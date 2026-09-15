@@ -234,4 +234,63 @@ def keret_geometria(ops: "tuple[FilterOp, ...]", width: int, height: int) -> Ker
     return KeretGeometria(szelesseg=sz, magassag=ma, matrix=m)
 
 
-__all__ = ["KeretGeometria", "Matrix", "AZONOSSAG", "keret_geometria"]
+@dataclass(frozen=True)
+class TartalomHely:
+    """A forrásfotó helye a kimenetben, **relatív** `[0..1]` alakban.
+
+    A szerkesztő átfedő rétegei (`cropOverlay`, `facesOverlay`) a kirajzolt
+    képre vannak horgonyozva, és relatív koordinátákkal dolgoznak — ez az
+    alak illik hozzájuk közvetlenül. A `szog` fokban, az óramutatóval
+    ellentétesen (ugyanaz az előjel, mint a QML `rotation`-jénél negálva:
+    ld. a fogyasztót).
+    """
+
+    #: A forrás KÖZÉPPONTJA a kimenetben, a kimenet méretéhez viszonyítva.
+    kozep_x: float
+    kozep_y: float
+    #: A forrás mérete a kimenet méretéhez viszonyítva.
+    szelesseg: float
+    magassag: float
+    #: Elforgatás fokban (`Polaroid`); a többi szűrőnél 0.
+    szog: float
+
+    @property
+    def erintetlen(self) -> bool:
+        """Kitölti-e a forrás pontosan a kimenetet, forgatás nélkül?"""
+        return (
+            self.kozep_x == 0.5
+            and self.kozep_y == 0.5
+            and self.szelesseg == 1.0
+            and self.magassag == 1.0
+            and self.szog == 0.0
+        )
+
+
+def tartalom_elhelyezes(geo: KeretGeometria, forras_w: int, forras_h: int) -> TartalomHely:
+    """A `keret_geometria` mátrixából a rétegek számára használható alak.
+
+    A mátrix eltolás + tengelyenkénti nyújtás + forgatás összetétele, tehát
+    a nyújtás az oszlopvektorok hossza, a szög az első oszlopé — és a
+    középpont egyszerűen a forrás középpontjának képe."""
+    (a, b, c), (d, e, f) = geo.matrix
+    nyujt_x = math.hypot(a, d)
+    nyujt_y = math.hypot(b, e)
+    kx = a * (forras_w / 2.0) + b * (forras_h / 2.0) + c
+    ky = d * (forras_w / 2.0) + e * (forras_h / 2.0) + f
+    return TartalomHely(
+        kozep_x=kx / geo.szelesseg,
+        kozep_y=ky / geo.magassag,
+        szelesseg=forras_w * nyujt_x / geo.szelesseg,
+        magassag=forras_h * nyujt_y / geo.magassag,
+        szog=math.degrees(math.atan2(d, a)),
+    )
+
+
+__all__ = [
+    "KeretGeometria",
+    "TartalomHely",
+    "Matrix",
+    "AZONOSSAG",
+    "keret_geometria",
+    "tartalom_elhelyezes",
+]

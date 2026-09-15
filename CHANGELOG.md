@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.466] – 2026-09-15
+
+### Belső
+
+- **A program megmondja, hol van a fénykép a kereten belül** (#3166). A
+  képfeldolgozás jelentése mostantól tartalmazza, hova került a fénykép a
+  keretes (Polaroid, filmvászon, paszpartu) kimenetben — a vágás-keret és az
+  arcok jelölésének ebből lehet majd a helyére igazodnia. Magában ez még
+  **nem látszik semmin**.
+
 ## [0.8.465] – 2026-09-15
 
 ### Belső

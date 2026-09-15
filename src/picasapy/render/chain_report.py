@@ -10,6 +10,7 @@ import dataclasses
 import numpy as np
 
 from picasapy.ini.filters import FilterOp
+from picasapy.render.chain_geometry import TartalomHely
 from picasapy.render.registry import FILTER_REGISTRY, clamp_slider_value
 
 #: Explicit (csúszka-index → paraméter-pozíció) leképezés a tartomány-
@@ -147,6 +148,12 @@ class ChainReport(tuple):
 
     Mindkettő a `skipped`-be is bekerül (a lánc kihagyja őket); a külön
     lista a KÜLÖNBÖZŐ okokat mondja ki, szűrőnként a saját üzenetével.
+
+    A `.content_placement` (#3166) megmondja, **hol van a fénykép a
+    kimenetben**, ha a lánc keret-effektet tartalmaz. Erre a szerkesztő
+    átfedő rétegeinek (vágás-téglalap, arckeretek) van szüksége: ők a
+    kirajzolt képre horgonyozódnak, az viszont keretes lánc esetén már a
+    keretezett kimenet. `None`, ha nem volt keret-effekt.
     """
 
     # (Nincs `__slots__`: a `tuple` már változó hosszú C-szintű tárolást
@@ -163,6 +170,7 @@ class ChainReport(tuple):
         resizes: bool,
         range_warnings: tuple[str, ...],
         legacy_warnings: tuple[str, ...] = (),
+        content_placement: TartalomHely | None = None,
     ) -> "ChainReport":
         obj = super().__new__(cls, (image, skipped))
         obj.full_res = full_res
@@ -170,6 +178,7 @@ class ChainReport(tuple):
         obj.resizes = resizes
         obj.range_warnings = range_warnings
         obj.legacy_warnings = legacy_warnings
+        obj.content_placement = content_placement
         return obj
 
     @property

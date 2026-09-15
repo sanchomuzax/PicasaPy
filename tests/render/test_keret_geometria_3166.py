@@ -209,3 +209,62 @@ def test_ket_keret_egymas_utan_osszeadodik():
     )
     assert ketto.szelesseg == egy.szelesseg + 20
     assert ketto.matrix[0][2] == egy.matrix[0][2] + 10
+
+
+# --- a ChainReport.content_placement (#3166, 2. lépés) -----------------------
+
+
+def test_a_jelentes_megmondja_hol_a_fenykep():
+    """`ChainReport.content_placement` — relatív hely a keretes kimenetben."""
+    hely = apply_filters(_forras(None), parse_filters(LANCOK[0][0])).content_placement
+    assert hely is not None
+    # Border: 800×600 → 850×650, körben 25 px ⇒ középen, 800/850 × 600/650
+    assert hely.kozep_x == pytest.approx(0.5)
+    assert hely.kozep_y == pytest.approx(0.5)
+    assert hely.szelesseg == pytest.approx(FORRAS_W / 850.0)
+    assert hely.magassag == pytest.approx(FORRAS_H / 650.0)
+    assert hely.szog == pytest.approx(0.0)
+
+
+def test_keret_nelkuli_lancnal_nincs_elhelyezes():
+    """Keret nélkül `None` — a rétegeknek nincs mit igazítani."""
+    assert apply_filters(_forras(None), parse_filters("sepia=1;")).content_placement is None
+    assert apply_filters(_forras(None), ()).content_placement is None
+
+
+def test_a_polaroid_elhelyezese_FORGAT():
+    """A `Polaroid` szöget is ad — a réteget el kell forgatni."""
+    hely = apply_filters(_forras(None), parse_filters("Polaroid=1,5,e2e2e2")).content_placement
+    assert hely is not None
+    assert hely.szog == pytest.approx(-5.0, abs=0.01)
+
+
+def test_a_vagas_UTANI_meretbol_szamol():
+    """⛔ A hely a VÁGOTT képhez tartozik, nem a vágatlanhoz.
+
+    A keretek a vágás után kerülnek a képre (#330), tehát a réteg-igazítás
+    referenciája a vágott téglalap. Ha a számítás a vágatlan méretből
+    indulna, a keret arányát elhibázná."""
+    vagott = apply_filters(
+        _forras(None), parse_filters("crop64=1,3fff3fffbfffbfff;Border=1,20,5,0,000000,ffffff,0")
+    )
+    # a vágás fele méretre visz (400×300), a keret onnan nő 450×350-re
+    assert vagott[0].shape[:2] == (350, 450)
+    assert vagott.content_placement.szelesseg == pytest.approx(400 / 450.0)
+    assert vagott.content_placement.magassag == pytest.approx(300 / 350.0)
+
+
+def test_a_hibara_futo_keret_kimarad_az_elhelyezesbol():
+    """Csak a TÉNYLEGESEN alkalmazott keretek számítanak.
+
+    Ha egy keret-op hibás paraméter miatt kimarad a renderből, a hely
+    számításából is ki kell maradnia — különben olyan keretet feltételezne,
+    ami nincs is a képen."""
+    hely = apply_filters(
+        _forras(None), parse_filters("Border=1,20,5,0,000000,ffffff,0;RoundedEdges=1")
+    ).content_placement
+    csak_border = apply_filters(
+        _forras(None), parse_filters("Border=1,20,5,0,000000,ffffff,0")
+    ).content_placement
+    # a RoundedEdges nem változtat méretet, tehát a két hely azonos
+    assert hely == csak_border
