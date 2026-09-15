@@ -4129,6 +4129,96 @@ látható kimenet **nem** ül egyenletes rácson. Az első mérőkép 97,62%-a a
 a képnek a sajátja, nem a szűrőé: mértani mezős képen a 7 színű paletta
 elemei épp a rácspontok közelébe esnek.
 
+### 1/c A KÉT export KÉT KÜLÖNBÖZŐ úton készült — SZÁMMAL (2026-09-15, #3084)
+
+A #3084 megvalósítási köre elsőként a mért oktree-modellt építette újra, és
+**mind a két mérőképen lemérte**. Az eredmény a fenti ellentmondást nem
+oldja fel, hanem **élesíti**: számot ad rá, ΔE nélkül is.
+
+**A bizonyíték: a `min` eset (`Steps = 2`).** Az oktree-út ilyenkor
+`0x00bb5da8` szerint **2** levelet kap, tehát a kimenet legfeljebb **2**
+különböző színt tartalmazhat. A mérés a Picasa saját exportján (a lapos
+területek 97%-os fedéséhez szükséges színszám, 4-es raszter):
+
+| export | `Steps` | az oktree-út felső korlátja | a MÉRT színszám |
+|---|---:|---:|---:|
+| mérőszett `min` (960 × 640, mértani) | 2 | **2** | **8** = 2³ |
+| mérőszett `alap` (960 × 640, mértani) | 8 | 7 | **17** = 12 szürke lépcső + 4 mező + fehér |
+| #2770 fotó (2560 × 1696, természetes) | 8 | 7 | 43 (de 7 szín fed 92,9%-ot) |
+
+A `8 = 2³` és a `17 = 12 + 4 + 1` nem közelítés: pontosan az a színszám,
+amit a **csatornánként független** rács ad a két kép saját színeire. Egy
+2 levelű palettából 8 szín nem jöhet ki.
+
+⇒ **A mérőszett exportja bizonyítottan NEM az oktree-út eredménye**, és ezt
+most nem ΔE mondja, hanem egy megszámolható felső korlát.
+
+**A másik irányban ugyanilyen éles.** A természetes fotó exportját a rácsos
+modell **116 paraméter-kombinációval sem** közelíti: `Steps` 2…30 × négy
+`Smoothing`-állás mellett a legjobb ΔE **26,31** — az érintetlen forrás
+26,33-a mellett, azaz a modell ott semmit nem magyaráz. A mért oktree-modell
+ugyanazon a képen **15,77**, és a palettájából hat szín ±8 szinten belül
+egyezik az export hat leggyakoribb színével:
+
+```
+a mi oktree-palettánk        az export (8-as raszter)
+(253, 220, 148)  10,8%   ↔   (248, 216, 144)   9,7%
+(219, 167,  93)   8,8%   ↔   (224, 168,  88)   6,4%
+(160, 101,  52)   7,9%   ↔   (160,  96,  48)   4,4%
+(254, 251, 234)   5,6%   ↔   (248, 248, 240)   5,1%
+(247, 218, 167)   4,8%   ↔   (240, 216, 168)   4,0%
+(250, 215, 107)   2,0%   ↔   (248, 216, 104)   1,4%
+( 34,  29,  22)  44,3%   ↔   (  8,   8,   8)  43,8%   ⚠️ EZ tér el
+```
+
+A hetedik, legsötétebb szín a mienknél **túl világos**, és ez a képpontok
+44%-át érinti — innen a 15,77 nagy része.
+
+**A színszám-ellentmondás viszont FELOLDVA:** az export 3685 színe (4-es
+raszter) nem cáfolja a palettás olvasatot, mert a **JPEG maga** állítja elő:
+a mi 12 színű oldalunk JPEG q95 után 2447, q85 után 6007 színt ad.
+
+**Mérési javítás a modellen** (a bináris utasításszintjéről): a
+`0x00bcb6f0` redukáló `N == 1` esetén **azonnal levélbe olvaszt**
+(`0x00bcb70c` → `FUN_00bcb880`), nem rekurzál tovább. Az első
+újraépítésem ezt kihagyta, és a hiba mérhető volt: a sötét ág keresése a
+bejárási sorrend **utolsó** (világos, index 7) gyerekének átlagát adta a
+teljes ág átlaga helyett (ΔE 16,02 → 15,77).
+
+**A `return 4` korai ág LEZÁRVA** (a 4. pont 2. alkérdése): a
+`0x00bb5edd`–`0x00bb5f02` a gyűjtő `+0x10` mezőjét nézi, és ha **nulla**,
+összeolvaszt, felszabadít és `4`-et ad vissza. Ez **üres mintára** szóló
+hibakód, **nem alternatív renderút**.
+
+**A képponti alkalmazó is dekódolva** (`0x00bcb2f0`, 744 b): a
+`0x00bcb4f2`-től induló ág **négy, 256 × 4 bájtos táblát** olvas a
+csomagolt képpont négy bájtjára (`0x400` léptetés), és `paddusb`-vel
+**telítéses bájtonkénti összeget** ad. Ez általános, csatornánkénti
+LUT-alkalmazó; a 3-3-2 index OR-os használata ennek egy speciális esete. A
+`0x00d695d2`/`0x00d695d3` bájtok a nem-SSE ágra váltanak — **a két ág
+ugyanazt számolja**, tehát nem ez a kétféle út.
+
+### ⛔ Ami ebből a MEGVALÓSÍTÁSRA következik: a csere NEM végezhető el
+
+Egyik modell sem írja le mind a két exportot:
+
+| | mérőszett `alap` | mérőszett `min` | #2770 fotó |
+|---|---:|---:|---:|
+| érintetlen forrás | 19,01 | 73,49 | 26,33 |
+| **rácsos (a mai)** | **0,83** | **1,71** | 29,50 |
+| **mért oktree** | 30,50 | 93,71 | **15,77** |
+
+A mai modellre cserélni az oktree-t a mérőszett képén **36-szorosára**
+rontaná a hibát. Ez nem paraméterezés-kérdés: a két export két különböző
+viselkedést mutat, és a meglévő két minta a **képméretet és a képtartalmat
+egyszerre** változtatja (960 × 640 mértani ↔ 2560 × 1696 természetes), ezért
+a mérésből nem dönthető el, melyik a szétválasztó tényező.
+
+⇒ A csere addig nem mehet ki, amíg egy olyan minta nincs, ami a két
+tényezőt szétválasztja. A gépi út ehhez **kimerült**: egyetlen
+`QuantizePaletteImageOperation` van (RTTI + `filterdesc.xml`), a `return 4`
+ág hibakód, a képponti alkalmazó két ága azonos eredményt ad.
+
 ### Amit ez a MEGVALÓSÍTÁSRA jelent
 
 A mai rácsos implementációnk (ΔE 0,268 a mérőszetten) **csak a mérőszett
