@@ -31,7 +31,7 @@ from .paint_mask import KEZDO_ARANY, MAX_ARANY, MaszkAllapot
 
 
 class PaintMaskMixin:
-    """`paintStroke` / `clearPaintMask` — az ecset felülete felé."""
+    """`paintStroke` / `setPaintBrushRatio` / `setPaintEraser` — az ecset felülete felé."""
 
     paintMaskChanged = Signal()
 
@@ -61,10 +61,6 @@ class PaintMaskMixin:
     def paintEraser(self) -> bool:  # noqa: N802
         """Radír-üzemmód (a mért vezérlő méret ÉS radír egyben)."""
         return self._paint_eraser
-
-    @Property(bool, notify=paintMaskChanged)
-    def paintMaskEmpty(self) -> bool:  # noqa: N802
-        return self._paint_mask.ures
 
     @Property(float, constant=True)
     def paintBrushMax(self) -> float:  # noqa: N802
@@ -102,19 +98,21 @@ class PaintMaskMixin:
         self._paint_eraser = bool(radir)
         self.paintMaskChanged.emit()
 
-    @Slot()
-    def clearPaintMask(self) -> None:  # noqa: N802
-        """A teljes festés elvetése — az effekt visszaáll a maszk NÉLKÜLI
-        viselkedésére (a `ReanimatedEyeColor` ilyenkor azonosság)."""
-        if self._paint_mask.ures:
-            return
-        self._paint_mask.torold()
-        self.paintMaskChanged.emit()
-        self._register_preview()
-
     # -- a gazdának ----------------------------------------------------------
 
     def _paint_strokes(self) -> tuple:
+        """A festés vonásai az előnézet-kérésbe.
+
+        Ha a láncban MÁR NINCS festhető effekt (a felhasználó alkalmazta vagy
+        elvetette), a festés is elvesztette az értelmét: ilyenkor magától
+        eldobódik. Enélkül egy következő, szintén festhető effekt a korábbi
+        vonásokat kapná meg — olyan maszkkal, amit a felületen épp nem is
+        látott.
+        """
+        if not self.paintMaskSupported:
+            if not self._paint_mask.ures:
+                self._paint_mask.torold()
+            return ()
         return self._paint_mask.vonasok
 
     def _paint_mask_kepvaltas(self, kulcs: str) -> None:
