@@ -469,9 +469,15 @@ felhasználó Picasája teljes újraszkennelést fog kérni.
 
 ---
 
-## 8. A KÉT BEÉPÍTETT, VÉDETT SZEMÉLYI ALBUM
+## 8. A BEÉPÍTETT, VÉDETT SZEMÉLYI ALBUM — EGY rekesz, KÉT token
 
-`0x004ac650` (456 b) hozza létre őket, album-tokennel:
+⚠️ **Helyesbítés (2026-09-15, #3002).** A szakasz korábban „két beépített
+albumot" írt. A `0x004ac650` diszasszemblálása és a valódi db3 mérése szerint
+ez **egy** albumsor, amely **két token** közül az egyiket viseli — a
+`]ignoreface` nem külön rekesz, hanem ugyanannak a rekesznek a másik
+megjelenése. A részletes bizonyíték a 8/b pontban.
+
+`0x004ac650` (456 b) hozza létre, album-tokennel:
 
 | token | belső név | felirat (EN) | felirat (HU) | rendezőkulcs |
 |---|---|---|---|---|
@@ -490,6 +496,52 @@ törölhető** (`CThumbUI::DeleteFacesAlbum`).
 | `CAlbumLabel::Unnamed` | **Meg nem nevezett emberek** | a panel fejlécében |
 
 A **nevesített** személyek albuma külön token: **`]facealbum:<id>`**.
+
+### 8/b A két token EGY albumsoré — mért bizonyíték
+
+**A binárisból** (`0x004ac650`, teljes törzs diszasszemblálva):
+
+1. A függvény **előbb a `]unknownface`-t keresi, majd a `]ignoreface`-t**, és
+   az albumot **csak akkor hozza létre, ha EGYIK SEM létezik**. Két külön
+   rekesznél ez a feltétel értelmetlen volna: a másik megléte nem indokolná a
+   kihagyást.
+2. A megtalált (vagy létrehozott) **egyetlen** albumazonosítót a
+   `[esi+0x16c]` tagba írja — nincs második tag a második albumnak.
+3. Egy bool tag (`[esi+0x168]`) dönti el, hogy a rekesz a
+   **`CThumbDB::unknownfacealbum` / „Unnamed"** vagy a
+   **`CThumbDB::ignorefacealbum` / „Ignored"** feliratot és a hozzá tartozó
+   tokent kapja-e. A függvény bemenő bool paramétere ezt a tagot **billenti**.
+4. A `0x006030a0` ugyanezt az albumfejlécen mutatja: az
+   `albumheader/%x/%d/showunknown` ↔ `albumheader/%x/%d/showignored` váltó
+   cseréli a címet `CAlbumLabel::Unnamed` („Unnamed people") és
+   `CAlbumLabel::Ignored` („Ignored people") között — **ugyanazon** a
+   fejlécen. (Ugyanez a pár a 12. szakasz `unknownfaceheaderpanel`
+   váltógombjainál.)
+
+**A valódi db3-ból** (`research/testdata/Picasa2-arcok/Picasa2/db3`, a
+tulajdonos erre készített telepítése, 144 `albumdata` sor, 3338 `imagedata`
+sor):
+
+| mérés | eredmény |
+|---|---|
+| `]ignoreface` token az `albumdata_token`-ben | **nincs egy sem** |
+| `]unknownface` token | **egy** sor: `albumdata[2]`, neve „Név nélküliek" |
+| egyéb `]`-tokenek | `]star`, `]updated`, `]screensaver`, `]search`, `]history:email`, `]history:upload` |
+| `imagedata_personalbumid` nem nulla értékei | **115 db**, mind a `]facealbum:109…117` sorokra mutat (nevesített személyek) |
+| ebből a `]unknownface`-re (2) mutató | **nulla** |
+
+⇒ **A „Figyelmen kívül hagyva" rekesz tagsága a db3-ban nem létezik külön
+adatként**, tehát a db3-importnak nincs mit átvennie hozzá. A rekesz a
+futásidejű váltó egyik állása, nem tárolt fotóhalmaz. *(Ez a #3002 második
+hátralévő pontjának a mért válasza — nem elmaradt munka, hanem negatív
+lelet.)*
+
+⚠️ **Nyitva marad**, hova írja Picasa az egyedi arc „elvetve" állapotát. A 9/b
+pont ezt a `0x005c9b00`-ra alapozva a `.picasa.ini`-hez kötötte; ennek a
+függvénynek a sztringkészlete viszont `.picasaoriginals`, `Deleting Files` és
+`CThumbUI::DeleteProgress` tételeket is tartalmaz, tehát **legalábbis a
+törlési ág is benne van**. A kulcs nevét egyik mérés sem adta meg — amíg nincs
+meg, ne építsünk rá.
 
 ---
 
@@ -554,7 +606,7 @@ listában az `adorners/listsuggestionfaceadorner`.
 | 5 | `facerect` értelmezése | **logikai jelző**, nem rect | a specünk „szentinel"-nek írta | helyesbítve (3.3) |
 | 6 | `ffffffffffffffff` | „ismeretlen" szentinel | — | ne személyként importáljuk |
 | 7 | duplikált kontakt | előfordul (mérve) | — | az importáló tűrje |
-| 8 | két beépített album | `]unknownface`, `]ignoreface`, **nem törölhető** | **nincs** | #26 |
+| 8 | **egy** beépített album, két tokennel | `]unknownface` ↔ `]ignoreface` váltó, **nem törölhető** | **nincs** | 8/b — a db3-ban nincs külön elvetett-tagság |
 | 9 | két küszöb | 50–95, ötösével, alap 85 | **nincs** | ha lesz motorunk, ugyanez a létra |
 | 10 | `frversion` | **`"1.5"`** | — | importáláskor ezt írjuk |
 
@@ -564,7 +616,7 @@ listában az `adorners/listsuggestionfaceadorner`.
 
 - **Megerősített:** a beállításkulcsok, alapértékek és a küszöb-létra
   (kód + ugrótábla-bájtok); a két ini-írási útvonal és a `FRWriteFaceDataINI`
-  kapu; a három romboló művelet; a verzió-migráció; a két beépített album
+  kapu; a három romboló művelet; a verzió-migráció; a beépített album
   tokene és feliratai; a PMP-oszlopok típusa, sorszáma és tartalma (élő
   adaton mérve); a `facedata` **nulla** korpusz-előfordulása.
 - **Erős:** a `contact_id → név` leképezés levezetése a két deferred oszlop
