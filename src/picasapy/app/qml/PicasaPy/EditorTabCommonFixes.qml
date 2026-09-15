@@ -197,33 +197,18 @@ ColumnLayout {
             Layout.fillWidth: false
             Layout.preferredWidth: 127
             spacing: 2
-            Label {
+            EditorSliderCaption {
                 objectName: "fixesFillLightLabel"
                 Layout.fillWidth: true
-                horizontalAlignment: Text.AlignHCenter
                 text: qsTr("Fill Light")
-                font.pixelSize: Theme.fontSize - 1
-                // #2626: normál tinta, nem a másodlagos szürke — a mérés a
-                // `EditorFinetunePanel.qml` `SliderCaption`-jénél áll.
-                color: Theme.ink
             }
-            PicasaSlider {
+            // #2627/#710: ez a csúszka a `scaleslider` családba tartozik (a
+            // fogantyú 16 × 22), NEM az `editslider`-be — a két mért család
+            // számai a közös `EditorSlider`-ben állnak.
+            EditorSlider {
                 id: fixesFillSlider
                 objectName: "fixesFillSlider"
-                // #2627: a BELSŐ geometria a `respack.yt` `scaleslider`
-                // családjából — a Gyakori javítások Derítőfénye az
-                // eredetiben `editpanel/clip(scaleslider,flightslider1):
-                // backlight_container`, tehát NEM az `editslider` család:
-                //
-                //   scaleslider/sliderbase  121 × 9   -> a sáv 9 képpont
-                //   scaleslider/thumb       16 × 22   -> a fogantyú álló
-                //
-                // (A finomhangoló négy csúszkája `editslider`, ott a
-                // fogantyú 16 × 26 — ld. `EditorFinetunePanel.qml`.)
-                grooveThickness: 9
-                handleWidth: 16
-                handleHeight: 22
-                handleRadius: 3
+                csalad: "scaleslider"
                 Layout.fillWidth: true
                 Layout.preferredHeight: 27
                 from: 0; to: 1; value: 0

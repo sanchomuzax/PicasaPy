@@ -149,3 +149,5 @@ singleton NotifierBus 1.0 NotifierBus.qml
 NotifierCell 1.0 NotifierCell.qml
 PicasaNotifier 1.0 PicasaNotifier.qml
 ActivityBadge 1.0 ActivityBadge.qml
+EditorSlider 1.0 EditorSlider.qml
+EditorSliderCaption 1.0 EditorSliderCaption.qml

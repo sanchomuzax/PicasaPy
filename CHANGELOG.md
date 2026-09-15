@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.483] – 2026-09-15
+
+### Javítva
+
+- **A szerkesztő csúszka-feliratai mindenhol a normál tintát viszik** (#710).
+  A csúszkás effekt-alpanelen (Élesítés, Szépia stb. paraméterei) eddig a
+  halványabb szürke maradt: a mért javítás (#2626) csak a Finomhangolás fülre
+  és a Gyakori javításokra került rá, mert a stílust három panel tartotta
+  külön. Mostantól egy helyen van — a felirat így minden csúszkán ugyanolyan
+  jól olvasható.
+
 ## [0.8.482] – 2026-09-15
 
 ### Javítva
