@@ -61,16 +61,20 @@ def _minta(meret: int = 48) -> np.ndarray:
 
 
 class TestASugarNemFuggAMennyisegtol:
+    #: #3110: a sugár a korong X-e, ezért a próbák a REFERENCIA-állást
+    #: (`x = 0,5`) adják át — ott a mért sugár egyenlő a régi állandóval.
     """⭐ A #2773 tovább vitte: a sugár nem is állandó, hanem a burkoló által
     átadott ELSŐ normált lánc-érték (`params+0x34`) nagysága — a „Mennyiség"
     függetlensége viszont változatlanul áll, és ez a fájl azt őrzi."""
 
     @pytest.mark.parametrize("amount", [0.0, 2.0, 10.0, 1000.0, -5.0])
     def test_a_sugar_minden_mennyisegre_ugyanaz(self, amount: float) -> None:
-        assert linblur_blur_radius(960, amount) == LINBLUR_MERT_SUGAR
+        assert linblur_blur_radius(960, 0.5, amount) == LINBLUR_MERT_SUGAR
 
     def test_a_sugar_a_szelessegtol_sem_fugg(self) -> None:
-        assert linblur_blur_radius(120, 2.0) == linblur_blur_radius(4000, 2.0)
+        assert linblur_blur_radius(120, 0.5, 2.0) == linblur_blur_radius(
+            4000, 0.5, 2.0
+        )
 
     def test_a_kimenet_azonos_harom_mennyisegre(self) -> None:
         """A referencia-exportok bitre azonosak — a mi kimenetünk is legyen az."""

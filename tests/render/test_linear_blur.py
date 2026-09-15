@@ -76,8 +76,8 @@ class TestBlurRadius:
     def test_a_sugar_MERVE_allando(self) -> None:
         """#2736 + #2773: se a szélesség, se a „Mennyiség" nem szól bele; az
         érték a natív együttható-alakhoz újrakalibrálva 0,5."""
-        assert linblur_blur_radius(800, 2.0) == pytest.approx(0.5)
-        assert linblur_blur_radius(1600, 0.0) == pytest.approx(0.5)
+        assert linblur_blur_radius(800, 0.5, 2.0) == pytest.approx(0.5)
+        assert linblur_blur_radius(1600, 0.5, 0.0) == pytest.approx(0.5)
 
 
 class TestApplyLinblur:
@@ -130,7 +130,7 @@ class TestApplyLinblur:
         egymás utáni `FUN_009dd0d0` hívása).
         """
         image = _zajos()
-        radius = linblur_blur_radius(image.shape[1], 2.0)
+        radius = linblur_blur_radius(image.shape[1], 0.5, 2.0)
         homalyos = apply_picasa_blur(
             apply_picasa_blur(image, radius, radius), radius, radius
         )
@@ -142,7 +142,7 @@ class TestApplyLinblur:
         képpontok egyre közelebb kerülnek az élesekhez."""
         image = _zajos()
         result = apply_linblur(image, 0.5, 0.0, 2.0).astype(float)
-        radius = linblur_blur_radius(image.shape[1], 2.0)
+        radius = linblur_blur_radius(image.shape[1], 0.5, 2.0)
         homalyos = apply_picasa_blur(
             apply_picasa_blur(image, radius, radius), radius, radius
         ).astype(float)
@@ -153,9 +153,16 @@ class TestApplyLinblur:
 
     def test_a_fuggoleges_korong_fuggoleges_atmenetet_ad(self) -> None:
         """A fókuszvonal a korong és a közép ÖSSZEKÖTŐ egyenesére merőleges:
-        függőlegesen eltolt koronggal a felső és az alsó sáv válik szét."""
+        függőlegesen eltolt koronggal a felső és az alsó sáv válik szét.
+
+        ⚠️ **#3110: a korong X-e itt már nem lehet 0.** A sugár a mért alak
+        szerint a korong X koordinátája, tehát `x = 0`-nál nincs mit
+        keverni — a kimenet az éles kép, és a próba semmit nem mérne. A
+        `0,1` épp elég sugár a szétváláshoz, és az összekötő egyenes még
+        majdnem függőleges (a korong 10%-kal tér el a középvonaltól).
+        Az `x = 0` ágat a `test_linblur_korong_sugar_3110.py` rögzíti."""
         image = _zajos(height=160, width=60)
-        result = apply_linblur(image, 0.0, 0.5, 2.0).astype(float)
+        result = apply_linblur(image, 0.1, 0.5, 2.0).astype(float)
         assert result[140:, :].std() > 3.0 * result[:20, :].std()
 
     def test_ervenytelen_bemenet(self) -> None:
@@ -192,6 +199,14 @@ class TestFelbontasfuggetlenseg953:
     állítja elő (`0x00c29990` → `cvttsd2si`), ami a nulla felé **csonkol** —
     és `csonk(méret/2) == méret>>1` MINDEN méretre. A feltétel tehát a
     binárisban paritás-független; nálunk a `round()` tette azzá.
+
+    ⚠️ **#3110: az eltolt korong POZITÍV X-szel mér.** Amíg a sugár állandó
+    volt, mindegy volt, melyik oldalra toljuk a korongot, és ez a lap
+    `x = −0,6`-ot használt. A #3110 óta a sugár a korong X-e, tehát negatív
+    X-nél nem mos — a keverés ott az éles képet adja vissza, és a próba
+    „nem hatott"-at mérne. A paritás-függetlenség pozitív X-szel ugyanúgy
+    mérhető; a negatív ágat a
+    `test_linblur_korong_sugar_3110.py::test_negativ_X_sem_mos` rögzíti.
     """
 
     def test_a_kozepre_tett_korong_minden_meretben_azonossag(self) -> None:
@@ -206,15 +221,15 @@ class TestFelbontasfuggetlenseg953:
 
     def test_az_eltolt_korong_minden_meretben_hat(self) -> None:
         hatastalan = {
-            f"{w}x{h}": _elteres(h, w, -0.6, 0.0, 2.0)
+            f"{w}x{h}": _elteres(h, w, 0.6, 0.0, 2.0)
             for (h, w) in _PARITAS_MERETEK
-            if _elteres(h, w, -0.6, 0.0, 2.0) == 0.0
+            if _elteres(h, w, 0.6, 0.0, 2.0) == 0.0
         }
         assert not hatastalan, f"az eltolt korong nem hatott: {hatastalan}"
 
     def test_a_hatas_merteke_nem_ugral_a_paritassal(self) -> None:
         """A mérték maradjon egy nagyságrendben: ne 0 az egyiken, teljes a másikon."""
-        mertekek = [_elteres(h, w, -0.6, 0.0, 2.0) for (h, w) in _PARITAS_MERETEK]
+        mertekek = [_elteres(h, w, 0.6, 0.0, 2.0) for (h, w) in _PARITAS_MERETEK]
         assert min(mertekek) > 0.5 * max(mertekek)
 
     def test_a_korong_egesze_csonkolassal_all_elo(self) -> None:

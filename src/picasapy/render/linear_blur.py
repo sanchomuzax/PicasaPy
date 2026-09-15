@@ -34,17 +34,30 @@ puffer), `idx >= +384` esetén a **nyers éles forrást** írja.
    mindkét tengelyre (`0x0090dec6`, `0x0090def6` → `0x009dd0d0`); a
    negyedik lánc-érték ebbe a láncba nem kerül be.
 
-   A sugár mért értéke a mi (`iir_blur`) paraméterezésünkben **1,5**
-   (`LINBLUR_MERT_SUGAR`): a ΔE a valódi exporttól 13,147 / 17,849 / 6,814
-   (alap / max / min, a régi `szélesség/100·(Mennyiség+1)` képlettel)
-   helyett **mindháromra 0,279** — JPEG-zaj nagyságrend.
+   A sugár a referencia-álláson **0,5** (a korong X-e): a ΔE a valódi
+   exporttól 13,147 / 17,849 / 6,814 (alap / max / min, a régi
+   `szélesség/100·(Mennyiség+1)` képlettel) helyett **mindháromra 0,300** —
+   JPEG-zaj nagyságrend. (A régi, illesztett együttható-alakkal 1,5 adta a
+   minimumot; a binárisból kiolvasott natív alakkal 0,5, ld. #2773.)
 
-   ⛔ **A hatókör:** a mérés EGY korong-álláson (`0,5; 0,5`) készült, mert
-   csak ahhoz van referencia-exportunk. Az MÉRVE van, hogy a „Mennyiség"
-   nem hat, és hogy ezen az álláson a sugár 1,5; az NINCS mérve, hogy a
-   sugár függ-e a korong helyétől — ezért konstans, nem képlet: egy
-   `1+|x|` alak ugyanezt az egy pontot találná el, de bizonyítatlan
-   függést állítana. Második referencia-pont: #2772.
+   ⚠️ **A referencia az `export-202608151229`**, NEM a frissebb
+   `export-202608202231`: abban a `linblur` nem futott le (forrás ↔ export
+   ΔE 0,14 = JPEG-zaj), és vele mérve a hiba 12,57-nek adódik. A csapdát a
+   privát `referencia/kepek-leltar.md` is kimondja.
+
+   ⭐ **A korong-függés MEGVAN (#2772 → #3110).** A mérés egy korong-álláson
+   (`0,5; 0,5`) készült, ezért a #2773 még állandónak hagyta a sugarat — de
+   a #2772 303. köre kiolvasta, hogy a feldolgozó (`0x008f99c0`) épp a
+   korong X-ét adja a magnak (`0x008f9a40 fstp dword [esp]` az `ftol`-ok
+   utáni FPU-verem-másolatból), a mag pedig mindkét IIR-hívásnak ugyanazt
+   (`0x0090dec6`, `0x0090def6`). A sugár tehát **a korong X koordinátája**,
+   és a referencia-állás `0,5`-e ennek egy pontja, nem illesztés.
+
+   ⚠️ **Amit ez felületen jelent:** a csak FÜGGŐLEGESEN eltolt korong
+   (`x = 0`) a mért alak szerint **nem mos** — a sugár nulla. Ez a #2773
+   kimondott ellenérve volt az `x`-függés ellen; a bizonyíték azóta megjött,
+   ezért a viselkedést átvettük, és őr rögzíti
+   (`test_linblur_korong_sugar_3110.py`). A negatív X-re nincs mérés.
 2. **A súlytábla utolsó rekeszei.** A natív kód a `round((1−2f)·255,9999)`
    értéket **bájtba** írja, így `f → 0` közelében (`i >= 338`) 256-ot
    tárolna, ami 0-ra fordul körbe — vagyis a teljesen ÉLES tartomány egy
@@ -81,10 +94,15 @@ _TABLE_STEP = 1.0 / 256.0
 #: A natív skálázó szorzó a súlytábla építésénél.
 _TABLE_SCALE = 255.9999
 
-#: A MÉRT elmosási sugár (#2736, újrakalibrálva #2773). Az 1,5 a RÉGI,
-#: illesztett együttható-alakhoz tartozott; a binárisból kiolvasott natív
-#: alakkal (#2773) a referencia-minimum 0,5-nél van — épp annál az értéknél,
-#: amit a burkoló a magnak átad. Ld. `linblur_blur_radius`.
+#: A referencia-lánc korong-X-e, és egyben a régi állandó értéke
+#: (#2736 → #2773 → #3110). Az 1,5 a RÉGI, illesztett együttható-alakhoz
+#: tartozott; a binárisból kiolvasott natív alakkal (#2773) a
+#: referencia-minimum 0,5-nél van — épp annál az értéknél, amit a burkoló a
+#: magnak átad, és ez a mi EGYETLEN referencia-láncunk korong-X-e is.
+#:
+#: ⚠️ A #3110 óta ez már NEM a sugár, csak a referencia-állás értéke: a
+#: sugarat a korong X-e adja (`linblur_blur_radius`). A név azért marad, mert
+#: a #2736/#2773 mérései erre az értékre hivatkoznak.
 LINBLUR_MERT_SUGAR = 0.5
 
 
@@ -121,35 +139,45 @@ _WEIGHT_TABLE = linblur_weight_table()
 _WEIGHT_TABLE.setflags(write=False)
 
 
-def linblur_blur_radius(width: int, amount: float) -> float:
-    """A `linblur` elmosási sugara — MÉRT állandó (#2736, újrakalibrálva #2773).
+def linblur_blur_radius(width: int, x: float, amount: float) -> float:
+    """A `linblur` elmosási sugara: **a korong X koordinátája** (#3110).
+
+    ## A mért alak (#2772, 303. kör)
+
+    A feldolgozó (`0x008f99c0`) `fld st(0)` másolata a két `ftol` után az
+    FPU-verem tetején marad, és a `0x008f9a40 fstp dword [esp]` ezt teszi a
+    natív mag harmadik veremargumentumába — vagyis a korong X-ét. A mag
+    (`0x0090de10`) betölti (`0x0090de9b`), és **mindkét** `0x009dd0d0`
+    IIR-hívásnak ugyanazt adja át (`0x0090dec6`, `0x0090def6`).
 
     A `width` és az `amount` SZÁNDÉKOSAN nem szól bele: mérve a „Mennyiség"
-    nem hat (három bitre azonos referencia-export három különböző lánccal),
-    és a szélesség-skálázásra sincs bizonyíték.
+    nem hat (#2736: három bitre azonos referencia-export három különböző
+    lánccal, és a feldolgozó a csúszkát sehol nem olvassa), és a
+    szélesség-skálázásra sincs bizonyíték.
 
-    ⭐ **A #2773 újrakalibrálta.** Amíg az együttható-alak illesztett volt
-    (`exp(−1/R)`, 65536), a referenciát 1,5 adta vissza; a binárisból
-    kiolvasott natív alakkal (`trunc((1 − 0,1^(1/R))·32767)`) a minimum
-    **0,5**-nél van, és ott a ΔE **0,2407** (1,5-tel: 1,148). A minimum
-    éles: 0,45 → 0,2611; 0,55 → 0,2628.
+    ## Miért nem mozdul a referencia-ΔE
 
-    ⭐ **És a 0,5 nem illesztett szám:** a burkoló (`0x008f99c0`) épp a
-    `filters=` lánc ELSŐ normált értékét adja át a magnak
-    (`fstp dword [esp]` a `call 0x0090de10` előtt), az pedig továbbadja az
-    elmosónak mindkét tengelyre (`0x0090dec6`, `0x0090def6`) — és a mi
-    egyetlen referencia-láncunkban ez az érték **pontosan 0,5**. A két
-    megfejtés tehát egymást igazolja.
+    Mind a három referencia-láncunk `x = 0,5`, tehát a korong X-e ott épp
+    egyenlő a korábbi állandóval — a csere a referencián **mérhetően
+    semleges** (ΔE 0,300, `export-202608151229`). A különbség más
+    korong-állásokon jelentkezik, amire nincs exportunk.
 
-    ⛔ **Amit ez MÉGSEM jelent:** hogy a sugár egyenlő a korong `x`-ével.
-    Egyetlen korong-állásunk van (`0,5; 0,5`), amelyen az összes jelölt
-    (`|x|`, `0,5` állandó, `(1+x)/3`, …) ugyanazt adja. Az `|x|`-es alak
-    ráadásul azt állítaná, hogy `x = 0`-nál (csak függőlegesen eltolt
-    korong) az effekt NEM MOS — ezt bizonyíték nélkül nem vezetjük be.
-    Ezért állandó, és a döntést a második referencia-pont hozza meg: #2772.
+    ⛔ **Ez az ELŐZŐ kör kimondott ellenérvét oldja fel.** A #2773 azért
+    hagyta állandónak, mert egyetlen korong-állásunk van, amelyen az összes
+    jelölt (`|x|`, állandó `0,5`, `(1+x)/3`, …) ugyanazt adja, és az
+    `x`-függés azt állítaná, hogy `x = 0`-nál nem mos — bizonyíték nélkül.
+    A bizonyíték a #2772-vel megjött, és **nem illesztés**: a bináris
+    utasításszinten mondja meg, melyik érték megy a magba.
+
+    ⚠️ **A negatív X nincs mérve.** A `filters=` érték a #2702 szerint
+    `[-1, +1]`-ben áll, a natív együttható-képlet
+    (`trunc((1 − 0,1^(1/R))·32767)`) negatív sugárra nem értelmes, és
+    referencia sincs rá. A mi elmosónk `radius > 0` esetén mos, tehát
+    negatív értéknél nem mos — ez **rögzített** viselkedés (őr:
+    `test_negativ_X_sem_mos`), nem az eredetiről tett állítás.
     """
     del width, amount  # mérve nem hatnak — ld. a docstringet
-    return LINBLUR_MERT_SUGAR
+    return float(x)
 
 
 def _projection(
@@ -246,11 +274,11 @@ def apply_linblur(
     Vagyis az effekt mostantól a jó oldalon élesít (bal oldal elmosva, jobb
     oldal éles, az átmenet 0,7–0,85 W között), pontosan mint az eredeti; a
     megmaradó ΔE az elmosás ERŐSSÉGÉBŐL jön, nem a helyéből. A
-    ⭐ **A #2736 ezt kimérte:** a „Mennyiség" nem hat, a sugár állandó
-    (`LINBLUR_MERT_SUGAR = 1,5`), és ezzel a ΔE mindhárom esetre **0,279**
-    (13,147 / 17,849 / 6,814 helyett). A súlytábla csonkolása (2. pont)
-    továbbra is közelítés — a 0,279-es maradék ΔE-ben csak ez és a
-    JPEG-kerekítés lehet benne.
+    ⭐ **A #2736 ezt kimérte:** a „Mennyiség" nem hat. A sugarat a #3110 óta
+    a korong X-e adja (`linblur_blur_radius`); a referencia-álláson ez
+    `0,5`, és ezzel a ΔE mindhárom esetre **0,300** (13,147 / 17,849 / 6,814
+    helyett). A súlytábla csonkolása (2. pont) továbbra is közelítés — a
+    0,300-as maradék ΔE-ben csak ez és a JPEG-kerekítés lehet benne.
 
     A paritás-függés ettől FÜGGETLENÜL szűnik meg: mindkét olvasat
     középpontja `csonk(méret/2) == méret>>1`.
@@ -262,7 +290,7 @@ def apply_linblur(
     if puck == center:
         return image.copy()
 
-    radius = linblur_blur_radius(width, amount)
+    radius = linblur_blur_radius(width, x, amount)
     # a natív burkoló KÉTSZER futtatja végig a közös elmosó magot
     blurred = apply_picasa_blur(
         apply_picasa_blur(image, radius, radius), radius, radius
