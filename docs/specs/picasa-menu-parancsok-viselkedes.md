@@ -484,10 +484,10 @@ A kivágás után következő lánc (`FUN_0056b5c0` → `FUN_006b0200` →
 `FUN_00579910(2)` → **`FUN_00744d00(0xf)`**) harmadik kérdése eldőlt: a
 **`FUN_00744d00`** sztringjei mondják ki, mi ez.
 
-| sztring | mit árul el |
-|---|---|
-| `IDS_PRINT_PREP_MSG` · **`Preparing to print`** | ez a **nyomtatási** út |
-| `outputlayout/pbutton` | a **kimeneti elrendezés** panelé |
+| sztring | hol | mit árul el |
+|---|---|---|
+| `IDS_PRINT_PREP_MSG` · **`Preparing to print`** | `0x00744d00` | ez a **nyomtatási** út |
+| `outputlayout/pbutton` | `0x00744d00` | a **kimeneti elrendezés** panelé |
 
 ⇒ **Az Útlevélkép nem fájlt ír és nem a szerkesztőbe visz: nyomtatási
 munkát készít elő.** A `FUN_00579910('editpanel/preview')` `2`-es
