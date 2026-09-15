@@ -2955,6 +2955,51 @@ Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 2 hatókörön kív�
   el is rejthetők, nem csak átrendezhetők (44.1).
 
 
+### 44.4 ⭐ A „Visszaállítás alapértelmezettre" kimenete — GUID-lista, KÓDBÓL (2026-09-15, #1792)
+
+*Forrás: `FUN_00757560` (1628 b), `0x00757577`–`0x00757621`.*
+
+A `Buttons\UserConfig` kulcs **alapértéke a `"0"` sztring**
+(`0x00c7fe6c`, `0x00758700`), nem gomblista — azaz „nincs saját
+összeállítás". A tényleges alapértelmezett készletet **kód építi**, és
+most megvan, hogyan:
+
+```
+FUN_007592f0(...)            ; a Buttons\Exclude beolvasása; hiba -> kilép
+append {45EF212C-84AB-46c5-A42E-95023ED50C76}     ; 0x00757589
+append {1FC0FA62-3412-4466-B485-B7CB97D3714B}     ; 0x007575a2
+append {4D139EF7-47A3-4da4-9A00-AF35AAEC17D1}     ; 0x007575c1
+append {0B3F3356-4FA1-48ca-B972-2B7D20AC6FBF}     ; 0x007575e0
+if ([obj+0xdb5] == 0)
+    append {3C09A978-42C4-4437-85CA-D326872B424D} ; 0x0075760a
+```
+
+Az `append` mindannyiszor a `FUN_007580d0`, a sztringet a `FUN_00985ff0`
+készíti (hossz `0x26` = 38 karakter, a kapcsos zárójelekkel együtt).
+
+⇒ Három megállapítás:
+
+1. **A gombokat GUID azonosítja**, nem név. A leíró-formátumot a
+   `FUN_00755190` (4712 b) olvassa: `version` · `value` · `action` ·
+   `format` · `buttons` · `button` mezőnevekkel.
+2. **Az alapkészlet négy fix + egy feltételes gomb.** Az ötödiket egy
+   objektum-jelző (`+0xdb5`) kapuzza — ez a mérésből nem derül ki, mit
+   jelent; a „Kész, ha" listájának ezzel kell számolnia.
+3. **A hatodik GUID (`{B9012CB2-DD50-49a5-B4CB-009344BBA285}`,
+   `0x00cb20b0`) NEM tagja az alapkészletnek**: a törzs csak
+   ÖSSZEHASONLÍTÁSRA használja (`cmp eax, 0xcb20b0`, `0x00757691` és
+   `0x0075772d`) — külön eset, nem alapértelmezett gomb.
+
+⛔ **Amit ez NEM ad meg:** a GUID→gombnév megfeleltetést. Az a
+bővítmény-leírókból jönne (`#buttons\` adatmappa), ami a mentésünkben
+nincs meg. A megvalósításnak tehát a SAJÁT gombjaink azonosítóit kell
+használnia; az eredeti GUID-ek csak a szerkezetet bizonyítják.
+
+*Bizonyítottsági fok: **megerősített** a listára, a sorrendre és a
+feltételes ötödikre (a törzs utasításai) · **nincs mérve**, mit jelent a
+`+0xdb5` jelző, és melyik GUID melyik gomb.*
+
+
 ## 45. tétel — a mérés HATÁRAI és a tudott eltérések táblája (2026-09-01)
 
 *Hetedik kör az UI-lefedettségi axisról. Nem panel: a **módszer** köre —
