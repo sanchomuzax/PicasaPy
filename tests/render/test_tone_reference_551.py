@@ -36,6 +36,7 @@ from picasapy.render.tone import (
     apply_neutral_pipette,
     apply_shadows,
 )
+from tests.support.dither import dither_nelkul
 from tests.support.finetune_reference import MeasuredCase, measured_cases
 
 #: Esetenkénti hibakorlát a mért görbéhez képest (átlagos abszolút
@@ -52,11 +53,15 @@ from tests.support.finetune_reference import MeasuredCase, measured_cases
 #: **#879 (2026-08-18):** a Kiemelések/Árnyékok modellje a natív szinthúzó
 #: LUT-ra (`0x0090c1e0` + `0x0090be70`) állt át, ezért a négy szintvágó eset
 #: hibája újramérve. Három JAVULT (0,51→0,35 · 0,61→0,35 · 0,42→0,32), egy
-#: kicsit ROMLOTT (0,64→0,87): a natív alkalmazó `>>8`-cal CSONKÍT, mi pedig
-#: — a natívtól eltérően — nem ditherelünk, így félszintnyi lefelé torzítás
-#: marad. Mind a négy hiba az adott eset JPEG-zajszintje alatt van, vagyis a
-#: különbség nem mérhető ki élesben; cserébe a kompozit (két csúszkás) eset
-#: hibája 217 szintről nullára esett.
+#: kicsit ROMLOTT (0,64→0,87): a natív alkalmazó `>>8`-cal CSONKÍT, ami
+#: félszintnyi lefelé torzítást hagy. Mind a négy hiba az adott eset
+#: JPEG-zajszintje alatt van, vagyis a különbség nem mérhető ki élesben;
+#: cserébe a kompozit (két csúszkás) eset hibája 217 szintről nullára esett.
+#:
+#: ⚠️ **#3092 (2026-09-15):** a „mi — a natívtól eltérően — nem ditherelünk"
+#: mondat innen KIKERÜLT: a dither azóta megvan. Ez a lap viszont a GÖRBE
+#: alakját méri, ezért a mérés idejére KIKAPCSOLJA (`tests.support.dither`) —
+#: a számok tehát a ditherelés nélküli görbére vonatkoznak, ahogy eddig is.
 HIBAKORLATOK: dict[str, float] = {
     "kiemelesek_mid": 1.2,  # 0,87
     "kiemelesek_max": 0.5,  # 0,35
@@ -94,8 +99,16 @@ def _model_luts(case: MeasuredCase) -> tuple[np.ndarray, np.ndarray, np.ndarray]
 
     A LUT-okat a tényleges render-függvényekkel állítjuk elő (egy 256 szintű
     „létra"-képen), hogy a teszt a valódi kódutat mérje, ne egy külön,
-    kézzel újraírt képletet.
+    kézzel újraírt képletet — **dither nélkül**, ld. `tests.support.dither`.
     """
+    with dither_nelkul():
+        return _model_luts_nyersen(case)
+
+
+def _model_luts_nyersen(
+    case: MeasuredCase,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """A tényleges kódút — a dither-kapcsolást a hívó intézi."""
     ladder = np.arange(256, dtype=np.uint8).reshape(1, 256, 1).repeat(3, axis=2)
     if case.control == "highlights":
         rendered = apply_highlights(ladder, case.param)

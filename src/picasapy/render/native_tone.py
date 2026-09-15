@@ -20,18 +20,35 @@ ugyanaz a zajkép. (A korábbi „nem determinisztikus, ezért villogna"
 indoklás MEGDŐLT; a `picasa-native-filter-workers.md` 2.2-ben a #2868
 helyesbítette.)
 
-A megvalósítás **mégis** a dither NÉLKÜLI alakot futtatja (a natív
-`v >> 8` csonkolással) — de 2026-09-12 óta ez már **nem mérési hiány,
-hanem el nem végzett munka**. A bejárási sorrend azóta ki van mérve
-(#2926 → `picasa-native-filter-workers.md` **2.2/b** és **2.2/c**):
-sorfolytonos bejárás, képpontonként pontosan egy minta mindhárom
-csatornára, csempézés és szálindítás nélkül. Az előfeltétel tehát
-teljesült; a megvalósítás a **#3092**.
+**A dither a #3092 óta MEGVAN** (`apply_native_lut16`). A bejárási sorrend
+a #2926-tal került mérésre (`picasa-native-filter-workers.md` **2.2/b** és
+**2.2/c**): sorfolytonos bejárás, képpontonként pontosan egy minta
+mindhárom csatornára, csempézés és szálindítás nélkül.
 
-A #685 mérőszettjén a mai alak képenként 0,18–0,37 átlagos ΔE-t ad a
-valódi Picasa-kimenethez képest — a JPEG-újratömörítés saját zaja alatt,
-tehát a különbség ma nem látható. A dither haszna nem is ez, hanem a
-**sávosodás** megszüntetése a széthúzott hisztogramon.
+**Mérve, a #685 mérőszettjén (a `contrast` három esete):**
+
+| | ΔE dither NÉLKÜL | ΔE ditherrel | forrás ↔ export |
+|---|---:|---:|---:|
+| `contrast__alap` | 0,4666 | 0,5167 | 13,19 |
+| `contrast__max` | 0,4881 | 0,5646 | 37,19 |
+| `contrast__min` | 0,2954 | 0,3347 | 44,56 |
+
+⚠️ **A ΔE tehát NEM javult, hanem kicsit ROMLOTT** (+0,04…+0,08) — és ennek
+megvan az oka: a mi zajmintánk **nem azonos** a natívéval (más temperáló
+maszkok, és a natív generátor állapota folyamat-globális), ezért a két zaj
+nem oltja ki egymást, hanem **összeadódik**. Bitre egyezésre a jegy
+kimondottan nem törekszik.
+
+**A haszon a másik oldalon mérhető** — ugyanazon a képen, a hisztogram
+üres rekeszeinek számában:
+
+| szinthúzás | lyukak dither nélkül | ditherrel |
+|---|---:|---:|
+| erős (0,35–0,65) | **117** | **0** |
+| közepes (0,2–0,8) | **46** | **0** |
+
+⇒ A csere ára 0,05 ΔE (a készlet ~1,0-es zajszintje alatt), a nyeresége a
+sávosodás teljes megszűnése. Ez a jegy kimondott célja.
 
 ⚠️ **Bitre egyezésre a #3092 sem törekszik:** a natív generátor állapota
 folyamat-globális (az index `0x00d67f74` a hívások közt tovább él), tehát
@@ -49,6 +66,15 @@ from picasapy.render.curves import validate_image
 
 #: A natív LUT teljes kitérése: `255 · 256` (8.8 fixpont).
 NATIVE_LUT_FULL = 0xFF00
+
+#: A natív dither generátorának vetőmagja (#2868). A `0x00d67f70` MT19937-et
+#: a `.CRT$XC` tábla ELSŐ magozója indítja (`0xc416b0` → `0x00c32520`), tehát
+#: az 1–3. `rand()`-ot kapja; az MSVC alapmagjával (1) ezek `41, 18467, 6334`,
+#: és `mag = r3 ^ ((r2 ^ (r1 << 12)) << 12)` ⇒ `0x2D8228BE`.
+#:
+#: ⚠️ Entrópiaforrás NINCS a magozásban — a tábla mind a 884 bejegyzése
+#: átnézve —, tehát a zajkép futásról futásra ugyanaz.
+NATIVE_DITHER_SEED = 0x2D8228BE
 
 #: A fényerő-paraméter szorzója a kontraszt-LUT-ban (`0x0090c100`):
 #: ±1 nagyjából ±100 nyolcbites szintnek felel meg.
@@ -110,15 +136,95 @@ def native_contrast_lut(
     return np.clip(np.rint(values), 0, NATIVE_LUT_FULL).astype(np.int64)
 
 
-def apply_native_lut16(image: np.ndarray, lut16: np.ndarray) -> np.ndarray:
-    """A közös 16 bites LUT-alkalmazó (`0x0090bc60`) — ditherelés nélkül.
+def _azonossag_lut(tabla: np.ndarray) -> bool:
+    """Igaz, ha a LUT a 8.8 fixpontos AZONOSSÁG (`LUT[c] == c · 256`).
 
-    A natív kód `v >> 8`-cal veszi ki a nyolcbites kimenetet (csonkolás, nem
-    kerekítés); a modul docstringje írja le, miért marad ki a dither.
-    """
+    Ilyen LUT-ot a semleges csúszka-állás ad; ld. a kapu indoklását az
+    `apply_native_lut16`-ban."""
+    if tabla.size < 256:
+        return False
+    return bool(np.array_equal(tabla[:256], np.arange(256, dtype=np.int64) * 256))
+
+
+def _dither_minta(darab: int) -> np.ndarray:
+    """`darab` darab 8 bites minta a natív generátorból (#3092).
+
+    MT19937, a mért vetőmaggal — a `numpy` `RandomState`-je **ugyanaz az
+    algoritmus** (624 szavas állapot, ugyanaz a temperálás: `>>11`,
+    `<<7 & 0x9d2c5680`… ⚠️ a natív temperáló maszkjai ettől ELTÉRNEK
+    (`0xff3a58ad`, `0xffffdf8c`), tehát a mintasorozat NEM azonos.
+
+    Ez tudatos döntés, és a jegy (#3092) ki is mondja: **bitre egyezésre nem
+    törekszünk**, mert a natív generátor állapota folyamat-globális (index
+    `0x00d67f74`), tehát ugyanannak a képnek a zaja ott attól is függ, mit
+    dolgozott fel előtte a program. A cél a SÁVOSODÁS megszüntetése a mért
+    szabály szerint: egy minta képpontonként, a helyi meredekséggel arányos
+    amplitúdó, nulla várható érték.
+
+    Amit viszont átveszünk: a vetőmag értékét (a determinizmus forrása) és a
+    sorfolytonos bejárást — a mintákat egyetlen, összefüggő sorozatból
+    osztjuk ki, nem soronként vagy csempénként újramagozva (2.2/b, 2.2/c)."""
+    generator = np.random.RandomState(NATIVE_DITHER_SEED)
+    return generator.randint(0, 256, size=darab, dtype=np.int64)
+
+
+def apply_native_lut16(
+    image: np.ndarray, lut16: np.ndarray, *, dither: bool = True
+) -> np.ndarray:
+    """A közös 16 bites LUT-alkalmazó (`0x0090bc60`), **ditherrel** (#3092).
+
+    ```c
+    r = MT19937_next() & 0xff;              // KÉPPONTONKÉNT EGY minta
+    for c in (R, G, B):
+        lo    = LUT[c];  delta = LUT[c+1] - lo;
+        v     = lo + ((delta * r) >> 8) - (delta >> 1);
+        out_c = clamp(v >> 8, 0, 255);
+    ```
+
+    A `LUT` **257 elemű**: a 257. elem az utolsó másolata, hogy a `LUT[c+1]`
+    ne fusson ki. A zaj amplitúdója a görbe helyi meredekségével (`delta`)
+    arányos — ott ditherel, ahol a szinthúzás széthúzza a hisztogramot, és
+    éppen ezért nem sávosodik.
+
+    Egy minta jut egy képpontra, mindhárom csatornára ugyanaz ⇒ a zaj
+    **szürke**, nem színes (2.2/b.2)."""
     validate_image(image)
-    table = np.clip(lut16 >> 8, 0, 255).astype(np.uint8)
-    return table[image]
+    tabla = np.asarray(lut16, dtype=np.int64)
+    if not dither:
+        #: ⚠️ A `dither=False` NEM a natív viselkedés — a GÖRBE mérésére van.
+        #: A dither ±0,5 szintnyi zajt visz a kimenetbe, ami a golden-lapok
+        #: görbe-illesztését elmossa: ott a LUT alakja a mérés tárgya, nem a
+        #: zaj. A terméki utak mind a ditherelt ágon mennek.
+        return np.clip(tabla[:256] >> 8, 0, 255).astype(np.uint8)[image]
+    if _azonossag_lut(tabla):
+        #: ⛳ A SEMLEGES beállítás AZONOSSÁG marad — a dither nem nyúl hozzá.
+        #:
+        #: A natív képlet semleges LUT-tal (`lo = 256c`, `delta = 256`)
+        #: `v = 256c + r − 128`-at ad, tehát a csonkolás után `c` vagy `c−1`:
+        #: az eredeti is „zajt" vinne bele. CSAKHOGY az eredetiben a semleges
+        #: csúszka **nem kerül a láncba**, tehát ez az eset ott elő sem áll —
+        #: a viselkedése nincs mérve.
+        #:
+        #: Nálunk viszont ELŐÁLL: a `.picasa.ini`-ben bent maradhat egy
+        #: nullára visszaállított bejegyzés, és akkor a kép némán ±1-gyel
+        #: sötétedne, zajosan. Ugyanaz a csapda, amit a #956 a
+        #: színhőmérséklet nulla állásánál fogott meg (`0x008f7fe6 jnp`): a
+        #: natív hívó ott is KAPUZ.
+        return image.copy()
+    if tabla.size < 257:
+        #: a natív LUT 257 elemű; a rövidebb táblát az utolsó elem másolata
+        #: egészíti ki (`LUT[256] = LUT[255]`)
+        tabla = np.concatenate([tabla, tabla[-1:]])
+
+    lo = tabla[:256][image.astype(np.int64)]
+    delta = (tabla[1:257] - tabla[:256])[image.astype(np.int64)]
+
+    magassag, szelesseg = image.shape[:2]
+    #: sorfolytonos bejárás: a minta a KÉPPONTHOZ tartozik, nem a csatornához
+    minta = _dither_minta(magassag * szelesseg).reshape(magassag, szelesseg, 1)
+
+    ertek = lo + ((delta * minta) >> 8) - (delta >> 1)
+    return np.clip(ertek >> 8, 0, 255).astype(np.uint8)
 
 
 def apply_native_levels(

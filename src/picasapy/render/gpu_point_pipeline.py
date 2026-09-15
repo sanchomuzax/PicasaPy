@@ -43,6 +43,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import functools
+
 import numpy as np
 
 from picasapy.render.color import saturation_gain as _saturation_gain
@@ -74,6 +76,22 @@ _POSITIVE_SATURATION_EPSILON = 1e-6
 LUT_SIZE = 256
 
 
+def _dither_nelkul_finetune2(image, **kwargs):
+    """`apply_finetune2` a natív alkalmazó ditherelése NÉLKÜL (#3092).
+
+    A `tone` modul `from … import`-tal vette át az alkalmazót, ezért ANNAK
+    az attribútumát cseréljük — a `native_tone`-on cserélni hatástalan
+    volna, és a LUT némán zajossá válna."""
+    from picasapy.render import tone as _tone
+
+    eredeti = _tone.apply_native_lut16
+    _tone.apply_native_lut16 = functools.partial(eredeti, dither=False)
+    try:
+        return apply_finetune2(image, **kwargs)
+    finally:
+        _tone.apply_native_lut16 = eredeti
+
+
 def build_finetune2_lut(
     *,
     fill: float = 0.0,
@@ -103,7 +121,16 @@ def build_finetune2_lut(
         )
     ramp = np.arange(LUT_SIZE, dtype=np.uint8)
     ramp_image = np.tile(ramp[np.newaxis, :, np.newaxis], (1, 1, 3))
-    result = apply_finetune2(
+    # ⛔ #3092: a LUT-ot DITHER NÉLKÜL kell felépíteni. A dither
+    # KÉPPONTONKÉNT húz mintát; egy táblázat viszont a BEMENETI SZINTHEZ
+    # köti az értéket. Ha a zaj beleépülne a táblába, minden azonos
+    # világosságú képpont UGYANAZT az eltolást kapná — az nem szemcse,
+    # hanem szintenkénti csík, ami rosszabb a sávosodásnál.
+    #
+    # Az előnézet ezért zaj nélkül jelenik meg, a MENTETT kép pedig
+    # ditherel. A kettő eltérése legfeljebb ±2 szint (a dither
+    # amplitúdója) — a `test_a_dither_elteresenek_KORLATJA` méri.
+    result = _dither_nelkul_finetune2(
         ramp_image,
         fill=fill,
         highlights=highlights,

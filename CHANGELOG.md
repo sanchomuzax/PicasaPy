@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.462] – 2026-09-15
+
+### Javítva
+
+- **Nem csíkosodik többé az erősen világosított vagy sötétített kép**
+  (#3092). Ha a fényerő-csúszkákkal erősen széthúztad a képet, a
+  világosság-átmenetekben látható sávok jelentek meg — ez a digitális
+  kerekítés természetes mellékhatása. Az eredeti Picasa ezt egy alig látható,
+  finom szemcsével oldja meg; mostantól mi is. Mérve: erős húzásnál a
+  világosság-eloszlás **117 lyuka nullára** csökkent.
+
 ## [0.8.461] – 2026-09-15
 
 ### Javítva

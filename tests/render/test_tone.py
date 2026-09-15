@@ -11,6 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from tests.support.dither import dither_nelkul
 from picasapy.render.tone import (
     FINETUNE_LEVEL_PARAM_MAX,
     apply_color_temperature,
@@ -141,7 +142,9 @@ class TestApplyHighlights:
     def test_mert_meredekseg_max_allasban(self) -> None:
         """#551: h=0,48-nál a mért meredekség 1,9235; a képlet 1/(1−h)."""
         image = _uniform_image(100)
-        result = apply_highlights(image, 0.48)
+        #: #3092: a GÖRBE meredekségét mérjük, a dither ±1-et ugrálna rajta
+        with dither_nelkul():
+            result = apply_highlights(image, 0.48)
         assert abs(int(result[0, 0, 0]) - 100 / (1 - 0.48)) <= 1
 
     def test_a_parameter_048_ra_van_vagva(self) -> None:
@@ -167,7 +170,9 @@ class TestApplyShadows:
         """#551: s=0,48-nál a feketepont 255·0,48 = 122,4-re ugrik, a
         meredekség 1/(1−s)."""
         image = _uniform_image(200)
-        result = apply_shadows(image, 0.48)
+        #: #3092: a GÖRBE meredekségét mérjük, a dither ±1-et ugrálna rajta
+        with dither_nelkul():
+            result = apply_shadows(image, 0.48)
         assert abs(int(result[0, 0, 0]) - (200 - 255 * 0.48) / (1 - 0.48)) <= 1
 
     def test_sotetit_es_feherpontot_tart(self) -> None:
@@ -308,14 +313,16 @@ class TestFinetuneKozosLut:
     def test_kompozit_az_eredeti_egyetlen_lutjat_koveti(
         self, highlights: float, shadows: float
     ) -> None:
-        result = apply_finetune2(
-            _szintletra(),
-            fill=0.0,
-            highlights=highlights,
-            shadows=shadows,
-            neutral=None,
-            temperature=0.0,
-        )
+        #: #3092: a LUT ALAKJA a mérés tárgya — a dither a mérés idejére ki
+        with dither_nelkul():
+            result = apply_finetune2(
+                _szintletra(),
+                fill=0.0,
+                highlights=highlights,
+                shadows=shadows,
+                neutral=None,
+                temperature=0.0,
+            )
         vart = _eredeti_szintvago_lut(highlights, shadows)
         np.testing.assert_array_equal(result[0, :, 0], vart)
 
@@ -327,14 +334,15 @@ class TestFinetuneKozosLut:
         self, highlights: float, shadows: float
     ) -> None:
         """A közös LUT az egy-vezérlős esetet is az eredeti szerint számolja."""
-        result = apply_finetune2(
-            _szintletra(),
-            fill=0.0,
-            highlights=highlights,
-            shadows=shadows,
-            neutral=None,
-            temperature=0.0,
-        )
+        with dither_nelkul():   # #3092: a LUT alakját mérjük
+            result = apply_finetune2(
+                _szintletra(),
+                fill=0.0,
+                highlights=highlights,
+                shadows=shadows,
+                neutral=None,
+                temperature=0.0,
+            )
         np.testing.assert_array_equal(
             result[0, :, 0], _eredeti_szintvago_lut(highlights, shadows)
         )
@@ -342,11 +350,14 @@ class TestFinetuneKozosLut:
     def test_a_kulon_csuszka_fuggvenyek_a_kozos_lutot_hasznaljak(self) -> None:
         """Az `apply_highlights`/`apply_shadows` a közös LUT elfajult esete."""
         ladder = _szintletra()
+        with dither_nelkul():   # #3092: a LUT alakját mérjük
+            kiemelt = apply_highlights(ladder, 0.32)
+            arnyekolt = apply_shadows(ladder, 0.32)
         np.testing.assert_array_equal(
-            apply_highlights(ladder, 0.32)[0, :, 0], _eredeti_szintvago_lut(0.32, 0.0)
+            kiemelt[0, :, 0], _eredeti_szintvago_lut(0.32, 0.0)
         )
         np.testing.assert_array_equal(
-            apply_shadows(ladder, 0.32)[0, :, 0], _eredeti_szintvago_lut(0.0, 0.32)
+            arnyekolt[0, :, 0], _eredeti_szintvago_lut(0.0, 0.32)
         )
 
     def test_a_ket_menetes_szamolas_erdemben_maskepp_szamolna(self) -> None:
