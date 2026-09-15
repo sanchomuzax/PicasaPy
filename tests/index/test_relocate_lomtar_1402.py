@@ -23,9 +23,17 @@ def _forras(tmp_path: Path) -> tuple[Path, Path]:
     regi = tmp_path / "regi"
     regi.mkdir()
     db = regi / "index.db"
-    with sqlite3.connect(db) as conn:
+    # ⚠️ A `with sqlite3.connect(...)` NEM zárja a kapcsolatot — csak a
+    # tranzakciót kezeli. Windowson a nyitva hagyott fájlt a törlés nem tudja
+    # elvinni (`WinError 32: used by another process`), és a próba pont a
+    # törlést állítja. Ezért explicit `close()`.
+    conn = sqlite3.connect(db)
+    try:
         conn.execute("CREATE TABLE t (x INTEGER)")
         conn.execute("INSERT INTO t VALUES (1)")
+        conn.commit()
+    finally:
+        conn.close()
     cache = regi / "thumbs"
     cache.mkdir()
     (cache / "a.jpg").write_bytes(b"kep")
