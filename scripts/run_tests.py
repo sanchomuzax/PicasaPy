@@ -1005,7 +1005,34 @@ def _kiegyensulyozott_darab(
 
 
 def _mert_idok() -> dict[str, float]:
-    """A commitolt futásidő-térkép; hiányában üres (minden egység medián)."""
+    """A commitolt futásidő-térkép; hiányában üres (minden egység medián).
+
+    ⚠️ **#3117: a tábla a SOROS futás WINDOWS-idejeit tartalmazza**, és ez
+    szándékos — ott van a 40 perces job-korláthoz legközelebb a leghosszabb
+    darab. A #2848 sorosra állítása után a régi, PÁRHUZAMOS időkkel töltött
+    tábla elcsúszott, és a **lefedettsége** is hiányos volt: 271 bejegyzés
+    659 egységre (41%), a többi mediánt kapott.
+
+    Mérve (main `4e2c6dd6`, 2026-09-15), a tényleges windows-terhelés:
+
+    | tábla | darabok (mp) | max | arány |
+    |---|---|---|---|
+    | régi (párhuzamos) | 1348 / 922 / 1008 / 937 | 22,5 p | 1,46× |
+    | új (soros windows) | 1053 / 1054 / 1054 / 1054 | 17,6 p | 1,00× |
+
+    Az ubuntu-láb ugyanezzel a kiosztással 10,4 perc (1,31×).
+
+    ⛔ A `teszt-darabok.yml` fejlécében álló „a négy darab egyenlő — mérve
+    732/732/732/732 mp, arány 1,00×" mondat a SOROS módra **elavult**; a
+    fenti számok a mértek. (A workflow-fájlt a gépi munkamenet nem
+    módosíthatja — `workflows` jogosultság kell hozzá —, ezért áll a
+    helyesbítés itt.)
+
+    A lefedettséget a `tests/test_ci_kor_ideje_1127.py`
+    `test_a_mert_tabla_LEFEDI_az_egysegeket` őrzi: 90% alatt bukik.
+
+    A tábla ÚJRAMÉRÉSE új CI-kör nélkül megy — a CI naplóinak időbélyegeiből
+    (a privát repó `eszkozok/meres/ci_fajlidok.py`-ja)."""
     ut = _ROOT / "scripts" / "teszt_idok.json"
     try:
         return json.loads(ut.read_text(encoding="utf-8"))
