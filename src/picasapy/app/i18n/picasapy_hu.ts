@@ -4318,6 +4318,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>MainToolbar</name>
     <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml"/>
+        <source>Show starred photos only</source>
+        <translation>Csak a csillagozott fotók</translation>
+    </message>
+    <message>
         <source>Filter by date range</source>
         <translation>Szűrés dátumtartomány szerint</translation>
     </message>

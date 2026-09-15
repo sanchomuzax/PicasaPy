@@ -34,8 +34,19 @@ class TestAGombOttVan:
         )
 
     def test_az_EREDETI_buboreksugot_hasznalja(self):
-        """`facesearch` — nem saját fogalmazás."""
-        assert 'qsTr("Show only photos with faces")' in _blokk()
+        """`facesearch` — nem saját fogalmazás.
+
+        #839: a súgó SZÖVEGE megvan, de már nem a gomb blokkjában: a
+        `searchcontainer.tre` szerint a szűrők súgója a „Szűrők" felirat
+        helyén jelenik meg (`hottip searchcontainer/filter_label`), ezért a
+        szöveg a felirat `hoveredTip` láncában áll, a gomb hover-kezelőjéhez
+        kötve. A teljes lánc őre: `test_szuro_sugok_839.py`."""
+        forras = _QML
+        assert 'qsTr("Show only photos with faces")' in forras
+        kezd = forras.index('readonly property string hoveredTip:')
+        lanc = forras[kezd : kezd + 1200]
+        assert "faceFilterHover.hovered" in lanc
+        assert 'qsTr("Show only photos with faces")' in lanc
 
 
 class TestABekotes:
