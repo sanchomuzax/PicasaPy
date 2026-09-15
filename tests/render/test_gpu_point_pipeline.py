@@ -13,6 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from tests.support.dither import dither_nelkul
 from picasapy.render import (
     LUT_SIZE,
     apply_finetune2,
@@ -33,6 +34,17 @@ def _apply_channel_lut(image: np.ndarray, lut: np.ndarray) -> np.ndarray:
     return np.stack([red, green, blue], axis=-1)
 
 
+#: A LUT-egyezés esetei — a dither-eltérés próbája ugyanezeket futtatja.
+_LUT_ESETEK = [
+    {"highlights": 0.4},
+    {"shadows": 0.3},
+    {"temperature": -0.6},
+    {"temperature": 0.8},
+    {"highlights": 0.1, "shadows": 0.1, "temperature": -0.3},
+    {"neutral": (200, 190, 150), "temperature": 0.1},
+]
+
+
 class TestBuildFinetune2Lut:
     def test_lut_shape_and_dtype(self):
         lut = build_finetune2_lut(highlights=0.1, shadows=0.1, temperature=0.2)
@@ -46,17 +58,7 @@ class TestBuildFinetune2Lut:
         np.testing.assert_array_equal(lut[:, 1], ramp)
         np.testing.assert_array_equal(lut[:, 2], ramp)
 
-    @pytest.mark.parametrize(
-        "kwargs",
-        [
-            {"highlights": 0.4},
-            {"shadows": 0.3},
-            {"temperature": -0.6},
-            {"temperature": 0.8},
-            {"highlights": 0.1, "shadows": 0.1, "temperature": -0.3},
-            {"neutral": (200, 190, 150), "temperature": 0.1},
-        ],
-    )
+    @pytest.mark.parametrize("kwargs", _LUT_ESETEK)
     def test_lut_matches_direct_cpu_render_on_real_image(self, kwargs):
         """A LUT-alkalmazás PONTOSAN egyezik azzal a CPU-úttal, amit
         reprodukálni hivatott — egy nem-rámpa (véletlen) képen.
@@ -73,7 +75,36 @@ class TestBuildFinetune2Lut:
         image = rng.integers(0, 256, size=(17, 23, 3), dtype=np.uint8)
         lut = build_finetune2_lut(**kwargs)
         via_lut = _apply_channel_lut(image, lut)
-        direct = apply_finetune2(
+        with dither_nelkul():
+            direct = apply_finetune2(
+                image,
+                fill=kwargs.get("fill", 0.0),
+                highlights=kwargs.get("highlights", 0.0),
+                shadows=kwargs.get("shadows", 0.0),
+                neutral=kwargs.get("neutral"),
+                temperature=kwargs.get("temperature", 0.0),
+                szinhomerseklet_kozelitessel=True,
+            )
+        np.testing.assert_array_equal(via_lut, direct)
+
+    @pytest.mark.parametrize("kwargs", _LUT_ESETEK)
+    def test_a_dither_elteresenek_KORLATJA(self, kwargs):
+        """Mennyivel tér el a GPU-előnézet a DITHERELT CPU-kimenettől (#3092)?
+
+        A LUT-os előnézet nem ditherel, a mentés igen — ez szándékos és
+        elkerülhetetlen: egy csatorna-LUT képpontonként AZONOS leképezést ad,
+        a dither viszont képpontonként más mintát húz. A próba nem elrejti az
+        eltérést, hanem SZÁMOT ad rá, hogy ha egyszer megnő, szóljon.
+
+        A korlát a dither saját amplitúdója: ±delta/2 a 16 bites skálán, ami
+        a `>> 8` után legfeljebb 2 szint. Ennél nagyobb eltérés már nem
+        ditherből jön."""
+        rng = np.random.default_rng(1234)
+        image = rng.integers(0, 256, size=(17, 23, 3), dtype=np.uint8)
+        via_lut = _apply_channel_lut(
+            image, build_finetune2_lut(**kwargs)
+        ).astype(np.int16)
+        ditherelt = apply_finetune2(
             image,
             fill=kwargs.get("fill", 0.0),
             highlights=kwargs.get("highlights", 0.0),
@@ -81,8 +112,13 @@ class TestBuildFinetune2Lut:
             neutral=kwargs.get("neutral"),
             temperature=kwargs.get("temperature", 0.0),
             szinhomerseklet_kozelitessel=True,
+        ).astype(np.int16)
+
+        elteres = int(np.max(np.abs(via_lut - ditherelt)))
+        assert elteres <= 2, (
+            f"a GPU-előnézet és a ditherelt CPU-kimenet {elteres} szinttel "
+            "tér el — ez több, mint a dither amplitúdója (#3092)"
         )
-        np.testing.assert_array_equal(via_lut, direct)
 
     @pytest.mark.parametrize("temperature", [-0.6, -0.3, 0.1, 0.8])
     def test_a_kozelites_elteresenek_KORLATJA(self, temperature):
