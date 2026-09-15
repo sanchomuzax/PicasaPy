@@ -178,7 +178,15 @@ Item {
             objectName: "collageClipsTab"
             x: 10
             y: 35
-            width: 256
+            //: #3201: a lap a testvérével AZONOS szélességű — `10 + 266 =
+            //: 276`, a `columnWidth`. A korábbi 256 elírás volt: a „–" gomb
+            //: (`x: 234 + 28 = 262`) kilógott belőle 6 képponttal.
+            //:
+            //: A MÉRT geometria ezt igazolja: a `deleteclips` panel-abszolút
+            //: helye (247, 60) 28 × 28, tehát a jobb széle **275** — az
+            //: oszlop 276-ján BELÜL, egy képpont ráhagyással
+            //: (`picasa-kollazs-felulet.md`, a klip-lap három gombja).
+            width: 266
             height: 352
             visible: tabBar.currentIndex === 1
             controller: panel.controller
