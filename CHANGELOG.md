@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.484] – 2026-09-15
+
+### Javítva
+
+- **A keresősáv szűrő-ikonjainak súgója ott jelenik meg, ahol az eredetiben**
+  (#839): nem lebegő buborékban, hanem a **„Szűrők" felirat helyén** — a
+  Picasa mind a hat ilyen vezérlőjére (öt szűrő + a dátum-csúszka) ezt írja
+  elő. A csillag-szűrőnek eddig egyáltalán nem volt súgója; most van
+  („Csak a csillagozott fotók").
+- A „Szűrők" felirat a **mért 12 képpontos betűt** viszi (eddig 9 volt).
+
 ## [0.8.483] – 2026-09-15
 
 ### Javítva

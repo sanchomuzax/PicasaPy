@@ -354,13 +354,47 @@ Rectangle {
             visible: !toolbar.toolbarCompact
             implicitWidth: filterIconsRow.width
             implicitHeight: filterIconsRow.y + filterIconsRow.height
+            // #839: a szűrők súgója NEM lebegő buborékban jelenik meg, hanem
+            // EZEN a feliraton — a `searchcontainer.tre` mind az öt
+            // szűrőgombjára ugyanezt a sort adja:
+            //
+            //   SharedHandler searchcontainer/tip hottip searchcontainer/filter_label
+            //
+            // (`hottip` = a súgó célja a `filter_label`, nem egy lebegő
+            // buborék). Ezért a szűrőkön nincs `ToolTip`: a feliratuk ide
+            // kerül, és mutatóelvétel után visszaáll a „Szűrők".
             Text {
+                id: filtersLabel
                 objectName: "toolbarFiltersLabel"
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: -4
-                text: qsTr("Filters")
-                font.pixelSize: 9
+                //: a mutató alatti szűrő súgója, ha van ilyen
+                readonly property string hoveredTip:
+                    starFilter.hovered
+                        ? qsTr("Show starred photos only")
+                        : faceFilterHover.hovered
+                            ? qsTr("Show only photos with faces")
+                            : movieFilterHover.hovered
+                                ? qsTr("Show movies only")
+                                : dupeFilterHover.hovered
+                                    ? qsTr("Show duplicate files only")
+                                    : geoFilterHover.hovered
+                                        ? qsTr("Show only photos with geotag")
+                                        : dateRangeHover.hovered
+                                            ? qsTr("Filter by date range")
+                                            : ""
+                text: filtersLabel.hoveredTip !== ""
+                    ? filtersLabel.hoveredTip : qsTr("Filters")
+                // #839: a mért betű `m_displayfont12` (`fontmacros_win.tre`
+                // 43–47. sor: `fontsize 12`), nem a korábbi 9.
+                font.pixelSize: 12
                 color: Theme.textGray
+                // a súgó hosszabb a „Szűrők"-nél: a szűrő-zónán belül marad,
+                // és inkább levágódik, mint hogy a szomszéd sávot tolja
+                width: Math.max(filterIconsRow.width, implicitWidth) > filterIconsRow.width
+                    ? filterIconsRow.width : implicitWidth
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignHCenter
             }
             Row {
                 id: filterIconsRow
@@ -437,10 +471,8 @@ Rectangle {
                                : (faceFilterHover.hovered
                                   ? Theme.selectionBlue : "#8f8b83")
                     }
-                    //: `facesearch` — az eredeti buboréksúgója
-                    ToolTip.text: qsTr("Show only photos with faces")
-                    ToolTip.visible: faceFilterHover.hovered
-                    ToolTip.delay: Theme.tooltipDelay
+                    // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
+                    // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: faceFilterHover }
                     TapHandler {
                         //: #885: lenyomásra, nem felengedésre
@@ -476,10 +508,8 @@ Rectangle {
                                : (movieFilterHover.hovered
                                   ? Theme.selectionBlue : "#8f8b83")
                     }
-                    //: `moviesearch` — az eredeti buboréksúgója
-                    ToolTip.text: qsTr("Show movies only")
-                    ToolTip.visible: movieFilterHover.hovered
-                    ToolTip.delay: Theme.tooltipDelay
+                    // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
+                    // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: movieFilterHover }
                     TapHandler {
                         //: #885: lenyomásra, nem felengedésre
@@ -522,12 +552,8 @@ Rectangle {
                                : (dupeFilterHover.hovered
                                   ? Theme.selectionBlue : "#8f8b83")
                     }
-                    //: #2174: a kapcsoló buboréksúgója. ⚠️ NEM mért felirat —
-                    //: a `dupesearch` rejtett elem, a szövegtár nem ad hozzá
-                    //: szöveget; a szomszédos szűrők alakját követi.
-                    ToolTip.text: qsTr("Show duplicate files only")
-                    ToolTip.visible: dupeFilterHover.hovered
-                    ToolTip.delay: Theme.tooltipDelay
+                    // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
+                    // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: dupeFilterHover }
                     TapHandler {
                         // KÖZÖS út a menüparanccsal (#1398): az eredetiben a
@@ -562,14 +588,8 @@ Rectangle {
                                  ? (geoFilterHover.hovered ? 1.0 : 0.85)
                                  : 0.35
                     }
-                    //: #839: `geotagsearch` — az eredeti buboréksúgója.
-                    //: Ez volt az EGYETLEN szűrő-ikon súgó nélkül: a másik
-                    //: négyen már rajta volt, ezen nem, tehát a
-                    //: felhasználó épp a legkevésbé magától értetődő
-                    //: ikonról (tű) nem kapott magyarázatot.
-                    ToolTip.text: qsTr("Show only photos with geotag")
-                    ToolTip.visible: geoFilterHover.hovered
-                    ToolTip.delay: Theme.tooltipDelay
+                    // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
+                    // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: geoFilterHover }
                     TapHandler {
                         enabled: parent.ctlHasGeo
@@ -607,9 +627,9 @@ Rectangle {
                     to: 1.0
                     anchors.verticalCenter: parent.verticalCenter
                     //: `timecontainer_label` — az eredeti buboréksúgója
-                    ToolTip.text: qsTr("Filter by date range")
-                    ToolTip.visible: dateRangeHover.hovered
-                    ToolTip.delay: Theme.tooltipDelay
+                    // #839: a `timecontainer_label` is `hottip
+                    // searchcontainer/filter_label` (a `.tre` hatodik ilyen
+                    // sora) — a súgó a „Szűrők" felirat helyén jelenik meg
                     HoverHandler { id: dateRangeHover }
                     //: a csúszka mozgatása KÖZBEN nem kérdezünk le: a
                     //: `moved` az elengedésre/lépésre szól, a `valueChanged`

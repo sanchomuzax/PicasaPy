@@ -73,22 +73,77 @@ def _blokk(nev: str) -> str:
     return forras[kezd:] if not hatarok else forras[kezd : min(hatarok)]
 
 
+#: #839: a súgó HELYE mérve — a `searchcontainer.tre` HAT elemre adja
+#: ugyanezt a sort (az öt szűrő + a `timecontainer_label`):
+#:
+#:     SharedHandler searchcontainer/tip hottip searchcontainer/filter_label
+#:
+#: A `hottip` célja a `filter_label`, tehát a súgó NEM lebegő buborékban,
+#: hanem a „Szűrők" felirat helyén jelenik meg.
+HOTTIP_SZOVEGEK = (
+    "Show starred photos only",
+    "Show only photos with faces",
+    "Show movies only",
+    "Show duplicate files only",
+    "Show only photos with geotag",
+    "Filter by date range",
+)
+
+
+def _hoveredtip_lanc() -> str:
+    forras = _SAV.read_text(encoding="utf-8")
+    kezd = forras.index("readonly property string hoveredTip:")
+    return forras[kezd : forras.index("text: filtersLabel.hoveredTip", kezd)]
+
+
 class TestMindenSzuronekVanSugoja:
-    def test_a_negy_nevesitett_szuro_sugoja_megvan(self) -> None:
-        for nev, szoveg in SZUROK.items():
-            blokk = _blokk(nev)
-            assert f'ToolTip.text: qsTr("{szoveg}")' in blokk, (
-                f"{nev}: nincs (vagy más) buboréksúgója — a súgó nélküli "
-                "ikon néma, a felhasználó nem tudja, mit csinál"
+    def test_MIND_A_HAT_sugo_szovege_megvan(self) -> None:
+        """Egy súgó nélküli ikon néma — a felhasználó nem tudja, mit csinál."""
+        lanc = _hoveredtip_lanc()
+        for szoveg in HOTTIP_SZOVEGEK:
+            assert f'qsTr("{szoveg}")' in lanc, (
+                f"hiányzik a súgó szövege a felirat láncából: {szoveg}"
             )
 
-    def test_a_sugo_a_LEBEGESRE_jelenik_meg(self) -> None:
+    def test_mindegyik_a_SAJAT_mutatojahoz_van_kotve(self) -> None:
+        """A szöveg jelenléte nem elég: a saját hover-kezelőjéhez kell
+        kötődnie, különben minden ikonon ugyanaz jelenne meg."""
+        lanc = _hoveredtip_lanc()
+        for kezelo in (
+            "starFilter.hovered",
+            "faceFilterHover.hovered",
+            "movieFilterHover.hovered",
+            "dupeFilterHover.hovered",
+            "geoFilterHover.hovered",
+            "dateRangeHover.hovered",
+        ):
+            assert kezelo in lanc, f"nincs a láncban: {kezelo}"
+
+    def test_a_sugo_a_FELIRAT_helyen_jelenik_meg_nem_lebegve(self) -> None:
+        """#839, mérve: a hat `hottip`-es elemen NINCS lebegő `ToolTip`."""
         for nev in SZUROK:
             blokk = _blokk(nev)
-            assert "ToolTip.visible:" in blokk and "hovered" in blokk
-            assert "ToolTip.delay: Theme.tooltipDelay" in blokk, (
-                f"{nev}: a súgó késleltetése nem a közös Theme-értékből jön"
+            assert "ToolTip.text" not in blokk, (
+                f"{nev}: lebegő buboréksúgója van, pedig a `.tre` szerint a "
+                "súgó a szűrő-felirat helyén jelenik meg (`hottip`)"
             )
+
+    def test_a_felirat_visszaall_mutato_nelkul(self) -> None:
+        forras = _SAV.read_text(encoding="utf-8")
+        assert 'filtersLabel.hoveredTip : qsTr("Filters")' in forras.replace(
+            "\n", " "
+        ) or 'qsTr("Filters")' in forras, (
+            'a felirat mutatóelvétel után nem áll vissza a „Szűrők” szóra'
+        )
+
+    def test_a_felirat_a_MERT_betumeretet_viszi(self) -> None:
+        """`m_displayfont12` (`fontmacros_win.tre` 43–47.: `fontsize 12`)."""
+        forras = _SAV.read_text(encoding="utf-8")
+        kezd = forras.index('objectName: "toolbarFiltersLabel"')
+        blokk = forras[kezd : kezd + 1600]
+        assert "font.pixelSize: 12" in blokk, (
+            'a „Szűrők” felirat nem a mért 12 képpontos betűt viszi'
+        )
 
 
 class TestAKeresesTorlo:
