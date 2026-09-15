@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.455] – 2026-09-15
+
+### Hozzáadva
+
+- **A keresősáv hiányzó buboréksúgói** (#839). A helyadat-szűrő (a kis tű)
+  volt az egyetlen szűrő-ikon, amelyikről nem derült ki, mit csinál — és a
+  keresés törlésére szolgáló gombról sem. Mostantól mindkettőn ott a magyar
+  magyarázat, ahogy a többi szűrőn.
+
 ## [0.8.454] – 2026-09-15
 
 ### Megváltozott

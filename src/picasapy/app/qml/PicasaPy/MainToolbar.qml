@@ -558,6 +558,14 @@ Rectangle {
                                  ? (geoFilterHover.hovered ? 1.0 : 0.85)
                                  : 0.35
                     }
+                    //: #839: `geotagsearch` — az eredeti buboréksúgója.
+                    //: Ez volt az EGYETLEN szűrő-ikon súgó nélkül: a másik
+                    //: négyen már rajta volt, ezen nem, tehát a
+                    //: felhasználó épp a legkevésbé magától értetődő
+                    //: ikonról (tű) nem kapott magyarázatot.
+                    ToolTip.text: qsTr("Show only photos with geotag")
+                    ToolTip.visible: geoFilterHover.hovered
+                    ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: geoFilterHover }
                     TapHandler {
                         enabled: parent.ctlHasGeo
@@ -677,6 +685,13 @@ Rectangle {
                         text: "✕"; color: "white"; font.pixelSize: 8
                         font.bold: true
                     }
+                    //: #839: a `searchcontainer.tre` `clearsearch` gombjának
+                    //: súgója. A gomb maga már helyesen csak akkor látszik,
+                    //: ha van mit törölni (az eredeti `showtarget`-je is
+                    //: így viselkedik) — a magyarázat hiányzott róla.
+                    ToolTip.text: qsTr("Clear your search")
+                    ToolTip.visible: searchClearHover.hovered
+                    ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: searchClearHover }
                     TapHandler {
                         onTapped: {

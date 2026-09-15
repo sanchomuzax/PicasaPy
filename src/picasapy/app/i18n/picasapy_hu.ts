@@ -4294,6 +4294,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <translation>Csak filmek megjelenítése</translation>
     </message>
     <message>
+        <source>Show only photos with geotag</source>
+        <translation>Csak a helyadattal ellátott fotók</translation>
+    </message>
+    <message>
+        <source>Clear your search</source>
+        <translation>Keresés törlése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="35"/>
         <source>Import</source>
         <translation>Importálás</translation>
