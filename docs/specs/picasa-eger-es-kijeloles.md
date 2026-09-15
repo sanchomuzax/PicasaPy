@@ -1048,8 +1048,13 @@ a húzással: vagy lasszózik (mert üres területre nyomtak, és `[+0x2ce]`
 
 A lasszó pedig **kizárólag üres területre** való lenyomásra indul —
 a lenyomás-ág (`0x00719c37`) elem-találat esetén a `0x0071bae0`-ra megy
-(kijelölés-váltás), és `[+0x2ce]`-t **nem** állítja; üres területnél
-viszont pillanatfelvételt ment és `[+0x2ce] = 1` (`0x00719dae`).
+(kijelölés-váltás), üres területnél viszont pillanatfelvételt ment és a
+lasszó-módot jelző `[+0x2d1]`-et állítja.
+
+⚠️ **Helyesbítve (14.7, #3053):** a `[+0x2ce]` — a „lenyomás él" jelző —
+**mindkét** ágon beáll, tehát nem ez választja szét a két gesztust, hanem
+a `[+0x2d1]`. A rács ezenfelül elemtalálatnál **maga hívja** a
+húzás-indítót (`vtable+0x7c` → `0x0071abc0`), nem csak félreáll.
 
 > **A trigger tehát egyetlen kérdés: a TALÁLAT-VIZSGÁLAT ad-e elemet.**
 
@@ -1160,6 +1165,85 @@ elem-gyártó `ytDragNode`-hívása mind utasításszinten.*
 - **A `.tre` sem dönt:** a 24 `Handler`-kötés között a rácshoz **nincs**
   húzás-kezelő (6. szakasz); a `selectiondrag` a szerkesztő három
   téglalapjáé (4/b).
+
+---
+
+### 14.7 A lenyomás-állapot HÁROM jelzője — és a rács maga indítja a húzást (2026-09-15, #3053)
+
+A 14.2 azt írta, hogy a rács elemtalálatnál „félreáll" (`0xF4241`), és a
+mozgás így jut el az elem `ytDragNode`-jához. **Ez a kép hiányos.** A
+lenyomás-ág három jelzőt állít be, és a mozgás-ág ezekből dönt — az egyik
+ágon a rács **maga hívja** a húzás-indítót.
+
+#### A három jelző (`CSelectionNode`)
+
+| eltolás | jelentés | ki írja |
+|---|---|---|
+| `[+0x2ce]` | **lenyomás él** (a rács „fogja" a gesztust) | lenyomáskor `1` (`0x00719dae`), 13. eseménykor `0` (`0x00719ab9`) |
+| `[+0x2d1]` | **lasszó-mód** | csak az „üres területre nyomtak" ágon íródik (`0x00719d5e`, `0x00719d6c`) |
+| `[+0x2d2]` | **húzás-mód** | elemtalálatnál: `(nincs Ctrl ÉS nincs Shift)` (`0x00719ce9`) |
+
+Mindhármat egyszerre nullázza a `0x0071ab50` (gesztus-vége/elvetés):
+`[+0x2d2] = [+0x2d1] = [+0x2ce] = 0`.
+
+#### A lenyomás (1. esemény, `0x00719c37`) — betű szerint
+
+```c
+idx = talalat(pont);                      // 0x007194e0
+if (idx != -1) {                          // ELEMRE nyomtak
+    modositok = isCtrlDown()              // 0x0097e4a0  -> 1. bit
+              | (isShiftDown() ? 2 : 0);  // GetKeyState(VK_SHIFT), a [0xd67849] kapuval
+    flag2D2 = (modositok == 0);           // 0x00719ce9  ← HUZAS csak modosito NELKUL
+    flag2D3 = 1;
+    kijelolest_valt(idx, ctrl, shift);    // 0x0071bae0
+} else {                                  // URES teruletre nyomtak
+    flag2D1 = (flag2D5 == 0);             // 0x00719d5e  ← LASSZO
+    minden elemre: elem[0x5c] = elem[0x5d];   // a kijeloles PILLANATFELVETELE
+}
+flag2CE = 1;                              // 0x00719dae — mindket agon!
+horgony = (esemeny.x, esemeny.y, ...);    // [+0x27c] .. [+0x288]
+```
+
+⚠️ **A `[+0x2ce]` tehát MINDKÉT ágon beáll** — nem csak lasszónál. A 14.2
+„elemtalálatnál nem állítja" mondata ezen a ponton pontatlan volt; a
+lasszó–húzás szétválasztást nem a `[+0x2ce]`, hanem a `[+0x2d1]` végzi.
+
+#### A mozgás (2./3. esemény, `0x00719ece` → `0x00719f84`)
+
+```asm
+0x00719f84  cmp  byte ptr [ebx+0x2ce], 0   ; el-e a lenyomas?
+0x00719f8b  je   0x71a13f                  ;   nem -> semmi
+0x00719f91  cmp  byte ptr [ebx+0x2d1], 0   ; lasszo-mod?
+0x00719f98  je   0x71a045                  ;   NEM -> huzas-ag
+;   ... igen: a gumikeret teglalapja a horgonytol az aktualis pontig ...
+
+0x0071a045  cmp  byte ptr [ebx+0x2d2], 0   ; huzas-mod (modosito nelkul nyomtak elemre)?
+0x0071a04e  je   0x71a141                  ;   nem -> semmi
+0x0071a056  call 0x00719480                ; kez-kurzor
+0x0071a060  mov  edx, [eax+0x7c]           ; vtable+0x7c  = slot 31
+0x0071a067  call edx                       ; ← 0x0071abc0 : a ytDragNode-GYARTO
+```
+
+A `vtable+0x7c` a `CSelectionNode` 49 bejegyzésű vtáblájának **31.
+rekesze**, és az a **`0x0071abc0`** — pontosan az az elem-gyártó, amit a
+14.1 megnevez (foglal `0x0097c5d0`-nel, majd `0x00aa1b90` `ytDragNode`-
+konstruktor a `0x0071ac84`-en). ⇒ **A rács nem passzívan engedi tovább a
+húzást: a lenyomás-állapotból maga indítja el.**
+
+#### Amit ez a #1721-nek (kézi sorrend) kimond
+
+| lenyomás | mi indul |
+|---|---|
+| **kép** fölött, módosító nélkül | **húzás** (átrendezés / ejtés) |
+| **kép** fölött, **Ctrl** vagy **Shift** lenyomva | **semmi** — csak kijelölés-módosítás, húzás **nem** |
+| **üres** területen (cellahézag vagy a kép melletti sáv) | **lasszó**, a meglévő kijelölés pillanatfelvételével |
+
+A „kép" határa a 14.3 találat-téglalapja (a kirajzolt, középre igazított
+kép), nem a cella.
+
+*Bizonyítottsági fok: **megerősített** — mindhárom jelző írója és olvasója,
+a módosító-lekérdezés és a `vtable+0x7c` → `0x0071abc0` feloldás
+utasításszinten.*
 
 ---
 
