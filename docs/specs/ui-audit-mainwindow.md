@@ -1529,3 +1529,73 @@ típuspásztázást „mindenhová" belelátná, itt is látnia kellett volna �
    fejléc-keresés; a `0.1 < v < 0.9` sávban helyette `0x006dcc40(CThumbUI)`
    fut. Hogy `v` mit mér, és mit csinál a `0x006dcc40`, ez a kör **nem mérte
    ki** — nem becslés helyettesíti, hanem nyitott kérdés marad.
+
+---
+
+## ⛳ Az album-ugrás két nyitott részlete: a `prevalbum` NEM tükörképe a `nextalbum`-nak (2026-09-15, #3143)
+
+*Forrás: `FUN_0076a4b0` (327 b) teljes törzse · a hívó feltétel
+`0x00578ac8`–`0x00578ae2` (`0x00c7dd30 = 0.1`, `0x00cf3ad8 = 0.9`) · a
+sorrekord másolója `FUN_004ae600` (217 b).*
+
+### 1. ⭐ Mit mér a `prevalbum` előfeltétele: HOL ÁLLUNK A SORON BELÜL
+
+A `FUN_0076a4b0` végigmegy a lista sorain (`[this+0x300]` mutatótömb,
+`[this+0x304]>>1` darabszám, `[this+0x30c]` a soronkénti 16 bájtos
+téglalap-tömb), és megkeresi azt a sort, amelyik a **jelenlegi
+görgetés-pozíciót** (`v_int`, a `[this+0x150]`-ből számolva) tartalmazza:
+
+```c
+// szűrés: nem üres téglalap, és a pozíció benne van
+if (r.bal < r.jobb && r.fent < r.lent && r.fent <= v_int && v_int <= r.lent) {
+    magassag = r.lent - r.fent;                 // 0x0076a596
+    v = (magassag == 0) ? 1.0                   // 0x0076a5ad: fld1
+                        : (v_int - r.fent) / magassag;   // 0x0076a5c5
+    v = min(v, 1.0);                            // 0x0076a5c7 fcom st(1)
+}
+```
+
+⇒ **`v` a nézet viszonyítási vonalának helye a JELENLEGI soron belül,
+`[0, 1]`-re normálva.**
+
+### 2. ⇒ A feltétel jelentése: „sorhatáron állunk-e"
+
+A hívó `v ≤ 0.1 || v ≥ 0.9` esetén indítja a fejléc-keresést, a
+`0.1 < v < 0.9` sávban helyette a `FUN_006dcc40(CThumbUI)` fut.
+
+| `v` | hol vagyunk | mi történik |
+|---|---|---|
+| `≤ 0,1` vagy `≥ 0,9` | a sor **tetején/alján**, azaz (majdnem) szakaszhatáron | ugrás az **előző** szakaszfejlécre |
+| `0,1 … 0,9` | a sor **közepén** | `FUN_006dcc40` — más művelet |
+
+⭐ Ez a **„zenelejátszó-viselkedés"**: a Vissza gomb előbb a JELENLEGI
+szakasz elejére visz, és csak ha már ott vagyunk, ugrik az előzőre. A
+`nextalbum`-nál ilyen feltétel **nincs** — a két gomb tehát **nem
+tükörkép**, és a másolásuk hibás volna.
+
+⚠️ **A `FUN_006dcc40` (912 b) pontos műveletét nem mondom ki.** Annyi
+mérve: a `CThumbUI`-t kapja, a `[ui+0xeb0]` objektum
+`[+0x320] + [+0x2f8]` összegéből indexet képez, `-1`-nél azonnal `0`-val
+tér vissza, és a `[+0x2c0]` listával dolgozik. Ez **összefér** a „görgess a
+jelenlegi sor elejére" olvasattal, de nem bizonyítja.
+
+### 3. A sorrekord mezőkiosztása — a `+0x20` szomszédai
+
+A másoló (`FUN_004ae600`) mezőnként visz át, ezért a rekord alakja
+leolvasható róla:
+
+| eltolás | méret | megjegyzés |
+|---|---|---|
+| `+0x00`, `+0x04` | dword | |
+| **`+0x08`** | **word** | a **TÍPUS** (az ugrási feltétel `1`-et és `{5,6,7}`-et vizsgál) |
+| `+0x0c`, `+0x10` | dword | **hivatkozásszámlált sztring** (a másoló elengedi a régit) |
+| `+0x14` | dword | |
+| `+0x18`, `+0x19`, `+0x1a` | **bájt** | három logikai jelző |
+| `+0x1c` | dword | |
+| **`+0x20`** | **dword** | az ugrási cél kapuja (`== 0` ⇒ az 5/6/7 típus is cél) |
+| `+0x24`, `+0x28`, `+0x2c` | dword | |
+
+⛔ **A `+0x20` JELENTÉSE továbbra is nyitott.** A másoló sima dwordként
+viszi, a típusa (dword, nem sztring, nem bájt-jelző) az egyetlen új adat.
+A megszerzés útja változatlan: a `[lista+0x158]` tömböt **feltöltő**
+függvény — a lista a `CThumbUI+0x2c0`, a lekérő a `FUN_004ae4e0` (288 b).
