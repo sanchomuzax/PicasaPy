@@ -1398,3 +1398,134 @@ gomb, se bélyegkép. ⇒ a szerkesztőben a jelző **nem megszakítható**.
   `+0x54` írói adnák meg, azt ez a kör nem pásztázta végig.
 - A `spinner` rétegének **2763 bájtos** tartalma (fázisképek?) nincs
   kibontva; az animáció ütemét nem mértük.
+
+## ⛳ Az album-ugró gombpár a KÖVETKEZŐ SZAKASZFEJLÉCRE ugrik (2026-09-15, 310. kör, #857)
+
+A 294. kör (fent) kimérte, hogy mind a négy görgetősáv-gomb a gazdapanel
+`+0x2a4` tagjának négy vtábla-rekeszére megy. Ez a kör megnyitotta a
+rekeszeket, és ezzel a jegy nyitott kérdése (*„mit jelent az »album« az
+ugrásnál"*) eldőlt.
+
+### A `+0x2a4` tag: az `INavigation` részobjektum a `CThumbUI`-ban
+
+A gazda konstruktora (`0x005643e0`) egymás után 26 interfész-vtáblát tölt
+be; a mienk a **`0x005644b5`**-ös sor:
+
+```
+0x005644b5  c785a40200009c04c900   mov dword ptr [ebp+0x2a4], 0xc9049c
+```
+
+RTTI a vtábla `-4` rekeszéből (`RTTICompleteObjectLocator` → `TypeDescriptor`):
+
+| vtábla | RTTI-név | hol íródik |
+|---|---|---|
+| `0x00c9049c` | **`.?AVINavigation@@`** | `0x005644b5` (ctor, tiszta virtuális) |
+| `0x00c90754` | **`.?AVCThumbUI@@`** | `0x005645da` és `0x005653da` |
+
+A négy rekesz tartalma a `0x00c90754` vtáblából kiolvasva:
+
+| gomb | rekesz | cím |
+|---|---|---|
+| `throttle/albumscrolltop` | `+0x20` | `0x00578460` |
+| `throttle/albumscrollbottom` | `+0x24` | `0x00578500` |
+| `throttle/nextalbum` | `+0x3c` | **`0x00578920`** |
+| `throttle/prevalbum` | `+0x40` | **`0x00578a90`** |
+
+A törzsekben az `ecx` **a részobjektumra** mutat, nem a `CThumbUI` elejére.
+Ez nem feltevés: mindkét album-ugró visszaigazítja, mielőtt `CThumbUI`-szintű
+függvényt hív — `add ebp, 0xfffffd5c` (`0x00578a53`) és
+`add edi, 0xfffffd5c` (`0x00578ae4`), ahol `0xfffffd5c = −0x2a4`.
+Ebből: `[részobj+0x1c] = CThumbUI+0x2c0` (a sorlista) és
+`[részobj+0xc0c] = CThumbUI+0xeb0` (a nézet-/görgetésmodell).
+Kereszt-ellenőrzés: egy másik `CThumbUI`-metódus ugyanezt a listát
+`mov eax, [edi+0x2c0]` alakban adja át ugyanannak a lekérőnek
+(`0x005e03a8` → `call 0x004ae4e0`).
+
+### A sorlista és a rekord
+
+`0x004ae4e0(lista EAX-ben, index, &rekord)` — zárolt elemkérő:
+
+| mező | hely | mérés |
+|---|---|---|
+| elemtömb | `[lista+0x158]` | lépésköz **56 bájt** (`lea edx,[ebp*8]; sub edx,ebp; lea esi,[eax+edx*8]`, `0x004ae541`) |
+| elemszám | `[lista+0x15c] >> 1` | `0x004ae52b` |
+| másoló | `0x004ae600` | `0x34` bájtot másol; `+0xc` és `+0x10` hivatkozásszámlált sztring |
+| **típus** | **rekord `+0x30`** | ld. lent |
+
+A nézetmodell (`CThumbUI+0xeb0`) mezői:
+
+| mező | jelentés | mérés |
+|---|---|---|
+| `+0x2f8` | az **első látható sor** indexe | `0x009d2821`, `0x009d283f` |
+| `+0x320` | a látható sorok **száma** | `0x00578943`, `0x00578b02` |
+| `+0x298` | **2 × sorszám** (mindenhol `>> 1`) | `0x0057894f`, `0x00578a0c` |
+| `+0x30c` | a beállított célsor | `0x00578a24` |
+
+### A keresés — előre és hátra, tükörképben
+
+```
+nextalbum (0x00578920):  i = [+0x320] + [+0x2f8] + 1 ;  amíg i < [+0x298]>>1   (0x00578943–0x005789da)
+prevalbum (0x00578a90):  i = [+0x320] + [+0x2f8] − 1 ;  amíg i >= 0            (0x00578b02–0x00578b85)
+```
+
+Mindkettő ugyanazt a **találati feltételt** használja a rekord `+0x30`
+típusmezőjére:
+
+```
+típus == 1                      -> TALÁLAT                 (0x005789b5 / 0x00578b64)
+típus ∈ {5, 6, 7} ÉS rekord+0x20 == 0 -> TALÁLAT           (0x005789ba–0x005789ce / 0x00578b69–0x00578b7d)
+egyébként                       -> lépj tovább
+```
+
+Találatkor:
+
+```
+[nézet+0x30c] = újpozíció                       (0x00578a24)
+call 0x009d2810(nézet, újpozíció, 1)            (0x00578a2a)
+```
+
+és `0x009d2810` a `[nézet+0x2f8]`-at, azaz az **első látható sort** állítja
+az új értékre (`0x009d2821`, `0x009d283f`). Korlát: `0 ≤ újpozíció <
+[+0x298]>>1` (`0x00578a12`–`0x00578a1a`).
+
+### Mit jelent a `{1, 5, 6, 7}` típushalmaz — a független megerősítés
+
+Pontosan ugyanezt a négy értéket vizsgálja a **`CAlbumList`** is, amikor a
+ragadós (sticky) fejlécet rajzolja:
+
+```
+0x00762752  cmp eax, 1 / 5 / 6 / 7   -> egy közös ágra            (0x00762746: ugyanaz a 0x004ae4e0 lekérő)
+```
+
+és ugyanez a függvény (`0x00762540`) a típusokhoz **fejléc-grafikát**
+rendel: `CAlbumList::liststicky2` (`0x00cb26a0`), `…sticky3`
+(`0x00cb26b8`), `…sticky5` (`0x00cb26d8`), `…sticky6` (`0x00cb26f0`),
+`…sticky7` (`0x00cb2708`) — a `.text`-ben ezek a nevek **kizárólag** ebben a
+függvényben szerepelnek.
+
+⇒ **A `{1, 5, 6, 7}` a fejléc-(szakasz-)sorok típuskészlete.** Az album-ugró
+gombpár tehát nem egy külön albumlista indexét lépteti, hanem a saját
+sormodelljében megkeresi a **következő/előző szakaszfejléc-sort**, és azt
+görgeti a nézet tetejére.
+
+### Kontroll-mérés
+
+A másik két rekesz (`+0x20` és `+0x24`, azaz a sima fel/le görgetés)
+**nem pásztáz sorokat**: a `0x00578460` és a `0x00578500` egy feltételvizsgálat
+után a saját vtáblája `+0x28` / `+0x2c` rekeszét hívja `0` argumentummal
+(`0x00578489`–`0x00578492`, `0x00578529`–`0x00578532`). Ha a módszerem a
+típuspásztázást „mindenhová" belelátná, itt is látnia kellett volna — nem látja.
+
+### Ami NYITVA marad
+
+1. **A rekord `+0x20` mezője**, ami az 5/6/7 típusú fejléceket kapuzza
+   (`== 0` kell a találathoz). A `0x004ae600` másoló sima dwordként viszi át
+   (`0x004ae6b2`), tehát a jelentése a lista **feltöltőjéből** olvasható ki —
+   ez a következő gépi lépés.
+2. **A `prevalbum` előfeltétele.** Csak a hátrafelé ugrás előtt fut egy
+   `0x0076a4b0` + `0xc29e1a` számítás, és az eredményt két konstanshoz méri:
+   `0x00c7dd30 = 0.1` és `0x00cf3ad8 = 0.9` (`0x00578ac8`–`0x00578ae2`). Az
+   FPU-státusz szerint **v ≤ 0.1 vagy v ≥ 0.9 esetén** indul a fenti
+   fejléc-keresés; a `0.1 < v < 0.9` sávban helyette `0x006dcc40(CThumbUI)`
+   fut. Hogy `v` mit mér, és mit csinál a `0x006dcc40`, ez a kör **nem mérte
+   ki** — nem becslés helyettesíti, hanem nyitott kérdés marad.
