@@ -91,6 +91,8 @@ class RelocationResult:
 
 ProgressCallback = Callable[[RelocationProgress], None]
 CancelPredicate = Callable[[], bool]
+#: #1402: a régi példány eltakarítója — egy útvonalat kap (fájl vagy mappa).
+DeleteCallback = Callable[[Path], None]
 
 
 def _check_cancelled(should_cancel: CancelPredicate | None) -> None:
@@ -257,23 +259,43 @@ def _cleanup_partial(new_index_db: Path, new_cache_dir: Path) -> None:
         shutil.rmtree(new_cache_dir, ignore_errors=True)
 
 
-def _delete_old(old_index_db: Path, old_cache_dir: Path) -> str | None:
-    """A régi adatok törlése — best-effort: a hiba szövegét adja vissza,
-    de NEM dob kivételt (az áthelyezés eddigi pontig már sikeres és
-    ellenőrzött, egy törlési hiba emiatt nem teheti "sikertelenné")."""
+def _delete_old(
+    old_index_db: Path,
+    old_cache_dir: Path,
+    delete_old: DeleteCallback | None = None,
+) -> str | None:
+    """A régi adatok eltakarítása — best-effort: a hiba szövegét adja
+    vissza, de NEM dob kivételt (az áthelyezés eddig a pontig már sikeres
+    és ellenőrzött, egy törlési hiba emiatt nem teheti "sikertelenné").
+
+    ⚠️ #1402: a MÓDRÓL a hívó dönt. A mért eredeti a régi példányt a
+    **Lomtárba** teszi, nem törli — a lomtár viszont a `fileops/` sávban
+    él, és az `index/` szándékosan nem ismeri (a két csomag között ma
+    egyetlen import sincs, egyik irányban sem). Ezért a `delete_old`
+    visszahívás: az app-réteg adja át a lomtáras takarítót
+    (`app/relocate_controller.py`), és csak a paraméter nélküli hívás
+    törli véglegesen.
+    """
+    utak = [
+        old_index_db.with_name(nev)
+        for nev in (
+            old_index_db.name,
+            old_index_db.name + "-wal",
+            old_index_db.name + "-shm",
+        )
+    ]
+    utak.append(old_cache_dir)
     errors: list[str] = []
-    for name in (
-        old_index_db.name,
-        old_index_db.name + "-wal",
-        old_index_db.name + "-shm",
-    ):
+    for ut in utak:
+        if not ut.exists():
+            continue
         try:
-            old_index_db.with_name(name).unlink(missing_ok=True)
-        except OSError as error:
-            errors.append(str(error))
-    if old_cache_dir.exists():
-        try:
-            shutil.rmtree(old_cache_dir)
+            if delete_old is not None:
+                delete_old(ut)
+            elif ut.is_dir():
+                shutil.rmtree(ut)
+            else:
+                ut.unlink()
         except OSError as error:
             errors.append(str(error))
     return "; ".join(errors) if errors else None
@@ -289,6 +311,7 @@ def relocate_data_root(
     progress: ProgressCallback | None = None,
     should_cancel: CancelPredicate | None = None,
     on_verified: Callable[[Path], None] | None = None,
+    delete_old: DeleteCallback | None = None,
 ) -> RelocationResult:
     """Az index-SQLite (`old_index_db`) + a thumbnail-cache
     (`old_cache_dir`) áthelyezése egyetlen ÚJ, egyesített `new_root`
@@ -301,6 +324,11 @@ def relocate_data_root(
     innen olvasandó" beállítást. Ha ez a hívás kivételt dob, a célon
     keletkezett másolat törlődik és a kivétel továbbterjed — a régi
     adatokhoz és a beállításhoz emiatt nem nyúlunk.
+
+    `delete_old`: a RÉGI példány eltakarítója, útvonalanként hívva (#1402).
+    Ha nincs megadva, a régi fájlok/mappák VÉGLEGESEN törlődnek. A mért
+    eredeti a Lomtárba teszi őket — azt az app-réteg adja át, mert a
+    lomtár a `fileops/` sávban él.
 
     `RelocationError`/`RelocationCancelled` esetén a forrás MINDIG
     érintetlen marad — ez a modul legfontosabb invariánsa."""
@@ -343,7 +371,7 @@ def relocate_data_root(
             _cleanup_partial(new_index_db, new_cache_dir)
             raise
 
-    old_cleanup_error = _delete_old(old_index_db, old_cache_dir)
+    old_cleanup_error = _delete_old(old_index_db, old_cache_dir, delete_old)
     if progress is not None:
         progress(RelocationProgress("done", 1, 1))
     return RelocationResult(new_root=new_root, old_cleanup_error=old_cleanup_error)
