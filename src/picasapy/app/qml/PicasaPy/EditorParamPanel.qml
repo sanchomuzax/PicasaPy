@@ -106,68 +106,10 @@ Flickable {
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: PicasaScrollBar {}
 
-    // #700: az Apply/Cancel gomb kör alakú ikonja. Az eredetiben ez két
-    // 15×15 képpontos bitkép (`editpanel/ok_icon`, `editpanel/cancel_icon`),
-    // tömör kör fehér pipával, illetve fehér X-szel; a színek a
-    // kicsomagolt képekből mérve (`docs/specs/ui-audit-editor.md` 7.4).
-    //
-    // A jelet SZÁNDÉKOSAN nem Unicode-karakter rajzolja: a vágás-panel
-    // „✔"/„✘" megoldása betűtípusfüggő, és hiányzó glifánál nyomtalanul
-    // eltűnik. Két elforgatott téglalap mindig ugyanazt adja.
-    component ActionBadge: Rectangle {
-        id: badge
-
-        // igaz = zöld pipa (Alkalmaz), hamis = indigó X (Mégse)
-        property bool tick: true
-
-        implicitWidth: 15
-        implicitHeight: 15
-        radius: 7.5
-        antialiasing: true
-        color: badge.tick ? "#4e904a" : "#524ba1"
-
-        // a pipa rövid, lefelé tartó szára
-        Rectangle {
-            visible: badge.tick
-            x: 4; y: 7
-            width: 3.9; height: 2
-            radius: 1
-            color: "white"
-            antialiasing: true
-            transformOrigin: Item.Left
-            rotation: 50
-        }
-        // a pipa hosszú, felfelé tartó szára
-        Rectangle {
-            visible: badge.tick
-            x: 6.5; y: 10
-            width: 8.2; height: 2
-            radius: 1
-            color: "white"
-            antialiasing: true
-            transformOrigin: Item.Left
-            rotation: -52
-        }
-        // az X két szára
-        Rectangle {
-            visible: !badge.tick
-            anchors.centerIn: parent
-            width: 9; height: 2
-            radius: 1
-            color: "white"
-            antialiasing: true
-            rotation: 45
-        }
-        Rectangle {
-            visible: !badge.tick
-            anchors.centerIn: parent
-            width: 9; height: 2
-            radius: 1
-            color: "white"
-            antialiasing: true
-            rotation: -45
-        }
-    }
+    // #710: az Apply/Cancel jel KÖZÖS komponens lett
+    // (`EditorActionBadge.qml`) — az audit szerint a vágás-panel és ez
+    // az alpanel ugyanazt a gombot használja, nálunk viszont két külön
+    // megoldás élt. A rajz változatlan, csak átköltözött.
 
     ColumnLayout {
         id: effectParamColumn
@@ -324,7 +266,7 @@ Flickable {
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.applyParamPanel()
-                ActionBadge {
+                EditorActionBadge {
                     objectName: "effectParamApplyIcon"
                     tick: true
                     anchors.right: parent.right
@@ -338,7 +280,7 @@ Flickable {
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.cancelParamPanel()
-                ActionBadge {
+                EditorActionBadge {
                     objectName: "effectParamCancelIcon"
                     tick: false
                     anchors.right: parent.right

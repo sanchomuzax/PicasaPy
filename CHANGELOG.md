@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.454] – 2026-09-15
+
+### Megváltozott
+
+- **A vágás Alkalmaz/Mégse gombján is rajzolt jel van** (#710). Eddig a
+  vágás-panelen a pipát és az X-et betűtípus-karakter adta — ha a betűtípus
+  nem ismerte, a jel szó nélkül eltűnt, és csak a felirat maradt. Mostantól
+  ugyanaz a rajzolt zöld pipa és indigó X van rajta, mint az effektek
+  beállító-panelén; a két gomb így egyforma, ahogy az eredeti Picasában is.
+
 ## [0.8.453] – 2026-09-15
 
 ### Javítva

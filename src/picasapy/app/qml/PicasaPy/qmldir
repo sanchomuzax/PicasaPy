@@ -123,6 +123,7 @@ EditorLegacyTab 1.0 EditorLegacyTab.qml
 EditTabButton 1.0 EditTabButton.qml
 EditTabIcon 1.0 EditTabIcon.qml
 EditorDialogs 1.0 EditorDialogs.qml
+EditorActionBadge 1.0 EditorActionBadge.qml
 EditorParamPanel 1.0 EditorParamPanel.qml
 EditorTabBar 1.0 EditorTabBar.qml
 EditorTabCommonFixes 1.0 EditorTabCommonFixes.qml
