@@ -6358,10 +6358,23 @@ edx` alakot használja, tehát a virtuális hívóhelyeket csak ezzel a
 három-utasításos mintával lehet keresni, ismert pozitív kontrollal együtt
 (pl. a `0x005e7c33` `mov eax,[edx+0x24]` → `call eax`).
 
-A következő kör a **listát birtokló osztálytól** induljon: a
-`FUN_00907390` a tömböt `[ebp+0x48]` / `[ebp+0x4c]` alakban kapja, és a
-`FUN_00438820` tölti — annak az objektumnak az RTTI-je nevezi meg, ki
-futtatja a láncot.
+⭐ **A listát birtokló osztály MEGVAN: `FilterArray`**
+(`vftable 0x00c827f8`, 8 rekesz), ami a
+**`ytArray<IImageFilter*,1,ytBaseThread>`** (`0x00c8281c`) leszármazottja.
+A `FUN_00438820` a verem-lokális példányát építi
+(`0x00438b3d mov dword ptr [esp+0x28], 0xc827f8`), és ezt adja át a
+`FUN_00907390` törlőjének.
+
+⇒ **A lánc elemei `IImageFilter*` interfész-mutatók**, a `CGenericFilter`
+ennek egy megvalósítása. A futtató tehát egy `FilterArray`-t bejáró kód,
+ami elemenként virtuálisat hív.
+
+A következő kör ezt keresse meg. ⚠️ **A `FilterArray::vftable`-re 87
+hivatkozás van, 30+ különböző függvényben** — a puszta „ki építi
+`FilterArray`-t" kérdés NEM szűr. A megkülönböztető jegy az, hogy a
+futtató **képet is kap** a tömb mellé: a jelölteket a paraméterlistájuk
+(tömb + kép/felület) alapján kell szűrni, nem a `FilterArray` érintése
+alapján.
 
 ### ⛔ Egy saját ellentmondás, amit ez a kör felszínre hozott
 
