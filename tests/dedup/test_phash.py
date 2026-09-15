@@ -88,18 +88,24 @@ class TestReducedDecoding:
     NEM változtatja meg a hash-t."""
 
     def test_uses_the_shared_reduced_decode_helper(self, tmp_path, monkeypatch):
-        import picasapy.dedup.phash as phash_module
+        """⚠️ #3120: a kém a `cvimage`-re került, nem a `phash`-re.
+
+        A dHash a közös belépőn (`cvimage.dekodolj_forrast`) megy, hogy a
+        NYERS fájlok is kapjanak ujjlenyomatot — a redukált zászló
+        választása így egy szinttel beljebb dől el. A lap ÁLLÍTÁSA
+        változatlan: a dHash redukált dekódolással készül."""
+        import picasapy.cvimage as cvimage_module
 
         photo = gradient_jpeg(tmp_path / "nagy.jpg", size=(1024, 1024))
         seen = []
-        original = phash_module.reduced_color_flag
+        original = cvimage_module.reduced_color_flag
 
         def spy(payload, goal):
             flag = original(payload, goal)
             seen.append(flag)
             return flag
 
-        monkeypatch.setattr(phash_module, "reduced_color_flag", spy)
+        monkeypatch.setattr(cvimage_module, "reduced_color_flag", spy)
         assert compute_dhash(photo) is not None
         assert seen == [cv2.IMREAD_REDUCED_COLOR_8]
 

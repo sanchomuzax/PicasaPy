@@ -21,7 +21,7 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
-from picasapy.cvimage import read_image_bytes, scale_down
+from picasapy.cvimage import dekodolj_forrast, scale_down
 from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
@@ -599,11 +599,12 @@ def _apply_filter_chain(image: np.ndarray, ops: tuple[FilterOp, ...]) -> np.ndar
 
 def _decode_image(source: Path) -> np.ndarray:
     """Bájt-alapú dekódolás a közös helperrel (`picasapy.cvimage`, #151/7).
-    EXIF-forgatással dekódol; hibánál emberi olvasásra szánt kivétel."""
-    payload = read_image_bytes(source)
-    if payload is None:
-        raise ValueError(f"Üres vagy nem olvasható forrásfájl: {source}")
-    image = cv2.imdecode(payload, cv2.IMREAD_COLOR)
+    EXIF-forgatással dekódol; hibánál emberi olvasásra szánt kivétel.
+
+    #3120: a közös belépőn megy, tehát a **nyers (RAW)** fájlok is
+    exportálhatók — korábban a puszta `cv2.imdecode` némán `None`-t adott
+    rájuk, és az export „nem dekódolható kép" hibával állt meg."""
+    image = dekodolj_forrast(source)
     if image is None:
         raise ValueError(f"Nem dekódolható kép: {source}")
     return image

@@ -41,10 +41,9 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
-from picasapy.lazy_cv2 import cv2
 from PySide6.QtCore import QSettings, Property, QLocale, QObject, Signal, Slot
 
-from picasapy.cvimage import read_image_bytes, reduced_color_flag
+from picasapy.cvimage import dekodolj_forrast
 from picasapy.faces import detector as detector_module
 from picasapy.faces import embedder as embedder_module
 from picasapy.faces import model_download
@@ -828,11 +827,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         """A fotó redukált dekódolása — a thumbs-cache/dedup mintáját
         követi (`cvimage.read_image_bytes` + `reduced_color_flag`), hogy
         ne épüljön új I/O-út a projektbe."""
-        payload = read_image_bytes(photo_path)
-        if payload is None:
-            return None
-        flag = reduced_color_flag(payload, _DETECT_MAX_DIMENSION)
-        return cv2.imdecode(payload, flag)
+        #: #3120: a KÖZÖS belépőn megy — a `cv2.imdecode`-nak nincs nyers
+        #: dekódere, tehát a RAW fájlokban nem kerestünk arcot.
+        return dekodolj_forrast(photo_path, goal=_DETECT_MAX_DIMENSION)
 
 
 def _group_payload(faces, label: str) -> dict:

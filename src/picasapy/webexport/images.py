@@ -13,8 +13,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from picasapy.cvimage import read_image_bytes
-from picasapy.lazy_cv2 import cv2
+from picasapy.cvimage import dekodolj_forrast
 
 from picasapy.export import ExportItem, ExportSettings, export_photos
 from picasapy.index import PhotoRecord
@@ -117,10 +116,9 @@ def _image_size(path: Path) -> tuple[int, int]:
     A (0, 0) visszatérés marad a szerződés (az export nem szakad meg), de
     NEM néma többé: naplózzuk, mert enélkül a felhasználó csak annyit
     látna, hogy a lapon nulla a képméret."""
-    payload = read_image_bytes(path)
-    image = (
-        None if payload is None else cv2.imdecode(payload, cv2.IMREAD_COLOR)
-    )
+    #: #3120: a KÖZÖS belépőn megy — a `cv2.imdecode`-nak nincs nyers
+    #: dekódere, tehát a RAW fájlok mérete nulla maradt a lapon.
+    image = dekodolj_forrast(path)
     if image is None:
         logger.warning(
             "A webexport nem tudta beolvasni a kép méretét: %s "

@@ -22,7 +22,7 @@ from pathlib import Path
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
-from picasapy.cvimage import read_image_bytes
+from picasapy.cvimage import dekodolj_forrast
 
 # A kodek-négyes: MP4 konténer, széles körben elérhető OpenCV-ben.
 _FOURCC = "mp4v"
@@ -112,10 +112,9 @@ def letterbox(
 
 
 def _decode(source: Path) -> np.ndarray:
-    payload = read_image_bytes(source)
-    if payload is None:
-        raise ValueError("üres vagy nem olvasható fájl")
-    image = cv2.imdecode(payload, cv2.IMREAD_COLOR)
+    #: #3120: a KÖZÖS belépőn megy — a `cv2.imdecode`-nak nincs nyers
+    #: dekódere, tehát a RAW fájlokra némán `None`-t adott.
+    image = dekodolj_forrast(source)
     if image is None:
         raise ValueError("nem dekódolható kép")
     return image

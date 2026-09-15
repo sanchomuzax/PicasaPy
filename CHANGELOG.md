@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.463] – 2026-09-15
+
+### Javítva
+
+- **A nyers (RAW) fényképek a többi művelethez is megnyílnak** (#3120).
+  Eddig csak megnézni lehetett őket: az exportálás, a duplikátum-keresés, a
+  szín szerinti keresés, a kollázs, a diavetítés, a webre mentés, az import
+  és az arckeresés némán kihagyta a nyers fájlokat. Mostantól mind a nyolc
+  helyen ugyanaz a beolvasó dolgozik, ami a megjelenítésnél is.
+  ⚠️ Egy kivétel szándékos: a **szerkesztés mentése** nyers fájlnál
+  továbbra is hibaüzenetet ad. Nyers fájlt nem lehet visszaírni (az eredeti
+  Picasa sem tette), és amíg nem mértük ki, hogyan menti a szerkesztést a
+  kép mellé, a biztonságos viselkedés az, ha hozzá sem nyúlunk a fájlodhoz.
+
 ## [0.8.462] – 2026-09-15
 
 ### Javítva

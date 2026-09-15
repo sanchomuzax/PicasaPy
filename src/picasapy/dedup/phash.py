@@ -35,7 +35,7 @@ from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
 
-from picasapy.cvimage import read_image_bytes, reduced_color_flag
+from picasapy.cvimage import dekodolj_forrast
 
 _HASH_SIZE = 8  # 8x8 = 64 bites hash
 
@@ -54,10 +54,11 @@ def compute_dhash(path: Path, hash_size: int = _HASH_SIZE) -> int | None:
     hash_size` méretre kicsinyítés INTER_AREA-val (9x8 az alapértelmezett
     8-as hash-mérethez), (3) soronként a szomszédos pixelek összevetése
     (balról jobbra nagyobb-e) — ez adja a `hash_size * hash_size` bitet."""
-    payload = read_image_bytes(path)
-    if payload is None:
-        return None
-    image = cv2.imdecode(payload, reduced_color_flag(payload, _DECODE_GOAL))
+    #: #3120: a közös belépőn megy, hogy a NYERS fájlok is kapjanak
+    #: ujjlenyomatot — a `cv2.imdecode` némán `None`-t adott rájuk, és a
+    #: duplikátum-kereső csendben kihagyta őket. A bájt-olvasás és a
+    #: redukált dekódolás választása a belépőn belül történik.
+    image = dekodolj_forrast(path, goal=_DECODE_GOAL)
     if image is None:
         return None
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
