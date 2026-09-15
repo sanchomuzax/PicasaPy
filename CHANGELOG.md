@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.476] – 2026-09-15
+
+### Javítva
+
+- **A kollázs kijelölés-gyűrűje nem halványul el a forgató perem fölött**
+  (#1379). Sok képes kollázsnál a képek kicsik, és a gyűrű kilógott
+  abból a sávból, ahol figyelte az egeret — a forgató-méretező karikára
+  ráállva a gyűrű elhalványult. Mostantól a gyűrű a saját területén is
+  figyel, ahogy az eredeti Picasában.
+
 ## [0.8.475] – 2026-09-15
 
 ### Javítva
