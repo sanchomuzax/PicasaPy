@@ -86,3 +86,91 @@ class TestAKatalogusEsALanc:
     )
     def test_a_sorrend_egyezik(self, effekt, vart):
         assert _kulcsok(effekt) == vart
+
+
+class TestAFocalZoom:
+    """A jegy harmadik effektje — a MÉRT feliratok és a képfüggő sugár.
+
+    | `filterdesc.xml:894–897` | mért |
+    |---|---|
+    | `_sldrImpact` | 1–100, alap 50 · felirat `ImageFilters::Zoominess` |
+    | `_sldrRadius` | **min 10, max `min(W,H)/2`**, alap a tartomány FELEZŐPONTJA · felirat `ImageFilters::FocalSize` |
+    | `_sldrHardness` | 0–100, alap 50 |
+    | `_sldrFade` | 0–100, alap 0 |
+
+    A feliratok forrása: `referencia/stringres-en-hu.tsv:1852` (Focal Size
+    / „Fókuszméret") és `:1877`-hez tartozó `ImageFilters::Zoominess`
+    („Suhanás", `panel-feliratok-hu.tsv:1422`).
+    """
+
+    def test_mind_a_HAT_vezerlo_megvan(self):
+        assert _kulcsok("focalzoom") == [
+            "x", "y", "impact", "radius", "hardness", "fade",
+        ]
+
+    def test_a_ket_felirat_a_MERT(self):
+        assert _felirat("focalzoom", "impact") == "Zoominess"
+        assert _felirat("focalzoom", "radius") == "Focal Size"
+
+    def test_a_regi_feliratok_MAR_NINCSENEK(self):
+        feliratok = {p.label for p in EFFECT_PARAMS["focalzoom"]}
+        assert "Impact" not in feliratok
+        assert "Radius" not in feliratok
+
+    def test_a_sugar_maximuma_KEPMERET_fuggo(self):
+        from picasapy.app.effect_params import resolve_effect_params
+
+        szeles = resolve_effect_params("focalzoom", 1000.0, 800.0)
+        sugar = next(p for p in szeles if p.key == "radius")
+        assert sugar.maximum == pytest.approx(400.0), "min(1000, 800) / 2"
+
+        keskeny = resolve_effect_params("focalzoom", 600.0, 1200.0)
+        sugar2 = next(p for p in keskeny if p.key == "radius")
+        assert sugar2.maximum == pytest.approx(300.0), "min(600, 1200) / 2"
+
+    def test_a_sugar_alapertele_a_tartomany_FELEZOPONTJA(self):
+        from picasapy.app.effect_params import resolve_effect_params
+
+        felold = resolve_effect_params("focalzoom", 1000.0, 800.0)
+        sugar = next(p for p in felold if p.key == "radius")
+        # `value="{… ((max − min) / 2) + min}"` = (400 − 10) / 2 + 10
+        assert sugar.default == pytest.approx(205.0)
+        assert sugar.minimum == pytest.approx(10.0)
+
+    def test_a_tobbi_csuszka_tartomanya_VALTOZATLAN(self):
+        """A képfüggés CSAK a sugárra vonatkozik — a többi fix marad."""
+        from picasapy.app.effect_params import resolve_effect_params
+
+        felold = {p.key: p for p in resolve_effect_params("focalzoom", 1000.0, 800.0)}
+        assert (felold["impact"].minimum, felold["impact"].maximum) == (1.0, 100.0)
+        assert felold["hardness"].default == pytest.approx(50.0)
+        assert felold["fade"].default == pytest.approx(0.0)
+
+
+class TestAFeliratokAFeluleten:
+    """A katalógus felirata csak akkor ér valamit, ha a panel is ismeri."""
+
+    def test_a_panel_fordit_mindket_uj_feliratot(self):
+        from pathlib import Path
+
+        import picasapy.app
+
+        qml = (
+            Path(picasapy.app.__file__).parent
+            / "qml" / "PicasaPy" / "EditorParamPanel.qml"
+        ).read_text(encoding="utf-8")
+        assert 'case "Zoominess": return qsTr("Zoominess")' in qml
+        assert 'case "Focal Size": return qsTr("Focal Size")' in qml
+
+    def test_a_magyar_forditas_a_MERT(self):
+        from pathlib import Path
+
+        import picasapy.app
+
+        ts = (
+            Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
+        ).read_text(encoding="utf-8")
+        kezd = ts.index("<name>EditorParamPanel</name>")
+        blokk = ts[kezd:ts.index("</context>", kezd)]
+        assert "<translation>Suhanás</translation>" in blokk
+        assert "<translation>Fókuszméret</translation>" in blokk

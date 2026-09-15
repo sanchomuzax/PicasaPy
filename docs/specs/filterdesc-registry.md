@@ -511,7 +511,7 @@ a #2456 helyesbítése (a hetes alakkal még nem mértünk) érvényben marad.
 | `CrossProcess` | Fade 0–100 (0) |
 | `DropShadow` | szín Shadow (#000), Distance 0–30 (4), Angle 0–360 (90), Blur 0–100 (10), Fade 0–100 (30), szín Background (#fff) |
 | `PicnikFocalPixelate` | Impact 2–100 (20), Radius 10–min(W,H)/2 (közép), Hardness 0–100 (50), Fade 0–100 (0), Reverse jelölő (ki) |
-| `FocalZoom` | Impact 1–100 (50), Radius 10–min(W,H)/2 (közép), Hardness 0–100 (50), Fade 0–100 (0) |
+| `FocalZoom` | Impact 1–100 (50), Radius 10–min(W,H)/2 (közép), Hardness 0–100 (50), Fade 0–100 (0) — ✅ **nálunk is, a #723 2. köre óta** (a Radius képfüggő maximuma és a felezőpont-alapérték: `effect_params.py`, `max_formula="half_min_wh"` + `default_formula="tartomany_kozepe"`) |
 | `PicnikGrain` | Grain 0–50 (10), Lighten jelölő (ki) |
 | `HDR` | Radius 1,3–80 (20), Contrast 1–7 (3), Fade 0–100 (0) |
 | `HeatMap` | Hue −180–180 (0), Fade 0–100 (0) |
@@ -536,6 +536,25 @@ a #2456 helyesbítése (a hetes alakkal még nem mértünk) érvényben marad.
 | `PicnikTint` | szín (#80cfff), Fade 0–100 (0) + festhető maszk |
 | `TwoTone` | szín Black (#004488), szín White (#ffff00), Brightness −95–95 (0), Contrast 0–100 (20), Fade 0–100 (0) |
 | `Vignette` | Blur 0–50 (35), Strength 1–2 (1,4), szín (#000), Fade 0–100 (0) |
+
+#### A két csúszka FELIRATA — nem „Impact" és nem „Radius" (#723)
+
+A `filterdesc.xml` az azonosítót adja (`_sldrImpact`, `_sldrRadius`), a
+felirat viszont a szövegtárból jön, és MÁS:
+
+| azonosító | szövegtár-kulcs | angol | **hivatalos magyar** |
+|---|---|---|---|
+| `_sldrImpact` | `ImageFilters::Zoominess` | Zoominess | **„Suhanás"** |
+| `_sldrRadius` | `ImageFilters::FocalSize` | Focal Size | **„Fókuszméret"** |
+
+*Forrás: `referencia/stringres-en-hu.tsv:1852`, `panel-feliratok-hu.tsv:1422`
+és `:1430`.*
+
+⚠️ A `Soften` `_sldrImpact`-ja ezzel szemben **„Softness"**
+(`ImageFilters::Softness` / „Lágyítás") — ugyanaz az azonosító, MÁS
+felirat. Az azonosítóból tehát a feliratra következtetni nem szabad; a
+szövegtár dönt.
+
 
 A `Fade` mindenütt ugyanazt jelenti: a művelet átlátszósága
 `BlendAlpha = 1 − Fade/100`. Ez **egységes implementációs mintát** ad: a

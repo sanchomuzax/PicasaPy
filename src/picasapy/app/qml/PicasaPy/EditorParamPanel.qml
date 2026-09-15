@@ -33,9 +33,13 @@ Flickable {
         case "Inner Radius": return qsTr("Inner Radius")
         case "Strength": return qsTr("Strength")
         case "Intensity": return qsTr("Intensity")
-        //: #723: a Lágyítás és a Neon MÉRT feliratai
+        //: #723: a Lágyítás, a Neon és a Fókusznagyítás MÉRT feliratai
         case "Softness": return qsTr("Softness")
         case "Neon Color": return qsTr("Neon Color")
+        //: #723: `ImageFilters::Zoominess` és `ImageFilters::FocalSize` —
+        //: a Fókusznagyítás két csúszkája korábban „Impact"/„Radius" volt
+        case "Zoominess": return qsTr("Zoominess")
+        case "Focal Size": return qsTr("Focal Size")
         case "Radius": return qsTr("Radius")
         case "Center X": return qsTr("Center X")
         case "Center Y": return qsTr("Center Y")

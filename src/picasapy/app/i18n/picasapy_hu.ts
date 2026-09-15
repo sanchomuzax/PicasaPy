@@ -8056,6 +8056,16 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <source>Neon Color</source>
         <translation>Neonszín</translation>
     </message>
+    <!-- #723: a Fókusznagyítás két csúszkájának MÉRT felirata
+         (`ImageFilters::Zoominess`, `ImageFilters::FocalSize`) -->
+    <message>
+        <source>Zoominess</source>
+        <translation>Suhanás</translation>
+    </message>
+    <message>
+        <source>Focal Size</source>
+        <translation>Fókuszméret</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Apply</source>

@@ -210,8 +210,17 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "focalzoom": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
-        _p("impact", "Impact", 1.0, 100.0, 50.0),
-        _p("radius", "Radius", 10.0, 100.0, 50.0),
+        # #723: a MÉRT feliratok — `ImageFilters::Zoominess` („Suhanás") és
+        # `ImageFilters::FocalSize` („Fókuszméret"), nem „Impact"/„Radius"
+        # (`referencia/stringres-en-hu.tsv:1852`, `panel-feliratok-hu.tsv:1422`).
+        _p("impact", "Zoominess", 1.0, 100.0, 50.0),
+        # #723: a sugár tartománya KÉPMÉRET-FÜGGŐ — `filterdesc.xml:895`:
+        # `minimum="10" maximum="{Math.min(fullResImageWidth,
+        # fullResImageHeight)/2}"`, az alapérték pedig a tartomány
+        # FELEZŐPONTJA (`value="{… ((max − min) / 2) + min}"`). A fix
+        # 10…100/50 hármas csak véletlenül volt jó egy képméretre.
+        _p("radius", "Focal Size", 10.0, 100.0, 50.0,
+           max_formula="half_min_wh", default_formula="tartomany_kozepe"),
         _p("hardness", "Edge Hardness", 0.0, 100.0, 50.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
@@ -425,6 +434,10 @@ def resolve_effect_params(
             maximum = sixth_h
         if param.default_formula == "tenth_min_wh":
             default = tenth_min_wh
+        elif param.default_formula == "tartomany_kozepe":
+            # #723: a `filterdesc.xml` `value="{… ((max − min)/2) + min}"`
+            # alakja — a MÁR feloldott maximumra számolva.
+            default = (maximum - param.minimum) / 2 + param.minimum
         if maximum != param.maximum or default != param.default:
             param = replace(param, maximum=maximum, default=default)
         resolved.append(param)
