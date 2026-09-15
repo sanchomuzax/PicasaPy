@@ -1173,8 +1173,8 @@ MenuBar {
         // A pipa-logika mérve (`0x00574b70`, `docs/specs/picasa-mappanezet.md`
         // 3.): az első kettő EGYETLEN bájt két állapota, tehát kizáró pár;
         // az „Egyszerűsített fanézet" ettől FÜGGETLEN, tartós kapcsoló.
-        // A négy gyökér (Sajátgép / Képek / Dokumentumok / Asztal) külön
-        // jegy (#1407), ezért itt még nem szerepel.
+        // A négy gyökér (Sajátgép / Képek / Dokumentumok / Asztal) a #1407-ben
+        // került be, a két nézetváltó UTÁN — a spec 2.2 sorrendjében.
         PicasaMenu {
             id: folderViewMenu
             objectName: "menuViewFolderView"
@@ -1187,6 +1187,12 @@ MenuBar {
             readonly property bool simplifiedMode:
                 (bar.folderViewCtl && bar.folderViewCtl.simplified !== undefined)
                     ? bar.folderViewCtl.simplified : false
+            //: #1407: a választott gyökér tokenje — a négy gyökér-tétel pipája
+            //: ezt olvassa. A `!== undefined` a próbák stub-vezérlőjére véd
+            //: (#1572, `scripts/qml_undefined_or.py`).
+            readonly property string viewRootToken:
+                (bar.folderViewCtl && bar.folderViewCtl.viewRoot !== undefined)
+                    ? bar.folderViewCtl.viewRoot : ""
             //: #2049: a mappa-borítók kapcsolójának állapota. A
             //: `!== undefined` a próbák stub-vezérlőjére véd (#1572).
             readonly property bool albumThumbsMode:
@@ -1230,6 +1236,82 @@ MenuBar {
                     if (bar.folderViewCtl) bar.folderViewCtl.setTreeView(true)
                     checked = Qt.binding(function () {
                         return folderViewMenu.treeMode
+                    })
+                }
+            }
+            MenuSeparator {}
+            // #1407: a NÉGY gyökér-tétel. Az eredetiben ezek a mappa-hasáb
+            // HELYI menüjében vannak (`thumbui/folderviewpopup`,
+            // `0x00733480`, spec 2.2) — nálunk a `folderviewpopup` gomb
+            // UGYANEZT a menüt nyitja, ezért egy helyen élnek.
+            //
+            // ⚠️ A spec 4.5/b helyesbítése szerint csak a Sajátgép valódi
+            // gyökér: a másik három ELŐBB a teljes fára vált, és csak utána
+            // ugrik a mappára (`push "all"` mindhárom ágban). Rádiógomb-pipát
+            // mégis mind a négy kap, mert a natív `[+0x2e0]`/`[+0x2f0]`
+            // rekesz a rendszermappa-tokent tárolja.
+            //
+            // A pipa-visszakötés ugyanaz a MÉRT buktató, mint a fenti két
+            // rádiótételnél (#1454): a valódi kattintás imperatívan
+            // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
+            //: ⚠️ A négy tétel SZÁNDÉKOSAN ki van írva, nem `Repeater`: a
+            //: `Menu` a `Repeater` delegáltjait nem veszi fel a tételei közé
+            //: (ugyanaz a buktató, amit az `EditorTextPanel` igazítás-gombjai
+            //: is kimondanak). Elsőre `Repeater`-rel írtam meg, és a próba
+            //: mind a négy tételt „nem található"-nak látta.
+            MenuItem {
+                objectName: "menuViewRootMyComputer"
+                text: qsTr("My &Computer")
+                //: a KÉT valódi gyökér egyike: a teljes fa. Bekapcsolt
+                //: „Egyszerűsített fanézet" mellett a vezérlő `watched`-et
+                //: ad — az a kapcsoló FÜGGETLEN (spec 3.).
+                checkable: true
+                checked: folderViewMenu.viewRootToken === "all"
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("all")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.viewRootToken === "all"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewRootMyPictures"
+                text: qsTr("My &Pictures")
+                //: `CSIDL_MYPICTURES` (0x27) → `QStandardPaths.PicturesLocation`.
+                //: Feloldhatatlan mappánál a vezérlő a Dokumentumokra, majd a
+                //: Sajátgép-gyökérre esik vissza (`0x00996747`, spec 4.6).
+                checkable: true
+                checked: folderViewMenu.viewRootToken === "mypics"
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("mypics")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.viewRootToken === "mypics"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewRootMyDocuments"
+                text: qsTr("My Do&cuments")
+                //: `CSIDL_PERSONAL` (0x05) → `QStandardPaths.DocumentsLocation`.
+                checkable: true
+                checked: folderViewMenu.viewRootToken === "mydocs"
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("mydocs")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.viewRootToken === "mydocs"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewRootDesktop"
+                text: qsTr("&Desktop")
+                //: `CSIDL_DESKTOP` (0x00) → `QStandardPaths.DesktopLocation`.
+                checkable: true
+                checked: folderViewMenu.viewRootToken === "desktop"
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("desktop")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.viewRootToken === "desktop"
                     })
                 }
             }

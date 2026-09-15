@@ -3561,6 +3561,14 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FolderPane</name>
     <message>
+        <source>Default View</source>
+        <translation>Alapértelmezett nézet</translation>
+    </message>
+    <message>
+        <source>My Computer</source>
+        <translation>Sajátgép</translation>
+    </message>
+    <message>
         <source>Do you want to remove the folder %1 and its subfolders?</source>
         <translation>Eltávolítja a(z) „%1&quot; mappát és a hozzá tartozó almappákat?</translation>
     </message>
@@ -4868,6 +4876,22 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <source>My &amp;Computer</source>
+        <translation>Sajátgé&amp;p</translation>
+    </message>
+    <message>
+        <source>My &amp;Pictures</source>
+        <translation>Ké&amp;pek</translation>
+    </message>
+    <message>
+        <source>My Do&amp;cuments</source>
+        <translation>Do&amp;kumentumok</translation>
+    </message>
+    <message>
+        <source>&amp;Desktop</source>
+        <translation>&amp;Asztal</translation>
+    </message>
     <message>
         <source>Write faces to XMP...</source>
         <translation>Arcinformációk írása XMP-adatokba...</translation>

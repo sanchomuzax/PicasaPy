@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.457] – 2026-09-15
+
+### Hozzáadva
+
+- **A bal hasábban végre ki lehet választani, honnan induljon a mappafa**
+  (#1407). A `Nézet ▸ Mappanézet` menübe bekerült a négy ugrópont, amit az
+  eredeti Picasa is ott tart: Sajátgép · Képek · Dokumentumok · Asztal. A
+  Sajátgép a teljes fát adja, a másik három szintén a teljes fára vált, majd
+  odaugrik és kijelöli a mappát — pontosan úgy, ahogy az eredeti működik. Ha
+  valamelyik mappa nem található a gépen, nem kapsz hibát: a fa a Sajátgépre
+  áll vissza.
+- **A Mappák fejléce megmondja, hol állsz**: „Alapértelmezett nézet" a lapos
+  listában, „Sajátgép" a fanézetben, a három ugróponton pedig a mappa neve.
+- **A választott kezdőpont megmarad**: ahol kilépéskor jártál, ott indul a
+  program legközelebb is.
+
 ## [0.8.456] – 2026-09-15
 
 ### Megváltozott

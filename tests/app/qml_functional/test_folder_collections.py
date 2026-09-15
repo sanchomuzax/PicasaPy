@@ -27,7 +27,9 @@ class TestFiveCollectionHeaders:
         for name, header in zip(names, headers, strict=True):
             assert header is not None, f"{name} nem található"
 
-        labels = ("Albums", "People", "Projects", "Folders", "Other")
+        #: #1407: a Mappák fejléce a hasáb GYÖKERÉT nevezi meg (spec 4.2) —
+        #: lapos nézetben „Default View", nem a gyűjtemény neve.
+        labels = ("Albums", "People", "Projects", "Default View", "Other")
         for header, label in zip(headers, labels, strict=True):
             assert label in header.property("text")
 
@@ -99,7 +101,9 @@ class TestFolderContentUnaffected:
         window, controller, _ = qml_app
         header = window.findChild(QObject, "folderPaneHeader")
         assert header is not None, "folderPaneHeader nem található"
-        assert "Folders" in header.property("text")
+        #: #1407: a Mappák fejléce a hasáb GYÖKERÉT nevezi meg — lapos
+        #: nézetben a mért „Default View" (spec 4.2)
+        assert "Default View" in header.property("text")
 
         controller.search("a")
         qt_app.processEvents()
@@ -107,7 +111,9 @@ class TestFolderContentUnaffected:
 
         controller.search("")
         qt_app.processEvents()
-        assert "Folders" in header.property("text")
+        #: #1407: a Mappák fejléce a hasáb GYÖKERÉT nevezi meg — lapos
+        #: nézetben a mért „Default View" (spec 4.2)
+        assert "Default View" in header.property("text")
 
     def test_empty_collections_show_zero_and_do_not_crash(self, qml_app, qt_app):
         window, _controller, _ = qml_app

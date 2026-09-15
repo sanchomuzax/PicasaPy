@@ -212,7 +212,9 @@ class TestSearchResultsGroupedGridWiring:
         window, controller, _ = qml_app
         header = window.findChild(QObject, "folderPaneHeader")
         assert header is not None, "folderPaneHeader nem található"
-        assert "Folders" in header.property("text")
+        #: #1407: a Mappák fejléce a hasáb GYÖKERÉT nevezi meg — lapos
+        #: nézetben a mért „Default View" (spec 4.2)
+        assert "Default View" in header.property("text")
         controller.search("a")
         qt_app.processEvents()
         assert header.property("text") == 'Search results for "a" (1)'
@@ -225,7 +227,9 @@ class TestSearchResultsGroupedGridWiring:
         controller.search("a")
         controller.search("")
         qt_app.processEvents()
-        assert "Folders" in header.property("text")
+        #: #1407: a Mappák fejléce a hasáb GYÖKERÉT nevezi meg — lapos
+        #: nézetben a mért „Default View" (spec 4.2)
+        assert "Default View" in header.property("text")
 
     def test_grouped_view_swaps_in_during_search(self, qml_app, qt_app):
         window, controller, _ = qml_app
