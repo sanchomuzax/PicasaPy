@@ -1963,14 +1963,27 @@ Column {
                     //: BILLENTI: a `0x005fe090` a `morebutton` állapotbájtját
                     //: invertálva írja a főablakba, és az
                     //: `outputlayout/overflowcontainer` vtable 14. rését
-                    //: hívja. Azt, hogy ez a billentés MIT MUTAT a képernyőn
-                    //: (a sor helyben kinyílik? második sorba tördel?), a
-                    //: kutatás NEM mérte ki — a vtable-rés törzse nincs
-                    //: dekompilálva.
+                    //: hívja.
                     //:
-                    //: Amíg nincs, a felugró lista ugyanazt a felhasználói
-                    //: célt szolgálja (a rejtett gombok elérhetők), és nem
-                    //: tesz hamis ígéretet. A különbség saját jegyen áll.
+                    //: ⭐ #2973: azt, hogy a billentés MIT MUTAT, a 305. kör
+                    //: KIMÉRTE (`picasa-keptalca.md` 23.): a kifért gombok
+                    //: **egymás alá kerülnek, egy függőleges oszlopba** — nem
+                    //: második sorba, nem szélesedő sávba. A cellás
+                    //: elrendezés-ágban az X halmozó a ciklus ELŐTT áll be és
+                    //: nem változik (`0x0059868e`), az Y viszont minden
+                    //: gyerekre nő (`0x00598858`); a lépésköz a `Property`-ből
+                    //: jön (`cellwidth` → `+0x274`, `cellheight` → `+0x278`,
+                    //: a `.tre` 50 / 52, `outputlayout.tre:143–150`).
+                    //:
+                    //: ⇒ A felugró listánk **ugyanazt a fajtát** adja, amit az
+                    //: eredeti mutat: a rejtett gombok függőleges listában,
+                    //: egymás alatt. Az eltérés a MEGVALÓSÍTÁSBAN van (nálunk
+                    //: menü, ott a konténer saját oszlopa), nem abban, amit a
+                    //: felhasználó lát — ez tehát MÉRT döntés, nem feltevés.
+                    //:
+                    //: ⚠️ Ami továbbra sincs mérve: a nyílás iránya (le- vagy
+                    //: felfelé) és a takarása. A látvány egyeztetése külön
+                    //: kört kér; a mai döntéshez nem kell.
                     TrayActionButton {
                         id: trayMoreBtn
                         objectName: "trayMoreButton"

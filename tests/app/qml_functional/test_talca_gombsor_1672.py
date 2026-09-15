@@ -165,3 +165,33 @@ class TestAKommentSemHazudhat:
         blokk = forras[kezd:veg]
         assert "overflowcontainer" in blokk
         assert "SZÁNDÉKOSAN más" in blokk
+
+    def test_az_indoklas_MERESRE_hivatkozik(self):
+        """#2973: az eltérés indoklása nem állhat feltevésen.
+
+        A 305. kör kimérte, hogy a billentés MIT MUTAT: a kifért gombok
+        függőleges oszlopba kerülnek (`picasa-keptalca.md` 23.). Amíg ez nem
+        volt meg, a kódban az állt, hogy „a kutatás NEM mérte ki" — és egy
+        ilyen mondat a mérés után **elavult**, de némán: senki nem veszi
+        észre, hogy már van válasz.
+
+        Ez a próba ezért két dolgot állít: a mérésre HIVATKOZIK, és a régi,
+        feltevésre hivatkozó mondat NINCS ott."""
+        forras = _TRAY.read_text(encoding="utf-8")
+        kezd = forras.index('objectName: "trayMoreCell"')
+        veg = forras.index('objectName: "trayMoreButton"', kezd)
+        blokk = forras[kezd:veg]
+
+        assert "picasa-keptalca.md` 23." in blokk, (
+            "az eltérés indoklása nem nevezi meg a mérést (#2973)"
+        )
+        assert "függőleges oszlop" in blokk, (
+            "az indoklás nem mondja ki, MIT mutat az eredeti billentés"
+        )
+        for elavult in (
+            "a kutatás NEM mérte ki",
+            "Amíg nincs, a felugró lista",
+        ):
+            assert elavult not in blokk, (
+                f"elavult, feltevésre hivatkozó mondat maradt bent: {elavult!r}"
+            )
