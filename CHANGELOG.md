@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.475] – 2026-09-15
+
+### Javítva
+
+- **A régi Finomhangolás színhőmérséklete a saját modelljét kapta**
+  (#958). A régebbi Picasa-verzióval készült képeknél a Színhőmérséklet
+  csúszka eddig az ÚJ változat számítását futtatta, ezért a kép
+  mérhetően másképp nézett ki, mint az eredetiben. Mostantól a négy
+  ellenőrző képpáron az eltérés a látható küszöb alatt van.
+
 ## [0.8.474] – 2026-09-15
 
 ### Javítva

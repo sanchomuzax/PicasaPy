@@ -5017,10 +5017,31 @@ látható v1-eltérés oka; a korábbi, v2-re épülő modell mind a négy kontr
 nagyságrenddel rosszabb. A `chart_detail` továbbra sem kontroll: azon a v1
 export korábban igazoltan teljes no-op.
 
-**Nálunk / teendő.** A `render/chain.py::_apply_finetune_op` ma a
-`finetune`-t és a `finetune2`-t egyaránt az `apply_finetune2` útjára küldi.
-A `render/native_colortemp.py` worker-alakja már megvan, de a két skálán
-`round`-ot használ; a bináris szerint **`trunc` kell**. A fejlesztési javítás:
+**Nálunk — ✅ MEGVAN (2026-09-15, #958).** A
+`render/chain.py::_apply_finetune_op` a `finetune` (v1) ágán a közös
+Derítőfény/Csúcsfények/Árnyékok menetet **hőmérséklet nélkül** futtatja,
+majd a `render/native_colortemp.apply_native_colortemp` workert
+`white_shift=0.0`-val — két külön képpontmenetben, ahogy a natív oldal. A
+worker skálázása `round`-ról **`trunc`**-ra javítva (`cvttsd2si`).
+
+A négy goldenpár újramérve a beolvadt kóddal (`ΔE76`, float-LAB):
+
+| kép · hőmérséklet | a spec mérése | a MI kódunk | határ |
+|---|---:|---:|---:|
+| `chart_color` · +0,5 | 0,5165 | **0,5143** | 0,67 |
+| `chart_color` · −0,5 | 0,6601 | **0,6585** | 0,67 |
+| `chart_ramp` · +0,5 | 0,4555 | **0,4544** | 0,67 |
+| `chart_ramp` · −0,5 | 0,3940 | **0,3940** | 0,67 |
+
+⚠️ **A mérés módja számít:** a `cv2.COLOR_RGB2LAB` **uint8** bemenetre az
+L-t 0…255-re skálázza (×2,55) és az a/b-hez +128-at ad — abban a térben a
+távolság **nem ΔE76**, és a fenti értékek helyett 0,64…0,89-et ad. A
+helyes út float32 bemenet 0…1-en. (Ez a mérő hibája volt, nem a kódé.)
+
+⛔ A CI-n ez a négy pár **nem futhat**: a `research/testdata/PicasaPy-merokit`
+gitignore-olt (valódi fotók). A CI-ben a
+`tests/render/test_finetune_v1_szinho_958.py` őrzi a képletet — a mért
+formulát **önállóan újraszámolva**, nem a termékkódot önmagával mérve. A fejlesztési javítás:
 v1-nél a neutrális menet után ezt a workert kell futtatni
 `white_shift=0.0`-val, a v2 út változatlanul marad. Kész, ha a fenti négy
 goldenpár külön-külön legfeljebb **0,67 átlagos ΔE76**-ot ad (a határ a négy
