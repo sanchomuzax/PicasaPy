@@ -6467,3 +6467,76 @@ hanem **a `/2` következetes alkalmazása minden használónál**, és utána
 * A `NightVision` és a `Matte` σ-ja **nincs mérve** — a `/2` bevezetése
   előtt mind a hét használót végig kell mérni (a jegy ötödik „Kész, ha"
   pontja).
+
+---
+
+## ⛳⛳ MEGVAN A FUTTATÓ: az eredeti a láncot SORRENDBEN futtatja, HAT nevet kihagyva (2026-09-15, #3169)
+
+*Forrás: `FUN_00907f30` (1065 b) teljes törzse — a ciklusfej `0x00907fcc`,
+a tétel-kiolvasás `0x00908077`, a hat névösszevetés
+`0x009080a4`–`0x009081ce`, a munkahívás `0x00908221`, a léptetés
+`0x009082d6`–`0x009082e5`; a hívó `FUN_0069f050` (411 b), ami a
+`FilterArray`-t építi (`0x0069f074`) és a `"filters"` kulcsból tölti
+(`0x0069f0c0` → `FUN_0069f510`).*
+
+Az előző szakasz a lánc SZERKEZETÉT adta meg (`FilterArray`,
+`IImageFilter*`, `CGenericFilter`), és a futtatót nyitva hagyta. Megvan.
+
+### A ciklus — ELŐRE, index szerint
+
+```asm
+0x00907fcc  mov eax, [ebp+0x4c]      ; a darabszám ×2
+0x00907fcf  shr eax, 1               ; ⇒ darabszám
+0x00907fd9  mov [esp+0x14], eax      ; a ciklus felső korlátja
+...
+0x00908077  mov ecx, [ebp+0x48]      ; a mutatótömb
+0x0090807a  mov ecx, [ecx + ebx*4]   ; a ebx. tétel
+0x0090807f  mov edx, [edx+0x10]      ; a NÉV lekérése (vtable +0x10)
+...                                  ; hat névösszevetés (lent)
+0x00908221  call 0x8f7140            ; a munka — CSAK ha egyik névre sem illik
+...
+0x009082d6  add ebx, 1
+0x009082d9  cmp ebx, [esp+0x14]
+0x009082e5  jb  0x908077             ; ELŐRE, 0-tól a darabszámig
+```
+
+⇒ **A futtató a tömböt NÖVEKVŐ indexben járja be**, és minden tételre —
+a kihagyottakon kívül — meghívja a `FUN_008f7140`-et.
+
+### A HAT kihagyott név
+
+| sztring-cím | név |
+|---|---|
+| `0x00c9776c` | `redeye` |
+| `0x00c80adc` | `crop64` |
+| `0x00ca8258` | `rot` |
+| `0x00c818e8` | **`save`** |
+| `0x00c9688c` | `retouch` |
+| `0x00c97f6c` | `picnik` |
+
+*(Öt közülük ugyanaz, mint a lánc-normalizálóé — a hatodik, a `save`, ott
+nem szerepel.)*
+
+### ⛔ Ebből következik: a KERETEK NEM kapnak külön kezelést
+
+A `Border`, `Polaroid`, `MuseumMatte`, `DropShadow`, `Cinemascope`,
+`RoundedEdges` **egyike sincs** a kihagyott nevek között ⇒ az eredeti
+ezeket **a lánc-pozíciójukban** futtatja, mint bármely más effektet.
+
+⇒ **A mi `_FRAME_EFFECTS`-halasztásunk (`render/chain.py`, #330) NEM az
+eredetit követi.** A #330 indoklása a VÁGÁS koordináta-rendszeréről szólt
+(„a `crop64` koordinátái az EREDETI képre vonatkoznak") — és a vágásra az
+eredeti tényleg külön utat tart (a `crop64` a kihagyott hatban van). A
+kereteket viszont a #330 indoklása nem fedi, és a mérés szerint nem is
+kellene halasztani őket.
+
+### ⚠️ A hatókör, kimondva
+
+* **Mérve:** a ciklus iránya, a hat név, és hogy a munkahívás csak a
+  „egyik névre sem illik" ágon fut.
+* **NEM mérve:** hogy a `FUN_008f7140` maga a képpont-művelet-e (a
+  paraméterei közt van a szűrő és egy cél-objektum, de a törzsét nem néztem
+  végig), és hogy **hol** alkalmazódik a kihagyott `crop64` (a
+  `FUN_0069f050` másik ágán vagy a hívóláncban feljebb).
+* Ez utóbbi kettő nélkül **nem mondom ki**, hogy a mi vágás-halasztásunk
+  helyes-e — csak azt, hogy a keret-halasztásnak nincs megfelelője.
