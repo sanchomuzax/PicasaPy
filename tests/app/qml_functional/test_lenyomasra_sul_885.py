@@ -374,3 +374,57 @@ class TestAMenutNyitoEsLejatszo:
             "a mappanézet-lenyíló nem lenyomásra nyílik (#885)"
         )
         assert "onTapped" not in blokk
+
+
+#: `Property normalcursor 1` — 16 elem, amely GOMB, de NEM vált kéz-kurzorra.
+#: A mért lista (a jegy törzse): `headerpanel/create_movie`, `create_collage`,
+#: `select_star`, `sync_options`, `websync0`, `websync1` ·
+#: `faceheaderpanel/websync0` · `thumbui/folderviewpopup` · `throttle/pageup`,
+#: `pagedown` · `bigslider/bigslider` · `acquirepanel/sync_options_button`,
+#: `add_groups_button` · `compose_share/add_groups_button`, `composeclip`.
+#:
+#: Ezek közül nálunk ma ezeknek van vezérlőjük:
+NORMALCURSOR_NALUNK = {
+    "headerCollageButton": "PicasaPy/LightboxHeader.qml",
+    "headerSelectStarredButton": "PicasaPy/LightboxHeader.qml",
+    "headerPlayButton": "PicasaPy/LightboxHeader.qml",
+    "toolbarFolderViewPopupButton": "PicasaPy/MainToolbar.qml",
+}
+
+
+class TestANyilKurzorMarad:
+    """A mért `normalcursor` pont — MÉRVE már teljesül, de nem volt rá őr.
+
+    ⚠️ Ez a lap azt rögzíti, ami MA igaz: ezeken a vezérlőkön nem állítunk
+    kéz-kurzort. A kapu azért kell, mert a hiány NÉMA — ha valaki később
+    „szebbnek" találja a kéz-kurzort és hozzáteszi, semmi nem szólna, pedig
+    az eredeti mérése szerint ezek a gombok nyíl-kurzorral maradnak.
+
+    A próba FORRÁS-szintű: a kurzor-alak a `HoverHandler`/`MouseArea`
+    `cursorShape`-jén dől el, amit a futásidejű objektumfáról nem lehet
+    megbízhatóan visszaolvasni (a `HoverHandler` nem `Item`, és a
+    `cursorShape` csak lebegéskor hat)."""
+
+    @pytest.mark.parametrize(("nev", "fajl"), sorted(NORMALCURSOR_NALUNK.items()))
+    def test_nem_valt_kez_kurzorra(self, nev: str, fajl: str) -> None:
+        forras = (_QML / fajl).read_text(encoding="utf-8")
+        kezd = forras.index(f'objectName: "{nev}"')
+        kovetkezo = forras.find("objectName:", kezd + 10)
+        blokk = forras[kezd : kovetkezo if kovetkezo > 0 else len(forras)]
+        assert "PointingHandCursor" not in blokk, (
+            f"a(z) {nev} kéz-kurzorra vált, pedig az eredetiben "
+            "`Property normalcursor 1` van rajta (#885)"
+        )
+
+    def test_a_proba_TALALNA_kez_kurzort(self) -> None:
+        """A mérőt is mérjük: van a kódban ismert pozitív, amit a minta elkap.
+
+        A verzió-címke (`MainToolbar.qml`) SZÁNDÉKOSAN kéz-kurzoros — az
+        hivatkozás, nem gomb. Ha ezt sem találná meg a próba, a fenti négy
+        állítás vakon menne át."""
+        forras = (_QML / "PicasaPy" / "MainToolbar.qml").read_text(
+            encoding="utf-8"
+        )
+        kezd = forras.index('objectName: "versionCursor"')
+        kovetkezo = forras.find("objectName:", kezd + 10)
+        assert "PointingHandCursor" in forras[kezd:kovetkezo]
