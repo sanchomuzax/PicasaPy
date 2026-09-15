@@ -34,6 +34,11 @@ Item {
     signal trimRequested(int startMs, int endMs)
     signal trimResetRequested()
 
+    //: #1838: KÉPKOCKA mentése (`movieeditpanel/capture_frame`). A komponens
+    //: itt sem ír fájlt — a gazda hívja a vezérlő `captureMovieFrame`-jét a
+    //: sor indexével és az ÉPP LÁTOTT pozícióval.
+    signal captureFrameRequested(int positionMs)
+
     readonly property bool trimmed: trimStartMs >= 0 || trimEndMs >= 0
     //: a lejátszható szakasz — a vágás nélküli oldalon a fájl határa
     readonly property int playFromMs: Math.max(0, trimStartMs)
@@ -171,10 +176,24 @@ Item {
                 text: "⟲"
                 //: vágás nélkül nincs mit visszaállítani — a gomb szürke
                 enabled: player.trimmed
-                ToolTip.text: qsTr("Reset trim")
+                //: `Tooltip(movieeditpanel/reset_trim)` — az eredeti szövege
+                ToolTip.text: qsTr("Restore movie to its original length (remove start and end points)")
                 ToolTip.delay: Theme.tooltipDelay
                 ToolTip.visible: hovered
                 onClicked: player.trimResetRequested()
+            }
+            //: #1838: `movieeditpanel/capture_frame` — „Take Snapshot".
+            //: A jel a fényképezőgép; a felirat a buboréksúgóban van, mert a
+            //: sávon csak 30 képpont széles gombok férnek el.
+            PicasaButton {
+                objectName: "videoCaptureFrameButton"
+                Layout.preferredWidth: 30
+                text: "⃞"
+                //: `Tooltip(movieeditpanel/capture_frame)`
+                ToolTip.text: qsTr("Capture current frame")
+                ToolTip.delay: Theme.tooltipDelay
+                ToolTip.visible: hovered
+                onClicked: player.captureFrameRequested(media.position)
             }
             Text {
                 objectName: "videoTimeLabel"

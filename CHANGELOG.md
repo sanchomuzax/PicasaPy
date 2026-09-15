@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.481] – 2026-09-15
+
+### Hozzáadva
+
+- **Képkocka mentése a videóból** (#1838). A videó-vezérlősávon megjelent a
+  „Pillanatfelvétel készítése" gomb: az éppen látott képkockát JPEG-ként
+  mentjük a **Rögzített videoklipek** mappába, a videó nevével — ütközéskor
+  `-001`, `-002` sorszámmal, ahogy az eredeti Picasa. A képkocka a fájl saját
+  felbontásában készül, nem a kicsinyített nézetből. Siker és hiba esetén is
+  kapunk visszajelzést.
+- A vágás visszaállításának buboréksúgója az **eredeti szövegére** javítva
+  („A mozgófilm eredeti hosszának visszaállítása…").
+
 ## [0.8.480] – 2026-09-15
 
 ### Javítva

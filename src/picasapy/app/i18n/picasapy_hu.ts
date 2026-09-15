@@ -4556,6 +4556,16 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>PhotoViewer</name>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
+        <source>Saved %1 to Captured Videos</source>
+        <translation>A(z) %1 mentve a Rögzített videoklipek albumba</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
+        <source>Failed to capture frame</source>
+        <translation>Nem sikerült a képkocka rögzítése</translation>
+    </message>
     <!-- #3013: a kettős nézet szegmensei — a MÉRT hivatalos magyar
          buboréksúgók (`docs/specs/ui-audit-editor.md`) -->
     <message>
@@ -6215,6 +6225,16 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>VideoPlayerView</name>
+    <message>
+        <location filename="../qml/PicasaPy/VideoPlayerView.qml"/>
+        <source>Capture current frame</source>
+        <translation>Aktuális képkocka rögzítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/VideoPlayerView.qml"/>
+        <source>Restore movie to its original length (remove start and end points)</source>
+        <translation>A mozgófilm eredeti hosszának visszaállítása (a kezdési és a befejezési pont eltávolításával)</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58"/>
         <source>Unable to play this video.</source>
