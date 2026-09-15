@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.456] – 2026-09-15
+
+### Megváltozott
+
+- **Tíz vezérlő mostantól lenyomásra hat, nem felengedésre** (#885). Az
+  eredeti Picasában a nézetváltó és állapotkapcsoló gombok azonnal
+  reagálnak, amint lenyomod őket — nálunk eddig meg kellett várni, míg
+  felengeded az egeret. Az első kör a kép-léptetést, a keresősáv szűrőit és
+  a szerkesztő füleit vitte át; most sorra került a szöveg-eszköz hat
+  formázó gombja (félkövér, dőlt, aláhúzott, három igazítás), a
+  mappa-fejléc lejátszó-, csillagos-kijelölő- és kollázsgombja, valamint a
+  mappanézet lenyíló menüje. A műveletvégző gombok (Mentés, Mégse,
+  Létrehozás) szándékosan maradtak felengedésre: azoknál számít, hogy
+  elhúzva még vissza tudod vonni a kattintást.
+
 ## [0.8.455] – 2026-09-15
 
 ### Hozzáadva

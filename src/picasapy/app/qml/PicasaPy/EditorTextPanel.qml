@@ -167,6 +167,11 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "textBoldButton"
+            //: #885: LENYOMÁSRA sül el — `edittextpanel` mért
+            //: `mousedown`-ja (`bold`/`italic`/`underline`,
+            //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
+            //: nem művelet: azonnal hat.
+            lenyomasra: true
             label: qsTr("B")
             tooltip: qsTr("Bold")
             active: panel.textBold
@@ -174,6 +179,11 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "textItalicButton"
+            //: #885: LENYOMÁSRA sül el — `edittextpanel` mért
+            //: `mousedown`-ja (`bold`/`italic`/`underline`,
+            //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
+            //: nem művelet: azonnal hat.
+            lenyomasra: true
             label: qsTr("I")
             tooltip: qsTr("Italic")
             active: panel.textItalic
@@ -181,6 +191,11 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "textUnderlineButton"
+            //: #885: LENYOMÁSRA sül el — `edittextpanel` mért
+            //: `mousedown`-ja (`bold`/`italic`/`underline`,
+            //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
+            //: nem művelet: azonnal hat.
+            lenyomasra: true
             label: qsTr("U")
             tooltip: qsTr("Underline")
             active: panel.textUnderline
@@ -215,6 +230,11 @@ ColumnLayout {
         // delegáltjai a funkcionális tesztekből nem érhetők el)
         PanelButton {
             objectName: "textAlign_left"
+            //: #885: LENYOMÁSRA sül el — `edittextpanel` mért
+            //: `mousedown`-ja (`bold`/`italic`/`underline`,
+            //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
+            //: nem művelet: azonnal hat.
+            lenyomasra: true
             label: "\u2261"
             tooltip: qsTr("Align left")
             active: panel.textAlign === "left"
@@ -222,6 +242,11 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "textAlign_center"
+            //: #885: LENYOMÁSRA sül el — `edittextpanel` mért
+            //: `mousedown`-ja (`bold`/`italic`/`underline`,
+            //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
+            //: nem művelet: azonnal hat.
+            lenyomasra: true
             label: "\u2261"
             tooltip: qsTr("Align center")
             active: panel.textAlign === "center"
@@ -229,6 +254,11 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "textAlign_right"
+            //: #885: LENYOMÁSRA sül el — `edittextpanel` mért
+            //: `mousedown`-ja (`bold`/`italic`/`underline`,
+            //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
+            //: nem művelet: azonnal hat.
+            lenyomasra: true
             label: "\u2261"
             tooltip: qsTr("Align right")
             active: panel.textAlign === "right"

@@ -268,7 +268,11 @@ Rectangle {
             ToolTip.visible: folderViewPopupHover.hovered
             ToolTip.delay: Theme.tooltipDelay
             HoverHandler { id: folderViewPopupHover }
-            TapHandler { onTapped: toolbar.folderViewMenuRequested(parent) }
+            //: #885: `thumbui/folderviewpopup` — a menü LENYOMÁSRA nyílik
+            //: (`Property mousedown 1`); menünyitásnál ez a mért viselkedés.
+            TapHandler {
+                onPressedChanged: if (pressed) toolbar.folderViewMenuRequested(parent)
+            }
         }
         // #1421: az `timelinebutton` — a NÉZET már megvolt (Nézet ▸ Időrend,
         // Ctrl+5, `timeline_controller.py`), csak az eszköztárról hiányzott.

@@ -192,3 +192,185 @@ class TestASzerkesztoFulek:
             "a fülgomb nem lenyomásra vált (#885)"
         )
         assert "onClicked: panel.activeTab" not in forras
+
+
+#: `edittextpanel` — a szövegformázás hat gombja, MÉRT `mousedown`
+#: (`bold`, `italic`, `underline`, `leftalign`, `centeralign`, `rightalign`).
+#: Az `outline` kimarad: nálunk nem gomb, hanem szín + vastagság-csúszka.
+SZOVEGFORMAZO = [
+    "textBoldButton",
+    "textItalicButton",
+    "textUnderlineButton",
+    "textAlign_left",
+    "textAlign_center",
+    "textAlign_right",
+]
+
+
+@pytest.fixture
+def panelgomb(qt_app):
+    """Egyetlen `PanelButton`, izoláltan — a kapcsoló a komponensé."""
+    nezet = QQuickView()
+    nezet.engine().addImportPath(str(_QML))
+    nezet.setSource(QUrl.fromLocalFile(str(_QML / "PicasaPy" / "PanelButton.qml")))
+    assert nezet.status() == QQuickView.Status.Ready, [
+        h.toString() for h in nezet.errors()
+    ]
+    elem = nezet.rootObject()
+    elem.setProperty("label", "B")
+    elem.setProperty("width", 40)
+    elem.setProperty("height", 24)
+    nezet.show()
+    qt_app.processEvents()
+    yield elem, qt_app
+    nezet.deleteLater()
+
+
+class TestAPanelGombKapcsoloja:
+    """A `PanelButton` ugyanazt az opt-in kapcsolót kapja, mint a
+    `PicasaButton` — de itt nagyobb a tét: ez a komponens viszi az
+    effekt-csempéket és az `Alkalmaz`/`Mégse` gombokat is, tehát az
+    alapértelmezésnek FELENGEDÉSRE kell maradnia."""
+
+    def test_alapbol_FELENGEDESRE_sul(self, panelgomb):
+        elem, qt_app = panelgomb
+        szamlalo = []
+        elem.buttonClicked.connect(lambda: szamlalo.append(1))
+
+        _lenyom(elem, qt_app)
+        assert szamlalo == [], "lenyomásra elsült, pedig nem kértük"
+        _felenged(elem, qt_app)
+        assert szamlalo == [1]
+
+    def test_bekapcsolva_LENYOMASRA_sul(self, panelgomb):
+        elem, qt_app = panelgomb
+        elem.setProperty("lenyomasra", True)
+        qt_app.processEvents()
+        szamlalo = []
+        elem.buttonClicked.connect(lambda: szamlalo.append(1))
+
+        _lenyom(elem, qt_app)
+
+        assert szamlalo == [1], "a panel-gomb nem sült el lenyomásra"
+
+    def test_felengedeskor_NEM_sul_el_masodszor(self, panelgomb):
+        elem, qt_app = panelgomb
+        elem.setProperty("lenyomasra", True)
+        qt_app.processEvents()
+        szamlalo = []
+        elem.buttonClicked.connect(lambda: szamlalo.append(1))
+
+        _lenyom(elem, qt_app)
+        _felenged(elem, qt_app)
+
+        assert szamlalo == [1], f"a panel-gomb {len(szamlalo)}-szor sült el"
+
+    def test_TILTOTT_gomb_nem_sul_el(self, panelgomb):
+        elem, qt_app = panelgomb
+        elem.setProperty("lenyomasra", True)
+        elem.setProperty("buttonEnabled", False)
+        qt_app.processEvents()
+        szamlalo = []
+        elem.buttonClicked.connect(lambda: szamlalo.append(1))
+
+        _lenyom(elem, qt_app)
+
+        assert szamlalo == []
+
+
+class TestASzovegformazas:
+    """FORRÁS-szintű állítás: a `edittextpanel` a szerkesztő szövegfülén
+    él, amit a rácsból nem lehet állapotba hozni a próbán. A viselkedést a
+    `TestAPanelGombKapcsoloja` méri, itt a BEKÖTÉS a kérdés."""
+
+    @pytest.mark.parametrize("nev", SZOVEGFORMAZO)
+    def test_a_formazo_gombok_lenyomasra(self, nev):
+        forras = (_QML / "PicasaPy" / "EditorTextPanel.qml").read_text(
+            encoding="utf-8"
+        )
+        # a gomb blokkja: az objectName sorától a következő objectName-ig
+        kezd = forras.index(f'objectName: "{nev}"')
+        kovetkezo = forras.find("objectName:", kezd + 10)
+        blokk = forras[kezd : kovetkezo if kovetkezo > 0 else len(forras)]
+        assert "lenyomasra: true" in blokk, (
+            f"a(z) {nev} felengedésre sül el, pedig az eredetiben "
+            "`mousedown` van rajta (#885)"
+        )
+
+    def test_az_ALKALMAZ_es_MEGSE_marad_felengedesre(self):
+        """Ellenpróba ugyanabból a fájlból: a művelet-gombokon NINCS."""
+        forras = (_QML / "PicasaPy" / "EditorTextPanel.qml").read_text(
+            encoding="utf-8"
+        )
+        for nev in ("textApplyButton", "textCancelButton", "textRemoveAllButton"):
+            kezd = forras.index(f'objectName: "{nev}"')
+            kovetkezo = forras.find("objectName:", kezd + 10)
+            blokk = forras[kezd : kovetkezo if kovetkezo > 0 else len(forras)]
+            assert "lenyomasra" not in blokk, (
+                f"a(z) {nev} művelet-gomb, elhúzva vissza kell tudni vonni"
+            )
+
+
+#: `headerpanel` — a mappa-fejléc mért `mousedown`-gombjai. ⚠️ FORRÁS-szintű
+#: állítás: a `LightboxHeader` a rácsfejlécben él, és a próba
+#: alap-állapotában (mappa nélkül) nem jön létre — a `findChild` `None`-t ad
+#: rá. A viselkedést a `PicasaButton` saját próbái fedik.
+FEJLEC_LENYOMASRA = [
+    "headerSelectStarredButton",
+    "headerCollageButton",
+]
+
+
+class TestAFejlecGombjai:
+    @pytest.mark.parametrize("nev", FEJLEC_LENYOMASRA)
+    def test_a_fejlec_gombjai_lenyomasra(self, nev):
+        forras = (_QML / "PicasaPy" / "LightboxHeader.qml").read_text(
+            encoding="utf-8"
+        )
+        kezd = forras.index(f'objectName: "{nev}"')
+        kovetkezo = forras.find("objectName:", kezd + 10)
+        blokk = forras[kezd : kovetkezo if kovetkezo > 0 else len(forras)]
+        assert "lenyomasra: true" in blokk, (
+            f"a(z) {nev} felengedésre sül el, pedig az eredetiben "
+            "`mousedown` van rajta (#885)"
+        )
+
+    def test_a_MENTES_marad_felengedesre(self):
+        """Ellenpróba ugyanabból a fájlból: a `save_edits` művelet-gomb."""
+        forras = (_QML / "PicasaPy" / "LightboxHeader.qml").read_text(
+            encoding="utf-8"
+        )
+        kezd = forras.index('objectName: "headerSaveEditsButton"')
+        vege = forras.find("objectName:", kezd + 10)
+        assert "lenyomasra" not in forras[kezd:vege], (
+            "a mentés lenyomásra sül el, pedig művelet-gomb"
+        )
+
+
+class TestAMenutNyitoEsLejatszo:
+    """`headerpanel/play` és `thumbui/folderviewpopup`: mindkettő
+    `TapHandler`-rel épült, tehát nem a `lenyomasra` kapcsoló érvényes
+    rájuk, hanem a kezelő MEGVÁLASZTÁSA."""
+
+    def test_a_lejatszo_gomb_lenyomasra(self):
+        forras = (_QML / "PicasaPy" / "LightboxHeader.qml").read_text(
+            encoding="utf-8"
+        )
+        kezd = forras.index('objectName: "headerPlayButton"')
+        blokk = forras[kezd : forras.index("PicasaButton {", kezd)]
+        assert "onPressedChanged" in blokk and "playRequested" in blokk, (
+            "a fejléc lejátszó gombja nem lenyomásra hat (#885)"
+        )
+        assert "onTapped" not in blokk, "felengedésre is elsül — kétszer hatna"
+
+    def test_a_mappanezet_lenyilo_lenyomasra(self):
+        forras = (_QML / "PicasaPy" / "MainToolbar.qml").read_text(
+            encoding="utf-8"
+        )
+        kezd = forras.index('objectName: "toolbarFolderViewPopupButton"')
+        vege = forras.find("objectName:", kezd + 10)
+        blokk = forras[kezd:vege]
+        assert "onPressedChanged" in blokk and "folderViewMenuRequested" in blokk, (
+            "a mappanézet-lenyíló nem lenyomásra nyílik (#885)"
+        )
+        assert "onTapped" not in blokk

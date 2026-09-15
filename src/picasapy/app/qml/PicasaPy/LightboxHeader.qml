@@ -168,13 +168,22 @@ ColumnLayout {
                 text: "▸"; color: Theme.picasaGreen; font.pixelSize: 13
             }
             HoverHandler { id: headerPlayHover }
-            TapHandler { onTapped: header.playRequested() }
+            //: #885: `headerpanel/play` — LENYOMÁSRA indul a diavetítés
+            //: (`Property mousedown 1`). A `TapHandler` a felengedést
+            //: jelzi, ezért a lenyomás-átmenetre kötjük; a `pressed`
+            //: visszaváltása nem sülhet el másodszor.
+            TapHandler {
+                onPressedChanged: if (pressed) header.playRequested()
+            }
         }
         // #1823: eddig ez egy néma díszcsempe volt — se neve, se
         // kezelője. Most a mért `select_star` gomb: a jelenlegi mappa
         // csillagozott képeit jelöli ki.
         PicasaButton {
             objectName: "headerSelectStarredButton"
+            //: #885: LENYOMÁSRA sül el — `headerpanel/select_star`
+            //: mért `mousedown`-ja. Kijelölést vált, nem művelet.
+            lenyomasra: true
             text: header.feliratSzammal("☆")
             Layout.preferredHeight: 22
             ToolTip.text: qsTr("Select starred photos")
@@ -207,6 +216,12 @@ ColumnLayout {
         // ami nálunk nem létezik.
         PicasaButton {
             objectName: "headerCollageButton"
+            //: #885: LENYOMÁSRA sül el — `headerpanel/create_collage`
+            //: mért `mousedown`-ja. ⚠️ Nem mond ellent a jegy
+            //: táblázatának: ez a gomb a kollázs-PANELT NYITJA MEG
+            //: (nézetváltás), a „Kollázs létrehozása" művelet-gomb
+            //: a panelen belül marad felengedésre.
+            lenyomasra: true
             width: 29; height: 27
             Layout.preferredWidth: 29
             Layout.preferredHeight: 27
