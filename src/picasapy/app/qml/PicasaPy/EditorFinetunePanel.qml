@@ -68,26 +68,16 @@ ColumnLayout {
     // ⚠️ A SZÍN nem itt dől el: a `PicasaSlider` sávja ma semleges
     // (`Theme.chromeBg`), az eredetié kékes. Az a #2627 másik fele, és
     // az egész alkalmazás csúszkáit érinti — külön lépés.
-    readonly property int savVastagsag: 9
-    readonly property int fogantyuSzeles: 16
-    readonly property int fogantyuMagas: 26
-    readonly property int fogantyuSugar: 3
+    // #710: a mért `editslider`-geometria a közös `EditorSlider`-ben áll (a
+    // számok innen kerültek ki, hogy ne három panel karbantartsa őket).
 
-    // középre igazított csúszka-felirat (az eredetin is középen áll)
-    component SliderCaption: Label {
+    // középre igazított csúszka-felirat — a STÍLUS a közös
+    // `EditorSliderCaption`-ben van (ott áll a #2626 mérése is), itt csak a
+    // panel saját elhelyezése
+    component SliderCaption: EditorSliderCaption {
         Layout.fillWidth: false
         Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
         Layout.leftMargin: finetunePanel.csuszkaEltolas
-        horizontalAlignment: Text.AlignHCenter
-        font.pixelSize: Theme.fontSize - 1
-        // #2626: a csúszka-felirat a NORMÁL TINTA színét viszi, nem a
-        // másodlagos szürkét. Mérve a tulajdonos 2026-09-06 22:32-i A/B
-        // felvételén (`research/felirat-ki-bekapcsolva/`, a „Derítőfény"
-        // feliratra, azonos háttéren): az eredeti legsötétebb betű-képpontja
-        // 47 a 231-es háttéren (kontraszt 184), a miénk 122 a 225-ösön
-        // (kontraszt 103) — a `Theme.textGray` világos témán `#7a776f`,
-        // luminancia ~120, tehát pontosan ez a 122.
-        color: Theme.ink
     }
 
     // kis, négyzetes ikonos gomb (varázspálca / pipetta) — az eredetin
@@ -131,17 +121,13 @@ ColumnLayout {
 
     // --- Derítőfény -------------------------------------------------------
     SliderCaption { text: qsTr("Fill Light") }
-    PicasaSlider {
+    EditorSlider {
         id: finetuneFillSlider
         objectName: "finetuneFillSlider"
         Layout.fillWidth: false
         Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
         Layout.preferredHeight: finetunePanel.csuszkaMagassag
         Layout.leftMargin: finetunePanel.csuszkaEltolas
-        grooveThickness: finetunePanel.savVastagsag
-        handleWidth: finetunePanel.fogantyuSzeles
-        handleHeight: finetunePanel.fogantyuMagas
-        handleRadius: finetunePanel.fogantyuSugar
         from: 0; to: 1; value: 0
         // #337: a Gyakori javítások fülön lévő párjával közös állapot
         onValueChanged: panel.fillLightMoved(value)
@@ -158,17 +144,13 @@ ColumnLayout {
             spacing: 6
 
             SliderCaption { text: qsTr("Highlights") }
-            PicasaSlider {
+            EditorSlider {
                 id: finetuneHighlightsSlider
                 objectName: "finetuneHighlightsSlider"
                 Layout.fillWidth: false
                 Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
                 Layout.preferredHeight: finetunePanel.csuszkaMagassag
                 Layout.leftMargin: finetunePanel.csuszkaEltolas
-        grooveThickness: finetunePanel.savVastagsag
-        handleWidth: finetunePanel.fogantyuSzeles
-        handleHeight: finetunePanel.fogantyuMagas
-        handleRadius: finetunePanel.fogantyuSugar
                 // #551: a `filterdesc.xml` szerinti nyers paraméter-
                 // tartomány [0..0.48] — a mérés is pontosan ezt igazolta (a
                 // felső állásban a FEHÉRPONT 0,48-cal mozdul). A csúszka
@@ -181,17 +163,13 @@ ColumnLayout {
             }
 
             SliderCaption { text: qsTr("Shadows") }
-            PicasaSlider {
+            EditorSlider {
                 id: finetuneShadowsSlider
                 objectName: "finetuneShadowsSlider"
                 Layout.fillWidth: false
                 Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
                 Layout.preferredHeight: finetunePanel.csuszkaMagassag
                 Layout.leftMargin: finetunePanel.csuszkaEltolas
-        grooveThickness: finetunePanel.savVastagsag
-        handleWidth: finetunePanel.fogantyuSzeles
-        handleHeight: finetunePanel.fogantyuMagas
-        handleRadius: finetunePanel.fogantyuSugar
                 // #551: ld. a Kiemelések megjegyzését — itt a FEKETEPONT
                 // mozdul ugyanennyivel.
                 from: 0; to: 0.48; value: 0
@@ -213,17 +191,13 @@ ColumnLayout {
 
     // --- Színhőmérséklet --------------------------------------------------
     SliderCaption { text: qsTr("Color Temperature") }
-    PicasaSlider {
+    EditorSlider {
         id: finetuneTempSlider
         objectName: "finetuneTempSlider"
         Layout.fillWidth: false
         Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
         Layout.preferredHeight: finetunePanel.csuszkaMagassag
         Layout.leftMargin: finetunePanel.csuszkaEltolas
-        grooveThickness: finetunePanel.savVastagsag
-        handleWidth: finetunePanel.fogantyuSzeles
-        handleHeight: finetunePanel.fogantyuMagas
-        handleRadius: finetunePanel.fogantyuSugar
         from: -1; to: 1; value: 0
         onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
         onPressedChanged: if (!pressed) panel.emitFinetuneCommit()

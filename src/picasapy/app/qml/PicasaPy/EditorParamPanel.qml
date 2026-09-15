@@ -198,32 +198,26 @@ Flickable {
                 // kirajzolt geometriából mérhető: a doboz középpontja a
                 // panel középvonalán van. Hosszú felirat a rendelkezésre
                 // álló szélességig nőhet és tördelődik.
-                Label {
+                // #710: a felirat STÍLUSA a közös `EditorSliderCaption`-ből
+                // jön (ott áll a #2626 mérése is) — itt csak az elhelyezés.
+                // ⚠️ Ezzel a felirat a NORMÁL tintát kapja: eddig a
+                // `Theme.textGray` volt, amit a #2626 mérése épp elvetett, de
+                // a javítás akkor csak a másik két panelre került rá.
+                EditorSliderCaption {
                     objectName: "effectParamLabel" + paramRow.index
                     Layout.fillWidth: false
                     Layout.alignment: Qt.AlignHCenter
                     Layout.maximumWidth: paramRow.width
                     visible: paramRow.controlKind === "slider"
                     text: panel.paramLabel(paramRow.modelData.label)
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.pixelSize: Theme.fontSize - 1
-                    color: Theme.textGray
                 }
-                PicasaSlider {
+                // #700/#710: az eredeti `editslider` arányai — a mért
+                // számok a közös `EditorSlider`-ben állnak, egy helyen.
+                EditorSlider {
                     id: paramSlider
                     objectName: "effectParamSlider" + paramRow.index
                     visible: paramRow.controlKind === "slider"
                     Layout.fillWidth: true
-                    // #700: az eredeti `editslider` arányai — 9 képpontos
-                    // sín, 16×26-os ÁLLÓ, enyhén lekerekített fogantyú
-                    // (a bitképekből mérve, audit 7.5). A közös
-                    // `PicasaSlider` alapértéke (4 px-es sín, 14 px-es kerek
-                    // fogantyú) változatlan marad a többi csúszkánál.
-                    grooveThickness: 9
-                    handleWidth: 16
-                    handleHeight: 26
-                    handleRadius: 3
                     from: paramRow.modelData.minimum
                     to: paramRow.modelData.maximum
                     stepSize: paramRow.modelData.step
