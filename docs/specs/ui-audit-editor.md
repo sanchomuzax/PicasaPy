@@ -2975,3 +2975,63 @@ a fenti listával **egyeznek**.
 
 *Forrás: `referencia/tre-eroforrasok/editpanel.tre` (1455 sor), a fenti
 sorszámok mind onnan.*
+
+## ⛳ A 3. fül effektsora — a csempe-tábla adja, képernyőkép nélkül (2026-09-15, 309. kör, #3051)
+
+*Forrás: a csempe-tábla `0x00c7e5a0` (36 rekord × 12 bájt), újraolvasva; a
+feliratok `referencia/stringres-en-hu.tsv` `filter_<id>_label0` sorai; a
+`filterdesc.xml` `:1007` és `:1269`.*
+
+A #464 a 3. fül tartalmát az egyetlen fehér foltnak hagyta, és képernyőképet
+javasolt. **Nem kell:** a tábla, amit a 2026-08-16-i kör már kiolvasott,
+pontosan ezt adja meg — ez a szakasz **független újraolvasással** igazolja, és
+kiegészíti a feliratokkal.
+
+### 1. A tizenkét csempe, sorrendben
+
+| # | token | 2. token | angol | magyar |
+|---:|---|---|---|---|
+| 1 | `unsharp2` | `unsharp` | Sharpen | **Élesítés** |
+| 2 | `sepia` | — | Sepia | **Szépia** |
+| 3 | `bw` | — | B&W | **Fekete-fehér** |
+| 4 | `warm` | — | Warmify | **Melegítés** |
+| 5 | `PicnikGrain` | `grain` | Film Grain | **Filmszemcse** |
+| 6 | `PicnikTint` | `tint` | Tint | **Árnyalás** |
+| 7 | `sat` | — | Saturation | **Telítettség** |
+| 8 | `radblur` | — | Soft Focus | **Lágy fókusz** |
+| 9 | `glow2` | `glow` | Glow | **Ragyogás** |
+| 10 | `ansel` | — | Filtered B&W | **Szűrt FF** |
+| 11 | `radsat` | — | Focal B&W | **Fókuszos FF** |
+| 12 | `dir_tint` | `radtint` | Graduated Tint | **Színátmenet** |
+
+**Határ-kontroll:** a 37. rekord helyén már idegen adat áll
+(`us-ascii` / `iso-8859-1`), a 38.-on `utf-8` — a tábla tehát **pontosan 36
+rekord**, azaz 3 fül × 12 csempe, és az 1–12. a 3. fülé.
+
+### 2. ⛔ A #464 kilenc jelöltjéből KETTŐ egyáltalán nem csempe
+
+A jelöltlista feltevés volt („ezek nincsenek a 4–5. fülön"). A tábla 45
+tokenjéhez mérve:
+
+| jelölt | hol van valójában |
+|---|---|
+| `PicnikGrain`, `PicnikTint` | **a 3. fülön** (5. és 6. csempe) |
+| `NightVision` | a 4. fül `HeatMap` csempéjének 2. tokenje |
+| `Vignette`, `Matte` | az 5. fül 3. csempéje (`Vignette` + `Matte`) |
+| `PicnikFocalPixelate` | az 5. fül `Pixelate` csempéjének 2. tokenje |
+| `RoundedEdges` | az 5. fül `Border` csempéjének 2. tokenje |
+| **`LocalContrast`** | **NINCS a táblában** |
+| **`ReanimatedEyeColor`** | **NINCS a táblában** |
+
+Mindkét hiányzó szerepel a `filterdesc.xml`-ben (`:1007`, `:1269`,
+`mode="effect"`), és van honosított feliratuk (`Helyi kontraszt`,
+`Vámpírszem`) — a **csempe-táblában viszont nincsenek**, sem elsődleges, sem
+második tokenként. ⇒ **a szerkesztő egyik fülén sem érhetők el**; a
+`filters=` láncban viszont előfordulhatnak.
+
+### 3. ⛔ Amit ez NEM mond ki
+
+- **Miért** nincs csempéje a két szűrőnek (örökölt? más belépési pont?) —
+  nincs kimérve. A tábla csak a hiányt mutatja.
+- A **csempék rácsbeli helye** (sor/oszlop) nem a táblából jön: az a
+  `fx1`…`fx12` helyekhez rendelés, amit a 2026-08-16-i szakasz ír le.
