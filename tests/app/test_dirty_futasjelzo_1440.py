@@ -159,9 +159,12 @@ class TestAtfedoIrok:
         inditasok: list[str | None] = []
         eredeti_start = controller._start_background
 
-        def figyelt_start(worker, name=None):
+        # #2966: a `_start_background` `cancel=` kulcsszót is kaphat — a kém
+        # ezért MINDENT továbbad, különben a bővítés itt bukna el, nem a
+        # mért viselkedésen.
+        def figyelt_start(worker, name=None, **egyeb):
             inditasok.append(name)
-            return eredeti_start(worker, name=name)
+            return eredeti_start(worker, name=name, **egyeb)
 
         monkeypatch.setattr(controller, "_start_background", figyelt_start)
 
