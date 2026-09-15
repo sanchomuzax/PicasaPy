@@ -83,17 +83,19 @@ a Windows saját témamotorja rajzolta, tehát a bináris visszafejtése ezekre 
 számokra **elvileg sem** tud válaszolni — ott csak az van, hogy a program
 átadta a menüt a rendszernek.
 
-⇒ A hangolás (1. pont) forrása **nem** lehet a binárisból mért szám. Két út
-marad, és a jegynek ki kell mondania, melyiket választja:
+⇒ A hangolás (1. pont) forrása **nem** lehet a binárisból mért szám.
 
-* **referencia-képernyőkép** az eredeti futó Picasáról, nyitott helyi
-  menüvel — ebből a sorköz, a keret és a színek kimérhetők;
-* a **Windows XP dokumentált menü-metrikái** mint másodlagos forrás, kimondva,
-  hogy nem a mi példányunkról mértük.
+⚠️ És **képernyőkép sem oldja meg** — pontosan azért, amiért a döntés a
+rajzolt utat választotta. A natív menüt az AKTUÁLIS rendszer témamotorja
+rajzolja, tehát a ma futó Windowson készült kép a MAI Windows menüjét
+mutatná, nem az XP-ét. Aki a jegyet viszi, ne kérjen ilyen képernyőképet: a
+kérdésre nem válaszol.
 
-Amíg egyik sincs meg, a menü-QML hangolása **találgatás lenne** — és a
-mért geometria hiányát pótló „józan ész" szerinti érték pontosan az a hiba,
-amit a projekt tilt.
+Ami marad: a **Windows XP (Luna) dokumentált menü-metrikái** mint
+**másodlagos** forrás — és a jegyben, valamint a kódban ki kell mondani,
+hogy ez nem a saját példányunkról mért érték. Ez a projekt szokásos
+„mérve" fokozatánál gyengébb bizonyíték, és annak is kell látszania; a
+hiányt „józan ész" szerinti értékkel pótolni viszont tilos.
 
 ## Kapcsolódó
 
