@@ -2804,6 +2804,114 @@ két beállítás-készlettel: a `Preferences\makemovieres` és a
 `Preferences\facemakemovieres` külön-külön a normál- és az arc-film
 felbontását tárolja (`0x006193e0`).
 
+### 2.8/b A film FELBONTÁSA: hét tétel, két kulcs, két különböző alapérték (2026-09-15, 311. kör, #3155)
+
+*A 2.8 csak annyit mondott, hogy a `makemovieres` és a `facemakemovieres`
+„külön-külön" tárolja a felbontást. Ez a szakasz megadja, MIT tárol, MI az
+alapértéke, MIKOR melyiket olvassa, és hogy az egyiket SOHA nem írja.*
+
+#### A felbontás-tábla — `0x00c7db50`, hét rekord, 12 bájt egyenként
+
+| index | 16:9-jelző (`+0x00`) | szélesség (`+0x04`) | magasság (`+0x08`) | a legördülő felirata |
+|---:|---:|---:|---:|---|
+| 0 | 0 | 320 | 240 | 320x240 |
+| 1 | 0 | **640** | **480** | 640x480 |
+| 2 | 0 | 800 | 600 | 800x600 |
+| 3 | 0 | **1024** | **768** | 1024x768 |
+| 4 | 0 | 1600 | 1200 | 1600x1200 |
+| 5 | **1** | 1280 | 720 | 1280x720 (720p) |
+| 6 | **1** | 1920 | 1080 | 1920x1080 (1080p) |
+
+*Forrás: a tábla `0x00c7db50`-től; a rekord-felosztást a `0x008142d0`–`0x008142f1`
+bizonyítja (a három mezőt egymás után másolja a beállítás-objektum `+0x2a4`,
+`+0x2a8`, `+0x2ac` mezőjébe), a szélesség/magasság szerepét pedig a
+`0x00614b40` ciklus, amely PÁRBAN veti össze őket (`[eax-4]` a `+0x2a8`-cal,
+`[eax]` a `+0x2ac`-cal).*
+
+**Határ-kontroll:** a tábla pontosan **hét** rekord. A `0x00614b55`-ös ciklus
+felső határa `0x00c7dbac`, a `0x00616b0e`-esé `0x54` (= 84 bájt = 7 × 12), és
+a 8. rekord helyén már idegen adat áll (`0x3b23d70a` = 0,0025f).
+
+**Független megerősítés a szövegtárból:** a `CMakeMoviePanel::size0` …
+`size6` sorok pontosan ezt a hét tételt adják, ugyanebben a sorrendben
+(`stringres-en-hu.tsv`) ⇒ **a beállítás értéke a fenti tábla INDEXE**, nem
+képpontszám. (A `CMakeMovie::size0`…`size4` egy MÁSIK, ötös lista — nem ez.)
+
+#### A két kulcs alapértéke — binárisból
+
+```
+0x00616b19  cmp byte [panel+0x4f0], 0
+0x00616b1f  jne 0x00616b42                  ; ID_FACES     -> arc-ág
+0x00616b21  cmp byte [panel+0x4f1], 0
+0x00616b27  jne 0x00616b42                  ; ID_FACESRANDOM -> arc-ág
+            ; NORMÁL film:
+0x00616b29  push 0x00c9c598                 ; "makemovieres"
+0x00616b37  mov dword [esp+0x74], 1         ; ALAPÉRTÉK = 1  -> 640x480
+            ; ARC-film:
+0x00616b42  push 0x00c9c584                 ; "facemakemovieres"
+0x00616b50  mov dword [esp+0x74], 3         ; ALAPÉRTÉK = 3  -> 1024x768
+0x00616b5f  call 0x00407a20                 ; GetPreference
+```
+
+**Kontroll-mérés az alapérték-konvencióra:** ugyanez az alak áll a már
+dokumentált `CMakeFaceMoviePanel::askapplyconfirm` olvasásánál
+(`0x0061dfbe mov dword [esp+0x2c], ebx` = 0, majd `0x0061dfc2 call 0x00407a20`),
+ahol az alapérték a 2.5/b szerint **0**. A `lea ecx, [esp+…]` ugyanarra a
+rekeszre mutat, mint a beírt érték — a két veremcím a közbeeső `push`-okkal
+együtt számolva azonos. A konvenció tehát igazolt.
+
+⇒ **Az arc-film alapból 1024×768, a normál film alapból 640×480.**
+
+#### Mikor melyik kulcs — a két jelzőt a MENÜPARANCS állítja be
+
+```
+0x0057cc61  cmp ebp, 0x9d59                 ; ID_FACES
+0x0057cc69  mov byte [panel+0x4f0], 1
+0x0057cc72  cmp ebp, 0x9d5a                 ; ID_FACESRANDOM
+0x0057cc7a  mov byte [panel+0x4f1], 1
+```
+
+A két parancsazonosító a `picasa-arcfelismeres.md` táblájából származik
+(`eMenuCreateMovie::ID_FACES` = **0x9d59**, `ID_FACESRANDOM` = **0x9d5a**) ⇒
+
+| jelző | jelentése |
+|---|---|
+| `panel+0x4f0` | a panel **„A kijelölésben lévő arcokból…"**-ként nyílt |
+| `panel+0x4f1` | a panel **„Az Emberek albumból…"**-ként nyílt |
+| `panel+0x4f3` | származtatott „ez arc-film" jelző (`0x0061823c`) |
+
+A panel felépítésekor ugyanez a pár dönti el a panel-fajta kódját is:
+`+0x4f0` → **5**, `+0x4f1` → **6** (`0x00618213`, `0x00618223`), és a 7-es
+fajtánál a `0x00618270` maga kapcsolja be a `+0x4f0`-t.
+
+#### ⛔ A `facemakemovieres`-nek NINCS írója
+
+A `"facemakemovieres"` sztring címére (`0x00c9c584`) a teljes `.text`-ben
+**pontosan egy** hivatkozás van: a fenti OLVASÁS (`0x00616b43`). A
+`"makemovieres"` (`0x00c9c598`) ezzel szemben **kettő**: az olvasás
+(`0x00616b2a`) és egy ÍRÁS — a `0x00619469`-es `SetPreference` (`0x00401900`),
+amely a kiválasztott indexet menti (`0x00619431`, `−1` esetén **1**-et:
+`0x00619437`).
+
+Ez indextől független pásztázás (4 bájtos mutató a nyers képben), és a
+**kontroll-pozitív maga a `makemovieres`**, amelyre ugyanez a módszer megtalálja
+az írót is. ⇒ **Az eredeti Picasa az arc-film felbontását nem menti vissza**:
+a legördülőn beállított érték a panel bezárásával elvész, a következő
+megnyitás újra az 1024×768-at kapja.
+
+**Termékre:** ha nálunk a felhasználó át tudja állítani az arc-film
+felbontását, döntsük el kimondva, hogy az eredeti (nem mentő) viselkedést
+másoljuk-e — ez nem ízléskérdés, hanem mért eltérés.
+
+#### Ami NYITVA marad
+
+A tábla első mezőjének (`+0x00`) a NEVE. Értéke **1** pontosan a két 16:9-es
+tételnél és **0** az öt 4:3-asnál, és a `0x008142d0` a beállítás-objektum
+`+0x2a4` mezőjébe másolja — de a `+0x2a4` eltolás a binárisban több osztályban
+is szerepel (a `0x006191e9` például egy egészen más objektumra ír ugyanide),
+ezért az olvasóját ez a kör nem szűrte le. A megszerzés útja: a `+0x4bc`
+alobjektum osztályának RTTI-je, és azon belül a `+0x2a4` olvasói.
+
 ## 3. A Létrehozás menü többi tétele
 
 | menüpont | ID | mit tudunk |
