@@ -76,6 +76,29 @@ Rectangle {
     property bool treeViewMode:
         (pane.hierarchyController && pane.hierarchyController.treeView !== undefined)
             ? pane.hierarchyController.treeView : false
+
+    //: #1407 (spec 4.2 / 4.5/c): a Mappák gyűjtemény fejléce a HASÁB
+    //: GYÖKERÉT nevezi meg — az eredetiben pontosan KÉT rögzített
+    //: erőforrás-szöveg van rá (`ViewRoot::AllFolders`, `ViewRoot::All`), a
+    //: három rendszermappa pedig a feloldott mappa SAJÁT nevét mutatja
+    //: (`0x00575483  mov esi, eax`), amihez nincs erőforrás-szöveg.
+    //:
+    //: ⚠️ A két rögzített szöveget SZÁNDÉKOSAN itt fordítjuk, nem a
+    //: vezérlőben: a `FolderHierarchyController` nem tölt be fordítást, a
+    //: `rootLabel` property-je a mért leképezés gépi tanúja (a próbái azt
+    //: olvassák). A mappa-név viszont onnan jön — az nem fordítható.
+    readonly property string folderRootLabel: {
+        var token = (pane.hierarchyController
+                     && pane.hierarchyController.viewRoot !== undefined)
+                    ? pane.hierarchyController.viewRoot : "flat"
+        if (token === "flat")
+            return qsTr("Default View")
+        if (token === "all" || token === "watched")
+            return qsTr("My Computer")
+        return (pane.hierarchyController
+                && pane.hierarchyController.rootLabel !== undefined)
+               ? pane.hierarchyController.rootLabel : qsTr("My Computer")
+    }
     // a fa sorainak száma — a magasságszámításhoz (#305 null-őrrel)
     //: #2049: „Indexképek megjelenítése a könyvtárban" — ugyanaz a
     //: kapcsoló, mint a `Nézet ▸ Mappanézet` menü tételéé. A
@@ -596,7 +619,10 @@ Rectangle {
 
             CollectionHeader {
                 Layout.fillWidth: true
-                label: qsTr("Folders")
+                //: #1407: a fejléc a GYÖKERET nevezi meg, nem a gyűjteményt —
+                //: az eredeti hasábban is ez a felirat áll itt. A darabszám
+                //: és a csukhatóság változatlan.
+                label: pane.folderRootLabel
                 itemCount: folderList.model ? folderList.model.folderCount : 0
                 headerText: pane.searchActive
                             ? qsTr("Search results for \"%1\" (%2)")

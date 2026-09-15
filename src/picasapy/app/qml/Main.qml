@@ -1586,6 +1586,24 @@ ApplicationWindow {
     // „minden küldéskor kérdezz" mód kérdése, az `emailFailed` a hibáé —
     // ez utóbbinak eddig SEHOL nem volt kezelője, tehát a hibaüzenet
     // („nincs levelezőprogram") némán elveszett.
+    //: #1407: a három rendszermappa-tétel (Képek / Dokumentumok / Asztal)
+    //: NEM gyökeret vált, hanem a teljes fára váltás UTÁN felfedi és
+    //: kijelöli a mappát (spec 4.5/b: `push "all"` mindhárom ágban). A
+    //: felfedés a hierarchia-vezérlő dolga, a KIJELÖLÉS a bekötőé — ezért
+    //: jön ide a jelzés.
+    //:
+    //: ⚠️ Feloldhatatlan mappánál a vezérlő NEM jelez (spec 4.6: visszaesés
+    //: a Sajátgép-gyökérre, nem hibaüzenet), tehát itt nincs hibaág.
+    Connections {
+        target: (typeof folderHierarchyController !== "undefined")
+                ? folderHierarchyController : null
+        function onRootFolderRevealed(utvonal) {
+            folderHierarchyController.revealPath(utvonal)
+            if (typeof controller !== "undefined" && controller)
+                controller.selectFolder(utvonal)
+        }
+    }
+
     Connections {
         target: (typeof emailController !== "undefined")
                 ? emailController : null
