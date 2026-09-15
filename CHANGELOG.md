@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.486] – 2026-09-16
+
+### Javítva
+
+- **A kettős nézet elrendezés-váltói azonnal váltanak** (#885): az „egy kép",
+  „két különböző kép" és „ugyanaz kétszer" szegmens lenyomásra hat, nem a gomb
+  felengedésére — ahogy az eredeti Picasa is. A két felcserélő gomb
+  szándékosan maradt felengedésre: a mérés szerint azokon az eredetiben sincs
+  azonnali kapcsolás.
+
 ## [0.8.485] – 2026-09-15
 
 ### Javítva
