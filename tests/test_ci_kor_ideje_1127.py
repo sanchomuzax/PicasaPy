@@ -123,6 +123,30 @@ class TestFelosztas:
         assert min(terhek) > 0
         assert max(terhek) / min(terhek) < 2.0, f"egyenetlen darabok: {terhek}"
 
+    def test_a_mert_tabla_LEFEDI_az_egysegeket(self):
+        """#3117: a tábla ismerje a futtatandó egységek túlnyomó részét.
+
+        A hiányzó egységek a MEDIÁNT kapják — ha ez a többségre igaz, a
+        „mért futásidők szerinti" kiosztás valójában találgatás, és a
+        `test_a_darabok_kiegyensulyozottak` is **vakon** zöld marad: az a
+        saját (hiányos) táblája szerint számol, nem a valódi idők szerint.
+
+        Mérve (2026-09-15): a tábla 271 bejegyzést tartalmazott **659**
+        egységre — 41% lefedettség. A tényleges windows-terhelés így
+        1348/922/1008/937 mp lett (22,5 perc, 1,46× szórás) a becsült
+        1123/1123/1123/1123 helyett."""
+        run_tests, egysegek = self._egysegek()
+        idok = run_tests._mert_idok()
+        if not idok:
+            pytest.skip("nincs mért futásidő-térkép")
+        ismert = sum(1 for nev in egysegek if nev in idok)
+        arany = ismert / len(egysegek)
+        assert arany >= 0.9, (
+            f"a futásidő-tábla csak az egységek {arany:.0%}-át ismeri "
+            f"({ismert}/{len(egysegek)}) — a többi mediánt kap, és a "
+            "kiegyensúlyozás elveszti az értelmét (#3117)"
+        )
+
     def test_egy_darab_eseten_MINDEN_fut(self):
         """`--shard 1/1` (és a hiányzó kapcsoló) a teljes készletet adja."""
         run_tests, egysegek = self._egysegek()
