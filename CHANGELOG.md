@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.485] – 2026-09-15
+
+### Javítva
+
+- **A tálcasáv nézet- és panelnyitó gombjai azonnal hatnak** (#885): a
+  csillag, a Kollázs, a Film és a négy oldalsó panel-váltó mostantól
+  **lenyomásra** sül el, nem a gomb felengedésére — ahogy az eredeti Picasa
+  is teszi ezeken a helyeken. A műveleteket végző gombok (Albumba, tálca
+  ürítése) szándékosan maradtak felengedésre: ott az „lenyomtam, de
+  elhúztam, mégsem" visszavonhatóság a fontos.
+
 ## [0.8.484] – 2026-09-15
 
 ### Javítva

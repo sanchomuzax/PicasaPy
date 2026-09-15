@@ -1077,6 +1077,9 @@ Column {
                         //: a szülő-lánc eltört. Egy név stabilabb, mint egy
                         //: hierarchia-feltevés.
                         objectName: "trayStarButton"
+                        //: #885: LENYOMÁSRA sül el — a `headerpanel/select_star`
+                        //: mért `Property mousedown 1`-e.
+                        lenyomasra: true
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
@@ -1285,6 +1288,12 @@ Column {
                             required property var modelData
                             required property int index
                             objectName: "trayPanelToggle_" + modelData.nev
+                            //: #885: LENYOMÁSRA sül el — mind a négy
+                            //: (`properties_toggle`, `tags_toggle`,
+                            //: `places_toggle`, `people_toggle`) mért
+                            //: `Property mousedown 1`-et visel: panelt nyit,
+                            //: tehát azonnal hat.
+                            lenyomasra: true
                             width: 60
                             height: 24
                             //: a szegmens-szerep: a szélsők lekerekítve, a
@@ -1913,6 +1922,9 @@ Column {
                     TrayActionButton {
                         id: trayCollageBtn
                         objectName: "trayCollageButton"
+                        //: #885: LENYOMÁSRA sül el — a `headerpanel/create_collage`
+                        //: mért `Property mousedown 1`-e.
+                        lenyomasra: true
                         anchors.fill: parent
                         text: qsTr("Collage")
                         iconSource: "icons/collage.svg"
@@ -1938,6 +1950,9 @@ Column {
                     TrayActionButton {
                         id: trayMovieBtn
                         objectName: "trayMovieButton"
+                        //: #885: LENYOMÁSRA sül el — a `headerpanel/create_movie`
+                        //: mért `Property mousedown 1`-e.
+                        lenyomasra: true
                         anchors.fill: parent
                         iconSource: "icons/movie.svg"
                         iconObjectName: "trayMovieIcon"
