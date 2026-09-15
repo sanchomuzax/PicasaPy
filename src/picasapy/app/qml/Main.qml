@@ -2722,13 +2722,26 @@ ApplicationWindow {
 
     //: #2966: a megszakítás megerősítése. Az eredeti címsora „Want to
     //: Cancel?" volt — azt NEM vesszük át, a miénk a műveletről szól.
-    ConfirmDialog {
-        objectName: "activityCancelConfirm"
+    //: #1719/#1720: halasztott példányosítás — a párbeszéd csak az első
+    //: megszakítás-kattintáskor épül fel.
+    DeferredDialog {
         id: activityCancelConfirm
-        namePrefix: "activityCancel"
-        title: qsTr("Stop the background operation")
-        message: qsTr("Do you want to stop the operation running in the background?")
-        onConfirmed: controller.cancelActivity()
+        objectName: "activityCancelConfirmLoader"
+        anchors.fill: parent
+        function ask() {
+            //: a `decisionKey` SZÁNDÉKOSAN üres: a futó munka leállítását
+            //: nem lehet „ne kérdezze újra"-val elnyomni
+            ensure().ask("", qsTr(
+                "Do you want to stop the operation running in the background?"))
+        }
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "activityCancelConfirm"
+                namePrefix: "activityCancel"
+                title: qsTr("Stop the background operation")
+                onConfirmed: controller.cancelActivity()
+            }
+        }
     }
 
     // #425: lebegő „Csoportos szerkesztés" folyamat-panel — az

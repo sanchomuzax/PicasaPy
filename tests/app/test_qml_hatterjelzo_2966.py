@@ -123,9 +123,12 @@ class TestHatterjelzo:
         assert hivasok == ["leall"]
         nyilvantarto.end()
 
-    def test_a_megerosito_parbeszed_letezik_es_nem_modalisan_all(self, qml_app, qt_app):
+    def test_a_megerosito_parbeszed_HALASZTVA_epul(self, qml_app, qt_app):
         """A gomb NEM állít le azonnal: az eredetiben megerősítő kérdés
-        jött. A párbeszéd legyen ott, és alapból zárva."""
+        jött. A párbeszéd a #1719/#1720 szerint HALASZTOTT — induláskor
+        csak a betöltője áll ott, maga a dialógus még nincs felépítve."""
         window, _controller, _lib, _engine = qml_app
-        parbeszed = _gyerek(window, "activityCancelConfirm")
-        assert parbeszed.property("visible") is False
+        _gyerek(window, "activityCancelConfirmLoader")  # a betöltő ott van
+        assert window.findChild(QObject, "activityCancelConfirm") is None, (
+            "a párbeszéd MINDEN induláskor felépül — halasztani kell (#1719)"
+        )
