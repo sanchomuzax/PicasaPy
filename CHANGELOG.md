@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.472] – 2026-09-15
+
+### Javítva
+
+- **A biztonsági mentés ablakában az eredeti Picasa feliratai állnak**
+  (#3189). Eddig saját fogalmazású szövegek voltak: a névmező most
+  „Mentési készlet”, az új készlet „Saját mentési készlet” néven indul
+  (az eredeti sem üres mezővel kezd), a szerkesztést a „Módosítás” gomb
+  zárja, a végén pedig „A mentés elkészült” áll.
+
 ## [0.8.471] – 2026-09-15
 
 ### Hozzáadva

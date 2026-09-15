@@ -61,7 +61,11 @@ Window {
 
     function ujKeszletUrlap() {
         backupWindow.szerkesztettId = -1
-        backupWindow.urlapNev = ""
+        //: #3189: az eredeti NEM üres mezővel indít — a panel feltöltője
+        //: (`0x006706d0`) a szövegtárból veszi az alapnevet
+        //: (`il_BurnPanel::bksetname`, „My Backup Set" /
+        //: „Saját mentési készlet"), ld. `biztonsagi-mentes.md` 9.
+        backupWindow.urlapNev = qsTr("My Backup Set")
         backupWindow.urlapCel = ""
         backupWindow.urlapSzuro = "minden"
         backupWindow.szerkesztes = true
@@ -102,7 +106,10 @@ Window {
             backupWindow.fut = false
             backupWindow.uzenet = darab === 0
                 ? qsTr("Everything was already backed up.")
-                : qsTr("Backup complete: %1 file(s).").arg(darab)
+                //: #3189: a mért záró üzenet `il_BurnPanel::BackupCopy::3`
+                //: („Backup Complete" / „A mentés elkészült"). A darabszám
+                //: a másolás közbeni sorban látszik, ezért itt nem kell.
+                : qsTr("Backup Complete")
         }
         //: #3009: a másolás háttérszálon megy, és végig beszél — az
         //: eredeti is („Copying (%d/%d) files").
@@ -212,8 +219,11 @@ Window {
             columnSpacing: 8
             rowSpacing: 8
 
+            //: #3189: a MÉRT felirat — `publish/label_backupname`
+            //: (`publish_text.tre:93`, „Backup Set" / „Mentési készlet").
+            //: A korábbi „Name:" saját fogalmazás volt.
             Text {
-                text: qsTr("Name:")
+                text: qsTr("Backup Set")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -361,7 +371,12 @@ Window {
             PicasaButton {
                 objectName: "backupFormSave"
                 visible: backupWindow.szerkesztes
-                text: qsTr("OK")
+                //: #3189: SZERKESZTÉSKOR a mért felirat „Change"
+                //: (`il_NewBkDialog::EditOKButton` / „Módosítás"); ÚJ
+                //: készletnél az eredetinek nincs mért felirata, ott
+                //: marad az „OK".
+                text: backupWindow.szerkesztettId >= 0
+                    ? qsTr("Change") : qsTr("OK")
                 onClicked: backupWindow.mentsdAzUrlapot()
             }
             PicasaButton {

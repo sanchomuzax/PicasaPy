@@ -9581,9 +9581,14 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Másolás: %1 fájl… (%2 CD vagy %3 DVD)</translation>
     </message>
     <!-- #3009: a másolás háttérszálon fut, és végig beszél -->
+    <!-- #3189: a MÉRT magyar szöveg `il_BurnPanel::BackupCopy::1`
+         („Copying (%1$d/%2$d) files" / „Fájlok másolása (%2$d/%1$d)").
+         ⚠️ Az eredeti magyar sora MEGCSERÉLI a két argumentumot, tehát
+         „kész/összes" helyett „összes/kész"-t írna ki — ezt NEM vesszük
+         át, mert az az eredeti hibája, nem a szöveg jelentése. -->
     <message>
         <source>Copying (%1/%2) files</source>
-        <translation>Másolás (%1/%2) fájl</translation>
+        <translation>Fájlok másolása (%1/%2)</translation>
     </message>
     <message>
         <source>Stop</source>
@@ -9684,6 +9689,24 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     <message>
         <source>Close</source>
         <translation>Bezárás</translation>
+    </message>
+    <!-- #3189: a MÉRT feliratok (`docs/specs/ajandek-cd-kimenet.md` 13.2,
+         `docs/specs/biztonsagi-mentes.md` 9.) -->
+    <message>
+        <source>Backup Set</source>
+        <translation>Mentési készlet</translation>
+    </message>
+    <message>
+        <source>My Backup Set</source>
+        <translation>Saját mentési készlet</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <translation>Módosítás</translation>
+    </message>
+    <message>
+        <source>Backup Complete</source>
+        <translation>A mentés elkészült</translation>
     </message>
 </context>
 </TS>
