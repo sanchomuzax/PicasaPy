@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.464] – 2026-09-15
+
+### Javítva
+
+- **Kevesebb véletlenszerű összeomlás bezáráskor** (#1457). Ha egy
+  háttérmunka (például a mappák figyelése) akkor ért véget, amikor a
+  program ablakait már lebontottuk, a munka befejezését jelző üzenet egy
+  megszűnt vezérlőnek szólt — és ez a hiba a program leállása közben az
+  egész folyamatot le tudta lőni. Mostantól a program észreveszi, hogy a
+  vezérlő már nincs meg, és csendben továbblép. A felhasználó ebből
+  annyit lát, hogy bezáráskor nem omlik össze a program.
+
 ## [0.8.463] – 2026-09-15
 
 ### Javítva

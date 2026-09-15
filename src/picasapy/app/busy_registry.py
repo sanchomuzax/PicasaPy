@@ -38,6 +38,7 @@ szükség Lock-ra — csak a GUI-szál nyúl a `_active`/`_visible`/időzítő
 
 from __future__ import annotations
 
+import shiboken6
 from PySide6.QtCore import QObject, QTimer, Signal
 
 #: Küszöb (ms): rövid műveletnél NE villanjon fel a csík. Néhány száz
@@ -105,14 +106,49 @@ class AppBusyRegistry(QObject):
 
     def begin(self) -> None:
         """Egy háttérmunka indul. BÁRMELY szálról hívható."""
-        self._beginRequested.emit()
+        self._emit_ha_el(self._beginRequested)
 
     def end(self) -> None:
         """Egy háttérmunka véget ért — HIBÁVAL leálló munkánál is hívandó
         (a hívó felelőssége `try`/`finally`-ben zárni, ld.
         `BackgroundWorkerMixin._start_background`), különben a számláló
         soha nem éri el a nullát, és a csík örökre pörögne."""
-        self._endRequested.emit()
+        self._emit_ha_el(self._endRequested)
+
+    def _emit_ha_el(self, jelzes: object) -> None:
+        """A belső kérés-jelzés kibocsátása, ha a C++ oldal MÉG LÉTEZIK (#1457).
+
+        ⛔ **Ezt mérés kényszerítette ki, nem óvatosság.** A 2026-09-15-i
+        CI-körökben (`34927349614` ubuntu 3/4 és még tizenöt körben) a
+        dirty-szinkron háttérszál így halt meg, a tesztek UTÁN:
+
+            File ".../worker_thread.py", line 277, in _run
+                registry.end()
+            File ".../busy_registry.py", line 115, in end
+                self._endRequested.emit()
+            RuntimeError: Signal source has been deleted
+
+        A lánc: a teszt-teardown lebontja a `QApplication`-t, ami minden
+        gyermek `QObject`-jét törli; a Python-példány viszont ÉL (a
+        `reset_app_busy_registry` szándékosan tartja életben, #519/#430),
+        tehát a háttérszál még hívhatja. A `Signal.emit()` ilyenkor
+        `RuntimeError`-t dob, a `threading` excepthookja a `stderr`-re ír,
+        és ha ez az értelmező leállása közben történik, a CPython
+        ABORTÁL (windowson `0xC0000409`).
+
+        ⚠️ Ez **nem elnémítás**: ha a C++ oldal megszűnt, nincs többé
+        felület, amit a jelzés frissíthetne, és a számláló is a példánnyal
+        együtt szűnt meg — a kibocsátás így tárgytalan, nem elmaradt.
+        A `RuntimeError` elkapása a versenyhelyzet miatt kell: az
+        `isValid` és az `emit` közt is megszűnhet az objektum.
+        """
+        if not shiboken6.isValid(self):
+            return
+        try:
+            jelzes.emit()
+        except RuntimeError:
+            # az isValid óta szűnt meg — ld. fent
+            return
 
     # -- belső: MINDIG a regisztrátum szálán fut (ld. modul docstring) ------
 
