@@ -49,6 +49,7 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
 )
+from picasapy.render.chain_geometry import keret_geometria, tartalom_elhelyezes
 from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
 from picasapy.render.directional import (
     apply_dir_brite,
@@ -871,6 +872,15 @@ def apply_filters(
             )
             skipped.append(crop_op.name)
     # keretek legvégül, a már kivágott képre (#330)
+    #
+    # #3166: itt még a VÁGOTT, keret nélküli méret áll — a szerkesztő átfedő
+    # rétegei (vágás-téglalap, arckeretek) pontosan ehhez a téglalaphoz
+    # tartoznak, a keretezett kimenetben viszont már nem ez a teljes kép.
+    # Ezért a keret-ág ELŐTT jegyezzük meg a méretet, és a TÉNYLEGESEN
+    # alkalmazott (csonkolt paraméterű, hibára nem futott) keret-opokból
+    # számoljuk a helyet.
+    elokeret_h, elokeret_w = result.shape[:2] if result is not None else (0, 0)
+    alkalmazott_keretek: list[FilterOp] = []
     for op in frame_ops:
         handler = _HANDLERS[op.name.casefold()]
         op, op_warnings = validate_and_clamp_op(op)
@@ -880,6 +890,15 @@ def apply_filters(
         except Exception:
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
+            continue
+        alkalmazott_keretek.append(op)
+    content_placement = None
+    if alkalmazott_keretek and elokeret_w and elokeret_h:
+        content_placement = tartalom_elhelyezes(
+            keret_geometria(tuple(alkalmazott_keretek), elokeret_w, elokeret_h),
+            elokeret_w,
+            elokeret_h,
+        )
     all_keys = [op.name for op in ops]
     full_res, slow, resizes = chain_flags(all_keys)
     return ChainReport(
@@ -890,4 +909,5 @@ def apply_filters(
         resizes=resizes,
         range_warnings=tuple(range_warnings),
         legacy_warnings=tuple(legacy_warnings),
+        content_placement=content_placement,
     )
