@@ -6388,3 +6388,82 @@ felé mutat (a `crop64` valódi lánc-tétel, saját osztály-viselkedéssel), d
 az 1. kör állítása **golden-exportokból** jött, tehát nem söpörhető félre
 mérés nélkül. **A feloldás a #3169 hatóköre**; addig egyik lapot sem
 írtam át.
+
+---
+
+## ⛳ A ragyogás-sugár: a hiba a hiányzó **/2**, nem a 255-ös korlát (2026-09-15, #3158)
+
+*Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml` `:788`,
+`:975`, `:1048`, `:1066`, `:1082`, `:1084`, `:1136`, `:1394`; a saját
+`src/picasapy/render/glimmer_tone.py:50–60` és `glimmer_ops.py:530–553`;
+a `GlowImageOperation` attribútum-olvasója `0x00bb8c40`.*
+
+### 1. ⛔ NEM hat használó van, hanem NYOLC sor HÉT szűrőben — és a képlet NEM közös
+
+| sor | szűrő | `xblur` | osztó |
+|---|---|---|---|
+| 788 | `Comicize` | `35*.02*max(W,H)/2` | **/2** |
+| 975 | **`Holga`** | `.5*max(W,H)/2` · `yblur` = `.4*…/2` | **/2**, és **x ≠ y** |
+| 1048 | **`Lomo`** | `35*.02*max(W,H)/2` | **/2** |
+| 1066 | `Matte` | `_sldrBlur.value*.02*max(W,H)/4` | **/4** |
+| 1082 | `MuseumMatte` | `2*.02*max(W,H)/4` | **/4** |
+| 1084 | `MuseumMatte` | `2*.02*max(W,H)/4` | **/4** |
+| 1136 | `NightVision` | `35*.02*max(W,H)/3` | **/3** |
+| 1394 | `Vignette` | `_sldrBlur.value*.02*max(W,H)/4` | **/4** |
+
+Két dolog, amit ez azonnal kimond:
+
+* az osztó **három különböző** érték (`/2`, `/3`, `/4`) ⇒ a „közös
+  sugár-korlát" ötlete már a leírás szintjén idegen a szerkezettől;
+* a **`Holga` képlete más alakú** (`.5`, nincs benne `35` és `.02`), és ez az
+  **egyetlen anizotrop** ragyogás (`xblur` ≠ `yblur`).
+
+### 2. ⭐ A `σ = xblur / 2` szabály HÁROM független mérésre illeszkedik
+
+A saját `glimmer_tone.py:50–60` már kimondja: *„a Flash-örökségű
+`blurX`/`blurY` és a szigma között ez a 2-es szorzó ül"* — de a kód ezt
+**csak a Vignette-nél** alkalmazza (`VIGNETTE_RADIUS_FACTOR = 0.02/8`, azaz
+`.02*max/4` **/2**-vel), a Lomónál/Holgánál/NightVisionnél nem: ott a
+képlet értéke **közvetlenül σ-ként** megy be, `clamp_glow_radius`-szal
+levágva.
+
+2560 × 1702-es képen (a `referencia/lomo/` mérőképe):
+
+| effekt | `xblur` | `xblur/2` | a MÉRT optimum | forrás |
+|---|---:|---:|---:|---|
+| **Lomo** | 896 | **448** | **450** | #2982 (két független mérőszám) |
+| **Vignette** Blur = 35 | 448 | **224** | **≈220** | `glimmer_tone.py:50` |
+| **Vignette** Blur = 50 | 640 | **320** | **≈310–320** | `glimmer_tone.py:51` |
+| Holga | 640 | 320 | 255 | #2982 — ⚠️ ld. lent |
+| NightVision | 597 | 299 | *nincs mérve* | — |
+
+⇒ **Három, egymástól független illesztés (450 · 220 · 320) mind a `/2`-t
+adja.** A Lomónál az eltérés 0,4 % (448 vs 450).
+
+⚠️ **A Holga kivétel, és ennek megvan az oka:** a #2982 szerint ott a
+sugárprofil nullátmenete **0,344-nél telítődik**, a mért 0,447-et nem éri
+el — vagyis a láncnak más eleme (AutoFix, tint, kontraszt) dominál, tehát a
+ΔE-optimum ott **nem tiszta σ-mérés**. Ezt nem lehet a `/2` elleni
+bizonyítékként olvasni.
+
+### 3. Ebből következik, mi a 255-ös korlát VALÓJÁBAN
+
+A `GLOW_RADIUS_MAX = 255` a #504-ben azért javított a Lomón (41,8 → 9,0),
+mert a **896-os, kétszer akkora** értéket vágta le — a 255 véletlenül közel
+esett a helyes 448-hoz *képest* a 896-nál. A korlát tehát a hiányzó `/2`
+**tünetét** kezelte, nem az okát.
+
+⇒ A helyes lépés nem a korlát átállítása (azt a jegy kifejezetten tiltja),
+hanem **a `/2` következetes alkalmazása minden használónál**, és utána
+újramérés.
+
+### 4. ⛔ Amit ez a kör NEM döntött el
+
+* **Hol alkalmazódik a Flash 0–255-ös korlát a binárisban.** A
+  `GlowImageOperation` attribútum-olvasója (`0x00bb8c40`) az `xblur`/`yblur`
+  értékét **nyersen** teszi a `[this+0x34]` / `[this+0x3c]` mezőbe —
+  **ott nincs vágás**. A futtató út (`0x00bb8e10` → `0x00bb8f70`, 2579 b)
+  első átnézése sem adott sugár-korlát konstanst. Nyitott.
+* A `NightVision` és a `Matte` σ-ja **nincs mérve** — a `/2` bevezetése
+  előtt mind a hét használót végig kell mérni (a jegy ötödik „Kész, ha"
+  pontja).
