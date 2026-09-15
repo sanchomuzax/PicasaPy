@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.477] – 2026-09-15
+
+### Javítva
+
+- **A kollázs Klipek lapján nem lóg ki a „–” gomb** (#3201). A lap 10
+  képponttal keskenyebb volt a kelleténél, ezért a klipek eltávolítására
+  szolgáló gomb jobb széle túlnyúlt a lap szélén. A gépi
+  elrendezés-ellenőr találta meg (#656).
+
 ## [0.8.476] – 2026-09-15
 
 ### Javítva

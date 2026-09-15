@@ -288,7 +288,7 @@ class TestValosSzerkesztoPanelEszkozModban:
 # | panel | vezérlő nélkül | a VALÓDI méret | honnan |
 # |---|---|---|---|
 # | `CollageSettingsTab` | 0 figyelmeztetés | **266 × 351** | `CollagePanel.qml:169` |
-# | `CollageClipsTab` | 0 figyelmeztetés | **256 × 352** | `CollagePanel.qml:181` |
+# | `CollageClipsTab` | 0 figyelmeztetés | **266 × 352** | `CollagePanel.qml:181` (#3201 előtt 256) |
 # | `CollagePanelTabBar` | 0 figyelmeztetés | **276** széles | a `columnWidth` |
 #
 # A méretek a panelben KÉZZEL beírt, mért értékek (a bal oszlop
@@ -303,7 +303,7 @@ class TestValosSzerkesztoPanelEszkozModban:
 # `find_overflows` megy.
 _KOLLAZS_LAPOK = [
     ("CollageSettingsTab", 266, 351),
-    ("CollageClipsTab", 256, 352),
+    ("CollageClipsTab", 266, 352),
     ("CollagePanelTabBar", 276, 30),
 ]
 
