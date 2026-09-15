@@ -67,6 +67,7 @@ from picasapy.render.tinting import (
     apply_tint,
     parse_rgb_hex,
 )
+from picasapy.render.native_colortemp import apply_native_colortemp
 from picasapy.render.tone import apply_fill, apply_finetune2, parse_neutral_argb
 
 _log = logging.getLogger(__name__)
@@ -287,18 +288,48 @@ def _finetune_float(op: FilterOp, index: int) -> float:
 def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     """finetune/finetune2 — a hiányzó paraméterek semlegesek.
 
-    (A v1 p1/fill-je mérten azonos a v2-ével; a v1 színhő-skálája eltér,
-    ott a v2 modellje közelítésként fut.)
+    A Derítőfény/Csúcsfények/Árnyékok ág a két változatban AZONOS (#879:
+    mindkettő ugyanazt a `0x0090c1e0` szinthúzót hívja). A KÜLÖNBSÉG a
+    színhőmérséklet: két külön natív függvény szolgálja ki.
+
+    | | natív worker | gépezet |
+    |---|---|---|
+    | `finetune2` (v2) | `0x0090e9d0` | feketetest-tábla + 3×3-as mátrix (#956) |
+    | `finetune` (v1) | **`0x0090ea10`** | középtónus-parabolás worker (ugyanaz, mint a `colortemp`-é) |
+
+    ⛔ A „a v1 ugyanaz a görbe kétszeres skálán" hipotézis MEGDŐLT (#958,
+    `filters-decoded.md`): a golden-eltérés 15,82 lett volna ~0 helyett, és
+    az irány is ellentmondott — a v1 a saját maximumán 3–5-ször erősebben hat.
+
+    ⭐ A v1 színága **KÉT KÜLÖN KÉPPONTMENET** (`0x008f7e4e`: `push esi;
+    push esi` — ugyanaz a puffer forrás és cél): előbb a semlegesítő, aztán
+    a hőmérséklet. A kettő között megmarad a 8 bites kvantálás, tehát nem
+    vonhatók össze egyetlen lebegőpontos menetté. A worker fehérváltás-
+    argumentuma mindkét ágon **0,0** (`fldz`, `0x008f7e3e`, `0x008f7e67`).
     """
     neutral = parse_neutral_argb(op.params[4]) if len(op.params) > 4 else None
-    return apply_finetune2(
+    temperature = _finetune_float(op, 5)
+    if op.name.casefold() != "finetune":
+        return apply_finetune2(
+            image,
+            fill=_finetune_float(op, 1),
+            highlights=_finetune_float(op, 2),
+            shadows=_finetune_float(op, 3),
+            neutral=neutral,
+            temperature=temperature,
+        )
+    # v1: a közös ág hőmérséklet NÉLKÜL, majd a saját natív worker.
+    kozbenso = apply_finetune2(
         image,
         fill=_finetune_float(op, 1),
         highlights=_finetune_float(op, 2),
         shadows=_finetune_float(op, 3),
         neutral=neutral,
-        temperature=_finetune_float(op, 5),
+        temperature=0.0,
     )
+    if temperature == 0.0:
+        return kozbenso
+    return apply_native_colortemp(kozbenso, temperature, 0.0)
 
 
 def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:

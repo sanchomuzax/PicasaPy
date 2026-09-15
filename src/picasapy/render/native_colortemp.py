@@ -82,9 +82,18 @@ def apply_native_colortemp(
     Mindkét csúszka nullán a kimenet bájtra azonos a bemenettel.
     """
     validate_image(image)
-    warm = int(round(cool_to_warm * _COOL_TO_WARM_SCALE))
+    # #958: NULLA FELÉ CSONKOL, nem kerekít. A skálázás az átalakító
+    # `0x00c29990` SSE-ágán megy, ahol a `cvttsd2si` (`0x00c299a5`) a
+    # nulla felé csonkoló utasítás — a worker saját konstansával
+    # (`256.0`, `0x00cf39d8`, `0x0090ead6`).
+    #
+    # ⚠️ Ez NEM ugyanaz, mint a `finetune2` hőmérsékletéé: az a
+    # `0x0090e9d0`, és ott a LEGKÖZELEBBI egészre kerekít (a #956
+    # helyesbítése) — a törzsében nincs vezérlőszó-állítás. A két út
+    # kerekítése szándékosan különbözik, ne vond össze őket.
+    warm = int(cool_to_warm * _COOL_TO_WARM_SCALE)
     shift = min(
-        max(int(round(white_shift * _WHITE_SHIFT_SCALE)), 0),
+        max(int(white_shift * _WHITE_SHIFT_SCALE), 0),
         _MAX_WHITE_SHIFT_STEPS,
     )
     if warm == 0 and shift == 0:
