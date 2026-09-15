@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.461] – 2026-09-15
+
+### Javítva
+
+- **Régi kollázsfájlok megnyitása nem rontja el a képméreteket** (#3073). A
+  Picasa korábbi kollázsformátuma (`version="1"`, képkupac témában) más
+  léptékben tárolta a képek méretét; az eredeti program megnyitáskor
+  átszámolja, és az új formátumban menti. Mi eddig csak az új formátum
+  jelzését írtuk ki, az átszámolást nem — így a képek aprók maradtak, a fájl
+  viszont már azt állította, hogy át van alakítva, és ez visszafordíthatatlan
+  volt. Most az átszámolás is megtörténik, pontosan egyszer.
+
 ## [0.8.460] – 2026-09-15
 
 ### Javítva
