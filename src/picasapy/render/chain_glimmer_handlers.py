@@ -260,7 +260,33 @@ def apply_reanimated_eye_color_op(image, op: FilterOp):
 
 #: Festhető (ecset-)maszkos effektek — a `chain.py` `apply_filters`-e
 #: ezekhez külön magyar figyelmeztetést fűz.
-PAINTABLE_MASK_OPS = frozenset({"picniktint", "reanimatedeyecolor"})
+#:
+#: ⭐ **MÉRVE: ÖT effekt, KÉT család** (#1908 296. köre, #3055). A
+#: `filterdesc.xml`-ben öt szűrő kap `Mask="{_mctr.mask}"`-ot, és a `_mctr`-t
+#: két különböző befoglaló elem adja:
+#:
+#:   `cnt:PaintEffectCanvas`   → `Boost` (715) · `Pixelate` (1199) ·
+#:                               `Soften` (1348) · `PicnikTint` (1360)
+#:   `eff:PaintOnEffectBase`   → `ReanimatedEyeColor` (1283)
+#:
+#: ⛔ Ez a halmaz korábban KETTŐT tartalmazott — egy tagot mindkét családból,
+#: a maradék három (`Boost`, `Pixelate`, `Soften`) kimaradt, és így nem kapott
+#: figyelmeztetést. Aki csak a `PaintEffectCanvas`-ra keres, épp a
+#: `ReanimatedEyeColor`-t hagyja ki; aki a talált kettőt általánosítja, a
+#: többi hármat. A `Boost` a tulajdonos korpuszában (859 `.picasa.ini`)
+#: SZEREPEL, tehát élesben előforduló eset volt.
+#:
+#: Őr: `tests/render/test_festheto_maszk_ot_effekt_3055.py` — a listát a
+#: spec TÁBLÁJÁBÓL olvassa, nem kézzel sorolja, hogy ne csúszhasson el újra.
+#: A spec: `docs/specs/filterdesc-registry.md` „⛳ A festhető maszk: ÖT
+#: effekt, KÉT család".
+PAINTABLE_MASK_OPS = frozenset({
+    "boost",
+    "pixelate",
+    "soften",
+    "picniktint",
+    "reanimatedeyecolor",
+})
 
 #: #688: azok a festhető-maszkos effektek, amelyek ÜRES maszkkal indulnak —
 #: befestés nélkül az eredeti Picasa sem változtat a képen. A #685

@@ -847,9 +847,11 @@ def apply_filters(
             skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
-            # #381/#688: a PicnikTint/ReanimatedEyeColor ecset-maszkja
-            # hiányzik — az előbbi ilyenkor a TELJES KÉPRE fut, az utóbbi
+            # #381/#688: az ecset-maszk hiányzik — a `PicnikTint` és a
+            # `Soften` ilyenkor a TELJES KÉPRE fut, a `ReanimatedEyeColor`
             # (üres maszkkal indul) változatlanul hagyja a képet.
+            # #3055: a halmaz MIND AZ ÖT mért effektet tartalmazza — a
+            # `Boost`, a `Pixelate` és a `Soften` korábban kimaradt belőle.
             range_warnings.append(glimmer.paintable_mask_warning(op.name))
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
