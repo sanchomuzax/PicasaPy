@@ -963,7 +963,7 @@ az elosztó a levélnevet nézi, nem a panelt.
 | 15 | **`selectsug`** | `0x006024e0` | `0x005e1520` |
 | 16 | **`moresug`** | **`0x00602890`** | `0x005e1570` |
 | 17 | **`confirmsug`** | **`0x00602640`** | `0x005e15bf` |
-| 18 | **`confirmsel`** | **`0x005c9b00`** | `0x005e160f` |
+| 18 | **`confirmsel`** | **`0x00602640`** ⛔ (helyesbítve, 18.1) | `0x005e160f` |
 | 19 | **`ignore`** | **`0x005c9b00`** | `0x005e1645` |
 | 20 | **`addname`** | **`0x00602970`** | `0x005e169a` |
 | 21 | **`sug_filter`** | vtable-hívás | `0x005e16e9` |
@@ -1004,9 +1004,14 @@ számol:
 ismételt megnyomás **ugyanazt** a 0,1-del csökkentett küszöböt használja,
 nem visz egyre lejjebb.
 
-#### b) A jóváhagyás / elvetés a `.picasa.ini`-be ír
+#### b) Az ELVETÉS a `.picasa.ini`-be ír
 
-A `faceheaderpanel/confirmsel`, `faceheaderpanel/ignore` és `faceheaderpanel/removesel` **ugyanazt** a kezelőt hívja
+> ⛔ **HELYESBÍTVE (18.1):** ez a pont eredetileg a `confirmsel`-t is ide sorolta.
+> A `confirmsel` valójában a `0x00602640`-re megy (a `confirmsug`-gal közös
+> kezelő, `push 0` / `push 1` különbséggel), és **az adatbázisba** ír — ld. 18.2.
+> Az alábbi `.picasa.ini`-tábla az `ignore` és a `removesel` útja.
+
+A `faceheaderpanel/ignore` és a `faceheaderpanel/removesel` **ugyanazt** a kezelőt hívja
 (`0x005c9b00`, 5744 b), és annak sztringjei megnevezik a tárolót:
 
 | sztring | mi |
@@ -1675,3 +1680,126 @@ a pásztázás `eszkozok/binaris/paszta.py`, kontroll `0x9e11` = 25 találat.*
 | a 12. mérleg „2 blokkolt checksum" tétele | ✅ LEZÁRVA — mindkettő megfejtve, a jegy zárva (17.1) |
 | a `0xa0cd` tényleges kezelője | ✅ LEZÁRVA — **nincs**: almenü-horgony (17.2) |
 | a #26 bináris blokkolója | ✅ LEZÁRVA — elfogyott; ami maradt, az felületi munka (17.3) |
+
+## 18. ⛳ A javaslat JÓVÁHAGYÁSA: egy kezelő, egy logikai kapcsoló — és az adatbázisba ír (2026-09-15, 312. kör, #3177)
+
+*A 15. szakasz a fejlécsáv parancskészletét adta, és az ELVETÉS tárolóját
+(`.picasa.ini`, `]ignoreface`). A JÓVÁHAGYÁS tárolója sehol nem volt kimondva.
+Ez a szakasz azt méri ki — és közben helyesbíti a 15. szakasz egy sorát.*
+
+### 18.1 ⛔ ÖNHELYESBÍTÉS: a `confirmsel` NEM a törlés-kezelőhöz megy
+
+A 15. szakasz táblája a `confirmsel`-t a `0x005c9b00` kezelőhöz rendelte, az
+`ignore` és a `removesel` mellé. **Ez téves.** Az elosztóban a két megerősítő
+parancs ugyanarra a kezelőre megy, egyetlen logikai argumentumban különböznek:
+
+```
+0x005e15bf  "confirmsug" névösszevetés  ->  0x005e15eb  push 1
+0x005e160f  "confirmsel" névösszevetés  ->  0x005e163b  push 0
+0x005e15ed  mov edi, [esp+0x18]
+0x005e15f1  call 0x00602640              ; MINDKETTŐ ide
+```
+
+A `0x00602640` első elágazása épp ezt a kapcsolót olvassa
+(`0x00602676 cmp byte [esp+0x24], 0`): igaz ágon az ÖSSZES javaslatot szedi
+össze (`0x00891110` / `0x007164b0`), hamis ágon a KIJELÖLTEKET
+(`0x007166c0`, `push 1`).
+
+⇒ **„Az összes jóváhagyása" és a „Jóváhagyás" ugyanaz a művelet, két
+hatókörrel** — ez egybevág a 15. szakasz geometriai leletével (a két gomb
+ugyanazt a 88 × 27-es téglalapot foglalja el).
+
+A `0x005c9b00` ezzel szemben a **törlés/eltávolítás** kezelője: a sztringjei
+`Deleting Files`, `CThumbUI::DeleteProgress`, `.picasaoriginals`, `.mxf`,
+`.cxf`, `.thm` a `]ignoreface` / `]unknownface` / `]search` mellett. Az
+`ignore` és a `removesel` tehát helyesen kerül oda, a `confirmsel` nem.
+
+*Forrás: `0x005e15bf`, `0x005e160f`, `0x005e15f1`, `0x00602676`; a
+`0x005c9b00` sztringjei a függvény törzsében álló `.rdata`-mutatókból
+(`0x005ca2ce`, `0x005ca368`, `0x005ca3b9`, `0x005ca59a`, `0x005ca6f2`,
+`0x005ca869`).*
+
+### 18.2 A jóváhagyás útja a tárolóig
+
+```
+0x00602640  confirmsug/confirmsel
+  0x006026ba  ebx = [album+0x3c0]            ; az album azonosítója
+  0x006026c0  eax = [panel+0x2bc]            ; az adatbázis-objektum
+  0x006026d0  call 0x0044a930(db, &lista, albumid, &lista)
+  0x0060272d  call 0x005c6500 -> 0x0047bf40 -> 0x0047baf0   ; újrakeresés
+  0x00602786  call 0x004abc70([panel+0x2c0], …)             ; nézet-frissítés
+  0x00602791  mov byte [[panel+0x2c0]+0x166], 1             ; piszkos-jelző
+```
+
+A `0x0044a930` **oszlop-beállító**: az objektum `[+0x48]` tömbjébe ír indexelve,
+és minden írás után meghívja a `0x006a2a60` piszkos-jelzőt
+(`0x0044acb4`+`0x0044acc6`, `0x0044aec3`+`0x0044aed1`, `0x0044b0fc`+`0x0044b10b`).
+Ugyanez a függvény végigmegy a tétellistán, és fájlonként meghívja a
+**`0x00484820`**-at:
+
+```
+0x0044b316  eax = lista[esi]
+0x0044b31d  push 0 / push 1 / push eax / push ecx
+0x0044b323  call 0x00484820
+```
+
+A `0x00484820` a 6/B pontban már dokumentált **arcadat-kiíró**: a
+`Preferences\FRWriteFaceDataINI` kulcsot olvassa (`0x00484dcf` a kulcsnév,
+`0x00484de7` az **alapérték 0**), és csak igaz esetben írja a `.picasa.ini`
+`faces` (`0x0048516d`) + `facedata` (`0x004851ab`) + `backuphash`
+(`0x0048521d`) kulcsait.
+
+⇒ **A jóváhagyás elsődlegesen az ADATBÁZISBA ír** (oszlop-tömb + piszkos-jelző),
+és a `.picasa.ini`-be **alapértelmezés szerint SEMMIT** — az ini-ág az
+alapból kikapcsolt `FRWriteFaceDataINI` mögött van. Az elvetés ezzel szemben
+közvetlenül ír `.picasa.ini`-t (`]ignoreface`, 15. szakasz).
+
+**Termékre:** ha nálunk a jóváhagyás a `.picasa.ini`-be ír, az **szándékos
+eltérés** az eredetitől — mondjuk ki a megvalósító jegyben (#2187), ne
+csússzon be véletlenül.
+
+### 18.3 Melléklelet: a PMP-oszlopok NEVE → TAGELTOLÁS, mind a 44
+
+A `0x004127c0` regisztráló minden oszlopnevet egy fix tagváltozóhoz köt
+(`push <név>` … `lea eax, [esi + eltolás]` … `call <regisztráló>`). A
+személy-albumhoz tartozó rész:
+
+| oszlopnév | tageltolás |
+|---|---|
+| `personalbumid` | `esi+0xca0` |
+| `suggestionpersonalbumid` | `esi+0xd00` |
+| `facequality` | `esi+0xd60` |
+| `facerect` | `esi+0xdc0` |
+| `deferredface` | `esi+0xe28` |
+| `deferredregion` | `esi+0xe88` |
+| `facerectdata` | `esi+0xee8` |
+| `personalbumrecs` | `esi+0xf48` |
+| `personalbumrecvalues` | `esi+0xfa8` |
+| `personalbumrecs2` | `esi+0x1008` |
+| `personalbumrecvalues2` | `esi+0x1068` |
+| `peoplealbumchecksum` | `esi+0x10c8` |
+| `tagdate` | `esi+0x1128` |
+| `fdbhash` | `esi+0x1190` |
+| `backuphash` | `esi+0x11f0` |
+
+**Határ-kontroll:** a regisztráló az utolsó oszlop után a `[esi+0x1250]`-be ír
+(`0x00412f19`), és visszatér — tehát a tábla a `0x11f0`-es `backuphash`-sel
+zárul, összesen **44** `lea esi+…` regisztrációval.
+
+*Forrás: `0x004127c0` (1893 b), a párok a `push <sztringcím>` → következő
+`lea eax, [esi + N]` mintából.*
+
+### 18.4 Ami NYITVA marad
+
+**Melyik oszlopot írja pontosan a jóváhagyás.** A `0x0044a930` a
+`0x1bc0` / `0x1c18` / `0x2048` / `0x20a0` eltolású tagokon dolgozik, azok
+viszont a fenti táblán KÍVÜL esnek (a tábla `0x11f0`-nél véget ér) ⇒ a
+`0x0044a930` egy MÁSIK, nagyobb objektumot kezel, nem közvetlenül ezt a
+sorosztályt. A megszerzés útja: a `[panel+0x2bc]` objektum osztályának RTTI-je,
+majd a `0x1bc0`–`0x20a0` tartomány tagjainak regisztrálója — ugyanazzal a
+`push <név>` → `lea` mintával, amely a 18.3-at adta.
+
+### 18.5 Nyitott kérdések mérlege (18.)
+
+`1 nyílt · 2 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva"`
+(nyílt: a 18.4; lezárva: a jóváhagyás kezelője és a tárolójának fajtája.)
