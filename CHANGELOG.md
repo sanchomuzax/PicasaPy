@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.467] – 2026-09-15
+
+### Javítva
+
+- **A szerkesztőben mostantól azt látod, amit mentesz** (#3169). Ha a képre
+  keretet (Szegély, Polaroid, Múzeumi matt, Árnyékvetés, filmvászon) vagy
+  vágást tettél, és utána még egy hatást is — például Vignettát vagy
+  Szépiát —, akkor a szerkesztő előnézete **más képet mutatott**, mint ami
+  mentéskor, exportáláskor vagy a bélyegképen készült: az utólagos hatás a
+  keretre is ráfutott, a vignetta pedig a vágatlan kép közepére számolt.
+  Mostantól a kettő ugyanaz.
+
 ## [0.8.466] – 2026-09-15
 
 ### Belső

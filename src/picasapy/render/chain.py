@@ -687,6 +687,23 @@ _FRAME_EFFECTS = frozenset(
     key for key, spec in FILTER_REGISTRY.items() if spec.resizes
 ) & _HANDLERS.keys()
 
+def halasztott_op(op: FilterOp) -> bool:
+    """Igaz, ha az `apply_filters` ezt az opot a lánc VÉGÉRE halasztja (#3169).
+
+    Az `apply_filters` szándékosan átrendez: előbb a nem-keret effektek,
+    **utána a vágás** (#330), **legvégül a keretek** (`_FRAME_EFFECTS`). Ez a
+    rendezés egyetlen híváson belül érvényes — aki a láncot KETTÉVÁGVA
+    futtatja (a szerkesztő lánc-prefix gyorsítótára), annak tudnia kell,
+    melyik op tartozik a végére, különben más képet kap, mint a teljes lánc.
+
+    ⛔ Ez a predikátum azért él ITT, és nem a hívónál: a halasztás szabálya
+    az `apply_filters` sajátja, és két helyen karbantartva némán elcsúszna.
+    Mérve (#3169): a `crop64=1,…;Vignette` lánc a két úton **18,2** átlagos
+    eltérést adott."""
+    kulcs = op.name.casefold()
+    return kulcs == "crop64" or kulcs in _FRAME_EFFECTS
+
+
 def can_render_filter(name: str) -> bool:
     """Van-e a `name` szűrőnévhez VALÓDI vizuális modellünk (#571)?
 
