@@ -3709,6 +3709,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Mellőzés visszavonása</translation>
     </message>
     <message>
+        <source>Look for more suggestions</source>
+        <translation>További javaslatok keresése</translation>
+    </message>
+    <message>
+        <source>Lowers the recognition threshold once, so more names are suggested. The stored setting is left unchanged.</source>
+        <translation>Egyszer lejjebb viszi a felismerési küszöböt, így több névre kapsz javaslatot. A tárolt beállítás nem változik.</translation>
+    </message>
+    <message>
         <source>%1?</source>
         <translation>%1?</translation>
     </message>

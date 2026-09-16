@@ -15,7 +15,12 @@ from .colors import (
     save_colors,
 )
 from .database import open_index
-from .face_groups import face_groups, group_unnamed_faces
+from .face_groups import (
+    face_groups,
+    group_unnamed_faces,
+    javaslatokat_ujraszamol,
+    lazitott_lepcso,
+)
 from .faces_detected import (
     PendingEmbeddingFace,
     UnnamedFace,
@@ -127,6 +132,8 @@ __all__ = [
     "photos_with_keyword",
     "video_photos",
     "group_unnamed_faces",
+    "javaslatokat_ujraszamol",
+    "lazitott_lepcso",
     "load_color_tokens",
     "IndexFastKeySource",
     "load_dhashes",

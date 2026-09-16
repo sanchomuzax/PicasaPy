@@ -21,12 +21,89 @@ import numpy as np
 from picasapy.faces.clustering import (
     DEFAULT_CLUSTER_THRESHOLD,
     DEFAULT_SUGGEST_THRESHOLD,
+    PICASA_STEPS,
     FaceGroupCentroid,
     assign_face,
+    cosine_similarity,
 )
 
 from .faces_detected import named_centroids as _named_centroids
 from .faces_detected import set_suggested_name
+
+
+#: #3237: a „További javaslatok keresése" ennyivel csökkenti a LÉPCSŐT.
+#:
+#: Az eredeti `moresug` (kezelő `0x00602890`) a `FRSuggestionThreshold`-ot
+#: `/100 − 0,1`-del használja, visszaírás nélkül. ⛔ A `0,75`-ös SZÁMOT nem
+#: vesszük át: nálunk a küszöb a `step_to_threshold` skáláján él (a Picasa
+#: 50–95-ös lépcsője a `[MIN_SIMILARITY … MAX_SIMILARITY]` sávba). A hű
+#: megfelelő a **lépcső** csökkentése tízzel — a vezérlőt vesszük át, nem a
+#: számot (#2187 mértékegység-csapdája).
+LAZITAS_LEPCSO = 10
+
+
+def lazitott_lepcso(lepcso: int) -> int:
+    """A lazított lépcső — a saját skálánk alját nem lépi túl.
+
+    Az alja alatt a `step_to_threshold` már extrapolálna (a sávon kívülre),
+    és a „javaslat" mindenre eltalálna; ott tehát megállunk.
+    """
+    return max(PICASA_STEPS[0], int(lepcso) - LAZITAS_LEPCSO)
+
+
+def javaslatokat_ujraszamol(
+    conn: sqlite3.Connection,
+    suggest_threshold: float,
+    named_centroids: Mapping[str, np.ndarray] | None = None,
+) -> int:
+    """A MEGADOTT küszöbbel javaslatot keres a még javaslat nélküli arcokra.
+
+    A `group_unnamed_faces`-től két dologban tér el, és mindkettő szándékos:
+
+    1. **a már csoportba sorolt arcokat is megvizsgálja** — a lazítás épp
+       azokra hasznos, amelyek korábban javaslat helyett csoportba kerültek;
+    2. **csak `suggested_name`-et ír**: a csoportokhoz hozzá sem nyúl, és a
+       kézzel beírt javaslatot sem írja felül.
+
+    A névvel ellátott (`state='named'`) arcokat nem bántja.
+
+    Visszatérési érték: hány arcra írtunk ÚJ javaslatot.
+    """
+    if named_centroids is None:
+        named_centroids = _named_centroids(conn)
+    if not named_centroids:
+        return 0  # nincs mihez hasonlítani
+    rows = conn.execute(
+        "SELECT id, embedding FROM face "
+        "WHERE state = 'unnamed' AND suggested_name IS NULL "
+        "AND embedding IS NOT NULL ORDER BY id"
+    ).fetchall()
+    irt = 0
+    for row in rows:
+        embedding = np.frombuffer(row["embedding"], dtype=np.float32)
+        nev, hasonlosag = _legkozelebbi_nev(embedding, named_centroids)
+        if nev is None or hasonlosag < suggest_threshold:
+            continue
+        set_suggested_name(conn, row["id"], nev)
+        irt += 1
+    return irt
+
+
+def _legkozelebbi_nev(
+    embedding: np.ndarray, named_centroids: Mapping[str, np.ndarray]
+) -> tuple[str | None, float]:
+    """A legjobban illeszkedő NEVESÍTETT centroid és a hasonlósága.
+
+    Ugyanaz a mérték, amit az `assign_face` használ (`cosine_similarity`) —
+    egy helyen, hogy a két út ne sodródjon el egymástól.
+    """
+    legjobb_nev: str | None = None
+    legjobb = -1.0
+    for nev, centroid in named_centroids.items():
+        hasonlosag = cosine_similarity(embedding, centroid)
+        if hasonlosag > legjobb:
+            legjobb_nev, legjobb = nev, hasonlosag
+    return legjobb_nev, legjobb
 
 
 def group_unnamed_faces(

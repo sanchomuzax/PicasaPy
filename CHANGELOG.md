@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.493] – 2026-09-16
+
+### Hozzáadva
+
+- **„További javaslatok keresése"** (#3237, a #2187 első szelete). Az
+  „Ismeretlen emberek" nézetben új gomb: egyetlen kattintással lejjebb viszi a
+  felismerési küszöböt, így több arcra kapsz **név-javaslatot** — a tárolt
+  beállítás viszont **nem változik**, ahogy az eredeti Picasában sem. A
+  javaslat továbbra is kérdés: pipával elfogadod, x-szel elveted.
+
 ## [0.8.492] – 2026-09-16
 
 ### Hozzáadva
