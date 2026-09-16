@@ -85,14 +85,28 @@ class TestAzABMod:
 
         assert nezo.property("abMasikSor") == nezo.property("currentIndex")
 
-    def test_a_masik_oldal_a_NYERS_fajlt_mutatja(self, qml_app, qt_app):
-        """A `filters=` lánc nélkül — nem az `editpreview` szolgáltatót."""
+    def test_a_masik_oldal_a_SAJAT_rekeszen_at_jon(self, qml_app, qt_app):
+        """#3187: a másik oldal a MÁSODIK előnézet-rekeszén át rendereli.
+
+        ⚠️ Ez a próba korábban azt állította, hogy AB módban a másik oldal a
+        NYERS fájlt mutatja — az akkori állapot leírása volt, nem szándék: a
+        #3014 törzse is kimondta, hogy „nálunk egy szerkesztési állapot van".
+        A #3187 óta van második rekesz, és azért kell, mert a másik oldal MÁS
+        fotót mutat: annak a mentett `filters=` láncával kell látszania,
+        ahogy a rácsban és az egy képes nézetben is — különben ugyanaz a kép
+        kétféleképp látszik a programban.
+
+        A próba SZÁNDÉKA változatlan: a két fél NE ugyanabból a forrásból
+        jöjjön. Ezt most a rekesz-kulcs (`@masodik`) mondja ki.
+        """
         window, _controller, _engine = qml_app
         _ab_modba(window, qt_app)
 
         forras = _gyerek(window, "viewerImageElotte").property("source").toString()
-        assert forras.startswith("file:")
-        assert "editpreview" not in forras
+        assert forras.startswith("image://editpreview/"), forras
+        assert "@masodik" in forras, forras
+        fo = _gyerek(window, "viewerImage").property("source").toString()
+        assert "@masodik" not in fo
 
     def test_mindket_kep_LATSZIK_AB_modban(self, qml_app, qt_app):
         window, _controller, _engine = qml_app

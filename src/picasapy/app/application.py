@@ -74,6 +74,7 @@ from .email_controller import EmailController
 from .discovery_controller import DiscoveryController
 from .drop_import_controller import DropImportController
 from .edit_controller import EditController
+from .second_preview import SecondPreview
 from .edit_preview import EditPreviewProvider
 from .effect_thumbnails import EffectThumbnailProvider
 from .face_scan_controller import FaceScanController
@@ -1096,6 +1097,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # rendereli a képet; a hidat az EditController adja a QML-nek
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
+    # #3187: a kettős nézet MÁSODIK felének önálló szerkesztési állapota. A
+    # rekesz (`slot`) miatt ugyanarra a fotóra is két független lánc állhat a
+    # szolgáltató gyorsítótárában; a logikai fotó-azonosító (ini-írás)
+    # változatlan. A második vezérlő CSAK előnézetet ad: a szerkesztő
+    # parancsai továbbra is az elsőn dolgoznak (a parancs-irányítás a jegy
+    # következő lépése).
+    edit_controller_masodik = EditController(edit_preview, slot="masodik")
+    second_preview = SecondPreview(edit_controller_masodik)
     # #644: minden mentett szerkesztési lánc a TARTÓS naplóba is bekerül — ez
     # az egyetlen nyomunk, ha a párhuzamosan futó Picasa később felülírja a
     # `.picasa.ini`-t a saját adatbázis-rekordjával.
@@ -1305,6 +1314,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     timeline.mark("QML-motor létrehozása és import-útvonalak")
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty("secondPreview", second_preview)
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )

@@ -116,6 +116,19 @@ Rectangle {
     // kiértékelődnek.
     readonly property var editCtl: editController
 
+    //: #3187: a kettős nézet MÁSODIK felének szerkesztő-vezérlője (saját
+    //: előnézet-rekesz). Csak AB módban van munkamenete: ott a másik oldal
+    //: MÁS fotót mutat, és azt ugyanúgy a mentett láncával kell látni, mint
+    //: a rácsban vagy egy képes nézetben — ma a nyers fájl jött, tehát
+    //: ugyanaz a kép KÉTFÉLEKÉPP látszott a programban.
+    //:
+    //: ⚠️ „aa" módban SZÁNDÉKOSAN nincs munkamenete: ott a bal/felső fél a
+    //: szerkesztés ELŐTTI képet mutatja (#3013 mérése), és épp a nyers fájl
+    //: az, ami ezt megadja.
+    //: #305-mintájú null-őr: a motor leépítésekor a kontextus eltűnhet.
+    readonly property var masodikEditCtl:
+        (typeof secondPreview !== "undefined") ? secondPreview : null
+
     // GPU élő-előnézet (#22): a finetune-csúszkák AKTÍV húzása alatt igaz —
     // az EditorPanel finetunePreview→finetuneCommit életciklusa keretezi
     // (ld. lent, az editorPanel bekötésénél). `gpuFinetuneEligible` a
@@ -426,6 +439,25 @@ Rectangle {
     // a munkamenet zárul. A panel kapcsoló-állapotait az EditController
     // igazságforrásából szinkronizáljuk (a kötést a panel belső átírása
     // megtörné, ezért imperatív sync a toolsChanged-re).
+    //: #3187: a MÁSODIK fél munkamenete. AB módban a másik sor fotójára
+    //: nyitunk (mentett lánccal), minden más módban zárjuk — a „aa" fél
+    //: nyers képe a #3013 szerint a szerkesztés ELŐTTI állapot.
+    function frissitsdAMasodikSzerkesztest() {
+        if (!viewer.masodikEditCtl) return
+        var sor = viewer.abMasikSor
+        if (!(viewer.visible && viewer.layoutMode === "ab"
+              && sor >= 0 && photosModel)
+                || photosModel.isVideoAt(sor)) {
+            viewer.masodikEditCtl.endEdit()
+            return
+        }
+        viewer.masodikEditCtl.beginEdit(photosModel.idAt(sor),
+                                       photosModel.filePathAt(sor))
+    }
+
+    onAbMasikSorChanged: viewer.frissitsdAMasodikSzerkesztest()
+    onLayoutModeChanged: viewer.frissitsdAMasodikSzerkesztest()
+
     function beginEditCurrent() {
         if (!(visible && currentIndex >= 0 && photosModel)) return
         // #218: a viewer.isCurrentVideo egy kötött property — a currentIndex
@@ -526,6 +558,7 @@ Rectangle {
         if (visible) {
             zoomFit()   // #6: minden belépés illesztett nézetben indul
             beginEditCurrent()
+            frissitsdAMasodikSzerkesztest()   // #3187
         } else {
             // a cropActive/retouchActive/textActive lenullázása ELŐBB (még
             // aktív szerkesztés alatt) fut, hogy az onXActiveChanged->
@@ -537,6 +570,9 @@ Rectangle {
             editorPanel.textActive = false
             editorPanel.redeyeActive = false
             editController.endEdit()
+            //: #3187: a második rekesz munkamenete is záruljon — nyitva
+            //: hagyva a szolgáltató gyorsítótárában maradna a képe.
+            if (viewer.masodikEditCtl) viewer.masodikEditCtl.endEdit()
         }
     }
     onCurrentIndexChanged: {
@@ -1451,11 +1487,22 @@ Rectangle {
                             : (viewer.fuggolegesElrendezes
                                ? Math.floor((parent.height - 8) / 2)
                                : parent.height)
-                        //: #3014: AB módban itt a MÁSIK kép áll (nyers fájl,
-                        //: `filters=` lánc nélkül); „aa" módban változatlanul
-                        //: ugyanez a kép a szerkesztés ELŐTTI állapotában.
+                        //: #3014/#3187: AB módban itt a MÁSIK kép áll, a
+                        //: SAJÁT előnézet-rekeszén át — tehát a mentett
+                        //: `filters=` láncával, ahogy a rácsban és az egy
+                        //: képes nézetben is látszik (a #3187 előtt itt a
+                        //: nyers fájl jött, és ugyanaz a kép kétféleképp
+                        //: látszott a programban). „aa" módban változatlanul
+                        //: a NYERS fájl: ott ez a fél a szerkesztés ELŐTTI
+                        //: állapot (#3013 mérése), és a második rekesznek
+                        //: szándékosan nincs munkamenete.
                         source: viewer.isCurrentVideo
-                            ? "" : viewer.urlAt(viewer.abMasikSor)
+                            ? ""
+                            : (viewer.layoutMode === "ab"
+                               && viewer.masodikEditCtl
+                               && viewer.masodikEditCtl.previewSource !== ""
+                               ? viewer.masodikEditCtl.previewSource
+                               : viewer.urlAt(viewer.abMasikSor))
                         fillMode: Image.PreserveAspectFit
                         asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true

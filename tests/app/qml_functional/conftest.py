@@ -186,6 +186,13 @@ def _build_qml_app(
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    # #3187: a kettős nézet második felének vezérlője — az application.py
+    # bekötésének tükre (ld. a szolgáltató-listánál írt figyelmeztetést)
+    from picasapy.app.second_preview import SecondPreview
+
+    edit_controller_masodik = EditController(edit_preview, slot="masodik")
+    second_preview = SecondPreview(edit_controller_masodik)
+    engine.rootContext().setContextProperty("secondPreview", second_preview)
     # fájlműveletek (#15) — az application.py bekötésének tükre
     fileops_controller = FileOpsController()
     app_module.wire_fileops(fileops_controller, controller)
