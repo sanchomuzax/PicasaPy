@@ -69,11 +69,16 @@ class TestAParancs:
         assert str(cel).endswith("core.%p")
 
     def test_a_parancs_jelszo_nelkuli_sudoval_ir(self):
-        parancs = rt._core_minta_parancs("/usr/bin/sudo", Path("/tmp/core.%p"))
+        #: ⚠️ Az összevetés a `Path` PLATFORMHELYES alakjával megy: Windowson
+        #: ugyanez az útvonal `\tmp\core.%p`, és a beégetett POSIX-alak
+        #: miatt a próba ott bukott (mérve, main CI windows 1/4). A vizsgált
+        #: logika platformfüggetlen, csak a VÁRT szöveg nem volt az.
+        cel = Path("/tmp/core.%p")
+        parancs = rt._core_minta_parancs("/usr/bin/sudo", cel)
         assert parancs[:3] == ["/usr/bin/sudo", "-n", "sh"]
         egyben = " ".join(parancs)
         assert "/proc/sys/kernel/core_pattern" in egyben
-        assert "/tmp/core.%p" in egyben
+        assert str(cel) in egyben
 
 
 class TestVisszaallitas:
