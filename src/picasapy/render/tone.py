@@ -430,8 +430,21 @@ def parse_neutral_argb(value: str) -> tuple[int, int, int] | None:
     """A finetune2 p4 (AARRGGBB hex) értelmezése.
 
     Nulla alfa = nincs kijelölt semleges szín → None; egyébként (R, G, B).
+
+    **ÜRES mező = None** (#3195). Az eredeti Picasa MINDIG kiírja a
+    `00000000`-t, ha nincs semleges szín (a referencia-korpuszban egyetlen
+    üres p4 sincs), de a `.picasa.ini` kézzel is szerkeszthető — és egy
+    hiányzó mező nem viheti el az EGÉSZ szűrőbejegyzést (#301: egy hibás
+    mező nem dönti el a beolvasást). Korábban az üres p4 kivételt dobott, a
+    lánc kihagyta a bejegyzést, és ezzel a Derítőfény, a Csúcsfények, az
+    Árnyékok ÉS a Színhőmérséklet beállítása is NÉMÁN elveszett.
+
+    ⚠️ A hibás, de nem üres alak (`zzz`, `12`, `#abcdef`) továbbra is
+    **kivétel**: ott a felhasználó írt valamit, aminek jelentése lett volna.
     """
     text = value.strip()
+    if not text:
+        return None
     if not _ARGB_PATTERN.match(text):
         raise ValueError(f"Érvénytelen AARRGGBB színérték: {value!r}")
     if int(text[0:2], 16) == 0:

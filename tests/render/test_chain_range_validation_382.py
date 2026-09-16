@@ -51,9 +51,18 @@ class TestTiltRange:
 
 class TestFinetuneRanges:
     def test_finetune_v1_homerseklet_tartomanya_felig_akkora(self, sample):
-        # finetune (v1) hőmérséklete [-0.5, 0.5] — 0.5 még pont belefér
+        """finetune (v1) hőmérséklete [-0.5, 0.5] — 0.5 még pont belefér.
+
+        ⚠️ #3195: ez a próba VAKON zöld volt. Az üres p4 (`,,`) miatt a lánc
+        az egész bejegyzést KIHAGYTA, tehát a „nincs figyelmeztetés" akkor is
+        teljesült volna, ha a tartomány-ellenőrzés egyáltalán nem létezik.
+        Ezért állítjuk azt is, hogy a bejegyzés **lefutott**.
+        """
         report = apply_filters(
             sample, parse_filters("finetune=1,0.0,0.0,0.0,,0.500000;")
+        )
+        assert report.skipped == (), (
+            f"a bejegyzés kihagyva ({report.skipped}) — a próba így vakon zöld"
         )
         assert report.range_warnings == ()
 
@@ -61,6 +70,7 @@ class TestFinetuneRanges:
         report = apply_filters(
             sample, parse_filters("finetune=1,0.0,0.0,0.0,,0.800000;")
         )
+        assert report.skipped == ()
         assert len(report.range_warnings) == 1
         assert "temperature" in report.range_warnings[0].casefold()
 
