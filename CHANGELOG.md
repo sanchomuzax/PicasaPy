@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.505] – 2026-09-17
+
+### Javítva
+
+- **A kettős nézetben a másik kép is a szerkesztéseivel látszik** (#3187). Ha
+  két különböző képet tettél egymás mellé, a jobb oldali a mentett
+  módosításai nélkül jelent meg — ugyanaz a kép tehát máshogy látszott itt,
+  mint a rácsban vagy egy képes nézetben. Mostantól mindkét oldal ugyanazt
+  mutatja. (Az „ugyanaz a kép kétszer" összevetésben a bal oldal továbbra is
+  szándékosan a szerkesztés ELŐTTI állapot.)
+
 ## [0.8.504] – 2026-09-16
 
 ### Javítva
