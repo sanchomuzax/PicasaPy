@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.503] – 2026-09-16
+
+### Megváltozva
+
+- **Előkészítés a kettős nézet szerkeszthető második feléhez** (#3187). Belső
+  rendezés: a szerkesztő-vezérlő „rekeszt" kaphat, így ugyanarra a fotóra két
+  független szerkesztési állapot tartható — ez kell ahhoz, hogy a kettős nézet
+  másik fele is szerkeszthető legyen. A felhasználó számára most még semmi nem
+  változik.
+
 ## [0.8.502] – 2026-09-16
 
 ### Megváltozva
