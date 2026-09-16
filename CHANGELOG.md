@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.499] – 2026-09-16
+
 ### Megváltozva
 
 - **A szűrő-lánc futtatható az eredeti Picasa sorrendjében** (#3229, 2. lépés,
