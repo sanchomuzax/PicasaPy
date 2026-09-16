@@ -39,9 +39,10 @@ SZELES, MAGAS = 120, 80
 #: A hat név, amit ez az őr NEM tud egy általános, regiszterből épített
 #: paraméter-listával megmérni (mérve 2026-09-16, a maradék 67 igen):
 #:
-#: * `Border`, `DropShadow`, `focalzoom`, `dir_tint` — a csúszkáik száma
-#:   TÖBB, mint amennyi paramétert a lánc elfogad (#910 fölös-paraméter kapu),
-#:   tehát a regiszterből épített lista túl hosszú;
+#: * `Border`, `DropShadow`, `focalzoom`, `dir_tint` — a csúszka-INDEX nem
+#:   paraméter-POZÍCIÓ: a `Border` 3. és 4. paramétere SZÍN (`000000`,
+#:   `ffffff`), a csúszkák viszont 0–3 indexen állnak. Számot adva a szín
+#:   helyére a bejegyzés hibára fut, és a lánc kihagyja;
 #: * `finetune`, `finetune2` — az 5. mező nem csúszka, hanem AARRGGBB szín, és
 #:   a csúszka-alapérték (`0`) érvénytelen színként elhasal.
 #:

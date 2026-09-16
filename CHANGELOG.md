@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Megváltozva
+
+- **A szűrő-lánc futtatható az eredeti Picasa sorrendjében** (#3229, 2. lépés,
+  előkészítés). Eddig a keretet és a vágást mindig a lánc végére tettük; a
+  bináris viszont abban a sorrendben renderel, ahogy a szűrők állnak, és a
+  koordinátákat számolja át. Az új út **kapcsolóval** érhető el, a felhasználó
+  által látott viselkedés még változatlan — az átállítás külön, mérhető lépés.
+
 ## [0.8.498] – 2026-09-16
 
 ### Megváltozva
