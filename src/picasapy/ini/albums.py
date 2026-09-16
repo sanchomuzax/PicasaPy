@@ -83,6 +83,69 @@ def without_album(
     )
 
 
+#: A tulajdonság-párbeszéd MÉRT mezői → a `.picasa.ini` kulcsai.
+#:
+#: A párbeszéd elrendezése a szállított `album.fen`-ből van (a Picasa
+#: `runtime/` mappájából), a feliratok a `referencia/i18n-hu/album.xml`-ből:
+#: `Név:` · `Dátum:` · `Zene:` · `Felvétel készítésének helye (opcionális):` ·
+#: `Leírás (opcionális):`.
+#:
+#: ⛔ A leírás mező NEVE az `album.fen`-ben `caption`, a `.picasa.ini` KULCSA
+#: viszont `description` (ezt olvassa az `albums_of`) — a kettő nem
+#: keverhető össze.
+#:
+#: ⚠️ A `music` mező szándékosan NINCS itt: diavetítés-/mozgófilm-zene a
+#: programban egyáltalán nincs, tehát nem is menthető (#3173).
+_ALBUM_MEZOK = ("name", "date", "location", "description")
+
+#: A NÉV nem törölhető: névtelen album a listában azonosíthatatlan volna.
+_KOTELEZO_MEZO = "name"
+
+
+def with_album_fields(
+    document: IniDocument,
+    token: str,
+    *,
+    name: str | None = None,
+    date: str | None = None,
+    location: str | None = None,
+    description: str | None = None,
+) -> IniDocument:
+    """Egy MEGLÉVŐ album tulajdonságainak írása (#3173).
+
+    A `None` azt jelenti: „ezt a mezőt nem szerkesztettük" — marad, ami volt.
+    Az **üres** (vagy csak szóközös) érték a kulcs TÖRLÉSE, mert üres kulcsot
+    a Picasa sem hagy maga után; a `name` ez alól kivétel (ott az üres érték
+    nem törli a meglévő nevet).
+
+    ⛔ Nem létező `[.album:<token>]` szekcióra **nem csinál semmit**: a
+    tulajdonság-szerkesztés meglévő albumra szól, és egy elírt token nem
+    hozhat létre szellem-albumot minden mappa ini-jében.
+    """
+    section_name = f"{ALBUM_SECTION_PREFIX}{token}"
+    if document.section(section_name) is None:
+        return document
+    ertekek = {
+        "name": name,
+        "date": date,
+        "location": location,
+        "description": description,
+    }
+    eredmeny = document
+    for kulcs in _ALBUM_MEZOK:
+        ertek = ertekek[kulcs]
+        if ertek is None:
+            continue
+        tisztitott = ertek.strip()
+        if not tisztitott:
+            if kulcs == _KOTELEZO_MEZO:
+                continue
+            eredmeny = eredmeny.with_removed(section_name, kulcs)
+            continue
+        eredmeny = eredmeny.with_value(section_name, kulcs, tisztitott)
+    return eredmeny
+
+
 def ensure_album(
     document: IniDocument, token: str, name: str | None = None
 ) -> IniDocument:

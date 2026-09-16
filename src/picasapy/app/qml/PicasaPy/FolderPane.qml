@@ -1050,6 +1050,24 @@ Rectangle {
         onExportAsHtmlRequested:
             if (pane.appWindow && pane.appWindow.openWebExport)
                 pane.appWindow.openWebExport()
+        //: #3173: az album tulajdonságai — UGYANAZ a párbeszéd, mint a
+        //: mappáé (`album.fen`), csak album módban: ott a név és a helyszín
+        //: is szerkeszthető.
+        onEditDescriptionRequested: {
+            var adat = (controller && controller.albumProperties)
+                ? controller.albumProperties(albumContextMenu.albumToken) : {}
+            folderPropertiesDialog.mode = "album"
+            folderPropertiesDialog.albumToken = albumContextMenu.albumToken
+            folderPropertiesDialog.albumName =
+                adat.name !== undefined ? adat.name : albumContextMenu.albumName
+            folderPropertiesDialog.currentDate =
+                adat.date !== undefined ? adat.date : ""
+            folderPropertiesDialog.albumLocation =
+                adat.location !== undefined ? adat.location : ""
+            folderPropertiesDialog.currentDescription =
+                adat.description !== undefined ? adat.description : ""
+            folderPropertiesDialog.open()
+        }
     }
 
     PeopleAlbumContextMenu {
@@ -1151,6 +1169,8 @@ Rectangle {
         // menütétel
         onEditDescriptionRequested: {
             var path = folderContextMenu.folderPath
+            //: #3173: a párbeszéd két használatú — a mappa-ág visszaállítja
+            folderPropertiesDialog.mode = "folder"
             folderPropertiesDialog.folderPath = path
             folderPropertiesDialog.folderName =
                 path.substring(path.lastIndexOf("/") + 1)
@@ -1264,6 +1284,14 @@ Rectangle {
             // üres dátum = „automatikus dátum": a felülírás törlése
             if (isoDate.length > 0) controller.setFolderDate(path, isoDate)
             else controller.clearFolderDate(path)
+        }
+        //: #3173: album módban az ini-írás a `photo_ops_controller`-en megy,
+        //: MINDEN olyan mappába, ahol az albumnak van tagja
+        onAlbumPropertiesAccepted: function(token, name, isoDate, location, description) {
+            if (!controller || !controller.editAlbumProperties) return
+            controller.editAlbumProperties(
+                token, name, isoDate, location, description)
+            pane.refreshCustomCollections()
         }
     }
 
