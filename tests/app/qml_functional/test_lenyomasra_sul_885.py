@@ -302,7 +302,10 @@ class TestASzovegformazas:
         forras = (_QML / "PicasaPy" / "EditorTextPanel.qml").read_text(
             encoding="utf-8"
         )
-        for nev in ("textApplyButton", "textCancelButton", "textRemoveAllButton"):
+        #: #3123: a `textApplyButton`/`textCancelButton` kikerült ebből a
+        #: fájlból — a pár a KÉP FÖLÉ került (`EditorToolBar`). Az
+        #: ellenpróba a maradék művelet-gombon ugyanaz.
+        for nev in ("textRemoveAllButton",):
             kezd = forras.index(f'objectName: "{nev}"')
             kovetkezo = forras.find("objectName:", kezd + 10)
             blokk = forras[kezd : kovetkezo if kovetkezo > 0 else len(forras)]

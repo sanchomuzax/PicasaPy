@@ -145,21 +145,8 @@ ColumnLayout {
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.maximumWidth: 118 + 7 + 118
-        Layout.alignment: Qt.AlignHCenter
-        spacing: 7
-        ActionButton {
-            objectName: "retouchApplyButton"
-            label: qsTr("Apply") + " ✔"
-            buttonEnabled: panel.retouchRegionCount > 0
-            onButtonClicked: panel.retouchApplyRequested()
-        }
-        ActionButton {
-            objectName: "retouchCancelButton"
-            label: qsTr("Cancel") + " ✘"
-            onButtonClicked: panel.retouchCancelRequested()
-        }
-    }
+    // #3123: az Alkalmaz/Mégse pár INNEN ELKERÜLT — az eredetiben a KÉP
+    // FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`, sötét
+    // háttér, fehér felirat). A gombok mostantól az `EditorToolBar`-ban
+    // élnek (`PhotoViewer.qml`), a RÉGI objektumneveiket megtartva.
 }

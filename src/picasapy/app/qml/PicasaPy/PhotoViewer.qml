@@ -1761,6 +1761,51 @@ Rectangle {
                     // Esc: kilép a vágásból. MVP-korlát: ini-forgatott
                     // (rotate=) képnél a koordináták a megjelenített térben
                     // értendők — a forgatás+vágás kombináció a #21-ben pontosodik.
+                    // #3123: az eszköz-sáv a KÉP FÖLÖTT lebeg — az
+                    // eredetiben az Alkalmaz/Mégse pár nem a bal panelben ül
+                    // (`editpanel/tool_container: editpanel/preview`,
+                    // `m_centerX`, `YConstraint 1, 1, -10`). A gombok a
+                    // korábbi panel-gombok OBJEKTUMNEVÉT viszik tovább, hogy
+                    // a rájuk épülő működés (és annak ellenőrzése) ne
+                    // szakadjon meg.
+                    EditorToolBar {
+                        id: editorToolBar
+                        objectName: "editorToolBar"
+                        parent: photo
+                        z: 20
+                        tool: editorPanel.cropActive ? "crop"
+                            : editorPanel.retouchActive ? "retouch"
+                            : editorPanel.textActive ? "text"
+                            : editorPanel.redeyeActive ? "redeye" : ""
+                        //: SZÓ SZERINT a korábbi panel-gombok feltétele —
+                        //: se többet, se kevesebbet. ⛔ A vágásnál
+                        //: SZÁNDÉKOSAN nincs kijelölés-feltétel: az
+                        //: „Alaphelyzet" után is el kell tudni fogadni a
+                        //: vágatlan állapotot (#1528), és a redeye-nél az
+                        //: automatika önmagában is menthető.
+                        applyEnabled: tool === "retouch"
+                                ? editorPanel.retouchRegionCount > 0
+                                : tool === "text"
+                                    ? editorPanel.textApplyEnabled
+                                    : true
+                        //: középre, és 10 képponttal a KIRAJZOLT kép alja fölé
+                        x: (photo.width - width) / 2
+                        y: (photo.height + photo.paintedHeight) / 2
+                           - height - 10
+                        onApplyClicked: {
+                            if (tool === "crop") editorPanel.cropApplyRequested()
+                            else if (tool === "retouch") editorPanel.retouchApplyRequested()
+                            else if (tool === "text") editorPanel.textApplyRequested()
+                            else if (tool === "redeye") editorPanel.redeyeApplyRequested()
+                        }
+                        onCancelClicked: {
+                            if (tool === "crop") editorPanel.cropCancelRequested()
+                            else if (tool === "retouch") editorPanel.retouchCancelRequested()
+                            else if (tool === "text") editorPanel.textCancelRequested()
+                            else if (tool === "redeye") editorPanel.redeyeCancelRequested()
+                        }
+                    }
+
                     // #3166 (a #819 `resizes` ága): a FÉNYKÉP területe a
                     // kirajzolt képen belül. Keret-effekt (Border,
                     // MuseumMatte, DropShadow, Polaroid, Cinemascope) után a

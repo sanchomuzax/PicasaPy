@@ -168,6 +168,10 @@ Rectangle {
     // vissza a felhasználói gépelést
     property string textDraftContent: ""
     property bool textPlacementPending: false
+    //: #3123: a kép fölötti eszköz-sáv ebből tudja, mikor alkalmazható a
+    //: szöveg (a szövegmező a `EditorTextPanel`-ben él).
+    readonly property bool textApplyEnabled:
+        textModePanel ? textModePanel.applyEngedve : false
     // #450: a kép mentett felirata ("Copy Caption" gombhoz) — a hívó
     // (PhotoViewer) tölti a photosModel.captionAt()-ból; üresnél a gomb
     // tiltott. A hasTextOverlay ("Remove all existing text" gombhoz) a
