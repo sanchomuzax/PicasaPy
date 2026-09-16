@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.491] – 2026-09-16
+
+### Javítva
+
+- **A Picasából átvett arcok eljutnak a `.picasa.ini`-be** (#3184). Az átvétel
+  kódja megvolt, de semmi nem hívta: a db3-ban álló, névvel ellátott arcok
+  ezért nem kerültek át. Mostantól a kulcsszavakkal és a helyadattal EGYÜTT,
+  mappánként egyetlen írásban mennek ki — és ahol az ini-ben már áll arc, oda
+  hozzá sem nyúlunk. ⚠️ A felhasználói kiváltó (az import indítása) még
+  hiányzik (#3132), addig ez a réteg készen áll, de magától nem indul.
+
 ## [0.8.490] – 2026-09-16
 
 ### Módosítva
