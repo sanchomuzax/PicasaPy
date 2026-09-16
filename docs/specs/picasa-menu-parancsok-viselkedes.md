@@ -5763,3 +5763,79 @@ A 295. kör egyetlen nyílt kérdése — **hol tárolódik az áthelyezési sz�
 *Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/move_database.fen` és
 `moving_database.fen`; `referencia/stringres-en-hu.tsv:2038–2042` és
 `:2707`; a binárisban `0x00600983`, `0x00404c30`–`0x00404c4d`.*
+
+## ⛳ A `printoptions` TIZENEGY kulcsának ALAPÉRTÉKE — binárisból, két független forrásból (2026-09-16, 316. kör, #1780)
+
+*A 39. tétel kimondta, hogy a numerikus alapértékek „nincsenek mérve", és
+hogy ésszerű értéket választani szabad. ⛔ Ez a kutatói kör alapszabályába
+ütközik (*becsült érték soha*), ezért ez a szakasz kiméri őket.*
+
+### A módszer és a kontrollja
+
+A beállítás-olvasó (`0x00407a20`) **alapértéke a hívás előtti veremrekeszben**
+áll (a módszert a 311. kör igazolta). A tizenegy kulcsot **két külön
+függvény** is végigolvassa:
+
+| függvény | méret | a nulla forrása |
+|---|---:|---|
+| `0x0085f3a0` | 1010 b | `xor ebp, ebp` (`0x0085f3ba`) |
+| `0x0085f7a0` | 1230 b | `xor ebx, ebx` (`0x0085f7c3`) |
+
+⭐ **A két függvény ugyanazokat az alapértékeket adja** — ez a mérés belső
+kontrollja. A külső kontroll a `textfont`: a 39. tétel szerint `Arial`, és a
+módszer pontosan azt adja vissza (ld. lent).
+
+### A tizenegy alapérték
+
+| kulcs | alapérték | a kiolvasás helye (`0x0085f7a0`) |
+|---|---:|---|
+| `printoptions::text` | **0** | `0x0085f8c7` |
+| `printoptions::textplacement` | **0** | `0x0085f8fa` |
+| `printoptions::textfont` | **`"Arial"`** | `0x0085f9db` (sztring-ág) |
+| `printoptions::textsize` | **12** (`0xc`) | `0x0085f963` |
+| `printoptions::textcolor` | **0** | `0x0085f994` |
+| `printoptions::wrap` | **0** | `0x0085f927` |
+| `printoptions::border` | **0** | `0x0085f7b2` |
+| `printoptions::bordersize` | **10** (`0xa`) | `0x0085f7f0` |
+| `printoptions::bordercolor` | **0** | `0x0085f827` |
+| `printoptions::borderedge` | **0** | `0x0085f85a` |
+| `printoptions::evenborder` | **1** | `0x0085f88d` |
+
+⇒ Az **egyetlen bekapcsolt** alapértelmezés az `evenborder` (egyenletes
+szélességű szegély); szegély és felirat alapból **nincs**.
+
+**A `textfont` külön úton megy:** nem a `0x00407a20` számos olvasója viszi,
+hanem a sztring-változat (`0x00407630`), és az alapértelmezett nevet egy
+`.rdata`-beli sztringből építi: `0x00c80a64` = **`"Arial"`**
+(`0x0085f9c6 push 0xc80a64`). Ez egyben a mérés külső kontrollja: a 39. tétel
+ugyanezt mondja, más forrásból.
+
+### A felirat-forrás enum NÉGY értékű — a fogyasztó is ezt mutatja
+
+A nyomtatási rajzoló (`0x00776180`) a `printoptions::text` kiolvasott értékét
+a **0**, az **1** és a **3** ellen hasonlítja (`0x007761cc cmp esi, 1`,
+`0x007761d2 cmp esi, 3`, `0x007761d8 cmp esi, ebx`) ⇒ az érték legalább
+négyállású, ami egybevág a 39. tétel **négytagú** rádiócsoportjával
+(`usenotext` · `usecaption` · `usefilename` · `useexif`).
+
+### Ami NYITVA marad
+
+1. **Melyik enum-érték melyik rádiótaghoz tartozik.** A fenti három
+   összehasonlítás a számosságot igazolja, a hozzárendelést nem. Út: a
+   `0x0085e800` író névre illesztő elágazásai (a vezérlő elemneve → a beírt
+   szám), pl. a `0x0085ebc3` (`text`) körüli ág.
+2. **A két szín-kulcs kódolása** (`textcolor`, `bordercolor`): a fogyasztóban
+   `0x0077625d` és `0x00776527` környékén `0x80`/`0xff` maszkolás áll — a
+   csatorna-sorrend ebből olvasható ki.
+3. **A `bordersize` egysége** (képpont, ezredhüvelyk vagy pont): a fogyasztó
+   szorzója dönti el.
+
+⚠️ Ezekre **nem adok becsült értéket**; a megvalósítás a fenti alapértékeket
+veheti át, a hozzárendelést pedig a fenti utak zárják le.
+
+*Forrás: `0x0085f3a0` és `0x0085f7a0` (a tizenegy `GetPreference`-hívás
+alapérték-operandusa), `0x00407630` + `0x00c80a64` (a betűtípus),
+`0x00776180` (a fogyasztó összehasonlításai). A kulcsnevek címei:
+`0x00cb3d14`, `0x00cb3d28`, `0x00cb3d40`, `0x00cb3d5c`, `0x00cb3d78`,
+`0x00cb3d94`, `0x00cb3db0`, `0x00cb3dc4`, `0x00cb3de0`, `0x00cb3df8`,
+`0x00cb3e10`.*
