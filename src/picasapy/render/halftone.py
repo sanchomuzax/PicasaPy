@@ -21,6 +21,21 @@ import numpy as np
 #: ad ugyanakkora pontot.
 _DOT_SIZE_DIVISOR = 70
 
+#: A pont TELJES kiterjedése a csempén belül — a `TiledImageMask`
+#: `scaleWidth`/`scaleHeight` mezője, MÉRT alapérték: **0,8** (#2476).
+#:
+#: A natív művelet a `+0x10`/`+0x14` mezőt a tengely méretével szorozza, és a
+#: konstruktor (`FUN_00bb7a10`) mindkettőt `0,8`-ra állítja; a szállított
+#: `filterdesc.xml` két `TiledImageMask` példánya egyiken sem adja meg, tehát
+#: mindkettő az alapértéket használja. A pont átmérője így `0,8 · csempe`,
+#: azaz a sugara a BEÍRT kör `0,8`-a — a rámpa egységében épp `0,8`.
+#:
+#: ⚠️ Ez az a szám, ami a raszterünk amplitúdó-hibáját magyarázza: a festékes
+#: terület a sugár NÉGYZETÉVEL nő, és `1 / 0,8² = 1,5625` — pontosan az a
+#: ~1,5-szeres túl-erősség, amit a `research/comicize-sweep/` 15 exportján
+#: mértünk (5,70 vs. a referencia 3,77).
+DOT_SCALE = 0.8
+
 #: A pont peremének lágyítása pixelben. A natív maszk antialiasingjának
 #: PONTOS alakja (és a perem kerekítése) az egyetlen nyitott részlet a
 #: #569-ben — golden-összevetés tisztázhatja. Egy pixelnyi lineáris átmenet
@@ -78,8 +93,9 @@ def halftone_branch(
     height, width = ink.shape[:2]
     ramp = tiled_dot_ramp(height, width, tile, offset_x, offset_y)
     tone = np.clip(ink / np.float32(255.0), 0.0, 1.0)
-    # a pont sugara (a beírt körhöz mérve): fekete tónusnál 1, fehérnél 0
-    radius = 1.0 - tone
+    # a pont sugara (a beírt körhöz mérve): fekete tónusnál a MÉRT
+    # `DOT_SCALE` (0,8), fehérnél 0 — a `scaleWidth`/`scaleHeight` alapérték
+    radius = np.float32(DOT_SCALE) * (1.0 - tone)
     # a perem lágyítása a csempeméretéhez mérve — a `_EDGE_SOFTNESS_PX` a
     # pixelben mért átmenet, a rámpa viszont a beírt sugárral normált
     softness = np.float32(max(_EDGE_SOFTNESS_PX / max(tile / 2.0, 1e-6), 1e-6))

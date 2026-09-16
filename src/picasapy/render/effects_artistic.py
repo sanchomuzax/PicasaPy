@@ -309,12 +309,24 @@ def apply_comicize(
       látszólag jobb (0,811) — épp azért, mert nem rajzol rasztert; ez a
       metrika csapdája, nem javulás.
 
+    **A pont MÉRETE mért** (#2476): a `TiledImageMask` `scaleWidth`/
+    `scaleHeight` alapértéke **0,8** (`halftone.DOT_SCALE`), tehát a pont
+    átmérője a csempe 0,8-a, nem a teljes beírt kör. Ez magyarázta a raszter
+    ~1,5-szeres túl-erősségét (`1 / 0,8² = 1,5625`), és a 15 export
+    újramérése igazolta:
+
+    | | amplitúdó-hiba | átlag ΔE |
+    |---|---:|---:|
+    | a #2476 előtt (skála 1,0) | 2,2519 | 6,5132 |
+    | **ma (skála 0,8)** | **1,3909** | **5,9326** |
+
+    Mind a 15 álláson javult a ΔE, és 12-en az amplitúdó is.
+
     **Nyitott részlet** (a #569 elfogadási feltétele szerint is): a natív
-    pontmaszk pontos antialiasingja és peremkerekítése. A mérés szerint a
-    raszterünk ~1,5-szer erősebb a kelleténél (amplitúdó 5,70 vs a
-    referencia 3,77), és a `DotContrast` válaszgörbéje is meredekebb
-    (0,58…10,91 a referencia 1,66…5,04-e helyett) — ez az, amit a fenti
-    három lépés önmagában nem javít.
+    pontmaszk pontos antialiasingja és peremkerekítése, valamint a
+    `DotContrast` válaszgörbéjének MEREDEKSÉGE — a mi raszterünk 0,41-től
+    9,35-ig fut, a referencia 1,66-tól 5,04-ig. A méret javítása ezt
+    arányosan húzta le, de a meredekséget nem lapította ki.
     """
     validate_image(image)
     for name, value in (
