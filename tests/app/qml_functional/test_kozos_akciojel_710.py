@@ -34,8 +34,14 @@ import picasapy.app
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 
-#: A két panel, aminek az auditja szerint UGYANAZ a gombja.
-PANELEK = ("EditorCropPanel.qml", "EditorParamPanel.qml")
+#: A két hely, aminek az auditja szerint UGYANAZ a gombja.
+#:
+#: ⚠️ #3123: a vágás Alkalmaz/Mégse párja KIKERÜLT a panelből — az
+#: eredetiben a KÉP FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`).
+#: A jel vele együtt költözött, tehát a kapu az `EditorToolBar.qml`-t nézi a
+#: `EditorCropPanel.qml` helyett. A kikötés változatlan: EGY komponens, és a
+#: Unicode-os alak ne szivárogjon vissza.
+PANELEK = ("EditorToolBar.qml", "EditorParamPanel.qml")
 
 
 def _kod_sorok(ut: Path) -> str:
@@ -92,9 +98,9 @@ class TestAUnicodeJelNemJonVISSZA:
 
     def test_a_feliratok_tisztak_maradtak(self) -> None:
         """A gomb felirata a puszta szó — a jelet a komponens adja."""
-        forras = (_QML / "EditorCropPanel.qml").read_text(encoding="utf-8")
-        assert 'label: qsTr("Apply")' in forras
-        assert 'label: qsTr("Cancel")' in forras
+        forras = (_QML / "EditorToolBar.qml").read_text(encoding="utf-8")
+        assert 'qsTr("Apply")' in forras
+        assert 'qsTr("Cancel")' in forras
 
 
 class TestAJelHELYE:

@@ -69,6 +69,8 @@ Item {
     component SavGomb: Rectangle {
         id: gomb
         property string felirat: ""
+        //: igaz = pipa (Alkalmaz), hamis = X (Mégse)
+        property bool pipa: true
         property bool buttonEnabled: true
         signal buttonClicked()
 
@@ -92,6 +94,17 @@ Item {
             opacity: terulet.containsMouse && gomb.buttonEnabled ? 0.8 : 1.0
         }
 
+        //: #710: a pipa/X a KÖZÖS rajzolt jel (`EditorActionBadge`), a gomb
+        //: jobb szélétől 9 képpontra (audit 7.4) — nem Unicode-glif, mert az
+        //: betűtípusfüggő, és hiányzó glifnél NYOMTALANUL eltűnik. A jel a
+        //: párral együtt költözött ide a panelekből (#3123).
+        EditorActionBadge {
+            tick: gomb.pipa
+            anchors.right: parent.right
+            anchors.rightMargin: 9
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         MouseArea {
             id: terulet
             anchors.fill: parent
@@ -110,6 +123,7 @@ Item {
         SavGomb {
             objectName: sav.tool + "CancelButton"
             felirat: qsTr("Cancel")
+            pipa: false
             onButtonClicked: sav.cancelClicked()
         }
         SavGomb {
