@@ -312,15 +312,21 @@ class TestASzuksegAgMerheto:
         Ha ez elromlik, a fenti szűk-panel-állítások észrevétlenül
         elveszítik az élüket (24 px-es csempékkel minden „elfér").
 
-        A küszöb 300: bélyegkép NÉLKÜL a legmagasabb fül ~158 px, VELE
-        pedig ~358 (a #704 óta — előtte 432 volt, mert a bélyegkép-doboz
-        56 px magas volt a mért 48 helyett). A 300 mindkét irányban jó
-        távolságra van, tehát a csempeméret finomhangolása nem teszi némává
-        az őrt, egy elveszett csonk viszont megbuktatja."""
+        A küszöb 300: bélyegkép NÉLKÜL a fül ~158 px, VELE pedig ~358 (a
+        #704 óta — előtte 432 volt, mert a bélyegkép-doboz 56 px magas volt
+        a mért 48 helyett). A 300 mindkét irányban jó távolságra van, tehát a
+        csempeméret finomhangolása nem teszi némává az őrt, egy elveszett
+        csonk viszont megbuktatja.
+
+        #3247: a mérés a `tallestTabHeight` helyett a LÁTHATÓ fül tartalmát
+        (`tabContentHeight`) olvassa — a panel magassága mostantól a MÉRT
+        277, tehát „a legmagasabb fül" nem létezik property-ként. A csonk
+        `activeTab: 2`-t állít, tehát ugyanazt a csempés fület méri, mint
+        eddig."""
         gyoker = _render(qt_app, _SZUK_PANEL_QML, 280, 900)
         panel = _child(gyoker, "panel")
 
-        assert panel.property("tallestTabHeight") > 300, (
+        assert panel.property("tabContentHeight") > 300, (
             "a csempék bélyegkép nélkül alacsonyak — a csonk nem ér el a "
             "panelig, és a szűk-panel-tesztek értelmüket vesztették"
         )

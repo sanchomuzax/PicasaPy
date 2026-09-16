@@ -235,6 +235,26 @@ for e in respack.read_index(adat):
 | `editpanel/tabpanel1` (az 1. fül lapja) | x 3..276, y 79..356 | 273 × 277 |
 | `editpanel/insetleft` (a képnézet bal széle) | x **280**..800 | — |
 
+⭐ **A `tabpanel1` 277-es magassága NÁLUNK IS ez (2026-09-16, #3247).** Eddig a
+panel magasság-igénye a MI legmagasabb fülünk tartalmából jött
+(`EditorPanel.tallestTabHeight`), tehát a saját tartalmunk szabta meg a panel
+méretét, nem az eredeti. Élőben mérve a legmagasabb fül a **saját**, az
+eredetiben nem létező „örökölt szűrők" füle volt (#571) — **298** képpont.
+
+| fül | implicitHeight (2026-09-16) |
+|---|---:|
+| örökölt szűrők (#571, SAJÁT) | 298 → **274** |
+| Finomhangolás | 272 |
+| Gyakori javítások | 245 |
+| effekt-fülek 1–3 · 6. fül | 102 · 58 |
+
+A #3247 óta a panel a **mért 277**-et használja (`mertTabPanelHeight`), és őr
+tartja, hogy egyetlen fül se lépje túl (`test_ful_magassag_3247.py`). Ennek
+három következménye van: a #703 szerződése („ne ugráljon fülváltáskor")
+erősebben teljesül (a szám állandó), a panel mérete az EREDETIÉ, és a fülek
+halaszthatóvá válnak (#3244), mert a magasság nem olvassa többé mind a hét fül
+implicit magasságát.
+
 **A bal panel tartalom-oszlopa tehát 276 képpont, a képnézet x = 280-nál
 kezdődik.** Ez egybevág a `.tre` `LEFTDRAWEROFFSET` alapértékével (**279**,
 `editpanel.tre` `toggle_left_drawer` és `insetleft`).

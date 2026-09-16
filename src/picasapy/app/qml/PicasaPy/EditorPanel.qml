@@ -38,11 +38,26 @@ Rectangle {
     // implicit magassága: fülsáv + a LEGMAGASABB fül + a Visszavonás/Újra
     // sor. Nem az AKTÍV fülé, hogy a panel magassága fülváltáskor ne
     // ugráljon. A néző ezt a magasságot kapja meg alsó korlátként.
-    readonly property real tallestTabHeight: Math.max(
-        fixesTab.implicitHeight, finetunePanel.implicitHeight,
-        effectsTab1.implicitHeight, effectsTab2.implicitHeight,
-        effectsTab3.implicitHeight, effectsTab4.implicitHeight,
-        legacyTab.implicitHeight)
+    // #3247: a fül lapjának magassága a MÉRT szám, nem a mi tartalmunk
+    // maximuma. Az eredeti `editpanel/tabpanel1` **273 × 277** képpont
+    // (`docs/specs/ui-audit-editor.md`, a `respack.yt`-ből képpontról
+    // képpontra), és a #3247 óta MINDEN fülünk belefér (a legmagasabb a
+    // Finomhangolás, 272; őr: `test_ful_magassag_3247.py`).
+    //
+    // Miért jobb ez, mint a fülek maximuma:
+    //
+    // * a #703 szerződése („a panel magassága fülváltáskor ne ugráljon")
+    //   ERŐSEBBEN teljesül — a szám állandó, nem a tartalomtól függ;
+    //   ⚠️ a paritás is javul: eddig a MI legmagasabb fülünk határozta meg,
+    //   mekkora a panel, nem az eredeti mérete;
+    // * és a fülek ezzel HALASZTHATÓVÁ válnak (#3244): a magasság nem
+    //   olvassa többé mind a hét fül `implicitHeight`-jét, tehát egy
+    //   `Loader` mögé tett, még létre nem jött fül nem rontja el.
+    //
+    // A VÁGÁS-logika változatlan, és továbbra is a LÁTHATÓ fülből dolgozik
+    // (`tabContentHeight`) — tehát ha egy fül mégis túlnő a 277-en, a
+    // `tabContentTruncated` jelzi, nem némán vágódik le.
+    readonly property real mertTabPanelHeight: 277
 
     // #703: a panel magasság-igénye a fülek tartalma NÉLKÜL — fülsáv,
     // gombsor és a margók. Ez az a magasság, ami alá menni már azt jelenti,
@@ -51,7 +66,7 @@ Rectangle {
     // minimumát — beégetett szám nélkül.
     readonly property real chromeHeight:
         10 + tabBar.height + 6 + globalUndoRow.height + 10
-    implicitHeight: panel.chromeHeight + panel.tallestTabHeight
+    implicitHeight: panel.chromeHeight + panel.mertTabPanelHeight
 
     // #641/#703: a panel TÉNYLEGES és LÁTHATÓ magassága eltérhet. Egy
     // layout-cella nem zsugorít a kért méret alá, hanem hagyja túlnyúlni a

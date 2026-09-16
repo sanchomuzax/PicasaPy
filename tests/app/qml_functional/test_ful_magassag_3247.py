@@ -8,10 +8,10 @@ képpontról képpontra mérve).
 
 ## Miért ez a panel EGÉSZÉNEK kérdése
 
-A panel magasság-igénye (`implicitHeight`) a `chromeHeight` + a LEGMAGASABB fül
-(`tallestTabHeight`) — szándékosan nem az aktív fülé, hogy a panel fülváltáskor
-ne ugráljon (#703). Egyetlen túl magas fül tehát az EGÉSZ panelt megnöveli, és
-a néző ezt kapja alsó korlátként.
+A panel magasság-igénye (`implicitHeight`) a `chromeHeight` + a fül lapjának
+MÉRT magassága (`mertTabPanelHeight` = 277). Ez a #3247 második lépése: eddig a
+LEGMAGASABB fülünk tartalma adta a számot, tehát egyetlen túl magas fül az
+EGÉSZ panelt megnövelte, és a néző ezt kapta alsó korlátként.
 
 Mérve 2026-09-16-án: a legmagasabb fül a **saját, az eredetiben nem létező**
 „örökölt szűrők" füle volt (#571), **298** képponttal — a mért 277 helyett. A
@@ -24,10 +24,9 @@ többi fül belefér (a legmagasabb eredeti-megfelelő a Finomhangolás, 272).
 
 ## Amit NEM állít
 
-Hogy a panel magassága PONTOSAN a mért 277-tel egyezik. Ahhoz a
-`tallestTabHeight` helyére a mért állandó kellene, az viszont a vágás-logikát
-is érinti (`tabContentTruncated`, a #703 stub-őre a valódi legmagasabb fület
-méri) — külön szelet, a jegyen megnevezve.
+A LÁTVÁNYT: hogy a 277 képponton belül a fülek tartalma hova kerül. A
+vágás-logika változatlanul a LÁTHATÓ fülből dolgozik (`tabContentHeight`), tehát
+ha egy fül mégis túlnő, a `tabContentTruncated` jelzi — nem némán vágódik le.
 """
 
 from __future__ import annotations
@@ -71,17 +70,37 @@ class TestAFulekBelefernek:
             + " — egyetlen ilyen fül az EGÉSZ panelt megnöveli (#703)"
         )
 
-    def test_a_panel_igenye_a_krom_plusz_a_legmagasabb_ful(self, qml_app, qt_app):
-        """A #703 szerződése él tovább: a panel a KRÓM + a legmagasabb fül."""
+    def test_a_panel_igenye_a_krom_plusz_a_MERT_lap(self, qml_app, qt_app):
+        """A panel magassága a KRÓM + a MÉRT 277 — nem a mi tartalmunk maximuma.
+
+        Így a #703 szerződése („ne ugráljon") erősebben teljesül, a paritás is
+        javul, és a fülek halaszthatóvá válnak (#3244).
+        """
         window = qml_app[0]
         qt_app.processEvents()
         panel = window.findChild(QObject, "viewerEditorPanel")
         assert panel is not None
+        assert float(panel.property("mertTabPanelHeight")) == MERT_LAP_MAGASSAG
         krom = float(panel.property("chromeHeight"))
-        legmagasabb = float(panel.property("tallestTabHeight"))
-        assert legmagasabb == max(_fulek(window).values())
-        assert float(panel.property("implicitHeight")) == krom + legmagasabb
-        assert legmagasabb <= MERT_LAP_MAGASSAG
+        assert float(panel.property("implicitHeight")) == krom + MERT_LAP_MAGASSAG
+
+    def test_a_magassag_nem_a_fulek_maximumabol_jon(self, qml_app, qt_app):
+        """Mutáció-próba: ha valaki visszaírja a fülek maximumát, ez bukik.
+
+        A legmagasabb fülünk 274, a mért lap 277 — a kettő KÜLÖNBÖZIK, tehát
+        a próba tényleg a mért számot állítja, nem véletlen egyezést.
+        """
+        window = qml_app[0]
+        qt_app.processEvents()
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        legmagasabb = max(_fulek(window).values())
+        assert legmagasabb < MERT_LAP_MAGASSAG, (
+            f"a legmagasabb fül {legmagasabb} — a mért 277-cel egyezve a "
+            "fenti próba nem tudná megkülönböztetni a két modellt"
+        )
+        assert float(panel.property("implicitHeight")) != (
+            float(panel.property("chromeHeight")) + legmagasabb
+        )
 
     def test_a_ful_magassaga_fulvaltaskor_nem_valtozik(self, qml_app, qt_app):
         """A #703 lényege: a panel magassága nem ugrál a fülek között."""
