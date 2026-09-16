@@ -6905,6 +6905,10 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <translation>Mappaleírás szerkesztése</translation>
     </message>
     <message>
+        <source>Album Properties</source>
+        <translation>Album tulajdonságai</translation>
+    </message>
+    <message>
         <source>Name:</source>
         <translation>Név:</translation>
     </message>

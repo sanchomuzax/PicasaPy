@@ -23,8 +23,10 @@ import QtQuick.Controls
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
 // szürkén LÁTSZANAK (#416, spec 5.1.). Az album törlése/leírása mögött
-// nincs réteg (a `photo_ops_controller` csak létrehozni és tagságot írni
-// tud), a webes műveletek pedig nálunk nem értelmezhetők.
+// nincs réteg (a `photo_ops_controller` az album TÖRLÉSÉT nem tudja), a
+// webes műveletek pedig nálunk nem értelmezhetők. ⭐ #3173: az
+// „Albumleírás szerkesztése…" viszont VALÓDI tétel lett — a tulajdonságok
+// (név, dátum, helyszín, leírás) az `album.fen` párbeszédén szerkeszthetők.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
 PicasaMenu {
@@ -34,6 +36,9 @@ PicasaMenu {
     // a jobbklikkelt album azonosítója — a hívó állítja be popup() előtt
     property string albumToken: ""
     property string albumName: ""
+
+    //: #3173: az album tulajdonságai (név, dátum, helyszín, leírás)
+    signal editDescriptionRequested()
 
     signal selectAllRequested()
     signal clearSelectionRequested()
@@ -48,10 +53,11 @@ PicasaMenu {
         text: qsTr("&Delete Album")
         placeholder: true
     }
-    PicasaMenuItem {
+    MenuItem {
+        //: #3173: valódi tétel — az album tulajdonságai (`album.fen`)
         objectName: "albumMenuEditDescription"
         text: qsTr("&Edit Album Description...")
-        placeholder: true
+        onTriggered: menu.editDescriptionRequested()
     }
     PicasaMenuItem {
         objectName: "albumMenuAddNameTags"

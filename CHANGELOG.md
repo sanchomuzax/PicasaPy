@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.492] – 2026-09-16
+
+### Hozzáadva
+
+- **Az album neve és adatai szerkeszthetők** (#3173). Eddig egy album nevét
+  csak a létrehozáskor lehetett megadni — elírás után nem volt javítási út.
+  Mostantól az album jobbklikk-menüjének **„Albumleírás szerkesztése…"**
+  tétele megnyitja az album tulajdonságait (Név, Dátum, Felvétel készítésének
+  helye, Leírás), és a mentés minden olyan mappa `.picasa.ini`-jébe átvezeti,
+  ahol az albumnak van tagja. A párbeszéd ugyanaz, mint a mappáénál — az
+  eredeti Picasa is egy ablakot használ a kettőre.
+
 ## [0.8.491] – 2026-09-16
 
 ### Javítva

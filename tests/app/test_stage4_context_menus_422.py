@@ -73,17 +73,32 @@ class TestAlbumContextMenu:
         assert found == self.DOCUMENTED
 
     def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
-        """Az album törlése/leírása és a webes műveletek mögött nincs
-        réteg — szürkén LÁTSZANAK (spec 5.1.)."""
+        """Az album törlése és a webes műveletek mögött nincs réteg — szürkén
+        LÁTSZANAK (spec 5.1.).
+
+        ⭐ #3173: az „Albumleírás szerkesztése…" KIKERÜLT ebből a listából —
+        valódi tétel lett (az album tulajdonságai az `album.fen`
+        párbeszédén szerkeszthetők). A viselkedését a
+        `test_album_tulajdonsagok_*_3173.py` méri.
+        """
         menu = _load(qml_engine, "AlbumContextMenu")
         for name in (
             "albumMenuDelete",
-            "albumMenuEditDescription",
             "albumMenuAddNameTags",
             "albumMenuOnlineActions",
             "albumMenuUploadToGooglePhotos",
         ):
             assert menu.findChild(QObject, name).property("enabled") is False
+
+    def test_az_albumleiras_MAR_valodi_tetel(self, qml_engine):
+        """#3173: engedélyezett, és a saját jelzését süti el."""
+        menu = _load(qml_engine, "AlbumContextMenu")
+        tetel = menu.findChild(QObject, "albumMenuEditDescription")
+        assert tetel.property("enabled") is True
+        latott = []
+        menu.editDescriptionRequested.connect(lambda: latott.append(True))
+        _trigger(menu, "albumMenuEditDescription")
+        assert latott == [True]
 
     @pytest.mark.parametrize(
         "item_name,signal_name",

@@ -27,17 +27,36 @@ import QtQuick.Layouts
 Dialog {
     id: root
     objectName: "folderPropertiesDialog"
-    title: qsTr("Edit Folder Description")
+    //: A címek MÉRVE: `CEditAlbum::albumTitle` = „Album tulajdonságai",
+    //: `CEditAlbum::folderTitle` = „Mappa tulajdonságai"
+    //: (`referencia/stringres-en-hu.tsv`). ⚠️ A mappa-ág címe egyelőre a
+    //: régi marad — az átvezetése a #422 hatóköre, nem ezé a jegyé.
+    title: root.albumMode
+        ? qsTr("Album Properties")
+        : qsTr("Edit Folder Description")
     modal: true
     focus: true
     anchors.centerIn: parent ? Overlay.overlay : undefined
     standardButtons: Dialog.Ok | Dialog.Cancel
+
+    //: #3173: EGY párbeszéd, KÉT használat — a rajz ugyanaz (`album.fen`),
+    //: csak a szerkesztett dolog más. „folder" = mappa (a #422 óta), „album"
+    //: = virtuális album. Két másolat helyett egy komponens: ugyanaz az elv,
+    //: mint a közös Alkalmaz/Mégse jelnél (#710).
+    property string mode: "folder"
+    readonly property bool albumMode: root.mode === "album"
+
+    //: a szerkesztett album azonosítója (album módban)
+    property string albumToken: ""
+    property string albumLocation: ""
 
     // a szerkesztett mappa — a hívó állítja be open() előtt
     property string folderPath: ""
     property string folderName: ""
     // a jelenlegi kézi dátum-felülírás ISO-alakban ("" = nincs, a mappa a
     // legrégebbi képe dátumát használja)
+    //: album módban az album neve (a prefillhez)
+    property string albumName: ""
     property string currentDate: ""
     property string currentDescription: ""
 
@@ -50,16 +69,30 @@ Dialog {
     // (mappa, ISO-dátum vagy "", leírás) — az Ok gomb
     signal folderPropertiesAccepted(string folderPath, string isoDate, string description)
 
+    //: #3173: album módban a NÉV és a HELYSZÍN is menthető (az `ini/albums`
+    //: mind a négy mezőt modellezi), ezért külön jel — a hívó ebből írja az
+    //: album definícióját minden érintett mappa ini-jébe.
+    signal albumPropertiesAccepted(string token, string name, string isoDate,
+                                   string location, string description)
+
     onOpened: {
-        nameField.text = root.folderName
+        nameField.text = root.albumMode ? root.albumName : root.folderName
         dateField.text = root.currentDate
+        locationField.text = root.albumMode ? root.albumLocation : ""
         descriptionField.text = root.currentDescription
-        descriptionField.forceActiveFocus()
+        if (root.albumMode) nameField.forceActiveFocus()
+        else descriptionField.forceActiveFocus()
         standardButton(Dialog.Ok).enabled =
             Qt.binding(function() { return root._dateValid })
     }
     onAccepted: {
         if (!root._dateValid) return
+        if (root.albumMode) {
+            root.albumPropertiesAccepted(
+                root.albumToken, nameField.text, dateField.text.trim(),
+                locationField.text, descriptionField.text)
+            return
+        }
         root.folderPropertiesAccepted(
             root.folderPath, dateField.text.trim(), descriptionField.text)
     }
@@ -77,8 +110,10 @@ Dialog {
             id: nameField
             objectName: "folderPropertiesNameField"
             Layout.preferredWidth: 320
-            // a mappa átnevezése (fájlrendszer-művelet) még nincs bekötve
-            enabled: false
+            //: #3173: ALBUM módban a név szerkeszthető (az album neve az
+            //: ini-ben áll). Mappánál viszont fájlrendszer-művelet volna, és
+            //: az még nincs bekötve — ott marad inaktív.
+            enabled: root.albumMode
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}
         }
@@ -144,10 +179,12 @@ Dialog {
             color: Theme.ink
         }
         TextField {
+            id: locationField
             objectName: "folderPropertiesLocation"
             Layout.preferredWidth: 320
-            // a mappa-szintű helyszín még nincs bekötve
-            enabled: false
+            //: #3173: ALBUM módban menthető (`location=` az album
+            //: definíciójában); mappánál nincs mögötte réteg.
+            enabled: root.albumMode
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}
         }
