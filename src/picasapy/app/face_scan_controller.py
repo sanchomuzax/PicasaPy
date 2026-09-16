@@ -49,12 +49,15 @@ from picasapy.faces import embedder as embedder_module
 from picasapy.faces import model_download
 from picasapy.faces.detector import FaceDetector
 from picasapy.faces.embedder import FaceEmbedder
+from picasapy.faces.clustering import DEFAULT_SUGGEST_STEP, step_to_threshold
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
     all_photos,
     faces_missing_embedding,
     ignored_faces,
     group_unnamed_faces,
+    javaslatokat_ujraszamol,
+    lazitott_lepcso,
     mark_faces_ignored,
     set_suggested_name,
     unignore_faces,
@@ -624,6 +627,50 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         with open_index(self._db_path) as conn:
             set_suggested_name(conn, int(face_id), None)
             conn.commit()
+
+    #: #3237: a javaslat-lépcső beállítás-kulcsa. A „További javaslatok
+    #: keresése" NEM ír bele — az eredeti sem írja vissza a küszöböt
+    #: (`moresug`, kezelő `0x00602890`).
+    SUGGEST_STEP_KEY = "faces/suggestStep"
+
+    @Slot(result=int)
+    def moreSuggestions(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """„További javaslatok keresése" — a lépcső TÍZZEL lejjebb (#3237).
+
+        Az eredeti `moresug` a felismerési küszöböt `0,1`-del csökkenti, és a
+        beállítást **nem írja vissza**: egy kattintás több javaslatot hoz, de
+        a program alapviselkedése változatlan.
+
+        ⚠️ A bináris `0,75`-ös SZÁMÁT nem vesszük át: nálunk a küszöb a
+        `step_to_threshold` skáláján él, tehát a **lépcsőt** csökkentjük
+        tízzel (`85 → 75`), és abból számolunk küszöböt — a vezérlőt vesszük
+        át, nem a számot (#2187).
+
+        Visszatérési érték: hány arcra került ÚJ javaslat.
+        """
+        lepcso = self._javaslat_lepcso()
+        lazitott = lazitott_lepcso(lepcso)
+        kuszob = step_to_threshold(lazitott)
+        try:
+            with open_index(self._db_path) as conn:
+                irt = javaslatokat_ujraszamol(conn, kuszob)
+                conn.commit()
+        except Exception as hiba:  # noqa: BLE001 — a nézet ne fagyjon le
+            _log.exception("javaslat-lazítás hiba: %s", self._db_path)
+            self.embeddingFailed.emit(str(hiba))
+            return 0
+        #: ⛔ A beállítást SZÁNDÉKOSAN nem írjuk vissza — ez a lazítás egyszeri.
+        if irt:
+            self.unnamedCountChanged.emit()
+        return irt
+
+    def _javaslat_lepcso(self) -> int:
+        """A tárolt javaslat-lépcső (alapértéken a mért `85`)."""
+        ertek = self._settings.value(self.SUGGEST_STEP_KEY, DEFAULT_SUGGEST_STEP)
+        try:
+            return int(ertek)
+        except (TypeError, ValueError):
+            return DEFAULT_SUGGEST_STEP
 
     @Slot(list, result=int)
     def ignoreFaces(self, face_ids) -> int:  # noqa: N802 — QML-slot-stílus

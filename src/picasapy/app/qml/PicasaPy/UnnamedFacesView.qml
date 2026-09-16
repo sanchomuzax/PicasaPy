@@ -124,6 +124,26 @@ ColumnLayout {
             ToolTip.delay: Theme.tooltipDelay
             onClicked: ignoreConfirm.open()
         }
+        // #3237: „További javaslatok keresése" — az eredeti `moresug`
+        // parancsa (kezelő `0x00602890`). A felismerési küszöböt EGYSZERI
+        // alkalommal lazítja (a lépcsőt tízzel), és a beállítást NEM írja
+        // vissza — a mért viselkedés. A mellőzött nézetben nincs értelme,
+        // ezért ott nem látszik.
+        Button {
+            objectName: "moreSuggestionsButton"
+            visible: !root.ignoredMode
+            text: qsTr("Look for more suggestions")
+            enabled: !!root.faceScanController
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr(
+                "Lowers the recognition threshold once, so more names are "
+                + "suggested. The stored setting is left unchanged.")
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: {
+                root.faceScanController.moreSuggestions()
+                root.reload()
+            }
+        }
         Button {
             id: addNameButton
             objectName: "addNameButton"
