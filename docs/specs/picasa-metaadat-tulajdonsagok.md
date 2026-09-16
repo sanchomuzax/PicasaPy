@@ -619,3 +619,103 @@ egyezése.
   **8 ULP tűréssel** (ld. 9.8).
 * ⛔ A `383` szám a jegy törzsében **elavult**: a szövegblokk **592** nevet
   tartalmaz.
+
+### 9.9 ⛳ MEGVAN A HÍVÓ: a gyártót a **Make** dönti el, a kulcsokat a saját szótár adja (2026-09-16, 315. kör, #3121)
+
+*A 9.7/9.8 a két keresőt és az algoritmusát adta. Ez a szakasz a fölötte álló
+elosztót méri ki: honnan jön a `LensType`, ki választ Canon és Nikon között,
+és hova kerül az eredmény.*
+
+#### A két kereső hívója: pontosan egy, és ugyanaz
+
+| kereső | közvetlen hívás | 4 bájtos mutató rá |
+|---|---|---:|
+| `0x00a35a60` (Canon) | **`0x00a359bb`** | **0** |
+| `0x00a35d80` (Nikon) | **`0x00a359dc`** | **0** |
+
+Mindkettő ugyanabban a függvényben (`FUN_00a35940`, 283 b), és **egyik sem
+érhető el függvénymutatón át** ⇒ az elosztó az EGYETLEN belépési pont.
+*(Indextől független pásztázás a teljes `.text`-en: `e8`/`e9` relatív hívások
+és nyers 4 bájtos mutatók.)*
+
+#### Az elosztó menete
+
+```
+0x00a35951  esi = 0xff                     ; a szótár 255-ös kulcsa
+0x00a3595a  div [ebp+0x10] / 0x00a35964    ; hasítás + láncbejárás: MÁR MEGVAN?
+0x00a35981  edi = 0x0a                     ; a 10-es kulcs
+0x00a35990  call 0x009f05c0                ;   -> a gyártó szövege
+0x00a359a2  ecx = 0x00ce3c00 ('canon')     ; kis/nagybetű-független összevetés
+0x00a359bb  call 0x00a35a60                ;   -> CANON-ág
+0x00a359c4  ecx = 0x00ce3c08 ('nikon')
+0x00a359dc  call 0x00a35d80                ;   -> NIKON-ág
+0x00a35a10  push 0xff / call 0x0049c640    ; az eredmény VISSZA a szótárba
+```
+
+A kulcsokat a **saját 6.1 táblánk** nevezi meg (a kulcs = `id` + 1):
+
+| kulcs | mi ez a 6.1 szerint | szerepe itt |
+|---:|---|---|
+| **10** (`0x0a`) | IFD0 `0x010f` — **Make** | ez dönti el a gyártót |
+| **105** (`0x69`) | gyártói (Canon) `0x0001` — **CameraSettings** | a Canon-ág bemenete |
+| **117** (`0x75`) | gyártói (Nikon) `0x0083` — **LensType** | a Nikon-ág bemenete |
+| **118** (`0x76`) | gyártói (Nikon) `0x0098` — **LensData** | a Nikon-ág bemenete |
+| **255** (`0xff`) | a 6.1 tábla 176 bejegyzésén **KÍVÜL** | a feloldott objektívnév — Picasa-belső, szintetikus kulcs |
+
+⇒ **Nincs harmadik gyártói tábla.** Az elosztó két nevet ismer (`'canon'`,
+`'nikon'`); a Sigma/Tamron/Tokina nevek NEM külön ágon jönnek, hanem a két
+tábla soraiban állnak (idegen gyártós objektívek a Canon/Nikon bajonetthez).
+
+#### A Canon-ág bemenete: a CameraSettings 22–27. eleme
+
+A `0x00a35a67 push 0x69` → `0x009f0fd0` a 105-ös kulcs tömbjét adja; a
+használt elemek (a bájteltolás 4-gyel osztva az elemindex):
+
+| bájteltolás | elem | mire megy |
+|---|---:|---|
+| `+0x58` | **22** | a `LensType` — **ez a keresőkulcs** (`edi`) |
+| `+0x5c` | 23 | → `gyújtó_max` |
+| `+0x60` | 24 | → `gyújtó_min` |
+| `+0x64` | 25 | a kettő **osztója** (`fdiv` `0x00a35aea`, `fdivrp` `0x00a35b0d`) |
+| `+0x68` | 26 | → `rekesz_min` |
+| `+0x6c` | 27 | → `rekesz_max` |
+
+⭐ A 22-es elem a dokumentált Canon `CameraSettings`-ben is a `LensType`
+helye — a bináris és a külső dokumentáció **függetlenül ugyanoda mutat**.
+
+A két rekesz-érték átváltása (minden konstans a binárisból kiolvasva):
+
+```
+rekesz = 2 ^ (elem / 64)
+```
+
+`0x00cf3fc0` = **0,015625** (= 1/64), az alap `0x00c7d9d0` = **2,0**, a
+hatványozó `0x00c0b410` (kétszer hívva, rekeszenként egyszer:
+`0x00a35b40`, `0x00a35b74`). A `0x00cf3ac0` = 4294967296,0 az előjeles→
+előjeltelen javítás (2³²), nem a képlet része.
+
+**Méret-kapu:** a Canon-ág csak akkor fut tovább, ha a tömb mérete
+(`(méret & ~1) > 0x36`) — `0x00a35a85`–`0x00a35a8f`.
+
+*Forrás: `FUN_00a35940` (`0x00a35940`, 283 b) és `FUN_00a35a60` prológusa
+(`0x00a35a67`–`0x00a35b7d`); a sztringek `0x00ce3c00` és `0x00ce3c08`; a
+kulcsnevek a 6.1 tábla `0x00c783ec`, `0x00c78e50`, `0x00c78fa0`,
+`0x00c78fbc` sorai.*
+
+### 9.10 Amit ez a megvalósításnak ad
+
+1. **A gyártót az EXIF `Make` (0x010f) dönti el**, kis/nagybetű-független
+   összevetéssel, és **csak** a `canon`/`nikon` kezdetre van ág.
+2. **Canon:** a `MakerNote 0x0001` (CameraSettings) tömbből a 22. elem a
+   `LensType`, a 23–27. elemből jön a gyújtó- és rekesz-négyes
+   (`gyújtó = elem / elem25`, `rekesz = 2^(elem/64)`), és ezt a négyest
+   **8 ULP tűréssel** kell a táblához mérni (9.8).
+3. **Nikon:** a `MakerNote 0x0083` (LensType) és `0x0098` (LensData) a
+   bemenet — a 416 soros `{8 bájtos kulcs → név}` táblához (9.2).
+4. Az eredmény a Picasa-belső **255-ös** kulcs alatt él; nálunk ez a
+   tulajdonságok panel „Objektív" sora.
+
+⚠️ **NYITVA:** a `0x009f0fd0` (a 105-ös tömb lekérője) **elem-egysége** —
+a méret-kapu `0x36`-ja és a `+0x6c`-ig tartó olvasás csak akkor fér össze, ha
+a méret nem bájtban értendő. A megszerzés útja: a `0x009f0fd0` törzse, és egy
+MÁSIK, ismert hosszú tömbre adott hívása kontrollként.
