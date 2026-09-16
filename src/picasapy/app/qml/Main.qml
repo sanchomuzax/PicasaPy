@@ -2636,25 +2636,44 @@ ApplicationWindow {
     // testvére, tehát a kollázs a mappapanellel EGYÜTT váltja le a könyvtárat
     // (`picasa-kollazs-felulet.md` 8.: a „Továbbiak..." visszavált a
     // `picasatab`-ra). A panel a saját bal hasábját hozza magával.
-    CollagePanel {
-        id: collagePanel
+    // #1612: a panel az induláskor NEM látszik (külön dokumentum-lap), a
+    // komponensenkénti mérés szerint viszont 74,5 ms-ba kerül. Ezért
+    // `Loader` mögött él: az ELSŐ megnyitásig nem jön létre, utána viszont
+    // MEGMARAD (`betoltve` ragadós) — a félkész kollázs nem veszhet el egy
+    // fülváltáson. A `visible` feltétel változatlan, csak a betöltőre került.
+    Loader {
+        id: collagePanelLoader
+        objectName: "collagePanelLoader"
         anchors.top: documentTabStrip.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        visible: !window.viewerOpen && !window.timelineOpen
+        readonly property bool kellene: !window.viewerOpen && !window.timelineOpen
                  && documentTabStrip.activeTabId === window.collageTabId
-        // az álnév a kötési hurkot kerüli ki (ld. `appController`)
-        controller: window.appController
-        librarySelection: window.selectedIndexes
+        property bool betoltve: false
+        onKelleneChanged: if (kellene) betoltve = true
+        active: kellene || betoltve
+        visible: kellene
+        sourceComponent: collagePanelKomponens
+    }
 
-        // #1028: a mentés VÉGE — a panel jelez, a navigáció a gazdáé
-        onCollageSaved: function(path) { window.locateSavedCollage(path) }
+    Component {
+        id: collagePanelKomponens
 
-        // spec 4.3/13.: a panel csak JELEZ, a fülváltás a gazdáé
-        onGetMoreClipsRequested: {
-            window.backToCollagePrompted = true
-            documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+        CollagePanel {
+            id: collagePanel
+            // az álnév a kötési hurkot kerüli ki (ld. `appController`)
+            controller: window.appController
+            librarySelection: window.selectedIndexes
+
+            // #1028: a mentés VÉGE — a panel jelez, a navigáció a gazdáé
+            onCollageSaved: function(path) { window.locateSavedCollage(path) }
+
+            // spec 4.3/13.: a panel csak JELEZ, a fülváltás a gazdáé
+            onGetMoreClipsRequested: {
+                window.backToCollagePrompted = true
+                documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+            }
         }
     }
 

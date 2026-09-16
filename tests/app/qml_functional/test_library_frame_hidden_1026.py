@@ -235,8 +235,11 @@ class TestAKeretEgeszbenTunikEl:
         tartalomterület TETEJE és ALJA mutatja meg."""
         window = qml_app[0]
         _kollazs_lapot_nyit(window, qt_app)
-        panel = _elem(window, "collagePanel")
-        tartalom = panel.parentItem()
+        # #1612: a panel `Loader` mögött él (halasztott betöltés), tehát a
+        # SZÜLŐJE a betöltő, nem a tartalomterület. A mérés tárgya változatlan:
+        # az `ApplicationWindow` tartalomterülete — azt kérdezzük közvetlenül.
+        _elem(window, "collagePanel")  # a lap tényleg nyitva van
+        tartalom = _elem(window, "collagePanelLoader").parentItem()
         _, tartalom_y, _, tartalom_h = _ablakban(tartalom)
         menu_h = _menusor(window).property("height")
         assert round(tartalom_y) == round(menu_h), (

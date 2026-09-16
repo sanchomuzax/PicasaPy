@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **Gyorsabb indulás: a program ~1 másodperccel korábban jelenik meg** (#1612).
+  A kollázs-szerkesztő felülete eddig MINDEN indításnál felépült, akkor is, ha
+  a felhasználó rá sem nézett — mostantól csak a **Kollázs** lap első
+  megnyitásakor épül fel (utána megmarad, a félkész kollázs nem veszik el). A
+  felület betöltése 2150…2350 ms helyett 1290…1330 ms; a Kollázs lap első
+  megnyitása viszont ~1 s-ot vár (a költség áthelyeződik oda, ahol tényleg
+  kell). Mérés: `docs/benchmarks/2026-09-16-kollazs-halasztas-1612.md`.
+
 ### Megváltozva
 
 - **A felület színei egyetlen ponton átvezethetők** (#3070, előkészítés). A
