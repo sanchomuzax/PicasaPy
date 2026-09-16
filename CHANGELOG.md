@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.504] – 2026-09-16
+
+### Javítva
+
+- **Az örökölt szűrők füle Windowson is belefér a szerkesztő-panelbe**
+  (#3263). A windowsos betűkészlet magasabb sorokat ad, ezért ezen a fülön a
+  lista alja lelógott a panelről. Mostantól a bevezető mondat legfeljebb két
+  sor, a szűrők rácsa pedig görgethető — így semmi nem vágódik le, akármilyen
+  betűvel is rajzol a rendszer.
+
 ## [0.8.503] – 2026-09-16
 
 ### Megváltozva
