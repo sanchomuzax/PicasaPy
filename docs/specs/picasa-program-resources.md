@@ -542,6 +542,85 @@ karakterkódjuk a 32…0x2fff tartományon kívüli —, nem ellenpélda.)*
 ⇒ **A karakterenkénti előrelépés (advance) ebben a blokkban van** — a
 kétszeres arány mást nem magyarázna.
 
+#### ✅ A `.ytf` SZERKEZETE MEGVAN — a betöltőből olvasva, 12/12 fájlon igazolva (2026-09-16, #2943)
+
+*Nem statisztikából, hanem az OLVASÓBÓL. A `%s-%d-%f-%d-%d.ytf` nevet a
+`FUN_00a48ac0` állítja össze, ott foglal egy **612 bájtos** (`0x264`)
+objektumot, felépíti (`FUN_00a43f80` → vtábla `0x00ce400c` =
+**`ytFontCache`**), majd a `vtbl+0x28` = **`FUN_00a443f0`** metódussal
+értelmezi. Ez a metódus adja meg a szerkezetet.*
+
+**Amit az értelmező olvas** (`0x00a443fd`-től):
+
+| fejléc | mit tesz vele | hova |
+|---|---|---|
+| `0x00` u32 | **`100` kötelező**, különben `3`-as hibakóddal kilép | — |
+| `0x04` u32 | pontméret | `font+0x1c0` **és** `font+0x254` |
+| `0x08` u32 | súly | `font+0x1c4` |
+| `0x0c` **u8** | dőlt | `font+0x1c8` |
+| `0x10` u32 | — | `font+0x1d0` |
+| `0x14` f32 | skála | `font+0x1d4` |
+| `0x18` u32 | **elemszám, 1 bájt/elem** | `font+0x1ec` |
+| `0x1c` u32 | **elemszám, 4 bájt/elem** (`lea ecx,[edi*4]`) | `font+0x1f4` |
+| `0x20` u32 | **elemszám, 20 bájt/elem** (`mov edx,0x14; mul`) | `font+0x1fc` |
+
+⛔ **Két korábbi olvasat megdőlt.** A `0x0c` **egy bájt**, nem `u32`; a `0x18`
+pedig **NEM eltolás**, hanem a bitkép-blob **hossza** (ezért volt „mindig <
+fájlméret"). A 20 bájtos lépték számtani bizonyítéka az értelmező felső
+korlátja: `0x6666666 = 2³² / 20` (`0x00a44732`).
+
+**A 20 bájtos rekord mezőnkénti másolással** (`0x00a447ed`–`0x00a44810`):
+`u32 · u32 · u32 · u32 · u16 · u16`.
+
+##### A fájl elrendezése — és a 4 bájtos maradék
+
+```
+0x00              fejléc (0x2c bájt)
+0x2c              családnév (a 0x28-as hossz szerint)
+0x2c + névhossz   BITKÉP-BLOB              [0x18] bájt
++                 kerning-párok            8 × [0x24] bájt
++                 BITKÉP-ELTOLÁS tábla     4 × [0x1c] = 1024 bájt (256 × u32)
++                 GLYPH-rekordok           20 × [0x20] = 5120 bájt (256 × 20)
++                 4 bájt lezárás
+= fájlméret
+```
+
+**Mind a 12 fájlon a maradék pontosan 4 bájt**, és az eltolás-tábla
+mindenhol `0`-ról indul, a maximuma a blob hosszán belül marad — vagyis a
+tábla a blobba mutat. Ez a korábbi „`K = 6209…6216`, nem osztható 256-tal"
+megfigyelés magyarázata: `1024 + 5120 = 6144`, a maradék a név és a fejléc.
+
+##### A rekord mezői — mérve (14 vs. 28 pt: minden mező kétszerez)
+
+| eltolás | típus | jelentés | példa (Praxis 14 pt, w700) |
+|---|---|---|---|
+| `+0x00` | u32 | a bitkép **szélessége** | `A` = 33, `i` = 7, szóköz = 1 |
+| `+0x04` | u32 | a bitkép **magassága** | 35 (a szóköznél 1) |
+| `+0x08` | u32 | **bal oldali térköz** (a keskeny glifeknél pozitív) | `i` = 3, `A` = 0 |
+| `+0x0c` | u32 | magasság-ismétlés (a szóköznél **0**) | 35 / 0 |
+| **`+0x10`** | **u16** | **ADVANCE** — a karakterenkénti előrelépés | `A` = 33, `i` = 13, szóköz = 13 |
+| `+0x12` | u16 | mindenhol 0 | — |
+
+A `MediumCond` 14 → 28 pt átmenetben mind az öt nem-nulla mező mediánja
+**2,000…2,038** — ez igazolja, hogy a rekord a pontmérettel skálázódó
+metrika, nem szemét.
+
+##### Szélesség-vektor — a 12 fájl advance-átlaga
+
+| család | pt | súly | átlagos advance | advance / pt |
+|---|---:|---:|---:|---:|
+| HelveticaNeue MediumCond | 14 | 400 | 22,29 | **1,592** |
+| HelveticaNeue MediumCond | 28 | 400 | 44,48 | **1,588** |
+| HelveticaNeue Condensed | 20 | 400 | 31,54 | **1,577** |
+| Praxis LT Regular | 18 | 400 | 34,83 | **1,935** |
+| Praxis Semi Bold/Heavy | 11…18 | 400/700 | 21,66…36,68 | **1,946…2,038** |
+
+⇒ A `advance/pt` **családonként állandó** (±0,03), tehát a vektor közvetlenül
+összevethető bármely szabad családdal.
+
+*Bizonyítottsági fok: **megerősített** — az értelmező diszasszemblálva
+(címekkel), és a szerkezet mind a 12 szállított fájlon bájtra zár.*
+
 ⛔ **De NEM egyenletes tábla.** A vizsgált rekordszélességek
 (4 · 5 · 10 · 19 · 20 · 25 · 38 · 50 `u32`) **egyike sem** ad oszloponként
 tiszta skálázást: mindegyik ~60 % körül marad, és sok érték
