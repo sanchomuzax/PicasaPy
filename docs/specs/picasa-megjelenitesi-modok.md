@@ -1814,7 +1814,7 @@ megjelenítésének ágában értelmezhető.
 | | várakozás | bizonyíték |
 |---|---:|---|
 | eredeti Picasa | **600 ms** | bináris: `0x00c7e304` |
-| PicasaPy jelenleg | **500 ms** | `src/picasapy/app/qml/PicasaPy/Theme.qml:83` |
+| PicasaPy jelenleg | **500 ms** | `src/picasapy/app/qml/PicasaPy/Theme.qml` (`tooltipDelay`) |
 | fejlesztői teendő | `Theme.tooltipDelay` legyen **600** | #901 |
 
 **Kész, ha:**

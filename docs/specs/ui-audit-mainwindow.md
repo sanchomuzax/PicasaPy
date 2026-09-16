@@ -111,7 +111,7 @@ Egyebek (1)                      ◀ gyűjtemény-fejléc
   funkció (`#77`/dizájnkézikönyv 08. fejezet hivatkozással a
   kódkommentben). Két eltérés az eredetihez képest:
   1. **`font.family: Theme.monoFamily`** (`"IBM Plex Mono, monospace"`,
-     Theme.qml 101. sor) — az eredeti screenshoton az évszám ugyanaz a
+     a `Theme.qml` `monoFamily` tokenje) — az eredeti screenshoton az évszám ugyanaz a
      arányos (nem monospace) betű, mint a többi UI-szöveg.
   2. **Nincs jobbra futó elválasztó-vonal** az évszám mellett — nálunk
      az évszám egy önálló `Text`, az eredetiben egy `Text` + egy vékony

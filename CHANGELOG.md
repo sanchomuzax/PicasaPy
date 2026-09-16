@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Megváltozva
+
+- **A felület színei egyetlen ponton átvezethetők** (#3070, előkészítés). A
+  téma-tokenek mostantól két rétegben élnek: a mért nyers értékek belül, a
+  felület által használt 103 szín pedig egy közös átvezetőn keresztül. Így a
+  megjelenítési mód (fekete-fehér, szépia, melegítés) később a felület
+  EGÉSZÉRE alkalmazható lesz, nem csak a képre. Ez a lépés szándékosan nem
+  változtat semmit a látványon.
+
 ## [0.8.493] – 2026-09-16
 
 ### Hozzáadva

@@ -35,6 +35,25 @@ gitignore-olt — személyes tartalom!). Minden szín pixelmintavétellel, minde
 méret pixelméréssel került ide. A QML-oldali tokenek:
 `src/picasapy/app/qml/PicasaPy/Theme.qml`.
 
+### A tokenek KÉT rétege (#3070)
+
+A `Theme.qml` két rétegű, és ez nem stílusdöntés, hanem a megjelenítési mód
+(fekete-fehér, szépia, melegítés) következménye:
+
+| réteg | mi van benne | ki olvassa |
+|---|---|---|
+| `Theme.nyers` (belső) | a MÉRT értékek és a belőlük SZÁRMAZTATOTT színek (`Qt.lighter`, `Qt.darker`, token→token) | csak maga a `Theme.qml` |
+| a nyilvános 103 szín | a nyers érték, egyszer áteresztve a `Theme.megjelenitesiPaletta` palettán | a felület összes QML-je |
+
+Miért nem elég egy réteg: a származtatás és a mód **nem kommutál**. Ha minden
+definíciót átalakítóba burkolnánk, a származtatott színek kétszer kapnák meg a
+módot; ha csak a literálokat, a származtatás a MÁR módosított színből
+számolna. A helyes sorrend `mód(származtat(nyers))` — ezért számol a
+származtatás nyersből nyersbe, és ezért megy a kész szín pontosan egyszer át a
+palettán. Új token felvételekor MINDKÉT réteg kap egy sort; az őr
+(`tests/app/test_tema_ket_reteg_3070.py`) a Qt metaobjektumán megy végig,
+tehát a hiányzó párt magától megfogja.
+
 ## Hiteles forrás: `runtime/constants.ui` (2026-08-06)
 
 A screenshot-mintavétel mellé előkerült a Picasa **saját UI-konstansfájlja**
