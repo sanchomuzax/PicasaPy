@@ -26,7 +26,7 @@ import pytest
 from picasapy.ini.document import parse_document
 from picasapy.metadata.gps import parse_geotag
 from picasapy.pmpimport.importer import PhotoRecord
-from picasapy.pmpimport.kulcsszo_hely_atvetel import (
+from picasapy.pmpimport.db3_atvetel import (
     AtvetelJelentes,
     atveendo_kulcsszavak,
     helyet_atvesz,

@@ -1,4 +1,4 @@
-"""A db3 kulcsszavainak és helyadatának átvétele a `.picasa.ini`-be (#2336).
+"""A db3 adatainak átvétele a `.picasa.ini`-be — kulcsszó, hely, ARC (#2336/#3184).
 
 ## Miért kell
 
@@ -32,10 +32,21 @@ hogy a hiányzó `geotag=` bekerüljön.
    modul „polcon álló" kód maradna: a #3002 arcátvétele pontosan így állt,
    és az adat ugyanúgy nem ért oda.
 
+## Miért EZ a neve (#3184)
+
+A #2336 óta a modul nem csak kulcsszót és helyet visz: az **arcok** átvétele
+(`arcatvetel.arcokat_atvesz`) ugyanebbe a ciklusba került, mert egy mappára
+EGY írás jár. A régi `kulcsszo_hely_atvetel` név ezt már nem írta le — a
+futtató a db3 → `.picasa.ini` átvétel közös helye.
+
 ## Ami ebben a modulban NINCS benne
 
-A db3 beolvasása (`importer.iter_photo_records` dolga) és az arcok
-átvétele (`arcatvetel`, a futtatóba külön jeggyel kötendő be).
+A db3 beolvasása (`importer.iter_photo_records` dolga).
+
+⚠️ **A futtatónak MA sincs hívója a felületről**: a `rekordokat_atvesz`-t
+semmi nem szólítja meg a `src/` alatt — az a **#3132** (a db3-import
+felhasználói kiváltója). Amíg az nincs meg, az adat a felhasználónál nem
+mozdul; ez a modul viszont készen áll rá.
 """
 
 from __future__ import annotations
@@ -47,12 +58,16 @@ from pathlib import Path
 from picasapy.ini.document import IniDocument
 from picasapy.ini.io import load_or_empty, update_document
 from picasapy.metadata.gps import format_geotag
+from picasapy.pmpimport.arcatvetel import arcokat_atvesz, atveendo_arcok
 from picasapy.pmpimport.importer import PhotoRecord
 from picasapy.scanner.walker import PICASA_INI_NAME
 
 #: a `.picasa.ini` kulcsai, amikbe az átvétel ír
 _KULCSSZO_KULCS = "keywords"
 _GEOTAG_KULCS = "geotag"
+#: #3184: az arcok kulcsa — az `arcatvetel` írja, itt csak a „már van
+#: adat" vizsgálatához kell
+_ARC_KULCS = "faces"
 
 
 def atveendo_kulcsszavak(kulcsszavak: tuple[str, ...]) -> tuple[str, ...]:
@@ -137,6 +152,8 @@ class AtvetelJelentes:
     kulcsszo: int = 0
     #: hány fotóra írtunk `geotag=` kulcsot
     hely: int = 0
+    #: #3184: hány fotóra írtunk `faces=` kulcsot (az arcátvétel hívója)
+    arc: int = 0
     #: hány fotón volt db3-adat, de az ini-ben már állt érték (nem nyúltunk hozzá)
     kihagyott: int = 0
 
@@ -145,6 +162,7 @@ class AtvetelJelentes:
             mappak=self.mappak + masik.mappak,
             kulcsszo=self.kulcsszo + masik.kulcsszo,
             hely=self.hely + masik.hely,
+            arc=self.arc + masik.arc,
             kihagyott=self.kihagyott + masik.kihagyott,
         )
 
@@ -159,7 +177,7 @@ def mappa_atvetel(
     le.
     """
     eredmeny = document
-    kulcsszo = hely = kihagyott = 0
+    kulcsszo = hely = arc = kihagyott = 0
     for rekord in rekordok:
         nev = Path(rekord.local_path).name
         volt_kulcsszo = bool(atveendo_kulcsszavak(rekord.tags)) and _van_erteke(
@@ -167,6 +185,12 @@ def mappa_atvetel(
         )
         van_hely = rekord.latitude is not None and rekord.longitude is not None
         volt_hely = van_hely and _van_erteke(eredmeny, nev, _GEOTAG_KULCS)
+        #: #3184: az arc ugyanebben a ciklusban megy ki — egy mappa EGY írás.
+        #: A „már van adat" itt is az „A" szabály szerint dönt (a
+        #: `faces=` kulcs jelenléte), ugyanúgy, mint a másik két fajtánál.
+        volt_arc = bool(atveendo_arcok(rekord.faces)) and _van_erteke(
+            eredmeny, nev, _ARC_KULCS
+        )
 
         elotte = eredmeny
         eredmeny = kulcsszavakat_atvesz(eredmeny, nev, rekord.tags)
@@ -176,12 +200,16 @@ def mappa_atvetel(
             eredmeny, nev, rekord.latitude, rekord.longitude
         )
         irt_hely = eredmeny is not elotte
+        elotte = eredmeny
+        eredmeny = arcokat_atvesz(eredmeny, nev, rekord.faces)
+        irt_arc = eredmeny is not elotte
 
         kulcsszo += int(irt_kulcsszo)
         hely += int(irt_hely)
-        kihagyott += int(volt_kulcsszo or volt_hely)
+        arc += int(irt_arc)
+        kihagyott += int(volt_kulcsszo or volt_hely or volt_arc)
     return eredmeny, AtvetelJelentes(
-        mappak=0, kulcsszo=kulcsszo, hely=hely, kihagyott=kihagyott
+        mappak=0, kulcsszo=kulcsszo, hely=hely, arc=arc, kihagyott=kihagyott
     )
 
 
@@ -233,7 +261,7 @@ def rekordokat_atvesz(
         # Enélkül az `update_document` változatlan tartalmat is kimentene,
         # ami üres `.picasa.ini`-t hozna létre és képfájl-mtime-ot érintene.
         _, proba = mappa_atvetel(load_or_empty(ut), tetelek)
-        if not (proba.kulcsszo or proba.hely):
+        if not (proba.kulcsszo or proba.hely or proba.arc):
             osszes = osszes + AtvetelJelentes(kihagyott=proba.kihagyott)
             continue
 
@@ -246,6 +274,7 @@ def rekordokat_atvesz(
             mappak=1,
             kulcsszo=vegso.kulcsszo,
             hely=vegso.hely,
+            arc=vegso.arc,
             kihagyott=vegso.kihagyott,
         )
     return osszes
