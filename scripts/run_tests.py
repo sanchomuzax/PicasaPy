@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import json
+import atexit
 import os
 import shutil
 import subprocess
@@ -679,6 +680,115 @@ def _kezelo_kapja_a_core_t(minta: str) -> bool:
     return minta.strip().startswith("|")
 
 
+#: #3265: a core-fájl mintája a munkakönyvtárban. A `%p` a PID — két
+#: egyidejű összeomlás így nem írja felül egymást, és a `_core_fajlok()`
+#: `core.*` mintája megtalálja őket.
+_CORE_FAJLNEV_MINTA = "core.%p"
+
+
+def _core_cel_minta() -> Path:
+    """Hova írja a kernel a core-t, ha mi állítjuk be (#3265)."""
+    return _ROOT / _CORE_FAJLNEV_MINTA
+
+
+def _core_minta_atallithato(minta: str, ci: bool, sudo: str | None) -> bool:
+    """Szabad-e (és van-e értelme) átállítani a `core_pattern`-t? (#3265)
+
+    Három feltétel EGYÜTT:
+
+    - **CI-n vagyunk** — a fejlesztő gépének rendszerbeállításához nem
+      nyúlunk hozzá, még akkor sem, ha technikailag menne;
+    - a minta tényleg **KEZELŐNEK** adja a core-t (`|`-es alak): fájlos
+      mintán nincs mit javítani;
+    - van **jelszó nélküli `sudo`** (a GitHub-futtatón van; másutt nem
+      kérünk jelszót egy tesztfuttatóban).
+    """
+    return bool(ci) and sudo is not None and _kezelo_kapja_a_core_t(minta)
+
+
+def _core_minta_parancs(sudo: str, ertek) -> list[str]:
+    """A `core_pattern` felülírásának parancsa (#3265).
+
+    Külön függvény, hogy a teszt a PARANCS ALAKJÁT tudja állítani anélkül,
+    hogy bármit is futtatna a rendszeren."""
+    return [
+        sudo,
+        "-n",
+        "sh",
+        "-c",
+        f"printf '%s' '{ertek}' > /proc/sys/kernel/core_pattern",
+    ]
+
+
+def _allitsd_at_a_core_mintat() -> str | None:
+    """A `core_pattern` fájlos mintára állítása CI-n (#3265).
+
+    Visszaadja az EREDETI mintát (a visszaállításhoz), vagy `None`-t, ha
+    nem nyúltunk hozzá. ⛔ Nem hallgat: ha a feltételek nem állnak, a
+    naplóban ott az ok — a #3178 óta épp az a szabály, hogy a hiányzó
+    veremkép magyarázatot kapjon.
+
+    Miért kell (#3265): a GitHub-futtatón a `systemd-coredump` kapja meg a
+    core-t, de nem tárolja (`coredumpctl`: „No coredumps found"), tehát a
+    SIGSEGV-ről CSAK a Python-szálak képe marad — a #430-osztályú hibáknál
+    viszont a C++ keret a lényeg.
+    """
+    minta = _core_minta()
+    sudo = _which("sudo")
+    ci = bool(os.environ.get("CI"))
+    if not _core_minta_atallithato(minta, ci=ci, sudo=sudo):
+        if ci and _kezelo_kapja_a_core_t(minta):
+            print(
+                "a core-t a rendszer kezelője kapja meg, és nincs `sudo` a "
+                "minta átállításához — natív veremkép nem lesz",
+                flush=True,
+            )
+        return None
+    parancs = _core_minta_parancs(sudo, _core_cel_minta())
+    try:
+        eredmeny = _run(parancs, capture_output=True, text=True, check=False)
+    except (OSError, subprocess.SubprocessError) as kivetel:
+        print(f"a core_pattern nem állítható át: {kivetel}", flush=True)
+        return None
+    if eredmeny.returncode != 0:
+        print(
+            "a core_pattern nem állítható át "
+            f"({eredmeny.returncode}): "
+            f"{_szoveggé(eredmeny.stderr).strip() or '(nincs kimenet)'}",
+            flush=True,
+        )
+        return None
+    print(
+        f"a core_pattern ideiglenesen: {_core_cel_minta()} "
+        f"(eredeti: {minta})",
+        flush=True,
+    )
+    return minta
+
+
+def _allitsd_vissza_a_core_mintat(eredeti: str | None) -> bool:
+    """Az eredeti `core_pattern` visszaírása (#3265).
+
+    `False`, ha nem volt mit visszaállítani — a hívó így nyugodtan
+    meghívhatja akkor is, ha az átállítás elmaradt."""
+    if not eredeti:
+        return False
+    sudo = _which("sudo")
+    if sudo is None:
+        return False
+    try:
+        eredmeny = _run(
+            _core_minta_parancs(sudo, eredeti),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as kivetel:
+        print(f"a core_pattern nem állítható vissza: {kivetel}", flush=True)
+        return False
+    return eredmeny.returncode == 0
+
+
 def _coredumpctl_veremkep(relative: str) -> bool:
     """A legutóbbi összeomlás adatai a `coredumpctl`-ből (#3178).
 
@@ -722,6 +832,57 @@ def _coredumpctl_veremkep(relative: str) -> bool:
     return True
 
 
+#: #3265: a `gdb` telepítésének ideje a CI-n. Ha ennél tovább tart, a
+#: hibakeresés segédje nem viheti el a kört.
+_APT_TIMEOUT_S = 180
+
+
+def _telepitheto_a_gdb(ci: bool, sudo: str | None, apt: str | None) -> bool:
+    """Megpróbálhatjuk-e TELEPÍTENI a `gdb`-t? (#3265)
+
+    Csak CI-n, jelszó nélküli `sudo`-val, ott, ahol `apt-get` van. A
+    fejlesztő gépére SOSEM telepítünk semmit egy tesztfuttatóból.
+
+    Miért kell: a GitHub-futtatón a core-fájl már MEGSZÜLETIK (#3265 első
+    lépése), de `gdb` nincs telepítve — mérve a PR #3266 futásán: „van core
+    (core.4952), de nincs `gdb` — a natív veremkép kimarad". A core
+    önmagában semmit nem mond; a keret csak a `gdb`-vel olvasható ki.
+    """
+    return bool(ci) and sudo is not None and apt is not None
+
+
+def _telepitsd_a_gdb_t() -> str | None:
+    """`gdb` telepítése a CI-futtatóra — az elérési úttal tér vissza (#3265).
+
+    `None`, ha nem próbálkozhatunk vagy nem sikerült; az OKOT ilyenkor is
+    kiírja (a #3178 szabálya: a hiányzó veremkép magyarázatot kap)."""
+    sudo = _which("sudo")
+    apt = _which("apt-get")
+    ci = bool(os.environ.get("CI"))
+    if not _telepitheto_a_gdb(ci, sudo, apt):
+        return None
+    print("a `gdb` hiányzik — telepítés a natív veremképhez (#3265)", flush=True)
+    try:
+        eredmeny = _run(
+            [sudo, "-n", apt, "install", "-y", "-q", "gdb"],
+            capture_output=True,
+            text=True,
+            timeout=_APT_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as kivetel:
+        print(f"a `gdb` nem telepíthető: {kivetel}", flush=True)
+        return None
+    if eredmeny.returncode != 0:
+        print(
+            f"a `gdb` telepítése {eredmeny.returncode}-tel lépett ki: "
+            f"{_szoveggé(eredmeny.stderr).strip()[-400:] or '(nincs kimenet)'}",
+            flush=True,
+        )
+        return None
+    return _which("gdb")
+
+
 def _ird_ki_a_nativ_veremkepet(relative: str) -> bool:
     """A core dump NATÍV veremképe a naplóba (#3178).
 
@@ -746,7 +907,7 @@ def _ird_ki_a_nativ_veremkepet(relative: str) -> bool:
             flush=True,
         )
         return False
-    gdb = _which("gdb")
+    gdb = _which("gdb") or _telepitsd_a_gdb_t()
     if gdb is None:
         print(
             f"van core ({magok[0].name}), de nincs `gdb` — a natív veremkép "
@@ -1304,6 +1465,13 @@ def main(argv: list[str] | None = None) -> int:
     # #3178: a core-korlát felemelése MÉG a részfutások indítása előtt — a
     # gyerekek a puha korlátot öröklik, tehát utólag már késő.
     _engedd_a_core_dumpot()
+    # #3265: CI-n a `core_pattern` is fájlos mintára áll — a GitHub-futtatón
+    # a rendszer kezelője kapja meg a core-t, de nem tárolja, tehát natív
+    # veremkép eddig nem születhetett. A visszaállítás `atexit`-en megy, hogy
+    # a `main` bármely kilépési ága után lefusson.
+    _eredeti_core_minta = _allitsd_at_a_core_mintat()
+    if _eredeti_core_minta:
+        atexit.register(_allitsd_vissza_a_core_mintat, _eredeti_core_minta)
 
     _bejelentkezes()
     _takarits_regi_maradekot()
