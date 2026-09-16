@@ -1749,3 +1749,70 @@ felépítés után kifejezetten 0-ra állítja a mezőt.
 
 *Forrás: `0x00578abc`, `0x00578ac3`, `0x00c29e1a`, `0x00d49170`, `0x00c29e24`,
 `0x0076a4b0`, `0x006dcc40`, `0x004a06e0`, `0x004a0720`.*
+
+## ⛳ Az album-ugrás gyakorlatilag CSAK az 1-es típusú sorokat találja meg (2026-09-16, 314. kör, #3143)
+
+*A 313. kör kimérte, hogy a sorrekord `+0x20` mezőjének alapértéke **−1**, az
+album-ugrás viszont az 5/6/7 típusú fejléceket csak `+0x20 == 0` mellett
+fogadja el. Ez a kör azt kereste, ki írja 0-ra — és a válasz: a mérhető
+utakon SENKI.*
+
+### 1. A sorok típusa a konstruktor ELSŐ argumentuma
+
+A paraméteres konstruktor (`0x004a0720`) az első argumentumot teszi a
+`+0x30`-ba: `mov edx, [esp+0x10]` (`0x004a0776`) → `mov [esi+0x30], edx`
+(`0x004a078d`); a veremeltolás a három prológ-`push`-sal (`ebx`, `ebp`, `edi`)
+és a visszatérési címmel együtt pontosan az 1. argumentumra mutat.
+
+Ebből a **12 hívóhely típus-leltára** (az utolsó `push` a hívás előtt):
+
+| hívóhely | típus | hívóhely | típus |
+|---|---:|---|---:|
+| `0x004b1acb` | **8** | `0x004b3281` | *változó* (`ebp`) |
+| `0x004b1eac` | **5** | `0x004b35a2` | **2** |
+| `0x004b22ce` | **2** | `0x004b3886` | **2** |
+| `0x004b2ab4` | **1** | `0x004b3b50` | **2** |
+| `0x004b2f9a` | **3** | `0x004b3f4b` | **2** |
+| `0x004b7f17` | **9** | `0x004b81fd` | **2** |
+
+⇒ A tizenegy **konstans** hívóhely a `{1, 2, 3, 5, 8, 9}` típusokat gyártja;
+**a 6-os és a 7-es egyiken sem szerepel.** (A `0x004b3281` egy futásidőben
+számolt értéket ad át — az a függvény, `0x004b2e10`, az `ebp`-t
+mutató-léptetésre is használja `add ebp, 0x38`-cal, ezért **ennek az egy
+helynek a típusát nem mondom meg**; ez a nyitott rész.)
+
+### 2. A `+0x20`-at a mérhető utakon senki nem írja
+
+Három, egymástól független pásztázás, mindegyik **működő kontrollal**:
+
+| # | mit néztem | eredmény | kontroll |
+|---|---|---|---|
+| 1 | mind a **12** konstruktor-hívóhely, a `lea esi,[esp+N]` bázishoz képest a hívás utáni 0x220 bájtos ablakban minden `[esp+…]` mezőírás | `+0x20`-ra **0 találat** | a `+0x0c`, `+0x14`, `+0x1c`, `+0x2c`, `+0x30` írásokat MEGTALÁLTA (pl. `0x004b2b13`, `0x004b2b30`, `0x004b2b4e`) |
+| 2 | a lista-modul (`0x004ae000`–`0x004b8600`) **85** darab `[reg+0x20]`-írása | mind a **lista** objektumé, nem a rekordé — a `+0x20`/`+0x24` pár ott a szál-azonosító és a rekurzió-számláló (`0x004ae500`, `0x004ae521`, `0x004ae528`) | a `[reg+0x30]`-írások ugyanezzel a mintával előjönnek |
+| 3 | a teljes `.text` **279** darab „×56-os lépésköz" helye (`lea r,[x*8]` + `sub r,x`), és mindegyik után 0x70 bájt | a rekord-listás helyeken **0 találat** `+0x20`-ra | a minta összesen **25** `+0x20`-írást talált (máshol), tehát nem vak |
+
+⇒ **Mért következtetés: a `+0x20` a konstruktor −1-én marad**, tehát az
+album-ugrás második ága (`típus ∈ {5,6,7} ÉS +0x20 == 0`) **a gyakorlatban
+soha nem tüzel**, és a gombpár **csak az 1-es típusú sorokra** ugrik.
+
+⚠️ **A negatív állítás hatóköre.** A pásztázások a rekord elérési útjait fedik
+(konstruktor-hívóhely, lista-modul, 56-os lépésközű indexelés). Egy olyan
+beállító, amely **csupasz `rekord*`-ot kap paraméterként**, nincs kizárva: a
+`mov dword [reg+0x20], 0` alak önmagában **1831**-szer fordul elő a
+`.text`-ben, ez a szám nem osztályozható. A megszerzés útja, ha valaki
+folytatja: a **típus-5-öt gyártó egyetlen hely** (`0x004b1eac`) rekordjának
+teljes élete — kinek adja át, és az mit hív rá.
+
+### 3. A `prevalbum` sor-közepi ága NEM görget
+
+A `0x006dcc40` (912 b) teljes törzsében **nincs** `[nézet+0x2f8]`-írás és
+**nincs** `0x009d2810` hívás (a görgetés-beállító, amit a két album-ugró
+használ). Amit csinál: ugyanabból a nézetmodellből (`[this+0xeb0]`) kiszámolja
+a **határsort** (`[+0x320] + [+0x2f8]`, `0x006dcc57`–`0x006dcc5d`), lekéri a
+`0x004ae4e0`-nal, majd a sorlistán (`[this+0x2c0]`) virtuális hívásokkal megy
+tovább (`0x006dcdcd`, `0x006dcde9`, `0x006dcf47`).
+
+⇒ A korábbi kézenfekvő olvasat („a sor tetejére igazít") **nincs
+alátámasztva** — a függvény nem nyúl a görgetési pozícióhoz. A pontos hatása
+NYITOTT; útja: a `0x006dc9a0` (`0x006dcdc1`) és a fenti három virtuális
+hívóhely célja.
