@@ -30,6 +30,7 @@ from picasapy.lazy_cv2 import cv2
 from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
 from picasapy.render import apply_filters, count_redeye_spots
 from picasapy.render.chain import halasztott_op
+from picasapy.render.chain_geometry import TartalomHely
 from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
     apply_display_mode,
@@ -115,6 +116,12 @@ class EditPreviewProvider(QQuickImageProvider):
         # filters-lánccal renderelt) előnézetből számol, az _images-szel
         # azonos LRU-életciklussal — nem külön gyorsítótár, csak melléktermék.
         self._histograms: OrderedDict[str, dict] = OrderedDict()
+        #: #3166: az utolsó render KERET-elhelyezése fotónként — a szerkesztő
+        #: átfedő rétegei (vágás-téglalap, arckeretek) ezen át kapják a
+        #: helyüket. `None`-t NEM tárolunk: a keret nélküli lánc TÖRLI a
+        #: bejegyzést, különben egy visszavont keret eltolva hagyná a
+        #: rétegeket.
+        self._placements: OrderedDict[str, TartalomHely] = OrderedDict()
         # dekódolt forrás gyorsítótár (#72): élő csúszka-húzásnál (pl. tilt)
         # a register() gyakran hívódik ugyanarra a fotóra, csak a szűrő-
         # lánc változik — a lemezes dekódot nem kell minden alkalommal
@@ -295,6 +302,10 @@ class EditPreviewProvider(QQuickImageProvider):
         # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó
         # op fut. A háttér-úton (#546) nincs gyorsítótár — cserébe nincs
         # megosztott állapot sem, amit sorosítani kellene.
+        #: #3166: a keret-elhelyezés a render JELENTÉSÉBŐL jön — abból a
+        #: hívásból, amelyik a kereteket tényleg alkalmazta (mind a három
+        #: ágon: festett maszk, gyorsítótár, közvetlen).
+        elhelyezes = None
         if paint_strokes and source_array is not None and ops:
             # #1908: festett ecset-maszk esetén a lánc-prefix gyorsítótár
             # KIMARAD. A maszk nem csak az utolsó opra hat (a festhető effekt
@@ -307,15 +318,21 @@ class EditPreviewProvider(QQuickImageProvider):
             maszk = maszk_vonasokbol(
                 paint_strokes, source_array.shape[0], source_array.shape[1]
             )
-            result_array, _skipped = apply_filters(
+            jelentes = apply_filters(
                 source_array, tuple(ops), paint_mask=maszk
             )
+            result_array = jelentes.image
+            elhelyezes = jelentes.content_placement
         elif shared_cache:
-            result_array = self._render_cached(key, source_array, tuple(ops))
+            result_array, elhelyezes = self._render_cached_jelentes(
+                key, source_array, tuple(ops)
+            )
         elif source_array is None or not ops:
             result_array = source_array
         else:
-            result_array, _skipped = apply_filters(source_array, tuple(ops))
+            jelentes = apply_filters(source_array, tuple(ops))
+            result_array = jelentes.image
+            elhelyezes = jelentes.content_placement
         if text is not None and result_array is not None and text.content:
             # a szöveg a filters-lánc UTÁN kerül a képre — a hisztogram (lent)
             # így is a TÉNYLEGESEN megjelenített (szöveggel együtt renderelt)
@@ -372,6 +389,13 @@ class EditPreviewProvider(QQuickImageProvider):
             self._histograms.move_to_end(key)
             while len(self._histograms) > _LRU_CAPACITY:
                 self._histograms.popitem(last=False)
+            if elhelyezes is None:
+                self._placements.pop(key, None)
+            else:
+                self._placements[key] = elhelyezes
+                self._placements.move_to_end(key)
+                while len(self._placements) > _LRU_CAPACITY:
+                    self._placements.popitem(last=False)
             self._store_gpu_image(self._gpu_prefix_images, key, gpu_prefix_image)
             self._store_gpu_image(self._gpu_lut_images, key, gpu_lut_image)
 
@@ -403,6 +427,7 @@ class EditPreviewProvider(QQuickImageProvider):
         with self._lock:
             self._images.pop(key, None)
             self._histograms.pop(key, None)
+            self._placements.pop(key, None)
             self._gpu_prefix_images.pop(key, None)
             self._gpu_lut_images.pop(key, None)
 
@@ -474,6 +499,15 @@ class EditPreviewProvider(QQuickImageProvider):
         with self._lock:
             return self._histograms.get(str(photo_id), EMPTY_HISTOGRAM)
 
+    def frame_placement(self, photo_id: str) -> TartalomHely | None:
+        """Hol van a FÉNYKÉP az utoljára renderelt előnézetben (#3166)?
+
+        `None`, ha a lánc nem tartalmaz keret-effektet (vagy a fotó nincs
+        regisztrálva) — ilyenkor a rétegek a kirajzolt kép TELJES
+        téglalapját kapják, ahogy eddig."""
+        with self._lock:
+            return self._placements.get(str(photo_id))
+
     @staticmethod
     def _store_gpu_image(
         store: OrderedDict[str, QImage], key: str, image: QImage | None
@@ -533,12 +567,12 @@ class EditPreviewProvider(QQuickImageProvider):
 
     # -- lánc-prefix gyorsítótár (#140) ------------------------------------
 
-    def _render_cached(
+    def _render_cached_jelentes(
         self,
         key: str,
         source_array: np.ndarray | None,
         ops: tuple[FilterOp, ...],
-    ) -> np.ndarray | None:
+    ) -> tuple[np.ndarray | None, TartalomHely | None]:
         """Renderelés lánc-prefix gyorsítótárral: interakció közben (azonos
         prefix, csak az utolsó op paramétere változik) csak az utolsó op fut.
 
@@ -550,9 +584,9 @@ class EditPreviewProvider(QQuickImageProvider):
         vissza a szűretlen köztes eredményre (kivétel nem szökik ki innen),
         a #73-elv (részleges előnézet a placeholder helyett) így is teljesül."""
         if source_array is None:
-            return None
+            return None, None
         if not ops:
-            return source_array
+            return source_array, None
         # #3169: a HALASZTOTT opok (vágás + keretek) nem kerülhetnek a
         # prefixbe. Az `apply_filters` a lánc végére teszi őket (#330); ha a
         # prefix-hívás a SAJÁT végén alkalmazza a benne lévő keretet, az
@@ -566,8 +600,20 @@ class EditPreviewProvider(QQuickImageProvider):
         else:
             prefix_array = source_array
             zaro = halasztott
-        result_array, _skipped = apply_filters(prefix_array, zaro)
-        return result_array
+        jelentes = apply_filters(prefix_array, zaro)
+        # #3166: a halasztott opok (vágás + keretek) MINDIG ebben a záró
+        # hívásban futnak, tehát a keret-elhelyezés is itt keletkezik.
+        return jelentes.image, jelentes.content_placement
+
+    def _render_cached(
+        self,
+        key: str,
+        source_array: np.ndarray | None,
+        ops: tuple[FilterOp, ...],
+    ) -> np.ndarray | None:
+        """Csak a kép — azoknak a hívóknak, akiknek a keret-elhelyezés
+        (#3166) nem kell (pl. a vörösszem-számolás)."""
+        return self._render_cached_jelentes(key, source_array, ops)[0]
 
     def _cached_prefix(
         self,

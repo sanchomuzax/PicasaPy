@@ -1761,15 +1761,50 @@ Rectangle {
                     // Esc: kilép a vágásból. MVP-korlát: ini-forgatott
                     // (rotate=) képnél a koordináták a megjelenített térben
                     // értendők — a forgatás+vágás kombináció a #21-ben pontosodik.
+                    // #3166 (a #819 `resizes` ága): a FÉNYKÉP területe a
+                    // kirajzolt képen belül. Keret-effekt (Border,
+                    // MuseumMatte, DropShadow, Polaroid, Cinemascope) után a
+                    // kirajzolt kép már a keretezett kimenet, tehát a relatív
+                    // koordinátákkal dolgozó rétegek a KERETRE skálázódnának.
+                    // A leképezést a renderelő méri (`chain_geometry`), a
+                    // vezérlő `framePlacement`-je adja tovább — a szimmetrikus
+                    // `(kimenet − forrás) / 2` képlet HAMIS (a DropShadow
+                    // árnyéka szögfüggő, a Polaroid forgat).
+                    //
+                    // Keret nélkül `hely === null`, és a terület pontosan a
+                    // kirajzolt kép — vagyis a mai viselkedés.
+                    Item {
+                        id: frameContentArea
+                        objectName: "frameContentArea"
+                        parent: photo
+                        readonly property var hely:
+                            (typeof editController !== "undefined" && editController
+                             && editController.framePlacement)
+                                ? editController.framePlacement : null
+                        width: photo.paintedWidth * (hely ? hely.szelesseg : 1)
+                        height: photo.paintedHeight * (hely ? hely.magassag : 1)
+                        x: (photo.width - photo.paintedWidth) / 2
+                           + (hely ? hely.kozepX * photo.paintedWidth : photo.paintedWidth / 2)
+                           - width / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                           + (hely ? hely.kozepY * photo.paintedHeight : photo.paintedHeight / 2)
+                           - height / 2
+                        //: a renderelő szöge az óramutatóval ellentétes, a QML
+                        //: `rotation`-je egyező irányú — innen az előjelváltás
+                        rotation: hely ? -hely.szog : 0
+                    }
+
                     CropOverlay {
                         id: cropOverlay
-                        parent: photo
+                        parent: frameContentArea
                         visible: editorPanel.cropActive
                         aspectRatio: editorPanel.currentAspect
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        //: KÖTÉS, nem `anchors.fill`: a tesztek (és a
+                        //: nagyítás-logika) felülírhatják a méretet
+                        x: 0
+                        y: 0
+                        width: frameContentArea.width
+                        height: frameContentArea.height
                         onVisibleChanged: {
                             if (visible) forceActiveFocus()
                             else viewer.forceActiveFocus()
@@ -1792,13 +1827,15 @@ Rectangle {
                     // rajzolható/nevezhető/törölhető egy régió.
                     FacesOverlay {
                         id: facesOverlay
-                        parent: photo
+                        //: #3166: a keret-leképezés szerinti területben — a
+                        //: mentett arc-régiók a FÉNYKÉPRE vonatkoznak
+                        parent: frameContentArea
                         visible: viewer.facesVisible && !editorPanel.cropActive
                                  && !viewer.isCurrentVideo
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: 0
+                        y: 0
+                        width: frameContentArea.width
+                        height: frameContentArea.height
                         faces: viewer.currentFaces
                         editMode: viewer.facesEditMode
                         imagePath: viewer.photosModel && viewer.currentIndex >= 0

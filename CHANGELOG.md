@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.489] – 2026-09-16
+
+### Javítva
+
+- **A keretes képeken a helyükön maradnak a vágás-téglalap és az arckeretek**
+  (#3166, a #819 utolsó ága). Ha a láncban keret van (Keret, Múzeumi paszpartu,
+  Vetett árnyék, Polaroid, Cinemascope), a szerkesztő eddig a KERETRE
+  skálázta ezeket a rétegeket: az arckeret elcsúszott, a Polaroidnál pedig
+  még el is fordult. Mostantól a renderelőtől mért leképezésen át kapják a
+  helyüket.
+
 ## [0.8.488] – 2026-09-16
 
 ### Hozzáadva
