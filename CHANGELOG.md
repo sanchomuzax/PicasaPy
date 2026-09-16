@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.496] – 2026-09-16
+
+### Megváltozva
+
+- **A szerkesztő bal paneljének magassága az eredeti Picasáé** (#3247). Eddig a
+  panel akkora volt, amekkorát a MI legtartalmasabb fülünk kért; mostantól a
+  mért méretet használja. A gyakorlatban ez azt jelenti, hogy a panel magassága
+  fülváltáskor nem csak „nem ugrál", hanem nem is tud — és kis képernyőn több
+  hely marad a képnek.
+
 ## [0.8.495] – 2026-09-16
 
 ### Javítva
