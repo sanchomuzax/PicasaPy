@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.498] – 2026-09-16
+
+### Megváltozva
+
+- **Minden képszűrő megadja, hova kerül a kép a kimenetében** (#3229,
+  előkészítés). Ez a belső lépés ahhoz kell, hogy a szűrők a jövőben abban a
+  sorrendben fussanak, ahogy az eredeti Picasa futtatja őket — ma a keretet és
+  a vágást a lánc végére tesszük. A felhasználó számára ez a lépés még semmit
+  nem változtat.
+
 ## [0.8.497] – 2026-09-16
 
 ### Javítva
