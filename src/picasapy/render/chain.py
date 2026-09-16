@@ -49,7 +49,14 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
 )
-from picasapy.render.chain_geometry import keret_geometria, tartalom_elhelyezes
+from picasapy.render.chain_geometry import (
+    AZONOSSAG,
+    Matrix,
+    keret_geometria,
+    tartalom_elhelyezes,
+    _szorzat,
+)
+from picasapy.render.op_geometry import OpGeometria, op_geometria
 from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
 from picasapy.render.directional import (
     apply_dir_brite,
@@ -259,6 +266,50 @@ def _apply_crop_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
         raise ValueError(f"A crop64 szűrőnek rect64 paraméter kell: {op}")
     rect = decode_rect64(op.params[1])
     return apply_crop(image, rect)
+
+
+def _apply_crop_op_lekepezve(
+    image: np.ndarray,
+    op: FilterOp,
+    eredeti_w: int,
+    eredeti_h: int,
+    matrix: "Matrix",
+) -> np.ndarray:
+    """A `crop64` a MÉRT sorrendben: a téglalap az EREDETI képre vonatkozik.
+
+    A #330 mérése szerint a `crop64` koordinátái az eredeti (szerkesztés
+    előtti) képre értendők. A mai, halasztott ág ezt úgy teljesíti, hogy a
+    vágást a méret-tartó effektek UTÁN, de a keretek ELŐTT futtatja. A mért
+    sorrendben viszont a vágás ott fut, ahol áll — tehát a téglalapot át kell
+    számolni az addig felgyűlt leképezéssel (`matrix`: eredeti → jelenlegi).
+    Pontosan ezt teszi az eredeti is: a `+0x84` rekesz a mátrixot ÉS az
+    inverzét adja át minden opnak.
+    """
+    if len(op.params) < 2:
+        raise ValueError(f"A crop64 szűrőnek rect64 paraméter kell: {op}")
+    rect = decode_rect64(op.params[1])
+    (a, b, c), (d, e, f) = matrix
+    sarkok = [
+        (
+            a * (rect.left * eredeti_w) + b * (rect.top * eredeti_h) + c,
+            d * (rect.left * eredeti_w) + e * (rect.top * eredeti_h) + f,
+        ),
+        (
+            a * (rect.right * eredeti_w) + b * (rect.bottom * eredeti_h) + c,
+            d * (rect.right * eredeti_w) + e * (rect.bottom * eredeti_h) + f,
+        ),
+    ]
+    magassag, szelesseg = image.shape[:2]
+    bal = max(0, min(round(min(x for x, _ in sarkok)), szelesseg))
+    jobb = max(0, min(round(max(x for x, _ in sarkok)), szelesseg))
+    fent = max(0, min(round(min(y for _, y in sarkok)), magassag))
+    lent = max(0, min(round(max(y for _, y in sarkok)), magassag))
+    if jobb <= bal or lent <= fent:
+        raise ValueError(
+            f"Üres kivágás a leképezés után: rect={rect} -> "
+            f"({bal}, {fent}, {jobb}, {lent})"
+        )
+    return image[fent:lent, bal:jobb].copy()
 
 
 def _apply_fill_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -779,6 +830,7 @@ def apply_filters(
     ops: tuple[FilterOp, ...],
     *,
     paint_mask: np.ndarray | None = None,
+    mert_sorrend: bool = False,
 ) -> ChainReport:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
     enhance, autolight, autocolor, autocontrast, fill, backlight,
@@ -827,6 +879,15 @@ def apply_filters(
     elv szent). A teljes lista a `chain_report._RANGE_VALIDATED_PARAM_POSITIONS`
     táblában van.
 
+    **`mert_sorrend` (#3229 2. lépés):** ha igaz, a lánc az ops EREDETI
+    sorrendjében fut — nincs vágás- és keret-halasztás —, a `crop64`
+    téglalapját pedig az addig felgyűlt leképezéssel számoljuk át (a #330
+    mérése így is teljesül: a koordináták az EREDETI képre vonatkoznak).
+    Ez az, amit az eredeti tesz: a `CGenericFilter` `+0x84` rekesze minden
+    opnak átadja a leképezést ÉS az inverzét (`docs/specs/filterdesc-registry.md`
+    12., `render/op_geometry.py`). **Az alapértelmezés a MAI viselkedés**, hogy
+    az átállítás mérhető, külön lépés legyen (#3169).
+
     **Sáv-jelzők (#382):** a visszaadott `ChainReport.full_res`/`.slow`/
     `.resizes` jelzi, hogy a lánc tartalmaz-e olyan szűrőt, ami csak teljes
     felbontáson helyes, ami drága (aszinkron út kell), illetve ami
@@ -834,6 +895,18 @@ def apply_filters(
     LÁNCBAN SZEREPLŐ (nemcsak a ténylegesen renderelt) nevek alapján.
     """
     result = image
+    # #3229: a MÉRT sorrend ága követi, hova került a forrás — `hely_matrix` a
+    # (vágás utáni) forrásból a jelenlegi képbe, `eredeti_*` pedig az eredeti
+    # méret, amire a `crop64` koordinátái vonatkoznak (#330).
+    eredeti_h, eredeti_w = image.shape[:2] if image is not None else (0, 0)
+    ered_matrix: Matrix = AZONOSSAG  # eredeti -> jelenlegi
+    hely_matrix: Matrix = AZONOSSAG  # a vágott forrás -> jelenlegi
+    hely_w, hely_h = eredeti_w, eredeti_h
+    utolso_crop = None
+    if mert_sorrend:
+        for _op in ops:
+            if _op.name == "crop64":
+                utolso_crop = _op
     skipped: list[str] = []
     range_warnings: list[str] = []
     legacy_warnings: list[str] = []
@@ -866,8 +939,27 @@ def apply_filters(
         key = op.name.casefold()
         if key == "crop64":
             crop_op = op  # csak az effektív (utolsó) crop64 számít
+            if mert_sorrend and op is utolso_crop:
+                # a MÉRT sorrendben a vágás OTT fut, ahol áll — a téglalapot
+                # az addig felgyűlt leképezéssel számoljuk át
+                try:
+                    result = _apply_crop_op_lekepezve(
+                        result, op, eredeti_w, eredeti_h, ered_matrix
+                    )
+                except Exception:
+                    _log.exception(
+                        "Filter-bejegyzés kihagyva (hibás paraméter): %s", op
+                    )
+                    skipped.append(op.name)
+                else:
+                    crop_op = None  # már alkalmazva, a záró ág ne fussa újra
+                    # a placement innentől a VÁGOTT forrásból indul
+                    hely_h, hely_w = result.shape[:2]
+                    hely_matrix = AZONOSSAG
+                    lepes = op_geometria(op, eredeti_w, eredeti_h)
+                    ered_matrix = _szorzat(lepes.matrix, ered_matrix)
             continue
-        if key in _FRAME_EFFECTS:
+        if key in _FRAME_EFFECTS and not mert_sorrend:
             # a keret a vágás UTÁN kerül a képre (#330) — a lánc szerinti
             # sorrendjüket egymás közt megtartva
             frame_ops.append(op)
@@ -922,6 +1014,7 @@ def apply_filters(
             range_warnings.append(glimmer.paintable_mask_warning(op.name))
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
+        elotte_h, elotte_w = result.shape[:2]
         try:
             result = handler(result, op)
         except Exception:
@@ -929,6 +1022,13 @@ def apply_filters(
             # ettől még lefusson (#301) — a hiba nem tűnik el nyomtalanul.
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
+        else:
+            if mert_sorrend:
+                # #3229: a TÉNYLEGESEN lefutott op leképezését fűzzük a
+                # lánchoz — a hibára futott (kihagyott) op nem mozdít semmit
+                lepes = op_geometria(op, elotte_w, elotte_h)
+                ered_matrix = _szorzat(lepes.matrix, ered_matrix)
+                hely_matrix = _szorzat(lepes.matrix, hely_matrix)
     if crop_op is not None:
         try:
             result = _apply_crop_op(result, crop_op)
@@ -959,7 +1059,17 @@ def apply_filters(
             continue
         alkalmazott_keretek.append(op)
     content_placement = None
-    if alkalmazott_keretek and elokeret_w and elokeret_h:
+    if mert_sorrend:
+        # #3229: a mért sorrendben a keretek NEM a lánc végén futnak, tehát a
+        # „keret-ág előtti méret" mint horgony nem létezik. A placement a
+        # VÁGOTT forrásból a végső kimenetbe vezető leképezésből jön — ez az,
+        # amit a szerkesztő átfedő rétegei (vágás-téglalap, arckeretek) kérnek.
+        if hely_matrix != AZONOSSAG and hely_w and hely_h and result is not None:
+            vegso_h, vegso_w = result.shape[:2]
+            content_placement = tartalom_elhelyezes(
+                OpGeometria(vegso_w, vegso_h, hely_matrix), hely_w, hely_h
+            )
+    elif alkalmazott_keretek and elokeret_w and elokeret_h:
         content_placement = tartalom_elhelyezes(
             keret_geometria(tuple(alkalmazott_keretek), elokeret_w, elokeret_h),
             elokeret_w,
