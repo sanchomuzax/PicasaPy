@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+
+- **A megjelenítési mód mostantól az EGÉSZ felületre hat** (#3070). A
+  **Nézet ▸ Megjelenítési mód** választása (Mac gamma, lineáris gamma,
+  projektor, LCD, fekete-fehér, szépia, túlcsordulás-jelölés) eddig csak a
+  fotókat érintette; mostantól a menük, sávok és hátterek is követik — ahogy
+  az eredeti Picasában. A diavetítés változatlanul a saját útján kapja meg a
+  módot. A Mac gamma a felület világos krómját +1,2…+3,5%-kal világosítja,
+  ami a tulajdonos eredeti Picasáról készült felvételein mért +1,3…+4,2%-os
+  sávba esik.
+
 ### Javítva
 
 - **Gyorsabb indulás: a program ~1 másodperccel korábban jelenik meg** (#1612).

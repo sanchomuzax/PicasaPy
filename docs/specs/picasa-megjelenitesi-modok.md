@@ -1089,6 +1089,57 @@ módban, **nyitott felbukkanó panellel** (pl. a filmfelvevő panel).
    mélységből jön) — a `dither16` kihagyása (#1579) tehát a menütételre
    igaz, a tartalék-útra nem értelmezendő.
 
+### 11.8 Ahogy MEGÉPÜLT — a téma színein, nem shaderrel (2026-09-16, #3070)
+
+A 11.7/1. („egy helyen") nálunk **nem** a jelenetgráf gyökerén teljesül,
+mert a `ShaderEffect` a software jelenetgráf-háttéren egyáltalán nem fut le
+(a #3070 négy próbája, köztük egy tartalomfüggetlen állandó piros, mind
+`(66, 67, 68)`-at adott). A megvalósítás ezért a **`Theme` szingleton
+színein** alkalmazza a módot — a szabályok képpontonkénti tiszta függvények,
+tehát a lapos színekre ugyanazt adják:
+
+| réteg | mi | hol |
+|---|---|---|
+| a MÉRT szabály | `apply_display_mode` | `render/display_modes.py` (változatlan) |
+| a leképezés | tokennév → átalakított szín, EGY `1 × N × 3` tömbön | `app/theme_palette.py` |
+| a kapu | `uiPalette(Theme.nyers)` slot | `app/display_mode_controller.py` |
+| a bekötés | mód- és téma-váltáskor újraszámol | `Main.qml` |
+
+A `Theme.qml` ezért **két rétegű** (a nyers értékek belül, a nyilvános 103
+szín egyszer áteresztve) — a származtatott színek (`Qt.lighter`, `Qt.darker`)
+különben kétszer kapnák meg a módot.
+
+**Kereszt-ellenőrzés a #1580-cal.** A mért `MAC_GAMMA_LUT` a téma világos
+krómjára ezt adja (kirajzolt képpontokon mérve):
+
+| token | luma előtte → utána | növekmény |
+|---|---|---:|
+| `panelBg` (`#f3f3f3`) | 243 → 246 | +1,23% |
+| `canvasBg` (`#eaeaea`) | 234 → 240 | +2,56% |
+| `panelHeaderBg` (`#e1e4e7`) | 227 → 235 | +3,52% |
+| `chromeBg` (`#e2e2e2`) | 226 → 234 | +3,54% |
+| `viewerBg` (`#808080`, a fotó-terület) | 128 → 158 | +23,4% |
+
+A #1580 képernyőkép-mérése a felület elemein +1,3…+4,2%-ot, a központi fotón
++15,7%-ot mutat. **Két, egymástól független forrás** (a binárisba beégetett
+tábla és a tulajdonos A/B felvétele) tehát ugyanazt mondja — a felület a
+sávba esik, a sötétebb fotó-terület pedig a felvételen is jóval nagyobbat
+lép.
+
+⚠️ A teljes képernyő +3,32%-át ez a próba **nem** állítja: az a szám a
+felvétel ÖSSZETÉTELÉÉ (fotó és felület arányában), nem a szabályé.
+
+**Az `overflow` BENNE VAN**: a 11.7/1. szerint az eredeti a gyökéren
+alkalmazza a módot, tehát a felület tiszta fehér paneljei is megkapják a
+`#FF7F7F` jelölést. Ha egy későbbi képernyőkép az ellenkezőjét mutatja, a
+kizárás egy sor — de találgatásból nem hagyjuk ki.
+
+**Ami kimarad:** a diavetítés (11.7/3., NY-4 — az a saját útján kapja meg a
+módot, #1640), a `dither16`/`rdesk` (#1579), és a NEM lapos színek: az
+ikonok és a rajzolt (SVG) elemek. Ez utóbbi azért marad ki, mert azok nem
+téma-tokenből kapják minden képpontjukat — külön jegy, ha a felvétel
+megkívánja.
+
 ---
 
 ## 12. A kísérő nézegető, és egy ÖNHELYESBÍTÉS a két gamma-táblán (2026-09-09, #2816)

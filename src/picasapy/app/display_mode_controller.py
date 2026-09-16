@@ -31,9 +31,10 @@ helyreállna, és a funkcionális teszt elveszítené a fogát — pontosan ez a
 
 from __future__ import annotations
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from .display_mode_paint import set_current_display_mode
+from .theme_palette import qobject_color_tokens, theme_palette
 
 #: A tizenegy mód, a menü SORRENDJÉBEN (spec 1. szakasz). Az azonosítók a
 #: bináris `ID_VIEW_*` parancsainak rövid, kisbetűs megfelelői.
@@ -90,6 +91,21 @@ class DisplayModeMixin:
     def displayMode(self) -> str:
         """Az aktív megjelenítési mód azonosítója (`DISPLAY_MODES` egyike)."""
         return self._display_mode
+
+    @Slot(QObject, result="QVariantMap")
+    def uiPalette(self, tokens) -> dict:
+        """A FELÜLET palettája az aktív módban (#3070).
+
+        A hívó a `Theme.nyers` belső rétegét adja át (egy `QtObject`), és
+        tokennév → szín szótárat kap vissza. Üres szótár = a mód nem mozdít
+        képpontot, tehát a `Theme` a nyers értékeket használja.
+
+        A bejárás a Qt metaobjektumán megy, tehát egy jövőben hozzáadott
+        téma-token magától bekerül — felsorolás nincs sehol.
+        """
+        if tokens is None:
+            return {}
+        return theme_palette(qobject_color_tokens(tokens), self._display_mode)
 
     @Slot(str)
     def setDisplayMode(self, mode: str) -> None:
