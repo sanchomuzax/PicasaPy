@@ -42,6 +42,14 @@ ColumnLayout {
     anchors.topMargin: 10
     spacing: 8
 
+    //: #3263: mennyi hely marad a rácsnak a MÉRT lapon belül. A felső margó
+    //: és a bevezető (legfeljebb két sor) levonása után maradó rész — így a
+    //: fül `implicitHeight`-je (bevezető + sorköz + keret) sosem lépi túl a
+    //: mért 277-et, akármilyen magas a platform betűje.
+    readonly property real racsKeret:
+        Math.max(0, panel.mertTabPanelHeight - legacyTab.anchors.topMargin
+                    - bevezeto.implicitHeight - legacyTab.spacing)
+
     // a katalógus; controller nélkül (izolált QML-tesztek) üres marad
     readonly property var effects:
         panel.hasEffectController() ? editController.legacyEffects : []
@@ -62,21 +70,51 @@ ColumnLayout {
     // 298 képpontot kért a mért `editpanel/tabpanel1` = 277 helyett. A
     // tartalom nem vész el: ugyanaz a két állítás áll benne (honnan jönnek,
     // és hogy a mai Picasa csak felismeri őket).
+    //: #3263: LEGFELJEBB KÉT SOR. A sormagasság platformfüggő (a windowsos
+    //: alapbetű magasabb sort ad), és a szöveg ott három sorba tört — a fül
+    //: magassága így a betűmetrikán múlt: Linuxon 274, Windowson 317, a mért
+    //: `editpanel/tabpanel1` = 277 helyett. A sorszám rögzítése nélkül a
+    //: keret alábbi számítása sem tartana.
     Text {
+        id: bevezeto
         objectName: "legacyEffectsIntro"
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
+        maximumLineCount: 2
+        elide: Text.ElideRight
         text: qsTr("These filters come from older Picasa versions. Today's Picasa only recognises them inside your old edits.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }
 
+    //: #3263: a rács GÖRGETHETŐ kereten belül él, és a keret a mért lapból
+    //: maradó helyet kapja. Így a fül magassága konstrukcióból belefér a
+    //: mért 277-be MINDEN platformon (a #703/#3247 őre ezt állítja), a
+    //: tartalom mégsem vész el: ami nem fér ki, az elgörgethető. A korábbi
+    //: alak a rács teljes implicit magasságát kérte, tehát egy magasabb
+    //: betűkészlet némán túlnőtt a lapon, és a tartalom alja levágódott.
+    Flickable {
+        id: racsGorgeto
+        objectName: "legacyEffectsScroll"
+        Layout.fillWidth: true
+        Layout.preferredHeight: Math.min(racs.implicitHeight, legacyTab.racsKeret)
+        contentWidth: width
+        contentHeight: racs.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: ScrollBar {
+            //: csak akkor látszik, ha tényleg van mit görgetni
+            policy: racs.implicitHeight > racsGorgeto.height
+                    ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+        }
+
     GridLayout {
+        id: racs
         objectName: "legacyEffectsGrid"
         columns: 3
         columnSpacing: 6
         rowSpacing: 6
-        Layout.fillWidth: true
+        width: racsGorgeto.width
 
         Repeater {
             model: legacyTab.effects
@@ -108,6 +146,7 @@ ColumnLayout {
                     : qsTr("Picasa can read this filter from an old .picasa.ini, but its exact pixel operation has not been decoded yet, so it cannot be applied."))
             }
         }
+    }
     }
 
     // #3247: a korábbi `Item { Layout.fillHeight: true }` kitöltő eltűnt. A
