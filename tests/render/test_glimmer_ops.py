@@ -239,56 +239,58 @@ class TestAnalyticWeightMapProperties:
         assert edges == sorted(edges, reverse=True)
 
 
-class TestClampGlowRadius:
-    """#504: a Flash `GlowFilter.blurX`/`blurY` öröksége — a Picasa
-    `GlowImageOperation`-je (`inner_glow`) méretfüggő sugár-képletei
-    (Lomo, Holga, NightVision, Matte, Vignette, MuseumMatte) sosem
-    futhatnak 255 fölé, bármekkora is a kép (ld. `GLOW_RADIUS_MAX`
-    docstringje a lomo-referenciakészlettel mért bizonyítékért)."""
+class TestGlowSigma:
+    """#3158: a `filterdesc` blur-értéke ÁTMÉRŐ, a Gauss-σ a FELE.
 
-    def test_konstans_255(self):
-        assert g.GLOW_RADIUS_MAX == 255.0
+    Ez váltotta le a #504 közös, 255-ös korlátját. A korlát a hiányzó
+    felezést pótolta, és épp ezért nem tudott mindkét használónak
+    megfelelni: a `referencia/lomo` és `referencia/holga` készleten mérve a
+    felezés (k = 0,5) a Lomo ΔE-jét 9,09-ról **1,94**-re viszi, a
+    nullátmenetét 0,625-ról **0,405**-re (a referenciáé 0,425), a Holgáét
+    13,89 → 12,01. A `Vignette` FÜGGETLENÜL ugyanezt adta (#518): a leíró
+    `/4`-et ad, a legjobb illesztés a képlet `/8`-a.
+    """
 
-    def test_nagy_kepen_a_tenyleges_sigma_255re_vagva(self):
-        # Lomo képlete: 35·0,02·max(W,H)/2 — egy 4000×3000-es fotón ez
-        # 35·0,02·4000/2 = 1400 lenne, jóval a Flash-korlát fölött.
+    def test_a_szigma_a_blur_FELE(self):
+        assert g.glow_sigma(896.0) == 448.0
+        assert g.glow_sigma(0.0) == 0.0
+
+    def test_nagy_kepen_NINCS_vagas(self):
+        """A Lomo képlete egy 4000×3000-es fotón 1400 — a σ ennek a fele.
+
+        A régi modell itt 255-re vágott; a mérés szerint az a Lomo σ-ját
+        (448 a referencia-képen) levágva mérhetően rosszabb képet adott.
+        """
         height, width = 3000, 4000
-        raw_radius = 35.0 * 0.02 * max(height, width) / 2.0
-        assert raw_radius > g.GLOW_RADIUS_MAX
-        assert g.clamp_glow_radius(raw_radius) == g.GLOW_RADIUS_MAX
+        keplet = 35.0 * 0.02 * max(height, width) / 2.0
+        assert g.glow_sigma(keplet) == pytest.approx(keplet / 2.0)
+        assert g.glow_sigma(keplet) > 255.0
 
-    def test_kis_kepen_a_kepletnek_megfelelo_kisebb_ertek(self):
-        # Ugyanaz a Lomo-képlet egy 96×72-es kis képen a korlát alatt marad
-        # — a `clamp_glow_radius` ekkor NEM módosít az értéken.
+    def test_kis_kepen_ugyanaz_a_SZABALY(self):
+        """A felezés méretfüggetlen — nincs tartomány, ahol más szabály él."""
         height, width = 72, 96
-        raw_radius = 35.0 * 0.02 * max(height, width) / 2.0
-        assert raw_radius < g.GLOW_RADIUS_MAX
-        assert g.clamp_glow_radius(raw_radius) == pytest.approx(raw_radius)
+        keplet = 35.0 * 0.02 * max(height, width) / 2.0
+        assert g.glow_sigma(keplet) == pytest.approx(keplet / 2.0)
 
 
-class TestClampGlowRadiusTengelyenkent:
-    """#504 (Holga-referencia): a Holga anizotrop sugarai (`0,5·R` és
-    `0,4·R`) tengelyenként KÜLÖN vágandók a 255-ös korláttal — a referencia
-    illesztése szerint a `255/255` jobban illeszkedik (RMS 0,112), mint az
-    arányt megtartó `255/204` (RMS 0,137). A Holga-hívás
-    (`glimmer_creative.apply_holga`) a `clamp_glow_radius`-t xblur-re és
-    yblur-re KÜLÖN-KÜLÖN hívja — ez a teszt ezt a hívási mintát rögzíti."""
+class TestGlowSigmaTengelyenkent:
+    """A Holga anizotrop sugarai (`0,5·R` és `0,4·R`) megtartják az ARÁNYT.
 
-    def test_nagy_kepen_mindket_tengely_kulon_255re_vagva(self):
-        # 2560×1702-es képen (a referencia mérete): xblur=0,5·1280=640,
-        # yblur=0,4·1280=512 — mindkettő a korlát fölött, de nem egyenlő
-        # egymással, tehát ha egy közös (pl. a nagyobbik) értéket vágnánk,
-        # az arányt megtartva 255/204-et adna, NEM 255/255-öt.
+    ⚠️ Ez MEGFORDÍTJA a #504 egyik részállítását. Ott a referencia
+    illesztése a `255/255` párt hozta ki jobbnak (RMS 0,112) az arányt
+    megtartó `255/204`-nél (0,137) — de MINDKETTŐ a hibás (felezés nélküli)
+    modellen belül. A #3158 végponttól végpontig mért összevetése a teljes
+    láncon a felezést hozza ki jobbnak (Holga ΔE 13,89 → 12,01), és ott az
+    arány a leíróé marad: 320/256 = 0,8.
+    """
+
+    def test_a_ket_tengely_aranya_a_LEIROE(self):
         outer_r = max(2560, 1702) / 2.0
-        xblur_raw = 0.5 * outer_r
-        yblur_raw = 0.4 * outer_r
-        xblur = g.clamp_glow_radius(xblur_raw)
-        yblur = g.clamp_glow_radius(yblur_raw)
-        assert xblur == g.GLOW_RADIUS_MAX
-        assert yblur == g.GLOW_RADIUS_MAX
-        # a rossz (arány-megtartó) eredmény 255/204 lenne — ellenőrizzük,
-        # hogy NEM azt kapjuk:
-        assert yblur != pytest.approx(xblur * (yblur_raw / xblur_raw))
+        xblur = g.glow_sigma(0.5 * outer_r)
+        yblur = g.glow_sigma(0.4 * outer_r)
+        assert xblur == pytest.approx(320.0)
+        assert yblur == pytest.approx(256.0)
+        assert yblur / xblur == pytest.approx(0.8)
 
 
 class TestBwTint:

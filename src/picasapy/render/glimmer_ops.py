@@ -524,32 +524,56 @@ def local_contrast(image_f: np.ndarray, radius: float, strength: float) -> np.nd
     return image_f + (image_f - blurred) * np.float32(strength)
 
 
-# --- Ragyogás-sugár korlátozása (Flash blurX/blurY limit, #504) ------------
+# --- A ragyogás SZIGMÁJA: a filterdesc blur ÁTMÉRŐ, a σ a fele (#3158) ----
 
-#: A Picasa `GlowImageOperation` a Flash `GlowFilter` portja, a Flashben
-#: pedig a `blurX`/`blurY` `[0, 255]`-re korlátozott (Flash 8+ dokumentáció).
-#: A méretfüggő sugár-képletek (`35·0,02·max(W,H)/2` stb., ld. lentebb Lomo,
-#: Holga, NightVision, Matte, Vignette) ezt a korlátot NEM ismerik — nagy
-#: képen tehát a Picasa tényleges σ-ja jóval kisebb, mint amit a képlet
-#: naivan adna.
+#: A `filterdesc.xml` `xblur`/`yblur` értéke a Flash `GlowFilter`-é, ami
+#: **átmérő-jellegű** elmosás-paraméter; a mi `inner_glow`-unk Gauss-**σ**-t
+#: vár. A kettő hányadosa 2 — ezt a szám MÉRÉSSEL igazolja, nem illesztéssel.
 #:
-#: Bizonyíték (#504, mérve a `sanchomuzax/picasapy-agent` privát repó
-#: `referencia/lomo/` öt mappás készletéhez, 2560×1702-es Lomo-exporttal):
-#: a `filterdesc.xml` képlete ezen a képen 896-ot adna; az illesztés
-#: optimuma σ≈255–340. A teljes láncon a Picasa kimenetétől való átlagos
-#: csatorna-eltérés **41,8-ról (korlát nélkül) 9,0-ra** csökken a 255-ös
-#: korláttal — viszonyításul az ÉRINTETLEN kép eltérése 32,1, azaz korlát
-#: nélkül ROSSZABBAK vagyunk, mintha meg sem csináltuk volna az effektet.
-GLOW_RADIUS_MAX = 255.0
+#: ## Mit váltott le (#504 → #3158)
+#:
+#: A korábbi modell egy közös **255-ös korlátot** (`GLOW_RADIUS_MAX`) tett a
+#: képletre, a Flash `blurX ∈ [0, 255]` dokumentált tartománya alapján. Az a
+#: korlát a hiányzó felezést pótolta, és épp ezért nem tudott mindkét
+#: használónak megfelelni (#3158: a Lomo 450-et, a Holga 255-öt „kért").
+#:
+#: ## A mérés (`referencia/lomo` és `referencia/holga`, 2560 × 1702)
+#:
+#: A képlet Lomóra `35 · 0,02 · max(W,H) / 2 = 896`. A söprés a képletet
+#: `k`-val szorozta; `k = 0,5` a felezés:
+#:
+#: | k | Lomo ΔE | Lomo nullátmenet | Holga ΔE | Holga nullátmenet |
+#: |---|---:|---:|---:|---:|
+#: | 0,285 (a régi 255-ös korlát) | 9,09 | 0,625 | 13,89 | 0,635 |
+#: | 0,40 | 4,10 | 0,515 | 12,79 | 0,605 |
+#: | **0,50 (ez a modell)** | **1,94** | **0,405** | **12,01** | 0,515 |
+#: | 0,60 | 6,04 | 0,305 | 11,54 | 0,415 |
+#: | 1,00 (korlát nélkül) | 23,76 | — | 12,92 | 0,025 |
+#:
+#: A referencia-export nullátmenete **0,425** (a sugár-profil előjelváltása a
+#: kép közepétől mérve, a képátló feléhez viszonyítva, 100 gyűrűn).
+#: ⇒ Lomón a `k = 0,5` **mindkét** mérőszámon optimum, és a nullátmenet
+#: 0,02-n belül van a mérttől — pontosan a #3158 elfogadási feltétele.
+#:
+#: ⭐ **Független megerősítés a `Vignette`-ből (#518):** annak a leírója `/4`-et
+#: ad, a legjobb illesztés viszont a képlet `/8`-a — a hányados ugyanaz a 2-es
+#: szorzó. Két, egymástól független effekt-mérés mondja tehát ugyanazt.
+#:
+#: ⚠️ **A Holga maradéka NEM a sugáron múlik.** Ott a `k = 0,6` adna
+#: hajszállal jobb ΔE-t (11,54 vs 12,01), de a `k = 0,5` is JAVÍT a mai
+#: állapoton (13,89 → 12,01), és egy effektenként hangolt szorzó szabad
+#: paraméter volna, ami elnyeli a lánc többi hibáját. A Holga eltérő
+#: nullátmenete a SAJÁT maszkjára mutat (`innerR = 0,9·R`, szemben a Lomo
+#: `0,5·R`-ével) — külön mérendő, a jegyen megnevezve.
+def glow_sigma(blur: float) -> float:
+    """A `filterdesc` blur-értékéből Gauss-σ: a FELE (#3158).
 
-
-def clamp_glow_radius(radius: float) -> float:
-    """A méretfüggő ragyogás-sugár képletek (Lomo, Holga, NightVision,
-    Matte, Vignette, MuseumMatte) KÖZÖS korlátja — ld. `GLOW_RADIUS_MAX`
-    docstringjét a bizonyítékért (#504). Minden méretfüggő σ-számítás ide
-    fusson be, hogy a korlát egy helyen legyen dokumentálva és karbantartva.
+    Minden méretfüggő ragyogás-számítás ide fusson be, hogy a felezés egy
+    helyen legyen dokumentálva és karbantartva. Korlát NINCS: a 255-ös
+    vágás (#504) a hiányzó felezést pótolta, és a Lomo 448-as σ-ját
+    levágva mérhetően rosszabb képet adott.
     """
-    return min(float(radius), GLOW_RADIUS_MAX)
+    return float(blur) / 2.0
 
 
 # --- Belső ragyogás (GlowImageOperation innerglow) ----------------------
@@ -1005,8 +1029,7 @@ __all__ = [
     "luma",
     "fade_alpha",
     "alpha_blend",
-    "GLOW_RADIUS_MAX",
-    "clamp_glow_radius",
+    "glow_sigma",
     "adjust_curves",
     "invert_curve",
     "apply_blend_mode",

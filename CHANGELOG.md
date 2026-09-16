@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.500] – 2026-09-16
+
+### Javítva
+
+- **A Lomo és a Holga ragyogása a mért erősségre került** (#3158). A két
+  effekt sötét pereme eddig túl szűk gyűrűben ült: a Lomo eltérése az eredeti
+  Picasa kimenetétől **9,09-ról 1,94-re** csökkent (a peremátmenet helye 0,613
+  → 0,405, a mért 0,425 mellett), a Holgáé 12,38 → 12,01. Az ok egyetlen,
+  mérésből igazolt szabály volt: a Picasa leírójában szereplő elmosás-érték
+  **átmérő**, a Gauss-szórás annak a **fele** — ezt a Vignette korábbi mérése
+  függetlenül ugyanígy adta.
+
 ## [0.8.499] – 2026-09-16
 
 ### Megváltozva
