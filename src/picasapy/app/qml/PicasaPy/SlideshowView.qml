@@ -496,7 +496,10 @@ Rectangle {
                     color: show.photosModel
                            && (show.photosModel.revision,
                                show.photosModel.starAt(show.currentIndex))
-                           ? Theme.starYellow : "#ffffff"
+                           //: #3070: a diavetítés a hatókörön KÍVÜL van
+                           //: (11.7/3., NY-4), ezért a NYERS tokent olvassa —
+                           //: a megjelenítési mód a csillagot sem színezheti át
+                           ? Theme.nyers.starYellow : "#ffffff"
                     style: Text.Outline
                     styleColor: "#9a9a9a"
                 }

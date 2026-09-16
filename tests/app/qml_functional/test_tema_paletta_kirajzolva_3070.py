@@ -253,3 +253,30 @@ class TestABekotes:
         controller.setDarkTheme(False)
         controller.setDisplayMode("normal")
         qt_app.processEvents()
+
+
+class TestADiavetitesKimarad:
+    """11.7/3. és NY-4: a diavetítésre a mód NEM hat.
+
+    A fotót a diavetítés a saját útján kapja (#1640), a rárajzolt csillag
+    viszont `Theme`-tokenből jön — ha az a NYILVÁNOS színt olvasná, a mód a
+    csillagot is átszínezné, és a hatókör-szerződés csendben sérülne. A
+    forrás alakját rögzítjük, mert a hiba természete forrás-szintű.
+    """
+
+    def test_a_diavetites_a_NYERS_tokent_olvassa(self):
+        import picasapy.app.application as app_module
+
+        forras = (
+            app_module._APP_DIR / "qml" / "PicasaPy" / "SlideshowView.qml"
+        ).read_text(encoding="utf-8")
+        szinek = [
+            sor.strip()
+            for sor in forras.splitlines()
+            if "Theme." in sor and "Theme.nyers." not in sor and "fontSize" not in sor
+        ]
+        assert szinek == [], (
+            "a diavetítés a NYILVÁNOS téma-színt olvassa, tehát a "
+            "megjelenítési mód ráhat — a 11.7/3. szerint kimarad: "
+            + " · ".join(szinek)
+        )
