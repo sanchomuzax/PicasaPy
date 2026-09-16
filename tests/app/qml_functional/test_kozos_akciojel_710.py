@@ -3,7 +3,7 @@
 ## Amit az audit mond
 
 A vágás-panel és a csúszkás paraméter-alpanel **ugyanazt** az Alkalmaz/Mégse
-gombot használja: zöld pipa / indigó X a felirat jobb oldalán, a gomb jobb
+gombot használja: zöld pipa / sötétvörös X a felirat jobb oldalán, a gomb jobb
 szélétől **9 képpontra** (`docs/specs/ui-audit-editor.md` 7.4).
 
 Nálunk két külön megoldás élt:

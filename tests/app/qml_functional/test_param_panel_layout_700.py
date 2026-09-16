@@ -314,11 +314,16 @@ class TestTheButtonRowIsCentred:
 
 
 class TestTheButtonsCarryTheOriginalIcons:
-    """#700/5 — 15×15 kör: zöld pipa / indigó X (audit 7.4)."""
+    """#700/5 — 15×15 kör: zöld pipa / SÖTÉTVÖRÖS X.
+
+    #710 (2026-09-16): a két szín a `respack.yt` `editpanel/ok_icon` és
+    `editpanel/cancel_icon` rétegéből MÉRVE (a tömör, nem fehér képpontok
+    mediánja). A korábbi `#4e904a`/`#524ba1` pár BGR↔RGB csere volt: a
+    zöldön észrevehetetlen, a Mégse jelvényét viszont indigóvá tette."""
 
     @pytest.mark.parametrize(
         "name,expected",
-        [("effectParamApplyIcon", "#4e904a"), ("effectParamCancelIcon", "#524ba1")],
+        [("effectParamApplyIcon", "#4a904e"), ("effectParamCancelIcon", "#a14b52")],
     )
     def test_the_icon_badge_is_visible_with_the_original_colour(
         self, qt_app, name, expected
