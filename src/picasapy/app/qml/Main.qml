@@ -48,6 +48,30 @@ ApplicationWindow {
         value: controller ? controller.darkTheme : false
     }
 
+    // #3070: a Nézet ▸ Megjelenítési mód a FELÜLET színeire is hat, nem csak
+    // a fotóra. A vezérlő EGY menetben átalakítja a `Theme.nyers` tokenjeit
+    // (`apply_display_mode` — ugyanaz a MÉRT szabály, ami a képen fut), és az
+    // eredményt a szingleton palettájába tesszük; onnantól minden kötés
+    // magától követi (a 11.7/2. szerződés „mindent újrafest" pontja nálunk a
+    // szingleton jelzése). Üres paletta = a mód nem mozdít képpontot, tehát a
+    // nyers értékek mennek ki változatlanul.
+    //
+    // A diavetítés SZÁNDÉKOSAN kimarad (11.7/3., NY-4): az a saját útján kapja
+    // meg a módot (#1640), a téma színeit pedig nem használja.
+    function frissitsdAMegjelenitesiPalettat() {
+        Theme.megjelenitesiPaletta = controller
+            ? controller.uiPalette(Theme.nyers) : ({})
+    }
+
+    Connections {
+        target: controller
+        function onDisplayModeChanged() { window.frissitsdAMegjelenitesiPalettat() }
+        //: a sötét/világos váltás a NYERS értékeket cseréli ki, tehát a
+        //: paletta is újraszámolandó — különben az előző téma átalakított
+        //: színei ragadnának be
+        function onDarkThemeChanged() { window.frissitsdAMegjelenitesiPalettat() }
+    }
+
     palette {
         window: Theme.canvasBg
         windowText: Theme.ink
@@ -1698,6 +1722,8 @@ ApplicationWindow {
         //: induló rács a felső szintről dolgozna, pedig a 144-es fokozat a
         //: kisebb szintből tízszer olcsóbban áll elő.
         if (controller) controller.setThumbCellSize(window.thumbSize)
+        //: #3070: a megjelenítési mód kezdőállapota a felület színein
+        window.frissitsdAMegjelenitesiPalettat()
         initialScanDialog.openIfNeeded()
         // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
         // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
