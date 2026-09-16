@@ -3084,3 +3084,55 @@ második tokenként. ⇒ **a szerkesztő egyik fülén sem érhetők el**; a
   nincs kimérve. A tábla csak a hiányt mutatja.
 - A **csempék rácsbeli helye** (sor/oszlop) nem a táblából jön: az a
   `fx1`…`fx12` helyekhez rendelés, amit a 2026-08-16-i szakasz ír le.
+
+## A MÁSODIK előnézet (`preview2`) — a kettős nézet szerkeszthető fele (#3187)
+
+*(2026-09-16, a binárisból mérve. Forrás: `FUN_00569720` — az egyetlen
+függvény, amely a `preview2_x0`/`preview2_y0` kulcsokat írja.)*
+
+### 1. A második előnézet önálló elrendezési elem
+
+A függvény **név szerint** kér ki két vágóelemet a panel-erőforrásból:
+
+| név | szerep |
+|---|---|
+| `editpanel/previewclip` | az első (mai) előnézet vágókerete |
+| `editpanel/previewclip2` | a MÁSODIK előnézeté — **26 függvény hivatkozik rá** |
+
+Ha **bármelyik** hiányzik, a rutin `4`-gyel azonnal kilép
+(`0x0056979e`), tehát a kettős nézet elrendezése a két elem MEGLÉTÉRE
+épül — a második előnézet nem a másolata az elsőnek, hanem saját,
+egyenrangú elem.
+
+### 2. A mért induló pozíciók — és hogy a tájolás CSERÉLI a tengelyeket
+
+A rutin négy animációs kulcsot állít be név szerint (`FUN_009c9de0`), és
+a törzse **két blokkra** ágazik a `[ebp+8]` bool argumentum szerint
+(`0x005697be`). A két blokkban a kulcsok ugyanazok, a hozzájuk rendelt
+érték viszont felcserélődik:
+
+| blokk | `previewx0` | `previewy0` | `preview2_x0` | `preview2_y0` |
+|---|---|---|---|---|
+| `[ebp+8] ≠ 0` (`0x005698b7`…) | *címke-szélesség + 45,0* | **5,0** | *címke-szélesség + 45,0* | **5,0** |
+| `[ebp+8] = 0` (`0x00569a3f`…) | **5,0** | *címke-szélesség + 45,0* | **5,0** | *címke-szélesség + 45,0* |
+
+- a **45,0** a `[0x00cf50a0]` dupla pontosságú konstans, amit a rutin az
+  `editpanel/selection_label` **szélességéhez** ad hozzá
+  (`0x005697ec`–`0x005697ff`: `jobb − bal`, majd `fadd`);
+- az **5,0** a `[0x00cf3a58]` egyszeres pontosságú konstans;
+- a `[0x00cf4c38]` = 45,0 a rutin elején a veremre kerül (`[esp+8]`) — a
+  hívott elrendező kapja meg.
+
+⇒ **A két előnézet ugyanabból a pontból indul**, és a tengelyek szerepe a
+bool argumentumtól függ. Ez pontosan a #3014-ben mért vízszintes/függőleges
+osztás (`swap_2up_layout`, nálunk `fuggolegesElrendezes`) — a mi oldalunkon
+a két félbevágás már e szerint működik.
+
+### 3. ⛔ Amit ez NEM mond ki
+
+- A `previewclip2` **végső téglalapja** nem ebből a rutinból jön: ezek
+  **animációs kezdőértékek**, a vágókeret geometriáját az erőforrás adja.
+  A tényleges felezést a #3014 mérése írja le.
+- Melyik oldal kapja a szerkesztett képet, és hogyan dől el ütközéskor —
+  az a #3014 `Confirm2up*` párbeszédéé, ami a #3187 lezárása után vehető
+  fel.

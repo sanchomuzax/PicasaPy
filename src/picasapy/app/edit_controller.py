@@ -381,9 +381,28 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     # EditController nem ismeri az adatgyökeret (a napló ott él).
     chainSaved = Signal(str, str)
 
-    def __init__(self, provider: EditPreviewProvider, parent=None) -> None:
+    def __init__(
+        self,
+        provider: EditPreviewProvider,
+        parent=None,
+        *,
+        slot: str = "",
+    ) -> None:
+        """`slot` (#3187): melyik ELŐNÉZET-REKESZ a vezérlőé.
+
+        A kettős nézet második fele önálló szerkesztési állapotot kaphat —
+        az eredetiben teljes értékű második előnézet áll
+        (`editpanel/preview2`, `editpanel/previewclip2`). A szolgáltató
+        gyorsítótára a fotó azonosítójával kulcsozódik, tehát UGYANARRA a
+        fotóra nyitott két munkamenet felülírná egymás képét. A rekesz a
+        kulcsot jelöli meg (`<fotó>@<rekesz>`); a LOGIKAI fotó-azonosító
+        (ini-írás, mentés) változatlan marad.
+
+        Üres rekesz = a mai, egyetlen munkamenet; a kulcs ilyenkor
+        betűre ugyanaz, mint eddig."""
         super().__init__(parent)
         self._provider = provider
+        self._slot = str(slot or "")
         # #514: az előnézet-renderelések sorszáma. Minden új kérés növeli;
         # a háttérszálra tett (lassú) renderelés a saját sorszámát
         # összeveti az aktuálissal, és ELAVULTKÉNT kihagyja magát, ha
@@ -474,6 +493,17 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 
+    @property
+    def _kulcs(self) -> str:
+        """A SZOLGÁLTATÓ kulcsa (#3187) — a rekesszel megjelölve.
+
+        Minden `self._provider.…` hívás és minden `image://editpreview/…`
+        URL ezt viszi, sosem a nyers `self._photo_id`-t; erre külön
+        forrás-szintű őr is fut (`test_masodik_elonezet_3187.py`)."""
+        if not self._photo_id or not self._slot:
+            return self._photo_id
+        return f"{self._photo_id}@{self._slot}"
+
     @Property(int, notify=revisionChanged)
     def revision(self) -> int:
         return self._revision
@@ -485,7 +515,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         értéke (a ?rev= rész) attól függ, hogy a kép-URL biztosan változzon."""
         if not self._photo_id:
             return ""
-        return f"image://editpreview/{self._photo_id}?rev={self._revision}"
+        return f"image://editpreview/{self._kulcs}?rev={self._revision}"
 
     @Property(str, notify=gpuRevisionChanged)
     def gpuPrefixSource(self) -> str:
@@ -496,7 +526,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         (QML) ÜRES string esetén nem is jeleníti meg a GPU-réteget."""
         if not self._photo_id or self._session.gpu_finetune_prefix() is None:
             return ""
-        return f"image://editpreview/{self._photo_id}?gpuprefix=1&rev={self._gpu_revision}"
+        return f"image://editpreview/{self._kulcs}?gpuprefix=1&rev={self._gpu_revision}"
 
     @Property(str, notify=gpuRevisionChanged)
     def gpuLutSource(self) -> str:
@@ -504,7 +534,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         eligibilitási feltétel, mint `gpuPrefixSource`-nál."""
         if not self._photo_id or self._session.gpu_finetune_prefix() is None:
             return ""
-        return f"image://editpreview/{self._photo_id}?gpulut=1&rev={self._gpu_revision}"
+        return f"image://editpreview/{self._kulcs}?gpulut=1&rev={self._gpu_revision}"
 
     @Property("QVariant", notify=revisionChanged)
     def histogram(self):
@@ -514,7 +544,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         provider a MEGJELENÍTETT képből számolja (ld. edit_preview.py)."""
         if not self._photo_id:
             return dict(EMPTY_HISTOGRAM)
-        return self._provider.histogram_for(self._photo_id)
+        return self._provider.histogram_for(self._kulcs)
 
     @Property("QVariant", notify=revisionChanged)
     def framePlacement(self):
@@ -532,7 +562,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         """
         if not self._photo_id:
             return None
-        hely = self._provider.frame_placement(self._photo_id)
+        hely = self._provider.frame_placement(self._kulcs)
         if hely is None or hely.erintetlen:
             return None
         return {
@@ -1122,7 +1152,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         `revisionChanged`-et emitálna egy már üres szerkesztő-állapotra."""
         self._preview_job += 1
         if self._photo_id:
-            self._provider.unregister(self._photo_id)
+            self._provider.unregister(self._kulcs)
         self._photo_id = ""
         self._image_path = None
         self._image_size = None
@@ -1245,7 +1275,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         """
         if not self._photo_id or self._image_path is None:
             return []
-        image = self._provider.source_image(self._photo_id, self._image_path)
+        image = self._provider.source_image(self._kulcs, self._image_path)
         if image is None:
             return []
         faces = self._saved_face_rects()
@@ -1529,7 +1559,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         előnézetet. Újrafuttatható (a jegy szerint az „Auto" gomb az)."""
         self._require_active()
         self._redeye_found = self._provider.redeye_spot_count(
-            self._photo_id, self._image_path, self._session.clear_redeye().ops
+            self._kulcs, self._image_path, self._session.clear_redeye().ops
         )
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
@@ -1899,7 +1929,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         lut = build_finetune2_lut(
             fill=fill, highlights=highlights, shadows=shadows, temperature=temperature
         )
-        self._provider.update_gpu_lut(self._photo_id, lut)
+        self._provider.update_gpu_lut(self._kulcs, lut)
         self._bump_gpu_revision()
 
     @Slot(float, float, float, float)
@@ -2260,7 +2290,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         gpu_prefix_ops = active_session.gpu_finetune_prefix()
         gpu_lut = self._gpu_lut_for(active_session) if gpu_prefix_ops is not None else None
         return {
-            "photo_id": self._photo_id,
+            "photo_id": self._kulcs,
             "path": self._image_path,
             "ops": active_session.ops,
             "text": self._current_text_spec(),
@@ -2347,7 +2377,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         (nincs regisztrált előnézet, vagy a pont a képen kívül esik).
         """
         self._require_active()
-        sample = self._provider.sample_color(self._photo_id, nx, ny)
+        sample = self._provider.sample_color(self._kulcs, nx, ny)
         if sample is None:
             return False
         red, green, blue = sample
@@ -2466,7 +2496,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._require_active()
         if self._image_path is None:
             return False
-        source = self._provider.source_image(self._photo_id, self._image_path)
+        source = self._provider.source_image(self._kulcs, self._image_path)
         if source is None:
             return False
         red, green, blue = estimate_neutral_color(source)
