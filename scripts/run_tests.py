@@ -66,6 +66,14 @@ _kill = os.kill
 _rmtree = shutil.rmtree
 _which = shutil.which
 
+#: #3178: a `resource` modul MODULSZINTŰ fogantyúja. A core-korlátot emelni
+#: kell a részfutások előtt, a tesztje viszont nem írhatja át a GLOBÁLIS
+#: `resource`-t (#1375) — ezt a nevet cseréli. Windowson `None`.
+try:  # pragma: no cover — platformfüggő
+    import resource as _resource
+except ImportError:  # pragma: no cover — Windows
+    _resource = None
+
 
 def _platform() -> str:
     """A platform MODULSZINTŰ fogantyúja (#1217).
@@ -598,6 +606,125 @@ _KIMENET: dict[str, str] = {}
 _OSSZEOMLAS_UJRAPROBA: list[str] = []
 
 
+#: #3178: a `gdb` futásának ideje. A natív veremkép egy 1–2 GB-os core-ból
+#: másodpercek alatt kiolvasható; ha ennél tovább tart, valami nem stimmel, és
+#: nem a hibakeresés miatt lőjük ki a CI-kört.
+_GDB_TIMEOUT_S = 120
+
+
+def _core_minta() -> str:
+    """A rendszer core-mintája (`/proc/sys/kernel/core_pattern`) — vagy a
+    hiány oka.
+
+    Ez a NÉGYSOROS válasz a „miért nincs core?" kérdésre: ha a minta `|`-lel
+    kezdődik, a kernel egy KEZELŐNEK (systemd-coredump, apport) adja át a
+    core-t, tehát a munkakönyvtárban nem keletkezik fájl. A CI-naplóban ez
+    magyarázza a hiányt — találgatás helyett.
+    """
+    try:
+        return Path("/proc/sys/kernel/core_pattern").read_text(
+            encoding="utf-8", errors="replace"
+        ).strip()
+    except OSError as kivetel:
+        return f"(nem olvasható: {kivetel})"
+
+
+def _engedd_a_core_dumpot() -> bool:
+    """A core-fájl PUHA korlátja a keményre — a részfutások ezt öröklik (#3178).
+
+    A `faulthandler` (#1457) csak a Python-szálakat mutatja; a ritka SIGSEGV
+    viszont a Qt/C++ oldalon van, tehát a hibás keret csak core dumpból
+    látszik. A GitHub-futtató alapból `0` PUHA korláttal indít, a kemény
+    korlát viszont `unlimited` — ezt a futtató maga felemelheti, munkafolyamat-
+    jogosultság nélkül (a botnak a `.github/workflows/*` írása tiltott).
+
+    `False`, ha nincs mit emelni (Windows, vagy nulla kemény korlát) —
+    kivételt SOHA nem dob: a hibakeresés segédje nem buktathatja a futást.
+    """
+    if _platform().startswith("win") or _resource is None:
+        return False
+    try:
+        puha, kemeny = _resource.getrlimit(_resource.RLIMIT_CORE)
+        if kemeny == 0:
+            return False
+        if puha == kemeny:
+            return True
+        _resource.setrlimit(_resource.RLIMIT_CORE, (kemeny, kemeny))
+    except (OSError, ValueError) as kivetel:
+        print(f"a core-korlát nem emelhető: {kivetel}", flush=True)
+        return False
+    return True
+
+
+def _core_fajlok() -> list[Path]:
+    """A munkakönyvtárban hagyott core-fájlok, a legfrissebb ELŐBB."""
+    talalt = [
+        ut
+        for minta in ("core", "core.*")
+        for ut in _ROOT.glob(minta)
+        if ut.is_file()
+    ]
+    return sorted(talalt, key=lambda ut: ut.stat().st_mtime, reverse=True)
+
+
+def _ird_ki_a_nativ_veremkepet(relative: str) -> bool:
+    """A core dump NATÍV veremképe a naplóba (#3178).
+
+    A `faulthandler` Python-verme megmondja, MELYIK teszt hívási helyén
+    történt a baj; a C++ keret — ami a SIGSEGV-t tényleg okozza — csak innen
+    derül ki.
+
+    ⛔ Ez a függvény SOHA nem hallgat: ha nincs core vagy nincs `gdb`, kiírja
+    az OKOT (a rendszer core-mintájával együtt). A hiányzó veremkép nem
+    hiba, az elhallgatott hiány viszont igen.
+    """
+    magok = _core_fajlok()
+    if not magok:
+        print(
+            f"nincs core-fájl a(z) {relative} összeomlásához "
+            f"(core_pattern: {_core_minta()})",
+            flush=True,
+        )
+        return False
+    gdb = _which("gdb")
+    if gdb is None:
+        print(
+            f"van core ({magok[0].name}), de nincs `gdb` — a natív veremkép "
+            "kimarad",
+            flush=True,
+        )
+        return False
+    print(f"--- NATÍV VEREMKÉP ({relative}, {magok[0].name}) ---", flush=True)
+    try:
+        eredmeny = _run(
+            [
+                gdb,
+                "-batch",
+                "-ex",
+                "thread apply all bt",
+                sys.executable,
+                str(magok[0]),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=_GDB_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as kivetel:
+        print(f"a gdb nem futott le: {kivetel}", flush=True)
+        return False
+    if eredmeny.returncode != 0:
+        print(
+            f"a gdb {eredmeny.returncode}-tel lépett ki: "
+            f"{_szoveggé(eredmeny.stderr)}",
+            flush=True,
+        )
+        return False
+    print(_szoveggé(eredmeny.stdout), flush=True)
+    print("--- a natív veremkép vége ---", flush=True)
+    return True
+
+
 def _ird_ki_az_osszeomlas_nyomat(relative: str, returncode: int) -> None:
     """Az összeomlott részfutás KIMENETE a naplóba, az újrapróbálás ELŐTT.
 
@@ -617,6 +744,11 @@ def _ird_ki_az_osszeomlas_nyomat(relative: str, returncode: int) -> None:
     if nyom:
         print(nyom, flush=True)
     print("--- az összeomlás nyoma vége ---", flush=True)
+    # #3178: a JELRE halt részfutásnak core-ja is lehet — a natív veremkép a
+    # `faulthandler` Python-verme MELLÉ jön, nem helyette. Tesztbukásnál
+    # (pozitív kilépőkód) nincs mit keresni.
+    if _osszeomlas(returncode):
+        _ird_ki_a_nativ_veremkepet(relative)
 
 
 def _osszeomlas(returncode: int) -> bool:
@@ -1108,6 +1240,10 @@ def main(argv: list[str] | None = None) -> int:
         # sosem takarított.
         _takarits_regi_maradekot()
         return 0
+
+    # #3178: a core-korlát felemelése MÉG a részfutások indítása előtt — a
+    # gyerekek a puha korlátot öröklik, tehát utólag már késő.
+    _engedd_a_core_dumpot()
 
     _bejelentkezes()
     _takarits_regi_maradekot()
