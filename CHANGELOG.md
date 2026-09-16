@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.494] – 2026-09-16
+
 ### Hozzáadva
 
 - **A megjelenítési mód mostantól az EGÉSZ felületre hat** (#3070). A
