@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.502] – 2026-09-16
+
+### Megváltozva
+
+- **A szerkesztő csúszkáinak mért méretei egy helyen élnek** (#710,
+  előkészítés). Belső rendezés: a Finomhangolás fül csúszka-geometriája
+  (191 × 27, 17 képpont eltolás) a közös csúszka-komponensbe került, így a
+  következő ilyen javítás nem maradhat félúton. A felhasználó számára semmi
+  nem változik.
+
 ## [0.8.501] – 2026-09-16
 
 ### Javítva
