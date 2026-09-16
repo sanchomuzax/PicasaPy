@@ -832,6 +832,57 @@ def _coredumpctl_veremkep(relative: str) -> bool:
     return True
 
 
+#: #3265: a `gdb` telepítésének ideje a CI-n. Ha ennél tovább tart, a
+#: hibakeresés segédje nem viheti el a kört.
+_APT_TIMEOUT_S = 180
+
+
+def _telepitheto_a_gdb(ci: bool, sudo: str | None, apt: str | None) -> bool:
+    """Megpróbálhatjuk-e TELEPÍTENI a `gdb`-t? (#3265)
+
+    Csak CI-n, jelszó nélküli `sudo`-val, ott, ahol `apt-get` van. A
+    fejlesztő gépére SOSEM telepítünk semmit egy tesztfuttatóból.
+
+    Miért kell: a GitHub-futtatón a core-fájl már MEGSZÜLETIK (#3265 első
+    lépése), de `gdb` nincs telepítve — mérve a PR #3266 futásán: „van core
+    (core.4952), de nincs `gdb` — a natív veremkép kimarad". A core
+    önmagában semmit nem mond; a keret csak a `gdb`-vel olvasható ki.
+    """
+    return bool(ci) and sudo is not None and apt is not None
+
+
+def _telepitsd_a_gdb_t() -> str | None:
+    """`gdb` telepítése a CI-futtatóra — az elérési úttal tér vissza (#3265).
+
+    `None`, ha nem próbálkozhatunk vagy nem sikerült; az OKOT ilyenkor is
+    kiírja (a #3178 szabálya: a hiányzó veremkép magyarázatot kap)."""
+    sudo = _which("sudo")
+    apt = _which("apt-get")
+    ci = bool(os.environ.get("CI"))
+    if not _telepitheto_a_gdb(ci, sudo, apt):
+        return None
+    print("a `gdb` hiányzik — telepítés a natív veremképhez (#3265)", flush=True)
+    try:
+        eredmeny = _run(
+            [sudo, "-n", apt, "install", "-y", "-q", "gdb"],
+            capture_output=True,
+            text=True,
+            timeout=_APT_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as kivetel:
+        print(f"a `gdb` nem telepíthető: {kivetel}", flush=True)
+        return None
+    if eredmeny.returncode != 0:
+        print(
+            f"a `gdb` telepítése {eredmeny.returncode}-tel lépett ki: "
+            f"{_szoveggé(eredmeny.stderr).strip()[-400:] or '(nincs kimenet)'}",
+            flush=True,
+        )
+        return None
+    return _which("gdb")
+
+
 def _ird_ki_a_nativ_veremkepet(relative: str) -> bool:
     """A core dump NATÍV veremképe a naplóba (#3178).
 
@@ -856,7 +907,7 @@ def _ird_ki_a_nativ_veremkepet(relative: str) -> bool:
             flush=True,
         )
         return False
-    gdb = _which("gdb")
+    gdb = _which("gdb") or _telepitsd_a_gdb_t()
     if gdb is None:
         print(
             f"van core ({magok[0].name}), de nincs `gdb` — a natív veremkép "

@@ -84,3 +84,23 @@ class TestVisszaallitas:
     def test_ures_regi_mintara_nem_ir_vissza(self, capsys):
         """Ha nem állítottunk át semmit, a visszaállítás NO-OP."""
         assert rt._allitsd_vissza_a_core_mintat(None) is False
+
+
+class TestAGdbTelepitese:
+    """A core magában semmit nem mond — `gdb` nélkül nincs natív keret.
+
+    Mérve a PR #3266 első futásán: „van core (core.4952), de nincs `gdb`".
+    A GitHub-futtatón a `gdb` nincs telepítve, de telepíthető."""
+
+    def test_ci_sudoval_es_apttal_igen(self):
+        assert rt._telepitheto_a_gdb(True, "/usr/bin/sudo", "/usr/bin/apt-get")
+
+    def test_ci_nelkul_soha(self):
+        """A fejlesztő gépére tesztfuttatóból nem telepítünk."""
+        assert not rt._telepitheto_a_gdb(False, "/usr/bin/sudo", "/usr/bin/apt-get")
+
+    def test_apt_nelkul_nem(self):
+        assert not rt._telepitheto_a_gdb(True, "/usr/bin/sudo", None)
+
+    def test_sudo_nelkul_nem(self):
+        assert not rt._telepitheto_a_gdb(True, None, "/usr/bin/apt-get")
