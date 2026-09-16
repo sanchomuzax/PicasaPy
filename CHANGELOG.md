@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **Egy hiányzó mező nem viszi el a teljes finomhangolást** (#3195). Ha egy
+  kézzel szerkesztett `.picasa.ini`-ben a finomhangolás semleges-szín mezője
+  üresen maradt, addig a kép **összes** finomhangolása (Derítőfény,
+  Csúcsfények, Árnyékok, Színhőmérséklet) némán elveszett. Mostantól az üres
+  mező annyit jelent, hogy nincs kijelölt semleges szín — a többi beállítás
+  érvényes marad. (Az eredeti Picasa mindig kiírja ezt a mezőt, tehát a saját
+  fájljaiban ez a helyzet nem fordul elő.)
+
 ## [0.8.496] – 2026-09-16
 
 ### Megváltozva
