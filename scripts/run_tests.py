@@ -667,6 +667,61 @@ def _core_fajlok() -> list[Path]:
     return sorted(talalt, key=lambda ut: ut.stat().st_mtime, reverse=True)
 
 
+def _kezelo_kapja_a_core_t(minta: str) -> bool:
+    """A `core_pattern` egy KEZELŐNEK adja át a core-t? (#3178)
+
+    A `|`-lel kezdődő minta azt jelenti, hogy a kernel csővezetéken átadja a
+    core-t egy programnak (`systemd-coredump`, `apport`), tehát a
+    munkakönyvtárban **soha nem lesz fájl**. Mérve a GitHub-futtatón
+    (PR #3239 ubuntu 2/4):
+    `|/usr/lib/systemd/systemd-coredump %P %u %g %s %t … %h %d`.
+    """
+    return minta.strip().startswith("|")
+
+
+def _coredumpctl_veremkep(relative: str) -> bool:
+    """A legutóbbi összeomlás adatai a `coredumpctl`-ből (#3178).
+
+    Ahol a core-t a `systemd-coredump` kapja meg, ez az EGYETLEN út a natív
+    képhez. Az `info` a jelet, a futtatható állományt és — ha a rendszer
+    megtartotta a core-t — a veremkép elejét is kiírja; ez már megmondja,
+    melyik C++ keretben történt a baj.
+
+    ⛔ Hallgatni itt sem szabad: ha nincs `coredumpctl`, azt kimondjuk.
+    """
+    coredumpctl = _which("coredumpctl")
+    if coredumpctl is None:
+        print(
+            f"a core-t a rendszer kezelője kapta meg (ld. a core_pattern-t), "
+            f"de nincs `coredumpctl` a(z) {relative} vizsgálatához",
+            flush=True,
+        )
+        return False
+    print(f"--- NATÍV VEREMKÉP a coredumpctl-ből ({relative}) ---", flush=True)
+    try:
+        eredmeny = _run(
+            [coredumpctl, "info", "--no-pager", "python3"],
+            capture_output=True,
+            text=True,
+            timeout=_GDB_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as kivetel:
+        print(f"a coredumpctl nem futott le: {kivetel}", flush=True)
+        return False
+    kimenet = _szoveggé(eredmeny.stdout).strip()
+    if eredmeny.returncode != 0 or not kimenet:
+        print(
+            f"a coredumpctl {eredmeny.returncode}-tel lépett ki: "
+            f"{_szoveggé(eredmeny.stderr).strip() or '(nincs kimenet)'}",
+            flush=True,
+        )
+        return False
+    print(kimenet, flush=True)
+    print("--- a natív veremkép vége ---", flush=True)
+    return True
+
+
 def _ird_ki_a_nativ_veremkepet(relative: str) -> bool:
     """A core dump NATÍV veremképe a naplóba (#3178).
 
@@ -680,9 +735,14 @@ def _ird_ki_a_nativ_veremkepet(relative: str) -> bool:
     """
     magok = _core_fajlok()
     if not magok:
+        minta = _core_minta()
+        #: #3178: a fájlos ág elsőbbséget kap; ha a core-t KEZELŐ kapja meg
+        #: (a `|`-es minta), a `coredumpctl` az egyetlen út.
+        if _kezelo_kapja_a_core_t(minta):
+            return _coredumpctl_veremkep(relative)
         print(
             f"nincs core-fájl a(z) {relative} összeomlásához "
-            f"(core_pattern: {_core_minta()})",
+            f"(core_pattern: {minta})",
             flush=True,
         )
         return False
