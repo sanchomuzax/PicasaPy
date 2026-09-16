@@ -74,9 +74,19 @@ class TestABevezetoNemAllitValotlant:
             )
 
     def test_a_mondat_tovabbra_is_megmondja_honnan_valok(self):
-        """A pontosítás nem törölheti a fül LÉNYEGÉT."""
+        """A pontosítás nem törölheti a fül LÉNYEGÉT.
+
+        #3247: a mondat RÖVIDEBB lett (a fül magassága a mért 277 fölé nőtt
+        tőle), tehát a próba a szó szerinti fordulat helyett a HÁROM
+        tartalmi elemet kéri — így a következő rövidítés sem tudja némán
+        kivenni belőle, honnan valók ezek a szűrők.
+        """
         mondat = _bevezeto_angol().lower()
-        assert "older versions of picasa" in mondat
+        for elem in ("older", "picasa", "version"):
+            assert elem in mondat, (
+                f"a bevezetőből eltűnt, hogy RÉGEBBI Picasa-VÁLTOZATOKBÓL "
+                f"származnak (hiányzik: {elem!r}) — {mondat!r}"
+            )
 
     def test_van_magyar_forditas(self):
         magyar = _bevezeto_magyar(_bevezeto_angol())

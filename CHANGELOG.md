@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.495] – 2026-09-16
+
+### Javítva
+
+- **A szerkesztő-panel 24 képponttal alacsonyabb lett** (#3247). A panel
+  magasságát a „Régi effektek" fül hosszú bevezető szövege hajtotta meg, és így
+  az EGÉSZ panel 21 képponttal magasabb volt az eredeti Picasáénál — kis
+  képernyőn ez pont a Visszavonás/Újra sortól vett el helyet. A szöveg
+  rövidebb (ugyanazt mondja), a fül pedig belefér a mért méretbe.
+
 ## [0.8.494] – 2026-09-16
 
 ### Hozzáadva
