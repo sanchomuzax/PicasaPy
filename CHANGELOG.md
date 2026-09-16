@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.501] – 2026-09-16
+
+### Javítva
+
+- **A Mégse gomb jelvénye sötétvörös lett, ahogy az eredetiben** (#710). A
+  szerkesztő Alkalmaz/Mégse gombjain a kis kör-ikon a Mégsénél **indigó**
+  volt, pedig az eredeti Picasáé sötétvörös — a szín egy régi, csatornákat
+  felcserélő képolvasásból maradt itt. A dokumentáció a helyes színt már
+  tartalmazta (#1160), csak a felület nem követte; mostantól próba is őrzi.
+
 ## [0.8.500] – 2026-09-16
 
 ### Javítva
