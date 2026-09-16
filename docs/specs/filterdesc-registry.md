@@ -5903,3 +5903,68 @@ görbeleíró-alakja, amiből a vezérlőpont-interpoláció aritmetikája kiolv
 
 *Bizonyítottsági fok: **megerősített** — diszasszemblált törzsek és a teljes
 vtábla-slot megoszlás; a családok tételesen felsorolva.*
+
+## 12. A SZŰRŐ KOORDINÁTA-HORGA: `CGenericFilter` `+0x84`, mátrix ÉS inverz (2026-09-16, #3169)
+
+**A kérdés,** amire ez a szakasz válaszol: hol érvényesül a vágás a
+szűrőláncban — a lánc elején, a végén, vagy a pozíciójában? A #3169 azért
+tette fel, mert nálunk az `apply_filters` a vágást és a kereteket a lánc
+**végére halasztja**, és emiatt az élő előnézet 18,2 átlagos eltérést ad a
+mentett képhez a `crop64;Vignette` láncon.
+
+**A válasz: egyik sem — az eredeti a KOORDINÁTÁKAT képezi le.**
+
+### Az osztály és a két szomszédos slot
+
+| tétel | cím | mi |
+|---|---|---|
+| `CGenericFilter::vftable` | `0x00cd184c` | a lánc op-osztálya, **43 slot** |
+| `+0x80` | `FUN_008f6e40` (51 b) | **render**: a `[this+0xc]` render-callback hívása 4 argumentummal, majd `[this+0x64]`/`[this+0x68]` = `-1` (gyorsítótár-érvénytelenítés) |
+| `+0x84` | `FUN_008f6e80` (146 b) | **a koordináta-leképezés átadása** |
+
+⚠️ Az osztály **nem** az RTTI-táblából jött: ott a ≥34 slotos vtáblák mind
+felületi osztályok. Bájtszintű pásztázás adta — 34-nél több egymást követő,
+érvényes kódcím, ahol a **32.** slot a lánc-moduljába (`0x008f…0x0091…`)
+esik. A teljes fájlban **két** ilyen jelölt van (a másik a
+`CRetouchFilter::vftable`, `0x00cc1b0c`).
+
+### Mit tesz a `+0x84`
+
+1. **10 dwordöt** másol a paraméterből a `[this+0x6c]`-be: 9 float (3×3-as
+   mátrix) + 1 jelzőbájt;
+2. ha a paraméter `[+0x24]` jelzője áll, a `[+8]`/`[+0x14]` mezőt **negálva**
+   épít mátrixot (a tisztán eltolásos eset inverze);
+3. különben `FUN_00a4a140`: a 3×3-as **determináns** (`0x00a4a148`-tól
+   `m11·m22 − m12·m21`…), nullára ellenőrizve ⇒ **mátrix-invertálás**;
+4. az eredmény a `[this+0x94]`-be kerül.
+
+⇒ Minden szűrő megkapja és eltárolja **a leképezést és annak inverzét**.
+
+### Ki hívja, és mire
+
+A szerkesztő `FUN_006ad860` (2590 b), ebben a sorrendben:
+
+| lépés | cím | mit |
+|---|---|---|
+| 1 | `0x006ad8dd` | a lánc utolsó elemét veszi (`[obj+0x10c]` tömb, darab = `[obj+0x110] >> 1`) |
+| 2 | `0x006ad943`, `…981`, `…9b9` | ha az utolsó `redeye` / `retouch` / `picnik`, kiveszi a listából (`FUN_00906fc0`, darab−1) és egy másik listába teszi (`[obj+0x15c]`) |
+| 3 | `0x006adb2d` | a maradék utolsó elemét a **`crop64`**-hez méri |
+| 4 | `0x006adbc1`–`…c3f` | **visszafelé** keresi az utolsó `crop64` indexét |
+| 5 | `0x006adc84` | abból az opból **négy dwordöt** olvas (`+0x40`…`+0x4c`) — a téglalap |
+| 6 | `0x006add5a` | `FUN_0090fcc0`: **forgatási mátrixot** épít (`sin`/`cos`, fok→radián a `0xcf4760`-on, a szög negálva) |
+| 7 | `0x006add70`–`…d95` | a lánc **MINDEN tagján, 0-tól a darabszámig**, meghívja a `+0x84`-et a struktúra mutatójával |
+| 8 | `0x006add97`–`…de2` | a téglalapot érvényesíti (`bal < jobb`, `fent < lent`), és `[obj+0x240…0x24c]`-be írja; érvénytelenre **nullázza** |
+
+### Amit ez nálunk eldönt
+
+* Az eredeti **sorrendben renderel**; a vágás nem ugrik se a lánc elejére, se
+  a végére.
+* A térben változó effektek (`Vignette`, elmosások) azért maradnak helyesek,
+  mert a koordinátáikat a leképezésen át kapják.
+* A mi lánc-szintű leképezésünk (#3166, `render/chain_geometry.py`) ennek a
+  **lánc-szintű, render utáni** megfelelője — a hiányzó darab az op-szintű
+  mátrix (és inverz). Ez a **#3229**.
+
+*Bizonyítottsági fok: **megerősített** — diszasszemblált törzsek, címekkel; a
+determináns-számítás és a fok→radián konstans közvetlenül olvasva. Amit NEM
+mértem: hogy a `CRetouchFilter` (a másik jelölt) `+0x84`-e ugyanezt teszi-e.*
