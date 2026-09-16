@@ -48,9 +48,15 @@ ColumnLayout {
     // osztásközzel; a feliratuk (151 × 12) a csúszka FÖLÖTT, középre zárva.
     // A fül 10 képpontos bal margójához képest az x 30 = 17 képpont eltolás
     // (13 + 17 = 30) — ezt a `csuszkaEltolas` tartja egy helyen.
-    readonly property int csuszkaSzelesseg: 191
-    readonly property int csuszkaMagassag: 27
-    readonly property int csuszkaEltolas: 17
+    //: #710: a számok a KÖZÖS `EditorSlider`-en élnek (`mertSzelesseg` stb.),
+    //: hogy a paraméter-alpanel ugyanazt kapja — itt csak áthivatkozás, hogy
+    //: a fájl meglévő használatai ne változzanak.
+    readonly property int csuszkaSzelesseg: mertekek.mertSzelesseg
+    readonly property int csuszkaMagassag: mertekek.mertMagassag
+    readonly property int csuszkaEltolas: mertekek.mertEltolas
+
+    //: a mért számok hordozója — nem rajzol (a láthatósága hamis)
+    EditorSlider { id: mertekek; visible: false; enabled: false }
 
     // #2627: a csúszka BELSŐ geometriája — a `respack.yt` `editslider`
     // családjából kimérve (`tools/picasa/respack.py`, a 13 bájtos
