@@ -104,6 +104,12 @@ class TestNativVeremkep:
     def test_core_nelkul_kimondja_az_okot(self, monkeypatch, tmp_path, capsys) -> None:
         monkeypatch.setattr(run_tests, "_ROOT", tmp_path)
         monkeypatch.setattr(run_tests, "_which", lambda nev: "/usr/bin/gdb")
+        #: ⚠️ A próba NEM olvashatja a gép VALÓDI `core_pattern`-jét: a
+        #: fejlesztői gépen az `core`, a CI-futtatón viszont
+        #: `|/usr/lib/systemd/systemd-coredump …` — ott a kezelős ág futna, és
+        #: a próba a hosszal együtt az ágat is eltévesztené (mérve: a #3240
+        #: első futásán épp ez bukott el).
+        monkeypatch.setattr(run_tests, "_core_minta", lambda: "core")
         assert run_tests._ird_ki_a_nativ_veremkepet("tests/app/x.py") is False
         kimenet = capsys.readouterr().out
         assert "nincs core" in kimenet.lower()
