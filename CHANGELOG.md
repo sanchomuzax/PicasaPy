@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.494] – 2026-09-16
+
 ### Hozzáadva
 
 - **A megjelenítési mód mostantól az EGÉSZ felületre hat** (#3070). A
@@ -19,6 +21,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   sávba esik.
 
 ### Javítva
+
+- **A Képregény (Comicize) raszterpontja a mért méretre került** (#2476). A
+  pontok eddig másfélszer erősebbek voltak a kelleténél: a pont átmérője az
+  eredetiben a rácsméret **0,8**-a, nálunk a teljes rács. A 15 eredeti
+  Picasa-exporton mérve az eltérés minden állásban csökkent (átlag ΔE 6,51 →
+  5,93; a raszter erősségének hibája 2,25 → 1,39). Mérés:
+  `docs/benchmarks/2026-09-16-comicize-pontmeret-2476.md`.
 
 - **Gyorsabb indulás: a program ~1 másodperccel korábban jelenik meg** (#1612).
   A kollázs-szerkesztő felülete eddig MINDEN indításnál felépült, akkor is, ha

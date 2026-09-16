@@ -9,6 +9,7 @@ hogy tényleg az.
 from __future__ import annotations
 
 import inspect
+import math
 
 import numpy as np
 import pytest
@@ -17,6 +18,7 @@ from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import apply_filters
 from picasapy.render.effects_artistic import apply_comicize
 from picasapy.render.halftone import (
+    DOT_SCALE,
     dot_size_for,
     halftone_branch,
     tiled_dot_mask,
@@ -123,19 +125,39 @@ class TestHalftoneBranch:
         branch = halftone_branch(np.full((32, 32), 255.0, np.float32), 8)
         assert branch.min() == pytest.approx(255.0, abs=1.0)
 
-    def test_black_prints_a_full_dot(self):
-        branch = halftone_branch(np.zeros((32, 32), np.float32), 8)
-        # a beírt kör TELJESEN fekete; a csempesarkokat a másik (fél
-        # csempével eltolt) ág fedi le — együtt lesz tömör a fekete
-        assert branch.min() == pytest.approx(0.0, abs=1.0)
-        assert (branch < 128).mean() > 0.7
+    def test_black_prints_a_dot_of_the_MEASURED_scale(self):
+        """A pont MAXIMÁLIS mérete mért: `scaleWidth = scaleHeight = 0,8`
+        (#2476) — tehát a fekete tónus sem tölti ki a csempét.
 
-    def test_the_two_branches_together_fill_a_black_area(self):
-        ink = np.zeros((64, 64), np.float32)
-        combined = np.minimum(
-            halftone_branch(ink, 8, 0.0, 0.0), halftone_branch(ink, 8, 4.0, 4.0)
+        A fedettség a csempéhez mérve `pi · 0,8^2 / 4 = 0,5027`; a korábbi
+        elvárás (`> 0,7`) a MI modellünké volt, nem mérésé, és épp ez adta a
+        raszter ~1,5-szeres túl-erősségét (`1 / 0,8^2 = 1,5625`).
+        """
+        branch = halftone_branch(np.zeros((64, 64), np.float32), 16)
+        assert branch.min() == pytest.approx(0.0, abs=1.0)
+        fedettseg = (branch < 128).mean()
+        vart = math.pi * DOT_SCALE**2 / 4.0
+        assert fedettseg == pytest.approx(vart, abs=0.02), (
+            f"a fekete pont fedettsége {fedettseg:.4f}, a mért 0,8-as skálából "
+            f"{vart:.4f} következik"
         )
-        assert combined.mean() < 20.0
+
+    def test_the_two_branches_together_cover_most_of_a_black_area(self):
+        """A két, fél csempével eltolt rács EGYÜTT sem tölti tömörre a
+        feketét — a mért 0,8-as pontméret mellett ez nem is lehetséges.
+
+        Amit állítunk: a két rács együtt LÉNYEGESEN többet fed, mint egy
+        (különben a második ág felesleges volna), és a maradék rés a mért
+        geometriából jön.
+        """
+        ink = np.zeros((64, 64), np.float32)
+        egy = halftone_branch(ink, 8, 0.0, 0.0)
+        combined = np.minimum(egy, halftone_branch(ink, 8, 4.0, 4.0))
+        assert combined.mean() < 0.4 * egy.mean(), (
+            f"a második ág alig fed: egy ág {egy.mean():.1f}, kettő "
+            f"{combined.mean():.1f}"
+        )
+        assert combined.mean() < 40.0
 
     def test_the_two_offsets_give_different_rasters(self):
         ink = np.full((32, 32), 120.0, np.float32)

@@ -271,14 +271,26 @@ class TestARaszterMegvan:
 
     | visszaírt ág | szórás |
     |---|---|
-    | **a mai kód** | **10,125** |
-    | régi lineáris skálázás a spline helyett | 8,981 |
-    | a raszter felvitele `multiply` | 9,757 |
-    | ágankénti küszöb az ág kimenetén + `add` | 0,000 |
-    | ágankénti küszöb a tintán + `add` | 10,178 |
-    | ágankénti küszöb az ág kimenetén + `darken` | 11,000 |
+    | **a mai kód** (`DOT_SCALE = 0,8`) | **8,410** |
+    | `DOT_SCALE = 1,0` — a #2476 ELŐTTI pontméret | 10,125 |
+    | `DOT_SCALE = 0,9` | 9,650 |
+    | `DOT_SCALE = 0,85` | 8,880 |
+    | `DOT_SCALE = 0,75` | 8,326 |
+    | `DOT_SCALE = 0,7` | 8,073 |
+    | `DOT_SCALE = 0,6` | 6,037 |
 
-    A ±0,2% (10,105…10,146) mindegyiket kizárja. A sáv azért lehet ilyen
+    ⚠️ **A táblát a #2476 újramérte.** A pont mérete a mért `scaleWidth`/
+    `scaleHeight` = 0,8-ra került, tehát a korábbi sor (10,125) maga is
+    MUTÁCIÓ lett — és a sáv kizárja. A skála ±0,05-os elmozdulását is
+    kizárja (8,880 és 8,326 egyaránt kívül van).
+
+    A #1606 korábban felsorolt ágai (lineáris skálázás a spline helyett,
+    `multiply` felvitel, ágankénti küszöb háromféleképpen) a régi, 1,0-es
+    pontméreten 8,981 · 9,757 · 0,000 · 10,178 · 11,000 szórást adtak; a
+    0,8-as skála mindegyiket arányosan mozdítja, tehát a mai, szűk sávtól
+    továbbra is nagyságrenddel messzebb esnek.
+
+    A ±0,2% (8,393…8,427) mindegyiket kizárja. A sáv azért lehet ilyen
     szűk, mert SÍK képen a lánc minden lépése determinisztikus — az
     elő-elmosás és a pixelesítés a sík képet változatlanul hagyja, tehát a
     szám csak a raszter geometriájából jön, nem gépfüggő mintavételből.
@@ -287,7 +299,8 @@ class TestARaszterMegvan:
     #: A mai kimenet mért szórása sík 90-es középtónuson, 700 px széles
     #: képen (11 px csempe). Ha ez a szám elmozdul, az a raszter-lánc
     #: MEGVÁLTOZÁSA — újramérni kell, nem a tűrést tágítani.
-    RASZTER_SZORAS = 10.1252
+    #: A #2476 óta a mért 0,8-as pontméreté (előtte 10,1252 volt).
+    RASZTER_SZORAS = 8.4096
 
     def test_sik_kozeptonon_a_raszter_a_mert_erossegen_all(self):
         """700 px széles kép ⇒ 11 px csempe: a raszter a mért erősségén áll."""
