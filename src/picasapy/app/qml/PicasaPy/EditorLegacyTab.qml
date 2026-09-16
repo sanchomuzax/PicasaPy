@@ -54,12 +54,19 @@ ColumnLayout {
     // 22 képpontos, kiemelt hátterű sáv ráadásul abból a panelmagasságból
     // vett el, ami a #703 szerint amúgy is szűkös.
 
-    // #571 2. pont: a fül teteje egy sorban mondja ki, mi ez a készlet
+    // #571 2. pont: a fül teteje egy sorban mondja ki, mi ez a készlet.
+    //
+    // #3247: a szöveg RÖVIDEBB lett (három sor helyett kettő), mert ennek a
+    // fülnek a magassága hajtotta meg az EGÉSZ panelt: a `tallestTabHeight`
+    // a legmagasabb fülé, és ez a — SAJÁT, az eredetiben nem létező — fül
+    // 298 képpontot kért a mért `editpanel/tabpanel1` = 277 helyett. A
+    // tartalom nem vész el: ugyanaz a két állítás áll benne (honnan jönnek,
+    // és hogy a mai Picasa csak felismeri őket).
     Text {
         objectName: "legacyEffectsIntro"
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("These filters come from older versions of Picasa. Most of them have no control of their own in today's Picasa — it only recognises them inside your old edits.")
+        text: qsTr("These filters come from older Picasa versions. Today's Picasa only recognises them inside your old edits.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }
@@ -103,5 +110,9 @@ ColumnLayout {
         }
     }
 
-    Item { Layout.fillHeight: true }
+    // #3247: a korábbi `Item { Layout.fillHeight: true }` kitöltő eltűnt. A
+    // fül a saját implicit magasságára áll (a gazda csak felül/oldalt
+    // horgonyozza), tehát a kitöltő sosem kapott helyet — a ColumnLayout
+    // sorköze viszont 8 képponttal növelte a fül magasságát, és ezzel az
+    // EGÉSZ panelét.
 }
