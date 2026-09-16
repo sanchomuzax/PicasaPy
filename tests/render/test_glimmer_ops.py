@@ -243,11 +243,11 @@ class TestGlowSigma:
     """#3158: a `filterdesc` blur-értéke ÁTMÉRŐ, a Gauss-σ a FELE.
 
     Ez váltotta le a #504 közös, 255-ös korlátját. A korlát a hiányzó
-    felezést pótolta, és épp ezért nem tudott mindkét használónak
-    megfelelni: a `referencia/lomo` és `referencia/holga` készleten mérve a
-    felezés (k = 0,5) a Lomo ΔE-jét 9,09-ról **1,94**-re viszi, a
-    nullátmenetét 0,625-ról **0,405**-re (a referenciáé 0,425), a Holgáét
-    13,89 → 12,01. A `Vignette` FÜGGETLENÜL ugyanezt adta (#518): a leíró
+    felezést pótolta. A `referencia/lomo` és `referencia/holga` készleten,
+    mindkét effekt SAJÁT alapértékeivel mérve a felezés a Lomo ΔE-jét
+    9,09-ról **1,94**-re, a Holgáét 1,95-ről **1,12**-re viszi; a
+    nullátmenet a Lomón 0,625 → **0,405**, a Holgán 0,435 → **0,425** — a
+    referenciáé 0,425. A `Vignette` FÜGGETLENÜL ugyanezt adta (#518): a leíró
     `/4`-et ad, a legjobb illesztés a képlet `/8`-a.
     """
 

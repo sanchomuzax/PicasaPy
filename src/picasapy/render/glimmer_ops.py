@@ -539,32 +539,30 @@ def local_contrast(image_f: np.ndarray, radius: float, strength: float) -> np.nd
 #:
 #: ## A mérés (`referencia/lomo` és `referencia/holga`, 2560 × 1702)
 #:
-#: A képlet Lomóra `35 · 0,02 · max(W,H) / 2 = 896`. A söprés a képletet
-#: `k`-val szorozta; `k = 0,5` a felezés:
+#: Mindkét effekt a SAJÁT alapértékeivel (Lomo: Blur 50, Fade 0 · Holga:
+#: Blur 70, Grain 30, Fade 0 — a `filterdesc.xml` `value=` mezőiből), a
+#: referencia-export ugyanezekkel készült:
 #:
-#: | k | Lomo ΔE | Lomo nullátmenet | Holga ΔE | Holga nullátmenet |
-#: |---|---:|---:|---:|---:|
-#: | 0,285 (a régi 255-ös korlát) | 9,09 | 0,625 | 13,89 | 0,635 |
-#: | 0,40 | 4,10 | 0,515 | 12,79 | 0,605 |
-#: | **0,50 (ez a modell)** | **1,94** | **0,405** | **12,01** | 0,515 |
-#: | 0,60 | 6,04 | 0,305 | 11,54 | 0,415 |
-#: | 1,00 (korlát nélkül) | 23,76 | — | 12,92 | 0,025 |
+#: | | régi (255-ös korlát) | **új (felezés)** | az ÉRINTETLEN kép |
+#: |---|---:|---:|---:|
+#: | Lomo ΔE | 9,09 | **1,94** | 16,27 |
+#: | Lomo nullátmenet | 0,625 | **0,405** | — |
+#: | Holga ΔE | 1,95 | **1,12** | 23,19 |
+#: | Holga nullátmenet | 0,435 | **0,425** | — |
 #:
 #: A referencia-export nullátmenete **0,425** (a sugár-profil előjelváltása a
-#: kép közepétől mérve, a képátló feléhez viszonyítva, 100 gyűrűn).
-#: ⇒ Lomón a `k = 0,5` **mindkét** mérőszámon optimum, és a nullátmenet
-#: 0,02-n belül van a mérttől — pontosan a #3158 elfogadási feltétele.
+#: kép közepétől, a képátló feléhez viszonyítva, 100 gyűrűn). ⇒ a felezés
+#: MINDKÉT effekten és MINDKÉT mérőszámon javít, a Holga nullátmenete pedig
+#: pontosan a mértre esik.
 #:
 #: ⭐ **Független megerősítés a `Vignette`-ből (#518):** annak a leírója `/4`-et
 #: ad, a legjobb illesztés viszont a képlet `/8`-a — a hányados ugyanaz a 2-es
 #: szorzó. Két, egymástól független effekt-mérés mondja tehát ugyanazt.
 #:
-#: ⚠️ **A Holga maradéka NEM a sugáron múlik.** Ott a `k = 0,6` adna
-#: hajszállal jobb ΔE-t (11,54 vs 12,01), de a `k = 0,5` is JAVÍT a mai
-#: állapoton (13,89 → 12,01), és egy effektenként hangolt szorzó szabad
-#: paraméter volna, ami elnyeli a lánc többi hibáját. A Holga eltérő
-#: nullátmenete a SAJÁT maszkjára mutat (`innerR = 0,9·R`, szemben a Lomo
-#: `0,5·R`-ével) — külön mérendő, a jegyen megnevezve.
+#: ⚠️ **A korábbi 255-ös korlát (#504) nem volt „rossz mérés", hanem a hiányzó
+#: felezést pótolta:** a Lomón 896 → 255 (a felezés 448-at ad), a Holgán a
+#: 640/512-es tengelypár → 255/255 (a felezés 320/256-ot, a leíró arányát).
+#: Ezért tudott a Holgán majdnem jó lenni (1,95) és a Lomón nem (9,09).
 def glow_sigma(blur: float) -> float:
     """A `filterdesc` blur-értékéből Gauss-σ: a FELE (#3158).
 
