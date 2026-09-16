@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Megváltozva
+
+- **Minden képszűrő megadja, hova kerül a kép a kimenetében** (#3229,
+  előkészítés). Ez a belső lépés ahhoz kell, hogy a szerkesztő élő előnézete
+  és a mentett kép **ugyanazt** adja akkor is, ha keret- vagy vágás-művelet
+  után jön további effekt (#3169 — ma mérhetően eltérnek). A felhasználó
+  számára ez a lépés még semmit nem változtat.
+
 ## [0.8.497] – 2026-09-16
 
 ### Javítva
