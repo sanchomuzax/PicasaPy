@@ -781,7 +781,7 @@ A **fájl saját megjegyzése** mondja meg a sorrendet: **kívül `#009EFF`**
 a `0x007224f0` (2997 b), amit a `0x00718d80` hív.
 
 **Nálunk ez a rácsban MÁR MEG VAN ÉPÍTVE** (#384, 2026-08-06):
-`app/qml/PicasaPy/Theme.qml:64` (`thumbSelection`) és a
+`app/qml/PicasaPy/Theme.qml` (`thumbSelection` token) és a
 `ThumbDelegate.qml` `selectionOuter` / `selectionInner` rétege
 (`:5`, `:118–125`). A `design-guide.md` 63. sora dokumentálja.
 

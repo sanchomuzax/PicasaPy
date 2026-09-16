@@ -536,13 +536,17 @@ class TestAVesesSzineiTemafuggoek:
     )
     def test_a_veses_szine_temafuggo(self, tulajdonsag):
         forras = self._theme_forras()
+        # #3070: a Theme.qml két rétegű — a token DEFINÍCIÓJA a `nyers`
+        # blokkban áll, a nyilvános réteg csak átereszti (`_szin(...)`).
+        # Az ÉRTÉKET tehát a definíciós soron kell mérni.
         sorok = [
             sor.strip()
             for sor in forras.splitlines()
-            if tulajdonsag in sor and "property" in sor
+            if tulajdonsag in sor and "property" in sor and "_szin(" not in sor
         ]
         assert len(sorok) == 1, (
-            f"a `{tulajdonsag}` {len(sorok)} helyen van megadva a Theme.qml-ben"
+            f"a `{tulajdonsag}` {len(sorok)} helyen van MEGADVA a Theme.qml-ben "
+            "(a `_szin(...)` áteresztő sorokat nem számoljuk)"
         )
         assert "dark ?" in sorok[0], (
             f"a `{tulajdonsag}` NEM témafüggő ({sorok[0]!r}). A fogantyú "
