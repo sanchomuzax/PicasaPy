@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.497] – 2026-09-16
+
 ### Javítva
 
 - **Egy hiányzó mező nem viszi el a teljes finomhangolást** (#3195). Ha egy
