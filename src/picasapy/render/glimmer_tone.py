@@ -26,7 +26,7 @@ from picasapy.render.glimmer_ops import (
     alpha_blend,
     apply_noise,
     autofix,
-    clamp_glow_radius,
+    glow_sigma,
     fade_alpha,
     hsv_gradient_map,
     inner_glow,
@@ -54,10 +54,12 @@ from picasapy.render.glimmer_ops import (
 #: örökségű `blurX/blurY` és a szigma között ez a 2-es szorzó ül (ld.
 #: `glimmer_ops.inner_glow` docstringje).
 #:
-#: A 255-ös `clamp_glow_radius` korlát ITT NEM alkalmazható: a Blur=50-es
-#: export illesztése 310–320-at kíván, a 255-re vágott sugár mérhetően
-#: rosszabb (eltérés 5,79 a 1,22 helyett). A korlát a Lomo/Holga láncban
-#: mért, ott érvényes marad (#518).
+#: ⭐ **Ez a mérés FÜGGETLENÜL megerősíti a #3158 felezését:** a `Vignette`
+#: leírója `/4`-et ad, a legjobb illesztés pedig a képlet `/8`-a — a kettő
+#: hányadosa pontosan a 2-es szorzó, amit a Lomo/Holga mérése is kiadott.
+#: A korábbi 255-ös korlát (#504) ITT sem volt alkalmazható (a 255-re vágott
+#: sugár eltérése 5,79 az 1,22 helyett); a #3158 óta a korlát megszűnt, és a
+#: felezés az EGYSÉGES szabály.
 VIGNETTE_RADIUS_FACTOR = 0.02 / 8.0
 
 #: A `filterdesc.xml` `xblur`-képlete: `Blur · 0,02 · max(W,H) / 4`
@@ -313,7 +315,7 @@ def apply_nightvision(image, brightness: float = 0.0, contrast: float = 0.0, fad
     fixed = autofix(image)
     mapped = gradient_map(fixed, _NIGHTVISION_COLORS)
     height, width = mapped.shape[:2]
-    radius = clamp_glow_radius(35.0 * 0.02 * max(height, width) / 3.0)
+    radius = glow_sigma(35.0 * 0.02 * max(height, width) / 3.0)
     glowed = inner_glow(mapped, (0, 0, 0), radius, radius, 1.5, alpha=1.0)
     noised = apply_noise(
         glowed, seed=30, low=0.0, high=180.0, grayscale=False, blend_alpha=0.2, blend_mode="lighten"

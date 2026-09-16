@@ -28,7 +28,7 @@ from picasapy.render.glimmer_ops import (
     autofix,
     bw_tint,
     circular_gradient_mask,
-    clamp_glow_radius,
+    glow_sigma,
     fade_alpha,
     gaussian_blur_f,
     inner_glow,
@@ -141,8 +141,8 @@ def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.
     glowed = inner_glow(
         fixed,
         (0, 0, 0),
-        clamp_glow_radius(0.5 * outer_r),
-        clamp_glow_radius(0.4 * outer_r),
+        glow_sigma(0.5 * outer_r),
+        glow_sigma(0.4 * outer_r),
         1.4,
         alpha=1.0,
     )
@@ -167,7 +167,7 @@ def apply_lomo(image, blur: float = 50.0, fade: float = 0.0):
     height, width = image.shape[:2]
     outer_r = max(height, width) / 2.0
     mask = circular_gradient_mask(height, width, outer_r * 0.5, outer_r * (2.0 - blur / 100.0))
-    radius = clamp_glow_radius(35.0 * 0.02 * max(height, width) / 2.0)
+    radius = glow_sigma(35.0 * 0.02 * max(height, width) / 2.0)
     glowed = inner_glow(image, (0, 0, 0), radius, radius, 1.1, alpha=1.0)
     blurred = gaussian_blur_f(to_float(glowed), 20.0, 20.0)
     masked = to_uint8(masked_blend(to_float(glowed), blurred, mask))

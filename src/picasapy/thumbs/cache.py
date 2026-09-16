@@ -99,7 +99,7 @@ _EDIT_BASE_FACTOR = 4
 # #525: a Glimmer-effektek (Holga, Lomo, Vignette, ...) sugár-/elmosás-
 # képletei RÉSZBEN abszolút képpontszámban vannak megadva (a Flash
 # `blurX`/`blurY` 255-ös korlátjának öröksége, ld. `glimmer_ops.
-# clamp_glow_radius`) — ha a láncot a MÁR kicsinyített (pl. 96–256px-es)
+# glow_sigma`) — ha a láncot a MÁR kicsinyített (pl. 96–256px-es)
 # thumbnailra futtatjuk, ez a sugár relatíve sokszorosan szélesebb
 # vignettát rajzol, mint amit Picasa nagy (2560px-es) exportján látni
 # (mérve: #525 jegy, `referencia/holga` és `referencia/lomo`). A puszta

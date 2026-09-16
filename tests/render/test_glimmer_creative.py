@@ -157,12 +157,10 @@ class TestHolgaRealPhoto504510:
         """j2: a KORLÁT ALATTI tartományban a fekete-arány nagyságrendileg
         méretfüggetlen.
 
-        #504 után a `clamp_glow_radius` 255-ös korlátja SZÁNDÉKOSAN
-        megtöri a méretfüggetlenséget — de csak ott, ahol a képlet a
-        korlát fölé nőne. 96 px és 700 px legnagyobb oldalnál mind az öt
-        effekt sugara a korlát ALATT marad (a legnagyobb szorzó 0,35·max
-        → 245 < 255), tehát ITT a méretfüggetlenségnek szigorúan állnia
-        kell. A korábbi, 96↔1600 px-es változat a két tartományt keverte,
+        #3158 óta nincs korlát: a σ MINDIG a képlet fele, tehát a
+        méretfüggetlenség az egész tartományban áll. (A korábbi, #504-es
+        255-ös korlát szándékosan megtörte — ezért szólt ez a próba csak a
+        korlát alatti tartományról.) A korábbi, 96↔1600 px-es változat a két tartományt keverte,
         ezért kellett volna 30 pp-es (érdemi ellenőrzést nem adó) tűrés.
 
         A tűrés 10→15 pp-re nőtt a #535-ös `AutoFix`-átírás után: a Holga
@@ -183,38 +181,31 @@ class TestHolgaRealPhoto504510:
         )
 
     @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
-    def test_a_korlat_csokkenti_a_fekete_aranyat(self, effect_name, apply_fn, monkeypatch):
-        """#504: a korlát fölött a sugár már NEM nő a képmérettel, ezért
-        KEVESEBB a tiszta fekete képpont, mint korlát nélkül lenne — ha
-        valaki visszavenné a `clamp_glow_radius`-t, ez a teszt bukna.
+    def test_a_felezes_csokkenti_a_fekete_aranyat(self, effect_name, apply_fn, monkeypatch):
+        """#3158: a σ a `filterdesc` blur FELE — ha valaki visszavenné a
+        felezést (vagyis a nyers képletet adná σ-ként), a belső ragyogás
+        sokkal többet feketítene. Ez a próba ezt méri KÖZVETLENÜL, ugyanazon
+        a képen.
 
-        #903/#904 UTÁN a korábbi, KÉT MÉRET (96 px / 2560 px) közötti
-        „huge < small" összevetés már NEM tartható: a `SimpleColorMatrix`
-        kontraszt-ága most a helyes, ALACSONYABB (63,5) forgáspontú és
-        ERŐSEBB (táblázatos) görbével számol, ez a nagy képen már korlát
-        ALATT is jelentkező, elhanyagolható mennyiségű tiszta feketét
-        (az `AutoFix`/belső ragyogás/maszkolt elmosás lánc mellékterméke)
-        felnagyítja — mérve: Holga 96px=7,4%, 2560px=12,0%, tehát a nagy
-        kép fekete-aránya a kis képé FÖLÉ kerül, FÜGGETLENÜL attól, hogy a
-        korlát dolgozik-e.
-
-        A `clamp_glow_radius` tényleges hatását ezért KÖZVETLENÜL, UGYANAZON
-        a képen, korlát be/ki összevetéssel mérjük (`GLOW_RADIUS_MAX`
-        ideiglenesen óriásira állítva) — ez nem függ a kontraszt
-        forgáspontjától. Mérve (1600×1200-as fotón): Holga korláttal
-        15,1%, korlát nélkül 19,6%; Lomo korláttal 0,03%, korlát nélkül
-        0,50%.
+        A korábbi változat a #504 255-ös korlátját mérte ugyanígy
+        (`GLOW_RADIUS_MAX` óriásira állítva); a korlát megszűnt, a mérés
+        szándéka változatlan.
         """
         photo = _real_photo_rgb(1600, 1200)
-        clamped = apply_fn(photo)
-        monkeypatch.setattr("picasapy.render.glimmer_ops.GLOW_RADIUS_MAX", 1_000_000.0)
-        unclamped = apply_fn(photo)
-        clamped_pct = _black_pct(clamped)
-        unclamped_pct = _black_pct(unclamped)
-        threshold = clamped_pct + max(0.1, clamped_pct * 0.15)
-        assert unclamped_pct > threshold, (
-            f"{effect_name}: a korlát nem csökkentette érdemben a fekete-arányt "
-            f"(korláttal={clamped_pct:.2f}%, korlát nélkül={unclamped_pct:.2f}%)"
+        felezve = apply_fn(photo)
+        monkeypatch.setattr(
+            "picasapy.render.glimmer_ops.glow_sigma", lambda blur: float(blur)
+        )
+        monkeypatch.setattr(
+            "picasapy.render.glimmer_creative.glow_sigma", lambda blur: float(blur)
+        )
+        nyers = apply_fn(photo)
+        felezve_pct = _black_pct(felezve)
+        nyers_pct = _black_pct(nyers)
+        kuszob = felezve_pct + max(0.1, felezve_pct * 0.15)
+        assert nyers_pct > kuszob, (
+            f"{effect_name}: felezve {felezve_pct:.2f}%, nyers képlettel "
+            f"{nyers_pct:.2f}% — a felezés hatása nem mérhető"
         )
 
     def test_holga_perf_nagy_kepen(self):
