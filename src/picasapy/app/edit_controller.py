@@ -40,6 +40,8 @@ from picasapy.ini import (
 )
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.retouch import RetouchPatch
+
+from .paint_mask_controller import PaintMaskMixin
 from picasapy.ini.text_overlay import (
     BETUMERETEK,
     tarolt_meret,
@@ -322,7 +324,7 @@ def _argb_to_rgb(argb: int) -> tuple[int, int, int]:
     return ((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF)
 
 
-class EditController(QObject, BackgroundWorkerMixin):
+class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     """A QML szerkesztő-panelhez tervezett híd: EditSession + ini-perzisztencia
     + EditPreviewProvider-regisztráció egy helyen.
 
@@ -424,6 +426,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         # folt). A patch-enkénti Undo/Redo/Reset EZEN a pufferen dolgozik —
         # a globális (`_undo_stack`) verem csak az Alkalmazott retusálást
         # látja EGY lépésként, a foltok belső részleteit nem.
+        self._init_paint_mask()
         self._retouch_patches: tuple[RetouchPatch, ...] = ()
         self._retouch_target: tuple[float, float] | None = None
         self._retouch_patch_undo: list[tuple[RetouchPatch, ...]] = []
@@ -994,6 +997,9 @@ class EditController(QObject, BackgroundWorkerMixin):
         # ELŐZŐ fotó képét tárolná el (és emitálna rá revíziót)
         self._preview_job += 1
         path = Path(image_path)
+        # #1908: a festett ecset-maszk munkamenet-élettartamú — MÁS képre
+        # váltva eldobódik (az eredeti sem tárolja)
+        self._paint_mask_kepvaltas(photo_id)
         self._photo_id = photo_id
         self._image_path = path
         self._image_size = self._read_image_size(path)
@@ -2233,6 +2239,7 @@ class EditController(QObject, BackgroundWorkerMixin):
             "text": self._current_text_spec(),
             "gpu_prefix_ops": gpu_prefix_ops,
             "gpu_lut": gpu_lut,
+            "paint_strokes": self._paint_strokes(),
         }
 
     def _register_preview(self, session: EditSession | None = None) -> None:

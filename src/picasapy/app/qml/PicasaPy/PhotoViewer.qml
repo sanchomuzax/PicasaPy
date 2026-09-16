@@ -1818,6 +1818,66 @@ Rectangle {
                     // kattintás színmintát vesz (nem navigál). A kattintás
                     // helyét a KIRAJZOLT képhez képest normálva adjuk át, így
                     // a nagyítástól/illesztéstől független.
+                    // #1908: az ECSET — a festhető-maszkos effektek (Boost,
+                    // Képpontnagyítás, Lágyítás, Árnyalás, Ghoul Eye) csak a
+                    // befestett területre hatnak. A mutató KÖR alakú
+                    // (`thumbui/circlecursor`, mérve), az átmérőjét a panel
+                    // csúszkája adja; a vonás a KIRAJZOLT képhez normálva megy
+                    // a vezérlőnek, tehát a nagyítástól független.
+                    MouseArea {
+                        id: paintMaskArea
+                        objectName: "paintMaskArea"
+                        parent: photo
+                        z: 5
+                        readonly property bool aktiv:
+                            (editController && editController.paintMaskSupported
+                             !== undefined)
+                                ? editController.paintMaskSupported : false
+                        visible: paintMaskArea.aktiv
+                        enabled: paintMaskArea.aktiv
+                        hoverEnabled: true
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+                        //: a rendszer-kurzort elrejtjük: a KÖR maga a mutató
+                        cursorShape: Qt.BlankCursor
+
+                        function fess(pont) {
+                            if (!editController) return
+                            editController.paintStroke(
+                                pont.x / Math.max(1, width),
+                                pont.y / Math.max(1, height))
+                        }
+                        onPressed: function (eger) { paintMaskArea.fess(eger) }
+                        onPositionChanged: function (eger) {
+                            if (eger.buttons) paintMaskArea.fess(eger)
+                        }
+
+                        //: a kör alakú mutató — a sugár a kép RÖVIDEBB
+                        //: oldalához mért arány (a vezérlő így számol)
+                        Rectangle {
+                            objectName: "paintMaskCursor"
+                            visible: paintMaskArea.containsMouse
+                            readonly property real sugar:
+                                ((editController && editController.paintBrushRatio
+                                  !== undefined)
+                                    ? editController.paintBrushRatio : 0.03)
+                                * Math.min(paintMaskArea.width,
+                                           paintMaskArea.height)
+                            width: 2 * sugar
+                            height: 2 * sugar
+                            radius: sugar
+                            x: paintMaskArea.mouseX - sugar
+                            y: paintMaskArea.mouseY - sugar
+                            color: "transparent"
+                            border.width: 1
+                            border.color: (editController
+                                           && editController.paintEraser)
+                                ? "#ff6666" : "#ffffff"
+                        }
+                    }
+
                     MouseArea {
                         id: neutralPickArea
                         objectName: "neutralPickArea"

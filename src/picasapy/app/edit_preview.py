@@ -226,6 +226,7 @@ class EditPreviewProvider(QQuickImageProvider):
         gpu_lut: np.ndarray | None = None,
         shared_cache: bool = True,
         is_current: Callable[[], bool] | None = None,
+        paint_strokes: tuple = (),
     ) -> None:
         """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
 
@@ -255,6 +256,7 @@ class EditPreviewProvider(QQuickImageProvider):
             gpu_prefix_ops=gpu_prefix_ops,
             gpu_lut=gpu_lut,
             shared_cache=shared_cache,
+            paint_strokes=paint_strokes,
             is_current=is_current,
         )
 
@@ -268,6 +270,7 @@ class EditPreviewProvider(QQuickImageProvider):
         gpu_lut: np.ndarray | None = None,
         shared_cache: bool = True,
         is_current: Callable[[], bool] | None = None,
+        paint_strokes: tuple = (),
     ) -> None:
         """A `register()` törzse (#546)."""
         key = str(photo_id)
@@ -292,7 +295,22 @@ class EditPreviewProvider(QQuickImageProvider):
         # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó
         # op fut. A háttér-úton (#546) nincs gyorsítótár — cserébe nincs
         # megosztott állapot sem, amit sorosítani kellene.
-        if shared_cache:
+        if paint_strokes and source_array is not None and ops:
+            # #1908: festett ecset-maszk esetén a lánc-prefix gyorsítótár
+            # KIMARAD. A maszk nem csak az utolsó opra hat (a festhető effekt
+            # bárhol állhat a láncban), a prefix viszont épp azt tartja
+            # változatlannak — a gyorsítótár tehát elavult képet adna. A
+            # festés nem csúszka-húzás: egy vonás után egy teljes lánc
+            # elfut, és ez a helyes, nem a gyors.
+            from .paint_mask import maszk_vonasokbol
+
+            maszk = maszk_vonasokbol(
+                paint_strokes, source_array.shape[0], source_array.shape[1]
+            )
+            result_array, _skipped = apply_filters(
+                source_array, tuple(ops), paint_mask=maszk
+            )
+        elif shared_cache:
             result_array = self._render_cached(key, source_array, tuple(ops))
         elif source_array is None or not ops:
             result_array = source_array
