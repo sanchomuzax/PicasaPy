@@ -476,11 +476,15 @@ class TestAzEffektRacs:
 # ==========================================================================
 class TestAVisszateroGombmeretek:
     #: (mód-property, a párban álló gombok) — mind 98 × 28
+    #:
+    #: ⚠️ #3123: az Alkalmaz/Mégse pár KIKERÜLT ebből a listából, mert
+    #: kikerült a panelből: az eredetiben a KÉP FÖLÖTT lebeg
+    #: (`editpanel/tool_container: editpanel/preview`), és ott a MÉRT mérete
+    #: **82 × 28** (`layer:editpanel/button(APPLY): tool_ok`), nem 98 × 28. A
+    #: 98 a panelbeli elhelyezésünk száma volt. A pár geometriáját mostantól
+    #: a `tests/app/test_qml_eszkozsav_3123.py` méri.
     PAROK = (
-        ("cropActive", ("cropApplyButton", "cropCancelButton")),
         ("cropActive", ("cropRotateButton", "cropPreviewButton")),
-        ("redeyeActive", ("redeyeApplyButton", "redeyeCancelButton")),
-        ("textActive", ("textApplyButton", "textCancelButton")),
     )
 
     @pytest.mark.parametrize("mod,gombok", PAROK)
@@ -496,9 +500,11 @@ class TestAVisszateroGombmeretek:
                 f"{nev} {magassag:.0f} px magas a 28 helyett (spec 7.)"
             )
 
+    #: #3123: az `retouchApplyButton`/`retouchCancelButton` kikerült — a pár
+    #: a kép fölé költözött, és ott 82 × 28 (ld. a #3123 próbáit).
     @pytest.mark.parametrize("nev", (
         "retouchUndoPatchButton", "retouchRedoPatchButton",
-        "retouchResetButton", "retouchApplyButton", "retouchCancelButton",
+        "retouchResetButton",
     ))
     def test_a_retusalas_gombjai_118x28(self, qt_app, nev) -> None:
         """A retusálás gombjai 118 px szélesek, nem 98 (spec 6.3/7.)."""

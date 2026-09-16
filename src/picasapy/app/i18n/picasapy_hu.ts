@@ -7108,6 +7108,17 @@ A MŰVELET NEM VONHATÓ VISSZA.
     </message>
 </context>
 <context>
+    <name>EditorToolBar</name>
+    <message>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
     <name>EditorCropPanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>

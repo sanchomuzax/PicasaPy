@@ -630,37 +630,20 @@ class TestRetouchTool:
         # rács/fülsáv (modeToolActive) mindkettőnél ugyanúgy rejtve marad
         assert panel.findChild(QObject, "toolsColumn").property("visible") is False
 
-    def test_apply_button_disabled_without_pending_regions(self, qml_engine, qt_app):
-        panel = self._make_panel(qml_engine)
-        qt_app.processEvents()
-        panel.setProperty("retouchActive", True)
-        qt_app.processEvents()
-        apply_button = panel.findChild(QObject, "retouchApplyButton")
-        assert apply_button.property("enabled") is False
-        panel.setProperty("retouchRegionCount", 2)
-        qt_app.processEvents()
-        assert apply_button.property("enabled") is True
+    def test_az_alkalmaz_megse_par_MAR_NINCS_a_panelben(self, qml_engine, qt_app):
+        """#3123: a pár a KÉP FÖLÉ került (`EditorToolBar`).
 
-    def test_apply_and_cancel_buttons_emit_signals(self, qml_engine, qt_app):
+        Az eredetiben az `editpanel/tool_container` szülője a `preview`,
+        tehát a gombok a kép fölött lebegnek. A viselkedésüket (engedve/
+        tiltva, jelzés) a sáv tesztje méri:
+        `tests/app/test_qml_eszkozsav_3123.py`.
+        """
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
         panel.setProperty("retouchActive", True)
-        panel.setProperty("retouchRegionCount", 1)
         qt_app.processEvents()
-        applied, cancelled = [], []
-        panel.retouchApplyRequested.connect(lambda: applied.append(True))
-        panel.retouchCancelRequested.connect(lambda: cancelled.append(True))
-        QMetaObject.invokeMethod(
-            panel.findChild(QObject, "retouchApplyButton"),
-            "buttonClicked", Qt.ConnectionType.DirectConnection,
-        )
-        QMetaObject.invokeMethod(
-            panel.findChild(QObject, "retouchCancelButton"),
-            "buttonClicked", Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
-        assert applied == [True]
-        assert cancelled == [True]
+        assert panel.findChild(QObject, "retouchApplyButton") is None
+        assert panel.findChild(QObject, "retouchCancelButton") is None
 
     def test_refining_label_visible_only_while_patch_pending(
         self, qml_engine, qt_app
@@ -769,14 +752,14 @@ class TestRedeyeTool:
         assert panel.findChild(QObject, "redeyeColumn").property("visible") is True
         assert panel.findChild(QObject, "toolsColumn").property("visible") is False
 
-    def test_apply_is_enabled_without_manual_regions(self, qml_engine, qt_app):
-        """Az Alkalmaz kézi régió NÉLKÜL is érvényes: az automatika
-        önmagában is elmenthető (`redeye=1;`)."""
+    def test_az_alkalmaz_megse_par_MAR_NINCS_a_panelben(self, qml_engine, qt_app):
+        """#3123: a pár a kép fölé került — ld. a retusálás ugyanilyen próbáját."""
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
         panel.setProperty("redeyeActive", True)
         qt_app.processEvents()
-        assert panel.findChild(QObject, "redeyeApplyButton").property("enabled") is True
+        assert panel.findChild(QObject, "redeyeApplyButton") is None
+        assert panel.findChild(QObject, "redeyeCancelButton") is None
 
     def test_reset_disabled_without_manual_regions(self, qml_engine, qt_app):
         panel = self._make_panel(qml_engine)
@@ -813,16 +796,17 @@ class TestRedeyeTool:
         panel.redeyeResetRequested.connect(lambda: seen.append("reset"))
         panel.redeyeApplyRequested.connect(lambda: seen.append("apply"))
         panel.redeyeCancelRequested.connect(lambda: seen.append("cancel"))
+        #: #3123: az Alkalmaz/Mégse MÁR NEM a panelben van (a kép fölé
+        #: került), ezért a panel gombsorából kimarad.
         for name in (
             "redeyeAutoButton", "redeyeUndoRegionButton", "redeyeResetButton",
-            "redeyeApplyButton", "redeyeCancelButton",
         ):
             QMetaObject.invokeMethod(
                 panel.findChild(QObject, name),
                 "buttonClicked", Qt.ConnectionType.DirectConnection,
             )
         qt_app.processEvents()
-        assert seen == ["auto", "undo", "reset", "apply", "cancel"]
+        assert seen == ["auto", "undo", "reset"]
 
     def test_hide_outlines_checkbox_toggles_panel_property(self, qml_engine, qt_app):
         panel = self._make_panel(qml_engine)
@@ -877,33 +861,22 @@ class TestTextTool:
         qt_app.processEvents()
         assert edited[-1] == "Nyaralás 2026"
 
-    def test_apply_button_requires_placement_and_content(self, qml_engine, qt_app):
+    def test_az_alkalmazhatosag_felteteltet_a_panel_MONDJA_MEG(
+        self, qml_engine, qt_app
+    ):
+        """#3123: a gomb a kép fölé került, a FELTÉTEL viszont itt lakik.
+
+        A szövegmező ebben a panelben él, ezért a panel adja ki a
+        `textApplyEnabled`-t a sávnak — enélkül a sáv nem tudná, mikor
+        alkalmazható a szöveg.
+        """
         panel = self._make_panel(qml_engine)
         panel.setProperty("textActive", True)
         qt_app.processEvents()
-        apply_button = panel.findChild(QObject, "textApplyButton")
-        assert apply_button.property("enabled") is False
+        assert panel.findChild(QObject, "textApplyButton") is None
+        assert panel.property("textApplyEnabled") is False
         field = panel.findChild(QObject, "textContentField")
         field.setProperty("text", "Cím")
         panel.setProperty("textPlacementPending", True)
         qt_app.processEvents()
-        assert apply_button.property("enabled") is True
-
-    def test_apply_and_cancel_buttons_emit_signals(self, qml_engine, qt_app):
-        panel = self._make_panel(qml_engine)
-        panel.setProperty("textActive", True)
-        qt_app.processEvents()
-        applied, cancelled = [], []
-        panel.textApplyRequested.connect(lambda: applied.append(True))
-        panel.textCancelRequested.connect(lambda: cancelled.append(True))
-        QMetaObject.invokeMethod(
-            panel.findChild(QObject, "textApplyButton"),
-            "buttonClicked", Qt.ConnectionType.DirectConnection,
-        )
-        QMetaObject.invokeMethod(
-            panel.findChild(QObject, "textCancelButton"),
-            "buttonClicked", Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
-        assert applied == [True]
-        assert cancelled == [True]
+        assert panel.property("textApplyEnabled") is True

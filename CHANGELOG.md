@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.490] – 2026-09-16
+
+### Módosítva
+
+- **Az Alkalmaz/Mégse pár a KÉP FÖLÉ került** (#3123). Az eredeti Picasában ez
+  a két gomb a fénykép alján lebeg — sötét, áttetsző háttérrel és fehér
+  felirattal —, nem a bal oldali panelben ül. Mostantól nálunk is ott van, mind
+  a négy eszköznél (vágás, retusálás, szöveg, vörösszem): a kép alja fölött 10
+  képponttal, középen, a mért 82 × 28-as gombokkal. Az **Esc** a Mégse gombot
+  süti el.
+
 ## [0.8.489] – 2026-09-16
 
 ### Javítva

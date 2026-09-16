@@ -340,42 +340,8 @@ ColumnLayout {
         onButtonClicked: panel.cropResetRequested()
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.maximumWidth: 98 + 6 + 98
-        Layout.alignment: Qt.AlignHCenter
-        spacing: 6
-        // #710: a jel a KÖZÖS `EditorActionBadge`, nem a felirat végére
-        // fűzött Unicode-karakter.
-        //
-        // ⛔ Miért szűnt meg a „✔" / „✘": a glif betűtípusfüggő, és ha
-        // hiányzik, NYOMTALANUL eltűnik — a gombon csak a felirat marad,
-        // hibaüzenet nélkül. A rajzolt jel minden betűtípussal ugyanaz, és
-        // ez ugyanaz a komponens, amit a paraméter-alpanel használ: az
-        // audit szerint az eredetiben is egy gombtípus a kettő.
-        ActionButton {
-            objectName: "cropApplyButton"
-            label: qsTr("Apply")
-            onButtonClicked: panel.cropApplyRequested()
-            EditorActionBadge {
-                objectName: "cropApplyIcon"
-                tick: true
-                anchors.right: parent.right
-                anchors.rightMargin: 9
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-        ActionButton {
-            objectName: "cropCancelButton"
-            label: qsTr("Cancel")
-            onButtonClicked: panel.cropCancelRequested()
-            EditorActionBadge {
-                objectName: "cropCancelIcon"
-                tick: false
-                anchors.right: parent.right
-                anchors.rightMargin: 9
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-    }
+    // #3123: az Alkalmaz/Mégse pár INNEN ELKERÜLT — az eredetiben a KÉP
+    // FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`, sötét
+    // háttér, fehér felirat). A gombok mostantól az `EditorToolBar`-ban
+    // élnek (`PhotoViewer.qml`), a RÉGI objektumneveiket megtartva.
 }

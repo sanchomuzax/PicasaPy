@@ -9,6 +9,12 @@ import QtQuick.Layouts
 // #496: kiemelve az EditorPanel.qml-ből — a gazda-panelre a `panel`
 // tulajdonságon át hivatkozik (a `FolderStatePanel.qml` `manager`-mintája).
 ColumnLayout {
+    //: #3123: a KÉP FÖLÖTTI eszköz-sáv Alkalmaz gombja ezt kérdezi — a
+    //: szövegmező itt bent él, a sáv viszont a PhotoViewerben. A feltétel
+    //: szó szerint a korábbi panel-gombé.
+    readonly property bool applyEngedve:
+        panel.textPlacementPending && textContentField.text.length > 0
+
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
 
@@ -355,40 +361,10 @@ ColumnLayout {
         onMoved: panel.textOpacityEdited(value)
     }
 
-    // #741: `edittextapply`/`edittextcancel` — párban álló, 98 × 28-as
-    // gombok (x 38 és 141), nem a teljes oszlopot kitöltve
-    //
-    // #779: a 98 FELSŐ KORLÁT, nem fix méret. Fixen a pár 98 + 6 + 98 = 202
-    // képpontot követelt az oszloptól, és ez volt a szöveg-panel mért
-    // MINIMUMA (ablációval igazolva: elrejtve a minimum 202-ről 156-ra esik).
-    // A `fillWidth` + `maximumWidth` a mért méretet adja, valahányszor van rá
-    // hely, és csak akkor zsugorít, amikor nincs.
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.maximumWidth: 98 + 6 + 98
-        Layout.alignment: Qt.AlignHCenter
-        spacing: 6
-        PanelButton {
-            objectName: "textApplyButton"
-            label: qsTr("Apply") + " ✔"
-            Layout.fillWidth: true
-            Layout.preferredWidth: 98
-            Layout.maximumWidth: 98
-            Layout.preferredHeight: 28
-            buttonEnabled: panel.textPlacementPending
-                          && textContentField.text.length > 0
-            onButtonClicked: panel.textApplyRequested()
-        }
-        PanelButton {
-            objectName: "textCancelButton"
-            label: qsTr("Cancel") + " ✘"
-            Layout.fillWidth: true
-            Layout.preferredWidth: 98
-            Layout.maximumWidth: 98
-            Layout.preferredHeight: 28
-            onButtonClicked: panel.textCancelRequested()
-        }
-    }
+    // #3123: az Alkalmaz/Mégse pár INNEN ELKERÜLT — az eredetiben a KÉP
+    // FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`, sötét
+    // háttér, fehér felirat). A gombok mostantól az `EditorToolBar`-ban
+    // élnek (`PhotoViewer.qml`), a RÉGI objektumneveiket megtartva.
 
     // #450: az összes szövegelem törlése — ma egyetlen szövegelem van,
     // a meglévő clearText (Visszavonás-verem NÉLKÜLI, azonnali) útvonalon
