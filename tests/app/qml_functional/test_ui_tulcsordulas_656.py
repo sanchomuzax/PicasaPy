@@ -20,9 +20,10 @@ végigjárva a jelenetet: **a felhasználó lássa a tartalmat**, azaz
 
 ## Amit MA mér (2026-09-17)
 
-Mind a három invariáns **teljesül** — egyetlen, nevesített kivétellel
-(`legacyEffectsIntro`, lásd `_KIVETELEK` és a #3278; a fejlesztői gépen
-elfér, a CI nagyobb betűjével elidálódik) — a vizsgált nyolc állapotban: a rácson, a
+Mind a három invariáns **teljesül** — két nevesített kivétellel
+(`legacyEffectsIntro` → #3278, `trayCollageLabel` → #3279; lásd
+`_KIVETELEK`: mindkettő a fejlesztői gépen elfér, a CI betűmetrikájával
+viszont levágódik) — a vizsgált nyolc állapotban: a rácson, a
 nézőben és a szerkesztő mind a hét fülén **nulla** találat. Az őr tehát
 REGRESSZIÓT fog: a #703/#3247 körökben kitakarított hibaosztály nem jöhet
 vissza némán.
@@ -61,6 +62,22 @@ TURES = 0.5
 
 def _lathato(elem: QObject) -> bool:
     return bool(elem.property("visible"))
+
+
+def _el_meg(elem: QObject) -> bool:
+    """Él-e még a C++ oldali objektum?
+
+    ⚠️ A `findChildren` olyan elemet is visszaadhat, amelyet a jelenet épp
+    elenged (`Loader`, `Repeater` delegáltjai). A windows-lábon ez
+    `RuntimeError: libshiboken: Internal C++ object … already deleted`
+    alakban dőlt el a bejárás közepén — a lelethez semmi köze, de az egész
+    tesztet elvitte.
+    """
+    try:
+        elem.metaObject()
+    except RuntimeError:
+        return False
+    return True
 
 
 def _gorgetheto_belsejeben(elem: QObject) -> bool:
@@ -109,7 +126,11 @@ def _esemeny_elem(elem: QObject) -> bool:
 #: viszont az nem oldja meg. A döntés a #3278-on: rövidebb mondat,
 #: buboréksúgó vagy három soros elrendezés. Amíg az nyitva van, ez az EGY
 #: felirat átmehet; MINDEN más levágás piros marad.
-_KIVETELEK = ("legacyEffectsIntro",)
+#: A `trayCollageLabel` a windows-lábon a 7 képpontos zsugorítási padlón
+#: is kilóg (49 képpont a 45-ből), a fejlesztői gépen elfér. A
+#: `TrayActionButton` szándékosan zsugorít és csak végszükségben vág; a
+#: cella szélessége mért geometria. Döntés a #3279-en.
+_KIVETELEK = ("legacyEffectsIntro", "trayCollageLabel")
 
 
 def _szoveg_elem(elem: QObject) -> bool:
@@ -176,57 +197,70 @@ def tulcsordulasok(gyoker: QObject) -> list[str]:
     """
     talalat = []
     for elem in gyoker.findChildren(QObject):
-        if elem.metaObject().indexOfProperty("width") < 0 or not _lathato(elem):
+        # a jelenet menet közben is elengedhet elemet — ld. `_el_meg`
+        if not _el_meg(elem):
             continue
-        if _esemeny_elem(elem) or _nev(elem) in _KIVETELEK:
+        try:
+            talalat.extend(_elem_leletei(elem))
+        except RuntimeError:
             continue
-        if _szoveg_elem(elem):
-            if bool(elem.property("truncated")):
-                talalat.append(
-                    f"{_nev(elem)}: levágott felirat — "
-                    f"{elem.property('text')!r}"
-                )
-                continue
-            szelesseg = _meret(elem, "width")
-            tartalom = _meret(elem, "contentWidth")
-            if (
-                bool(elem.property("clip"))
-                and szelesseg > 0
-                and tartalom > szelesseg + TURES
-            ):
-                talalat.append(
-                    f"{_nev(elem)}: a saját kerete vágja — a szöveg "
-                    f"{tartalom:.0f} képpont, a hely {szelesseg:.0f}"
-                )
-                continue
-            talalat.extend(_vizszintes_levagas(elem, tartalom))
-            continue
-        vago = _vago_os(elem)
-        if vago is None or not hasattr(elem, "mapRectToItem"):
-            continue
-        szelesseg = max(_meret(elem, "width"), _meret(elem, "contentWidth"))
-        magassag = max(_meret(elem, "height"), _meret(elem, "contentHeight"))
-        if szelesseg <= 0 or magassag <= 0:
-            continue
-        # ⚠️ `mapRectToItem`, nem kézi x/y-összegzés: a jelenetben
-        # TRANSZFORMÁCIÓ is lehet (a `histogramBitmap` 256×70-es belső képe
-        # egy `Scale`-lel kerül a 213×59-es keretbe, #864) — összeadva az
-        # hamis leletet adna, leképezve viszont pontosan illeszkedik.
-        teglalap = elem.mapRectToItem(vago, QRectF(0, 0, szelesseg, magassag))
-        keret_sz = _meret(vago, "width")
-        keret_ma = _meret(vago, "height")
-        if teglalap.left() < -TURES or teglalap.right() > keret_sz + TURES:
+    return talalat
+
+
+def _elem_leletei(elem: QObject) -> list[str]:
+    """Egyetlen elem leletei — a `tulcsordulasok` ciklusmagja."""
+    talalat: list[str] = []
+    if elem.metaObject().indexOfProperty("width") < 0 or not _lathato(elem):
+        return talalat
+    if _esemeny_elem(elem) or _nev(elem) in _KIVETELEK:
+        return talalat
+    if _szoveg_elem(elem):
+        if bool(elem.property("truncated")):
             talalat.append(
-                f"{_nev(elem)}: vízszintesen levágja a(z) {_nev(vago)} — "
-                f"x={teglalap.left():.0f}..{teglalap.right():.0f}, "
-                f"keret 0..{keret_sz:.0f}"
+                f"{_nev(elem)}: levágott felirat — "
+                f"{elem.property('text')!r}"
             )
-        if teglalap.top() < -TURES or teglalap.bottom() > keret_ma + TURES:
+            return talalat
+        szelesseg = _meret(elem, "width")
+        tartalom = _meret(elem, "contentWidth")
+        if (
+            bool(elem.property("clip"))
+            and szelesseg > 0
+            and tartalom > szelesseg + TURES
+        ):
             talalat.append(
-                f"{_nev(elem)}: függőlegesen levágja a(z) {_nev(vago)} — "
-                f"y={teglalap.top():.0f}..{teglalap.bottom():.0f}, "
-                f"keret 0..{keret_ma:.0f}"
+                f"{_nev(elem)}: a saját kerete vágja — a szöveg "
+                f"{tartalom:.0f} képpont, a hely {szelesseg:.0f}"
             )
+            return talalat
+        talalat.extend(_vizszintes_levagas(elem, tartalom))
+        return talalat
+    vago = _vago_os(elem)
+    if vago is None or not hasattr(elem, "mapRectToItem"):
+        return talalat
+    szelesseg = max(_meret(elem, "width"), _meret(elem, "contentWidth"))
+    magassag = max(_meret(elem, "height"), _meret(elem, "contentHeight"))
+    if szelesseg <= 0 or magassag <= 0:
+        return talalat
+    # ⚠️ `mapRectToItem`, nem kézi x/y-összegzés: a jelenetben
+    # TRANSZFORMÁCIÓ is lehet (a `histogramBitmap` 256×70-es belső képe
+    # egy `Scale`-lel kerül a 213×59-es keretbe, #864) — összeadva az
+    # hamis leletet adna, leképezve viszont pontosan illeszkedik.
+    teglalap = elem.mapRectToItem(vago, QRectF(0, 0, szelesseg, magassag))
+    keret_sz = _meret(vago, "width")
+    keret_ma = _meret(vago, "height")
+    if teglalap.left() < -TURES or teglalap.right() > keret_sz + TURES:
+        talalat.append(
+            f"{_nev(elem)}: vízszintesen levágja a(z) {_nev(vago)} — "
+            f"x={teglalap.left():.0f}..{teglalap.right():.0f}, "
+            f"keret 0..{keret_sz:.0f}"
+        )
+    if teglalap.top() < -TURES or teglalap.bottom() > keret_ma + TURES:
+        talalat.append(
+            f"{_nev(elem)}: függőlegesen levágja a(z) {_nev(vago)} — "
+            f"y={teglalap.top():.0f}..{teglalap.bottom():.0f}, "
+            f"keret 0..{keret_ma:.0f}"
+        )
     return talalat
 
 
@@ -235,7 +269,8 @@ def levagott_feliratok(gyoker: QObject) -> list[str]:
     return [
         f"{_nev(elem)}: {str(elem.property('text'))[:40]!r}"
         for elem in gyoker.findChildren(QObject)
-        if elem.metaObject().indexOfProperty("truncated") >= 0
+        if _el_meg(elem)
+        and elem.metaObject().indexOfProperty("truncated") >= 0
         and _lathato(elem)
         and elem.property("truncated")
         and _nev(elem) not in _KIVETELEK
