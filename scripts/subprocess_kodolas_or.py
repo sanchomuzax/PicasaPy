@@ -31,10 +31,23 @@ Az `errors="replace"` nem kötelező (a hívó dönthet szigorúbban), az
 `encoding=` viszont igen: enélkül a viselkedés **platformfüggő**, és a
 fejlesztői gépen soha nem jön elő.
 
+## #3302: a `Path.read_text()` ugyanez a hibaosztály
+
+A gyerekfolyamat kimenete mellett a **fájl-olvasás** is a locale-kódolást
+használja, ha nem adunk meg mást. A main windows-lába pontosan ettől ment
+pirosra: egy próba UTF-8 forrásfájlt olvasott `read_text()`-tel, és
+Windowson `UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f`
+lett belőle.
+
+Mérve (2026-09-18) a `tests/` és `scripts/` alatt: `read_text()` kódolás
+nélkül **5** helyen — ezért fér bele az őrbe. A `write_text(…)` 16 és az
+`open(…)` 76 találata **szándékosan kimarad**: azok külön kört érnek, és
+egy zajos kapu rosszabb, mint egy szűk.
+
 ## Amit NEM néz
 
 A `text=` nélküli (bájtos) hívásokat — ott nincs dekódolás, tehát nincs mit
-elrontani.
+elrontani. A `write_text`/`open` alakokat sem (lásd fent, mérés alapján).
 """
 
 from __future__ import annotations
@@ -63,6 +76,17 @@ def _subprocess_hivas(csomopont: ast.Call) -> str | None:
         }:
             return f"subprocess.{fv.attr}"
     return None
+
+
+def _read_text_hivas(csomopont: ast.Call) -> bool:
+    """`valami.read_text()` — kódolás nélkül (#3302).
+
+    A nevet nem próbáljuk `Path`-ra szűkíteni: a `read_text` metódusnév a
+    projektben kizárólag útvonal-objektumon fordul elő, és a szűkítés csak
+    vakfoltot adna (egy `p = Path(...)` értékadás után a típus nem látszik
+    az AST-ben)."""
+    fv = csomopont.func
+    return isinstance(fv, ast.Attribute) and fv.attr == "read_text"
 
 
 def _szoveges_mod(csomopont: ast.Call) -> bool:
@@ -104,6 +128,13 @@ def leletek(gyoker: Path | None = None) -> list[str]:
             for cs in ast.walk(fa):
                 if not isinstance(cs, ast.Call):
                     continue
+                if _read_text_hivas(cs) and not _van_kodolas(cs):
+                    talalatok.append(
+                        f"{fajl.relative_to(alap)}:{cs.lineno}: "
+                        "read_text() KÓDOLÁS NÉLKÜL — Windowson cp1252-vel "
+                        'dekódol. Add meg: encoding="utf-8"'
+                    )
+                    continue
                 nev = _subprocess_hivas(cs)
                 if nev is None or not _szoveges_mod(cs) or _van_kodolas(cs):
                     continue
@@ -125,8 +156,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {h}")
         return 1
     print(
-        "✅ a tests/ és a scripts/ minden szöveges `subprocess` hívása "
-        "megadja a kódolást"
+        "✅ a tests/ és a scripts/ minden szöveges `subprocess` hívása és "
+        "`read_text()`-je megadja a kódolást"
     )
     return 0
 

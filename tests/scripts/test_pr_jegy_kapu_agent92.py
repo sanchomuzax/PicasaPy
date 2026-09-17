@@ -37,10 +37,21 @@ ALAIRAS = "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
 
 @pytest.fixture
 def torzs(tmp_path):
+    """A törzs-fájl útvonala **POSIX alakban** (előre dőlő jelekkel).
+
+    ⚠️ Nem kényelmi választás: a kapu `shlex.split`-tel, POSIX szabály
+    szerint bontja a parancsot — ez a helyes, mert a hookot a fejlesztői gép
+    shellje adja be. Windowson a `str(p)` visszafelé dőlő jeleket ad
+    (`C:\\Users\\...`), amiket a POSIX-bontás ESCAPE-nek olvas és lenyel: a
+    fájl megnyithatatlan lesz, a kapu fail-openre esik, és a próba
+    „átengedte" hibával bukik. A windows-CI pontosan ezen hasalt el
+    (2026-09-18, piros main). A POSIX-alakú útvonalat MINDKÉT platform
+    megnyitja, tehát az állítás ugyanaz marad."""
+
     def ir(tartalom: str) -> str:
         p = tmp_path / "torzs.md"
         p.write_text(tartalom, encoding="utf-8")
-        return str(p)
+        return p.as_posix()
     return ir
 
 
@@ -132,3 +143,35 @@ class TestFailOpen:
             {"tool_input": {"command":
                 f"gh-bot pr create --repo r {T} 'x' --body 'semmi'"}})))
         assert kapu.main() == 2
+
+class TestBackslashesUtvonal:
+    """#3302: a backslash-es útvonal ne nyelje el a kaput.
+
+    A `shlex` POSIX-módban a `\\`-t escape-nek veszi, tehát egy windowsos
+    útvonalból (`C:\\Users\\...`) eltűnnek a választójelek: a kapu nem létező
+    fájlt nyitna, az „olvashatatlan → átenged" ágra futna, és a VALÓDI
+    elkövetőt is átengedné. A main windows-lába ettől ment pirosra.
+
+    ⚠️ A próba Linuxon is MÉR, nem skipel: ott a `\\` rendes fájlnév-karakter,
+    tehát az elnyelődés ugyanúgy kimutatható. (A környezetfüggő skip nem őr.)"""
+
+    def test_a_backslashes_utvonalu_torzs_is_elolvasva(self, tmp_path):
+        mappa = tmp_path / "wt"
+        mappa.mkdir()
+        fajl = mappa / "Temp\\picasapy\\torzs.md"
+        fajl.write_text("Torzs jegyszam nelkul.\n", encoding="utf-8")
+        indok = kapu.blokkolando(
+            f"gh-bot pr create --repo r {T} 'chore: x' --body-file {fajl}")
+        assert indok and "jegyet" in indok
+
+    def test_a_nem_utf8_torzs_sem_engedi_at(self, tmp_path):
+        """Rossz bájt a törzsben: a kapu akkor sem lesz néma.
+
+        Korábban a rendszer kódlapja `UnicodeDecodeError`-t adott, és a
+        kapu fail-open lett — pedig a jegyszámot és az aláírást a hibás
+        bájt mellett is meg tudjuk keresni."""
+        fajl = tmp_path / "torzs.md"
+        fajl.write_bytes(b"Torzs jegyszam nelkul \x8f vege.\n")
+        indok = kapu.blokkolando(
+            f"gh-bot pr create --repo r {T} 'chore: x' --body-file {fajl}")
+        assert indok and "jegyet" in indok

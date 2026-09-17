@@ -126,7 +126,7 @@ _MEMINFO = Path("/proc/meminfo")
 def _szabad_memoria_mib() -> int | None:
     """`MemAvailable` MiB-ban — `None`, ha nem olvasható (nem Linux)."""
     try:
-        for sor in _MEMINFO.read_text().splitlines():
+        for sor in _MEMINFO.read_text(encoding="utf-8").splitlines():
             if sor.startswith("MemAvailable:"):
                 return int(sor.split()[1]) // 1024
     except (OSError, ValueError, IndexError):
