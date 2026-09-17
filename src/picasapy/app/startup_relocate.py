@@ -41,6 +41,7 @@ from picasapy.index.relocate import (
 )
 
 from .data_location import clear_pending_root, read_pending_root, write_data_root
+from .worker_thread import BackgroundWorkerMixin
 from .relocate_cel import (
     AKADALY_FORRASON_BELUL,
     AKADALY_HALOZATI,
@@ -191,3 +192,42 @@ class KoltozesHid(QObject):
         self._kesz = haladas.done
         self._osszes = haladas.total
         self.valtozott.emit()
+
+
+class IndulasiKoltozo(BackgroundWorkerMixin, QObject):
+    """A költözés HÁTTÉRSZÁLON, a haladásjelző ablak mellett (#3214).
+
+    A szálat a `BackgroundWorkerMixin` tartja nyilván (#430/#438/#988) — a
+    nyers `threading.Thread` az `app/` rétegben tiltott, mert a
+    háttérszálról emitált Qt-jelzés SIGSEGV-t ad, ha a küldő közben
+    megsemmisül. Itt a `kesz` jelzés zárja az indulási eseményhurkot.
+    """
+
+    kesz = Signal()
+
+    def __init__(self, hid: KoltozesHid, parent: QObject | None = None) -> None:
+        """`hid`: a haladásjelző ablak kontextus-objektuma. KÍVÜLRŐL jön,
+        nem itt születik: a `kepesseg_or.py` csak a közvetlen
+        konstruktor-hívásból tudja feloldani, MELYIK osztály kerül a QML
+        kontextusába — egy `koltozo.hid` alakú regisztrációt „fel nem
+        oldott kontextus-regisztrációként" utasít el."""
+        super().__init__(parent)
+        self.hid = hid
+        self.eredmeny = KoltozesEredmeny()
+
+    def inditsd(self, config_dir: Path, index_db: Path, cache_dir: Path) -> None:
+        """A költözés indítása; a `kesz` jelzés az `eredmeny` kitöltése
+        UTÁN jön — a hívó onnan olvassa ki, mi történt."""
+        self._start_background(
+            self._munka,
+            args=(Path(config_dir), Path(index_db), Path(cache_dir)),
+            name="picasapy-indulasi-koltozes",
+        )
+
+    def _munka(self, config_dir: Path, index_db: Path, cache_dir: Path) -> None:
+        try:
+            self.eredmeny = fuggo_koltozes(
+                config_dir, index_db, cache_dir, haladas=self.hid.jelentsd
+            )
+        finally:
+            self.kesz.emit()

@@ -18,7 +18,6 @@ from pathlib import Path
 
 import shutil
 import subprocess
-import threading
 
 from PySide6.QtCore import (
     QCoreApplication,
@@ -69,7 +68,11 @@ from .exported_folders import (
 )
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
-from .startup_relocate import KoltozesEredmeny, KoltozesHid, fuggo_koltozes
+from .startup_relocate import (
+    IndulasiKoltozo,
+    KoltozesEredmeny,
+    KoltozesHid,
+)
 from . import collage_output, collage_prefs
 from .backup_controller import BackupController
 from .dedup_controller import DedupController
@@ -467,36 +470,27 @@ def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
     if cel is None:
         return KoltozesEredmeny()
 
-    hid = KoltozesHid(cel)
+    koltozes_hid = KoltozesHid(cel)
+    indulasi_koltozo = IndulasiKoltozo(koltozes_hid)
     engine = QQmlApplicationEngine()
     engine.addImportPath(str(_APP_DIR / "qml"))
-    engine.rootContext().setContextProperty("koltozes", hid)
+    engine.rootContext().setContextProperty("koltozes", koltozes_hid)
     engine.load(str(_APP_DIR / "qml" / "StartupRelocateWindow.qml"))
 
-    eredmeny: list[KoltozesEredmeny] = []
+    # a munka HÁTTÉRSZÁLON fut (nyilvántartva, #430/#438/#988), közben ez a
+    # hurok tartja életben a haladásjelző ablakot
     hurok = QEventLoop()
-
-    def _munka() -> None:
-        eredmeny.append(
-            fuggo_koltozes(
-                config_dir,
-                _data_dir() / "index.db",
-                _cache_dir() / "thumbs",
-                haladas=hid.jelentsd,
-            )
-        )
-        # a hurok lezárása a FŐ szálon fusson le
-        QTimer.singleShot(0, hurok.quit)
-
-    szal = threading.Thread(target=_munka, name="picasapy-indulasi-koltozes")
-    szal.start()
+    indulasi_koltozo.kesz.connect(hurok.quit, Qt.ConnectionType.QueuedConnection)
+    indulasi_koltozo.inditsd(
+        config_dir, _data_dir() / "index.db", _cache_dir() / "thumbs"
+    )
     hurok.exec()
-    szal.join()
-    # az ablak a költözéssel együtt tűnik el — az engine eldobása zárja
+    indulasi_koltozo.waitForBackgroundWorkers(60.0)
+
     for ablak in engine.rootObjects():
         ablak.close()
     engine.deleteLater()
-    return eredmeny[0] if eredmeny else KoltozesEredmeny()
+    return indulasi_koltozo.eredmeny
 
 
 def _force_qml_dialogs(platform: str = sys.platform) -> bool:

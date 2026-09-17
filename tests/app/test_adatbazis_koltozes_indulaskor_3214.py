@@ -219,3 +219,34 @@ class TestARegiPeldanyLomtarba:
 
         assert "Lomtárba" in str(hiba.value)
         assert fajl.exists(), "a fájl eltűnt, pedig nem volt hova tenni"
+
+
+class TestAzIndulasiKoltozoSzal:
+    """A költözés HÁTTÉRSZÁLON fut, nyilvántartva (#430/#438/#988).
+
+    Az `app/` rétegben a nyers `threading.Thread` tiltott — a
+    háttérszálról emitált Qt-jelzés SIGSEGV-t ad, ha a küldő közben
+    megsemmisül. (Mérve: a CI szál-őre pontosan ezt fogta meg az első
+    változatomon.)"""
+
+    def test_a_szal_elvegzi_a_koltozest_es_jelez(
+        self, qt_app, forras, config_dir, tmp_path
+    ):
+        from PySide6.QtCore import QEventLoop, Qt
+
+        from picasapy.app.startup_relocate import IndulasiKoltozo, KoltozesHid
+
+        index_db, cache_dir = forras
+        cel = tmp_path / "uj-hely"
+        write_pending_root(config_dir, cel)
+
+        koltozo = IndulasiKoltozo(KoltozesHid(cel))
+        hurok = QEventLoop()
+        koltozo.kesz.connect(hurok.quit, Qt.ConnectionType.QueuedConnection)
+        koltozo.inditsd(config_dir, index_db, cache_dir)
+        hurok.exec()
+
+        assert koltozo.waitForBackgroundWorkers(30.0), "a szál nem állt le"
+        assert koltozo.eredmeny.uj_gyoker == cel
+        assert (cel / "index.db").exists()
+        assert read_data_root(config_dir) == cel
