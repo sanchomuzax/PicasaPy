@@ -183,7 +183,7 @@ class FileOpsController(QObject):
         kijelölt képeket helyezi át egy ÚJ mappába, amit a felhasználó
         NEVEZ el — a helyét (a kijelölés ELSŐ elemének jelenlegi mappáját)
         a program választja, ezért a dialógus csak egy nevet kér, mint az
-        „Új album…" (`newAlbumDialog`).
+        „Új album…" (`FileOpsDialogs.openNewAlbum`; a #2911 ota nevbekeres nelkul).
 
         A tényleges mozgatás a MEGLÉVŐ kötegelt úton fut (`_run_batch` →
         `move_photos`), pontosan úgy, mint a „Áthelyezés…" (#457): a

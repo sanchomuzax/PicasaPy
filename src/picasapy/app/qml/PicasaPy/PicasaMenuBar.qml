@@ -185,7 +185,7 @@ MenuBar {
     signal compactDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
-    // #1616: Fájl ▸ Új album… (Ctrl+N) — a dialógus (`newAlbumDialog`,
+    // #1616: Fájl ▸ Új album… (Ctrl+N) — a belépő (`openNewAlbum`,
     // FileOpsDialogs.qml) a Main.qml-ben él, és ugyanazt a
     // `fileOpsDialogs.openNewAlbum(...)` belépőt hívja, amit a rács helyi
     // menüjének „Új album…" tétele is (PhotoContextMenu.newAlbumRequested).
@@ -434,7 +434,7 @@ MenuBar {
         // MÉRVE (`git log -S'menuFileNewAlbum'`): MINDIG az volt, az #416
         // óta, tehát a #1616 jegy „a tétel él, csak a billentyű néma"
         // állítása a mai kódon TÉVES. A funkció maga viszont NEM hiányzik:
-        // a `newAlbumDialog` (FileOpsDialogs.qml) és a `controller.
+        // az `openNewAlbum` (FileOpsDialogs.qml) és a `controller.
         // createAlbum(name, rows)` már kész és élesen működik a rács
         // helyi menüjéből (`PhotoContextMenu.newAlbumRequested` →
         // `fileOpsDialogs.openNewAlbum(window.selectedRows())`, Main.qml).

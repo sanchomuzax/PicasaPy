@@ -3136,6 +3136,10 @@
         <translation>A fájlművelet nem sikerült</translation>
     </message>
     <message>
+        <source>Untitled</source>
+        <translation>Névtelen</translation>
+    </message>
+    <message>
         <source>New Album...</source>
         <translation>Új album…</translation>
     </message>

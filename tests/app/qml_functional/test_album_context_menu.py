@@ -149,48 +149,58 @@ class TestRemoveFromAlbumWiring:
         assert f"albums={_TOKEN}" not in ini
 
 
-class TestNewAlbumDialog:
-    def test_new_album_requested_opens_dialog(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        _select_row(window, qt_app, 0)
+class TestUjAlbumCsendben:
+    """#2911: az „Új album" NÉVBEKÉRÉS NÉLKÜL hoz létre „Névtelen" albumot.
 
-        menu = _child(window, "photoContextMenu")
-        menu.newAlbumRequested.emit()
-        qt_app.processEvents()
+    ⚠️ Ez a három próba korábban azt állította, hogy megnyílik a
+    `newAlbumDialog`. Az a mai állapot leírása volt; a bináris mérése
+    (`thumbui/newalbum`, kezelő `0x005eb810`) szerint az eredetiben ezen az
+    úton NINCS névbekérő: a kezelő az `IDS_DEFAULT_ALBUM_NAME` nevű albumot
+    hozza létre, és kész. A SZÁNDÉK változatlan: a helyi menü tétele
+    ugyanazon az egy úton indítja az album-készítést, és üres kijelölésnél
+    nem csinál semmit.
+    """
 
-        dialog = _child(window, "newAlbumDialog")
-        assert dialog.property("visible") is True
-
-    def test_accepting_creates_album_with_selected_rows(
-        self, qml_app, qt_app, tmp_path
-    ):
+    def test_a_menu_tetele_LETREHOZZA_az_albumot(self, qml_app, qt_app):
         window, controller, _engine = qml_app
-        lib = tmp_path / "kepek"
         _select_row(window, qt_app, 0)
 
         menu = _child(window, "photoContextMenu")
         menu.newAlbumRequested.emit()
         qt_app.processEvents()
 
-        field = _child(window, "newAlbumField")
-        field.setProperty("text", "Friss album")
-        dialog = _child(window, "newAlbumDialog")
-        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        nevek = [a["name"] for a in controller.albums]
+        assert len(nevek) == 1, nevek
+
+    def test_a_nev_a_FELULET_sajat_felirata(self, qml_app, qt_app, tmp_path):
+        """A név a `FileOpsDialogs` saját, FORDÍTHATÓ feliratából jön.
+
+        ⚠️ A próba-motorban nincs telepítve fordító (azt az
+        `application.py` teszi élesben), ezért itt a FORRÁSALAK
+        (`Untitled`) jön vissza. Hogy magyar felületen „Névtelen" lesz
+        belőle, azt a `test_ujalbum_nev_forditas_2911.py` méri a
+        `.qm`-ből — így egyik próba sem függ a másik környezetétől."""
+        window, controller, _engine = qml_app
+        _select_row(window, qt_app, 0)
+
+        _child(window, "photoContextMenu").newAlbumRequested.emit()
         qt_app.processEvents()
 
-        assert any(a["name"] == "Friss album" for a in controller.albums)
-        ini = (lib / ".picasa.ini").read_text(encoding="utf-8")
-        assert "name=Friss album" in ini
+        assert [a["name"] for a in controller.albums] == ["Untitled"]
+        ini = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        assert "name=Untitled" in ini, ini
 
-    def test_empty_selection_does_not_open_dialog(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+    def test_ures_kijelolesnel_nem_tortenik_semmi(self, qml_app, qt_app):
+        """⛔ Nálunk az album a `.picasa.ini`-ben él, tehát TAG nélkül nincs
+        hova kiírni — az eredetinek adatbázisa volt, ott az üres album is
+        létezhetett."""
+        window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [])
         window.setProperty("selectedIndex", -1)
         qt_app.processEvents()
+        elotte = len(controller.albums)
 
-        menu = _child(window, "photoContextMenu")
-        menu.newAlbumRequested.emit()
+        _child(window, "photoContextMenu").newAlbumRequested.emit()
         qt_app.processEvents()
 
-        dialog = _child(window, "newAlbumDialog")
-        assert dialog.property("visible") is False
+        assert len(controller.albums) == elotte

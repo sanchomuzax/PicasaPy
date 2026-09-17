@@ -36,7 +36,6 @@ FILEOPS_PARBESZEDEK = frozenset(
     {
         "renameDialog",
         "renameManyDialog",
-        "newAlbumDialog",
         "moveToNewFolderDialog",
         "moveFolderDialog",
         "moveConfirmDialog",
