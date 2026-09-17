@@ -1778,13 +1778,15 @@ amit a lefedettségi lista nem nevezett meg (`border_size_label`,
 ⭐ **a szegélyvastagság CSÚSZKA** („Egyik sem" … „Maximális",
 `printborderslider/scaleslider`, `Property slider 2`, saját névtérben a `root`
 alatt), nem számmező; a két legördülő (`fontfamily`, `sizelist`) **runtime
-töltődik** (`maxrows 7`, tételek sem a `.tre`-ben, sem az i18n-fájlban) ⇒ a
-betűméret-lista blokkolt kérdése két további forrásra nézve negatív;
+kapacitáskezeléssel** épül, de a `sizelist` 16 értékét a bináris statikus
+`0x00c7dab8` táblája adja: **8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36,
+48, 60, 72, 84, 96** (`0x008261c0`); a `.tre` és az i18n-fájl csak a
+legfeljebb 7 látható sort írja le.
 ⚠️ **hibás hivatalos szöveg:** az `apply`/`ok` buboréksúgója
 nyomtatás helyett **„a Google Fotókra"** hivatkozik — hogy fordítási hiba-e
 vagy az angol is ilyen, **NINCS MEG** (angol i18n-csomag nincs a kutatási
 anyagban); ezt a két szöveget **nem vesszük át**. Jegy-komment: **#1780**.
-**39.3–39.7 (2026-09-02):** a **Mégse VISSZATÖLT** (a vezérlők azonnal írnak, az „Alkalmaz" csak újrarajzol, az ablak X-ével bezárva a módosítások BENT MARADNAK); a két rádiócsoport értékkészlete **0–3** (nincs szöveg/képfelirat/fájlnév/Exif) és **0–2** (kép alatt/képen/szegélyen); mind a tizenegy kulcs **alapértéke** kimérve (`textsize`=12, `bordersize`=10, **`evenborder`=1** az egyetlen bekapcsolt), a `.tre` `setpressed` értékeivel keresztmérve — egy eltéréssel (`wrap_checkbox`), ahol a **beállítás nyer**; ⛔ helyesbítés: a `usefilename`-nek **VAN** felirata („Fájlnév"); ⛔ negatív: a betűméret-lista **nem** a filmkészítő statikus táblájából jön. Nyitva: honnan töltődik a lista. **39.8 (2026-09-17, #1780):** a két színkulcs
+**39.3–39.7 (2026-09-02):** a **Mégse VISSZATÖLT** (a vezérlők azonnal írnak, az „Alkalmaz" csak újrarajzol, az ablak X-ével bezárva a módosítások BENT MARADNAK); a két rádiócsoport értékkészlete **0–3** (nincs szöveg/képfelirat/fájlnév/Exif) és **0–2** (kép alatt/képen/szegélyen); mind a tizenegy kulcs **alapértéke** kimérve (`textsize`=12, `bordersize`=10, **`evenborder`=1** az egyetlen bekapcsolt), a `.tre` `setpressed` értékeivel keresztmérve — egy eltéréssel (`wrap_checkbox`), ahol a **beállítás nyer**; ⛔ helyesbítés: a `usefilename`-nek **VAN** felirata („Fájlnév"); ⛔ negatív: a betűméret-lista **nem** a filmkészítő statikus táblájából jön. **39.10 (2026-09-17, #1780/#2287):** a listafeltöltő panel-ág keresztellenőrizve, a 16 statikus méretérték forrása és értékei lezárva. **39.8 (2026-09-17, #1780):** a két színkulcs
 `textcolor`/`bordercolor` tárolási alakja **lezárva `0xAARRGGBB`** (`0x0085f2b0`,
 `0x009a9a70`, `picasa-menu-parancsok-viselkedes.md` 39.8), a `bordersize`
 **0…1024-es tárolási skálája és `1/1024` ↔ `1024` kétirányú átváltása is
