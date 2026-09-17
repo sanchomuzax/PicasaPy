@@ -37,10 +37,21 @@ ALAIRAS = "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
 
 @pytest.fixture
 def torzs(tmp_path):
+    """A törzs-fájl útvonala **POSIX alakban** (előre dőlő jelekkel).
+
+    ⚠️ Nem kényelmi választás: a kapu `shlex.split`-tel, POSIX szabály
+    szerint bontja a parancsot — ez a helyes, mert a hookot a fejlesztői gép
+    shellje adja be. Windowson a `str(p)` visszafelé dőlő jeleket ad
+    (`C:\\Users\\...`), amiket a POSIX-bontás ESCAPE-nek olvas és lenyel: a
+    fájl megnyithatatlan lesz, a kapu fail-openre esik, és a próba
+    „átengedte" hibával bukik. A windows-CI pontosan ezen hasalt el
+    (2026-09-18, piros main). A POSIX-alakú útvonalat MINDKÉT platform
+    megnyitja, tehát az állítás ugyanaz marad."""
+
     def ir(tartalom: str) -> str:
         p = tmp_path / "torzs.md"
         p.write_text(tartalom, encoding="utf-8")
-        return str(p)
+        return p.as_posix()
     return ir
 
 
