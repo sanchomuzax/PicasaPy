@@ -5839,3 +5839,79 @@ alapérték-operandusa), `0x00407630` + `0x00c80a64` (a betűtípus),
 `0x00cb3d14`, `0x00cb3d28`, `0x00cb3d40`, `0x00cb3d5c`, `0x00cb3d78`,
 `0x00cb3d94`, `0x00cb3db0`, `0x00cb3dc4`, `0x00cb3de0`, `0x00cb3df8`,
 `0x00cb3e10`.*
+
+## ⛳ A `printoptions` két rádiócsoportjának SZÁMKÓDJAI — kiolvasva (2026-09-17, 317. kör, #1780)
+
+*A 316. kör három kérdést hagyott nyitva. Ez a szakasz az elsőt — a
+legfontosabbat — lezárja, a másik kettőt pedig ÉLESEBB úttal adja tovább.*
+
+### 1. A felirat FORRÁSA (`printoptions::text`)
+
+Az OK/Alkalmaz kezelője (`0x0085e800`) elemnévre illeszt, és a találati ágon
+konstanst tesz a kiírandó értékbe:
+
+| érték | vezérlő (teljes elemnév) | a magyar felirat (39. tétel) | hol |
+|---:|---|---|---|
+| **0** | `printoptions/usenotext` (`0x00cc38b0`) | „Nincs szöveg" | `0x0085ebc1 xor esi, esi` |
+| **1** | `printoptions/usecaption` (`0x00cc38c8`) | „Képfeliratok" | `0x0085ec3a mov esi, 1` |
+| **2** | `printoptions/usefilename` (`0x00cc38e0`) | *(fájlnév)* | `0x0085ec73 mov esi, 2` |
+| **3** | `printoptions/useexif` (`0x00cc38fc`) | „Exif-adatok" | `0x0085ecaf mov esi, 3` |
+
+⭐ Ez **független megerősítése** a 316. kör melléklelének: a fogyasztó
+(`0x00776180`) épp a **0**, **1** és **3** ellen mér — a `2` azért hiányzik
+onnan, mert a fájlnév-ág máshol dől el, de a készlet négyes.
+
+### 2. A felirat HELYE (`printoptions::textplacement`)
+
+| érték | vezérlő | felirat | hol |
+|---:|---|---|---|
+| **0** | `printoptions/textbelowimage` (`0x00cc3914`) | „A kép alatt" | `0x0085eceb xor esi, esi` |
+| **1** | `printoptions/textonimage` (`0x00cc3930`) | „A képen" | `0x0085ed4a mov esi, 1` |
+| **2** | `printoptions/textonborder` (`0x00cc394c`) | „A szegélyen" | `0x0085ed83 mov esi, 2` |
+
+⇒ A 316. kör alapértékei ezzel **jelentést kapnak**: `text` = 0 → *nincs
+felirat*, `textplacement` = 0 → *a kép alatt*.
+
+### Kontroll: a jelölőnégyzetek NEM konstanst írnak
+
+A `printoptions/border_checkbox` ágában (`0x0085ea07`) nincs
+`mov esi, <konstans>`: a kód a vezérlő állapotát kérdezi le
+(`0x0085ea38 call 0x009cd9a0`, majd `movsx eax, al`), és azt írja ki. ⇒ a
+módszer **megkülönbözteti** a rádió-konstanst a logikai vezérlőtől — ha
+mindenhová konstanst látna bele, ez a kontroll megbukott volna.
+
+### Melléklelet: két eddig nem szereplő elemnév
+
+A vezérlő-készlet blokkjában a hét rádiótag és a négy jelölőnégyzet közt
+még két név áll, hivatkozásokkal:
+
+| elemnév | hivatkozás |
+|---|---|
+| `printborderslider/scaleslider` (`0x00cc3968`) | `0x0085e601`, `0x0085e631` |
+| `printoptions/border_options` (`0x00cc3988`) | `0x0085e664` |
+
+⇒ a szegélyvastagság **csúszka** (a 39. tétel „Méret" választója), és van egy
+`border_options` gyűjtő is.
+
+### 3. Ami NYITVA marad — élesebb úttal
+
+A szín-kódolás és a `bordersize` egysége **nem a beolvasónál dől el**: a
+fogyasztó (`0x00776180`) a kiolvasott számokat változtatás nélkül teszi a
+beállítás-objektum mezőibe. A mezőtérkép (ez a kör mérte):
+
+| kulcs | mező |
+|---|---|
+| `bordersize` | `+0x84` (`0x007762fc`) |
+| `bordercolor` | `+0x88` (`0x0077633f`) |
+| `borderedge` | `+0x8c` (`0x00776382`) |
+| `textplacement` | `+0x70` (`0x0077644c`) |
+| `textsize` | `+0x78` (`0x00776490`) |
+| `textcolor` | `+0x74` (`0x007764d0`) |
+
+⇒ A következő lépés **nem** a beolvasó, hanem e mezők **olvasói** a rajzoló
+oldalon: ott derül ki a csatorna-sorrend (`+0x74`, `+0x88`) és a
+szegélyvastagság egysége (`+0x84`).
+
+*Forrás: `0x0085e800` (az író névre illesztő ágai), `0x00776180` (a
+fogyasztó mezőtárolásai), a `printoptions/*` elemnevek a `0x00cc38b0`–
+`0x00cc3a04` blokkban.*
