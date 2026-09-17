@@ -30,9 +30,11 @@ Item {
         moveFolderDialog.paths = paths
         if (moveFolderDialog.paths.length > 0) moveFolderDialog.open()
     }
-    // #1614: Fájl ▸ Áthelyezés új mappába… — a `newAlbumDialog` mintáját
-    // követi (egyetlen névmező), mert a párbeszéd pontos alakjára nincs
-    // erősebb bizonyíték (ld. a jegy „Bizonyítottsági fok" szakasza).
+    // #1614: Fájl ▸ Áthelyezés új mappába… — egyetlen névmezős párbeszéd,
+    // mert a pontos alakjára nincs erősebb bizonyíték (ld. a jegy
+    // „Bizonyítottsági fok" szakasza). ⚠️ #2911: a mintaadó `newAlbumDialog`
+    // MEGSZŰNT — az „Új album" azóta csendben, névbekérés nélkül hoz létre
+    // „Névtelen" albumot, az eredeti mért viselkedése szerint.
     function openMoveToNewFolder(paths) {
         moveToNewFolderDialog.openFor(paths)
     }
@@ -56,11 +58,25 @@ Item {
         dialogs.appWindow.clearSelection()
     }
 
-    // #9 (2. lépés): új album neve — a rows a kijelölés sorindexei, amelyek
-    // a controller.createAlbum(name, rows) hívásba kerülnek elfogadáskor
+    //: #2911: az „Új album" CSENDBEN hoz létre egy „Névtelen" albumot —
+    //: az eredetiben ezen az úton NINCS névbekérő (`thumbui/newalbum`,
+    //: kezelő `0x005eb810`: felépíti az album-leírót, a nevét a
+    //: `IDS_DEFAULT_ALBUM_NAME` erőforrásból tölti, létrehozza, és kész;
+    //: se párbeszéd, se számozás, se dátum). Az átnevezés utólag, a
+    //: meglévő albumátnevező úton történik.
+    //:
+    //: ⛔ ÜRES kijelölésnél nem történik semmi: nálunk az album a
+    //: `.picasa.ini`-ben él (`[.album:<token>]`), tehát TAG nélkül nincs
+    //: hova kiírni — az eredetinek adatbázisa volt, ott az üres album is
+    //: létezhetett. Ez a tárolásunk következménye, nem kihagyás.
     function openNewAlbum(rows) {
-        newAlbumDialog.openFor(rows)
+        if (!controller || !rows || rows.length === 0) return
+        controller.createAlbum(dialogs.ujAlbumNeve, rows)
     }
+
+    //: #2911: a MÉRT alapértelmezett albumnév (`IDS_DEFAULT_ALBUM_NAME`).
+    //: Fordításból jön — magyar felületen „Névtelen" —, nem beégetve.
+    readonly property string ujAlbumNeve: qsTr("Untitled")
 
     // #1612: a vezérlő VISSZAJELZÉSEI. A hozzájuk tartozó `Connections`
     // SZÁNDÉKOSAN nem itt áll, hanem a `Main.qml`-ben (a #2096 mintája):
@@ -239,36 +255,8 @@ Item {
         }
     }
 
-    Dialog {
-        id: newAlbumDialog
-        objectName: "newAlbumDialog"
-        title: qsTr("New Album...")
-        modal: true
-        anchors.centerIn: parent
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        property var rows: []
-        function openFor(rowList) {
-            if (rowList.length === 0) return
-            rows = rowList
-            newAlbumField.text = ""
-            open()
-            newAlbumField.forceActiveFocus()
-        }
-        onAccepted: {
-            if (controller) controller.createAlbum(newAlbumField.text.trim(), rows)
-        }
-        TextField {
-            id: newAlbumField
-            objectName: "newAlbumField"
-            width: 300
-            font.pixelSize: Theme.fontSize
-            // #422: jobbklikk-menü (Picasa `Address`)
-            TextFieldContextArea {}
-        }
-    }
-
-    // #1614: Fájl ▸ Áthelyezés új mappába… — a `newAlbumDialog` mintáját
-    // követő egyetlen névmező. A tényleges névellenőrzés (üres/csak
+    // #1614: Fájl ▸ Áthelyezés új mappába… — egyetlen névmező (a mintaadó
+    // `newAlbumDialog` a #2911 óta nincs meg). A tényleges névellenőrzés (üres/csak
     // szóköz/Windows-tiltott karakter) és a mappa létrehozása a
     // `fileOpsController.moveSelectionToNewFolder`-ben történik — hiba
     // esetén a szokásos `operationFailed` → `fileOpsErrorDialog` úton jut

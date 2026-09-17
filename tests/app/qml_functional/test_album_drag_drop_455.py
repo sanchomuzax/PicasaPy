@@ -39,23 +39,28 @@ class TestDropTargets:
         assert hint.property("visible") is True
         assert "album" in hint.property("text").lower()
 
-    def test_dropping_on_the_list_opens_the_new_album_dialog(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+    def test_a_listara_ejtes_LETREHOZZA_az_albumot(self, qml_app, qt_app):
+        """#2911: a négy belépő egyike — párbeszéd nélkül, „Untitled" néven.
+
+        ⚠️ Korábban azt állította, hogy megnyílik a `newAlbumDialog`. A
+        SZÁNDÉK ugyanaz (az ejtés indítja az album-készítést); a mért
+        eredetiben viszont ezen az úton nincs névbekérő."""
+        window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [0])
 
         _emit(_child(window, "folderPane"), "newAlbumDropped")
         qt_app.processEvents()
 
-        assert _child(window, "newAlbumDialog").property("visible") is True
+        assert [a["name"] for a in controller.albums] == ["Untitled"]
 
-    def test_an_empty_selection_opens_nothing(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+    def test_ures_kijelolesnel_nem_tortenik_semmi(self, qml_app, qt_app):
+        window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [])
 
         _emit(_child(window, "folderPane"), "newAlbumDropped")
         qt_app.processEvents()
 
-        assert _child(window, "newAlbumDialog").property("visible") is False
+        assert controller.albums == []
 
     def test_dropping_on_an_existing_album_adds_the_photos_to_it(
         self, qml_app, qt_app

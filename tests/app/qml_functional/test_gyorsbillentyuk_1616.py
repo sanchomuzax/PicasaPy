@@ -71,7 +71,15 @@ def _elem(window, nev):
     return obj
 
 
-def _nem_nyilt_meg(window, nev="newAlbumDialog") -> bool:
+def _albumok(window) -> list:
+    """#2911: az albumok a vezérlőben — a dialógus-alapú próbák helyett.
+
+    Az „Új album" a #2911 óta NÉVBEKÉRÉS NÉLKÜL hoz létre albumot, tehát a
+    hatást az album LÉTREJÖTTE mutatja, nem egy megnyíló párbeszéd."""
+    return list(window.property("controller").albums)
+
+
+def _nem_nyilt_meg(window, nev="renameDialog") -> bool:
     """#1612: a `FileOpsDialogs` halasztott — a nyitás ELŐTT a párbeszéd
     létre sem jön. A hiánya erősebb állítás, mint a `visible is False`."""
     par = window.findChild(QObject, nev)
@@ -123,10 +131,11 @@ class TestUjAlbumMenupontEsCtrlN:
         felirat = str(_elem(window, "menuFileNewAlbum").property("text"))
         assert felirat.replace("&", "") == "New Album...\tCtrl+N"
 
-    def test_a_menupontra_kattintva_megnyilik_a_dialog(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+    def test_a_menupontra_kattintva_LETREJON_az_album(self, qml_app, qt_app):
+        """#2911: a menütétel csendben hoz létre albumot (nincs névbekérő)."""
+        window, controller, _engine = qml_app
         _select_row(window, qt_app, 0)
-        assert _nem_nyilt_meg(window)
+        assert controller.albums == []
 
         tetel = _elem(window, "menuFileNewAlbum")
         QMetaObject.invokeMethod(
@@ -134,33 +143,33 @@ class TestUjAlbumMenupontEsCtrlN:
         )
         qt_app.processEvents()
 
-        assert _elem(window, "newAlbumDialog").property("visible") is True, (
-            "a Fájl ▸ Új album… nem nyitotta meg a dialógust"
+        assert [a["name"] for a in controller.albums] == ["Untitled"], (
+            "a Fájl ▸ Új album… nem hozta létre az albumot"
         )
 
-    def test_a_ctrl_n_valodi_billentyuvel_megnyitja_a_dialogot(
+    def test_a_ctrl_n_valodi_billentyuvel_LETREHOZZA_az_albumot(
         self, qml_app, qt_app
     ):
-        window, _controller, _engine = qml_app
+        window, controller, _engine = qml_app
         _select_row(window, qt_app, 0)
-        assert _nem_nyilt_meg(window)
+        assert controller.albums == []
 
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert _elem(window, "newAlbumDialog").property("visible") is True, (
-            "a Ctrl+N nem nyitotta meg az Új album… dialógust"
+        assert [a["name"] for a in controller.albums] == ["Untitled"], (
+            "a Ctrl+N nem hozta létre az albumot"
         )
 
     def test_kijeloles_nelkul_a_ctrl_n_nem_csinal_semmit(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+        window, controller, _engine = qml_app
         _clear_selection(window, qt_app)
 
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert _nem_nyilt_meg(window), (
-            "a Ctrl+N kijelölés nélkül is megnyitotta a dialógust"
+        assert controller.albums == [], (
+            "a Ctrl+N kijelölés nélkül is létrehozott albumot"
         )
 
     def test_a_gyorsbillentyu_elo_es_a_sorozata_a_hirdetett(self, qml_app):
@@ -186,8 +195,7 @@ class TestUjAlbumMenupontEsCtrlN:
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
 
-        dialog = _elem(window, "newAlbumDialog")
-        assert dialog.property("visible") is True, (
+        assert [a["name"] for a in _controller.albums] == ["Untitled"], (
             "a Ctrl+N a keresőmezőben állva elveszett"
         )
         assert str(mezo.property("text")) == "", (
@@ -229,18 +237,25 @@ class TestUjAlbumMenupontEsCtrlN:
         window, _controller, _engine = qml_app
         assert window.findChild(QObject, nev) is not None, nev
 
-    def test_a_lanc_utolso_szeme_a_NYITAS_utan_van_meg(self, qml_app, qt_app):
-        """#1612: a `newAlbumDialog` halasztott — a láncnak a nyitás
-        pillanatában kell összeérnie, nem induláskor."""
-        window, _controller, _engine = qml_app
+    def test_a_lanc_utolso_szeme_a_HIVAS_utan_er_ossze(self, qml_app, qt_app):
+        """#1612: a `FileOpsDialogs` HALASZTOTT — a láncnak a hívás
+        pillanatában kell összeérnie, nem induláskor.
+
+        ⚠️ #2911: a lánc vége már nem a `newAlbumDialog` megnyílása (az a
+        párbeszéd megszűnt), hanem a komponens felépülése ÉS a létrejött
+        album. A próba SZÁNDÉKA változatlan: a halasztott komponens az
+        első használatkor áll össze."""
+        window, controller, _engine = qml_app
         _select_row(window, qt_app, 0)
+        assert window.findChild(QObject, "renameDialog") is None
         QMetaObject.invokeMethod(
             _elem(window, "menuFileNewAlbum"),
             "triggered",
             Qt.ConnectionType.DirectConnection,
         )
         qt_app.processEvents()
-        assert window.findChild(QObject, "newAlbumDialog") is not None
+        assert window.findChild(QObject, "renameDialog") is not None
+        assert [a["name"] for a in controller.albums] == ["Untitled"]
 
 
 class TestNemaCimkekLekerultBillentyuvel:

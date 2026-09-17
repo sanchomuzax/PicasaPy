@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.508] – 2026-09-17
+
+### Megváltozva
+
+- **Az „Új album" nem kérdez nevet, hanem azonnal létrehoz egy „Névtelen"
+  albumot** (#2911) — így működött az eredeti Picasa is. Mind a négy út (az
+  eszköztár ＋ gombja, a `Fájl ▸ Új album`, a `Ctrl+N` és a képek ráhúzása a
+  bal hasábra) ugyanígy viselkedik; az albumot utólag bármikor átnevezheted.
+  Kijelölés nélkül — mint eddig — nem történik semmi.
+
 ## [0.8.507] – 2026-09-17
 
 ### Hozzáadva
