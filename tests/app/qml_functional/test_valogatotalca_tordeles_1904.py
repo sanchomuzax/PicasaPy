@@ -187,16 +187,52 @@ class TestNegyzetesCella:
         assert "nominalAspect" not in forras
 
 
+#: A `TrayBar.qml` tördelés-képletének két konstansa: a bélyegkép PADLÓJA
+#: és a sáv osztásköze. A padlón fér a legtöbb kép egy sorba — ennél több
+#: képnél a tördelés KÖTELEZŐ, akármekkora az ablak.
+_PADLO_MAGASSAG = 12
+_OSZTASKOZ = 2
+
+
+def _egy_sorba_fero_maximum(window) -> int:
+    """A legtöbb bélyegkép, ami MÉG egy sorba férhet — MÉRVE.
+
+    ⚠️ #3300: ezt mérni kell, nem feltenni. A „negyven kép nem fér egy
+    sorba" állítás a tálca szélességétől függ, azt pedig a futtató
+    ablakmérete adja: a main ubuntu-lábán 2026-09-18-án negyven kép EGY
+    sorba került, és a próba elbukott — ugyanaz a kód helyben és a PR-on
+    zöld volt. Ez nem időzítés, hanem geometria.
+
+    A képlet a `TrayBar.qml`-ével azonos: a sáv szélessége osztva a
+    PADLÓRA zsugorított bélyegkép osztásközével. Helyben mérve: 392
+    képpontos sávon 28 — és a tördelés valóban 20 kép körül indul, tehát
+    ez felső korlát, nem becslés."""
+    csik = _elem(window, "trayScratchStrip").width()
+    return max(
+        1, int((csik + _OSZTASKOZ) // (_PADLO_MAGASSAG + _OSZTASKOZ))
+    )
+
+
 class TestTordeles:
     def test_sok_kepnel_tobb_sor_es_kisebb_belyegkep(self, qml_app, qt_app):
         window, _ = _kepekkel(qml_app, qt_app, 5)
         kevés = _bélyegképek(window)[0].height()
         sorok_kevés = {round(item.y()) for item in _bélyegképek(window)}
+        #: eggyel több, mint amennyi a MÉRT szélességen egy sorba fér —
+        #: így a tördelés bármekkora ablakban kötelező (#3300)
+        sok_darab = _egy_sorba_fero_maximum(window) + 1
 
-        window, _ = _kepekkel(qml_app, qt_app, 40)
+        window, betoltve = _kepekkel(qml_app, qt_app, sok_darab)
         sok = _bélyegképek(window)[0].height()
         sorok_sok = {round(item.y()) for item in _bélyegképek(window)}
 
         assert len(sorok_kevés) == 1, "öt kép egyetlen sorba fér"
-        assert len(sorok_sok) > 1, "negyven kép nem fér egyetlen sorba"
+        assert betoltve >= sok_darab, (
+            f"nem töltődött be mind a {sok_darab} kép (csak {betoltve})"
+        )
+        assert len(sorok_sok) > 1, (
+            f"{sok_darab} kép egyetlen sorba került, pedig a mért "
+            f"szélességen a PADLÓN is csak {sok_darab - 1} fér el "
+            f"(bélyegkép-magasság: {sok})"
+        )
         assert sok < kevés, "több sornál a bélyegképnek zsugorodnia kell"
