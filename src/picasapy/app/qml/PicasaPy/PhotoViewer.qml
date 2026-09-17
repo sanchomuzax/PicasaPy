@@ -284,11 +284,12 @@ Rectangle {
     //: mutatja, és a válogató parancsok (albumba tétel) erre hatnak.
     //: Egy kép módban mindig a jelenlegi kép.
     //:
-    //: ⚠️ Csak a VÁLOGATÓ parancsok használják. A szerkesztő parancsai
-    //: (mentés, visszavonás, forgatás) továbbra is a `currentIndex`-en
-    //: dolgoznak: nálunk EGY szerkesztési állapot van, a bal oldal a
-    //: nyers fájlt mutatja. A második, önállóan szerkeszthető előnézet
-    //: (`editpanel/preview2`, 26 hivatkozás) külön jegy.
+    //: #3187: a SZERKESZTŐ parancsai is ezt a sort célozzák. A fő vezérlő
+    //: mindig a kijelölt oldalt szerkeszti, a második rekesz a másikat —
+    //: így a szerkesztő-panel 104 kötése változatlan maradt.
+    //: ⚠️ Imperatív kezelőben NE ezt a kötött property-t olvasd, hanem a
+    //: `_kijeloltSort()`-ot: a kötés újraértékelése nem garantált, mire az
+    //: ugyanarra a jelzésre futó kezelő lefut (#218, mérve a #3187-en).
     readonly property int aktivSor: (viewer.layoutMode !== "1up"
                                      && viewer.aktivOldal === "bal")
         ? viewer.abMasikSor : viewer.currentIndex
@@ -442,9 +443,34 @@ Rectangle {
     //: #3187: a MÁSODIK fél munkamenete. AB módban a másik sor fotójára
     //: nyitunk (mentett lánccal), minden más módban zárjuk — a „aa" fél
     //: nyers képe a #3013 szerint a szerkesztés ELŐTTI állapot.
+    //: #3187 3. lépés: a NEM kijelölt oldal sora. A fő vezérlő a KIJELÖLT
+    //: oldalt szerkeszti (`aktivSor`), a második rekesz ezt a másikat kapja —
+    //: így a szerkesztő-panel 104 kötése változatlan maradhat, a parancsok
+    //: mégis a kijelölt oldalra hatnak.
+    readonly property int masodikSor: viewer._masodikSort()
+
+    //: ⚠️ #3187: a KÖTÖTT `aktivSor`/`masodikSor` NEM használható az
+    //: imperatív kezelőkben. A #218 óta tudjuk: egy kötött property
+    //: újraértékelése nem garantált, mire az UGYANARRA a jelzésre futó
+    //: imperatív kezelő lefut — mérve ezen a jegyen is: fókuszváltás után a
+    //: `beginEditCurrent()` még a RÉGI `aktivSor`-t látta, és a két oldal
+    //: fordítva kapta a rekeszeket. Ezért a két sor-számítás FÜGGVÉNY: a
+    //: kötések is ezt hívják (a QML a hívás alatt olvasott property-ket
+    //: függőségként követi), a kezelők pedig friss értéket kapnak.
+    function _kijeloltSort() {
+        return (viewer.layoutMode !== "1up" && viewer.aktivOldal === "bal")
+            ? viewer.abMasikSor : viewer.currentIndex
+    }
+
+    function _masodikSort() {
+        if (viewer.layoutMode !== "ab") return -1
+        return viewer.aktivOldal === "bal" ? viewer.currentIndex
+                                           : viewer.abMasikSor
+    }
+
     function frissitsdAMasodikSzerkesztest() {
         if (!viewer.masodikEditCtl) return
-        var sor = viewer.abMasikSor
+        var sor = viewer._masodikSort()
         if (!(viewer.visible && viewer.layoutMode === "ab"
               && sor >= 0 && photosModel)
                 || photosModel.isVideoAt(sor)) {
@@ -456,23 +482,36 @@ Rectangle {
     }
 
     onAbMasikSorChanged: viewer.frissitsdAMasodikSzerkesztest()
-    onLayoutModeChanged: viewer.frissitsdAMasodikSzerkesztest()
+    onLayoutModeChanged: {
+        viewer.beginEditCurrent()            // #3187: a célpont módot vált
+        viewer.frissitsdAMasodikSzerkesztest()
+    }
+    //: #3187: a fókuszváltás ÁTVISZI a szerkesztést a másik oldalra — a fő
+    //: vezérlő a kijelöltet kapja, a második rekesz a régi kijelöltet.
+    onAktivOldalChanged: {
+        viewer.beginEditCurrent()
+        viewer.frissitsdAMasodikSzerkesztest()
+    }
 
     function beginEditCurrent() {
-        if (!(visible && currentIndex >= 0 && photosModel)) return
+        //: #3187: a szerkesztett sor a KIJELÖLT oldal sora. Egy képes és
+        //: „aa" módban ez maga a jelenlegi kép (az `aktivSor` ott
+        //: `currentIndex`-et ad), tehát azokon a módokon semmi nem változik.
+        var sor = viewer._kijeloltSort()
+        if (!(visible && sor >= 0 && photosModel)) return
         // #218: a viewer.isCurrentVideo egy kötött property — a currentIndex
         // váltásakor NEM garantált, hogy már újraértékelődött, mire ez a
         // (szintén a currentIndexChanged-re futó) imperatív függvény lefut,
         // ezért a modellt itt KÖZVETLENÜL kérdezzük le (mindig friss),
         // nem a cache-elt property-t
-        if (photosModel.isVideoAt(currentIndex)) {
+        if (photosModel.isVideoAt(sor)) {
             // videón nincs képszerkesztés (#14) — az előző kép nyitott
             // munkamenete záruljon, ne lógjon át az előnézete
             editController.endEdit()
             return
         }
-        editController.beginEdit(photosModel.idAt(currentIndex),
-                                 photosModel.filePathAt(currentIndex))
+        editController.beginEdit(photosModel.idAt(sor),
+                                 photosModel.filePathAt(sor))
     }
     // #1598: a megjelenítési mód (`Nézet ▸ Megjelenítési mód`) KIZÁRÓLAG az
     // `editpreview` szolgáltatón át jut a képernyőre. A lenti `photo.source`
@@ -1496,13 +1535,23 @@ Rectangle {
                         //: a NYERS fájl: ott ez a fél a szerkesztés ELŐTTI
                         //: állapot (#3013 mérése), és a második rekesznek
                         //: szándékosan nincs munkamenete.
+                        //: #3187: ez a fél az `abMasikSor` fotóját mutatja —
+                        //: a fő rekeszből, ha a KIJELÖLT oldal ez, egyébként
+                        //: a másodikból. „aa" módban továbbra is a nyers fájl
+                        //: (ott ez a fél a szerkesztés ELŐTTI kép, #3013).
                         source: viewer.isCurrentVideo
                             ? ""
-                            : (viewer.layoutMode === "ab"
-                               && viewer.masodikEditCtl
-                               && viewer.masodikEditCtl.previewSource !== ""
-                               ? viewer.masodikEditCtl.previewSource
-                               : viewer.urlAt(viewer.abMasikSor))
+                            : (viewer.layoutMode !== "ab"
+                               ? viewer.urlAt(viewer.abMasikSor)
+                               : (viewer.aktivOldal === "bal"
+                                  ? (viewer.editCtl
+                                     && viewer.editCtl.previewSource !== ""
+                                     ? viewer.editCtl.previewSource
+                                     : viewer.urlAt(viewer.abMasikSor))
+                                  : (viewer.masodikEditCtl
+                                     && viewer.masodikEditCtl.previewSource !== ""
+                                     ? viewer.masodikEditCtl.previewSource
+                                     : viewer.urlAt(viewer.abMasikSor))))
                         fillMode: Image.PreserveAspectFit
                         asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true
@@ -1599,10 +1648,21 @@ Rectangle {
                         // editpreview provider rendereli a képet (?rev=
                         // cache-buster minden módosításnál)
                         // #305: null-őr
+                        //: #3187: ez a fél a `currentIndex` fotóját mutatja.
+                        //: A FŐ vezérlő a KIJELÖLT oldalt szerkeszti, tehát
+                        //: ha a kijelölt a BAL, akkor ide a MÁSODIK rekesz
+                        //: képe jön — a hozzárendelés a fókusszal cserél.
                         source: viewer.isCurrentVideo ? ""
-                                : (viewer.editCtl && viewer.editCtl.previewSource !== ""
-                                   ? viewer.editCtl.previewSource
-                                   : viewer.urlAt(viewer.currentIndex))
+                                : (viewer.layoutMode === "ab"
+                                   && viewer.aktivOldal === "bal"
+                                   ? (viewer.masodikEditCtl
+                                      && viewer.masodikEditCtl.previewSource !== ""
+                                      ? viewer.masodikEditCtl.previewSource
+                                      : viewer.urlAt(viewer.currentIndex))
+                                   : (viewer.editCtl
+                                      && viewer.editCtl.previewSource !== ""
+                                      ? viewer.editCtl.previewSource
+                                      : viewer.urlAt(viewer.currentIndex)))
                         fillMode: Image.PreserveAspectFit
                         // #53: offscreen (teszt) platformon szinkron betöltés —
                         // itt reprodukálódott a GIL-deadlock (a lapozás
