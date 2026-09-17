@@ -5911,25 +5911,50 @@ még két név áll, hivatkozásokkal:
 ⇒ a szegélyvastagság **csúszka** (a 39. tétel „Méret" választója), és van egy
 `border_options` gyűjtő is.
 
-### 3. Ami NYITVA marad — élesebb úttal
+### 3. A színkódolás — LEZÁRVA (2026-09-17, #1780)
 
-A szín-kódolás és a `bordersize` egysége **nem a beolvasónál dől el**: a
-fogyasztó (`0x00776180`) a kiolvasott számokat változtatás nélkül teszi a
-beállítás-objektum mezőibe. A mezőtérkép (ez a kör mérte):
+A `printoptions::textcolor` és `printoptions::bordercolor` értéke egyetlen
+32 bites, **`0xAARRGGBB` alakú** dword. A bizonyíték két független lépésből áll:
 
-| kulcs | mező |
-|---|---|
-| `bordersize` | `+0x84` (`0x007762fc`) |
-| `bordercolor` | `+0x88` (`0x0077633f`) |
-| `borderedge` | `+0x8c` (`0x00776382`) |
-| `textplacement` | `+0x70` (`0x0077644c`) |
-| `textsize` | `+0x78` (`0x00776490`) |
-| `textcolor` | `+0x74` (`0x007764d0`) |
+1. A `CPrintOptionsDialog` színírója (`0x0085f2b0`) a négy bemeneti bájtot
+   változtatás nélkül, `b3 << 24 | b2 << 16 | b1 << 8 | b0` alakban csomagolja;
+   ugyanaz az ág írja a `textcolor`-t (`0x0085f31d`–`0x0085f32b`) és a
+   `bordercolor`-t (`0x0085f346`–`0x0085f368`). Nincs csatornacsere vagy
+   szorzás.
+2. A rajzoló `textcolor`-fogyasztója (`0x008623c0`) a beállítás-objektum
+   `+0x74` mezőjét változtatás nélkül továbbadja (`0x008629b1`–`0x008629c8`)
+   a `0x009a9a70` képpuffer-segédnek. A segéd minden képpontnál a felső
+   bájtot megőrzi (`and 0xff000000`), az alsó 24 bitet pedig közvetlenül
+   beírja (`or edi`, `0x009a9aa1`–`0x009a9aab`). A nyomtatási puffer mért
+   bájtsorrendje BGRA, ezért a tárolt dword numerikusan `0xAARRGGBB`.
 
-⇒ A következő lépés **nem** a beolvasó, hanem e mezők **olvasói** a rajzoló
-oldalon: ott derül ki a csatorna-sorrend (`+0x74`, `+0x88`) és a
-szegélyvastagság egysége (`+0x84`).
+**Implementációs jelentés:** a PicasaPy-nek a két preferenciaértéket dwordként,
+`0xAARRGGBB` numerikus alakban kell tartania; a Qt- vagy platformszínobjektum
+bemeneti alakját ezen a határon explicit módon erre kell konvertálni. A
+csatornasorrend most már nem nyitott kérdés.
 
-*Forrás: `0x0085e800` (az író névre illesztő ágai), `0x00776180` (a
-fogyasztó mezőtárolásai), a `printoptions/*` elemnevek a `0x00cc38b0`–
-`0x00cc3a04` blokkban.*
+### 4. A `bordersize` egysége és skálája — LEZÁRVA (2026-09-17, #1780)
+
+A `bordersize` nem képpont-, DPI- vagy pontérték: a panel egy normalizált
+csúszkájának **0…1024-es egész skálára kvantált** beállítása.
+
+- Betöltéskor a tárolt dword (`CPrintOptionsDialog +0x278`) lebegőpontosan
+  `0,0009765625`-tel, azaz `1/1024`-gyel szorzódik
+  (`0x0085dc30`–`0x0085dc53`, konstans `0x00cf3f68`). Az eredmény a
+  `printborderslider/scaleslider` vezérlőbe kerül a `0x009ddc90` segéden át.
+- Mentéskor a csúszka lebegőpontos értékét a `0x009ddd00` olvassa ki
+  (`0x009ddd23`–`0x009ddd2f`), majd `1024,0`-gyel szorozza
+  (`0x0085e659`–`0x0085e663`, konstans `0x00cf4218`) és csonkoló `fistp`-vel
+  egész dwordként írja vissza (`0x0085e668`–`0x0085e682`).
+- A két konstans értéke a bináris `.rdata`-jából közvetlenül kiolvasva:
+  `0x00cf3f68 = 0,0009765625`, `0x00cf4218 = 1024,0`.
+- A csúszka nullája kikapcsolja a szegély-opciókat (`0x0085e682`–
+  `0x0085e6b9`), de a korábbi tárolt `bordersize` érték megmarad; betöltéskor
+  ezért a `border` logikai állapot és a vastagság külön kezelendő.
+
+Az alapérték **10**, tehát a tárolt skálaérték `10/1024`; a tárolt értéket
+nem szabad közvetlen képpontként vagy fizikai nyomtatási egységként kezelni.
+
+*Forrás: a panel-frissítő `0x0085d550`, a panel-esemény/mentési ág
+`0x0085df30`, a slider getter/setter `0x009ddd00`/`0x009ddc90`, valamint a
+`0x00cf3f68` és `0x00cf4218` `.rdata` konstansok.*
