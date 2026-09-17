@@ -277,9 +277,7 @@ class PrintController(QObject):
 
     @Slot(result=str)
     def printOptionsDisabledText(self):  # noqa: N802 — QML-stílus
-        return self.tr(
-            "These options cannot be used when printing contact sheets."
-        )
+        return "Ezek a beállítások indexképek nyomtatásakor nem használhatók."
 
     def _print_options(self) -> PrintOptions:
         """A renderelő mindig a tartós, legfrissebb állapotot olvassa."""

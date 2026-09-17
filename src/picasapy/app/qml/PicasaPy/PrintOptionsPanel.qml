@@ -29,12 +29,10 @@ Rectangle {
     property var fontFamilies: []
     property var textSizes: []
     property var sourceLabels: [
-        qsTr("No text"), qsTr("Picture caption"),
-        qsTr("File name"), qsTr("EXIF data")
+        "Nincs szöveg", "Képfeliratok", "Fájlnév", "Exif-adatok"
     ]
     property var placementLabels: [
-        qsTr("Below the picture"), qsTr("On the picture"),
-        qsTr("On the border")
+        "A kép alatt", "A képen", "A szegélyen"
     ]
     property var colorPalette: [
         "#00000000", "#ff000000", "#ffffffff", "#ffff0000",
@@ -66,12 +64,54 @@ Rectangle {
         }
     }
 
+    function readOptions() {
+        if (typeof printController !== "undefined" && printController)
+            return printController.printOptions()
+        return panel.controller ? panel.controller.printOptions() : ({})
+    }
+
+    function readFontFamilies() {
+        if (typeof printController !== "undefined" && printController)
+            return printController.printFontFamilies()
+        return panel.controller ? panel.controller.printFontFamilies() : []
+    }
+
+    function readTextSizes() {
+        if (typeof printController !== "undefined" && printController)
+            return printController.printTextSizes()
+        return panel.controller ? panel.controller.printTextSizes() : []
+    }
+
+    function writeOption(name, value) {
+        if (typeof printController !== "undefined" && printController) {
+            printController.setPrintOption(name, value)
+            return
+        }
+        if (panel.controller) panel.controller.setPrintOption(name, value)
+    }
+
+    function restoreOptions(values) {
+        if (typeof printController !== "undefined" && printController) {
+            printController.restorePrintOptions(values)
+            return
+        }
+        if (panel.controller) panel.controller.restorePrintOptions(values)
+    }
+
+    function disabledText() {
+        if (typeof printController !== "undefined" && printController)
+            return printController.printOptionsDisabledText()
+        return panel.controller
+               ? panel.controller.printOptionsDisabledText()
+               : "Ezek a beállítások indexképek nyomtatásakor nem használhatók."
+    }
+
     function showOptions() {
         if (!panel.controller) return
-        panel.options = panel.copyOptions(panel.controller.printOptions())
+        panel.options = panel.copyOptions(panel.readOptions())
         panel.savedOptions = panel.copyOptions(panel.options)
-        panel.fontFamilies = panel.controller.printFontFamilies()
-        panel.textSizes = panel.controller.printTextSizes()
+        panel.fontFamilies = panel.readFontFamilies()
+        panel.textSizes = panel.readTextSizes()
         panel.visible = true
     }
 
@@ -80,18 +120,18 @@ Rectangle {
         var next = panel.copyOptions(panel.options)
         next[name] = value
         panel.options = next
-        panel.controller.setPrintOption(name, value)
+        panel.writeOption(name, value)
     }
 
     function applyChanges() {
         if (!panel.controller || !panel.editable) return
-        panel.options = panel.copyOptions(panel.controller.printOptions())
+        panel.options = panel.copyOptions(panel.readOptions())
         panel.optionsApplied()
     }
 
     function cancelChanges() {
         if (panel.controller && !panel.contactSheet)
-            panel.controller.restorePrintOptions(panel.savedOptions)
+            panel.restoreOptions(panel.savedOptions)
         panel.options = panel.copyOptions(panel.savedOptions)
         panel.closeRequested()
     }
@@ -119,7 +159,7 @@ Rectangle {
             Layout.fillWidth: true
             Text {
                 objectName: "printOptionsTitle"
-                text: qsTr("Border and text options")
+                text: "Szegély- és feliratopciók"
                 font.pixelSize: Theme.fontSize + 3
                 font.bold: true
                 color: Theme.ink
@@ -127,7 +167,7 @@ Rectangle {
             }
             PicasaButton {
                 objectName: "printOptionsCloseButton"
-                text: qsTr("Close")
+                text: "Bezárás"
                 onClicked: panel.cancelChanges()
             }
         }
@@ -136,8 +176,8 @@ Rectangle {
             objectName: "printOptionsDisabledText"
             visible: panel.contactSheet
             text: panel.controller
-                  ? panel.controller.printOptionsDisabledText()
-                  : qsTr("These options cannot be used when printing contact sheets.")
+                  ? panel.disabledText()
+                  : "Ezek a beállítások indexképek nyomtatásakor nem használhatók."
             color: Theme.textGray
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
@@ -156,7 +196,7 @@ Rectangle {
                 spacing: 6
 
                 Text {
-                    text: qsTr("Text source:")
+                    text: "Felirat forrása:"
                     color: Theme.ink
                     font.bold: true
                 }
@@ -179,7 +219,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: qsTr("Text placement:")
+                    text: "Felirat helye:"
                     color: Theme.ink
                     font.bold: true
                 }
@@ -204,7 +244,7 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: qsTr("Font:")
+                        text: "Betűtípus:"
                         color: Theme.ink
                     }
                     PicasaComboBox {
@@ -218,7 +258,7 @@ Rectangle {
                         onActivated: panel.setOption("textFont", textAt(currentIndex))
                     }
                     Text {
-                        text: qsTr("Size:")
+                        text: "Méret:"
                         color: Theme.ink
                     }
                     PicasaComboBox {
@@ -236,20 +276,20 @@ Rectangle {
 
                 CheckBox {
                     objectName: "printOptionWrapCheckBox"
-                    text: qsTr("Wrap text")
+                    text: "Szöveg tördelése"
                     checked: panel.options.wrap
                     enabled: panel.editable && panel.options.textSource !== 0
                     onClicked: panel.setOption("wrap", checked)
                 }
 
                 Text {
-                    text: qsTr("Border:")
+                    text: "Szegély:"
                     color: Theme.ink
                     font.bold: true
                 }
                 CheckBox {
                     objectName: "printOptionBorderCheckBox"
-                    text: qsTr("Print a border")
+                    text: "Szegély nyomtatása"
                     checked: panel.options.border
                     enabled: panel.editable
                     onClicked: panel.setOption("border", checked)
@@ -257,7 +297,7 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: qsTr("None")
+                        text: "Egyik sem"
                         color: Theme.textGray
                     }
                     Slider {
@@ -271,20 +311,20 @@ Rectangle {
                         onMoved: panel.setOption("borderSize", Math.floor(value * 1024))
                     }
                     Text {
-                        text: qsTr("Maximum")
+                        text: "Maximális"
                         color: Theme.textGray
                     }
                 }
                 CheckBox {
                     objectName: "printOptionBottomOnlyCheckBox"
-                    text: qsTr("Bottom only")
+                    text: "Csak alul"
                     checked: panel.options.borderEdge
                     enabled: panel.editable && panel.options.border
                     onClicked: panel.setOption("borderEdge", checked)
                 }
                 CheckBox {
                     objectName: "printOptionEvenBorderCheckBox"
-                    text: qsTr("Even-width border")
+                    text: "Egyenletes szélességű szegély"
                     checked: panel.options.evenBorder
                     enabled: panel.editable && panel.options.border
                     onClicked: panel.setOption("evenBorder", checked)
@@ -293,7 +333,7 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: qsTr("Text color:")
+                        text: "Szöveg színe:"
                         color: Theme.ink
                     }
                     Grid {
@@ -327,7 +367,7 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: qsTr("Border color:")
+                        text: "Szegély színe:"
                         color: Theme.ink
                     }
                     Grid {
@@ -366,18 +406,18 @@ Rectangle {
             Item { Layout.fillWidth: true }
             PicasaButton {
                 objectName: "printOptionsCancelButton"
-                text: qsTr("Cancel")
+                text: "Mégse"
                 onClicked: panel.cancelChanges()
             }
             PicasaButton {
                 objectName: "printOptionsApplyButton"
-                text: qsTr("Apply")
+                text: "Alkalmaz"
                 enabled: panel.editable
                 onClicked: panel.applyChanges()
             }
             PicasaButton {
                 objectName: "printOptionsOkButton"
-                text: qsTr("OK")
+                text: "OK"
                 enabled: panel.editable
                 accent: Theme.picasaGreen
                 onClicked: panel.acceptChanges()
