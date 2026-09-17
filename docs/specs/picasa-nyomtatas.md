@@ -577,3 +577,95 @@ lapszám csökkenésekor **magától visszaigazítja** a lapozót.
 | nyomtató neve | `printername` | megvan (`printerName`, `:72`) |
 | **papíradatok** | **`paperinfo`** | **NINCS** — a `PrintDialog.qml`-ben nincs papírméret-kijelző (a `print_controller.py:314` `pageLayout()`-ja megvan, de nem jelenik meg) |
 | állapotsor | `statustext` | megvan (a minőség-üzenet) |
+
+## ⛳ A 17 nyomtatási méret FIZIKAI mérete — az ugrótáblából (2026-09-17, 318. kör, #1401)
+
+*A lap eddig a 17 méretnek csak a NEVÉT és a magyar feliratát adta. A tényleges
+méret enélkül találgatás volt — az Útlevélkép (#1401) megvalósításához viszont
+szám kell.*
+
+### A forrás: `FUN_00776e20` — méret-azonosító → két hüvelyk-érték
+
+```
+0x00776e20  cmp eax, 0x11
+0x00776e31  jmp dword ptr [eax*4 + 0x007771ac]   ; 18 elemű ugrótábla
+```
+
+Minden ág két `float` konstanst tesz a `[esp+0xc]` (hosszabb oldal) és a
+`[esp+0x10]` (rövidebb oldal) rekeszbe. A kiolvasott értékek:
+
+| index | kulcs | `[esp+0xc]` | `[esp+0x10]` | ellenőrzés a NÉV ellen |
+|---:|---|---:|---:|---|
+| 1 | `e4x6` | **6,0** | **4,0** | ✅ 4×6 |
+| 2 | `e3x5` | **5,0** | **3,5** | ✅ 3,5×5 |
+| 3 | `e5x7` | **7,0** | **5,0** | ✅ 5×7 |
+| 4 | `e8x10` | **10,0** | **8,0** | ✅ 8×10 |
+| 5 | `eWallet` | **3,5** | **2,5** | — (a név nem mond méretet) |
+| 6 | `e3x4` | **4,0** | **3,0** | ✅ 3×4 |
+| 7 | `e4x5` | **5,0** | **4,0** | ✅ 4×5 |
+| **15** | **`ePassport`** | **2,0** | **2,0** | **NÉGYZET** |
+
+⭐ **A mérésnek saját kontrollja van:** öt méret neve számot is tartalmaz
+(`e4x6`, `e3x5`, `e5x7`, `e8x10`, `e3x4`, `e4x5`), és **mind az öt** pontosan
+a nevében álló számpárt adja vissza. Ha a tábla nem ez volna, ez nem jönne ki.
+
+⇒ **Az egység HÜVELYK** (a `e4x6` = 6,0/4,0, nem 152,4/101,6).
+
+### Az `ePassport` NÉGYZET — és ez egybevág a kivágással
+
+A passport-ág **egyetlen** konstanst olvas, és ugyanazt teszi mindkét
+rekeszbe:
+
+```
+0x00776ecb  fld  dword ptr [0x00cf3a48]   ; 2,0
+0x00776ed1  fst  dword ptr [esp + 0xc]
+0x00776ed5  fstp dword ptr [esp + 0x10]
+```
+
+⇒ **2,0 × 2,0 hüvelyk.** Ez független megerősítése a
+`picasa-menu-parancsok-viselkedes.md` 24. szakaszának, amely a **kivágást is
+NÉGYZETNEK** mérte ki (`0x00531faa`–`0x00531fc7`): a négyzet alakú kivágás és a
+négyzet alakú nyomat ugyanaz a döntés, két helyről olvasva.
+
+### A centiméteres méretek: külön ág, `0,3937`-es szorzóval
+
+A nyolc cm-es tétel (`e5x8cm` … `e20x25cm`, `eCDSize`) **közös ágra** megy
+(`0x00776f0a`): a méretet egy példány-tábla (`[objektum+0xa0]`) adja, és a kód
+megszorozza a `0x00cf3fe0`-en álló **0,3937** (`double`) értékkel — ez a
+**cm → hüvelyk** átváltás (1/2,54 = 0,3937008). ⇒ a tábla belül centiméterben
+tárol, a kimenet itt is hüvelyk.
+
+Az `eFullPage` (0) és az `eContact` (16) nem konstansból dolgozik: az előbbi a
+`0x007767e0`-t hívja (a lapból számol), az utóbbi az alapértelmezett ágra megy.
+
+### A `LayoutPassport` elrendező — ugyanaz a 2,0
+
+Az osztály vtáblája **`0x00cb3f80`** (a `-4`-en a `0x00d0cbe0`-es
+`RTTICompleteObjectLocator`, annak `+0x0c`-je a
+`LayoutPassport@ytPrinterHelper@@` típusleíró, `0x00d428d4`). A 0. rekesz
+(`0x00775660`) ugyanazt a **2,0**-t (`0x00cf3a48`) adja át **mindkét**
+méretként az ősosztály elrendezőjének (`[vtbl+4]` = `0x00778190`):
+
+```
+0x00775660  fld dword ptr [0xcf3a48]      ; 2,0
+0x00775672  fst  dword ptr [esp + 4]
+0x00775676  fstp dword ptr [esp]
+0x0077567a  call eax                      ; az os csempézője
+```
+
+*(A szomszédos osztály — `0x00775680` — a `0x00cf3fd8` = **3,5**-öt adja: az
+a Zsebméret elrendezője. Ugyanaz a minta, méretenként egy osztály.)*
+
+### Ami NYITVA marad
+
+**Hány példány fér egy lapra.** A darabszámot nem a `LayoutPassport` mondja
+meg, hanem az ősosztály csempézője (`0x00778190`) a lapmérettel és a
+margókkal. Út: a `0x00778190` törzse, és a lapméret forrása a nyomtatási
+munkában.
+
+*Forrás: `FUN_00776e20` (`0x00776e20`–`0x00776f45`), az ugrótábla
+`0x007771ac`; a konstansok `0x00cf39e8` = 6,0 · `0x00c7e4a4` = 4,0 ·
+`0x00cf3a58` = 5,0 · `0x00cf3fd8` = 3,5 · `0x00cf3fec` = 7,0 ·
+`0x00cf3b28` = 10,0 · `0x00c7cf84` = 8,0 · `0x00cf3fe8` = 2,5 ·
+`0x00c49618` = 3,0 · **`0x00cf3a48` = 2,0**; a cm-szorzó `0x00cf3fe0` =
+0,3937. A `LayoutPassport` vtáblája `0x00cb3f80`.*
