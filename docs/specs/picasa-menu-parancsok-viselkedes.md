@@ -2124,15 +2124,17 @@ hívási sorrendje adja.*
 kijelölés a **6. sor** (`0x0085d95e`), kivéve ha valamelyik elem egyezik a
 tárolt mérettel (`0x0085d9a5`).
 
-⛔ **NEGATÍV eredmény:** a lista **NEM** a filmkészítő statikus
+✅ **NEGATÍV eredmény:** a lista **NEM** a filmkészítő statikus
 betűméret-táblájából (`0x00c7e4f0`, 8…96) jön — a `0x0085d***`–`0x0085f***`
 tartomány **egyetlen** függvénye sem hivatkozik arra a címre (a teljes
-tartomány diszasszemblálva ellenőrizve). Hogy MI tölti fel a tömböt,
-**nincs mérve** — lásd a nyitott kérdést.
+tartomány diszasszemblálva ellenőrizve). A feltöltés forrása most megvan:
+a panelépítő (`0x0085d8a9`) a `panel+0x2b4` tömb címét a `0x008261c0`
+segédnek adja, amely a bináris `0x00c7dab8` címen lévő 16 dwordot másolja a
+tömbbe (39.10).
 
 ### 39.7 Nyitott kérdések mérlege (a 39. tételre)
 
-`0 nyílt · 6 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 7 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
@@ -2142,7 +2144,7 @@ tartomány diszasszemblálva ellenőrizve). Hogy MI tölti fel a tömböt,
 | mi a különbség OK / Alkalmaz / Mégse közt | **LEZÁRVA** — 39.3 |
 | van-e felirata a `usefilename`-nek | **LEZÁRVA (helyesbítés)** — van, „Fájlnév" (39.4) |
 | mi a `bordersize` skálája | **LEZÁRVA** — `0 … 1024`, a csúszka `0 … 1`-ének 1024-szerese, **csonkolva** (39.9) |
-| **honnan jön a betűméret-lista tartalma** | **BLOKKOLT** — a `[panel+0x2b4]` tömböt a `0x0085d3c0` konstruktor nullázza, a `0x0085df30` olvassa; a feltöltés helye a mérésből nem derül ki. **Megszerzés:** a `0x0085df30` (2165 b) célzott dekompilációja, vagy a futó Picasa listájának leolvasása. **A megvalósítást nem blokkolja:** a `textsize` alapértéke (12) és a tárolás módja megvan. **Szűkítve (39.8/c, 2026-09-03):** a `.tre` és az `i18n\printoptionstext.xml` sem hordoz tételeket ⇒ a lista **futásidőben** töltődik. |
+| **honnan jön a betűméret-lista tartalma** | **LEZÁRVA** — a panelépítő `0x0085d8a9` a `panel+0x2b4` tömböt a `0x008261c0` segédnek adja; ez a `0x00c7dab8` címen lévő 16 dwordos táblát másolja be. A konkrét értékek: `8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96` (39.10). |
 
 ### 39.8 A FELIRAT-RÉTEG és a szegélycsúszka — az i18n XML-ből (2026-09-03)
 
@@ -2194,9 +2196,9 @@ printoptions.tre:190  Property maxrows 7
 
 Mindkettő **legfeljebb 7 sort** mutat, és **egyik sem hordoz tételeket**: sem a
 `.tre`-ben, sem a `printoptionstext.xml`-ben nincs egyetlen betűméret vagy
-betűtípusnév sem. ⇒ a 39.7 blokkolt kérdése („honnan jön a betűméret-lista")
-**két további forrásra nézve is negatív**: nem a felületleíróból és nem az
-i18n-fájlból. Marad a `0x0085df30` célzott dekompilációja.
+betűtípusnév sem. ⇒ a 39.7 kérdése két forrásra nézve negatív: nem a
+felületleíróból és nem az i18n-fájlból. A `sizelist` tényleges forrását a
+`0x008261c0` segéd és a `0x00c7dab8` tábla adja (39.10).
 
 ### 39.9 ⭐ A szegélycsúszka SKÁLÁJA — `0 … 1024` (2026-09-15, #1780)
 
@@ -2279,6 +2281,40 @@ kibontása a `Picasa3i18n.dll`-ből.
 **A gyakorlati következmény független ettől:** a szolgáltatás megszűnt, tehát
 **ezt a két buboréksúgót nem vesszük át** — nálunk a nyomtatásra kell
 vonatkozniuk. A többi 25 bejegyzés változatlanul átvehető.
+
+### 39.10 A `textsize` lista panel-ágának keresztellenőrzése (2026-09-17, #1780)
+
+*Az értéklista már le van zárva a `picasa-ini-format.md` 8.6. szakaszában
+(#2287). Ez a szakasz a `printoptions` panel saját feltöltési láncát méri
+hozzá, nem új értéklistát vezet be.*
+
+A `sizelist` listadoboz tartalmát a panelépítő nem a `.tre`-ből és nem az
+i18n-erőforrásból olvassa. A `panel+0x2b4` tömb címét átadja a
+`0x008261c0` segédnek. A segéd a tömb kapacitását a `[panel+0x2b8]` mezőből
+kezeli, majd a `0x00c7dab8` címen lévő **16 darab, 32 bites egész** értéket
+`0x40` bájton keresztül bemásolja a tömbbe:
+
+```
+0x008262b0  mov ecx, dword ptr [eax + 0xc7dab8]
+0x008262b6  mov edx, dword ptr [esi]
+0x008262b8  mov dword ptr [eax + edx], ecx
+0x008262bb  add eax, 4
+0x008262be  cmp eax, 0x40
+```
+
+A nyers PE-adatblokk (kis endian, 64 bájt) értékei:
+
+```
+8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96
+```
+
+Ezután a panel `0x0085d97e`–`0x0085d991` ciklusa minden értéket `%d`-ként
+formáz a listába; a kiválasztott érték a `0x0085e5a2`–`0x0085e5af` ágon a
+`printoptions::textsize` kulcsba kerül. A listának tehát 16 eleme van, a
+felületen egyszerre legfeljebb 7 látható (`maxrows 7`).
+
+**Bizonyítottság:** megerősített — a célzott dekompiláció és a
+`0x00c7dab8` 64 bájtos nyers PE-kiolvasása ugyanazt a 16 értéket adja.
 ## 40. tétel — a `printpanel`: DPI-ŐR, példányszám és a megjegyzett méret (2026-08-31)
 
 *Második kör az UI-lefedettségi axisról (#1778). Panel: `printpanel` —
@@ -5911,25 +5947,50 @@ még két név áll, hivatkozásokkal:
 ⇒ a szegélyvastagság **csúszka** (a 39. tétel „Méret" választója), és van egy
 `border_options` gyűjtő is.
 
-### 3. Ami NYITVA marad — élesebb úttal
+### 3. A színkódolás — LEZÁRVA (2026-09-17, #1780)
 
-A szín-kódolás és a `bordersize` egysége **nem a beolvasónál dől el**: a
-fogyasztó (`0x00776180`) a kiolvasott számokat változtatás nélkül teszi a
-beállítás-objektum mezőibe. A mezőtérkép (ez a kör mérte):
+A `printoptions::textcolor` és `printoptions::bordercolor` értéke egyetlen
+32 bites, **`0xAARRGGBB` alakú** dword. A bizonyíték két független lépésből áll:
 
-| kulcs | mező |
-|---|---|
-| `bordersize` | `+0x84` (`0x007762fc`) |
-| `bordercolor` | `+0x88` (`0x0077633f`) |
-| `borderedge` | `+0x8c` (`0x00776382`) |
-| `textplacement` | `+0x70` (`0x0077644c`) |
-| `textsize` | `+0x78` (`0x00776490`) |
-| `textcolor` | `+0x74` (`0x007764d0`) |
+1. A `CPrintOptionsDialog` színírója (`0x0085f2b0`) a négy bemeneti bájtot
+   változtatás nélkül, `b3 << 24 | b2 << 16 | b1 << 8 | b0` alakban csomagolja;
+   ugyanaz az ág írja a `textcolor`-t (`0x0085f31d`–`0x0085f32b`) és a
+   `bordercolor`-t (`0x0085f346`–`0x0085f368`). Nincs csatornacsere vagy
+   szorzás.
+2. A rajzoló `textcolor`-fogyasztója (`0x008623c0`) a beállítás-objektum
+   `+0x74` mezőjét változtatás nélkül továbbadja (`0x008629b1`–`0x008629c8`)
+   a `0x009a9a70` képpuffer-segédnek. A segéd minden képpontnál a felső
+   bájtot megőrzi (`and 0xff000000`), az alsó 24 bitet pedig közvetlenül
+   beírja (`or edi`, `0x009a9aa1`–`0x009a9aab`). A nyomtatási puffer mért
+   bájtsorrendje BGRA, ezért a tárolt dword numerikusan `0xAARRGGBB`.
 
-⇒ A következő lépés **nem** a beolvasó, hanem e mezők **olvasói** a rajzoló
-oldalon: ott derül ki a csatorna-sorrend (`+0x74`, `+0x88`) és a
-szegélyvastagság egysége (`+0x84`).
+**Implementációs jelentés:** a PicasaPy-nek a két preferenciaértéket dwordként,
+`0xAARRGGBB` numerikus alakban kell tartania; a Qt- vagy platformszínobjektum
+bemeneti alakját ezen a határon explicit módon erre kell konvertálni. A
+csatornasorrend most már nem nyitott kérdés.
 
-*Forrás: `0x0085e800` (az író névre illesztő ágai), `0x00776180` (a
-fogyasztó mezőtárolásai), a `printoptions/*` elemnevek a `0x00cc38b0`–
-`0x00cc3a04` blokkban.*
+### 4. A `bordersize` egysége és skálája — LEZÁRVA (2026-09-17, #1780)
+
+A `bordersize` nem képpont-, DPI- vagy pontérték: a panel egy normalizált
+csúszkájának **0…1024-es egész skálára kvantált** beállítása.
+
+- Betöltéskor a tárolt dword (`CPrintOptionsDialog +0x278`) lebegőpontosan
+  `0,0009765625`-tel, azaz `1/1024`-gyel szorzódik
+  (`0x0085dc30`–`0x0085dc53`, konstans `0x00cf3f68`). Az eredmény a
+  `printborderslider/scaleslider` vezérlőbe kerül a `0x009ddc90` segéden át.
+- Mentéskor a csúszka lebegőpontos értékét a `0x009ddd00` olvassa ki
+  (`0x009ddd23`–`0x009ddd2f`), majd `1024,0`-gyel szorozza
+  (`0x0085e659`–`0x0085e663`, konstans `0x00cf4218`) és csonkoló `fistp`-vel
+  egész dwordként írja vissza (`0x0085e668`–`0x0085e682`).
+- A két konstans értéke a bináris `.rdata`-jából közvetlenül kiolvasva:
+  `0x00cf3f68 = 0,0009765625`, `0x00cf4218 = 1024,0`.
+- A csúszka nullája kikapcsolja a szegély-opciókat (`0x0085e682`–
+  `0x0085e6b9`), de a korábbi tárolt `bordersize` érték megmarad; betöltéskor
+  ezért a `border` logikai állapot és a vastagság külön kezelendő.
+
+Az alapérték **10**, tehát a tárolt skálaérték `10/1024`; a tárolt értéket
+nem szabad közvetlen képpontként vagy fizikai nyomtatási egységként kezelni.
+
+*Forrás: a panel-frissítő `0x0085d550`, a panel-esemény/mentési ág
+`0x0085df30`, a slider getter/setter `0x009ddd00`/`0x009ddc90`, valamint a
+`0x00cf3f68` és `0x00cf4218` `.rdata` konstansok.*
