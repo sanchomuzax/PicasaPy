@@ -493,6 +493,25 @@ def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
     return indulasi_koltozo.eredmeny
 
 
+def allitsd_be_a_stilust() -> None:
+    """A Quick Controls stílusa: `PicasaStyle`, tartalékként `Fusion` (#901).
+
+    A saját stílus EGYETLEN vezérlőt visz — a buboréksúgót
+    (`qml/PicasaStyle/ToolTip.qml`): a felület mind a 24 `ToolTip`-használata
+    a Qt CSATOLT alakját használja, az pedig egyetlen, a stílustól kapott
+    példányt jelenít meg. Így lett „egy hely" a buborékból anélkül, hogy a
+    lebegtetés/pozicionálás logikáját 253 hívóhelyen átírnánk.
+
+    Minden más vezérlő a `Fusion` tartalékra esik — ez a Quick Controls
+    dokumentált viselkedése, és pontosan a korábbi állapotot adja.
+
+    A függvény a tesztekből is hívható: a stílus FOLYAMAT-szintű, tehát a
+    QML-motor létrehozása ELŐTT kell beállítani.
+    """
+    QQuickStyle.setFallbackStyle("Fusion")
+    QQuickStyle.setStyle("PicasaStyle")
+
+
 def _force_qml_dialogs(platform: str = sys.platform) -> bool:
     """Kényszerítsük-e a saját (nem natív) QML-dialógusokat.
 
@@ -1018,7 +1037,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         QGuiApplication.setAttribute(
             Qt.ApplicationAttribute.AA_DontUseNativeDialogs
         )
-    QQuickStyle.setStyle("Fusion")
+    allitsd_be_a_stilust()
 
     # Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67)
     _set_windows_app_id()

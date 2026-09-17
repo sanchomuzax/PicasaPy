@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.510] – 2026-09-17
+
+### Megváltozva
+
+- **A buboréksúgók mostantól egyetlen, közös megjelenést kapnak** (#901) —
+  eddig a Qt alapértelmezett buborékja jelent meg, felületenként ugyanúgy,
+  de közös hely nélkül. A súgó kerete és háttere innentől a PicasaPy saját
+  színeiből jön, a késleltetés pedig a korábban kimért 600 ezredmásodperc.
+  Ez egyben előkészítés is: ha az eredeti Picasa buborékjának rajza egyszer
+  kiolvasható lesz a programfájlból, egyetlen helyen kell átírni.
+
 ## [0.8.509] – 2026-09-17
 
 ### Megváltozva

@@ -151,6 +151,12 @@ def _build_qml_app(
     # és a puszta létrehozása is bejelentkezne a folyamat-szintű
     # pool-nyilvántartásba. Az `application.py` változatlanul a valódit
     # köti be; azt saját, motor nélküli tesztek mérik.
+    # #901: a felület-tesztek UGYANAZZAL a Quick Controls-stílussal
+    # fussanak, amivel az éles app indul (`PicasaStyle`, tartalék `Fusion`)
+    # — különben a stílus cseréje a teljes tesztkészleten át NÉMÁN
+    # maradna fedezetlen. A beállítás folyamat-szintű, és a motor
+    # létrehozása ELŐTT kell megtörténnie.
+    app_module.allitsd_be_a_stilust()
     engine = QQmlApplicationEngine()
     # ⚠️ #1457: a QML-motor SZINKRON szolgáltatót kap. A termékkód
     # aszinkron marad; itt a pool-szálak és a válasz-objektumok csak a
