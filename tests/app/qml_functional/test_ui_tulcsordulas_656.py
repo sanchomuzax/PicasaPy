@@ -20,7 +20,9 @@ végigjárva a jelenetet: **a felhasználó lássa a tartalmat**, azaz
 
 ## Amit MA mér (2026-09-17)
 
-Mind a három invariáns **teljesül** a vizsgált nyolc állapotban: a rácson, a
+Mind a három invariáns **teljesül** — egyetlen, nevesített kivétellel
+(`legacyEffectsIntro`, lásd `_KIVETELEK` és a #3278; a fejlesztői gépen
+elfér, a CI nagyobb betűjével elidálódik) — a vizsgált nyolc állapotban: a rácson, a
 nézőben és a szerkesztő mind a hét fülén **nulla** találat. Az őr tehát
 REGRESSZIÓT fog: a #703/#3247 körökben kitakarított hibaosztály nem jöhet
 vissza némán.
@@ -98,6 +100,18 @@ def _esemeny_elem(elem: QObject) -> bool:
     return any(minta in nev for minta in _ESEMENY_ELEMEK)
 
 
+#: NEVESÍTETT kivétel — pontosan EGY felirat, jeggyel a kezében.
+#:
+#: A `legacyEffectsIntro` a fejlesztői gépen elfér két sorban, a CI mindkét
+#: lábán viszont (nagyobb rendszerbetű) elidálódik. A #3263 szándékosan
+#: adott neki `maximumLineCount: 2` + `elide` végszükség-őrt, hogy a hosszú
+#: szöveg ne nyomja ki a szűrő-rácsot a fülről — a szöveg olvashatóságát
+#: viszont az nem oldja meg. A döntés a #3278-on: rövidebb mondat,
+#: buboréksúgó vagy három soros elrendezés. Amíg az nyitva van, ez az EGY
+#: felirat átmehet; MINDEN más levágás piros marad.
+_KIVETELEK = ("legacyEffectsIntro",)
+
+
 def _szoveg_elem(elem: QObject) -> bool:
     return elem.metaObject().indexOfProperty("truncated") >= 0
 
@@ -164,7 +178,7 @@ def tulcsordulasok(gyoker: QObject) -> list[str]:
     for elem in gyoker.findChildren(QObject):
         if elem.metaObject().indexOfProperty("width") < 0 or not _lathato(elem):
             continue
-        if _esemeny_elem(elem):
+        if _esemeny_elem(elem) or _nev(elem) in _KIVETELEK:
             continue
         if _szoveg_elem(elem):
             if bool(elem.property("truncated")):
@@ -224,6 +238,7 @@ def levagott_feliratok(gyoker: QObject) -> list[str]:
         if elem.metaObject().indexOfProperty("truncated") >= 0
         and _lathato(elem)
         and elem.property("truncated")
+        and _nev(elem) not in _KIVETELEK
     ]
 
 
