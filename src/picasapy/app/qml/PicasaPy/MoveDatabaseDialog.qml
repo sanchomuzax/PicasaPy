@@ -6,10 +6,12 @@ import QtQuick.Layouts
 // Adatbázis áthelyezése (#368, `move_database.fen` + `moving_database.fen`):
 // az index-SQLite + a thumbnail-cache átköltöztetése új mappába.
 //
-// A FEN-eredetiben KÉT külön ablak van (a választó + a haladásjelző) — itt
-// EGY, önálló, mozgatható/átméretezhető Window-ba vonva (a DedupDialog/
-// ImportSourceDialog mintája), a haladás-szakasz csak áthelyezés közben
-// látszik. Az eredeti "ne hálózati/cserélhető meghajtóra helyezze át"
+// A FEN-eredetiben KÉT külön ablak van, és NEM egyszerre: ez itt a VÁLASZTÓ
+// (`move_database.fen`), a haladásjelző (`moving_database.fen`) pedig a
+// KÖVETKEZŐ induláskor jelenik meg — a mért eredeti a gombra csak szándékot
+// rögzít, és a másolás indulásnál fut (#3214, `StartupRelocateWindow.qml`).
+// Ez az ablak ezért soha nem költöztet: kiválaszt, ellenőriztet, előjegyez.
+// Az eredeti "ne hálózati/cserélhető meghajtóra helyezze át"
 // figyelmeztetés NÁLUNK NEM igaz — a PicasaPy-nál a NAS/hálózati mappa a
 // NORMÁL használati eset (CLAUDE.md 7. döntés, "ismételhető migráció"), a
 // szöveg ezért erre a tényre hívja fel a figyelmet ahelyett, hogy
@@ -20,7 +22,7 @@ Window {
     title: qsTr("Move Database")
     modality: Qt.ApplicationModal
     width: 560
-    height: relocating || lastResultLocation.length > 0 ? 360 : 300
+    height: scheduledLocation.length > 0 ? 340 : 300
     minimumWidth: 480
     minimumHeight: 260
     color: Theme.canvasBg
@@ -39,54 +41,31 @@ Window {
             ? fileOpsController.toLocalPath(moveDatabaseWindow.newLocation)
             : moveDatabaseWindow.newLocation.replace(/^file:\/\//, "")
 
-    property bool relocating: false
-    property string progressPhase: ""
-    property int progressDone: 0
-    property int progressTotal: 0
-
     property string lastError: ""
-    property string lastResultLocation: ""  // sikeres áthelyezés után az új hely
-    property bool lastCancelled: false
+    //: a KÖVETKEZŐ indulásra előjegyzett cél (#3214) — üres, ha nincs ilyen
+    property string scheduledLocation: ""
 
     function open() {
         moveDatabaseWindow.newLocation = ""
         moveDatabaseWindow.lastError = ""
-        moveDatabaseWindow.lastResultLocation = ""
-        moveDatabaseWindow.lastCancelled = false
+        moveDatabaseWindow.scheduledLocation = ""
         moveDatabaseWindow.visible = true
     }
 
     function startMove() {
         if (moveDatabaseWindow.newLocation.length === 0) return
         moveDatabaseWindow.lastError = ""
-        moveDatabaseWindow.lastCancelled = false
         relocateController.startRelocate(moveDatabaseWindow.newLocation)
     }
 
     Connections {
         target: typeof relocateController !== "undefined" ? relocateController : null
-        function onRelocateStarted() {
-            moveDatabaseWindow.relocating = true
-            moveDatabaseWindow.progressPhase = ""
-            moveDatabaseWindow.progressDone = 0
-            moveDatabaseWindow.progressTotal = 0
-        }
-        function onRelocateProgress(phase, done, total) {
-            moveDatabaseWindow.progressPhase = phase
-            moveDatabaseWindow.progressDone = done
-            moveDatabaseWindow.progressTotal = total
-        }
-        function onRelocateFinished(newRoot) {
-            moveDatabaseWindow.relocating = false
-            moveDatabaseWindow.lastResultLocation = newRoot
+        function onRelocateScheduled(newRoot) {
+            moveDatabaseWindow.scheduledLocation = newRoot
         }
         function onRelocateFailed(message) {
-            moveDatabaseWindow.relocating = false
+            moveDatabaseWindow.scheduledLocation = ""
             moveDatabaseWindow.lastError = message
-        }
-        function onRelocateCancelled() {
-            moveDatabaseWindow.relocating = false
-            moveDatabaseWindow.lastCancelled = true
         }
     }
 
@@ -100,10 +79,11 @@ Window {
         Text {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
+            //: #3214: a költözés a KÖVETKEZŐ induláskor fut le — ezért NEM
+            //: kérünk külön újraindítást, ahogy a mért eredeti sem.
             text: qsTr(
                 "Move the photo index and thumbnail cache to a new folder. "
-                + "A restart is required afterwards for the change to take "
-                + "effect.")
+                + "PicasaPy moves them the next time it starts.")
             font.pixelSize: Theme.fontSize
             color: Theme.textGray
         }
@@ -141,7 +121,6 @@ Window {
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 2
-            enabled: !moveDatabaseWindow.relocating
             Text {
                 text: qsTr("New database location:")
                 font.pixelSize: Theme.fontSize
@@ -185,57 +164,12 @@ Window {
         }
 
         Text {
-            objectName: "moveDatabaseCancelledText"
-            visible: moveDatabaseWindow.lastCancelled
-            text: qsTr("Move cancelled — nothing was changed.")
-            color: Theme.textGray
-            font.pixelSize: Theme.fontSize
-        }
-
-        // -- haladás-nézet (`moving_database.fen`) ---------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            visible: moveDatabaseWindow.relocating
-            spacing: 6
-
-            Text {
-                text: qsTr("PicasaPy is moving the database.")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 8
-                radius: 4
-                color: Theme.trackBg
-                border.color: Theme.chromeBorder
-
-                Rectangle {
-                    objectName: "moveDatabaseProgressFill"
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    radius: parent.radius
-                    color: Theme.picasaGreen
-                    width: moveDatabaseWindow.progressTotal > 0
-                           ? parent.width * moveDatabaseWindow.progressDone
-                                 / moveDatabaseWindow.progressTotal
-                           : 0
-                }
-            }
-
-            PicasaButton {
-                objectName: "moveDatabaseCancelProgressButton"
-                text: qsTr("Cancel")
-                onClicked: relocateController.cancelRelocate()
-            }
-        }
-
-        Text {
             objectName: "moveDatabaseResultText"
-            visible: moveDatabaseWindow.lastResultLocation.length > 0
-            text: qsTr("Database moved. Restart PicasaPy for the change to take effect.")
+            visible: moveDatabaseWindow.scheduledLocation.length > 0
+            //: #3214: a költözés a KÖVETKEZŐ induláskor fut le — a mért
+            //: eredeti is így teszi, és így a másolás nem fut olyankor,
+            //: amikor a program még a régi helyet használja.
+            text: qsTr("PicasaPy will move the database the next time it starts.")
             color: Theme.picasaGreen
             font.pixelSize: Theme.fontSize
             wrapMode: Text.WordWrap
@@ -253,14 +187,21 @@ Window {
                 text: qsTr("Move on next restart")
                 accent: Theme.picasaGreen
                 enabled: moveDatabaseWindow.newLocation.length > 0
-                         && !moveDatabaseWindow.relocating
-                         && moveDatabaseWindow.lastResultLocation.length === 0
+                         && moveDatabaseWindow.scheduledLocation.length === 0
                 onClicked: moveDatabaseWindow.startMove()
+            }
+            PicasaButton {
+                objectName: "moveDatabaseUndoScheduleButton"
+                text: qsTr("Cancel the move")
+                visible: moveDatabaseWindow.scheduledLocation.length > 0
+                onClicked: {
+                    relocateController.cancelScheduledRelocate()
+                    moveDatabaseWindow.scheduledLocation = ""
+                }
             }
             PicasaButton {
                 objectName: "moveDatabaseCloseButton"
                 text: qsTr("Close")
-                enabled: !moveDatabaseWindow.relocating
                 onClicked: moveDatabaseWindow.visible = false
             }
         }

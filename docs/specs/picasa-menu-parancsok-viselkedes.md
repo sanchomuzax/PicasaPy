@@ -5739,6 +5739,24 @@ ablakban nincs rá törlés-hívás; ha nem törlődik, az „egyszer fut le"
 garanciát az adja, hogy a két kulcs egyenlővé válik — ez **nincs
 igazolva**.
 
+#### Nálunk (2026-09-17, #3214)
+
+A séma átvéve, ugyanezzel a két lépéssel:
+
+| lépés | nálunk |
+|---|---|
+| a szándék | `data-location-pending.txt` a konfig-mappában (`app/data_location.py`) |
+| az író | `RelocateController.startRelocate` — a cél ELLENŐRZÉSE után, fájlmozgás nélkül |
+| az olvasó + a költöztető | `app/startup_relocate.py`, a tárhely-előkészítés ELŐTT hívva (`application.py`) |
+| a haladásjelző | `qml/StartupRelocateWindow.qml` (a `moving_database.fen` megfelelője) |
+| az élő útvonal átírása | `write_data_root`, az integritás-ellenőrzés után (`on_verified`) |
+
+⚠️ A szándék TÖRLÉSE — amit a bináris nem árult el — nálunk **saját,
+kimondott döntés**: sikeres ÉS sikertelen költözés után is elfogy. Ok: egy
+elérhetetlenné vált cél különben minden indulást megfogna, és a felhasználó
+a saját gépén nem tudná megkerülni. A hiba nem vész el: az indulás kiírja,
+a program pedig a RÉGI helyről indul tovább.
+
 ### 9. Geometria
 
 A `.fen` `width="fit"`, a `new_location` mező `25em`; a többi a

@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.509] – 2026-09-17
+
+### Megváltozva
+
+- **Az adatbázis áthelyezése a következő indításkor történik meg**, nem
+  azonnal (#3214) — így működik az eredeti Picasa is. Az „Áthelyezés a
+  következő újraindításkor" gomb mostantól csak előjegyzi a költözést (a
+  párbeszéd azonnal bezárható), a másolás pedig a PicasaPy következő
+  indulásakor fut le, saját haladásjelző ablakban. Két előnye van: a
+  másolás nem fut olyankor, amikor a program még a régi helyet használja,
+  és utána nem kell külön újraindítani — a program már az új helyről indul.
+  Az előjegyzés a párbeszédből visszavonható. A régi példány — mint eddig —
+  a Lomtárba kerül, a cél ellenőrzése pedig továbbra is megelőzi a
+  műveletet.
+
 ## [0.8.508] – 2026-09-17
 
 ### Megváltozva
