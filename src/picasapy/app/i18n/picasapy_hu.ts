@@ -2826,6 +2826,10 @@
         <translation>Videó mérete:</translation>
     </message>
     <message>
+        <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
+        <translation>A film képei és a diaidő a projektfájlból jönnek; a méret az alapértelmezésről indul.</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146"/>
         <source>Seconds per picture:</source>
         <translation>Másodperc per kép:</translation>
@@ -4817,6 +4821,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Edit the collage from which this image was created</source>
         <translation>A kép alapjául szolgáló kollázs szerkesztése</translation>
+    </message>
+    <message>
+        <source>Edit Movie</source>
+        <translation>Mozgófilm szerkesztése</translation>
+    </message>
+    <message>
+        <source>Edit the movie presentation</source>
+        <translation>Mozgófilmes prezentáció szerkesztése</translation>
     </message>
     <message>
         <source>Start slideshow</source>

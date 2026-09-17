@@ -39,8 +39,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from xml.etree import ElementTree
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, QUrl, Signal, Slot
 
 from picasapy.collage import write_collage
 from picasapy.collage.autosave import (
@@ -58,6 +59,8 @@ from picasapy.movie.mxf import (
     MxfAtmenet,
     MxfForras,
     MxfProjekt,
+    projekt_utvonal,
+    read_mxf,
     write_mxf,
 )
 
@@ -437,6 +440,68 @@ class CreateMixin(BackgroundWorkerMixin):
                 for i, ut in enumerate(sources)
             ),
         )
+
+    # -- #2114: a film KIMENETÉTŐL vissza a projekthez ---------------------
+    #
+    # Az eredetiben a szerkesztő két ikergombot ismer — `editpanel/editcollage`
+    # („Kollázs szerkesztése") és `editpanel/editslideshow` („Mozgófilm
+    # szerkesztése") —, ugyanabban a kezelőben (`0x00567a00`), mindkettő
+    # `m_hidden`: csak akkor jön elő, ha a megnyitott fájl egy PROJEKT
+    # kimenete. A kollázs-ág nálunk a `.cxf`-en áll (`hasCollageProject`);
+    # a film-ág feltétele a #3191 óta adott, mert a kimenet mellé kiírjuk a
+    # `.mxf`-et.
+
+    @staticmethod
+    def _film_projekt_utja(video_path: str) -> Path | None:
+        """A kimenet melletti `.mxf`, ha létezik (#2114).
+
+        A KERESÉST a `movie.mxf.projekt_utvonal` végzi (#3191 óta megvan,
+        a `collage_save._collage_project_path` párja); itt csak az
+        URL-alakot bontjuk vissza, mert a QML `file://`-ként adja tovább a
+        néző útvonalát — enélkül a gomb SOSEM jelenne meg."""
+        nyers = str(video_path or "")
+        if not nyers:
+            return None
+        if nyers.startswith("file://"):
+            nyers = QUrl(nyers).toLocalFile()
+        return projekt_utvonal(nyers)
+
+    @Slot(str, result=bool)
+    def hasMovieProject(self, video_path: str) -> bool:  # noqa: N802
+        """Van-e a filmnek `.mxf` párja — vagyis szerkeszthető-e (#2114).
+
+        A `hasCollageProject` ikerpárja: nem a létrehozás emléke kapcsolja
+        be a gombot, hanem a fájl mellett álló projektfájl."""
+        return CreateMixin._film_projekt_utja(video_path) is not None
+
+    @Slot(str, result="QVariantMap")
+    def movieProject(self, video_path: str):  # noqa: N802
+        """A film projektje a felületnek: forrásképek + diaidő (#2114).
+
+        Üres szótár, ha nincs (vagy nem olvasható) projektfájl — a visszaút
+        nem boríthatja a felületet.
+
+        ⛔ A **felbontás nincs benne**: a `_film_projekt` a `curresolution`
+        mezőt nem tölti ki (a jelentése a mi modellünkben nincs mérve),
+        ezért az újranyitás a felbontás alapértelmezését hozza. Ezt a hívó
+        felület mondja ki a felhasználónak — találgatott érték nem megy a
+        projektbe."""
+        ut = CreateMixin._film_projekt_utja(video_path)
+        if ut is None:
+            return {}
+        try:
+            projekt = read_mxf(ut)
+        except (OSError, ValueError, ElementTree.ParseError) as hiba:
+            logger.warning("a film projektfájlja nem olvasható: %s", hiba)
+            return {}
+        return {
+            "sources": [
+                atmenet.forras.filename
+                for atmenet in projekt.atmenetek
+                if atmenet.forras.filename
+            ],
+            "seconds": float(projekt.defaulttrans.advanceinterval),
+        }
 
     @Slot(list, str, int, float)
     @Slot(list, str, int, float, int)

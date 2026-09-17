@@ -356,6 +356,40 @@ ApplicationWindow {
         A nézőt elhagyjuk (#1055): a kollázs panelje `!viewerOpen`-re
         látszik, tehát enélkül a lap megnyílna, és a felhasználó közben a
         képet nézné. */
+    /** #2114: a FILM újranyitása a projektfájljából.
+
+        Az eredeti „Mozgófilm szerkesztése" gombja a forrásprojektet nyitja
+        meg; nálunk a filmkészítő párbeszéd a szerkesztő felülete, ezért a
+        projekt képeit KIJELÖLJÜK, és a párbeszéd a projekt diaidejével jön
+        fel. A forrásképek tipikusan nem a jelenlegi nézetben állnak — a
+        `locateSavedCollage` mintájára előbb a mappájukra állunk. */
+    function openSavedMovie(path) {
+        if (!controller) return
+        var cel = String(path || "")
+        if (cel.length === 0) return
+        var projekt = controller.movieProject(cel)
+        if (!projekt || !projekt.sources || projekt.sources.length === 0) return
+        var elso = String(projekt.sources[0])
+        if (controller.photos.rowOfPath(elso) < 0) {
+            var mappa = window.folderOfPath(elso)
+            if (mappa.length > 0) controller.selectFolder(mappa)
+        }
+        var sorok = []
+        for (var i = 0; i < projekt.sources.length; ++i) {
+            var sor = controller.photos.rowOfPath(String(projekt.sources[i]))
+            if (sor >= 0) sorok.push(sor)
+        }
+        //: ha egyetlen forráskép sincs meg (törölt/áthelyezett mappa), a
+        //: párbeszéd megnyitása félrevezető volna — a gomb inkább ne
+        //: csináljon semmit, mint hogy MÁS képekből ajánljon filmet (#936)
+        if (sorok.length === 0) return
+        window.viewerOpen = false
+        documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+        window.selectedIndex = sorok[0]
+        window.selectedIndexes = sorok
+        createDialogs.ensure().openMovieProject(projekt.seconds)
+    }
+
     function openSavedCollage(path) {
         if (!controller) return
         var cel = String(path || "")
@@ -1921,6 +1955,11 @@ ApplicationWindow {
         // a gazdáé, ugyanúgy, ahogy a `CollagePanel` jelzéseinél.
         onEditCollageRequested: function(path) {
             window.openSavedCollage(path)
+        }
+        //: #2114: a film forrásprojektje — a `.mxf` képeit kijelöljük, és
+        //: a filmkészítő párbeszéd a projekt diaidejével nyílik.
+        onEditMovieRequested: function(path) {
+            window.openSavedMovie(path)
         }
         onClosed: {
             window.viewerOpen = false
