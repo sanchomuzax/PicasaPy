@@ -53,6 +53,8 @@ def _kapu(hook: str, cmd: str) -> int:
         input=json.dumps({"tool_input": {"command": cmd}, "cwd": str(_HOOKOK)}),
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     ).returncode
 
 
