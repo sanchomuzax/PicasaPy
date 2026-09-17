@@ -241,6 +241,7 @@ Window {
                         + "install it with: "
                         + "sudo apt install python3-pyside6.qtprintsupport")
         printWindow.printers = printWindow.printCtl ? printWindow.printCtl.listPrinters() : []
+        printOptionsPanel.visible = false
         printWindow.visible = true
     }
 
@@ -364,6 +365,18 @@ Window {
                     onValueModified: printWindow.contactColumns = value
                 }
             }
+        }
+
+        // -- szegély és felirat (#1780) -----------------------------------
+        PicasaButton {
+            objectName: "printOptionsButton"
+            Layout.fillWidth: true
+            text: qsTr("Border and text options...")
+            enabled: printWindow.printCtl !== null
+            ToolTip.text: qsTr("Configure borders and text for printed pictures")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: printOptionsPanel.showOptions()
         }
 
         // -- nyomatméret + minőség-ellenőrzés (#1782) ---------------------
@@ -767,6 +780,16 @@ Window {
                 onClicked: printWindow.visible = false
             }
         }
+    }
+
+    PrintOptionsPanel {
+        id: printOptionsPanel
+        objectName: "printOptionsPanel"
+        anchors.fill: parent
+        controller: printWindow.printCtl
+        contactSheet: printWindow.contactSheet
+        onOptionsApplied: printWindow.frissitsdAzElonezetet()
+        onCloseRequested: printOptionsPanel.visible = false
     }
 
     // #1953: az „Ellenőrzés" eredménye — MELYIK képek esnek a küszöb alá.

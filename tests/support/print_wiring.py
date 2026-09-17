@@ -15,7 +15,7 @@ saját `skipif`-jükkel maradnak ki.
 from __future__ import annotations
 
 
-def wire_print(engine, photo_source):
+def wire_print(engine, photo_source, settings=None):
     """A vezérlő létrehozása és regisztrálása — az `application.py` tükre.
 
     A visszatérési érték a vezérlő (hiányzó QtPrintSupport esetén `None`);
@@ -27,6 +27,9 @@ def wire_print(engine, photo_source):
         engine.rootContext().setContextProperty("printController", None)
         return None
 
-    print_controller = PrintController(photo_source=photo_source)
+    print_controller = PrintController(
+        photo_source=photo_source,
+        settings=settings,
+    )
     engine.rootContext().setContextProperty("printController", print_controller)
     return print_controller

@@ -257,7 +257,11 @@ def _build_qml_app(
     # A `Main.qml` `PrintDialog`-ja `typeof`-őr mögül hivatkozik rá, tehát
     # enélkül a nyomtatás felületi útja NÉMÁN méretlen maradna.
     # a névre kötés életben tartja a vezérlőt, amíg a motor él
-    _print_controller = wire_print(engine, lambda: controller.photos.photos)
+    _print_controller = wire_print(
+        engine,
+        lambda: controller.photos.photos,
+        settings=settings,
+    )
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))

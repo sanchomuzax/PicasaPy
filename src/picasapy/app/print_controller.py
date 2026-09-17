@@ -50,7 +50,15 @@ from PySide6.QtCore import (
     Slot,
 )
 from PySide6.QtCore import QMarginsF
-from PySide6.QtGui import QFont, QImage, QPageLayout, QPageSize, QPainter
+from PySide6.QtGui import (
+    QFont,
+    QFontDatabase,
+    QImage,
+    QPageLayout,
+    QPageSize,
+    QPainter,
+    QPen,
+)
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
 from picasapy.app.busy_registry import get_app_busy_registry
@@ -74,6 +82,16 @@ from picasapy.printing.layout import (
     PrintOrientation,
     compute_print_layout,
     resolve_orientation,
+)
+from picasapy.printing.options import (
+    BORDER_SIZE_MAX,
+    TEXT_SIZE_VALUES,
+    PrintOptions,
+    argb_to_qcolor,
+    has_render_effects,
+    load_print_options,
+    save_print_options,
+    update_print_option,
 )
 
 from .collage_draft_guard import CollageDraftGuard
@@ -214,6 +232,99 @@ class PrintController(QObject):
         elrontaná a következő indulást."""
         if nev in {tag.name for tag in self._keszlet()}:
             self._settings.setValue("print/lastSize", nev)
+
+    # -- Szegély- és felirat-opciók (#1780) -------------------------------
+
+    @Slot(result="QVariantMap")
+    def printOptions(self):  # noqa: N802 — QML-stílus
+        """A 11 tartós printoptions-beállítás QML-kompatibilis térképe."""
+        return load_print_options(self._settings).as_mapping()
+
+    @Slot(result=list)
+    def printTextSizes(self):  # noqa: N802 — QML-stílus
+        """A binárisból mért 16 betűméret, sorrendben."""
+        return list(TEXT_SIZE_VALUES)
+
+    @Slot(result=list)
+    def printFontFamilies(self):  # noqa: N802 — QML-stílus
+        """A gép tényleges Qt-betűkészlete, az aktuális Arial-lal együtt."""
+        aktualis = load_print_options(self._settings).textFont
+        nevek = set(QFontDatabase.families())
+        nevek.add(aktualis)
+        return sorted(nevek, key=str.casefold)
+
+    @Slot(str, "QVariant")
+    def setPrintOption(self, nev: str, ertek) -> None:  # noqa: N802
+        """Egy vezérlő azonnali mentése, mint az eredeti panelben.
+
+        Az `Alkalmaz` ezért nem külön mentési pont: csak a már elmentett
+        állapotból kéri újra az előnézetet. A validálás közös rétegben él,
+        így QML-ből érkező hibás vagy határon túli érték nem kerül a tárba.
+        """
+        regi = load_print_options(self._settings)
+        uj = update_print_option(regi, nev, ertek)
+        if uj != regi:
+            save_print_options(self._settings, uj)
+
+    @Slot("QVariantMap")
+    def restorePrintOptions(self, ertekek) -> None:  # noqa: N802
+        """A `Mégse` által visszatöltött állapot explicit mentése."""
+        regi = load_print_options(self._settings)
+        uj = regi
+        for nev, ertek in dict(ertekek or {}).items():
+            uj = update_print_option(uj, str(nev), ertek)
+        save_print_options(self._settings, uj)
+
+    @Slot(result=str)
+    def printOptionsDisabledText(self):  # noqa: N802 — QML-stílus
+        return self.tr(
+            "These options cannot be used when printing contact sheets."
+        )
+
+    def _print_options(self) -> PrintOptions:
+        """A renderelő mindig a tartós, legfrissebb állapotot olvassa."""
+        return load_print_options(self._settings)
+
+    @staticmethod
+    def _caption_text(record: PhotoRecord, options: PrintOptions) -> str:
+        """A négy mért feliratforrásból előálló szöveg."""
+        if options.textSource == 0:
+            return ""
+        if options.textSource == 1:
+            return str(getattr(record, "caption", None) or "")
+        if options.textSource == 2:
+            return str(getattr(record, "name", ""))
+        taken = str(getattr(record, "taken_at", None) or "").strip()
+        width = getattr(record, "width", None)
+        height = getattr(record, "height", None)
+        reszletek = [darab for darab in (taken,)
+                    if darab]
+        if width and height:
+            reszletek.append(f"{width} × {height}")
+        return " · ".join(reszletek) or str(getattr(record, "name", ""))
+
+    @staticmethod
+    def _font_for_print(options: PrintOptions, dpi: float) -> QFont:
+        font = QFont(options.textFont or "Arial")
+        font.setPixelSize(max(1, round(options.textSize * dpi / 72.0)))
+        return font
+
+    @staticmethod
+    def _border_width(options: PrintOptions, page: PageGeometry) -> float:
+        """A tárolt 0..1024 skálát a nyomtatható területre vetíti.
+
+        A bináris a tárolási skálát méri; a renderer képpontos végső
+        ecsetméretét nem adja át dokumentált konstansként. Ez az explicit,
+        determinisztikus terméki leképezés a PDF és az előnézet között közös:
+        nulla nincs, a maximum pedig a rövidebb nyomtatható oldal.
+        """
+        if options.borderSize <= 0:
+            return 0.0
+        return min(
+            min(page.printable_width, page.printable_height),
+            max(1.0, min(page.printable_width, page.printable_height)
+                * options.borderSize / BORDER_SIZE_MAX),
+        )
 
     @Slot(list, str, result="QVariantMap")
     def printQuality(self, rows, size_name: str):  # noqa: N802 — QML-stílus
@@ -714,6 +825,7 @@ class PrintController(QObject):
         if self._nyomtatas_folyamatban:
             return False
         paths = self._resolve_paths(rows)
+        records = self._resolve_records(rows)
         if not paths:
             self.printFailed.emit(self.tr("No pictures to print."))
             return False
@@ -735,14 +847,16 @@ class PrintController(QObject):
             return False
 
         images: list[QImage] = []
+        job_records: list[PhotoRecord] = []
         skipped: list[str] = []
-        for path in paths:
+        for record, path in zip(records, paths, strict=True):
             image = QImage(str(path))
             if image.isNull():
                 _log.warning("nyomtatás: nem dekódolható kép — kihagyva: %s", path)
                 skipped.append(path.name)
                 continue
             images.append(image)
+            job_records.append(record)
         if not images:
             # ⚠️ a csak-videós (vagy csak-RAW) kijelölésnél a „Nincs
             # nyomtatható kép." FÉLREVEZET: a felhasználó képeket JELÖLT KI,
@@ -769,8 +883,13 @@ class PrintController(QObject):
         # a másik olvasat (A, B, A, B) a nyomtató példányszám-mezőjének
         # viselkedése lenne, amitől ez a vezérlő épp különbözik.
         images = self._sokszorozva(images, copies)
+        darab = max(1, int(copies or 1))
+        job_records = [record for record in job_records for _ in range(darab)]
 
-        # a teljes feladat egy tájolást használ (ld. a modul docstringje) —
+        # A szegély/felirat a PDF- és nyomtató-úton is ugyanabból az
+        # állapotból készül. Alapállapotban megtartjuk a régi rajzolási ágat,
+        # így a meglévő sebesség- és példányszám-kapuk változatlanok.
+        options = self._print_options()
         # az első képhez igazítva, ha "auto"
         orientation_for_job = resolve_orientation(
             images[0].width(), images[0].height(), requested
@@ -796,7 +915,12 @@ class PrintController(QObject):
         # nem az elozo feladat ora-allasatol fugg
         self._utolso_frissites = 0.0
         try:
-            self._paint_pages(printer, images, mode, self._lap_kesz)
+            if has_render_effects(options):
+                self._paint_pages_with_options(
+                    printer, images, job_records, mode, options, self._lap_kesz
+                )
+            else:
+                self._paint_pages(printer, images, mode, self._lap_kesz)
         except RuntimeError:
             _log.exception("nyomtatás: a feladat nem indítható")
             self.printFailed.emit(self.tr("The print job could not be started."))
@@ -892,14 +1016,18 @@ class PrintController(QObject):
         if not target:
             return False
         paths = self._resolve_paths(rows)
-        kepek = [
-            kep
-            for kep in (QImage(str(path)) for path in paths)
-            if not kep.isNull()
-        ]
-        kepek = self._sokszorozva(kepek, copies)
-        if not 0 <= int(page_index) < len(kepek):
+        records = self._resolve_records(rows)
+        kep_parok = []
+        for record, path in zip(records, paths, strict=True):
+            kep = QImage(str(path))
+            if not kep.isNull():
+                kep_parok.append((kep, record))
+        darab = max(1, int(copies or 1))
+        kep_parok = [par for par in kep_parok for _ in range(darab)]
+        if not 0 <= int(page_index) < len(kep_parok):
             return False
+        kepek = [par[0] for par in kep_parok]
+        rekordok = [par[1] for par in kep_parok]
         kep = kepek[int(page_index)]
 
         meret = NyomatMeret[self.printSize()]
@@ -926,31 +1054,25 @@ class PrintController(QObject):
 
         vaszon_sz = _ELONEZET_DPI * huvelyk_sz
         vaszon_ma = _ELONEZET_DPI * huvelyk_ma
-        margo = _MARGIN_MM / 25.4 * _ELONEZET_DPI
         lap = QImage(
             int(round(vaszon_sz)),
             int(round(vaszon_ma)),
             QImage.Format.Format_RGB32,
         )
         lap.fill(Qt.GlobalColor.white)
-        page = PageGeometry(
-            width=float(lap.width()),
-            height=float(lap.height()),
-            margin=max(
-                0.0,
-                min(margo, lap.width() / 2 - 1, lap.height() / 2 - 1),
-            ),
-        )
-        placement = compute_print_layout(page, kep.width(), kep.height(), mode)
+        options = self._print_options()
         painter = QPainter()
         if not painter.begin(lap):
             return False
         try:
-            painter.drawImage(
-                QRectF(
-                    placement.x, placement.y, placement.width, placement.height
-                ),
+            self._draw_options_page(
+                painter,
+                QRectF(0, 0, lap.width(), lap.height()),
                 kep,
+                rekordok[int(page_index)],
+                mode,
+                options,
+                _ELONEZET_DPI,
             )
         finally:
             painter.end()
@@ -968,6 +1090,128 @@ class PrintController(QObject):
             if not QImage(str(path)).isNull():
                 darab += 1
         return darab * max(1, int(copies or 1))
+
+    @staticmethod
+    def _draw_options_page(
+        painter: QPainter,
+        page_rect: QRectF,
+        image: QImage,
+        record: PhotoRecord,
+        mode: PrintFitMode,
+        options: PrintOptions,
+        dpi: float,
+    ) -> None:
+        """Egy oldal képe, szegélye és felirata közös geometriával."""
+        margin = min(
+            _MARGIN_MM / 25.4 * dpi,
+            page_rect.width() / 2 - 1,
+            page_rect.height() / 2 - 1,
+        )
+        margin = max(0.0, margin)
+        page = PageGeometry(
+            width=page_rect.width(), height=page_rect.height(), margin=margin
+        )
+        text = PrintController._caption_text(record, options)
+        font = PrintController._font_for_print(options, dpi)
+        caption_height = 0.0
+        if text and options.textPlacement == 0:
+            caption_height = min(
+                page.printable_height * 0.25,
+                max(float(font.pixelSize() + 8), float(font.pixelSize() * 3)),
+            )
+        content_height = max(margin * 2 + 1, page.height - caption_height)
+        content_page = PageGeometry(
+            width=page.width,
+            height=min(page.height, content_height),
+            margin=min(margin, max(0.0, min(page.width, content_height) / 2 - 1)),
+        )
+        placement = compute_print_layout(
+            content_page, image.width(), image.height(), mode
+        )
+        target = QRectF(
+            page_rect.x() + placement.x,
+            page_rect.y() + placement.y,
+            placement.width,
+            placement.height,
+        )
+        painter.drawImage(target, image)
+
+        border_width = PrintController._border_width(options, page)
+        if options.border and border_width > 0:
+            color = argb_to_qcolor(options.borderColor)
+            if options.borderEdge:
+                painter.setPen(QPen(color, max(1.0, border_width)))
+                painter.drawLine(target.bottomLeft(), target.bottomRight())
+            else:
+                if options.evenBorder:
+                    painter.setPen(QPen(color, max(1.0, border_width)))
+                    painter.drawRect(target)
+                else:
+                    painter.setPen(QPen(color, max(1.0, border_width / 2)))
+                    painter.drawRect(target)
+                    painter.setPen(QPen(color, max(1.0, border_width)))
+                    painter.drawLine(target.bottomLeft(), target.bottomRight())
+
+        if not text:
+            return
+        painter.setFont(font)
+        painter.setPen(argb_to_qcolor(options.textColor))
+        flags = int(Qt.AlignmentFlag.AlignCenter)
+        if options.wrap:
+            flags |= int(Qt.TextFlag.TextWordWrap)
+        else:
+            flags |= int(Qt.TextFlag.TextSingleLine)
+
+        if options.textPlacement == 1:
+            caption_rect = target
+        elif options.textPlacement == 2 and options.border and border_width > 0:
+            caption_rect = QRectF(
+                target.left(),
+                target.bottom() - max(border_width, font.pixelSize() + 2),
+                target.width(),
+                max(border_width, font.pixelSize() + 2),
+            )
+        else:
+            caption_rect = QRectF(
+                page_rect.x() + margin,
+                page_rect.y() + content_page.height,
+                page.printable_width,
+                max(font.pixelSize() + 4, page.height - content_page.height - margin),
+            )
+        painter.drawText(caption_rect, flags, text)
+
+    @staticmethod
+    def _paint_pages_with_options(
+        printer: QPrinter,
+        images: Sequence[QImage],
+        records: Sequence[PhotoRecord],
+        mode: PrintFitMode,
+        options: PrintOptions,
+        lap_kesz: Callable[[int, int], None] | None = None,
+    ) -> None:
+        """A printoptions-ág lapfestése PDF-re és élő QPrinterre."""
+        painter = QPainter()
+        if not painter.begin(printer):
+            raise RuntimeError("A nyomtatási feladat nem indítható")
+        ossz = len(images)
+        try:
+            for index, (image, record) in enumerate(zip(images, records, strict=True)):
+                if index > 0:
+                    printer.newPage()
+                rect = printer.pageRect(QPrinter.Unit.DevicePixel)
+                PrintController._draw_options_page(
+                    painter,
+                    QRectF(rect),
+                    image,
+                    record,
+                    mode,
+                    options,
+                    float(printer.resolution()),
+                )
+                if lap_kesz is not None:
+                    lap_kesz(index + 1, ossz)
+        finally:
+            painter.end()
 
     @staticmethod
     def _paint_pages(
