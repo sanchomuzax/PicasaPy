@@ -84,7 +84,27 @@ jobs:
               echo "kod=true" >> "$GITHUB_OUTPUT"; exit 0
             fi
           fi
-          valtozott="$(git diff --name-only "$BASE" "$HEAD")"
+          # #3288: az ELÁGAZÁS HELYÉHEZ kell mérni, nem a base-ág mai
+          # csúcsához. A `pull_request.base.sha` a main tipje, az pedig a PR
+          # élete alatt továbbmegy — és akkor a közben beolvadt IDEGEN
+          # commitok fájljai is „a PR változásának" látszanak.
+          #
+          # Mérve a PR #3287-en (csak dokumentáció): a merge-base-től 2 fájl,
+          # a base.sha-tól 9 — köztük öt QML és egy .js, egyik sem a PR-ből.
+          # A job emiatt `kod=true`-t adott, és lefutott a teljes mátrix.
+          # A projekt napi több kiadást lát, tehát a main szinte mindig
+          # előrébb van: a gyors dokumentációs út így gyakorlatilag soha nem
+          # működött.
+          if ALAP="$(git merge-base "$BASE" "$HEAD" 2>/dev/null)" \
+             && [ -n "$ALAP" ]; then
+            echo "Összevetés az elágazás helyétől ($ALAP)."
+          else
+            # Fail-safe: ha nincs közös előd (sekély klón, átírt történet),
+            # a TELJES kör fut. Kevesebb mérés helyett inkább több.
+            echo "Nincs közös előd — a base.sha marad, teljes kör."
+            ALAP="$BASE"
+          fi
+          valtozott="$(git diff --name-only "$ALAP" "$HEAD")"
           echo "Változott fájlok:"; echo "$valtozott"
 
           # Nem érinti a kód futását: bármilyen .md és a docs/ egésze.
@@ -99,7 +119,7 @@ jobs:
 
           # Igaz (0), ha a fájlban a verziósoron KÍVÜL is változott valami.
           van_erdemi_valtozas() {   # $1 = fájl, $2 = a verziósor mintája
-            git diff -U0 "$BASE" "$HEAD" -- "$1" \
+            git diff -U0 "$ALAP" "$HEAD" -- "$1" \
               | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
               | grep -vqE "$2"
           }
