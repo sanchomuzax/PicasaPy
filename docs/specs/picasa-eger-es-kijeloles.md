@@ -607,6 +607,31 @@ viselkedés maradványai.)*
 a `showtextcheckbox`, a `keywords/closebutton`, és három
 `makemoviepanel` jelölőnégyzet.
 
+### 7/b Hol tartunk ebből a két viselkedésből (2026-09-17, mérve a mai kódon)
+
+⚓ **Horgony (#2193):** a viselkedések forrása a 7. szakasz elején megnevezett
+`editoneup.tre:140` (`plusone`) · `editoneup.tre:148` (`minusone`) ·
+`keywords.tre:67`, a `thumbui/prev`/`next` kikommentezett párja pedig
+`thumbui.tre:43` és `thumbui.tre:48` (ld. `konyvtar-ablak-meretek.md` 4.1).
+A `normalcursor`-lista ugyanannak a szakasznak a felsorolása; a „nálunk"
+oszlop a mai kód mérése (fájl + objectName a sorokban).
+
+| viselkedés | eredeti elem | nálunk | állapot |
+|---|---|---|---|
+| `setautorepeat 1` | `oneup/plusone`, `minusone`, `editoneup/plusone`, `minusone` | `autoRepeat: true` | ✅ 2026-09-15 óta (a késleltetés Qt-alapértelmezés, **nincs mérve** — ld. `picasa-create-features.md`) |
+| `setautorepeat 5` (gyors) | `thumbui/morethumbs`, `lessthumbs` | — | ⛔ **nincs ilyen vezérlőnk**: a bélyegkép-méret nálunk **előre beállított léptékekkel** vált (`Main.qml` `onThumbSizePreset`), nem ±1 gombbal. Ismétlés csak akkor kerül szóba, ha egyszer megépül a két gomb |
+| `normalcursor 1` | `headerpanel/create_collage` | `headerCollageButton` | ✅ a nyíl marad (a `PicasaButton` nem állít `cursorShape`-et) |
+| `normalcursor 1` | `headerpanel/select_star` | `headerSelectStarredButton` | ✅ |
+| `normalcursor 1` | `thumbui/folderviewpopup` | `toolbarFolderViewPopupButton` | ✅ |
+| `normalcursor 1` | a maradék 13 (`create_movie`, `sync_options`, `websync0/1`, `throttle/*`, `bigslider`, `acquirepanel/*`, `compose_share/*`) | — | ⛔ nincs megfelelő vezérlőnk |
+
+⚠️ **A „✅ a nyíl marad" nem magától értetődő, ezért ŐR is tartozik hozzá**
+(`tests/app/qml_functional/test_nyil_kurzor_885.py`): a
+`Qt.PointingHandCursor` egyetlen `HoverHandler`-sorral bekerül, és a
+felületen sok helyen JOGOS (verzió-hivatkozás, értesítő kártyák) — a próba
+ezért a három MÉRT elemet nézi, nem a felületet általában, és
+ellenpróbával igazolja, hogy a keresése tényleg lát kéz-kurzort.
+
 ---
 ## 8. Az Esc-billentyű — 11 gomb
 
