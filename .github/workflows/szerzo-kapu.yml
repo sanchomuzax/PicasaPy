@@ -38,6 +38,7 @@ jobs:
           sanchomuzax
           picasapy-claude-agent[bot]
           picasapy-codex-agent[bot]
+          picasapy-hermes-agent[bot]
           "
           echo "PR szerzője: $SZERZO"
           echo "forkból érkezett: $FORKBOL"
