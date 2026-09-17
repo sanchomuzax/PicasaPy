@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import os
 import json
 import pathlib
 
@@ -156,9 +157,21 @@ class TestBackslashesUtvonal:
     tehát az elnyelődés ugyanúgy kimutatható. (A környezetfüggő skip nem őr.)"""
 
     def test_a_backslashes_utvonalu_torzs_is_elolvasva(self, tmp_path):
+        #: ⚠️ Az útvonalnak MINDKÉT platformon tartalmaznia kell
+        #: választójelet — de máshogy. Linuxon a `\` rendes fájlnév-
+        #: karakter, tehát EGY fájl neve lehet; windowson viszont
+        #: könyvtárhatár, ezért ott VALÓDI, létező alkönyvtárak kellenek —
+        #: különben a próba a fájl LÉTREHOZÁSÁN hasal el
+        #: (`FileNotFoundError`), még mielőtt a kaput megkérdezné. A main
+        #: windows-lába 2026-09-18-án pontosan ezen ment pirosra.
+        #: Az ÁLLÍTÁS mindkét ágon ugyanaz: a kapu olvassa el a törzset.
         mappa = tmp_path / "wt"
         mappa.mkdir()
-        fajl = mappa / "Temp\\picasapy\\torzs.md"
+        if os.name == "nt":
+            fajl = mappa / "Temp" / "picasapy" / "torzs.md"
+            fajl.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            fajl = mappa / "Temp\\picasapy\\torzs.md"
         fajl.write_text("Torzs jegyszam nelkul.\n", encoding="utf-8")
         indok = kapu.blokkolando(
             f"gh-bot pr create --repo r {T} 'chore: x' --body-file {fajl}")
