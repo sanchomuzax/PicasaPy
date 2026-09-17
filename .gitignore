@@ -103,6 +103,10 @@ tools/histogram/out/
 # publikus repó része. A klón maga a checkouton kívül van (/workspace/… ill. ~/…).
 .claude/skills/
 .agents/skills/
+# A Hermes-profil kapui: a FORRÁS a privát picasapy-agent repóban él
+# (eszkozok/hermes/), itt csak TÜKÖR van, hogy a Hermes megtalálja.
+# Ugyanaz a minta, mint a skilleknél: gépezet nem megy a termék-repóba.
+.hermes/
 docs/allapotlap.html
 docs/binaris-terkep.html
 
