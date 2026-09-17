@@ -52,6 +52,19 @@ Rectangle {
                && controller.hasCollageProject(viewer.currentFilePath) === true
     }
 
+    //: #2114: a megnyitott fájl egy MOZGÓFILM-projekt kimenete-e. A
+    //: `currentIsSavedCollage` ikerpárja: az eredetiben a két gomb
+    //: (`editpanel/editcollage` és `editpanel/editslideshow`) UGYANABBAN a
+    //: kezelőben él (`0x00567a00`), és mindkettő `m_hidden` — csak a
+    //: projekt kimenetén jön elő. A feltétel nálunk is ugyanaz: a fájl
+    //: mellett ott a projektfájl (`.mxf`, a #3191 írja ki).
+    readonly property bool currentIsSavedMovie: {
+        if (!viewer.controllerReady || viewer.currentFilePath.length === 0)
+            return false
+        return controller.hasMovieProject !== undefined
+               && controller.hasMovieProject(viewer.currentFilePath) === true
+    }
+
     // #641: mekkora magasság kell ahhoz, hogy a bal panel TELJESEN elférjen
     // — a felső sáv plusz a panel saját igénye. Beégetett szám nincs benne:
     // mindkét tag a saját elemétől jön.
@@ -165,6 +178,8 @@ Rectangle {
     //: #1002: a megnyitott kollázs újranyitása SZERKESZTÉSRE. A néző
     //: csak JELEZ — a lapváltás és a panel feltöltése a gazdáé.
     signal editCollageRequested(string path)
+    //: #2114: a film forrásprojektjének újranyitása
+    signal editMovieRequested(string path)
     // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
     // megerősítő dialógus a Main.qml-ben él (FileOpsDialogs), ezért a
     // kérés jelként megy kifelé
@@ -856,6 +871,24 @@ Rectangle {
                     visible: viewer.currentIsSavedCollage
                              || viewer.currentIsCollageDraft
                     onClicked: viewer.editCollageRequested(viewer.currentFilePath)
+                }
+                //: #2114 — `editpanel/editslideshow`, a fenti gomb
+                //: IKERPÁRJA: ugyanaz a kezelő (`0x00567a00`), ugyanaz a
+                //: `m_hidden` alapállapot, csak a másik projekt-fajtára.
+                //: A felirat és a buboréksúgó a HIVATALOS magyar szöveg
+                //: (`panel-feliratok-hu.tsv:4928` és `:4929`).
+                PicasaButton {
+                    id: filmSzerkesztes
+                    objectName: "viewerEditMovieButton"
+                    //: `editpanel/editslideshow-label`
+                    text: qsTr("Edit Movie")
+                    font.pixelSize: Theme.fontSize
+                    //: `editpanel/editslideshow` elemleírása
+                    ToolTip.text: qsTr("Edit the movie presentation")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    visible: viewer.currentIsSavedMovie
+                    onClicked: viewer.editMovieRequested(viewer.currentFilePath)
                 }
                 Item { Layout.fillWidth: true }
                 //: #3013: a kettős nézet háromszegmenses kapcsolója

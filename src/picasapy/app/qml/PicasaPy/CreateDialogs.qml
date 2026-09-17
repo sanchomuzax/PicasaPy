@@ -35,6 +35,17 @@ Item {
 
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
+    //: #2114: a film ÚJRANYITÁSA a projektfájljából — a diaidő onnan
+    //: jön, a kijelölés a hívó oldalán már a projekt képeire áll.
+    //: ⛔ A FELBONTÁS nincs a projektfájlban (`curresolution` nálunk
+    //: kitöltetlen), ezért az marad az alapértelmezésen — a párbeszéd
+    //: felirata ezt ki is mondja.
+    function openMovieProject(masodperc) {
+        movieDialog.projektbolNyilt = true
+        if (masodperc > 0)
+            movieSeconds.value = Math.round(masodperc * 10)
+        movieDialog.open()
+    }
 
     Dialog {
         id: collageDialog
@@ -194,6 +205,9 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok | Dialog.Cancel
         property string targetFile: ""
+        //: #2114: projektfájlból nyitottuk-e — ilyenkor a párbeszéd
+        //: kimondja, hogy a felbontás NEM a projektből jön.
+        property bool projektbolNyilt: false
         // a felbontás-lista indexei → videó-magasság
         //: #1977 (7. pont): az eredeti HÉT mérete
         //: (`docs/specs/picasa-create-features.md` 2.6/c). Öt közülük
@@ -218,6 +232,7 @@ Item {
         //: mappába ír, a forrásmappa nevével, ütközésnél sorszámozva.
         //: A fájlválasztó megmarad „Mentés másként"-ként.
         onOpened: standardButton(Dialog.Ok).enabled = true
+        onClosed: movieDialog.projektbolNyilt = false
         onAccepted: {
             movieProgressDialog.done = 0
             movieProgressDialog.total = dialogs.appWindow.selectedIndexes.length
@@ -229,6 +244,18 @@ Item {
         }
         ColumnLayout {
             spacing: 10
+            Text {
+                objectName: "movieProjectNote"
+                visible: movieDialog.projektbolNyilt
+                //: #2114: a projektfájl a diaidőt és a képeket őrzi meg,
+                //: a felbontást nem — ezt kimondjuk, nem találgatunk.
+                text: qsTr("The movie's pictures and timing come from the "
+                           + "project file; the size starts from the default.")
+                wrapMode: Text.WordWrap
+                Layout.maximumWidth: 320
+                font.pixelSize: Theme.fontSize - 1
+                color: Theme.textGray
+            }
             Text {
                 objectName: "movieCountLabel"
                 text: qsTr("%1 pictures selected.").arg(

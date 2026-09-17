@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.507] – 2026-09-17
+
+### Hozzáadva
+
+- **„Mozgófilm szerkesztése" gomb a szerkesztőben** (#2114). Ha egy korábban
+  elkészített mozgófilmet nyitsz meg, mostantól egy gombbal visszatérhetsz a
+  hozzá tartozó képekhez és beállításokhoz — ugyanúgy, ahogy a kollázsnál már
+  megvolt. A film képei és a diaidő a film mellé mentett projektfájlból
+  jönnek; a felbontás az alapértelmezésről indul, és ezt a párbeszéd ki is
+  írja.
+
 ## [0.8.506] – 2026-09-17
 
 ### Megváltozva

@@ -221,25 +221,35 @@ class TestAKepProjektMegfeleltetes:
         assert van_piszkozat(tmp_path) is True
 
 
-class TestANemVAGYOK_slot:
-    """⛔ SZÁNDÉKOSAN nincs `hasMovieProject` Slot ebben a körben.
+class TestASlotABEKOTESSEL_EGYUTT:
+    """A Slot a #2114-ben a BEKÖTÉSÉVEL EGYÜTT került be.
 
-    A lekérdezés megvan — `movie.mxf.van_projektje` —, de a QML-nek szóló
-    `Slot` a **bekötésével EGYÜTT** kerül be (#2114, a „Mozgófilm
-    szerkesztése" gomb). Egy bekötetlen Slot „polcon álló" kód volna, és a
-    `kepesseg_or.py` jogosan meg is fogja: *„ÚJ, felületről elérhetetlen
-    vezérlő-tag"*.
-
-    (A tanulság a #2336/#3002 köréből: a megírt, tesztelt átalakító hívó
-    nélkül nem szállít semmit.)
+    Ez a próba korábban azt állította, hogy a Slot MÉG NINCS — a #3191
+    szándéka az volt, hogy „polcon álló" kód ne keletkezzen (a `kepesseg_or`
+    is fogná: *„ÚJ, felületről elérhetetlen vezérlő-tag"*). A #2114-gyel a
+    feltétel teljesült: a Slot ÉS a „Mozgófilm szerkesztése" gomb együtt
+    van meg, ezért a próba a SZÁNDÉKOT megtartva megfordul — most azt
+    követeli, hogy a kettő együtt maradjon.
     """
 
-    def test_a_vezerlo_MEG_NEM_kapott_slotot(self):
+    def test_a_slot_MEGVAN(self):
         from picasapy.app.create_controller import CreateMixin
 
-        assert not hasattr(CreateMixin, "hasMovieProject"), (
-            "a Slot csak a QML-bekötéssel EGYÜTT kerülhet be (#2114)"
-        )
+        assert hasattr(CreateMixin, "hasMovieProject")
+        assert hasattr(CreateMixin, "movieProject")
+
+    def test_a_QML_be_is_koti(self):
+        """A gomb és a jelzője a nézőben — enélkül a Slot polcon állna."""
+        from pathlib import Path
+
+        import picasapy.app as app_csomag
+
+        nezo = (
+            Path(app_csomag.__file__).parent
+            / "qml" / "PicasaPy" / "PhotoViewer.qml"
+        ).read_text(encoding="utf-8")
+        assert "hasMovieProject(" in nezo
+        assert 'objectName: "viewerEditMovieButton"' in nezo
 
     def test_a_lekerdezes_viszont_MEGVAN(self, tmp_path):
         from picasapy.movie.mxf import van_projektje
