@@ -2133,6 +2133,54 @@ elrendezésben értelmetlen szöveget mutat.
 külön szerkesztési állapotot hozott létre, és a felhasználó kilép a módból.
 A `DoNotAskOnEnd2Up` beállítás elnyomja.
 
+#### 4/b ⭐ A FELTÉTEL-LÉTRA — a `0x0056aad0` törzséből (2026-09-17)
+
+A fenti „mikor jelenik meg" mondat eddig a sztringekből következett; ez a
+szakasz a **kód tényleges ágait** írja le, mert a megvalósításnak pontosan
+ezek kellenek. A rutin `this`-e a `CThumbUI`; a két fél állapota **két külön
+objektum** a példányban:
+
+| eltolás | mi |
+|---|---|
+| `[this+0x5f8]` · `[this+0x92c]` | a két fél **szerkesztési állapota** |
+| `[this+0x668]` · `[this+0x99c]` | a két fél **kép-fogantyúja** (a `[0x00c40328]` hívása adja az összevethető értéket) |
+| `[this+0x327c]` · `[this+0x3280]` | melyik fél az aktív (egyenlő ⇒ az egyik, `0` ⇒ egyik sem) |
+
+A létra, sorrendben:
+
+1. **`previewclip2` nélkül nincs kérdés.** A rutin azonnal kilép, ha az elem
+   nincs meg vagy rejtett (`[eax+0x20c]`) — ugyanaz a kapu, mint a
+   `0x00569720` elrendezőben.
+2. **Ugyanaz a kép áll a két félen?** A két kép-fogantyú összevetése
+   (`cmp esi, eax` @ `0x0056ab2f`): **csak EGYENLŐSÉG esetén** megy tovább a
+   kérdés felé. Két KÜLÖNBÖZŐ fotónál (az `AB` mód) nincs ütközés — ott a
+   rutin a másik ágon a fogantyúkat rendezi és `0`-val tér vissza.
+3. **Mindkét fél MÓDOSULT?** Félenként `[állapot+0x20]` ≠ a `vtbl+0x8`
+   virtuális hívás eredménye (`0x0056abee`, `0x0056ac11`). Ha **bármelyik fél
+   érintetlen**, nincs kérdés — annak a félnek nincs mit megtartani.
+4. **A két állapot KÜLÖNBÖZIK?** `FUN_006aef30(A, B)` dönti el. Ha a kettő
+   egyezik, a rutin **kérdés nélkül** véglegesít (`FUN_0056b5c0` +
+   `FUN_0056b5f0`).
+5. Csak ezután jön a **`Preferences` / `DoNotAskOnEnd2Up`** olvasása, és — ha
+   nincs beállítva — a párbeszéd.
+6. A gombpár nyelvét a **`FUN_00569650`** (az elrendezés-tájolás lekérdezése)
+   dönti el: igaz ⇒ `Fent`/`Lent`, hamis ⇒ `Bal`/`Jobb`.
+
+#### 4/c ⛔ Amit ez a MI modellünkről mond
+
+A #3013 óta nálunk az „aa" mód bal fele a szerkesztés **ELŐTTI** képet mutatja
+(összevetés), és nincs saját szerkesztési állapota. A fenti 2. és 3. pont
+viszont kimondja: **az eredetiben az „aa" mód mindkét fele önállóan
+szerkeszthető ugyanazon a fotón** — épp ezért lehet „a képnek két szerkesztett
+változata". A „szerkesztés előtti kép" nálunk annak a SPECIÁLIS ESETE, amikor
+az egyik felet nem szerkeszti senki (a 3. pont szerint ilyenkor az eredeti sem
+kérdez).
+
+⇒ A #3187 utolsó pontjához (két külön állapot az „aa" módban) **nem kell
+tulajdonosi döntés**: a bináris megadta a viselkedést. A megvalósítás viszont
+csak a párbeszéddel EGYÜTT mehet ki — állapot-pár kérdés nélkül némán
+eldobná az egyik fél munkáját.
+
 ### 5. ⛔ `editpanel/wipe_2up_toggle` — a KÓD ismeri, a FELÜLET nem
 
 A bináris `0x005d59f0` vezérlő-listájában ott a **`editpanel/wipe_2up_toggle`**
