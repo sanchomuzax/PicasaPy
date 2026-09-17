@@ -20,9 +20,18 @@ fájl dokumentálja: a privát picasapy-agent repó munkafolyamat-lapján van.
 
 import json
 import os
+import pathlib
 import re
 import subprocess
 import sys
+
+# A közös kapu-rész a SAJÁT mappájából jön. A `sys.path` bővítése azért
+# kell, mert a hook egyszer önálló szkriptként fut (akkor magától adott),
+# egyszer viszont a próbasor `spec_from_file_location`-nel tölti be — az
+# nem állítja a keresési utat.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+from kapu_kozos import GH as _GH, POZICIO, adat_nelkul  # noqa: E402
 
 #: #1375: modulszintű fogantyú a `subprocess.run`-ra. A próbáknak EZT kell
 #: cserélniük — a globális `subprocess.run` átírása minden más modulra
@@ -124,6 +133,20 @@ def _tag_push(cmd: str) -> bool:
         if minta.search(ablak):
             return True
     return False
+
+
+#: ⛔ agent#93: a kapu eddig a CSUPASZ `gh` programnevet kereste, miközben a
+#: projekt szabálya szerint GitHub-műveletet kizárólag a bot-burkolókkal
+#: adunk ki. Mérve: a hat valódi írásmód közül egyedül a tiltott csupasz
+#: alak blokkolt, mind az öt HASZNÁLT alak átment — vagyis a kapu a
+#: kiadás-létrehozásra nézve nem létezett. A minta ezért a `kapu_kozos`
+#: `GH`-jából jön, ami minden burkolót és útvonalas alakot ismer.
+_KIADAS = re.compile(POZICIO + _GH + r"\s+" + _GLOBALIS
+                     + r"release\s+(?:create|edit|upload)\b")
+
+
+def _kiadas_letrehozas(cmd: str) -> bool:
+    return bool(_KIADAS.search(cmd))
 
 
 def _verziot_emel(cwd: str) -> bool:
@@ -236,7 +259,7 @@ def _blokkolando(cmd: str, cwd: str) -> str | None:
     """A parancs kiadási lépés-e; ha igen, rövid indok, ha nem, None."""
     if FELOLDO in cmd:
         return None
-    if _parancsok(cmd, "gh", "release\\s+(?:create|edit|upload)"):
+    if _kiadas_letrehozas(cmd):
         return "GitHub release létrehozása/módosítása"
     if _tag_letrehozas(cmd):
         return "git tag létrehozása"
@@ -258,6 +281,7 @@ def main() -> int:
     try:
         adat = json.load(sys.stdin)
         cmd = (adat.get("tool_input") or {}).get("command") or ""
+        cmd = adat_nelkul(cmd)  # agent#94: az ADAT-heredoc törzse nem parancs
         cwd = adat.get("cwd") or os.getcwd()
     except Exception:
         return 0  # fail-open: rossz bemenet nem blokkolhat

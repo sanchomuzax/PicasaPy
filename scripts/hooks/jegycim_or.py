@@ -43,8 +43,17 @@ párhuzamos munkameneteket.
 
 import json
 import re
+import pathlib
 import shlex
 import sys
+
+# A közös kapu-rész a SAJÁT mappájából jön. A `sys.path` bővítése azért
+# kell, mert a hook egyszer önálló szkriptként fut (akkor magától adott),
+# egyszer viszont a próbasor `spec_from_file_location`-nel tölti be — az
+# nem állítja a keresési utat.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+from kapu_kozos import GH as _GH, adat_nelkul  # noqa: E402
 
 #: Parancspozíció: sor eleje vagy shell-elválasztó után. Enélkül a parancs
 #: SZÖVEGÉBEN előforduló említés is kiváltaná a kaput — ez a hibaosztály a
@@ -106,7 +115,9 @@ _MIN_SZO = 4
 #: látszódjon, melyik mit alkot — az őr viszont csak a `gh`/`gh-bot` alakot
 #: ismerte, tehát a Codexből nyitott jegyek címét NEM nézte volna meg. Ez
 #: már a harmadik névre kötött vakfolt ebben a projektben.
-_GH = r"(?:[\w.~-]*(?:/[\w.~-]+)*/)?(?:gh|gh-bot|codex-bot|opencode-bot)"
+#: ⛔ agent#93: a lista a `kapu_kozos`-ban él, hogy egy új eszköz
+#: felvételekor MINDEN kapu megkapja — ez a negyedik névre kötött
+#: vakfolt volt a projektben.
 
 
 def _jegycimek(cmd: str) -> list[str]:
@@ -178,6 +189,7 @@ def main() -> int:
     try:
         adat = json.load(sys.stdin)
         cmd = (adat.get("tool_input") or {}).get("command") or ""
+        cmd = adat_nelkul(cmd)  # agent#94: az ADAT-heredoc törzse nem parancs
     except Exception:
         return 0  # fail-open: rossz bemenet nem blokkolhat
     try:
