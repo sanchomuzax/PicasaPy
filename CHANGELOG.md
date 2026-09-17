@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.506] – 2026-09-17
+
+### Megváltozva
+
+- **A kettős nézetben a kijelölt képet szerkeszted** (#3187). Ha két képet
+  tettél egymás mellé, a szerkesztő eddig mindig a jobb oldalit módosította —
+  akkor is, ha a „Kijelölve" jelvényt a bal oldalra vitted a ⇄ gombbal.
+  Mostantól minden szerkesztő-művelet (effekt, visszavonás, mentés) a kijelölt
+  oldalon dolgozik, és a két kép is követi a kijelölést. (Az „ugyanaz a kép
+  kétszer" összevetésben változatlanul a jobb oldal a szerkesztendő.)
+
 ## [0.8.505] – 2026-09-17
 
 ### Javítva
