@@ -5968,3 +5968,80 @@ A szerkesztő `FUN_006ad860` (2590 b), ebben a sorrendben:
 *Bizonyítottsági fok: **megerősített** — diszasszemblált törzsek, címekkel; a
 determináns-számítás és a fok→radián konstans közvetlenül olvasva. Amit NEM
 mértem: hogy a `CRetouchFilter` (a másik jelölt) `+0x84`-e ugyanezt teszi-e.*
+
+## ⛳ A `DropShadow` vászon-margója: `ceil(blur × 1,3501)`, és a `blur` KÉPPONT (2026-09-17, 319. kör, #626)
+
+*A termékkódunkban két, egymásnak ellentmondó modell él ugyanarra a szűrőre —
+a `render/glimmer_frame_ops.py:216` ezt maga mondja ki, és a #626-ra hivatkozik.
+Ez a szakasz a binárisból dönti el.*
+
+### A határoló doboz kiterjesztője: `0x00bcd760`
+
+A `DropShadow` `apply`-ja (`0x00bbb720`) a kimeneti méretet ettől a
+függvénytől kéri (`0x00bbb7ba`), majd a visszakapott téglalapból számol
+szélességet és magasságot (`0x00bbb7c7`–`0x00bbb7d1`).
+
+A kiterjesztő a **minőség-fokozatra** (`[objektum+0x1c]`) ágazik, és a két
+elmosás-paramétert (`[+0x10]` = `blurX`, `[+0x14]` = `blurY`) szorozza:
+
+| minőség | szorzó | cím |
+|---:|---:|---|
+| **1** | **0,25** (`0x00c7d9c8`) | `0x00bcd7e5` |
+| **2** | **1,05** (`0x00cf4360`) | `0x00bcd7b1` |
+| **3** | **1,3501** (`0x00cf4368`) | `0x00bcd78d` |
+| bármi más | **nincs kiterjesztés** | `0x00bcd781 jne` |
+
+A szorzat **felfelé kerekül**: a `0x00c090f0` hívás a CRT-leíró-tábla szerint
+**`Math.ceil`** (a `0x00c7d85c`-en álló `{név, függvény}` pár neve
+`0x00cd04ec` = `"Math.ceil"`; a szomszédai `Math.abs`, `Math.floor`,
+`Math.round`, `Math.sqrt` — ez egyben a Flash-eredet újabb bizonyítéka).
+
+⇒ **oldalanként `ceil(blurX · f)` vízszintesen és `ceil(blurY · f)`
+függőlegesen** (`0x00bcd869`–`0x00bcd88d`: bal −, fent −, jobb +, lent +).
+
+### A `distance` külön lépés, és a végeredmény UNIÓ
+
+A kiterjesztett dobozt a `0x00bcdea0` által adott `(dx, dy)` **eltolja**
+(`0x00bcd8a2`–`0x00bcd8ac`), majd a kód az **eredeti** dobozzal vett uniót
+tartja meg (`0x00bcd8ae`, `0x00bcd8bd`, és a `0x00bcd8c1` visszaállító ág).
+
+⇒ **A margó NEM `2 · blur + distance`.** Az elmosás `ceil(blur·f)`-fel tágít,
+az eltolás pedig eltolja a dobozt; a kimenet a kettő uniója az eredetivel.
+
+### A `blur` KÉPPONTBAN van — nincs sehol kép-mérethez kötés
+
+A kiterjesztőben a `blurX`/`blurY` **egyetlen** szorzót kap (a fenti
+minőség-faktort), és a kép szélessége/magassága ott **elő sem fordul**. A
+paraméter-vágó (`0x00bcd640`) a két értéket `clamp(1, 255)`-re szorítja, a
+minőséget pedig `min(q, 15)`-re (`0x00bcd73a`–`0x00bcd744`) — nem `0`-ra vagy
+`15`-re állítja, ahogy a 4.12 korábbi jegyzete sugallta.
+
+**A leíró ezt megerősíti** (`filterdesc.xml`): mindkét használat
+`quality="{BitmapFilterQuality.HIGH}"`, és
+
+- az önálló effekt: `blurX="{_sldrBlur.value}" blurY="{_sldrBlur.value}"` —
+  a csúszka értéke **közvetlenül**, átváltás nélkül;
+- a Polaroid: `blurX="8" blurY="8" distance="3" angle="{90−forgatás}"`.
+
+A Flash `BitmapFilterQuality.HIGH` = **3** ⇒ a szorzó **1,3501**, tehát a
+Polaroid árnyékának margója `ceil(8 · 1,3501)` = **11 képpont** oldalanként.
+
+### ⛔ Amit ez a termékkódunkról mond
+
+A `render/glimmer_frame_ops.py` önálló `DropShadow` útja a `blur`-t a
+**rövidebb oldal százalékaként** veszi (`thickness_px`), és `2·blur_px +
+distance` margót számol. **Mindkettő téves:**
+
+| | eredeti (mérve) | nálunk (ma) |
+|---|---|---|
+| `blur` egysége | **képpont** | a rövidebb oldal százaléka |
+| margó oldalanként | **`ceil(blur · 1,3501)`** (HIGH) | `2 · blur_px` |
+| `distance` | a dobozt eltolja, majd unió | hozzáadódik a margóhoz |
+
+A javítás a **#626** jegyen marad (ez a jegy a fejlesztői gazdája).
+
+*Forrás: `0x00bbb720` (apply), `0x00bcd760` (a kiterjesztő, 467 b),
+`0x00bcd640` (a vágó, 285 b), a konstansok `0x00c7d9c8` = 0,25 ·
+`0x00cf4360` = 1,05 · `0x00cf4368` = 1,3501; a `Math.ceil` azonosítása a
+`0x00c7d85c`-es CRT-leíró-párból; a leíró-attribútumok
+`research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml`.*
