@@ -59,7 +59,7 @@ Item {
     // lehet nagyobb a képernyőnél), akkor a fül tartalma veszít — soha nem
     // a gombsor. A vágás ilyenkor és csak ilyenkor kapcsol be, és a
     // `panel.tabContentTruncated`-en át MÉRHETŐ, hogy melyik ágon vagyunk.
-    height: tabArea.visible
+    height: tabHost.visible
             ? Math.min(panel.tabContentHeight, panel.tabAreaAvailable) : 0
     clip: panel.tabContentTruncated
 
