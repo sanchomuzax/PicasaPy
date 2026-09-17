@@ -483,6 +483,8 @@ class PhotoGridModel(QAbstractListModel):
         #: #467: a szín-rendezés adatforrása (a vezérlő adja) — enélkül a
         #: szempont a fájlnév-sorrendre esik vissza, nem ürül ki a rács
         self._folder_photo_hues = None
+        #: #1721: a kézi sorrend adatforrása (a mappák `.picasa.ini`-je)
+        self._folder_photo_prioritasok = None
         # #1596: a `Nézet ▸ Megjelenítési mód` aktív tétele. A modell csak
         # az URL-cimkét adja hozzá (`display_mode_url_suffix`); a képpontokat
         # a `thumbnail_provider` írja át. Amíg senki nem állította be, a
@@ -514,7 +516,12 @@ class PhotoGridModel(QAbstractListModel):
             )
 
     def set_folder_photo_sort(
-        self, sort_mode: str, reverse: bool, is_active=None, hues=None
+        self,
+        sort_mode: str,
+        reverse: bool,
+        is_active=None,
+        hues=None,
+        prioritasok=None,
     ) -> None:
         """A mappán belüli képsorrend beállítása (#1436).
 
@@ -525,12 +532,20 @@ class PhotoGridModel(QAbstractListModel):
         azonosság: színezet}` visszahívás. **Csak `color` szempontnál hívjuk
         meg**: az index olvasása minden más rendezésnél fölösleges munka
         lenne, egy nagy könyvtárban pedig minden frissítéskor.
+
+        `prioritasok` (#1721): a KÉZI sorrend adatforrása — `rekordok →
+        {(mappa, fájlnév): priority}` visszahívás, a mappák
+        `.picasa.ini`-jéből. Ugyanaz a szerződés: **csak `priority`
+        szempontnál** hívjuk, mert minden más rendezésnél fölösleges
+        fájlolvasás lenne.
         """
         self._folder_photo_sort = sort_mode
         self._folder_photo_sort_reverse = bool(reverse)
         self._folder_photo_sort_active = is_active
         if hues is not None:
             self._folder_photo_hues = hues
+        if prioritasok is not None:
+            self._folder_photo_prioritasok = prioritasok
         if self._photos:
             self.set_photos(self._photos)
 
@@ -581,11 +596,16 @@ class PhotoGridModel(QAbstractListModel):
         hues = None
         if self._folder_photo_sort == "color" and self._folder_photo_hues is not None:
             hues = self._folder_photo_hues(photos)
+        prioritasok = None
+        forras = getattr(self, "_folder_photo_prioritasok", None)
+        if self._folder_photo_sort == "priority" and forras is not None:
+            prioritasok = forras(photos)
         return sort_folder_blocks(
             photos,
             self._folder_photo_sort,
             self._folder_photo_sort_reverse,
             hues,
+            prioritasok,
         )
 
     @Property(int, notify=revisionChanged)

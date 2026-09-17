@@ -190,6 +190,23 @@ PicasaMenu {
                 })
             }
         }
+        //: #1721 (ADR-014): az ÖTÖDIK szempont — a KÉZI sorrend. A rácson
+        //: húzással átrendezett képek sorrendje; a mappa `.picasa.ini`-je
+        //: hordozza (`priority=`). Az eredeti a manuális sorrendet a
+        //: `db3`-ban tartja, a menüjében „Rendezés prioritás szerint"
+        //: néven — a tárolás nálunk más, a szempont ugyanaz.
+        MenuItem {
+            objectName: "folderMenuSortByPriority"
+            text: qsTr("&Manual order")
+            checkable: true
+            checked: menu.sortMode === "priority"
+            onTriggered: {
+                menu.sortModeRequested("priority")
+                checked = Qt.binding(function () {
+                    return menu.sortMode === "priority"
+                })
+            }
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "folderMenuSortReverse"

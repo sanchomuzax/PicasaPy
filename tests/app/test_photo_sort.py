@@ -159,3 +159,114 @@ class TestVisszaesesek:
         eredeti = list(_BLOKKOK)
         sort_folder_blocks(_BLOKKOK, "date")
         assert list(_BLOKKOK) == eredeti
+
+
+class TestKeziSorrend:
+    """#1721 (ADR-014): az ÖTÖDIK szempont a kézi sorrend.
+
+    A kulcs a `.picasa.ini` `priority=` értéke, amit a hívó
+    **(mappa, fájlnév)** szerinti szótárban ad be — ugyanaz a minta, mint a szín-rendezés
+    `hues`-e (#467): az adat nem a rekordban él, mert az indexben sincs
+    benne, és a rendezőnek nem kell tudnia, honnan jön.
+
+    Az ADR két szabálya:
+
+    * **hiányzó érték** = „nincs kézi hely" → a lista VÉGÉRE, fájlnév szerint;
+    * **ütközés** (azonos érték) → fájlnév dönt, hogy determinisztikus legyen.
+    """
+
+    _KEPEK = (
+        _Photo("/a", "elso.jpg"),
+        _Photo("/a", "masodik.jpg"),
+        _Photo("/a", "harmadik.jpg"),
+    )
+
+    def test_a_kezi_hely_szerint_rendez(self):
+        prioritasok = {
+            ("/a", "elso.jpg"): 3.0,
+            ("/a", "masodik.jpg"): 1.0,
+            ("/a", "harmadik.jpg"): 2.0,
+        }
+
+        assert _names(
+            sort_folder_blocks(self._KEPEK, "priority", prioritasok=prioritasok)
+        ) == ["masodik.jpg", "harmadik.jpg", "elso.jpg"]
+
+    def test_a_felezopontos_ertek_is_a_helyere_kerul(self):
+        """A beszúrás felezőpontot termel (`ini.priority.kozteslepes`) — a
+        rendezésnek ezt ugyanúgy kell értenie, mint az egészeket."""
+        prioritasok = {
+            ("/a", "elso.jpg"): 1.0,
+            ("/a", "masodik.jpg"): 1.5,
+            ("/a", "harmadik.jpg"): 2.0,
+        }
+
+        assert _names(
+            sort_folder_blocks(self._KEPEK, "priority", prioritasok=prioritasok)
+        ) == ["elso.jpg", "masodik.jpg", "harmadik.jpg"]
+
+    def test_a_kezi_hely_nelkuli_kepek_a_vegere_esnek(self):
+        prioritasok = {("/a", "harmadik.jpg"): 5.0}
+
+        assert _names(
+            sort_folder_blocks(self._KEPEK, "priority", prioritasok=prioritasok)
+        ) == ["harmadik.jpg", "elso.jpg", "masodik.jpg"]
+
+    def test_azonos_ertek_mellett_a_fajlnev_dont(self):
+        prioritasok = {
+            ("/a", "elso.jpg"): 1.0,
+            ("/a", "masodik.jpg"): 1.0,
+            ("/a", "harmadik.jpg"): 1.0,
+        }
+
+        assert _names(
+            sort_folder_blocks(self._KEPEK, "priority", prioritasok=prioritasok)
+        ) == ["elso.jpg", "harmadik.jpg", "masodik.jpg"]
+
+    def test_adat_nelkul_a_fajlnev_sorrend_marad(self):
+        """Ha egyetlen kézi hely sincs (friss mappa), a rács NEM ürül ki és
+        nem is lesz futásfüggő: fájlnév-sorrendre esik vissza."""
+        assert _names(sort_folder_blocks(self._KEPEK, "priority")) == [
+            "elso.jpg",
+            "harmadik.jpg",
+            "masodik.jpg",
+        ]
+
+    def test_a_blokkhatar_itt_sem_mozdul(self):
+        kepek = (
+            _Photo("/a", "a1.jpg"),
+            _Photo("/a", "a2.jpg"),
+            _Photo("/b", "b1.jpg"),
+        )
+        prioritasok = {
+            ("/a", "a1.jpg"): 9.0,
+            ("/a", "a2.jpg"): 1.0,
+            ("/b", "b1.jpg"): 0.5,
+        }
+
+        assert _names(
+            sort_folder_blocks(kepek, "priority", prioritasok=prioritasok)
+        ) == ["a2.jpg", "a1.jpg", "b1.jpg"]
+
+    def test_ugyanaz_a_fajlnev_ket_mappaban_nem_utkozik(self):
+        """A leggyakoribb eset: két mappában ugyanaz a fájlnév. A kézi hely
+        MAPPÁNKÉNT él, tehát az egyik mappa értéke nem ülhet a másikra."""
+        kepek = (
+            _Photo("/a", "IMG_1.jpg"),
+            _Photo("/a", "IMG_2.jpg"),
+            _Photo("/b", "IMG_1.jpg"),
+            _Photo("/b", "IMG_2.jpg"),
+        )
+        prioritasok = {("/a", "IMG_2.jpg"): 0.0, ("/b", "IMG_1.jpg"): 0.0}
+
+        rendezve = sort_folder_blocks(kepek, "priority", prioritasok=prioritasok)
+
+        assert [(r.folder_path, r.name) for r in rendezve] == [
+            ("/a", "IMG_2.jpg"),
+            ("/a", "IMG_1.jpg"),
+            ("/b", "IMG_1.jpg"),
+            ("/b", "IMG_2.jpg"),
+        ]
+
+    def test_a_szempont_ervenyes_nevnek_szamit(self):
+        assert coerce_sort_mode("priority") == "priority"

@@ -8713,6 +8713,10 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <translation>&amp;Szín</translation>
     </message>
     <message>
+        <source>&amp;Manual order</source>
+        <translation>&amp;Kézi sorrend</translation>
+    </message>
+    <message>
         <source>&amp;Name</source>
         <translation>&amp;Név</translation>
     </message>
