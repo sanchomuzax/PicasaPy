@@ -1,6 +1,12 @@
-"""#368: MoveDatabaseDialog.qml — önállóan betöltve, fake kontrollerrel
+"""#368/#3214: MoveDatabaseDialog.qml — önállóan betöltve, fake kontrollerrel
 (a `test_qml_import_drop_area.py` mintája). A Main.qml-be illesztés (a
-felület-belépési pont, pl. eszköztár-gomb/menü) az integrátoré."""
+felület-belépési pont, pl. eszköztár-gomb/menü) az integrátoré.
+
+⚠️ #3214 óta ez a párbeszéd **nem költöztet**: a gomb SZÁNDÉKOT rögzít, a
+másolás a következő induláskor fut (`StartupRelocateWindow.qml`). A
+haladás-, megszakítás- és „kész, indítsd újra"-próbák ezért eltűntek —
+nincs mit mérniük. Ami maradt: a cél átadása, az előjegyzés visszajelzése,
+a visszavonás és a hibaág."""
 
 from __future__ import annotations
 
@@ -16,11 +22,8 @@ from PySide6.QtCore import (
 
 
 class FakeRelocateController(QObject):
-    relocateStarted = Signal()
-    relocateProgress = Signal(str, int, int)
-    relocateCancelled = Signal()
     relocateFailed = Signal(str)
-    relocateFinished = Signal(str)
+    relocateScheduled = Signal(str)
 
     def __init__(self, current_location="/home/user/.local/share/picasapy"):
         super().__init__()
@@ -38,7 +41,7 @@ class FakeRelocateController(QObject):
         self.start_calls.append(new_location)
 
     @Slot()
-    def cancelRelocate(self) -> None:
+    def cancelScheduledRelocate(self) -> None:
         self.cancel_calls += 1
 
 
@@ -139,66 +142,42 @@ class TestStartMove:
         qt_app.processEvents()
         assert fake.start_calls == ["/mnt/nas/picasapy-adatok"]
 
-    def test_started_signal_shows_progress_section(self, dialog, qt_app):
+    def test_az_elojegyzes_visszajelzese_megjelenik(self, dialog, qt_app):
         window, fake, _qt_app2 = dialog
-        fake.relocateStarted.emit()
+        fake.relocateScheduled.emit("/mnt/nas/picasapy-adatok")
         qt_app.processEvents()
-        assert window.property("relocating") is True
 
-    def test_progress_signal_updates_progress_bar(self, dialog, qt_app):
-        window, fake, _qt_app2 = dialog
-        fake.relocateStarted.emit()
-        fake.relocateProgress.emit("cache", 40, 100)
-        qt_app.processEvents()
-        fill = _child(window, "moveDatabaseProgressFill")
-        track_width = fill.parent().property("width")
-        assert fill.property("width") == pytest.approx(track_width * 0.4, rel=0.05)
+        eredmeny = _child(window, "moveDatabaseResultText")
+        assert eredmeny.property("visible") is True
+        assert window.property("scheduledLocation") == "/mnt/nas/picasapy-adatok"
 
-    def test_cancel_button_calls_controller_during_progress(self, dialog, qt_app):
+    def test_az_elojegyzes_utan_a_gomb_nem_nyomhato_ujra(self, dialog, qt_app):
         window, fake, _qt_app2 = dialog
-        fake.relocateStarted.emit()
+        window.setProperty("newLocation", "/mnt/nas/picasapy-adatok")
+        fake.relocateScheduled.emit("/mnt/nas/picasapy-adatok")
         qt_app.processEvents()
-        _click(_child(window, "moveDatabaseCancelProgressButton"))
+
+        assert _child(window, "moveDatabaseMoveButton").property("enabled") is False
+
+    def test_a_visszavonas_szol_a_vezerlonek(self, dialog, qt_app):
+        window, fake, _qt_app2 = dialog
+        fake.relocateScheduled.emit("/mnt/nas/picasapy-adatok")
         qt_app.processEvents()
+
+        _click(_child(window, "moveDatabaseUndoScheduleButton"))
+        qt_app.processEvents()
+
         assert fake.cancel_calls == 1
+        assert window.property("scheduledLocation") == ""
 
-    def test_finished_signal_shows_result_and_hides_progress(self, dialog, qt_app):
+    def test_failed_signal_shows_error(self, dialog, qt_app):
         window, fake, _qt_app2 = dialog
-        fake.relocateStarted.emit()
-        qt_app.processEvents()
-        fake.relocateFinished.emit("/mnt/nas/picasapy-adatok")
-        qt_app.processEvents()
-        assert window.property("relocating") is False
-        result_text = _child(window, "moveDatabaseResultText")
-        assert result_text.property("visible") is True
-
-    def test_failed_signal_shows_error_and_hides_progress(self, dialog, qt_app):
-        window, fake, _qt_app2 = dialog
-        fake.relocateStarted.emit()
-        qt_app.processEvents()
         fake.relocateFailed.emit("Nincs elég szabad hely.")
         qt_app.processEvents()
-        assert window.property("relocating") is False
+
         error_text = _child(window, "moveDatabaseErrorText")
         assert error_text.property("visible") is True
         assert "Nincs elég szabad hely" in str(error_text.property("text"))
-
-    def test_cancelled_signal_shows_cancelled_text(self, dialog, qt_app):
-        window, fake, _qt_app2 = dialog
-        fake.relocateStarted.emit()
-        qt_app.processEvents()
-        fake.relocateCancelled.emit()
-        qt_app.processEvents()
-        assert window.property("relocating") is False
-        cancelled_text = _child(window, "moveDatabaseCancelledText")
-        assert cancelled_text.property("visible") is True
-
-    def test_close_disabled_while_relocating(self, dialog, qt_app):
-        window, fake, _qt_app2 = dialog
-        fake.relocateStarted.emit()
-        qt_app.processEvents()
-        close_button = _child(window, "moveDatabaseCloseButton")
-        assert close_button.property("enabled") is False
 
 
 class TestRelocateControllerQtProperty:

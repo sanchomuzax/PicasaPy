@@ -49,3 +49,40 @@ def clear_data_root(config_dir: Path) -> None:
     XDG-alapértelmezés lesz érvényben (pl. a "Default" gomb + tényleges
     visszaköltöztetés után)."""
     override_file(config_dir).unlink(missing_ok=True)
+
+
+#: A KÖVETKEZŐ induláskor elvégzendő költözés szándéka (#3214).
+#:
+#: A mért eredetiben ez a `Preferences\AppLocalDataPathCopy` kulcs: a
+#: párbeszéd „Áthelyezés" gombja csak ezt írja (`0x007d1936`), a tényleges
+#: költözést az indulás végzi (`0x00404d97`). Nálunk ugyanez egy második,
+#: ugyanolyan egyszerű szövegfájl — az `override_file` társa.
+_PENDING_FILENAME = "data-location-pending.txt"
+
+
+def pending_file(config_dir: Path) -> Path:
+    """A KÖVETKEZŐ induláskor elvégzendő költözés célját tartalmazó fájl
+    helye (#3214) — nem feltétlenül létezik."""
+    return Path(config_dir) / _PENDING_FILENAME
+
+
+def read_pending_root(config_dir: Path) -> Path | None:
+    """A rögzített költözési szándék célja, vagy `None`."""
+    try:
+        text = pending_file(config_dir).read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return Path(text) if text else None
+
+
+def write_pending_root(config_dir: Path, new_root: Path) -> None:
+    """A költözési szándék rögzítése — fájlt NEM mozgat (#3214)."""
+    config_dir = Path(config_dir)
+    config_dir.mkdir(parents=True, exist_ok=True)
+    pending_file(config_dir).write_text(str(Path(new_root)), encoding="utf-8")
+
+
+def clear_pending_root(config_dir: Path) -> None:
+    """A költözési szándék törlése — az indulás használja, sikeres ÉS
+    sikertelen költözés után egyaránt (ld. `startup_relocate`)."""
+    pending_file(config_dir).unlink(missing_ok=True)

@@ -1095,6 +1095,10 @@
     </message>
     <message>
         <location filename="../relocate_controller.py"/>
+        <source>The destination is inside the current database folder. Choose a folder outside it.</source>
+        <translation>A megadott hely a jelenlegi adatbázis mappáján belül van. Válasszon rajta kívüli mappát.</translation>
+    </message>
+    <message>
         <source>The destination folder is not empty. Choose an empty folder and try again.</source>
         <translation>A cél mappa nem üres. Válasszon üres mappát, és próbálja újra.</translation>
     </message>
@@ -1144,14 +1148,37 @@
     </message>
 </context>
 <context>
+    <name>StartupRelocateWindow</name>
+    <message>
+        <source>Moving the database</source>
+        <translation>Az adatbázis áthelyezése</translation>
+    </message>
+    <message>
+        <source>PicasaPy is moving the database.</source>
+        <translation>A PicasaPy áthelyezi az adatbázist.</translation>
+    </message>
+    <message>
+        <source>Photo index…</source>
+        <translation>Fotóindex…</translation>
+    </message>
+    <message>
+        <source>Thumbnail cache…</source>
+        <translation>Bélyegkép-gyorsítótár…</translation>
+    </message>
+    <message>
+        <source>Finishing…</source>
+        <translation>Befejezés…</translation>
+    </message>
+</context>
+<context>
     <name>MoveDatabaseDialog</name>
     <message>
         <source>Move Database</source>
         <translation>Adatbázis áthelyezése</translation>
     </message>
     <message>
-        <source>Move the photo index and thumbnail cache to a new folder. A restart is required afterwards for the change to take effect.</source>
-        <translation>A fotóindex és a bélyegkép-gyorsítótár áthelyezése új mappába. A változás érvényesítéséhez utána újraindítás szükséges.</translation>
+        <source>Move the photo index and thumbnail cache to a new folder. PicasaPy moves them the next time it starts.</source>
+        <translation>A fotóindex és a bélyegkép-gyorsítótár áthelyezése új mappába. A PicasaPy a következő indításkor költözteti át őket.</translation>
     </message>
     <message>
         <source>Network drives (e.g. a NAS) are fully supported and are the normal setup for PicasaPy — make sure the drive stays connected while the app is running.</source>
@@ -1190,20 +1217,12 @@
         <translation>Áthelyezés a következő újraindításkor</translation>
     </message>
     <message>
-        <source>Move cancelled — nothing was changed.</source>
-        <translation>Az áthelyezés megszakítva — semmi sem változott.</translation>
+        <source>PicasaPy will move the database the next time it starts.</source>
+        <translation>A PicasaPy a következő indításkor helyezi át az adatbázist.</translation>
     </message>
     <message>
-        <source>PicasaPy is moving the database.</source>
-        <translation>A PicasaPy áthelyezi az adatbázist.</translation>
-    </message>
-    <message>
-        <source>Database moved. Restart PicasaPy for the change to take effect.</source>
-        <translation>Az adatbázis áthelyezve. A változás érvényesítéséhez indítsa újra a PicasaPy-t.</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Mégse</translation>
+        <source>Cancel the move</source>
+        <translation>Az áthelyezés visszavonása</translation>
     </message>
     <message>
         <source>Close</source>

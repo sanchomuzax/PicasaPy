@@ -18,9 +18,11 @@ from pathlib import Path
 
 import shutil
 import subprocess
+import threading
 
 from PySide6.QtCore import (
     QCoreApplication,
+    QEventLoop,
     QLockFile,
     QSettings,
     Qt,
@@ -57,7 +59,7 @@ from picasapy.version import version_string
 from .confirm_settings_bridge import ConfirmSettingsBridge
 from .folder_cover_provider import FolderCoverProvider, borito_fajljai
 from .controller import AppController
-from .data_location import read_data_root
+from .data_location import read_data_root, read_pending_root
 from . import display_photo_provider
 from .error_log import error_log_path, install_error_log
 from .exported_folders import (
@@ -67,6 +69,7 @@ from .exported_folders import (
 )
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
+from .startup_relocate import KoltozesEredmeny, KoltozesHid, fuggo_koltozes
 from . import collage_output, collage_prefs
 from .backup_controller import BackupController
 from .dedup_controller import DedupController
@@ -445,6 +448,55 @@ def _bootstrap_storage(
         home=home,
         migrate=migrate,
     )
+
+
+def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
+    """A KÖVETKEZŐ indulásra előjegyzett adatbázis-költözés elvégzése (#3214).
+
+    A mért eredetiben a „Move Database" gomb csak szándékot rögzít, a
+    másolás pedig induláskor fut, saját haladásjelző ablakkal
+    (`moving_database.fen`). Ezért hívódik ez a tárhely-előkészítés
+    (`_bootstrap_storage`, zár + útvonalak) **előtt**: mire az útvonalak
+    kiszámolódnak, a felülbírálás már az új helyre mutat, tehát a program
+    az ÚJ helyről indul — nem kell külön újraindítás.
+
+    Szándék nélkül a függvény semmit nem tesz (ablak sem jön létre).
+    """
+    config_dir = _config_dir()
+    cel = read_pending_root(config_dir)
+    if cel is None:
+        return KoltozesEredmeny()
+
+    hid = KoltozesHid(cel)
+    engine = QQmlApplicationEngine()
+    engine.addImportPath(str(_APP_DIR / "qml"))
+    engine.rootContext().setContextProperty("koltozes", hid)
+    engine.load(str(_APP_DIR / "qml" / "StartupRelocateWindow.qml"))
+
+    eredmeny: list[KoltozesEredmeny] = []
+    hurok = QEventLoop()
+
+    def _munka() -> None:
+        eredmeny.append(
+            fuggo_koltozes(
+                config_dir,
+                _data_dir() / "index.db",
+                _cache_dir() / "thumbs",
+                haladas=hid.jelentsd,
+            )
+        )
+        # a hurok lezárása a FŐ szálon fusson le
+        QTimer.singleShot(0, hurok.quit)
+
+    szal = threading.Thread(target=_munka, name="picasapy-indulasi-koltozes")
+    szal.start()
+    hurok.exec()
+    szal.join()
+    # az ablak a költözéssel együtt tűnik el — az engine eldobása zárja
+    for ablak in engine.rootObjects():
+        ablak.close()
+    engine.deleteLater()
+    return eredmeny[0] if eredmeny else KoltozesEredmeny()
 
 
 def _force_qml_dialogs(platform: str = sys.platform) -> bool:
@@ -999,6 +1051,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     timeline.mark("felület-betűtípus betöltése")
     _install_translator(app)
     timeline.mark("fordítás betöltése")
+
+    # #3214: az előjegyzett adatbázis-költözés MÉG a tárhely-előkészítés
+    # előtt fut le — különben a program a régi helyet nyitná meg, és
+    # újraindítást kellene kérni (a mért eredeti sem kér).
+    koltozes = _fuggo_koltozes_indulaskor()
+    if koltozes.hiba:
+        print(koltozes.hiba, file=sys.stderr)
+    timeline.mark("előjegyzett adatbázis-költözés")
 
     # #1076: Windowson a legacy konfigurációból feloldott EFFEKTÍV
     # adatgyökeret még a migráció előtt zárjuk. A bootstrap az útvonalakat
