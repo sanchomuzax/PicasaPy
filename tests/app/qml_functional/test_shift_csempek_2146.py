@@ -52,6 +52,13 @@ _FULEK = {
     for nev in ("1", "2", "3", "4")
 }
 _PANEL = (_QML_DIR / "EditorPanel.qml").read_text(encoding="utf-8")
+#: ⚠️ #3220: a panel LOGIKÁJA külön fájlba került (a panel 1295 sorról
+#: 769-re fogyott). Az alábbi állítások változatlanok — csak azt kell
+#: tudniuk, hol keressék a függvény TÖRZSÉT. A kezelő-blokkok
+#: (`onActiveTabChanged`, `Component.onCompleted`) a panelben maradtak.
+_PANEL_LOGIKA = (_QML_DIR / "editorpanel_logika.js").read_text(
+    encoding="utf-8"
+)
 
 #: A MÉRT kilencből NYOLC pár épült meg: elsődleges -> (másodlagos, felirat).
 #:
@@ -188,7 +195,9 @@ class TestAFrissitesBEKOTESE:
         # rögzített karakterablakkal egy jogos komment-bővítés kivágná a
         # keresett sort, és a próba hamisan bukna (ez meg is történt).
         # #2540: a kézzel írt párosítás helyett a KÖZÖS mérő.
-        blokk = blokk_horgony_utan(_PANEL, "function frissitsdAShiftAllapotot")
+        blokk = blokk_horgony_utan(
+            _PANEL_LOGIKA, "function frissitsdAShiftAllapotot"
+        )
         assert "editController.shiftLenyomva()" in blokk, (
             "a frissítő nem a vezérlőt kérdezi — a QML-ből nincs más mód a "
             "pillanatnyi Shift-állapot megismerésére"

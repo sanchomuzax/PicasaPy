@@ -126,6 +126,9 @@ EditorDialogs 1.0 EditorDialogs.qml
 EditorActionBadge 1.0 EditorActionBadge.qml
 EditorParamPanel 1.0 EditorParamPanel.qml
 EditorTabBar 1.0 EditorTabBar.qml
+EditorUndoRow 1.0 EditorUndoRow.qml
+EditorTabHost 1.0 EditorTabHost.qml
+EditorModeTools 1.0 EditorModeTools.qml
 EditorToolBar 1.0 EditorToolBar.qml
 EditorTabCommonFixes 1.0 EditorTabCommonFixes.qml
 CollageBackgroundBox 1.0 CollageBackgroundBox.qml

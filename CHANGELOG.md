@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.511] – 2026-09-17
+
+### Belső
+
+- **A szerkesztő panel forráskódja négy darabra bontva** (#3220) — a
+  felületen semmi nem változik: ugyanazok a fülek, gombok, csúszkák és
+  ugyanaz a viselkedés. A fájl 1295 sorra nőtt, és mivel minden
+  szerkesztő-fejlesztés ide nyúl, egyre gyakrabban ütközött két
+  párhuzamosan futó munka ugyanabban a blokkban. A szétbontás után a
+  gazda-fájl 769 sor.
+
 ## [0.8.510] – 2026-09-17
 
 ### Megváltozva

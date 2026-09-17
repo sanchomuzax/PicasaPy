@@ -114,9 +114,23 @@ class TestNincsGorgetesAzEffektFuleken:
         )
 
     def test_a_forrasban_nincs_gorgetosav_a_fuleken(self):
-        """Forrás-őr: a `ScrollBar` a fülterületről végleg lekerült."""
-        forras = (_QML_DIR / "PicasaPy" / "EditorPanel.qml").read_text(
-            encoding="utf-8"
+        """Forrás-őr: a `ScrollBar` a fülterületről végleg lekerült.
+
+        ⚠️ #3220: az ÁLLÍTÁS változatlan, csak a forrás-KÉSZLET követi a
+        szétbontást. A panel 1295 sorról 769-re fogyott, és a mód-eszközök
+        (`editorModeToolScroll`) az `EditorModeTools.qml`-be, a fülterület
+        az `EditorTabHost.qml`-be került — a szerkesztő forrása azóta
+        három fájl. Ha csak az `EditorPanel.qml`-t olvasnánk, ez az őr
+        NÉMÁN átengedné a visszaesést (a `editorTabScroll` bárhol
+        visszakerülhetne), és a „maradnia kell" fele hamisan bukna.
+        """
+        forras = "\n".join(
+            (_QML_DIR / "PicasaPy" / nev).read_text(encoding="utf-8")
+            for nev in (
+                "EditorPanel.qml",
+                "EditorTabHost.qml",
+                "EditorModeTools.qml",
+            )
         )
         # a mód-eszközök és az alpanel görgetése MARAD, azokat nem bántjuk
         assert "editorTabScroll" not in forras, (

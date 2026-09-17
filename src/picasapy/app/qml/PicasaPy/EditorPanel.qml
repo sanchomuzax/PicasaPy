@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import "editorpanel_logika.js" as Logika
 
 // Szerkesztő eszközpanel — a néző bal oldali panelje, Picasa-hű ikonos
 // csempékkel (#51). Két mód:
@@ -68,59 +69,16 @@ Rectangle {
         10 + tabBar.height + 6 + globalUndoRow.height + 10
     implicitHeight: panel.chromeHeight + panel.mertTabPanelHeight
 
-    // #641/#703: a panel TÉNYLEGES és LÁTHATÓ magassága eltérhet. Egy
-    // layout-cella nem zsugorít a kért méret alá, hanem hagyja túlnyúlni a
-    // gyereket — a panel aljához igazodó gombsor pedig vele együtt csúszik
-    // ki a képernyőről.
-    //
-    // #641 ezt a KÖZVETLEN szülővel korlátozta. Az kevés: ha a túlnyúlás egy
-    // távolabbi ősnél történik, a panel a saját dobozán belül rendben van, a
-    // doboz viszont már az ablakon kívül. Ezért végigmegyünk a TELJES
-    // ős-láncon a jelenetgyökérig, és minden szinten megnézzük, mennyi
-    // maradt a panelnek — ez lényegében az ABLAK koordinátarendszerében mért
-    // korlát. A ciklus a `y`/`height` tulajdonságokat olvassa, ezért a QML
-    // mindegyikre kötés-függőséget vesz fel: ha bármelyik ős elmozdul vagy
-    // átméreteződik, ez újraszámolódik.
-    readonly property real visibleHeight: {
-        var limit = panel.height
-        var item = panel
-        var offset = 0
-        while (item.parent) {
-            offset += item.y
-            // A NULLA magasságú őst kihagyjuk: az nem szűk hely, hanem
-            // „még nincs elrendezve" (a jelenetgyökér a megjelenítésig 0).
-            // Ha egy ős tényleg nulla magas, a panelből úgysem látszik
-            // semmi — a korlátozásnak ott nincs mit megvédenie.
-            if (item.parent.height > 0)
-                limit = Math.min(limit, item.parent.height - offset)
-            item = item.parent
-        }
-        return Math.max(0, limit)
-    }
+    //: #3220: a számítás a `editorpanel_logika.js`-ben (`lathatoMagassag`)
+    //: — az ős-lánc bejárása és az indoklása ott olvasható. A kötés-
+    //: függőségek változatlanok: a függvény ugyanazokat a `y`/`height`
+    //: tulajdonságokat olvassa, tehát a QML ugyanúgy újraszámol.
+    readonly property real visibleHeight: Logika.lathatoMagassag()
 
-    // #703: a látható fül tartalmának TELJES igénye (vágás nélkül), és
-    // amennyi hely ebből ténylegesen jut neki a gombsor fölött. A kettő
-    // eltérése a SZÜKSÉG-ÁG: ilyenkor — és kizárólag ilyenkor — vágunk.
-    // Külön, olvasható állapotként, hogy a teszt tudja állítani, és ne csak
-    // „valahogy" működjön (#703/4).
-    //
-    // #659: a fülek egy része FELSŐ MARGÓVAL ül (`anchors.margins`), ezért a
-    // puszta `implicitHeight` kevesebb, mint a tényleges alsó szél — a
-    // gyerek `y`-ját is bele kell számolni. Az `implicitHeight`-et (és nem a
-    // `height`-et) használjuk, mert az nem függ a szülő magasságától — így
-    // nincs kötési hurok.
-    readonly property real tabContentHeight: {
-        var tallest = 0
-        var kids = tabArea.children
-        for (var i = 0; i < kids.length; ++i) {
-            if (!kids[i].visible)
-                continue
-            var also = kids[i].y + kids[i].implicitHeight
-            if (also > tallest)
-                tallest = also
-        }
-        return tallest
-    }
+    //: #3220: a számítás a `editorpanel_logika.js`-ben
+    //: (`fulTartalomMagassag`) — a #659/#703 indoklás ott olvasható.
+    readonly property real tabContentHeight: Logika.fulTartalomMagassag()
+
     readonly property real tabAreaAvailable:
         Math.max(0, globalUndoRow.y - 6 - tabArea.y)
     readonly property bool tabContentTruncated:
@@ -186,7 +144,9 @@ Rectangle {
     //: #3123: a kép fölötti eszköz-sáv ebből tudja, mikor alkalmazható a
     //: szöveg (a szövegmező a `EditorTextPanel`-ben él).
     readonly property bool textApplyEnabled:
-        textModePanel ? textModePanel.applyEngedve : false
+        //: #3220: a szöveg-panel a mód-eszközök fájljában él
+        modeToolScroll.szovegLap ? modeToolScroll.szovegLap.applyEngedve
+                                 : false
     // #450: a kép mentett felirata ("Copy Caption" gombhoz) — a hívó
     // (PhotoViewer) tölti a photosModel.captionAt()-ból; üresnél a gomb
     // tiltott. A hasTextOverlay ("Remove all existing text" gombhoz) a
@@ -325,39 +285,9 @@ Rectangle {
         ? editController.shiftAktiv
         : false
 
-    function frissitsdAShiftAllapotot() {
-        //: ⚠️ A #305 null-őr ITT NEM ELÉG. A QML-tesztek egy része CSONK
-        //: vezérlőt ad (`_FakeEditController`), ami LÉTEZIK, csak ezt a
-        //: metódust nem ismeri — a puszta `editController` vizsgálat
-        //: átengedné, és a hívás `TypeError`-t dobna. A kivétel pedig
-        //: MEGSZAKÍTANÁ az `onActiveTabChanged` kezelő hátralévő részét
-        //: (a paraméter-panel bezárását!), tehát egy látszólag ártatlan
-        //: új hívás vinne el egy egészen más funkciót. A CI ezt el is
-        //: kapta (#2146).
-        if (typeof editController === "undefined" || !editController)
-            return
-        if (typeof editController.shiftLenyomva !== "function")
-            return
-        //: #798: a kötést csak akkor írjuk felül, ha a vezérlő NEM adja
-        //: az élő állapotot (régi csonk a próbákban). Élő vezérlőnél a
-        //: kötés magától követ, és a felülírás pont azt törné el.
-        if (editController.shiftAktiv !== undefined)
-            return
-        panel.shiftMasodlagos = editController.shiftLenyomva()
-    }
+    function frissitsdAShiftAllapotot() { return Logika.frissitsdAShiftAllapotot() }
 
-    function allitsdAShiftFigyelest() {
-        //: #798: a Shift-figyelés eseményszűrője MINDEN eseményre átlép
-        //: Pythonba — mérve a `test_people_panel_26.py` 13 s-ról 25 s-ra
-        //: nőtt tőle. Ezért csak a NÉGY effekt-fülön van fent (2–5); a
-        //: Shift a kilenc csempe közül négyet ezeken vált át.
-        if (typeof editController === "undefined" || !editController)
-            return
-        if (typeof editController.figyeldAShiftet !== "function")
-            return
-        editController.figyeldAShiftet(panel.activeTab >= 2
-                                       && panel.activeTab <= 5)
-    }
+    function allitsdAShiftFigyelest() { return Logika.allitsdAShiftFigyelest() }
 
     Component.onCompleted: {
         panel.allitsdAShiftFigyelest()
@@ -407,16 +337,7 @@ Rectangle {
         panel.paramEffectLabel !== "" ? panel.paramEffectLabel
                                       : panel.paramEffectName
 
-    // #305 null-őr — de ITT szigorúbb annál: az EditorPanel-t önállóan (a
-    // `PicasaPy 1.0` modulon át) betöltő tesztek (test_editor_tabs.py,
-    // test_editor_effects.py, test_qml_editor_panel.py) az editController
-    // kontextus-property-t EGYÁLTALÁN nem állítják be — ott a bare
-    // `editController` hivatkozás ReferenceError-t dobna. A `typeof` ezt is
-    // lekezeli (nem csak a null-esetet), ezért a régi izolált tesztek
-    // változatlanul a sima effectRequested-útra esnek vissza.
-    function hasEffectController() {
-        return typeof editController !== "undefined" && editController !== null
-    }
+    function hasEffectController() { return Logika.hasEffectController() }
 
     // #338: az effekt-gombok bélyegképéhez (image://effectthumb/<id>/<effekt>)
     // szükséges fotó-azonosító. Nincs rá külön EditController-property — az
@@ -435,17 +356,7 @@ Rectangle {
         return q >= 0 ? rest.substring(0, q) : rest
     }
 
-    // az adott effekt bélyegkép-URL-je, vagy "" ha nincs aktív szerkesztés
-    // (a hívó PanelButton ilyenkor a régi sima kinézetére esik vissza). A
-    // fotó ALAP állapotán mutatja az effektet (nem a jelenlegi szerkesztési
-    // láncon) — ld. effect_thumbnails.py modul-docstringjének indoklását.
-    // NINCS "?rev="-féle cache-buster: a bélyegkép csak a FOTÓTÓL függ, a
-    // szerkesztési lánc (undo/redo/csúszka-húzás) nem érvényteleníti — ez
-    // adja a kért "effektenként csak egyszer" gyorsítótárazást.
-    function effectThumbSource(effectName) {
-        if (panel.effectThumbPhotoId === "") return ""
-        return "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
-    }
+    function effectThumbSource(effectName) { return Logika.effectThumbSource(effectName) }
 
     // #704: melyik szűrő HÁNYSZOR szerepel a szerkesztési láncban — ebből
     // kapja a csempe az „alkalmazva" jelvényt. A `revision`-re frissül (a
@@ -474,14 +385,9 @@ Rectangle {
         return (lista === undefined || lista === null) ? [] : lista
     }
 
-    function hasBadge(effectName) {
-        return panel.oneClickEffects.indexOf(effectName) >= 0
-    }
+    function hasBadge(effectName) { return Logika.hasBadge(effectName) }
 
-    function effectAppliedCount(effectName) {
-        var count = panel.effectChainCounts[effectName]
-        return count === undefined ? 0 : count
-    }
+    function effectAppliedCount(effectName) { return Logika.effectAppliedCount(effectName) }
 
     // #411: a "Gyakori javítások" fül csempéi a #405 óta a felhasználó
     // fotójának bélyegképét/effekt-előnézetét mutatták — sötét képnél ez
@@ -492,85 +398,19 @@ Rectangle {
     // megszűnt (a 3–5. effekt-fül VÁLTOZATLANUL a fenti
     // `effectThumbSource()`-t használja, az egy külön útvonal).
 
-    // egy effekt-gomb kattintása: ha az effektnek vannak paraméterei,
-    // megnyitja az alpanelt és true-t ad vissza — ilyenkor a hívó (a gomb
-    // onButtonClicked-je) NEM küldi az effectRequested jelet. Egyébként
-    // (vagy ha nincs editController — ld. fent) false-t ad vissza, és a
-    // gomb VÁLTOZATLANUL a meglévő effectRequested jelet küldi tovább. Az
-    // effectRequested hívás szó szerinti (nem változóból font) formája
-    // minden gombnál megmarad, csak feltételesen fut le — a
-    // test_effect_names.py #315-ös regex-alapú lefedettség-ellenőrzése
-    // erre épít.
-    //
-    // #700: a második paraméter a megnyitó csempe SAJÁT felirata — ebből
-    // lesz az alpanel címe (ld. `paramEffectLabel`). Elhagyható: régi,
-    // felirat nélküli hívónál a cím a belső kulcsra esik vissza.
-    function tryOpenParamPanel(name, displayLabel) {
-        if (panel.hasEffectController() && editController.effectHasParams(name)) {
-            panel.openParamPanel(name, displayLabel)
-            return true
-        }
-        return false
-    }
+    function tryOpenParamPanel(name, displayLabel) { return Logika.tryOpenParamPanel(name, displayLabel) }
 
-    // az alpanel megnyitása: csúszkák a katalógus alapértékein, azonnali
-    // élő előnézettel.
-    function openParamPanel(name, displayLabel) {
-        if (!panel.hasEffectController()) return
-        var params = editController.effectParams(name)
-        // #516: a "color" vezérlők kezdőértéke a katalógus hex-alapértéke,
-        // nem a (náluk értelmezetlen) numerikus `default` mező
-        var values = []
-        for (var i = 0; i < params.length; i++)
-            values.push(params[i].kind === "color" ? params[i].color : params[i].default)
-        panel.paramEffectName = name
-        panel.paramEffectLabel = displayLabel ? displayLabel : ""
-        panel.paramEffectParams = params
-        panel.paramEffectValues = values
-        panel.paramPanelActive = true
-        editController.previewEffect(name, values)
-    }
+    function openParamPanel(name, displayLabel) { return Logika.openParamPanel(name, displayLabel) }
 
-    // egy csúszka húzása: az értéklista frissítése + késleltetett előnézet —
-    // a folderPaneWidthSaver mintája (Main.qml): ne hívjunk feleslegesen
-    // minden pixelnyi elmozdulásnál, de az utolsó érték mindig átmegy.
-    function updateParamValue(index, value) {
-        panel.paramEffectValues[index] = value
-        paramPreviewTimer.restart()
-    }
+    function updateParamValue(index, value) { return Logika.updateParamValue(index, value) }
 
-    // Apply: a beállított értékekkel a láncra (undo + mentés), vissza a rácsra.
-    function applyParamPanel() {
-        paramPreviewTimer.stop()
-        if (panel.hasEffectController())
-            editController.applyEffectWithParams(panel.paramEffectName,
-                                                  panel.paramEffectValues)
-        panel.closeParamPanel()
-    }
+    function applyParamPanel() { return Logika.applyParamPanel() }
 
-    // Cancel: az előnézet elvetése (a mentett lánc marad érintetlen),
-    // vissza a rácsra.
-    function cancelParamPanel() {
-        paramPreviewTimer.stop()
-        if (panel.hasEffectController())
-            editController.discardEffectPreview()
-        panel.closeParamPanel()
-    }
+    function cancelParamPanel() { return Logika.cancelParamPanel() }
 
-    function closeParamPanel() {
-        panel.paramPanelActive = false
-        panel.paramEffectName = ""
-        panel.paramEffectLabel = ""
-        panel.paramEffectParams = []
-        panel.paramEffectValues = []
-    }
+    function closeParamPanel() { return Logika.closeParamPanel() }
 
-    // #496: a csúszka-felirat-fordító switch (#316) az EditorParamPanel.qml-be
-    // került, az egyetlen hívója mellé; ez a vékony átjáró tartja meg a
-    // panel-szintű felületet (a meglévő tesztek a panelen hívják).
-    function paramLabel(key) {
-        return effectParamScroll.paramLabel(key)
-    }
+    function paramLabel(key) { return Logika.paramLabel(key) }
 
     // tool: "crop"|"tilt"|"redeye"|"enhance"|"autolight"|"autocolor"
     signal toolActivated(string tool)
@@ -632,48 +472,13 @@ Rectangle {
     signal cropApplyRequested()
     signal cropCancelRequested()
 
-    // a négy csúszka aktuális értékét egyben küldi (élő előnézet)
-    function emitFinetunePreview() {
-        panel.finetunePreview(finetunePanel.fillSlider.value,
-                               finetunePanel.highlightsSlider.value,
-                               finetunePanel.shadowsSlider.value,
-                               finetunePanel.tempSlider.value)
-    }
-    // a csúszkák a mentett (kontroller) értékekre állnak — előnézet nélkül
-    function syncFinetuneSliders() {
-        panel.suppressFinetune = true
-        finetunePanel.fillSlider.value = panel.fillLight
-        fixesTab.fillSlider.value = panel.fillLight   // #337: a másik fül párja
-        finetunePanel.highlightsSlider.value = panel.highlights
-        finetunePanel.shadowsSlider.value = panel.shadows
-        finetunePanel.tempSlider.value = panel.colorTemp
-        panel.suppressFinetune = false
-    }
+    function emitFinetunePreview() { return Logika.emitFinetunePreview() }
+    function syncFinetuneSliders() { return Logika.syncFinetuneSliders() }
 
-    // #337: a Kitöltő fény KÉT helyen látszik (Gyakori javítások és
-    // Finomhangolás), de EGY beállítás — amelyiket húzzák, a másik követi.
-    // A visszacsatolást a suppressFinetune zárja ki: a párja beállítása nem
-    // vált ki újabb előnézetet, csak a húzott csúszka.
-    function fillLightMoved(value) {
-        if (panel.suppressFinetune)
-            return
-        panel.suppressFinetune = true
-        finetunePanel.fillSlider.value = value
-        fixesTab.fillSlider.value = value
-        panel.suppressFinetune = false
-        panel.emitFinetunePreview()
-    }
+    function fillLightMoved(value) { return Logika.fillLightMoved(value) }
 
-    // a négy csúszka aktuális értékének MENTÉSE (a húzás végén) — a
-    // Finomhangolás fül minden csúszkája és a Gyakori javítások fülön lévő
-    // Derítőfény-párja is ezen az egy ponton megy ki
-    function emitFinetuneCommit() {
-        panel.finetuneCommit(finetunePanel.fillSlider.value,
-                             finetunePanel.highlightsSlider.value,
-                             finetunePanel.shadowsSlider.value,
-                             finetunePanel.tempSlider.value)
-    }
-    function fillLightCommitted() { panel.emitFinetuneCommit() }
+    function emitFinetuneCommit() { return Logika.emitFinetuneCommit() }
+    function fillLightCommitted() { return Logika.fillLightCommitted() }
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
@@ -790,51 +595,10 @@ Rectangle {
         return panel.aspectRotated ? 1 / base : base
     }
 
-    // #448 `lastCropRatio`: az eszköz megnyitásakor a legutóbb használt
-    // arányt tölti vissza (QSettings-ből, `controller` közvetítésével) — a
-    // hívó (`onCropActiveChanged` a fájl végén) hívja.
-    function restoreLastCropRatio() {
-        if (typeof controller === "undefined" || !controller) return
-        var key = controller.lastCropRatio
-        for (var i = 0; i < panel.aspectFullList.length; i++) {
-            if (panel.aspectFullList[i].key === key) {
-                panel.aspectIndex = i
-                return
-            }
-        }
-        // #876: ISMERETLEN kulcs → „Kézi". Ez nem elméleti eset: a lista
-        // hat tétele (`CurrentDisplay`, `4x4`, `4x6`, `5x7`, `8x10`,
-        // `8.5x11`) kikerült, és aki korábban ilyet választott, annak a
-        // beállítása MOST is ott van a QSettingsben. A korábbi kód ilyenkor
-        // csak visszatért, tehát az `aspectIndex` az ELŐZŐ képen használt
-        // értéken maradt — a vágó néma, láthatatlan aránnyal nyílt volna.
-        panel.aspectIndex = 0
-    }
-    function selectAspect(index) {
-        panel.aspectIndex = index
-        panel.aspectRotated = false
-        if (typeof controller !== "undefined" && controller) {
-            var key = panel.aspectFullList[index].key
-            if (key) controller.setLastCropRatio(key)
-        }
-    }
+    function restoreLastCropRatio() { return Logika.restoreLastCropRatio() }
+    function selectAspect(index) { return Logika.selectAspect(index) }
 
-    // egy csempe-kattintás kezelése: mód-eszköznél kapcsoló-állapot váltása,
-    // egygombos javításnál (#116) csak jelzés — tiltott gombnál no-op
-    function handleToolClick(tool) {
-        switch (tool) {
-        case "crop": panel.cropActive = !panel.cropActive; break
-        case "tilt": panel.tiltActive = !panel.tiltActive; break
-        case "redeye": panel.redeyeActive = !panel.redeyeActive; break
-        case "retouch": panel.retouchActive = !panel.retouchActive; break
-        case "text": panel.textActive = !panel.textActive; break
-        case "enhance": if (!panel.enhanceEnabled) return; break
-        case "autolight": if (!panel.autolightEnabled) return; break
-        case "autocolor": if (!panel.autocolorEnabled) return; break
-        }
-        panel.toolActivated(tool)
-        if (tool === "crop") panel.cropRequested()
-    }
+    function handleToolClick(tool) { return Logika.handleToolClick(tool) }
 
     // #411: SAJÁT rajzú SVG-ikonos eszköz-csempe — a "Gyakori javítások"
     // fülön a #405-ös kör a felhasználó fotójának bélyegképét/effekt-
@@ -879,138 +643,26 @@ Rectangle {
         anchors.topMargin: 10
     }
 
+    //: #3220: a fülek önálló fájlba kerültek, a `editorpanel_logika.js`
+    //: viszont NÉVVEL hivatkozik kettőre — ez a két tükör tartja a
+    //: logikát változatlanul (a nevek szándékosan a RÉGIEK).
+    readonly property Item finetunePanel: tabArea.finomhangoloLap
+    readonly property Item fixesTab: tabArea.gyakoriLap
+
     // ---------------- a FÜLEK közös területe (NEM görgethető) ----------
     //
-    // #628 — a #616 visszavonása. A #422 a felhasználó nyomatékos kérésére
-    // levette a görgethető keretet az effekt-fülekről; a #616 aztán, a
-    // kilógó gombsort orvosolva, VISSZATETTE. A valódi ok azonban nem a
-    // fülek mérete volt, hanem egy beégetett szám: a PhotoViewer.qml fix
-    // 420 képpontot adott a panelnek, akármekkora az ablak. A 3. fül 12
-    // bélyegképes csempéje (3×4 ≈ 450 px) ennél MINDIG magasabb, ezért a
-    // görgetés nem szélsőséges eset volt, hanem az alapállapot.
-    //
-    // Az eredetiben a panel FIX méretű, és a kényszer-alapú (.tre)
-    // elrendezésben a rács mindig kifér — görgetés nincs. Nálunk ezt a
-    // garanciát a panel `implicitHeight`-je adja (ld. lent): az a
-    // LEGMAGASABB fület is elbírja, a gombsor pedig a tartalmat követi,
-    // nem fix magasságon ül.
-    Item {
+    // A terület és a hét fül önálló fájlban él (#3220) — az indoklások
+    // (#422/#616/#628/#703) ott olvashatók (`EditorTabHost.qml`).
+    EditorTabHost {
         id: tabArea
-        objectName: "editorTabArea"
-        // a csúszkás alpanel a fülek HELYETT jelenik meg (nem föléjük)
-        visible: !panel.modeToolActive && !panel.paramPanelActive
+        panel: panel
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         // #741: a fülterület a fülsávval AZONOS 276 képpontos
-        // tartalom-oszlop (x 3..279) — a fülek eddig a teljes 280-ból
-        // indultak, és a saját margóikkal együtt 260-ra szűkültek.
+        // tartalom-oszlop (x 3..279)
         anchors.leftMargin: 3
         anchors.rightMargin: 1
-        // a terület magassága a LÁTHATÓ fülé — egyszerre legfeljebb egy az.
-        // ALAPÁLLAPOTBAN nincs vágás és nincs görgetősáv: a tartalomnak el
-        // KELL férnie (#422/#628 — a görgethető keret levételét a felhasználó
-        // nyomatékosan kérte, és a #616 visszahozta; nem harmadszor is).
-        //
-        // #703: EGYETLEN kivétel, a szükség-ág. Ha a kijelző annyira alacsony,
-        // hogy a panel nem kaphatja meg az igényét (az ablak minimuma nem
-        // lehet nagyobb a képernyőnél), akkor a fül tartalma veszít — soha nem
-        // a gombsor. A vágás ilyenkor és csak ilyenkor kapcsol be, és a
-        // `panel.tabContentTruncated`-en át MÉRHETŐ, hogy melyik ágon vagyunk.
-        height: tabArea.visible
-                ? Math.min(panel.tabContentHeight, panel.tabAreaAvailable) : 0
-        clip: panel.tabContentTruncated
-
-
-        // ---------------- 1. fül: "Gyakori javítások" ikonrács ----------------
-        // #496: a fül tartalma önálló fájlban (EditorTabCommonFixes.qml) — a
-        // láthatóság és a horgonyok itt, a testvér-fülek mintája szerint.
-        EditorTabCommonFixes {
-            id: fixesTab
-            panel: panel
-            visible: !panel.modeToolActive && panel.activeTab === 0
-                     && !panel.paramPanelActive  // #583
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---------------- "finetune" mód: Finomhangolás (#20/#464) ----------
-        // #464/#496: a fül tartalma önálló fájlban, a tulajdonos négy
-        // képernyőképe szerinti elrendezéssel (ld. ott).
-        EditorFinetunePanel {
-            id: finetunePanel
-            panel: panel
-            visible: !panel.modeToolActive && panel.activeTab === 1
-                     && !panel.paramPanelActive  // #583
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---------------- "effects" mód: Effektek (#20) ----------------
-        EditorEffectsTab1 {
-            id: effectsTab1
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---------------- "effects2" mód: 4. effekt-fül — zöld ecset,
-        // "kreatív effektek" (#328, docs/specs/ui-audit-editor.md 4. fül) ------
-        EditorEffectsTab2 {
-            id: effectsTab2
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---------------- "effects3" mód: 5. effekt-fül — kék ecset,
-        // "művészi effektek" (#328, docs/specs/ui-audit-editor.md 5. fül) ------
-        EditorEffectsTab3 {
-            id: effectsTab3
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---------------- "retouch" mód: Retusálás (#148) ----------------
-        // A Vágás mintáját követi: a kép TELJES panel-területét foglalja el a
-        // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
-        // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
-        // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
-
-        // ---------------- "redeye" mód: Vörösszem (#445) ----------------
-        // Az automatika a panel megnyitásakor lefut; a kézzel húzott
-        // téglalapokat — a Retusálás mintájára — a hívó (PhotoViewer) veszi fel
-        // a képen, ez a fájl a puffer-állapotot és a gombokat mutatja.
-
-        // ---------------- "text" mód: Szöveg-overlay (#148) ----------------
-        // A pozicionálás is kattintással történik a képen (a hívó feladata,
-        // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
-        // gépelését a textDraftEdited jel viszi a controllerhez.
-
-        // ---------------- 6. fül: a további Glimmer-effektek (#422) --------
-        EditorEffectsTab4 {
-            id: effectsTab4
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---------------- 7. fül: örökölt, felület nélküli szűrők (#571) ---
-        EditorLegacyTab {
-            id: legacyTab
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
     }
 
 
@@ -1053,86 +705,17 @@ Rectangle {
 
     // ---------------- mód-eszközök (vágás/retusálás/vörösszem/szöveg) ----
     //
-    // #464 (felhasználói hibajelentés az effekt-fülekről, ugyanaz az
-    // osztály): ezek a panelek a tartalmuktól függően MAGASABBAK lehetnek,
-    // mint a rendelkezésre álló hely — vágás/görgetés nélkül rálógnának a
-    // panel alján ülő, globális Visszavonás/Újra sorra. Ezért mind a négy
-    // EGY közös, vágott görgethető területen ül, ami pontosan a gombsorig
-    // ér. Egyszerre mindig legfeljebb egy látszik (a saját `visible`
-    // kötése szerint), a görgethető magasság ezért a LÁTHATÓÉ.
-    Flickable {
+    // A négy mód-panel és a görgethető keretük önálló fájlban él
+    // (#3220) — az indoklások (#778 és társai) ott olvashatók
+    // (`EditorModeTools.qml`).
+    EditorModeTools {
         id: modeToolScroll
-        objectName: "editorModeToolScroll"
-        visible: panel.modeToolActive
+        panel: panel
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: globalUndoRow.top
         anchors.bottomMargin: 6
-        clip: true
-        contentWidth: width
-        // #778: a négy mód-panel FELSŐ MARGÓVAL ül (`anchors.margins: 10` a
-        // saját fájljaikban), ezért a puszta `implicitHeight` kevesebb, mint a
-        // tényleges alsó szél — a panel alja pontosan a margónyival lógott ki a
-        // görgethető terület aljából, mind a négy módban, minden szélességnél.
-        // A gyerek `y`-ját is bele kell számolni; ugyanaz a javítás, amit a
-        // fülek `tabContentHeight`-je a #659-ben kapott. Beégetett 10 helyett
-        // az `y`-t olvassuk, hogy a margó a panelek fájljaiban maradjon az
-        // egyetlen igazságforrás.
-        contentHeight: Math.max(
-            cropModePanel.visible
-                ? cropModePanel.y + cropModePanel.implicitHeight : 0,
-            retouchModePanel.visible
-                ? retouchModePanel.y + retouchModePanel.implicitHeight : 0,
-            redeyeModePanel.visible
-                ? redeyeModePanel.y + redeyeModePanel.implicitHeight : 0,
-            textModePanel.visible
-                ? textModePanel.y + textModePanel.implicitHeight : 0)
-        boundsBehavior: Flickable.StopAtBounds
-        ScrollBar.vertical: PicasaScrollBar {}
-
-        // ---- "crop" mód: Fotó vágása ----
-        EditorCropPanel {
-            id: cropModePanel
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---- "retouch" mód: Retusálás (#148) ----
-        // A kattintások kezelését a hívó (PhotoViewer) végzi a képen (ez a
-        // fájl nem ismeri a kép geometriáját); a panel a puffer méretét és
-        // az Alkalmaz/Mégse gombokat mutatja.
-        EditorRetouchPanel {
-            id: retouchModePanel
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---- "redeye" mód: Vörösszem (#445) ----
-        // Az automatika a panel megnyitásakor lefut; a kézzel húzott
-        // téglalapokat a hívó (PhotoViewer) veszi fel a képen.
-        EditorRedeyePanel {
-            id: redeyeModePanel
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
-        // ---- "text" mód: Szöveg-overlay (#148) ----
-        // A pozicionálás is kattintással történik a képen; a szövegmező itt
-        // él, a gépelést a textDraftEdited jel viszi a controllerhez.
-        EditorTextPanel {
-            id: textModePanel
-            panel: panel
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
     }
 
     // #448: "AddCustomAspectRatio" — szélesség × magasság + név bekérő; a
@@ -1171,125 +754,16 @@ Rectangle {
 
     // ---------------- #464: GLOBÁLIS Visszavonás/Újra ----------------
     //
-    // Az eredeti Picasában a pár a panel ALJÁN ül, és NEM fülhöz kötött —
-    // minden eszközben elérhető. Korábban mind az öt fül saját (azonos)
-    // gombpárt rajzolt; most egyetlen, a panel aljához horgonyzott sor van,
-    // és a fül-oszlopok EFÖLÖTT érnek véget (`anchors.bottom`).
-    // #641: a sor a LÁTHATÓ terület alján ül, mindig. A #628 „lejjebb
-    // tolódik, ha nem fér el" ága MEGSZŰNT: az eredetiben nincs ilyen, és a
-    // gyakorlatban azt eredményezte, hogy a sor kicsúszott a képernyőről —
-    // a felhasználó egyáltalán nem látta a Visszavonás/Újra gombokat.
-    //
-    // Ha szűkös a hely, a FÜL TARTALMA veszít, nem a gombsor: a
-    // Visszavonás/Újra a szerkesztés visszacsinálásának egyetlen útja, egy
-    // levágott csempesor ennél sokkal kisebb baj. Hogy ez az ág egyáltalán
-    // ne forduljon elő, az ablak minimális magassága elbírja a panel
-    // `implicitHeight`-jét (Main.qml).
-    RowLayout {
+    // A sor önálló fájlban él (#3220) — az indoklások és a mért
+    // geometria ott olvashatók (`EditorUndoRow.qml`).
+    EditorUndoRow {
         id: globalUndoRow
-        objectName: "editorGlobalUndoRow"
+        panel: panel
+        tabArea: tabArea
         anchors.left: parent.left
         anchors.right: parent.right
-        // #741: a MÉRT geometria — a két gomb x 7..139 és x 144..276,
-        // vagyis 132 képpont széles mindkettő, 5 képpont hézaggal, és
-        // együtt kitöltik a 276-os tartalom-oszlopot
-        // (7 + 132 + 5 + 132 = 276). A sor szélessége ezért 269, a bal
-        // margó 7, a jobb 4 — a `fillWidth` innen PONTOSAN 132-t oszt.
+        // #741: a MÉRT geometria — a két gomb x 7..139 és x 144..276
         anchors.leftMargin: 7
         anchors.rightMargin: 4
-        // #616: a sor a FÜL TARTALMA ALATT ül, nem a panel aljára szegezve.
-        //
-        // A #628/#641/#703 kör azt érte el, hogy a sor mindig a LÁTHATÓ
-        // terület alján legyen — ez megakadályozta, hogy kicsússzon a
-        // képernyőről, de egy nagy képernyőn (1920×1080, maximalizált ablak)
-        // a panel 832 képpont magas, a „Gyakori javítások" fül tartalma
-        // viszont csak ~300: a gombsor így **több száz képponttal a tartalom
-        // alatt**, egy nagy üres szürke mező túloldalán jelent meg. A
-        // felhasználó ezt joggal olvasta úgy, hogy „nincsenek is ott a
-        // gombok" — a képernyőképén a fül alatt csak üres terület látszik.
-        //
-        // Az eredeti Picasában a panel FIX méretű, ezért a gombsor mindig
-        // közvetlenül a tartalom alatt van. Nálunk az ablak átméretezhető,
-        // ezért a kettő közül a KISEBBIK helyre tesszük:
-        //   - a tartalom alja + egy kis rés (ez az eredeti viselkedés), de
-        //   - sosem lejjebb, mint a látható terület alja (ez a #641 garancia).
-        // Így a gombsor ott van, ahol a felhasználó keresi, és szűk ablakban
-        // sem csúszik ki.
-        y: {
-            var lathatoAlja = panel.visibleHeight - height - 10
-            if (!tabArea.visible)
-                return Math.max(0, lathatoAlja)
-            var tartalomAlatt = tabArea.y + panel.tabContentHeight + 8
-            return Math.max(0, Math.min(lathatoAlja, tartalomAlatt))
-        }
-        spacing: 5
-        opacity: panel.enabled ? 1 : 0.45
-
-        //: #2494/#405: a pár EGYFORMA magas, és a magasságot MI számoljuk,
-        //: nem a Layout `fillHeight`-je — az Qt-verziófüggően viselkedik
-        //: (a CI-n a gomb 28 maradt a kétsoros felirat alatt is, helyben
-        //: megnőtt).
-        //:
-        //: ⚠️ 28 → **26**, és ez NEM mond ellent a #741-nek. A respack
-        //: `filter_undo`/`filter_redo` téglalapja (132 × 28) a HELY, amit a
-        //: gomb az elrendezésben elfoglal; a KIRAJZOLT gombkeret ennél
-        //: minden oldalon 1 képponttal kisebb. Mindkettő MÉRVE a tulajdonos
-        //: 1:1 felvételén (`141421.jpg`): a két gomb bal keretének
-        //: osztásköze 137 = 132 + 5 hézag (a respack pontosan ennyit mond),
-        //: a rajzolt keret viszont 130 × 26. Nálunk ez a `Rectangle` MAGA a
-        //: rajzolt keret — nincs külön hely és külön kép —, tehát a
-        //: látható értéket kell felvennie: 26.
-        //: #2597: a MÉRT magasság, rögzítve. Korábban `Math.max(26, …a két
-        //: gomb kért magassága…)` állt itt, és a kért magasság a PLATFORM
-        //: betűmetrikáját hordozta: a CI windows-lába 32 képpontot mért (a
-        //: mért eredeti 26 helyett), a hosszabb effektneveknél pedig itt is
-        //: 36-ra nőtt. Az eredeti a feliratot szorítja a gombhoz, nem
-        //: fordítva — ezt a `PanelButton.rogzitettMagassag` végzi.
-        readonly property real gombMagassag: 26
-
-        PanelButton {
-            id: editUndoBtn
-            //: #2597: a gomb a mért 26 képpontot veszi fel, és a felirat
-            //: igazodik hozzá (betűillesztés + legfeljebb két sor) — a
-            //: magasság így nem függ a platform betűjétől.
-            rogzitettMagassag: globalUndoRow.gombMagassag
-            objectName: "editUndoButton"
-            label: panel.undoLabel
-            buttonEnabled: panel.undoAvailable
-            //: #741/#2494: a mért, KIRAJZOLT gombmagasság 26 (a respack
-            //: 132 × 28-as téglalapja a HELY, ld. a `gombMagassag`-nál).
-            //: ALSÓ korlát, nem felső — a felirat itt az effekt
-            //: nevét is tartalmazza („Visszavonás: Jó napom van"), ami két
-            //: sorra tör, és a rögzített 28 nem engedett neki helyet: a
-            //: második sor a gomb alsó keretén kezdődött és 5 képponttal
-            //: lelógott (MÉRVE, `235707.jpg`). Egysoros feliratnál a
-            //: mért 28 marad, mert a `PanelButton` magától kisebbet adna.
-            Layout.preferredHeight: globalUndoRow.gombMagassag
-            //: a `minimumHeight` KÖTELEZŐ a Layoutnak — a preferált érték
-            //: egymagában elveszhet egy késleltetett elrendezési körben
-            //: (mérve: a gomb 28 maradt a kétsoros felirat alatt is)
-            Layout.minimumHeight: globalUndoRow.gombMagassag
-            onButtonClicked: panel.undoRequested()
-        }
-        PanelButton {
-            id: editRedoBtn
-            //: #2597: a gomb a mért 26 képpontot veszi fel, és a felirat
-            //: igazodik hozzá (betűillesztés + legfeljebb két sor) — a
-            //: magasság így nem függ a platform betűjétől.
-            rogzitettMagassag: globalUndoRow.gombMagassag
-            objectName: "editRedoButton"
-            label: panel.redoLabel
-            buttonEnabled: panel.redoAvailable
-            // #405: egyenlő szélességű pár (nem egy keskeny + egy kitöltő)
-            //: #741/#2494: a mért, KIRAJZOLT gombmagasság 26 (a respack
-            //: 132 × 28-as téglalapja a HELY) — ALSÓ korlát, a párja miatt is: a két gomb
-            //: egy sorban ül, a magasabbik szabja meg a sor magasságát.
-            Layout.preferredHeight: globalUndoRow.gombMagassag
-            //: a `minimumHeight` KÖTELEZŐ a Layoutnak — a preferált érték
-            //: egymagában elveszhet egy késleltetett elrendezési körben
-            //: (mérve: a gomb 28 maradt a kétsoros felirat alatt is)
-            Layout.minimumHeight: globalUndoRow.gombMagassag
-            onButtonClicked: panel.redoRequested()
-        }
     }
 }
