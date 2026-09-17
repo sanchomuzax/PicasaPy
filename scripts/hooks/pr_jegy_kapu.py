@@ -54,6 +54,12 @@ _CIM = ("--title", "-t")
 _TORZS = ("--body", "-b")
 _FAJL = ("--body-file", "-F")
 
+#: A torzs-fajl kapcsoloja es utana az utvonal, a NYERS parancsbol
+#: (idezve vagy idezojel nelkul). Lasd a #3302-t.
+_FAJL_MINTA = re.compile(
+    r"(?:" + "|".join(re.escape(k) for k in _FAJL) + r")(?:=|\s+)"
+    r"(?P<ut>'[^']*'|\"[^\"]*\"|\S+)")
+
 
 def _szoveg(cmd: str):
     """A PR cime + torzse. None, ha a parancs nem PR-iras."""
@@ -80,14 +86,25 @@ def _szoveg(cmd: str):
             reszek.append(ertek)
             if kulcs in _TORZS:
                 ir_torzset = True
-        elif t in _FAJL or any(t.startswith(k + "=") for k in _FAJL):
-            ut = kov if "=" not in t else t.partition("=")[2]
-            ir_torzset = True
-            try:
-                with open(os.path.expanduser(ut), encoding="utf-8") as f:
-                    reszek.append(f.read())
-            except OSError:
-                olvashatatlan = True
+    # #3302: a torzs-fajl utvonalat a NYERS parancsbol olvassuk ki, nem a
+    # `shlex` tokenjeibol. A `shlex` POSIX-modban a `\`-t escape-nek veszi,
+    # tehat egy windowsos utvonalbol (`C:\Users\...`) eltunnek a
+    # valasztojelek: a kapu nem letezo fajlt nyitna, az "olvashatatlan ->
+    # atenged" agra futna, es a VALODI elkovetot is atengedne. Merve: harom
+    # proba `None`-t kapott ott, ahol blokkolast var.
+    for talalat in _FAJL_MINTA.finditer(cmd):
+        ut = talalat.group("ut").strip("'\"")
+        ir_torzset = True
+        try:
+            # `errors="replace"`: a tartalmat csak jegyszamra es alairasra
+            # nezzuk, tehat egy rossz bajt nem indokolja, hogy a kapu
+            # atengedjen. Korabban a rendszer kodlapja UnicodeDecodeError-t
+            # adott, es a kapu nemen fail-open lett.
+            with open(os.path.expanduser(ut), encoding="utf-8",
+                      errors="replace") as f:
+                reszek.append(f.read())
+        except OSError:
+            olvashatatlan = True
     if olvashatatlan:
         return None
     return "\n".join(reszek) if ir_torzset else None

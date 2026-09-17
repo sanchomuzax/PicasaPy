@@ -586,7 +586,7 @@ class TestAFajlkezelovelAthelyezettGyoker:
             f"a bal hasáb kiürült: {sorted(_mappa_utak(ctl))}"
         )
         assert list(ctl.watchedFolders) == [str(library)]
-        assert (tmp_path / "WatchedFolders.txt").read_text().split() == [str(library)]
+        assert (tmp_path / "WatchedFolders.txt").read_text(encoding="utf-8").split() == [str(library)]
 
     def test_a_mappak_offline_jelolest_kapnak(self, qt_app, tmp_path):
         """DÖNTÉS (ld. a modul docstringjét): a felhasználó nem néma

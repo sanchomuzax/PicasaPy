@@ -87,7 +87,7 @@ def test_a_burkolo_lista_egy_helyen_el() -> None:
     assert set(kozos.BURKOLOK) >= {"gh-bot", "codex-bot", "hermes-bot",
                                    "opencode-bot"}
     for nev in ("jegycim_or.py", "release_kapu.py"):
-        szoveg = (_HOOKOK / nev).read_text()
+        szoveg = (_HOOKOK / nev).read_text(encoding="utf-8")
         assert "from kapu_kozos import" in szoveg, nev
         # saját, párhuzamos burkoló-lista nem maradhat a fájlban
         assert 'r"(?:[\\w.~-]*' not in szoveg, nev
