@@ -470,6 +470,47 @@ ListView {
     // megbízható jel (a sávot a rajzolás állítja, nem a modell).
     property bool lassoActive: false
 
+    //: #1721 (ADR-014): a KÉZI sorrend ejtési pontja a rácson.
+    //:
+    //: A #3053 MÉRÉSE szerint az eredeti a lenyomáskor dönt: kép fölött,
+    //: módosító nélkül HÚZÁS indul (átrendezés), módosítóval csak a
+    //: kijelölés változik, üres területen LASSZÓ. A húzást nálunk a
+    //: `ThumbDelegate` indítja (#455, kijelölt képről) — ez a rész az
+    //: EJTÉST fogadja: kiszámolja, MELYIK kép ELÉ kerül a blokk.
+    //:
+    //: Az `acceptsPhotoDrag` ugyanaz a szerződés, amit az album-ejtés is
+    //: használ (`AlbumsSection.qml`): a húzás „teste" a `thumbDragProxy`,
+    //: és a `payload === "photos"` mondja meg, hogy fotók érkeznek.
+    function acceptsPhotoDrag(drop) {
+        return !!drop && !!drop.source && drop.source.payload === "photos"
+    }
+
+    /** A cél SOR-index egy ejtési pontból: a blokk EZ ELÉ kerül.
+        `-1`, ha az ejtés a csoport utolsó cellája után történt — akkor a
+        blokk a mappa végére megy. */
+    function ejtesiCelSor(start, count, flowWidth, x, y) {
+        var oszlopok = Math.max(
+            1, Math.floor(flowWidth / grid.nominalCellWidth))
+        var oszlop = Math.floor(x / Math.max(1, Math.floor(flowWidth / oszlopok)))
+        var sor = Math.floor(y / Math.max(1, grid.cellHeight))
+        if (oszlop < 0) oszlop = 0
+        if (oszlop >= oszlopok) oszlop = oszlopok - 1
+        var helyi = sor * oszlopok + oszlop
+        if (helyi < 0) helyi = 0
+        if (helyi >= count) return -1
+        return start + helyi
+    }
+
+    /** Az ejtés végrehajtása: a kijelölt képek a cél ELÉ kerülnek, és a
+        vezérlő kiírja az új kézi sorrendet a mappa `.picasa.ini`-jébe. */
+    function ejtsdAzAtrendezest(start, count, flowWidth, x, y) {
+        if (!grid.ctl || typeof grid.ctl.reorderPhotos !== "function") return
+        var sorok = appWindow.selectedIndexes
+        if (!sorok || sorok.length === 0) return
+        grid.ctl.reorderPhotos(sorok, grid.ejtesiCelSor(
+            start, count, flowWidth, x, y))
+    }
+
     function beginLasso() {
         lassoSnapshot = appWindow.selectedIndexes.slice()
         lassoActive = true
@@ -707,6 +748,21 @@ ListView {
                         groupCol.modelData.start, groupCol.modelData.count,
                         groupFlow.width,
                         pressX, pressY, event.x, event.y, event.modifiers)
+                }
+            }
+            //: #1721: a kézi sorrend ejtési területe. A `DropArea` NEM
+            //: fogyaszt egéresemenyt, tehát a lasszó és a cellák kezelése
+            //: érintetlen marad — csak a húzás-ejtés érkezik ide.
+            DropArea {
+                id: reorderDrop
+                objectName: "feedReorderDropArea"
+                anchors.fill: parent
+                onDropped: function(drop) {
+                    if (!grid.acceptsPhotoDrag(drop)) return
+                    drop.accept()
+                    grid.ejtsdAzAtrendezest(
+                        groupCol.modelData.start, groupCol.modelData.count,
+                        groupFlow.width, drop.x, drop.y)
                 }
             }
             Repeater {

@@ -34,7 +34,11 @@ FOLDER_PHOTO_SORT_REVERSE_KEY = "view/folderPhotoSortReverse"
 # (`CSelectionNode` → `SortColor`, „Rendezés szín alapján"), de a menübe
 # sosem került be, tehát a felhasználó nem érhette el. Nálunk a #383
 # átlagszín-indexe már megvan, ezért egyetlen rendezőkulcs.
-SORT_MODES = ("date", "name", "size", "color")
+#: #1721 (ADR-014): az ÖTÖDIK a KÉZI sorrend. Az eredeti a manuális
+#: sorrendet a `db3/albums_0.db`-ben, az album tagsági listájának
+#: SORRENDJEKÉNT tartja (#1645); nálunk a mappa `.picasa.ini`-je hordozza
+#: (`ini/priority.py`) — szándékos eltérés, az ADR indoklásával.
+SORT_MODES = ("date", "name", "size", "color", "priority")
 
 #: #467: a szín-rendezés osztályai. A sorrend a kulcs első eleme, tehát ez
 #: dönti el, mi kerül a lista végére:
@@ -148,7 +152,34 @@ def szin_kulcs(record, hues) -> tuple:
     return (SZINES, hue, record.name.casefold())
 
 
-def _sort_key(sort_mode: str, hues=None):
+#: #1721: a kézi hely nélküli képek osztálya — a lista VÉGE (az ADR
+#: szabálya). A színnél is ez a minta (`NINCS_ADAT`).
+VAN_KEZI_HELY, NINCS_KEZI_HELY = 0, 1
+
+
+def prioritas_kulcs(record, prioritasok) -> tuple:
+    """A kézi sorrend kulcsa egy rekordra (#1721, ADR-014).
+
+    `prioritasok`: **(mappa, fájlnév)** → `priority` érték a mappa
+    `.picasa.ini`-jéből.
+
+    ⚠️ A kulcs SZÁNDÉKOSAN összetett, nem csak a fájlnév: a rács egyszerre
+    több mappa futamait mutatja, és ugyanaz a fájlnév (`IMG_1234.jpg`) két
+    mappában a leggyakoribb eset — puszta névre kulcsolva az egyik mappa
+    kézi helye a másikra is ráülne.
+
+    Két szabály az ADR-ből: a kulcs nélküli kép a lista VÉGÉRE esik („nincs
+    kézi hely"), és ütközésnél (azonos érték) a fájlnév dönt — enélkül két
+    egyenlő kép sorrendje futásfüggő lenne, ami a rácson „ugrálásnak"
+    látszik.
+    """
+    ertek = prioritasok.get((record.folder_path, record.name))
+    if ertek is None:
+        return (NINCS_KEZI_HELY, 0.0, record.name.casefold())
+    return (VAN_KEZI_HELY, float(ertek), record.name.casefold())
+
+
+def _sort_key(sort_mode: str, hues=None, prioritasok=None):
     """Rendezőkulcs egy mappa-blokkon belül."""
     if sort_mode == "date":
         return lambda r: (_datum_kulcs(r), r.name.casefold())
@@ -160,11 +191,16 @@ def _sort_key(sort_mode: str, hues=None):
         #: egy üres rács vagy egy futásfüggő sorrend rosszabb lenne
         tabla = {} if hues is None else hues
         return lambda r: szin_kulcs(r, tabla)
+    if sort_mode == "priority":
+        #: kézi hely nélkül (friss mappa) a fájlnév-sorrend marad — egy üres
+        #: rács vagy egy futásfüggő sorrend rosszabb lenne
+        helyek = {} if prioritasok is None else prioritasok
+        return lambda r: prioritas_kulcs(r, helyek)
     return lambda r: r.name.casefold()
 
 
 def sort_folder_blocks(
-    records, sort_mode: str, reverse: bool = False, hues=None
+    records, sort_mode: str, reverse: bool = False, hues=None, prioritasok=None
 ) -> tuple:
     """A képek újrarendezése MAPPA-BLOKKONKÉNT (a blokkhatárok maradnak).
 
@@ -174,7 +210,7 @@ def sort_folder_blocks(
     records = tuple(records)
     if not records:
         return records
-    key = _sort_key(coerce_sort_mode(sort_mode), hues)
+    key = _sort_key(coerce_sort_mode(sort_mode), hues, prioritasok)
     ordered: list = []
     block: list = []
     current: str | None = None

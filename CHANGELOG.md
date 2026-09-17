@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.512] – 2026-09-17
+
+### Hozzáadva
+
+- **Kézi sorrend a rácson** (#1721) — a képeket mostantól egérrel át lehet
+  rendezni: fogd meg a kijelölt képeket, és húzd őket oda, ahol állniuk
+  kell. A sorrend a mappa mellé kerül (a `.picasa.ini` fájlba), tehát
+  megmarad a következő indításig, és a mappával együtt átmásolható másik
+  gépre is. A mappa helyi menüjében új szempont: **Kézi sorrend** — az
+  átrendezés magától erre állítja a rendezést, hogy amit húztál, az
+  látsszon.
+
 ## [0.8.511] – 2026-09-17
 
 ### Belső

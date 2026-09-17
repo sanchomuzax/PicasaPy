@@ -75,7 +75,11 @@ def _hue_tabla(parok):
 
 class TestASzempont:
     def test_a_szin_a_negyedik_szempont(self):
-        assert SORT_MODES == ("date", "name", "size", "color")
+        """⚠️ #1721: a lista ÖTÖDIK taggal bővült (kézi sorrend). Az
+        állítás lényege változatlan — a szín a NEGYEDIK helyen áll —, csak
+        a lista végét nem szegezzük le: egy új szempont felvétele nem
+        lehet ennek az őrnek a bukása."""
+        assert SORT_MODES[:4] == ("date", "name", "size", "color")
 
     def test_ervenyes_szempontkent_atmegy(self):
         assert coerce_sort_mode("color") == "color"
