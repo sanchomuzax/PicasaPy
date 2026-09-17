@@ -159,6 +159,7 @@ class TestBackslashesUtvonal:
         mappa = tmp_path / "wt"
         mappa.mkdir()
         fajl = mappa / "Temp\\picasapy\\torzs.md"
+        fajl.parent.mkdir(parents=True, exist_ok=True)
         fajl.write_text("Torzs jegyszam nelkul.\n", encoding="utf-8")
         indok = kapu.blokkolando(
             f"gh-bot pr create --repo r {T} 'chore: x' --body-file {fajl}")
