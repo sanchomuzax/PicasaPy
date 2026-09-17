@@ -385,7 +385,7 @@ def _betoltott_natív_fajlok() -> set[str]:
                 utak.add(puffer.value)
         return utak
     try:
-        sorok = Path("/proc/self/maps").read_text().splitlines()
+        sorok = Path("/proc/self/maps").read_text(encoding="utf-8").splitlines()
     except OSError:
         return utak
     for sor in sorok:
