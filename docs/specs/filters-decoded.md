@@ -558,40 +558,54 @@ szomszéd, nem interpoláció) — ettől élesek a blokkok.
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
 
-> ⚠️ **MÉRVE (#1142): a 3.9.141.259 a `PicnikFocalPixelate`-et a szettben
-> nem futtatta le** — a `merokit-2` mindkét próbált alakja **a forrást adta
-> vissza** (ΔE 0,181 = a JPEG-újratömörítés zajszintje), miközben a PicasaPy
-> 29,19-es eltérést okozott. A lánc ezért a #1142 óta NEM futtatja
-> (`chain.MEASURED_NOT_RUNNING_OPS`); a csővezeték maga megmarad
-> (`render/focal.py`), csak nem hívjuk.
+> ✅ **HELYESBÍTÉS (#2456, 2026-09-18): a persistált és az élő út külön kérdés.**
 >
-> ⛔ **HELYESBÍTÉS (2026-09-05, #2456) — a verdikt NEM megalapozott, mert a
-> szűrő SAJÁT paraméteralakját egyik próba sem használta.**
+> A `merokit-2` valódi `.picasa.ini`-jében szerepel a mért hétmezős alak:
+> `PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000;`
+> Ez `1` + puck `(x,y)` + `Impact` + `Radius` + `Hardness` + `Fade`.
+> A `Reverse` vezérlő a `filterdesc.xml`-ben létezik, de a mért sorban nem
+> jelenik meg; a mentett `Reverse` tokenje **NINCS MEG**, nem becsüljük.
+> A #1142 mérés ezen a persistált láncon is azt mutatta, hogy az eredeti a
+> forrást adta vissza, miközben a PicasaPy modellje eltért.
+> Ezért a `chain.MEASURED_NOT_RUNNING_OPS` besorolás a **mentett
+> `filters=`-láncra** megalapozott, és a kezelő puszta bekötése ott továbbra is
+> tilos.
 >
-> 1. **A két próbált alak 6, illetve 4 érték** (nem „hét és négy”):
->    `PicnikFocalPixelate=1,0.5,0.5,40,60,50,0;` a `FocalZoom` alakja
->    (puck + 4 csúszka), `PicnikFocalPixelate=1,40,60,50,0;` négy érték.
->    Az 1. kör szettjében ugyanez **egyetlen** értékkel ment
->    (`PicnikFocalPixelate=1,20.000000;`).
-> 2. **A szűrő saját aritása 7.** A #685 szettjében **30 szűrőből 30** pontosan
->    `vezérlőszám + (puck ? 2 : 0)` értéket kapott, és **mindegyiknek volt
->    ható esete**; egyedül a `PicnikFocalPixelate` nem kapta meg a magáét
->    (5 vezérlő — `Impact`, `Radius`, `Hardness`, `Fade`, `Reverse` — + puck
->    = **7**). A szabályt a legközelebbi testvér hitelesíti: a `FocalZoom`
->    4 + 2 = 6 értékkel ténylegesen lefut (ΔE 7,61).
-> 3. **Rövid lista sehol nem hatott.** A `merokit-2` „halott” csoportjában
->    **9 rövid alak** futott (`blur`, `colorfix`, `whitept`, `triple`,
->    `focalpixelate`), és **mind a 9 tétlen maradt** — köztük a `triple=1;`,
->    ugyanaz a `triple`, amely a saját aritásán **ΔE 21,42**-t ad. Vagyis a
->    „nem történt semmi” a rövid alakoknál nem a szűrőre, hanem a lista
->    hosszára bizonyíték.
->
-> ⇒ A „az eredeti sem futtatja” állítás **egy hetes alakkal mért exportig**
-> nyitott. A `MEASURED_NOT_RUNNING_OPS`-bejegyzést addig NEM szabad sem
-> igazolásként, sem cáfolatként idézni. Jegy: **#2456** (`blocked`).
->
-> Amit a helyesbítés NEM érint: hogy a tag **elvágja-e** mögötte a láncot
-> (#1140) — a szettben egyik esetben sem áll mögötte másik tag.
+> Ez azonban nem válaszolja meg a szerkesztői csempe kattintását. Az élő út
+> külön van, és a következő szakaszban címekkel végig van vezetve.
+
+### A `Pixelate` Shift-párjának élő kattintási útja (#2456, 2026-09-18)
+
+A csempe-tábla (`0x00c7e5a0`) a `Pixelate` második tokenjeként a
+`PicnikFocalPixelate` nevet adja. A kattintás útja nem a mentett lánc
+visszajátszása:
+
+1. A `0x005d59f0` `editpanel/fx` ága a fülből és a csempe sorszámából
+   kiszámítja a rekordot (`0x005d6e6c`–`0x005d6e7c`), majd a Shift-állapot
+   szerint az első vagy a második tokent választja (`0x005d6e8f`–
+   `0x005d6ea6`).
+2. A kiválasztott szűrőnévvel a közös kattintási végpontra lép
+   (`0x005d6eac`–`0x005d6eaf` → `0x006021d0`). Ezen az ágon nincs
+   `PicnikFocalPixelate`-re szűkített elutasítás.
+3. A közös effekt-alkalmazó a név alapján keres (`0x00d67f68` szolgáltatás,
+   `0x005f8520`), az `effect` módot a descriptor 4-es kódja jelöli
+   (`0x005f85a0`–`0x005f85b3`), majd az élő szerkesztési állapotot frissítő
+   hívási útba megy (`0x0057bb50`, végül `0x00476a60`).
+
+**Következtetés:** a `PicnikFocalPixelate` csempe kattintása az eredeti
+szerkesztőben **belép az élő effekt-alkalmazási útba**; nem „halott csempe”.
+A hétmezős mentett lánc no-op mérése ebből nem cáfolható és nem is vihető át
+az élő útra.
+
+**Bizalmi fok:** az élő kattintási út és az útvonal azonossága a nyolc társával
+**megerősített** statikus bináris bizonyíték. A pontos pixelkimenet és a
+mentés utáni újratöltés viszonya **NINCS MEG**; a mintavételezési perem- és
+interpolációs részlet külön golden-mérésre vár (#317). A megvalósítási teendő
+külön fejlesztői jegyben van: **#3315**.
+
+A #1140 kérdését ez a lelet nem nyitja újra: a mentett mintában nem volt a
+`PicnikFocalPixelate` mögött következő tag, ezért a lánc-elvágás ott továbbra
+is külön kérdés.
 >
 > ⭐ **LEZÁRVA (2026-09-07, #2636): az effekt leírása INLINE van.** A 84
 > `<filter>` közül **32** hoz magával `<effect>` blokkot a

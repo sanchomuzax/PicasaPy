@@ -494,11 +494,11 @@ karakterpárnak látszanak — ez a szám tehát **alsó korlát**):
 valószínűleg mert kis méretnél sok alávágás egész képpontra nullára
 kerekedik, és kimarad a táblából.
 
-⚠️ **Ami továbbra sem megfejtett:** a **karakterenkénti előrelépés
-(advance)**. A fejléc `0x18`-as eltolása (12 pt-nél 44016) egy tömörítettnek
-látszó blokkra mutat; a szélesség-vektor valószínűleg ott van, de nincs
-kiolvasva. A #2943 első teendője ezzel **félig** teljesült: a kerning-kérdés
-IGEN, a szélesség-kérdés nyitva.
+~~⚠️ **Ami továbbra sem megfejtett:** a karakterenkénti előrelépés (advance).~~
+**ELAVULT JELÖLÉS (2026-09-18, #2943):** az `advance`-vektor a betöltőből
+kiolvasva megvan; a teljes, visszakereshető lelet a 3.5 következő szakaszában
+áll. A korábbi nyitott állítás itt csak történeti nyom, nem maradt nyitott
+kérdés.
 
 **Miért érdekes mégis:** a fájlkészlet önmagában megadja a Picasa felületének
 **hiteles tipográfiáját** — két család (`Praxis Semi Bold/Heavy` és
@@ -642,6 +642,78 @@ egyik a betöltő. Abból derül ki, hogyan lépked a program a farok-blokkon �
 *Bizonyítottsági fok: **megerősített** a `0x24` jelentésére (12 fájl) és a
 farok hosszképletére · **erős** arra, hogy a metrikák a farokban vannak (a
 kétszeres skálázás) · **cáfolt**, hogy a farok egyenletes rekordtábla.*
+
+#### ✅ Az `advance`-vektor kiolvasva, a négy jelölt mérve (2026-09-18, #2943)
+
+A korábbi „a farokban van” erős következtetést most a **betöltő és a valódi
+telepítőfájl** zárja le. A Picasa 3.9.141.259 telepítőből statikusan
+kicsomagolt `Picasa3.exe` SHA-256-a
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96` — ez
+azonos a kutatási index binárisával. Az index célzott lekérdezései:
+
+| cím | index-lelet |
+|---|---|
+| `0x00a443f0` (`FUN_00a443f0`) | 2501 bájt; az értelmező, amely a három elemszámot felhasználja |
+| `0x00a48770` (`FUN_00a48770`) | 72 bájt; a `%s-%d-%f-%d-%d.ytf` fájlnév hivatkozója |
+| `0x00a48ac0` (`FUN_00a48ac0`) | 840 bájt; a betöltési út hivatkozója |
+| `0x00a487c0 → 0x00a48770` | 1 közvetlen hívás |
+| `0x00a48e10 → 0x00a48ac0` | 1 közvetlen hívás |
+
+A `FUN_00a443f0` olvasási útja a 20 bájtos glyph-rekord **`+0x10` mezőjét
+u16-ként** értelmezi; ez az `advance`. A 12 szállított `.ytf` fájlon végzett
+bájt-szintű validációban mind a 12 rekordkészlet `256` glyph-rekordot,
+`256` elemű eltolástáblát és pontosan `4` bájtos fájlvégi maradékot adott.
+A 14 pontos Praxis-minták közvetlen kontrolljai:
+
+| fájl | súly | `A` advance | `i` advance | szóköz advance |
+|---|---:|---:|---:|---:|
+| `Praxis Semi Bold-Heavy-14-…-400-0.ytf` | 400 | 31 | 14 | 12 |
+| `Praxis Semi Bold-Heavy-14-…-700-0.ytf` | 700 | 33 | 13 | 13 |
+
+**Mérés forrása:** a Picasa saját `.ytf` rekordja (`+0x10`), a jelölt TTF-ek
+`hmtx` advance-a és `head.unitsPerEm` mezője. A négy jelöltből valódi, rögzített
+TTF-et mértem; a forrásfájlok SHA-256-a:
+
+| jelölt | regular | bold |
+|---|---|---|
+| Source Sans 3 | `b6f2cc8d9905e97b5cd7a294367bb529814385f299fb23057060394cbd6bbffb` | `e53acf3eb590b2ff183288401da9f3b829703e9716bc88e0da821e3a2ce9c175` |
+| Open Sans | `47ed1cfaa7ffca04a04ab850b2938fd52c09d1b44cfa3e2980878e166b0cbd87` | `75367e6da7d914eaed87883ba51b2a2b5816b5cdbb39f96ec5c81a5b032bfd5a` |
+| Fira Sans | `848a44b912bc756fe5b1be7a0a82e58b38da321ce29970d69d38dd864790c8c5` | `ecaef073dcc8ae30830774ea1e456392b7ca618e4d4c3b45a9869cc70eeb71b6` |
+| Archivo Narrow | `8f870c49fabce4a26512907ce19f55d78324a0b13b43b66ee2bb2d64356d5efa` | `ae9051970e75e3e260f15d103bb7642271bdb6b36b78e7604d588582cea7948e` |
+
+A TTF-ek forráslekérése egyetlen, rögzített Google Fonts CSS-kérésből történt:
+`https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;700&family=Open+Sans:wght@400;700&family=Fira+Sans:wght@400;700&family=Archivo+Narrow:wght@400;700&display=swap`.
+A fenti SHA-256-értékek a CSS által adott konkrét TTF-fájlokat pinelik; a
+mérésben nem használtam a rendszer automatikus helyettesítőjét.
+A **72 leggyakoribb, 0…255 közötti** karakteren végzett, saját átlagukkal
+normalizált alak-összevetés eredménye (MAE; pontos mérés, nem illesztett
+szabad paraméter):
+
+| Picasa-minta | Source Sans 3 | Open Sans | Fira Sans | Archivo Narrow |
+|---|---:|---:|---:|---:|
+| Praxis 14 / 400, a regular jelölt | 6,086% | **5,127%** | 6,207% | 9,569% |
+| Praxis 14 / 700, a bold jelölt | 6,016% | 7,917% | 8,816% | **1,285%** |
+
+A karakterkészlet a mérésben pontosan: ` é t a l s n o z k é á r i m g p b d v . y j h f í ö ó u c % A ; & - K F \\ 1 E ) M ü $ , S P 0 ( : x T 2 N G ? D B / ú H L C V I q 3 R 4 J # O` — a kezdő szóköz a szóköz karakter.
+
+⛔ **A kompozit következtetés fontos:** a `.ytf`-vektor most már pontosan
+kiolvasható, de a normalizált alakmérés önmagában **nem ad egyetlen, súlytól
+független győztest**: a 400-as minta Open Sans, a 700-as minta Archivo Narrow
+felé áll. Az Archivo Narrow eredményét ezért nem szabad úgy olvasni, hogy a
+Picasa felülete keskeny betűt használ; a normalizálás éppen az abszolút
+kondenzáltságot veszi ki. A `Theme.uiFamily` / `Theme.condensedFamily` ma
+üres, míg az alkalmazás globális betűje mérve `Open Sans` (`application.py`
+593–613), és a két Theme-tokennek jelenleg nincs fogyasztója. **A `.ytf`-
+mechanizmus megfejtve, de a Theme-tokenek terméki bekötésének hatása NINCS
+külön mérve.**
+
+**Bizalmi fok:** a rekordmező és a 12 fájl szerkezete **megerősített**
+(betöltő + bájtra záró minták); a négy jelölt glyph-alakmérése
+**megerősített** (rögzített TTF-hash, 72 közös karakter); egyetlen Theme-
+család kiválasztása pusztán ebből a normalizált vektorból **elvetett
+hipotézis**, mert a két súly más jelöltet ad. A jelenlegi Open Sans
+termékválasztás önálló, korábbi képpontmérésből származik; ezt a bináris-lelet
+nem diagnosztizálja újra.
 
 ### 3.6 Egyéb runtime-fájlok — rövid jegyzetek
 

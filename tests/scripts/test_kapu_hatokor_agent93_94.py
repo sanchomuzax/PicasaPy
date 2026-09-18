@@ -159,3 +159,45 @@ def test_a_valodi_elkovetok_tovabbra_is_fogva() -> None:
                  + ' "P0: kesz"') == 2
     assert _kapu("push_azonossag_kapu.py",
                  "cd ~/Documents/PicasaPy && " + _PUSH) == 2
+
+# ---------------------------------------------------------------- #3313
+
+#: A projekt szabálya szerint hosszú szöveget (commit-üzenet, jegytörzs,
+#: PR-leírás) MINDIG fájlból vagy szabvány bemenetről adunk át. A
+#: leggyakoribb alak a `git commit -F - <<EOF`. A #3295 zárt listája ezt
+#: nem tartalmazta, tehát a kapu épp az ELŐÍRT alakot tiltotta.
+#:
+#: ⚠️ Az alábbi első eset a MÉRT, valódi alak: a hivatkozás hátsó
+#: idézőjelben (backtick) áll, és a parancspozíció-minta a backtick utáni
+#: kezdetet is annak veszi. Ez akasztotta meg a #96 commit-üzenetét.
+STDIN_UZENET = [
+    ("release_kapu.py",
+     "cd ~/picasapy-agent && git commit -q -F - <<'MSG'\n"
+     "fix(hermes): a profil kötelességet is kap\n\n"
+     "Mérve: a `hermes-bot " + _KIADAS + "` alak eddig ÁTMENT.\n"
+     "MSG\n"),
+    ("release_kapu.py",
+     "gh-bot issue comment 5 --body-file - <<'EOF'\ngh-bot "
+     + _KIADAS + "\nEOF\n"),
+    ("push_azonossag_kapu.py",
+     "cd ~/Documents/PicasaPy && git commit -q -F - <<'EOF'\nfix: x\n\n"
+     "Tilos: " + _PUSH + "\nEOF\n"),
+    ("jegycim_or.py",
+     "git commit -q --file=- <<'EOF'\nfix: x\n\nPélda: " + _JEGY
+     + ' "Hiba"\nEOF\n'),
+]
+
+
+@pytest.mark.parametrize("hook,cmd", STDIN_UZENET)
+def test_a_stdin_uzenet_heredocja_adat(hook: str, cmd: str) -> None:
+    """A `-F -` / `--body-file -` törzse üzenet, nem parancs."""
+    assert _kapu(hook, cmd) == 0, cmd
+
+
+def test_a_stdin_alak_nem_nyitja_meg_a_listat() -> None:
+    """⛔ A legfontosabb kontroll: az ÉRTELMEZŐ törzse parancs marad.
+
+    Ha a `-F -` jelenléte önmagában adattá tenné az egészet, egy
+    `bash <<EOF` + egy odaírt `-F -` bármelyik kaput megkerülné."""
+    cmd = ("cd ~/Documents/PicasaPy && bash <<'EOF'\n" + _PUSH + "\nEOF\n")
+    assert _kapu("push_azonossag_kapu.py", cmd) == 2

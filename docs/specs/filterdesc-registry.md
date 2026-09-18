@@ -286,11 +286,12 @@ Két nyitott részlet:
 - `Cinemascope=1,0` — az egyetlen paraméter a Letterbox jelölő, de a
   `filterdesc` alapértéke `true`, az ini-ben `0` áll. A polaritás
   ellenőrizendő egy célzott exporttal.
-- `FocalZoom=1,0.5,0.5,50.0,50.0,50.0,0.0` — itt a **puck (x, y) elöl** van,
-  a natív szűrők mintájára; a `PicnikFocalPixelate`-ra **továbbra sincs valós
-  mintánk**, és a #685 szettje sem adta meg neki a saját alakját — ld. 4.1/b.
+- A `PicnikFocalPixelate` teljes, hétmezős alakja már szerepel a `merokit-2`
+  valódi `.picasa.ini`-jében; a **mentett lánc** no-op mérését és a
+  **szerkesztői élő utat** külön kell kezelni — lásd 4.1/b és a
+  `filters-decoded.md` #2456-szakaszát.
 
-### 4.1/b A paraméter-aritás SZABÁLYA, és az egyetlen szűrő, amely sosem kapta meg a magáét (2026-09-05, #2456)
+### 4.1/b A paraméter-aritás SZABÁLYA és a mentett/élő út szétválása (#2456)
 
 **A szabály:** egy Glimmer-effekt `.picasa.ini`-alakja pontosan
 
@@ -300,37 +301,33 @@ Két nyitott részlet:
 `filterdesc.xml`-beli **deklarációs sorrendben** (a jelölők is, záró
 `0`/`1`-ként — pl. `Sixties`, `PicnikGrain`).
 
-**Mérve** a `referencia/meroszett-685-verdikt.json` (178 tétel) és a
-`filterdesc.xml` összevetésével: a szettben szereplő **31 Glimmer-effektből 30**
-pontosan ennyi értéket kapott, és mind a 30-nak volt ható esete. A kivétel:
+A `PicnikFocalPixelate`-nél a leíró öt vezérlőt ad: `_sldrImpact`,
+`_sldrRadius`, `_sldrHardness`, `_sldrFade` és `_chkReverse` (`:869`),
+valamint egy tartós puckot. A mért `.picasa.ini`-alak hét számmezője azonban
+`1` + puck `(x,y)` + a négy HSlider értéke:
 
-| effekt | vezérlők | puck | a szabály szerinti aritás | amit a szett próbált |
-|---|---|---|---|---|
-| `FocalZoom` | 4 | ✔ | **6** | 6 → lefut (ΔE 7,61) |
-| `Pixelate` | 3 | — | **3** | 3 → lefut (ΔE 7,96 / 23,30) |
-| `PicnikGrain` | 2 | — | **2** | 2 → lefut (ΔE 3,09 / 14,24) |
-| `PicnikTint` | 2 | — | **2** | 2 → lefut (ΔE 36,93) |
-| **`PicnikFocalPixelate`** | **5** | ✔ | **7** | **1 · 4 · 6 — hetes alak SOHA** |
+    PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000;
 
-A `PicnikFocalPixelate` ötödik vezérlője a `_chkReverse` jelölő
-(`filterdesc.xml:869`), amit a korábbi leírásaink kihagytak; a szett hatos
-alakja a **`FocalZoom` vezérlőkészletét** másolta, nem ezét.
+A `Reverse` vezérlő mentett tokenje a mért sorban nem jelenik meg: **NINCS
+MEG**, nem becsüljük.
 
-**Rövid lista sehol nem hatott.** A `meroszett-685-2kor.json` „halott”
-csoportjában **9 rövid alak** futott le (`blur`, `colorfix`, `whitept`,
-`triple`, `focalpixelate`), és **mind a 9 tétlen maradt** — köztük a
-`triple=1;`, holott ugyanaz a `triple` a saját hármas alakján **ΔE 21,42**-t
-ad. ⇒ A rövid alaknál a „nem történt semmi” a **lista hosszára** bizonyíték,
-nem a szűrőre.
+**Mérés:** a `merokit-2` valódi `.picasa.ini`-je ezt a mért alakot tartalmazza,
+és a #1142 persistált-lánc mérése az eredeti forráskimenetét adta vissza,
+miközben a PicasaPy korábbi modellje eltért. Ez a `chain.MEASURED_NOT_RUNNING_OPS`
+besorolását a **mentett `filters=`-láncra** igazolja; nem bizonyítja, hogy a
+szerkesztői csempe kattintása is tétlen.
 
-**Következmény:** az az állítás, hogy „a 3.9.141.259 a `PicnikFocalPixelate`-et
-sem futtatja le” (#1142, `chain.MEASURED_NOT_RUNNING_OPS`), **kizárólag rövid
-alakokon nyugszik**, tehát nem megalapozott. Egyetlen export dönti el:
+**A szerkesztői élő út külön:** a csempe-tábla (`0x00c7e5a0`) a `Pixelate`
+Shift-párjaként ezt a nevet választja (`0x005d59f0`, `0x005d6e6c`–
+`0x005d6ea6`), majd a közös kattintási végpontba lép (`0x006021d0` →
+`0x005f8520`). A névfeloldó/alkalmazó útban nincs erre a névre szűkített
+elutasítás; a descriptor `effect` módja 4 (`0x005f85a0`–`0x005f85b3`). A
+következtetés **megerősített statikus bináris bizonyíték**: az élő csempe
+nem halott, a mentett lánc mérése nem vihető át rá.
 
-    PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000,0.000000;
-
-(`Reverse = 0` mellett a hatás a körön KÍVÜL jelentkezik, tehát a kép nagy
-részén — összetéveszthetetlen.) Jegy: **#2456** (`blocked`).
+A pontos élő pixelkimenet és a mentés utáni újratöltés viszonya **NINCS MEG**;
+a mintavételezési perem-/interpolációs részlet golden-összevetésre vár (#317).
+A megvalósítási teendő külön fejlesztői jegy: **#3315**.
 
 ### 4.1/c A `PicnikFocalPixelate` teljes műveletgráfja (`filterdesc.xml:859–886`)
 
