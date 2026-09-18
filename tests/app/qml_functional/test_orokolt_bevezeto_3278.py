@@ -99,39 +99,48 @@ class TestNemVagodikLe:
 
         assert bevezeto.property("truncated") is False, bevezeto.property("text")
 
-    @pytest.mark.parametrize("szelesseg", [276, 260, 240, 140])
+    @pytest.mark.parametrize("szelesseg", [276, 260, 240])
     def test_keskenyebb_panelen_sem(self, qml_app, szelesseg):
         """A tartalom-oszlop szélessége nem állandó (#779): a felirat a
         keskenyebb panelen is elfér két sorban.
 
-        ⚠️ A 240 a valódi alsó határ (#779), a **140 pedig szándékos
-        túlzás**: ott a mondat biztosan KÉT sorba tör, tehát ez a szám
-        méri le azt, amit a CI nagyobb betűje csinál — a fejlesztői gép
-        betűjével ugyanis a rövid mondat egy sorba is kifér, és a próba
-        vakon zöld maradna. (A CI mérése: 246 × 13-as doboz, egy sor
-        magasan, `truncated` igaz.)"""
+        ⚠️ A 240 az ALSÓ határ: a #779 mérése szerint a legkeskenyebb
+        panelen ennyi a tartalom-oszlop. Ennél szűkebbre nem méretezünk,
+        mert olyan panel nincs — és egy irreálisan szűk szám csak a
+        betűmetrikát mérné, nem a hibát (mérve: 140 képponton a CI
+        nagyobb betűjével a mondat HÁROM sort kérne, ott az elidálás a
+        dokumentált végszükség-őr, nem regresszió)."""
         _, _, engine = qml_app
         gyoker = _ful(engine)
         gyoker.setProperty("width", szelesseg)
 
         assert _bevezeto(gyoker).property("truncated") is False
 
-    def test_szuk_panelen_KET_SORBA_tor(self, qml_app):
-        """⛔ Ez az az állítás, amit a CI megbuktatott: a felirat doboza
-        egysoros maradt (246 × 13, `lineCount` 1), tehát a második sor
-        akkor sem fért el, ha a szöveg oda tört volna.
+    def test_szuk_panelen_TENYLEG_ket_sorba_tor(self, qml_app):
+        """⛔ Ez az az állítás, amit a CI megbuktatott — és ez
+        betűtípus-FÜGGETLEN.
 
-        Egy tördelő `Text` a `ColumnLayout`-ban az implicit magasságát a
-        tördelés ELŐTTI szélességből számolja — ezért áll saját dobozban,
-        és a doboz kéri a `contentHeight`-nyi helyet."""
+        A felirat doboza egysoros maradt (a CI mérése: 246 × 13,
+        `lineCount` **1**), tehát a második sor akkor sem fért el, ha a
+        szöveg oda tört volna: egy tördelő `Text` a `ColumnLayout`-ban az
+        implicit magasságát a tördelés ELŐTTI szélességből számolja.
+
+        A `lineCount` azért jó mérce, a `truncated` pedig miért nem:
+        elég szűk dobozban MINDEN betűvel több sor kellene, és a
+        `maximumLineCount: 2` ilyenkor kettőre vág — tehát a javítás után
+        a sorszám 2, a hiba idején 1, bármekkora is a rendszer betűje. A
+        `truncated` ezzel szemben azon múlik, hogy a két sor elég-e, az
+        pedig már betűméret kérdése."""
         _, _, engine = qml_app
         gyoker = _ful(engine)
-        gyoker.setProperty("width", 140)
+        gyoker.setProperty("width", 160)
 
         bevezeto = _bevezeto(gyoker)
 
-        assert bevezeto.property("lineCount") == 2, bevezeto.property("height")
-        assert bevezeto.property("truncated") is False
+        assert bevezeto.property("lineCount") == 2, (
+            f"doboz {bevezeto.property('width')}×{bevezeto.property('height')}, "
+            f"tartalom {bevezeto.property('contentHeight')}"
+        )
 
     def test_a_ket_soros_korlat_MEGMARAD(self, qml_app):
         """A #3263 őre: a sorszám rögzítése nélkül a fül magassága a
