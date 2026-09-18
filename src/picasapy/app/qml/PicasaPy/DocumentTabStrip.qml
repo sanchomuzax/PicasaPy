@@ -228,7 +228,7 @@ Item {
     }
 
     // Háromgombos kérdés (`CCollageUI::ConfirmCloseTitle`, 3.3). SZÁNDÉKOSAN
-    // nem a `ConfirmDialog`: annak van „Ne kérdezze újra” jelölője, mentetlen
+    // nem a `ConfirmDialog`: annak van „Ne kérdezze meg újra” jelölője, mentetlen
     // módosítást pedig soha nem szabad némán eldobni. A harmadik gomb sem
     // dísz — az eredeti szöveg maga mondja ki, hogy a Mégse nyitva hagyja a
     // lapot (`docs/specs/picasa-bezaras-es-kilepes.md` 2. szint).

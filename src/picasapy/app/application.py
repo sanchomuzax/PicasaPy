@@ -1213,7 +1213,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         controller, edit_controller, edit_preview
     )
 
-    # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — a
+    # #367: az általános ConfirmDialog "Ne kérdezze meg újra" tára — a
     # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír
     confirm_settings = ConfirmSettingsBridge()
 

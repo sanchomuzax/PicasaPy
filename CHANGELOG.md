@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.521] – 2026-09-19
+
+### Javítva
+
+- Négy felirat az eredeti Picasa hivatalos szövegére javítva: a rejtett
+  mappák jelszóüzenete („A jelszavak nem egyeztek."), a megerősítő ablakok
+  „Ne kérdezze meg újra" jelölője (két helyen) és a címke-menü „A címke
+  hozzáadása a teljes kijelölt részhez" pontja. (#3358)
+
 ## [0.8.520] – 2026-09-18
 
 ### Javítva

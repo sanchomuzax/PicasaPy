@@ -1506,7 +1506,7 @@ ApplicationWindow {
 
     // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
     // FileOpsDialogs.qml deleteConfirmDialog) — a döntés-kulcs
-    // "undoAllEdits" a „Don't ask again" jelölő eltárolásához.
+    // "undoAllEdits" a „Do not ask again" jelölő eltárolásához.
     // #1404: a geocímke-törlés MEGERŐSÍTÉSE. Az eredeti `ClearGeoTag::warn`
     // szövegével, szó szerint — nem átfogalmazva.
     //

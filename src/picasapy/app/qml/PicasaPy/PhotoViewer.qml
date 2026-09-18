@@ -3004,7 +3004,7 @@ Rectangle {
 
     // #465: a retus/vörösszem visszavonása ADATOT dob el (nincs „Újra") —
     // az eredeti Picasa két külön szövegével kérdez rá. A döntés-kulcs
-    // eszközönként külön, hogy a „Ne kérdezze újra" a másikra ne hasson.
+    // eszközönként külön, hogy a „Ne kérdezze meg újra" a másikra ne hasson.
     //: #1612: halasztva — a retus/vörösszem visszavonásának megerősítése csak
     //: akkor kell, ha a felhasználó ilyet vissza is von (mérve: 76 QObject).
     DeferredDialog {

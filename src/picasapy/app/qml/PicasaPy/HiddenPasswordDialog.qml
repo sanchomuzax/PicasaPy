@@ -110,7 +110,7 @@ Dialog {
             wrapMode: Text.WordWrap
             font.pixelSize: Theme.fontSize
             color: Theme.brandRed
-            text: qsTr("The passwords do not match.")
+            text: qsTr("The passwords did not match.")
         }
 
         CheckBox {

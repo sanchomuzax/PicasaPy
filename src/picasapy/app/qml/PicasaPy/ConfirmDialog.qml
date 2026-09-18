@@ -3,13 +3,13 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // #367: általános, újrafelhasználható megerősítő dialógus — a `confirm.fen`
-// szerkezetének megfelelően (üzenet + „Don't ask again" jelölő + Igen/Nem/
+// szerkezetének megfelelően (üzenet + „Do not ask again" jelölő + Igen/Nem/
 // Mégse gombsor, ebben a sorrendben). A FEN-ben a „No" gomb type="other",
 // NEM "cancel" — ezért itt sem a Dialog beépített reject()-jét futtatja,
 // hanem külön `denied` jelzést ad; a Cancel gomb a valódi mégse-út.
 //
 // Kulcs-alapú elnyomás (#367): ha a felhasználó egy adott `key`-re egyszer
-// bepipálja a „Don't ask again"-t és Igent választ, a `confirmSettings`
+// bepipálja a „Do not ask again"-t és Igent választ, a `confirmSettings`
 // (context property, ld. application.py/teszt-conftest-ek) megjegyzi —
 // az `ask()` ettől kezdve NEM nyitja meg a dialógust, hanem azonnal úgy
 // viselkedik, mintha a felhasználó Igent választott volna (`confirmed`
@@ -91,7 +91,7 @@ Dialog {
         CheckBox {
             id: rememberCheck
             objectName: root.namePrefix + "RememberCheck"
-            text: qsTr("Don't ask again")
+            text: qsTr("Do not ask again")
         }
 
         RowLayout {
