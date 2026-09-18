@@ -396,6 +396,57 @@ A kiválasztott sor a becsukott vezérlőn is ugyanígy, ikonnal jelenik meg.
 A tételek belső margója `itempadding 2 2 20 4` (bal 2, felső 2, jobb 20,
 alsó 4) — a jobb oldali 20 px a lenyíló-nyílnak.
 
+### 4.2/b ⭐ R2/R3 szerkezeti ellenőrzés — a Beállítások lap (#656, 2026-09-18)
+
+Ez a kör a 4.2 táblájában szereplő **Beállítások**-lap vezérlőinek
+szülő- és horgonyzási szerződését vetette össze. A `.tre` forrása a
+`referencia/tre-eroforrasok/collagepanel.tre` 41–149. és 327–440. sora;
+a termékoldali forrás a `CollageSettingsTab.qml`,
+`CollageBorderPicker.qml` és `CollageBackgroundBox.qml`.
+
+**Mérés.** Egy vezérlő nélküli, offscreen `QQuickView`-próbában a 4.2-höz
+tartozó **35/35** kiválasztott `objectName` megtalálható volt. A mért
+szülők és dobozok közül néhány ellenőrző sor:
+
+| elem | `.tre` szerződés | futó QML-szülő | R2/R3 ítélet |
+|---|---|---|---|
+| `theme_popup` | `tabpanel1` közvetlen gyereke, középre horgonyzott | `collageSettingsTab`, `0, 8, 266 × 56` | **R2 egyezik; R3 a fix vázon ekvivalens** |
+| `borders_group` | `tabpanel1` közvetlen gyereke, teljes szélesség, rejtett | `collageBorderPicker` közvetítésével, `0, 67, 266 × 89` | **R2 eltérő**: extra wrapper |
+| `borders_label` | `borders_label_clip` → `borders_group` | közvetlenül `collageBorderPicker` alatt | **R2 eltérő**: a clip-réteg hiányzik |
+| `border0/1/2` | `borders_group` gyerekei, `m_offsetLT` | `collageBordersGroup` gyerekei, `34/103/172, 21, 62 × 62` | **R2 egyezik; R3 a fix vázon ekvivalens** |
+| `spacing_group` | `tabpanel1` közvetlen gyereke, középre horgonyzott, rejtett | közvetlenül `collageSettingsTab` alatt, `6, 68, 250 × 81` | **R2 egyezik; R3 a fix vázon ekvivalens** |
+| `spacing_label` | `spacing_label_clip` → `spacing_group` | közvetlenül `collageSpacingGroup` alatt, `15, 8, 225 × 21` | **R2 eltérő**: a clip-réteg hiányzik |
+| `bkg_settings_title` | `bkg_settings_title_clip` → `tabpanel1` | `collageBackgroundBox` alatt, `3, 159, 239 × 15` | **R2 eltérő**: extra wrapper és hiányzó clip-réteg |
+| `background_types` | `tabpanel1` közvetlen gyereke | `collageBackgroundBox` alatt, `6, 178, 127 × 55` | **R2 eltérő**: extra wrapper |
+| `color_bg` / `bitmap_bg` | `background_types` gyerekei, felirattal együtt kapcsolhatók | `collageBackgroundTypes` alatt a rádió és a felirat külön testvér | **R2 eltérő**, a működési szándék megmarad |
+| `colorpick_container` / `background_container` | `tabpanel1` közvetlen gyerekek, ugyanazon a helyen | `collageBackgroundBox` alatt, `134, 180, 49 × 49` / `135 × 49` | **R2 eltérő**: extra wrapper; R3 a fix vázon ekvivalens |
+| `format_title` | `format_title_clip` → `tabpanel1` | közvetlenül `collageSettingsTab` alatt, `3, 235, 239 × 15` | **R2 eltérő**: a clip-réteg hiányzik |
+| `format_menu` / `delete_custom_aspect` | `tabpanel1` közvetlen gyerekei | közvetlenül `collageSettingsTab` alatt, `3, 255, 243 × 21` / `248, 259, 14 × 14` | **R2 egyezik; R3 a fix vázon ekvivalens** |
+| `orientation_container` → `portrait`/`landscape` | a két gomb a konténer gyereke | ugyanaz a szülőlánc, `88, 280, 74 × 22`, gombonként `37 × 22` | **R2 egyezik; R3 a fix vázon ekvivalens** |
+| `shadow_checkbox` / `caption_checkbox` | közvetlenül `tabpanel1` alatt; a címke a checkbox gyereke | a négyzet és a címke testvér a `collageSettingsTab` alatt | **R2 részben eltérő**: a `m_hit_childlabel` hatását külön MouseArea adja |
+| `leftdivider` / `set_frame_center` | közvetlenül `tabpanel1` alatt | közvetlenül `collageSettingsTab` alatt, `0, 154, 256 × 3` / `137, 310, 124 × 30` | **R2 egyezik; R3 a fix vázon ekvivalens** |
+
+Az R3-ítélet itt **nem** azt jelenti, hogy a QML megőrizte az eredeti
+dinamikus horgonyzást. A jelenlegi, szerződés szerint fix `266 × 351`-es
+Beállítások-lapon a mért dobozok egyeznek a 4.2 táblájával; a `.tre`-beli
+`m_offsetT`, `m_centerX` és `XConstraint` viszont több helyen explicit
+`x/y/width/height` értékekre fordult. A lap átméretezésére ezért ez a kör
+nem állít ekvivalenciát — azt külön, futásidejű méretezési mérésnek kell
+eldöntenie.
+
+**Futási kontroll:**
+`python3 -m pytest -q --tb=short -p no:cacheprovider
+tests/app/qml_functional/test_ui_overflow_audit_656.py` → **26 passed in
+4,17 s**. Ez túlcsordulás-őrzés, nem R2/R3-bizonyító teszt; a 35/35
+szülő- és dobozmérés külön offscreen QML-próba volt.
+
+**Következtetés.** A Beállítások-lap látható fix geometriája több ponton
+megfelel, de a szerkezeti leképezés nem teljes: a `CollageBorderPicker` és
+`CollageBackgroundBox` wrapper, valamint a hiányzó clip-rétegek miatt az
+eredeti `.tre`-szülőfa nem áll fenn betű szerint. Ez **kutatási lelet**, nem
+önmagában bizonyított felhasználói hiba; a kiválasztott kérdés lezárva,
+dinamikus átméretezési ekvivalenciát nem állítunk.
+
 ### 4.3 „Klipek" lap
 
 | komponens | `objectName` | x, y (a `tabpanel2`-höz) | méret |
