@@ -29,8 +29,10 @@ Egyetlen körön belül négyszer állított meg (agent#94 táblázata).
 ⚠️ **A törzset csak ADAT-parancsnál hagyjuk ki.** A `bash <<EOF` és a
 `python3 - <<PY` alak a törzsét VÉGREHAJTJA, tehát ott a törzs igenis
 parancs; ha azt is kihagynánk, a heredoc kapumegkerülő alak lenne. Ezért a
-lista **zárt**: `cat` és `tee`. Ami nem ezekkel nyílik, ott minden marad,
-ahogy volt.
+lista **zárt**: `cat` és `tee` — és (#3313) az az alak, amely a szabvány
+bemenetről ÜZENETET olvas (`-F -`, `--body-file -`), mert a projekt
+szabálya épp ezt írja elő hosszú szövegre. Ami nem ezekkel nyílik, ott
+minden marad, ahogy volt.
 
 ## Amit ez a modul NEM tud (mérve)
 
@@ -62,6 +64,18 @@ POZICIO = r"(?:^|[;&|]\s*|\n\s*|\$\(\s*|`\s*)(?:\w+=\S*\s+)*"
 #: Azok a parancsok, amelyeknél a heredoc törzse ADAT: fájlba írjuk, nem
 #: futtatjuk. Szándékosan zárt lista — lásd a modul fejét.
 ADAT_PARANCSOK = ("cat", "tee")
+
+#: #3313: a szabvány bemenetről ÜZENETET olvasó alakok. A projekt szabálya
+#: szerint hosszú szöveget (commit-üzenet, jegytörzs, PR-leírás) mindig
+#: fájlból vagy stdinről adunk át — a leggyakoribb alak a
+#: `git commit -F - <<EOF`. Az ilyen törzs adat: a program üzenetként
+#: olvassa, nem futtatja. Enélkül a kapu pont az ELŐÍRT alakot tiltja, és
+#: ez ma harmadszor akasztotta meg a saját szabályunk dokumentálását.
+#:
+#: ⚠️ Ez NEM nyitja meg a listát: a `bash <<EOF` és a `python3 - <<PY`
+#: törzsét az értelmező VÉGREHAJTJA, tehát ott a törzs parancs marad.
+_STDIN_UZENET = re.compile(
+    r"(?:-F|--file|--body-file|--notes-file)(?:=|\s+)-(?:\s|$)")
 
 #: Heredoc-megnyitó: `<<EOF`, `<<-EOF`, `<<'EOF'`, `<<"EOF"`. A here-STRING
 #: (`<<<`) nem illeszkedik, mert a harmadik `<` se a `-?\s*`-ra, se a
@@ -97,7 +111,8 @@ def adat_nelkul(cmd: str) -> str:
         talalatok = _HEREDOC.findall(sor)
         if not talalatok:
             continue
-        adat = _sor_parancsa(sor) in ADAT_PARANCSOK
+        adat = (_sor_parancsa(sor) in ADAT_PARANCSOK
+                or bool(_STDIN_UZENET.search(sor)))
         for idezett_a, idezett_b, csupasz in talalatok:
             hatarolo = idezett_a or idezett_b or csupasz
             while i < len(sorok) and sorok[i].strip() != hatarolo:
