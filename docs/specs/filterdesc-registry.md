@@ -6119,6 +6119,36 @@ A javítás a **#626** jegyen marad (ez a jegy a fejlesztői gazdája).
 nyitva: a rámpa **végpontjait** — az `alphaMax`-ot és a négy `padding`-et. Ez
 a szakasz azokat adja meg.*
 
+### Független helyi ellenőrzés (2026-09-18)
+
+A leletet a helyi, indexelt binárison újraellenőriztem; a vizsgált
+`Picasa3.exe` SHA-256-a `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az index RTTI-táblája a `glimmer::TiledImageMask::vftable` címet
+`0x00cf02e8`-ként, a hozzá tartozó attribútum-olvasót
+`FUN_00bba2e0`-ként (481 bájt) adja. Ennek string-xrefjei egymás után
+azonosítják a teljes 12-es készletet: `tileWidth`, `tileHeight`,
+`scaleWidth`, `scaleHeight`, `paddingLeft`, `paddingTop`, `paddingRight`,
+`paddingBottom`, `offsetX`, `offsetY`, `alphaMin`, `alphaMax`.
+
+A célzott diszasszemblálás három, egymástól független ponton egyezik:
+
+- `FUN_00bba250` a `0x00c7dbc4`-ről betöltött `0,8`-at mindkét skála-mezőbe
+  írja, `fldz`-zel nullázza az alfa-minimumot, `fld1`-gyel 1,0-ra állítja az
+  alfa-maximumot, és nullázza a négy padding-mezőt;
+- `FUN_00bbaa90` a két skála-mezővel külön-külön megszorozza a belső
+  téglalap két tengelyét, az alfa-mezőket pedig a két megálló végpontjaiként
+  használja;
+- ugyanott a pozíciók `0x00` és `0xff`, a megállószám átadása
+  `0x00bbacba: push 2`, majd a `0x008f3970` hívása. Ez lineáris radiális
+  rámpát bizonyít, külön perem-sáv és külön élsimítási kapcsoló nélkül.
+
+A mai kód kontrollja ugyanebben a munkafában: a célzott
+`tests/render/test_comicize_569.py` futása **39 passed in 2,61 s**; a forrás
+`DOT_SCALE = 0,8`, `_EDGE_SOFTNESS_PX = 1,0`, és az
+`apply_comicize()` továbbra is a `halftone_branch()`-en át modulálja a pont
+sugarát. Ez a teszt a jelenlegi implementációt ellenőrzi, nem natív
+pixelazonossági goldent; a terméki átvezetés ezért külön fejlesztési munka.
+
 ### A konstruktor: `0x00bba250` (133 b)
 
 A `glimmer::TiledImageMask` attribútum-készletét ez a függvény állítja

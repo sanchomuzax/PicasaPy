@@ -3672,8 +3672,8 @@ Vagyis a tizenkettőből **hármat**: `tileWidth`, `tileHeight`, `alphaMin`
 #### Ami ebből következik
 
 1. **Az `alphaMin = 0.0` explicit** — a maszk alfa alulról 0-ig fut, tehát a
-   pont közepe teljesen átlátszó. Az `alphaMax` **nincs megadva**, vagyis az
-   alapértéke (feltehetően 1,0) érvényes.
+   pont közepe teljesen átlátszó. Az `alphaMax` **nincs megadva**, vagyis a
+   2026-09-18-i bináris-ellenőrzés szerint az 1,0-s tartalékérték érvényes.
 2. **A pont mérete nem külön paraméter:** a `padding*` négyese szabja meg a
    csempén belül, és a `Comicize` **egyiket sem állítja** — a pont/csempe
    arány tehát **beégetett**, nem a felhasználó állítja. Ez magyarázza, miért
@@ -3684,8 +3684,8 @@ Vagyis a tizenkettőből **hármat**: `tileWidth`, `tileHeight`, `alphaMin`
 
 *Bizonyítottsági fok: megerősített* az attribútum-névsorra (a `.rdata`
 sztringjei az olvasó-hívások előtt) és arra, hogy a `Comicize` melyik hármat
-állítja · **nyitott**: a kilenc beégetett alapérték számszerű értéke — az a
-konstruktorban (`0x00bba030` / `0x00bba250`) lesz.
+állítja · **lezárva** a kilenc nem-explicit érték hozzárendelése és számszerű
+értéke a lenti, 2026-09-18-i ellenőrzésben (`filterdesc-registry.md`).
 
 #### ⚠️ A „kilenc beégetett alapérték" NEM az objektumban van (2026-08-16)
 
@@ -3780,17 +3780,20 @@ független, második bizonyítéka, most a gyorsítótár-kulcs oldaláról.
    eredetiben a csempe geometriája **állandó** (gyorsítótárazott), és a
    tónus a láncból jön. Ez a #1606 „kb. 1,5× túl erős" leletének mechanizmusa.
 
-#### Ami NYITVA marad — pontosan egy tétel
+#### ✅ A tartalékértékek lezárva (2026-09-18, #2476)
 
-Az `alphaMax` (és a `padding*`) **tartalék értéke**. A `0x00bba670` nem
-tartalmaz numerikus konstanst, tehát a kitöltés máshol van: a fenti
-gyorsítótár-kulcsot adó **paraméter-struktúra** feltöltőjében (a `ebx`,
-amellyel a `0x00bba980` dolgozik). A következő kör belépője ez a feltöltő.
+A korábbi „tartalékérték nyitva” állítás elavult. A `FUN_00bba250`
+`0x00c7dbc4`-ről betöltött `0,8` értéke, a `fldz`/`fld1` alfa-végpontok és
+a négy nullázott padding-mező a `filterdesc-registry.md` friss,
+fájlonként visszakereshető ellenőrzésében áll. A vizsgált bináris SHA-256-a
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
 
-*Bizonyítottsági fok: **megerősített** a kétmegállós lineáris rámpára, a
-radiális geometriára, az eltolás-térképre és a gyorsítótárazásra (helyi
-diszasszemblálás, minden lépés címmel) · **nyitott** az `alphaMax`/`padding*`
-tartalékértéke.*
+*Bizonyítottsági fok: **megerősített** a kétmegállós lineáris radiális
+rámpára, a `scaleWidth`/`scaleHeight` = 0,8 értékére, az
+`alphaMin`/`alphaMax` = 0,0/1,0 végpontokra, a négy padding = 0 értékre,
+az eltolás-térképre és a gyorsítótárazásra. A bináris kutatási kérdés
+lezárult; a `halftone_branch()` helyett a natív statikus maszk és a teljes
+lánc terméki átvezetése továbbra is fejlesztési feladat.*
 
 ### A `CircularGradientImageMask` HÉT attribútuma — és egy, amit sosem állítunk (2026-08-16)
 
@@ -5331,11 +5334,12 @@ Ez **bitre egyezik** a mi `zoom_max_offset` (`floor(width · Impact / 200)`)
 esetből 9-ben bitre azonos, a maradék háromban a `REFLECT` is azonos), a két
 képlet a natív magból diszasszemblálva.*
 
-### A `TiledImageMask` beégetett alapértékei — a KÖTŐ függvény (2026-08-25)
+### A `TiledImageMask` beégetett alapértékei — a KÖTŐ függvény (2026-08-25; hozzárendelés lezárva 2026-09-18)
 
-A `#785` nyitott pontja: *„a 12 attribútum megvan, a beégetett alapértékek
-nincsenek."* A kötő függvény megvan, az **értékek** megvannak, a
-**hozzárendelés** nem.
+A #785 egykori nyitott pontja: *„a 12 attribútum megvan, a beégetett
+alapértékek nincsenek."* A kötő függvény, az **értékek** és a
+**hozzárendelés** ma már mind visszakereshető; a lezáró, független ellenőrzés
+a lap végén és a `filterdesc-registry.md` megfelelő szakaszában áll.
 
 #### Hol vannak: vtable 7. rekesz — `0x00bba580` (234 b)
 
@@ -5368,27 +5372,19 @@ A leíró (`filterdesc.xml` 781–782) ezeket **megadja**: `tileWidth`,
 ⇒ **Tartalékon fut:** `scaleWidth`, `scaleHeight`, `paddingLeft`,
 `paddingTop`, `paddingRight`, `paddingBottom`, `alphaMax` — **hét darab**.
 
-#### ⚠️ Amit NEM sikerült: a hozzárendelés
+#### ✅ A hozzárendelés lezárva (2026-09-18)
 
-**Hét** tartalékon futó attribútum áll szemben **hat** lebegőpontos
-tartalékkal ⇒ a blokk **nem 1:1** a nem beállított attribútumokkal, tehát a
-sorrendből nem lehet leolvasni, melyik melyiké.
+A korábbi „hét attribútum / hat lebegőpontos tartalék” rés a korabeli
+olvasási korlátot rögzíti, nem a jelenlegi állapotot. A célzott
+`FUN_00bba250`/`FUN_00bbaa90` ellenőrzés a mezőneveket és a fogyasztási
+eltolásokat egymásra zárja: `scaleWidth`/`scaleHeight` = 0,8,
+`paddingLeft/Top/Right/Bottom` = 0, `alphaMin` = 0,0, `alphaMax` = 1,0.
+Részletes címek és a bináris SHA-256: `filterdesc-registry.md`,
+„Független helyi ellenőrzés (2026-09-18)”.
 
-A `CircularGradientImageMask`-nál volt keresztellenőrzés (a `FocalZoom`
-**fölöslegesen** kiírta az `innerAlpha="0"` / `outerAlpha="1"` értékeket,
-épp a tartalékokat) — **itt nincs ilyen**: a `Comicize` egyetlen redundáns
-attribútumot sem ad meg.
-
-**Az is kizárva, hogy a konstansból következtessünk:** a `[0xc7dbc4]`
-(`0.8f`) **általános, megosztott** konstans — **14 helyen** hivatkozzák a
-`.text`-ben (`0x609599`, `0x782be8`, `0x7f848c`, `0x83a13e`, `0x868b1f` …),
-tehát nem hordoz attribútum-specifikus jelentést.
-
-**A következő lépés:** a kötő két hívottja — `0xbbace0` és `0xbbafe0` —
-másolja a blokkot az objektum mezőibe; ott derül ki a leképezés.
-
-*Bizonyítottsági fok: **megerősített** a kötő helye, a hat érték és a
-`Comicize` hét tartalékon futó attribútuma; **nyitva** a hozzárendelés.*
+*Bizonyítottsági fok: **megerősített**; a bináris kérdés lezárult, a
+`halftone_branch()` helyett a natív statikus maszk teljes terméki
+átvezetése fejlesztési feladat.*
 
 ---
 
