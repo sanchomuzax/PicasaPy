@@ -27,14 +27,10 @@ változó — és azt a betű dönti el.
 from __future__ import annotations
 
 import picasapy.app.application as app_module
-from PySide6.QtGui import QFontDatabase, QFontMetricsF
+from PySide6.QtGui import QFontDatabase
 
 #: A csomagolt család neve (`application._UI_FONT_FAMILY`).
 CSALAD = "Open Sans"
-
-#: Az a felirat, amelyiken a különbség a legnagyobb (mérve: 182,6 → 196,8).
-HOSSZU_FELIRAT = "Histogram and camera information"
-
 
 class TestAFixtureBeallitja:
     def test_az_alkalmazas_betuje_a_csomagolt(self, qml_app, qt_app):
@@ -47,18 +43,18 @@ class TestAFixtureBeallitja:
         assert CSALAD in QFontDatabase.families()
 
 
-class TestMiertSzamit:
-    def test_a_rendszerbetu_MASKEPP_mer(self, qml_app, qt_app):
-        """A két betű nem cserélhető fel: ha egy későbbi kör kiveszi a
-        fixture-ből a betű beállítását, a mért szélességek elcsúsznak."""
-        sajat = QFontMetricsF(qt_app.font())
-        rendszer_font = qt_app.font()
-        rendszer_font.setFamily("")  # a Qt alapértelmezése
-        rendszer = QFontMetricsF(rendszer_font)
-
-        assert sajat.horizontalAdvance(HOSSZU_FELIRAT) != rendszer.horizontalAdvance(
-            HOSSZU_FELIRAT
-        )
+#: ⛔ Ami SZÁNDÉKOSAN nincs itt: „a rendszerbetű MÁSKÉPP mér" próba.
+#:
+#: Az első változat a saját betűt egy üres családnevű (`setFamily("")`)
+#: betűvel vetette össze, és azt várta, hogy a két szélesség különbözik.
+#: A main windows-lába megbuktatta: ott az üres családnév ugyanazt adja
+#: vissza, amit az alkalmazás betűje (`197.0 != 197.0`) — az „alapértelmezés"
+#: platformonként mást jelent, tehát ez a kontroll a KÖRNYEZETET mérte, nem
+#: a mi döntésünket.
+#:
+#: A „miért számít" bizonyíték a jegyen és a PR-ben áll, számokkal
+#: (rendszerbetű ↔ Open Sans, hét feliratra). Egy próbának, ami
+#: platformfüggő alapértelmezésre épül, nincs helye az őrök között.
 
 
 class TestForras:
