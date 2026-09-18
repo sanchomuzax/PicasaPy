@@ -17,6 +17,14 @@ kérdés).
 
 *Utolsó átvilágítás: 2026-08-16 (a második, tízkörös menet után).*
 
+### [cim-atlasz.md](cim-atlasz.md) — GENERÁLT címjegyzék
+
+A gépi kereséshez a `cim-atlasz.tsv` a rekordforma; az olvasható változat
+4096 címenként blokkosított fejezeteket ad. A privát generátor
+`picasapy-agent/eszkozok/cim_atlasz.py`, a publikus determinisztikus mag és az
+őr a #3342 szerződése szerint dolgozik. A lap saját darabszámot nem állít,
+a fejléc a futáskor mért lap-, rekord-, szűrt- és ismeretlen-fajta számot írja.
+
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
 > ⛔ **2026-09-09 (#2813) — EZ A LISTA KIÜRÜLT, és ez önmagában lelet.**
