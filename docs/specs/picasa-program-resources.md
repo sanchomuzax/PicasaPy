@@ -715,7 +715,61 @@ hipotézis**, mert a két súly más jelöltet ad. A jelenlegi Open Sans
 termékválasztás önálló, korábbi képpontmérésből származik; ezt a bináris-lelet
 nem diagnosztizálja újra.
 
-### 3.6 Egyéb runtime-fájlok — rövid jegyzetek
+### 3.6 A felületi feliratok metrikai szerződése — Praxis + GDI (2026-09-18, #3337)
+
+A felületi „Windowsos betű” nem a rendszer véletlen alapértelmezettje. A
+`fontmacros_win.tre` leggyakoribb gombmakrója (`m_buttonfontC`) ezt rögzíti:
+
+| tulajdonság | eredeti érték |
+|---|---|
+| család | `Praxis Semi Bold/Heavy` |
+| pontméret | `12` |
+| súly | `400` |
+| betűköz | `-1` képpont |
+| sorköz | `10` képpont |
+| igazítás | középre |
+| belső margó | bal `5`, jobb `5` képpont |
+
+A másik gyakori felületi makró, az `m_displayfont12`, ugyanazt a családot,
+méretet, súlyt és `-1`-es betűközt használja; a `m_displayfont14` ugyanezt a
+családot `14` pontos mérettel adja. A `constants.ui` külön is ezt nevezi meg:
+`alabel_buttfont_win = Praxis Semi Bold/Heavy, 12`.
+
+#### A szélesség nem szemre, hanem GDI-metrikával dől el
+
+A bináris importtáblája a tényleges mérési utakat is tartalmazza:
+
+| import | hívófüggvény-cím |
+|---|---|
+| `CreateFontIndirectA` | `0x008637f0` |
+| `GetTextExtentExPointA` | `0x008637f0`, `0x008262d0` |
+| `GetTextExtentPoint32A` | `0x008d7140` |
+| `GetTextExtentPoint32W` | `0x008d8ce0`, `0x009b0ff0` |
+| `GetTextMetricsA` | `0x008d7140` |
+
+A szállított `.ytf` glyph-rekord `+0x10` mezője a karakterenkénti
+`advance`. Közvetlen kontroll a 14 pontos Praxis-fájlokon: az `A` advance
+`31` (400-as súly) és `33` (700-as súly), az `i` `14` és `13`, a szóköz
+`12` és `13`. Ezek a számok a fontrekordból olvasott értékek, nem közös
+képernyő-skálázásból származó becslések.
+
+#### Eredeti / nálunk / teendő
+
+| | Eredeti, mérve | PicasaPy, mérve | Teendő |
+|---|---|---|---|
+| gombfelirat | `Praxis Semi Bold/Heavy`, 12 pt, 400, tracking `-1`, leading `10`, 5–5 px belső margó | az alkalmazás globális családja `Open Sans` (`application.py:594–637`); a `PanelButton` Qt `FontMetrics`-szel méretez és `letterSpacing=-1`-et állít | az érintett feliratokat a saját eredeti makrójukkal és tényleges dobozukkal kell párosítani |
+| szélesség | GDI `GetTextExtentExPointA` / `GetTextExtentPoint32A/W`, kiegészítve a `.ytf` advance-vektorral | QML/Qt platformmetrika | a túlcsordulást karakter- vagy feliratszinten kell mérni, nem közös screenshot-skálázással |
+| családtoken | `alabel_buttfont_win = Praxis Semi Bold/Heavy, 12`; `m_displayfont12` ugyanez a család | `Theme.uiFamily` és `Theme.condensedFamily` üres (`Theme.qml:498–499`) | a családválasztás hatását külön, mért UI-kimeneten kell igazolni |
+
+**Bizonyítottsági fok: megerősített** a Praxis/GDI szerződésre és a `.ytf`
+`advance` jelentésére. A konkrét feliratok egyenkénti `.tre`-makró-hozzárendelése
+külön fejlesztői átadás; erre a bináris lelet nem becsül nevet vagy dobozméretet.
+
+**Nyitott kérdések mérlege — e kör saját kérdései:** 0 nyílt · 1 lezárva ·
+0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A leletből következő
+terméki teendő a #3337 jegyen áll.
+
+### 3.7 Egyéb runtime-fájlok — rövid jegyzetek
 
 | Fájl | Típus | Megjegyzés |
 |---|---|---|
