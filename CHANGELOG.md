@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.520] – 2026-09-18
+
+### Javítva
+
+- **Eltűnt a kötési hurok a kék információs sávnál** (#3289) — indításkor a
+  Qt ismétlődően figyelmeztetett a tálca fölötti szöveg miatt, és a
+  naplóban ez elfedte a fontosabb üzeneteket. A szöveg rövidítése
+  (hosszú fájlnévnél) most a betű méreteit egy olyan úton kérdezi le,
+  ami nem írja felül a saját bemenetét. A rövidítés viselkedése
+  változatlan.
+
 ## [0.8.519] – 2026-09-18
 
 ### Javítva
