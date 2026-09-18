@@ -82,7 +82,7 @@ def _safe_description(line: str) -> str:
     text = re.sub(r"\s+", " ", line.strip())
     text = INSTRUCTION_RE.sub("utasítás ", text)
     # A Markdown-kódhatárok és táblázat-jelek nem maradhatnak ki a sorból.
-    text = text.replace("|", "\\|").replace("`", "\\`")
+    text = text.replace("|", "\\|").replace("`", "")
     first = re.split(r"(?<=[.!?])\s+", text, maxsplit=1)[0]
     if len(first) > 120:
         return first[:117].rstrip() + "…"
