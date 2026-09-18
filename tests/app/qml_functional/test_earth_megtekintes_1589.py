@@ -166,7 +166,22 @@ class TestKimenet:
         _celmappat_valaszt(parbeszed, qt_app, cel)
 
         kml = cel / "doc.kml"
-        _var(qt_app, kml.exists, uzenet="a menüpont NEM írt KML-t a lemezre")
+
+        def kesz() -> bool:
+            """A fájl LÉTEZÉSE nem elég: a TARTALMÁRA kell várni.
+
+            ⚠️ A puszta `kml.exists()` versenyhelyzet — a fájlbejegyzés már
+            ott van, de az írás még nem ért a végére, és a próba ÜRES
+            szöveget olvasott. Helyben sosem látszott (gyors lemez, üres
+            gép), a CI-n viszont pirosra vitte a main ubuntu-lábát
+            (2026-09-18: `assert '<Placemark' in ''`). A determinisztikus
+            szinkronpont a TARTALOM, nem a fájlbejegyzés."""
+            try:
+                return "<Placemark" in kml.read_text(encoding="utf-8")
+            except OSError:
+                return False
+
+        _var(qt_app, kesz, uzenet="a menüpont NEM írt kész KML-t a lemezre")
         szoveg = kml.read_text(encoding="utf-8")
         # a kiírt KML valóban a geocímkézett képet hordozza
         assert "<Placemark" in szoveg
