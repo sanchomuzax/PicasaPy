@@ -728,6 +728,59 @@ tehát a lenti geometria közvetlen mérésből származik. *(erős)*
 | Sáv színe | hideg szürkéskék, RGB 202,213,229 alap, 175,192,216 belső árnyék |
 | Fogantyú (thumb) | **16 × 26 px**, **álló, lekerekített kapszula** (ovális) — x 44–59, y 155–180, függőlegesen a sávra központozva |
 
+### 4.3/a Forrási kontroll: az effekt-alpanel is az `editslider`-készletet használja (#710, 2026-09-18)
+
+A képernyőkép-kérés helyett a deklarációs forrás és a bináris index dönti el,
+hogy van-e effektfüggő csúszka-geometria.
+
+**Az `editpanel.tre` szerkezeti tényei:**
+
+- `editpanel/tab2` → `Property showtarget editpanel/editcontrol_well`;
+- az `editpanel/editslider1_container` …
+  `editpanel/editslider4_container` mind ugyanennek a
+  `editpanel/editcontrol_well`-nek a gyermeke, és mind a négyen
+  `m_centerXY` + `m_hidden` áll;
+- a négy belső `editsliderN/editslider` elem egyformán `Property slider 0`-
+  val szerepel;
+- a `tab3`, `tab4` és `tab5` csak a saját `tabpanelN`-jét mutatja; a teljes
+  `editpanel.tre`-ben nincs másik effekt-specifikus slider-konténer vagy
+  `showtarget`-ág.
+
+**Index-keresztellenőrzés** (`referencia/binary-index/picasa3-index.sqlite`,
+`string_xrefs`):
+
+| sztring | indexelt hivatkozások | függvénycímek |
+|---|---:|---|
+| `editpanel/editcontrol_well` | **3** | `0x0057bb50`, `0x005f95d0`, `0x00750ff0` |
+| `editpanel/editslider1_container` | **2** | `0x0050cf90`, `0x007518e0` |
+| `editpanel/editslider2_container` | **1** | `0x007518e0` |
+| `editpanel/editslider3_container` | **1** | `0x007518e0` |
+| `editpanel/editslider4_container` | **1** | `0x007518e0` |
+
+Ez nem névazonossági következtetés: a négy konténer közül a 2–4. ugyanahhoz
+a feldolgozó címhez kötődik, és külön effektcsúszka-családnak nincs indexelt
+nyoma.
+
+**A geometria mért ténye:** a rétegtéglalapok már rögzített mérése szerint
+mind a négy `editsliderN_container` **191 × 27 képpont**, x = **30..221**
+(`docs/specs/szerkeszto-panel-meretek.md` 4. szakasz, 186–189. sor). A
+**127 × 27** méret a külön `scaleslider` családé (`backlight_container`,
+Derítőfény), nem az effekt-paraméter alpanelé.
+
+**Eredeti / nálunk / teendő:**
+
+| | Eredeti Picasa | PicasaPy jelenlegi állapota |
+|---|---|---|
+| vezérlőkészlet | egy közös `editcontrol_well`, négy `editslider` konténer | az `EditorFinetunePanel` és az `EditorParamPanel` is `EditorSlider`-t használ |
+| csúszka-geometria | **191 × 27**, x = **30..221** | a Finomhangolás `Layout.preferredWidth`-del 191-re áll; az effekt-alpanel `Layout.fillWidth: true`-t használ, ezért a fix 191 px még nincs kikényszerítve |
+| effektfüggő eltérés | **nincs** a `.tre`-ben | nincs forrási eltérés, de a paraméter-alpanel bekötését a fejlesztői munka során a mért szélességre kell igazítani |
+
+**Következtetés:** az effekt-paraméter alpanel ugyanazokat a négy
+`editslider` példányokat és ugyanazt a 191 × 27-es rétegméretet használja, mint
+a Finomhangolás fül. A paraméterek száma csak a látható példányok számát
+változtatja; a csúszka méretét és pozícióját nem. A #710 kutatási kérdése
+forrásból megválaszolva, a terméki átvezetés külön fejlesztői teendő.
+
 ### 4.4 A paraméter-felirat igazítása — **a csúszka FÖLÖTT, KÖZÉPEN** (megerősített)
 
 *Forrás: `editpanel.tre:531` (`editpanel/editlabel1`).*
@@ -844,8 +897,12 @@ A helyes `cancel_icon` így valóban **sötétvörös**, összhangban a korábbi
 képernyőképes megfigyeléssel; ugyanaz a két kép szolgálja ki a vágás-panelt is.
 
 Összehasonlításul a felület MÁSIK csúszka-sablonja (nagyítás, derítőfény,
-retusáló ecset - `scaleslider`): sín 121x9, fogantyú 16x22. A paraméter-alpanel
-csúszkája tehát **szándékosan más arányú**, nem a közös vezérlő.
+retusáló ecset — `scaleslider`): sín 121x9, fogantyú 16x22. Ez a külön
+`scaleslider` család adja a **127 × 27**-es Derítőfény-konténert; az
+effekt-paraméter alpanel és a Finomhangolás négy csúszkája viszont az
+`editslider` családba tartozik, **191 × 27**-es réteggel. A korábbi mondat,
+amely az effekt-alpanelt „szándékosan más arányú, nem közös vezérlőként” írta
+le, téves volt; a #710 forrási kontrollja ezt helyesbíti.
 ### 4.y A csúszka-FELIRAT honnan jön — LEZÁRVA (2026-08-15)
 
 A #700 nyitva hagyta, hogy a Holga első csúszkája „Méret" vagy
