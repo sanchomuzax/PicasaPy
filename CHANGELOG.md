@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.517] – 2026-09-18
+
+### Hozzáadva
+
+- **Névjavaslatok jóváhagyása egy személy albumából** (#2187) — ha egy
+  személy albumát nyitod meg, és a program talált hozzá még el nem döntött
+  névjavaslatokat, a fejlécben megjelenik az „Az összes jóváhagyása (N)" és
+  az „Eltávolítás" gomb. A jóváhagyás ráírja a nevet az arcokra (a képek
+  ettől bekerülnek az albumba), az eltávolítás csak a javaslatot veti el —
+  az arc névtelen marad, egy későbbi keresés újra megvizsgálja.
+
 ## [0.8.516] – 2026-09-18
 
 ### Megváltozva

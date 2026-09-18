@@ -655,6 +655,23 @@ ListView {
                 if (grid.appWindow && grid.appWindow.saveSelectedEdits)
                     grid.appWindow.saveSelectedEdits()
             }
+            //: #2187: személy-album módban a fejléc a javaslat-vezérlőket
+            //: is mutatja. A nevet és a darabszámot a gazdaablak tölti —
+            //: a képfolyam nem ismeri az arc-vezérlőt, ahogy a
+            //: mentés/csillagozás esetében sem.
+            personName: grid.appWindow && grid.appWindow.personAlbumName
+                        ? grid.appWindow.personAlbumName : ""
+            suggestionCount: grid.appWindow
+                             && grid.appWindow.personSuggestionCount !== undefined
+                             ? grid.appWindow.personSuggestionCount : 0
+            onConfirmSuggestionsRequested: {
+                if (grid.appWindow && grid.appWindow.confirmPersonSuggestions)
+                    grid.appWindow.confirmPersonSuggestions()
+            }
+            onRemoveSuggestionsRequested: {
+                if (grid.appWindow && grid.appWindow.removePersonSuggestions)
+                    grid.appWindow.removePersonSuggestions()
+            }
             // #422: jobbklikk a mappa-fejlécen — a mappa-kontextusmenü
             // ARRA a mappára, amelyiknek a fejléce ez (nem a kijelöltre)
             onContextMenuRequested: {

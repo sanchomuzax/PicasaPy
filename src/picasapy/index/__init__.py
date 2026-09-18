@@ -43,6 +43,7 @@ from .faces_detected import (
     unnamed_album_photos,
     set_suggested_name,
     suggested_faces,
+    suggested_faces_for,
     unignore_faces,
     unnamed_faces,
 )
@@ -181,6 +182,7 @@ __all__ = [
     "sync_tree",
     "set_suggested_name",
     "suggested_faces",
+    "suggested_faces_for",
     "unignore_faces",
     "unnamed_faces",
     "update_photo_fields",
