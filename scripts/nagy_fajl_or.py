@@ -45,6 +45,14 @@ KIVETELEK: dict[str, str] = {
     "docs/assets/notebooklm-infografika.png": (
         "a projekt kutatási infografikája, a README-ből hivatkozva (5,2 MB)"
     ),
+    "docs/specs/cim-atlasz.md": (
+        "#3342 generált, kereshető specifikációs címjegyzék; a publikus magból "
+        "újraépíthető artifact"
+    ),
+    "docs/specs/cim-atlasz.tsv": (
+        "#3342 generált, géppel feldolgozható specifikációs címjegyzék; a "
+        "publikus magból újraépíthető artifact"
+    ),
 }
 
 

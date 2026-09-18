@@ -93,6 +93,18 @@ class TestKivetelek:
         assert (GYOKER / kivetel).stat().st_size > modul.KUSZOB
         assert _futtat().returncode == 0
 
+    def test_a_cim_atlasz_geralt_kimenetei_szandekos_kivetel(self):
+        """A #3342 atlasz két nagy, de újragenerálható kimenete átmegy."""
+        from importlib.util import module_from_spec, spec_from_file_location
+
+        spec = spec_from_file_location("nagy_fajl_or", OR)
+        modul = module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        for kivetel in ("docs/specs/cim-atlasz.md", "docs/specs/cim-atlasz.tsv"):
+            assert kivetel in modul.KIVETELEK
+            assert (GYOKER / kivetel).stat().st_size > modul.KUSZOB
+        assert _futtat().returncode == 0
+
     def test_MINDEN_kivetelhez_tartozik_INDOKLAS(self):
         """A kivétel nem kényelmi lehetőség: aki felvesz egyet, megmondja,
         miért van a repóban a helye."""
