@@ -264,6 +264,13 @@ def _build_qml_app(
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
+    # #1792: az album-fejléc gombsorának összeállítása — az application.py
+    # bekötésének tükre. A fejléc `typeof`-őr mögül hivatkozik rá, tehát
+    # enélkül a testreszabás felületi útja NÉMÁN méretlen maradna.
+    from picasapy.app.gombsav_bridge import GombsavBridge
+
+    gombsav = GombsavBridge(settings)
+    engine.rootContext().setContextProperty("gombsav", gombsav)
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]

@@ -1333,6 +1333,7 @@ ApplicationWindow {
                 fileOpsController.revealFolder(controller.currentFolder)
         }
         onAboutRequested: aboutDialog.open()
+        onConfigureButtonsRequested: configureButtonsDialog.open()
         onThumbSizePreset: function(size) { window.thumbSize = size }
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
@@ -3656,6 +3657,16 @@ ApplicationWindow {
         id: helpDialog
         anchors.fill: parent
         sourceComponent: Component { HelpDialog { objectName: "helpDialog" } }
+    }
+
+    //: #1792: a fejlec gombsoranak testreszabasa — halasztott toltes, a
+    //: tobbi parbeszed mintajara (a nev a BECSOMAGOLT parbeszede)
+    DeferredDialog {
+        id: configureButtonsDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfigureButtonsDialog { objectName: "configureButtonsDialog" }
+        }
     }
 
     DeferredDialog {

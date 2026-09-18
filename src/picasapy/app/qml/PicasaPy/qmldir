@@ -72,6 +72,7 @@ FaceScanDialog 1.0 FaceScanDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
 AddFileDialog 1.0 AddFileDialog.qml
 TesztuzemNaploDialog 1.0 TesztuzemNaploDialog.qml
+ConfigureButtonsDialog 1.0 ConfigureButtonsDialog.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
 DeferredDialog 1.0 DeferredDialog.qml
 BackupDialog 1.0 BackupDialog.qml

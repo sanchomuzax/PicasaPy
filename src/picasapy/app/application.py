@@ -56,6 +56,7 @@ from picasapy.scanner import (
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .confirm_settings_bridge import ConfirmSettingsBridge
+from .gombsav_bridge import GombsavBridge
 from .folder_cover_provider import FolderCoverProvider, borito_fajljai
 from .controller import AppController
 from .data_location import read_data_root, read_pending_root
@@ -1216,6 +1217,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír
     confirm_settings = ConfirmSettingsBridge()
 
+    # #1792: az album-fejléc gombsorának összeállítása — ugyanabba a
+    # közös QSettings("PicasaPy", "PicasaPy")-ba ír, mint a fenti híd
+    gombsav = GombsavBridge()
+
     # meglévő Picasa-telepítés átvétele (#146): felderítés + a kijelölt
     # mappák hozzáadása a meglévő addWatchedFolder úton
     discovery_controller = DiscoveryController(
@@ -1392,6 +1397,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         "fileOpsController", fileops_controller
     )
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
+    engine.rootContext().setContextProperty("gombsav", gombsav)
     engine.rootContext().setContextProperty(
         "discoveryController", discovery_controller
     )

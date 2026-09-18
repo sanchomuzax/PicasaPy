@@ -173,12 +173,21 @@ ColumnLayout {
         Layout.leftMargin: 50
     }
 
-    RowLayout {
+    Item {
+        id: gombSor
         Layout.leftMargin: 28
         Layout.topMargin: 4
-        spacing: 6
+        Layout.fillWidth: true
+        //: a legmagasabb gomb (a kollázs 27) — a sor magassága ennyi
+        Layout.preferredHeight: 27
+        implicitHeight: 27
+
         Rectangle {
+            id: playGomb
             objectName: "headerPlayButton"
+            visible: header.gombLathato(objectName)
+            x: header.gombX(objectName)
+            anchors.verticalCenter: parent.verticalCenter
             width: 26; height: 22; radius: 3
             color: headerPlayHover.hovered ? "#f0f0ee" : "#ffffff"
             border.color: Theme.chromeBorder
@@ -199,7 +208,12 @@ ColumnLayout {
         // kezelője. Most a mért `select_star` gomb: a jelenlegi mappa
         // csillagozott képeit jelöli ki.
         PicasaButton {
+            id: csillagGomb
             objectName: "headerSelectStarredButton"
+            visible: header.gombLathato(objectName)
+            x: header.gombX(objectName)
+            anchors.verticalCenter: parent.verticalCenter
+            height: 22
             //: #885: LENYOMÁSRA sül el — `headerpanel/select_star`
             //: mért `mousedown`-ja. Kijelölést vált, nem művelet.
             lenyomasra: true
@@ -214,7 +228,12 @@ ColumnLayout {
         // fejlécről eddig teljesen hiányzott, pedig a művelet megvan
         // (#444). Üres kijelölésnél tiltott: a mentés a KIJELÖLTEKRE hat.
         PicasaButton {
+            id: mentesGomb
             objectName: "headerSaveEditsButton"
+            visible: header.gombLathato(objectName)
+            x: header.gombX(objectName)
+            anchors.verticalCenter: parent.verticalCenter
+            height: 22
             text: header.feliratSzammal(qsTr("Save"))
             enabled: header.selectedCount > 0
             Layout.preferredHeight: 22
@@ -238,7 +257,11 @@ ColumnLayout {
         // javaslat-munkafolyamat) ezért ugyanebbe a fejlécbe kerültek, a
         // `personName` módjába, nem külön panelbe.
         PicasaButton {
+            id: kollazsGomb
             objectName: "headerCollageButton"
+            visible: header.gombLathato(objectName)
+            x: header.gombX(objectName)
+            anchors.verticalCenter: parent.verticalCenter
             //: #885: LENYOMÁSRA sül el — `headerpanel/create_collage`
             //: mért `mousedown`-ja. ⚠️ Nem mond ellent a jegy
             //: táblázatának: ez a gomb a kollázs-PANELT NYITJA MEG
@@ -246,8 +269,6 @@ ColumnLayout {
             //: a panelen belül marad felengedésre.
             lenyomasra: true
             width: 29; height: 27
-            Layout.preferredWidth: 29
-            Layout.preferredHeight: 27
             ToolTip.text: qsTr("Create Photo Collage")
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
@@ -274,16 +295,19 @@ ColumnLayout {
         // kijelölt hatókörhöz a javaslatoknak látszaniuk kell a rácsban,
         // különben a „Jóváhagyás" üres halmazra hatna. A művelet maga
         // (`confirmPersonSuggestions`) mindkettőt tudja.
+        //: #1792: a nem testreszabható elemek a négy gomb UTÁN állnak —
+        //: a `gombSorVege` a testreszabott sor jobb széle.
         PicasaButton {
+            id: jovahagyGomb
             objectName: "headerConfirmSuggestionsButton"
+            x: header.gombSorVege
+            anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatokLatszanak
             //: MÉRT felirat (`faceheaderpaneltext.tre:44`): „Confirm all"
             //: — magyarul „Az összes jóváhagyása". A darabszám a
             //: fejléc-gombok szokása szerint zárójelben (#1823).
             text: qsTr("Confirm all") + " (" + header.suggestionCount + ")"
             width: 88; height: 27
-            Layout.preferredWidth: 88
-            Layout.preferredHeight: 27
             //: MÉRT súgó: „Confirm all suggestions"
             ToolTip.text: qsTr("Confirm all suggestions")
             ToolTip.visible: hovered
@@ -291,13 +315,16 @@ ColumnLayout {
             onClicked: header.confirmSuggestionsRequested()
         }
         PicasaButton {
+            id: elvetGomb
             objectName: "headerRemoveSuggestionsButton"
+            x: jovahagyGomb.visible
+                ? jovahagyGomb.x + jovahagyGomb.width + header.gombKoz
+                : header.gombSorVege
+            anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatokLatszanak
             //: MÉRT felirat (`faceheaderpaneltext.tre:50`): „Remove"
             text: qsTr("Remove")
             width: 88; height: 27
-            Layout.preferredWidth: 88
-            Layout.preferredHeight: 27
             //: ⚠️ A MÉRT súgó „Remove selected suggestions" — a KIJELÖLT
             //: hatókörről szól, ami nálunk még nincs bekötve (ld. fent).
             //: Amíg a hatókör a teljes, a súgó is azt mondja; a mért
@@ -309,7 +336,15 @@ ColumnLayout {
             onClicked: header.removeSuggestionsRequested()
         }
         PicasaButton {
+            id: feltoltesGomb
             objectName: "headerUploadButton"
+            x: elvetGomb.visible
+                ? elvetGomb.x + elvetGomb.width + header.gombKoz
+                : (jovahagyGomb.visible
+                    ? jovahagyGomb.x + jovahagyGomb.width + header.gombKoz
+                    : header.gombSorVege)
+            anchors.verticalCenter: parent.verticalCenter
+            height: 22
             text: header.feliratSzammal(qsTr("Upload")) + " ▾"
             enabled: false
             Layout.preferredHeight: 22
@@ -360,4 +395,76 @@ ColumnLayout {
             visible: descriptionField.text.length === 0 && !descriptionField.activeFocus
         }
     }
+
+    // #1792: a testreszabott gombsor segédei.
+    //
+    // ⚠️ SZÁNDÉKOSAN a gombok UTÁN állnak. A `headerCollageButton` fölötti
+    // indoklást egy őr olvassa (#1006), és az a horgony ELSŐ előfordulását
+    // keresi — ha a név itt, feljebb is szerepelne, az őr a fájl fejlécét
+    // vizsgálná, és némán mást mérne, mint amit állít.
+    //: #1792: a testreszabott gombsor — a `gombsav` híd tölti (az
+    //: eredetiben a `Preferences\Buttons\UserConfig` és `…\Exclude`
+    //: tárolta). Ha a híd nincs (önálló komponens-teszt), a teljes,
+    //: alapértelmezett készlet jön — a fejléc próbái így változatlanul
+    //: minden gombot megtalálnak.
+    readonly property var gombSorrend:
+        (typeof gombsav !== "undefined" && gombsav && gombsav.sorrend)
+            ? gombsav.sorrend
+            : ["headerPlayButton", "headerSelectStarredButton",
+               "headerSaveEditsButton", "headerCollageButton"]
+
+    //: Látszik-e ez a gomb? A készleten KÍVÜLI gomb (feltöltés,
+    //: javaslat-vezérlők) nem testreszabható, az mindig a saját
+    //: feltételét követi.
+    function gombLathato(nev) {
+        return header.gombSorrend.indexOf(nev) >= 0
+    }
+
+    //: #1792: a gomb HELYE a sorban — ebből lesz a megjelenítési
+    //: sorrend. ⚠️ `RowLayout`-tal ez nem megoldható: az a gyerekeit a
+    //: DEKLARÁCIÓ sorrendjében rakja ki. `Repeater`-rel sem: annak a
+    //: delegáltjait a `findChild` nem találja meg, és a fejléc gombjaira
+    //: épülő próbák pont azon a néven szólítják meg őket. Ezért marad a
+    //: négy gomb a helyén, és a VÍZSZINTES pozíciót számoljuk.
+    function gombX(nev, sajatSzelesseg) {
+        var helye = header.gombSorrend.indexOf(nev)
+        if (helye < 0)
+            return 0
+        var x = 0
+        for (var i = 0; i < helye; ++i)
+            x += header.gombSzelessege(header.gombSorrend[i]) + header.gombKoz
+        return x
+    }
+
+    //: a gombok közti hézag — a korábbi `RowLayout` `spacing`-je
+    readonly property int gombKoz: 6
+
+    //: a testreszabott gombsor jobb széle (a további elemek innen
+    //: folytatódnak)
+    readonly property real gombSorVege: {
+        var x = 0
+        for (var i = 0; i < header.gombSorrend.length; ++i)
+            x += header.gombSzelessege(header.gombSorrend[i]) + header.gombKoz
+        return x
+    }
+
+    //: A gomb szélessége a sorrend-számításhoz. A `play` és a kollázs
+    //: MÉRT, fix méretű; a másik kettő felirat-függő, azt az elemtől
+    //: kérdezzük.
+    function gombSzelessege(nev) {
+        var elem = header.gombElem(nev)
+        return elem ? elem.width : 0
+    }
+
+    //: azonosító → elem, a szélesség-lekérdezéshez
+    function gombElem(nev) {
+        switch (nev) {
+        case "headerPlayButton": return playGomb
+        case "headerSelectStarredButton": return csillagGomb
+        case "headerSaveEditsButton": return mentesGomb
+        case "headerCollageButton": return kollazsGomb
+        }
+        return null
+    }
+
 }
