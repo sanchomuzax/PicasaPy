@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.519] – 2026-09-18
+
+### Javítva
+
+- **Az „Örökölt szűrők" fül bevezetője már nem vágódik le** (#3278) —
+  nagyobb rendszerbetűvel a mondat vége eddig „…"-szal elmaradt, tehát nem
+  lehetett végigolvasni. A bevezető most rövidebb, a folytatás pedig a
+  buboréksúgóban olvasható. Ezzel a felirat-levágást figyelő őr utolsó
+  kivétele is megszűnt: mostantól minden levágott felirat hibának számít.
+
 ## [0.8.518] – 2026-09-18
 
 ### Hozzáadva

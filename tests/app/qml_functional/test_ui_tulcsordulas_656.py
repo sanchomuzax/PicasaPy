@@ -146,19 +146,20 @@ def _esemeny_elem(elem: QObject) -> bool:
     return any(minta in nev for minta in _ESEMENY_ELEMEK)
 
 
-#: NEVESÍTETT kivétel — jeggyel a kezében.
+#: ⭐ ÜRES — és ez a lényeg.
 #:
-#: A `legacyEffectsIntro` a fejlesztői gépen elfér két sorban, a CI mindkét
-#: lábán viszont (nagyobb rendszerbetű) elidálódik. A #3263 szándékosan
-#: adott neki `maximumLineCount: 2` + `elide` végszükség-őrt, hogy a hosszú
-#: szöveg ne nyomja ki a szűrő-rácsot a fülről — a szöveg olvashatóságát
-#: viszont az nem oldja meg. A döntés a #3278-on: rövidebb mondat,
-#: buboréksúgó vagy három soros elrendezés. Amíg az nyitva van, ez az EGY
-#: felirat átmehet; MINDEN más levágás piros marad.
-#: (A `trayCollageLabel` kivétele visszakerült a #3279-be: az CSAK a
-#: windows-betűvel lóg ki, azt a lábat pedig ez a modul már nem méri —
-#: ld. a `pytestmark` indoklását.)
-_KIVETELEK = ("legacyEffectsIntro",)
+#: Egyetlen nevesített kivétel volt, a `legacyEffectsIntro`: a fejlesztői
+#: gépen elfért két sorban, a CI mindkét lábán (nagyobb rendszerbetű)
+#: elidálódott. A #3278 lezárta — a bevezető rövidebb mondat lett, a
+#: kivett fél mondat pedig a buboréksúgóba került —, tehát a kivétel
+#: megszűnt. MINDEN levágás piros.
+#:
+#: ⛔ Ha ide új név kerül, tartozzon hozzá NYITOTT jegy és indoklás: a
+#: kivétel nélküli üres lista az alapállapot, nem a kényelmes kiindulás.
+#: (A `trayCollageLabel` kivétele a #3279-ben él: az CSAK a windows-betűvel
+#: lóg ki, azt a lábat pedig ez a modul már nem méri — ld. a `pytestmark`
+#: indoklását.)
+_KIVETELEK: tuple[str, ...] = ()
 
 
 def _szoveg_elem(elem: QObject) -> bool:

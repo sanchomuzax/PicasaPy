@@ -75,6 +75,15 @@ ColumnLayout {
     //: magassága így a betűmetrikán múlt: Linuxon 274, Windowson 317, a mért
     //: `editpanel/tabpanel1` = 277 helyett. A sorszám rögzítése nélkül a
     //: keret alábbi számítása sem tartana.
+    //: #3278: a bevezető RÖVID mondat. A korábbi, kétmondatos alak a
+    //: fejlesztői gépen elfért, a CI (és egy nagyobb rendszerbetűvel a
+    //: felhasználó) gépén viszont levágódott — az `elide` a törést
+    //: hárította el, az olvashatóságot nem: a mondat vége „…"-szal
+    //: elmaradt.
+    //:
+    //: ⛔ REFERENCIA NINCS: ez a fül a mi SAJÁT kiegészítésünk (ADR-003),
+    //: az eredetiben nem létezik — a szöveg hossza tehát a mi döntésünk.
+    //: A kivett fél mondat nem vész el: a buboréksúgóban ott van.
     Text {
         id: bevezeto
         objectName: "legacyEffectsIntro"
@@ -82,9 +91,20 @@ ColumnLayout {
         wrapMode: Text.WordWrap
         maximumLineCount: 2
         elide: Text.ElideRight
-        text: qsTr("These filters come from older Picasa versions. Today's Picasa only recognises them inside your old edits.")
+        text: qsTr("These filters come from older Picasa versions.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
+
+        //: A bővebb magyarázat. SAJÁT tulajdonságban is áll, nem csak a
+        //: csatolt `ToolTip.text`-ben: a csatolt tulajdonságot a próba nem
+        //: tudja kiolvasni (`property("ToolTip.text")` → null, mérve a
+        //: #1701-ben), tehát a meglétét nem lehetne rajta őrizni.
+        readonly property string bovebbSugo: qsTr(
+            "Today's Picasa only recognises them inside your old edits.")
+        ToolTip.text: bevezeto.bovebbSugo
+        ToolTip.visible: bevezetoEgér.hovered
+        ToolTip.delay: Theme.tooltipDelay
+        HoverHandler { id: bevezetoEgér }
     }
 
     //: #3263: a rács GÖRGETHETŐ kereten belül él, és a keret a mért lapból
