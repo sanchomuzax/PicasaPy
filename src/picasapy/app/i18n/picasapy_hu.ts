@@ -3867,6 +3867,26 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Szinkronizálás az internettel</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Confirm all</source>
+        <translation>Az összes jóváhagyása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Confirm all suggestions</source>
+        <translation>Az összes javaslat jóváhagyása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Remove</source>
+        <translation>Eltávolítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Remove all suggestions</source>
+        <translation>Az összes javaslat törlése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30"/>
         <source>SYNC</source>
         <translation>SZINKRON</translation>

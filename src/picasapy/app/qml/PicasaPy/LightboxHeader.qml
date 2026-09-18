@@ -47,6 +47,25 @@ ColumnLayout {
     //: két fejléc-gomb hiányzott.
     signal collageRequested()
 
+    //: #2187: a SZEMÉLY-ALBUM módja. Az eredetiben a személy-album
+    //: fejléce saját panel (`faceheaderpanel`), és rajta ül a
+    //: javaslat-munkafolyamat; nálunk a személy képei ugyanebben a
+    //: rácsban, ugyanezzel a fejléccel jelennek meg, ezért a vezérlők
+    //: ide kerülnek, ebbe a módba. Üres név = nem személy-album.
+    property string personName: ""
+    //: hány MÉG EL NEM DÖNTÖTT javaslat tartozik ehhez a személyhez —
+    //: a gazda tölti a vezérlő `personSuggestionCount`-jából
+    property int suggestionCount: 0
+    //: `confirmsug` — a javaslatok jóváhagyása
+    signal confirmSuggestionsRequested()
+    //: `removesel` — a javaslatok elvetése
+    signal removeSuggestionsRequested()
+
+    //: a két javaslat-vezérlő együtt jelenik meg: nyitott személy-album ÉS
+    //: van mit eldönteni
+    readonly property bool javaslatokLatszanak:
+        header.personName !== "" && header.suggestionCount > 0
+
     //: A számos/szám nélküli alak választása egy helyen, hogy minden
     //: fejléc-gomb ugyanúgy viselkedjen.
     function feliratSzammal(alap) {
@@ -214,6 +233,10 @@ ColumnLayout {
         // arc-fejléc. Ez az egy gomb tehát mindkét belépési pontot
         // lefedi; külön arc-fejlécet építeni olyan felületet hozna létre,
         // ami nálunk nem létezik.
+        //
+        // #2187: ez a döntés maradt — az arc-fejléc SAJÁT vezérlői (a
+        // javaslat-munkafolyamat) ezért ugyanebbe a fejlécbe kerültek, a
+        // `personName` módjába, nem külön panelbe.
         PicasaButton {
             objectName: "headerCollageButton"
             //: #885: LENYOMÁSRA sül el — `headerpanel/create_collage`
@@ -239,6 +262,51 @@ ColumnLayout {
                     anchors.centerIn: parent
                 }
             }
+        }
+        // #2187: a javaslat-munkafolyamat két vezérlője. MÉRT méret
+        // mindkettőn 88 × 27 (`respack.yt`); az eredetiben a
+        // `confirmsug` és a `confirmsel` UGYANAZON a téglalapon
+        // váltakozik — a mérés szerint ugyanaz a kezelő (`0x00602640`),
+        // egyetlen logikai argumentummal (`push 1` = mind, `push 0` = a
+        // kijelöltek).
+        //
+        // ⚠️ Ebben a körben csak a TELJES hatókör van bekötve: a
+        // kijelölt hatókörhöz a javaslatoknak látszaniuk kell a rácsban,
+        // különben a „Jóváhagyás" üres halmazra hatna. A művelet maga
+        // (`confirmPersonSuggestions`) mindkettőt tudja.
+        PicasaButton {
+            objectName: "headerConfirmSuggestionsButton"
+            visible: header.javaslatokLatszanak
+            //: MÉRT felirat (`faceheaderpaneltext.tre:44`): „Confirm all"
+            //: — magyarul „Az összes jóváhagyása". A darabszám a
+            //: fejléc-gombok szokása szerint zárójelben (#1823).
+            text: qsTr("Confirm all") + " (" + header.suggestionCount + ")"
+            width: 88; height: 27
+            Layout.preferredWidth: 88
+            Layout.preferredHeight: 27
+            //: MÉRT súgó: „Confirm all suggestions"
+            ToolTip.text: qsTr("Confirm all suggestions")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: header.confirmSuggestionsRequested()
+        }
+        PicasaButton {
+            objectName: "headerRemoveSuggestionsButton"
+            visible: header.javaslatokLatszanak
+            //: MÉRT felirat (`faceheaderpaneltext.tre:50`): „Remove"
+            text: qsTr("Remove")
+            width: 88; height: 27
+            Layout.preferredWidth: 88
+            Layout.preferredHeight: 27
+            //: ⚠️ A MÉRT súgó „Remove selected suggestions" — a KIJELÖLT
+            //: hatókörről szól, ami nálunk még nincs bekötve (ld. fent).
+            //: Amíg a hatókör a teljes, a súgó is azt mondja; a mért
+            //: alakra a kijelölt hatókörrel EGYÜTT váltunk, különben a
+            //: súgó mást ígérne, mint amit a gomb tesz.
+            ToolTip.text: qsTr("Remove all suggestions")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: header.removeSuggestionsRequested()
         }
         PicasaButton {
             objectName: "headerUploadButton"

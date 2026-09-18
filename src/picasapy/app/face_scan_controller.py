@@ -60,6 +60,7 @@ from picasapy.index import (
     lazitott_lepcso,
     mark_faces_ignored,
     set_suggested_name,
+    suggested_faces_for,
     unignore_faces,
     mark_faces_named,
     open_index,
@@ -627,6 +628,73 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         with open_index(self._db_path) as conn:
             set_suggested_name(conn, int(face_id), None)
             conn.commit()
+
+    @Slot(str, result=int)
+    def personSuggestionCount(self, name: str) -> int:  # noqa: N802
+        """Hány MÉG EL NEM DÖNTÖTT javaslat tartozik ehhez a személyhez
+        (#2187) — ebből lesz a személy-album fejlécének darabszáma.
+
+        Üres névre nulla: a fejléc kötése akkor is hívja, amikor nem
+        személy-album van nyitva."""
+        if not name:
+            return 0
+        with open_index(self._db_path) as conn:
+            return len(suggested_faces_for(conn, name))
+
+    def _szemely_javaslatai(
+        self, name: str, face_ids: list | None
+    ) -> list[int]:
+        """A művelet HATÓKÖRE: a személy függő javaslatai, opcionálisan a
+        megadott arcokra szűkítve (#2187).
+
+        A mérés szerint a `confirmsug` és a `confirmsel` UGYANAZ a kezelő
+        (`0x00602640`), egyetlen logikai argumentummal — nálunk ezért egy
+        művelet van, és ez a metódus dönti el a hatókört. A szűkítés
+        MINDIG a személy javaslatain belül marad: idegen arc azonosítója
+        nem hat, akkor sem, ha a hívó odaadja."""
+        if not name:
+            return []
+        with open_index(self._db_path) as conn:
+            sajat = [arc.id for arc in suggested_faces_for(conn, name)]
+        if face_ids is None:
+            return sajat
+        kert = {int(azonosito) for azonosito in face_ids}
+        return [azonosito for azonosito in sajat if azonosito in kert]
+
+    @Slot(str, result=int)
+    @Slot(str, "QVariantList", result=int)
+    def confirmPersonSuggestions(  # noqa: N802
+        self, name: str, face_ids: list | None = None
+    ) -> int:
+        """A személy javaslatainak JÓVÁHAGYÁSA — `confirmsug` (mind) és
+        `confirmsel` (a kijelöltek) egyetlen műveletként.
+
+        A jóváhagyás a nevet TÉNYLEGESEN ráírja az arcra, ugyanazon az
+        úton, mint az egy arcra szóló `acceptSuggestion`. Visszatérési
+        érték: hány javaslatot hagytunk jóvá."""
+        celok = self._szemely_javaslatai(name, face_ids)
+        if not celok:
+            return 0
+        return len(celok) if self.assignNameToFaces(celok, name) else 0
+
+    @Slot(str, result=int)
+    @Slot(str, "QVariantList", result=int)
+    def removePersonSuggestions(  # noqa: N802
+        self, name: str, face_ids: list | None = None
+    ) -> int:
+        """A személy javaslatainak ELVETÉSE — `removesel`.
+
+        Az elvetés nem névadás és nem mellőzés: a javaslat eltűnik, az arc
+        NÉVTELEN marad, hogy egy későbbi futás újra megvizsgálhassa (az
+        egy arcra szóló `rejectSuggestion` szerződése)."""
+        celok = self._szemely_javaslatai(name, face_ids)
+        if not celok:
+            return 0
+        with open_index(self._db_path) as conn:
+            for azonosito in celok:
+                set_suggested_name(conn, azonosito, None)
+            conn.commit()
+        return len(celok)
 
     #: #3237: a javaslat-lépcső beállítás-kulcsa. A „További javaslatok
     #: keresése" NEM ír bele — az eredeti sem írja vissza a küszöböt

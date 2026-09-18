@@ -371,6 +371,29 @@ def suggested_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
     )
 
 
+def suggested_faces_for(
+    conn: sqlite3.Connection, name: str
+) -> tuple[UnnamedFace, ...]:
+    """Egy megnevezett személy MÉG EL NEM DÖNTÖTT javaslatai (#2187).
+
+    A `suggested_faces()` minden függő javaslatot ad; a személy-album
+    javaslat-munkafolyamatának viszont az kell, ami ehhez az EGY névhez
+    tartozik — ebből lesz a fejléc darabszáma, és ezen hat az „Az összes
+    jóváhagyása".
+
+    A névösszevetés kis-nagybetűre érzéketlen, ahogy a `.picasa.ini`
+    `[Contacts2]` neveinél is szokás. Üres névre üres eredmény (nem hiba):
+    a felület akkor is meghívhatja, amikor nincs nyitott személy-album."""
+    if not name:
+        return ()
+    kulcs = name.casefold()
+    return tuple(
+        face
+        for face in suggested_faces(conn)
+        if face.suggested_name and face.suggested_name.casefold() == kulcs
+    )
+
+
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """A „Névtelenek" album (issue #26, javasolt 1. lépcső): minden fotó,
     amelyen a SAJÁT detektorunk legalább egy arcot talált — csoportosítás

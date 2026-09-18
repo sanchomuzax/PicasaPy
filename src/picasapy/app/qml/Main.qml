@@ -667,6 +667,46 @@ ApplicationWindow {
         window.selectedIndexes = rows
         window.selectedIndex = rows.length > 0 ? rows[0] : -1
     }
+    //: #2187: a személy-album javaslat-munkafolyamata. A fejléc a
+    //: nevet és a darabszámot innen kapja, a két gombja pedig ezeket a
+    //: függvényeket hívja — a képfolyam nem ismeri az arc-vezérlőt.
+    //:
+    //: A darabszám a nézet váltásakor (`personViewChanged`) és a saját
+    //: műveleteink után frissül; a `_javaslatRevizio` az a horgony, amit
+    //: a kötés újraértékel.
+    property int _javaslatRevizio: 0
+    readonly property string personAlbumName:
+        controller && controller.currentPersonName
+            ? controller.currentPersonName : ""
+    readonly property int personSuggestionCount: {
+        window._javaslatRevizio
+        if (!window._faceScanController || window.personAlbumName === "")
+            return 0
+        return window._faceScanController.personSuggestionCount(
+            window.personAlbumName)
+    }
+    function confirmPersonSuggestions() {
+        if (!window._faceScanController || window.personAlbumName === "")
+            return
+        window._faceScanController.confirmPersonSuggestions(
+            window.personAlbumName)
+        window._javaslatFrissult()
+    }
+    function removePersonSuggestions() {
+        if (!window._faceScanController || window.personAlbumName === "")
+            return
+        window._faceScanController.removePersonSuggestions(
+            window.personAlbumName)
+        window._javaslatFrissult()
+    }
+    //: a darabszám újraszámolása + az album újratöltése: a jóváhagyott
+    //: arcok ettől kerülnek be a személy képei közé
+    function _javaslatFrissult() {
+        window._javaslatRevizio += 1
+        if (controller && window.personAlbumName !== "")
+            controller.showPerson(window.personAlbumName)
+    }
+
     //: #1823: „szerkesztések mentése lemezre" a mappa-fejlécről. A
     //: művelet a #444 mentés-párbeszédéé — ez csak egy újabb belépési
     //: pont, ugyanazzal a megerősítéssel és biztonsági mentéssel.
