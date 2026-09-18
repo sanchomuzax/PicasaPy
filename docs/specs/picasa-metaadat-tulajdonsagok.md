@@ -830,3 +830,87 @@ A szükséges következő lépés a `Picasa3.exe` célzott dekompilációja a
 `0x00bdbe50` és `0x00bd9ae0` címeken. A helyi kutatási anyagban az EXE nincs
 jelen, ezért ezt a kört nem helyettesítettem becsléssel; a #3348 nyitva marad
 és a hiányzó bináris miatt külső függőségre vár.
+
+## 12. ⛳ A regisztrációs LÁNC megvan — 49 SDK-névtér + a Picasa NÉGY sajátja (2026-09-18, #3348)
+
+*A 11. szakasz a `0x00bdbe50`-t „jelölt blokknak" nevezte, és a jegy azért
+állt `blocked`-on, mert az előző (felhős) kör nem érte el a binárist. A
+bináris helyben megvan (`research/copy_Picasa_3_7/Picasa3/Picasa3.exe`,
+10 160 456 bájt), így a kérdés eldőlt.*
+
+### A lánc
+
+```
+0x00ba7430  (91 b)   ← a Picasa saját belépési pontja
+   ├── 0x00bb1d60 (71 b)  → 0x00bd9ae0 (88 b) → 0x00bdbe50 (1822 b)
+   │                                              └── 49 × 0x00be26d0   (SDK-katalógus)
+   └── 4 × 0x00bb1db0 (76 b) → 0x00bd9dd0 (182 b) → 0x00be26d0          (SAJÁT névterek)
+```
+
+A `0x00be26d0` (1297 b) a **regisztráló**: `this` egy névtér-tábla
+(`lea ecx, [esp+0x1c]`), az argumentumai `(URI, prefix)` — a hívóhelyek
+sorrendje `push prefix; push URI; call`, tehát a veremtetőn az URI áll,
+azaz az **URI az első argumentum**. A táblának pontosan **két** hívója van:
+a `0x00bdbe50` (49 hívás) és a `0x00bd9dd0` (1 hívás) — utóbbi a nyilvános
+„regisztrálj egy névteret" API, amit a Picasa saját kódja használ.
+
+### A) A 49 SDK-névtér (`0x00bdbe50`)
+
+Az Adobe XMP-Core alapkatalógusa, sorrendben kiolvasva a törzsből:
+`xml` · `rdf` · `dc` · `xmp` · `pdf` · `photoshop` · `album` · `exif` ·
+`aux` · `tiff` · `png` · `jpeg` · `jp2k` · `crs` · `asf` · `wav` · `bmsp` ·
+`creatorAtom` · `xmpRights` · `xmpMM` · `xmpBJ` · `xmpNote` · `xmpDM` ·
+`xmpScript` · `bext` · `xmpT` · `xmpTPg` · `xmpG` · `xmpGImg` · `stFnt` ·
+`stDim` · `stEvt` · `stRef` · `stVer` · `stJob` · `stMfs` · `xmpidq` ·
+`Iptc4xmpCore` · `DICOM` · `pdfaSchema` · `pdfaProperty` · `pdfaType` ·
+`pdfaField` · `pdfaid` · `pdfaExtension` · `pdfx` · `pdfxid` · `x` · `iX`.
+
+⛔ **Ez a lista NEM a Picasa kimeneti sémája.** Az SDK inicializálása
+regisztrálja mind a 49-et függetlenül attól, hogy a program ír-e belőlük
+bármit — tehát egy névtér jelenléte itt **semmit nem bizonyít** a
+`.jpg`-be írt XMP-ről. A 11. szakasz „48 namespace-URL" száma is
+pontosítható: a párok száma **49**, a különbség az `x` → `adobe:ns:meta/`,
+ami nem `http`-vel kezdődik, ezért az index URL-heurisztikája kihagyta.
+
+### B) ⭐ A Picasa NÉGY saját névtere (`0x00ba7430`, négy hívás)
+
+| # | prefix | URI | cím (prefix / URI) |
+|---|---|---|---|
+| 1 | `MP` | `http://ns.microsoft.com/photo/1.2/` | `0xcef370` / `0xcef374` |
+| 2 | `Iptc4xmpExt` | `http://iptc.org/std/Iptc4xmpExt/2008-02-29/` | `0xcef398` / `0xcef228` |
+| 3 | `stArea` | `http://ns.adobe.com/xmp/sType/Area#` | `0xcef3a4` / `0xcef170` |
+| 4 | `mwg-rs` | `http://www.metadataworkinggroup.com/schemas/regions/` | `0xcef3ac` / `0xcef194` |
+
+A négy prefix és a négy URI **egymás melletti, nullával zárt sztringként**
+áll az adatszakaszban; a párosítás nem a szomszédságból, hanem a
+hívóhelyek `push`/`mov ecx` operandusaiból jön.
+
+⭐ **Kontroll:** a jól ismert kanonikus párosítások mind stimmelnek —
+`dc` → `purl.org/dc/elements/1.1/`, `xmp` → `ns.adobe.com/xap/1.0/`,
+`tiff` → `ns.adobe.com/tiff/1.0/`, `exif` → `ns.adobe.com/exif/1.0/`. Ha a
+kiolvasás egy elemet elcsúsztatna, ez a négy azonnal hibásan jönne ki.
+*(A terv egy másik kontrollt is előírt — hogy a prefixek `:`-re
+végződnek —, az **megdőlt**: a prefixek kettőspont nélkül állnak. A
+párosítás-kontroll ettől független, és áll.)*
+
+### C) „eredeti / nálunk / teendő"
+
+| névtér | eredeti | nálunk (`export/xmp.py`) |
+|---|---|---|
+| `mwg-rs` regions | **regisztrálva** (B/4) | megvan |
+| `stArea` | **regisztrálva** (B/3) | megvan |
+| `MP` (MicrosoftPhoto 1.2) | **regisztrálva** (B/1) | megvan |
+| `MPRI`/`MPREG` (`…/1.2/t/RegionInfo#`, `…/1.2/t/Region#`) | a sztring MEGVAN (`0xcef210`, `0xcef1e4`), de a négy regisztráció nem ezeket adja | megvan |
+| `Iptc4xmpExt` (IPTC Ext 2008-02-29) | **regisztrálva** (B/2) | **NINCS** |
+| `stDim` | az SDK katalógusában (A) | megvan |
+| `lr` (`http://ns.adobe.com/lightroom/1.0/`) | ⛔ **a teljes képfájlban NULLA előfordulás** | **írjuk** |
+
+⛔ **A `lr:` névtér a mi hozzátoldásunk.** A `ns.adobe.com/lightroom`
+minta a teljes 10 160 456 bájtos képfájlban **egyszer sem** szerepel — a
+keresés bájtszintű, tehát az index lyukaitól független. Az eredeti Picasa
+XMP-kimenete ezt a névteret nem ismeri. *(Fejlesztői teendő: **#3353**.)*
+
+*Forrás: `0x00ba7430` (91 b), `0x00bb1db0` (76 b), `0x00bb1d60` (71 b),
+`0x00bd9ae0` (88 b), `0x00bd9dd0` (182 b), `0x00bdbe50` (1822 b),
+`0x00be26d0` (1297 b); a hívószámok a bináris index `xrefs` táblájából, a
+sztringek `pe_dis.D`-ből kiolvasva.*
