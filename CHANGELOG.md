@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+
+- **Szegély- és feliratopciók a nyomtatásnál** (#1780) — a nyomtatási
+  párbeszédben beállítható a felirat forrása és helye, a betű, a színek,
+  a tördelés és a szegély; ezek a beállítások a következő indításkor is
+  megmaradnak.
+
 ## [0.8.515] – 2026-09-18
 
 ### Megváltozva
