@@ -560,10 +560,19 @@ Rectangle {
     // beállítását elnyomjuk, hogy az onValueChanged NE váltson ki
     // previewTilt-et — a szinkron csak a csúszkát mozgatja, az előnézet
     // már a beginEditCurrent()/_register_preview() óta helyes.
+    //: #3234: a szinkron ELNYOMÓJA. Korábban a csúszka saját
+    //: `suppressPreview` tulajdonsága volt; a csúszka a sávba költözött,
+    //: a szerepe viszont változatlan: a programozott értékadás NE
+    //: váltson ki előnézetet.
+    property bool tiltSzinkronFut: false
+    //: #3234: a döntés értéke az eszköz NYITÁSAKOR — ezt állítja vissza a
+    //: sáv Mégse gombja (`tool_cancel`, `Property escapekey 1`).
+    property real tiltErtekNyitaskor: 0
+
     function syncTiltSlider() {
-        tiltSlider.suppressPreview = true
-        tiltSlider.value = editController.tiltParam
-        tiltSlider.suppressPreview = false
+        viewer.tiltSzinkronFut = true
+        editorToolBar.csuszkaErtek = editController.tiltParam
+        viewer.tiltSzinkronFut = false
         // #448: a Kiegyenesítés-figyelmeztetés a vágó-panelen — a
         // tiltParam a mentett döntés-paraméter, 0.0 = nincs aktív tilt
         editorPanel.straightenActive = editController.tiltParam !== 0
@@ -1242,8 +1251,12 @@ Rectangle {
                         if (tool === "tilt") {
                             // eszköz-nyitáskor a csúszka a MENTETT
                             // tilt-értékről induljon, ne 0-ról (#131)
-                            if (editorPanel.tiltActive)
+                            if (editorPanel.tiltActive) {
+                                // #3234: a Mégse ehhez az értékhez tér vissza
+                                viewer.tiltErtekNyitaskor =
+                                    editController.tiltParam
                                 viewer.syncTiltSlider()
+                            }
                         } else if (tool === "crop" || tool === "retouch"
                                    || tool === "text" || tool === "redeye") {
                             // az enter/exit a Connections{target: editorPanel}
@@ -1433,36 +1446,11 @@ Rectangle {
                     onTextAlignEdited: (value) => editController.setTextAlign(value)
                 }
 
-                ColumnLayout {
-                    anchors.top: editorPanel.bottom
-                    anchors.left: parent.left; anchors.right: parent.right
-                    anchors.margins: 10
-                    spacing: 6
-                    Label {
-                        visible: editorPanel.tiltActive && editorPanel.activeTab === 0
-                        text: qsTr("Straighten")
-                        font.pixelSize: Theme.fontSize
-                        color: Theme.textGray
-                    }
-                    // döntés-csúszka: −1..1 Picasa-egység (±11,5°); húzás
-                    // közben élő előnézet (previewTilt, nincs ini-mentés,
-                    // #72), elengedéskor ír + tol undo-lépést (setTilt)
-                    PicasaSlider {
-                        id: tiltSlider
-                        objectName: "tiltSlider"
-                        visible: editorPanel.tiltActive && editorPanel.activeTab === 0
-                        from: -1; to: 1; value: 0
-                        // programozott szinkronnál (nyitás/lapozás) NEM
-                        // váltunk ki previewTilt-et — az felülírná a
-                        // mentett érték előnézetét (#131)
-                        property bool suppressPreview: false
-                        Layout.fillWidth: true
-                        onValueChanged: if (editorPanel.tiltActive && !suppressPreview)
-                                            editController.previewTilt(value)
-                        onPressedChanged: if (!pressed && editorPanel.tiltActive)
-                                              editController.setTilt(value)
-                    }
-                }
+                // #3234: a döntés-csúszka a KÉP FÖLÖTTI sávba költözött
+                // (`EditorToolBar`, `toolslider`) — az `editpanel.tre`
+                // `#---Straighen Overlay---` szakasza szerint ott a helye,
+                // nem a bal panel alatt. A viselkedése VÁLTOZATLAN: húzás
+                // közben élő előnézet (#72), elengedéskor ír.
                 // élő RGB-hisztogram + fényképezőgép-adat sor (#25): a
                 // korábbi placeholder-doboz élesítve — HistogramBox.qml
                 // #1323: a panel a bal fiókON BELÜL dokkolt, nem a
@@ -1916,7 +1904,12 @@ Rectangle {
                         tool: editorPanel.cropActive ? "crop"
                             : editorPanel.retouchActive ? "retouch"
                             : editorPanel.textActive ? "text"
-                            : editorPanel.redeyeActive ? "redeye" : ""
+                            : editorPanel.redeyeActive ? "redeye"
+                            //: #3234: a kiegyenesítés a sáv CSÚSZKÁS
+                            //: eszköze — a `.tre` a sávot a
+                            //: `#---Straighen Overlay---` alá teszi
+                            : (editorPanel.tiltActive
+                               && editorPanel.activeTab === 0) ? "tilt" : ""
                         //: SZÓ SZERINT a korábbi panel-gombok feltétele —
                         //: se többet, se kevesebbet. ⛔ A vágásnál
                         //: SZÁNDÉKOSAN nincs kijelölés-feltétel: az
@@ -1928,6 +1921,22 @@ Rectangle {
                                 : tool === "text"
                                     ? editorPanel.textApplyEnabled
                                     : true
+                        //: #3234: a döntés-csúszka tartománya — −1…1
+                        //: Picasa-egység (±11,5°)
+                        csuszkaMin: -1
+                        csuszkaMax: 1
+                        //: húzás közben ÉLŐ előnézet, ini-mentés nélkül
+                        //: (#72); a programozott szinkron (nyitás, lapozás)
+                        //: nem vált ki előnézetet (#131)
+                        onCsuszkaMozgott: (ertek) => {
+                            if (editorPanel.tiltActive && !viewer.tiltSzinkronFut)
+                                editController.previewTilt(ertek)
+                        }
+                        //: elengedéskor ír + undo-lépést tol (#72)
+                        onCsuszkaElengedve: (ertek) => {
+                            if (editorPanel.tiltActive)
+                                editController.setTilt(ertek)
+                        }
                         //: középre, és 10 képponttal a KIRAJZOLT kép alja fölé
                         x: (photo.width - width) / 2
                         y: (photo.height + photo.paintedHeight) / 2
@@ -1937,12 +1946,26 @@ Rectangle {
                             else if (tool === "retouch") editorPanel.retouchApplyRequested()
                             else if (tool === "text") editorPanel.textApplyRequested()
                             else if (tool === "redeye") editorPanel.redeyeApplyRequested()
+                            //: #3234: a döntés értéke MÁR ki van írva (a
+                            //: csúszka elengedésekor, #72) — az Alkalmaz
+                            //: ezért csak bezárja az eszközt.
+                            else if (tool === "tilt") editorPanel.tiltActive = false
                         }
                         onCancelClicked: {
                             if (tool === "crop") editorPanel.cropCancelRequested()
                             else if (tool === "retouch") editorPanel.retouchCancelRequested()
                             else if (tool === "text") editorPanel.textCancelRequested()
                             else if (tool === "redeye") editorPanel.redeyeCancelRequested()
+                            //: #3234: a Mégse a NYITÁSKORI döntés-értéket
+                            //: állítja vissza. Ha közben nem változott,
+                            //: nem írunk — különben fölösleges
+                            //: undo-lépést tolnánk.
+                            else if (tool === "tilt") {
+                                if (editController.tiltParam
+                                        !== viewer.tiltErtekNyitaskor)
+                                    editController.setTilt(viewer.tiltErtekNyitaskor)
+                                editorPanel.tiltActive = false
+                            }
                         }
                     }
 

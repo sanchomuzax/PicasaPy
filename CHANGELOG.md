@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.516] – 2026-09-18
+
+### Megváltozva
+
+- **A kiegyenesítés csúszkája a kép fölé került** (#3234) — eddig a bal
+  oldali panel alatt ült. Az eredetiben ez a csúszka a kép fölött lebegő
+  sávban áll, a mért méretekkel (267 × 28 keret, 253 × 28 sáv, 16 × 24
+  fogantyú); a Mégse a kiegyenesítés nyitáskori értékét állítja vissza.
+  A húzás közbeni élő előnézet és az elengedéskori mentés változatlan.
+- **A retusálás ecsetmérete marad a bal panelben** — a jegy eredetileg azt
+  kérte, hogy az is költözzön, de a mérés szerint az eredetiben is ott van.
+
 ### Hozzáadva
 
 - **Szegély- és feliratopciók a nyomtatásnál** (#1780) — a nyomtatási
