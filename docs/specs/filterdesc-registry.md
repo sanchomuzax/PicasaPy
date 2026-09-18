@@ -2755,16 +2755,47 @@ négy hívója van, köztük mindkettő.
 > próbák a mag értékeit a képletből ellenőrzik (`x = 0`, `1`, `2`), nem a
 > kimenetből.
 
-**Ami NINCS mérve — két külön nyitott kérdés:**
+### 5/a. `smoothing=false`: legközelebbi szomszéd, nem dobozmód
 
-1. Hogy `smoothing = false` esetén a bináris a `0`-s dobozmódot
-   választja-e, vagy tényleg legközelebbi szomszédot. Nálunk marad az
-   `INTER_NEAREST`, és a docstring kimondja, hogy ez nem mérés.
-2. **Hogy a mag KICSINYÍTÉSKOR a léptékkel nyúlik-e** (élsimítás). A
-   bináris annyit árul el, hogy a mód 3-as; a `ytResampler` belső
-   lépték-kezelése nincs visszafejtve. A mi implementációnk a szokásos
-   nyújtott magot használja — **dokumentált döntés, nem visszafejtett
-   viselkedés**. Aki ezt kiméri, itt írja át.
+A korábbi „NINCS MÉRVE” jelölés lezárult. A `ResizeImageOperation`
+alkalmazója (`0x00bc3650`) a `smoothing` értékét a `+0x34` mezőből olvassa:
+a hiányzó érték alapja `true` (`0x00bc36ac`), a kiolvasott érték pedig a
+`0x00c29990` egészre alakítása után a `0x00bc36c5` `setnz` ágával lesz a
+`bVar2` bájt. Ezt adja át a közös resampler-wrappernek
+(`0x00bc37d6` → `0x00bcb5e0`).
+
+A wrapper utasításszinten külön ágazik (`0x00bcb602` `test bl,bl`):
+
+- **`smoothing=true`** esetén a skálát hasonlítja 1,0-hoz
+  (`0x00bcb63f`–`0x00bcb655`), és 1:1-nél a 0-s dobozmódot, egyébként a
+  3-as Mitchell–Netravali módot választja;
+- **`smoothing=false`** esetén közvetlenül a `0x009e6df0` affine-ágat hívja
+  (`0x00bcb6b8`–`0x00bcb6ce`), `param_4=0`, `param_5=0` és `param_6=0x100`
+  értékekkel (`0x00bcb6bf`, `0x00bcb6c4`, `0x00bcb6c6`, `0x00bcb6c9`). A
+  `0x009e6df0` ebből a feltételből a `0x009e7420` rutint választja
+  (`0x009e6ff0`–`0x009e6ffa`), amely fixpontos forráskoordinátát csonkol
+  (`0x009e754d`, `0x009e7553`) és **egyetlen képpontot** olvas
+  (`0x009e756d`). Ez a 9-es, legközelebbi-szomszéd mód.
+
+⇒ `smoothing=false` esetén **nem** a 0-s dobozmód fut. 1:1 léptéknél is
+ugyanez a legközelebbi-szomszéd ág fut; a kimenet ilyenkor természetesen a
+forrás képpontjait adja vissza, de a választott mechanizmus nem a doboz.
+
+**Nálunk (MÉRVE):** a `resize_image(..., smoothing=False)` már
+`cv2.INTER_NEAREST`-et használ (`src/picasapy/render/glimmer_ops.py:961–969`),
+tehát a mechanizmus egyezik. A próba eddig ezt feltevésként jelölte
+(`tests/render/test_resize_mitchell_2227.py:127–136`); a kutatási lelet a
+megfelelő bináris kontrollt most megadta.
+
+### 5/b. Ami továbbra is nyitott
+
+**A mag KICSINYÍTÉSKOR a léptékkel nyúlik-e** (élsimítás). A bináris azt
+igazolja, hogy a simított út 3-as módot választ, de a `ytResampler` belső
+lépték-kezelése nincs ebből a körből visszafejtve. A mi implementációnk a
+szokásos nyújtott magot használja — **dokumentált döntés, nem visszafejtett
+viselkedés**. A megszerzés útja: a `ytResampler` súlyszámításának célzott
+átolvasása a `0x00a3f660` táblafelépítő és a `0x00a3f5b0` együttható-építő
+környékén, kifejezetten `scale > 1` esetén.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
@@ -2894,9 +2925,9 @@ iránya.
 
 *Bizonyítottsági fok: **megerősített** mind a hét leletre (kiolvasott
 utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
-tartalma, a `TwoTone` megálló-pozíciói, a `Resize` `smoothing = false` ága,
-az `AutoFix` lekicsinyítő léptékének CRT-függvénye és az `AdjustCurves` négy
-görbéjének SORRENDJE **nincsenek mérve**.*
+tartalma, a `TwoTone` megálló-pozíciói, a `Resize` kicsinyítéskori
+lépték-nyújtása, az `AutoFix` lekicsinyítő léptékének CRT-függvénye és az
+`AdjustCurves` négy görbéjének SORRENDJE **nincsenek mérve**.*
 
 ---
 

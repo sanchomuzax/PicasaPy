@@ -552,8 +552,12 @@ igen. Jegy: **#2456**.
 legnagyobb zoomeltolás `floor(width · Impact / 200)` pixel.
 
 **`PicnikFocalPixelate`:** lekicsinyítés `W/Impact × H/Impact` méretre, majd
-visszanagyítás `W × H`-ra **`smoothing = false`** módban (legközelebbi
-szomszéd, nem interpoláció) — ettől élesek a blokkok.
+visszanagyítás `W × H`-ra **`smoothing = false`** módban. A bináris ezt a
+`ResizeImageOperation` közös útján (`0x00bc3650` → `0x00bcb5e0`) a
+`0x009e7420` egyképpontos, fixpontos koordinátát csonkoló rutinjához köti
+(`0x009e754d`, `0x009e7553`, `0x009e756d`) — vagyis **legközelebbi
+szomszéd**, nem interpoláció (részletes levezetés:
+`filterdesc-registry.md` 4.12/5.a) — ettől élesek a blokkok.
 
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
