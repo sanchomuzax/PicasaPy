@@ -6195,3 +6195,104 @@ bejegyzését).
 `0x00bba285` (`fld1`), `0x00bba287`, `0x00bba28b`, `0x00bba28f`,
 `0x00bba293`, `0x00bba297`, `0x00bba29b`; a `0,8` konstans `0x00c7dbc4`; a
 mezősorrend a beolvasóból (`0x00bba2e0`, 481 b).*
+
+## ⛳ Az `AdjustCurves` ponttárolója és természetes spline-cache-e (2026-09-18, #626)
+
+*A kör pontos kérdése az volt, hogyan kapcsolódik össze a négy görbe
+paraméter-előkészítése, a ponttárolás és a már ismert természetes spline.
+A válasz a binárisban egyetlen, visszakövethető lánc: négy 24 bájtos leíró →
+8 bájtos `(x, y)` pontpárok → másodderivált-cache → 256 elemű LUT.*
+
+### A négy leíróból a pontpárokig
+
+A `AdjustCurvesImageOperation` 8. slotja (`FUN_00bb9d20`, **RVA
+`0x007b9d20`, 224 bájt**) a négy görbetagot (`+0x40`, `+0x44`, `+0x48`,
+`+0x4c`) külön, **24 bájtos lépésközű** helyi leíróba küldi a
+`FUN_00bb9e00`-t (RVA `0x007b9e00`, **438 bájt**). A négy leíró sorrendje a
+már lezárt attribútumtérkép szerint: `MasterCurve`, `RedCurve`, `GreenCurve`,
+`BlueCurve`.
+
+A `FUN_00bb9e00` a görbepont-vektort bejárja, a két numerikus pontértéket
+kiolvassa, majd a `FUN_008f2c70`-vel tárolja. Az xref-index ezt a hívási láncot
+függetlenül adja vissza:
+
+```text
+0x00bb9d20 → 0x00bb9e00  (4 hívás)
+0x00bb9e00 → 0x008f2c70 (1 hívási hely, a pontbejárás törzsében)
+```
+
+A ponttároló (`FUN_008f2c70`, **RVA `0x004f2c70`, 299 bájt**) rekordja:
+
+| mező | jelentés | bináris bizonyíték |
+|---|---|---|
+| `+0x00` | ponttömb mutatója; rekordonként 8 bájt | a célcím `bázis + index × 8` |
+| `+0x04` | darabszám és alacsony flag-bit | `>> 1` = darabszám; íráskor `+2` |
+| `+0x08` | a természetes spline másodderivált-tömbje | a fogyasztó `FUN_008f3290` innen olvas |
+| `+0x0c` | a másodderivált-tömb darabszáma és flagje | a fogyasztó ezt ellenőrzi |
+| `+0x10` | második gyorsítótár-rekesz mutatója | a pontbeszúrás érvényteleníti |
+| `+0x14` | a második gyorsítótár-rekesz darabszáma és flagje | a pontbeszúrás érvényteleníti |
+
+Új pont után a bináris **mindkét** cache-rekeszt felszabadítja és nullázza;
+az append tehát nem hagyhat régi másodderiváltat az új pontkészlet mellett.
+A második cache fogyasztóját ebben a körben nem azonosítottam — nem nevezem
+meg találgatásból.
+
+### A kiértékelés és a cache újraépítése
+
+A `FUN_008f3290` (**RVA `0x004f3290`, 280 bájt**) a `[+0x00]` ponttömbön
+**bináris kereséssel** választja ki azt a szakaszt, amelyre `x[j] ≤ x <
+x[j+1]`. A `[+0x08]` tömb hiányzó vagy érvénytelen cache-e esetén meghívja a
+`FUN_008f33b0`-t (**RVA `0x004f33b0`, 836 bájt). Ez a klasszikus
+tridiagonális megoldást futtatja:
+
+- a munkatömb első eleme és a `y2[0]` nulla;
+- a belső pontokra `σ = (x[j]−x[j−1])/(x[j+1]−x[j−1])`, `p = σ·y2[j−1]+2`;
+- a jobb oldalban a két szomszédos szakasz meredekségkülönbsége szerepel, `6`
+  szorzóval;
+- a visszahelyettesítés után `y2[n−1] = 0`.
+
+Ez nem pusztán „spline-szerű" leírás: a természetes peremfeltételt és a
+`2`/`6` konstansokat a konkrét függvény adja.
+
+A szakaszban a natív képlet:
+
+```text
+h = x[j+1] − x[j]
+A = (x[j+1] − x) / h
+B = (x − x[j]) / h
+y = A·y[j] + B·y[j+1]
+   + ((A³−A)·y2[j] + (B³−B)·y2[j+1]) · h² / 6
+```
+
+A `FUN_008f3290` törzsében nincs külön határon kívüli clamp-ág; a
+Picasa-szállításban használt görbék végpontjainak és a 0…255 LUT-tartomány
+hatásának teljes, golden-alapú összevetése **NINCS MEG**. A jelenlegi
+`curve_lut()` (`src/picasapy/render/curves.py:57–111`) a tartományon kívül a
+szélső értéket tartja — ez terméki policy, nem a most kiolvasott natív ág
+bizonyítéka.
+
+### Eredeti / nálunk / teendő
+
+| | Eredeti, mérve | PicasaPy, mérve | Teendő |
+|---|---|---|---|
+| görbepont-tárolás | 8 bájtos `(x,y)` rekord, `FUN_008f2c70` | `CurvePoints` és `curve_lut()` | nincs tárolási kompatibilitási feladat a jelenlegi render API-ban |
+| spline | természetes köbös, `FUN_008f3290` + `FUN_008f33b0` | `_natural_spline_second_derivatives()` + vektorizált kiértékelés | a mechanizmus egyezik |
+| csatornaösszetétel | master után R/G/B, a közös LUT-építőben (`FUN_00bcd1e0`, RVA `0x007cd1e0`, 376 bájt) | `adjust_curves()`: master LUT, majd csatorna-LUT-ok (`glimmer_ops.py:125–148`) | a sorrend egyezik |
+| cache-életciklus | pontbeszúráskor két cache invalidálódik | a tiszta LUT-függvény nem hordoz natív cache-t | nincs pixelhatásra vonatkozó mérés; külön teljesítményfeladat csak mérés után indokolt |
+
+**Bizonyítottsági fok: megerősített** a pontrekord, a cache-invalidálás, a
+természetes spline és a LUT-lánc mechanizmusára. **NINCS MEG** a natív és a
+PicasaPy közötti pixelazonosság golden-mérése a cache-hatékonyság és a
+határon kívüli görbepontok esetére; ezek hatását nem tulajdonítom a
+mechanizmusleletnek.
+
+**Nyitott kérdések mérlege — e kör saját kérdései:** 0 nyílt · 1 lezárva ·
+0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva". Az örökölt pixel-golden
+mérés külön, nem átadott mechanizmus-kérdés.
+
+*Forrás: `picasa3-index.sqlite` `functions`/`xrefs` táblák; a célzott
+Ghidra-kimenet `FUN_00bb9d20`, `FUN_00bb9e00`, `FUN_008f2c70`,
+`FUN_008f3290`, `FUN_008f33b0`, `FUN_00bcd1e0`; a kapcsolódó mai kód
+`src/picasapy/render/curves.py:26–111`,
+`src/picasapy/render/glimmer_ops.py:125–148`,
+`tests/render/test_curves_spline_629.py:28–145`.*
