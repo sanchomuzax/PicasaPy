@@ -1,6 +1,6 @@
 panel,allapot,qml_fajlok,megjegyzes
 acquirepanel,parositva,PicasaPy/PicasaImportDialog.qml;PicasaPy/ImportSourceDialog.qml;PicasaPy/ImportProgressPanel.qml;PicasaPy/ImportDropArea.qml,"Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel"
-activity,nincs-megfeleltetes,,Töltésjelző pörgettyű a rácson — nálunk nincs külön elem
+activity,parositva,PicasaPy/ActivityBadge.qml,"Háttérművelet-jelző a főablak jobb-felső sarkában (#2966); a helye és mérete a respack.yt-ból mérve (#3112)"
 bigslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 brushslider,parositva,PicasaPy/PicasaSlider.qml,Ecsetméret-csúszka (retusálás)
 burstslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
@@ -45,7 +45,7 @@ panelroot,parositva,Main.qml;PicasaPy/MainToolbar.qml,Legfelső panelváltó (K�
 peoplepanel,parositva,PicasaPy/PeoplePanel.qml;PicasaPy/PeoplePanelRow.qml,Emberek oldalsó panel
 pickerpanel,parositva,PicasaPy/TextColorSwatches.qml,Színválasztó paletta + legutóbbiak
 printborderslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-printoptions,nincs-megfeleltetes,,Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel)
+printoptions,parositva,PicasaPy/PrintOptionsPanel.qml;PicasaPy/PrintDialog.qml,"Nyomtatási szegély- és feliratopciók (#1780); a Beállítások „Nyomtatás” füle MÁS panel"
 printpanel,parositva,PicasaPy/PrintDialog.qml,"Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782)"
 propertiespanel,parositva,PicasaPy/PropertiesPanel.qml,Tulajdonságlista a jobb oldali fiókban
 publish,nincs-megfeleltetes,,Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk

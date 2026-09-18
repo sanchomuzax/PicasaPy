@@ -41,16 +41,16 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 643 |
-| párosítva | 281 |
-| másutt megvan (nem ezen a felületen) | 38 |
+| párosítva | 294 |
+| másutt megvan (nem ezen a felületen) | 34 |
 | hiányzik — **feltáratlan** (kutatói kör kell) | 0 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 301 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 292 |
 | bizonytalan | 25 |
 | nem értékelhető (rajzoló elem) | 1284 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 91 |
-| **lefedettség az értékelhető elemeken** | **43.7%** |
+| **lefedettség az értékelhető elemeken** | **45.7%** |
 
-> ⚠️ **A 43.7% ALSÓ BECSLÉS, nem pontos érték.** 25 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **47.6%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 45.7% ALSÓ BECSLÉS, nem pontos érték.** 25 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.6%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -61,8 +61,8 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 1 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 2 | `publish` | 27 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | 3 | `editpanel` | 22 | A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet) |
-| 4 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
-| 5 | `thumbui` | 20 | A fő könyvtárnézet egésze |
+| 4 | `thumbui` | 20 | A fő könyvtárnézet egésze |
+| 5 | `printoptions` | 13 | Nyomtatási szegély- és feliratopciók (#1780); a Beállítások „Nyomtatás” füle MÁS panel |
 | 6 | `buttonmgr` | 13 | Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | 7 | `choose_mail` | 13 | Levelezőprogram-választó párbeszéd — nincs nálunk |
 | 8 | `capturemoviepanelpopup` | 11 | Webkamerás videofelvétel — nincs nálunk |
@@ -76,8 +76,8 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 0 | 44 | 5 | 56 | 0 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 3 | 0 | 27 | 0 | 95 | 0 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `editpanel` | 312 | 125 | 102 | 1 | 0 | 22 | 0 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
-| `printoptions` | 49 | 29 | 0 | 7 | 0 | 22 | 0 | 20 | 0 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | `thumbui` | 140 | 44 | 20 | 4 | 0 | 18 | 2 | 93 | 3 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
+| `printoptions` | 49 | 29 | 13 | 3 | 0 | 13 | 0 | 20 | 0 | `PrintOptionsPanel.qml`, `PrintDialog.qml` |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 0 | 13 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 0 | 13 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 0 | 11 | 0 | 33 | 0 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
@@ -109,7 +109,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `unknownfaceheaderpanel` | 18 | 6 | 4 | 0 | 0 | 2 | 0 | 12 | 0 | `UnnamedFacesView.qml` |
 | `instructionpanel` | 7 | 2 | 0 | 0 | 0 | 2 | 0 | 5 | 0 | **nincs-megfeleltetes** — Betanító buborék („Learn more…”) — nincs nálunk |
 | `movieeditpanel` | 7 | 4 | 2 | 0 | 0 | 2 | 0 | 3 | 0 | `VideoPlayerView.qml` |
-| `activity` | 6 | 1 | 0 | 0 | 0 | 1 | 0 | 5 | 0 | **nincs-megfeleltetes** — Töltésjelző pörgettyű a rácson — nálunk nincs külön elem |
+| `activity` | 6 | 1 | 0 | 0 | 0 | 1 | 0 | 5 | 0 | `ActivityBadge.qml` |
 | `nav` | 6 | 1 | 0 | 0 | 0 | 1 | 0 | 5 | 0 | **nincs-megfeleltetes** — Nagyítás-navigátor („floater”) a szerkesztőben — nálunk csak a PhotoViewer nagyítás-állapotgépe van, navigátor-ablak nincs |
 | `uploadallinstructionpanel` | 5 | 1 | 0 | 0 | 0 | 1 | 0 | 4 | 0 | **nincs-megfeleltetes** — Feltöltési betanító buborék — nincs nálunk |
 | `propertiespanel` | 3 | 1 | 0 | 0 | 0 | 0 | 1 | 2 | 0 | `PropertiesPanel.qml` |
@@ -265,33 +265,6 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 - `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
 - `weblink` buboréksúgó: „Go to the website associated with this Photo” — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x00518b40)
 
-### `printoptions` — 22 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
-
-Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel)
-
-- `apply` „Apply” (magyarul: „Alkalmaz”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085e800)
-- `border_color_label` „Border color” (magyarul: „Szegély színe”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `bottomonly_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
-- `bottomonly_checkbox_label` „Bottom only” (magyarul: „Csak alul”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085e800)
-- `caption_font_label` „Font” (magyarul: „Betűtípus”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `caption_label` „Captions” (magyarul: „Képfeliratok”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `caption_size_label` „Size” (magyarul: „Méret”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `colorpicker_bevel` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
-- `disabled_label` „Sorry, but these options cannot be used when printing contact sheets.” (magyarul: „Ezek a beállítások indexképek nyomtatásakor nem használhatók.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
-- `evenwidth_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
-- `evenwidth_checkbox_label` „Even width border” (magyarul: „Egyenletes szélességű szegély”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `ok` „OK” (magyarul: „OK”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085e800)
-- `sizelist` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
-- `text_picker_panel` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
-- `textbelowimage_label` „Below image” (magyarul: „A kép alatt”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `textonborder_label` „On border” (magyarul: „A szegélyen”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `textonimage_label` „On image” (magyarul: „A képen”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `useexif_label` „Exif information” (magyarul: „Exif-adatok”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `usenotext_label` „No text” (magyarul: „Nincs szöveg”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `wrap_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
-- `wrap_checkbox_label` „Wrap text” (magyarul: „Szöveg tördelése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-
 ### `thumbui` — 20 hiány · panel-megfeleltetés: `parositva`
 
 A fő könyvtárnézet egésze
@@ -316,6 +289,24 @@ A fő könyvtárnézet egésze
 - `toggle_right_drawer` — 🔧 **lekutatva**, csak nem megépítve (jobb-fiok-meretek.md: 0x00632060)
 - `visitweb` „Web View” (magyarul: „Internetes nézet”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-fo-ablak-elrendezes.md)
 - `webcambutton` buboréksúgó: „Capture photos or video from a webcam or other video device” — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: 0x009ca5e0)
+
+### `printoptions` — 13 hiány · panel-megfeleltetés: `parositva`
+
+Nyomtatási szegély- és feliratopciók (#1780); a Beállítások „Nyomtatás” füle MÁS panel
+
+- `bottomonly_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
+- `caption_label` „Captions” (magyarul: „Képfeliratok”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `colorpicker_bevel` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
+- `disabled_label` „Sorry, but these options cannot be used when printing contact sheets.” (magyarul: „Ezek a beállítások indexképek nyomtatásakor nem használhatók.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
+- `evenwidth_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
+- `sizelist` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
+- `text_picker_panel` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
+- `textbelowimage_label` „Below image” (magyarul: „A kép alatt”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `textonborder_label` „On border” (magyarul: „A szegélyen”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `textonimage_label` „On image” (magyarul: „A képen”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `useexif_label` „Exif information” (magyarul: „Exif-adatok”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `usenotext_label` „No text” (magyarul: „Nincs szöveg”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `wrap_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
 
 ### `buttonmgr` — 13 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -635,9 +626,9 @@ Videovágó panel
 - `export_movie` „Export Clip” (magyarul: „Klip exportálása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x005952d0)
 - `export_youtube` „Upload to YouTube” (magyarul: „Feltöltés a YouTube webhelyre”) — 🔧 **lekutatva**, csak nem megépítve (picasa-feltolteskezelo.md: movieeditpanel.tre:20)
 
-### `activity` — 1 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
+### `activity` — 1 hiány · panel-megfeleltetés: `parositva`
 
-Töltésjelző pörgettyű a rácson — nálunk nincs külön elem
+Háttérművelet-jelző a főablak jobb-felső sarkában (#2966); a helye és mérete a respack.yt-ból mérve (#3112)
 
 - `activitybutton` — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: 0x007d3f90)
 
@@ -797,22 +788,18 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 - `showtextlabel` — „Show Text” itt: PicasaPy/PicasaMenuBar.qml
 
-### `printoptions` — 7
-
-- `border_label` — „Border” itt: PicasaPy/EditorEffectsTab3.qml
-- `border_max_label` — „Max.” itt: PicasaPy/CollageSettingsTab.qml
-- `border_none_label` — „None” itt: PicasaPy/CollageBorderPicker.qml, PicasaPy/CollageContextMenus.qml, PicasaPy/CollageSettingsTab.qml
-- `border_size_label` — „Border width” itt: PicasaPy/EditorParamPanel.qml
-- `caption_color_label` — „Text Color” itt: PicasaPy/EditorTextPanel.qml
-- `usecaption_label` — „Caption” itt: PicasaPy/PicasaMenuBar.qml
-- `usefilename_label` — „File name” itt: PicasaPy/PicasaMenuBar.qml
-
 ### `thumbui` — 4
 
 - `albumview` — „Back To Library” itt: PicasaPy/PhotoViewer.qml, PicasaPy/ViewerContextMenu.qml
 - `backup` — „Backup” itt: PicasaPy/BackupDialog.qml
 - `librarylabel` — „Library” itt: PicasaPy/DocumentTabStrip.qml
 - `sbutton` — „Slideshow” itt: PicasaPy/OptionsDialog.qml, PicasaPy/PicasaMenuBar.qml
+
+### `printoptions` — 3
+
+- `border_size_label` — „Border width” itt: PicasaPy/EditorParamPanel.qml
+- `usecaption_label` — „Caption” itt: PicasaPy/PicasaMenuBar.qml
+- `usefilename_label` — „File name” itt: PicasaPy/PicasaMenuBar.qml
 
 ### `capturemoviepanelpopup` — 1
 
@@ -1657,5 +1644,5 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - GYANÚS »nem cél«: 'uploadmgr/pause' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'uploadmgr/resume' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'uploadmgr/throttlechk' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
-- ÁTSOROLVA (#1970): 107 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
+- ÁTSOROLVA (#1970): 114 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
 
