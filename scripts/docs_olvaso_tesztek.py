@@ -67,6 +67,7 @@ DOCS_OLVASO_TESZTEK: tuple[str, ...] = (
     #: A #1968 helyreállította a mérést, és ez a tétel MÉRÉSSEL igazolt
     #: (76 megnyitott `docs/`-lap) — nem kézi feltevés.
     "tests/scripts/test_spec_elavulas_jelzes_1958.py",
+    "tests/test_cim_atlasz_or.py",
     "tests/test_index_leltar_szam_1512.py",
     #: #2182: a 22.4-es horgony-előírás őre — MINDEN `docs/specs/*.md`
     #: lapot megnyitja, tehát csak-`docs/` PR-en is futnia kell. Enélkül
