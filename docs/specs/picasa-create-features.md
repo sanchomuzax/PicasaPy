@@ -3474,6 +3474,20 @@ felületen nincs ott — csak azt, hogy **nevesített kezelője nincs**.
 > geometriai kényszer + a középpontszámítás együtt, futásidejű
 > megerősítés nélkül).
 
+#### A korábbi öt „bizonytalan" elem státusza — LEZÁRVA (#3328)
+
+A lefedettségi mérés öt, felirat nélküli elemet `bizonytalan`-ként hagyott: `previewimage`, `previewpanel`, `tabs`, `tabpanel1` és `tabpanel3`. A `makemoviepanel.tre` szülő- és állapotsorai ezt közvetlenül eldöntik:
+
+| elem | mért szerep | bizonyíték |
+|---|---|---|
+| `makemoviepanel/previewimage` | a `moviebk` rejtett gyereke; az előnézeti kép rétege, önálló parancs nélkül | `makemoviepanel.tre:15–16`, `m_hidden` |
+| `makemoviepanel/previewpanel` | az `insetleft` előnézeti területe; a `moviebk` ennek gyereke, tehát tartó/klipkeret | `makemoviepanel.tre:515–520` |
+| `makemoviepanel/tabs` | az `edittabbase` alá kötött fülsáv-tartó | `makemoviepanel.tre:554–565` |
+| `makemoviepanel/tabpanel1` | az első, „Movie" fül tartalma; a `tab1` `showtarget`-je | `makemoviepanel.tre:103–111`, `:267–269` |
+| `makemoviepanel/tabpanel3` | a harmadik, „Options"/„Klipek" fül tartalma; a `tab3` `showtarget`-je | `makemoviepanel.tre:402–410`, `:509–511` |
+
+⇒ Ezek **nem önálló felhasználói vezérlők**, hanem a már feltárt filmkészítő panel szerkezeti vagy rejtett rétegei. A kutatási státuszuk `lekutatva`; a filmkészítő panel megépítése továbbra is fejlesztési munka a #432-ben, nem új kutatási kérdés.
+
 ### 2.12 ⭐ A `makemoviepanel` PARANCS-ELOSZTÓJA — mind a 34 parancs, és a `rewind` MŰKÖDÉSE (2026-09-06)
 
 ⛔ **Egy korábbi kör lezárása MEGDŐLT.** A `00-index.md` 2026-09-05-i

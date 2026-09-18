@@ -1035,6 +1035,8 @@ COM-metódusa — ezért nincs hozzá nyom a Picasa binárisaiban. Linuxon a
 megfelelője platform-szolgáltatás (`eject` / UDisks). Lap: 13.;
 jegy-komment: **#2074**.
 
+⭐ **2026-09-18 (#3328) — az öt legnagyobb UI-fehér folt kutatási státusza helyesbítve.** A `makemoviepanel` öt korábbi `bizonytalan` eleme és a `thumbui` két alternatív nézete a `.tre` szülő-/rejtési soraiból **lekutatva**, szerkezeti elemként lezárva; a `publish`, `editpanel` és `printoptions` korábbi leletei kutatási szempontból már készek, a maradék fejlesztési hiány. Részletek: `picasa-create-features.md` 2.11, `picasa-fo-ablak-elrendezes.md` 4/b; átadás **#3328**.
+
 ### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
 
 ⭐ **2026-09-04 (#2305) — a szerkesztő NAGYÍTÁS-HÁRMASA.** Az `editpanel/fit`
