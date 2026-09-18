@@ -1323,6 +1323,40 @@ kilenc párt **egymás mellé** teszi, hogy a paraméterpanel egy helyről
 | 8 | Képpontnagyítás | `Pixelate` — Impact 2–150 (20), BlendMode 0–9 (9), Fade 0–100 (0) | **`PicnikFocalPixelate`** — Impact 2–100 (20), Radius 10–min(W,H)/2 (közép), Hardness 0–100 (50), Fade 0–100 (0), Fordított jelölő (ki) |
 | 9 | Szegély | `Border` — szín Outer (#000), OuterThickness 0–100 (20), szín Inner (#fff), InnerThickness 0–100 (5), CornerRadius 0–min(W,H)/2 (0), CaptionHeight 0–H/6 (0) | **`RoundedEdges`** — szín Outer (**#fff**), CornerRadius 0–min(W,H)/2 (**min(W,H)/10**) |
 
+### A `Pixelate` Shift-párjának élő kattintási útja (#2456, 2026-09-18)
+
+A Shift-váltás nem csak a csempe feliratát cseréli: a kattintó ugyanazt a
+szűrőnevet viszi tovább az eredeti élő alkalmazási útjába, amelyet a többi
+Shift-pár is használ.
+
+| lépés | bináris bizonyíték | jelentés |
+|---|---|---|
+| csempe és második token | `0x00c7e5a0`; a `Pixelate` rekord +4 mezője | `PicnikFocalPixelate` |
+| rekord kiválasztása | `0x005d59f0`, `0x005d6e6c`–`0x005d6e7c` | fül- és csempeindexből 12 bájtos rekord |
+| Shift-választás | `0x005d6e8f` → `GetAsyncKeyState(VK_SHIFT)` → `0x005d6ea6` | Shift nélkül +0, Shifttel +4 token |
+| kattintási végpont | `0x005d6eac`–`0x005d6eaf` → `0x006021d0` | a kiválasztott név elindul az effekt-ágon |
+| élő alkalmazó | `0x006021d0` → `0x005f8520` | névfeloldás és szerkesztési állapot frissítése |
+| effekt-mód és frissítés | `0x005f85a0`–`0x005f85b3`; `0x0057bb50` → `0x00476a60` | `effect = 4`, majd az élő kép frissítési útja |
+
+A `0x005f8520` útja név alapján dolgozik, és nincs benne a
+`PicnikFocalPixelate`-re szűkített elutasítás. **Következtetés:** az eredeti
+szerkesztőben a kilencedik Shift-csempe kattintása belép az élő
+alkalmazási útba; a csempe nem halott. Ez a válasz külön áll a mentett
+`.picasa.ini` lánc mért no-op eredményétől, amelyet a `chain.MEASURED_NOT_RUNNING_OPS`
+helyesen őriz.
+
+**Nálunk (mérve):** `EditorEffectsTab3.qml:91–108` a csempén csak a
+`pixelate` kulcsot küldi, nincs Shift-ág; `edit_controller.py:135–138` a
+`picnikfocalpixelate` kulcsot nem teszi az effektnevek közé; a persistált
+kulcs a `render/chain.py:172–184` mért nem-futó készletében marad. A teljes
+megvalósítás külön fejlesztői jegy: **#3315**. A `MEASURED_NOT_RUNNING_OPS`
+eltávolítása ebből a leletből nem következik.
+
+**Bizalmi fok:** a csempe-pár és az élő kattintási út **megerősített**
+statikus bináris bizonyíték. A pontos élő pixelkimenet és a mentés utáni
+újratöltés viszonya **NINCS MEG**; a mintavételezési perem-/interpolációs
+részlet golden-összevetésre vár (#317).
+
 ### Három szerkezeti tanulság
 
 **1. A `Vignette` és a `Matte` paraméterei BETŰRE azonos szerkezetűek** —
