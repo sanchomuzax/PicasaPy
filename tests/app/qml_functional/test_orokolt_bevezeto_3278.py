@@ -99,19 +99,39 @@ class TestNemVagodikLe:
 
         assert bevezeto.property("truncated") is False, bevezeto.property("text")
 
-    @pytest.mark.parametrize("szelesseg", [276, 260, 240])
+    @pytest.mark.parametrize("szelesseg", [276, 260, 240, 140])
     def test_keskenyebb_panelen_sem(self, qml_app, szelesseg):
         """A tartalom-oszlop szélessége nem állandó (#779): a felirat a
         keskenyebb panelen is elfér két sorban.
 
-        ⚠️ A 240 az ALSÓ határ: a #779 mérése szerint a legkeskenyebb
-        panelen ennyi a tartalom-oszlop. Ennél szűkebbre nem méretezünk,
-        mert olyan panel nincs."""
+        ⚠️ A 240 a valódi alsó határ (#779), a **140 pedig szándékos
+        túlzás**: ott a mondat biztosan KÉT sorba tör, tehát ez a szám
+        méri le azt, amit a CI nagyobb betűje csinál — a fejlesztői gép
+        betűjével ugyanis a rövid mondat egy sorba is kifér, és a próba
+        vakon zöld maradna. (A CI mérése: 246 × 13-as doboz, egy sor
+        magasan, `truncated` igaz.)"""
         _, _, engine = qml_app
         gyoker = _ful(engine)
         gyoker.setProperty("width", szelesseg)
 
         assert _bevezeto(gyoker).property("truncated") is False
+
+    def test_szuk_panelen_KET_SORBA_tor(self, qml_app):
+        """⛔ Ez az az állítás, amit a CI megbuktatott: a felirat doboza
+        egysoros maradt (246 × 13, `lineCount` 1), tehát a második sor
+        akkor sem fért el, ha a szöveg oda tört volna.
+
+        Egy tördelő `Text` a `ColumnLayout`-ban az implicit magasságát a
+        tördelés ELŐTTI szélességből számolja — ezért áll saját dobozban,
+        és a doboz kéri a `contentHeight`-nyi helyet."""
+        _, _, engine = qml_app
+        gyoker = _ful(engine)
+        gyoker.setProperty("width", 140)
+
+        bevezeto = _bevezeto(gyoker)
+
+        assert bevezeto.property("lineCount") == 2, bevezeto.property("height")
+        assert bevezeto.property("truncated") is False
 
     def test_a_ket_soros_korlat_MEGMARAD(self, qml_app):
         """A #3263 őre: a sorszám rögzítése nélkül a fül magassága a
