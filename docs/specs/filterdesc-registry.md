@@ -6045,3 +6045,87 @@ A javítás a **#626** jegyen marad (ez a jegy a fejlesztői gazdája).
 `0x00cf4360` = 1,05 · `0x00cf4368` = 1,3501; a `Math.ceil` azonosítása a
 `0x00c7d85c`-es CRT-leíró-párból; a leíró-attribútumok
 `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml`.*
+
+## ⛳ A `TiledImageMask` mind a tizenkét TARTALÉKÉRTÉKE — `alphaMax = 1,0`, `alphaMin = 0,0` (2026-09-18, 320. kör, #2476)
+
+*A 2026-09-12-i kör kimérte, hogy a pont profilja **lineáris radiális rámpa**
+(két megálló, küszöb és felül-mintavételezés nélkül), és egy dolgot hagyott
+nyitva: a rámpa **végpontjait** — az `alphaMax`-ot és a négy `padding`-et. Ez
+a szakasz azokat adja meg.*
+
+### A konstruktor: `0x00bba250` (133 b)
+
+A `glimmer::TiledImageMask` attribútum-készletét ez a függvény állítja
+alapállapotba, mielőtt a beolvasó (`0x00bba2e0`) a `filterdesc.xml`-ből
+felülírná a megadottakat. A struktúra `esi = [esp+0x14]`-től indul, és a
+mezősorrend **azonos** a beolvasóéval (a beolvasó `mov edi, <attribútumnév>` →
+`lea esi, [ebp + eltolás]` párjaiból kiolvasva):
+
+| attribútum | tageltolás | **tartalékérték** | hol íródik |
+|---|---|---:|---|
+| `tileWidth` | `+0x08` | **0** | `0x00bba281` |
+| `tileHeight` | `+0x0c` | **0** | `0x00bba287` |
+| **`scaleWidth`** | `+0x10` | **0,8** | `0x00bba261` |
+| **`scaleHeight`** | `+0x14` | **0,8** | `0x00bba266` |
+| `paddingLeft` | `+0x18` | **0** | `0x00bba28f` |
+| `paddingTop` | `+0x1c` | **0** | `0x00bba293` |
+| `paddingRight` | `+0x20` | **0** | `0x00bba297` |
+| `paddingBottom` | `+0x24` | **0** | `0x00bba29b` |
+| `offsetX` | `+0x28` | **0,0** | `0x00bba270` |
+| `offsetY` | `+0x2c` | **0,0** | `0x00bba275` |
+| **`alphaMin`** | `+0x30` | **0,0** | `0x00bba27d` |
+| **`alphaMax`** | `+0x34` | **1,0** | `0x00bba28b` (`fld1`) |
+
+A `0,8` a `0x00c7dbc4`-en álló `float` (kiolvasva: **0,800000011920929**), és a
+konstruktor **ugyanazt az FPU-értéket** teszi mindkét skála-mezőbe
+(`fst` + `fstp`).
+
+⭐ **Ez a mérés kontrollja:** a `scaleWidth`/`scaleHeight` = **0,8** az az
+érték, amit a jegy és a termékkódunk (`render/halftone.py`, `DOT_SCALE`) már
+tudott, és **pontosan azokon az eltolásokon** (`+0x10`/`+0x14`), amelyeket a
+kódunk megjegyzése megnevez. Ha a struktúra-illesztésem hibás volna, ez nem
+jönne ki.
+
+### Amit ez a pont PROFILJÁRÓL kimond
+
+A 2026-09-12-i mérés szerint a csemperajzoló **két megállót** ad át
+(`0x00bbacba push 2`): a közép alfája `CSONK(alphaMax · 255)`, a szél alfája
+`CSONK(alphaMin · 255)`. A most kiolvasott tartalékértékekkel, és mivel a
+szállított `filterdesc.xml` két `TiledImageMask` példánya (`_mskColorSpots1/2`)
+**egyiken sem adja meg** ezeket:
+
+```
+kozep  = TRUNC(1,0 · 255) = 255      (teljesen átlátszatlan)
+szel   = TRUNC(0,0 · 255) =   0      (teljesen átlátszó)
+```
+
+⇒ **a pont TELJES kiterjedésében lineáris rámpa fut 255-től 0-ig** — nincs
+külön „élsimítási sáv", és nincs kemény mag sem. A `padding*` mind **0**,
+tehát a rámpa a csempe teljes, `0,8`-cal skálázott befoglalóját használja.
+
+### ⛔ Amit ez a termékkódunkról mond
+
+A `render/halftone.py:40` egy **kimondottan tippelt** értéket tart:
+
+> *„A natív maszk antialiasingjának PONTOS alakja … az egyetlen nyitott
+> részlet … Egy pixelnyi lineáris átmenet a szokásos"* → `_EDGE_SOFTNESS_PX = 1.0`
+
+| | eredeti (mérve) | nálunk (ma) |
+|---|---|---|
+| a pont belseje | **lineáris rámpa 255 → 0 a teljes sugáron** | kemény mag |
+| a perem | *nincs külön perem* | 1 képpontos lágyítás (tipp) |
+| `alphaMax` / `alphaMin` | **1,0 / 0,0** | — |
+| `padding*` | **mind 0** | — |
+
+⇒ a javítás nem a perem szélességének finomítása, hanem a **maszk alakjának**
+cseréje: kemény mag + 1 px perem helyett **egyetlen lineáris rámpa**. Ez
+mérhető a `research/comicize-sweep/` 15 exportján a #1606 raszter-amplitúdó
+módszerével — és irányában is egyezik a mért hibával (a mi profilunk „fennsík
+nélkül monoton lejt", a referencia fennsíkos, ld. a 00-index 2026-09-05-i
+bejegyzését).
+
+*Forrás: `0x00bba250` (a konstruktor, 133 b) — a tárolások `0x00bba261`,
+`0x00bba266`, `0x00bba270`, `0x00bba275`, `0x00bba27d`, `0x00bba281`,
+`0x00bba285` (`fld1`), `0x00bba287`, `0x00bba28b`, `0x00bba28f`,
+`0x00bba293`, `0x00bba297`, `0x00bba29b`; a `0,8` konstans `0x00c7dbc4`; a
+mezősorrend a beolvasóból (`0x00bba2e0`, 481 b).*
