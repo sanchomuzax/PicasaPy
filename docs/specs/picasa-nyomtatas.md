@@ -663,6 +663,38 @@ meg, hanem az ősosztály csempézője (`0x00778190`) a lapmérettel és a
 margókkal. Út: a `0x00778190` törzse, és a lapméret forrása a nyomtatási
 munkában.
 
+### ⛳ A közös csempéző hatóköre — indexből kimérve (2026-09-18, #1401)
+
+A helyi `picasa3-index.sqlite` RTTI-indexe **11** konkrét
+`ytPrinterHelper::Layout*` vtáblát sorol fel: `Layout3x4`, `Layout3x5`,
+`Layout4x5`, `Layout4x6`, `Layout5x7`, `Layout8x10`, `LayoutFullPage`,
+`LayoutMetric`, `LayoutPassport`, `LayoutRegularGrid` és `LayoutWallet`.
+Mind a 11 vtable **második** (0-alapú index: `1`) bejegyzése ugyanaz:
+`FUN_00778190` (`0x00778190`). Ez a `LayoutPassport`-nál a már mért
+`0x00775660` méret-átadó után, és a `0x00778640` szomszédos bejegyzés előtt
+áll. A közös függvény indexelt mérete **305 bájt**.
+
+Az indexelt hívási részgráf három közvetlen célcímet ad a közös csempézőből:
+`0x00775730` (138 bájt), `0x007782d0` (368 bájt) és `0x00778440`
+(502 bájt). Ez a lelet a darabszám számolóját a passport-specifikus
+`0x00775660` helyett a közös `0x00778190` törzséhez köti, de az index nem
+tartalmaz utasítás-testet, ezért a sor-/oszlopszám és a margóképlet innen
+**NINCS MEG**. A helyi kutatási anyagban a Picasa3.exe sincs jelen, így a
+célzott dekompiláció ebben a körben nem futtatható.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti, bináris-indexből | PicasaPy, futó saját kód mérése | teendő |
+|---|---|---|---|
+| csempéző | 11 layout-osztály közös `FUN_00778190` metódusa, 305 bájt | — | a függvény törzsének célzott dekompilációja |
+| passport darabszám | **NINCS MEG** | — | a `0x00778190` és három közvetlen céljának kiolvasása |
+| indexkép-rács | — | `DEFAULT_COLUMNS = 4`; az érintett nyomtatási próbák **65/65** zöldek; A4, 300 dpi, 17 kép, 4 oszlop mellett **20** hely/lap és 1 lap, 3 oszlop mellett **12** hely/lap és 2 lap (`[12, 5]`) | ez a jelenlegi saját indexkép-út, nem az eredeti passport-lelet |
+
+**Nyitott kérdések mérlege — e kör saját kérdései:** 1 nyílt · 0 lezárva ·
+0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva". A következő gépi lépés
+nevesítve marad: `FUN_00778190` törzse, majd a három közvetlen célfüggvény
+és a nyomtatási munka lapméret-forrása.
+
 *Forrás: `FUN_00776e20` (`0x00776e20`–`0x00776f45`), az ugrótábla
 `0x007771ac`; a konstansok `0x00cf39e8` = 6,0 · `0x00c7e4a4` = 4,0 ·
 `0x00cf3a58` = 5,0 · `0x00cf3fd8` = 3,5 · `0x00cf3fec` = 7,0 ·
