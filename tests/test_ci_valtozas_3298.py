@@ -41,6 +41,7 @@ def _git(tar: Path, *argumentumok: str) -> str:
     return subprocess.run(
         ["git", "-C", str(tar), *argumentumok],
         check=True, capture_output=True, text=True,
+        encoding="utf-8", errors="replace",
     ).stdout.strip()
 
 
@@ -186,6 +187,7 @@ def test_a_cli_a_github_output_ba_ir(tarolo: Path, tmp_path: Path) -> None:
     futas = subprocess.run(
         [sys.executable, str(SZKRIPT), "--tarolo", str(tarolo)],
         check=True, capture_output=True, text=True, env=kornyezet,
+        encoding="utf-8", errors="replace",
     )
     sorok = kimenet.read_text(encoding="utf-8").splitlines()
     assert "kod=false" in sorok
@@ -207,6 +209,7 @@ def test_push_esemeny_az_elozo_allapothoz_mer(tarolo: Path, tmp_path: Path) -> N
     subprocess.run(
         [sys.executable, str(SZKRIPT), "--tarolo", str(tarolo)],
         check=True, capture_output=True, text=True, env=kornyezet,
+        encoding="utf-8", errors="replace",
     )
     assert "kod=false" in kimenet.read_text(encoding="utf-8").splitlines()
 
@@ -223,5 +226,6 @@ def test_elozmeny_nelkuli_push_eseten_teljes_kor(tarolo: Path, tmp_path: Path) -
     subprocess.run(
         [sys.executable, str(SZKRIPT), "--tarolo", str(tarolo)],
         check=True, capture_output=True, text=True, env=kornyezet,
+        encoding="utf-8", errors="replace",
     )
     assert "kod=true" in kimenet.read_text(encoding="utf-8").splitlines()

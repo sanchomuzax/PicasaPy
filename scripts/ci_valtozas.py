@@ -68,6 +68,7 @@ def _git(tarolo: str, *argumentumok: str) -> str:
     kesz = subprocess.run(
         ["git", "-C", tarolo, *argumentumok],
         capture_output=True, text=True, check=True,
+        encoding="utf-8", errors="replace",
     )
     return kesz.stdout
 
