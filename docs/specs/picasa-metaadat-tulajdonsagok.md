@@ -719,3 +719,64 @@ kulcsnevek a 6.1 tábla `0x00c783ec`, `0x00c78e50`, `0x00c78fa0`,
 a méret-kapu `0x36`-ja és a `+0x6c`-ig tartó olvasás csak akkor fér össze, ha
 a méret nem bájtban értendő. A megszerzés útja: a `0x009f0fd0` törzse, és egy
 MÁSIK, ismert hosszú tömbre adott hívása kontrollként.
+
+## 10. ⛳ A határvonal EXIF/GPS-névregisztere — részlelet (2026-09-18, #3345)
+
+A kutatási határvonal a `0x00bf697a`-ból elérhető feltáratlan
+`0x00bab6e0`-t jelölte. Ez a `.text`-ben lévő `FUN_00bab6e0`, **4153 bájt**.
+A bináris-index `string_xrefs` táblája ehhez a függvényhez **70 különböző
+ASCII-sztringet** köt:
+
+| csoport | darab | mért alak |
+|---|---:|---|
+| szabványos EXIF-név, GPS-előtag nélkül | **44** | `DateTimeOriginal`, `FNumber`, `ColorSpace`, `ImageUniqueID` … |
+| GPS-előtagú név | **22** | `GPSLatitude`, `GPSAltitude`, `GPSDestDistance` … |
+| nem egyértelműen EXIF/GPS-név | **4** | `Function`, `RedEyeMode`, `Return`, `Fired` |
+| **összesen** | **70** | `string_xrefs`, `function_address = 0x00bab6e0` |
+
+A sztringek első és utolsó indexelt RVA-ja `0x0089eff4`, illetve
+`0x008ef3f0`. Ez a blokk ténylegesen EXIF/GPS-mezőneveket tartalmaz; a
+névlista önmagában **nem** bizonyítja, hogy a Tulajdonságok-panel közvetlen
+forrása.
+
+### 10.1 A hívási lánc, amit az index ténylegesen lát
+
+`0x00bab6e0` az index szerint nyolc belső segédfüggvényt és a
+`__stricmp`-ként indexelt `0x00bf697a` rutint hívja:
+
+| cím | méret (bájt) | `call_count` az xref-indexben |
+|---|---:|---:|
+| `0x009eee30` | 187 | 71 |
+| `0x00ba9040` | 82 | 13 |
+| `0x00ba90a0` | 106 | 24 |
+| `0x00ba9170` | 175 | 22 |
+| `0x00ba9220` | 147 | 3 |
+| `0x00ba9500` | 504 | 3 |
+| `0x00ba9930` | 2220 | 2 |
+| `0x00baa1f0` | 690 | 4 |
+| `0x00bf697a` (`__stricmp`) | 80 | 71 |
+
+A `0x00ba9930` segédfüggvény az indexben egyszer meghívja a
+`0x009f05c0` címet. Ez a lap 1. szakaszában már dokumentált
+`BinaryMetadata::GetString` lekérdező címe. **A bizonyított állítás ennyi:**
+a jelölt függvény hívási részgráfja eléri a belső metaadat-lekérdezőt; a
+paraméterek és a mezőazonosító-képzés még nem olvasható ki az indexből.
+
+### 10.2 Eredeti / nálunk / nyitva
+
+| | Eredeti | Nálunk | Állapot |
+|---|---|---|---|
+| névkészlet | `0x00bab6e0`: 70 indexelt ASCII EXIF/GPS-név | `metadata/reader.py` és `app/formatting.py` a panel számára külön, szabványos EXIF-címkéket olvas | **bináris tény + saját kód mérve** |
+| kapcsolat a belső kulcstérrel | a hívási lánc eléri a `BinaryMetadata::GetString` címet | a jelenlegi olvasó nem használ ilyen névregisztert | **a közös réteg erős jel, közvetlen leképezés NINCS MEG** |
+| gazdag saját próba | — | szintetikus, 12 × 8-as EXIF-képen **23 panel-sor**, ebből **20 nem-üres** metaadatérték | **mérés**, nem bináris állítás |
+
+**Ami NINCS MEG:** a 70 névhez tartozó pontos belső kulcs-/típus- és
+értékleképezés, valamint annak bizonyítása, hogy a `0x00bab6e0` közvetlenül
+a Tulajdonságok-panel regisztere volna. A helyi kutatási anyagban a Picasa3.exe
+nem áll rendelkezésre célzott dekompilációhoz; a Codespace-eszköz előfeltétel-
+ellenőrzése sikeres, de a bináris feltöltési útja ebben a körben nincs meg.
+**Nem becsültünk.**
+
+A következő gépi lépés: célzott dekompiláció a `0x00bab6e0` törzsére, a nyolc
+segédfüggvény argumentum-/visszatérési szerződésére, majd kontrollként egy
+ismert hosszú EXIF-mezőtáblás hívó összevetése. A #3345 nyitva marad.
