@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.515] – 2026-09-18
+
+### Megváltozva
+
+- **A képtálca jobbklikk-menüjében félkövér a „Megjelenítés és
+  szerkesztés"** (#886) — ez a menü alapértelmezett művelete, ahogy a
+  kép- és a néző-menüben eddig is félkövér volt a sajátja. Kimérve: az
+  eredeti Picasa pontosan két parancsot jelöl alapértelmezettnek, és a
+  tálca menüje is azt kapja, amit a kép helyi menüje.
+
 ## [0.8.514] – 2026-09-18
 
 ### Megváltozva

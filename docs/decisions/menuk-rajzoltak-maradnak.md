@@ -23,7 +23,7 @@ kellett hozzá.
 | a tételek pipálhatók / tilthatók | `CheckMenuItem` 13 hely, `EnableMenuItem` 17 hely |
 | van **félkövér alapértelmezett** tétel | `SetMenuDefaultItem` |
 | **nincs saját rajzolás** | a menüépítő (`0x0056c5a0`, 6816 b) `MF_OWNERDRAW` (`0x100`) jelző NÉLKÜL fűz be |
-| a program csak OLVASSA a menü stílusát | `GetMenuInfo` egyetlen hívása (`0x005e7c20`): `cbSize = 0x1c`, `fMask = 8` (`MIM_STYLE`) |
+| a program a menühöz tartozó **kontextus-azonosítót** olvassa | `GetMenuInfo` egyetlen hívása (`0x005e7c20`): `cbSize = 0x1c`, `fMask = 8` — ⛔ **`MIM_MENUDATA`**, nem `MIM_STYLE` (helyesbítés, 2026-09-18: `ui-audit-context-menus.md` **C.2**) |
 
 **Amit a Picasa MAGA rajzol:** csak a panelen belüli legördülőket
 (`CPopupList`, `ytPopupListNode`, `ytTextPopupListItem`,
@@ -55,8 +55,10 @@ A döntés **hangolást** ír elő, nem átírást. A `#886` nyitva maradó pont
 1. a négy helyi menü QML-je a mért XP-méretekre, sorközre, keretre és
    színekre áll — az elfogadás **LÁTÁS**: renderelt menü vs. referencia,
    mért eltéréssel, nem számolt geometria;
-2. **félkövér alapértelmezett tétel** ott, ahol az eredetiben van
-   (`SetMenuDefaultItem`);
+2. ✅ **félkövér alapértelmezett tétel** — MEGVAN (2026-09-18): pontosan
+   kettő van, `MF_BYCOMMAND` szerint (`0x9ca0` a kép- és a tálca-menüben,
+   `0x9cc6` a nézőben), máshol nincs. Mérés és őr:
+   `docs/specs/ui-audit-context-menus.md` **C**;
 3. **gyorsbillentyű-oszlop** a felirat mellett, a 24 kimért tételen. A
    módosító-előtag a `0x00a6b250` bitmaszkjából áll össze (`Ctrl+` /
    `Shift+` / `Alt+`), **nem a feliratból**;

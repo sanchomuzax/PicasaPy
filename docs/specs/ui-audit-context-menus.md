@@ -490,7 +490,11 @@ karbantartása nálunk négy helyen történik, ott egy helyen plusz öt kivoná
   jönnek. A megnevezés útja: a `0x00730e65`, `0x007316b2`, `0x0073200c` és
   `0x0073244c` helyeken a `MENUITEMINFO.wID`-be írt azonosítók köré épülő
   `InsertMenuItem`-hívások felirat-forrása.
-- **Melyik felületrész melyik azonosítót adja:** a 14 hívóhely
+- **Melyik felületrész melyik azonosítót adja:** ✅ **LEZÁRVA** a **C.3**-ban
+  — nem a hívóhelyek felől, hanem az azonosító ÍRÓJA felől
+  (`SetMenuInfo`/`MIM_MENUDATA`, 25 menüépítő). Az alábbi, hívóhely-alapú
+  terv ezért nem kell; a 14 cím itt marad, mert a menüépítés előzményét
+  máshoz még adja: a 14 hívóhely
   (`0x0059606d`, `0x005d41f4`, `0x005d43a4`, `0x005e77b2`, `0x005e7b54`,
   `0x005e7be5`, `0x005e7d44`, `0x00622381`, `0x0063840c`, `0x0063b56b`,
   `0x0074626d`, `0x0082fbec`, `0x0082fcbb`, `0x0082fda9`) azonosítása
@@ -607,3 +611,135 @@ feloldó tölti fel (ugyanaz a tábla adja a `[0x00c406f8]`-at, amit a 3. szakas
 kiolvasni, mi a `[0x00c407bc]` — utána a mezőeltolás újraszámolható, és a
 kilenc érték jelentése eldől.
 
+
+## C. ⛳ A félkövér alapértelmezett tétel — és a kontextus-azonosító FORRÁSA (2026-09-18, #886)
+
+*Forrás: az import-tábla saját parszolása (`SetMenuDefaultItem` →
+`[0x00c408bc]`, `GetMenuInfo` → `[0x00c407bc]`, `SetMenuInfo` →
+`[0x00c407c0]`, `RemoveMenu` → `[0x00c408b0]`), a két hívóhely
+`0x0056dbd0` és `0x0056dbf6`, a beállító `0x00a6ae90` és annak 25 hívója.*
+
+### C.1 Két alapértelmezett tétel van, és PARANCS szerint van kijelölve
+
+A `SetMenuDefaultItem`-nek **egyetlen** hívó függvénye van, a táblavezérelt
+menüépítő (`0x0056c5a0`), abban **két** hívóhely:
+
+```
+0x0056dbc8  push 0            ; fByPos = 0  ->  MF_BYCOMMAND
+0x0056dbca  push 0x9cc6
+0x0056dbd0  call dword ptr [0xc408bc]
+
+0x0056dbee  push 0
+0x0056dbf0  push 0x9ca0
+0x0056dbf6  call dword ptr [0xc408bc]
+```
+
+- **`MF_BYCOMMAND`** (a harmadik argumentum `0`): az alapértelmezett tételt a
+  **parancsazonosító** jelöli ki, nem a pozíció — a menü sorrendje nem
+  befolyásolja.
+- A választás a kontextus-azonosítón (`[esp+0xdc]`, az építő 2. argumentuma)
+  múlik: `0x8a` → `0x9cc6`; `0xa4`, `0x70`, `0x8b` → `0x9ca0`; **minden más
+  azonosító alapértelmezett tétel nélkül marad** (`0x0056dbb9 jne`).
+- A blokknak **kapuja** van: a 4. argumentum (`[esp+0xe4]`) nullán az egészet
+  átugorja. A helyi menü belépési pontja (`0x005e7c99`) `1`-et ad át, az
+  építő másik hívója (`0x0056f418`) `0`-t — az utóbbi `-1` azonosítóval jön,
+  tehát a **menüsor-úton eleve nincs** alapértelmezett tétel.
+
+A két parancs feliratát a [`picasa-gyorsbillentyuk.md`](picasa-gyorsbillentyuk.md)
+adja: `0x9ca0` = „Megjelenítés és szerkesztés" (`Enter`), `0x9cc6` =
+„Visszatérés a könyvtárhoz" (`Esc`).
+
+### C.2 ⛔ HELYESBÍTÉS: a `fMask = 8` **MIM_MENUDATA**, nem `MIM_STYLE`
+
+A B.1 úgy fogalmazott, hogy a belépési pont „a menütétel adatait kérdezi le",
+az ADR-013 és a [`picasa-gomb-es-menu-rendszer.md`](picasa-gomb-es-menu-rendszer.md)
+pedig azt állította, hogy a `GetMenuInfo` egyetlen hívása **csak a stílust
+olvassa**. Mindkettő téves, és a `WinUser.h` értékei döntik el:
+
+| jelző | érték |
+|---|---|
+| `MIM_MAXHEIGHT` | `0x01` |
+| `MIM_BACKGROUND` | `0x02` |
+| `MIM_HELPID` | `0x04` |
+| **`MIM_MENUDATA`** | **`0x08`** |
+| `MIM_STYLE` | `0x10` |
+
+A `MENUINFO` szerkezete `0x1c` bájt (`cbSize`, `fMask`, `dwStyle`, `cyMax`,
+`hbrBack`, `dwContextHelpID`, `dwMenuData`), tehát a `dwMenuData` a `0x18`
+eltoláson áll. A belépési pont a struktúrát `esp+0x14`-re teszi, és a hívás
+után pontosan onnan olvas: `0x005e7c8f movzx edx, word ptr [esp+0x2c]` =
+`0x14 + 0x18`. ⇒ **a kontextus-azonosító a menü `dwMenuData` mezője**, nem
+egy menütétel `wID`-je. Ez egyben feloldja a B.6 kételyét is: a
+`[0x00c407bc]` import-azonosítás helyes (`GetMenuInfo`), csak a `0x1c`/`8`
+párost olvastuk `MENUITEMINFOW`-ként.
+
+Az írói oldal ugyanezt mutatja. A `0x00a6ae90` (65 bájt) egy szűk beállító:
+kinullázza a `MENUINFO`-t, a **szó méretű argumentumát** a `0x18`
+eltolásra írja, `cbSize = 0x1c`, `fMask = 8`, majd `SetMenuInfo`:
+
+```
+0x00a6aea5  movzx eax, word ptr [esp + 0x20]   ; az azonosító
+0x00a6aead  mov   dword ptr [esp + 0x18], eax  ; MENUINFO.dwMenuData
+0x00a6aeb5  mov   dword ptr [esp + 8], 0x1c    ; cbSize
+0x00a6aebd  mov   dword ptr [esp + 0xc], 8     ; MIM_MENUDATA
+0x00a6aec5  call  dword ptr [0xc407c0]         ; SetMenuInfo
+```
+
+### C.3 ⭐ A B.4 második nyitott pontja LEZÁRVA: felületrész → azonosító
+
+A B.4 azt mondta, hogy „melyik felületrész melyik azonosítót adja" külön kör,
+mert az azonosító a menütételből jön. A C.2 után a kérdés más helyen dől el:
+**minden menüépítő maga állítja be a saját azonosítóját** a `0x00a6ae90`-en
+át. Annak **25 hívója** van, mindegyik egyetlen konstanssal:
+
+| építő | azonosító | melyik menü | alapértelmezett tétel |
+|---|---|---|---|
+| `0x00730790` | `0x70` | mappa-nézetbeli **kép** | **`0x9ca0`** |
+| `0x00731050` | `0xa4` | album-nézetbeli **kép** | **`0x9ca0`** |
+| `0x00732ee0` | `0x8b` | **képtálca** | **`0x9ca0`** |
+| `0x007327a0` | `0x8a` | **néző** (OneUp) | **`0x9cc6`** |
+| `0x007319f0` | `0xa6` | **mappa** | — |
+| `0x00732160` | `0x77` | **album** | — |
+| `0x00733a40` | `0x127` | gyűjtemény/mappalista | — |
+| `0x007355c0` | `0x13d` | **Emberek**-album képe | — |
+| `0x007359e0` | `0x13c` | **Emberek**-album | — |
+| `0x007325a0` | `0xa5` | *(nincs megnevezve)* | — |
+| `0x00732680` | `0x88` | *(nincs megnevezve)* | — |
+| `0x007331e0` | `0xd8` | *(nincs megnevezve)* | — |
+| `0x00733480` | `0x86` | *(nincs megnevezve)* | — |
+| `0x007339a0` | `0x126` | *(nincs megnevezve)* | — |
+| `0x00733c70` | `0x128` | *(nincs megnevezve)* | — |
+| `0x00733e00` | `0x13f` | *(nincs megnevezve)* | — |
+| `0x00733ea0` | `0x13e` | *(nincs megnevezve)* | — |
+| `0x007344b0` | `0x12f` | *(nincs megnevezve)* | — |
+| `0x007347a0` | `0x130` | *(nincs megnevezve)* | — |
+| `0x007348f0` | `0x131` | *(nincs megnevezve)* | — |
+| `0x00734a80` | `0x136` | *(nincs megnevezve)* | — |
+| `0x00734bc0` | `0x13a` | *(nincs megnevezve)* | — |
+| `0x00735480` | `0x13b` | *(nincs megnevezve)* | — |
+| `0x007a60a0` | `0x64` | *(nincs megnevezve)* | — |
+| `0x007a6590` | `0x65` | *(nincs megnevezve)* | — |
+
+A „melyik menü" oszlop hat sorát a
+[`picasa-gyorsbillentyuk.md`](picasa-gyorsbillentyuk.md) menüépítő-táblája
+adja (ugyanazok a címek), és a két szál **egymástól függetlenül** áll össze:
+ott a `0x00730790` az `Enter`/`0x9ca0` tételt hordozza, itt ugyanez a menü
+kapja a `0x9ca0` alapértelmezettet; a `0x007327a0` ott az `Esc`/`0x9cc6`-ot,
+itt a `0x9cc6` alapértelmezettet. A többi 19 azonosító építőjét ez a kör nem
+nevezi meg — a megnevezés útja az egyes építők felirat-tábláinak
+összevetése a menüosztály-táblával (A.1).
+
+### C.4 Mit változtatott ez nálunk
+
+A „Megjelenítés és szerkesztés" (`PhotoContextMenu`) és a „Visszatérés a
+könyvtárhoz" (`ViewerContextMenu`) már félkövér volt. Új a **képtálca**
+menüje: a `0x8b` azonosító miatt ott is félkövér az első tétel
+(`trayMenuViewAndEdit`, ugyanaz a `0x9ca0` parancs). Fordítva is őrizzük: a
+mérés szerint a Picasa **soha** nem jelöl más parancsot alapértelmezettnek,
+tehát a többi helyi menünkben nem lehet félkövér tétel.
+
+⛔ **Amit ez NEM ad meg:** a félkövér betűkép képpontos egyezését az
+XP-menüével. Az ADR-013 kimondja, hogy az XP-menü metrikái sem a binárisból,
+sem mai képernyőképből nem szerezhetők meg.
+
+Őr: `tests/app/qml_functional/test_felkover_alapertelmezett_886.py`.
