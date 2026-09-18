@@ -2787,16 +2787,54 @@ tehát a mechanizmus egyezik. A próba eddig ezt feltevésként jelölte
 (`tests/render/test_resize_mitchell_2227.py:127–136`); a kutatási lelet a
 megfelelő bináris kontrollt most megadta.
 
-### 5/b. Ami továbbra is nyitott
+### 5/b. A mag kicsinyítéskor a léptékkel nyúlik — LEZÁRVA
 
-**A mag KICSINYÍTÉSKOR a léptékkel nyúlik-e** (élsimítás). A bináris azt
-igazolja, hogy a simított út 3-as módot választ, de a `ytResampler` belső
-lépték-kezelése nincs ebből a körből visszafejtve. A mi implementációnk a
-szokásos nyújtott magot használja — **dokumentált döntés, nem visszafejtett
-viselkedés**. A megszerzés útja: a `ytResampler` súlyszámításának célzott
-átolvasása a `0x00a3f660` táblafelépítő és a `0x00a3f5b0` együttható-építő
-környékén, kifejezetten `scale > 1` esetén.
+A korábbi nyitott kérdés („a 3-as mód magja kicsinyítéskor szélesedik-e?”)
+a célzott kiolvasással eldőlt: **igen**. Itt a bináris `scale` a
+cél/forrás transzformációs lépték (`scale < 1` = kicsinyítés); a mi kódunk
+ennek reciprokát, `be_meret / ki_meret` értéket használja. A `0x00a3f660`
+súlyépítő a 3-as módnál előbb a `0x00a3f5b0`-t hívja
+(`0x00a3f68c`–`0x00a3f6a3`), és a súlyépítő kritikus ágában a tartósugarat a
+léptékkel osztja:
 
+```asm
+0x00a3f728  fcomp dword ptr [ecx + 0x30]
+0x00a3f732  fld   dword ptr [esp + 0x70]
+0x00a3f736  fld   dword ptr [ecx + 0x30]
+0x00a3f739  fadd  qword ptr [0x00cf3db0]
+0x00a3f73f  fdivp st(1)                 ; lépték / ([this+0x30] + 0,001)
+0x00a3f745  fld   dword ptr [esp + 0x10] ; alap-tartósugár
+0x00a3f74b  fdiv  dword ptr [esp + 0x70] ; alap-tartósugár / lépték
+```
+
+A `0x00a3f660` friss Ghidra-dekompilációja ugyanezt nevezi meg: a
+`param_6` a lépték, amelyet `1,0` fölött 1,0-ra korlátoz, majd a
+`0x00a3f74b` osztásban kerül a sugár nevezőjébe. Ezért `scale < 1` esetén a
+forrástérbeli tartósugár **nő**; a mag nem marad fix kétpixeles. A
+`0x00cf3db0` értékét ebben a körben nem adom át számszerűen: **NINCS MEG**
+kiolvasva, de az összeadás helye és szerepe a binárisból megvan.
+
+**Nálunk (MÉRVE):** a `src/picasapy/render/glimmer_ops.py:922–930`
+ugyanezt a szerkezetet használja: `skala = be_meret / ki_meret`,
+`nyujtas = max(1.0, skala)`, `tamasz = 2.0 * nyujtas`, majd a Mitchell-mag
+argumentuma `(kozep - index) / nyujtas`. A két érintett meglévő tesztfájl
+célzott futása: `45 passed in 1.71s`; ez a jelenlegi kód őrzése, **nem**
+Picasa-exporttal végzett pixelazonossági mérés.
+
+| | Eredeti | Nálunk (mért forrásállapot) | Teendő |
+|---|---|---|---|
+| `smoothing=true`, `scale < 1` | bináris `0x00a3f745`–`0x00a3f74b`: tartósugár / lépték | `glimmer_ops.py:922–930`: `max(1, scale)`-nyújtás | mechanizmus szerint nincs javítás |
+| `smoothing=true`, `scale = 1` | 0-s dobozmód, a `0x00bcb63f`–`0x00bcb655` ág szerint | `glimmer_ops.py:940–941`: azonosság | nincs javítás |
+| kimeneti pixelazonosság eredeti exporttal | **NINCS MEG** ebben a körben | **NINCS MEG** | külön golden-pár szükséges |
+
+**Bizonyítottsági fok: megerősített** a mechanizmusra (célzott Ghidra
+utasítás- és dekompilációs kiolvasás); **NINCS MEG** a Picasa eredeti és a mi
+Mitchell-kicsinyítésünk pixelazonossági golden-mérése.
+
+**Nyitott kérdések mérlege:** 0 nyílt · 1 lezárva · 0 blokkolt · 0 hatókörön
+kívül · 0 „csak nyitva”. A pixelazonossági golden nem ennek a bináris
+mechanizmus-kérdésnek a nyitva maradt része, hanem külön fejlesztési/mérési
+feladat; a kimeneti eltérés okát ebből a leletből nem állítom.
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
 A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
