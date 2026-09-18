@@ -159,6 +159,10 @@ class TestBackslashesUtvonal:
         mappa = tmp_path / "wt"
         mappa.mkdir()
         fajl = mappa / "Temp\\picasapy\\torzs.md"
+        # Windowson ez VALÓDI alkönyvtár-út (ott a `\\` választójel), Linuxon
+        # egyetlen fájlnév, amiben benne van a `\\`. Mindkettő pont az, amit
+        # mérni akarunk — de Windowson a szülőt létre kell hozni, különben a
+        # próba `FileNotFoundError`-ral bukik, és nem a kaput méri.
         fajl.parent.mkdir(parents=True, exist_ok=True)
         fajl.write_text("Torzs jegyszam nelkul.\n", encoding="utf-8")
         indok = kapu.blokkolando(
