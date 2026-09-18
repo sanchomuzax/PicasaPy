@@ -521,10 +521,10 @@ QtObject {
     readonly property color textDark: tema._szin("textDark", nyersTokenek.textDark)
     readonly property color thumbCard: tema._szin("thumbCard", nyersTokenek.thumbCard)
     readonly property color picasaGreen: tema._szin("picasaGreen", nyersTokenek.picasaGreen)
-    readonly property color szuroGlifKi: nyersTokenek.szuroGlifKi
-    readonly property color szuroGlifBe: nyersTokenek.szuroGlifBe
-    readonly property color szuroHatterAktiv: nyersTokenek.szuroHatterAktiv
-    readonly property color szuroHatterRamutat: nyersTokenek.szuroHatterRamutat
+    readonly property color szuroGlifKi: tema._szin("szuroGlifKi", nyersTokenek.szuroGlifKi)
+    readonly property color szuroGlifBe: tema._szin("szuroGlifBe", nyersTokenek.szuroGlifBe)
+    readonly property color szuroHatterAktiv: tema._szin("szuroHatterAktiv", nyersTokenek.szuroHatterAktiv)
+    readonly property color szuroHatterRamutat: tema._szin("szuroHatterRamutat", nyersTokenek.szuroHatterRamutat)
     readonly property color selectionBlue: tema._szin("selectionBlue", nyersTokenek.selectionBlue)
     readonly property color panelSelection: tema._szin("panelSelection", nyersTokenek.panelSelection)
     readonly property color panelSelectionActive: tema._szin("panelSelectionActive", nyersTokenek.panelSelectionActive)
