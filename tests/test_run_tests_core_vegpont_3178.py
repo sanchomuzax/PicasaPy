@@ -38,12 +38,21 @@ A teszt ezért a mintából számolja ki a helyét, és a saját core-jait
 from __future__ import annotations
 
 import os
-import resource
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+
+#: ⛔ A `resource` POSIX-modul: Windowson NEM LÉTEZIK, és a sima
+#: `import resource` már a BEGYŰJTÉSNÉL elszáll
+#: (`ModuleNotFoundError`) — piros main, nem kihagyott teszt. Mérve:
+#: CI 35340396245, `darabok-windows 1/4`.
+#:
+#: Az `importorskip` az EGÉSZ modult kihagyja ott, ahol a core-korlát
+#: fogalma sem értelmes; a `skipif` erre kevés lenne, mert a modul
+#: törzse (a `_kemeny_core_korlat()` hívása) az import idején fut.
+resource = pytest.importorskip("resource")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -61,8 +70,7 @@ def _kemeny_core_korlat() -> int:
 #: A `skipif` OKA mindig látszik — a #3178 szabálya, hogy a hiányzó
 #: veremkép magyarázatot kapjon, ne csendes kihagyást.
 _NINCS_CORE_LEHETOSEG = (
-    sys.platform.startswith("win")
-    or _kemeny_core_korlat() == 0
+    _kemeny_core_korlat() == 0
     or run_tests._kezelo_kapja_a_core_t(run_tests._core_minta())
 )
 _OK = (
