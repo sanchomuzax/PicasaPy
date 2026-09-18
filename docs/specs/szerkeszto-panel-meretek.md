@@ -552,8 +552,28 @@ m_hidden                                        # alapból rejtett
    háttér és a fehér felirat.
 2. **Vízszintesen középen, a kép aljától 10 képpontra.**
 3. ⭐ **A sávban egy CSÚSZKA is van** (`toolslider`, balra nyúlva, a két
-   gomb pedig jobbra igazodik). A jegy ezt nem említette: az eszközök
-   paramétere (pl. a retusálás ecsetmérete) ITT áll, nem a bal panelben.
+   gomb pedig jobbra igazodik).
+
+   ⛔ **HELYESBÍTÉS (2026-09-18, #3234).** Ez a pont eredetileg azt írta,
+   hogy „az eszközök paramétere (pl. a retusálás ecsetmérete) ITT áll, nem
+   a bal panelben". **Téves**, és két, egymástól független mérés mondja ki:
+
+   - a sáv a **KIEGYENESÍTÉS** átfedése — az `editpanel.tre`-ben a négy
+     bejegyzést (`toolslider/thumb` `:1040`, `toolslider/toolslider`
+     `:1044`, `tool_slider_container` `:1049`, `tool_container` `:1052`) a
+     `#---Straighen Overlay---` szakaszfejléc vezeti be (`:1038`);
+   - a többi eszköznek **saját** Alkalmaz/Mégse párja van a saját
+     paneljében: `cropapply`/`cropcancel` a `crop_well`-ben (`:817`,
+     `:805`), `retouchapply`/`retouchcancel` a `retouch_well`-ben (`:894`,
+     `:906`), `redeyeapply`/`redeyecancel` a `redeye_well`-ben (`:722`,
+     `:739`);
+   - a retusálás ecsetmérete a BAL panelben áll:
+     `editpanel/brushslider_container: editpanel/retouch_well` (`:869`), és
+     a retusáló kezelője is a `brushslider/scaleslider`-t nevezi meg
+     (`:962`).
+
+   ⇒ A `tool_container` **nem** a négy eszköz közös sávja. Hogy a #3123
+   ezt mégis annak vette, külön jegy tárgya.
 4. ⭐ **Az Esc a Mégse gombot süti el** (`Property escapekey 1`) — nem
    külön billentyűkezelő.
 
