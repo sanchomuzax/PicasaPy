@@ -780,3 +780,53 @@ ellenőrzése sikeres, de a bináris feltöltési útja ebben a körben nincs me
 A következő gépi lépés: célzott dekompiláció a `0x00bab6e0` törzsére, a nyolc
 segédfüggvény argumentum-/visszatérési szerződésére, majd kontrollként egy
 ismert hosszú EXIF-mezőtáblás hívó összevetése. A #3345 nyitva marad.
+
+## 11. Az XMP Core namespace-katalógus jelölt blokkja (2026-09-18, #3348)
+
+A kutatási határvonal `0x00bdbe50` címen egy külön XMP-adatblokkot jelölt.
+A kérdés az volt, hogy a blokk csak véletlenül együtt álló sztringeket tartalmaz-e,
+vagy az eredeti XMP-olvasó/író réteghez tartozó névtér-katalógus része.
+
+### Amit az index közvetlenül mér
+
+| tétel | mért tény |
+|---|---|
+| függvény | `FUN_00bdbe50`, **1822 bájt**, RVA és fájloffset `0x007dbe50` |
+| közvetlen hívó | `0x00bd9ae0` → `0x00bdbe50`, **1** indexelt hívás |
+| közvetlen hívottak | **9** függvény; köztük `0x00be26d0` (**49** hívás) és `0x00c0769f` (**3** hívás) |
+| sztringhivatkozás | **80** különböző sztring a `string_xrefs` táblában |
+| namespace-URL | **48** `http…` sztring ugyanebben a függvényben |
+
+A sztringek között közvetlenül ott van az `XMP Core 5.1.2`, az Adobe copyright,
+a `Failure from XMPIterator::Initialize`, az `adobe:ns:meta/`, az RDF- és
+Dublin Core-névtér, valamint az Adobe XAP/XMP, PDF/A, Photoshop, EXIF, TIFF,
+PNG, JPEG, DICOM, IPTC és StockPhoto namespace-család több URI-ja. Ez a lista
+a `string_xrefs` mérési eredménye; önmagában nem bizonyítja, hogy mind a 48
+URI-t futásidőben regisztrálja.
+
+Az RTTI-tábla ugyanebben a binárisban külön osztálycsaládot mutat:
+`ytXMPReader::vftable` = `0x00cef524`, `ytXMPWriter::vftable` =
+`0x00cef54c`, `XMP_NamespaceTable::vftable` = `0x00cf1a4c`,
+`XMP_Node::vftable` = `0x00cf1a54`, `XMPMeta::vftable` = `0x00cf1a5c`.
+Ez az XMP-namespace adatblokk és az XMP-típuscsalád közötti kapcsolatot erős
+statikus jelként támasztja alá; a tényleges regisztráló hívás még nincs
+utasításszinten kiolvasva.
+
+### Eredeti / nálunk / teendő
+
+| | Eredeti, indexből mérve | PicasaPy, forrásból mérve | Állapot |
+|---|---|---|---|
+| XMP-réteg jelenléte | XMP Core 5.1.2 sztring + külön `ytXMPReader`/`ytXMPWriter`/`XMPMeta` RTTI | `export/xmp.py` saját, determinisztikus XMP-builder és sidecar-író | **megerősített statikus kapcsolat** |
+| névtérkészlet | `0x00bdbe50`: 80 sztring, ebből 48 URL | 9 saját URI-konstans (`RDF`, `DC`, `LR`, `MWG-RS`, `stArea`, `stDim`, `MP`, `MPRI`, `MPReg`) és az `adobe:ns:meta/` wrapper | a készletek nem azonosak; nincs átvezetési következtetés |
+| regisztrációs szemantika | a 48 URL ugyanahhoz a függvényhez kötött; a közvetlen hívó és az XMP RTTI megvan | a saját exporter nem natív registryt használ | **NINCS MEG** a tényleges `RegisterNamespace`-szerű hívás és az URI→prefix párosítás |
+
+**Bizonyítottsági fok: erős statikus lelet** az XMP Core/namespace-adatblokk
+létezésére és a környező XMP-típuscsaládra. **NINCS MEG** a `0x00bdbe50`
+utasításszintű szerepe, a regisztrációk sorrendje, az URI→prefix teljes
+leképezése és az, hogy a 48 URL közül melyeket használja ténylegesen az olvasó
+vagy az író.
+
+A szükséges következő lépés a `Picasa3.exe` célzott dekompilációja a
+`0x00bdbe50` és `0x00bd9ae0` címeken. A helyi kutatási anyagban az EXE nincs
+jelen, ezért ezt a kört nem helyettesítettem becsléssel; a #3348 nyitva marad
+és a hiányzó bináris miatt külső függőségre vár.
