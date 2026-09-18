@@ -4545,11 +4545,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <translation>Megjelenítés és szerkesztés</translation>
     </message>
     <message>
-        <source>Rotate Right</source>
+        <source>Rotate Clockwise</source>
         <translation>Forgatás jobbra</translation>
     </message>
     <message>
-        <source>Rotate Left</source>
+        <source>Rotate Counterclockwise</source>
         <translation>Forgatás balra</translation>
     </message>
     <message>
@@ -5123,7 +5123,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
-        <source>Sign in with your Google Account</source>
+        <source>Sign in with Google Account</source>
         <translation>Bejelentkezés Google Fiókkal</translation>
     </message>
     <message>
@@ -5441,7 +5441,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265"/>
-        <source>Auto Redeye Fix</source>
+        <source>Auto Red Eye Correction</source>
         <translation>Automatikus vörösszem-eltávolítás</translation>
     </message>
     <message>
@@ -5466,12 +5466,12 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296"/>
-        <source>Rotate Right</source>
+        <source>R&amp;otate Clockwise</source>
         <translation>Forgatás jobbra</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302"/>
-        <source>Rotate Left</source>
+        <source>Rotate &amp;Counterclockwise</source>
         <translation>Forgatás balra</translation>
     </message>
     <message>
@@ -5597,7 +5597,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92"/>
-        <source>Open File(s) in Editor</source>
+        <source>&amp;Open File(s) in an Editor</source>
         <translation>Fájl(ok) megnyitása szerkesztőben</translation>
     </message>
     <message>
@@ -5647,7 +5647,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212"/>
-        <source>Show Editing Controls</source>
+        <source>Show Edit Controls</source>
         <translation>Szerkesztési vezérlők megjelenítése</translation>
     </message>
     <message>
@@ -5657,7 +5657,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="228"/>
-        <source>Thumbnails Only</source>
+        <source>Small &amp;Pictures</source>
         <translation>Kis képek</translation>
     </message>
     <message>
@@ -5727,6 +5727,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374"/>
+        <source>&amp;Unhide</source>
+        <translation>Megjelenítés</translation>
+    </message>
+    <message>
         <source>Show</source>
         <translation>Megjelenítés</translation>
     </message>
@@ -5752,12 +5756,12 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406"/>
-        <source>Reset Face Positions</source>
+        <source>Reset &amp;Faces</source>
         <translation>Arcok alaphelyzetbe állítása</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416"/>
-        <source>Set as Desktop Background...</source>
+        <source>Set as &amp;Desktop...</source>
         <translation>Beállítás háttérképként…</translation>
     </message>
     <message>
@@ -5767,7 +5771,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="426"/>
-        <source>Make a Gift CD...</source>
+        <source>Create a &amp;Gift CD...</source>
         <translation>Ajándék CD készítése…</translation>
     </message>
     <message>
@@ -6877,11 +6881,11 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <translation>Hozzáadás az albumhoz</translation>
     </message>
     <message>
-        <source>Rotate Right</source>
+        <source>Rotate Clockwise</source>
         <translation>Forgatás jobbra</translation>
     </message>
     <message>
-        <source>Rotate Left</source>
+        <source>Rotate Counterclockwise</source>
         <translation>Forgatás balra</translation>
     </message>
     <message>

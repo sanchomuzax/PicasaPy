@@ -266,7 +266,8 @@ class TestNemaCimkekLekerultBillentyuvel:
     @pytest.mark.parametrize(
         ("szoveg_resz", "vart_szoveg"),
         [
-            ("Open File(s) in Editor", "Open File(s) in Editor"),
+            #: ⚠️ #2921: a felirat a MÉRT hivatalos angolra igazodott
+            ("Open File(s) in an Editor", "Open File(s) in an Editor"),
             ("E-Mail...", "E-Mail..."),
         ],
     )

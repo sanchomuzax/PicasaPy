@@ -181,12 +181,12 @@ PicasaMenu {
 
     MenuItem {
         objectName: "contextMenuRotateRight"
-        text: qsTr("Rotate Right") + "\tCtrl+R"
+        text: qsTr("Rotate Clockwise") + "\tCtrl+R"
         onTriggered: menu.rotateRightRequested()
     }
     MenuItem {
         objectName: "contextMenuRotateLeft"
-        text: qsTr("Rotate Left") + "\tCtrl+Shift+R"
+        text: qsTr("Rotate Counterclockwise") + "\tCtrl+Shift+R"
         onTriggered: menu.rotateLeftRequested()
     }
     MenuSeparator {}

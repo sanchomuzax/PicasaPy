@@ -45,7 +45,7 @@ MenuBar {
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
-            text: qsTr("Sign in with your Google Account")
+            text: qsTr("Sign in with Google Account")
             color: Theme.linkBlue
             font.pixelSize: Theme.fontSize
             font.underline: true
@@ -489,7 +489,7 @@ MenuBar {
         // hiányzott (#324 audit): fájl(ok) megnyitása a szerkesztőben
         // #1616: a felirat Ctrl+Shift+O-t hirdetett, de a funkció teljesen
         // hiányzik (a tétel helyfoglaló) — a billentyű lekerült a feliratról.
-        PicasaMenuItem { text: qsTr("Open File(s) in Editor"); placeholder: true }
+        PicasaMenuItem { text: qsTr("&Open File(s) in an Editor"); placeholder: true }
         MenuSeparator {}
         // #1614: ÉLŐ tétel — MÉRVE (`git log -S'ID_FILE_NEWFOLDER'`) a
         // tétel a #324 audit óta helyfoglaló volt, holott a parancs neve
@@ -815,7 +815,7 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit): a szerkesztő panel láthatóság-kapcsolója
-        PicasaMenuItem { text: qsTr("Show Editing Controls"); checkable: true; placeholder: true }
+        PicasaMenuItem { text: qsTr("Show Edit Controls"); checkable: true; placeholder: true }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         MenuItem {
@@ -850,7 +850,7 @@ MenuBar {
         // egyértelmű — feltehetően mappacím nélküli indexkép-rács
         PicasaMenuItem {
             objectName: "menuViewThumbnailsOnly"
-            text: qsTr("Thumbnails Only")
+            text: qsTr("Small &Pictures")
             checkable: true
             placeholder: true
         }
@@ -1559,6 +1559,9 @@ MenuBar {
         // hiányzott (#324 audit): mappa szintű elrejtés/megjelenítés — más,
         // mint a Nézet ▸ Rejtett képek (kép-szintű) kapcsoló
         PicasaMenuItem { text: qsTr("&Hide"); placeholder: true }
+        //: ⚠️ #2921: EZ a MAPPA-menü tétele, és rá NINCS mért hivatalos
+        //: szöveg — a mért `AlbumPhoto::ID_PICTURE_UNHIDE` a KÉP-menüé.
+        //: Ezért marad „Show”, nem igazítjuk „&Unhide”-ra.
         PicasaMenuItem { text: qsTr("Show"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit)
@@ -1636,7 +1639,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuBatchAutoRedeye"
-                text: qsTr("Auto Redeye Fix")
+                text: qsTr("Auto Red Eye Correction")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("redeye")
             }
@@ -1667,13 +1670,13 @@ MenuBar {
             MenuSeparator {}
             MenuItem {
                 objectName: "menuBatchRotateRight"
-                text: qsTr("Rotate Right")
+                text: qsTr("R&otate Clockwise")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("rotate_cw")
             }
             MenuItem {
                 objectName: "menuBatchRotateLeft"
-                text: qsTr("Rotate Left")
+                text: qsTr("Rotate &Counterclockwise")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("rotate_ccw")
             }
@@ -1707,12 +1710,12 @@ MenuBar {
         // „Megjelenítés” tétel áll (a mentésen mindkettő inaktív). Nálunk
         // az Elrejtés ma kapcsoló — a szétválasztás külön jegy, addig ez a
         // tétel helyfoglaló, hogy a csoport szerkezete stimmeljen.
-        PicasaMenuItem { text: qsTr("Show"); placeholder: true }
+        PicasaMenuItem { text: qsTr("&Unhide"); placeholder: true }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         // hiányzott (#324 audit): arc-négyzetek pozíciójának visszaállítása
         // (3. fázis, arcfelismerés-előkészítés)
-        PicasaMenuItem { text: qsTr("Reset Face Positions"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Reset &Faces"); placeholder: true }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         MenuItem {
@@ -1733,7 +1736,7 @@ MenuBar {
         //: kijelölés nélkül szürke (a néma kattintás helyett).
         MenuItem {
             objectName: "menuCreateWallpaper"
-            text: qsTr("Set as Desktop Background...")
+            text: qsTr("Set as &Desktop...")
             enabled: bar.photoActionsEnabled
             onTriggered: bar.wallpaperRequested()
         }
@@ -1748,7 +1751,7 @@ MenuBar {
         }
         // hiányzott (#324 audit): OS-integrációs funkciók
         PicasaMenuItem { text: qsTr("Add to &Screensaver..."); placeholder: true }
-        PicasaMenuItem { text: qsTr("Make a Gift CD..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Create a &Gift CD..."); placeholder: true }
         // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
         // filmkészítés a submenu egyetlen tételeként maradt életben
         PicasaMenu {
