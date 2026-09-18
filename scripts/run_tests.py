@@ -1113,7 +1113,13 @@ def _run_pytest(
         if csendben:
             _KIMENET[" ".join(args)] = _szoveggé(kivetel.stdout)
         print(f"TIMEOUT ({timeout_s}s): {' '.join(args)}", flush=True)
-        return 124
+        return _IDOTULLEPES_KOD
+
+
+#: #3297: a `timeout(1)` és a mi részfutás-figyelőnk is ezzel a kóddal
+#: jelzi az időtúllépést. Egy helyen áll, hogy a JELENTÉS és a
+#: részfutás ugyanazt a számot használja.
+_IDOTULLEPES_KOD = 124
 
 
 def _jelold_a_futast(basetemp: Path) -> None:
@@ -1436,6 +1442,17 @@ def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
     """
     print("\nHIBÁS RÉSZFUTÁSOK:", flush=True)
     for name, returncode in failures:
+        #: #3297: az `exit 124` NEM tesztbukás — a részfutás elfogyasztotta
+        #: a saját idejét. A puszta szám ezt nem mondja meg, és a naplót
+        #: olvasó (vagy a tulajdonos, aki a piros main e-mailjét kapja)
+        #: tesztbukásnak látja. A jelentés ezért kimondja.
+        if returncode == _IDOTULLEPES_KOD:
+            print(
+                f"  {name}: IDŐTÚLLÉPÉS (exit {returncode}) — a részfutás "
+                "nem fért bele a saját idejébe; ez nem tesztbukás",
+                flush=True,
+            )
+            continue
         print(f"  {name}: exit {returncode}", flush=True)
     # A környezet a bukás MELLÉ tartozik: enélkül nem tudni, melyik gépről
     # szól a hibaüzenet, és a reprodukció vaktában indul.

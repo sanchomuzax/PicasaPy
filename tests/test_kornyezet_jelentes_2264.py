@@ -82,7 +82,18 @@ class TestABukasJelentesUtja:
 
     def test_a_bukott_reszfutasok_MIND_szerepelnek(self, capsys):
         modul = _modul()
-        modul.jelentsd_a_bukasokat([("a.py", 1), ("b.py", -6), ("c.py", 124)])
+        modul.jelentsd_a_bukasokat([("a.py", 1), ("b.py", -6), ("c.py", 2)])
         kimenet = capsys.readouterr().out
-        for nev, kod in [("a.py", 1), ("b.py", -6), ("c.py", 124)]:
+        for nev, kod in [("a.py", 1), ("b.py", -6), ("c.py", 2)]:
             assert f"{nev}: exit {kod}" in kimenet, kimenet
+
+    def test_az_idotullepes_is_szerepel_de_nem_bukaskent(self, capsys):
+        """#3297: a 124 időtúllépés, nem tesztbukás — de a nevének ki kell írva
+        lennie, különben eltűnik a jelentésből az, ami nem fért bele az idejébe.
+        """
+        modul = _modul()
+        modul.jelentsd_a_bukasokat([("a.py", 1), ("c.py", 124)])
+        kimenet = capsys.readouterr().out
+        assert "a.py: exit 1" in kimenet, kimenet
+        assert "c.py: IDŐTÚLLÉPÉS" in kimenet, kimenet
+        assert "nem tesztbukás" in kimenet, kimenet
