@@ -538,34 +538,35 @@ A feltöltés-lista stílusblokkjából (`0x007af010`) egy egész készlet:
 | `[+0x9ac]` | 2 |
 | `[+0x9b0]` | −2 |
 
-### 8/b A buboréksúgó rajza — hol NINCS (2026-08-21, G2 + kiegészítés)
+### 8/b A buboréksúgó rajza — a statikus lánc határai (2026-08-21, G2 + 2026-09-18-i helyesbítés)
 
-A `ytToolTip` **megjelenése** (háttér, keret, árnyék) továbbra sem
-mérhető ki a binárisból az olcsó lánccal. Hogy a következő kör ne járja
-újra ugyanezt, itt a **teljes negatív leltár** — a kör elején (G2) hét
-helyen kerestük, a felhasználó kérésére **négy továbbival** bővítve:
+A `ytToolTip` **megjelenése** nem egyetlen képrétegből olvasható ki. A
+korábbi negatív leltárt célzott constructor-, attribútum- és import-xref
+vizsgálattal pontosítottuk:
 
 | hol kerestük | eredmény |
 |---|---|
-| a `ytToolTip` **csomópont-vtable**-je (`0x00c909d4`, 30 rekesz) | **egyetlen saját rajzoló-felülírás sincs** — mind a 30 rekesz általános (`0x009e0…`, `0x00a6…`, `0x0051…`) |
-| a **konstruktor** (`0x00563060`, 224 b, teljes egészében kiolvasva) | **csak pozíció (`ecx`-ből 4 dword) és két IDŐBÉLYEG** (`[0xc40298]`-hívás, kétszer, `+0x328`/`+0x330`-ba) — **szín-paraméter EGYÁLTALÁN nem érkezik hívóból**, és nincs is beégetve |
-| az `IToolTip` felület (`0x00c90408`, 3 rekesz) | slot 0 = `0x00563040` (31 b, csak a vtable beállítása), a másik kettő `_purecall` |
-| a **`0x00562000`–`0x00564500`** kódtartomány (az osztály környéke) | ARGB-konstans **nincs**: csak `0xFF000000`, `0xFFFFFFFF` és `-1`/`-2` őrértékek |
-| a **respack**, teljes réteglista (nem csak a `.tre`-k) | **nincs** `tooltip`/`balloon`/`hint`/`callout`/`bubble` nevű `decrect`-réteg — a `listdecrect`, `tooldecrect`, `overlaydecrect` stb. mind MÁS elemé; van `tre:tooltips` (3595 b), de az **szövegforrás** (`Tooltip <vezérlő>` + felirat), nem elrendezés |
-| a **`.tre`-k** | a `thumbui.tre` `#include tooltips.tre` — ugyanaz a szövegforrás |
-| a létrehozó (`0x005733f0`, a `"tooltip"` névvel, `0x0057351e`) | a nevet a `0x009ccdf0`-nak adja át — **ez NEM csomópont-gyár, hanem egy globális NÉV-INTERNÁLÓ hashtábla** (39 hívó, `[0xd67914]` globális objektum) — szín ott sem lehet, mert a függvény semmilyen szín-adatot nem kezel |
-| **⭐ ÚJ: a megosztott, öröklött rajzoló-metódusok TÖRZSE** (`0x009e0660`, `0x009e0700`, `0x009e08b0`, `0x009e0ad0`, `0x009e0990`, `0x009e0ed0` [a legnagyobb, 2028 b], `0x009e0b50`, `0x009e3970/90/b00`, `0x00a6be80`, `0x00a6c4b0`, `0x00a6be40`, `0x00a6bca0`) | végigpásztázva **32 bites `0xFF…`/`0xFE…` ARGB-mintára** (a G1 tanulsága szerint) — **egyetlen valódi találat sincs**, csak a `and esp, 0xfffffff8` verem-igazítás és hasonló bitmaszk-műveletek |
-| **⭐ ÚJ: natív Win32 tooltip vezérlő** | a `COMCTL32.dll` importja **nem** tartalmaz tooltip-függvényt (csak `InitCommonControlsEx`, `PropertySheetA/W`, két ordinál — property sheet/wizard máshoz); a `"tooltips_class32"` / `"TOOLTIPS_CLASS"` szó **sehol nincs** a binárisban. **A buboréksúgó tehát biztosan a saját `ytToolTip`, nem az OS natív tooltipje.** |
-| **⭐ ÚJ: `GetSysColor`** (rendszerszín-lekérdezés, pl. `COLOR_INFOBK` a klasszikus sárga tooltip-háttérhez) | **hat hívási helye van a binárisban, egyik sincs** a tooltip létrehozási/rajzolási láncban (`0x005733f0`, `0x00563060`, a fenti generikus rajzolók) — a szín tehát **nem az operációs rendszertől** jön futásidőben |
+| a `ytToolTip` vtable-je (`0x00c909d4`, 30 rekesz) | nincs külön tooltip-specifikus rajzoló-felülírás; a rajz öröklött csomóponti úton történik |
+| a constructor (`0x00563060`) és alapconstructora (`0x00a6b680`) | a `ytToolTip` saját csomópont; az alapértékek között az `Arial` sztring (`0x00c80a64`) és a 12-es alapmezők binárisan látszanak |
+| a `respack` és `tre:tooltips` | nincs tooltip-háttérkép; a `tooltips.tre` csak `Tooltip <vezérlő>` + felirat párokat tartalmaz |
+| a natív tooltip-út | `tooltips_class32`/`TOOLTIPS_CLASS` nincs; a vizsgált `CreateWindowEx`-hívók ismert osztályai `ytDSMovie`, `AtlAxWin80`, `AtlAxWinLic80` — egyik sem tooltip |
+| `useshadow` attribútum-feldolgozás | a parser létezik (`0x009cb26f`–`0x009cb2bf`), és a saját árnyékobjektum-beállítóba (`0x009c7660` → `0x00a659e0`) megy; ez **általános** csomóponti út, nem bizonyítja, hogy a `ytToolTip` példánya ezt kapja |
 
-**Amit ez kizár:** a buboréksúgó megjelenése **nem** `.tre`-tulajdonság,
-**nem** respack-réteg, **nem** az osztály saját kódjában ülő konstans,
-**nem** az öröklött rajzoló-metódusok konstansa, **nem** natív Win32
-vezérlő, és **nem** rendszerszín. Az egyetlen megmaradó lehetőség egy
-futásidőben, más forrásból (pl. egy meg nem talált globális
-„skin"/paletta-objektum) összeállított érték — ennek nyomon követése
-már **bizonytalan kimenetelű, drága dekompiláció** lenne, hetekre
-visszamenő adatfolyam-követéssel, konkrét célcím nélkül.
+**Amit most biztosan tudunk:** a buborék nem a Windows `tooltips_class32`
+vezérlője és nem respack-kép. A `ytToolTip` saját csomópontként jön létre,
+az alapfont-család binárisan `Arial`; a konkrét felületi krómot a tulajdonosi
+képernyőkép méri.
+
+**Amit nem szabad összekeverni:** a `useshadow` általános útján a bináris
+kiolvasható értékei: `0x00c49618` = `0x40400000` = `3.0`,
+`0x00c7dcc8` = `0x3e99999a` = `0.30000001192092896`, valamint két `1` offset
+(`0x009c7690` és `0x009c7694`). Ezek a `useshadow` alap-paraméterei, de
+**NINCS MEG**, hogy a tooltip példánya ezt a tulajdonságot használja; a
+`m_shadow` makró jelenlegi mintái más paneleken vannak.
+
+A korábbi „a jobb/alsó árnyék pontosan `CS_DROPSHADOW`” állítás
+**helyesbítve, nem bizonyított**. A kép az árnyékot méri, de az árnyék
+forrása a mostani statikus láncban **NINCS MEG**.
 
 ### 8/c A megjelenés MEGVAN — a tulajdonos képernyőképéből mérve (2026-08-21)
 
@@ -584,32 +585,25 @@ miért nincs egy csepp kód sem hozzá.
 | **árnyék** | **VAN, de csak a JOBB és ALSÓ élen** — ~4–5 képpontos, sima (nem lépcsős) szürke elhalványulás a panel hátteréig; a **bal és felső élen NINCS árnyék** (éles átmenet panel→keret) | vízszintes/függőleges metszet mindkét párra |
 | **a panel háttere** (amin a buborék ül) | `#E8E8E8` — összhangban a #894-ben mért legördülő-panel-színnel | referenciapont a fentiekhez |
 
-**A csak-jobb/alsó árnyék a döntő nyom.** Egy alkalmazás-rajzolt árnyék
-tetszőleges alakú lehetne; egy **kétoldalas, éles vágású, azonos
-mélységű** árnyék pontosan az, amit a Win32 **`CS_DROPSHADOW`**
-ablakosztály-stílus ad automatikusan a felugró ablakoknak (a rendszer
-rajzolja, az alkalmazás kódja nem lát belőle semmit). **Ez összhangban
-van a 8/b teljes negatív lelettel**: nem azért nincs árnyék-kód a
-binárisban, mert nem találtuk meg, hanem mert **nincs is** — az
-operációs rendszer rajzolja rá.
+**A képernyőn mért árnyék valódi lelet; a forrása nem azonosított.** A jobb
+és alsó él menti elhalványulás a tulajdonosi képernyőképen mérve van, de a
+`CS_DROPSHADOW`-hoz kötés **NINCS MEG**: a célzott import-xrefek más ablakos
+osztályokat fednek le, a `ytToolTip` pedig saját csomópont. A generikus
+`useshadow` út paraméterei binárisan kiolvashatók, de a tooltip példányára
+való alkalmazásuk nincs bizonyítva.
 
-**Következtetés a kitöltésre és a keretre:** ha ezek sem
-alkalmazáskódból jönnek (a 8/b tizenegy pontja ezt kizárta), a
-legvalószínűbb magyarázat egy **Windows rendszerszín-pár**, amit a
-korábbi `GetSysColor`-keresésünk **nem** talált meg a tooltip-lánc
-közelében — vagyis vagy egy **közvetett** hívási úton jut oda (amit nem
-követtünk végig), vagy egy **futásidőben betöltött, statikusan nem
-látható** skin-objektumból. *(A klasszikus Win32 `COLOR_INFOBK`
-alapértéke `#FFFFE1` lenne — közel, de NEM egyezik a mért `#F4F1E5`-tel,
-tehát ez feltehetően egy egyéni, nem rendszer-alapértelmezett szín.)*
+**Következtetés a kitöltésre és a keretre:** a képernyőkép mért értékei
+normatívak a PicasaPy megvalósításához; a célzott bináris láncban a forrásuk
+**NINCS MEG**. A korábbi „Windows rendszerszín-pár” és `COLOR_INFOBK`
+magyarázat nem bizonyított, ezért nem kerül át implementációs állításként.
 
 **Kész, ha** (a PicasaPy megvalósításának): a buboréksúgó kitöltése
 `#F4F1E5`, kerete `#B7B5AC` 1 px, derékszögű sarkokkal, és — ha a
 platform/Qt engedi — árnyék csak a jobb és alsó élen.
 
-**Jegy: #901** — a leltár most már **pozitív mérési eredménnyel**
-zárható; a nyitva maradó rész csak a *miért éppen ez a szín* kérdés
-(nem befolyásolja a megvalósítást).
+**Jegy: #901** — a képi króm normatív mérése átadható a fejlesztésnek; a
+belső eredeti szín-/árnyékforrás és a pontos eredeti font-pixelméret
+**NINCS MEG**, ezt a lap nem állítja bizonyítottnak.
 
 > *A színmérésnél a G1 tanulságát alkalmaztuk: a Picasa a színeket
 > **32 bites `0xAARRGGBB`** alakban tárolja — de ez a kép önmagában

@@ -480,10 +480,11 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    a tulajdonos képernyőképéből képpontonként mérve — kitöltés
    **`#F4F1E5`**, keret **`#B7B5AC` 1 px**, **derékszögű** sarkok, fekete
    szöveg, és **árnyék CSAK a jobb és alsó élen** (a bal/felső élen
-   nincs). Az utóbbi a döntő nyom: ez pontosan a Win32
-   **`CS_DROPSHADOW`** ablakstílus automatikus, rendszer-rajzolta
-   árnyéka — ami megmagyarázza, miért nem volt sehol árnyék-kód a
-   binárisban (a 8/b tizenegy pontos negatív leltára). Jegy: **#901**.
+   nincs). A **CS_DROPSHADOW / Windows-rendszerszín** magyarázat korábbi
+   következtetése **HELYESBÍTVE, NEM BIZONYÍTOTT**: a kép a képpontokat méri,
+   a célzott bináris láncban az árnyék és a színek forrása **NINCS MEG**.
+   A `ytToolTip` saját csomópont, alapfontja binárisan `Arial` (`0x00c80a64`).
+   Jegy: **#901**.
 
 ### [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) — nincs nyitott kérdés
 
