@@ -157,6 +157,14 @@ def _build_qml_app(
     # maradna fedezetlen. A beállítás folyamat-szintű, és a motor
     # létrehozása ELŐTT kell megtörténnie.
     app_module.allitsd_be_a_stilust()
+    # #3279: a felület-tesztek UGYANAZZAL A BETŰVEL mérjenek, amivel az
+    # éles app indul (csomagolt Open Sans, #526) — különben a
+    # felirat-geometriát mérő őrök a FUTTATÓ rendszerbetűjét nézik, ami
+    # gépenként más. Mérve ezen a gépen: a rendszer alapértelmezése
+    # (Nunito Sans) minden érintett feliratnál KESKENYEBB az Open
+    # Sansnál („Histogram and camera information": 182,6 → 196,8 képpont),
+    # tehát az őrök eddig megengedőbbek voltak a valóságnál.
+    app_module._install_ui_font(qt_app)
     engine = QQmlApplicationEngine()
     # ⚠️ #1457: a QML-motor SZINKRON szolgáltatót kap. A termékkód
     # aszinkron marad; itt a pool-szálak és a válasz-objektumok csak a
