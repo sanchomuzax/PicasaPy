@@ -293,6 +293,41 @@ A két fül felirata: **„Beállítások"** és **„Klipek (%1)"** — a máso
 **tényleges klip-darabszám**mal (`collageUI::tab2_title`), minden
 felvétel/törlés után újraírva.
 
+### 4.1/b ⭐ R2/R3 szerkezeti ellenőrzés — a két lap és a kliplista (#656, 2026-09-18)
+
+Ez a rész nem új geometriai becslés: az eredeti `.tre` szerkezeti és
+horgonyzási osztályát vetjük össze a futó PicasaPy QML-fával. A `.tre`
+forráshelyei: `referencia/tre-eroforrasok/collagepanel.tre:447–485` (fülnavigáció) és `:174–208` (klipvezérlők).
+
+| eredeti elem | `.tre` szerződés | PicasaPy megfelelője | ítélet |
+|---|---|---|---|
+| `tabs` | `collagepanel/tabbase` gyerek; balra és felül 5 px-re (`m_offsetL`, `YConstraint 0,0,5`) | `CollagePanel.qml:152–159`, `collageTabBase` gyerek; `x: 0`, `y: 5`, szélessége a szülőé | **R2 egyezik; R3 a fix vázon ekvivalens** |
+| `tabpanel1` | `tabbase` gyerek; bal/jobb 4 px, felül 30 px, alul 4 px (`XConstraint 0,0,4`, `XConstraint 1,1,-4`, `YConstraint 0,0,30`, `YConstraint 1,1,-4`) | `CollageSettingsTab`, `CollagePanel.qml:165–174`; `x: 10`, `y: 35`, `266 × 351` | **R2 egyezik; R3 eltérő kifejezés**: négyoldali horgony helyett fix doboz |
+| `tabpanel2` | ugyanaz a négyoldali horgonyzás, induláskor `m_hidden` | `CollageClipsTab`, `CollagePanel.qml:176–194`; `x: 10`, `y: 35`, `266 × 352`, a fülindex rejti | **R2 egyezik; R3 eltérő kifejezés**: négyoldali horgony helyett fix doboz |
+| `solo` | `tabpanel2` gyerek; bal/fent/jobbra horgonyzott, alul 10 px rés (`m_offsetLTR`, `YConstraint 1,1,-10`) | `CollageClipsTab.qml:181–187`; `x: 4`, `y: 36`, jobb és alsó él a lapból számolva | **R2 és R3 egyezik** |
+| `addclips`, `deleteclips`, `getmoreclips` | `tabpanel2` közvetlen gyerekei, bal/fent horgonyzással (`m_offsetLT`) | `CollageClipsTab.qml:94–177`; mindhárom közvetlen gyerek, mért `x/y` és fix méret | **R2 egyezik; R3 jelenleg fix eltolásra fordítva** |
+
+**A futó fa kontrollja.** A `tests/app/qml_functional/test_ui_overflow_audit_656.py`
+célzott futása a teljes munkafán **26 passed in 5,22 s** eredményt adott. A
+teszt a valódi `QQuickView`-ban bejárt vizuális fával mér, nem csak QML-forrást
+számol; a kollázs-lapok mérete és a `collageTabBase` szülőkapcsolata így
+futásidejű kontrollt kap.
+
+**Következtetés.** A konténer-szerződés (R2) a két lapnál és a három gombnál
+megfelel. A lapoknál az eredeti négyoldali horgonyzási osztályt a mai kód
+fix dobozra fordítja le; ez a jelenlegi, szándékosan fix `276 × 386`-os
+`collageTabBase` mellett ugyanazt a látható dobozt adja, de nem ugyanaz a
+reszponzív szerződés. A kliplista viszont a `.tre` nyúló horgonyzását tényleges
+QML-számítással megőrzi. Ez **kutatási lelet**, nem önmagában igazolt
+felhasználói hiba; a lapok átméretezésekor a négyoldali horgonyzás külön
+fejlesztési teendővé válna.
+
+*Bizonyítottsági fok: **megerősített** az eredeti szülő- és horgonyosztályra,
+valamint a futó QML-szülőfára; a fix doboz és a horgonyos leképezés pixel-
+azonosságát csak a jelenlegi fix vázon mértük. Saját kérdések: **1 lezárva**
+(R2/R3 kollázs-lap kontroll) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül ·
+0 „csak nyitva".*
+
 > ⚠️ **Két külön erőforrás — ne keverd (2026-08-18).** A `.tre` statikus
 > fülcímkéje (`collagepanel/tab2-label`) magyarul „**Képek**"
 > (`panel-feliratok-hu.tsv`), a futásidejű formátum viszont
