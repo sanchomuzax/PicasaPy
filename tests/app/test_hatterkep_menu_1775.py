@@ -109,7 +109,7 @@ class TestAMenutetel:
             Path(picasapy.app.__file__).parent
             / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
         ).read_text(encoding="utf-8")
-        i = forras.index('text: qsTr("Set as Desktop Background...")')
+        i = forras.index('text: qsTr("Set as &Desktop...")')
         blokk = forras[i - 400 : i + 200]
 
         assert "menuCreateWallpaper" in blokk, "a tételnek objectName-t kell kapnia"

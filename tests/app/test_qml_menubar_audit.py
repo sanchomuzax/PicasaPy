@@ -54,7 +54,7 @@ HIANYZOTT_TETELEK = [
     # sincs a kódban, a tétel helyfoglaló — és a #1616 szabálya szerint
     # nem hirdetünk olyat, ami nincs bekötve. Amint a funkció elkészül,
     # a felirat és az élő `Shortcut` EGYSZERRE kerül vissza.
-    ("Open File(s) in Editor", None),
+    ("Open File(s) in an Editor", None),
     ("Move to New Folder...", None),
     ("Save As...", None),
     ("Save a Copy", None),
@@ -66,9 +66,9 @@ HIANYZOTT_TETELEK = [
     ("Copy Text", None),
     ("Paste Text", None),
     # Nézet
-    ("Show Editing Controls", None),
+    ("Show Edit Controls", None),
     ("Search Options", None),
-    ("Thumbnails Only", None),
+    ("Small Pictures", None),
     ("Use Color Management", None),
     ("Display Mode", None),
     # Mappa
@@ -80,11 +80,11 @@ HIANYZOTT_TETELEK = [
     ("Move...", None),
     ("Delete...", None),
     # Kép
-    ("Reset Face Positions", None),
+    ("Reset Faces", None),
     # Létrehozás
-    ("Set as Desktop Background...", None),
+    ("Set as Desktop...", None),
     ("Add to Screensaver...", None),
-    ("Make a Gift CD...", None),
+    ("Create a Gift CD...", None),
     ("Publish to Blogger...", None),
     # Eszközök
     ("Upload Manager...", None),

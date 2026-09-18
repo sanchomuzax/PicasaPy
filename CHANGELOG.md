@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.514] – 2026-09-18
+
+### Megváltozva
+
+- **A menüsor angol feliratai a Picasa saját szövegeire igazodtak** (#2921)
+  — tizenegy tétel, például „Rotate Right" helyett „R&otate Clockwise",
+  „Thumbnails Only" helyett „Small &Pictures". **A magyar felület
+  változatlan**: ezeknél a magyar fordításunk eddig is a hivatalos Picasa-
+  szöveg volt, csak az angol forrás fogalmazott másképp — emiatt a
+  lefedettségi mérőnk sem találta meg a párjukat.
+
 ## [0.8.513] – 2026-09-18
 
 ### Megváltozva
