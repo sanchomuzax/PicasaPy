@@ -75,16 +75,54 @@ ColumnLayout {
     //: magassága így a betűmetrikán múlt: Linuxon 274, Windowson 317, a mért
     //: `editpanel/tabpanel1` = 277 helyett. A sorszám rögzítése nélkül a
     //: keret alábbi számítása sem tartana.
-    Text {
-        id: bevezeto
-        objectName: "legacyEffectsIntro"
+    //: #3278: a bevezető RÖVID mondat. A korábbi, kétmondatos alak a
+    //: fejlesztői gépen elfért, a CI (és egy nagyobb rendszerbetűvel a
+    //: felhasználó) gépén viszont levágódott — az `elide` a törést
+    //: hárította el, az olvashatóságot nem: a mondat vége „…"-szal
+    //: elmaradt.
+    //:
+    //: ⛔ REFERENCIA NINCS: ez a fül a mi SAJÁT kiegészítésünk (ADR-003),
+    //: az eredetiben nem létezik — a szöveg hossza tehát a mi döntésünk.
+    //: A kivett fél mondat nem vész el: a buboréksúgóban ott van.
+    //: ⛔ #3278: a felirat SAJÁT dobozban áll, és a doboz kéri a helyet.
+    //:
+    //: Egy tördelő `Text` a `ColumnLayout`-ban az implicit magasságát a
+    //: tördelés ELŐTTI szélességből számolja, ezért egysoros helyet kap —
+    //: és onnantól a második sor akkor sem fér el, ha a szöveg oda törne.
+    //: Mérve (a CI ubuntu 2/4 lába): a doboz 246 × 13, `lineCount` 1,
+    //: `truncated` igaz. Helyben, szűkebb panelen ugyanez: 186 × 16, egy
+    //: sor, levágva.
+    //:
+    //: A megoldás: a `Text` szélessége a SZÜLŐ dobozáé (tehát a tördelés
+    //: a tényleges szélességgel számol), a doboz magassága pedig a
+    //: `contentHeight` — így a sorok száma után igazodik.
+    Item {
+        id: bevezetoDoboz
         Layout.fillWidth: true
-        wrapMode: Text.WordWrap
-        maximumLineCount: 2
-        elide: Text.ElideRight
-        text: qsTr("These filters come from older Picasa versions. Today's Picasa only recognises them inside your old edits.")
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
+        Layout.preferredHeight: bevezeto.contentHeight
+
+        Text {
+            id: bevezeto
+            objectName: "legacyEffectsIntro"
+            width: bevezetoDoboz.width
+            wrapMode: Text.WordWrap
+            maximumLineCount: 2
+            elide: Text.ElideRight
+            text: qsTr("These filters come from older Picasa versions.")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+
+            //: A bővebb magyarázat. SAJÁT tulajdonságban is áll, nem csak a
+            //: csatolt `ToolTip.text`-ben: a csatolt tulajdonságot a próba
+            //: nem tudja kiolvasni (`property("ToolTip.text")` → null,
+            //: mérve a #1701-ben), tehát a meglétét nem lehetne őrizni.
+            readonly property string bovebbSugo: qsTr(
+                "Today's Picasa only recognises them inside your old edits.")
+            ToolTip.text: bevezeto.bovebbSugo
+            ToolTip.visible: bevezetoEgér.hovered
+            ToolTip.delay: Theme.tooltipDelay
+            HoverHandler { id: bevezetoEgér }
+        }
     }
 
     //: #3263: a rács GÖRGETHETŐ kereten belül él, és a keret a mért lapból

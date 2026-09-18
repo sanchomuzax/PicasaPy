@@ -7949,8 +7949,13 @@ A MŰVELET NEM VONHATÓ VISSZA.
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
-        <source>These filters come from older Picasa versions. Today&apos;s Picasa only recognises them inside your old edits.</source>
-        <translation>Ezek a szűrők a Picasa régebbi változataiból származnak. A mai Picasa csak a korábbi szerkesztéseidben ismeri fel őket.</translation>
+        <source>These filters come from older Picasa versions.</source>
+        <translation>Ezek a szűrők a Picasa régebbi változataiból származnak.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
+        <source>Today&apos;s Picasa only recognises them inside your old edits.</source>
+        <translation>A mai Picasa csak a korábbi szerkesztéseidben ismeri fel őket.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
