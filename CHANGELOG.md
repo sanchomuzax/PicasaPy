@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.518] – 2026-09-18
+
+### Hozzáadva
+
+- **„Gombok konfigurálása…" — az album-fejléc gombsora testreszabható**
+  (#1792). Az Eszközök menü eddig halott tétele most valódi párbeszédet
+  nyit: két listában eldöntheted, mely gombok látszanak a képek fölötti
+  fejlécsávon (diavetítés, csillagozottak kijelölése, mentés lemezre,
+  kollázs), és milyen sorrendben. Van „Visszaállítás alapértelmezettre",
+  a Mégse elveti a változtatást, és a beállítás túléli az újraindítást.
+
 ## [0.8.517] – 2026-09-18
 
 ### Hozzáadva

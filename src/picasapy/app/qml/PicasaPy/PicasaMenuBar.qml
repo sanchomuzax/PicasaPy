@@ -133,6 +133,8 @@ MenuBar {
     signal hiddenPasswordRequested()
     signal rescanRequested()
     signal aboutRequested()
+    //: #1792: a fejlec gombsoranak testreszabasa
+    signal configureButtonsRequested()
     //: #671: a Fájl ▸ Kilépés — a gazda dönti el, kérdez-e
     signal exitRequested()
     signal thumbSizePreset(int size)
@@ -2004,7 +2006,14 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("Configure Buttons..."); placeholder: true }
+        //: #1792: az album-fejlec gombsoranak testreszabasa — ketlistas
+        //: valaszto (`ConfigureButtonsDialog.qml`). A gombcsomag-letoltes
+        //: (`picasa.smo`) hatokoron kivul: a kiszolgalo nem letezik.
+        MenuItem {
+            objectName: "menuConfigureButtons"
+            text: qsTr("Configure Buttons...")
+            onTriggered: bar.configureButtonsRequested()
+        }
         // #1774 (mérve): az eredetiben itt NINCS csoporthatár.
         // #333: nyelvválasztás — alapértelmezés az angol, a magyar
         // választható; a döntés a QSettings-ben marad. A #305-ös null-őr

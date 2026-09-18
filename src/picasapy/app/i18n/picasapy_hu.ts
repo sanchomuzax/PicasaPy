@@ -9875,4 +9875,67 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>A mentés elkészült</translation>
     </message>
 </context>
+<context>
+    <name>ConfigureButtonsDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Configure Buttons</source>
+        <translation>Gombok konfigurálása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Available buttons:</source>
+        <translation>Rendelkezésre álló gombok:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Current buttons:</source>
+        <translation>Jelenlegi gombok:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Add >></source>
+        <translation>Hozzáadás >></translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>&lt;&lt; Remove</source>
+        <translation>&lt;&lt; Eltávolítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Move Up</source>
+        <translation>Feljebb</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Move Down</source>
+        <translation>Lejjebb</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Reset to Defaults</source>
+        <translation>Visszaállítás alapértelmezettre</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Play Fullscreen Slideshow</source>
+        <translation>Teljes képernyős diavetítés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Select starred photos</source>
+        <translation>Csillagozott fényképek kijelölése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Save edited photos to disk</source>
+        <translation>Szerkesztett fényképek mentése lemezre</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
+        <source>Create Photo Collage</source>
+        <translation>Fotókollázs készítése</translation>
+    </message>
+</context>
 </TS>
