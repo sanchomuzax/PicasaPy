@@ -52,37 +52,30 @@ meglássa.
 
 from __future__ import annotations
 
-import sys
 
 import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRectF, Qt
 
-#: ⚠️ Az őr CSAK azon a betűmetrikán mér, amelyre az elrendezésünk
-#: kalibrálva van (a fejlesztői gép és az ubuntu-CI betűje).
+#: ⭐ #3279: az őr MINDKÉT lábon fut — mert végre ugyanazt a betűt méri,
+#: amit az app szállít.
 #:
-#: **Miért nem fut a windows-lábon.** A dobozméreteink a Picasa mért
-#: geometriájából jönnek, a SZÖVEGET viszont a mi betűnk rajzolja. A
-#: windowsos rendszerbetű szélesebb: ugyanaz a felirat több képpontot kér,
-#: és a szoros, mért dobozokban elidálódik. Mérve a mainen (2026-09-17):
-#: `editToolEnhanceLabel` („I'm Feeling Lucky"), `histogramTitle`,
-#: `effectLocalContrastLabel`, `effectSatLabel`, `effectCinemascopeLabel`,
-#: `effectVignetteLabel`, `trayCollageLabel`.
+#: **Ami kiderült.** A windows-lábat korábban azért hagytuk ki, mert ott hét
+#: felirat elidálódott, és a magyarázat az volt, hogy „a windowsos
+#: rendszerbetű szélesebb". A rendszerbetű viszont NEM a mi betűnk: az app a
+#: csomagolt **Open Sans**-t állítja be (#526, `_install_ui_font`) — a
+#: felület-tesztek fixture-je viszont EZT NEM hívta meg, tehát a futtató
+#: rendszerbetűjén mért (Linuxon és Windowson is máson).
 #:
-#: Ez VALÓDI lelet — és pontosan EGY osztály: „a windowsos betűvel nem fér
-#: el a mért dobozban". A helye a **#3279** jegy, nem a piros main: ha
-#: minden ilyen feliratot kivételként vennénk fel, az őr a saját
-#: alapállapotában fulladna meg, és a valódi REGRESSZIÓT nem venné észre.
+#: A fixture a #3279 óta beállítja az app betűjét. A különbség mérve ezen a
+#: gépen: a rendszer alapértelmezése (Nunito Sans) MINDEN érintett
+#: feliratnál keskenyebb az Open Sansnál — „Histogram and camera
+#: information" 182,6 → 196,8 képpont —, tehát az őr eddig **megengedőbb**
+#: volt a valóságnál, nem szigorúbb.
 #:
-#: Ez tehát nem kényelmi kibúvó: az őr a kalibrált lábon MINDIG fut, és ott
-#: mind a nyolc állapotot végigméri. A windowsos osztályt a #3279 viszi
-#: tovább — ha az lezárul, ez a kapu is megszűnik.
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32",
-    reason=(
-        "a mért dobozokat a kalibrált betűn mérjük; a windowsos "
-        "betűmetrika külön jegyen fut (#3279)"
-    ),
-)
+#: A hét windowsos lelet így SEGOE UI-n született, amit a felhasználó soha
+#: nem lát. A valódi betűvel a kalibrált lábon egyik sem lóg ki (mérve,
+#: 2026-09-18) — a windows-láb pedig mostantól maga mondja meg, marad-e
+#: belőlük bármi.
 
 #: fél képpont: a QML lebegőpontos geometriája kerekítésből is adhat
 #: hajszálnyi eltérést — az nem hiba
@@ -156,9 +149,9 @@ def _esemeny_elem(elem: QObject) -> bool:
 #:
 #: ⛔ Ha ide új név kerül, tartozzon hozzá NYITOTT jegy és indoklás: a
 #: kivétel nélküli üres lista az alapállapot, nem a kényelmes kiindulás.
-#: (A `trayCollageLabel` kivétele a #3279-ben él: az CSAK a windows-betűvel
-#: lóg ki, azt a lábat pedig ez a modul már nem méri — ld. a `pytestmark`
-#: indoklását.)
+#: (A `trayCollageLabel` sem kivétel többé: a #3279 mérése szerint az a
+#: lelet a futtató RENDSZERBETŰJÉN született, nem azon, amit az app
+#: szállít — ld. fent.)
 _KIVETELEK: tuple[str, ...] = ()
 
 
