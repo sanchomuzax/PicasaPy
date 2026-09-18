@@ -1697,7 +1697,7 @@ minden további lapja.
 | [picasa-arcfelismeres.md](picasa-arcfelismeres.md) | **Az arcfelismerés TELJES működése** — a három réteg és kapcsolóik, a két küszöb-létra, a KÉT ini-írási útvonal (`facedata`!), a `db3` arc-oszlopai élő adaton mérve, a három romboló művelet, a verzió-migráció; **15.: a személy-album fejlécsávja** — 25 parancs, a küszöb-lazítás képlete, a `]ignoreface` írás (#2187) |
 | [picasa-imagedata-rekord.md](picasa-imagedata-rekord.md) | Az `imagedata` rekord — belső kép-nyilvántartás |
 | [picasa-respack-format.md](picasa-respack-format.md) | `respack.yt` — a bináris erőforráscsomag (megfejtve); **2026-09-03: a rétegfejléc 8–9. bájtja ÁTLÁTSZÓSÁG** (`uint16`, 256 = átlátszatlan) — a lap két korábbi sora téves volt, a kicsomagolónk ma eldobja a mezőt (**#2178**) |
-| [picasa-program-resources.md](picasa-program-resources.md) | Erőforrás- és formátum-leltár (gombok, web-export, plugin-ök) |
+| [picasa-program-resources.md](picasa-program-resources.md) | Erőforrás- és formátum-leltár (gombok, web-export, plugin-ök); **3.5: a `.ytf` glyph-rekord és az `advance`-vektor 12/12 fájlon lezárva, a négy szabad jelölt 72 karakteres mérése rögzítve (#2943)** |
 | [picasa-fen-dialogs.md](picasa-fen-dialogs.md) | A `.fen` dialógus-definíciók |
 | [picasa-web-template-nyelv.md](picasa-web-template-nyelv.md) | A web-export sablonnyelve |
 | [picasa-exe-strings.md](picasa-exe-strings.md) | Bináris string-bányászat |
