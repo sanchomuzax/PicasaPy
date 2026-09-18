@@ -58,7 +58,7 @@ NYUGDIJAZOTT = (
 #: parancs tényleg ír).
 HELYFOGLALO_MARAD = (
     "Check for Updates",
-    "Make a Gift CD...",
+    "Create a Gift CD...",
 )
 
 

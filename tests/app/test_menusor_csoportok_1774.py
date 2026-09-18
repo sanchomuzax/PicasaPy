@@ -42,6 +42,10 @@ _MENU_QML = (
 #: Elválasztó a várt alakokban.
 SZ = "---"
 
+#: ⚠️ #2921: a tételek FELIRATA 2026-09-18-án a mért hivatalos angolra
+#: igazodott (`stringres-en-hu.tsv`), ezért a várt lista szövegei is. Az
+#: őr ÁLLÍTÁSA változatlan: a sorrend és az elválasztók helye a mért
+#: eredetit követi — az összevetés a `&` gyorsítót amúgy is elhagyja.
 #: A menüsor sorrendje — mind a nyolc mentés menüsávja ezt mutatja.
 MENUSOR = [
     "&File",
@@ -66,7 +70,7 @@ VART: dict[str, list[str]] = {
         "Import From...",
         "Import From Google Photos...",
         SZ,
-        "Open File(s) in Editor",
+        "Open File(s) in an Editor",
         SZ,
         "Move to New Folder...",
         "Rename...",
@@ -118,13 +122,13 @@ VART: dict[str, list[str]] = {
         "People",
         "Places",
         SZ,
-        "Show Editing Controls",
+        "Show Edit Controls",
         SZ,
         "Slideshow",
         "Timeline",
         SZ,
         "Search Options",
-        "Thumbnails Only",
+        "Small Pictures",
         "Hidden Pictures",
         SZ,
         "Use Color Management",
@@ -160,19 +164,19 @@ VART: dict[str, list[str]] = {
         "Undo All Edits",
         SZ,
         "Hide",
-        "Show",
+        "Unhide",
         SZ,
-        "Reset Face Positions",
+        "Reset Faces",
         SZ,
         "Properties",
     ],
     "&Create": [
-        "Set as Desktop Background...",
+        "Set as Desktop...",
         "Make a Poster...",
         SZ,
         "Picture Collage...",
         "Add to Screensaver...",
-        "Make a Gift CD...",
+        "Create a Gift CD...",
         "Movie >",
         SZ,
         "Publish to Blogger...",
