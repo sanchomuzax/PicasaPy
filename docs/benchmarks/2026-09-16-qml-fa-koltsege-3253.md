@@ -63,3 +63,26 @@ izolált jelöltre (`PicasaMenuBar` 133,9 ms, `PhotoViewer` 103,8, `FolderPane`
 
 Hogy melyik gyermek mennyibe kerül. Az 1. pont a szakasz EGÉSZÉT helyezi a
 fára; a 2. pont egy módszert zár ki. A per-elem bontás nyitva marad.
+
+## 4. Friss alapvonal — a jelenlegi mainen (2026-09-18)
+
+A mérőeszközt a `0910dcd3` állapotú `origin/main` worktree-ben futtattam,
+üres könyvtárral (`--mappa-szam 0`), két egymást követő indulással. A mérés
+közben a gép 4 magon **2,88 / 2,38 / 2,93**, majd **2,89 / 2,39 / 2,93**
+terhelési átlagot jelentett; a futás alatti terhelést rögzítettem, ezért a számok összehasonlíthatók.
+
+| futás | Python/PySide6 modulok | QML betöltése (`Main.qml`) | összes indulás |
+|---|---:|---:|---:|
+| hideg | **1827,9 ms** | **1979,1 ms** | **4018,9 ms** |
+| meleg | **804,5 ms** | **1071,0 ms** | **2033,5 ms** |
+
+**Következtetés:** a jegyben szereplő „~1200 ms” nem stabil állandó: ezen a
+  mérésen a meleg QML-szakasz **1071,0 ms**, a hideg **1979,1 ms**. A három
+  jelölt (`PicasaMenuBar`, `PhotoViewer`, `FolderPane`) közötti időarányt ez a
+  futás még nem választja szét; a következő bizonyító lépés továbbra is a
+  függőségeket megőrző, külön A/B abláció.
+
+**Bizonyíték:**
+`python scripts/indulas_meres.py --mappa-szam 0 --cimke '3253-alapvonal'`;
+Python 3.13.5 · Qt 6.8.2 · Linux 6.18.39+rpt-rpi-2712-aarch64 · v0.8.518
+(`2736.0910dcd3`).
