@@ -297,6 +297,12 @@ Column {
             // fér ki.)
             x: 20
             width: Math.max(0, parent.width - 40)
+            // #3310: a MÉRT felület-betűcsalád tokenje itt kap LÁTHATÓ
+            // fogyasztót. Az érték megegyezik azzal, amit az alkalmazás
+            // globálisan beállít (`_UI_FONT_FAMILY`, #526), tehát a
+            // megjelenés nem változik — a token viszont innentől bizonyítottan
+            // arra a családra mutat, amit a felhasználó tényleg lát.
+            font.family: Theme.uiFamily
             anchors.verticalCenter: parent.verticalCenter
             horizontalAlignment: Text.AlignHCenter
             clip: true

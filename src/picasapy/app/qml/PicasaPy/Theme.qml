@@ -489,13 +489,21 @@ QtObject {
         readonly property int folderTitleSize: 16         // csoport-fejléc / 600
         readonly property string monoFamily: "IBM Plex Mono, monospace"
 
-        // #526 2. pont: a szabad HELYETTESÍTŐ betűtípus kiválasztása MÉRÉSSEL
-        // tartozik eldőlni (felirat-szélességek összevetése), és ahhoz a `.ytf`
-        // glyph-táblája kellene — az még nincs megfejtve. Amíg nincs mérés,
-        // SZÁNDÉKOSAN a rendszer alapértelmezett sans-serifjét használjuk (üres
-        // családnév = a Qt alapértelmezése): egy találomra választott család
-        // rosszabb, mint a semleges alap, és nehezebb is később cserélni.
-        readonly property string uiFamily: ""
+        // #526 2. pont: a helyettesítő betűtípus kiválasztása MÉRÉSSEL dőlt el
+        // — tíz magyar felirat képpont-szélessége két Picasa-képernyőképről,
+        // öt jelölttel összevetve: az Open Sans nyert (0,92% átlagos eltérés).
+        // Az alkalmazás ezt a családot telepíti és állítja be globálisan
+        // (`application._UI_FONT_FAMILY`); a token ugyanazt a nevet adja, hogy
+        // a QML-oldal is a MÉRT családra hivatkozhasson (#3310).
+        readonly property string uiFamily: "Open Sans"
+
+        // A keskeny család SZÁNDÉKOSAN üres. A `.ytf` glyph-táblájának
+        // megfejtése (#2943/#3311) nem ad súlytól független győztest: a
+        // normalizált eltérés 14/400-nál az Open Sans-t (5,127%), 14/700-nál
+        // az Archivo Narrow-t (1,285%) hozza ki. Ebből keskeny UI-család NEM
+        // következik, és egy találomra választott család rosszabb, mint a
+        // semleges alap — az üres családnév a Qt alapértelmezését jelenti.
+        // Amíg nincs abszolút szélességre kalibrált mérés, ez üres marad.
         readonly property string condensedFamily: ""
     }
 

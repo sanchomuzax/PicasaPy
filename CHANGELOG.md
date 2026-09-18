@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.522] – 2026-09-19
+
+### Változott
+
+- A felület betűcsaládja mostantól a QML-oldalon is nevesített token
+  (`Theme.uiFamily` = a mért Open Sans), így a jövőbeli komponensek is a
+  mért családra hivatkozhatnak. A keskeny család szándékosan üres marad,
+  mert a mérés nem ad egyértelmű győztest. (#3310)
+
 ## [0.8.521] – 2026-09-19
 
 ### Javítva
