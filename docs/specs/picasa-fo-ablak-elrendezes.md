@@ -596,6 +596,17 @@ nyilvántartva.
 > leírja, tehát a mai fán az osztályozó **`lekutatva`**-t adna rá. ⇒ **Nem
 > kutatói, hanem fejlesztői tétel** (#1421); a mérést újra kell futtatni.
 
+### 4/b `thumbui/editpanel` és `thumbui/listdetail` — szerkezeti nézetek, nem külön vezérlők (#3328)
+
+A lefedettségi mérés ezt a két, felirat nélküli elemet `bizonytalan`-ként hagyta, holott a `thumbui.tre` szülő- és állapotsorai eldöntik a szerepüket:
+
+| elem | mért szerep | bizonyíték |
+|---|---|---|
+| `thumbui/editpanel` | rejtett, teljes méretű alap-panel; a `thumbui/basepanel` gyereke, nem szerkesztőgomb | `thumbui.tre:708–710`, `m_hidden` |
+| `thumbui/listdetail` | rejtett alternatív nézet az albumterületen; az `albumsback` gyereke, nem önálló művelet | `thumbui.tre:183–188`, `m_hidden` |
+
+⇒ Mindkettő **`lekutatva`**, nem kutatói hiány. Az első a fő könyvtárnézet panelváltási fája, a második az albumterület részletes nézetének tartója. A megvalósítási hiányt a könyvtárnézet fejlesztési jegyei kezelik; új bináris kutatás ezekhez nem szükséges.
+
 ### 5. Nálunk — MÉRVE (2026-09-03)
 
 | | eredeti | nálunk | állapot |
