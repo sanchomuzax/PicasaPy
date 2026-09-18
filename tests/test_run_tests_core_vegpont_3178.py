@@ -27,8 +27,12 @@ kapja meg (`|`-es `core_pattern`), ott a `coredumpctl`-ág az út (#3240) —
 azt ez a fájl nem tudja kiváltani. Ezért a 3. pont csak **fájlos
 mintán** fut le; máshol a 4. pont (a kimondott ok) marad a mérce.
 
-⚠️ A core-fájl mérete mérve **5,3 MB** egy csupasz Python-gyerekre, és a
-teszt saját `tmp_path`-ba írja — nem terheli a `/tmp`-et tartósan.
+⚠️ A core-fájl mérete mérve **5,3 MB** egy csupasz Python-gyerekre. Hogy
+HOVA kerül, azt a `core_pattern` dönti el, nem a gyerek munkakönyvtára —
+a CI-n a futtató abszolút útra írja át (#3265), tehát a repó gyökerébe.
+A teszt ezért a mintából számolja ki a helyét, és a saját core-jait
+**eltakarítja**: egy ottfelejtett teszt-core miatt egy későbbi, VALÓDI
+összeomlás veremképe a mi szándékos SIGSEGV-ünket mutatná.
 """
 
 from __future__ import annotations
@@ -68,6 +72,46 @@ _OK = (
 )
 
 
+def _core_konyvtar(munkakonyvtar: Path) -> Path | None:
+    """Hova írja a kernel a core-t EZZEL a mintával?
+
+    ⛔ Ezt mérni kell, nem feltételezni. A teszt első változata a gyerek
+    munkakönyvtárát vette adottnak, és a CI-n elbukott: ott a futtató a
+    `core_pattern`-t egy ABSZOLÚT útra írja át (#3265,
+    `/home/runner/work/PicasaPy/PicasaPy/core.%p`), tehát a core a repó
+    gyökerébe kerül, nem a gyerek mellé.
+
+    - `|`-es minta → a core-t KEZELŐ kapja, fájl sehol (`None`);
+    - abszolút minta → a minta könyvtára;
+    - relatív minta → a gyerek munkakönyvtára.
+    """
+    minta = run_tests._core_minta().strip()
+    if not minta or run_tests._kezelo_kapja_a_core_t(minta):
+        return None
+    ut = Path(minta.split()[0])
+    return ut.parent if ut.is_absolute() else munkakonyvtar
+
+
+@pytest.fixture
+def core_takarito():
+    """A teszt által keltett core-fájlokat MI takarítjuk el.
+
+    ⚠️ Nem kényelmi kérdés: a futtató `_core_fajlok()`-ja a repó
+    gyökerében keres, és a legfrissebbet adja a `gdb`-nek. Egy ottfelejtett
+    teszt-core miatt egy KÉSŐBBI, valódi összeomlás veremképe a mi
+    szándékos SIGSEGV-ünket mutatná."""
+    korabbi: set[Path] = set()
+
+    def jegyezd(konyvtar: Path) -> None:
+        korabbi.update(konyvtar.glob("core*"))
+
+    yield jegyezd
+    for konyvtar in {ut.parent for ut in korabbi} or set():
+        for ut in konyvtar.glob("core*"):
+            if ut not in korabbi and ut.is_file():
+                ut.unlink(missing_ok=True)
+
+
 def _omlassz(munkakonyvtar: Path) -> int:
     """Valódi SIGSEGV egy gyerekfolyamatban, a megadott könyvtárban.
 
@@ -91,34 +135,51 @@ def _omlassz(munkakonyvtar: Path) -> int:
 
 @pytest.mark.skipif(_NINCS_CORE_LEHETOSEG, reason=_OK)
 class TestValodiOsszeomlas:
-    def test_a_gyerek_JELRE_hal_es_core_t_hagy(self, tmp_path) -> None:
+    def test_a_gyerek_JELRE_hal_es_core_t_hagy(
+        self, tmp_path, core_takarito
+    ) -> None:
+        celkonyvtar = _core_konyvtar(tmp_path)
+        assert celkonyvtar is not None
+        core_takarito(celkonyvtar)
+
         kilepokod = _omlassz(tmp_path)
 
         assert run_tests._osszeomlas(kilepokod), kilepokod
-        magok = sorted(tmp_path.glob("core*"))
-        assert magok, f"nincs core a(z) {tmp_path} alatt: {os.listdir(tmp_path)}"
+        magok = sorted(celkonyvtar.glob("core*"))
+        assert magok, (
+            f"nincs core a(z) {celkonyvtar} alatt "
+            f"(core_pattern: {run_tests._core_minta()!r})"
+        )
 
-    def test_a_futtato_MEGTALALJA_a_core_t(self, tmp_path, monkeypatch) -> None:
+    def test_a_futtato_MEGTALALJA_a_core_t(
+        self, tmp_path, monkeypatch, core_takarito
+    ) -> None:
         """A `_core_fajlok()` a futtató gyökerében keres — a teszt ezt a
-        gyökeret tereli a saját könyvtárába."""
+        gyökeret a MÉRT core-könyvtárra tereli."""
+        celkonyvtar = _core_konyvtar(tmp_path)
+        assert celkonyvtar is not None
+        core_takarito(celkonyvtar)
         _omlassz(tmp_path)
-        monkeypatch.setattr(run_tests, "_ROOT", tmp_path)
+        monkeypatch.setattr(run_tests, "_ROOT", celkonyvtar)
 
         talalt = run_tests._core_fajlok()
 
-        assert talalt, os.listdir(tmp_path)
+        assert talalt, os.listdir(celkonyvtar)
         assert talalt[0].stat().st_size > 0
 
     @pytest.mark.skipif(run_tests._which("gdb") is None, reason="nincs `gdb`")
     def test_a_NATIV_veremkep_tenyleg_megszuletik(
-        self, tmp_path, monkeypatch, capsys
+        self, tmp_path, monkeypatch, capsys, core_takarito
     ) -> None:
         """A lánc lényege: a naplóban ott a C++ keret és a jel neve.
 
         Ez az az állítás, amit a hamisított `gdb` SOHA nem tudott
         bizonyítani — a mai teszt-készlet minden más pontja megvolt."""
+        celkonyvtar = _core_konyvtar(tmp_path)
+        assert celkonyvtar is not None
+        core_takarito(celkonyvtar)
         _omlassz(tmp_path)
-        monkeypatch.setattr(run_tests, "_ROOT", tmp_path)
+        monkeypatch.setattr(run_tests, "_ROOT", celkonyvtar)
 
         siker = run_tests._ird_ki_a_nativ_veremkepet("proba.py")
 
@@ -141,10 +202,12 @@ class TestMindenKornyezetben:
     """
 
     def test_valodi_osszeomlas_utan_sem_nema(
-        self, tmp_path, monkeypatch, capsys
+        self, tmp_path, monkeypatch, capsys, core_takarito
     ) -> None:
+        celkonyvtar = _core_konyvtar(tmp_path) or tmp_path
+        core_takarito(celkonyvtar)
         _omlassz(tmp_path)
-        monkeypatch.setattr(run_tests, "_ROOT", tmp_path)
+        monkeypatch.setattr(run_tests, "_ROOT", celkonyvtar)
 
         run_tests._ird_ki_a_nativ_veremkepet("proba.py")
 
@@ -172,6 +235,34 @@ class TestNemHallgat:
         assert siker is False
         assert "nincs core-fájl" in kimenet
         assert "core_pattern" in kimenet
+
+
+class TestACoreHelye:
+    """A `_core_konyvtar()` maga — ez az a pont, ahol az első változat
+    elhasalt, és ez fut MINDEN környezetben, a valódi minta nélkül is."""
+
+    def test_abszolut_minta_a_sajat_konyvtaraba_ir(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """A CI mért esete (#3265): `/home/runner/work/.../core.%p`."""
+        monkeypatch.setattr(
+            run_tests, "_core_minta", lambda: "/var/cores/core.%p"
+        )
+
+        assert _core_konyvtar(tmp_path) == Path("/var/cores")
+
+    def test_relativ_minta_a_gyerek_melle_ir(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setattr(run_tests, "_core_minta", lambda: "core")
+
+        assert _core_konyvtar(tmp_path) == tmp_path
+
+    def test_kezelos_minta_eseten_nincs_fajl(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setattr(
+            run_tests, "_core_minta",
+            lambda: "|/usr/lib/systemd/systemd-coredump %P %u %g",
+        )
+
+        assert _core_konyvtar(tmp_path) is None
 
 
 class TestAProbaMaganak:
