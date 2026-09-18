@@ -23,7 +23,11 @@ stílusleírás), `Picasa3.exe` (importtábla, RTTI), `stringres-en-hu.tsv`.
 - A menüépítő (`0x0056c5a0`, 6816 b) `MF_OWNERDRAW` (0x100) jelző **nélkül**
   fűz be tételeket → **nincs saját rajzolás**.
 - `GetMenuInfo` egyetlen hívása (`0x005e7c20`) `cbSize = 0x1c`,
-  `fMask = 8` (`MIM_STYLE`) — csak a **stílust olvassa**, nem ír színt.
+  `fMask = 8` — ⛔ **ez `MIM_MENUDATA`, nem `MIM_STYLE`** (`MIM_STYLE` =
+  `0x10`). A program tehát nem a stílust olvassa, hanem a menühöz tartozó
+  **kontextus-azonosítót** (`MENUINFO.dwMenuData`); színt továbbra sem ír.
+  A helyesbítés mérése és következményei:
+  [`ui-audit-context-menus.md`](ui-audit-context-menus.md) **C.2**.
 - `GetDoubleClickTime` **nincs** importálva → a dupla kattintás küszöbe a
   rendszeré (`WM_LBUTTONDBLCLK`).
 

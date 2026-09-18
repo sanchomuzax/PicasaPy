@@ -46,6 +46,12 @@ PicasaMenu {
         objectName: "trayMenuViewAndEdit"
         //: `AlbumPhoto::ID_PICTURE_VIEW` — a menü ELSŐ tétele (#1917).
         text: qsTr("&View and Edit")
+        // #886: ez a menü ALAPÉRTELMEZETT tétele, tehát félkövér. Mérve:
+        // a képtálca menüje a `0x8b` azonosítót viszi
+        // (`SetMenuInfo`/`MIM_MENUDATA`, `0x007331c9`), és a menüépítő
+        // arra `SetMenuDefaultItem(hMenu, 0x9ca0, MF_BYCOMMAND)`-ot hív
+        // (`0x0056dbf6`) — a `0x9ca0` pedig épp ez a parancs.
+        font.bold: true
         onTriggered: menu.viewAndEditRequested()
     }
     MenuItem {
