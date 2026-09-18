@@ -411,7 +411,7 @@ Item {
     }
 
     // #367: az általános ConfirmDialog komponensre állítva (confirm.fen
-    // paritás) — a törlés-kulcs "delete", a "Don't ask again" jelöléssel
+    // paritás) — a törlés-kulcs "delete", a "Do not ask again" jelöléssel
     // legközelebb nem nyílik meg újra, hanem azonnal törli a kijelöltet.
     //
     // #457: NAS/hálózati meghajtón (ahol nincs elérhető lomtár, sem a

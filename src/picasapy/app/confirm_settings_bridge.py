@@ -1,7 +1,7 @@
 """#367: vékony QML-híd a `confirm_settings.py` fölött.
 
 Az általános `ConfirmDialog.qml` ezen a `confirmSettings` context property-n
-keresztül olvassa/írja a „Ne kérdezze újra" jelölő állapotát döntés-
+keresztül olvassa/írja a „Ne kérdezze meg újra" jelölő állapotát döntés-
 kulcsonként. A tényleges logika a `confirm_settings.py`-ban él (tesztelhető,
 QSettings-injektálható); ez a modul csak QML-ből hívható metódusokká
 csomagolja.

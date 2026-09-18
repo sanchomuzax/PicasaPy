@@ -173,7 +173,7 @@ def _build_qml_app(qt_app, tmp_path):
     settings.setValue("collage/outputDir", str(tmp_path / "kollazsok"))
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     controller = AppController(db, (str(lib),), provider, settings=settings)
-    # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — ugyanaz az
+    # #367: az általános ConfirmDialog "Ne kérdezze meg újra" tára — ugyanaz az
     # elszigetelt settings, mint a controlleré
     from picasapy.app.confirm_settings_bridge import ConfirmSettingsBridge
 
