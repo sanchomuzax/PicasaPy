@@ -120,12 +120,24 @@ class TestAzOrokoltFulSzovege:
     """A rövidítés nem veszítheti el a KÉT állítást, amit a #571 kért."""
 
     def test_a_bevezeto_ket_allitast_mond(self):
+        """⛔ #3278: a határ NEM karakterszám.
+
+        A korábbi alak a horgony utáni 600 karaktert nézte. Amikor a
+        felirat saját dobozba került (mert a `ColumnLayout`-ban egysoros
+        helyet kapott), a második állítás a buboréksúgóba csúszott, az
+        indoklás pedig kitolta a 600-as ablakból — az őr JOGOS változáson
+        bukott meg. A `blokk_horgonyra` a kommentek nélküli, TELJES
+        elem-blokkot adja, tehát se egy hosszú indoklás nem szorítja ki a
+        mért sorokat, se egy kommentbe írt említés nem elégíti ki az őrt.
+        """
         import picasapy.app.application as app_module
+
+        from tests.support.qml_blokk import blokk_horgonyra
 
         forras = (
             app_module._APP_DIR / "qml" / "PicasaPy" / "EditorLegacyTab.qml"
         ).read_text(encoding="utf-8")
-        kezd = forras.index('objectName: "legacyEffectsIntro"')
-        blokk = forras[kezd : kezd + 600]
+        blokk = blokk_horgonyra(forras, 'objectName: "legacyEffectsIntro"')
+
         assert "older Picasa versions" in blokk, "eltűnt: HONNAN jönnek"
         assert "only recognises them" in blokk, "eltűnt: a mai Picasa csak FELISMERI"
