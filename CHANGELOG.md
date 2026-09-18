@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.513] – 2026-09-18
+
+### Megváltozva
+
+- **A keresősáv szűrő-gombjai a Picasa mért színeit viselik** (#839) — a
+  bekapcsolt szűrő eddig fehér dobozt és kék keretet kapott (ez a mi
+  találmányunk volt), mostantól zöld gombon fehér ikon, ahogy az eredeti
+  Picasában. A kikapcsolt ikon tompa zöld. A színek a Picasa saját
+  erőforrás-csomagjából származnak, képpontról képpontra kimérve.
+
 ## [0.8.512] – 2026-09-17
 
 ### Hozzáadva

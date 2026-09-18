@@ -73,6 +73,31 @@ QtObject {
         // sötét háttéren a világos alap-zöld/kék beleolvadna: világosított pár
         readonly property color picasaGreen: tema.dark ? "#6cbf3f" : "#3b8f00"    // az EGYETLEN zöld tett
         readonly property color selectionBlue: tema.dark ? "#4d6b80" : "#83a7bd"  // jelölő kék (lista, szűrő)
+
+        // #839: a keresősáv SZŰRŐ-gombjainak MÉRT színei
+        // (`respack.yt` → `globalbuttons_filter_n/_p/_h` és a tíz
+        // `<szűrő>_icon_0/_1` réteg, a projekt kiolvasójával kinyerve).
+        //
+        // A mérés két dolgot mond ki:
+        //
+        // 1. a be/ki állapot a GLIF TÓNUSA, nem átlátszóság: kikapcsolva
+        //    tompa zöld, bekapcsolva FEHÉR — a maszk (alak) bájtra azonos
+        //    a két rétegben (starsearch/facesearch/webview: `#61996A` →
+        //    `#FFFFFF`; a `moviesearch` két tónusa `#7D9F82`/`#BBD8BF` →
+        //    `#FFFFFF`/`#CCCCCC`; a `geotagsearch` `#3D8D56` → `#FFFFFF`);
+        // 2. a gomb hátterének HÁROM állapota van, és mind a ZÖLD családba
+        //    tartozik — nem kékbe, ahogy nálunk eddig: nyugalomban szürke
+        //    átmenet, rámutatva világoszöld (`#BBD9BF` a közepén),
+        //    lenyomva/aktívan zöld (`#4E9258` a közepén).
+        //
+        // ⚠️ Ami NEM került át: a bitképek vízszintes él-árnyékolása (a
+        // gomb bal széle világosabb, a jobb sötétebb, 26 × 16 képpont). A
+        // mi gombjaink RAJZOLTAK, nem bitképek — a mért KÖZÉPSŐ tónust
+        // vesszük át, az él-árnyékolás nincs utánozva.
+        readonly property color szuroGlifKi: "#61996a"
+        readonly property color szuroGlifBe: "#ffffff"
+        readonly property color szuroHatterAktiv: "#4e9258"
+        readonly property color szuroHatterRamutat: "#bbd9bf"
         readonly property color panelSelection: nyersTokenek.selectionBlue
         // #384: a TÉNYLEGES kijelölés mélykékje (constants.ui alist_selcolor_win);
         // a sötét érték a selectionBlue világos/sötét arányából becsült — az
@@ -496,6 +521,10 @@ QtObject {
     readonly property color textDark: tema._szin("textDark", nyersTokenek.textDark)
     readonly property color thumbCard: tema._szin("thumbCard", nyersTokenek.thumbCard)
     readonly property color picasaGreen: tema._szin("picasaGreen", nyersTokenek.picasaGreen)
+    readonly property color szuroGlifKi: nyersTokenek.szuroGlifKi
+    readonly property color szuroGlifBe: nyersTokenek.szuroGlifBe
+    readonly property color szuroHatterAktiv: nyersTokenek.szuroHatterAktiv
+    readonly property color szuroHatterRamutat: nyersTokenek.szuroHatterRamutat
     readonly property color selectionBlue: tema._szin("selectionBlue", nyersTokenek.selectionBlue)
     readonly property color panelSelection: tema._szin("panelSelection", nyersTokenek.panelSelection)
     readonly property color panelSelectionActive: tema._szin("panelSelectionActive", nyersTokenek.panelSelectionActive)

@@ -411,17 +411,27 @@ Rectangle {
                     readonly property bool ctlFilterActive:
                         (controller && controller.filterActive !== undefined)
                             ? controller.filterActive : false
+                    objectName: "starFilterButton"
                     width: 22; height: 20; radius: 2
-                    color: ctlFilterActive ? "#ffffff" : "transparent"
-                    border.width: ctlFilterActive ? 1 : 0
-                    border.color: Theme.selectionBlue
+                    //: #839: a MÉRT állapotok — aktívan ZÖLD gomb fehér
+                    //: glifával, rámutatva világoszöld, egyébként üres. A
+                    //: korábbi fehér doboz + kék keret a MI találmányunk
+                    //: volt; a `respack.yt` `globalbuttons_filter_*` három
+                    //: állapota mind a zöld családba tartozik (ld. `Theme`).
+                    color: ctlFilterActive
+                           ? Theme.szuroHatterAktiv
+                           : (starFilter.hovered ? Theme.szuroHatterRamutat
+                                                 : "transparent")
+                    border.width: 0
                     Text {
                         anchors.centerIn: parent
+                        objectName: "starFilterGlyph"
                         text: "★"
                         font.pixelSize: 13
+                        //: #839: a be/ki állapot a glif TÓNUSA (mérve: a
+                        //: maszk bájtra azonos a két rétegben)
                         color: parent.ctlFilterActive
-                               ? Theme.selectionBlue
-                               : (starFilter.hovered ? Theme.starYellow : "#8f8b83")
+                               ? Theme.szuroGlifBe : Theme.szuroGlifKi
                     }
                     HoverHandler { id: starFilter }
                     TapHandler {
@@ -458,18 +468,21 @@ Rectangle {
                     Rectangle {
                         anchors.fill: parent
                         radius: 2
-                        color: parent.aktiv ? "#ffffff" : "transparent"
-                        border.width: parent.aktiv ? 1 : 0
-                        border.color: Theme.selectionBlue
+                        //: #839: MÉRT állapotok — aktívan zöld gomb (a
+                        //: `globalbuttons_filter_p` közepe), egyébként üres
+                        color: parent.aktiv
+                               ? Theme.szuroHatterAktiv : "transparent"
+                        border.width: 0
                     }
                     Text {
                         anchors.centerIn: parent
+                        objectName: "faceFilterGlyph"
                         text: "☺"
                         font.pixelSize: 13
+                        //: #839: a be/ki állapot a glif TÓNUSA (mérve) —
+                        //: kikapcsolva tompa zöld, bekapcsolva fehér
                         color: parent.aktiv
-                               ? Theme.selectionBlue
-                               : (faceFilterHover.hovered
-                                  ? Theme.selectionBlue : "#8f8b83")
+                               ? Theme.szuroGlifBe : Theme.szuroGlifKi
                     }
                     // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
@@ -495,18 +508,21 @@ Rectangle {
                     Rectangle {
                         anchors.fill: parent
                         radius: 2
-                        color: parent.aktiv ? "#ffffff" : "transparent"
-                        border.width: parent.aktiv ? 1 : 0
-                        border.color: Theme.selectionBlue
+                        //: #839: MÉRT állapotok — aktívan zöld gomb (a
+                        //: `globalbuttons_filter_p` közepe), egyébként üres
+                        color: parent.aktiv
+                               ? Theme.szuroHatterAktiv : "transparent"
+                        border.width: 0
                     }
                     Text {
                         anchors.centerIn: parent
+                        objectName: "movieFilterGlyph"
                         text: "▶"
                         font.pixelSize: 11
+                        //: #839: a be/ki állapot a glif TÓNUSA (mérve) —
+                        //: kikapcsolva tompa zöld, bekapcsolva fehér
                         color: parent.aktiv
-                               ? Theme.selectionBlue
-                               : (movieFilterHover.hovered
-                                  ? Theme.selectionBlue : "#8f8b83")
+                               ? Theme.szuroGlifBe : Theme.szuroGlifKi
                     }
                     // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
@@ -538,19 +554,21 @@ Rectangle {
                     Rectangle {
                         anchors.fill: parent
                         radius: 2
-                        color: parent.aktiv ? "#ffffff" : "transparent"
-                        border.width: parent.aktiv ? 1 : 0
-                        border.color: Theme.selectionBlue
+                        //: #839: MÉRT állapotok — aktívan zöld gomb (a
+                        //: `globalbuttons_filter_p` közepe), egyébként üres
+                        color: parent.aktiv
+                               ? Theme.szuroHatterAktiv : "transparent"
+                        border.width: 0
                     }
                     Text {
                         anchors.centerIn: parent
                         //: két egymásra csúszó lap — a másodpéldány jele
                         text: "⧉"
                         font.pixelSize: 12
+                        //: #839: a be/ki állapot a glif TÓNUSA (mérve) —
+                        //: kikapcsolva tompa zöld, bekapcsolva fehér
                         color: parent.aktiv
-                               ? Theme.selectionBlue
-                               : (dupeFilterHover.hovered
-                                  ? Theme.selectionBlue : "#8f8b83")
+                               ? Theme.szuroGlifBe : Theme.szuroGlifKi
                     }
                     // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
