@@ -36,7 +36,7 @@ tizenegy mód egyetlen közös mechanizmuson ül; ezért ezek előre:
 | **16 bites (szemcsézett)** `ID_VIEW_16` | véletlen zaj hozzáadása telítéssel: **B += 0…7, G += 0…3, R += 0…7**, alfa változatlan; a zaj MT19937-alakú generátorból, maszk `0x00070307` | `0x009e8b90` · 5.3 | MÉRVE (az „ez RGB565-höz illesztett szemcsézés” értelmezés: KÖVETKEZTETÉS) |
 | **LCD fehérpont** `ID_VIEW_LCD` | mindhárom csatorna **×246/256** (≈ −3,9 % fényerő), **színeltolás nélkül** | `0x009e8a70` · 5.4 | MÉRVE |
 | **Lineáris gamma (2.2)** `ID_VIEW_LINEAR` | csatornánként egy LUT, amit a rutin **futásidőben tölt fel** `round(pow(c/255, 1/2,2) · 255)`-tel — tehát pontosan 2,2-es | `0x009e8b60` → `0x00aa3f80`, tábla `0x00d32cd0`, kitöltő `0x00aa3ff0` · 12.4 | MÉRVE |
-| **Mac gamma (1.6)** `ID_VIEW_MAC` | csatornánként egy **beégetett 256 bájtos LUT** (a teljes tábla az 5.9-ben). **NEM `x^(1/1,6)`** — a legjobb illeszkedés ≈ gamma 1,44 | `0x009e8b40` → `0x00aa3f80`, tábla `0x00d32bd0` · 5.9 · 12.4 | MÉRVE (a tábla bájtra; a „miért 1,44” NYITOTT) |
+| **Mac gamma (1.6)** `ID_VIEW_MAC` | csatornánként egy **beégetett 256 bájtos LUT** (a teljes tábla az 5.9-ben). **NEM `x^(1/1,6)`** — a szabály bájtra `TRUNC(255·(i/255)^(1/1,45))`, azaz gamma **1,45** (20.) | `0x009e8b40` → `0x00aa3f80`, tábla `0x00d32bd0` · 5.9 · 12.4 | MÉRVE (a tábla bájtra ÉS a generáló szabálya — 20.) |
 | **Túlcsordult képpontok** `ID_VIEW_OV` | **kizárólag** a tökéletesen fehér képpontot (B=G=R=255) írja át **`#FF7F7F`**-re. Nincs tűrés, nincs csatornánkénti jelölés, a **fekete oldali levágás nincs jelölve** | `0x009e8810` · 5.6 | MÉRVE |
 | **Projektor mód** `ID_VIEW_PROJECTOR` | mindhárom csatorna **×220/256** (≈ −14,1 % fényerő). **Nem** teljes képernyő, **nem** energiagazdálkodás, **nem** nagyítás | `0x009e8a10` · 5.5 | MÉRVE |
 
@@ -846,7 +846,7 @@ NY-5 az **5.12**-ben kapott választ.
 | # | a kérdés | miért nem dőlt el statikusan | mi döntené el |
 |---|---|---|---|
 | **NY-1** | **Hat-e a mód az exportra / nyomtatásra?** | **LEZÁRVA 2026-08-30 (#1580)** — a tulajdonos exportjai és nyomtatásai **bájtszinten azonosak**: a `chart_color__b050-001-24bit.jpg` vs `…-projektor-mod.jpg` csak **4 bájtban** tér el (a fejléc időbérjegye `"20"→"47"`, offset 116–117 és 2916–2917), a **pixel-adat azonos**; a `print-24bit.pdf` vs `print-projektor-mod.pdf` csak **6 bájtban** (a fájl végén, PDF `/ID`+`CreationDate`). ⇒ a mód **nem hat sem az exportra, sem a nyomtatásra** (a test `0x009e285d`-hoz kötött, csak képernyős). | lezárva (nem hat) |
-| **NY-2** | **Miért ≈ gamma 1,44 a „Lineáris gamma (2.2)" táblája?** | **MEGERŐSÍTVE 2026-08-30 (matematika):** a `2.2` float itt csak a tábla **kiválasztó kulcsa**; a tábla a binárisban előre kitöltve érkezik. A mért 256 bájt illesztése: **p = 0,6944** hatványkitevő a legjobb (`round(255·(i/255)^p)`, **219/256 bájt azonos, a maradék ±1**), azaz a tábla **gamma 1/0,6944 = 1,440**. Az adatpont-gammák (i=1…4): 1,409 / 1,450 / 1,413 / 1,432 — konzisztens 1,44 körül. **A „miért épp 1,44" a generátor hiányában képernyőképet igényelne, de a megvalósításhoz NEM kell: a mért 256 bájtos tábla a szerződés (5.9).** | lezárva (a tábla a szerződés) |
+| **NY-2** | **Miért nem az ígért 1,6 a Mac gamma táblája?** | **LEZÁRVA 2026-09-18 (#3324, ld. 20.)** — a generáló szabály bájtra megvan: `LUT[i] = TRUNC(255·(i/255)^(1/1,45))`, mind a 256 bájt egyezik. A kitevő bezárt metszete `[0,68965355 ; 0,68967322)`, amiben **egyetlen** két tizedesjegyű gamma van: **1,45**. ⛔ A korábbi 1,44 a `round` kerekítést feltételező illesztésé volt; a tényleges kerekítés **csonkítás**. | lezárva (a szabály zárt alakú; a szerződés továbbra is a tábla) |
 | **NY-3** | **Mit csinál valójában a `Mac gamma (1.6)`?** | **MÉRVE 2026-08-30 (#1580)**: a tulajdonos teljes képernyős felvételei (24bit / gamma / automatikus) + codex-pixel-mérés — a gamma kép **VILÁGOSABB**: teljes képernyős luma **+3,32%** (RGB +7,1/255), a központi **fotó +15,7%** (133,5→154,5), a felület is +1,3…+4,2%. A világosítás iránya **konzisztens az `x^(1/1,6)` (0,625) LUT-tal**, a korábbi „1/0 → fekete képernyő" feltételezés **MEGDŐLT** (az adott futásban a tábla egy normál gamma-táblával töltődött). | reprodukálható a `pow(x,1/1,6)` LUT-tel; a futásidő-függés két indítási képpel továbbra is csak közvetetten zárható ki (de a mérés szerint nem a hibás 0-s ág fut) |
 | **NY-4** | **Látszik-e a mód diavetítésben / teljes képernyőn?** | **LEZÁRVA 2026-08-30 (#1580)** — a tulajdonos megfigyelése (a `1580-megjelenitesi-mod/NY-4` README-je): **diavetítésben NEM látszik** a mód hatása. Ugyanakkor a **teljes képernyős** felületen IGEN (a NY-3 képei teljes képernyősek és a gamma hat rajtuk, a README: „a teljes felületre, még a menükre is"). | a diavetítés eltérő rajzolóúton fut; a mi implementációnk a NORMÁL nézetre tegye a módot |
 | **NY-5** | **Mit csinál a `Színkezelés használata` (`ID_VIEW_COLOR_MANAGED`)?** | **LEZÁRVA (2026-08-30, #1582)** — lásd az **5.12** szakaszt: önálló kapcsoló, `Preferences\EnableColorManagement`, alap 0; bekapcsoláskor a szerkesztő-előnézet újraépül; a beágyazott `icc_camera_profile`/`icc_camera_to_tone_matrix` metaadat-tagok a forrás. | **a kapcsoló megvalósítása → #1725**; a felirat↔pipa párosítás a tulajdonos képeivel MEGERŐSÍTVE (a pipa a „Színkezelés használata" során) |
@@ -1883,3 +1883,67 @@ megjelenítésének ágában értelmezhető.
 - **NINCS MÉRÉS:** hogy a 100 ms-os eltérés a PicasaPy felületén milyen
   felhasználói hatással jár; a 600 ms-os implementációs értéket ettől
   függetlenül a bináris küszöbe írja elő.
+
+## 20. Az NY-2 LEZÁRVA: a Mac gamma tábla generáló szabálya BÁJTRA megvan (2026-09-18, #3324)
+
+*A 12.5 pont a „miért épp 1,44" kérdést NYITOTT-ként hagyta. Most zárt
+alakban megvan — és a `1,44` szám is helyesbítendő.*
+
+### A szabály
+
+```
+LUT[i] = TRUNC( 255 · (i / 255) ^ (1 / 1,45) )        i = 0 … 255
+```
+
+**Mind a 256 bájt egyezik** a `0x00d32bd0`-n álló táblával — `double` és
+`float32` számolással egyaránt (a kerekítés **csonkítás**, nem `round`).
+
+### Miért ez, és miért nem más
+
+A kitevőt nem illesztéssel kerestem, hanem **bezárással**: minden `i`-re a
+`TRUNC(255·(i/255)^g) == LUT[i]` feltétel egy intervallumot ad `g`-re, és a
+256 intervallum **metszete nem üres**:
+
+| | érték |
+|---|---|
+| a kitevő metszete | **[0,6896535520 ; 0,6896732187)** |
+| `1/1,45` = 0,6896551724 | **benne van** ✅ |
+| `1/1,44` = 0,6944444444 | **nincs benne** ❌ |
+| a gammára átszámítva | **[1,44996206 ; 1,45000341]** |
+| a metszetet szűkítő bájtok | `i = 108` (alulról), `i = 117` (felülről) |
+
+⇒ a tartományban **egyetlen két tizedesjegyű érték** van: **1,45**.
+
+⛔ **HELYESBÍTÉS a 12.5-höz.** Az ott közölt `0,6944` / „gamma 1,440" a
+`round` kerekítést feltételező legjobb illesztés volt (219/256 bájt, ±1
+eltérés). A tényleges kerekítés **csonkítás**, és azzal a kitevő
+**0,68966**, a gamma **1,45**. A menüfelirat és a tábla közötti rés tehát
+**1,45 vs 1,6**, nem 1,44 vs 1,6.
+
+### A kontrollok
+
+1. ⭐ **Hamis pozitív próba.** Ugyanezt a bezárást egy **sRGB-kódoló**
+   táblára futtatva (szakaszos görbe, nem hatvány) **249 bájt mond ellent**
+   ⇒ a módszer nem fogad el bármit; a Mac-tábla 0 ellentmondása valódi.
+2. **A bináris összes ilyen táblája.** A teljes képfájlban **két** olyan
+   256 bájtos, monoton, 0-ról 255-re futó tábla van, amelynek legalább 200
+   különböző értéke van: a `0xc6b420` (**azonosság**, kitevő-metszet
+   [0,9894 ; 1,0]) és a `0x00d32bd0` (ez a tábla). Harmadik beégetett
+   gamma-tábla **nincs** — összhangban a 12.5-tel, amely szerint a
+   `Lineáris (2.2)` mód **futásidőben** számol `pow`-val.
+3. **A mi táblánk.** A `src/picasapy/render/display_modes.py`
+   `MAC_GAMMA_LUT`-ja **bájtra azonos** a binárisból most újraolvasott
+   táblával (256/256) ⇒ a megvalósításunk helyes, ez a lelet **nem
+   igényel kódváltoztatást**.
+
+### Amit ez NEM mond meg
+
+Hogy a Picasa szerzői **miért** a 1,45-öt választották a felirat 1,6-ja
+helyett. A bináris csak a kitöltött táblát tartalmazza (a generátor nem
+fut benne), tehát a szándék a kódból nem olvasható ki — ez azonban már
+nem befolyásol semmit: a **szerződés a tábla**, és a tábla szabálya
+mostantól zárt alakú.
+
+*Forrás: a tábla `0x00d32bd0` (256 bájt, `pe_dis.D`-ből újraolvasva); a
+bezárás és a kontrollok számolása a kör mérőszkriptjeivel. A mód
+alkalmazója `0x009e8b40` → `0x00aa3f80` (5.9, 12.4).*
