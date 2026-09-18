@@ -12,7 +12,7 @@ import QtQuick.Layouts
 //
 // ## Miért nem `ConfirmDialog`
 //
-// A `ConfirmDialog`-nak van „Ne kérdezze újra" jelölője. Mentetlen
+// A `ConfirmDialog`-nak van „Ne kérdezze meg újra" jelölője. Mentetlen
 // módosítást vagy egy meglévő fájl felülírását SOHA nem szabad némán
 // eldönteni — ezeknek a kérdéseknek nincs elnyomható változata. A
 // `DocumentTabStrip` (#944) ugyanezért épített saját, háromgombos

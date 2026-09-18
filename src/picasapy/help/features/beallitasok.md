@@ -27,7 +27,7 @@ Ugyanez elérhető az **Eszközök ▸ Nyelv** menüből is.
 
 Ha bekapcsolod a **Törlés a lemezről megerősítés nélkül** pipát, a
 program a törlésnél nem kérdez rá többé. Ugyanezt beállíthatod magában a
-törlés-megerősítő ablakban is, a **Ne kérdezze újra** pipával.
+törlés-megerősítő ablakban is, a **Ne kérdezze meg újra** pipával.
 
 ### Duplikátumok észlelése importáláskor
 

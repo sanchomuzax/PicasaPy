@@ -139,7 +139,7 @@ Item {
             // különben egy elvetett párbeszéd némán kikapcsolná a kérdést.
             CheckBox {
                 objectName: "saveConfirmRememberCheck"
-                text: qsTr("Don't ask again")
+                text: qsTr("Do not ask again")
                 checked: saveConfirmDialog.rememberChecked
                 onToggled: saveConfirmDialog.rememberChecked = checked
             }
