@@ -113,3 +113,15 @@ docs/help/.update.log
 docs/help/.last_documented_commit
 temp_1645/
 .opencode/
+
+# uv-zárolófájl: a projekt NEM használ `uv`-t — a függőségek egyetlen
+# helyen élnek (`pyproject.toml`, `packaging/qt-runtime-deps.txt`), és a CI
+# is onnan telepít (`scripts/print_dependencies.py`). A `uv.lock` tehát
+# melléktermék, ha valaki kipróbálja az eszközt a checkoutban.
+#
+# ⛔ Miért kizárás és nem követett fájl (#3335): a közös munkamásolatban egy
+# NEM KÖVETETT fájl minden kört megállít — a szabály szerint nem tiszta
+# main mellett tilos a fájlokhoz nyúlni. 2026-09-18-án egy Hermes kutatói
+# kör emiatt nem tudta átadni a leletét. Két követett zárolófájl viszont
+# némán elsodródna egymástól, ezért nem vesszük fel.
+uv.lock
