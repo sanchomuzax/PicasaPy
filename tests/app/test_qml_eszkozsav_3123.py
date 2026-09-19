@@ -145,7 +145,9 @@ class TestForras:
         `CropOverlay` maga kezeli az Esc-et, tehát ott nem duplázunk."""
         f = self.forras
         assert 'sequence: "Escape"' in f
-        assert 'sav.tool !== "crop"' in f
+        #: #3320: a vágás-kivétel eltűnt — a sáv már csak a kiegyenesítésé
+        assert 'sav.tool !== "crop"' not in f
+        assert "enabled: sav.visible" in f
         assert "onActivated: sav.cancelClicked()" in f
 
     def test_az_eger_alatt_CSAK_a_felirat_halvanyodik(self):
@@ -163,22 +165,28 @@ class TestAKepFolott:
         # eszköz-mód nélkül rejtve
         assert sav.property("visible") is False
 
-    def test_vagas_modban_a_kep_alja_folott_all(self, qml_app, qt_app):
+    def test_kiegyenesitesben_a_kep_alja_folott_all(self, qml_app, qt_app):
         """A LEKÉPEZETT geometria: a sáv alja 10 képponttal a kirajzolt kép
         alja fölött van, és vízszintesen középen — nem a forrásban, hanem az
-        élő ablakban mérve."""
+        élő ablakban mérve.
+
+        #3320: a mérés a KIEGYENESÍTÉSSEL megy, mert a sáv már csak azé (a
+        `.tre` a `#---Straighen Overlay---` alá teszi); a másik négy eszköz
+        párja a saját paneljében ül.
+        """
         window, _controller, _lib, _engine = qml_app
         window.setProperty("viewerOpen", True)
         nezo = window.findChild(QObject, "photoViewer")
         nezo.setProperty("currentIndex", 0)
         qt_app.processEvents()
         panel = window.findChild(QObject, "viewerEditorPanel")
-        panel.setProperty("cropActive", True)
+        panel.setProperty("activeTab", 0)
+        panel.setProperty("tiltActive", True)
         qt_app.processEvents()
 
         sav = window.findChild(QObject, "editorToolBar")
         assert sav.property("visible") is True
-        assert sav.findChild(QObject, "cropApplyButton") is not None
+        assert sav.findChild(QObject, "tiltApplyButton") is not None
 
         #: ⚠️ `sav.parent()` NEM a kép: a QML `parent:` a LÁTVÁNY-szülőt
         #: állítja, a QObject-szülő a létrehozás helye marad

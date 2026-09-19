@@ -145,8 +145,45 @@ ColumnLayout {
         }
     }
 
-    // #3123: az Alkalmaz/Mégse pár INNEN ELKERÜLT — az eredetiben a KÉP
-    // FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`, sötét
-    // háttér, fehér felirat). A gombok mostantól az `EditorToolBar`-ban
-    // élnek (`PhotoViewer.qml`), a RÉGI objektumneveiket megtartva.
+    // #3320: az Alkalmaz/Mégse pár IDE tartozik — az `editpanel.tre`
+    // szerint a `retouchapply`/`retouchcancel` szülője a saját
+    // `retouch_well`, nem a kép fölötti `tool_container` (az a
+    // `#---Straighen Overlay---` szakaszé). A #3123 egy félreolvasott
+    // mérés alapján vitte a képre; a #3234 mérése ezt helyesbítette.
+    //
+    // #710: a jel a KÖZÖS, RAJZOLT `EditorActionBadge` — a Unicode-glif
+    // betűtípusfüggő, és hiányzó glifnél NYOMTALANUL eltűnik.
+    //
+    // #741/#779: a retusálás gombjai 118 × 28-asok.
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.maximumWidth: 118 + 7 + 118
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 7
+        ActionButton {
+            objectName: "retouchApplyButton"
+            label: qsTr("Apply")
+            buttonEnabled: panel.retouchRegionCount > 0
+            onButtonClicked: panel.retouchApplyRequested()
+            EditorActionBadge {
+                objectName: "retouchApplyIcon"
+                tick: true
+                anchors.right: parent.right
+                anchors.rightMargin: 9
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        ActionButton {
+            objectName: "retouchCancelButton"
+            label: qsTr("Cancel")
+            onButtonClicked: panel.retouchCancelRequested()
+            EditorActionBadge {
+                objectName: "retouchCancelIcon"
+                tick: false
+                anchors.right: parent.right
+                anchors.rightMargin: 9
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+    }
 }

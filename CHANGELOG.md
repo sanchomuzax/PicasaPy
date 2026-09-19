@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.524] – 2026-09-19
+
+### Javítva
+
+- A vágás, a retusálás, a szöveg és a vörösszem Alkalmaz/Mégse gombja
+  visszakerült a saját panelbe — az eredetiben is ott ül. A kép fölötti
+  sáv mostantól csak a kiegyenesítésnél jelenik meg, a döntés-csúszkával
+  együtt. (#3320)
+
 ## [0.8.523] – 2026-09-19
 
 ### Változott

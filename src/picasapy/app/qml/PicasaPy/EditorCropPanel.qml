@@ -340,8 +340,42 @@ ColumnLayout {
         onButtonClicked: panel.cropResetRequested()
     }
 
-    // #3123: az Alkalmaz/Mégse pár INNEN ELKERÜLT — az eredetiben a KÉP
-    // FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`, sötét
-    // háttér, fehér felirat). A gombok mostantól az `EditorToolBar`-ban
-    // élnek (`PhotoViewer.qml`), a RÉGI objektumneveiket megtartva.
+    // #3320: az Alkalmaz/Mégse pár IDE tartozik — az `editpanel.tre`
+    // szerint a `cropapply`/`cropcancel` szülője a saját
+    // `crop_well`, nem a kép fölötti `tool_container` (az a
+    // `#---Straighen Overlay---` szakaszé). A #3123 egy félreolvasott
+    // mérés alapján vitte a képre; a #3234 mérése ezt helyesbítette.
+    //
+    // #710: a jel a KÖZÖS, RAJZOLT `EditorActionBadge` — a Unicode-glif
+    // betűtípusfüggő, és hiányzó glifnél NYOMTALANUL eltűnik.
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.maximumWidth: 98 + 6 + 98
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 6
+        ActionButton {
+            objectName: "cropApplyButton"
+            label: qsTr("Apply")
+            onButtonClicked: panel.cropApplyRequested()
+            EditorActionBadge {
+                objectName: "cropApplyIcon"
+                tick: true
+                anchors.right: parent.right
+                anchors.rightMargin: 9
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        ActionButton {
+            objectName: "cropCancelButton"
+            label: qsTr("Cancel")
+            onButtonClicked: panel.cropCancelRequested()
+            EditorActionBadge {
+                objectName: "cropCancelIcon"
+                tick: false
+                anchors.right: parent.right
+                anchors.rightMargin: 9
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+    }
 }

@@ -572,8 +572,21 @@ m_hidden                                        # alapból rejtett
      a retusáló kezelője is a `brushslider/scaleslider`-t nevezi meg
      (`:962`).
 
-   ⇒ A `tool_container` **nem** a négy eszköz közös sávja. Hogy a #3123
-   ezt mégis annak vette, külön jegy tárgya.
+   ⇒ A `tool_container` **nem** a négy eszköz közös sávja.
+
+   ✅ **RENDEZVE (2026-09-19, #3320).** A négy eszköz — vágás, retusálás,
+   szöveg, vörösszem — Alkalmaz/Mégse párja visszakerült a SAJÁT paneljébe
+   (a mért `*_well`-ekbe), a kép fölötti sáv pedig a **kiegyenesítésé**
+   maradt: csúszka + a saját gombpárja. A gombok a #3123 óta használt
+   objektumnevüket vitték vissza (`cropApplyButton`, `retouchCancelButton`,
+   …), tehát a rájuk épülő működés és annak ellenőrzése nem szakadt meg. A
+   jel mindenütt a közös, RAJZOLT `EditorActionBadge` (#710).
+
+   ⚠️ A mai állapot tehát: **a kép fölött csak a kiegyenesítés sávja
+   jelenik meg**; a panelbeli gombok a szokásos `PanelButton` rajzát
+   viselik (a retusálásé 118 × 28, #741/#779), nem a sáv sötét, áttetsző
+   rajzát. A sáv sötét rajza (`#505050` alfa 229) továbbra is mért, és a
+   kiegyenesítésnél látszik.
 4. ⭐ **Az Esc a Mégse gombot süti el** (`Property escapekey 1`) — nem
    külön billentyűkezelő.
 
