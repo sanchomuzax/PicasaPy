@@ -96,10 +96,24 @@ class TestTiledMaskPrimitive:
         # sarka volt — a két ág épp ezért fedi le egymást
         assert shifted[0, 0] == pytest.approx(plain[4, 4], abs=0.15)
 
-    def test_mask_is_a_disk(self):
+    def test_mask_is_a_two_stop_radial_ramp(self):
+        """A maszk MÉRT alakja rámpa, nem kemény korong (#2476).
+
+        A `TiledImageMask` konstruktora `alphaMax = 1,0`-t és `alphaMin = 0,0`-t
+        ír be, a rajzoló pedig két megállót ad át — a csempe közepétől a
+        `DOT_SCALE`-szeres peremig lineáris az átmenet.
+        """
         mask = tiled_dot_mask(16, 16, 8)
-        assert mask[4, 4] == pytest.approx(1.0)
+        # a közép a maximum, de a fél képpontos eltolás miatt nem 1,0: nyolc
+        # képpontos csempén a középső képpont már 0,779-en áll
+        assert mask[4, 4] == mask.max()
+        assert mask[4, 4] == pytest.approx(0.779, abs=0.01)
         assert mask[0, 0] == pytest.approx(0.0, abs=0.6)
+        # a közép és a perem KÖZÖTT monoton csökken — kemény korongnál a
+        # sor eleje csupa 1,0 volna
+        sor = list(mask[4, 4:8])
+        assert sor == sorted(sor, reverse=True)
+        assert len(set(sor)) == len(sor)
 
     def test_alpha_min_raises_the_floor(self):
         mask = tiled_dot_mask(16, 16, 8, alpha_min=0.3)
@@ -154,8 +168,7 @@ class TestHalftoneBranch:
         egy = halftone_branch(ink, 8, 0.0, 0.0)
         combined = np.minimum(egy, halftone_branch(ink, 8, 4.0, 4.0))
         assert combined.mean() < 0.4 * egy.mean(), (
-            f"a második ág alig fed: egy ág {egy.mean():.1f}, kettő "
-            f"{combined.mean():.1f}"
+            f"a második ág alig fed: egy ág {egy.mean():.1f}, kettő {combined.mean():.1f}"
         )
         assert combined.mean() < 40.0
 
@@ -214,9 +227,7 @@ class TestComicizeParameters:
 
 class TestComicizeOutput:
     def test_the_raster_only_darkens(self):
-        image = np.random.default_rng(7).integers(
-            0, 256, size=(60, 100, 3), dtype=np.uint8
-        )
+        image = np.random.default_rng(7).integers(0, 256, size=(60, 100, 3), dtype=np.uint8)
         assert np.all(apply_comicize(image) <= image)
 
     def test_a_flat_midtone_gets_a_visible_dot_pattern(self):
@@ -243,9 +254,7 @@ class TestComicizeOutput:
 class TestComicizeInTheChain:
     def test_chain_passes_the_three_filterdesc_sliders(self):
         image = _flat(120)
-        report = apply_filters(
-            image, parse_filters("Comicize=1,20.000000,50.000000,50.000000;")
-        )
+        report = apply_filters(image, parse_filters("Comicize=1,20.000000,50.000000,50.000000;"))
         assert report.skipped == ()
         np.testing.assert_array_equal(
             report.image,

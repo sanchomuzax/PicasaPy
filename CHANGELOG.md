@@ -9,6 +9,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Előkészítés (a felületen még nem látszik)
 
+- A képregény-effekt pontmaszkja a MÉRT alakra került (a csempe közepétől
+  a pereme felé lineárisan halványuló pont). A megjelenő kép nem változik:
+  a mérés kimutatta, hogy a mai raszter pontsugara pontosan ez a maszk,
+  a tónussal küszöbölve. (#2476)
+
 - Megvan az öt lassú szűrő (Automatikus kontraszt, Színhőmérséklet,
   Cross-process, Feljavítás, Melegítés) gyorsításához szükséges
   keresőtábla, pontosan a mai képfeldolgozás kimenetéből — a
