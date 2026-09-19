@@ -36,10 +36,21 @@ _DOT_SIZE_DIVISOR = 70
 #: mértünk (5,70 vs. a referencia 3,77).
 DOT_SCALE = 0.8
 
-#: A pont peremének lágyítása pixelben. A natív maszk antialiasingjának
-#: PONTOS alakja (és a perem kerekítése) az egyetlen nyitott részlet a
-#: #569-ben — golden-összevetés tisztázhatja. Egy pixelnyi lineáris átmenet
-#: a szokásos, és a raszter jellegét nem befolyásolja.
+#: A maszk KÖZÉPPONTI értéke — a `TiledImageMask` `alphaMax` mezője, MÉRT
+#: alapérték: **1,0** (#2476). A konstruktor (`0x00bba250`) a `fld1`-gyel írja
+#: be, az `alphaMin`-t `fldz`-vel, a négy `padding` mezőt nullával; a szállított
+#: `filterdesc.xml` egyik `TiledImageMask` példánya sem adja meg őket.
+#: ⇒ a maszk a csempe közepén 1,0-ról a `DOT_SCALE`-szeres peremén 0,0-ra futó
+#: LINEÁRIS rámpa (a rajzoló két megállót ad át: `0x00bbacba: push 2`).
+DOT_ALPHA_MAX = 1.0
+
+#: A pont peremének lágyítása pixelben — a KÜSZÖB antialiasingja.
+#:
+#: ⚠️ Ez NEM a natív maszk alakja: a maszk lineáris rámpa (`tiled_dot_mask`), és
+#: az ág a rámpát KÜSZÖBÖLI a tónussal. A küszöb átmenetének pontos szélessége
+#: (és a perem kerekítése) az, ami a #569-ben nyitott maradt; egy pixelnyi
+#: lineáris átmenet a szokásos. A raszter-amplitúdó maradék hibáját (#3390) épp
+#: ez a fedettségi profil hordozza, nem a sugár-törvény.
 _EDGE_SOFTNESS_PX = 1.0
 
 
@@ -114,27 +125,48 @@ def tiled_dot_mask(
     offset_x: float = 0.0,
     offset_y: float = 0.0,
     alpha_min: float = 0.0,
+    alpha_max: float = DOT_ALPHA_MAX,
+    scale: float = DOT_SCALE,
 ) -> np.ndarray:
-    """Csempézett, antialiasolt pontmaszk — `TiledImageMask` (#569).
+    """Csempézett pontmaszk — a `TiledImageMask` MÉRT alakja (#569, #2476).
 
-    Minden `tile` × `tile` csempe közepén egy kör áll, `tile / 2` sugárral;
-    a körön belül a maszk 1, kívül `alpha_min`, a perem `_EDGE_SOFTNESS_PX`
-    szélességben lineárisan megy át. Az `offset_x`/`offset_y` a csempe-rács
-    eltolása — a `Comicize` második ága ezt `tile / 2`-re állítja, ettől lesz
-    a raszter sakktábla-szerűen sűrű, ahogy a nyomdai féltónusnál.
+    Minden `tile` × `tile` csempe közepén `alpha_max` áll, és onnan a csempe
+    `scale`-szeres beírt körének peremén `alpha_min`-ig fut **lineárisan**; a
+    peremen kívül `alpha_min`. Ez nem „kemény korong antialiasolt peremmel",
+    hanem kétmegállós radiális rámpa — a rajzoló (`0x00bbaa90`) ugyanazt a
+    megálló-kiértékelőt hívja, mint a `CircularGradientImageMask`, mindkettő
+    **két** megállóval (`0x00bbacba: push 2`).
+
+    Az `offset_x`/`offset_y` a csempe-rács eltolása — a `Comicize` második ága
+    ezt `tile / 2`-re állítja, ettől lesz a raszter sakktábla-szerűen sűrű,
+    ahogy a nyomdai féltónusnál.
+
+    ⭐ **A maszk ÁLLANDÓ, és ez nem mond ellent a tónussal növő pontnak**
+    (#2476): ha ezt a rámpát a (pixelesített) tónus KÜSZÖBÉNEK használjuk,
+    `alpha_max − ρ/scale > tónus` épp akkor áll, ha `ρ < scale · (1 − tónus)` —
+    azaz pontosan a `halftone_branch` sugár-törvényét adja. A kettő
+    azonosságát a `tests/render/test_comicize_maszk_kuszob_2476.py` mind a 256
+    tónusra megméri (0 eltérő képpont), elhangolt skálájú kontrollal.
 
     A visszaadott maszk float32 [0,1], (H, W).
     """
-    if not 0.0 <= alpha_min <= 1.0:
-        raise ValueError(f"Az alphaMin [0,1] közé esik: {alpha_min}")
-    ramp = np.clip(tiled_dot_ramp(height, width, tile, offset_x, offset_y), 0.0, 1.0)
-    center = max(tile / 2.0, 1e-6)
-    softness = np.float32(max(_EDGE_SOFTNESS_PX / center, 1e-6))
-    # 1 a beírt körön belül, 0 kívül, lineáris átmenettel a peremen
-    inside = np.clip((1.0 - ramp) / softness + np.float32(0.5), 0.0, 1.0)
-    return (np.float32(alpha_min) + (1.0 - np.float32(alpha_min)) * inside).astype(
+    for nev, ertek in (("alphaMin", alpha_min), ("alphaMax", alpha_max)):
+        if not 0.0 <= ertek <= 1.0:
+            raise ValueError(f"A(z) {nev} [0,1] közé esik: {ertek}")
+    if scale <= 0.0:
+        raise ValueError(f"A pontskála pozitív: {scale}")
+    ramp = tiled_dot_ramp(height, width, tile, offset_x, offset_y)
+    hely = np.clip(ramp / np.float32(scale), 0.0, 1.0)
+    return (np.float32(alpha_max) + (np.float32(alpha_min) - np.float32(alpha_max)) * hely).astype(
         np.float32
     )
 
 
-__all__ = ["dot_size_for", "halftone_branch", "tiled_dot_mask", "tiled_dot_ramp"]
+__all__ = [
+    "DOT_ALPHA_MAX",
+    "DOT_SCALE",
+    "dot_size_for",
+    "halftone_branch",
+    "tiled_dot_mask",
+    "tiled_dot_ramp",
+]

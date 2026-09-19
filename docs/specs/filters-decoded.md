@@ -6711,3 +6711,71 @@ objektumból veszi (`[edi+0x10]`, `[edi+0x14]`, `[edi+0x18]`, `[edi+0x1c]`,
 `[edi+0x34]`); ezek alapértékét a feltöltő adja. Amíg ez nincs kiolvasva, a
 pont/csempe arány **szabad paraméter**, és a fenti mérés szerint semmilyen
 értéke nem hoz javulást — tehát nem hangolással kell folytatni.
+
+## A Comicize pontja: az ÁLLANDÓ maszk és a tónussal növő sugár UGYANAZ (2026-09-19, #2476)
+
+*Ez a szakasz a #2476 jegy kérdését zárja le. A jegy címe azt állította, hogy
+„nálunk a tónus a sugarat modulálja, az eredetiben állandó" — a mérés szerint ez
+**hamis szembeállítás**: a két leírás ugyanannak a szerkezetnek a két oldala.*
+
+### A bemenet: a maszk mind a tizenkét tartalékértéke ki van olvasva
+
+A `glimmer::TiledImageMask` konstruktora (`0x00bba250`, ld. a 2026-09-18-i
+szakaszt) `alphaMin = 0,0`, `alphaMax = 1,0`, `scaleWidth = scaleHeight = 0,8`,
+`offsetX/Y = 0` és mind a négy `padding = 0` értéket ír be, és a szállított
+`filterdesc.xml` egyik `TiledImageMask` példánya sem írja felül őket. A rajzoló
+(`0x00bbaa90`) **két** megállót ad át (`0x00bbacba: push 2`), ugyanannak a
+megálló-kiértékelőnek (`0x008f3970`), mint a `CircularGradientImageMask`.
+
+⇒ a maszk állandó pontrács: a csempe közepén `1,0`, a csempe `0,8`-szoros
+beírt körének peremén `0,0`, **lineárisan** — nincs benne semmi képfüggő.
+
+### A mérés: küszöbölve a két leírás bitre azonos
+
+Ha ezt az állandó rámpát a (pixelesített, görbézett) tónus **küszöbének**
+használjuk, akkor
+
+    alphaMax − ρ/0,8 > tónus   ⟺   ρ < 0,8 · (1 − tónus)
+
+ahol `ρ` a beírt körrel normált sugár. A jobb oldal **szó szerint** a
+`halftone.halftone_branch` sugár-törvénye. Mérve (24 képpontos csempe, 96×96,
+mind a 256 tónus-szint):
+
+| | eltérő képpont |
+|---|---:|
+| natív maszk küszöbe vs. a mai sugár-törvény | **0** |
+| ugyanaz, de a maszk skálája 0,9-re hangolva (kontroll) | 105 536 |
+
+A 234-es tónus-szinttől a mai ág a lágyított peremmel (`_EDGE_SOFTNESS_PX`)
+elnyeli az utolsó, **képpont alatti** szemcsét — az eltérés ott
+**egyirányú** (csak a mai ág veszít festéket), és nem a sugár-törvényből jön.
+Őr: `tests/render/test_comicize_maszk_kuszob_2476.py`.
+
+⇒ **A render-láncban nincs mit átvezetni.** A `tiled_dot_mask` alakja viszont
+tippelt volt (kemény korong egy képpontos antialiasinggal); ez a kör a MÉRT
+kétmegállós rámpára cserélte.
+
+### Ami ezek után nyitva marad — #3390
+
+A 15 eredeti Picasa-export újramérése (`research/comicize-sweep/`, a #1606
+módszerével) a mai kódra:
+
+| tengely | miénk | referencia |
+|---|---|---|
+| `BlurXY` 0…100 | 4,729 … 4,764 | 3,693 … 3,824 |
+| `DotFade` 0…100 | 9,506 … 0,296 | 7,691 … 0,295 |
+| `DotContrast` 0…100 | 0,410 … 9,353 | 1,716 … 5,067 |
+
+átlagos |amplitúdó-hiba| **1,3661**, átlag ΔE **5,9326** (n = 15; a ΔE a #3246
+körének számával azonos, tehát a metrika ugyanaz).
+
+A maradék **két, mérhetően különböző** tétel, és mindkettő a küszöb
+**fedettségi profilja**, nem a sugár-törvény:
+
+1. a `BlurXY`- és `DotFade`-tengelyen az alak követi a referenciát, csak az
+   amplitúdó kb. **1,25×** nagyobb (a `DotFade = 100` eltűnés pontos);
+2. a `DotContrast`-tengelyen a **meredekség** más, a középső álláson nem.
+
+A megnevezett következő gépi irány a #3390-ben áll: a `0x008f3970`
+megálló-kiértékelő — hogyan lesz a két megálló közti rámpából kiírt bájt, és
+van-e felül-mintavételezés.
