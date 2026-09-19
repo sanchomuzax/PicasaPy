@@ -1943,19 +1943,23 @@ R' = k*R + t;   G' = k*G + t;   B' = k*B + t;
 >
 > A `63,5`-ös fixpont meglepő (a középszürke fele). A dekompilátorban
 > `(1.0 - k) * 127.0 * 0.5` alakban áll; a másik ágban viszont explicit
-> `127.5 - k*127.5` szerepel, tehát nem fordítási artefaktum. **Referencia-
-> exporttal érdemes ellenőrizni**, mielőtt véglegesítjük.
+> `127.5 - k*127.5` szerepel, tehát nem fordítási artefaktum.
+
+**Kompozit golden-kontroll (nem izolált mátrixmérés):** a szállított
+`TwoTone`-minta (`effekt4_12_kettonusu_alap.jpg`, paraméter:
+`TwoTone=1,0.000000,20.000000,0.000000,00004488,00ffff00;`) és a natív
+export összevethető. Azonos `1200×1600×3` méreten a PicasaPy teljes
+`apply_twotone` csővezetéke **22,4231 MAE**-t ad a natív exporthoz, míg az
+érintetlen forrás–natív eltérés **59,5135 MAE**. Ez pozitív kontroll a teljes
+TwoTone-útra, de nem választja le a linked mátrix hibáját a luma-/gradient-
+és JPEG-hatástól; pixelazonosságot ebből nem állítok.
 
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
-`h = clamp(h, -180, 180)`, majd `szog = h/180 · π`, és `sin`/`cos`
-(`0x00c29d20`, `0x00c285f0`) alapján a szokásos hue-rotation mátrix.
-
-> A mátrix együtthatói **nem olvashatók ki** a dekompilátumból: az FPU-veremben
-> mennek át, a `FUN_008f28d0` argumentumlistája üresen látszik. A szerkezet
-> (szögkorlát, fok→radián, sin/cos) biztos; a konkrét együtthatók
-> **feltételesek** — a Haeberli-féle hue-rotation a valószínű, de ez még nincs
-> bizonyítva.
+**LEZÁRVA a G) szakaszban:** a korábbi dekompilátor-korlátot a helyi nyers
+x86-diszasszemblálás és a PE-adatkonstansok kiolvasása feloldotta. A hue-
+mátrix konkrét együtthatói, címei és numerikus kontrolljai a G) szakaszban
+állnak; a korábbi „feltételes / valószínű Haeberli” megfogalmazás elavult.
 
 ### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
 
