@@ -5099,6 +5099,17 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
 </context>
 <context>
+    <name>PicasaScrollBar</name>
+    <message>
+        <source>Previous album</source>
+        <translation>Előző album</translation>
+    </message>
+    <message>
+        <source>Next album</source>
+        <translation>Következő album</translation>
+    </message>
+</context>
+<context>
     <name>PicasaMenuBar</name>
     <message>
         <source>My &amp;Computer</source>

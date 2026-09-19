@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.531] – 2026-09-19
+
+### Hozzáadva
+
+- **Album-ugró gombok a rács görgetősávján (#857).** A sáv tetején és alján
+  egy-egy kettős nyíl: az egyikkel az előző, a másikkal a következő mappára
+  ugorhatsz anélkül, hogy végiggörgetnéd a képeket. Nyomva tartva ismételnek,
+  ahogy az eredeti Picasában. A sáv maga marad a megszokott keskeny,
+  lapos stílusban.
+
+
 ## [0.8.530] – 2026-09-19
 
 ### Hozzáadva
