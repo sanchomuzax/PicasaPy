@@ -48,7 +48,7 @@ printborderslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 printoptions,parositva,PicasaPy/PrintOptionsPanel.qml;PicasaPy/PrintDialog.qml,"Nyomtatási szegély- és feliratopciók (#1780); a Beállítások „Nyomtatás” füle MÁS panel"
 printpanel,parositva,PicasaPy/PrintDialog.qml,"Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782)"
 propertiespanel,parositva,PicasaPy/PropertiesPanel.qml,Tulajdonságlista a jobb oldali fiókban
-publish,nincs-megfeleltetes,,Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
+publish,parositva,PicasaPy/PublishPanel.qml,"A panel 21 MÉRT vezérlője megvan (#2508: Ajándék-CD, biztonsági mentés, feltöltés — a mért helyeken és feliratokkal). ⚠️ A három üzemmód MŰKÖDÉSE még nincs kész, és a panel ezért szándékosan nincs bekötve a menübe; az elemenkénti párosítás ezt helyesen tükrözi (ami nincs megépítve, az nem párosul). A web_group hét eleme hatókörön kívül (online)."
 quicktagconfig,parositva,PicasaPy/QuickTagsConfigDialog.qml,Gyorscímke-beállító
 rightdrawerpanel,parositva,PicasaPy/PropertiesPanel.qml,Jobb oldali fiók kerete
 scaleslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
