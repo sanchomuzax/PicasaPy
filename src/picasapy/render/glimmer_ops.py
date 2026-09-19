@@ -911,10 +911,15 @@ def _mintavetel_sulyok(
 
     A kimeneti képpont középpontját a bemeneti rácsra vetítjük, és a magot
     a szomszédos bemeneti mintákon értékeljük ki. **Kicsinyítéskor a mag a
-    léptékkel nyúlik** — ez a szokásos élsimító megoldás.
+    léptékkel nyúlik** — élsimítás.
 
-    ⚠️ A nyújtás NINCS MÉRVE: a bináris annyit árul el, hogy a mód 3-as. Az
-    itteni választás dokumentált döntés, nem visszafejtett viselkedés.
+    ⭐ #3321: a nyújtás MÉRVE van, nem feltevés. Az eredeti újramintavevő
+    3-as ága (`0x00a3f660`, `0x00a3f68c`–`0x00a3f6a3`) a mag alap-tartósugarát
+    a LÉPTÉKKEL OSZTJA (`0x00a3f745`–`0x00a3f74b`), tehát `scale < 1` mellett
+    a mag a forrástérben szélesedik — pontosan az itteni `max(1, skala)`.
+
+    ⚠️ Amit ez NEM bizonyít: a képpontra azonos kimenetet. A mechanizmus
+    statikus bizonyíték; a golden-egyezés külön mérési feladat.
 
     A széleken a bemeneti index a tartományra csippentődik (peremismétlés),
     a súlyok pedig sorösszegre normálódnak, hogy a fényesség megmaradjon.
