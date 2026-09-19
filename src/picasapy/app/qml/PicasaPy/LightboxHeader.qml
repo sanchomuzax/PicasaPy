@@ -60,11 +60,20 @@ ColumnLayout {
     signal confirmSuggestionsRequested()
     //: `removesel` — a javaslatok elvetése
     signal removeSuggestionsRequested()
+    //: `moresug` — a felismerési lépcső lazítása, hogy több javaslat jöjjön
+    signal moreSuggestionsRequested()
 
     //: a két javaslat-vezérlő együtt jelenik meg: nyitott személy-album ÉS
     //: van mit eldönteni
     readonly property bool javaslatokLatszanak:
         header.personName !== "" && header.suggestionCount > 0
+
+    //: #2187: a `moresug` a jóváhagyás-pár TELJES helyét foglalja el
+    //: (mérve: `confirmsug` (348,55)–(436,82), `removesel` (439,55)–(527,82),
+    //: `moresug` (348,55)–(527,82)) — tehát akkor látszik, amikor nincs mit
+    //: jóváhagyni. A két állapot kizárja egymást.
+    readonly property bool tovabbiJavaslatLatszik:
+        header.personName !== "" && header.suggestionCount === 0
 
     //: A számos/szám nélküli alak választása egy helyen, hogy minden
     //: fejléc-gomb ugyanúgy viselkedjen.
@@ -335,14 +344,41 @@ ColumnLayout {
             ToolTip.delay: Theme.tooltipDelay
             onClicked: header.removeSuggestionsRequested()
         }
+        //: #2187: „További javaslatok keresése" — a `moresug` mért helyén és
+        //: méretében (179 × 27, a jóváhagyás-pár teljes sávja). A művelet a
+        //: `FaceScanController.moreSuggestions()`: a javaslat-lépcsőt tízzel
+        //: lazítja, és a beállítást SZÁNDÉKOSAN nem írja vissza — az eredeti
+        //: `moresug` kezelője (`0x00602890`) sem írja.
+        PicasaButton {
+            id: tovabbiJavaslatGomb
+            objectName: "headerMoreSuggestionsButton"
+            x: header.gombSorVege
+            anchors.verticalCenter: parent.verticalCenter
+            visible: header.tovabbiJavaslatLatszik
+            //: MÉRT felirat (`faceheaderpaneltext.tre:53`): „Find more
+            //: suggestions" — magyarul „További javaslatok keresése".
+            text: qsTr("Find more suggestions")
+            width: 179; height: 27
+            //: MÉRT súgó ugyanonnan
+            ToolTip.text: qsTr("Lower the recognition threshold to get more suggestions")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: header.moreSuggestionsRequested()
+        }
         PicasaButton {
             id: feltoltesGomb
             objectName: "headerUploadButton"
+            //: #2187: a feltöltés a javaslat-vezérlők UTÁN áll — akármelyik
+            //: állapot van érvényben (jóváhagyás-pár VAGY „További
+            //: javaslatok"); a kettő kizárja egymást.
             x: elvetGomb.visible
                 ? elvetGomb.x + elvetGomb.width + header.gombKoz
                 : (jovahagyGomb.visible
                     ? jovahagyGomb.x + jovahagyGomb.width + header.gombKoz
-                    : header.gombSorVege)
+                    : (tovabbiJavaslatGomb.visible
+                        ? tovabbiJavaslatGomb.x + tovabbiJavaslatGomb.width
+                          + header.gombKoz
+                        : header.gombSorVege))
             anchors.verticalCenter: parent.verticalCenter
             height: 22
             text: header.feliratSzammal(qsTr("Upload")) + " ▾"

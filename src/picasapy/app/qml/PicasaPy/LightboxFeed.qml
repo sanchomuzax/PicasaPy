@@ -672,6 +672,11 @@ ListView {
                 if (grid.appWindow && grid.appWindow.removePersonSuggestions)
                     grid.appWindow.removePersonSuggestions()
             }
+            //: #2187: `moresug` — a lazítás az egész készletre újraszámol
+            onMoreSuggestionsRequested: {
+                if (grid.appWindow && grid.appWindow.findMoreSuggestions)
+                    grid.appWindow.findMoreSuggestions()
+            }
             // #422: jobbklikk a mappa-fejlécen — a mappa-kontextusmenü
             // ARRA a mappára, amelyiknek a fejléce ez (nem a kijelöltre)
             onContextMenuRequested: {
