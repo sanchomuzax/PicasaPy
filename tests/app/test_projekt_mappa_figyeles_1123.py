@@ -41,28 +41,25 @@ a körbeforgó kurzortól függenek.
 
 from __future__ import annotations
 
-import time
 
 import pytest
 
 from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_feltetelre
 
 
-def _var(qt_app, feltetel, masodperc: float = 20.0) -> bool:
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        try:
-            if feltetel():
-                return True
-        except (AttributeError, TypeError, RuntimeError):
-            pass
-        qt_app.processEvents()
-        time.sleep(0.02)
-    try:
-        return bool(feltetel())
-    except (AttributeError, TypeError, RuntimeError):
-        return False
+#: #3265: a KÖZÖS várakozó — a ciklikus gyűjtő szünetel a bevárás közben.
+#:
+#: A natív veremkép (a #3178 útján) EBBEN a hurokban fogta a szegmentálást:
+#: a fő szál `Garbage-collecting` a `_var` `processEvents()`-e közben,
+#: miközben a szinkron-szál a `removed_folder_paths`-ban járt. A saját hurok
+#: helyére ezért a `support.qt_wait.varj_feltetelre` kerül — ugyanaz a
+#: viselkedés, plusz a mért trigger szünetel.
+#:
+#: ⚠️ ENYHÍTÉS, nem diagnózis: hogy MELYIK objektum szűnt meg, azt csak a
+#: natív veremkép mondja meg (a #3265 első pontja arra vár).
+_var = varj_feltetelre
 
 
 @pytest.fixture
