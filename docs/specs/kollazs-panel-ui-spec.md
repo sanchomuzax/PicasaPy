@@ -604,6 +604,62 @@ kimerítő keresés (mind a 46 fájl).*
 A két oszlop **csak kijelöléskor** látszik (2.4). A `collageMoveUp` és
 `collageMoveDown` **`autoRepeat: true`**.
 
+### 4.4/b ⭐ R2/R3 szerkezeti kontroll — a négy vászon körüli csoport (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` a négy csoportot a
+`previewshadow` (maga a lap) gyerekeként deklarálja. A PicasaPy-ban a
+csoportok a kirajzolt `CollageCanvas`-ban jelennek meg. A kérdés az volt,
+hogy a szülőkapcsolat (R2) és a négy él viszonya (R3) egyezik-e, nem az,
+hogy a tervezővászon régi abszolút koordinátái visszatérnek-e.
+
+**Olcsó bizonyítéklánc.**
+
+- **Erőforrás:** `referencia/tre-eroforrasok/collagepanel.tre:22–24`
+  (`rand_group`), `:278–322` (`action_group`, `z_order_group`,
+  `snap_rotation_group`); a `ui-leltar.csv` a négy közvetlen `previewshadow`
+  szülőt és a négy csoport gyermekelemeit is felsorolja.
+- **Indexelt bináris kontroll:** a négy csoportazonosítóra a helyi
+  `string_xrefs` tábla **0 sort** ad, ezért a csoport-szülőfát nem xref-hiányból
+  állítom. A pozitív parancskontrollok viszont megvannak: `rand_placement`
+  → `0x0082a670`, `0x0082d570`, `0x0082fa00`, `0x0082fce0`; `select_all`
+  → `0x0082d570`, `0x00831750`; `move_up` és `snap_12` → `0x0082d570`.
+  A függvényjegyzékben `0x0082a670` = `FUN_0082a670` (6692 bájt),
+  `0x0082d570` = `FUN_0082d570` (4721 bájt), `0x0083b900` = a snap-ág
+  (341 bájt); a `CCollageUI::vftable` címe `0x00cbf450`, és a két
+  fő-elosztó címe benne van. Ez a vezérlő-útvonal kontrollja, nem geometriai
+  bizonyíték.
+- **Mai saját kód:** a négy QML-elem a `CollageCanvas` közvetlen gyereke
+  (`CollageCanvas.qml:108–148`), és a lap téglalapjából számolt `x/y`-t kap;
+  nem a lap abszolút tervezői koordinátáit használja.
+- **Pontos runtime-mérés:** a célzott `QQuickView`-próba
+  `test_collage_groups_948.py` **30 passed in 16,62 s** eredményt adott.
+  A külön parent-probe 1280 × 800-as ablakban, álló lappal ezt mérte:
+  `sheet = (517, 55, 525 × 700)`, `action = (557, 25, 445 × 28)`,
+  `random = (602,5, 757, 354 × 28)`, `snap = (498, 372,5, 17 × 65)`,
+  `z-order = (1044, 372,5, 17 × 65)`. Mind a négy futásidejű közvetlen
+  szülője `collageCanvas`.
+
+| csoport | eredeti `.tre`-szülő és kényszer | PicasaPy futásidejű szülő | ítélet |
+|---|---|---|---|
+| `action_group` | `previewshadow`; `m_centerX` + `YConstraint 1, 0, -2` | `collageCanvas`; `CollageActionRow.qml` | **R2 eltér; R3 egyezik** — alsó él = lap teteje − 2 |
+| `rand_group` | `previewshadow`; `m_centerX` + `YConstraint 0, 1, 2` | `collageCanvas`; `CollageRandomRow.qml` | **R2 eltér; R3 egyezik** — felső él = lap alja + 2 |
+| `snap_rotation_group` | `previewshadow`; `m_centerY` + `XConstraint 1, 0, -2` + `m_hidden` | `collageCanvas`; `CollageSnapColumn.qml` | **R2 eltér; R3 egyezik** — jobb él = lap bal széle − 2 |
+| `z_order_group` | `previewshadow`; `m_centerY` + `XConstraint 0, 1, 2` + `m_hidden` | `collageCanvas`; `CollageZOrderColumn.qml` | **R2 eltér; R3 egyezik** — bal él = lap jobb széle + 2 |
+
+**Következtetés.** A négy csoport **geometriai R3-szerződése mért módon
+megmaradt**, és a csoportok a lap tájolás- és ablakméret-változását követik.
+A **szerkezeti R2-szerződés viszont nem betű szerinti**: a PicasaPy-ban a
+csoportok `collageCanvas`-gyerekek, nem `previewshadow`-gyerekek. Ez önmagában
+nem bizonyít felhasználói hibát; a `CollageCanvas.qml` külön ki is mondja,
+hogy ez tudatos geometriai leképezés. A két oldalsó oszlop láthatósága és a
+nyolc gomb kirajzolódása a 30 próbás kontroll része; a `move_up` és
+`move_down` ismétlése, a szélső két rétegsorrend-gombé nem.
+
+**Bizonyítottsági fok:** megerősített a `.tre`-szerződés, a PicasaPy
+futásidejű közvetlen szülője, valamint a négy élre vonatkozó R3-egyezés;
+**NINCS MEG**, hogy a szülőfa eltérésének lenne önálló felhasználói hatása.
+Ez a kutatási szelet lezárva; a #656 teljes UI-összevetése nyitva marad.
+
 Gombok engedélyezése:
 
 | gomb | engedélyezve, ha |
