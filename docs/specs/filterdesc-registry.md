@@ -6396,3 +6396,68 @@ felvehető lépés; nem becsülöm meg. *(Fejlesztői oldal: **#3377**.)*
 a kulcs-sztring `0x00cc44f8`; a konstans `0x00cf39e4` = 2³²; a csúszka-sorok
 a szállított `filterdesc.xml`-ből (`_sldrOuterThickness`,
 `_sldrInnerThickness`, `_sldrCornerRadius`, `_sldrCaptionHeight`).*
+
+### F) ⭐ A skálázási tényező iránya — a második argumentum teljes felbontású rekordja (2026-09-19, #626)
+
+A korábbi rés nyitva hagyta, hogy a `0x00bbe4b0` által képzett arány
+`imageWidth / [esi+8]` a munkavászonhoz vagy annak reciprokához igazodik-e.
+A kérdést a Crop-kontroll és a Glimmer-változóasztal közös argumentumlánca
+méri ki; nem goldenből és nem feltételezésből.
+
+#### 1. A műveleti argumentumok azonosítása
+
+Az `ApplyInstruction` (`0x00bd0cc0`, az RTTI-vtábla `0x008f0f18` negyedik
+slotja) a 40 bájtos verem legfelső rekordját adja az alkalmazónak első
+argumentumként (`0x00bd0d41`), a hívó kontextusát második argumentumként
+(`0x00bd0d3d`), és az új kimeneti rekordot harmadikként (`0x00bd0d3c`).
+
+A `CropImageOperation` alkalmazója (`0x00bbdbd0`) az első argumentum
+`+0x08`/`+0x0c` mezőjét olvassa (`0x00bbdc27`, `0x00bbdc34`), majd ezt a
+40 bájtos képreceptort másolja a harmadik argumentumba (`0x009a8ca0`, hívás:
+`0x00bbdc99`). Ez a pozitív kontroll: az első argumentum a pillanatnyi
+munkakép rekordja, a harmadik a létrehozandó kimeneti rekord.
+
+A `Border` alkalmazója (`0x00bbe320`) a második argumentum `+4`-ére mutató
+kontextust tartja meg (`0x00bbe32b`, `0x00bbe338`); a `0x00bbe430` ebből az
+`esi` rekordból olvassa a két méretmezőt (`0x00bbe4a6`, `0x00bbe4af`).
+
+#### 2. A `+8/+0c` rekord szerepe
+
+A változóasztal felépítője (`0x008e38a0`) a bemeneti méretpár két egészét a
+kontextus `+0x08` és `+0x0c` mezőjébe másolja (`0x008e38ad`, `0x008e38b5`),
+és ugyanebben az ágban a `fullResImageWidth` / `fullResImageHeight`
+kulcsokat regisztrálja (`0x00cd0270`, `0x00cd0284`). Az `imageWidth` és
+`imageHeight` külön kulcsfeloldó ágon szerepel (`0x008e45b0`, kulcsok:
+`0x00cc44f8`, `0x00cc44ec`), vagyis a Border nevezője nem az aktuális
+munkakép `+8/+0c` rekordja, hanem a teljes felbontás párja.
+
+A Border utasításszintű aritmetikája ezért pontosan ez:
+
+```text
+skálázási tényező = imageWidth / fullResImageWidth
+innerthickness'   = csonk(innerthickness × tényező)
+outerthickness'   = csonk(outerthickness × tényező)
+```
+
+A fordított `fullResImageWidth / imageWidth` olvasatot a `0x00bbe4a6`
+`fild [esi+8]` → `0x00bbe4b0` `fdivr` sorrendje kizárja. A magassági pár
+ugyanezt a kontextust hordozza (`+0x0c`), bár a Border saját tényezője a
+szélességből készül.
+
+#### 3. Eredeti / nálunk / teendő
+
+| | Eredeti, mérve | PicasaPy, mérve | Teendő |
+|---|---|---|---|
+| Border vastagság skálája | `imageWidth / fullResImageWidth`, `0x00bbe4a6`–`0x00bbe4b0`; a két `fmul` `0x00bbe4d0` és `0x00bbe51b` | `glimmer_frame_ops.py:102–118`: a `draw_border` a kapott vastagságokat közvetlenül adja át az `add_ring`-nek; nincs teljes felbontású tényező | külön fejlesztői jegy: **#3377** |
+| captionheight / cornerradius | nyers képpont, nincs `fmul` (`0x00bbe553`, illetve `0x00bbe3b8`) | közvetlen képpont-paraméter | #3377-ben kezelendő |
+| natív–PicasaPy pixel-golden | **NINCS MEG** ebben a körben | **NINCS MEG** | külön golden-pár szükséges |
+
+**Bizonyítottsági fok: megerősített** a tényező irányára és a rekord
+szerepére (SQLite RTTI/string/xref + célzott x86-diszasszemblálás).
+A Border teljes renderelési pixel-goldenje továbbra is **NINCS MEG**; ezt
+nem állítom elő a mechanizmus-leletből.
+
+**Nyitott kérdések mérlege — e kör saját kérdései:** 0 nyílt · 1 lezárva ·
+0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A #626 gyűjtőjegy nyitva
+marad: a Rotate, Crop, SimpleBorder és az alkalmazási lánc további részei
+külön kutatási tételek.
