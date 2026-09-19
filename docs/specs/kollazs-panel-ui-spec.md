@@ -731,6 +731,57 @@ ezt igazolja: kijelölés nélkül a „Az összes kijelölés megszüntetése",
 „Eltávolítás", „Beállítás háttérként" és a „Megjelenítés és szerkesztés"
 **halvány**, a 3. képen — egy kijelölt képpel — mind aktív.
 
+### 4.4/d ⭐ R2/R3 rétegszerkezeti kontroll — a lap és a csomópontok (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` két külön, testvér szerepet ad a
+`previewshadow` (a lap) és a `previewroot` (a csomópontok) számára, közös
+`previewinset` alatt. A PicasaPy futó QML-fájában ugyanez a két szerep külön
+vizuális rétegben él-e, és a lap tényleges téglalapja az eredeti illesztést
+adja-e?
+
+**Olcsó bizonyítéklánc.**
+
+- **Forrás:** `referencia/tre-eroforrasok/collagepanel.tre:160–168` és
+  `:238–249`; a `referencia/ui-leltar.csv:361–365` a
+  `previewclip`/`previewcontainer`/`previewinset`/`previewroot`/
+  `previewshadow` szülőkapcsolatait ugyanígy sorolja.
+- **SQLite-index kontroll:** a `string_xrefs` pozitív találata a
+  `collagepanel/previewcontainer` és `collagepanel/previewroot` neveket a
+  `FUN_0082a670` (`0x0082a670`, **6692** bájt) panelépítőhöz köti; a
+  `previewshadow` további találata `0x00830350`. A `previewclip` és a
+  `previewinset` **0 soros** index-találata nem negatív bizonyíték — a
+  parent-struktúrát a `.tre` adja, nem az xref-index.
+- **Mai kód:** `CollageCanvas.qml:91–105` egy `collageSheetClip` alatt tartja
+  a `CollageSheet`-et; a `CollageSheet.qml` háttér- és `Repeater`-rétegei a
+  `collageSheet` alatt vannak. Külön `previewshadow`/`previewroot` QML-réteg
+  nincs.
+- **Futásidejű mérés:** célzott `QQuickView`, 1280 × 800-as ablak, 4:3
+  fekvő lap. A `collageCanvas` doboza **(289, 20, 981 × 770)**. A `.tre`
+  szerinti behúzásból a `previewinset` pontos doboza **(301, 55, 957 × 700)**;
+  a lap 0,75-ös arányú illesztett doboza **(313, 55, 933 × 700)**. A mérő
+  ezt adta a `collageSheetClip`-re és a `collageSheet`-re is.
+
+| eredeti réteg | PicasaPy futásidejű megfelelője | ítélet |
+|---|---|---|
+| `previewclip` → `previewcontainer` | `collageCanvas` fölött nincs külön teljes keretű QML-vágó; a `collageSheetClip` már a lap doboza | **R2 eltér** |
+| `previewshadow` és `previewroot` testvérek a `previewinset` alatt | `collageSheetClip` → `collageSheet`, amely alatt a háttér és a `collageNode0…2` együtt él | **R2 eltér**: a két szerep összevonva |
+| lap az illesztett `previewinset`-ben | `collageSheet` = **(313, 55, 933 × 700)** | **R3 a mért lapdobozon egyezik** |
+| csomópontok | `collageNode0…2` közvetlen szülője `collageSheet`; a szülőlánc mindháromnál `collageNode → collageSheet → collageSheetClip → collageCanvas` | a lapvágás működése kontrollált, a rétegfelosztás nem betű szerinti |
+
+**Következtetés.** A PicasaPy a lap **mért illesztési geometriáját** megtartja,
+és a meglévő kirajzolt készletben a lapon kívülre tolt csomópont nem rajzol a
+vászonkereten kívülre. A statikus `.tre`-szerződés szerinti külön
+`previewshadow`/`previewroot` rétegek azonban nincsenek meg: a lap és a
+csomópontok egy `collageSheet` alatt, egy lapméretű vágóban élnek. Ez a
+**megerősített R2-eltérés** önmagában nem bizonyít külön felhasználói hibát;
+az R3 lapdoboz-egyezés és a vágási viselkedés a 138 próbás célzott készletben
+zöld maradt. A szülőfa eltérésének önálló hatása: **NINCS MEG**.
+
+**Bizonyítottsági fok:** megerősített a `.tre`-rétegszerkezet, a mai
+futásidejű szülőlánc és a mért lapdoboz; NINCS MEG az R2-eltérés önálló
+felhasználói hatása. Új terméki teendő ebben a körben nem nyílt; a #656 teljes
+UI-összevetése további elemekre továbbra is nyitott.
+
 ---
 
 ## 5. A téma-váltás hatása — a képesség-maszk mátrixa
