@@ -399,7 +399,19 @@ def main(
     # dokumentáció-PR így kaphat „ez a PR kódot módosít, de nincs
     # CHANGELOG-bejegyzése" hibát. Élesben elő is jött (#1765).
     valtozott = runner(
-        ["git", "diff", "--name-only", f"{beallitas.base}...{beallitas.head}"]
+        # #3423: `-c core.quotepath=false` — enélkül a git az EKEZETES
+        # útvonalat idézőjelesen, oktális escape-ekkel adja
+        # (`"docs/.../m\303\251r..."`), és a `docs/`-előtagos kizárás nem
+        # illeszkedik rá: egy dokumentációs lap „felhasználóhoz eljutó
+        # kódnak" látszott. A hiba éles PR-en jött elő (#684 benchmark-lapja).
+        [
+            "git",
+            "-c",
+            "core.quotepath=false",
+            "diff",
+            "--name-only",
+            f"{beallitas.base}...{beallitas.head}",
+        ]
     )
     if valtozott.returncode != 0:
         # ⚠️ A sikertelen mérésből SOHA nem lehet zöld út. Éles próbán jött
