@@ -6383,19 +6383,21 @@ amikor a művelet **nem teljes felbontású** vásznon fut (előnézet, nagyít�
 ⇒ Ebből egy **mérhető aszimmetria** következik: előnézeten a keret vastagsága
 a vászonhoz skálázódik, a **feliratsáv és a sarok-lekerekítés viszont nem**.
 
-### E) Ami NYITOTT — megnevezve
+### E) A korábbi iránykérdés — LEZÁRVA az F) szakaszban
 
-A tényező **irányát** (`imageWidth / vászonszélesség` vagy fordítva) az
-eldöntené, hogy a méret-rekord (`[esi + 8]`, `[esi + 0xc]`) a **vászon** vagy
-az **eredeti** méretét tartja. Ez a rekord az alkalmazó **2. argumentuma**,
-és a 4.5 tábla szerint **minden** 6. rés ugyanezt kapja — tehát bármely már
-kimért alkalmazó (pl. `Crop` `0x00bbdbd0`) eldönti. Ez a következő,
-felvehető lépés; nem becsülöm meg. *(Fejlesztői oldal: **#3377**.)*
+~~A tényező iránya (`imageWidth / vászonszélesség` vagy fordítva) nyitott
+kérdés volt: a méret-rekord (`[esi + 8]`, `[esi + 0xc]`) a vászon vagy az
+eredeti méretét tartja.~~
 
-*Forrás: `0x00bbe320` (266 b), `0x00bbe430` (317 b), `0x00bbe570` (1953 b);
-a kulcs-sztring `0x00cc44f8`; a konstans `0x00cf39e4` = 2³²; a csúszka-sorok
-a szállított `filterdesc.xml`-ből (`_sldrOuterThickness`,
-`_sldrInnerThickness`, `_sldrCornerRadius`, `_sldrCaptionHeight`).*
+Az F) szakasz ezt a kérdést a Crop-kontrollal és a változóasztal
+argumentumláncával lezárta: a rekord a `fullResImageWidth` /
+`fullResImageHeight` pár, a tényező pedig **`imageWidth /
+fullResImageWidth`**. A korábbi nyitott kérdés ezért nem új kutatási tétel.
+*(Fejlesztői oldal: **#3377**.)*
+
+*A lezáró bizonyíték forrása: `0x00bbe320`, `0x00bbe430`, `0x00bbe570`,
+`0x00bbdbd0`, `0x008e38a0` és az F) szakaszban felsorolt kulcs-/konstans-
+címek.*
 
 ### F) ⭐ A skálázási tényező iránya — a második argumentum teljes felbontású rekordja (2026-09-19, #626)
 
@@ -6461,3 +6463,62 @@ nem állítom elő a mechanizmus-leletből.
 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A #626 gyűjtőjegy nyitva
 marad: a Rotate, Crop, SimpleBorder és az alkalmazási lánc további részei
 külön kutatási tételek.
+
+### G) ⭐ A `SimpleColorMatrix` hue-forgató mátrixa (2026-09-19, #626)
+
+A `SimpleColorMatrix` ötödik mátrix-építője (`0x008f1e70`, 463 bájt) a
+szögparamétert előbb **−180…+180 fokra vágja**, majd
+`h / 180 · π` alakban radiánra váltja. A `180` konstans a `0x00cf3d48`, a
+π-konstans a `0x00cf4298`; a `sin` és `cos` hívási útja rendre
+`0x00c285f0` és `0x00c29d20`.
+
+A nyers FPU-lánc a mátrix első sorát közvetlenül kiadja (`0x008f1f08`–
+`0x008f1f66`), a további sorok ugyanebbe a 25 elemű mátrix-lokálisba kerülnek
+(`0x008f1f6a`–`0x008f2028`), majd a közös mátrix-alkalmazó kapja
+(`0x008f202c`, `FUN_008f28d0`). A kilenc színkonstans és címe:
+
+| cím | érték |
+|---|---:|
+| `0x00cf4250` | 0,283 |
+| `0x00cf4258` | 0,14 |
+| `0x00cf4260` | 0,285 |
+| `0x00cf4268` | 0,143 |
+| `0x00cf4270` | 0,928 |
+| `0x00cf4278` | 0,072 |
+| `0x00cf4280` | 0,715 |
+| `0x00cf4288` | 0,213 |
+| `0x00cf4290` | 0,787 |
+
+A kiolvasott 3×3 színmátrix — `C = cos(h/180·π)`,
+`S = sin(h/180·π)` — ez:
+
+```text
+R' = (0,213 + 0,787·C − 0,213·S)·R
+   + (0,715 − 0,715·C − 0,715·S)·G
+   + (0,072 − 0,072·C + 0,928·S)·B
+
+G' = (0,213 − 0,213·C + 0,143·S)·R
+   + (0,715 + 0,285·C + 0,140·S)·G
+   + (0,072 − 0,072·C − 0,283·S)·B
+
+B' = (0,213 − 0,213·C − 0,787·S)·R
+   + (0,715 − 0,715·C + 0,715·S)·G
+   + (0,072 + 0,928·C + 0,072·S)·B
+```
+
+#### Független numerikus kontroll
+
+Az explicit képletből számolva `h=0°` esetén az azonosságmátrix maximális
+eltérése **0,0**, a `h ∈ {−180°, −90°, 0°, 90°, 180°}` kontrollpontokon a
+legnagyobb sorösszeg-eltérés **2,22·10⁻¹⁶** (lebegőpontos zaj). A ±180°
+ág ugyanazt a mátrixot adja, mert a szög előbb a határra vágódik.
+
+**Bizonyítottsági fok: megerősített** a szögkorlátra, a fok→radián útra,
+az állandók címére/értékére és a mátrix képletére (helyi x86
+diszasszemblálás + PE-adatkiolvasás + numerikus kontroll). Ez nem pixel-
+golden: natív és PicasaPy kimenet összevetése ebben a körben **NINCS MEG**.
+
+**Nyitott kérdések mérlege — e kör saját kérdései:** 0 nyílt · 1 lezárva ·
+0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A `ContrastAndBrightnessLinked`
+ág 127,5-ös képlete utasításszinten már korábban megvolt (`0x008f2040`),
+de a natív export-golden továbbra is külön, meg nem mért ellenőrzés.
