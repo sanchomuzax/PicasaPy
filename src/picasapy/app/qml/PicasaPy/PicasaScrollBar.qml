@@ -11,6 +11,22 @@ import QtQuick.Controls
 ScrollBar {
     id: control
 
+    //: #857 (ADR-015): az eredeti sávján NÉGY gomb van — a fel/le mellett egy
+    //: `prevalbum` és egy `nextalbum` album-ugró (`respack.yt` `scrollart/` +
+    //: `throttle/`, mind 16 × 24, mind `m_autorepeat`). A tulajdonos
+    //: 2026-09-18-án kérte a két album-ugrót; a fel/le nyílgombok, a lapozó
+    //: féltér és a pozíciójelző NEM épül meg, és a sáv 10 képpontos, lapos
+    //: stílusa marad (a döntés indoklása a `docs/decisions/`-ben).
+    //:
+    //: ALAPBÓL KI: a mappafa és a párbeszédek sávján az album-ugrásnak nincs
+    //: értelme — ott a mai sáv változatlan marad.
+    property bool albumUgras: false
+    //: az album-ugró gomb mért magassága (`prevalbum` / `nextalbum`: 16 × 24).
+    //: A SZÉLESSÉG a mi sávunké, a MAGASSÁG a mért érték.
+    readonly property real albumGombMagassag: 24
+    signal elozoAlbum()
+    signal kovetkezoAlbum()
+
     // a sín (background) és a fogantyú (contentItem) közös vastagsága;
     // mindkét irányban ugyanaz az érték — a ScrollBar belső elrendezése
     // a görgetés-tengely mentén automatikusan nyújtja a hosszt.
@@ -30,6 +46,12 @@ ScrollBar {
     policy: ScrollBar.AsNeeded
     minimumSize: 0.06
     padding: 0
+    //: a két gomb a sín KÉT VÉGÉN ül, ezért a fogantyú sávja rövidül —
+    //: ugyanúgy, ahogy az eredetiben a sín a gombok között kezdődik
+    topPadding: control.albumUgras && !control.horizontal
+                ? control.albumGombMagassag : 0
+    bottomPadding: control.albumUgras && !control.horizontal
+                   ? control.albumGombMagassag : 0
 
     // #894: a fogantyú a MÉRT átmenetet kapja (`scrollart/base_win`, 15 × 25:
     // VÍZSZINTES átmenet, függőlegesen állandó — tehát egy függőleges sáv
@@ -95,6 +117,7 @@ ScrollBar {
     // sín: halványan mindig ott van a fogantyú mögött, interakció közben
     // valamivel erősebb (#323)
     background: Rectangle {
+        id: sin
         implicitWidth: control.barThickness
         implicitHeight: control.barThickness
         color: Theme.chromeBg
@@ -102,6 +125,33 @@ ScrollBar {
 
         Behavior on opacity {
             NumberAnimation { duration: 150 }
+        }
+
+        //: #857: a két album-ugró gomb. Csak akkor létezik, ha a hívó kérte —
+        //: a `Loader` nélkül minden sávon ott ülne két láthatatlan elem.
+        Loader {
+            active: control.albumUgras && !control.horizontal
+            anchors.fill: parent
+            sourceComponent: Item {
+                AlbumUgroGomb {
+                    objectName: "scrollPrevAlbum"
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    height: control.albumGombMagassag
+                    felfele: true
+                    //: buboréksúgó — az eredeti `prevalbum` gombja
+                    magyarazat: qsTr("Previous album")
+                    onAktivalva: control.elozoAlbum()
+                }
+                AlbumUgroGomb {
+                    objectName: "scrollNextAlbum"
+                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+                    height: control.albumGombMagassag
+                    felfele: false
+                    //: buboréksúgó — az eredeti `nextalbum` gombja
+                    magyarazat: qsTr("Next album")
+                    onAktivalva: control.kovetkezoAlbum()
+                }
+            }
         }
     }
 }
