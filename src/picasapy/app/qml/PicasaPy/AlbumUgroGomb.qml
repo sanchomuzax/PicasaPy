@@ -66,18 +66,31 @@ Item {
         }
     }
 
+    //: #857: a lenyomás/elengedés MEGHÍVHATÓ függvényekben él, nem az
+    //: egérkezelőbe zárva. Ok: az ismétlés viselkedését így lehet
+    //: PLATFORMFÜGGETLENÜL mérni. Az első próba a `MouseArea`
+    //: `mousePressEvent`-jét hívta közvetlenül — Linuxon működött, a
+    //: windowsos CI-lábon NEM (ott az esemény ablak nélkül nem kézbesül),
+    //: és pirosra vitte a main-t. A gomb viselkedése ettől nem változik:
+    //: az egérkezelő UGYANEZT a két függvényt hívja.
+    function nyomvaTartasIndul() {
+        gomb.aktivalva()
+        ismetlo.interval = gomb.elsoKesleltetes
+        ismetlo.restart()
+    }
+
+    function nyomvaTartasVege() {
+        ismetlo.stop()
+    }
+
     MouseArea {
         id: terulet
         objectName: "albumUgroTerulet"
         anchors.fill: parent
         hoverEnabled: true
-        onPressed: {
-            gomb.aktivalva()
-            ismetlo.interval = gomb.elsoKesleltetes
-            ismetlo.restart()
-        }
-        onReleased: ismetlo.stop()
-        onCanceled: ismetlo.stop()
+        onPressed: gomb.nyomvaTartasIndul()
+        onReleased: gomb.nyomvaTartasVege()
+        onCanceled: gomb.nyomvaTartasVege()
     }
 
     //: #857: `m_autorepeat` — nyomva tartva ismétel. A Qt `Button`
