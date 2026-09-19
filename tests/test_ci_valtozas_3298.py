@@ -229,3 +229,28 @@ def test_elozmeny_nelkuli_push_eseten_teljes_kor(tarolo: Path, tmp_path: Path) -
         encoding="utf-8", errors="replace",
     )
     assert "kod=true" in kimenet.read_text(encoding="utf-8").splitlines()
+
+
+def test_a_cli_CP1252_kimeneten_sem_bukik_el(tarolo: Path, tmp_path: Path) -> None:
+    """#2077 hibaosztály: a magyar üzenetben van `ő`, ami a Windows
+    alapértelmezett `cp1252`-jében nem ábrázolható — a szkript ilyenkor a
+    SAJÁT kiírásán hasalna el, és a CI valódi leletnek látná.
+    """
+    alap = _git(tarolo, "rev-parse", "HEAD")
+    _agat_nyit(tarolo, "ag")
+    (tarolo / "docs" / "uj.md").write_text("uj\n", encoding="utf-8")
+    fej = _commit(tarolo, "csak dokumentacio")
+    kimenet = tmp_path / "out.txt"
+    kornyezet = {
+        **os.environ,
+        "BASE": alap, "HEAD": fej, "ELOZO": "", "MOSTANI": fej,
+        "GITHUB_OUTPUT": str(kimenet),
+        "PYTHONIOENCODING": "cp1252",
+    }
+    futas = subprocess.run(
+        [sys.executable, str(SZKRIPT), "--tarolo", str(tarolo)],
+        capture_output=True, text=True, env=kornyezet,
+        encoding="utf-8", errors="replace",
+    )
+    assert futas.returncode == 0, futas.stderr
+    assert "kod=false" in kimenet.read_text(encoding="utf-8").splitlines()
