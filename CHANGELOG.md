@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.525] – 2026-09-19
+
+### Hozzáadva
+
+- A személy-album fejlécén megjelent a **További javaslatok keresése**
+  gomb: ha épp nincs eldöntendő javaslat, egy kattintással lejjebb viszi
+  a felismerési küszöböt, hogy több névre kapj javaslatot — a tárolt
+  beállítás nem változik. (#2187)
+
 ## [0.8.524] – 2026-09-19
 
 ### Javítva

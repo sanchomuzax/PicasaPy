@@ -699,6 +699,17 @@ ApplicationWindow {
             window.personAlbumName)
         window._javaslatFrissult()
     }
+    //: #2187: „További javaslatok keresése" (`moresug`). A vezérlő a
+    //: javaslat-lépcsőt tízzel lazítja, és a beállítást NEM írja vissza —
+    //: az eredeti kezelője (`0x00602890`) sem. A személy-album nevére itt
+    //: nincs szükség: a lazítás az EGÉSZ készletre újraszámol, ahogy a
+    //: mért kezelő is.
+    function findMoreSuggestions() {
+        if (!window._faceScanController)
+            return
+        window._faceScanController.moreSuggestions()
+        window._javaslatFrissult()
+    }
     //: a darabszám újraszámolása + az album újratöltése: a jóváhagyott
     //: arcok ettől kerülnek be a személy képei közé
     function _javaslatFrissult() {

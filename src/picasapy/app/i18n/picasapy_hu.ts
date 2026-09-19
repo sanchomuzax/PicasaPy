@@ -3868,6 +3868,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Find more suggestions</source>
+        <translation>További javaslatok keresése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Lower the recognition threshold to get more suggestions</source>
+        <translation>A felismerési küszöb lejjebb vitele, hogy több javaslat jöjjön</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
         <source>Confirm all</source>
         <translation>Az összes jóváhagyása</translation>
     </message>
