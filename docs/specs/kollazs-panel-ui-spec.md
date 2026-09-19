@@ -836,6 +836,65 @@ futásidejű szülőlánc és a mért lapdoboz; NINCS MEG az R2-eltérés önál
 felhasználói hatása. Új terméki teendő ebben a körben nem nyílt; a #656 teljes
 UI-összevetése további elemekre továbbra is nyitott.
 
+### 4.4/e ⭐ R5 felirat- és buboréksúgó-kontroll — a magyar futásidejű szöveg egyezik, négy angol forrás eltér (#656, 2026-09-19)
+
+**Pontos kérdés.** A négy vászon körüli csoport 15 vezérlőjének látható
+felirata és buboréksúgója egyezik-e a szállított `collagepanel.tre`-ből
+kinyert `ui-leltar.csv` és `panel-feliratok-hu.tsv` szerződésével? A
+`view_and_edit` vezérlőhöz a referencia nem ad buboréksúgót; ezt nem pótoljuk
+kitalált szöveggel.
+
+**Mai kód és kontroll.** A vizsgált forrás a
+`CollageActionRow.qml`, `CollageRandomRow.qml`, `CollageZOrderColumn.qml` és
+`CollageSnapColumn.qml`; a honosítás kontextusai rendre
+`CollageActionRow`, `CollageRandomRow`, `CollageZOrderColumn` és
+`CollageSnapColumn`. A meglévő, kirajzolt csoportkontroll friss `origin/main`
+állapoton:
+
+```text
+python3 -m pytest -q --tb=short -p no:cacheprovider \
+  tests/app/qml_functional/test_collage_groups_948.py
+→ 30 passed in 10,64 s
+```
+
+Ez a futás a geometriát, a láthatóságot, az engedélyezést és a gombok
+bekötését méri; a szövegeket a külön, pontos forrás-összevetés adja.
+
+**Mért R5-eredmény.** A 15 vezérlőben **7 cím** és **14 buboréksúgó** van,
+összesen **21 szövegmező**. A QML-források, a referencia-táblák és a TS
+XML-kontextus összevetése:
+
+| réteg | mezők | pontos egyezés |
+|---|---:|---:|
+| angol címforrás | 7 | **7/7** |
+| angol buboréksúgó-forrás | 14 | **10/14** |
+| magyar címfordítás | 7 | **7/7** |
+| magyar buboréksúgó-fordítás | 14 | **14/14** |
+
+Az angol forrás négy eltérése mind az `action_group` négy gombján van:
+
+| elem | mai QML-forrás | referencia-forrás |
+|---|---|---|
+| `select_all` | `Select all the pictures (Ctrl+A)` | `Select all pictures (Ctrl-A)` |
+| `select_none` | `Deselect all the pictures (Ctrl+D)` | `Deselect all pictures (Ctrl-D)` |
+| `remove_node` | `Remove selected items from the collage (Del)` | `Remove selection from collage (Del)` |
+| `set_background` | `Use the selected picture as the background` | `Use selected picture as the background` |
+
+**Következtetés.** A magyar futásidejű felület 21/21 szövegmezőben egyezik a
+Picasa hivatalos honosításával. Az angol `qsTr`-forrás négy buboréksúgója
+eltér, ezért angol tartaléknyelven ez R5-eltérés; ez a mérés nem állít
+képernyőképes vagy felhasználói hatást a magyar futásidejű felületre. A négy
+forrás-szöveg javítása külön terméki teendő, kutatási kódváltoztatás nélkül.
+
+**Bizonyítottsági fok:** **megerősített** a 21 forrás-/fordítás-egyezésre és
+a négy angol forráseltérésre; a magyar futásidejű R5-egyezés a TS-kontextus
+alapján megerősített. **NINCS MEG** külön képernyőképes bizonyíték arról,
+hogy a négy angol tartaléknyelvi eltérés bármely felhasználónál látható volt.
+
+**Nyitott kérdések mérlege:** **0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva”.** A #656 örökölt,
+teljes UI-összevetése további elemekre nyitva marad.
+
 ---
 
 ## 5. A téma-váltás hatása — a képesség-maszk mátrixa
