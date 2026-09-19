@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.530] – 2026-09-19
+
+### Hozzáadva
+
+- **A biztonsági mentés lemezképbe is mehet (#2074).** A Képek biztonsági
+  mentése ablakban választható, hogy a mentés mappába, CD- vagy
+  DVD-lemezképbe készüljön. Ha a gyűjtemény nem fér el egy lemezen, több,
+  **sorszámozott** lemezkép készül (`picasapy-mentes-01.iso`, `-02.iso`…),
+  pontosan akkora darabokban, amekkora egy valódi lemezre ráfér. Minden
+  lemezképen ott vannak a képek a saját mappaszerkezetükben, mellettük a
+  `.picasa.ini` (címkék, csillagok), és a gyökérben egy `files.txt` lista —
+  a mentés a program nélkül is olvasható. A lemezkép felcsatolható, és
+  bármelyik íróprogrammal lemezre írható; a program maga nem ír lemezt.
+
+
 ## [0.8.529] – 2026-09-19
 
 ### Hozzáadva

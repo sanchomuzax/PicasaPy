@@ -9827,6 +9827,10 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 <context>
     <name>BackupController</name>
     <message>
+        <source>%1 file(s) do not fit on a single disc.</source>
+        <translation>%1 fájl egyetlen lemezre sem fér rá.</translation>
+    </message>
+    <message>
         <source>Give the backup set a name.</source>
         <translation>Adj nevet a mentés-készletnek.</translation>
     </message>
@@ -9857,6 +9861,26 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 </context>
 <context>
     <name>BackupDialog</name>
+    <message>
+        <source>To folder</source>
+        <translation>Mappába</translation>
+    </message>
+    <message>
+        <source>To CD image (ISO)</source>
+        <translation>CD-lemezképbe (ISO)</translation>
+    </message>
+    <message>
+        <source>To DVD image (ISO)</source>
+        <translation>DVD-lemezképbe (ISO)</translation>
+    </message>
+    <message>
+        <source>Writing %1 file(s) to disc image(s)...</source>
+        <translation>%1 fájl írása lemezképbe…</translation>
+    </message>
+    <message>
+        <source>Done: %1 file(s) in %2 disc image(s).</source>
+        <translation>Kész: %1 fájl, %2 lemezképen.</translation>
+    </message>
     <!-- #2074: lemezszám-becslés a mért kapacitás-képletből -->
     <message>
         <source>Copying %1 file(s)... (%2 CD or %3 DVD)</source>

@@ -31,6 +31,14 @@ libxkbcommon0
 # fut, mint a CI-ben.
 libpulse0
 
+# #2074: a biztonsági mentés LEMEZKÉP-kimenetének próbája ezzel olvassa vissza
+# a kiírt ISO-t. Nem a termék futásához kell, hanem ahhoz, hogy az író
+# helyességét NE magunkkal mérjük: a `7z` (p7zip) független megvalósítás, egy
+# saját olvasóval való összevetés önigazolás volna. Enélkül a
+# `tests/burn/test_iso_lemezkep_2074.py` őre megbukik — szándékosan, mert a
+# csendben kihagyott ellenőrzés rosszabb a bukásnál.
+p7zip-full
+
 [csak-disztribucios]
 
 # Qt nyomtatás-támogatás (#1472).

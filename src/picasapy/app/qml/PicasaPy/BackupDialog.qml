@@ -111,6 +111,15 @@ Window {
                 //: a másolás közbeni sorban látszik, ezért itt nem kell.
                 : qsTr("Backup Complete")
         }
+        //: #2074: a lemezkép-ág vége — a felhasználó SZÁMOKAT kap: hány
+        //: lemezkép készült és hány fájl van rajtuk.
+        function onLemezkepekKeszek(lemezek, fajlok) {
+            backupWindow.fut = false
+            backupWindow.uzenet = lemezek === 0
+                ? qsTr("Everything was already backed up.")
+                : qsTr("Done: %1 file(s) in %2 disc image(s).")
+                    .arg(fajlok).arg(lemezek)
+        }
         //: #3009: a másolás háttérszálon megy, és végig beszél — az
         //: eredeti is („Copying (%d/%d) files").
         function onFutasIndult(osszes) {
@@ -348,6 +357,21 @@ Window {
                         backupController.szakitsdMeg()
                 }
             }
+            //: #2074: a KIMENET választója. A tulajdonos döntése
+            //: (2026-09-18): a mentés mehet lemezképbe is, és ha nem fér el
+            //: egyre, több, sorszámozott képre oszlik. Fizikai lemezírás
+            //: NINCS — a gépen nincs lemezíró, a kép viszont felcsatolható.
+            ComboBox {
+                objectName: "backupOutputMode"
+                visible: !backupWindow.szerkesztes && !backupWindow.fut
+                model: [
+                    qsTr("To folder"),
+                    qsTr("To CD image (ISO)"),
+                    qsTr("To DVD image (ISO)"),
+                ]
+                //: a `burn` modul médiatípus-kulcsai — a felirat sorrendjével
+                readonly property var mediak: ["", "cd", "dvd"]
+            }
             PicasaButton {
                 objectName: "backupRun"
                 visible: !backupWindow.szerkesztes && !backupWindow.fut
@@ -365,7 +389,18 @@ Window {
                         ? qsTr("Everything was already backed up.")
                         : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
                             .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
-                    backupController.futtasdMost(k.id)
+                    var mod = backupOutputMode.currentIndex
+                    if (mod === 0) {
+                        backupController.futtasdMost(k.id)
+                        return
+                    }
+                    //: a lemezkép-ág a MÉRT kapacitással oszt lemezekre
+                    backupWindow.uzenet = terv.darab === 0
+                        ? qsTr("Everything was already backed up.")
+                        : qsTr("Writing %1 file(s) to disc image(s)...")
+                            .arg(terv.darab)
+                    backupController.futtasdLemezkepbe(
+                        k.id, backupOutputMode.mediak[mod])
                 }
             }
             PicasaButton {
