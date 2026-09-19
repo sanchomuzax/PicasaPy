@@ -703,31 +703,29 @@ mert az azonosító a menütételből jön. A C.2 után a kérdés más helyen d
 | `0x00733a40` | `0x127` | gyűjtemény/mappalista | — |
 | `0x007355c0` | `0x13d` | **Emberek**-album képe | — |
 | `0x007359e0` | `0x13c` | **Emberek**-album | — |
-| `0x007325a0` | `0xa5` | *(nincs megnevezve)* | — |
-| `0x00732680` | `0x88` | *(nincs megnevezve)* | — |
-| `0x007331e0` | `0xd8` | *(nincs megnevezve)* | — |
-| `0x00733480` | `0x86` | *(nincs megnevezve)* | — |
-| `0x007339a0` | `0x126` | *(nincs megnevezve)* | — |
-| `0x00733c70` | `0x128` | *(nincs megnevezve)* | — |
-| `0x00733e00` | `0x13f` | *(nincs megnevezve)* | — |
-| `0x00733ea0` | `0x13e` | *(nincs megnevezve)* | — |
-| `0x007344b0` | `0x12f` | *(nincs megnevezve)* | — |
-| `0x007347a0` | `0x130` | *(nincs megnevezve)* | — |
-| `0x007348f0` | `0x131` | *(nincs megnevezve)* | — |
-| `0x00734a80` | `0x136` | *(nincs megnevezve)* | — |
-| `0x00734bc0` | `0x13a` | *(nincs megnevezve)* | — |
-| `0x00735480` | `0x13b` | *(nincs megnevezve)* | — |
-| `0x007a60a0` | `0x64` | *(nincs megnevezve)* | — |
-| `0x007a6590` | `0x65` | *(nincs megnevezve)* | — |
+| `0x007325a0` | `0xa5` | **Publish** kijelölésmenü (`Select All` / `Select None`) | `Publish::ID_CHECKALL`, `Publish::ID_UNCHECKALL` |
+| `0x00732680` | `0x88` | **Gyűjtemény** helyi menüje | `Collection::ID_*` |
+| `0x007331e0` | `0xd8` | **Szöveg-/címmező** helyi menüje | `Address::ID_*` |
+| `0x00733480` | `0x86` | **AlbumList / bal oldali könyvtárnézet** menüje | `AlbumList::ID_VIEW*`, `AlbumList::Shortcuts` |
+| `0x007339a0` | `0x126` | **Gombok konfigurálása** menüje | `BtnConf::ID_TOOLS_BUTTONMGR` |
+| `0x00733c70` | `0x128` | **Importálás: fájl be-/kihagyása** menüje | `Import::ID_IMPORT_INCLUDE*` |
+| `0x00733e00` | `0x13f` | **Importcsoportok kezelése** menüje | `ImportGroups::ID_IMPORT_MANAGE_GROUPS` |
+| `0x00733ea0` | `0x13e` | **Feltöltési/szinkronizálási opciók** menüje | `ImpULOpts::ID_*`, `SyncOpts::ID_*` |
+| `0x007344b0` | `0x12f` | **Kollázs: egy kijelölt kép** menüje | `CollageS::ID_COLLAGE_*` |
+| `0x007347a0` | `0x130` | **Kollázs: több kijelölt kép** menüje | `CollageS::ChangeBorder`, `CollageS::AlignRotation` |
+| `0x007348f0` | `0x131` | **Kollázs: elrendezési műveletek** menüje | `CollageD::ID_COLLAGE_*` |
+| `0x00734a80` | `0x136` | **Film: dia helyi menüje** | `MMFilm::ID_MAKEMOVIE_*` |
+| `0x00734bc0` | `0x13a` | **Online album szinkronizálási** menüje | `SyncOpts::ID_*` |
+| `0x00735480` | `0x13b` | **Címke** helyi menüje | `Tags::ID_*` |
+| `0x007a60a0` | `0x64` | **Feltöltési kép-méret** almenüje | `UploadOptionMenu::usesize*` |
+| `0x007a6590` | `0x65` | **Feltöltési láthatóság** almenüje | `UploadOptionMenu::onlyou`, `private`, `public` |
 
-A „melyik menü" oszlop hat sorát a
-[`picasa-gyorsbillentyuk.md`](picasa-gyorsbillentyuk.md) menüépítő-táblája
-adja (ugyanazok a címek), és a két szál **egymástól függetlenül** áll össze:
-ott a `0x00730790` az `Enter`/`0x9ca0` tételt hordozza, itt ugyanez a menü
-kapja a `0x9ca0` alapértelmezettet; a `0x007327a0` ott az `Esc`/`0x9cc6`-ot,
-itt a `0x9cc6` alapértelmezettet. A többi 19 azonosító építőjét ez a kör nem
-nevezi meg — a megnevezés útja az egyes építők felirat-tábláinak
-összevetése a menüosztály-táblával (A.1).
+A „melyik menü" oszlop most már **mind a 25 íróra** ki van töltve. A hat
+korábban ismert főmenü mellett a maradék 19 is azonosítható a saját
+menüosztály-neveiből és feliratkészletéből; a `dwMenuData` értéke nem a menü
+első tételének `wID`-je, hanem a menüépítő által beállított kontextusrekesz.
+A tábla ezért a fő helyi menük mellett a menüosztályhoz tartozó műveleti és
+almenü-építőket is felsorolja.
 
 ### C.4 Mit változtatott ez nálunk
 
@@ -743,3 +741,34 @@ XP-menüével. Az ADR-013 kimondja, hogy az XP-menü metrikái sem a binárisbó
 sem mai képernyőképből nem szerezhetők meg.
 
 Őr: `tests/app/qml_functional/test_felkover_alapertelmezett_886.py`.
+
+### C.5 A 25-ös térkép független ellenőrzése (#3364)
+
+A lelet nem csak a korábbi kommentek átírása:
+
+- **PE-minta:** a vizsgált `Picasa3.exe` SHA-256 értéke
+  `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`;
+- **SQLite-index:** a `xrefs` táblában a `0x00a6ae90` írófüggvénynek **25
+  különböző hívója** van; a `0x005e7c20` belépési pontnak **12 hívója**,
+  amelyek összesített `call_count` értéke **14**;
+- **független bájtpásztázás:** a `.text`-ben a relatív `E8` hívásokból
+  **25** vezet a `0x00a6ae90`-re, **14** a `0x005e7c20`-re és **2** a
+  `0x0056c5a0`-ra. Az import-hivatkozás alakja (`FF 15 <cím>`) a
+  `0x005e7c89` helyen a `GetMenuInfo`, a `0x00a6aec5` helyen a `SetMenuInfo`
+  hívását adja;
+- **célzott diszasszemblálás:** a `0x005e7c20` törzse `cbSize = 0x1c`,
+  `fMask = 8` után a `MENUINFO` `dwMenuData` mezőjét olvassa, és a
+  `0x005e7c99` helyen átadja a `0x0056c5a0` építőnek. A 25 hívó törzsében a
+  `call 0x00a6ae90` közvetlen előzménye minden esetben a táblázatban szereplő
+  `push <azonosító>`;
+- **saját oldal:** a forrásfában jelenleg tíz `*ContextMenu.qml` komponens
+  van: `Photo`, `Album`, `Folder`, `Collection`, `Viewer`, `Tray`,
+  `FolderList`, `PeopleAlbum`, `Tag` és `TextField`. Ez nem négy eredeti
+  kontextus összevonását támasztja alá: a Picasa 25 írója több főmenü- és
+  almenüosztályt különböztet meg, a mi komponenseink pedig ezeknek csak a
+  jelenleg felvett felületi szeletét fedik.
+
+**Következtetés:** a #3364 kérdése binárisan **lezárva**: minden
+`dwMenuData`-értékhez megvan a menüosztály és a felületi jelentés. A négy QML-
+menü összevonása ebből nem következik; új fejlesztői jegyet erre a leletre
+nem nyitunk. A hiányzó tételek és bekötések külön fejlesztői jegyek tárgyai.

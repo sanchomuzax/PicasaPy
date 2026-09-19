@@ -1,4 +1,4 @@
-"""#367: `confirm_settings.py` — a „Ne kérdezze újra" jelölő perzisztens
+"""#367: `confirm_settings.py` — a „Ne kérdezze meg újra" jelölő perzisztens
 tára (a `window_geometry.py` tesztjeinek mintájára)."""
 
 import pytest

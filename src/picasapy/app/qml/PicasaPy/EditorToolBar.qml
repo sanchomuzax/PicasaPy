@@ -1,7 +1,19 @@
 import QtQuick
 
-// #3123: az eszköz-sáv — az Alkalmaz/Mégse gombpár az eredetiben a KÉP
-// FÖLÖTT lebeg, nem a bal panelben ül.
+// A KIEGYENESÍTÉS (Straighten) átfedése: csúszka + Alkalmaz/Mégse pár a
+// kép fölött.
+//
+// ⭐ #3320 — SZÉTVÁLASZTÁS. A #3123 ide hozta a vágás, a retusálás, a
+// szöveg és a vörösszem gombpárját is, `editpanel/tool_container` alapján.
+// A #3234 mérése szerint ez a sáv NEM az ő közös sávjuk: az
+// `editpanel.tre` a `tool_container`-t a `#---Straighen Overlay---`
+// szakaszfejléc alá teszi (`:1038`–`:1052`), és mindegyik eszköznek SAJÁT
+// párja van a saját `*_well`-jében (`cropapply: crop_well` `:821`,
+// `retouchapply: retouch_well` `:894`, `redeyeapply: redeye_well` `:722`).
+// A négy pár ezért visszakerült a saját paneljébe; ez a sáv a
+// kiegyenesítésé maradt.
+//
+// #3123: a pár az eredetiben a KÉP FÖLÖTT lebeg, nem a bal panelben ül.
 //
 // A mérés (`respack.yt` + `editpanel.tre`, 2026-09-14/16):
 //
@@ -35,7 +47,8 @@ import QtQuick
 Item {
     id: sav
 
-    //: melyik eszköz sávja: "crop" · "retouch" · "text" · "redeye" · "" (rejtett)
+    //: melyik eszköz sávja: "tilt" (kiegyenesítés) · "" (rejtett).
+    //: #3320: a másik négy eszköz párja a SAJÁT paneljében ül.
     property string tool: ""
     property bool applyEnabled: true
 
@@ -90,11 +103,12 @@ Item {
     visible: sav.tool !== ""
 
     //: #3123: a Mégse gombot az Esc is elsüti (`Property escapekey 1`).
-    //: A vágásnál NEM: ott a `CropOverlay` maga kezeli az Esc-et, és a
-    //: kettős kezelő kétszer mondaná le ugyanazt.
+    //: #3320: a vágás-kivétel INNEN ELTŰNT, mert a vágás gombpárja
+    //: visszakerült a saját paneljébe — ez a sáv már csak a
+    //: kiegyenesítésé, ott pedig nincs másik Esc-kezelő.
     Shortcut {
         sequence: "Escape"
-        enabled: sav.visible && sav.tool !== "crop"
+        enabled: sav.visible
         onActivated: sav.cancelClicked()
     }
 

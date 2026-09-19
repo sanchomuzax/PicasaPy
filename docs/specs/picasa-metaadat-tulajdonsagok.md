@@ -719,3 +719,363 @@ kulcsnevek a 6.1 tábla `0x00c783ec`, `0x00c78e50`, `0x00c78fa0`,
 a méret-kapu `0x36`-ja és a `+0x6c`-ig tartó olvasás csak akkor fér össze, ha
 a méret nem bájtban értendő. A megszerzés útja: a `0x009f0fd0` törzse, és egy
 MÁSIK, ismert hosszú tömbre adott hívása kontrollként.
+
+### 9.11 ✅ ÁTVÉVE: a két tábla és a feloldó a termékben (2026-09-19, #3121)
+
+A 9.1–9.10 mérése alapján a **táblák kinyerve**, a feloldó megvalósítva:
+
+| mit | hol |
+|---|---|
+| a két tábla tartalma | `src/picasapy/metadata/objektiv_tabla.json` — 230 Canon + 416 Nikon rekord, a binárisból kinyerve |
+| a kinyerő | privát agent-repó: `eszkozok/meres/objektiv_tabla_kinyer.py` |
+| a feloldó | `src/picasapy/metadata/objektiv.py` — `canon_objektiv`, `nikon_objektiv`, `objektiv_neve` |
+| az őr | `tests/metadata/test_objektiv_feloldas_3121.py` (17 próba) |
+
+A megvalósítás a mérés két nem-kézenfekvő részletét is átveszi:
+
+1. az **ismétlődő `LensType`** esetén a gyújtó/rekesz négyes választ;
+2. a float-egyezés **8 ULP tűréssel** megy — az őr ellenpróbával méri, hogy a
+   9. ULP már NEM találat.
+
+⚠️ A Nikon-kulcs a táblában a **fájl bájtsorrendjében** áll
+(`003E80A0383F0002`), nem DWORD-önként megfordítva — a kinyerő és a feloldó
+ugyanezt az alakot használja, tehát a kettő nem csúszhat el. *(Az első ad-hoc
+kiolvasás két 32 bites egészként írta ki, és attól megfordult a sorrend.)*
+
+⬜ **Ami hátravan:** a kulcs KIOLVASÁSA a MakerNote-ból (a 9.10 szerinti
+elemhelyek és képletek), majd a név a tulajdonságok panelre. A végső
+elfogadáshoz **egy tükörreflexes gépből származó fájl** kell — a mai
+tesztkészletben és a mintázott NAS-mappákban egyetlen MakerNote-os kép sincs
+(mérve: 31 vizsgált fájl, nulla találat).
+
+## 10. ⛳ A határvonal EXIF/GPS-névregisztere — részlelet (2026-09-18, #3345)
+
+A kutatási határvonal a `0x00bf697a`-ból elérhető feltáratlan
+`0x00bab6e0`-t jelölte. Ez a `.text`-ben lévő `FUN_00bab6e0`, **4153 bájt**.
+A bináris-index `string_xrefs` táblája ehhez a függvényhez **70 különböző
+ASCII-sztringet** köt:
+
+| csoport | darab | mért alak |
+|---|---:|---|
+| szabványos EXIF-név, GPS-előtag nélkül | **44** | `DateTimeOriginal`, `FNumber`, `ColorSpace`, `ImageUniqueID` … |
+| GPS-előtagú név | **22** | `GPSLatitude`, `GPSAltitude`, `GPSDestDistance` … |
+| nem egyértelműen EXIF/GPS-név | **4** | `Function`, `RedEyeMode`, `Return`, `Fired` |
+| **összesen** | **70** | `string_xrefs`, `function_address = 0x00bab6e0` |
+
+A sztringek első és utolsó indexelt RVA-ja `0x0089eff4`, illetve
+`0x008ef3f0`. Ez a blokk ténylegesen EXIF/GPS-mezőneveket tartalmaz; a
+névlista önmagában **nem** bizonyítja, hogy a Tulajdonságok-panel közvetlen
+forrása.
+
+### 10.1 A hívási lánc, amit az index ténylegesen lát
+
+`0x00bab6e0` az index szerint nyolc belső segédfüggvényt és a
+`__stricmp`-ként indexelt `0x00bf697a` rutint hívja:
+
+| cím | méret (bájt) | `call_count` az xref-indexben |
+|---|---:|---:|
+| `0x009eee30` | 187 | 71 |
+| `0x00ba9040` | 82 | 13 |
+| `0x00ba90a0` | 106 | 24 |
+| `0x00ba9170` | 175 | 22 |
+| `0x00ba9220` | 147 | 3 |
+| `0x00ba9500` | 504 | 3 |
+| `0x00ba9930` | 2220 | 2 |
+| `0x00baa1f0` | 690 | 4 |
+| `0x00bf697a` (`__stricmp`) | 80 | 71 |
+
+A `0x00ba9930` segédfüggvény az indexben egyszer meghívja a
+`0x009f05c0` címet. Ez a lap 1. szakaszában már dokumentált
+`BinaryMetadata::GetString` lekérdező címe. **A bizonyított állítás ennyi:**
+a jelölt függvény hívási részgráfja eléri a belső metaadat-lekérdezőt; a
+paraméterek és a mezőazonosító-képzés még nem olvasható ki az indexből.
+
+### 10.2 Eredeti / nálunk / nyitva
+
+| | Eredeti | Nálunk | Állapot |
+|---|---|---|---|
+| névkészlet | `0x00bab6e0`: 70 indexelt ASCII EXIF/GPS-név | `metadata/reader.py` és `app/formatting.py` a panel számára külön, szabványos EXIF-címkéket olvas | **bináris tény + saját kód mérve** |
+| kapcsolat a belső kulcstérrel | a hívási lánc eléri a `BinaryMetadata::GetString` címet | a jelenlegi olvasó nem használ ilyen névregisztert | **a közös réteg erős jel, közvetlen leképezés NINCS MEG** |
+| gazdag saját próba | — | szintetikus, 12 × 8-as EXIF-képen **23 panel-sor**, ebből **20 nem-üres** metaadatérték | **mérés**, nem bináris állítás |
+
+**Ami NINCS MEG:** a 70 névhez tartozó pontos belső kulcs-/típus- és
+értékleképezés, valamint annak bizonyítása, hogy a `0x00bab6e0` közvetlenül
+a Tulajdonságok-panel regisztere volna. A helyi kutatási anyagban a Picasa3.exe
+nem áll rendelkezésre célzott dekompilációhoz; a Codespace-eszköz előfeltétel-
+ellenőrzése sikeres, de a bináris feltöltési útja ebben a körben nincs meg.
+**Nem becsültünk.**
+
+A következő gépi lépés: célzott dekompiláció a `0x00bab6e0` törzsére, a nyolc
+segédfüggvény argumentum-/visszatérési szerződésére, majd kontrollként egy
+ismert hosszú EXIF-mezőtáblás hívó összevetése. A #3345 nyitva marad.
+
+## 11. Az XMP Core namespace-katalógus jelölt blokkja (2026-09-18, #3348)
+
+A kutatási határvonal `0x00bdbe50` címen egy külön XMP-adatblokkot jelölt.
+A kérdés az volt, hogy a blokk csak véletlenül együtt álló sztringeket tartalmaz-e,
+vagy az eredeti XMP-olvasó/író réteghez tartozó névtér-katalógus része.
+
+### Amit az index közvetlenül mér
+
+| tétel | mért tény |
+|---|---|
+| függvény | `FUN_00bdbe50`, **1822 bájt**, RVA és fájloffset `0x007dbe50` |
+| közvetlen hívó | `0x00bd9ae0` → `0x00bdbe50`, **1** indexelt hívás |
+| közvetlen hívottak | **9** függvény; köztük `0x00be26d0` (**49** hívás) és `0x00c0769f` (**3** hívás) |
+| sztringhivatkozás | **80** különböző sztring a `string_xrefs` táblában |
+| namespace-URL | **48** `http…` sztring ugyanebben a függvényben |
+
+A sztringek között közvetlenül ott van az `XMP Core 5.1.2`, az Adobe copyright,
+a `Failure from XMPIterator::Initialize`, az `adobe:ns:meta/`, az RDF- és
+Dublin Core-névtér, valamint az Adobe XAP/XMP, PDF/A, Photoshop, EXIF, TIFF,
+PNG, JPEG, DICOM, IPTC és StockPhoto namespace-család több URI-ja. Ez a lista
+a `string_xrefs` mérési eredménye; önmagában nem bizonyítja, hogy mind a 48
+URI-t futásidőben regisztrálja.
+
+Az RTTI-tábla ugyanebben a binárisban külön osztálycsaládot mutat:
+`ytXMPReader::vftable` = `0x00cef524`, `ytXMPWriter::vftable` =
+`0x00cef54c`, `XMP_NamespaceTable::vftable` = `0x00cf1a4c`,
+`XMP_Node::vftable` = `0x00cf1a54`, `XMPMeta::vftable` = `0x00cf1a5c`.
+Ez az XMP-namespace adatblokk és az XMP-típuscsalád közötti kapcsolatot erős
+statikus jelként támasztja alá; a tényleges regisztráló hívás még nincs
+utasításszinten kiolvasva.
+
+### Eredeti / nálunk / teendő
+
+| | Eredeti, indexből mérve | PicasaPy, forrásból mérve | Állapot |
+|---|---|---|---|
+| XMP-réteg jelenléte | XMP Core 5.1.2 sztring + külön `ytXMPReader`/`ytXMPWriter`/`XMPMeta` RTTI | `export/xmp.py` saját, determinisztikus XMP-builder és sidecar-író | **megerősített statikus kapcsolat** |
+| névtérkészlet | `0x00bdbe50`: 80 sztring, ebből 48 URL | 9 saját URI-konstans (`RDF`, `DC`, `LR`, `MWG-RS`, `stArea`, `stDim`, `MP`, `MPRI`, `MPReg`) és az `adobe:ns:meta/` wrapper | a készletek nem azonosak; nincs átvezetési következtetés |
+| regisztrációs szemantika | a 48 URL ugyanahhoz a függvényhez kötött; a közvetlen hívó és az XMP RTTI megvan | a saját exporter nem natív registryt használ | **NINCS MEG** a tényleges `RegisterNamespace`-szerű hívás és az URI→prefix párosítás |
+
+**Bizonyítottsági fok: erős statikus lelet** az XMP Core/namespace-adatblokk
+létezésére és a környező XMP-típuscsaládra. **NINCS MEG** a `0x00bdbe50`
+utasításszintű szerepe, a regisztrációk sorrendje, az URI→prefix teljes
+leképezése és az, hogy a 48 URL közül melyeket használja ténylegesen az olvasó
+vagy az író.
+
+A szükséges következő lépés a `Picasa3.exe` célzott dekompilációja a
+`0x00bdbe50` és `0x00bd9ae0` címeken. A helyi kutatási anyagban az EXE nincs
+jelen, ezért ezt a kört nem helyettesítettem becsléssel; a #3348 nyitva marad
+és a hiányzó bináris miatt külső függőségre vár.
+
+## 12. ⛳ A regisztrációs LÁNC megvan — 49 SDK-névtér + a Picasa NÉGY sajátja (2026-09-18, #3348)
+
+*A 11. szakasz a `0x00bdbe50`-t „jelölt blokknak" nevezte, és a jegy azért
+állt `blocked`-on, mert az előző (felhős) kör nem érte el a binárist. A
+bináris helyben megvan (`research/copy_Picasa_3_7/Picasa3/Picasa3.exe`,
+10 160 456 bájt), így a kérdés eldőlt.*
+
+### A lánc
+
+```
+0x00ba7430  (91 b)   ← a Picasa saját belépési pontja
+   ├── 0x00bb1d60 (71 b)  → 0x00bd9ae0 (88 b) → 0x00bdbe50 (1822 b)
+   │                                              └── 49 × 0x00be26d0   (SDK-katalógus)
+   └── 4 × 0x00bb1db0 (76 b) → 0x00bd9dd0 (182 b) → 0x00be26d0          (SAJÁT névterek)
+```
+
+A `0x00be26d0` (1297 b) a **regisztráló**: `this` egy névtér-tábla
+(`lea ecx, [esp+0x1c]`), az argumentumai `(URI, prefix)` — a hívóhelyek
+sorrendje `push prefix; push URI; call`, tehát a veremtetőn az URI áll,
+azaz az **URI az első argumentum**. A táblának pontosan **két** hívója van:
+a `0x00bdbe50` (49 hívás) és a `0x00bd9dd0` (1 hívás) — utóbbi a nyilvános
+„regisztrálj egy névteret" API, amit a Picasa saját kódja használ.
+
+### A) A 49 SDK-névtér (`0x00bdbe50`)
+
+Az Adobe XMP-Core alapkatalógusa, sorrendben kiolvasva a törzsből:
+`xml` · `rdf` · `dc` · `xmp` · `pdf` · `photoshop` · `album` · `exif` ·
+`aux` · `tiff` · `png` · `jpeg` · `jp2k` · `crs` · `asf` · `wav` · `bmsp` ·
+`creatorAtom` · `xmpRights` · `xmpMM` · `xmpBJ` · `xmpNote` · `xmpDM` ·
+`xmpScript` · `bext` · `xmpT` · `xmpTPg` · `xmpG` · `xmpGImg` · `stFnt` ·
+`stDim` · `stEvt` · `stRef` · `stVer` · `stJob` · `stMfs` · `xmpidq` ·
+`Iptc4xmpCore` · `DICOM` · `pdfaSchema` · `pdfaProperty` · `pdfaType` ·
+`pdfaField` · `pdfaid` · `pdfaExtension` · `pdfx` · `pdfxid` · `x` · `iX`.
+
+⛔ **Ez a lista NEM a Picasa kimeneti sémája.** Az SDK inicializálása
+regisztrálja mind a 49-et függetlenül attól, hogy a program ír-e belőlük
+bármit — tehát egy névtér jelenléte itt **semmit nem bizonyít** a
+`.jpg`-be írt XMP-ről. A 11. szakasz „48 namespace-URL" száma is
+pontosítható: a párok száma **49**, a különbség az `x` → `adobe:ns:meta/`,
+ami nem `http`-vel kezdődik, ezért az index URL-heurisztikája kihagyta.
+
+### B) ⭐ A Picasa NÉGY saját névtere (`0x00ba7430`, négy hívás)
+
+| # | prefix | URI | cím (prefix / URI) |
+|---|---|---|---|
+| 1 | `MP` | `http://ns.microsoft.com/photo/1.2/` | `0xcef370` / `0xcef374` |
+| 2 | `Iptc4xmpExt` | `http://iptc.org/std/Iptc4xmpExt/2008-02-29/` | `0xcef398` / `0xcef228` |
+| 3 | `stArea` | `http://ns.adobe.com/xmp/sType/Area#` | `0xcef3a4` / `0xcef170` |
+| 4 | `mwg-rs` | `http://www.metadataworkinggroup.com/schemas/regions/` | `0xcef3ac` / `0xcef194` |
+
+A négy prefix és a négy URI **egymás melletti, nullával zárt sztringként**
+áll az adatszakaszban; a párosítás nem a szomszédságból, hanem a
+hívóhelyek `push`/`mov ecx` operandusaiból jön.
+
+⭐ **Kontroll:** a jól ismert kanonikus párosítások mind stimmelnek —
+`dc` → `purl.org/dc/elements/1.1/`, `xmp` → `ns.adobe.com/xap/1.0/`,
+`tiff` → `ns.adobe.com/tiff/1.0/`, `exif` → `ns.adobe.com/exif/1.0/`. Ha a
+kiolvasás egy elemet elcsúsztatna, ez a négy azonnal hibásan jönne ki.
+*(A terv egy másik kontrollt is előírt — hogy a prefixek `:`-re
+végződnek —, az **megdőlt**: a prefixek kettőspont nélkül állnak. A
+párosítás-kontroll ettől független, és áll.)*
+
+### C) „eredeti / nálunk / teendő"
+
+| névtér | eredeti | nálunk (`export/xmp.py`) |
+|---|---|---|
+| `mwg-rs` regions | **regisztrálva** (B/4) | megvan |
+| `stArea` | **regisztrálva** (B/3) | megvan |
+| `MP` (MicrosoftPhoto 1.2) | **regisztrálva** (B/1) | megvan |
+| `MPRI`/`MPREG` (`…/1.2/t/RegionInfo#`, `…/1.2/t/Region#`) | a sztring MEGVAN (`0xcef210`, `0xcef1e4`), de a négy regisztráció nem ezeket adja | megvan |
+| `Iptc4xmpExt` (IPTC Ext 2008-02-29) | **regisztrálva** (B/2) | **NINCS** |
+| `stDim` | az SDK katalógusában (A) | megvan |
+| `lr` (`http://ns.adobe.com/lightroom/1.0/`) | ⛔ **a teljes képfájlban NULLA előfordulás** | **írjuk** |
+
+⛔ **A `lr:` névtér a mi hozzátoldásunk.** A `ns.adobe.com/lightroom`
+minta a teljes 10 160 456 bájtos képfájlban **egyszer sem** szerepel — a
+keresés bájtszintű, tehát az index lyukaitól független. Az eredeti Picasa
+XMP-kimenete ezt a névteret nem ismeri. *(Fejlesztői teendő: **#3353**.)*
+
+*Forrás: `0x00ba7430` (91 b), `0x00bb1db0` (76 b), `0x00bb1d60` (71 b),
+`0x00bd9ae0` (88 b), `0x00bd9dd0` (182 b), `0x00bdbe50` (1822 b),
+`0x00be26d0` (1297 b); a hívószámok a bináris index `xrefs` táblájából, a
+sztringek `pe_dis.D`-ből kiolvasva.*
+
+## 13. ⛳ A `0x00bab6e0` szerepe MEGVAN: az EXIF/GPS sémaleíró, egy 14 rekeszes séma-tábla 6. rekesze (2026-09-19, #3345)
+
+*A 10. szakasz a `0x00bab6e0`-t „részleletként" hagyta ott (70 indexelt
+mezőnév, nyolc segédfüggvény). A törzs kiolvasásával a szerep és a
+típusmodell is megvan.*
+
+### A) Mi ez a függvény, és hogyan hívódik
+
+⛔ Az xref-index szerint a függvénynek **nincs közvetlen hívója** — ez nem
+azt jelenti, hogy halott: **függvénymutatóként** telepszik. A címét
+(`0x00bab6e0`) a teljes képfájlban **pontosan egy** 4 bájtos konstans
+tartalmazza, a `0x00c34339` címen, a `0x00c34300` (236 b) inicializálóban:
+
+```
+0x00c34338  mov eax, 0xbab6e0
+0x00c3433d  mov dword ptr [0xd3b298], eax
+```
+
+Az inicializáló egy **14 rekeszes globális táblát** tölt fel `0xd3b248`-tól,
+`0x10` bájtos lépésközzel. A rekeszek tartalma és — az egyes függvényekhez
+kötött sztringkészletből azonosítva — a sémacsalád:
+
+| rekesz | függvény | méret | nevek | mi ez (a sztringekből) |
+|---|---|---:|---:|---|
+| `0xd3b248` | `0x00bad700` | 87 b | 0 | *nincs név* |
+| `0xd3b258` | `0x00baac00` | — | 0 | *nincs név* |
+| `0xd3b268` | `0x00baad30` | 594 b | 10 | **XMP Basic** (`Rating`, `Advisory`, `BaseURL`, `Identifier`, …) |
+| `0xd3b278` | `0x00baaf90` | 1385 b | 23 | **TIFF** (`Software`, `ImageWidth`, `BitsPerSample`, …) |
+| `0xd3b288` | `0x00bab500` | — | 0 | *nincs név* |
+| **`0xd3b298`** | **`0x00bab6e0`** | **4153 b** | **71** | **EXIF + GPS** ← ez a jegy tárgya |
+| `0xd3b2a8` | `0x00bac720` | 851 b | 12 | **Dublin Core** (`description`, `title`, `subject`, …) |
+| `0xd3b2b8` | `0x00baca80` | — | 0 | *nincs név* |
+| `0xd3b2c8` | `0x00bacd50` | 796 b | 13 | **IPTC Core** (`CountryCode`, `IntellectualGenre`, `Scene`, …) |
+| `0xd3b2d8` | `0x00bad070` | 1274 b | 21 | **IPTC Extension** (`AddlModelInfo`, `ArtworkOrObject`, …) |
+| `0xd3b2e8` | `0x00bad570` | — | 0 | *nincs név* |
+| `0xd3b2f8` | `0x00bad5a0` | — | 0 | *nincs név* |
+| `0xd3b308` | `0x00bad610` | 234 b | 2 | **MWG-régiók** (`AppliedToDimensions`, `RegionList`) |
+| `0xd3b318` | `0x00bad760` | 221 b | 0 | *nincs név* |
+
+⭐ **Ez keresztbe igazolja a #3348-at:** ott a Picasa négy saját XMP-névtere
+`MP`, `Iptc4xmpExt`, `stArea`, `mwg-rs` volt — itt az `IPTC Extension` és az
+`MWG-régiók` sémaleíró külön rekeszben ül. A két mérés egymástól
+függetlenül készült.
+
+### B) A 71 mezőnév → HÉT típuskezelő
+
+A törzs `__stricmp` (a `0x00bf697a`, az indexben így nevesítve) hívásokkal
+egyezteti a kért nevet, és a találat után **pontosan egy** kezelőt hív. A 71
+egyeztetés és a hét kezelő hívásszáma **kiadja egymást** (24+22+13+4+3+3+2 =
+71):
+
+| kezelő | méret | nevek | a csoport tartalma |
+|---|---:|---:|---|
+| `0x00ba90a0` | 106 b | **24** | felsorolás/rövid egész: `ColorSpace`, `ExposureProgram`, `MeteringMode`, `LightSource`, `SensingMethod`, `WhiteBalance`, `Contrast`, `Saturation`, `Sharpness`, `FocalLengthIn35mmFilm`, `GPSAltitudeRef`, `GPSDifferential`, … |
+| `0x00ba9170` | 175 b | **22** | racionális: `ExposureTime`, `FNumber`, `ApertureValue`, `FocalLength`, `FlashEnergy`, `DigitalZoomRatio`, `GPSAltitude`, `GPSSpeed`, `GPSTrack`, `GPSImgDirection`, … |
+| `0x00ba9040` | 82 b | **13** | szöveg: `UserComment`, `RelatedSoundFile`, `ImageUniqueID`, `GPSSatellites`, `GPSStatus`, `GPSMapDatum`, és a `*Ref` mezők |
+| `0x00baa1f0` | 690 b | **4** | **GPS-koordináta**: `GPSLatitude`, `GPSLongitude`, `GPSDestLatitude`, `GPSDestLongitude` |
+| `0x00ba9500` | 504 b | **3** | rövid egészek tömbje: `ISOSpeedRatings`, `SubjectArea`, `SubjectLocation` |
+| `0x00ba9220` | 147 b | **3** | a `Flash` bitmezői: `Fired`, `Function`, `RedEyeMode` *(a `Mode` és a `Return` a felsorolás-csoportban van)* |
+| `0x00ba9930` | 2220 b | **2** | dátum-idő: `DateTimeOriginal`, `DateTimeDigitized` |
+
+⭐ **Három független kontroll, mind teljesült:**
+
+1. a négy koordináta-mező **ugyanahhoz** a kezelőhöz megy (`0x00baa1f0`),
+   a két dátum pedig egy másikhoz (`0x00ba9930`) — elcsúszott párosítás
+   ezen azonnal kiderülne;
+2. a koordináta-kezelő a `0x00cf4020`-on álló `double` **60,0**-nal szoroz
+   (`0x00baa3ff  fmul qword ptr [0xcf4020]`) ⇒ fok/perc/másodperc bontás,
+   tehát tényleg koordináta;
+3. az összehasonlító a `0x00bf697a`, amit az index **`__stricmp`**-ként
+   nevesít ⇒ a névegyeztetés **kis-nagybetűre érzéketlen**.
+
+📎 Pontosítás a 10. szakaszhoz: a mezőnevek száma a törzsből **71**
+(mind különböző, ismétlés nélkül), nem 70 — az index ennél a függvénynél
+eggyel kevesebbet kötött ide.
+
+### C) A Tulajdonságok-panel NEM ebből a regiszterből olvas (2026-09-19, #3366)
+
+A #3366 célzott köre ezt a kérdést **eldöntötte**: a panel és a 14 rekeszes
+XMP-séma-tábla két külön réteg.
+
+A `0x00ba8f80` (183 bájt) a név alapján választ a 14 rekesz között: a
+`0xd3b240` névlistán `edi += 0x10` lépéssel halad, egyezéskor `esi <<= 4`,
+majd a `[0xd3b248 + esi]` callbacket, a rekesz adatát és paraméterét tölti
+be, végül indirektül hívja a callbacket (`0x00ba9000`–`0x00ba902a`). A
+hívói `0x00ba8210` és `0x00ba8f30`; az előbbi az RTTI-ben a
+`ytXMPReader::vftable` metódusa. Ez tehát az **XMP-beolvasó genericus
+séma-diszpécsere**, nem a Tulajdonságok-panel olvasója.
+
+A `CPropertiesDlg` (`0x007e3210`, 7711 bájt) ezzel szemben az
+`[obj+0xc0] + 0xf20` bázisból közvetlenül az `imagedata` CColumn-út mezőit
+zárolja és olvassa (`0x007e3908`, `0x007e39bf`, `0x007e3a76`,
+`0x007e3b2d`, `0x007e3be4`, `0x007e3c9d`, `0x007e3d9b`, `0x007e3e22`).
+A teljes panel-függvény nyers kontrollja ezt adta:
+
+| keresett cím | találat a `FUN_007e3210` teljes 7711 bájtjában |
+|---|---:|
+| `0xd3b248` — séma-tábla bázisa | **0** |
+| `0x00ba8f80` — séma-diszpécser | **0** |
+| `0x009f05c0` — `BinaryMetadata::GetString` | **0** |
+| `0x00c80b84` — `personalbumid` panelkontroll | **1** |
+
+**Válasz a #3366 címében feltett kérdésre:** a Tulajdonságok-panel a
+14 rekeszes séma-táblából **egyetlen rekeszt sem olvas közvetlenül**. A panel
+az `imagedata` belső rekordból olvas; a 14 rekeszes tábla az XMP-olvasó
+réteghez tartozik. A termékben ezért nincs ehhez a kutatáshoz tartozó
+rekeszbekötési teendő.
+
+### D) A hét korábban névtelen rekesz feloldása
+
+A `0x00c34300` inicializáló mind a 14 callbacket feltölti. A hét, korábban
+sztring nélkül jelölt rekesz kezelője célzott diszasszemblálással azonosítható:
+
+| rekesz | callback | binárisan kiolvasott kulcsok / szerep | fok |
+|---|---|---|---|
+| `0xd3b248` | `0x00bad700` | `w`, `h`; `stDim` méret-alstruktúra | erős |
+| `0xd3b258` | `0x00baac00` | `Certificate`, `Marked`, `Owner`, `UsageTerms`, `WebStatement`; `xmpRights` | megerősített |
+| `0xd3b288` | `0x00bab500` | `Firmware`, `FlashCompensation`, `ImageNumber`, `Lens`, `LensID`, `LensInfo`, `OwnerName`, `SerialNumber`; `aux` | megerősített |
+| `0xd3b2b8` | `0x00baca80` | `AuthorsPosition`, `CaptionWriter`, `Category`, `City`, `Country`, `Credit`, `Headline`, `Instructions`, `Source`, `State`, `SupplementalCategory`, `TransmissionReference`; `photoshop` | megerősített |
+| `0xd3b2e8` | `0x00bad570` | `Regions`; `MPRI` régió-konténer | erős |
+| `0xd3b2f8` | `0x00bad5a0` | `Rectangle`, `PersonDisplayName`; `MPReg` régió-elem | megerősített |
+| `0xd3b318` | `0x00bad760` | `x`, `y`, `w`, `h`, `d`; `stArea` terület-alstruktúra | megerősített |
+
+A `mwg-rs` rekesz nem névtelen: a `0xd3b308` → `0x00bad610` kezelő a
+`RegionList`, `AppliedToDimensions`, `Name` és `Area` kulcsokat kezeli, és
+a `stArea` segédláncra támaszkodik. A `photoshop`, `aux`, `xmpRights` és
+`stDim` jelenléte az Adobe XMP-Core regisztrációs katalógusával is egyezik;
+az `MPRI`/`MPReg` kulcsok a Microsoft Photo 1.2 régióstruktúráját adják.
+
+*Forrás: `0x00c34300` (236 b), `0x00ba8f80` (183 b), `0x00ba8210`
+(2955 b), `0x00ba8f30` (78 b), a hét callback (`0x00bad700`,
+`0x00baac00`, `0x00bab500`, `0x00baca80`, `0x00bad570`, `0x00bad5a0`,
+`0x00bad760`), a `CPropertiesDlg` `0x007e3210` (7711 b), valamint a
+kanonikus SQLite-index és a teljes PE nyers bájtpásztázása. A kezelők
+kulcsai a célzott diszasszemblálásból; a kontrollok paraméterei a #3366
+kutatási naplójában vannak.*

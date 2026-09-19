@@ -352,3 +352,65 @@ def varj_kollazs_jelzesre(signal, action, timeout_ms: int = 20000):
         f"időkorlátnál vagy beragadt."
     )
     return ("args" in received, received.get("args", ()))
+
+
+def varj_feltetelre(
+    qt_app,
+    feltetel: Callable[[], bool],
+    masodperc: float = 20.0,
+    *,
+    gc_szunet: bool = True,
+) -> bool:
+    """Eseménysort pörgető várakozó — a ciklikus gyűjtő SZÜNETEL (#3265).
+
+    A tesztkészletben 63 fájl visel saját `_var(qt_app, feltetel)` hurkot:
+    `processEvents()` + rövid alvás, amíg a feltétel teljesül. A #3265
+    mérése szerint épp ez a hurok a szegmentálás helye — a natív veremkép
+    (a #3178 útján) a FŐ SZÁLON ezt adta:
+
+    ```
+    Current thread: Garbage-collecting
+      test_projekt_mappa_figyeles_1123.py:60 in _var
+      test_projekt_mappa_figyeles_1123.py:118 in controller
+    Thread: index/sync.py:623 removed_folder_paths  ← háttérszál dolgozik
+    ```
+
+    Vagyis a fő szál a bevárás közben szemetet gyűjt, miközben egy
+    háttérszál él. Ez a modul MÁR alkalmazza ugyanezt a szünetet a
+    kollázs-jelzés bevárásánál (#988/#1112) — ott a mérés kimondta, hogy a
+    szemét a TESZT oldalán keletkezik (bontatlan kapcsolatok, árva
+    `QEventLoop`-ok).
+
+    ⚠️ **Ez ENYHÍTÉS, nem diagnózis.** A `gc.disable()` csak a CIKLIKUS
+    gyűjtőt állítja meg; a hivatkozásszám-vezérelt felszabadítás fut
+    tovább. Hogy pontosan MELYIK objektum szűnt meg a háttérszál alól, azt
+    csak a natív veremkép mondaná meg — a #3265 első pontja erre vár, és
+    helyi reprodukció nem sikerült (8 futás, 2,0-as terhelés alatt: nulla
+    összeomlás).
+
+    A szünet a `finally`-ben áll vissza: egy elszálló teszt sem hagyhatja
+    kikapcsolva a gyűjtőt a többinek.
+    """
+    import gc
+    import time
+
+    hatarido = time.monotonic() + masodperc
+    szunetel = bool(gc_szunet) and gc.isenabled()
+    if szunetel:
+        gc.disable()
+    try:
+        while time.monotonic() < hatarido:
+            try:
+                if feltetel():
+                    return True
+            except (AttributeError, TypeError, RuntimeError):
+                pass
+            qt_app.processEvents()
+            time.sleep(0.02)
+        try:
+            return bool(feltetel())
+        except (AttributeError, TypeError, RuntimeError):
+            return False
+    finally:
+        if szunetel:
+            gc.enable()

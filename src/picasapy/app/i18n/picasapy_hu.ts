@@ -1244,8 +1244,8 @@
         <translation>Mégse</translation>
     </message>
     <message>
-        <source>Don&apos;t ask again</source>
-        <translation>Ne kérdezze újra</translation>
+        <source>Do not ask again</source>
+        <translation>Ne kérdezze meg újra</translation>
     </message>
 </context>
 <context>
@@ -3271,8 +3271,8 @@ Would you like to rename or skip these files?</source>
         <translation>A program biztonsági másolatot készít erről a fájlról.</translation>
     </message>
     <message>
-        <source>Don&apos;t ask again</source>
-        <translation>Ne kérdezze újra</translation>
+        <source>Do not ask again</source>
+        <translation>Ne kérdezze meg újra</translation>
     </message>
     <message>
         <source>Save As...</source>
@@ -3860,11 +3860,79 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
 </context>
 <context>
+    <name>PublishPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Selection and Settings</source>
+        <translation>Kijelölés és beállítások</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Photo Size</source>
+        <translation>Fotóméret</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Name the Gift CD</source>
+        <translation>Az ajándék CD elnevezése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>CD Name</source>
+        <translation>CD neve</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Limit 16 Characters</source>
+        <translation>Legfeljebb 16 karakter</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Erase Media</source>
+        <translation>Adathordozó törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Include Picasa</source>
+        <translation>A Picasával együtt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Backup Set</source>
+        <translation>Mentési készlet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Size:</source>
+        <translation>Méret:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Visibility:</source>
+        <translation>Láthatóság:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Sync:</source>
+        <translation>Szinkronizálás:</translation>
+    </message>
+</context>
+<context>
     <name>LightboxHeader</name>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
         <source>Sync to the web</source>
         <translation>Szinkronizálás az internettel</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Find more suggestions</source>
+        <translation>További javaslatok keresése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Lower the recognition threshold to get more suggestions</source>
+        <translation>A felismerési küszöb lejjebb vitele, hogy több javaslat jöjjön</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
@@ -7054,7 +7122,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
 <context>
     <name>TagContextMenu</name>
     <message>
-        <source>Add Tag to Entire Selection</source>
+        <source>Add this tag to entire selection</source>
         <translation>A címke hozzáadása a teljes kijelölt részhez</translation>
     </message>
     <message>
@@ -9697,8 +9765,8 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Erősebb védelem (a Picasa nem nyitja meg)</translation>
     </message>
     <message>
-        <source>The passwords do not match.</source>
-        <translation>A két jelszó nem egyezik.</translation>
+        <source>The passwords did not match.</source>
+        <translation>A jelszavak nem egyeztek.</translation>
     </message>
     <message>
         <source>This only hides the folders inside PicasaPy. The files stay on the disk and can be opened with any file manager.</source>

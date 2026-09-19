@@ -297,6 +297,12 @@ Column {
             // fér ki.)
             x: 20
             width: Math.max(0, parent.width - 40)
+            // #3310: a MÉRT felület-betűcsalád tokenje itt kap LÁTHATÓ
+            // fogyasztót. Az érték megegyezik azzal, amit az alkalmazás
+            // globálisan beállít (`_UI_FONT_FAMILY`, #526), tehát a
+            // megjelenés nem változik — a token viszont innentől bizonyítottan
+            // arra a családra mutat, amit a felhasználó tényleg lát.
+            font.family: Theme.uiFamily
             anchors.verticalCenter: parent.verticalCenter
             horizontalAlignment: Text.AlignHCenter
             clip: true
@@ -342,15 +348,27 @@ Column {
 
             // #2581: a leépülés KÉPPONT-alapú, tehát a saját betűnkkel
             // kell mérni — a karakterszám nem elég (a mérés ezt zárta ki).
-            TextMetrics {
+            //
+            // ⛔ #3289: a mérés NEM írhat QML-tulajdonságot. A korábbi alak
+            // egy `TextMetrics` `text`-jébe írt, és onnan olvasta vissza a
+            // szélességet — csakhogy a `text:` kötés KIÉRTÉKELÉSE közben írt
+            // tulajdonságot a Qt függőségként jegyzi meg, tehát a következő
+            // változása újraértékelteti a kötést, és a kör bezárul. A
+            // tulajdonos naplójában ez volt a
+            // `TrayBar.qml:271 … Binding loop detected for property "text"`.
+            //
+            // A `FontMetrics.advanceWidth()` FÜGGVÉNYHÍVÁS: semmit nem ír,
+            // tehát nem is válhat a kötés függőségévé. Ugyanezt a mintát
+            // követi a `PanelButton.qml` fokozat-számolója
+            // (`pbtnAlapMetrika`).
+            FontMetrics {
                 id: infoMetrika
                 font: trayInfoLabel.font
             }
 
             /** Egy sztring szélessége EBBEN a betűben, képpontban. */
             function szelessege(szoveg) {
-                infoMetrika.text = szoveg
-                return infoMetrika.width
+                return infoMetrika.advanceWidth(szoveg)
             }
         }
     }

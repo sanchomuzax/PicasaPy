@@ -26,7 +26,7 @@ PicasaMenu {
 
     MenuItem {
         objectName: "tagMenuAddToSelection"
-        text: qsTr("Add Tag to Entire Selection")
+        text: qsTr("Add this tag to entire selection")
         onTriggered: menu.addToSelectionRequested()
     }
     MenuItem {

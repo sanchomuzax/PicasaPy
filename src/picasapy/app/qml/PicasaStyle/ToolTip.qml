@@ -24,14 +24,23 @@ import PicasaPy
 //   `tooltips_class32` vezérlője (a névre nulla előfordulás a binárisban;
 //   RTTI: `ytToolTip`, `IToolTip`, `ytHotTip`).
 //
-// ## Ami NEM mért — és ezért nem is utánzás
+// * a KRÓM a tulajdonos képernyőképéről képpontonként leolvasva:
+//   kitöltés `#F4F1E5`, keret `#B7B5AC` 1 képpont, derékszögű sarok,
+//   fekete szöveg, és árnyék **csak a jobb és az alsó élen** (#901);
+// * a betű alapCSALÁDJA `Arial` — a konstruktor-lánc közvetlenül
+//   tartalmazza (`0x00a6b6ed` → `0x00c80a64`).
 //
-// A buborék tényleges RAJZA (háttérszín, keret, árnyék, betűméret): a
-// `respack.yt`-ben nincs tooltip-réteg, tehát kódból rajzolódik, és a
-// konstansai nincsenek kiolvasva. Amíg ez így van, a saját
-// `Theme`-tokenjeinket használjuk — ugyanazokat, amikkel a többi krómunk
-// rajzolódik. **Ez a mi döntésünk, nem a Picasa mérése.** Ha a rajz egyszer
-// kiolvasható lesz, EBBEN a fájlban kell átírni; a #901 emiatt marad nyitva.
+// ## Ami NEM mért — és ezért nem is állítás
+//
+// * **Az árnyék belső mechanizmusa.** A képen ott van, de a binárisban
+//   nincs a tooltip példányára kötve: a generikus `useshadow` út
+//   paraméterei (`0x00c49618` = 3,0; `0x00c7dcc8` = 0,3) ismertek, a
+//   KAPCSOLAT nem. Ezért a mért KÉPI alakot utánozzuk, és a korábbi
+//   `CS_DROPSHADOW`-magyarázatot nem állítjuk bizonyítottnak.
+// * **A betű pontos képpontmérete.** A bináris csak a családot adja; a
+//   12 képpont a MI mércénk marad.
+// * **A sötét mód színei.** Az eredetinek nincs sötét témája — ott nincs
+//   mit mérni, a `Theme` sötét értéke a mi döntésünk.
 T.ToolTip {
     id: sugo
     objectName: "picasaToolTip"
@@ -57,15 +66,42 @@ T.ToolTip {
     contentItem: Text {
         objectName: "picasaToolTipText"
         text: sugo.text
+        //: a MÉRT alapcsalád `Arial` (`0x00a6b6ed` → `0x00c80a64`).
+        //: ⚠️ Ahol nincs telepítve (Linuxon jellemzően nincs), a Qt
+        //: metrikailag rokon családra helyettesít — jellemzően Liberation
+        //: Sans. Ez SZÁNDÉKOS: a kért család a mért, a helyettesítés a
+        //: rendszeré. (A `font.families` listás alak ezen a Qt-n nem
+        //: létező tulajdonság — mérve: „Cannot assign to non-existent
+        //: property", Qt 6.8.2.)
+        font.family: "Arial"
         font.pixelSize: Theme.fontSize
         color: Theme.ink
         wrapMode: Text.WordWrap
     }
 
-    background: Rectangle {
-        objectName: "picasaToolTipHatter"
-        color: Theme.panelBg
-        border.color: Theme.chromeBorder
-        border.width: 1
+    background: Item {
+        implicitWidth: keret.implicitWidth
+        implicitHeight: keret.implicitHeight
+
+        //: a képen MÉRT árnyék: csak a JOBB és az ALSÓ élen látszik, tehát
+        //: egy azonos méretű, eltolt téglalap a buborék ALATT — bal és
+        //: felső élen így nem marad belőle semmi
+        Rectangle {
+            objectName: "picasaToolTipArnyek"
+            x: 2
+            y: 2
+            width: parent.width
+            height: parent.height
+            color: Qt.rgba(0, 0, 0, 0.3)
+        }
+
+        Rectangle {
+            id: keret
+            objectName: "picasaToolTipHatter"
+            anchors.fill: parent
+            color: Theme.tooltipBg
+            border.color: Theme.tooltipBorder
+            border.width: 1
+        }
     }
 }

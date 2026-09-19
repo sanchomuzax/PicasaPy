@@ -50,9 +50,16 @@ Window {
     function sugoNeve() { return gomb.ToolTip.toolTip.objectName }
     function sugoKesleltetes() { return gomb.ToolTip.toolTip.delay }
     function sugoHatterSzine() {
-        return String(gomb.ToolTip.toolTip.background.color)
+        // #901: a háttér a MÉRT krómot viselő `picasaToolTipHatter`
+        // téglalapé — a `background` maga egy burkoló `Item`, mert alatta
+        // ül a mért, jobb+alsó élre eső árnyék.
+        var h = gomb.ToolTip.toolTip.background
+        for (var i = 0; i < h.children.length; ++i)
+            if (h.children[i].objectName === "picasaToolTipHatter")
+                return String(h.children[i].color)
+        return "nincs-hatter"
     }
-    function temaPanelSzine() { return String(Theme.panelBg) }
+    function temaTooltipSzine() { return String(Theme.tooltipBg) }
 
     Button {
         id: gomb
@@ -108,4 +115,10 @@ class TestAKozosBuborek:
         assert _hivd(ablak, "sugoKesleltetes") == 600
 
     def test_a_hatter_a_tema_tokenjebol_jon(self, ablak):
-        assert _hivd(ablak, "sugoHatterSzine") == _hivd(ablak, "temaPanelSzine")
+        """#901: a MÉRT buborék-token, nem a panel-króm.
+
+        A buborék krómja 2026-09-19 óta mért érték (`#F4F1E5`), ezért saját
+        tokent kapott — korábban a semleges `Theme.panelBg`-t viselte, ami
+        kimondottan a MI döntésünk volt, nem az eredeti mérése.
+        """
+        assert _hivd(ablak, "sugoHatterSzine") == _hivd(ablak, "temaTooltipSzine")

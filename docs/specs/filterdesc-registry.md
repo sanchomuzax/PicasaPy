@@ -1943,19 +1943,23 @@ R' = k*R + t;   G' = k*G + t;   B' = k*B + t;
 >
 > A `63,5`-ös fixpont meglepő (a középszürke fele). A dekompilátorban
 > `(1.0 - k) * 127.0 * 0.5` alakban áll; a másik ágban viszont explicit
-> `127.5 - k*127.5` szerepel, tehát nem fordítási artefaktum. **Referencia-
-> exporttal érdemes ellenőrizni**, mielőtt véglegesítjük.
+> `127.5 - k*127.5` szerepel, tehát nem fordítási artefaktum.
+
+**Kompozit golden-kontroll (nem izolált mátrixmérés):** a szállított
+`TwoTone`-minta (`effekt4_12_kettonusu_alap.jpg`, paraméter:
+`TwoTone=1,0.000000,20.000000,0.000000,00004488,00ffff00;`) és a natív
+export összevethető. Azonos `1200×1600×3` méreten a PicasaPy teljes
+`apply_twotone` csővezetéke **22,4231 MAE**-t ad a natív exporthoz, míg az
+érintetlen forrás–natív eltérés **59,5135 MAE**. Ez pozitív kontroll a teljes
+TwoTone-útra, de nem választja le a linked mátrix hibáját a luma-/gradient-
+és JPEG-hatástól; pixelazonosságot ebből nem állítok.
 
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
-`h = clamp(h, -180, 180)`, majd `szog = h/180 · π`, és `sin`/`cos`
-(`0x00c29d20`, `0x00c285f0`) alapján a szokásos hue-rotation mátrix.
-
-> A mátrix együtthatói **nem olvashatók ki** a dekompilátumból: az FPU-veremben
-> mennek át, a `FUN_008f28d0` argumentumlistája üresen látszik. A szerkezet
-> (szögkorlát, fok→radián, sin/cos) biztos; a konkrét együtthatók
-> **feltételesek** — a Haeberli-féle hue-rotation a valószínű, de ez még nincs
-> bizonyítva.
+**LEZÁRVA a G) szakaszban:** a korábbi dekompilátor-korlátot a helyi nyers
+x86-diszasszemblálás és a PE-adatkonstansok kiolvasása feloldotta. A hue-
+mátrix konkrét együtthatói, címei és numerikus kontrolljai a G) szakaszban
+állnak; a korábbi „feltételes / valószínű Haeberli” megfogalmazás elavult.
 
 ### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
 
@@ -6326,3 +6330,229 @@ Ghidra-kimenet `FUN_00bb9d20`, `FUN_00bb9e00`, `FUN_008f2c70`,
 `src/picasapy/render/curves.py:26–111`,
 `src/picasapy/render/glimmer_ops.py:125–148`,
 `tests/render/test_curves_spline_629.py:28–145`.*
+
+## ⛳ A `Border` négy attribútumának EGYSÉGE — és a rejtett átméretezési tényező (2026-09-19, 325. kör, #626)
+
+*A jegy 3. prioritása a `Border` (Border · MuseumMatte · RoundedEdges ·
+Sixties). A kimeneti méret és a tageltolások korábban megvoltak; itt a
+rajzolási lánc és az egységek jönnek.*
+
+### A) A lánc — három függvény, mindegyiknek EGY hívója
+
+```
+0x00bbe320 (266 b, 6. rés = alkalmazó)
+   ├── 0x00bbe430 (317 b)   ← a két VASTAGSÁG + a feliratsáv beolvasása
+   └── 0x00bbe570 (1953 b)  ← a munkavégző (egyetlen hívója a fenti)
+         ├── 0x00aa13b0 (1153 b, 6 hívó)   vászon-primitív
+         ├── 0x00aa1840 (813 b, 7 hívó)    rajzoló-primitív
+         ├── 0x009ab360 (176 b, EGYETLEN hívója ez)  ← csak a Borderé
+         └── 0x008f4c80 (247 b, 4 hívó; a másik három a `0x00bd0f10`,
+             `0x00bd1350`, `0x00bd1730` szűrő-támogató)
+```
+
+A `Border`-nek a 4.5 táblázatban nincs 8. rése — a rajzolás tehát **ebben a
+láncban** történik, nem külön munkavégzőben.
+
+### B) A színek: `double` attribútum, előjel-helyreállítással
+
+Mindkét szín a `0x8ef520` → `0x8eea90` páron jön be `double`-ként, és ha az
+érték **negatív**, a kód hozzáadja a `0x00cf39e4`-en álló `float`
+konstanst — az értéke **2³² = 4 294 967 296**:
+
+```
+0x00bbe6d4  test eax, eax
+0x00bbe6db  jge  …
+0x00bbe6dd  fadd dword ptr [0xcf39e4]      ; + 2^32
+```
+
+⇒ ez nem paraméter, hanem **előjeles → előjel nélküli** helyreállítás: a
+`0xff000000 + szín` alakú leíró-kifejezés `double`-ben negatívként jelenik
+meg, és így lesz belőle újra ARGB. (A leíró tényleg így ír:
+`outercolor="{0xff000000 + _cpkrOuter.liveColor}"`.)
+
+### C) ⭐ A két VASTAGSÁG át van skálázva — a `captionheight` és a `cornerradius` NEM
+
+A `0x00bbe430` először **kikeresi az `imageWidth` változót** a szűrő
+változó-táblájából (a kulcs-sztring a `0x00cc44f8`-on: `imageWidth`; a
+szomszédai `imageHeight`, `outputIndex`), majd elosztja a méret-rekord egy
+egész mezőjével, és az így kapott **tényezővel szoroz**:
+
+```
+0x00bbe4a6  fild dword ptr [esi + 8]       ; a méret-rekord egész mezője
+0x00bbe4b0  fdivr qword ptr [esp + 0x14]   ; imageWidth / ez  → tényező
+0x00bbe4bd  call 0x8f1490                  ; innerthickness beolvasása
+0x00bbe4d0  fmul dword ptr [esp + 0xc]     ; ← SKÁLÁZÁS
+0x00bbe508  lea  ecx, [ebx + 0x44]         ; outerthickness
+0x00bbe51b  fmul dword ptr [esp + 0xc]     ; ← SKÁLÁZÁS
+0x00bbe553  call 0x8f1490                  ; captionheight — ⛔ NINCS fmul
+```
+
+A `cornerradius`-t nem is ez a segítő olvassa, hanem maga az alkalmazó
+(`0x00bbe3b8`), szintén **szorzás nélkül**. Mindegyik érték `fldcw`-vel
+váltott kerekítési módban megy `int`-be (csonkítás).
+
+**Független megerősítés a szállított leíróból** — a csúszkák deklarációja
+maga mondja meg az egységet:
+
+| attribútum | csúszka tartománya | alap | ⇒ egység |
+|---|---|---:|---|
+| `outerthickness` | 0 … **100** | 20 | a **kép pixelében**, átméretezve (C) |
+| `innerthickness` | 0 … **100** | 5 | ugyanaz |
+| `cornerradius` | 0 … `min(imagewidth, imageheight)/2` | 0 | **képpont**, nyersen |
+| `captionheight` | 0 … `imageheight/6` | 0 | **képpont**, nyersen |
+
+A két „pixel" tartomány kép-méretből származik, a két vastagságé fix 0–100 —
+és pontosan a két utóbbi az, amit a bináris átskáláz. **A két forrás
+egymástól függetlenül ugyanazt adja.**
+
+### D) Miért nem mond ez ellent a #317 exportjainak
+
+A `render/glimmer_frame_ops.py` `add_ring()` megjegyzése hét valódi
+MuseumMatte-exportra hivatkozik, amelyeken az oldalankénti ráadás **pontosan
+`Outer + Inner` képpont** volt (0/50/100 külső, 0/100 belső állásokon). Ez
+**összhangban van** a fentiekkel: teljes felbontású kimenetnél a C) pont
+tényezője **1**, tehát a szorzás nem látszik. A tényező akkor tér el 1-től,
+amikor a művelet **nem teljes felbontású** vásznon fut (előnézet, nagyítás).
+
+⇒ Ebből egy **mérhető aszimmetria** következik: előnézeten a keret vastagsága
+a vászonhoz skálázódik, a **feliratsáv és a sarok-lekerekítés viszont nem**.
+
+### E) A korábbi iránykérdés — LEZÁRVA az F) szakaszban
+
+~~A tényező iránya (`imageWidth / vászonszélesség` vagy fordítva) nyitott
+kérdés volt: a méret-rekord (`[esi + 8]`, `[esi + 0xc]`) a vászon vagy az
+eredeti méretét tartja.~~
+
+Az F) szakasz ezt a kérdést a Crop-kontrollal és a változóasztal
+argumentumláncával lezárta: a rekord a `fullResImageWidth` /
+`fullResImageHeight` pár, a tényező pedig **`imageWidth /
+fullResImageWidth`**. A korábbi nyitott kérdés ezért nem új kutatási tétel.
+*(Fejlesztői oldal: **#3377**.)*
+
+*A lezáró bizonyíték forrása: `0x00bbe320`, `0x00bbe430`, `0x00bbe570`,
+`0x00bbdbd0`, `0x008e38a0` és az F) szakaszban felsorolt kulcs-/konstans-
+címek.*
+
+### F) ⭐ A skálázási tényező iránya — a második argumentum teljes felbontású rekordja (2026-09-19, #626)
+
+A korábbi rés nyitva hagyta, hogy a `0x00bbe4b0` által képzett arány
+`imageWidth / [esi+8]` a munkavászonhoz vagy annak reciprokához igazodik-e.
+A kérdést a Crop-kontroll és a Glimmer-változóasztal közös argumentumlánca
+méri ki; nem goldenből és nem feltételezésből.
+
+#### 1. A műveleti argumentumok azonosítása
+
+Az `ApplyInstruction` (`0x00bd0cc0`, az RTTI-vtábla `0x008f0f18` negyedik
+slotja) a 40 bájtos verem legfelső rekordját adja az alkalmazónak első
+argumentumként (`0x00bd0d41`), a hívó kontextusát második argumentumként
+(`0x00bd0d3d`), és az új kimeneti rekordot harmadikként (`0x00bd0d3c`).
+
+A `CropImageOperation` alkalmazója (`0x00bbdbd0`) az első argumentum
+`+0x08`/`+0x0c` mezőjét olvassa (`0x00bbdc27`, `0x00bbdc34`), majd ezt a
+40 bájtos képreceptort másolja a harmadik argumentumba (`0x009a8ca0`, hívás:
+`0x00bbdc99`). Ez a pozitív kontroll: az első argumentum a pillanatnyi
+munkakép rekordja, a harmadik a létrehozandó kimeneti rekord.
+
+A `Border` alkalmazója (`0x00bbe320`) a második argumentum `+4`-ére mutató
+kontextust tartja meg (`0x00bbe32b`, `0x00bbe338`); a `0x00bbe430` ebből az
+`esi` rekordból olvassa a két méretmezőt (`0x00bbe4a6`, `0x00bbe4af`).
+
+#### 2. A `+8/+0c` rekord szerepe
+
+A változóasztal felépítője (`0x008e38a0`) a bemeneti méretpár két egészét a
+kontextus `+0x08` és `+0x0c` mezőjébe másolja (`0x008e38ad`, `0x008e38b5`),
+és ugyanebben az ágban a `fullResImageWidth` / `fullResImageHeight`
+kulcsokat regisztrálja (`0x00cd0270`, `0x00cd0284`). Az `imageWidth` és
+`imageHeight` külön kulcsfeloldó ágon szerepel (`0x008e45b0`, kulcsok:
+`0x00cc44f8`, `0x00cc44ec`), vagyis a Border nevezője nem az aktuális
+munkakép `+8/+0c` rekordja, hanem a teljes felbontás párja.
+
+A Border utasításszintű aritmetikája ezért pontosan ez:
+
+```text
+skálázási tényező = imageWidth / fullResImageWidth
+innerthickness'   = csonk(innerthickness × tényező)
+outerthickness'   = csonk(outerthickness × tényező)
+```
+
+A fordított `fullResImageWidth / imageWidth` olvasatot a `0x00bbe4a6`
+`fild [esi+8]` → `0x00bbe4b0` `fdivr` sorrendje kizárja. A magassági pár
+ugyanezt a kontextust hordozza (`+0x0c`), bár a Border saját tényezője a
+szélességből készül.
+
+#### 3. Eredeti / nálunk / teendő
+
+| | Eredeti, mérve | PicasaPy, mérve | Teendő |
+|---|---|---|---|
+| Border vastagság skálája | `imageWidth / fullResImageWidth`, `0x00bbe4a6`–`0x00bbe4b0`; a két `fmul` `0x00bbe4d0` és `0x00bbe51b` | `glimmer_frame_ops.py:102–118`: a `draw_border` a kapott vastagságokat közvetlenül adja át az `add_ring`-nek; nincs teljes felbontású tényező | külön fejlesztői jegy: **#3377** |
+| captionheight / cornerradius | nyers képpont, nincs `fmul` (`0x00bbe553`, illetve `0x00bbe3b8`) | közvetlen képpont-paraméter | #3377-ben kezelendő |
+| natív–PicasaPy pixel-golden | **NINCS MEG** ebben a körben | **NINCS MEG** | külön golden-pár szükséges |
+
+**Bizonyítottsági fok: megerősített** a tényező irányára és a rekord
+szerepére (SQLite RTTI/string/xref + célzott x86-diszasszemblálás).
+A Border teljes renderelési pixel-goldenje továbbra is **NINCS MEG**; ezt
+nem állítom elő a mechanizmus-leletből.
+
+**Nyitott kérdések mérlege — e kör saját kérdései:** 0 nyílt · 1 lezárva ·
+0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A #626 gyűjtőjegy nyitva
+marad: a Rotate, Crop, SimpleBorder és az alkalmazási lánc további részei
+külön kutatási tételek.
+
+### G) ⭐ A `SimpleColorMatrix` hue-forgató mátrixa (2026-09-19, #626)
+
+A `SimpleColorMatrix` ötödik mátrix-építője (`0x008f1e70`, 463 bájt) a
+szögparamétert előbb **−180…+180 fokra vágja**, majd
+`h / 180 · π` alakban radiánra váltja. A `180` konstans a `0x00cf3d48`, a
+π-konstans a `0x00cf4298`; a `sin` és `cos` hívási útja rendre
+`0x00c285f0` és `0x00c29d20`.
+
+A nyers FPU-lánc a mátrix első sorát közvetlenül kiadja (`0x008f1f08`–
+`0x008f1f66`), a további sorok ugyanebbe a 25 elemű mátrix-lokálisba kerülnek
+(`0x008f1f6a`–`0x008f2028`), majd a közös mátrix-alkalmazó kapja
+(`0x008f202c`, `FUN_008f28d0`). A kilenc színkonstans és címe:
+
+| cím | érték |
+|---|---:|
+| `0x00cf4250` | 0,283 |
+| `0x00cf4258` | 0,14 |
+| `0x00cf4260` | 0,285 |
+| `0x00cf4268` | 0,143 |
+| `0x00cf4270` | 0,928 |
+| `0x00cf4278` | 0,072 |
+| `0x00cf4280` | 0,715 |
+| `0x00cf4288` | 0,213 |
+| `0x00cf4290` | 0,787 |
+
+A kiolvasott 3×3 színmátrix — `C = cos(h/180·π)`,
+`S = sin(h/180·π)` — ez:
+
+```text
+R' = (0,213 + 0,787·C − 0,213·S)·R
+   + (0,715 − 0,715·C − 0,715·S)·G
+   + (0,072 − 0,072·C + 0,928·S)·B
+
+G' = (0,213 − 0,213·C + 0,143·S)·R
+   + (0,715 + 0,285·C + 0,140·S)·G
+   + (0,072 − 0,072·C − 0,283·S)·B
+
+B' = (0,213 − 0,213·C − 0,787·S)·R
+   + (0,715 − 0,715·C + 0,715·S)·G
+   + (0,072 + 0,928·C + 0,072·S)·B
+```
+
+#### Független numerikus kontroll
+
+Az explicit képletből számolva `h=0°` esetén az azonosságmátrix maximális
+eltérése **0,0**, a `h ∈ {−180°, −90°, 0°, 90°, 180°}` kontrollpontokon a
+legnagyobb sorösszeg-eltérés **2,22·10⁻¹⁶** (lebegőpontos zaj). A ±180°
+ág ugyanazt a mátrixot adja, mert a szög előbb a határra vágódik.
+
+**Bizonyítottsági fok: megerősített** a szögkorlátra, a fok→radián útra,
+az állandók címére/értékére és a mátrix képletére (helyi x86
+diszasszemblálás + PE-adatkiolvasás + numerikus kontroll). Ez nem pixel-
+golden: natív és PicasaPy kimenet összevetése ebben a körben **NINCS MEG**.
+
+**Nyitott kérdések mérlege — e kör saját kérdései:** 0 nyílt · 1 lezárva ·
+0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A `ContrastAndBrightnessLinked`
+ág 127,5-ös képlete utasításszinten már korábban megvolt (`0x008f2040`),
+de a natív export-golden továbbra is külön, meg nem mért ellenőrzés.

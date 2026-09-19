@@ -699,6 +699,17 @@ ApplicationWindow {
             window.personAlbumName)
         window._javaslatFrissult()
     }
+    //: #2187: „További javaslatok keresése" (`moresug`). A vezérlő a
+    //: javaslat-lépcsőt tízzel lazítja, és a beállítást NEM írja vissza —
+    //: az eredeti kezelője (`0x00602890`) sem. A személy-album nevére itt
+    //: nincs szükség: a lazítás az EGÉSZ készletre újraszámol, ahogy a
+    //: mért kezelő is.
+    function findMoreSuggestions() {
+        if (!window._faceScanController)
+            return
+        window._faceScanController.moreSuggestions()
+        window._javaslatFrissult()
+    }
     //: a darabszám újraszámolása + az album újratöltése: a jóváhagyott
     //: arcok ettől kerülnek be a személy képei közé
     function _javaslatFrissult() {
@@ -1506,7 +1517,7 @@ ApplicationWindow {
 
     // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
     // FileOpsDialogs.qml deleteConfirmDialog) — a döntés-kulcs
-    // "undoAllEdits" a „Don't ask again" jelölő eltárolásához.
+    // "undoAllEdits" a „Do not ask again" jelölő eltárolásához.
     // #1404: a geocímke-törlés MEGERŐSÍTÉSE. Az eredeti `ClearGeoTag::warn`
     // szövegével, szó szerint — nem átfogalmazva.
     //
