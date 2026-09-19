@@ -64,6 +64,18 @@ QtObject {
         readonly property color chromeBorder: tema.dark ? "#4a4a4a" : "#cdcdcd"   // vezérlők, keretek
         readonly property color ink: tema.dark ? "#ececea" : "#1c1b19"            // tinta: szöveg, menük
 
+        // ------- buboréksúgó: a KÉPERNYŐN MÉRT króm (#901) -------
+        //
+        // A tulajdonos képernyőképéről képpontonként leolvasva: a kitöltés
+        // `#F4F1E5`, a keret `#B7B5AC`. Ezek NEM a mi semleges krómunk
+        // (`panelBg`/`chromeBorder`), hanem az eredeti buborék saját, mért
+        // értékei — ezért kapnak külön tokent.
+        //
+        // ⚠️ A sötét mód értéke a MI döntésünk: az eredeti Picasának nincs
+        // sötét témája, tehát ott nincs mit mérni.
+        readonly property color tooltipBg: tema.dark ? "#3a3a36" : "#f4f1e5"
+        readonly property color tooltipBorder: tema.dark ? "#5a584f" : "#b7b5ac"
+
         // kompatibilitási aliasok (fokozatos átállás)
         readonly property color lightboxBg: nyersTokenek.canvasBg
         readonly property color textDark: nyersTokenek.ink
@@ -525,6 +537,8 @@ QtObject {
     readonly property color chromeBg: tema._szin("chromeBg", nyersTokenek.chromeBg)
     readonly property color chromeBorder: tema._szin("chromeBorder", nyersTokenek.chromeBorder)
     readonly property color ink: tema._szin("ink", nyersTokenek.ink)
+    readonly property color tooltipBg: tema._szin("tooltipBg", nyersTokenek.tooltipBg)
+    readonly property color tooltipBorder: tema._szin("tooltipBorder", nyersTokenek.tooltipBorder)
     readonly property color lightboxBg: tema._szin("lightboxBg", nyersTokenek.lightboxBg)
     readonly property color textDark: tema._szin("textDark", nyersTokenek.textDark)
     readonly property color thumbCard: tema._szin("thumbCard", nyersTokenek.thumbCard)

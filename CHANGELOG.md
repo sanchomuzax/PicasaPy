@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.523] – 2026-09-19
+
+### Változott
+
+- A buboréksúgó az eredeti Picasa mért krómját viseli: krémszínű
+  háttér (`#F4F1E5`), `#B7B5AC` keret, derékszögű sarok, Arial felirat,
+  és a képen mért árnyék a jobb és az alsó élen. A 600 ms-os
+  késleltetés változatlan. (#901)
+
 ## [0.8.522] – 2026-09-19
 
 ### Változott
