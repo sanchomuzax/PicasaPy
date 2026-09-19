@@ -630,20 +630,19 @@ class TestRetouchTool:
         # rács/fülsáv (modeToolActive) mindkettőnél ugyanúgy rejtve marad
         assert panel.findChild(QObject, "toolsColumn").property("visible") is False
 
-    def test_az_alkalmaz_megse_par_MAR_NINCS_a_panelben(self, qml_engine, qt_app):
-        """#3123: a pár a KÉP FÖLÉ került (`EditorToolBar`).
+    def test_az_alkalmaz_megse_par_A_PANELBEN_all(self, qml_engine, qt_app):
+        """#3320: a pár IDE tartozik — `retouchapply: retouch_well` (`:894`).
 
-        Az eredetiben az `editpanel/tool_container` szülője a `preview`,
-        tehát a gombok a kép fölött lebegnek. A viselkedésüket (engedve/
-        tiltva, jelzés) a sáv tesztje méri:
-        `tests/app/test_qml_eszkozsav_3123.py`.
+        A #3123 a kép fölé vitte az `editpanel/tool_container` alapján; a
+        #3234 mérése szerint az a sáv a KIEGYENESÍTÉSÉ
+        (`#---Straighen Overlay---`), nem a négy eszköz közös sávja.
         """
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
         panel.setProperty("retouchActive", True)
         qt_app.processEvents()
-        assert panel.findChild(QObject, "retouchApplyButton") is None
-        assert panel.findChild(QObject, "retouchCancelButton") is None
+        assert panel.findChild(QObject, "retouchApplyButton") is not None
+        assert panel.findChild(QObject, "retouchCancelButton") is not None
 
     def test_refining_label_visible_only_while_patch_pending(
         self, qml_engine, qt_app
@@ -752,14 +751,14 @@ class TestRedeyeTool:
         assert panel.findChild(QObject, "redeyeColumn").property("visible") is True
         assert panel.findChild(QObject, "toolsColumn").property("visible") is False
 
-    def test_az_alkalmaz_megse_par_MAR_NINCS_a_panelben(self, qml_engine, qt_app):
-        """#3123: a pár a kép fölé került — ld. a retusálás ugyanilyen próbáját."""
+    def test_az_alkalmaz_megse_par_A_PANELBEN_all(self, qml_engine, qt_app):
+        """#3320: `redeyeapply: redeye_well` (`:722`) — ld. a retusálás párját."""
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
         panel.setProperty("redeyeActive", True)
         qt_app.processEvents()
-        assert panel.findChild(QObject, "redeyeApplyButton") is None
-        assert panel.findChild(QObject, "redeyeCancelButton") is None
+        assert panel.findChild(QObject, "redeyeApplyButton") is not None
+        assert panel.findChild(QObject, "redeyeCancelButton") is not None
 
     def test_reset_disabled_without_manual_regions(self, qml_engine, qt_app):
         panel = self._make_panel(qml_engine)
@@ -864,19 +863,22 @@ class TestTextTool:
     def test_az_alkalmazhatosag_felteteltet_a_panel_MONDJA_MEG(
         self, qml_engine, qt_app
     ):
-        """#3123: a gomb a kép fölé került, a FELTÉTEL viszont itt lakik.
+        """#3320: a gomb visszakerült a panelbe, a feltétel ITT lakik.
 
-        A szövegmező ebben a panelben él, ezért a panel adja ki a
-        `textApplyEnabled`-t a sávnak — enélkül a sáv nem tudná, mikor
-        alkalmazható a szöveg.
+        A `textApplyEnabled` kifelé is megmarad (a gazda EditorPanel adja
+        ki), mert a szövegmező ebben a panelben él — a próbák és a többi
+        kötés ezen a néven olvassák.
         """
         panel = self._make_panel(qml_engine)
         panel.setProperty("textActive", True)
         qt_app.processEvents()
-        assert panel.findChild(QObject, "textApplyButton") is None
+        gomb = panel.findChild(QObject, "textApplyButton")
+        assert gomb is not None
+        assert gomb.property("buttonEnabled") is False
         assert panel.property("textApplyEnabled") is False
         field = panel.findChild(QObject, "textContentField")
         field.setProperty("text", "Cím")
         panel.setProperty("textPlacementPending", True)
         qt_app.processEvents()
         assert panel.property("textApplyEnabled") is True
+        assert gomb.property("buttonEnabled") is True

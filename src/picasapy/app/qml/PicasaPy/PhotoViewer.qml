@@ -1901,26 +1901,17 @@ Rectangle {
                         objectName: "editorToolBar"
                         parent: photo
                         z: 20
-                        tool: editorPanel.cropActive ? "crop"
-                            : editorPanel.retouchActive ? "retouch"
-                            : editorPanel.textActive ? "text"
-                            : editorPanel.redeyeActive ? "redeye"
-                            //: #3234: a kiegyenesítés a sáv CSÚSZKÁS
-                            //: eszköze — a `.tre` a sávot a
-                            //: `#---Straighen Overlay---` alá teszi
-                            : (editorPanel.tiltActive
+                        //: #3320: a sáv KIZÁRÓLAG a kiegyenesítésé. A
+                        //: `.tre` a `tool_container`-t a
+                        //: `#---Straighen Overlay---` szakaszfejléc alá
+                        //: teszi (`:1038`–`:1052`); a másik négy eszköz
+                        //: párja a SAJÁT paneljében ül (`crop_well`,
+                        //: `retouch_well`, `redeye_well`).
+                        tool: (editorPanel.tiltActive
                                && editorPanel.activeTab === 0) ? "tilt" : ""
-                        //: SZÓ SZERINT a korábbi panel-gombok feltétele —
-                        //: se többet, se kevesebbet. ⛔ A vágásnál
-                        //: SZÁNDÉKOSAN nincs kijelölés-feltétel: az
-                        //: „Alaphelyzet" után is el kell tudni fogadni a
-                        //: vágatlan állapotot (#1528), és a redeye-nél az
-                        //: automatika önmagában is menthető.
-                        applyEnabled: tool === "retouch"
-                                ? editorPanel.retouchRegionCount > 0
-                                : tool === "text"
-                                    ? editorPanel.textApplyEnabled
-                                    : true
+                        //: a kiegyenesítés Alkalmaz gombja mindig aktív —
+                        //: a döntés értéke már ki van írva (#72)
+                        applyEnabled: true
                         //: #3234: a döntés-csúszka tartománya — −1…1
                         //: Picasa-egység (±11,5°)
                         csuszkaMin: -1
@@ -1942,25 +1933,17 @@ Rectangle {
                         y: (photo.height + photo.paintedHeight) / 2
                            - height - 10
                         onApplyClicked: {
-                            if (tool === "crop") editorPanel.cropApplyRequested()
-                            else if (tool === "retouch") editorPanel.retouchApplyRequested()
-                            else if (tool === "text") editorPanel.textApplyRequested()
-                            else if (tool === "redeye") editorPanel.redeyeApplyRequested()
                             //: #3234: a döntés értéke MÁR ki van írva (a
                             //: csúszka elengedésekor, #72) — az Alkalmaz
                             //: ezért csak bezárja az eszközt.
-                            else if (tool === "tilt") editorPanel.tiltActive = false
+                            if (tool === "tilt") editorPanel.tiltActive = false
                         }
                         onCancelClicked: {
-                            if (tool === "crop") editorPanel.cropCancelRequested()
-                            else if (tool === "retouch") editorPanel.retouchCancelRequested()
-                            else if (tool === "text") editorPanel.textCancelRequested()
-                            else if (tool === "redeye") editorPanel.redeyeCancelRequested()
                             //: #3234: a Mégse a NYITÁSKORI döntés-értéket
                             //: állítja vissza. Ha közben nem változott,
                             //: nem írunk — különben fölösleges
                             //: undo-lépést tolnánk.
-                            else if (tool === "tilt") {
+                            if (tool === "tilt") {
                                 if (editController.tiltParam
                                         !== viewer.tiltErtekNyitaskor)
                                     editController.setTilt(viewer.tiltErtekNyitaskor)
