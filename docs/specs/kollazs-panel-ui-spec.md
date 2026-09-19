@@ -501,6 +501,66 @@ eredeti `.tre`-szülőfa nem áll fenn betű szerint. Ez **kutatási lelet**, ne
 önmagában bizonyított felhasználói hiba; a kiválasztott kérdés lezárva,
 dinamikus átméretezési ekvivalenciát nem állítunk.
 
+### 4.2/c ⭐ R5 felirat- és súgókontroll — hat angol forráseltérés (#656, 2026-09-19)
+
+**Pontos kérdés.** A Beállítások lap, a képkeret-választó, a háttérdoboz és
+az oldalformátum-menü mai szövegforrásai, valamint a magyar futásidejű
+fordításaik egyeznek-e a szállított Picasa-forrásokkal? Ez külön kérdés az
+R2/R3 szerkezettől: itt a látható felirat/súgó tartalma a mérce.
+
+**Olcsó bizonyítéklánc.**
+
+- **Mai saját kód:** `CollageSettingsTab.qml`, `CollageThemePopup.qml`,
+  `CollageBorderPicker.qml`, `CollageBackgroundBox.qml` és
+  `CollageFormatMenu.qml`; a QML-ben **48** `qsTr`-híváshely van, amelyek
+  **46** egyedi kontextus/forrás-párra vezetnek.
+- **Magyar TS:** a megfelelő öt kontextusban `11 + 12 + 4 + 4 + 15 = 46`
+  üzenet áll; **0** befejezetlen fordítás van.
+- **Eredeti szerkezet/szöveg:** `referencia/ui-leltar.csv:323,341,346,359`,
+  `referencia/tre-eroforrasok/collagepanel.tre`, valamint a
+  `referencia/stringres-en-hu.tsv:103,124`. A helyi SQLite string-index
+  pozitív kontrollja: `Instant Camera` **2 xref / 2 függvény**, az
+  `Add Custom Aspect Ratio...` **1 xref / 1 függvény**; negatív indexeredményt
+  itt nem használok bizonyítékként.
+
+**Mért eredmény.** Az angol forrás **42/48** híváshelyen egyezik. A hat
+ eltérés mind pontosan azonosítható:
+
+| elem | nálunk ma | eredeti forrás | következmény |
+|---|---|---|---|
+| `landscape` súgó | `Landscape: orient the collage horizontally` | `Landscape: Orient your design horizontally` | angol forráseltérés |
+| `portrait` súgó | `Portrait: orient the collage vertically` | `Portrait: Orient your design vertically` | angol forráseltérés |
+| `caption_checkbox` súgó | `...Polaroid Camera border` | `...an "Instant Camera" border` | angol forráseltérés |
+| keret 3. súgója | `Polaroid Camera` | `Instant Camera` | angol forráseltérés |
+| `format_menu` súgó | `...height of the collage` | `...height of your design` | angol forráseltérés |
+| egyéni arány felvétele | Unicode `…` | ASCII `...` | forrás- és írásjel-eltérés |
+
+A hat téma becsukott/lenyíló feliratait a név + leírás futásidejű
+összeállításában külön is kontrolláltam: **6/6** teljes magyar mező egyezik
+(`Képkupac`, `Mozaik`, `Képkockamozaik`, `Rács`, `Indexkép`, `Többszörös
+exponálás`). A teljes magyar mezőkészlet **47/48** esetben karakterre
+egyezik; az egyetlen eltérés az egyéni arány felvételének `…` kontra `...`
+írásjele. A négy panel-/menü-csoport többi magyar mezője a hivatalos
+honosítással egyezik.
+
+**Eredeti / nálunk / teendő.** Az eredeti hat angol forrás és a hozzájuk
+tartozó pontos hivatkozás a fenti táblában áll; nálunk a hat mai QML-forrás
+eltér, miközben a magyar jelentés többnyire megmarad. A terméki javítás
+külön fejlesztői jegye **#3408**; ebben a kutatási körben termékkódot nem
+írtam.
+
+**Bizonyítottsági fok:** megerősített a 48 híváshely száma, az öt TS-
+kontextus teljessége, a 42/48 angol forrás-egyezés, a 47/48 magyar
+karakter-egyezés és a 6/6 témafelirat-egyezés. A hat angol eltérés külön
+felhasználói képernyőképes hatása **NINCS MEG**; a forrásszintű eltérés
+azonban közvetlenül mérhető. A kutatási kérdés lezárva, a fejlesztői
+átvezetés a #3408 feladata, a #656 teljes összevetése nyitva marad.
+
+**Futási kontroll:**
+`python3 -m pytest -q --tb=short -p no:cacheprovider
+tests/app/qml_functional/test_collage_settings_tab_946.py
+tests/app/test_i18n_meretarany_982.py` → **126 passed in 10,13 s**.
+
 ### 4.3 „Klipek" lap
 
 | komponens | `objectName` | x, y (a `tabpanel2`-höz) | méret |
