@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.526] – 2026-09-19
+
+### Hozzáadva
+
+- Megvan az objektívnevek feloldásához szükséges két tábla (230 Canon +
+  416 Nikon objektív), pontosan úgy, ahogy az eredeti Picasa keresett
+  bennük. A tulajdonságok panelen a név megjelenítése a következő
+  lépés. (#3121)
+
 ## [0.8.525] – 2026-09-19
 
 ### Hozzáadva
