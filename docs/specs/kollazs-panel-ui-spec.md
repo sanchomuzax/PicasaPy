@@ -660,6 +660,62 @@ futásidejű közvetlen szülője, valamint a négy élre vonatkozó R3-egyezés
 **NINCS MEG**, hogy a szülőfa eltérésének lenne önálló felhasználói hatása.
 Ez a kutatási szelet lezárva; a #656 teljes UI-összevetése nyitva marad.
 
+### 4.4/c ⭐ R2/R3 szerkezeti és belső geometriai kontroll — a folyamatjelző (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` a folyamatjelzőt a
+`collageprog_base → collageprog_clip → previewclip → previewcontainer →
+rightcontainer` láncba teszi. A kérdés az volt, hogy a PicasaPy futó QML-fája
+ugyanezt a szülőláncot és a rétegrekordból mért belső dobozokat adja-e.
+
+**Olcsó bizonyítéklánc.**
+
+- **Struktúra:** `referencia/tre-eroforrasok/collagepanel.tre:214–249` és
+  `referencia/ui-leltar.csv:325–331`.
+- **Eredeti geometria:** `docs/specs/picasa-create-features.md:717–728`.
+  A rétegrekordban a `collageprog_base` alapdoboza `(409, 220)`,
+  **224 × 80**; a három belső elem helye ebből rendre `(5, 6)`,
+  `(100, 24)`, `(5, 60)`.
+- **Mai kód:** `CollagePanel.qml:382–396` és
+  `CollageProgressOverlay.qml:30–118`.
+- **Futásidő:** a célzott kirajzolt kontroll
+  `python -m pytest -q --tb=short -p no:cacheprovider
+  tests/app/qml_functional/test_collage_output_ui_949.py` → **47 passed in
+  28,55 s**. A külön parent-/QML-geometriapróba 1280 × 800-as ablakban a
+  QML saját `x/y/width/height` értékeit és a vizuális szülőfát olvasta.
+
+| elem | eredeti, a 224 × 80-as alapon belül | PicasaPy futásidőben | ítélet |
+|---|---|---|---|
+| progress-overlay alapdoboz | 224 × 80 | 224 × 80 | **R3 alapméret egyezik** |
+| cím | `x=5, y=6, 213 × 14` | `x=8, y=6, 208 × 16` | **R3 eltér** |
+| pörgő | `x=100, y=24, 29 × 31` | `x=98, y=26, 28 × 28` | **R3 eltér** |
+| állapotsor | `x=5, y=60, 213 × 14` | `x=8, y=58, 208 × 16` | **R3 eltér** |
+| szülőlánc | `collageprog_base` a `previewclip`-láncban | `collageProgressOverlay` közvetlenül a `collagePanel` gyereke; a `collageCanvas` testvére | **R2 eltér** |
+| középpont | a preview-terület közepe | a progress-overlay közepe a `collageCanvas` közepétől **0,0 px** eltérésű | **R3 középpont egyezik** |
+
+**Következtetés.** A PicasaPy megtartja a folyamatjelző 224 × 80-as alapdobozát
+és a vászon középpontját, de a három belső réteg mért geometriája eltér az
+eredetitől, és a szülőlánc sem betű szerinti. A parent-eltérés külön
+felhasználói hatása **NINCS MEG**; a belső geometriai eltérés közvetlenül
+mérhető, ezért önálló terméki folytatást kapott: **#3392**.
+
+**Eredeti / nálunk / teendő.**
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| alapdoboz | 224 × 80 | 224 × 80 | megtartani |
+| cím | `5,6,213×14` | `8,6,208×16` | #3392: eredeti belső doboz |
+| pörgő | `100,24,29×31` | `98,26,28×28` | #3392: eredeti belső doboz |
+| állapotsor | `5,60,213×14` | `8,58,208×16` | #3392: eredeti belső doboz |
+| szülőlánc | `collageprog_base` a `previewclip`-láncban | közvetlen `collagePanel`-gyerek | #3392: R2-szerkezet rendezése a középre helyezés megtartásával |
+
+**Bizonyítottsági fok:** **megerősített** az eredeti geometriára, a mai
+futásidejű geometriára és a parent-kapcsolatra; **NINCS MEG**, hogy az R2
+szülőfa-eltérésnek önálló felhasználói hatása van.
+
+**Nyitott kérdések mérlege:** 0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva”. A #656 örökölt, teljes
+UI-összevetése nyitva marad; a fejlesztői teendő #3392.
+
 Gombok engedélyezése:
 
 | gomb | engedélyezve, ha |
@@ -1180,7 +1236,9 @@ ahogy a mai `makeCollage` — új szálkezelés ne szülessen.
 
 **A folyamatjelző overlay** a vászon közepén (`m_centerXY`, alapból
 rejtett): 224 × 80 doboz, benne cím (fent), pörgő (középen), állapotsor
-(lent). `objectName: collageProgressOverlay`.
+(lent). `objectName: collageProgressOverlay`. A rétegszerkezeti és belső
+geometriai R2/R3-kontroll részlete: **4.4/c**; a mért eltérések fejlesztői
+teendője: **#3392**.
 
 ### 9.2 Mentés meglévő fölé
 
