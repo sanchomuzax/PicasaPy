@@ -94,6 +94,9 @@ Item {
             font.pixelSize: Theme.fontSize
             //: a `namelimitext` MÉRT felirata szerint 16 karakter a korlát
             maximumLength: panel.cdNevHossz
+            //: minden szövegmezőnek jár a jobbklikk-menü (#422) — a
+            //: forrás-szintű őr ezt meg is követeli
+            TextFieldContextArea {}
         }
         MertFelirat {
             objectName: "publishNameLimitText"
