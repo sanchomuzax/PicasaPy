@@ -15,10 +15,14 @@ támasz 1 és 2 között negatív), ezért egy éles élen **túllövést** ad �
 bilineáris és a doboz soha nem lép a bemeneti szélsőértékeken kívülre.
 Ez az a különbség, ami a magot azonosítja, nem a „valamivel élesebb".
 
-⚠️ **A KICSINYÍTÉSI viselkedés nincs mérve.** A bináris annyit árul el,
-hogy a mód 3-as; hogy a mag a léptékkel nyúlik-e (élsimítás), az NYITOTT
-kérdés. Az implementáció a szokásos, nyújtott magot használja, és ezt a
-docstring kimondja.
+⭐ **A KICSINYÍTÉSI viselkedés MÉRVE van** (#3321). Az eredeti
+újramintavevő 3-as ága (`0x00a3f660`) a mag alap-tartósugarát a
+LÉPTÉKKEL OSZTJA (`0x00a3f745`–`0x00a3f74b`): `scale < 1` mellett a mag a
+forrástérben szélesedik. A mi `max(1, skala)`-nyújtásunk tehát nem
+„szokásos feltevés", hanem a mért mechanizmus.
+
+⚠️ Amit ez NEM bizonyít: a képpontra azonos kimenetet az eredetivel — a
+mechanizmus statikus bizonyíték, a golden-egyezés külön mérési feladat.
 """
 
 from __future__ import annotations
@@ -135,3 +139,93 @@ class TestASmoothingAgaMarad:
             resize_image(kep, 64, 16, smoothing=False),
             cv2.resize(kep, (64, 16), interpolation=cv2.INTER_NEAREST),
         )
+
+
+class TestAKicsinyitesiNyujtas:
+    """#3321: a mag KICSINYÍTÉSKOR a léptékkel nyúlik — mérve.
+
+    Az eredeti 3-as ága (`0x00a3f660`) a mag alap-tartósugarát a léptékkel
+    osztja (`0x00a3f745`–`0x00a3f74b`). A hatás élsimítás: `scale < 1`
+    mellett a szélesebb mag ÁTLAGOL, tehát a Nyquist-határon lévő minta
+    (egy képpont széles csíkok) nem alias-ol vissza.
+
+    A próba ezt a HATÁST méri, és a kontroll megmutatja, hogy az állításnak
+    van foga: ugyanaz a mag NYÚJTÁS NÉLKÜL látványos aliast ad.
+    """
+
+    @staticmethod
+    def _csikos(szelesseg: int = 64, magassag: int = 8) -> np.ndarray:
+        """Egy képpont széles, függőleges fekete-fehér csíkok (Nyquist)."""
+        kep = np.zeros((magassag, szelesseg, 3), dtype=np.uint8)
+        kep[:, ::2] = 255
+        return kep
+
+    @staticmethod
+    def _nyujtas_nelkul(be_meret: int, ki_meret: int):
+        """A KONTROLL súlyai: ugyanaz a mag, de rögzített, 1-es nyújtással."""
+        from picasapy.render.glimmer_ops import mitchell_netravali
+
+        skala = be_meret / ki_meret
+        tamasz = 2.0
+        kozep = (np.arange(ki_meret) + 0.5) * skala - 0.5
+        elso = np.ceil(kozep - tamasz).astype(np.int64)
+        ablak = int(np.ceil(2 * tamasz)) + 1
+        indexek = elso[:, None] + np.arange(ablak)[None, :]
+        sulyok = mitchell_netravali(kozep[:, None] - indexek)
+        osszeg = sulyok.sum(axis=1, keepdims=True)
+        osszeg[osszeg == 0] = 1.0
+        return np.clip(indexek, 0, be_meret - 1), sulyok / osszeg
+
+    def _kontroll_sor(self, kep: np.ndarray, ki_szelesseg: int) -> np.ndarray:
+        indexek, sulyok = self._nyujtas_nelkul(kep.shape[1], ki_szelesseg)
+        sor = kep[0, :, 0].astype(np.float64)
+        return (sor[indexek] * sulyok).sum(axis=1)
+
+    #: A 64 → 9 arány SZÁNDÉKOS. A kettő hatványainál (64 → 8, 64 → 16) a
+    #: mintavételi fázis szimmetrikus a periódus-2 csíkokra, ezért a
+    #: NYÚJTÁS NÉLKÜLI kontroll is pontosan 127,5-öt ad (szórás 0,0) — a
+    #: próba ott vakon átmenne. Mérve: 64 → 9-nél a kontroll szórása 65,2,
+    #: a nyújtotté 9,8.
+    KI_SZELESSEG = 9
+
+    def test_a_kicsinyites_ATLAGOL_nem_aliasol(self):
+        """A mért nyújtással a csíkok egyenletes szürkévé olvadnak."""
+        kep = self._csikos()
+        kicsi = resize_image(kep, self.KI_SZELESSEG, 8)
+        sor = kicsi[0, :, 0].astype(np.float64)
+        assert sor.std() < 12.0, (
+            f"a kimenet szórása {sor.std():.1f} — a szélesebb magnak "
+            "át kellene átlagolnia a csíkokat")
+        assert 96.0 < sor.mean() < 160.0, (
+            f"a fekete-fehér csíkok átlaga {sor.mean():.1f}, a várt "
+            "középszürke helyett")
+
+    def test_a_NYUJTAS_NELKULI_mag_ELBUKNA(self):
+        """Ellenpróba: az állításnak van foga.
+
+        Ugyanaz a Mitchell-mag, rögzített 2-es támasszal — a kimenet a
+        csíkokra ül rá, tehát nagy szórást ad. Ha ez a kontroll egyszer
+        „átmenne", az azt jelentené, hogy a fenti próba bármit elfogad.
+        """
+        kep = self._csikos()
+        sor = self._kontroll_sor(kep, self.KI_SZELESSEG)
+        assert sor.std() > 50.0, (
+            f"a nyújtás nélküli mag szórása {sor.std():.1f} — a kontroll "
+            "nem különbözteti meg a két magot")
+
+    def test_a_sulyok_a_MERT_nyujtast_hasznaljak(self):
+        """A súlyablak szélessége a léptékkel nő — a mechanizmus maga."""
+        from picasapy.render.glimmer_ops import _mintavetel_sulyok
+
+        _, kicsi = _mintavetel_sulyok(64, 8)
+        _, azonos = _mintavetel_sulyok(8, 8)
+        assert kicsi.shape[1] > azonos.shape[1], (
+            "kicsinyítéskor a mag NEM szélesedett — a mért osztás hiányzik")
+
+    def test_nagyitaskor_NINCS_nyujtas(self):
+        """A mért képlet `max(1, skala)`: `scale > 1` esetén a mag marad."""
+        from picasapy.render.glimmer_ops import _mintavetel_sulyok
+
+        _, nagy = _mintavetel_sulyok(8, 64)
+        _, azonos = _mintavetel_sulyok(8, 8)
+        assert nagy.shape[1] == azonos.shape[1]
