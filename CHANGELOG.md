@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Előkészítés (a felületen még nem látszik)
+
+- Az album-ugró gomb lenyomás-kezelése két megnevezett függvénybe került, hogy
+  a viselkedése minden rendszeren egyformán mérhető legyen. A gomb ugyanúgy
+  működik, mint eddig. (#857)
+
 ## [0.8.531] – 2026-09-19
 
 ### Hozzáadva
