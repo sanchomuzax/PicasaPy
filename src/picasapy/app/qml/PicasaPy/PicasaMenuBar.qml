@@ -185,6 +185,11 @@ MenuBar {
     //: #440: Eszközök ▸ Képek biztonsági mentése… (`ID_TOOLS_BACKUP`)
     signal backupRequested()
     signal compactDatabaseRequested()
+    //: #3132: SAJÁT FUNKCIÓ — a régi Picasa adatbázisából (`db3`) vesszük át
+    //: a neveket, kulcsszavakat és helyeket a `.picasa.ini`-be. Az eredetinek
+    //: nincs ilyen parancsa: ő MAGA a db3 gazdája. A helyét a tulajdonos
+    //: választotta (2026-09-18): menüpont, tehát kérésre fut.
+    signal picasaDataImportRequested()
     signal renameRequested()
     signal exportRequested()
     // #1616: Fájl ▸ Új album… (Ctrl+N) — a belépő (`openNewAlbum`,
@@ -2064,6 +2069,21 @@ MenuBar {
             objectName: "menuToolsOptions"
             text: qsTr("&Options...")
             onTriggered: bar.optionsRequested()
+        }
+        MenuSeparator {}
+        // SAJÁT FUNKCIÓ (#3132): a régi Picasa adatbázisának átvétele. Az
+        // eredeti Eszközök menüjében ilyen parancs NINCS és nem is lehet — ő
+        // maga a `db3` gazdája, nekünk viszont át kell vennünk tőle. Ezért
+        // kapja a #1701 jelölését, mint a duplikátum-KEZELŐ.
+        //
+        // A MAG a #3002/#3184 óta kész; ez a tétel az, ami eddig hiányzott
+        // (#3132) — nélküle az adat a felhasználónál nem mozdult.
+        PicasaMenuItem {
+            objectName: "menuToolsImportFromPicasa"
+            placeholder: false
+            sajat: true
+            text: qsTr("Import from Picasa...")
+            onTriggered: bar.picasaDataImportRequested()
         }
     }
     PicasaMenu {

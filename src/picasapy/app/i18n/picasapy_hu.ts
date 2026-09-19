@@ -5060,6 +5060,45 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
 </context>
 <context>
+    <name>PicasaDataImportDialog</name>
+    <message>
+        <source>Import from Picasa</source>
+        <translation>Import a Picasából</translation>
+    </message>
+    <message>
+        <source>Copying names, keywords and places from Picasa...</source>
+        <translation>Nevek, kulcsszavak és helyek átvétele a Picasából…</translation>
+    </message>
+    <message>
+        <source>Done.</source>
+        <translation>Kész.</translation>
+    </message>
+    <message>
+        <source>No Picasa data found on this computer.</source>
+        <translation>Nem találtunk Picasa-adatokat ezen a gépen.</translation>
+    </message>
+    <message>
+        <source>The import could not finish: %1</source>
+        <translation>Az átvétel nem fejeződött be: %1</translation>
+    </message>
+    <message>
+        <source>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</source>
+        <translation>%1 mappa frissült: %2 kulcsszó, %3 hely, %4 név.</translation>
+    </message>
+    <message>
+        <source>%1 photo(s) were left untouched because they already had data.</source>
+        <translation>%1 fotóhoz nem nyúltunk hozzá, mert azoknál már volt adat.</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+</context>
+<context>
     <name>PicasaMenuBar</name>
     <message>
         <source>My &amp;Computer</source>
@@ -5997,6 +6036,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Manage Duplicates...</source>
         <translation>Másodpéldányok kezelése…</translation>
+    </message>
+    <message>
+        <source>Import from Picasa...</source>
+        <translation>Import a Picasából…</translation>
     </message>
 </context>
 <context>

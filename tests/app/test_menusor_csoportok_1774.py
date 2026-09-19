@@ -34,10 +34,7 @@ from pathlib import Path
 
 from tests.support.qml_blokk import kommentek_nelkul
 
-_MENU_QML = (
-    Path(__file__).resolve().parents[2]
-    / "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
-)
+_MENU_QML = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
 
 #: Elválasztó a várt alakokban.
 SZ = "---"
@@ -205,6 +202,10 @@ VART: dict[str, list[str]] = {
         "Configure Buttons...",
         "Language >",
         "Options...",
+        # #3132: SAJÁT funkció, a mért menü UTÁN, saját csoportban — az
+        # eredeti sorrendjéből semmit nem told el (ld. ELTERESEK).
+        SZ,
+        "Import from Picasa...",
     ],
     "&Help": [
         "Help Contents and Index",
@@ -265,6 +266,15 @@ ELTERESEK = {
         "windowsos telepítő rögzítette, futásidőben nem volt váltható. "
         "Nálunk a #333 óta futásidejű, ezért kell menütétel."
     ),
+    "&Tools · Import from Picasa...": (
+        "SAJÁT funkció (#3132): a régi Picasa adatbázisából (`db3`) vesszük "
+        "át a neveket, kulcsszavakat és helyeket a `.picasa.ini`-be. Az "
+        "eredetinek ilyen parancsa NINCS és nem is lehet — ő MAGA a db3 "
+        "gazdája, nekünk viszont át kell vennünk tőle. A helyét a tulajdonos "
+        "választotta (2026-09-18: „A menüpont”), és a MÉRT sorrend UTÁN, "
+        "külön csoportban áll, tehát az eredeti szerkezetéből semmit nem "
+        "told el."
+    ),
     "&Help · fejlesztői tételek": (
         "Teljesítménymérő, tesztmód, naplóküldés — a mi eszközeink; az "
         "eredeti Súgó menü utolsó csoportja csak a névjegy. Az eredeti "
@@ -316,14 +326,8 @@ def _alak() -> dict[str, list[str]]:
                 verem.append(melyseg)
             else:
                 if len(verem) == 1:
-                    szoveg = re.search(
-                        r'text:\s*(?:qsTr\("([^"]*)"\)|bar\.(\w+))', reszlet
-                    )
-                    menuk[-1][1].append(
-                        (szoveg.group(1) or szoveg.group(2))
-                        if szoveg
-                        else "?"
-                    )
+                    szoveg = re.search(r'text:\s*(?:qsTr\("([^"]*)"\)|bar\.(\w+))', reszlet)
+                    menuk[-1][1].append((szoveg.group(1) or szoveg.group(2)) if szoveg else "?")
             melyseg += 1
         elif jel == "{":
             melyseg += 1
@@ -371,8 +375,7 @@ def test_a_csoportok_a_mert_eredetit_kovetik():
             )
     assert elteres == [], (
         "a menük csoportosztása eltér a mért eredetitől (#1774; "
-        "docs/specs/picasa-menusor-csoportok.md, 2. szakasz):"
-        + "".join(elteres)
+        "docs/specs/picasa-menusor-csoportok.md, 2. szakasz):" + "".join(elteres)
     )
 
 
