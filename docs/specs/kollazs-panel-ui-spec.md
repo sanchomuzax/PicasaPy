@@ -328,6 +328,60 @@ azonosságát csak a jelenlegi fix vázon mértük. Saját kérdések: **1 lezá
 (R2/R3 kollázs-lap kontroll) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül ·
 0 „csak nyitva".*
 
+### 4.1/c ⭐ R2/R3 szerkezeti kontroll — a négy alsó globális gomb (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` a `cancelbutton`, `resetbutton`,
+`makedesktop` és `sharebutton` elemeket a `tabbase` gyerekeiként, `m_offsetLB`
+horgonyzással deklarálja (`collagepanel.tre:490–501`). A PicasaPy futó QML-fája
+ugyanezt a szülőkapcsolatot tartja-e, és a négy gomb doboza az eredeti
+erőforrásban mért helyen marad-e ablakméret-váltáskor?
+
+**Olcsó bizonyítéklánc.**
+
+- **Erőforrás:** a `.tre` szerint mind a négy közvetlen szülője
+  `collagepanel/tabbase`, a horgonyzás `m_offsetLB`; az eredeti geometria
+  `picasa-create-features.md:631–639` szerint `(10,415,127×28)`,
+  `(147,415,133×28)`, `(10,448,127×28)` és `(147,448,133×28)`.
+- **Indexelt bináris kontroll:** a `string_xrefs` pozitív találata mind a négy
+  névre a panel-elosztó `0x0082d570` (`FUN_0082d570`, RVA `0x0042d570`,
+  4721 bájt) címe; a `cancelbutton` mentési útja emellett
+  `0x0083ba60`-nál is megjelenik. A `tabbase` pozitív kontrolljai
+  `0x0082a670`, `0x0083d610` és `0x0083d670`. Ez útvonal-kontroll, nem a
+  szülőfa önálló bizonyítéka.
+- **Mai kód:** a négy QML-gomb a `CollagePanel.qml:217–264` alatt közvetlenül
+  a `collagePanel` gyökérhez tartozik; a mai koordináták az erőforrás táblájának
+  négy dobozát adják.
+- **Pontos futásidejű mérés:** a célzott kirajzolt őr
+  `python3 -m pytest -q --tb=short -p no:cacheprovider
+  tests/app/qml_functional/test_collage_panel_layout_945.py` eredménye
+  **52 passed in 10,25 s**. A külön `QQuickView` parent-probe mindhárom
+  ablakméreten (800×534, 1280×800, 1920×1080) ugyanazt a négy dobozt mérte:
+  összesen **12/12** geometriai egyezés; mind a négy futásidejű közvetlen
+  szülője `collagePanel`.
+
+| gomb | eredeti `.tre`-szülő és horgony | PicasaPy futásidejű szülő | mért doboz mindhárom ablakméreten | ítélet |
+|---|---|---|---|---|
+| `makedesktop` / `collageMakeDesktopButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(10,415,127×28)` | **R2 eltér; R3 egyezik** |
+| `sharebutton` / `collageShareButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(147,415,133×28)` | **R2 eltér; R3 egyezik** |
+| `resetbutton` / `collageResetButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(10,448,127×28)` | **R2 eltér; R3 egyezik** |
+| `cancelbutton` / `collageCloseButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(147,448,133×28)` | **R2 eltér; R3 egyezik** |
+
+**Következtetés.** A PicasaPy a négy globális gomb jelenlegi, fix panelvázon
+mért R3-geometriáját megőrzi: a dobozok mindhárom vizsgált ablakméreten
+változatlanul az eredeti helyen állnak. Az R2-szülőkapcsolat viszont nem betű
+szerinti: a gombok `tabbase` helyett a `collagePanel` közvetlen gyerekei. Ez a
+szülőfa-eltérés önmagában nem bizonyít külön felhasználói hatást; a mérés csak
+a geometriai egyezést igazolja, dinamikus, nem fix panelvázra vonatkozó
+horgonyzási ekvivalenciát nem állít.
+
+**Bizonyítottsági fok:** megerősített az eredeti `.tre`-szerződés, a pozitív
+indexelt panel-út, a futásidejű szülő és a 12/12 mért dobozegyezés;
+**NINCS MEG**, hogy az R2-eltérésnek önálló felhasználói hatása lenne.
+
+**Nyitott kérdések mérlege:** 0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva”. A #656 teljes
+UI-összevetése további elemekre nyitva marad.
+
 > ⚠️ **Két külön erőforrás — ne keverd (2026-08-18).** A `.tre` statikus
 > fülcímkéje (`collagepanel/tab2-label`) magyarul „**Képek**"
 > (`panel-feliratok-hu.tsv`), a futásidejű formátum viszont
