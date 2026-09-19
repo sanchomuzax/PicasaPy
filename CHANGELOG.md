@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.529] – 2026-09-19
+
+### Hozzáadva
+
+- **Elindítható a Picasából való átvétel: `Eszközök ▸ Import a
+  Picasából…` (#3132).** A régi Picasa adatbázisából a nevek, a
+  kulcsszavak és a helyek átkerülnek a képek mellé — eddig a gépezet
+  készen állt, de nem volt hol elindítani. Kérésre fut, bármikor
+  megismételhető, és a végén megmondja, hány mappát érintett, hány
+  kulcsszó, hely és név került be, és hány fotóhoz nem nyúltunk hozzá
+  azért, mert ott már volt adat.
+
+
 ## [0.8.528] – 2026-09-19
 
 ### Javítva

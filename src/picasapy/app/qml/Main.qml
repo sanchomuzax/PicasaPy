@@ -1411,6 +1411,8 @@ ApplicationWindow {
         onBackupRequested: backupDialog.ensure().open()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
+        // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
+        onPicasaDataImportRequested: picasaDataImportDialog.open()
         // #936: a Létrehozás menü jelzésének NEM VOLT kezelője — a
         // menüpont elsütötte a jelzést, és az a semmibe ment. Az
         // egyetlen kezelő a képtálca sávján ült (`trayBar`), ezért
@@ -3763,6 +3765,12 @@ ApplicationWindow {
         id: compactDatabaseDialog
         anchors.fill: parent
         sourceComponent: Component { CompactDatabaseDialog { } }
+    }
+    // #3132: a db3-import párbeszéde — ritkán nyitott, ezért halasztott
+    DeferredDialog {
+        id: picasaDataImportDialog
+        anchors.fill: parent
+        sourceComponent: Component { PicasaDataImportDialog { } }
     }
 
     // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
