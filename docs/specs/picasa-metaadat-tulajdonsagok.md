@@ -1019,17 +1019,63 @@ egyeztetés és a hét kezelő hívásszáma **kiadja egymást** (24+22+13+4+3+3
 (mind különböző, ismétlés nélkül), nem 70 — az index ennél a függvénynél
 eggyel kevesebbet kötött ide.
 
-### C) Amit ez NEM mond ki
+### C) A Tulajdonságok-panel NEM ebből a regiszterből olvas (2026-09-19, #3366)
 
-Hogy a Tulajdonságok-panel **közvetlenül** ebből a regiszterből olvas. Ez a
-mérés a sémaleírót és a típusmodellt bizonyítja; a panel felé vezető út
-(melyik rekeszt kérdezi a panel, és milyen sorrendben) továbbra is
-nyitott — a horgony a `0xd3b248` tábla **olvasói**, azaz a `0x10`-es
-lépésközre indexelő hívóhelyek. *(Ez a következő felvehető irány; külön
-jegy: **#3366**.)*
+A #3366 célzott köre ezt a kérdést **eldöntötte**: a panel és a 14 rekeszes
+XMP-séma-tábla két külön réteg.
 
-*Forrás: `0x00bab6e0` (4153 b, 1376 utasítás), az inicializáló `0x00c34300`
-(236 b) és a benne írt `0xd3b248`+`0x10·n` rekeszek; a kezelők
-`0x00ba9040`, `0x00ba90a0`, `0x00ba9170`, `0x00ba9220`, `0x00ba9500`,
-`0x00ba9930`, `0x00baa1f0`; a `60,0` konstans `0x00cf4020`; a
-sztringkészletek a bináris index `string_xrefs` táblájából.*
+A `0x00ba8f80` (183 bájt) a név alapján választ a 14 rekesz között: a
+`0xd3b240` névlistán `edi += 0x10` lépéssel halad, egyezéskor `esi <<= 4`,
+majd a `[0xd3b248 + esi]` callbacket, a rekesz adatát és paraméterét tölti
+be, végül indirektül hívja a callbacket (`0x00ba9000`–`0x00ba902a`). A
+hívói `0x00ba8210` és `0x00ba8f30`; az előbbi az RTTI-ben a
+`ytXMPReader::vftable` metódusa. Ez tehát az **XMP-beolvasó genericus
+séma-diszpécsere**, nem a Tulajdonságok-panel olvasója.
+
+A `CPropertiesDlg` (`0x007e3210`, 7711 bájt) ezzel szemben az
+`[obj+0xc0] + 0xf20` bázisból közvetlenül az `imagedata` CColumn-út mezőit
+zárolja és olvassa (`0x007e3908`, `0x007e39bf`, `0x007e3a76`,
+`0x007e3b2d`, `0x007e3be4`, `0x007e3c9d`, `0x007e3d9b`, `0x007e3e22`).
+A teljes panel-függvény nyers kontrollja ezt adta:
+
+| keresett cím | találat a `FUN_007e3210` teljes 7711 bájtjában |
+|---|---:|
+| `0xd3b248` — séma-tábla bázisa | **0** |
+| `0x00ba8f80` — séma-diszpécser | **0** |
+| `0x009f05c0` — `BinaryMetadata::GetString` | **0** |
+| `0x00c80b84` — `personalbumid` panelkontroll | **1** |
+
+**Válasz a #3366 címében feltett kérdésre:** a Tulajdonságok-panel a
+14 rekeszes séma-táblából **egyetlen rekeszt sem olvas közvetlenül**. A panel
+az `imagedata` belső rekordból olvas; a 14 rekeszes tábla az XMP-olvasó
+réteghez tartozik. A termékben ezért nincs ehhez a kutatáshoz tartozó
+rekeszbekötési teendő.
+
+### D) A hét korábban névtelen rekesz feloldása
+
+A `0x00c34300` inicializáló mind a 14 callbacket feltölti. A hét, korábban
+sztring nélkül jelölt rekesz kezelője célzott diszasszemblálással azonosítható:
+
+| rekesz | callback | binárisan kiolvasott kulcsok / szerep | fok |
+|---|---|---|---|
+| `0xd3b248` | `0x00bad700` | `w`, `h`; `stDim` méret-alstruktúra | erős |
+| `0xd3b258` | `0x00baac00` | `Certificate`, `Marked`, `Owner`, `UsageTerms`, `WebStatement`; `xmpRights` | megerősített |
+| `0xd3b288` | `0x00bab500` | `Firmware`, `FlashCompensation`, `ImageNumber`, `Lens`, `LensID`, `LensInfo`, `OwnerName`, `SerialNumber`; `aux` | megerősített |
+| `0xd3b2b8` | `0x00baca80` | `AuthorsPosition`, `CaptionWriter`, `Category`, `City`, `Country`, `Credit`, `Headline`, `Instructions`, `Source`, `State`, `SupplementalCategory`, `TransmissionReference`; `photoshop` | megerősített |
+| `0xd3b2e8` | `0x00bad570` | `Regions`; `MPRI` régió-konténer | erős |
+| `0xd3b2f8` | `0x00bad5a0` | `Rectangle`, `PersonDisplayName`; `MPReg` régió-elem | megerősített |
+| `0xd3b318` | `0x00bad760` | `x`, `y`, `w`, `h`, `d`; `stArea` terület-alstruktúra | megerősített |
+
+A `mwg-rs` rekesz nem névtelen: a `0xd3b308` → `0x00bad610` kezelő a
+`RegionList`, `AppliedToDimensions`, `Name` és `Area` kulcsokat kezeli, és
+a `stArea` segédláncra támaszkodik. A `photoshop`, `aux`, `xmpRights` és
+`stDim` jelenléte az Adobe XMP-Core regisztrációs katalógusával is egyezik;
+az `MPRI`/`MPReg` kulcsok a Microsoft Photo 1.2 régióstruktúráját adják.
+
+*Forrás: `0x00c34300` (236 b), `0x00ba8f80` (183 b), `0x00ba8210`
+(2955 b), `0x00ba8f30` (78 b), a hét callback (`0x00bad700`,
+`0x00baac00`, `0x00bab500`, `0x00baca80`, `0x00bad570`, `0x00bad5a0`,
+`0x00bad760`), a `CPropertiesDlg` `0x007e3210` (7711 b), valamint a
+kanonikus SQLite-index és a teljes PE nyers bájtpásztázása. A kezelők
+kulcsai a célzott diszasszemblálásból; a kontrollok paraméterei a #3366
+kutatási naplójában vannak.*
