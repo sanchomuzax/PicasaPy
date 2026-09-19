@@ -22,10 +22,16 @@ Ez a fájl ezért **szándékosan összeomlaszt** egy gyerekfolyamatot
 
 A 3. és 4. pont **környezetfüggő**: ha a `core_pattern` egy kezelőnek adja
 át a core-t (`|/usr/lib/systemd/systemd-coredump …`), fájl nem keletkezik,
-és ha nincs `gdb`, nincs veremkép. Ilyenkor a próba **nem száll el**, de a
-kihagyás OKÁT kiírja — a néma `skip` pont az a hibaosztály, amit a #3178
-maga is kerülni akar (a „8 passed, 2 skipped" a CI-n minden körben kimaradó
-két állítást jelentené).
+és ha nincs `gdb`, nincs veremkép. A kihagyás OKA ilyenkor
+`pytest.skip(...)`-ként **látszik a naplóban**: a futtató `-rs`-sel indít,
+tehát a rövid jelentés kiírja az indokot.
+
+⚠️ A `print` ERRE NEM JÓ — a pytest elnyeli az ÁTMENŐ próbák kimenetét,
+tehát a CI-n se a lefutás, se a kihagyás nem látszana. *(Mérve: a #3372
+első CI-körének naplójában a `print`-es alak semmit nem hagyott.)*
+
+⚠️ A kihagyás **nem mentesít**: ahol a lánc futhatna (fájlos `core_pattern`
+és `gdb`), ott a próba a TELJES utat megköveteli.
 """
 
 from __future__ import annotations
@@ -84,8 +90,7 @@ def test_a_futtato_korlatemelese_nem_nullat_hagy() -> None:
         if kemeny == 0:
             #: a rendszer TILTJA a core-t — ez legitim, de mondjuk ki
             assert engedve is False
-            print("a kemény korlát 0: ezen a gépen nincs core dump")
-            return
+            pytest.skip("a kemény korlát 0: ezen a gépen nincs core dump")
         assert engedve is True
         assert puha == kemeny
     finally:
@@ -97,14 +102,11 @@ def test_a_lanc_vegigmegy_ahol_a_kernel_fajlba_ir(munkakonyvtar, capsys) -> None
     minta = run_tests._core_minta()
     _, kemeny = resource.getrlimit(resource.RLIMIT_CORE)
     if kemeny == 0:
-        print("kihagyva: a rendszer kemény core-korlátja 0")
-        return
+        pytest.skip("a rendszer kemény core-korlátja 0 — nincs core dump")
     if run_tests._kezelo_kapja_a_core_t(minta):
-        print(f"kihagyva: a core-t KEZELŐ kapja meg (core_pattern: {minta})")
-        return
+        pytest.skip(f"a core-t KEZELŐ kapja meg (core_pattern: {minta})")
     if os.path.sep in minta.strip() and not minta.strip().startswith("core"):
-        print(f"kihagyva: a core máshova kerül (core_pattern: {minta})")
-        return
+        pytest.skip(f"a core máshova kerül (core_pattern: {minta})")
 
     assert _omlassz_ossze(munkakonyvtar) == -11
     magok = run_tests._core_fajlok()
@@ -114,8 +116,7 @@ def test_a_lanc_vegigmegy_ahol_a_kernel_fajlba_ir(munkakonyvtar, capsys) -> None
         f"{sorted(ut.name for ut in munkakonyvtar.iterdir())}")
 
     if run_tests._which("gdb") is None:
-        print("kihagyva a veremkép: nincs `gdb` ezen a gépen")
-        return
+        pytest.skip("nincs `gdb` ezen a gépen — a natív veremkép kimarad")
     assert run_tests._ird_ki_a_nativ_veremkepet("proba.py") is True
     kimenet = capsys.readouterr().out
     assert "NATÍV VEREMKÉP" in kimenet
