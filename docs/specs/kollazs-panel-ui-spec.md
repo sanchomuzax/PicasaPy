@@ -706,6 +706,47 @@ kollázs-panel viszont a főablakba ágyazott `.tre`-panel. A források tehát:
 rectjeiből; a „Továbbiak…" ága a binárisból. A `.fen` hiánya
 kimerítő keresés (mind a 46 fájl).*
 
+### 4.3/d ⭐ R5 felirat- és súgókontroll — a Klipek lap (#656, 2026-09-19)
+
+**Pontos kérdés.** A Klipek lap három műveleti gombjának eredeti angol
+felirat-/súgóforrása és a mai QML-forrás betű szerint egyezik-e; a magyar
+fordítási forrás megtartja-e a hivatalos alakot?
+
+**Bizonyítéklánc.** Az eredeti értékek a szállított
+`referencia/tre-eroforrasok/collagepaneltext.tre` és a
+`referencia/ui-leltar.csv` soraiból jönnek; a hivatalos magyar értékek a
+`referencia/panel-feliratok-hu.tsv` 127–130. sorából. A mai oldal a
+`CollageClipsTab.qml` három `ToolTip.text` mezője és a
+`picasapy_hu.ts` megfelelő `source`/`translation` párja.
+
+| vezérlő | eredeti angol súgó | mai QML angol súgó | magyar TS-forrás |
+|---|---|---|---|
+| `addclips` | `Add selected clips to the collage` | **egyezik** | `Kijelölt klipek felvétele a kollázsba` |
+| `deleteclips` | `Remove selected clips from the tray` | `Remove the selected pictures from the tray` | `A kijelölt képek eltávolítása a tálcáról` |
+| `getmoreclips` | `Get more clips from the Library` | `Load more pictures from the library` | `További képek beolvasása a könyvtárból` |
+
+**Mért eredmény:** az eredeti angol súgó és a mai QML-forrás **1/3** mezőben
+egyezik; két mező eltér. A jelenlegi QML-forrásokhoz tartozó magyar TS-
+fordítás **3/3** mezőben megvan, és mindhárom a hivatalos magyar értékkel
+egyezik. A célzott kirajzolt kontroll
+`python3 -m pytest -q --tb=short -p no:cacheprovider tests/app/qml_functional/test_collage_clips_tab_949.py`
+eredménye **29 passed in 8,10 s**; ez a geometria- és viselkedési láncot
+ellenőrzi, de a két eltérő mai angol forrást rögzíti, ezért önmagában nem
+bizonyít eredeti-forrás-egyezést.
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| három súgó angol forrása | a `collagepaneltext.tre`/`ui-leltar.csv` szerinti alakok | **1/3 egyező**, két eltérő QML-forrás | a két forrás visszaállítása: **#3410** |
+| három magyar fordítási forrás | hivatalos alakok | **3/3 egyező** | a javított angol forrásokhoz tartozó TS-ellenőrzés átvezetése |
+
+**Bizonyítottsági fok:** megerősített az eredeti három súgó, a mai három QML-
+forrás és a három magyar TS-fordítás összevetése; a felhasználó által látott
+tooltip képpontos megjelenését ez a célzott teszt nem méri.
+
+**Nyitott kérdések mérlege:** **0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva".** A #656 teljes gépi
+UI-összevetése további szeletekre nyitva marad.
+
 ### 4.4 A vászon körüli csoportok
 
 | komponens | `objectName` | elhelyezés (2.4) | tartalom |
