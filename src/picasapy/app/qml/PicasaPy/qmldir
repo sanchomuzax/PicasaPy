@@ -104,6 +104,7 @@ OptionsTabNameTags 1.0 OptionsTabNameTags.qml
 WebExportDialog 1.0 WebExportDialog.qml
 PrintDialog 1.0 PrintDialog.qml
 PrintOptionsPanel 1.0 PrintOptionsPanel.qml
+PublishPanel 1.0 PublishPanel.qml
 UnnamedFacesView 1.0 UnnamedFacesView.qml
 ToolTile 1.0 ToolTile.qml
 PanelButton 1.0 PanelButton.qml

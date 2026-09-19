@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.527] – 2026-09-19
+
+### Hozzáadva
+
+- Elkészült a közzététel-panel 21 vezérlője (Ajándék-CD, biztonsági
+  mentés, feltöltés) — pontosan azokon a helyeken és azokkal a magyar
+  feliratokkal, ahogy az eredeti Picasában. A három üzemmód működése
+  külön lépés, ezért a panel egyelőre nincs bekötve a menübe. (#2508)
+
 ## [0.8.526] – 2026-09-19
 
 ### Hozzáadva
