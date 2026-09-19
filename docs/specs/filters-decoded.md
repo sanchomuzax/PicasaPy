@@ -660,10 +660,34 @@ A csővezeték:
 A pont sugara a tónussal nő: fekete területen a csempe tömören fedett (a
 sarkokat a másik, fél csempével eltolt ág fedi le), fehéren nincs festék.
 
-**Nyitott:** a natív pontmaszk pontos antialiasingja és peremkerekítése — a
-PicasaPy egy pixelnyi lineáris átmenetet használ (`halftone._EDGE_SOFTNESS_PX`).
-Ez a raszter jellegét nem befolyásolja, de a pixelhű egyezéshez
-golden-összevetés kell (#317).
+**A natív fedettségi profil — MEGFEJTVE (#3390, 2026-09-19).** A pontprofil
+nem külön „1 px-es antialiasing" paraméterből áll. A `TiledImageMask` útja a
+`0x00bbaa90` → `0x008f3840` → `0x008f3970` láncon **két megállót** ad át:
+pozíció `0x00` és `0xFF`, alfa-végpontokkal. A közös LUT-építő
+`0x008f3700` minden packed 8 bites csatornára ezt számolja:
+
+```text
+TRUNC(c0 + t · (c1 − c0))
+```
+
+`0x008f3970` a két megálló közötti rekeszeket előállítja, majd a pixel
+`sqrt`-tel kapott sugarát 8.8-as egészre csonkolja. A felső byte a LUT-rekesz,
+az alsó byte a tört súlya; a két szomszédos rekesz keverése csatornánként:
+
+```text
+(next · frac + current · (256 − frac)) >> 8
+```
+
+A skalár út `0x008f404f` környékén, a SIMD út `0x008f3ce5–0x008f3df9`
+között ugyanazt az elvet használja (`sqrtps` négy pixelen). **Nincs
+felülmintavételezés és nincs alpixel-akkumuláció.** A két alfa-végponttal a
+256 rekeszes kontroll-LUT pontosan `[255, 254, …, 1, 0]`.
+
+**Nálunk / teendő.** A `halftone.py` jelenleg külön
+`_EDGE_SOFTNESS_PX = 1.0` átmenetet használ; ez nem a binárisból származó
+paraméter. A natív LUT- és byte-keverési út átvezetése külön terméki munka
+(#3401). A kutatási lelet mechanizmusa **megerősített**, de a PicasaPy-ba
+átvezetés és annak mért hatása még nincs megvalósítva.
 
 ### `autobacklight` és a kisbetűs `focalpixelate` (#567)
 
