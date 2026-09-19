@@ -914,3 +914,94 @@ XMP-kimenete ezt a névteret nem ismeri. *(Fejlesztői teendő: **#3353**.)*
 `0x00bd9ae0` (88 b), `0x00bd9dd0` (182 b), `0x00bdbe50` (1822 b),
 `0x00be26d0` (1297 b); a hívószámok a bináris index `xrefs` táblájából, a
 sztringek `pe_dis.D`-ből kiolvasva.*
+
+## 13. ⛳ A `0x00bab6e0` szerepe MEGVAN: az EXIF/GPS sémaleíró, egy 14 rekeszes séma-tábla 6. rekesze (2026-09-19, #3345)
+
+*A 10. szakasz a `0x00bab6e0`-t „részleletként" hagyta ott (70 indexelt
+mezőnév, nyolc segédfüggvény). A törzs kiolvasásával a szerep és a
+típusmodell is megvan.*
+
+### A) Mi ez a függvény, és hogyan hívódik
+
+⛔ Az xref-index szerint a függvénynek **nincs közvetlen hívója** — ez nem
+azt jelenti, hogy halott: **függvénymutatóként** telepszik. A címét
+(`0x00bab6e0`) a teljes képfájlban **pontosan egy** 4 bájtos konstans
+tartalmazza, a `0x00c34339` címen, a `0x00c34300` (236 b) inicializálóban:
+
+```
+0x00c34338  mov eax, 0xbab6e0
+0x00c3433d  mov dword ptr [0xd3b298], eax
+```
+
+Az inicializáló egy **14 rekeszes globális táblát** tölt fel `0xd3b248`-tól,
+`0x10` bájtos lépésközzel. A rekeszek tartalma és — az egyes függvényekhez
+kötött sztringkészletből azonosítva — a sémacsalád:
+
+| rekesz | függvény | méret | nevek | mi ez (a sztringekből) |
+|---|---|---:|---:|---|
+| `0xd3b248` | `0x00bad700` | 87 b | 0 | *nincs név* |
+| `0xd3b258` | `0x00baac00` | — | 0 | *nincs név* |
+| `0xd3b268` | `0x00baad30` | 594 b | 10 | **XMP Basic** (`Rating`, `Advisory`, `BaseURL`, `Identifier`, …) |
+| `0xd3b278` | `0x00baaf90` | 1385 b | 23 | **TIFF** (`Software`, `ImageWidth`, `BitsPerSample`, …) |
+| `0xd3b288` | `0x00bab500` | — | 0 | *nincs név* |
+| **`0xd3b298`** | **`0x00bab6e0`** | **4153 b** | **71** | **EXIF + GPS** ← ez a jegy tárgya |
+| `0xd3b2a8` | `0x00bac720` | 851 b | 12 | **Dublin Core** (`description`, `title`, `subject`, …) |
+| `0xd3b2b8` | `0x00baca80` | — | 0 | *nincs név* |
+| `0xd3b2c8` | `0x00bacd50` | 796 b | 13 | **IPTC Core** (`CountryCode`, `IntellectualGenre`, `Scene`, …) |
+| `0xd3b2d8` | `0x00bad070` | 1274 b | 21 | **IPTC Extension** (`AddlModelInfo`, `ArtworkOrObject`, …) |
+| `0xd3b2e8` | `0x00bad570` | — | 0 | *nincs név* |
+| `0xd3b2f8` | `0x00bad5a0` | — | 0 | *nincs név* |
+| `0xd3b308` | `0x00bad610` | 234 b | 2 | **MWG-régiók** (`AppliedToDimensions`, `RegionList`) |
+| `0xd3b318` | `0x00bad760` | 221 b | 0 | *nincs név* |
+
+⭐ **Ez keresztbe igazolja a #3348-at:** ott a Picasa négy saját XMP-névtere
+`MP`, `Iptc4xmpExt`, `stArea`, `mwg-rs` volt — itt az `IPTC Extension` és az
+`MWG-régiók` sémaleíró külön rekeszben ül. A két mérés egymástól
+függetlenül készült.
+
+### B) A 71 mezőnév → HÉT típuskezelő
+
+A törzs `__stricmp` (a `0x00bf697a`, az indexben így nevesítve) hívásokkal
+egyezteti a kért nevet, és a találat után **pontosan egy** kezelőt hív. A 71
+egyeztetés és a hét kezelő hívásszáma **kiadja egymást** (24+22+13+4+3+3+2 =
+71):
+
+| kezelő | méret | nevek | a csoport tartalma |
+|---|---:|---:|---|
+| `0x00ba90a0` | 106 b | **24** | felsorolás/rövid egész: `ColorSpace`, `ExposureProgram`, `MeteringMode`, `LightSource`, `SensingMethod`, `WhiteBalance`, `Contrast`, `Saturation`, `Sharpness`, `FocalLengthIn35mmFilm`, `GPSAltitudeRef`, `GPSDifferential`, … |
+| `0x00ba9170` | 175 b | **22** | racionális: `ExposureTime`, `FNumber`, `ApertureValue`, `FocalLength`, `FlashEnergy`, `DigitalZoomRatio`, `GPSAltitude`, `GPSSpeed`, `GPSTrack`, `GPSImgDirection`, … |
+| `0x00ba9040` | 82 b | **13** | szöveg: `UserComment`, `RelatedSoundFile`, `ImageUniqueID`, `GPSSatellites`, `GPSStatus`, `GPSMapDatum`, és a `*Ref` mezők |
+| `0x00baa1f0` | 690 b | **4** | **GPS-koordináta**: `GPSLatitude`, `GPSLongitude`, `GPSDestLatitude`, `GPSDestLongitude` |
+| `0x00ba9500` | 504 b | **3** | rövid egészek tömbje: `ISOSpeedRatings`, `SubjectArea`, `SubjectLocation` |
+| `0x00ba9220` | 147 b | **3** | a `Flash` bitmezői: `Fired`, `Function`, `RedEyeMode` *(a `Mode` és a `Return` a felsorolás-csoportban van)* |
+| `0x00ba9930` | 2220 b | **2** | dátum-idő: `DateTimeOriginal`, `DateTimeDigitized` |
+
+⭐ **Három független kontroll, mind teljesült:**
+
+1. a négy koordináta-mező **ugyanahhoz** a kezelőhöz megy (`0x00baa1f0`),
+   a két dátum pedig egy másikhoz (`0x00ba9930`) — elcsúszott párosítás
+   ezen azonnal kiderülne;
+2. a koordináta-kezelő a `0x00cf4020`-on álló `double` **60,0**-nal szoroz
+   (`0x00baa3ff  fmul qword ptr [0xcf4020]`) ⇒ fok/perc/másodperc bontás,
+   tehát tényleg koordináta;
+3. az összehasonlító a `0x00bf697a`, amit az index **`__stricmp`**-ként
+   nevesít ⇒ a névegyeztetés **kis-nagybetűre érzéketlen**.
+
+📎 Pontosítás a 10. szakaszhoz: a mezőnevek száma a törzsből **71**
+(mind különböző, ismétlés nélkül), nem 70 — az index ennél a függvénynél
+eggyel kevesebbet kötött ide.
+
+### C) Amit ez NEM mond ki
+
+Hogy a Tulajdonságok-panel **közvetlenül** ebből a regiszterből olvas. Ez a
+mérés a sémaleírót és a típusmodellt bizonyítja; a panel felé vezető út
+(melyik rekeszt kérdezi a panel, és milyen sorrendben) továbbra is
+nyitott — a horgony a `0xd3b248` tábla **olvasói**, azaz a `0x10`-es
+lépésközre indexelő hívóhelyek. *(Ez a következő felvehető irány; külön
+jegy: **#3366**.)*
+
+*Forrás: `0x00bab6e0` (4153 b, 1376 utasítás), az inicializáló `0x00c34300`
+(236 b) és a benne írt `0xd3b248`+`0x10·n` rekeszek; a kezelők
+`0x00ba9040`, `0x00ba90a0`, `0x00ba9170`, `0x00ba9220`, `0x00ba9500`,
+`0x00ba9930`, `0x00baa1f0`; a `60,0` konstans `0x00cf4020`; a
+sztringkészletek a bináris index `string_xrefs` táblájából.*
