@@ -6151,7 +6151,15 @@ A mai kód kontrollja ugyanebben a munkafában: a célzott
 `DOT_SCALE = 0,8`, `_EDGE_SOFTNESS_PX = 1,0`, és az
 `apply_comicize()` továbbra is a `halftone_branch()`-en át modulálja a pont
 sugarát. Ez a teszt a jelenlegi implementációt ellenőrzi, nem natív
-pixelazonossági goldent; a terméki átvezetés ezért külön fejlesztési munka.
+pixelazonossági goldent.
+
+⚠️ **Helyesbítés (2026-09-19, #2476):** a „terméki átvezetés külön fejlesztési
+munka" állítás elavult. A fenti rámpa a tónussal KÜSZÖBÖLVE pontosan a
+`halftone_branch()` `0,8 · (1 − tónus)` sugarát adja (mind a 256 tónuson 0
+eltérő képpont, elhangolt skálájú kontrollal 105 536) — a render-láncban nincs
+mit átvezetni. Ami maradt, az a küszöb fedettségi profilja: **#3390**. Mérés:
+`filters-decoded.md`, „A Comicize pontja: az ÁLLANDÓ maszk és a tónussal növő
+sugár UGYANAZ"; őr: `tests/render/test_comicize_maszk_kuszob_2476.py`.
 
 ### A konstruktor: `0x00bba250` (133 b)
 

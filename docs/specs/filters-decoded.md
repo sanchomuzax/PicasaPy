@@ -3792,8 +3792,13 @@ fájlonként visszakereshető ellenőrzésében áll. A vizsgált bináris SHA-2
 rámpára, a `scaleWidth`/`scaleHeight` = 0,8 értékére, az
 `alphaMin`/`alphaMax` = 0,0/1,0 végpontokra, a négy padding = 0 értékre,
 az eltolás-térképre és a gyorsítótárazásra. A bináris kutatási kérdés
-lezárult; a `halftone_branch()` helyett a natív statikus maszk és a teljes
-lánc terméki átvezetése továbbra is fejlesztési feladat.*
+lezárult.*
+
+⚠️ **Helyesbítés (2026-09-19, #2476):** az „átvezetés fejlesztési feladat"
+állítás elavult. Az állandó maszkot a tónussal KÜSZÖBÖLVE a
+`halftone_branch()` mai sugár-törvénye jön ki — mind a 256 tónuson 0 eltérő
+képponttal, negatív kontrollal. Ld. a lap végén: *„A Comicize pontja: az
+ÁLLANDÓ maszk és a tónussal növő sugár UGYANAZ"*.
 
 ### A `CircularGradientImageMask` HÉT attribútuma — és egy, amit sosem állítunk (2026-08-16)
 
