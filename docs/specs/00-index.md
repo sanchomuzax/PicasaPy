@@ -1108,7 +1108,7 @@ kódban NÉV, a felületen NINCS** — sem `.tre`, sem respack-réteg. ⇒ Az
 `editpanel` feltáratlan listája **11 → 3** (globálisan 111 → **103**).
 Komment: **#434**.
 
-### [picasa-nyomtatas.md](picasa-nyomtatas.md) — 1 NYITOTT tétel (⭐ **2026-09-18, #1401:** a passport-lap darabszámának közös csempézője 11 layout-osztály második vtáblarekese, `FUN_00778190` / `0x00778190`; a törzs pontos sor-/oszlopszáma és margóképlete **NINCS MEG**, mert a helyi kutatási anyagban nincs meg a Picasa3.exe)
+### [picasa-nyomtatas.md](picasa-nyomtatas.md) — 1 NYITOTT tétel (⭐ **2026-09-19, #1401:** a passport mérete binárisból **2,0 × 2,0 hüvelyk**; a korábban csempézőnek nevezett `FUN_00778190` valójában slot-1 előkészítő, a tényleges közös geometriai rutin a slot-2 `FUN_00778640` (**1960 bájt**). A laponkénti darabszám a futásidejű layout-állapot visszakövetéséig **NINCS MEG**)
 
 ⭐ **2026-09-03 — HÁROM TÉVES ÁLLÍTÁS JAVÍTVA, és a panel alsó gombjai
 feltárva.** ⛔ A lap azt írta, hogy a nyomtatási beállítások párbeszéd

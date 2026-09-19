@@ -650,7 +650,7 @@ méretként az ősosztály elrendezőjének (`[vtbl+4]` = `0x00778190`):
 0x00775660  fld dword ptr [0xcf3a48]      ; 2,0
 0x00775672  fst  dword ptr [esp + 4]
 0x00775676  fstp dword ptr [esp]
-0x0077567a  call eax                      ; az os csempézője
+0x0077567a  call eax                      ; a slot-1 előkészítője
 ```
 
 *(A szomszédos osztály — `0x00775680` — a `0x00cf3fd8` = **3,5**-öt adja: az
@@ -659,45 +659,74 @@ a Zsebméret elrendezője. Ugyanaz a minta, méretenként egy osztály.)*
 ### Ami NYITVA marad
 
 **Hány példány fér egy lapra.** A darabszámot nem a `LayoutPassport` mondja
-meg, hanem az ősosztály csempézője (`0x00778190`) a lapmérettel és a
-margókkal. Út: a `0x00778190` törzse, és a lapméret forrása a nyomtatási
-munkában.
+meg: a `0x00775660` a közös slot-1 előkészítőre (`0x00778190`) lép, amely
+kétszer hívja a tényleges slot-2 geometriai rutint (`0x00778640`). A célzott
+kiolvasás szerint a darabszám kérdésének útja ezért a `0x00778640` törzse és
+a lapméretet adó hívói állapot.
 
-### ⛳ A közös csempéző hatóköre — indexből kimérve (2026-09-18, #1401)
+### ⛳ A passport-lap előkészítője és a tényleges csempéző — célzott dekompiláció (2026-09-19, #1401)
 
-A helyi `picasa3-index.sqlite` RTTI-indexe **11** konkrét
-`ytPrinterHelper::Layout*` vtáblát sorol fel: `Layout3x4`, `Layout3x5`,
-`Layout4x5`, `Layout4x6`, `Layout5x7`, `Layout8x10`, `LayoutFullPage`,
-`LayoutMetric`, `LayoutPassport`, `LayoutRegularGrid` és `LayoutWallet`.
-Mind a 11 vtable **második** (0-alapú index: `1`) bejegyzése ugyanaz:
-`FUN_00778190` (`0x00778190`). Ez a `LayoutPassport`-nál a már mért
-`0x00775660` méret-átadó után, és a `0x00778640` szomszédos bejegyzés előtt
-áll. A közös függvény indexelt mérete **305 bájt**.
+A helyi, SHA-256 szerint az indexelt binárissal azonos `Picasa3.exe`-ben a
+`ytPrinterHelper::Layout*` RTTI-vtáblák teljes, bájtszintű mintája **11**
+slot-1 címet és **11** slot-2 címet ad. Mind a 11 layout-osztály slot-1-e
+`FUN_00778190` (`0x00778190`, **305 bájt**), és mind a 11 slot-2-je
+`FUN_00778640` (`0x00778640`, **1960 bájt**). A slotok egymás utáni címei a
+vtable-adatokban vannak (`0x008b3f14` … `0x008b3fb8`), tehát ez nem egyetlen
+RTTI-példányból levont következtetés.
 
-Az indexelt hívási részgráf három közvetlen célcímet ad a közös csempézőből:
-`0x00775730` (138 bájt), `0x007782d0` (368 bájt) és `0x00778440`
-(502 bájt). Ez a lelet a darabszám számolóját a passport-specifikus
-`0x00775660` helyett a közös `0x00778190` törzséhez köti, de az index nem
-tartalmaz utasítás-testet, ezért a sor-/oszlopszám és a margóképlet innen
-**NINCS MEG**. A helyi kutatási anyagban a Picasa3.exe sincs jelen, így a
-célzott dekompiláció ebben a körben nem futtatható.
+#### A passport-belépés továbbra is 2,0 × 2,0 hüvelyk
+
+A `LayoutPassport` slot-1 burkolója (`0x00775660`, 31 bájt) a
+`0x00cf3a48` címen lévő **2,0** konstans ugyanazon értékét teszi a két
+méret-argumentumba (`0x00775672` és `0x00775676`), majd a vtable slot-1-re
+ugrik (`0x0077567a`). Ez a korábbi négyzetes fizikai méret leletét
+függetlenül megtartja.
+
+#### A korábbi címke helyesbítése: `0x00778190` nem a darabszám-csempéző
+
+A `FUN_00778190` törzse két helyi layout-rekordot készít a
+`FUN_007782d0`-nal (`0x007781aa` és `0x007781b5`), majd a saját objektumának
+vtable slot-2-jét (`+0x08`) hívja meg kétszer (`0x007781e1` és
+`0x00778207`). A slot-2 célja a vtable-mintában **`FUN_00778640`**, tehát a
+`0x00778190` előkészítő/elosztó, nem a tényleges geometriai csempéző.
+
+A tényleges közös geometriai rutin, `FUN_00778640`, három argumentumot takarít
+le (`ret 0xc`). A törzsben közvetlenül mérhető:
+
+- a nyomtatási/oldal-állapotot a `this+0x50` objektumon keresztül olvassa
+  (`0x0077864f`–`0x0077866b`);
+- a layout állapotának `+0x20`…`+0x2c` mezőit lebegőpontos skálázásban
+  használja (`0x0077866f`–`0x0077869f`);
+- a meglévő rekordszámot a `this+0x1c` mezőből vizsgálja
+  (`0x00778703`), majd a kimeneti rekordtömböt dinamikus allokációs úton
+  bővíti (`0x00778ccf` → `0x00c0769f`).
+
+⇒ A célzott dekompiláció megdöntötte a korábbi szerepattribúciót, de a
+**laponkénti útlevélkép-darabszámot nem adta meg**: a `FUN_00778640` nem egy
+útlevélhez égetett darabszámot olvas, hanem futásidejű layout-állapotból épít
+rekordokat. A darabszám ezért továbbra is **NINCS MEG**. A következő gépi út a
+`this+0x50`, `this+0x1c` és a lapméretet adó hívói állapotának visszakövetése;
+terméki kódot ehhez nem írunk.
 
 ### Eredeti / nálunk / teendő
 
-| | eredeti, bináris-indexből | PicasaPy, futó saját kód mérése | teendő |
+| | eredeti, binárisból | PicasaPy, futó saját kód mérése | teendő |
 |---|---|---|---|
-| csempéző | 11 layout-osztály közös `FUN_00778190` metódusa, 305 bájt | — | a függvény törzsének célzott dekompilációja |
-| passport darabszám | **NINCS MEG** | — | a `0x00778190` és három közvetlen céljának kiolvasása |
+| passport-méret | `0x00775660` → `0x00cf3a48` = **2,0 × 2,0 hüvelyk** | passport-layout nincs meg | a fizikai méret lelete használható |
+| közös előkészítő | 11 layout-osztály slot-1-e: `FUN_00778190`, **305 bájt**; két slot-2-hívás | — | szerepe dokumentálva, nem csempézőként |
+| tényleges geometriai csempéző | 11 layout-osztály slot-2-je: `FUN_00778640`, **1960 bájt** | — | `this+0x50` / `this+0x1c` és a lapméret-hívó visszakövetése |
+| passport darabszám | **NINCS MEG** | — | a futásidejű rekordtömb tényleges darabszáma szükséges |
 | indexkép-rács | — | `DEFAULT_COLUMNS = 4`; az érintett nyomtatási próbák **65/65** zöldek; A4, 300 dpi, 17 kép, 4 oszlop mellett **20** hely/lap és 1 lap, 3 oszlop mellett **12** hely/lap és 2 lap (`[12, 5]`) | ez a jelenlegi saját indexkép-út, nem az eredeti passport-lelet |
 
 **Nyitott kérdések mérlege — e kör saját kérdései:** 1 nyílt · 0 lezárva ·
 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva". A következő gépi lépés
-nevesítve marad: `FUN_00778190` törzse, majd a három közvetlen célfüggvény
-és a nyomtatási munka lapméret-forrása.
+nevesítve marad: a `FUN_00778640` futásidejű oldal- és layout-állapotának
+visszakövetése.
 
 *Forrás: `FUN_00776e20` (`0x00776e20`–`0x00776f45`), az ugrótábla
-`0x007771ac`; a konstansok `0x00cf39e8` = 6,0 · `0x00c7e4a4` = 4,0 ·
-`0x00cf3a58` = 5,0 · `0x00cf3fd8` = 3,5 · `0x00cf3fec` = 7,0 ·
+`0x007771ac`; célzott dekompiláció: `0x00775660`, `0x00778190`,
+`0x007782d0`, `0x00778440`, `0x00778640`; a konstansok `0x00cf39e8` = 6,0 ·
+`0x00c7e4a4` = 4,0 · `0x00cf3a58` = 5,0 · `0x00cf3fd8` = 3,5 · `0x00cf3fec` = 7,0 ·
 `0x00cf3b28` = 10,0 · `0x00c7cf84` = 8,0 · `0x00cf3fe8` = 2,5 ·
 `0x00c49618` = 3,0 · **`0x00cf3a48` = 2,0**; a cm-szorzó `0x00cf3fe0` =
 0,3937. A `LayoutPassport` vtáblája `0x00cb3f80`.*
