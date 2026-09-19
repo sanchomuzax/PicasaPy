@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Előkészítés (a felületen még nem látszik)
+
+- Megvan az öt lassú szűrő (Automatikus kontraszt, Színhőmérséklet,
+  Cross-process, Feljavítás, Melegítés) gyorsításához szükséges
+  keresőtábla, pontosan a mai képfeldolgozás kimenetéből — a
+  grafikus gyorsítás bekötése a következő lépés. (#22)
+
 ## [0.8.527] – 2026-09-19
 
 ### Hozzáadva
