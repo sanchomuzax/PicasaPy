@@ -6780,3 +6780,69 @@ A maradék **két, mérhetően különböző** tétel, és mindkettő a küszöb
 A megnevezett következő gépi irány a #3390-ben áll: a `0x008f3970`
 megálló-kiértékelő — hogyan lesz a két megálló közti rámpából kiírt bájt, és
 van-e felül-mintavételezés.
+
+### ⭐ A kétmegállós LUT bájt-útja — nincs felülmintavételezés (2026-09-19, #3390)
+
+A célzott helyi diszasszemblálás a vizsgált Picasa3.exe-n (SHA-256:
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`) a
+korábban csak szerkezeti szinten leírt rámpát bájtszinten is lezárja.
+
+#### 1. A megállótábla
+
+- A `0x00bbaa90` két pozíciót ad a `0x008f3970`-nek (`0x00bbacba: push 2`). A
+  pozíciók `0x00` és `0xFF` (`0x00bbaba8`/`0x00bbabc0`), az alfa-végpontok a
+  `0x00bbab26`–`0x00bbab92` úton készülnek.
+- A `0x008f3970` (2158 bájt) a `0x008f39c2`-n megkapja a megállószámot, a
+  `0x008f39dd`–`0x008f3a01` ciklusban a szomszédos pozíciókat olvassa, majd
+  `0x008f3a0d`–`0x008f3a4b` között minden köztes rekeszt a
+  `0x008f3700` szín-lerp hívásával tölt.
+- A `0x008f3700` (308 bájt) csatornánként ezt hajtja végre:
+
+  ```text
+  ki = TRUNC(c0 + t · (c1 − c0))
+  ```
+
+  A `0x008f3722`–`0x008f3748`, `0x008f376f`–`0x008f3793`,
+  `0x008f37be`–`0x008f37de` és `0x008f37fb`–`0x008f381d` blokkok az x87
+  kerekítési módját `0xc00`-ra állítják, majd `fistp`-vel csonkolnak. A
+  két alfa-végponttal (`c0 = 255`, `c1 = 0`) a 256 elemű tábla mért alakja:
+  `[255, 254, 253, …, 2, 1, 0]` — minden egymást követő rekesz különbsége
+  pontosan `1`.
+
+#### 2. A képponti kiértékelés
+
+A `0x008f3970` rajzolóága a sugárértéket képpontonként állítja elő:
+
+- SIMD-ágban `sqrtps` (`0x008f3cf6`/`0x008f3e48`) négy képpont távolságát
+  számolja párhuzamosan, majd `cvtps2dq` (`0x008f3cf9`/`0x008f3e4b`)
+  egész, fixpontos távolságra alakítja;
+- a felső bájt a LUT-rekeszt, az alsó bájt a szomszédos rekeszek közti
+  8 bites súlyt adja (`0x008f3d44`–`0x008f3d65`, illetve a skalárágban
+  `0x008f4086`–`0x008f411d`);
+- a két szomszédos bájt súlyozott összege `>> 8` után kerül a kimenetre
+  (`0x008f3dd5`–`0x008f3df1`, illetve `0x008f40aa`–`0x008f411a`).
+
+Ez **képpontonkénti radiális LUT-kiértékelés**, nem felülmintavételezés: a
+négyes SIMD-út négy képpontot dolgoz fel, nem négy almintát vesz egyetlen
+képponthoz. A függvényben nincs mintaszámláló vagy alpixel-akkumulációs ciklus;
+a ciklusok a megállótáblát, illetve a kimeneti képpontokat járják.
+
+#### 3. Eredeti / nálunk / teendő
+
+| | eredeti, binárisból | PicasaPy mai kontroll |
+|---|---|---|
+| nyers maszk | `TRUNC(c0 + t·(c1−c0))`, két megálló, 256 rekesz, fixpontos képponti köztes érték | `halftone_branch()` tónussal számolt sugarat küszöböl |
+| külön él-lágyító paraméter | **nincs** ebben a rajzolóútban | `_EDGE_SOFTNESS_PX = 1,0` a `halftone.py:47–54` alatt |
+| saját kód kontrollja | — | `dot_size_for(1600) = 24`, `DOT_SCALE = 0,8`; a célzott Comicize-próbák **82 passed in 5,31 s** |
+
+A `0x008f3970` ezért a nyers maszk rámpáját és a képponti kiértékelését
+megmagyarázza, de a teljes `DotContrast`-válasz meredekségét önmagában nem
+azonosítja: az a rámpa előtt álló `MasterCurve`/`Pixelate`/`BW`/`GetVar … Mask`
+lánc izolált, natív golden-összevetését igényli. Ez a rész **NINCS MEG**;
+termékkódot ebben a körben nem módosítottam.
+
+*Forrás: `binary-index/functions.csv` (`0x008f3700` = 308 bájt,
+`0x008f3970` = 2158 bájt), a helyi `annot_disasm.py` célzott kimenete,
+`0x00bbaa90`/`0x00bbacba`, valamint a mai kontroll futása a
+`tests/render/test_comicize_569.py`, `test_comicize_gorbe_1606.py` és
+`test_comicize_maszk_kuszob_2476.py` fájlokon.*
