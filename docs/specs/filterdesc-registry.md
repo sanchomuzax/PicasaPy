@@ -6296,3 +6296,103 @@ Ghidra-kimenet `FUN_00bb9d20`, `FUN_00bb9e00`, `FUN_008f2c70`,
 `src/picasapy/render/curves.py:26–111`,
 `src/picasapy/render/glimmer_ops.py:125–148`,
 `tests/render/test_curves_spline_629.py:28–145`.*
+
+## ⛳ A `Border` négy attribútumának EGYSÉGE — és a rejtett átméretezési tényező (2026-09-19, 325. kör, #626)
+
+*A jegy 3. prioritása a `Border` (Border · MuseumMatte · RoundedEdges ·
+Sixties). A kimeneti méret és a tageltolások korábban megvoltak; itt a
+rajzolási lánc és az egységek jönnek.*
+
+### A) A lánc — három függvény, mindegyiknek EGY hívója
+
+```
+0x00bbe320 (266 b, 6. rés = alkalmazó)
+   ├── 0x00bbe430 (317 b)   ← a két VASTAGSÁG + a feliratsáv beolvasása
+   └── 0x00bbe570 (1953 b)  ← a munkavégző (egyetlen hívója a fenti)
+         ├── 0x00aa13b0 (1153 b, 6 hívó)   vászon-primitív
+         ├── 0x00aa1840 (813 b, 7 hívó)    rajzoló-primitív
+         ├── 0x009ab360 (176 b, EGYETLEN hívója ez)  ← csak a Borderé
+         └── 0x008f4c80 (247 b, 4 hívó; a másik három a `0x00bd0f10`,
+             `0x00bd1350`, `0x00bd1730` szűrő-támogató)
+```
+
+A `Border`-nek a 4.5 táblázatban nincs 8. rése — a rajzolás tehát **ebben a
+láncban** történik, nem külön munkavégzőben.
+
+### B) A színek: `double` attribútum, előjel-helyreállítással
+
+Mindkét szín a `0x8ef520` → `0x8eea90` páron jön be `double`-ként, és ha az
+érték **negatív**, a kód hozzáadja a `0x00cf39e4`-en álló `float`
+konstanst — az értéke **2³² = 4 294 967 296**:
+
+```
+0x00bbe6d4  test eax, eax
+0x00bbe6db  jge  …
+0x00bbe6dd  fadd dword ptr [0xcf39e4]      ; + 2^32
+```
+
+⇒ ez nem paraméter, hanem **előjeles → előjel nélküli** helyreállítás: a
+`0xff000000 + szín` alakú leíró-kifejezés `double`-ben negatívként jelenik
+meg, és így lesz belőle újra ARGB. (A leíró tényleg így ír:
+`outercolor="{0xff000000 + _cpkrOuter.liveColor}"`.)
+
+### C) ⭐ A két VASTAGSÁG át van skálázva — a `captionheight` és a `cornerradius` NEM
+
+A `0x00bbe430` először **kikeresi az `imageWidth` változót** a szűrő
+változó-táblájából (a kulcs-sztring a `0x00cc44f8`-on: `imageWidth`; a
+szomszédai `imageHeight`, `outputIndex`), majd elosztja a méret-rekord egy
+egész mezőjével, és az így kapott **tényezővel szoroz**:
+
+```
+0x00bbe4a6  fild dword ptr [esi + 8]       ; a méret-rekord egész mezője
+0x00bbe4b0  fdivr qword ptr [esp + 0x14]   ; imageWidth / ez  → tényező
+0x00bbe4bd  call 0x8f1490                  ; innerthickness beolvasása
+0x00bbe4d0  fmul dword ptr [esp + 0xc]     ; ← SKÁLÁZÁS
+0x00bbe508  lea  ecx, [ebx + 0x44]         ; outerthickness
+0x00bbe51b  fmul dword ptr [esp + 0xc]     ; ← SKÁLÁZÁS
+0x00bbe553  call 0x8f1490                  ; captionheight — ⛔ NINCS fmul
+```
+
+A `cornerradius`-t nem is ez a segítő olvassa, hanem maga az alkalmazó
+(`0x00bbe3b8`), szintén **szorzás nélkül**. Mindegyik érték `fldcw`-vel
+váltott kerekítési módban megy `int`-be (csonkítás).
+
+**Független megerősítés a szállított leíróból** — a csúszkák deklarációja
+maga mondja meg az egységet:
+
+| attribútum | csúszka tartománya | alap | ⇒ egység |
+|---|---|---:|---|
+| `outerthickness` | 0 … **100** | 20 | a **kép pixelében**, átméretezve (C) |
+| `innerthickness` | 0 … **100** | 5 | ugyanaz |
+| `cornerradius` | 0 … `min(imagewidth, imageheight)/2` | 0 | **képpont**, nyersen |
+| `captionheight` | 0 … `imageheight/6` | 0 | **képpont**, nyersen |
+
+A két „pixel" tartomány kép-méretből származik, a két vastagságé fix 0–100 —
+és pontosan a két utóbbi az, amit a bináris átskáláz. **A két forrás
+egymástól függetlenül ugyanazt adja.**
+
+### D) Miért nem mond ez ellent a #317 exportjainak
+
+A `render/glimmer_frame_ops.py` `add_ring()` megjegyzése hét valódi
+MuseumMatte-exportra hivatkozik, amelyeken az oldalankénti ráadás **pontosan
+`Outer + Inner` képpont** volt (0/50/100 külső, 0/100 belső állásokon). Ez
+**összhangban van** a fentiekkel: teljes felbontású kimenetnél a C) pont
+tényezője **1**, tehát a szorzás nem látszik. A tényező akkor tér el 1-től,
+amikor a művelet **nem teljes felbontású** vásznon fut (előnézet, nagyítás).
+
+⇒ Ebből egy **mérhető aszimmetria** következik: előnézeten a keret vastagsága
+a vászonhoz skálázódik, a **feliratsáv és a sarok-lekerekítés viszont nem**.
+
+### E) Ami NYITOTT — megnevezve
+
+A tényező **irányát** (`imageWidth / vászonszélesség` vagy fordítva) az
+eldöntené, hogy a méret-rekord (`[esi + 8]`, `[esi + 0xc]`) a **vászon** vagy
+az **eredeti** méretét tartja. Ez a rekord az alkalmazó **2. argumentuma**,
+és a 4.5 tábla szerint **minden** 6. rés ugyanezt kapja — tehát bármely már
+kimért alkalmazó (pl. `Crop` `0x00bbdbd0`) eldönti. Ez a következő,
+felvehető lépés; nem becsülöm meg. *(Fejlesztői oldal: **#3377**.)*
+
+*Forrás: `0x00bbe320` (266 b), `0x00bbe430` (317 b), `0x00bbe570` (1953 b);
+a kulcs-sztring `0x00cc44f8`; a konstans `0x00cf39e4` = 2³²; a csúszka-sorok
+a szállított `filterdesc.xml`-ből (`_sldrOuterThickness`,
+`_sldrInnerThickness`, `_sldrCornerRadius`, `_sldrCaptionHeight`).*
