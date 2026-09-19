@@ -6599,3 +6599,53 @@ golden: natív és PicasaPy kimenet összevetése ebben a körben **NINCS MEG**.
 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A `ContrastAndBrightnessLinked`
 ág 127,5-ös képlete utasításszinten már korábban megvolt (`0x008f2040`),
 de a natív export-golden továbbra is külön, meg nem mért ellenőrzés.
+
+## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
+
+*A 12. szakasz kimérte a binárisból, hogy az eredeti nem rendez át: a
+`CGenericFilter` `+0x84` rekesze minden opnak átadja a koordináta-leképezést és
+az inverzét, és a szerkesztő sorrendben renderel. Az átállítás viszont MINDEN
+ilyen képen megváltoztatja a látványt, ezért a tulajdonos golden-exportot kért —
+ez a szakasz azt zárja le.*
+
+### A mérőkészlet és a döntő kép
+
+`My Pictures\3229-lanc-sorrend`, négy kép, a beállítások a `.picasa.ini`-ben; az
+`export/` az eredeti, windowsos Picasa kimenete.
+
+Döntő: `01-keret-utan-szepia.jpg` —
+`Border=1,20,5,0,00000000,00ffffff,0;sepia=1;`. A keret (a kimenet legkülső 1%-a)
+átlagos RGB-je az eredetinél **(46, 37, 28)**: barnás, tehát a szépia a KERETRE
+is ráment. Kontroll: `02-szepia-utan-keret.jpg` (`sepia;Border`) — ott a keret
+**(0, 0, 0)**, azaz a keret a saját színén marad, ha utoljára kerül fel.
+
+⇒ **Az eredeti a lánc sorrendjében dolgozik.** A `#330` „a keret a legvégén fut"
+olvasata ezzel megdőlt.
+
+### A két águnk ugyanazon a képen
+
+| ág | a keret RGB-je | átlagos ΔE a referenciához |
+|---|---|---:|
+| a régi (halasztó) | 0, 0, 0 | 4,481 |
+| **a mért sorrend** | **46, 37, 29** | **2,278** |
+
+A `03-keret-utan-vignetta.jpg`-n mindkét ág feketét ad, mint a referencia (a
+vignetta erőssége maga tér el: ΔE 29,4 → 26,9).
+
+### ⚠️ A negyedik kép NEM mér
+
+A `04-vagas-utan-vignetta.jpg` a vágást a `filters=` sorba írta
+(`crop64=1,3c3c8c8c;…`), a Picasa viszont a képszekció **`crop=`** kulcsából vág
+— ezért az exportja **vágatlan** (1600×1200), és a két águnk 376×659-es kimenete
+nem hasonlítható hozzá. A vágás sorrendjét ezért a 12. szakasz bináris mérése és
+a `tests/render/test_mert_sorrend_3229.py` próbái fedik, nem golden. Új
+mérőkészlet NEM kell hozzá.
+
+### Ami ebből a termékbe került
+
+Az `apply_filters` alapértelmezése a mért sorrend (#3229 3. lépés), a halasztó
+ág `mert_sorrend=False`-szal kontrollnak megmarad, és a szerkesztő lánc-prefix
+gyorsítótára a koordináta-állapotot (`LancHelyzet`) is átadja a folytatásnak —
+enélkül a kettévágott lánc mást adna, mint az egészben futtatott (a #3169 ezt
+`crop64;Vignette` esetén 18,2-nek mérte). Őr:
+`tests/render/test_lanc_sorrend_elesben_3229.py`.

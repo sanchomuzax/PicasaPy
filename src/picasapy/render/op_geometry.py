@@ -82,6 +82,39 @@ class OpGeometria:
         return invertal(self.matrix)
 
 
+@dataclass(frozen=True)
+class LancHelyzet:
+    """A lánc futtatása közben felgyűlt koordináta-állapot (#3229).
+
+    Az `apply_filters` egyetlen hívásán belül ez a bejáró belső állapota. Aki a
+    láncot KETTÉVÁGVA futtatja — a szerkesztő lánc-prefix gyorsítótára —, annak
+    át kell vinnie a második hívásba, különben az azt hinné, hogy a kapott kép
+    az eredeti: a `crop64` koordinátái az EREDETI képre vonatkoznak (#330), és a
+    `content_placement` is a forrásfotó helyét mondja meg a kimenetben.
+
+    Mérve (#3169): a régi, halasztó ágon a kettévágott és az egészben futtatott
+    lánc **18,2** átlagos eltérést adott `crop64;Vignette` esetén.
+    """
+
+    #: A LÁNC bemenetének (az eredeti fotónak) a mérete.
+    eredeti_szelesseg: int
+    eredeti_magassag: int
+    #: Eredeti → jelenlegi kép leképezés.
+    eredeti_matrix: Matrix = AZONOSSAG
+    #: A (már vágott) forrás → jelenlegi kép leképezés, és a forrás mérete —
+    #: ebből számol a `content_placement`.
+    hely_matrix: Matrix = AZONOSSAG
+    hely_szelesseg: int = 0
+    hely_magassag: int = 0
+
+    @classmethod
+    def kezdo(cls, szelesseg: int, magassag: int) -> "LancHelyzet":
+        """A lánc elején érvényes, érintetlen állapot."""
+        return cls(
+            int(szelesseg), int(magassag), AZONOSSAG, AZONOSSAG, int(szelesseg), int(magassag)
+        )
+
+
 def invertal(m: Matrix) -> Matrix:
     """Egy 2×3-as affin leképezés inverze.
 
@@ -102,9 +135,7 @@ def _eltolas_es_meret(bal: int, fent: int) -> Matrix:
     return ((1.0, 0.0, float(-bal)), (0.0, 1.0, float(-fent)))
 
 
-def _crop_geometria(
-    szelesseg: int, magassag: int, op: FilterOp
-) -> tuple[int, int, Matrix]:
+def _crop_geometria(szelesseg: int, magassag: int, op: FilterOp) -> tuple[int, int, Matrix]:
     """A `crop64` leképezése — a SAJÁT bemenetére vonatkozó relatív téglalap.
 
     A kerekítés az `ops._rect_to_pixels`-é, hogy a megjósolt méret a valóban
@@ -122,9 +153,7 @@ def _crop_geometria(
     return jobb - bal, lent - fent, _eltolas_es_meret(bal, fent)
 
 
-def _tilt_geometria(
-    szelesseg: int, magassag: int, op: FilterOp
-) -> tuple[int, int, Matrix]:
+def _tilt_geometria(szelesseg: int, magassag: int, op: FilterOp) -> tuple[int, int, Matrix]:
     """A `tilt` MÉRET-TARTÓ forgatás a kép közepe körül (`ops.apply_tilt`).
 
     A `chain._apply_tilt_op` átalakítását tükrözzük, KONSTANST NEM DUPLIKÁLVA:
@@ -172,9 +201,7 @@ def op_geometria(op: FilterOp, szelesseg: int, magassag: int) -> OpGeometria:
     return OpGeometria(int(sz), int(ma), matrix)
 
 
-def lanc_geometria(
-    ops: tuple[FilterOp, ...], szelesseg: int, magassag: int
-) -> OpGeometria:
+def lanc_geometria(ops: tuple[FilterOp, ...], szelesseg: int, magassag: int) -> OpGeometria:
     """A teljes lánc leképezése, az ops EREDETI sorrendjében.
 
     ⚠️ Ez az, amiben a `chain_geometry.keret_geometria`-tól KÜLÖNBÖZIK: az a

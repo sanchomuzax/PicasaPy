@@ -11,6 +11,7 @@ import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.render.chain_geometry import TartalomHely
+from picasapy.render.op_geometry import LancHelyzet
 from picasapy.render.registry import FILTER_REGISTRY, clamp_slider_value
 
 #: Explicit (csúszka-index → paraméter-pozíció) leképezés a tartomány-
@@ -110,9 +111,7 @@ def validate_and_clamp_op(op: FilterOp) -> tuple[FilterOp, tuple[str, ...]]:
             raw_value = float(params[position])
         except ValueError:
             continue  # hibás/nem-szám paraméter — a handler majd elszáll rajta
-        if raw_value in _INTERNAL_PARAM_SENTINELS.get(
-            (key, slider_index), frozenset()
-        ):
+        if raw_value in _INTERNAL_PARAM_SENTINELS.get((key, slider_index), frozenset()):
             continue
         clamped, out_of_range = clamp_slider_value(spec, slider, raw_value)
         if out_of_range:
@@ -149,6 +148,12 @@ class ChainReport(tuple):
     Mindkettő a `skipped`-be is bekerül (a lánc kihagyja őket); a külön
     lista a KÜLÖNBÖZŐ okokat mondja ki, szűrőnként a saját üzenetével.
 
+    A `.helyzet` (#3229) a lánc VÉGÉN érvényes koordináta-állapot: az eredeti
+    kép mérete és a hozzá vezető leképezés. Aki a láncot KETTÉVÁGVA futtatja (a
+    szerkesztő lánc-prefix gyorsítótára), ezt adja vissza a folytatásnak
+    `bejovo=` gyanánt — enélkül a második hívás azt hinné, hogy a kapott kép az
+    eredeti, és a `crop64` koordinátái meg a `content_placement` elcsúszna.
+
     A `.content_placement` (#3166) megmondja, **hol van a fénykép a
     kimenetben**, ha a lánc keret-effektet tartalmaz. Erre a szerkesztő
     átfedő rétegeinek (vágás-téglalap, arckeretek) van szüksége: ők a
@@ -171,6 +176,7 @@ class ChainReport(tuple):
         range_warnings: tuple[str, ...],
         legacy_warnings: tuple[str, ...] = (),
         content_placement: TartalomHely | None = None,
+        helyzet: LancHelyzet | None = None,
     ) -> "ChainReport":
         obj = super().__new__(cls, (image, skipped))
         obj.full_res = full_res
@@ -179,6 +185,7 @@ class ChainReport(tuple):
         obj.range_warnings = range_warnings
         obj.legacy_warnings = legacy_warnings
         obj.content_placement = content_placement
+        obj.helyzet = helyzet
         return obj
 
     @property

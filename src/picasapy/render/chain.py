@@ -56,7 +56,7 @@ from picasapy.render.chain_geometry import (
     tartalom_elhelyezes,
     _szorzat,
 )
-from picasapy.render.op_geometry import OpGeometria, op_geometria
+from picasapy.render.op_geometry import LancHelyzet, OpGeometria, op_geometria
 from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
 from picasapy.render.directional import (
     apply_dir_brite,
@@ -306,8 +306,7 @@ def _apply_crop_op_lekepezve(
     lent = max(0, min(round(max(y for _, y in sarkok)), magassag))
     if jobb <= bal or lent <= fent:
         raise ValueError(
-            f"Üres kivágás a leképezés után: rect={rect} -> "
-            f"({bal}, {fent}, {jobb}, {lent})"
+            f"Üres kivágás a leképezés után: rect={rect} -> ({bal}, {fent}, {jobb}, {lent})"
         )
     return image[fent:lent, bal:jobb].copy()
 
@@ -468,12 +467,8 @@ def _apply_desat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     Hiányzó paraméterre a natív konstruktor alapértéke fut (mindhárom
     csatorna `0,333` — semleges szürke).
     """
-    channels = tuple(
-        _effect_float(op, index, 1.0 / 3.0) for index in range(3)
-    )
-    color = tuple(
-        max(0, min(255, round(channel * 255.0))) for channel in channels
-    )
+    channels = tuple(_effect_float(op, index, 1.0 / 3.0) for index in range(3))
+    color = tuple(max(0, min(255, round(channel * 255.0))) for channel in channels)
     return apply_ansel(image, color=color)
 
 
@@ -765,25 +760,9 @@ _HANDLERS = {
 #: `RoundedEdges` a #381-ben MEGKAPTA a `_HANDLERS` bejegyzését
 #: (`glimmer.apply_rounded_edges_op`) — a metszetben szerepel, nem marad ki
 #: (a korábbi, "implementálatlan" állapotot leíró megjegyzés elavult volt).
-_FRAME_EFFECTS = frozenset(
-    key for key, spec in FILTER_REGISTRY.items() if spec.resizes
-) & _HANDLERS.keys()
-
-def halasztott_op(op: FilterOp) -> bool:
-    """Igaz, ha az `apply_filters` ezt az opot a lánc VÉGÉRE halasztja (#3169).
-
-    Az `apply_filters` szándékosan átrendez: előbb a nem-keret effektek,
-    **utána a vágás** (#330), **legvégül a keretek** (`_FRAME_EFFECTS`). Ez a
-    rendezés egyetlen híváson belül érvényes — aki a láncot KETTÉVÁGVA
-    futtatja (a szerkesztő lánc-prefix gyorsítótára), annak tudnia kell,
-    melyik op tartozik a végére, különben más képet kap, mint a teljes lánc.
-
-    ⛔ Ez a predikátum azért él ITT, és nem a hívónál: a halasztás szabálya
-    az `apply_filters` sajátja, és két helyen karbantartva némán elcsúszna.
-    Mérve (#3169): a `crop64=1,…;Vignette` lánc a két úton **18,2** átlagos
-    eltérést adott."""
-    kulcs = op.name.casefold()
-    return kulcs == "crop64" or kulcs in _FRAME_EFFECTS
+_FRAME_EFFECTS = (
+    frozenset(key for key, spec in FILTER_REGISTRY.items() if spec.resizes) & _HANDLERS.keys()
+)
 
 
 def can_render_filter(name: str) -> bool:
@@ -830,7 +809,8 @@ def apply_filters(
     ops: tuple[FilterOp, ...],
     *,
     paint_mask: np.ndarray | None = None,
-    mert_sorrend: bool = False,
+    mert_sorrend: bool = True,
+    bejovo: LancHelyzet | None = None,
 ) -> ChainReport:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
     enhance, autolight, autocolor, autocontrast, fill, backlight,
@@ -879,14 +859,30 @@ def apply_filters(
     elv szent). A teljes lista a `chain_report._RANGE_VALIDATED_PARAM_POSITIONS`
     táblában van.
 
-    **`mert_sorrend` (#3229 2. lépés):** ha igaz, a lánc az ops EREDETI
-    sorrendjében fut — nincs vágás- és keret-halasztás —, a `crop64`
-    téglalapját pedig az addig felgyűlt leképezéssel számoljuk át (a #330
-    mérése így is teljesül: a koordináták az EREDETI képre vonatkoznak).
+    **`mert_sorrend` — MA EZ AZ ALAPÉRTELMEZÉS (#3229 3. lépés):** a lánc az
+    ops EREDETI sorrendjében fut — nincs vágás- és keret-halasztás —, a
+    `crop64` téglalapját pedig az addig felgyűlt leképezéssel számoljuk át (a
+    #330 mérése így is teljesül: a koordináták az EREDETI képre vonatkoznak).
     Ez az, amit az eredeti tesz: a `CGenericFilter` `+0x84` rekesze minden
     opnak átadja a leképezést ÉS az inverzét (`docs/specs/filterdesc-registry.md`
-    12., `render/op_geometry.py`). **Az alapértelmezés a MAI viselkedés**, hogy
-    az átállítás mérhető, külön lépés legyen (#3169).
+    12., `render/op_geometry.py`).
+
+    **Amit ez eldöntött (2026-09-19, a tulajdonos exportja).** A
+    `3229-lanc-sorrend` készlet `01-keret-utan-szepia.jpg` képén az eredeti
+    Picasa kimenetén a keret **barnás** (átlagos RGB 46, 37, 28), tehát a
+    szépia a KERETRE is ráment; a kontroll-képen (`sepia;Border`) a keret
+    fekete marad. A mi két águnk ugyanazon a képen: a halasztott 0, 0, 0
+    (átlagos ΔE 4,481), a mért sorrend **46, 37, 29** (ΔE **2,278**). Ezért
+    fordult meg az alapértelmezés. Őr:
+    `tests/render/test_lanc_sorrend_elesben_3229.py`.
+
+    `mert_sorrend=False` a RÉGI, halasztó ág — csak kontroll-mérésre való.
+
+    **`bejovo` — a KETTÉVÁGOTT lánc folytatása (#3229).** Aki a láncot két
+    hívásban futtatja (a szerkesztő lánc-prefix gyorsítótára), az első hívás
+    `ChainReport.helyzet`-ét adja ide. Enélkül a második hívás a kapott képet
+    hiszi az eredetinek, és a `crop64` koordinátái meg a `content_placement`
+    elcsúsznak. `None` esetén a lánc a saját bemenetét tekinti eredetinek.
 
     **Sáv-jelzők (#382):** a visszaadott `ChainReport.full_res`/`.slow`/
     `.resizes` jelzi, hogy a lánc tartalmaz-e olyan szűrőt, ami csak teljes
@@ -898,10 +894,16 @@ def apply_filters(
     # #3229: a MÉRT sorrend ága követi, hova került a forrás — `hely_matrix` a
     # (vágás utáni) forrásból a jelenlegi képbe, `eredeti_*` pedig az eredeti
     # méret, amire a `crop64` koordinátái vonatkoznak (#330).
-    eredeti_h, eredeti_w = image.shape[:2] if image is not None else (0, 0)
-    ered_matrix: Matrix = AZONOSSAG  # eredeti -> jelenlegi
-    hely_matrix: Matrix = AZONOSSAG  # a vágott forrás -> jelenlegi
-    hely_w, hely_h = eredeti_w, eredeti_h
+    if bejovo is not None:
+        eredeti_w, eredeti_h = bejovo.eredeti_szelesseg, bejovo.eredeti_magassag
+        ered_matrix: Matrix = bejovo.eredeti_matrix  # eredeti -> jelenlegi
+        hely_matrix: Matrix = bejovo.hely_matrix  # a vágott forrás -> jelenlegi
+        hely_w, hely_h = bejovo.hely_szelesseg, bejovo.hely_magassag
+    else:
+        eredeti_h, eredeti_w = image.shape[:2] if image is not None else (0, 0)
+        ered_matrix = AZONOSSAG
+        hely_matrix = AZONOSSAG
+        hely_w, hely_h = eredeti_w, eredeti_h
     utolso_crop = None
     if mert_sorrend:
         for _op in ops:
@@ -930,9 +932,7 @@ def apply_filters(
             count = effective_param_count(op.params)
             if count > limit:
                 legacy_warnings.append(
-                    EXCESS_PARAM_WARNING_TEMPLATE.format(
-                        name=op.name, count=count, limit=limit
-                    )
+                    EXCESS_PARAM_WARNING_TEMPLATE.format(name=op.name, count=count, limit=limit)
                 )
                 skipped.append(op.name)
                 continue
@@ -943,14 +943,13 @@ def apply_filters(
                 # a MÉRT sorrendben a vágás OTT fut, ahol áll — a téglalapot
                 # az addig felgyűlt leképezéssel számoljuk át
                 try:
-                    result = _apply_crop_op_lekepezve(
-                        result, op, eredeti_w, eredeti_h, ered_matrix
-                    )
+                    result = _apply_crop_op_lekepezve(result, op, eredeti_w, eredeti_h, ered_matrix)
                 except Exception:
-                    _log.exception(
-                        "Filter-bejegyzés kihagyva (hibás paraméter): %s", op
-                    )
+                    _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
                     skipped.append(op.name)
+                    # a záró ág se próbálja újra: akkor KÉTSZER kerülne a
+                    # kihagyott-listára ugyanaz a bejegyzés (#301 őre)
+                    crop_op = None
                 else:
                     crop_op = None  # már alkalmazva, a záró ág ne fussa újra
                     # a placement innentől a VÁGOTT forrásból indul
@@ -973,21 +972,15 @@ def apply_filters(
             if key in DEAD_LEGACY_OPS:
                 # #567: nem „még nincs modellünk", hanem a Picasa maga sem
                 # futtatta már — ezt ki is mondjuk, nem csak kihagyjuk
-                legacy_warnings.append(
-                    DEAD_LEGACY_WARNING_TEMPLATE.format(name=op.name)
-                )
+                legacy_warnings.append(DEAD_LEGACY_WARNING_TEMPLATE.format(name=op.name))
             elif key in MEASURED_IDLE_OPS:
                 # #687: van natív feldolgozója, de a mérésben nem hatott —
                 # a két ok külön üzenetet kap (ld. MEASURED_IDLE_OPS)
-                legacy_warnings.append(
-                    MEASURED_IDLE_WARNING_TEMPLATE.format(name=op.name)
-                )
+                legacy_warnings.append(MEASURED_IDLE_WARNING_TEMPLATE.format(name=op.name))
             elif key in MEASURED_NOT_RUNNING_OPS:
                 # #1142: a mérés szerint az eredeti nem futtatja — nálunk
                 # volt rá renderer, ezért a mi kimenetünk tért el
-                legacy_warnings.append(
-                    MEASURED_NOT_RUNNING_WARNING_TEMPLATE.format(name=op.name)
-                )
+                legacy_warnings.append(MEASURED_NOT_RUNNING_WARNING_TEMPLATE.format(name=op.name))
             skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS and paint_mask is not None:
@@ -1000,9 +993,7 @@ def apply_filters(
             try:
                 result = glimmer.alkalmazd_maszkkal(key, result, op, paint_mask)
             except Exception:
-                _log.exception(
-                    "Filter-bejegyzés kihagyva (hibás paraméter): %s", op
-                )
+                _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
                 skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
@@ -1033,9 +1024,7 @@ def apply_filters(
         try:
             result = _apply_crop_op(result, crop_op)
         except Exception:
-            _log.exception(
-                "Filter-bejegyzés kihagyva (hibás paraméter): %s", crop_op
-            )
+            _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", crop_op)
             skipped.append(crop_op.name)
     # keretek legvégül, a már kivágott képre (#330)
     #
@@ -1086,4 +1075,5 @@ def apply_filters(
         range_warnings=tuple(range_warnings),
         legacy_warnings=tuple(legacy_warnings),
         content_placement=content_placement,
+        helyzet=LancHelyzet(eredeti_w, eredeti_h, ered_matrix, hely_matrix, hely_w, hely_h),
     )
