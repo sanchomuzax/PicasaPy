@@ -139,7 +139,23 @@ def _push_alap(tarolo: str, elozo: str, mostani: str) -> tuple[str, str] | None:
     return elozo, mostani
 
 
+def _utf8_kimenet() -> None:
+    """A saját kiírásunk se bukjon el a Windows-konzolon (#2077).
+
+    A magyar szövegünkben van `ő` és `ű`, azok pedig a Windows
+    alapértelmezett `cp1252` kódolásában NEM ábrázolhatók: a szkript a
+    LELET helyett a saját üzenetén hasalna el, és a CI ezt valódi hibának
+    látná (mérve: a #3298 első kiadása pirosra vitte a windows 1/4 darabot).
+    """
+    for folyam in (sys.stdout, sys.stderr):
+        try:
+            folyam.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 def main(ervek: list[str] | None = None) -> int:
+    _utf8_kimenet()
     ertelmezo = argparse.ArgumentParser(description=__doc__)
     ertelmezo.add_argument("--tarolo", default=".", help="a git-munkafa útja")
     beallitas = ertelmezo.parse_args(ervek)
