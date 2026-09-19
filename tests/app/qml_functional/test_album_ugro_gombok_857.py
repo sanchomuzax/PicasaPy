@@ -13,6 +13,18 @@ Az eredeti Picasa görgetősávján NÉGY gomb van, nem kettő: a fel/le mellett
 ⇒ a két **album-ugró** megépül; a sáv 10 képpontos, lapos stílusa marad, és a
 fel/le nyílgombok nem épülnek meg (ADR-015, `docs/decisions/`).
 
+## ⚠️ Amit a gomb-próba mér, és amit NEM
+
+Az ismétlést a gomb **meghívható** `nyomvaTartasIndul()` /
+`nyomvaTartasVege()` függvényein át mérjük, nem szimulált egéreseménnyel. Az
+első változat a `MouseArea.mousePressEvent`-jét hívta közvetlenül: Linuxon
+működött, a **windowsos CI-lábon nem** (ablak nélkül ott nem kézbesül az
+esemény), és pirosra vitte a main-t.
+
+⇒ ez a próba az ISMÉTLÉS viselkedését méri (időzítés, leállás), **nem** azt,
+hogy az egérkezelő hozzá van-e kötve. Azt külön, forrás-szinten állítjuk — és
+ki is mondjuk, hogy az nem futtatott mérés.
+
 ## Amit ez a fájl mér
 
 A bekötést: a gombok csak a RÁCS sávján jelennek meg, a jelzésük a feed
@@ -30,6 +42,7 @@ from tests.support.qml_blokk import blokk_horgonyra
 _QML = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
 _SAV = (_QML / "PicasaScrollBar.qml").read_text(encoding="utf-8")
 _FEED = (_QML / "LightboxFeed.qml").read_text(encoding="utf-8")
+_GOMB = (_QML / "AlbumUgroGomb.qml").read_text(encoding="utf-8")
 _DONTES = (
     Path(__file__).resolve().parents[3]
     / "docs" / "decisions" / "gorgetosav-album-ugro.md"
@@ -93,7 +106,6 @@ class TestADontesRogzitve:
 from PySide6.QtCore import (  # noqa: E402
     QEventLoop,
     QMetaObject,
-    QPointF,
     QTimer,
     QUrl,
     Qt,
@@ -101,7 +113,6 @@ from PySide6.QtCore import (  # noqa: E402
 from PySide6.QtCore import Q_ARG  # noqa: E402
 
 from tests.support.jpeg_factory import make_jpeg  # noqa: E402
-from PySide6.QtGui import QMouseEvent  # noqa: E402
 from PySide6.QtQml import QQmlComponent, QQmlEngine  # noqa: E402
 from PySide6.QtQuick import QQuickItem  # noqa: E402
 
@@ -126,28 +137,6 @@ def _gomb(qt_app):
     return obj
 
 
-def _egerlenyomas(pont: QPointF) -> QMouseEvent:
-    return QMouseEvent(
-        QMouseEvent.Type.MouseButtonPress,
-        pont,
-        pont,
-        Qt.MouseButton.LeftButton,
-        Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier,
-    )
-
-
-def _egerfelengedes(pont: QPointF) -> QMouseEvent:
-    return QMouseEvent(
-        QMouseEvent.Type.MouseButtonRelease,
-        pont,
-        pont,
-        Qt.MouseButton.LeftButton,
-        Qt.MouseButton.NoButton,
-        Qt.KeyboardModifier.NoModifier,
-    )
-
-
 def _var(qt_app, ms: int) -> None:
     hurok = QEventLoop()
     QTimer.singleShot(ms, hurok.quit)
@@ -155,48 +144,36 @@ def _var(qt_app, ms: int) -> None:
     qt_app.processEvents()
 
 
-def _terulet(gomb):
-    for gyermek in gomb.findChildren(QQuickItem):
-        if gyermek.objectName() == "albumUgroTerulet":
-            return gyermek
-    raise AssertionError("nincs egérterület a gombon")
-
-
 class TestAzISMETLES:
     """#856: az eredeti mind a hat eleme `m_autorepeat` — nyomva tartva ismétel."""
 
-    def test_egy_KATTINTAS_egy_kivaltas(self, qt_app):
+    def test_egy_LENYOMAS_egy_kivaltas(self, qt_app):
         gomb = _gomb(qt_app)
-        terulet = _terulet(gomb)
         darab: list[int] = []
         gomb.aktivalva.connect(lambda: darab.append(1))
-        pont = QPointF(3, 3)
-        terulet.setWidth(10)
-        terulet.setHeight(24)
-        terulet.mousePressEvent(
-            _egerlenyomas(pont)
+        QMetaObject.invokeMethod(
+            gomb, "nyomvaTartasIndul", Qt.ConnectionType.DirectConnection
         )
-        terulet.mouseReleaseEvent(
-            _egerfelengedes(pont)
+        QMetaObject.invokeMethod(
+            gomb, "nyomvaTartasVege", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
-        assert len(darab) == 1, f"egy kattintás {len(darab)} kiváltást adott"
+        assert len(darab) == 1, f"egy lenyomás {len(darab)} kiváltást adott"
 
     def test_NYOMVA_TARTVA_tobbszor_sul_el(self, qt_app):
         gomb = _gomb(qt_app)
-        terulet = _terulet(gomb)
-        terulet.setWidth(10)
-        terulet.setHeight(24)
         darab: list[int] = []
         gomb.aktivalva.connect(lambda: darab.append(1))
-        pont = QPointF(3, 3)
-        terulet.mousePressEvent(
-            _egerlenyomas(pont)
+        QMetaObject.invokeMethod(
+            gomb, "nyomvaTartasIndul", Qt.ConnectionType.DirectConnection
         )
         # az első késleltetés + két ismétlés ideje bőven elég
-        _var(qt_app, gomb.property("elsoKesleltetes") + 3 * gomb.property("ismetlesKoz"))
-        terulet.mouseReleaseEvent(
-            _egerfelengedes(pont)
+        _var(
+            qt_app,
+            gomb.property("elsoKesleltetes") + 3 * gomb.property("ismetlesKoz"),
+        )
+        QMetaObject.invokeMethod(
+            gomb, "nyomvaTartasVege", Qt.ConnectionType.DirectConnection
         )
         assert len(darab) >= 3, (
             f"nyomva tartva csak {len(darab)} kiváltás — nem ismétel"
@@ -204,23 +181,32 @@ class TestAzISMETLES:
 
     def test_ELENGEDES_utan_MEGALL(self, qt_app):
         gomb = _gomb(qt_app)
-        terulet = _terulet(gomb)
-        terulet.setWidth(10)
-        terulet.setHeight(24)
         darab: list[int] = []
         gomb.aktivalva.connect(lambda: darab.append(1))
-        pont = QPointF(3, 3)
-        terulet.mousePressEvent(
-            _egerlenyomas(pont)
+        QMetaObject.invokeMethod(
+            gomb, "nyomvaTartasIndul", Qt.ConnectionType.DirectConnection
         )
         _var(qt_app, gomb.property("elsoKesleltetes") + gomb.property("ismetlesKoz"))
-        terulet.mouseReleaseEvent(
-            _egerfelengedes(pont)
+        QMetaObject.invokeMethod(
+            gomb, "nyomvaTartasVege", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
         elengedeskor = len(darab)
         _var(qt_app, 5 * gomb.property("ismetlesKoz"))
         assert len(darab) == elengedeskor, "elengedés után is ismételt"
+
+    def test_az_EGERKEZELO_ugyanezt_a_ket_fuggvenyt_hivja(self):
+        """⚠️ FORRÁS-szintű állítás: a kötést NEM futtatva ellenőrizzük.
+
+        A lenyomás→ismétlés utat a fenti három próba méri; azt, hogy az
+        egérkezelő is ezen az úton megy, itt mondjuk ki — mert szimulált
+        egéreseménnyel a windowsos futón nem mérhető (ablak nélkül nem
+        kézbesül).
+        """
+        blokk = blokk_horgonyra(_GOMB, "MouseArea {")
+        assert "onPressed: gomb.nyomvaTartasIndul()" in blokk
+        assert "onReleased: gomb.nyomvaTartasVege()" in blokk
+        assert "onCanceled: gomb.nyomvaTartasVege()" in blokk
 
 
 class TestAzUgrasAZELORACSON:
