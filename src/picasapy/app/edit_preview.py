@@ -29,8 +29,8 @@ from picasapy.ini.filters import FilterOp
 from picasapy.lazy_cv2 import cv2
 from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
 from picasapy.render import apply_filters, count_redeye_spots
-from picasapy.render.chain import halasztott_op
 from picasapy.render.chain_geometry import TartalomHely
+from picasapy.render.op_geometry import LancHelyzet
 from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
     apply_display_mode,
@@ -40,8 +40,10 @@ from picasapy.render.text_fonts import DEFAULT_FAMILY
 from picasapy.render.text_overlay import apply_text_overlay
 
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
+
 # #151/7: a placeholder-szürke egyetlen helyen (thumbnail_provider) definiált
 from .thumbnail_provider import PLACEHOLDER_COLOR as _PLACEHOLDER_COLOR
+
 _PLACEHOLDER_SIZE = 16
 _MAX_PREVIEW_EDGE = 2560
 # LRU-kapacitás (#128): lapozáskor a beginEdit új id-vel regisztrál, endEdit
@@ -126,15 +128,24 @@ class EditPreviewProvider(QQuickImageProvider):
         # a register() gyakran hívódik ugyanarra a fotóra, csak a szűrő-
         # lánc változik — a lemezes dekódot nem kell minden alkalommal
         # megismételni, csak a filter-lánc újraszámolását.
-        self._sources: OrderedDict[
-            str, tuple[Path, float | None, np.ndarray | None]
-        ] = OrderedDict()
+        self._sources: OrderedDict[str, tuple[Path, float | None, np.ndarray | None]] = (
+            OrderedDict()
+        )
         # lánc-prefix gyorsítótár (#140): élő csúszka-húzásnál csak az UTOLSÓ
         # op paramétere változik — az utolsó op ELŐTTI köztes eredményt
         # egyetlen rekeszben tároljuk (kulcs, prefix-lánc, forrás-referencia,
-        # prefix-kép), így interakció közben csak az utolsó op fut újra.
+        # prefix-kép, lánc-helyzet), így interakció közben csak az utolsó op
+        # fut újra. A lánc-helyzet (#3229) azért kell bele, mert a folytatás
+        # koordinátái az EREDETI képre vonatkoznak.
         self._prefix_cache: (
-            tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray] | None
+            tuple[
+                str,
+                tuple[FilterOp, ...],
+                np.ndarray,
+                np.ndarray,
+                LancHelyzet,
+            ]
+            | None
         ) = None
         # GPU élő-előnézet (#22): KÜLÖN prefix-gyorsítótár-rekesz a fentitől
         # — a `gpu_prefix_ops` (a finetune2 ELŐTTI lánc) ÁLTALÁBAN eltér a
@@ -147,9 +158,9 @@ class EditPreviewProvider(QQuickImageProvider):
         # alattiak. A gyakori esetben (finetune2 a lánc VÉGén) a két
         # prefix EGYEZIK (`gpu_prefix_ops == ops[:-1]`) — ott a `register()`
         # mindkét rekeszt frissen tartja, nincs dupla munka.
-        self._gpu_prefix_cache: (
-            tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray] | None
-        ) = None
+        self._gpu_prefix_cache: tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray] | None = (
+            None
+        )
         # GPU élő-előnézet (#22): a finetune2 ELŐTTI köztes kép, illetve a
         # jelenlegi finetune2-LUT, 256×1 QImage-ként — a GpuPointFilterPreview.qml
         # ezeket tölti be `sourceItem`/`lutItem`-ként. Ugyanazzal az LRU-
@@ -293,9 +304,7 @@ class EditPreviewProvider(QQuickImageProvider):
             mtime = None
         #: #819: a lánc sáv-jelzői. A `fullres` szűrők csak teljes
         #: felbontáson helyesek, ezért náluk a dekód korlátja elmarad.
-        teljes_felbontas, _lassu, _ujrameretez = chain_flags(
-            [op.name for op in ops]
-        )
+        teljes_felbontas, _lassu, _ujrameretez = chain_flags([op.name for op in ops])
         source_array = self._resolve_source(
             key, path, mtime, shared_cache, full_res=teljes_felbontas
         )
@@ -315,18 +324,12 @@ class EditPreviewProvider(QQuickImageProvider):
             # elfut, és ez a helyes, nem a gyors.
             from .paint_mask import maszk_vonasokbol
 
-            maszk = maszk_vonasokbol(
-                paint_strokes, source_array.shape[0], source_array.shape[1]
-            )
-            jelentes = apply_filters(
-                source_array, tuple(ops), paint_mask=maszk
-            )
+            maszk = maszk_vonasokbol(paint_strokes, source_array.shape[0], source_array.shape[1])
+            jelentes = apply_filters(source_array, tuple(ops), paint_mask=maszk)
             result_array = jelentes.image
             elhelyezes = jelentes.content_placement
         elif shared_cache:
-            result_array, elhelyezes = self._render_cached_jelentes(
-                key, source_array, tuple(ops)
-            )
+            result_array, elhelyezes = self._render_cached_jelentes(key, source_array, tuple(ops))
         elif source_array is None or not ops:
             result_array = source_array
         else:
@@ -361,9 +364,7 @@ class EditPreviewProvider(QQuickImageProvider):
             else QImage()
         )
         histogram = (
-            compute_rgb_histogram(result_array)
-            if result_array is not None
-            else EMPTY_HISTOGRAM
+            compute_rgb_histogram(result_array) if result_array is not None else EMPTY_HISTOGRAM
         )
         gpu_prefix_image = None
         if gpu_prefix_ops is not None and source_array is not None:
@@ -460,13 +461,9 @@ class EditPreviewProvider(QQuickImageProvider):
             mtime = Path(path).stat().st_mtime
         except OSError:
             mtime = None
-        return self._resolve_source(
-            str(photo_id), Path(path), mtime, shared_cache=True
-        )
+        return self._resolve_source(str(photo_id), Path(path), mtime, shared_cache=True)
 
-    def redeye_spot_count(
-        self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
-    ) -> int:
+    def redeye_spot_count(self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]) -> int:
         """Hány vörösszem-foltot TALÁL az automatika (#445).
 
         Az `ops` a jelenlegi lánc a `redeye` réteg NÉLKÜL — így a számolás
@@ -509,9 +506,7 @@ class EditPreviewProvider(QQuickImageProvider):
             return self._placements.get(str(photo_id))
 
     @staticmethod
-    def _store_gpu_image(
-        store: OrderedDict[str, QImage], key: str, image: QImage | None
-    ) -> None:
+    def _store_gpu_image(store: OrderedDict[str, QImage], key: str, image: QImage | None) -> None:
         """GPU-előnézeti kép (LRU-tárolt) frissítése — `image is None` esetén
         a bejegyzés törlődik (a lánc jelenleg nem GPU-alkalmas, #22)."""
         if image is None:
@@ -537,9 +532,7 @@ class EditPreviewProvider(QQuickImageProvider):
         cserébe a két szál között nincs megosztott, zárral védendő állapot.
         """
         if not shared_cache:
-            return _decode_source(
-                path, full_res=full_res, color_managed=self.color_management
-            )
+            return _decode_source(path, full_res=full_res, color_managed=self.color_management)
         cached = self._sources.get(key)
         #: #819: a kicsinyített és a teljes felbontású forrás NEM cserélhető
         #: fel — a negyedik mező mondja meg, melyik van a gyorsítótárban.
@@ -587,22 +580,19 @@ class EditPreviewProvider(QQuickImageProvider):
             return None, None
         if not ops:
             return source_array, None
-        # #3169: a HALASZTOTT opok (vágás + keretek) nem kerülhetnek a
-        # prefixbe. Az `apply_filters` a lánc végére teszi őket (#330); ha a
-        # prefix-hívás a SAJÁT végén alkalmazza a benne lévő keretet, az
-        # utolsó op már ARRA fut rá — és az előnézet eltér a mentett képtől
-        # (mérve: `crop64;Vignette` esetén 18,2 átlagos eltérés).
-        halasztott = tuple(op for op in ops if halasztott_op(op))
-        mag = tuple(op for op in ops if not halasztott_op(op))
-        if mag:
-            prefix_array = self._cached_prefix(key, source_array, mag[:-1])
-            zaro = mag[-1:] + halasztott
-        else:
-            prefix_array = source_array
-            zaro = halasztott
-        jelentes = apply_filters(prefix_array, zaro)
-        # #3166: a halasztott opok (vágás + keretek) MINDIG ebben a záró
-        # hívásban futnak, tehát a keret-elhelyezés is itt keletkezik.
+        # #3229: a lánc MÁR NEM rendez át — az `apply_filters` az ops
+        # sorrendjében fut, és a `crop64` koordinátáit a leképezés vezeti át.
+        # Ezért a prefix egyszerűen a lánc eleje, és a kettévágott futtatás
+        # ugyanazt adja, mint az egészben futtatott. (A #3169 itt 18,2
+        # átlagos eltérést mért a régi, halasztó ágon: a prefixbe került keret
+        # után az utolsó op ARRA futott rá. A halasztás megszűnésével ez a
+        # csapda is megszűnt — őr: `test_lanc_sorrend_elesben_3229.py`.)
+        prefix_array, prefix_helyzet = self._cached_prefix(key, source_array, ops[:-1])
+        # #3166 + #3229: a keret-elhelyezés a FORRÁS helyét mondja meg a
+        # kimenetben, tehát a TELJES láncra értendő — a záró hívás ezért
+        # megkapja a prefix koordináta-állapotát (`bejovo`), különben a
+        # prefixben lefutott vágás/keret elveszne belőle.
+        jelentes = apply_filters(prefix_array, ops[-1:], bejovo=prefix_helyzet)
         return jelentes.image, jelentes.content_placement
 
     def _render_cached(
@@ -620,12 +610,17 @@ class EditPreviewProvider(QQuickImageProvider):
         key: str,
         source_array: np.ndarray,
         prefix_ops: tuple[FilterOp, ...],
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, LancHelyzet]:
         """Az utolsó op ELŐTTI köztes eredmény, gyorsítótárból ha lehet.
 
         A találat feltétele: azonos fotó-kulcs, azonos prefix-lánc és
         ugyanaz a (referencia szerint azonos) dekódolt forrás — a
-        forrás-cache frissülésekor a prefix automatikusan érvénytelen."""
+        forrás-cache frissülésekor a prefix automatikusan érvénytelen.
+
+        A köztes KÉP mellett a lánc koordináta-állapotát is visszaadja
+        (#3229): a folytatásnak tudnia kell, hogy a kapott kép már nem az
+        eredeti — a `crop64` koordinátái arra vonatkoznak (#330), és a
+        keret-elhelyezés is a forrás helyét mondja meg a kimenetben."""
         cached = self._prefix_cache
         if (
             cached is not None
@@ -633,13 +628,17 @@ class EditPreviewProvider(QQuickImageProvider):
             and cached[1] == prefix_ops
             and cached[2] is source_array
         ):
-            return cached[3]
+            return cached[3], cached[4]
         if prefix_ops:
-            prefix_array, _skipped = apply_filters(source_array, prefix_ops)
+            jelentes = apply_filters(source_array, prefix_ops)
+            prefix_array = jelentes.image
+            helyzet = jelentes.helyzet
         else:
             prefix_array = source_array
-        self._prefix_cache = (key, prefix_ops, source_array, prefix_array)
-        return prefix_array
+            magassag, szelesseg = source_array.shape[:2]
+            helyzet = LancHelyzet.kezdo(szelesseg, magassag)
+        self._prefix_cache = (key, prefix_ops, source_array, prefix_array, helyzet)
+        return prefix_array, helyzet
 
     def _cached_gpu_prefix(
         self,
@@ -703,9 +702,7 @@ class EditPreviewProvider(QQuickImageProvider):
             width, height = requested_size.width(), requested_size.height()
             smooth = Qt.TransformationMode.SmoothTransformation
             if width > 0 and height > 0:
-                image = image.scaled(
-                    requested_size, Qt.AspectRatioMode.KeepAspectRatio, smooth
-                )
+                image = image.scaled(requested_size, Qt.AspectRatioMode.KeepAspectRatio, smooth)
             elif width > 0:
                 image = image.scaledToWidth(width, smooth)
             elif height > 0:
@@ -831,9 +828,7 @@ def _megjelenitendo(tomb: np.ndarray, teljes_felbontas: bool) -> np.ndarray:
     arany = _MAX_PREVIEW_EDGE / leghosszabb
     from picasapy.render.glimmer_ops import resize_image
 
-    return resize_image(
-        tomb, max(1, round(szeles * arany)), max(1, round(magas * arany))
-    )
+    return resize_image(tomb, max(1, round(szeles * arany)), max(1, round(magas * arany)))
 
 
 def _placeholder() -> QImage:
@@ -858,9 +853,7 @@ def _rgb_array_to_qimage(array: np.ndarray) -> QImage:
     contiguous = np.ascontiguousarray(array)
     height, width = contiguous.shape[:2]
     stride = width * 3
-    image = QImage(
-        contiguous.data, width, height, stride, QImage.Format.Format_RGB888
-    )
+    image = QImage(contiguous.data, width, height, stride, QImage.Format.Format_RGB888)
     return image.copy()
 
 

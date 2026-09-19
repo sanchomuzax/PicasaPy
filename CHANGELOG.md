@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.528] – 2026-09-19
+
+### Javítva
+
+- **A szerkesztések most abban a sorrendben futnak, ahogy állnak (#3229).**
+  Eddig a keret és a vágás mindig a legvégére került, ezért egy keret utáni
+  szépia nem színezte a keretet. Az eredeti Picasa exportja eldöntötte: ott a
+  keret is barnás lesz. Ettől a szerkesztő élő előnézete és a mentett kép is
+  ugyanazt adja.
+
 ### Előkészítés (a felületen még nem látszik)
 
 - A képregény-effekt pontmaszkja a MÉRT alakra került (a csempe közepétől

@@ -1,5 +1,11 @@
 """#3229 2. lépés — a lánc a MÉRT (eredeti) sorrendben is futtatható.
 
+⚠️ **A 3. lépés (2026-09-19) MEGFORDÍTOTTA az alapértelmezést**: az
+`apply_filters` ma a mért sorrendben fut, a `mert_sorrend=False` a régi,
+halasztó ág. Ez a fájl ezért mindkét ágat KIMONDOTTAN kéri — a „mai" oszlop
+itt mindenhol a régi, halasztó ág. Amit a fordulás eldöntött, az a
+`test_lanc_sorrend_elesben_3229.py`-ban áll (a tulajdonos exportja).
+
 ## Mit mond a bináris
 
 Az eredeti NEM rendezi át a láncot: a `CGenericFilter` `+0x80` rekesze rendereli
@@ -8,11 +14,11 @@ az opot, a `+0x84` pedig **átadja a koordináta-leképezést és az inverzét**
 vágást és a kereteket a lánc VÉGÉRE halasztja (#330) — ez a `mert_sorrend=True`
 ág az, ami az eredeti sorrendet futtatja.
 
-## Az alapértelmezés MA IS a régi
+## Az alapértelmezés 2026-09-19 óta a MÉRT sorrend
 
-A kapcsoló nélkül semmi nem változik: a bekötés (élő előnézet, export,
-bélyegkép) a jegy 3. lépése. Így az átállítás mérhető, és a #3169 belső
-egyezése (előnézet = mentés) közben sem sérül.
+A 2. lépés idején a kapcsoló nélkül még a régi ág futott; a 3. lépés a
+tulajdonos exportja alapján megfordította. A lenti táblázat változatlanul
+érvényes, csak a „mai" szó jelentése lett „a régi, halasztó ág".
 
 ## A KONTROLL-mérés, ami ezt a fájlt hitelesíti
 
@@ -59,8 +65,8 @@ def _elteres(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.mean(np.abs(a.astype(int) - b.astype(int))))
 
 
-class TestAzAlapertelmezesValtozatlan:
-    """A kapcsoló nélkül a viselkedés bitre a mai."""
+class TestAholASorrendMarAMert:
+    """Ahol a lánc sorrendje már ma is a mért, a két ág bitre egyezik."""
 
     @pytest.mark.parametrize(
         "lanc",
@@ -73,7 +79,7 @@ class TestAzAlapertelmezesValtozatlan:
     )
     def test_ahol_a_sorrend_MAR_a_mert_ott_a_ket_ag_AZONOS(self, minta, lanc):
         ops = parse_filters(lanc)
-        mai = apply_filters(minta, ops)
+        mai = apply_filters(minta, ops, mert_sorrend=False)
         mert = apply_filters(minta, ops, mert_sorrend=True)
         assert mai.image.shape == mert.image.shape, lanc
         np.testing.assert_array_equal(mai.image, mert.image)
@@ -100,7 +106,7 @@ class TestASorrendSZAMIT:
     )
     def test_a_halasztas_miatt_mas_kepet_ad_a_ket_ag(self, minta, lanc, legalabb):
         ops = parse_filters(lanc)
-        mai = apply_filters(minta, ops)
+        mai = apply_filters(minta, ops, mert_sorrend=False)
         mert = apply_filters(minta, ops, mert_sorrend=True)
         assert mai.image.shape == mert.image.shape
         assert _elteres(mai.image, mert.image) >= legalabb, (
@@ -115,7 +121,7 @@ class TestASorrendSZAMIT:
         rá a keretet, tehát nagyobb kimenetet ad.
         """
         ops = parse_filters(KERET + CROP)
-        mai = apply_filters(minta, ops)
+        mai = apply_filters(minta, ops, mert_sorrend=False)
         mert = apply_filters(minta, ops, mert_sorrend=True)
         nyers_vagas = apply_filters(minta, parse_filters(CROP))
         assert mert.image.shape == nyers_vagas.image.shape
@@ -134,9 +140,7 @@ class TestAVagasKoordinataja:
 
     def test_ket_crop64_kozul_csak_az_UTOLSO_fut(self, minta):
         """#130: a több `crop64`-es valódi láncok nem kaszkádolnak."""
-        ketto = apply_filters(
-            minta, parse_filters("crop64=1,20204040;" + CROP), mert_sorrend=True
-        )
+        ketto = apply_filters(minta, parse_filters("crop64=1,20204040;" + CROP), mert_sorrend=True)
         egy = apply_filters(minta, parse_filters(CROP), mert_sorrend=True)
         assert ketto.image.shape == egy.image.shape
         np.testing.assert_array_equal(ketto.image, egy.image)
