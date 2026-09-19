@@ -1983,6 +1983,12 @@ rendezése.
   összeadja, majd ugyanazon byte-helyekre írja vissza (`0x00bcb3a0`–
   `0x00bcb4ba`). A `TwoTone` LUT-ját `0x00bb87b0` építi, a két megálló
   leképezését `0x00bb85b0` végzi.
+- A mátrix-tároló (`0x008f28d0`, 191 bájt) nem egyszerű sík másolás: az öt
+  bemeneti értéket `fVar1=*in_EAX`, `fVar2=in_EAX[1]`, `fVar3=in_EAX[2]`,
+  `fVar4=in_EAX[4]`, `fVar5=in_EAX[3]` sorrendben veszi, majd oszloponként
+  ötös dot-productot számol (`0x008f28e0`–`0x008f2983`) a `this+0x28` mátrix-
+  rekeszeivel. A 3/4. elem felcserélése ezért nem dokumentációs rövidítés,
+  hanem a natív belső rendezés része.
 
 **Következő bizonyító lépés:** a `0x008f28d0` mátrix-tárolójának és a
 `0x008f2640` byte-sorrendjének együttes kiolvasása; ebből dől el, hogy a
