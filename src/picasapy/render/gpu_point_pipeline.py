@@ -280,3 +280,78 @@ __all__ = [
     "saturation_gain",
     "simulate_positive_saturation_shader",
 ]
+
+
+#: #22: az öt szűrő, amit a GPU-út fogadhat a `finetune2`/`sat` mellé. A
+#: halmaz MÉRÉSBŐL jön, nem válogatásból:
+#:
+#: * `docs/benchmarks/2026-09-17-gpu-pontonkenti-szurok-22.md` — három
+#:   csatornánkénti 256-os LUT-tal HAT szűrő fejezhető ki;
+#: * `docs/benchmarks/2026-09-18-cpu-eloonezet-kesleltetes-22.md` — a
+#:   célgépen (RPi 5, 2560 × 1707) ebből ÖT akadozik a 100 ms-os küszöbhöz
+#:   mérve: `autocontrast` 146 ms · `colortemp` 702 · `crossprocess` 863 ·
+#:   `enhance` 174 · `warm` 104.
+#:
+#: ⛔ Az `invert` KIMARAD: 5,6 ms, bőven a küszöb alatt — GPU-ra vinni
+#: nyereség nélküli kockázat.
+GPU_PONT_SZUROK: frozenset[str] = frozenset({
+    "autocontrast", "colortemp", "crossprocess", "enhance", "warm",
+})
+
+
+def csatorna_lut_a_kimenetbol(
+    forras: np.ndarray, eredmeny: np.ndarray
+) -> np.ndarray:
+    """`(256, 3)` uint8 LUT egy CPU-szűrő BE- és KIMENETÉBŐL (#22).
+
+    A jegy kikötése: *„a LUT-ok a MAI CPU-implementációból származzanak
+    (nem újraszámolt képlet): ugyanaz a kimenet, képpontra"*. Ez a függvény
+    ezért nem modellez semmit — a szűrő VALÓDI kimenetéből olvassa ki a
+    leképezést:
+
+    1. minden csatornára összegyűjti a jelen lévő bemeneti szintek → kimenet
+       párokat;
+    2. a hiányzó szinteket a szomszédokból LINEÁRISAN interpolálja (a
+       gradiens-előnézeten jellemzően mind a 256 szint jelen van, de egy
+       szegényes hisztogramú képen nem);
+    3. ha egy szinthez TÖBB kimenet tartozik, a szűrő nem pontonkénti —
+       ilyenkor `ValueError`, mert a LUT-os GPU-út némán MÁS képet adna.
+
+    A hívó dolga, hogy a `forras` reprezentatív legyen: a statisztika-függő
+    szűrők (`autocontrast`, `enhance`) leképezése a KÉP hisztogramjától
+    függ, tehát a LUT-ot mindig az ÉLŐ előnézeti képből kell kinyerni, nem
+    egy szintetikus rámpából.
+    """
+    if forras.shape != eredmeny.shape or forras.ndim != 3 or forras.shape[2] != 3:
+        raise ValueError(
+            f"a be- és kimenetnek azonos alakú RGB-tömbnek kell lennie: "
+            f"{forras.shape} vs {eredmeny.shape}")
+    lut = np.zeros((256, 3), dtype=np.uint8)
+    for csatorna in range(3):
+        be = forras[..., csatorna].ravel()
+        ki = eredmeny[..., csatorna].ravel()
+        szintek = np.unique(be)
+        ertekek = np.empty(szintek.shape, dtype=np.float64)
+        for index, szint in enumerate(szintek):
+            kimenetek = np.unique(ki[be == szint])
+            if kimenetek.size > 1:
+                raise ValueError(
+                    f"a szűrő NEM pontonkénti: a {csatorna}. csatorna "
+                    f"{int(szint)} szintje {kimenetek.tolist()} kimenetet ad")
+            ertekek[index] = float(kimenetek[0])
+        #: a hiányzó szintek lineáris interpolációval — a széleken a
+        #: legszélső mért érték ismétlődik (`np.interp` alapértelmezése)
+        lut[:, csatorna] = np.rint(
+            np.interp(np.arange(256), szintek.astype(np.float64), ertekek)
+        ).astype(np.uint8)
+    return lut
+
+
+def lut_alkalmaz(kep: np.ndarray, lut: np.ndarray) -> np.ndarray:
+    """A `(256, 3)` LUT alkalmazása — a GPU-shader CPU-oldali mása (#22)."""
+    if lut.shape != (256, 3):
+        raise ValueError(f"a LUT alakja (256, 3) legyen, nem {lut.shape}")
+    kimenet = np.empty_like(kep)
+    for csatorna in range(3):
+        kimenet[..., csatorna] = lut[kep[..., csatorna], csatorna]
+    return kimenet
