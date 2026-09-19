@@ -96,5 +96,5 @@ Item {
 
     ToolTip.visible: terulet.containsMouse && gomb.magyarazat !== ""
     ToolTip.text: gomb.magyarazat
-    ToolTip.delay: 600
+    ToolTip.delay: Theme.tooltipDelay
 }
