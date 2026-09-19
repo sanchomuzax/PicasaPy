@@ -720,6 +720,34 @@ a méret-kapu `0x36`-ja és a `+0x6c`-ig tartó olvasás csak akkor fér össze,
 a méret nem bájtban értendő. A megszerzés útja: a `0x009f0fd0` törzse, és egy
 MÁSIK, ismert hosszú tömbre adott hívása kontrollként.
 
+### 9.11 ✅ ÁTVÉVE: a két tábla és a feloldó a termékben (2026-09-19, #3121)
+
+A 9.1–9.10 mérése alapján a **táblák kinyerve**, a feloldó megvalósítva:
+
+| mit | hol |
+|---|---|
+| a két tábla tartalma | `src/picasapy/metadata/objektiv_tabla.json` — 230 Canon + 416 Nikon rekord, a binárisból kinyerve |
+| a kinyerő | privát agent-repó: `eszkozok/meres/objektiv_tabla_kinyer.py` |
+| a feloldó | `src/picasapy/metadata/objektiv.py` — `canon_objektiv`, `nikon_objektiv`, `objektiv_neve` |
+| az őr | `tests/metadata/test_objektiv_feloldas_3121.py` (17 próba) |
+
+A megvalósítás a mérés két nem-kézenfekvő részletét is átveszi:
+
+1. az **ismétlődő `LensType`** esetén a gyújtó/rekesz négyes választ;
+2. a float-egyezés **8 ULP tűréssel** megy — az őr ellenpróbával méri, hogy a
+   9. ULP már NEM találat.
+
+⚠️ A Nikon-kulcs a táblában a **fájl bájtsorrendjében** áll
+(`003E80A0383F0002`), nem DWORD-önként megfordítva — a kinyerő és a feloldó
+ugyanezt az alakot használja, tehát a kettő nem csúszhat el. *(Az első ad-hoc
+kiolvasás két 32 bites egészként írta ki, és attól megfordult a sorrend.)*
+
+⬜ **Ami hátravan:** a kulcs KIOLVASÁSA a MakerNote-ból (a 9.10 szerinti
+elemhelyek és képletek), majd a név a tulajdonságok panelre. A végső
+elfogadáshoz **egy tükörreflexes gépből származó fájl** kell — a mai
+tesztkészletben és a mintázott NAS-mappákban egyetlen MakerNote-os kép sincs
+(mérve: 31 vizsgált fájl, nulla találat).
+
 ## 10. ⛳ A határvonal EXIF/GPS-névregisztere — részlelet (2026-09-18, #3345)
 
 A kutatási határvonal a `0x00bf697a`-ból elérhető feltáratlan
