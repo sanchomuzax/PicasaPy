@@ -943,6 +943,44 @@ XMP-kimenete ezt a névteret nem ismeri. *(Fejlesztői teendő: **#3353**.)*
 `0x00be26d0` (1297 b); a hívószámok a bináris index `xrefs` táblájából, a
 sztringek `pe_dis.D`-ből kiolvasva.*
 
+### D) ⭐ Mit ÍR KI valójában — a saját exportján mérve (2026-09-19, #3353)
+
+A B) tábla `Iptc4xmpExt` sora önmagában félreérthető: a regisztráció mellé az
+eredeti a **teljes IPTC Extension SÉMÁT** is bejegyzi — 21 tulajdonság
+`_Bag`/`_Seq` típusjelzőkkel a `0xbafe00`–`0xbb0300` sávban (`AddlModelInfo`,
+`ArtworkOrObject`, `OrganisationInImageCode`, `CVterm`, `LocationShown`,
+`ModelAge`, `OrganisationInImageName`, `PersonInImage`, `DigImageGUID`,
+`DigitalSourcefileType`, `DigitalSourceType`, `Event`, `IptcLastEdited`,
+`MaxAvailHeight`, `MaxAvailWidth`, `Version`, `MinorModelAgeDisclosure`,
+`ModelReleaseID`, `ModelReleaseStatus`, `PropertyReleaseID`,
+`PropertyReleaseStatus`); a névtér URI-jára **23** hivatkozás van, és ezek
+mind ebben a séma-blokkban, illetve a négyes regisztrációban állnak. A
+tulajdonságnevek emellett két TÁBLÁBAN is szerepelnek: egy 24 bájt lépésközű
+leíró-táblában (`0x634c3c`-től) és egy emberi felirat–tulajdonság párokat adó
+táblában (`"Person Shown"` → `"XMP::PersonInImage"`, `0xce34c0`-től) — azaz az
+OLVASÓ/megjelenítő oldalon.
+
+⇒ **A regisztráció és a séma nem írás.** Amit a Picasa tényleg kiír, azt a
+SAJÁT exportján mértük:
+
+| forrás | a kiírt XMP névterei |
+|---|---|
+| `684-merokeszlet/export` (40 kép) | `xmp`, `exif`, `dc` — és semmi más |
+| `3229-lanc-sorrend/export` (4 kép) | ugyanaz |
+
+Mind a 44 képben **nulla** `Iptc4xmpExt`, `PersonInImage`, `mwg-rs`,
+`MicrosoftPhoto` és `lightroom` előfordulás. A csomag tartalma:
+`xmp:ModifyDate`, `exif:DateTimeOriginal`, `dc:creator` = „Picasa".
+
+⚠️ **A negatív állítás HATÓKÖRE:** a mért exportokon nem volt **névvel
+ellátott arc**, tehát a „`PersonInImage` megnevezett arc mellett" eset nincs
+lefedve, és az `mwg-rs` hiánya sem jelenti, hogy arcos képnél is hiányozna (a
+#1403 épp azt mérte ki, hogy arcokhoz az `mwg-rs`/`MP` megy). A hiányzó mérés
+jegye: **#3424**.
+
+*A `lr:` sorsa ezzel eldőlt: MARAD, tudatos, az eredetiben nem létező
+kiegészítésként — a `export/xmp.py` névtér-listája ezt ki is mondja (#3353).*
+
 ## 13. ⛳ A `0x00bab6e0` szerepe MEGVAN: az EXIF/GPS sémaleíró, egy 14 rekeszes séma-tábla 6. rekesze (2026-09-19, #3345)
 
 *A 10. szakasz a `0x00bab6e0`-t „részleletként" hagyta ott (70 indexelt

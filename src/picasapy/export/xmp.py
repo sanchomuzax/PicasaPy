@@ -34,8 +34,39 @@ from picasapy.ioutil import write_atomic
 
 # Névterek (kanonikus URI-k) — a digiKam/Lightroom ezekre a pontos
 # azonosítókra illeszt.
+#
+# Az eredeti Picasa névtér-készletének mérése:
+# `docs/specs/picasa-metaadat-tulajdonsagok.md` 12. szakasz (#3348, #3353).
+#
+# ⛔ #3353: `Iptc4xmpExt` (`http://iptc.org/std/Iptc4xmpExt/2008-02-29/`)
+# SZÁNDÉKOSAN nincs a listában — de NEM azért, mert az eredeti ne ismerné.
+# Az eredeti a SAJÁT négy regisztrációja közé veszi fel (#3348), és a teljes
+# IPTC Extension SÉMÁT is bejegyzi: 21 tulajdonság `_Bag`/`_Seq`
+# típusjelzőkkel (`AddlModelInfo`, `ArtworkOrObject`, `PersonInImage`,
+# `LocationShown`, `ModelRelease*`, `PropertyRelease*`, … —
+# `0xbafe00`–`0xbb0300`, 23 hivatkozás a névtér URI-jára).
+#
+# ⇒ A regisztráció és a séma viszont NEM írás. Amit a Picasa TÉNYLEGESEN
+# kiír, azt a saját exportján mértük: a `684-merokeszlet/export` 40 képében
+# (és a `3229-lanc-sorrend` 4 képében) az XMP-csomag PONTOSAN három névteret
+# tartalmaz — `xmp`, `exif`, `dc` (`dc:creator` = „Picasa") —, és
+# `Iptc4xmpExt`, `PersonInImage`, `mwg-rs`, `MicrosoftPhoto` egyikben SEM
+# szerepel. Az arcrégiókat az eredeti a `mwg-rs`/`MP` alá írja (#1403).
+#
+# ⚠️ A negatív állítás HATÓKÖRE: a mért exportokon nem volt NÉVVEL ellátott
+# arc, tehát a „`PersonInImage` névvel ellátott arc mellett" eset nincs
+# lefedve. Ha valaha előkerül egy KIÍRT IPTC-tulajdonság, az új mérés és új
+# jegy (#3424).
 _NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 _NS_DC = "http://purl.org/dc/elements/1.1/"
+#: ⚠️ #3353 — TUDATOS, az eredetiben NEM LÉTEZŐ kiegészítés. A
+#: `ns.adobe.com/lightroom` minta a szállított `Picasa3.exe`-ben (10 160 456
+#: bájt) **nulla** alkalommal szerepel — bájtszintű pásztázás az egész
+#: fájlon, nem xref-indexből. Mégis benne marad: a `lr:hierarchicalSubject`
+#: az EGYETLEN elterjedt alak, amivel a hierarchikus címke (`People|Név`) egy
+#: digiKam/Lightroom-oldali olvasóhoz eljut, és a `.picasa.ini`
+#: kompatibilitást nem érinti (oda semmit nem írunk vissza belőle).
+#: A döntés tehát: MARAD, de nem állítjuk, hogy az eredeti is ezt tenné.
 _NS_LR = "http://ns.adobe.com/lightroom/1.0/"
 _NS_MWG_RS = "http://www.metadataworkinggroup.com/schemas/regions/"
 #: #1403: a Microsoft Photo 1.2 arcrégió-séma. Az eredeti Picasa MINDKETTŐT
