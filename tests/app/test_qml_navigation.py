@@ -145,21 +145,37 @@ def _settle_content_y_at(qt_app, grid, target=0.0, timeout_ms=2000):
     return grid.property("contentY") == target
 
 
-def _wait_for_scroll_settled(qt_app, grid, timeout_ms=2000):
+def _wait_for_scroll_settled(qt_app, grid, timeout_ms=2000, *, kiindulas=None):
     """#261: determinisztikus szinkronpont a `contentY`-ra épülő
     tesztekhez — a `_wait_for_row_bounds` párja. A `moveSelection` utáni
     görgetés (ensureVisible) lassabb gépen (Windows-CI) 1-2 eseményciklus
     késéssel ér célba; addig várunk, amíg a `contentY` két egymást követő
-    lekérdezés között már nem változik."""
+    lekérdezés között már nem változik.
+
+    ⛔ **#3399: a KIINDULÁSI plató nem megállapodás.** „Két egymást követő
+    azonos érték" akkor is teljesül, ha a görgetés **még el sem indult** — a
+    terhelt futón a helper ilyenkor azonnal „kész"-nek mondta a lépést. A main
+    CI ubuntu 3/4 darabja emiatt lett piros (`assert 597.0 <= 1`,
+    `test_down_scrolls_just_enough`): a `contentY` a kezdőértéken állt, a
+    cél-sor alja messze a látótéren kívül.
+
+    Aki tudja, hogy a lépésnek MOZDULNIA kell, adja át a lépés előtti
+    `contentY`-t `kiindulas=`-ként: akkor a helper előbb a mozdulást várja ki,
+    és csak utána a megállapodást. Ahol a lépés jogosan nem mozdít (a legfelső
+    sorra lépés), ott NE add át — ott a plató a helyes válasz."""
     from PySide6.QtCore import QEventLoop, QMetaObject, QTimer
 
     prev = None
+    elindult = kiindulas is None
     steps = max(1, timeout_ms // 20)
     for _ in range(steps):
         QMetaObject.invokeMethod(grid, "forceLayout")
         qt_app.processEvents()
         y = grid.property("contentY")
-        if prev is not None and y == prev:
+        if not elindult and y != kiindulas:
+            elindult = True
+            prev = None  # a megállapodást a MOZDULÁS UTÁN kezdjük mérni
+        if elindult and prev is not None and y == prev:
             return y
         prev = y
         pause = QEventLoop()
@@ -170,9 +186,13 @@ def _wait_for_scroll_settled(qt_app, grid, timeout_ms=2000):
     # megkülönböztetni a „beállt" és a „lejárt" esetet — a bukás így egy
     # KÉSŐBBI állításon jelentkezett, félrevezetően. A segítő maga áll meg,
     # így mind az öt csupasz hívási helye biztonságos marad.
+    reszlet = (
+        f", a kiindulás {kiindulas} — el sem indult"
+        if kiindulas is not None and prev == kiindulas
+        else ""
+    )
     raise AssertionError(
-        f"#2408: a görgetés {timeout_ms} ms alatt sem állt be "
-        f"(utolsó contentY: {prev})"
+        f"#2408: a görgetés {timeout_ms} ms alatt sem állt be (utolsó contentY: {prev}{reszlet})"
     )
 
 
@@ -193,7 +213,7 @@ class TestViewerWheelPaging:
         viewer = _open_viewer(window, qt_app)
         _invoke(qt_app, viewer, "wheelStep", -120)  # görgő lefelé
         assert viewer.property("currentIndex") == 1
-        _invoke(qt_app, viewer, "wheelStep", 120)   # görgő felfelé
+        _invoke(qt_app, viewer, "wheelStep", 120)  # görgő felfelé
         assert viewer.property("currentIndex") == 0
 
     def test_wheel_stops_at_ends(self, qml_nav_app, qt_app):
@@ -281,11 +301,9 @@ class TestGridWheelScrollsPage:
             qt_app.processEvents()
             _invoke(qt_app, grid, "wheelStep", -120)  # görgő lefelé
             assert grid.property("contentY") > 0, "a lapnak görgetődnie kell"
-            assert window.property("selectedIndex") == 0, (
-                "a kijelölés görgetéskor nem mozdulhat"
-            )
+            assert window.property("selectedIndex") == 0, "a kijelölés görgetéskor nem mozdulhat"
             scrolled = grid.property("contentY")
-            _invoke(qt_app, grid, "wheelStep", 120)   # görgő felfelé
+            _invoke(qt_app, grid, "wheelStep", 120)  # görgő felfelé
             assert grid.property("contentY") < scrolled
             assert window.property("selectedIndex") == 0
         finally:
@@ -298,7 +316,7 @@ class TestGridWheelScrollsPage:
         try:
             grid.setProperty("contentY", 0)
             qt_app.processEvents()
-            _invoke(qt_app, grid, "wheelStep", 120)   # felfelé a tetején
+            _invoke(qt_app, grid, "wheelStep", 120)  # felfelé a tetején
             assert grid.property("contentY") == 0
         finally:
             window.setProperty("thumbSize", old_size)
@@ -331,8 +349,7 @@ class TestWheelEndStop:
         window, _, _ = qml_nav_app
         window.setProperty("selectedIndex", 0)
         window.setProperty("selectedIndexes", [0])
-        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
-            window, qt_app)
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(window, qt_app)
         try:
             grid.setProperty("contentY", 0)
             qt_app.processEvents()
@@ -360,8 +377,7 @@ class TestArrowMinimalScroll:
         window, _, _ = qml_nav_app
         window.setProperty("selectedIndex", 1)
         window.setProperty("selectedIndexes", [1])
-        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
-            window, qt_app)
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(window, qt_app)
         try:
             grid.setProperty("selectionAnchor", 1)
             # #261: a kiindulás is szinkronpontot kap — enélkül a rács
@@ -393,12 +409,12 @@ class TestArrowMinimalScroll:
         window, _, _ = qml_nav_app
         window.setProperty("selectedIndex", 0)
         window.setProperty("selectedIndexes", [0])
-        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
-            window, qt_app)
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(window, qt_app)
         try:
             grid.setProperty("selectionAnchor", 0)
             grid.setProperty("contentY", 0)
             qt_app.processEvents()
+            elotte = grid.property("contentY")
             _invoke(qt_app, grid, "moveSelection", "down")
             # #2497-es körben mérve: EZ az egyetlen görgetés-teszt a
             # fájlban, ahol a `moveSelection` után hiányzott a
@@ -406,7 +422,9 @@ class TestArrowMinimalScroll:
             # emiatt bukott: a `contentY` még 6,0 volt, a cél-sor alja
             # 1185,0 — vagyis a görgetés még el sem indult, amikor mértünk.
             # Helyben 6/6 zöld volt, tehát csak a lassabb futón látszik.
-            _wait_for_scroll_settled(qt_app, grid)
+            # #3399: a lépésnek MOZDULNIA kell — a kiindulási plató nem
+            # megállapodás (ettől lett piros a main)
+            _wait_for_scroll_settled(qt_app, grid, kiindulas=elotte)
             target = window.property("selectedIndex")
             assert target > 0
             b = _wait_for_row_bounds(qt_app, grid, target)
@@ -423,8 +441,7 @@ class TestArrowMinimalScroll:
         window, _, _ = qml_nav_app
         window.setProperty("selectedIndex", 0)
         window.setProperty("selectedIndexes", [0])
-        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
-            window, qt_app)
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(window, qt_app)
         try:
             grid.setProperty("selectionAnchor", 0)
             grid.setProperty("contentY", 0)
@@ -493,9 +510,7 @@ class TestShiftArrowSelection:
         assert self._selection(window) == [self.KEZDET, self.KEZDET + 1]
         assert window.property("selectedIndex") == self.KEZDET + 1
         _invoke(qt_app, grid, "extendSelection", "right")
-        assert self._selection(window) == [
-            self.KEZDET, self.KEZDET + 1, self.KEZDET + 2
-        ]
+        assert self._selection(window) == [self.KEZDET, self.KEZDET + 1, self.KEZDET + 2]
 
     def test_extend_back_does_not_shrink(self, qml_nav_app, qt_app):
         """#892/#1222: az irányváltás nem vesz vissza — a kurzor csak
@@ -505,9 +520,7 @@ class TestShiftArrowSelection:
         _invoke(qt_app, grid, "extendSelection", "right")
         _invoke(qt_app, grid, "extendSelection", "right")
         _invoke(qt_app, grid, "extendSelection", "left")
-        assert self._selection(window) == [
-            self.KEZDET, self.KEZDET + 1, self.KEZDET + 2
-        ]
+        assert self._selection(window) == [self.KEZDET, self.KEZDET + 1, self.KEZDET + 2]
         assert window.property("selectedIndex") == self.KEZDET + 1
 
     def test_plain_move_resets_to_single(self, qml_nav_app, qt_app):
