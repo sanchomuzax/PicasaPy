@@ -1954,6 +1954,41 @@ export összevethető. Azonos `1200×1600×3` méreten a PicasaPy teljes
 TwoTone-útra, de nem választja le a linked mátrix hibáját a luma-/gradient-
 és JPEG-hatástól; pixelazonosságot ebből nem állítok.
 
+#### A natív golden csatorna-kontrollja — erős, de mintához kötött lelet
+
+Ugyanezen a páron a natív kimenetet visszavetítettem a deklarált két szín
+egyenesére (`#004488` → `#FFFF00`). Az így kapott 0…1 színkoordináta a bemenet
+**első RGB-csatornáját** követi: a közvetlen, vörös-csatornából számolt kimeneti
+kontroll MAE-je **6,3644** szint, csatornánként `[8,3348; 6,1246; 4,6337]`,
+a korreláció **0,9950**. Az érintetlen forrás és a natív export eltérése
+ugyanott **59,5135 MAE**.
+
+Ez a kontroll kizárja, hogy a korábbi `22,4231`-es eltérés egyszerűen csak a
+forrás változatlansága legyen, és jelzi, hogy a PicasaPy jelenlegi
+`glimmer_tone.py:348–355`-ös Rec.601-luma-útja **nem tekinthető bizonyítottan
+azonosnak** a natív csatornaútjával. Nem általánosítom a vörös-csatornás
+olvasatot minden képre: a döntő nyitott rész a natív mátrix belső byte-/mátrix-
+rendezése.
+
+#### Bináris horgony a következő lépéshez
+
+- A `filterdesc.xml:1377–1378` szerint a `TwoTone` előbb a
+  `SimpleColorMatrix(ContrastAndBrightnessLinked=true, Saturation=0,
+  Brightness, Contrast)` ágat, utána a `TwoToneImageOperation`-t futtatja.
+- A linked mátrix-építő `0x008f2040` a `k`/`t` értékeket a közös mátrixépítőnek
+  adja; a színmátrix-alkalmazó `0x00bc16b0` a `0x008f2640` byte-szintű
+  alkalmazóba fut.
+- A közös LUT-út `0x00bb7c80` → `0x00bcb2f0` a négy pixelbyte-ot külön LUT-
+  rekeszekből (`+0x000`, `+0x400`, `+0x800`, `+0xc00`) olvassa, telítetten
+  összeadja, majd ugyanazon byte-helyekre írja vissza (`0x00bcb3a0`–
+  `0x00bcb4ba`). A `TwoTone` LUT-ját `0x00bb87b0` építi, a két megálló
+  leképezését `0x00bb85b0` végzi.
+
+**Következő bizonyító lépés:** a `0x008f28d0` mátrix-tárolójának és a
+`0x008f2640` byte-sorrendjének együttes kiolvasása; ebből dől el, hogy a
+PicasaPy luma-útja rossz csatornasorrendet használ-e, vagy a golden-minta
+csatornaútja különleges. A termékkódot addig nem módosítom.
+
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
 **LEZÁRVA a G) szakaszban:** a korábbi dekompilátor-korlátot a helyi nyers
