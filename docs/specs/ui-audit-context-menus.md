@@ -36,34 +36,48 @@ nem díszítés: az eredetiben több funkció **kizárólag** innen érhető el.
 képernyőképe (rács üres területe, illetve a bal panelen az „AI (88)" mappa)
 bájtra azonos listát ad. Egy implementáció, két megnyitási pont.
 
+A „nálunk" oszlop **mérve 2026-09-20-án** a
+`src/picasapy/app/qml/PicasaPy/FolderContextMenu.qml` forrásából (tétel,
+sorrend, kezelő) és a `FolderPane.qml` 1121–1212. sorából (a jelek
+fogadása). A menüt a **#422** építette meg, a sorrendjét a
+`tests/app/test_folder_context_menu_320.py::
+test_all_fifteen_original_commands_are_present_in_order` őrzi.
+
 | # | eredeti felirat | gyorsbillentyű | van-e nálunk |
 |---|---|---|---|
-| 1 | Mappaleírás szerkesztése… | — | nem |
+| 1 | Mappaleírás szerkesztése… | — | **igen** |
 | — | *elválasztó* | | |
-| 2 | Az összes kép kijelölése | `Ctrl+A` | nem (menüsávban igen) |
-| 3 | Kijelölés törlése | `Ctrl+D` | nem |
-| 4 | Kiválasztás megfordítása | `Ctrl+I` | nem |
+| 2 | Az összes kép kijelölése | `Ctrl+A` | **igen** |
+| 3 | Kijelölés törlése | `Ctrl+D` | **igen** |
+| 4 | Kiválasztás megfordítása | `Ctrl+I` | **igen** |
 | 5 | Áthelyezés gyűjteménybe ▸ | — | **igen** |
 | — | *elválasztó* | | |
-| 6 | Indexképek frissítése | — | nem |
-| 7 | Mappa rendezésének alapja ▸ | — | nem |
+| 6 | Indexképek frissítése | — | **igen** |
+| 7 | Mappa rendezésének alapja ▸ | — | **igen** (öt rendezés + fordított sorrend) |
 | — | *elválasztó* | | |
-| 8 | Mappa elrejtése | — | nem |
+| 8 | Mappa elrejtése | — | **igen** (#1637) |
 | — | *elválasztó* | | |
-| 9 | Keresés a lemezen | `Ctrl+Enter` | nem |
-| 10 | Eltávolítás a Picasából… | — | nem |
+| 9 | Keresés a lemezen | `Ctrl+Enter` | **igen** |
+| 10 | Eltávolítás a Picasából… | — | **igen** |
 | — | *elválasztó* | | |
-| 11 | Mappa áthelyezése… | — | nem |
-| 12 | Mappa törlése… | — | nem |
+| 11 | Mappa áthelyezése… | — | **igen** |
+| 12 | Mappa törlése… | — | **igen** (#1638 — a lomtárba) |
 | — | *elválasztó* | | |
-| 13 | Feltöltés a Google Fotókba… | — | nem |
+| 13 | Feltöltés a Google Fotókba… | — | tétel megvan, **`retired`** (a szolgáltatás megszűnt, véglegesen szürke) |
 | — | *elválasztó* | | |
-| 14 | Exportálás HTML-oldalként… | — | nem (#351 készül) |
-| 15 | Névcímkék hozzáadása | — | nem |
+| 14 | Exportálás HTML-oldalként… | — | **igen** |
+| 15 | Névcímkék hozzáadása | — | tétel megvan, **`placeholder`** (szürke, hátralévő munka) |
 
-Nálunk ma ebből: „Áthelyezés gyűjteménybe ▸" és a „Mappa dátumának
-beállítása…" — utóbbi az **eredetiben nincs is** ebben a menüben (a
-Mappaleírás-dialógusban lakik).
+Vagyis mind a 15 tétel megvan, a mért sorrendben; kettő szándékosan
+szürke (egy megszűnt szolgáltatás, egy hátralévő munka). A „Mappa
+dátumának beállítása…" — amely az eredetiben **nincs** ebben a menüben —
+azóta kikerült; a helye a Mappaleírás-dialógus, és ezt a
+`test_folder_date_item_is_gone` őrzi.
+
+⚠️ Ez az oszlop **2026-09-19-ig „nem"-eket mutatott** egy elavult
+felmérésből, és emiatt született a #3363 jegy egy már elkészült
+munkára. Aki ezt a táblát olvassa: a „nálunk" oszlop mérés, nem
+feltevés — használat előtt vesd össze a forrással.
 
 ### 1.b Harmadik megnyitási pont: a mappa-fejléc a rácsban
 
@@ -77,6 +91,12 @@ mappa-menünek **három** megnyitási pontja van, bájtra azonos tartalommal:
 
 Implementációs következmény: **egy** komponens, három `MouseArea`/
 `TapHandler` hívóval — nem három külön menü.
+
+Nálunk így is van (mérve 2026-09-20): egyetlen `FolderContextMenu`
+példány él a `FolderPane.qml` 1121. sorában, és mind a három hívó a
+`FolderPane.openFolderContextMenu(path)` függvényen megy át — a bal panel
+mappa-sora (`FolderPane.qml` 616., 876., 998. sor), a rács üres területe
+és a rács tetején a mappa-fejléc (`LightboxFeed.qml` 641. és 722. sor).
 
 ## 2. Indexkép-kontextus (kép a rácsban)
 
