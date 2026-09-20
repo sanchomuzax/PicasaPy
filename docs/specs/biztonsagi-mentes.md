@@ -1403,3 +1403,42 @@ Kontroll, hogy a minta nem hibás: `grep -rniE "storage" src/ --include=*.py
 --include=*.qml` → **64 találat**, de **mind** a helyi adatmappa-kezelés
 (`app/platform_storage.py`, `StoragePaths`, `bootstrap_storage`) — a
 tárhely-előrejelzésből nálunk **semmi** nincs meg.
+
+
+## 13. A lemezkép-kimenet BEÉPÍTVE (2026-09-19, #2074)
+
+A tulajdonos 2026-09-18-án a **(b)** ágat választotta:
+
+> Biztonsági mentés - a gyűjtemény mentése több lemezképre
+
+### Amit ez a körbe hozott
+
+| | hol |
+|---|---|
+| ISO 9660 + Joliet **író** | `src/picasapy/burn/iso.py` |
+| lemezekre osztás + sorszámozás | `src/picasapy/backup/lemezkep.py` |
+| felületi ág (`Mappába` / `CD-lemezképbe` / `DVD-lemezképbe`) | `BackupDialog.qml`, `BackupController.futtasdLemezkepbe` |
+
+A szétosztás a **mért** képletet használja (`szektor × 2048 − tartalék`,
+`0x0066be90`): CD-nél 409 600, DVD-nél 4 096 000 bájt a tartalék, a kétrétegű
+kapacitása rögzített 8 547 991 552. A három küszöböt egységteszt rögzíti
+(`tests/burn/test_iso_lemezkep_2074.py`).
+
+⚠️ **Az ISO-írót NEM magunkkal mérjük.** A próbák a kiírt képet `7z`-vel
+(p7zip — független megvalósítás) bontják ki, és a fájlneveket, a
+mappaszerkezetet ÉS a bájtokat vetik össze. Egy saját olvasóval való
+összehasonlítás önigazolás volna. A `p7zip-full` ezért bekerült a
+`packaging/qt-runtime-deps.txt`-be: `7z` nélkül a próba **megbukik**, nem
+kimarad.
+
+### A fizikai lemezírásról: NEM csináljuk meg
+
+A célgépen nincs lemezíró, és a lemezkép felcsatolható, illetve bármelyik
+íróprogrammal kiírható. Ez tudatos, kimondott döntés — nem elmaradt munka. Ha
+a tulajdonos mégis kéri, külön jegy lesz.
+
+### Rock Ridge NINCS
+
+A képek Joliet-fát kapnak (valódi, ékezetes, hosszú nevek); POSIX-jogosultságot
+és Unix-specifikus neveket hordozó Rock Ridge-et nem írunk. A mentéshez nem
+kell, és amit nem építünk meg, azt ki is mondjuk.

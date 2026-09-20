@@ -9,9 +9,11 @@ import QtQuick.Layouts
 // #496: kiemelve az EditorPanel.qml-ből — a gazda-panelre a `panel`
 // tulajdonságon át hivatkozik (a `FolderStatePanel.qml` `manager`-mintája).
 ColumnLayout {
-    //: #3123: a KÉP FÖLÖTTI eszköz-sáv Alkalmaz gombja ezt kérdezi — a
-    //: szövegmező itt bent él, a sáv viszont a PhotoViewerben. A feltétel
-    //: szó szerint a korábbi panel-gombé.
+    id: szovegLap
+
+    //: Az Alkalmaz gomb feltétele. #3320: a gomb visszakerült ide, de a
+    //: kifejezés SAJÁT tulajdonságban marad — a `textApplyEnabled` néven a
+    //: PhotoViewer is erre kötött, és a próbák is ezt olvassák.
     readonly property bool applyEngedve:
         panel.textPlacementPending && textContentField.text.length > 0
 
@@ -361,10 +363,56 @@ ColumnLayout {
         onMoved: panel.textOpacityEdited(value)
     }
 
-    // #3123: az Alkalmaz/Mégse pár INNEN ELKERÜLT — az eredetiben a KÉP
-    // FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`, sötét
-    // háttér, fehér felirat). A gombok mostantól az `EditorToolBar`-ban
-    // élnek (`PhotoViewer.qml`), a RÉGI objektumneveiket megtartva.
+    // #3320: az Alkalmaz/Mégse pár IDE tartozik — az `editpanel.tre`
+    // szerint a szöveg-eszköz párja is a saját paneljében ül, nem a kép
+    // fölötti `tool_container`-ben (az a `#---Straighen Overlay---`
+    // szakaszé). A #3123 egy félreolvasott mérés alapján vitte a képre;
+    // a #3234 mérése ezt helyesbítette.
+    //
+    // #710: a jel a KÖZÖS, RAJZOLT `EditorActionBadge` — a Unicode-glif
+    // betűtípusfüggő, és hiányzó glifnél NYOMTALANUL eltűnik.
+    //
+    // #741/#779: a 98 FELSŐ KORLÁT, nem fix méret — a `fillWidth` +
+    // `maximumWidth` a mért méretet adja, valahányszor van rá hely.
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.maximumWidth: 98 + 6 + 98
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 6
+        PanelButton {
+            objectName: "textApplyButton"
+            label: qsTr("Apply")
+            Layout.fillWidth: true
+            Layout.preferredWidth: 98
+            Layout.maximumWidth: 98
+            Layout.preferredHeight: 28
+            buttonEnabled: szovegLap.applyEngedve
+            onButtonClicked: panel.textApplyRequested()
+            EditorActionBadge {
+                objectName: "textApplyIcon"
+                tick: true
+                anchors.right: parent.right
+                anchors.rightMargin: 9
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        PanelButton {
+            objectName: "textCancelButton"
+            label: qsTr("Cancel")
+            Layout.fillWidth: true
+            Layout.preferredWidth: 98
+            Layout.maximumWidth: 98
+            Layout.preferredHeight: 28
+            onButtonClicked: panel.textCancelRequested()
+            EditorActionBadge {
+                objectName: "textCancelIcon"
+                tick: false
+                anchors.right: parent.right
+                anchors.rightMargin: 9
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+    }
 
     // #450: az összes szövegelem törlése — ma egyetlen szövegelem van,
     // a meglévő clearText (Visszavonás-verem NÉLKÜLI, azonnali) útvonalon

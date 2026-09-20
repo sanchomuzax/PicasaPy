@@ -610,6 +610,31 @@ listában az `adorners/listsuggestionfaceadorner`.
 | 9 | két küszöb | 50–95, ötösével, alap 85 | **nincs** | ha lesz motorunk, ugyanez a létra |
 | 10 | `frversion` | **`"1.5"`** | — | importáláskor ezt írjuk |
 
+### 10/b. Az átvétel BELÉPÉSI PONTJA megvan (2026-09-19, #3132)
+
+A 4. sor gépezete (`pmpimport/db3_atvetel.py` + `arcatvetel.py`) a #3002/#3184
+óta kész és tesztelt, de a `src/` alól **semmi nem hívta** — az adat a
+felhasználónál nem mozdult. A hiányzó rész nem fejlesztői részletkérdés volt,
+hanem termékdöntés: mikor nyúljon a program a fotók mellé írt adatokhoz.
+
+A tulajdonos 2026-09-18-án választott a három felkínált hely közül:
+
+> `A menüpont (Eszközök ▸ Import a Picasából…)`
+
+⇒ az átvétel **kérésre** fut, bármikor megismételhető, és a végén SZÁMOKAT ad:
+hány mappát érintett, hány fotóra került kulcsszó / hely / név, és hányat
+hagytunk ki azért, mert ott már állt adat („A" szabály — meglévőt nem írunk
+felül).
+
+⚠️ **SAJÁT funkció**: az eredetinek ilyen parancsa nincs és nem is lehet — ő
+MAGA a db3 gazdája. A menütétel ezért a #1701 jelölését viseli (`sajat: true`),
+és a mért menüszerkezet UTÁN, külön csoportban áll, hogy az eredeti sorrendjéből
+semmit ne toljon el.
+
+Kód: `app/picasa_import_controller.py`, `qml/PicasaPy/PicasaDataImportDialog.qml`.
+Őrök: `tests/app/test_picasa_import_vezerlo_3132.py`,
+`tests/app/qml_functional/test_import_menupont_3132.py`.
+
 ---
 
 ## 11. Bizonyítottsági fok

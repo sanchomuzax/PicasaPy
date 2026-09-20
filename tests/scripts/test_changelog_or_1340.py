@@ -339,3 +339,63 @@ class TestBokezuKontextus2749:
         assert cor.main(
             ["--base", "a", "--head", "b", "--changelog", str(naplo)], runner=futtat
         ) == 1
+
+
+class TestEkezetesFajlnev1340_3423:
+    """#3423 — az ÉKEZETES útvonalat is helyesen kell kizárni.
+
+    A `git diff --name-only` az ékezetes utat alapból idézőjelesen, oktális
+    escape-ekkel adja (`"docs/.../m\\303\\251r..."`), és a `docs/`-előtagos
+    kizárás arra NEM illeszkedik. A #684 benchmark-lapja egyetlen,
+    csak-dokumentáció fájlként bukott meg így a főági összesítőn.
+
+    A javítás: `git -c core.quotepath=false diff …`. ⚠️ Nem a jelzés
+    elnémítása — az őr foga változatlan, csak a fájlnevet olvassa helyesen.
+    """
+
+    def _futtato(self, valaszok: dict[str, str], naplo: list[list[str]]):
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            naplo.append(args)
+            for kulcs, kimenet in valaszok.items():
+                if kulcs in " ".join(args):
+                    return subprocess.CompletedProcess(args, 0, kimenet, "")
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        return futtat
+
+    def test_a_git_hivas_KIKAPCSOLJA_az_utvonal_idezest(self, tmp_path: Path):
+        naplo_fajl = tmp_path / "CHANGELOG.md"
+        naplo_fajl.write_text("# N\n\n## [Nem kiadott]\n", encoding="utf-8")
+        hivasok: list[list[str]] = []
+        cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo_fajl)],
+            runner=self._futtato({"--name-only": "docs/x.md\n"}, hivasok),
+        )
+        nev_hivas = [h for h in hivasok if "--name-only" in h]
+        assert nev_hivas, "a fájllistát meg sem kérdezte"
+        assert "core.quotepath=false" in nev_hivas[0], (
+            "idézett útvonalon a kizárás nem illeszkedik (#3423)"
+        )
+
+    def test_ekezetes_DOKUMENTACIO_nem_ker_bejegyzest(self, tmp_path: Path):
+        naplo_fajl = tmp_path / "CHANGELOG.md"
+        naplo_fajl.write_text("# N\n\n## [Nem kiadott]\n", encoding="utf-8")
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo_fajl)],
+            runner=self._futtato(
+                {"--name-only": "docs/benchmarks/2026-09-19-mérőszett.md\n"}, []
+            ),
+        )
+        assert kod == 0, "ékezetes nevű docs-lap CHANGELOG-mondatot kért"
+
+    def test_ekezetes_PROGRAMFAJL_tovabbra_is_ker(self, tmp_path: Path):
+        """A fog megmarad: ékezetes nevű `src/` fájl ugyanúgy buktat."""
+        naplo_fajl = tmp_path / "CHANGELOG.md"
+        naplo_fajl.write_text("# N\n\n## [Nem kiadott]\n", encoding="utf-8")
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo_fajl)],
+            runner=self._futtato(
+                {"--name-only": "src/picasapy/render/szűrő.py\n"}, []
+            ),
+        )
+        assert kod == 1

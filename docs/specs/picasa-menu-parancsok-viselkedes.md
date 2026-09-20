@@ -5701,9 +5701,12 @@ Az elfogadó gomb felirata és a figyelmeztetés együtt dönt: a művelet **a
 KÖVETKEZŐ INDÍTÁSKOR** fut le, nem az OK-ra. A párbeszéd tehát csak
 **szándékot rögzít**.
 
-⛔ **NYITOTT:** hol tárolja a szándékot (registry-kulcs vagy fájl). A
-`MoveDatabase`, `DatabaseLocation`, `PendingMove` és hasonló nevekre a
-binárisban **nincs sztring** — a kulcs máshogy hívódik.
+✅ **LEZÁRVA (2026-09-19, #3413): a szándék a `Preferences` blokk
+`AppLocalDataPathCopy` kulcsában áll** — a részletek a lap „A `MoveDatabase`
+két kulcsa" szakaszában. ⛔ A korábbi „nincs sztring a `MoveDatabase`-re"
+megállapítás **téves volt**: a név létezik, csak összetett diagnosztikai
+címkék belsejében (`MoveDatabase::Success` stb.), ezért a szótöredékre
+keresés nem találta meg.
 
 ### 5. MI TÖRTÉNIK A MEGLÉVŐ ADATTAL — KÉT mappa, és LOMTÁR
 
@@ -5994,3 +5997,70 @@ nem szabad közvetlen képpontként vagy fizikai nyomtatási egységként kezeln
 *Forrás: a panel-frissítő `0x0085d550`, a panel-esemény/mentési ág
 `0x0085df30`, a slider getter/setter `0x009ddd00`/`0x009ddc90`, valamint a
 `0x00cf3f68` és `0x00cf4218` `.rdata` konstansok.*
+
+
+## ⛳ A `MoveDatabase` KÉT kulcsa — a szándék az `AppLocalDataPathCopy`-ban áll (2026-09-19, 334. kör, #3413)
+
+*A 3–4. pont kimondta, hogy a „Move on next restart" párbeszéd csak
+szándékot rögzít, és nyitva hagyta, hogy hol. Megvan.*
+
+### A két beállítás-kulcs
+
+| kulcs (a `Preferences` blokkban) | sztring címe | szerep |
+|---|---|---|
+| `AppLocalDataPath` | `0x00c7ef0c` | a **mostani, élő** adatgyökér |
+| **`AppLocalDataPathCopy`** | `0x00c7eef0` | a **szándék**: hova kell mozgatni |
+
+Mindkettőt ugyanaz a beállítás-elérő pár olvassa, amit a lap más pontjai is
+használnak: `0x00407630` (szekció + kulcs) majd `0x004078e0`.
+
+- a **párbeszéd** (`0x007d14f0`, 444 b — elemnevei `current_location`,
+  `new_location`) az `AppLocalDataPath`-ot olvassa ki, és azzal tölti fel a
+  „mostani hely" mezőt (`0x007d15c9`–`0x007d15e2`);
+- a **végrehajtó** (`0x00404d60`, 1094 b) **először** az
+  `AppLocalDataPathCopy`-t kérdezi meg (`0x00404d97`), és a törzs későbbi
+  szakaszában kétszer nyúl az `AppLocalDataPath`-hoz (`0x00404fd3`,
+  `0x00405007`).
+
+### Hogy tényleg INDULÁSKOR fut
+
+A hívási lánc mindhárom tagjának **egyetlen** indexelt hívója van:
+
+```
+0x00401060  →  0x004051b0 (2533 b)  →  0x00404d60 (1094 b)
+```
+
+A középső törzs sztringjei azonosítják az indulási utat: `Picasa2NoLaunch`,
+`Picasa2Installing`, `SOFTWARE\Google\Picasa\`, `Google\Picasa2`,
+`IDS_MIN_RES_MSG`, `IDS_MMX_MSG`. ⇒ a mozgatás **a program indulásakor**
+történik, nem az OK-ra — pontosan ahogy a gomb felirata ígéri.
+
+### A végrehajtó saját diagnosztikai címkéi
+
+`MoveDatabase::MoveDbFailed` · `MoveDatabase::MoveAlbumsFailed` ·
+`MoveDatabase::Success` · `MoveDatabase::Failure` (címek: `0x00c7ef54`,
+`0x00c7efa8`, `0x00c7efec`, `0x00c7f06c`).
+
+⛔ **Helyesbítés:** a 3–4. pont korábbi jelölése szerint a `MoveDatabase`
+névre „nincs sztring". A név **megvan** — csak nem önálló tokenként, hanem
+ezekben az összetett címkékben. *(Módszertani tanulság: a „nincs sztring"
+állítás csak akkor érvényes, ha a keresés részszóra is lefutott.)*
+
+A hozzájuk tartozó, felhasználónak látszó szövegek a régi adatbázis és a
+régi albumok mappa **lomtárba** küldéséről beszélnek, valamint a cél
+elérhetőségéről — ez független megerősítése az 5. pontnak (KÉT mappa +
+lomtár).
+
+### NYITOTT — megnevezve, nem becsülve
+
+Melyik kód **ÍRJA** az `AppLocalDataPathCopy`-t (a párbeszéd OK-ága). A
+sztringre az egész binárisban **egyetlen** hivatkozás van, a végrehajtóban;
+tehát az írás vagy közös segítőn át megy, vagy nem literál kulccsal. A
+következő lépés: a párbeszéd `move` elemének kezelője az elem-tábla
+(`respack.yt` / `.tre`) felől — nem a sztring-indexből, mert az a
+mutatón át menő kezelőket nem látja.
+
+*Forrás: `0x007d14f0` (444 b), `0x00404d60` (1094 b), `0x004051b0`
+(2533 b); a kulcs-sztringek `0x00c7ef0c` és `0x00c7eef0`; a szekció
+`Preferences` (`0x00c7eafc`); a hívási lánc a bináris index `xrefs`
+táblájából.*

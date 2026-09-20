@@ -138,6 +138,44 @@ ListView {
     // a nézet, hogy a cél-sor belógjon a látótérbe.
     // #1335: a `rowBounds` a még nem kész layoutból SZÁMOL, ezért túllőhet
     // a tartalom végén — a vágás nélkül a nézet érvénytelen helyre kerül.
+    //: #857: ugrás a szomszédos albumra (mappára). A feed MODELLJE maga a
+    //: csoportlista (`feedGroups`), tehát az ugrás a szomszédos csoport
+    //: elejére pozicionál — nem sorral lépünk, hanem albumot váltunk.
+    //:
+    //: A „hol állunk" kérdésre a LÁTHATÓ tető válaszol: az a csoport, amelyik
+    //: még belelóg a nézetbe. Lefelé ennek a KÖVETKEZŐJE a cél, felfelé pedig
+    //: — ha már a tetején állunk — az ELŐZŐ; különben a saját eleje. Így a
+    //: „fel" gomb először a jelenlegi album elejére visz, ahogy az eredeti
+    //: görgetősávján is.
+    function aktualisCsoport() {
+        if (!model || model.length === 0)
+            return -1
+        for (var i = 0; i < model.length; i++) {
+            var it = itemAtIndex(i)
+            if (it && it.y + it.height > contentY + 1)
+                return i
+        }
+        return model.length - 1
+    }
+
+    function ugrasAlbumra(irany) {
+        if (!model || model.length === 0)
+            return
+        var most = aktualisCsoport()
+        if (most < 0)
+            return
+        var cel = most
+        if (irany > 0) {
+            cel = Math.min(model.length - 1, most + 1)
+        } else {
+            var it = itemAtIndex(most)
+            var tetejen = it && Math.abs(it.y - contentY) <= 1
+            cel = tetejen ? Math.max(0, most - 1) : most
+        }
+        positionViewAtIndex(cel, ListView.Beginning)
+        savedY = contentY
+    }
+
     function scrollToRow(row) {
         var b = rowBounds(row)
         if (!b) {
@@ -672,6 +710,11 @@ ListView {
                 if (grid.appWindow && grid.appWindow.removePersonSuggestions)
                     grid.appWindow.removePersonSuggestions()
             }
+            //: #2187: `moresug` — a lazítás az egész készletre újraszámol
+            onMoreSuggestionsRequested: {
+                if (grid.appWindow && grid.appWindow.findMoreSuggestions)
+                    grid.appWindow.findMoreSuggestions()
+            }
             // #422: jobbklikk a mappa-fejlécen — a mappa-kontextusmenü
             // ARRA a mappára, amelyiknek a fejléce ez (nem a kijelöltre)
             onContextMenuRequested: {
@@ -1090,7 +1133,14 @@ ListView {
             }
         }
     }
-    ScrollBar.vertical: PicasaScrollBar { objectName: "feedScrollBar" }
+    //: #857 (ADR-015): a rács sávja az EGYETLEN, ahol az album-ugrásnak
+    //: értelme van — a mappafa és a párbeszédek sávja változatlan marad.
+    ScrollBar.vertical: PicasaScrollBar {
+        objectName: "feedScrollBar"
+        albumUgras: true
+        onElozoAlbum: grid.ugrasAlbumra(-1)
+        onKovetkezoAlbum: grid.ugrasAlbumra(1)
+    }
 
     // görgő-elfogó réteg (#77/#89): a wheel-eseményt egy a
     // rács fölött ülő átlátszó réteg kapja el (pointer-

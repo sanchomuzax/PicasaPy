@@ -68,6 +68,7 @@ from .exported_folders import (
     registered_exported_folders,
 )
 from .compact_controller import CompactController
+from .picasa_import_controller import PicasaImportController
 from .relocate_controller import RelocateController
 from .startup_relocate import (
     IndulasiKoltozo,
@@ -98,6 +99,7 @@ from .folder_hierarchy_controller import FolderHierarchyController
 from .folder_tree_controller import FolderTreeController
 from .import_source_controller import ImportSourceController
 from .models import sorted_folder_rows
+
 # #1472: a nyomtatás vezérlője. Az import VÉDETT, mert a
 # `print_controller` a `PySide6.QtPrintSupport`-ra épül, azt pedig a
 # Debian/Ubuntu-féle rendszercsomag KÜLÖN modulba teszi (a pip-es wheel —
@@ -202,9 +204,7 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
     indulást —, de NAPLÓZVA: a #1075 másik fele éppen az volt, hogy a néma
     ág miatt vakon álltunk."""
     try:
-        mappa = collage_output.output_dir(
-            settings.value(collage_prefs.OUTPUT_DIR_KEY)
-        )
+        mappa = collage_output.output_dir(settings.value(collage_prefs.OUTPUT_DIR_KEY))
         if not mappa.is_dir():
             return
         collage_output.ensure_project_album(mappa)
@@ -238,9 +238,7 @@ def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
 
     A hiba nyelt (az indulás soha nem hiúsulhat meg tőle), de naplózva."""
     try:
-        mappak = existing_exported_folders(
-            settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
-        )
+        mappak = existing_exported_folders(settings.value(EXPORTED_FOLDERS_SETTINGS_KEY))
     except Exception:  # noqa: BLE001 - olvashatatlan beállítás sem állíthat meg
         logging.getLogger(__name__).warning(
             "az exportcélok nyilvántartása nem olvasható", exc_info=True
@@ -260,9 +258,7 @@ def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
             )
 
 
-def _takaritas_gyokerei(
-    roots: tuple[str | Path, ...], settings: QSettings
-) -> tuple[str, ...]:
+def _takaritas_gyokerei(roots: tuple[str | Path, ...], settings: QSettings) -> tuple[str, ...]:
     """A #58 induláskori takarítás VÉDETT gyökerei (#1667).
 
     A figyelt gyökerek mellé a **nyilvántartott exportcélok** is bekerülnek.
@@ -290,9 +286,7 @@ def _takaritas_gyokerei(
     `registered_exported_folders`."""
     return (
         *(str(root) for root in roots),
-        *registered_exported_folders(
-            settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
-        ),
+        *registered_exported_folders(settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)),
         *_kollazs_gyoker(settings),
     )
 
@@ -320,13 +314,7 @@ def _kollazs_gyoker(settings: QSettings) -> tuple[str, ...]:
     kollázsmappa sorai sem eshetnek ki emiatt.
     """
     try:
-        return (
-            str(
-                collage_output.output_dir(
-                    settings.value(collage_prefs.OUTPUT_DIR_KEY)
-                )
-            ),
-        )
+        return (str(collage_output.output_dir(settings.value(collage_prefs.OUTPUT_DIR_KEY))),)
     except Exception:  # noqa: BLE001 — a takarítás soha nem hiúsulhat meg tőle
         logging.getLogger(__name__).warning(
             "a Kollázsok mappa védett gyökérként nem oldható fel", exc_info=True
@@ -445,9 +433,7 @@ def _bootstrap_storage(
     active_platform = sys.platform if platform is None else platform
     return bootstrap_storage(
         active_platform,
-        acquire_lock=(
-            _acquire_instance_lock if acquire_lock is None else acquire_lock
-        ),
+        acquire_lock=(_acquire_instance_lock if acquire_lock is None else acquire_lock),
         environ=environ,
         home=home,
         migrate=migrate,
@@ -482,9 +468,7 @@ def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
     # hurok tartja életben a haladásjelző ablakot
     hurok = QEventLoop()
     indulasi_koltozo.kesz.connect(hurok.quit, Qt.ConnectionType.QueuedConnection)
-    indulasi_koltozo.inditsd(
-        config_dir, _data_dir() / "index.db", _cache_dir() / "thumbs"
-    )
+    indulasi_koltozo.inditsd(config_dir, _data_dir() / "index.db", _cache_dir() / "thumbs")
     hurok.exec()
     indulasi_koltozo.waitForBackgroundWorkers(60.0)
 
@@ -530,9 +514,7 @@ def _watched_folders_path() -> Path:
     néven is előfordulhat. Ha nincs ilyen fájl, a kanonikus nevet adja
     vissza (ide fog írni a `write_watched_folders`)."""
     config_dir = _config_dir()
-    return find_watched_folders_file(config_dir) or (
-        config_dir / WATCHED_FOLDERS_NAME
-    )
+    return find_watched_folders_file(config_dir) or (config_dir / WATCHED_FOLDERS_NAME)
 
 
 def _exclude_folders_path() -> Path:
@@ -542,9 +524,7 @@ def _exclude_folders_path() -> Path:
     kapcsoló: az arcfelismerésből kizárt mappák (ma még csak SZÁNDÉK-
     rögzítés, arcfelismerés-motor nélkül, ld. library_controller.py)."""
     config_dir = _config_dir()
-    return find_exclude_folders_file(config_dir) or (
-        config_dir / EXCLUDE_FOLDERS_NAME
-    )
+    return find_exclude_folders_file(config_dir) or (config_dir / EXCLUDE_FOLDERS_NAME)
 
 
 def _resolve_roots(argv: list[str]) -> tuple[str, ...]:
@@ -567,8 +547,7 @@ def _offer_error_log(path: Path) -> None:
 
     text = QCoreApplication.translate(
         "startup",
-        "There were errors loading the PicasaPy database. "
-        "Would you like to view the error log?",
+        "There were errors loading the PicasaPy database. Would you like to view the error log?",
     )
     answer = QMessageBox.question(
         None, QCoreApplication.translate("startup", "Database error"), text
@@ -588,7 +567,6 @@ def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
     if lock.tryLock(100):
         return lock
     return None
-
 
 
 #: #526: a felület betűtípusa. Az eredeti Picasa a **Praxis** (Linotype)
@@ -652,9 +630,7 @@ def _set_windows_app_id() -> None:
         return  # Csak Windowson van értelme
 
     try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-            "PicasaPy.PicasaPy"
-        )
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("PicasaPy.PicasaPy")
     except (AttributeError, OSError):
         # AttributeError: régi Windows-verzió vagy hiányzó API
         # OSError: nem admin-felhasználó vagy rendszer-hiba — csendben kimarad
@@ -666,9 +642,7 @@ def _set_windows_app_id() -> None:
 _SPLASH_MIN_VISIBLE_MS = 1500
 
 
-def _remaining_splash_ms(
-    elapsed_ms: float, minimum_ms: int = _SPLASH_MIN_VISIBLE_MS
-) -> int:
+def _remaining_splash_ms(elapsed_ms: float, minimum_ms: int = _SPLASH_MIN_VISIBLE_MS) -> int:
     """Hátralévő splash-idő: a minimum-megjelenítésből még ki nem töltött
     rész (0, ha a betöltés maga is elég sokáig tartott)."""
     return max(0, round(minimum_ms - elapsed_ms))
@@ -690,9 +664,7 @@ def _start_initial_scan(
         template = QCoreApplication.translate(
             "startup", "Existing data migrated from {source} to {target}."
         )
-        text = template.format(
-            source=migration_notice.source, target=migration_notice.target
-        )
+        text = template.format(source=migration_notice.source, target=migration_notice.target)
     startup_status.report(text)
     controller.start()
 
@@ -710,9 +682,7 @@ def _window_icon_path(platform: str = sys.platform) -> Path:
 def _install_desktop_entry() -> None:
     """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
     tálca az app_id ↔ .desktop párosításból kapja az ikont. Idempotens."""
-    base = Path(
-        os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
-    )
+    base = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share")))
     icon_target = base / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"
     icon_source = _APP_DIR / "assets" / "icon.png"
     launcher = Path(__file__).resolve().parents[3] / "picasapy"
@@ -730,10 +700,7 @@ def _install_desktop_entry() -> None:
     )
     desktop_target = base / "applications" / "picasapy.desktop"
     try:
-        if (
-            not icon_target.exists()
-            or icon_target.read_bytes() != icon_source.read_bytes()
-        ):
+        if not icon_target.exists() or icon_target.read_bytes() != icon_source.read_bytes():
             icon_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(icon_source, icon_target)
             _refresh_icon_cache(base / "icons" / "hicolor")
@@ -794,6 +761,7 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
 
     fileops.photoRenamed.connect(lambda old, new: refresh(old, new))
     fileops.photoMoved.connect(lambda old, new: refresh(old, new))
+
     def torles_utan(path: str) -> None:
         """#1227: a sor AZONNAL tűnjön el, a resync csak utólag egyeztessen.
 
@@ -814,15 +782,11 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     # így sem az áthelyezett mappa sora, sem az almappáié nem kerülne a
     # helyére. A részfa-logika a vezérlőben él (`resyncMovedFolder`), mert
     # a RÉGI oldalhoz az INDEXET kell megkérdezni: a lemezen az már nincs.
-    fileops.folderMoved.connect(
-        lambda old, new: controller.resyncMovedFolder(old, new)
-    )
+    fileops.folderMoved.connect(lambda old, new: controller.resyncMovedFolder(old, new))
     # #1638: a lomtárba tett mappa kivezetése az indexből — ugyanaz a
     # részfa-logika, mint az áthelyezés RÉGI oldalán (a lemezen már nincs
     # meg, tehát az indexet kell megkérdezni).
-    fileops.folderDeleted.connect(
-        lambda path: controller.resyncDeletedFolder(path)
-    )
+    fileops.folderDeleted.connect(lambda path: controller.resyncDeletedFolder(path))
 
 
 def wire_dedup(dedup: DedupController, controller: AppController) -> None:
@@ -847,9 +811,7 @@ def wire_dedup(dedup: DedupController, controller: AppController) -> None:
     A `deleteOthers` ágán SZÁNDÉKOSAN nincs második kötés: a Kuka nem a
     figyelt körben van, oda nincs mit újraolvasni."""
     dedup.itemResolved.connect(controller.resyncOutputFolder)
-    dedup.photoRelocated.connect(
-        lambda _source, new: controller.resyncOutputFolder(new)
-    )
+    dedup.photoRelocated.connect(lambda _source, new: controller.resyncOutputFolder(new))
 
 
 def _configured_language() -> str:
@@ -866,9 +828,7 @@ def _configured_language() -> str:
     return coerce_language(settings.value(LANGUAGE_KEY, DEFAULT_LANGUAGE))
 
 
-def _install_translator(
-    app: QGuiApplication, language: str | None = None
-) -> QTranslator | None:
+def _install_translator(app: QGuiApplication, language: str | None = None) -> QTranslator | None:
     """A `language` (vagy a beállított) nyelv fordítójának telepítése.
 
     Az angolhoz nincs `.qm` — a forrásszövegek maguk angolok —, ezért ott
@@ -894,9 +854,7 @@ def _indexelt_kepszamok(data_dir: Path) -> tuple[int, ...]:
     Hibánál üres sorozat: egy diagnosztika nem dönthet el egy indulást."""
     try:
         with open_index(data_dir / "index.db") as conn:
-            return tuple(
-                int(count) for _name, _path, count, *_rest in sorted_folder_rows(conn)
-            )
+            return tuple(int(count) for _name, _path, count, *_rest in sorted_folder_rows(conn))
     except sqlite3.DatabaseError:
         logging.getLogger(__name__).warning(
             "a könyvtárméret leolvasása hibára futott", exc_info=True
@@ -929,17 +887,13 @@ def _jelentsd_az_idovonalat(timeline, kepszamok=None, vedett_gyokerek=None) -> N
         from PySide6.QtCore import qVersion
 
         szoveg = naplo_szovege(
-            idovonal_jelentes=timeline.render(
-                app_version=version_string(), qt_version=qVersion()
-            ),
+            idovonal_jelentes=timeline.render(app_version=version_string(), qt_version=qVersion()),
             fejlec=session_header(version_string(), qVersion() or ""),
             meret=konyvtar_merete(kepszamok() if kepszamok is not None else ()),
             # #1712: a #1706 szerint EZ a szám a domináns tényező, nem a
             # mappáké — késleltetve hívjuk, hogy kikapcsolt tesztüzemben
             # ne kerüljön semmibe.
-            vedett_gyokerek=(
-                len(vedett_gyokerek()) if vedett_gyokerek is not None else None
-            ),
+            vedett_gyokerek=(len(vedett_gyokerek()) if vedett_gyokerek is not None else None),
             # #1660: a tároló TÍPUSA — a #1653 zárásához hiányzó
             # bizonyíték. Két helyet nézünk: ahol a PROGRAM fut (a modulok
             # ~290 MB-ja innen olvasódik minden induláskor), és ahol a
@@ -1035,9 +989,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # világos QML-dialógusok a rendszer sötét mappaválasztója helyett.
     # Windowson natív dialógus kell — ld. _force_qml_dialogs (#58).
     if _force_qml_dialogs():
-        QGuiApplication.setAttribute(
-            Qt.ApplicationAttribute.AA_DontUseNativeDialogs
-        )
+        QGuiApplication.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeDialogs)
     allitsd_be_a_stilust()
 
     # Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67)
@@ -1117,9 +1069,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # Ottragadt gyökerek takarítása (#58): az indexben csak a most figyelt
     # mappák maradhatnak — a korábbi futások (pl. régi parancssori argumentum)
     # mappái különben örökre a bal hasábban ragadnának.
-    startup_status.report(
-        QCoreApplication.translate("startup", "Preparing index…")
-    )
+    startup_status.report(QCoreApplication.translate("startup", "Preparing index…"))
     try:
         with open_index(data_dir / "index.db") as conn:
             # #1601: a `mark` az ELŐZŐ bejelentés óta eltelt időt zárja le —
@@ -1145,9 +1095,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     # #83: a cache-méretet a képernyő DPR-jéhez igazítjuk, hogy a rács
     # legnagyobb fokozata (256px) se legyen homályos HiDPI kijelzőn.
-    startup_status.report(
-        QCoreApplication.translate("startup", "Loading photo library…")
-    )
+    startup_status.report(QCoreApplication.translate("startup", "Loading photo library…"))
     timeline.mark("index előkészítése — utómunka")
     cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
     provider = ThumbnailProvider(
@@ -1202,18 +1150,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # megjelenítési mód (#1575/#1576): a `Nézet ▸ Megjelenítési mód` almenü
     # állapota a KÉPERNYŐRE ható átalakítóig. A visszaadott átvezetőt névre
     # kötjük, hogy a kapcsolat a motor életében biztosan éljen.
-    _display_mode_bridge = wire_display_mode(
-        controller, edit_controller, edit_preview
-    )
+    _display_mode_bridge = wire_display_mode(controller, edit_controller, edit_preview)
 
     # színkezelés (#1725): a `Nézet ▸ Színkezelés használata` kapcsoló a
     # beágyazott ICC-profil érvényesítéséig. Ugyanaz a névre kötés, mint
     # fentebb — a bekötés a motor életében éljen.
-    _color_management_bridge = wire_color_management(
-        controller, edit_controller, edit_preview
-    )
+    _color_management_bridge = wire_color_management(controller, edit_controller, edit_preview)
 
-    # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — a
+    # #367: az általános ConfirmDialog "Ne kérdezze meg újra" tára — a
     # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír
     confirm_settings = ConfirmSettingsBridge()
 
@@ -1233,9 +1177,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     # kép/mappa ablakra ejtése (#237): a kép mappája (vagy maga a mappa)
     # figyelt gyökér lesz — az ImportDropArea.qml hídja
-    drop_import_controller = DropImportController(
-        add_folder=controller.addWatchedFolder
-    )
+    drop_import_controller = DropImportController(add_folder=controller.addWatchedFolder)
 
     # Mappakezelő fa-nézete (#231): a helyi fájlrendszer LUSTA, háttérszálas
     # listázása — a FolderManagerDialog.qml hídja
@@ -1270,9 +1212,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             # a hasáb lapos listája külön úton frissül — egy sérült index
             # miatt a fa maradjon a korábbi tartalmán, ne dőljön el a
             # `syncFinished` jelzés kiszolgálása
-            logging.getLogger(__name__).exception(
-                "a fa-mappanézet frissítése hibára futott"
-            )
+            logging.getLogger(__name__).exception("a fa-mappanézet frissítése hibára futott")
 
     controller.syncFinished.connect(_reload_folder_hierarchy)
     with timeline.phase("a bal hasáb mappafájának betöltése"):
@@ -1393,48 +1333,36 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty("secondPreview", second_preview)
-    engine.rootContext().setContextProperty(
-        "fileOpsController", fileops_controller
-    )
+    engine.rootContext().setContextProperty("fileOpsController", fileops_controller)
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     engine.rootContext().setContextProperty("gombsav", gombsav)
-    engine.rootContext().setContextProperty(
-        "discoveryController", discovery_controller
-    )
-    engine.rootContext().setContextProperty(
-        "dropImportController", drop_import_controller
-    )
-    engine.rootContext().setContextProperty(
-        "folderTreeController", folder_tree_controller
-    )
+    engine.rootContext().setContextProperty("discoveryController", discovery_controller)
+    engine.rootContext().setContextProperty("dropImportController", drop_import_controller)
+    engine.rootContext().setContextProperty("folderTreeController", folder_tree_controller)
     engine.rootContext().setContextProperty(
         "folderHierarchyController", folder_hierarchy_controller
     )
-    engine.rootContext().setContextProperty(
-        "timelineController", timeline_controller
-    )
+    engine.rootContext().setContextProperty("timelineController", timeline_controller)
     engine.rootContext().setContextProperty("backupController", backup_controller)
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
     # #1066 — az „E-Mail" beállításfül és a webexportálás párbeszéde
     engine.rootContext().setContextProperty("emailController", email_controller)
-    engine.rootContext().setContextProperty(
-        "webExportController", web_export_controller
-    )
+    engine.rootContext().setContextProperty("webExportController", web_export_controller)
     # #1472: a nyomtatás-párbeszéd hídja (`PrintDialog.qml`)
     engine.rootContext().setContextProperty("printController", print_controller)
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
     relocate_controller = RelocateController(
         data_dir / "index.db", cache_dir / "thumbs", config_dir
     )
-    engine.rootContext().setContextProperty(
-        "relocateController", relocate_controller
-    )
+    engine.rootContext().setContextProperty("relocateController", relocate_controller)
     # #449: adatbázis-tömörítés — a CompactDatabaseDialog.qml hídja
     compact_controller = CompactController(data_dir / "index.db")
     engine.rootContext().setContextProperty("compactController", compact_controller)
-    engine.rootContext().setContextProperty(
-        "importSourceController", import_source_controller
-    )
+    # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
+    # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
+    picasa_import_controller = PicasaImportController()
+    engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
+    engine.rootContext().setContextProperty("importSourceController", import_source_controller)
     # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
     # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.
     # A helyi változóban tartás megakadályozza, hogy a Python GC a
@@ -1452,9 +1380,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         # írjuk-e ki az XMP-t" kapcsoló (alapérték BE, ahogy az eredetiben).
         settings=QSettings(),
     )
-    engine.rootContext().setContextProperty(
-        "faceScanController", face_scan_controller
-    )
+    engine.rootContext().setContextProperty("faceScanController", face_scan_controller)
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())
@@ -1492,9 +1418,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     # #192: az utolsó ablakpozíció/-méret visszaállítása induláskor,
     # mentése az ablak zárásakor — a controllerrel közös QSettings-tárba
-    wire_window_geometry(
-        window, QSettings("PicasaPy", "PicasaPy"), virtual_desktop_rect(app)
-    )
+    wire_window_geometry(window, QSettings("PicasaPy", "PicasaPy"), virtual_desktop_rect(app))
     splash_state = {"started": False}
 
     def _start_and_finish() -> None:
@@ -1517,18 +1441,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         with timeline.phase("exportcélok visszavétele (#1565)"):
             _exportcelok_visszavetele(data_dir / "index.db", QSettings())
         with timeline.phase("könyvtár betöltése (a vezérlő indítása)"):
-            _start_initial_scan(
-                startup_status, controller, storage_bootstrap.migration_notice
-            )
+            _start_initial_scan(startup_status, controller, storage_bootstrap.migration_notice)
         elapsed_ms = (time.monotonic() - first_frame_at) * 1000
         _jelentsd_az_idovonalat(
             timeline,
             lambda: _indexelt_kepszamok(data_dir),
             lambda: _takaritas_gyokerei(roots, QSettings()),
         )
-        QTimer.singleShot(
-            _remaining_splash_ms(elapsed_ms), startup_status.finish
-        )
+        QTimer.singleShot(_remaining_splash_ms(elapsed_ms), startup_status.finish)
 
     def _on_first_frame() -> None:
         # a frameSwapped minden képkockánál jön — csak az első számít

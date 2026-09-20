@@ -1244,8 +1244,8 @@
         <translation>Mégse</translation>
     </message>
     <message>
-        <source>Don&apos;t ask again</source>
-        <translation>Ne kérdezze újra</translation>
+        <source>Do not ask again</source>
+        <translation>Ne kérdezze meg újra</translation>
     </message>
 </context>
 <context>
@@ -3271,8 +3271,8 @@ Would you like to rename or skip these files?</source>
         <translation>A program biztonsági másolatot készít erről a fájlról.</translation>
     </message>
     <message>
-        <source>Don&apos;t ask again</source>
-        <translation>Ne kérdezze újra</translation>
+        <source>Do not ask again</source>
+        <translation>Ne kérdezze meg újra</translation>
     </message>
     <message>
         <source>Save As...</source>
@@ -3860,11 +3860,79 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
 </context>
 <context>
+    <name>PublishPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Selection and Settings</source>
+        <translation>Kijelölés és beállítások</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Photo Size</source>
+        <translation>Fotóméret</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Name the Gift CD</source>
+        <translation>Az ajándék CD elnevezése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>CD Name</source>
+        <translation>CD neve</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Limit 16 Characters</source>
+        <translation>Legfeljebb 16 karakter</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Erase Media</source>
+        <translation>Adathordozó törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Include Picasa</source>
+        <translation>A Picasával együtt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Backup Set</source>
+        <translation>Mentési készlet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Size:</source>
+        <translation>Méret:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Visibility:</source>
+        <translation>Láthatóság:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Sync:</source>
+        <translation>Szinkronizálás:</translation>
+    </message>
+</context>
+<context>
     <name>LightboxHeader</name>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
         <source>Sync to the web</source>
         <translation>Szinkronizálás az internettel</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Find more suggestions</source>
+        <translation>További javaslatok keresése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Lower the recognition threshold to get more suggestions</source>
+        <translation>A felismerési küszöb lejjebb vitele, hogy több javaslat jöjjön</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
@@ -4992,6 +5060,56 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
 </context>
 <context>
+    <name>PicasaDataImportDialog</name>
+    <message>
+        <source>Import from Picasa</source>
+        <translation>Import a Picasából</translation>
+    </message>
+    <message>
+        <source>Copying names, keywords and places from Picasa...</source>
+        <translation>Nevek, kulcsszavak és helyek átvétele a Picasából…</translation>
+    </message>
+    <message>
+        <source>Done.</source>
+        <translation>Kész.</translation>
+    </message>
+    <message>
+        <source>No Picasa data found on this computer.</source>
+        <translation>Nem találtunk Picasa-adatokat ezen a gépen.</translation>
+    </message>
+    <message>
+        <source>The import could not finish: %1</source>
+        <translation>Az átvétel nem fejeződött be: %1</translation>
+    </message>
+    <message>
+        <source>%1 folder(s) updated: %2 keyword(s), %3 place(s), %4 name(s).</source>
+        <translation>%1 mappa frissült: %2 kulcsszó, %3 hely, %4 név.</translation>
+    </message>
+    <message>
+        <source>%1 photo(s) were left untouched because they already had data.</source>
+        <translation>%1 fotóhoz nem nyúltunk hozzá, mert azoknál már volt adat.</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+</context>
+<context>
+    <name>PicasaScrollBar</name>
+    <message>
+        <source>Previous album</source>
+        <translation>Előző album</translation>
+    </message>
+    <message>
+        <source>Next album</source>
+        <translation>Következő album</translation>
+    </message>
+</context>
+<context>
     <name>PicasaMenuBar</name>
     <message>
         <source>My &amp;Computer</source>
@@ -5929,6 +6047,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Manage Duplicates...</source>
         <translation>Másodpéldányok kezelése…</translation>
+    </message>
+    <message>
+        <source>Import from Picasa...</source>
+        <translation>Import a Picasából…</translation>
     </message>
 </context>
 <context>
@@ -7054,7 +7176,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
 <context>
     <name>TagContextMenu</name>
     <message>
-        <source>Add Tag to Entire Selection</source>
+        <source>Add this tag to entire selection</source>
         <translation>A címke hozzáadása a teljes kijelölt részhez</translation>
     </message>
     <message>
@@ -9697,8 +9819,8 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Erősebb védelem (a Picasa nem nyitja meg)</translation>
     </message>
     <message>
-        <source>The passwords do not match.</source>
-        <translation>A két jelszó nem egyezik.</translation>
+        <source>The passwords did not match.</source>
+        <translation>A jelszavak nem egyeztek.</translation>
     </message>
     <message>
         <source>This only hides the folders inside PicasaPy. The files stay on the disk and can be opened with any file manager.</source>
@@ -9715,6 +9837,10 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 </context>
 <context>
     <name>BackupController</name>
+    <message>
+        <source>%1 file(s) do not fit on a single disc.</source>
+        <translation>%1 fájl egyetlen lemezre sem fér rá.</translation>
+    </message>
     <message>
         <source>Give the backup set a name.</source>
         <translation>Adj nevet a mentés-készletnek.</translation>
@@ -9746,6 +9872,26 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 </context>
 <context>
     <name>BackupDialog</name>
+    <message>
+        <source>To folder</source>
+        <translation>Mappába</translation>
+    </message>
+    <message>
+        <source>To CD image (ISO)</source>
+        <translation>CD-lemezképbe (ISO)</translation>
+    </message>
+    <message>
+        <source>To DVD image (ISO)</source>
+        <translation>DVD-lemezképbe (ISO)</translation>
+    </message>
+    <message>
+        <source>Writing %1 file(s) to disc image(s)...</source>
+        <translation>%1 fájl írása lemezképbe…</translation>
+    </message>
+    <message>
+        <source>Done: %1 file(s) in %2 disc image(s).</source>
+        <translation>Kész: %1 fájl, %2 lemezképen.</translation>
+    </message>
     <!-- #2074: lemezszám-becslés a mért kapacitás-képletből -->
     <message>
         <source>Copying %1 file(s)... (%2 CD or %3 DVD)</source>

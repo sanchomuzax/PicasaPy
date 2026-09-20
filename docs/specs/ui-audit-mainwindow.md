@@ -1816,3 +1816,17 @@ tovább (`0x006dcdcd`, `0x006dcde9`, `0x006dcf47`).
 alátámasztva** — a függvény nem nyúl a görgetési pozícióhoz. A pontos hatása
 NYITOTT; útja: a `0x006dc9a0` (`0x006dcdc1`) és a fenti három virtuális
 hívóhely célja.
+
+
+## A görgetősáv album-ugrói MEGÉPÜLTEK (2026-09-19, #857)
+
+A #856 leletéből (négy gomb, mind `m_autorepeat`) a két **album-ugró** a
+termékbe került: a rács sávjának tetején az előző, alján a következő mappára
+ugrik, nyomva tartva ismételve. A fel/le nyílgomb, a lapozó féltér és a
+pozíciójelző NEM épült meg, és a sáv 10 képpontos, lapos stílusa marad — a
+döntés és az indoklása: `docs/decisions/gorgetosav-album-ugro.md` (ADR-015).
+
+⚠️ A 3.1 szakasz egykori indoklása („natív Windows-króm, tehát nem követendő
+minta") **megdőlt**; a stílusdöntés attól még áll, csak más okból: a mai
+felület MINDEN sávja ilyen, és a 16 képpontos, három állapotképes rajz
+visszahozása az egész króm szétszabdalásával járna.

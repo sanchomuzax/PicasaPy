@@ -20,6 +20,7 @@ FolderHierarchyView 1.0 FolderHierarchyView.qml
 FolderStatePanel 1.0 FolderStatePanel.qml
 FolderStateBadge 1.0 FolderStateBadge.qml
 PicasaButton 1.0 PicasaButton.qml
+AlbumUgroGomb 1.0 AlbumUgroGomb.qml
 PicasaScrollBar 1.0 PicasaScrollBar.qml
 PicasaSlider 1.0 PicasaSlider.qml
 EditorPanel 1.0 EditorPanel.qml
@@ -79,6 +80,7 @@ BackupDialog 1.0 BackupDialog.qml
 MoveDatabaseDialog 1.0 MoveDatabaseDialog.qml
 EditOverwriteDialog 1.0 EditOverwriteDialog.qml
 CompactDatabaseDialog 1.0 CompactDatabaseDialog.qml
+PicasaDataImportDialog 1.0 PicasaDataImportDialog.qml
 FolderContextMenu 1.0 FolderContextMenu.qml
 AlbumContextMenu 1.0 AlbumContextMenu.qml
 PeopleAlbumContextMenu 1.0 PeopleAlbumContextMenu.qml
@@ -104,6 +106,7 @@ OptionsTabNameTags 1.0 OptionsTabNameTags.qml
 WebExportDialog 1.0 WebExportDialog.qml
 PrintDialog 1.0 PrintDialog.qml
 PrintOptionsPanel 1.0 PrintOptionsPanel.qml
+PublishPanel 1.0 PublishPanel.qml
 UnnamedFacesView 1.0 UnnamedFacesView.qml
 ToolTile 1.0 ToolTile.qml
 PanelButton 1.0 PanelButton.qml

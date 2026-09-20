@@ -7,6 +7,147 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Előkészítés (a felületen még nem látszik)
+
+- Az album-ugró gomb lenyomás-kezelése két megnevezett függvénybe került, hogy
+  a viselkedése minden rendszeren egyformán mérhető legyen. A gomb ugyanúgy
+  működik, mint eddig. (#857)
+
+## [0.8.531] – 2026-09-19
+
+### Hozzáadva
+
+- **Album-ugró gombok a rács görgetősávján (#857).** A sáv tetején és alján
+  egy-egy kettős nyíl: az egyikkel az előző, a másikkal a következő mappára
+  ugorhatsz anélkül, hogy végiggörgetnéd a képeket. Nyomva tartva ismételnek,
+  ahogy az eredeti Picasában. A sáv maga marad a megszokott keskeny,
+  lapos stílusban.
+
+
+## [0.8.530] – 2026-09-19
+
+### Hozzáadva
+
+- **A biztonsági mentés lemezképbe is mehet (#2074).** A Képek biztonsági
+  mentése ablakban választható, hogy a mentés mappába, CD- vagy
+  DVD-lemezképbe készüljön. Ha a gyűjtemény nem fér el egy lemezen, több,
+  **sorszámozott** lemezkép készül (`picasapy-mentes-01.iso`, `-02.iso`…),
+  pontosan akkora darabokban, amekkora egy valódi lemezre ráfér. Minden
+  lemezképen ott vannak a képek a saját mappaszerkezetükben, mellettük a
+  `.picasa.ini` (címkék, csillagok), és a gyökérben egy `files.txt` lista —
+  a mentés a program nélkül is olvasható. A lemezkép felcsatolható, és
+  bármelyik íróprogrammal lemezre írható; a program maga nem ír lemezt.
+
+
+## [0.8.529] – 2026-09-19
+
+### Hozzáadva
+
+- **Elindítható a Picasából való átvétel: `Eszközök ▸ Import a
+  Picasából…` (#3132).** A régi Picasa adatbázisából a nevek, a
+  kulcsszavak és a helyek átkerülnek a képek mellé — eddig a gépezet
+  készen állt, de nem volt hol elindítani. Kérésre fut, bármikor
+  megismételhető, és a végén megmondja, hány mappát érintett, hány
+  kulcsszó, hely és név került be, és hány fotóhoz nem nyúltunk hozzá
+  azért, mert ott már volt adat.
+
+
+## [0.8.528] – 2026-09-19
+
+### Javítva
+
+- **A szerkesztések most abban a sorrendben futnak, ahogy állnak (#3229).**
+  Eddig a keret és a vágás mindig a legvégére került, ezért egy keret utáni
+  szépia nem színezte a keretet. Az eredeti Picasa exportja eldöntötte: ott a
+  keret is barnás lesz. Ettől a szerkesztő élő előnézete és a mentett kép is
+  ugyanazt adja.
+
+### Előkészítés (a felületen még nem látszik)
+
+- A képregény-effekt pontmaszkja a MÉRT alakra került (a csempe közepétől
+  a pereme felé lineárisan halványuló pont). A megjelenő kép nem változik:
+  a mérés kimutatta, hogy a mai raszter pontsugara pontosan ez a maszk,
+  a tónussal küszöbölve. (#2476)
+
+- Megvan az öt lassú szűrő (Automatikus kontraszt, Színhőmérséklet,
+  Cross-process, Feljavítás, Melegítés) gyorsításához szükséges
+  keresőtábla, pontosan a mai képfeldolgozás kimenetéből — a
+  grafikus gyorsítás bekötése a következő lépés. (#22)
+
+## [0.8.527] – 2026-09-19
+
+### Hozzáadva
+
+- Elkészült a közzététel-panel 21 vezérlője (Ajándék-CD, biztonsági
+  mentés, feltöltés) — pontosan azokon a helyeken és azokkal a magyar
+  feliratokkal, ahogy az eredeti Picasában. A három üzemmód működése
+  külön lépés, ezért a panel egyelőre nincs bekötve a menübe. (#2508)
+
+## [0.8.526] – 2026-09-19
+
+### Hozzáadva
+
+- Megvan az objektívnevek feloldásához szükséges két tábla (230 Canon +
+  416 Nikon objektív), pontosan úgy, ahogy az eredeti Picasa keresett
+  bennük. A tulajdonságok panelen a név megjelenítése a következő
+  lépés. (#3121)
+
+## [0.8.525] – 2026-09-19
+
+### Hozzáadva
+
+- A személy-album fejlécén megjelent a **További javaslatok keresése**
+  gomb: ha épp nincs eldöntendő javaslat, egy kattintással lejjebb viszi
+  a felismerési küszöböt, hogy több névre kapj javaslatot — a tárolt
+  beállítás nem változik. (#2187)
+
+## [0.8.524] – 2026-09-19
+
+### Javítva
+
+- A vágás, a retusálás, a szöveg és a vörösszem Alkalmaz/Mégse gombja
+  visszakerült a saját panelbe — az eredetiben is ott ül. A kép fölötti
+  sáv mostantól csak a kiegyenesítésnél jelenik meg, a döntés-csúszkával
+  együtt. (#3320)
+
+## [0.8.523] – 2026-09-19
+
+### Változott
+
+- A buboréksúgó az eredeti Picasa mért krómját viseli: krémszínű
+  háttér (`#F4F1E5`), `#B7B5AC` keret, derékszögű sarok, Arial felirat,
+  és a képen mért árnyék a jobb és az alsó élen. A 600 ms-os
+  késleltetés változatlan. (#901)
+
+## [0.8.522] – 2026-09-19
+
+### Változott
+
+- A felület betűcsaládja mostantól a QML-oldalon is nevesített token
+  (`Theme.uiFamily` = a mért Open Sans), így a jövőbeli komponensek is a
+  mért családra hivatkozhatnak. A keskeny család szándékosan üres marad,
+  mert a mérés nem ad egyértelmű győztest. (#3310)
+
+## [0.8.521] – 2026-09-19
+
+### Javítva
+
+- Négy felirat az eredeti Picasa hivatalos szövegére javítva: a rejtett
+  mappák jelszóüzenete („A jelszavak nem egyeztek."), a megerősítő ablakok
+  „Ne kérdezze meg újra" jelölője (két helyen) és a címke-menü „A címke
+  hozzáadása a teljes kijelölt részhez" pontja. (#3358)
+
+## [0.8.520] – 2026-09-18
+
+### Javítva
+
+- **Eltűnt a kötési hurok a kék információs sávnál** (#3289) — indításkor a
+  Qt ismétlődően figyelmeztetett a tálca fölötti szöveg miatt, és a
+  naplóban ez elfedte a fontosabb üzeneteket. A szöveg rövidítése
+  (hosszú fájlnévnél) most a betű méreteit egy olyan úton kérdezi le,
+  ami nem írja felül a saját bemenetét. A rövidítés viselkedése
+  változatlan.
+
 ## [0.8.519] – 2026-09-18
 
 ### Javítva

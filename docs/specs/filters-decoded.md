@@ -660,10 +660,34 @@ A csővezeték:
 A pont sugara a tónussal nő: fekete területen a csempe tömören fedett (a
 sarkokat a másik, fél csempével eltolt ág fedi le), fehéren nincs festék.
 
-**Nyitott:** a natív pontmaszk pontos antialiasingja és peremkerekítése — a
-PicasaPy egy pixelnyi lineáris átmenetet használ (`halftone._EDGE_SOFTNESS_PX`).
-Ez a raszter jellegét nem befolyásolja, de a pixelhű egyezéshez
-golden-összevetés kell (#317).
+**A natív fedettségi profil — MEGFEJTVE (#3390, 2026-09-19).** A pontprofil
+nem külön „1 px-es antialiasing" paraméterből áll. A `TiledImageMask` útja a
+`0x00bbaa90` → `0x008f3840` → `0x008f3970` láncon **két megállót** ad át:
+pozíció `0x00` és `0xFF`, alfa-végpontokkal. A közös LUT-építő
+`0x008f3700` minden packed 8 bites csatornára ezt számolja:
+
+```text
+TRUNC(c0 + t · (c1 − c0))
+```
+
+`0x008f3970` a két megálló közötti rekeszeket előállítja, majd a pixel
+`sqrt`-tel kapott sugarát 8.8-as egészre csonkolja. A felső byte a LUT-rekesz,
+az alsó byte a tört súlya; a két szomszédos rekesz keverése csatornánként:
+
+```text
+(next · frac + current · (256 − frac)) >> 8
+```
+
+A skalár út `0x008f404f` környékén, a SIMD út `0x008f3ce5–0x008f3df9`
+között ugyanazt az elvet használja (`sqrtps` négy pixelen). **Nincs
+felülmintavételezés és nincs alpixel-akkumuláció.** A két alfa-végponttal a
+256 rekeszes kontroll-LUT pontosan `[255, 254, …, 1, 0]`.
+
+**Nálunk / teendő.** A `halftone.py` jelenleg külön
+`_EDGE_SOFTNESS_PX = 1.0` átmenetet használ; ez nem a binárisból származó
+paraméter. A natív LUT- és byte-keverési út átvezetése külön terméki munka
+(#3401). A kutatási lelet mechanizmusa **megerősített**, de a PicasaPy-ba
+átvezetés és annak mért hatása még nincs megvalósítva.
 
 ### `autobacklight` és a kisbetűs `focalpixelate` (#567)
 
@@ -3672,8 +3696,8 @@ Vagyis a tizenkettőből **hármat**: `tileWidth`, `tileHeight`, `alphaMin`
 #### Ami ebből következik
 
 1. **Az `alphaMin = 0.0` explicit** — a maszk alfa alulról 0-ig fut, tehát a
-   pont közepe teljesen átlátszó. Az `alphaMax` **nincs megadva**, vagyis az
-   alapértéke (feltehetően 1,0) érvényes.
+   pont közepe teljesen átlátszó. Az `alphaMax` **nincs megadva**, vagyis a
+   2026-09-18-i bináris-ellenőrzés szerint az 1,0-s tartalékérték érvényes.
 2. **A pont mérete nem külön paraméter:** a `padding*` négyese szabja meg a
    csempén belül, és a `Comicize` **egyiket sem állítja** — a pont/csempe
    arány tehát **beégetett**, nem a felhasználó állítja. Ez magyarázza, miért
@@ -3684,8 +3708,8 @@ Vagyis a tizenkettőből **hármat**: `tileWidth`, `tileHeight`, `alphaMin`
 
 *Bizonyítottsági fok: megerősített* az attribútum-névsorra (a `.rdata`
 sztringjei az olvasó-hívások előtt) és arra, hogy a `Comicize` melyik hármat
-állítja · **nyitott**: a kilenc beégetett alapérték számszerű értéke — az a
-konstruktorban (`0x00bba030` / `0x00bba250`) lesz.
+állítja · **lezárva** a kilenc nem-explicit érték hozzárendelése és számszerű
+értéke a lenti, 2026-09-18-i ellenőrzésben (`filterdesc-registry.md`).
 
 #### ⚠️ A „kilenc beégetett alapérték" NEM az objektumban van (2026-08-16)
 
@@ -3780,17 +3804,25 @@ független, második bizonyítéka, most a gyorsítótár-kulcs oldaláról.
    eredetiben a csempe geometriája **állandó** (gyorsítótárazott), és a
    tónus a láncból jön. Ez a #1606 „kb. 1,5× túl erős" leletének mechanizmusa.
 
-#### Ami NYITVA marad — pontosan egy tétel
+#### ✅ A tartalékértékek lezárva (2026-09-18, #2476)
 
-Az `alphaMax` (és a `padding*`) **tartalék értéke**. A `0x00bba670` nem
-tartalmaz numerikus konstanst, tehát a kitöltés máshol van: a fenti
-gyorsítótár-kulcsot adó **paraméter-struktúra** feltöltőjében (a `ebx`,
-amellyel a `0x00bba980` dolgozik). A következő kör belépője ez a feltöltő.
+A korábbi „tartalékérték nyitva” állítás elavult. A `FUN_00bba250`
+`0x00c7dbc4`-ről betöltött `0,8` értéke, a `fldz`/`fld1` alfa-végpontok és
+a négy nullázott padding-mező a `filterdesc-registry.md` friss,
+fájlonként visszakereshető ellenőrzésében áll. A vizsgált bináris SHA-256-a
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
 
-*Bizonyítottsági fok: **megerősített** a kétmegállós lineáris rámpára, a
-radiális geometriára, az eltolás-térképre és a gyorsítótárazásra (helyi
-diszasszemblálás, minden lépés címmel) · **nyitott** az `alphaMax`/`padding*`
-tartalékértéke.*
+*Bizonyítottsági fok: **megerősített** a kétmegállós lineáris radiális
+rámpára, a `scaleWidth`/`scaleHeight` = 0,8 értékére, az
+`alphaMin`/`alphaMax` = 0,0/1,0 végpontokra, a négy padding = 0 értékre,
+az eltolás-térképre és a gyorsítótárazásra. A bináris kutatási kérdés
+lezárult.*
+
+⚠️ **Helyesbítés (2026-09-19, #2476):** az „átvezetés fejlesztési feladat"
+állítás elavult. Az állandó maszkot a tónussal KÜSZÖBÖLVE a
+`halftone_branch()` mai sugár-törvénye jön ki — mind a 256 tónuson 0 eltérő
+képponttal, negatív kontrollal. Ld. a lap végén: *„A Comicize pontja: az
+ÁLLANDÓ maszk és a tónussal növő sugár UGYANAZ"*.
 
 ### A `CircularGradientImageMask` HÉT attribútuma — és egy, amit sosem állítunk (2026-08-16)
 
@@ -5331,11 +5363,12 @@ Ez **bitre egyezik** a mi `zoom_max_offset` (`floor(width · Impact / 200)`)
 esetből 9-ben bitre azonos, a maradék háromban a `REFLECT` is azonos), a két
 képlet a natív magból diszasszemblálva.*
 
-### A `TiledImageMask` beégetett alapértékei — a KÖTŐ függvény (2026-08-25)
+### A `TiledImageMask` beégetett alapértékei — a KÖTŐ függvény (2026-08-25; hozzárendelés lezárva 2026-09-18)
 
-A `#785` nyitott pontja: *„a 12 attribútum megvan, a beégetett alapértékek
-nincsenek."* A kötő függvény megvan, az **értékek** megvannak, a
-**hozzárendelés** nem.
+A #785 egykori nyitott pontja: *„a 12 attribútum megvan, a beégetett
+alapértékek nincsenek."* A kötő függvény, az **értékek** és a
+**hozzárendelés** ma már mind visszakereshető; a lezáró, független ellenőrzés
+a lap végén és a `filterdesc-registry.md` megfelelő szakaszában áll.
 
 #### Hol vannak: vtable 7. rekesz — `0x00bba580` (234 b)
 
@@ -5368,27 +5401,19 @@ A leíró (`filterdesc.xml` 781–782) ezeket **megadja**: `tileWidth`,
 ⇒ **Tartalékon fut:** `scaleWidth`, `scaleHeight`, `paddingLeft`,
 `paddingTop`, `paddingRight`, `paddingBottom`, `alphaMax` — **hét darab**.
 
-#### ⚠️ Amit NEM sikerült: a hozzárendelés
+#### ✅ A hozzárendelés lezárva (2026-09-18)
 
-**Hét** tartalékon futó attribútum áll szemben **hat** lebegőpontos
-tartalékkal ⇒ a blokk **nem 1:1** a nem beállított attribútumokkal, tehát a
-sorrendből nem lehet leolvasni, melyik melyiké.
+A korábbi „hét attribútum / hat lebegőpontos tartalék” rés a korabeli
+olvasási korlátot rögzíti, nem a jelenlegi állapotot. A célzott
+`FUN_00bba250`/`FUN_00bbaa90` ellenőrzés a mezőneveket és a fogyasztási
+eltolásokat egymásra zárja: `scaleWidth`/`scaleHeight` = 0,8,
+`paddingLeft/Top/Right/Bottom` = 0, `alphaMin` = 0,0, `alphaMax` = 1,0.
+Részletes címek és a bináris SHA-256: `filterdesc-registry.md`,
+„Független helyi ellenőrzés (2026-09-18)”.
 
-A `CircularGradientImageMask`-nál volt keresztellenőrzés (a `FocalZoom`
-**fölöslegesen** kiírta az `innerAlpha="0"` / `outerAlpha="1"` értékeket,
-épp a tartalékokat) — **itt nincs ilyen**: a `Comicize` egyetlen redundáns
-attribútumot sem ad meg.
-
-**Az is kizárva, hogy a konstansból következtessünk:** a `[0xc7dbc4]`
-(`0.8f`) **általános, megosztott** konstans — **14 helyen** hivatkozzák a
-`.text`-ben (`0x609599`, `0x782be8`, `0x7f848c`, `0x83a13e`, `0x868b1f` …),
-tehát nem hordoz attribútum-specifikus jelentést.
-
-**A következő lépés:** a kötő két hívottja — `0xbbace0` és `0xbbafe0` —
-másolja a blokkot az objektum mezőibe; ott derül ki a leképezés.
-
-*Bizonyítottsági fok: **megerősített** a kötő helye, a hat érték és a
-`Comicize` hét tartalékon futó attribútuma; **nyitva** a hozzárendelés.*
+*Bizonyítottsági fok: **megerősített**; a bináris kérdés lezárult, a
+`halftone_branch()` helyett a natív statikus maszk teljes terméki
+átvezetése fejlesztési feladat.*
 
 ---
 
@@ -6711,3 +6736,137 @@ objektumból veszi (`[edi+0x10]`, `[edi+0x14]`, `[edi+0x18]`, `[edi+0x1c]`,
 `[edi+0x34]`); ezek alapértékét a feltöltő adja. Amíg ez nincs kiolvasva, a
 pont/csempe arány **szabad paraméter**, és a fenti mérés szerint semmilyen
 értéke nem hoz javulást — tehát nem hangolással kell folytatni.
+
+## A Comicize pontja: az ÁLLANDÓ maszk és a tónussal növő sugár UGYANAZ (2026-09-19, #2476)
+
+*Ez a szakasz a #2476 jegy kérdését zárja le. A jegy címe azt állította, hogy
+„nálunk a tónus a sugarat modulálja, az eredetiben állandó" — a mérés szerint ez
+**hamis szembeállítás**: a két leírás ugyanannak a szerkezetnek a két oldala.*
+
+### A bemenet: a maszk mind a tizenkét tartalékértéke ki van olvasva
+
+A `glimmer::TiledImageMask` konstruktora (`0x00bba250`, ld. a 2026-09-18-i
+szakaszt) `alphaMin = 0,0`, `alphaMax = 1,0`, `scaleWidth = scaleHeight = 0,8`,
+`offsetX/Y = 0` és mind a négy `padding = 0` értéket ír be, és a szállított
+`filterdesc.xml` egyik `TiledImageMask` példánya sem írja felül őket. A rajzoló
+(`0x00bbaa90`) **két** megállót ad át (`0x00bbacba: push 2`), ugyanannak a
+megálló-kiértékelőnek (`0x008f3970`), mint a `CircularGradientImageMask`.
+
+⇒ a maszk állandó pontrács: a csempe közepén `1,0`, a csempe `0,8`-szoros
+beírt körének peremén `0,0`, **lineárisan** — nincs benne semmi képfüggő.
+
+### A mérés: küszöbölve a két leírás bitre azonos
+
+Ha ezt az állandó rámpát a (pixelesített, görbézett) tónus **küszöbének**
+használjuk, akkor
+
+    alphaMax − ρ/0,8 > tónus   ⟺   ρ < 0,8 · (1 − tónus)
+
+ahol `ρ` a beírt körrel normált sugár. A jobb oldal **szó szerint** a
+`halftone.halftone_branch` sugár-törvénye. Mérve (24 képpontos csempe, 96×96,
+mind a 256 tónus-szint):
+
+| | eltérő képpont |
+|---|---:|
+| natív maszk küszöbe vs. a mai sugár-törvény | **0** |
+| ugyanaz, de a maszk skálája 0,9-re hangolva (kontroll) | 105 536 |
+
+A 234-es tónus-szinttől a mai ág a lágyított peremmel (`_EDGE_SOFTNESS_PX`)
+elnyeli az utolsó, **képpont alatti** szemcsét — az eltérés ott
+**egyirányú** (csak a mai ág veszít festéket), és nem a sugár-törvényből jön.
+Őr: `tests/render/test_comicize_maszk_kuszob_2476.py`.
+
+⇒ **A render-láncban nincs mit átvezetni.** A `tiled_dot_mask` alakja viszont
+tippelt volt (kemény korong egy képpontos antialiasinggal); ez a kör a MÉRT
+kétmegállós rámpára cserélte.
+
+### Ami ezek után nyitva marad — #3390
+
+A 15 eredeti Picasa-export újramérése (`research/comicize-sweep/`, a #1606
+módszerével) a mai kódra:
+
+| tengely | miénk | referencia |
+|---|---|---|
+| `BlurXY` 0…100 | 4,729 … 4,764 | 3,693 … 3,824 |
+| `DotFade` 0…100 | 9,506 … 0,296 | 7,691 … 0,295 |
+| `DotContrast` 0…100 | 0,410 … 9,353 | 1,716 … 5,067 |
+
+átlagos |amplitúdó-hiba| **1,3661**, átlag ΔE **5,9326** (n = 15; a ΔE a #3246
+körének számával azonos, tehát a metrika ugyanaz).
+
+A maradék **két, mérhetően különböző** tétel, és mindkettő a küszöb
+**fedettségi profilja**, nem a sugár-törvény:
+
+1. a `BlurXY`- és `DotFade`-tengelyen az alak követi a referenciát, csak az
+   amplitúdó kb. **1,25×** nagyobb (a `DotFade = 100` eltűnés pontos);
+2. a `DotContrast`-tengelyen a **meredekség** más, a középső álláson nem.
+
+A megnevezett következő gépi irány a #3390-ben áll: a `0x008f3970`
+megálló-kiértékelő — hogyan lesz a két megálló közti rámpából kiírt bájt, és
+van-e felül-mintavételezés.
+
+### ⭐ A kétmegállós LUT bájt-útja — nincs felülmintavételezés (2026-09-19, #3390)
+
+A célzott helyi diszasszemblálás a vizsgált Picasa3.exe-n (SHA-256:
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`) a
+korábban csak szerkezeti szinten leírt rámpát bájtszinten is lezárja.
+
+#### 1. A megállótábla
+
+- A `0x00bbaa90` két pozíciót ad a `0x008f3970`-nek (`0x00bbacba: push 2`). A
+  pozíciók `0x00` és `0xFF` (`0x00bbaba8`/`0x00bbabc0`), az alfa-végpontok a
+  `0x00bbab26`–`0x00bbab92` úton készülnek.
+- A `0x008f3970` (2158 bájt) a `0x008f39c2`-n megkapja a megállószámot, a
+  `0x008f39dd`–`0x008f3a01` ciklusban a szomszédos pozíciókat olvassa, majd
+  `0x008f3a0d`–`0x008f3a4b` között minden köztes rekeszt a
+  `0x008f3700` szín-lerp hívásával tölt.
+- A `0x008f3700` (308 bájt) csatornánként ezt hajtja végre:
+
+  ```text
+  ki = TRUNC(c0 + t · (c1 − c0))
+  ```
+
+  A `0x008f3722`–`0x008f3748`, `0x008f376f`–`0x008f3793`,
+  `0x008f37be`–`0x008f37de` és `0x008f37fb`–`0x008f381d` blokkok az x87
+  kerekítési módját `0xc00`-ra állítják, majd `fistp`-vel csonkolnak. A
+  két alfa-végponttal (`c0 = 255`, `c1 = 0`) a 256 elemű tábla mért alakja:
+  `[255, 254, 253, …, 2, 1, 0]` — minden egymást követő rekesz különbsége
+  pontosan `1`.
+
+#### 2. A képponti kiértékelés
+
+A `0x008f3970` rajzolóága a sugárértéket képpontonként állítja elő:
+
+- SIMD-ágban `sqrtps` (`0x008f3cf6`/`0x008f3e48`) négy képpont távolságát
+  számolja párhuzamosan, majd `cvtps2dq` (`0x008f3cf9`/`0x008f3e4b`)
+  egész, fixpontos távolságra alakítja;
+- a felső bájt a LUT-rekeszt, az alsó bájt a szomszédos rekeszek közti
+  8 bites súlyt adja (`0x008f3d44`–`0x008f3d65`, illetve a skalárágban
+  `0x008f4086`–`0x008f411d`);
+- a két szomszédos bájt súlyozott összege `>> 8` után kerül a kimenetre
+  (`0x008f3dd5`–`0x008f3df1`, illetve `0x008f40aa`–`0x008f411a`).
+
+Ez **képpontonkénti radiális LUT-kiértékelés**, nem felülmintavételezés: a
+négyes SIMD-út négy képpontot dolgoz fel, nem négy almintát vesz egyetlen
+képponthoz. A függvényben nincs mintaszámláló vagy alpixel-akkumulációs ciklus;
+a ciklusok a megállótáblát, illetve a kimeneti képpontokat járják.
+
+#### 3. Eredeti / nálunk / teendő
+
+| | eredeti, binárisból | PicasaPy mai kontroll |
+|---|---|---|
+| nyers maszk | `TRUNC(c0 + t·(c1−c0))`, két megálló, 256 rekesz, fixpontos képponti köztes érték | `halftone_branch()` tónussal számolt sugarat küszöböl |
+| külön él-lágyító paraméter | **nincs** ebben a rajzolóútban | `_EDGE_SOFTNESS_PX = 1,0` a `halftone.py:47–54` alatt |
+| saját kód kontrollja | — | `dot_size_for(1600) = 24`, `DOT_SCALE = 0,8`; a célzott Comicize-próbák **82 passed in 5,31 s** |
+
+A `0x008f3970` ezért a nyers maszk rámpáját és a képponti kiértékelését
+megmagyarázza, de a teljes `DotContrast`-válasz meredekségét önmagában nem
+azonosítja: az a rámpa előtt álló `MasterCurve`/`Pixelate`/`BW`/`GetVar … Mask`
+lánc izolált, natív golden-összevetését igényli. Ez a rész **NINCS MEG**;
+termékkódot ebben a körben nem módosítottam.
+
+*Forrás: `binary-index/functions.csv` (`0x008f3700` = 308 bájt,
+`0x008f3970` = 2158 bájt), a helyi `annot_disasm.py` célzott kimenete,
+`0x00bbaa90`/`0x00bbacba`, valamint a mai kontroll futása a
+`tests/render/test_comicize_569.py`, `test_comicize_gorbe_1606.py` és
+`test_comicize_maszk_kuszob_2476.py` fájlokon.*

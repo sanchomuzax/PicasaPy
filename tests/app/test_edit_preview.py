@@ -200,9 +200,11 @@ class TestPrefixCache:
         calls: list[tuple] = []
         original = edit_preview.apply_filters
 
-        def counting(image, ops):
+        def counting(image, ops, **kwargs):
+            # a `bejovo` (#3229) átmegy: a záró hívás a prefix
+            # koordináta-állapotát kapja meg
             calls.append(tuple(ops))
-            return original(image, ops)
+            return original(image, ops, **kwargs)
 
         monkeypatch.setattr(edit_preview, "apply_filters", counting)
         return calls
@@ -227,9 +229,7 @@ class TestPrefixCache:
         # csak az utolsó (megváltozott) op fut újra, a fill-prefix nem
         assert calls == [(tilt2,)]
 
-    def test_single_op_interaction_runs_one_op_per_register(
-        self, qt_app, tmp_path, monkeypatch
-    ):
+    def test_single_op_interaction_runs_one_op_per_register(self, qt_app, tmp_path, monkeypatch):
         calls = self._counting_apply_filters(monkeypatch)
         provider = _make_provider()
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
@@ -278,6 +278,8 @@ class TestPrefixCache:
         provider.register("1", photo, (fill, tilt))
         # leregisztrálás után nincs cache-találat: prefix + utolsó op fut
         assert calls == [(fill,), (tilt,)]
+
+
 class TestLruEviction:
     """#128: lapozáskor a provider nem nőhet korlátlanul — kis LRU tartja
     az utolsó néhány kép dekódolt forrását/előnézetét, a régebbiek
@@ -405,9 +407,7 @@ class TestTextOverlayPreview:
         provider.register("1", photo, ())
         without_text = provider.requestImage("1", None, None)
 
-        provider.register(
-            "1", photo, (), text=TextOverlaySpec(content="Hi", x=0.1, y=0.8)
-        )
+        provider.register("1", photo, (), text=TextOverlaySpec(content="Hi", x=0.1, y=0.8))
         with_text = provider.requestImage("1", None, None)
 
         assert without_text != with_text
@@ -451,7 +451,9 @@ class TestGpuPreviewImages:
         photo = _make_gradient_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         provider = _make_provider()
         provider.register(
-            "1", photo, (FilterOp("enhance", ("1",)),),
+            "1",
+            photo,
+            (FilterOp("enhance", ("1",)),),
             gpu_prefix_ops=(),
         )
         prefix_image = provider.requestImage("1?gpuprefix=1&rev=1", None, None)
@@ -466,9 +468,7 @@ class TestGpuPreviewImages:
 
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         provider = _make_provider()
-        ramp = np.tile(
-            np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3)
-        )
+        ramp = np.tile(np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3))
         provider.register("1", photo, (), gpu_lut=ramp)
         lut_image = provider.requestImage("1?gpulut=1&rev=1", None, None)
         assert not lut_image.isNull()
@@ -480,9 +480,7 @@ class TestGpuPreviewImages:
         import numpy as np
 
         provider = _make_provider()
-        ramp = np.tile(
-            np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3)
-        )
+        ramp = np.tile(np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3))
         provider.update_gpu_lut("1", ramp)
         lut_image = provider.requestImage("1?gpulut=1&rev=1", None, None)
         assert not lut_image.isNull()
@@ -495,9 +493,7 @@ class TestGpuPreviewImages:
 
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         provider = _make_provider()
-        ramp = np.tile(
-            np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3)
-        )
+        ramp = np.tile(np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3))
         provider.register("1", photo, (), gpu_prefix_ops=(), gpu_lut=ramp)
         provider.unregister("1")
         assert provider.requestImage("1?gpuprefix=1&rev=1", None, None).isNull()

@@ -59,103 +59,12 @@ jobs:
           # #1722: a `main`-re érkező push ELŐZŐ állapota. PR-nél üres.
           ELOZO: ${{ github.event.before }}
           MOSTANI: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-
-          # A `main`-en is ugyanaz a döntés szülessen, mint a PR-en. Eddig
-          # itt feltétel nélkül `kod=true` állt, mert push-nál nincs
-          # `pull_request.base` — de a push-eseménynek VAN előzménye
-          # (`github.event.before`), tehát van mihez hasonlítani. Enélkül
-          # minden dokumentációs merge elvitte a teljes mátrixot a
-          # `main`-en (mérve: a #1434 docs-commitja 15 percet).
-          #
-          # Az összefogó `Test (…)` jobok `if: always()`-szel futnak, és
-          # `kod=false` mellett zölden jelentenek — a kötelező ellenőrzés
-          # tehát ITT is megérkezik, nem „kihagyva" állapotban.
-          if [ -z "${BASE:-}" ]; then
-            # Csupa nulla = az ág most jött létre; ilyenkor nincs előzmény.
-            if [ -n "${ELOZO:-}" ] \
-               && [ "$ELOZO" != "0000000000000000000000000000000000000000" ] \
-               && git cat-file -e "$ELOZO^{commit}" 2>/dev/null; then
-              echo "push — összevetés az előző main-állapottal ($ELOZO)."
-              BASE="$ELOZO"; HEAD="$MOSTANI"
-            else
-              echo "Nincs használható előzmény (új ág vagy kézi indítás) — teljes kör."
-              echo "kod=true" >> "$GITHUB_OUTPUT"; exit 0
-            fi
-          fi
-          # #3288: az ELÁGAZÁS HELYÉHEZ kell mérni, nem a base-ág mai
-          # csúcsához. A `pull_request.base.sha` a main tipje, az pedig a PR
-          # élete alatt továbbmegy — és akkor a közben beolvadt IDEGEN
-          # commitok fájljai is „a PR változásának" látszanak.
-          #
-          # Mérve a PR #3287-en (csak dokumentáció): a merge-base-től 2 fájl,
-          # a base.sha-tól 9 — köztük öt QML és egy .js, egyik sem a PR-ből.
-          # A job emiatt `kod=true`-t adott, és lefutott a teljes mátrix.
-          # A projekt napi több kiadást lát, tehát a main szinte mindig
-          # előrébb van: a gyors dokumentációs út így gyakorlatilag soha nem
-          # működött.
-          if ALAP="$(git merge-base "$BASE" "$HEAD" 2>/dev/null)" \
-             && [ -n "$ALAP" ]; then
-            echo "Összevetés az elágazás helyétől ($ALAP)."
-          else
-            # Fail-safe: ha nincs közös előd (sekély klón, átírt történet),
-            # a TELJES kör fut. Kevesebb mérés helyett inkább több.
-            echo "Nincs közös előd — a base.sha marad, teljes kör."
-            ALAP="$BASE"
-          fi
-          valtozott="$(git diff --name-only "$ALAP" "$HEAD")"
-          echo "Változott fájlok:"; echo "$valtozott"
-
-          # Nem érinti a kód futását: bármilyen .md és a docs/ egésze.
-          # ⚠️ A .github/ SZÁNDÉKOSAN kód: ha a CI-t magát változtatjuk,
-          # a teljes mátrixnak le KELL futnia, különben egy elrontott
-          # munkafolyamat-definíció zölden beolvad.
-          #
-          # A verzióemelés két fájlja (pyproject.toml, __init__.py) csak
-          # akkor számít nem-kódnak, ha bennük CSAK a verziósor változott —
-          # kódot ezen az úton nem lehet becsempészni.
-          maradek="$(grep -vE '^(.*\.md|docs/.*)$' <<<"$valtozott" || true)"
-
-          # Igaz (0), ha a fájlban a verziósoron KÍVÜL is változott valami.
-          van_erdemi_valtozas() {   # $1 = fájl, $2 = a verziósor mintája
-            git diff -U0 "$ALAP" "$HEAD" -- "$1" \
-              | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
-              | grep -vqE "$2"
-          }
-          if grep -qx 'pyproject\.toml' <<<"$maradek" \
-             && ! van_erdemi_valtozas pyproject.toml '^[+-]version = '; then
-            maradek="$(grep -vx 'pyproject\.toml' <<<"$maradek" || true)"
-          fi
-          if grep -qx 'src/picasapy/__init__\.py' <<<"$maradek" \
-             && ! van_erdemi_valtozas src/picasapy/__init__.py '^[+-]__version__ = '; then
-            maradek="$(grep -vx 'src/picasapy/__init__\.py' <<<"$maradek" || true)"
-          fi
-
-          # #1863: a `docs/` alatt TESZTADAT is van — a `check_decision_links`
-          # és a `check_protected_features` a TELJES fát bejárja, tehát
-          # bármely lap változása hathat egy teszt eredményére. MÉRVE: 105
-          # docs-fájlt nyitnak meg a tesztek, nem kilencet, ahogy a #1863
-          # jegy szemre becsülte — kivétel-listával ez nem javítható.
-          #
-          # Ezért a mátrix továbbra is kimarad (az olcsó marad olcsó), de a
-          # `docs/`-ot OLVASÓ őrök külön lefutnak (`docs-orok` job), és a
-          # kötelező `Test (ubuntu-latest)` MEGVÁRJA őket. Enélkül ez is
-          # csak egy nem-blokkoló láb lenne — pontosan az a hiba, ami a
-          # #1858-at zölden beolvasztotta.
-          if grep -qE '^docs/' <<<"$valtozott"; then
-            echo "docs=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "docs=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          if [ -n "$maradek" ]; then
-            echo "A kód futását ÉRINTŐ fájlok:"; echo "$maradek"
-            echo "kod=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Csak dokumentáció és/vagy verziósor — a mátrix kimarad."
-            echo "kod=false" >> "$GITHUB_OUTPUT"
-          fi
+        # #3298: a döntés KÜLÖN, próbasorral őrzött szkriptben él
+        # (`tests/test_ci_valtozas_3298.py`). Korábban itt állt beágyazott
+        # shellként, és semmi nem mérte — pedig épp ő dönti el, hogy a kód
+        # kap-e egyáltalán tesztfutást. A hiba iránya néma: nem piros CI,
+        # hanem KIMARADT mérés, zöld pipával.
+        run: python3 scripts/ci_valtozas.py
 
   # A két platform KÜLÖN hívás — ld. a `teszt-darabok.yml` fejlécét: egyetlen
   # közös mátrix eredménye egyben látszik, és egy bukó windows-darab a

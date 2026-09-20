@@ -328,6 +328,60 @@ azonosságát csak a jelenlegi fix vázon mértük. Saját kérdések: **1 lezá
 (R2/R3 kollázs-lap kontroll) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül ·
 0 „csak nyitva".*
 
+### 4.1/c ⭐ R2/R3 szerkezeti kontroll — a négy alsó globális gomb (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` a `cancelbutton`, `resetbutton`,
+`makedesktop` és `sharebutton` elemeket a `tabbase` gyerekeiként, `m_offsetLB`
+horgonyzással deklarálja (`collagepanel.tre:490–501`). A PicasaPy futó QML-fája
+ugyanezt a szülőkapcsolatot tartja-e, és a négy gomb doboza az eredeti
+erőforrásban mért helyen marad-e ablakméret-váltáskor?
+
+**Olcsó bizonyítéklánc.**
+
+- **Erőforrás:** a `.tre` szerint mind a négy közvetlen szülője
+  `collagepanel/tabbase`, a horgonyzás `m_offsetLB`; az eredeti geometria
+  `picasa-create-features.md:631–639` szerint `(10,415,127×28)`,
+  `(147,415,133×28)`, `(10,448,127×28)` és `(147,448,133×28)`.
+- **Indexelt bináris kontroll:** a `string_xrefs` pozitív találata mind a négy
+  névre a panel-elosztó `0x0082d570` (`FUN_0082d570`, RVA `0x0042d570`,
+  4721 bájt) címe; a `cancelbutton` mentési útja emellett
+  `0x0083ba60`-nál is megjelenik. A `tabbase` pozitív kontrolljai
+  `0x0082a670`, `0x0083d610` és `0x0083d670`. Ez útvonal-kontroll, nem a
+  szülőfa önálló bizonyítéka.
+- **Mai kód:** a négy QML-gomb a `CollagePanel.qml:217–264` alatt közvetlenül
+  a `collagePanel` gyökérhez tartozik; a mai koordináták az erőforrás táblájának
+  négy dobozát adják.
+- **Pontos futásidejű mérés:** a célzott kirajzolt őr
+  `python3 -m pytest -q --tb=short -p no:cacheprovider
+  tests/app/qml_functional/test_collage_panel_layout_945.py` eredménye
+  **52 passed in 10,25 s**. A külön `QQuickView` parent-probe mindhárom
+  ablakméreten (800×534, 1280×800, 1920×1080) ugyanazt a négy dobozt mérte:
+  összesen **12/12** geometriai egyezés; mind a négy futásidejű közvetlen
+  szülője `collagePanel`.
+
+| gomb | eredeti `.tre`-szülő és horgony | PicasaPy futásidejű szülő | mért doboz mindhárom ablakméreten | ítélet |
+|---|---|---|---|---|
+| `makedesktop` / `collageMakeDesktopButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(10,415,127×28)` | **R2 eltér; R3 egyezik** |
+| `sharebutton` / `collageShareButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(147,415,133×28)` | **R2 eltér; R3 egyezik** |
+| `resetbutton` / `collageResetButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(10,448,127×28)` | **R2 eltér; R3 egyezik** |
+| `cancelbutton` / `collageCloseButton` | `tabbase`; `m_offsetLB` | `collagePanel` | `(147,448,133×28)` | **R2 eltér; R3 egyezik** |
+
+**Következtetés.** A PicasaPy a négy globális gomb jelenlegi, fix panelvázon
+mért R3-geometriáját megőrzi: a dobozok mindhárom vizsgált ablakméreten
+változatlanul az eredeti helyen állnak. Az R2-szülőkapcsolat viszont nem betű
+szerinti: a gombok `tabbase` helyett a `collagePanel` közvetlen gyerekei. Ez a
+szülőfa-eltérés önmagában nem bizonyít külön felhasználói hatást; a mérés csak
+a geometriai egyezést igazolja, dinamikus, nem fix panelvázra vonatkozó
+horgonyzási ekvivalenciát nem állít.
+
+**Bizonyítottsági fok:** megerősített az eredeti `.tre`-szerződés, a pozitív
+indexelt panel-út, a futásidejű szülő és a 12/12 mért dobozegyezés;
+**NINCS MEG**, hogy az R2-eltérésnek önálló felhasználói hatása lenne.
+
+**Nyitott kérdések mérlege:** 0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva”. A #656 teljes
+UI-összevetése további elemekre nyitva marad.
+
 > ⚠️ **Két külön erőforrás — ne keverd (2026-08-18).** A `.tre` statikus
 > fülcímkéje (`collagepanel/tab2-label`) magyarul „**Képek**"
 > (`panel-feliratok-hu.tsv`), a futásidejű formátum viszont
@@ -446,6 +500,66 @@ megfelel, de a szerkezeti leképezés nem teljes: a `CollageBorderPicker` és
 eredeti `.tre`-szülőfa nem áll fenn betű szerint. Ez **kutatási lelet**, nem
 önmagában bizonyított felhasználói hiba; a kiválasztott kérdés lezárva,
 dinamikus átméretezési ekvivalenciát nem állítunk.
+
+### 4.2/c ⭐ R5 felirat- és súgókontroll — hat angol forráseltérés (#656, 2026-09-19)
+
+**Pontos kérdés.** A Beállítások lap, a képkeret-választó, a háttérdoboz és
+az oldalformátum-menü mai szövegforrásai, valamint a magyar futásidejű
+fordításaik egyeznek-e a szállított Picasa-forrásokkal? Ez külön kérdés az
+R2/R3 szerkezettől: itt a látható felirat/súgó tartalma a mérce.
+
+**Olcsó bizonyítéklánc.**
+
+- **Mai saját kód:** `CollageSettingsTab.qml`, `CollageThemePopup.qml`,
+  `CollageBorderPicker.qml`, `CollageBackgroundBox.qml` és
+  `CollageFormatMenu.qml`; a QML-ben **48** `qsTr`-híváshely van, amelyek
+  **46** egyedi kontextus/forrás-párra vezetnek.
+- **Magyar TS:** a megfelelő öt kontextusban `11 + 12 + 4 + 4 + 15 = 46`
+  üzenet áll; **0** befejezetlen fordítás van.
+- **Eredeti szerkezet/szöveg:** `referencia/ui-leltar.csv:323,341,346,359`,
+  `referencia/tre-eroforrasok/collagepanel.tre`, valamint a
+  `referencia/stringres-en-hu.tsv:103,124`. A helyi SQLite string-index
+  pozitív kontrollja: `Instant Camera` **2 xref / 2 függvény**, az
+  `Add Custom Aspect Ratio...` **1 xref / 1 függvény**; negatív indexeredményt
+  itt nem használok bizonyítékként.
+
+**Mért eredmény.** Az angol forrás **42/48** híváshelyen egyezik. A hat
+ eltérés mind pontosan azonosítható:
+
+| elem | nálunk ma | eredeti forrás | következmény |
+|---|---|---|---|
+| `landscape` súgó | `Landscape: orient the collage horizontally` | `Landscape: Orient your design horizontally` | angol forráseltérés |
+| `portrait` súgó | `Portrait: orient the collage vertically` | `Portrait: Orient your design vertically` | angol forráseltérés |
+| `caption_checkbox` súgó | `...Polaroid Camera border` | `...an "Instant Camera" border` | angol forráseltérés |
+| keret 3. súgója | `Polaroid Camera` | `Instant Camera` | angol forráseltérés |
+| `format_menu` súgó | `...height of the collage` | `...height of your design` | angol forráseltérés |
+| egyéni arány felvétele | Unicode `…` | ASCII `...` | forrás- és írásjel-eltérés |
+
+A hat téma becsukott/lenyíló feliratait a név + leírás futásidejű
+összeállításában külön is kontrolláltam: **6/6** teljes magyar mező egyezik
+(`Képkupac`, `Mozaik`, `Képkockamozaik`, `Rács`, `Indexkép`, `Többszörös
+exponálás`). A teljes magyar mezőkészlet **47/48** esetben karakterre
+egyezik; az egyetlen eltérés az egyéni arány felvételének `…` kontra `...`
+írásjele. A négy panel-/menü-csoport többi magyar mezője a hivatalos
+honosítással egyezik.
+
+**Eredeti / nálunk / teendő.** Az eredeti hat angol forrás és a hozzájuk
+tartozó pontos hivatkozás a fenti táblában áll; nálunk a hat mai QML-forrás
+eltér, miközben a magyar jelentés többnyire megmarad. A terméki javítás
+külön fejlesztői jegye **#3408**; ebben a kutatási körben termékkódot nem
+írtam.
+
+**Bizonyítottsági fok:** megerősített a 48 híváshely száma, az öt TS-
+kontextus teljessége, a 42/48 angol forrás-egyezés, a 47/48 magyar
+karakter-egyezés és a 6/6 témafelirat-egyezés. A hat angol eltérés külön
+felhasználói képernyőképes hatása **NINCS MEG**; a forrásszintű eltérés
+azonban közvetlenül mérhető. A kutatási kérdés lezárva, a fejlesztői
+átvezetés a #3408 feladata, a #656 teljes összevetése nyitva marad.
+
+**Futási kontroll:**
+`python3 -m pytest -q --tb=short -p no:cacheprovider
+tests/app/qml_functional/test_collage_settings_tab_946.py
+tests/app/test_i18n_meretarany_982.py` → **126 passed in 10,13 s**.
 
 ### 4.3 „Klipek" lap
 
@@ -592,6 +706,47 @@ kollázs-panel viszont a főablakba ágyazott `.tre`-panel. A források tehát:
 rectjeiből; a „Továbbiak…" ága a binárisból. A `.fen` hiánya
 kimerítő keresés (mind a 46 fájl).*
 
+### 4.3/d ⭐ R5 felirat- és súgókontroll — a Klipek lap (#656, 2026-09-19)
+
+**Pontos kérdés.** A Klipek lap három műveleti gombjának eredeti angol
+felirat-/súgóforrása és a mai QML-forrás betű szerint egyezik-e; a magyar
+fordítási forrás megtartja-e a hivatalos alakot?
+
+**Bizonyítéklánc.** Az eredeti értékek a szállított
+`referencia/tre-eroforrasok/collagepaneltext.tre` és a
+`referencia/ui-leltar.csv` soraiból jönnek; a hivatalos magyar értékek a
+`referencia/panel-feliratok-hu.tsv` 127–130. sorából. A mai oldal a
+`CollageClipsTab.qml` három `ToolTip.text` mezője és a
+`picasapy_hu.ts` megfelelő `source`/`translation` párja.
+
+| vezérlő | eredeti angol súgó | mai QML angol súgó | magyar TS-forrás |
+|---|---|---|---|
+| `addclips` | `Add selected clips to the collage` | **egyezik** | `Kijelölt klipek felvétele a kollázsba` |
+| `deleteclips` | `Remove selected clips from the tray` | `Remove the selected pictures from the tray` | `A kijelölt képek eltávolítása a tálcáról` |
+| `getmoreclips` | `Get more clips from the Library` | `Load more pictures from the library` | `További képek beolvasása a könyvtárból` |
+
+**Mért eredmény:** az eredeti angol súgó és a mai QML-forrás **1/3** mezőben
+egyezik; két mező eltér. A jelenlegi QML-forrásokhoz tartozó magyar TS-
+fordítás **3/3** mezőben megvan, és mindhárom a hivatalos magyar értékkel
+egyezik. A célzott kirajzolt kontroll
+`python3 -m pytest -q --tb=short -p no:cacheprovider tests/app/qml_functional/test_collage_clips_tab_949.py`
+eredménye **29 passed in 8,10 s**; ez a geometria- és viselkedési láncot
+ellenőrzi, de a két eltérő mai angol forrást rögzíti, ezért önmagában nem
+bizonyít eredeti-forrás-egyezést.
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| három súgó angol forrása | a `collagepaneltext.tre`/`ui-leltar.csv` szerinti alakok | **1/3 egyező**, két eltérő QML-forrás | a két forrás visszaállítása: **#3410** |
+| három magyar fordítási forrás | hivatalos alakok | **3/3 egyező** | a javított angol forrásokhoz tartozó TS-ellenőrzés átvezetése |
+
+**Bizonyítottsági fok:** megerősített az eredeti három súgó, a mai három QML-
+forrás és a három magyar TS-fordítás összevetése; a felhasználó által látott
+tooltip képpontos megjelenését ez a célzott teszt nem méri.
+
+**Nyitott kérdések mérlege:** **0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva".** A #656 teljes gépi
+UI-összevetése további szeletekre nyitva marad.
+
 ### 4.4 A vászon körüli csoportok
 
 | komponens | `objectName` | elhelyezés (2.4) | tartalom |
@@ -603,6 +758,118 @@ kimerítő keresés (mind a 46 fájl).*
 
 A két oszlop **csak kijelöléskor** látszik (2.4). A `collageMoveUp` és
 `collageMoveDown` **`autoRepeat: true`**.
+
+### 4.4/b ⭐ R2/R3 szerkezeti kontroll — a négy vászon körüli csoport (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` a négy csoportot a
+`previewshadow` (maga a lap) gyerekeként deklarálja. A PicasaPy-ban a
+csoportok a kirajzolt `CollageCanvas`-ban jelennek meg. A kérdés az volt,
+hogy a szülőkapcsolat (R2) és a négy él viszonya (R3) egyezik-e, nem az,
+hogy a tervezővászon régi abszolút koordinátái visszatérnek-e.
+
+**Olcsó bizonyítéklánc.**
+
+- **Erőforrás:** `referencia/tre-eroforrasok/collagepanel.tre:22–24`
+  (`rand_group`), `:278–322` (`action_group`, `z_order_group`,
+  `snap_rotation_group`); a `ui-leltar.csv` a négy közvetlen `previewshadow`
+  szülőt és a négy csoport gyermekelemeit is felsorolja.
+- **Indexelt bináris kontroll:** a négy csoportazonosítóra a helyi
+  `string_xrefs` tábla **0 sort** ad, ezért a csoport-szülőfát nem xref-hiányból
+  állítom. A pozitív parancskontrollok viszont megvannak: `rand_placement`
+  → `0x0082a670`, `0x0082d570`, `0x0082fa00`, `0x0082fce0`; `select_all`
+  → `0x0082d570`, `0x00831750`; `move_up` és `snap_12` → `0x0082d570`.
+  A függvényjegyzékben `0x0082a670` = `FUN_0082a670` (6692 bájt),
+  `0x0082d570` = `FUN_0082d570` (4721 bájt), `0x0083b900` = a snap-ág
+  (341 bájt); a `CCollageUI::vftable` címe `0x00cbf450`, és a két
+  fő-elosztó címe benne van. Ez a vezérlő-útvonal kontrollja, nem geometriai
+  bizonyíték.
+- **Mai saját kód:** a négy QML-elem a `CollageCanvas` közvetlen gyereke
+  (`CollageCanvas.qml:108–148`), és a lap téglalapjából számolt `x/y`-t kap;
+  nem a lap abszolút tervezői koordinátáit használja.
+- **Pontos runtime-mérés:** a célzott `QQuickView`-próba
+  `test_collage_groups_948.py` **30 passed in 16,62 s** eredményt adott.
+  A külön parent-probe 1280 × 800-as ablakban, álló lappal ezt mérte:
+  `sheet = (517, 55, 525 × 700)`, `action = (557, 25, 445 × 28)`,
+  `random = (602,5, 757, 354 × 28)`, `snap = (498, 372,5, 17 × 65)`,
+  `z-order = (1044, 372,5, 17 × 65)`. Mind a négy futásidejű közvetlen
+  szülője `collageCanvas`.
+
+| csoport | eredeti `.tre`-szülő és kényszer | PicasaPy futásidejű szülő | ítélet |
+|---|---|---|---|
+| `action_group` | `previewshadow`; `m_centerX` + `YConstraint 1, 0, -2` | `collageCanvas`; `CollageActionRow.qml` | **R2 eltér; R3 egyezik** — alsó él = lap teteje − 2 |
+| `rand_group` | `previewshadow`; `m_centerX` + `YConstraint 0, 1, 2` | `collageCanvas`; `CollageRandomRow.qml` | **R2 eltér; R3 egyezik** — felső él = lap alja + 2 |
+| `snap_rotation_group` | `previewshadow`; `m_centerY` + `XConstraint 1, 0, -2` + `m_hidden` | `collageCanvas`; `CollageSnapColumn.qml` | **R2 eltér; R3 egyezik** — jobb él = lap bal széle − 2 |
+| `z_order_group` | `previewshadow`; `m_centerY` + `XConstraint 0, 1, 2` + `m_hidden` | `collageCanvas`; `CollageZOrderColumn.qml` | **R2 eltér; R3 egyezik** — bal él = lap jobb széle + 2 |
+
+**Következtetés.** A négy csoport **geometriai R3-szerződése mért módon
+megmaradt**, és a csoportok a lap tájolás- és ablakméret-változását követik.
+A **szerkezeti R2-szerződés viszont nem betű szerinti**: a PicasaPy-ban a
+csoportok `collageCanvas`-gyerekek, nem `previewshadow`-gyerekek. Ez önmagában
+nem bizonyít felhasználói hibát; a `CollageCanvas.qml` külön ki is mondja,
+hogy ez tudatos geometriai leképezés. A két oldalsó oszlop láthatósága és a
+nyolc gomb kirajzolódása a 30 próbás kontroll része; a `move_up` és
+`move_down` ismétlése, a szélső két rétegsorrend-gombé nem.
+
+**Bizonyítottsági fok:** megerősített a `.tre`-szerződés, a PicasaPy
+futásidejű közvetlen szülője, valamint a négy élre vonatkozó R3-egyezés;
+**NINCS MEG**, hogy a szülőfa eltérésének lenne önálló felhasználói hatása.
+Ez a kutatási szelet lezárva; a #656 teljes UI-összevetése nyitva marad.
+
+### 4.4/c ⭐ R2/R3 szerkezeti és belső geometriai kontroll — a folyamatjelző (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` a folyamatjelzőt a
+`collageprog_base → collageprog_clip → previewclip → previewcontainer →
+rightcontainer` láncba teszi. A kérdés az volt, hogy a PicasaPy futó QML-fája
+ugyanezt a szülőláncot és a rétegrekordból mért belső dobozokat adja-e.
+
+**Olcsó bizonyítéklánc.**
+
+- **Struktúra:** `referencia/tre-eroforrasok/collagepanel.tre:214–249` és
+  `referencia/ui-leltar.csv:325–331`.
+- **Eredeti geometria:** `docs/specs/picasa-create-features.md:717–728`.
+  A rétegrekordban a `collageprog_base` alapdoboza `(409, 220)`,
+  **224 × 80**; a három belső elem helye ebből rendre `(5, 6)`,
+  `(100, 24)`, `(5, 60)`.
+- **Mai kód:** `CollagePanel.qml:382–396` és
+  `CollageProgressOverlay.qml:30–118`.
+- **Futásidő:** a célzott kirajzolt kontroll
+  `python -m pytest -q --tb=short -p no:cacheprovider
+  tests/app/qml_functional/test_collage_output_ui_949.py` → **47 passed in
+  28,55 s**. A külön parent-/QML-geometriapróba 1280 × 800-as ablakban a
+  QML saját `x/y/width/height` értékeit és a vizuális szülőfát olvasta.
+
+| elem | eredeti, a 224 × 80-as alapon belül | PicasaPy futásidőben | ítélet |
+|---|---|---|---|
+| progress-overlay alapdoboz | 224 × 80 | 224 × 80 | **R3 alapméret egyezik** |
+| cím | `x=5, y=6, 213 × 14` | `x=8, y=6, 208 × 16` | **R3 eltér** |
+| pörgő | `x=100, y=24, 29 × 31` | `x=98, y=26, 28 × 28` | **R3 eltér** |
+| állapotsor | `x=5, y=60, 213 × 14` | `x=8, y=58, 208 × 16` | **R3 eltér** |
+| szülőlánc | `collageprog_base` a `previewclip`-láncban | `collageProgressOverlay` közvetlenül a `collagePanel` gyereke; a `collageCanvas` testvére | **R2 eltér** |
+| középpont | a preview-terület közepe | a progress-overlay közepe a `collageCanvas` közepétől **0,0 px** eltérésű | **R3 középpont egyezik** |
+
+**Következtetés.** A PicasaPy megtartja a folyamatjelző 224 × 80-as alapdobozát
+és a vászon középpontját, de a három belső réteg mért geometriája eltér az
+eredetitől, és a szülőlánc sem betű szerinti. A parent-eltérés külön
+felhasználói hatása **NINCS MEG**; a belső geometriai eltérés közvetlenül
+mérhető, ezért önálló terméki folytatást kapott: **#3392**.
+
+**Eredeti / nálunk / teendő.**
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| alapdoboz | 224 × 80 | 224 × 80 | megtartani |
+| cím | `5,6,213×14` | `8,6,208×16` | #3392: eredeti belső doboz |
+| pörgő | `100,24,29×31` | `98,26,28×28` | #3392: eredeti belső doboz |
+| állapotsor | `5,60,213×14` | `8,58,208×16` | #3392: eredeti belső doboz |
+| szülőlánc | `collageprog_base` a `previewclip`-láncban | közvetlen `collagePanel`-gyerek | #3392: R2-szerkezet rendezése a középre helyezés megtartásával |
+
+**Bizonyítottsági fok:** **megerősített** az eredeti geometriára, a mai
+futásidejű geometriára és a parent-kapcsolatra; **NINCS MEG**, hogy az R2
+szülőfa-eltérésnek önálló felhasználói hatása van.
+
+**Nyitott kérdések mérlege:** 0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva”. A #656 örökölt, teljes
+UI-összevetése nyitva marad; a fejlesztői teendő #3392.
 
 Gombok engedélyezése:
 
@@ -618,6 +885,116 @@ Gombok engedélyezése:
 ezt igazolja: kijelölés nélkül a „Az összes kijelölés megszüntetése",
 „Eltávolítás", „Beállítás háttérként" és a „Megjelenítés és szerkesztés"
 **halvány**, a 3. képen — egy kijelölt képpel — mind aktív.
+
+### 4.4/d ⭐ R2/R3 rétegszerkezeti kontroll — a lap és a csomópontok (#656, 2026-09-19)
+
+**Pontos kérdés.** A `collagepanel.tre` két külön, testvér szerepet ad a
+`previewshadow` (a lap) és a `previewroot` (a csomópontok) számára, közös
+`previewinset` alatt. A PicasaPy futó QML-fájában ugyanez a két szerep külön
+vizuális rétegben él-e, és a lap tényleges téglalapja az eredeti illesztést
+adja-e?
+
+**Olcsó bizonyítéklánc.**
+
+- **Forrás:** `referencia/tre-eroforrasok/collagepanel.tre:160–168` és
+  `:238–249`; a `referencia/ui-leltar.csv:361–365` a
+  `previewclip`/`previewcontainer`/`previewinset`/`previewroot`/
+  `previewshadow` szülőkapcsolatait ugyanígy sorolja.
+- **SQLite-index kontroll:** a `string_xrefs` pozitív találata a
+  `collagepanel/previewcontainer` és `collagepanel/previewroot` neveket a
+  `FUN_0082a670` (`0x0082a670`, **6692** bájt) panelépítőhöz köti; a
+  `previewshadow` további találata `0x00830350`. A `previewclip` és a
+  `previewinset` **0 soros** index-találata nem negatív bizonyíték — a
+  parent-struktúrát a `.tre` adja, nem az xref-index.
+- **Mai kód:** `CollageCanvas.qml:91–105` egy `collageSheetClip` alatt tartja
+  a `CollageSheet`-et; a `CollageSheet.qml` háttér- és `Repeater`-rétegei a
+  `collageSheet` alatt vannak. Külön `previewshadow`/`previewroot` QML-réteg
+  nincs.
+- **Futásidejű mérés:** célzott `QQuickView`, 1280 × 800-as ablak, 4:3
+  fekvő lap. A `collageCanvas` doboza **(289, 20, 981 × 770)**. A `.tre`
+  szerinti behúzásból a `previewinset` pontos doboza **(301, 55, 957 × 700)**;
+  a lap 0,75-ös arányú illesztett doboza **(313, 55, 933 × 700)**. A mérő
+  ezt adta a `collageSheetClip`-re és a `collageSheet`-re is.
+
+| eredeti réteg | PicasaPy futásidejű megfelelője | ítélet |
+|---|---|---|
+| `previewclip` → `previewcontainer` | `collageCanvas` fölött nincs külön teljes keretű QML-vágó; a `collageSheetClip` már a lap doboza | **R2 eltér** |
+| `previewshadow` és `previewroot` testvérek a `previewinset` alatt | `collageSheetClip` → `collageSheet`, amely alatt a háttér és a `collageNode0…2` együtt él | **R2 eltér**: a két szerep összevonva |
+| lap az illesztett `previewinset`-ben | `collageSheet` = **(313, 55, 933 × 700)** | **R3 a mért lapdobozon egyezik** |
+| csomópontok | `collageNode0…2` közvetlen szülője `collageSheet`; a szülőlánc mindháromnál `collageNode → collageSheet → collageSheetClip → collageCanvas` | a lapvágás működése kontrollált, a rétegfelosztás nem betű szerinti |
+
+**Következtetés.** A PicasaPy a lap **mért illesztési geometriáját** megtartja,
+és a meglévő kirajzolt készletben a lapon kívülre tolt csomópont nem rajzol a
+vászonkereten kívülre. A statikus `.tre`-szerződés szerinti külön
+`previewshadow`/`previewroot` rétegek azonban nincsenek meg: a lap és a
+csomópontok egy `collageSheet` alatt, egy lapméretű vágóban élnek. Ez a
+**megerősített R2-eltérés** önmagában nem bizonyít külön felhasználói hibát;
+az R3 lapdoboz-egyezés és a vágási viselkedés a 138 próbás célzott készletben
+zöld maradt. A szülőfa eltérésének önálló hatása: **NINCS MEG**.
+
+**Bizonyítottsági fok:** megerősített a `.tre`-rétegszerkezet, a mai
+futásidejű szülőlánc és a mért lapdoboz; NINCS MEG az R2-eltérés önálló
+felhasználói hatása. Új terméki teendő ebben a körben nem nyílt; a #656 teljes
+UI-összevetése további elemekre továbbra is nyitott.
+
+### 4.4/e ⭐ R5 felirat- és buboréksúgó-kontroll — a magyar futásidejű szöveg egyezik, négy angol forrás eltér (#656, 2026-09-19)
+
+**Pontos kérdés.** A négy vászon körüli csoport 15 vezérlőjének látható
+felirata és buboréksúgója egyezik-e a szállított `collagepanel.tre`-ből
+kinyert `ui-leltar.csv` és `panel-feliratok-hu.tsv` szerződésével? A
+`view_and_edit` vezérlőhöz a referencia nem ad buboréksúgót; ezt nem pótoljuk
+kitalált szöveggel.
+
+**Mai kód és kontroll.** A vizsgált forrás a
+`CollageActionRow.qml`, `CollageRandomRow.qml`, `CollageZOrderColumn.qml` és
+`CollageSnapColumn.qml`; a honosítás kontextusai rendre
+`CollageActionRow`, `CollageRandomRow`, `CollageZOrderColumn` és
+`CollageSnapColumn`. A meglévő, kirajzolt csoportkontroll friss `origin/main`
+állapoton:
+
+```text
+python3 -m pytest -q --tb=short -p no:cacheprovider \
+  tests/app/qml_functional/test_collage_groups_948.py
+→ 30 passed in 10,64 s
+```
+
+Ez a futás a geometriát, a láthatóságot, az engedélyezést és a gombok
+bekötését méri; a szövegeket a külön, pontos forrás-összevetés adja.
+
+**Mért R5-eredmény.** A 15 vezérlőben **7 cím** és **14 buboréksúgó** van,
+összesen **21 szövegmező**. A QML-források, a referencia-táblák és a TS
+XML-kontextus összevetése:
+
+| réteg | mezők | pontos egyezés |
+|---|---:|---:|
+| angol címforrás | 7 | **7/7** |
+| angol buboréksúgó-forrás | 14 | **10/14** |
+| magyar címfordítás | 7 | **7/7** |
+| magyar buboréksúgó-fordítás | 14 | **14/14** |
+
+Az angol forrás négy eltérése mind az `action_group` négy gombján van:
+
+| elem | mai QML-forrás | referencia-forrás |
+|---|---|---|
+| `select_all` | `Select all the pictures (Ctrl+A)` | `Select all pictures (Ctrl-A)` |
+| `select_none` | `Deselect all the pictures (Ctrl+D)` | `Deselect all pictures (Ctrl-D)` |
+| `remove_node` | `Remove selected items from the collage (Del)` | `Remove selection from collage (Del)` |
+| `set_background` | `Use the selected picture as the background` | `Use selected picture as the background` |
+
+**Következtetés.** A magyar futásidejű felület 21/21 szövegmezőben egyezik a
+Picasa hivatalos honosításával. Az angol `qsTr`-forrás négy buboréksúgója
+eltér, ezért angol tartaléknyelven ez R5-eltérés; ez a mérés nem állít
+képernyőképes vagy felhasználói hatást a magyar futásidejű felületre. A négy
+forrás-szöveg javítása külön terméki teendő, kutatási kódváltoztatás nélkül.
+
+**Bizonyítottsági fok:** **megerősített** a 21 forrás-/fordítás-egyezésre és
+a négy angol forráseltérésre; a magyar futásidejű R5-egyezés a TS-kontextus
+alapján megerősített. **NINCS MEG** külön képernyőképes bizonyíték arról,
+hogy a négy angol tartaléknyelvi eltérés bármely felhasználónál látható volt.
+
+**Nyitott kérdések mérlege:** **0 saját nyitott · 1 saját lezárva · 0 saját
+blokkolt · 0 saját hatókörön kívül · 0 „csak nyitva”.** A #656 örökölt,
+teljes UI-összevetése további elemekre nyitva marad.
 
 ---
 
@@ -1124,7 +1501,9 @@ ahogy a mai `makeCollage` — új szálkezelés ne szülessen.
 
 **A folyamatjelző overlay** a vászon közepén (`m_centerXY`, alapból
 rejtett): 224 × 80 doboz, benne cím (fent), pörgő (középen), állapotsor
-(lent). `objectName: collageProgressOverlay`.
+(lent). `objectName: collageProgressOverlay`. A rétegszerkezeti és belső
+geometriai R2/R3-kontroll részlete: **4.4/c**; a mért eltérések fejlesztői
+teendője: **#3392**.
 
 ### 9.2 Mentés meglévő fölé
 

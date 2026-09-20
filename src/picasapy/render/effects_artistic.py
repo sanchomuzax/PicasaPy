@@ -178,9 +178,7 @@ def apply_pencil_sketch(
     return _to_uint8(gray_rgb + mix * (image_f - gray_rgb))
 
 
-def pixelate_shifted(
-    image: np.ndarray, tile: int, offset_x: float, offset_y: float
-) -> np.ndarray:
+def pixelate_shifted(image: np.ndarray, tile: int, offset_x: float, offset_y: float) -> np.ndarray:
     """Csempeméretű pixelesítés, `offset`-tel eltolt rácson (#1351).
 
     A `glimmer` `PixelateImageOperation`-je `offsetX`/`offsetY`
@@ -202,9 +200,7 @@ def pixelate_shifted(
             (max(1, width // tile), max(1, height // tile)),
             interpolation=cv2.INTER_AREA,
         )
-        return cv2.resize(
-            kicsi, (width, height), interpolation=cv2.INTER_NEAREST
-        )
+        return cv2.resize(kicsi, (width, height), interpolation=cv2.INTER_NEAREST)
 
     #: az eltolt rácshoz a képet elcsúsztatva pixelesítjük, majd
     #: visszacsúsztatjuk — a kilógó rész a képhatáron kívül marad, épp
@@ -322,11 +318,21 @@ def apply_comicize(
 
     Mind a 15 álláson javult a ΔE, és 12-en az amplitúdó is.
 
-    **Nyitott részlet** (a #569 elfogadási feltétele szerint is): a natív
-    pontmaszk pontos antialiasingja és peremkerekítése, valamint a
-    `DotContrast` válaszgörbéjének MEREDEKSÉGE — a mi raszterünk 0,41-től
-    9,35-ig fut, a referencia 1,66-tól 5,04-ig. A méret javítása ezt
-    arányosan húzta le, de a meredekséget nem lapította ki.
+    **A pont SUGÁR-TÖRVÉNYE is mért** (#2476, 2026-09-19). A jegy azt vetette
+    fel, hogy az eredeti maszk állandó, nálunk viszont a tónus modulálja a
+    sugarat. Mérve ez **ugyanaz a szerkezet**: a natív, állandó rámpa
+    (`alphaMax = 1,0` a közepén, `alphaMin = 0,0` a csempe 0,8-szoros peremén)
+    a tónussal KÜSZÖBÖLVE pontosan az itteni `0,8 · (1 − tónus)` sugarat adja —
+    mind a 256 tónuson 0 eltérő képpont, elhangolt skálájú kontrollal
+    (`tests/render/test_comicize_maszk_kuszob_2476.py`).
+
+    **Nyitott részlet** (a #569 elfogadási feltétele szerint is, jegy: **#3390**):
+    a küszöb FEDETTSÉGI PROFILJA — a pont peremének átmenete. A 15 export mai
+    mérése: átlagos amplitúdó-hiba 1,3661, átlag ΔE 5,9326; a `BlurXY`- és
+    `DotFade`-tengelyen az alak követi a referenciát, de kb. 1,25× nagyobb az
+    amplitúdó, a `DotContrast`-tengelyen pedig a MEREDEKSÉG más (0,41…9,35 a
+    referencia 1,72…5,07 helyett). Mindkettő a fedettségi profilon múlik, nem a
+    sugár-törvényen.
     """
     validate_image(image)
     for name, value in (
@@ -374,12 +380,12 @@ def apply_comicize(
     # eltolás a maszkban ÉS a pixelesítésben is érvényes. Egy közös
     # pixelesítéssel az eltolás fele elvész, és a raszter szabályosabb
     # lesz a kelleténél.
-    branch_a = halftone_branch(
-        _luma(pixelate_shifted(curved, dot, 0.0, 0.0)), dot, 0.0, 0.0
-    )
+    branch_a = halftone_branch(_luma(pixelate_shifted(curved, dot, 0.0, 0.0)), dot, 0.0, 0.0)
     branch_b = halftone_branch(
         _luma(pixelate_shifted(curved, dot, dot / 2.0, dot / 2.0)),
-        dot, dot / 2.0, dot / 2.0,
+        dot,
+        dot / 2.0,
+        dot / 2.0,
     )
     raster = np.minimum(branch_a, branch_b)
 

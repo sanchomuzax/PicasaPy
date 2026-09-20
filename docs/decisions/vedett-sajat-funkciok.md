@@ -180,6 +180,15 @@ kódtól).
   helyről, tehát a kompatibilitás nem sérül. Indoklás: ADR-010,
   `docs/decisions/pillanatkep-nevter.md`.
 
+- `src/picasapy/app/qml/PicasaPy/PicasaDataImportDialog.qml` (#3132) — a
+  **régi Picasa adatbázisának átvétele** (`Eszközök ▸ Import a Picasából…`):
+  a `db3` neveit, kulcsszavait és helyeit a képek mellé, a `.picasa.ini`-be.
+  Az eredetinek ilyen parancsa nincs és nem is lehet — ő MAGA a `db3` gazdája,
+  nekünk viszont át kell vennünk tőle. A menüpont helyét a tulajdonos
+  választotta (2026-09-18: „A menüpont"), és a mért menüszerkezet UTÁN, külön
+  csoportban áll, hogy az eredeti sorrendjéből semmit ne toljon el. A mag
+  (#3002/#3184) meglévő adatot soha nem ír felül.
+
 ## Tervezett, még nem implementált saját funkciók
 
 Ezeket a tulajdonos nevezte meg (#1187) mint jövőbeli saját kiegészítést,

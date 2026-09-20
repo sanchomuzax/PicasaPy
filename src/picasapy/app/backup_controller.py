@@ -23,16 +23,20 @@ from __future__ import annotations
 
 import logging
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
 from picasapy.backup import futtasd, tervezd_meg
+from picasapy.backup.lemezkep import LemezkepTetel, lemezkepekbe
 from picasapy.burn import CD, DVD, hasznalhato_kapacitas, lemezek_szama
 from picasapy.index import open_index
 from .worker_thread import BackgroundWorkerMixin
 from picasapy.index.backup_sets import (
     SZUROK,
+    jegyezd_fel_a_futast,
+    jegyezd_fel_az_elmentettet,
     keszlet_letrehozasa,
     keszlet_modositasa,
     keszlet_torlese,
@@ -57,6 +61,8 @@ class BackupController(BackgroundWorkerMixin, QObject):
     keszletekValtoztak = Signal()
     #: (átmásolt darab, átmásolt bájt)
     futasKesz = Signal(int, int)
+    #: #2074: (hány lemezkép, hány fájl) — a lemezkép-kimenet vége
+    lemezkepekKeszek = Signal(int, int)
     #: #3009: (hányadik, hány) — az eredeti is végig beszél
     #: („Copying (%d/%d) files"). A felület ebből tud haladást mutatni.
     haladas = Signal(int, int)
@@ -208,6 +214,88 @@ class BackupController(BackgroundWorkerMixin, QObject):
             self._futtatas_hattereben, args=(int(keszlet_id),),
             name="backup-run",
         )
+
+    @Slot(int, str)
+    def futtasdLemezkepbe(self, keszlet_id: int, media: str) -> None:  # noqa: N802
+        """A készlet mentése sorszámozott ISO-lemezképekbe (#2074).
+
+        A tulajdonos 2026-09-18-án ezt az ágat kérte („a gyűjtemény mentése
+        több lemezképre"). A kapacitás a MÉRT képletből jön; a `media` a
+        felületen választott lemezfajta (`cd` vagy `dvd`).
+        """
+        self._megszakitas.clear()
+        self._start_background(
+            self._lemezkepek_hattereben,
+            args=(int(keszlet_id), str(media)),
+            name="backup-iso",
+        )
+
+    def _lemezkepek_hattereben(self, keszlet_id: int, media: str) -> None:
+        """A lemezkép-írás törzse — háttérszálon fut.
+
+        ⚠️ A nyilvántartás (a mentési készlet `BKTag`-je) a képek kiírása
+        UTÁN frissül, ahogy az eredetiben is: a `WriteProgress::13`
+        („Mentési készlet frissítése") az írás VÉGÉN fut. Ha a képírás
+        elszáll, a következő futás ugyanazt viszi újra — nem hazudunk kész
+        mentést.
+        """
+        szektor = _DVD_SZEKTOR if media == DVD else _CD_SZEKTOR
+        try:
+            with open_index(self._db_path) as conn:
+                keszlet = self._keszlet(conn, keszlet_id)
+                if keszlet is None:
+                    self.hibatJelez.emit(self.tr("There is no such backup set."))
+                    return
+                terv = tervezd_meg(
+                    conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek
+                )
+                if not terv.fajlok:
+                    self.lemezkepekKeszek.emit(0, 0)
+                    return
+                self.futasIndult.emit(len(terv.fajlok))
+                eredmeny = lemezkepekbe(
+                    (
+                        LemezkepTetel(
+                            relativ=tetel.relativ,
+                            forras=tetel.forras,
+                            meret=tetel.meret,
+                        )
+                        for tetel in terv.fajlok
+                    ),
+                    Path(keszlet.cel),
+                    media=media,
+                    szektorszam=szektor,
+                    haladas=lambda par: self.haladas.emit(par[0], par[1]),
+                )
+                # csak a kiírás UTÁN — `WriteProgress::13`
+                jegyezd_fel_az_elmentettet(
+                    conn,
+                    keszlet.id,
+                    [
+                        (str(tetel.forras), tetel.meret, tetel.mtime_ns)
+                        for tetel in terv.fajlok
+                    ],
+                )
+                jegyezd_fel_a_futast(
+                    conn,
+                    keszlet.id,
+                    datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                )
+                conn.commit()
+        except OSError as hiba:
+            _log.warning("a lemezkép-írás elszállt: %s", hiba)
+            self.hibatJelez.emit(
+                self.tr("The backup did not finish: %1").replace("%1", str(hiba))
+            )
+            return
+        if eredmeny.tulcsordulo:
+            self.hibatJelez.emit(
+                self.tr("%1 file(s) do not fit on a single disc.").replace(
+                    "%1", str(len(eredmeny.tulcsordulo))
+                )
+            )
+        self.keszletekValtoztak.emit()
+        self.lemezkepekKeszek.emit(len(eredmeny.kepek), sum(eredmeny.darabok))
 
     @Slot()
     def szakitsdMeg(self) -> None:  # noqa: N802
