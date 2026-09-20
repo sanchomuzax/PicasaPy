@@ -62,11 +62,24 @@ ColumnLayout {
     signal removeSuggestionsRequested()
     //: `moresug` — a felismerési lépcső lazítása, hogy több javaslat jöjjön
     signal moreSuggestionsRequested()
+    //: `sug_filter` — a javaslat-szűrő állása (a gazda vezérlőjéből)
+    property bool suggestionsOnly: false
+    //: `sug_filter` — a szűrő átkapcsolása; az új állapotot adja át
+    signal suggestionsOnlyToggled(bool csak)
 
     //: a két javaslat-vezérlő együtt jelenik meg: nyitott személy-album ÉS
     //: van mit eldönteni
     readonly property bool javaslatokLatszanak:
         header.personName !== "" && header.suggestionCount > 0
+
+    //: #2187: a javaslat-szűrő akkor van kint, ha van mit szűrni —
+    //: VAGY ha már be van kapcsolva. A második fél nem díszítés: ha az
+    //: utolsó javaslatot jóváhagyjuk, a darabszám nullára esik, és a
+    //: gomb eltűnése bent hagyná a rácsot az üres, szűrt nézetben,
+    //: visszakapcsolási lehetőség nélkül.
+    readonly property bool javaslatSzuroLatszik:
+        header.personName !== ""
+        && (header.suggestionCount > 0 || header.suggestionsOnly)
 
     //: #2187: a `moresug` a jóváhagyás-pár TELJES helyét foglalja el
     //: (mérve: `confirmsug` (348,55)–(436,82), `removesel` (439,55)–(527,82),
@@ -306,10 +319,50 @@ ColumnLayout {
         // (`confirmPersonSuggestions`) mindkettőt tudja.
         //: #1792: a nem testreszabható elemek a négy gomb UTÁN állnak —
         //: a `gombSorVege` a testreszabott sor jobb széle.
+        //: #2187: `sug_filter` — MÉRT méret 29 × 27, és a mért helye a
+        //: jóváhagyás-pár BAL oldala ((316,55) vs. (348,55)). A hézag
+        //: nálunk a ház szokása (`gombKoz`), nem az eredeti 3 képpontja:
+        //: a fejléc minden gombja így áll egymás mellett (#1792).
+        PicasaButton {
+            id: javaslatSzuroGomb
+            objectName: "headerSuggestionFilterButton"
+            x: header.gombSorVege
+            anchors.verticalCenter: parent.verticalCenter
+            visible: header.javaslatSzuroLatszik
+            width: 29; height: 27
+            checkable: true
+            checked: header.suggestionsOnly
+            //: MÉRT súgó (`faceheaderpaneltext.tre:35`): „Show only
+            //: suggestions (when toggled on)"
+            ToolTip.text: qsTr("Show only suggestions (when toggled on)")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            //: a kötést a kattintás UTÁN vissza kell állítani, különben a
+            //: gomb a saját, belső állapotát mutatná a vezérlőé helyett
+            //: (#1468 rádió-csapda)
+            onClicked: {
+                header.suggestionsOnlyToggled(!header.suggestionsOnly)
+                checked = Qt.binding(function () {
+                    return header.suggestionsOnly
+                })
+            }
+            contentItem: Item {
+                Image {
+                    objectName: "headerSuggestionFilterIcon"
+                    source: "icons/face-suggestion-badge.svg"
+                    width: 16; height: 16
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                    anchors.centerIn: parent
+                }
+            }
+        }
         PicasaButton {
             id: jovahagyGomb
             objectName: "headerConfirmSuggestionsButton"
-            x: header.gombSorVege
+            x: javaslatSzuroGomb.visible
+                ? javaslatSzuroGomb.x + javaslatSzuroGomb.width + header.gombKoz
+                : header.gombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatokLatszanak
             //: MÉRT felirat (`faceheaderpaneltext.tre:44`): „Confirm all"
@@ -352,7 +405,9 @@ ColumnLayout {
         PicasaButton {
             id: tovabbiJavaslatGomb
             objectName: "headerMoreSuggestionsButton"
-            x: header.gombSorVege
+            x: javaslatSzuroGomb.visible
+                ? javaslatSzuroGomb.x + javaslatSzuroGomb.width + header.gombKoz
+                : header.gombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.tovabbiJavaslatLatszik
             //: MÉRT felirat (`faceheaderpaneltext.tre:53`): „Find more

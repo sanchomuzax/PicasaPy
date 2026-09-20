@@ -1178,9 +1178,9 @@ gombkészlete. Szerkezeti horgony: `unknownfaceheaderpanel.tre:38`
 |---|---|---|
 | a fejlécsáv | **három** változat (`headerpanel`, `faceheaderpanel`, `unknownfaceheaderpanel`) | **egy**, általános: `LightboxHeader.qml` |
 | gombok a fejlécen | 25 parancs (15.2) | **öt**: `headerPlayButton` (162), `headerSelectStarredButton` (177), `headerSaveEditsButton` (189), `headerCollageButton` (209), `headerUploadButton` (229) |
-| javaslat-vezérlők | `faceheaderpanel/confirmsug`, `faceheaderpanel/confirmsel`, `faceheaderpanel/removesel`, `faceheaderpanel/moresug`, `faceheaderpanel/sug_filter`, `faceheaderpanel/selectsug`, `faceheaderpanel/addname`, `faceheaderpanel/ignore` | **egyik sincs** — 0 találat `confirmAll`/`moresug`/arc-javaslat névre a `src/`-ben |
+| javaslat-vezérlők | `faceheaderpanel/confirmsug`, `faceheaderpanel/confirmsel`, `faceheaderpanel/removesel`, `faceheaderpanel/moresug`, `faceheaderpanel/sug_filter`, `faceheaderpanel/selectsug`, `faceheaderpanel/addname`, `faceheaderpanel/ignore` | **négy megvan** (mérve 2026-09-20, `LightboxHeader.qml`): `confirmsug` (`headerConfirmSuggestionsButton`), `removesel` (`headerRemoveSuggestionsButton`), `moresug` (`headerMoreSuggestionsButton`), `sug_filter` (`headerSuggestionFilterButton`). **Nincs még:** `confirmsel` KIJELÖLT hatóköre, `selectsug`, `addname`, `ignore` |
 | arc-nagyítás váltó | `faceheaderpanel/face_zoom` ↔ `faceheaderpanel/picture_zoom` | **nincs** |
-| a küszöb-lazítás | `FRSuggestionThreshold/100 − 0,1` | **nincs** |
+| a küszöb-lazítás | `FRSuggestionThreshold/100 − 0,1` | **megvan** — nálunk a LÉPCSŐ csökken tízzel (`FaceScanController.moreSuggestions`, #3237); a vezérlőt vettük át, nem a számot |
 
 *(A `render/crop_suggest.py` a **vágási** javaslatoké — más funkció, nem
 ez.)*
