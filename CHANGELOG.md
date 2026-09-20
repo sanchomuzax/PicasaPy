@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.532] – 2026-09-20
+
+### Javítva
+
+- **Az effekt-csúszkák ugyanolyanok, mint a Finomhangolás fülé (#710).** Eddig
+  a paraméter-panel csúszkája a panel teljes szélességét kitöltötte, a
+  Finomhangolásé viszont keskenyebb volt — most mindkettő a mért, eredeti
+  méretet (191 képpont) kapja. A panel tartalma továbbra is a teljes
+  szélességet használja.
+
 ### Előkészítés (a felületen még nem látszik)
 
 - Az album-ugró gomb lenyomás-kezelése két megnevezett függvénybe került, hogy

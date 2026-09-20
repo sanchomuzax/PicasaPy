@@ -44,14 +44,22 @@ PicasaSlider {
     //: Itt, a KÖZÖS komponensen élnek, hogy egy helyen legyenek — eddig a
     //: `EditorFinetunePanel` írta le őket a saját fájljában.
     //:
-    //: ⚠️ **A paraméter-alpanel NEM ezt a szélességet használja ma**, hanem
-    //: panel-közepű, teljes szélességű csúszkát (#700). Hogy az eredetiben a
-    //: két hely tényleg azonos elrendezésű-e, az **nyitott**: a mért tábla
-    //: (`szerkeszto-panel-meretek.md` 4.) a FINOMHANGOLÁS négy csúszkáját
-    //: adja meg (`editslider1..4_container`, x 30..221), a paraméter-alpanel
-    //: konténere pedig ugyanott **127 × 27 vagy 191 × 27** alakban szerepel —
-    //: tehát a „ugyanaz a well ⇒ ugyanaz a szélesség" következtetés
-    //: BIZONYÍTÉK NÉLKÜLI. A kérdés a #710-en áll, képernyőképpel dönthető.
+    //: ✅ **A paraméter-alpanel is EZT a szélességet használja** (#710,
+    //: 2026-09-18/19). A kérdés korábban nyitott volt („127 × 27 vagy
+    //: 191 × 27?"), és képernyőképet kértünk rá — a tulajdonos joggal
+    //: visszautasította: *„Ez nem tőlem kérdezendő adat… a forrásból pontosan
+    //: kimérhető."* A FORRÁS döntött (`ui-audit-editor.md` 4.3/a):
+    //:
+    //: * az `editpanel.tre`-ben mind a négy `editsliderN_container`
+    //:   ugyanannak az `editcontrol_well`-nek a gyermeke, `m_centerXY`-val;
+    //: * a `tab3`–`tab5` nem hoz létre effekt-specifikus slider-konténert, és
+    //:   a 2–4. konténer ugyanahhoz a feldolgozó címhez kötődik
+    //:   (`0x007518e0`);
+    //: * a **127 × 27** a KÜLÖN `scaleslider` családé (`backlight_container`,
+    //:   Derítőfény) — nem a paraméter-alpanelé.
+    //:
+    //: ⇒ a „ugyanaz a well ⇒ ugyanaz a geometria" következtetés már NEM
+    //: bizonyíték nélküli.
     readonly property int mertSzelesseg: 191
     readonly property int mertMagassag: 27
     readonly property int mertEltolas: 17

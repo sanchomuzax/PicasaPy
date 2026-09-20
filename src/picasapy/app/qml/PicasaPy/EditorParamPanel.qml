@@ -165,6 +165,13 @@ Flickable {
                 required property var modelData
                 required property int index
                 Layout.fillWidth: true
+                //: ⚠️ #710: a sor szélességét KIMONDVA az oszlophoz kötjük.
+                //: A `fillWidth` egyedül nem elég, amióta a csúszka fix (mért)
+                //: szélességű: a sor implicit szélessége a gyermekeiből
+                //: számolna, és a felirat középre igazítása a SOR közepéhez
+                //: húzódna, nem a panel közepéhez (a #700 őre ezt buktatta).
+                //: Az oszlop szélessége horgonyból jön, tehát kötésmentes.
+                Layout.preferredWidth: effectParamColumn.width
                 spacing: 2
 
                 // #650: a `kind` szerinti láthatóság. A delegate mindhárom
@@ -207,17 +214,58 @@ Flickable {
                     objectName: "effectParamLabel" + paramRow.index
                     Layout.fillWidth: false
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.maximumWidth: paramRow.width
+                    //: ⚠️ A korlát az OSZLOP szélessége, nem a soré: a sor
+                    //: szélessége a gyermekeiből is számol, tehát a
+                    //: `paramRow.width` KÖRKÖRÖS kötés lenne. Amíg a csúszka
+                    //: `fillWidth: true` volt, a sor szélességét ő adta, és a
+                    //: kör nem záródott be; a mért, fix szélességgel (#710)
+                    //: viszont bezáródott, és a sor a feliratával együtt
+                    //: összeomlott. Az oszlop szélessége horgonyból jön
+                    //: (`anchors.left/right`), tehát kötésmentes.
+                    Layout.maximumWidth: effectParamColumn.width
                     visible: paramRow.controlKind === "slider"
                     text: panel.paramLabel(paramRow.modelData.label)
                 }
                 // #700/#710: az eredeti `editslider` arányai — a mért
                 // számok a közös `EditorSlider`-ben állnak, egy helyen.
+                //
+                // ⭐ #710 (2026-09-18/19): a SZÉLESSÉG is a mért érték lett.
+                // Eddig `Layout.fillWidth: true` állt itt, mert nyitott volt,
+                // hogy az eredetiben a paraméter-alpanel csúszkája
+                // ugyanolyan-e, mint a Finomhangolás füléé. A kérdést a
+                // FORRÁS zárta le (`ui-audit-editor.md` 4.3/a): az
+                // `editpanel.tre`-ben mind a négy `editsliderN_container`
+                // ugyanannak az `editcontrol_well`-nek a gyermeke, a
+                // `tab3`–`tab5` nem hoz létre effekt-specifikus
+                // slider-konténert, és a 2–4. konténer ugyanahhoz a
+                // feldolgozó címhez kötődik (`0x007518e0`). A 127 × 27-es
+                // méret a KÜLÖN `scaleslider` családé (Derítőfény), nem ezé.
+                //
+                // ⚠️ A csúszka szélessége fix, a SORÉ nem: a tartalom-oszlop
+                // továbbra is a panel teljes szélességét kitölti (#700 őre:
+                // „a bal szélére szorul a területnek"). A csúszka a mért
+                // eltolással ül a sorban, középre igazítva — a panelünk
+                // szélessége nem a mért 251, tehát a bal margóhoz igazítás
+                // önmagában elcsúsztatná a képtől.
                 EditorSlider {
                     id: paramSlider
                     objectName: "effectParamSlider" + paramRow.index
                     visible: paramRow.controlKind === "slider"
-                    Layout.fillWidth: true
+                    Layout.fillWidth: false
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: paramSlider.mertSzelesseg
+                    //: ⚠️ A felső korlát NEM `paramRow.width` lehet: a sor
+                    //: szélessége a gyermekeiből is számol, tehát az
+                    //: KÖRKÖRÖS kötés lenne — a Qt ilyenkor nullát ad, és a
+                    //: sor (vele a felirat) összeomlik. Élesben elő is jött:
+                    //: a #700 felirat-középre-igazítás őre bukott meg tőle.
+                    //: A korlát ezért a MÉRT szélesség és az oszlop
+                    //: szélességének a kisebbike: szűk panelen a csúszka
+                    //: befér, szélesen a mért 191-en marad. (Az oszlop
+                    //: szélessége horgonyból jön, tehát kötésmentes.)
+                    Layout.maximumWidth: Math.min(
+                        paramSlider.mertSzelesseg, effectParamColumn.width)
+                    Layout.preferredHeight: paramSlider.mertMagassag
                     from: paramRow.modelData.minimum
                     to: paramRow.modelData.maximum
                     stepSize: paramRow.modelData.step
