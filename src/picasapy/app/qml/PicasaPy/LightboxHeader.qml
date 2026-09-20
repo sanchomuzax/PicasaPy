@@ -159,7 +159,7 @@ ColumnLayout {
             Text {
                 objectName: "folderSyncLabel"
                 anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Sync to the web")
+                text: qsTr("Sync to Web")
                 font.pixelSize: 10
                 color: Theme.textGray
             }
