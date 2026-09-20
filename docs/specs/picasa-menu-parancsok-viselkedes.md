@@ -6051,16 +6051,85 @@ régi albumok mappa **lomtárba** küldéséről beszélnek, valamint a cél
 elérhetőségéről — ez független megerősítése az 5. pontnak (KÉT mappa +
 lomtár).
 
-### NYITOTT — megnevezve, nem becsülve
+### ✅ Az ÍRÓ is megvan (2026-09-20, 335. kör)
 
-Melyik kód **ÍRJA** az `AppLocalDataPathCopy`-t (a párbeszéd OK-ága). A
-sztringre az egész binárisban **egyetlen** hivatkozás van, a végrehajtóban;
-tehát az írás vagy közös segítőn át megy, vagy nem literál kulccsal. A
-következő lépés: a párbeszéd `move` elemének kezelője az elem-tábla
-(`respack.yt` / `.tre`) felől — nem a sztring-indexből, mert az a
-mutatón át menő kezelőket nem látja.
+Lásd a következő szakaszt: a `0x007d1900` írja a kulcsot, és egy
+írható-helyi-lemez ellenőrzés előzi meg.
 
 *Forrás: `0x007d14f0` (444 b), `0x00404d60` (1094 b), `0x004051b0`
 (2533 b); a kulcs-sztringek `0x00c7ef0c` és `0x00c7eef0`; a szekció
 `Preferences` (`0x00c7eafc`); a hívási lánc a bináris index `xrefs`
 táblájából.*
+
+
+## ⛳ A `Copy` kulcs ÍRÓJA és a lemez-ellenőrzés (2026-09-20, 335. kör, #3413)
+
+*Az előző kör az xref-INDEXRE hivatkozva azt írta, hogy az
+`AppLocalDataPathCopy` sztringre egyetlen hivatkozás van. Index-független
+pásztázás ezt megjavítja.*
+
+### A) A pásztázás — a sztring CÍME mint 4 bájtos konstans
+
+| sztring | cím | hivatkozási helyek |
+|---|---|---|
+| `AppLocalDataPathCopy` | `0x00c7eef0` | `0x00404d98` (a végrehajtó **olvasása**) · **`0x007d1937`** (ÚJ) |
+| `AppLocalDataPath` | `0x00c7ef0c` | `0x00404fd4`, `0x00405008`, `0x00405457`, `0x004073a9`, `0x00541bb7`, `0x00541d65`, `0x007d15ca` |
+
+⛔ A `0x007d1937`-es helyet az xref-index **nem** kötötte a `Copy` kulcshoz —
+ezért állt a lapon, hogy csak egy hivatkozás van. A kontroll teljesült: az
+előző körben mért olvasási hely (`0x00404d98`) a pásztázásban is előjött.
+
+### B) Az író: `0x007d1900` (168 b)
+
+```
+0x007d1907  call dword ptr [0xc403b4]      ; import (a nevét az index nem oldja fel)
+0x007d190d  lea  ebx, [esi + 0xbc]         ; az ÚJ hely szövege (ugyanaz a mező, amit
+0x007d1913  push ebx                       ;   a párbeszéd-kezelő is használ)
+0x007d1914  call 0x6db040                  ; ellenőrzés → al
+0x007d1919  test al, al
+0x007d191b  je   0x7d1968                  ; ha HAMIS → hibaág, és NEM ír semmit
+…
+0x007d191e  push 0xc7f979                  ; üres sztring (a cél objektum kezdőértéke)
+0x007d1936  push 0xc7eef0                  ; 'AppLocalDataPathCopy'
+0x007d193b  push 0xc7eafc                  ; 'Preferences'
+0x007d1948  call 0x407630                  ; szekció + kulcs megnyitása
+0x007d1952  call 0x407760                  ; ← ÍRÁS
+```
+
+A hibaág a `MoveDatabase::LocalDriveOnly` címkét (`0x00cb8b80`) és a hozzá
+tartozó üzenetet használja, amely kimondja, hogy csak **írható helyi
+merevlemezre** engedi a mozgatást, és hogy ilyenkor **semmit nem módosít**. Ez
+a párbeszéd saját figyelmeztetésének (hálózati/cserélhető/külső meghajtó
+tilalma) a **gépi betartatása** — tehát nem csak tanács.
+
+⇒ **`0x006db040`** (1175 b) az „írható helyi lemez-e" ellenőrzés; a
+szándék csak akkor kerül a registrybe, ha ez igazat ad.
+
+A `0x007d1900`-nak **nincs indexelt hívója** ⇒ mutatón át hívott
+gombkezelő — ugyanaz a minta, mint a párbeszéd többi kezelőjénél.
+
+### C) ⭐ A beállítás-API három függvénye — ezt minden további kör használhatja
+
+| cím | méret | hívók | szerep |
+|---|---:|---:|---|
+| `0x00407630` | 302 b | 125 | szekció + kulcs **megnyitása** (a két sztring a két argumentum) |
+| `0x004078e0` | 307 b | 96 | **olvasás** (ezt használja a párbeszéd és a végrehajtó) |
+| **`0x00407760`** | 369 b | 68 | **írás** (ezt használja az OK-ág) |
+
+A hármas ugyanaz minden `Preferences`-kulcsnál; az olvasás és az írás
+**kizárólag** a második hívásban tér el. *(Módszertani haszon: egy kulcsnál
+mostantól a második hívás címéből egyből látszik, hogy olvasó vagy író
+helyet találtunk.)*
+
+### D) Amit a 168 bájt NEM mond meg
+
+Az érték **pontos alakját** (van-e záró `\`, idézőjel, környezeti változó).
+A törzs egy üres sztringből (`0x00c7f979`) indul és a `[esi + 0xbc]` mező
+tartalmát adja tovább, tehát a formázás — ha van — a mező feltöltésekor
+történik, nem itt. Ez a `changeloc`/`defaultloc` kezelőben (`0x007d16b0`,
+590 b) olvasható ki; nem becsülöm meg.
+
+*Forrás: index-független bájtpásztázás a `0x00c7eef0` és `0x00c7ef0c`
+címekre; `0x007d1900` (168 b), `0x006db040` (1175 b); a beállítás-hármas
+`0x00407630` / `0x004078e0` / `0x00407760`, hívószámok a bináris index
+`xrefs` táblájából.*
