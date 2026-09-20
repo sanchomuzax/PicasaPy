@@ -1205,8 +1205,8 @@
         <translation>Alapértelmezett</translation>
     </message>
     <message>
-        <source>Choose new database location...</source>
-        <translation>Válassza ki az adatbázis új helyét…</translation>
+        <source>Choose database location...</source>
+        <translation>Adatbázis helyének kiválasztása…</translation>
     </message>
     <message>
         <source>Choose a new database location first.</source>
@@ -3921,7 +3921,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <name>LightboxHeader</name>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
-        <source>Sync to the web</source>
+        <source>Sync to Web</source>
         <translation>Szinkronizálás az internettel</translation>
     </message>
     <message>

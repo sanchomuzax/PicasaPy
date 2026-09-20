@@ -1,7 +1,7 @@
-"""A négy felirat a HIVATALOS Picasa-szöveget mondja (#3358).
+"""A feliratok a HIVATALOS Picasa-szöveget mondják (#3358, #2921).
 
-A #2921 közeli-pár mérése (privát repó, `felirat_kozeli_parok.py`) négy
-olyan feliratot talált, amelynél az eredetinek VAN szövege ugyanabban a
+A #2921 közeli-pár mérése (privát repó, `felirat_kozeli_parok.py`) olyan
+feliratokat talál, amelyeknél az eredetinek VAN szövege ugyanabban a
 helyzetben, csak mi máshogy fogalmaztuk. Ez nem stílusdöntés: a
 lefedettségi mérő emiatt nem találja meg a párját, a felhasználó pedig
 más szöveget lát, mint az eredeti Picasában.
@@ -29,6 +29,11 @@ HIVATALOS = {
     "Add this tag to entire selection": (
         "A címke hozzáadása a teljes kijelölt részhez",
         "Tags::ID_APPLYTHISTAGTOSELECTION"),
+    # #2921, második kör: a mappa-fejléc szinkron-felirata és az
+    # adatbázis-áthelyező mappaválasztó címe
+    "Sync to Web": ("Szinkronizálás az internettel", "SyncLabel::Off"),
+    "Choose database location...": (
+        "Adatbázis helyének kiválasztása…", "eMenuTools::ID_MOVE_DATABASE"),
 }
 
 #: fájl → a benne várt hivatalos feliratok
@@ -37,6 +42,8 @@ ELOFORDULASOK = {
     "PicasaPy/SaveDialogs.qml": ["Do not ask again"],
     "PicasaPy/ConfirmDialog.qml": ["Do not ask again"],
     "PicasaPy/TagContextMenu.qml": ["Add this tag to entire selection"],
+    "PicasaPy/LightboxHeader.qml": ["Sync to Web"],
+    "PicasaPy/MoveDatabaseDialog.qml": ["Choose database location..."],
 }
 
 #: amit a rossz alakból SEHOL nem szabad `qsTr()`-ben látni
@@ -44,6 +51,8 @@ ELAVULT = (
     "The passwords do not match.",
     "Don't ask again",
     "Add Tag to Entire Selection",
+    "Sync to the web",
+    "Choose new database location...",
 )
 
 

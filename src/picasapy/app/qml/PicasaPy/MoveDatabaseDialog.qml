@@ -209,7 +209,7 @@ Window {
 
     FolderDialog {
         id: newLocationDialog
-        title: qsTr("Choose new database location...")
+        title: qsTr("Choose database location...")
         onAccepted: moveDatabaseWindow.newLocation = selectedFolder.toString()
     }
 }

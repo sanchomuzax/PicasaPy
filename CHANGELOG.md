@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.533] – 2026-09-20
+
+### Javítva
+
+- **Két felirat az eredeti Picasa hivatalos szövegére javítva (#2921).** A
+  mappa fejlécében „Sync to Web” áll a korábbi „Sync to the web” helyett, az
+  adatbázis áthelyezésekor megnyíló mappaválasztó címe pedig „Adatbázis
+  helyének kiválasztása…” lett — ugyanaz, ami a menüben is szerepel.
+
 ## [0.8.532] – 2026-09-20
 
 ### Javítva
