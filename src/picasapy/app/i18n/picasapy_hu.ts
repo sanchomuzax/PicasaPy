@@ -9144,7 +9144,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Fehér szegély</translation>
     </message>
     <message>
-        <source>Polaroid Camera</source>
+        <source>Instant Camera</source>
         <translation>Polaroid fényképezőgép</translation>
     </message>
 </context>
@@ -9222,11 +9222,11 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Egyéni méretarányok</translation>
     </message>
     <message>
-        <source>Add Custom Aspect Ratio…</source>
+        <source>Add Custom Aspect Ratio...</source>
         <translation>Egyéni méretarány hozzáadása…</translation>
     </message>
     <message>
-        <source>You can select the relative width and height of the collage</source>
+        <source>Select the relative width and height of your design</source>
         <translation>Kijelölheti a kollázs viszonylagos szélességét és magasságát</translation>
     </message>
 </context>
@@ -9253,11 +9253,11 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>A jelenlegi méretarány törlése</translation>
     </message>
     <message>
-        <source>Landscape: orient the collage horizontally</source>
+        <source>Landscape: Orient your design horizontally</source>
         <translation>Fekvő: a kollázs vízszintes tájolása</translation>
     </message>
     <message>
-        <source>Portrait: orient the collage vertically</source>
+        <source>Portrait: Orient your design vertically</source>
         <translation>Álló: A kollázs függőleges tájolása</translation>
     </message>
     <message>
@@ -9269,7 +9269,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Képfeliratok megjelenítése</translation>
     </message>
     <message>
-        <source>Show picture captions as text on pictures with the Polaroid Camera border</source>
+        <source>Show captions as text on pictures with an "Instant Camera" border</source>
         <translation>Képfeliratok szövegként való megjelenítése „Polaroid fényképezőgép” szegélyű képeken</translation>
     </message>
     <message>
@@ -9426,7 +9426,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
-        <source>Polaroid Camera</source>
+        <source>Instant Camera</source>
         <translation>Polaroid fényképezőgép</translation>
     </message>
     <message>

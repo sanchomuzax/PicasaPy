@@ -129,8 +129,7 @@ Item {
             onClicked: menu.expanded = !menu.expanded
         }
         //: `format_menu` buboréksúgó (a hivatalos magyarral).
-        ToolTip.text: qsTr("You can select the relative width and height of "
-                           + "the collage")
+        ToolTip.text: qsTr("Select the relative width and height of your design")
         ToolTip.visible: menuHover.hovered
         ToolTip.delay: Theme.tooltipDelay
         HoverHandler { id: menuHover }
@@ -291,7 +290,7 @@ Item {
                         anchors.left: parent.left
                         anchors.leftMargin: 6
                         anchors.verticalCenter: parent.verticalCenter
-                        text: qsTr("Add Custom Aspect Ratio…")
+                        text: qsTr("Add Custom Aspect Ratio...")
                         font.pixelSize: Theme.fontSize
                         color: addHover.hovered ? Theme.panelSelectionText : Theme.ink
                     }

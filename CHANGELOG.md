@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.534] – 2026-09-21
+
+### Javítva
+
+- **A Kollázs Beállítások lapjának hat felirata az eredeti Picasa hivatalos
+  angol szövegére javítva (#3408).** A tájolás- és formátumsúgók, a
+  „Polaroid Camera” keretnév (helyesen „Instant Camera”) és az egyéni
+  méretarány sor most a hivatalos forrásszöveget viszi; a magyar fordítás
+  változatlan.
+
 ## [0.8.533] – 2026-09-20
 
 ### Javítva

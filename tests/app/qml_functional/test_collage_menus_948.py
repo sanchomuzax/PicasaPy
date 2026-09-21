@@ -425,7 +425,7 @@ _HIVATALOS_MAGYAR = {
     "Scatter Pictures": "Képek szétszórása",
     "None": "Egyik sem",
     "White Border": "Fehér szegély",
-    "Polaroid Camera": "Polaroid fényképezőgép",
+    "Instant Camera": "Polaroid fényképezőgép",
     "0 Degrees": "0 fok",
     "90 Degrees": "90 fok",
     "180 Degrees": "180 fok",
