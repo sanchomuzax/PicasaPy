@@ -62,6 +62,18 @@ class TestNativeLevelLut:
         lut = native_level_lut(0.0, 1.0, math.e)
         assert int(lut[64]) > 64 * 256
 
+    def test_invertalt_par_eseten_teljes_feher(self):
+        """#3418: `black > white` (a feketepont a fehérpont FÖLÖTT) → a
+        teljes LUT a maximumra (0xFF00) ugrik, nem invertált rámpát ad.
+
+        Mérve a 684-es golden mérőkészlet `finetune__max`/`finetune2__max`
+        esetén (Shadows=1,0, Highlights=0,5 → black=1,0, white=0,5): a
+        képlet naiv (invertált-rámpás) kiterjesztése ΔE=43-47-et adott a
+        valódi Picasa-exporthoz képest, a teljes-fehér modell ΔE=3,4-3,7-et.
+        """
+        lut = native_level_lut(1.0, 0.5, 1.0)
+        assert np.array_equal(lut, np.full(256, NATIVE_LUT_FULL, dtype=np.int64))
+
 
 class TestNativeContrastLut:
     def test_semleges_kontraszt_azonossag(self):

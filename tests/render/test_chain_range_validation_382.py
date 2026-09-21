@@ -81,13 +81,24 @@ class TestFinetuneRanges:
         )
         assert report.range_warnings == ()
 
-    def test_highlights_shadows_valodi_ui_tartomanya(self, sample):
-        # highlights/shadows valódi UI-tartománya [0, 0.48], NEM [0, 1]
+    def test_highlights_shadows_nem_vagodik_es_nem_is_figyelmeztet(self, sample):
+        """#3418: a Kiemelések/Árnyékok `[0, 0.48]`-as tartománya a CSÚSZKA
+        határa, nem a renderelő belső vágása — a `.picasa.ini`-be kerülő,
+        e fölötti nyers érték a natív képletet korlátozás nélkül éri el.
+
+        A 684-es golden mérőkészlet `finetune2__alap` esete (Highlights=
+        Shadows=0,5, azaz 0,04-del a csúszka felső állása fölött) mérte ki:
+        a korábbi, `[0, 0.48]`-ra vágó/figyelmeztető modell ΔE=52,3-at adott
+        a valódi Picasa-exporthoz, a nyers érték ΔE=0,57-et. Ezért a
+        `_RANGE_VALIDATED_PARAM_POSITIONS`-ból (`chain_report.py`) a
+        Kiemelések/Árnyékok pozíciója KIKERÜLT — a Derítőfény és a
+        Színhőmérséklet pozíciója marad vágva.
+        """
         report = apply_filters(sample, parse_filters("finetune2=1,0.0,0.9,0.9;"))
-        assert len(report.range_warnings) == 2
-        joined = " ".join(report.range_warnings).casefold()
-        assert "highlights" in joined
-        assert "shadows" in joined
+        assert report.range_warnings == ()
+        # a nyers (vágatlan) 0,9-es érték tényleg lefutott, nem a 0,48-ra vágott
+        clamped_only, _ = apply_filters(sample, parse_filters("finetune2=1,0.0,0.48,0.48;"))
+        assert not np.array_equal(report.image, clamped_only)
 
 
 class TestUnsharpRanges:

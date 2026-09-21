@@ -64,9 +64,33 @@ _FILL_WEIGHT_FULL = 0xFF00
 #: százalékával. A mért meredekség 0,48-as állásnál 1,9235 (kiemelések) és
 #: 1,9244 (árnyékok); a képlet 1/(1−0,48) = 1,9231-et ad. A `filterdesc.xml`
 #: ezzel egybehangzóan `[0..0.48]` tartományt ad meg mindkét paraméterre —
-#: ezért a csúszkák felső határa is 0,48, nem 1,0. (A 859 valódi
-#: `.picasa.ini`-ből álló korpusz mind az 566 Finomhangolás-láncában a két
-#: érték a tartományon belül van, tehát a vágás éles használatban no-op.)
+#: ez a CSÚSZKA felső határa.
+#:
+#: ⛔ **#3418: a `[0..0.48]` a CSÚSZKA korlátja, nem a képlet belső vágása.**
+#: A korábbi kód `FINETUNE_LEVEL_PARAM_MAX`-ra klemp-elte a nyers
+#: paramétert, mielőtt a LUT-ba került — ez volt a golden-mérőkészlet
+#: (`684-es mérőkészlet`) legnagyobb ΔE-forrása. A `finetune2__alap` esete
+#: (Highlights=Shadows=0,5, tehát MINDKETTŐ 0,04-del a klemp fölött) a
+#: klemp-elt modellel ΔE=52,3-at adott a valódi Picasa-exporthoz képest; a
+#: NYERS érték (klemp nélkül) ΔE=0,57-et. A klemp tehát maga volt a hiba: a
+#: `.picasa.ini`-be bekerülő nyers érték a natív képletet éri el
+#: KORLÁTOZÁS NÉLKÜL — a 0,48 csak azt szabja meg, meddig húzható a
+#: csúszka, nem azt, mit fogad el a renderelő. (A `native_level_lut`
+#: `black > white` ága — ld. ott — külön kezeli azt a szélsőséget, amikor a
+#: nyers Shadows a Highlights-nál is nagyobb feketepontot adna.)
+#:
+#: ⚠️ **A `chain.py`/`chain_report.py` szintjén EGY MÁSIK, ettől FÜGGETLEN
+#: vágás is létezett** (`_RANGE_VALIDATED_PARAM_POSITIONS`, #382): az
+#: `apply_filters` a Kiemelések/Árnyékok pozícióját a REGISZTER
+#: `[0..0.48]`-jára vágta, MIELŐTT ez a függvény egyáltalán megkapta volna a
+#: paramétert. Emiatt a csak itteni klemp eltávolítása ÖNMAGÁBAN NEM
+#: változtatott a golden-mérésen (egy korábbi kör pont ezen bukott el, és
+#: tévesen „a klemp nem az ok" következtetésre jutott) — a `chain_report.py`
+#: táblájából is ki kellett venni a Kiemelések/Árnyékok pozícióját.
+#:
+#: A konstans MARAD, mert a mérőkészlet-generátor és a tesztek a csúszka
+#: NÉVLEGES felső határaként hivatkoznak rá — csak a `finetune_level_lut`
+#: (és a `chain_report.py` tábla) belső vágásaként szűnt meg.
 #:
 #: **A KETTŐ EGYETLEN LEKÉPEZÉS (#879).** A natív callback (`0x008f7ee0`) nem
 #: futtatja őket egymás után: egy hívással (`0x0090c430`) EGY 256×uint16
@@ -278,19 +302,23 @@ def finetune_level_lut(highlights: float, shadows: float) -> np.ndarray:
     gamma = 1,0. Ugyanez a mag szolgálja ki a `triple2`/`triple3` szűrőt is
     (`chain_native_handlers`), csak ott már eleve egy táblával számoltunk.
 
-    Mindkét paraméter a `filterdesc.xml` `[0..0.48]` tartományára vágódik.
+    ⛔ **#3418: a paraméterek NEM vágódnak `FINETUNE_LEVEL_PARAM_MAX`-ra.**
+    A `[0..0.48]` a Picasa CSÚSZKÁJÁNAK a határa, nem a renderelő belső
+    vágása — a `.picasa.ini`-be (kézzel, hibás exporttal vagy idegen
+    forrásból) kerülő, ezen kívüli nyers érték a natív képletet
+    korlátozás nélkül éri el (ld. lent a mért ΔE-ket). A negatív alsó
+    tartomány ellen a `max(…, 0.0)` mégis véd — arra a `filterdesc.xml`
+    sem ad értelmezhető negatív tartományt, és a natív fehérpont-védés is
+    csak felfelé nyitott.
     """
-    black = _clamp(shadows, 0.0, FINETUNE_LEVEL_PARAM_MAX)
-    white = 1.0 - _clamp(highlights, 0.0, FINETUNE_LEVEL_PARAM_MAX)
+    black = max(shadows, 0.0)
+    white = 1.0 - max(highlights, 0.0)
     return native_level_lut(black=black, white=max(white, _MIN_WHITE_POINT))
 
 
 def _apply_levels(image: np.ndarray, highlights: float, shadows: float) -> np.ndarray:
     """A közös szinthúzás — semleges állásban a natív burkoló is kihagyja."""
-    if (
-        _clamp(highlights, 0.0, FINETUNE_LEVEL_PARAM_MAX) == 0.0
-        and _clamp(shadows, 0.0, FINETUNE_LEVEL_PARAM_MAX) == 0.0
-    ):
+    if max(highlights, 0.0) == 0.0 and max(shadows, 0.0) == 0.0:
         return image.copy()
     return apply_native_lut16(image, finetune_level_lut(highlights, shadows))
 
