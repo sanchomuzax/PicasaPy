@@ -1,9 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-// #757: az `IconLabel` a Qt saját, MNEMONIK-TUDATOS címkéjét
-// (`QQuickMnemonicLabel`) hozza magával — pontosan azt, amit a sima
-// `MenuItem` alapértelmezése is használ.
-import QtQuick.Controls.impl
 
 // #416: helyfoglaló (még be nem kötött) menüpont — a menü HELYE megvan, de
 // funkció nincs mögötte. Ránézésre is látszódjon, mi működik és mi nem:
@@ -70,14 +66,11 @@ MenuItem {
     // sem a helyfoglaló, sem a nyugdíjazott tétel nem kattintható
     enabled: !placeholder && !control.retired
 
-    // #757: NEM sima `Text`. Amióta a feliratok az eredeti `&`-mnemonikkal
-    // érkeznek (a `Picasa3i18n.dll` string-táblájából), egy sima `Text` az
-    // ampersandot NYERSEN mutatná („&Mappa elrejtése"). Az `IconLabel`
-    // belül `QQuickMnemonicLabel`-t rajzol — ugyanazt, amit a sima
-    // `MenuItem` alapértelmezése —, tehát az `&` az aláhúzás helyét jelöli,
-    // nem betűként látszik. A színezés és a jobb oldali térköz miatt kell
-    // saját `contentItem`; ezt az `IconLabel` ugyanúgy tudja.
-    contentItem: IconLabel {
+    // A színezés és a jobb oldali térköz miatt saját `contentItem` kell. A
+    // `MenuCimke` a feliratot mnemonik-tudatos `IconLabel`-lel rajzolja
+    // (#757: a `&` aláhúzás, nem betű), a gyorsbillentyűt pedig jobbra
+    // igazított oszlopba teszi (#3455).
+    contentItem: MenuCimke {
         // #1750: HELY A JELÖLŐNEK. A Qt alapértelmezett `MenuItem`-je a
         // saját `contentItem`-jében kihagyja a jelölő (és az almenü-nyíl)
         // helyét; mi viszont saját `contentItem`-et adunk (#757, a
@@ -105,7 +98,6 @@ MenuItem {
         color: control.placeholder || control.retired
             ? Theme.textGray
             : (control.sajat ? Theme.linkBlue : Theme.ink)
-        alignment: Qt.AlignLeft | Qt.AlignVCenter
         // hely a jobb szélen a placeholder-pontnak, hogy ne fedjék egymást,
         // és (#1750) az almenü-nyílnak — tükrözött elrendezésben a jelölőnek
         rightPadding: (control.placeholder ? placeholderDot.width + 8 : 0)

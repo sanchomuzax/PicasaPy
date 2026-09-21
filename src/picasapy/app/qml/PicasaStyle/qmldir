@@ -1,2 +1,3 @@
 module PicasaStyle
 ToolTip 1.0 ToolTip.qml
+MenuItem 1.0 MenuItem.qml
