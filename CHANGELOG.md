@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.540] – 2026-09-21
+
+### Javítva
+
+- **A menükben a gyorsbillentyűk egy jobbra igazított oszlopban állnak, mint
+  az eredeti Picasában (#3455).** Eddig a gyorsbillentyű közvetlenül a
+  felirat után, annak hosszától függő helyen állt, a hosszú tételeknél pedig
+  le is vágódott (például a „Forgatás balra" `Ctrl+Shift+R`-je nem
+  látszott). A javítás minden menüre — a menüsávra és a helyi menükre — egyszerre
+  hat.
+
 ## [0.8.539] – 2026-09-21
 
 ### Javítva
