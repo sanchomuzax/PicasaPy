@@ -19,16 +19,6 @@ from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import fade_alpha, gaussian_blur_f, to_float, to_uint8
 
 
-def thickness_px(height: int, width: int, percent: float) -> int:
-    """Százalék (0..100) → pixel, a kép rövidebb oldalára vetítve.
-
-    #317 óta CSAK a `DropShadow` `Blur` paramétere használja (a szegély-
-    vastagságok pixelben értendők, ld. `add_ring`) — ott nincs mért adat,
-    ez marad a dokumentált közelítés.
-    """
-    return max(0, round(min(height, width) * percent / 100.0))
-
-
 def add_ring(image: np.ndarray, thickness: float, color: tuple[int, int, int]) -> np.ndarray:
     """Egyetlen egyenletes szegélygyűrű hozzáadása — a vastagság PIXELBEN.
 
@@ -163,31 +153,65 @@ def shadow_offset(distance_px: float, angle: float) -> tuple[int, int]:
     )
 
 
+#: A `DropShadow` határoló-doboz kiterjesztőjének (`0x00bcd760`) szorzója a
+#: leíró `quality="{BitmapFilterQuality.HIGH}"` (= 3) fokozatán, `0x00cf4368`.
+_DROPSHADOW_HIGH_FAKTOR = 1.3501
+#: A paraméter-vágó (`0x00bcd640`) a `blurX`/`blurY`-t erre a tartományra szorítja.
+_DROPSHADOW_BLUR_MIN = 1.0
+_DROPSHADOW_BLUR_MAX = 255.0
+
+
+def drop_shadow_padding(
+    distance: float, angle: float, blur: float
+) -> tuple[float, tuple[int, int], tuple[int, int, int, int]]:
+    """A `DropShadow` vásznának oldalankénti bővítése (#3419).
+
+    A `0x00bcd760` a képet oldalanként `ceil(blur · 1,3501)` képponttal
+    tágítja; a `blur` KÉPPONT, `clamp(1, 255)`. A kitágított dobozt az
+    árnyék `(dx, dy)` eltolja, és a kimenet a kettő UNIÓJA az eredeti
+    képpel — ha az eltolás nagyobb a margónál, a vászon aszimmetrikus.
+
+    Vissza: `(blur_px, (dx, dy), (bal, fent, jobb, lent))`.
+    """
+    blur_px = min(max(float(blur), _DROPSHADOW_BLUR_MIN), _DROPSHADOW_BLUR_MAX)
+    margo = math.ceil(blur_px * _DROPSHADOW_HIGH_FAKTOR)
+    dx, dy = shadow_offset(int(round(distance)), angle)
+    return (
+        blur_px,
+        (dx, dy),
+        (max(0, margo - dx), max(0, margo - dy), max(0, margo + dx), max(0, margo + dy)),
+    )
+
+
 def compose_drop_shadow(
     image: np.ndarray,
     shadow_color: tuple[int, int, int],
     background_color: tuple[int, int, int],
     distance_px: int,
     angle: float,
-    blur_px: int,
+    blur_px: float,
     margin: int,
     fade: float = 0.0,
+    pads: tuple[int, int, int, int] | None = None,
 ) -> np.ndarray:
     """A `DropShadow` kompozitálása MÁR KISZÁMOLT pixel-paraméterekkel
-    (elmosás-sugár, eltolás, vászon-margó) — a százalékos `draw_drop_shadow`
+    (elmosás-sugár, eltolás, vászon-margó) — az önálló `draw_drop_shadow`
     és a Polaroid rögzített (pixelben megadott) árnyék-receptje közös magja
-    (#1144). A hívó felel a `margin` helyes levezetéséért.
+    (#1144). A hívó felel a `margin` helyes levezetéséért; a `pads`
+    (bal, fent, jobb, lent) megadásakor a vászon aszimmetrikus, és a
+    `margin` figyelmen kívül marad.
     """
     validate_image(image)
     height, width = image.shape[:2]
-    canvas_h, canvas_w = height + margin * 2, width + margin * 2
+    bal, fent, jobb, lent = pads if pads is not None else (margin,) * 4
+    canvas_h, canvas_w = height + fent + lent, width + bal + jobb
     canvas = np.empty((canvas_h, canvas_w, 3), dtype=np.float32)
     canvas[:] = np.array(background_color, dtype=np.float32)
 
     offset_x, offset_y = shadow_offset(distance_px, angle)
     shadow_layer = np.zeros((canvas_h, canvas_w), dtype=np.float32)
-    top = margin + offset_y
-    left = margin + offset_x
+    top = fent + offset_y
+    left = bal + offset_x
     shadow_layer[top : top + height, left : left + width] = 1.0
     shadow_blurred = gaussian_blur_f(shadow_layer, blur_px)
 
@@ -196,7 +220,7 @@ def compose_drop_shadow(
     shadow_color_arr = np.array(shadow_color, dtype=np.float32)
     canvas = canvas * (1.0 - weight[..., np.newaxis]) + shadow_color_arr * weight[..., np.newaxis]
 
-    canvas[margin : margin + height, margin : margin + width] = to_float(image)
+    canvas[fent : fent + height, bal : bal + width] = to_float(image)
     return to_uint8(canvas)
 
 
@@ -210,26 +234,31 @@ def draw_drop_shadow(
     fade: float = 0.0,
 ) -> np.ndarray:
     """`DropShadow`: a kép vetett árnyéka a `background_color` vászonra,
-    `distance`/`angle` szerint eltolva, `blur`-ral (0..100, a rövidebb oldal
-    százalékában) elmosva, `shadowAlpha = fade_alpha(fade)` átlátszósággal.
+    `distance`/`angle` szerint eltolva, `blur` KÉPPONTNYI elmosással,
+    `shadowAlpha = fade_alpha(fade)` átlátszósággal.
 
-    ⚠️ #1144/#626: ez a `blur`→pixel átváltás (rövidebb oldal százaléka,
-    `margin = 2·blur_px + distance`) a Polaroid mérésén bizonyítottan HIBÁS
-    modell — a valódi Flash-eredetű `DropShadowFilter`-ben a `blur` már
-    PIXELBEN értendő, és a margó `blur_px + distance` (nincs duplázás). A
-    Polaroid receptje ezért NEM ezt a függvényt hívja, hanem a
-    `compose_drop_shadow` magot közvetlenül, kiszámolt pixel-margóval — az
-    itteni százalékos modell (az önálló `DropShadow` effekt) javítása
-    külön, nyitott jegy (#626), mert a `min`/`max` mérés ezzel a
-    függvénnyel ELLENTMOND az egyszerű `blur_px + distance` képletnek.
+    A vászon mérete a bináris kiterjesztőjét követi (`drop_shadow_padding`,
+    #3419): a 684-es golden mindhárom állásában képpontra egyezik a valódi
+    Picasa-exporttal. A korábbi modell (a `blur` a rövidebb oldal százaléka,
+    margó `2·blur + distance`) a `0x00bcd760` szerint mindkét pontján téves
+    volt.
+
+    ⚠️ Az elmosás ALAKJA (itt `blur` szigmájú Gauss) nincs a binárisból
+    kiolvasva — a Flash `HIGH` minőség dobozszűrő-menetei ettől eltérhetnek;
+    ez a vászon méretét nem érinti.
     """
     validate_image(image)
-    height, width = image.shape[:2]
-    blur_px = max(1, thickness_px(height, width, blur))
-    distance_px = int(round(distance))
-    margin = blur_px * 2 + abs(distance_px)
+    blur_px, _, pads = drop_shadow_padding(distance, angle, blur)
     return compose_drop_shadow(
-        image, shadow_color, background_color, distance_px, angle, blur_px, margin, fade
+        image,
+        shadow_color,
+        background_color,
+        int(round(distance)),
+        angle,
+        blur_px,
+        0,
+        fade,
+        pads=pads,
     )
 
 
@@ -271,7 +300,6 @@ def rotate_with_pad(
 
 
 __all__ = [
-    "thickness_px",
     "add_ring",
     "add_border_sides",
     "round_corners",
@@ -279,6 +307,7 @@ __all__ = [
     "draw_border",
     "compose_drop_shadow",
     "shadow_offset",
+    "drop_shadow_padding",
     "draw_drop_shadow",
     "rotate_with_pad",
 ]
