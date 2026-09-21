@@ -7175,8 +7175,8 @@ ki = ⌊(t·α_forrás + 255·(255 − α_forrás)) / 255⌋ ,  ki.alfa = 255
 (minden fénykép) a kimenet bitre a felső elem. A fordító akkor fűzi a
 művelet után, ha a `maskWithSourceAlpha` attribútum igaz (`[op+0x20]`,
 beolvasás `0x00bc4962`–`0x00bc496c`; kiírás `0x00bc4b23`–`0x00bc4b41`) — a
-`filterdesc.xml`-ben egyetlen helyen: a `PicnikGrain` beágyazott
-műveletén.
+`filterdesc.xml`-ben két helyen: a `Cinemascope` zajrétegén (`:762`) és a
+`PicnikGrain` beágyazott műveletén (`:923`).
 
 ### E) Eredeti / nálunk / teendő
 
