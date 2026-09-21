@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.537] – 2026-09-21
+
+### Javítva
+
+- **Az Árnyék keret (DropShadow) ugyanakkora képet ad, mint az eredeti
+  Picasa (#3419).** A keret szélessége eddig a kép méretétől függött, és
+  jóval nagyobb lett a kelleténél (egy 960×640-es fotón 1224×904 a helyes
+  988×668 helyett); most képpontra az eredeti programét követi, és a kép
+  is ugyanott ül a kereten belül. A valódi Picasa-exporthoz mérve az
+  eltérés 36,5 → 0,7, illetve 28,4 → 0,1 ΔE lett.
+
 ## [0.8.536] – 2026-09-21
 
 ### Javítva

@@ -71,11 +71,13 @@ class TestDropShadow:
         _assert_valid(result)
         assert result.shape[0] > image.shape[0]
 
-    def test_a_kep_kozepen_marad(self, image):
+    def test_a_kep_a_mert_helyen_marad(self, image):
+        """#3419: a vászon az árnyék irányában aszimmetrikus. A 684-es golden
+        `dropshadow__alap` exportjában (distance 4, angle 90, blur 10) a
+        forrás MÉRT helye: bal 14, fent 10 (jobb 14, lent 18) — NEM középen."""
         result = f.apply_drop_shadow(image, distance=4.0, angle=90.0, blur=10.0, fade=30.0)
-        top = (result.shape[0] - image.shape[0]) // 2
-        left = (result.shape[1] - image.shape[1]) // 2
-        np.testing.assert_array_equal(result[top : top + image.shape[0], left : left + image.shape[1]], image)
+        assert result.shape[:2] == (image.shape[0] + 28, image.shape[1] + 28)
+        np.testing.assert_array_equal(result[10 : 10 + image.shape[0], 14 : 14 + image.shape[1]], image)
 
 
 class TestMuseumMatte:
