@@ -26,6 +26,11 @@ import QtQuick.Controls
 // szürkén LÁTSZANAK (#416, illetve a spec 5.1. szabálya: az inaktív tétel
 // is tétel, hogy a menü magassága és a tételek helye állandó maradjon).
 //
+// #3448: minden feltételesen rejtett tétel `height: visible ? implicitHeight : 0`
+// kötést kap — a Qt Quick menüje a `visible: false` tétel sormagasságát
+// megtartja, így mappanézetben az öt album-/személy-tétel üres rést hagyott.
+// Az eredeti ezeket be sem építi a menübe (spec B.3: kivonással készül).
+//
 // Önálló, signal-alapú komponens: a bekötést a Main.qml végzi.
 PicasaMenu {
     id: menu
@@ -111,7 +116,10 @@ PicasaMenu {
                 onTriggered: menu.addToAlbumRequested(modelData.token)
             }
         }
-        MenuSeparator { visible: menu.albums.length > 0 }
+        MenuSeparator {
+            visible: menu.albums.length > 0
+            height: visible ? implicitHeight : 0
+        }
         MenuItem {
             objectName: "contextMenuNewAlbum"
             text: qsTr("New Album...")
@@ -130,6 +138,7 @@ PicasaMenu {
         // csak album-nézetben (#9): a rács ott az adott album tagjait
         // mutatja, ott van értelme a kijelölés kivételének
         visible: menu.currentAlbumToken !== ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.removeFromAlbumRequested()
     }
 
@@ -142,6 +151,7 @@ PicasaMenu {
         // `Ctrl+Delete` ezért ITT él az Emberek-albumban
         text: qsTr("Remove from People Album") + "\tCtrl+Delete"
         visible: menu.personName !== ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.removeFromPeopleAlbumRequested()
     }
     // #422: `PplAlbumPhoto::ID_PEOPLEALBUMS` — a MEGLÉVŐ személyek közé
@@ -158,12 +168,14 @@ PicasaMenu {
         objectName: "contextMenuAddToPeopleAlbum"
         text: qsTr("Add to People Album")
         visible: menu.personName !== ""
+        height: visible ? implicitHeight : 0
         placeholder: true
     }
     MenuItem {
         objectName: "contextMenuMoveToNewPerson"
         text: qsTr("Move to New Person...")
         visible: menu.personName !== ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.moveToNewPersonRequested()
     }
     // A negyedik `PplAlbumPhoto` parancs („Beállítás az Emberek album
@@ -174,6 +186,7 @@ PicasaMenu {
         objectName: "contextMenuSetAsPeopleAlbumThumbnail"
         text: qsTr("Set as People Album Thumbnail")
         visible: menu.personName !== ""
+        height: visible ? implicitHeight : 0
     }
     MenuSeparator {}
 
@@ -311,6 +324,7 @@ PicasaMenu {
             // nem a saját mappájában látszik. Mappanézetben az eredeti sem
             // mutatja.
             visible: menu.currentAlbumToken !== "" || menu.personName !== ""
+            height: visible ? implicitHeight : 0
             onTriggered: menu.locateInPicasaRequested()
         }
     }
@@ -325,6 +339,7 @@ PicasaMenu {
         // törlést a kép helyi menüjében: ott ugyanez a parancsrekesz
         // eltávolításra van átcímkézve (ld. fentebb a két tételt).
         visible: menu.currentAlbumToken === "" && menu.personName === ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.deleteRequested()
     }
     MenuItem {
