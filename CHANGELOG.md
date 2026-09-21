@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.538] – 2026-09-21
+
+### Javítva
+
+- **A Hőtérkép (HeatMap) effekt úgy színez, mint az eredeti Picasa
+  (#3421).** Két eltérés volt: a színskálán a képpont helyét nem a
+  világossága, hanem — az eredeti gépikódja szerint — a piros csatornája
+  adja; és a színezés előtt a kép nem szürkül. A valódi Picasa-exportokhoz
+  mérve az eltérés ΔE 20,9 → 1,0, 21,3 → 1,1, illetve 47,2 → 0,8 lett. Az
+  Éjjellátó (NightVision) ugyanezt a színskála-módot használja, ott az
+  eltérés részben csökkent (14,5 → 11,9).
+
 ## [0.8.537] – 2026-09-21
 
 ### Javítva

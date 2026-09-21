@@ -699,9 +699,18 @@ def apply_noise(
 # --- Gradiens-leképezés (GradientMap / HSVGradientMap) ------------------
 
 
+#: #3421: a gradiens-LUT-ok INDEXE a képpont piros csatornája. A
+#: `GradientMap` (`0x00bb87b0`) és a `HSVGradientMap` (`0x00bbc260`)
+#: építője a színtáblát a közös futószalag (`0x00bcb2f0`) `+0x800`
+#: rekeszébe írja (a BGRA `src[2]` bájtja), a másik kettőt nullázza — a
+#: kimenet tehát csak a piros csatornától függ, nem a lumától.
+_GRADIENS_INDEX_CSATORNA = 0
+
+
 def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) -> np.ndarray:
-    """`GradientMap`: a Rec.601 luma [0..255] értékét a `colors` (egyenletes
-    közű, `len(colors)` pontos) színátmenetére képezi le.
+    """`GradientMap`: a képpont PIROS csatornáját [0..255] a `colors`
+    (egyenletes közű, `len(colors)` pontos) színátmenetére képezi le
+    (#3421, ld. `_GRADIENS_INDEX_CSATORNA`).
 
     `colors` elemeinek csatornasorrendje **RGB** — ld. `tint_multiply`
     docstringjét (#510).
@@ -709,8 +718,7 @@ def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) ->
     validate_image(image)
     if len(colors) < 2:
         raise ValueError("Legalább két szín kell a gradienshez")
-    image_f = to_float(image)
-    gray_index = to_uint8(luma(image_f))
+    gray_index = image[..., _GRADIENS_INDEX_CSATORNA]
     xs = np.linspace(0.0, 255.0, len(colors))
     channel_luts = []
     for channel in range(3):
@@ -725,9 +733,9 @@ def hsv_gradient_map(
     stops: tuple[tuple[float, float, float, float], ...],
     hue_offset: float = 0.0,
 ) -> np.ndarray:
-    """`HSVGradientMap`: a luma-hoz rendelt (pozíció, hue°, sat%, val%)
-    töréspontok interpolációja HSV-térben, majd RGB-re konvertálva —
-    a `HeatMap` effekt implementációja.
+    """`HSVGradientMap`: a PIROS csatornához (#3421) rendelt (pozíció,
+    hue°, sat%, val%) töréspontok interpolációja HSV-térben, majd RGB-re
+    konvertálva — a `HeatMap` effekt implementációja.
     """
     validate_image(image)
     positions = np.array([stop[0] for stop in stops], dtype=np.float64)
@@ -743,9 +751,7 @@ def hsv_gradient_map(
     )
     hsv_lut = np.clip(np.rint(hsv_lut), 0, 255).astype(np.uint8).reshape(1, 256, 3)
     rgb_lut = cv2.cvtColor(hsv_lut, cv2.COLOR_HSV2RGB).reshape(256, 3)
-    image_f = to_float(image)
-    gray_index = to_uint8(luma(image_f))
-    return rgb_lut[gray_index]
+    return rgb_lut[image[..., _GRADIENS_INDEX_CSATORNA]]
 
 
 # --- Térbeli maszkok -------------------------------------------------------

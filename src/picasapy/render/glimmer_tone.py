@@ -290,12 +290,17 @@ _HEATMAP_STOPS = (
 
 
 def apply_heatmap(image, hue: float = 0.0, fade: float = 0.0):
-    """`HeatMap=1,Hue,Fade` — deszaturálás → `HSVGradientMap` a 240°→120°→0°
-    hőtérkép-skálán, `Hue` (`[-180..180]`) eltolással.
+    """`HeatMap=1,Hue,Fade` — `SimpleColorMatrix(Saturation=0)` →
+    `HSVGradientMap` a 240°→120°→0° hőtérkép-skálán, `Hue` (`[-180..180]`)
+    eltolással.
+
+    #3421: a leíró `Saturation="0"`-t ír, ami NEM szürkít (mint a TwoTone-nál,
+    #3433); a korábbi `-100`-as teljes szürkítés a gradiens piros-csatornás
+    indexével együtt a Picasa-exporttól ΔE ~21-re vitt.
     """
     validate_image(image)
-    desaturated = simple_color_matrix(image, saturation=-100.0)
-    mapped = hsv_gradient_map(desaturated, _HEATMAP_STOPS, hue_offset=hue)
+    matrixed = simple_color_matrix(image, saturation=0.0)
+    mapped = hsv_gradient_map(matrixed, _HEATMAP_STOPS, hue_offset=hue)
     return to_uint8(alpha_blend(to_float(image), to_float(mapped), fade_alpha(fade)))
 
 
