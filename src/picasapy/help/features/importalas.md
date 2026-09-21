@@ -85,3 +85,25 @@ mutathatod meg őket.
 
 Ez a párbeszéd az első indításkor magától megjelenik, később pedig a
 Mappakezelőből bármikor újranyitható.
+
+## A régi Picasa adatainak átvétele
+
+Ha ezen a gépen korábban Picasát használtál, a benne megadott **nevek**,
+**kulcsszavak** és **helyek** átvehetők a képek mellé.
+
+Indítás: **Eszközök ▸ Import a Picasából…**
+
+Az ablak az **Import a Picasából** címet viseli, és amíg fut, ezt írja:
+„Nevek, kulcsszavak és helyek átvétele a Picasából…". A végén megmondja,
+mit végzett — például „12 mappa frissült: 342 kulcsszó, 219 hely, 87
+név." —, és azt is, hány fotóhoz nem nyúlt hozzá, mert azoknál **már
+volt adat**.
+
+Két fontos tulajdonsága van:
+
+- **Meglévő adatot soha nem ír felül.** Ahol a kép mellett már van
+  kulcsszó, hely vagy arc, azt érintetlenül hagyja.
+- **Bármikor megismételhető** — a kimaradt mappákkal folytatja.
+
+Ha a program nem talál régi Picasa-adatot a gépen, ezt írja ki: „Nem
+találtunk Picasa-adatokat ezen a gépen."

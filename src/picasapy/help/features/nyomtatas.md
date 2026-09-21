@@ -38,6 +38,32 @@ hogy nyomtatás előtt érdemes ellenőrizni őket. Egy kép akkor számít
 kicsinek, ha a választott nyomatméretre kevesebb mint **150 képpont
 jut hüvelykenként**.
 
+## Szegély és felirat
+
+A **Szegély- és szövegopciók…** gombbal külön lap nyílik, ahol a
+nyomtatott kép szegélyét és feliratát állítod be:
+
+- **Felirat forrása** — *Nincs szöveg*, *Képfeliratok*, *Fájlnév* vagy
+  *Exif-adatok*;
+- **Felirat helye** — *A kép alatt*, *A képen* vagy *A szegélyen*;
+- **Betűtípus** és **méret**, valamint a **Szöveg tördelése** kapcsoló;
+- **Szegély** — *Egyik sem*, *Maximális*, *Csak alul*, illetve
+  **Egyenletes szélességű szegély**;
+- **Szöveg színe** és **Szegély színe**.
+
+Az **Alkalmaz** után az előnézet rögtön megmutatja az eredményt. A
+beállítások megmaradnak a következő indításig.
+
+Indexképek nyomtatásakor ezek a beállítások nem használhatók — a lap ezt
+ki is írja.
+
+## A nyomtatás haladása
+
+Nyomtatás közben a párbeszéd kiírja, hol tart („Nyomtatás: 2 / 12"),
+laponként lépve, és az alsó sáv is jelzi a munkát. Ez a nyomtatóra
+küldésre és a PDF-be mentésre egyaránt áll. Amíg fut, a **Nyomtatás**
+gomb nem indít újabb feladatot.
+
 ## Indexképek nyomtatása
 
 **Mappa ▸ Indexképek nyomtatása…** (Ctrl+Shift+P) egy lapra sok kis képet
