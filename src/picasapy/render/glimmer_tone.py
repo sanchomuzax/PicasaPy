@@ -337,13 +337,18 @@ def apply_twotone(
 ):
     """`TwoTone=1,Brightness,Contrast,Fade,fekete,fehér` —
     `SimpleColorMatrix(Saturation=0, Brightness, Contrast,
-    ContrastAndBrightnessLinked=true)` → luma-alapú lineáris interpoláció
-    a `black_color`/`white_color` között.
+    ContrastAndBrightnessLinked=true)` → lineáris interpoláció a
+    `black_color`/`white_color` között, a mátrix utáni NYERS PIROS
+    csatorna szerint.
+
+    #3433: a gradiens indexe NEM luma. A `0x00bb87b0` LUT-építő a négy
+    256-os rekeszből csak a `+0x800`-at (a BGRA-képpont `src[2]` bájtja,
+    a piros) tölti az interpolált színnel, a másik kettőt nullázza; a
+    `0x00bcb2f0` alkalmazó a rekeszeket bájtonként összegzi.
     """
     import numpy as np
 
     validate_image(image)
-    from picasapy.render.glimmer_ops import luma
 
     matrixed = simple_color_matrix(
         image,
@@ -352,7 +357,7 @@ def apply_twotone(
         contrast=contrast,
         linked=True,
     )
-    gray = (luma(to_float(matrixed)) / 255.0)[..., None]
+    gray = to_float(matrixed)[..., 0:1] / 255.0
     black = np.array(black_color, dtype=float)
     white = np.array(white_color, dtype=float)
     mapped = black + gray * (white - black)
