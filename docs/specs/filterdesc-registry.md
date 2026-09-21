@@ -523,7 +523,7 @@ a #2456 helyesbítése (a hetes alakkal még nem mértünk) érvényben marad.
 | `NightVision` | Brightness −50–50 (0), Contrast −50–50 (0), Fade 0–100 (0) |
 | `Orton` | Bloom 0–50 (25), Brightness 0–100 (50), Fade 0–100 (0) |
 | `PencilSketch` | Radius 1,3–5 (2), Contrast 0–200 (100), Fade 0–100 (0) |
-| `Pixelate` | Impact 2–150 (20), BlendMode 0–9 (9), Fade 0–100 (0) |
+| `Pixelate` | Impact 2–150 (20), BlendMode 0–9 (9 = Normal; a sorszám a natív módtábla indexe, ld. „A `BlendInstruction`” szakasz), Fade 0–100 (0) |
 | `Polaroid` | szín Outer (#E2E2E2), Rotate −10–10 (5) |
 | `QuantizePalette` | Steps 2–30 (8), Smoothing 0–100 (80), Fade 0–100 (0) |
 | `ReanimatedEyeColor` | Blur 0–30 (6), Fade 0–100 (20) + ecset (festhető maszk, **ÜRESEN indul** — befestés nélkül az effekt tétlen, #688) |
@@ -6842,3 +6842,225 @@ gyorsítótára a koordináta-állapotot (`LancHelyzet`) is átadja a folytatás
 enélkül a kettévágott lánc mást adna, mint az egészben futtatott (a #3169 ezt
 `crop64;Vignette` esetén 18,2-nek mérte). Őr:
 `tests/render/test_lanc_sorrend_elesben_3229.py`.
+
+## ⛳⛳ A `BlendInstruction`: tizenegy keverési mód, egész aritmetika — és két mért hiba nálunk (2026-09-21, 337. kör, #626)
+
+*Forrás: a `BlendInstruction` vtáblája (`0x00cf0f00`) és végrehajtója
+`FUN_00bd0700` (1040 b) · a mód-feloldó `FUN_00bd0b40` · a módonkénti
+elosztó `FUN_008f4a60` és ugrótáblája (`0x008f4c48`) · a tizenegy kernel
+és segédfüggvényeik (`0x008f41e0`–`0x008f6620`) · az átlátszóság-keverő
+`FUN_009dc4b0` · a fordító (`0x00bc4ae0`) és az attribútum-beolvasó
+(`0x00bc496f`/`0x00bc4999`) · az `IR` konstruktora (`0x00bc3d80`) · mérés a
+684-es golden-szetten.*
+
+### A) Honnan jön a mód és az átlátszóság
+
+A műveleti objektum **ős-attribútumai**: `BlendMode` (`0x00cf0ab0`) → az
+objektum `+0x04`, `BlendAlpha` (`0x00cf0abc`) → `+0x0c` (beolvasás
+`0x00bc496f`, `0x00bc4999`; mindkét sztringre egyetlen hivatkozás, indextől
+független pásztázással). A fordító (`0x00bc4c0f`–`0x00bc4c3c`) **csak akkor**
+fűz a művelet után `BlendInstruction`-t, ha a kettő közül legalább az egyik
+meg van adva; az utasítás `+0x0c`-je maga a művelet. Utána egy
+`PopInstruction` jön **1-es mélységgel** (`0x00bc4f0e`, `0x00bc50a4`): a
+`Pop` végrehajtója (`0x00bd1ff0`) a legfelső alatti `k`-adik elemet veszi ki
+a veremből ⇒ a keverés után a **bemenet** esik ki, a keveréket hordozó
+felső elem marad.
+
+**A veremszerep tehát:** `B` = alsó elem (a művelet BEMENETE), `A` = felső
+elem (a művelet KIMENETE). A végrehajtó az eredményt `A` helyére írja
+(`0x009a8ca0` = `cél ← forrás`, a forrás az `eax`-ben, a cél a veremben).
+
+### B) A mód-feloldó (`FUN_00bd0b40`) — a teljes névtábla
+
+Előbb kifejezésként értékel (`0x008ef520`), és siker esetén a számot
+egésszé alakítja (`0x008eea90`) — **a szám közvetlenül a mód sorszáma**.
+Ha a kifejezés nem értékelhető ki, a nyers attribútum-szövegből levágja a
+`BlendMode.` előtagot (`0x00cf0ef0`, 10 bájt), és a táblán megy végig
+(`0x00cf0e98`, 11 × {érték, névmutató}) **`_strnicmp`**-pel, a táblabeli név
+hosszával (`0x00bf6b22` — a CRT mintázata: locale-jelző `0x00d49bf4`,
+`EINVAL`, `0x7fffffff` hibaérték). Ha nincs találat, a mód **−1** marad.
+
+| sorszám | név | kernel | képpont-segéd (SSE2 · skalár) |
+|---:|---|---|---|
+| 0 | `Add` | `0x008f4d80` | `0x008f41e0` · `0x008f41f0` |
+| 1 | `Darken` | `0x008f4fa0` | `0x008f4270` · `0x008f4280` |
+| 2 | `Difference` | `0x008f51c0` | `0x008f42d0` · `0x008f42f0` |
+| 3 | `Hardlight` | `0x008f5460` | tábla `0x00d7fc98`, építő `0x008f6540` |
+| 4 | `Lighten` | `0x008f5580` | `0x008f4370` · `0x008f4380` |
+| 5 | `Multiply` | `0x008f57a0` | `0x008f4400` · `0x008f4460` |
+| 6 | `Overlay` | `0x008f5c00` | tábla `0x00d8fca8`, építő `0x008f65b0` |
+| 7 | `Screen` | `0x008f5d20` | `0x008f4540` · `0x008f45c0` |
+| 8 | `Subtract` | `0x008f6070` | `0x008f46c0` · `0x008f46d0` |
+| 9 | `Normal` | `0x008f59d0` | `0x008f4780` · `0x008f48b0` |
+| 10 | `Softlight` | `0x008f5f50` | tábla `0x00d6fc80`, építő `0x008f6620` |
+
+⚠️ A sorszám **nem ábécérendű a végén**: a `Softlight` a 10-es, a `Normal` a
+9-es. Minden `BlendMode="{…?7:5}"` és minden számot adó csúszka EZT a
+sorszámot adja át.
+
+### C) A képpont-képletek — `b` = alsó (bemenet), `t` = felső (kimenet)
+
+Mind a négy bájtra (B, G, R **és alfa**) ugyanaz a képlet fut. A `÷255`
+mindenütt **csonkoló** (`0x80808081`-es szorzás, `sar 7`, előjel-korrekció).
+
+| mód | képlet | bizonyíték |
+|---|---|---|
+| Add | `min(b + t, 255)` | `paddusb` `0x008f41e0` |
+| Darken | `min(b, t)` | `pminub` `0x008f4270` |
+| Lighten | `max(b, t)` | `pmaxub` `0x008f4370` |
+| Difference | `|b − t|` | két `psubusb` + `por` `0x008f42d0` |
+| Subtract | `max(b − t, 0)` | `psubusb xmm0(b), xmm1(t)` `0x008f46c0` |
+| Multiply | `⌊b·t / 255⌋` | skalár `0x008f446e`; SSE2: `(p + (p>>8) + 1) >> 8`, `0x00cd0520` = 1 |
+| Screen | `⌊(65025 − (255−b)(255−t)) / 255⌋` = `b + t − ⌈b·t/255⌉` | skalár `0x008f45dc`; SSE2 `psubusw`, `0x00cd0530` = 254, `0x00cd0540` = 1 |
+| Overlay | `f(b, t)` | tábla `T[t·256 + b] = f(b, t)` (`0x008f65d8`) |
+| Hardlight | `f(t, b)` | tábla `T[t·256 + b] = f(t, b)` (`0x008f6568`) — CSERÉLT argumentum |
+| Softlight | `t < 128`: `⌊t·(b′+128) / 255⌋`; különben `⌊(65025 − (382 − b′)(255 − t)) / 255⌋`, ahol **`b′ = b & 0xFE`** | `0x008f6640`–`0x008f667d` |
+| Normal | `⌊(t·αₜ + b·(255 − αₜ)) / 255⌋` — a felső elem SAJÁT alfájával | `pshuflw/pshufhw 0xff` + `pandn` `0x008f4780`; skalár `0x008f48b0` |
+
+Az `Overlay`/`Hardlight` közös alapfüggvénye (`0x008f53f0`, `x` = 1., `y` =
+2. argumentum):
+
+```
+x ≤ 127:          ⌊2·x·y / 255⌋
+x = y = 255:      255                         ← külön ág (0x008f5405)
+különben:         ⌊(65024 − 2·(255−x)·(255−y)) / 255⌋
+```
+
+(A 65024 = 255² − 1; a külön ág nélkül 255/255-re 254 jönne ki.)
+
+**A két útvonal bitre azonos** — mérve mind a 65 536 bájtpáron (Multiply,
+Screen), a `Normal`-nál mind a 256 alfaértékre is. A CPU-jelző
+(`0x00d695d2`/`0x00d695d3`) tehát nem befolyásolja a kimenetet.
+
+A `Softlight` képletében a döntő operandus a **felső** elem, és az alsó
+elem legalsó bitje eldobódik (`and al, 0xfe`, `0x008f6642`). Ezt a kód így
+mondja — hogy szándékos-e, azt nem tudjuk; a Glimmer-leíró egyetlen
+effektje sem hivatkozik a 10-es módra név szerint, a `Pixelate` csúszkája
+pedig csak 0–9-ig megy.
+
+### D) A végrehajtó menete (`FUN_00bd0700`)
+
+1. `α = BlendAlpha` (hiányában **1,0**), **[0, 1]-re vágva** (`0x00bd0742`–
+   `0x00bd0778`) — a `BlendAlpha="100"` (a `Boost`-ban) tehát 1.
+2. Ha a mód **−1 vagy 9 (Normal)** és `α ≈ 1` → **semmi nem történik**, a
+   felső elem változatlan (`0x00bd077e`–`0x00bd07b2`). ⚠️ A kifejezett
+   `Normal` tehát teljes átlátszóságnál **nem** kompozitál a felső elem
+   alfájával; `α < 1`-nél viszont igen (3. lépés).
+3. Ha `α ≈ 0` → a felső elem helyére az alsó kerül (`0x00bd07d3`–`0x00bd07ec`).
+4. Ha a mód 0–10 → a kernel a (felső, alsó) párból új képet ír, és az a
+   felső elem helyére kerül (`0x00bd0934`, `0x00bd09b9`).
+5. Ha `α` nem ≈ 1 → **átlátszóság-keverés** (`0x009dc4b0`), majd a
+   kimenet **alfacsatornája 255-re áll** (`0x009a99c0`, `eax = 0xff`, teljes
+   téglalap).
+
+A „≈” mindkét helyen a float **bitmintáján** mér: `|bits(α) − bits(x)| < 8`
+(ugyanaz a fogás, mint az `Exposure`-nél).
+
+**Az átlátszóság-keverés** (`0x009dc4b0`):
+
+```
+w = trunc(α · 256)        ; 0x00cf39d8 = 256,0, csonkoló kerekítés (0x0c00 vezérlőszó)
+w = w − 1, ha w > 0       ; 0x009dc561
+ki = (b · (255 − w) + t · w) >> 8      ; MMX, 0x00c7c828 = 0x00FF
+```
+
+⚠️ **A súlyok összege 255, az osztó 256** — a keverék ezért egy szinttel
+sötétebb lehet (két 255-ös bemenetből 254). Ez a kód viselkedése, nem
+kerekítési hiba nálunk.
+
+⚠️ **Páratlan szélességnél az utolsó oszlop MÁS képletet kap**
+(`0x009dc646`–`0x009dc6fb`): `ki = t + ((b − t) · w >> 8)`, azaz a súly
+ott az ALSÓ elemre esik. A csomagolt (`0x00FF00FF`) aritmetika átvitele
+negatív különbségnél sincs modellezve. Ez egyetlen képpontoszlopot érint;
+utánépíteni csak akkor érdemes, ha egy golden-mérés kimutatja.
+
+### E) Két mért hiba nálunk — a bináris itt az OKOT is megadja
+
+**1. Az `IR` zöld ragyogása SCREEN, nem LIGHTEN.** Az `IR` konstruktora a
+ragyogás gyerekművelete (`glimmer::NestedImageOperation`, vtábla
+`0x00cf0774`) mód-attribútumát **konstans 7-re** állítja: `0x00bc3e49
+push 7` → `+0x04` → `0x008eedc0`. A 7 a fenti tábla szerint **Screen**.
+A mai kódunk (`glimmer_creative.py`, `apply_ir`) LIGHTEN-t használ, és a
+docstringje ezt azzal indokolja, hogy „a `PicnikGrain` deklarációja szerint
+a 7-es mód LIGHTEN” — **ez az olvasat téves**, a 7 a Screen.
+
+| `ir` eset | ΔE (Picasa vs. eredeti) | ΔE mi (LIGHTEN, ma) | ΔE mi (SCREEN) |
+|---|---:|---:|---:|
+| `alap` (Fade 0) | 18,131 | **6,039** | **1,280** |
+| `max` (Fade 100) | — | 0,121 | 0,121 |
+
+*Mérés: `684-merokeszlet`, `tools/golden/compare_render.py`
+`delta_e_cie76` átlaga; a SCREEN a mai lebegőpontos `_blend_screen`-nel, az
+`apply_ir` többi része változatlan.* ⇒ a verdikt `ROSSZ` → `JO`.
+
+**2. A `Pixelate` `BlendMode` csúszkája (0–9) a natív sorszámot adja.** A mai
+`apply_pixelate` docstringje szerint a csúszka jelentése „a
+`filterdesc.xml`-ből NEM dekódolható”, ezért figyelmen kívül hagyjuk. A
+fenti tábla dekódolja: 0 Add · 1 Darken · 2 Difference · 3 Hardlight ·
+4 Lighten · 5 Multiply · 6 Overlay · 7 Screen · 8 Subtract · **9 Normal
+(alapérték)**.
+
+| `pixelate` eset | lánc | ΔE mi (ma) | ΔE mi (a natív móddal) |
+|---|---|---:|---:|
+| `min` | `Impact 2 · BlendMode 0 · Fade 0` | **23,307** | **0,783** (Add) |
+| `alap` | `Impact 20 · BlendMode 9 · Fade 0` | 4,638 | 4,638 (Normal, α = 1 → no-op) |
+
+Az `alap` maradék 4,6-ja tehát **nem** a keverésből jön — az a pixelesítés
+saját eltérése, külön kérdés.
+
+### F) A három „futásidőben változó” mód — feloldva
+
+| effekt | kifejezés | mit ad |
+|---|---|---|
+| `PicnikGrain` | `{_radioLighten.selected?7:5}` | **7 = Screen** (világosító), **5 = Multiply** (sötétítő) — nálunk ma `lighten` / `darken` |
+| `Pixelate` | `{_sldrBlendMode.value}` | a csúszka értéke = sorszám (E/2) |
+| `PicnikTint` | `{_cbBlendMode.liveValue}` | a `_cbBlendMode` vezérlő **sehol nincs definiálva** a leíróban ⇒ a kifejezés nem értékelhető; a szöveges ág a `BlendMode.` előtag után a `liveValue}` maradékot hasonlítja ⇒ nincs találat ⇒ **mód −1**, csak átlátszóság-keverés. Összhangban a #884 mérésével (tiszta színezés, ΔE 1,50). |
+
+A `{BlendMode.SCREEN}` alakú kifejezések (`PencilSketch`,
+`ReanimatedEyeColor`) ugyanígy a szöveges ágon oldódnak fel: a `BlendMode`
+szóra a binárisban csak az attribútumnév és az előtag hivatkozik (egy-egy
+helyen), tehát a kiértékelőnek nincs ilyen szimbóluma; az előtag után a
+`SCREEN}` a `Screen` név hosszán, kis/nagybetű nélkül illeszkedik ⇒ 7.
+
+### G) Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| módok | 11 | 7 (`normal multiply screen overlay darken lighten add`) | `difference`, `hardlight`, `subtract`, `softlight` hiányzik |
+| Add/Darken/Lighten | egész | **bitre azonos** (65 536 pár, 0 eltérés) | — |
+| Multiply/Screen | csonkoló `÷255` | `rint` — 31 770 / 65 536 pár tér el, max 1 | csonkolás |
+| Overlay | csonkoló, `255/255` külön ág | `rint` — 32 767 pár tér el, max 1 | csonkolás |
+| átlátszóság | `(b·(255−w) + t·w) >> 8`, `w = trunc(256α) − 1` | lebegőpontos `b + α(t − b)` + `rint` — α ∈ {0,25; 0,5; 0,6; 0,75; 0,9}: 51 754–57 184 pár tér el, max **2** | egész képlet |
+| alfa a keverés után | 255 | nem kezeljük (RGB-ben dolgozunk) | nincs teendő, amíg a lánc RGB |
+| `IR` ragyogás | Screen | Lighten | **Screen** — ΔE 6,04 → 1,28 |
+| `Pixelate` csúszka | sorszám | figyelmen kívül | bekötés — `min`: ΔE 23,31 → 0,78 |
+| `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **nem mérve** (a zaj magja véletlen, #907) |
+
+*Bizonyítottsági fok:* a tábla, a kernelek, a keverő és a végrehajtó menete
+**megerősített** (diszasszemblátum + kimerítő bájtpáros próba); a veremszerep
+**erős** (a `Pop` 1-es mélysége és a `cél ← forrás` másoló, a Dupe helye a
+művelet saját fordító-slotjában nincs végigkövetve); az `IR` 7-ese
+**megerősített** (konstans a mód-attribútumba) és **mérve** hat; a
+`PicnikTint` −1-e **erős** (a vezérlő hiánya a leíróban ellenőrizve).
+
+### H) Nyitott kérdések mérlege
+
+- a páratlan szélesség utolsó oszlopának csomagolt átvitele — **HATÓKÖRÖN
+  KÍVÜL** (egy oszlop, golden-mérés nélkül nem építjük; 337. kör döntése);
+- a `Softlight` `& 0xFE`-je szándékos-e — **LEZÁRVA**: a kód ezt csinálja,
+  utánépíteni így kell; a szándék nem kérdés a megvalósításhoz;
+- a `PicnikGrain` hatása a mért eltérésre — **LEZÁRVA mint nem mérhető
+  pixelre**: a mag véletlen (#907); a fejlesztői jegy statisztikai
+  (átlag/szórás) próbát ír elő.
+
+`0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+### Amit KIZÁRTAM
+
+- „a 7-es mód LIGHTEN” (`glimmer_creative.py` docstring) — a névtábla
+  (`0x00cf0e98`) és az ugrótábla (`0x008f4c48`) egyaránt Screent ad, és a
+  golden-mérés is azt igazolja;
+- „a `Pixelate` csúszkája nem dekódolható” — a sorszám közvetlenül a
+  módtábla indexe;
+- „a `Normal` teljes átlátszóságnál is alfával kompozitál” — a végrehajtó
+  `α ≈ 1`-nél a kernelt meg sem hívja.
