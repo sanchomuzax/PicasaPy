@@ -2023,12 +2023,56 @@ mechanizmusa (több mátrix egymásba szorzása), nem csatorna-újrarendezés.
 
 ⇒ **A golden-mérésben látott "első RGB-csatornát követi" jelenség forrása
 KIZÁRVA ebből a lépésből.** A színmátrix-alkalmazó és a linked
-kontraszt/fényerő-mátrix egyaránt szimmetrikus a csatornákon; a luma-/
-gradiens-skalár tehát a `TwoToneImageOperation` SAJÁT munkavégzőjében
-számolódik, nem az általános mátrix-alkalmazóban. **Következő cím:**
-`0x00bb87b0` (a LUT-építő) és `0x00bb85b0` (a két megálló leképezése) —
-itt kell megkeresni, milyen skalárt (luma? egy kiválasztott csatorna?)
-vetít a gradiens LUT indexébe. A termékkódot addig nem módosítom.
+kontraszt/fényerő-mátrix egyaránt szimmetrikus a csatornákon.
+
+#### A LUT-skalár MEGVAN — a `TwoTone` NEM lumát használ, hanem a NYERS piros csatornát
+
+**Bizonyítottság: MEGERŐSÍTETT.** A `0x00bb87b0` (493 b, LUT-építő) és a
+közös LUT-alkalmazó `0x00bcb2f0` (744 b) teljes diszasszemblátuma
+megválaszolja a kérdést.
+
+**A LUT-tábla négy 256 elemű "rekeszből" áll** (`base+0x000`, `+0x400`,
+`+0x800`, `+0xc00`, egyenként 256×4 bájt), és a `0x00bcb2f0` mindegyiket a
+MEGFELELŐ forrás-bájttal indexeli:
+
+```
+byte[src+2] → LUT[base+0x800 + byte·4]   (32 bites csomagolt szín)
+byte[src+1] → LUT[base+0x400 + byte·4]
+byte[src+0] → LUT[base+0x000 + byte·4]
+byte[src+3] → LUT[base+0xc00 + byte·4]
+```
+
+A négy lekérdezett dword-ot bájtonként (0–7, 8–15, 16–23, 24–31 bit)
+SZÉTBONTVA, telítetten összeadja, és ugyanarra a négy kimeneti bájt-helyre
+írja vissza — ugyanaz a mechanizmus, amit a `0x008f2640` mátrix-alkalmazónál
+már dokumentáltunk, csak LUT-tal, nem szorzással.
+
+**A `0x00bb87b0` viszont a NÉGY rekeszből CSAK EGYET tölt fel.** A
+két-megállós (fekete/fehér) esetben a `0xbb8931`–`0xbb8958` ciklus mind a
+256 index `i` (0–255) értékre kiszámolja az interpolált ARGB32 színt
+(`0x00bb85b0` hívásával, `pozíció = i`, két megálló: 0,0 és 1,0), és
+**KIZÁRÓLAG a `+0x800` rekeszbe** írja (`mov dword ptr [edx+ecx*4+0x800], eax`
+a `0xbb8951` címen). A `+0x000` és `+0x400` rekeszt a függvény explicit
+**NULLÁZZA** (`memset(esi, 0, 0x400)` és `memset(esi+0x400, 0, 0x400)`,
+`0xbb895a`–`0xbb897f`); a `+0xc00` (alfa) rekeszt nem érinti (más helyen
+töltődik fel, feltehetően identitás-áttengedéssel).
+
+**Összerakva a `0x008f2640` mátrix-elemzés bájt-leképezésével**
+(`src[2]` = a mátrix R-oszlopa, ha a tároló a szokásos Win32-BGRA): a
+`+0x800` rekesz pontosan a **`src[2]` (piros csatorna) bájtjával**
+indexelődik. A `+0x000`/`+0x400` rekeszek (kék/zöld csatorna) nullák ⇒
+**nulla hozzájárulás**; a végeredmény a kimenetben **kizárólag a bemenő
+(kontraszt/fényerő-korrigált) piros csatorna értékétől függ.**
+
+⇒ **A `TwoTone` NEM lumát számol.** A `glimmer_tone.py:apply_twotone`
+Rec.601-luma útja (`luma(to_float(matrixed))`) tehát **bizonyítottan téves
+modell** — az eredeti a `SimpleColorMatrix` utáni pixel **nyers piros
+csatornáját** (a mátrix R-oszlopa szerinti kimeneti bájtot) vetíti a
+fekete→fehér gradiensbe, súlyozás nélkül. Ez pontosan magyarázza a golden-
+mérés „első RGB-csatornát követi" eredményét (MAE 6,3644 a nem-izolált 22,42
+helyett) — nem mintafüggő különlegesség, hanem az algoritmus tényleges
+viselkedése. Termékkód-javítás: külön fejlesztői jegy (lásd a #626 jegy
+kommentjét).
 
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
