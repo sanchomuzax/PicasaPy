@@ -63,7 +63,7 @@ Item {
         // maszk 4. bitje ÉS legalább egy kép (spec 4.4)
         enabled: row.can("selection") && row.clipCount >= 1
         //: `select_all` buboréksúgó.
-        ToolTip.text: qsTr("Select all the pictures (Ctrl+A)")
+        ToolTip.text: qsTr("Select all pictures (Ctrl-A)")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.selectAllNodes()
@@ -75,7 +75,7 @@ Item {
         text: qsTr("Select None")
         enabled: row.selectionCount > 0
         //: `select_none` buboréksúgó.
-        ToolTip.text: qsTr("Deselect all the pictures (Ctrl+D)")
+        ToolTip.text: qsTr("Deselect all pictures (Ctrl-D)")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.selectNoNodes()
@@ -87,7 +87,7 @@ Item {
         text: qsTr("Remove")
         enabled: row.selectionCount > 0
         //: `remove_node` buboréksúgó.
-        ToolTip.text: qsTr("Remove selected items from the collage (Del)")
+        ToolTip.text: qsTr("Remove selection from collage (Del)")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.removeSelectedNodes()
@@ -100,7 +100,7 @@ Item {
         // PONTOSAN egy kijelölt kép — a háttérnek egy képe van
         enabled: row.selectionCount === 1
         //: `set_background` buboréksúgó.
-        ToolTip.text: qsTr("Use the selected picture as the background")
+        ToolTip.text: qsTr("Use selected picture as the background")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.setBackgroundFromSelection()

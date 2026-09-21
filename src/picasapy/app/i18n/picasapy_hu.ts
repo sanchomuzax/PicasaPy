@@ -9299,7 +9299,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Select all the pictures (Ctrl+A)</source>
+        <source>Select all pictures (Ctrl-A)</source>
         <translation>Az összes kép kijelölése (Ctrl+A)</translation>
     </message>
     <message>
@@ -9309,7 +9309,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Deselect all the pictures (Ctrl+D)</source>
+        <source>Deselect all pictures (Ctrl-D)</source>
         <translation>Az összes kép kijelölésének megszüntetése (Ctrl+D)</translation>
     </message>
     <message>
@@ -9319,7 +9319,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Remove selected items from the collage (Del)</source>
+        <source>Remove selection from collage (Del)</source>
         <translation>Kijelölt elemek eltávolítása a kollázsból (Del)</translation>
     </message>
     <message>
@@ -9329,7 +9329,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Use the selected picture as the background</source>
+        <source>Use selected picture as the background</source>
         <translation>A kijelölt kép használata háttérként</translation>
     </message>
 </context>
