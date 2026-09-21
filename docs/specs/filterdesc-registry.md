@@ -6101,9 +6101,10 @@ alatta hívott `FUN_00bcb2f0` mozgatja. A **finomítás**: a `vtbl+0x18` nem
 egyetlen közös motor, hanem **családonkénti** belépési pont, és a művelet
 mégis részt vesz — a saját `+0x20` slotjával, paraméterezőként.
 
-⇒ **A következő gépi lépés:** a `FUN_00bcb2f0` (a két puffer-leíró
-fogyasztója) — ez a közös képpont-futószalag; és a `FUN_00bb9e00` 24 bájtos
-görbeleíró-alakja, amiből a vezérlőpont-interpoláció aritmetikája kiolvasható.
+⇒ **A következő gépi lépés (LEZÁRVA, ld. lejjebb):** a `FUN_00bcb2f0` (a két
+puffer-leíró fogyasztója) — ez a közös képpont-futószalag; és a `FUN_00bb9e00`
+24 bájtos görbeleíró-alakja, amiből a vezérlőpont-interpoláció aritmetikája
+kiolvasható.
 
 *Bizonyítottsági fok: **megerősített** — diszasszemblált törzsek és a teljes
 vtábla-slot megoszlás; a családok tételesen felsorolva.*
@@ -6145,9 +6146,19 @@ dokumentálva van; a maradék öt osztály (`AutoFix`, `Exposure`,
 `GradientMap`, `HSVGradientMap`, `PaletteMap`) LUT-tartalma egyenként
 ugyanezzel a módszerrel olvasható ki a saját `vtbl+0x20` szerint.
 
-⇒ **Következő cím:** `FUN_00bb9e00` (a görbecsatorna-leíró, 24 bájtos
-alak) — ebből a `AdjustCurves` vezérlőpont-interpolációjának aritmetikája
-olvasható ki, ez zárná le a hetes családot teljesen.
+⇒ **`FUN_00bb9e00` MÁR MEGVAN, kereszthivatkozás pótolva (2026-09-21).** A
+függvény szerepe: a filterdesc.xml pontlistájának `x`/`y` attribútumú elemeit
+járja be (a névsztringek — `0xcac5b4`="x", `0xcac5b8`="y" — a helyi
+diszasszemblátumból közvetlenül kiolvashatók), és minden pontot a
+`FUN_008f2c70` ponttárolóba fűz. **Ez maga NEM az interpolációs aritmetika**
+— az a lentebbi „Az `AdjustCurves` ponttárolója és természetes spline-
+cache-e" szakaszban (2026-09-18) teljes egészében megvan: `FUN_008f2c70`
+ponttároló-rekord, `FUN_008f3290` bináris keresés + kiértékelés,
+`FUN_008f33b0` tridiagonális természetes spline-megoldó, zárt képlettel. A
+hetes LUT-család pixel-matematikája ezzel **teljesen lezárt**; a
+fennmaradó apró nyitott rész (nem blokkoló) a görbepont-rekord **második
+gyorsítótár-rekeszének** (`+0x10`/`+0x14`) azonosítatlan fogyasztója — ld.
+ugyanott.
 
 ## 12. A SZŰRŐ KOORDINÁTA-HORGA: `CGenericFilter` `+0x84`, mátrix ÉS inverz (2026-09-16, #3169)
 
