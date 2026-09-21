@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.541] – 2026-09-22
+
+### Javítva
+
+- **A Kollázs négy műveleti gombjának angol buboréksúgója az eredeti Picasa
+  szövegét viszi (#3405)** — „Select all pictures (Ctrl-A)", „Deselect all
+  pictures (Ctrl-D)", „Remove selection from collage (Del)", „Use selected
+  picture as the background"; a magyar fordítás változatlan.
+- **Helyesbítés a 0.8.534-hez:** a Kollázs Beállítások lap hat feliratának
+  (köztük az „Instant Camera" keretnek) magyar fordítása a kiadás óta nem
+  töltődött be, mert a fordítási fájl lefordított változata nem frissült
+  vele — magyarul ezek angolul látszottak. Most újra magyarul jelennek meg,
+  és egy új ellenőrzés figyeli, hogy ez ne ismétlődhessen.
+
 ## [0.8.540] – 2026-09-21
 
 ### Javítva
