@@ -7065,7 +7065,7 @@ művelet saját fordító-slotjában nincs végigkövetve); az `IR` 7-ese
 - „a `Normal` teljes átlátszóságnál is alfával kompozitál” — a végrehajtó
   `α ≈ 1`-nél a kernelt meg sem hívja.
 
-## ⛳⛳ A három maszk-utasítás: egy közös képlet, három különböző maszk-forrás (2026-09-22, 338. kör, #626)
+## ⛳⛳ A három maszk-utasítás: egy közös képlet, három különböző maszk-forrás (2026-09-21, 338. kör, #626)
 
 *Forrás: a `MaskInstruction` (`0x00cf0f6c`, másodlagos vtábla `0x00cf0f84`),
 a `PartialMaskInstruction` (`0x00cf0f30`) és a
