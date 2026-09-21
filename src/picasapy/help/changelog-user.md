@@ -4,6 +4,111 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-21
+
+**Nyers (RAW) fényképek**
+
+- A `.cr2`, `.nef`, `.arw`, `.dng` és a többi nyers fájlból **végre
+  megjelenik a kép**: a rácson, a nagy nézőben, a mappaborítókon és a
+  szerkesztő előnézetén. Nyers fájlt mostantól exportálhatsz,
+  kereshetsz benne duplikátumot vagy színt, tehetsz kollázsba,
+  diavetítésbe és webes mentésbe. A szerkesztés **mentése** nyers
+  fájlra továbbra sem megy — ott hibaüzenetet kapsz. Lásd [A
+  könyvtár](features/konyvtar.md).
+
+**Rendezés és mappák**
+
+- **Kézi sorrend**: a képeket egérrel át lehet rendezni a rácson. A
+  sorrend a mappa mellé kerül, tehát megmarad, és a mappával együtt
+  másik gépre is átvihető.
+- A rács görgetősávjának két végén **album-ugró nyíl**: a következő
+  vagy az előző címsorra ugrasz vele, nyomva tartva ismétel.
+- A **Nézet ▸ Mappanézet** almenüben végre kiválasztható, honnan
+  induljon a mappafa: **Sajátgép**, **Képek**, **Dokumentumok**,
+  **Asztal**. A Mappák felirata megmondja, hol állsz, és a választás
+  megmarad a következő indításig.
+- Az **Új album** nem kérdez nevet, hanem azonnal létrehoz egy
+  **Névtelen** albumot — ahogy az eredeti Picasa. Az album neve, dátuma,
+  helye és leírása utólag szerkeszthető az **Albumleírás szerkesztése…**
+  paranccsal.
+
+**A nézőben**
+
+- Működik a **Két különböző kép megjelenítése**: két felvétel egymás
+  mellett, válogatáshoz. Új gomb váltja a vízszintes és a függőleges
+  elrendezést, és **minden parancs a kijelölt oldalra hat** — a
+  szerkesztés és az albumba tétel is.
+- **A videó megvágható**: kezdő- és végpont állítható a vezérlősávról,
+  és a vágás vissza is állítható. A videófájlhoz nem nyúlunk; a
+  vágáspontok abban az alakban íródnak ki, amit az eredeti Picasa is
+  használ.
+- **Képkocka menthető a videóból**: az éppen látott kocka JPEG-ként
+  kerül a **Rögzített videoklipek** mappába, a videó saját
+  felbontásában.
+- A diavetítés vezérlősávja nem tűnik el a kezed alól, a diaidő **−** és
+  **+** gombja pedig nyomva tartva ismétel.
+
+**Szerkesztés**
+
+- **Ecset**: a Felpörgetés, a Képpontnagyítás, a Lágyítás és az Árnyalás
+  esetén felfestheted, hol érvényesüljön a hatás; a Radírral vissza is
+  veheted. (A festés egyelőre csak az élő előnézetben látszik — a
+  mentett kép az egész képen mutatja az effektet.)
+- A szerkesztések **abban a sorrendben futnak, ahogy felraktad őket**:
+  egy keret utáni szépia mostantól a keretet is színezi, ahogy az
+  eredetiben. Amit a szerkesztőben látsz, az kerül mentéskor a fájlba
+  is.
+- A **kiegyenesítés** csúszkája a kép fölé költözött; a vágás, a
+  retusálás, a szöveg és a vörösszem Alkalmaz/Mégse gombja a saját
+  paneljében maradt.
+- A **Fókusznagyítás** két csúszkája az eredeti nevét kapta (**Suhanás**,
+  **Fókuszméret**), és a fókuszméret a kép méretéhez igazodik.
+- Szebb lett a **Lomo** és a **Holga** sötét pereme, a
+  **Színhőmérséklet** az eredeti számítását követi, az erősen
+  világosított kép pedig nem csíkosodik. A **forgatás és a tükrözés**
+  együtt is jó irányban áll.
+
+**Emberek**
+
+- A személy albumának fejlécéből **jóváhagyhatod az összes
+  névjavaslatot**, vagy eldobhatod őket.
+- A **További javaslatok keresése** gomb egyszer lejjebb viszi a
+  felismerési küszöböt, hogy több névre kapj tippet — a tárolt
+  beállítás nem változik.
+
+**Ki- és bevitel**
+
+- **Eszközök ▸ Import a Picasából…**: a régi Picasa adatbázisából
+  átvehetők a nevek, a kulcsszavak és a helyek. Meglévő adatot soha nem
+  ír felül, és bármikor megismételhető.
+- A **biztonsági mentés lemezképbe is mehet** (CD- vagy DVD-ISO). Ha a
+  gyűjtemény nem fér el egy lemezen, több, sorszámozott lemezkép
+  készül. A programnak nem kell lemezíró: a lemezképet bármelyik
+  íróprogrammal lemezre teszed.
+- A **nyomtatásnál** beállítható a felirat forrása és helye, a betű, a
+  színek, a tördelés és a szegély. Nyomtatás közben látszik, hányadik
+  lapnál tart.
+
+**A felület**
+
+- **Eszközök ▸ Gombok konfigurálása…**: eldöntheted, mely gombok
+  látszanak a képek fölötti fejlécsávon, és milyen sorrendben.
+- **Háttérművelet-jelző** a jobb felső sarokban: csak akkor látszik, ha
+  a program a háttérben dolgozik, és a futó munka meg is állítható róla.
+- A **megjelenítési mód** (fekete-fehér, szépia, projektor, gamma) immár
+  a **teljes felületre** hat, nem csak a fotókra.
+- A program **~1 másodperccel gyorsabban indul**: a kollázs-szerkesztő
+  csak az első megnyitásakor épül fel.
+- Buboréksúgók sok új helyen, egységes megjelenéssel, az eredeti
+  Picasáéval egyező 0,6 másodperces késleltetéssel.
+
+**Adatbázis**
+
+- Az **adatbázis áthelyezése** a következő indításkor történik meg: a
+  gomb csak előjegyzi a költözést (ez vissza is vonható), a másolás a
+  következő induláskor fut le, és utána nem kell újraindítani. A régi
+  példány a Lomtárba kerül.
+
 ## 2026-09-13
 
 **Két kép egymás mellett a nézőben**

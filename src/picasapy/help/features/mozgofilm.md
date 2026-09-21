@@ -47,8 +47,26 @@ jelzi.
 Az elkészült film a bal hasáb **Projektek** csoportjának filmek-mappájába
 kerül.
 
+## A film újranyitása később
+
+A kész videó mellé a program egy **projektfájlt** is ment (`.mxf`) —
+ugyanaz a formátum, amit az eredeti Picasa is használt, a kollázs
+`.cxf`-jének megfelelője. Ebben van a képek sorrendje, a diaidő és az
+átmenet hossza.
+
+Ha egy korábban elkészített filmet megnyitsz a nézőben, megjelenik a
+**Mozgófilm szerkesztése** gomb: ezzel visszatérsz a film képeihez és
+beállításaihoz, ahogy a kollázsnál is megszokott. A felbontás ilyenkor
+az alapértelmezésről indul — ezt a párbeszéd ki is írja.
+
 ## Ha egy kép hiányzik
 
 Ha a kijelölésből időközben eltűnt néhány fájl (áthelyezted,
 átnevezted vagy törölted őket), a program szól, hány kép marad ki, és a
 többiből elkészíti a filmet.
+
+## Képkocka mentése videóból
+
+Ha nem filmet készítenél, hanem egyetlen képet emelnél ki egy videóból,
+azt a nézőben teheted meg — lásd
+[Nézegetés](nezegetes.md).

@@ -62,7 +62,7 @@ effekt a nyers fotóra.
 | Szegély | keret a kép köré |
 | Képregény | rajzolt, képregényes hatás |
 | Árnyékvetés | árnyék a kép mögé |
-| Fókusznagyítás | egy pont felnagyítása, sugaras elmosással |
+| Fókusznagyítás | egy pont felnagyítása, sugaras elmosással — a **Suhanás** és a **Fókuszméret** csúszkával |
 | Múzeumi matt | képkeret-szerű paszpartu |
 | Neon | világító kontúrok, választható színben |
 | Ceruzarajz | ceruzavázlat hatás |
@@ -99,7 +99,16 @@ szerkesztésben, és tudnod kell róla.
 
 A **Lineáris homályosítás** eddig a legtöbb képen nem csinált semmit;
 mostantól látszik a hatása. Ez az effekt a kép egyik oldalát élesen
-hagyja, a másikat elmossa, és a kettő közt átmenetet ad.
+hagyja, a másikat elmossa, és a kettő közt átmenetet ad. Az elmosás
+erőssége attól függ, **hol áll a korong vízszintesen** — ha csak
+fel-le mozgatod, a középvonalon hagyva, az effekt nem mos. Az eredeti
+Picasa is így viselkedik.
+
+## Öt effekt, amit rá lehet festeni a képre
+
+A **Felpörgetés**, a **Képpontnagyítás**, a **Lágyítás** és az
+**Árnyalás** nem az egész képre hat, hanem arra, amit ecsettel
+felfestesz. Az ecset használata: [A szerkesztő](szerkeszto.md).
 
 ## Rejtett párok: a Shift billentyű
 

@@ -51,6 +51,18 @@ számolja ki, és csak utána kicsinyíti le a képernyőre, hogy az előnézet
 azt mutassa, ami a kimentett fájlba is kerül. Nagy képnél ez érezhetően
 lassabb.
 
+## Az effektek sorrendje számít
+
+A szerkesztések abban a sorrendben futnak le, **ahogy felrakod őket**.
+Ennek ott van jelentősége, ahol keretet (**Szegély**, **Múzeumi matt**,
+**Árnyékvetés**, **Polaroid**, **Kinemaszkóp**) vagy vágást teszel a
+képre: ami a keret **után** jön — mondjuk egy Szépia vagy egy Vignetta
+—, az a keretre is ráfut. Az eredeti Picasa is így dolgozik.
+
+A szerkesztő előnézete ugyanazt mutatja, mint ami mentéskor,
+exportáláskor és a bélyegképen készül. (Egy kivétel van: az ecsettel
+festett terület — lásd a *Festés ecsettel* szakaszt.)
+
 ## A jobb oldali fiók szerkesztés közben
 
 A **Címkék**, **Emberek**, **Helyek** és **Tulajdonságok** panel a
@@ -76,6 +88,15 @@ Kilenc gomb:
 - **Retusálás** — folt eltüntetése ecsettel.
 - **Szöveg** — felirat írása a képre.
 - **Derítőfény** — a sötét részek felderítése csúszkával.
+
+### Hol van az Alkalmaz és a Mégse
+
+A vágás, a retusálás, a szöveg és a vörösszem **Alkalmaz** és **Mégse**
+gombja a saját paneljében van, a bal oldalon.
+
+Egy kivétel a **Kiegyenesítés**: ott a csúszka és a két gomb a **kép
+fölött lebegő sávban** áll. A **Mégse** a kiegyenesítés nyitáskori
+értékét állítja vissza, az **Esc** billentyű ugyanezt teszi.
 
 ## Vágás
 
@@ -189,6 +210,28 @@ beállítottad, és a windowsos Picasa is így látja.
 > Korábban a program minden feliratot félkövérként mentett, a körvonal
 > vastagsága pedig mindig elveszett. Mindkettő megjavult; a régebben
 > mentett feliratokat érdemes egyszer ellenőrizni.
+
+## Festés ecsettel: hol hasson az effekt
+
+Négy effekt nem az egész képre hat, hanem arra, amit **ráfestesz**:
+**Felpörgetés**, **Képpontnagyítás**, **Lágyítás** és **Árnyalás**. Ha
+egy ilyen effektet nyitsz meg, a paraméterei alatt megjelenik az ecset
+vezérlője:
+
+- az **Ecsetméret** csúszkával a mutató kör méretét állítod;
+- a képen húzva felfested, hol érvényesüljön a hatás;
+- a **Radír** bejelölésével ugyanazzal a mozdulattal veszed vissza a
+  befestett részt (a felirat ilyenkor **Radír mérete**).
+
+A festett terület a szerkesztő **munkamenetében** él: másik képre
+váltva eldobódik, és a `.picasa.ini` fájlba sem kerül bele. Az eredeti
+Picasa sem tárolta.
+
+> **Amit a festés ma még nem visz magával.** A befestett terület a
+> szerkesztő **élő előnézetén** látszik. A lemezre mentett és az
+> exportált kép, valamint a rácson a bélyegkép viszont az effektet az
+> **egész képen** mutatja. Ha tehát egy ilyen effektet kimentesz, a
+> hatás nem szorítkozik arra, amit felfestettél.
 
 ## Finomhangolás
 

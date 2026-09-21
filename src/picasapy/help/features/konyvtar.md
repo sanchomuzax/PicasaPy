@@ -46,6 +46,23 @@ kapcsoló érhető el.
 
 **Mindhárom beállítás megmarad a következő indításig.**
 
+### Honnan induljon a fa
+
+A **Nézet ▸ Mappanézet** almenü tetején négy ugrópont áll — ezeket az
+eredeti Picasa is ott tartotta:
+
+- **Sajátgép** — a teljes fa, minden mappával;
+- **Képek**, **Dokumentumok**, **Asztal** — a fa szintén teljes lesz, de
+  a program odaugrik, és kijelöli az adott mappát.
+
+A **Mappák** felirat megmondja, hol állsz: „Alapértelmezett nézet" a
+lapos listában, „Sajátgép" a fanézetben, a három ugróponton pedig a
+mappa neve.
+
+Ha a választott mappa nincs meg a gépen, nem kapsz hibaüzenetet: a fa a
+Sajátgépre áll vissza. A választott kezdőpont megmarad — ahol
+kilépéskor jártál, ott indul a program legközelebb is.
+
 A hasáb szélessége az elválasztó vonal húzásával állítható, de egy alsó
 határnál keskenyebbre nem húzható; ez a határ az eredeti Picasáéval
 egyezik.
@@ -111,6 +128,29 @@ színtelenek. Ha egy mappát épp most olvasott be a program, a szín szerint
 még be nem sorolt képek a lista végén, névsorban állnak; ez magától a
 helyére kerül, ahogy a háttérben elkészül a színindex.
 
+### Kézi sorrend: húzd oda, ahova való
+
+A képeket egérrel is átrendezheted: fogd meg a kijelölt képeket, és húzd
+őket arra a helyre, ahol állniuk kell. A rács mutatja, hova esnek majd.
+
+Az átrendezés magától a **Kézi sorrend** szempontra állítja a mappát —
+ez a **Mappa rendezése** almenü új tétele —, így azonnal látod is, amit
+húztál.
+
+A kézi sorrend a mappa mellé, a `.picasa.ini` fájlba kerül. Megmarad a
+következő indításig, és a mappával együtt másik gépre is átvihető.
+
+Egy húzás mindig **egy mappán belül** marad: több mappa képeit egyszerre
+nem lehet egymás közé rendezni.
+
+### Ugrás a következő mappára a görgetősávról
+
+A rács görgetősávjának tetején és alján egy-egy **kettős nyíl** ül:
+**Előző album** és **Következő album**. Ezekkel a rácsban a következő,
+illetve az előző **címsorra** ugrasz — vagyis a következő mappa vagy
+album elejére —, anélkül, hogy végiggörgetnéd a képeket. Nyomva tartva
+ismételnek.
+
 ## Albumok
 
 Az album **nem mozgat fájlokat** — csak egy összeállítás. Ugyanaz a kép
@@ -118,7 +158,10 @@ több albumban is szerepelhet.
 
 - Új albumot a **Fájl ▸ Új album…** (Ctrl+N) paranccsal, az eszköztár
   **+** gombjával, vagy a képek helyi menüjének **Új album…** tételével
-  hozol létre.
+  hozol létre. A program **nem kérdez nevet**: azonnal készít egy
+  **Névtelen** albumot a kijelölt képekből, ahogy az eredeti Picasa is
+  tette. A nevet utólag bármikor átírod (lásd lentebb). Kijelölés nélkül
+  nem történik semmi.
 - Meglévő albumhoz a kép helyi menüjének **Hozzáadás az albumhoz**
   almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca album-gombjával.
 - Kivenni a **Eltávolítás az albumból** paranccsal tudsz.
@@ -130,6 +173,17 @@ több albumban is szerepelhet.
 
 A **Csillagozott képek** egy állandó album: minden csillaggal megjelölt
 képet mutatja.
+
+### Az album nevének és adatainak átírása
+
+Az album sorára jobbgombbal kattintva az **Albumleírás szerkesztése…**
+tétel megnyitja az **Album tulajdonságai** ablakot. Négy mezője van:
+**Név**, **Dátum**, **A felvétel helye** és **Leírás**. A mentés minden
+olyan mappa `.picasa.ini` fájljába átvezeti a változást, ahol az albumnak
+van tagja.
+
+Ugyanez az ablak nyílik meg a mappáknál is (**Mappaleírás
+szerkesztése…**) — az eredeti Picasa is egy ablakot használ a kettőre.
 
 ## Gyűjtemények
 
@@ -240,12 +294,30 @@ A figyelt mappákban a PicasaPy háromféle fájlt vesz észre:
 - **Fényképek** — JPEG (a `.jpg`, `.jpeg` és `.jpe` név is), PNG, TIFF,
   BMP, GIF, PSD, TGA és **WebP**.
 - **Nyers (RAW) felvételek** — a szokásos gyártói kiterjesztések, például
-  CR2, NEF, ARW, DNG, ORF, RAF, RW2.
+  CR2, NEF, ARW, DNG, ORF, RAF, RW2 (lásd lentebb).
 - **Videók** — például AVI, MOV, MP4, MKV, WMV, MPG, MPEG, 3GP, TS,
   M2V, OGG és OGV.
 
 Minden más fájl (dokumentum, hangfelvétel) láthatatlan marad: a program
 nem indexeli és nem is bántja.
+
+### A nyers (RAW) fájlok
+
+A nyers fájlokból mostantól **kép is látszik**: a rácson, a nagy
+nézőben, a mappák borítóképén és a szerkesztő előnézetén is. A
+bélyegkép a gyorstárba is bekerül, tehát másodszorra már gyors.
+
+Nyers fájlt ugyanúgy használhatsz, mint egy JPEG-et: exportálás,
+duplikátum-keresés, szín szerinti keresés, kollázs, diavetítés, webre
+mentés, importálás és arckeresés — mind elfogadja.
+
+Két dolgot érdemes tudni:
+
+- **A szerkesztés mentése nyers fájlra nem megy**: a program
+  hibaüzenetet ad. Nyers fájlt nem lehet visszaírni, az eredeti Picasa
+  sem tette. Ha kimentett képet szeretnél, exportálj.
+- Ha egy nyers fájlt mégsem sikerül megnyitni (ismeretlen gépmodell,
+  sérült fájl), a helyén **helyőrző** látszik — nem néma, üres kép.
 
 ## Ha egy mappa nem érhető el
 

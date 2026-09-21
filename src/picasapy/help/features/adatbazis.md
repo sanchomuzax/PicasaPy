@@ -32,13 +32,24 @@ A párbeszéd kiírja **az adatbázis jelenlegi helyét**, és a
 **Tallózás…** gombbal választhatod ki az újat. Az **Alapértelmezett**
 gomb visszaáll az eredeti helyre.
 
-Az **Áthelyezés a következő újraindításkor** gombbal indítod. Amíg a
-másolás fut, haladásjelző látszik. Amikor kész, ezt írja: „Az adatbázis
-áthelyezve. A változás érvényesítéséhez indítsa újra a PicasaPy-t."
+Az **Áthelyezés a következő újraindításkor** gomb **előjegyzi** a
+költözést: „A PicasaPy a következő indításkor helyezi át az
+adatbázist." A párbeszédet ezután rögtön bezárhatod — a másolás nem
+most fut le, hanem a program **következő indulásakor**, saját
+haladásjelző ablakban. Így a program nem másol olyankor, amikor még a
+régi helyet használja, és utána nem is kell újraindítani: már az új
+helyről indul.
 
-A **futó példány nem költözik át menet közben** — a változás csak a
-következő indításnál lép életbe. Ha megszakítod, semmi nem változik: „Az
-áthelyezés megszakítva — semmi sem változott."
+Az előjegyzés visszavonható: a párbeszédben az **Az áthelyezés
+visszavonása** gomb törli.
+
+A **régi példány a Lomtárba kerül**, nem törlődik véglegesen — ahogy az
+eredeti Picasa is tette. Ha nincs elérhető Lomtár, a régi adatbázis a
+helyén marad, és a program ezt meg is mondja.
+
+A program a **célt előre ellenőrzi**: legyen mappa, legyen üres, és ne
+legyen hálózati meghajtó. Ha valamelyik nem teljesül, semmihez nem nyúl
+hozzá.
 
 ## Az adatbázis tömörítése
 

@@ -62,10 +62,11 @@ fölöslegesen.
 - Fotómegjelenítő beállítása…
 - Képernyővédő konfigurálása…
 - Dátum és idő beállítása…
-- Gombok konfigurálása…
 
-(A **Képek biztonsági mentése…** tétel viszont már **működik** — lásd
-[Képek biztonsági mentése](biztonsagi-mentes.md).)
+(A **Képek biztonsági mentése…**, a **Gombok konfigurálása…** és az
+**Import a Picasából…** tétel viszont már **működik** — lásd [Képek
+biztonsági mentése](biztonsagi-mentes.md), [Beállítások](beallitasok.md)
+és [Importálás](importalas.md).)
 
 **Súgó**
 
@@ -76,14 +77,6 @@ fölöslegesen.
 már **működik**: ezt a súgót nyitja meg — lásd
 [A beépített súgó](sugo.md).)
 
-**A nézőben**
-
-- **Két különböző kép megjelenítése** — a néző alsó sávjában lévő
-  harmadik szegmens. Két *különböző* kép egymás mellé tétele még nem
-  készült el; ugyanannak a képnek a szerkesztés előtti és mostani
-  állapota viszont **megjeleníthető** egymás mellett, lásd
-  [Nézegetés](nezegetes.md).
-
 **Helyi menükben**
 
 - Hozzáadás az Emberek albumhoz
@@ -91,7 +84,9 @@ már **működik**: ezt a súgót nyitja meg — lásd
 - Mappa felosztása itt…
 - Társítás
 - Névcímkék hozzáadása
-- Album törlése, Albumleírás szerkesztése…, Album rendezésének alapja
+- Album törlése, Album rendezésének alapja — az **Albumleírás
+  szerkesztése…** viszont már **működik**, lásd [A
+  könyvtár](konyvtar.md)
 - Jelszó megadása/módosítása…
 - Az Emberek album törlése, Az Emberek album szerkesztése…
 - Feltöltés tiltása — a Picasa Webalbumok megszűnt szolgáltatás
@@ -137,16 +132,12 @@ Google Fiókkal" felirat sem — az csak az eredeti elrendezés része.
 
 - **Virtuális albumok a `.picasa.ini`-ből** — a PicasaPy elolvassa és
   változatlanul megőrzi őket, de böngészni még nem lehet bennük.
-- **Régi Picasa-adatbázis behozatala** — a program el tudja olvasni a
-  régi Picasa adatfájljait, de az adatok átemelése a saját indexbe még
-  nem készült el. A régi telepítés **figyelt mappáit** viszont át tudja
-  venni, lásd [Importálás](importalas.md).
+- **Régi Picasa-adatbázis behozatala** — a nevek, a kulcsszavak és a
+  helyek átvétele már **működik** (**Eszközök ▸ Import a Picasából…**,
+  lásd [Importálás](importalas.md)); a régi adatbázis többi tartalmát
+  még nem emeljük át.
 - **Névjegyzék írása** — a régi Picasa névjegyzékét olvassuk, de írni még
   nem tudjuk.
-- **Videó vágáspontjai** — ha a régi Picasában megadtál egy videóhoz
-  kezdő- és végpontot, a lejátszás betartja, de **megadni vagy
-  módosítani ma nem lehet** a PicasaPy felületén. Lásd
-  [Nézegetés](nezegetes.md).
 - **A rejtett mappák jelszava** — a jelszó-kapu megvan a programban (a
   **Nézet ▸ Rejtett képek** bekapcsolása jelszót kérne, ha volna
   beállítva), de **jelszót ma nem lehet megadni a felületről**: a
