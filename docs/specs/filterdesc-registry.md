@@ -1984,10 +1984,51 @@ rendezése.
   `0x00bcb4ba`). A `TwoTone` LUT-ját `0x00bb87b0` építi, a két megálló
   leképezését `0x00bb85b0` végzi.
 
-**Következő bizonyító lépés:** a `0x008f28d0` mátrix-tárolójának és a
-`0x008f2640` byte-sorrendjének együttes kiolvasása; ebből dől el, hogy a
-PicasaPy luma-útja rossz csatornasorrendet használ-e, vagy a golden-minta
-csatornaútja különleges. A termékkódot addig nem módosítom.
+**Következő bizonyító lépés — MEGVAN, a mátrix-alkalmazó nem csatornacserés.**
+
+A `0x008f2640` (644 b, `void apply(coeffs* eax, pixel* ecx, int count edx, pixel* dst[ebp+0x10])`)
+teljes diszasszemblátuma kiolvasva (`/tmp/picasapy-research-venv` capstone-nal,
+fájloffszet `0x4f2640`). Fixpontos **Q9** szorzó-összeadó: minden `coeffs*eax`
+szó (int16) `src_byte` értékkel szorozva `>>9`, a négy tag összeadva, `+bias`
+(dword), végül `>>2` (⇒ teljes skálázás `/2048`), és `[0,255]`-re vágva.
+
+**Az oszlop↔bájt leképezés MÉRVE, mind a négy kimeneti sorra azonos:**
+
+| mátrix-oszlop (byte-eltolás a soron belül) | szorzott forrás-bájt |
+|---|---|
+| `+0x00` | `src[2]` |
+| `+0x10` | `src[1]` |
+| `+0x20` | `src[0]` |
+| `+0x30` | `src[3]` |
+
+A négy kimeneti sor (soronként 4×int16 + 1×int32 bias, sortávolság `0x04`,
+biasz `0x40+4·sor`) ugyanazt az oszlopsorrendet használja, és a sorok
+**pontosan a bemenetükkel azonos indexre** íródnak vissza: a `src[2]`-t
+domináló sor a kimenet `+0`-ás bájtjára megy, a `src[1]`-t domináló a `+1`-re,
+`src[0]` a `+2`-re, `src[3]` (alfa) a `+3`-ra. Ha a tároló BGRA (a Win32 GDI
+szokása szerint: `src[0]=B, src[1]=G, src[2]=R, src[3]=A`), a mátrix-oszlopok
+sorrendje **R, G, B, A** — a szokásos, matematikailag "helyes" színmátrix-
+konvenció —, és az alkalmazó **nem cserél csatornát**: a bemeneti bájtindexet
+és a kimeneti bájtindexet azonos leképezéssel kezeli.
+
+**Következmény a nyitott kérdésre:** a `TwoTone` linked
+`ContrastAndBrightnessLinked` ágának saját mátrixépítője (`0x008f2040`,
+lásd fent: `R'=k·R+t; G'=k·G+t; B'=k·B+t`, **azonos** `k`/`t` mind a három
+csatornán) ezért **csatorna-szimmetrikus** — nem tud R/B-cserét vagy
+egyenlőtlen luma-súlyozást okozni, mert a diagonális mátrix minden
+RGB-csatornán azonos együtthatót ír. A `0x008f28d0` (191 b) egy általános
+**5×5 lebegőpontos mátrixszorzó** (`this[0x28..] = this[0..] × eax[0..]`,
+homogén 5. sor/oszlop a biaszhoz) — ez a `SimpleColorMatrix` láncolási
+mechanizmusa (több mátrix egymásba szorzása), nem csatorna-újrarendezés.
+
+⇒ **A golden-mérésben látott "első RGB-csatornát követi" jelenség forrása
+KIZÁRVA ebből a lépésből.** A színmátrix-alkalmazó és a linked
+kontraszt/fényerő-mátrix egyaránt szimmetrikus a csatornákon; a luma-/
+gradiens-skalár tehát a `TwoToneImageOperation` SAJÁT munkavégzőjében
+számolódik, nem az általános mátrix-alkalmazóban. **Következő cím:**
+`0x00bb87b0` (a LUT-építő) és `0x00bb85b0` (a két megálló leképezése) —
+itt kell megkeresni, milyen skalárt (luma? egy kiválasztott csatorna?)
+vetít a gradiens LUT indexébe. A termékkódot addig nem módosítom.
 
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
