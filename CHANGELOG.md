@@ -7,6 +7,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.536] – 2026-09-21
+
+### Javítva
+
+- **A Kéttónusú (TwoTone) effekt a kép piros csatornája szerint színez,
+  ahogy az eredeti Picasa (#3433).** Eddig a képpont világosságát
+  (lumáját) vetítettük a két szín közé; az eredeti program — a
+  gépikódja szerint — a fényerő/kontraszt utáni piros csatornát használja.
+  A valódi Picasa-exporthoz mérve az eltérés két független mintán
+  22,1 → 0,5, illetve 9,2 → 0,5 ΔE-re csökkent.
+
+### Helyesbítés
+
+- A 0.8.535 bejegyzése túlállította a Finomhangolás-javítást: az a
+  csúszkák felületről elérhető állásain (0–0,48) semmit nem változtatott,
+  csak a `.picasa.ini`-ben kézzel vagy más programmal megadott,
+  tartományon kívüli értékek kezelését igazította az eredetihez.
+
 ## [0.8.535] – 2026-09-21
 
 ### Javítva
