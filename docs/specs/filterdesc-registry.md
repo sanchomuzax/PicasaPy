@@ -2446,9 +2446,23 @@ tölti ki (`0x009a91a0`).
 > legközelebbi-szomszéd, vagy **bilineáris 4 bites (16 lépcsős) részpixel-
 > súlyokkal** — ez utóbbi mérhetően eltér a naiv, lebegőpontos bilineáristól.
 >
-> **Ami a mi oldalunkon maradt eldöntendő:** melyik szűrési szintet kéri a
+> ~~**Ami a mi oldalunkon maradt eldöntendő:** melyik szűrési szintet kéri a
 > `Rotate` (a `0x00bc8060`-ban két eltérő festék-beállítás van). Ez egy
-> jelzőbit, nem algoritmus — és golden-összevetéssel is ellenőrizhető.
+> jelzőbit, nem algoritmus — és golden-összevetéssel is ellenőrizhető.~~
+>
+> **EZ A KÉRDÉS IS OKAFOGYOTT** — nincs Skia-szűrési szint, mert nincs
+> Skia-hívás ezen az úton (ld. a fenti MEGDŐLT-jelzés). A ténylegesen
+> lefutó választás a `ytResampler` **0-s (doboz) vs. 3-as (Mitchell–
+> Netravali, B=C=0,4)** módja közt dönt, kizárólag a lépték alapján — ezt
+> a fenti MEGDŐLT-blokk **teljeskörűen megválaszolja**, nincs rajta
+> további nyitott rész.
+
+**LEZÁRVA (2026-08-17, kereszthivatkozás pótolva 2026-09-21).** A
+`RotateImageOperation` mintavételezése ezzel teljesen ismert: `0x00bc8060`
+a léptéket 1,0-hoz hasonlítja (`0x00bcb63e`–`0xbcb659`), és a `ytResampler`-t
+0-s vagy 3-as móddal példányosítja. Nincs Skia, nincs nyitott jelzőbit.
+Részletek: `filters-decoded.md`, „A `RotateImageOperation` a `ytResampler`-t
+használja, NEM a Skiát".
 
 #### `CropImageOperation` (`0x00bbdbd0`)
 
