@@ -6108,6 +6108,47 @@ görbeleíró-alakja, amiből a vezérlőpont-interpoláció aritmetikája kiolv
 *Bizonyítottsági fok: **megerősített** — diszasszemblált törzsek és a teljes
 vtábla-slot megoszlás; a családok tételesen felsorolva.*
 
+### A közös képpont-futószalag (`FUN_00bcb2f0`, 744 b) — MEGVAN, KÉT PÁRHUZAMOS ÚTVONAL
+
+**Bizonyítottság: MEGERŐSÍTETT.** A teljes diszasszemblátum megválaszolja a
+„hol van a képpontciklus" kérdést: **a LUT-család mind a hét tagja
+(`AdjustCurves`/`AutoFix`/`Exposure`/`GradientMap`/`HSVGradientMap`/
+`PaletteMap`/`TwoTone`) UGYANEZT a futószalagot futtatja**, csak a saját
+`vtbl+0x20` slotjával eltérő tartalmú LUT-ot épít bele.
+
+A függvény a CPU-jelzőt vizsgálja (`0xd695d2`/`0xd695d3` — ugyanaz a pár,
+amit a `0x008f2640` mátrix-alkalmazó is nézett) és két, **funkcionálisan
+azonos** utat választ:
+
+1. **Skalár út** (`0xbcb360`–`0xbcb4e7`, a lassabb ág): soronként,
+   képpontonként — ez pontosan az a mechanizmus, amit a TwoTone-elemzés
+   (fent, „A LUT-skalár MEGVAN") már dokumentált: 4 forrás-bájt → 4 LUT-
+   rekesz (`+0x000`/`+0x400`/`+0x800`/`+0xc00`, 256×4 bájt), a 4 dword
+   bájtonkénti szétbontása, egyenkénti összegzés, kézi `[0,255]`-vágás,
+   visszaírás ugyanarra a 4 bájt-helyre.
+2. **SSE2 út** (`0xbcb4f2`–`0xbcb5cd`, a gyors ág): **ugyanaz a négy
+   LUT-lekérdezés**, de a 4 bájtot egyszerre, egy `movd xmm.,[LUT+idx*4]`
+   utasítással tölti be, és **`paddusb`-vel** (packed unsigned byte add,
+   BEÉPÍTETT telítéssel) összegzi — nincs kézi vágás, a művelet maga
+   telít. A belső ciklus soronként a `dec eax; jne` — a sorok között
+   pointert lépteti (`[ebp+0x10]`/`[ebp-0x18]`, előjelesen skálázva a
+   kép szélességéhez és a LUT-elrendezéshez).
+
+**Mindkét út bájt-pontosan ugyanazt az eredményt adja** (telített
+összeadás — a skalár út kézi vágása és a `paddusb` telítése matematikailag
+azonos), csak a CPU-képesség dönt, melyik fut. ⇒ **A LUT-alapú effektek
+teljes pixel-matematikája ezzel LEZÁRT**: a hét osztály mindegyikének
+„algoritmusa" abból áll, hogy a saját `+0x20` slotja milyen 4×256×4 bájtos
+LUT-ot épít — ez már a `TwoTone`-nál (négy rekeszből egy töltve) és az
+`AdjustCurves`-nél (a `+0x40..+0x4c` négy görbecsatorna-leíró, fent) is
+dokumentálva van; a maradék öt osztály (`AutoFix`, `Exposure`,
+`GradientMap`, `HSVGradientMap`, `PaletteMap`) LUT-tartalma egyenként
+ugyanezzel a módszerrel olvasható ki a saját `vtbl+0x20` szerint.
+
+⇒ **Következő cím:** `FUN_00bb9e00` (a görbecsatorna-leíró, 24 bájtos
+alak) — ebből a `AdjustCurves` vezérlőpont-interpolációjának aritmetikája
+olvasható ki, ez zárná le a hetes családot teljesen.
+
 ## 12. A SZŰRŐ KOORDINÁTA-HORGA: `CGenericFilter` `+0x84`, mátrix ÉS inverz (2026-09-16, #3169)
 
 **A kérdés,** amire ez a szakasz válaszol: hol érvényesül a vágás a
