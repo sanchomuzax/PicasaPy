@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.535] – 2026-09-21
+
+### Javítva
+
+- **A finetune/finetune2 (Finomhangolás) csúszkasor Kiemelések/Árnyékok
+  paramétere a valódi Picasa-viselkedésre igazítva (#3418).** A `[0..0.48]`
+  a Picasa CSÚSZKÁJÁNAK a határa, nem a renderelő belső vágása — a natív
+  algoritmus a nyers, vágatlan értéket kapja. Nálunk két független klemp
+  vágta ugyanezt a két paramétert (a `chain_report.py` értékellenőrzője ÉS
+  a `tone.py` szinthúzó-LUT-ja); mindkettő eltávolítva, és a feketepontot a
+  fehérpont fölé toló szélsőséges esetre (Árnyékok a maximumon) mért
+  teljes-fehér különeset került be. A golden mérőkészleten a `finetune2`
+  alap állása ΔE 52,3-ról 0,57-re, a két „max” eset 44,3/43,2-ről 3,4–3,7-re
+  javult.
+
 ## [0.8.534] – 2026-09-21
 
 ### Javítva

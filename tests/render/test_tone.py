@@ -13,7 +13,6 @@ import pytest
 
 from tests.support.dither import dither_nelkul
 from picasapy.render.tone import (
-    FINETUNE_LEVEL_PARAM_MAX,
     apply_color_temperature,
     apply_color_temperature_gpu_kozelites,
     apply_fill,
@@ -48,13 +47,21 @@ def _eredeti_szintvago_lut(highlights: float, shadows: float) -> np.ndarray:
         LUT16[i] = clamp(rint((i·256 − a0·65280) / (a1 − a0)), 0, 0xFF00)
         ki       = LUT16[i] >> 8
 
-    (Degenerált `a1 == a0` párnál a natív kód 1,0-s skálával megy tovább.)
+    (Degenerált `a1 == a0` párnál a natív kód 1,0-s skálával megy tovább;
+    `a0 > a1`-nél — #3418 — a natív kimenet teljes fehér, ld.
+    `native_level_lut`.)
 
     A képlet itt SZÁNDÉKOSAN újra le van írva, nem a megvalósításból hívva:
     így az elvárást nem tudja némán magával vinni egy átírás.
+
+    ⚠️ A `highlights`/`shadows` itt NEM vágódik `FINETUNE_LEVEL_PARAM_MAX`-ra
+    (#3418) — a paraméterek e teszt-készletben mind ≤0,48-ak, tehát ez a
+    változás itt no-op, de a valós renderelő (`finetune_level_lut`) sem vág.
     """
-    black = min(max(shadows, 0.0), FINETUNE_LEVEL_PARAM_MAX)
-    white = max(1.0 - min(max(highlights, 0.0), FINETUNE_LEVEL_PARAM_MAX), 0.001)
+    black = max(shadows, 0.0)
+    white = max(1.0 - max(highlights, 0.0), 0.001)
+    if black > white:
+        return np.full(256, 255, dtype=np.uint8)
     scale = 1.0 / (white - black) if white != black else 1.0
     values = (np.arange(256, dtype=np.float64) * 256.0 - black * 65280.0) * scale
     return (np.clip(np.rint(values), 0, 0xFF00).astype(np.int64) >> 8).astype(np.uint8)
@@ -147,13 +154,26 @@ class TestApplyHighlights:
             result = apply_highlights(image, 0.48)
         assert abs(int(result[0, 0, 0]) - 100 / (1 - 0.48)) <= 1
 
-    def test_a_parameter_048_ra_van_vagva(self) -> None:
-        """A `filterdesc.xml` tartománya [0..0.48] — a fölötte lévő érték
-        (idegen/sérült lánc) nem robbanthatja fel a képletet."""
+    def test_a_048_folotti_ertek_NEM_vagodik(self) -> None:
+        """#3418: a `[0..0.48]` a CSÚSZKA határa, nem a képlet belső vágása.
+
+        A golden-mérőkészlet (684-es szett) `finetune2__alap` esete
+        Highlights=Shadows=0,5-tel (0,04-del a csúszka felső állása fölött)
+        méri: a korábbi, `FINETUNE_LEVEL_PARAM_MAX`-ra vágó modell ΔE=52,3-at
+        adott a valódi Picasa-exporthoz, a nyers (vágatlan) érték ΔE=0,57-et
+        — tehát a natív képlet a nyers paramétert kapja, nem a csúszka
+        felső állására vágottat.
+        """
         image = _uniform_image(100)
-        assert np.array_equal(
-            apply_highlights(image, 1.0), apply_highlights(image, 0.48)
+        assert not np.array_equal(
+            apply_highlights(image, 0.6), apply_highlights(image, 0.48)
         )
+        # 0,6-nál a fehérpont még nem fordul a feketepont alá (itt 0,0), a
+        # képlet tehát a mért 1/(1-h) meredekséget adja, nem a 0,48-as vágott
+        # értéket.
+        with dither_nelkul():
+            result = apply_highlights(image, 0.6)
+        assert abs(int(result[0, 0, 0]) - 100 / (1 - 0.6)) <= 1
 
     def test_vilagosit(self) -> None:
         image = _uniform_image(100)
@@ -393,3 +413,48 @@ class TestFinetuneKozosLut:
             ),
             image,
         )
+
+    @pytest.mark.parametrize(("highlights", "shadows"), [(0.6, 0.0), (0.0, 0.6), (0.7, 0.2)])
+    def test_048_folotti_parameter_nem_vagodik(
+        self, highlights: float, shadows: float
+    ) -> None:
+        """#3418: a `[0..0.48]` a csúszka határa, a képlet a nyers értéket kapja.
+
+        A 684-es golden mérőkészlet `finetune2__alap` esete (Highlights=
+        Shadows=0,5) mérte ki: a korábbi `FINETUNE_LEVEL_PARAM_MAX`-ra vágó
+        modell ΔE=52,3, a nyers paraméterrel ΔE=0,57 a valódi Picasa-
+        exporthoz képest.
+        """
+        with dither_nelkul():
+            result = apply_finetune2(
+                _szintletra(),
+                fill=0.0,
+                highlights=highlights,
+                shadows=shadows,
+                neutral=None,
+                temperature=0.0,
+            )
+        np.testing.assert_array_equal(
+            result[0, :, 0], _eredeti_szintvago_lut(highlights, shadows)
+        )
+
+    def test_invertalt_feketepont_teljes_feher(self) -> None:
+        """#3418: `Shadows > 1 − Highlights` (feketepont a fehérpont fölött)
+        → a natív szinthúzó a TELJES képet fehérre teszi.
+
+        A 684-es mérőkészlet `finetune__max`/`finetune2__max` esete méri
+        (Highlights=0,5, Shadows=1,0): a korábbi, invertált-rámpás modellünk
+        ΔE=43-47-et adott a valódi (gyakorlatilag egyenletes fehér)
+        exporthoz képest; a teljes-fehér modell ΔE=3,4-3,7-et (a JPEG saját
+        zajszintjével egyező nagyságrend).
+        """
+        with dither_nelkul():
+            result = apply_finetune2(
+                _szintletra(),
+                fill=0.0,
+                highlights=0.5,
+                shadows=1.0,
+                neutral=None,
+                temperature=0.0,
+            )
+        np.testing.assert_array_equal(result[0, :, 0], np.full(256, 255, dtype=np.uint8))

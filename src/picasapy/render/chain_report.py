@@ -44,8 +44,29 @@ _RANGE_VALIDATED_PARAM_POSITIONS: dict[str, tuple[tuple[int, int], ...]] = {
     "tilt": ((0, 1),),
     "unsharp": ((0, 1),),
     "unsharp2": ((0, 1),),
-    "finetune": ((0, 1), (1, 2), (2, 3), (3, 5)),
-    "finetune2": ((0, 1), (1, 2), (2, 3), (3, 5)),
+    #: ⛔ **#3418: a Kiemelések(1)/Árnyékok(2) csúszka NINCS itt.** Eredetileg
+    #: mind a négy pozíció szerepelt (`(0,1),(1,2),(2,3),(3,5)`), és épp EZ
+    #: adta a 684-es golden mérőkészlet legnagyobb ΔE-jét: a `finetune2__alap`
+    #: esete Highlights=Shadows=0,5-tel (0,04-del a csúszka felső állása,
+    #: 0,48 fölött) a klemp-elt modellel ΔE=52,3-at adott a valódi Picasa-
+    #: exporthoz, a nyers (vágatlan) értékkel ΔE=0,57-et — a `[0..0.48]` a
+    #: Picasa CSÚSZKÁJÁNAK a határa, nem a renderelő belső vágása, a natív
+    #: képlet a nyers `.picasa.ini`-értéket kapja. A `finetune_level_lut`
+    #: (`tone.py`) ezért NEM vág 0,48-ra; a szélsőséges, feketepontot a
+    #: fehérpont fölé toló esetet (`finetune__max`/`finetune2__max`,
+    #: Shadows=1,0) a `native_level_lut` `black > white` ága kezeli külön
+    #: (teljes fehér, ld. ott). A Derítőfény(0) és a Színhőmérséklet(3)
+    #: pozíció marad vágva — azok a golden-mérésben nem voltak hibaforrás.
+    #:
+    #: ⚠️ Ez a tábla ÉS a `tone.finetune_level_lut` KÉT FÜGGETLEN vágás
+    #: volt ugyanarra a két paraméterre — csak az egyik eltávolítása
+    #: (bármelyiké önmagában) NEM változtat a renderelt képen, mert a
+    #: `validate_and_clamp_op` a `chain.py`-beli handler ELŐTT fut le, és a
+    #: paramétert már vágva adja tovább. Egy korábbi kör csak a
+    #: `tone.py`-t módosította, a mérésen nem látott változást, és emiatt
+    #: tévesen elvetette a klemp-hipotézist.
+    "finetune": ((0, 1), (3, 5)),
+    "finetune2": ((0, 1), (3, 5)),
     "dir_sat": ((0, 1), (1, 2)),
     "dir_brite": ((0, 1), (1, 2)),
     "dir_sharp": ((0, 1), (1, 2)),

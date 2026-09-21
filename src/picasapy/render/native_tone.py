@@ -103,9 +103,27 @@ def native_level_lut(
     tovább — ezt szándékosan átvesszük, mert a `triple2` felső
     csúszkaállásában (fekete = fehér = 1,0) éppen ez adja a mérésben látott
     fekete képet.
+
+    ⛔ **#3418: `black > white` (INVERTÁLT feketepont) → TELJES FEHÉR.** A
+    `finetune`/`finetune2` szűrő wire-formátuma nem korlátozza a Shadows
+    (`black`) paramétert a `filterdesc.xml` UI-tartományára — az csak a
+    csúszkát fogja vissza, a `.picasa.ini`-be kézzel/hibásan írt, tartományon
+    kívüli érték a natív kódot **is** eléri. A 684-es golden mérőkészlet
+    `finetune__max`/`finetune2__max` esete pont ezt méri (Shadows=1,0,
+    Highlights=0,5 → `black=1,0 > white=0,5`): a képlet fenti alakja ekkor
+    egy INVERTÁLT rámpát adna (a sötét bemenet fehér, a világos fekete
+    lenne), a valódi Picasa-export viszont gyakorlatilag **egyenletes
+    fehér** (ΔE a tiszta fehértől 3,4–3,7 — a JPEG zajszintjével egyező
+    nagyságrend). Az invertált-rámpás modellünk ugyanerre 43–47 ΔE-t adott.
+    Nincs dekompilált bizonyíték ARRA, hogyan jut el a natív kód a teljes
+    fehérhez (feltehetően egy előjel nélküli/fixpontos reciprok-tábla
+    „elszáll" negatív osztónál) — ez itt a MÉRÉSBŐL illesztett viselkedés,
+    nem visszafejtett képlet.
     """
     if gamma <= 0.0:
         raise ValueError(f"A gamma pozitív kell legyen, nem {gamma}")
+    if black > white:
+        return np.full(256, NATIVE_LUT_FULL, dtype=np.int64)
     scale = 1.0 / (white - black) if white != black else 1.0
     curve = np.power(_LEVELS / 255.0, 1.0 / gamma)
     values = (curve * NATIVE_LUT_FULL - black * NATIVE_LUT_FULL) * scale
