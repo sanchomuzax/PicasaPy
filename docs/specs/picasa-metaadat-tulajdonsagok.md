@@ -975,11 +975,69 @@ Mind a 44 képben **nulla** `Iptc4xmpExt`, `PersonInImage`, `mwg-rs`,
 ⚠️ **A negatív állítás HATÓKÖRE:** a mért exportokon nem volt **névvel
 ellátott arc**, tehát a „`PersonInImage` megnevezett arc mellett" eset nincs
 lefedve, és az `mwg-rs` hiánya sem jelenti, hogy arcos képnél is hiányozna (a
-#1403 épp azt mérte ki, hogy arcokhoz az `mwg-rs`/`MP` megy). A hiányzó mérés
-jegye: **#3424**.
+#1403 épp azt mérte ki, hogy arcokhoz az `mwg-rs`/`MP` megy). ~~A hiányzó mérés
+jegye: **#3424**.~~ ⚠️ **LEZÁRVA a binárisból (2026-09-22), ld. az E) szakaszt:** a megnevezett arc NEM kerül `PersonInImage` alá.
 
 *A `lr:` sorsa ezzel eldőlt: MARAD, tudatos, az eredetiben nem létező
 kiegészítésként — a `export/xmp.py` névtér-listája ezt ki is mondja (#3353).*
+
+### E) ⛳ A #3424 kérdése a BINÁRISBÓL: a megnevezett arc NEM kerül `PersonInImage` alá (2026-09-22, #3424)
+
+*Forrás: indextől független bájtpásztázás a `PersonInImage` literál
+(`0x00c9ff18`) minden 4 bájtos hivatkozására · az arcrégió-író
+`0x00bb17e0` (1380 b) sztring-készlete · a három hivatkozó függvény
+diszasszemblátuma.*
+
+A D) szakasz a „névvel ellátott arc” esetet mérés híján nyitva hagyta, és
+exportot kért. A kérdés azonban eldönthető a binárisból: egy XMP-tulajdonság
+KIÍRÁSÁHOZ a tulajdonság nevét át kell adni az XMP-eszközkészletnek, tehát
+az író kódnak hivatkoznia kell a literálra.
+
+**A `PersonInImage` literálra PONTOSAN három hivatkozás van** a teljes
+fájlban, és egyik sem író:
+
+| hivatkozás | függvény | mit csinál |
+|---|---|---|
+| `0x00634d5c` | `0x00633210` (8048 b) | név → belső kulcs leképező `strcmp`-lánc: `PersonInImage` → **0x123** (`0x00634d6d`) |
+| `0x00bad223` | `0x00bad070` (1274 b) | **olvasó** visszahívás: a beérkező tulajdonság nevét hasonlítja, egyezésnél a 0x123-as kulcs alá TÁROLJA az értéket (`0x00bad233` → `0x00ba9040`), a kulcsmaszk (`[esi+0x24]`) szerint |
+| `0x00bb0039` | `0x00bafde0` (1322 b) | a séma-regisztráció (a D) szakasz 21 tulajdonsága) |
+
+**Az arcrégiók írója** (`0x00bb17e0`) a teljes sztring-készlete szerint csak
+ezt írja: `mwg-rs:Regions/mwg-rs:AppliedToDimensions` (`w`, `h`,
+`unit = pixel`), `mwg-rs:Regions/mwg-rs:RegionList[last()]` alá `Name`,
+`Type = Face` és `mwg-rs:Area` (`x`, `y`, `w`, `h`, `unit = normalized`),
+valamint a Microsoft `RegionInfo`-t (`http://ns.microsoft.com/photo/1.2/`,
+`0x00bb186b`). **`Iptc4xmpExt`-re és `PersonInImage`-re egyáltalán nem
+hivatkozik.**
+
+⛳ **Pozitív kontroll:** ugyanez a pásztázás a `mwg-rs:Regions/...` XPath
+literálokra megtalálja az író hívóhelyeit (`0x00bb1b89`, `0x00bb1bb7`,
+`0x00bb1bf1` …), tehát a módszer az írót látja, ha van.
+
+⇒ **LEZÁRVA: a Picasa a megnevezett arc nevét a régió `Name` mezőjébe írja
+(`mwg-rs` + `MP`), `PersonInImage`-t nem generál.** A `PersonInImage`-et
+OLVASSA (0x123-as kulcs), ha a képben már benne van.
+
+⚠️ **Hatókör:** ez az állítás a `PersonInImage` ELŐÁLLÍTÁSÁRÓL szól. Hogy egy
+forrásképben MÁR meglévő `PersonInImage` a Picasa újraírása után megmarad-e
+(az XMP-eszközkészlet a nem ismert tulajdonságokat általában megőrzi), azt ez
+a kör nem vizsgálta — a mi exportunk nem ír vissza forrás-XMP-t, tehát a
+termékre nincs hatása.
+
+⛔ **Helyesbítés a D) szakaszhoz:** az ott „24 bájt lépésközű leíró-táblának”
+nevezett `0x634c3c`-es sáv nem tábla, hanem **kód** — a `0x00633210`
+`strcmp`-lánca, amelynek minden blokkja (`push név · push esi · call
+0x00bf697a · add esp,8 · test · jne · mov eax,kulcs · ret`) pontosan 24
+bájt. A „leíró-tábla” olvasat ezt a szabályos lépésközt értette félre.
+
+**Nálunk:** az `export/xmp.py` `PersonInImage`-t nem ír, az arcneveket az
+`mwg-rs`/`MP` régiókba teszi — ez **egyezik** az eredetivel. A kódban álló
+„a negatív állítás hatóköre” megjegyzés (`export/xmp.py`, a névtér-lista
+fölött) ezzel hatókör nélkül igaz; a pontosítása a #3424-en áll.
+
+`Nyitott kérdések: 0 nyílt · 1 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 „csak nyitva”`
+(hatókörön kívül: a meglévő `PersonInImage` megőrzése — a termékre nincs
+hatása, 339. kör döntése).
 
 ## 13. ⛳ A `0x00bab6e0` szerepe MEGVAN: az EXIF/GPS sémaleíró, egy 14 rekeszes séma-tábla 6. rekesze (2026-09-19, #3345)
 
