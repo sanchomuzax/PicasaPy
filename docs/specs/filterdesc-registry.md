@@ -4228,6 +4228,48 @@ az 5. pont **nyitott**, és a gépi úton nem eldönthető része nevesítve.*
 
 ## ⛔ A `QuantizePalette` OKTREE-útja NEM az, ami a képre kerül (2026-09-08, #2231)
 
+> ⛔⛔ **HELYESBÍTÉS (2026-09-21, #3084): ez a szakasz HAMIS referencián
+> áll. Az `export-202608202231` NEM a Picasa exportja, hanem a PicasaPy
+> v0.8.27 SAJÁT kimenete** — ezt a `docs/benchmarks/2026-08-24-1143-teljes-effekt-export.md`
+> fejléce szó szerint kimondja („PicasaPy-export: v0.8.27 (`2026-08-20 22:31`)").
+> Az alábbi 1. pont „0,268" egyezése tehát a mi rácsos modellünk és a mi
+> régi kimenetünk egyezése — önmagunkhoz mértünk. A mappa a Picasa-exportokkal
+> szemben kimérhetően más forrásból való:
+>
+> | jel | `export-202608151229` (Picasa) | 684-kit `export/` (Picasa, 09-18) | `export-202608202231` |
+> |---|---|---|---|
+> | EXIF a 178 fájlban | 178 | van | **0** |
+> | átlagos luma-kvantáló (JPEG) | 3,45 | — | **1,00** (minden együttható 1) |
+> | ΔE a 684-es exporthoz — `quantizepalette` `alap` / `min` | **0,38 / 0,07** | — | 16,72 / 39,78 |
+> | ΔE a 684-es exporthoz — `heatmap` / `sixties` / `radtint` / `polaroid` `alap` | **4,10 / 1,01 / 1,48 / 0,20** | — | 24,13 / 17,20 / 9,46 / 22,95 |
+>
+> A két VALÓDI Picasa-export (08-15 és 09-18) egymással JPEG-zajszinten
+> egyezik; a `2231` mindkettőtől eltér, a mai renderelőnktől viszont alig
+> (`quantizepalette` `alap` 0,28, `radtint` 1,11). *(A projekt kanonikus
+> ΔE-jével, `tools/golden/compare_render.delta_e_cie76`.)*
+>
+> **Következmény a Poszterizálásra.** A valódi Picasa kimenete **egyik**
+> exportban sem ül egyenletes rácson (rács-illeszkedés 1,5% / 0,0% / 11,9%
+> — mérőkép `alap` / `min` / a #2770 fotó). Az 1., 1/b és 1/c pont
+> „két kép, két viselkedés" ellentmondása ezzel **megszűnik**: egyetlen
+> viselkedés van, és az NEM a rácsos. A kanonikus ΔE a valódi exportokon:
+>
+> | eset | forrás ↔ Picasa | rácsos (mai) | oktree (a 2. pont hű újraépítése) |
+> |---|---:|---:|---:|
+> | mérőkép `alap` (8/80/0) | 16,04 | 16,73 | **15,21** |
+> | mérőkép `min` (2/0/0) | 26,93 | 40,02 | **17,54** |
+> | #2770 fotó (8/80/0) | 14,49 | 17,16 | **7,64** |
+>
+> Az oktree mindhárom valódi exporton jobb a rácsosnál, de **egyik sem
+> hű**: a mértani mérőképen az oktree alig jobb a semmittevésnél
+> (15,21 vs 16,04). A csere indoklása tehát a helyes referencia, nem a
+> ΔE-mérő (egy korábbi, 2026-09-21-i megvalósítási kísérlet tévesen a
+> mérőeszközt okolta — az a szál HAMIS). A hátralévő eltérés oka nyitott;
+> ld. a #3084 jegyet.
+>
+> ⚠️ A `test_quantizepalette_racs_2231.py` őr ugyanerre a hamis
+> referenciára épül (a docstringje a `2231`-es mappát nevezi Picasa-exportnak).
+
 Ez a szakasz **nem cáfolja** a fenti két oktree-szakaszt — a binárisbeli
 olvasat megerősítve marad, sőt bővül —, hanem **szembeállítja egy
 viselkedés-méréssel**, amely az ellenkezőjét mondja. Mindkettő mérés; a
