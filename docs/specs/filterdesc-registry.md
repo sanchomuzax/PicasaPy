@@ -7064,3 +7064,154 @@ művelet saját fordító-slotjában nincs végigkövetve); az `IR` 7-ese
   módtábla indexe;
 - „a `Normal` teljes átlátszóságnál is alfával kompozitál” — a végrehajtó
   `α ≈ 1`-nél a kernelt meg sem hívja.
+
+## ⛳⛳ A három maszk-utasítás: egy közös képlet, három különböző maszk-forrás (2026-09-22, 338. kör, #626)
+
+*Forrás: a `MaskInstruction` (`0x00cf0f6c`, másodlagos vtábla `0x00cf0f84`),
+a `PartialMaskInstruction` (`0x00cf0f30`) és a
+`MaskWithSourceAlphaInstruction` (`0x00cf0f48`) végrehajtója · a közös
+maszkolt keverő `0x008f4c80` → `0x008f62a0` · a maszk-osztályok vtáblái
+(RTTI) · a fordító választása (`0x00bc4dcb`–`0x00bc4fde`) · kimerítő
+hármas-próba.*
+
+### A) A közös képpont-képlet
+
+Mindhárom utasítás ugyanazt a keverőt hívja: `0x008f4c80(felső, alsó,
+maszk, cél, téglalap)` → `0x008f62a0`, és az a már ismert segédpárt
+(`0x008f4810` SSE2 · `0x008f49a0` skalár — ld. a `BlendInstruction`
+szakaszban a `Normal` módot). A különbség csak annyi, hogy itt a súly a
+**harmadik kép alfacsatornája** (`psrld xmm5, 0x18`, `0x008f482c`), nem a
+felső elemé:
+
+```
+m   = a maszk-kép képpontjának ALFA-bájtja (0…255)
+ki  = ⌊(t·m + b·(255 − m)) / 255⌋        ; R, G, B
+ki.alfa = 255                             ; 0x008f48a1–0x008f48aa, skalárban 0x008f4a45
+```
+
+`t` = a felső veremelem (a művelet kimenete), `b` = az alsó (a bemenete).
+Az SSE2 út `(s + (s >> 8) + 1) >> 8`-cal oszt; **mind a 256 maszkértékre
+bitre azonos** a skalár `⌊s/255⌋`-val (kimerítő próba).
+
+### B) `MaskInstruction` — csak a festett ecsetmaszk kapja
+
+A fordító (`0x00bc4dcb`) minden maszk-műveletre megkérdezi annak két
+predikátumát (`vtbl+0x10`, `vtbl+0x0c`); **ha mindkettő igaz**, teljes
+`MaskInstruction` jön (`+0x10` = a maszk-művelet, `+0x08` = 100), különben
+`PartialMaskInstruction`. A predikátumok a vtáblákból:
+
+| maszk-osztály | vtábla | `+0x0c` / `+0x10` | utasítás |
+|---|---|---|---|
+| `PaintMaskPlusImageMask` | `0x00cf0750` | `0x007a5240` → **1** / 1 | **`MaskInstruction`** |
+| `ImageMask` | `0x00cf0d34` | `0x004bdeb0` → 0 / 0 | `PartialMask` |
+| `TiledImageMask` | `0x00cf02e8` | `0x004bdeb0` → 0 / 0 | `PartialMask` |
+| `ShapeGradientImageMask` | `0x00cf0e50` | `0x004bdeb0` → 0 / 0 | `PartialMask` |
+| `CircularGradientImageMask` | `0x00cf0890` | `0x004bdeb0` → 0 / 0 | `PartialMask` |
+
+A végrehajtó (`0x00bd16f0` → `0x00bd1730`, jelző = 0):
+
+1. a maszk-művelet saját rajzoló slotja (`vtbl+0x1c`, `0x00bd1ae6`) a
+   BEMENET méretére megrajzolja a maszkot egy helyi képbe;
+2. egy üres, bemenet-méretű célképet foglal (`0x009a9c90`);
+3. az A) képlettel a teljes képre kever;
+4. a célképet **új elemként** a verem tetejére teszi (`0x00bd1f08`) — a
+   verem eggyel nő; a fölösleget a fordító utána tett `Pop`-ja viszi el.
+
+**Az 1-es jelzős ág** (`0x00bd1710`, a másodlagos vtáblán, azaz a
+`ReExecutingInstruction`-felületen át) az ecsethúzás közbeni
+**újraszámolás**: a verem tetejéről leveszi az ELŐZŐ futás eredményét
+(`0x00bd179c`), azt használja célképnek, és a téglalapot a kontextus
+`+0x28` objektumából veszi (`0x00bd1b68`–`0x00bd1ba5`), majd azt
+**-1-re állítja** (elfogyasztja). ⇒ húzás közben csak a „piszkos”
+téglalap számolódik újra.
+
+### C) `PartialMaskInstruction` — a téglalapon kívül EGYETLEN szám dönt
+
+A végrehajtó (`0x00bd0f10`):
+
+1. megrajzolja a maszkot (`vtbl+0x1c`, `0x00bd0ff3`);
+2. megkérdezi a maszk-művelet `vtbl+0x08` értékét (`0x00bd102c`), és ha az
+   `≈ 1` (bitmintán `< 8` ULP), az **alap** a felső elem, különben az alsó
+   (`0x00bd1045`–`0x00bd1058`);
+3. ha a maszknak nincs befoglaló téglalapja (mind a négy −1), az eredmény
+   **az alap maga**, keverés nélkül (`0x00bd10bd`–`0x00bd10cf` →
+   `0x00bd12e8`);
+4. különben az alapot a maszk téglalapjára másolja (`0x009a8fe0`), azon
+   belül az A) képlettel kever, és az eredmény a **felső elem helyére**
+   kerül (`0x00bd130c`) — a verem mérete nem változik.
+
+A `vtbl+0x08` értéke:
+
+| maszk-család | függvény | érték |
+|---|---|---|
+| `ImageMask`, `TiledImageMask`, `PaintMaskPlusImageMask` | `0x00bb9fc0` | **0,0** (`fldz`) ⇒ a téglalapon kívül az EREDETI marad |
+| `ShapeGradient`, `CircularGradient` | `0x00bcfbf0` | az **`outerAlpha`** attribútum, [0,1]-re vágva, alapértéke 1,0 |
+
+Az `outerAlpha` azonosítása: a színátmenetes maszk attribútum-beolvasója a
+nevet a `0x00bcfd12`-n tölti be, és a `+0x38`-as tartóba teszi; a
+`0x00bd02d0` ezt olvassa a rekord `+0x18`-ába (`0x00bd03ce`–`0x00bd03de`,
+[0,1]-vágás `0x00bd03e8`–`0x00bd0408`), és a `0x00bcfbf0` ezt adja vissza
+(`0x00bcfc57`).
+
+⚠️ **Köztes `outerAlpha` nem kever a téglalapon kívül:** 0,5-nél a kívül
+eső rész az EREDETI (mert `0,5 ≉ 1`). A `filterdesc.xml` minden
+színátmenetes maszkja `outerAlpha = Reverse ? 0 : 1`-et ad (ld. fent a
+`CircularGradientImageMask` sort), tehát a mai effektekben ez a határeset
+nem fordul elő.
+
+### D) `MaskWithSourceAlphaInstruction` — a forrás alfája a maszk
+
+A végrehajtó (`0x00bd1350`) egy felső-méretű helyi képet **fehérre és
+teljesen fedőre** tölt (`0x009a91a0`, érték `0xFFFFFFFF`, `0x00bd13dc`),
+majd az A) keverőt így hívja: felső = a felső elem, alsó = ÉS cél = a fehér
+kép, maszk = **az alsó veremelem** (a forrás). Az eredmény a felső elem
+helyére kerül (`0x00bd1620`).
+
+```
+ki = ⌊(t·α_forrás + 255·(255 − α_forrás)) / 255⌋ ,  ki.alfa = 255
+```
+
+⇒ ahol a forrás átlátszó, ott a kimenet fehér; teljesen fedő forrásnál
+(minden fénykép) a kimenet bitre a felső elem. A fordító akkor fűzi a
+művelet után, ha a `maskWithSourceAlpha` attribútum igaz (`[op+0x20]`,
+beolvasás `0x00bc4962`–`0x00bc496c`; kiírás `0x00bc4b23`–`0x00bc4b41`) — a
+`filterdesc.xml`-ben két helyen: a `Cinemascope` zajrétegén (`:762`) és a
+`PicnikGrain` beágyazott műveletén (`:923`).
+
+### E) Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| maszkolt keverés | `⌊(t·m + b·(255−m))/255⌋`, `m` = a maszk ALFA-bájtja | `masked_blend`: lebegőpontos `b·(1−m) + t·m`, `rint` — **8 164 890 / 16 777 216 hármas (48,7%) tér el, max 1** | csonkoló egész képlet — a #3442 része |
+| kimeneti alfa | 255 | RGB-ben dolgozunk | nincs teendő |
+| `PartialMask` a téglalapon kívül | `vtbl+0x08 ≈ 1` ? felső : alsó | nem mérve (a maszkjaink teljes képet adnak) | nincs, amíg minden `outerAlpha` 0 vagy 1 |
+| `MaskWithSourceAlpha` | fehérre kompozitál a forrás alfájával | nincs | nincs teendő fedő forrásnál (bitre no-op) |
+| ecset-újraszámolás | csak a piszkos téglalap | — | teljesítmény-kérdés, nem pixel-kérdés |
+
+*Bizonyítottsági fok:* a képlet, a három végrehajtó adatfolyama és a
+fordító választása **megerősített**; az `outerAlpha` azonosítása **erős**
+(a beolvasó és a `0x00bd02d0` ugyanazt a `+0x38` tartót használja — a két
+függvény közös objektum-bázisát a hívási lánc nem bizonyítja közvetlenül).
+
+### F) Nyitott kérdések mérlege
+
+- a `PartialMask` köztes-`outerAlpha` viselkedése — **LEZÁRVA** (C);
+- az 1-es jelzős ág szerepe — **LEZÁRVA**: újraszámolás a piszkos
+  téglalapon (B);
+- hogy a `MaskInstruction` `+0x08 = 100` mit jelent (gyorsítótár-prioritás?)
+  — **HATÓKÖRÖN KÍVÜL**: a képpont-kimenetre nincs hatása (a végrehajtó nem
+  olvassa); 338. kör döntése.
+
+`0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+⇒ **A #626 utasításgép-leltára ezzel teljes:** `Apply` (LUT- és
+mátrix-család), `Blend` (11 mód), a három maszk, `Dupe`/`Pop` (verem),
+`GetVar`/`SetVar` (változók). A #626 maradék, műveletenkénti kérdései a
+fenti gépezeten már egyenként olvashatók.
+
+### Amit KIZÁRTAM
+
+- „a maszk a szürkeárnyalatos világosságával súlyoz” — a súly az ALFA-bájt
+  (`psrld 0x18`);
+- „a `PartialMask` a téglalapon kívül is a maszk értékével kever” — egyetlen
+  küszöbölt szám dönt (felső vagy alsó).
