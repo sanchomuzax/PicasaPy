@@ -106,7 +106,10 @@ PicasaMenu {
                 onTriggered: menu.moveToCollectionRequested(modelData.name)
             }
         }
-        MenuSeparator { visible: menu.customCollections.length > 0 }
+        MenuSeparator {
+            visible: menu.customCollections.length > 0
+            height: visible ? implicitHeight : 0
+        }
         MenuItem {
             objectName: "folderContextMenuNewCollection"
             text: qsTr("New Collection...")

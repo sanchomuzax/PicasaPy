@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.539] – 2026-09-21
+
+### Javítva
+
+- **Az indexkép jobb-gombos menüjében megszűnt az üres rés (#3448).** A
+  mappanézetben a csak album- vagy személy-nézetben használt tételek
+  rejtve is megtartották a helyüket, ezért a „Hozzáadás albumhoz" alatt
+  öt sornyi üres hely állt. Most a rejtett tételek nem foglalnak helyet —
+  a mappa-helyimenü egy elválasztójánál ugyanígy.
+
 ## [0.8.538] – 2026-09-21
 
 ### Javítva
