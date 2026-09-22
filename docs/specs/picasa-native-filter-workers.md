@@ -1009,7 +1009,9 @@ nem simul), fölötte egy sem (a teljes, „szabad" simítás fut le).
 dilatált lánc σ ≈ 3,24-et adna, a mérés σ = 4,00-et: a per-lépték simítás
 pontos alakja tehát még nem stimmel, csak a végeredmény van kimérve.
 
-> **Ami NYITVA marad:** a `küszöb` → falképzés leképezése a 0,5 és a 2,0
+> ⛳ **MEGVÁLASZOLVA (2026-09-22, #3482):** a küszöb → falképzés leképezése kiolvasva és bitre szimulálva (`filters-decoded.md`, „A `blur` TELJES lánca bitre szimulálva”): a jelölő a SZOMSZÉDOS párt hasonlítja `K/n²`-hez, és valódi tartalmon a szűrő a csúszka tartományában is simít — a lenti „tétlen” olvasat a kétszínű tesztábrák sajátja. A modellünk cseréje: #3493.
+>
+> ~~**Ami NYITVA marad:**~~ *(elavult)* a `küszöb` → falképzés leképezése a 0,5 és a 2,0
 > közötti sávban. Erre nincs mérési pontunk, és a szabadon választott
 > küszöbskála pontosan az a fajta paraméter, ami elnyeli a hibát. A
 > PicasaPy modellje (`src/picasapy/render/blur.py`) ezért a váltást a
