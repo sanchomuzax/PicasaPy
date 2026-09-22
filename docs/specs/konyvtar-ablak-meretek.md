@@ -399,7 +399,7 @@ olvasta ki. Itt a `respack.yt` nyers koordinátái állnak — **normatív**.
 A jobb szélen: `librarylabel_button` (**725**, 24 × 25) és a
 `gplushit` / `gplus` Google+-gomb (**733**, 26 × 26 / 22 × 22, y = 6).
 
-### A MÓD-sor gombjai (y = 5, magasság 28–29, mind 132 széles)
+### A MÓD-sor gombjai — deklarált geometria (a láthatóság külön forrás)
 
 | elem | x | méret | felirat | súgó |
 |---|---:|---|---|---|
@@ -414,6 +414,16 @@ A `fullview` és az `albumview` **ugyanazon a helyen** (x 5) van — a kettő
 egymást váltja. Mind a kettő a `globalbuttons/b132_*` képcsaládot használja
 (**132 × 29**).
 
+> ⚠️ **Láthatósági helyesbítés (#656/R6).** A fenti táblázat deklarált
+> tervező-geometriát sorol, nem azt állítja, hogy minden téglalap a kiadott
+> főablakban látszik. A `thumbui.tre` szerint a `sbutton`,
+> `timelinebutton`, `newfolder` és `cdmode` `m_hidden`, a `fullview`
+> `m_fakehidden`; a `backup` pedig külön „currently not shown in UI” jelölést
+> kapott (`thumbui.tre:95–101`, `147–149`, `378–382`, `463–489`). A részletes
+> akció- és láthatóság-levezetés: [`ui-audit-mainwindow.md`](ui-audit-mainwindow.md)
+> R6. A méretadatot ezért nem szabad önmagában látható gomb elfogadási
+> feltételének használni.
+
 ### Négy gomb, amit ELHAGYTAK
 
 A csomagban `#`-kal kikommentezve:
@@ -425,8 +435,10 @@ A csomagban `#`-kal kikommentezve:
 | `#listbox_title` / `#listbox_title_button` | (16, 51) | 80 × 14 / 24 × 14 |
 
 Vagyis a mappalistának eredetileg **előre/vissza navigációja** és külön
-**„Library" felirata** lett volna. A kiadott változatban helyettük a
-`newfolder` gomb áll (**174**, 50, **29 × 22**).
+**„Library" felirata** lett volna. A kiadott változatban a `newfolder`
+geometriája továbbra is szerepel a tervezőforrásban (**174**, 50, **29 × 22**),
+de a `thumbui.tre:378–382` `m_hidden` jelölése miatt ez a szám önmagában
+nem bizonyít kirajzolt kiadott gombot.
 
 ### ❌ Amiben eltérünk
 

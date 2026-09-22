@@ -1844,9 +1844,12 @@ függvény **három bemutató-módot** kezel egy helyen:
 
 Közös őre az `IDS_MUST_SELECT`, és a függvény a `thumbui/fullview`,
 `editpanel/preview`, `editpanel/only_1up_toggle`, `oneup/back`
-csomópontokat is kezeli — vagyis a **teljes képernyős** útra vált át. Van
-saját gomb-belépési pontja is: **`thumbui/timelinebutton`**
-(`0x005d9cc0`).
+csomópontokat is kezeli — vagyis a **teljes képernyős** útra vált át. A
+`thumbui/timelinebutton` név szerinti parancsága is megvan a közös
+`0x005d9cc0` diszpécserben (`0x005da7ab–0x005da7ae`), de a
+`thumbui.tre:472–478` ugyanennek a főablaki elemnek `m_hidden`-t és az
+eltávolítási blokkot adja. ⇒ Ez **akció-belépési pont**, nem bizonyíték arra,
+hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
 ⇒ **Az Idővonal nem nézet-kapcsoló, hanem egy előkészítő lépéssel induló,
 teljes képernyős bemutató-mód** („Preparing timeline…" folyamatjelzővel).

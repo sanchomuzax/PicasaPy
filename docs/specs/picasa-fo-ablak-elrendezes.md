@@ -1022,15 +1022,17 @@ thumbui.tre:100   m_hidden
 
 A `thumbui/backup` — a `m_backupcontrolset_enable` módot viselő gomb —
 **`m_hidden`**, és a forrás saját megjegyzése is kimondja. A mód tehát
-LÉTEZIK és teljesen le van írva, de a kiadott 3.9-es felületen a
-belépési pontja nincs kirakva. *(Hogy a menüből elérhető-e, ez a kör nem
-mérte — a `Property uptarget searchcontainer/searchbutton` sora szerint a
-gomb a keresőgombhoz kapcsolódik.)*
+LÉTEZIK és teljesen le van írva, de a kiadott 3.9-es felületen a **gomb
+maga** nincs kirakva. Ez nem jelenti azt, hogy az akció elérhetetlen: a
+menü-diszpécser `0x005cb990` függvényének `0x005cbdee–0x005cbdf3` ága
+`thumbui/backup` célra hívja a közös kattintási útvonalat (`0x009cd8a0`).
+A gomb rejtettsége és a Tools-menü belépési pontja tehát két külön dolog.
 
-⇒ **A három publikáló mód (Ajándék CD · Biztonsági mentés · Replikáció)
-pontosan ugyanazt a hármat rejti el**: a keresősávot, az alsó
-él-díszítést és a logót. Ez **normatív**: ha ezeket a módokat megépítjük,
-a keresősávnak el kell tűnnie.
+A módmakró a `publish/backup_group`-ot és a `thumbui/backup_label`-t mutatja
+(`macros.tre:245–252`), nem magát a rejtett gombot. ⇒ **A három publikáló
+mód (Ajándék CD · Biztonsági mentés · Replikáció) pontosan ugyanazt a hármat
+rejti el**: a keresősávot, az alsó él-díszítést és a logót. Ez **normatív**:
+ha ezeket a módokat megépítjük, a keresősávnak el kell tűnnie.
 
 ⛔ **Három mód-makró DEFINIÁLVA VAN, de egyetlen `.tre`-elem sem viseli:**
 `m_webcontrolset_enable` (`macros.tre:269`), `m_collage_enable`

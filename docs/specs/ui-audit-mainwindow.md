@@ -1864,23 +1864,95 @@ a hivatalos angol és magyar szöveg cél-azonosító szerint:
 | `albumview` | felirat *Back To Library*, súgó *Return to organized thumbnails* / **Vissza a rendezett indexképekhez** | a „Back to Library” gombnak (`PhotoViewer.qml:840`) **nincs súgója** | hiányzó súgó |
 | `single_action_close` | *Cancel "Get more"* / **A "Továbbiak" művelet megszakítása** | a magyar „A „Továbbiak” művelet megszakítása” (`TrayBar.qml:2183`) | csak az idézőjel: az eredeti egyenes `"…"`, nálunk tipográfiai `„…”` |
 
-### C) Nem tárgya ennek a szeletnek (12)
+### C) A többi hat elem: nem látható vagy állapotfüggő — R6
 
-A többi elem vagy **nem látható vezérlő** (`smallthumbs`, `largethumbs`,
-`next`, `prev`, `visitweb`: szülő `root`, makró `m_render_offscreen` — a
-`visitweb` súgója ráadásul `PLACEHOLDER`), vagy **alapból rejtett, feltételesen
-megjelenő** gomb (`sbutton`, `timelinebutton`, `newfolder`, `backup`,
-`cdmode`: `m_hidden`; `fullview`: `m_fakehidden`), vagy a webkamerás rögzítés
-(`webcambutton`), amelynek nálunk nincs megfelelője. Hogy ezek mikor
-jelennek meg, az a láthatósági feltételük kérdése, nem a súgó szövegéé.
+Az R5-ben a `m_hidden`/`m_fakehidden` elemeket még „feltételesen megjelenőként”
+kezeltük. Ez túl erős állítás volt: a `.tre`-forrás a **kezdeti
+láthatóságot** adja, a bináris pedig külön választja az akciót attól, hogy a
+vezérlő kirajzolódik-e. A hat név most külön le van vezetve.
 
-### D) Nyitott kérdések mérlege
+#### Forrásból bizonyított kezdeti állapot
 
-- a 19 látható vezérlő súgójának összevetése — **LEZÁRVA** (A: 15, B: 4);
-- a 12 rejtett/nem látható elem megjelenési feltétele — **HATÓKÖRÖN
-  KÍVÜL** ebben a szeletben: az R5 a meglévő vezérlők szövegét méri
-  (341. kör döntése); a #656 további szeletei viszik.
+A `macros.tre:112–117` szerint:
 
-`0 nyílt · 1 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+- `m_hidden` = `Property setvisible 0`;
+- `m_fakehidden` = `Property setvisible 0` **és** `Property hiddentimer 1`.
 
-Fejlesztői jegy a B) négy tételére: **#3476**.
+A hat cél a `thumbui.tre`-ben:
+
+| elem | erőforrás-forrás | kezdeti állapot | további forrásjel |
+|---|---|---|---|
+| `sbutton` | `thumbui.tre:463–470` | `m_hidden` | a blokk címe: `these buttons are to be removed` |
+| `timelinebutton` | `thumbui.tre:472–478` | `m_hidden` | ugyanebben az eltávolítási blokkban |
+| `newfolder` | `thumbui.tre:378–382` | `m_hidden` | nincs aktív `showtarget` a módmakrókban |
+| `backup` | `thumbui.tre:95–101` | `m_hidden` | a forrás megjegyzése: `currently not shown in UI` |
+| `cdmode` | `thumbui.tre:480–489` | `m_hidden` | a `m_cdcontrolset_enable` mód ugyanitt kapcsolja a CD-sávot |
+| `fullview` | `thumbui.tre:147–149` | `m_fakehidden` | a `m_enable_albummode` aktívan rejti (`macros.tre:196–203`) |
+
+A módmakrók **nem teszik láthatóvá magukat a gombokat**: a
+`m_cdcontrolset_enable` a `publish/presentation_group`-ot és a
+`thumbui/cd_label`-t mutatja (`macros.tre:233–240`), a
+`m_backupcontrolset_enable` pedig a `publish/backup_group`-ot és a
+`thumbui/backup_label`-t (`macros.tre:245–252`). A `sbutton` és a
+`timelinebutton` `showtarget` sorai (`macros.tre:230–231`) kikommentezettek;
+a kapcsolódó `hidetarget` sorok is kikommentezettek (`macros.tre:242–278`).
+Ez a forrás nem támasztja alá, hogy a főablakban bármelyik gombot a módváltás
+kirajzolná.
+
+#### A binárisban az akció él, a gomb nem következik belőle
+
+A közös vezérlő-diszpécser (`0x005d9cc0`, 7153 bájt) mind az öt `m_hidden`
+elemet név szerint felismeri, de ez csak parancskezelés:
+
+| cél | diszpécser-ág | átadott kezelő | mit bizonyít |
+|---|---|---|---|
+| `thumbui/fullview` | `0x005da6d3–0x005da6d8` | `0x005683a0` | a megtekintési/szerkesztési nézet akciója |
+| `thumbui/sbutton` | `0x005da740–0x005da743` | `0x005e8a70`, jelző `0` | a diavetítés akciója |
+| `thumbui/timelinebutton` | `0x005da7ab–0x005da7ae` | `0x005e8a70`, jelző `1` | az Időrend akciója |
+| `thumbui/newfolder` | `0x005da362–0x005da365` | `0x005e9bb0` | az új mappa akciója |
+| `thumbui/cdmode` | `0x005db4bc–0x005db4d5` | `0x005675d0`, `0x006032f0`, `0x0067be30` lánca | a CD-mód indítása |
+| `thumbui/backup` | `0x005db77c–0x005db7ee` | `0x006032f0`, majd `0x0067be30` | a mentési mód indítása |
+
+A két publikáló út külön kontrollált: a `create_cd` parancs
+`0x005e0f70:0x005e1167–0x005e116c` alatt a `thumbui/cdmode` célra kattint,
+a Tools-menü mentési ága pedig `0x005cb990:0x005cbdee–0x005cbdf3` alatt a
+`thumbui/backup` célra kattint. Ugyanígy a menü-diszpécser a
+`thumbui/fullview` célra kattint (`0x005cb990:0x005cbd7a–0x005cbd7f`).
+Ezek a hívások az aktiválást bizonyítják, nem a vezérlő látható állapotát.
+
+A `fullview` valódi felhasználói útja külön is megvan: a gyorsbillentyű-ág
+`0x005e60d0:0x005e624f–0x005e6254` aktiválja a célt; a jelenlegi termékben
+ugyanezt a `Main.qml` `nezdEsSzerkeszd()` függvénye és a `Ctrl+3` kötése adja
+(`Main.qml:178–185`, `829–835`).
+
+#### Eredeti / nálunk / teendő
+
+| elem | eredeti — mért lelet | nálunk — mért állapot | teendő |
+|---|---|---|---|
+| `sbutton` | főablaki erőforrásban rejtett, eltávolításra jelölt; a parancskezelő él | nincs kihelyezett főablaki QML-gomb; a vetítés menütétel külön él | nincs új főablaki gombfeladat; a rejtett erőforrás nem hiányzó gomb |
+| `timelinebutton` | főablaki erőforrásban rejtett, eltávolításra jelölt; a parancskezelő él | `MainToolbar.qml:277–302` csak a korábbi gomb eltávolítását dokumentáló komment; a `PicasaMenuBar.qml:847–852` menütétel inaktív | a valódi animált Időrend külön terméki munka; a rejtett erőforrás önmagában nem indokol gombot |
+| `newfolder` | `m_hidden`; külön parancskezelő-ág bizonyított | a fő eszköztárban nincs `newfolder` QML-elem; a jelenlegi forrásban külön `newalbum` van (`MainToolbar.qml:36–40`, `154–166`) | a mappa-létrehozás felületét külön terméki jegyben kell eldönteni; ez a kutatás nem bizonyít látható eredeti gombot |
+| `backup` | `m_hidden`, a forrás szerint „currently not shown”; Tools-menüből a rejtett cél aktiválható | `PicasaMenuBar.qml:1824–1830` alatt külön `menuToolsBackup` menütétel és jel van | a főablaki gombot nem kell hozzáadni; a menüút nem azonos a rejtett gombbal |
+| `cdmode` | `m_hidden`; a `create_cd` parancs a CD-sávot aktiválja | a `Create a Gift CD...` tétel jelenleg placeholder (`PicasaMenuBar.qml:1759–1762`) | a CD-kimenet meglévő terméki munkája; a rejtett főablaki gomb pótlása nem a bizonyított eltérés |
+| `fullview` | `m_fakehidden`; a nézetakció és a módmakrók megvannak, de a `hiddentimer 1` futásidejű feloldó eseménye ebből a körből nem azonosítható | `Ctrl+3`/„Megjelenítés és szerkesztés” út megvan (`Main.qml:178–185`, `829–835`) | a rejtett gomb kirajzolási eseménye **NINCS MEG**; csak célzott runtime-trace vagy valódi Picasa-mérés zárhatja le |
+
+#### Korábbi állítás helyesbítése és kérdésmérleg
+
+Az R5 korábbi „mind a hat alapból rejtett, feltételesen megjelenő gomb”
+mondata helyesbítve: a bizonyított állapot **rejtett kezdeti erőforrás +
+élő parancsút**. Ez nem bizonyítja, hogy a kiadott főablakban hat látható
+gombnak kell lennie. A `newfolder` és `fullview` esetében különösen nem
+szabad a deklarált méretből látható UI-ra következtetni.
+
+- a hat elem kezdeti `visible`-állapota és parancsútja — **LEZÁRVA**;
+- a `fullview` `hiddentimer 1` feloldó eseménye — **BLOKKOLT**: a megszerzéshez
+  célzottan a `setvisible`/`hiddentimer` futásidejű setterláncét kell
+  követni, vagy valódi Picasa-mérést kell készíteni;
+- a R5 fennmaradó hat eleme (`smallthumbs`, `largethumbs`, `next`, `prev`,
+  `visitweb`, `webcambutton`) — **HATÓKÖRÖN KÍVÜL** ebben a körben.
+
+`0 nyílt · 1 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+Fejlesztői jegyek: a korábbi felirat-eltérések **#3476**; a CD-kimenet és az
+Időrend csak a saját meglévő terméki jegyeikben folytatandó, új duplikált jegy
+e körben nem nyílt.
