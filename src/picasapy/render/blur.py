@@ -38,7 +38,7 @@ Hat bájtra azonos forrás (800×512), `EXIF Software = Picasa` exportok:
 
 | lánc | az export a forráshoz képest |
 |---|---|
-| `blur=1,0.100000;` · `0.5` · `0.8` · `1.1` · `1.4` | képpontra AZONOS (átlag \|Δ\| = 0,000) |
+| `blur=1,0.100000;` · `0.5` · `0.8` · `1.1` · `1.4` | képpontra AZONOS (átlagos abszolút eltérés 0,000) |
 | `blur=1,2.000000;` | teljes elsimítás (Laplace-szórás 162,6 → 0,4) |
 
 A 2,0-s exporttól a `BLUR_SIGMA` = 4-es elmosásunk átlagosan 0,026-tal tér
