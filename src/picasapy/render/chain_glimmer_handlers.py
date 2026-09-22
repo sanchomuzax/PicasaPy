@@ -19,6 +19,7 @@ from picasapy.render import glimmer_creative as creative
 from picasapy.render import glimmer_focal as focal
 from picasapy.render import glimmer_frames as frames
 from picasapy.render import glimmer_tone as tone
+from picasapy.render.elonezeti_arany import skalazott_vastagsag
 from picasapy.render.tinting import parse_rgb_hex
 
 
@@ -197,10 +198,12 @@ def apply_picnik_grain_op(image, op: FilterOp):
 
 
 def apply_border_op(image, op: FilterOp):
+    # #3377: a két vastagság az előnézeti aránnyal skálázódik, a sarok és a
+    # feliratsáv NEM — az eredeti mért aszimmetriája (`elonezeti_arany`).
     return frames.apply_border(
         image,
-        outer_thickness=_float_at(op, 0, 20.0),
-        inner_thickness=_float_at(op, 1, 5.0),
+        outer_thickness=skalazott_vastagsag(_float_at(op, 0, 20.0)),
+        inner_thickness=skalazott_vastagsag(_float_at(op, 1, 5.0)),
         corner_radius=_float_at(op, 2, 0.0),
         outer_color=_color_at(op, 3, (0, 0, 0)),
         inner_color=_color_at(op, 4, (255, 255, 255)),
@@ -232,8 +235,8 @@ def apply_drop_shadow_op(image, op: FilterOp):
 def apply_museum_matte_op(image, op: FilterOp):
     return frames.apply_museum_matte(
         image,
-        outer_thickness=_float_at(op, 0, 25.0),
-        inner_thickness=_float_at(op, 1, 40.0),
+        outer_thickness=skalazott_vastagsag(_float_at(op, 0, 25.0)),
+        inner_thickness=skalazott_vastagsag(_float_at(op, 1, 40.0)),
         outer_color=_color_at(op, 2, (0x1A, 0x0E, 0x03)),
         inner_color=_color_at(op, 3, (0xF0, 0xEA, 0xE4)),
     )
