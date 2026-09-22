@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.542] – 2026-09-22
+
+### Javítva
+
+- **A Kollázs Klipek lapjának két gombsúgója az eredeti Picasa angol
+  szövegét viszi (#3410)** — „Remove selected clips from the tray" és „Get
+  more clips from the Library"; a magyar fordítás változatlan.
+
 ## [0.8.541] – 2026-09-22
 
 ### Javítva

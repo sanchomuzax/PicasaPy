@@ -9512,7 +9512,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Továbbiak...</translation>
     </message>
     <message>
-        <source>Load more pictures from the library</source>
+        <source>Get more clips from the Library</source>
         <translation>További képek beolvasása a könyvtárból</translation>
     </message>
     <message>
@@ -9528,7 +9528,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>–</translation>
     </message>
     <message>
-        <source>Remove the selected pictures from the tray</source>
+        <source>Remove selected clips from the tray</source>
         <translation>A kijelölt képek eltávolítása a tálcáról</translation>
     </message>
 </context>

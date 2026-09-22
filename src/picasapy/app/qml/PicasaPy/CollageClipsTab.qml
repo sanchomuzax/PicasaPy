@@ -27,7 +27,7 @@ import QtQuick.Controls
 // * a „+" a **könyvtár** kijelöltjeit veszi fel a kollázsra (ezért van
 //   `librarySelection` property), és a felvett képeket felhasználtnak
 //   jelöli — a tálcán MARADNAK, csak kiesnek e lap listájából;
-// * a „–" *„Remove the selected pictures from the tray"* — vagyis EZEN a
+// * a „–" *„Remove selected clips from the tray"* — vagyis EZEN a
 //   listán bejelölteket veszi ki a tálcából. Ez a lap saját kijelölése
 //   (`trayValasztas`, fotó-azonosítók), mert a tálca-elem nem
 //   kollázs-csomópont: nincs is köze a vászon kijelöléséhez.
@@ -96,7 +96,7 @@ Item {
         x: 6; y: 5; width: 166; height: 28
         text: qsTr("Get more...")
         //: Buboréksúgó a „Továbbiak..." gombon (1.10.6 `getmoreclips`).
-        ToolTip.text: qsTr("Load more pictures from the library")
+        ToolTip.text: qsTr("Get more clips from the Library")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
         // A gomb BAL oldalán ikon áll (spec 4.3) — ezért cseréljük a
@@ -163,7 +163,7 @@ Item {
         text: qsTr("–")
         enabled: tab.trayValasztas.length > 0
         //: Buboréksúgó a „–" gombon (1.10.6 `deleteclips`).
-        ToolTip.text: qsTr("Remove the selected pictures from the tray")
+        ToolTip.text: qsTr("Remove selected clips from the tray")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
         // #1276: a súgó a TÁLCÁT ígéri, tehát a tálcából veszünk ki —
