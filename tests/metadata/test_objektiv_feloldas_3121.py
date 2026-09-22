@@ -22,8 +22,9 @@ Két részlet, amit a mérés kimondott, és amit ez a próbasor betartat:
 ## Amit ez a próbasor NEM mér
 
 Hogy a `LensType`/`LensID` a MakerNote MELYIK bájtjain áll — azt a gyártói
-formátum adja, és a mi oldalán még nincs kiolvasva. Ez a próbasor a
-FELOLDÁST méri: kulcs → név. A MakerNote-kiolvasás a jegy következő lépése.
+formátum adja. Ez a próbasor a FELOLDÁST méri: kulcs → név. A Canon
+MakerNote-kiolvasás és a teljes Canon-ág őre:
+`test_canon_objektiv_makernote_3121.py`.
 """
 
 from __future__ import annotations
