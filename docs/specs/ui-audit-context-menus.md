@@ -792,3 +792,143 @@ A lelet nem csak a korábbi kommentek átírása:
 `dwMenuData`-értékhez megvan a menüosztály és a felületi jelentés. A négy QML-
 menü összevonása ebből nem következik; új fejlesztői jegyet erre a leletre
 nem nyitunk. A hiányzó tételek és bekötések külön fejlesztői jegyek tárgyai.
+
+## D. ⛳ Az indexkép helyi menüje a binárisból: a „Keresés” almenü FELTÉTELES, és csak KÉT tétele van (2026-09-22, 340. kör, #3456)
+
+*Forrás: a két rekordtábla-építő (`0x00730790` mappa-nézet, `0x00731050`
+album-nézet) felirat-kulcsainak sorrendje · a közös utófeldolgozó
+`0x0056c5a0`, `0x0056d664`–`0x0056d8f0` · a kijelölési állapotmaszk
+`0x00562c10` → `0x005cb1a0` · az oszlop-mutatók betöltője `0x004a6ba6`–
+`0x004a6bb2` · `stringres-en-hu.tsv` · `picasa-imagedata-rekord.md`
+eltolás-táblája.*
+
+### D.1 A rekordtábla tételsora — szó szerint
+
+A `0x00730790` (kontextus `0x70`, mappa-nézetbeli kép) felirat-kulcsai
+sorrendben (a gyorsbillentyű-szöveg kulcsa zárójelben):
+
+| # | kulcs | magyar felirat |
+|---:|---|---|
+| 1 | `AlbumPhoto::ID_PICTURE_VIEW` (`CMenuBar::Enter`) | Megjelenítés és szerkesztés |
+| 2 | `AlbumPhoto::ID_LABELS` | **Hozzáadás az albumhoz** |
+| 3 | `OneUp::ID_PICTURE_ROTATECLOCKWISE` | Forgatás jobbra |
+| 4 | `AlbumPhoto::ID_PICTURE_ROTATECOUNTERCLOCKWISE` | Forgatás balra |
+| 5 | `FolderPhoto::ID_PICTURE_REVERT` | Összes szerkesztés visszavonása |
+| 6–7 | `AlbumPhoto::ID_PICTURE_HIDE` / `…_UNHIDE` | Elrejtés / Megjelenítés |
+| 8 | `FolderPhoto::ID_ALBUM_NEW` | Áthelyezés új mappába… |
+| 9 | `FolderPhoto::ID_PICTURE_SPLITALBUMHERE` | Mappa felosztása itt… |
+| 10 | `OneUp::ID_FILE_OPENINANEDITOR` | Fájl megnyitása |
+| 11 | `AlbumPhoto::ID_FILEOPENWITH` | Társítás |
+| 12–13 | `AlbumPhoto::ID_FILE_SAVE` / `…_REVERT` | Mentés / Visszaállítás |
+| 14 | `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`CMenuBar::Enter`) | **Keresés a lemezen** — lapos tétel, `cmd 0x9c99` (a csúszás-szabály szerint a `0x00730d10`-nél íródik) |
+| 15 | `FolderPhoto::ID_FILE_DELETEFROMDISK` (`CMenuBar::Delete`) | **Törlés a lemezről** |
+| 16 | `AlbumPhoto::ID_COPY_PATH` | Teljes elérési út másolása |
+| 17 | `Album::ID_UPLOAD_TO_…` | Feltöltés … |
+| 18 | `Album::ID_ONLINE_ACTIONS` | (online műveletek almenü, `0x0056c450`) |
+| 19 | `AlbumPhoto::ID_SUPPRESS` | Feltöltés tiltása |
+| 20 | `AlbumPhoto::ID_PICTURE_RESET_FACES` | Arcok alaphelyzetbe állítása |
+| 21 | `AlbumPhotoWin::ID_PICTURE_PROPERTIES` (`CMenuBar::Enter`) | Tulajdonságok |
+
+Az album-nézet építője (`0x00731050`, kontextus `0xa4`) ugyanez, **két
+eltéréssel**: nincs „Mappa felosztása itt…”, és a „Keresés a lemezen” UTÁN
+egy **külön, lapos** tétel áll: `AlbumPhoto::ID_FILE_LOCATEINPICASA` =
+**„Keresés a Picasában”** (`0x007314f7`). A törlés kulcsa itt
+`AlbumPhoto::ID_FILE_DELETEFROMDISK`, magyarul **„Eltávolítás az
+albumból”**.
+
+⇒ **Hasonlóság-keresés egyik építőben sincs.** A `loadsim` a keresősáv
+parancsa (`searchoptions/loadsim`, `Ctrl+F7` — `picasa-gyorsbillentyuk.md`),
+helyi menüből nem érhető el.
+
+### D.2 ⭐ A „Keresés” almenü: az utófeldolgozó FELTÉTELESEN cseréli be
+
+A rekordtábla lapos „Keresés a lemezen” tételt épít. A közös utófeldolgozó
+(`0x0056c5a0`) a `0x0056d821`–`0x0056d8e0` sávban **lecseréli** egy
+„Keresés” almenüre — de csak így:
+
+```
+kontextus ∈ { 0x70 mappa-kép · 0xa4 album-kép · 0x8a néző · 0x8b képtálca }
+ÉS  maszk & 0x200 == 0          ; 0x0056d842 — NEM több kép van kijelölve
+ÉS  maszk & 0x80  != 0          ; 0x0056d84e — a kijelölt kép VISSZAÁLLÍTHATÓ
+⇒  CreatePopupMenu ([0x00c408f0])
+     + „&Fájl a lemezen\tCtrl+Enter”   cmd 0x9c99  (CThumbUI::locateondiskmenu, 0x0056d887)
+     + „Eredeti &a lemezen”           cmd 0xa0aa  (CThumbUI::locateorigondiskmenu_win, 0x0056d8b3)
+   → a 0x9c99 tétel helyére „Keresés” (CThumbUI::locatemenu, 0x0056d8db)
+```
+
+**Az almenünek KÉT tétele van**, nem három: a „Keresés a Picasában”
+(`IDS_LOCATE_SOURCE_IMAGE`) NEM tagja.
+
+A két maszkbit forrása (`0x005cb1a0`, a kijelölésre számolva, a nézet
+`+0x34a8`-as gyorsítótárában):
+
+| bit | feltétel | bizonyíték |
+|---|---|---|
+| `0x200` | a kijelölt képek száma **> 1** | `0x005cb2a9` `cmp edi,1` → `0x005cb2ae` |
+| `0x80` | legalább egy kijelölt kép **`revertable`** oszlopa nem nulla | `0x005cb3cf`/`0x005cb53f` → `0x005c6250` |
+
+A `revertable` azonosítása: a `0x005c6250` a `[obj+0x2c4]` `CColumn`-ból
+olvas egy **bájtot** a kép indexével (`0x005c62b3`–`0x005c62d1`). Az
+objektum oszlopmutatóit a `0x004a6ba6`–`0x004a6bb2` tölti be a gazdából:
+`+0x2c0` = gazda+`0x1838`, **`+0x2c4` = gazda+`0x1898`**, `+0x2cc` =
+gazda+`0x114c`. Az `imagedata`-gyűjtemény a gazda `+0xf20`-án ül, tehát ezek
+a gyűjtemény `+0x918` (`edited`), **`+0x978` (`revertable`, i8)** és
+`+0x22c` (`filetype`) oszlopa (`picasa-imagedata-rekord.md`, 21–22. és 3.
+sor).
+
+⇒ **Az almenü csak akkor jelenik meg, ha EGY kép van kijelölve, és annak
+van visszaállítható eredetije** — épp ezért kínálja az „Eredeti a lemezen”-t.
+Minden más esetben a lapos „Keresés a lemezen” marad.
+
+### D.3 A felirat-cserék a néző és az album-kép menüjében
+
+Ugyanitt (`0x0056d664`–`0x0056d7c5`) a `0x8a` (néző) és a `0xa4`
+(album-kép) kontextusban a maszk `0x10` bitje szerint két felirat cserélődik:
+a törlésé (`cmd 0x9c9a`) `IDS_REMOVE_FROM_LABEL` / `IDS_DELETE_FROM_DISK`,
+és — **csak a nézőben** (`0xa4`-nél a `0x0056d705` átugorja) — a keresésé
+(`cmd 0x9c99`) `IDS_LOCATE_SOURCE_IMAGE` („Keresés a Picasában”) /
+`IDS_LOCATE_ON_DISK`. A rács (mappa-kép, `0x70`) menüjét ez nem érinti.
+
+### D.4 A törlés gyorsbillentyűjének szövege
+
+A rekord gyorsbillentyű-szövege a `CMenuBar::Delete` kulcs (`0x00c8c494`),
+magyarul **„Törlés”**; az előtagot a módosítómaszk adja, szintén honosítva
+(`ytMenu::CtrlPrefix` = „Ctrl+”, `picasa-gyorsbillentyuk.md` 3.2) ⇒ a
+magyar felületen **„Ctrl+Törlés”**. A billentyű maga `Ctrl+Delete` — a #1418
+döntése (helyi menüben `Ctrl+Delete`, menüsávban `Delete`) **helyes**; csak a
+kiírt szövegnek kell honosítottnak lennie.
+
+### D.5 Eredeti / nálunk / teendő (`PhotoContextMenu.qml`, mérve)
+
+| tétel | eredeti | nálunk | teendő |
+|---|---|---|---|
+| 2. felirat | **Hozzáadás az albumhoz** | „Hozzáadás albumhoz” (`picasapy_hu.ts`) | fordítás javítása |
+| Keresés | lapos „Keresés a lemezen” `Ctrl+Enter`; EGY visszaállítható kép kijelölésekor „Keresés ▸” {Fájl a lemezen · Eredeti a lemezen} | **mindig** „Keresés ▸” almenü, három tétellel (#1613) | a D.2 feltétele szerint |
+| Keresés a Picasában | album-nézetben **külön, lapos** tétel a „Keresés a lemezen” után | az almenü harmadik tétele | kivenni az almenüből, album-nézetben lapos tételként |
+| Keresés hasonló képekre | **nincs** ebben a menüben (a keresősáv `Ctrl+F7`) | tétel (#1833) | kivenni a helyi menüből; a funkció a keresősávban maradhat |
+| törlés felirata | **Törlés a lemezről** | „Törlés lemezről” | fordítás javítása |
+| törlés billentyű-szövege | **Ctrl+Törlés** | „Ctrl+Delete” (a QML-ben beégetve) | a billentyűnév honosítva |
+
+⛔ **Helyesbítés** a `picasa-menu-parancsok-viselkedes.md` 31.2-höz (és a
+#1613-hoz): az almenü **nem háromtételes**, és **nem mindig** jelenik meg —
+ld. D.2. A „Keresés a Picasában” a `0x0056c5a0`-ban csak a néző
+feliratcseréjeként (D.3), az album-nézet rekordtáblájában pedig külön
+tételként (D.1) szerepel.
+
+*Bizonyítottsági fok:* a tételsor, az almenü-feltétel és a két bit
+**megerősített**; a `revertable` azonosítása **erős** (az oszlopmutató
+betöltése és a bájtos elemolvasás egyezik az eltolás-táblával; hogy a
+`0x005c6250` `obj`-ja ugyanaz az osztály, mint a `0x004a66e0`-é, azt a
+nézet `+0x2c0` mezőjén át közvetlenül nem követtük végig).
+
+### D.6 Nyitott kérdések mérlege
+
+- a menü tételsora, a „Keresés” almenü, a hasonlóság-keresés helye —
+  **LEZÁRVA** (D.1, D.2);
+- a „Hozzáadás az albumhoz” felirat — **LEZÁRVA** (D.1);
+- a törlés billentyűnevének honosítása — **LEZÁRVA** (D.4);
+- a maszk `0x10` bitjének pontos jelentése (a D.3 feliratcseréje) —
+  **HATÓKÖRÖN KÍVÜL**: a rács menüjét nem érinti, és a mi nézőnk helyi
+  menüje nem tárgya a jegynek (340. kör döntése).
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
