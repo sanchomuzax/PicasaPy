@@ -195,6 +195,8 @@ jelvénye — és a jelvény **két különböző felvételen**, eltérő szerke
 
 ### [filters-decoded.md](filters-decoded.md) — nincs blokkolt tétel; a #2456 élő útja lezárva, a megvalósítás #3315
 
+⭐ **2026-09-22 — a `blur` 0,1…1,4 közötti „tétlensége” a KÉTSZÍNŰ tesztábra sajátja, nem a szűrőé (#3482).** A jelölő (`0x0090ca10`) mindig a szomszédos párt hasonlítja `K/n²`-hez; a fekete-fehér él négyzetes különbsége 195 075, tehát `K = CSONK(t²·65536) < 195 075`-ig fal. A kiolvasott lánc bitszintű szimulációja a `merokit-2` három exportját újratömörítve 0,013-ra (99,1% bitre), a 762-es hat exportot 0,000 / 0,010-re adja; valódi tartalmon 0,1-nél és 0,5-nél is simít. A kezelő hívóhelyének vizsgálata tárgytalan. Fejlesztés: #3493.
+
 ⭐ **2026-09-12 — a `finetune` v1 színhőmérséklete teljesen lezárva
 (#958).** A callback `0x008f7cf0` a neutrális `0x0090eda0` után a
 `0x0090ea10` középtónus-parabolás workert hívja, a worker második
