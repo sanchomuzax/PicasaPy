@@ -79,8 +79,10 @@ A csúszkát **balra, a szélére** húzva kikapcsolod a szűrőt.
 
 ## Hasonló képek keresése
 
-Egy képre jobbgombbal kattintva a **Keresés hasonló képekre** parancs a
-kiválasztott képhez hasonló felvételeket gyűjti össze (**Ctrl+F7**). A
+Jelölj ki egy képet, és nyomd meg a **Ctrl+F7** billentyűt: a **Keresés
+hasonló képekre** parancs a kiválasztott képhez hasonló felvételeket gyűjti
+össze. (Az eredeti Picasához hasonlóan a kép jobb gombos menüjében ez nem
+szerepel.) A
 találati fejléc mutatja, melyik kép a minta; a **Minta törlése** gombbal
 (**Ctrl+F8**) zárod le a keresést.
 

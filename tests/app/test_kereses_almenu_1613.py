@@ -1,4 +1,4 @@
-"""#1613 — a „Keresés" HÁROMTÉTELES almenü, nem egy lapos parancs.
+"""#1613 — a „Keresés" almenü (#3468 óta: kéttételes és feltételes, ld. lent).
 
 Az eredetiben a rács helyi menüjében almenü van (`CThumbUI::locatemenu`),
 benne három tétel:
@@ -84,23 +84,22 @@ class TestEredetiALemezen:
 
 
 class TestAzAlmenuSzerkezete:
-    """A menü SZERKEZETE — almenü, benne a három tétel."""
+    """A menü SZERKEZETE — a #3468 óta kéttételes, feltételes almenü."""
 
-    def test_a_kereses_almenu_harom_tetelt_tartalmaz(self, qml_app):
+    def test_a_kereses_almenu_ket_tetelt_tartalmaz(self, qml_app):
+        """#3468 helyesbítés: az almenü KÉTTÉTELES („Fájl a lemezen",
+        „Eredeti a lemezen"), és csak egy visszaállítható képnél jelenik
+        meg; a „Keresés a Picasában" külön, lapos tétel
+        (`ui-audit-context-menus.md` D). A feltételt a
+        `test_kereses_menu_3468.py` méri."""
         window, _controller, _lib, _engine = qml_app
         almenu = window.findChild(QObject, "contextMenuLocateMenu")
-        assert almenu is not None, (
-            "nincs Keresés almenü a rács helyi menüjében — a három tétel "
-            "továbbra is laposan áll (#1613)"
-        )
-        for nev in (
-            "contextMenuLocate",
-            "contextMenuLocateOriginal",
-            "contextMenuLocateInPicasa",
-        ):
+        assert almenu is not None, "nincs Keresés almenü a rács helyi menüjében"
+        for nev in ("contextMenuLocateFile", "contextMenuLocateOriginal"):
             assert almenu.findChild(QObject, nev) is not None, (
                 f"{nev} nincs a Keresés almenüben"
             )
+        assert almenu.findChild(QObject, "contextMenuLocateInPicasa") is None
 
     def test_az_eredeti_tetel_mar_nem_helyfoglalo(self, qml_app):
         window, _controller, _lib, _engine = qml_app

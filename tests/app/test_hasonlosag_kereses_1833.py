@@ -165,13 +165,16 @@ class TestAKuszob:
 
 
 class TestABekotes:
-    def test_van_menutetel(self):
-        assert 'objectName: "contextMenuFindSimilar"' in _MENU
-        assert "signal findSimilarRequested()" in _MENU
+    def test_a_belepes_a_ctrl_f7_nem_a_helyi_menu(self):
+        """#3468: az eredeti helyi menüjében hasonlóság-keresés NINCS
+        (`ui-audit-context-menus.md` D) — a keresősáv Ctrl+F7 parancsa."""
+        assert 'objectName: "contextMenuFindSimilar"' not in _MENU
+        assert "signal findSimilarRequested()" not in _MENU
+        assert 'objectName: "findSimilarShortcut"' in _MAIN
+        assert 'sequence: "Ctrl+F7"' in _MAIN
 
-    def test_a_jel_ELJUT_a_vezerlohoz(self):
-        """A #1153 osztálya: a menü jelet ad, de senki nem veszi fel."""
-        assert "onFindSimilarRequested" in _MAIN
+    def test_a_belepes_ELJUT_a_vezerlohoz(self):
+        """A #1153 osztálya: a belépő jelet ad, de senki nem veszi fel."""
         assert "controller.showSimilarTo(" in _MAIN
 
     def test_a_minta_savja_es_a_torles_ott_van(self):

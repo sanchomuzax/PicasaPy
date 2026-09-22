@@ -4609,7 +4609,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="40"/>
         <source>Delete from Disk</source>
-        <translation>Törlés lemezről</translation>
+        <translation>Törlés a lemezről</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="46"/>
@@ -4618,7 +4618,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <source>Add to Album</source>
-        <translation>Hozzáadás albumhoz</translation>
+        <translation>Hozzáadás az albumhoz</translation>
     </message>
     <message>
         <source>New Album...</source>
@@ -4695,6 +4695,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Find Similar Pictures</source>
         <translation>Keresés hasonló képekre</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Ctrl+Delete</source>
+        <translation>Ctrl+Törlés</translation>
     </message>
 </context>
 <context>

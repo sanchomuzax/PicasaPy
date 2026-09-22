@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.548] – 2026-09-22
+
+### Javítva
+
+- **A kép jobb gombos menüje az eredeti Picasa szerint (#3468)** — a
+  „Keresés a lemezen" alapból egyetlen tétel; „Keresés ▸" almenü (Fájl a
+  lemezen, Eredeti a lemezen) csak akkor jelenik meg, ha egy kép van
+  kijelölve, és annak van mentett eredetije. Album-nézetben a „Keresés a
+  Picasában" külön tétel. A feliratok: „Hozzáadás az albumhoz",
+  „Törlés a lemezről", a billentyű „Ctrl+Törlés". A „Keresés hasonló
+  képekre" kikerült a helyi menüből — a Ctrl+F7 billentyűvel továbbra is
+  elérhető.
+
 ## [0.8.547] – 2026-09-22
 
 ### Javítva
