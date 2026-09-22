@@ -390,8 +390,8 @@ class TestFeliratok:
         "sugo",
         [
             "Add selected clips to the collage",
-            "Remove the selected pictures from the tray",
-            "Load more pictures from the library",
+            "Remove selected clips from the tray",
+            "Get more clips from the Library",
         ],
     )
     def test_mindharom_buboreksugo_forrasa_megvan(self, sugo):
@@ -406,11 +406,11 @@ class TestFeliratok:
                 "Kijelölt klipek felvétele a kollázsba",
             ),
             (
-                "Remove the selected pictures from the tray",
+                "Remove selected clips from the tray",
                 "A kijelölt képek eltávolítása a tálcáról",
             ),
             (
-                "Load more pictures from the library",
+                "Get more clips from the Library",
                 "További képek beolvasása a könyvtárból",
             ),
         ],
