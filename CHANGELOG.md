@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.549] – 2026-09-22
+
+### Javítva
+
+- **Az Árnyékvetés árnyéka ugyanúgy mosódik el, mint az eredeti Picasában
+  (#3474)** — a korábbi közelítő elmosás helyett az eredeti program saját
+  számítása: háromszor vízszintesen, háromszor függőlegesen, egész
+  számokkal. A program kódját gépen lefuttatva, ugyanarra a bemenetre
+  képpontra azonos eredményt ad; a valódi Picasa-exportokhoz mérve az
+  eltérés a korábbinak nagyjából a nyolcada. A Polaroid keret árnyékára is
+  vonatkozik.
+
 ## [0.8.548] – 2026-09-22
 
 ### Javítva

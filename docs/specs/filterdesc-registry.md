@@ -6467,6 +6467,50 @@ PicasaPy-kimenete kell.
 `0x00bc5360`, `0x00bc5480`, `0x00bc7540`, `0x00bc77b0`, valamint a
 `626-drop-shadow-branches.log` célzott Ghidra-kimenete.*
 
+### ✅ Kiolvasva, emulátorral bitre igazolva és átvezetve (2026-09-22, #3474)
+
+*A fenti „NINCS MEG" / „nem mértem össze" pontok ezzel lezárultak. A natív
+kódot unicorn-emulátorban (a PE szekciói a saját VA-jukon, a skalár ág
+jelzőivel) futtattuk, és a PicasaPy-megvalósítást (`render/nativ_blur.py`)
+ehhez mértük: **0 eltérő bájt** minden próbán.*
+
+**`0x00bc5360` — sugár → `(k, h, w, osztó)`.** `n = _ftol2(r)` (nulla felé
+csonkol), `k = 6`; ha `n > 1`: `k--`, `n >>= 1`, amíg `n > 1` és `k ≠ 0`.
+- `k ≠ 0`: `v = chop((r − 1)·2^(k−1))`, `w = v & (2^k − 1)`,
+  `h = (v >> k) + 1`, `osztó = 2^k + 2v`;
+- `k = 0` (`n ≥ 64`): `v = chop(ceilf(r − 1) · −0,5)`, `w = 0`,
+  `h = 1 − v`, `osztó = 2h − 1` (a `0x00529e10` a `ceilf`; `floor`-ral 5988
+  sugáron eltér).
+- Igazolva 16 142 sugáron (1…253, 1/64-es lépés + határesetek).
+
+**`0x00bc5480` + `0x00bc7540`/`0x00bc77b0` — egy menet.** Csatornánként,
+szélső minta ismétlésével:
+`ki[i] = (w·(s[i−h] + s[i+h]) + 2^k · Σ_{j=i−h+1}^{i+h−1} s[j]) // osztó`
+(előjel nélküli, csonkoló osztás). Előbb `quality` vízszintes, aztán
+`quality` függőleges menet (`0x00bc6590`), két puffer között váltva; a
+diszpécser a sugarat `0…253`-ra, majd `min(r, hossz·0,5)`-re vágja, és egy
+tengely csak `r > 1` és `hossz ≥ 2` mellett mosódik. A négy csatorna
+független, előszorzás nincs.
+
+**A kompozitálás (`0x00bcd940`, `0x008f48b0`).** Az árnyékréteg egyenes
+BGRA: a teljes vászon `árnyékszín | alfa 0`, a téglalap
+`ROUND(shadowAlpha·255)` alfával ⇒ az elmosás gyakorlatilag csak az alfát
+mossa. A keverés egész: `(S·α + D·(255 − α)) // 255` (3000 képpontpáron
+0 eltérés). A sugár a mi `blur_px`-ünk (ugyanaz a két mező, amit a
+`0x00bcd760` a margóhoz ×1,3501-gyel szoroz).
+
+**Mérés valódi Picasa-exporton** (684-es golden, `EXIF Software = Picasa`),
+átlagos ΔE a Picasa-exporttól, a régi Gauss-út → a natív út:
+`alap` (Blur 10, Fade 30) **0,713 → 0,084**; `min` **0,279 → 0,083**;
+`max` (Fade 100, nincs látható árnyék) 0,054 → 0,054.
+
+*Nyitva marad (nem blokkol):* (1) hogy a rajzoló `+0x0c` alfa-mezője a
+`shadowAlpha` — a paraméterépítő (`0x00bbb8d0`) első lebegőpontos mezője
+a `shadowAlpha` (alapértéke `fld1` = 1), a leképezés utasításszintű
+végigkövetése hiányzik, a golden-mérés viszont ezt a leképezést igazolja;
+(2) a SIMD-ágak (`0x00bc6920`, `0x00bc7300`, `0x00bc6f30`, `0x00bc6b60`)
+bitre azonossága a skalár úttal nincs mérve.
+
 ## ⛳ A `TiledImageMask` mind a tizenkét TARTALÉKÉRTÉKE — `alphaMax = 1,0`, `alphaMin = 0,0` (2026-09-18, 320. kör, #2476)
 
 *A 2026-09-12-i kör kimérte, hogy a pont profilja **lineáris radiális rámpa**
