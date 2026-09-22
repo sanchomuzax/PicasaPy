@@ -1934,7 +1934,80 @@ ugyanezt a `Main.qml` `nezdEsSzerkeszd()` függvénye és a `Ctrl+3` kötése ad
 | `newfolder` | `m_hidden`; külön parancskezelő-ág bizonyított | a fő eszköztárban nincs `newfolder` QML-elem; a jelenlegi forrásban külön `newalbum` van (`MainToolbar.qml:36–40`, `154–166`) | a mappa-létrehozás felületét külön terméki jegyben kell eldönteni; ez a kutatás nem bizonyít látható eredeti gombot |
 | `backup` | `m_hidden`, a forrás szerint „currently not shown”; Tools-menüből a rejtett cél aktiválható | `PicasaMenuBar.qml:1824–1830` alatt külön `menuToolsBackup` menütétel és jel van | a főablaki gombot nem kell hozzáadni; a menüút nem azonos a rejtett gombbal |
 | `cdmode` | `m_hidden`; a `create_cd` parancs a CD-sávot aktiválja | a `Create a Gift CD...` tétel jelenleg placeholder (`PicasaMenuBar.qml:1759–1762`) | a CD-kimenet meglévő terméki munkája; a rejtett főablaki gomb pótlása nem a bizonyított eltérés |
-| `fullview` | `m_fakehidden`; a nézetakció és a módmakrók megvannak, de a `hiddentimer 1` futásidejű feloldó eseménye ebből a körből nem azonosítható | `Ctrl+3`/„Megjelenítés és szerkesztés” út megvan (`Main.qml:178–185`, `829–835`) | a rejtett gomb kirajzolási eseménye **NINCS MEG**; csak célzott runtime-trace vagy valódi Picasa-mérés zárhatja le |
+| `fullview` | `m_fakehidden`; a `hiddentimer 1` most már statikusan feloldva: külön eseménykapu-jelző, nem láthatóvá tevő timer; a `setvisible 1`-re váltó konkrét futásidejű esemény **NINCS MEG** | `Ctrl+3`/„Megjelenítés és szerkesztés” út megvan (`Main.qml:178–185`, `829–835`) | a rejtett gomb kirajzolási eseménye továbbra is **BLOKKOLT**; a célzott runtime-trace vagy valódi Picasa-mérés maradt |
+
+### D) `fullview`: a `hiddentimer` eseménykapu, nem visszaszámláló — R7
+
+Az R6 a `hiddentimer 1` futásidejű jelentését nyitva hagyta. A célzott
+index- és diszasszemblálási kör ezt a részt most **megerősített** szinten
+pontosítja, de nem állít láthatóvá válást olyan eseményre, amelyet a bináris
+nem nevez meg.
+
+#### A parser két külön műveletet kezel
+
+A `Property`-parser a `setvisible` és a `hiddentimer` kulcsot külön ágon
+kezeli:
+
+- `setvisible`: a kulcsliterál `0x00c7ca40`, összehasonlítás
+  `0x009caecf–0x009caf14`; nem nulla értéknél a cél virtuális
+  `+0x6c` metódusát, nulla értéknél a `+0x68` metódusát hívja
+  (`0x009caf2c–0x009caf47`). Ez a tényleges láthatósági művelet útja.
+- `hiddentimer`: a kulcsliterál `0x00c7cbc4`, összehasonlítás
+  `0x009cbdb0–0x009cbdf6`; az értéket a `0x009c7700` setterbe adja
+  (`0x009cbdfd–0x009cbe00`). A két kulcs tehát nem ugyanazt a mezőt vagy
+  műveletet jelenti.
+
+#### Mit ír a `hiddentimer` setter?
+
+A `0x009c7700` (51 bájt) a kapott értéket az elem `+0x22c` bájtjába írja
+(`0x009c7713`). Ha az elem `+0x213` jelzője nulla, a `+0x244` alatt tárolt
+szülőre is továbbírja (`0x009c771b–0x009c7725`), a
+`0x009e3930` rekurzív propagálóval. A konstruktor a mezőt először nullázza
+(`0x009dd800`, `0x009dda35`, az előtte nullázott `ebx`-szel), tehát a
+`Property hiddentimer 1` egy **egybájtos állapotjelzőt** állít; nincs benne
+visszaszámláló, időtartam vagy láthatósági érték.
+
+A layout-/esemény-előkészítő `0x009e0ed0` ezt a jelzőt újra `1`-re állítja
+(`0x009e0f04–0x009e0f27`) és a szülőre propagálja; a vizsgált ágban nem
+nullázza. Ez kizárja azt az olvasatot, hogy a „timer” név önmagában egy
+lejáró, majd láthatóvá tevő időzítőt bizonyítana.
+
+#### A tényleges eseménykapu
+
+A `0x009e4630` esemény-előkészítőben:
+
+1. ha az elem `+0x20c` állapotjelzője nem nulla és a `+0x22c` hiddentimer-
+   jelző is aktív (`0x009e464a–0x009e465b`),
+2. akkor a `0x13` eseménykód kivételével az ág `0xf4241` értékkel tér vissza
+   (`0x009e4663–0x009e466e`). A motorban `0xf4241` a „nem kezeltem, add
+   tovább” érték, a `0x13` pedig találat-vizsgálat/kurzorkérés
+   (`picasa-eger-es-kijeloles.md:330–340`, pozitív bináris kontrollok:
+   `0x00860a31`).
+
+Vagyis a binárisból bizonyítható hatás: a `hiddentimer` az események
+feldolgozását kapuzza, miközben a találat-vizsgálati kivételt meghagyja.
+Ebben az ágban nincs `setvisible 1` hívás, nincs időérték-összehasonlítás,
+és nincs `+0x22c`-t nullázó feloldás.
+
+#### Mi zárható le, és mi nem?
+
+- **LEZÁRVA — kezdeti állapot:** a `fullview` `m_fakehidden` miatt
+  `setvisible 0`-val épül fel (`thumbui.tre:147–149`, `macros.tre:115–117`).
+- **LEZÁRVA — `hiddentimer` statikus jelentése:** egy elem- és szülő-
+  propagálható eseménykapu-jelző; nem bizonyított láthatóvá tevő timer.
+- **BLOKKOLT — a konkrét `setvisible 1` esemény:** a `.tre`-korpuszban
+  nincs `showtarget thumbui/fullview`; a `m_fullviewButtons` más célokat
+  mutat/rejt (`thumbuimacros_win.tre:1–8`), az `m_enable_albummode` pedig
+  `hidetarget thumbui/fullview`-t tartalmaz (`macros.tre:196–203`). A
+  statikus anyag ezért nem nevezi meg, mikor válna a `fullview` ténylegesen
+  láthatóvá. Ezen a gépen nincs `wine`, ezért valódi Picasa-futtatásból
+  származó képernyő- vagy settermérés **NINCS MEG**. A lezáráshoz Windowsos
+  futásidejű trace kell a `fullview` objektum `setvisible` útjára, vagy a
+  tulajdonos valódi Picasa-mérése.
+
+*Bizonyítottsági fok: **megerősített** a kezdeti `setvisible 0`, a parser-
+setter lánc és az eseménykapu; **BLOKKOLT** a láthatóvá válás konkrét
+futásidejű kiváltója.*
 
 #### Korábbi állítás helyesbítése és kérdésmérleg
 
@@ -1945,13 +2018,16 @@ gombnak kell lennie. A `newfolder` és `fullview` esetében különösen nem
 szabad a deklarált méretből látható UI-ra következtetni.
 
 - a hat elem kezdeti `visible`-állapota és parancsútja — **LEZÁRVA**;
-- a `fullview` `hiddentimer 1` feloldó eseménye — **BLOKKOLT**: a megszerzéshez
-  célzottan a `setvisible`/`hiddentimer` futásidejű setterláncét kell
-  követni, vagy valódi Picasa-mérést kell készíteni;
+- a `fullview` `hiddentimer 1` statikus mechanizmusa — **LEZÁRVA**: a
+  `+0x22c` eseménykapu-jelző és a `0x13` találatvizsgálati kivétel
+  bizonyított;
+- a `fullview` konkrét `setvisible 1` futásidejű eseménye — **BLOKKOLT**:
+  nincs helyi Wine-futtatás; a megszerzéshez Windowsos runtime-trace vagy
+  valódi Picasa-mérés kell;
 - a R5 fennmaradó hat eleme (`smallthumbs`, `largethumbs`, `next`, `prev`,
   `visitweb`, `webcambutton`) — **HATÓKÖRÖN KÍVÜL** ebben a körben.
 
-`0 nyílt · 1 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 2 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 
 Fejlesztői jegyek: a korábbi felirat-eltérések **#3476**; a CD-kimenet és az
 Időrend csak a saját meglévő terméki jegyeikben folytatandó, új duplikált jegy
