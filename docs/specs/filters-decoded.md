@@ -562,21 +562,26 @@ szomszéd**, nem interpoláció (részletes levezetés:
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
 
-> ✅ **HELYESBÍTÉS (#2456, 2026-09-18): a persistált és az élő út külön kérdés.**
+> ⛔ **HELYESBÍTVE (#3315, 2026-09-22): a hétmezős sort a MI generátorunk írta.**
 >
-> A `merokit-2` valódi `.picasa.ini`-jében szerepel a mért hétmezős alak:
+> A `merokit-2` `.picasa.ini`-jébe a
 > `PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000;`
-> Ez `1` + puck `(x,y)` + `Impact` + `Radius` + `Hardness` + `Fade`.
-> A `Reverse` vezérlő a `filterdesc.xml`-ben létezik, de a mért sorban nem
-> jelenik meg; a mentett `Reverse` tokenje **NINCS MEG**, nem becsüljük.
-> A #1142 mérés ezen a persistált láncon is azt mutatta, hogy az eredeti a
-> forrást adta vissza, miközben a PicasaPy modellje eltért.
-> Ezért a `chain.MEASURED_NOT_RUNNING_OPS` besorolás a **mentett
-> `filters=`-láncra** megalapozott, és a kezelő puszta bekötése ott továbbra is
-> tilos.
+> sort a `tools/golden/make_validation_kit2.py` tette be — nem a Picasa
+> mentése. A natív lánc-ÍRÓ (`0x008fac40`) a jelölőnégyzetet is kiírja
+> `,%d`-ként, tehát a teljes alak **nyolcmezős**:
+> `PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade,Reverse;` — a
+> `Reverse` mentett tokenje ezzel MEGVAN.
 >
-> Ez azonban nem válaszolja meg a szerkesztői csempe kattintását. Az élő út
-> külön van, és a következő szakaszban címekkel végig van vezetve.
+> Ezért a #1142 „az eredeti a forrást adta vissza" mérése **rossz aritású
+> bemenetre** vonatkozott, és a `chain.MEASURED_NOT_RUNNING_OPS`
+> besorolást nem tartja meg: a betöltő úton semmi nem zárja ki a szűrőt
+> (`0x008f9fe0` a `filterdesc.xml`-regiszterből építi, `0x008f9a60` a közös
+> Glimmer-feldolgozó), és a `FocalZoom` — ugyanilyen leíró jelölő nélkül —
+> mérten lefut. A PicasaPy a #3315 óta rendereli; a nyolcmezős alak
+> golden-mérése hátravan.
+>
+> A szerkesztői csempe kattintása külön kérdés: az élő út a következő
+> szakaszban címekkel végig van vezetve.
 
 ### A `Pixelate` Shift-párjának élő kattintási útja (#2456, 2026-09-18)
 

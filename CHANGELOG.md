@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.551] – 2026-09-22
+
+### Hozzáadva
+
+- **A Képpontnagyítás csempe Shift-párja: Képpontnövelés (#3315)** — a
+  szerkesztő 5. fülén Shifttel kattintva ugyanaz a rejtett szűrő nyílik
+  meg, mint az eredeti Picasában (Hatás, Sugár, Élkeménység, Fokozat és
+  Megfordítás). Ezzel mind a kilenc Shift-pár működik.
+
+### Javítva
+
+- **A Kerekített élek felirata az eredeti szövegére (#3315)** — eddig
+  „Lekerekített sarkok" állt a Shift-es csempén.
+
 ## [0.8.550] – 2026-09-22
 
 ### Új

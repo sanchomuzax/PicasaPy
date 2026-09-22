@@ -303,19 +303,33 @@ Két nyitott részlet:
 
 A `PicnikFocalPixelate`-nél a leíró öt vezérlőt ad: `_sldrImpact`,
 `_sldrRadius`, `_sldrHardness`, `_sldrFade` és `_chkReverse` (`:869`),
-valamint egy tartós puckot. A mért `.picasa.ini`-alak hét számmezője azonban
-`1` + puck `(x,y)` + a négy HSlider értéke:
+valamint egy tartós puckot.
 
-    PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000;
+⛔ **HELYESBÍTÉS (2026-09-22, #3315): a mentett alak NYOLCMEZŐS, és a
+`Reverse` tokenje MEGVAN.** A natív lánc-ÍRÓ (`FUN_0042a800`,
+`0x0042abcc` `"%s=%s;"`) a nevet a leíró `+0x14` mezőjéből veszi
+(`0x008f6bc0`), az értékrészt pedig a `0x008fac40` állítja össze, kötött
+sorrendben: engedélyezés (`%c`) → puck `x,y` (`,%f`) → az első három
+csúszka (`,%f`) → szín(ek) → a NEGYEDIK csúszka (`,%f`, `+0x7f` jelző) →
+a jelölőnégyzetek (**`,%d`**, `+0xa1` bitjei). Tehát:
 
-A `Reverse` vezérlő mentett tokenje a mért sorban nem jelenik meg: **NINCS
-MEG**, nem becsüljük.
+    PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade,Reverse;
 
-**Mérés:** a `merokit-2` valódi `.picasa.ini`-je ezt a mért alakot tartalmazza,
-és a #1142 persistált-lánc mérése az eredeti forráskimenetét adta vissza,
-miközben a PicasaPy korábbi modellje eltért. Ez a `chain.MEASURED_NOT_RUNNING_OPS`
-besorolását a **mentett `filters=`-láncra** igazolja; nem bizonyítja, hogy a
-szerkesztői csempe kattintása is tétlen.
+Független visszaigazolás ugyanerre a sorrendre: `PicnikGrain=1,10.000000,0;`
+(csúszka + jelölő) és `Sixties=1,100.000000,00ffffff,0;` (csúszka + szín +
+jelölő).
+
+⚠️ **Ettől a #1142 „mérten nem fut" besorolása ELAVULT:** a mért sorok
+hét-, illetve ötmezősek voltak, és a `merokit-2` `.picasa.ini`-jébe **a mi
+generátorunk** írta őket (`tools/golden/make_validation_kit2.py`), nem a
+Picasa. A betöltő úton semmi nem zárja ki a szűrőt: a név a
+`filterdesc.xml`-regiszterben van, a gyártó (`0x008f9fe0`) a közös
+Glimmer-feldolgozót (`0x008f9a60`) építi rá, és a beolvasó ugyanazokkal a
+jelzőkkel tölti fel a mezőket, amikkel az író kiírta. Pozitív kontroll: a
+`FocalZoom` — ugyanilyen leíró jelölőnégyzet nélkül, ott a hétmezős alak a
+TELJES alak, és mérten lefut. A PicasaPy ezért a #3315 óta rendereli
+(`chain._apply_focal_pixelate_op`); a nyolcmezős alak golden-mérése
+hátravan.
 
 **A szerkesztői élő út külön:** a csempe-tábla (`0x00c7e5a0`) a `Pixelate`
 Shift-párjaként ezt a nevet választja (`0x005d59f0`, `0x005d6e6c`–

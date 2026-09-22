@@ -2450,6 +2450,10 @@
         <translation>Fókusznagyítás</translation>
     </message>
     <message>
+        <source>Focal Pixelate</source>
+        <translation>Képpontnövelés</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="856"/>
         <source>Pencil Sketch</source>
         <translation>Ceruzarajz</translation>
@@ -2498,7 +2502,7 @@
     </message>
     <message>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <source>Film Grain (Fine)</source>
@@ -7476,7 +7480,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
@@ -8054,7 +8058,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>

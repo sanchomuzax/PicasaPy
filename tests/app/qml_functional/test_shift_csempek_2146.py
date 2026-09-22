@@ -60,12 +60,8 @@ _PANEL_LOGIKA = (_QML_DIR / "editorpanel_logika.js").read_text(
     encoding="utf-8"
 )
 
-#: A MÉRT kilencből NYOLC pár épült meg: elsődleges -> (másodlagos, felirat).
-#:
-#: ⚠️ A kilencedik — `pixelate` -> `picnikfocalpixelate` — KIMARADT: a
-#: `render/chain.py` `_HANDLERS` táblájában nincs kezelője, tehát a
-#: Shifttel megnyomott csempe `ValueError`-t adna. A mérés érvényes, a
-#: megvalósítás vár a `picnikfocalpixelate` render-oldalára.
+#: A MÉRT kilenc pár — a kilencedik (`pixelate` -> `picnikfocalpixelate`)
+#: a #3315-ben épült meg, a render-kezelővel együtt.
 PAROK = {
     "unsharp2": ("unsharp", "Sharpen (Old)"),
     "picnikgrain": ("grain", "Film Grain (Old)"),
@@ -215,13 +211,11 @@ class TestAFrissitesBEKOTESE:
 
 
 class TestAKilencedikPar:
-    """⚠️ A `pixelate` -> `picnikfocalpixelate` pár MÉRVE van, de nem épült
-    meg: a `render/chain.py` `_HANDLERS` táblájában nincs kezelő, tehát a
-    Shifttel megnyomott csempe `ValueError`-t adna. Ez a próba akkor bukik
-    el, ha a render-oldal megkészül — és akkor épp azt jelenti, hogy a
-    Shift-ág megépíthető."""
+    """#3315: a `pixelate` -> `picnikfocalpixelate` pár MEGÉPÜLT. A
+    render-kezelőnek és a Shift-ágnak együtt kell mozognia: bekötött ág
+    kezelő nélkül `ValueError`-t adna."""
 
-    def test_amig_nincs_render_kezeloje_addig_nem_kotjuk_be(self):
+    def test_a_render_kezelo_es_a_shift_ag_egyutt_mozog(self):
         from picasapy.render.chain import _HANDLERS
 
         van_kezelo = "picnikfocalpixelate" in _HANDLERS

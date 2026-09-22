@@ -132,10 +132,8 @@ _EFFECT_NAMES = (
     # enélkül a Shifttel megnyomott csempe `ValueError`-t adna (a
     # `test_effect_names.py` őre pontosan ezt fogta meg).
     #
-    # ⚠️ A `picnikfocalpixelate` KIMARAD: a `render/chain.py` `_HANDLERS`
-    # táblájában NINCS kezelője, tehát alkalmazni sem tudnánk. A
-    # `pixelate` csempe Shift-ága emiatt nem épült meg — külön jegy, ld.
-    # a #2146 lezárását.
+    # #3315: a `picnikfocalpixelate` is bekerült — a kezelője megvan, és a
+    # Shift-ág a `pixelate` csempén megépült (a kilencedik pár).
     "unsharp",
     "grain",
     "tint",
@@ -174,6 +172,8 @@ _EFFECT_NAMES = (
     "boost",
     "soften",
     "pixelate",
+    # #3315: a `pixelate` Shift-párja (a kilencedik)
+    "picnikfocalpixelate",
     "focalzoom",
     "pencilsketch",
     "neon",
@@ -216,6 +216,7 @@ _EFFECT_INI_NAMES: dict[str, str] = {
     "nightvision": "NightVision",
     "localcontrast": "LocalContrast",
     "roundededges": "RoundedEdges",
+    "picnikfocalpixelate": "PicnikFocalPixelate",
     "picnikgrain": "PicnikGrain",
     "picniktint": "PicnikTint",
     "boost": "Boost",

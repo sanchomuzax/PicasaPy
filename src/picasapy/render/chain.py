@@ -37,7 +37,7 @@ from picasapy.render.effects import (
 )
 from picasapy.render.blur import apply_blur
 from picasapy.render.effects_artistic import apply_comicize
-from picasapy.render.focal import apply_focal_zoom
+from picasapy.render.focal import apply_focal_pixelate, apply_focal_zoom
 from picasapy.render.effects_creative_tone import apply_invert
 from picasapy.render import chain_glimmer_handlers as glimmer
 from picasapy.render import chain_native_handlers as native
@@ -170,18 +170,28 @@ DEAD_LEGACY_OPS = frozenset({"focalpixelate"})
 MEASURED_IDLE_OPS = frozenset({"colorfix", "whitept"})
 
 #: #1142 — MÉRTEN NEM FUTÓ szűrőnevek: a `merokit-2` szettben az eredeti
-#: Picasa a FORRÁST adta vissza rájuk (0,164 = a JPEG-újratömörítés
-#: zajszintje), miközben nálunk volt hozzájuk renderer, tehát a mi
-#: kimenetünk némán ELTÉRT az eredetiétől (a `PicnikFocalPixelate`-nél
-#: 29,19-es eltéréssel).
+#: Picasa a FORRÁST adta vissza rájuk, miközben nálunk volt hozzájuk
+#: renderer, tehát a mi kimenetünk némán ELTÉRT az eredetiétől.
 #:
-#: Ez sem a `DEAD_LEGACY_OPS` (ott a natív regiszter hiánya a bizonyíték),
-#: sem a `MEASURED_IDLE_OPS` (ott ismert a natív feldolgozó, csak a hatás
-#: maradt el): itt a KIMENET van megmérve, az OK nem. Hogy a
-#: `PicnikFocalPixelate` azért nem fut-e, mert a 3.9.141.259 nem ismeri a
-#: nevet, vagy mert a paraméterszám nem stimmel, a mérés nem dönti el —
-#: mindkét mért alak (hét és négy paraméter) egyformán tétlen maradt.
-MEASURED_NOT_RUNNING_OPS = frozenset({"picnikfocalpixelate"})
+#: ⚠️ A `picnikfocalpixelate` 2026-09-22-én KIKERÜLT innen (#3315). A
+#: binárisból kiolvasva a lánc-ÍRÓ (`0x0042abcc` `"%s=%s;"`, a név a
+#: leíró `+0x14` mezőjéből, `0x008f6bc0`) és az értékrész mezősorrendje
+#: (`0x008fac40`: engedélyezés → puck x,y → 3 csúszka → szín(ek) → a
+#: NEGYEDIK csúszka → jelölőnégyzetek `,%d`) szerint a helyes alak
+#: **nyolcmezős**:
+#:     `PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade,Reverse;`
+#: A #1142 mérése hét- és négymezős sorral készült, tehát ROSSZ ARITÁSÚ
+#: bemenetet mért — ugyanaz a hibaosztály, mint a #2948 kisbetűs láncai.
+#: A betöltő úton semmi nem zárja ki a szűrőt: a név a `filterdesc.xml`
+#: regiszterében van, a gyártó (`0x008f9fe0`) a közös Glimmer-feldolgozót
+#: (`0x008f9a60`) építi rá, és a beolvasó ugyanazokkal a jelzőkkel tölti
+#: fel a mezőket, amikkel az író kiírta. Pozitív kontroll: a `FocalZoom`
+#: ugyanilyen leíró jelölőnégyzet NÉLKÜL — ott a hétmezős alak a TELJES
+#: alak, és mérten LEFUT.
+#: A nyolcmezős alak golden-mérése külön jegy; addig rendereljük, mert a
+#: bizonyíték a futás mellett szól, a tétlenség mellett pedig csak egy
+#: érvénytelen aritású mérés szólt.
+MEASURED_NOT_RUNNING_OPS: frozenset[str] = frozenset()
 
 #: A mérten tétlen bejegyzésre adott, felhasználónak szóló magyar üzenet.
 MEASURED_IDLE_WARNING_TEMPLATE = (
@@ -625,12 +635,25 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
-# A `PicnikFocalPixelate` handlere a #1142-ben MEGSZŰNT: a `merokit-2`
-# mérés szerint az eredeti Picasa nem futtatja a szűrőt (a
-# `MEASURED_NOT_RUNNING_OPS` docstringje írja le a bizonyítékot). Maga a
-# `render.focal.apply_focal_pixelate` megmarad — a #570-es visszafejtés
-# eredménye, és a jövőbeli kalibrációhoz kell —, csak a láncból nem
-# hívjuk.
+def _apply_focal_pixelate_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade,Reverse` (#3315).
+
+    A mezősorrendet a natív lánc-ÍRÓ adja (`0x008fac40`): engedélyezés →
+    puck x,y → az első három csúszka → (szín, ha volna) → a NEGYEDIK
+    csúszka → a jelölőnégyzet `,%d`-ként. A leíró
+    (`runtime/filterdesc.xml:859`) puckot, négy csúszkát (Impact, Radius,
+    Hardness, Fade) és egy `_chkReverse` jelölőt ad.
+    """
+    return apply_focal_pixelate(
+        image,
+        x=_effect_float(op, 0, 0.5),
+        y=_effect_float(op, 1, 0.5),
+        impact=_effect_float(op, 2, 20.0),
+        radius=_effect_float(op, 3, 10.0),
+        hardness=_effect_float(op, 4, 50.0),
+        fade=_effect_float(op, 5, 0.0),
+        reverse=_effect_float(op, 6, 0.0) != 0.0,
+    )
 
 
 def _apply_comicize_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -737,7 +760,8 @@ _HANDLERS = {
     # #570: mindkét fókusz-effekt a natív paraméter-sorrendet és a közös
     # körmaszkot használja (render/focal.py)
     "focalzoom": _apply_focal_zoom_op,
-    # a `picnikfocalpixelate` a #1142-ben KIKERÜLT: mérten nem fut
+    # #3315: visszakerült — a #1142 mérése rossz aritású sorra készült
+    "picnikfocalpixelate": _apply_focal_pixelate_op,
     "pencilsketch": glimmer.apply_pencil_sketch_op,
     "neon": glimmer.apply_neon_op,
     "comicize": _apply_comicize_op,  # KÖZELÍTŐ maradt (ld. fent)

@@ -101,9 +101,13 @@ def cases() -> list[tuple[str, str, str, str]]:
             "focalpixelate=1;",
             "focalpixelate=1,0.500000,0.500000,40.000000,1.000000,0.250000,0.000000;",
         ),
+        # #3315: a natív lánc-író NYOLC mezőt ír (0x008fac40: engedélyezés →
+        # puck x,y → 3 csúszka → a 4. csúszka → a jelölőnégyzet `,%d`). A
+        # korábbi hét- és ötmezős sorok ROSSZ ARITÁSÚAK voltak, ezért a
+        # #1142 „nem fut" mérése rájuk nem bizonyít semmit.
         "PicnikFocalPixelate": (
-            "PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000;",
-            "PicnikFocalPixelate=1,40.000000,60.000000,50.000000,0.000000;",
+            "PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000,0;",
+            "PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000,1;",
         ),
     }
     for name, chains in dead.items():

@@ -1257,6 +1257,30 @@ csoportonként egyetlen mozgatott változóval.
 > KÖZÖS hexolvasó, tehát a `tint`, az `ansel`, a `dir_tint`, a `radtint` és
 > a Glimmer-effektek színmezőire egyaránt érvényes.
 
+## ⛔ Az ismeretlen tag a lánc MARADÉKÁT is elejti — utasításszinten (2026-09-22, #3315)
+
+A „néma elejtés" fentebbi mérése a tagra vonatkozott; a bináris ennél
+többet mond: az ismeretlen tag **a mögötte állókat is elviszi**.
+
+| cím | utasítás | mit jelent |
+|---|---|---|
+| `0x009077ba` | `push 0x3b` | a bejáró (`FUN_00907740`) `;` mentén tokenekre vág |
+| `0x0090785f` | `call 0x908360` | a token feldolgozása |
+| `0x0090786a` | `jne 0x907995` | **nem nulla hibakód → KILÉP a ciklusból** |
+| `0x00908461` | `jne 0x908478` | ismeretlen név → az objektum eldobása… |
+| `0x009084a8` | `mov eax, esi` | …és nem nulla visszatérés |
+| `0x0045f7ea`–`0x0045f7ef` | `call 0x907740` / `xor esi, esi` | a hívó a hibakódot **eldobja**, és a részleges lánccal renderel |
+
+⇒ ha a `filters=` láncba olyan tag kerül, amit az adott Picasa-build nem
+ismer, akkor **az utána következő összes szerkesztés némán elvész** —
+hibaüzenet nélkül, a felhasználó számára láthatatlanul.
+
+**Amit ez a PicasaPy írására kimond:** kanonikus néven kívül mást nem
+írunk (ezt a `ini/filter_guard.py` és a `canonicalize_op` tartja be), és
+ha valaha PicasaPy-saját tokent írnánk, az **csak a lánc VÉGÉRE** kerülhet
+— különben az eredeti Picasa a mi tagunk mögötti valódi Picasa-effekteket
+is eldobja. (A mai írásunkban ilyen tag nincs.)
+
 ## Írási szabályok (PicasaPy, kétirányú kompatibilitáshoz)
 
 1. Atomikus írás (temp fájl + rename), írás előtti backup.
