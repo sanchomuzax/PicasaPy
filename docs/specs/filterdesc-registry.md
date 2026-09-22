@@ -6494,7 +6494,7 @@ független, előszorzás nincs.
 
 **A kompozitálás (`0x00bcd940`, `0x008f48b0`).** Az árnyékréteg egyenes
 BGRA: a teljes vászon `árnyékszín | alfa 0`, a téglalap
-`ROUND(shadowAlpha·255)` alfával ⇒ az elmosás gyakorlatilag csak az alfát
+~~`ROUND(shadowAlpha·255)`~~ → **`TRUNC(float32(shadowAlpha)·255)`** (helyesbítve lent, #3498) alfával ⇒ az elmosás gyakorlatilag csak az alfát
 mossa. A keverés egész: `(S·α + D·(255 − α)) // 255` (3000 képpontpáron
 0 eltérés). A sugár a mi `blur_px`-ünk (ugyanaz a két mező, amit a
 `0x00bcd760` a margóhoz ×1,3501-gyel szoroz).
@@ -6504,12 +6504,60 @@ mossa. A keverés egész: `(S·α + D·(255 − α)) // 255` (3000 képpontpáro
 `alap` (Blur 10, Fade 30) **0,713 → 0,084**; `min` **0,279 → 0,083**;
 `max` (Fade 100, nincs látható árnyék) 0,054 → 0,054.
 
-*Nyitva marad (nem blokkol):* (1) hogy a rajzoló `+0x0c` alfa-mezője a
+*Nyitva marad (nem blokkol):* ~~(1) hogy a rajzoló `+0x0c` alfa-mezője a
 `shadowAlpha` — a paraméterépítő (`0x00bbb8d0`) első lebegőpontos mezője
 a `shadowAlpha` (alapértéke `fld1` = 1), a leképezés utasításszintű
-végigkövetése hiányzik, a golden-mérés viszont ezt a leképezést igazolja;
+végigkövetése hiányzik, a golden-mérés viszont ezt a leképezést igazolja;~~ → **LEZÁRVA lent**;
 (2) a SIMD-ágak (`0x00bc6920`, `0x00bc7300`, `0x00bc6f30`, `0x00bc6b60`)
 bitre azonossága a skalár úttal nincs mérve.
+
+### ⛳ A `shadowAlpha` útja utasításszinten — és az alfa-bájt CSONKOLT, nem kerekített (2026-09-22, 345. kör, #626)
+
+A fenti „Nyitva marad" (1) pontja lezárva. A lánc:
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| paraméterépítő `0x00bbb8d0` | a helyi alapérték `fld1` (= 1,0), majd a getter (`0x008ef520`) a `[op+0x24]` = `shadowAlpha` attribútumot `double`-ként adja, és **float32**-be tárolja | `0x00bbb8d9`–`0x00bbb8f6` |
+| ugyanott | a 0x24 bájtos rekord konstruktorának (`0x00bcd640`) a **4.** veremargumentuma ez a helyi | `0x00bbba5a`–`0x00bbba5e` |
+| konstruktor `0x00bcd640` | `clamp(·, 0, 1)` (`fldz`/`fld1` + két `fcom`), majd `fstp dword [rec+0x0c]` | `0x00bcd654`–`0x00bcd68c` |
+| rajzoló `0x00bcd940` | `fld dword [rec+0x0c]`, `fmul qword [0x00cf39d0]` (= 255,0), **`fnstcw` + `or eax, 0xc00` + `fldcw`** (kerekítési mód = nulla felé), `fistp`, majd `shl edx, 0x18` \| a szín (`and ecx, 0xffffff`, `0x00bcd9c6`) | `0x00bcda34`–`0x00bcda96` |
+
+A konstruktor teljes rekordja (`ret 0x20`, 8 veremargumentum + `edx`):
+
+| eltolás | mező | átalakítás |
+|---|---|---|
+| `+0x00` | `distance` | — |
+| `+0x04` | `angle` | — |
+| `+0x08` | `shadowColor` (ARGB egész) | — |
+| `+0x0c` | **`shadowAlpha`** | `clamp(0, 1)` |
+| `+0x10` | `blurX` | vágás `0` és `255,0` közé (`0x00cf39d0`, `0x00cf3a00`) ¹ |
+| `+0x14` | `blurY` | ugyanaz ¹ |
+| `+0x18` | `strength` | ugyanaz ¹ |
+| `+0x1c` | `quality` (`edx`) | `< 0` → 0, `> 15` → 15 |
+| `+0x20` | `inner` (bájt) | — |
+
+¹ A három mező a veremen tartott `0`, `255,0` (`qword`) és `255,0` (`dword`) konstansokkal hasonlítódik; az egyes `fcom`-ágakat nem követtem végig egyenként, ezért a pontos vágási irány itt **nincs kimondva** — a kérdés (a `+0x0c`) ettől független.
+
+⇒ **Az árnyék-téglalap alfája `TRUNC(float32(clamp(shadowAlpha, 0, 1)) · 255)`.**
+A fenti szakasz `ROUND`-ot írt, és a kódunk (`glimmer_frame_ops.py`) is
+kerekít, azzal az indoklással, hogy a `fistp` alapmódja a páros felé
+kerekítés — de a rajzoló a `fistp` előtt kifejezetten csonkolásra állítja
+a módot.
+
+**Mekkora a különbség (számolva, nem becsülve):** a DropShadow szűrő
+`shadowAlpha="{1-(_sldrFade.value/100)}"` (`filterdesc.xml` 854. sor); a
+101 egész `Fade`-értékből **48-nál** a csonkolás 1-gyel kisebb alfát ad
+(pl. Fade 2: 249 ↔ 250, Fade 50: 127 ↔ 128). A többszörös-20 értékeknél
+(`2,55·f` egész) a float32 érték az egész fölé esik, ott nincs eltérés. A
+Polaroid rögzített `shadowAlpha=".4"`-je (1236. sor) mindkét módon 102. A
+684-es golden három állása (Fade 0 / 30 / 100) mind egyező értékre esik,
+ezért a golden-mérés ezt nem láthatta. Képpontonkénti felső korlát:
+`|árnyékszín − háttér| / 255 ≤ 1` szint.
+
+*Bizonyítottsági fok: **megerősített** (utasításszintű kiolvasás). A
+pixelgoldenen mért hatás: **NINCS MEG** — ehhez egy 48 érintett Fade-érték
+egyikén készült eredeti export kellene; a javítás ettől függetlenül a
+binárist követi. Fejlesztés: **#3498**.*
 
 ## ⛳ A `TiledImageMask` mind a tizenkét TARTALÉKÉRTÉKE — `alphaMax = 1,0`, `alphaMin = 0,0` (2026-09-18, 320. kör, #2476)
 
