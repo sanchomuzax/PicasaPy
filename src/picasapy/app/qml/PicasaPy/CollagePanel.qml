@@ -379,20 +379,41 @@ Item {
     // `CollageCanvas`-ban ül: a vászon tartalma a #947/#948 hatóköre, a
     // mentés folyamata ezé a jegyé — így a két kör nem ír ugyanabba a
     // fájlba.
-    CollageProgressOverlay {
-        id: progressOverlay
-        objectName: "collageProgressOverlay"
-        x: panel.canvasArea.x + (panel.canvasArea.width - width) / 2
-        y: panel.canvasArea.y + (panel.canvasArea.height - height) / 2
-        total: panel.clipCount
-        multiExposure: panel.controller
-                       && panel.controller.collageTheme === "multiexp"
-        onClicked: {
-            if (progressOverlay.finished)
-                panel.finishSave(panel.controller
-                                 ? panel.controller.collageSavedPath : "")
-            else
-                dialogs.askCancel()
+    //
+    // A szülőlánc az eredeti `collagepanel.tre` szerint (#3392):
+    // `collageprog_base → collageprog_clip → previewclip` — a doboz saját
+    // vágókeretben, az pedig a vászon területét vágó tárolóban ül.
+    Item {
+        id: previewClip
+        objectName: "collagePreviewClip"
+        x: panel.canvasArea.x
+        y: panel.canvasArea.y
+        width: panel.canvasArea.width
+        height: panel.canvasArea.height
+        clip: true
+
+        Item {
+            objectName: "collageProgressClip"
+            x: (previewClip.width - width) / 2
+            y: (previewClip.height - height) / 2
+            width: progressOverlay.width
+            height: progressOverlay.height
+            clip: true
+
+            CollageProgressOverlay {
+                id: progressOverlay
+                objectName: "collageProgressOverlay"
+                total: panel.clipCount
+                multiExposure: panel.controller
+                               && panel.controller.collageTheme === "multiexp"
+                onClicked: {
+                    if (progressOverlay.finished)
+                        panel.finishSave(panel.controller
+                                         ? panel.controller.collageSavedPath : "")
+                    else
+                        dialogs.askCancel()
+                }
+            }
         }
     }
 
