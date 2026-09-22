@@ -89,13 +89,16 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectPixelate"
-            label: qsTr("Pixelate")
-            //: ⚠️ #2146: a MÉRT Shift-pár `pixelate` -> `picnikfocalpixelate`
-            //: lenne, de a `render/chain.py` `_HANDLERS` táblájában
-            //: NINCS kezelője — alkalmazni sem tudnánk, a kattintás
-            //: `ValueError`-t adna. A Shift-ág ezért NEM épült meg
-            //: ezen a csempén; a többi nyolcon igen.
-            readonly property string szuro: "pixelate"
+            //: #3315: a Shift-pár MEGÉPÜLT. Az eredeti csempe-táblája
+            //: (`0x00c7e5a0`) a `Pixelate` rekord második mezőjeként a
+            //: `PicnikFocalPixelate`-et adja; a tulajdonos képernyőképe
+            //: (`3315-pixelate-parja`) ezt a felületen is mutatja
+            //: („Képpontnövelés", Hatás · Sugár · Élkeménység · Fokozat +
+            //: Megfordítás).
+            label: panel.shiftMasodlagos
+                   ? qsTr("Focal Pixelate") : qsTr("Pixelate")
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "picnikfocalpixelate" : "pixelate"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
             //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
             //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
@@ -105,7 +108,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("pixelate")
-            badge: panel.hasBadge("pixelate")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectFocalZoom"

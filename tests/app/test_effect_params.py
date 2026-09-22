@@ -324,8 +324,10 @@ class TestPicnikFocalPixelateAndMaskEffectsAreDeliberatelySkipped:
         csempéje az eredeti csempe-táblája szerint a `PicnikTint`."""
         assert "picniktint" in _EFFECT_NAMES
 
-    def test_picnik_focal_pixelate_has_no_ui_effect_name(self):
-        assert "picnikfocalpixelate" not in _EFFECT_NAMES
+    def test_picnik_focal_pixelate_a_shift_par_miatt_szerepel(self):
+        """#3315: a `pixelate` csempe Shift-párja — enélkül a Shiftes
+        kattintás `ValueError`-t adna."""
+        assert "picnikfocalpixelate" in _EFFECT_NAMES
 
     def test_soften_a_MERT_keszletet_hozza(self):
         """#723: `_sldrImpact` → Softness és `_sldrFade` → Fade.

@@ -199,17 +199,19 @@ class TestParameterPositionsInTheChain:
                 kicsi, apply_focal_pixelate(photo, **{**alap, **eltero})
             ), f"a {list(eltero)[0]} paraméter nem hat"
 
-    def test_focal_pixelate_a_lancbol_kimarad(self, photo):
-        """A `merokit-2` mérése szerint az eredeti Picasa nem futtatja."""
+    def test_focal_pixelate_a_lancbol_LEFUT(self, photo):
+        """#3315: a natív lánc-író NYOLC mezőt ír (`0x008fac40`), és a
+        betöltő úton semmi nem zárja ki — a #1142 „nem fut" mérése rossz
+        aritású sorra készült (azt a sort a mi generátorunk írta)."""
         report = apply_filters(
             photo,
             parse_filters(
                 "PicnikFocalPixelate=1,0.250000,0.750000,20.000000,12.000000,"
-                "30.000000,10.000000;"
+                "30.000000,10.000000,0;"
             ),
         )
-        assert report.skipped == ("PicnikFocalPixelate",)
-        np.testing.assert_array_equal(report.image, photo)
+        assert report.skipped == ()
+        assert not np.array_equal(report.image, photo)
 
     def test_impact_is_the_third_field_not_the_radius(self, photo):
         """Ha a harmadik mezőt Radius-ként olvasnánk (a régi hiba), a két

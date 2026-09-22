@@ -2498,7 +2498,7 @@
     </message>
     <message>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <source>Film Grain (Fine)</source>
@@ -7476,7 +7476,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
@@ -8054,7 +8054,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>

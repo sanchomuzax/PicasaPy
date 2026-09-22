@@ -133,47 +133,57 @@ class TestTizJegyuHexSzin:
         np.testing.assert_array_equal(report.image, rovid.image)
 
 
-class TestPicnikFocalPixelateNemFut:
-    """3. eset — az eredeti NEM futtatja, tehát mi sem futtathatjuk.
+class TestPicnikFocalPixelateFut:
+    """3. eset — HELYESBÍTVE (#3315).
 
-    Mindkét mért alak (hét és négy paraméterrel) a forrást adta vissza
-    (0,164 = JPEG-zaj), miközben nálunk a hétparaméteres 29,19-es
-    eltérést okozott.
+    A #1142 mérése hét, illetve négy mezős sorral készült, a natív
+    lánc-ÍRÓ viszont NYOLCAT ír (`0x008fac40`: engedélyezés → puck x,y →
+    három csúszka → a negyedik csúszka → a jelölőnégyzet `,%d`). A mérés
+    tehát rossz aritású bemenetre vonatkozott; a betöltő úton semmi nem
+    zárja ki a szűrőt (`0x008f9fe0` a `filterdesc.xml`-regiszterből építi,
+    `0x008f9a60` a közös Glimmer-feldolgozó). Pozitív kontroll: a
+    `FocalZoom` ugyanilyen leíró jelölőnégyzet nélkül — ott a hétmezős
+    alak a TELJES alak, és mérten lefut.
+
+    ⚠️ A nyolcmezős alak golden-mérése HÁTRAVAN (külön jegy); addig a
+    bizonyíték a futás mellett szól.
     """
 
-    def test_a_lanc_tag_nem_valtoztat_a_kepen(self, sample):
+    def test_a_nyolcmezos_alak_LEFUT(self, sample):
+        """#3315: a #1142 mérése ROSSZ ARITÁSÚ sorral készült (hét, illetve
+        négy mező), a natív lánc-író viszont NYOLCAT ír:
+        `PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade,Reverse;`
+        (`0x008fac40` mezősorrend). A betöltő úton semmi nem zárja ki a
+        szűrőt, ezért rendereljük."""
         report = apply_filters(
             sample,
             parse_filters(
                 "PicnikFocalPixelate=1,0.500000,0.500000,40.000000,"
-                "60.000000,50.000000,0.000000;"
+                "60.000000,50.000000,0.000000,0;"
             ),
         )
-        np.testing.assert_array_equal(report.image, sample)
+        assert report.skipped == ()
+        assert not np.array_equal(report.image, sample)
 
-    def test_a_kihagyas_okat_kimondjuk(self, sample):
+    def test_mar_van_hozza_renderer(self):
+        assert "picnikfocalpixelate" not in MEASURED_NOT_RUNNING_OPS
+        assert can_render_filter("PicnikFocalPixelate")
+
+    def test_a_lanc_tobbi_tagja_is_fut(self, sample):
+        """#3315: a tag LEFUT, és a mögötte álló tagok is.
+
+        ⚠️ Az EREDETI Picasában egy ISMERETLEN tag a lánc maradékát is
+        elejti (`0x00907740`: a `0x00908360` nem nulla hibakódjára a
+        bejáró kilép a ciklusból, a hívó a hibakódot eldobja) — ezért nem
+        mindegy, hogy kanonikus nevet írunk-e. Ez a tag kanonikus."""
         report = apply_filters(
             sample,
             parse_filters(
-                "PicnikFocalPixelate=1,0.500000,0.500000,40.000000,"
-                "60.000000,50.000000,0.000000;"
+                "PicnikFocalPixelate=1,0.5,0.5,40,60,50,0,0;bw=1;"
             ),
-        )
-        assert report.skipped == ("PicnikFocalPixelate",)
-        assert len(report.legacy_warnings) == 1
-        assert "PicnikFocalPixelate" in report.legacy_warnings[0]
-
-    def test_mar_nincs_hozza_renderer(self):
-        assert "picnikfocalpixelate" in MEASURED_NOT_RUNNING_OPS
-        assert not can_render_filter("PicnikFocalPixelate")
-
-    def test_a_lanc_tobbi_tagja_fut(self, sample):
-        """A #1140-es LÁNCVÁGÁS itt NINCS bizonyítva: a mérőszett egyik
-        esetében sem áll másik tag a `PicnikFocalPixelate` mögött. Amíg
-        nincs mérés, a tagot ELEJTJÜK (mint minden modell nélküli nevet),
-        a lánc többi tagját nem dobjuk el."""
-        report = apply_filters(
-            sample, parse_filters("PicnikFocalPixelate=1,0.5,0.5,40,60,50,0;bw=1;")
         )
         csak_bw = apply_filters(sample, parse_filters("bw=1;"))
-        np.testing.assert_array_equal(report.image, csak_bw.image)
+        assert report.skipped == ()
+        assert not np.array_equal(report.image, csak_bw.image)
+        # a bw a második tag: a kimenet szürke marad
+        assert np.allclose(report.image[..., 0], report.image[..., 1], atol=1)
