@@ -36,6 +36,13 @@ PicasaMenu {
     id: menu
     objectName: "photoContextMenu"
 
+    //: #3470: a befoglaló menü a `Repeater`-delegáltaknak. A delegáltban a
+    //: `menu` név NEM ezt jelenti: ott a `MenuItem` saját `menu`
+    //: tulajdonsága nyer (a beágyazott almenü), mert a delegált külön
+    //: komponens-kontextus, és a hatókör-objektum tulajdonsága megelőzi a
+    //: külső `id`-t. A delegált ezért ezen a néven hív.
+    readonly property var helyiMenu: menu
+
     // #17: igaz, ha a jobbklikkelt kép rejtett — a tétel felirata VÁLT
     // (Elrejtés ↔ Megjelenítés), nem pipát kap (spec A.2)
     property bool hideChecked: false
@@ -52,6 +59,14 @@ PicasaMenu {
     property string currentAlbumToken: ""
     //: a jelenleg mutatott személy neve (üres, ha nem személy-album)
     property string personName: ""
+    //: #3464: a meglévő személyek (`[{name, count}, ...]`, a
+    //: `peopleController.people` alakja) — a „Hozzáadás az Emberek
+    //: albumhoz" almenü forrása
+    property var people: []
+    //: az almenü tételei: minden személy a jelenlegi kivételével
+    readonly property var _tobbiSzemely: (menu.people || [])
+        .map(function (szemely) { return szemely.name })
+        .filter(function (nev) { return nev !== menu.personName })
     //: #1613: van-e a képnek megőrzött eredetije a `.picasaoriginals`-ban —
     //: enélkül az „Eredeti a lemezen" tétel szürke, mint az eredetiben
     property bool hasOriginalOnDisk: false
@@ -64,6 +79,8 @@ PicasaMenu {
     // string = a rács nem személy-albumot mutat, a tételek rejtve maradnak
     signal removeFromPeopleAlbumRequested()
     signal moveToNewPersonRequested()
+    //: #3464: az arc egy MEGLÉVŐ személyhez kerül
+    signal moveToPersonRequested(string name)
     signal newAlbumRequested()
     signal rotateRightRequested()
     signal rotateLeftRequested()
@@ -89,6 +106,24 @@ PicasaMenu {
     signal undoAllEditsRequested()
     signal resetFacesRequested()
 
+    //: #3464: a beágyazott személy-almenü Qt által létrehozott tételére
+    //: köti a láthatóságot és a nulla magasságot (a `personName` szerint),
+    //: és elnevezi, hogy a tesztek és az őrök megtalálják.
+    function _kossElRejtettAlmenut() {
+        for (var i = 0; i < menu.count; ++i) {
+            var tetel = menu.itemAt(i)
+            if (tetel && tetel.subMenu === addToPeopleAlbumMenu) {
+                tetel.objectName = "contextMenuAddToPeopleAlbum"
+                tetel.visible = Qt.binding(function () { return menu.personName !== "" })
+                tetel.height = Qt.binding(function () {
+                    return menu.personName !== "" ? tetel.implicitHeight : 0
+                })
+                return
+            }
+        }
+    }
+    Component.onCompleted: menu._kossElRejtettAlmenut()
+
     // -- 1. blokk: az alapértelmezett művelet (félkövér) + album ----------
 
     MenuItem {
@@ -113,7 +148,7 @@ PicasaMenu {
                 required property var modelData
                 objectName: "contextMenuAddToAlbumItem_" + modelData.token
                 text: modelData.name
-                onTriggered: menu.addToAlbumRequested(modelData.token)
+                onTriggered: helyiMenu.addToAlbumRequested(modelData.token)
             }
         }
         MenuSeparator {
@@ -161,15 +196,32 @@ PicasaMenu {
     // parancsot említ, de a felsorolásában ez összemosódott az „Áthelyezés
     // új személyhez…"-zel — a string-tábla választja szét a kettőt.
     //
-    // HELYFOGLALÓ: az eredetiben ez a MEGLÉVŐ személyek almenüje, a
-    // személylistát viszont a menü nem látja — a hívónak kellene betöltenie,
-    // ahogy az `albums`-ot is teszi. Ld. a jegy integrációs igényeit.
-    PicasaMenuItem {
-        objectName: "contextMenuAddToPeopleAlbum"
-        text: qsTr("Add to People Album")
-        visible: menu.personName !== ""
-        height: visible ? implicitHeight : 0
-        placeholder: true
+    // #3464: az eredetiben ez a MEGLÉVŐ személyek futásidőben töltött
+    // almenüje (`docs/specs/picasa-arcfelismeres.md` 17.2). A listát a
+    // hívó tölti a `people`-be, ahogy az `albums`-ot is; a jelenlegi
+    // személy kimarad, és személyek nélkül az almenü szürke. Egy névre
+    // kattintva az arc ÁTKERÜL — ugyanaz a művelet, mint az „Áthelyezés
+    // új személyhez…", csak meglévő célszeméllyel.
+    //
+    // A beágyazott `Menu` tételét a Qt maga hozza létre, ezért a
+    // láthatósága és a magassága nem írható ide deklaratívan: a
+    // `_kossElRejtettAlmenut` köti be (#3448 — a rejtett tétel ne hagyjon
+    // rést).
+    PicasaMenu {
+        id: addToPeopleAlbumMenu
+        objectName: "contextMenuAddToPeopleAlbumMenu"
+        title: qsTr("Add to People Album")
+        enabled: menu._tobbiSzemely.length > 0
+
+        Repeater {
+            model: menu._tobbiSzemely
+            delegate: MenuItem {
+                required property var modelData
+                objectName: "contextMenuAddToPeopleAlbumItem_" + modelData
+                text: modelData
+                onTriggered: helyiMenu.moveToPersonRequested(modelData)
+            }
+        }
     }
     MenuItem {
         objectName: "contextMenuMoveToNewPerson"
@@ -187,6 +239,7 @@ PicasaMenu {
         text: qsTr("Set as People Album Thumbnail")
         visible: menu.personName !== ""
         height: visible ? implicitHeight : 0
+        placeholder: true
     }
     MenuSeparator {}
 

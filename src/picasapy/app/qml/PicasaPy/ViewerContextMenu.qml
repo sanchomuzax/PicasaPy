@@ -36,6 +36,13 @@ PicasaMenu {
     id: menu
     objectName: "viewerContextMenu"
 
+    //: #3470: a befoglaló menü a `Repeater`-delegáltaknak. A delegáltban a
+    //: `menu` név NEM ezt jelenti: ott a `MenuItem` saját `menu`
+    //: tulajdonsága nyer (a beágyazott almenü), mert a delegált külön
+    //: komponens-kontextus, és a hatókör-objektum tulajdonsága megelőzi a
+    //: külső `id`-t. A delegált ezért ezen a néven hív.
+    readonly property var helyiMenu: menu
+
     // -- állapot, amit a hívó állít be popup() előtt ----------------------
 
     // igaz, ha a nézett kép rejtett — az Elrejtés/Megjelenítés tétel
@@ -104,7 +111,7 @@ PicasaMenu {
                 required property var modelData
                 objectName: "viewerMenuAddToAlbumItem_" + modelData.token
                 text: modelData.name
-                onTriggered: menu.addToAlbumRequested(modelData.token)
+                onTriggered: helyiMenu.addToAlbumRequested(modelData.token)
             }
         }
     }
