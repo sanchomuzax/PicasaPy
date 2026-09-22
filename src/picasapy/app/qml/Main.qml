@@ -1472,6 +1472,10 @@ ApplicationWindow {
         onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.selectedIndex)
         onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.selectedIndexes)
         onSlideshowRequested: window.startSlideshow(-1)
+        // #3460: Mappa ▸ Leírás szerkesztése… — a helyi menüével azonos párbeszéd
+        currentFolder: controller ? controller.currentFolder : ""
+        onEditFolderDescriptionRequested:
+            if (controller) folderPane.openFolderDescription(controller.currentFolder)
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.valtsFiokLapot("tags")
         peoplePanelOpen: window.peoplePanelOpen

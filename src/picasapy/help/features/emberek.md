@@ -122,9 +122,10 @@ keresése** gomb áll — ugyanaz, mint a Névtelenek nézetben.
 ## Emberek albumok
 
 Az **Áthelyezés új személyhez…** paranccsal egy rosszul besorolt arcot új
-névhez rendelhetsz, az **Eltávolítás az Emberek albumból** (Ctrl+Delete)
-pedig kiveszi onnan.
+névhez rendelhetsz, a **Hozzáadás az Emberek albumhoz** almenüből pedig egy
+már meglévő személyhez teheted át — az almenü a többi személyt sorolja fel.
+Az **Eltávolítás az Emberek albumból** (Ctrl+Delete) kiveszi onnan.
 
-> A helyi menü **Beállítás az Emberek album indexképeként** és
-> **Hozzáadás az Emberek albumhoz** tétele **még nem működik** — az
-> emberalbumok saját borítóképét ma nem lehet megválasztani.
+> A helyi menü **Beállítás az Emberek album indexképeként** tétele **még
+> nem működik** — az emberalbumok saját borítóképét ma nem lehet
+> megválasztani.
