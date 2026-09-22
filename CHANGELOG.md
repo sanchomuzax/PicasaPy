@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.544] – 2026-09-22
+
+### Javítva
+
+- **A Keret és a Múzeumi paszpartu vastagsága a szerkesztő előnézetén
+  arányos a mentett képpel (#3377)** — nagy (2560 képpontnál hosszabb)
+  fotón az előnézet kicsinyített képen rajzolta a keretet, ezért ott
+  arányaiban vastagabbnak látszott, mint a mentett képen. Most, mint az
+  eredetiben, a két vastagság a kicsinyítés arányában skálázódik; a
+  feliratsáv és a sarok-lekerekítés — szintén az eredeti szerint — nem.
+
 ## [0.8.543] – 2026-09-22
 
 ### Javítva

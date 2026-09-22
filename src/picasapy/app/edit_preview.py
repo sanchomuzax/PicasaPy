@@ -13,6 +13,7 @@ azonosító az URL első (kérdőjel előtti) része.
 
 from __future__ import annotations
 
+import functools
 import threading
 from collections import OrderedDict
 from collections.abc import Callable
@@ -27,9 +28,10 @@ from PySide6.QtQuick import QQuickImageProvider
 from picasapy.cvimage import scale_down
 from picasapy.ini.filters import FilterOp
 from picasapy.lazy_cv2 import cv2
-from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
+from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
 from picasapy.render import apply_filters, count_redeye_spots
 from picasapy.render.chain_geometry import TartalomHely
+from picasapy.render.elonezeti_arany import elonezeti_arany
 from picasapy.render.op_geometry import LancHelyzet
 from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
@@ -308,34 +310,15 @@ class EditPreviewProvider(QQuickImageProvider):
         source_array = self._resolve_source(
             key, path, mtime, shared_cache, full_res=teljes_felbontas
         )
-        # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó
-        # op fut. A háttér-úton (#546) nincs gyorsítótár — cserébe nincs
-        # megosztott állapot sem, amit sorosítani kellene.
-        #: #3166: a keret-elhelyezés a render JELENTÉSÉBŐL jön — abból a
-        #: hívásból, amelyik a kereteket tényleg alkalmazta (mind a három
-        #: ágon: festett maszk, gyorsítótár, közvetlen).
-        elhelyezes = None
-        if paint_strokes and source_array is not None and ops:
-            # #1908: festett ecset-maszk esetén a lánc-prefix gyorsítótár
-            # KIMARAD. A maszk nem csak az utolsó opra hat (a festhető effekt
-            # bárhol állhat a láncban), a prefix viszont épp azt tartja
-            # változatlannak — a gyorsítótár tehát elavult képet adna. A
-            # festés nem csúszka-húzás: egy vonás után egy teljes lánc
-            # elfut, és ez a helyes, nem a gyors.
-            from .paint_mask import maszk_vonasokbol
-
-            maszk = maszk_vonasokbol(paint_strokes, source_array.shape[0], source_array.shape[1])
-            jelentes = apply_filters(source_array, tuple(ops), paint_mask=maszk)
-            result_array = jelentes.image
-            elhelyezes = jelentes.content_placement
-        elif shared_cache:
-            result_array, elhelyezes = self._render_cached_jelentes(key, source_array, tuple(ops))
-        elif source_array is None or not ops:
-            result_array = source_array
-        else:
-            jelentes = apply_filters(source_array, tuple(ops))
-            result_array = jelentes.image
-            elhelyezes = jelentes.content_placement
+        # #3377: a lánc a kicsinyítés arányával fut — a keret vastagsága így
+        # a mentett képpel arányos marad (az eredeti `imageWidth /
+        # fullResImageWidth` tényezője).
+        with elonezeti_arany(
+            _elonezeti_arany(path, mtime, source_array, teljes_felbontas)
+        ):
+            result_array, elhelyezes = self._futtasd_a_lancot(
+                key, source_array, ops, shared_cache, paint_strokes
+            )
         if text is not None and result_array is not None and text.content:
             # a szöveg a filters-lánc UTÁN kerül a képre — a hisztogram (lent)
             # így is a TÉNYLEGESEN megjelenített (szöveggel együtt renderelt)
@@ -516,6 +499,45 @@ class EditPreviewProvider(QQuickImageProvider):
         store.move_to_end(key)
         while len(store) > _LRU_CAPACITY:
             store.popitem(last=False)
+
+    def _futtasd_a_lancot(
+        self,
+        key: str,
+        source_array: np.ndarray | None,
+        ops: tuple[FilterOp, ...],
+        shared_cache: bool,
+        paint_strokes: tuple,
+    ) -> tuple[np.ndarray | None, TartalomHely | None]:
+        """A lánc a `_register_impl` három ágán (#3377-ben kiemelve)."""
+        # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó
+        # op fut. A háttér-úton (#546) nincs gyorsítótár — cserébe nincs
+        # megosztott állapot sem, amit sorosítani kellene.
+        #: #3166: a keret-elhelyezés a render JELENTÉSÉBŐL jön — abból a
+        #: hívásból, amelyik a kereteket tényleg alkalmazta (mind a három
+        #: ágon: festett maszk, gyorsítótár, közvetlen).
+        elhelyezes = None
+        if paint_strokes and source_array is not None and ops:
+            # #1908: festett ecset-maszk esetén a lánc-prefix gyorsítótár
+            # KIMARAD. A maszk nem csak az utolsó opra hat (a festhető effekt
+            # bárhol állhat a láncban), a prefix viszont épp azt tartja
+            # változatlannak — a gyorsítótár tehát elavult képet adna. A
+            # festés nem csúszka-húzás: egy vonás után egy teljes lánc
+            # elfut, és ez a helyes, nem a gyors.
+            from .paint_mask import maszk_vonasokbol
+
+            maszk = maszk_vonasokbol(paint_strokes, source_array.shape[0], source_array.shape[1])
+            jelentes = apply_filters(source_array, tuple(ops), paint_mask=maszk)
+            result_array = jelentes.image
+            elhelyezes = jelentes.content_placement
+        elif shared_cache:
+            result_array, elhelyezes = self._render_cached_jelentes(key, source_array, tuple(ops))
+        elif source_array is None or not ops:
+            result_array = source_array
+        else:
+            jelentes = apply_filters(source_array, tuple(ops))
+            result_array = jelentes.image
+            elhelyezes = jelentes.content_placement
+        return result_array, elhelyezes
 
     def _resolve_source(
         self,
@@ -729,6 +751,37 @@ class EditPreviewProvider(QQuickImageProvider):
             size.setWidth(image.width())
             size.setHeight(image.height())
         return image
+
+
+@functools.lru_cache(maxsize=64)
+def _teljes_hosszabb_el(path: str, mtime: float | None) -> int | None:
+    """A forrás TELJES felbontású hosszabb éle — csak a fejlécből (#3377).
+
+    Az `mtime` a gyorsítótár-kulcs része: a lecserélt fájl új méretét adja.
+    `None`, ha a méret nem olvasható."""
+    if nyers_utvonal(path):
+        return nyers_hosszabb_el(Path(path))
+    meret = QImageReader(path).size()
+    if not meret.isValid():
+        return None
+    return max(meret.width(), meret.height()) or None
+
+
+def _elonezeti_arany(
+    path: Path, mtime: float | None, source: np.ndarray | None, teljes_felbontas: bool
+) -> float:
+    """A munkavászon és a teljes felbontású kép aránya (#3377).
+
+    Az eredeti a keret két vastagságát ezzel szorozza (`imageWidth /
+    fullResImageWidth`). Teljes felbontású dekódnál, és ha a méret nem
+    állapítható meg, 1 — ilyenkor a keret a mai, teljes felbontású
+    viselkedést adja."""
+    if teljes_felbontas or source is None:
+        return 1.0
+    teljes = _teljes_hosszabb_el(str(path), mtime)
+    if not teljes:
+        return 1.0
+    return min(1.0, max(source.shape[0], source.shape[1]) / teljes)
 
 
 def _decode_source(
