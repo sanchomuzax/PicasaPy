@@ -2478,6 +2478,36 @@ kellene — a mért teljes tétlenség ennél többet mond (korai kilépés vagy
 összehasonlítási irány). Ennek kiolvasása és a natív mag beépítése külön
 jegy.*
 
+#### ⛳ A két megnevezett hipotézis MEGDŐLT: a láncban nincs korai kilépés, és az összehasonlítás iránya sem fordított (2026-09-22, #3482)
+
+A fenti „Ami NYITVA marad” két jelöltet nevezett meg az 1,4-es teljes
+tétlenségre. Mindkettő utasításszinten ellenőrizve — **egyik sem igaz**:
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| kezelő | a szűrőobjektum `+0x28`-as float paraméterét (a lánc értékét) és egy `1,0` konstanst ad a keretezőnek | `0x008f89a4`, `0x008f89b3`, `0x008f89c5` |
+| a `+0x28` forrása | a láncból beolvasott szám **átalakítás nélkül** (`0x00c080d7` → `fstp [obj + i·4 + 0x28]`) | `0x008fb72e`–`0x008fb746` |
+| keretező | kizárólag üres kép (szélesség vagy magasság ≤ 0) esetén lép ki; a paramétert küszöbként továbbadja | `0x0090cf94`–`0x0090cf9e`, `0x0090d0b5`–`0x0090d0cc` |
+| vezénylő | csak üres metszetnél lép ki; `K = CSONK(t² · 65536)` (`0x00c29990` = `_ftol`) | `0x0090cddf`–`0x0090cde9`, `0x0090cdef`–`0x0090cdfb` |
+| fal-jelölő | fal, ha `ΔR² + ΔG² + ΔB² > K / n²` (`cmp` + `jle` átugrás) — nagy különbség = fal | `0x0090cac8`–`0x0090cad7`, `0x0090cb9b`–`0x0090cba6` |
+| keretező utólagos kapuja | a 4. argumentum (`1,0`) `== 1,0` → nincs utólagos keverés | `0x0090d0d1`–`0x0090d0e2` |
+
+⇒ **A lánc értéke nyersen jut el a küszöbig**, és a kód 1,4-nél
+(`K = 128 450`) szinte sehol nem jelöl falat — azaz **simítást jósol**. A mért
+teljes tétlenség (0,1…1,4) tehát **nem** a `0x008f89a0` →
+`0x0090cf60` → `0x0090cd90` → `0x0090ca10` láncban dől el.
+
+**A következő kiolvasandó lépés:** a natív szűrő **kezelőjét meghívó** hely
+(a szűrőobjektum `+0x0c` mezője). Ez a hívás a vtábla (`0x00cd184c`) közvetlen
+slotjaiban nincs meg (`0x008fa8d0` csak a paramétereket klónozza); a
+`mov reg,[x+0x0c]` + `call reg` minta a `0x008f0000`–`0x00910000` sávban hat
+helyen fordul elő, ebből négy vtábla-hívás. Ott dőlhet el, hogy egy adott
+paraméterű `blur` egyáltalán lefut-e (pl. a lánc-végrehajtó kihagyó feltétele).
+
+*Bizonyítottsági fok:* a két hipotézis cáfolata **megerősített**
+(diszasszemblátum, minden lépés címmel); a tétlenség valódi oka **nincs
+kiolvasva**.
+
 ### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
 
 A callback konstans `0.5f`-fel hív (`FUN_0090a2e0(dst, 0.5f)`), amiből
