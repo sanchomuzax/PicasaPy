@@ -6344,6 +6344,103 @@ A javítás a **#626** jegyen marad (ez a jegy a fejlesztői gazdája).
 `0x00c7d85c`-es CRT-leíró-párból; a leíró-attribútumok
 `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml`.*
 
+## ⛳ A `DropShadow` `quality=3` natív elmosása: hat egydimenziós menet (2026-09-22, #626)
+
+### Mit ad ma a PicasaPy — mérve
+
+A mai `draw_drop_shadow()` a `compose_drop_shadow()` útvonalon a
+`gaussian_blur_f(shadow_layer, blur_px)` hívást használja
+(`src/picasapy/render/glimmer_frame_ops.py:212–224`). A tesztkészlet ettől
+függetlenül a jelenlegi geometriát ellenőrzi: a célzott körben
+`tests/render/test_dropshadow_margo_3419.py` és
+`tests/render/test_glimmer_frames.py` együtt **30 passed in 2,49 s**.
+Ez a mérés nem bizonyít natív pixelazonosságot.
+
+### A natív hívási lánc
+
+A `DropShadowImageOperation` rajzolója (`0x00bcd940`) a blur-diszpécsert
+(`0x00bc5680`) a két blur-paraméterrel és a minőségértékkel hívja
+(`0x00bcd940` dekompilátum, a `FUN_00bc5680` hívása). A sorrend a rajzolóban:
+
+1. az árnyék színű téglalap létrehozása (`0x00bcd940`),
+2. a blur-diszpécser meghívása (`0x00bcd940`),
+3. a forrás és az árnyék kompozitálása (`0x00bcd940`, végső
+   `FUN_008f59d0` hívás).
+
+A blur-paraméter-vágó (`0x00bc52c0`) a sugarakat `0…253` közé szorítja,
+a `quality` értéket pedig `1…15` közé: a nulla **1**-re változik, a
+nem nulla, legfeljebb **15** érték változatlan marad (`0x00bc52c0`). A
+`quality=3` ezért a blur-meneten ténylegesen **3**-ként fut, nem vált át
+másik minőségi számra.
+
+### Mit jelent pontosan a `quality=3`
+
+A diszpécser több optimalizált megvalósítási ágat választ a blur-sugár
+és két futásidejű jelző alapján (`0x00bc5680`). Az elemzett binárisban a
+két jelző kezdeti bájtja **0** (`0x00d695d2`, `0x00d695d3`); a `d695d2`
+bájtját azonban induláskor a `0x00c33d56` írhatja, a `0x009bbd50` visszatérési
+értékének **26. bitjéből** (`shr eax,0x1a` → `and al,1`). Ezért a
+konkrét optimalizált kódút futásidő- és processzorkörnyezet-függő, de a
+minőségi menet szerkezete közös.
+
+A két tengelyt külön, egymás után dolgozza fel:
+
+| tengely | natív megvalósítási családok | a `quality` ciklusa |
+|---|---|---:|
+| vízszintes | `0x00bc7540`, `0x00bc6920`, `0x00bc7300` | `param_3`-szor; `0x00bc7540: local_34 = param_3`, majd `local_34--` |
+| függőleges | `0x00bc77b0`, `0x00bc6f30`, `0x00bc6b60` | `param_3`-szor; `0x00bc77b0: local_10 = param_3`, majd `local_10--` |
+
+Következésképp `quality=3` esetén a normál, mindkét tengelyen aktív
+út **3 vízszintes + 3 függőleges, összesen 6 egydimenziós menetet** fut.
+A két puffer között menetenként vált (`0x00bc7540` / `0x00bc77b0` és a
+vektoros megfelelőik); ez nem hat menet egyetlen közös pufferbejárásban,
+hanem tengelyenként egymásra épülő menetek. Ha egy tengely sugara nem
+aktív vagy a tartomány túl rövid, a kód másolási utat választ
+(`0x00bc5960`); ez a `quality=3` hatmenetes esetét nem cáfolja, hanem a
+határfeltétel külön ága.
+
+### A menet magja és a kvantálás
+
+A sugárhoz tartozó fixpontos együtthatókat a `0x00bc5360` állítja elő.
+A dekompilátumban a lekerekített sugár (`FUN_00c29990`) alapján a belső
+lépték 6-ról indul és feleződik, amíg 1 fölött marad; ezután a kód
+`2^k`, `2^k−1`, a `(r−1)·2^(k−1)` lekerekített értéke, valamint bitmaszkok
+segítségével képezi a menet három egész paraméterét
+(`0x00bc5360`, `0x00bc5620`). A teljes leképezés tehát nem egy szabadon
+illesztett Gauss-sugár.
+
+A skalár kimeneti segéd (`0x00bc5480`) minden BGRA-bájtra egész aritmetikát
+használ: a két mintavételi összeg és a futó akkumulátor kombinációját
+szorzóval, balra tolással és egész osztással alakítja bájttá
+(`0x00bc5480`). A határszakaszok külön ágai a szélső mintákat ismételten
+használják (`0x00bc7540`, `0x00bc77b0`); a cél nem lebegőpontos Gaussian-
+értékek kiírása.
+
+### Eredeti / nálunk / teendő
+
+| | Eredeti, mérve | PicasaPy, mérve | Teendő |
+|---|---|---|---|
+| minőségi ciklus | `quality=3` → 3 vízszintes + 3 függőleges menet (`0x00bc7540`, `0x00bc77b0`) | a `draw_drop_shadow()` egyetlen `gaussian_blur_f()` hívása (`glimmer_frame_ops.py:216`) | a natív hatmenetes út átvezetése |
+| menet matematikája | futóablakos, fixpontos/integer út; sugárfüggő együttható-előkészítés (`0x00bc5360`, `0x00bc5480`) | lebegőpontos Gaussian-kernel | azonos puffer-, perem- és csonkolási szerződés megvalósítása |
+| natív–PicasaPy pixel-golden | **NINCS MEG** ebben a körben | **NINCS MEG** | külön Windows/Picasa export–render golden-pár szükséges |
+
+**Bizonyítottsági fok: megerősített** a `quality=3` ciklusszámára,
+a vízszintes→függőleges sorrendre, a puffer-váltásra és az integer
+kimeneti útra. A sugárhoz tartozó három együttható teljes jelentését és a
+különböző optimalizált ágak bitre azonos megfelelését ebben a körben nem
+mértem össze — ezekre nem adok át nem bizonyított kernel-táblát.
+
+**A megfejtett mechanizmus hatása a PicasaPy eltérésére NINCS MÉRVE:** a
+natív út leírása önmagában nem bizonyítja, hogy a hatmenetes csere egy
+adott golden-páron javít; ehhez eredeti Picasa-export és ugyanazon bemenet
+PicasaPy-kimenete kell.
+
+*Forrás: `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`;
+`0x00bcd940`, `0x00bc5680`, `0x00bc52c0`, `0x00bc5960`, `0x00bc6590`,
+`0x00bc5360`, `0x00bc5480`, `0x00bc7540`, `0x00bc77b0`, valamint a
+`626-drop-shadow-branches.log` célzott Ghidra-kimenete.*
+
 ## ⛳ A `TiledImageMask` mind a tizenkét TARTALÉKÉRTÉKE — `alphaMax = 1,0`, `alphaMin = 0,0` (2026-09-18, 320. kör, #2476)
 
 *A 2026-09-12-i kör kimérte, hogy a pont profilja **lineáris radiális rámpa**
