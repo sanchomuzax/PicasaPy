@@ -3348,9 +3348,16 @@ ApplicationWindow {
         // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
         // csak személy-albumban látszanak (üres `personName` = rejtve).
         personName: controller ? controller.currentPersonName : ""
+        people: controller ? controller.people : []
         onRemoveFromPeopleAlbumRequested: {
             if (controller) removePeopleFacesDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
+        }
+        // #3464: a „Hozzáadás az Emberek albumhoz" almenü egy meglévő
+        // személyére kattintva a kijelölt képeken az arc ÁTKERÜL hozzá
+        onMoveToPersonRequested: function (name) {
+            if (controller) controller.movePersonOnRows(
+                window.selectedRows(), controller.currentPersonName, name)
         }
         onMoveToNewPersonRequested: {
             if (controller) moveToNewPersonDialog.ensure().openFor(

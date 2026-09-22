@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.543] – 2026-09-22
+
+### Javítva
+
+- **A kép helyi menüjében a „Hozzáadás az Emberek albumhoz" most a meglévő
+  személyek almenüje (#3464)** — mint az eredetiben: egy névre kattintva a
+  kijelölt képeken az arc ahhoz a személyhez kerül. A jelenleg nézett
+  személy nincs a listán; ha nincs másik személy, az almenü szürke. A
+  „Beállítás az Emberek album indexképeként" továbbra is szürke helyőrző.
+- **Az almenük listás tételei kattintásra újra működnek (#3470)** — a kép
+  és a nézegető helyi menüjében a „Hozzáadás az albumhoz" alatti albumokra,
+  a mappa helyi menüjében az „Áthelyezés gyűjteménybe" alatti
+  gyűjteményekre kattintva eddig semmi nem történt.
+
 ## [0.8.542] – 2026-09-22
 
 ### Javítva
