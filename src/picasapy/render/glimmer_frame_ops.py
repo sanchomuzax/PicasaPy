@@ -16,7 +16,8 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image
-from picasapy.render.glimmer_ops import fade_alpha, gaussian_blur_f, to_float, to_uint8
+from picasapy.render.glimmer_ops import fade_alpha
+from picasapy.render.nativ_blur import nativ_blur_csatorna
 
 
 def add_ring(image: np.ndarray, thickness: float, color: tuple[int, int, int]) -> np.ndarray:
@@ -156,6 +157,9 @@ def shadow_offset(distance_px: float, angle: float) -> tuple[int, int]:
 #: A `DropShadow` határoló-doboz kiterjesztőjének (`0x00bcd760`) szorzója a
 #: leíró `quality="{BitmapFilterQuality.HIGH}"` (= 3) fokozatán, `0x00cf4368`.
 _DROPSHADOW_HIGH_FAKTOR = 1.3501
+#: `quality="{BitmapFilterQuality.HIGH}"` (`filterdesc.xml`) = 3: a natív
+#: elmosás 3 vízszintes + 3 függőleges menete (#3474, `0x00bc7540`/`0x00bc77b0`).
+_DROPSHADOW_QUALITY = 3
 #: A paraméter-vágó (`0x00bcd640`) a `blurX`/`blurY`-t erre a tartományra szorítja.
 _DROPSHADOW_BLUR_MIN = 1.0
 _DROPSHADOW_BLUR_MAX = 255.0
@@ -205,23 +209,28 @@ def compose_drop_shadow(
     height, width = image.shape[:2]
     bal, fent, jobb, lent = pads if pads is not None else (margin,) * 4
     canvas_h, canvas_w = height + fent + lent, width + bal + jobb
-    canvas = np.empty((canvas_h, canvas_w, 3), dtype=np.float32)
-    canvas[:] = np.array(background_color, dtype=np.float32)
 
+    # #3474: a natív út (`0x00bcd940`). Az árnyékréteg egyenes BGRA: a teljes
+    # vászon `árnyékszín | alfa 0`, a téglalap `ROUND(shadowAlpha · 255)`
+    # alfával. Az elmosás (`0x00bc5680`, quality=3: 3 vízszintes + 3
+    # függőleges egész menet) az állandó RGB-t nem változtatja, tehát
+    # gyakorlatilag csak az alfát mossa — ezért elég az alfa-csatorna.
     offset_x, offset_y = shadow_offset(distance_px, angle)
-    shadow_layer = np.zeros((canvas_h, canvas_w), dtype=np.float32)
     top = fent + offset_y
     left = bal + offset_x
-    shadow_layer[top : top + height, left : left + width] = 1.0
-    shadow_blurred = gaussian_blur_f(shadow_layer, blur_px)
+    alfa = np.zeros((canvas_h, canvas_w), dtype=np.uint8)
+    # a `round` a fistp alapértelmezett (páros felé kerekítő) módja
+    alfa[top : top + height, left : left + width] = round(fade_alpha(fade) * 255)
+    alfa = nativ_blur_csatorna(alfa, blur_px, blur_px, _DROPSHADOW_QUALITY).astype(np.uint32)
 
-    shadow_alpha = fade_alpha(fade)
-    weight = np.clip(shadow_blurred * np.float32(shadow_alpha), 0.0, 1.0)
-    shadow_color_arr = np.array(shadow_color, dtype=np.float32)
-    canvas = canvas * (1.0 - weight[..., np.newaxis]) + shadow_color_arr * weight[..., np.newaxis]
+    # a keverés (`0x008f48b0`) egész: `(S·α + D·(255 − α)) // 255`
+    hatter = np.array(background_color, dtype=np.uint32)
+    arnyek = np.array(shadow_color, dtype=np.uint32)
+    canvas = (arnyek * alfa[..., np.newaxis] + hatter * (255 - alfa[..., np.newaxis])) // 255
+    canvas = canvas.astype(np.uint8)
 
-    canvas[fent : fent + height, bal : bal + width] = to_float(image)
-    return to_uint8(canvas)
+    canvas[fent : fent + height, bal : bal + width] = image
+    return canvas
 
 
 def draw_drop_shadow(
@@ -243,9 +252,8 @@ def draw_drop_shadow(
     margó `2·blur + distance`) a `0x00bcd760` szerint mindkét pontján téves
     volt.
 
-    ⚠️ Az elmosás ALAKJA (itt `blur` szigmájú Gauss) nincs a binárisból
-    kiolvasva — a Flash `HIGH` minőség dobozszűrő-menetei ettől eltérhetnek;
-    ez a vászon méretét nem érinti.
+    Az elmosás a natív `quality=3` út (#3474, `render/nativ_blur.py`): az
+    emulátorban futtatott eredeti kóddal bitre azonos.
     """
     validate_image(image)
     blur_px, _, pads = drop_shadow_padding(distance, angle, blur)
