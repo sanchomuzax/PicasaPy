@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.552] – 2026-09-22
+
+### Új
+
+- **A személy albumában megjelennek a névjavaslatok, és külön is
+  megnézhetők (#2187).** A személy képei közt most már ott vannak azok a
+  fotók is, amelyeken a program javasolja ezt a nevet — eddig csak a már
+  megerősítettek látszottak. A fejlécre került egy kis kapcsoló (a sárga
+  kérdőjeles jelvény): bekapcsolva csak a javaslatok maradnak a rácsban,
+  kikapcsolva újra minden. Az eredeti Picasa ugyanitt, ugyanekkora
+  gombbal csinálja.
+
 ## [0.8.551] – 2026-09-22
 
 ### Hozzáadva

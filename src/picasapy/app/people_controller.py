@@ -22,6 +22,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 from picasapy.index import open_index
+from picasapy.index.faces_detected import suggested_album_photos
 from picasapy.index.people import (
     PEOPLE_SORT_MODES,
     people_in_index,
@@ -102,6 +103,10 @@ class PeopleMixin:
     def _init_people(self) -> None:
         """A konstruktorból hívandó kezdeti állapot (a `people` mezőé)."""
         self._people: tuple = ()
+        #: #2187: a javaslat-szűrő (`sug_filter`) állapota. Nézetenként
+        #: NEM tartjuk meg: a személy-album minden megnyitása a teljes
+        #: listával indul, ahogy az eredeti fejléce is.
+        self._csak_javaslatok = False
         # #1608: a `currentPersonName` a NÉZETTEL változik, a `peopleChanged`
         # viszont csak az Emberek-LISTA frissülésekor megy ki
         # (`_load_people`). Emiatt a rá épülő QML-kötések a nézetváltás után
@@ -131,19 +136,83 @@ class PeopleMixin:
     @Slot(str)
     def showPerson(self, name: str) -> None:
         """Személy-szűrő be — a `showAlbum` mintáját követi: szűrt nézet, a
-        mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz."""
+        mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz.
+
+        #2187: a rács a MEGERŐSÍTETT képek mellett a függő JAVASLATOKAT is
+        mutatja — az eredeti személy-albuma is ezekre kínálja a pipát és az
+        x-et. A megnyitás mindig a teljes listával indul, a szűrő kikapcsolt
+        állapotából."""
         if not name:
             return
         self._view_mode = ("person", name)
+        self._csak_javaslatok = False
+        self._szemely_betoltese(name)
+
+    def _szemely_betoltese(self, name: str) -> None:
+        """A személy-album rácsának feltöltése a szűrő MOSTANI állása
+        szerint (#2187). A `showPerson` és a javaslat-szűrő közös útja."""
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
-            records = person_photos(conn, name)
+            javaslatok = suggested_album_photos(conn, name)
+            if self._csak_javaslatok:
+                records = javaslatok
+            else:
+                records = self._osszefuzve(person_photos(conn, name), javaslatok)
         elapsed = time.perf_counter() - started
         self._filter_active = True
         self._filter_status = formatting.filter_status_text(
             records, elapsed, QLocale(), self.tr
         )
         self._show(records)
+
+    @staticmethod
+    def _osszefuzve(
+        megerositett: tuple, javasolt: tuple
+    ) -> tuple:
+        """A két halmaz egyesítése úgy, hogy egy kép EGYSZER szerepeljen.
+
+        A rács sora a FOTÓ, nem az arc: ugyanazon a képen lehet a személy
+        megerősítve és — egy másik arcon — javasolva is. A sorrend a
+        megerősítetteké marad, a javaslatok a végére kerülnek; mindkét
+        lekérdezés `f.path, p.name` szerint rendez."""
+        latott = {(r.folder_path, r.name) for r in megerositett}
+        return megerositett + tuple(
+            r for r in javasolt if (r.folder_path, r.name) not in latott
+        )
+
+    @Slot()
+    def refreshPersonAlbum(self) -> None:  # noqa: N802 — QML-slot-stílus
+        """A nyitott személy-album újratöltése a szűrő MOSTANI állásával.
+
+        A jóváhagyás és az elvetés után a rácsnak frissülnie kell (a
+        jóváhagyott arc ettől kerül a személy képei közé), de a
+        javaslat-szűrő állását ilyenkor megtartjuk — a `showPerson`
+        ezzel szemben új albumot nyit, és tiszta lappal indul."""
+        mode, param = self._view_mode
+        if mode != "person" or not param:
+            return
+        self._szemely_betoltese(param)
+
+    @Property(bool, notify=personViewChanged)
+    def personSuggestionsOnly(self) -> bool:
+        """A javaslat-szűrő (`sug_filter`) állása — MÉRT súgó: „Csak a
+        javaslatok megjelenítése (ha be van kapcsolva)"."""
+        return self._csak_javaslatok
+
+    @Slot(bool)
+    def setPersonSuggestionsOnly(self, csak: bool) -> None:  # noqa: N802
+        """A javaslat-szűrő átkapcsolása.
+
+        Csak személy-album nézetben hat: máshol nincs mit szűrni, és a
+        rácsot sem szabad átírnia. Azonos értékre nem olvas újra indexet —
+        a kapcsoló minden átkapcsolása egy teljes ini-söprés."""
+        csak = bool(csak)
+        mode, param = self._view_mode
+        if mode != "person" or not param or csak == self._csak_javaslatok:
+            return
+        self._csak_javaslatok = csak
+        self._szemely_betoltese(param)
+        self.personViewChanged.emit()
 
     @Slot(str, result="QVariantList")
     def peopleWith(self, name: str):  # noqa: N802 — QML-slot-stílus

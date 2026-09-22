@@ -699,6 +699,20 @@ ApplicationWindow {
             window.personAlbumName)
         window._javaslatFrissult()
     }
+    //: #2187: `sug_filter` — a javaslat-szűrő állása és átkapcsolása. Az
+    //: állapotot a vezérlő tartja (nézetváltáskor magától kikapcsol),
+    //: a `_javaslatRevizio` itt is a kötés horgonya.
+    readonly property bool personSuggestionsOnly: {
+        window._javaslatRevizio
+        return controller && controller.personSuggestionsOnly !== undefined
+            ? controller.personSuggestionsOnly : false
+    }
+    function setPersonSuggestionsOnly(csak) {
+        if (!controller || !controller.setPersonSuggestionsOnly)
+            return
+        controller.setPersonSuggestionsOnly(csak)
+        window._javaslatRevizio += 1
+    }
     //: #2187: „További javaslatok keresése" (`moresug`). A vezérlő a
     //: javaslat-lépcsőt tízzel lazítja, és a beállítást NEM írja vissza —
     //: az eredeti kezelője (`0x00602890`) sem. A személy-album nevére itt
@@ -714,8 +728,15 @@ ApplicationWindow {
     //: arcok ettől kerülnek be a személy képei közé
     function _javaslatFrissult() {
         window._javaslatRevizio += 1
-        if (controller && window.personAlbumName !== "")
-            controller.showPerson(window.personAlbumName)
+        //: #2187: `refreshPersonAlbum` és nem `showPerson` — az
+        //: újratöltés megtartja a javaslat-szűrő állását, a `showPerson`
+        //: viszont új albumot nyit, és kikapcsolja.
+        if (controller && window.personAlbumName !== "") {
+            if (controller.refreshPersonAlbum)
+                controller.refreshPersonAlbum()
+            else
+                controller.showPerson(window.personAlbumName)
+        }
     }
 
     //: #1823: „szerkesztések mentése lemezre" a mappa-fejlécről. A

@@ -394,6 +394,36 @@ def suggested_faces_for(
     )
 
 
+def suggested_album_photos(
+    conn: sqlite3.Connection, name: str
+) -> tuple[PhotoRecord, ...]:
+    """Azok a fotók, amelyeken ehhez a névhez FÜGGŐ javaslat tartozik (#2187).
+
+    A személy-album rácsa ebből kapja a javaslatokat: a névvel ELLÁTOTT
+    arcok a `.picasa.ini`-ből jönnek (`people.person_photos`), a még el nem
+    döntött javaslatok viszont a saját `face` táblánkból. A kettő külön
+    halmaz, és a metszetük sem feltétlenül üres.
+
+    A névösszevetés kis-nagybetűre érzéketlen — ugyanaz a szokás, mint a
+    `suggested_faces_for`-nál. Üres névre üres eredmény (nem hiba): a
+    felület akkor is hívja, amikor nem személy-album van nyitva.
+
+    Egy fotó egyszer szerepel akkor is, ha több arca hordozza ugyanazt a
+    javaslatot — a rács SORA a fotó, nem az arc.
+    """
+    if not name:
+        return ()
+    rows = conn.execute(
+        f"{_SELECT} WHERE p.id IN ("
+        "SELECT DISTINCT photo_id FROM face "
+        "WHERE state = 'unnamed' AND suggested_name IS NOT NULL "
+        "AND suggested_name = ? COLLATE NOCASE"
+        ") ORDER BY f.path, p.name",
+        (name,),
+    )
+    return _records(rows)
+
+
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """A „Névtelenek" album (issue #26, javasolt 1. lépcső): minden fotó,
     amelyen a SAJÁT detektorunk legalább egy arcot talált — csoportosítás

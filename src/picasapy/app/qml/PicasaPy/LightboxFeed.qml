@@ -710,6 +710,15 @@ ListView {
                 if (grid.appWindow && grid.appWindow.removePersonSuggestions)
                     grid.appWindow.removePersonSuggestions()
             }
+            //: #2187: `sug_filter` — a szűrő állását a vezérlő tartja, a
+            //: fejléc csak mutatja és kéri az átkapcsolást
+            suggestionsOnly: grid.appWindow
+                             && grid.appWindow.personSuggestionsOnly !== undefined
+                             ? grid.appWindow.personSuggestionsOnly : false
+            onSuggestionsOnlyToggled: function (csak) {
+                if (grid.appWindow && grid.appWindow.setPersonSuggestionsOnly)
+                    grid.appWindow.setPersonSuggestionsOnly(csak)
+            }
             //: #2187: `moresug` — a lazítás az egész készletre újraszámol
             onMoreSuggestionsRequested: {
                 if (grid.appWindow && grid.appWindow.findMoreSuggestions)

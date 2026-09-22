@@ -53,12 +53,24 @@ def test_a_felirat_a_MERT_szoveg() -> None:
 
 
 def test_a_gomb_a_jovahagyas_par_HELYEN_all() -> None:
-    """A mért téglalap ugyanott indul, mint a `confirmsug` (x = 348)."""
+    """A mért téglalap ugyanott indul, mint a `confirmsug` (x = 348).
+
+    ⚠️ #2187, második kör: ez NEM ugyanaz, mint „a gombsor végén". A
+    javaslat-szűrő (`sug_filter`, x = 316) a jóváhagyás-pár ELŐTT ül, és a
+    `moresug` mért kezdőpontja (348) a szűrő UTÁN van — a két gombnak
+    tehát ugyanaz a kezdőpontja, akármelyik áll épp kint. Az őr ezért a
+    KETTŐ EGYEZÉSÉT méri, nem egy konkrét horgony nevét.
+    """
     forras = FEJLEC.read_text(encoding="utf-8")
-    kezd = forras.index('objectName: "headerMoreSuggestionsButton"')
-    blokk = forras[kezd:kezd + 900]
-    assert "x: header.gombSorVege" in blokk, (
-        "a gombnak a jóváhagyás-pár kezdőpontján kell állnia")
+    helyek = {}
+    for nev in ("headerMoreSuggestionsButton", "headerConfirmSuggestionsButton"):
+        kezd = forras.index(f'objectName: "{nev}"')
+        blokk = forras[kezd:kezd + 400]
+        talalat = re.search(r"x:\s*(.+?)\n\s+anchors", blokk, re.S)
+        assert talalat, f"{nev}: nem olvasható ki az x kifejezése"
+        helyek[nev] = " ".join(talalat.group(1).split())
+    assert (helyek["headerMoreSuggestionsButton"]
+            == helyek["headerConfirmSuggestionsButton"]), helyek
 
 
 def test_a_ket_allapot_KIZARJA_egymast() -> None:

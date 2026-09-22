@@ -3925,6 +3925,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <name>LightboxHeader</name>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Show only suggestions (when toggled on)</source>
+        <translation>Csak a javaslatok megjelenítése (ha be van kapcsolva)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
         <source>Sync to Web</source>
         <translation>Szinkronizálás az internettel</translation>
     </message>
