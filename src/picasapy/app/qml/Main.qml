@@ -3253,13 +3253,6 @@ ApplicationWindow {
 
     PhotoContextMenu {
         id: photoContextMenu
-        //: #1833: „Keress ehhez hasonlót" — a MINTA a jobbklikkelt kép
-        //: (`fileOpTargetRow`), nem a kijelölés: a menü arra a képre
-        //: vonatkozik, amin megnyílt. Az eredmény külön nézetben jön.
-        onFindSimilarRequested: {
-            if (window.fileOpTargetRow >= 0)
-                controller.showSimilarTo(window.fileOpTargetRow)
-        }
         // #1613: a lemezt CSAK a menü megnyitásakor kérdezzük meg — egy
         // kötés minden képkockán fájlrendszert olvasna.
         onAboutToShow: {
@@ -3267,6 +3260,9 @@ ApplicationWindow {
                 ? controller.photos.filePathAt(window.fileOpTargetRow) : ""
             photoContextMenu.hasOriginalOnDisk =
                 ut.length > 0 && fileOpsController.hasOriginalOnDisk(ut)
+            // #3468: a „Keresés" almenü csak EGY kijelölt képnél jelenik meg
+            var db = window.selectedRows().length
+            photoContextMenu.kijeloltKepekSzama = db > 0 ? db : 1
         }
         // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
         // együtt kötve, hogy a menü újranyitáskor friss legyen)
