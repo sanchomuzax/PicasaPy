@@ -4,6 +4,30 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-22
+
+**Menük**
+
+- A menükben a gyorsbillentyűk (például **Ctrl+Delete**) a sor jobb
+  szélén, egymás alá igazított oszlopban állnak, mint az eredeti
+  Picasában — nem tapadnak a felirat végére.
+- A kép helyi menüjében mappanézetben nem marad üres rés ott, ahol az
+  album- és személy-tételek állnának. Ezek csak album-, illetve
+  Emberek-nézetben jelennek meg, máshol a menü összezár.
+
+**Effektek — pontosabban egyeznek az eredetivel**
+
+- **Hőtérkép**: a színei már nem fakulnak szürkésre; a kép ugyanazokat
+  az élénk hőtérkép-színeket kapja, mint az eredeti Picasában.
+- **Kéttónusú**: a két szín közti átmenet ugyanúgy oszlik el a képen,
+  mint az eredetiben.
+- **Árnyékvetés**: a kép az árnyék miatt pontosan annyival nő meg, és az
+  árnyék ugyanott, ugyanakkora elmosással jelenik meg, mint az
+  eredetiben.
+- **Finomhangolás**: a **Kiemelések** és az **Árnyékok** csúszka hatása
+  megegyezik az eredeti Picasáéval. Ez a régebben, az eredeti Picasában
+  szerkesztett képeken is látszik.
+
 ## 2026-09-21
 
 **Nyers (RAW) fényképek**
