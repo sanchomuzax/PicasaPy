@@ -571,8 +571,9 @@ def _apply_blur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     """`blur=1[,Küszöbérték]` — küszöbvezérelt simítás (#1142).
 
     Az egyetlen csúszka a KÜSZÖB, nem a sugár: a `filterdesc.xml` szerinti
-    `[-0,5; 0,5]` tartományon belül a mérés tétlen kimenetet ad, fölötte
-    viszont valódi, paraméterfüggetlen elmosás jön (ld. `render/blur.py`).
+    `[-0,5; 0,5]` tartományon belül — sőt 1,4-ig (#762) — a mérés tétlen
+    kimenetet ad, 2,0-nél viszont valódi, paraméterfüggetlen elmosás jön
+    (ld. `render/blur.py`).
     Az alapérték a `filterdesc.xml`-ből 0,1.
 
     ⚠️ A paraméter szándékosan NINCS a `chain_report` tartományvágó
@@ -786,8 +787,9 @@ def can_render_filter(name: str) -> bool:
 #: az eredeti Picasa sem változtat a képen.
 #:
 #: A `blur` küszöbcsúszkája `[-0,5; 0,5]`, és a #685 (−0,5 / 0,1 / 0,5),
-#: illetve a `merokit-2` (0,5) mérése mind tétlen kimenetet adott; hatást
-#: csak a tartományon KÍVÜLI érték hoz (`blur=1,2.000000;`). Egy ilyen
+#: a `merokit-2` (0,5) és a #762 (0,8 / 1,1 / 1,4) mérése mind tétlen
+#: kimenetet adott; hatást csak a tartományon messze KÍVÜLI érték hoz
+#: (`blur=1,2.000000;`). Egy ilyen
 #: érték idegen vagy kézzel szerkesztett `.picasa.ini`-ből jöhet — ezért a
 #: LÁNC rendereli —, de gombot adni rá a felületen hazug lenne: a
 #: felhasználó állítgatná a csúszkát, és nem történne semmi.

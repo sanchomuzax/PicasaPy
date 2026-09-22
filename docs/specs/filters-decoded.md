@@ -2456,11 +2456,27 @@ háromdobozos lánc 0,72. A sugár tehát **nem függ a paramétertől** — ami
 összefér a dekompilátummal: a küszöb azt dönti el, HOL simíthat, nem azt,
 mekkora sugárral.
 
-*Bizonyítottsági fok: a két véglet MEGERŐSÍTETT (eredeti export, képenként).
-Ami NYITVA marad: a küszöb → falképzés leképezése a 0,5 és a 2,0 közötti
-sávban — erre nincs mérési pontunk. A PicasaPy modellje
-(`src/picasapy/render/blur.py`) a váltást a csúszka tetejére teszi, mert az
-a legnagyobb mérten tétlen érték; a sáv kimérése önálló kutatói kör.*
+**A köztes sáv kimérve (#762, a tulajdonos 2026-09-21-i exportja).** Hat
+bájtra azonos, 800×512-es forrás, `EXIF Software = Picasa`:
+
+| lánc | az export a forráshoz képest |
+|---|---|
+| `blur=1,0.100000;` · `0.5` · `0.8` · `1.1` · `1.4` | képpontra AZONOS (átlag \|Δ\| = 0,000) |
+| `blur=1,2.000000;` | teljes elsimítás (Laplace-szórás 162,6 → 0,4); a σ = 4-es modell ettől 0,026-tal tér el |
+
+A 2026-09-15-i „ellentmondás" (a `referencia/blur-meres/` egyenletesen növő
+hatása) ezzel eldőlt: az az anyag nem ennek a csúszkának a söprése volt — a
+tulajdonos kimondta, hogy a származása nem visszakövethető, és kivontuk.
+
+*Bizonyítottsági fok: 1,4-ig bezárólag és 2,0-nél MEGERŐSÍTETT (eredeti
+export, képpontra). Ami NYITVA marad: a váltás pontos helye 1,4 és 2,0
+KÖZÖTT. A PicasaPy modellje (`src/picasapy/render/blur.py`) a váltást a
+legnagyobb mérten tétlen értékre (1,4) teszi. ⚠️ A fenti küszöb-képletből
+(`CSONK(t²·65536)/n²`) ez NEM vezethető le közvetlenül: 1,4-nél a képlet
+szerint a kis különbségű szomszédpárok nem falak, a simításnak tehát látszania
+kellene — a mért teljes tétlenség ennél többet mond (korai kilépés vagy más
+összehasonlítási irány). Ennek kiolvasása és a natív mag beépítése külön
+jegy.*
 
 ### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
 

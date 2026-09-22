@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.546] – 2026-09-22
+
+### Javítva
+
+- **Az Elhomályosítás 0,5 és 1,4 közötti küszöbértékkel már nem mos el
+  (#762)** — az eredeti Picasa ezekre az értékekre képpontra változatlan
+  képet ad (a tulajdonos exportja mérte ki), mi viszont teljes elmosást
+  adtunk. A 2,0-s érték elmosása változatlan, és gyakorlatilag azonos az
+  eredetivel. Ilyen érték a csúszkáról nem, csak kézzel szerkesztett vagy
+  más programból jött beállításból keletkezhet.
+
 ## [0.8.545] – 2026-09-22
 
 ### Javítva
