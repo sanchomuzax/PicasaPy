@@ -4,7 +4,9 @@ import QtQuick.Controls
 // A kollázs-mentés folyamatjelzője (#949) — spec 9.1.
 //
 // 224 × 80-as doboz a vászon KÖZEPÉN (`m_centerXY`), alapból REJTETT:
-// cím fent, pörgő középen, állapotsor lent.
+// cím fent, pörgő középen, állapotsor lent. A három belső doboz a mért
+// `respack` koordináta (#3392, `picasa-create-features.md` 1.10.4):
+// cím (5,6) 213×14 · pörgő (100,24) 29×31 · állapotsor (5,60) 213×14.
 //
 // A négy szöveg, ahogy az eredeti adja őket:
 //
@@ -74,10 +76,10 @@ Item {
 
     Text {
         objectName: "collageProgressTitle"
-        x: 8
+        x: 5
         y: 6
-        width: parent.width - 16
-        height: 16
+        width: 213
+        height: 14
         text: overlay.phase
         elide: Text.ElideRight
         horizontalAlignment: Text.AlignHCenter
@@ -88,10 +90,10 @@ Item {
 
     BusyIndicator {
         objectName: "collageProgressSpinner"
-        x: (parent.width - width) / 2
-        y: 26
-        width: 28
-        height: 28
+        x: 100
+        y: 24
+        width: 29
+        height: 31
         running: overlay.visible && !overlay.finished
         // készen a pörgő megáll, de a helye marad — különben a doboz
         // tartalma a legutolsó pillanatban ugrana egyet
@@ -100,10 +102,10 @@ Item {
 
     Text {
         objectName: "collageProgressStatus"
-        x: 8
-        y: 58
-        width: parent.width - 16
-        height: 16
+        x: 5
+        y: 60
+        width: 213
+        height: 14
         text: overlay.statusText
         elide: Text.ElideRight
         horizontalAlignment: Text.AlignHCenter

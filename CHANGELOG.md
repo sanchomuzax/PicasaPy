@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.553] – 2026-09-22
+
+### Javítva
+
+- **A kollázs készítésekor megjelenő folyamatjelző az eredeti méretekkel
+  (#3392)** — a doboz felirata, pörgője és állapotsora pontosan ott és
+  akkora, ahol és amekkora az eredeti Picasában (a cím és az állapotsor
+  keskenyebb, a pörgő kicsit magasabb). A doboz továbbra is a kollázs
+  közepén áll.
+
 ## [0.8.552] – 2026-09-22
 
 ### Új
