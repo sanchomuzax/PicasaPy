@@ -40,7 +40,7 @@ Item {
         {
             key: "polaroid",
             icon: "icons/collage-border-polaroid.svg",
-            name: qsTr("Polaroid Camera")
+            name: qsTr("Instant Camera")
         }
     ]
 

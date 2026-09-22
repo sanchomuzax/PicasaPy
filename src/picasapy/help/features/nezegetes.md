@@ -31,17 +31,33 @@ egymás mellett. Ezek döntik el, hány kép látszik:
 | szegmens | mit csinál |
 |---|---|
 | **Csak egy kép megjelenítése** | a szokásos, egyképes nézet — ez az alapállás |
+| **Két különböző kép megjelenítése** | két **különböző** kép egymás mellett — válogatáshoz |
 | **Ugyanazon kép megjelenítése kétszer** | ugyanaz a kép kétszer: **balra a szerkesztés előtti**, jobbra a mostani állapot |
-| **Két különböző kép megjelenítése** | **még nem működik** — a szegmens látszik, de nem választható |
 
 Az **Ugyanazon kép megjelenítése kétszer** a szerkesztés
 összehasonlítására való: a bal oldalon a nyers fájl van, minden effekt
 és javítás nélkül, a jobb oldalon pedig az, amit éppen csinálsz belőle.
 Így egy pillantással látod, mennyit változott a kép.
 
-Ha két kép látszik, megjelenik mellettük egy negyedik szegmens is,
-**Fókusz váltása a képek között** — ezzel jelölöd ki, melyik oldal az
-aktív. Az aktív oldal felső sarkában **Kijelölve** felirat áll.
+A **Két különböző kép megjelenítése** a válogatásra való: két felvétel
+egymás mellett, és eldöntöd, melyik a jobb. Mindkét kép a **mentett
+szerkesztéseivel** látszik, ugyanúgy, mint a rácsban.
+
+Ha két kép látszik, megjelenik mellettük két további szegmens:
+
+- **Fókusz váltása a képek között** — ezzel jelölöd ki, melyik oldal az
+  aktív. Az aktív oldal felső sarkában **Kijelölve** felirat áll.
+- **Váltás a vízszintes és a függőleges elrendezés között** — a két kép
+  egymás mellett vagy egymás alatt.
+
+A kijelölt oldal nem csak jelzés: **minden parancs arra hat**. A
+szerkesztő effektjei, a visszavonás és a mentés a kijelölt oldal képét
+módosítja, és az albumba is az kerül. A képek közt a filmszalagon
+válogatsz: mindkét megjelenített kép kiemelve látszik ott, és egy
+bélyegképre kattintva **az aktív oldal** képét cseréled le.
+
+(Az „ugyanaz a kép kétszer" összevetésben a bal oldal szándékosan a
+szerkesztés előtti állapot, tehát ott mindig a jobb oldalt szerkeszted.)
 
 Videónál a kettős nézet nem használható.
 
@@ -104,7 +120,9 @@ abbamaradt.
 
 ### A vezérlősáv
 
-Az egeret megmozdítva a kép alján előjön a vezérlősáv:
+Az egeret megmozdítva a kép alján előjön a vezérlősáv, és pár másodperc
+múlva magától eltűnik. Amíg az egér **a sávon** áll, ott is marad —
+amint elhagyod, újraindul a visszaszámlálás. A sávon:
 
 - **✕ Kilépés**;
 - **◀** előző, **▶** / **❚❚** lejátszás és szünet, **▶▶** következő;
@@ -115,6 +133,8 @@ Az egeret megmozdítva a kép alján előjön a vezérlősáv:
 - **★** csillagozás — ez is megmarad;
 - **Diaidő** — a **−** és a **+** gombbal 1 és 30 másodperc közt
   állítható, hogy meddig álljon egy kép. A szám a két gomb közt látszik.
+  A gombot **nyomva tartva** folyamatosan léptet, nem kell
+  huszonkilencszer kattintani.
 
 A választott átmenet, feliratmód és diaidő **megmarad** a következő
 vetítésre és a következő indításig is.
@@ -149,14 +169,29 @@ hiányzik, a program fut tovább, csak a lejátszó helyén ezt írja ki:
 
 Az eszköztár szűrőjével csak a videókat is megjelenítheted.
 
-### Az eredeti Picasából hozott vágáspontok
+### A videó megvágása
 
-Ha egy videóhoz a régi Picasában megadtál kezdő- és végpontot, a PicasaPy
-ezt elolvassa a videó melletti adatokból, és **a lejátszásnál
-érvényesíti**:
-a kezdőpontra ugrik, a végpontnál megáll, a csúszka pedig csak a
-kijelölt szakaszon mozog.
+A videó vezérlősávján három gomb tartozik a vágáshoz:
 
-A **fájlhoz nem nyúlunk**, és a vágáspontokat a PicasaPy felületén ma még
-**nem lehet megadni vagy módosítani** — csak azt tudjuk használni, ami
-már ott van.
+- **Új kezdőpont beállítása** — az éppen látott képkocka lesz a kezdet;
+- **Új végpont beállítása** — az éppen látott képkocka lesz a vég;
+- **A mozgófilm eredeti hosszának visszaállítása** — a két pont törlése.
+
+A lejátszás ezután a kijelölt szakaszra szorítkozik: a kezdőpontra
+ugrik, a végpontnál megáll, a csúszka pedig csak a szakaszon mozog.
+
+**A videófájlhoz nem nyúlunk.** A vágáspontok a mappa `.picasa.ini`
+fájljába kerülnek, pontosan abban az alakban, amit az eredeti Picasa is
+használ — a két program tehát ugyanazt a vágást látja. Ami korábban a
+Picasában készült, azt érintetlenül megőrizzük.
+
+### Képkocka mentése a videóból
+
+Ugyanezen a sávon az **Aktuális képkocka rögzítése** gombbal az éppen
+látott képkockát JPEG-ként mentheted. A kép a **Rögzített videoklipek**
+mappába kerül (a Képek mappád Picasa almappájában), a videó nevével;
+ha már van ilyen nevű, `-001`, `-002` sorszámot kap.
+
+A képkocka a videó **saját felbontásában** készül, nem abból, amit épp
+kicsinyítve látsz. A mentésről — sikerről és hibáról egyaránt —
+visszajelzést kapsz.

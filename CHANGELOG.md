@@ -7,7 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.534] – 2026-09-20
+## [0.8.552] – 2026-09-22
 
 ### Új
 
@@ -18,6 +18,227 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   kérdőjeles jelvény): bekapcsolva csak a javaslatok maradnak a rácsban,
   kikapcsolva újra minden. Az eredeti Picasa ugyanitt, ugyanekkora
   gombbal csinálja.
+
+## [0.8.551] – 2026-09-22
+
+### Hozzáadva
+
+- **A Képpontnagyítás csempe Shift-párja: Képpontnövelés (#3315)** — a
+  szerkesztő 5. fülén Shifttel kattintva ugyanaz a rejtett szűrő nyílik
+  meg, mint az eredeti Picasában (Hatás, Sugár, Élkeménység, Fokozat és
+  Megfordítás). Ezzel mind a kilenc Shift-pár működik.
+
+### Javítva
+
+- **A Kerekített élek felirata az eredeti szövegére (#3315)** — eddig
+  „Lekerekített sarkok" állt a Shift-es csempén.
+
+## [0.8.550] – 2026-09-22
+
+### Új
+
+- **A Canon gépek fotóinál a Tulajdonságok panel megmutatja az objektívet
+  (#3121)** — ugyanúgy, ahogy az eredeti Picasa: a gép rejtett adataiból
+  kiolvassa az objektív azonosítóját, és a Picasa saját, beépített
+  objektívlistájából adja a nevét. Ha az objektív nincs a listában, a
+  gyújtótávolságot és a rekeszt írja ki (például „50mm f/1.8"), ahogy az
+  eredeti is. A Nikon gépek objektívneve a következő lépés (#3495).
+
+## [0.8.549] – 2026-09-22
+
+### Javítva
+
+- **Az Árnyékvetés árnyéka ugyanúgy mosódik el, mint az eredeti Picasában
+  (#3474)** — a korábbi közelítő elmosás helyett az eredeti program saját
+  számítása: háromszor vízszintesen, háromszor függőlegesen, egész
+  számokkal. A program kódját gépen lefuttatva, ugyanarra a bemenetre
+  képpontra azonos eredményt ad; a valódi Picasa-exportokhoz mérve az
+  eltérés a korábbinak nagyjából a nyolcada. A Polaroid keret árnyékára is
+  vonatkozik.
+
+## [0.8.548] – 2026-09-22
+
+### Javítva
+
+- **A kép jobb gombos menüje az eredeti Picasa szerint (#3468)** — a
+  „Keresés a lemezen" alapból egyetlen tétel; „Keresés ▸" almenü (Fájl a
+  lemezen, Eredeti a lemezen) csak akkor jelenik meg, ha egy kép van
+  kijelölve, és annak van mentett eredetije. Album-nézetben a „Keresés a
+  Picasában" külön tétel. A feliratok: „Hozzáadás az albumhoz",
+  „Törlés a lemezről", a billentyű „Ctrl+Törlés". A „Keresés hasonló
+  képekre" kikerült a helyi menüből — a Ctrl+F7 billentyűvel továbbra is
+  elérhető.
+
+## [0.8.547] – 2026-09-22
+
+### Javítva
+
+- **A Mappa ▸ Leírás szerkesztése… menüpont működik (#3460)** — eddig
+  szürke volt; most a megnyitott mappára ugyanazt a párbeszédet nyitja
+  (név, dátum, hely, leírás), mint a mappa helyi menüjének Mappaleírás
+  szerkesztése… tétele. Album vagy személy nézetében szürke marad, mert
+  ott nincs megnyitott mappa.
+- **A súgó naprakész az Emberek albumokról** — a Hozzáadás az Emberek
+  albumhoz almenü (0.8.543 óta működik) már nem szerepel a „még nem
+  érhető el" listán.
+
+## [0.8.546] – 2026-09-22
+
+### Javítva
+
+- **Az Elhomályosítás 0,5 és 1,4 közötti küszöbértékkel már nem mos el
+  (#762)** — az eredeti Picasa ezekre az értékekre képpontra változatlan
+  képet ad (a tulajdonos exportja mérte ki), mi viszont teljes elmosást
+  adtunk. A 2,0-s érték elmosása változatlan, és gyakorlatilag azonos az
+  eredetivel. Ilyen érték a csúszkáról nem, csak kézzel szerkesztett vagy
+  más programból jött beállításból keletkezhet.
+
+## [0.8.545] – 2026-09-22
+
+### Javítva
+
+- **A szerkesztőpanel effektcsempéi újra mutatják az effektet (#3478)** — a
+  nagybetűs nevű effektek (például Szegély, Vignetta, Neon, Árnyékvetés,
+  Polaroid, Múzeumi matt — összesen 31) csempéje eddig a módosítatlan
+  fotót mutatta.
+- **A keretes képek bélyegképén és az effektcsempén a keret vastagsága
+  arányos a mentett képpel (#3472)** — a rácsban és a csempén a Szegély és
+  a Múzeumi matt kerete eddig sokszorosan vastagabbnak látszott. A már
+  elkészült bélyegképek maguktól újragenerálódnak.
+
+## [0.8.544] – 2026-09-22
+
+### Javítva
+
+- **A Szegély és a Múzeumi matt effekt vastagsága a szerkesztő előnézetén
+  arányos a mentett képpel (#3377)** — nagy (2560 képpontnál hosszabb)
+  fotón az előnézet kicsinyített képen rajzolta a keretet, ezért ott
+  arányaiban vastagabbnak látszott, mint a mentett képen. Most, mint az
+  eredetiben, a két vastagság a kicsinyítés arányában skálázódik; a
+  feliratsáv és a sarok-lekerekítés — szintén az eredeti szerint — nem.
+
+## [0.8.543] – 2026-09-22
+
+### Javítva
+
+- **A kép helyi menüjében a „Hozzáadás az Emberek albumhoz" most a meglévő
+  személyek almenüje (#3464)** — mint az eredetiben: egy névre kattintva a
+  kijelölt képeken az arc ahhoz a személyhez kerül. A jelenleg nézett
+  személy nincs a listán; ha nincs másik személy, az almenü szürke. A
+  „Beállítás az Emberek album indexképeként" továbbra is szürke helyőrző.
+- **Az almenük listás tételei kattintásra újra működnek (#3470)** — a kép
+  és a nézegető helyi menüjében a „Hozzáadás az albumhoz" alatti albumokra,
+  a mappa helyi menüjében az „Áthelyezés gyűjteménybe" alatti
+  gyűjteményekre kattintva eddig semmi nem történt.
+
+## [0.8.542] – 2026-09-22
+
+### Javítva
+
+- **A Kollázs Klipek lapjának két gombsúgója az eredeti Picasa angol
+  szövegét viszi (#3410)** — „Remove selected clips from the tray" és „Get
+  more clips from the Library"; a magyar fordítás változatlan.
+
+## [0.8.541] – 2026-09-22
+
+### Javítva
+
+- **A Kollázs négy műveleti gombjának angol buboréksúgója az eredeti Picasa
+  szövegét viszi (#3405)** — „Select all pictures (Ctrl-A)", „Deselect all
+  pictures (Ctrl-D)", „Remove selection from collage (Del)", „Use selected
+  picture as the background"; a magyar fordítás változatlan.
+- **Helyesbítés a 0.8.534-hez:** a Kollázs Beállítások lap hat feliratának
+  (köztük az „Instant Camera" keretnek) magyar fordítása a kiadás óta nem
+  töltődött be, mert a fordítási fájl lefordított változata nem frissült
+  vele — magyarul ezek angolul látszottak. Most újra magyarul jelennek meg,
+  és egy új ellenőrzés figyeli, hogy ez ne ismétlődhessen.
+
+## [0.8.540] – 2026-09-21
+
+### Javítva
+
+- **A menükben a gyorsbillentyűk egy jobbra igazított oszlopban állnak, mint
+  az eredeti Picasában (#3455).** Eddig a gyorsbillentyű közvetlenül a
+  felirat után, annak hosszától függő helyen állt, a hosszú tételeknél pedig
+  le is vágódott (például a „Forgatás balra" `Ctrl+Shift+R`-je nem
+  látszott). A javítás minden menüre — a menüsávra és a helyi menükre — egyszerre
+  hat.
+
+## [0.8.539] – 2026-09-21
+
+### Javítva
+
+- **Az indexkép jobb-gombos menüjében megszűnt az üres rés (#3448).** A
+  mappanézetben a csak album- vagy személy-nézetben használt tételek
+  rejtve is megtartották a helyüket, ezért a „Hozzáadás albumhoz" alatt
+  öt sornyi üres hely állt. Most a rejtett tételek nem foglalnak helyet —
+  a mappa-helyimenü egy elválasztójánál ugyanígy.
+
+## [0.8.538] – 2026-09-21
+
+### Javítva
+
+- **A Hőtérkép (HeatMap) effekt úgy színez, mint az eredeti Picasa
+  (#3421).** Két eltérés volt: a színskálán a képpont helyét nem a
+  világossága, hanem — az eredeti gépikódja szerint — a piros csatornája
+  adja; és a színezés előtt a kép nem szürkül. A valódi Picasa-exportokhoz
+  mérve az eltérés ΔE 20,9 → 1,0, 21,3 → 1,1, illetve 47,2 → 0,8 lett. Az
+  Éjjellátó (NightVision) ugyanezt a színskála-módot használja, ott az
+  eltérés részben csökkent (14,5 → 11,9).
+
+## [0.8.537] – 2026-09-21
+
+### Javítva
+
+- **Az Árnyék keret (DropShadow) ugyanakkora képet ad, mint az eredeti
+  Picasa (#3419).** A keret szélessége eddig a kép méretétől függött, és
+  jóval nagyobb lett a kelleténél (egy 960×640-es fotón 1224×904 a helyes
+  988×668 helyett); most képpontra az eredeti programét követi, és a kép
+  is ugyanott ül a kereten belül. A valódi Picasa-exporthoz mérve az
+  eltérés 36,5 → 0,7, illetve 28,4 → 0,1 ΔE lett.
+
+## [0.8.536] – 2026-09-21
+
+### Javítva
+
+- **A Kéttónusú (TwoTone) effekt a kép piros csatornája szerint színez,
+  ahogy az eredeti Picasa (#3433).** Eddig a képpont világosságát
+  (lumáját) vetítettük a két szín közé; az eredeti program — a
+  gépikódja szerint — a fényerő/kontraszt utáni piros csatornát használja.
+  A valódi Picasa-exporthoz mérve az eltérés két független mintán
+  22,1 → 0,5, illetve 9,2 → 0,5 ΔE-re csökkent.
+
+### Helyesbítés
+
+- A 0.8.535 bejegyzése túlállította a Finomhangolás-javítást: az a
+  csúszkák felületről elérhető állásain (0–0,48) semmit nem változtatott,
+  csak a `.picasa.ini`-ben kézzel vagy más programmal megadott,
+  tartományon kívüli értékek kezelését igazította az eredetihez.
+
+## [0.8.535] – 2026-09-21
+
+### Javítva
+
+- **A finetune/finetune2 (Finomhangolás) csúszkasor Kiemelések/Árnyékok
+  paramétere a valódi Picasa-viselkedésre igazítva (#3418).** A `[0..0.48]`
+  a Picasa CSÚSZKÁJÁNAK a határa, nem a renderelő belső vágása — a natív
+  algoritmus a nyers, vágatlan értéket kapja. Nálunk két független klemp
+  vágta ugyanezt a két paramétert (a `chain_report.py` értékellenőrzője ÉS
+  a `tone.py` szinthúzó-LUT-ja); mindkettő eltávolítva, és a feketepontot a
+  fehérpont fölé toló szélsőséges esetre (Árnyékok a maximumon) mért
+  teljes-fehér különeset került be. A golden mérőkészleten a `finetune2`
+  alap állása ΔE 52,3-ról 0,57-re, a két „max” eset 44,3/43,2-ről 3,4–3,7-re
+  javult.
+
+## [0.8.534] – 2026-09-21
+
+### Javítva
+
+- **A Kollázs Beállítások lapjának hat felirata az eredeti Picasa hivatalos
+  angol szövegére javítva (#3408).** A tájolás- és formátumsúgók, a
+  „Polaroid Camera” keretnév (helyesen „Instant Camera”) és az egyéni
+  méretarány sor most a hivatalos forrásszöveget viszi; a magyar fordítás
+  változatlan.
 
 ## [0.8.533] – 2026-09-20
 

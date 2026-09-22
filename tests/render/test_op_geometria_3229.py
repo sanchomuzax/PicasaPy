@@ -72,6 +72,12 @@ _KEZI = {
     "tilt": "tilt=1,0.2,0.0;",
     "redeye": "redeye=1;",
     "retouch": "retouch=1;",
+    # #3315: puck + négy csúszka + jelölőnégyzet — a regiszterből épített
+    # lánc ezt nem adná ki (a puck x,y nincs a csúszkák közt)
+    "picnikfocalpixelate": (
+        "PicnikFocalPixelate=1,0.500000,0.500000,20.000000,10.000000,"
+        "50.000000,0.000000,0;"
+    ),
 }
 
 

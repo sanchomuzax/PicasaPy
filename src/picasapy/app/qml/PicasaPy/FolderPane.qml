@@ -161,6 +161,24 @@ Rectangle {
         removeFolderConfirm.open()
     }
 
+    //: #422/#3460: a mappa `album.fen` párbeszéde (név, dátum, hely,
+    //: leírás). Két belépője van: a mappa helyi menüje és a menüsor
+    //: Mappa ▸ Leírás szerkesztése… tétele.
+    function openFolderDescription(path) {
+        if (!path)
+            return
+        //: #3173: a párbeszéd két használatú — a mappa-ág visszaállítja
+        folderPropertiesDialog.mode = "folder"
+        folderPropertiesDialog.folderPath = path
+        folderPropertiesDialog.folderName =
+            path.substring(path.lastIndexOf("/") + 1)
+        folderPropertiesDialog.currentDate =
+            controller ? controller.folderDateOverride(path) : ""
+        folderPropertiesDialog.currentDescription =
+            controller ? controller.folderDescriptionOf(path) : ""
+        folderPropertiesDialog.open()
+    }
+
     function openFolderContextMenu(path) {
         folderContextMenu.folderPath = path
         folderContextMenu.customCollections = pane.customCollectionsModel
@@ -1167,19 +1185,7 @@ Rectangle {
         // #422: az eredeti `album.fen` dialógusa — a mappa DÁTUMA is itt
         // lakik, ezért szűnt meg a külön „Mappa dátumának beállítása…"
         // menütétel
-        onEditDescriptionRequested: {
-            var path = folderContextMenu.folderPath
-            //: #3173: a párbeszéd két használatú — a mappa-ág visszaállítja
-            folderPropertiesDialog.mode = "folder"
-            folderPropertiesDialog.folderPath = path
-            folderPropertiesDialog.folderName =
-                path.substring(path.lastIndexOf("/") + 1)
-            folderPropertiesDialog.currentDate =
-                controller ? controller.folderDateOverride(path) : ""
-            folderPropertiesDialog.currentDescription =
-                controller ? controller.folderDescriptionOf(path) : ""
-            folderPropertiesDialog.open()
-        }
+        onEditDescriptionRequested: pane.openFolderDescription(folderContextMenu.folderPath)
 
         onSelectAllRequested:
             if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()

@@ -346,7 +346,12 @@ class TestApplyQuantizepalette:
 
 class TestApplyTwotone:
     def test_a_szinkevero_linkelt_es_tetlen_telitettséget_hasznal(self) -> None:
-        """#966: a TwoTone előtti SimpleColorMatrix az XML szerinti ág."""
+        """#966: a TwoTone előtti SimpleColorMatrix az XML szerinti ág.
+
+        #3433: a gradiens indexe a mátrix utáni NYERS PIROS csatorna, nem a
+        luma — a `0x00bb87b0` LUT-építő csak a `+0x800` (BGRA `src[2]`)
+        rekeszt tölti. A próbaképpont kék-túlsúlyú, így a kettő messze esik.
+        """
         image = np.array([[[40, 120, 220]]], dtype=np.uint8)
         result = glimmer_tone.apply_twotone(
             image,
@@ -358,7 +363,9 @@ class TestApplyTwotone:
         matrixed = glimmer_tone.simple_color_matrix(
             image, saturation=0.0, brightness=10.0, contrast=20.0, linked=True
         )
-        expected_value = int(round(float(luma(matrixed.astype(np.float32))[0, 0])))
+        expected_value = int(matrixed[0, 0, 0])
+        luma_value = int(round(float(luma(matrixed.astype(np.float32))[0, 0])))
+        assert abs(expected_value - luma_value) > 20
         np.testing.assert_array_equal(
             result[0, 0], np.array([expected_value, expected_value, expected_value], dtype=np.uint8)
         )

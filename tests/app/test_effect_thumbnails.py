@@ -87,7 +87,7 @@ class TestToolPreviewNames:
     katalógus tagjai, mégis renderelhetők a `render/chain.py` `_HANDLERS`
     meglévő "enhance"/"autolight"/"autocolor"/"redeye" kulcsain át."""
 
-    def test_public_effect_names_stay_45(self):
+    def test_public_effect_names_stay_46(self):
         # a katalógus (#516: +5) csak MÉRT okból bővül — külön halmaz kezeli
         # az eszköz-előnézeteket (ld. effect_thumbnails._KNOWN_EFFECTS).
         #
@@ -102,7 +102,10 @@ class TestToolPreviewNames:
         # a #2146".
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
-        assert len(EFFECT_NAMES) == 45
+        #
+        # #3315: 45 -> 46. A kilencedik Shift-pár (`pixelate` ->
+        # `picnikfocalpixelate`) megépült, a render-kezelővel együtt.
+        assert len(EFFECT_NAMES) == 46
 
     def test_tool_preview_names_render_real_thumbnails(self, qt_app, tmp_path):
         records = _library(tmp_path)

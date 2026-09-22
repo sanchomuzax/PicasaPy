@@ -49,7 +49,8 @@ import math
 from dataclasses import dataclass
 
 from picasapy.ini.filters import FilterOp
-from picasapy.render.glimmer_frame_ops import thickness_px
+from picasapy.render.glimmer_frame_ops import drop_shadow_padding
+from picasapy.render.elonezeti_arany import skalazott_vastagsag
 
 #: 2×3-as affin mátrix: `((a, b, c), (d, e, f))`, azaz
 #: `x' = a·x + b·y + c`, `y' = d·x + e·y + f`.
@@ -129,8 +130,10 @@ def _px(ertek: float) -> int:
 
 
 def _border(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:
-    kulso = _px(_szam(op, 1, 20.0))
-    belso = _px(_szam(op, 2, 5.0))
+    # #3377: a vastagság az előnézeti aránnyal skálázódik (a renderelővel
+    # közös segéd), a feliratsáv NEM
+    kulso = skalazott_vastagsag(_szam(op, 1, 20.0))
+    belso = skalazott_vastagsag(_szam(op, 2, 5.0))
     felirat = _px(_szam(op, 6, 0.0))
     keret = kulso + belso
     return w + 2 * keret, h + 2 * keret + felirat, _eltolas(keret, keret)
@@ -143,17 +146,19 @@ def _rounded_edges(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:
 
 
 def _museum_matte(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:
-    kulso = _px(_szam(op, 1, 25.0))
-    belso = _px(_szam(op, 2, 40.0))
+    kulso = skalazott_vastagsag(_szam(op, 1, 25.0))
+    belso = skalazott_vastagsag(_szam(op, 2, 40.0))
     keret = kulso + belso
     return w + 2 * keret, h + 2 * keret, _eltolas(keret, keret)
 
 
 def _drop_shadow(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:
-    tavolsag = int(round(_szam(op, 1, 4.0)))
-    elmosas = max(1, thickness_px(h, w, _szam(op, 3, 10.0)))
-    margo = elmosas * 2 + abs(tavolsag)
-    return w + 2 * margo, h + 2 * margo, _eltolas(margo, margo)
+    # Ugyanaz a segéd számol, mint a renderelőben (#3419) — így a kettő nem
+    # sodródhat el; az eltolás-szög miatt a vászon aszimmetrikus is lehet.
+    _, _, (bal, fent, jobb, lent) = drop_shadow_padding(
+        _szam(op, 1, 4.0), _szam(op, 2, 90.0), _szam(op, 3, 10.0)
+    )
+    return w + bal + jobb, h + fent + lent, _eltolas(bal, fent)
 
 
 def _polaroid(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:

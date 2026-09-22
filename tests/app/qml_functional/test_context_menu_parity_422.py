@@ -77,6 +77,8 @@ TETELSOR: dict[str, dict[str, str]] = {
         "contextMenuRevert": "Visszaállítás",
         "contextMenuLocateInPicasa": "Keresés a Picasában",
         "contextMenuLocate": "Keresés a lemezen",
+        # #3468: csak egy visszaállítható képnél jelenik meg
+        "contextMenuLocateMenu": "Keresés",
         "contextMenuDelete": "Törlés a lemezről",
         "contextMenuCopyFullPath": "Teljes elérési út másolása",
         "contextMenuUploadToWebAlbums": "Feltöltés a Picasa Webalbumokba...",
@@ -243,11 +245,9 @@ class TestKeresesAPicasabanCsakAlbumNezetben:
     Mappa-nézetben nincs értelme (már ott vagyunk), ezért ugyanaz a kapu,
     mint az „Eltávolítás az albumból"-nál."""
 
-    # #1613: a tétel azóta a „Keresés" ALMENÜBEN ül. Csukott almenüben a
-    # Qt minden tételt `visible: false`-nak mutat — a saját kötésünket
-    # tehát csak NYITOTT almenüben lehet megmérni. (Ugyanaz a csapda, mint
-    # a #1720 szövegmező-menüjénél: a `visible` a felbukkanó ablak
-    # állapotát tükrözi, nem a mi feltételünket.)
+    # #3468: a tétel ismét LAPOS, a „Keresés a lemezen" után (az eredeti
+    # szerkezete). Az almenü-nyitó segéd ártalmatlan maradt: a mért tétel
+    # a nyitott FŐmenüben él.
     @staticmethod
     def _nyisd_ki_a_kereses_almenut(window, qt_app):
         almenu = _child(window, "contextMenuLocateMenu")

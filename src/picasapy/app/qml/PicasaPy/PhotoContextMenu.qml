@@ -26,10 +26,22 @@ import QtQuick.Controls
 // szürkén LÁTSZANAK (#416, illetve a spec 5.1. szabálya: az inaktív tétel
 // is tétel, hogy a menü magassága és a tételek helye állandó maradjon).
 //
+// #3448: minden feltételesen rejtett tétel `height: visible ? implicitHeight : 0`
+// kötést kap — a Qt Quick menüje a `visible: false` tétel sormagasságát
+// megtartja, így mappanézetben az öt album-/személy-tétel üres rést hagyott.
+// Az eredeti ezeket be sem építi a menübe (spec B.3: kivonással készül).
+//
 // Önálló, signal-alapú komponens: a bekötést a Main.qml végzi.
 PicasaMenu {
     id: menu
     objectName: "photoContextMenu"
+
+    //: #3470: a befoglaló menü a `Repeater`-delegáltaknak. A delegáltban a
+    //: `menu` név NEM ezt jelenti: ott a `MenuItem` saját `menu`
+    //: tulajdonsága nyer (a beágyazott almenü), mert a delegált külön
+    //: komponens-kontextus, és a hatókör-objektum tulajdonsága megelőzi a
+    //: külső `id`-t. A delegált ezért ezen a néven hív.
+    readonly property var helyiMenu: menu
 
     // #17: igaz, ha a jobbklikkelt kép rejtett — a tétel felirata VÁLT
     // (Elrejtés ↔ Megjelenítés), nem pipát kap (spec A.2)
@@ -47,9 +59,25 @@ PicasaMenu {
     property string currentAlbumToken: ""
     //: a jelenleg mutatott személy neve (üres, ha nem személy-album)
     property string personName: ""
+    //: #3464: a meglévő személyek (`[{name, count}, ...]`, a
+    //: `peopleController.people` alakja) — a „Hozzáadás az Emberek
+    //: albumhoz" almenü forrása
+    property var people: []
+    //: az almenü tételei: minden személy a jelenlegi kivételével
+    readonly property var _tobbiSzemely: (menu.people || [])
+        .map(function (szemely) { return szemely.name })
+        .filter(function (nev) { return nev !== menu.personName })
     //: #1613: van-e a képnek megőrzött eredetije a `.picasaoriginals`-ban —
     //: enélkül az „Eredeti a lemezen" tétel szürke, mint az eredetiben
     property bool hasOriginalOnDisk: false
+    //: #3468: a kijelölt képek száma a megnyitáskor (a „Keresés" almenü
+    //: csak EGY képnél jelenik meg)
+    property int kijeloltKepekSzama: 1
+    readonly property bool _keresesAlmenu: menu.kijeloltKepekSzama === 1
+                                           && menu.hasOriginalOnDisk
+    //: #3468: a törlés billentyű-szövege honosított („Ctrl+Törlés") —
+    //: az eredetiben `ytMenu::CtrlPrefix` + `CMenuBar::Delete`
+    readonly property string _torlesBillentyu: qsTr("Ctrl+Delete")
 
     signal openRequested()
     signal addToAlbumRequested(string token)
@@ -59,6 +87,8 @@ PicasaMenu {
     // string = a rács nem személy-albumot mutat, a tételek rejtve maradnak
     signal removeFromPeopleAlbumRequested()
     signal moveToNewPersonRequested()
+    //: #3464: az arc egy MEGLÉVŐ személyhez kerül
+    signal moveToPersonRequested(string name)
     signal newAlbumRequested()
     signal rotateRightRequested()
     signal rotateLeftRequested()
@@ -66,9 +96,6 @@ PicasaMenu {
     signal moveRequested()
     signal openFileRequested()
     signal locateRequested()
-    //: #1833: „keress ehhez hasonlót” — a minta-alapú hasonlóság-keresés
-    //: belépési pontja (`loadsim`).
-    signal findSimilarRequested()
     //: #1613: a `.picasaoriginals`-beli megőrzött eredeti megmutatása
     signal locateOriginalRequested()
     //: #1613: ugrás a kép VALÓDI mappájára (album-/Emberek-nézetből)
@@ -83,6 +110,30 @@ PicasaMenu {
     signal revertRequested()
     signal undoAllEditsRequested()
     signal resetFacesRequested()
+
+    //: #3464/#3468: a beágyazott almenük Qt által létrehozott tételére
+    //: köti a láthatóságot és a nulla magasságot, és elnevezi, hogy a
+    //: tesztek és az őrök megtalálják. A `lathato` függvény a feltétel.
+    function _kossAlmenuTetelt(almenu, nev, lathato) {
+        for (var i = 0; i < menu.count; ++i) {
+            var tetel = menu.itemAt(i)
+            if (tetel && tetel.subMenu === almenu) {
+                tetel.objectName = nev
+                tetel.visible = Qt.binding(lathato)
+                tetel.height = Qt.binding(function () {
+                    return lathato() ? tetel.implicitHeight : 0
+                })
+                return
+            }
+        }
+    }
+    function _kossElRejtettAlmenut() {
+        menu._kossAlmenuTetelt(addToPeopleAlbumMenu, "contextMenuAddToPeopleAlbum",
+                               function () { return menu.personName !== "" })
+        menu._kossAlmenuTetelt(locateMenu, "contextMenuLocateMenuTetel",
+                               function () { return menu._keresesAlmenu })
+    }
+    Component.onCompleted: menu._kossElRejtettAlmenut()
 
     // -- 1. blokk: az alapértelmezett művelet (félkövér) + album ----------
 
@@ -108,10 +159,13 @@ PicasaMenu {
                 required property var modelData
                 objectName: "contextMenuAddToAlbumItem_" + modelData.token
                 text: modelData.name
-                onTriggered: menu.addToAlbumRequested(modelData.token)
+                onTriggered: helyiMenu.addToAlbumRequested(modelData.token)
             }
         }
-        MenuSeparator { visible: menu.albums.length > 0 }
+        MenuSeparator {
+            visible: menu.albums.length > 0
+            height: visible ? implicitHeight : 0
+        }
         MenuItem {
             objectName: "contextMenuNewAlbum"
             text: qsTr("New Album...")
@@ -126,10 +180,11 @@ PicasaMenu {
         // mint a mappa-nézet „Törlés lemezről"-e — `AlbumPhoto::
         // ID_FILE_DELETEFROMDISK`, csak átcímkézve. Ezért album-nézetben
         // egyetlen ilyen tétel van, és az viszi a `Ctrl+Delete`-et.
-        text: qsTr("Remove from Album") + "\tCtrl+Delete"
+        text: qsTr("Remove from Album") + "\t" + menu._torlesBillentyu
         // csak album-nézetben (#9): a rács ott az adott album tagjait
         // mutatja, ott van értelme a kijelölés kivételének
         visible: menu.currentAlbumToken !== ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.removeFromAlbumRequested()
     }
 
@@ -140,8 +195,9 @@ PicasaMenu {
         objectName: "contextMenuRemoveFromPeopleAlbum"
         // #1619: ugyanaz a rekesz átcímkézve (spec 4., `0x007355c0`), a
         // `Ctrl+Delete` ezért ITT él az Emberek-albumban
-        text: qsTr("Remove from People Album") + "\tCtrl+Delete"
+        text: qsTr("Remove from People Album") + "\t" + menu._torlesBillentyu
         visible: menu.personName !== ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.removeFromPeopleAlbumRequested()
     }
     // #422: `PplAlbumPhoto::ID_PEOPLEALBUMS` — a MEGLÉVŐ személyek közé
@@ -151,19 +207,38 @@ PicasaMenu {
     // parancsot említ, de a felsorolásában ez összemosódott az „Áthelyezés
     // új személyhez…"-zel — a string-tábla választja szét a kettőt.
     //
-    // HELYFOGLALÓ: az eredetiben ez a MEGLÉVŐ személyek almenüje, a
-    // személylistát viszont a menü nem látja — a hívónak kellene betöltenie,
-    // ahogy az `albums`-ot is teszi. Ld. a jegy integrációs igényeit.
-    PicasaMenuItem {
-        objectName: "contextMenuAddToPeopleAlbum"
-        text: qsTr("Add to People Album")
-        visible: menu.personName !== ""
-        placeholder: true
+    // #3464: az eredetiben ez a MEGLÉVŐ személyek futásidőben töltött
+    // almenüje (`docs/specs/picasa-arcfelismeres.md` 17.2). A listát a
+    // hívó tölti a `people`-be, ahogy az `albums`-ot is; a jelenlegi
+    // személy kimarad, és személyek nélkül az almenü szürke. Egy névre
+    // kattintva az arc ÁTKERÜL — ugyanaz a művelet, mint az „Áthelyezés
+    // új személyhez…", csak meglévő célszeméllyel.
+    //
+    // A beágyazott `Menu` tételét a Qt maga hozza létre, ezért a
+    // láthatósága és a magassága nem írható ide deklaratívan: a
+    // `_kossElRejtettAlmenut` köti be (#3448 — a rejtett tétel ne hagyjon
+    // rést).
+    PicasaMenu {
+        id: addToPeopleAlbumMenu
+        objectName: "contextMenuAddToPeopleAlbumMenu"
+        title: qsTr("Add to People Album")
+        enabled: menu._tobbiSzemely.length > 0
+
+        Repeater {
+            model: menu._tobbiSzemely
+            delegate: MenuItem {
+                required property var modelData
+                objectName: "contextMenuAddToPeopleAlbumItem_" + modelData
+                text: modelData
+                onTriggered: helyiMenu.moveToPersonRequested(modelData)
+            }
+        }
     }
     MenuItem {
         objectName: "contextMenuMoveToNewPerson"
         text: qsTr("Move to New Person...")
         visible: menu.personName !== ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.moveToNewPersonRequested()
     }
     // A negyedik `PplAlbumPhoto` parancs („Beállítás az Emberek album
@@ -174,6 +249,8 @@ PicasaMenu {
         objectName: "contextMenuSetAsPeopleAlbumThumbnail"
         text: qsTr("Set as People Album Thumbnail")
         visible: menu.personName !== ""
+        height: visible ? implicitHeight : 0
+        placeholder: true
     }
     MenuSeparator {}
 
@@ -270,61 +347,58 @@ PicasaMenu {
     // ki onnan; a string-tábla viszont az `AlbumPhoto` osztályban hozza.
     // Ugyanaz a kapu, mint az „Eltávolítás az albumból"-nál.
     //
-    // HELYFOGLALÓ: a réteg megvan (`controller.selectFolder(mappa)`), de a
-    // bekötés a Main.qml-ben lakik (forró fájl) — ld. az integrációs
-    // igényeket a jegyben.
-    // #1613: az eredetiben ez ALMENÜ (`CThumbUI::locatemenu`), három
-    // tétellel — nálunk egyetlen lapos parancs volt. A középső („Eredeti a
-    // lemezen") a `.picasaoriginals`-beli megőrzött eredetihez visz, ami
-    // eddig sehonnan nem volt elérhető.
-    // #1833: „Keress ehhez hasonlót” (`loadsim`). Az eredetiben a keresés
-    // második rétegében (`searchoptions`) ül; nálunk a kép saját menüje a
-    // természetes belépési pont, mert a MINTA maga egy kijelölt kép.
+    // #3468: az eredeti szerkezete (`docs/specs/ui-audit-context-menus.md`
+    // D): a keresés alapból LAPOS „Keresés a lemezen" (Ctrl+Enter). Almenüvé
+    // CSAK akkor válik, ha egyetlen kép van kijelölve, és annak van
+    // visszaállítható eredetije (`0x0056d821`: maszk `0x200` = több kép,
+    // `0x80` = revertable) — az almenü kéttételes. A „Keresés a Picasában"
+    // album-nézetben KÜLÖN, lapos tétel utána. Hasonlóság-keresés a helyi
+    // menüben nincs (a keresősáv Ctrl+F7 parancsa, #1833).
     MenuItem {
-        objectName: "contextMenuFindSimilar"
-        text: qsTr("Find Similar Pictures")
-        onTriggered: menu.findSimilarRequested()
+        objectName: "contextMenuLocate"
+        text: qsTr("Locate on Disk") + "\tCtrl+Enter"
+        visible: !menu._keresesAlmenu
+        height: visible ? implicitHeight : 0
+        onTriggered: menu.locateRequested()
     }
-    MenuSeparator {}
-
     PicasaMenu {
+        id: locateMenu
         objectName: "contextMenuLocateMenu"
         title: qsTr("Locate")
 
         MenuItem {
-            objectName: "contextMenuLocate"
+            objectName: "contextMenuLocateFile"
             text: qsTr("File on Disk") + "\tCtrl+Enter"
             onTriggered: menu.locateRequested()
         }
         MenuItem {
             objectName: "contextMenuLocateOriginal"
             text: qsTr("Locate Original on Disk")
-            // az eredetiben is SZÜRKE, ha nincs megőrzött eredeti — a
-            // tétel léte így is megmondja, hogy a funkció létezik
             enabled: menu.hasOriginalOnDisk
             onTriggered: menu.locateOriginalRequested()
         }
-        MenuItem {
-            objectName: "contextMenuLocateInPicasa"
-            text: qsTr("Locate in Picasa")
-            // #1613: album- és Emberek-nézetben van értelme — ott a kép
-            // nem a saját mappájában látszik. Mappanézetben az eredeti sem
-            // mutatja.
-            visible: menu.currentAlbumToken !== "" || menu.personName !== ""
-            onTriggered: menu.locateInPicasaRequested()
-        }
+    }
+    MenuItem {
+        objectName: "contextMenuLocateInPicasa"
+        text: qsTr("Locate in Picasa")
+        // #1613: album- és Emberek-nézetben van értelme — ott a kép nem a
+        // saját mappájában látszik. Mappanézetben az eredeti sem mutatja.
+        visible: menu.currentAlbumToken !== "" || menu.personName !== ""
+        height: visible ? implicitHeight : 0
+        onTriggered: menu.locateInPicasaRequested()
     }
     MenuItem {
         objectName: "contextMenuDelete"
         // #1418: a rácsban (és a nézőben is) Ctrl+Delete — a puszta
         // Delete a menüsávé (spec 4.). A valódi billentyű a Main.qml
         // `shortcutDeleteFromDiskGrid` Shortcutja (#422-ből, változatlan).
-        text: qsTr("Delete from Disk") + "\tCtrl+Delete"
+        text: qsTr("Delete from Disk") + "\t" + menu._torlesBillentyu
         // #1619: ADATVESZTÉS volt — album- és Emberek-nézetben is
         // kínáltuk, holott az eredeti ott EGYÁLTALÁN nem ad lemezről
         // törlést a kép helyi menüjében: ott ugyanez a parancsrekesz
         // eltávolításra van átcímkézve (ld. fentebb a két tételt).
         visible: menu.currentAlbumToken === "" && menu.personName === ""
+        height: visible ? implicitHeight : 0
         onTriggered: menu.deleteRequested()
     }
     MenuItem {

@@ -1493,6 +1493,10 @@ ApplicationWindow {
         onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.selectedIndex)
         onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.selectedIndexes)
         onSlideshowRequested: window.startSlideshow(-1)
+        // #3460: Mappa ▸ Leírás szerkesztése… — a helyi menüével azonos párbeszéd
+        currentFolder: controller ? controller.currentFolder : ""
+        onEditFolderDescriptionRequested:
+            if (controller) folderPane.openFolderDescription(controller.currentFolder)
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.valtsFiokLapot("tags")
         peoplePanelOpen: window.peoplePanelOpen
@@ -3270,13 +3274,6 @@ ApplicationWindow {
 
     PhotoContextMenu {
         id: photoContextMenu
-        //: #1833: „Keress ehhez hasonlót" — a MINTA a jobbklikkelt kép
-        //: (`fileOpTargetRow`), nem a kijelölés: a menü arra a képre
-        //: vonatkozik, amin megnyílt. Az eredmény külön nézetben jön.
-        onFindSimilarRequested: {
-            if (window.fileOpTargetRow >= 0)
-                controller.showSimilarTo(window.fileOpTargetRow)
-        }
         // #1613: a lemezt CSAK a menü megnyitásakor kérdezzük meg — egy
         // kötés minden képkockán fájlrendszert olvasna.
         onAboutToShow: {
@@ -3284,6 +3281,9 @@ ApplicationWindow {
                 ? controller.photos.filePathAt(window.fileOpTargetRow) : ""
             photoContextMenu.hasOriginalOnDisk =
                 ut.length > 0 && fileOpsController.hasOriginalOnDisk(ut)
+            // #3468: a „Keresés" almenü csak EGY kijelölt képnél jelenik meg
+            var db = window.selectedRows().length
+            photoContextMenu.kijeloltKepekSzama = db > 0 ? db : 1
         }
         // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
         // együtt kötve, hogy a menü újranyitáskor friss legyen)
@@ -3369,9 +3369,16 @@ ApplicationWindow {
         // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
         // csak személy-albumban látszanak (üres `personName` = rejtve).
         personName: controller ? controller.currentPersonName : ""
+        people: controller ? controller.people : []
         onRemoveFromPeopleAlbumRequested: {
             if (controller) removePeopleFacesDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
+        }
+        // #3464: a „Hozzáadás az Emberek albumhoz" almenü egy meglévő
+        // személyére kattintva a kijelölt képeken az arc ÁTKERÜL hozzá
+        onMoveToPersonRequested: function (name) {
+            if (controller) controller.movePersonOnRows(
+                window.selectedRows(), controller.currentPersonName, name)
         }
         onMoveToNewPersonRequested: {
             if (controller) moveToNewPersonDialog.ensure().openFor(

@@ -26,6 +26,13 @@ PicasaMenu {
     id: menu
     objectName: "folderContextMenu"
 
+    //: #3470: a befoglaló menü a `Repeater`-delegáltaknak. A delegáltban a
+    //: `menu` név NEM ezt jelenti: ott a `MenuItem` saját `menu`
+    //: tulajdonsága nyer (a beágyazott almenü), mert a delegált külön
+    //: komponens-kontextus, és a hatókör-objektum tulajdonsága megelőzi a
+    //: külső `id`-t. A delegált ezért ezen a néven hív.
+    readonly property var helyiMenu: menu
+
     // a jobbklikkelt mappa útvonala — a hívó állítja be popup() előtt
     property string folderPath: ""
     // a felhasználó egyéni gyűjteményei: {name, folders} elemek listája
@@ -103,10 +110,13 @@ PicasaMenu {
                 required property var modelData
                 objectName: "folderContextMenuMoveToCollectionItem_" + modelData.name
                 text: modelData.name
-                onTriggered: menu.moveToCollectionRequested(modelData.name)
+                onTriggered: helyiMenu.moveToCollectionRequested(modelData.name)
             }
         }
-        MenuSeparator { visible: menu.customCollections.length > 0 }
+        MenuSeparator {
+            visible: menu.customCollections.length > 0
+            height: visible ? implicitHeight : 0
+        }
         MenuItem {
             objectName: "folderContextMenuNewCollection"
             text: qsTr("New Collection...")

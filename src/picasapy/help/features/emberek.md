@@ -56,6 +56,11 @@ gyűjti. Itt:
   akarsz elnevezni (járókelők, plakátok). A mellőzött arcok a **Mellőzött
   emberek** alá kerülnek, ahonnan a **Mellőzés visszavonása** hozza őket
   vissza.
+- A **További javaslatok keresése** gombbal egyetlen kattintással több
+  névjavaslatot kérsz: a program egyszer lejjebb viszi a felismerési
+  küszöbét, és újra megnézi, kire tud tippelni. A **tárolt beállítás nem
+  változik** — a következő keresés megint a szokásos szigorúsággal fut.
+  A mellőzött arcok nézetében ez a gomb nem látszik.
 
 ## Arcok a nézőben
 
@@ -100,12 +105,27 @@ azok érvényesek maradnak.
 A végén összegzést kapsz: hány fájlba írt, hányat hagyott ki, és ha volt
 hiba, mi volt az első.
 
+## Javaslatok jóváhagyása egy személy albumában
+
+Ha egy személy albumát nyitod meg, és a programnak van még el nem
+döntött névjavaslata hozzá, a fejlécben két gomb jelenik meg:
+
+- **Az összes jóváhagyása (N)** — ráírja a nevet az arcokra; a képek
+  ettől bekerülnek a személy albumába. A zárójelben az eldöntetlen
+  javaslatok száma áll.
+- **Eltávolítás** — csak a javaslatokat veti el. Az arc névtelen marad,
+  és egy későbbi keresés újra megvizsgálhatja.
+
+Ha nincs mit eldönteni, ugyanezen a helyen a **További javaslatok
+keresése** gomb áll — ugyanaz, mint a Névtelenek nézetben.
+
 ## Emberek albumok
 
 Az **Áthelyezés új személyhez…** paranccsal egy rosszul besorolt arcot új
-névhez rendelhetsz, az **Eltávolítás az Emberek albumból** (Ctrl+Delete)
-pedig kiveszi onnan.
+névhez rendelhetsz, a **Hozzáadás az Emberek albumhoz** almenüből pedig egy
+már meglévő személyhez teheted át — az almenü a többi személyt sorolja fel.
+Az **Eltávolítás az Emberek albumból** (Ctrl+Delete) kiveszi onnan.
 
-> A helyi menü **Beállítás az Emberek album indexképeként** és
-> **Hozzáadás az Emberek albumhoz** tétele **még nem működik** — az
-> emberalbumok saját borítóképét ma nem lehet megválasztani.
+> A helyi menü **Beállítás az Emberek album indexképeként** tétele **még
+> nem működik** — az emberalbumok saját borítóképét ma nem lehet
+> megválasztani.

@@ -112,6 +112,11 @@ meghagyni a képet szerkesztetlenül. Lásd
 A kép formátumát a program nem tudja kiírni. Próbáld a **Fájl ▸ Mentés
 másként…** paranccsal, JPEG vagy WebP formátumban.
 
+**Nyers (RAW) fájlnál ez a várt válasz**: nyers fájlt a PicasaPy nem ír
+vissza — az eredeti Picasa sem tette. A szerkesztésed nem vész el: a
+mappa `.picasa.ini` fájljában megmarad, és a képet bármikor
+exportálhatod belőle JPEG-ként.
+
 ### „A fájl mentése nem lehetséges. Már van ilyen nevű fájl."
 
 A választott néven már létezik fájl. Adj másik nevet.

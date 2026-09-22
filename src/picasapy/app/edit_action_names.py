@@ -134,6 +134,9 @@ def _effects() -> dict[str, str]:
         "boost": "Boost",
         "soften": "Soften",
         "pixelate": "Pixelate",
+        # #3315: a `pixelate` csempe Shift-párja — a felirat a mért
+        # `filter_PicnikFocalPixelate_label0` (Focal Pixelate / Képpontnövelés)
+        "picnikfocalpixelate": "Focal Pixelate",
         "focalzoom": "Focal Zoom",
         "pencilsketch": "Pencil Sketch",
         "neon": "Neon",
@@ -192,9 +195,6 @@ ACTION_LABELS: dict[str, tuple[str, str]] = _build_labels()
 #: nevük, innen kerülnek át a névtárba.
 UNNAMED_CHAIN_KEYS: frozenset[str] = frozenset(
     {
-        # (a `picnikfocalpixelate` a #1142-ben KIKERÜLT: a renderelő már nem
-        # ismeri, mert a mérés szerint az eredeti Picasa sem futtatja)
-        #
         # #2141: a `picniktint` is KIKERÜLT innen. A „szótárban sem
         # szerepelnek" indoklás rá NEM állt: az eredeti szövegtárban ott a
         # felirata (`filter_PicnikTint_label0` = Tint / Árnyalás), és a

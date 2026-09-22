@@ -408,7 +408,7 @@ Item {
                 }
             }
             //: `landscape` buboréksúgó.
-            ToolTip.text: qsTr("Landscape: orient the collage horizontally")
+            ToolTip.text: qsTr("Landscape: Orient your design horizontally")
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
             onClicked: if (tab.controller)
@@ -451,7 +451,7 @@ Item {
                 }
             }
             //: `portrait` buboréksúgó.
-            ToolTip.text: qsTr("Portrait: orient the collage vertically")
+            ToolTip.text: qsTr("Portrait: Orient your design vertically")
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
             onClicked: if (tab.controller)
@@ -564,8 +564,8 @@ Item {
         y: 327
         text: qsTr("Show Captions")
         //: `caption_checkbox` buboréksúgó.
-        ToolTip.text: qsTr("Show picture captions as text on pictures with the "
-                           + "Polaroid Camera border")
+        ToolTip.text: qsTr("Show captions as text on pictures with an "
+                           + "\"Instant Camera\" border")
         ToolTip.visible: captionHover.hovered
         ToolTip.delay: Theme.tooltipDelay
         HoverHandler { id: captionHover }

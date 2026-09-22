@@ -131,7 +131,7 @@ Item {
         }
         MenuItem {
             objectName: prefix + "BorderPolaroid"
-            text: qsTr("Polaroid Camera")
+            text: qsTr("Instant Camera")
             onTriggered: host.applyBorder("polaroid")
         }
     }

@@ -715,10 +715,9 @@ kulcsnevek a 6.1 tábla `0x00c783ec`, `0x00c78e50`, `0x00c78fa0`,
 4. Az eredmény a Picasa-belső **255-ös** kulcs alatt él; nálunk ez a
    tulajdonságok panel „Objektív" sora.
 
-⚠️ **NYITVA:** a `0x009f0fd0` (a 105-ös tömb lekérője) **elem-egysége** —
-a méret-kapu `0x36`-ja és a `+0x6c`-ig tartó olvasás csak akkor fér össze, ha
-a méret nem bájtban értendő. A megszerzés útja: a `0x009f0fd0` törzse, és egy
-MÁSIK, ismert hosszú tömbre adott hívása kontrollként.
+✅ ~~NYITVA: a `0x009f0fd0` elem-egysége~~ — **lezárva a 9.12-ben**: a
+kimeneti vektor `+4` mezője **elemszám·2 | jelzőbit**, tehát a kapu
+„legalább 28 elem".
 
 ### 9.11 ✅ ÁTVÉVE: a két tábla és a feloldó a termékben (2026-09-19, #3121)
 
@@ -747,6 +746,96 @@ elemhelyek és képletek), majd a név a tulajdonságok panelre. A végső
 elfogadáshoz **egy tükörreflexes gépből származó fájl** kell — a mai
 tesztkészletben és a mintázott NAS-mappákban egyetlen MakerNote-os kép sincs
 (mérve: 31 vizsgált fájl, nulla találat).
+
+### 9.12 ⛳ A Canon-ág TELJES menete — a számítás, a tartalék-leírás és a panel sora (2026-09-22, #3121)
+
+*Forrás: `FUN_00a35a60` `0x00a35a95`–`0x00a35d4e`, a formázó `0x00a36650`, a
+lekérő `0x009f0fd0`, a név→kulcs leképező `0x006349fb`. A 9.9 a menetet
+`…`-tal rövidítette; ez a szakasz utasításonként végigmegy rajta.*
+
+#### A méret-kapu egysége (a 9.10 nyitott pontja)
+
+A `0x009f0fd0` a kimeneti vektorba 4 bájtos elemeket másol
+(`lea ecx,[ebx*4]` → `0x00bf2350`), a `+4` mezőbe pedig
+`lea ecx,[edi+edi] / or ecx, jelző` kerül ⇒ **elemszám·2 | 1 bites jelző**. A
+kapu (`and ecx,~1 / cmp ecx,0x36 / jbe`) tehát **elemszám > 27**, vagyis
+pontosan annyi, amennyi a `+0x6c`-ig (27. elem) tartó olvasáshoz kell.
+
+#### A négy szám — a rövidítés nélkül
+
+| lépés | feltétel | érték |
+|---|---|---|
+| `A` (→ `gyujto_min`) | `e25 ≠ 0` és `e24 ≠ 0` | `e24 / e25` |
+| `B` (→ `gyujto_max`) | `e25 ≠ 0`, `e23 ≠ 0` **és `e23 ≠ e24`** | `e23 / e25` |
+| `D` (→ `rekesz_min`) | `e26 ≠ 0` | `2^(e26/64)` |
+| `C` (→ `rekesz_max`) | `e27 ≠ 0` **és `e27 ≠ e26`** | `2^(e27/64)` |
+
+Mindegyik `float`-ba tárolva (`fstp dword`), a kiinduló érték `0.0`. ⭐ A két
+`≠` feltétel adja a táblában álló `0.0`-t: a fix objektívnél `e23 = e24`,
+ezért `B = 0.0` — ugyanúgy, ahogy a 230 sorban a fix gyújtótávolság áll.
+
+A tábla-keresés az x87-verem cseréiből kiolvasva `(A, B, D, C)` ↔
+`(+0x08, +0x0c, +0x10, +0x14)` sorrendben megy, és **csak
+`1 ≤ LensType ≤ 0xfffe`** esetén (`lea ecx,[edi-1] / cmp ecx,0xfffd / ja`).
+
+#### ⭐ Nincs találat ⇒ TARTALÉK-LEÍRÁS, nem üres sor
+
+Ha a keresés nem ad nevet (nincs sor, nem egyezik a négyes, üres a név, vagy
+érvénytelen a `LensType`), a `0x00a35ce2` a `0x00a36650`-et hívja a négy
+számmal. A formázó (a sztringek kiolvasva):
+
+| rész | feltétel (8 ULP-vel 0.0 ellen) | formátum |
+|---|---|---|
+| gyújtó | `A ≠ 0`, `B ≠ 0` | `%d-%dmm` (`0x00ce3e38`) |
+| gyújtó | `A ≠ 0`, `B = 0` | `%dmm` (`0x00ce3e40`) |
+| elválasztó | a gyújtó-rész nem üres | egy szóköz (`push 0x20`) |
+| rekesz | `D ≠ 0`, `C ≠ 0` | `f/%.2g-%.2g` (`0x00ce3e48`), a sorrend `D`, `C` |
+| rekesz | `D ≠ 0`, `C = 0` | `f/%.2g` (`0x00ce3e54`) |
+
+A gyújtótávolság **csonkolva** megy egészre (`0x00c29990`: `cvttsd2si`), tehát
+`17,9 mm` → `17mm`.
+
+⇒ **Következmény, számolva:** a tábla négyese csak akkor egyezik, ha a
+`2^(e/64)` 8 ULP-n belül esik a táblabeli rekeszre. Egész `e`-re ez csak a
+kettő hatványain teljesül (`e = 64` → 2,0; `128` → 4,0); a Canon f/1.8-a
+(`e = 54`) `2^(54/64) = 1,795…`, ami a táblabeli `1.8f`-től több tízezer ULP.
+Ilyenkor a panelen a tartalék-leírás jelenik meg (`50mm f/1.8`), nem a
+táblanév.
+
+#### A panel „Lens" sora = a 255-ös kulcs
+
+A `runtime/properties.xml` `<Lens/>` eleme a név→kulcs leképezőben
+(`0x006349fb`) a **`0xff`**-re fordul: a sor az elosztó eredményét mutatja. A
+255-ös kulcs a `0x00a27546`-nál az `XMP::Lens` (`0x00ce3180`) névvel együtt
+is előkerül (`push 0xff` → `0x009f1d60`); hogy ez az XMP olvasó vagy író
+oldala, azt ez a kör NEM mérte ki (#3496). Az EXIF
+`LensModel` (`0xA434`) a 6.1 táblában **nincs** — a 3.7 nem olvassa.
+
+#### Nálunk
+
+| mit | hol |
+|---|---|
+| a `CameraSettings` kiolvasása (JPEG APP1 és TIFF-alapú nyers fájl) | `src/picasapy/metadata/makernote.py` |
+| a négy szám, a keresés, a tartalék-leírás | `objektiv.canon_leiras` |
+| a panel sora | `reader._objektiv` → `ExifDetails.lens` |
+| az őr | `tests/metadata/test_canon_objektiv_makernote_3121.py` |
+
+⚠️ **Kimondott eltérések:**
+
+1. A sorrend nálunk **táblanév → EXIF `LensModel` → tartalék-leírás**. Az
+   eredeti a `LensModel`-t nem ismeri, tehát nála a tartalék-leírás (vagy
+   üres sor) állna; a mai, működő, pontosabb kijelzést nem vesszük el.
+2. Sérült fájlban a `2^(e/64)` túlcsordulhat (`e ≥ 8192`); az x87 ilyenkor
+   végtelent tárol. Nálunk is végtelen lesz (a tábla-összevetés így sem
+   egyezik), de a tartalék-leírás ezt a részt **kihagyja** — az eredeti CRT
+   olvashatatlan szöveget írna.
+3. ⬜ Nyitva: a `0x009f0fd0` előjel nélkül (`movzx`) vagy előjelesen
+   (`movsx`) terjeszti-e ki a 16 bites elemeket — nálunk előjel nélküli.
+   Csak a `0xFFFF` („n/a") értékű mezőknél számít.
+
+⬜ **Nincs benne:** a Nikon-ág (a `FUN_00a35d80` a `LensData` `0100`…`0204`
+verziószövegeit vizsgálja, és a `0x00ce3c38`-nál a Nikon visszafejtő táblája
+áll) — **#3495**; és az `XMP::Lens` szerepe — **#3496**.
 
 ## 10. ⛳ A határvonal EXIF/GPS-névregisztere — részlelet (2026-09-18, #3345)
 
@@ -975,11 +1064,69 @@ Mind a 44 képben **nulla** `Iptc4xmpExt`, `PersonInImage`, `mwg-rs`,
 ⚠️ **A negatív állítás HATÓKÖRE:** a mért exportokon nem volt **névvel
 ellátott arc**, tehát a „`PersonInImage` megnevezett arc mellett" eset nincs
 lefedve, és az `mwg-rs` hiánya sem jelenti, hogy arcos képnél is hiányozna (a
-#1403 épp azt mérte ki, hogy arcokhoz az `mwg-rs`/`MP` megy). A hiányzó mérés
-jegye: **#3424**.
+#1403 épp azt mérte ki, hogy arcokhoz az `mwg-rs`/`MP` megy). ~~A hiányzó mérés
+jegye: **#3424**.~~ ⚠️ **LEZÁRVA a binárisból (2026-09-22), ld. az E) szakaszt:** a megnevezett arc NEM kerül `PersonInImage` alá.
 
 *A `lr:` sorsa ezzel eldőlt: MARAD, tudatos, az eredetiben nem létező
 kiegészítésként — a `export/xmp.py` névtér-listája ezt ki is mondja (#3353).*
+
+### E) ⛳ A #3424 kérdése a BINÁRISBÓL: a megnevezett arc NEM kerül `PersonInImage` alá (2026-09-22, #3424)
+
+*Forrás: indextől független bájtpásztázás a `PersonInImage` literál
+(`0x00c9ff18`) minden 4 bájtos hivatkozására · az arcrégió-író
+`0x00bb17e0` (1380 b) sztring-készlete · a három hivatkozó függvény
+diszasszemblátuma.*
+
+A D) szakasz a „névvel ellátott arc” esetet mérés híján nyitva hagyta, és
+exportot kért. A kérdés azonban eldönthető a binárisból: egy XMP-tulajdonság
+KIÍRÁSÁHOZ a tulajdonság nevét át kell adni az XMP-eszközkészletnek, tehát
+az író kódnak hivatkoznia kell a literálra.
+
+**A `PersonInImage` literálra PONTOSAN három hivatkozás van** a teljes
+fájlban, és egyik sem író:
+
+| hivatkozás | függvény | mit csinál |
+|---|---|---|
+| `0x00634d5c` | `0x00633210` (8048 b) | név → belső kulcs leképező `strcmp`-lánc: `PersonInImage` → **0x123** (`0x00634d6d`) |
+| `0x00bad223` | `0x00bad070` (1274 b) | **olvasó** visszahívás: a beérkező tulajdonság nevét hasonlítja, egyezésnél a 0x123-as kulcs alá TÁROLJA az értéket (`0x00bad233` → `0x00ba9040`), a kulcsmaszk (`[esi+0x24]`) szerint |
+| `0x00bb0039` | `0x00bafde0` (1322 b) | a séma-regisztráció (a D) szakasz 21 tulajdonsága) |
+
+**Az arcrégiók írója** (`0x00bb17e0`) a teljes sztring-készlete szerint csak
+ezt írja: `mwg-rs:Regions/mwg-rs:AppliedToDimensions` (`w`, `h`,
+`unit = pixel`), `mwg-rs:Regions/mwg-rs:RegionList[last()]` alá `Name`,
+`Type = Face` és `mwg-rs:Area` (`x`, `y`, `w`, `h`, `unit = normalized`),
+valamint a Microsoft `RegionInfo`-t (`http://ns.microsoft.com/photo/1.2/`,
+`0x00bb186b`). **`Iptc4xmpExt`-re és `PersonInImage`-re egyáltalán nem
+hivatkozik.**
+
+⛳ **Pozitív kontroll:** ugyanez a pásztázás a `mwg-rs:Regions/...` XPath
+literálokra megtalálja az író hívóhelyeit (`0x00bb1b89`, `0x00bb1bb7`,
+`0x00bb1bf1` …), tehát a módszer az írót látja, ha van.
+
+⇒ **LEZÁRVA: a Picasa a megnevezett arc nevét a régió `Name` mezőjébe írja
+(`mwg-rs` + `MP`), `PersonInImage`-t nem generál.** A `PersonInImage`-et
+OLVASSA (0x123-as kulcs), ha a képben már benne van.
+
+⚠️ **Hatókör:** ez az állítás a `PersonInImage` ELŐÁLLÍTÁSÁRÓL szól. Hogy egy
+forrásképben MÁR meglévő `PersonInImage` a Picasa újraírása után megmarad-e
+(az XMP-eszközkészlet a nem ismert tulajdonságokat általában megőrzi), azt ez
+a kör nem vizsgálta — a mi exportunk nem ír vissza forrás-XMP-t, tehát a
+termékre nincs hatása.
+
+⛔ **Helyesbítés a D) szakaszhoz:** az ott „24 bájt lépésközű leíró-táblának”
+nevezett `0x634c3c`-es sáv nem tábla, hanem **kód** — a `0x00633210`
+`strcmp`-lánca, amelynek minden blokkja (`push név · push esi · call
+0x00bf697a · add esp,8 · test · jne · mov eax,kulcs · ret`) pontosan 24
+bájt. A „leíró-tábla” olvasat ezt a szabályos lépésközt értette félre.
+
+**Nálunk:** az `export/xmp.py` `PersonInImage`-t nem ír, az arcneveket az
+`mwg-rs`/`MP` régiókba teszi — ez **egyezik** az eredetivel. A kódban álló
+„a negatív állítás hatóköre” megjegyzés (`export/xmp.py`, a névtér-lista
+fölött) ezzel hatókör nélkül igaz; a pontosítása a #3424-en áll.
+
+`Nyitott kérdések: 0 nyílt · 1 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 „csak nyitva”`
+(hatókörön kívül: a meglévő `PersonInImage` megőrzése — a termékre nincs
+hatása, 339. kör döntése).
 
 ## 13. ⛳ A `0x00bab6e0` szerepe MEGVAN: az EXIF/GPS sémaleíró, egy 14 rekeszes séma-tábla 6. rekesze (2026-09-19, #3345)
 

@@ -707,5 +707,20 @@
  "tests/app/test_wayland_bovitmeny_3028.py": 0.96,
  "tests/app/test_webexport_controller.py": 1.22,
  "tests/app/test_window_geometry.py": 1.61,
- "tests/app/test_windows_csapdak_1082.py": 30.12
+ "tests/app/test_windows_csapdak_1082.py": 30.12,
+ "tests/app/qml_functional/test_album_ugro_gombok_857.py": 4.32,
+ "tests/app/qml_functional/test_betucsalad_tokenek_3310.py": 1.52,
+ "tests/app/qml_functional/test_buboreksugo_krom_901.py": 1.17,
+ "tests/app/qml_functional/test_eszkozgombok_panelben_3320.py": 0.67,
+ "tests/app/qml_functional/test_gyorsbillentyu_oszlop_3455.py": 2.47,
+ "tests/app/qml_functional/test_helyi_menu_ures_res_3448.py": 2.42,
+ "tests/app/qml_functional/test_import_menupont_3132.py": 1.52,
+ "tests/app/qml_functional/test_menu_invariansok_886.py": 0.67,
+ "tests/app/qml_functional/test_param_csuszka_mert_szelesseg_710.py": 1.37,
+ "tests/app/qml_functional/test_publish_panel_2508.py": 1.17,
+ "tests/app/qml_functional/test_tovabbi_javaslatok_gomb_2187.py": 3.27,
+ "tests/app/test_gorgetes_szinkronpont_3399.py": 0.92,
+ "tests/app/test_hivatalos_feliratok_3358.py": 0.57,
+ "tests/app/test_mentes_lemezkepbe_vezerlo_2074.py": 0.87,
+ "tests/app/test_picasa_import_vezerlo_3132.py": 0.57
 }

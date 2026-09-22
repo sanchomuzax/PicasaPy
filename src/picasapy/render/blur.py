@@ -32,24 +32,26 @@ minden más próbált mag rosszabb: a Picasa saját IIR-elmosója
 ez összefér a bináris képével: a küszöb azt dönti el, HOL simíthat,
 nem azt, MEKKORA sugárral.
 
+## A köztes sáv — a tulajdonos exportja (#762, 2026-09-21)
+
+Hat bájtra azonos forrás (800×512), `EXIF Software = Picasa` exportok:
+
+| lánc | az export a forráshoz képest |
+|---|---|
+| `blur=1,0.100000;` · `0.5` · `0.8` · `1.1` · `1.4` | képpontra AZONOS (átlagos abszolút eltérés 0,000) |
+| `blur=1,2.000000;` | teljes elsimítás (Laplace-szórás 162,6 → 0,4) |
+
+A 2,0-s exporttól a `BLUR_SIGMA` = 4-es elmosásunk átlagosan 0,026-tal tér
+el — a fenti illesztés tehát egy független ábrán is áll.
+
 ## Amit a mérés NEM dönt el — és ezért a modell határa
 
-A küszöb → falképzés pontos leképezése nyitva marad: 0,5-nél a hatás a
-zajszinten van, 2,0-nél már NINCS egyetlen fal sem (a tesztábra
-fekete-fehér csíkjai is teljesen összemosódnak). A kettő közötti átmenet
-alakjára nincs mérési pontunk, és találgatni tilos — egy szabadon
-választott küszöbskála pontosan az a fajta paraméter, ami elnyeli a hibát.
-
-Ezért a modell **a mért két tartományt** adja vissza, és a váltást a
-csúszka tetejére (`0,5`) teszi: ez a LEGNAGYOBB mérten tétlen érték, és
-egyben a `filterdesc.xml` felső korlátja, tehát **minden felületről
-elérhető érték a mért, tétlen ágon marad**. A `0,5` és a `2,0` közötti
-sávot a modell teljes elmosásként kezeli — ez a mérés által NEM fedett
-rész, és ilyen érték valódi Picasa-írásból nem is keletkezik (a lánc
-kézzel szerkesztett vagy idegen ini-ből jöhet).
-
-A küszöbskála kimérése önálló kutatói kör tárgya (a #1142 „Ami nyitva
-marad" pontja).
+A váltás 1,4 és 2,0 KÖZÖTT van; a pontos helyére nincs mérési pontunk, és
+találgatni tilos. A modell ezért a váltást a LEGNAGYOBB mérten tétlen
+értékre (1,4) teszi. Az 1,4 és 2,0 közötti sáv a mérés által NEM fedett
+rész; ilyen érték a felületről (`[-0,5; 0,5]`) nem is keletkezik, csak kézzel
+szerkesztett vagy idegen ini-ből. A küszöb pontos helyét a bináris
+(`0x0090cf60`) falképző feltételéből kell kiolvasni (#762).
 """
 
 from __future__ import annotations
@@ -59,9 +61,10 @@ import numpy as np
 
 from picasapy.render.curves import validate_image
 
-#: A `filterdesc.xml` Threshold csúszkájának felső vége. Eddig bezárólag a
-#: mérés TÉTLEN kimenetet adott (#685: −0,5 / 0,1 / 0,5; #1142: 0,5).
-BLUR_IDLE_THRESHOLD_MAX = 0.5
+#: A legnagyobb MÉRTEN tétlen küszöb. Eddig bezárólag a Picasa a forrást
+#: adta vissza (#685: −0,5 / 0,1 / 0,5; #1142: 0,5; #762: 0,8 / 1,1 / 1,4 —
+#: képpontra azonos exportok). 2,0-nél már teljes elmosás.
+BLUR_IDLE_THRESHOLD_MAX = 1.4
 
 #: A küszöb fölötti, MÉRT elmosás szórása képpontban (`merokit-2`,
 #: `halott_03`: `blur=1,2.000000;` → 0,552 maradék).

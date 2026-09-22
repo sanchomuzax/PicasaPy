@@ -32,6 +32,7 @@ esetén placeholder megy vissza, a részletek a logba.
 
 from __future__ import annotations
 
+import functools
 import logging
 import os
 import threading
@@ -55,10 +56,11 @@ from PySide6.QtQuick import (
     QQuickTextureFactory,
 )
 
-from picasapy.app.edit_controller import _EFFECT_NAMES
+from picasapy.app.edit_controller import _EFFECT_INI_NAMES, _EFFECT_NAMES
 from picasapy.app.effect_params import effect_params, format_param_values
 from picasapy.ini.filters import FilterOp, parse_filters
 from picasapy.render import apply_filters
+from picasapy.render.elonezeti_arany import elonezeti_arany
 
 from .thumbnail_provider import PLACEHOLDER_COLOR
 from .worker_thread import register_pool_owner
@@ -85,12 +87,12 @@ _SOURCE_CACHE_CAPACITY = 2
 #: bélyegkép-cache: bőven elég egyszerre több fotó mind a 40 effektjéhez
 _THUMB_CACHE_CAPACITY = 256
 
-#: A `filters=`-ben ismert effekt-kulcsok — a `render/chain.py` `_HANDLERS`
-#: kis-nagybetű-tűrő (`op.name.casefold()`), ezért a bélyegkép-rendereléshez
-#: az ini-írásnál használt CamelCase írásmód (`EditController._EFFECT_INI_NAMES`)
-#: NEM szükséges, elég a kisbetűs kulcs. A lista magát az
+#: A `filters=`-ben ismert effekt-kulcsok. A lista magát az
 #: `edit_controller.py`-t importálja (egyetlen forrás, nincs duplikált,
-#: idővel elcsúszható másolat).
+#: idővel elcsúszható másolat). ⚠️ A csempe műveletneve NEM a kisbetűs kulcs,
+#: hanem a kanonikus ini-név (`_EFFECT_INI_NAMES`): a #1141 óta a lánc a nem
+#: kanonikus írásmódú nevet — az eredeti bejárójához hűen — kihagyja, és a
+#: nagybetűs nevű effektek csempéje így a módosítatlan fotót mutatta (#3478).
 EFFECT_NAMES: tuple[str, ...] = _EFFECT_NAMES
 
 #: #405: a szerkesztőpanel „Gyakori javítások" fülének kép-előnézetes
@@ -129,14 +131,32 @@ def _default_op(effect: str) -> FilterOp:
     """Az effekt alapértékes `FilterOp`-ja — ugyanazok az alapértékek, mint
     amivel a csúszkás alpanel (EditorPanel.qml `openParamPanel`) indul."""
     params = effect_params(effect)
+    nev = _EFFECT_INI_NAMES.get(effect, effect)
     if not params:
-        return FilterOp(name=effect, params=("1",))
+        return FilterOp(name=nev, params=("1",))
     # #516: "color" vezérlőnél a hex-alapérték a kezdőérték, nem a (náluk
     # értelmezetlen) numerikus `default` mező — az `openParamPanel()` QML-
     # függvény ugyanígy dönt
     values = [p.color if p.kind == "color" else p.default for p in params]
     formatted = format_param_values(values, params)
-    return FilterOp(name=effect, params=("1", *formatted))
+    return FilterOp(name=nev, params=("1", *formatted))
+
+
+@functools.lru_cache(maxsize=256)
+def _teljes_hosszabb_el(path: str, mtime_ns: int) -> int | None:
+    """A forrás TELJES felbontású hosszabb éle a fejlécből (#3472)."""
+    meret = QImageReader(path).size()
+    if not meret.isValid():
+        return None
+    return max(meret.width(), meret.height()) or None
+
+
+def _csempe_arany(path: str, mtime_ns: int, source: np.ndarray) -> float:
+    """A csempe-forrás és a teljes kép aránya; ismeretlen méretnél 1."""
+    teljes = _teljes_hosszabb_el(path, mtime_ns)
+    if not teljes:
+        return 1.0
+    return min(1.0, max(source.shape[0], source.shape[1]) / teljes)
 
 
 def _decode_small_source(path: Path) -> np.ndarray | None:
@@ -431,9 +451,13 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         # újraszámolása egy MÁR dekódolt 200 px-es forrásból 53 ms; magának
         # a láncnak az alkalmazása 0,51 ms. A dekódolás (a drága rész) a
         # `_source_for` cache-ében marad.
-        source = _lanc_teteje(source, lanc)
-        op = _default_op(effect_key)
-        result, _skipped = apply_filters(source, (op,))
+        # #3472: a csempe a fotó kicsinyített KÉPÉT mutatja — a keret két
+        # vastagsága ezért a csempe és a teljes kép arányában skálázódik
+        # (`render/elonezeti_arany.py`), a mentett képpel arányosan.
+        with elonezeti_arany(_csempe_arany(str(path), photo.mtime_ns, source)):
+            source = _lanc_teteje(source, lanc)
+            op = _default_op(effect_key)
+            result, _skipped = apply_filters(source, (op,))
         image = _scale_to_thumb(_rgb_array_to_qimage(result))
         self._thumb_cache.put(cache_key, image)
         return image

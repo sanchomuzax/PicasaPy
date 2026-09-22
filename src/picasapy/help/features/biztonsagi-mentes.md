@@ -31,7 +31,8 @@ mentés-készlet."
 
 Az **Új készlet…** gombbal három dolgot adsz meg:
 
-- **Név** — amit a listában látsz majd.
+- **Mentési készlet** — a készlet neve, amit a listában látsz majd. A
+  mező nem üresen indul: az ajánlott név **Saját mentési készlet**.
 - **Mentés ide** — a célmappa. A **Tallózás…** gombbal ki is válaszd.
 - **Fájlok** — mi kerüljön át:
   - **Minden fájltípus** — fotók, RAW-fájlok és videók;
@@ -39,6 +40,8 @@ Az **Új készlet…** gombbal három dolgot adsz meg:
   - **Csak JPEG-ek fényképezőgép-adatokkal** — azok a JPEG-ek, amikben
     benne van a fényképezőgép neve. Ezzel a képernyőképek és a letöltött
     képek kimaradnak a mentésből.
+
+A szerkesztést a **Módosítás** gomb zárja le.
 
 A **Készlet módosítása…** ugyanezt a három mezőt nyitja meg egy meglévő
 készleten. A **Készlet törlése** rákérdez; **a már elmentett fájlokat nem
@@ -70,6 +73,27 @@ Csak a **sikeresen** átmásolt fájl kerül a nyilvántartásba. Ha a mentés
 magától szakad félbe — például megtelik a cél, vagy megszűnik a hálózati
 kapcsolat —, a következő futás ugyanígy pótolja a hiányzót.
 
+## Mappába vagy lemezképbe
+
+A **Mentés** gomb mellett választod ki, hova készüljön a mentés:
+
+- **Mappába** — a szokásos út: külső meghajtó, pendrive vagy hálózati
+  megosztás;
+- **CD-lemezképbe (ISO)** vagy **DVD-lemezképbe (ISO)** — a program
+  lemezkép-fájlokat ír a célmappába.
+
+Ha a gyűjtemény nem fér el egy lemezen, **több, sorszámozott lemezkép**
+készül (`picasapy-mentes-01.iso`, `-02.iso` és így tovább), pontosan
+akkora darabokban, amekkora egy valódi lemezre ráfér. Minden lemezképen
+ott vannak a képek a saját mappaszerkezetükben, mellettük a
+`.picasa.ini` fájlok, a gyökérben pedig a `files.txt` lista — a mentés
+tehát a PicasaPy nélkül is olvasható.
+
+A lemezkép **felcsatolható**, és bármelyik lemezíró programmal lemezre
+írható. **A PicasaPy maga nem ír lemezt.**
+
+A végén ezt írja ki: „Kész: *N* fájl, *M* lemezképen."
+
 ## Mi kerül a célmappába
 
 - A képek, az eredeti **mappaszerkezetet megtartva**.
@@ -82,7 +106,6 @@ kapcsolat —, a következő futás ugyanígy pótolja a hiányzót.
 
 ## Ami nincs benne
 
-Az eredeti Picasa CD-re és DVD-re is tudott menteni. A PicasaPy **nem ír
-lemezt** — a cél mindig egy mappa: külső meghajtó, pendrive vagy hálózati
-megosztás. A lemezszám-becslés ezért csak tájékoztat arról, mekkora a
-mentésed; magát a lemezt más programmal kell megírnod.
+Az eredeti Picasa maga írta meg a CD-t vagy a DVD-t. A PicasaPy **nem ír
+lemezt**: a kimenete mappa vagy lemezkép-fájl. A lemezt ebből egy
+tetszőleges lemezíró programmal készíted el.

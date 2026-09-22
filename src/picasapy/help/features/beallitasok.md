@@ -69,6 +69,11 @@ Ezek csak a képernyőn látszó képet módosítják; a fájljaidat nem érinti
 A választott mód mindenütt hat, ahol képet látsz: az indexképeken, a nagy
 nézőben és a **diavetítésben** is.
 
+Mostantól **magát a felületet is** követi: a menük, a sávok és a
+hátterek ugyanazt a módot viselik, mint a képek — ahogy az eredeti
+Picasában. Fekete-fehér vagy szépia módban tehát nem csak a fotó, hanem
+a program kinézete is átvált.
+
 ## Színkezelés használata
 
 A **Nézet ▸ Színkezelés használata** kapcsolóval azt döntöd el,
@@ -141,3 +146,20 @@ arra az egy futásra:
 ```bash
 ./picasapy --tesztuzem ~/Kepek
 ```
+
+## A fejléc gombsorának testreszabása
+
+Az **Eszközök ▸ Gombok konfigurálása…** azt állítja be, mely gombok
+látszanak a képek fölötti fejlécsávon, és milyen sorrendben.
+
+Az ablakban két lista van: **Rendelkezésre álló gombok** és **Jelenlegi
+gombok**. A **Hozzáadás >>** és a **<< Eltávolítás** mozgat közöttük, a
+**Feljebb** és a **Lejjebb** a sorrendet állítja.
+
+Négy gomb rendezhető így: **Teljes képernyős diavetítés**,
+**Csillagozott fényképek kijelölése**, **Szerkesztett fényképek mentése
+lemezre** és **Fotókollázs készítése**.
+
+A **Visszaállítás alapértelmezettre** az eredeti sorrendet hozza vissza,
+a **Mégse** elveti a változtatást. A beállítás megmarad a következő
+indításig.

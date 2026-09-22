@@ -94,6 +94,22 @@ def beagyazott_elonezet(source: Path) -> bytes | None:
     return bytes(elonezet.data)
 
 
+def nyers_hosszabb_el(source: Path) -> int | None:
+    """A nyers fájl TELJES felbontású hosszabb éle képpontban, dekódolás
+    nélkül (a LibRaw méret-mezőiből); `None`, ha nem olvasható (#3377).
+
+    A forgatás (`flip`) a két élt felcserélheti, a hosszabbat nem."""
+    rawpy = _rawpy()
+    if rawpy is None:
+        return None
+    try:
+        with rawpy.imread(str(source)) as nyers:
+            meretek = nyers.sizes
+            return max(int(meretek.width), int(meretek.height)) or None
+    except Exception:  # noqa: BLE001 — a LibRaw sokféle kivétellel jelez
+        return None
+
+
 def dekodol_nyerset(source: Path, goal: int | None = None) -> np.ndarray | None:
     """Nyers fájl → **BGR** `uint8` kép; `None`, ha nem megy (és naplóz).
 

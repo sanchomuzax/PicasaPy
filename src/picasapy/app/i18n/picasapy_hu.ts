@@ -2450,6 +2450,10 @@
         <translation>Fókusznagyítás</translation>
     </message>
     <message>
+        <source>Focal Pixelate</source>
+        <translation>Képpontnövelés</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="856"/>
         <source>Pencil Sketch</source>
         <translation>Ceruzarajz</translation>
@@ -2498,7 +2502,7 @@
     </message>
     <message>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <source>Film Grain (Fine)</source>
@@ -4614,7 +4618,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="40"/>
         <source>Delete from Disk</source>
-        <translation>Törlés lemezről</translation>
+        <translation>Törlés a lemezről</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="46"/>
@@ -4623,7 +4627,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <source>Add to Album</source>
-        <translation>Hozzáadás albumhoz</translation>
+        <translation>Hozzáadás az albumhoz</translation>
     </message>
     <message>
         <source>New Album...</source>
@@ -4700,6 +4704,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Find Similar Pictures</source>
         <translation>Keresés hasonló képekre</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Ctrl+Delete</source>
+        <translation>Ctrl+Törlés</translation>
     </message>
 </context>
 <context>
@@ -7476,7 +7485,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
@@ -8054,7 +8063,7 @@ A MŰVELET NEM VONHATÓ VISSZA.
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
         <source>Rounded Edges</source>
-        <translation>Lekerekített sarkok</translation>
+        <translation>Kerekített élek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
@@ -9149,7 +9158,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Fehér szegély</translation>
     </message>
     <message>
-        <source>Polaroid Camera</source>
+        <source>Instant Camera</source>
         <translation>Polaroid fényképezőgép</translation>
     </message>
 </context>
@@ -9227,11 +9236,11 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Egyéni méretarányok</translation>
     </message>
     <message>
-        <source>Add Custom Aspect Ratio…</source>
+        <source>Add Custom Aspect Ratio...</source>
         <translation>Egyéni méretarány hozzáadása…</translation>
     </message>
     <message>
-        <source>You can select the relative width and height of the collage</source>
+        <source>Select the relative width and height of your design</source>
         <translation>Kijelölheti a kollázs viszonylagos szélességét és magasságát</translation>
     </message>
 </context>
@@ -9258,11 +9267,11 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>A jelenlegi méretarány törlése</translation>
     </message>
     <message>
-        <source>Landscape: orient the collage horizontally</source>
+        <source>Landscape: Orient your design horizontally</source>
         <translation>Fekvő: a kollázs vízszintes tájolása</translation>
     </message>
     <message>
-        <source>Portrait: orient the collage vertically</source>
+        <source>Portrait: Orient your design vertically</source>
         <translation>Álló: A kollázs függőleges tájolása</translation>
     </message>
     <message>
@@ -9274,7 +9283,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Képfeliratok megjelenítése</translation>
     </message>
     <message>
-        <source>Show picture captions as text on pictures with the Polaroid Camera border</source>
+        <source>Show captions as text on pictures with an "Instant Camera" border</source>
         <translation>Képfeliratok szövegként való megjelenítése „Polaroid fényképezőgép” szegélyű képeken</translation>
     </message>
     <message>
@@ -9304,7 +9313,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Select all the pictures (Ctrl+A)</source>
+        <source>Select all pictures (Ctrl-A)</source>
         <translation>Az összes kép kijelölése (Ctrl+A)</translation>
     </message>
     <message>
@@ -9314,7 +9323,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Deselect all the pictures (Ctrl+D)</source>
+        <source>Deselect all pictures (Ctrl-D)</source>
         <translation>Az összes kép kijelölésének megszüntetése (Ctrl+D)</translation>
     </message>
     <message>
@@ -9324,7 +9333,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Remove selected items from the collage (Del)</source>
+        <source>Remove selection from collage (Del)</source>
         <translation>Kijelölt elemek eltávolítása a kollázsból (Del)</translation>
     </message>
     <message>
@@ -9334,7 +9343,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
-        <source>Use the selected picture as the background</source>
+        <source>Use selected picture as the background</source>
         <translation>A kijelölt kép használata háttérként</translation>
     </message>
 </context>
@@ -9431,7 +9440,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
-        <source>Polaroid Camera</source>
+        <source>Instant Camera</source>
         <translation>Polaroid fényképezőgép</translation>
     </message>
     <message>
@@ -9517,7 +9526,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Továbbiak...</translation>
     </message>
     <message>
-        <source>Load more pictures from the library</source>
+        <source>Get more clips from the Library</source>
         <translation>További képek beolvasása a könyvtárból</translation>
     </message>
     <message>
@@ -9533,7 +9542,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>–</translation>
     </message>
     <message>
-        <source>Remove the selected pictures from the tray</source>
+        <source>Remove selected clips from the tray</source>
         <translation>A kijelölt képek eltávolítása a tálcáról</translation>
     </message>
 </context>

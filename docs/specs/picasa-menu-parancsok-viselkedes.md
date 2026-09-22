@@ -804,6 +804,8 @@ kulcsok). Linuxra az eredeti nem ad feliratot — ez döntést igényel.
 
 ### 31.2 A „Keresés" HÁROMTÉTELES ALMENÜ, nem egy parancs
 
+> ⛔ **HELYESBÍTVE (2026-09-22, #3456):** az almenü **KÉT** tételes (Fájl a lemezen · Eredeti a lemezen), és **feltételes** — csak egyetlen, visszaállítható (`revertable`) kép kijelölésekor cseréli be a közös utófeldolgozó; a „Keresés a Picasában” NEM tagja. Részletek: `ui-audit-context-menus.md` **D.2**.
+
 A rács helyi menüjében (`CThumbUI`, `0x0056c5a0` / `0x0056e1c0`) a
 `CThumbUI::locatemenu` = **„Keresés"** egy almenü, három gyerekkel:
 
@@ -1842,9 +1844,12 @@ függvény **három bemutató-módot** kezel egy helyen:
 
 Közös őre az `IDS_MUST_SELECT`, és a függvény a `thumbui/fullview`,
 `editpanel/preview`, `editpanel/only_1up_toggle`, `oneup/back`
-csomópontokat is kezeli — vagyis a **teljes képernyős** útra vált át. Van
-saját gomb-belépési pontja is: **`thumbui/timelinebutton`**
-(`0x005d9cc0`).
+csomópontokat is kezeli — vagyis a **teljes képernyős** útra vált át. A
+`thumbui/timelinebutton` név szerinti parancsága is megvan a közös
+`0x005d9cc0` diszpécserben (`0x005da7ab–0x005da7ae`), de a
+`thumbui.tre:472–478` ugyanennek a főablaki elemnek `m_hidden`-t és az
+eltávolítási blokkot adja. ⇒ Ez **akció-belépési pont**, nem bizonyíték arra,
+hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
 ⇒ **Az Idővonal nem nézet-kapcsoló, hanem egy előkészítő lépéssel induló,
 teljes képernyős bemutató-mód** („Preparing timeline…" folyamatjelzővel).
