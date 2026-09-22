@@ -68,6 +68,17 @@ def reduced_color_flag(payload: np.ndarray, goal: int) -> int:
     return cv2.IMREAD_COLOR
 
 
+def hosszabb_el(source: Path) -> int | None:
+    """A képfájl TELJES felbontású hosszabb éle a fejlécből, dekódolás
+    nélkül (#3472); `None`, ha nem olvasható. A forgatás (EXIF) a két élt
+    felcserélheti, a hosszabbat nem."""
+    try:
+        with Image.open(source) as probe:
+            return max(probe.size) or None
+    except (OSError, UnidentifiedImageError, ValueError, Image.DecompressionBombError):
+        return None
+
+
 def read_image_bytes(source: Path) -> np.ndarray | None:
     """A forrásfájl bájtjai np.fromfile-lal; None, ha a fájl üres vagy
     nem olvasható (időközben törölt/elérhetetlen NAS-forrás)."""

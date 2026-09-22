@@ -19,6 +19,7 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.cvimage import (
+    hosszabb_el,
     read_image_bytes,
     reduced_color_flag,
     scale_down,
@@ -26,8 +27,9 @@ from picasapy.cvimage import (
 )
 from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
-from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
+from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
 from picasapy.render import apply_filters
+from picasapy.render.elonezeti_arany import elonezeti_arany
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
 from picasapy.thumbs.szintek import szint_cellahoz, szintek
@@ -126,7 +128,9 @@ _EDIT_BASE_CAP = 2048
 # hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
 # (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
 # (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 2
+_EDIT_CACHE_VERSION = 3
+# 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
+# skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
 
 
 def _edit_base_size(target_size: int) -> int:
@@ -134,6 +138,24 @@ def _edit_base_size(target_size: int) -> int:
     legalább `_EDIT_BASE_MIN`, legfeljebb `_EDIT_BASE_CAP`, a kettő között
     a célméret `_EDIT_BASE_FACTOR`-szorosa."""
     return min(_EDIT_BASE_CAP, max(target_size * _EDIT_BASE_FACTOR, _EDIT_BASE_MIN))
+
+
+def _bazis_arany(source: Path, dekodolt: np.ndarray, bazis: np.ndarray) -> float:
+    """A renderelt bázis és a TELJES felbontású forrás aránya (#3472).
+
+    A teljes méret a fejlécből jön (nyers fájlnál a LibRaw méret-mezőiből);
+    videónál és olvashatatlan fejlécnél a dekódolt képkocka a mérce. A
+    dekód maga is kicsinyíthet (`IMREAD_REDUCED_*`), ezért nem elég a
+    dekódolt kép méretét nézni."""
+    if source.suffix.lower() in VIDEO_EXTENSIONS:
+        teljes = None
+    elif nyers_utvonal(source):
+        teljes = nyers_hosszabb_el(source)
+    else:
+        teljes = hosszabb_el(source)
+    if not teljes:
+        teljes = max(dekodolt.shape[0], dekodolt.shape[1])
+    return min(1.0, max(bazis.shape[0], bazis.shape[1]) / teljes)
 
 
 class ThumbnailCache:
@@ -341,7 +363,12 @@ class ThumbnailCache:
         # #301: a hibás/idegen lánc-bejegyzést az apply_filters saját maga
         # hagyja ki (kivétel nem szökik ki innen) — a lánc többi tagja lefut,
         # a #73-elv (szűretlen kép a placeholder helyett) így is teljesül.
-        rendered, _skipped = apply_filters(rgb, ops)
+        # #3472: a bázis kisebb a teljes képnél — a keret két vastagsága
+        # ezzel az aránnyal skálázódik, mint az eredetiben (`imageWidth /
+        # fullResImageWidth`, ld. `render/elonezeti_arany.py`), különben a
+        # bélyegképen sokszorosan vastagabb, mint a mentett képen.
+        with elonezeti_arany(_bazis_arany(source, base, rgb)):
+            rendered, _skipped = apply_filters(rgb, ops)
         thumb = cv2.cvtColor(scale_down_picasa_mag(rendered, self._size),
                              cv2.COLOR_RGB2BGR)
         ok, encoded = cv2.imencode(
