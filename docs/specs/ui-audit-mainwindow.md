@@ -1883,4 +1883,4 @@ jelennek meg, az a láthatósági feltételük kérdése, nem a súgó szövegé
 
 `0 nyílt · 1 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 
-Fejlesztői jegy a B) négy tételére: ld. a #656 kommentjét.
+Fejlesztői jegy a B) négy tételére: **#3476**.
