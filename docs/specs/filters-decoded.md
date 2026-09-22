@@ -2474,8 +2474,8 @@ hatása) ezzel eldőlt: az az anyag nem ennek a csúszkának a söprése volt �
 tulajdonos kimondta, hogy a származása nem visszakövethető, és kivontuk.
 
 *Bizonyítottsági fok: 1,4-ig bezárólag és 2,0-nél MEGERŐSÍTETT (eredeti
-export, képpontra). Ami NYITVA marad: a váltás pontos helye 1,4 és 2,0
-KÖZÖTT. A PicasaPy modellje (`src/picasapy/render/blur.py`) a váltást a
+export, képpontra). ~~Ami NYITVA marad: a váltás pontos helye 1,4 és 2,0
+KÖZÖTT.~~ → **MEGVÁLASZOLVA (#3482):** a váltás a KÉPTŐL függ; a 762-es kétszínű ábrán `t = 1,725285` — ld. „A `blur` TELJES lánca bitre szimulálva” szakaszt. A PicasaPy modellje (`src/picasapy/render/blur.py`) a váltást a
 legnagyobb mérten tétlen értékre (1,4) teszi. ⚠️ A fenti küszöb-képletből
 (`CSONK(t²·65536)/n²`) ez NEM vezethető le közvetlenül: 1,4-nél a képlet
 szerint a kis különbségű szomszédpárok nem falak, a simításnak tehát látszania
@@ -2502,16 +2502,114 @@ tétlenségre. Mindkettő utasításszinten ellenőrizve — **egyik sem igaz**:
 teljes tétlenség (0,1…1,4) tehát **nem** a `0x008f89a0` →
 `0x0090cf60` → `0x0090cd90` → `0x0090ca10` láncban dől el.
 
-**A következő kiolvasandó lépés:** a natív szűrő **kezelőjét meghívó** hely
+~~**A következő kiolvasandó lépés:**~~ → **TÁRGYTALAN** (lent, 6. pont): ~~a natív szűrő **kezelőjét meghívó** hely
 (a szűrőobjektum `+0x0c` mezője). Ez a hívás a vtábla (`0x00cd184c`) közvetlen
 slotjaiban nincs meg (`0x008fa8d0` csak a paramétereket klónozza); a
 `mov reg,[x+0x0c]` + `call reg` minta a `0x008f0000`–`0x00910000` sávban hat
 helyen fordul elő, ebből négy vtábla-hívás. Ott dőlhet el, hogy egy adott
-paraméterű `blur` egyáltalán lefut-e (pl. a lánc-végrehajtó kihagyó feltétele).
+paraméterű `blur` egyáltalán lefut-e (pl. a lánc-végrehajtó kihagyó feltétele).~~
 
 *Bizonyítottsági fok:* a két hipotézis cáfolata **megerősített**
 (diszasszemblátum, minden lépés címmel); a tétlenség valódi oka **nincs
-kiolvasva**.
+kiolvasva**. → ⛳ **Megválaszolva lent (a tesztábra sajátja).**
+
+#### ⭐ A `blur` TELJES lánca bitre szimulálva — a „tétlenség" a TESZTÁBRA sajátja (2026-09-22, #3482)
+
+⛳ **A VÁLASZ a fenti „Ami NYITVA marad" kérdésre.** A 0,1…1,4 közötti mért
+tétlenségnek **nincs** külön oka a lánc előtt (kihagyó feltétel, hívóhely):
+a kiolvasott lánc **önmagában** kiadja. A 343. kör levezetése azért jósolt
+simítást, mert **a tesztábra tartalmát nem nézte meg**.
+
+**1. A 762-es ábra kétszínű.** `Blur_kuszob-010.jpg` (800×512): 2 különböző
+szín, a vízszintes szomszédpárok 99,87%-a azonos, a maradék 512 pár (egyetlen
+függőleges él) négyzetes különbsége **pontosan 195 075** (= 3·255², fekete ↔
+fehér); függőlegesen minden pár azonos. Mérve (PIL + numpy, a forrásfájlon).
+
+⇒ Az 1. léptéken az él **fal**, amíg `195 075 > K`, azaz
+`K = CSONK(t²·65536) ≤ 195 074`; a sík részeken az 5 tagú mag azonos
+értékeket átlagol, tehát nem változtat. A kép a lánc végén bitre a forrás.
+**A váltópont ezen az ábrán `t = 1,725285`** (`√(195 075/65 536)`), és ez a
+**kép** tulajdonsága, nem a szűrőé. Szimulálva: `t = 1,72528` (K = 195 073)
+→ eltérés 0,0000; `t = 1,7253` (K = 195 078) → 1,0012.
+
+**2. Amit a korábbi kiolvasás rosszul modellezett volna — helyesbítés a 6.
+ponthoz.** A **jelölő** (`0x0090ca10`) **mindig a SZOMSZÉDOS** képpontpárt
+hasonlítja, csak a küszöb osztódik `n²`-tel; az `n` távolságot csak a
+**simító** használja:
+
+| elem | kiolvasva | cím |
+|---|---|---|
+| vízszintes pár | `[edi]` és `[edi+4]` — az `x` és `x+1` képpont | `0x0090ca83`, `0x0090ca85` |
+| függőleges pár | az `y` és az `y+1` sor azonos oszlopa | `0x0090cb20`–`0x0090cb58` |
+| küszöb | `K / n²` (`imul ecx,ecx` + `idiv`) | `0x0090ca17`–`0x0090ca1b` |
+| vízszintes fal helye és bitje | a rács `(y, x+1)` cellája (`+2` bájt), `\|= n²·0x5555` | `0x0090ca6c`, `0x0090ca1d`, `0x0090cad7` |
+| függőleges fal helye és bitje | a `(y+1, x)` cella, `\|= 2·n²·0x5555` (= `n²·0xaaaa`) | `0x0090cb3a`, `0x0090ca3a`, `0x0090cba6` |
+
+A bitmaszk 16 bitre vágódik: `n = 1, 2, 4` → `0x5555`, `0x5554`, `0x5550`
+(függőlegesen `0xaaaa`, `0xaaa8`, `0xaaa0`).
+
+**3. A propagáció (`0x0090cbe0`) `n` cellás számlálóval szélesít**, soronként
+előre, majd hátra (a sor elején és végén a számláló `n`-ről indul, tehát a
+szélső `n` cella is kap bitet):
+
+```
+cnt = n
+for c in cellák (előre, majd ugyanígy hátra):
+    if rács[c] & maszk: cnt = n        ; 0x0090cc42, 0x0090cc46
+    if cnt > 0: rács[c] |= maszk       ; 0x0090cc4a–0x0090cc50
+    cnt -= 1                           ; 0x0090cc5a
+```
+
+A vízszintes maszk (`n²·0x5555`) a sorok mentén, a függőleges
+(`n²·0xaaaa`, `0x0090cbf4`) az oszlopok mentén terjed (`0x0090ccca`-tól).
+Az 1. léptéken nincs propagáció.
+
+**4. A simító (`0x0090c6b0`) melyik cellát nézi.** Vízszintesen az `n²`,
+függőlegesen a `2n²` bitet (`0x0090c767`, `0x0090c80d`; `and` a
+`0x0090c838`, `0x0090c85c`, `0x0090c879`, `0x0090c897` címen):
+
+| szomszéd | cella | kezdőoffszet |
+|---|---|---|
+| bal (`x−n`) | `(y, x−n+1)` | `−2n` bájt (`0x0090c779`–`0x0090c788`) + `2` (`0x0090c833`) |
+| jobb (`x+n`) | `(y, x+n)` | `2n` bájt (`0x0090c7e9`, `0x0090c858`) |
+| fel (`y−n`) | `(y−n+1, x)` | `(1−n)·sorlépés` (`0x0090c75b`–`0x0090c764`, `0x0090c875`) |
+| le (`y+n`) | `(y+n, x)` | `n·sorlépés` (`0x0090c749`, `0x0090c893`) |
+
+A képen kívül eső szomszéd **fal** (az alapértékek `n²`, illetve `2n²`, tehát
+nem nullák: `0x0090c814`–`0x0090c81c`). A cellák képpontonkénti léptetését
+nem olvastam végig utasításonként — a kezdőoffszetek kiolvasottak, a léptetést
+a 4. pont mérése igazolja.
+
+**5. Mérés — a lánc bitszintű szimulációja** (a fenti 1–4. pont és a
+„GÉPEZETE" szakasz 1., 4–6. pontja szerint; átlagos abszolút eltérés az
+eredeti Picasa-exporttól, 0–255 skála):
+
+| mérőanyag (NAS, `My Pictures\`) | lánc | identitás | σ = 4 Gauss-modellünk | kiolvasott lánc | lánc + az export kvantálótábláival újratömörítve |
+|---|---|---:|---:|---:|---:|
+| `PicasaPy merokit-2/export-202608151438/halott_01.jpg` | `blur=1;` (0,1) | 0,240 | (= identitás) | 0,173 | **0,013** (99,08% bitre egyezik) |
+| `…/halott_02.jpg` | `blur=1,0.500000;` | 0,562 | (= identitás) | 0,177 | **0,013** (99,06%) |
+| `…/halott_03.jpg` | `blur=1,2.000000;` | 17,317 | 0,426 | 0,112 | **0,013** (99,07%) |
+| `762-blur-kuszob/export/…-010`…`-140` | 0,1 · 0,5 · 0,8 · 1,1 · 1,4 | 0,000 | 0,000 | **0,000** | — |
+| `762-blur-kuszob/export/…-200` | 2,0 | 0,999 | 0,026 | **0,010** | — |
+
+A `merokit-2` forrása és exportja ugyanazzal a kvantálótáblával (átlag 3,45 /
+5,20, 4:2:0) készült; a maradék 0,013 a két JPEG-kódoló eltérése — az
+identitás ugyanígy újratömörítve 0,122 / 0,540 / 17,281.
+
+⇒ **A szűrő valódi, zajos tartalmon a csúszka tartományában IS simít**
+(0,1-nél és 0,5-nél a `merokit-2` exportja a lánccal egyezik, nem a
+forrással). A korábbi „0,562 ≈ tétlen, σ ≤ 0,3" olvasat a kis különbségek
+elsimítása volt. A mai kétállású modellünk (`render/blur.py`,
+`BLUR_IDLE_THRESHOLD_MAX = 1,4`, `BLUR_SIGMA = 4,0`) a kétszínű ábrákra
+illeszkedik, fotón nem → fejlesztői jegy **#3493**.
+
+**6. A 343. kör „következő lépése" (a kezelő hívóhelye, `0x008f9be3`,
+`0x00906e6b`) ezzel TÁRGYTALAN** — a tétlenség magyarázatához nem kell.
+
+*Bizonyítottsági fok: **megerősített** — utasításszintű kiolvasás, és a
+szimuláció két független mérőkészlet kilenc exportját reprodukálja (a
+`merokit-2` hármát újratömörítve 99,1%-ban bitre). Nincs szabad paraméter: a
+lánc minden száma a binárisból jön.*
 
 ### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
 

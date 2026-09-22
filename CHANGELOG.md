@@ -7,7 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.550] – 2026-09-22
+## [0.8.551] – 2026-09-22
 
 ### Hozzáadva
 
@@ -20,6 +20,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - **A Kerekített élek felirata az eredeti szövegére (#3315)** — eddig
   „Lekerekített sarkok" állt a Shift-es csempén.
+
+## [0.8.550] – 2026-09-22
+
+### Új
+
+- **A Canon gépek fotóinál a Tulajdonságok panel megmutatja az objektívet
+  (#3121)** — ugyanúgy, ahogy az eredeti Picasa: a gép rejtett adataiból
+  kiolvassa az objektív azonosítóját, és a Picasa saját, beépített
+  objektívlistájából adja a nevét. Ha az objektív nincs a listában, a
+  gyújtótávolságot és a rekeszt írja ki (például „50mm f/1.8"), ahogy az
+  eredeti is. A Nikon gépek objektívneve a következő lépés (#3495).
 
 ## [0.8.549] – 2026-09-22
 

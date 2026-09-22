@@ -2450,6 +2450,10 @@
         <translation>Fókusznagyítás</translation>
     </message>
     <message>
+        <source>Focal Pixelate</source>
+        <translation>Képpontnövelés</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="856"/>
         <source>Pencil Sketch</source>
         <translation>Ceruzarajz</translation>
