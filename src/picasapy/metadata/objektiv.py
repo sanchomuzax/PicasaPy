@@ -23,17 +23,26 @@ elosztó — a `docs/specs/picasa-metaadat-tulajdonsagok.md` **9. szakaszában**
    8-hoz. Ezért a `35.0`-hoz az EXIF-ből jövő `34.999996` MÉG találat, a
    kilencedik ULP viszont már nem.
 
-⚠️ Amit ez a modul NEM tud: hogy a `LensType`/`LensID` a MakerNote melyik
-bájtjain áll. A feloldás kulcs → név; a kulcs KIOLVASÁSA a MakerNote-ból a
-#3121 következő lépése, és mintafájl kell hozzá.
+## A Canon-ág teljes menete (9.12)
+
+A `canon_leiras` a `MakerNote 0x0001` tömbből ugyanazt számolja, amit a
+`FUN_00a35a60`: a négy számot, a tábla-keresést, és ha az nem ad nevet, a
+`0x00a36650` **tartalék-leírását** (`35-105mm f/3.5-4.5`). A tömböt a
+`makernote.py` olvassa ki.
+
+⚠️ A Nikon-ág kulcsa (a `LensData` verziói és titkosítása) még nincs
+kiolvasva — az a #3495; addig a Nikon-fájl „Lens"
+sora változatlan.
 """
 
 from __future__ import annotations
 
 import json
+import math
 import struct
 from functools import lru_cache
 from pathlib import Path
+from typing import Sequence
 
 TABLA_UT = Path(__file__).with_name("objektiv_tabla.json")
 
@@ -143,3 +152,89 @@ def objektiv_neve(
             return None
         return nikon_objektiv(lens_id)
     return None
+
+
+#: A méret-kapu: a tömb legalább ennyi elemű (`(elemszám·2 & ~1) > 0x36`,
+#: `0x00a35a8c`; a `0x009f0fd0` a méretet elemszám·2 alakban adja vissza).
+_CANON_MIN_ELEM = 28
+#: `lea ecx,[edi-1] / cmp ecx,0xfffd / ja` — ezen kívül nincs tábla-keresés.
+_CANON_LENS_TYPE_MAX = 0xFFFE
+
+
+#: A legnagyobb véges float32; fölötte az x87 `fstp dword` végtelent ír.
+_F32_MAX = 3.4028234663852886e38
+
+
+def _f32(ertek: float) -> float:
+    """Egyszeres pontosságra kerekítés — az eredeti `fstp dword` lépése.
+
+    A tartományon kívüli érték (sérült fájl, pl. `e26 = 0xFFFF`) végtelen
+    lesz, ahogy az x87-en is — a `struct` itt kivételt dobna.
+    """
+    if not abs(ertek) <= _F32_MAX:
+        return math.copysign(math.inf, ertek)
+    return struct.unpack("<f", struct.pack("<f", ertek))[0]
+
+
+def _nem_nulla(ertek: float) -> bool:
+    """A tartalék-leírás „van-e érték" próbája: ugyanaz a 8 ULP, 0.0 ellen.
+
+    ⚠️ Eltérés: a nem véges számot (a túlcsorduló sérült érték) „nincs
+    értéknek" vesszük — az eredeti CRT itt olvashatatlan szöveget írna ki.
+    """
+    return math.isfinite(ertek) and not _egyezik(0.0, ertek)
+
+
+def canon_leiras(beallitasok: Sequence[int]) -> str | None:
+    """A Canon-ág (`FUN_00a35a60`): név a táblából, vagy tartalék-leírás."""
+    talalat = canon_talalat(beallitasok)
+    return talalat[0] if talalat else None
+
+
+def canon_talalat(beallitasok: Sequence[int]) -> tuple[str, bool] | None:
+    """Mint a `canon_leiras`, de megmondja, TÁBLANÉV-e (`True`) vagy a
+    tartalék-leírás (`False`) — a panel a kettőt másképp rangsorolja.
+
+    `beallitasok` a `MakerNote 0x0001` (CameraSettings) tömbje. `None`, ha a
+    tömb rövid, vagy ha a számokból semmi nem írható ki.
+    """
+    if len(beallitasok) < _CANON_MIN_ELEM:
+        return None
+    e = beallitasok
+    gyujto_min = gyujto_max = rekesz_min = rekesz_max = 0.0
+    if e[25]:
+        if e[24]:
+            gyujto_min = _f32(e[24] / e[25])
+        if e[23] and e[23] != e[24]:
+            gyujto_max = _f32(e[23] / e[25])
+    if e[26]:
+        rekesz_min = _f32(2.0 ** (e[26] / 64))
+    if e[27] and e[27] != e[26]:
+        rekesz_max = _f32(2.0 ** (e[27] / 64))
+    if 1 <= e[22] <= _CANON_LENS_TYPE_MAX:
+        nev = canon_objektiv(e[22], gyujto_min, gyujto_max, rekesz_min, rekesz_max)
+        if nev:
+            return nev, True
+    leiras = _tartalek_leiras(gyujto_min, gyujto_max, rekesz_min, rekesz_max)
+    return (leiras, False) if leiras else None
+
+
+def _tartalek_leiras(
+    gyujto_min: float, gyujto_max: float, rekesz_min: float, rekesz_max: float
+) -> str:
+    """A `0x00a36650` formázója: a gyújtó CSONKOLVA (`cvttsd2si`), a rekesz
+    `%.2g`-vel; a két rész közé csak akkor kerül szóköz, ha az első nem üres."""
+    szoveg = ""
+    if _nem_nulla(gyujto_min):
+        if _nem_nulla(gyujto_max):
+            szoveg = "%d-%dmm" % (int(gyujto_min), int(gyujto_max))
+        else:
+            szoveg = "%dmm" % int(gyujto_min)
+    if _nem_nulla(rekesz_min):
+        if szoveg:
+            szoveg += " "
+        if _nem_nulla(rekesz_max):
+            szoveg += "f/%.2g-%.2g" % (rekesz_min, rekesz_max)
+        else:
+            szoveg += "f/%.2g" % rekesz_min
+    return szoveg
