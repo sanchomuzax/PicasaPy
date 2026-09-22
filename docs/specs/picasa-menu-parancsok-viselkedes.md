@@ -804,6 +804,8 @@ kulcsok). Linuxra az eredeti nem ad feliratot — ez döntést igényel.
 
 ### 31.2 A „Keresés" HÁROMTÉTELES ALMENÜ, nem egy parancs
 
+> ⛔ **HELYESBÍTVE (2026-09-22, #3456):** az almenü **KÉT** tételes (Fájl a lemezen · Eredeti a lemezen), és **feltételes** — csak egyetlen, visszaállítható (`revertable`) kép kijelölésekor cseréli be a közös utófeldolgozó; a „Keresés a Picasában” NEM tagja. Részletek: `ui-audit-context-menus.md` **D.2**.
+
 A rács helyi menüjében (`CThumbUI`, `0x0056c5a0` / `0x0056e1c0`) a
 `CThumbUI::locatemenu` = **„Keresés"** egy almenü, három gyerekkel:
 
