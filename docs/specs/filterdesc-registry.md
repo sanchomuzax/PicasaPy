@@ -1402,6 +1402,32 @@ statikus szűrőneve **kimerítően**: `autolight` (Automatikus kontraszt),
 `triple2`, `triple`, **`debug`** — az utolsó fejlesztői eszköz, ezért marad
 ki a fülünkről.
 
+**Az Elhomályosítás (`blur`) sem érhető el a felületről (2026-09-22, #3485).**
+A `filterdesc.xml` definiálja (`id="blur"`, `mode="effect"`, felirat *Blur*,
+egy *Threshold* csúszka), de ettől még nem kap csempét. A `blur` név-sztringre
+(`0x00c7fc14`) a teljes fájlban **öt** hivatkozás van (indextől független
+pásztázás), és egyik sem felületi:
+
+| hivatkozás | mi ez |
+|---|---|
+| `0x0040aad1` | név-visszaadó (`mov eax, "blur"; ret`), egy szűrőosztály vtáblájának eleme (`0x00c80794`) |
+| `0x00bc437c` · `0x00bc4484` · `0x00bc4571` | a Glimmer-sávban (`0x00bc41e0`) egy `blur` nevű attribútum — nem a natív szűrő |
+| `0x00cd07b8` | a natív szűrő-nyilvántartás 23. rekordja (`picasa-native-filter-registry.md`) |
+
+⛳ **Pozitív kontroll:** a csempetáblák sávjában (`0x00c7e400`–`0x00c7e800`)
+ugyanez a pásztázás megtalálja a csempés effektek nevét — `sepia`
+(`0x00c7e5ac`), `bw` (`0x00c7e5b8`), `warm` (`0x00c7e5c4`), a Shifttel
+elérhető `radtint` (`0x00c7e628`), `Soften` (`0x00c7e6cc`), `Vignette`
+(`0x00c7e6d8`); a `blur`-ét nem. A szerkesztőpanel belépési pontjának
+(`0x006021d0`) statikus nevei között sincs (fent). UTF-16-os `blur` sztring
+nincs a fájlban.
+
+⇒ **LEZÁRVA: az eredeti Picasában az Elhomályosításnak nincs menüje,
+csempéje és gombja** — csak egy betöltött szerkesztési láncból (`filters=` a
+`.picasa.ini`-ben) fut le. Nálunk a
+„Régi effektek” fülön szürkén áll (`chain.UI_INERT_RANGE_OPS`), ami ennek
+megfelel: a felületről ott sem alkalmazható.
+
 **Ráadás-lelet:** a `focalpixelate` kulcs sztringként **nincs benne** a
 `Picasa3.exe`-ben (a `PicnikFocalPixelate` igen), a `filterdesc.xml`-ben
 viszont **van** — tehát XML-vezérelt bejegyzés, nem beégetett. Ez
