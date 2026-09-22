@@ -265,9 +265,14 @@ play-pause, Enter/Esc → teljes képernyő → #1154 42–44.). Jegy-kommentek:
    a lap-szintű csomópontmagasság, amellyel az elrendező a sorban középre
    igazít; a teljes Indexkép-elrendezés (margók, cellaosztás, `x` és `y`)
    **31/31 csomóponton pontosan** egyezik, öt binárisból kiolvasott
-   konstanssal. **Ami NYITVA:** (a) melyik menet írja a csomópont `+0x2c`
+   konstanssal. ~~**Ami NYITVA:** (a) melyik menet írja a csomópont `+0x2c`
    mezőjét a témalayout UTÁN (a layout maga `1,0`-t ír), és (b) mi állítja
-   elő magát az értéket (313 / 500 / 256 / 158). A `[this+0x18]` 2026-09-06-án
+   elő magát az értéket (313 / 500 / 256 / 158).~~ ⚠️ **ELAVULT JELÖLÉS
+   (2026-09-22, #3500):** mindkét rész lezárult, ugyanúgy, ahogy a lap 168.
+   köri bejegyzésénél (#2931): a `scale` képlete megvan, a `+0x2c` írójának
+   gépi keresése három címzési alakra kimerült (#2805), és a gyakorlati
+   következtetés — a tárolt értéket átvinni, nem újraszámolni — a **#2923**
+   óta a kódban van. Gazdajegyek: #1412, #2583, #2593, #2923, mind zárva. A `[this+0x18]` 2026-09-06-án
    **lezárva**: az a cellaél `k`, **nem** a `scale` (19.1). A közvetlen írás
    mind a négy alakja kizárva (19.2). ⭐ **A `picturepile` képlete 2026-09-06-án
    a binárisból MEGVAN** (`S(i) = CSONK(clamp₁(1/sqrt(sqrt(i)−1)) × 1024 × 0,33)`,
