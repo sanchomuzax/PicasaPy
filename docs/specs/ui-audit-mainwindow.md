@@ -1830,3 +1830,57 @@ döntés és az indoklása: `docs/decisions/gorgetosav-album-ugro.md` (ADR-015).
 minta") **megdőlt**; a stílusdöntés attól még áll, csak más okból: a mai
 felület MINDEN sávja ilyen, és a 16 képpontos, három állapotképes rajz
 visszahozása az egész króm szétszabdalásával járna.
+
+## ⛳ R5 — a fő könyvtárnézet (`thumbui`) súgói: 15 egyezik, 4 eltér (2026-09-22, 341. kör, #656)
+
+*Forrás: `referencia/ui-leltar.csv` (a `thumbui.tre` 31 buborék-súgója) ·
+a hivatalos angol és magyar szöveg cél-azonosító szerint:
+`referencia/i18n/enUS/tooltips.xml` és `referencia/i18n/hu/tooltips.xml`
+(`<action type="Tooltip" target="thumbui/…">`) · a mi QML-forrásunk és a
+`picasapy_hu.ts`, szó szerinti összevetéssel.*
+
+### A) Szó szerint egyezik — angolul ÉS magyarul (15)
+
+| eredeti elem | angol | magyar | nálunk |
+|---|---|---|---|
+| `addtobuttcon` | Add selected items to an Album | Kijelölt elemek hozzáadása albumhoz | `TrayBar.qml:960` |
+| `flatview` | Set view to show flat folder structure | Egydimenziós mappanézet beállítása | `MainToolbar.qml:204` |
+| `folderview` | Set view to show folder tree structure | Fastruktúrájú mappanézet beállítása | `MainToolbar.qml:231` |
+| `importbutton` | Get photos from a camera, scanner, or other media | Fotók letöltése fényképezőgépről, képolvasóról vagy más eszközről | `MainToolbar.qml:110` |
+| `newalbum` | Create a new album | Új album létrehozása | `MainToolbar.qml:163` |
+| `rotateleft` / `rotateright` | Rotate counter-clockwise / Rotate clockwise | Forgatás balra / jobbra | `TrayBar.qml:1167` / `:1212` |
+| `scratchclear` | Clear items from the selection | Elemek eltávolítása a kijelölésből | `TrayBar.qml:923` |
+| `scratchhold` | Hold selected items | Kijelölt elemek megőrzése | `TrayBar.qml:899` |
+| `single_action_return` | Go back to what you were editing | Visszatérés a szerkesztett elemhez | `TrayBar.qml:2167` |
+| `startoggle` | Add/Remove Star | Csillag hozzáadása/eltávolítása | `TrayBar.qml:1107` |
+| `people_toggle` · `places_toggle` · `tags_toggle` · `properties_toggle` | Show/Hide … Panel | Az … párbeszédpanel megjelenítése/elrejtése | `TrayBar.qml:1291`–`1300` (`sugo`) |
+
+### B) Eltér (4)
+
+| eredeti elem | eredeti (EN / HU) | nálunk (EN / HU) | mi a különbség |
+|---|---|---|---|
+| `loupehit` | *Click and drag over photos to magnify them* / **Ide kattintva és az egérmutatót a fotókra húzva kinagyíthatja a részleteket** | *Loupe — drag over the photos* / „Nagyító — húzd a képek fölött” (`TrayBar.qml:1446`) | más mondat, és a magyar **tegező** — az eredeti magázó |
+| `folderviewpopup` | *View options* / **Megjelenítési beállítások** | *Folder view options* / „Mappanézet beállításai” (`MainToolbar.qml:267`) | más szöveg |
+| `albumview` | felirat *Back To Library*, súgó *Return to organized thumbnails* / **Vissza a rendezett indexképekhez** | a „Back to Library” gombnak (`PhotoViewer.qml:840`) **nincs súgója** | hiányzó súgó |
+| `single_action_close` | *Cancel "Get more"* / **A "Továbbiak" művelet megszakítása** | a magyar „A „Továbbiak” művelet megszakítása” (`TrayBar.qml:2183`) | csak az idézőjel: az eredeti egyenes `"…"`, nálunk tipográfiai `„…”` |
+
+### C) Nem tárgya ennek a szeletnek (12)
+
+A többi elem vagy **nem látható vezérlő** (`smallthumbs`, `largethumbs`,
+`next`, `prev`, `visitweb`: szülő `root`, makró `m_render_offscreen` — a
+`visitweb` súgója ráadásul `PLACEHOLDER`), vagy **alapból rejtett, feltételesen
+megjelenő** gomb (`sbutton`, `timelinebutton`, `newfolder`, `backup`,
+`cdmode`: `m_hidden`; `fullview`: `m_fakehidden`), vagy a webkamerás rögzítés
+(`webcambutton`), amelynek nálunk nincs megfelelője. Hogy ezek mikor
+jelennek meg, az a láthatósági feltételük kérdése, nem a súgó szövegéé.
+
+### D) Nyitott kérdések mérlege
+
+- a 19 látható vezérlő súgójának összevetése — **LEZÁRVA** (A: 15, B: 4);
+- a 12 rejtett/nem látható elem megjelenési feltétele — **HATÓKÖRÖN
+  KÍVÜL** ebben a szeletben: az R5 a meglévő vezérlők szövegét méri
+  (341. kör döntése); a #656 további szeletei viszik.
+
+`0 nyílt · 1 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+Fejlesztői jegy a B) négy tételére: **#3476**.
