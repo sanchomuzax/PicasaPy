@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.545] – 2026-09-22
+
+### Javítva
+
+- **A szerkesztőpanel effektcsempéi újra mutatják az effektet (#3478)** — a
+  nagybetűs nevű effektek (például Szegély, Vignetta, Neon, Árnyékvetés,
+  Polaroid, Múzeumi matt — összesen 31) csempéje eddig a módosítatlan
+  fotót mutatta.
+- **A keretes képek bélyegképén és az effektcsempén a keret vastagsága
+  arányos a mentett képpel (#3472)** — a rácsban és a csempén a Szegély és
+  a Múzeumi matt kerete eddig sokszorosan vastagabbnak látszott. A már
+  elkészült bélyegképek maguktól újragenerálódnak.
+
 ## [0.8.544] – 2026-09-22
 
 ### Javítva

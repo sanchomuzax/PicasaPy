@@ -502,7 +502,9 @@ class TestEditedThumbnailCacheInvalidation:
 
         monkeypatch.setattr(cache_module, "_EDIT_BASE_MIN", 1536)
         monkeypatch.setattr(cache_module, "_EDIT_BASE_CAP", 2048)
-        monkeypatch.setattr(cache_module, "_EDIT_CACHE_VERSION", 3)
+        monkeypatch.setattr(
+            cache_module, "_EDIT_CACHE_VERSION", cache_module._EDIT_CACHE_VERSION + 1
+        )
         fresh = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
 
         assert fresh is not None
