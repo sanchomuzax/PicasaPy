@@ -35,8 +35,6 @@ fölöslegesen.
 
 **Mappa**
 
-- Leírás szerkesztése… — a mappa helyi menüjének **Mappaleírás
-  szerkesztése…** tétele viszont **működik**
 - A mappalista helyi menüjében: Elrejtés, Megjelenítés, Indexképek
   megjelenítése a könyvtárban, Gyorsbillentyűk, Asztal — a **Nézet ▸
   Mappanézet** almenü **Indexképek megjelenítése a könyvtárban** tétele
@@ -79,7 +77,6 @@ már **működik**: ezt a súgót nyitja meg — lásd
 
 **Helyi menükben**
 
-- Hozzáadás az Emberek albumhoz
 - Beállítás az Emberek album indexképeként
 - Mappa felosztása itt…
 - Társítás

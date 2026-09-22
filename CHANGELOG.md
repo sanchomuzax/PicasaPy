@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.547] – 2026-09-22
+
+### Javítva
+
+- **A Mappa ▸ Leírás szerkesztése… menüpont működik (#3460)** — eddig
+  szürke volt; most a megnyitott mappára ugyanazt a párbeszédet nyitja
+  (név, dátum, hely, leírás), mint a mappa helyi menüjének Mappaleírás
+  szerkesztése… tétele. Album vagy személy nézetében szürke marad, mert
+  ott nincs megnyitott mappa.
+- **A súgó naprakész az Emberek albumokról** — a Hozzáadás az Emberek
+  albumhoz almenü (0.8.543 óta működik) már nem szerepel a „még nem
+  érhető el" listán.
+
 ## [0.8.546] – 2026-09-22
 
 ### Javítva

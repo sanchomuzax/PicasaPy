@@ -253,6 +253,9 @@ MenuBar {
     // és people_controller.py `currentPersonName`).
     property string currentAlbumToken: ""
     property string currentPersonName: ""
+    //: #3460: a megnyitott mappa — üres, ha nincs (a „Leírás szerkesztése…"
+    //: csak mappára vonatkozik)
+    property string currentFolder: ""
     // A felirat és a művelet EGYETLEN helyen dől el, hogy a kettő ne
     // csúszhasson el egymástól (a menütétel azt csinálja, amit ígér).
     readonly property string deleteCommandText:
@@ -283,6 +286,9 @@ MenuBar {
     signal saveAsRequested()
     signal saveCopyRequested()
     signal slideshowRequested()
+    //: #3460: Mappa ▸ Leírás szerkesztése… — ugyanaz az `album.fen`
+    //: párbeszéd, mint a mappa helyi menüjéé (#422), a megnyitott mappára
+    signal editFolderDescriptionRequested()
     // #24: Időrend nézet (Ctrl+5)
     signal timelineRequested()
     // #12: a Címkék-panel állapota kívülről kötve, a menüpont csak kér
@@ -1453,7 +1459,14 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("F&older")
-        PicasaMenuItem { text: qsTr("&Edit Description..."); placeholder: true }
+        MenuItem {
+            objectName: "menuFolderEditDescription"
+            text: qsTr("&Edit Description...")
+            // album vagy személy nézetében nincs „a" mappa, amire vonatkozna
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
+            onTriggered: bar.editFolderDescriptionRequested()
+        }
         MenuItem {
             objectName: "menuFolderSlideshow"
             text: qsTr("&View Slideshow") + "\tCtrl+4"

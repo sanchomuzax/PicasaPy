@@ -74,7 +74,8 @@ A mappára jobbgombbal kattintva:
 - **Mappa rendezése** — dátum, név, méret, fordított sorrend
 - **Indexképek frissítése** — újraolvassa a mappát
 - **Mappaleírás szerkesztése…** — név, dátum, hely és leírás; a mappához
-  zene is választható a diavetítéshez és a filmhez
+  zene is választható a diavetítéshez és a filmhez (a megnyitott mappára
+  ugyanez a **Mappa ▸ Leírás szerkesztése…** menüpontból is)
 - **Mappa elrejtése** / **Mappa megjelenítése**
 - **Keresés a lemezen** — megnyitja a fájlkezelőben
 - **Áthelyezés gyűjteménybe** — meglévőbe vagy újba
