@@ -11,7 +11,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
-- **A Keret és a Múzeumi paszpartu vastagsága a szerkesztő előnézetén
+- **A Szegély és a Múzeumi matt effekt vastagsága a szerkesztő előnézetén
   arányos a mentett képpel (#3377)** — nagy (2560 képpontnál hosszabb)
   fotón az előnézet kicsinyített képen rajzolta a keretet, ezért ott
   arányaiban vastagabbnak látszott, mint a mentett képen. Most, mint az
