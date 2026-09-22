@@ -6468,7 +6468,7 @@ használják (`0x00bc7540`, `0x00bc77b0`); a cél nem lebegőpontos Gaussian-
 a vízszintes→függőleges sorrendre, a puffer-váltásra és az integer
 kimeneti útra. A sugárhoz tartozó három együttható teljes jelentését és a
 különböző optimalizált ágak bitre azonos megfelelését ebben a körben nem
-mértem össze — ezekre nem adok át nem bizonyított kernel-táblát.
+mértem össze — ezekre nem adok át nem bizonyított kernel-táblát. *(A különböző ágak egyezése 2026-09-23-án lemérve: bájtra azonosak — ld. „A SIMD-ágak” szakaszt lent.)*
 
 **A megfejtett mechanizmus hatása a PicasaPy eltérésére NINCS MÉRVE:** a
 natív út leírása önmagában nem bizonyítja, hogy a hatmenetes csere egy
@@ -6522,8 +6522,8 @@ mossa. A keverés egész: `(S·α + D·(255 − α)) // 255` (3000 képpontpáro
 `shadowAlpha` — a paraméterépítő (`0x00bbb8d0`) első lebegőpontos mezője
 a `shadowAlpha` (alapértéke `fld1` = 1), a leképezés utasításszintű
 végigkövetése hiányzik, a golden-mérés viszont ezt a leképezést igazolja;~~ → **LEZÁRVA lent**;
-(2) a SIMD-ágak (`0x00bc6920`, `0x00bc7300`, `0x00bc6f30`, `0x00bc6b60`)
-bitre azonossága a skalár úttal nincs mérve.
+~~(2) a SIMD-ágak (`0x00bc6920`, `0x00bc7300`, `0x00bc6f30`, `0x00bc6b60`)
+bitre azonossága a skalár úttal nincs mérve.~~ → **LEZÁRVA lent (346. kör): bájtra azonosak.**
 
 ### ⛳ A `shadowAlpha` útja utasításszinten — és az alfa-bájt CSONKOLT, nem kerekített (2026-09-22, 345. kör, #626)
 
@@ -6572,6 +6572,64 @@ ezért a golden-mérés ezt nem láthatta. Képpontonkénti felső korlát:
 pixelgoldenen mért hatás: **NINCS MEG** — ehhez egy 48 érintett Fade-érték
 egyikén készült eredeti export kellene; a javítás ettől függetlenül a
 binárist követi. Fejlesztés: **#3498**.*
+
+### ⛳ A SIMD-ágak bájtra azonosak a skalár úttal — mert a vektoros út LEFELÉ kerekítésre állítja az FPU-t (2026-09-23, 346. kör, #626)
+
+A fenti „Nyitva marad" (2) pontja lezárva. **Melyik ág fut egy valódi
+gépen:** a diszpécser (`0x00bc5680`) a vektoros útra lép, ha a `0x00d695d2`
+vagy a `0x00d695d3` bájt nem nulla (`0x00bc5794`–`0x00bc57a4`). A
+`0x00d695d2`-t a `0x00c33d30` írja: `CPUID` 1-es levél (`0x009bbd50`,
+`cpuid` a `0x009bbda6`-on), és a kimenetek veremkiosztása szerint az
+**EDX 26. bitje** (`0x00c33d4d`–`0x00c33d56`) — az **SSE2** jelzőbitje.
+⇒ Minden SSE2-es processzoron (gyakorlatilag minden gépen, amin a Picasa 3
+fut) a **vektoros** út fut, nem a skalár, amelyet a #3474 átvett.
+
+**Mit számol a vektoros menet** (`0x00bc7b80`/`0x00bc7c10`):
+ugyanazt a számlálót, mint a skalár — `pslld` a `2^k`-val és `pmaddwd` a `w`
+együtthatóval (`0x00bc7ba7`–`0x00bc7bb3`) —, az osztás viszont két
+változatban megy:
+
+| ág | osztás | cím |
+|---|---|---|
+| az osztó kettő-hatvány (`p2`: `H-simd` `0x00bc6920`, `V-simd2` `0x00bc6b60`) | `psrld` a kitevővel (a `0x00bc5620` számolja) → **csonkol** | `0x00bc5670`, `0x00bc5640`–`0x00bc5648` |
+| minden más (`H-simd2` `0x00bc7300`, `V-simd` `0x00bc6f30`) | `cvtdq2ps` → `divps` az osztóval (float, `0x00bc5570` tölti) → `cvtps2dq` | `0x00bc5660`–`0x00bc5666` |
+
+A második sor kerekítése az **MXCSR**-től függ. A vektoros út eleje
+(`0x00bc57e0`: `mov eax, 2` → `0x009025c0`) elmenti a vezérlőszót, majd
+`_controlfp(új, maszk)`-ot hív a 2-es táblaelemmel: `új = [0x00d333a4]` =
+**`0x100` = `_RC_DOWN`**, `maszk = [0x00d333c0]` = `0x300` = `_MCW_RC`; a
+diszpécser a végén visszaállítja (`0x00bc58d8`–`0x00bc58e1`). A `_controlfp`
+(`0x00c0963e`) az MXCSR-t is átírja, ha a futtatókönyvtár SSE2-jelzője
+(`0x00da1428`) 1 (`0x00c097af`) — ezt a `__get_sse2_info` (`0x00bf5fd5`)
+írja induláskor ugyanabból a CPUID-bitből (`0x00bf6019`, `0x00bf603a`).
+⇒ A vektoros út **lefelé kerekítő** `divps`-szel és `cvtps2dq`-val fut.
+
+**Mérés (unicorn-emulátor, `eszkozok/nativ_emu/simd_verify.py` a privát
+repóban):** a #3474 esetkészlete + kettő-hatvány és páratlan méretű esetek
+(39 eset: téglalap, zaj, 223×211-es kép; sugár −2…300; `quality` 0…15),
+mindhárom nem-nulla jelzőállásban, a futtatókönyvtár SSE2-jelzőjével és az
+MXCSR-betöltő (`0x00c1344f`) horoggal: **0 eltérő bájt** a skalár úthoz
+képest, és a skalár út **0 eltérő bájt** a `render/nativ_blur.py`-hoz. Mind
+a négy vektoros menetfüggvény (`0x00bc6920`, `0x00bc7300`, `0x00bc6f30`,
+`0x00bc6b60`) és a diszpécser négy vektoros változata (`0x00bc5a10`,
+`0x00bc5cf0`, `0x00bc5fd0`, `0x00bc62b0`) lefutott; az MXCSR-írások `0x2000` (lefelé) és vissza.
+
+⚠️ **Kontroll — miért kell a futtatókönyvtár állapota:** ha a `0x00da1428`
+0 marad (indítás nélküli emulátor), a `_controlfp` nem ír MXCSR-t, a
+`divps`/`cvtps2dq` a legközelebbire kerekít, és a vektoros út menetenként
+legfeljebb +1-gyel, hat menet után +4-gyel tér el (39 esetben 878 059 bájt).
+Ez **az emulátor hiánya volt, nem a Picasa viselkedése**; a kerekítő
+változat csak akkor volna valós, ha a futtatókönyvtár nem észlelné az
+SSE2-t — akkor viszont a `0x00c33d30` sem kapcsolná be a vektoros utat.
+
+⇒ **A mi `render/nativ_blur.py`-unk a valódi gépen futó ágat is bitre
+követi; nincs teendő.**
+
+*Bizonyítottsági fok: **megerősített** — utasításszintű kiolvasás
+(elágazás, CPUID-bit, `_controlfp`-tábla, MXCSR-út) és emulátoros mérés
+39 × 3 esetben. A valódi CPU és az unicorn `divps`-e közti egyezést nem
+mértem külön; a lefelé kerekítés mellett a hányados csonkolt egész része
+mindkettőn IEEE-szerinti.*
 
 ## ⛳ A `TiledImageMask` mind a tizenkét TARTALÉKÉRTÉKE — `alphaMax = 1,0`, `alphaMin = 0,0` (2026-09-18, 320. kör, #2476)
 
