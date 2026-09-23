@@ -315,6 +315,23 @@ menünek a tétele **Megjelenítés**-re vált, és azzal hozod vissza a képet.
 > **Elrejtés** / **Megjelenítés** párja még **nem működik** — a
 > kép-elrejtés a kép helyi menüjéből megy.
 
+### A rejtett mappák jelszava
+
+A **Rejtett mappák** jelszóval zárható le. Ha van jelszó, a **Nézet ▸
+Rejtett képek** bekapcsolása előbb ezt kéri.
+
+1. Kapcsold be a **Nézet ▸ Rejtett képek** pontot. A bal hasáb alján
+   megjelenik a **Rejtett mappák** fejléc (csak akkor, ha van rejtett
+   mappád).
+2. Kattints a fejlécre a **jobb** egérgombbal, és válaszd a **Jelszó
+   megadása/módosítása…** pontot.
+3. Írd be a jelszót kétszer, és nyomd meg az **OK**-t.
+
+Ugyanitt tudod a jelszót megváltoztatni vagy levenni.
+
+> A jelszó csak a PicasaPy felületén rejti el a képeket. A fájlok a
+> lemezen változatlanul ott vannak, bármelyik fájlkezelővel megnyithatók.
+
 ## Milyen fájlokat lát a program
 
 A figyelt mappákban a PicasaPy háromféle fájlt vesz észre:

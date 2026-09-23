@@ -110,6 +110,8 @@ Rectangle {
     readonly property int hierarchyRowCount:
         pane.hierarchyController ? pane.hierarchyController.rows.length : 0
     signal folderChosen(string path)
+    // #3461: a Rejtett mappák fejlécének „Jelszó megadása/módosítása…" tétele
+    signal hiddenPasswordRequested()
     signal starredChosen()
     signal albumChosen(string token)
     signal personChosen(string name)
@@ -228,6 +230,14 @@ Rectangle {
     // függvényben (tesztelhetőség).
     function openCollectionContextMenu(name) {
         collectionContextMenu.collectionName = name
+        collectionContextMenu.hiddenCollection = false
+        collectionContextMenu.popup()
+    }
+    // #3461: a beépített „Rejtett mappák" csomópont fejlécének helyi menüje
+    // — ugyanaz a Collection menü, de ott a jelszó-tétel él.
+    function openHiddenCollectionContextMenu(name) {
+        collectionContextMenu.collectionName = name
+        collectionContextMenu.hiddenCollection = true
         collectionContextMenu.popup()
     }
 
@@ -712,6 +722,7 @@ Rectangle {
                     }
                 }
                 delegate: Rectangle {
+                    objectName: kind === "hidden" ? "hiddenCollectionHeader" : ""
                     required property string kind
                     required property string name
                     required property string path
@@ -734,7 +745,8 @@ Rectangle {
                     // a "year" sorok nem kattinthatók, a MouseArea rájuk
                     // enabled: false, így containsMouse mindig false marad.
                     color: isSelectedFolder ? Theme.panelSelectionActive
-                           : (folderRowMouse.containsMouse ? Theme.panelSelection : "transparent")
+                           : (kind === "folder" && folderRowMouse.containsMouse
+                              ? Theme.panelSelection : "transparent")
 
                     // évszám-elválasztó: arányos betűs címke + vékony
                     // vízszintes elválasztó vonal a panel széléig (audit:
@@ -884,11 +896,18 @@ Rectangle {
                     ToolTip.delay: Theme.tooltipDelay
                     MouseArea {
                         id: folderRowMouse
-                        enabled: kind === "folder"
-                        hoverEnabled: true
+                        // #3461: a Rejtett mappák fejléce is kap egeret, de
+                        // CSAK a jobb gombra (helyi menü) — kijelölni nem lehet
+                        enabled: kind === "folder" || kind === "hidden"
+                        hoverEnabled: kind === "folder"
                         anchors.fill: parent
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        acceptedButtons: kind === "hidden"
+                            ? Qt.RightButton : (Qt.LeftButton | Qt.RightButton)
                         onClicked: function(mouse) {
+                            if (kind === "hidden") {
+                                pane.openHiddenCollectionContextMenu(name)
+                                return
+                            }
                             folderList.forceActiveFocus()   // kurzorgombokhoz (#77)
                             if (mouse.button === Qt.RightButton) {
                                 pane.openFolderContextMenu(path)
@@ -1330,6 +1349,7 @@ Rectangle {
     // fejlécre kötve (pane.openCollectionContextMenu).
     CollectionContextMenu {
         id: collectionContextMenu
+        onPasswordRequested: pane.hiddenPasswordRequested()
         onRenameRequested: {
             pane._renamingCollection = collectionContextMenu.collectionName
             newCollectionDialog.initialName = collectionContextMenu.collectionName
