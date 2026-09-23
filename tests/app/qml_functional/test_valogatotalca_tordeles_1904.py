@@ -223,6 +223,10 @@ class TestTordeles:
         sok_darab = _egy_sorba_fero_maximum(window) + 1
 
         window, betoltve = _kepekkel(qml_app, qt_app, sok_darab)
+        #: #3532: a `_kepekkel` csak a bélyegképek DARABSZÁMÁT várja ki; a
+        #: tördelés (y és magasság) egy későbbi elrendezési körben frissül.
+        #: Időkorlátos: ha a tördelés elmarad, a lenti állítás bukik.
+        _var(qt_app, lambda: len({round(i.y()) for i in _bélyegképek(window)}) > 1)
         sok = _bélyegképek(window)[0].height()
         sorok_sok = {round(item.y()) for item in _bélyegképek(window)}
 
