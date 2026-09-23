@@ -7097,3 +7097,62 @@ eltűnése tehát a lánc egy MÁSIK pontján dől el.
 *Bizonyítottsági fok: **megerősített** a BW mátrixára és a `GetVar`
 fordítási sorrendjére (utasításszintű kiolvasás, minden lépés címmel). A
 rasztervesztés oka: **nincs kiolvasva** — #3511.*
+
+## ⛳ A Comicize szó szerinti lánca VISSZAADJA a rasztert — a kísérletből a nyitó Glow hiányzott (2026-09-23, #3511)
+
+*A fenti szakasz (#3507) megmutatta, hogy a BW és a maszkos GetVar olvasata
+helyes, tehát a rasztervesztés máshol van. Ez a kör megtalálta: nem a
+bináris olvasatában, hanem a kísérlet láncában.*
+
+**A hiányzó lépés.** A `filterdesc.xml` Comicize-blokkjában a
+`_opColorSpots` **első** gyereke egy fekete belső ragyogás (788. sor):
+
+```
+GlowImageOperation color="0" glowalpha="1" strength="1.1" quality="3"
+    innerglow="true" knockout="false"
+    xblur = yblur = 35·0,02·max(W,H)/2
+```
+
+— ez a görbe, a pixelesítés és a két ág **előtt** fut. A #3401 kísérlete
+(`comic_kiserlet.py`) a `ColorSpots_orig`-ot közvetlenül a görbézett,
+elsötétített képből vette, ezt a lépést kihagyta. (A #1606 mérése a
+Glow-t, a görbe + `add`-ot és a `multiply`-t **egyenként** próbálta a
+küszöb-modellre, és egyenként mindegyik rontott — a lépések csak
+**együtt** helyesek.)
+
+**A sugár nem illesztett.** A Glow ugyanaz a művelet és paraméterezés, mint
+a Vignette-é (`innerglow="true"`, `quality="3"`), amelynek sugara mért
+levezetéssel megvan (`glimmer_tone.vignette_radius`, #2159: `xblur =
+Blur·0,02·max(W,H)/4`). A Comicize `35·0,02·max/2`-je ezzel pontosan
+`Blur = 70`: `r = vignette_radius(70, W, H)`, `strength = 1,1`.
+
+**Mérés** — a 15 eredeti export (`research/comicize-sweep/`), a #3401
+mérőjével (a kísérlet eredeti számait bitre visszaadja: 3,0843 / 3,1522):
+
+| változat | átl. amplitúdó-hiba | átl. ΔE76 |
+|---|---:|---:|
+| mai kód (`halftone.halftone_branch`) | 1,4331 | 2,8293 |
+| szó szerinti lánc Glow NÉLKÜL, `multiply` | 3,0843 | 2,4861 |
+| **szó szerinti lánc a Glow-VAL, `multiply`** | **0,0276** | **2,4640** |
+| ugyanaz `darken`-nel (nem a lánc szerinti mód) | 1,5252 | 2,4087 |
+
+Állásonként (mi / referencia): DotFade 0 → 7,139 / 7,237 · 25 → 5,359 / 5,400
+· 50 → 3,584 / 3,590 · 75 → 1,823 / 1,785 · 100 → 0,399 / 0,400; DotContrast
+0 → 1,587 / 1,557 · 100 → 4,818 / 4,842; BlurXY 0…100 → 3,573…3,588 /
+3,487…3,606.
+
+⇒ **A raszter a szó szerinti láncból jön; a mai küszöb-modell helyett ezt
+kell futtatni** — fejlesztői jegy **#3522**, a lánc lépésenkénti
+leírásával és a reprodukáló kísérlettel.
+
+**A #3511 három megnevezett iránya ezzel tárgytalan** a rasztervesztés
+szempontjából: (1) a csempézett maszk téglalapja — a teljes képnyi maszkkal
+futó kísérlet a referencia amplitúdóját adja; a `TiledImageMask` 7. rekesze
+(`0x00bba580`) a `tileWidth`/`tileHeight` (`0x00bbace0`) csempéjét a
+hívó célképébe csempézi (`0x00bba670` → `0x009a8d80`, téglalap −1 = egész
+kép); (2) a színmátrix kerekítése és (3) a görbe interpolációja (természetes
+spline, már leírva) nem kellett a raszterhez.
+
+*Bizonyítottsági fok: a hiányzó lépés **megerősített** (`filterdesc.xml`
+788. sor + a 15 exporton mért amplitúdó). A maradék ΔE (≈ 2,46) forrása
+**nincs mérve** — jelöltek a #3522-ben.*
