@@ -1448,3 +1448,84 @@ az `MPRI`/`MPReg` kulcsok a Microsoft Photo 1.2 régióstruktúráját adják.
 kanonikus SQLite-index és a teljes PE nyers bájtpásztázása. A kezelők
 kulcsai a célzott diszasszemblálásból; a kontrollok paraméterei a #3366
 kutatási naplójában vannak.*
+
+## 14. ⛳ A Tömörítés sor kód → szöveg táblája — 36 kód, és egy eltolás a 0/1-nél (2026-09-23, 351. kör, #3535)
+
+*Forrás: a `0x009f23a0` (1202 b) döntési fájának programmal végigjárt
+kiolvasása 0…0xFFFF között, a hívó `0x009f4b69`–`0x009f4b87`, és a
+`referencia/stringres-en-hu.tsv`.*
+
+**Mi ez.** A Tulajdonságok panel „Compression” sorának érték-formázója. A
+hívó a **3-as kulcsot** kéri le (`0x009f0620(3, …)`, `0x009f4b6d`) — a
+`FUN_00a00120` sorformázó szerint ez az `EXIF::Compression` —, és az értéket
+**változatlanul** adja át (`eax`, `0x009f4b7c` → `call 0x009f23a0`).
+
+**A döntési fa.** `0…0x63`: bájttábla `0x009f2880` + ugrótábla `0x009f2854`;
+`0x106`; `0x7ffe…0x80b3`: bájttábla `0x009f2920` + ugrótábla `0x009f28e4`;
+`0x8765`; `0x8774…0x8799`: bájttábla `0x009f29ec` + ugrótábla `0x009f29d8`;
+`0x879e`, `0x879f`, `0x87a0`, `0xfde8`, `0xffff` egyenként
+(`0x009f23a0`–`0x009f2808`). Minden ág `0x009ae560(alapszöveg,
+"EXIF::…")` — a szövegtár-kereső, hiányzó azonosítónál az alapszöveggel.
+**Ismeretlen kódnál** a kimenet `sprintf("%ld", kód)` (`0x009f280a`–
+`0x009f2816`, formátum `0x00c82fd8`).
+
+| kód | hex | ág | szövegtár-azonosító | alapszöveg | magyar (`stringres`) |
+|---:|---|---|---|---|---|
+| 0 | `0x0000` | `0x9f23cb` | `EXIF::Uncompressed` | Uncompressed | Tömörítetlen |
+| 1 | `0x0001` | `0x9f23f7` | `EXIF::CCITT1D` | CCITT 1D | CCITT 1D |
+| 3 | `0x0003` | `0x9f2406` | `EXIF::T4/Group3Fax` | T4/Group 3 Fax | T4/Group 3 fax |
+| 4 | `0x0004` | `0x9f2432` | `EXIF::T6/Group4Fax` | T6/Group 4 Fax | T6/Group 4 fax |
+| 5 | `0x0005` | `0x9f2441` | `EXIF::LZW` | LZW | LZW |
+| 6 | `0x0006` | `0x9f246d` | `EXIF::JPEGOldStyle` | JPEG (old-style) | JPEG (régi típusú) |
+| 7 | `0x0007` | `0x9f247c` | `EXIF::JPEG` | JPEG | JPEG |
+| 8 | `0x0008` | `0x9f24a8` | `EXIF::AdobeDeflate` | Adobe Deflate | Adobe Deflate |
+| 9 | `0x0009` | `0x9f24b7` | `EXIF::JBIGB&W` | JBIG B&W | — |
+| 10 | `0x000A` | `0x9f24e3` | `EXIF::JBIGColor` | JBIG Color | JBIG színes |
+| 99 | `0x0063` | `0x9f247c` | `EXIF::JPEG` | JPEG | JPEG |
+| 262 | `0x0106` | `0x9f24f2` | `EXIF::Kodak262` | Kodak 262 | Kodak 262 |
+| 32766 | `0x7FFE` | `0x9f2532` | `EXIF::Next` | Next | Következő |
+| 32767 | `0x7FFF` | `0x9f2541` | `EXIF::SonyARWCompressed` | Sony ARW Compressed | Sony ARW-tömörítésű |
+| 32769 | `0x8001` | `0x9f256d` | `EXIF::EpsonERFCompressed` | Epson ERF Compressed | Epson ERF-tömörítésű |
+| 32773 | `0x8005` | `0x9f257c` | `EXIF::PackBits` | PackBits | PackBits |
+| 32809 | `0x8029` | `0x9f25a8` | `EXIF::Thunderscan` | Thunderscan | Thunderscan |
+| 32867 | `0x8063` | `0x9f25b7` | `EXIF::KodakKDCCompressed` | Kodak KDC Compressed | Kodak KDC-tömörítésű |
+| 32895 | `0x807F` | `0x9f25e3` | `EXIF::IT8CTPAD` | IT8CTPAD | IT8CTPAD |
+| 32896 | `0x8080` | `0x9f25f2` | `EXIF::IT8LW` | IT8LW | IT8LW |
+| 32897 | `0x8081` | `0x9f261e` | `EXIF::IT8MP` | IT8MP | IT8MP |
+| 32898 | `0x8082` | `0x9f262d` | `EXIF::IT8BL` | IT8BL | IT8BL |
+| 32908 | `0x808C` | `0x9f2659` | `EXIF::PixarFilm` | PixarFilm | PixarFilm |
+| 32909 | `0x808D` | `0x9f2668` | `EXIF::PixarLog` | PixarLog | PixarLog |
+| 32946 | `0x80B2` | `0x9f2694` | `EXIF::Deflate` | Deflate | Veszteség nélküli tömörítés |
+| 32947 | `0x80B3` | `0x9f26a3` | `EXIF::DCS` | DCS | DCS |
+| 34661 | `0x8765` | `0x9f26cf` | `EXIF::JBIG` | JBIG | JBIG |
+| 34676 | `0x8774` | `0x9f270c` | `EXIF::SGILog` | SGILog | SGILog |
+| 34677 | `0x8775` | `0x9f271b` | `EXIF::SGILog24` | SGILog24 | SGILog24 |
+| 34712 | `0x8798` | `0x9f2747` | `EXIF::JPEG2000` | JPEG 2000 | JPEG 2000 |
+| 34713 | `0x8799` | `0x9f2756` | `EXIF::NikonNEFCompressed` | Nikon NEF Compressed | Nikon NEF-tömörítésű |
+| 34718 | `0x879E` | `0x9f2782` | `EXIF::MDIBinaryLevelCodec` | MDI Binary Level Codec | MDI bináris szintű kodek |
+| 34719 | `0x879F` | `0x9f27d2` | `EXIF::MDIProgressiveTransformCodec` | MDI Progressive Transform Codec | MDI progresszív transzformációs kodek |
+| 34720 | `0x87A0` | `0x9f27a9` | `EXIF::MDIVector` | MDI Vector | MDI-vektor |
+| 65000 | `0xFDE8` | `0x9f27de` | `EXIF::KodakDCRCompressed` | Kodak DCR Compressed | Kodak DCR-tömörítésű |
+| 65535 | `0xFFFF` | `0x9f2822` | `EXIF::PentaxPEFCompressed` | Pentax PEF Compressed | Pentax PEF-tömörítésű |
+
+**⚠️ Az eltolás a 0/1-nél — az eredeti saját hibája.** A 3-as kódtól minden
+ág a **nyers TIFF-kódot** használja (5 LZW, 6 régi JPEG, 7 JPEG, 8 Adobe
+Deflate, 99 JPEG, 262 Kodak, 32773 PackBits, 34712 JPEG 2000 …), a tárolt
+érték tehát nyers. A táblában viszont **0 → Uncompressed, 1 → CCITT 1D**,
+a 2-es kódnak nincs ága; a TIFF-szabványban 1 = tömörítetlen, 2 = CCITT 1D.
+⇒ Az eredeti Picasa egy tömörítetlen TIFF-re **„CCITT 1D”**-t ír, a valódi
+CCITT 1D-re **„2”**-t. *(Erős: a tárolt értéket a tábla többi, szabványos
+ága alapján vettem nyersnek; a 3-as kulcs EXIF-beolvasóját nem követtem.)*
+
+**A `JBIGB&W`** azonosítónak nincs magyar szövege a szövegtárban ⇒ az
+alapszöveg („JBIG B&W”) jelenik meg.
+
+**Nálunk (mérve):** `metadata/reader.py:213`
+`_COMPRESSIONS = {1: "Uncompressed", 6: "JPEG", 7: "JPEG", 8: "AdobeDeflate"}`
+— 4 kód a 36-ból; a 6-os nálunk „JPEG”, az eredetiben „JPEG (régi típusú)”;
+az 1-es nálunk „Tömörítetlen”, az eredetiben „CCITT 1D”; ismeretlen kódnál a
+sor nálunk üres, az eredetiben a szám. Fejlesztés: **#3535**.
+
+*Bizonyítottsági fok: **megerősített** a 36 soros táblára, az ismeretlen kód
+kezelésére és a hívó kulcsára (minden ág programmal kiolvasva, 0 olvasatlan);
+**erős** a 0/1-eltolás következményére (lásd fent).*
