@@ -102,8 +102,8 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # `radtint` a #565-ben KIKERÜLT innen: a natív regisztráció
         # (0x8f8730), a feldolgozó mag (0x90b370) és a maszk-LUT (0x90aeb0)
         # visszafejtésével az algoritmuscsalád és a pixelművelet (radiális
-        # szorzó-tint, köbös smoothstep maszk) rögzített — egyedül a Feather
-        # csúszka affin leképezése maradt feltételezés (ld. apply_radtint).
+        # szorzó-tint, köbös smoothstep maszk) rögzített; a #3453 óta a
+        # közös natív sugaras maszkkal fut (ld. apply_radtint).
         # --- a filterdesc-regiszter (#382) által azonosított 21 további,
         # eddig sehol nem dokumentált szűrőnév — a filterdesc.xml-ben
         # léteznek, tehát régi könyvtárak `filters=` láncában előfordulhatnak.

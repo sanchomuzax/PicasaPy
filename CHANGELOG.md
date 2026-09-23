@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.559] – 2026-09-23
+
+### Javítva
+
+- **A Sugaras árnyalás az eredeti Picasa szerint színez (#3453)** — eddig
+  a kép közepén egy éles szélű ellipszis maradt színezetlen; most a színezés
+  a középponttól lágyan erősödik kifelé, és az Átmenet csúszka a színezetlen
+  közép méretét állítja, ahogy az eredeti programban. Az eredeti Picasa
+  exportjához mért színeltérés a három mért csúszkaállásban 11,8 / 8,9 /
+  4,4-ről 0,7 körülire csökkent.
+
 ## [0.8.558] – 2026-09-23
 
 ### Javítva

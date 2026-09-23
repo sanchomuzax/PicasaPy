@@ -481,7 +481,7 @@ Picasa-hű lenne.
 | **KÖZELÍTŐ (másik, mért v2-modell újrahasznosítva) — #347 lezáró audit (2026-08-06)** | a filterdesc szerint a v1/v2 pár paraméter nélküli, azonos "oneclick" család (nincs csúszka/szín, ami megkülönböztetné őket) — a v1-re önmagára nincs golden-mérés, ezért a már mért v2-modellt futtatjuk rá | `grain` (v1, a `grain2` modelljét használja) |
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell, vagy a natív kódból kinyert beégetett tábla | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át), `warm` (256×3 beégetett tábla a `0x0090c040`/`0x00d33b70`-ből kinyerve, #611 — ld. `docs/specs/picasa-native-filter-workers.md` 2.8) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
-| **MEGFEJTVE A BINÁRISBÓL, EGY PARAMÉTER KALIBRÁLATLAN (#565)** | az algoritmuscsalád és a pixelművelet a natív kód visszafejtéséből egzakt, egyetlen csúszka affin leképezése maradt feltételezés | `radtint` (radiális **szorzó**-tint köbös smoothstep maszkkal; a Feather affin leképezéséhez golden-pár kell) |
+| **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#565, #317, #3453)** | a natív közös sugaras maszk (`0x0090b050` + `0x0090aeb0`, élesség 0, sugár `min(W,H)/2·(Feather+1)`); a 684-es golden három Feather-állásán ΔE 0,70 / 0,73 / 0,74 | `radtint` (radiális **szorzó**-tint a `render/radial_mask.py` maszkjával) |
 | **MEGFEJTVE A BINÁRISBÓL (#623)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve) — nincs benne feltételezett skalár | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`) |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#668)** | a natív elmosó mag (`0x009dd0d0`) alá állítva, és MINDEN szabad skalár valódi Picasa-exportból mérve — 12 golden-párból 12 „közelítés", átlagos ΔE 0,09…1,19 | `glow`/`glow2` (`0x0090d4b0`: négyzetre emelő előgörbe → IIR-elmosás → screen, súly = Intenzitás), `radblur` (`0x008f8520`: IIR-elmosás + natív smoothstep sugaras maszk) |
 | **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | `dir_sharp` (`0x0090d600`; ~~a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve~~ → **2026-08-30 Ghidra-C: `k = 2·Δ` (a két `FUN_00c29990` különbségének duplája)**), `linblur` (`0x0090de10`; ~~a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára~~ → **2026-08-30 Ghidra-C: a sugár a `param_5`-ből közvetlenül** — a #623 feltevése megdőlt, ld. lentebb) |
@@ -775,6 +775,14 @@ sugarat** nyújtja.
 *Bizonyítottsági fok: megerősített* (a hívási hely és a táblaépítő is
 visszafejtve; a `sqrt` azonosítása `0x0049fe60 → 0x00c0b310` alapján erős).
 A golden-pár innentől **validáció**, nem felfedezés.
+
+**Validálva (2026-09-23, #3453).** A kód a #317 után is a régi, tengelyenként
+normált sávos feltevést futtatta; a #3453 a `radtint`-et a közös
+`render/radial_mask.py` maszkjára tette (közép = eredeti, perem = teljes
+szorzó-tint, élesség 0). A 684-es golden ΔE-je Feather 0 / 0,25 / 1 mellett
+11,79 / 8,91 / 4,37 → **0,70 / 0,73 / 0,74**. A szorzó-tint osztása egész
+(padló): a goldenen jobb a kerekítésnél (0,70 vs 0,81), a natív osztás módja
+maga nincs kiolvasva.
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 
@@ -6366,7 +6374,6 @@ Modell **minden** effekt mögött van; a törzs „ezért `blocked`" mondata
 | effekt | miért kell rá export |
 |---|---|
 | `Comicize` · `FocalZoom` · `PicnikFocalPixelate` | a csővezeték egzakt, de a **mintavételezés perem-/interpolációs szabálya** golden-összevetésre vár (#569, #570) |
-| `radtint` | a **Feather** csúszka affin leképezése feltevés (#565) |
 | `dir_sharp` | egy skalár az x87-veremen ment át, a helyén **indokolt feltevés** áll (#623) |
 | `grain` (v1) | saját mérése nincs — a `grain2` modelljét futtatjuk rá (#347) |
 | `tint` · `dir_tint` | **MÉRT, DE ELTÉR**: ΔE 20,6 és 9 |
