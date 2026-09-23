@@ -31,8 +31,8 @@ import numpy as np
 
 from picasapy.render.curves import validate_image
 from picasapy.render.dir_tint import apply_dir_tint
-from picasapy.render.effects import _radius_grid
 from picasapy.render.ops import apply_channel_levels_stretch
+from picasapy.render.radial_mask import apply_radial_mask
 
 _HEX_PATTERN = re.compile(r"^[0-9a-fA-F]+$")
 
@@ -198,27 +198,11 @@ def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     return np.stack([gray, gray, gray], axis=-1)
 
 
-#: A `radtint` maszk-LUT mérete a natív kódban (`0x90aeb0`, #565). A méret
-#: önmagában nem befolyásolja a képet (a smoothstep folytonos), de a
-#: visszafejtett szerkezettel való egyezés kedvéért itt is 1024 elem.
-_RADTINT_LUT_SIZE = 1024
-
 #: A `radtint` szorzó-tint osztója a natív magban (`0x90b370`):
-#: `tinted = source * tint / 256`.
-_RADTINT_TINT_DIVISOR = 256.0
-
-
-def radtint_lut(size: int = _RADTINT_LUT_SIZE) -> np.ndarray:
-    """A `radtint` maszk-LUT-ja: köbös smoothstep, `t*t*(3-2*t)` (#565).
-
-    A natív segédfüggvény (`0x90aeb0`) egy `size` elemű táblát tölt fel a
-    0..1 tartományon egyenletesen mintavételezett smoothstep-értékekkel; a
-    feldolgozó mag (`0x90b370`) ebből olvassa ki a keverési súlyt.
-    """
-    if size < 2:
-        raise ValueError(f"Érvénytelen LUT-méret: {size}")
-    t = np.linspace(0.0, 1.0, size, dtype=np.float32)
-    return (t * t * (np.float32(3.0) - np.float32(2.0) * t)).astype(np.float32)
+#: `tinted = source * tint / 256`. Az egész osztás (padló) a 684-es goldenen
+#: mérve jobb a kerekítésnél (ΔE 0,70 vs 0,81, #3453); a natív osztás módja
+#: nincs kiolvasva.
+_RADTINT_TINT_DIVISOR = 256
 
 
 def apply_radtint(
@@ -228,56 +212,23 @@ def apply_radtint(
     feather: float,
     color: tuple[int, int, int],
 ) -> np.ndarray:
-    """Sugaras árnyalás (`radtint`) — radiális **szorzó** színezés (#565).
+    """Sugaras árnyalás (`radtint`) — radiális **szorzó** színezés (#565, #3453).
 
-    A visszafejtett natív viselkedés (regisztráció `0x8f8730`, mag
-    `0x90b370`, maszk-LUT `0x90aeb0`):
+    A natív mag (`0x90b370`) a `radblur`/`radsat` közös sugaras maszkját
+    hívja (`0x0090b050` + `0x0090aeb0`, `render/radial_mask.py`),
+    `FUN_0090aeb0(0, Feather)` alakban (spec: `filters-decoded.md`, #317):
 
-    - az (x, y) fókuszpont körül normalizált (a két tengelyen külön
-      normált, tehát elliptikus) távolság számolódik,
-    - a fókuszpont környékén a kép **változatlan**,
-    - kifelé haladva a színezés egy 1024 elemű, köbös smoothstep LUT
-      szerint erősödik,
-    - a teljes tint csatornánként `tinted = source * tint / 256` (szorzás,
-      nem keverés a szín FELÉ — ez a lényegi különbség a `dir_tint`-hez
-      képest), az alfa érintetlen,
-    - az átmeneti sávban lineáris keverés fut az eredeti és a szorzott kép
-      között.
-
-    A `feather` **affin leképezése FELTÉTELEZÉS**, golden-mérés még nincs
-    rá (ld. #565 „Nyitott kalibráció"): a `filterdesc.xml` szerint a csúszka
-    0..1 tartományú, alapértéke 0,25. Itt a feather az átmeneti sáv
-    SZÉLESSÉGE, a fókuszponttól mért legnagyobb távolság (`r_max`) felénél
-    KÖZÉPPONTOSAN: a sáv a `(0,5 − feather/2) · r_max` sugárnál kezdődik és
-    a `(0,5 + feather/2) · r_max` sugárnál ér véget. Így `feather = 0` éles
-    határt ad a fél sugárnál (belül érintetlen, kívül teljes tint),
-    `feather = 1` pedig a fókuszponttól a legtávolabbi sarokig húzódó, végig
-    lágy átmenetet. Minden feather-értéknél igaz marad a két rögzített pont:
-    a fókuszpont érintetlen, a legtávolabbi sarok teljes tintet kap. A mérés
-    a leképezést pontosíthatja — a pixelművelet és az algoritmuscsalád
-    viszont már nem kérdéses.
+    - a sugár `min(W, H)/2 · (Feather + 1)` — izotróp, képpontban;
+    - az élesség beégetett nulla, tehát a smoothstep a középponttól a
+      sugárig végig fut;
+    - a középen az eredeti kép, a sugáron túl a teljes tint, amely
+      csatornánként `source · tint / 256` (szorzás, nem a szín FELÉ
+      keverés — ez a lényegi különbség a `dir_tint`-hez képest).
     """
     validate_image(image)
-    height, width = image.shape[:2]
-    radii = _radius_grid(height, width, x, y)
-    # a normáláshoz a fókuszponttól MÉRT legnagyobb távolság kell (a kép
-    # legtávolabbi sarka) — enélkül a nem középre tett fókuszpontnál a
-    # maszk egy része sosem érné el a teljes erősséget
-    max_radius = float(radii.max())
-    if max_radius <= 0.0:
-        return image.copy()
-    width = float(np.clip(feather, 0.0, 1.0))
-    start = np.float32((0.5 - width / 2.0) * max_radius)
-    span = np.float32(max(width * max_radius, 1e-6))
-    t = np.clip((radii - start) / span, 0.0, 1.0)
-    lut = radtint_lut()
-    weight = lut[np.rint(t * np.float32(len(lut) - 1)).astype(np.int32)]
-
-    image_f = image.astype(np.float32)
-    tint = np.array(color, dtype=np.float32) / np.float32(_RADTINT_TINT_DIVISOR)
-    tinted = image_f * tint
-    blend = weight[..., np.newaxis]
-    return _to_uint8(image_f + blend * (tinted - image_f))
+    tint = np.array(color, dtype=np.int64)
+    tinted = (image.astype(np.int64) * tint // _RADTINT_TINT_DIVISOR).astype(np.uint8)
+    return apply_radial_mask(image, tinted, x, y, feather, 0.0)
 
 
 #: A `dir_tint` a saját moduljában él (#874) — a régi importútvonal
@@ -288,5 +239,4 @@ __all__ = [
     "apply_radtint",
     "apply_tint",
     "parse_rgb_hex",
-    "radtint_lut",
 ]
