@@ -39,6 +39,10 @@ csoportba (és velük az `unsharp`/`unsharp2` is).
 | **NEM pontonkénti** (környezet, hely vagy geometria) | 35 | `cinemascope`, `comicize`, `contrast`, `dir_brite`, `dir_sat`, `dir_sharp`, `gamma`, `glow`, `glow2`, `grain`, `grain2`, `hdr`, `holga`, `ir`, `linblur`, `localcontrast`, `lomo`, `matte`, `museummatte`, `neon`, `nightvision`, `orton`, `pencilsketch`, `picnikgrain`, `pixelate`, `polaroid`, `quantizepalette`, `radblur`, `radtint`, `sixties`, `soften`, `triple`, `unsharp`, `unsharp2`, `vignette` |
 | nem mérve | 30 | 6 szín-paraméteres (`border`, `dropshadow`, `focalzoom`, `dir_tint`, `finetune`, `finetune2` — a #3229 óta ismert: a csúszka-INDEX nem paraméter-POZÍCIÓ), 7 a láncból kihagyott (`colorfix`, `crop64`, `debug`, `focalpixelate`, `picnikfocalpixelate`, `rainbow`, `whitept`), 17 pedig az alapértékén **nem változtat** a képen |
 
+> **Utólag (2026-09-23, #3452):** a `crossprocess` azóta a csatornák keveredő
+> csoportjába tartozik — a záró `Tint` a fényesség-tartó színezés, így a
+> Picasa-exporttal egyező kimenet csatornánkénti LUT-tal nem fejezhető ki.
+
 ## ⛔ Amit ez NEM mond ki
 
 - **A verdikt az ALAPÉRTELMEZETT paraméterekre szól.** Egy szűrő lehet az
