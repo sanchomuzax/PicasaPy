@@ -7028,3 +7028,72 @@ termékkódot ebben a körben nem módosítottam.
 `0x00bbaa90`/`0x00bbacba`, valamint a mai kontroll futása a
 `tests/render/test_comicize_569.py`, `test_comicize_gorbe_1606.py` és
 `test_comicize_maszk_kuszob_2476.py` fájlokon.*
+
+## A Comicize ágának két lépése a binárisból: a BW NEM küszöböl, a maszkos GetVar pontosan `PartialMask` (2026-09-23, #3507)
+
+*A #3401 mérése szerint a `filterdesc.xml` szó szerinti ága a mi olvasatunkban
+kioltja a rasztert. A #3507 két jelöltet nevezett meg. Mindkettő megdőlt.*
+
+### 1. `BWImageOperation` — folytonos szürke színmátrix, küszöb nélkül
+
+A `BW` a közös színmátrix-alkalmazót (`0x00bc16b0`) futtatja; a mátrixát a
+8. rés (`0x00bbdd80`) építi:
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| `filtercolor` (`[op+0x28]`) | alapértéke `0xFFFFFFFF` (a négy bájt `0xFF`) | `0x00bbdda8`–`0x00bbddb5` |
+| súlyok | `wR = R_f·0,3086` · `wG = G_f·0,6094` · `wB = B_f·0,0820` (`0x00cf4060`, `0x00cf4068`, `0x00cf4058`; `R_f` a szín 3. bájtja, `B_f` az 1.) | `0x00bbdddc`–`0x00bbde1b` |
+| normálás | `w /= wR + wG + wB`; nulla összegnél mindhárom `255,0` (`0x00cf3a00`) | `0x00bbde1f`–`0x00bbde80` |
+| mátrix | 4×5 (`0x14` bájtos sorok): mindhárom színsor `[wR, wG, wB, 0, 0]`, az alfasorban 1 | `0x00bbde84`–`0x00bbdef1` |
+
+⇒ Alapértelmezett `filtercolor` mellett a kimenet mindhárom csatornán
+`0,3086·R + 0,6094·G + 0,0820·B` — a Haeberli-súlyok, ugyanazok, mint a
+`SimpleColorMatrix` telítettség-ágáé (`glimmer_ops._HAEBERLI_WEIGHTS`).
+**Nincs küszöb.** A színmátrix-alkalmazó kerekítése itt nincs kiolvasva
+(→ #3511).
+
+### 2. A maszkos `GetVar` — `GetVarInstruction` → `PartialMask` → `Pop`
+
+A `GetVarImageOperation` fordítója (`0x00bbf810`) egyetlen
+`GetVarInstruction`-t ír (`0x00cf0d58`, a név a `+0x0c`-ben,
+`0x00bbf838`–`0x00bbf854`). A többit a közös fordító (`0x00bc4ae0`) fűzi
+utána, ebben a sorrendben:
+
+1. a művelet saját utasítása (`vtbl+0x1c`, `0x00bc4b19`);
+2. `MaskWithSourceAlpha`, ha `[op+0x20]` igaz (`0x00bc4b23`);
+3. `Blend` **csak akkor**, ha a `BlendMode` (`[op+0x08]`) vagy a
+   `BlendAlpha` (`[op+0x10]`) meg van adva (`0x00bc4c0f`–`0x00bc4c1c`);
+4. a `Mask` attribútum (`[op+0x14]`, `0x00bc4ce7`) nevén talált maszkra
+   `MaskInstruction` vagy `PartialMaskInstruction` (a `TiledImageMask`-ra
+   `PartialMask`, `0x00bc4dcb`–`0x00bc4fde`);
+5. `Pop`.
+
+A Comicize `<GetVarImageOperation Name="pixelatedN_BW" Mask="_mskColorSpotsN"/>`
+sorában nincs `BlendMode`, tehát nincs `Blend`: a verem teteje a BW-változó
+(`t`), alatta a `ColorMatrix` fehér képe (`b`); a `PartialMask` (ld.
+`filterdesc-registry.md`, „A három maszk-utasítás", A és C) a téglalapon belül
+
+```
+ki = ⌊(g·m + 255·(255 − m)) / 255⌋ ,   m = a maszk ALFA-bájtja
+```
+
+és a téglalapon kívül az alapot adja, ami a `TiledImageMask`-nál
+(`vtbl+0x08` = 0) az **alsó** elem, azaz a fehér kép.
+
+⇒ **A #3401 kísérletének olvasata erre a két lépésre helyes.** A raszter
+eltűnése tehát a lánc egy MÁSIK pontján dől el.
+
+### Amit ez a kör NEM döntött el — a következő irány: #3511
+
+1. a `PartialMask` téglalapja: a végrehajtó (`0x00bd0f10`) a megrajzolt
+   maszk-kép mezőiből veszi (`0x00bd105c`–`0x00bd107d`); ha a
+   `TiledImageMask` rajzolója (`0x00bbaa90`) nem teljes képnyi téglalapot
+   ad, a BW-ág ott fehér;
+2. a színmátrix-alkalmazó (`0x00bc16b0`) kerekítése és a `ColorMatrix
+   UseAlpha=true` eltolás-oszlopának egysége;
+3. az `AdjustCurves` [0,0] [150,0] [160,255] [255,255] görbéjének natív
+   interpolációja.
+
+*Bizonyítottsági fok: **megerősített** a BW mátrixára és a `GetVar`
+fordítási sorrendjére (utasításszintű kiolvasás, minden lépés címmel). A
+rasztervesztés oka: **nincs kiolvasva** — #3511.*
