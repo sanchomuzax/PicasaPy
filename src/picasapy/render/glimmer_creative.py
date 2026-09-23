@@ -179,7 +179,7 @@ def apply_lomo(image, blur: float = 50.0, fade: float = 0.0):
 
 #: Az `IRImageOperation` fix paraméterei a natív visszafejtésből (#566).
 #: A `greenglow = 5` a blur szigmája (x és y egyaránt), a `greenglowalpha`
-#: a LIGHTEN-keverés súlya, a záró monokróm mátrix súlyai pedig
+#: a SCREEN-keverés súlya (#3441), a záró monokróm mátrix súlyai pedig
 #: `(−0,5, +2,0, −0,5)` — a KÉK súlya is negatív (ezt hagyta ki a korábbi,
 #: paraméternevekből következtetett modell).
 _IR_GLOW_BLUR = 5.0
@@ -201,17 +201,20 @@ def apply_ir(image, fade: float = 0.0):
     2. **elmosás**: `x = 5`, `y = 5` (quality 3 — a minőségfok a natív
        Gauss-közelítés lépésszáma, a mi `cv2.GaussianBlur`-ünkkel nem
        paraméterezhető és a kimenetet nem is befolyásolja érdemben);
-    3. a zöld glow **LIGHTEN** módban kerül az EREDETI képre, `alpha = 0,25`;
+    3. a zöld glow **SCREEN** módban kerül az EREDETI képre, `alpha = 0,25`;
     4. záró monokróm színmátrix:
        `Y = clamp(−0,5·R + 2,0·G − 0,5·B)`, majd `RGB = (Y, Y, Y)`;
     5. végül a Glimmer-közös Fade-keverés (`1 − Fade/100`).
 
-    A korábbi modell három ponton tért el: SCREEN-t kevert LIGHTEN helyett,
-    a glow-t a már monokrómmá tett képre tette (nem az eredetire), és a KÉK
-    csatorna negatív súlyát teljesen figyelmen kívül hagyta.
+    A korábbi modell a glow-t a már monokrómmá tett képre tette (nem az
+    eredetire), és a KÉK csatorna negatív súlyát figyelmen kívül hagyta.
 
-    A LIGHTEN-azonosítást a `PicnikGrain` deklarációja is megerősíti: ott a
-    7-es blend-mód LIGHTEN, az 5-ös MULTIPLY.
+    A keverési mód (#3441): a konstruktor a ragyogás gyerekműveletének
+    mód-attribútumát konstans 7-re állítja (`0x00bc3e49 push 7`), és a natív
+    módtáblában (`0x00cf0e98`) a 7-es a **Screen** — az ugrótábla
+    (`0x008f4c48`) 7. eleme a Screen-kernelre (`0x008f5d20`) mutat. A #566
+    „7 = LIGHTEN" olvasata téves volt; a 684-es golden `ir__alap` ΔE-je a
+    cserével 6,04 → 1,28.
     """
     validate_image(image)
     image_f = to_float(image)
@@ -221,13 +224,13 @@ def apply_ir(image, fade: float = 0.0):
     green_layer = np.stack([zeros, green, zeros], axis=-1)
     # 2. elmosás (x = y = 5)
     glow = gaussian_blur_f(green_layer, _IR_GLOW_BLUR)
-    # 3. LIGHTEN az EREDETI képre, 0,25 súllyal
-    lightened = apply_blend_mode(image_f, glow, "lighten", _IR_GLOW_ALPHA)
+    # 3. SCREEN az EREDETI képre, 0,25 súllyal
+    glowed = apply_blend_mode(image_f, glow, "screen", _IR_GLOW_ALPHA)
     # 4. záró monokróm mátrix — a kék súlya is negatív
     luma_ir = np.clip(
-        _IR_RED_WEIGHT * lightened[..., 0]
-        + _IR_GREEN_WEIGHT * lightened[..., 1]
-        + _IR_BLUE_WEIGHT * lightened[..., 2],
+        _IR_RED_WEIGHT * glowed[..., 0]
+        + _IR_GREEN_WEIGHT * glowed[..., 1]
+        + _IR_BLUE_WEIGHT * glowed[..., 2],
         0.0,
         255.0,
     )

@@ -7328,7 +7328,7 @@ helyen), tehát a kiértékelőnek nincs ilyen szimbóluma; az előtag után a
 | Overlay | csonkoló, `255/255` külön ág | `rint` — 32 767 pár tér el, max 1 | csonkolás |
 | átlátszóság | `(b·(255−w) + t·w) >> 8`, `w = trunc(256α) − 1` | lebegőpontos `b + α(t − b)` + `rint` — α ∈ {0,25; 0,5; 0,6; 0,75; 0,9}: 51 754–57 184 pár tér el, max **2** | egész képlet |
 | alfa a keverés után | 255 | nem kezeljük (RGB-ben dolgozunk) | nincs teendő, amíg a lánc RGB |
-| `IR` ragyogás | Screen | Lighten | **Screen** — ΔE 6,04 → 1,28 |
+| `IR` ragyogás | Screen | ✅ **Screen** (#3441, v0.8.555) | kész — ΔE 6,04 → 1,28, mérve |
 | `Pixelate` csúszka | sorszám | figyelmen kívül | bekötés — `min`: ΔE 23,31 → 0,78 |
 | `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **nem mérve** (a zaj magja véletlen, #907) |
 
