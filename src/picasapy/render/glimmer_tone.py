@@ -24,6 +24,7 @@ from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import (
     adjust_curves,
     alpha_blend,
+    apply_blend_mode,
     apply_noise,
     autofix,
     glow_sigma,
@@ -32,9 +33,9 @@ from picasapy.render.glimmer_ops import (
     inner_glow,
     local_contrast,
     simple_color_matrix,
+    tint_luma_preserving,
     to_float,
     to_uint8,
-    tint_multiply,
 )
 
 # --- Vignette / Matte: GlowImageOperation(innerglow=true) ------------------
@@ -240,11 +241,16 @@ _CROSS_TINT_COLOR = (0xFC, 0xFF, 0x00)
 
 def apply_crossprocess(image, fade: float = 0.0):
     """`CrossProcess=1,Fade` — fix csatornagörbék → `SimpleColorMatrix
-    (Contrast=+10, Brightness=+10)` → `#fcff00` szorzó-tint 0,2 alfával."""
+    (Contrast=+10, Brightness=+10)` → `#fcff00` `Tint`.
+
+    A `Tint` maga a fényesség-tartó színezés; a leíró `BlendMode="multiply"`
+    és `BlendAlpha=".2"` mezője az eredményét keveri a bemenetére (#3452).
+    """
     validate_image(image)
     curved = adjust_curves(image, red=_CROSS_RED, green=_CROSS_GREEN, blue=_CROSS_BLUE)
     matrixed = simple_color_matrix(curved, brightness=10.0, contrast=10.0)
-    tinted = tint_multiply(matrixed, _CROSS_TINT_COLOR, 0.2)
+    colored = tint_luma_preserving(matrixed, _CROSS_TINT_COLOR)
+    tinted = apply_blend_mode(to_float(matrixed), to_float(colored), "multiply", 0.2)
     return to_uint8(alpha_blend(to_float(image), to_float(tinted), fade_alpha(fade)))
 
 

@@ -1,25 +1,27 @@
-"""A GPU-út öt új szűrőjének LUT-ja — a CPU kimenetéből, KÉPPONTRA (#22).
+"""A GPU-út új szűrőinek LUT-ja — a CPU kimenetéből, KÉPPONTRA (#22).
 
 ## A jegy kikötése
 
 *„a LUT-ok a MAI CPU-implementációból származzanak (nem újraszámolt
 képlet): ugyanaz a kimenet, képpontra"*.
 
-Ez a próbasor ezt méri: az öt szűrőt lefuttatja a CPU-lánc kezelőjével,
+Ez a próbasor ezt méri: a négy szűrőt lefuttatja a CPU-lánc kezelőjével,
 kinyeri a csatornánkénti LUT-ot a VALÓDI kimenetéből, majd a LUT-tal
 újraszámolja a képet — és **bitre azonos** eredményt követel.
 
-## Az öt szűrő MÉRÉSBŐL jön
+## A szűrők MÉRÉSBŐL jönnek
 
 | szűrő | CPU-idő a célgépen | LUT-tal kifejezhető |
 |---|---:|---|
 | `autocontrast` | 146 ms | igen |
 | `colortemp` | 702 ms | igen |
-| `crossprocess` | 863 ms | igen |
+| `crossprocess` | 863 ms | **nem** (#3452) |
 | `enhance` | 174 ms | igen |
 | `warm` | 104 ms | igen |
 
 ⛔ Az `invert` szándékosan kimarad: 5,6 ms, a 100 ms-os küszöb alatt.
+⛔ A `crossprocess` is kimarad (#3452): a záró fényesség-tartó `Tint`
+csatornák közötti, tehát csatornánkénti LUT-tal nem fejezhető ki.
 
 ## Amit ez a próbasor NEM mér
 
@@ -47,7 +49,6 @@ from picasapy.render.gpu_point_pipeline import (
 PARAMETEREK: dict[str, tuple[str, ...]] = {
     "autocontrast": ("1",),
     "colortemp": ("1", "0.5"),
-    "crossprocess": ("1", "50"),
     "enhance": ("1",),
     "warm": ("1",),
 }

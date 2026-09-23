@@ -282,7 +282,7 @@ __all__ = [
 ]
 
 
-#: #22: az öt szűrő, amit a GPU-út fogadhat a `finetune2`/`sat` mellé. A
+#: #22: a szűrők, amelyeket a GPU-út fogadhat a `finetune2`/`sat` mellé. A
 #: halmaz MÉRÉSBŐL jön, nem válogatásból:
 #:
 #: * `docs/benchmarks/2026-09-17-gpu-pontonkenti-szurok-22.md` — három
@@ -294,8 +294,12 @@ __all__ = [
 #:
 #: ⛔ Az `invert` KIMARAD: 5,6 ms, bőven a küszöb alatt — GPU-ra vinni
 #: nyereség nélküli kockázat.
+#:
+#: ⛔ A `crossprocess` is KIMARAD (#3452): a záró `Tint` a fényesség-tartó
+#: színezés, amely a kimeneti csatornát mindhárom bemeneti csatornából
+#: számolja — csatornánkénti LUT-tal nem fejezhető ki.
 GPU_PONT_SZUROK: frozenset[str] = frozenset({
-    "autocontrast", "colortemp", "crossprocess", "enhance", "warm",
+    "autocontrast", "colortemp", "enhance", "warm",
 })
 
 

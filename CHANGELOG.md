@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.558] – 2026-09-23
+
+### Javítva
+
+- **Az Áttűnés (Cross Process) effekt színe az eredeti Picasa szerint
+  (#3452)** — a záró sárga színezés eddig a kék csatornát a világos
+  részekben is visszavette, ezért a fehér sárgás lett. Most a színezés a
+  kép fényességét megtartja, ahogy az eredeti program. Az eredeti Picasa
+  exportjához mért színeltérés 8,9-ről 1,0-ra csökkent.
+
 ## [0.8.557] – 2026-09-23
 
 ### Javítva
