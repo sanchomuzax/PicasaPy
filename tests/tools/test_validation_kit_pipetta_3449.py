@@ -91,3 +91,20 @@ def test_a_valodi_fokuszpontos_effekt_marad_05_05(sorok):
     assert sajat
     for sor in sajat:
         assert _szamok(sor["lanc"])[:2] == [0.5, 0.5], sor["lanc"]
+
+
+@pytest.mark.parametrize("sorrend", ["a_pontos_elol", "a_pontos_hatul"])
+def test_a_sablonvalasztas_nem_fugg_a_fajlsorrendtol(tmp_path, sorrend):
+    """Azonos hosszú minták közül a tizedespontos (a Picasa írásmódja) nyer,
+    akármelyik fájl kerül elő előbb. A CI-n egy egységteszt-sztring
+    (`finetune=1,0.1,0,0,…`) nyert, és a 0,24-et egészre vágta."""
+    module = _load_generator()
+    pontos = "finetune=1,0.500000,0.000000,0.000000,00000000,0.000000;"
+    egesz = "finetune=1,0.1,0,0,00000000,0.2;"
+    elso, masodik = (pontos, egesz) if sorrend == "a_pontos_elol" else (egesz, pontos)
+    mappa = tmp_path / "docs" / "specs"
+    mappa.mkdir(parents=True)
+    (mappa / "a.md").write_text(elso, encoding="utf-8")
+    (mappa / "b.md").write_text(masodik, encoding="utf-8")
+    sablon = module.harvest_templates(tmp_path)["finetune"]
+    assert sablon == ["0.500000", "0.000000", "0.000000", "00000000", "0.000000"]

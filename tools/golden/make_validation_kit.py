@@ -144,19 +144,31 @@ HEX_SLOT = re.compile(r"^[0-9a-fA-F]{8}$")
 KNOWN_CHAINS = "docs/specs", "tests", "tools"
 
 
+def _template_rank(params: list[str]) -> tuple[int, int]:
+    """A sablon rangja: előbb a hossz, azonos hossznál a tizedespontos mezők
+    száma (#3449) — a Picasa `%.6f`-fel ír, egy egységteszt-sztring
+    (`finetune=1,0.1,0,0,…`) viszont egész alakú mezővel, és azt a
+    `chain_for` egészre vágott csúszkaértékkel töltené ki."""
+    return len(params), sum("." in p for p in params)
+
+
 def harvest_templates(repo_root: Path) -> dict[str, list[str]]:
-    """Kulcs -> valódi lánc paraméterlistája a leghosszabb talált mintából."""
+    """Kulcs -> valódi lánc paraméterlistája a legjobb rangú talált mintából.
+
+    A fájlok RENDEZETT sorrendben jönnek (#3449): az `rglob` sorrendje
+    fájlrendszerfüggő, és azonos rangú mintáknál gépenként más sablon nyert.
+    """
     pattern = re.compile(r"\b([A-Za-z_][A-Za-z_0-9]*)=1((?:,[0-9a-fA-F.eE+-]+)*);")
     best: dict[str, list[str]] = {}
     for folder in KNOWN_CHAINS:
-        for path in (repo_root / folder).rglob("*"):
+        for path in sorted((repo_root / folder).rglob("*")):
             if not path.is_file() or path.suffix not in (".md", ".py", ".txt", ".ini"):
                 continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             for match in pattern.finditer(text):
                 params = [p for p in match.group(2).split(",") if p]
                 key = match.group(1).casefold()
-                if key not in best or len(params) > len(best[key]):
+                if key not in best or _template_rank(params) > _template_rank(best[key]):
                     best[key] = params
     return best
 
