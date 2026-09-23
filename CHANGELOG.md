@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.557] – 2026-09-23
+
+### Javítva
+
+- **A 60-as évek effekt meleg, fakó színe az eredeti Picasa szerint (#3451)**
+  — a színgörbék kezdőpontját eddig rosszul olvastuk be, ezért a sötét
+  részek feketék maradtak, holott az eredeti program meleg barnára emeli
+  őket. Az eredeti Picasa exportjához mért színeltérés 15,8-ról 1,7-re
+  (a legerősebb állásban 20,1-ről 1,6-ra) csökkent.
+
 ## [0.8.556] – 2026-09-23
 
 ### Javítva
