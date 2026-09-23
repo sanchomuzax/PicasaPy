@@ -13,7 +13,9 @@ import random
 
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import (
+    BLEND_MODE_BY_INDEX,
     alpha_blend,
+    apply_blend_mode,
     apply_noise,
     fade_alpha,
     gaussian_blur_f,
@@ -60,21 +62,30 @@ def apply_soften(image, impact: float = 50.0, fade: float = 50.0):
     return to_uint8(alpha_blend(image_f, blurred, alpha))
 
 
-def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0):
+def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0, blend_mode: int = 9):
     """`Pixelate=1,Impact,BlendMode,Fade` — `Resize(W/Impact, H/Impact)` →
-    `Resize(W, H, smoothing=false)`, `Impact` `[2..150]`. A `BlendMode`
-    csúszka (`[0..9]`, alap 9) jelentése a `filterdesc.xml`-ből NEM
-    dekódolható (nincs leírt formula/enum-lista) — a paraméter átveendő
-    a lánc `filters=` sorából, de a pixelesítést a Fade-szabályon kívül
-    NEM módosítja (nyitott részlet, ld. `docs/specs/filters-decoded.md`).
+    `Resize(W, H, smoothing=false)`, `Impact` `[2..150]`.
+
+    A pixelesített kép (felső) a BEMENETTEL (alsó) a `BlendMode` sorszámú
+    natív móddal keveredik, utána a `Fade` szerinti átlátszósággal (a
+    `filterdesc.xml`: `BlendMode="{_sldrBlendMode.value}"`,
+    `BlendAlpha="{1-(_sldrFade.value/100)}"`). A csúszka `[0..9]`, alap 9
+    (Normal); a sorszám közvetlenül a módtábla (`0x00cf0e98`) indexe — ld.
+    `glimmer_ops.BLEND_MODE_BY_INDEX` (#3443).
+
+    Csúszkán kívüli sorszámra `ValueError`: némán Normalt futtatni hamis
+    képet adna.
     """
     validate_image(image)
+    mode = BLEND_MODE_BY_INDEX.get(int(blend_mode))
+    if mode is None:
+        raise ValueError(f"A Pixelate keverési módja 0 és 9 közé esik: {blend_mode}")
     height, width = image.shape[:2]
     small_w = max(1, round(width / impact))
     small_h = max(1, round(height / impact))
     small = resize_image(image, small_w, small_h, smoothing=True)
     pixelated = resize_image(small, width, height, smoothing=False)
-    return to_uint8(alpha_blend(to_float(image), to_float(pixelated), fade_alpha(fade)))
+    return to_uint8(apply_blend_mode(to_float(image), to_float(pixelated), mode, fade_alpha(fade)))
 
 
 def _grain_seed(seed: int | None) -> int:

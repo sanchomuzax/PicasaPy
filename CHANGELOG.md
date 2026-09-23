@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.556] – 2026-09-23
+
+### Javítva
+
+- **A Képpontnagyítás „Keverési mód” csúszkája működik (#3443)** — eddig a
+  csúszka állásától függetlenül mindig ugyanazt a képet adta; most az
+  eredeti Picasa tíz keverési módja közül azt választja, amelyik a
+  csúszkán áll (például a legbaloldalibb állás az összeadó keverés). A
+  csúszka alapállásában a kép nem változik. Az eredeti Picasa exportjához
+  mért színeltérés a legkisebb állásban 23,3-ról 0,8-ra csökkent.
+
 ## [0.8.555] – 2026-09-23
 
 ### Javítva

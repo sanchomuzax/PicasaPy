@@ -7329,7 +7329,7 @@ helyen), tehát a kiértékelőnek nincs ilyen szimbóluma; az előtag után a
 | átlátszóság | `(b·(255−w) + t·w) >> 8`, `w = trunc(256α) − 1` | lebegőpontos `b + α(t − b)` + `rint` — α ∈ {0,25; 0,5; 0,6; 0,75; 0,9}: 51 754–57 184 pár tér el, max **2** | egész képlet |
 | alfa a keverés után | 255 | nem kezeljük (RGB-ben dolgozunk) | nincs teendő, amíg a lánc RGB |
 | `IR` ragyogás | Screen | ✅ **Screen** (#3441, v0.8.555) | kész — ΔE 6,04 → 1,28, mérve |
-| `Pixelate` csúszka | sorszám | figyelmen kívül | bekötés — `min`: ΔE 23,31 → 0,78 |
+| `Pixelate` csúszka | sorszám | ✅ **sorszám** (#3443, v0.8.556) — a Difference/Hardlight/Subtract lebegőpontosan | kész — `min`: ΔE 23,31 → 0,78, mérve; az egész képletek és a Softlight: #3442 |
 | `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **nem mérve** (a zaj magja véletlen, #907) |
 
 *Bizonyítottsági fok:* a tábla, a kernelek, a keverő és a végrehajtó menete
