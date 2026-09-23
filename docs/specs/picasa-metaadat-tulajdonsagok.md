@@ -810,7 +810,7 @@ A `runtime/properties.xml` `<Lens/>` eleme a név→kulcs leképezőben
 (`0x006349fb`) a **`0xff`**-re fordul: a sor az elosztó eredményét mutatja. A
 255-ös kulcs a `0x00a27546`-nál az `XMP::Lens` (`0x00ce3180`) névvel együtt
 is előkerül (`push 0xff` → `0x009f1d60`); hogy ez az XMP olvasó vagy író
-oldala, azt ez a kör NEM mérte ki (#3496). Az EXIF
+oldala, azt ez a kör NEM mérte ki (#3496). Az EXIF → **megválaszolva: 9.14** (felirat-azonosító; az XMP `aux:Lens` első nyer).
 `LensModel` (`0xA434`) a 6.1 táblában **nincs** — a 3.7 nem olvassa.
 
 #### Nálunk
@@ -944,6 +944,82 @@ rekesznél is kétszer írja (`f/2.8-2.8`). A D100-as mintán a tartalék
 kulcs-összerakásra és a tartalékra (utasításszintű kiolvasás + a D100-as
 kontroll); **erős** a visszafejtésre (az exiftool eljárásával azonos
 szerkezet, mintán nem mérve).*
+
+### 9.14 ⛳ Az XMP `aux:Lens` ELŐBB tölti a 255-ös kulcsot, mint a MakerNote-feloldás (2026-09-23, 350. kör, #3496)
+
+*A 9.12 nyitva hagyta: a `0x00a27546` környéke (`XMP::Lens`, `push 0xff`)
+XMP-olvasó vagy -író? Egyik sem — de a kérdés mögötti kérdésre (van-e XMP-
+olvasó, és elsőbbséget kap-e) van válasz.*
+
+#### A) A `0x00a27546` a panelsor FELIRATA, az `XMP::Lens` szövegtár-azonosító
+
+A `FUN_00a00120(meta, kulcs, &feliratok, &értékek)` a Tulajdonságok panel
+kulcsonkénti sorformázója: a két panelépítő (`FUN_006364c0` „PropertiesPanel",
+`FUN_007e3210` „CPropertiesDlg") hívja ciklusban (`0x006365a8`–`0x006365d0`),
+az ugrótáblája (`0x00a344b4`, 0…0x14e) minden kulcsnak saját ágat ad. A 255-ös
+ág (`0x00a272fd`–`0x00a2755c`) a feliratot a `0x009ae560("Lens", "XMP::Lens")`
+szövegtár-keresővel képzi (`0x00d4a654` a betöltött szövegtár; hiányzó
+azonosítónál az alapszöveg), az értéket a `0x009f1d60(…, 0xff, &értékek)`-kel.
+Az `XMP::Lens` tehát a **felirat azonosítója** — `stringres` 2479. sor:
+`Lens` → **`Objektív`**; ugyanígy `EXIF::BitsPerSample` (2), `XMP::FlashCompensation`
+(253), `XMP::LensID` (256). Az előtag az azonosító elnevezése, nem az érték
+forrása.
+
+#### B) Van XMP-OLVASÓ, és „első nyer" alapon tölti a 255-öt
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| `ytXMPReader` | RTTI-vtábla `0x00cef524`; az 5. rekesz a névtér → kezelő elosztó `0x00ba8dd0` (tábla `0x00d3b240`–`0x00d3b2bc`, kitöltés `0x00c3430a`–`0x00c343b9`) | a vtábla-írók `0x00ba76ca`, `0x00ba7a8c` |
+| tulajdonságnév-kezelő | `FUN_00baaf90`: `strcmp(név, "Lens")` (`0x00bab5bd`), és ha a kért kulcsok maszkjában (`[esi+0x24]`) a 255 szerepel, `0x00ba9040(…, 0xff, érték)` | `0x00bab5bc`–`0x00bab5d3` |
+| beszúrás | a kulcs-hash (`[obj+0x28]`) láncán keres; **ha a kulcs már megvan, nem ír felül**, csak hiányzó kulcsot szúr be (`0x0049d8d0`) | `0x00ba9048`–`0x00ba9089` |
+
+A `"Lens"` sztringnek (`0x00c9fd6c`) a teljes `.text`-ben (bájtmintára,
+indextől függetlenül) **négy** hivatkozása van: a `properties.xml`
+név → kulcs leképezője (`0x006349fb`), a panelfelirat (`0x00a27527`), az
+XMP-olvasó (`0x00bab5bd`) és az XMP-**író** (`0x00bae4d2`, lent).
+
+#### C) A sorrend: az XMP-olvasás MEGELŐZI az objektív-elosztót
+
+A két betöltő, amely mindkettőt hívja:
+
+| betöltő | XMP-olvasás (`0x00ba7490`) | utófeldolgozás (`0x00a34b00`, benne az objektív-elosztó `0x00a35940`) |
+|---|---|---|
+| `0x00a4f840` | `0x00a4f8c1` | `0x00a4f8ed` |
+| `0x009ea9c0` | `0x009eaa4f` | `0x009eab73` |
+
+A `0x00a34b00` az objektív-elosztót **utolsó lépésként** hívja
+(`0x00a34b42`), és az elosztó a 255-ös kulcsra „már megvan?" próbával kezd
+(9.9, `0x00a35951`–`0x00a35964`). ⇒ **Ha a fájl XMP-jében van `aux:Lens`,
+annak a szövege kerül a panelre, és a MakerNote-feloldás (Canon/Nikon)
+kimarad.** Ha nincs, a MakerNote-ág tölti.
+
+#### D) Az XMP-író (a kérdés másik fele)
+
+A `0x00bae420` a 0xfc…0x103 kulcsokon megy végig: ha a kulcs be van
+állítva (`0x009eee30` + `test [ecx+8]`), a `0x00bb0440(…, aux-névtér
+0x00cef2e8, név, kulcs, 0)` a Picasa-tulajdonság értékét
+(`0x009f0560(propset, kulcs)`, `0x00bb048b`) XMP-tulajdonságként beállítja
+(`0x00bb0310` → `0x00bda060`, az XMP Toolkit beállítója). Ez a 255-öt
+`aux:Lens`-ként **írja** (`0x00bae4b9`–`0x00bae4dd`); hogy mikor fut
+(mentéskor/exportkor), ez a kör nem követte végig — a panel szempontjából
+nincs jelentősége.
+
+#### E) Mérve — a mai olvasónk
+
+| minta | a fájlban | Picasa (a fenti lánc) | nálunk (`read_exif_details().lens`) |
+|---|---|---|---|
+| `951-kiemelesek-arnyekok-fel-allas/original.jpg` (D7000, Lightroom) | XMP `aux:Lens = 70.0-200.0 mm f/2.8`, MakerNote nincs | `70.0-200.0 mm f/2.8` | **`None`** |
+| `/mnt/photo/2003/2003-01-more/DSC_0001.JPG` (D100) | MakerNote `0100`, XMP nincs | Sigma 70-300mm F4-5.6 APO Macro Super II (9.13) | **`None`** (#3495) |
+
+⇒ Teendő: **#3496** — az `aux:Lens` beolvasása elsőként, utána a
+MakerNote-ág.
+
+*Bizonyítottsági fok: **megerősített** a felirat-azonosítóra, az olvasó
+„első nyer" beszúrására és a két betöltő hívási sorrendjére; **erős**, hogy
+a két betöltőben a `0x00ba7490` és a `0x00a34b00` ugyanazt a
+tulajdonság-halmazt kapja (a regiszter-átadás nincs lépésenként követve), és
+hogy a panel a szöveget változatlanul mutatja (a `0x009f1d60` szöveg-ágát
+nem olvastam végig).*
 
 ## 10. ⛳ A határvonal EXIF/GPS-névregisztere — részlelet (2026-09-18, #3345)
 
