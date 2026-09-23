@@ -161,5 +161,7 @@ class TestASzamontartasHelyes:
             r'objectName: "collectionMenuPassword".*?\n    \}', forras, re.DOTALL
         )
         assert blokk is not None
-        assert "placeholder: true" in blokk.group(0)
+        # #3461: a beépített Rejtett mappákon él, a felhasználói
+        # gyűjteményeken (#424) továbbra is helyfoglaló
+        assert "placeholder: !menu.hiddenCollection" in blokk.group(0)
         assert "retired: true" not in blokk.group(0)
