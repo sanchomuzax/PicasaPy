@@ -23,6 +23,8 @@ tárolja. Képváltásnál eldobjuk.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.render.chain_glimmer_handlers import PAINTABLE_MASK_OPS
@@ -114,6 +116,15 @@ class PaintMaskMixin:
                 self._paint_mask.torold()
             return ()
         return self._paint_mask.vonasok
+
+    def paint_strokes_for_path(self, path) -> tuple:
+        """A mentés kérdezi (#3462): a MOST szerkesztett kép festésének
+        vonásai, ha a kért út épp ez a kép — különben üres. A festés
+        munkamenet-élettartamú, tehát más kép mentésére nem hathat."""
+        sajat = getattr(self, "_image_path", None)
+        if sajat is None or Path(path) != Path(sajat):
+            return ()
+        return self._paint_strokes()
 
     def _paint_mask_kepvaltas(self, kulcs: str) -> None:
         """Képváltáskor a festés eldobódik (munkamenet-élettartamú)."""
