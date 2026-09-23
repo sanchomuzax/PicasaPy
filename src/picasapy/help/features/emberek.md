@@ -107,8 +107,13 @@ hiba, mi volt az első.
 
 ## Javaslatok jóváhagyása egy személy albumában
 
-Ha egy személy albumát nyitod meg, és a programnak van még el nem
-döntött névjavaslata hozzá, a fejlécben két gomb jelenik meg:
+Ha egy személy albumát nyitod meg, a rács **kétféle képet mutat**: azokat,
+amelyeken a név már rá van írva egy arcra, és azokat, amelyeken a program
+még csak **tippel** erre a névre. Így egy helyen látod, mit döntöttél el, és
+mi vár még rád. Egy kép akkor is egyszer szerepel, ha több arca hordozza
+ugyanazt a javaslatot.
+
+Ha van még el nem döntött javaslat, a fejlécben két gomb jelenik meg:
 
 - **Az összes jóváhagyása (N)** — ráírja a nevet az arcokra; a képek
   ettől bekerülnek a személy albumába. A zárójelben az eldöntetlen
@@ -118,6 +123,18 @@ döntött névjavaslata hozzá, a fejlécben két gomb jelenik meg:
 
 Ha nincs mit eldönteni, ugyanezen a helyen a **További javaslatok
 keresése** gomb áll — ugyanaz, mint a Névtelenek nézetben.
+
+### Csak a javaslatokat mutasd
+
+A gombok bal oldalán egy kis, benyomható gomb áll: **Csak a javaslatok
+megjelenítése (ha be van kapcsolva)**. Benyomva a rácsban csak azok a
+képek maradnak, amelyeken még döntened kell — a már elnevezett arcok
+képei eltűnnek. Újra megnyomva mindent visszakapsz.
+
+A gomb akkor is kint marad, ha közben elfogytak a javaslatok, hogy a szűrt,
+üres nézetből mindig ki tudj lépni. Az album **minden megnyitása szűrő
+nélkül indul**: a szűrő nem marad meg a következő alkalomra. Jóváhagyás
+vagy elvetés után viszont igen — a rács frissül, a szűrő állása marad.
 
 ## Emberek albumok
 

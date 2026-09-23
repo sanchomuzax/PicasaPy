@@ -276,6 +276,34 @@ A tálca kimeneti gombsora (**Nyomtatás**, **E-mail**, **Exportálás**,
 a sor végén megjelenik a **További lehetőségek…** gomb, és a ki nem
 férő gombok alatta, listában érhetők el.
 
+## A Tulajdonságok panel
+
+A jobb oldali fiók **Tulajdonságok** panelje (**Alt+Enter**, vagy a képtálca
+panelkapcsolójáról) a kijelölt kép adatait mutatja. Legfelül a **Fájl
+útvonala**, a **Fájlméret** és a **Méretek** áll, alattuk a felvétel adatai:
+a **Fényképezőgép gyártmánya** és **típusa**, a felvétel és a digitalizálás
+ideje, a tájolás, a **Vaku** állása, az **Objektív** neve, a
+**Fókusztávolság**, az **Exponálási idő**, az **F-érték**, az ISO, a
+**Fehéregyensúly**, a **Fénymérés módja** és a **Színtér**, végül a
+**Kulcsszavak** és a GPS-koordináták.
+
+A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
+annak **a sora sem jelenik meg** — a panel tehát képenként rövidebb vagy
+hosszabb. Videóra ma csak a három felső sor jön ki.
+
+### Az objektív neve
+
+A legtöbb fényképezőgép nem írja le az objektív nevét emberi nyelven, csak
+egy azonosítót hagy a fájlban. **Canon-gépek képein** a program ezt az
+azonosítót feloldja, és az **Objektív** sorba a valódi objektívnevet írja —
+ugyanabból a listából, amit az eredeti Picasa is használt. Ha egy
+azonosítóhoz több objektív tartozik, a gyújtótávolság és a rekesz alapján
+választ közülük.
+
+Ha a fájl maga is tartalmaz objektívnevet, de a feloldás nem ad találatot, a
+fájlban lévő név marad. Más gyártók gépeinél egyelőre az marad, amit a fájl
+ír.
+
 ## Rejtett képek
 
 Egy képet a **kép helyi menüjének Elrejtés** parancsával tüntethetsz el
