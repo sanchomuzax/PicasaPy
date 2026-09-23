@@ -1137,6 +1137,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # ezért közvetlenül a `recordSavedChains()`-t hívja — nincs második
     # jelzés-út, amit itt el lehetne felejteni bekötni.
     edit_controller.chainSaved.connect(controller.recordSavedChain)
+    # #3462: a mentés a szerkesztő munkamenetében élő festett maszkot is
+    # beégeti — különben a festhető effekt a mentett fájlban az egész képre
+    # kerülne, eltérően attól, amit az előnézet mutatott.
+    controller.set_paint_strokes_provider(edit_controller.paint_strokes_for_path)
 
     # effekt-gomb bélyegképek (#338): a meglévő thumbnail-provider
     # regisztrációját (a teljes könyvtár fotóit) használja fel útvonal-

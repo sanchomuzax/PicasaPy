@@ -227,11 +227,13 @@ A festett terület a szerkesztő **munkamenetében** él: másik képre
 váltva eldobódik, és a `.picasa.ini` fájlba sem kerül bele. Az eredeti
 Picasa sem tárolta.
 
-> **Amit a festés ma még nem visz magával.** A befestett terület a
-> szerkesztő **élő előnézetén** látszik. A lemezre mentett és az
-> exportált kép, valamint a rácson a bélyegkép viszont az effektet az
-> **egész képen** mutatja. Ha tehát egy ilyen effektet kimentesz, a
-> hatás nem szorítkozik arra, amit felfestettél.
+Ha a szerkesztőből **mented** a képet (**Fájl ▸ Mentés**, **Másolat
+mentése**, **Mentés másként…**), a mentett fájlban a hatás pontosan ott
+lesz, ahová festetted — elforgatott és tükrözött képen is.
+
+> **Amit a festés ma még nem visz magával.** Az **exportálás** és a rácson
+> a **bélyegkép** mentés előtt az effektet az **egész képen** mutatja.
+> Ha a festett hatást exportálni szeretnéd, előbb mentsd a képet.
 
 ## Finomhangolás
 

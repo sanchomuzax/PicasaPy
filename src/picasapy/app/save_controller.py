@@ -44,6 +44,7 @@ from picasapy.ini import IniConflictError, IniSaveError
 from picasapy.render.chain import apply_filters, can_render_filter
 from picasapy.render.flip import apply_flip
 
+from .paint_mask import maszk_vonasokbol
 from .save_error_kind import save_error_code, save_error_kind
 from .worker_thread import BackgroundWorkerMixin
 
@@ -68,13 +69,22 @@ _FAILED_DETAILS_LIMIT = 5
 
 
 def _render_for_save(
-    path: Path, rotate_steps: int, filters: str, flip_flags: int = 0
+    path: Path,
+    rotate_steps: int,
+    filters: str,
+    flip_flags: int = 0,
+    paint_strokes: tuple = (),
 ) -> np.ndarray:
     """A képfájl a szerkesztésekkel BEÉGETVE, OpenCV BGR-ben.
 
     A forgatás, a tükrözés (#2902) és a `filters=` lánc ugyanazon a
     renderelő-úton megy, mint az exportnál — a mentett fájl és a rácsban
     látott kép így egyezik.
+
+    `paint_strokes`: a szerkesztő munkamenetében élő festés vonásai (#3462).
+    A vonások a FORGATATLAN forrás terében vannak (az előnézet ott futtatja a
+    láncot), ezért a maszk a forrás méretén épül, és a képpel azonos módon
+    tükröződik és fordul.
     """
     # ⛔ #3120: ez az EGYETLEN képbetöltő hely, amit SZÁNDÉKOSAN nem
     # kötöttünk át a nyerset is ismerő `cvimage.dekodolj_forrast`-ra.
@@ -99,6 +109,11 @@ def _render_for_save(
     # #3065: ELŐBB a tükrözés, UTÁNA a forgatás — a mért sorrend (ld. az
     # `export/exporter.py` azonos megjegyzését és a `render/flip.py`
     # modul-docstringjét).
+    maszk = (
+        maszk_vonasokbol(paint_strokes, image.shape[0], image.shape[1])
+        if paint_strokes
+        else None
+    )
     image = apply_flip(image, flip_flags)
     steps = int(rotate_steps or 0) % 4
     for _ in range(steps):
@@ -106,13 +121,34 @@ def _render_for_save(
     ops = EditSession.from_value(filters).ops
     if not ops:
         return image
+    if maszk is not None:
+        maszk = apply_flip(maszk, flip_flags)
+        for _ in range(steps):
+            maszk = cv2.rotate(maszk, cv2.ROTATE_90_CLOCKWISE)
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    rendered, _skipped = apply_filters(rgb, ops)
+    rendered, _skipped = apply_filters(rgb, ops, paint_mask=maszk)
     return cv2.cvtColor(rendered, cv2.COLOR_RGB2BGR)
 
 
 class SaveMixin(BackgroundWorkerMixin):
     """A Fájl menü mentés-műveletei a kijelölt képekre."""
+
+    #: #3462: a szerkesztő festésének vonásai útvonal szerint — az
+    #: `application.py` köti be (`set_paint_strokes_provider`). Bekötés nélkül
+    #: a mentés maszk nélkül renderel, ahogy eddig.
+    _paint_strokes_provider = None
+
+    def set_paint_strokes_provider(self, szolgaltato) -> None:
+        """A `Path -> tuple[Vonas, ...]` szolgáltató bekötése (#3462)."""
+        self._paint_strokes_provider = szolgaltato
+
+    def _festes_vonasai(self, path: Path) -> tuple:
+        """A képhez a munkamenetben élő festés vonásai — a FŐ szálon kell
+        kiolvasni, a háttér-mentés már csak a kész sorozatot kapja."""
+        szolgaltato = self._paint_strokes_provider
+        if szolgaltato is None:
+            return ()
+        return tuple(szolgaltato(path) or ())
 
     #: (sikeres, sikertelen) — a művelet végén EGY összegzés
     saveFinished = Signal(int, int)
@@ -303,7 +339,8 @@ class SaveMixin(BackgroundWorkerMixin):
         """
         records = [
             (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
-             r.filters or "", int(getattr(r, "flip_flags", 0) or 0))
+             r.filters or "", int(getattr(r, "flip_flags", 0) or 0),
+             self._festes_vonasai(Path(r.folder_path) / r.name))
             for r in self._selected_records(rows)
         ]
         if not records:
@@ -319,9 +356,11 @@ class SaveMixin(BackgroundWorkerMixin):
             # fájlokat: három külön mondata van, és a lemezhiba-ágon az
             # ELSŐ érintett fájl neve + a hibakód jelenik meg.
             jelentett_agak: set[str] = set()
-            for index, (path, rotate_steps, filters, flip) in enumerate(records):
+            for index, (path, rotate_steps, filters, flip, vonasok) in enumerate(records):
                 try:
-                    rendered = _render_for_save(path, rotate_steps, filters, flip)
+                    rendered = _render_for_save(
+                        path, rotate_steps, filters, flip, paint_strokes=vonasok
+                    )
                     save_edited(path, rendered, EditSession.from_value(filters))
                 except _SAVE_ERRORS as error:
                     failed += 1
@@ -402,7 +441,8 @@ class SaveMixin(BackgroundWorkerMixin):
         """A másolat-mentés közös háttérszálas útja."""
         items = [
             (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
-             r.filters or "", int(getattr(r, "flip_flags", 0) or 0))
+             r.filters or "", int(getattr(r, "flip_flags", 0) or 0),
+             self._festes_vonasai(Path(r.folder_path) / r.name))
             for r in records
         ]
         if not items:
@@ -424,9 +464,11 @@ class SaveMixin(BackgroundWorkerMixin):
             # megy be az indexbe a ciklus UTÁN — képenként külön kapcsolatot
             # nyitni fölösleges lemezmunka lenne.
             orokolt_kulcsok: list[tuple[str, int]] = []
-            for index, (path, rotate_steps, filters, flip) in enumerate(items):
+            for index, (path, rotate_steps, filters, flip, vonasok) in enumerate(items):
                 try:
-                    rendered = _render_for_save(path, rotate_steps, filters, flip)
+                    rendered = _render_for_save(
+                        path, rotate_steps, filters, flip, paint_strokes=vonasok
+                    )
                     eredmeny = save_copy(
                         path,
                         rendered,
