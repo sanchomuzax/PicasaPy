@@ -2235,6 +2235,9 @@ ApplicationWindow {
                     controller.selectFolder(path)
                 }
             }
+            // #3461: a Rejtett mappák fejlécének jelszó-tétele — ugyanaz a
+            // párbeszéd, amit a menüsáv `hiddenPasswordRequested`-je nyitna
+            onHiddenPasswordRequested: hiddenPasswordDialog.ensure().openSet()
             onStarredChosen: {
                 toolbar.clearSearch()
                 window.clearSelection()

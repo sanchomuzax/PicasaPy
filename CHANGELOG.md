@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.560] – 2026-09-23
+
+### Javítva
+
+- **A Rejtett mappák jelszava beállítható (#3461)** — eddig a jelszót nem
+  lehetett megadni, így a rejtett képek jelszó nélkül is előhozhatók
+  voltak. Most a bal hasáb **Rejtett mappák** fejlécére jobb gombbal
+  kattintva a **Jelszó megadása/módosítása…** pont megnyitja a jelszó
+  ablakát; utána a **Nézet ▸ Rejtett képek** bekapcsolása jelszót kér.
+  A súgó leírja a lépéseket.
+
 ## [0.8.559] – 2026-09-23
 
 ### Javítva

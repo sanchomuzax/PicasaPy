@@ -84,7 +84,9 @@ már **működik**: ezt a súgót nyitja meg — lásd
 - Album törlése, Album rendezésének alapja — az **Albumleírás
   szerkesztése…** viszont már **működik**, lásd [A
   könyvtár](konyvtar.md)
-- Jelszó megadása/módosítása…
+- Jelszó megadása/módosítása… a saját gyűjteményeken — a **Rejtett
+  mappák** fejlécén viszont már **működik**, lásd [A
+  könyvtár](konyvtar.md)
 - Az Emberek album törlése, Az Emberek album szerkesztése…
 - Feltöltés tiltása — a Picasa Webalbumok megszűnt szolgáltatás
 - A **Mappa ▸ Mappa rendezése** almenüben a **Legutóbbi változtatások**
@@ -135,10 +137,3 @@ Google Fiókkal" felirat sem — az csak az eredeti elrendezés része.
   még nem emeljük át.
 - **Névjegyzék írása** — a régi Picasa névjegyzékét olvassuk, de írni még
   nem tudjuk.
-- **A rejtett mappák jelszava** — a jelszó-kapu megvan a programban (a
-  **Nézet ▸ Rejtett képek** bekapcsolása jelszót kérne, ha volna
-  beállítva), de **jelszót ma nem lehet megadni a felületről**: a
-  **Jelszó megadása/módosítása…** menüpont még nincs bekötve. Amíg ez
-  így van, a rejtett képek jelszó nélkül előhozhatók. A rejtés
-  egyébként sem védi a fájlokat: azok a lemezen változatlanul ott
-  vannak, csak a PicasaPy nézeteiből tűnnek el.

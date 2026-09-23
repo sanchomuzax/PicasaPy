@@ -14,6 +14,8 @@ mintáját követve forráskód-vizsgálattal ellenőrizzük."""
 
 from __future__ import annotations
 
+import re
+
 from types import SimpleNamespace
 
 import pytest
@@ -173,7 +175,12 @@ class TestHoverToneWiringInSource:
         assert "albumMouse.containsMouse ? Theme.panelSelection" in source_text
 
     def test_folder_row_hover_uses_panel_selection(self, source_text):
-        assert "folderRowMouse.containsMouse ? Theme.panelSelection" in source_text
+        # #3461: a kiemelés csak a mappasoré — a Rejtett mappák fejléce is
+        # kap egeret (jobb gombra), de hover-kiemelést nem
+        assert re.search(
+            r'kind === "folder" && folderRowMouse\.containsMouse\s*\?\s*Theme\.panelSelection',
+            source_text,
+        )
 
     def test_all_three_mouse_areas_enable_hover_tracking(self, source_text):
         assert source_text.count("hoverEnabled: true") >= 3
