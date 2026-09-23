@@ -250,10 +250,14 @@ def apply_crossprocess(image, fade: float = 0.0):
 
 # --- Sixties -----------------------------------------------------------------
 
-_SIXTIES_MASTER = ((0.0, 0.0), (150.0, 104.0), (243.0, 255.0), (255.0, 255.0))
-_SIXTIES_RED = ((0.0, 0.0), (59.0, 59.0), (96.0, 156.0), (210.0, 255.0), (255.0, 255.0))
-_SIXTIES_GREEN = ((0.0, 0.0), (22.0, 22.0), (150.0, 166.0), (255.0, 216.0))
-_SIXTIES_BLUE = ((0.0, 0.0), (9.0, 9.0), (126.0, 98.0), (255.0, 231.0))
+# A `filterdesc.xml` `Sixties` görbéi szó szerint (#3451). A csatornagörbék
+# ELSŐ pontja emeli a feketét (piros 59, zöld 22, kék 9) — ez adja a meleg,
+# fakó alapot. A `curve_lut` a töréspontokon kívül a szélső értéket tartja,
+# tehát a pontokat nem kell 0-ig vagy 255-ig kiegészíteni.
+_SIXTIES_MASTER = ((0.0, 0.0), (150.0, 104.0), (243.0, 255.0))
+_SIXTIES_RED = ((0.0, 59.0), (96.0, 156.0), (210.0, 255.0))
+_SIXTIES_GREEN = ((0.0, 22.0), (150.0, 166.0), (255.0, 216.0))
+_SIXTIES_BLUE = ((0.0, 9.0), (126.0, 98.0), (255.0, 231.0))
 
 
 def apply_sixties(image, rounded: bool = True, color=(255, 255, 255), fade: float = 20.0):
