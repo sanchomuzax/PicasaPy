@@ -161,14 +161,33 @@ def harvest_templates(repo_root: Path) -> dict[str, list[str]]:
     return best
 
 
+#: A PIPETTÁS effektek (#3449): a regiszter ezeket is `has_puck=True`-val
+#: viszi (a felületen színpipetta van), de a láncukban NINCS fókuszpont — az
+#: első numerikus helyek csúszkák. Bizonyítva: valódi Picasa-lánc és a
+#: formátumleírás (`picasa-ini-format.md` 143. és 257. sor: `finetune2=1, fill,
+#: highlights, shadows, SZÍN, színhőmérséklet`).
+#:
+#: ⚠️ A `colorfix` és a `whitept` is pipettás, de a mezőszámuk a spec szerint
+#: NEM dönthető el (`picasa-ini-format.md` „Amire szándékosan NINCS
+#: paraméterszám-korlát"), és a renderelő egyiket sem futtatja — ezért ide
+#: nem kerülnek, a láncuk a korábbi alakjában marad.
+DROPPER_KEYS = frozenset({"finetune", "finetune2"})
+
+
+def _has_focal_point(key: str, spec) -> bool:
+    """Visz-e a lánc `x, y` fókuszpontot az első két numerikus helyen?"""
+    return spec.has_puck and key not in DROPPER_KEYS
+
+
 def chain_for(
     key: str, wire: str, spec, values: list[float], template: list[str] | None
 ) -> tuple[str, str]:
     """A lánc és a megbízhatósága (`mintabol` vagy `regiszterbol`)."""
+    focal = _has_focal_point(key, spec)
     if template is not None:
         params = list(template)
         numeric = [i for i, p in enumerate(params) if not HEX_SLOT.match(p)]
-        if spec.has_puck and len(numeric) >= 2:
+        if focal and len(numeric) >= 2:
             params[numeric[0]] = "0.500000"
             params[numeric[1]] = "0.500000"
             numeric = numeric[2:]
@@ -180,7 +199,7 @@ def chain_for(
         return f"{wire}=1,{','.join(params)};", "mintabol"
 
     params = ["1"]
-    if spec.has_puck:
+    if focal:
         params += ["0.500000", "0.500000"]
     params += [f"{value:.6f}" for value in values]
     if spec.color_kind != "none":
