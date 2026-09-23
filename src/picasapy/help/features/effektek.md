@@ -104,7 +104,7 @@ erőssége attól függ, **hol áll a korong vízszintesen** — ha csak
 fel-le mozgatod, a középvonalon hagyva, az effekt nem mos. Az eredeti
 Picasa is így viselkedik.
 
-## Öt effekt, amit rá lehet festeni a képre
+## Négy effekt, amit rá lehet festeni a képre
 
 A **Felpörgetés**, a **Képpontnagyítás**, a **Lágyítás** és az
 **Árnyalás** nem az egész képre hat, hanem arra, amit ecsettel
@@ -112,7 +112,7 @@ felfestesz. Az ecset használata: [A szerkesztő](szerkeszto.md).
 
 ## Rejtett párok: a Shift billentyű
 
-Kilenc csempe **másik effektet ad, ha a Shift billentyűt lenyomva tartod,
+Tíz csempe **másik effektet ad, ha a Shift billentyűt lenyomva tartod,
 amikor átváltasz az adott fülre**. A felirat is átvált, tehát látod, mit
 kapsz. Ezt az eredeti Picasa is így csinálta.
 
@@ -126,10 +126,16 @@ kapsz. Ezt az eredeti Picasa is így csinálta.
 | Kreatív | Hőtérkép | Éjjellátó |
 | Művészi | Vignetta | Matt |
 | Művészi | Szegély | Lekerekített sarkok |
+| Művészi | Képpontnagyítás | Képpontnövelés |
 | További effektek | Filmszemcse | Régi filmszemcse |
 
+A **Képpontnövelés** a legújabb a sorban: nem az egész képet bontja durva
+képpontokra, hanem **csak a kör körül** — a kép egy pontja körüli folt éles
+marad, kifelé pedig fokozatosan elképpontosodik. Csúszkája ma nincs: a
+csempére kattintva a program a saját alapértékeivel teszi rá.
+
 A váltás **azonnali**: elég lenyomni a Shiftet, miközben az effekt-fülön
-állsz, és a kilenc csempe felirata átvált; elengedve visszaáll.
+állsz, és a tíz csempe felirata átvált; elengedve visszaáll.
 
 A csempe **kis előnézete az alap effekté marad**, csak a felirat és a
 hatás vált.

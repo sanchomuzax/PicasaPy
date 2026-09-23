@@ -78,13 +78,25 @@ lapon ki lehet kapcsolni („Törlés a lemezről megerősítés nélkül").
 **Fájl ▸ Keresés a lemezen** (Ctrl+Enter) megnyitja a fájlkezelőben azt
 a mappát, ahol a kép van.
 
-A kép helyi menüjében ezen kívül:
+A kép helyi menüjében ugyanez a **Keresés a lemezen** (Ctrl+Enter). Ha
+**egyetlen** képet jelöltél ki, és annak a program megőrizte a szerkesztés
+előtti eredetijét, a tétel helyén **Keresés** almenü nyílik, két sorral:
+
+- **Fájl a lemezen** (Ctrl+Enter) — a kép mappája a fájlkezelőben,
+- **Eredeti a lemezen** — a szerkesztés előtti, megőrzött eredeti fájl.
+
+Több kijelölt képnél, illetve ha nincs megőrzött eredeti, az almenü nem
+nyílik ki: a lapos **Keresés a lemezen** marad. Ez az eredeti Picasa
+viselkedése.
+
+Album- és Emberek-nézetben áll alatta a **Keresés a Picasában** is: ez a
+kép **saját mappájára** ugrik vissza. Mappanézetben nem jelenik meg, mert
+ott a kép már a saját mappájában látszik.
+
+A helyi menüben ezen kívül:
 
 - **Fájl megnyitása** — a rendszer alapértelmezett programjával,
-- **Teljes elérési út másolása** — a vágólapra teszi az útvonalat,
-- **Eredeti a lemezen** — a szerkesztés előtti eredeti fájlhoz visz,
-- **Keresés a Picasában** — a keresésből visszaugrik a kép saját
-  mappájába.
+- **Teljes elérési út másolása** — a vágólapra teszi az útvonalat.
 
 ## Mappák
 

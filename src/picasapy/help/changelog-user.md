@@ -4,6 +4,47 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-23
+
+**Emberek**
+
+- Egy személy albuma mostantól **a még el nem döntött javaslatokat is
+  mutatja**, nem csak azokat a képeket, amelyekre a nevet már ráírtad. Így
+  egy helyen látod, mi kész és mi vár még rád.
+- A fejlécben új, benyomható gomb: **Csak a javaslatok megjelenítése**.
+  Benyomva a rácsban csak az eldöntetlen képek maradnak. Az album minden
+  megnyitása szűrő nélkül indul.
+
+**Szerkesztő**
+
+- A **Művészi** fül **Képpontnagyítás** csempéjének is lett Shift-párja:
+  **Képpontnövelés**. Ez nem az egész képet bontja képpontokra, hanem a kép
+  egy pontja körüli foltot élesen hagyja, és kifelé haladva képpontosít.
+  Ezzel már tíz csempének van rejtett párja.
+- Több effekt **csempéjének kis előnézete** eddig a változatlan fotót
+  mutatta; mostantól azt, amit az effekt tényleg csinál.
+- A **Szegély** és a **Múzeumi matt** keretének vastagsága a szerkesztő
+  előnézetében és az effekt-csempéken is a képhez **arányosan** jelenik meg,
+  tehát az előnézet a mentett képpel egyezik.
+- **Árnyékvetés**: az árnyék elmosódása képpontra ugyanolyan lágy, mint az
+  eredeti Picasában.
+
+**Képadatok**
+
+- A **Tulajdonságok** panel **Objektív** sora **Canon-gépek képein** a valódi
+  objektívnevet mutatja akkor is, ha a fájl csak egy azonosítót tárol — az
+  eredeti Picasáéval azonos listából. Más gyártóknál egyelőre az marad, amit
+  a fájl ír.
+
+**Apróságok**
+
+- A kollázs mentésekor megjelenő folyamatjelző doboz belső elrendezése az
+  eredeti Picasáét követi, és a vászon területén kívülre nem lóg ki.
+- Az eredeti Picasában **Elhomályosítás** lépéssel szerkesztett régi képek
+  most ugyanúgy jelennek meg nálunk is, mint az eredetiben. (Ennek az
+  effektnek a felületen nincs gombja; csak régi képek szerkesztésében
+  fordul elő.)
+
 ## 2026-09-22
 
 **Menük**
