@@ -1714,7 +1714,7 @@ minden további lapja.
 | [picasa-imagedata-rekord.md](picasa-imagedata-rekord.md) | Az `imagedata` rekord — belső kép-nyilvántartás |
 | [picasa-respack-format.md](picasa-respack-format.md) | `respack.yt` — a bináris erőforráscsomag (megfejtve); **2026-09-03: a rétegfejléc 8–9. bájtja ÁTLÁTSZÓSÁG** (`uint16`, 256 = átlátszatlan) — a lap két korábbi sora téves volt, a kicsomagolónk ma eldobja a mezőt (**#2178**) |
 | [picasa-program-resources.md](picasa-program-resources.md) | Erőforrás- és formátum-leltár (gombok, web-export, plugin-ök); **3.5: a `.ytf` glyph-rekord és az `advance`-vektor 12/12 fájlon lezárva, a négy szabad jelölt 72 karakteres mérése rögzítve (#2943)**; **3.6: a felületi feliratok Praxis/GDI metrikai szerződése és a `.ytf` advance-mérés (#3337)** |
-| [picasa-fen-dialogs.md](picasa-fen-dialogs.md) | A `.fen` dialógus-definíciók |
+| [picasa-fen-dialogs.md](picasa-fen-dialogs.md) | ⭐ **2026-09-24 — a törlés-megerősítések szövegválasztója (#3539, `picasa-fen-dialogs.md` 3.3.1):** a `0x005fdc30` fajta (fájl/album/emberek-album/mellőzött), darabszám, lomtár-állapot és tárolónév szerint választ címet, üzenetet és igen-gombot a 34 `DeleteMessage::` azonosítóból; nálunk a fájltörlés saját szöveget mutat, az albumból eltávolítás megerősítés nélkül fut, az albumtörlés helykitöltő. A `.fen` dialógus-definíciók |
 | [picasa-web-template-nyelv.md](picasa-web-template-nyelv.md) | A web-export sablonnyelve |
 | [picasa-exe-strings.md](picasa-exe-strings.md) | Bináris string-bányászat |
 | [picasa-beepitett-konyvtarak.md](picasa-beepitett-konyvtarak.md) | A Picasa beépített nyílt forráskódú könyvtárai |
