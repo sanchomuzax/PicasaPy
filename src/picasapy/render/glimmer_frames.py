@@ -30,6 +30,10 @@ from picasapy.render.glimmer_frame_ops import (
 _POLAROID_SHADOW_BLUR_PX = 8
 _POLAROID_SHADOW_DISTANCE_PX = 3
 
+#: A Polaroid képkerete — a `filterdesc.xml` `SimpleBorderImageOperation`-je
+#: rögzítve adja (`color="0xffffff"`), a csúszka-szín nem hat rá (#3420).
+_POLAROID_FRAME_COLOR = (255, 255, 255)
+
 
 def apply_border(
     image,
@@ -110,9 +114,11 @@ def apply_museum_matte(
 
 def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2)):
     """`Polaroid=1,Rotate,szín` — négyzetes középvágás → aszimmetrikus
-    fehér keret (oldalt 6,45%, fent 9,68%, lent 25,8% a négyzet oldalából)
+    FEHÉR keret (oldalt 6,45%, fent 9,68%, lent 25,8% a négyzet oldalából)
     → vetett árnyék (`distance 3`, `angle = 90−Rotate`, `blur 8`,
-    `shadowAlpha 0,4`) → `padBorder` forgatás `Rotate` `[-10..10]` fokkal.
+    `shadowAlpha 0,4`, háttér: `szín`) → `padBorder` forgatás `Rotate`
+    `[-10..10]` fokkal, pozitívnál az óramutató járása szerint, a sarkokban
+    `szín` kitöltéssel.
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -123,7 +129,11 @@ def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2)):
     side_border = round(crop_size * 0.0645)
     top_border = round(crop_size * 0.0968)
     bottom_border = round(crop_size * 0.258)
-    bordered = add_border_sides(cropped, side_border, side_border, top_border, bottom_border, color)
+    # #3420: a képkeret FEHÉR (`SimpleBorderImageOperation color="0xffffff"`);
+    # a `color` csak az árnyék hátterére és a forgatás kitöltésére megy
+    bordered = add_border_sides(
+        cropped, side_border, side_border, top_border, bottom_border, _POLAROID_FRAME_COLOR
+    )
     # shadowAlpha = 0,4 rögzített → fade_alpha(fade) = 0,4 ⇒ fade = 60.
     # #1144: a margó `blur_px + distance_px` (NEM `2·blur_px + distance_px` —
     # az a `draw_drop_shadow` %-os, ide nem érvényes modellje volt, ami a

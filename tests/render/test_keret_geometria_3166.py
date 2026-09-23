@@ -233,10 +233,15 @@ def test_keret_nelkuli_lancnal_nincs_elhelyezes():
 
 
 def test_a_polaroid_elhelyezese_FORGAT():
-    """A `Polaroid` szöget is ad — a réteget el kell forgatni."""
+    """A `Polaroid` szöget is ad — a réteget el kell forgatni.
+
+    #3420: a Picasa pozitív `Rotate`-je az óramutató JÁRÁSA szerint dönt (a
+    684-es golden), ezért `Rotate = 5`-nél a hely szöge `+5` (óramutatóval
+    ellentétes előjelben mérve); a korábbi `-5` a fordított forgatást
+    rögzítette."""
     hely = apply_filters(_forras(None), parse_filters("Polaroid=1,5,e2e2e2")).content_placement
     assert hely is not None
-    assert hely.szog == pytest.approx(-5.0, abs=0.01)
+    assert hely.szog == pytest.approx(5.0, abs=0.01)
 
 
 def test_a_vagas_UTANI_meretbol_szamol():

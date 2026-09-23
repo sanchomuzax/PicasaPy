@@ -189,7 +189,9 @@ def _polaroid(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:
     uj_sz = int(math.floor(sz * cos_a + ma * sin_a))
     uj_ma = int(math.floor(sz * sin_a + ma * cos_a))
     m = _szorzat(_eltolas((uj_sz - sz) // 2, (uj_ma - ma) // 2), m)
-    m = _szorzat(_forgatas(uj_sz / 2.0, uj_ma / 2.0, szog), m)
+    # a `rotate_with_pad` a Picasa irányát követi (pozitív = óramutató
+    # járása), ezért az OpenCV-képletű `_forgatas` az ellentettet kapja (#3420)
+    m = _szorzat(_forgatas(uj_sz / 2.0, uj_ma / 2.0, -szog), m)
     return uj_sz, uj_ma, m
 
 
