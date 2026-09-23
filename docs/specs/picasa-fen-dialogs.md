@@ -279,6 +279,75 @@ PicasaPy-ban is érdemes egy közös `ConfirmDialog` komponensként megvalósít
   - `button "No" type="other" name="no"` — **megjegyzés:** `other` típus, nem `cancel`! Fontos szemantikai különbség.
   - `button "Cancel" type="cancel" name="cancel"`
 
+### 3.3.1 ⛳ A törlés-megerősítések szövegválasztója — `0x005fdc30` (2026-09-24, 352. kör, #3539)
+
+A `confirm.fen` ablak **szövegeit** (cím, üzenet, igen-gomb) törlés-jellegű
+műveleteknél egyetlen függvény választja ki: `0x005fdc30` (1117 b, `ret 0x18`),
+minden kimenetet a szövegtár-keresővel (`0x009ae560(alapszöveg,
+"DeleteMessage::…")`). Hívói: `0x005c9930`, `0x005c9b00`, `0x005edef0`.
+
+**Bemenetek:**
+
+| bemenet | hol | jelentés |
+|---|---|---|
+| `edi` | regiszter | **fajta**: 0 = lemezen lévő fájl/mappa · 1 = album · 2 = emberek-album · 3 = mellőzött (ismeretlen) emberek |
+| `al` | regiszter | „az egész tárolót törli” (mappa / album) — csak a címet befolyásolja |
+| 1. arg | `[esp+0x10]` | **darabszám**; `≤ 1` → egyes számú szövegek (`0x005fdddd`–`0x005fdde4`) |
+| 2. arg | `ebx` | a tároló **neve** (`%s`); ha nem üres, a tároló-ág fut (`0x005fdcad`) |
+| 3. arg | `[esp+0x18]` | **lomtár elérhető**: igaz → „Recycle Bin”, hamis → végleges törlés (`0x005fdee6`, `0x005fe01b`) |
+| 5. arg | `ebp` | a cím kimenete |
+
+**A cím** (`0x005fdc30`–`0x005fdca8`):
+
+| fajta | `al` = 1 | `al` = 0 |
+|---|---|---|
+| 0 | `DeleteFolderTitle` — Delete Folder / *Mappa törlése* | `DeleteItemsTitle` — Delete Items / *Elemek törlése* |
+| 1 | `DeleteAlbumTitle` — Delete Album / *Album törlése* | `RemoveItemsTitle` — Remove Items / *Elemek eltávolítása* |
+| 2 | `UnknownPeopleTitle` — Remove People / *Személyek eltávolítása* | ugyanaz |
+| 3 | `IgnorePeopleTitle` — Ignore People / *Személyek mellőzése* | ugyanaz |
+
+**Az üzenet és az igen-gomb:**
+
+| eset | üzenet-azonosító | igen-gomb | cím |
+|---|---|---|---|
+| tároló, fajta 1 | `DeleteAlbum` — …delete the album "%s"? | `DeleteAlbumYesButton` — Delete Album | `0x005fdcde`, `0x005fdd08` |
+| tároló, fajta 2 | `DeletePeopleAlbum` — …delete the people album "%s"? | (a 2-es ág) | `0x005fdd46`–`0x005fdd65` |
+| tároló, más fajta | `DeleteFolderWarnPC` — …move the folder "%s" and its contents to the Recycle Bin? | `DeleteFolderYesButton` — Delete Folder | `0x005fdd74`, `0x005fddbd` |
+| több, fajta 1 | `RemoveMultiple` — …remove the %d selected images from the current album? | `RemoveMultipleYesButton` — Remove Images | `0x005fddf4`, `0x005fde1e` |
+| több, fajta 2 | `RemoveMultiplePeople` | `RemoveMultipleYesButtonPeople` — Remove People | `0x005fde48`, `0x005fde72` |
+| több, fajta 3 | `RemoveMultipleUnknown` | `RemoveMultipleYesButtonUnknown` — Ignore People | `0x005fde9c`, `0x005fdec6` |
+| több, fajta 0, lomtár | `DeleteMultiple` — …send the %d selected items to the Recycle Bin? (They will also be removed…) | `DeleteMultipleYesButton` — Delete Items | `0x005fdef2`, `0x005fdf1c` |
+| több, fajta 0, nincs lomtár | `NoUndoMultiple` — …delete %d selected files? (This cannot be undone.) | `NoUndoMultipleYesButton` — Delete Files | `0x005fdf41`, `0x005fdf6b` |
+| egy, fajta 1 | `RemoveSingle` | `RemoveSingleYesButton` — Remove Image | `0x005fdf95`, `0x005fdfb2` |
+| egy, fajta 2 | `RemoveSinglePeople` | `RemoveSingleYesButtonPeople` — Remove Person | `0x005fdfc6`, `0x005fdfe3` |
+| egy, fajta 3 | `RemoveSingleUnknown` | `RemoveSingleYesButtonUnknown` — Ignore Person | `0x005fdff7`, `0x005fe014` |
+| egy, fajta 0, lomtár | `DeleteSingle` — …send the selected file to the Recycle Bin? (It will also be removed…) | `DeleteSingleYesButton` — Delete Image | `0x005fe027`, `0x005fe044` |
+| egy, fajta 0, nincs lomtár | `NoUndoSingle` — …permanently delete the selected file? (This cannot be undone.) | **`DeletMessage::NoUndoSingleYesButton`** — Delete File | `0x005fe050`, `0x005fe06d` |
+
+⚠️ Az utolsó gomb azonosítója az eredetiben **elgépelt** (`DeletMessage::`,
+„e” nélkül) — a szövegtárban ugyanígy áll, tehát a magyar szöveg („Fájl
+törlése”) megjelenik. A magyar szövegek a `referencia/stringres-en-hu.tsv`
+34 `DeleteMessage::`/`DeletMessage::` sorában.
+
+**Nálunk (mérve, 2026-09-24):**
+
+| művelet | eredeti | nálunk | hol |
+|---|---|---|---|
+| fájl(ok) a lomtárba | cím „Elemek törlése”, `DeleteSingle`/`DeleteMultiple`, gomb „Kép törlése”/„Elemek törlése” | cím „Delete from Disk”, saját üzenet („%n picture(s) will be moved to the system trash.”) | `FileOpsDialogs.qml:425–440` |
+| végleges törlés (nincs lomtár) | `NoUndoSingle`/`NoUndoMultiple`, gomb „Fájl törlése”/„Fájlok törlése” | saját üzenet („This file cannot be moved to the Trash…”) | ugyanott |
+| mappa törlése | `DeleteFolderWarnPC` | az eredeti szöveg | `FolderPane.qml:1177` |
+| albumból eltávolítás | `RemoveSingle`/`RemoveMultiple` megerősítés | **nincs megerősítés** | `Main.qml:1477–1481` |
+| album törlése | `DeleteAlbum` | a menütétel helykitöltő | `AlbumContextMenu.qml:51–54` |
+| emberek-album eltávolítás | `RemoveSinglePeople`/`RemoveMultiplePeople` | saját üzenet („The face tag "%1" will be removed…”) | `Main.qml:3405–3417` |
+| mellőzés | `RemoveSingleUnknown`/`RemoveMultipleUnknown` | az eredeti szöveg | `UnnamedFacesView.qml:329` |
+
+Fejlesztés: **#3539**.
+
+*Bizonyítottsági fok: **megerősített** a bemenetek szerepére és mind a 15
+üzenet/gomb-ág kiolvasására (utasításszinten, programmal feloldott
+sztringekkel). Hogy a három hívó melyik menüműveletnél melyik fajtát adja,
+**nincs** végigkövetve — a fajták jelentése a szövegeikből következik.*
+
 ### 3.4 `input.fen` — Generikus szöveg-/jelszóbekérő (V1, alapinfrastruktúra)
 
 Minimalista, egysoros bemenetkérő; a `<password>` mező jelenléte arra utal,
