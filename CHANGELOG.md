@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.555] – 2026-09-23
+
+### Javítva
+
+- **Az Infravörös film effekt úgy néz ki, mint az eredeti Picasában
+  (#3441)** — a zöld ragyogást most ugyanazzal a keverési móddal adja a
+  képhez, mint az eredeti program. Az eredeti Picasa exportjához mért
+  színeltérés 6,0-ról 1,3-ra csökkent.
+
 ## [0.8.554] – 2026-09-23
 
 ### Javítva

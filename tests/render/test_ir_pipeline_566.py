@@ -1,10 +1,14 @@
 """#566 — az `IR` effekt eredeti, zöldcsatornás csővezetéke.
 
 A `Picasa3.exe` statikus visszafejtése (`glimmer::IRImageOperation`) alapján
-a modell már nem interpretáció. A korábbi implementáció három ponton tért el:
-SCREEN-t kevert LIGHTEN helyett, a glow-t a már monokrómmá tett képre tette
-(nem az eredetire), és a KÉK csatorna negatív súlyát figyelmen kívül hagyta.
-Ez a fájl pontosan ezt a három dolgot méri, szintetikus, tiszta színekre.
+a modell már nem interpretáció. Ez a fájl három dolgot mér, szintetikus,
+tiszta színekre: a glow keverési módját, azt, hogy a glow az EREDETI képre
+kerül (nem a monokrómmá tettre), és a KÉK csatorna negatív súlyát.
+
+#3441: a keverési mód **SCREEN** — a konstruktor a ragyogás mód-attribútumát
+konstans 7-re állítja (`0x00bc3e49 push 7`), és a natív módtáblában
+(`0x00cf0e98`) a 7-es a Screen. A #566 „7 = LIGHTEN" olvasata téves volt; a
+684-es golden `ir__alap` ΔE-je a cserével 6,04 → 1,28.
 """
 
 from __future__ import annotations
@@ -55,10 +59,10 @@ class TestMonochromeMatrixWeights:
         assert out[..., 0].tolist() == out[..., 1].tolist() == out[..., 2].tolist()
 
 
-class TestLightenNotScreen:
-    def test_glow_uses_lighten(self):
+class TestScreenNotLighten:
+    def test_glow_uses_screen(self):
         """A LIGHTEN és a SCREEN mérhetően más eredményt ad — a kimenetnek a
-        LIGHTEN-ágat kell követnie."""
+        SCREEN-ágat kell követnie (#3441)."""
         image = np.zeros((*_SIZE, 3), dtype=np.uint8)
         image[..., 0] = 120
         image[..., 1] = 90
@@ -81,10 +85,10 @@ class TestLightenNotScreen:
         assert not np.array_equal(lighten, screen), "a két mód itt egybeesne"
 
         out = apply_ir(image)[..., 0]
-        np.testing.assert_array_equal(out, lighten)
+        np.testing.assert_array_equal(out, screen)
 
     def test_glow_is_applied_to_the_original_not_the_monochrome(self):
-        """A LIGHTEN a NYERS képre fut, a monokróm mátrix csak UTÁNA. Ha a
+        """A glow-keverés a NYERS képre fut, a monokróm mátrix csak UTÁNA. Ha a
         sorrend fordított lenne, a tiszta kék kép nem maradna feketén: a
         zöld glow a szürkévé tett képre világosítva már nem esne ki a
         negatív súly alól."""
