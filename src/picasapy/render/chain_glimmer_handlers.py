@@ -187,7 +187,12 @@ def apply_soften_op(image, op: FilterOp):
 
 
 def apply_pixelate_op(image, op: FilterOp):
-    return artistic.apply_pixelate(image, impact=max(2.0, _float_at(op, 0, 20.0)), fade=_float_at(op, 2, 0.0))
+    return artistic.apply_pixelate(
+        image,
+        impact=max(2.0, _float_at(op, 0, 20.0)),
+        fade=_float_at(op, 2, 0.0),
+        blend_mode=int(_float_at(op, 1, 9.0)),
+    )
 
 
 def apply_picnik_grain_op(image, op: FilterOp):

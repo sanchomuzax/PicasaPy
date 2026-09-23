@@ -187,6 +187,21 @@ def _blend_add(base: np.ndarray, top: np.ndarray) -> np.ndarray:
     return np.clip(base + top, 0.0, 255.0)
 
 
+def _blend_difference(base: np.ndarray, top: np.ndarray) -> np.ndarray:
+    # `|b − t|` — két `psubusb` + `por` (`0x008f42d0`, #3443)
+    return np.abs(base - top)
+
+
+def _blend_subtract(base: np.ndarray, top: np.ndarray) -> np.ndarray:
+    # `max(b − t, 0)` — az ALSÓBÓL vonja ki a felsőt (`psubusb`, `0x008f46c0`)
+    return np.maximum(base - top, np.float32(0.0))
+
+
+def _blend_hardlight(base: np.ndarray, top: np.ndarray) -> np.ndarray:
+    # az Overlay CSERÉLT argumentummal (a tábla-építő `0x008f6568`, #3443)
+    return _blend_overlay(top, base)
+
+
 def _blend_normal(base: np.ndarray, top: np.ndarray) -> np.ndarray:
     del base
     return top
@@ -200,6 +215,25 @@ _BLEND_FUNCS = {
     "darken": _blend_darken,
     "lighten": _blend_lighten,
     "add": _blend_add,
+    "difference": _blend_difference,
+    "subtract": _blend_subtract,
+    "hardlight": _blend_hardlight,
+}
+
+#: A natív módtábla (`0x00cf0e98`) sorszám → mód. A csúszkák és a
+#: `BlendMode="{…}"` kifejezések EZT a sorszámot adják át (#3443). A 10-es
+#: `Softlight` még nincs meg (#3442), ezért nem szerepel.
+BLEND_MODE_BY_INDEX: dict[int, str] = {
+    0: "add",
+    1: "darken",
+    2: "difference",
+    3: "hardlight",
+    4: "lighten",
+    5: "multiply",
+    6: "overlay",
+    7: "screen",
+    8: "subtract",
+    9: "normal",
 }
 
 
