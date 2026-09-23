@@ -6364,6 +6364,15 @@ minőséget pedig `min(q, 15)`-re (`0x00bcd73a`–`0x00bcd744`) — nem `0`-ra v
 A Flash `BitmapFilterQuality.HIGH` = **3** ⇒ a szorzó **1,3501**, tehát a
 Polaroid árnyékának margója `ceil(8 · 1,3501)` = **11 képpont** oldalanként.
 
+**A Polaroid keret színe és a forgatás iránya (#3420, 2026-09-23).** A leíró
+`SimpleBorderImageOperation`-je a képkeretet rögzítetten **fehérre** festi
+(`color="0xffffff"`); a színválasztó (`_cpkrOuter`, alap `E2E2E2`) csak az
+árnyék `backgroundColor`-jába és a `RotateImageOperation` `borderColor`-jába
+megy. A `RotateImageOperation degAngle` **pozitív értéknél az óramutató
+járása szerint** forgat — a 684-es golden `Rotate = 5`-ös exportján a keret
+felső éle jobbra lejt. A kettő átvezetése után a három golden-állás ΔE-je
+22,46 / 18,65 / 22,68 → **2,58 / 0,69 / 1,10** (`min` / `alap` / `max`).
+
 ### ⛔ Amit ez a termékkódunkról mond
 
 A `render/glimmer_frame_ops.py` önálló `DropShadow` útja a `blur`-t a

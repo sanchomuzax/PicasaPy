@@ -278,6 +278,11 @@ def rotate_with_pad(
     sarkok (majdnem) nem vágódnak le — az üresen maradó sarkokat
     `border_color` tölti ki.
 
+    #3420: a szög a Picasa `RotateImageOperation degAngle`-je, és POZITÍV
+    értéknél az óramutató JÁRÁSA szerint forgat (a 684-es Polaroid-exporton
+    `Rotate = 5`-nél a keret felső éle jobbra lejt). Az OpenCV pozitív szöge
+    ennek fordítottja, ezért a mátrixnak az ellentettje megy.
+
     #1144: a befoglaló méretet LEFELÉ kerekítjük (`floor`), nem felfelé — a
     Polaroid `818×950`/`887×1004` mért kimenete csak `floor`-ral egyezik
     (két különböző forgatási szöggel is ellenőrizve; `ceil` mindkét esetben
@@ -296,7 +301,7 @@ def rotate_with_pad(
     left = (new_w - width) // 2
     canvas[top : top + height, left : left + width] = image
     center = (new_w / 2.0, new_h / 2.0)
-    matrix = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
+    matrix = cv2.getRotationMatrix2D(center, -angle_deg, 1.0)
     return cv2.warpAffine(
         canvas,
         matrix,

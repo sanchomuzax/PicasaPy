@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.554] – 2026-09-23
+
+### Javítva
+
+- **A Polaroid keret úgy néz ki, mint az eredeti Picasában (#3420)** — a
+  fénykép körüli keret fehér (eddig a háttér szürkéjével olvadt össze), és
+  a kép a helyes irányba dől: a pozitív szög az óramutató járása szerint
+  forgat, ahogy az eredetiben. Az eredeti Picasa exportjaihoz mért színeltérés
+  a három beállításon 19–23-ról 0,7–2,6-ra csökkent — szemmel már nem
+  látszik különbség.
+
 ## [0.8.553] – 2026-09-22
 
 ### Javítva
