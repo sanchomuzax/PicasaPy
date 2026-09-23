@@ -434,6 +434,8 @@ gyártófüggetlen névalakokat nem látja.)*
 
 ### 9.2 ⭐ A NIKON tábla: `{ név-mutató, 8 bájtos LensID }` — 12 bájt/rekord
 
+> ⛔ **HELYESBÍTVE (2026-09-23, 9.13 A):** a rekord `{8 bájtos kulcs, név-mutató}`, a `0x00c7b228`-tól, **417** sor — az alábbi olvasat a kulcs ELŐTTI mutatót vette névnek, ezért a lenti példák neve a szomszéd sor kulcsához tartozik.
+
 A `0x00c7b230`-tól `0x00c7c5b0`-ig **417 rekord**, mindegyik 12 bájt:
 
 ```c
@@ -526,7 +528,7 @@ MakerNote-mezőt hasonlítja hozzá). Ez a jegy következő lépése.
 
 ### 9.5 Két HELYESBÍTÉS a 9.2-höz és 9.3-hoz
 
-1. **A Nikon tábla 416 rekord, nem 417.** A `0x0087c5b0`-on álló hivatkozás
+1. ~~**A Nikon tábla 416 rekord, nem 417.**~~ → **VISSZAVONVA (9.13 A): 417 rekord, `{kulcs, név}` alakban.** A `0x0087c5b0`-on álló hivatkozás
    NEM táblasor: utána közvetlenül az `ICC_PROFILE` sztring következik
    (`70 AA CD 00 | 49 43 43 5F 50 52 4F 46 49 4C 45 00`), tehát az egy magában
    álló mutató, nem `{név, 8 bájtos kulcs}` pár. Az utolsó valódi sor a
@@ -725,7 +727,7 @@ A 9.1–9.10 mérése alapján a **táblák kinyerve**, a feloldó megvalósítv
 
 | mit | hol |
 |---|---|
-| a két tábla tartalma | `src/picasapy/metadata/objektiv_tabla.json` — 230 Canon + 416 Nikon rekord, a binárisból kinyerve |
+| a két tábla tartalma | `src/picasapy/metadata/objektiv_tabla.json` — 230 Canon + 416 Nikon rekord, a binárisból kinyerve — ⛔ a Nikon-rész egy sorral elcsúszott és egy sorral rövid (9.13 A) |
 | a kinyerő | privát agent-repó: `eszkozok/meres/objektiv_tabla_kinyer.py` |
 | a feloldó | `src/picasapy/metadata/objektiv.py` — `canon_objektiv`, `nikon_objektiv`, `objektiv_neve` |
 | az őr | `tests/metadata/test_objektiv_feloldas_3121.py` (17 próba) |
@@ -836,6 +838,112 @@ oldala, azt ez a kör NEM mérte ki (#3496). Az EXIF
 ⬜ **Nincs benne:** a Nikon-ág (a `FUN_00a35d80` a `LensData` `0100`…`0204`
 verziószövegeit vizsgálja, és a `0x00ce3c38`-nál a Nikon visszafejtő táblája
 áll) — **#3495**; és az `XMP::Lens` szerepe — **#3496**.
+
+### 9.13 ⛳ A Nikon-ág TELJES menete — és a 9.2 rekordolvasata EGY SORRAL ELCSÚSZOTT (2026-09-23, 349. kör, #3495)
+
+*Forrás: a `0x00a35d80` (1892 b) teljes diszasszemblálása, a visszafejtő
+`0x00a364f0`, a tartalék-formázó `0x00a36650`, a tábla közvetlen kiolvasása,
+és kontrollként egy valódi `NIKON D100`-as JPEG (`/mnt/photo/2003/2003-01-more/DSC_0001.JPG`,
+`LensData 0100`).*
+
+#### A) ⛔ HELYESBÍTÉS: a rekord `{8 bájtos kulcs, név-mutató}`, és 417 soros
+
+A kereső ciklus (`0x00a362a8`–`0x00a3635a`) az `edi = 0x00c7b228 + 12·i`
+címen hasonlítja a kulcsot, és találatkor a nevet a
+`[i·12 + 0x00c7b230]`-ból veszi (`0x00a36369`) — **a név a kulcs UTÁN, a
+`+8`-on áll.** A 9.2 a kulcs ELŐTTI mutatót olvasta névnek, ezért minden név
+a **szomszéd** sor kulcsához került. A ciklus felső határa `0x138c` = 5004 =
+**417 · 12** (`0x00a36354`): a 0. sor a `00 00 00 00 00 00 00 01` →
+„Manual Lens No CPU", a 416. a `FE 53 5C 80 24 24 84 06` → „Tamron SP AF
+70-200mm f/2.8 Di LD (IF) Macro (A001)". A 9.5 „416, nem 417" helyesbítése
+ugyanebből a félreolvasásból született, és **visszavonva**.
+
+**Mérve:** a termék `objektiv_tabla.json` Nikon-részének 416 sorából **17**
+áll a helyes párosítással is így; a többi egy sorral el van csúszva.
+
+**Kontroll (D100):** a helyes párosítással a `56 3C 5C 8E 30 3C 1C 02`
+kulcshoz (`0x00c7bf0c`, 275. sor) a **„Sigma 70-300mm F4-5.6 APO Macro Super
+II"** tartozik — ugyanezt adja az exiftool és a digiKam adatbázisa. A mai
+táblánk ugyanerre a kulcsra az előző sor nevét adja („AF Zoom-Micro Nikkor
+70-180mm f/4.5-5.6D ED").
+
+A helyes táblában **5 kulcs ismétlődik**; a ciklus az **első** találatnál
+áll meg (`0x00a36347`), tehát ezeknél az első név érvényes:
+
+| kulcs | az érvényes (első) név | a második, sosem látszó |
+|---|---|---|
+| `25 48 3C 5C 24 24 1B 02` | Tokina AT-X 270 AF PRO II (AF 28-70mm f/2.6-2.8) | Tokina AT-X 287 AF PRO SV |
+| `2F 40 30 44 2C 34 29 02` | Tokina AF 235 II (AF 20-35mm f/3.5-4.5) | Tokina AF 193 |
+| `2F 48 30 44 24 24 29 02` | AF Zoom-Nikkor 20-35mm f/2.8D IF | Tokina AT-X 235 AF PRO |
+| `32 54 6A 6A 24 24 35 02` | AF Micro-Nikkor 105mm f/2.8D | Sigma Macro 105mm F2.8 EX DG |
+| `7A 3C 1F 37 30 30 7E 06` | AF-S DX Zoom-Nikkor 12-24mm f/4G IF-ED | Tokina AT-X 124 AF PRO DX II |
+
+A tábla az első bájt szerint rendezett, és a ciklus kilép, ha a táblabeli
+első bájt nagyobb a keresettnél (`0x00a362b1`).
+
+#### B) A kulcs összerakása
+
+| `LensData` első 4 bájtja | a 7 bájt eltolása | visszafejtés | cím |
+|---|---:|---|---|
+| `0100` (`0x00cc7e74`) | 6 | nem | `0x00a35ecf` |
+| `0101` (`0x00ce3c10`) | 0x0b | nem | `0x00a35f60` → `0x00a361d8` |
+| `0201`, `0202`, `0203` | 0x0b | igen | → `0x00a361d6` |
+| `0204` (`0x00ce3c30`) | 0x0c | igen | `0x00a3619b`–`0x00a361a0` |
+| más | — | **üres** eredmény | `0x00a361a4` |
+
+- a `LensData` hossza nagyobb kell legyen, mint `eltolás + 7`, különben üres
+  (`0x00a361dd`–`0x00a361e6`);
+- **kulcs = `LensData[eltolás … eltolás+6]` (7 bájt) + `LensType`**
+  (`0x0083`, a 8. bájt; `0x00a362bd`–`0x00a36347`) — ugyanaz a sorrend, mint
+  az exiftool `LensID`-jéé;
+- a `LensType`-nak `1 … 0xFFFE` közé kell esnie, különben a táblát
+  kihagyja és a tartalékra megy (`0x00a3627a`–`0x00a36292`).
+
+**Kontroll:** a D100-as minta `LensData`-ja `30 31 30 30 11 56 | 56 3C 5C 8E
+30 3C 1C | …`, `LensType = 2` ⇒ kulcs `56 3C 5C 8E 30 3C 1C 02`, bájtra az
+exiftool `LensID -n` értéke.
+
+#### C) A visszafejtés (`0x00a364f0`, a 4. bájttól)
+
+Szerkezetében az exiftool Nikon-`Decrypt` eljárása: a sorozatszám a gyártói
+szótár `0x74`-es eleméből, ha az nincs, a `0x78`-asból szövegként `atoi`-val
+(`0x00bf6a2d`); ha egyik sincs, `"D50"`-nél (`0x00cccd68`) `0x22`, egyébként
+`0x60` (`0x00a365b0`–`0x00a365d2`); a zárszámláló a szótár `0x0b` eleme, négy
+bájtja XOR-olva (`0x00a365da`-tól); a helyettesítő tábla a `0x00ce3c38`-on.
+⚠️ **Mintán NINCS mérve** — a gépen nincs `0201`+ `LensData`-s Nikon-kép
+(a digiKam-adatbázis 15 Nikon-képe: 1 D100-as, a többi Coolpix). A szótár
+`0x74`/`0x78`/`0x0b` elemének gyártói címkéje nincs külön kiolvasva.
+
+#### D) A tartalék-leírás (nincs táblatalálat vagy a `LensType` érvénytelen)
+
+`0x00a363c4` → `0x00a36650`, a 7 bájtos `p` mezőiből, `g(b) = 2^(b/24)`
+(`0x00cf3ef0` = 24,0, `0x00c7d9d0` = 2,0, hatvány: `0x00c0b410`):
+
+```
+fmin = 5·g(p[2])   fmax = 5·g(p[3])        (0x00cf4618 = 5,0)
+amin = g(p[4])     amax = g(p[5])
+szöveg = "%d-%dmm" (fmin, fmax — _ftol, CSONKOL)  vagy "%dmm", ha fmax ≈ 0
+       + " " + "f/%.2g-%.2g" (amin, amax)        vagy "f/%.2g", ha amax ≈ 0
+```
+
+(`0x00ce3e38` `%d-%dmm`, `0x00ce3e40` `%dmm`, `0x00ce3e48` `f/%.2g-%.2g`,
+`0x00ce3e54` `f/%.2g`.) A „≈ 0" próba (bitminta, 8 ULP) kiszámolt értékre
+sosem igaz (`g ≥ 1`), tehát a gyakorlatban **mindig** `A-Bmm f/X-Y` — azonos
+rekesznél is kétszer írja (`f/2.8-2.8`). A D100-as mintán a tartalék
+`71-302mm f/4-5.7` volna.
+
+#### E) Amit ez a megvalósításnak ad — #3495
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| a Nikon-tábla | 417 sor, `{kulcs, név}` a `0x00c7b228`-tól | 416 sor, egy sorral elcsúszott párosítás (17/416 helyes) | a tábla újra-kinyerése a helyes párosítással |
+| ismétlődő kulcs | az első nyer | a `dict` az utolsót tartja | első-nyer index |
+| a Nikon-ág | a B)–D) menet | nincs bekötve | a Canon-ág mintájára |
+
+*Bizonyítottsági fok: **megerősített** a rekordolvasatra, a 417 sorra, a
+kulcs-összerakásra és a tartalékra (utasításszintű kiolvasás + a D100-as
+kontroll); **erős** a visszafejtésre (az exiftool eljárásával azonos
+szerkezet, mintán nem mérve).*
 
 ## 10. ⛳ A határvonal EXIF/GPS-névregisztere — részlelet (2026-09-18, #3345)
 
