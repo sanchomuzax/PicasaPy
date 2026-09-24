@@ -383,86 +383,39 @@ def apply_twotone(
 
 
 def apply_quantizepalette(image, steps: float = 8.0, smoothing: float = 80.0, fade: float = 0.0):
-    """`QuantizePalette=1,Steps,Smoothing,Fade` — előzetes lágy elmosás
-    (`(100−Smoothing)/10 + 0,1` szigma) → csatornánként egyenletes
-    lépésközű kvantálás `Steps` szintre.
+    """`QuantizePalette=1,Steps,Smoothing,Fade` — előzetes elmosás
+    (`(100−Smoothing)/10 + 0,1` szigma), majd a kép SAJÁT, `Steps − 1`
+    elemű palettájára kvantálás, végül `Fade` szerinti visszakeverés.
 
-    ## A `Depth = 4` és a lineáris közelítés — MÉRVE (#2454)
+    A `filterdesc.xml` lánca (1244–1258. sor): `BlurImageOperation` →
+    `QuantizePaletteImageOperation Depth="4"`, egy `NestedImageOperation`
+    `BlendAlpha = 1 − Fade/100` keverésében. A kvantálás a binárisból
+    kiolvasott oktree-út (#3084): 50 × 50-es pontminta → oktree →
+    `Steps − 1` levél → 3-3-2 keresőtábla — a részletek és a címek a
+    `picasapy.render.quantize_palette` modulban.
 
-    A `filterdesc.xml` `Depth = 4`-et szállít, ami az eredetiben oktree-t
-    jelöl (3 osztási szint), nem RGB-mélységet. Mi lineárisan kvantálunk.
-    Ez a docstring korábban azt ÁLLÍTOTTA, hogy a kettő „egyenértékű" —
-    **bizonyíték nélkül**. Most van bizonyíték.
+    ## Miért nem egyenletes rács (a #2231 régi modellje)
 
-    Mérve a NAS-mérőszett három szállított beállításán, a Picasa saját
-    exportjához hasonlítva (ΔE, CIE Lab, átlagos képpont-távolság):
+    A korábbi megvalósítás csatornánként egyenletes rácsra kvantált, egy
+    olyan referencia alapján, amely a PicasaPy SAJÁT exportja volt, nem a
+    Picasáé (PR #3440). A valódi Picasa-exportokon (NAS
+    `3084-poszterizalas`, 8/80/0, kanonikus ΔE) a rácsos modell 16,64 /
+    17,16, ez 0,54 / 0,91 — az őr:
+    `tests/render/test_quantizepalette_paletta_3084.py`.
 
-    ```
-    eset  Steps Smoothing Fade   ΔE mi↔Picasa   ΔE forrás↔Picasa
-    alap     8       80     0          0,268           19,009
-    min      2        0     0          0,687           73,485
-    max     30      100   100          0,136            0,136
-    ```
-
-    A viszonyítás adja az értelmét: a `min` esetben az érintetlen forrás
-    73,5-tel tér el az eredeti kimenetétől, a mienk **0,687-tel** — a hatás
-    99,1%-át eltaláljuk. A 0,1–0,7 a JPEG-újrakódolás zajszintje.
-
-    ⇒ A lineáris kvantálás a **szállított beállításokon** mérhetően
-    egyenértékű; az oktree-út megvalósítása nem indokolt.
-
-    ⚠️ **A `max` eset semmit nem bizonyít a kvantálásról:** ott
-    `Fade = 100`, tehát a hatás teljesen elhalványul, és a kimenet a
-    forrás. Kontrollnak jó (a `fade`-kezelés helyes), a kvantálás hűségéről
-    nem szól.
-
-    ⚠️ **Csak három beállításra mérve**, a szállítottakra — a `Steps`
-    teljes tartományára (2…30) nem.
-
-    ## Az eredeti algoritmus — a régi „NEM ismert" HELYÉBE (#2231, 2026-09-08)
-
-    Két, egymásnak ellentmondó, de **mindkettő mért** leletünk van. A
-    docstring korábbi „a pontos algoritmus NEM ismert" mondata elavult:
-    mindkét oldal megvan, csak nem állnak össze.
-
-    **1. A binárisban álló művelet OKTREE-alapú palettaválasztó.**
-    A `glimmer::QuantizePaletteImageOperation` (vtábla `0x008eff58`,
-    alkalmazó `0x00bb5ad0`) két attribútumot olvas — `Steps` a `+0x24`-en
-    (kódbeli alapérték **255**), `Depth` a `+0x2c`-n (alapérték **2**) —,
-    a nevek a `0x00ceff4c` és `0x00c85524` sztringekből. A munkát a
-    `0x00bb5b60` végzi: egy 50×50-es, 256 színű mintából (`0x00bb5c44`
-    `mov eax, 0x32`) oktree-t épít, `Steps − 1`-re redukálja
-    (`Steps == 2` esetén 2-re), majd egy 256 rekeszes 3-3-2 keresőtáblát
-    tölt fel a fa legközelebbi színeivel. A `filterdesc.xml` (1255. sor)
-    `Depth="4"`-et és `Steps="{_sldrSteps.value}"`-t szállít.
-
-    **2. A szállított szűrő LÁTHATÓ kimenete viszont csatornánként
-    egyenletes rácsra ugrik** — ez a mienk. A NAS-mérőszett
-    `quantizepalette__alap` (`Steps=8`) esetén a Picasa saját exportjának
-    képpontértékei **97,6%-ban** a `round(i·255/(Steps−1))` rácson ülnek
-    (`min`, `Steps=2`: 98,4%), és a mezőnkénti leképezés csatornánként
-    FÜGGETLEN — pl. `(41, 60, 199) → (36, 72, 182)`. Ilyen színt egy
-    palettaválasztó nem tud előállítani: a `(36, 72, 182)` nincs benne a
-    forrásképben. A hű oktree-újraépítés ΔE-je ugyanezen a képen
-    **28,55** (`min`: 93,30) a lineáris **0,268** / **0,687** ellenében.
-
-    ⇒ **A lineáris modell marad**, mert a mérés szerint az írja le az
-    eredeti látható viselkedését. Az ellentmondás feloldása (miért nem az
-    oktree-út fut a `.picasa.ini`-vezérelt teljes felbontású renderben)
-    **NYITOTT** — ld. `docs/specs/filterdesc-registry.md`. Az őr:
-    `tests/render/test_quantizepalette_racs_2231.py`.
+    Az elmosás a `BlurImageOperation` natív útja (`quality="3"`,
+    `render/nativ_blur.blur_image_operation`): a Gauss-közelítéssel a
+    három valódi export ΔE-je 2,45 / 4,01 / 1,74 volt, ezzel 0,54 / 0,34 /
+    0,91 — a JPEG-újratömörítés zajszintje.
     """
-    import numpy as np
-
-    from picasapy.render.glimmer_ops import gaussian_blur_f
+    from picasapy.render.nativ_blur import blur_image_operation
+    from picasapy.render.quantize_palette import kvantal
 
     validate_image(image)
-    sigma = max((100.0 - smoothing) / 10.0 + 0.1, 1e-6)
-    blurred = gaussian_blur_f(to_float(image), sigma)
-    levels = max(2, int(round(steps)))
-    scale = 255.0 / (levels - 1) if levels > 1 else 255.0
-    quantized = np.rint(np.rint(blurred / scale) * scale)
-    return to_uint8(alpha_blend(to_float(image), quantized, fade_alpha(fade)))
+    sugar = (100.0 - smoothing) / 10.0 + 0.1
+    blurred = blur_image_operation(image, sugar, sugar, quality=3)
+    quantized = kvantal(blurred, steps)
+    return to_uint8(alpha_blend(to_float(image), to_float(quantized), fade_alpha(fade)))
 
 
 __all__ = [

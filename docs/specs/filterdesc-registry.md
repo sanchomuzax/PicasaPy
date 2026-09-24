@@ -3800,11 +3800,14 @@ keverést **bitre az eredeti képlettel** végzi, a kvantálást viszont
 **csatornánként egyenletes lépésközzel**, `Steps` szintre. A docstring
 (`:290–292`) azt állítja, hogy ez a `Depth` konstans mellett
 „egyenértékű" — ~~**ez az állítás nincs mérve**, és 512 palettacella mellett
-kétséges~~. **MOST MÉRVE (#2231):** a szállított szűrő kimenete
+kétséges~~. ~~**MOST MÉRVE (#2231):** a szállított szűrő kimenete
 csatornánként EGYENLETES rácson ül, tehát a lineáris modell nem közelítés,
-hanem a mért viselkedés; a hű oktree-újraépítés 100-szor nagyobb ΔE-t ad.
-Ld. a lap végi „A `QuantizePalette` OKTREE-útja NEM az, ami a képre kerül"
-szakaszt. Jegy: **#2454** (mérést kért, nem átírást).
+hanem a mért viselkedés; a hű oktree-újraépítés 100-szor nagyobb ΔE-t ad.~~
+**⛔ HELYESBÍTVE (#3084):** a „mért viselkedés" a PicasaPy SAJÁT exportja
+volt (PR #3440). A valódi Picasa-exportokon a kimenet képfüggő palettán ül,
+és az oktree-út a binárisból kiolvasott mintavétellel és elmosással
+0,34–0,91 ΔE-re egyezik — ld. a lap végi „✅ A `QuantizePalette` teljes
+útja" szakaszt.
 
 ## `QuantizePalette` `Depth` — MEGVAN, és a 3-3-2 tábla NEM tartalék (2026-09-04, #2231)
 
@@ -4307,7 +4310,7 @@ az 5. pont **nyitott**, és a gépi úton nem eldönthető része nevesítve.*
 > mérőeszközt okolta — az a szál HAMIS). A hátralévő eltérés oka nyitott;
 > ld. a #3084 jegyet.
 >
-> ⚠️ A `test_quantizepalette_racs_2231.py` őr ugyanerre a hamis
+> ⚠️ A `test_quantizepalette_racs_2231.py` őr *(törölve, #3084)* ugyanerre a hamis
 > referenciára épül (a docstringje a `2231`-es mappát nevezi Picasa-exportnak).
 
 Ez a szakasz **nem cáfolja** a fenti két oktree-szakaszt — a binárisbeli
@@ -4366,7 +4369,7 @@ a bemeneti szín ugyanazt a kimenetet adja más színeloszlású képben is"*. E
 három beállítása volt. A tulajdonos leszállította a kért második, természetes
 átmenetes képet, és a mérés az állítást **megdöntötte**. Ld. az 1/b pontot.
 
-Őr: `tests/render/test_quantizepalette_racs_2231.py` (28 állítás; a hű
+Őr: `tests/render/test_quantizepalette_racs_2231.py` *(törölve, #3084)* (28 állítás; a hű
 oktree-modellel 27 bukik). ⚠️ Ez az őr a mérőszett képére igaz — a
 természetes fotóra NEM, ld. lent.
 
@@ -4870,7 +4873,7 @@ A lap eddig állította; a 224. kör kiolvasta:
 
 #### 8.2 A mért kimenet ennél TÖBB színt tartalmaz
 
-A `tests/render/test_quantizepalette_racs_2231.py` docstringjében rögzített,
+A `tests/render/test_quantizepalette_racs_2231.py` *(törölve, #3084)* docstringjében rögzített,
 a Picasa exportjából a **mezők közepén** kiolvasott értékek:
 
 | mit | egyedi értékek | darab |
@@ -5103,6 +5106,57 @@ megnevezhető jelöltek.
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
+
+## ✅ A `QuantizePalette` teljes útja — a minta, a keresés és az elmosás (2026-09-24, #3084)
+
+A fenti szakaszok nyitva hagyták, hogyan áll elő az 50 × 50-es minta, és
+mitől lett az oktree-újraépítés palettája „túl világos". Utasításszinten
+kiolvasva:
+
+| lelet | cím | mit mond |
+|---|---|---|
+| a minta **pontmintavétel** | `0x009e7420` (a `0x009e6df0` diszpécser `[a4]=[a5]=0` ága) | a mintaképpont KÖZEPE (`+0,5`, `[0x00c72150]`) a mátrixszal visszavetítve, 16.16 fixpontban (`×65536`, `[0x00cf3cb0]`, `floor` majd `ftol`), EGYETLEN forrásképpont; a léptetés soronként `floor(m0·65536)` |
+| a lépték **mindkét irányban `W / 50`** | `0x00bb5bd0` `fild [ebp+8]` (a szélesség), `fdiv [0x00cf3bd8]` = 50,0; a mátrix float32 (`fstp dword`), `m0 = m4 = W/50` | fekvő képen a minta alsó sorai a képen KÍVÜL esnek |
+| a képen kívüli mintaképpont **fekete** | `0x009a8d80` (a teljes képre `rep stosd` 0-val), a mintavevő határellenőrzése (`0x009e755a`/`0x009e7560`) | ezek is a fába kerülnek |
+| a beszúrás **oszlopfolytonos**, szűrés nélkül | `0x00bb5d3b`–`0x00bb5d9d` | `x` külső, `y` belső ciklus; átlátszóság-vizsgálat nincs |
+| a keresés helyettesítő testvére | `0x00bcb9f0`, a tábla `0x00cf0c48` (8 × 7 dword) | hiányzó gyereknél, ha a csomópont `+8` jelzője 0, a tábla sorának első LÉTEZŐ gyerekébe megy; a jelző a gyerekeknél mindig 1 (`0x00bcb9b8`), a gyökérnél csak `Steps == 2` esetén 0 |
+| a csomópont-átlag | `0x00bcbaa0` | `floor(float32(összeg/darab))` |
+| az elmosás a **natív dobozszűrő** | `0x00bb4de0` → `0x00bb4fc9 call 0x00bc5680` | ugyanaz a diszpécser, mint a DropShadow-é (`render/nativ_blur.py`, #3474), a sugár a `0x00bb5050` kvantálón át |
+
+⚠️ **Következmény széles képeknél:** mivel a sorok is `W / 50`-nel lépnek, a
+mintából `50 · H / W` sor esik a képre, a többi fekete. Egy 3:2-es fotónál ez
+a minta kb. harmada, egy panorámánál a nagyobbik része — a paletta ilyenkor a
+fekete felé húz, akkor is, ha a képen nincs fekete. Ez az EREDETI viselkedése
+(a fenti mérés épp ezen múlik), nem regresszió.
+
+A sugár-kvantáló (`0x00bb5050`, float32 konstansok `0x00cf3a44`–`0x00cf3a58`):
+1 alatt 0; `2 < x < 2,065` → 2,065; `3 ≤ x < 3,0625` → 3,0625;
+`4 < x < 4,13` → 4,13; `5 < x < 5,13` → 5,13; egyébként `x`. A
+`BlurImageOperation` előtte tengelyenként 255-re vág.
+
+### A mérés — a valódi Picasa-exportokon, kanonikus ΔE
+
+| pár | forrás | rácsos (régi) | oktree, átlagoló minta | ez |
+|---|---:|---:|---:|---:|
+| mérőkép 8/80/0 (`3084-poszterizalas`) | 16,04 | 16,64 | 15,21 | **0,54** |
+| természetes fotó 8/80/0 | 14,49 | 17,16 | 7,64 | **0,91** |
+| mérőkép `min` 2/0/0 (`export-202608151229`) | 26,93 | 40,02 | 17,54 | **0,34** |
+
+A Gauss-közelítésű elmosással a paletta ugyanez, de a ΔE 2,31 / 1,74 /
+4,01 — a maradék tehát az elmosásé volt. A korábbi „a legsötétebb
+palettaszín túl világos" tünet oka a fekete mintasorok hiánya volt.
+
+Megvalósítás: `render/quantize_palette.py`,
+`render/nativ_blur.blur_image_operation`; őr:
+`tests/render/test_quantizepalette_paletta_3084.py`,
+`tests/render/test_blur_image_operation_3084.py`.
+
+⚠️ **A többi Glimmer-effekt** `BlurImageOperation`-je ma is a
+Gauss-közelítést (`gaussian_blur_f`) futtatja — a fenti mérés szerint ez
+mérhető eltérés; külön jegy: **#3580**.
+
+*Bizonyítottsági fok: **megerősített** — minden állítás mellett cím, és a
+három valódi exporton a JPEG-újratömörítés zajszintjén egyezik.*
 
 ## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
 

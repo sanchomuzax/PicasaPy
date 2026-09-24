@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.568] – 2026-09-24
+
+### Javítva
+
+- **A Poszterizálás az eredeti Picasa színeit adja (#3084)** — eddig a
+  képet egy mindenhol egyforma színrácsra kerekítettük, az eredeti program
+  viszont a kép saját színeiből választ néhány jellemző színt (a
+  Lépcsők csúszkánál eggyel kevesebbet), és azokra vált. Most ugyanígy
+  működik, az előtte futó simítással együtt: az eredeti Picasa kimenetétől
+  a három mért képen már csak a JPEG-tömörítés zajszintjén tér el.
+
 ## [0.8.567] – 2026-09-24
 
 ### Javítva

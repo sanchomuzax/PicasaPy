@@ -75,21 +75,29 @@ def sugar_egyutthatok(sugar: float) -> tuple[int, int, int, int]:
 
 
 def _menet(kep: np.ndarray, tengely: int, k: int, h: int, w: int, oszto: int) -> np.ndarray:
-    """Egy egydimenziós menet a megadott tengely mentén (`0x00bc7540`/`0x00bc77b0`)."""
-    # int32 elég: a legnagyobb részösszeg 255 · (hossz + 2h) ≈ 1,1·10^6, a
-    # szorzat `255 · osztó` < 2^31 — fele a memória, mint int64-gyel
-    x = np.moveaxis(kep, tengely, -2).astype(np.int32)
-    n = x.shape[-2]
-    idx = np.clip(np.arange(-h, n + h), 0, n - 1)
-    p = x[..., idx, :]
-    cs = np.concatenate(
-        [np.zeros(p.shape[:-2] + (1, p.shape[-1]), np.int32), np.cumsum(p, axis=-2, dtype=np.int32)], axis=-2
-    )
-    # p[m] = s[clamp(m − h)]; a belső ablak p[i+1 … i+2h−1], a szélek p[i], p[i+2h].
-    belso = cs[..., 2 * h : 2 * h + n, :] - cs[..., 1 : 1 + n, :]
-    szel = p[..., 0:n, :] + p[..., 2 * h : 2 * h + n, :]
-    ki = (szel * w + (belso << k)) // oszto
-    return np.moveaxis(ki.astype(np.uint8), -2, tengely)
+    """Egy egydimenziós menet a megadott tengely mentén (`0x00bc7540`/`0x00bc77b0`).
+
+    A képlet egy `[w, 2^k, …, 2^k, w]` súlyú, `2h + 1` hosszú szűrő a szélre
+    vágott (ismételt) mintákon, utána egész osztás. A részösszeg a teljes
+    sugártartományban legfeljebb 64 515 (`255 · (2w + 2^k · (2h − 1))`,
+    mérve r = 1,01 … 253-ra), tehát a float32-es OpenCV-szűrő EGÉSZ
+    pontossággal számolja (#3084: a numpy-futóösszeg a célgép előnézeti
+    felbontásán 7 s volt). A `sepFilter2D` nem vált Fourier-útra, mint a
+    `filter2D` nagy kernelnél.
+    """
+    from picasapy.lazy_cv2 import cv2
+
+    sulyok = np.zeros(2 * h + 1, dtype=np.float32)
+    sulyok[1:-1] = float(1 << k)
+    sulyok[0] += w
+    sulyok[-1] += w
+    egyseg = np.ones(1, dtype=np.float32)
+    kx, ky = (sulyok, egyseg) if tengely == 1 else (egyseg, sulyok)
+    bemenet = kep.astype(np.float32)
+    osszeg = cv2.sepFilter2D(bemenet, cv2.CV_32F, kx, ky, borderType=cv2.BORDER_REPLICATE)
+    if osszeg.ndim == 2:
+        osszeg = osszeg[..., np.newaxis]
+    return (osszeg.astype(np.int64) // oszto).astype(np.uint8)
 
 
 def _vagott_sugar(sugar: float, hossz: int) -> np.float32:
@@ -153,3 +161,60 @@ def _tengelyenkent(ki: np.ndarray, rx: np.float32, ry: np.float32, q: int) -> np
         for _ in range(q):
             ki = _menet(ki, 0, *par)
     return ki
+
+
+#: `0x00bb5050` — a sugár-kvantáló sávjai: `(alsó, felső, az alsó is benne)`;
+#: a sávba eső sugár a FELSŐ értéket kapja (float32 konstansok,
+#: `0x00cf3a58`/`0x00cf3a54` … `0x00cf3a48`/`0x00cf3a44`).
+_KVANTALO_SAVOK = (
+    (np.float32(5.0), np.float32(5.13), False),
+    (np.float32(4.0), np.float32(4.13), False),
+    (np.float32(3.0), np.float32(3.0625), True),
+    (np.float32(2.0), np.float32(2.065), False),
+)
+
+#: `0x00bb4de0`: a `BlurImageOperation` tengelyenkénti felső korlátja
+BLUR_OPERATION_MAX = np.float32(255.0)
+
+
+def sugar_kvantal(sugar: float) -> float:
+    """`0x00bb5050` — a `BlurImageOperation` sugár-kvantálója (#3084).
+
+    1 alatt (és NaN-ra) 0; a 2/3/4/5 körüli keskeny sávok a sáv felső
+    értékére ugranak (a 3-as sáv alulról zárt, a többi nyitott);
+    egyébként a sugár változatlan.
+    """
+    x = np.float32(sugar)
+    if not x >= np.float32(1.0):
+        return 0.0
+    for also, felso, zart in _KVANTALO_SAVOK:
+        benne = (x >= also) if zart else (x > also)
+        if benne and x < felso:
+            return float(felso)
+    return float(x)
+
+
+def blur_image_operation(
+    kep: np.ndarray, xblur: float, yblur: float, quality: int = 3
+) -> np.ndarray:
+    """A `glimmer::BlurImageOperation` (`0x00bb4de0`) egy `HxWxC` uint8 képre.
+
+    Tengelyenként: 255 fölött 255, különben a `0x00bb5050` kvantáló; utána
+    a DropShadow-val közös natív diszpécser (`0x00bb4fc9 call 0x00bc5680`).
+    A csatornákat a natív kód egymástól függetlenül mossa, ezért RGB-re is
+    ugyanazt adja, mint a BGRA első három csatornáján.
+    """
+    if kep.ndim != 3 or kep.dtype != np.uint8:
+        raise ValueError("blur_image_operation: HxWxC uint8 kép kell")
+
+    def _tengely(ertek: float) -> float:
+        return float(BLUR_OPERATION_MAX) if np.float32(ertek) > BLUR_OPERATION_MAX else sugar_kvantal(ertek)
+
+    magas, szeles = kep.shape[:2]
+    q = min(max(int(quality), MINOSEG_MIN), MINOSEG_MAX)
+    return _tengelyenkent(
+        kep.copy(),
+        _vagott_sugar(_tengely(xblur), szeles),
+        _vagott_sugar(_tengely(yblur), magas),
+        q,
+    )
