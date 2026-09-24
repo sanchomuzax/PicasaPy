@@ -4,6 +4,46 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-24
+
+**Rejtett mappák**
+
+- A **Rejtett mappák** jelszavát mostantól **be lehet állítani a felületről**:
+  a bal hasáb **Rejtett mappák** fejlécén jobb gombbal kattintva a **Jelszó
+  megadása/módosítása…** pont él. Eddig a jelszó-kapu megvolt a programban,
+  de nem vezetett hozzá út. Lásd [A könyvtár](features/konyvtar.md).
+
+**Szerkesztő**
+
+- Ha ecsettel **ráfested** valamelyik festhető effektet a képre
+  (Felpörgetés, Képpontnagyítás, Lágyítás, Árnyalás), a **mentett fájlban**
+  mostantól tényleg csak ott lesz a hatás, ahová festetted — elforgatott és
+  tükrözött képen is. Eddig a mentett kép az effektet az egész képen kapta
+  meg. (Az exportálás és a rácsbeli bélyegkép egyelőre továbbra is az egész
+  képre mutatja.)
+- A **Képpontnagyítás** **Keverési mód** csúszkája mostantól tényleg hat a
+  képre: eddig el lehetett húzni, de a kimenet nem változott tőle.
+
+**Effektek az eredetihez igazítva**
+
+Ezeknél a kép látványa változik. A képeidhez korábban felvett beállítások
+érintetlenek — csak az kerül másképp a képre, amit a program kirajzol
+belőlük.
+
+- **Polaroid**: a kerete **fehér**, ahogy az eredetiben. A **Külső szín**
+  ezentúl a megdöntött kép mögötti hátteret festi, nem a keretet. A
+  **Forgatás** csúszka pozitív értékénél a kép az óramutató járása szerint
+  dől — eddig az ellenkező irányba.
+- **Infravörös film**: a zöld ragyogás másképp keveredik a képre, és így a
+  végeredmény már alig tér el az eredeti Picasáétól.
+- **60-as évek**: a színgörbék az eredeti értékeit követik, ezért a kép
+  melegebb, fakóbb alapot kap.
+- **Áttűnés**: a záró sárgás színezés megtartja a kép fényességét, ahogy az
+  eredetiben.
+- **Sugaras árnyalás** (a Színátmenet Shift-párja): ugyanazt a sugaras
+  átmenetet használja, mint a **Lágy fókusz** és a **Fókuszos FF**, tehát a
+  lágy szél szélessége is az eredetit követi.
+
 ## 2026-09-23
 
 **Emberek**

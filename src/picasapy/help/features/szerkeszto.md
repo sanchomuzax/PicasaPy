@@ -61,7 +61,8 @@ képre: ami a keret **után** jön — mondjuk egy Szépia vagy egy Vignetta
 
 A szerkesztő előnézete ugyanazt mutatja, mint ami mentéskor,
 exportáláskor és a bélyegképen készül. (Egy kivétel van: az ecsettel
-festett terület — lásd a *Festés ecsettel* szakaszt.)
+festett terület — a mentésbe már belekerül, az exportba és a bélyegképbe
+még nem. Lásd a *Festés ecsettel* szakaszt.)
 
 ## A jobb oldali fiók szerkesztés közben
 
