@@ -491,34 +491,35 @@ szerinti**, kódja `0` (`0x006e6070`). Utána, **ebben a sorrendben**:
 
 | # | azonosító | kód | | # | azonosító | kód |
 |---:|---|---:|---|---:|---|---:|
-| 1 | `Lang::id` | 27 | | 21 | `Lang::fi` | 17 |
-| 2 | `Lang::ca` | 19 | | 22 | `Lang::sv` | 14 |
-| 3 | `Lang::da` | 15 | | 23 | `Lang::fil` | 35 |
-| 4 | `Lang::de` | 4 | | 24 | `Lang::vi` | 39 ◆ |
-| 5 | `Lang::enUK` | 13 | | 25 | `Lang::tr` | 37 |
-| 6 | `Lang::enUS` | 1 | | 26 | `Lang::cs` | 21 |
-| 7 | `Lang::es` | 5 | | 27 | `Lang::el` | 23 |
-| 8 | `Lang::fr` | 2 | | 28 | `Lang::ru` | 12 |
-| 9 | `Lang::hr` | 20 | | 29 | `Lang::sr` | 32 |
-| 10 | `Lang::it` | 3 | | 30 | `Lang::uk` | 38 |
-| 11 | `Lang::lv` | 28 | | 31 | `Lang::bg` | 18 |
-| 12 | `Lang::lt` | 29 | | 32 | `Lang::hi` | 24 |
-| 13 | `Lang::hu` | 25 | | 33 | `Lang::th` | 36 ◆ |
-| 14 | `Lang::nl` | 10 | | 34 | `Lang::zh-CN` | 6 ◆ |
-| 15 | `Lang::no` | 16 | | 35 | `Lang::zh-TW` | 7 ◆ |
-| 16 | `Lang::pt` | 40 | | 36 | `Lang::ja` | 8 ◆ |
-| 17 | `Lang::pt-BR` | 11 | | 37 | `Lang::ko` | 9 ◆ |
-| 18 | `Lang::ro` | 31 | | 38 | `Lang::ar` | 41 **BETA** |
-| 19 | `Lang::sk` | 33 | | 39 | `Lang::fa` | 43 **BETA** |
-| 20 | `Lang::sl` | 34 | | 40 | `Lang::iw` | 42 **BETA** |
+| 1 | `Lang::id` | 27 | | 22 | `Lang::fi` | 17 |
+| 2 | `Lang::ca` | 19 | | 23 | `Lang::sv` | 14 |
+| 3 | `Lang::da` | 15 | | 24 | `Lang::fil` | 35 |
+| 4 | `Lang::de` | 4 | | 25 | `Lang::vi` | 39 ◆ |
+| 5 | `Lang::enUK` | 13 | | 26 | `Lang::tr` | 37 |
+| 6 | `Lang::enUS` | 1 | | 27 | `Lang::cs` | 21 |
+| 7 | `Lang::es` | 5 | | 28 | `Lang::el` | 23 |
+| 8 | `Lang::fr` | 2 | | 29 | `Lang::ru` | 12 |
+| 9 | `Lang::hr` | 20 | | 30 | `Lang::sr` | 32 |
+| 10 | `Lang::it` | 3 | | 31 | `Lang::uk` | 38 |
+| 11 | `Lang::lv` | 28 | | 32 | `Lang::bg` | 18 |
+| 12 | `Lang::lt` | 29 | | 33 | `Lang::hi` | 24 |
+| 13 | `Lang::hu` | 25 | | 34 | `Lang::th` | 36 ◆ |
+| 14 | `Lang::nl` | 10 | | 35 | `Lang::zh-CN` | 6 ◆ |
+| 15 | `Lang::no` | 16 | | 36 | `Lang::zh-TW` | 7 ◆ |
+| 16 | `Lang::pl` | 30 | | 37 | `Lang::ja` | 8 ◆ |
+| 17 | `Lang::pt` | 40 | | 38 | `Lang::ko` | 9 ◆ |
+| 18 | `Lang::pt-BR` | 11 | | 39 | `Lang::ar` | 41 **BETA** |
+| 19 | `Lang::ro` | 31 | | 40 | `Lang::fa` | 43 **BETA** |
+| 20 | `Lang::sk` | 33 | | 41 | `Lang::iw` | 42 **BETA** |
+| 21 | `Lang::sl` | 34 | | | | |
 
-(A 41. rekesz kódja `44`, a „látható” jelzője `0` ⇒ sosem kerül a listába.)
+(A 42. rekesz kódja `44`, a „látható” jelzője `0` ⇒ sosem kerül a listába.)
 
 **A kód jelentése — független kontrollal.** A kód a `0x00d46e88` 45 elemű
 mutatótömb indexe (olvasója `0x0098dd51`: `mov edx, [esi*4 + 0xd46e88]`,
 `cmp esi, 0x2d` határral), amely a nyelvkód-sztringre mutat: `1`→`en`,
 `2`→`fr`, … `13`→`en-GB`, `25`→`hu`, `40`→`pt-PT`, `41`→`ar`, `42`→`iw`,
-`43`→`fa`, `44`→`xx-bork`. **A lista mind a 40 kódja pontosan a saját
+`43`→`fa`, `44`→`xx-bork`. **A lista mind a 41 kódja pontosan a saját
 nyelvére mutat** ebben a tömbben (a két tábla egymástól függetlenül
 íródott). A tömb két nyelvet **nem kínál fel**: `22`→`et` (észt) és
 `26`→`is` (izlandi), a `44`-es `xx-bork` pedig álnyelv.
