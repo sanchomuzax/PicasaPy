@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Dialogs
 
+// SAJÁT FUNKCIÓ (#1654): a tesztüzem és naplójának mentése — a PicasaPy saját hibakereső eszköze.
+//
 // #1654/#2553: a tesztüzem naplójának mentés-párbeszéde.
 //
 // ⚠️ #2553: ez már NEM tartalék, hanem AZ út. A #1654 egy beégetett

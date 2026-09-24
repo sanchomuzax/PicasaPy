@@ -3,6 +3,8 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 
+// SAJÁT FUNKCIÓ (#146): a korábbi Picasa-telepítés figyelt mappáinak átvétele — utódprogram-funkció, az eredetiben nincs.
+//
 // Meglévő Picasa-telepítés átvétele (#146): a discoveryController
 // (scanner/discovery.py, #199) háttérszálon felderíti a korábbi Picasa
 // figyelt mappáit, ez a dialógus emberi nyelven kérdez rá az átvételükre.

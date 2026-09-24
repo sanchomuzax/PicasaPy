@@ -189,6 +189,32 @@ kódtól).
   csoportban áll, hogy az eredeti sorrendjéből semmit ne toljon el. A mag
   (#3002/#3184) meglévő adatot soha nem ír felül.
 
+- `src/picasapy/app/qml/PicasaPy/FaceScanDialog.qml` (#1473, jegyzékbe véve
+  #2921) — az **arckeresés kézi indítóablaka**. Az eredetiben a
+  `BgFaceDetectThread` háttérszál magától futott, indítógomb nélkül
+  (`docs/specs/picasa-arcfelismeres.md` 1.1); nálunk nincs ilyen háttérszál,
+  és a percekig tartó keresést nem indítjuk a felhasználó háta mögött.
+- `src/picasapy/app/qml/PicasaPy/CollageDraftDialog.qml` (#1051, jegyzékbe
+  véve #2921) — a **kollázs-piszkozat visszaállításának felajánlása**. Az
+  eredeti nem kérdez: induláskor „Helyreállított automatikus másolat"-ként
+  beindexeli a piszkozatot. Ez a felajánlás a #979 elkészültéig tartó
+  köztes állapot — addig ne töröld a „hűség" kedvéért, mert akkor a
+  piszkozat megint elérhetetlen lenne.
+- `src/picasapy/app/qml/PicasaPy/EditOverwriteDialog.qml` (#644, jegyzékbe
+  véve #2921) — figyelmeztetés, ha egy **másik program (a párhuzamosan futó
+  eredeti Picasa) felülírta** a nálunk mentett szerkesztéseket, a
+  visszaállítás felajánlásával. Az eredetinek ilyen helyzete nincs.
+- `src/picasapy/app/qml/PicasaPy/PicasaImportDialog.qml` (#146, jegyzékbe
+  véve #2921) — a **korábbi Picasa-telepítés figyelt mappáinak átvétele**.
+  Utódprogram-funkció: az eredeti önmagát nem veheti át.
+- `src/picasapy/app/qml/PicasaPy/TesztuzemNaploDialog.qml` (#1654, jegyzékbe
+  véve #2921) — a **tesztüzem** (`Súgó ▸ Tesztüzem`, `Napló elküldése…`) és
+  naplójának mentése: a PicasaPy saját hibakereső eszköze, az eredetiben
+  nincs megfelelője.
+- `src/picasapy/app/qml/PicasaPy/MainToolbar.qml` (#706, jegyzékbe véve
+  #2921) — a sarokban álló **verziószám a GitHub-kiadásokra mutató
+  hivatkozás**. Az eredetinek nincs nyilvános kiadáslistája.
+
 ## Tervezett, még nem implementált saját funkciók
 
 Ezeket a tulajdonos nevezte meg (#1187) mint jövőbeli saját kiegészítést,

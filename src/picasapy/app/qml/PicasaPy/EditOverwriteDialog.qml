@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// SAJÁT FUNKCIÓ (#644): figyelmeztetés, ha egy másik program felülírta a szerkesztéseinket — az eredetiben nincs.
+//
 // #644: figyelmeztetés, ha egy MÁSIK program (a párhuzamosan futó eredeti
 // Picasa) felülírta a nálunk mentett szerkesztéseket.
 //
