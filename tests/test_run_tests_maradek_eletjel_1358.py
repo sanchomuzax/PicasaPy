@@ -409,7 +409,10 @@ class TestTakaritoNaplo:
         assert len(sorok) <= run_tests._NAPLO_SOROK, "a napló korlátlanul nő"
         assert "picasapy-tests-uj" in sorok[-1], "az új sor elveszett"
 
-    def test_tesztben_a_naplo_nem_a_felhasznaloi_mappaba_ir(self):
+    def test_tesztben_a_naplo_nem_a_felhasznaloi_mappaba_ir(self, tmp_path_factory):
         """#3502: a `conftest` elvezeti — a takarítást hívó próbák nem
-        írhatnak a valódi `~/.cache/picasapy/takarito.log`-ba."""
-        assert Path.home() not in run_tests._TAKARITO_NAPLO.parents
+        írhatnak a valódi `~/.cache/picasapy/takarito.log`-ba. (Windowson a
+        pytest ideiglenes gyökere is a saját mappa alatt van, ezért a próba
+        a pontos helyet nézi, nem azt, hogy a saját mappán kívül van-e.)"""
+        assert run_tests._TAKARITO_NAPLO.parent == tmp_path_factory.getbasetemp()
+        assert ".cache" not in run_tests._TAKARITO_NAPLO.parts
