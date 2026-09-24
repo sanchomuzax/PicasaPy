@@ -7,6 +7,7 @@ a pontok között. A kerekítés egyetlen helyen, az alkalmazáskor történik.
 
 from __future__ import annotations
 
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 #: Görbe-töréspontok típusa: ((bemenet, kimenet), ...) — bemenet 0..255.
@@ -140,14 +141,35 @@ def apply_channel_luts(
     Pontonkénti (csatornánként független) műveletek uint8-natív, képméret-
     független költségű futtatása: a LUT-ok 256 elemű float tömbök, a
     kerekítés/clippelés az `apply_lut`-tal azonos módon itt történik.
+
+    Az alkalmazás az OpenCV `LUT`-jával megy (#22): ugyanaz a bájttábla,
+    bitre azonos kimenet, de a célgép előnézeti felbontásán ~100 ms helyett
+    néhány ms (`tests/render/test_lut_gyorsitas_22.py`).
     """
     validate_image(image)
     if len(luts) != 3:
         raise ValueError(f"Pontosan három (R, G, B) LUT kell, kaptunk: {len(luts)}")
-    channels = []
-    for index, lut in enumerate(luts):
+    for lut in luts:
         if lut.shape != (256,):
             raise ValueError(f"A LUT alakja (256,) kell legyen, nem {lut.shape}")
-        table = np.clip(np.rint(lut), 0, 255).astype(np.uint8)
-        channels.append(table[image[..., index]])
-    return np.stack(channels, axis=-1)
+    tables = np.stack(
+        [np.clip(np.rint(lut), 0, 255).astype(np.uint8) for lut in luts], axis=-1
+    )
+    return apply_byte_luts(image, tables)
+
+
+def apply_byte_luts(image: np.ndarray, tables: np.ndarray) -> np.ndarray:
+    """Csatornánkénti uint8 táblák alkalmazása: `ki[..., c] = tables[be[..., c], c]`.
+
+    `tables` alakja `(256, 3)`, uint8. Új tömböt ad, a bemenetet nem írja át.
+    """
+    validate_image(image)
+    if tables.shape != (256, 3) or tables.dtype != np.uint8:
+        raise ValueError(
+            f"A táblák alakja (256, 3) uint8 kell legyen, nem {tables.shape} {tables.dtype}"
+        )
+    if image.size == 0:
+        # a `cv2.LUT` nulla kiterjedésű képre `None`-t ad
+        # (ld. `display_modes._tablat_alkalmaz`)
+        return image.copy()
+    return cv2.LUT(np.ascontiguousarray(image), np.ascontiguousarray(tables[None]))

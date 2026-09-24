@@ -125,9 +125,30 @@ def _levels_clip_threshold(pixel_count: int) -> int:
     return max(1, int(round(pixel_count * _LEVELS_CLIP_RATIO)))
 
 
-def _channel_histogram(values: np.ndarray) -> np.ndarray:
-    """Egy csatorna 256 rekeszes hisztogramja (uint8 értékekből)."""
-    return np.bincount(values.reshape(-1), minlength=256)
+#: A `calcHist` float32 rekeszekbe számol, ami 2^24 fölött már nem pontos
+#: egész — egy sáv legfeljebb ennyi képpont, a sávok összege int64.
+_HISZTOGRAM_SAV_KEPPONT = (1 << 24) - 1
+
+
+def _channel_histograms(image: np.ndarray) -> np.ndarray:
+    """A három csatorna 256 rekeszes hisztogramja, `(3, 256)` int64 (#22).
+
+    Ugyanaz, mint csatornánként egy `np.bincount`, de az OpenCV
+    `calcHist`-jével: a célgép előnézeti felbontásán ~45 ms helyett ~14 ms.
+    """
+    height, width = image.shape[:2]
+    oszlopok = min(max(width, 1), _HISZTOGRAM_SAV_KEPPONT)
+    sorok = max(1, _HISZTOGRAM_SAV_KEPPONT // oszlopok)
+    osszeg = np.zeros((3, 256), dtype=np.int64)
+    for felso in range(0, height, sorok):
+        for bal in range(0, width, oszlopok):
+            sav = np.ascontiguousarray(
+                image[felso:felso + sorok, bal:bal + oszlopok]
+            )
+            for csatorna in range(3):
+                darab = cv2.calcHist([sav], [csatorna], None, [256], [0, 256])
+                osszeg[csatorna] += darab.reshape(-1).astype(np.int64)
+    return osszeg
 
 
 def _native_clip_points(histogram: np.ndarray, threshold: int) -> tuple[int, int]:
@@ -193,9 +214,9 @@ def _union_black_white_point(image: np.ndarray) -> tuple[int, int]:
     """
     height, width = image.shape[:2]
     threshold = _levels_clip_threshold(height * width)
+    histograms = _channel_histograms(image)
     points = [
-        _native_clip_points(_channel_histogram(image[..., channel]), threshold)
-        for channel in range(3)
+        _native_clip_points(histograms[channel], threshold) for channel in range(3)
     ]
     return min(point[0] for point in points), max(point[1] for point in points)
 
@@ -287,9 +308,9 @@ def _channel_black_white_points(
     height, width = image.shape[:2]
     threshold = _levels_clip_threshold(height * width)
     region = _analysis_region(image)
+    histograms = _channel_histograms(region)
     points = tuple(
-        _native_clip_points(_channel_histogram(region[..., channel]), threshold)
-        for channel in range(3)
+        _native_clip_points(histograms[channel], threshold) for channel in range(3)
     )
     return points[0], points[1], points[2]
 

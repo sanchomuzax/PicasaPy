@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.567] – 2026-09-24
+
+### Javítva
+
+- **Négy képjavítás azonnal látszik az előnézeten (#22)** — a
+  Színhőmérséklet effekt, az Automatikus kontraszt, a „Jó napom van” és a
+  Melegítés a Raspberry Pi 5-ön eddig 100–700 ezredmásodpercig számolt, a
+  Színhőmérséklet effekt csúszkája húzás közben akadozott. Most mind a négy
+  100 ezredmásodperc alatt végez (a Színhőmérséklet effekt 680 helyett 5
+  alatt), és a kép képpontra ugyanaz, mint eddig.
+
 ## [0.8.566] – 2026-09-24
 
 ### Javítva

@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from picasapy.render.curves import validate_image
+from picasapy.render.curves import apply_byte_luts, validate_image
 
 #: A hideg↔meleg csúszka egészre skálázása. A `filterdesc.xml` szerint a
 #: csúszka tartománya `[-0.5, 0.5]`; a ×256 a #685 mérőszettjén IGAZOLT
@@ -98,16 +98,19 @@ def apply_native_colortemp(
     )
     if warm == 0 and shift == 0:
         return image.copy()
+    # #22: mindhárom csatorna kimenete CSAK a saját bemeneti szintjétől
+    # függ, ezért a képlet a 256 szintre egyszer kiszámolva táblázat, és a
+    # kép ezen a táblán megy át — bitre ugyanaz, mint képpontonként.
     down, up = _white_shift_tables(shift)
     warm_green = warm if warm >= 1 else 0
-    values = image.astype(np.int64)
-    red, green, blue = (down[values[..., channel]] for channel in range(3))
+    level = down[_LEVELS]
     shifted = (
-        np.clip(red + ((_MIDTONE_PARABOLA[red] * warm) >> 15), 0, 255),
-        np.clip(green + ((_MIDTONE_PARABOLA[green] * warm_green) >> 17), 0, 255),
-        np.clip(blue - ((_MIDTONE_PARABOLA[blue] * warm) >> 15), 0, 255),
+        np.clip(level + ((_MIDTONE_PARABOLA[level] * warm) >> 15), 0, 255),
+        np.clip(level + ((_MIDTONE_PARABOLA[level] * warm_green) >> 17), 0, 255),
+        np.clip(level - ((_MIDTONE_PARABOLA[level] * warm) >> 15), 0, 255),
     )
-    return np.stack([up[channel] for channel in shifted], axis=-1).astype(np.uint8)
+    tables = np.stack([up[channel] for channel in shifted], axis=-1).astype(np.uint8)
+    return apply_byte_luts(image, tables)
 
 
 __all__ = ["apply_native_colortemp"]
