@@ -620,7 +620,7 @@ szövegváltozatából választ (`0x005123e0`: index a `+0x2fc` tömbbe):
 | 2. argumentum | **betöltés folyik** | a `Loading…`/`Looking…` ágak kapuja (`0x00647f93`, `0x00648070`) |
 | `+0x348 >> 1` | a kijelölt képek **száma** (a `+0x344` vektor mérete) | `0x00647f79`, `0x00648097` |
 | `+0x2ac` | **személy albuma van kiválasztva**: a jelenlegi album `albumcontactids` mezője nem nulla (`0x00448c90` → `0x00448fb0`), `setg` @ `0x0064d248` | ezt erősíti a 3-as mód szövege is |
-| `+0x364` | a begyűjtés talált **megjeleníthető (megnevezett) személyt** — a gyűjtő `+0x11d` jelzőjéből másolva (`0x0064d7a9`), a gyűjtés indulása nullázza (`0x0063e032`) | *erős:* a hamis ágon mindig az „itt jelenik meg majd…” szöveg áll; a jelzőt 1-re állító utasítást közvetlen írásként nem találtam |
+| `+0x364` | a begyűjtés talált **megjeleníthető (megnevezett) személyt** — a gyűjtő `+0x11d` jelzőjéből másolva (`0x0064d7a9`), a gyűjtés indulása nullázza (`0x0063e032`) | **megerősítve a 9/c-ben:** a lekérdező `0x006c63d0` a kijelölt arcok `personalbumid`-jét gyűjti, és nem üres listánál `+0x4d = 1` (`0x006c6881`) |
 | `+0x29c` | az **ellenőrizetlen** fájlok száma | `0x0064d1cb` (nullázás), `0x0064810b` (kiírás) |
 | `editpanel/preview` látható | **egyképes szerkesztő** nézet | `0x00647f59`–`0x00647f73` |
 | `+0x2ad`, `+0x2ae`, `+0x2af`, `+0x2b0` | a „Név nélküliek” album-mód jelzői (lent) | `0x0064c3d8`, `0x0064c50f`, `0x0064c4e6`, `0x0064c436` |
@@ -680,8 +680,55 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 
 *Bizonyítottsági fok: **megerősített** a döntési fára, a feliratokra, az öt
 utasítás-módra, a személy-album jelzőre, a darabszámra és az ellenőrizetlen
-utótagra (utasításszinten olvasva); **erős** a `+0x364` jelentésére (lásd a
-táblát; pontosítása: **#3565**).*
+utótagra (utasításszinten olvasva); a `+0x364` jelentése a 9/c-ben **megerősítve** (#3565).*
+
+#### 9/c A két nyitott jelző kiolvasva (2026-09-24, 357. kör, #3565)
+
+**A `+0x364` = a kijelölt arcok közül legalább egynek van személy-albuma.**
+A panel frissítője (`0x0064bb70`) egy kérés-rekordot állít össze, és a
+szinkron arc-lekérdezőnek adja (`0x006c63d0(&kérés, 0)`, `0x0064c227`); a
+`+0x364` a rekord `+0x4d` bájtja (`[esp+0xad]` → `0x0064c272`). A lekérdező a
+kijelölt képek × arcok kettős ciklusában (`0x006c6455`–`0x006c6870`) minden
+arcra a `0x0044a6b0(adatbázis, sor, 0)`-t hívja: ez `0`-t ad, ha a sor
+`filetype`-ja (`+0x114c` = az `imagedata` `+0x22c`) **nem** `0x3e9` = 1001
+(arcsablon-bejegyzés, `picasa-mappakezelo.md`), különben a sor
+**`personalbumid`** oszlopát (`+0x1bc0` = `imagedata +0xca0`; `1`-es
+jelzővel a `suggestionpersonalbumid`-t, `+0x1c20`). A nem nulla értékeket
+ismétlés nélkül gyűjti, és ha a lista nem üres, `mov byte [kérés+0x4d], 1`
+(`0x006c6876`–`0x006c6881`). ⇒ A 9/b „erős” olvasata **megerősítve**.
+
+**A „Név nélküliek” album-mód = a `]unknownface` VAGY a `]ignoreface` album.**
+A `0x00448a10(album-gyűjtemény, album, jelző)` az album `+0xaf0` szöveges
+oszlopát (a token) veti össze a gyűjtemény két tárolt tokenjével —
+`+0x2e98` = `]unknownface`, `+0x2e94` = `]ignoreface` (beállítva
+`0x00415e6e`, `0x00415e57`):
+
+| token | jelző `0` | jelző `1` |
+|---|---|---|
+| `]unknownface` (Név nélküliek) | **igaz** | hamis |
+| `]ignoreface` (Figyelmen kívül hagyva) | **igaz** | igaz |
+| más | hamis | hamis |
+
+(`0x00448a7b`–`0x00448c18`.) A panel a `0`-s jelzővel képzi a `+0x2ad`-t
+(`0x0064c3c7`), az `1`-essel a `+0x36d = !…`-t (`0x0064c408`–`0x0064c422`,
+tehát igaz a Név nélküliek albumon).
+
+**A `+0x2b0` („Arcok adatainak rendezése...”) ebben a modulban nem áll 1-re.**
+A `0x00630000`–`0x00660000` tartományban minden írása nulláz (`0x0063f320`
+konstruktor, `0x0063f864`, `0x0064c436`), és szó-/duplaszó-írás vagy
+`lea`-n át vett cím sem éri. *Hatókör:* a panelmodul; a teljes `.text`-ben a
+`+0x2b0` eltolás más osztályokban is előfordul, azokat nem soroltam ide.
+
+**A `+0x2ae` és a `+0x2af`** csak ebben a módban áll (`0x0064c4b5`–
+`0x0064c50f`): ha a nézett gyűjtemény-csomópont `+0x3c9` jelzője be van
+kapcsolva, `+0x2af = 1`, és `+0x2ae` = a csomópont listája üres. A `+0x3c9`-et
+a `CAlbumSelectionNode` és a `CFoundFaceSelectionNode` vtáblájának
+**50. rekesze** állítja (`0x0077fd20`, `0x007898b0`); ennek a rekesznek a
+jelentése (mikor hívja a program) a **#3578** tárgya — a két „Név
+nélküli…” fejléc közti választás múlik rajta.
+
+*Bizonyítottsági fok: **megerősített** a `+0x364`-re és a
+`0x00448a10`-re; a `+0x2b0`-ra negatív, a fenti hatókörrel.*
 
 ---
 
