@@ -474,6 +474,136 @@ Az alapérték a `PWADefaultSize` = **1600** (az előző szakasz) — vagyis az
 *Bizonyítottsági fok: megerősített* (a függvény mind a 79 hivatkozott
 sztringje, és a feliratok a `*text.tre` szövegforrásból).
 
+### ⛳ A nyelvválasztó (`language`) — lista, felirat, tárolás, érvénybe lépés (2026-09-24, 354. kör, #3553)
+
+A Beállítások párbeszéd a `language` legördülőt a **`0x006e5e10`**-ben tölti
+fel (4462 b, egyetlen hívója a `0x006e1100`). A vezérlőt a `language` névvel
+keresi ki (`0x00c9fdec`, `vtbl+0xa0`), és a tételek mellé egy **belső
+nyelvkód-vektort** épít (`[this+0xdc]`), a tétel sorszáma szerint.
+
+#### A) A lista — 1 + 41 tétel, rögzített sorrendben
+
+A tételek egy 45 rekeszes, 12 bájtos **veremtáblából** jönnek (`esp+0x70`-től;
+rekesz: `{név, kód, látható, betűkészlet-próba}`), amelyet a függvény
+utasításonként tölt fel (`0x006e6086`–`0x006e6c5d`), és egy 45 lépéses ciklus
+jár be (`0x006e6c9d`–`0x006e6ebb`). Az első tétel mindig a **rendszer
+szerinti**, kódja `0` (`0x006e6070`). Utána, **ebben a sorrendben**:
+
+| # | azonosító | kód | | # | azonosító | kód |
+|---:|---|---:|---|---:|---|---:|
+| 1 | `Lang::id` | 27 | | 21 | `Lang::fi` | 17 |
+| 2 | `Lang::ca` | 19 | | 22 | `Lang::sv` | 14 |
+| 3 | `Lang::da` | 15 | | 23 | `Lang::fil` | 35 |
+| 4 | `Lang::de` | 4 | | 24 | `Lang::vi` | 39 ◆ |
+| 5 | `Lang::enUK` | 13 | | 25 | `Lang::tr` | 37 |
+| 6 | `Lang::enUS` | 1 | | 26 | `Lang::cs` | 21 |
+| 7 | `Lang::es` | 5 | | 27 | `Lang::el` | 23 |
+| 8 | `Lang::fr` | 2 | | 28 | `Lang::ru` | 12 |
+| 9 | `Lang::hr` | 20 | | 29 | `Lang::sr` | 32 |
+| 10 | `Lang::it` | 3 | | 30 | `Lang::uk` | 38 |
+| 11 | `Lang::lv` | 28 | | 31 | `Lang::bg` | 18 |
+| 12 | `Lang::lt` | 29 | | 32 | `Lang::hi` | 24 |
+| 13 | `Lang::hu` | 25 | | 33 | `Lang::th` | 36 ◆ |
+| 14 | `Lang::nl` | 10 | | 34 | `Lang::zh-CN` | 6 ◆ |
+| 15 | `Lang::no` | 16 | | 35 | `Lang::zh-TW` | 7 ◆ |
+| 16 | `Lang::pt` | 40 | | 36 | `Lang::ja` | 8 ◆ |
+| 17 | `Lang::pt-BR` | 11 | | 37 | `Lang::ko` | 9 ◆ |
+| 18 | `Lang::ro` | 31 | | 38 | `Lang::ar` | 41 **BETA** |
+| 19 | `Lang::sk` | 33 | | 39 | `Lang::fa` | 43 **BETA** |
+| 20 | `Lang::sl` | 34 | | 40 | `Lang::iw` | 42 **BETA** |
+
+(A 41. rekesz kódja `44`, a „látható” jelzője `0` ⇒ sosem kerül a listába.)
+
+**A kód jelentése — független kontrollal.** A kód a `0x00d46e88` 45 elemű
+mutatótömb indexe (olvasója `0x0098dd51`: `mov edx, [esi*4 + 0xd46e88]`,
+`cmp esi, 0x2d` határral), amely a nyelvkód-sztringre mutat: `1`→`en`,
+`2`→`fr`, … `13`→`en-GB`, `25`→`hu`, `40`→`pt-PT`, `41`→`ar`, `42`→`iw`,
+`43`→`fa`, `44`→`xx-bork`. **A lista mind a 40 kódja pontosan a saját
+nyelvére mutat** ebben a tömbben (a két tábla egymástól függetlenül
+íródott). A tömb két nyelvet **nem kínál fel**: `22`→`et` (észt) és
+`26`→`is` (izlandi), a `44`-es `xx-bork` pedig álnyelv.
+
+A sorrend a `langnames.xml` sorrendje (41 `Lang::` bejegyzés, a saját nyelvű
+nevek ábécéjében: *Bahasa Indonesia, Català, Dansk, Deutsch, English …*), egy
+eltéréssel: a három jobbról balra író nyelv a fájlban **elöl**, a listában
+**a végén** áll.
+
+#### B) A felirat
+
+- **A nyelvek neve** a `0x009ae560("Lang::xx", angol alapszöveg)`
+  szövegtár-keresőből jön. Az induló betöltő ugyanabba a szövegtárba
+  (`[0x00d4a654]`) előbb az `i18n\stringres.xml`-t, **utána** az
+  `i18n\langnames.xml`-t tölti (`0x004055d4`, `0x004055ef`, mindkettő
+  `0x0099ec80`). A `langnames.xml` csak az alapnyelvben van meg, és a neveket
+  **saját nyelvükön** adja (`Magyar`, `Deutsch`, `日本語`, `العربية`); a
+  fordított `stringres.xml`-ekben a `Lang::` sorok `x)`-szel jelölt angol
+  helykitöltők (a magyarban `x)Japanese`). **A második betöltés felülír:** a
+  betöltő (`0x0099e480`) az azonosítót kikeresi (`0x004a0380`); ha megvan és
+  a szöveg eltér, a `0x0099e020` a meglévő bejegyzés értékét cseréli
+  (`0x0099e7f2` → `0x0099e066`), csak hiányzónál szúr be ⇒ **a listában a
+  `langnames.xml` saját nyelvű nevei látszanak**, bármi a felület nyelve.
+- **`(BETA) %s`** (`0x00ca9f54`): pontosan az arab, a perzsa és a héber kapja
+  (`0x006e60b5`, `0x006e60e6`, `0x006e6117`).
+- **A rendszer szerinti tétel:** `Lang::sys` („Alapértelmezett
+  rendszerbeállítás”) + ` (%s-%s)` (`0x00ca9f34`), a két helyőrzőben a
+  Windows **felhasználói területi beállításának** ISO nyelv- és országkódja
+  (`GetLocaleInfoA(0x400, 0x59/0x5a)`, `0x0098d45f`, `0x0098d480`; hiányzó,
+  számjegyes vagy háromnál hosszabb országkódnál `US`, `0x0098d607`–`0x0098d670`) — pl. *„Alapértelmezett
+  rendszerbeállítás (hu-HU)”*. Ha a nyelvkód már az országra végződik
+  (`0x00987150` = „végződik-e”), csak ` (%s)` (`0x00ca9f2c`).
+
+#### C) Mikor hiányzik egy tétel
+
+| feltétel | mi történik | cím |
+|---|---|---|
+| a „látható” jelző `0` | kimarad (csak a `44`-es kód) | `0x006e6ca9` |
+| „betűkészlet-próba” jelző (◆ a táblában: vi, th, zh-CN, zh-TW, ja, ko) | csak akkor kerül be, ha a rendszer **meg tudja jeleníteni a nevét**: MLang `IMLangFontLink2` (`CoCreateInstance` `275c23e2-…`/`dccfc162-…`, `0x006e6c80`), `GetStrCodePages` + `MapFont` (`vtbl+0x10`, `+0x28`) a `0x006e0f00`-ban. A `24`-es és a `39`-es kód (hindi, vietnami) mentes | `0x006e6cb5`–`0x006e6d30` |
+| ugyanez, de a Picasa az előtérben van **és** a Shift le van nyomva | a próba elmarad, a tétel bekerül | `0x006e6cbf`–`0x006e6cd5` |
+| nem NT-alapú Windows (`GetVersion` ≥ `0x80000000`, `[0x00d694b9]` = 0) | a választó **letiltva**, az érték `1` (angol) | `0x006e5ec8`–`0x006e5eed`, `0x00c33caa` |
+
+#### D) A tárolás — KÉT kulcs a `Preferences` alatt, SZÁMMAL
+
+| kulcs | mit tárol | írja | olvassa |
+|---|---|---|---|
+| **`ytHLocal::lang`** | az **érvényes** nyelv kódja (fenti `0`–`44`); `0` = rendszer szerint. Ha még nincs beállítva (az olvasó `-1`-et ad, `0x00406103`), az indítás a rendszer területi beállításából dönt — ez a #2979 4. fázisának kérdése | kilépéskor (lent) | indításkor (`0x004060d8`, `0x0098dd22`) |
+| **`ytHLocal::langchange`** | a **következő indításra kért** kód | indításkor (`= lang`), és a párbeszéd OK-jára | a párbeszéd (a kijelölt tétel), kilépéskor |
+
+A kiválasztott tétel a legördülő megnyitásakor a `langchange` értéke
+(`0x006e6ed0`–`0x006e6ef7`: a kódvektorban keresett sorszám → `SetCurSel`).
+
+#### E) Az érvénybe lépés — három lépés, a következő indításkor
+
+1. **A párbeszéd OK-ja** (`0x006e3c15`–`0x006e3cf0`): a kijelölt tétel kódja
+   (`[this+0xdc][GetCurSel()]`) ≠ `langchange` ⇒ a `CGeneralPrefsPage::LangChange`
+   kérdés (*„Módosítja a Picasa kezelőfelületének nyelvét? … A változás a
+   program következő megnyitásakor lép érvénybe.”*, igen/nem,
+   `0x009bac20`). **Igen** ⇒ `langchange := kód`; **nem** ⇒ semmi nem
+   változik. A futó felület nyelve **nem** vált.
+2. **Kilépéskor** a `CThumbUI` lebontása (`0x00565300`, `DeleteCriticalSection`)
+   a `0x00576a20` állapotmentőt hívja, amely: `langchange ≠ lang` ⇒
+   `lang := langchange` (`0x00577146`–`0x0057715f`).
+3. **A következő indításkor** a betöltő a `lang` kódjához tartozó nyelvet
+   tölti (`0x0098dd4c`–`0x0098dd80`), és a `langchange`-et újra `lang`-ra
+   állítja (`0x00406422`–`0x0040644c`).
+
+⇒ **Újraindítás kell, és a program ezt ki is mondja** — a választás a
+megerősítés után függőben áll, és csak egy teljes kilépés–indítás után él.
+
+#### F) MIT AD MA a PicasaPy (mérve, 2026-09-24)
+
+| | eredeti | nálunk |
+|---|---|---|
+| nyelvek | 41 + rendszer szerint | 2 (`SUPPORTED_LANGUAGES = ("en", "hu")`, `language_controller.py:27`) |
+| a nevek | saját nyelvükön, 3 × `(BETA)` | `qsTr("Hungarian")` / `qsTr("English")` (`OptionsTabGeneral.qml:95–97`) |
+| „rendszer szerint” tétel | van, a területi kóddal | nincs |
+| tárolás | `ytHLocal::lang` + `langchange`, számmal | `general/language` QSettings, nyelvkóddal |
+| érvénybe lépés | megerősítés, a következő indításkor | **azonnal**, kérdés nélkül (`setLanguage` → `languageChanged`) |
+
+*Bizonyítottsági fok: **megerősített** a listára, a kódokra (kétirányú
+kontroll), a nevek forrására (betöltési sorrend + felülíró beszúrás), a
+`(BETA)`-ra, a rendszer-tétel feliratára, a szűrésre és a tárolás–érvénybe
+lépés láncára — mind utasításszinten olvasva.*
+
 ---
 
 ## A MEGŐRZÖTT elrendezés-állapot — mit ír ki a Picasa, hova, mikor (2026-09-03)
