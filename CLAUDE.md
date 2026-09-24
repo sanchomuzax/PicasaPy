@@ -129,7 +129,8 @@ git-szabályok betartása.
 
 ### A kör ELEJÉN — olvasd el
 
-Fejlesztési vagy kutatási kör indulásakor `WebFetch` a fenti címre. Két dolog
+Fejlesztési vagy kutatási kör indulásakor olvasd el a lapot az `Artifact`
+eszköz `action: "read"` műveletével. Két dolog
 múlik rajta: látod, hol tart a projekt, **és ez előfeltétele annak, hogy a kör
 végén egyáltalán publikálni tudj**.
 
@@ -145,11 +146,12 @@ cd ~/picasapy-agent && python3 eszkozok/egy_lap.py
 
 majd `Artifact` hívás — `file_path`: `~/picasapy-agent/docs/egy-lap.html`,
 `url`: a fenti cím (**kötelező**; `url` nélkül új lap jön létre, és a
-felhasználó régi linkje elavul), `favicon`: 📐.
+felhasználó régi linkje elavul). Ikon nem kell: a lap megtartja a sajátját.
 
 ### Publikálás előtt MINDIG olvasd el — nem elég a kör elején
 
-Közvetlenül az `Artifact` hívás ELŐTT `WebFetch` arra a címre, amit publikálsz.
+Közvetlenül a publikálás ELŐTT olvasd el azt a címet, amit publikálsz
+(`Artifact`, `action: "read"`).
 A közzétevő eszköz csak attól fogad el frissítést, aki **ebben a
 munkamenetben** már látta a jelenlegi változatot, és ez **laponként** külön
 számít. A kör eleji olvasás tájékozódásra jó, de a publikálást nem váltja ki.
@@ -164,8 +166,9 @@ A köztes HTML-eket soha ne publikáld külön, és a régi címeikre se publik�
 ### Ha hibát kapsz
 
 - **„this session hasn't viewed the latest version"** — kimaradt a publikálás
-  előtti `WebFetch`. Olvasd el a címet, és publikálj újra. Ez nem tiltás.
-- **`conflict`** — egy másik munkamenet közben újat tett fel. `WebFetch`-eld a
+  előtti olvasás. Olvasd el a címet (`action: "read"`), és publikálj újra.
+  Ez nem tiltás.
+- **`conflict`** — egy másik munkamenet közben újat tett fel. Olvasd el a
   lapot, és olvasd ki a fejlécből a „Frissítve" időpontot:
   - ha az **újabb**, mint a te generált fájlod → kész, nincs teendőd;
   - ha **régebbi** → publikálj újra, hogy a friss adat kimenjen.
