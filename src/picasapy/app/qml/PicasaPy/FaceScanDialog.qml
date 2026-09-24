@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// SAJÁT FUNKCIÓ (#1473): az arckeresés kézi indítóablaka — az eredetiben háttérszál futott, indítógomb nélkül.
+//
 // Arckeresés (#1473) — a `FaceScanController` keresési oldalának belépési
 // pontja.
 //

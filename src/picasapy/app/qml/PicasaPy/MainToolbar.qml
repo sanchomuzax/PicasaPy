@@ -764,6 +764,7 @@ Rectangle {
             // aktiválható — ld. lent a Keys.onPressed ágat
             activeFocusOnTab: true
 
+            // SAJÁT FUNKCIÓ (#706): a verziószám a GitHub-kiadásokra mutató hivatkozás.
             // #706: a kiadások LISTÁJÁRA visz, nem a futó verzió saját
             // kiadására: fejlesztői példánynál (még ki nem adott build)
             // a `.../releases/tag/v<verzió>` 404-et adna.

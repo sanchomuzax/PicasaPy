@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// SAJÁT FUNKCIÓ (#1051): a piszkozat visszaállításának felajánlása — az eredeti nem kérdez (#979-ig).
+//
 // A kollázs-piszkozat HELYREÁLLÍTÁSÁNAK felajánlása (#1051).
 //
 // Spec: `docs/specs/picasa-create-features.md` 1.5 és
