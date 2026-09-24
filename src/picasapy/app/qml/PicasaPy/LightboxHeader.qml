@@ -56,9 +56,17 @@ ColumnLayout {
     //: hány MÉG EL NEM DÖNTÖTT javaslat tartozik ehhez a személyhez —
     //: a gazda tölti a vezérlő `personSuggestionCount`-jából
     property int suggestionCount: 0
-    //: `confirmsug` — a javaslatok jóváhagyása
+    //: a rács KIJELÖLÉSÉN ülő, e személyre szóló függő javaslatok száma —
+    //: a gazda tölti. Ha nem nulla, a két gomb a kijelöltekre hat
+    //: (`confirmsel`, `removesel`), különben az összesre (`confirmsug`).
+    property int selectedSuggestionCount: 0
+    readonly property bool kijeloltJavaslatHatokor:
+        header.selectedSuggestionCount > 0
+    //: `confirmsug` / `confirmsel` — a javaslatok jóváhagyása; a hatókört
+    //: a gazda a kijelölésből dönti el
     signal confirmSuggestionsRequested()
-    //: `removesel` — a javaslatok elvetése
+    //: `removesel` — a javaslatok elvetése (a kijelöltek, vagy ha nincs
+    //: kijelölt javaslat, mind)
     signal removeSuggestionsRequested()
     //: `moresug` — a felismerési lépcső lazítása, hogy több javaslat jöjjön
     signal moreSuggestionsRequested()
@@ -313,10 +321,8 @@ ColumnLayout {
         // egyetlen logikai argumentummal (`push 1` = mind, `push 0` = a
         // kijelöltek).
         //
-        // ⚠️ Ebben a körben csak a TELJES hatókör van bekötve: a
-        // kijelölt hatókörhöz a javaslatoknak látszaniuk kell a rácsban,
-        // különben a „Jóváhagyás" üres halmazra hatna. A művelet maga
-        // (`confirmPersonSuggestions`) mindkettőt tudja.
+        // Nálunk a váltás feltétele: van-e a kijelölésen e személyre
+        // szóló függő javaslat (`kijeloltJavaslatHatokor`).
         //: #1792: a nem testreszabható elemek a négy gomb UTÁN állnak —
         //: a `gombSorVege` a testreszabott sor jobb széle.
         //: #2187: `sug_filter` — MÉRT méret 29 × 27, és a mért helye a
@@ -365,13 +371,20 @@ ColumnLayout {
                 : header.gombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatokLatszanak
-            //: MÉRT felirat (`faceheaderpaneltext.tre:44`): „Confirm all"
-            //: — magyarul „Az összes jóváhagyása". A darabszám a
-            //: fejléc-gombok szokása szerint zárójelben (#1823).
-            text: qsTr("Confirm all") + " (" + header.suggestionCount + ")"
+            //: MÉRT feliratok (`faceheaderpaneltext.tre:44`): „Confirm all"
+            //: — magyarul „Az összes jóváhagyása" —, a kijelölt hatókörben
+            //: „Confirm" („Jóváhagyás"). A darabszám a fejléc-gombok
+            //: szokása szerint zárójelben (#1823).
+            text: header.kijeloltJavaslatHatokor
+                ? qsTr("Confirm")
+                : qsTr("Confirm all") + " (" + header.suggestionCount + ")"
             width: 88; height: 27
-            //: MÉRT súgó: „Confirm all suggestions"
-            ToolTip.text: qsTr("Confirm all suggestions")
+            //: MÉRT súgók: „Confirm all suggestions" / „Confirm selected
+            //: suggestions"
+            property string sugoSzoveg: header.kijeloltJavaslatHatokor
+                ? qsTr("Confirm selected suggestions")
+                : qsTr("Confirm all suggestions")
+            ToolTip.text: sugoSzoveg
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
             onClicked: header.confirmSuggestionsRequested()
@@ -387,12 +400,13 @@ ColumnLayout {
             //: MÉRT felirat (`faceheaderpaneltext.tre:50`): „Remove"
             text: qsTr("Remove")
             width: 88; height: 27
-            //: ⚠️ A MÉRT súgó „Remove selected suggestions" — a KIJELÖLT
-            //: hatókörről szól, ami nálunk még nincs bekötve (ld. fent).
-            //: Amíg a hatókör a teljes, a súgó is azt mondja; a mért
-            //: alakra a kijelölt hatókörrel EGYÜTT váltunk, különben a
-            //: súgó mást ígérne, mint amit a gomb tesz.
-            ToolTip.text: qsTr("Remove all suggestions")
+            //: MÉRT súgó: „Remove selected suggestions". Kijelölt javaslat
+            //: nélkül a gomb nálunk az összesre hat, és a súgó is ezt
+            //: mondja — különben mást ígérne, mint amit a gomb tesz.
+            property string sugoSzoveg: header.kijeloltJavaslatHatokor
+                ? qsTr("Remove selected suggestions")
+                : qsTr("Remove all suggestions")
+            ToolTip.text: sugoSzoveg
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
             onClicked: header.removeSuggestionsRequested()

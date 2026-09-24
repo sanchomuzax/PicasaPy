@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.570] – 2026-09-25
+
+### Új
+
+- **A személy-albumban a kijelölt javaslatokat külön is jóvá lehet hagyni
+  vagy törölni (#2187)** — ha a személy albumában kijelölsz néhány képet,
+  amelyeken az illetőre szóló javaslat van, a fejléc gombja „Az összes
+  jóváhagyása” helyett „Jóváhagyás” lesz, és csak a kijelölt képek
+  javaslataira hat; az „Eltávolítás” ugyanígy csak a kijelölteket törli.
+  Kijelölés nélkül a két gomb továbbra is az összes javaslatra hat.
+
 ## [0.8.569] – 2026-09-25
 
 ### Javítva

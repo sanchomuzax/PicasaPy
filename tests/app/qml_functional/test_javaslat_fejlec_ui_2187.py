@@ -16,13 +16,8 @@ A két jóváhagyó ugyanazon a helyen váltakozik, mert a mérés szerint
 **ugyanaz a kezelő** (`0x00602640`), egyetlen logikai argumentummal:
 `confirmsug` → `push 1` (mind), `confirmsel` → `push 0` (a kijelöltek).
 
-## ⚠️ Amit ez a kör NEM visz
-
-A **kijelölt** hatókör (`confirmsel`, `removesel` a kijelöltekre). Ahhoz a
-javaslatoknak látszaniuk kell a személy-album rácsában — enélkül a
-„Jóváhagyás" felirat egy üres halmazra hatna. A művelet mindkét hatókört
-tudja (`test_javaslat_fejlec_2187.py`), a felület egyelőre a teljeset
-hívja, és a gomb felirata ezért nem vált.
+A **kijelölt** hatókört (`confirmsel`, `removesel` a kijelöltekre) és a
+felirat váltakozását a `test_kijelolt_javaslatok_ui_2187.py` méri.
 """
 
 from __future__ import annotations
@@ -110,8 +105,8 @@ class TestGeometria:
 class TestFelirat:
     def test_a_jovahagyas_kiirja_a_darabszamot(self, qml_app):
         """A fejléc-gombok szám nélküli és számos alakban élnek (#1823) —
-        a javaslat-gomb a FÜGGŐ javaslatok számát mutatja, nem a
-        kijelölését, mert a hatóköre (ebben a körben) mindig a teljes."""
+        kijelölt javaslat nélkül a javaslat-gomb a FÜGGŐ javaslatok
+        számát mutatja, mert a hatóköre ilyenkor a teljes."""
         _, _, engine = qml_app
         fejlec = _fejlec(engine, personName="Anna", suggestionCount=3)
 

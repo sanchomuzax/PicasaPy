@@ -21,10 +21,9 @@ közvetlenül ír. Nálunk a meglévő, egy arcra szóló út a mérce:
 `acceptSuggestion` a nevet ténylegesen ráírja, `rejectSuggestion` csak a
 javaslatot törli, az arc névtelen marad.
 
-⚠️ Ami ebben a körben MÉG NINCS: a KIJELÖLT hatókör (`confirmsel`,
-`removesel`). Ahhoz a javaslatoknak látszaniuk kell a személy-album
-rácsában, hogy legyen mit kijelölni — az a következő szelet. A művelet
-mindkét hatókört tudja, a felület egyelőre csak a teljeset hívja.
+A KIJELÖLT hatókör (`confirmsel`, `removesel`) felületi bekötését a
+`test_kijelolt_javaslatok_2187.py` és a
+`qml_functional/test_kijelolt_javaslatok_ui_2187.py` méri.
 """
 
 from __future__ import annotations
