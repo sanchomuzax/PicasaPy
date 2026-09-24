@@ -71,3 +71,12 @@ def test_a_felirat_ma_is_a_fajlban_all(sor):
     assert f'"{sor["felirat"]}"' in forras, (
         f"a(z) „{sor['felirat']}” felirat már nincs a {sor['qml_fajl']} fájlban"
     )
+
+
+def test_az_indok_nem_hasznalja_a_vedett_funkcio_jelolot():
+    """A `SAJÁT FUNKCIÓ` nagybetűs alakja a #1187 greppelhető jelölője: ha
+    egy indok így írja, a generált lapon jegyzék nélküli jelölés lesz, és
+    a `check_protected_features.py` elbukik."""
+    jelolo = "SAJÁT " + "FUNKCIÓ"
+    hibas = [(s["qml_fajl"], s["felirat"]) for s in _sorok() if jelolo in s["indok"]]
+    assert not hibas, hibas

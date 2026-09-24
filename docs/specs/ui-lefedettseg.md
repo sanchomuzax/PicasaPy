@@ -1135,35 +1135,35 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 ### `PicasaPy/DedupDialog.qml` — 15
 
 - „Find Duplicates”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Select at least two pictures in the grid, or pick another scope.”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Comparing files...”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Analysing pictures...”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Searching...”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Groups of duplicate and similar pictures. Pick which one to ”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Search in:”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Selected pictures (none)”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „This folder and its subfolders”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Whole library”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Scan for Duplicates”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Searching the whole library reads every picture — with tens ”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „No duplicates found.”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Move others to \"Duplikátumok\"”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 - „Delete others to Trash”
-  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten SAJÁT FUNKCIÓNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
+  - *saját funkció* — A Duplikátum-kereső párbeszéd (#287) az eredeti Picasa 3.9-ben nem létezik önálló ablakként: a docs/decisions/vedett-sajat-funkciok.md kifejezetten saját funkcióNAK sorolja fel — az eredetiben a másodpéldány-kezelés két MÁS mechanizmus (importáláskori AcquireDupeCheckThread és a keresősáv dupesearch módja), önálló kereső-dialógus nincs.
 
 ### `PicasaPy/BackupDialog.qml` — 14
 
@@ -1750,13 +1750,13 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 ### `PicasaPy/EditOverwriteDialog.qml` — 4
 
 - „Edits overwritten by another program”
-  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md SAJÁT FUNKCIÓNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
+  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md saját funkcióNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
 - „Another program changed these pictures and removed the edits you made here:”
-  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md SAJÁT FUNKCIÓNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
+  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md saját funkcióNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
 - „While the same folder is open in Picasa, its changes overwrite the edits made here. Restoring writes your edits back.”
-  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md SAJÁT FUNKCIÓNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
+  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md saját funkcióNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
 - „Restore edits”
-  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md SAJÁT FUNKCIÓNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
+  - *saját funkció* — A #643 kétirányú .picasa.ini szinkron/round-trip kezelése — amit a docs/decisions/vedett-sajat-funkciok.md saját funkcióNAK sorol fel ('amíg a kétirányú átjárás nincs meg, a Picasa írása nyer') — ehhez a saját mechanizmushoz tartozó figyelmeztető párbeszéd; az eredetiben nincs ilyen konfliktus-értesítés.
 
 ### `PicasaPy/EditorLegacyTab.qml` — 4
 
@@ -1946,9 +1946,9 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 ### `PicasaPy/PerfMonitorPanel.qml` — 2
 
 - „Performance monitor”
-  - *saját funkció* — A Teljesítmény-monitor a docs/decisions/vedett-sajat-funkciok.md szerint SAJÁT FUNKCIÓ (#1364): fejlesztői eszköz, az eredeti Picasa 3.9 Súgó menüjében nincs ilyen menüpont vagy panel.
+  - *saját funkció* — A Teljesítmény-monitor a docs/decisions/vedett-sajat-funkciok.md szerint saját funkció (#1364): fejlesztői eszköz, az eredeti Picasa 3.9 Súgó menüjében nincs ilyen menüpont vagy panel.
 - „Save diagnostics...”
-  - *saját funkció* — A Teljesítmény-monitor a docs/decisions/vedett-sajat-funkciok.md szerint SAJÁT FUNKCIÓ (#1364): fejlesztői eszköz, az eredeti Picasa 3.9 Súgó menüjében nincs ilyen menüpont vagy panel.
+  - *saját funkció* — A Teljesítmény-monitor a docs/decisions/vedett-sajat-funkciok.md szerint saját funkció (#1364): fejlesztői eszköz, az eredeti Picasa 3.9 Súgó menüjében nincs ilyen menüpont vagy panel.
 
 ### `PicasaPy/PicasaNotifier.qml` — 2
 
