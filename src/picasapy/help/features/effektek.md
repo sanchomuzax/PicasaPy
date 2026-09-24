@@ -66,10 +66,35 @@ effekt a nyers fotóra.
 | Múzeumi matt | képkeret-szerű paszpartu |
 | Neon | világító kontúrok, választható színben |
 | Ceruzarajz | ceruzavázlat hatás |
-| Képpontnagyítás | durva képpontokra bontás |
-| Polaroid | polaroid keret és színek |
+| Képpontnagyítás | durva képpontokra bontás — a **Képpontméret**, a **Keverési mód** és az **Elhalványítás** csúszkával |
+| Polaroid | fehér polaroid keret, megdöntve |
 | Lágyítás | lágy, elmosott kép — a **Lágyítás** és a **Fokozat** csúszkával |
 | Vignetta | sötétedő sarkok |
+
+### A Polaroid kerete és színe
+
+A **Polaroid** négyzetesre vágja a képet, **fehér** polaroid-keretet tesz
+köré — oldalt keskenyet, alul szélesebbet —, árnyékot vet alá, és megdönti.
+A **Forgatás** csúszka pozitív értékénél a kép az **óramutató járása
+szerint** dől.
+
+A **Külső szín** nem a keretet festi: azt a hátteret adja, ami a megdöntött
+kép köré kerül, és amelyen az árnyék látszik. A keret fehér marad, bármit
+állítasz be — az eredeti Picasa is így csinálta.
+
+### A Képpontnagyítás csúszkái
+
+A **Képpontnagyítás** három csúszkát kap: **Képpontméret**, **Keverési
+mód** és **Elhalványítás**. A Képpontmérettel a kockák nagyságát állítod,
+az Elhalványítással azt, mennyire üssön át alóla az eredeti fotó.
+
+A **Keverési mód** azt szabja meg, hogyan kerüljön a képpontos változat az
+eredeti fotóra. Tíz állása van, balról jobbra: összeadás, sötétítés,
+különbség, kemény fény, világosítás, szorzás, átfedés, kiszűrés, kivonás,
+és a jobb szélső **normál** — ez az alapértelmezés, ilyenkor a képpontos
+változat egyszerűen eltakarja a fotót. A nevek az eredeti Picasa keverési
+módjai; a csúszkán nem jelennek meg, csak a fogantyú helye mutatja, melyiket
+választottad.
 
 ## További effektek (6. fül)
 

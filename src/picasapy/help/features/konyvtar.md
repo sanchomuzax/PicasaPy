@@ -324,13 +324,32 @@ Rejtett képek** bekapcsolása előbb ezt kéri.
    megjelenik a **Rejtett mappák** fejléc (csak akkor, ha van rejtett
    mappád).
 2. Kattints a fejlécre a **jobb** egérgombbal, és válaszd a **Jelszó
-   megadása/módosítása…** pontot.
-3. Írd be a jelszót kétszer, és nyomd meg az **OK**-t.
+   megadása/módosítása…** pontot. (A fejléc csak a jobb gombra válaszol:
+   kijelölni nem lehet.)
+3. Írd be a jelszót kétszer — a másodikat az **Írja be újra a jelszót**
+   mezőbe —, és nyomd meg az **OK**-t. Amíg a két mező nem egyezik, az OK
+   szürke, és a párbeszéd kiírja, hogy a jelszavak nem egyeznek.
 
-Ugyanitt tudod a jelszót megváltoztatni vagy levenni.
+A mezők alatt egy jelölőnégyzet áll: **Erősebb védelem (a Picasa nem
+nyitja meg)**.
+
+- **Bejelöletlenül** (ez az alapértelmezés) a jelszó ugyanúgy tárolódik,
+  ahogy a windowsos Picasa tárolta: ha ugyanazokat a mappákat mindkét
+  programmal nézed, a jelszó ott is, itt is nyit.
+- **Bejelölve** a jelszó erősebben tárolódik, cserébe a windowsos Picasa
+  nem tudja megnyitni vele a rejtett mappákat.
+
+Ugyanezen az úton tudod a jelszót később megváltoztatni. Ha már van
+beállított jelszó, a párbeszédben megjelenik **A jelszó törlése** gomb is
+— ezzel veszed le a zárat.
+
+Ha rossz jelszót írsz be a rejtett képek előhozásakor, a program **Hibás
+jelszó** címmel jelzi, és a rejtett mappák rejtve maradnak; az üzenetet
+bezárva újra próbálkozhatsz.
 
 > A jelszó csak a PicasaPy felületén rejti el a képeket. A fájlok a
 > lemezen változatlanul ott vannak, bármelyik fájlkezelővel megnyithatók.
+> Ezt a párbeszéd maga is kiírja.
 
 ## Milyen fájlokat lát a program
 
