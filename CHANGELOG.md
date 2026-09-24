@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.566] – 2026-09-24
+
+### Javítva
+
+- **Az Árnyékvetés átlátszósága az eredeti Picasa szerint számol (#3498)** —
+  az árnyék átlátszóságát eddig kerekítettük, az eredeti program
+  lefelé vágja. A halványító csúszka 101 állásából 48-nál az árnyék egy
+  árnyalattal erősebb volt a kelleténél; most egyezik.
+
 ## [0.8.565] – 2026-09-24
 
 ### Javítva

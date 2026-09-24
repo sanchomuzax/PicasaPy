@@ -26,10 +26,11 @@ def _kep(szeles=60, magas=40):
     return np.full((magas, szeles, 3), 128, dtype=np.uint8)
 
 
-@pytest.mark.parametrize(("fade", "alfa"), [(0.0, 255), (30.0, 178), (50.0, 128), (100.0, 0)])
+@pytest.mark.parametrize(("fade", "alfa"), [(0.0, 255), (30.0, 178), (50.0, 127), (100.0, 0)])
 def test_a_tavoli_arnyek_kepont_egesz_keveres(fade, alfa):
     """Az árnyék belsejében (az elmosás hatókörén túl) az alfa a téglalapé:
-    `ROUND(shadowAlpha·255)` — 0,7·255 = 178,5 → 178 (páros felé)."""
+    `TRUNC(float32(shadowAlpha)·255)` (#3498, `0x00bcda7a`) — 0,5·255 = 127,5
+    → 127."""
     kep = _kep()
     ki = compose_drop_shadow(kep, ARNYEK, HATTER, distance_px=30, angle=0.0,
                              blur_px=2.0, margin=40, fade=fade)

@@ -6580,7 +6580,7 @@ ezért a golden-mérés ezt nem láthatta. Képpontonkénti felső korlát:
 *Bizonyítottsági fok: **megerősített** (utasításszintű kiolvasás). A
 pixelgoldenen mért hatás: **NINCS MEG** — ehhez egy 48 érintett Fade-érték
 egyikén készült eredeti export kellene; a javítás ettől függetlenül a
-binárist követi. Fejlesztés: **#3498**.*
+binárist követi. Fejlesztés: **#3498** — ✅ beépítve 2026-09-24 (`glimmer_frame_ops.teglalap_alfa`).*
 
 ### ⛳ A SIMD-ágak bájtra azonosak a skalár úttal — mert a vektoros út LEFELÉ kerekítésre állítja az FPU-t (2026-09-23, 346. kör, #626)
 

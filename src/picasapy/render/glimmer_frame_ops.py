@@ -187,6 +187,18 @@ def drop_shadow_padding(
     )
 
 
+def teglalap_alfa(shadow_alpha: float) -> int:
+    """Az árnyék-téglalap alfa-bájtja (#3498).
+
+    A konstruktor a `shadowAlpha`-t `[0, 1]`-re vágja, és float32-ként tárolja
+    (`0x00bcd654`–`0x00bcd68c`); a rajzoló 255-tel szoroz, majd a `fistp`
+    ELŐTT a kerekítési módot nulla felé állítja (`0x00bcda7a`: `or 0xc00`).
+    Az eredmény tehát CSONKOLT, nem kerekített érték.
+    """
+    vagott = float(np.float32(min(max(float(shadow_alpha), 0.0), 1.0)))
+    return math.trunc(vagott * 255.0)
+
+
 def compose_drop_shadow(
     image: np.ndarray,
     shadow_color: tuple[int, int, int],
@@ -211,16 +223,15 @@ def compose_drop_shadow(
     canvas_h, canvas_w = height + fent + lent, width + bal + jobb
 
     # #3474: a natív út (`0x00bcd940`). Az árnyékréteg egyenes BGRA: a teljes
-    # vászon `árnyékszín | alfa 0`, a téglalap `ROUND(shadowAlpha · 255)`
-    # alfával. Az elmosás (`0x00bc5680`, quality=3: 3 vízszintes + 3
+    # vászon `árnyékszín | alfa 0`, a téglalap `TRUNC(shadowAlpha · 255)`
+    # alfával (#3498, `teglalap_alfa`). Az elmosás (`0x00bc5680`, quality=3: 3 vízszintes + 3
     # függőleges egész menet) az állandó RGB-t nem változtatja, tehát
     # gyakorlatilag csak az alfát mossa — ezért elég az alfa-csatorna.
     offset_x, offset_y = shadow_offset(distance_px, angle)
     top = fent + offset_y
     left = bal + offset_x
     alfa = np.zeros((canvas_h, canvas_w), dtype=np.uint8)
-    # a `round` a fistp alapértelmezett (páros felé kerekítő) módja
-    alfa[top : top + height, left : left + width] = round(fade_alpha(fade) * 255)
+    alfa[top : top + height, left : left + width] = teglalap_alfa(fade_alpha(fade))
     alfa = nativ_blur_csatorna(alfa, blur_px, blur_px, _DROPSHADOW_QUALITY).astype(np.uint32)
 
     # a keverés (`0x008f48b0`) egész: `(S·α + D·(255 − α)) // 255`
@@ -319,6 +330,7 @@ __all__ = [
     "add_caption",
     "draw_border",
     "compose_drop_shadow",
+    "teglalap_alfa",
     "shadow_offset",
     "drop_shadow_padding",
     "draw_drop_shadow",
