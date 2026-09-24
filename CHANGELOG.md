@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.563] – 2026-09-24
+
+### Javítva
+
+- **Windowson a könyvtár-szinkron nem áll meg egyes lemezeken (#3549)** —
+  bizonyos windowsos lemezeken a fájlok belső azonosítója olyan nagy szám,
+  amelyet a program adatbázisa eddig nem tudott eltárolni, és a könyvtár
+  szinkronja hibával megállt. Most ezek az azonosítók is tárolhatók.
+
 ## [0.8.562] – 2026-09-24
 
 ### Javítva
