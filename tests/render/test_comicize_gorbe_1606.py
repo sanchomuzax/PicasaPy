@@ -36,12 +36,14 @@ sötétített képhez 1,46, az eredetihez 2,32 (SSIM 0,920 vs 0,768).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 from picasapy.lazy_cv2 import cv2
 
 from picasapy.render.effects_artistic import apply_comicize, comicize_master_curve
-from picasapy.render.halftone import dot_size_for, halftone_branch
+from picasapy.render.halftone import dot_size_for
 
 
 @pytest.fixture
@@ -137,73 +139,18 @@ class TestAFoKuszobgorbe:
 
 
 class TestACsovezetekAGorbevelSzamol:
-    """#1606 1. pontja a CSŐVEZETÉKEN — nem csak a LUT-függvényben.
+    """A `DotContrast` a görbén át hat (#1606).
 
-    A `TestAFoKuszobgorbe` a `comicize_master_curve()`-öt KÖZVETLENÜL hívja,
-    tehát önmagában nem mondja meg, hogy az `apply_comicize()` egyáltalán
-    használja-e. Mérve: a 3. lépést a régi lineáris skálázásra
-    (`érték · 255 / (90 + DotContrast·1,5)`) visszaírva az egész fájl zöld
-    maradt. Az itteni tesztek a KIMENETET a LUT-ból építik újra.
+    A korábbi próbák a régi küszöb-modell csővezetékét építették újra; a #3522
+    óta a lánc a `filterdesc.xml` szerinti (Glow, `PartialMask`, küszöbgörbe,
+    `multiply`), és a mérőszáma a 15 export (`TestA15ExportonMerve`).
     """
 
-    @staticmethod
-    def _sik_kimenet(
-        level: float, festek: float, dot_fade: float = 50.0,
-        height: int = 200, width: int = 700,
-    ) -> np.ndarray:
-        """A csővezeték 4-7. lépése SÍK szürke képre, adott festékszinttel.
-
-        Síkon `min(kép, elmosás) == kép`, és a pixelesítés sem változtat,
-        ezért a raszter EGYETLEN bemenete a görbe kimenete — a 3. lépés
-        teljes hatása egyetlen számba (`festek`) sűrűsödik. Így a
-        visszaépítés nem másolja le a görbét, csak a köré épülő ágakat.
-        """
-        alap = np.full((height, width, 3), float(level), dtype=np.float32)
-        dot = dot_size_for(width)
-        tinta = np.full((height, width), float(festek), dtype=np.float32)
-        raszter = np.minimum(
-            halftone_branch(tinta, dot, 0.0, 0.0),
-            halftone_branch(tinta, dot, dot / 2.0, dot / 2.0),
-        )
-        raszter_rgb = np.repeat(raszter[..., np.newaxis], 3, axis=-1)
-        alfa = 0.5 - dot_fade / 200.0
-        kimenet = alap + alfa * (np.minimum(alap, raszter_rgb) - alap)
-        return np.clip(np.rint(kimenet), 0, 255).astype(np.uint8)
-
-    @classmethod
-    def _varhato(cls, level: int, dot_contrast: float = 50.0, **kw) -> np.ndarray:
-        festek = float(comicize_master_curve(dot_contrast)[level])
-        return cls._sik_kimenet(level, festek, **kw)
-
-    @pytest.mark.parametrize("level", [30, 60, 90, 120])
-    def test_a_kimenet_a_spline_LUT_jabol_epul_fel(self, level):
-        """A csővezeték festékszintje PONTOSAN `comicize_master_curve()[L]`."""
-        kep = np.full((200, 700, 3), level, dtype=np.uint8)
-        np.testing.assert_array_equal(apply_comicize(kep), self._varhato(level))
-
-    @pytest.mark.parametrize("dot_contrast", [0.0, 100.0])
-    def test_a_dot_contrast_a_LUT_on_keresztul_hat(self, dot_contrast):
-        """A csúszka nem külön képleten, hanem a görbén át fejti ki hatását."""
+    def test_a_dot_contrast_valtoztat_a_kozeptonuson(self):
         kep = np.full((200, 700, 3), 90, dtype=np.uint8)
-        np.testing.assert_array_equal(
-            apply_comicize(kep, dot_contrast=dot_contrast),
-            self._varhato(90, dot_contrast=dot_contrast),
+        assert not np.array_equal(
+            apply_comicize(kep, dot_contrast=0.0), apply_comicize(kep, dot_contrast=100.0)
         )
-
-    @pytest.mark.parametrize("level", [24, 36, 48])
-    def test_az_arnyekokat_a_csovezetek_NEM_vilagositja_ki(self, level):
-        """0…48 között a görbe IDENTITÁS ⇒ a festék maga a tónus.
-
-        A régi lineáris modell ugyanezt 1,5-szeresére húzta (`48 → 74`),
-        amitől kevesebb festék jutott a csempére, és a kimenet
-        VILÁGOSABB lett. Az őr a lineáris modell festékszintjével épített
-        kimenethez méri: a mienknek sötétebbnek kell lennie.
-        """
-        kep = np.full((200, 700, 3), level, dtype=np.uint8)
-        linearis_festek = min(level * 255.0 / (90.0 + 50.0 * 1.5), 255.0)
-        assert apply_comicize(kep).mean() < self._sik_kimenet(
-            level, linearis_festek
-        ).mean()
 
 
 class TestAzElmosasBenneMaradAKimenetben:
@@ -300,7 +247,10 @@ class TestARaszterMegvan:
     #: képen (11 px csempe). Ha ez a szám elmozdul, az a raszter-lánc
     #: MEGVÁLTOZÁSA — újramérni kell, nem a tűrést tágítani.
     #: A #2476 óta a mért 0,8-as pontméreté (előtte 10,1252 volt).
-    RASZTER_SZORAS = 8.4096
+    #: ⚠️ A #3522 óta (a `filterdesc.xml` szerinti lánc) újramérve: 8,8331.
+    #: A fenti mutációs tábla még a régi küszöb-modellé; az új lánc hűségét a
+    #: 15 exportos mérés őrzi (`TestA15ExportonMerve`).
+    RASZTER_SZORAS = 8.8331
 
     def test_sik_kozeptonon_a_raszter_a_mert_erossegen_all(self):
         """700 px széles kép ⇒ 11 px csempe: a raszter a mért erősségén áll."""
@@ -313,3 +263,61 @@ class TestARaszterMegvan:
     def test_a_raszter_sotetit_de_nem_vilagosit(self):
         kep = np.random.default_rng(7).integers(0, 256, (60, 100, 3), dtype=np.uint8)
         assert np.all(apply_comicize(kep) <= kep)
+
+
+SWEEP_JELOLTEK = (
+    Path(__file__).resolve().parents[2] / "research" / "comicize-sweep",
+    Path.home() / "Documents" / "PicasaPy" / "research" / "comicize-sweep",
+)
+
+
+def _sweep() -> Path | None:
+    return next((p for p in SWEEP_JELOLTEK if p.is_dir()), None)
+
+
+def _amplitudo(kep: np.ndarray, csempe: int) -> float:
+    """A csempén belüli fázisprofil szórása (a #1606/#3401 mérője)."""
+    g = kep.astype(np.float64).mean(axis=2)
+    h, w = g.shape
+    h, w = h - h % csempe, w - w % csempe
+    return float(g[:h, :w].reshape(h // csempe, csempe, w // csempe, csempe).mean(axis=(0, 2)).std())
+
+
+@pytest.mark.skipif(_sweep() is None, reason="a research/comicize-sweep mérőkészlet nincs meg")
+class TestA15ExportonMerve:
+    """A 15 eredeti Picasa-export (#3522): átl. amplitúdó-hiba 0,0276, ΔE76 2,4640."""
+
+    def test_az_amplitudo_es_a_delta_e(self):
+        import configparser
+        import importlib.util
+        import sys
+
+        import cv2
+
+        gyoker = Path(__file__).resolve().parents[2]
+        spec = importlib.util.spec_from_file_location(
+            "compare_render_3522", gyoker / "tools" / "golden" / "compare_render.py"
+        )
+        cr = importlib.util.module_from_spec(spec)
+        sys.modules["compare_render_3522"] = cr
+        spec.loader.exec_module(cr)
+
+        def betolt(ut):
+            return cv2.cvtColor(cv2.imread(str(ut)), cv2.COLOR_BGR2RGB)
+
+        hibak, de = [], []
+        for tengely in ("blurxy", "dotcontrast", "dotfade"):
+            mappa = _sweep() / f"effekt5_kepregeny_{tengely}"
+            ini = configparser.ConfigParser()
+            ini.read(mappa / ".picasa.ini")
+            for nev in sorted(ini.sections()):
+                par = ini[nev]["filters"].split("=")[1].rstrip(";").split(",")
+                bxy, dc, df = (float(x) for x in par[1:4])
+                forras, ref = betolt(mappa / nev), betolt(mappa / "export" / nev)
+                mi = apply_comicize(forras, blur_xy=bxy, dot_contrast=dc, dot_fade=df)
+                csempe = dot_size_for(forras.shape[1])
+                hibak.append(abs(_amplitudo(mi, csempe) - _amplitudo(ref, csempe)))
+                de.append(float(cr.delta_e_cie76(mi, ref).mean()))
+        assert len(hibak) == 15
+        assert np.mean(hibak) <= 0.05, f"amplitúdó-hiba {np.mean(hibak):.4f}"
+        assert np.mean(de) <= 2.47, f"ΔE76 {np.mean(de):.4f}"
