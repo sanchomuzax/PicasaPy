@@ -1320,10 +1320,23 @@ def _azonossag(ut: str) -> tuple[int, int] | None:
     gyorstáraz — a bizonytalanság sosem vezethet arra, hogy egy régi
     feloldást igaznak veszünk (#1859)."""
     try:
-        adat = os.stat(ut)
+        adat = _stat(ut)
     except OSError:
         return None
-    return (adat.st_dev, adat.st_ino)
+    return (_elojeles64(adat.st_dev), _elojeles64(adat.st_ino))
+
+
+def _elojeles64(ertek: int) -> int:
+    """Előjel nélküli 64 bites azonosító → az SQLite előjeles `INTEGER`-e (#3549).
+
+    Windowson az `st_ino` a 64 bites ELŐJEL NÉLKÜLI fájlazonosító, és 2^63
+    fölé is eshet; az SQLite ezt `OverflowError`-ral utasítja vissza. A
+    leképezés bitre azonos (kettes komplemens), tehát kölcsönösen egyértelmű:
+    az összevetés a tárolt és a friss érték között ugyanúgy igaz vagy hamis,
+    mint a nyers értékek között.
+    """
+    ertek = int(ertek) & 0xFFFF_FFFF_FFFF_FFFF
+    return ertek - (1 << 64) if ertek >= (1 << 63) else ertek
 
 
 def _feloldas_gyorstarral(
