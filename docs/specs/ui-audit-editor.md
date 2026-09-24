@@ -2234,7 +2234,7 @@ objektum** a példányban:
 | eltolás | mi |
 |---|---|
 | `[this+0x5f8]` · `[this+0x92c]` | a két fél **szerkesztési állapota** |
-| `[this+0x668]` · `[this+0x99c]` | a két fél **kép-fogantyúja** (a `[0x00c40328]` hívása adja az összevethető értéket) |
+| `[this+0x668]` · `[this+0x99c]` | a két fél **kép-fogantyúja** (a `[0x00c40328]` hívása adja az összevethető értéket) — valójában `állapot+0x70`: a félhez kötött kép azonosítója, ld. 4/b.1 |
 | `[this+0x327c]` · `[this+0x3280]` | melyik fél az aktív (egyenlő ⇒ az egyik, `0` ⇒ egyik sem) |
 
 A létra, sorrendben:
@@ -2256,6 +2256,92 @@ A létra, sorrendben:
    nincs beállítva — a párbeszéd.
 6. A gombpár nyelvét a **`FUN_00569650`** (az elrendezés-tájolás lekérdezése)
    dönti el: igaz ⇒ `Fent`/`Lent`, hamis ⇒ `Bal`/`Jobb`.
+
+#### 4/b.1 ⭐ A két állapot KIINDULÓ értéke és a „módosult” próba alapja (2026-09-24, #3543)
+
+A 4/b létrája két bemenetet nem mondott meg: mi van a két félben az „aa” módba
+lépéskor, és mihez képest „módosult” egy fél. Mindkettő kiolvasva.
+
+**Az állapot-objektum osztálya.** Mindkét fél egy beágyazott **`EditStack`**
+példány (a `0x006a94b0` konstruktor a `0x00565884`/`0x0056588f` hívásban
+állítja be a vtáblát; RTTI: `EditStack::vftable`, rva `0x008a82f4`). A 4/b-ben
+használt mezők:
+
+| mező | mi | bizonyíték |
+|---|---|---|
+| `állapot+0x70` | a félhez **kötött kép azonosítója** (`-1` = nincs kötve); atomikusan olvassák (`InterlockedCompareExchange(&+0x70, 0, 0)`) | a `0x006ab7f0` `InterlockedExchange(&+0x70, -1)`-gyel oldja, a `0x006abd70` az új azonosítót írja be |
+| `állapot+0x20` | az állapot **ujjlenyomata a betöltés pillanatában** | a `0x006abd70` a betöltés után `[+0x20] = vtbl+0x8(azonosító)` (`0x006abe42`) |
+| `vtbl+0x8` (`0x006aa430` → `0x006abee0`) | az állapot **jelenlegi** 32 bites ujjlenyomata: a vágókeret négy egésze (`+0x240…+0x24c`), a szűrő-bejegyzések (`[+0x250]`, darabszám `[+0x254]/2`, lépésköz `0x58`), valamint nevek sztring-hashe (kezdőérték `0x12345678`, `h ^= (h<<5) + (h>>2) + c`), XOR-ral összefűzve | `0x006ac319`, `0x006ac424`–`0x006ac46e`, visszatérés `mov eax, edi` @ `0x006ac46e` |
+
+⇒ **„Módosult” = a fél jelenlegi ujjlenyomata ≠ a betöltéskori.** A 4/b 3.
+lépésének `[állapot+0x20]` ≠ `vtbl+0x8` összevetése tehát nem „van-e rajta
+szerkesztés”, hanem **„változott-e, amióta a fél betöltődött”**. Egy korábban
+(egyképes nézetben) már szerkesztett kép az „aa” módba lépve **nem** számít
+módosultnak. Ugyanezt a próbát a `0x006aef10` is elvégzi (`setne al`).
+
+**Belépés az „aa” módba.** A vezérlő-elosztó (`0x005d59f0`) az
+`editpanel/aa_2up_toggle`-ra (`0x00c8ef10`) a **`0x0056a260(this, 1)`**-et
+hívja (`push 1` @ `0x005d730b`), az `ab_2up_toggle`-ra ugyanezt `0`-val
+(`push 0` @ `0x005d7281`); az `only_1up_toggle` a `0x0056a680`. A
+`0x0056a260` sorrendje:
+
+1. **`0x0056aad0`** — a 4/b kilépési létrája (ha épp 2-up módban vagyunk);
+2. **`0x005f8d80(this, 1, 0, 0)`** — a *„Apply changes to the current
+   image?”* kérdés, ha egy modális eszköz (vágás, finomhangolás…) nyitva van
+   (ld. [`picasa-bezaras-es-kilepes.md`](picasa-bezaras-es-kilepes.md) 7.
+   (c)); ha nem `0`-val tér vissza (Mégse), a belépés elmarad;
+3. a második fél képe: `aa` (`arg2 ≠ 0`) esetén **a jelenlegi kép**
+   (`[this+0xe64]`), `ab` esetén a szomszéd (`0x00718110`);
+4. **`0x006abd70(&[this+0x5f8], kép)`** és **`0x006abd70(&[this+0x92c], kép)`**
+   (`0x0056a3c0`, `0x0056a3d6`) — `aa` módban **ugyanazzal** az azonosítóval.
+
+A `0x006abd70` (a „kötés”): ha a fél már ehhez a képhez van kötve, nem
+tölt újra; különben **alaphelyzetbe teszi** (`0x006ab7f0`), beírja az
+azonosítót, **betölti a kép szerkesztési állapotát** a forrásobjektumból
+(`[[+0x1c]]` `vtbl+0xc`, `0x006abe36`), és felveszi az ujjlenyomatot
+`[+0x20]`-ba. Mivel a kilépés (`0x0056a680`) mindkét felet `0x006ab7f0`-val
+oldja, **minden belépés friss betöltés**. Ugyanez a kötés tölti az egyképes
+szerkesztő állapotát is (`[this+0x2bc]+0x2ec0`, `0x0056a96d`).
+
+⇒ **Az „aa” mód mindkét fele a kép JELENLEGI (mentett) szerkesztési
+láncával indul — a kettő egyforma, és egyik sem „módosult”.** Nem az
+eredeti, szerkesztés nélküli kép; és nem is üres lánc.
+
+**A kilépés teljes döntési táblája** (`0x0056aad0`, a 4/b 2. lépése után;
+*megtart* = `0x006abae0`, *eldob* = `0x006abd40`, ami `0x006ab7f0` +
+`0x006abd70`: alaphelyzet és újratöltés a forrásból):
+
+| első fél (`+0x5f8`) | második fél (`+0x92c`) | mi történik | cím |
+|---|---|---|---|
+| módosult | érintetlen | az elsőt megtartja, a másodikat eldobja — **kérdés nélkül** | `0x0056afb3`–`0x0056afc0` |
+| érintetlen | módosult | a másodikat megtartja, az elsőt eldobja — **kérdés nélkül** | `0x0056afda`–`0x0056afec` |
+| érintetlen | érintetlen | mindkettőt eldobja (újratölti) | `0x0056b000`–`0x0056b009` |
+| módosult | módosult, **egyforma** (`0x006aef30`) | az **aktív** felet megtartja, a másikat eldobja | `0x0056ac28`–`0x0056ac3b` |
+| módosult | módosult, különböző | `DoNotAskOnEnd2Up` be ⇒ az **aktív** felet tartja; különben párbeszéd | `0x0056ac90` → `0x0056af39` |
+
+Az *aktív* fél a `0x0056b5c0` (`[this+0x3280] == [this+0x327c]` ⇒ az első,
+különben a második), a *másik* a `0x0056b5f0`.
+
+**A párbeszéd gombjai.** Sorrend: `Fent`/`Bal` (0), `Lent`/`Jobb` (1),
+`Mégse` (2) — a 4/b 6. pontja szerinti feliratokkal. Az alapértelmezett gomb
+**az aktív félé**: `1`, ha az aktív a második (`0x0056ae02`), különben `0`.
+A 0. gomb az első felet, az 1. a másodikat tartja meg (`0x0056af23`–
+`0x0056af5c`). **Mégse** (`2`) ⇒ a rutin `0xf4242`-vel tér vissza
+(`0x0056aef8`), a hívó nem hajtja végre a módváltást: **a 2-up mód marad**,
+mindkét fél szerkesztése megmarad. A bejelölt „Ne kérdezzen újra”
+(`[esp+0x17]`, `0x0056ae79`) a `DoNotAskOnEnd2Up`-ot `1`-re írja
+(`0x0056af7d`).
+
+⇒ **A mi megvalósításunknak ennyi kell:** belépéskor mindkét fél a kép
+jelenlegi láncának másolata, és félenként eltároljuk a belépéskori láncot;
+„módosult” = a fél lánca ≠ a belépéskori. (Az eredeti ujjlenyomatot hasonlít;
+nálunk a lánc-egyenlőség ugyanazt dönti el, ütközés nélkül.)
+
+> *Bizonyítottsági fok: **megerősített*** a kötésre, a betöltésre, az
+> ujjlenyomat írójára és a döntési táblára (mind utasításszinten olvasva). A
+> forrásobjektum (`[+0x1c]`) belsejét nem követtem: hogy a betöltés az
+> adatbázisból vagy a `.picasa.ini`-ből jön, a fenti viselkedést nem
+> változtatja — mindkét fél ugyanabból, ugyanazzal az azonosítóval tölt.
 
 #### 4/c ⛔ Amit ez a MI modellünkről mond
 
