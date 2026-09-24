@@ -840,6 +840,10 @@ Rectangle {
                     objectName: "viewerBackButton"
                     font.pixelSize: Theme.fontSize
                     text: qsTr("Back to Library")
+                    //: #3476: az eredeti `thumbui/albumview` súgója
+                    ToolTip.text: qsTr("Return to organized thumbnails")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
                     Layout.preferredWidth: 118
                     Layout.preferredHeight: 34
                     leftPadding: 30

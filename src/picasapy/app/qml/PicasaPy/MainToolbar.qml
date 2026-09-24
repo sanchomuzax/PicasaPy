@@ -264,7 +264,8 @@ Rectangle {
                 color: folderViewPopupHover.hovered ? Theme.selectionBlue : "#8f8b83"
             }
             //: `folderviewpopup` — a nézet-beállítások lenyílója
-            ToolTip.text: qsTr("Folder view options")
+            //: #3476: az eredeti `thumbui/folderviewpopup` szövege
+            ToolTip.text: qsTr("View options")
             ToolTip.visible: folderViewPopupHover.hovered
             ToolTip.delay: Theme.tooltipDelay
             HoverHandler { id: folderViewPopupHover }
