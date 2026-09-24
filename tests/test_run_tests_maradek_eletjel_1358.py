@@ -314,7 +314,7 @@ class TestCsakTakaritas:
         assert not regi.exists()
 
 
-class ElhagyottHelyekTeszt:
+class TestElhagyottHelyek:
     """A takarító a FOGLALÁSI helyeket is vigye (2026-09-07).
 
     A #2532 foglalási rétege `/tmp/picasapy-teszt-helyek/hely-N` könyvtárakat
@@ -330,6 +330,10 @@ class ElhagyottHelyekTeszt:
         (helyek / "hely-0").mkdir(parents=True)
         (helyek / "hely-0" / run_tests._PID_FAJL).write_text("999999")
         monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", helyek)
+        # ⚠️ a maradék-keresés gyökere is a tesztkönyvtár: különben a valódi
+        # /tmp `picasapy-tests-*` könyvtárait söpri — a CI-n az ÉLŐ futás
+        # saját gyökerét is (#3502)
+        monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
         monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: False)
 
         run_tests._takarits_regi_maradekot()
@@ -342,8 +346,70 @@ class ElhagyottHelyekTeszt:
         (helyek / "hely-0").mkdir(parents=True)
         (helyek / "hely-0" / run_tests._PID_FAJL).write_text("1")
         monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", helyek)
+        # ⚠️ a maradék-keresés gyökere is a tesztkönyvtár: különben a valódi
+        # /tmp `picasapy-tests-*` könyvtárait söpri — a CI-n az ÉLŐ futás
+        # saját gyökerét is (#3502)
+        monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
         monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: True)
 
         run_tests._takarits_regi_maradekot()
 
         assert (helyek / "hely-0").exists(), "elvitte egy ÉLŐ futás helyét"
+
+
+class TestTakaritoNaplo:
+    """A takarítás hagyjon nyomot (2026-09-07).
+
+    A tulajdonos kérdezte: „Mit takarított az elmúlt 15 percben?" — és a
+    válasz nem volt megadható, mert a takarító **semmit nem naplózott**. Ami
+    eltűnt, arról utólag csak az tudott, aki épp nézte.
+    """
+
+    def test_a_torles_naploz(self, monkeypatch, tmp_path):
+        naplo = tmp_path / "takarito.log"
+        monkeypatch.setattr(run_tests, "_TAKARITO_NAPLO", naplo)
+        maradek = tmp_path / "picasapy-tests-abc"
+        maradek.mkdir()
+        (maradek / run_tests._PID_FAJL).write_text("999999")
+        monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
+        monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: False)
+
+        run_tests._takarits_regi_maradekot()
+
+        sorok = naplo.read_text(encoding="utf-8").splitlines()
+        assert len(sorok) == 1, "nem pontosan egy sort írt"
+        assert "picasapy-tests-abc" in sorok[0], "nem nevezi meg, MIT vitt el"
+        assert "gazda" in sorok[0], "nem mondja meg, MIÉRT vitte el"
+
+    def test_a_naplozas_bukasa_NEM_akasztja_meg_a_takaritast(
+        self, monkeypatch, tmp_path
+    ):
+        """A napló kényelme nem előzheti meg magát a munkát."""
+        monkeypatch.setattr(run_tests, "_TAKARITO_NAPLO",
+                            tmp_path / "nincs-ilyen-mappa" / "x" / "y.log")
+        maradek = tmp_path / "picasapy-tests-def"
+        maradek.mkdir()
+        monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
+        monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: False)
+
+        run_tests._takarits_regi_maradekot()
+
+        assert not maradek.exists(), "a naplózás hibája megakasztotta a takarítást"
+
+    def test_a_naplo_nem_no_a_vegtelensegig(self, monkeypatch, tmp_path):
+        naplo = tmp_path / "takarito.log"
+        naplo.write_text("".join(f"regi-{i}\n" for i in range(1200)), encoding="utf-8")
+        monkeypatch.setattr(run_tests, "_TAKARITO_NAPLO", naplo)
+
+        run_tests._naplozd_a_takaritast(tmp_path / "picasapy-tests-uj", "próba")
+
+        sorok = naplo.read_text(encoding="utf-8").splitlines()
+        assert len(sorok) <= run_tests._NAPLO_SOROK, "a napló korlátlanul nő"
+        assert "picasapy-tests-uj" in sorok[-1], "az új sor elveszett"
+
+    def test_tesztben_a_naplo_nem_a_felhasznaloi_mappaba_ir(self):
+        """#3502: a `conftest` elvezeti — a takarítást hívó próbák nem
+        írhatnak a valódi `~/.cache/picasapy/takarito.log`-ba."""
+        assert Path.home() not in run_tests._TAKARITO_NAPLO.parents

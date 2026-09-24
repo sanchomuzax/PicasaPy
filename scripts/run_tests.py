@@ -50,6 +50,7 @@ import importlib
 import sys
 import tempfile
 import time
+from datetime import datetime
 from collections.abc import Callable
 from pathlib import Path
 
@@ -1214,6 +1215,36 @@ def _takarits_egy_konyvtarat(
     )
 
 
+#: A takarítás naplója. A tulajdonos kérdezte 2026-09-07-én: „Mit takarított
+#: az elmúlt 15 percben?" — és a válasz nem volt megadható, mert a takarító
+#: SEMMIT nem hagyott maga után. Ami eltűnt, arról utólag csak az tudott, aki
+#: épp nézte.
+_TAKARITO_NAPLO = Path.home() / ".cache" / "picasapy" / "takarito.log"
+
+#: Ennyi sornál nem nő tovább a napló (a régi sorok kiesnek).
+_NAPLO_SOROK = 1000
+
+
+def _naplozd_a_takaritast(ut: Path, ok: str) -> None:
+    """Egy sor arról, MIT vittünk el és MIÉRT.
+
+    ⚠️ A naplózás bukása SOHA nem foghatja meg a takarítást — a napló
+    kényelme nem előzheti meg magát a munkát (ugyanaz az elv, mint az
+    életjelnél, #1358)."""
+    sor = (f"{datetime.now().isoformat(timespec='seconds')}\t"
+           f"{ut.name}\t{ok}\n")
+    try:
+        _TAKARITO_NAPLO.parent.mkdir(parents=True, exist_ok=True)
+        with _TAKARITO_NAPLO.open("a", encoding="utf-8") as f:
+            f.write(sor)
+        sorok = _TAKARITO_NAPLO.read_text(encoding="utf-8").splitlines(True)
+        if len(sorok) > _NAPLO_SOROK:
+            _TAKARITO_NAPLO.write_text("".join(sorok[-_NAPLO_SOROK:]),
+                                       encoding="utf-8")
+    except OSError:
+        pass
+
+
 def _takarits_regi_maradekot(
     *, alvo: Callable[[float], None] = time.sleep
 ) -> None:
@@ -1234,8 +1265,13 @@ def _takarits_regi_maradekot(
             continue
         try:
             regi = konyvtar.stat().st_mtime <= hatarido
-            if not regi and _el_e_a_futas(konyvtar) is not False:
+            el = _el_e_a_futas(konyvtar)
+            if not regi and el is not False:
                 continue
+            _naplozd_a_takaritast(
+                konyvtar,
+                "halott gazda" if el is False
+                else f"{_MARADEK_KOR_S / 3600:.0f} óránál régebbi, életjel nélkül")
             _takarits_egy_konyvtarat(konyvtar, alvo=alvo)
         except OSError:
             # más munkamenet épp törli, vagy nincs jogunk — nem baj
@@ -1263,6 +1299,7 @@ def _takarits_elhagyott_helyeket(
         try:
             if not hely.is_dir() or _el_e_a_futas(hely) is not False:
                 continue
+            _naplozd_a_takaritast(hely, "elhagyott foglalási hely, halott gazda")
             _takarits_egy_konyvtarat(hely, alvo=alvo)
         except OSError:
             continue
