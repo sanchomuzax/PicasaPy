@@ -125,3 +125,7 @@ temp_1645/
 # kör emiatt nem tudta átadni a leletét. Két követett zárolófájl viszont
 # némán elsodródna egymástól, ezért nem vesszük fel.
 uv.lock
+
+# #3549: a teszt-összeomlások core dumpja (a #3178 fájlos core-mintája) a
+# folyamat memóriáját hordozza — soha nem kerülhet a repóba
+core.[0-9]*
