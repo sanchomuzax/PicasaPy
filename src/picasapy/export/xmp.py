@@ -53,10 +53,11 @@ from picasapy.ioutil import write_atomic
 # `Iptc4xmpExt`, `PersonInImage`, `mwg-rs`, `MicrosoftPhoto` egyikben SEM
 # szerepel. Az arcrégiókat az eredeti a `mwg-rs`/`MP` alá írja (#1403).
 #
-# ⚠️ A negatív állítás HATÓKÖRE: a mért exportokon nem volt NÉVVEL ellátott
-# arc, tehát a „`PersonInImage` névvel ellátott arc mellett" eset nincs
-# lefedve. Ha valaha előkerül egy KIÍRT IPTC-tulajdonság, az új mérés és új
-# jegy (#3424).
+# A megnevezett arc SEM kerül `PersonInImage` alá (#3424): a név a régió
+# `Name` mezőjébe megy (`mwg-rs` + `MP`), a `PersonInImage`-et a Picasa csak
+# OLVASSA — az arcrégió-író (`0x00bb17e0`) nem hivatkozik rá
+# (`docs/specs/picasa-metaadat-tulajdonsagok.md`, 12/E). A fenti negatív
+# állítás tehát hatókör nélkül igaz, a kódunk egyezik az eredetivel.
 _NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 _NS_DC = "http://purl.org/dc/elements/1.1/"
 #: ⚠️ #3353 — TUDATOS, az eredetiben NEM LÉTEZŐ kiegészítés. A

@@ -20,9 +20,11 @@ A döntést nem a bináris, hanem a **saját exportja** hozta meg: a
 XMP-csomag PONTOSAN három névteret tartalmaz (`xmp`, `exif`, `dc`), és
 `Iptc4xmpExt`/`PersonInImage`/`mwg-rs`/`MicrosoftPhoto` egyikben sem szerepel.
 
-⚠️ A negatív állítás HATÓKÖRE: a mért exportokon nem volt nevesített arc — az
-`mwg-rs` hiánya ezért NEM jelenti, hogy arcos képnél is hiányozna (#1403 épp
-azt mérte, hogy arcokhoz az `mwg-rs`/`MP` megy). A hiányzó mérés jegye: #3424.
+A mért exportokon nem volt nevesített arc — az `mwg-rs` hiánya ezért NEM
+jelenti, hogy arcos képnél is hiányozna (#1403 épp azt mérte, hogy arcokhoz az
+`mwg-rs`/`MP` megy). A `PersonInImage` viszont a megnevezett arc mellett SEM
+íródik: a binárisból eldöntve (#3424, spec 12/E) a név a régió `Name`
+mezőjébe kerül, a `PersonInImage`-et a Picasa csak olvassa.
 
 ## A két döntés, amit ez a fájl őriz
 
@@ -94,10 +96,12 @@ class TestADontesAKODBANisLATSZIK:
             "a hiányt nem elég megtenni, ki is kell mondani — különben a "
             "következő kör újra felveti"
         )
-        # a kimondás lényege: a regisztráció nem írás, ÉS a negatív állítás
-        # hatóköre is ott áll (a mért exportokon nem volt nevesített arc)
+        # a kimondás lényege: a regisztráció nem írás, ÉS a megnevezett arc
+        # sem kerül `PersonInImage` alá — a #3424 óta binárisból eldöntve,
+        # tehát a negatív állítás hatókör nélkül igaz
         assert "NEM írás" in _FORRAS or "nem írás" in _FORRAS
-        assert "HATÓKÖRE" in _FORRAS
+        assert "megnevezett arc SEM" in _FORRAS
+        assert "0x00bb17e0" in _FORRAS
 
     def test_a_MERES_hivatkozasa_ott_van_a_nevterek_mellett(self):
         assert "picasa-metaadat-tulajdonsagok.md" in _FORRAS
