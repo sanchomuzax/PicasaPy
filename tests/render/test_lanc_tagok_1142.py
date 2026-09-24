@@ -13,10 +13,10 @@ zajszintje ebben a szettben **0,24**.
 
 A három eset HÁROM KÜLÖN ok, ezért három külön osztály:
 
-1. **`blur`** — nem „halott" és nem is tétlen: a küszöbcsúszkája fölött
-   VALÓDI elmosás. A mérés (`render/blur.py` docstringje) szerint a
-   csúszkatartományon belül tétlen, fölötte paraméterfüggetlen, σ = 4,0
-   szórású elmosás.
+1. **`blur`** — nem „halott": a lánc lefuttatja. A #3493 óta a kiolvasott
+   natív láncot futtatjuk (`render/blur.py`); a korábbi „csúszkatartományon
+   belül tétlen, fölötte σ = 4 Gauss" modell a kétszínű 762-es ábra sajátja
+   volt, a viselkedést a `test_blur_nativ_3493.py` rögzíti.
 2. **`tint` tíz jegyű hexszel** — nem a `tint` a hibás, hanem a HEXMEZŐ
    olvasója: az eredeti az első 8 jegyet veszi, mi az egész tagot
    érvénytelennek vettük.
@@ -30,7 +30,7 @@ import numpy as np
 import pytest
 
 from picasapy.ini.filters import parse_filters
-from picasapy.render.blur import BLUR_IDLE_THRESHOLD_MAX, BLUR_SIGMA, apply_blur
+from picasapy.render.blur import apply_blur
 from picasapy.render.chain import (
     KNOWN_UNRENDERED_OPS,
     MEASURED_IDLE_OPS,
@@ -56,16 +56,9 @@ class TestBlurLefut:
         assert report.legacy_warnings == ()
         assert not np.array_equal(report.image, sample)
 
-    def test_a_kuszob_folott_a_mert_elmosast_adja(self, sample):
+    def test_a_lanc_a_blur_modult_futtatja(self, sample):
         report = apply_filters(sample, parse_filters("blur=1,2.000000;"))
         np.testing.assert_array_equal(report.image, apply_blur(sample, 2.0))
-
-    def test_a_csuszkatartomanyon_belul_merten_tetlen(self, sample):
-        """`blur=1;` és `blur=1,0.500000;` a mérésben a FORRÁST adta vissza
-        (0,24 és 0,56 — a 0,24-es JPEG-zajszint közelében)."""
-        for chain in ("blur=1;", "blur=1,0.500000;", "blur=1,-0.500000;"):
-            report = apply_filters(sample, parse_filters(chain))
-            np.testing.assert_array_equal(report.image, sample)
 
     def test_a_parameter_nincs_tartomanyra_vagva(self, sample):
         """A 2,0 KILÓG a filterdesc [-0,5; 0,5] csúszkatartományából, mégis
@@ -77,22 +70,6 @@ class TestBlurLefut:
         assert "blur" not in MEASURED_IDLE_OPS
         assert "blur" not in KNOWN_UNRENDERED_OPS
         assert can_render_filter("blur")
-
-    def test_az_elmosas_parameterfuggetlen(self, sample):
-        """A csúszka a KÜSZÖB, nem a sugár: a küszöb fölött ugyanazt az
-        elmosást adja minden értékre (a mérés egyetlen sugarat mutat)."""
-        np.testing.assert_array_equal(apply_blur(sample, 2.0), apply_blur(sample, 9.0))
-
-    def test_a_kuszob_hatara_a_csuszka_teteje(self, sample):
-        np.testing.assert_array_equal(
-            apply_blur(sample, BLUR_IDLE_THRESHOLD_MAX), sample
-        )
-        assert not np.array_equal(
-            apply_blur(sample, BLUR_IDLE_THRESHOLD_MAX + 0.01), sample
-        )
-
-    def test_a_mert_szoras(self):
-        assert BLUR_SIGMA == pytest.approx(4.0)
 
 
 class TestTizJegyuHexSzin:
