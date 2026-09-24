@@ -29,6 +29,7 @@ from pathlib import Path
 import pytest
 
 from picasapy.index import open_index
+from picasapy.index import sync
 from picasapy.index.sync import (
     _feloldas_gyorstarral,
     _resolved_protected_roots,
@@ -158,6 +159,17 @@ class TestANyereseg:
                 return _eredeti(*args, **kwargs)
 
             monkeypatch.setattr(os, nev, burok)
+
+        #: #3549: az azonosság-ellenőrzés a modul `_stat` fogantyúján megy
+        #: (#1375) — azt is számolni kell, különben a második futás hívásai
+        #: láthatatlanok, és a mérés hazudna
+        eredeti_stat = sync._stat
+
+        def stat_burok(*args, **kwargs):
+            szamlalo["n"] += 1
+            return eredeti_stat(*args, **kwargs)
+
+        monkeypatch.setattr(sync, "_stat", stat_burok)
 
         _feloldas_gyorstarral(conn, (str(gyoker),))
         elso = szamlalo["n"]

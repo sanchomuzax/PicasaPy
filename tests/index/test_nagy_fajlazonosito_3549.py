@@ -5,7 +5,8 @@ Windowson az `st_ino` a 64 bites ELŐJEL NÉLKÜLI fájlazonosító, az SQLite
 ilyen azonosítót adott, és a `_feloldas_gyorstarral` `OverflowError`-ral
 megállt — egy windowsos felhasználónál a könyvtár szinkronja ugyanígy.
 
-A próba az `os.stat`-ot helyettesíti, így platformtól függetlenül fut.
+A próba a `sync._stat` fogantyút helyettesíti (#1375: globális modult nem
+írunk át), így platformtól függetlenül fut.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ def nagy_azonosito(monkeypatch):
         adat = eredeti(ut, *args, **kwargs)
         return SimpleNamespace(st_dev=LEGNAGYOBB - 1, st_ino=LEGNAGYOBB, st_mode=adat.st_mode)
 
-    monkeypatch.setattr(sync.os, "stat", stat)
+    monkeypatch.setattr(sync, "_stat", stat)
 
 
 def test_a_legnagyobb_azonosito_is_tarolhato(conn, tmp_path, nagy_azonosito):

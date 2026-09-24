@@ -1320,7 +1320,7 @@ def _azonossag(ut: str) -> tuple[int, int] | None:
     gyorstáraz — a bizonytalanság sosem vezethet arra, hogy egy régi
     feloldást igaznak veszünk (#1859)."""
     try:
-        adat = os.stat(ut)
+        adat = _stat(ut)
     except OSError:
         return None
     return (_elojeles64(adat.st_dev), _elojeles64(adat.st_ino))
