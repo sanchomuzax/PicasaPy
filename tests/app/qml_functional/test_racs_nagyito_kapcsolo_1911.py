@@ -205,14 +205,14 @@ class TestAFelfedezhetoseg:
         ts = (
             Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
         ).read_text(encoding="utf-8")
-        assert "Loupe — drag over the photos" in ts, (
+        assert "Click and drag over photos to magnify them" in ts, (
             "a súgó nincs lefordítva magyarra"
         )
         # #2575: a fordítás határa a `<message>` elem, nem 300 karakter.
         # A rögzített ablak a KÖVETKEZŐ üzenet fordításából is „bizonyított"
         # volna, és egy hosszabb forrásszöveg ki is lökte volna a sajátját.
         parositas = re.search(
-            r"<source>Loupe — drag over the photos</source>\s*"
+            r"<source>Click and drag over photos to magnify them</source>\s*"
             r"<translation[^>]*>(.*?)</translation>",
             ts,
             re.DOTALL,

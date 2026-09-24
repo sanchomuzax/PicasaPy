@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.564] – 2026-09-24
+
+### Javítva
+
+- **A könyvtárnézet négy buboréksúgója az eredeti Picasa szövegét mondja
+  (#3476)** — a nagyító: „Ide kattintva és az egérmutatót a fotókra húzva
+  kinagyíthatja a részleteket"; a nézetbeállítások gombja: „Megjelenítési
+  beállítások"; a néző „Vissza a könyvtárhoz" gombja most kap súgót:
+  „Vissza a rendezett indexképekhez"; a „Továbbiak" megszakítása az
+  eredeti írásmóddal jelenik meg.
+
 ## [0.8.563] – 2026-09-24
 
 ### Javítva

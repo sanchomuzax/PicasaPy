@@ -4526,8 +4526,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
-        <source>Folder view options</source>
-        <translation>Mappanézet beállításai</translation>
+        <source>View options</source>
+        <translation>Megjelenítési beállítások</translation>
     </message>
     <message>
         <source>Click and drag over photos to magnify them</source>
@@ -4990,6 +4990,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Display Photo at actual size</source>
         <translation>Fotó megjelenítése tényleges méretben</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="0"/>
+        <source>Return to organized thumbnails</source>
+        <translation>Vissza a rendezett indexképekhez</translation>
     </message>
 </context>
 <context>
@@ -6263,8 +6268,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <translation>Csillag hozzáadása/eltávolítása</translation>
     </message>
     <message>
-        <source>Loupe — drag over the photos</source>
-        <translation>Nagyító — húzd a képek fölött</translation>
+        <source>Click and drag over photos to magnify them</source>
+        <translation>Ide kattintva és az egérmutatót a fotókra húzva kinagyíthatja a részleteket</translation>
     </message>
     <message>
         <source>Select the items you want to add to the project clip tray, then click &quot;Back&quot; to return to the project</source>
@@ -6280,7 +6285,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <source>Cancel &quot;Get more&quot;</source>
-        <translation>A „Továbbiak” művelet megszakítása</translation>
+        <translation>A &quot;Továbbiak&quot; művelet megszakítása</translation>
     </message>
     <message>
         <source>Rotate counter-clockwise</source>

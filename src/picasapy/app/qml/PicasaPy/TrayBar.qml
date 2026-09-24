@@ -1440,10 +1440,10 @@ Column {
                             //: nem ad rá támpontot — mérve (spec 2. szakasz)
                             //: külön egérmutatót SEM használ. A #1911 viszont
                             //: kiköti, hogy kipróbálás nélkül is kiderüljön:
-                            //: nyomva HÚZNI kell. A legkisebb ilyen jelzés a
-                            //: buboréksúgó — nem foglal helyet, és nem talál ki
-                            //: új viselkedést.
-                            ToolTip.text: qsTr("Loupe — drag over the photos")
+                            //: nyomva HÚZNI kell. A buboréksúgó ezt mondja ki —
+                            //: #3476: az eredeti SAJÁT szövegével
+                            //: (`thumbui/loupehit`, hivatalos magyarral).
+                            ToolTip.text: qsTr("Click and drag over photos to magnify them")
                             ToolTip.visible: hovered
                             ToolTip.delay: Theme.tooltipDelay
                             onClicked: {
