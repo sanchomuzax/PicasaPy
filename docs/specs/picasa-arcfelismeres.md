@@ -595,6 +595,96 @@ listában az `adorners/listsuggestionfaceadorner`.
 
 ---
 
+### 9/b ⛳ MIKOR melyik felirat — a `0x00647df0` döntési fája (2026-09-24, 356. kör, #3563)
+
+*A 9. szakasz a feliratokat sorolja; ez azt, hogy a panel mikor melyiket
+mutatja. Forrás: a `0x00647df0` (851 b) teljes törzse, a jelzők írói a
+`0x0064c340` / `0x0064d0xx` frissítőben, és a `peoplepanel_text.tre`.*
+
+**A kimenet két vezérlő** (a panelben név szerint keresve): a
+`status_label` (`0x00ca10e0`) — a lista fölötti **fejléc** — és az
+`instructions` (`0x00ca10f0`), amely a `peoplepanel_text.tre` öt
+szövegváltozatából választ (`0x005123e0`: index a `+0x2fc` tömbbe):
+
+| mód | `.tre` | magyar szöveg (`panel-feliratok-hu.tsv`) |
+|---:|---|---|
+| 0, 1 | `Text1`, `Text2` | „A Picasa a fotókeresés közben … automatikusan csoportosítja az arcokat. …” (az elnevezés útmutatója) |
+| 2 | `Text3` | „A program még nem talált személyeket. …” |
+| 3 | `Text4` | „Itt látható majd az aktuálisan kijelölt személlyel együtt megjelenő, megnevezett szereplők listája.” |
+| 4 | `Text5` | „Itt jelenik meg a kijelölt fotókon szereplő személyek listája.” |
+
+**A bemenetek** (a panel-objektum mezői):
+
+| mező | jelentés | bizonyíték |
+|---|---|---|
+| 2. argumentum | **betöltés folyik** | a `Loading…`/`Looking…` ágak kapuja (`0x00647f93`, `0x00648070`) |
+| `+0x348 >> 1` | a kijelölt képek **száma** (a `+0x344` vektor mérete) | `0x00647f79`, `0x00648097` |
+| `+0x2ac` | **személy albuma van kiválasztva**: a jelenlegi album `albumcontactids` mezője nem nulla (`0x00448c90` → `0x00448fb0`), `setg` @ `0x0064d248` | ezt erősíti a 3-as mód szövege is |
+| `+0x364` | a begyűjtés talált **megjeleníthető (megnevezett) személyt** — a gyűjtő `+0x11d` jelzőjéből másolva (`0x0064d7a9`), a gyűjtés indulása nullázza (`0x0063e032`) | *erős:* a hamis ágon mindig az „itt jelenik meg majd…” szöveg áll; a jelzőt 1-re állító utasítást közvetlen írásként nem találtam |
+| `+0x29c` | az **ellenőrizetlen** fájlok száma | `0x0064d1cb` (nullázás), `0x0064810b` (kiírás) |
+| `editpanel/preview` látható | **egyképes szerkesztő** nézet | `0x00647f59`–`0x00647f73` |
+| `+0x2ad`, `+0x2ae`, `+0x2af`, `+0x2b0` | a „Név nélküliek” album-mód jelzői (lent) | `0x0064c3d8`, `0x0064c50f`, `0x0064c4e6`, `0x0064c436` |
+
+**A döntési fa** (a `+0x2ad` mód nélkül):
+
+```
+EGYKÉPES ág — ha a szerkesztő előnézete látszik, VAGY (1 kép ÉS nem személy-album):
+  betöltés            → „Arcok betöltése a fájlhoz...”            (Loading1)
+  van személy (+364)  → „Ezen a fotón:”                            (InThis)
+  van kép             → „Ki látható ezeken a fotókon?”             (Who)
+  különben            → instructions 4 („Itt jelenik meg …”)
+
+TÖBBKÉPES ág — minden más eset (több kép, 0 kép, vagy személy-album):
+  betöltés            → személy-album ? „További személyek keresése...” (Looking)
+                                      : „Arcok betöltése %d fájlhoz...” (Loading2)
+  van személy (+364)  → személy-album ? „Szintén ezeken a fotókon:”     (Known1)
+                                      : „Személyek ezeken a fotókon:”   (Known2)
+  van kép             → +2af ? „Meg nem nevezett emberek ezeken a fotókon:” (UnnamedCluster)
+                             : „Név nélküli személycsoportok:”              (Unnamed)
+  különben            → személy-album ? instructions 3 : instructions 4
+
+UTÁNA mindig: ha +29c ≠ 0 ÉS nem személy-album → a fejléc mögé
+  „, %d ellenőrizetlen fájl.” (Unchecked)
+```
+
+Címek: egyképes ág `0x00648070`–`0x006480cb`; többképes `0x00647f93`–
+`0x0064806e`; a kapu `0x00647f79`–`0x00647f8d`; az utótag `0x006480d7`–
+`0x0064811c`. A fejléc a `status_label`-be kerül (`0x0064812d`,
+`vtbl+0x14`).
+
+⇒ **A „Szintén ezeken a fotókon:” (Known1) a SZEMÉLY ALBUMÁNAK fejléce**:
+ugyanaz a lista, amit máskor a „Személyek ezeken a fotókon:” vezet be — nem
+egy második szakasz. Személy-albumban az egyképes „Ezen a fotón:” sem jelenik
+meg (egy kijelölt képnél is a többképes ág fut), kivéve a szerkesztőben.
+
+**A „Név nélküliek” album-mód** (`+0x2ad` igaz — a `0x00448a10` album-próba,
+`0x0064c3c7`): `+0x2b0` ⇒ „Arcok adatainak rendezése...” (`status0`,
+`0x00647ea9`); különben `+0x2ae` (a gyűjtemény listája üres, `0x0064c4fe`–
+`0x0064c50f`) ⇒ üres fejléc és instructions 0/1 (`0x00431290` dönt,
+`0x00647ee2`); különben 0 kép ⇒ instructions 2, majd a fenti fa. *Ennek a
+módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítja a
+`+0x2b0`-t) az al-jegyé: **#3565**.*
+
+#### Nálunk (mérve, `PeoplePanel.qml`)
+
+| helyzet | eredeti | nálunk |
+|---|---|---|
+| 1 kép, van megnevezett személy | „Ezen a fotón:” | „Ezen a fotón:” ✅ |
+| több kép, van személy | „Személyek ezeken a fotókon:” | ✅ |
+| személy albuma | **egyetlen** lista „Szintén ezeken a fotókon:” fejléccel | **két** szakasz: „Ezen a fotón / Személyek…” **és** külön „Szintén ezeken a fotókon:” (`PeoplePanel.qml:44–82`) |
+| 1 kép, nincs megnevezett személy | „Ki látható ezeken a fotókon?” | a fejléc rejtve |
+| több kép, csak név nélküli arcok | „Név nélküli személycsoportok:” + a csoportok | nincs |
+| betöltés közben | „Arcok betöltése…” / „További személyek keresése...” | nincs |
+| ellenőrizetlen fájlok | „, %d ellenőrizetlen fájl.” a fejléc mögött | nincs |
+| üres, nincs kijelölés | instructions 4 (Text5) | `Text3` („A program még nem talált személyeket…”, `PeoplePanel.qml:110–117`) — az eredetiben a Text3 a „Név nélküliek” album-mód üres esete |
+
+*Bizonyítottsági fok: **megerősített** a döntési fára, a feliratokra, az öt
+utasítás-módra, a személy-album jelzőre, a darabszámra és az ellenőrizetlen
+utótagra (utasításszinten olvasva); **erős** a `+0x364` jelentésére (lásd a
+táblát; pontosítása: **#3565**).*
+
+---
+
 ## 10. Eredeti / nálunk / teendő
 
 | # | | eredeti | nálunk | teendő |
