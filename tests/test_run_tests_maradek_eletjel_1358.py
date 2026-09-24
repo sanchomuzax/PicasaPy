@@ -330,6 +330,10 @@ class TestElhagyottHelyek:
         (helyek / "hely-0").mkdir(parents=True)
         (helyek / "hely-0" / run_tests._PID_FAJL).write_text("999999")
         monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", helyek)
+        # ⚠️ a maradék-keresés gyökere is a tesztkönyvtár: különben a valódi
+        # /tmp `picasapy-tests-*` könyvtárait söpri — a CI-n az ÉLŐ futás
+        # saját gyökerét is (#3502)
+        monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
         monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: False)
 
         run_tests._takarits_regi_maradekot()
@@ -342,6 +346,10 @@ class TestElhagyottHelyek:
         (helyek / "hely-0").mkdir(parents=True)
         (helyek / "hely-0" / run_tests._PID_FAJL).write_text("1")
         monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", helyek)
+        # ⚠️ a maradék-keresés gyökere is a tesztkönyvtár: különben a valódi
+        # /tmp `picasapy-tests-*` könyvtárait söpri — a CI-n az ÉLŐ futás
+        # saját gyökerét is (#3502)
+        monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
         monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: True)
 
         run_tests._takarits_regi_maradekot()
@@ -364,6 +372,7 @@ class TestTakaritoNaplo:
         maradek.mkdir()
         (maradek / run_tests._PID_FAJL).write_text("999999")
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
         monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: False)
 
         run_tests._takarits_regi_maradekot()
@@ -382,6 +391,7 @@ class TestTakaritoNaplo:
         maradek = tmp_path / "picasapy-tests-def"
         maradek.mkdir()
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
         monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: False)
 
         run_tests._takarits_regi_maradekot()
