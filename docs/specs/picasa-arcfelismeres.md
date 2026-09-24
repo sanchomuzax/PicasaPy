@@ -724,11 +724,62 @@ konstruktor, `0x0063f864`, `0x0064c436`), és szó-/duplaszó-írás vagy
 kapcsolva, `+0x2af = 1`, és `+0x2ae` = a csomópont listája üres. A `+0x3c9`-et
 a `CAlbumSelectionNode` és a `CFoundFaceSelectionNode` vtáblájának
 **50. rekesze** állítja (`0x0077fd20`, `0x007898b0`); ennek a rekesznek a
-jelentése (mikor hívja a program) a **#3578** tárgya — a két „Név
-nélküli…” fejléc közti választás múlik rajta.
+jelentése a **9/d**-ben: a csoportosított arcnézet (#3578).
 
 *Bizonyítottsági fok: **megerősített** a `+0x364`-re és a
 `0x00448a10`-re; a `+0x2b0`-ra negatív, a fenti hatókörrel.*
+
+#### 9/d A „Név nélküliek” album csoportosítás-kapcsolója — ez dönt a két fejléc között (2026-09-25, 358. kör, #3578)
+
+**A `+0x3c9` = csoportosított arcnézet.** A csomópont `+0x3c9` bájtját a
+vtábla 50. rekesze (`0x0077fd20` / `0x007898b0`, `ret 8`, a 2. argumentum)
+állítja; a hívója a `0x0074c200` (`0x0074c256`–`0x0074c266`:
+`push (csoportosít ≠ 0)`, `push arg2`) — a `mov reg,[reg+0xc8]` + `call reg`
+minta tíz előfordulása közül ez az egyetlen, amely két argumentumot ad át. Ez a függvény egyben
+az album-fejléc utasítás-szövegét is választja (`0x0074c304` →
+`0x00717810`):
+
+| állapot | feltétel | fejléc-szöveg (`stringres`, magyar) |
+|---|---|---|
+| csoportosítva, a csoportosítás még fut | a csomópont `vtbl+0xb4` hamis | `CAlbumLabel::LoadingGrouped` — „Az arcok csoportosítása folyamatban van, kérjük, várjon...” |
+| csoportosítva, Figyelmen kívül hagyva album | `+0x3c8`, `+0x3f0` és a `0x00783480` (a mellőzött-album próba) igaz | `CAlbumLabel::ToggleGroupIgnore` — „Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet.” |
+| csoportosítva | különben | `CAlbumLabel::ToggleGrouped` — „Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet, vagy kattintson az "x" ikonra az adott személy mellőzéséhez.” |
+| kibontva | | `CAlbumLabel::ToggleUnGrouped` — „Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet” |
+
+(`0x0074c2c8`–`0x0074c2f9`.)
+
+**Ki kapcsolja.** A fejléc parancskezelője (`0x0074cc00`) a vezérlő nevét a
+`"cluster"`-rel veti össze (`0x0074cd50`–`0x0074cd8c`): **`cluster` ⇒
+csoportosít**, minden más (a pár másik tagja, `showall`) ⇒ kibont. Az album
+megnyitásakor a `0x0074cae0` **csoportosítva** indít (`push 1; push 1` @
+`0x0074cbbb`, ugyanott a cím „Ignored people” / „Unnamed people”).
+
+**A vezérlő egy váltógomb két arca** (`unknownfaceheaderpanel.tre`): a
+`cluster` („Group by face” — „Csoportosítás arcok szerint”) és a `showall`
+(„Expand groups” — „Csoportok részletes nézete”) ugyanabban a
+`clustering_container`-ben ül, és egymást rejtik (`hidetarget` /
+`showtarget`); a `cluster` kezdetben `m_hidden`. ⇒ Csoportosított állapotban
+a „Csoportok részletes nézete” gomb látszik, kibontottban a „Csoportosítás
+arcok szerint”.
+
+⇒ **A 9/b fejléc-választója:** csoportosított nézetben „Meg nem nevezett
+emberek ezeken a fotókon:” (`UnnamedCluster`), kibontottban „Név nélküli
+személycsoportok:” (`Unnamed`).
+
+#### Nálunk (mérve, `UnnamedFacesView.qml`)
+
+| | eredeti | nálunk |
+|---|---|---|
+| a kapcsoló | **egy** váltógomb, két állapot (csoportosítva / kibontva) | **két független** jelölőnégyzet: „Group by face” és „Expand groups” (`:70–84`) — négy kombináció |
+| kezdőállapot | csoportosítva | `groupByFace: true`, `expandGroups: false` (`:26–27`) ✅ |
+| a fejléc-utasítás | a fenti négy szöveg | nincs |
+| az Emberek-panel fejléce | az állapottól függ (fent) | #3566 |
+
+Fejlesztés: **#3585** (a váltógomb és a fejléc-utasítás).
+
+*Bizonyítottsági fok: **megerősített** — a beállító, egyetlen hívója, a
+parancskezelő névösszevetése, a kezdőállapot és a `.tre` váltópár mind
+utasítás-, illetve forrásszinten olvasva.*
 
 ---
 
