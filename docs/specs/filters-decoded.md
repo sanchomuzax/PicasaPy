@@ -719,11 +719,26 @@ között ugyanazt az elvet használja (`sqrtps` négy pixelen). **Nincs
 felülmintavételezés és nincs alpixel-akkumuláció.** A két alfa-végponttal a
 256 rekeszes kontroll-LUT pontosan `[255, 254, …, 1, 0]`.
 
-**Nálunk / teendő.** A `halftone.py` jelenleg külön
+~~**Nálunk / teendő.** A `halftone.py` jelenleg külön
 `_EDGE_SOFTNESS_PX = 1.0` átmenetet használ; ez nem a binárisból származó
 paraméter. A natív LUT- és byte-keverési út átvezetése külön terméki munka
-(#3401). A kutatási lelet mechanizmusa **megerősített**, de a PicasaPy-ba
-átvezetés és annak mért hatása még nincs megvalósítva.
+(#3401).~~ **✅ ÁTVEZETVE (#3522, 2026-09-25).** A `halftone.native_dot_mask`
+a fenti 8.8-as, csonkolt keverést futtatja, és az `apply_comicize` a
+`filterdesc.xml` szó szerinti láncát (772–824. sor) — a blokkot nyitó
+fekete belső ragyogással (788. sor), `PartialMask`-kal a fehér fölé, a
+`[0,0][150,0][160,255][255,255]` küszöbgörbével és `multiply` felvitellel.
+A `_EDGE_SOFTNESS_PX` és a küszöb-modell (`halftone_branch`) megszűnt. A 15
+eredeti Picasa-exporton (`research/comicize-sweep/`, a #3401 mérőjével):
+
+| | átl. amplitúdó-hiba | átl. ΔE76 |
+|---|---:|---:|
+| a küszöb-modell | 1,4331 | 2,8293 |
+| **a lánc** | **0,0276** | **2,4640** |
+
+A 8.8-as csonkolás és a kerekítés ugyanazt adja (0,0276 / 2,4640). A
+maradék ΔE (≈2,46) forrása nincs mérve (jelöltek: a Gauss-elmosás a natív
+helyett — ld. #3580 —, a szürke kerekítése). Őr:
+`tests/render/test_comicize_gorbe_1606.py::TestA15ExportonMerve`.
 
 ### `autobacklight` és a kisbetűs `focalpixelate` (#567)
 

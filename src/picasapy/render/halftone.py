@@ -44,15 +44,6 @@ DOT_SCALE = 0.8
 #: LINEÁRIS rámpa (a rajzoló két megállót ad át: `0x00bbacba: push 2`).
 DOT_ALPHA_MAX = 1.0
 
-#: A pont peremének lágyítása pixelben — a KÜSZÖB antialiasingja.
-#:
-#: ⚠️ Ez NEM a natív maszk alakja: a maszk lineáris rámpa (`tiled_dot_mask`), és
-#: az ág a rámpát KÜSZÖBÖLI a tónussal. A küszöb átmenetének pontos szélessége
-#: (és a perem kerekítése) az, ami a #569-ben nyitott maradt; egy pixelnyi
-#: lineáris átmenet a szokásos. A raszter-amplitúdó maradék hibáját (#3390) épp
-#: ez a fedettségi profil hordozza, nem a sugár-törvény.
-_EDGE_SOFTNESS_PX = 1.0
-
 
 def dot_size_for(width: int) -> int:
     """A raszter csempemérete a kép szélességéből: `round(W / 70) + 1` (#569).
@@ -90,32 +81,30 @@ def tiled_dot_ramp(
     return (np.hypot(local_x, local_y) / center).astype(np.float32)
 
 
-def halftone_branch(
-    ink: np.ndarray, tile: int, offset_x: float = 0.0, offset_y: float = 0.0
+def native_dot_mask(
+    height: int, width: int, tile: int, offset_x: float = 0.0, offset_y: float = 0.0
 ) -> np.ndarray:
-    """Egy raszter-ág: a `ink` (0..255 tónus) féltónusos pontrácsa.
+    """A `TiledImageMask` natív pontmaszkja, 0..255 (#3390, #3522).
 
-    A pont sugara a tónussal nő: sötét képpontnál a csempe majdnem teljesen
-    fekete, világosnál egy szemcse marad, 255-nél semmi. A perem
-    antialiasolt — ennek PONTOS alakja a #569 egyetlen nyitott részlete.
+    A csemperajzoló (`0x00bbaa90`) két megállóval hívja a közös rácsolót
+    (`0x008f3840` → `0x008f3970`): a kétmegállós LUT a két alfa-végpontból
+    `[255, 254, …, 1, 0]` (`0x008f3700`, csonkolt lineáris keverés). A
+    rácsoló a képpont sugarát 8.8-as fixpontra CSONKOLJA: a felső bájt a
+    LUT-rekesz, az alsó a tört súlya, és a kimenet
+    `(next · frac + current · (256 − frac)) >> 8`. Felülmintavételezés és
+    külön peremlágyítás NINCS.
 
-    A visszatérés float32 [0,255]: 0 a festékes, 255 a festéktelen rész.
+    A sugár a `DOT_SCALE`-lel (0,8) normált rámpa: 0 a pont közepén, 1 a
+    pont peremén; azon túl a maszk 0.
     """
-    height, width = ink.shape[:2]
-    ramp = tiled_dot_ramp(height, width, tile, offset_x, offset_y)
-    tone = np.clip(ink / np.float32(255.0), 0.0, 1.0)
-    # a pont sugara (a beírt körhöz mérve): fekete tónusnál a MÉRT
-    # `DOT_SCALE` (0,8), fehérnél 0 — a `scaleWidth`/`scaleHeight` alapérték
-    radius = np.float32(DOT_SCALE) * (1.0 - tone)
-    # a perem lágyítása a csempeméretéhez mérve — a `_EDGE_SOFTNESS_PX` a
-    # pixelben mért átmenet, a rámpa viszont a beírt sugárral normált
-    softness = np.float32(max(_EDGE_SOFTNESS_PX / max(tile / 2.0, 1e-6), 1e-6))
-    ink_amount = np.clip((radius - ramp) / softness + np.float32(0.5), 0.0, 1.0)
-    # a második tényező zárja ki, hogy a NULLA sugarú pont (tiszta fehér)
-    # a lágyítás miatt mégis kapjon egy fél fedettségű szemcsét a csempe
-    # közepén — fehéren nincs festék
-    ink_amount = ink_amount * np.clip(radius / softness, 0.0, 1.0)
-    return ((1.0 - ink_amount) * np.float32(255.0)).astype(np.float32)
+    rampa = tiled_dot_ramp(height, width, tile, offset_x, offset_y) / np.float32(DOT_SCALE)
+    fix = np.floor(np.clip(rampa, 0.0, 1.0) * np.float32(255.0 * 256.0)).astype(np.int64)
+    fix = np.minimum(fix, 255 * 256)
+    rekesz, tort = fix >> 8, fix & 255
+    lut = 255 - np.arange(256, dtype=np.int64)
+    aktualis = lut[rekesz]
+    kovetkezo = lut[np.minimum(rekesz + 1, 255)]
+    return ((kovetkezo * tort + aktualis * (256 - tort)) >> 8).astype(np.float32)
 
 
 def tiled_dot_mask(
@@ -141,12 +130,11 @@ def tiled_dot_mask(
     ezt `tile / 2`-re állítja, ettől lesz a raszter sakktábla-szerűen sűrű,
     ahogy a nyomdai féltónusnál.
 
-    ⭐ **A maszk ÁLLANDÓ, és ez nem mond ellent a tónussal növő pontnak**
-    (#2476): ha ezt a rámpát a (pixelesített) tónus KÜSZÖBÉNEK használjuk,
-    `alpha_max − ρ/scale > tónus` épp akkor áll, ha `ρ < scale · (1 − tónus)` —
-    azaz pontosan a `halftone_branch` sugár-törvényét adja. A kettő
-    azonosságát a `tests/render/test_comicize_maszk_kuszob_2476.py` mind a 256
-    tónusra megméri (0 eltérő képpont), elhangolt skálájú kontrollal.
+    ⭐ **A maszk ÁLLANDÓ** (#2476): a tónus nem a maszkból jön, hanem a
+    láncból (`PartialMask` a fehér fölé, majd küszöbgörbe — ld.
+    `effects_artistic.apply_comicize`). A lánc a 8 bites, natív keverésű
+    változatot használja (`native_dot_mask`); ez a lebegőpontos alak a maszk
+    geometriájának őre.
 
     A visszaadott maszk float32 [0,1], (H, W).
     """
@@ -166,7 +154,7 @@ __all__ = [
     "DOT_ALPHA_MAX",
     "DOT_SCALE",
     "dot_size_for",
-    "halftone_branch",
+    "native_dot_mask",
     "tiled_dot_mask",
     "tiled_dot_ramp",
 ]

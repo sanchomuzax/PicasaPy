@@ -1,16 +1,15 @@
-"""A natív pontmaszk és a mai sugár-moduláció AZONOSSÁGA (#2476).
+"""A natív pontmaszk alakja (#2476).
 
-A jegy címe azt állította, hogy „nálunk a tónus a sugarat modulálja, az
-eredetiben állandó". A `TiledImageMask` mind a tizenkét tartalékértéke ki van
-olvasva a konstruktorból (`0x00bba250`, #2476): `alphaMax = 1,0`,
-`alphaMin = 0,0`, `scaleWidth/Height = 0,8`, mind a négy `padding` nulla —
-tehát a maszk egy ÁLLANDÓ pontrács, a közepén 1,0-ról a csempe 0,8-szoros
-peremén 0,0-ra futó lineáris rámpával.
+A `TiledImageMask` mind a tizenkét tartalékértéke ki van olvasva a
+konstruktorból (`0x00bba250`, #2476): `alphaMax = 1,0`, `alphaMin = 0,0`,
+`scaleWidth/Height = 0,8`, mind a négy `padding` nulla — tehát a maszk egy
+ÁLLANDÓ pontrács, a közepén 1,0-ról a csempe 0,8-szoros peremén 0,0-ra futó
+lineáris rámpával.
 
-Ez a fájl azt méri, hogy ez a két leírás UGYANAZ a szerkezet: az állandó
-maszk KÜSZÖBE a (pixelesített) tónus pontosan azt a pontsugarat adja, amit a
-`halftone_branch` számol. A kontroll-eset elhangolt skálával fut — ha a
-mérés a hangolásra érzéketlen volna, az őr nem érne semmit.
+A korábbi első osztály azt mérte, hogy a maszk küszöbe ugyanazt a sugarat
+adja, mint a régi `halftone_branch` küszöb-modell. A #3522 óta a Comicize a
+maszkot a `filterdesc.xml` láncában, `PartialMask`-ként használja, a
+küszöb-modell megszűnt — az az osztály ezért törölve.
 """
 
 from __future__ import annotations
@@ -21,85 +20,11 @@ import pytest
 from picasapy.render.halftone import (
     DOT_ALPHA_MAX,
     DOT_SCALE,
-    halftone_branch,
     tiled_dot_mask,
     tiled_dot_ramp,
 )
 
 _CSEMPE = 24
-_MERET = _CSEMPE * 4
-#: A pontosan a rámpára eső tónusokat kihagyjuk: ott a két oldal a
-#: lebegőpontos egyenlőségen dől el, nem a szerkezeten.
-_TIES_TURES = 1e-3
-
-
-def _festek_a_mai_kodbol(tone: float) -> np.ndarray:
-    """A mai ág festékes képpontjai: a lágyított perem 0,5-ös átmenete."""
-    ink = np.full((_MERET, _MERET), tone * 255.0, np.float32)
-    return halftone_branch(ink, _CSEMPE) < 127.5
-
-
-def _festek_a_nativ_maszkbol(tone: float, skala: float = DOT_SCALE) -> np.ndarray:
-    """A natív, ÁLLANDÓ maszk küszöbe a tónus."""
-    maszk = tiled_dot_mask(_MERET, _MERET, _CSEMPE, scale=skala)
-    return maszk > np.float32(tone)
-
-
-def _nem_hatareset(tone: float, skala: float = DOT_SCALE) -> np.ndarray:
-    maszk = tiled_dot_mask(_MERET, _MERET, _CSEMPE, scale=skala)
-    return np.abs(maszk - np.float32(tone)) > _TIES_TURES
-
-
-#: Az a tónus-szint, amelytől a pont MÉRETE a lágyított perem szélessége alá
-#: esik (24 képpontos csempén). Efölött a mai ág a küszöb antialiasingjával
-#: elnyeli az utolsó, képpont alatti szemcsét — a szerkezet ott nem dől el.
-_KEPPONT_ALATTI_SZINT = 234
-
-
-class TestAzAllandoMaszkEsASugarModulacioUgyanaz:
-    def test_a_kepponthataron_kivul_nulla_az_elteres(self):
-        """A két leírás UGYANAZ: 234 alatt egyetlen képpont sem tér el."""
-        elteres = 0
-        for szint in range(_KEPPONT_ALATTI_SZINT):
-            tone = szint / 255.0
-            elteres += int(
-                np.count_nonzero(
-                    (_festek_a_nativ_maszkbol(tone) != _festek_a_mai_kodbol(tone))
-                    & _nem_hatareset(tone)
-                )
-            )
-        assert elteres == 0, f"{elteres} képpont tér el a két leírás között"
-
-    def test_a_maradek_elteres_EGYIRANYU_es_a_keppont_alatti_pontban_van(self):
-        """A képpont alatti szemcsénél csak a MAI ág veszít festéket.
-
-        Ez a lágyított perem (`_EDGE_SOFTNESS_PX`) hatása, nem a sugár-törvény
-        eltérése: a natív maszk küszöbe még festéket ad, a mai ág viszont a
-        perem-átmenettel a fele alá csillapítja. A #3390 méri ki, mi a helyes
-        fedettségi profil — ez az őr addig rögzíti, hogy az eltérés IRÁNYA egy.
-        """
-        rossz_irany = 0
-        for szint in range(_KEPPONT_ALATTI_SZINT, 256):
-            tone = szint / 255.0
-            nativ = _festek_a_nativ_maszkbol(tone)
-            mai = _festek_a_mai_kodbol(tone)
-            rossz_irany += int(np.count_nonzero(mai & ~nativ & _nem_hatareset(tone)))
-        assert rossz_irany == 0, (
-            f"{rossz_irany} képponton a MAI ág ad festéket a natív maszk nélkül"
-        )
-
-    def test_kontroll_az_elhangolt_skala_ELTERESt_ad(self):
-        """Negatív kontroll: 0,8 helyett 0,9-es maszk-skálával nem egyezik."""
-        elteres = 0
-        for szint in range(0, _KEPPONT_ALATTI_SZINT, 8):
-            tone = szint / 255.0
-            elteres += int(
-                np.count_nonzero(
-                    (_festek_a_nativ_maszkbol(tone, skala=0.9) != _festek_a_mai_kodbol(tone))
-                    & _nem_hatareset(tone, skala=0.9)
-                )
-            )
-        assert elteres > 1000, f"a kontroll is egyezett ({elteres} eltérés)"
 
 
 class TestANativMaszkAlakja:

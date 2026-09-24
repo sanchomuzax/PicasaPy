@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.569] – 2026-09-25
+
+### Javítva
+
+- **A Képregény effekt pontrácsa az eredeti Picasa szerint rajzolódik
+  (#3522)** — eddig egy saját közelítés rajzolta a nyomdai pontokat, és a
+  rács erősebb volt a kelleténél. Most az eredeti program teljes lépéssora
+  fut, a kép szélét finoman sötétítő belső árnyékkal együtt: a pontrács
+  erőssége a 15 mért képen gyakorlatilag azonos az eredetiével.
+
 ## [0.8.568] – 2026-09-24
 
 ### Javítva

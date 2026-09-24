@@ -9,7 +9,6 @@ hogy tényleg az.
 from __future__ import annotations
 
 import inspect
-import math
 
 import numpy as np
 import pytest
@@ -20,7 +19,7 @@ from picasapy.render.effects_artistic import apply_comicize
 from picasapy.render.halftone import (
     DOT_SCALE,
     dot_size_for,
-    halftone_branch,
+    native_dot_mask,
     tiled_dot_mask,
     tiled_dot_ramp,
 )
@@ -126,57 +125,28 @@ class TestTiledMaskPrimitive:
             tiled_dot_mask(8, 8, 4, alpha_min=1.5)
 
 
-class TestHalftoneBranch:
-    """A két ág külön tesztelhető — ez a #569 egyik elfogadási feltétele."""
+class TestNativeDotMask:
+    """A natív pontmaszk (#3390): kétmegállós LUT, 8.8-as csonkolt keverés."""
 
-    def test_dark_tone_grows_the_dot(self):
-        dark = halftone_branch(np.full((32, 32), 30.0, np.float32), 8)
-        light = halftone_branch(np.full((32, 32), 200.0, np.float32), 8)
-        # a festékes (0-hoz közeli) pixelek aránya sötét tónusnál nagyobb
-        assert (dark < 128).mean() > (light < 128).mean()
+    def test_a_pont_kozepen_255_a_peremen_tul_0(self):
+        m = native_dot_mask(16, 16, 8)
+        # páros csempén a képpont-középpont sosem esik a pont közepére
+        assert 190.0 < m.max() <= 255.0
+        assert m[0, 0] == 0.0, "a csempe sarka a ponton kívül esik"
 
-    def test_white_prints_nothing(self):
-        branch = halftone_branch(np.full((32, 32), 255.0, np.float32), 8)
-        assert branch.min() == pytest.approx(255.0, abs=1.0)
+    def test_a_keveres_a_88_as_csonkolt_keplet(self):
+        """`(next · frac + current · (256 − frac)) >> 8`, `LUT[i] = 255 − i`."""
+        h = w = 24
+        m = native_dot_mask(h, w, 8)
+        rampa = tiled_dot_ramp(h, w, 8) / np.float32(DOT_SCALE)
+        fix = np.minimum(np.floor(np.clip(rampa, 0, 1) * np.float32(255 * 256)).astype(np.int64), 255 * 256)
+        b, f = fix >> 8, fix & 255
+        cur = 255 - b
+        nxt = 255 - np.minimum(b + 1, 255)
+        assert np.array_equal(m, ((nxt * f + cur * (256 - f)) >> 8).astype(np.float32))
 
-    def test_black_prints_a_dot_of_the_MEASURED_scale(self):
-        """A pont MAXIMÁLIS mérete mért: `scaleWidth = scaleHeight = 0,8`
-        (#2476) — tehát a fekete tónus sem tölti ki a csempét.
-
-        A fedettség a csempéhez mérve `pi · 0,8^2 / 4 = 0,5027`; a korábbi
-        elvárás (`> 0,7`) a MI modellünké volt, nem mérésé, és épp ez adta a
-        raszter ~1,5-szeres túl-erősségét (`1 / 0,8^2 = 1,5625`).
-        """
-        branch = halftone_branch(np.zeros((64, 64), np.float32), 16)
-        assert branch.min() == pytest.approx(0.0, abs=1.0)
-        fedettseg = (branch < 128).mean()
-        vart = math.pi * DOT_SCALE**2 / 4.0
-        assert fedettseg == pytest.approx(vart, abs=0.02), (
-            f"a fekete pont fedettsége {fedettseg:.4f}, a mért 0,8-as skálából "
-            f"{vart:.4f} következik"
-        )
-
-    def test_the_two_branches_together_cover_most_of_a_black_area(self):
-        """A két, fél csempével eltolt rács EGYÜTT sem tölti tömörre a
-        feketét — a mért 0,8-as pontméret mellett ez nem is lehetséges.
-
-        Amit állítunk: a két rács együtt LÉNYEGESEN többet fed, mint egy
-        (különben a második ág felesleges volna), és a maradék rés a mért
-        geometriából jön.
-        """
-        ink = np.zeros((64, 64), np.float32)
-        egy = halftone_branch(ink, 8, 0.0, 0.0)
-        combined = np.minimum(egy, halftone_branch(ink, 8, 4.0, 4.0))
-        assert combined.mean() < 0.4 * egy.mean(), (
-            f"a második ág alig fed: egy ág {egy.mean():.1f}, kettő {combined.mean():.1f}"
-        )
-        assert combined.mean() < 40.0
-
-    def test_the_two_offsets_give_different_rasters(self):
-        ink = np.full((32, 32), 120.0, np.float32)
-        a = halftone_branch(ink, 8, 0.0, 0.0)
-        b = halftone_branch(ink, 8, 4.0, 4.0)
-        assert not np.array_equal(a, b)
+    def test_the_two_offsets_give_different_masks(self):
+        assert not np.array_equal(native_dot_mask(32, 32, 8), native_dot_mask(32, 32, 8, 4.0, 4.0))
 
 
 class TestComicizeParameters:
@@ -237,8 +207,12 @@ class TestComicizeOutput:
         # egyenletes szürkén is raszter keletkezik: van szórás a kimenetben
         assert out[..., 0].std() > 1.0
 
-    def test_white_stays_white(self):
-        np.testing.assert_array_equal(apply_comicize(_flat(255)), _flat(255))
+    def test_white_stays_white_in_the_centre_the_glow_darkens_the_edge(self):
+        """A blokkot nyitó fekete belső ragyogás (788. sor, #3522) a kép
+        szélét sötétíti — a közép fehér marad."""
+        ki = apply_comicize(np.full((200, 700, 3), 255, np.uint8))
+        assert ki[90:110, 340:360].min() == 255
+        assert ki[0, 0, 0] < 230
 
     def test_input_is_not_mutated(self):
         image = _flat(120)
