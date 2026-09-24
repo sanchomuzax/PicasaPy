@@ -1529,3 +1529,97 @@ sor nálunk üres, az eredetiben a szám. Fejlesztés: **#3535**.
 *Bizonyítottsági fok: **megerősített** a 36 soros táblára, az ismeretlen kód
 kezelésére és a hívó kulcsára (minden ág programmal kiolvasva, 0 olvasatlan);
 **erős** a 0/1-eltolás következményére (lásd fent).*
+
+## 15. ⛳ A Fényforrás (`LightSource`) kód → szöveg táblája — és hogy a panel miért NEM mutatja (2026-09-24, 355. kör, #3557)
+
+*Forrás: a `0x009f35d0` (1216 b) ugrótáblájának programmal végigjárt
+kiolvasása, a hívó `0x009f65c0`, a sorformázó `0x00a00120` 66-os és 94-es
+ága, a `properties.xml` név → kulcs leképezője (`0x00633210`) és a szállított
+`runtime/properties.xml`. A módszer a 14. szakaszé.*
+
+**Mi ez.** A `0x009f35d0` a **66-os kulcs** (`0x42`; a 6.1 tábla szerint az
+EXIF `0x9208` **LightSource**, SHORT) értékformázója. A hívó
+`0x009f0620(0x42, …)`-vel kéri le (`0x009f68bd`), és az értéket
+változatlanul adja át (`0x009f68cc` → `call 0x009f35d0`). A sorformázó
+`0x00a00120` 66-os ága (`0x00a0a9d9`, ugrótábla `0x00a344b4`) ide fut
+(`0x00a0ac4f`–`0x00a0ac8f`); a **felirat** az `EXIF::LightSource` azonosító:
+alapszöveg **„White Balance”**, magyarul **„Fehéregyensúly”**
+(`0x00a0ac5a`).
+
+**A tábla.** `0…0x18`: ugrótábla `0x009f3a90` (25 rekesz); `0xff` külön ág
+(`0x009f3a48`); minden más kód — és a táblán belüli 5–8. és 16. rekesz — az
+alapesetre fut: `sprintf("%ld", kód)` (`0x009f3a78`, formátum
+`0x00c82fd8`). Minden ág `0x009ae560("EXIF::…", alapszöveg)`.
+
+| kód | ág | szövegtár-azonosító | alapszöveg | magyar (`stringres`) | EXIF-szabvány |
+|---:|---|---|---|---|---|
+| 0 | `0x9f35f4` | `EXIF::Unknown` | Unknown | Ismeretlen | unknown |
+| 1 | `0x9f362c` | `EXIF::Sunny` | Sunny | Napos | Daylight |
+| 2 | `0x9f3664` | `EXIF::Fluorescent` | Fluorescent | Fluoreszkáló | Fluorescent |
+| 3 | `0x9f369c` | `EXIF::Incandescent` | Incandescent | Fehéren izzó | Tungsten |
+| 4 | `0x9f36d4` | `EXIF::Flash` | Flash | Vaku | Flash |
+| 9 | `0x9f370c` | `EXIF::FineWeather` | Fine Weather | Szép idő | Fine weather |
+| 10 | `0x9f3744` | `EXIF::Cloudy` | Cloudy | Felhős | Cloudy |
+| 11 | `0x9f377c` | `EXIF::Shade` | Shade | Árnyék | Shade |
+| 12 | `0x9f37b4` | `EXIF::DaylightFlourescent` | Daylight Flourescent | Nappali fénycső | Daylight fluorescent |
+| 13 | `0x9f37ec` | `EXIF::DayWhiteFlourescent` | Day White Flourescent | Nappali fehér fénycső | Day white fluorescent |
+| 14 | `0x9f3824` | `EXIF::CoolWhiteFlourescent` | Cool White Flourescent | Hideg fehér fénycső | Cool white fluorescent |
+| 15 | `0x9f385c` | `EXIF::WhiteFlourescent` | White Flourescent | Fehér fénycső | White fluorescent |
+| 17 | `0x9f3894` | `EXIF::StandardLightA` | Standard Light A | Normál fény A | Standard light A |
+| 18 | `0x9f38cc` | `EXIF::StandardLightB` | Standard Light B | Normál fény B | Standard light B |
+| 19 | `0x9f3904` | `EXIF::StandardLightC` | Standard Light C | Normál fény C | Standard light C |
+| 20 | `0x9f393c` | `EXIF::D55` | D55 | D55 | D55 |
+| 21 | `0x9f3974` | `EXIF::D65` | D65 | D65 | D65 |
+| 22 | `0x9f39ac` | `EXIF::D75` | D75 | D75 | D75 |
+| 23 | `0x9f39e4` | `EXIF::D50` | D50 | D50 | D50 |
+| 24 | `0x9f3a18` | `EXIF::ISOStudioTungsten` | ISO Studio Tungsten | Szabványos volfrámszálas stúdiólámpa | ISO studio tungsten |
+| 255 | `0x9f3a48` | `EXIF::Other` | Other | Egyéb | Other light source |
+
+⇒ **Nincs eltolás** (szemben a 14. szakasz 0/1-hibájával): mind a 21 ág a
+szabványos kódon ül. Két eltérés a szabványtól: a 16-os kód (*Warm white
+fluorescent*, EXIF 2.3) **hiányzik** — rá a szám jelenik meg —, és az
+alapszövegben a *Fluorescent* négy helyen **elgépelve** áll
+(„Flourescent”; a magyar szöveget ez nem érinti).
+
+### A panel NEM ezt a sort mutatja
+
+A panel sorrendjét és tartalmát a `runtime/properties.xml` adja. Az
+olvasója (`0x00637660`) az elemekből **(kulcs, rejtett)** párokat képez, és
+belőlük **láncolt listát** fűz a panel-objektumban: kezdet `[+0x1a98]`,
+kulcsonként 20 bájtos rekesz, előző `+0x74`, következő `+0x78`, rejtett
+jelző `+0x7c` (`0x0063777b`–`0x006377bc`). A panel frissítője
+(`0x00636f80`) előbb a `0x006364c0`-val **mind a 335 kulcs** értékét
+begyűjti (`0x00636582`–`0x00636989`, a sorformázó `0x006365d0`-nál), de
+kiírni **csak a láncon** halad (`0x006372f8`–`0x006374d3`: `[+0x1a98]`-tól a
+`+0x78` mentén). ⇒ Ami nincs a `properties.xml`-ben, annak az értéke
+begyűjtődik, de **sorként nem jelenik meg**.
+
+A név → kulcs leképező
+(`0x00633210`, `__stricmp`-láncolat) **mindkét nevet ismeri**:
+
+| elem | kulcs | cím | értékformázó |
+|---|---:|---|---|
+| `LightSource` | **66** (`0x42`) | `0x00633855` | a fenti tábla (`0x009f35d0`) |
+| `WhiteBalance` | **94** (`0x5e`) | `0x00633af5` | `0x009f3f00`: 0 → `EXIF::Auto` („Automatikus”), 1 → `EXIF::Manual` („Kézi”), más → `%ld` |
+
+A szállított `properties.xml` (a 3.7-es és a telepítés-mentés példánya
+bájtra azonos, md5 `e8d8020208f5…`) 44 eleméből (ebből 6 `hide="1"`) **csak `<WhiteBalance/>`**
+szerepel, `<LightSource/>` **nincs**. Mindkét sor felirata ráadásul
+„Fehéregyensúly” (`EXIF::LightSource` és `EXIF::WhiteBalance`, ugyanaz az
+alapszöveg). ⇒ **Az eredeti Tulajdonságok panelen a „Fehéregyensúly” sor a
+94-es kulcs (Automatikus/Kézi); a Fényforrás-tábla csak akkor látszana, ha
+a `properties.xml`-be `<LightSource/>` kerülne.**
+
+### Nálunk (mérve)
+
+| | eredeti | nálunk |
+|---|---|---|
+| „Fehéregyensúly” sor forrása | 94-es kulcs = EXIF `0xa403` | `_WHITE_BALANCE_TAG = 41987` (`0xa403`, `metadata/reader.py:52`) ✅ |
+| 0 / 1 | „Automatikus” / „Kézi” | `tr("Auto")` / `tr("Manual")` → „Automatikus” / „Kézi” (`formatting.py:457–461`) ✅ |
+| ismeretlen kód | a **szám** (`%ld`) | a sor **eltűnik** (`reader.py:191–194`: csak 0/1-re ad értéket) |
+| Fényforrás (`0x9208`) | a panel nem mutatja | nincs olvasó — **nem is kell** |
+
+*Bizonyítottsági fok: **megerősített** a 21 soros táblára (minden ág
+programmal kiolvasva, 0 olvasatlan), a 66-os és a 94-es kulcsra, a két
+formázóra, a `properties.xml` tartalmára és arra, hogy a panel csak a
+`properties.xml` láncán ír ki sort — mind utasításszinten olvasva.*
