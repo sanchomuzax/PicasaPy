@@ -559,6 +559,37 @@ visszanagyítás `W × H`-ra **`smoothing = false`** módban. A bináris ezt a
 szomszéd**, nem interpoláció (részletes levezetés:
 `filterdesc-registry.md` 4.12/5.a) — ettől élesek a blokkok.
 
+**✅ GOLDEN-MÉRÉS a nyolcmezős alakon (#3491, 2026-09-24).** A
+`684-merokeszlet` `export/` mappája valódi Picasa-export (EXIF
+`Software = Picasa`, 2026-09-18), a `.picasa.ini` a nyolcmezős sort hordozza
+(`Reverse = 0`). Kanonikus ΔE (`tools/golden/compare_render.py`):
+
+| beállítás (Impact · Radius · Hardness · Fade) | a mi renderünk | érintetlen forrás |
+|---|---:|---:|
+| `alap` 20 · 105 · 50 · 0 | **4,25** | 2,89 |
+| `min` 2 · 10 · 0 · 0 | 0,18 | 0,97 |
+| `max` 100 · 200 · 100 · 100 (Fade 100 — kontroll) | 0,12 | 0,12 |
+
+⇒ **A szűrő fut** (a `min` és az `alap` exportja eltér a forrástól), a kis
+beállításon egyezünk, az alapbeállításon viszont ROSSZABBAK vagyunk a
+semmittevésnél. Sugaras bontásban (`alap`, a kép közepétől):
+
+| sugár (px) | mi ↔ export | forrás ↔ export |
+|---|---:|---:|
+| 0–50 | 0,45 | 0,45 |
+| 50–105 | 5,40 | 0,20 |
+| 105–160 | 13,49 | 0,14 |
+| 160–250 | 8,31 | 1,53 |
+| 250 fölött | 2,11 | 3,79 |
+
+A leíró szerint a maszk belső sugara `105 · 50/101 ≈ 52`, a külső
+`105 · (2 − 50/101) ≈ 158` — a Picasa-export viszont még a 105–160-as
+sávban is gyakorlatilag érintetlen, és csak kb. 160 fölött pixelez. A mi
+tiszta körünk tehát túl kicsi. Hogy a különbség a sugár egységéből
+(előnézeti ↔ teljes felbontás) vagy a maszk alakjából jön, az NINCS
+eldöntve — kalibrációs jegy: **#3583**. A `Reverse = 1` golden-párja még
+hiányzik (ugyanott).
+
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
 
