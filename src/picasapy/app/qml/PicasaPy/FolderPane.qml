@@ -10,6 +10,8 @@ import QtQuick.Window
 // szakaszokra (ld. docs/specs/ui-audit-mainwindow.md, mappafa szakasz).
 Rectangle {
     id: pane
+    //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
+    property string helpTopic: "features/konyvtar.md"
     color: Theme.panelBg
 
     // #384: constants.ui alist_selcolor_win/alist_scatcolor (#25648B) —

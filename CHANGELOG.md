@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.562] – 2026-09-24
+
+### Javítva
+
+- **A Shift+F1 az egér alatti felületrész súgóját nyitja (#3463)** — eddig
+  mindig a súgó főoldala nyílt meg. Most a mappalista és a képrács fölött
+  a könyvtár, a néző fölött a nézegetés, a szerkesztőpanel fölött a
+  szerkesztő, a kollázs fölött a kollázs fejezete jön elő; nyitott
+  Exportálás mappába vagy Átvétel a Picasából ablaknál azok fejezete. A
+  külön ablakban nyíló párbeszédek (Nyomtatás, Mappakezelő, Beállítások)
+  külön jegyen vannak (#3544).
+
 ## [0.8.561] – 2026-09-24
 
 ### Javítva

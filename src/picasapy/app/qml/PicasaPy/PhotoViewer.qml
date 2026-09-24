@@ -11,6 +11,8 @@ import "aranykenyszer.js" as AranyKenyszer
 // Balra: előző, Esc: vissza a könyvtárba.
 Rectangle {
     id: viewer
+    //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
+    property string helpTopic: "features/nezegetes.md"
 
     // #1816: látszik-e a felirat-sáv. A GYÖKÉREN áll, mert a sáv és a
     // „Make a caption!" helyőrző két külön szülő alatt él.

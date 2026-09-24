@@ -43,6 +43,8 @@ import QtQuick.Controls
 Item {
     id: panel
     objectName: "collagePanel"
+    //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
+    property string helpTopic: "features/kollazs.md"
 
     // A tervezővászon mérete. Ez alatt a vászon-oldal zsugorodik a
     // `previewinset` nulla méretéig — a bal hasáb SOHA (spec 2.6).

@@ -46,6 +46,15 @@ Item {
     Dialog {
         id: exportDialog
         objectName: "exportDialog"
+        //: #3463: a Shift+F1 fejezete. Modális réteg-párbeszéd: amíg
+        //: nyitva van, a főablak Shift+F1-ét a Qt letiltja — ezért itt is
+        //: van egy, csak nyitott állapotban.
+        property string helpTopic: "features/exportalas.md"
+        Shortcut {
+            sequence: "Shift+F1"
+            enabled: exportDialog.opened
+            onActivated: dialogs.appWindow.nyisdASugot(exportDialog.helpTopic)
+        }
         // #1138: a `.fen` címe „Export to Folder", magyarul „Exportálás
         // mappába" — PONT NÉLKÜL (a honosítás `export/window1.title`-je).
         title: qsTr("Export to Folder")

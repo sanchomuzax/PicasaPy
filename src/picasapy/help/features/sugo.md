@@ -38,10 +38,22 @@ A mezőt kiürítve visszakapod a teljes fejezetlistát.
 
 ## Shift+F1
 
-A **Shift+F1** annak a felületrésznek a fejezetét nyitná meg, ami fölött
-épp az egér áll. Ez az út már működik, de **a program panelei ma még nem
-jelölik meg a saját fejezetüket**, ezért a Shift+F1 egyelőre mindig a
-tartalomjegyzéket nyitja meg — ugyanazt, mint az F1.
+A **Shift+F1** annak a felületrésznek a fejezetét nyitja meg, ami fölött
+épp az egér áll:
+
+- a bal oldali **mappa- és albumlista**, valamint a **képrács** fölött: *A
+  könyvtár*;
+- a **néző** fölött: *Nézegetés*, a bal oldali **szerkesztőpanel** fölött:
+  *A szerkesztő*;
+- a **kollázs** paneljei fölött: *Kollázs*.
+
+Ha egy párbeszéd van nyitva (**Exportálás mappába**, **Átvétel a
+Picasából**), a Shift+F1 annak a fejezetét nyitja meg.
+
+Ahol a felületrésznek nincs saját fejezete, ott a tartalomjegyzék nyílik
+meg, ugyanaz, mint az F1-re. A külön ablakban nyíló párbeszédekben
+(például **Nyomtatás**, **Mappakezelő**, **Beállítások**) a Shift+F1 ma
+még nem nyit súgót.
 
 ## Szöveg kimásolása
 

@@ -13,6 +13,8 @@ import "../selection.js" as Selection
 ListView {
     id: grid
     objectName: "photoGrid"
+    //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
+    property string helpTopic: "features/konyvtar.md"
 
     // a főablak (kijelölés-állapot + kijelölés-logika gazdája)
     required property var appWindow

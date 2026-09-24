@@ -12,6 +12,8 @@ import QtQuick.Layouts
 Dialog {
     id: importDialog
     objectName: "picasaImportDialog"
+    //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
+    property string helpTopic: "features/importalas.md"
     title: qsTr("Import from Picasa")
     modal: true
     width: 480
