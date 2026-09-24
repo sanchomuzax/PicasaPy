@@ -32,6 +32,21 @@ def pytest_configure(config):
 
 
 @pytest.fixture(autouse=True)
+def takarito_naplo_elvezetve(monkeypatch, tmp_path_factory):
+    """#3502: a futtató takarító-naplója (`~/.cache/picasapy/takarito.log`)
+    tesztben a pytest ideiglenes gyökerébe megy — a takarítást hívó próbák
+    így nem írhatnak a felhasználó valódi naplójába. Csak ha a `run_tests`
+    modul be van töltve; a saját napló-próbák utána felülírhatják."""
+    import sys
+
+    modul = sys.modules.get("run_tests")
+    if modul is not None and hasattr(modul, "_TAKARITO_NAPLO"):
+        monkeypatch.setattr(
+            modul, "_TAKARITO_NAPLO", tmp_path_factory.getbasetemp() / "takarito.log"
+        )
+
+
+@pytest.fixture(autouse=True)
 def nem_szennyezi_a_felhasznaloi_mappat():
     """Elhasal, ha a teszt a valódi képmappában bármit létrehoz vagy módosít."""
     yield from user_folder_guard()

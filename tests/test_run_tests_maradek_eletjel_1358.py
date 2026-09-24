@@ -398,3 +398,8 @@ class TestTakaritoNaplo:
         sorok = naplo.read_text(encoding="utf-8").splitlines()
         assert len(sorok) <= run_tests._NAPLO_SOROK, "a napló korlátlanul nő"
         assert "picasapy-tests-uj" in sorok[-1], "az új sor elveszett"
+
+    def test_tesztben_a_naplo_nem_a_felhasznaloi_mappaba_ir(self):
+        """#3502: a `conftest` elvezeti — a takarítást hívó próbák nem
+        írhatnak a valódi `~/.cache/picasapy/takarito.log`-ba."""
+        assert Path.home() not in run_tests._TAKARITO_NAPLO.parents
