@@ -24,6 +24,8 @@ import "editorpanel_logika.js" as Logika
 Rectangle {
     id: panel
     objectName: "editorPanel"
+    //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
+    property string helpTopic: "features/szerkeszto.md"
     color: Theme.chromeBg
     // #411: FIX pixelszélesség — az eredeti panel NEM skálázódik az
     // ablakmérettel (a #405 tévesen levetítette; a felhasználó

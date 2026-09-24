@@ -902,7 +902,12 @@ ApplicationWindow {
         //: A mutató alatti elem súgója. A leképezés a `helpTopic`
         //: tulajdonságon át megy; ha a mutató alatt egyik ős sem
         //: deklarál ilyet, a FŐOLDAL nyílik — néma kudarc nincs.
-        onActivated: helpDialog.ensure().nyisdMeg(window.helpTopicUnderCursor())
+        //:
+        //: #3463: amíg a főablak rétegében MODÁLIS párbeszéd áll nyitva, a
+        //: Qt ezt a gyorsbillentyűt letiltja — ezért a témát deklaráló
+        //: réteg-párbeszédek maguk is hordoznak egy Shift+F1-et, CSAK
+        //: nyitott állapotban, a SAJÁT fejezetükkel (`nyisdASugot`).
+        onActivated: window.nyisdASugot(window.helpTopicUnderCursor())
     }
 
     //: #2054: a mutató helye a Shift+F1-hez. A `HoverHandler` a teljes
@@ -921,16 +926,45 @@ ApplicationWindow {
     //: minden gombot felcímkézni: elég a panelekre és a párbeszédekre,
     //: a többi öröklődik. Ha egyik sem deklarál, ÜRES jön vissza, és a
     //: néző a főoldalt nyitja — néma kudarc nincs.
+    //:
+    //: #3463: a `childAt()` CSAK a közvetlen, legfelső gyermeket adja — az
+    //: pedig gyakran egy üres, az egész ablakot kitöltő réteg (pl. egy
+    //: halasztott párbeszéd `DeferredDialog`-betöltője), amelyben nincs
+    //: téma. A keresés ezért MÉLYSÉGI: felülről lefelé minden olyan látható
+    //: gyermeket kipróbál, amelyik a pontot tartalmazza, és a legmélyebb
+    //: témát adja; ha egy ág üres, az alatta fekvővel folytatja. A réteg
+    //: (`overlay`) párbeszédei NEM itt kapnak témát: amíg egy modális
+    //: párbeszéd nyitva van, a saját Shift+F1-e a saját fejezetét nyitja.
+    function _temaAPontban(elem, x, y) {
+        var gyerekek = elem.children
+        for (var i = gyerekek.length - 1; i >= 0; --i) {
+            var gyerek = gyerekek[i]
+            if (!gyerek.visible || gyerek.width <= 0 || gyerek.height <= 0)
+                continue
+            var pont = elem.mapToItem(gyerek, x, y)
+            if (!gyerek.contains(pont))
+                continue
+            var tema = window._temaAPontban(gyerek, pont.x, pont.y)
+            if (tema.length > 0)
+                return tema
+        }
+        if (elem.helpTopic !== undefined && String(elem.helpTopic).length > 0)
+            return String(elem.helpTopic)
+        return ""
+    }
+
+    //: #3463: a súgó megnyitása egy fejezettel — a modális
+    //: réteg-párbeszédek Shift+F1-e is ezt hívja (üres fejezet = főoldal).
+    function nyisdASugot(tema) {
+        helpDialog.ensure().nyisdMeg(tema)
+    }
+
     function helpTopicUnderCursor() {
         if (window.helpCursor.x < 0) return ""
-        var elem = window.contentItem.childAt(
-            window.helpCursor.x, window.helpCursor.y)
-        while (elem) {
-            if (elem.helpTopic !== undefined && String(elem.helpTopic).length > 0)
-                return String(elem.helpTopic)
-            elem = elem.parent
-        }
-        return ""
+        //: a `helpCursor` a `contentItem` koordinátáiban áll (a
+        //: `HoverHandler` ott ül)
+        return window._temaAPontban(
+            window.contentItem, window.helpCursor.x, window.helpCursor.y)
     }
 
     Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
@@ -1812,7 +1846,16 @@ ApplicationWindow {
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
     // gombjából (discoveryController.dialogRequested) vagy induláskori
     // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
-    PicasaImportDialog { id: picasaImportDialog }
+    PicasaImportDialog {
+        id: picasaImportDialog
+        //: #3463: modális réteg-párbeszéd — a főablak Shift+F1-ét a Qt
+        //: letiltja, amíg nyitva van
+        Shortcut {
+            sequence: "Shift+F1"
+            enabled: picasaImportDialog.opened
+            onActivated: window.nyisdASugot(picasaImportDialog.helpTopic)
+        }
+    }
     // Import forrásból (#23): az eszköztár "Import" gombja nyitja
     DeferredDialog {
         id: importSourceDialog

@@ -144,7 +144,7 @@ felszabadítja az arányt.
 | billentyű | mit csinál |
 |---|---|
 | F1 | A súgó megnyitása |
-| Shift+F1 | A súgó megnyitása (ma ugyanoda visz, mint az F1 — lásd [A beépített súgó](sugo.md)) |
+| Shift+F1 | Az egér alatti felületrész súgófejezete — lásd [A beépített súgó](sugo.md) |
 
 ## A menük betűjelei
 
