@@ -1,92 +1,167 @@
-"""A `blur` („Elhomályosítás") szűrő — küszöbvezérelt simítás (#1142).
+"""A `blur` („Elhomályosítás") szűrő — a kiolvasott natív lánc (#762, #3482, #3493).
 
-## Mit tud a bináris
+## A lánc (`docs/specs/filters-decoded.md`, „⭐ A `blur` GÉPEZETE")
 
-A natív mag (`0x0090cf60`, ld. `docs/specs/picasa-native-filter-workers.md`
-4.2.3) **nem Gauss-elmosás**, hanem ÉLMEGŐRZŐ, többléptékű simítás:
+A natív mag (`0x0090cf60` → `0x0090cd90`) **élmegőrző, háromléptékű
+simítás**, minden száma a binárisból jön:
 
-- `(szélesség+1) × (magasság+1)` méretű, 2 bit/cella navigációs rács;
-- három lépték (1, 2, 4); minden léptéken „falnak" jelöli azokat a
-  szomszédpárokat, ahol `ΔR² + ΔG² + ΔB² > küszöb / n²`;
-- a simítás csak a falakon BELÜL dolgozik.
+1. **Fal-rács** (`0x0090cf60`): `(h+1)×(w+1)` darab 16 bites cella. A kép
+   bal és jobb széle `0x5555` (vízszintes fal), a felső és az alsó `0xaaaa`
+   (függőleges fal). A vízszintes fal az `x` és az `x+1` képpont között a
+   `(y, x+1)` cellában, a függőleges az `y` és az `y+1` sor között a
+   `(y+1, x)` cellában ül.
+2. **Küszöb** (`0x0090cd90`): `K = CSONK(t² · 65536)`.
+3. **Léptékenként** (`n = 1, 2, 4`):
+   * **jelölés** (`0x0090ca10`): a MINDIG szomszédos pár fal, ha
+     `ΔR² + ΔG² + ΔB² > K // n²`; a bit `n²·0x5555`, illetve `n²·0xaaaa`,
+     16 bitre vágva;
+   * **terjesztés** (`0x0090cbe0`, csak `n > 1`): a fal-bit sorok, illetve
+     oszlopok mentén `n − 1` cellával mindkét irányba szélesedik, és a
+     sor két szélső `n` cellája is megkapja;
+   * **két simító menet** (`0x0090c6b0`): `(4·közép + 3·Σ4 szomszéd + 8) >> 4`
+     csatornánként, a szomszéd `n` távolságra. A menet vízszintesen az
+     `n²`, függőlegesen a `2n²` bitet nézi; falnál (és a képen kívül) a
+     szomszéd helyére a KÖZÉP kerül.
 
-Ezért van a szűrőnek „Küszöbérték" csúszkája (`filterdesc.xml`:
-`Threshold`, `[-0,5; 0,5]`, alapérték `0,1`) — a csúszka NEM sugár.
+## A mérés
 
-## Mit mond a MÉRÉS (`PicasaPy merokit-2`, 2026-08-15-i eredeti export)
-
-Ugyanaz a 960×640-es tesztábra, három lánccal; a számok a forrástól vett
-átlagos abszolút eltérések, a JPEG-újratömörítés zajszintje **0,24**:
-
-| lánc | eltérés | mit jelent |
-|---|---|---|
-| `blur=1;` (alapérték, 0,1) | 0,240 | TÉTLEN (a zajszint maga) |
-| `blur=1,0.500000;` (csúszka teteje) | 0,562 | gyakorlatilag tétlen |
-| `blur=1,2.000000;` (tartományon KÍVÜL) | 17,317 | TELJES elmosás |
-
-A 2,0-s kimenetre a legjobb illesztés **σ = 4,00 szórású Gauss-elmosás**,
-0,552 maradékkal — a σ optimuma éles (3,90 → 0,650; 4,10 → 0,692), és
-minden más próbált mag rosszabb: a Picasa saját IIR-elmosója
-(`iir_blur`, legjobb sugár) 3,49, a háromléptékű `[1,2,1]` dobozlánc
-2,03, a legjobb háromdobozos lánc 0,72. A σ **nem függ a paramétertől** —
-ez összefér a bináris képével: a küszöb azt dönti el, HOL simíthat,
-nem azt, MEKKORA sugárral.
-
-## A köztes sáv — a tulajdonos exportja (#762, 2026-09-21)
-
-Hat bájtra azonos forrás (800×512), `EXIF Software = Picasa` exportok:
-
-| lánc | az export a forráshoz képest |
-|---|---|
-| `blur=1,0.100000;` · `0.5` · `0.8` · `1.1` · `1.4` | képpontra AZONOS (átlagos abszolút eltérés 0,000) |
-| `blur=1,2.000000;` | teljes elsimítás (Laplace-szórás 162,6 → 0,4) |
-
-A 2,0-s exporttól a `BLUR_SIGMA` = 4-es elmosásunk átlagosan 0,026-tal tér
-el — a fenti illesztés tehát egy független ábrán is áll.
-
-## Amit a mérés NEM dönt el — és ezért a modell határa
-
-A váltás 1,4 és 2,0 KÖZÖTT van; a pontos helyére nincs mérési pontunk, és
-találgatni tilos. A modell ezért a váltást a LEGNAGYOBB mérten tétlen
-értékre (1,4) teszi. Az 1,4 és 2,0 közötti sáv a mérés által NEM fedett
-rész; ilyen érték a felületről (`[-0,5; 0,5]`) nem is keletkezik, csak kézzel
-szerkesztett vagy idegen ini-ből. A küszöb pontos helyét a bináris
-(`0x0090cf60`) falképző feltételéből kell kiolvasni (#762).
+A lánc a `PicasaPy merokit-2` három eredeti exportját (0,1 · 0,5 · 2,0) az
+export kvantálótábláival újratömörítve **képpontra** adja vissza; a 762-es
+hat exportot 0,000-val (0,1…1,4) és 0,010-zel (2,0). A korábban mért
+„1,4-ig tétlen" viselkedés a kétszínű 762-es ÁBRA sajátja: annak egyetlen
+fekete-fehér élén a fal addig áll, amíg `3·255² = 195 075 > K`, azaz
+`t ≤ 1,725285`-ig. Valódi, zajos tartalmon a szűrő a csúszka tartományában
+is simít.
 """
 
 from __future__ import annotations
 
-from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image
 
-#: A legnagyobb MÉRTEN tétlen küszöb. Eddig bezárólag a Picasa a forrást
-#: adta vissza (#685: −0,5 / 0,1 / 0,5; #1142: 0,5; #762: 0,8 / 1,1 / 1,4 —
-#: képpontra azonos exportok). 2,0-nél már teljes elmosás.
-BLUR_IDLE_THRESHOLD_MAX = 1.4
+#: A három lépték (`0x0090cd90`: `0x0090ce65` / `0x0090ceda` / `0x0090cf18`).
+LEPTEKEK = (1, 2, 4)
 
-#: A küszöb fölötti, MÉRT elmosás szórása képpontban (`merokit-2`,
-#: `halott_03`: `blur=1,2.000000;` → 0,552 maradék).
-BLUR_SIGMA = 4.0
+#: A peremek fal-bitjei (`0x0090d07d`, `0x0090d0a0`).
+_VIZSZINTES_PEREM = 0x5555
+_FUGGOLEGES_PEREM = 0xAAAA
+
+
+def kuszob(t: float) -> int:
+    """`K = CSONK(t² · 65536)` — a lánc float32 paraméteréből (`0x0090cdf3`)."""
+    t32 = float(np.float32(t))
+    return int(t32 * t32 * 65536.0)
+
+
+def _vizszintes_maszk(n: int) -> int:
+    return (n * n * _VIZSZINTES_PEREM) & 0xFFFF
+
+
+def _fuggoleges_maszk(n: int) -> int:
+    return (n * n * _FUGGOLEGES_PEREM) & 0xFFFF
+
+
+def _ures_racs(magassag: int, szelesseg: int) -> np.ndarray:
+    racs = np.zeros((magassag + 1, szelesseg + 1), dtype=np.uint16)
+    racs[:, 0] |= _VIZSZINTES_PEREM
+    racs[:, szelesseg] |= _VIZSZINTES_PEREM
+    racs[0, :] |= _FUGGOLEGES_PEREM
+    racs[magassag, :] |= _FUGGOLEGES_PEREM
+    return racs
+
+
+def _falakkal(racs: np.ndarray, kep: np.ndarray, n: int, k: int) -> np.ndarray:
+    """A jelölő (`0x0090ca10`): új rács a lépték falaival."""
+    kuszob_n = k // (n * n)
+    egesz = kep.astype(np.int32)
+    ki = racs.copy()
+    vizszintes = ((egesz[:, 1:] - egesz[:, :-1]) ** 2).sum(axis=2) > kuszob_n
+    ki[:-1, 1:-1][vizszintes] |= _vizszintes_maszk(n)
+    fuggoleges = ((egesz[1:, :] - egesz[:-1, :]) ** 2).sum(axis=2) > kuszob_n
+    ki[1:-1, :-1][fuggoleges] |= _fuggoleges_maszk(n)
+    return ki
+
+
+def _szelesitve(jeloltek: np.ndarray, n: int) -> np.ndarray:
+    """A terjesztő egy iránya (`0x0090cc3c`–`0x0090cc5a`): előre, majd hátra
+    `n` cellás számlálóval — a jelölt `n − 1` cellával mindkét irányba
+    szélesedik, és a sor két szélső `n` cellája is bitet kap."""
+    ki = jeloltek.copy()
+    for d in range(1, n):
+        ki[..., d:] |= jeloltek[..., :-d]
+        ki[..., :-d] |= jeloltek[..., d:]
+    ki[..., :n] = True
+    ki[..., -n:] = True
+    return ki
+
+
+def _terjesztve(racs: np.ndarray, n: int) -> np.ndarray:
+    """A terjesztő (`0x0090cbe0`): a vízszintes maszk a sorok, a függőleges
+    az oszlopok mentén."""
+    ki = racs.copy()
+    vm = _vizszintes_maszk(n)
+    ki[_szelesitve((ki & vm) != 0, n)] |= vm
+    fm = _fuggoleges_maszk(n)
+    ki[_szelesitve(((ki & fm) != 0).T, n).T] |= fm
+    return ki
+
+
+def _simitva(kep: np.ndarray, racs: np.ndarray, n: int) -> np.ndarray:
+    """Egy simító menet (`0x0090c6b0`).
+
+    Szeletekkel dolgozik, nem indextömbökkel: exportnál teljes felbontáson
+    fut, és a köztes tömbök így a kép méretének néhányszorosán maradnak. A
+    legnagyobb összeg `16·255 + 8 = 4088`, tehát `uint16`-ban pontos.
+    """
+    magassag, szelesseg = kep.shape[:2]
+    kozep = kep.astype(np.uint16)
+    osszeg = 4 * kozep + 8
+    vizszintes_bit, fuggoleges_bit = n * n, 2 * n * n
+    racs_kep = racs[:magassag, :szelesseg]
+    for irany in ("bal", "jobb", "fel", "le"):
+        #: falnál és a képen kívül a szomszéd helyére a KÖZÉP kerül — ezért
+        #: indul a szomszéd-tömb a közép másolataként
+        szomszed = kozep.copy()
+        if irany == "bal" and n < szelesseg:
+            # (y, x−n), fal-cella (y, x−n+1)
+            nyitott = (racs_kep[:, 1:szelesseg - n + 1] & vizszintes_bit) == 0
+            szomszed[:, n:] = np.where(nyitott[..., None], kozep[:, :-n], kozep[:, n:])
+        elif irany == "jobb" and n < szelesseg:
+            # (y, x+n), fal-cella (y, x+n)
+            nyitott = (racs[:magassag, n:szelesseg] & vizszintes_bit) == 0
+            szomszed[:, :-n] = np.where(nyitott[..., None], kozep[:, n:], kozep[:, :-n])
+        elif irany == "fel" and n < magassag:
+            # (y−n, x), fal-cella (y−n+1, x)
+            nyitott = (racs_kep[1:magassag - n + 1, :] & fuggoleges_bit) == 0
+            szomszed[n:, :] = np.where(nyitott[..., None], kozep[:-n, :], kozep[n:, :])
+        elif irany == "le" and n < magassag:
+            # (y+n, x), fal-cella (y+n, x)
+            nyitott = (racs[n:magassag, :szelesseg] & fuggoleges_bit) == 0
+            szomszed[:-n, :] = np.where(nyitott[..., None], kozep[n:, :], kozep[:-n, :])
+        osszeg += 3 * szomszed
+    return (osszeg >> 4).astype(np.uint8)
 
 
 def apply_blur(image: np.ndarray, threshold: float) -> np.ndarray:
-    """A `blur` szűrő a MÉRT modell szerint (#1142).
+    """A `blur` szűrő a natív lánc szerint (#3493).
 
     Args:
         image: `uint8`, HxWx3 (RGB) kép.
-        threshold: a Küszöbérték csúszka értéke a láncból.
+        threshold: a Küszöbérték a láncból (a `t` a `K = CSONK(t²·65536)`-ban).
 
     Returns:
-        ÚJ kép — a bemenet változatlan marad. A csúszkatartományon belül
-        (`threshold <= BLUR_IDLE_THRESHOLD_MAX`) a bemenet másolata,
-        fölötte a `BLUR_SIGMA` szórású elmosás.
+        ÚJ kép — a bemenet változatlan marad.
     """
     validate_image(image)
-    if threshold <= BLUR_IDLE_THRESHOLD_MAX:
-        return image.copy()
-    return cv2.GaussianBlur(
-        image, (0, 0), sigmaX=BLUR_SIGMA, sigmaY=BLUR_SIGMA,
-        borderType=cv2.BORDER_REPLICATE,
-    )
+    magassag, szelesseg = image.shape[:2]
+    k = kuszob(threshold)
+    racs = _ures_racs(magassag, szelesseg)
+    kep = image.copy()
+    for n in LEPTEKEK:
+        racs = _falakkal(racs, kep, n, k)
+        if n > 1:
+            racs = _terjesztve(racs, n)
+        kep = _simitva(kep, racs, n)
+        kep = _simitva(kep, racs, n)
+    return kep

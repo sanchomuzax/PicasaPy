@@ -2455,7 +2455,8 @@ kiolvasott magot futtatta: `[1,2,1]` súlyokkal, **fal-térkép nélkül** ment.
 Tehát nem cáfolat — de azt jelenti, hogy a beépítést csak a
 `referencia/blur-meres/` anyagán **mért** javulás igazolhatja, és amíg az
 nincs, a mai közelítés marad (`render/blur.py`, σ = 4,0 a csúszkatartományon
-kívül). Ez a jegy negyedik „Kész, ha" pontja.
+kívül). Ez a jegy negyedik „Kész, ha" pontja. → ✅ **Mérve és beépítve
+(#3493)**, ld. „A `blur` TELJES lánca bitre szimulálva" szakasz végét.
 
 *Bizonyítottsági fok: **megerősített** a fal-bittérképre, a küszöb-képletre,
 a három léptékre (`1, 2, 4`), az öt tagú magra és a fal-ágra (helyi
@@ -2610,6 +2611,13 @@ forrással). A korábbi „0,562 ≈ tétlen, σ ≤ 0,3" olvasat a kis különb
 elsimítása volt. A mai kétállású modellünk (`render/blur.py`,
 `BLUR_IDLE_THRESHOLD_MAX = 1,4`, `BLUR_SIGMA = 4,0`) a kétszínű ábrákra
 illeszkedik, fotón nem → fejlesztői jegy **#3493**.
+
+✅ **BEÉPÍTVE (2026-09-24, #3493):** a `render/blur.py` ezt a láncot
+futtatja; a kétállású modell megszűnt. Mérve a termék kódjával: a
+`merokit-2` három exportja az export kvantálótábláival újratömörítve
+**100%-ban** bitre egyezik (a fenti szimuláció 99,1%-a fölött), a 762-es
+hat export 0,000 / 0,010. Őrök: `tests/render/test_blur_nativ_3493.py`,
+`tests/render/test_blur_kuszob_762.py`.
 
 **6. A 343. kör „következő lépése" (a kezelő hívóhelye, `0x008f9be3`,
 `0x00906e6b`) ezzel TÁRGYTALAN** — a tétlenség magyarázatához nem kell.

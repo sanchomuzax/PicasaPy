@@ -578,12 +578,10 @@ def _apply_linblur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_blur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    """`blur=1[,Küszöbérték]` — küszöbvezérelt simítás (#1142).
+    """`blur=1[,Küszöbérték]` — élmegőrző, küszöbvezérelt simítás (#1142, #3493).
 
-    Az egyetlen csúszka a KÜSZÖB, nem a sugár: a `filterdesc.xml` szerinti
-    `[-0,5; 0,5]` tartományon belül — sőt 1,4-ig (#762) — a mérés tétlen
-    kimenetet ad, 2,0-nél viszont valódi, paraméterfüggetlen elmosás jön
-    (ld. `render/blur.py`).
+    Az egyetlen csúszka a KÜSZÖB, nem a sugár: azt dönti el, hol áll fal,
+    azaz hol NEM simít a kiolvasott natív lánc (ld. `render/blur.py`).
     Az alapérték a `filterdesc.xml`-ből 0,1.
 
     ⚠️ A paraméter szándékosan NINCS a `chain_report` tartományvágó
@@ -806,17 +804,14 @@ def can_render_filter(name: str) -> bool:
     return key in _HANDLERS or key in _FRAME_EFFECTS or key == "crop64"
 
 
-#: #1142 — VAN modellünk, de a felületen mégsem kínálható vezérlőként: a
-#: `filterdesc.xml` szerinti TELJES csúszkatartományán a mérés szerint maga
-#: az eredeti Picasa sem változtat a képen.
+#: #1142 — VAN modellünk, de a felületen mégsem kínálunk hozzá vezérlőt.
 #:
-#: A `blur` küszöbcsúszkája `[-0,5; 0,5]`, és a #685 (−0,5 / 0,1 / 0,5),
-#: a `merokit-2` (0,5) és a #762 (0,8 / 1,1 / 1,4) mérése mind tétlen
-#: kimenetet adott; hatást csak a tartományon messze KÍVÜLI érték hoz
-#: (`blur=1,2.000000;`). Egy ilyen
-#: érték idegen vagy kézzel szerkesztett `.picasa.ini`-ből jöhet — ezért a
-#: LÁNC rendereli —, de gombot adni rá a felületen hazug lenne: a
-#: felhasználó állítgatná a csúszkát, és nem történne semmi.
+#: ⚠️ #3493: a korábbi indok („a csúszkatartományban tétlen") MEGDŐLT — a
+#: kiolvasott natív lánc valódi, zajos tartalmon a csúszka tartományában
+#: is simít; a mért tétlenség a kétszínű 762-es ábra sajátja volt. A
+#: `blur`-nek viszont az eredetiben SINCS felületi belépési pontja (#3485):
+#: a lánc idegen vagy régi `.picasa.ini`-ből kapja, ezért a LÁNC rendereli,
+#: de gombot nem adunk rá — az eredeti sem ad.
 UI_INERT_RANGE_OPS = frozenset({"blur"})
 
 

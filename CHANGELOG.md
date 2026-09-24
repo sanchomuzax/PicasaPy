@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.565] – 2026-09-24
+
+### Javítva
+
+- **Az Elhomályosítás (blur) pontosan úgy simít, mint az eredeti Picasa
+  (#3493)** — eddig egy közelítés futott, amely a csúszka tartományában
+  semmit nem csinált, fölötte pedig egyenletesen mosott el. Most az eredeti
+  program élmegőrző simítása fut: a finom különbségeket elsimítja, az
+  éleket megtartja. Az eredeti Picasa exportjaival újratömörítve a kimenet
+  képpontra egyezik.
+
 ## [0.8.564] – 2026-09-24
 
 ### Javítva
