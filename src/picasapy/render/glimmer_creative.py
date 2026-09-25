@@ -3,7 +3,8 @@
 
 Ld. `glimmer_tone.py` modul-docstringjét az egzaktság-elvről: a lépéssorrend
 és a számértékek a `filterdesc-registry.md` 4. fejezetéből jönnek, az
-alacsony szintű kernelek (Gauss-elmosás, LERP) a szokásos megfelelőik. Az
+alacsony szintű kernelek (LERP) a szokásos megfelelőik; a `BlurImageOperation`
+a natív dobozszűrő (`render/nativ_blur.blur_image_operation`, #3580). Az
 Az `IR` a #566 óta már NEM interpretáció: a `filterdesc.xml` valóban csak a
 három paraméternevet és fix értéket adja, de a `Picasa3.exe` statikus
 visszafejtése (`glimmer::IRImageOperation`) a teljes csővezetéket feltárta —
@@ -30,7 +31,6 @@ from picasapy.render.glimmer_ops import (
     circular_gradient_mask,
     glow_sigma,
     fade_alpha,
-    gaussian_blur_f,
     inner_glow,
     masked_blend,
     resize_image,
@@ -39,6 +39,7 @@ from picasapy.render.glimmer_ops import (
     to_float,
     to_uint8,
 )
+from picasapy.render.nativ_blur import blur_image_operation
 
 # --- Cinemascope -------------------------------------------------------------
 
@@ -78,7 +79,8 @@ def apply_cinemascope(image, letterbox: bool = True):
 
 def apply_orton(image, bloom: float = 25.0, brightness: float = 50.0, fade: float = 0.0):
     """`Orton=1,Bloom,Brightness,Fade` — `overlay`-módú elmosott réteg
-    (`Bloom` `[0..50]`, alap 25; a Gauss-szigma a FELE, ld. lent) → mestergörbe középpont-emelés
+    (`Bloom` `[0..50]`, alap 25; `BlurImageOperation xblur = yblur = Bloom`,
+    `quality = 3`) → mestergörbe középpont-emelés
     `(128, 128+(Brightness−50)·96/50)` (`Brightness` `[0..100]`, alap 50).
     """
     validate_image(image)
@@ -88,7 +90,9 @@ def apply_orton(image, bloom: float = 25.0, brightness: float = 50.0, fade: floa
     # adta (Bloom=25 → σ≈12, Bloom=50 → σ≈25); az eltérés az alap-exporttól
     # 5,06 → 1,99, a bloom-maxon 5,19 → 2,04. Ugyanez a 2-es szorzó jött ki a
     # Vignette és a Museum Matte ragyogás-sugaránál is.
-    blurred = gaussian_blur_f(image_f, max(bloom / 2.0, 1e-3))
+    # #3580: a felezés oka a natív út — a `quality = 3` háromszoros doboz
+    # szórása `xblur/2` —, ezért a sugár maga a `Bloom`.
+    blurred = to_float(blur_image_operation(image, bloom, bloom, quality=3))
     overlaid = apply_blend_mode(image_f, blurred, "overlay", 1.0)
     # #317: a mestergörbe középpontjának kitérése MÉRVE ±96 (nem ±75) a
     # csúszka két végén (`referencia/ortonish/`: Brightness=0 → 26,
@@ -114,8 +118,10 @@ def apply_pencil_sketch(image, radius: float = 2.0, contrast: float = 100.0, fad
     validate_image(image)
     base_a = autofix(apply_bw(image))
     base_f = to_float(base_a)
-    inverted = 255.0 - base_f
-    blurred = gaussian_blur_f(inverted, max(radius, 0.1))
+    # az invertálás 8 bites görbe (`(0,255)→(255,0)`), utána a
+    # `BlurImageOperation xblur = yblur = Radius` natív útja (#3580)
+    inverted = 255 - base_a
+    blurred = to_float(blur_image_operation(inverted, radius, radius, quality=3))
     added = apply_blend_mode(base_f, blurred, "add", 1.0)
     overlaid = apply_blend_mode(added, base_f, "overlay", 1.0)
     fixed_again = autofix(to_uint8(overlaid))
@@ -146,7 +152,7 @@ def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.
         1.4,
         alpha=1.0,
     )
-    blurred = gaussian_blur_f(to_float(glowed), 18.0, 20.0)
+    blurred = to_float(blur_image_operation(glowed, 18.0, 20.0, quality=3))
     masked = to_uint8(masked_blend(to_float(glowed), blurred, mask))
     tinted = bw_tint(masked, (255, 102, 102))
     matrixed = simple_color_matrix(tinted, contrast=25.0)
@@ -169,7 +175,7 @@ def apply_lomo(image, blur: float = 50.0, fade: float = 0.0):
     mask = circular_gradient_mask(height, width, outer_r * 0.5, outer_r * (2.0 - blur / 100.0))
     radius = glow_sigma(35.0 * 0.02 * max(height, width) / 2.0)
     glowed = inner_glow(image, (0, 0, 0), radius, radius, 1.1, alpha=1.0)
-    blurred = gaussian_blur_f(to_float(glowed), 20.0, 20.0)
+    blurred = to_float(blur_image_operation(glowed, 20.0, 20.0, quality=3))
     masked = to_uint8(masked_blend(to_float(glowed), blurred, mask))
     matrixed = simple_color_matrix(masked, brightness=5.0, contrast=35.0, saturation=20.0)
     return to_uint8(alpha_blend(to_float(image), to_float(matrixed), fade_alpha(fade)))
@@ -178,7 +184,7 @@ def apply_lomo(image, blur: float = 50.0, fade: float = 0.0):
 # --- IR ------------------------------------------------------------------
 
 #: Az `IRImageOperation` fix paraméterei a natív visszafejtésből (#566).
-#: A `greenglow = 5` a blur szigmája (x és y egyaránt), a `greenglowalpha`
+#: A `greenglow = 5` a gyerek-blur `xblur`/`yblur`-je, a `greenglowalpha`
 #: a SCREEN-keverés súlya (#3441), a záró monokróm mátrix súlyai pedig
 #: `(−0,5, +2,0, −0,5)` — a KÉK súlya is negatív (ezt hagyta ki a korábbi,
 #: paraméternevekből következtetett modell).
@@ -198,9 +204,9 @@ def apply_ir(image, fade: float = 0.0):
 
     1. **színmátrix**: csak a ZÖLD csatorna (és az alfa) marad meg — a
        glow-réteg `(0, G, 0)`;
-    2. **elmosás**: `x = 5`, `y = 5` (quality 3 — a minőségfok a natív
-       Gauss-közelítés lépésszáma, a mi `cv2.GaussianBlur`-ünkkel nem
-       paraméterezhető és a kimenetet nem is befolyásolja érdemben);
+    2. **elmosás**: a gyerek `BlurImageOperation` (`+0x24`/`+0x2c` =
+       `xblur`/`yblur` = `greenglow` = 5, quality 3) — a natív
+       dobozszűrő, `render/nativ_blur.blur_image_operation` (#3580);
     3. a zöld glow **SCREEN** módban kerül az EREDETI képre, `alpha = 0,25`;
     4. záró monokróm színmátrix:
        `Y = clamp(−0,5·R + 2,0·G − 0,5·B)`, majd `RGB = (Y, Y, Y)`;
@@ -222,8 +228,10 @@ def apply_ir(image, fade: float = 0.0):
     green = image_f[..., 1]
     zeros = np.zeros_like(green)
     green_layer = np.stack([zeros, green, zeros], axis=-1)
-    # 2. elmosás (x = y = 5)
-    glow = gaussian_blur_f(green_layer, _IR_GLOW_BLUR)
+    # 2. elmosás (x = y = 5), a natív `BlurImageOperation` (#3580)
+    glow = to_float(
+        blur_image_operation(to_uint8(green_layer), _IR_GLOW_BLUR, _IR_GLOW_BLUR, quality=3)
+    )
     # 3. SCREEN az EREDETI képre, 0,25 súllyal
     glowed = apply_blend_mode(image_f, glow, "screen", _IR_GLOW_ALPHA)
     # 4. záró monokróm mátrix — a kék súlya is negatív
