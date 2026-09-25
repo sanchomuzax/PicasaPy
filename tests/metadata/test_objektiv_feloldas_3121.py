@@ -9,7 +9,7 @@ kulccsal keres:
 | gyártó | tábla | kulcs |
 |---|---|---|
 | Canon | `0x00c79c98`, 230 × 24 bájt | `LensType` + a gyújtó/rekesz négyes |
-| Nikon | `0x00c7b230`, 416 × 12 bájt | a 8 bájtos `LensID` |
+| Nikon | `0x00c7b228`, 417 × 12 bájt (9.13 A) | a 8 bájtos `LensID` |
 
 Két részlet, amit a mérés kimondott, és amit ez a próbasor betartat:
 
@@ -49,7 +49,7 @@ def tabla() -> dict:
 class TestATabla:
     def test_a_MERT_darabszamok(self, tabla) -> None:
         assert len(tabla["canon"]) == 230
-        assert len(tabla["nikon"]) == 416
+        assert len(tabla["nikon"]) == 417
 
     def test_a_forras_meg_van_nevezve(self, tabla) -> None:
         """A kinyert adat provenienciája a fájlban áll, nem csak a commitban."""
@@ -107,10 +107,12 @@ class TestNikonFeloldas:
     alakot használja, tehát a kettő nem csúszhat el."""
 
     def test_a_MERT_kulcsok(self) -> None:
-        assert nikon_objektiv(bytes.fromhex("00361C2D343C0006")).startswith(
-            "TC-20E")
+        """A 9.13 A helyes párosítása — a 9.2 olvasata a szomszéd sor nevét
+        adta ezekre (`TC-20E…`, `Tokina AT-X 124…`)."""
+        assert nikon_objektiv(bytes.fromhex("00361C2D343C0006")) == \
+            "Tamron SP AF 11-18mm f/4.5-5.6 Di II LD Aspherical (IF) (A13)"
         assert nikon_objektiv(bytes.fromhex("003E80A0383F0002")) == \
-            "Tokina AT-X 124 AF PRO DX (AF 12-24mm f/4)"
+            "Tamron SP AF 200-500mm f/5-6.3 Di LD (IF) (A08)"
 
     def test_a_kulcs_hexben_is_mehet(self) -> None:
         assert nikon_objektiv("003e80a0383f0002") == nikon_objektiv(
@@ -136,7 +138,7 @@ class TestAGyartoValaszt:
     def test_nikon_make(self) -> None:
         assert objektiv_neve(
             "NIKON CORPORATION", lens_id="003E80A0383F0002"
-        ).startswith("Tokina AT-X 124")
+        ).startswith("Tamron SP AF 200-500mm")
 
     def test_ismeretlen_gyarto_None(self) -> None:
         assert objektiv_neve("Fujifilm", lens_type=1) is None

@@ -7,7 +7,7 @@ Picasa két beépített táblából oldotta fel, és **két külön kulccsal**:
 | gyártó | tábla (VA) | rekord | kulcs |
 |---|---|---|---|
 | Canon | `0x00c79c98` | 230 × 24 bájt | `LensType` + gyújtó/rekesz négyes |
-| Nikon | `0x00c7b230` | 416 × 12 bájt | a 8 bájtos `LensID` |
+| Nikon | `0x00c7b228` | 417 × 12 bájt | a 8 bájtos `LensID` |
 
 A mérés — a táblák határai, a rekordkiosztás, a keresés utasításonként és az
 elosztó — a `docs/specs/picasa-metaadat-tulajdonsagok.md` **9. szakaszában**
@@ -30,9 +30,18 @@ A `canon_leiras` a `MakerNote 0x0001` tömbből ugyanazt számolja, amit a
 `0x00a36650` **tartalék-leírását** (`35-105mm f/3.5-4.5`). A tömböt a
 `makernote.py` olvassa ki.
 
-⚠️ A Nikon-ág kulcsa (a `LensData` verziói és titkosítása) még nincs
-kiolvasva — az a #3495; addig a Nikon-fájl „Lens"
-sora változatlan.
+## A Nikon-ág teljes menete (9.13, #3495)
+
+A `nikon_leiras` a `0x00a35d80` menetét követi: a `LensData` (`0x0098`)
+verziója adja a 7 bájt eltolását és azt, hogy kell-e visszafejteni; a kulcs
+ez a 7 bájt + a `LensType` (`0x0083`); a keresés az **első** találatnál áll
+meg (a táblában 5 kulcs ismétlődik); találat nélkül ugyanaz a
+`0x00a36650` tartalék-leírás jön, mint a Canon-ágon.
+
+⛔ A 9.2 a Nikon-rekordot `{név, kulcs}`-nak olvasta; a helyes alak
+`{kulcs, név}` a `0x00c7b228`-tól (9.13 A) — a tábla ennek megfelelően
+újraépítve. A visszafejtés az exiftool Nikon-`Decrypt` eljárása; valódi
+titkosított mintán nincs mérve (9.13 C).
 """
 
 from __future__ import annotations
@@ -71,7 +80,12 @@ def _canon_index() -> dict[int, tuple[dict, ...]]:
 
 @lru_cache(maxsize=1)
 def _nikon_index() -> dict[str, str]:
-    return {r["lens_id"].upper(): r["nev"] for r in _tabla()["nikon"]}
+    """Kulcs → név, az ELSŐ előfordulás nyer (`0x00a36347`: a ciklus az első
+    találatnál kilép) — a sima dict-építés az utolsót tartaná meg."""
+    index: dict[str, str] = {}
+    for rekord in _tabla()["nikon"]:
+        index.setdefault(rekord["lens_id"].upper(), rekord["nev"])
+    return index
 
 
 def _bitminta(ertek: float) -> int:
@@ -238,3 +252,140 @@ def _tartalek_leiras(
         else:
             szoveg += "f/%.2g" % rekesz_min
     return szoveg
+
+
+# -- a Nikon-ág (9.13) ---------------------------------------------------------
+
+#: `LensData` verzió → (a 7 bájt eltolása, titkosított-e) — 9.13 B.
+_NIKON_VERZIOK = {
+    b"0100": (6, False),
+    b"0101": (0x0B, False),
+    b"0201": (0x0B, True),
+    b"0202": (0x0B, True),
+    b"0203": (0x0B, True),
+    b"0204": (0x0C, True),
+}
+_NIKON_P_HOSSZ = 7
+#: `0x00a3627a`–`0x00a36292`: ezen kívül nincs tábla-keresés, csak tartalék.
+_NIKON_LENS_TYPE_MAX = 0xFFFE
+#: A visszafejtés a 4. bájttól indul (`0x00a364f0`); a verzió nyílt.
+_NIKON_TITKOS_KEZDET = 4
+#: Sorozatszám nélkül a kulcs: D50-en 0x22, máshol 0x60 (`0x00a365b0`–`d2`).
+_NIKON_D50_KULCS = 0x22
+_NIKON_ALAP_KULCS = 0x60
+
+#: A helyettesítő táblák (`0x00ce3c38`) — bájtra az exiftool `Nikon.pm`
+#: `@xlat` tömbje (12.76).
+_NIKON_XLAT = (
+    bytes.fromhex(
+        "c1bf6d0d59c5139d83616b4fc77f3d3d5359e3c7e92f95a7951fdf7f2b29c70d"
+        "df07ef71893d133d3b13fb0d89c1651fb30d6b29e3fbefa36b477f9535a7474f"
+        "c7f1599535112961f13db32b0d4389c19d9d8965f1e9dfbf3d7f5397e5e99517"
+        "1d3d8bfbc7e367a707f171a753b52989e52ba71729e94fc5656d6bef0d89492f"
+        "b34353651d49a3138959ef6bef651d0b5913e34f9db329432b071d95595947fb"
+        "e5e961472f357f177fef7f959571d3a30b71a3ad0b3bb5fba3bf4f831dade92f"
+        "7165a3e507353d0db5e9e5473b9def35a3bfb3df53d397534971073561712f43"
+        "2f11df1797fb953b7f6bd325bfadc7c5c5b58bef2fd3076b25499525496d71c7"
+    ),
+    bytes.fromhex(
+        "a7bcc9ad91df85e5d478d517467c294c4d03e925681186b3bdf76f6122a22634"
+        "2abe1e4614689d4418c240f47e5f1bad0b94b667b40be1ea959c66dce75d6c05"
+        "dad5df7aeff6db1f824cc06847a1bdee3950564adddfa5f8c6daca90ca01429d"
+        "8b0c7343750594de24b38034e52cdc9b3fca3345d0db5ff552c321dae222726b"
+        "3ed05ba8878c065d0fdd091993d0b9fc8b0f8460331c9b45f1f0a3943a127733"
+        "4d4478283c9efd655716946bfb59d0c82236dbd2639843a1048786f7a626bbd6"
+        "594dbf6a2eaa2befe678b64ee02fdc7cbe5719327e2ad0b8ba29003c527da849"
+        "3b2deb2549faa3aa39a7c5a7501136fbc6674af5a512657eb0dfaf4eb3617f2f"
+    ),
+)
+
+
+def nikon_visszafejt(lens_data: bytes, sorozat_kulcs: int, zarszamlalo: int) -> bytes:
+    """A `0x00a364f0`: a 4. bájttól XOR-folyam, az exiftool `Decrypt`
+    szerkezetével (a zárszámláló négy bájtja XOR-olva adja a 2. kulcsot)."""
+    szamlalo_kulcs = 0
+    for i in range(4):
+        szamlalo_kulcs ^= (zarszamlalo >> (8 * i)) & 0xFF
+    ci = _NIKON_XLAT[0][sorozat_kulcs & 0xFF]
+    cj = _NIKON_XLAT[1][szamlalo_kulcs]
+    ck = 0x60
+    ki = bytearray(lens_data)
+    for i in range(_NIKON_TITKOS_KEZDET, len(ki)):
+        cj = (cj + ci * ck) & 0xFF
+        ck = (ck + 1) & 0xFF
+        ki[i] ^= cj
+    return bytes(ki)
+
+
+def _nikon_sorozat_kulcs(sorozatszam: str | None, modell: str | None) -> int:
+    """A számjegyes sorozatszám maga a kulcs; különben a modell dönt.
+
+    ⚠️ Az eredeti a gyártói szótár `0x74`/`0x78` eleméből veszi (9.13 C,
+    a címkéjük nincs kiolvasva); itt az exiftool `SerialKey` eljárása megy a
+    `0x001d` `SerialNumber` mezőn.
+    """
+    szoveg = (sorozatszam or "").strip()
+    if szoveg.isdigit():
+        return int(szoveg)
+    modell_szo = (modell or "").strip().split()
+    return _NIKON_D50_KULCS if modell_szo[-1:] == ["D50"] else _NIKON_ALAP_KULCS
+
+
+def nikon_leiras(
+    lens_data: bytes | None,
+    lens_type: int | None,
+    *,
+    sorozatszam: str | None = None,
+    zarszamlalo: int | None = None,
+    modell: str | None = None,
+) -> str | None:
+    """A Nikon-ág (`0x00a35d80`): név a táblából, vagy tartalék-leírás."""
+    talalat = nikon_talalat(
+        lens_data, lens_type,
+        sorozatszam=sorozatszam, zarszamlalo=zarszamlalo, modell=modell)
+    return talalat[0] if talalat else None
+
+
+def nikon_talalat(
+    lens_data: bytes | None,
+    lens_type: int | None,
+    *,
+    sorozatszam: str | None = None,
+    zarszamlalo: int | None = None,
+    modell: str | None = None,
+) -> tuple[str, bool] | None:
+    """Mint a `nikon_leiras`, de megmondja, TÁBLANÉV-e (`True`) vagy a
+    tartalék-leírás (`False`).
+
+    `None`, ha a `LensData` hiányzik, ismeretlen verziójú, vagy nem hosszabb,
+    mint `eltolás + 7` (`0x00a361dd`–`e6`). ⚠️ Titkosított verziónál
+    zárszámláló nélkül is `None` — az eredeti ilyenkor is visszafejtene, de a
+    kulcs fele hiányzik, és a szemét kulcsból jövő név rosszabb a semminél.
+    """
+    if not lens_data:
+        return None
+    verzio = _NIKON_VERZIOK.get(bytes(lens_data[:4]))
+    if verzio is None:
+        return None
+    eltolas, titkos = verzio
+    if len(lens_data) <= eltolas + _NIKON_P_HOSSZ:
+        return None
+    if titkos:
+        if zarszamlalo is None:
+            return None
+        lens_data = nikon_visszafejt(
+            bytes(lens_data), _nikon_sorozat_kulcs(sorozatszam, modell),
+            zarszamlalo)
+    p = bytes(lens_data[eltolas:eltolas + _NIKON_P_HOSSZ])
+    if lens_type is not None and 1 <= lens_type <= _NIKON_LENS_TYPE_MAX:
+        nev = nikon_objektiv(p + bytes([lens_type & 0xFF]))
+        if nev:
+            return nev, True
+    leiras = _tartalek_leiras(
+        5 * _nikon_g(p[2]), 5 * _nikon_g(p[3]), _nikon_g(p[4]), _nikon_g(p[5]))
+    return (leiras, False) if leiras else None
+
+
+def _nikon_g(bajt: int) -> float:
+    """`g(b) = 2^(b/24)` (`0x00cf3ef0` = 24,0; `0x00c7d9d0` = 2,0)."""
+    return 2.0 ** (bajt / 24)
