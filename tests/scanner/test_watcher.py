@@ -23,6 +23,20 @@ def collector():
             assert self.event.wait(timeout), "nem érkezett watcher-jelzés"
             self.event.clear()
 
+        def wait_until_seen(self, folders, timeout=5.0):
+            """Addig vár, amíg MINDEN mappa jelzést kapott — akár több kötegben.
+
+            Terhelt gépen a két írás a debounce-ablak két oldalára eshet, és
+            akkor két köteg jön; az első köteg utáni azonnali állítás
+            ilyenkor hamisan piros (CI, 2026-09-25).
+            """
+            hatarido = time.monotonic() + timeout
+            while not set(folders) <= self.seen:
+                marad = hatarido - time.monotonic()
+                assert marad > 0, f"nem jött jelzés: {set(folders) - self.seen}"
+                self.event.wait(marad)
+                self.event.clear()
+
         @property
         def seen(self):
             return set().union(*self.batches) if self.batches else set()
@@ -113,8 +127,7 @@ class TestLibraryWatcher:
         watcher_factory(tmp_path)
         (tmp_path / "a" / "1.jpg").write_bytes(b"x")
         (tmp_path / "b" / "2.jpg").write_bytes(b"y")
-        collector.wait()
-        assert {str(tmp_path / "a"), str(tmp_path / "b")} <= collector.seen
+        collector.wait_until_seen({str(tmp_path / "a"), str(tmp_path / "b")})
 
     def test_stop_stops_reporting(self, tmp_path, watcher_factory, collector):
         """A `stop()` után nem érkezik több jelzés.
