@@ -158,12 +158,12 @@ A „nálunk" oszlop **mérés** (`e0abfbb3`).
 
 | | eredeti (mért) | nálunk (mért) | teendő |
 |---|---|---|---|
-| menü-belépési pont | „Create a &Gift CD…", a **Létrehozás** menüben (9.) | **halott helyőrző** — `PicasaMenuBar.qml:1417`, `placeholder: true` *(a korábbi `:1329` sorszám téves volt: az 1329. sor a kötegelt „Sharpen")* | bekötni vagy kimondottan elhalasztani |
+| menü-belépési pont | „Create a &Gift CD…", a **Létrehozás** menüben (9.) | ✅ **él (#3503)** — `menuCreateGiftCd`: a kiadás-panelt Ajándék-CD üzemmódban nyitja a könyvtár alján (`GiftCdHost.qml`) | — |
 | önjáró lemez | Win + Mac vetítő, Win + Mac visszaállító, telepítő, letöltő-link | **nincs** | ld. lent |
 | `autorun.inf` | generált, pontos sablon (2.) | **nincs** | Linuxon **tárgytalan** |
-| mappanevek | **honosított** (`Biztonsági mentés` / `Képek`) | **nincs** | honosított nevek |
-| kimeneti beállítások | **16 kulcs** (3.) | **nincs** | a listából válogatva |
-| befejező párbeszéd | „CD kész" + kiadás/megjelenítés | **nincs** | Linux-megfelelő |
+| mappanevek | **honosított** (`Biztonsági mentés` / `Képek`) | ✅ az Ajándék-CD ágon `Képek` (#3503, `AjandekCdMixin`, a fordítóból) | — |
+| kimeneti beállítások | **16 kulcs** (3.) | ✅ az Ajándék-CD ág tartalmi kulcsai (12.4): méret 0/640/800/1600, minőség 85, film bájthűen, nincs HTML és nincs `.picasa.ini`; a nem-JPEG kép JPEG-gé válik (`CDSlideshow` alapértéke) — `burn/ajandek_cd.py` (#3503) | — |
+| befejező párbeszéd | „CD kész" + kiadás/megjelenítés | ✅ „CD kész" + „CD megjelenítése" (a lemezkép helye a fájlkezelőben); a „CD kiadása" **nincs**, mert lemezkép-kimenetnél nincs kiadni való lemez (#3503) | — |
 
 **Mérés módja nálunk**, két lekérdezés-alakkal:
 

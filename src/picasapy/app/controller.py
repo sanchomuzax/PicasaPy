@@ -60,6 +60,7 @@ from .custom_collections_controller import CustomCollectionsMixin
 from .edit_journal_controller import EditJournalMixin
 from .folder_date_controller import FolderDateMixin
 from .effects_controller import EffectsClipboardMixin
+from .ajandek_cd_controller import AjandekCdMixin
 from .export_controller import ExportMixin
 from .save_controller import SaveMixin
 from .geo_controller import GeoMixin
@@ -144,6 +145,8 @@ class AppController(
     PhotoOpsMixin,
     BatchEffectMixin,
     ExportMixin,
+    # #3503: Ajándék CD — a tálca elemeiből lemezkép
+    AjandekCdMixin,
     # #444: Mentés / Visszaállítás / Utolsó mentés visszavonása — a mag
     # (`picasapy.edit.save`) régóta kész volt, csak felület nem volt hozzá
     SaveMixin,

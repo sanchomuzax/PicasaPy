@@ -237,6 +237,8 @@ MenuBar {
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
     signal collageRequested()
     signal movieRequested()
+    //: #3503: Létrehozás ▸ Ajándék CD készítése… — a kiadás-panel
+    signal giftCdRequested()
     signal locateRequested()
     signal deleteRequested()
     // #1608: a `0x9c9a` parancs jelentése NÉZETFÜGGŐ (spec 5., két
@@ -1771,7 +1773,14 @@ MenuBar {
         }
         // hiányzott (#324 audit): OS-integrációs funkciók
         PicasaMenuItem { text: qsTr("Add to &Screensaver..."); placeholder: true }
-        PicasaMenuItem { text: qsTr("Create a &Gift CD..."); placeholder: true }
+        //: #3503: a kiadás-panelt Ajándék-CD üzemmódban nyitja; a tálcáról
+        //: dolgozik, ezért ugyanaz a kapu, mint a kollázsé és a filmé
+        MenuItem {
+            objectName: "menuCreateGiftCd"
+            text: qsTr("Create a &Gift CD...")
+            enabled: bar.createActionsEnabled
+            onTriggered: bar.giftCdRequested()
+        }
         // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
         // filmkészítés a submenu egyetlen tételeként maradt életben
         PicasaMenu {

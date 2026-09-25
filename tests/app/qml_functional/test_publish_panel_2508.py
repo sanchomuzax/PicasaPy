@@ -17,8 +17,10 @@ rétegfejléceiből valók, a **1024 × 212**-es vászonhoz.
 
 ## Amit NEM mér
 
-A LÁTVÁNYT (színek, keretstílus) és a MŰKÖDÉST: a három üzemmód művelete
-külön jegy, és a panel ezért egyelőre nincs bekötve a menübe.
+A LÁTVÁNYT (színek, keretstílus) és a MŰKÖDÉST. Az Ajándék-CD üzemmód
+működő vezérlőit (#3503) a `test_ajandek_cd_panel_3503.py`, a bekötését a
+`test_ajandek_cd_bekotes_3503.py` méri; a mentés és a feltöltés üzemmódja
+nincs bekötve.
 """
 
 from __future__ import annotations
@@ -169,16 +171,22 @@ def test_az_uzemmod_valtja_a_csoportokat(panel) -> None:
     panel.setProperty("uzemmod", "cd")
 
 
-def test_a_panel_MEG_NINCS_bekotve() -> None:
-    """A működés külön jegy; egy tétlen felület rosszabb a mai hiánynál.
+def test_csak_a_KESZ_uzemmod_van_bekotve() -> None:
+    """Egy tétlen felület rosszabb a hiánynál — ezért a panelt CSAK olyan
+    üzemmódban szabad bekötni, amelynek a művelete kész.
 
-    Ez az állítás SZÁNDÉKOSAN tiltó: ha valaki bekötné a panelt anélkül,
-    hogy a művelet mögé kerülne, ez a próba szól.
+    #3503 óta az Ajándék-CD kész: egyetlen gazda (`GiftCdHost.qml`) köti
+    be, `cd` üzemmódban, és a „Lemezre írás" a vezérlő műveletét hívja. A
+    mentés és a feltöltés üzemmódja NINCS bekötve — ha valaki bekötné a
+    panelt más gazdában vagy más üzemmódban, ez a próba szól.
     """
     qml = Path(app_module.__file__).parent / "qml"
-    hivok = [
+    hivok = sorted(
         ut.name for ut in qml.rglob("*.qml")
         if ut.name != "PublishPanel.qml"
         and "PublishPanel" in ut.read_text(encoding="utf-8")
-    ]
-    assert not hivok, f"a panel bekötve, de a művelet nincs kész: {hivok}"
+    )
+    assert hivok == ["GiftCdHost.qml"], f"váratlan gazda: {hivok}"
+    gazda = (qml / "PicasaPy" / "GiftCdHost.qml").read_text(encoding="utf-8")
+    assert 'uzemmod: "cd"' in gazda
+    assert "ajandekCdIrasa" in gazda
