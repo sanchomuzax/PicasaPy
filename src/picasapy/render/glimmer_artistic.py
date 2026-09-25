@@ -58,8 +58,14 @@ def apply_soften(image, impact: float = 50.0, fade: float = 50.0):
     #3580), nem Gauss-közelítés: a háromszoros doboz szórása ≈ `xblur/2`.
     """
     validate_image(image)
-    image_f = to_float(image)
     radius = impact * 20.0 / 50.0
+    if radius <= 0.0:
+        # 0-s sugárnál nincs elmosás, és keverés sincs: a Picasa exportja itt a
+        # bemenettel azonos (684-es golden, `soften__min`: MINDKETTO_TETLEN). Az
+        # egész keverés (#3442) két azonos réteget is `>>8`-cal osztana, ami
+        # minden képpontot eggyel sötétítene.
+        return image.copy()
+    image_f = to_float(image)
     blurred = to_float(blur_image_operation(image, radius, radius, quality=3))
     alpha = max(0.0, min(1.0, (100.0 - fade) * 0.8 / 100.0))
     return to_uint8(alpha_blend(image_f, blurred, alpha))
