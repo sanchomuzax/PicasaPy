@@ -144,7 +144,9 @@ def _szabad_memoria_mib() -> int | None:
 #: ⚠️ Az `RLIMIT_AS` CÍMTERET korlátoz, nem RSS-t, ezért nem lehet a
 #: `MemoryMax` értéke: a Qt/QML a ténylegesen használtnál jóval több címteret
 #: foglal le. MÉRVE (2026-09-25, felhős gép): `test_keptalca_455.py` VmPeak
-#: 5066 MiB mellett VmHWM 1612 MiB. A túllépő itt nem 137-tel hal meg, hanem
+#: 5066 MiB mellett VmHWM 1612 MiB. Teljes kör (749 app-fájl + nem-app rész,
+#: 32 perc): a legnagyobb VmPeak **5893 MiB** — a 8G 39% ráhagyás fölötte.
+#: A túllépő itt nem 137-tel hal meg, hanem
 #: `MemoryError`-ral vagy abort-tal — de EGYEDÜL, a gép él.
 #:
 #: Swap-tiltást ez az ág nem ad; a felhős gépen nincs is swap. Ahol a busz
