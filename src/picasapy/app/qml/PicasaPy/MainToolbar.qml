@@ -774,7 +774,7 @@ Rectangle {
             // (Saját property, mert a csatolt `ToolTip.text` a Qt
             // metaobjektumán át nem olvasható ki teszteléskor.)
             readonly property string tooltipText:
-                qsTr("Kiadások megtekintése a GitHubon")
+                qsTr("View releases on GitHub")
 
             function openReleases() {
                 Qt.openUrlExternally(versionLabel.releasesUrl)

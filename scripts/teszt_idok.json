@@ -738,6 +738,7 @@
  "tests/app/test_undo_labels_465.py": 1.17,
  "tests/app/test_vagolap_beillesztes_1526.py": 1.19,
  "tests/app/test_varolistas_frissites_jelzese_1458.py": 1.89,
+ "tests/app/test_verzio_sugo_forras_3576.py": 0.66,
  "tests/app/test_vezerlo_regisztracio_1066.py": 1.22,
  "tests/app/test_videovagas_lejatszas_1838.py": 1.08,
  "tests/app/test_videovagas_mentes_1838.py": 1.13,

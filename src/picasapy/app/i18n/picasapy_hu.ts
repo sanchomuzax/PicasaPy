@@ -4551,7 +4551,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="259"/>
-        <source>Kiadások megtekintése a GitHubon</source>
+        <source>View releases on GitHub</source>
         <translation>Kiadások megtekintése a GitHubon</translation>
     </message>
     <message>
