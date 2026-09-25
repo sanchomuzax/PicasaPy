@@ -21,7 +21,12 @@ Fusion.MenuItem {
         rightPadding: !control.mirrored ? nyilHely : jeloloHely
         text: control.text
         font: control.font
-        color: control.down || control.highlighted
+        //: #3537: a letiltott tétel SZÜRKE (spec `ui-audit-context-menus.md`
+        //: 5.1) — ugyanaz a token, amivel a `PicasaMenuItem` a helyfoglalót
+        //: szürkíti. A paletta tiltott színcsoportjára nem bízhatjuk: mérve
+        //: a letiltott és az élő tétel ugyanolyan színű volt.
+        color: !control.enabled ? Theme.textGray
+            : control.down || control.highlighted
             ? control.palette.highlightedText : control.palette.text
     }
 }
