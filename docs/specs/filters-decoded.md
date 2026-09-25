@@ -590,6 +590,43 @@ tiszta körünk tehát túl kicsi. Hogy a különbség a sugár egységéből
 eldöntve — kalibrációs jegy: **#3583**. A `Reverse = 1` golden-párja még
 hiányzik (ugyanott).
 
+**⛳ A körmaszk alakja kiolvasva, és a sugár a mért exporton HÁROMSZOROS — a két fókuszos effektben egyformán (2026-09-25, 359. kör, #3583).**
+
+*A maszk alakja — bináris.* A `CircularGradientImageMask` rajzolója
+(`0x00bc2a50`, a vtábla 9. rekesze, `0x00cf08b4`) a kör **befoglaló
+téglalapját** a `0x00bd05f0`-val képzi: `R = max(innerRadius, outerRadius)`,
+a téglalap `aspectRatio · 2R × 2R`, a középpont `xCenter`/`yCenter`
+(`0x00bd0621`–`0x00bd06ce`). Erre **kétmegállós** színátmenetet tesz
+(`0x008f3970`, megállószám `2`): az első megálló helye
+`csonk(255 · innerRadius / R)`, alfája `csonk(255 · innerAlpha)`; a második
+255-nél, `csonk(255 · outerAlpha)` alfával (`0x00bc2b8a`–`0x00bc2d1d`).
+⇒ A belső sugárig az alfa `innerAlpha`, onnan **lineárisan** nő a külső
+sugárig. (A `0x00bcfe10` látszólagos „lépték”-összevetése — `[esp+0x40]`
+≈ 1 — valójában az `outerAlpha ≈ 1` próba, nem skálázás.)
+
+*A mért export (`684-merokeszlet`, 960 × 640, `alap` 20 · 105 · 50 · 0).*
+Az alfa sugaranként, `export = forrás + a · (pixelezett − forrás)`
+legkisebb négyzetekkel (a pixelezett kép terület-átlagos kicsinyítéssel,
+20 px-es blokkal; a blokkméret az exporton mérve 20 px, azaz 960/48):
+
+| sugár (px) | 0–157 | 170 | 190 | 250 | 310 | 400 | 470 | 480+ |
+|---|---|---|---|---|---|---|---|---|
+| alfa | 0,00 | 0,03 | 0,10 | 0,28 | 0,47 | 0,77 | 0,96 | 1,00 |
+
+⇒ **Lineáris rámpa kb. 157-től kb. 475 px-ig** — ez a leíró képletének
+(`52`, `158`) pontosan **háromszorosa** (156, 474). A ×3 **nem a maszké**
+(a `0x00bd05f0` a sugarat változatlanul használja), és **nem a Pixelate
+hiányzó `imageWidth/fullResImageWidth` tagjáé**: a `FocalZoom` — amely ezt a
+tagot alkalmazza, exportnál legfeljebb 1-gyel — ugyanezen a képen, ugyanazzal
+a `Radius = 105`, `Hardness = 50` beállítással **szintén ~157 px-nél** kezd
+eltérni a forrástól. A tényező tehát a `.picasa.ini` sugár-mezőjének
+betöltésében keletkezik, mindkét effektre közösen.
+
+**NINCS MEG:** a betöltő tényezőjének szabálya (fix ×3, vagy a képmérettől
+függ — pl. `W/320` vagy `min(W,H)/2 / 106,7` ugyanezen a képen mind 3). Ezen
+az egyetlen képméreten nem választható szét; a betöltő kiolvasása a
+**#3591** tárgya.
+
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
 
