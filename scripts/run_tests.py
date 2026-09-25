@@ -135,20 +135,100 @@ def _szabad_memoria_mib() -> int | None:
     return None
 
 
+#: #3616: TARTALÉK plafon ott, ahol nincs felhasználói systemd-busz (felhős
+#: konténer: `Failed to connect to bus: No medium found`). A részfutás egy
+#: Python-előtéten át indul, ami a GYEREKBEN `RLIMIT_AS`-t állít, és csak
+#: utána `exec`-eli a valódi parancsot — a szülőre és a párhuzamos szálakra
+#: nem hat (a `preexec_fn` szálak mellett holtpontra vihet, ez nem).
+#:
+#: ⚠️ Az `RLIMIT_AS` CÍMTERET korlátoz, nem RSS-t, ezért nem lehet a
+#: `MemoryMax` értéke: a Qt/QML a ténylegesen használtnál jóval több címteret
+#: foglal le. MÉRVE (2026-09-25, felhős gép): `test_keptalca_455.py` VmPeak
+#: 5066 MiB mellett VmHWM 1612 MiB. A túllépő itt nem 137-tel hal meg, hanem
+#: `MemoryError`-ral vagy abort-tal — de EGYEDÜL, a gép él.
+#:
+#: Swap-tiltást ez az ág nem ad; a felhős gépen nincs is swap. Ahol a busz
+#: elérhető (RPi), ott továbbra is a `systemd-run` scope fut (#2646).
+_CIMTER_PLAFON = os.environ.get("PICASAPY_TESZT_CIMTER", "8G")
+
+#: A tartalék előtét kódja: `argv[1]` a bájtszám, `argv[2]` a `--`, utána a
+#: valódi parancs.
+_CIMTER_ELOTET = (
+    "import os, resource, sys; n = int(sys.argv[1]); "
+    "resource.setrlimit(resource.RLIMIT_AS, (n, n)); "
+    "os.execvp(sys.argv[3], sys.argv[3:])"
+)
+
+#: A `systemd-run --user --scope` szondázásának eredménye — futásonként
+#: egyszer (#3616). `None`: még nem szondáztunk.
+_SCOPE_ELERHETO: bool | None = None
+
+
+def _systemd_scope_elerheto() -> bool:
+    """Igaz, ha a `systemd-run --user --scope` TÉNYLEGESEN működik (#3616).
+
+    A bináris jelenléte kevés: a felhős konténerben ott van, de busz nélkül
+    minden hívás `exit 1` — és ezzel minden részfutás is elbukott.
+    """
+    global _SCOPE_ELERHETO
+    if _SCOPE_ELERHETO is None:
+        if _which("systemd-run") is None:
+            _SCOPE_ELERHETO = False
+        else:
+            try:
+                _SCOPE_ELERHETO = _run(
+                    ["systemd-run", "--user", "--scope", "-q", "--", "true"],
+                    capture_output=True, timeout=15,
+                ).returncode == 0
+            except (OSError, subprocess.SubprocessError):
+                _SCOPE_ELERHETO = False
+    return _SCOPE_ELERHETO
+
+
+def _cimter_bajt() -> int:
+    """A `_CIMTER_PLAFON` bájtban (a systemd `K`/`M`/`G`/`T` jelölésével)."""
+    ertek = _CIMTER_PLAFON.strip().upper()
+    szorzo = {"K": 1024, "M": 1024 ** 2, "G": 1024 ** 3, "T": 1024 ** 4}
+    if ertek[-1:] in szorzo:
+        return int(ertek[:-1]) * szorzo[ertek[-1]]
+    return int(ertek)
+
+
 def _memoria_burok() -> list[str]:
     """A részfutás elé fűzendő plafon-burkoló — üres lista, ha nem elérhető.
 
-    Fail-open, DE nem némán: ha a burkoló hiányzik, a hívó kiírja. A néma
-    hiány pontosan úgy nézne ki, mint a nyugalom — ez a hibaosztály vitte el
-    a gépet 09-07-én.
+    Fail-open, DE nem némán: ha a burkoló hiányzik vagy tartalék, a
+    `_plafon_sor` kimondja. A néma hiány pontosan úgy nézne ki, mint a
+    nyugalom — ez a hibaosztály vitte el a gépet 09-07-én.
     """
     if _NINCS_MEMORIA_KORLAT or not _platform().startswith("linux"):
         return []
-    if _which("systemd-run") is None:
+    if _systemd_scope_elerheto():
+        return ["systemd-run", "--user", "--scope", "-q",
+                "-p", f"MemoryMax={_MEMORIA_PLAFON}",
+                "-p", "MemorySwapMax=0", "--"]
+    if _resource is None:
         return []
-    return ["systemd-run", "--user", "--scope", "-q",
-            "-p", f"MemoryMax={_MEMORIA_PLAFON}",
-            "-p", "MemorySwapMax=0", "--"]
+    return [sys.executable, "-c", _CIMTER_ELOTET, str(_cimter_bajt()), "--"]
+
+
+def _plafon_sor() -> str | None:
+    """Egy sor a futás elejére, ha a plafon NEM a `systemd-run` scope (#3616).
+
+    A helyi gépen (működő scope) nincs új kiírás; a vészkijárat szándékos,
+    azt sem ismételjük.
+    """
+    if _NINCS_MEMORIA_KORLAT or not _platform().startswith("linux"):
+        return None
+    burok = _memoria_burok()
+    if burok[:1] == ["systemd-run"]:
+        return None
+    if burok:
+        return (f"Memóriaplafon: TARTALÉK — nincs felhasználói systemd-busz, a "
+                f"részfutások RLIMIT_AS={_CIMTER_PLAFON} címtér-korláttal "
+                f"futnak (#3616).")
+    return ("Memóriaplafon: NINCS — se systemd-busz, se `resource` modul; a "
+            "részfutások plafon nélkül futnak (#3616).")
 
 # ⚠️ A windowsos konzol alapértelmezett kódlapja (cp1252) NEM ismeri a
 # magyar `ő` és `ű` betűket — egy `print()` rajtuk `UnicodeEncodeError`-rel
@@ -1529,6 +1609,9 @@ def main(argv: list[str] | None = None) -> int:
 
     _bejelentkezes()
     _takarits_regi_maradekot()
+    plafon_sor = _plafon_sor()
+    if plafon_sor:
+        print(plafon_sor, flush=True)
 
     # #1360: a harmadik egyidejű futás VÁRJON, ne induljon el. A gép
     # négymagos; a túlterhelésből valódi hiba nélküli bukások lesznek.

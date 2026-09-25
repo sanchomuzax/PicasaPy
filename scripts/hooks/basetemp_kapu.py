@@ -80,6 +80,8 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import sys
 
 #: Idézett szakaszok — ezeket kivágjuk, mielőtt parancsot keresnénk benne.
@@ -121,6 +123,18 @@ _NEHEZ_IMPORT = re.compile(
 _PLAFON_JELE = "systemd-run"
 _PLAFON_KAPCSOLO = "MemoryMax="
 
+#: #3616: a TARTALÉK plafon busz nélküli gépen (felhős konténer). Csak ott
+#: számít plafonnak, ahol a `systemd-run --user --scope` nem működik — a
+#: helyi gépen a swap-tiltás (#2646) miatt a scope marad a szabály.
+_TARTALEK_JELE = "prlimit"
+#: Csak a `--as=<bájtszám>` alak korlátoz: a `prlimit` opcionális argumentumú
+#: kapcsolói a külön tokenben álló értéket NEM veszik át, a `G` utótagot pedig
+#: nem értik (`--as=8G` mérve: `Argument list too long`, semmi sem indul).
+_TARTALEK_AS = re.compile(r"^--as=[0-9]+(:[0-9]+)?$")
+
+#: A `prlimit` kapcsolóinak külön álló értéke (`-v 8589934592`, `--as 8589934592`).
+_PRLIMIT_ERTEK = re.compile(r"^([0-9]+[KMGTkmgt]?|unlimited)(:([0-9]+[KMGTkmgt]?|unlimited)?)?$")
+
 
 def _szakaszok(cmd: str) -> list[list[str]]:
     """A parancs szakaszai tokenekre bontva, idézetek nélkül."""
@@ -151,6 +165,20 @@ def _fej(tokenek: list[str]) -> list[str]:
             while i < len(tokenek) and tokenek[i] != "--":
                 i += 1
             i += 1  # magát a `--`-t is átlépjük
+            continue
+        if t == _TARTALEK_JELE or t.endswith("/" + _TARTALEK_JELE):
+            # #3616: a `prlimit` után a `--` elhagyható, és a kapcsoló értéke
+            # külön tokenben is állhat — mindkettőt át kell lépni, különben
+            # a mappa- és basetemp-ellenőrzés NÉMÁN kiesne.
+            i += 1
+            while i < len(tokenek):
+                if tokenek[i] == "--":
+                    i += 1
+                    break
+                if tokenek[i].startswith("-") or _PRLIMIT_ERTEK.match(tokenek[i]):
+                    i += 1
+                    continue
+                break
             continue
         break
     return tokenek[i:]
@@ -193,11 +221,51 @@ def _app_cel(tokenek: list[str]) -> bool:
                for t in tokenek)
 
 
+def _systemd_scope_elerheto() -> bool:
+    """Igaz, ha a `systemd-run --user --scope` TÉNYLEGESEN működik (#3616).
+
+    Felhős konténerben a bináris ott van, de busz nélkül `exit 1`. Csak a
+    `prlimit`-alaknál hívjuk, így a kapu többi útját nem lassítja.
+    """
+    if shutil.which(_PLAFON_JELE) is None:
+        return False
+    try:
+        return subprocess.run(
+            [_PLAFON_JELE, "--user", "--scope", "-q", "--", "true"],
+            capture_output=True, timeout=10,
+        ).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def _van_plafon(tokenek: list[str]) -> bool:
-    """Igaz, ha a szakasz memóriaplafon alatt indítja a pytestet."""
-    return (any(t == _PLAFON_JELE or t.endswith("/" + _PLAFON_JELE)
-                for t in tokenek)
-            and any(_PLAFON_KAPCSOLO in t for t in tokenek))
+    """Igaz, ha a szakasz memóriaplafon alatt indítja a pytestet.
+
+    #3616: busz nélküli gépen a `prlimit --as=…` is plafon (kimondott
+    tartalék); ahol a scope működik, ott nem elég.
+    """
+    if (any(t == _PLAFON_JELE or t.endswith("/" + _PLAFON_JELE)
+            for t in tokenek)
+            and any(_PLAFON_KAPCSOLO in t for t in tokenek)):
+        return True
+    tartalek = any(_TARTALEK_AS.match(k) for k in _prlimit_kapcsolok(tokenek))
+    return tartalek and not _systemd_scope_elerheto()
+
+
+def _prlimit_kapcsolok(tokenek: list[str]) -> list[str]:
+    """A `prlimit` SAJÁT kapcsolói — a mögötte álló parancséi nem (#3616).
+
+    Enélkül a pytest `-v`-je `prlimit -v`-nek (címtér-korlátnak) számítana.
+    """
+    for i, t in enumerate(tokenek):
+        if t == _TARTALEK_JELE or t.endswith("/" + _TARTALEK_JELE):
+            kapcsolok = []
+            for k in tokenek[i + 1:]:
+                if k == "--" or not (k.startswith("-") or _PRLIMIT_ERTEK.match(k)):
+                    break
+                kapcsolok.append(k)
+            return kapcsolok
+    return []
 
 
 def _adhoc_szkript(tokenek: list[str]) -> str | None:
@@ -290,6 +358,12 @@ def main() -> int:
         "    systemd-run --user --scope -q \\\n"
         "        -p MemoryMax=2400M -p MemorySwapMax=0 -- \\\n"
         "        python3 -m pytest <egy fájl>.py -q --basetemp=\"$BT\"\n"
+        "\n"
+        "Ha NINCS felhasználói systemd-busz (felhős gép, #3616: a fenti\n"
+        "`Failed to connect to bus`-szal kilép), a kimondott tartalék a\n"
+        "címtér-korlát (8 GiB, BÁJTBAN: a prlimit nem ismeri a `G`-t) —\n"
+        "CSAK ott fogadja el a kapu:\n"
+        "    prlimit --as=8589934592 -- python3 -m pytest <egy fájl>.py -q --basetemp=\"$BT\"\n"
         "\n"
         "Miért az AD-HOC szkript is (#2752): 2026-09-08 15:38-kor egy\n"
         "kutatói kör scratchpad-szkriptje 5,69 GiB-ra hízott, a swap\n"
