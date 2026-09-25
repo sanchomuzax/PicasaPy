@@ -4,6 +4,49 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-25
+
+**Emberek**
+
+- Egy személy albumában a javaslatokat mostantól **egyenként is
+  eldöntheted**: jelöld ki a rácsban azokat a képeket, amelyekről dönteni
+  akarsz, és a jóváhagyó gomb **Jóváhagyás**-ra vált — innentől csak a
+  kijelölt képek javaslataira hat. Ugyanez áll az **Eltávolítás**-ra.
+  Kijelölés nélkül mindkettő az összes javaslatot kezeli, mint eddig. Lásd
+  [Emberek és arcok](features/emberek.md).
+
+**Effektek az eredetihez igazítva**
+
+Ezeknél a kép látványa változik. A képeidhez korábban felvett beállítások
+érintetlenek — csak az kerül másképp a képre, amit a program kirajzol
+belőlük.
+
+- **Poszterizálás**: a program nem előre megszabott színekre vált, hanem
+  **a képen található színek közül** választ néhányat, és azokra cseréli a
+  képpontokat. Ezért ugyanaz a beállítás más képen más színeket ad. A
+  színfoltok széle is lágyabb, ahogy az eredetiben.
+- **Képregény**: a hatás felépítése az eredetit követi, ezért a kontúrok és
+  a rácspontok máshogy ülnek a képen.
+- **Árnyékvetés**: az árnyék átlátszósága egy hajszállal eltért az
+  eredetitől, ez rendbe jött. A képen alig észrevehető.
+- Ha egy régi képed szerkesztésében olyan **simítás** van, amihez a
+  felületen nincs gomb — mert még a régi Picasából maradt ott —, a program
+  mostantól úgy rajzolja ki, ahogy az eredeti.
+
+**Gyorsabb lett**
+
+- Az **Automatikus kontraszt**, a **Színhőmérséklet**, a **Jó napom van** és
+  a **Melegítés** érezhetően hamarabb végez: a kép szinte azonnal követi a
+  csúszkát, illetve a kattintást. A kép ugyanaz marad, csak előbb készül el.
+
+**Apróságok**
+
+- A néző **Vissza a könyvtárhoz** gombja eddig súgó nélkül állt; most
+  elárulja, mit tesz.
+- Három további buboréksúgó — a nagyítón, a mappanézet-beállítások
+  gombján és a „Továbbiak” művelet megszakító gombján — az eredeti Picasa
+  saját szövegét mondja.
+
 ## 2026-09-24
 
 **Rejtett mappák**

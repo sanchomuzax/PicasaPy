@@ -3,7 +3,9 @@
 ## Az egyképes néző
 
 A rácsban egy képre duplán kattintva megnyílik a néző. Kilépni a
-**Visszatérés a könyvtárhoz** gombbal vagy az Esc billentyűvel tudsz.
+**Vissza a könyvtárhoz** gombbal vagy az Esc billentyűvel tudsz. A gomb
+fölé állva a súgója is elmondja, hova visz: *Vissza a rendezett
+indexképekhez*.
 
 A néző alján és szélein a következőket találod:
 

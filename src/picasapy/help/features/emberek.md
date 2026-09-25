@@ -124,6 +124,29 @@ Ha van még el nem döntött javaslat, a fejlécben két gomb jelenik meg:
 Ha nincs mit eldönteni, ugyanezen a helyen a **További javaslatok
 keresése** gomb áll — ugyanaz, mint a Névtelenek nézetben.
 
+### Egyenként is dönthetsz: jelölj ki képeket
+
+Nem kell mindent egyszerre elfogadnod vagy elvetned. **Jelöld ki azokat a
+képeket a rácsban**, amelyekről dönteni akarsz, és a két gomb csak rájuk
+hat:
+
+- A jóváhagyó gomb felirata **Jóváhagyás**-ra rövidül (darabszám nélkül), a
+  súgója pedig **Kijelölt javaslatok jóváhagyása** — így látszik, hogy most
+  nem az összesre hat.
+- Az **Eltávolítás** ugyanígy szűkül; a súgója **Kijelölt javaslatok
+  törlése**.
+
+A váltás magától történik: akkor lép be, ha a kijelölt képeken van még el
+nem döntött javaslat **erre a névre**. Ha a kijelölésben nincs ilyen — mert
+csak már elnevezett képeket jelöltél ki, vagy nem jelöltél ki semmit —, a
+gombok a szokott módon az **összes** javaslatra hatnak, és a felirat is
+visszaáll.
+
+Más emberek javaslatai akkor sem kerülnek bele, ha ugyanazon a kijelölt
+képen vannak: a művelet csak annak a személynek a javaslataira hat, akinek
+az albumát épp nyitva tartod. Ha egy képen több arc is ezt a nevet
+javasolja, a kijelölése mindegyikre szól.
+
 ### Csak a javaslatokat mutasd
 
 A gombok bal oldalán egy kis, benyomható gomb áll: **Csak a javaslatok
