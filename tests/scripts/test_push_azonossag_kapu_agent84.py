@@ -160,3 +160,51 @@ class TestAHookVege:
         """Fail-open: elromlott kapu nem akaszthat meg munkát."""
         monkeypatch.setattr("sys.stdin", io.StringIO("nem json"))
         assert kapu.main() == 0
+
+
+# ---------------------------------------------------------------------------
+# picasapy-agent#153 — felhős munkamenet (CLAUDE_CODE_REMOTE=true) a saját,
+# nem-main ágát feltöltheti (tulajdonosi döntés, 2026-09-25): ott a botkulcs
+# nem érhető el, a feltöltés a Claude GitHub Appen át megy.
+
+FELHOBEN_ATMEHET = [
+    "git push -u origin fix/3616-futtato-felhoben",
+    "git push origin fix/3616-futtato-felhoben",
+    "git push --set-upstream origin claude/valami",
+    "git push origin HEAD:fix/3616-x",
+]
+
+FELHOBEN_IS_TILOS = [
+    "git push",                                  # ág nélkül: nem tudni, hová megy
+    "git push origin main",
+    "git push origin HEAD:main",
+    "git push origin fix/x:main",
+    "git push origin master",
+    "git push --force origin fix/x",
+    "git push -f origin fix/x",
+    "git push --force-with-lease origin fix/x",
+    "git push --all origin",
+    "git push --mirror origin",
+    "git push --tags origin",
+    "git push origin v0.9.0",                    # tag-nak látszó név
+    "git push origin fix/x main",                # több ág, köztük a main
+    "git push --delete origin fix/x",
+]
+
+
+@pytest.mark.parametrize("cmd", FELHOBEN_ATMEHET)
+def test_felhoben_a_sajat_ag_feltoltheto(cmd, monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_REMOTE", "true")
+    assert not kapu.blokkolando(cmd, "/home/user/PicasaPy")
+
+
+@pytest.mark.parametrize("cmd", FELHOBEN_IS_TILOS)
+def test_felhoben_is_tilos(cmd, monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_REMOTE", "true")
+    assert kapu.blokkolando(cmd, "/home/user/PicasaPy")
+
+
+@pytest.mark.parametrize("cmd", FELHOBEN_ATMEHET)
+def test_helyben_valtozatlanul_blokkol(cmd, monkeypatch):
+    monkeypatch.delenv("CLAUDE_CODE_REMOTE", raising=False)
+    assert kapu.blokkolando(cmd, "/home/sancho/Documents/PicasaPy")
