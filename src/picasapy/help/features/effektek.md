@@ -50,9 +50,20 @@ effekt a nyers fotóra.
 | Színinvertálás | negatív kép |
 | Lomo-szerű | erős kontraszt és színek, sötét sarkok |
 | Orton-szerű | lágy, ragyogó, festményszerű hatás |
-| Poszterizálás | kevés színre egyszerűsíti a képet |
+| Poszterizálás | kevés színre egyszerűsíti a képet — a színeket a képből veszi |
 | 60-as évek | korabeli színvilág |
 | Kinemaszkóp | széles, filmes formátum és színek |
+
+### A Poszterizálás a kép saját színeit használja
+
+A **Poszterizálás** nem egy előre megszabott színkészletre vált, hanem
+**megnézi, milyen színek vannak a képen**, kiválaszt közülük néhányat, és
+minden képpontot a hozzá legközelebbire cserél. Ezért ugyanaz a beállítás
+más képen más színeket ad: egy naplemente meleg sávokat kap, egy erdei kép
+zöldeket.
+
+A színfoltok széle nem teljesen éles: a program egy kicsit elmossa a képet,
+mielőtt a színeket kiválasztja, ahogy az eredeti Picasa is tette.
 
 ## Művészi (5. fül)
 
