@@ -99,9 +99,8 @@ Dialog {
 
         Text {
             Layout.fillWidth: true
-            text: qsTr(
-                "Edit the 10 quick tag buttons shown at the bottom of the "
-                + "Tags panel.")
+            //: #3575: a hivatalos útmutató (`quicktagconfig/instructions`)
+            text: qsTr("You can use Quick Tags to apply a tag with a single click.  Type in tags below that you want to have one-click access to.  By default, the top two Quick Tags are used to track recently applied tags.  Uncheck the checkbox below to manually set the top two tags.")
             wrapMode: Text.WordWrap
             font.pixelSize: Theme.fontSize
             color: Theme.textGray
@@ -130,6 +129,15 @@ Dialog {
             objectName: "quickTagsReserveRecentCheck"
             Layout.fillWidth: true
             text: qsTr("Reserve the top two buttons for recently used tags")
+            //: #3575: a hosszú felirat tördelődik, nem vágódik le
+            contentItem: Text {
+                leftPadding: parent.indicator.width + parent.spacing
+                text: parent.text
+                font: parent.font
+                color: parent.palette.windowText
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+            }
             onToggled: controller.setQuickTagsReserveRecent(checked)
         }
 
@@ -137,7 +145,16 @@ Dialog {
             id: autoFillCheck
             objectName: "quickTagsAutoFillCheck"
             Layout.fillWidth: true
-            text: qsTr("Fill the empty boxes above with frequently used tags")
+            text: qsTr("Autofill empty boxes above with commonly used tags")
+            //: #3575: a hosszú felirat tördelődik, nem vágódik le
+            contentItem: Text {
+                leftPadding: parent.indicator.width + parent.spacing
+                text: parent.text
+                font: parent.font
+                color: parent.palette.windowText
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+            }
             onToggled: controller.setQuickTagsAutoFillFrequent(checked)
         }
     }

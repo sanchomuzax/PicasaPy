@@ -67,7 +67,8 @@ Dialog {
     ColumnLayout {
         spacing: 8
         Text {
-            text: qsTr("Collection name:")
+            //: #3575: `IDS_NEW_COLLECTION_PROMPT`
+            text: qsTr("Enter Collection Name:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }

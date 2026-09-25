@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.578] – 2026-09-25
+
+### Javítva
+
+- **Tizenhárom felirat a hivatalos Picasa-szöveget mondja** (#3575): a
+  Képkockamozaik kollázstéma, a mappa-tulajdonságok három mezője, az
+  importálás három célmappa-módja (a mai mappa neve a feliratban látszik),
+  az adatbázis-áthelyezés két címkéje, az új gyűjtemény mezője, a
+  Gyorscímkék útmutatója és kitöltő jelölőnégyzete, valamint a címkemező.
+- A Gyorscímkék ablak hosszú jelölőnégyzet-feliratai tördelődnek, nem
+  vágódnak le; az Importálás ablak rádiófeliratai olvashatók (az ablak
+  megkapja a főablak színkészletét).
+
 ## [0.8.577] – 2026-09-25
 
 ### Javítva

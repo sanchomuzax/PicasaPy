@@ -80,8 +80,10 @@ class TestATizHely:
         assert "QuickTagButton { slot: 10 }" not in _PANEL
 
     def test_a_dialogus_szovege_is_tizet_mond(self):
-        """A felirat nem maradhat »8« — azt a felhasználó olvassa."""
-        assert "Edit the 10 quick tag buttons" in _DIALOG
+        """A felirat nem maradhat »8« — azt a felhasználó olvassa.
+
+        A #3575 óta a hivatalos útmutató áll ott, ami darabszámot nem mond.
+        """
         assert "Edit the 8 quick tag buttons" not in _DIALOG
 
 

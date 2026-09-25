@@ -1083,8 +1083,8 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <translation>Már van „%1” nevű gyűjteményed.</translation>
     </message>
 <message>
-        <source>Collection name:</source>
-        <translation>Gyűjtemény neve:</translation>
+        <source>Enter Collection Name:</source>
+        <translation>Gyűjteménynév megadása:</translation>
     </message>
 </context>
 <context>
@@ -1202,11 +1202,11 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Current database location:</source>
-        <translation>Az adatbázis jelenlegi helye:</translation>
+        <translation>Adatbázis aktuális helye:</translation>
     </message>
     <message>
         <source>New database location:</source>
-        <translation>Az adatbázis új helye:</translation>
+        <translation>Adatbázis új helye:</translation>
     </message>
     <message>
         <source>(none selected)</source>
@@ -2827,7 +2827,7 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63"/>
         <source>Frame Mosaic</source>
-        <translation>Keretes mozaik</translation>
+        <translation>Képkockamozaik</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63"/>
@@ -6256,8 +6256,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TagsPanel.qml" line="73"/>
-        <source>Add a tag...</source>
-        <translation>Új címke...</translation>
+        <source>Type in a tag to add:</source>
+        <translation>Írjon be egy hozzáadandó címkét:</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TagsPanel.qml" line="88"/>
@@ -6289,8 +6289,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml"/>
-        <source>Fill the empty boxes above with frequently used tags</source>
-        <translation>A fenti üres mezők automatikus kitöltése gyakran használt címkékkel</translation>
+        <source>Autofill empty boxes above with commonly used tags</source>
+        <translation>A fenti üres mezők automatikus kitöltése gyakran használatos címkékkel</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml"/>
@@ -6304,8 +6304,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" line="56"/>
-        <source>Edit the 10 quick tag buttons shown at the bottom of the Tags panel.</source>
-        <translation>A Címkék panel alján megjelenő 10 gyorscímke-gomb szerkesztése.</translation>
+        <source>You can use Quick Tags to apply a tag with a single click.  Type in tags below that you want to have one-click access to.  By default, the top two Quick Tags are used to track recently applied tags.  Uncheck the checkbox below to manually set the top two tags.</source>
+        <translation>A Gyorscímkék funkció segítségével egyetlen kattintással alkalmazhat címkéket. Alább írja be azokat a címkéket, amelyekhez egy kattintással hozzá szeretne férni. Alapértelmezés szerint a felső két gyorscímke a legutóbb alkalmazott címkéket követi. A felső két címke kézi beállításához törölje a jelet a jelölőnégyzetből.</translation>
     </message>
 </context>
 <context>
@@ -6914,18 +6914,18 @@ A MŰVELET NEM VONHATÓ VISSZA.
     </message>
     <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376"/>
-        <source>Enter new folder title or choose existing folder to continue</source>
-        <translation>Adj meg egy új mappanevet, vagy válassz meglévő mappát a folytatáshoz</translation>
+        <source>Enter Folder Title</source>
+        <translation>Mappa nevének megadása</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392"/>
-        <source>Import into separate folders for each date taken</source>
-        <translation>Importálás külön mappákba felvétel dátuma szerint</translation>
+        <source>Date Taken (YYYY-MM-DD)</source>
+        <translation>Készítés dátuma (ÉÉÉÉ. HH. NN.)</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399"/>
-        <source>Import into folder with today's date</source>
-        <translation>Importálás a mai dátum nevű mappába</translation>
+        <source>%1 (Today)</source>
+        <translation>%1 (ma)</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408"/>
@@ -7205,15 +7205,15 @@ A MŰVELET NEM VONHATÓ VISSZA.
     </message>
     <message>
         <source>Use music for Slideshow and Movie presentation:</source>
-        <translation>Zene használata a diavetítéshez és a mozgófilmhez:</translation>
+        <translation>Zene használata diavetítéshez és mozgófilmes prezentációhoz:</translation>
     </message>
     <message>
         <source>Place taken (optional):</source>
-        <translation>A felvétel helye (nem kötelező):</translation>
+        <translation>Felvétel készítésének helye (opcionális):</translation>
     </message>
     <message>
         <source>Description (optional):</source>
-        <translation>Leírás (nem kötelező):</translation>
+        <translation>Leírás (opcionális):</translation>
     </message>
 </context>
 <context>

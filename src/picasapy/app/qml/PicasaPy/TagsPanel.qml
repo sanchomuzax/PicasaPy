@@ -73,7 +73,8 @@ Rectangle {
                 Layout.fillWidth: true
                 enabled: panel.cimkezheto
                 font.pixelSize: Theme.fontSize
-                placeholderText: qsTr("Add a tag...")
+                //: #3575: `tagpanel/add_tag_label` — az eredetiben a mező fölötti felirat
+                placeholderText: qsTr("Type in a tag to add:")
                 onAccepted: panel.submit()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
