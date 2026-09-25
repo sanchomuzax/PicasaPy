@@ -95,7 +95,8 @@ MenuItem {
         font: control.font
         // a nyugdíjazott tétel ugyanúgy halvány, mint a helyfoglaló — a
         // különbség csak a sor végi pont (ld. lent)
-        color: control.placeholder || control.retired
+        //: #3537: a hívó által letiltott tétel is szürke
+        color: control.placeholder || control.retired || !control.enabled
             ? Theme.textGray
             : (control.sajat ? Theme.linkBlue : Theme.ink)
         // hely a jobb szélen a placeholder-pontnak, hogy ne fedjék egymást,

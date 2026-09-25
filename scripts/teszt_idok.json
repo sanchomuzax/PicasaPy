@@ -202,6 +202,7 @@
  "tests/app/qml_functional/test_legordulo_rajza_894.py": 1.07,
  "tests/app/qml_functional/test_legordulo_rajzolt_894.py": 1.51,
  "tests/app/qml_functional/test_lenyomasra_sul_885.py": 18.94,
+ "tests/app/qml_functional/test_letiltott_menu_szurke_3537.py": 10.46,
  "tests/app/qml_functional/test_library_frame_hidden_1026.py": 6.17,
  "tests/app/qml_functional/test_mappa_borito_2049.py": 8.66,
  "tests/app/qml_functional/test_mappa_borito_ikon_2215.py": 6.82,

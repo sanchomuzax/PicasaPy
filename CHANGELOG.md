@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.574] – 2026-09-25
+
+### Javítva
+
+- **A letiltott menüpontok szürkék (#3537)** — eddig a menüben nem
+  látszott, melyik parancs nem érhető el: a letiltott tétel ugyanolyan
+  sötét volt, mint a működő. Most az eredeti Picasához hasonlóan
+  halvány szürke, a gyorsbillentyűjével együtt.
+
 ## [0.8.573] – 2026-09-25
 
 ### Javítva
