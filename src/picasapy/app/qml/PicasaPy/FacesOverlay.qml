@@ -298,9 +298,8 @@ Item {
         anchors.top: parent.top
         anchors.margins: 8
         wrapMode: Text.WordWrap
-        text: qsTr("Drag a rectangle over the face you want to add, then "
-                   + "adjust its sides. Click \"Add a name\" under the "
-                   + "rectangle and type the person's name.")
+        //: #3574: a hivatalos szöveg (`manual_add::instructions`)
+        text: qsTr("Instructions:\n\n1) Manipulate the rectangle to fit the face of the person you want to add.\n\nYou can drag the rectangle to position it, and move its sides to refine the shape.\n\n2) Click on \"Add a name\" under the rectangle and type in the person's name.\n\n(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)")
         font.pixelSize: Theme.fontSize
         color: "#ffffff"
         style: Text.Outline

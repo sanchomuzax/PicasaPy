@@ -89,6 +89,10 @@ ColumnLayout {
     //: megfogalmazásunk (az eredeti angol alakja nincs kimérve).
     Text {
         objectName: "redeyeFrameHintLabel"
+        //: #3574: a hivatalos sikerüzenet (`RedEye::AutoFixedMessage`) maga
+        //: is tartalmazza ezt a mondatot — amíg az látszik, ez a sor nem
+        //: ismétli meg
+        visible: !(panel.redeyeFoundCount > 0)
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
         text: qsTr("Note: click inside the box to undo the change.")
@@ -103,7 +107,8 @@ ColumnLayout {
         wrapMode: Text.WordWrap
         visible: panel.redeyeFoundCount >= 0
         text: panel.redeyeFoundCount > 0
-              ? qsTr("Picasa has found and corrected red eye(s).")
+              //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
+              ? qsTr("Picasa has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that Picasa may have missed.")
               : qsTr("No red eye was found automatically.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray

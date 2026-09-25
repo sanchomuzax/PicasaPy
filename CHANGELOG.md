@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.577] – 2026-09-25
+
+### Javítva
+
+- **Tizenegy felirat az eredeti Picasa szövegét mondja (#3574)** — a
+  szerkesztőben a vágás „Kiegyenesítés”-figyelmeztetése, a vörösszem
+  sikerüzenete, a Színátmenet „Lágy perem” és az Árnyalás „Színek
+  megőrzése” csúszkája, a szövegigazítás három súgója („Szöveg balra
+  igazítása” stb.); az arcoknál a kézi felvétel útmutatója és a „Az összes
+  kijelölt arc mellőzése” súgó; a diavetítésben a „Megjelenítési idő”, és
+  az idő kiírva („3 másodperc”).
+
 ## [0.8.576] – 2026-09-25
 
 ### Javítva

@@ -466,8 +466,24 @@
         <translation>Név hozzáadása</translation>
     </message>
     <message>
-        <source>Drag a rectangle over the face you want to add, then adjust its sides. Click "Add a name" under the rectangle and type the person&apos;s name.</source>
-        <translation>Húzzon négyszöget a hozzáadni kívánt arc fölé, majd az oldalaival pontosítsa az alakját. Kattintson a négyszög alatti „Név hozzáadása" feliratra, és írja be a személy nevét.</translation>
+        <source>Instructions:
+
+1) Manipulate the rectangle to fit the face of the person you want to add.
+
+You can drag the rectangle to position it, and move its sides to refine the shape.
+
+2) Click on &quot;Add a name&quot; under the rectangle and type in the person's name.
+
+(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)</source>
+        <translation>Utasítások:
+
+1) A négyszöget alakítsa úgy, hogy illeszkedjen a hozzáadni kívánt személy arcához.
+
+Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásával pedig pontosíthatja az alakját.
+
+2) Kattintson a négyszög alatt látható &quot;Név hozzáadása&quot; feliratra, és írja be a személy nevét.
+
+(Ne feledje, hogy a befejezéshez le kell nyomnia az Enter billentyűt, vagy az egyik automatikusan kiegészített névre kell kattintania.)</translation>
     </message>
     <message>
         <source>Name</source>
@@ -3756,8 +3772,8 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Mellőzés</translation>
     </message>
     <message>
-        <source>Move the selected people to the ignored people album</source>
-        <translation>A kijelölt személyek áthelyezése a Mellőzött emberek albumba</translation>
+        <source>Ignore all of the selected faces</source>
+        <translation>Az összes kijelölt arc mellőzése</translation>
     </message>
     <message>
         <source>Ignore People</source>
@@ -6181,11 +6197,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <name>SlideshowView</name>
     <message>
         <source>Display Time</source>
-        <translation>Diaidő</translation>
+        <translation>Megjelenítési idő</translation>
     </message>
     <message>
-        <source> s</source>
-        <translation> mp</translation>
+        <source>seconds</source>
+        <translation>másodperc</translation>
     </message>
     <message>
         <source>Cut</source>
@@ -7394,8 +7410,10 @@ A MŰVELET NEM VONHATÓ VISSZA.
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
-        <source>This image's orientation has been modified by the Straighten tool and might not crop accurately… try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
-        <translation>A kép tájolását a Kiegyenesítés eszköz módosította, ezért a vágás pontatlan lehet… próbálja meg visszavonni a Kiegyenesítés javítást, végezze el a vágást, majd szükség esetén alkalmazza újra a Kiegyenesítést.</translation>
+        <source>This image's orientation has been modified by the Straighten tool and might not crop accurately.
+If you encounter difficulty cropping this image, try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
+        <translation>A kép irányát megváltoztatta a „Kiegyenesítés” eszközzel, ami pontatlanságokat okozhat a vágás alkalmazásakor.
+Ha nem sikerül a kép vágása, vonja vissza a „Kiegyenesítés” eszközzel végzett javítást, majd ismételje meg a vágást és - ha szükséges - a kiegyenesítést.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
@@ -7620,8 +7638,16 @@ A MŰVELET NEM VONHATÓ VISSZA.
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
-        <source>Picasa has found and corrected red eye(s).</source>
-        <translation>A vörösszem-hatás megtalálva és javítva.</translation>
+        <source>Picasa has found and corrected red eye(s).
+
+Note: You can click on a box to delete a change.
+
+You can also draw a square around any red eye that Picasa may have missed.</source>
+        <translation>A Picasa vörösszem-effektusokat talált a képen, és kijavította őket.
+
+Megjegyzés: a keretbe kattintva visszavonhatja a változást.
+
+A Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan kijelölheti és kijavíthatja.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
@@ -7800,16 +7826,16 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <translation>Aláhúzott</translation>
     </message>
     <message>
-        <source>Align left</source>
-        <translation>Balra igazítás</translation>
+        <source>Left justify text</source>
+        <translation>Szöveg balra igazítása</translation>
     </message>
     <message>
-        <source>Align center</source>
-        <translation>Középre igazítás</translation>
+        <source>Center justify text</source>
+        <translation>Szöveg középre igazítása</translation>
     </message>
     <message>
-        <source>Align right</source>
-        <translation>Jobbra igazítás</translation>
+        <source>Right justify text</source>
+        <translation>Szöveg jobbra igazítása</translation>
     </message>
     <message>
         <source>B</source>
@@ -8490,13 +8516,13 @@ A MŰVELET NEM VONHATÓ VISSZA.
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
-        <source>Preserve Color</source>
-        <translation>Szín megőrzése</translation>
+        <source>Color Preservation</source>
+        <translation>Színek megőrzése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
-        <source>Gradient</source>
-        <translation>Átmenet</translation>
+        <source>Feather</source>
+        <translation>Lágy perem</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>

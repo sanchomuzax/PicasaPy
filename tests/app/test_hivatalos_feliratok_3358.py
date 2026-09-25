@@ -34,6 +34,25 @@ HIVATALOS = {
     "Sync to Web": ("Szinkronizálás az internettel", "SyncLabel::Off"),
     "Choose database location...": (
         "Adatbázis helyének kiválasztása…", "eMenuTools::ID_MOVE_DATABASE"),
+    # #3574: a szerkesztő, az arcok és a diavetítés feliratai
+    "This image's orientation has been modified by the Straighten tool and might not crop accurately.\nIf you encounter difficulty cropping this image, try undoing the Straighten fix, then recrop, and Straighten again if necessary.": (
+        'A kép irányát megváltoztatta a „Kiegyenesítés” eszközzel, ami pontatlanságokat okozhat a vágás alkalmazásakor.\nHa nem sikerül a kép vágása, vonja vissza a „Kiegyenesítés” eszközzel végzett javítást, majd ismételje meg a vágást és - ha szükséges - a kiegyenesítést.',
+        "IDS_WARN_CROP_ACCURACY"),
+    'Picasa has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that Picasa may have missed.': (
+        'A Picasa vörösszem-effektusokat talált a képen, és kijavította őket.\n\nMegjegyzés: a keretbe kattintva visszavonhatja a változást.\n\nA Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan kijelölheti és kijavíthatja.',
+        "RedEye::AutoFixedMessage"),
+    'Instructions:\n\n1) Manipulate the rectangle to fit the face of the person you want to add.\n\nYou can drag the rectangle to position it, and move its sides to refine the shape.\n\n2) Click on "Add a name" under the rectangle and type in the person\'s name.\n\n(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)': (
+        'Utasítások:\n\n1) A négyszöget alakítsa úgy, hogy illeszkedjen a hozzáadni kívánt személy arcához.\n\nHúzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásával pedig pontosíthatja az alakját.\n\n2) Kattintson a négyszög alatt látható "Név hozzáadása" feliratra, és írja be a személy nevét.\n\n(Ne feledje, hogy a befejezéshez le kell nyomnia az Enter billentyűt, vagy az egyik automatikusan kiegészített névre kell kattintania.)',
+        "manual_add::instructions"),
+    "Feather": ("Lágy perem", "filter_dir_tint_label1"),
+    "Color Preservation": ("Színek megőrzése", "filter_tint_label1"),
+    "Left justify text": ("Szöveg balra igazítása", "edittextpanel/leftalign"),
+    "Center justify text": ("Szöveg középre igazítása", "edittextpanel/centeralign"),
+    "Right justify text": ("Szöveg jobbra igazítása", "edittextpanel/rightalign"),
+    "Ignore all of the selected faces": (
+        "Az összes kijelölt arc mellőzése", "unknownfaceheaderpanel/ignore"),
+    "Display Time": ("Megjelenítési idő", "oneup/tpslabel"),
+    "seconds": ("másodperc", "OneUpUI::seconds"),
 }
 
 #: fájl → a benne várt hivatalos feliratok
@@ -44,6 +63,11 @@ ELOFORDULASOK = {
     "PicasaPy/TagContextMenu.qml": ["Add this tag to entire selection"],
     "PicasaPy/LightboxHeader.qml": ["Sync to Web"],
     "PicasaPy/MoveDatabaseDialog.qml": ["Choose database location..."],
+    "PicasaPy/EditorParamPanel.qml": ["Feather", "Color Preservation"],
+    "PicasaPy/EditorTextPanel.qml": [
+        "Left justify text", "Center justify text", "Right justify text"],
+    "PicasaPy/UnnamedFacesView.qml": ["Ignore all of the selected faces"],
+    "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
 }
 
 #: amit a rossz alakból SEHOL nem szabad `qsTr()`-ben látni
@@ -53,6 +77,12 @@ ELAVULT = (
     "Add Tag to Entire Selection",
     "Sync to the web",
     "Choose new database location...",
+    # #3574
+    "Align left",
+    "Align center",
+    "Align right",
+    "Preserve Color",
+    " s",
 )
 
 
