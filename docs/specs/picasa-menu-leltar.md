@@ -68,7 +68,7 @@ RÉGI, 39 tételes mérésből származik; a tételek besorolása (hatókörön 
 
 | parancs | felirat | miért |
 |---|---|---|
-| `ID_GETMYSTUFF` | Importálás a Picasa Webalbumokból… | a szolgáltatás megszűnt |
+| `ID_GETMYSTUFF` | Importálás a Picasa Webalbumokból… *(a 3.9.141 képernyőjén angolul: „Import from Google Photos...”, ld. 10.)* | a szolgáltatás megszűnt |
 | `ID_DELETE_EMPTY_ALBUMS` | Üres online albumok törlése… | ua. |
 | `ID_TOOLS_COLLAB` | Feltöltés közös szerkesztésű webalbumba | ua. |
 | `ID_TOOLS_DOWNLOAD_FACES` | Névcímkék letöltése a Picasa Webalbumokból | ua. |
@@ -1024,3 +1024,63 @@ parancstérkép és a menüépítő), és **megerősített negatív** a négyre
 *Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — a négy maradék: a
 binárisban nincs rájuk hivatkozás) · 0 nyitott · 0 blokkolt · 0 hatókörön
 kívül · 0 „csak nyitva".*
+
+## 10. ÉLESBEN MÉRVE az eredetin — sorrend, láthatóság, felirat (2026-09-25, #3610)
+
+*Forrás: az eredeti angol Picasa 3.9.141, Wine alatt, 1280×1024, feladatra
+futtatva (Colab-felmérés #4, #7, #17–#28; a mérés eszközei és a képek a privát
+`picasapy-agent` #142, #146 alatt). Ide csak a mért tény kerül.*
+
+### 10.1 A sorrend a rekordtömb sorrendje
+
+A `CMenuBar` építője (7. szakasz) minden menüt egy **20 bájtos rekordokból álló
+tömbbe** ír. A tömbön belüli sorrend **a megjelenés sorrendje**, a kitöltetlen
+rekord pedig **az elválasztó**. A lenyitott menük képéből kimért sorok (tétel,
+illetve 9 px-es elválasztóblokk, 16 px-es tételmagasság) **mind a 8 főmenüben**
+egyeznek a tömbök sorrendjével, az elválasztókkal együtt. A főmenük tömbjeinek
+kezdőcíme:
+
+| menü | tömb | rekord | ebből látszik |
+|---|---|---:|---:|
+| File | `0xd6d960` | 27 | 19 tétel + 8 elválasztó |
+| Edit | `0xd6db80` | 14 | 11 + 3 |
+| View | `0xd6dfa0` | 23 | 18 + 5 |
+| Folder | `0xd6e1c0` | 17 | 12 + 5 |
+| Picture | `0xd6e498` | 11 | 7 + 4 |
+| Create | `0xd6e5b0` | 10 | 8 + 2 |
+| Tools | `0xd6e850` | 18 | 13 + 4 (+1 rejtett) |
+| Help | `0xd6e9b8` | 13 | 10 + 3 |
+
+⇒ A `picasa-menu-parancsok.csv` kulcsrendű listája helyett **ez** a sorrend a
+mérvadó a menüsor felépítéséhez.
+
+### 10.2 Feltételes tétel: `ID_TOOLS_DOWNLOAD_FACES`
+
+A „Download Name Tags from Picasa Web Albums” rekordja a Tools-tömbben ott
+van (a Batch Upload és az Upload almenü között), de **a képernyőn nem
+jelenik meg**. A Tools menü a képen 13 tételt mutat, a tömb 14-et. Feltételes
+tétel. Nálunk a szolgáltatás megszűnése miatt hatókörön kívül van (3.1).
+
+### 10.3 Az `ID_GETMYSTUFF` felirata a képernyőn MÁS, mint a sztringtáblában
+
+A kulcs (`eMenuFile::ID_GETMYSTUFF`, `0x9dfa`) angol sztringtábla-szövege
+„Import from Picasa Web Albums...”. **A képernyőn viszont „Import from Google
+Photos...” áll.** A 3.9.141 a feliratot kicserélte, a kulcsot megtartotta.
+⚠️ A sztringtábla tehát nem minden tételnél a képernyő felirata. Ahol a kettő
+eltér, **a kép a mérvadó**.
+
+### 10.4 Élesben megnyitva
+
+Üres könyvtárral (első indítás után) a 98 látható tételből **40 választható**:
+a törlő, áthelyező és eltávolító tételeket, valamint az almenü-fejeket nem
+nyitottuk meg. Megnyitva **17 ad látható hatást**:
+
+- új ablakot nyit: Album Properties, Folder Manager, Open, Log in to Google,
+  People, Confirm, Configure Buttons, Options, About Picasa;
+- a nézetet váltja: Tags, People.
+
+A „View and Edit” és az „Edit View” kép nélkül egy **Info** ablakot nyit:
+„You must select an image to edit.” A többi tétel üres könyvtárral nem ad
+látható hatást (nincs kijelölés, nincs mit vetíteni), a Súgó webes tételei
+pedig böngészőt nyitnának.
+
