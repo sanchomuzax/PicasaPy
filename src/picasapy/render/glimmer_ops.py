@@ -79,9 +79,8 @@ _CONTRAST_EPS = 1e-6
 _TINT_GAMUT_PASSES = 4
 _TINT_EPSILON = np.float32(1e-6)
 
-#: Blend-módok neve → függvény (`base`, `top` float32 [0,255] tömbök,
-#: azonos alakúak) → keverendő rétegérték (a `BlendAlpha`/`strength`
-#: szerinti súlyozást a hívó végzi, ld. `apply_blend_mode`).
+#: Keverési mód neve (`_BLEND_FUNCS` kulcsa); az `apply_blend_mode` a natív
+#: sorszámot (`BLEND_MODE_BY_INDEX`) is elfogadja.
 BlendMode = str
 
 
@@ -114,9 +113,41 @@ def fade_alpha(fade: float) -> float:
     return float(np.clip(1.0 - fade / 100.0, 0.0, 1.0))
 
 
+def _float_bitek(value: float) -> int:
+    return int(np.array(value, dtype=np.float32).view(np.int32))
+
+
+def _kozel(alpha: float, cel: float) -> bool:
+    """A natív „≈": a float32 BITMINTÁJÁN `< 8` eltérés (`0x00bd0700`, #3442)."""
+    return abs(_float_bitek(alpha) - _float_bitek(cel)) < 8
+
+
+def _bajt(values: np.ndarray) -> np.ndarray:
+    """A keverés bemenete bájtként (int32-ben, hogy a szorzatok ne csorduljanak)
+    — a natív lánc minden utasítás után 8 bites képet ad át."""
+    return np.clip(np.rint(values), 0, 255).astype(np.int32)
+
+
 def alpha_blend(base: np.ndarray, top: np.ndarray, alpha: float) -> np.ndarray:
-    """Lineáris keverés: `base + alpha·(top − base)`, float32 tömbökön."""
-    return base + np.float32(alpha) * (top - base)
+    """Átlátszóság-keverés a natív EGÉSZ képlettel (`0x009dc4b0`, #3442).
+
+    `α` `[0, 1]`-re vágva; `α ≈ 1` → `top` változatlanul, `α ≈ 0` → `base`
+    (a végrehajtó `0x00bd0700` ekkor a keverőt meg sem hívja). Különben
+    `w = trunc(256α)`, és ha `w > 0`, `w − 1`; `ki = (b·(255−w) + t·w) >> 8`
+    — a súlyok összege 255, az osztó 256, tehát két 255-ös bemenetből 254.
+    A bemenetek float32 `[0,255]` tömbök (bájtra kerekítve), a kimenet
+    float32.
+    """
+    alpha = float(np.clip(alpha, 0.0, 1.0))
+    if _kozel(alpha, 1.0):
+        return top.astype(np.float32)
+    if _kozel(alpha, 0.0):
+        return base.astype(np.float32)
+    w = int(np.float32(alpha) * np.float32(256.0))
+    if w > 0:
+        w -= 1
+    kevert = (_bajt(base) * (255 - w) + _bajt(top) * w) >> 8
+    return kevert.astype(np.float32)
 
 
 # --- Görbék -----------------------------------------------------------------
@@ -155,56 +186,72 @@ def invert_curve(image: np.ndarray) -> np.ndarray:
 
 
 # --- Keverési módok -----------------------------------------------------
+#
+# Mind a tizenegy kernel a natív EGÉSZ képlete (spec „A `BlendInstruction`"
+# C, #3442): `b`, `t` int32 bájtok (0–255), a `÷255` CSONKOLÓ.
 
 
-def _blend_multiply(base: np.ndarray, top: np.ndarray) -> np.ndarray:
-    return base * top / np.float32(255.0)
+def _blend_multiply(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return b * t // 255
 
 
-def _blend_screen(base: np.ndarray, top: np.ndarray) -> np.ndarray:
-    return np.float32(255.0) - (np.float32(255.0) - base) * (np.float32(255.0) - top) / np.float32(
-        255.0
-    )
+def _blend_screen(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return (65025 - (255 - b) * (255 - t)) // 255
 
 
-def _blend_overlay(base: np.ndarray, top: np.ndarray) -> np.ndarray:
-    low = _blend_multiply(base, top) * np.float32(2.0)
-    high = np.float32(255.0) - np.float32(2.0) * (np.float32(255.0) - base) * (
-        np.float32(255.0) - top
-    ) / np.float32(255.0)
-    return np.where(base < np.float32(128.0), low, high)
+def _overlay_alap(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    # `0x008f53f0`: `x ≤ 127` → `⌊2xy/255⌋`; `x = y = 255` → 255 (külön ág);
+    # különben `⌊(65024 − 2(255−x)(255−y))/255⌋`
+    also = 2 * x * y // 255
+    felso = (65024 - 2 * (255 - x) * (255 - y)) // 255
+    felso = np.where((x == 255) & (y == 255), 255, felso)
+    return np.where(x <= 127, also, felso)
 
 
-def _blend_darken(base: np.ndarray, top: np.ndarray) -> np.ndarray:
-    return np.minimum(base, top)
+def _blend_overlay(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return _overlay_alap(b, t)
 
 
-def _blend_lighten(base: np.ndarray, top: np.ndarray) -> np.ndarray:
-    return np.maximum(base, top)
+def _blend_darken(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return np.minimum(b, t)
 
 
-def _blend_add(base: np.ndarray, top: np.ndarray) -> np.ndarray:
-    return np.clip(base + top, 0.0, 255.0)
+def _blend_lighten(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return np.maximum(b, t)
 
 
-def _blend_difference(base: np.ndarray, top: np.ndarray) -> np.ndarray:
+def _blend_add(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return np.minimum(b + t, 255)
+
+
+def _blend_difference(b: np.ndarray, t: np.ndarray) -> np.ndarray:
     # `|b − t|` — két `psubusb` + `por` (`0x008f42d0`, #3443)
-    return np.abs(base - top)
+    return np.abs(b - t)
 
 
-def _blend_subtract(base: np.ndarray, top: np.ndarray) -> np.ndarray:
+def _blend_subtract(b: np.ndarray, t: np.ndarray) -> np.ndarray:
     # `max(b − t, 0)` — az ALSÓBÓL vonja ki a felsőt (`psubusb`, `0x008f46c0`)
-    return np.maximum(base - top, np.float32(0.0))
+    return np.maximum(b - t, 0)
 
 
-def _blend_hardlight(base: np.ndarray, top: np.ndarray) -> np.ndarray:
+def _blend_hardlight(b: np.ndarray, t: np.ndarray) -> np.ndarray:
     # az Overlay CSERÉLT argumentummal (a tábla-építő `0x008f6568`, #3443)
-    return _blend_overlay(top, base)
+    return _overlay_alap(t, b)
 
 
-def _blend_normal(base: np.ndarray, top: np.ndarray) -> np.ndarray:
-    del base
-    return top
+def _blend_softlight(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    # `0x008f6620`: a döntő operandus a FELSŐ, és az alsó legalsó bitje
+    # eldobódik (`and al, 0xfe`, `0x008f6642`)
+    bv = b & 0xFE
+    also = t * (bv + 128) // 255
+    felso = (65025 - (382 - bv) * (255 - t)) // 255
+    return np.where(t < 128, also, felso)
+
+
+def _blend_normal(b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    # a felső elem saját alfájával kompozitál — RGB-ben az alfa 255, tehát `t`
+    del b
+    return t
 
 
 _BLEND_FUNCS = {
@@ -218,11 +265,11 @@ _BLEND_FUNCS = {
     "difference": _blend_difference,
     "subtract": _blend_subtract,
     "hardlight": _blend_hardlight,
+    "softlight": _blend_softlight,
 }
 
 #: A natív módtábla (`0x00cf0e98`) sorszám → mód. A csúszkák és a
-#: `BlendMode="{…}"` kifejezések EZT a sorszámot adják át (#3443). A 10-es
-#: `Softlight` még nincs meg (#3442), ezért nem szerepel.
+#: `BlendMode="{…}"` kifejezések EZT a sorszámot adják át (#3443, #3442).
 BLEND_MODE_BY_INDEX: dict[int, str] = {
     0: "add",
     1: "darken",
@@ -234,25 +281,55 @@ BLEND_MODE_BY_INDEX: dict[int, str] = {
     7: "screen",
     8: "subtract",
     9: "normal",
+    10: "softlight",
 }
 
 
 def apply_blend_mode(
-    base: np.ndarray, top: np.ndarray, mode: BlendMode, opacity: float = 1.0
+    base: np.ndarray, top: np.ndarray, mode: BlendMode | int, opacity: float = 1.0
 ) -> np.ndarray:
-    """`base`/`top` float32 [0,255] rétegek keveréke a `mode` móddal,
-    `opacity` (`BlendAlpha`) súllyal az eredmény felé — mindkettő azonos
-    alakú kell legyen.
+    """`base` (alsó) és `top` (felső) float32 `[0,255]` rétegek keveréke a
+    `mode` móddal — névvel vagy a natív SORSZÁMMAL (`BLEND_MODE_BY_INDEX`)
+    —, utána `opacity` (`BlendAlpha`) szerinti átlátszóság-keverés az
+    `alpha_blend` egész képletével. A kettő azonos alakú kell legyen.
+
+    A végrehajtó (`0x00bd0700`, #3442) menete: `α` `[0,1]`-re vágva;
+    `normal` és `α ≈ 1` → `top` változatlanul; `α ≈ 0` → `base`; különben
+    a mód egész kernele a bájtra kerekített rétegeken, és ha `α` nem ≈ 1,
+    az átlátszóság-keverés. A kimenet float32.
     """
+    if isinstance(mode, (int, np.integer)) and not isinstance(mode, bool):
+        name = BLEND_MODE_BY_INDEX.get(int(mode))
+        if name is None:
+            raise ValueError(f"Ismeretlen blend-mód sorszám: {mode!r}")
+        mode = name
     if mode not in _BLEND_FUNCS:
         raise ValueError(f"Ismeretlen blend-mód: {mode!r}")
-    blended = _BLEND_FUNCS[mode](base, top)
+    opacity = float(np.clip(opacity, 0.0, 1.0))
+    if mode == "normal" and _kozel(opacity, 1.0):
+        return top.astype(np.float32)
+    if _kozel(opacity, 0.0):
+        return base.astype(np.float32)
+    blended = _BLEND_FUNCS[mode](_bajt(base), _bajt(top)).astype(np.float32)
     return alpha_blend(base, blended, opacity)
 
 
 def masked_blend(base: np.ndarray, overlay: np.ndarray, mask: np.ndarray) -> np.ndarray:
-    """`base·(1−mask) + overlay·mask` — `mask` (H, W) float32 [0,1]."""
-    return base * (1.0 - mask[..., np.newaxis]) + overlay * mask[..., np.newaxis]
+    """Maszkolt keverés a natív EGÉSZ képlettel (`0x008f62a0` →
+    `0x008f4810`/`0x008f49a0`, #3442): `⌊(t·m + b·(255 − m)) / 255⌋`.
+
+    `mask` (H, W): `uint8` maszk-bájt (0–255), vagy float `[0,1]` súly —
+    ez utóbbi `rint(255·mask)`-kal bájtra kerekítve. `base`/`overlay`
+    float32 `[0,255]` (bájtra kerekítve); a kimenet float32.
+    """
+    mask = np.asarray(mask)
+    if mask.dtype == np.uint8:
+        m = mask.astype(np.int32)
+    else:
+        m = np.clip(np.rint(mask.astype(np.float32) * np.float32(255.0)), 0, 255).astype(np.int32)
+    m = m[..., np.newaxis]
+    kevert = (_bajt(overlay) * m + _bajt(base) * (255 - m)) // 255
+    return kevert.astype(np.float32)
 
 
 # --- Elmosás / AutoFix / SimpleColorMatrix -----------------------------
