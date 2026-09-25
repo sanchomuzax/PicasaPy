@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.573] – 2026-09-25
+
+### Javítva
+
+- **A kollázs árnyéka nem ír hibát a naplóba kilépéskor (#3505)** — a
+  program bezárásakor a kollázslap egy utolsó frissítése hibaüzenetet
+  hagyott a naplóban. Az árnyék működés közben nem maradt el (ezt
+  megmértük); most a kilépés is csendes.
+
 ## [0.8.572] – 2026-09-25
 
 ### Javítva

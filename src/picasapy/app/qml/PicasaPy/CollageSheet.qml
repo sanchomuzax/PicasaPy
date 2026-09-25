@@ -90,7 +90,12 @@ Item {
     //: „Cannot read property 'collageShadowSprite'" hibát dobna a
     //: fixture-életciklusban (a #1260 őre ezt bukásként jelenti). A CI-n
     //: elő is jött, helyben nem: időzítésfüggő.
-    readonly property var shadowSprite: (controller && shadowVisible)
+    //: #3505: a metódus-őr a folyamat VÉGÉRE kell — a Python-oldali vezérlő
+    //: ott már lebomlott, a lap viszont még egyszer újraértékel, a régi
+    //: `shadow` értékkel. A hívás ilyenkor „is not a function" hibát írt a
+    //: naplóba (az árnyék élő lapon nem maradt el — mérve).
+    readonly property var shadowSprite: (controller && shadowVisible
+            && typeof controller.collageShadowSprite === "function")
         ? controller.collageShadowSprite(shadow.blur * unit, shadow.alpha)
         : null
 

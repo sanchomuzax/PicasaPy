@@ -179,6 +179,7 @@
  "tests/app/qml_functional/test_klipek_ful_forras_1276.py": 3.08,
  "tests/app/qml_functional/test_klipgyujto_savja_1939.py": 12.13,
  "tests/app/qml_functional/test_kollazs_a_nezobol_1055.py": 7.9,
+ "tests/app/qml_functional/test_kollazs_arnyek_lebontas_3505.py": 9.05,
  "tests/app/qml_functional/test_kollazs_csoport_overlay_1170.py": 8.22,
  "tests/app/qml_functional/test_kollazs_ertesites_1028.py": 13.73,
  "tests/app/qml_functional/test_kollazs_folyamatjelzo_geometria_3392.py": 2.88,
