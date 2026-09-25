@@ -48,6 +48,7 @@ import json
 import os
 import pathlib
 import re
+import shlex
 import sys
 
 # A közös kapu-rész a SAJÁT mappájából jön. A `sys.path` bővítése azért
@@ -113,6 +114,41 @@ _BURKOLO = re.compile(r"(?:^|[\s;&|/])git-push-bot\b")
 _BOT_AZONOSSAG = re.compile(r"x-access-token|gh_bot_token\.py")
 
 
+#: Felhős munkamenetben (picasapy-agent#153) ezek a kapcsolók mehetnek; minden
+#: más (force, all, mirror, tags, delete…) tilos marad.
+_FELHO_KAPCSOLOK = {"-u", "--set-upstream", "-q", "--quiet", "-v", "--verbose"}
+_VEDETT_AG = re.compile(r"^(?:refs/heads/)?(?:main|master|HEAD)$|^refs/tags/|^v\d")
+
+
+def _felhoben_engedett(cmd: str) -> bool:
+    """Felhős gépen: minden push-parancs a SAJÁT, megnevezett, nem-main ágra megy?
+
+    Tulajdonosi döntés (2026-09-25): a felhős kör — ahol a botkulcs nem érhető el —
+    a saját ágát a Claude GitHub Appen át feltöltheti, és PR-t nyithat. Összeolvasztás,
+    verzió és kiadás marad a helyi körnél, a bot nevében.
+    """
+    talalat = False
+    for m in _GIT_PUSH.finditer(cmd):
+        vege = re.search(r"[;&|\n]", cmd[m.end():])
+        resz = cmd[m.end(): m.end() + vege.start()] if vege else cmd[m.end():]
+        try:
+            szavak = shlex.split(resz)
+        except ValueError:
+            return False
+        kapcsolok = [w for w in szavak if w.startswith("-")]
+        helyi = [w for w in szavak if not w.startswith("-")]
+        if any(k not in _FELHO_KAPCSOLOK for k in kapcsolok) or len(helyi) < 2:
+            return False                        # tiltott kapcsoló, vagy nincs megnevezett ág
+        for refspec in helyi[1:]:
+            if refspec.startswith("+"):
+                return False                    # a `+` kényszerített feltöltés
+            cel = refspec.split(":")[-1]
+            if not cel or _VEDETT_AG.search(cel):
+                return False
+        talalat = True
+    return talalat
+
+
 def blokkolando(cmd: str, cwd: str = "") -> bool:
     """Csupasz feltoltes a projekt repojaba, NEM a bot azonossagaval?"""
     if not hatokorben(cmd, cwd):
@@ -121,7 +157,12 @@ def blokkolando(cmd: str, cwd: str = "") -> bool:
         return False
     #: Az idezeteket a burkolo-vizsgalat UTAN vagjuk ki: a helyes
     #: parancs utvonala is allhat idezojelben.
-    return bool(_GIT_PUSH.search(_IDEZET.sub(" ", cmd)))
+    tisztitott = _IDEZET.sub(" ", cmd)
+    if not _GIT_PUSH.search(tisztitott):
+        return False
+    if os.environ.get("CLAUDE_CODE_REMOTE") == "true" and _felhoben_engedett(tisztitott):
+        return False
+    return True
 
 
 _SEGITSEG = """
@@ -137,6 +178,12 @@ Helyette:
 Például a jelenlegi munkafa main-ágára:
 
   ~/picasapy-agent/eszkozok/git-push-bot . main
+
+FELHŐS munkamenetben (claude --cloud, ahol a burkoló nem érhető el) csak a
+saját, megnevezett, nem-main ág tölthető fel, kényszerítés nélkül
+(picasapy-agent#153):
+
+  git push -u origin <ág>
 
 Mindkét repóra érvényes — a publikusra és a privátra is. A vegyes használat
 rosszabb, mint a következetes tévedés: abból nem látszik, melyik a szabály.
