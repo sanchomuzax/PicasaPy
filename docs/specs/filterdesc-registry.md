@@ -5151,9 +5151,30 @@ Megvalósítás: `render/quantize_palette.py`,
 `tests/render/test_quantizepalette_paletta_3084.py`,
 `tests/render/test_blur_image_operation_3084.py`.
 
-⚠️ **A többi Glimmer-effekt** `BlurImageOperation`-je ma is a
-Gauss-közelítést (`gaussian_blur_f`) futtatja — a fenti mérés szerint ez
-mérhető eltérés; külön jegy: **#3580**.
+**A többi Glimmer-effekt `BlurImageOperation`-je is a natív utat futtatja
+(#3580).** Hívóhelyenként, a leíró értékeivel (`quality` mindenütt 3):
+
+| effekt | `xblur` × `yblur` | a döntés forrása |
+|---|---|---|
+| `Soften` | `Impact·20/50` × ugyanaz | a csúszka-képlet (a 4.2 táblája); a nyers XML-sor ebben a repóban nincs idézve |
+| `Orton` | `Bloom` × `Bloom` | a #317 mért σ-ja a Bloom FELE — a 3 menetes doboz szórása `≈ xblur/2`, tehát `xblur = Bloom` |
+| `PencilSketch` | `Radius` × `Radius` | a 4.5 példa-receptje: `<BlurImageOperation xblur="{_sldrRadius.value}" …/>` |
+| `Holga` | 18 × 20 | a 4.4: „a maszkolt elmosás (ami Blur)" |
+| `Lomo` | 20 × 20 | ugyanaz |
+| `IR` | `greenglow` × `greenglow` (5) | nem XML-sor: az `IRImageOperation` gyereke, a `+0x24`/`+0x2c` tag a `Blur`-é (ld. „`IRImageOperation` — szürkeárnyalatos mátrix") |
+| `ReanimatedEyeColor` | `Blur` × `Blur` | `filterdesc.xml` 1269–1295: `<BlurImageOperation xblur="{Blur}" yblur="{Blur}" quality="3" BlendMode="{BlendMode.LIGHTEN}"/>` |
+
+Nem `BlurImageOperation` (a jegy hét helyén kívül, **nem** érintett): a
+`GlowImageOperation` saját sugár-skálázással (`0x00bb89b0`) és a
+DropShadow (#3474) — ezek külön kódúton maradnak.
+
+⚠️ **Golden-mérés nyitva:** a 684-es készlet a NAS-on van; az effektenkénti
+ΔE (régi Gauss ↔ natív) a helyi körben mérendő, a jegybe írva. Ahol a
+régi kód a nyers `xblur`-t σ-ként használta (Soften, PencilSketch, Holga,
+Lomo, IR, ReanimatedEyeColor), a tényleges szórás a felére csökken — ez a
+#545 (`LocalContrast`: σ = Radius/2) és a #317 (`Orton`: σ = Bloom/2)
+mérésével egybevág, de effektenként még nincs goldenen igazolva.
+Őr: `tests/render/test_glimmer_nativ_blur_3580.py`.
 
 *Bizonyítottsági fok: **megerősített** — minden állítás mellett cím, és a
 három valódi exporton a JPEG-újratömörítés zajszintjén egyezik.*

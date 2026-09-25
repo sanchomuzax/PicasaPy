@@ -18,12 +18,12 @@ from picasapy.render.glimmer_ops import (
     apply_blend_mode,
     apply_noise,
     fade_alpha,
-    gaussian_blur_f,
     resize_image,
     simple_color_matrix,
     to_float,
     to_uint8,
 )
+from picasapy.render.nativ_blur import blur_image_operation
 
 
 def apply_boost(image, impact: float = 50.0):
@@ -50,14 +50,17 @@ def apply_boost(image, impact: float = 50.0):
 
 
 def apply_soften(image, impact: float = 50.0, fade: float = 50.0):
-    """`Soften=1,Impact,Fade` — Gauss-elmosás (`σ = Impact·20/50`) keverve
-    `BlendAlpha = (100−Fade)·0,8/100` súllyal — a Fade itt 0,8-as
-    szorzóval hat, NEM 1,0-val.
+    """`Soften=1,Impact,Fade` — `BlurImageOperation` (`xblur = yblur =
+    Impact·20/50`, `quality = 3`) keverve `BlendAlpha = (100−Fade)·0,8/100`
+    súllyal — a Fade itt 0,8-as szorzóval hat, NEM 1,0-val.
+
+    Az elmosás a natív dobozszűrő (`render/nativ_blur.blur_image_operation`,
+    #3580), nem Gauss-közelítés: a háromszoros doboz szórása ≈ `xblur/2`.
     """
     validate_image(image)
     image_f = to_float(image)
-    sigma = max(impact * 20.0 / 50.0, 1e-6)
-    blurred = gaussian_blur_f(image_f, sigma)
+    radius = impact * 20.0 / 50.0
+    blurred = to_float(blur_image_operation(image, radius, radius, quality=3))
     alpha = max(0.0, min(1.0, (100.0 - fade) * 0.8 / 100.0))
     return to_uint8(alpha_blend(image_f, blurred, alpha))
 

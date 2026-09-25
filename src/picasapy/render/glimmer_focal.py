@@ -35,12 +35,12 @@ from picasapy.render.glimmer_ops import (
     alpha_blend,
     apply_blend_mode,
     fade_alpha,
-    gaussian_blur_f,
     masked_blend,
     tint_luma_preserving,
     to_float,
     to_uint8,
 )
+from picasapy.render.nativ_blur import blur_image_operation
 
 
 def apply_picnik_tint(image, color=(0x80, 0xCF, 0xFF), fade: float = 0.0):
@@ -146,8 +146,9 @@ def apply_reanimated_eye_color(
         return image.copy()
     weights = _normalized_mask(mask, image.shape[:2])
     image_f = to_float(image)
-    # 1. az elmosás LIGHTEN módban keveredik vissza az eredetibe
-    blurred = gaussian_blur_f(image_f, max(blur, 1e-6))
+    # 1. az elmosás LIGHTEN módban keveredik vissza az eredetibe; a
+    #    `BlurImageOperation` natív útja a leíró értékeivel (#3580)
+    blurred = to_float(blur_image_operation(image, blur, blur, quality=3))
     lightened = apply_blend_mode(image_f, blurred, "lighten", 1.0)
     # 2. a színezés-ág: előbb a görbe, aztán a fényesség-tartó tint
     curved = adjust_curves(to_uint8(lightened), master=GHOUL_EYE_CURVE)
