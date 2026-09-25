@@ -7,6 +7,25 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.572] – 2026-09-25
+
+### Javítva
+
+- **Újra működik a „Képek biztonsági mentése” Mentés gombja** — egy
+  korábbi változtatás óta a gomb megnyomása hibára futott, és a mentés el
+  sem indult. Most a gombnyomás tényleg elindítja a mentést, akár mappába,
+  akár lemezképbe.
+
+### Új
+
+- **A mentési készlet megjegyzi a típusát (#3593)** — az eredeti Picasa
+  szerint az új készletnél választható: „Mentés CD-re vagy DVD-re” vagy
+  „Lemezről lemezre mentés (külső és hálózati meghajtókhoz)”. A CD/DVD
+  típusú készlet lemezképbe ment (a képek mappájában, a „Picasa
+  biztonsági másolat/ISO-k” alá), a lemezről lemezre típusú a
+  kiválasztott mappába. A korábbi készletek lemezről lemezre típusúak
+  maradnak, tehát ugyanúgy mentenek, mint eddig.
+
 ## [0.8.571] – 2026-09-25
 
 ### Új

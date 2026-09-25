@@ -35,13 +35,22 @@ SZURO_KEPEK = "kepek"
 SZURO_FENYKEPEZOGEP = "fenykepezogep"
 SZUROK = (SZURO_MINDEN, SZURO_KEPEK, SZURO_FENYKEPEZOGEP)
 
+#: #3593: a készlet TÍPUSA — az eredeti `newbackupset.fen` két rádiója
+#: („CD or DVD backup" · „Disk-to-disk backup"). A `backups.xml`-ben a
+#: `diskroot` jelenléte hordozza (`biztonsagi-mentes.md` 2.); nálunk
+#: külön oszlop. A CD/DVD-típus nálunk LEMEZKÉPET ír (lemezíró nincs).
+TIPUS_LEMEZ = "lemez"
+TIPUS_CD_DVD = "cddvd"
+TIPUSOK = (TIPUS_CD_DVD, TIPUS_LEMEZ)
+
 _DDL = """
 CREATE TABLE IF NOT EXISTS backup_sets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     target TEXT NOT NULL,
     file_filter TEXT NOT NULL,
-    last_run TEXT
+    last_run TEXT,
+    kind TEXT NOT NULL DEFAULT 'lemez'
 );
 CREATE TABLE IF NOT EXISTS backup_files (
     set_id INTEGER NOT NULL,
@@ -62,38 +71,66 @@ class MentesKeszlet:
     cel: str
     szuro: str
     utolso_futas: str | None = None
+    tipus: str = TIPUS_LEMEZ
 
 
 def ensure_backup_tables(conn: sqlite3.Connection) -> None:
-    """A két tábla lusta létrehozása — idempotens."""
+    """A két tábla lusta létrehozása — idempotens.
+
+    #3593: a korábbi változat táblájából hiányzik a `kind` oszlop; a
+    pótlás a meglévő készleteket LEMEZ-LEMEZ típusúnak veszi — ma is
+    mappába mentenek."""
     conn.executescript(_DDL)
+    oszlopok = {
+        sor[1] for sor in conn.execute("PRAGMA table_info(backup_sets)")
+    }
+    if "kind" not in oszlopok:
+        conn.execute(
+            "ALTER TABLE backup_sets "
+            f"ADD COLUMN kind TEXT NOT NULL DEFAULT '{TIPUS_LEMEZ}'"
+        )
+
+
+def _ellenorizd_a_tipust(tipus: str) -> None:
+    if tipus not in TIPUSOK:
+        raise ValueError(f"ismeretlen készlet-típus: {tipus!r} (várt: {TIPUSOK})")
 
 
 def keszlet_letrehozasa(
-    conn: sqlite3.Connection, nev: str, cel: str, szuro: str = SZURO_MINDEN
+    conn: sqlite3.Connection,
+    nev: str,
+    cel: str,
+    szuro: str = SZURO_MINDEN,
+    *,
+    tipus: str = TIPUS_LEMEZ,
 ) -> MentesKeszlet:
     """Új készlet. A név egyedi — ugyanazon a néven nincs két definíció."""
     if not nev.strip():
         raise ValueError("a mentés-készletnek neve kell")
     if szuro not in SZUROK:
         raise ValueError(f"ismeretlen fájlszűrő: {szuro!r} (várt: {SZUROK})")
+    _ellenorizd_a_tipust(tipus)
     ensure_backup_tables(conn)
     kurzor = conn.execute(
-        "INSERT INTO backup_sets (name, target, file_filter) VALUES (?, ?, ?)",
-        (nev.strip(), str(cel), szuro),
+        "INSERT INTO backup_sets (name, target, file_filter, kind) "
+        "VALUES (?, ?, ?, ?)",
+        (nev.strip(), str(cel), szuro, tipus),
     )
-    return MentesKeszlet(int(kurzor.lastrowid), nev.strip(), str(cel), szuro)
+    return MentesKeszlet(
+        int(kurzor.lastrowid), nev.strip(), str(cel), szuro, tipus=tipus
+    )
 
 
 def keszletek(conn: sqlite3.Connection) -> tuple[MentesKeszlet, ...]:
     """Az összes készlet, név szerint."""
     ensure_backup_tables(conn)
     sorok = conn.execute(
-        "SELECT id, name, target, file_filter, last_run "
+        "SELECT id, name, target, file_filter, last_run, kind "
         "FROM backup_sets ORDER BY name"
     ).fetchall()
     return tuple(
-        MentesKeszlet(int(s[0]), s[1], s[2], s[3], s[4]) for s in sorok
+        MentesKeszlet(int(s[0]), s[1], s[2], s[3], s[4], tipus=s[5])
+        for s in sorok
     )
 
 
@@ -113,12 +150,15 @@ def keszlet_modositasa(
     nev: str | None = None,
     cel: str | None = None,
     szuro: str | None = None,
+    tipus: str | None = None,
 ) -> None:
     """Az eredeti „Edit Set" művelete — a nyilvántartás MEGMARAD."""
     if szuro is not None and szuro not in SZUROK:
         raise ValueError(f"ismeretlen fájlszűrő: {szuro!r}")
+    if tipus is not None:
+        _ellenorizd_a_tipust(tipus)
     ensure_backup_tables(conn)
-    mezok = {"name": nev, "target": cel, "file_filter": szuro}
+    mezok = {"name": nev, "target": cel, "file_filter": szuro, "kind": tipus}
     valtozok = {kulcs: ertek for kulcs, ertek in mezok.items() if ertek is not None}
     if not valtozok:
         return

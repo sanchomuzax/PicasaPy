@@ -22,11 +22,31 @@ Window {
     property int osszesFajl: 0
     title: qsTr("Back Up Pictures")
     modality: Qt.ApplicationModal
-    width: 620
+    //: #3593: a gombsor (három készlet-gomb, a CD/DVD-választó, a Mentés és
+    //: a Bezárás) magyarul ennyi helyet kér — keskenyebben kilóg
+    width: 760
     height: 460
-    minimumWidth: 520
+    minimumWidth: 720
     minimumHeight: 380
     color: Theme.canvasBg
+    //: #3593: a külön `Window` NEM örökli a főablak `palette`-jét — enélkül
+    //: a mezők a rendszer (sötét) színeit kapták, a rádiógombok felirata
+    //: pedig olvashatatlan volt. Ugyanaz a készlet, mint a `Main.qml`-é.
+    palette {
+        window: Theme.canvasBg
+        windowText: Theme.ink
+        base: Theme.controlBase
+        alternateBase: Theme.panelBg
+        text: Theme.ink
+        button: Theme.buttonBg
+        buttonText: Theme.ink
+        highlight: Theme.selectionBlue
+        highlightedText: Theme.panelSelectionText
+        placeholderText: Theme.placeholderText
+        mid: Theme.chromeBorder
+        light: Theme.shadeLight
+        dark: Theme.shadeDark
+    }
 
     property var keszletek: []
     property int kivalasztott: -1          // a lista sorindexe
@@ -35,6 +55,14 @@ Window {
     property string urlapNev: ""
     property string urlapCel: ""
     property string urlapSzuro: "minden"
+    //: #3593: a készlet TÍPUSA (`newbackupset.fen`): "cddvd" · "lemez"
+    property string urlapTipus: "lemez"
+    //: #3593: a kiválasztott készlet típusa — ettől függ, mit ír a futás
+    readonly property string valasztottTipus:
+        backupWindow.kivalasztott >= 0
+        && backupWindow.kivalasztott < backupWindow.keszletek.length
+        ? (backupWindow.keszletek[backupWindow.kivalasztott].tipus || "lemez")
+        : "lemez"
     property string uzenet: ""
 
     readonly property var szuroKulcsok: ["minden", "kepek", "fenykepezogep"]
@@ -68,6 +96,7 @@ Window {
         backupWindow.urlapNev = qsTr("My Backup Set")
         backupWindow.urlapCel = ""
         backupWindow.urlapSzuro = "minden"
+        backupWindow.urlapTipus = "lemez"
         backupWindow.szerkesztes = true
     }
 
@@ -78,6 +107,7 @@ Window {
         backupWindow.urlapNev = k.nev
         backupWindow.urlapCel = k.cel
         backupWindow.urlapSzuro = k.szuro
+        backupWindow.urlapTipus = k.tipus || "lemez"
         backupWindow.szerkesztes = true
     }
 
@@ -87,11 +117,13 @@ Window {
         var rendben = backupWindow.szerkesztettId < 0
             ? backupController.ujKeszlet(backupWindow.urlapNev,
                                          backupWindow.urlapCel,
-                                         backupWindow.urlapSzuro)
+                                         backupWindow.urlapSzuro,
+                                         backupWindow.urlapTipus)
             : backupController.modositsdAKeszletet(backupWindow.szerkesztettId,
                                                    backupWindow.urlapNev,
                                                    backupWindow.urlapCel,
-                                                   backupWindow.urlapSzuro)
+                                                   backupWindow.urlapSzuro,
+                                                   backupWindow.urlapTipus)
         if (rendben) {
             backupWindow.szerkesztes = false
             backupWindow.frissitsd()
@@ -247,6 +279,34 @@ Window {
                 TextFieldContextArea {}
             }
 
+            //: #3593: MÉRT (`newbackupset.fen`): „Backup type:" és a két
+            //: rádió. A „Choose…" csak a lemez-lemez típusnál él (a
+            //: `.fen` `bind attr="enabled" source="type"` sora).
+            Text {
+                Layout.alignment: Qt.AlignTop
+                text: qsTr("Backup type:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                RadioButton {
+                    objectName: "backupTypeCdDvd"
+                    text: qsTr("CD or DVD backup")
+                    font.pixelSize: Theme.fontSize
+                    checked: backupWindow.urlapTipus === "cddvd"
+                    onClicked: backupWindow.urlapTipus = "cddvd"
+                }
+                RadioButton {
+                    objectName: "backupTypeDisk"
+                    text: qsTr("Disk-to-disk backup (for external and network drives)")
+                    font.pixelSize: Theme.fontSize
+                    checked: backupWindow.urlapTipus === "lemez"
+                    onClicked: backupWindow.urlapTipus = "lemez"
+                }
+            }
+
             Text {
                 text: qsTr("Save to:")
                 font.pixelSize: Theme.fontSize
@@ -255,10 +315,17 @@ Window {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
+                //: CD/DVD-típusnál a lemezkép a vezérlő alaphelyére kerül —
+                //: a mező azt mutatja, és nem szerkeszthető
                 TextField {
                     objectName: "backupSetTarget"
                     Layout.fillWidth: true
-                    text: backupWindow.urlapCel
+                    enabled: backupWindow.urlapTipus === "lemez"
+                    text: backupWindow.urlapTipus === "lemez"
+                          ? backupWindow.urlapCel
+                          : ((typeof backupController !== "undefined"
+                              && backupController)
+                             ? backupController.lemezkepAlapHely() : "")
                     font.pixelSize: Theme.fontSize
                     onTextEdited: backupWindow.urlapCel = text
                     // #422: jobbklikk-menü minden szövegmezőn
@@ -266,7 +333,9 @@ Window {
                 }
                 PicasaButton {
                     objectName: "backupChooseTarget"
-                    text: qsTr("Browse...")
+                    //: MÉRT felirat: `newbackupset/disk` („Choose...")
+                    text: qsTr("Choose...")
+                    enabled: backupWindow.urlapTipus === "lemez"
                     onClicked: celValaszto.open()
                 }
             }
@@ -357,20 +426,27 @@ Window {
                         backupController.szakitsdMeg()
                 }
             }
-            //: #2074: a KIMENET választója. A tulajdonos döntése
-            //: (2026-09-18): a mentés mehet lemezképbe is, és ha nem fér el
-            //: egyre, több, sorszámozott képre oszlik. Fizikai lemezírás
-            //: NINCS — a gépen nincs lemezíró, a kép viszont felcsatolható.
+            //: #2074: a lemezkép MÉRETE. A tulajdonos döntése (2026-09-18):
+            //: a mentés mehet lemezképbe is, és ha nem fér el egyre, több,
+            //: sorszámozott képre oszlik. Fizikai lemezírás NINCS.
+            //: #3593: a kimenet fajtáját a KÉSZLET TÍPUSA dönti el (mappa a
+            //: lemez-lemez, lemezkép a CD/DVD-típusnál); itt csak az marad
+            //: választható, amit lemez híján nem lehet tudni: CD vagy DVD.
             ComboBox {
+                //: az `id` hiányzott: a Mentés gomb erre hivatkozott, és a
+                //: feloldatlan név miatt a futás el sem indult
+                id: backupOutputMode
                 objectName: "backupOutputMode"
                 visible: !backupWindow.szerkesztes && !backupWindow.fut
+                         && backupWindow.valasztottTipus === "cddvd"
+                //: a legszélesebb felirathoz méreteződik — különben levágódik
+                implicitContentWidthPolicy: ComboBox.WidestText
                 model: [
-                    qsTr("To folder"),
                     qsTr("To CD image (ISO)"),
                     qsTr("To DVD image (ISO)"),
                 ]
                 //: a `burn` modul médiatípus-kulcsai — a felirat sorrendjével
-                readonly property var mediak: ["", "cd", "dvd"]
+                readonly property var mediak: ["cd", "dvd"]
             }
             PicasaButton {
                 objectName: "backupRun"
@@ -389,8 +465,7 @@ Window {
                         ? qsTr("Everything was already backed up.")
                         : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
                             .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
-                    var mod = backupOutputMode.currentIndex
-                    if (mod === 0) {
+                    if (backupWindow.valasztottTipus !== "cddvd") {
                         backupController.futtasdMost(k.id)
                         return
                     }
@@ -400,7 +475,8 @@ Window {
                         : qsTr("Writing %1 file(s) to disc image(s)...")
                             .arg(terv.darab)
                     backupController.futtasdLemezkepbe(
-                        k.id, backupOutputMode.mediak[mod])
+                        k.id,
+                        backupOutputMode.mediak[backupOutputMode.currentIndex])
                 }
             }
             PicasaButton {
