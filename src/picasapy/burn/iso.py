@@ -145,6 +145,10 @@ def joliet_nev(nev: str, *, konyvtar: bool) -> str:
     return utovel
 
 
+#: ISO 9660 1. szint: a méretmező 32 bites — egy fájl legfeljebb ennyi bájt
+FAJL_MERET_MAX = (1 << 32) - 1
+
+
 @dataclass
 class _Bejegyzes:
     """Egy fájl a képben: a forrás, a neve és a helye a képen belül."""
@@ -153,6 +157,9 @@ class _Bejegyzes:
     forras: Path
     meret: int
     kezdo_szektor: int = 0
+    #: a két fa EGYEDI neve (`_nevek_kiosztasa`)
+    iso: str = ""
+    jol: str = ""
 
 
 @dataclass
@@ -170,6 +177,9 @@ class _Konyvtar:
     joliet_meret: int = 0
     #: az útvonal-tábla 1-alapú sorszáma (mindkét fában azonos)
     sorszam: int = 0
+    #: a két fa EGYEDI neve (`_nevek_kiosztasa`)
+    iso: str = ""
+    jol: str = ""
 
     def gyermek(self, nev: str) -> "_Konyvtar":
         for k in self.alkonyvtarak:
@@ -189,11 +199,75 @@ def _fa_epitese(tetelek: Iterable[tuple[str, Path]]) -> _Konyvtar:
         for resz in ut.parts[:-1]:
             aktualis = aktualis.gyermek(resz)
         p = Path(forras)
-        aktualis.fajlok.append(
-            _Bejegyzes(nev=ut.name, forras=p, meret=p.stat().st_size)
-        )
+        meret = p.stat().st_size
+        if meret > FAJL_MERET_MAX:
+            raise ValueError(
+                f"{p.name}: {meret} bájt nem fér ISO 9660 lemezképbe "
+                f"(fájlonként legfeljebb {FAJL_MERET_MAX})"
+            )
+        aktualis.fajlok.append(_Bejegyzes(nev=ut.name, forras=p, meret=meret))
     _rendezd(gyoker)
+    _nevek_kiosztasa(gyoker)
     return gyoker
+
+
+def _valtozat(nev: str, sorszam: int, *, konyvtar: bool, joliet: bool) -> str:
+    """Az `alap` név `sorszam`-adik ütközés-feloldó változata: `~N` a törzs
+    végén, a hosszkorláton belül (a 8.3-as, illetve a Joliet-korlát)."""
+    jel = f"~{sorszam}"
+    if joliet:
+        hatar = JOLIET_NEV_MAX if konyvtar else JOLIET_NEV_MAX - 2
+        torzs, pont, kit = (nev, "", "") if konyvtar else nev.rpartition(".")
+        if not torzs:
+            torzs, pont, kit = kit, "", ""
+        vege = pont + kit
+        uj = torzs[: max(1, hatar - len(vege) - len(jel))] + jel + vege
+        return uj if konyvtar else uj + ";1"
+    alap = iso_nev(nev, konyvtar=konyvtar)
+    if konyvtar:
+        return alap[: 8 - len(jel)] + jel
+    torzs, _, maradek = alap.partition(".")
+    return f"{torzs[: 8 - len(jel)]}{jel}.{maradek}"
+
+
+def _egyedi(nev: str, foglalt: set[str], *, konyvtar: bool, joliet: bool) -> str:
+    """A név alakja az adott fában, könyvtáron belül EGYEDIRE igazítva.
+
+    A 8.3-as vágás ütköztet (`IMG_0001.jpg` és `IMG_0001-1.jpg` egyaránt
+    `IMG_0001.JPG;1`), a Joliet 64 karakteres vágása szintén. A Joliet-t
+    a Windows kis-nagybetűre érzéketlenül olvassa, ezért ott úgy vetünk
+    össze."""
+    alak = joliet_nev(nev, konyvtar=konyvtar) if joliet else iso_nev(
+        nev, konyvtar=konyvtar
+    )
+    kulcs = alak.casefold()
+    sorszam = 1
+    while kulcs in foglalt:
+        alak = _valtozat(nev, sorszam, konyvtar=konyvtar, joliet=joliet)
+        kulcs = alak.casefold()
+        sorszam += 1
+    foglalt.add(kulcs)
+    return alak
+
+
+def _nevek_kiosztasa(konyvtar: _Konyvtar) -> None:
+    """Mindkét fa neveit kiosztja, könyvtáranként egyedire."""
+    for joliet in (False, True):
+        foglalt: set[str] = set()
+        for elem in konyvtar.alkonyvtarak:
+            nev = _egyedi(elem.nev, foglalt, konyvtar=True, joliet=joliet)
+            if joliet:
+                elem.jol = nev
+            else:
+                elem.iso = nev
+        for elem in konyvtar.fajlok:
+            nev = _egyedi(elem.nev, foglalt, konyvtar=False, joliet=joliet)
+            if joliet:
+                elem.jol = nev
+            else:
+                elem.iso = nev
+    for gyermek in konyvtar.alkonyvtarak:
+        _nevek_kiosztasa(gyermek)
 
 
 def _rendezd(konyvtar: _Konyvtar) -> None:
@@ -240,10 +314,10 @@ def _katalogus(
 ) -> bytes:
     """Egy könyvtár teljes katalógusa (`.`, `..`, majd a tartalma)."""
 
-    def kodol(nev: str, *, kvt: bool) -> bytes:
+    def kodol(elem) -> bytes:
         if joliet:
-            return joliet_nev(nev, konyvtar=kvt).encode("utf-16-be")
-        return iso_nev(nev, konyvtar=kvt).encode("ascii")
+            return elem.jol.encode("utf-16-be")
+        return elem.iso.encode("ascii")
 
     sajat_sz = konyvtar.joliet_szektor if joliet else konyvtar.iso_szektor
     sajat_m = konyvtar.joliet_meret if joliet else konyvtar.iso_meret
@@ -255,26 +329,33 @@ def _katalogus(
         _katalogus_rekord(b"\x00", sajat_sz, sajat_m, konyvtar=True, ido=ido),
         _katalogus_rekord(b"\x01", szulo_sz, szulo_m, konyvtar=True, ido=ido),
     ]
-    for gyermek in konyvtar.alkonyvtarak:
-        rekordok.append(
+    tartalom = [
+        (
+            kodol(gyermek),
             _katalogus_rekord(
-                kodol(gyermek.nev, kvt=True),
+                kodol(gyermek),
                 gyermek.joliet_szektor if joliet else gyermek.iso_szektor,
                 gyermek.joliet_meret if joliet else gyermek.iso_meret,
                 konyvtar=True,
                 ido=ido,
-            )
+            ),
         )
-    for fajl in konyvtar.fajlok:
-        rekordok.append(
+        for gyermek in konyvtar.alkonyvtarak
+    ] + [
+        (
+            kodol(fajl),
             _katalogus_rekord(
-                kodol(fajl.nev, kvt=False),
-                fajl.kezdo_szektor,
-                fajl.meret,
-                konyvtar=False,
-                ido=ido,
-            )
+                kodol(fajl), fajl.kezdo_szektor, fajl.meret,
+                konyvtar=False, ido=ido,
+            ),
         )
+        for fajl in konyvtar.fajlok
+    ]
+    # ECMA-119 9.3: a rekordok a NÉV szerint rendezettek — az elsődleges fa
+    # nevei a 8.3-as alakok, a sorrendjük tehát nem a Joliet-é
+    if not joliet:
+        tartalom.sort(key=lambda par: par[0])
+    rekordok.extend(rekord for _, rekord in tartalom)
 
     # A rekord nem lóghat át szektorhatáron (ECMA-119 6.8.1.1).
     ki = bytearray()
@@ -294,9 +375,9 @@ def _utvonal_tabla(
         if konyvtar.szulo is None:
             nev = b"\x00"
         elif joliet:
-            nev = joliet_nev(konyvtar.nev, konyvtar=True).encode("utf-16-be")
+            nev = konyvtar.jol.encode("utf-16-be")
         else:
-            nev = iso_nev(konyvtar.nev, konyvtar=True).encode("ascii")
+            nev = konyvtar.iso.encode("ascii")
         szektor = konyvtar.joliet_szektor if joliet else konyvtar.iso_szektor
         szulo_sorszam = konyvtar.szulo.sorszam if konyvtar.szulo else 1
         rekord = (
@@ -458,4 +539,7 @@ def iso_kiirasa(
     return cel
 
 
-__all__ = ["JOLIET_NEV_MAX", "SZEKTOR", "iso_kiirasa", "iso_nev", "joliet_nev"]
+__all__ = [
+    "FAJL_MERET_MAX", "JOLIET_NEV_MAX", "SZEKTOR", "iso_kiirasa", "iso_nev",
+    "joliet_nev",
+]

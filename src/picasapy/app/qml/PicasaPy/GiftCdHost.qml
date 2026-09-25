@@ -27,6 +27,8 @@ Rectangle {
     property bool dolgozik: false
     //: a legutóbb elkészült lemezkép útja
     property string keszUt: ""
+    //: hány elem maradt le a legutóbbi lemezképről
+    property int keszHibas: 0
     property int _meretIndex: 0
     property string _cdNev: ""
 
@@ -68,7 +70,7 @@ Rectangle {
         //: MÉRT szűrőnév: `il_BurnPanel::ISOFilter` („ISO Files")
         nameFilters: [qsTr("ISO Files") + " (*.iso)"]
         currentFolder: host.appController
-                       ? "file://" + host.appController.ajandekCdAlapHely() : ""
+                       ? host.appController.ajandekCdAlapHely() : ""
         onAccepted: host.indit(selectedFile.toString())
     }
 
@@ -78,6 +80,7 @@ Rectangle {
         function onAjandekCdKesz(ut, darab, hibas) {
             host.dolgozik = false
             host.keszUt = ut
+            host.keszHibas = hibas
             if (ut !== "")
                 keszParbeszed.open()
             else
@@ -94,10 +97,23 @@ Rectangle {
         anchors.centerIn: parent
         modal: true
         title: qsTr("CD Done")
-        contentItem: Label {
-            objectName: "giftCdDonePath"
-            text: host.keszUt
-            wrapMode: Text.WrapAnywhere
+        contentItem: Column {
+            spacing: 6
+            Label {
+                objectName: "giftCdDonePath"
+                width: 420
+                text: host.keszUt
+                wrapMode: Text.WrapAnywhere
+            }
+            //: ha elemek maradtak le, azt nem csak a napló tudja
+            Label {
+                objectName: "giftCdDoneMissing"
+                width: 420
+                visible: host.keszHibas > 0
+                wrapMode: Text.WordWrap
+                text: qsTr("%1 item(s) could not be added to the disc.")
+                      .arg(host.keszHibas)
+            }
         }
         footer: DialogButtonBox {
             Button {

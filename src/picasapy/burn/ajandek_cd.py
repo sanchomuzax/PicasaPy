@@ -28,6 +28,7 @@ telepítő — 6. szakasz): Linuxon a lemezkép a kimenet.
 from __future__ import annotations
 
 import dataclasses
+import os
 import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -103,11 +104,17 @@ def ajandek_cd_lemezkep(
                 lemezkep=None, darab=0,
                 hibas=jelentes.failed, okok=jelentes.reasons,
             )
+        # a kép előbb a munkamappába készül, és csak kész állapotban kerül
+        # a helyére: egy írás közbeni hiba (tele lemez) nem hagy csonka
+        # `.iso`-t, és nem teszi tönkre a korábbit (ugyanaz a kötet, tehát
+        # a csere atomikus)
+        kesz = Path(munka) / ".lemezkep.iso"
         iso_kiirasa(
             ((f"{kepek_mappa}/{ut.name}", ut) for ut in jelentes.exported),
-            cel,
+            kesz,
             kotetnev=kotetnev(cd_nev, cel),
         )
+        os.replace(kesz, cel)
     return AjandekCdEredmeny(
         lemezkep=cel,
         darab=len(jelentes.exported),

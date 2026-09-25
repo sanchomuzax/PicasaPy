@@ -144,3 +144,27 @@ class TestALemezkep:
         assert str(cel.parent) in str(megnyitott[0]) or str(cel) in str(
             megnyitott[0]
         )
+
+    def test_a_lemaradt_elemeket_kimondja(self, qml_app, qt_app):
+        """Az átnézés lelete: ha elemek maradtak le, a „CD kész" ablak is
+        mondja, nem csak a napló."""
+        window, controller, _ = qml_app
+        host = _elem(window, "giftCdHost")
+        hiany = _elem(window, "giftCdDoneMissing")
+
+        controller.ajandekCdKesz.emit("/tmp/x.iso", 2, 1)
+
+        assert _var(qt_app, lambda: hiany.property("visible") is True)
+        assert "1" in hiany.property("text")
+        assert host.property("dolgozik") is False
+
+    def test_hiba_utan_ujra_nyomhato(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        _talcara(window, qt_app, [0])
+        host = _nyisd_meg(window, qt_app)
+        host.setProperty("dolgozik", True)
+
+        controller.ajandekCdKesz.emit("", 0, 1)
+
+        assert _var(qt_app, lambda: _elem(window, "giftCdErrorDialog").property("visible") is True)
+        assert _elem(window, "publishPresentCdGo").property("enabled") is True

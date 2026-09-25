@@ -10195,6 +10195,11 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <source>The disc image could not be created.</source>
         <translation>A lemezkép nem készült el.</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0"/>
+        <source>%1 item(s) could not be added to the disc.</source>
+        <translation>%1 elem nem került a lemezre.</translation>
+    </message>
 </context>
 <context>
     <name>AjandekCdMixin</name>

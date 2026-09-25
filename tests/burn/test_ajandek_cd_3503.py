@@ -221,3 +221,132 @@ class TestHibak:
         )
 
         assert sorted(p.name for p in cel_mappa.iterdir()) == ["ajandek.iso"]
+
+
+def _elsodleges_nevek(kep: Path, konyvtar: str | None = None) -> list[str]:
+    """Az ELSŐDLEGES (ISO 9660) fa neveit olvassa ki — a `7z` a Joliet-fát
+    mutatja, a régi olvasók (tévé, DVD-lejátszó) viszont ezt látják.
+
+    ECMA-119: a PVD a 16. szektorban, a gyökér-rekord a 156. bájton; egy
+    rekord: hossz, …, kiterjedés (2. bájt, LE), méret (10. bájt, LE),
+    jelzők (25.), névhossz (32.), név (33.-tól)."""
+    adat = kep.read_bytes()
+
+    def rekordok(szektor: int, meret: int):
+        kezdet = szektor * _SZEKTOR
+        poz = kezdet
+        while poz < kezdet + meret:
+            hossz = adat[poz]
+            if hossz == 0:  # a szektor maradéka üres
+                poz = (poz // _SZEKTOR + 1) * _SZEKTOR
+                continue
+            nevhossz = adat[poz + 32]
+            nev = adat[poz + 33: poz + 33 + nevhossz]
+            yield (
+                nev,
+                int.from_bytes(adat[poz + 2: poz + 6], "little"),
+                int.from_bytes(adat[poz + 10: poz + 14], "little"),
+                bool(adat[poz + 25] & 2),
+            )
+            poz += hossz
+
+    gyoker = 16 * _SZEKTOR + 156
+    sz = int.from_bytes(adat[gyoker + 2: gyoker + 6], "little")
+    m = int.from_bytes(adat[gyoker + 10: gyoker + 14], "little")
+    if konyvtar is not None:
+        for nev, alsz, alm, kvt in rekordok(sz, m):
+            if kvt and nev.decode("ascii", "replace") == konyvtar:
+                sz, m = alsz, alm
+                break
+        else:
+            raise AssertionError(f"nincs {konyvtar} könyvtár az elsődleges fában")
+    return [
+        nev.decode("ascii")
+        for nev, *_ in rekordok(sz, m)
+        if nev not in (b"\x00", b"\x01")
+    ]
+
+
+class TestElsodlegesFa:
+    """Az átnézés lelete: az ISO 9660 8.3-as nevek ÜTKÖZHETNEK. Két azonos
+    nevű kép két mappából — az exportáló `IMG_0001-1.jpg`-t ad a másodiknak
+    —, és mindkettő `IMG_0001.JPG;1` lett volna."""
+
+    def test_az_utkozo_83_nevek_egyediek(self, tmp_path):
+        forras = tmp_path / "forras"
+        (forras / "a").mkdir(parents=True)
+        (forras / "b").mkdir(parents=True)
+        make_jpeg(forras / "a" / "IMG_0001.jpg")
+        make_jpeg(forras / "b" / "IMG_0001.jpg")
+        make_jpeg(forras / "a" / "DSC_12345.jpg")
+        make_jpeg(forras / "a" / "DSC_12346.jpg")
+        cel = tmp_path / "ajandek.iso"
+
+        ajandek_cd_lemezkep(
+            [ExportItem(source=p) for p in (
+                forras / "a" / "IMG_0001.jpg", forras / "b" / "IMG_0001.jpg",
+                forras / "a" / "DSC_12345.jpg", forras / "a" / "DSC_12346.jpg",
+            )],
+            cel, meret_index=0, cd_nev="X", kepek_mappa="Pictures",
+        )
+
+        nevek = _elsodleges_nevek(cel, "PICTURES")
+        assert len(nevek) == 4
+        assert len(set(nevek)) == 4, nevek
+        assert nevek == sorted(nevek), "az elsődleges fa rekordjai rendezettek"
+        # a Joliet-fa (a valódi nevek) ettől érintetlen
+        kibontva = tmp_path / "bontas"
+        _kicsomagol(cel, kibontva)
+        assert sorted(p.name for p in (kibontva / "Pictures").iterdir()) == [
+            "DSC_12345.jpg", "DSC_12346.jpg", "IMG_0001-1.jpg", "IMG_0001.jpg",
+        ]
+
+
+class TestAtomikusIras:
+    def test_hibanal_a_regi_lemezkep_megmarad(self, tmp_path, talca, monkeypatch):
+        """Az átnézés lelete: a kép írás közbeni hibája (tele lemez) nem
+        hagyhat csonka `.iso`-t, és nem teheti tönkre a korábbit."""
+        import picasapy.burn.ajandek_cd as modul
+
+        cel = tmp_path / "ajandek.iso"
+        cel.write_bytes(b"REGI")
+
+        def _elszall(tetelek, ut, **_kw):
+            Path(ut).write_bytes(b"csonka")
+            raise OSError("No space left on device")
+
+        monkeypatch.setattr(modul, "iso_kiirasa", _elszall)
+
+        with pytest.raises(OSError):
+            ajandek_cd_lemezkep(
+                talca, cel, meret_index=0, cd_nev="X", kepek_mappa="Képek"
+            )
+
+        assert cel.read_bytes() == b"REGI"
+        assert sorted(p.name for p in tmp_path.iterdir()) == [
+            "ajandek.iso", "forras",
+        ]
+
+
+class TestTulNagyFajl:
+    def test_a_4_gib_os_fajlt_kimondja(self, tmp_path, monkeypatch):
+        """ISO 9660 1. szinten egy fájl legfeljebb 4 GiB − 1 bájt: a 32 bites
+        méretmezőbe nem fér több. A nagyobbat nem némán, hanem
+        `ValueError`-ral kell elutasítani."""
+        from picasapy.burn import iso
+
+        nagy = tmp_path / "nagy.bin"
+        nagy.write_bytes(b"x")
+
+        class _Stat:
+            st_size = 1 << 32
+
+        eredeti = Path.stat
+
+        def _stat(self, *a, **k):
+            return _Stat() if self == nagy else eredeti(self, *a, **k)
+
+        monkeypatch.setattr(Path, "stat", _stat)
+
+        with pytest.raises(ValueError):
+            iso.iso_kiirasa([("nagy.bin", nagy)], tmp_path / "ki.iso")

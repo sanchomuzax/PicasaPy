@@ -15,12 +15,12 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QStandardPaths, Signal, Slot
+from PySide6.QtCore import QStandardPaths, QUrl, Signal, Slot
 
 from picasapy.burn.ajandek_cd import ajandek_cd_lemezkep
 
 from .export_controller import _export_item
-from .formatting import to_local_path
+from .formatting import to_file_url, to_local_path
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
@@ -33,11 +33,15 @@ class AjandekCdMixin(BackgroundWorkerMixin):
     #: sikertelen elemek)
     ajandekCdKesz = Signal(str, int, int)
 
-    @Slot(result=str)
-    def ajandekCdAlapHely(self) -> str:  # noqa: N802 — QML-slot-stílus
-        """A lemezkép-mentés kiinduló mappája: a felhasználó Képek mappája."""
-        return QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.PicturesLocation
+    @Slot(result=QUrl)
+    def ajandekCdAlapHely(self) -> QUrl:  # noqa: N802 — QML-slot-stílus
+        """A lemezkép-mentés kiinduló mappája: a felhasználó Képek mappája,
+        URL-ként — kézzel fűzött `"file://" + út` Windowson érvénytelen
+        (#1009)."""
+        return to_file_url(
+            QStandardPaths.writableLocation(
+                QStandardPaths.StandardLocation.PicturesLocation
+            )
         )
 
     @Slot(int, str, str)
@@ -70,7 +74,10 @@ class AjandekCdMixin(BackgroundWorkerMixin):
                 tetelek, cel, meret_index=meret_index, cd_nev=cd_nev,
                 kepek_mappa=kepek_mappa,
             )
-        except (OSError, ValueError) as hiba:
+        except Exception as hiba:  # noqa: BLE001 — a felület nem ragadhat „dolgozik" állapotban
+            # BÁRMILYEN hiba után jelezni kell: a panel a jelzésig nem
+            # engedi újra a „Lemezre írás"-t, és a felhasználó egyik
+            # visszajelzést sem kapná
             _log.warning("az Ajándék CD lemezképe nem készült el: %s", hiba)
             self.ajandekCdKesz.emit("", 0, len(tetelek))
             return

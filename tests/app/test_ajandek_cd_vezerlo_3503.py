@@ -143,3 +143,33 @@ def test_a_mappanev_honositott(controller, qt_app, library):
     ).stdout
     assert "Path = Képek" in lista
     assert "Path = Pictures" not in lista
+
+
+def test_varatlan_hibanal_is_jelez(controller, qt_app, library, monkeypatch):
+    """Az átnézés lelete: egy nem várt kivétel (pl. `OverflowError` egy túl
+    nagy filmnél) után is ki kell mennie a jelzésnek — különben a panel
+    „dolgozik" állapotban ragad, és a „Lemezre írás" nem nyomható többé."""
+    import picasapy.app.ajandek_cd_controller as modul
+
+    tmp_path, first, second, _ = library
+    _tartsd_mindkettot(controller, qt_app, first, second)
+
+    def _elszall(*_a, **_k):
+        raise OverflowError("int too big to convert")
+
+    monkeypatch.setattr(modul, "ajandek_cd_lemezkep", _elszall)
+
+    eredmeny = _varj(
+        controller, qt_app,
+        lambda: controller.ajandekCdIrasa(0, "X", str(tmp_path / "x.iso")),
+    )
+
+    assert eredmeny == {"ut": "", "darab": 0, "hibas": 2}
+
+
+def test_az_alaphely_url(controller):
+    """Kézzel fűzött `"file://" + út` Windowson érvénytelen (#1009) — a
+    kiinduló mappa kész URL-ként jön."""
+    url = controller.ajandekCdAlapHely()
+
+    assert url.isLocalFile()
