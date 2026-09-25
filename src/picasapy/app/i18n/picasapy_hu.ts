@@ -9912,6 +9912,21 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 <context>
     <name>BackupController</name>
     <message>
+        <location filename="../backup_controller.py" line="0"/>
+        <source>Unknown backup type.</source>
+        <translation>Ismeretlen mentéstípus.</translation>
+    </message>
+    <message>
+        <location filename="../backup_controller.py" line="0"/>
+        <source>Picasa Backup</source>
+        <translation>Picasa biztonsági másolat</translation>
+    </message>
+    <message>
+        <location filename="../backup_controller.py" line="0"/>
+        <source>ISOs</source>
+        <translation>ISO-k</translation>
+    </message>
+    <message>
         <source>%1 file(s) do not fit on a single disc.</source>
         <translation>%1 fájl egyetlen lemezre sem fér rá.</translation>
     </message>
@@ -9947,8 +9962,24 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 <context>
     <name>BackupDialog</name>
     <message>
-        <source>To folder</source>
-        <translation>Mappába</translation>
+        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
+        <source>Backup type:</source>
+        <translation>Mentés típusa:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
+        <source>CD or DVD backup</source>
+        <translation>Mentés CD-re vagy DVD-re</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
+        <source>Disk-to-disk backup (for external and network drives)</source>
+        <translation>Lemezről lemezre mentés (külső és hálózati meghajtókhoz)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
+        <source>Choose...</source>
+        <translation>Kiválasztás...</translation>
     </message>
     <message>
         <source>To CD image (ISO)</source>
@@ -10028,10 +10059,6 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     <message>
         <source>Files:</source>
         <translation>Fájlok:</translation>
-    </message>
-    <message>
-        <source>Browse...</source>
-        <translation>Tallózás…</translation>
     </message>
     <message>
         <source>New Set...</source>

@@ -26,7 +26,7 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QStandardPaths, Signal, Slot
 
 from picasapy.backup import futtasd, tervezd_meg
 from picasapy.backup.lemezkep import LemezkepTetel, lemezkepekbe
@@ -35,6 +35,9 @@ from picasapy.index import open_index
 from .worker_thread import BackgroundWorkerMixin
 from picasapy.index.backup_sets import (
     SZUROK,
+    TIPUS_CD_DVD,
+    TIPUS_LEMEZ,
+    TIPUSOK,
     jegyezd_fel_a_futast,
     jegyezd_fel_az_elmentettet,
     keszlet_letrehozasa,
@@ -50,6 +53,18 @@ _log = logging.getLogger(__name__)
 #: a ténylegesen használható méretet.
 _CD_SZEKTOR = 360_000
 _DVD_SZEKTOR = 2_295_104
+
+
+def _kepek_mappaja() -> str:
+    """A felhasználó Képek mappája — MODULSZINTŰ fogantyú: a teszt ezt
+    cseréli, hogy a lemezkép ne a fejlesztő valódi Képek mappájába
+    kerüljön. Üres rendszerválasznál a saját mappa (relatív út nem lehet)."""
+    return (
+        QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        )
+        or str(Path.home())
+    )
 
 
 class BackupController(BackgroundWorkerMixin, QObject):
@@ -90,19 +105,47 @@ class BackupController(BackgroundWorkerMixin, QObject):
                     "nev": k.nev,
                     "cel": k.cel,
                     "szuro": k.szuro,
+                    "tipus": k.tipus,
                     "utolsoFutas": k.utolso_futas or "",
                 }
                 for k in keszletek(conn)
             ]
 
+    @Slot(result=str)
+    def lemezkepAlapHely(self) -> str:  # noqa: N802 — QML-slot-stílus
+        """#3593: a CD/DVD-típusú készlet lemezképeinek helye.
+
+        Az eredetiben ennek a típusnak nincs célmappája (a lemezre ír, a
+        „Choose…" csak a lemez-lemez típusnál él). Nálunk a lemezkép fájl,
+        tehát kell egy hely: a Képek mappában a honosított
+        `il_BurnPanel::DefBkFolder` („Picasa biztonsági másolat") alatti
+        `il_BurnPanel::ISOFolder` („ISO-k")."""
+        return str(
+            Path(_kepek_mappaja()) / self.tr("Picasa Backup") / self.tr("ISOs")
+        )
+
     @Slot(str, str, str, result=bool)
-    def ujKeszlet(self, nev: str, cel: str, szuro: str) -> bool:  # noqa: N802
-        """Új készlet; `False`, ha nem jött létre (a hibát jelezzük)."""
+    @Slot(str, str, str, str, result=bool)
+    def ujKeszlet(  # noqa: N802
+        self, nev: str, cel: str, szuro: str, tipus: str = TIPUS_LEMEZ
+    ) -> bool:
+        """Új készlet; `False`, ha nem jött létre (a hibát jelezzük).
+
+        #3593: a `tipus` a `newbackupset.fen` két rádiója; a CD/DVD-típus
+        üres célnál a `lemezkepAlapHely`-re ír."""
         if not str(nev).strip():
             self.hibatJelez.emit(
                 self.tr("Give the backup set a name.")
             )
             return False
+        if tipus not in TIPUSOK:
+            self.hibatJelez.emit(self.tr("Unknown backup type."))
+            return False
+        if tipus == TIPUS_CD_DVD:
+            # a CD/DVD-típusnak nincs választható helye (a `.fen` szerint a
+            # „Choose…" tiltott) — a felület az alaphelyet mutatja, tehát
+            # az is kerül a készletbe, akármit hozott az űrlap
+            cel = self.lemezkepAlapHely()
         if not str(cel).strip():
             self.hibatJelez.emit(
                 self.tr("Choose where to save the backup.")
@@ -113,7 +156,7 @@ class BackupController(BackgroundWorkerMixin, QObject):
             return False
         try:
             with open_index(self._db_path) as conn:
-                keszlet_letrehozasa(conn, nev, cel, szuro)
+                keszlet_letrehozasa(conn, nev, cel, szuro, tipus=tipus)
                 conn.commit()
         except Exception as hiba:  # noqa: BLE001 — a felületre megy
             # a leggyakoribb eset az ütköző név (egyedi kulcs)
@@ -126,16 +169,24 @@ class BackupController(BackgroundWorkerMixin, QObject):
         return True
 
     @Slot(int, str, str, str, result=bool)
+    @Slot(int, str, str, str, str, result=bool)
     def modositsdAKeszletet(  # noqa: N802 — QML-slot-stílus
-        self, keszlet_id: int, nev: str, cel: str, szuro: str
+        self, keszlet_id: int, nev: str, cel: str, szuro: str,
+        tipus: str = "",
     ) -> bool:
         """Az „Edit Set" művelete — a nyilvántartás MEGMARAD, tehát a
-        mentés nem kezdődik elölről."""
+        mentés nem kezdődik elölről. Üres `tipus` = nem változik (#3593)."""
+        if tipus and tipus not in TIPUSOK:
+            self.hibatJelez.emit(self.tr("Unknown backup type."))
+            return False
+        if tipus == TIPUS_CD_DVD:
+            cel = self.lemezkepAlapHely()
         try:
             with open_index(self._db_path) as conn:
                 keszlet_modositasa(
                     conn, int(keszlet_id), nev=nev or None,
                     cel=cel or None, szuro=szuro or None,
+                    tipus=tipus or None,
                 )
                 conn.commit()
         except Exception as hiba:  # noqa: BLE001

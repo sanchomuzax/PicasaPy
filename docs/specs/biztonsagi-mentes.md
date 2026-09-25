@@ -185,6 +185,7 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 | a másolt fájlok listája | **`files.txt`** a célmappában | **nincs** (`grep -rn 'files.txt' src/` → 0) | felvenni |
 | tartalom-mód | **három** (`bkallfiles` / `bkonlypics` / `bkonlyexif`) | **nincs** | három mód |
 | célmappa alapértéke | honosított: **`\Picasa biztonsági másolat\`** | **nincs** | honosított név |
+| készlet típusa | CD/DVD **vagy** lemez-lemez (`newbackupset.fen` két rádiója; a `backups.xml`-ben a `diskroot` jelenléte hordozza, 2.) | ✅ **#3593**: a `backup_sets.kind` oszlop (`cddvd` · `lemez`, a régi készletek `lemez`); a CD/DVD-típus lemezképet ír a `Képek/Picasa biztonsági másolat/ISO-k` alá | — |
 | lemezhely-ellenőrzés | **van** (`BackgroundProc::4`) | **nincs** | felvenni |
 | folyamatszöveg | három állapot, magyarul is | **nincs** | a mért szövegek |
 | `replicates.xml` | **ugyanaz a szerkezet** | nincs | egy író, két név |

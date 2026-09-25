@@ -113,18 +113,22 @@ class TestAParbeszed:
 
 
 class TestALemezkepKimenet2074:
-    """#2074 — a kimenet-választó és a lemezkép-ág bekötése.
+    """#2074 — a lemezkép-ág bekötése.
 
     A tulajdonos 2026-09-18-án ezt kérte: „a gyűjtemény mentése több
-    lemezképre". A választó a párbeszédben van, a Futtatás gomb pedig a
-    választás szerint hívja a vezérlőt.
+    lemezképre". #3593 óta a KÉSZLET TÍPUSA dönti el, mappába vagy
+    lemezképbe megy-e a mentés (`newbackupset.fen`); a párbeszédben csak a
+    lemezkép mérete (CD vagy DVD) választható. A gombnyomástól a kész
+    kimenetig a `test_mentes_tipus_ui_3593.py` méri, valódi kattintással.
     """
 
-    def test_van_kimenet_valaszto(self):
+    def test_van_meretvalaszto(self):
         assert 'objectName: "backupOutputMode"' in _PARBESZED
+        # az `id` nélkül a Futtatás gomb hivatkozása feloldatlan volt
+        assert "id: backupOutputMode" in _PARBESZED
 
-    def test_HAROM_kimenet_kozul_lehet_valasztani(self):
-        for felirat in ("To folder", "To CD image (ISO)", "To DVD image (ISO)"):
+    def test_a_ket_lemezkep_meret(self):
+        for felirat in ("To CD image (ISO)", "To DVD image (ISO)"):
             assert f'qsTr("{felirat}")' in _PARBESZED, felirat
 
     def test_a_mappa_ag_a_REGI_utat_hivja(self):
@@ -132,7 +136,7 @@ class TestALemezkepKimenet2074:
 
     def test_a_lemezkep_ag_a_MEDIA_kulcsot_adja_at(self):
         assert "futtasdLemezkepbe(" in _PARBESZED
-        assert 'mediak: ["", "cd", "dvd"]' in _PARBESZED
+        assert 'mediak: ["cd", "dvd"]' in _PARBESZED
 
     def test_a_kesz_jelzesnek_van_kezeloje(self):
         """Kezelő nélkül a jelzés a semmibe menne (#936 hibaosztálya)."""
