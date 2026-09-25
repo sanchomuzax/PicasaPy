@@ -704,6 +704,9 @@ ListView {
             suggestionCount: grid.appWindow
                              && grid.appWindow.personSuggestionCount !== undefined
                              ? grid.appWindow.personSuggestionCount : 0
+            selectedSuggestionCount: grid.appWindow
+                && grid.appWindow.personSelectedSuggestionIds !== undefined
+                ? grid.appWindow.personSelectedSuggestionIds.length : 0
             onConfirmSuggestionsRequested: {
                 if (grid.appWindow && grid.appWindow.confirmPersonSuggestions)
                     grid.appWindow.confirmPersonSuggestions()

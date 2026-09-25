@@ -685,18 +685,48 @@ ApplicationWindow {
         return window._faceScanController.personSuggestionCount(
             window.personAlbumName)
     }
+    //: #2187: a kijelölt hatókör (`confirmsel`, `removesel`) — a
+    //: KIJELÖLT fotókon ülő, e személyre szóló függő javaslatok arcai. A
+    //: rács sora a fotó, a művelet arcokra hat; a leképezést a vezérlő
+    //: végzi. Üres lista = nincs kijelölt javaslat, a gombok az összesre
+    //: hatnak.
+    readonly property var personSelectedSuggestionIds: {
+        window._javaslatRevizio
+        var sorok = window.selectedIndexes
+        if (!window._faceScanController || window.personAlbumName === ""
+                || !sorok || sorok.length === 0)
+            return []
+        var utak = []
+        for (var k = 0; k < sorok.length; ++k) {
+            var ut = controller.photos.filePathAt(Number(sorok[k]))
+            if (ut !== "")
+                utak.push(ut)
+        }
+        return window._faceScanController.personSuggestionIdsForPaths(
+            window.personAlbumName, utak)
+    }
     function confirmPersonSuggestions() {
         if (!window._faceScanController || window.personAlbumName === "")
             return
-        window._faceScanController.confirmPersonSuggestions(
-            window.personAlbumName)
+        var arcok = window.personSelectedSuggestionIds
+        if (arcok.length > 0)
+            window._faceScanController.confirmPersonSuggestions(
+                window.personAlbumName, arcok)
+        else
+            window._faceScanController.confirmPersonSuggestions(
+                window.personAlbumName)
         window._javaslatFrissult()
     }
     function removePersonSuggestions() {
         if (!window._faceScanController || window.personAlbumName === "")
             return
-        window._faceScanController.removePersonSuggestions(
-            window.personAlbumName)
+        var arcok = window.personSelectedSuggestionIds
+        if (arcok.length > 0)
+            window._faceScanController.removePersonSuggestions(
+                window.personAlbumName, arcok)
+        else
+            window._faceScanController.removePersonSuggestions(
+                window.personAlbumName)
         window._javaslatFrissult()
     }
     //: #2187: `sug_filter` — a javaslat-szűrő állása és átkapcsolása. Az
@@ -727,7 +757,6 @@ ApplicationWindow {
     //: a darabszám újraszámolása + az album újratöltése: a jóváhagyott
     //: arcok ettől kerülnek be a személy képei közé
     function _javaslatFrissult() {
-        window._javaslatRevizio += 1
         //: #2187: `refreshPersonAlbum` és nem `showPerson` — az
         //: újratöltés megtartja a javaslat-szűrő állását, a `showPerson`
         //: viszont új albumot nyit, és kikapcsolja.
@@ -737,6 +766,9 @@ ApplicationWindow {
             else
                 controller.showPerson(window.personAlbumName)
         }
+        //: a horgony az újratöltés UTÁN lép: a kijelölt javaslatok
+        //: listája már az új rács soraiból számolódik újra
+        window._javaslatRevizio += 1
     }
 
     //: #1823: „szerkesztések mentése lemezre" a mappa-fejlécről. A

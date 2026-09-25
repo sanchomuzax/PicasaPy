@@ -661,6 +661,26 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         kert = {int(azonosito) for azonosito in face_ids}
         return [azonosito for azonosito in sajat if azonosito in kert]
 
+    @Slot(str, "QVariantList", result="QVariantList")
+    def personSuggestionIdsForPaths(  # noqa: N802
+        self, name: str, paths: list
+    ) -> list[int]:
+        """A kijelölt FOTÓKON ülő, e személyre szóló függő javaslatok
+        arc-azonosítói — a `confirmsel`/`removesel` hatóköre (#2187).
+
+        A rács sora a fotó, a művelet viszont arcokra hat: egy képen több
+        arc is javasolhatja ugyanazt a nevet, és a kijelölés mindegyiküket
+        lefedi. Idegen személy javaslata nem kerül bele."""
+        if not name or not paths:
+            return []
+        kijelolt = {Path(ut) for ut in paths if ut}
+        with open_index(self._db_path) as conn:
+            return [
+                arc.id
+                for arc in suggested_faces_for(conn, name)
+                if Path(arc.photo_path) in kijelolt
+            ]
+
     @Slot(str, result=int)
     @Slot(str, "QVariantList", result=int)
     def confirmPersonSuggestions(  # noqa: N802

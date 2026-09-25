@@ -3964,6 +3964,21 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Az összes javaslat törlése</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Confirm</source>
+        <translation>Jóváhagyás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Confirm selected suggestions</source>
+        <translation>Kijelölt javaslatok jóváhagyása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Remove selected suggestions</source>
+        <translation>Kijelölt javaslatok törlése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30"/>
         <source>SYNC</source>
         <translation>SZINKRON</translation>
