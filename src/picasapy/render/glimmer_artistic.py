@@ -80,7 +80,8 @@ def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0, blend_mode: i
     képet adna.
     """
     validate_image(image)
-    mode = BLEND_MODE_BY_INDEX.get(int(blend_mode))
+    # a csúszka 0–9-ig megy; a 10-es Softlight a táblában van, de itt nem
+    mode = BLEND_MODE_BY_INDEX.get(int(blend_mode)) if 0 <= int(blend_mode) <= 9 else None
     if mode is None:
         raise ValueError(f"A Pixelate keverési módja 0 és 9 közé esik: {blend_mode}")
     height, width = image.shape[:2]
