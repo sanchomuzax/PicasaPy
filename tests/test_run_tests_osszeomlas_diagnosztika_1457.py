@@ -40,6 +40,7 @@ azonnal megadja.
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -125,12 +126,31 @@ class TestPytestFaulthandlerTimeout:
         )
 
 
+def _core_dump_nelkul() -> None:
+    """A gyerekfolyamatban (fork után, exec előtt) nullázza a core-korlátot."""
+    import resource
+
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+
+def _gyoker_core_fajljai() -> set[str]:
+    return {p.name for p in _GYOKER.glob("core*") if p.is_file()}
+
+
 class TestAFaulthandlerTENYLEG_ir(object):
     """Ismert pozitív: a beállítás csak akkor ér valamit, ha a jelre TÉNYLEG
-    kiírja a vermet. Ezt egy szándékosan összeomló gyerekfolyamattal mérjük."""
+    kiírja a vermet. Ezt egy szándékosan összeomló gyerekfolyamattal mérjük.
+
+    ⚠️ Az összeomlás core dumpot is hagyhat (#3617): ha a kernel
+    `core_pattern`-je relatív, a dump a gyerek munkamappájába kerül — ez
+    korábban a repó gyökere volt, ahol egy ~5 MB-os `core` jelent meg.
+    Ezért a gyerek a `tmp_path`-ban fut, és POSIX-on a core dump is ki van
+    kapcsolva (a Windowsnak nincs `resource` modulja és core dumpja sem)."""
 
     def test_a_sigsegv_verme_a_stderrre_kerul(self, tmp_path: Path) -> None:
         import subprocess
+
+        elotte = _gyoker_core_fajljai()
 
         szkript = tmp_path / "omlik.py"
         szkript.write_text(
@@ -148,9 +168,16 @@ class TestAFaulthandlerTENYLEG_ir(object):
             errors="replace",
             timeout=60,
             env={"PYTHONFAULTHANDLER": "1", "PATH": "/usr/bin:/bin"},
+            cwd=tmp_path,
+            preexec_fn=_core_dump_nelkul if os.name == "posix" else None,
         )
         assert eredmeny.returncode != 0
         assert "melyen" in eredmeny.stderr, (
             "a faulthandler nem írta ki a hívási láncot — enélkül a #1457 "
             f"osztályú bukás megint néma lenne. stderr: {eredmeny.stderr!r}"
+        )
+        uj_core = _gyoker_core_fajljai() - elotte
+        assert not uj_core, (
+            "#3617: a szándékos összeomlás core dumpot hagyott a repó "
+            f"gyökerében: {sorted(uj_core)}"
         )
