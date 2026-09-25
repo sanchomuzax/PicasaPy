@@ -727,9 +727,9 @@ A 9.1–9.10 mérése alapján a **táblák kinyerve**, a feloldó megvalósítv
 
 | mit | hol |
 |---|---|
-| a két tábla tartalma | `src/picasapy/metadata/objektiv_tabla.json` — 230 Canon + 416 Nikon rekord, a binárisból kinyerve — ⛔ a Nikon-rész egy sorral elcsúszott és egy sorral rövid (9.13 A) |
+| a két tábla tartalma | `src/picasapy/metadata/objektiv_tabla.json` — 230 Canon + 417 Nikon rekord; a Nikon-rész a 9.13 A `{kulcs, név}` párosításával újraépítve (#3495) |
 | a kinyerő | privát agent-repó: `eszkozok/meres/objektiv_tabla_kinyer.py` |
-| a feloldó | `src/picasapy/metadata/objektiv.py` — `canon_objektiv`, `nikon_objektiv`, `objektiv_neve` |
+| a feloldó | `src/picasapy/metadata/objektiv.py` — `canon_objektiv`, `nikon_objektiv`, `objektiv_neve`; a Nikon-ág (9.13): `nikon_leiras` / `nikon_talalat` |
 | az őr | `tests/metadata/test_objektiv_feloldas_3121.py` (17 próba) |
 
 A megvalósítás a mérés két nem-kézenfekvő részletét is átveszi:

@@ -1,5 +1,5 @@
 {
- "_forras": "Picasa3.exe 3.7 (10 160 456 bájt) — mérés: docs/specs/picasa-metaadat-tulajdonsagok.md 9. szakasz (#3121). Canon: 0x00c79c98, 230 × 24 bájt; Nikon: 0x00c7b230, 416 × 12 bájt.",
+ "_forras": "Picasa3.exe 3.7 (10 160 456 bájt) — mérés: docs/specs/picasa-metaadat-tulajdonsagok.md 9. szakasz (#3121). Canon: 0x00c79c98, 230 × 24 bájt; Nikon: 0x00c7b228, 417 × 12 bájt, {8 bájtos kulcs, név-mutató} — a 9.13 A helyesbítése (#3495).",
  "canon": [
   {
    "lens_type": 1,
@@ -1844,220 +1844,224 @@
  ],
  "nikon": [
   {
-   "lens_id": "000000000000E112",
+   "lens_id": "0000000000000001",
    "nev": "Manual Lens No CPU"
   },
   {
-   "lens_id": "000000000000F10C",
+   "lens_id": "000000000000E112",
    "nev": "TC-17E II"
   },
   {
-   "lens_id": "000000000000F218",
+   "lens_id": "000000000000F10C",
    "nev": "TC-14E [II] or Sigma APO Tele Converter 1.4x EX DG or Kenko Teleplus PRO 300 DG 1.4x"
   },
   {
-   "lens_id": "00361C2D343C0006",
+   "lens_id": "000000000000F218",
    "nev": "TC-20E [II] or Sigma APO Tele Converter 2x EX DG or Kenko Teleplus PRO 300 DG 2.0x"
   },
   {
-   "lens_id": "003C1F3730300006",
+   "lens_id": "00361C2D343C0006",
    "nev": "Tamron SP AF 11-18mm f/4.5-5.6 Di II LD Aspherical (IF) (A13)"
   },
   {
-   "lens_id": "003E80A0383F0002",
+   "lens_id": "003C1F3730300006",
    "nev": "Tokina AT-X 124 AF PRO DX (AF 12-24mm f/4)"
   },
   {
-   "lens_id": "003F2D802B400006",
+   "lens_id": "003E80A0383F0002",
    "nev": "Tamron SP AF 200-500mm f/5-6.3 Di LD (IF) (A08)"
   },
   {
-   "lens_id": "003F2D802C400006",
+   "lens_id": "003F2D802B400006",
    "nev": "Tamron AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical (IF) (A14)"
   },
   {
-   "lens_id": "003F80A0383F0002",
+   "lens_id": "003F2D802C400006",
    "nev": "Tamron AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical (IF) Macro (A14)"
   },
   {
-   "lens_id": "0040182B2C340006",
+   "lens_id": "003F80A0383F0002",
    "nev": "Tamron SP AF 200-500mm f/5-6.3 Di (A08)"
   },
   {
-   "lens_id": "00402A722C3C0006",
+   "lens_id": "0040182B2C340006",
    "nev": "Tokina AT-X 107 DX Fisheye (AF 10-17mm f/3.5-4.5)"
   },
   {
-   "lens_id": "00402B2B2C2C0002",
+   "lens_id": "00402A722C3C0006",
    "nev": "Tokina AT-X 16.5-135 DX (AF 16.5-135mm F3.5-5.6)"
   },
   {
-   "lens_id": "00402D2D2C2C0000",
+   "lens_id": "00402B2B2C2C0002",
    "nev": "Tokina AT-X 17 AF PRO (AF 17mm f/3.5)"
   },
   {
-   "lens_id": "00402D802C400006",
+   "lens_id": "00402D2D2C2C0000",
    "nev": "Carl Zeiss Distagon T* 3,5/18 ZF.2"
   },
   {
-   "lens_id": "00402D882C400006",
+   "lens_id": "00402D802C400006",
    "nev": "Tamron AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical (IF) Macro (A14NII)"
   },
   {
-   "lens_id": "00402D882C406206",
+   "lens_id": "00402D882C400006",
    "nev": "Tamron AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18NII)"
   },
   {
-   "lens_id": "004031312C2C0000",
+   "lens_id": "00402D882C406206",
    "nev": "Tamron AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18)"
   },
   {
-   "lens_id": "004037802C3C0002",
+   "lens_id": "004031312C2C0000",
    "nev": "Voigtlander Color Skopar 20mm F3.5 SLII Aspherical"
   },
   {
-   "lens_id": "004064642C2C0000",
+   "lens_id": "004037802C3C0002",
    "nev": "Tokina AT-X 242 AF (AF 24-200mm f/3.5-5.6)"
   },
   {
-   "lens_id": "00446098343C0002",
+   "lens_id": "004064642C2C0000",
    "nev": "Voigtlander APO-Lanthar 90mm F3.5 SLII Close Focus"
   },
   {
-   "lens_id": "0047101024240000",
+   "lens_id": "00446098343C0002",
    "nev": "Tokina AT-X 840 D (AF 80-400mm f/4.5-5.6)"
   },
   {
-   "lens_id": "0047252524240002",
+   "lens_id": "0047101024240000",
    "nev": "Fisheye Nikkor 8mm f/2.8 AiS"
   },
   {
-   "lens_id": "0047444424240006",
+   "lens_id": "0047252524240002",
    "nev": "Tamron SP AF 14mm f/2.8 Aspherical (IF) (69E)"
   },
   {
-   "lens_id": "00475380303C0006",
+   "lens_id": "0047444424240006",
    "nev": "Tokina AT-X M35 PRO DX (AF 35mm f/2.8 Macro)"
   },
   {
-   "lens_id": "00481C2924240006",
+   "lens_id": "00475380303C0006",
    "nev": "Tamron AF 55-200mm f/4-5.6 Di II LD (A15)"
   },
   {
-   "lens_id": "0048293C24240006",
+   "lens_id": "00481C2924240006",
    "nev": "Tokina AT-X 116 PRO DX (AF 11-16mm f/2.8)"
   },
   {
-   "lens_id": "0048295024240006",
+   "lens_id": "0048293C24240006",
    "nev": "Tokina AT-X 16-28 AF PRO FX (AF 16-28mm f/2.8)"
   },
   {
-   "lens_id": "0048323224240000",
+   "lens_id": "0048295024240006",
    "nev": "Tokina AT-X 165 PRO DX (AF 16-50mm f/2.8)"
   },
   {
-   "lens_id": "00483C6024240002",
+   "lens_id": "0048323224240000",
    "nev": "Carl Zeiss Distagon T* 2,8/21 ZF.2"
   },
   {
-   "lens_id": "00483C6A24240002",
+   "lens_id": "00483C6024240002",
    "nev": "Tokina AT-X 280 AF PRO (AF 28-80mm f/2.8)"
   },
   {
-   "lens_id": "0048505018180000",
+   "lens_id": "00483C6A24240002",
    "nev": "Tamron SP AF 28-105mm f/2.8 LD Aspherical IF (176D)"
   },
   {
-   "lens_id": "0048507224240006",
+   "lens_id": "0048505018180000",
    "nev": "Nikkor H 50mm f/2"
   },
   {
-   "lens_id": "00485C8E303C0006",
+   "lens_id": "0048507224240006",
    "nev": "Tokina AT-X 535 PRO DX (AF 50-135mm f/2.8)"
   },
   {
-   "lens_id": "0048686824240000",
+   "lens_id": "00485C8E303C0006",
    "nev": "Tamron AF 70-300mm f/4-5.6 Di LD Macro 1:2 (A17)"
   },
   {
-   "lens_id": "0048808030300000",
+   "lens_id": "0048686824240000",
    "nev": "Series E 100mm f/2.8"
   },
   {
-   "lens_id": "00493048222B0002",
+   "lens_id": "0048808030300000",
    "nev": "Nikkor 200mm f/4 AiS"
   },
   {
-   "lens_id": "004C6A6A20200000",
+   "lens_id": "00493048222B0002",
    "nev": "Tamron SP AF 20-40mm f/2.7-3.5 (166D)"
   },
   {
-   "lens_id": "004C7C7C2C2C0002",
+   "lens_id": "004C6A6A20200000",
    "nev": "Nikkor 105mm f/2.5 AiS"
   },
   {
-   "lens_id": "00532B5024240006",
+   "lens_id": "004C7C7C2C2C0002",
    "nev": "Tamron SP AF 180mm f/3.5 Di Model (B01)"
   },
   {
-   "lens_id": "00542B5024240006",
+   "lens_id": "00532B5024240006",
    "nev": "Tamron SP AF 17-50mm f/2.8 XR Di II LD Aspherical (IF) (A16)"
   },
   {
-   "lens_id": "00543C3C18180000",
+   "lens_id": "00542B5024240006",
    "nev": "Tamron SP AF 17-50mm f/2.8 XR Di II LD Aspherical (IF) (A16NII)"
   },
   {
-   "lens_id": "005444440C0C0000",
+   "lens_id": "00543C3C18180000",
    "nev": "Carl Zeiss Distagon T* 2/28 ZF.2"
   },
   {
-   "lens_id": "0054444418180000",
+   "lens_id": "005444440C0C0000",
    "nev": "Nikkor 35mm f/1.4 AiS"
   },
   {
-   "lens_id": "0054484818180000",
+   "lens_id": "0054444418180000",
    "nev": "Carl Zeiss Distagon T* 2/35 ZF.2"
   },
   {
-   "lens_id": "005450500C0C0000",
+   "lens_id": "0054484818180000",
    "nev": "Voigtlander Ultron 40mm F2 SLII Aspherical"
   },
   {
-   "lens_id": "0054505018180000",
+   "lens_id": "005450500C0C0000",
    "nev": "Carl Zeiss Planar T* 1,4/50 ZF.2"
   },
   {
-   "lens_id": "005455550C0C0000",
+   "lens_id": "0054505018180000",
    "nev": "Carl Zeiss Makro-Planar T* 2/50 ZF.2"
   },
   {
-   "lens_id": "0054565630300000",
+   "lens_id": "005455550C0C0000",
    "nev": "Voigtlander Nokton 58mm F1.4 SLII"
   },
   {
-   "lens_id": "005462620C0C0000",
+   "lens_id": "0054565630300000",
    "nev": "Coastal Optical Systems 60mm 1:4 UV-VIS-IR Macro Apo"
   },
   {
-   "lens_id": "0054686818180000",
+   "lens_id": "005462620C0C0000",
    "nev": "Carl Zeiss Planar T* 1,4/85 ZF.2"
   },
   {
-   "lens_id": "0054686824240002",
+   "lens_id": "0054686818180000",
    "nev": "Carl Zeiss Makro-Planar T* 2/100 ZF.2"
   },
   {
-   "lens_id": "00548E8E24240002",
+   "lens_id": "0054686824240002",
    "nev": "Tokina AT-X M100 PRO D (AF 100mm f/2.8 Macro)"
   },
   {
-   "lens_id": "0058646420200000",
+   "lens_id": "00548E8E24240002",
    "nev": "Tokina AT-X 300 AF PRO (AF 300mm f/2.8)"
   },
   {
-   "lens_id": "0100000000000200",
+   "lens_id": "0058646420200000",
    "nev": "Soligor C/D Macro MC 90mm f/2.5"
+  },
+  {
+   "lens_id": "0100000000000200",
+   "nev": "TC-16A"
   },
   {
    "lens_id": "0100000000000800",
@@ -2065,55 +2069,55 @@
   },
   {
    "lens_id": "0158505014140200",
-   "nev": "TC-16A"
-  },
-  {
-   "lens_id": "022F98983D3D0200",
    "nev": "AF Nikkor 50mm f/1.8"
   },
   {
-   "lens_id": "0234A0A044440200",
+   "lens_id": "022F98983D3D0200",
    "nev": "Sigma APO 400mm F5.6"
   },
   {
-   "lens_id": "02375E8E353D0200",
+   "lens_id": "0234A0A044440200",
    "nev": "Sigma APO 500mm F7.2"
   },
   {
-   "lens_id": "0237A0A034340200",
+   "lens_id": "02375E8E353D0200",
    "nev": "Sigma 75-300mm F4.5-5.6 APO"
   },
   {
-   "lens_id": "023A5E8E323D0200",
+   "lens_id": "0237A0A034340200",
    "nev": "Sigma APO 500mm F4.5"
   },
   {
-   "lens_id": "023B4461303D0200",
+   "lens_id": "023A5E8E323D0200",
    "nev": "Sigma 75-300mm F4.0-5.6"
   },
   {
-   "lens_id": "023CB0B03C3C0200",
+   "lens_id": "023B4461303D0200",
    "nev": "Sigma 35-80mm F4-5.6"
   },
   {
-   "lens_id": "023F24242C2C0200",
+   "lens_id": "023CB0B03C3C0200",
    "nev": "Sigma APO 800mm F5.6"
   },
   {
-   "lens_id": "023F3C5C2D350200",
+   "lens_id": "023F24242C2C0200",
    "nev": "Sigma 14mm F3.5"
   },
   {
-   "lens_id": "0240445C2C340200",
+   "lens_id": "023F3C5C2D350200",
    "nev": "Sigma 28-70mm F3.5-4.5 UC"
   },
   {
-   "lens_id": "024044732B360200",
+   "lens_id": "0240445C2C340200",
    "nev": "Exakta AF 35-70mm 1:3.5-4.5 MC"
   },
   {
-   "lens_id": "0242445C2A340200",
+   "lens_id": "024044732B360200",
    "nev": "Sigma 35-135mm F3.5-4.5 a"
+  },
+  {
+   "lens_id": "0242445C2A340200",
+   "nev": "AF Zoom-Nikkor 35-70mm f/3.3-4.5"
   },
   {
    "lens_id": "0242445C2A340800",
@@ -2121,55 +2125,55 @@
   },
   {
    "lens_id": "0246373725250200",
-   "nev": "AF Zoom-Nikkor 35-70mm f/3.3-4.5"
-  },
-  {
-   "lens_id": "02463C5C25250200",
    "nev": "Sigma 24mm F2.8 Super Wide II Macro"
   },
   {
-   "lens_id": "02465C8225250200",
+   "lens_id": "02463C5C25250200",
    "nev": "Sigma 28-70mm F2.8"
   },
   {
-   "lens_id": "0248656524240200",
+   "lens_id": "02465C8225250200",
    "nev": "Sigma 70-210mm F2.8 APO"
   },
   {
-   "lens_id": "03435C8135350200",
+   "lens_id": "0248656524240200",
    "nev": "Sigma 90mm F2.8 Macro"
   },
   {
-   "lens_id": "03485C8130300200",
+   "lens_id": "03435C8135350200",
    "nev": "Soligor AF C/D Zoom UMCS 70-210mm 1:4.5"
   },
   {
-   "lens_id": "04483C3C24240300",
+   "lens_id": "03485C8130300200",
    "nev": "AF Zoom-Nikkor 70-210mm f/4"
   },
   {
-   "lens_id": "055450500C0C0400",
+   "lens_id": "04483C3C24240300",
    "nev": "AF Nikkor 28mm f/2.8"
   },
   {
-   "lens_id": "063F68682C2C0600",
+   "lens_id": "055450500C0C0400",
    "nev": "AF Nikkor 50mm f/1.4"
   },
   {
-   "lens_id": "0654535324240600",
+   "lens_id": "063F68682C2C0600",
    "nev": "Cosina AF 100mm F3.5 Macro"
   },
   {
-   "lens_id": "07363D5F2C3C0300",
+   "lens_id": "0654535324240600",
    "nev": "AF Micro-Nikkor 55mm f/2.8"
   },
   {
-   "lens_id": "073E30432D350300",
+   "lens_id": "07363D5F2C3C0300",
    "nev": "Cosina AF Zoom 28-80mm F3.5-5.6 MC Macro"
   },
   {
-   "lens_id": "07402F442C340302",
+   "lens_id": "073E30432D350300",
    "nev": "Soligor AF Zoom 19-35mm 1:3.5-4.5 MC"
+  },
+  {
+   "lens_id": "07402F442C340302",
+   "nev": "Tamron AF 19-35mm f/3.5-4.5 (A10)"
   },
   {
    "lens_id": "074030452D350302",
@@ -2177,139 +2181,139 @@
   },
   {
    "lens_id": "07403C5C2C350300",
-   "nev": "Tamron AF 19-35mm f/3.5-4.5 (A10)"
-  },
-  {
-   "lens_id": "07403C622C340300",
    "nev": "Tokina AF 270 II (AF 28-70mm f/3.5-4.5)"
   },
   {
-   "lens_id": "07462B4424300302",
+   "lens_id": "07403C622C340300",
    "nev": "AF Zoom-Nikkor 28-85mm f/3.5-4.5"
   },
   {
-   "lens_id": "07463D6A252F0300",
+   "lens_id": "07462B4424300302",
    "nev": "Tamron SP AF 17-35mm f/2.8-4 Di LD Aspherical (IF) (A05)"
   },
   {
-   "lens_id": "07473C5C25350300",
+   "lens_id": "07463D6A252F0300",
    "nev": "Cosina AF Zoom 28-105mm F2.8-3.8 MC"
   },
   {
-   "lens_id": "07483C5C24240300",
+   "lens_id": "07473C5C25350300",
    "nev": "Tokina AF 287 SD (AF 28-70mm f/2.8-4.5)"
   },
   {
-   "lens_id": "0840446A2C340400",
+   "lens_id": "07483C5C24240300",
    "nev": "Tokina AT-X 287 AF (AF 28-70mm f/2.8)"
   },
   {
-   "lens_id": "0948373724240400",
+   "lens_id": "0840446A2C340400",
    "nev": "AF Zoom-Nikkor 35-105mm f/3.5-4.5"
   },
   {
-   "lens_id": "0A488E8E24240300",
+   "lens_id": "0948373724240400",
    "nev": "AF Nikkor 24mm f/2.8"
   },
   {
-   "lens_id": "0A488E8E24240500",
+   "lens_id": "0A488E8E24240300",
    "nev": "AF Nikkor 300mm f/2.8 IF-ED"
   },
   {
-   "lens_id": "0B3E3D7F2F3D0E00",
+   "lens_id": "0A488E8E24240500",
    "nev": "AF Nikkor 300mm f/2.8 IF-ED N"
   },
   {
-   "lens_id": "0B3E3D7F2F3D0E02",
+   "lens_id": "0B3E3D7F2F3D0E00",
    "nev": "Tamron AF 28-200mm f/3.8-5.6 (71D)"
   },
   {
-   "lens_id": "0B487C7C24240500",
+   "lens_id": "0B3E3D7F2F3D0E02",
    "nev": "Tamron AF 28-200mm f/3.8-5.6D (171D)"
   },
   {
-   "lens_id": "0D4044722C340700",
+   "lens_id": "0B487C7C24240500",
    "nev": "AF Nikkor 180mm f/2.8 IF-ED"
   },
   {
-   "lens_id": "0E485C8130300500",
+   "lens_id": "0D4044722C340700",
    "nev": "AF Zoom-Nikkor 35-135mm f/3.5-4.5"
   },
   {
-   "lens_id": "0E4A3148232D0E02",
+   "lens_id": "0E485C8130300500",
    "nev": "AF Zoom-Nikkor 70-210mm f/4"
   },
   {
-   "lens_id": "0F58505014140500",
+   "lens_id": "0E4A3148232D0E02",
    "nev": "Tamron SP AF 20-40mm f/2.7-3.5 (166D)"
   },
   {
-   "lens_id": "103D3C602C3CD202",
+   "lens_id": "0F58505014140500",
    "nev": "AF Nikkor 50mm f/1.8 N"
   },
   {
-   "lens_id": "10488E8E30300800",
+   "lens_id": "103D3C602C3CD202",
    "nev": "Tamron AF 28-80mm f/3.5-5.6 Aspherical (177D)"
   },
   {
-   "lens_id": "1148445C24240800",
+   "lens_id": "10488E8E30300800",
    "nev": "AF Nikkor 300mm f/4 IF-ED"
   },
   {
-   "lens_id": "12365C81353D0900",
+   "lens_id": "1148445C24240800",
    "nev": "AF Zoom-Nikkor 35-70mm f/2.8"
   },
   {
-   "lens_id": "12395C8E343D0802",
+   "lens_id": "12365C81353D0900",
    "nev": "Cosina AF Zoom 70-210mm F4.5-5.6 MC Macro"
   },
   {
-   "lens_id": "123B688D3D430902",
+   "lens_id": "12395C8E343D0802",
    "nev": "Cosina AF Zoom 70-300mm F4.5-5.6 MC Macro"
   },
   {
-   "lens_id": "123B98983D3D0900",
+   "lens_id": "123B688D3D430902",
    "nev": "Cosina AF Zoom 100-300mm F5.6-6.7 MC Macro"
   },
   {
-   "lens_id": "123D3C802E3CDF02",
+   "lens_id": "123B98983D3D0900",
    "nev": "Tokina AT-X 400 AF SD (AF 400mm f/5.6)"
   },
   {
-   "lens_id": "12445E8E343C0900",
+   "lens_id": "123D3C802E3CDF02",
    "nev": "Tamron AF 28-200mm f/3.8-5.6 AF Aspherical LD (IF) (271D)"
   },
   {
-   "lens_id": "12485C81303C0900",
+   "lens_id": "12445E8E343C0900",
    "nev": "Tokina AF 730 (AF 75-300mm F4.5-5.6)"
   },
   {
-   "lens_id": "124A5C81313D0900",
+   "lens_id": "12485C81303C0900",
    "nev": "AF Nikkor 70-210mm f/4-5.6"
   },
   {
-   "lens_id": "134237502A340B00",
+   "lens_id": "124A5C81313D0900",
    "nev": "Soligor AF C/D Auto Zoom+Macro 70-210mm 1:4-5.6 UMCS"
   },
   {
-   "lens_id": "1448608024240B00",
+   "lens_id": "134237502A340B00",
    "nev": "AF Zoom-Nikkor 24-50mm f/3.3-4.5"
   },
   {
-   "lens_id": "1448688E30300B00",
+   "lens_id": "1448608024240B00",
    "nev": "AF Zoom-Nikkor 80-200mm f/2.8 ED"
   },
   {
-   "lens_id": "1454608024240B00",
+   "lens_id": "1448688E30300B00",
    "nev": "Tokina AT-X 340 AF (AF 100-300mm f/4)"
   },
   {
-   "lens_id": "154C626214140C00",
+   "lens_id": "1454608024240B00",
    "nev": "Tokina AT-X 828 AF (AF 80-200mm f/2.8)"
   },
   {
-   "lens_id": "173CA0A030300F00",
+   "lens_id": "154C626214140C00",
    "nev": "AF Nikkor 85mm f/1.8"
+  },
+  {
+   "lens_id": "173CA0A030300F00",
+   "nev": "Nikkor 500mm f/4 P ED IF"
   },
   {
    "lens_id": "173CA0A030301100",
@@ -2317,86 +2321,82 @@
   },
   {
    "lens_id": "184044722C340E00",
-   "nev": "Nikkor 500mm f/4 P ED IF"
-  },
-  {
-   "lens_id": "1A54444418181100",
    "nev": "AF Zoom-Nikkor 35-135mm f/3.5-4.5 N"
   },
   {
-   "lens_id": "1B445E8E343C1000",
+   "lens_id": "1A54444418181100",
    "nev": "AF Nikkor 35mm f/2"
   },
   {
-   "lens_id": "1C48303024241200",
+   "lens_id": "1B445E8E343C1000",
    "nev": "AF Zoom-Nikkor 75-300mm f/4.5-5.6"
   },
   {
-   "lens_id": "1D42445C2A341200",
+   "lens_id": "1C48303024241200",
    "nev": "AF Nikkor 20mm f/2.8"
   },
   {
-   "lens_id": "1E54565624241300",
+   "lens_id": "1D42445C2A341200",
    "nev": "AF Zoom-Nikkor 35-70mm f/3.3-4.5 N"
   },
   {
-   "lens_id": "1E5D646420201300",
+   "lens_id": "1E54565624241300",
    "nev": "AF Micro-Nikkor 60mm f/2.8"
   },
   {
-   "lens_id": "1F546A6A24241400",
+   "lens_id": "1E5D646420201300",
    "nev": "Tamron SP AF 90mm f/2.5 (52E)"
   },
   {
-   "lens_id": "203C80983D3D1E02",
+   "lens_id": "1F546A6A24241400",
    "nev": "AF Micro-Nikkor 105mm f/2.8"
   },
   {
-   "lens_id": "2048608024241500",
+   "lens_id": "203C80983D3D1E02",
    "nev": "Tamron AF 200-400mm f/5.6 LD IF (75D)"
   },
   {
-   "lens_id": "205A646420201400",
+   "lens_id": "2048608024241500",
    "nev": "AF Zoom-Nikkor 80-200mm f/2.8 ED"
   },
   {
-   "lens_id": "21403C5C2C341600",
+   "lens_id": "205A646420201400",
    "nev": "Tamron SP AF 90mm f/2.5 Macro (152E)"
   },
   {
-   "lens_id": "21568E8E24241400",
+   "lens_id": "21403C5C2C341600",
    "nev": "AF Zoom-Nikkor 28-70mm f/3.5-4.5"
   },
   {
-   "lens_id": "2248727218181600",
+   "lens_id": "21568E8E24241400",
    "nev": "Tamron SP AF 300mm f/2.8 LD-IF (60E)"
   },
   {
-   "lens_id": "225364642424E002",
+   "lens_id": "2248727218181600",
    "nev": "AF DC-Nikkor 135mm f/2"
   },
   {
-   "lens_id": "2330BECA3C481700",
+   "lens_id": "225364642424E002",
    "nev": "Tamron SP AF 90mm f/2.8 Macro 1:1 (72E)"
   },
   {
-   "lens_id": "24446098343C1A02",
+   "lens_id": "2330BECA3C481700",
    "nev": "Zoom-Nikkor 1200-1700mm f/5.6-8 P ED IF"
   },
   {
-   "lens_id": "2448608024241A02",
+   "lens_id": "24446098343C1A02",
    "nev": "Tokina AT-X 840 AF-II (AF 80-400mm f/4.5-5.6)"
   },
   {
-   "lens_id": "2454608024241A02",
+   "lens_id": "2448608024241A02",
    "nev": "AF Zoom-Nikkor 80-200mm f/2.8D ED"
   },
   {
-   "lens_id": "2544448E34421B02",
+   "lens_id": "2454608024241A02",
    "nev": "Tokina AT-X 828 AF PRO (AF 80-200mm f/2.8)"
   },
   {
-   "lens_id": "25483C5C24241B02",
+   "lens_id": "2544448E34421B02",
    "nev": "Tokina AF 353 (AF 35-300mm f/4.5-6.7)"
   },
   {
@@ -2404,8 +2404,12 @@
    "nev": "Tokina AT-X 270 AF PRO II (AF 28-70mm f/2.6-2.8)"
   },
   {
-   "lens_id": "2548445C24241B02",
+   "lens_id": "25483C5C24241B02",
    "nev": "Tokina AT-X 287 AF PRO SV (AF 28-70mm f/2.8)"
+  },
+  {
+   "lens_id": "2548445C24241B02",
+   "nev": "AF Zoom-Nikkor 35-70mm f/2.8D"
   },
   {
    "lens_id": "2548445C24245202",
@@ -2413,67 +2417,67 @@
   },
   {
    "lens_id": "263C5480303C1C06",
-   "nev": "AF Zoom-Nikkor 35-70mm f/2.8D"
-  },
-  {
-   "lens_id": "263C5C82303C1C02",
    "nev": "Sigma 55-200mm F4-5.6 DC"
   },
   {
-   "lens_id": "263C5C8E303C1C02",
+   "lens_id": "263C5C82303C1C02",
    "nev": "Sigma 70-210mm F4-5.6 UC-II"
   },
   {
-   "lens_id": "263C98983C3C1C02",
+   "lens_id": "263C5C8E303C1C02",
    "nev": "Sigma 70-300mm F4-5.6 DG Macro"
   },
   {
-   "lens_id": "263D3C802F3D1C02",
+   "lens_id": "263C98983C3C1C02",
    "nev": "Sigma APO Tele Macro 400mm F5.6"
   },
   {
-   "lens_id": "263E3C6A2E3C1C02",
+   "lens_id": "263D3C802F3D1C02",
    "nev": "Sigma 28-300mm F3.8-5.6 Aspherical"
   },
   {
-   "lens_id": "2640273F2C341C02",
+   "lens_id": "263E3C6A2E3C1C02",
    "nev": "Sigma 28-105mm F3.8-5.6 UC-III Aspherical IF"
   },
   {
-   "lens_id": "26402D442B341C02",
+   "lens_id": "2640273F2C341C02",
    "nev": "Sigma 15-30mm F3.5-4.5 EX DG Aspherical DF"
   },
   {
-   "lens_id": "26402D502C3C1C06",
+   "lens_id": "26402D442B341C02",
    "nev": "Sigma 18-35 F3.5-4.5 Aspherical"
   },
   {
-   "lens_id": "26402D702B3C1C06",
+   "lens_id": "26402D502C3C1C06",
    "nev": "Sigma 18-50mm F3.5-5.6 DC"
   },
   {
-   "lens_id": "26402D802C401C06",
+   "lens_id": "26402D702B3C1C06",
    "nev": "Sigma 18-125mm F3.5-5.6 DC"
   },
   {
-   "lens_id": "2640375C2C3C1C02",
+   "lens_id": "26402D802C401C06",
    "nev": "Sigma 18-200mm F3.5-6.3 DC"
   },
   {
-   "lens_id": "26403C5C2C341C02",
+   "lens_id": "2640375C2C3C1C02",
    "nev": "Sigma 24-70mm F3.5-5.6 Aspherical HF"
   },
   {
-   "lens_id": "26403C602C3C1C02",
+   "lens_id": "26403C5C2C341C02",
    "nev": "AF Zoom-Nikkor 28-70mm f/3.5-4.5D"
   },
   {
-   "lens_id": "26403C652C3C1C02",
+   "lens_id": "26403C602C3C1C02",
    "nev": "Sigma 28-80mm F3.5-5.6 Mini Zoom Macro II Aspherical"
   },
   {
-   "lens_id": "26403C802B3C1C02",
+   "lens_id": "26403C652C3C1C02",
    "nev": "Sigma 28-90mm F3.5-5.6 Macro"
+  },
+  {
+   "lens_id": "26403C802B3C1C02",
+   "nev": "Sigma 28-200mm F3.5-5.6 Compact Aspherical Hyperzoom Macro"
   },
   {
    "lens_id": "26403C802C3C1C02",
@@ -2481,143 +2485,143 @@
   },
   {
    "lens_id": "26403C8E2C401C02",
-   "nev": "Sigma 28-200mm F3.5-5.6 Compact Aspherical Hyperzoom Macro"
-  },
-  {
-   "lens_id": "26407BA034401C02",
    "nev": "Sigma 28-300mm F3.5-6.3 Macro"
   },
   {
-   "lens_id": "26413C8E2C401C02",
+   "lens_id": "26407BA034401C02",
    "nev": "Sigma APO 170-500mm F5-6.3 Aspherical RF"
   },
   {
-   "lens_id": "26447398343C1C02",
+   "lens_id": "26413C8E2C401C02",
    "nev": "Sigma 28-300mm F3.5-6.3 DG Macro"
   },
   {
-   "lens_id": "2648111130301C02",
+   "lens_id": "26447398343C1C02",
    "nev": "Sigma 135-400mm F4.5-5.6 APO Aspherical"
   },
   {
-   "lens_id": "2648272724241C02",
+   "lens_id": "2648111130301C02",
    "nev": "Sigma 8mm F4 EX Circular Fisheye"
   },
   {
-   "lens_id": "26482D5024241C06",
+   "lens_id": "2648272724241C02",
    "nev": "Sigma 15mm F2.8 EX Diagonal Fisheye"
   },
   {
-   "lens_id": "2648314924241C02",
+   "lens_id": "26482D5024241C06",
    "nev": "Sigma 18-50mm F2.8 EX DC"
   },
   {
-   "lens_id": "2648375624241C02",
+   "lens_id": "2648314924241C02",
    "nev": "Sigma 20-40mm F2.8"
   },
   {
-   "lens_id": "26483C5C24241C06",
+   "lens_id": "2648375624241C02",
    "nev": "Sigma 24-60mm F2.8 EX DG"
   },
   {
-   "lens_id": "26483C5C24301C02",
+   "lens_id": "26483C5C24241C06",
    "nev": "Sigma 28-70mm F2.8 EX DG"
   },
   {
-   "lens_id": "26483C6A24301C02",
+   "lens_id": "26483C5C24301C02",
    "nev": "Sigma 28-70mm F2.8-4 DG"
   },
   {
-   "lens_id": "26488E8E30301C02",
+   "lens_id": "26483C6A24301C02",
    "nev": "Sigma 28-105mm F2.8-4 Aspherical"
   },
   {
-   "lens_id": "26542B4424301C02",
+   "lens_id": "26488E8E30301C02",
    "nev": "Sigma APO Tele Macro 300mm F4"
   },
   {
-   "lens_id": "2654375C24241C02",
+   "lens_id": "26542B4424301C02",
    "nev": "Sigma 17-35mm F2.8-4 EX Aspherical"
   },
   {
-   "lens_id": "2654377324341C02",
+   "lens_id": "2654375C24241C02",
    "nev": "Sigma 24-70mm F2.8 EX DG Macro"
   },
   {
-   "lens_id": "26543C5C24241C02",
+   "lens_id": "2654377324341C02",
    "nev": "Sigma 24-135mm F2.8-4.5"
   },
   {
-   "lens_id": "2658313114141C02",
+   "lens_id": "26543C5C24241C02",
    "nev": "Sigma 28-70mm F2.8 EX"
   },
   {
-   "lens_id": "2658373714141C02",
+   "lens_id": "2658313114141C02",
    "nev": "Sigma 20mm F1.8 EX DG Aspherical RF"
   },
   {
-   "lens_id": "26583C3C14141C02",
+   "lens_id": "2658373714141C02",
    "nev": "Sigma 24mm F1.8 EX DG Aspherical Macro"
   },
   {
-   "lens_id": "27488E8E24241D02",
+   "lens_id": "26583C3C14141C02",
    "nev": "Sigma 28mm F1.8 EX DG Aspherical Macro"
   },
   {
-   "lens_id": "27488E8E2424E102",
+   "lens_id": "27488E8E24241D02",
    "nev": "AF-I Nikkor 300mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "27488E8E2424F102",
+   "lens_id": "27488E8E2424E102",
    "nev": "AF-I Nikkor 300mm f/2.8D IF-ED + TC-17E"
   },
   {
-   "lens_id": "27488E8E2424F202",
+   "lens_id": "27488E8E2424F102",
    "nev": "AF-I Nikkor 300mm f/2.8D IF-ED + TC-14E"
   },
   {
-   "lens_id": "27488E8E30301D02",
+   "lens_id": "27488E8E2424F202",
    "nev": "AF-I Nikkor 300mm f/2.8D IF-ED + TC-20E"
   },
   {
-   "lens_id": "27548E8E24241D02",
+   "lens_id": "27488E8E30301D02",
    "nev": "Tokina AT-X 304 AF (AF 300mm f/4.0)"
   },
   {
-   "lens_id": "283CA6A630301D02",
+   "lens_id": "27548E8E24241D02",
    "nev": "Tamron SP AF 300mm f/2.8 LD-IF (360E)"
   },
   {
-   "lens_id": "283CA6A63030E102",
+   "lens_id": "283CA6A630301D02",
    "nev": "AF-I Nikkor 600mm f/4D IF-ED"
   },
   {
-   "lens_id": "283CA6A63030F102",
+   "lens_id": "283CA6A63030E102",
    "nev": "AF-I Nikkor 600mm f/4D IF-ED + TC-17E"
   },
   {
-   "lens_id": "283CA6A63030F202",
+   "lens_id": "283CA6A63030F102",
    "nev": "AF-I Nikkor 600mm f/4D IF-ED + TC-14E"
   },
   {
-   "lens_id": "2A543C3C0C0C2602",
+   "lens_id": "283CA6A63030F202",
    "nev": "AF-I Nikkor 600mm f/4D IF-ED + TC-20E"
   },
   {
-   "lens_id": "2B3C4460303C1F02",
+   "lens_id": "2A543C3C0C0C2602",
    "nev": "AF Nikkor 28mm f/1.4D"
   },
   {
-   "lens_id": "2C486A6A18182702",
+   "lens_id": "2B3C4460303C1F02",
    "nev": "AF Zoom-Nikkor 35-80mm f/4-5.6D"
   },
   {
-   "lens_id": "2D48808030302102",
+   "lens_id": "2C486A6A18182702",
    "nev": "AF DC-Nikkor 105mm f/2D"
   },
   {
-   "lens_id": "2E485C82303C2202",
+   "lens_id": "2D48808030302102",
    "nev": "AF Micro-Nikkor 200mm f/4D IF-ED"
+  },
+  {
+   "lens_id": "2E485C82303C2202",
+   "nev": "AF Nikkor 70-210mm f/4-5.6D"
   },
   {
    "lens_id": "2E485C82303C2802",
@@ -2625,14 +2629,10 @@
   },
   {
    "lens_id": "2F4030442C342902",
-   "nev": "AF Nikkor 70-210mm f/4-5.6D"
-  },
-  {
-   "lens_id": "2F4030442C342902",
    "nev": "Tokina AF 235 II (AF 20-35mm f/3.5-4.5)"
   },
   {
-   "lens_id": "2F48304424242902",
+   "lens_id": "2F4030442C342902",
    "nev": "Tokina AF 193 (AF 19-35mm f/3.5-4.5)"
   },
   {
@@ -2640,35 +2640,35 @@
    "nev": "AF Zoom-Nikkor 20-35mm f/2.8D IF"
   },
   {
-   "lens_id": "3048989824242402",
+   "lens_id": "2F48304424242902",
    "nev": "Tokina AT-X 235 AF PRO (AF 20-35mm f/2.8)"
   },
   {
-   "lens_id": "304898982424E102",
+   "lens_id": "3048989824242402",
    "nev": "AF-I Nikkor 400mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "304898982424F102",
+   "lens_id": "304898982424E102",
    "nev": "AF-I Nikkor 400mm f/2.8D IF-ED + TC-17E"
   },
   {
-   "lens_id": "304898982424F202",
+   "lens_id": "304898982424F102",
    "nev": "AF-I Nikkor 400mm f/2.8D IF-ED + TC-14E"
   },
   {
-   "lens_id": "3154565624242502",
+   "lens_id": "304898982424F202",
    "nev": "AF-I Nikkor 400mm f/2.8D IF-ED + TC-20E"
   },
   {
-   "lens_id": "3253646424243502",
+   "lens_id": "3154565624242502",
    "nev": "AF Micro-Nikkor 60mm f/2.8D"
   },
   {
-   "lens_id": "3254505024243502",
+   "lens_id": "3253646424243502",
    "nev": "Tamron SP AF 90mm f/2.8 [Di] Macro 1:1 (172E/272E)"
   },
   {
-   "lens_id": "32546A6A24243502",
+   "lens_id": "3254505024243502",
    "nev": "Sigma Macro 50mm F2.8 EX DG"
   },
   {
@@ -2676,260 +2676,264 @@
    "nev": "AF Micro-Nikkor 105mm f/2.8D"
   },
   {
-   "lens_id": "33482D2D24243102",
+   "lens_id": "32546A6A24243502",
    "nev": "Sigma Macro 105mm F2.8 EX DG"
   },
   {
-   "lens_id": "33543C5E24246202",
+   "lens_id": "33482D2D24243102",
    "nev": "AF Nikkor 18mm f/2.8D"
   },
   {
-   "lens_id": "3448292924243202",
+   "lens_id": "33543C5E24246202",
    "nev": "Tamron SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09)"
   },
   {
-   "lens_id": "353CA0A030303302",
+   "lens_id": "3448292924243202",
    "nev": "AF Fisheye Nikkor 16mm f/2.8D"
   },
   {
-   "lens_id": "353CA0A03030E102",
+   "lens_id": "353CA0A030303302",
    "nev": "AF-I Nikkor 500mm f/4D IF-ED"
   },
   {
-   "lens_id": "353CA0A03030F102",
+   "lens_id": "353CA0A03030E102",
    "nev": "AF-I Nikkor 500mm f/4D IF-ED + TC-17E"
   },
   {
-   "lens_id": "353CA0A03030F202",
+   "lens_id": "353CA0A03030F102",
    "nev": "AF-I Nikkor 500mm f/4D IF-ED + TC-14E"
   },
   {
-   "lens_id": "3648373724243402",
+   "lens_id": "353CA0A03030F202",
    "nev": "AF-I Nikkor 500mm f/4D IF-ED + TC-20E"
   },
   {
-   "lens_id": "3748303024243602",
+   "lens_id": "3648373724243402",
    "nev": "AF Nikkor 24mm f/2.8D"
   },
   {
-   "lens_id": "384C626214143702",
+   "lens_id": "3748303024243602",
    "nev": "AF Nikkor 20mm f/2.8D"
   },
   {
-   "lens_id": "3A403C5C2C343902",
+   "lens_id": "384C626214143702",
    "nev": "AF Nikkor 85mm f/1.8D"
   },
   {
-   "lens_id": "3B48445C24243A02",
+   "lens_id": "3A403C5C2C343902",
    "nev": "AF Zoom-Nikkor 28-70mm f/3.5-4.5D"
   },
   {
-   "lens_id": "3C48608024243B02",
+   "lens_id": "3B48445C24243A02",
    "nev": "AF Zoom-Nikkor 35-70mm f/2.8D N"
   },
   {
-   "lens_id": "3D3C4460303C3E02",
+   "lens_id": "3C48608024243B02",
    "nev": "AF Zoom-Nikkor 80-200mm f/2.8D ED"
   },
   {
-   "lens_id": "3E483C3C24243D02",
+   "lens_id": "3D3C4460303C3E02",
    "nev": "AF Zoom-Nikkor 35-80mm f/4-5.6D"
   },
   {
-   "lens_id": "3F40446A2C344502",
+   "lens_id": "3E483C3C24243D02",
    "nev": "AF Nikkor 28mm f/2.8D"
   },
   {
-   "lens_id": "41487C7C24244302",
+   "lens_id": "3F40446A2C344502",
    "nev": "AF Zoom-Nikkor 35-105mm f/3.5-4.5D"
   },
   {
-   "lens_id": "4254444418184402",
+   "lens_id": "41487C7C24244302",
    "nev": "AF Nikkor 180mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "435450500C0C4602",
+   "lens_id": "4254444418184402",
    "nev": "AF Nikkor 35mm f/2D"
   },
   {
-   "lens_id": "44446080343C4702",
+   "lens_id": "435450500C0C4602",
    "nev": "AF Nikkor 50mm f/1.4D"
   },
   {
-   "lens_id": "453D3C602C3C4802",
+   "lens_id": "44446080343C4702",
    "nev": "AF Zoom-Nikkor 80-200mm f/4.5-5.6D"
   },
   {
-   "lens_id": "45403C602C3C4802",
+   "lens_id": "453D3C602C3C4802",
    "nev": "Tamron AF 28-80mm f/3.5-5.6 Aspherical (177D)"
   },
   {
-   "lens_id": "454137722C3C4802",
+   "lens_id": "45403C602C3C4802",
    "nev": "AF Zoom-Nikkor 28-80mm f/3.5-5.6D"
   },
   {
-   "lens_id": "463C4460303C4902",
+   "lens_id": "454137722C3C4802",
    "nev": "Tamron SP AF 24-135mm f/3.5-5.6 AD Aspherical (IF) Macro (190D)"
   },
   {
-   "lens_id": "474237502A344A02",
+   "lens_id": "463C4460303C4902",
    "nev": "AF Zoom-Nikkor 35-80mm f/4-5.6D N"
   },
   {
-   "lens_id": "48381F37343C4B06",
+   "lens_id": "474237502A344A02",
    "nev": "AF Zoom-Nikkor 24-50mm f/3.3-4.5D"
   },
   {
-   "lens_id": "483C1931303C4B06",
+   "lens_id": "48381F37343C4B06",
    "nev": "Sigma 12-24mm F4.5-5.6 EX DG Aspherical HSM"
   },
   {
-   "lens_id": "483C50A030404B02",
+   "lens_id": "483C1931303C4B06",
    "nev": "Sigma 10-20mm F4-5.6 EX DC HSM"
   },
   {
-   "lens_id": "483C8EB03C3C4B02",
+   "lens_id": "483C50A030404B02",
    "nev": "Sigma 50-500mm F4-6.3 EX APO RF HSM"
   },
   {
-   "lens_id": "483CB0B03C3C4B02",
+   "lens_id": "483C8EB03C3C4B02",
    "nev": "Sigma APO 300-800mm F5.6 EX DG HSM"
   },
   {
-   "lens_id": "4844A0A034344B02",
+   "lens_id": "483CB0B03C3C4B02",
    "nev": "Sigma APO 800mm F5.6 EX HSM"
   },
   {
-   "lens_id": "4848242424244B02",
+   "lens_id": "4844A0A034344B02",
    "nev": "Sigma APO 500mm F4.5 EX HSM"
   },
   {
-   "lens_id": "48482B4424304B06",
+   "lens_id": "4848242424244B02",
    "nev": "Sigma 14mm F2.8 EX Aspherical HSM"
   },
   {
-   "lens_id": "4848688E30304B02",
+   "lens_id": "48482B4424304B06",
    "nev": "Sigma 17-35mm F2.8-4 EX DG Aspherical HSM"
   },
   {
-   "lens_id": "4848767624244B06",
+   "lens_id": "4848688E30304B02",
    "nev": "Sigma 100-300mm F4 EX IF HSM"
   },
   {
-   "lens_id": "48488E8E24244B02",
+   "lens_id": "4848767624244B06",
    "nev": "Sigma 150mm F2.8 EX DG APO Macro HSM"
   },
   {
-   "lens_id": "48488E8E2424E102",
+   "lens_id": "48488E8E24244B02",
    "nev": "AF-S Nikkor 300mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "48488E8E2424F102",
+   "lens_id": "48488E8E2424E102",
    "nev": "AF-S Nikkor 300mm f/2.8D IF-ED + TC-17E"
   },
   {
-   "lens_id": "48488E8E2424F202",
+   "lens_id": "48488E8E2424F102",
    "nev": "AF-S Nikkor 300mm f/2.8D IF-ED + TC-14E"
   },
   {
-   "lens_id": "484C7C7C2C2C4B02",
+   "lens_id": "48488E8E2424F202",
    "nev": "AF-S Nikkor 300mm f/2.8D IF-ED + TC-20E"
   },
   {
-   "lens_id": "484C7D7D2C2C4B02",
+   "lens_id": "484C7C7C2C2C4B02",
    "nev": "Sigma 180mm F3.5 EX DG Macro"
   },
   {
-   "lens_id": "48543E3E0C0C4B06",
+   "lens_id": "484C7D7D2C2C4B02",
    "nev": "Sigma APO Macro 180mm F3.5 EX DG HSM"
   },
   {
-   "lens_id": "48545C8024244B02",
+   "lens_id": "48543E3E0C0C4B06",
    "nev": "Sigma 30mm F1.4 EX DC HSM"
   },
   {
-   "lens_id": "48546F8E24244B02",
+   "lens_id": "48545C8024244B02",
    "nev": "Sigma 70-200mm F2.8 EX APO IF HSM"
   },
   {
-   "lens_id": "48548E8E24244B02",
+   "lens_id": "48546F8E24244B02",
    "nev": "Sigma APO 120-300mm F2.8 EX DG HSM"
   },
   {
-   "lens_id": "493CA6A630304C02",
+   "lens_id": "48548E8E24244B02",
    "nev": "Sigma APO 300mm F2.8 EX DG HSM"
   },
   {
-   "lens_id": "493CA6A63030E102",
+   "lens_id": "493CA6A630304C02",
    "nev": "AF-S Nikkor 600mm f/4D IF-ED"
   },
   {
-   "lens_id": "493CA6A63030F102",
+   "lens_id": "493CA6A63030E102",
    "nev": "AF-S Nikkor 600mm f/4D IF-ED + TC-17E"
   },
   {
-   "lens_id": "493CA6A63030F202",
+   "lens_id": "493CA6A63030F102",
    "nev": "AF-S Nikkor 600mm f/4D IF-ED + TC-14E"
   },
   {
-   "lens_id": "4A482424240C4D02",
+   "lens_id": "493CA6A63030F202",
    "nev": "AF-S Nikkor 600mm f/4D IF-ED + TC-20E"
   },
   {
-   "lens_id": "4A5462620C0C4D02",
+   "lens_id": "4A482424240C4D02",
    "nev": "Samyang AE 14mm f/2.8 ED AS IF UMC"
   },
   {
-   "lens_id": "4A6062620C0C4D02",
+   "lens_id": "4A5462620C0C4D02",
    "nev": "AF Nikkor 85mm f/1.4D IF"
   },
   {
-   "lens_id": "4B3CA0A030304E02",
+   "lens_id": "4A6062620C0C4D02",
    "nev": "Samyang AE 85mm f/1.4 AS IF UMC"
   },
   {
-   "lens_id": "4B3CA0A03030E102",
+   "lens_id": "4B3CA0A030304E02",
    "nev": "AF-S Nikkor 500mm f/4D IF-ED"
   },
   {
-   "lens_id": "4B3CA0A03030F102",
+   "lens_id": "4B3CA0A03030E102",
    "nev": "AF-S Nikkor 500mm f/4D IF-ED + TC-17E"
   },
   {
-   "lens_id": "4B3CA0A03030F202",
+   "lens_id": "4B3CA0A03030F102",
    "nev": "AF-S Nikkor 500mm f/4D IF-ED + TC-14E"
   },
   {
-   "lens_id": "4C40376E2C3C4F02",
+   "lens_id": "4B3CA0A03030F202",
    "nev": "AF-S Nikkor 500mm f/4D IF-ED + TC-20E"
   },
   {
-   "lens_id": "4D403C802C3C6202",
+   "lens_id": "4C40376E2C3C4F02",
    "nev": "AF Zoom-Nikkor 24-120mm f/3.5-5.6D IF"
   },
   {
-   "lens_id": "4D413C8E2B406202",
+   "lens_id": "4D403C802C3C6202",
    "nev": "AF Zoom-Nikkor 28-200mm f/3.5-5.6D IF"
   },
   {
-   "lens_id": "4D413C8E2C406202",
+   "lens_id": "4D413C8E2B406202",
    "nev": "Tamron AF 28-300mm f/3.5-6.3 XR Di LD Aspherical (IF) (A061)"
   },
   {
-   "lens_id": "4E48727218185102",
+   "lens_id": "4D413C8E2C406202",
    "nev": "Tamron AF 28-300mm f/3.5-6.3 XR LD Aspherical (IF) (185D)"
   },
   {
-   "lens_id": "4F40375C2C3C5306",
+   "lens_id": "4E48727218185102",
    "nev": "AF DC-Nikkor 135mm f/2D"
   },
   {
-   "lens_id": "5048567C303C5406",
+   "lens_id": "4F40375C2C3C5306",
    "nev": "IX-Nikkor 24-70mm f/3.5-5.6"
   },
   {
-   "lens_id": "5348608024245702",
+   "lens_id": "5048567C303C5406",
    "nev": "IX-Nikkor 60-180mm f/4-5.6"
+  },
+  {
+   "lens_id": "5348608024245702",
+   "nev": "AF Zoom-Nikkor 80-200mm f/2.8D ED"
   },
   {
    "lens_id": "5348608024246002",
@@ -2937,170 +2941,166 @@
   },
   {
    "lens_id": "54445C7C343C5802",
-   "nev": "AF Zoom-Nikkor 80-200mm f/2.8D ED"
-  },
-  {
-   "lens_id": "563C5C8E303C1C02",
    "nev": "AF Zoom-Micro Nikkor 70-180mm f/4.5-5.6D ED"
   },
   {
-   "lens_id": "56485C8E303C5A02",
+   "lens_id": "563C5C8E303C1C02",
    "nev": "Sigma 70-300mm F4-5.6 APO Macro Super II"
   },
   {
-   "lens_id": "5948989824245D02",
+   "lens_id": "56485C8E303C5A02",
    "nev": "AF Zoom-Nikkor 70-300mm f/4-5.6D ED"
   },
   {
-   "lens_id": "594898982424E102",
+   "lens_id": "5948989824245D02",
    "nev": "AF-S Nikkor 400mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "594898982424F102",
+   "lens_id": "594898982424E102",
    "nev": "AF-S Nikkor 400mm f/2.8D IF-ED + TC-17E"
   },
   {
-   "lens_id": "594898982424F202",
+   "lens_id": "594898982424F102",
    "nev": "AF-S Nikkor 400mm f/2.8D IF-ED + TC-14E"
   },
   {
-   "lens_id": "5A3C3E56303C5E06",
+   "lens_id": "594898982424F202",
    "nev": "AF-S Nikkor 400mm f/2.8D IF-ED + TC-20E"
   },
   {
-   "lens_id": "5B44567C343C5F06",
+   "lens_id": "5A3C3E56303C5E06",
    "nev": "IX-Nikkor 30-60mm f/4-5.6"
   },
   {
-   "lens_id": "5D483C5C24246302",
+   "lens_id": "5B44567C343C5F06",
    "nev": "IX-Nikkor 60-180mm f/4.5-5.6"
   },
   {
-   "lens_id": "5E48608024246402",
+   "lens_id": "5D483C5C24246302",
    "nev": "AF-S Zoom-Nikkor 28-70mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "5F403C6A2C346502",
+   "lens_id": "5E48608024246402",
    "nev": "AF-S Zoom-Nikkor 80-200mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "60403C602C3C6602",
+   "lens_id": "5F403C6A2C346502",
    "nev": "AF Zoom-Nikkor 28-105mm f/3.5-4.5D IF"
   },
   {
-   "lens_id": "61445E86343C6702",
+   "lens_id": "60403C602C3C6602",
    "nev": "AF Zoom-Nikkor 28-80mm f/3.5-5.6D"
   },
   {
-   "lens_id": "63482B4424246802",
+   "lens_id": "61445E86343C6702",
    "nev": "AF Zoom-Nikkor 75-240mm f/4.5-5.6D"
   },
   {
-   "lens_id": "6400626224246A02",
+   "lens_id": "63482B4424246802",
    "nev": "AF-S Nikkor 17-35mm f/2.8D IF-ED"
   },
   {
-   "lens_id": "65446098343C6B0A",
+   "lens_id": "6400626224246A02",
    "nev": "PC Micro-Nikkor 85mm f/2.8D"
   },
   {
-   "lens_id": "66402D442C346C02",
+   "lens_id": "65446098343C6B0A",
    "nev": "AF VR Zoom-Nikkor 80-400mm f/4.5-5.6D ED"
   },
   {
-   "lens_id": "6748376224306D02",
+   "lens_id": "66402D442C346C02",
    "nev": "AF Zoom-Nikkor 18-35mm f/3.5-4.5D IF-ED"
   },
   {
-   "lens_id": "6754375C24241C02",
+   "lens_id": "6748376224306D02",
    "nev": "AF Zoom-Nikkor 24-85mm f/2.8-4D IF"
   },
   {
-   "lens_id": "68423C602A3C6E06",
+   "lens_id": "6754375C24241C02",
    "nev": "Sigma 24-70mm F2.8 EX DG Macro"
   },
   {
-   "lens_id": "69475C8E303C0002",
+   "lens_id": "68423C602A3C6E06",
    "nev": "AF Zoom-Nikkor 28-80mm f/3.3-5.6G"
   },
   {
-   "lens_id": "69485C8E303C6F02",
+   "lens_id": "69475C8E303C0002",
    "nev": "Tamron AF 70-300mm f/4-5.6 Di LD Macro 1:2 (A17N)"
   },
   {
-   "lens_id": "69485C8E303C6F06",
+   "lens_id": "69485C8E303C6F02",
    "nev": "Tamron AF 70-300mm f/4-5.6 LD Macro 1:2 (772D)"
   },
   {
-   "lens_id": "6A488E8E30307002",
+   "lens_id": "69485C8E303C6F06",
    "nev": "AF Zoom-Nikkor 70-300mm f/4-5.6G"
   },
   {
-   "lens_id": "6B48242424247102",
+   "lens_id": "6A488E8E30307002",
    "nev": "AF-S Nikkor 300mm f/4D IF-ED"
   },
   {
-   "lens_id": "6D488E8E24247302",
+   "lens_id": "6B48242424247102",
    "nev": "AF Nikkor ED 14mm f/2.8D"
   },
   {
-   "lens_id": "6E48989824247402",
+   "lens_id": "6D488E8E24247302",
    "nev": "AF-S Nikkor 300mm f/2.8D IF-ED II"
   },
   {
-   "lens_id": "6F3CA0A030307502",
+   "lens_id": "6E48989824247402",
    "nev": "AF-S Nikkor 400mm f/2.8D IF-ED II"
   },
   {
-   "lens_id": "703CA6A630307602",
+   "lens_id": "6F3CA0A030307502",
    "nev": "AF-S Nikkor 500mm f/4D IF-ED II"
   },
   {
-   "lens_id": "72484C4C24247700",
+   "lens_id": "703CA6A630307602",
    "nev": "AF-S Nikkor 600mm f/4D IF-ED II"
   },
   {
-   "lens_id": "744037622C347806",
+   "lens_id": "72484C4C24247700",
    "nev": "Nikkor 45mm f/2.8 P"
   },
   {
-   "lens_id": "75403C682C3C7906",
+   "lens_id": "744037622C347806",
    "nev": "AF-S Zoom-Nikkor 24-85mm f/3.5-4.5G IF-ED"
   },
   {
-   "lens_id": "7658505014147A02",
+   "lens_id": "75403C682C3C7906",
    "nev": "AF Zoom-Nikkor 28-100mm f/3.5-5.6G"
   },
   {
-   "lens_id": "77446198343C7B0E",
+   "lens_id": "7658505014147A02",
    "nev": "AF Nikkor 50mm f/1.8D"
   },
   {
-   "lens_id": "77485C8024247B0E",
+   "lens_id": "77446198343C7B0E",
    "nev": "Sigma 80-400mm F4.5-5.6 EX OS"
   },
   {
-   "lens_id": "7840376E2C3C7C0E",
+   "lens_id": "77485C8024247B0E",
    "nev": "AF-S VR Zoom-Nikkor 70-200mm f/2.8G IF-ED"
   },
   {
-   "lens_id": "794011112C2C1C06",
+   "lens_id": "7840376E2C3C7C0E",
    "nev": "AF-S VR Zoom-Nikkor 24-120mm f/3.5-5.6G IF-ED"
   },
   {
-   "lens_id": "79403C802C3C7F06",
+   "lens_id": "794011112C2C1C06",
    "nev": "Sigma 8mm F3.5 EX Circular Fisheye"
   },
   {
-   "lens_id": "79485C5C24241C06",
+   "lens_id": "79403C802C3C7F06",
    "nev": "AF Zoom-Nikkor 28-200mm f/3.5-5.6G IF-ED"
   },
   {
-   "lens_id": "7A3B5380303C4B06",
+   "lens_id": "79485C5C24241C06",
    "nev": "Sigma Macro 70mm F2.8 EX DG"
   },
   {
-   "lens_id": "7A3C1F3730307E06",
+   "lens_id": "7A3B5380303C4B06",
    "nev": "Sigma 55-200mm F4-5.6 DC HSM"
   },
   {
@@ -3108,120 +3108,124 @@
    "nev": "AF-S DX Zoom-Nikkor 12-24mm f/4G IF-ED"
   },
   {
-   "lens_id": "7A402D502C3C4B06",
+   "lens_id": "7A3C1F3730307E06",
    "nev": "Tokina AT-X 124 AF PRO DX II (AF 12-24mm f/4)"
   },
   {
-   "lens_id": "7A402D802C404B0E",
+   "lens_id": "7A402D502C3C4B06",
    "nev": "Sigma 18-50mm F3.5-5.6 DC HSM"
   },
   {
-   "lens_id": "7A472B5C24344B06",
+   "lens_id": "7A402D802C404B0E",
    "nev": "Sigma 18-200mm F3.5-6.3 DC OS HSM"
   },
   {
-   "lens_id": "7A47507624244B06",
+   "lens_id": "7A472B5C24344B06",
    "nev": "Sigma 17-70mm F2.8-4.5 DC Macro Asp. IF HSM"
   },
   {
-   "lens_id": "7A482B5C24344B06",
+   "lens_id": "7A47507624244B06",
    "nev": "Sigma 50-150mm F2.8 EX APO DC HSM"
   },
   {
-   "lens_id": "7A482D5024244B06",
+   "lens_id": "7A482B5C24344B06",
    "nev": "Sigma 17-70mm F2.8-4.5 DC Macro Asp. IF HSM"
   },
   {
-   "lens_id": "7A485C8024244B06",
+   "lens_id": "7A482D5024244B06",
    "nev": "Sigma 18-50mm F2.8 EX DC Macro"
   },
   {
-   "lens_id": "7A546E8E24244B02",
+   "lens_id": "7A485C8024244B06",
    "nev": "Sigma 70-200mm F2.8 EX APO DG Macro HSM II"
   },
   {
-   "lens_id": "7B4880983030800E",
+   "lens_id": "7A546E8E24244B02",
    "nev": "Sigma APO 120-300mm F2.8 EX DG HSM"
   },
   {
-   "lens_id": "7D482B5324248206",
+   "lens_id": "7B4880983030800E",
    "nev": "AF-S VR Zoom-Nikkor 200-400mm f/4G IF-ED"
   },
   {
-   "lens_id": "7F402D5C2C348406",
+   "lens_id": "7D482B5324248206",
    "nev": "AF-S DX Zoom-Nikkor 17-55mm f/2.8G IF-ED"
   },
   {
-   "lens_id": "7F482B5C24341C06",
+   "lens_id": "7F402D5C2C348406",
    "nev": "AF-S DX Zoom-Nikkor 18-70mm f/3.5-4.5G IF-ED"
   },
   {
-   "lens_id": "7F482D5024241C06",
+   "lens_id": "7F482B5C24341C06",
    "nev": "Sigma 17-70mm F2.8-4.5 DC Macro Asp. IF"
   },
   {
-   "lens_id": "80481A1A24248506",
+   "lens_id": "7F482D5024241C06",
    "nev": "Sigma 18-50mm F2.8 EX DC Macro"
   },
   {
-   "lens_id": "815480801818860E",
+   "lens_id": "80481A1A24248506",
    "nev": "AF DX Fisheye-Nikkor 10.5mm f/2.8G ED"
   },
   {
-   "lens_id": "82488E8E2424870E",
+   "lens_id": "815480801818860E",
    "nev": "AF-S VR Nikkor 200mm f/2G IF-ED"
   },
   {
-   "lens_id": "8300B0B05A5A8804",
+   "lens_id": "82488E8E2424870E",
    "nev": "AF-S VR Nikkor 300mm f/2.8G IF-ED"
   },
   {
-   "lens_id": "893C5380303C8B06",
+   "lens_id": "8300B0B05A5A8804",
    "nev": "FSA-L2, EDG 65, 800mm F13 G"
   },
   {
-   "lens_id": "8A546A6A24248C0E",
+   "lens_id": "893C5380303C8B06",
    "nev": "AF-S DX Zoom-Nikkor 55-200mm f/4-5.6G ED"
   },
   {
-   "lens_id": "8B402D802C3C8D0E",
+   "lens_id": "8A546A6A24248C0E",
    "nev": "AF-S VR Micro-Nikkor 105mm f/2.8G IF-ED"
   },
   {
-   "lens_id": "8B402D802C3CFD0E",
+   "lens_id": "8B402D802C3C8D0E",
    "nev": "AF-S DX VR Zoom-Nikkor 18-200mm f/3.5-5.6G IF-ED"
   },
   {
-   "lens_id": "8C402D532C3C8E06",
+   "lens_id": "8B402D802C3CFD0E",
    "nev": "AF-S DX VR Zoom-Nikkor 18-200mm f/3.5-5.6G IF-ED [II]"
   },
   {
-   "lens_id": "8D445C8E343C8F0E",
+   "lens_id": "8C402D532C3C8E06",
    "nev": "AF-S DX Zoom-Nikkor 18-55mm f/3.5-5.6G ED"
   },
   {
-   "lens_id": "8F402D722C3C9106",
+   "lens_id": "8D445C8E343C8F0E",
    "nev": "AF-S VR Zoom-Nikkor 70-300mm f/4.5-5.6G IF-ED"
   },
   {
-   "lens_id": "903B5380303C920E",
+   "lens_id": "8F402D722C3C9106",
    "nev": "AF-S DX Zoom-Nikkor 18-135mm f/3.5-5.6G IF-ED"
   },
   {
-   "lens_id": "9248243724249406",
+   "lens_id": "903B5380303C920E",
    "nev": "AF-S DX VR Zoom-Nikkor 55-200mm f/4-5.6G IF-ED"
   },
   {
-   "lens_id": "9348375C24249506",
+   "lens_id": "9248243724249406",
    "nev": "AF-S Zoom-Nikkor 14-24mm f/2.8G ED"
   },
   {
-   "lens_id": "94402D532C3C9606",
+   "lens_id": "9348375C24249506",
    "nev": "AF-S Zoom-Nikkor 24-70mm f/2.8G ED"
   },
   {
-   "lens_id": "950037372C2C9706",
+   "lens_id": "94402D532C3C9606",
    "nev": "AF-S DX Zoom-Nikkor 18-55mm f/3.5-5.6G ED II"
+  },
+  {
+   "lens_id": "950037372C2C9706",
+   "nev": "PC-E Nikkor 24mm f/3.5D ED"
   },
   {
    "lens_id": "954C37372C2C9702",
@@ -3229,27 +3233,27 @@
   },
   {
    "lens_id": "964898982424980E",
-   "nev": "PC-E Nikkor 24mm f/3.5D ED"
-  },
-  {
-   "lens_id": "973CA0A03030990E",
    "nev": "AF-S VR Nikkor 400mm f/2.8G ED"
   },
   {
-   "lens_id": "983CA6A630309A0E",
+   "lens_id": "973CA0A03030990E",
    "nev": "AF-S VR Nikkor 500mm f/4G ED"
   },
   {
-   "lens_id": "994029622C3C9B0E",
+   "lens_id": "983CA6A630309A0E",
    "nev": "AF-S VR Nikkor 600mm f/4G ED"
   },
   {
-   "lens_id": "9A402D532C3C9C0E",
+   "lens_id": "994029622C3C9B0E",
    "nev": "AF-S DX VR Zoom-Nikkor 16-85mm f/3.5-5.6G ED"
   },
   {
-   "lens_id": "9B004C4C24249D06",
+   "lens_id": "9A402D532C3C9C0E",
    "nev": "AF-S DX VR Zoom-Nikkor 18-55mm f/3.5-5.6G"
+  },
+  {
+   "lens_id": "9B004C4C24249D06",
+   "nev": "PC-E Micro Nikkor 45mm f/2.8D ED"
   },
   {
    "lens_id": "9B544C4C24249D02",
@@ -3257,19 +3261,19 @@
   },
   {
    "lens_id": "9B5462620C0C4B06",
-   "nev": "PC-E Micro Nikkor 45mm f/2.8D ED"
-  },
-  {
-   "lens_id": "9C485C8024244B0E",
    "nev": "Sigma 85mm F1.4 EX DG HSM"
   },
   {
-   "lens_id": "9C54565624249E06",
+   "lens_id": "9C485C8024244B0E",
    "nev": "Sigma 70-200mm F2.8 EX DG OS HSM"
   },
   {
-   "lens_id": "9D00626224249F06",
+   "lens_id": "9C54565624249E06",
    "nev": "AF-S Micro Nikkor 60mm f/2.8G ED"
+  },
+  {
+   "lens_id": "9D00626224249F06",
+   "nev": "PC-E Micro Nikkor 85mm f/2.8D"
   },
   {
    "lens_id": "9D54626224249F02",
@@ -3277,199 +3281,199 @@
   },
   {
    "lens_id": "9E381129343C4B06",
-   "nev": "PC-E Micro Nikkor 85mm f/2.8D"
-  },
-  {
-   "lens_id": "9E402D6A2C3CA00E",
    "nev": "Sigma 8-16mm F4.5-5.6 DC HSM"
   },
   {
-   "lens_id": "9F3750A034404B0E",
+   "lens_id": "9E402D6A2C3CA00E",
    "nev": "AF-S DX VR Zoom-Nikkor 18-105mm f/3.5-5.6G ED"
   },
   {
-   "lens_id": "9F5844441414A106",
+   "lens_id": "9F3750A034404B0E",
    "nev": "Sigma 50-500mm F4.5-6.3 DG OS HSM"
   },
   {
-   "lens_id": "A05450500C0CA206",
+   "lens_id": "9F5844441414A106",
    "nev": "AF-S DX Nikkor 35mm f/1.8G"
   },
   {
-   "lens_id": "A14018372C34A306",
+   "lens_id": "A05450500C0CA206",
    "nev": "AF-S Nikkor 50mm f/1.4G"
   },
   {
-   "lens_id": "A14119312C2C4B06",
+   "lens_id": "A14018372C34A306",
    "nev": "AF-S DX Nikkor 10-24mm f/3.5-4.5G ED"
   },
   {
-   "lens_id": "A2485C802424A40E",
+   "lens_id": "A14119312C2C4B06",
    "nev": "Sigma 10-20mm F3.5 EX DC HSM"
   },
   {
-   "lens_id": "A33C29443030A50E",
+   "lens_id": "A2485C802424A40E",
    "nev": "AF-S Nikkor 70-200mm f/2.8G ED VR II"
   },
   {
-   "lens_id": "A33C5C8E303C4B0E",
+   "lens_id": "A33C29443030A50E",
    "nev": "AF-S Nikkor 16-35mm f/4G ED VR"
   },
   {
-   "lens_id": "A4472D5024344B0E",
+   "lens_id": "A33C5C8E303C4B0E",
    "nev": "Sigma 70-300mm F4-5.6 DG OS"
   },
   {
-   "lens_id": "A45437370C0CA606",
+   "lens_id": "A4472D5024344B0E",
    "nev": "Sigma 18-50mm F2.8-4.5 DC OS HSM"
   },
   {
-   "lens_id": "A5402D882C404B0E",
+   "lens_id": "A45437370C0CA606",
    "nev": "AF-S Nikkor 24mm f/1.4G ED"
   },
   {
-   "lens_id": "A5403C8E2C3CA70E",
+   "lens_id": "A5402D882C404B0E",
    "nev": "Sigma 18-250mm F3.5-6.3 DC OS HSM"
   },
   {
-   "lens_id": "A648375C24244B06",
+   "lens_id": "A5403C8E2C3CA70E",
    "nev": "AF-S Nikkor 28-300mm f/3.5-5.6G ED VR"
   },
   {
-   "lens_id": "A6488E8E2424A80E",
+   "lens_id": "A648375C24244B06",
    "nev": "Sigma 24-70mm F2.8 IF EX DG HSM"
   },
   {
-   "lens_id": "A74980A024244B06",
+   "lens_id": "A6488E8E2424A80E",
    "nev": "AF-S VR Nikkor 300mm f/2.8G IF-ED II"
   },
   {
-   "lens_id": "A74B62622C2CA90E",
+   "lens_id": "A74980A024244B06",
    "nev": "Sigma APO 200-500mm F2.8 EX DG"
   },
   {
-   "lens_id": "A95480801818AB0E",
+   "lens_id": "A74B62622C2CA90E",
    "nev": "AF-S DX Micro Nikkor 85mm f/3.5G ED VR"
   },
   {
-   "lens_id": "AA3C376E3030AC0E",
+   "lens_id": "A95480801818AB0E",
    "nev": "AF-S Nikkor 200mm f/2G ED VR II"
   },
   {
-   "lens_id": "AC38538E343CAE0E",
+   "lens_id": "AA3C376E3030AC0E",
    "nev": "AF-S Nikkor 24-120mm f/4G ED VR"
   },
   {
-   "lens_id": "AE5462620C0CB006",
+   "lens_id": "AC38538E343CAE0E",
    "nev": "AF-S DX VR Nikkor 55-300mm 4.5-5.6G ED"
   },
   {
-   "lens_id": "AF5444440C0CB106",
+   "lens_id": "AE5462620C0CB006",
    "nev": "AF-S Nikkor 85mm f/1.4G"
   },
   {
-   "lens_id": "B648375624241C02",
+   "lens_id": "AF5444440C0CB106",
    "nev": "AF-S Nikkor 35mm f/1.4G"
   },
   {
-   "lens_id": "CD3D2D702E3C4B0E",
+   "lens_id": "B648375624241C02",
    "nev": "Sigma 24-60mm F2.8 EX DG"
   },
   {
-   "lens_id": "CE3476A038404B0E",
+   "lens_id": "CD3D2D702E3C4B0E",
    "nev": "Sigma 18-125mm F3.8-5.6 DC OS HSM"
   },
   {
-   "lens_id": "CF386E98343C4B0E",
+   "lens_id": "CE3476A038404B0E",
    "nev": "Sigma 150-500mm F5-6.3 DG OS APO HSM"
   },
   {
-   "lens_id": "DC48191924244B06",
+   "lens_id": "CF386E98343C4B0E",
    "nev": "Sigma APO 120-400mm F4.5-5.6 DG OS HSM"
   },
   {
-   "lens_id": "DE5450500C0C4B06",
+   "lens_id": "DC48191924244B06",
    "nev": "Sigma 10mm F2.8 EX DC HSM Fisheye"
   },
   {
-   "lens_id": "E03C5C8E303C4B06",
+   "lens_id": "DE5450500C0C4B06",
    "nev": "Sigma 50mm F1.4 EX DG HSM"
   },
   {
-   "lens_id": "E158373714141C02",
+   "lens_id": "E03C5C8E303C4B06",
    "nev": "Sigma 70-300mm F4-5.6 APO DG Macro HSM"
   },
   {
-   "lens_id": "E354505024243502",
+   "lens_id": "E158373714141C02",
    "nev": "Sigma 24mm F1.8 EX DG Aspherical Macro"
   },
   {
-   "lens_id": "E5546A6A24243502",
+   "lens_id": "E354505024243502",
    "nev": "Sigma Macro 50mm F2.8 EX DG"
   },
   {
-   "lens_id": "E954375C24241C02",
+   "lens_id": "E5546A6A24243502",
    "nev": "Sigma Macro 105mm F2.8 EX DG"
   },
   {
-   "lens_id": "ED402D802C404B0E",
+   "lens_id": "E954375C24241C02",
    "nev": "Sigma 24-70mm F2.8 EX DG Macro"
   },
   {
-   "lens_id": "EE485C8024244B06",
+   "lens_id": "ED402D802C404B0E",
    "nev": "Sigma 18-200mm F3.5-6.3 DC OS HSM"
   },
   {
-   "lens_id": "F0381F37343C4B06",
+   "lens_id": "EE485C8024244B06",
    "nev": "Sigma 70-200mm F2.8 EX APO DG Macro HSM II"
   },
   {
-   "lens_id": "F144A0A034344B02",
+   "lens_id": "F0381F37343C4B06",
    "nev": "Sigma 12-24mm F4.5-5.6 EX DG Aspherical HSM"
   },
   {
-   "lens_id": "F1475C8E303CDF0E",
+   "lens_id": "F144A0A034344B02",
    "nev": "Sigma APO 500mm F4.5 EX DG HSM"
   },
   {
-   "lens_id": "F348688E30304B02",
+   "lens_id": "F1475C8E303CDF0E",
    "nev": "Tamron SP 70-300mm f/4-5.6 Di VC USD (A005)"
   },
   {
-   "lens_id": "F3542B502424840E",
+   "lens_id": "F348688E30304B02",
    "nev": "Sigma APO 100-300mm F4 EX IF HSM"
   },
   {
-   "lens_id": "F454565618188406",
+   "lens_id": "F3542B502424840E",
    "nev": "Tamron SP AF 17-50mm f/2.8 XR Di II VC LD Aspherical (IF) (B005)"
   },
   {
-   "lens_id": "F5402C8A2C40400E",
+   "lens_id": "F454565618188406",
    "nev": "Tamron SP AF 60mm f/2.0 Di II Macro 1:1 (G005)"
   },
   {
-   "lens_id": "F548767624244B06",
+   "lens_id": "F5402C8A2C40400E",
    "nev": "Tamron AF 18-270mm f/3.5-6.3 Di II VC LD Aspherical (IF) Macro (B003)"
   },
   {
-   "lens_id": "F63F18372C348406",
+   "lens_id": "F548767624244B06",
    "nev": "Sigma 150mm F2.8 EX DG APO Macro HSM"
   },
   {
-   "lens_id": "F6482D5024244B06",
+   "lens_id": "F63F18372C348406",
    "nev": "Tamron SP AF 10-24mm f/3.5-4.5 Di II LD Aspherical (IF) (B001)"
   },
   {
-   "lens_id": "F7535C8024248406",
+   "lens_id": "F6482D5024244B06",
    "nev": "Sigma 18-50mm F2.8 EX DC Macro"
   },
   {
-   "lens_id": "F8543E3E0C0C4B06",
+   "lens_id": "F7535C8024248406",
    "nev": "Tamron SP AF 70-200mm f/2.8 Di LD (IF) Macro (A001)"
   },
   {
-   "lens_id": "F85464642424DF06",
+   "lens_id": "F8543E3E0C0C4B06",
    "nev": "Sigma 30mm F1.4 EX DC HSM"
+  },
+  {
+   "lens_id": "F85464642424DF06",
+   "nev": "Tamron SP AF 90mm f/2.8 Di Macro 1:1 (272NII)"
   },
   {
    "lens_id": "F855646424248406",
@@ -3477,35 +3481,35 @@
   },
   {
    "lens_id": "F93C1931303C4B06",
-   "nev": "Tamron SP AF 90mm f/2.8 Di Macro 1:1 (272NII)"
-  },
-  {
-   "lens_id": "F9403C8E2C40400E",
    "nev": "Sigma 10-20mm F4-5.6 EX DC HSM"
   },
   {
-   "lens_id": "FA543C5E24248406",
+   "lens_id": "F9403C8E2C40400E",
    "nev": "Tamron AF 28-300mm f/3.5-6.3 XR Di VC LD Aspherical (IF) Macro (A20)"
   },
   {
-   "lens_id": "FA546E8E24244B02",
+   "lens_id": "FA543C5E24248406",
    "nev": "Tamron SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09NII)"
   },
   {
-   "lens_id": "FB548E8E24244B02",
+   "lens_id": "FA546E8E24244B02",
    "nev": "Sigma APO 120-300mm F2.8 EX DG HSM"
   },
   {
-   "lens_id": "FD47507624244B06",
+   "lens_id": "FB548E8E24244B02",
    "nev": "Sigma APO 300mm F2.8 EX DG HSM"
   },
   {
-   "lens_id": "FE47000024244B06",
+   "lens_id": "FD47507624244B06",
    "nev": "Sigma 50-150mm F2.8 EX APO DC HSM II"
   },
   {
-   "lens_id": "FE535C8024248406",
+   "lens_id": "FE47000024244B06",
    "nev": "Sigma 4.5mm F2.8 EX DC HSM Circular Fisheye"
+  },
+  {
+   "lens_id": "FE535C8024248406",
+   "nev": "Tamron SP AF 70-200mm f/2.8 Di LD (IF) Macro (A001)"
   }
  ]
 }

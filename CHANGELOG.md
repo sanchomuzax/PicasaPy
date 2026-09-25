@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Nikon-gépek objektívjének neve helyesen jelenik meg a Tulajdonságok
+  panelen (#3495).** A program Nikon-objektívtáblája eddig egy sorral el
+  volt csúszva, ezért a legtöbb Nikon-objektívnél rossz nevet vagy semmit
+  sem mutatott. Mostantól a gép saját adataiból olvassa ki, ahogy az
+  eredeti Picasa: egy D100-as felvételnél például a „Sigma 70-300mm F4-5.6
+  APO Macro Super II” nevet.
+
 ## [0.8.578] – 2026-09-25
 
 ### Javítva

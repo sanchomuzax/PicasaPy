@@ -26,8 +26,8 @@ from PIL import Image
 from PIL.IptcImagePlugin import getiptcinfo
 
 from .gps import gps_from_exif
-from .makernote import canon_camera_settings, tiff_blokk
-from .objektiv import canon_talalat
+from .makernote import canon_camera_settings, nikon_objektiv_mezok, tiff_blokk
+from .objektiv import canon_talalat, nikon_talalat
 
 _BOMB_EXCEPTIONS = (
     OSError,
@@ -258,7 +258,9 @@ def _properties_extra(exif, ifd, path: str | Path) -> dict:
             if isinstance(exif.get(_ORIENTATION_TAG), int)
             else None
         ),
-        "lens": _objektiv(path, exif.get(_MAKE_TAG), text(ifd.get(_LENS_MODEL_TAG))),
+        "lens": _objektiv(
+            path, exif.get(_MAKE_TAG), text(ifd.get(_LENS_MODEL_TAG)),
+            text(exif.get(_MODEL_TAG))),
         "subject_distance_m": _rational(ifd.get(_SUBJECT_DISTANCE_TAG)),
         "metering_mode": enum(ifd.get(_METERING_MODE_TAG), _METERING_MODES),
         "exposure_program": enum(ifd.get(_EXPOSURE_PROGRAM_TAG), _EXPOSURE_PROGRAMS),
@@ -273,19 +275,30 @@ def _properties_extra(exif, ifd, path: str | Path) -> dict:
     }
 
 
-def _objektiv(path: str | Path, make, lens_model: str | None) -> str | None:
+def _objektiv(
+    path: str | Path, make, lens_model: str | None, model: str | None = None
+) -> str | None:
     """Az eredeti „Lens" sora: a Picasa-belső 255-ös kulcs, azaz a
-    MakerNote-ból feloldott név (#3121, spec 9.12).
+    MakerNote-ból feloldott név (#3121 Canon, spec 9.12; #3495 Nikon, 9.13).
 
     ⚠️ Eltérés: a 3.7 az EXIF `LensModel`-t (0xA434) nem ismeri. Nálunk a
     sorrend táblanév → `LensModel` → tartalék-leírás: a tartalék
     („50mm f/1.8") nem írhatja felül a pontosabb, ma is látszó nevet.
     """
-    if not isinstance(make, str) or not make.strip().lower().startswith("canon"):
+    gyarto = make.strip().lower() if isinstance(make, str) else ""
+    if not gyarto.startswith(("canon", "nikon")):
         return lens_model
     try:
-        beallitasok = canon_camera_settings(tiff_blokk(path))
-        talalat = canon_talalat(beallitasok) if beallitasok else None
+        if gyarto.startswith("canon"):
+            beallitasok = canon_camera_settings(tiff_blokk(path))
+            talalat = canon_talalat(beallitasok) if beallitasok else None
+        else:
+            mezok = nikon_objektiv_mezok(tiff_blokk(path))
+            talalat = nikon_talalat(
+                mezok.lens_data, mezok.lens_type,
+                sorozatszam=mezok.sorozatszam, zarszamlalo=mezok.zarszamlalo,
+                modell=model,
+            ) if mezok else None
     except Exception:  # noqa: BLE001 — sérült MakerNote: a sor marad, a panel él
         talalat = None
     if talalat and talalat[1]:
