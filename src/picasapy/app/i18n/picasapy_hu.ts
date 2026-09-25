@@ -3867,6 +3867,46 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <name>PublishPanel</name>
     <message>
         <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>The items selected with a checkmark above will be included on your Gift CD.   To add more items click the &quot;Add More&quot; button below.</source>
+        <translation>A program a fent pipával kijelölt elemeket másolja az ajándék CD-re. További elemek felvételéhez kattintson az alábbi &quot;Továbbiak hozzáadása&quot; gombra.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Add More...</source>
+        <translation>Továbbiak hozzáadása...</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Original Size</source>
+        <translation>Eredeti méret</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>640 x 480</source>
+        <translation>640x480</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>800 x 600</source>
+        <translation>800x600</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>1600 x 1200</source>
+        <translation>1600x1200</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Burn Disc</source>
+        <translation>Lemezre írás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
         <source>Selection and Settings</source>
         <translation>Kijelölés és beállítások</translation>
     </message>
@@ -10121,6 +10161,47 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
         <source>Create Photo Collage</source>
         <translation>Fotókollázs készítése</translation>
+    </message>
+</context>
+<context>
+    <name>GiftCdHost</name>
+    <message>
+        <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0"/>
+        <source>Create a Gift CD...</source>
+        <translation>Ajándék CD készítése...</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0"/>
+        <source>ISO Files</source>
+        <translation>ISO-fájlok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0"/>
+        <source>CD Done</source>
+        <translation>CD kész</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0"/>
+        <source>Show CD</source>
+        <translation>CD megjelenítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0"/>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/GiftCdHost.qml" line="0"/>
+        <source>The disc image could not be created.</source>
+        <translation>A lemezkép nem készült el.</translation>
+    </message>
+</context>
+<context>
+    <name>AjandekCdMixin</name>
+    <message>
+        <location filename="../ajandek_cd_controller.py" line="0"/>
+        <source>Pictures</source>
+        <translation>Képek</translation>
     </message>
 </context>
 </TS>

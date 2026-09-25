@@ -56,9 +56,12 @@ NYUGDIJAZOTT = (
 #: (#1005). Ha a tétel valaha visszaesne helyfoglalóvá, azt a
 #: `test_hatterkep_menu_1775.py` fogja meg (a menütétel nem helyfoglaló, és a
 #: parancs tényleg ír).
+#: ⚠️ #3503: a „Create a Gift CD..." is KIKERÜLT innen: **elkészült** — a
+#: kiadás-panel Ajándék-CD üzemmódját nyitja, és a tálcából lemezképet ír.
+#: Ha valaha visszaesne helyfoglalóvá, a `test_ajandek_cd_bekotes_3503.py`
+#: fogja meg.
 HELYFOGLALO_MARAD = (
     "Check for Updates",
-    "Create a Gift CD...",
 )
 
 

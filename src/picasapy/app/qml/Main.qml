@@ -1510,6 +1510,8 @@ ApplicationWindow {
         // marad — a leszerelése külön jegy.
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.ensure().openMovie()
+        //: #3503: a kiadás-panel Ajándék-CD üzemmódja a könyvtár alján
+        onGiftCdRequested: giftCdHost.nyisd()
         onExportRequested: exportDialogs.ensure().openForSelection()
         // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
@@ -2203,7 +2205,9 @@ ApplicationWindow {
         //: #3037: a fiók a jobb szélen ül, a könyvtár mellette ér véget —
         //: ez a mért `RIGHTDRAWEROFFSET` viselkedés (a tartalom eltolása).
         anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
-        anchors.bottom: parent.bottom
+        //: #3503: nyitott Ajándék-CD panelnél a könyvtár a panel fölött ér
+        //: véget — a panel nem takarhatja el a képeket
+        anchors.bottom: giftCdHost.visible ? giftCdHost.top : parent.bottom
         // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
         // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
         // a kijelölése (a #944 kimérte, a #985 tesztje állítja).
@@ -3288,6 +3292,21 @@ ApplicationWindow {
                     + "like to hide the files on disk?"))
             }
         }
+    }
+
+    //: #3503: „Létrehozás ▸ Ajándék CD készítése…" — a kiadás-panel
+    //: Ajándék-CD üzemmódja a könyvtár ALJÁN (az eredetiben is ott ül).
+    //: Csak a könyvtár lapján látszik, ugyanazzal a feltétellel, mint a
+    //: könyvtár maga.
+    GiftCdHost {
+        id: giftCdHost
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        appController: controller
+        fileOps: typeof fileOpsController !== "undefined" ? fileOpsController : null
+        visible: nyitva && !window.viewerOpen && !window.timelineOpen
+                 && window.libraryFrameVisible
     }
 
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)

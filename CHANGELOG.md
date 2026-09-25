@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.571] – 2026-09-25
+
+### Új
+
+- **Működik az „Ajándék CD készítése” (#3503)** — a Létrehozás menü eddig
+  halott menüpontja most a könyvtár alján megnyitja az Ajándék CD panelt.
+  Megadhatod a CD nevét (legfeljebb 16 karakter) és a fotóméretet (eredeti,
+  640, 800 vagy 1600 képpont), és a „Lemezre írás” a képtálcán lévő
+  képekből és filmekből egy lemezképet (ISO-fájlt) készít, a képeket a
+  „Képek” mappába téve — ezt bármely lemezíró programmal kiírhatod. A
+  végén a „CD kész” ablakból egy kattintással megnyithatod a lemezkép
+  helyét.
+
 ## [0.8.570] – 2026-09-25
 
 ### Új
