@@ -84,7 +84,11 @@ IDEGEN = "/home/sancho/Documents/claude-code-rules"
 
 
 @pytest.mark.parametrize("cmd", BLOKKOLANDO)
-def test_blokkolja(cmd: str) -> None:
+def test_blokkolja(cmd: str, monkeypatch) -> None:
+    # A HELYI szabályt méri: felhős munkamenetben (#3616) a futtató
+    # környezetében `CLAUDE_CODE_REMOTE=true` áll, és a saját ágra tolás
+    # ott szándékosan átmegy (picasapy-agent#153).
+    monkeypatch.delenv("CLAUDE_CODE_REMOTE", raising=False)
     assert kapu.blokkolando(cmd, PROJEKT), cmd
 
 

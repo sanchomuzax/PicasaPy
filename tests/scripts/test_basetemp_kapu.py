@@ -295,3 +295,122 @@ def test_az_uzenet_megnevezi_az_earlyoom_lyukat(monkeypatch, capsys):
     hiba = capsys.readouterr().err
     assert "MemorySwapMax=0" in hiba, "nem mondja meg a swap-tiltást"
     assert "2250" in hiba, "nem hozza a mért mélypontot"
+
+
+# --- #3616: tartalék plafon busz nélküli gépen ----------------------------
+#
+# 2026-09-25, felhős munkamenet: nincs felhasználói systemd-busz, a
+# `systemd-run --user` `Failed to connect to bus`-szal kilép. A kapu itt
+# MINDEN csupasz app-fájlos futást blokkolt volna, a javasolt alak pedig nem
+# indul el. A kimondott tartalék: `prlimit --as=…` — de CSAK ott, ahol a
+# scope tényleg nem érhető el; a helyi gépen (RPi) marad a `systemd-run`,
+# mert a swap-tiltást (#2646) csak az adja.
+
+_TARTALEK = "prlimit --as=8589934592 -- "
+_APP_FAJL = "python3 -m pytest tests/app/qml_functional/test_x.py -q --basetemp=/tmp/bt"
+
+
+@pytest.fixture
+def busz_nelkul(monkeypatch):
+    monkeypatch.setattr(kapu, "_systemd_scope_elerheto", lambda: False)
+
+
+@pytest.fixture
+def busszal(monkeypatch):
+    monkeypatch.setattr(kapu, "_systemd_scope_elerheto", lambda: True)
+
+
+def test_busz_nelkul_a_prlimit_tartalek_atmegy(busz_nelkul):
+    assert kapu.blokkolando(_TARTALEK + _APP_FAJL) is None
+
+
+def test_busz_nelkul_a_prlimit_elvalaszto_nelkul_is_atmegy(busz_nelkul):
+    assert kapu.blokkolando("prlimit --as=8589934592 " + _APP_FAJL) is None
+
+
+def test_busszal_a_prlimit_NEM_eleg(busszal):
+    """A helyi gépen a `MemorySwapMax=0` a lényeg — azt a prlimit nem adja."""
+    assert "MEMÓRIAPLAFON" in (kapu.blokkolando(_TARTALEK + _APP_FAJL) or "")
+
+
+def test_busz_nelkul_is_kell_plafon(busz_nelkul):
+    """A tartalék nem kiskapu: plafon nélkül busz nélkül is blokkol."""
+    assert "MEMÓRIAPLAFON" in (kapu.blokkolando(_APP_FAJL) or "")
+
+
+def test_as_nelkuli_prlimit_nem_plafon(busz_nelkul):
+    cmd = "prlimit --nofile=1024 -- " + _APP_FAJL
+    assert "MEMÓRIAPLAFON" in (kapu.blokkolando(cmd) or "")
+
+
+@pytest.mark.parametrize("elotag", [
+    "prlimit --as=8589934592 -- ",
+    "prlimit -v 8589934592 ",
+    "prlimit --as 8589934592 ",
+])
+def test_a_prlimit_mogott_is_latszik_a_pytest(busz_nelkul, elotag):
+    """Ellenpróba: a `_fej` a prlimit kapcsolóit is átlépi, különben a
+    mappa- és basetemp-ellenőrzés NÉMÁN kiesne."""
+    assert kapu.blokkolando(elotag + "python3 -m pytest tests/app -q --basetemp=/tmp/bt")
+    assert "basetemp" in (kapu.blokkolando(
+        elotag + "python3 -m pytest tests/ini/test_x.py -q") or "")
+
+
+def test_busz_nelkul_az_adhoc_szkript_is_mehet_tartalekkal(busz_nelkul):
+    assert kapu.blokkolando(_TARTALEK + _A_GEPHALAL_PARANCSA) is None
+
+
+def test_az_uzenet_megnevezi_a_tartalekot(monkeypatch, capsys, busz_nelkul):
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({
+        "tool_input": {"command": _APP_FAJL}})))
+    assert kapu.main() == 2
+    assert "prlimit --as=" in capsys.readouterr().err
+
+
+class _Eredmeny:
+    def __init__(self, returncode):
+        self.returncode = returncode
+
+
+def test_szonda_busz_nelkul_hamis(monkeypatch):
+    monkeypatch.setattr(kapu, "_which", lambda _: "/usr/bin/systemd-run")
+    monkeypatch.setattr(kapu, "_run", lambda *a, **k: _Eredmeny(1))
+    assert kapu._systemd_scope_elerheto() is False
+
+
+def test_szonda_mukodo_scope_igaz(monkeypatch):
+    monkeypatch.setattr(kapu, "_which", lambda _: "/usr/bin/systemd-run")
+    monkeypatch.setattr(kapu, "_run", lambda *a, **k: _Eredmeny(0))
+    assert kapu._systemd_scope_elerheto() is True
+
+
+def test_szonda_binaris_nelkul_hamis(monkeypatch):
+    monkeypatch.setattr(kapu, "_which", lambda _: None)
+    assert kapu._systemd_scope_elerheto() is False
+
+
+def test_szonda_csak_prlimit_alaknal_fut(monkeypatch):
+    """A kapu minden Bash-hívás előtt fut — a szonda nem lassíthatja."""
+    def tilos():
+        raise AssertionError("prlimit nélkül is szondázott")
+    monkeypatch.setattr(kapu, "_systemd_scope_elerheto", tilos)
+    assert kapu.blokkolando(_PLAFON + _APP_FAJL) is None
+    assert kapu.blokkolando(_APP_FAJL) is not None
+    assert kapu.blokkolando("ls -la") is None
+
+
+def test_a_pytest_v_kapcsoloja_nem_prlimit_korlat(busz_nelkul):
+    """A `-v` a pytesté, nem a prlimité — nem számíthat címtér-korlátnak."""
+    cmd = ("prlimit --nofile=1024 -- python3 -m pytest "
+           "tests/app/qml_functional/test_x.py -v --basetemp=/tmp/bt")
+    assert "MEMÓRIAPLAFON" in (kapu.blokkolando(cmd) or "")
+
+
+@pytest.mark.parametrize("elotag", [
+    "prlimit --as=8G -- ",          # a prlimit nem érti a `G`-t
+    "prlimit -v 8589934592 ",       # külön token: nem a kapcsoló értéke
+    "prlimit --as 8589934592 -- ",
+    "prlimit --as=unlimited -- ",
+])
+def test_a_nem_korlatozo_prlimit_alak_nem_plafon(busz_nelkul, elotag):
+    assert "MEMÓRIAPLAFON" in (kapu.blokkolando(elotag + _APP_FAJL) or "")

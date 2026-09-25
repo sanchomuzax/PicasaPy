@@ -141,6 +141,12 @@ BT="$SCRATCH/bt"; mkdir -p "$BT"
 python3 -m pytest <fájl> -q --basetemp="$BT"
 ```
 
+A `tests/app` alatti fájlhoz memóriaplafon is kell (#2646):
+`systemd-run --user --scope -q -p MemoryMax=2400M -p MemorySwapMax=0 -- …`.
+Ahol nincs felhasználói systemd-busz (felhős gép, #3616), ott a kapu a
+`prlimit --as=8589934592 -- …` tartalékot fogadja el; a `run_tests.py` ilyenkor
+magától `RLIMIT_AS`-előtétre vált, és ezt egy sorban kiírja.
+
 **Miért kapu, és nem szabály a dokumentációban:** a szabály eddig is le volt
 írva, és 2026-08-15-én mégis megsérült — öt párhuzamos kör **5,8 GB**-ot
 hagyott a tmpfs-en, mert a pytest a „tartsd meg az utolsó hármat" takarítást

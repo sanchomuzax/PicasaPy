@@ -33,6 +33,7 @@ class TestMemoriaBurok:
     def test_a_burok_plafont_es_swaptiltast_ad(self, monkeypatch):
         monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", False)
         monkeypatch.setattr(rt, "_which", lambda _: "/usr/bin/systemd-run")
+        monkeypatch.setattr(rt, "_systemd_scope_elerheto", lambda: True)
         monkeypatch.setattr(rt, "_platform", lambda: "linux")
         b = rt._memoria_burok()
         assert b[0] == "systemd-run"
@@ -41,12 +42,18 @@ class TestMemoriaBurok:
             "swap nélkül a folyamat nem hal meg, csak fojtja a gépet")
         assert b[-1] == "--", "a `--` nélkül a pytest kapcsolói a systemd-runé"
 
-    def test_systemd_run_nelkul_ures(self, monkeypatch):
-        """Fail-open: hiányzó eszköz nem akaszthatja meg a munkát."""
+    def test_systemd_run_nelkul_tartalek(self, monkeypatch):
+        """Fail-open: hiányzó eszköz nem akaszthatja meg a munkát.
+
+        #3616: de plafon nélkül sem futhat — ilyenkor a tartalék
+        `RLIMIT_AS`-előtét jön (részletek:
+        `test_run_tests_tartalek_plafon_3616.py`)."""
         monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", False)
         monkeypatch.setattr(rt, "_which", lambda _: None)
+        monkeypatch.setattr(rt, "_SCOPE_ELERHETO", None)
         monkeypatch.setattr(rt, "_platform", lambda: "linux")
-        assert rt._memoria_burok() == []
+        b = rt._memoria_burok()
+        assert b and "systemd-run" not in b
 
     def test_veszkijarat(self, monkeypatch):
         monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", True)
