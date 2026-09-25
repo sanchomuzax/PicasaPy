@@ -84,6 +84,11 @@ import shutil
 import subprocess
 import sys
 
+#: #3616: a szonda fogantyúi MODULSZINTEN (#1375) — a teszt ezeket cseréli,
+#: nem a globális `shutil`/`subprocess`-t.
+_which = shutil.which
+_run = subprocess.run
+
 #: Idézett szakaszok — ezeket kivágjuk, mielőtt parancsot keresnénk benne.
 _IDEZET = re.compile(r"'[^']*'|\"[^\"]*\"")
 
@@ -227,10 +232,10 @@ def _systemd_scope_elerheto() -> bool:
     Felhős konténerben a bináris ott van, de busz nélkül `exit 1`. Csak a
     `prlimit`-alaknál hívjuk, így a kapu többi útját nem lassítja.
     """
-    if shutil.which(_PLAFON_JELE) is None:
+    if _which(_PLAFON_JELE) is None:
         return False
     try:
-        return subprocess.run(
+        return _run(
             [_PLAFON_JELE, "--user", "--scope", "-q", "--", "true"],
             capture_output=True, timeout=10,
         ).returncode == 0

@@ -373,19 +373,19 @@ class _Eredmeny:
 
 
 def test_szonda_busz_nelkul_hamis(monkeypatch):
-    monkeypatch.setattr(kapu.shutil, "which", lambda _: "/usr/bin/systemd-run")
-    monkeypatch.setattr(kapu.subprocess, "run", lambda *a, **k: _Eredmeny(1))
+    monkeypatch.setattr(kapu, "_which", lambda _: "/usr/bin/systemd-run")
+    monkeypatch.setattr(kapu, "_run", lambda *a, **k: _Eredmeny(1))
     assert kapu._systemd_scope_elerheto() is False
 
 
 def test_szonda_mukodo_scope_igaz(monkeypatch):
-    monkeypatch.setattr(kapu.shutil, "which", lambda _: "/usr/bin/systemd-run")
-    monkeypatch.setattr(kapu.subprocess, "run", lambda *a, **k: _Eredmeny(0))
+    monkeypatch.setattr(kapu, "_which", lambda _: "/usr/bin/systemd-run")
+    monkeypatch.setattr(kapu, "_run", lambda *a, **k: _Eredmeny(0))
     assert kapu._systemd_scope_elerheto() is True
 
 
 def test_szonda_binaris_nelkul_hamis(monkeypatch):
-    monkeypatch.setattr(kapu.shutil, "which", lambda _: None)
+    monkeypatch.setattr(kapu, "_which", lambda _: None)
     assert kapu._systemd_scope_elerheto() is False
 
 
