@@ -244,7 +244,7 @@ ColumnLayout {
             //: nem művelet: azonnal hat.
             lenyomasra: true
             label: "\u2261"
-            tooltip: qsTr("Align left")
+            tooltip: qsTr("Left justify text")
             active: panel.textAlign === "left"
             onButtonClicked: panel.textAlignEdited("left")
         }
@@ -256,7 +256,7 @@ ColumnLayout {
             //: nem művelet: azonnal hat.
             lenyomasra: true
             label: "\u2261"
-            tooltip: qsTr("Align center")
+            tooltip: qsTr("Center justify text")
             active: panel.textAlign === "center"
             onButtonClicked: panel.textAlignEdited("center")
         }
@@ -268,7 +268,7 @@ ColumnLayout {
             //: nem művelet: azonnal hat.
             lenyomasra: true
             label: "\u2261"
-            tooltip: qsTr("Align right")
+            tooltip: qsTr("Right justify text")
             active: panel.textAlign === "right"
             onButtonClicked: panel.textAlignEdited("right")
         }

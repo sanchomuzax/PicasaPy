@@ -119,8 +119,7 @@ ColumnLayout {
             text: qsTr("Ignore")
             enabled: root.selectedCount > 0 && !!root.faceScanController
             ToolTip.visible: hovered
-            ToolTip.text: qsTr("Move the selected people to the ignored "
-                               + "people album")
+            ToolTip.text: qsTr("Ignore all of the selected faces")
             ToolTip.delay: Theme.tooltipDelay
             onClicked: ignoreConfirm.open()
         }

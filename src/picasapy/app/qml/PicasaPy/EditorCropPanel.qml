@@ -77,10 +77,8 @@ ColumnLayout {
         visible: panel.straightenActive
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("This image's orientation has been modified by the "
-                   + "Straighten tool and might not crop accurately… "
-                   + "try undoing the Straighten fix, then recrop, and "
-                   + "Straighten again if necessary.")
+        //: #3574: a hivatalos szöveg (`IDS_WARN_CROP_ACCURACY`)
+        text: qsTr("This image's orientation has been modified by the Straighten tool and might not crop accurately.\nIf you encounter difficulty cropping this image, try undoing the Straighten fix, then recrop, and Straighten again if necessary.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }

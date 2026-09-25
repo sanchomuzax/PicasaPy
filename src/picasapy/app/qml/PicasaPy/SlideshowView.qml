@@ -538,12 +538,23 @@ Rectangle {
                 Text {
                     objectName: "slideshowTimeValue"
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 34
+                    //: #3574: a mért `oneup/tps` mező 48 képpont széles, de a
+                    //: kiírt „másodperc” szó abba csak olvashatatlanul apró
+                    //: betűvel férne — a mező a LEGSZÉLESEBB értékhez nő, hogy
+                    //: a számváltás ne rángassa a sort
+                    TextMetrics {
+                        id: diaidoMertek
+                        font: diaidoErtek.font
+                        text: "99 " + qsTr("seconds")
+                    }
+                    id: diaidoErtek
+                    width: Math.max(48, Math.ceil(diaidoMertek.width) + 4)
                     horizontalAlignment: Text.AlignHCenter
                     //: másodperc-jelölés a szám után (az eredeti `tps` mezője)
-                    text: show.seconds + qsTr(" s")
+                    //: #3574: `OneUpUI::Format` „%1$d %2$s” — a szó kiírva
+                    text: show.seconds + " " + qsTr("seconds")
                     color: "#ffffff"
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize - 2
                 }
                 PicasaButton {
                     objectName: "slideshowTimePlus"
