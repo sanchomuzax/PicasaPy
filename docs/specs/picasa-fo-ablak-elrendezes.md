@@ -186,7 +186,7 @@ A „nálunk" oszlop **kirajzolva mérve** (#587, a teljes `Main.qml`
 
 | | eredeti | nálunk | állapot |
 |---|---|---|---|
-| bal panel szélessége | **240 px fix**, húzható | `folderPaneWidth`, alap **230** | ❌ **nyitva** — az alapérték a `FOLDER_PANE_WIDTH_DEFAULT`-ban (`app/controller.py`) és a `Main.qml` tartalék-értékében él |
+| bal panel szélessége | **240 px fix**, húzható | `folderPaneWidth`, alap **240** (`FOLDER_PANE_WIDTH_DEFAULT`, `app/controller.py`); kirajzolva mérve 800 / 1280 / 1920 px-en (#3582) | ✅ |
 | a bal panel viselkedése átméretezéskor | **nem skálázódik** | nem skálázódik (mérve: 230 mindhárom ablakszélességen) | ✅ |
 | felső sáv | 35 px | **35 px** (#587 előtt 34) | ✅ |
 | `importbutton` | 111 × 22 | **111 × 22** (#587 előtt 100 × 24) | ✅ |
@@ -201,6 +201,63 @@ A „nálunk" oszlop **kirajzolva mérve** (#587, a teljes `Main.qml`
 > a forráskód felülírja. **A #587 mindkét helyet kijavította** — a
 > `design-guide.md` mostantól a forrásra mutat, és a fix/skálázódó
 > megkülönböztetést is kimondja.
+
+## R2/R3 — a fő könyvtárnézet vezérlőinek szülője és horgonyzása (2026-09-25, #3582)
+
+*Forrás: `thumbui.tre:26–705` (`thumbui/importbutton` … `thumbui/basecontrolset`) · `searchcontainer.tre:1–95` (`searchcontainer/searchbase`, `searchcontainer/filterbase`) · `macros.tre:7–118` (a makrók jelentése).*
+
+A #656 R2 (szülő-konténer) és R3 (horgonyzási osztály) szabálya a `thumbui` panelen. Három forrás:
+
+- **az eredeti szerkezete:** az elemsor `<id>: <szülő>` alakja, és a horgonyzó makrók (`m_offset*` = `MaintainOffset`, `XConstraint`/`YConstraint` = `él, arány, eltolás`);
+- **az eredeti tervezési téglalapja:** a `respack.yt` rétegfejlécei (`tools/picasa/respack.py`). A `MaintainOffset` ehhez méri a megtartott eltolást;
+- **az eredeti kirajzolva:** a tulajdonos 1920 px széles Picasa-képernyőképe (`research/testdata/screenshot/Képernyőkép 2026-07-18 150933.png`, magyar Picasa 3.9), pixelre mérve.
+
+A nálunk-oszlopot a TELJES `Main.qml` adta kirajzolva (`qml_app_module`), **800 / 1280 / 1920 px** szélességen: minden `objectName` ablak-koordinátája, mérete, láthatósága és szülőlánca.
+
+### A képlet próbája a képernyőképen
+
+A felső sávon két független egyenlet van. A keresőmező bal széle `0,4 · W + 238` (a konténer `XConstraint 0, .4, 0`-ja, benne a `searchbase` `m_offsetLT`-je), a jobb széle `W − 70 + 23` (a konténer `XConstraint 1, 1, -70`-je, és a `searchbase` jobb eltolása a konténer 388-as tervezési szélességéhez: 388 − 411 = −23). A mért keret (1006 … 1872, kizáró 1873) ebből **W = 1920** és **0 bal eltolás** értéket ad, egész számra. A másik jelölt szerint a jobb eltolást a `searchcontainer` saját, 425-ös `docbounds`-a adja (425 − 411 = 14). Ez nem egész `W`-t adna (1981,7), és az ablak a képernyőnél is szélesebb lenne, tehát kiesik.
+
+Ugyanez a keret minden más mért ponton egyezik: Importálás 6, új album 124, nézetváltó 160, ▾ 225, webkamera 254, a gombok teteje a panel tetejétől 9. Lent a csillag `S − 3` (698), a két forgatógomb `S + 38` és `S + 75`, a tálcagombok 644 … 678, a nagyító ikonja 1488, a négy kapcsoló 1666 … 1905 (`S = 0,365 · W`).
+
+### Az összevetés — párosított és látható vezérlők
+
+| elem | eredeti szülő · horgony (`thumbui.tre`) | nálunk szülő · horgony (mérve) | R2 | R3 | teendő |
+|---|---|---|---|---|---|
+| `importbutton` | `mainuipanel` · LT, x 6 y 9 (`:452`) | `mainToolbar` `RowLayout` · x 8 y 7 (`MainToolbar.qml:97`) | ⚠️ nálunk a gombsorban, eredetiben a `buttonbarsets` testvére — látható hatás nélkül | ✅ fix bal · ❌ +2 | #3603 |
+| `newalbum` | `buttonbarsets` · LT, x 124 (`:375`) | ua. `RowLayout` · x 129 (`:143`) | ✅ | ✅ · ❌ +5 | #3603 |
+| `hviewtoggle` → `flatview`, `folderview` | `buttonbarsets` · LT, x 160 / 190 (`:406–415`) | `toolbarFolderViewToggle` · 168 / 198 (`:179`) | ✅ | ✅ · ❌ +8 | #3603 |
+| `folderviewpopup` | `buttonbarsets` · LT, x 225 (`:421`) | ua. · x 238 (`:250`) | ✅ | ✅ · ❌ +13 | #3603 |
+| `searchcontainer` + belül `filterbase`, `searchbase` | `buttonbarsets` · `0,4·W` … `W − 70` (`:352–355`); benne szűrők LT, mező LTR, 24 magas | szűrőzóna + 388 × 30 doboz, jobbra tolva (`:350`, `:670`) | ✅ | ❌ **arányos + kifeszített ↔ fix szélességű, jobbra tolt**; 1920-on a szűrők 1144-nél (eredeti 766), a mező 1408 … 1796 (eredeti 1006 … 1872) | #3603 |
+| `startoggle`, `rotateleft`, `rotateright` | `bcenterright` (2 px széles, `S`-en) · RT (`:225–245`) | `trayStarGroup` < `trayTopRow` < `trayRightPane` (`S`-en) (`TrayBar.qml:1083`) | ⚠️ két burkoló réteg, látható hatás nélkül | ✅ `S`-hez kötve · ❌ +3 / +4 / +4 | #3602 |
+| `scratchhold`, `scratchclear`, `addtobuttcon` | `scratchback` · RT, jobbról 7 (`:317–337`) | `trayScratchBack` · jobbról 5 (`:887–946`) | ✅ | ✅ · ❌ +2 | #3602 |
+| `scratch` | `scratchback` · 5 … −50, 5 … −5 (`:307`) | `trayScratchStrip` · 5 … −50, 5 … −5 (`:607`) | ✅ | ✅ | — |
+| `scratchlabel` | `scratchpadbase` (a `scratchback` LRB-kitöltője) · középen (`:300–304`) | `trayScratchBack` · `anchors.centerIn` (`:864`) | ⚠️ a díszítő `scratchpadbase` réteg hiányzik — ugyanakkora doboz | ✅ | — |
+| `scale_group` → `loupehit`, `scalecontainer` | `basecontrolset` · RT, jobbról 275; `loupehit` + 7 + 127 (`:286–294`) | `trayZoomGroup` · a kapcsolók bal széléhez −12; a csúszka jobb széle `W − 275` ✅, de közbe `−` és `+` jel (`:1386–1498`) | ✅ | ✅ osztály · ❌ nagyító −13, fölösleges `−`/`+` | #3602 |
+| `metadata_group` → a négy kapcsoló | `basecontrolset` · RT, jobbról **15** (`:258–283`) | `trayMetadataGroup` · jobbról 10 (`:1279`) | ✅ | ✅ · ❌ +5 | #3602 |
+| `webupload_rect` | `basecontrolset` · `S − 5` … `S + 140` (`:646`) | `trayUploadSlot` · `S − 5`, 147 széles | ✅ | ✅ · ❌ +2 szélesség | #3602 |
+| `outputs` | `basecontrolset` · `S + 140` … `W − 10` (`:629`) | `trayActionRow` · `S + 140`, a befogadóképességet `W − 10`-hez méri (`TrayBar.qml:432–466`) | ✅ | ✅ | — |
+| `separator` | `basecontrolset` · `S − 3` … `W − 17`, y 50 … 52 (`:623`) | `traySeparator` · ua., mérve | ✅ | ✅ | — |
+| `infotext_clip` | `basecontrolset` · 20 … `W − 20`, felül (`:690`) | `trayInfoText` · 20 … `W − 20` | ✅ | ✅ | — |
+| `listdecrect` + `hlistsizer` | `mainuipanel` · 0 … 240, húzható (`:441`, `:516`) | `folderPane` a `SplitView`-ban · 240 mindhárom szélességen | ✅ | ✅ | a korlátok: 6. szakasz |
+| `throttlegroup` (a rács görgetősávja) | `albumsback` · jobb él 0 (`:158`) | `feedScrollBar` a `photoGrid`-ben · az ablak szélétől 26 | ⚠️ | ❌ | #3604 |
+| `single_action_group` („Továbbiak…” sáv) | `single_action_container` · **középen** (`m_centerXY`, `:666`) | `traySingleActionBar` · a gombok a sáv jobb széléhez kötve (`TrayBar.qml:2089`) | ✅ | ❌ középre ↔ jobbra | #3605 |
+
+Az osztály mindenhol egyezik, ahol a sor ✅-t kap. A ❌ számértéke a mért eltérés: az eredeti képlet és a mi kirajzolt helyünk különbsége képpontban, pozitív, ha nálunk jobbrább áll.
+
+### Nem látható vagy feltételes elemek — külön sorban
+
+| elem | az eredeti állapota | nálunk | verdikt |
+|---|---|---|---|
+| `largethumbs`, `smallthumbs` | `m_render_offscreen` — a vásznon kívül (`XConstraint 0, 0, -9999`), parancs-proxi (`:26–31`) | a Nézet menü két tétele | nincs R2/R3-tárgy |
+| `newfolder`, `timelinebutton`, `sbutton`, `backup`, `cdmode` | `m_hidden` — a kiadott felületen nem látszik; a parancsútjuk él (`0x005d9cc0`) | menütételek | `ui-audit-mainwindow.md` R6 — nincs R2/R3-tárgy |
+| `fullview` / `albumview` | `buttongroup1` · LT (5, 5); `m_fakehidden` / `m_hidden` | a `Ctrl+3` út | a feloldó esemény: `ui-audit-mainwindow.md` R7 |
+| `webcambutton` | `mainuipanel` · LT, x 254; **látszik, alapból tiltva** (`m_webcambuttonDefaultState` = `Property disable 1`, `thumbuimacros_win.tre:10`) | nincs | a funkció jegye: #466 |
+| `single_action_*` | `m_hidden`; a „Továbbiak…” klipgyűjtő mód mutatja | `traySingleActionBar`, ugyanabban a módban | a fenti táblában (#3605) |
+
+⚠️ **A #423 szűk ablakos elrejtése saját alkalmazkodás.** Nálunk 800 px-en a `newalbum`, a nézetváltó pár, a ▾ és a szűrőzóna **nem látszik** (mérve: `visible=False`), mert a sávnak egy csíkban kell maradnia. Az eredetiben ezek fix bal horgonyú elemek, és nincs rejtési feltételük. A #3603 kimondja, hogy ez csak ott maradhat meg, ahol az eredeti képlete már nem fér ki.
+
+*Bizonyítottsági fok: megerősített.* Az eredeti oldalon a `.tre` kényszere, a `respack.yt` téglalapja és a képernyőkép pixelmérése egymástól függetlenül ugyanazt adja. A nálunk-oldal kirajzolt ablakban mért érték, nem a QML-szövegből számolt. Kivétel a #3605 sora: ott a mi helyünket a kódból számoltam (`anchors.right: parent.right`, `rightMargin: 16`).
 
 ## Elérhető, még fel nem dolgozott elrendezések
 
