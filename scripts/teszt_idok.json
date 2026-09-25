@@ -395,6 +395,7 @@
  "tests/app/test_confirm_settings_bridge.py": 0.97,
  "tests/app/test_controller.py": 37.9,
  "tests/app/test_create_controller.py": 6.46,
+ "tests/app/test_crossprocess_hatterben_3570.py": 0.64,
  "tests/app/test_csempe_kanonikus_nev_3478.py": 1.31,
  "tests/app/test_csempe_lanc_teteje_2273.py": 1.42,
  "tests/app/test_csillag_lanc_1438.py": 3.75,

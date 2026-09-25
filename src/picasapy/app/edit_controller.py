@@ -342,6 +342,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     irányelvnél, ezért ez az osztály EGYBEN maradt — ld. a #148 jelentés
     "nyitva maradt" pontját."""
 
+    #: #3570: a MI megvalósításunkban mérten lassú szűrők — a felület szála
+    #: helyett ezek is a háttér-úton renderelnek. A regiszter `slow` jelzője
+    #: az eredeti `filterdesc.xml` adata, azt nem írjuk át; ez a lista a
+    #: saját költségünkről szól. Mérve a célgépen (Raspberry Pi 5, 2560 ×
+    #: 1707-es előnézet): `crossprocess` 2399 ms.
+    SAJAT_LASSU_SZUROK = frozenset({"crossprocess"})
+
     revisionChanged = Signal()
     toolsChanged = Signal()
     # GPU élő-előnézet (#22): KÜLÖN jel a revisionChanged-től — a
@@ -2313,8 +2320,11 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         térünk — a kép így csak a renderelés VÉGÉN frissül, de a felület
         él, és a közös haladásjelző csík magától pörög."""
         aktiv = session if session is not None else self._session
-        _teljes, lassu, _ujrameretez = chain_flags(
-            [op.name for op in aktiv.ops]
+        nevek = [op.name for op in aktiv.ops]
+        _teljes, lassu, _ujrameretez = chain_flags(nevek)
+        # #3570: a saját (mért) lassú szűrőink is ide tartoznak
+        lassu = lassu or any(
+            nev.lower() in self.SAJAT_LASSU_SZUROK for nev in nevek
         )
         if lassu:
             self._register_preview_async(session)

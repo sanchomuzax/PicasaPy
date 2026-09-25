@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.575] – 2026-09-25
+
+### Javítva
+
+- **Az Áttűnés (Cross Process) nem akasztja meg a szerkesztőt (#3570)** —
+  a Raspberry Pi-n az effekt kiszámolása kb. 2,4 másodperc, és eddig ez
+  alatt az egész ablak megállt. Most a háttérben számol: a felület közben
+  használható, és a kép a végén frissül. A kép ugyanaz, mint eddig.
+
 ## [0.8.574] – 2026-09-25
 
 ### Javítva
