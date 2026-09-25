@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.576] – 2026-09-25
+
+### Javítva
+
+- **A verziószám súgója más nyelven is a saját nyelvén szól (#3576)** —
+  a verziószám fölötti „Kiadások megtekintése a GitHubon” súgó eddig
+  minden felületi nyelven magyarul jelent meg. A magyar felületen
+  változatlan.
+
 ## [0.8.575] – 2026-09-25
 
 ### Javítva
