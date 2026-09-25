@@ -8,6 +8,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **Az effektek rétegeit a program az eredeti Picasa pontos képletével
+  keveri (#3442).** Több effekt két réteget kever egymásba (például az
+  Infravörös film, a Holga-szerű vagy a Ceruzarajz). Ez a keverés eddig
+  kerekítésben eltért az eredetitől, és négy keverési mód hiányzott.
+  Mostantól bitre ugyanúgy számol, mint a Picasa, így ezeknek az
+  effekteknek a színe egy-két árnyalattal közelebb került az eredetihez.
+
+### Javítva
 - **Hat effekt elmosása az eredeti Picasa módszerével készül (#3580).** A
   Lágyítás, az Orton-szerű, a Ceruzarajz, a Holga-szerű, a Lomo-szerű és az
   Infravörös film eddig egy közelítő elmosást használt, ezért a kép
