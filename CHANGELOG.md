@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.579] – 2026-09-26
+
 ### Javítva
 - **Az effektek rétegeit a program az eredeti Picasa pontos képletével
   keveri (#3442).** Több effekt két réteget kever egymásba (például az
@@ -14,16 +16,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   kerekítésben eltért az eredetitől, és négy keverési mód hiányzott.
   Mostantól bitre ugyanúgy számol, mint a Picasa, így ezeknek az
   effekteknek a színe egy-két árnyalattal közelebb került az eredetihez.
-
-### Javítva
 - **Hat effekt elmosása az eredeti Picasa módszerével készül (#3580).** A
   Lágyítás, az Orton-szerű, a Ceruzarajz, a Holga-szerű, a Lomo-szerű és az
   Infravörös film eddig egy közelítő elmosást használt, ezért a kép
   lágyabb vagy élesebb lett, mint az eredetiben. Mostantól ugyanazt az
   elmosást futtatják, mint a Picasa: a Lágyítás és az Infravörös film
   eltérése az eredeti exportjától a korábbi harmadára-negyedére csökkent.
-
-### Javítva
 - **A Nikon-gépek objektívjének neve helyesen jelenik meg a Tulajdonságok
   panelen (#3495).** A program Nikon-objektívtáblája eddig egy sorral el
   volt csúszva, ezért a legtöbb Nikon-objektívnél rossz nevet vagy semmit
