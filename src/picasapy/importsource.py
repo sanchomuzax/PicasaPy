@@ -48,12 +48,12 @@ UNKNOWN_DATE_FOLDER_NAME = "Ismeretlen dátum"
 
 # -- #441: célmappa-elnevezési módok -----------------------------------
 
-#: Kézi név — "Enter new folder title or choose existing folder to continue".
+#: Kézi név — "Enter Folder Title".
 NAMING_MANUAL = "manual"
 #: Felvétel dátuma szerint, "ÉÉÉÉ-HH-NN" mappánként külön —
-#: "Import into separate folders for each date taken".
+#: "Date Taken (YYYY-MM-DD)".
 NAMING_BY_DATE = "date"
-#: Egyetlen, a mai dátum nevű mappa — "Import into folder with today's date".
+#: Egyetlen, a mai dátum nevű mappa — "%s (Today)".
 NAMING_TODAY = "today"
 
 # a NAMING_BY_DATE módnál használt, EGYSZINTŰ sablon (nincs "{YYYY}/" előtag

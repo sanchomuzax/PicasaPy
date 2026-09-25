@@ -53,7 +53,33 @@ HIVATALOS = {
         "Az összes kijelölt arc mellőzése", "unknownfaceheaderpanel/ignore"),
     "Display Time": ("Megjelenítési idő", "oneup/tpslabel"),
     "seconds": ("másodperc", "OneUpUI::seconds"),
+    # #3575: párbeszédablakok, importálás, címkék
+    "Frame Mosaic": ("Képkockamozaik", "collage::frame_desc"),
+    "Description (optional):": ("Leírás (opcionális):", "folderprops"),
+    "Place taken (optional):": (
+        "Felvétel készítésének helye (opcionális):", "folderprops"),
+    "Use music for Slideshow and Movie presentation:": (
+        "Zene használata diavetítéshez és mozgófilmes prezentációhoz:", "folderprops"),
+    "Enter Folder Title": ("Mappa nevének megadása", "iCAcquireUI::SubFolder"),
+    "Date Taken (YYYY-MM-DD)": (
+        "Készítés dátuma (ÉÉÉÉ. HH. NN.)", "iCAcquireUI::AutoDate"),
+    "%1 (Today)": ("%1 (ma)", "iCAcquireUI::TodayDate"),
+    "Current database location:": ("Adatbázis aktuális helye:", "movedb"),
+    "New database location:": ("Adatbázis új helye:", "movedb"),
+    "Enter Collection Name:": (
+        "Gyűjteménynév megadása:", "IDS_NEW_COLLECTION_PROMPT"),
+    'You can use Quick Tags to apply a tag with a single click.  Type in tags below that you want to have one-click access to.  By default, the top two Quick Tags are used to track recently applied tags.  Uncheck the checkbox below to manually set the top two tags.': (
+        'A Gyorscímkék funkció segítségével egyetlen kattintással alkalmazhat címkéket. Alább írja be azokat a címkéket, amelyekhez egy kattintással hozzá szeretne férni. Alapértelmezés szerint a felső két gyorscímke a legutóbb alkalmazott címkéket követi. A felső két címke kézi beállításához törölje a jelet a jelölőnégyzetből.',
+        "quicktagconfig/instructions"),
+    "Autofill empty boxes above with commonly used tags": (
+        "A fenti üres mezők automatikus kitöltése gyakran használatos címkékkel",
+        "quicktagconfig/autofill"),
+    "Type in a tag to add:": (
+        "Írjon be egy hozzáadandó címkét:", "tagpanel/add_tag_label"),
 }
+
+#: a Gyorscímkék-útmutató (a két szóköz a mondatok között az eredetié)
+QUICKTAG_UTMUTATO = 'You can use Quick Tags to apply a tag with a single click.  Type in tags below that you want to have one-click access to.  By default, the top two Quick Tags are used to track recently applied tags.  Uncheck the checkbox below to manually set the top two tags.'
 
 #: fájl → a benne várt hivatalos feliratok
 ELOFORDULASOK = {
@@ -62,12 +88,25 @@ ELOFORDULASOK = {
     "PicasaPy/ConfirmDialog.qml": ["Do not ask again"],
     "PicasaPy/TagContextMenu.qml": ["Add this tag to entire selection"],
     "PicasaPy/LightboxHeader.qml": ["Sync to Web"],
-    "PicasaPy/MoveDatabaseDialog.qml": ["Choose database location..."],
     "PicasaPy/EditorParamPanel.qml": ["Feather", "Color Preservation"],
     "PicasaPy/EditorTextPanel.qml": [
         "Left justify text", "Center justify text", "Right justify text"],
     "PicasaPy/UnnamedFacesView.qml": ["Ignore all of the selected faces"],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
+    # #3575
+    "PicasaPy/CreateDialogs.qml": ["Frame Mosaic"],
+    "PicasaPy/FolderPropertiesDialog.qml": [
+        "Description (optional):", "Place taken (optional):",
+        "Use music for Slideshow and Movie presentation:"],
+    "PicasaPy/ImportSourceDialog.qml": [
+        "Enter Folder Title", "Date Taken (YYYY-MM-DD)", "%1 (Today)"],
+    "PicasaPy/MoveDatabaseDialog.qml": [
+        "Choose database location...", "Current database location:",
+        "New database location:"],
+    "PicasaPy/NewCollectionDialog.qml": ["Enter Collection Name:"],
+    "PicasaPy/QuickTagsConfigDialog.qml": [
+        QUICKTAG_UTMUTATO, "Autofill empty boxes above with commonly used tags"],
+    "PicasaPy/TagsPanel.qml": ["Type in a tag to add:"],
 }
 
 #: amit a rossz alakból SEHOL nem szabad `qsTr()`-ben látni
@@ -83,6 +122,13 @@ ELAVULT = (
     "Align right",
     "Preserve Color",
     " s",
+    # #3575
+    "Enter new folder title or choose existing folder to continue",
+    "Import into separate folders for each date taken",
+    "Import into folder with today's date",
+    "Collection name:",
+    "Fill the empty boxes above with frequently used tags",
+    "Add a tag...",
 )
 
 

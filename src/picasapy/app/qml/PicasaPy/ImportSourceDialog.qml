@@ -23,6 +23,23 @@ Window {
     minimumWidth: 480
     minimumHeight: 480
     color: Theme.canvasBg
+    //: #3575: a külön `Window` NEM örökli a főablak `palette`-jét — enélkül
+    //: a célmappa-módok rádiófeliratai olvashatatlanok (mint a #3593-ban).
+    palette {
+        window: Theme.canvasBg
+        windowText: Theme.ink
+        base: Theme.controlBase
+        alternateBase: Theme.panelBg
+        text: Theme.ink
+        button: Theme.buttonBg
+        buttonText: Theme.ink
+        highlight: Theme.selectionBlue
+        highlightedText: Theme.panelSelectionText
+        placeholderText: Theme.placeholderText
+        mid: Theme.chromeBorder
+        light: Theme.shadeLight
+        dark: Theme.shadeDark
+    }
 
     // a forrás/cél FolderDialog `selectedFolder.toString()`-ja (file:// URL
     // is lehet) — a Pythonnak MINDIG ezt a nyers alakot adjuk át, a
@@ -583,7 +600,8 @@ Window {
             spacing: 2
             RadioButton {
                 objectName: "importSourceNamingManualRadio"
-                text: qsTr("Enter new folder title or choose existing folder to continue")
+                //: #3575: `iCAcquireUI::SubFolder`
+                text: qsTr("Enter Folder Title")
                 ButtonGroup.group: namingModeGroup
                 checked: importSourceWindow.namingMode === "manual"
                 onToggled: if (checked) importSourceWindow.namingMode = "manual"
@@ -601,14 +619,17 @@ Window {
             }
             RadioButton {
                 objectName: "importSourceNamingByDateRadio"
-                text: qsTr("Import into separate folders for each date taken")
+                //: #3575: `iCAcquireUI::AutoDate`
+                text: qsTr("Date Taken (YYYY-MM-DD)")
                 ButtonGroup.group: namingModeGroup
                 checked: importSourceWindow.namingMode === "date"
                 onToggled: if (checked) importSourceWindow.namingMode = "date"
             }
             RadioButton {
                 objectName: "importSourceNamingTodayRadio"
-                text: qsTr("Import into folder with today's date")
+                //: #3575: `iCAcquireUI::TodayDate` („%s (Today)”) — a %s a mai
+                //: mappa neve, ugyanabban az alakban, ahogy létrejön (ÉÉÉÉ-HH-NN)
+                text: qsTr("%1 (Today)").arg(Qt.formatDate(new Date(), "yyyy-MM-dd"))
                 ButtonGroup.group: namingModeGroup
                 checked: importSourceWindow.namingMode === "today"
                 onToggled: if (checked) importSourceWindow.namingMode = "today"
