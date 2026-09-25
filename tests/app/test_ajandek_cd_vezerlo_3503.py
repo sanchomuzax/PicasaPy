@@ -9,11 +9,12 @@ a kép.
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QEventLoop, QSettings, QTimer
+from PySide6.QtCore import QSettings
 
 from picasapy.index import open_index, sync_tree
 from picasapy.thumbs import ThumbnailCache
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import wait_for_signal
 
 
 @pytest.fixture
@@ -54,23 +55,22 @@ def _tartsd_mindkettot(controller, qt_app, first, second):
 
 
 def _varj(controller, qt_app, muvelet, timeout_ms=20000):
-    loop = QEventLoop()
+    """A művelet indítása és az `ajandekCdKesz` megvárása — HANGOS
+    vészfékkel (#1467): ha a jelzés nem jön meg, a bukás megmondja."""
     eredmeny = {}
 
     def _kesz(ut, darab, hibas):
         eredmeny.update(ut=ut, darab=darab, hibas=hibas)
-        loop.quit()
 
     controller.ajandekCdKesz.connect(_kesz)
     try:
-        muvelet()
-        if not eredmeny:
-            QTimer.singleShot(timeout_ms, loop.quit)
-            loop.exec()
+        wait_for_signal(
+            controller.ajandekCdKesz, muvelet, timeout_ms=timeout_ms,
+            description="az Ajándék CD lemezképe",
+        )
     finally:
         controller.ajandekCdKesz.disconnect(_kesz)
     qt_app.processEvents()
-    assert eredmeny, "az ajandekCdKesz jelzés nem érkezett meg az időkorlát alatt"
     return eredmeny
 
 
@@ -138,7 +138,9 @@ def test_a_mappanev_honositott(controller, qt_app, library):
     hetz = shutil.which("7z") or shutil.which("7za")
     assert hetz, "nincs `7z` a gépen — a lemezkép ellenőrzése így nem mérés"
     lista = subprocess.run(
-        [hetz, "l", "-slt", str(cel)], capture_output=True, text=True,
+        # `-sccUTF-8`: a konzol kódlapja (Windowson) nem torzíthatja a nevet
+        [hetz, "l", "-slt", "-sccUTF-8", str(cel)], capture_output=True,
+        text=True,
         encoding="utf-8", errors="replace", timeout=60,
     ).stdout
     assert "Path = Képek" in lista

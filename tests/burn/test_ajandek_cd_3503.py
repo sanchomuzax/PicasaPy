@@ -22,6 +22,7 @@ import subprocess
 from pathlib import Path
 
 import cv2
+import numpy as np
 import pytest
 
 from picasapy.burn.ajandek_cd import (
@@ -45,6 +46,11 @@ def _kicsomagol(kep: Path, cel: Path) -> None:
         timeout=120,
     )
     assert kesz.returncode == 0, kesz.stdout + kesz.stderr
+
+
+def _kep(ut: Path):
+    """A `cv2.imread` Windowson ékezetes útra `None`-t ad — bájtból dekódolunk."""
+    return cv2.imdecode(np.frombuffer(ut.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
 
 
 def _joliet_kotetnev(kep: Path) -> str:
@@ -129,8 +135,8 @@ class TestALemezTartalma:
 
         kibontva = tmp_path / "bontas"
         _kicsomagol(cel, kibontva)
-        nagy = cv2.imread(str(kibontva / "Képek" / "nyár.jpg"))
-        kicsi = cv2.imread(str(kibontva / "Képek" / "tél.jpg"))
+        nagy = _kep(kibontva / "Képek" / "nyár.jpg")
+        kicsi = _kep(kibontva / "Képek" / "tél.jpg")
         assert max(nagy.shape[:2]) == oldal
         # a korlátnál kisebb kép nem nő
         assert kicsi.shape[:2] == (200, 300)
@@ -329,24 +335,18 @@ class TestAtomikusIras:
 
 
 class TestTulNagyFajl:
-    def test_a_4_gib_os_fajlt_kimondja(self, tmp_path, monkeypatch):
+    def test_a_4_gib_os_fajlt_kimondja(self, tmp_path):
         """ISO 9660 1. szinten egy fájl legfeljebb 4 GiB − 1 bájt: a 32 bites
-        méretmezőbe nem fér több. A nagyobbat nem némán, hanem
-        `ValueError`-ral kell elutasítani."""
+        méretmezőbe nem fér több. A nagyobbat nem némán (és nem
+        `OverflowError`-ral), hanem `ValueError`-ral kell elutasítani.
+
+        A fájl RITKA (sparse): a `truncate` lemezhelyet nem foglal."""
         from picasapy.burn import iso
 
         nagy = tmp_path / "nagy.bin"
-        nagy.write_bytes(b"x")
-
-        class _Stat:
-            st_size = 1 << 32
-
-        eredeti = Path.stat
-
-        def _stat(self, *a, **k):
-            return _Stat() if self == nagy else eredeti(self, *a, **k)
-
-        monkeypatch.setattr(Path, "stat", _stat)
+        with nagy.open("wb") as f:
+            f.truncate(1 << 32)
 
         with pytest.raises(ValueError):
             iso.iso_kiirasa([("nagy.bin", nagy)], tmp_path / "ki.iso")
+        assert not (tmp_path / "ki.iso").exists()

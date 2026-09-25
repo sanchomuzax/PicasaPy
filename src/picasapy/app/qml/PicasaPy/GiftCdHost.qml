@@ -97,6 +97,9 @@ Rectangle {
         anchors.centerIn: parent
         modal: true
         title: qsTr("CD Done")
+        //: rögzített szélesség — a tördelő szöveg és a Fusion `Dialog`
+        //: egymásra hivatkozó szélessége különben kötési hurok (#1599)
+        implicitWidth: 420 + leftPadding + rightPadding
         contentItem: Column {
             spacing: 6
             Label {
@@ -139,7 +142,10 @@ Rectangle {
         anchors.centerIn: parent
         modal: true
         title: qsTr("Create a Gift CD...")
+        implicitWidth: 360 + leftPadding + rightPadding
         contentItem: Label {
+            width: 360
+            wrapMode: Text.WordWrap
             text: qsTr("The disc image could not be created.")
         }
         standardButtons: Dialog.Ok
