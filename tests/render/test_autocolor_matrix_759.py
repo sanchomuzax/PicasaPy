@@ -99,6 +99,43 @@ class TestMatrix:
         assert np.abs(atlon_kivul).max() > 0, "a kereszt-tagok hiányoznak"
 
 
+class TestLumaMegorzes:
+    """#3615: a luma-súlyok (`77/151/28`) a mátrix KIMENETÉN látszanak.
+
+    A spec (`docs/specs/filters-decoded.md`, „Miért pont ez a képlet —
+    önellenőrzés") algebrai azonossága:
+
+        A · k = M · diag(P/Q) · Q = M · P = (L, L, L),
+        L = (77·kR + 151·kG + 28·kB) >> 8
+
+    vagyis a mátrix a becsült megvilágítás színét a vele AZONOS LUMÁJÚ
+    semleges szürkére képezi le. Ez a kimenetet méri, nem a konstanst
+    olvassa vissza: egyetlen súly egy egységnyi elmozdítása (`76/151/29`)
+    az `L`-et itt pontosan egy szinttel viszi el.
+
+    A golden képek (`ImFeelLucky` párok) nem kerülhetnek a publikus repóba,
+    ezért a várt `L` a spec képletéből, a súlyok leírt értékével számol.
+    """
+
+    @staticmethod
+    def _vart_luma(k_red: int, k_green: int, k_blue: int) -> int:
+        return (77 * k_red + 151 * k_green + 28 * k_blue) >> 8
+
+    @pytest.mark.parametrize(
+        ("k_red", "k_blue"),
+        # Mindegyik párnál a `(76, 151, 29)` vagy a `(78, 151, 27)` súly más
+        # `L`-et ad; a tartomány a becslő `k(d)` kimenete (64 … 255).
+        [(255, 64), (64, 255), (180, 96), (236, 72), (96, 180)],
+    )
+    def test_a_becsult_szint_AZONOS_LUMAJU_szurkere_kepez(self, k_red, k_blue):
+        A = autocolor_matrix_16_16(k_red, 128, k_blue)
+        kimenet = A.astype(np.float64) @ np.array([k_red, 128, k_blue]) / 65536.0
+        vart = self._vart_luma(k_red, 128, k_blue)
+        # A 16.16-os csonkítás és a float32 együtt 0,01 alatt marad; egy
+        # elmozdult luma-súly egész szintnyi eltérést ad.
+        np.testing.assert_allclose(kimenet, [vart, vart, vart], rtol=0, atol=0.05)
+
+
 class TestBecslo:
     def test_szurke_kepre_semleges(self):
         kep = np.full((32, 32, 3), 128, dtype=np.uint8)
