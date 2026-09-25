@@ -624,8 +624,74 @@ betöltésében keletkezik, mindkét effektre közösen.
 
 **NINCS MEG:** a betöltő tényezőjének szabálya (fix ×3, vagy a képmérettől
 függ — pl. `W/320` vagy `min(W,H)/2 / 106,7` ugyanezen a képen mind 3). Ezen
-az egyetlen képméreten nem választható szét; a betöltő kiolvasása a
-**#3591** tárgya.
+az egyetlen képméreten nem választható szét. → **Megválaszolva a következő bekezdésben (#3591): a csúszka százalékot tárol.**
+
+**⛳ A „háromszoros sugár” oka: a képmérettől függő csúszka a `.picasa.ini`-ben SZÁZALÉKOT tárol (2026-09-25, 360. kör, #3591).**
+
+*Két csúszkaosztály.* A Glimmer-leíró csúszkáit a `0x00bb25f0` építi fel.
+Ha a `minimum`, a `maximum` és a `value` kifejezés mind **állandóként**
+kiértékelhető (`0x008f1460` háromszor, `0x00bb2b5c`–`0x00bb2b7c`), a
+csúszka **statikus** (`glimmer::StaticRangeSlider`, konstruktor
+`0x00bbc8b0`, három állandóval); ha bármelyik a képtől függ, **dinamikus**
+(`glimmer::DynamicRangeSlider`, konstruktor `0x00bbd230`, vtábla
+`0x00cf0518`).
+
+*A dinamikus csúszka értéke százalék.* A `DynamicRangeSlider` 4. rekesze
+(`0x00bbd3d0`) a tárolt `t` értéket előbb **0 és 100 közé szorítja**
+(`0x00bbd426`–`0x00bbd452`, a korlát `100,0` a `0x00cf3a08`-on, illetve
+`0x00cf39ec`-en), majd a pillanatnyi tartományra vetíti:
+
+```text
+érték = minimum + (maximum − minimum) · t / 100        (0x00bbd456–0x00bbd478)
+```
+
+Az alapértéke `t = 50` (`0x00bbd389`, `0x00cf4b60` = 50,0) — ez a
+leíró „a tartomány közepe” alapértéke.
+
+*A két fókuszos effekt `Radius`-a dinamikus* (a maximuma
+`Math.min(imagewidth, imageheight)/2`, illetve a `FocalZoom`-nál
+`Math.min(fullResImageWidth, fullResImageHeight)/2`). A mérőkészlet
+`Radius = 105`-je tehát **105 %** → 100 %-ra szorul → a sugár a
+maximum: 960 × 640-en `320`. Ebből:
+
+| | képlet | számolt | mért (fent) |
+|---|---|---:|---:|
+| belső sugár | `320 · 50/101` | 158,4 | ~157 |
+| külső sugár | `320 · (2 − 50/101)` | 481,6 | ~475–480 |
+
+⇒ A „×3” csak ennek a képnek a véletlene (105 → 320); a valódi szabály:
+**`Radius_px = 10 + (min(W, H)/2 − 10) · min(Radius_ini, 100) / 100`.**
+A `FocalZoom` ugyanígy viselkedik, ezért kezdett ugyanott (~157 px).
+
+⚠️ **Következmény a golden-készletekre:** a mi generátorunk a `Radius`-t
+képpontnak vette; minden 100 fölötti érték ugyanazt a (maximális) sugarat
+adja. A `min` beállítás (`Radius = 10`) a képlet szerint
+`10 + 310 · 0,10 = 41` px, nem 10.
+
+*Bizonyítottsági fok: **megerősített** — az osztályválasztás, a szorítás, a
+vetítés és az alapérték utasításszinten olvasva, a számolt sugarak a mért
+exporttal egyeznek.*
+
+*Kontroll — a statikus csúszka NYERS értéket tárol.* Az `Impact`
+(`minimum="2" maximum="100" value="{zeroR + 20}"`) statikus: az export
+pixelblokkja pontosan **20 px** (az oszlopkülönbség-profil
+autokorrelációs csúcsa 20-nál, 0,186; dinamikusként 20 % → 21,6 → ~21,8 px
+volna). A `zeroR` tehát állandóként értékelődik.
+
+*A képmérettől függő tartományú csúszkák — mind az öt* (a szállított
+`filterdesc.xml` teljes átnézése, a `minimum`/`maximum` kifejezésben
+képváltozó):
+
+| szűrő | csúszka | tartomány |
+|---|---|---|
+| `PicnikFocalPixelate` | `_sldrRadius` | 10 … `min(imagewidth, imageheight)/2` |
+| `FocalZoom` | `_sldrRadius` | 10 … `min(fullResImageWidth, fullResImageHeight)/2` |
+| `RoundedEdges` | `_sldrCornerRadius` | 0 … `min(imagewidth, imageheight)/2` |
+| `Border` | `_sldrCornerRadius` | 0 … `min(imagewidth, imageheight)/2` |
+| `Border` | `_sldrCaptionHeight` | 0 … `imageheight/6` |
+
+Ezeknél a `.picasa.ini` értéke **százalék** a fenti szabály szerint; minden
+más csúszkánál nyers érték. Nálunk mind az öt képpontként megy — fejlesztés: **#3596**.
 
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
