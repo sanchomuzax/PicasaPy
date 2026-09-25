@@ -58,7 +58,12 @@ def _kattints(ablak, elem, qt_app):
 
 
 @pytest.fixture
-def parbeszed(qt_app, tmp_path):
+def parbeszed(qt_app, tmp_path, monkeypatch):
+    # a lemezkép-alaphely a tmp alá — SOHA ne a fejlesztő Képek mappájába
+    monkeypatch.setattr(
+        "picasapy.app.backup_controller._kepek_mappaja",
+        lambda: str(tmp_path / "Kepek"),
+    )
     from picasapy.app.backup_controller import BackupController
     from picasapy.index import open_index, sync_tree
 
@@ -148,8 +153,9 @@ class TestAFutas:
 
     def test_cd_dvd_keszlet_lemezkepet_ir(self, parbeszed, qt_app, tmp_path):
         ablak, vezerlo = parbeszed
-        cel = tmp_path / "iso"
-        vezerlo.ujKeszlet("Lemezre", str(cel), "minden", "cddvd")
+        vezerlo.ujKeszlet("Lemezre", "", "minden", "cddvd")
+        cel = Path(vezerlo.lemezkepAlapHely())
+        assert tmp_path in cel.parents
         QMetaObject.invokeMethod(ablak, "frissitsd")
         ablak.setProperty("kivalasztott", 0)
         qt_app.processEvents()

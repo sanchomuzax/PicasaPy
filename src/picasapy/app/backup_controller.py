@@ -55,6 +55,18 @@ _CD_SZEKTOR = 360_000
 _DVD_SZEKTOR = 2_295_104
 
 
+def _kepek_mappaja() -> str:
+    """A felhasználó Képek mappája — MODULSZINTŰ fogantyú: a teszt ezt
+    cseréli, hogy a lemezkép ne a fejlesztő valódi Képek mappájába
+    kerüljön. Üres rendszerválasznál a saját mappa (relatív út nem lehet)."""
+    return (
+        QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        )
+        or str(Path.home())
+    )
+
+
 class BackupController(BackgroundWorkerMixin, QObject):
     """Az `Eszközök ▸ Képek biztonsági mentése…` háttér-hídja."""
 
@@ -108,10 +120,9 @@ class BackupController(BackgroundWorkerMixin, QObject):
         tehát kell egy hely: a Képek mappában a honosított
         `il_BurnPanel::DefBkFolder` („Picasa biztonsági másolat") alatti
         `il_BurnPanel::ISOFolder` („ISO-k")."""
-        kepek = QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.PicturesLocation
+        return str(
+            Path(_kepek_mappaja()) / self.tr("Picasa Backup") / self.tr("ISOs")
         )
-        return str(Path(kepek) / self.tr("Picasa Backup") / self.tr("ISOs"))
 
     @Slot(str, str, str, result=bool)
     @Slot(str, str, str, str, result=bool)
@@ -130,7 +141,10 @@ class BackupController(BackgroundWorkerMixin, QObject):
         if tipus not in TIPUSOK:
             self.hibatJelez.emit(self.tr("Unknown backup type."))
             return False
-        if tipus == TIPUS_CD_DVD and not str(cel).strip():
+        if tipus == TIPUS_CD_DVD:
+            # a CD/DVD-típusnak nincs választható helye (a `.fen` szerint a
+            # „Choose…" tiltott) — a felület az alaphelyet mutatja, tehát
+            # az is kerül a készletbe, akármit hozott az űrlap
             cel = self.lemezkepAlapHely()
         if not str(cel).strip():
             self.hibatJelez.emit(
@@ -165,7 +179,7 @@ class BackupController(BackgroundWorkerMixin, QObject):
         if tipus and tipus not in TIPUSOK:
             self.hibatJelez.emit(self.tr("Unknown backup type."))
             return False
-        if tipus == TIPUS_CD_DVD and not str(cel).strip():
+        if tipus == TIPUS_CD_DVD:
             cel = self.lemezkepAlapHely()
         try:
             with open_index(self._db_path) as conn:

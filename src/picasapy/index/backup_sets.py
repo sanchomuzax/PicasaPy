@@ -85,10 +85,15 @@ def ensure_backup_tables(conn: sqlite3.Connection) -> None:
         sor[1] for sor in conn.execute("PRAGMA table_info(backup_sets)")
     }
     if "kind" not in oszlopok:
-        conn.execute(
-            "ALTER TABLE backup_sets "
-            f"ADD COLUMN kind TEXT NOT NULL DEFAULT '{TIPUS_LEMEZ}'"
-        )
+        try:
+            conn.execute(
+                "ALTER TABLE backup_sets "
+                f"ADD COLUMN kind TEXT NOT NULL DEFAULT '{TIPUS_LEMEZ}'"
+            )
+        except sqlite3.OperationalError as hiba:
+            # egy másik kapcsolat (a mentés szála) épp most pótolta
+            if "duplicate column" not in str(hiba):
+                raise
 
 
 def _ellenorizd_a_tipust(tipus: str) -> None:

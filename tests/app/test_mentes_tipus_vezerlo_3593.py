@@ -17,7 +17,12 @@ from support.jpeg_factory import make_jpeg
 
 
 @pytest.fixture
-def vezerlo(qt_app, tmp_path):
+def vezerlo(qt_app, tmp_path, monkeypatch):
+    # a lemezkép-alaphely a tmp alá — SOHA ne a fejlesztő Képek mappájába
+    monkeypatch.setattr(
+        "picasapy.app.backup_controller._kepek_mappaja",
+        lambda: str(tmp_path / "Kepek"),
+    )
     from picasapy.app.backup_controller import BackupController
     from picasapy.index import open_index, sync_tree
 
@@ -90,3 +95,24 @@ def test_a_regi_negy_argumentumos_modositas_a_tipust_nem_bantja(
 
     keszlet = vezerlo.keszletek()[0]
     assert (keszlet["nev"], keszlet["tipus"]) == ("Átnevezve", "cddvd")
+
+
+def test_cd_dvd_tipusra_valtva_az_alaphelyre_ir_nem_a_regi_mappaba(
+    vezerlo, tmp_path
+):
+    """Az átnézés lelete: a lemez-lemez készletet CD/DVD-re váltva a felület
+    az alaphelyet MUTATJA — a mentett helynek is annak kell lennie, nem a
+    régi mappának (különben a lemezképek a régi mentés közé kerülnének)."""
+    regi = str(tmp_path / "regi")
+    vezerlo.ujKeszlet("Külső", regi, "minden", "lemez")
+    azonosito = vezerlo.keszletek()[0]["id"]
+
+    vezerlo.modositsdAKeszletet(azonosito, "Külső", regi, "minden", "cddvd")
+
+    assert vezerlo.keszletek()[0]["cel"] == vezerlo.lemezkepAlapHely()
+
+
+def test_uj_cd_dvd_keszlet_a_megadott_mappat_sem_hasznalja(vezerlo, tmp_path):
+    vezerlo.ujKeszlet("Lemezre", str(tmp_path / "x"), "minden", "cddvd")
+
+    assert vezerlo.keszletek()[0]["cel"] == vezerlo.lemezkepAlapHely()

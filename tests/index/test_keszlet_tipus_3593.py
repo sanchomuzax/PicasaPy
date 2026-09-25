@@ -97,3 +97,29 @@ def test_a_regi_tabla_is_olvashato(conn):
     assert {k.nev: k.tipus for k in keszletek(conn)} == {
         "Régi": TIPUS_LEMEZ, "Új": TIPUS_CD_DVD,
     }
+
+
+def test_ket_kapcsolat_egyszerre_bovit(tmp_path):
+    """Az átnézés lelete: frissítés utáni első futáskor a felület és a
+    mentés szála egyszerre láthatja hiányzónak az oszlopot — a második
+    `ALTER` nem dönthet el semmit."""
+    from picasapy.index.backup_sets import ensure_backup_tables
+
+    db = tmp_path / "regi.db"
+    elso = sqlite3.connect(db)
+    elso.executescript(
+        "CREATE TABLE backup_sets (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "name TEXT NOT NULL UNIQUE, target TEXT NOT NULL, "
+        "file_filter TEXT NOT NULL, last_run TEXT);"
+    )
+    elso.commit()
+    masodik = sqlite3.connect(db)
+    try:
+        # a második kapcsolat még a régi sémát látta, amikor az első bővít
+        masodik.execute("PRAGMA table_info(backup_sets)").fetchall()
+        ensure_backup_tables(elso)
+        elso.commit()
+        ensure_backup_tables(masodik)
+    finally:
+        elso.close()
+        masodik.close()

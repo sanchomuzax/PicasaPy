@@ -303,7 +303,17 @@ Window {
                     text: qsTr("Disk-to-disk backup (for external and network drives)")
                     font.pixelSize: Theme.fontSize
                     checked: backupWindow.urlapTipus === "lemez"
-                    onClicked: backupWindow.urlapTipus = "lemez"
+                    onClicked: {
+                        //: a CD/DVD-típus helye (a lemezkép-alaphely) nem
+                        //: maradhat itt mappának — a mező üresen vár
+                        if (backupWindow.urlapTipus === "cddvd"
+                                && typeof backupController !== "undefined"
+                                && backupController
+                                && backupWindow.urlapCel
+                                   === backupController.lemezkepAlapHely())
+                            backupWindow.urlapCel = ""
+                        backupWindow.urlapTipus = "lemez"
+                    }
                 }
             }
 
