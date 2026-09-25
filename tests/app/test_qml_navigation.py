@@ -114,6 +114,38 @@ def _wait_for_row_bounds(qt_app, grid, row, timeout_ms=2000):
     return prev
 
 
+def _wait_for_row_bottom_at_view_bottom(qt_app, grid, row, timeout_ms=3000):
+    """#3514: a lefelé-lépés VÁRT végállapotának kivárása — a sor alja a
+    látótér aljára kerül, és ez két egymást követő lekérdezésben is így
+    marad. A `_wait_for_scroll_settled` csak a mozdulatlanságot méri; egy
+    közbeeső újrarendezés (0→6 sodródás) után az a még el sem indult
+    görgetést is „kész"-nek fogadta el.
+
+    Visszatérés: `(rowBounds, contentY, height)` — időtúllépéskor az utolsó
+    mért értékek, hogy a hívó állítása a valódi számokkal bukjon el."""
+    from PySide6.QtCore import QEventLoop, QMetaObject, QTimer
+
+    stabil = 0
+    b = content_y = height = None
+    steps = max(1, timeout_ms // 20)
+    for _ in range(steps):
+        QMetaObject.invokeMethod(grid, "forceLayout")
+        qt_app.processEvents()
+        b = _ret(qt_app, grid, "rowBounds", row)
+        content_y = grid.property("contentY")
+        height = grid.property("height")
+        if b is not None and abs(b["bottom"] - (content_y + height)) <= 1:
+            stabil += 1
+            if stabil >= 2:
+                break
+        else:
+            stabil = 0
+        pause = QEventLoop()
+        QTimer.singleShot(20, pause.quit)
+        pause.exec()
+    return b, content_y, height
+
+
 def _settle_content_y_at(qt_app, grid, target=0.0, timeout_ms=2000):
     """#261: a KIINDULÓ görgetés-pozíció determinisztikus beállítása.
 
@@ -412,8 +444,11 @@ class TestArrowMinimalScroll:
         grid, old_size = TestGridWheelScrollsPage._scrollable_grid(window, qt_app)
         try:
             grid.setProperty("selectionAnchor", 0)
-            grid.setProperty("contentY", 0)
-            qt_app.processEvents()
+            # #3514: a kiindulást STABILIZÁLNI kell — a `thumbSize`-váltás
+            # utáni újrarendezés egy-két ciklussal később 0-ról 6-ra írta a
+            # `contentY`-t, és a `kiindulas=0`-hoz mért szinkronpont ezt a
+            # 0→6 sodródást „elindult görgetésnek" vette (597 = 1185 − 588)
+            assert _settle_content_y_at(qt_app, grid, 0), "a kiindulás nem állt be"
             elotte = grid.property("contentY")
             _invoke(qt_app, grid, "moveSelection", "down")
             # #2497-es körben mérve: EZ az egyetlen görgetés-teszt a
@@ -427,10 +462,13 @@ class TestArrowMinimalScroll:
             _wait_for_scroll_settled(qt_app, grid, kiindulas=elotte)
             target = window.property("selectedIndex")
             assert target > 0
-            b = _wait_for_row_bounds(qt_app, grid, target)
+            # #3514: nem a mozdulatlanságot, hanem a VÁRT végállapotot várjuk
+            # ki — a cél-sor alja a látótér aljára kerül. Időtúllépéskor a
+            # segéd az utolsó mért értékeket adja, és az állítás elbukik.
+            b, content_y, height = _wait_for_row_bottom_at_view_bottom(
+                qt_app, grid, target
+            )
             assert b is not None
-            content_y = grid.property("contentY")
-            height = grid.property("height")
             # a cél-sor alja pont belóg: pontosan annyi görgetés, amennyi kell
             assert abs(b["bottom"] - (content_y + height)) <= 1
         finally:
