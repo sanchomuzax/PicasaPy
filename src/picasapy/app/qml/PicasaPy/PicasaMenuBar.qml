@@ -2078,14 +2078,14 @@ MenuBar {
                     ? qsTr("System Default (%1)").arg(controller.systemLanguageSuffix)
                     : qsTr("System Default")
                 checkable: true
-                checked: controller
+                checked: (controller && controller.systemLanguageCode !== undefined)
                     ? controller.pendingLanguage === controller.systemLanguageCode
                     : false
                 onTriggered: {
                     bar.requestLanguageChange(
                         controller ? controller.systemLanguageCode : "system")
                     checked = Qt.binding(function () {
-                        return controller
+                        return (controller && controller.systemLanguageCode !== undefined)
                             ? controller.pendingLanguage === controller.systemLanguageCode
                             : false
                     })

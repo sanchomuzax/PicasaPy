@@ -10325,10 +10325,6 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Fájlok:</translation>
     </message>
     <message>
-        <source>Delete Set</source>
-        <translation>Készlet törlése</translation>
-    </message>
-    <message>
         <source>Are you sure you want to delete the backup set &quot;%1&quot;?</source>
         <translation>Biztosan törli a(z) „%1” mentési készletet?</translation>
     </message>
