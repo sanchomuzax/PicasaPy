@@ -2679,7 +2679,7 @@ eleje.
 | `Blur` | `0x008efe98` | `0x00bb4d50` | `0x00bb4de0` (616 b) | — | xblur@0x24, yblur@0x2c, quality@0x34 |
 | `Border` | `0x008f0650` | `0x00bbe090` | `0x00bbe320` (266 b) | — | outercolor@0x24, innercolor@0x2c, cornerradius@0x34, innerthickness@0x3c, outerthickness@0x44, captionheight@0x4c |
 | `ColorMatrix` | `0x008f0798` | `0x00bc1620` | `0x00bc16b0` (428 b) | `0x00bc1860` (245 b) | — *(a `Matrix` tömb más úton)* |
-| `Crop` | `0x008f05a0` | `0x00bbd9a0` | `0x00bbdbd0` (227 b) | — | width@0x34, height@0x3c |
+| `Crop` | `0x008f05a0` | `0x00bbd9a0` | `0x00bbdbd0` (227 b) | — | x@0x24, y@0x2c, width@0x34, height@0x3c *(teljes: H) pont)* |
 | `DropShadow` | `0x008f039c` | `0x00bbb350` | `0x00bbb720` (417 b) | — | shadowAlpha@0x24, angle@0x2c, shadowColor@0x34, backgroundColor@0x3c, distance@0x44, inner@0x4c, quality@0x54, strength@0x5c, blurX@0x64, blurY@0x6c |
 | `EdgeDetectionB` | `0x008f04a0` | `0x00bbca60` | `0x00bbcdd0` (124 b) | — | detail@0x2c |
 | `EdgeDetectionSobel` | `0x008efff4` | `0x00bb6590` | `0x00bb6620` (544 b) | — | — |
@@ -2702,9 +2702,9 @@ eleje.
 | `Rotate` | `0x008efefc` | `0x00bb5270` | `0x00bb5640` (239 b) | — | radAngle@0x24, degAngle@0x2c, borderColor@0x34, flipH@0x3c, flipV@0x44, padBorder@0x4c |
 | `Shader` | `0x008eff2c` | `0x00bb5830` | `0x00bb58d0` (202 b) | — | — |
 | `Sharpen` | `0x008f0720` | `0x00bbf990` | `0x00bbf9e0` (550 b) | — | sharpness@0x24 |
-| `SimpleBorder` | `0x008f06cc` | `0x00bbf280` | `0x00bbf4a0` (391 b) | — | right@0x2c, bottom@0x3c, color@0x44 |
+| `SimpleBorder` | `0x008f06cc` | `0x00bbf280` | `0x00bbf4a0` (391 b) | — | left@0x24, right@0x2c, top@0x34, bottom@0x3c, color@0x44 *(teljes: H) pont)* |
 | `SimpleColorMatrix` | `0x008effb4` | `0x00bb62c0` | `0x00bc16b0` (428 b) | `0x00bb6400` (296 b) | saturation@0x28, contrast@0x30, brightness@0x38, ContrastAndBrightnessLinked@0x48 |
-| `Tint` ⚠ | `0x008f0554` | `0x00bbd630` | `0x00bbf920` (6 b) | — | color@0x10 *(a kiolvasás itt nem megbízható)* |
+| `Tint` | `0x008f0554` | `0x00bbd630` | `0x00bbf920` (6 b) | — | nincs saját tag: a `color` helyi változó → két gyerek (`ColorMatrix` s = −100 + `Resaturate`); ld. H) pont |
 | `TwoTone` | `0x008f085c` | `0x00bc2760` | `0x00bb7c80` (435 b) | `0x00bb87b0` (493 b) | whiteColor@0x24, blackColor@0x2c |
 
 ### A `BlendAlpha` NEM műveletenkénti attribútum
@@ -2741,9 +2741,9 @@ motor többet, mint amennyit az effektek kihasználnak — a megvalósításnak 
   `GradientMap::gradientArray`, `PaletteMap::ColorMaps`,
   `AdjustCurves::*Curve`) **más úton** kerül be — a fenti mintával nem
   olvasható ki.
-- A `Tint`, a `Crop` és a `SimpleBorder` sora **hiányos**: a `red.cfg`
+- ~~A `Tint`, a `Crop` és a `SimpleBorder` sora **hiányos**: a `red.cfg`
   több nevet sorol (`x`/`y`, illetve `top`/`left`), mint amennyit a minta
-  megtalált.
+  megtalált.~~ → **LEZÁRVA (2026-09-26, #626):** mindhárom teljes, ld. „H) A `Tint` belseje” pont.
 - A `QuantizePalette` **KÓDBELI** alapértékei mérve vannak: `Steps` = 255,
   `Depth` = 2 (`0x00bb5aed`, `0x00bb5b1d`) — a tényleges kvantálást a
   `0x00bb5b60` (1510 b) végzi.
@@ -7163,6 +7163,94 @@ golden: natív és PicasaPy kimenet összevetése ebben a körben **NINCS MEG**.
 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A `ContrastAndBrightnessLinked`
 ág 127,5-ös képlete utasításszinten már korábban megvolt (`0x008f2040`),
 de a natív export-golden továbbra is külön, meg nem mért ellenőrzés.
+
+### H) ⭐ A `Tint` belseje: szürkítés + a `Resaturate` táblája — és három attribútum-sor kiegészítése (2026-09-26, #626)
+
+*Forrás: `0x00bbd630` (`glimmer::TintImageOperation`, 1. rés) · `0x00bbd4a0` / `0x00bbd500` (`ResaturateImageOperation`) · `0x00bce2f0` (a táblaelem) · `0x00bbf280` (`SimpleBorder`, 1. rés) · `0x00bbd9a0` (`Crop`, 1. rés).*
+
+#### 1. A három hiányos attribútum-sor — most teljes
+
+A fenti „A teljes tábla” a `Tint`, a `Crop` és a `SimpleBorder` sorát hiányosnak jelölte. Az 1. rés (attribútum-beolvasó) minden `FUN_008eb160(leíró, név)` hívása kiolvasva:
+
+| művelet | 1. rés | név → tagoffszet |
+|---|---|---|
+| `SimpleBorder` | `0x00bbf280` | `left`@0x24 (`0x00c939b0`) · `right`@0x2c (`0x00c939b8`) · `top`@0x34 (`0x00cc3468`) · `bottom`@0x3c (`0x00cc346c`) · `color`@0x44 (`0x00cbda84`) |
+| `Crop` | `0x00bbd9a0` | `x`@0x24 (`0x00cac5b4`) · `y`@0x2c (`0x00cac5b8`) · `width`@0x34 (`0x00c80ac4`) · `height`@0x3c (`0x00c80acc`) |
+| `Tint` | `0x00bbd630` | **nincs saját tagja**: a `color`-t (`0x00cbda84`) HELYI változóba olvassa, és két gyerekműveletet épít belőle (2. pont); a `dynamicColorCachePriority` (`0x00cf0534`) a második gyerek `+0x18` mezőjébe kerül (`0x00bbd819`) |
+
+Mindhárom beolvasó a végén az ős beolvasóját hívja (`0x00bc4900`), tehát a `BlendAlpha`, a `BlendMode` és a `Mask` náluk is él.
+
+#### 2. A `Tint` NEM önálló pixelművelet
+
+A `Tint` 6. rése (az alkalmazó, `0x00bbf920`) 6 bájtos. A munkát a beolvasó által épített két gyerek végzi, ebben a sorrendben:
+
+1. **`ColorMatrixImageOperation`** (vtábla `0x00cf0798`): a mátrixot a `0x008f19e0` (egységmátrix) és a telítettség-építő `0x008f1d00` adja, **`s = −100`** paraméterrel (`fld [0xcf4238]` = −100,0; `0x00bbd686`). Ez a 4.9 szakasz képlete szerint `k = 0`, vagyis minden csatorna a **Haeberli-szürke**: `0,3086·R + 0,6094·G + 0,0820·B`. A 20 `float` elem `double`-ként másolódik át (`0x00bbd6a0`–`0x00bbd6b1`), a gyerek a `0x00bc14e0`/`0x00bc1420` párossal kerül a láncba.
+2. **`ResaturateImageOperation`** (vtábla `0x00cf0578`, építő `0x00bbd4a0`): a `color` szöveget a `+0x40` mezőbe teszi.
+   - A 8. rés (`0x00bbd500`) a szöveget a `0x008ef520`-szal számmá, a `0x008eea90`-nel színné alakítja. Ha az átalakítás nem sikerül, az **alapszín `0xFFDDC9AE`** marad (a `0x00bbd51d`–`0x00bbd52c` négy bájtja).
+   - Ezután **`i = 0 … 255`**-re `LUT[+0x800 + 4·i] = 0x00bce2f0(szín, (float)i)` (`0x00bbd560`–`0x00bbd588`); a `+0x000`, `+0x400` és `+0xc00` rekeszt kinullázza (`0x00bbd58a`–`0x00bbd5b8`, `memset` 0x400).
+   - A 6. rés **`0x00bb7c80`**, ugyanaz az alkalmazó, mint a `TwoTone`-é. A 4.9-es TwoTone-lelet szerint a `+0x800` rekesz a bemenet **piros** csatornájával indexel. Az 1. lépés után a piros csatorna maga a Haeberli-szürke.
+
+⇒ **`Tint(szín)` = `LUT_szín[ Haeberli-szürke(képpont) ]`**, és utána a `BlendAlpha`/`BlendMode`/`Mask` keverés a bemenettel (az ős beolvasója).
+
+⛔ **Helyesbítés** a `picasa-native-filter-registry.md` 3. szakaszához: ott az áll, hogy a `ResaturateImageOperation` „egyetlen effektnek sem feleltethető meg”. A `0x00bbd630` a `glimmer::TintImageOperation` vtáblájának 1. rése (RTTI: `0x008f0554`, rések: `0x00bc1280;0x00bbd630;…`), tehát a `Resaturate` a **`Tint` gyereke**. Így négy effekt használja: `CrossProcess`, `Soften`, `ReanimatedEyeColor`, `PicnikTint` (`filterdesc.xml` 836., 1117., 1289., 1360. sor).
+
+#### 3. A táblaelem: `0x00bce2f0(szín, L)` — fényesség-tartó színező, Haeberli-súlyokkal
+
+A konstansok: `0,6094` (`0xcf4068`), `0,3086` (`0xcf4060`), `0,0820` (`0xcf4058`), `0,5` (`0xc72150`), `255,0` (`0xcf39d0`), és a három kiegészítő: `0,6914` (`0xcf4050`), `0,3906` (`0xcf4048`), `0,9180` (`0xcf4040`).
+
+A váz, utasításszinten:
+
+1. `Lc = round(0,3086·R + 0,6094·G + 0,0820·B + 0,5)`, 0…255-re szorítva (`0x00bce32d`–`0x00bce380`, a kerekítés a `0x00c29990`);
+2. `d = L − Lc`; mind a három csatornához hozzáadja (`0x00bce388`–`0x00bce3b3`);
+3. ha `d > 0`, a csatornákat `255 − x` alakra tükrözi, és ezt a végén visszafordítja (`bl` jelző, `0x00bce3ca`–`0x00bce3e6` és `0x00bce813`–`0x00bce832`);
+4. a negatívba került csatornákat nullára húzza, és a hiányt a még szabad csatornákra osztja szét: egy csatornánál a saját súlyával, kettőnél a kiegészítő súllyal osztva (`0x00bce41e`–`0x00bce7a0`). A ciklus addig fut, amíg a csatornák float-bitmintája 8-nál kisebb különbséggel be nem áll (`sub eax, …; cmp eax, 8`);
+5. a kimenet csatornánként **csonkolt** egész (`or 0xc00` + `fistp`, `0x00bce83a`–`0x00bce8b1`), `0xFFRRGGBB` alakban.
+
+A 4. lépés ágait nem írom át képletre: a bitpontos igazsághoz nem kell. A táblát a natív kód maga adja emulátorból, bármely színre:
+
+    PYTHONPATH=~/picasapy-agent/venv/lib/python3.13/site-packages \
+      python3 ~/picasapy-agent/eszkozok/nativ_emu/tint_lut.py ki.json 0x80cfff
+
+#### 4. Kontroll a meglévő goldenen
+
+A #878 `picniktint__alap.jpg` golden párjának három mért pontja (szín `0x80cfff`, a bemenet szürkéje → kimenet) és az emulált tábla:
+
+| szürke | golden (medián) | emulált `0x00bce2f0` | nálunk (`tint_luma_preserving`) |
+|---:|---|---|---|
+| 16 | (0, 16, 65) | (0, 16, 64) | nem mérve ezen a ponton |
+| 128 | (69, 147, 195) | (69, 148, 196) | (67, 146, 194) |
+| 248 | (231, 255, 255) | (231, 255, 255) | nem mérve ezen a ponton |
+
+Az eltérés a golden és az emulált tábla között legfeljebb 1 szint, ez a JPEG-zaj nagyságrendje. **A kiolvasott lánc tehát a valódi.**
+
+#### 5. Eredeti / nálunk
+
+Nálunk a `render/glimmer_ops.py::tint_luma_preserving` egy goldenből ILLESZTETT modell: Rec.601 fényesség plusz a szín krómája, iteratív levágás-kompenzációval. Szürke bemeneten (`R = G = B = i`, a szürkítés után a bináris is ezt látja), a teljes 0…255 tartományon mérve:
+
+| szín | átlagos eltérés (szint) | legnagyobb eltérés (szint) |
+|---|---:|---:|
+| `0x80cfff` (PicnikTint alap) | 1,47 | 8 |
+| `0xddc9ae` (a Resaturate alapszíne) | 0,95 | 6 |
+| `0xff0000` | 1,34 | 9 |
+| `0x00ff00` | 2,46 | 13 |
+| `0x0000ff` | 4,27 | **71** |
+| `0xffff00` | 4,27 | **71** |
+| `0x202060` | 1,89 | 20 |
+| `0x808080` | 0,00 | 0 |
+
+Két különbség van: (a) a súlyok Rec.601 helyett **Haeberli**-súlyok, mind a szürkítésben, mind a táblában; (b) a levágás-kompenzáció más, telített kéknél és sárgánál ettől jön a 71 szint.
+
+*Megfejtve, és a szürke rámpán mérve.* A valódi képekre gyakorolt hatás (a négy effekt goldenjén) NINCS mérve. A fejlesztői jegy (**#3631**) ezt kéri a „Kész, ha” pontjában.
+
+*Bizonyítottsági fok: megerősített.* A lánc utasításszinten olvasva, a tábla a natív kódból emulálva, a golden három pontja 1 szinten belül egyezik.
+
+
+### 🔁 Független újralevezetés
+- **bíráló:** friss opus-ügynök (Agent, nem fork) (friss kontextus, a kutató magyarázata nélkül)
+- **címek:** `0x00bbd630`, `0x00bbd4a0`, `0x00bbd500`
+- **eredmény:** EGYEZIK
+- **a bíráló tényei:** a két gyerek sorrendje (ColorMatrix, s=-100 a 0x00bbd686-on; majd Resaturate, vtábla 0xcf0578); a 8. rés 0x00bbd500 csak a +0x800 táblát tölti a 0x00bce2f0(szín,(float)i)-vel, a másik hármat nullázza; alapszín 0xFFDDC9AE. A 0x00bce2f0 második felét a bíráló nem vizsgálta — azt az emulált futtatás és a #878 golden három pontja igazolja.
+- **költség:** 104054 token
 
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
