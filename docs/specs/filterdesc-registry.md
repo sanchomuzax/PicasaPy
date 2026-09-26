@@ -581,7 +581,8 @@ formában rakhat össze.
   **Ez a `filters-decoded.md` „Nyitva 2" pontjának megoldása** — a korábban
   csak *mért* radiális profil mögötti tényleges modell.
 - **`HDR`** = `LocalContrastImageOperation(Radius, Strength)` — semmi más.
-  A `LocalContrast` effekt ugyanezt bontja ki explicit lépésekre:
+  ⭐ **2026-09-26 (#3520):** a natív művelet a láncot az EREDETIBŐL indítja (`be + C·(be − elm)`), az XML-es `LocalContrast` az elmosottból; ez a lenti `Contrast − 1` különbség bináris oka. Ld. `filters-decoded.md`, „`HDR` — a natív `LocalContrastImageOperation`…”.
+  A `LocalContrast` effekt hasonlót bont ki explicit lépésekre:
   `orig − blur(r)`, `× Strength`, visszaadás — klasszikus unsharp-jellegű
   helyi kontraszt.
   **A két effekt `Strength`-je viszont NEM ugyanaz (#688).** A `HDR` a
