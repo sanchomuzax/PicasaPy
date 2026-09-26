@@ -80,6 +80,7 @@ TesztuzemNaploDialog 1.0 TesztuzemNaploDialog.qml
 ConfigureButtonsDialog 1.0 ConfigureButtonsDialog.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
 DeferredDialog 1.0 DeferredDialog.qml
+BackupFolderStrip 1.0 BackupFolderStrip.qml
 BackupHost 1.0 BackupHost.qml
 MoveDatabaseDialog 1.0 MoveDatabaseDialog.qml
 EditOverwriteDialog 1.0 EditOverwriteDialog.qml

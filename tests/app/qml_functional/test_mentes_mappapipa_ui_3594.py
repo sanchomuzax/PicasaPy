@@ -24,7 +24,10 @@ EGYETLEN lekérdezést indít.
 #3504: a felület a `BackupHost` + `PublishPanel` mentés-üzemmódja — a
 korábbi, külön ablakban futó `BackupDialog` helyett. A `BackupHost` már
 nem `Window`, ezért a valódi kattintáshoz `QQuickView`-ba ágyazva fut
-(`support.backup_host_harness`).
+(`support.backup_host_harness`). A mért panelen lista nincs (az
+eredetiben a könyvtár mutatja a mappákat), ezért a pipás lista a panel
+fölötti sávban ül (`BackupFolderStrip`); a két gomb és a szövegek a mért
+`backuprect2`-ben maradtak.
 """
 
 from __future__ import annotations
@@ -133,9 +136,10 @@ def _pipak(ablak) -> list[QQuickItem]:
 
 
 def _gordits_latvanyba(ablak, index: int, qt_app) -> None:
-    """A `backuprect2` MÉRT doboza (324×166) csak pár sort mutat egyszerre
-    — a valódi kattintáshoz a sort a `ListView`-nek kell látványba
-    görgetnie, ahogy egy felhasználó is görgetne (`ListView.Contain`)."""
+    """A lista sávja (`BackupFolderStrip`) csak néhány sort mutat
+    egyszerre — a valódi kattintáshoz a sort a `ListView`-nek kell
+    látványba görgetnie, ahogy egy felhasználó is görgetne
+    (`ListView.Contain`)."""
     lista = _elem(ablak, "publishBackupFolderList")
     QMetaObject.invokeMethod(
         lista, "positionViewAtIndex", Q_ARG(int, index), Q_ARG(int, 4)
@@ -296,8 +300,6 @@ class TestAMagyarFelirat:
          "nem készült biztonsági másolat."),
         ("Select All", "Az összes kijelölése"),
         ("Select None", "Az összes kijelölés megszüntetése"),
-        # `il_BurnPanel::calculating` (`biztonsagi-mentes.md` 15.7)
-        ("Calculating…", "Számítás…"),
     ])
     def test_a_hivatalos_magyar_a_qm_bol_jon(self, qt_app, forras, magyar):
         from PySide6.QtCore import QTranslator
@@ -305,3 +307,13 @@ class TestAMagyarFelirat:
         fordito = QTranslator()
         assert fordito.load("picasapy_hu", str(_QML.parent / "i18n"))
         assert fordito.translate("PublishPanel", forras) == magyar
+
+    def test_a_szamitas_felirata_a_listasavban(self, qt_app):
+        """`il_BurnPanel::calculating` (`biztonsagi-mentes.md` 15.7) — a
+        lista a panel fölötti sávban ül (`BackupFolderStrip`, #3504)."""
+        from PySide6.QtCore import QTranslator
+
+        fordito = QTranslator()
+        assert fordito.load("picasapy_hu", str(_QML.parent / "i18n"))
+        assert fordito.translate("BackupFolderStrip", "Calculating…") == (
+            "Számítás…")

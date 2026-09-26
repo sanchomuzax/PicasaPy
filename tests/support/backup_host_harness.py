@@ -18,20 +18,24 @@ from PySide6.QtQuick import QQuickView
 _KEEPALIVE: list[object] = []
 
 
-def epits_ablakot(qml_dir, context_props: dict, width: int = 1024,
-                   height: int = 250):
+def epits_ablakot(qml_dir, context_props: dict, width: int = 1024):
     """A `BackupHost` valódi, kirajzolt ablakban.
 
     `context_props`: a QML gyökér-kontextusnak adandó tulajdonságok
     (pl. `backupController`). Visszaadja a `(view, root)` párt — a
     kattintás célja a `view`, a tulajdonságoké/jelzéseké a `root`.
+
+    ⚠️ A gazda MAGASSÁGÁHOZ nem nyúlunk: az a saját kötéséből jön (a mért
+    panel + a mappalista sávja), és a nézet ahhoz igazodik. Egy korábbi
+    változat `root.setHeight(250)`-nel felülírta a kötést, így a tesztek
+    egy nem létező, magasabb panelt néztek — a lelógó gombokat nem látták
+    (#3673 átnézése).
     """
     view = QQuickView()
     engine = view.engine()
     engine.addImportPath(str(qml_dir))
     for nev, ertek in context_props.items():
         engine.rootContext().setContextProperty(nev, ertek)
-    view.setResizeMode(QQuickView.ResizeMode.SizeRootObjectToView)
 
     komponens = QQmlComponent(engine)
     komponens.setData(
@@ -45,9 +49,8 @@ def epits_ablakot(qml_dir, context_props: dict, width: int = 1024,
     root = komponens.create()
     assert root is not None
     root.setParentItem(view.contentItem())
-    view.resize(width, height)
     root.setWidth(width)
-    root.setHeight(height)
+    view.resize(width, round(root.height()))
     view.show()
     assert _var_a_megjelenesre(view), "az ablak nem jelent meg"
     _KEEPALIVE.extend((view, komponens))

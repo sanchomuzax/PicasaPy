@@ -4037,6 +4037,17 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
 </context>
 <context>
+    <name>BackupFolderStrip</name>
+    <message>
+        <source>Calculating…</source>
+        <translation>Számítás…</translation>
+    </message>
+    <message>
+        <source>Everything was already backed up.</source>
+        <translation>Minden el volt már mentve.</translation>
+    </message>
+</context>
+<context>
     <name>PublishPanel</name>
     <message>
         <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
@@ -4168,12 +4179,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy &quot;Az összes kijelölése&quot; gombra kattintva az összes elemet jelölje ki.</translation>
     </message>
     <message>
-        <source>Calculating…</source>
-        <translation>Számítás…</translation>
+        <source>A Backup Set records where to store backed-up files, and it also keeps a record of which files have been backed up already, so you don&apos;t have to back them up again.</source>
+        <translation>A Mentési készlet tárolja a biztonsági másolatok helyét, és azt is nyomon követi, hogy mely fájlokról készült már biztonsági másolat, így azokat nem kell újra menteni.</translation>
     </message>
     <message>
-        <source>Everything was already backed up.</source>
-        <translation>Minden el volt már mentve.</translation>
+        <source>%1 — last run: %2</source>
+        <translation>%1 — utolsó futás: %2</translation>
+    </message>
+    <message>
+        <source>%1 — not run yet</source>
+        <translation>%1 — még nem futott</translation>
     </message>
     <message>
         <source>Select All</source>

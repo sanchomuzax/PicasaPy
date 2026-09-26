@@ -12,8 +12,8 @@ import QtQuick.Layouts
 // Az **Ajándék-CD** üzemmód él (#3503): a „Létrehozás ▸ Ajándék CD
 // készítése…" nyitja, és a „Lemezre írás" a képtálca elemeiből lemezképet
 // készít. A panel csak JELEZ (`lemezreIrasKert`, `megseKert`,
-// `tovabbiakKert`); a munkát a gazda végzi. A biztonsági mentés és a
-// feltöltés üzemmódja nincs bekötve.
+// `tovabbiakKert`); a munkát a gazda végzi. A biztonsági mentés
+// üzemmódját a `BackupHost` köti be (#3504); a feltöltésé nincs bekötve.
 //
 // ## A mért vászon
 //
@@ -64,11 +64,11 @@ Item {
     //: a kiválasztott készlet SORINDEXE a `mentesKeszletek`-ben, -1 = nincs
     property int mentesKivalasztottIndex: -1
     //: #3594: a kiválasztott készlet még el nem mentett fájljai, mappánként
+    //: (a lista a gazda `BackupFolderStrip`-jében látszik; itt a
+    //: „Select All" dönt belőle)
     property var mentesMentetlenek: []
     //: #3594: a bepipált mappák útjai
     property var mentesPipaltMappak: []
-    //: #3594: a mappa-lista háttérszálon készül — amíg nem jön meg
-    property bool mentesMappakToltodnek: false
     //: #3009: fut-e éppen másolás
     property bool mentesFut: false
     //: #3009: a haladás-sáv számlálói
@@ -95,8 +95,6 @@ Item {
     signal mentesTorolKert()
     //: `publish/backup_set_menu` — a felhasználó másik készletet választott
     signal mentesKeszletValasztva(int index)
-    //: egy mappa pipája vált
-    signal mentesPipaldKert(string mappa, bool be)
     //: `publish/selectall`
     signal mentesMindetPipaldKert()
     //: `publish/selectnone`
@@ -252,14 +250,31 @@ Item {
 
     // ------- biztonsági mentés (`backup_group`) — #3504 -------
     //
-    // A csoport két lépés-keretre oszlik, ahogy az eredetiben (12.4. kép a
-    // jegyben, `docs/specs/ajandek-cd-kimenet.md` 13. és
-    // `docs/specs/biztonsagi-mentes.md` 10.–15.):
+    // A csoport két lépés-keretre oszlik, ahogy az eredetiben
+    // (`docs/specs/ajandek-cd-kimenet.md` 13., `biztonsagi-mentes.md`
+    // 10.–15.). MINDEN koordináta a `respack.yt` rétegfejlécéből jön
+    // (`tools/picasa/respack.py`, `layer:publish/…`):
     //
     //   1. lépés (`backuprect`, 128,37 311×166): melyik KÉSZLETET mentjük —
-    //      legördülő + Új/Módosítás/Törlés.
-    //   2. lépés (`backuprect2`, 448,37 324×166, #3594): MELYIK MAPPÁK —
-    //      a még el nem mentett mappák, pipával.
+    //      fejléc, `backuptext`, legördülő + Új/Módosítás/Törlés.
+    //   2. lépés (`backuprect2`, 448,37 324×166, #3594): fejléc, a két
+    //      tájékoztató szöveg és az „Az összes kijelölése / megszüntetése"
+    //      gombpár (`selectall` 505,162 · `selectnone` 608,162, 98×28).
+    //
+    // ⚠️ A 2. lépés MAPPALISTÁJA nincs a mért vásznon: az eredetiben a
+    // KÖNYVTÁR maga mutatja a még el nem mentett fájlokat, pipás mappákkal
+    // (`backuptext2`: „A Picasa most azokat a fájlokat jeleníti meg…"). A
+    // mi könyvtárunknak nincs ilyen szűrő-módja, ezért a lista a panel
+    // FÖLÖTTI sávban ül (`BackupFolderStrip`, a gazda helyezi el) — így a
+    // mért 212 képpontos vászon érintetlen marad.
+    //
+    // A feliratok a mért dobozukba TÖRDELVE és szükség szerint kicsinyítve
+    // férnek el (`Text.Fit`, a `giftcdtext` mintája): a hivatalos magyar
+    // hosszabb az angolnál, és a csonkolt fejléc („…hasz…") néma
+    // információvesztés volna. A két fejléc a MÉRT alaplapját
+    // (`backupcdheader_base` 168,41 262×27 · `backupcdheader2_base`
+    // 485,41 282×30) kapja dobozul — a `.tre` a szöveget ebben középre
+    // zárja (`m_centerY`).
     //
     // A panel itt is csak JELEZ; az állapotot és a `backupController`
     // hívásait a `BackupHost.qml` tartja (a `GiftCdHost` mintája).
@@ -277,11 +292,30 @@ Item {
         //: hivatalos magyar mindkét állapotra mérve (`Text1`/`Text2`)
         MertFelirat {
             objectName: "publishBackupCdHeader"
-            x: 168; y: 43; width: 250; height: 13
+            x: 168; y: 41; width: 262; height: 27
             font.bold: true
+            wrapMode: Text.WordWrap
+            elide: Text.ElideNone
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 8
             text: panel.mentesVanKivalasztva
                 ? qsTr("Create a Set or use an existing one")
                 : qsTr("Create a Backup CD")
+        }
+        //: `publish/backuptext` (140,74 – 433,127) — a készlet fogalma az
+        //: eredeti saját szavaival (`publish_text.tre`, `Text1`). A doboz
+        //: lefelé a következő mért elemig (`label_backupname`, y 134) ér: a
+        //: hivatalos magyar a mért 53 képpontba csak olvashatatlanul
+        //: kicsinyítve férne
+        MertFelirat {
+            objectName: "publishBackupText"
+            x: 140; y: 74; width: 293; height: 58
+            wrapMode: Text.WordWrap
+            elide: Text.ElideNone
+            verticalAlignment: Text.AlignTop
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 7
+            text: qsTr("A Backup Set records where to store backed-up files, and it also keeps a record of which files have been backed up already, so you don't have to back them up again.")
         }
         //: `publish/backup_set_menu` (269,134 – 420,155) — rejtve, ha
         //: nincs egyetlen készlet sem (15.3/3. pont)
@@ -311,7 +345,8 @@ Item {
             onClicked: panel.mentesSzerkesztKert()
         }
         //: `publish/deletebackupset` (332,162 – 420,190) — rejtve, ha a
-        //: készletek száma legfeljebb egy (15.3/2. pont)
+        //: készletek száma legfeljebb egy (15.3/2. pont): az eredetiben az
+        //: EGYETLEN készlet nem törölhető, csak szerkeszthető
         PicasaButton {
             objectName: "publishDeleteBackupSet"
             x: 332; y: 162; width: 88; height: 28
@@ -320,9 +355,12 @@ Item {
             enabled: panel.mentesVanKivalasztva
             onClicked: panel.mentesTorolKert()
         }
+        //: `publish/label_backupname` (148,134 – 256,150)
         MertFelirat {
             objectName: "publishLabelBackupName"
             x: 148; y: 134; width: 108; height: 16
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 8
             text: qsTr("Backup Set")
         }
 
@@ -331,125 +369,88 @@ Item {
             objectName: "publishBackupRect2"
             x: 448; y: 37; width: 324; height: 166
         }
-        //: `publish/backupcdheader2` (490,43 – 740,56)
+        //: `publish/backupcdheader2` — a doboz a mért alaplap
+        //: (`backupcdheader2_base` 485,41 – 767,71)
         MertFelirat {
             objectName: "publishBackupCdHeader2"
-            x: 490; y: 43; width: 250; height: 13
+            x: 485; y: 41; width: 282; height: 30
             font.bold: true
+            wrapMode: Text.WordWrap
+            elide: Text.ElideNone
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 8
             text: qsTr("Choose folders & albums to back up")
         }
-        //: `publish/backuptext2` — a tartalma mérve
-        //: (`biztonsagi-mentes.md` 10.3), a pontos y-sora a 14.1 táblából
-        //: hiányzik: a fejléc (43…56) és a `backuptext3` (108…143) közé
-        //: illesztve, becsült magassággal.
+        //: `publish/backuptext2` (470,74 – 741,105) — lefelé a
+        //: `backuptext3`-ig (y 108) ér, hogy a két sor kicsinyítés nélkül
+        //: elférjen
         MertFelirat {
             objectName: "publishBackupText2"
-            x: 460; y: 60; width: 300; height: 32
+            x: 470; y: 74; width: 271; height: 34
             wrapMode: Text.WordWrap
+            elide: Text.ElideNone
+            verticalAlignment: Text.AlignTop
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 7
             text: qsTr("Picasa is now showing the files you have not previously backed up.")
         }
-        //: `publish/backuptext3` (470,108 – 741,143)
+        //: `publish/backuptext3` (470,108 – 741,143) — lefelé a
+        //: gombpárig (`selectall`, y 162) ér: a hivatalos magyar négy sor
         MertFelirat {
             objectName: "publishBackupText3"
-            x: 470; y: 108; width: 271; height: 35
+            x: 470; y: 108; width: 271; height: 52
             wrapMode: Text.WordWrap
+            elide: Text.ElideNone
+            verticalAlignment: Text.AlignTop
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 7
             text: qsTr("Check the folders you want to back up, or choose 'Select All' to choose everything.")
         }
-        Rectangle {
-            x: 460; y: 145; width: 300; height: 40
-            color: Theme.controlBase
-            border.width: 1
-            border.color: Theme.chromeBorder
-
-            ListView {
-                id: mappaLista
-                objectName: "publishBackupFolderList"
-                anchors.fill: parent
-                anchors.margins: 1
-                clip: true
-                model: panel.mentesMentetlenek
-                ScrollBar.vertical: ScrollBar {}
-                delegate: RowLayout {
-                    id: mappaSor
-                    required property var modelData
-                    width: mappaLista.width
-                    spacing: 6
-                    CheckBox {
-                        objectName: "publishBackupFolderCheck"
-                        text: mappaSor.modelData.nev
-                        font.pixelSize: Theme.fontSize
-                        checked: panel.mentesPipaltMappak
-                                 .indexOf(mappaSor.modelData.mappa) >= 0
-                        onToggled: {
-                            panel.mentesPipaldKert(mappaSor.modelData.mappa,
-                                                   checked)
-                            //: a kattintás elvágja a kötést — a
-                            //: `mentesPipaltMappak` a hosztból jön vissza
-                            checked = Qt.binding(function () {
-                                return panel.mentesPipaltMappak
-                                    .indexOf(mappaSor.modelData.mappa) >= 0
-                            })
-                        }
-                    }
-                    Text {
-                        objectName: "publishBackupFolderFiles"
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                        color: Theme.ink
-                        font.pixelSize: Theme.fontSize - 1
-                        text: "(" + mappaSor.modelData.darab + ")  "
-                              + mappaSor.modelData.fajlok.join(", ")
-                              + (mappaSor.modelData.darab
-                                 > mappaSor.modelData.fajlok.length
-                                 ? ", …" : "")
-                    }
-                }
-            }
-
-            //: #3594: amíg a háttérszál számol —
-            //: `il_BurnPanel::calculating` (biztonsagi-mentes.md 15.7)
-            Text {
-                objectName: "publishBackupFolderLoading"
-                anchors.centerIn: parent
-                visible: panel.mentesMappakToltodnek
-                text: qsTr("Calculating…")
-                font.pixelSize: Theme.fontSize
-                color: Theme.textGray
-            }
-            Text {
-                anchors.centerIn: parent
-                visible: !panel.mentesMappakToltodnek
-                         && panel.mentesMentetlenek.length === 0
-                text: qsTr("Everything was already backed up.")
-                font.pixelSize: Theme.fontSize
-                color: Theme.textGray
-            }
+        //: `publish/selectall` (505,162 – 603,190), `b98` gomb
+        PicasaButton {
+            objectName: "publishBackupSelectAll"
+            x: 505; y: 162; width: 98; height: 28
+            text: qsTr("Select All")
+            enabled: panel.mentesMentetlenek.length > 0
+            onClicked: panel.mentesMindetPipaldKert()
         }
-        RowLayout {
-            x: 460; y: 187; width: 300; height: 16
-            spacing: 8
-            PicasaButton {
-                objectName: "publishBackupSelectAll"
-                text: qsTr("Select All")
-                enabled: panel.mentesMentetlenek.length > 0
-                onClicked: panel.mentesMindetPipaldKert()
-            }
-            PicasaButton {
-                objectName: "publishBackupSelectNone"
-                text: qsTr("Select None")
-                enabled: panel.mentesPipaltMappak.length > 0
-                onClicked: panel.mentesSenkitSePipaldKert()
-            }
+        //: `publish/selectnone` (608,162 – 706,190), `b98` gomb
+        PicasaButton {
+            objectName: "publishBackupSelectNone"
+            x: 608; y: 162; width: 98; height: 28
+            text: qsTr("Select None")
+            enabled: panel.mentesPipaltMappak.length > 0
+            onClicked: panel.mentesSenkitSePipaldKert()
         }
 
         // -- gombsor (777,37…203) — a `_go`/`_eject`/`_cancel`/`_help`
         //    négyes MÓD-FÜGGŐ RÉSE (spec 11.4); a fizikai kiadás és a
         //    súgó Linuxon nincs bekötve (mint a CD-üzemmódban, spec 6.,
         //    13.) — a réseiket a lemezkép-méret és a Megszakítás kapja.
+        //: `publish/backupinfo` — a mért helyőrzője „active backup set
+        //: info": a kiválasztott készlet CÉLHELYE és UTOLSÓ FUTÁSA. Ha
+        //: épp üzenet van (haladás, hiba, kész), az kerül ide. A doboz a
+        //: `bckinfoclip` (113,0 – 913,25): a `.tre` a szöveget ebben
+        //: nyújtja (`m_scaleX`) és középre zárja (`textalign center`).
         MertFelirat {
             objectName: "publishBackupInfo"
-            x: 420; y: 2; width: 197; height: 25
-            text: panel.mentesUzenet
+            x: 113; y: 2; width: 800; height: 25
+            horizontalAlignment: Text.AlignHCenter
+            //: hosszú célútnál előbb kicsinyít, és csak végső esetben
+            //: rövidít KÖZÉPEN — az út eleje és a mappa neve így látszik
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: 8
+            elide: Text.ElideMiddle
+            text: panel.mentesUzenet !== "" ? panel.mentesUzenet
+                : !panel.mentesVanKivalasztva ? ""
+                : panel.mentesKeszletek[panel.mentesKivalasztottIndex]
+                    .utolsoFutas
+                ? qsTr("%1 — last run: %2")
+                    .arg(panel.mentesKeszletek[panel.mentesKivalasztottIndex].cel)
+                    .arg(panel.mentesKeszletek[panel.mentesKivalasztottIndex]
+                         .utolsoFutas)
+                : qsTr("%1 — not run yet")
+                    .arg(panel.mentesKeszletek[panel.mentesKivalasztottIndex].cel)
         }
         //: #3009: haladás-sáv — csak a másolás alatt látszik
         Rectangle {

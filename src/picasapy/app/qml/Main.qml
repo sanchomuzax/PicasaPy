@@ -3354,6 +3354,10 @@ ApplicationWindow {
         fileOps: typeof fileOpsController !== "undefined" ? fileOpsController : null
         visible: nyitva && !window.viewerOpen && !window.timelineOpen
                  && window.libraryFrameVisible
+        //: #3504: a kiadás-panel EGYSZERRE egy üzemmódban látszik — az
+        //: Ajándék-CD nyitása becsukja a mentést (az eredetiben is egy sáv
+        //: vált módot, `biztonsagi-mentes.md` 10.)
+        onNyitvaChanged: if (nyitva) backupHost.nyitva = false
     }
 
     //: #3504: „Eszközök ▸ Képek biztonsági mentése…" — a kiadás-panel
@@ -3365,6 +3369,8 @@ ApplicationWindow {
         anchors.bottom: parent.bottom
         visible: nyitva && !window.viewerOpen && !window.timelineOpen
                  && window.libraryFrameVisible
+        //: a mentés nyitása becsukja az Ajándék-CD-t (ld. fent)
+        onNyitvaChanged: if (nyitva) giftCdHost.nyitva = false
     }
 
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)

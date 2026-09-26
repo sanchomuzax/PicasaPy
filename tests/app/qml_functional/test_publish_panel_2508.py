@@ -52,7 +52,12 @@ MERT_GEOMETRIA: dict[str, tuple[int, int, int, int]] = {
     # biztonsági mentés — `backup_group`
     "publishBackupRect2": (448, 37, 324, 166),
     "publishLabelBackupName": (148, 134, 108, 16),
-    "publishBackupInfo": (420, 2, 197, 25),
+    # #3504: a `backupinfo` (420,2 197×25) szövege a `.tre` szerint a
+    # `bckinfoclip` vágókeretében nyúlik (`m_scaleX`, `textalign center`)
+    # — a doboza ezért a vágókeret: 113,0 – 913,25. A 197-es doboz a
+    # kiválasztott készlet célhelyét („active backup set info") mindig
+    # csonkolná.
+    "publishBackupInfo": (113, 2, 800, 25),
     # feltöltés — `replication_group`
     "publishRpOptions": (36, 93, 199, 99),
     "publishUploadAllSize": (431, 106, 139, 21),

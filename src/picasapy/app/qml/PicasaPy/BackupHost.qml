@@ -20,7 +20,10 @@ Rectangle {
     //: a panel nyitva van-e (a gazda nyitja a menüből)
     property bool nyitva: false
     visible: nyitva
-    height: panel.height
+    //: a mért panel (212) + fölötte a mappalista sávja (#3594) — a lista
+    //: az eredetiben a könyvtárban látszik, a mért vásznon nincs helye
+    //: (`BackupFolderStrip` fejkommentje)
+    height: mappaSav.y + mappaSav.height + panel.height
     color: Theme.chromeBg
     clip: true
 
@@ -34,6 +37,9 @@ Rectangle {
     //: #3593: a készlet TÍPUSA (`newbackupset.fen`): "cddvd" · "lemez"
     property string urlapTipus: "lemez"
     property string uzenet: ""
+    //: az űrlap saját hibasora — ha a vezérlő elutasítja a készletet, az
+    //: űrlap NYITVA marad, a beírt adat megmarad, és ez mondja meg, miért
+    property string urlapHiba: ""
     //: #3009: fut-e éppen másolás, és a haladás-sáv számlálói
     property bool fut: false
     property int keszFajl: 0
@@ -61,9 +67,13 @@ Rectangle {
         host.nyitva = true
     }
 
-    //: másik készlet = más nyilvántartás, a régi pipák nem érvényesek
+    //: másik készlet = más nyilvántartás, a régi pipák nem érvényesek;
+    //: a régi üzenet sem róla szól — az állapotsor a választott készlet
+    //: célhelyét és utolsó futását mutatja helyette
     onKivalasztottChanged: {
         host.pipaltMappak = []
+        if (!host.fut)
+            host.uzenet = ""
         host.frissitsdAMappakat()
     }
 
@@ -125,6 +135,7 @@ Rectangle {
         host.urlapCel = ""
         host.urlapSzuro = "minden"
         host.urlapTipus = "lemez"
+        host.urlapHiba = ""
         host.szerkesztes = true
     }
 
@@ -136,6 +147,7 @@ Rectangle {
         host.urlapCel = k.cel
         host.urlapSzuro = k.szuro
         host.urlapTipus = k.tipus || "lemez"
+        host.urlapHiba = ""
         host.szerkesztes = true
     }
 
@@ -149,19 +161,36 @@ Rectangle {
                                                    host.urlapNev, host.urlapCel,
                                                    host.urlapSzuro, host.urlapTipus)
         if (rendben) {
+            host.urlapHiba = ""
             host.szerkesztes = false
             host.frissitsd()
         }
     }
 
+    //: #3594: a még el nem mentett mappák, pipával — a panel FÖLÖTT, a
+    //: 2. lépés alatt kezdődő és a két lépés-keret szélességét követő
+    //: sávban (`backuprect` 128 … `backuprect2` 772)
+    BackupFolderStrip {
+        id: mappaSav
+        x: 128
+        y: 6
+        width: 772 - 128
+        height: implicitHeight
+        mentetlenek: host.mentetlenek
+        pipaltMappak: host.pipaltMappak
+        toltodnek: host.mappakToltodnek
+        vanKeszlet: host.kivalasztott >= 0
+        onPipaldKert: function (mappa, be) { host.pipald(mappa, be) }
+    }
+
     PublishPanel {
         id: panel
+        y: mappaSav.y + mappaSav.height
         uzemmod: "backup"
         mentesKeszletek: host.keszletek
         mentesKivalasztottIndex: host.kivalasztott
         mentesMentetlenek: host.mentetlenek
         mentesPipaltMappak: host.pipaltMappak
-        mentesMappakToltodnek: host.mappakToltodnek
         mentesFut: host.fut
         mentesKeszFajl: host.keszFajl
         mentesOsszesFajl: host.osszesFajl
@@ -172,7 +201,6 @@ Rectangle {
         onMentesTorolKert: torlesMegerosites.ask(
             "", qsTr("Delete this backup set? The saved files stay where they are."))
         onMentesKeszletValasztva: function (index) { host.kivalasztott = index }
-        onMentesPipaldKert: function (mappa, be) { host.pipald(mappa, be) }
         onMentesMindetPipaldKert: host.mindetPipald()
         onMentesSenkitSePipaldKert: host.egyiketSemPipald()
         onMentesMegszakitasKert: {
@@ -206,7 +234,14 @@ Rectangle {
 
     Connections {
         target: (typeof backupController !== "undefined") ? backupController : null
-        function onHibatJelez(szoveg) { host.uzenet = szoveg }
+        function onHibatJelez(szoveg) {
+            //: nyitott űrlapnál a hiba az ŰRLAPRA megy — a modális
+            //: párbeszéd mögötti állapotsort a felhasználó nem nézi
+            if (host.szerkesztes)
+                host.urlapHiba = szoveg
+            else
+                host.uzenet = szoveg
+        }
         function onKeszletekValtoztak() { host.frissitsd() }
         function onMentetlenMappakKeszek(keres, keszletId, sorok) {
             host.fogadjAMappakat(keres, keszletId, sorok)
@@ -363,14 +398,32 @@ Rectangle {
                 currentIndex: host.szuroKulcsok.indexOf(host.urlapSzuro)
                 onActivated: host.urlapSzuro = host.szuroKulcsok[currentIndex]
             }
+
+            //: a vezérlő elutasításának oka — az űrlap ilyenkor nyitva marad
+            Text {
+                objectName: "backupFormError"
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                visible: host.urlapHiba !== ""
+                text: host.urlapHiba
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.brandRed
+            }
         }
+        //: ⚠️ A mentés gombja NEM `AcceptRole`: az a párbeszédet a mentés
+        //: ELŐTT bezárná, és ha a vezérlő elutasítja a készletet (üres név,
+        //: hiányzó hely, foglalt név), a beírt adat elveszne. Az
+        //: `ActionRole` csak jelez; a párbeszédet a `mentsdAzUrlapot`
+        //: zárja, és csak SIKERES mentés után — ahogy a régi ablak is.
         footer: DialogButtonBox {
             Button {
                 objectName: "backupFormSave"
                 //: #3189: SZERKESZTÉSKOR a mért felirat „Change"
                 //: (`il_NewBkDialog::EditOKButton`); ÚJ készletnél „OK"
                 text: host.szerkesztettId >= 0 ? qsTr("Change") : qsTr("OK")
-                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                DialogButtonBox.buttonRole: DialogButtonBox.ActionRole
+                onClicked: host.mentsdAzUrlapot()
             }
             Button {
                 objectName: "backupFormCancel"
@@ -378,7 +431,6 @@ Rectangle {
                 DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
             }
         }
-        onAccepted: host.mentsdAzUrlapot()
         onRejected: host.szerkesztes = false
     }
 
