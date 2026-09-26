@@ -11,6 +11,16 @@ from dataclasses import dataclass
 
 from .document import ALBUM_SECTION_PREFIX, IniDocument
 
+#: A beépített „Mellőzött emberek" álalbum tokenje (#3670, a #2187 nyitva
+#: hagyott pontja). A spec (`picasa-arcfelismeres.md` 8. és 15/b szakasza)
+#: szerint az eredeti Picasa ezzel a tokennel jelöli a `.picasa.ini`-ben az
+#: elvetett arc-javaslatot (`CThumbDB::ignorefacealbum`); a `faceheaderpanel/
+#: ignore` és `.../removesel` közös kezelője (`0x005c9b00`) írja. Nálunk a
+#: NORMÁL virtuális-album úton megy (`with_album`/`without_album` lent) —
+#: a token ÉRTÉKE mért, a fotó↔album kapcsolat ÍRÁSA a saját `albums=`
+#: mechanizmusunk, nem az eredeti (a régió-szintű pontosság nyitva marad).
+IGNORE_FACE_ALBUM_TOKEN = "]ignoreface"
+
 
 @dataclass(frozen=True)
 class Album:

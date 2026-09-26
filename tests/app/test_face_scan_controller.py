@@ -78,14 +78,15 @@ class _FakeDetector:
         return (FaceDetection(left=5, top=10, right=40, bottom=50, score=0.9, landmarks=landmarks),)
 
 
-def _make_controller(qt_app, tmp_path, library, detector=None, embedder=None):
+def _make_controller(qt_app, tmp_path, library, detector=None, embedder=None, db_path=None):
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.index import open_index, sync_tree
 
-    with open_index(tmp_path / "index.db") as conn:
+    resolved_db = db_path if db_path is not None else tmp_path / "index.db"
+    with open_index(resolved_db) as conn:
         sync_tree(conn, library)
     ctl = FaceScanController(
-        tmp_path / "index.db",
+        resolved_db,
         detector=detector if detector is not None else _FakeDetector(),
         embedder=embedder if embedder is not None else _FakeEmbedder(),
     )
@@ -509,3 +510,131 @@ class TestScanPercent:
         _run(ctl.modelUnavailable, ctl.scanForFaces)
 
         assert ctl.scanPercent == -1
+
+
+class _TwoFaceDetector(_FakeDetector):
+    """Két arcot ad EGYETLEN fotón — a #3670 „egy fotó, két javaslat"
+    ágának teszteléséhez (csak az egyiket mellőzzük/vesszük vissza)."""
+
+    def detect(self, image):
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+
+        self.calls.append(image)
+        landmarks = FaceLandmarks(
+            right_eye=(10.0, 20.0),
+            left_eye=(30.0, 20.0),
+            nose=(20.0, 30.0),
+            mouth_right=(15.0, 40.0),
+            mouth_left=(25.0, 40.0),
+        )
+        return (
+            FaceDetection(left=5, top=10, right=40, bottom=50, score=0.9, landmarks=landmarks),
+            FaceDetection(left=60, top=10, right=90, bottom=50, score=0.8, landmarks=landmarks),
+        )
+
+
+def _albums_for(ini_path, photo_name):
+    from picasapy.ini import load_document, parse_album_refs
+
+    document = load_document(ini_path)
+    section = document.section(photo_name)
+    if section is None:
+        return ()
+    return parse_album_refs(section.get("albums") or "")
+
+
+class TestIgnoreFacesWritesIni:
+    """#3670 (#2187 nyitva hagyott 8. pontja): a mellőzés (`ignoreFaces`,
+    „Mellőzött emberek" album) az INDEX `state='ignored'`-ja MELLETT a
+    `.picasa.ini`-be is írjon — a mért `]ignoreface` tokennel
+    (`ini/albums.py`), a normál `albums=` mechanizmuson át. Enélkül az
+    elvetés más gépen / friss indexelés után elveszne."""
+
+    def _scan_one(self, qt_app, tmp_path, root, detector=None, db_path=None):
+        from picasapy.index import open_index, unnamed_faces
+
+        ctl = _make_controller(qt_app, tmp_path, root, detector=detector, db_path=db_path)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        with open_index(db_path if db_path is not None else tmp_path / "index.db") as conn:
+            face_ids = [f.id for f in unnamed_faces(conn)]
+        return ctl, face_ids
+
+    def test_ignoring_writes_the_ignoreface_token(self, qt_app, tmp_path):
+        from picasapy.ini.albums import IGNORE_FACE_ALBUM_TOKEN
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl, face_ids = self._scan_one(qt_app, tmp_path, root)
+
+        assert ctl.ignoreFaces(face_ids) == 1
+
+        assert IGNORE_FACE_ALBUM_TOKEN in _albums_for(root / ".picasa.ini", "a.jpg")
+
+    def test_unignoring_removes_the_token(self, qt_app, tmp_path):
+        from picasapy.ini.albums import IGNORE_FACE_ALBUM_TOKEN
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl, face_ids = self._scan_one(qt_app, tmp_path, root)
+        ctl.ignoreFaces(face_ids)
+
+        assert ctl.unignoreFaces(face_ids) == 1
+
+        assert IGNORE_FACE_ALBUM_TOKEN not in _albums_for(root / ".picasa.ini", "a.jpg")
+
+    def test_unignoring_one_of_two_faces_keeps_the_token(self, qt_app, tmp_path):
+        """Egy fotón két javaslat is lehet — az egyik visszavétele nem
+        veheti le a jelölést, amíg a másik még mellőzött."""
+        from picasapy.ini.albums import IGNORE_FACE_ALBUM_TOKEN
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl, face_ids = self._scan_one(qt_app, tmp_path, root, detector=_TwoFaceDetector())
+        assert len(face_ids) == 2
+        ctl.ignoreFaces(face_ids)
+
+        assert ctl.unignoreFaces([face_ids[0]]) == 1
+
+        assert IGNORE_FACE_ALBUM_TOKEN in _albums_for(root / ".picasa.ini", "a.jpg")
+
+    def test_reindexing_from_scratch_restores_the_ignored_state(self, qt_app, tmp_path):
+        """A #3670 lelke: a `.picasa.ini` túléli, ha az INDEX elvész
+        (másik gép, vagy egy friss újraindexelés)."""
+        from picasapy.index import ignored_faces, open_index, unnamed_faces
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl, face_ids = self._scan_one(qt_app, tmp_path, root)
+        ctl.ignoreFaces(face_ids)
+
+        # szimulált újraindexelés: friss (üres) index, UGYANAZ a mappa/ini
+        fresh_db = tmp_path / "friss_index.db"
+        ctl2, _ = self._scan_one(qt_app, tmp_path, root, db_path=fresh_db)
+
+        with open_index(fresh_db) as conn:
+            assert unnamed_faces(conn) == ()
+            assert len(ignored_faces(conn)) == 1
+
+    def test_a_second_unrelated_face_is_not_affected(self, qt_app, tmp_path):
+        """A jelölés FOTÓNKÉNT él — egy másik fotó javaslata érintetlen."""
+        from picasapy.index import open_index, unnamed_faces
+        from picasapy.ini.albums import IGNORE_FACE_ALBUM_TOKEN
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        make_jpeg(root / "b.jpg")
+        ctl, _face_ids = self._scan_one(qt_app, tmp_path, root)
+        with open_index(tmp_path / "index.db") as conn:
+            by_name = {face.photo_path.name: face.id for face in unnamed_faces(conn)}
+        a_id = by_name["a.jpg"]
+
+        ctl.ignoreFaces([a_id])
+
+        assert IGNORE_FACE_ALBUM_TOKEN in _albums_for(root / ".picasa.ini", "a.jpg")
+        assert IGNORE_FACE_ALBUM_TOKEN not in _albums_for(root / ".picasa.ini", "b.jpg")

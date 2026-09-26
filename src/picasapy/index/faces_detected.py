@@ -319,6 +319,64 @@ def ignored_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
     return _faces_in_state(conn, "ignored")
 
 
+def face_photo_paths(
+    conn: sqlite3.Connection, face_ids: Iterable[int]
+) -> dict[int, tuple[int, Path]]:
+    """A megadott arcok fotó-útvonala, ÁLLAPOTTÓL függetlenül (#3670).
+
+    A `mellőzés`/`visszavétel` a `.picasa.ini`-be is ír (`]ignoreface`,
+    `ini/albums.py`) — ehhez kell tudni, MELYIK mappa ini-jét kell
+    módosítani. `face_id -> (photo_id, photo_path)`, a `_faces_in_state`
+    mintáját követve, de state-szűrés nélkül."""
+    ids = list(face_ids)
+    if not ids:
+        return {}
+    placeholders = ",".join("?" for _ in ids)
+    rows = conn.execute(
+        f"SELECT f.id, f.photo_id, fo.path AS folder_path, p.name AS name "
+        f"FROM face f "
+        f"JOIN photos p ON p.id = f.photo_id "
+        f"JOIN folders fo ON fo.id = p.folder_id "
+        f"WHERE f.id IN ({placeholders})",
+        ids,
+    )
+    return {
+        row["id"]: (row["photo_id"], Path(row["folder_path"]) / row["name"])
+        for row in rows
+    }
+
+
+def photo_ids_still_ignored(
+    conn: sqlite3.Connection, photo_ids: Iterable[int]
+) -> set[int]:
+    """Mely fotóknak van MÉG `'ignored'` állapotú arca (#3670).
+
+    A `unignoreFaces` ebből dönti el, törölhető-e egy fotóról a
+    `.picasa.ini` `]ignoreface` jelölése: ha a fotónak több mellőzött arca
+    volt, és csak egyet vettünk vissza, a jelölés a többi miatt marad."""
+    ids = list(photo_ids)
+    if not ids:
+        return set()
+    placeholders = ",".join("?" for _ in ids)
+    rows = conn.execute(
+        f"SELECT DISTINCT photo_id FROM face WHERE state = 'ignored' "
+        f"AND photo_id IN ({placeholders})",
+        ids,
+    )
+    return {row["photo_id"] for row in rows}
+
+
+def face_ids_for_photo(conn: sqlite3.Connection, photo_id: int) -> tuple[int, ...]:
+    """A `photo_id` fotóhoz JELENLEG tárolt arc-sorok azonosítói (#3670).
+
+    A frissen detektált (`replace_faces` utáni) sorok lekérésére: ha a fotó
+    a `.picasa.ini` `]ignoreface` albumába van sorolva, a hívó ezzel az
+    azonosító-listával állítja vissza azonnal `'ignored'`-ra a friss
+    találatokat, hogy egy újraindexelés ne hozza vissza javaslatként."""
+    rows = conn.execute("SELECT id FROM face WHERE photo_id = ?", (photo_id,))
+    return tuple(row["id"] for row in rows)
+
+
 def named_centroids(conn: sqlite3.Connection) -> dict[str, "np.ndarray"]:
     """Személynév → a hozzá tartozó arcok ÁTLAGOS lenyomata.
 

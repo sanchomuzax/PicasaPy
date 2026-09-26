@@ -543,6 +543,18 @@ függvénynek a sztringkészlete viszont `.picasaoriginals`, `Deleting Files` é
 törlési ág is benne van**. A kulcs nevét egyik mérés sem adta meg — amíg nincs
 meg, ne építsünk rá.
 
+> **Termékre (#3670).** A 15/b és a 18.1 szakasz szerint az `ignore`/
+> `removesel` közös kezelője a `]ignoreface`/`]unknownface` TOKENEKET
+> referenciázza, de a pontos írási formátumot (fotó-szintű album-tagság
+> vs. régió-szintű jelölés) egyik mérés sem adta meg — a fenti figyelmeztetés
+> erre a részletre továbbra is áll. Nálunk a `FaceScanController.ignoreFaces`/
+> `unignoreFaces` a mért **token NEVÉT** (`]ignoreface`) használja, de a saját
+> `albums=` mechanizmusunkon (`ini/albums.py: with_album`/`without_album`,
+> FOTÓ-szintű) írja — ez SZÁNDÉKOS eltérés az eredetitől, nem az ő mért
+> formátuma, a 18.2 pont mintáját követve itt kimondva. Következmény: egy
+> fotón lévő TÖBBI, még el nem döntött javaslatot a jelölés nem zárja ki
+> (`photo_ids_still_ignored` ezt ellenőrzi visszavételkor).
+
 ---
 
 ## 9. AZ EMBEREK PANEL — állapotok és feliratok
