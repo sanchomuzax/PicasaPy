@@ -172,12 +172,13 @@ class LanguageMixin:
         pending_raw = _normalise_pending(settings.value(PENDING_LANGUAGE_KEY))
         self._pending_language = pending_raw if pending_raw is not None else self._language
 
-    @Property(str, notify=languageChanged)
+    @property
     def language(self) -> str:
         """Az EBBEN a futásban érvényes felület-nyelv: `en` vagy `hu`.
 
         #3555 óta ez a fordító-betöltés után NEM változik a futás alatt —
-        a váltás csak a következő indításkor lép életbe."""
+        a váltás csak a következő indításkor lép életbe. A felület a
+        `pendingLanguage`-t mutatja, ezért ez csak Python-oldali tag."""
         return self._language
 
     @Property(str, notify=pendingLanguageChanged)

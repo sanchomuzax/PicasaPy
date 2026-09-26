@@ -48,7 +48,7 @@ class TestSelectionHasRedeye:
 
     def test_no_edits_means_no_redeye(self, controller):
         ctl, _library = controller
-        assert ctl.selectionHasRedeye(self._rows(ctl)) is False
+        assert bool(ctl.redeyeNamesInSelection(self._rows(ctl))) is False
 
     def test_detects_redeye_in_any_selected_picture(self, controller):
         ctl, library = controller
@@ -56,14 +56,14 @@ class TestSelectionHasRedeye:
             "[b.jpg]\nfilters=crop64=1,10000000f1ddff49;redeye=1;\n",
             encoding="utf-8",
         )
-        assert ctl.selectionHasRedeye(self._rows(ctl)) is True
+        assert bool(ctl.redeyeNamesInSelection(self._rows(ctl))) is True
 
     def test_other_effects_do_not_count(self, controller):
         ctl, library = controller
         (library / ".picasa.ini").write_text(
             "[a.jpg]\nfilters=enhance=1;sepia=1;\n", encoding="utf-8"
         )
-        assert ctl.selectionHasRedeye(self._rows(ctl)) is False
+        assert bool(ctl.redeyeNamesInSelection(self._rows(ctl))) is False
 
     def test_manual_redeye_regions_also_count(self, controller):
         """A kézi régiós alak (#445) is vörösszem-javítás."""
@@ -71,17 +71,17 @@ class TestSelectionHasRedeye:
         (library / ".picasa.ini").write_text(
             "[a.jpg]\nfilters=redeye=1,333333334ccd4ccd;\n", encoding="utf-8"
         )
-        assert ctl.selectionHasRedeye(self._rows(ctl)) is True
+        assert bool(ctl.redeyeNamesInSelection(self._rows(ctl))) is True
 
     def test_empty_selection_is_false(self, controller):
         ctl, _library = controller
-        assert ctl.selectionHasRedeye([]) is False
+        assert bool(ctl.redeyeNamesInSelection([])) is False
 
     def test_broken_ini_does_not_raise(self, controller):
         """Sérült/idegen ini nem szökhet ki kivétellel (#301-elv)."""
         ctl, library = controller
         (library / ".picasa.ini").write_text("nem ini tartalom\x00", encoding="utf-8")
-        assert ctl.selectionHasRedeye(self._rows(ctl)) is False
+        assert bool(ctl.redeyeNamesInSelection(self._rows(ctl))) is False
 
 
 class TestRedeyeNamesInSelection:

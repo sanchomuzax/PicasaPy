@@ -252,28 +252,13 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-batcheffect")
 
-    @Slot(list, result=bool)
-    def selectionHasRedeye(self, rows) -> bool:
-        """Van-e a kijelölésben vörösszem-javítás (#465)?
-
-        Az eredeti Picasa a teljes visszaállítás előtt KÜLÖN figyelmeztet
-        rá (`IDS_CONFIRM_REDEYE_REVERT`), mert a vörösszem régió-adatot
-        hordoz: a törléssel véglegesen elvész, az „Újra" nem hozza vissza.
-
-        A megerősítő dialógus hívja, tehát a GUI-szálon fut — ezért csak a
-        `.picasa.ini` fájlokat olvassa (mappánként egyszer), képet nem nyit
-        meg. Olvashatatlan ini-nél `False` (a #301-elv szerint: idegen/sérült
-        adat nem szökhet ki kivétellel, és a hiánya nem hazudik javítást).
-        """
-        return bool(self.redeyeNamesInSelection(rows))
-
     @Slot(list, result=list)
     def redeyeNamesInSelection(self, rows) -> list[str]:
         """A kijelölés vörösszem-javítást hordozó képeinek neve (#3573).
 
         Az eredeti figyelmeztetés a képet NÉVVEL mondja
         (`IDS_CONFIRM_REDEYE_REVERT`: „Red eye fixes have been applied to
-        %s.”). A sorrend a kijelölésé; a `selectionHasRedeye` hibatűrése
+        %s.”). A sorrend a kijelölésé; a hibatűrése
         érvényes itt is: olvashatatlan ini-ből nem jön név.
         """
         photos = self._rows_to_photos(rows)
