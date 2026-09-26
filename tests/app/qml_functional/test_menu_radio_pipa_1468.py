@@ -362,9 +362,17 @@ class TestMappaRendezes(_KizaroCsoportProba):
 
 
 class TestNyelvvalasztas(_KizaroCsoportProba):
-    """Eszközök ▸ Nyelv — kizáró pár (`language`)."""
+    """Eszközök ▸ Nyelv — HÁROM kizáró tétel (`pendingLanguage`, #3555).
 
-    nevek = ("menuLanguageEnglish", "menuLanguageHungarian")
+    #3555 óta a kattintás CSAK egy megerősítő kérdésen át vezet a
+    kiválasztott nyelvre (a `menuLanguageConfirm*` ConfirmDialog, Main.qml)
+    — a közös `_KizaroCsoportProba` a `_trigger`-rel önmagában csak a
+    kérdést nyitná meg, ezért a két tesztet felülírjuk: a kérdés „Igen"-jét
+    is megnyomjuk, mielőtt a menüt újranyitnánk. A #1468-as rebind-mintát
+    (`checked = Qt.binding(...)`) ez nem érinti — az a `triggered`-del
+    egy időben fut le, a megerősítéstől függetlenül."""
+
+    nevek = ("menuLanguageSystem", "menuLanguageEnglish", "menuLanguageHungarian")
     menu = "menuToolsLanguage"
     # SZÁNDÉKOSAN a magyar (nem az alapértelmezett angol): az első
     # kattintásnak VALÓDI váltásnak kell lennie, hogy a második legyen a
@@ -372,6 +380,32 @@ class TestNyelvvalasztas(_KizaroCsoportProba):
     # két kattintás párosan kioltaná egymást, és a teszt hibás kód mellett
     # is zöld maradna (ezen a párosságon MÉRVE bukott meg az első változat).
     cel = "menuLanguageHungarian"
+
+    @staticmethod
+    def _trigger_es_igen(window, name, qt_app):
+        _trigger(window, name)
+        qt_app.processEvents()
+        igen = _child(window, "menuLanguageConfirmYesButton")
+        QMetaObject.invokeMethod(igen, "clicked", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+
+    def test_a_valtas_utan_pontosan_egy_pipa_all(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        self._trigger_es_igen(window, self.cel, qt_app)
+        _ujranyit(window, self.menu, qt_app)
+        _egyetlen_pipa(window, self.nevek, self.cel)
+
+    def test_a_mar_aktiv_tetelre_ujra_kattintva_marad_a_pipa(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        self._trigger_es_igen(window, self.cel, qt_app)
+        _ujranyit(window, self.menu, qt_app)
+
+        # MÁSODSZOR: már aktív tétel — nincs eltérés, tehát kérdés sem nyílik
+        _trigger(window, self.cel)
+        qt_app.processEvents()
+        _ujranyit(window, self.menu, qt_app)
+
+        _egyetlen_pipa(window, self.nevek, self.cel)
 
 
 class TestKonyvtarNezetAllandoPipaja:

@@ -76,8 +76,11 @@ ColumnLayout {
             enabled: false
         }
 
-        // ÉLŐ: nyelvválasztás — ugyanaz a controller.language, amit az
-        // Eszközök → Nyelv menü is vezérel (#333)
+        // ÉLŐ: nyelvválasztás — ugyanaz a controller.pendingLanguage, amit az
+        // Eszközök → Nyelv menü is vezérel (#333). #3555: a lista első
+        // tétele a rendszer szerinti, a nevek SAJÁT nyelvükön állnak (a
+        // felület nyelvétől függetlenül), és a váltás csak megerősítés
+        // UTÁN íródik — a következő indításig nem lép érvénybe.
         RowLayout {
             spacing: 8
             Text {
@@ -88,22 +91,49 @@ ColumnLayout {
             PicasaComboBox {
                 id: languageCombo
                 objectName: "optionsLanguageCombo"
-                // a megjelenő lista a nyelvkódok emberi neve — a controller
-                // csak kódokat ismer (en/hu), a leképezés itt él
-                readonly property var codes:
-                    controller ? controller.availableLanguages : ["en"]
+                // a rendszer-tétel a controller konkrét nyelvei ELÉ kerül
+                // (spec A) szakasz); a codes a `pendingLanguage`
+                // ÉRTÉKEIT sorolja, nem a mai `language`-t (spec D szakasz)
+                readonly property var codes: [
+                    controller ? controller.systemLanguageCode : "system"
+                ].concat(controller ? controller.availableLanguages : ["en"])
                 model: languageCombo.codes.map(function (code) {
-                    return code === "hu" ? qsTr("Hungarian") : qsTr("English (US)")
+                    if (controller && code === controller.systemLanguageCode)
+                        return qsTr("System Default (%1)").arg(
+                            controller.systemLanguageSuffix)
+                    return controller ? controller.ownLanguageName(code) : code
                 })
-                currentIndex: {
-                    var idx = languageCombo.codes.indexOf(
-                        controller ? controller.language : "en")
-                    return idx >= 0 ? idx : 0
+                function syncToPending() {
+                    var idx = codes.indexOf(
+                        controller ? controller.pendingLanguage : "en")
+                    currentIndex = idx >= 0 ? idx : 0
+                }
+                Component.onCompleted: syncToPending()
+                Connections {
+                    target: controller
+                    function onPendingLanguageChanged() {
+                        languageCombo.syncToPending()
+                    }
                 }
                 onActivated: function (index) {
-                    if (controller) controller.setLanguage(languageCombo.codes[index])
+                    if (!controller) return
+                    var code = languageCombo.codes[index]
+                    if (code === controller.pendingLanguage) return
+                    languageConfirm.candidateCode = code
+                    languageConfirm.ask("", qsTr(
+                        "Change the language of the PicasaPy user "
+                        + "interface?\n\nThe change takes effect the next "
+                        + "time you start the program."))
                 }
             }
+        }
+        ConfirmDialog {
+            id: languageConfirm
+            namePrefix: "optionsLanguageConfirm"
+            property string candidateCode: ""
+            onConfirmed: if (controller) controller.setLanguage(candidateCode)
+            onDenied: languageCombo.syncToPending()
+            onCanceled: languageCombo.syncToPending()
         }
     }
 

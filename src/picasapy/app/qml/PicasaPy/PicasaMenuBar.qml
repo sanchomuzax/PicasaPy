@@ -22,6 +22,18 @@ MenuBar {
         (typeof folderHierarchyController !== "undefined")
         ? folderHierarchyController : null
 
+    // #3555: a nyelvváltás megerősítő kérdése a Main.qml-ben él (a
+    // ConfirmDialog nem fér el egy MenuBar gyermekeként — annak a default
+    // property-je `list<Menu>`). A menütétel csak jelez, ha a választás
+    // ELTÉR a mai függő nyelvtől; az azonos tételre kattintás így sem kérdést,
+    // sem `setLanguage`-hívást nem indít (a #1468-as rebind ettől függetlenül
+    // mindig lefut, ld. fent).
+    signal languageConfirmRequested(string code)
+    function requestLanguageChange(code) {
+        if (!controller || code === controller.pendingLanguage) return
+        bar.languageConfirmRequested(code)
+    }
+
     // #423: a kék „Bejelentkezés Google Fiókkal" hivatkozás a menüsáv jobb
     // szélén — az eredeti Picasa ugyanabban a sorban tartja, mint a
     // Fájl/Szerkesztés/… menüket. A `background` felülírása szükséges,
@@ -2042,43 +2054,64 @@ MenuBar {
             onTriggered: bar.configureButtonsRequested()
         }
         // #1774 (mérve): az eredetiben itt NINCS csoporthatár.
-        // #333: nyelvválasztás — alapértelmezés az angol, a magyar
-        // választható; a döntés a QSettings-ben marad. A #305-ös null-őr
-        // kötelező: a controller a QML-engine leépítésekor null lehet.
+        // #333/#3555: nyelvválasztás — a lista első tétele a rendszer
+        // szerinti, utána a konkrét nyelvek (spec A szakasz). A pipa a
+        // `pendingLanguage`-et tükrözi (a KÖVETKEZŐ indításra kért
+        // választást, spec D szakasz), nem a mai `language`-t — a döntés a
+        // Main.qml-ben élő megerősítő kérdés UTÁN íródik, és csak a
+        // következő indításkor lép érvénybe (`languageConfirmRequested`,
+        // ld. Main.qml ConfirmDialog). A #305-ös null-őr kötelező: a
+        // controller a QML-engine leépítésekor null lehet.
         // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
         // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
         // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
         // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
         // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
-        // (a #1464-ben bevezetett minta).
-        //
-        // Itt a hiba MÉRHETŐ volt: a `LanguageController.setLanguage` azonos
-        // értéknél szándékosan NEM jelez, tehát a már aktív nyelvre kattintva
-        // mindkét pipa eltűnt.
+        // (a #1464-ben bevezetett minta) — ez a megerősítés ELMARADÁSA
+        // (már aktív tétel, vagy "Nem"/"Mégse") esetén is kell.
         PicasaMenu {
             objectName: "menuToolsLanguage"
             title: qsTr("Language")
             MenuItem {
-                objectName: "menuLanguageEnglish"
-                text: qsTr("English")
+                objectName: "menuLanguageSystem"
+                text: controller
+                    ? qsTr("System Default (%1)").arg(controller.systemLanguageSuffix)
+                    : qsTr("System Default")
                 checkable: true
-                checked: controller ? controller.language === "en" : true
+                checked: controller
+                    ? controller.pendingLanguage === controller.systemLanguageCode
+                    : false
                 onTriggered: {
-                    if (controller) controller.setLanguage("en")
+                    bar.requestLanguageChange(
+                        controller ? controller.systemLanguageCode : "system")
                     checked = Qt.binding(function () {
-                        return controller ? controller.language === "en" : true
+                        return controller
+                            ? controller.pendingLanguage === controller.systemLanguageCode
+                            : false
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuLanguageEnglish"
+                text: "English"
+                checkable: true
+                checked: controller ? controller.pendingLanguage === "en" : true
+                onTriggered: {
+                    bar.requestLanguageChange("en")
+                    checked = Qt.binding(function () {
+                        return controller ? controller.pendingLanguage === "en" : true
                     })
                 }
             }
             MenuItem {
                 objectName: "menuLanguageHungarian"
-                text: qsTr("Hungarian")
+                text: "Magyar"
                 checkable: true
-                checked: controller ? controller.language === "hu" : false
+                checked: controller ? controller.pendingLanguage === "hu" : false
                 onTriggered: {
-                    if (controller) controller.setLanguage("hu")
+                    bar.requestLanguageChange("hu")
                     checked = Qt.binding(function () {
-                        return controller ? controller.language === "hu" : false
+                        return controller ? controller.pendingLanguage === "hu" : false
                     })
                 }
             }

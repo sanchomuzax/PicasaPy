@@ -228,8 +228,9 @@ BEALLITASOK = {
     ("OptionsTabFileTypes", "Display JPEG files and:"): (
         "Megjelenítés: JPEG-fájlok és", "options/label61.title"),
     ("OptionsTabFileTypes", "RAW"): ("RAW formátumok", "options/SupportRAW.title"),
-    # a nyelvlista saját nyelvű neveket mutat, fordítás nélkül (Lang::enUS)
-    ("OptionsTabGeneral", "English (US)"): ("English (US)", "Lang::enUS"),
+    # a nyelvlista saját nyelvű neveket mutat, fordítás NÉLKÜL — #3555 óta ez
+    # már nem is `qsTr()`-ezett literál, hanem a controller.ownLanguageName()
+    # adja (ld. tests/app/test_language_controller.py::TestOwnLanguageNames)
     ("OptionsTabGeneral", "Help improve PicasaPy:"): (
         "Részvétel a Picasa fejlesztésében:", "options/labelgroup16.title"),
     ("OptionsTabGeneral", "Import destination folder:"): (

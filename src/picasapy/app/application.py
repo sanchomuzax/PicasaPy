@@ -89,8 +89,8 @@ from .face_scan_controller import FaceScanController
 from .faces_helper import FacesHelper
 from .language_controller import (
     DEFAULT_LANGUAGE,
-    LANGUAGE_KEY,
     coerce_language,
+    resolve_startup_language,
 )
 from .color_management_controller import wire_color_management
 from .display_mode_controller import wire_display_mode
@@ -815,17 +815,20 @@ def wire_dedup(dedup: DedupController, controller: AppController) -> None:
 
 
 def _configured_language() -> str:
-    """A betöltendő nyelv: a környezeti változó nyer, utána a mentett
-    beállítás, végül az alapértelmezés (#333).
+    """A betöltendő nyelv: a környezeti változó nyer, utána a mentett/függő
+    beállítás beérése (#333, #3555), végül az alapértelmezés.
 
-    A rendszer nyelvét SZÁNDÉKOSAN nem nézzük: a felhasználó kérése szerint
-    az alapértelmezés az angol, és a váltás a beállításokban történik.
+    A `resolve_startup_language` hívása itt (a fordító betöltése előtt)
+    SZÁNDÉKOSAN a legkorábbi lehetséges hely: ez viszi be a következő
+    indításra kért nyelvet ténylegesen érvénybe — az `AppController` saját
+    induláskori hívása ugyanerre a `QSettings`-re már csak szinkronban talál
+    mindent (idempotens, ld. `language_controller.resolve_startup_language`).
     """
     forced = os.environ.get("PICASAPY_LANG")
     if forced:
         return coerce_language(forced)
     settings = QSettings("PicasaPy", "PicasaPy")
-    return coerce_language(settings.value(LANGUAGE_KEY, DEFAULT_LANGUAGE))
+    return resolve_startup_language(settings)
 
 
 def _install_translator(app: QGuiApplication, language: str | None = None) -> QTranslator | None:

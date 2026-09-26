@@ -5,18 +5,26 @@ illesztés (Eszközök → Beállítások... menüpont bekötése) az integráto
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import Property, QObject, Qt, Signal, Slot
+from PySide6.QtCore import Property, QMetaObject, QObject, Qt, Signal, Slot
 
 
 class FakeController(QObject):
-    """A nyelvválasztáshoz szükséges felület (#333) — csak annyi, amennyit
-    az OptionsDialog "General" füle ténylegesen használ."""
+    """A nyelvválasztáshoz szükséges felület (#333/#3555) — csak annyi,
+    amennyit az OptionsDialog "General" füle ténylegesen használ.
+
+    #3555: a `setLanguage` a valódi vezérlőhöz hasonlóan CSAK a
+    `pendingLanguage`-et írja — a `language` (a futó felület nyelve) a
+    következő indításig nem változik."""
 
     languageChanged = Signal()
+    pendingLanguageChanged = Signal()
 
-    def __init__(self, language="en"):
+    _OWN_NAMES = {"en": "English", "hu": "Magyar"}
+
+    def __init__(self, language="en", pending_language=None):
         super().__init__()
         self._language = language
+        self._pending_language = pending_language if pending_language is not None else language
         self.set_language_calls = []
 
     def _get_language(self):
@@ -24,16 +32,28 @@ class FakeController(QObject):
 
     language = Property(str, _get_language, notify=languageChanged)
 
+    def _get_pending_language(self):
+        return self._pending_language
+
+    pendingLanguage = Property(str, _get_pending_language, notify=pendingLanguageChanged)
+
     def _get_available_languages(self):
         return ["en", "hu"]
 
     availableLanguages = Property(list, _get_available_languages, constant=True)
 
+    systemLanguageCode = Property(str, lambda self: "system", constant=True)
+    systemLanguageSuffix = Property(str, lambda self: "hu-HU", constant=True)
+
+    @Slot(str, result=str)
+    def ownLanguageName(self, code) -> str:
+        return self._OWN_NAMES.get(code, code)
+
     @Slot(str)
     def setLanguage(self, code) -> None:
         self.set_language_calls.append(code)
-        self._language = code
-        self.languageChanged.emit()
+        self._pending_language = code
+        self.pendingLanguageChanged.emit()
 
 
 class FakeConfirmSettings(QObject):
@@ -237,19 +257,29 @@ class TestTabStructure:
 
 
 class TestGeneralTabLiveLanguage:
-    """A nyelvválasztás (#333) az OptionsDialogból is elérhető — ugyanaz a
-    controller.language/setLanguage, mint az Eszközök → Nyelv menüben."""
+    """A nyelvválasztás (#333/#3555) az OptionsDialogból is elérhető —
+    ugyanaz a controller.pendingLanguage/setLanguage, mint az Eszközök →
+    Nyelv menüben. A lista első tétele a rendszer szerinti (spec A szakasz);
+    a `currentIndex` a FÜGGŐ (nem a mai) nyelvet tükrözi (spec D szakasz), és
+    a váltás csak a megerősítő kérdés UTÁN íródik."""
+
+    def test_combo_lists_system_first(self, dialog):
+        window, _fc, _cs, _qt = dialog
+        combo = _child(window, "optionsLanguageCombo")
+        assert combo.property("model") == [
+            "System Default (hu-HU)", "English", "Magyar",
+        ]
 
     def test_combo_reflects_current_language(self, dialog):
-        window, fake_controller, _cs, _qt = dialog
+        window, _fc, _cs, _qt = dialog
         combo = _child(window, "optionsLanguageCombo")
-        assert combo.property("currentIndex") == 0  # "en"
+        assert combo.property("currentIndex") == 1  # "en"
 
     def test_combo_reflects_hungarian(self, qt_app, fake_confirm_settings):
         import picasapy.app.application as app_module
         from PySide6.QtQml import QQmlComponent, QQmlEngine
 
-        controller = FakeController(language="hu")
+        controller = FakeController(language="hu", pending_language="hu")
         engine = QQmlEngine()
         engine.addImportPath(str(app_module._APP_DIR / "qml"))
         engine.rootContext().setContextProperty("controller", controller)
@@ -263,16 +293,50 @@ class TestGeneralTabLiveLanguage:
         item = factory.create()
         assert item is not None, factory.errorString()
         combo = _child(item, "optionsLanguageCombo")
-        assert combo.property("currentIndex") == 1  # "hu"
+        assert combo.property("currentIndex") == 2  # "hu"
         item.deleteLater()
         qt_app.processEvents()
 
-    def test_choosing_a_language_calls_controller(self, dialog, qt_app):
+    def test_choosing_a_language_asks_for_confirmation_first(self, dialog, qt_app):
         window, fake_controller, _cs, _qt = dialog
         combo = _child(window, "optionsLanguageCombo")
-        combo.activated.emit(1)
+        combo.activated.emit(2)  # "hu"
+        qt_app.processEvents()
+        assert fake_controller.set_language_calls == [], (
+            "#3555: a váltás csak a megerősítés UTÁN íródhat"
+        )
+        confirm = _child(window, "optionsLanguageConfirmDialog")
+        assert confirm.property("visible") is True
+
+    def test_confirming_calls_the_controller(self, dialog, qt_app):
+        window, fake_controller, _cs, _qt = dialog
+        combo = _child(window, "optionsLanguageCombo")
+        combo.activated.emit(2)  # "hu"
+        qt_app.processEvents()
+        yes = _child(window, "optionsLanguageConfirmYesButton")
+        QMetaObject.invokeMethod(yes, "clicked", Qt.ConnectionType.DirectConnection)
         qt_app.processEvents()
         assert fake_controller.set_language_calls == ["hu"]
+
+    def test_denying_leaves_the_controller_untouched(self, dialog, qt_app):
+        window, fake_controller, _cs, _qt = dialog
+        combo = _child(window, "optionsLanguageCombo")
+        combo.activated.emit(2)  # "hu"
+        qt_app.processEvents()
+        no = _child(window, "optionsLanguageConfirmNoButton")
+        QMetaObject.invokeMethod(no, "clicked", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert fake_controller.set_language_calls == []
+        assert _child(window, "optionsLanguageCombo").property("currentIndex") == 1
+
+    def test_choosing_the_already_pending_language_asks_nothing(self, dialog, qt_app):
+        window, fake_controller, _cs, _qt = dialog
+        combo = _child(window, "optionsLanguageCombo")
+        combo.activated.emit(1)  # már "en" — nincs eltérés
+        qt_app.processEvents()
+        assert fake_controller.set_language_calls == []
+        confirm = _child(window, "optionsLanguageConfirmDialog")
+        assert confirm.property("visible") is False
 
 
 class TestGeneralTabLiveDeleteConfirmSuppression:
