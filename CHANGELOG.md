@@ -40,6 +40,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   „Csak a csillagozott fotók szinkronizálása”; a Webalbumok fülön a
   névcímke-feltöltés az eredeti szerint címke + jelölőnégyzet, a hosszú
   megerősítés-felirat pedig tördelődik, nem lóg ki az ablakból.
+### Javítva
+- **A Képpontnövelés (Shift + Képpontnagyítás) csúszkapanelt nyit
+  (#3515).** A fókuszpont, a hatás, a sugár, az élkeménység és a
+  fokozat élő előnézettel állítható, a Megfordítás jelölő pedig a kör
+  belsejét pixelesíti a széle helyett.
 
 ## [0.8.580] – 2026-09-26
 
