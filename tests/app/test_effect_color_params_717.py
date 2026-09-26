@@ -122,9 +122,11 @@ class TestChainCarriesTheFullParameterSet:
         assert _chain(editing) == "radtint=1,0.500000,0.500000,0.250000,00336699;"
 
     def test_focalzoom_writes_all_six_parameters(self, editing):
-        editing.applyEffectWithParams("focalzoom", [0.5, 0.5, 60.0, 20.0, 70.0, 10.0])
+        # #3596: a sugár SZÁZALÉKKÉNT megy a láncba — a 8 × 6-os képen a
+        # tartomány `10 … min(W, H)/2 = 3`, a 6,5 képpont ennek a fele
+        editing.applyEffectWithParams("focalzoom", [0.5, 0.5, 60.0, 6.5, 70.0, 10.0])
         assert _chain(editing) == (
-            "FocalZoom=1,0.500000,0.500000,60.000000,20.000000,70.000000,10.000000;"
+            "FocalZoom=1,0.500000,0.500000,60.000000,50.000000,70.000000,10.000000;"
         )
 
     def test_default_apply_uses_white_as_the_pick_color(self, editing):

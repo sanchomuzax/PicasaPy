@@ -21,7 +21,10 @@ from picasapy.render import apply_filters
 from picasapy.render.elonezeti_arany import elonezeti_arany, jelenlegi_arany
 
 KERET = "Border=1,20,5,0,000000,ffffff,0;"
-FELIRATOS = "Border=1,20,5,0,000000,ffffff,30;"
+#: #3596: a feliratsáv SZÁZALÉK (`0 … H/6`, a munkakép magasságából) — a
+#: 60 % 300 magas képen 30, 150 magason 15 képpont; az előnézeti arány
+#: NEM szorozza meg még egyszer.
+FELIRATOS = "Border=1,20,5,0,000000,ffffff,60;"
 MUZEUM = "MuseumMatte=1,25,40,1a0e03,f0eae4;"
 
 
@@ -49,9 +52,10 @@ class TestAVastagsagSkalazodik:
     def test_a_feliratsav_NEM_skalazodik(self):
         teljes = _render(_kep(400, 300), FELIRATOS).image
         fel = _render(_kep(200, 150), FELIRATOS, arany=0.5).image
-        # a felirat mindkét esetben 30 képpont a keret alatt
+        # a felirat a munkakép H/6-jának 60 %-a: 30, illetve 15 képpont —
+        # nem 15·0,5 = 7,5 (azaz az arány nem szoroz rá még egyszer)
         assert teljes.shape[0] - teljes.shape[1] == (300 + 50 + 30) - (400 + 50)
-        assert fel.shape[0] == 150 + 24 + 30
+        assert fel.shape[0] == 150 + 24 + 15
 
     def test_a_museummatte_vastagsaga_is_skalazodik(self):
         kimenet = _render(_kep(200, 150), MUZEUM, arany=0.5).image

@@ -19,6 +19,7 @@ from picasapy.render import glimmer_creative as creative
 from picasapy.render import glimmer_focal as focal
 from picasapy.render import glimmer_frames as frames
 from picasapy.render import glimmer_tone as tone
+from picasapy.render.dinamikus_csuszka import dinamikus_csuszka_ertek, fel_rovidebb_el, felirat_maximum
 from picasapy.render.elonezeti_arany import skalazott_vastagsag
 from picasapy.render.tinting import parse_rgb_hex
 
@@ -205,22 +206,33 @@ def apply_picnik_grain_op(image, op: FilterOp):
 def apply_border_op(image, op: FilterOp):
     # #3377: a két vastagság az előnézeti aránnyal skálázódik, a sarok és a
     # feliratsáv NEM — az eredeti mért aszimmetriája (`elonezeti_arany`).
+    # #3596: a sarok és a feliratsáv SZÁZALÉK (`DynamicRangeSlider`), a
+    # tartományuk `0 … min(W, H)/2`, illetve `0 … H/6` — a (munka)kép
+    # méretéből, ezért az előnézeten magától arányos marad.
+    height, width = image.shape[:2]
     return frames.apply_border(
         image,
         outer_thickness=skalazott_vastagsag(_float_at(op, 0, 20.0)),
         inner_thickness=skalazott_vastagsag(_float_at(op, 1, 5.0)),
-        corner_radius=_float_at(op, 2, 0.0),
+        corner_radius=dinamikus_csuszka_ertek(_float_at(op, 2, 0.0), 0.0, fel_rovidebb_el(height, width)),
         outer_color=_color_at(op, 3, (0, 0, 0)),
         inner_color=_color_at(op, 4, (255, 255, 255)),
-        caption_height=_float_at(op, 5, 0.0),
+        caption_height=dinamikus_csuszka_ertek(_float_at(op, 5, 0.0), 0.0, felirat_maximum(height)),
     )
+
+
+#: #3596: a `RoundedEdges` sarok-rádiuszának alapértéke százalékban — a
+#: korábbi `min(W, H)/10` képpont a `0 … min(W, H)/2` tartomány 20 %-a.
+_LEKEREKITES_ALAP_SZAZALEK = 20.0
 
 
 def apply_rounded_edges_op(image, op: FilterOp):
     height, width = image.shape[:2]
     return frames.apply_rounded_edges(
         image,
-        corner_radius=_float_at(op, 0, min(height, width) / 10.0),
+        corner_radius=dinamikus_csuszka_ertek(
+            _float_at(op, 0, _LEKEREKITES_ALAP_SZAZALEK), 0.0, fel_rovidebb_el(height, width)
+        ),
         outer_color=_color_at(op, 1, (255, 255, 255)),
     )
 
