@@ -48,10 +48,6 @@ Amit tudatosan KIHAGYUNK (ld. a #516 jegy jelentése):
 - a **festhető maszk / ecset** effektek (`ReanimatedEyeColor`, `Soften`,
   `PicnikTint`) — a Picasában ecsettel kijelölt területre hatnak, a
   PicasaPy-nak még nincs ilyen eszköze (#381); önálló munka.
-- `PicnikFocalPixelate` — a `render/` rétegben NINCS hozzá handler (a natív
-  `focalpixelate` egy MÁSIK, `chain.KNOWN_UNRENDERED_OPS`-beli szűrő), így
-  vezérlők hozzáadása egy nem-létező renderert kötne be — ez már nem
-  "kicsi és egyértelmű" javítás (#516 jelentés).
 - `Boost`, `Cinemascope`, `Comicize`, `Invert`, `Neon`, `PencilSketch` — a
   #516 jegy szerint ezeknél a vezérlőszám MA MÁR egyezik az eredetivel,
   nincs teendő. (A `FocalZoom` ide korábban szintén be volt sorolva — ez
@@ -223,6 +219,23 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
            max_formula="half_min_wh", default_formula="tartomany_kozepe"),
         _p("hardness", "Edge Hardness", 0.0, 100.0, 50.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
+    ),
+    # PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade,Reverse (#3515):
+    # a `Pixelate` csempe Shift-párja, a #3315 óta renderel
+    # (`chain._apply_focal_pixelate_op`). Tartományok a
+    # `filterdesc.xml:865–869`-ből (`filterdesc-registry.md` 4.1/c); a
+    # feliratok a szűrőnkénti felülírásból (`picasa-effekt-feliratok.md`):
+    # `_sldrImpact` → „Pixel Size", `_sldrRadius` → „Focal Size".
+    "picnikfocalpixelate": (
+        _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
+        _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
+        _p("impact", "Pixel Size", 2.0, 100.0, 20.0),
+        _p("radius", "Focal Size", 10.0, 100.0, 50.0,
+           max_formula="half_min_wh", default_formula="tartomany_kozepe"),
+        _p("hardness", "Edge Hardness", 0.0, 100.0, 50.0),
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
+        # `_chkReverse` (#788): a körmaszk két alfáját cseréli
+        _checkbox("reverse", "Reverse"),
     ),
     "pencilsketch": (
         _p("blur_radius", "Blur Radius", 0.5, 20.0, 2.0, 0.5),

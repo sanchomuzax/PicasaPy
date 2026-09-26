@@ -8864,6 +8864,11 @@ A Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan ki
         <translation>Képpontméret</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Reverse</source>
+        <translation>Megfordítás</translation>
+    </message>
+    <message>
         <source>Brush Size</source>
         <translation>Ecsetméret</translation>
     </message>
