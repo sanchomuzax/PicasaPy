@@ -55,3 +55,30 @@ class SecondPreview(QObject):
     def endEdit(self) -> None:
         """A rekesz munkamenetének zárása (a szolgáltató bejegyzését is)."""
         self._controller.endEdit()
+
+    # -- #3014: az „aa" mód második fele ---------------------------------
+    #
+    # Az „aa" módban a második fél ugyanazt a fotót szerkeszti, mint az első,
+    # de CSAK MEMÓRIÁBAN (a két fél ugyanazt a `filters=` sort írná). A
+    # fókuszváltás a két fél láncát cseréli, a kilépéskori döntés pedig
+    # kiírja, ha ezt a felet kell megtartani.
+
+    @Property(str, notify=previewSourceChanged)
+    def chainValue(self) -> str:
+        """A rekesz jelenlegi `filters=` értéke."""
+        return self._controller.chainValue
+
+    @Slot(str, str)
+    def beginEditInMemory(self, photo_id: str, image_path: str) -> None:
+        """Munkamenet a mentett lánccal, ini-írás nélkül."""
+        self._controller.beginEditInMemory(photo_id, image_path)
+
+    @Slot(str)
+    def setChainValue(self, value: str) -> None:
+        """A rekesz láncának lecserélése (memóriás munkamenetben nem ír)."""
+        self._controller.setChainValue(value)
+
+    @Slot()
+    def persistChain(self) -> None:
+        """A rekesz memóriában élő láncának kiírása."""
+        self._controller.persistChain()

@@ -122,8 +122,11 @@ class TestAMasodikKep:
 
         assert _gyerek(window, "viewerImageElotte").property("visible") is False
 
-    def test_a_bal_oldal_a_SZERKESZTES_ELOTTI(self, qml_app, qt_app):
-        """A szűretlen kép a nyers fájl URL-je — a `filters=` lánc nélkül."""
+    def test_a_bal_oldal_SAJAT_szerkesztes(self, qml_app, qt_app):
+        """#3014: a #3013 itt a nyers fájlt (a szerkesztés ELŐTTI képet)
+        követelte. A bináris mérése (`ui-audit-editor.md` 4/b.1) szerint az
+        „aa" mód két fele két önálló szerkesztés a kép JELENLEGI láncáról —
+        a bal fél tehát a második rekesz előnézete."""
         window, _controller, _engine = qml_app
         _nezot_nyit(window, qt_app)
         QMetaObject.invokeMethod(
@@ -133,10 +136,8 @@ class TestAMasodikKep:
         qt_app.processEvents()
 
         elotte = _gyerek(window, "viewerImageElotte").property("source").toString()
-        assert elotte.startswith("file:"), (
-            f"a bal oldal nem a nyers fájlt mutatja: {elotte}"
-        )
-        assert "editpreview" not in elotte
+        assert elotte.startswith("image://editpreview/"), elotte
+        assert "@masodik" in elotte
 
 
 class TestAFokusz:

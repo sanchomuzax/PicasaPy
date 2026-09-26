@@ -84,13 +84,22 @@ def _relativ_ut(fajl: Path, gyokerek) -> Path:
     return Path(fajl.parent.name) / fajl.name
 
 
-def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=()) -> Terv:
+def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
     """Mit kell menteni: az ÚJ és a MEGVÁLTOZOTT fájlok (#440).
 
     A `fajlok` a jelöltek (az index vagy a bejárás adja); a készlet
     szűrője itt fut le rajtuk. A már elmentett, változatlan fájl kimarad —
     ez a készlet lényege.
+
+    #3594: a `mappak` a felületen bepipált mappák (`backuptext3`: „Jelölje
+    ki azokat a mappákat, amelyekről biztonsági másolatot szeretne
+    készíteni"). `None` = minden mappa; üres lista = semmi. A szűkítés a
+    fájlszűrő ELŐTT fut, így a ki nem pipált mappa fájljait a
+    fényképezőgép-szűrő sem olvassa.
     """
+    if mappak is not None:
+        pipaltak = {Path(mappa) for mappa in mappak}
+        fajlok = [f for f in fajlok if Path(f).parent in pipaltak]
     nyilvantartas = elmentett_allapot(conn, keszlet.id)
     tervezett: list[TervezettFajl] = []
     kihagyott = 0
@@ -115,6 +124,21 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=()) -> Terv:
             )
         )
     return Terv(tuple(tervezett), kihagyott)
+
+
+def mappankent(terv: Terv) -> dict[Path, tuple[TervezettFajl, ...]]:
+    """A terv mappánként, mappa szerint rendezve (#3594).
+
+    Ez a mentés-üzemmód nézete: csak a még el nem mentett fájlok, és csak
+    azok a mappák, amelyekben van ilyen — a teljesen elmentett mappa nem
+    látszik (`backuptext2`)."""
+    csoportok: dict[Path, list[TervezettFajl]] = {}
+    for tetel in terv.fajlok:
+        csoportok.setdefault(tetel.forras.parent, []).append(tetel)
+    return {
+        mappa: tuple(sorted(csoportok[mappa], key=lambda t: t.forras.name))
+        for mappa in sorted(csoportok)
+    }
 
 
 def _ird_ki_a_manifesztet(cel: Path, tetelek) -> Path:

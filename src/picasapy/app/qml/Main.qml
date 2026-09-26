@@ -30,6 +30,10 @@ ApplicationWindow {
     //: Ha háttérmunka fut, a bezárást visszavonjuk, és a kérdés dönt;
     //: egyébként a Qt zárja az ablakot, ahogy eddig.
     onClosing: function (close) {
+        if (!window.aaKapu(window.kilepes)) {   // #3644
+            close.accepted = false
+            return
+        }
         if (controller && controller.backgroundWorkRunning()) {
             close.accepted = false
             kilepesDialog.askExit()
@@ -326,6 +330,7 @@ ApplicationWindow {
         elhagyása, a lap aktiválása — ugyanaz, ezért egy helyen él. */
     function openCollageFromRows(rows) {
         if (!controller) return
+        if (!window.aaKapu(function () { window.openCollageFromRows(rows) })) return
         window.backToCollagePrompted = false
         window.viewerOpen = false
         if (!controller.collageOpen)
@@ -335,6 +340,7 @@ ApplicationWindow {
 
     function openCollageTab() {
         if (!controller) return
+        if (!window.aaKapu(window.openCollageTab)) return
         window.backToCollagePrompted = false
         // #1055: a NÉZŐT (és vele a szerkesztőt) el kell hagyni. A kollázs
         // panelje `!viewerOpen`-re látszik, a képtálca kollázs-gombja
@@ -365,6 +371,7 @@ ApplicationWindow {
         `locateSavedCollage` mintájára előbb a mappájukra állunk. */
     function openSavedMovie(path) {
         if (!controller) return
+        if (!window.aaKapu(function () { window.openSavedMovie(path) })) return
         var cel = String(path || "")
         if (cel.length === 0) return
         var projekt = controller.movieProject(cel)
@@ -392,6 +399,7 @@ ApplicationWindow {
 
     function openSavedCollage(path) {
         if (!controller) return
+        if (!window.aaKapu(function () { window.openSavedCollage(path) })) return
         var cel = String(path || "")
         if (cel.length === 0) return
         controller.openCollageProject(cel)
@@ -1107,6 +1115,16 @@ ApplicationWindow {
         }
     }
 
+    //: #3644: a néző elhagyása ELŐTT az „aa" mód kapuja dönt a két fél
+    //: szerkesztéséről (`PhotoViewer.aaKilepesKapu`, spec
+    //: `ui-audit-editor.md` 4/c.1). `true`: folytatható MOST; `false`: a
+    //: párbeszéd nyitva, a `folytatas` a VÁLASZ után fut, Mégsére elmarad.
+    //: Az eredeti a programzáráskor is kérdez (`SC_CLOSE` → `0x0057c4e0` →
+    //: `0x005e45c0` → `0x0056aad0`), és Mégsére nem zár be (`0x0057c59c`).
+    function aaKapu(folytatas) {
+        return !window.viewerOpen || photoViewer.aaKilepesKapu(folytatas)
+    }
+
     //: #671 4. pont: a kilépés NEM kérdez — KIVÉVE, ha háttérmunka fut.
     //: Az eredeti Picasa sem blokkolja a kilépést („Uploads will resume next
     //: time"), de rákérdez; nálunk a háttérmunka NEM folytatódik legközelebb,
@@ -1115,6 +1133,7 @@ ApplicationWindow {
     //: Egy helyen fut: a Fájl ▸ Kilépés menütétel és az ablak „X"-e is ezt
     //: hívja — különben az egyik út megkérdezné, a másik nem.
     function kilepes() {
+        if (!window.aaKapu(window.kilepes)) return   // #3644
         //: #305: null-őr — a leépülő motor is újraértékelheti a kötést
         if (controller && controller.backgroundWorkRunning()) {
             kilepesDialog.askExit()
@@ -2107,11 +2126,15 @@ ApplicationWindow {
         // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
         // most beállított nézetet írná felül.
         onFindTaggedRequested: function(keyword) {
+            if (!window.aaKapu(function () { photoViewer.findTaggedRequested(keyword) }))
+                return
             window.viewerOpen = false
             if (controller) controller.search(keyword)
         }
         onPersonChosen: function(name) {
             if (!controller) return
+            if (!window.aaKapu(function () { photoViewer.personChosen(name) }))
+                return
             window.viewerOpen = false
             window.clearSelection()
             window.unnamedFacesOpen = false

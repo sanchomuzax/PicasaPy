@@ -2,6 +2,43 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>AaUtkozesDialog</name>
+    <!-- #3014: a `CThumbUI::Confirm2up*` párbeszéd — a MÉRT hivatalos magyar
+         szövegek (`docs/specs/ui-audit-editor.md` 4. szakasz) -->
+    <message>
+        <source>Choose Edits</source>
+        <translation>Szerkesztett változatok kiválasztása</translation>
+    </message>
+    <message>
+        <source>The same image has two different edits. Which one would you like to keep?</source>
+        <translation>A képnek két szerkesztett változata van. Melyiket szeretné megtartani?</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again, always use the selected image</source>
+        <translation>Ne kérdezzen újra, mindig használja a kijelölt képet</translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation>Fent</translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation>Bal</translation>
+    </message>
+    <message>
+        <source>Bottom</source>
+        <translation>Lent</translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation>Jobb</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
     <name>ActivityBadge</name>
     <message>
         <location filename="../qml/PicasaPy/ActivityBadge.qml"/>
@@ -10250,6 +10287,34 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     <message>
         <source>Backup Complete</source>
         <translation>A mentés elkészült</translation>
+    </message>
+    <!-- #3594: a mentés-üzemmód 2. lépése (`backuprect2`), a MÉRT feliratok
+         (`docs/specs/biztonsagi-mentes.md` 10.3, `ui-lefedettseg.md`) -->
+    <message>
+        <source>Choose folders &amp; albums to back up</source>
+        <translation>Mappák és albumok kijelölése biztonsági másolat készítéséhez</translation>
+    </message>
+    <message>
+        <source>Picasa is now showing the files you have not previously backed up.</source>
+        <translation>A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat.</translation>
+    </message>
+    <message>
+        <source>Check the folders you want to back up, or choose &apos;Select All&apos; to choose everything.</source>
+        <translation>Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy &quot;Az összes kijelölése&quot; gombra kattintva az összes elemet jelölje ki.</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <source>Select None</source>
+        <translation>Az összes kijelölés megszüntetése</translation>
+    </message>
+    <!-- #3594: amíg a mappa-lista háttérszálon készül —
+         `il_BurnPanel::calculating` (`biztonsagi-mentes.md` 15.7) -->
+    <message>
+        <source>Calculating…</source>
+        <translation>Számítás…</translation>
     </message>
 </context>
 <context>

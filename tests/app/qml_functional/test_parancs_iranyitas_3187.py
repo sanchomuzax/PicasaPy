@@ -18,7 +18,8 @@ oldalra hatnak — és a két oldal képe is követi a hozzárendelést.
 - a két kép forrása CSERÉL: a kijelölt fél a fő rekeszből, a másik a
   `@masodik`-ból jön;
 - egy effekt a KIJELÖLT oldal `.picasa.ini`-jébe kerül, nem a fő képébe;
-- „aa" és egy képes módban a célpont VÁLTOZATLANUL a jelenlegi kép.
+- „aa" és egy képes módban a célpont VÁLTOZATLANUL a jelenlegi kép (az „aa"
+  mód fókuszváltása #3014 óta a két fél LÁNCÁT cseréli, a fotó ugyanaz).
 """
 
 from __future__ import annotations
@@ -141,7 +142,8 @@ class TestAmiVALTOZATLAN:
         )
 
     def test_aa_modban_a_fokuszvaltas_nem_valt_celpontot(self, qml_app, qt_app):
-        """#3013: ott a bal fél a szerkesztés ELŐTTI kép — nem cél."""
+        """Ugyanaz a fotó áll mindkét félen: a fő vezérlő ezen marad, a bal
+        fél pedig (#3014) a második rekesz saját szerkesztése."""
         window, _controller, _engine = qml_app
         nezo = _nezot_nyit(window, qt_app)
         _kattint(window, qt_app, "viewerLayoutAa")
@@ -152,4 +154,6 @@ class TestAmiVALTOZATLAN:
         assert nezo.property("editCtl").property("previewSource").startswith(
             f"image://editpreview/{azonosito}?"
         )
-        assert _forras(window, "viewerImageElotte").startswith("file:")
+        # a bal most a KIJELÖLT: a fő rekeszből jön, a jobb a másodikból
+        assert "@masodik" not in _forras(window, "viewerImageElotte")
+        assert "@masodik" in _forras(window, "viewerImage")

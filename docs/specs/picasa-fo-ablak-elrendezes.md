@@ -241,7 +241,7 @@ Ugyanez a keret minden más mért ponton egyezik: Importálás 6, új album 124,
 | `infotext_clip` | `basecontrolset` · 20 … `W − 20`, felül (`:690`) | `trayInfoText` · 20 … `W − 20` | ✅ | ✅ | — |
 | `listdecrect` + `hlistsizer` | `mainuipanel` · 0 … 240, húzható (`:441`, `:516`) | `folderPane` a `SplitView`-ban · 240 mindhárom szélességen | ✅ | ✅ | a korlátok: 6. szakasz |
 | `throttlegroup` (a rács görgetősávja) | `albumsback` · jobb él 0 (`:158`) | `feedScrollBar` a `photoGrid`-ben · az ablak szélétől 26 | ⚠️ | ❌ | #3604 |
-| `single_action_group` („Továbbiak…” sáv) | `single_action_container` · **középen** (`m_centerXY`, `:666`) | `traySingleActionBar` · a gombok a sáv jobb széléhez kötve (`TrayBar.qml:2089`) | ✅ | ❌ középre ↔ jobbra | #3605 |
+| `single_action_group` („Továbbiak…” sáv) | `single_action_container` · **középen** (`m_centerXY`, `:666`) | `traySingleActionGroup` · 481 széles, `anchors.centerIn` a sávban; belül 2 · 335 · 9 · 109 · 3 · 18 · 5 (1920-on a × jobb széle 1537) | ✅ | ✅ | #3605 |
 
 Az osztály mindenhol egyezik, ahol a sor ✅-t kap. A ❌ számértéke a mért eltérés: az eredeti képlet és a mi kirajzolt helyünk különbsége képpontban, pozitív, ha nálunk jobbrább áll.
 
