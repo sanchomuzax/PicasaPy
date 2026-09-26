@@ -430,7 +430,7 @@ mintát követi az `unsharp`/`unsharp2` is. Jegy: **#1409**.
 
 Három felirat: `Passport0` = „Nem találhatók arcok", `Passport1` = „Úgy
 tűnik, több arc van a képen.", `Passportfail` = „Megpróbálkozik egy másik
-képpel?" (kérdés ⇒ igen/nem párbeszéd). Jegy: **#1401**.
+képpel?" ~~(kérdés ⇒ igen/nem párbeszéd)~~ ⛔ **HELYESBÍTVE élő méréssel (2026-09-26, picasa-colab-jobs #49/#50):** a `Passportfail` a hibaablak **CÍME** („Try another picture?”); az ablakban hiba-ikon, a `Passport0`/`Passport1` szöveg („Can't find any faces”) és **egyetlen OK gomb** — nem igen/nem kérdés. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (tiltva) · Show Duplicate Files · Search for ▸ · Save search results… · Show tag as album… · Passport photo… · Delete empty online albums… · Choose database location… · Write faces to XMP…). Jegy: **#1401**.
 
 #### ⭐ A KIVÁGÁS GEOMETRIÁJA — kimérve (2026-09-12, #1401)
 
