@@ -79,7 +79,7 @@ mielőtt a színeket kiválasztja, ahogy az eredeti Picasa is tette.
 | Ceruzarajz | ceruzavázlat hatás |
 | Képpontnagyítás | durva képpontokra bontás — a **Képpontméret**, a **Keverési mód** és az **Elhalványítás** csúszkával |
 | Polaroid | fehér polaroid keret, megdöntve |
-| Lágyítás | lágy, elmosott kép — a **Lágyítás** és a **Fokozat** csúszkával |
+| Lágyítás | lágy, elmosott kép — a **Lágyítás** és az **Elhalványítás** csúszkával |
 | Vignetta | sötétedő sarkok |
 
 ### A Polaroid kerete és színe
@@ -92,6 +92,12 @@ szerint** dől.
 A **Külső szín** nem a keretet festi: azt a hátteret adja, ami a megdöntött
 kép köré kerül, és amelyen az árnyék látszik. A keret fehér marad, bármit
 állítasz be — az eredeti Picasa is így csinálta.
+
+### A Lágyítás nulla erősségnél
+
+Ha a **Lágyítás** csúszkát nullára húzod, a kép **változatlan marad** —
+nem lesz tőle sem lágyabb, sem sötétebb. Az eredeti Picasa is így
+viselkedik.
 
 ### A Képpontnagyítás csúszkái
 

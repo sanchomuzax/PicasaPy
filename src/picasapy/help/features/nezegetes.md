@@ -133,12 +133,13 @@ amint elhagyod, újraindul a visszaszámlálás. A sávon:
 - **feliratmód** gombja — körbejár a három állás közt: a felirat (**T**),
   a fájlnév (**F**), vagy semmi (**—**);
 - **★** csillagozás — ez is megmarad;
-- **Diaidő** — a **−** és a **+** gombbal 1 és 30 másodperc közt
-  állítható, hogy meddig álljon egy kép. A szám a két gomb közt látszik.
+- **Megjelenítési idő** — a **−** és a **+** gombbal 1 és 30 másodperc
+  közt állítható, hogy meddig álljon egy kép. A két gomb közt a kiírt
+  érték látszik, például „5 másodperc".
   A gombot **nyomva tartva** folyamatosan léptet, nem kell
   huszonkilencszer kattintani.
 
-A választott átmenet, feliratmód és diaidő **megmarad** a következő
+A választott átmenet, feliratmód és megjelenítési idő **megmarad** a következő
 vetítésre és a következő indításig is.
 
 ### Átmenetek

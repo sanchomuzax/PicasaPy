@@ -29,11 +29,18 @@ mentés-készlet."
 
 ## Új készlet
 
-Az **Új készlet…** gombbal három dolgot adsz meg:
+Az **Új készlet…** gombbal négy dolgot adsz meg:
 
 - **Mentési készlet** — a készlet neve, amit a listában látsz majd. A
   mező nem üresen indul: az ajánlott név **Saját mentési készlet**.
-- **Mentés ide** — a célmappa. A **Tallózás…** gombbal ki is válaszd.
+- **Mentés típusa** — ez dönti el, **milyen** a mentés kimenete:
+  - **Lemezről lemezre mentés (külső és hálózati meghajtókhoz)** — a
+    képek egy **mappába** másolódnak;
+  - **Mentés CD-re vagy DVD-re** — a képek **lemezkép-fájlba** kerülnek.
+- **Mentés ide** — a célmappa. A **Kiválasztás…** gombbal ki is válaszd.
+  Ez csak a lemezről lemezre mentésnél állítható: a CD/DVD-típusnál a
+  program adja a helyet, és mutatja is a mezőben (a Képek mappádon belül
+  a *Picasa biztonsági másolat ▸ ISO-k* mappa).
 - **Fájlok** — mi kerüljön át:
   - **Minden fájltípus** — fotók, RAW-fájlok és videók;
   - **Minden kép (videók nélkül)**;
@@ -43,17 +50,19 @@ Az **Új készlet…** gombbal három dolgot adsz meg:
 
 A szerkesztést a **Módosítás** gomb zárja le.
 
-A **Készlet módosítása…** ugyanezt a három mezőt nyitja meg egy meglévő
-készleten. A **Készlet törlése** rákérdez; **a már elmentett fájlokat nem
-bántja**, csak a nyilvántartást szünteti meg.
+A **Készlet módosítása…** ugyanezeket a mezőket nyitja meg egy meglévő
+készleten — a típusát is átállíthatod. A **Készlet törlése** rákérdez;
+**a már elmentett fájlokat nem bántja**, csak a nyilvántartást szünteti
+meg.
 
 ## A mentés futtatása
 
 Válaszd ki a készletet a listában, majd **Mentés**.
 
-A program először **megszámolja**, hány fájl menne át, és ezt kiírja —
-azt is odaírja, **hány CD-re vagy DVD-re férne** ennyi adat. Ha közben
-semmi nem változott, ezt az üzenetet kapod: „Minden el volt már mentve."
+A program először **megszámolja**, hány fájl menne át, és ezt kiírja.
+Mappába mentésnél azt is odaírja, **hány CD-re vagy DVD-re férne** ennyi
+adat; lemezkép-mentésnél a „*N* fájl írása lemezképbe…" üzenet jön. Ha
+közben semmi nem változott, ezt kapod: „Minden el volt már mentve."
 
 Másolás közben a gombok fölött **haladásjelző csík** fut, az üzenetben
 pedig a „Másolás (12/340) fájl" alakú számláló mutatja, hol tart. Az
@@ -75,12 +84,16 @@ kapcsolat —, a következő futás ugyanígy pótolja a hiányzót.
 
 ## Mappába vagy lemezképbe
 
-A **Mentés** gomb mellett választod ki, hova készüljön a mentés:
+Hogy mappa vagy lemezkép lesz a kimenet, **a készlet típusa** dönti el —
+nem a Mentés gomb melletti választó:
 
-- **Mappába** — a szokásos út: külső meghajtó, pendrive vagy hálózati
-  megosztás;
-- **CD-lemezképbe (ISO)** vagy **DVD-lemezképbe (ISO)** — a program
-  lemezkép-fájlokat ír a célmappába.
+- **lemezről lemezre** típusnál a képek a megadott célmappába
+  másolódnak: külső meghajtó, pendrive vagy hálózati megosztás;
+- **CD/DVD**-típusnál lemezkép-fájlok készülnek. Ilyenkor a **Mentés**
+  gomb mellett megjelenik egy választó, amiben az dönthető el, hogy
+  **CD-lemezképbe (ISO)** vagy **DVD-lemezképbe (ISO)** menjen a mentés
+  — ez a darabok méretét szabja meg. A választó csak ennél a típusnál
+  látszik.
 
 Ha a gyűjtemény nem fér el egy lemezen, **több, sorszámozott lemezkép**
 készül (`picasapy-mentes-01.iso`, `-02.iso` és így tovább), pontosan

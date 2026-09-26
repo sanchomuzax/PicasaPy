@@ -25,12 +25,18 @@ mit talált: hány kép és videó van benne.
 ### Hova kerüljön
 
 A **Cél** mappát a **Tallózás…** gombbal választod, vagy a korábbi
-célmappák közül. Ezen kívül két gyors lehetőség van:
+célmappák közül. Alatta három lehetőség közül választasz, hogy a
+képek **milyen nevű almappába** kerüljenek:
 
-- **Importálás a mai dátum nevű mappába**,
-- **Importálás külön mappákba felvétel dátuma szerint**.
+- **Mappa nevének megadása** — te írod be, az alatta lévő mezőbe;
+- **Készítés dátuma (ÉÉÉÉ. HH. NN.)** — minden felvételi nap külön
+  mappába kerül;
+- **… (ma)** — a mai dátum nevű mappába. A felirat elején mindig a mai
+  nap áll, abban az alakban, ahogy a mappa létrejön (például
+  `2026-01-31 (ma)`).
 
-Az új mappa címét is meg kell adni, mielőtt az importálás elindulhat.
+Az első lehetőségnél a mappa nevét meg kell adni, mielőtt az importálás
+elindulhat.
 
 ### Másolás után
 

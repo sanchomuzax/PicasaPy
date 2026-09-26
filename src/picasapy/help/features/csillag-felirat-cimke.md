@@ -54,8 +54,9 @@ A címkék a jobb oldali **Címkék** panelen élnek. Megnyitás: **Nézet ▸
 Címkék** vagy **Ctrl+T**, illetve a képtálca Címkék gombja. A Ctrl+T
 nyitja és zárja is a panelt.
 
-- Jelölj ki egy vagy több képet, majd az **Új címke…** mezőbe írd be a
-  címkét és nyomj Entert. A címke a kijelölés minden képére felkerül.
+- Jelölj ki egy vagy több képet, majd a beíró mezőbe („Írjon be egy
+  hozzáadandó címkét:") írd be a címkét, és nyomj Entert. A címke a
+  kijelölés minden képére felkerül.
 - A panelen látszik, mely címkék vannak a kijelölésen. Egy címkére
   jobbgombbal kattintva: **Címke hozzáadása a teljes kijelöléshez**,
   **Így címkézett elemek keresése**, **Címke eltávolítása**.

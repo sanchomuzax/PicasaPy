@@ -31,9 +31,9 @@ Az effektek részletes listája: [Effektek](effektek.md).
 ## A lassú effektek és az előnézet
 
 Tucatnyi effekt sokat számol: ilyen az **Élesítés**, a **Filmszemcse**,
-a **Ragyogás**, a **Képregény**, az **Árnyékvetés**, a **HDR-szerű**, a
-**Holga-szerű**, a **Lomo-szerű**, a **Neon**, az **Orton-szerű**, a
-**Ceruzarajz** és a **Poszterizálás**. Ezeknél az előnézet a
+a **Ragyogás**, az **Áttűnés**, a **Képregény**, az **Árnyékvetés**, a
+**HDR-szerű**, a **Holga-szerű**, a **Lomo-szerű**, a **Neon**, az
+**Orton-szerű**, a **Ceruzarajz** és a **Poszterizálás**. Ezeknél az előnézet a
 **háttérben** készül el, nem abban a pillanatban, ahogy a csúszkát
 húzod:
 

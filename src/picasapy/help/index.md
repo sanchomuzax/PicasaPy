@@ -40,6 +40,7 @@ szerkesztő fülei ugyanott vannak.
 - [Nyomtatás](features/nyomtatas.md)
 - [Küldés e-mailben](features/email.md)
 - [Kollázs](features/kollazs.md)
+- [Ajándék CD](features/ajandek-cd.md)
 - [Mozgófilm](features/mozgofilm.md)
 - [Asztali háttérkép](features/hatterkep.md)
 
