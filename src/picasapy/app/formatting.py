@@ -517,9 +517,12 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
     if details.iso:
         add("ISO", str(details.iso))
     if details.white_balance:
+        # ismeretlen kódnál az olvasó a számot adja: az marad (#3558)
         add(
             "White Balance",
-            tr("Auto") if details.white_balance == "auto" else tr("Manual"),
+            {"auto": tr("Auto"), "manual": tr("Manual")}.get(
+                details.white_balance, details.white_balance
+            ),
         )
     add("Metering Mode", _enum_entry(details.metering_mode, tr))
     add("Exposure Program", _enum_entry(details.exposure_program, tr))

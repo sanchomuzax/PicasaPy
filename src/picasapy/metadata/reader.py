@@ -131,7 +131,7 @@ class ExifDetails:
     focal_mm: float | None = None
     focal_35mm: int | None = None  # 35 mm-egyenérték (#235)
     flash_fired: bool | None = None
-    white_balance: str | None = None  # "auto" | "manual"
+    white_balance: str | None = None  # "auto" | "manual" | a kód (#3558)
     # #529: a Picasa `runtime/properties.xml` további látható mezői. Az
     # ENUM-értékek a Picasa saját (angol) kulcsszavaival térnek vissza
     # (`Average`, `AperturePriority`, `sRGB`…) — a magyar feliratot a
@@ -189,8 +189,9 @@ def read_exif_details(path: str | Path) -> ExifDetails:
             else None
         ),
         flash_fired=bool(flash & 1) if isinstance(flash, int) else None,
+        # ismeretlen kódnál a szám, ahogy az eredeti `%ld`-je (#3558)
         white_balance=(
-            {0: "auto", 1: "manual"}.get(white_balance)
+            {0: "auto", 1: "manual"}.get(white_balance, str(white_balance))
             if isinstance(white_balance, int)
             else None
         ),
