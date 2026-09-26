@@ -18,6 +18,7 @@ csak a gépet fojtja — a 2 GiB zram aznap ~100%-on állt.
 from __future__ import annotations
 
 import importlib.util
+import types
 from pathlib import Path
 
 import pytest
@@ -52,6 +53,8 @@ class TestMemoriaBurok:
         monkeypatch.setattr(rt, "_which", lambda _: None)
         monkeypatch.setattr(rt, "_SCOPE_ELERHETO", None)
         monkeypatch.setattr(rt, "_platform", lambda: "linux")
+        # #3636: a színlelt Linuxhoz a `resource` modul is kell — Windowson `None`
+        monkeypatch.setattr(rt, "_resource", rt._resource or types.SimpleNamespace())
         b = rt._memoria_burok()
         assert b and "systemd-run" not in b
 
