@@ -9,7 +9,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Hozzáadva
 - **A személy-album fejlécén az arc ↔ teljes kép váltóval a képek a
-  személy arcára közelítve is megjeleníthetők (#2187).**
+  személy arcára közelítve is megjeleníthetők (#2187).** A közelített kép
+  éles, kis arcnál is, mert a program ilyenkor nagyobb felbontásból vág.
+
+## [0.8.583] – 2026-09-26
+
+### Javítva
+- **A Tulajdonságok panel Fehéregyensúly sora ismeretlen értéknél a számot
+  mutatja, nem tűnik el (#3558)**, ahogy az eredeti Picasában: az
+  „Automatikus” és „Kézi” mellett például egy `2`-es kódnál „2” jelenik meg.
 
 ## [0.8.582] – 2026-09-26
 
