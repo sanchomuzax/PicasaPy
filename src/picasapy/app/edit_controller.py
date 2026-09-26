@@ -1257,12 +1257,16 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._bump_revision()
         self.toolsChanged.emit()
 
-    @Slot(str)
     def setChainValue(self, value: str) -> None:
-        """#3014: a lánc lecserélése (az „aa" mód fókuszváltásakor).
+        """#3014: a lánc lecserélése — a festett maszkot és az eszközpuffert
+        ÜRÍTI (a #3649 `swapAaFocus`-a helyette a párral cseréli).
 
         A visszavonás-verem az új lánc rétegeiből épül újra — ugyanúgy, mint
-        egy újranyitáskor (`beginEdit`). Memóriás munkamenetben nem ír."""
+        egy újranyitáskor (`beginEdit`). Memóriás munkamenetben nem ír.
+
+        #3649: NEM `@Slot` — a QML az „aa" fókuszváltáshoz a `swapAaFocus`-t
+        hívja, ezt csak a Python-oldal (tesztek, `beginEdit` társai) hívja
+        közvetlenül."""
         self._apply_chain_value(value)
         # A fél ALKALMAZATLAN eszközpuffere a régi lánchoz tartozott — a
         # csere után a másik fél láncára kerülne (#3644 3.). Ugyanúgy ürül,
@@ -1279,6 +1283,15 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         FESTETT MASZKJA is a párjával cserélődik (nem ürül), hogy a félkész
         festés a saját felén megmaradjon.
 
+        A festés NEM része a `chainValue`-nak, ezért a korai kilépés is a
+        vonásokat nézi, nem csak a láncot — azonos láncnál is lehet
+        csereigény, ha csak az egyik fél festett (code review lelet #3).
+
+        A maszkot a lánc cseréje ELŐTT visszük át: az `_apply_chain_value`
+        (`_save()`-en át) azonnal új előnézetet kér, és ha az még a RÉGI
+        festéssel menne ki az ÚJ lánccal összepárosítva, a másik fél
+        pillanatra a rossz maszkkal látszana (code review lelet #2).
+
         A retusálás/vörösszem alkalmazatlan puffere továbbra is ürül: az a
         modális eszköz bezárásakor (QML `retouchActive`/`redeyeActive` ->
         `false`, ami `exitRetouchTool`/`exitRedeyeTool`-t hív) amúgy is
@@ -1291,17 +1304,14 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             return
         my_chain = self.chainValue
         partner_chain = partner.chainValue
-        if my_chain == partner_chain:
+        if my_chain == partner_chain and self._paint_mask.vonasok == partner._paint_mask.vonasok:
             return
-        my_paint = self._paint_mask.vonasok
-        partner_paint = partner._paint_mask.vonasok
+        self._swap_paint_with(partner)
         self._apply_chain_value(partner_chain)
         self._reset_tool_buffers()
-        self._paint_mask.allit(partner_paint)
         self.paintMaskChanged.emit()
         partner._apply_chain_value(my_chain)
         partner._reset_tool_buffers()
-        partner._paint_mask.allit(my_paint)
         partner.paintMaskChanged.emit()
 
     def _reset_tool_buffers(self) -> None:

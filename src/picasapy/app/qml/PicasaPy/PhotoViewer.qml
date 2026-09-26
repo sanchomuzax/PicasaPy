@@ -660,11 +660,12 @@ Rectangle {
     //: (retusálás-folt, vörösszem-régió, vágókeret) — előbb zárul, mint a
     //: néző bezárásakor; a csere után a panel az ÚJ fél értékeit mutatja.
     //: #3649: a festett maszk NEM ürül — a `swapAaFocus` a párral cseréli,
-    //: hogy a félkész festés a saját felén megmaradjon.
+    //: hogy a félkész festés a saját felén megmaradjon. A festés NEM
+    //: része a láncnak (`chainValue`), ezért a „van-e mit cserélni"
+    //: döntés a `swapAaFocus`-é — a QML itt nem tér ki azonos lánc esetén
+    //: sem: a pár nélküli vagy tényleg semmiben nem különböző eset a
+    //: vezérlőn belül no-op (code review lelet #3).
     function _aaFeleketCserel() {
-        var fo = editController.chainValue
-        var masik = viewer.masodikEditCtl.chainValue
-        if (fo === masik) return
         editorPanel.cropActive = false
         editorPanel.tiltActive = false
         editorPanel.retouchActive = false

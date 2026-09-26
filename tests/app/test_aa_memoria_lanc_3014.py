@@ -224,6 +224,80 @@ class TestASwapAaFocus:
         vezerlo.swapAaFocus()
         assert vezerlo._paint_strokes()
 
+    def test_azonos_lancnal_is_cserel_ha_csak_a_festes_ter_el(self, part, foto):
+        """[code review lelet #3, PR #3679]: a festés NEM része a
+        `chainValue`-nak — ha a két fél lánca EGYEZIK, de csak az egyik fél
+        festett, a fókuszváltásnak akkor is cserélnie kell, különben a
+        festés soha nem juthatna át a párra."""
+        elso, masodik = part
+        elso.beginEditInMemory("1", str(foto))
+        masodik.beginEditInMemory("1", str(foto))
+        elso.applyEffect("soften")
+        masodik.applyEffect("soften")
+        assert elso.chainValue == masodik.chainValue
+
+        elso.paintStroke(0.5, 0.5)
+        assert elso._paint_strokes()
+        assert not masodik._paint_strokes()
+
+        elso.swapAaFocus()
+        assert not elso._paint_strokes()
+        assert masodik._paint_strokes()
+
+        elso.swapAaFocus()
+        assert elso._paint_strokes()
+        assert not masodik._paint_strokes()
+
+    def test_az_elonezet_keres_mar_a_cserelt_festessel_megy_ki(
+        self, part, foto, monkeypatch
+    ):
+        """[code review lelet #2, PR #3679]: az `_apply_chain_value`
+        (`_save()`-en át) azonnal előnézetet kér — annak a PILLANATNAK a
+        festésével, ami épp a `_paint_mask`-ban áll. Ha a lánc korábban
+        váltana, mint a maszk, a kérés egy pillanatra a RÉGI festést az ÚJ
+        lánccal keverné (a másik fél a rossz festéssel látszana). Ez a
+        teszt minden `_preview_request()`-hívást elkap, és megköveteli,
+        hogy már a PÁRTÓL kapott (végleges) festéssel menjen ki."""
+        elso, masodik = part
+        elso.beginEditInMemory("1", str(foto))
+        masodik.beginEditInMemory("1", str(foto))
+        elso.applyEffect("soften")
+        elso.paintStroke(0.5, 0.5)
+        # a láncok szándékosan KÜLÖNBÖZŐEK (mindkettő festhető) — így ez a
+        # teszt önmagában a #2 leletet méri, függetlenül attól, hogy a #3
+        # lelet miatti láncegyenlőség-őr egyáltalán belép-e.
+        masodik.applyEffect("soften")
+        masodik.applyEffect("sepia")
+        masodik.paintStroke(0.2, 0.2)
+        masodik.paintStroke(0.8, 0.8)
+        assert elso.chainValue != masodik.chainValue
+
+        elso_festese = elso._paint_strokes()
+        masodik_festese = masodik._paint_strokes()
+        assert elso_festese != masodik_festese
+
+        hivasok: list[tuple[bool, tuple]] = []
+        eredeti = type(elso)._preview_request
+
+        def kem(self, session=None):
+            eredmeny = eredeti(self, session)
+            hivasok.append((self is elso, eredmeny["paint_strokes"]))
+            return eredmeny
+
+        monkeypatch.setattr(type(elso), "_preview_request", kem)
+
+        elso.swapAaFocus()
+
+        elso_hivasok = [festes for sajate, festes in hivasok if sajate]
+        masodik_hivasok = [festes for sajate, festes in hivasok if not sajate]
+        assert elso_hivasok, "az `_apply_chain_value` előnézetet kér `elso`-n"
+        assert masodik_hivasok, "az `_apply_chain_value` előnézetet kér `masodik`-on"
+        # `elso` MINDEN kérése már a PÁRTÓL kapott (`masodik` eredeti)
+        # festéssel megy ki — sosem a saját (`elso` eredeti) festésével az
+        # új lánccal keveredve.
+        assert all(f == masodik_festese for f in elso_hivasok)
+        assert all(f == elso_festese for f in masodik_hivasok)
+
 
 class TestAHid:
     def test_a_hid_tovabbadja(self, vezerlo, foto):
@@ -234,7 +308,9 @@ class TestAHid:
         vezerlo.applyEffect("bw")
         assert hid.chainValue == vezerlo.chainValue
         assert _ini_lanc(foto) == ""
-        hid.setChainValue("")
+        # #3649: a `setChainValue` hídtag törölve — a hid csak OLVASSA a
+        # láncot, a cserét a vezérlőn közvetlenül kell elvégezni.
+        vezerlo.setChainValue("")
         assert hid.chainValue == ""
         vezerlo.applyEffect("sepia")
         hid.persistChain()
