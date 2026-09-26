@@ -211,7 +211,30 @@ _EXPOSURE_PROGRAMS = {
     8: "Landscape",
 }
 _COLOR_SPACES = {1: "sRGB", 0xFFFF: "Uncalibrated"}
-_COMPRESSIONS = {1: "Uncompressed", 6: "JPEG", 7: "JPEG", 8: "AdobeDeflate"}
+#: #3535: az eredeti `0x009f23a0` formázó 36 kódja → az `EXIF::…`
+#: azonosító (spec `picasa-metaadat-tulajdonsagok.md` 14.). ⚠️ A 0/1 az
+#: eredeti szerint EL VAN TOLVA (1 → CCITT1D, a 2-esnek nincs ága), a
+#: TIFF-szabvány szerint 1 = tömörítetlen — a felület az eredetit követi.
+_COMPRESSIONS = {
+    0: "Uncompressed", 1: "CCITT1D", 3: "T4/Group3Fax", 4: "T6/Group4Fax",
+    5: "LZW", 6: "JPEGOldStyle", 7: "JPEG", 8: "AdobeDeflate", 9: "JBIGB&W",
+    10: "JBIGColor", 99: "JPEG", 262: "Kodak262", 32766: "Next",
+    32767: "SonyARWCompressed", 32769: "EpsonERFCompressed",
+    32773: "PackBits", 32809: "Thunderscan", 32867: "KodakKDCCompressed",
+    32895: "IT8CTPAD", 32896: "IT8LW", 32897: "IT8MP", 32898: "IT8BL",
+    32908: "PixarFilm", 32909: "PixarLog", 32946: "Deflate", 32947: "DCS",
+    34661: "JBIG", 34676: "SGILog", 34677: "SGILog24", 34712: "JPEG2000",
+    34713: "NikonNEFCompressed", 34718: "MDIBinaryLevelCodec",
+    34719: "MDIProgressiveTransformCodec", 34720: "MDIVector",
+    65000: "KodakDCRCompressed", 65535: "PentaxPEFCompressed",
+}
+
+
+def _compression(value) -> str | None:
+    """Tömörítési kód → azonosító; ismeretlen kódnál a szám (`%ld`, #3535)."""
+    if not isinstance(value, int):
+        return None
+    return _COMPRESSIONS.get(value, str(value))
 
 
 def _properties_extra(exif, ifd, path: str | Path) -> dict:
@@ -268,7 +291,7 @@ def _properties_extra(exif, ifd, path: str | Path) -> dict:
         "metering_mode": enum(ifd.get(_METERING_MODE_TAG), _METERING_MODES),
         "exposure_program": enum(ifd.get(_EXPOSURE_PROGRAM_TAG), _EXPOSURE_PROGRAMS),
         "color_space": enum(ifd.get(_COLOR_SPACE_TAG), _COLOR_SPACES),
-        "compression": enum(exif.get(_COMPRESSION_TAG), _COMPRESSIONS),
+        "compression": _compression(exif.get(_COMPRESSION_TAG)),
         "has_icc_profile": icc,
         "has_embedded_thumbnail": thumbnail,
         "image_unique_id": text(ifd.get(_IMAGE_UNIQUE_ID_TAG)),

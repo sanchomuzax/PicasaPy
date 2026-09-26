@@ -1513,6 +1513,81 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <location filename="../formatting.py"/>
+        <source>T4/Group 3 Fax</source>
+        <translation>T4/Group 3 fax</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>T6/Group 4 Fax</source>
+        <translation>T6/Group 4 fax</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>JPEG (old-style)</source>
+        <translation>JPEG (régi típusú)</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>JBIG Color</source>
+        <translation>JBIG színes</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Next</source>
+        <translation>Következő</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Sony ARW Compressed</source>
+        <translation>Sony ARW-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Epson ERF Compressed</source>
+        <translation>Epson ERF-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Kodak KDC Compressed</source>
+        <translation>Kodak KDC-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Deflate</source>
+        <translation>Veszteség nélküli tömörítés</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Nikon NEF Compressed</source>
+        <translation>Nikon NEF-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>MDI Binary Level Codec</source>
+        <translation>MDI bináris szintű kodek</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>MDI Progressive Transform Codec</source>
+        <translation>MDI progresszív transzformációs kodek</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>MDI Vector</source>
+        <translation>MDI-vektor</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Kodak DCR Compressed</source>
+        <translation>Kodak DCR-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Pentax PEF Compressed</source>
+        <translation>Pentax PEF-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
         <source>Auto</source>
         <translation>Automatikus</translation>
     </message>
