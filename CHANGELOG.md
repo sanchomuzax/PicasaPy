@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.580] – 2026-09-26
+
 ### Hozzáadva
 - **A Névtelenek album fejlécében egyetlen csoportosítás-váltógomb áll,
   az eredeti Picasa szövegeivel (#3585).** A két jelölőnégyzet helyett egy
