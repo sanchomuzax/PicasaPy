@@ -7240,6 +7240,15 @@ A 4. lépés ágait nem írom át képletre: a bitpontos igazsághoz nem kell. A
     PYTHONPATH=~/picasapy-agent/venv/lib/python3.13/site-packages \
       python3 ~/picasapy-agent/eszkozok/nativ_emu/tint_lut.py ki.json 0x80cfff
 
+**Kiegészítés (#3631, a PR #3676 átnézése):** a 4. lépés képletre írva, az
+emulátor kimenetével 54 színen × 256 szinten bitre egyezően
+(`glimmer_ops._resaturate_table_entry`, golden:
+`tests/support/native_filter_reference/tint_resaturate_3631.json`): az 1.
+lépés `Lc = floor(W·c + 0,5)`; menetenként `over = Σ w·(−v)` a negatív
+csatornákon, azokat 0-ra, majd a pozitívakon `v −= over / Σ w_szabad`. A
+tükrözés (3. lépés) NEM hagyható el: a csonkolás a tükrözött térben történik,
+a végén `255 − trunc(v)`.
+
 #### 4. Kontroll a meglévő goldenen
 
 A #878 `picniktint__alap.jpg` golden párjának három mért pontja (szín `0x80cfff`, a bemenet szürkéje → kimenet) és az emulált tábla:
