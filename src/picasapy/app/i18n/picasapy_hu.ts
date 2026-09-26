@@ -5314,6 +5314,10 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Ezen a fotón:</translation>
     </message>
     <message>
+        <source>Who is in these photos?</source>
+        <translation>Ki látható ezeken a fotókon?</translation>
+    </message>
+    <message>
         <source>People in these photos:</source>
         <translation>Személyek ezeken a fotókon:</translation>
     </message>

@@ -80,6 +80,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   most ez olvasható: „Minden mappa esetében megadhatja, hogy a Picasa
   keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja,
   hogy a program figyelje bennük az új képek megjelenését.”
+- **Az Emberek panel egyetlen fejlécet és egyetlen listát mutat, az eredeti
+  Picasa szabályai szerint (#3566).** Egy személy albumában a lista fejléce
+  „Szintén ezeken a fotókon:” (egy képnél is), megnevezett személy nélküli
+  képnél „Ki látható ezeken a fotókon?”, a képszerkesztőben pedig mindig
+  „Ezen a fotón:”; üres panelen a helyzethez illő útmutató szöveg áll. Egy
+  személy albumában kijelölés nélkül is ez az útmutató szöveg jelenik meg —
+  a korábbi, „kik szerepelnek még vele” listát felsoroló nézet helyett,
+  ahogy az eredeti Picasa is teszi.
 
 ## [0.8.580] – 2026-09-26
 

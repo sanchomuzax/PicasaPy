@@ -665,18 +665,22 @@ meg (egy kijelölt képnél is a többképes ág fut), kivéve a szerkesztőben.
 módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítja a
 `+0x2b0`-t) az al-jegyé: **#3565**.*
 
-#### Nálunk (mérve, `PeoplePanel.qml`)
+#### Nálunk (mérve, `PeoplePanel.qml`, #3566 után)
 
 | helyzet | eredeti | nálunk |
 |---|---|---|
-| 1 kép, van megnevezett személy | „Ezen a fotón:” | „Ezen a fotón:” ✅ |
+| 1 kép, van megnevezett személy | „Ezen a fotón:” | ✅ |
 | több kép, van személy | „Személyek ezeken a fotókon:” | ✅ |
-| személy albuma | **egyetlen** lista „Szintén ezeken a fotókon:” fejléccel | **két** szakasz: „Ezen a fotón / Személyek…” **és** külön „Szintén ezeken a fotókon:” (`PeoplePanel.qml:44–82`) |
-| 1 kép, nincs megnevezett személy | „Ki látható ezeken a fotókon?” | a fejléc rejtve |
-| több kép, csak név nélküli arcok | „Név nélküli személycsoportok:” + a csoportok | nincs |
-| betöltés közben | „Arcok betöltése…” / „További személyek keresése...” | nincs |
-| ellenőrizetlen fájlok | „, %d ellenőrizetlen fájl.” a fejléc mögött | nincs |
-| üres, nincs kijelölés | instructions 4 (Text5) | `Text3` („A program még nem talált személyeket…”, `PeoplePanel.qml:110–117`) — az eredetiben a Text3 a „Név nélküliek” album-mód üres esete |
+| személy albuma | **egyetlen** lista „Szintén ezeken a fotókon:” fejléccel (1 képnél is) | ✅ egy fejléc, egy lista: a kijelölt képek megnevezett emberei (#3566) |
+| 1 kép, nincs megnevezett személy | „Ki látható ezeken a fotókon?” | ✅ (#3566) |
+| több kép, nincs megnevezett személy | „Név nélküli személycsoportok:” (a Névtelenek csoportosított nézetében „Meg nem nevezett emberek…”) | ✅ a fejléc (#3566, #3585); a csoportlista a motortól függ (#26) |
+| betöltés közben | „Arcok betöltése…” / „További személyek keresése...” | ⛔ nincs: a `peopleOfRows` szinkron, nincs betöltési állapotunk |
+| ellenőrizetlen fájlok | „, %d ellenőrizetlen fájl.” a fejléc mögött | ⛔ nincs: folyamatos háttér-arcellenőrzés híján nincs ilyen számunk |
+| üres, nem személy-album | instructions 4 (Text5) | ✅ (#3566) |
+| üres, személy-album | instructions 3 (Text4) | ✅ |
+| „Név nélküliek” mód, 0 kijelölés | instructions 2 (Text3) | ✅ (#3566) |
+| „Név nélküliek” mód, üres gyűjtemény | üres fejléc, instructions 0/1 (Text1/Text2) | ⛔ nincs: a két szöveg nincs meg nálunk; Text3 áll helyette |
+| a szerkesztőben | mindig az egyképes ág | ✅ a néző panelje (`editorView`, #3566) |
 
 *Bizonyítottsági fok: **megerősített** a döntési fára, a feliratokra, az öt
 utasítás-módra, a személy-album jelzőre, a darabszámra és az ellenőrizetlen
@@ -773,7 +777,7 @@ személycsoportok:” (`Unnamed`).
 | a kapcsoló | **egy** váltógomb, két állapot (csoportosítva / kibontva) | ✅ egy váltógomb (`clusterToggleButton`), a felirat a másik állapotot nevezi meg (#3585) |
 | kezdőállapot | csoportosítva | ✅ `grouped: true`, az album minden megnyitásakor újra csoportosítva |
 | a fejléc-utasítás | a fenti négy szöveg | ✅ `unnamedInstructions`; a „várjon” a csoportosítás (lenyomat-számítás) futása alatt (#3585) |
-| az Emberek-panel fejléce | az állapottól függ (fent) | ✅ a többképes ág két „Név nélküli…” fejléce (#3585); a fa többi ága #3566 |
+| az Emberek-panel fejléce | az állapottól függ (fent) | ✅ a többképes ág két „Név nélküli…” fejléce (#3585); a fa többi ága is (#3566) |
 
 Fejlesztés: **#3585** (a váltógomb és a fejléc-utasítás).
 
