@@ -182,9 +182,9 @@ színmátrix köré. A művelet **tartalmilag egy színmátrix + maszk/blend
 sor**, tehát a `Resaturate` **nem önálló képi algoritmus**, hanem a
 színmátrix-motor egy összetett csomagolása (`color` és
 `dynamicColorCachePriority` paraméterekkel). A tényleges pixellogika a
-vtable egyik metódusában van (a `0x00cf0578`); a `resaturate`-ként való
+vtable egyik metódusában van (a `0x00cf0578`); ~~a `resaturate`-ként való
 előfordulás **egyetlen effektnek sem feleltethető meg** (a név nincs a
-binárisban) — belső segédművelet. *Bizonyítottsági fok: megerősített (a
+binárisban) — belső segédművelet.~~ ⛔ **HELYESBÍTVE (2026-09-26, #626):** a `0x00bbd630` a `glimmer::TintImageOperation` vtáblájának 1. rése (attribútum-beolvasó), tehát a `Resaturate` a **`Tint` gyereke**, és négy effekt használja (`CrossProcess`, `Soften`, `ReanimatedEyeColor`, `PicnikTint`). A teljes lánc és a táblaelem (`0x00bce2f0`): `filterdesc-registry.md`, „H) A `Tint` belseje”. *Bizonyítottsági fok: megerősített (a
 konstruktor + a sorosító Ghidra-C).*
 
 ## A `desat` „negyedik mezője" — NEM LÉTEZIK (2026-08-16)
