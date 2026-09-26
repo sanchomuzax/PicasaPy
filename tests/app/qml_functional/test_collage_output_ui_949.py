@@ -456,6 +456,8 @@ class TestHivatalosMagyar:
             ("%1 / %2 processed", "%1 / %2 feldolgozva"),
             ("Stacking pictures", "Képek egymásra helyezése"),
         ],
+        # rövid azonosító: a teljes szöveg Windowson túl hosszú (#1629)
+        ids=lambda s: s[:40],
     )
     def test_a_forras_es_a_forditas_parban_all(self, angol, magyar):
         # a `.ts` XML: az idézőjel `&quot;`-ként áll benne (#3573)

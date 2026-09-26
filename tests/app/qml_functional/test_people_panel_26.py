@@ -198,14 +198,26 @@ class TestUnnamedAlbumHeader:
         return face_ids
 
     def _click_faces(self, window, qt_app, face_ids):
+        """A csempe a rács `reload()`-ja után, aszinkron jön létre, és a
+        helye az elrendezés végéig mozoghat — ezért megvárjuk, hogy
+        látsszon, és kattintás után azt is, hogy a kijelölés átmenjen
+        (a CI lassabb gépén az azonnali kattintás mellément)."""
+        view = _child(window, "unnamedFacesView")
         for i, face_id in enumerate(face_ids):
             target = f"faceTile_{face_id}"
-            item = next(
-                (it for it in _walk(window.contentItem())
-                 if it.objectName() == target and it.isVisible()),
-                None,
-            )
+            item = None
+            for _ in range(150):
+                item = next(
+                    (it for it in _walk(window.contentItem())
+                     if it.objectName() == target and it.isVisible()
+                     and it.width() > 0),
+                    None,
+                )
+                if item is not None:
+                    break
+                QTest.qWait(20)
             assert item is not None, f"{target} nem található/nem látszik a rácson"
+            QTest.qWait(50)
             center = item.mapToScene(item.boundingRect().center())
             QTest.mouseClick(
                 window, Qt.MouseButton.LeftButton,
@@ -213,7 +225,10 @@ class TestUnnamedAlbumHeader:
                 else Qt.KeyboardModifier.NoModifier,
                 QPoint(round(center.x()), round(center.y())),
             )
-            qt_app.processEvents()
+            for _ in range(100):
+                if view.property("selectedCount") >= i + 1:
+                    break
+                QTest.qWait(20)
 
     def _open_unnamed_album(self, window, qt_app, tmp_path, selected):
         face_ids = self._seed_unnamed_faces(tmp_path, selected)
