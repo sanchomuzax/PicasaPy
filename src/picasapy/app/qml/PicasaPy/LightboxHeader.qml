@@ -75,6 +75,12 @@ ColumnLayout {
     //: `sug_filter` — a szűrő átkapcsolása; az új állapotot adja át
     signal suggestionsOnlyToggled(bool csak)
 
+    //: #2187: az arc ↔ teljes kép nagyításváltó (`face_zoom` ↔
+    //: `picture_zoom`) állása — a gazda vezérlőjéből
+    property bool faceZoom: false
+    //: a váltó átkapcsolása; az új állapotot adja át (igaz = arc)
+    signal faceZoomToggled(bool arc)
+
     //: a két javaslat-vezérlő együtt jelenik meg: nyitott személy-album ÉS
     //: van mit eldönteni
     readonly property bool javaslatokLatszanak:
@@ -133,7 +139,8 @@ ColumnLayout {
             x: 50
             y: 2
             width: Math.max(
-                0, titleRow.width - 50 - 20 - syncRow.implicitWidth - 8)
+                0, titleRow.width - 50 - 20 - syncRow.implicitWidth - 8
+                   - (nagyitasSor.visible ? nagyitasSor.width + 8 : 0))
             height: titleText.implicitHeight
             clip: true
 
@@ -165,6 +172,77 @@ ColumnLayout {
                             Theme.lightboxBg.b, 0.0)
                     }
                     GradientStop { position: 1.0; color: Theme.lightboxBg }
+                }
+            }
+        }
+
+        //: #2187: az arc ↔ teljes kép nagyításváltó — MÉRT `zoom_container`
+        //: (457,4)–(527,25): két 35 × 21-es gomb hézag nélkül, a fejléc
+        //: JOBB FELSŐ sarkában. Nálunk ott a szinkron-sor ül, ezért elé
+        //: kerül. Váltópár, nem kapcsoló: a már érvényes állapot gombja
+        //: nem kér semmit.
+        Row {
+            id: nagyitasSor
+            objectName: "headerZoomContainer"
+            visible: header.personName !== ""
+            anchors.right: syncRow.left
+            anchors.rightMargin: 8
+            anchors.verticalCenter: syncRow.verticalCenter
+            spacing: 0
+
+            PicasaButton {
+                id: arcNagyitasGomb
+                objectName: "headerFaceZoomButton"
+                visible: nagyitasSor.visible
+                width: 35; height: 21
+                checkable: true
+                checked: header.faceZoom
+                //: MÉRT súgó (`faceheaderpaneltext.tre:68`): „View zoomed in
+                //: to the face" — magyarul „Megjelenítés az arcra közelítve"
+                ToolTip.text: qsTr("View zoomed in to the face")
+                ToolTip.visible: hovered
+                ToolTip.delay: Theme.tooltipDelay
+                //: a kötést a kattintás UTÁN vissza kell állítani (#1468)
+                onClicked: {
+                    if (!header.faceZoom)
+                        header.faceZoomToggled(true)
+                    checked = Qt.binding(function () { return header.faceZoom })
+                }
+                contentItem: Item {
+                    Image {
+                        source: "icons/faces-badge.svg"
+                        width: 14; height: 14
+                        sourceSize.width: 14; sourceSize.height: 14
+                        fillMode: Image.PreserveAspectFit
+                        anchors.centerIn: parent
+                    }
+                }
+            }
+            PicasaButton {
+                id: kepNagyitasGomb
+                objectName: "headerPictureZoomButton"
+                visible: nagyitasSor.visible
+                width: 35; height: 21
+                checkable: true
+                checked: !header.faceZoom
+                //: MÉRT súgó: „View zoomed out to the full picture" —
+                //: magyarul „Megjelenítés a teljes képre távolítva"
+                ToolTip.text: qsTr("View zoomed out to the full picture")
+                ToolTip.visible: hovered
+                ToolTip.delay: Theme.tooltipDelay
+                onClicked: {
+                    if (header.faceZoom)
+                        header.faceZoomToggled(false)
+                    checked = Qt.binding(function () { return !header.faceZoom })
+                }
+                contentItem: Item {
+                    Image {
+                        source: "icons/zoom-fit.svg"
+                        width: 14; height: 14
+                        sourceSize.width: 14; sourceSize.height: 14
+                        fillMode: Image.PreserveAspectFit
+                        anchors.centerIn: parent
+                    }
                 }
             }
         }

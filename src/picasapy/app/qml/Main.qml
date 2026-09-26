@@ -751,6 +751,20 @@ ApplicationWindow {
         controller.setPersonSuggestionsOnly(csak)
         window._javaslatRevizio += 1
     }
+    //: #2187: az arc ↔ teljes kép nagyításváltó (`face_zoom` ↔
+    //: `picture_zoom`) — a szűrő mintájára: az állást a vezérlő tartja, a
+    //: `_javaslatRevizio` a kötés horgonya.
+    readonly property bool personFaceZoom: {
+        window._javaslatRevizio
+        return controller && controller.personFaceZoom !== undefined
+            ? controller.personFaceZoom : false
+    }
+    function setPersonFaceZoom(arc) {
+        if (!controller || !controller.setPersonFaceZoom)
+            return
+        controller.setPersonFaceZoom(arc)
+        window._javaslatRevizio += 1
+    }
     //: #2187: „További javaslatok keresése" (`moresug`). A vezérlő a
     //: javaslat-lépcsőt tízzel lazítja, és a beállítást NEM írja vissza —
     //: az eredeti kezelője (`0x00602890`) sem. A személy-album nevére itt
