@@ -1752,7 +1752,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 
 | lap | miről szól |
 |---|---|
-| [ui-audit-editor.md](ui-audit-editor.md) | A szerkesztőpanel: fülek, effekt-csempék, dialógusok |
+| [ui-audit-editor.md](ui-audit-editor.md) | ⭐ **2026-09-26 (#3663): a kettős nézet ÉLŐBEN** — az A|AB|AA és a két segédgomb a filmszalagtól JOBBRA (x 933–1130, 1280 px); a „Selected” jelvény SZÜRKE (`#666666`), 86 × 26, a képen kívül a fókuszban lévő kép mellett, az osztó felőli végén; a képre KATTINTVA is vált a fókusz; az ikonok bitképek (colab #58) · A szerkesztőpanel: fülek, effekt-csempék, dialógusok |
 | [ui-audit-mainwindow.md](ui-audit-mainwindow.md) | Főablak: mappafa, eszköztár, tálca, görgetősáv · ⭐ **2026-09-22 (#656/R7):** a `fullview` `hiddentimer` kulcsa nem visszaszámláló, hanem `+0x22c` eseménykapu-jelző; a `0x13` találatvizsgálati kivétel bizonyított, a konkrét `setvisible 1` esemény blokkolt · R6: a `thumbui` hat rejtett eleménél elválasztva a deklarált geometria, a kezdeti láthatóság és az élő parancsút |
 | [ui-audit-menus.md](ui-audit-menus.md) | A teljes menürendszer |
 | [ui-audit-context-menus.md](ui-audit-context-menus.md) | ✅ **2026-09-22 — az indexkép helyi menüje a binárisból (D, #3456):** a „Keresés” almenü KÉT tételes és feltételes (egy `revertable` kép), hasonlóság-keresés nincs benne, „Hozzáadás az albumhoz”, „Ctrl+Törlés”. Jobbklikkes helyi menük; a `dwMenuData` **25 menüépítőhöz** feloldva (`0x00a6ae90`), a 14 belépési hívóhellyel és a fő-/almenüosztályok teljes térképével (#3364) |
