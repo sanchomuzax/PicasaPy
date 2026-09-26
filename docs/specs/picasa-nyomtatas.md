@@ -743,7 +743,7 @@ A kérdés nem egy útlevélhez égetett darabszám. Az elrendező annyi cellát
 4. **Tájolás.** A `0x00778190` a rácselrendezőt kétszer hívja, egyszer `(szélesség, magasság)`, egyszer felcserélve (`0x007781e1`, `0x00778207`), és a két eredményből választ (`0x00778238`–`0x00778276`). A 2,0 × 2,0-s útlevélnél a két eset azonos.
 5. **A rács.** A `0x00778640` a képlistán (`[rekord+0x1c] >> 1` kép) és képenként a példányszámon (`[rekord+0x0c]`) megy végig (`0x0077896e`–`0x0077899a`). Minden cella egy 0x1c bájtos rekord (`0x0077892a`, `rep movsd`, 7 duplaszó: kép, téglalap, sor, oszlop). A cellákat sorfolytonosan rakja a nyomtatható területre: vízszintesen, amíg a következő cella belefér (0,999-es tűréssel, `0xcf4a38`), aztán új sort kezd. Ha a következő sor már nem fér el, a menet kilép (`0x00778809` → `0x007789ba`). A második menetben a maradék helyet egyenletes térközként osztja szét. Ha a rés 0,2 alatti (`0xcf4748`, `0xc7e4b0`), a cellákat 0,975-szörösre kicsinyíti (`0xcf4a30`; `0x00778a46`–`0x00778aa7`). A végén a lap téglalapjára normalizál.
 
-⇒ **Az Útlevélkép parancs alapból EGY 2 × 2 hüvelykes képet tesz a lapra.** Többet a nyomtatási panel példányszámával (`numberprints`) lehet kérni; ekkor a képek sorfolytonos rácsban, egyenletes térközzel kerülnek a lapra. A lapszámot a panel a munka lap-tömbjéből számolja (`0x00745b52`, ld. fent); hogy a ki nem férő cellák hogyan kerülnek a következő lapra, azt ez a kör NEM vizsgálta, mert az útlevél alapesetében (1 kép) nem fordul elő. A laponkénti **befogadóképesség** a nyomtatható terület függvénye (nyomtatófüggő), állandó szám nincs.
+⇒ **Az Útlevélkép parancs alapból EGY 2 × 2 hüvelykes képet tesz a lapra.** Többet a nyomtatási panel példányszámával (`numberprints`) lehet kérni; ekkor a képek sorfolytonos rácsban, egyenletes térközzel kerülnek a lapra. A lapszámot a panel a munka lap-tömbjéből számolja (`0x00745b52`, ld. fent); a ki nem férő cellák a következő lapra kerülnek — ld. a következő szakaszt (#3646). A laponkénti **befogadóképesség** a nyomtatható terület függvénye (nyomtatófüggő), állandó szám nincs.
 
 ⛔ **Élőben nem mérhető (2026-09-26).** A Colab-gépen nincs telepített nyomtató: a Print gombra „A printer must be installed in order to print.” jön (picasa-colab-jobs #51). A tesztkönyvtárban arc sincs, amit az útlevél-felismerő elfogadna (#49, #50: négy képből négy „Can't find any faces”). Gépház-jegy: picasapy-agent #159. A vizuális egyezés tehát NINCS mérve; a fenti lánc a binárisból megerősített.
 
@@ -755,3 +755,38 @@ A kérdés nem egy útlevélhez égetett darabszám. Az elrendező annyi cellát
 - **eredmény:** EGYEZIK
 - **a bíráló tényei:** a példányszám kezdőértéke 1 (0x00860f78, [+0xc]); a 0x00744d00 csak a méretet (0xf, [munka+0x1c]) írja; a rácselrendező a képlistát (+0x18/+0x1c) és a példányszámot (+0xc) a beállításcsomagból veszi, képenként példányszám darab cellát rak; 0xf → LayoutPassport a 0x00775890 táblájában (0x00775b24–0x00775b36); a következő sor túlcsordulásakor kilép (0x00778809 → 0x007789ba).
 - **költség:** 125761 token
+
+### ⛳ A rácselrendező LAPTÖRÉSE — a túlcsorduló cella a következő lapra kerül (2026-09-26, 364. kör, #3646)
+
+*Forrás: `0x00778640` vége (`0x00778c58`–`0x00778de5`) · `0x00778190` (`0x00778238`–`0x00778276`) · `0x007774b0` · `0x00745b52`.*
+
+Az előző szakasz nyitva hagyta, mi lesz a cellákkal, ha a következő sor már nem fér el. A válasz: **új lap kezdődik, és ott folytatódik, ahol abbamaradt.**
+
+1. **A kimeneti tömb eleme LAP, nem cella.** A rendező egy lapon belül a cellákat helyi tömbbe gyűjti (0x1c bájtos cellarekordok, `0x0077892a`). A lap lezárásakor ezt a helyi tömböt egy 12 bájtos lap-rekordként fűzi a beállításcsomag kimeneti tömbjéhez (`[csomag+0x00]`/`[+0x04]`; `0x00778d7a`–`0x00778da5`). A panel ennek az elemszámát mutatja lapszámként (`[munka+0x18] >> 1`, `0x00745b52`; a munkában a csomag `+0x14`-en kezdődik).
+2. **Túlcsordulás.** Ha a következő sor már nem fér el (`0x00778809` → `0x007789ba`), a rendező az aktuális cellát nem helyezi el. A példányszámlálót nem lépteti, és a laphoz a második menet következik: térköz, kicsinyítés, normalizálás.
+3. **Új lap.** A lap hozzáfűzése után, ha a képindex még kisebb a képek számánál (`0x00778dbd`–`0x00778dc9`: `[esp+0x2c] < [csomag+0x1c] >> 1`), visszaugrik a lap-ciklus elejére (`0x00778dd5` → `0x0077871a`). Ott új x/y, új sorszámláló és új oszlopindex indul, a **kép- és a példányszámláló viszont megmarad**. A túlcsorduló cella tehát a következő lap első cellája.
+4. **Sorrend.** Kívül a képek, belül a példányok (`0x0077896e`–`0x0077899a`). Két kép két példánnyal: A, A, B, B, sorfolytonosan, lapról lapra folytatva.
+5. **Tájolás a lapszám szerint.** A `0x00778190` a két tájolás eredményét a lapok számával veti össze (`[rekord+0x04] >> 1`). A felcserélt tájolást (`h, w`) **csak akkor** választja, ha az kevesebb lapot ad; döntetlennél az eredeti (`w, h`) marad (`0x00778238`–`0x00778276`). Ha az egyik tájolás nulla lapot adott, a másikat veszi; ha mindkettő nullát, a slot-1 `−1`-gyel tér vissza (`0x0077825f`, `0x0077827b`–`0x007782be`).
+6. **Ha egy cella sem fér el.** Ha a cella már egy üres lapra sem fér (`0x007786a3`–`0x007786ff`), a rendező `−1`-gyel tér vissza. Ekkor a `0x007774b0` a 0. indexű elrendezővel próbálja újra (`0x007775f1`–`0x00777602`). A lapméretet és a nyomtatható területet a kiválasztott nyomtató objektumából veszi (`0x00777551`–`0x007775e5`).
+
+Minden lap a saját második menetével kapja a térközét: a részben teli utolsó lap cellái a maradék helyen egyenletesen oszlanak el.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`app/print_controller.py`) | teendő |
+|---|---|---|---|
+| egy lapon | a nyomatméretű cellák (pl. 4 × 6 hüvelyk) rácsba rendezve a nyomtató papírján | **minden példány külön oldal**, és az oldal maga a nyomatméret (`:1053`–`:1054`: a vászon = a méret hüvelykben × DPI) | cellarács a papíron |
+| laptörés | a túlcsorduló cella a következő lap első cellája | nincs értelmezve (1 példány = 1 oldal) | a fenti szabály |
+| sorrend | A, A, B, B | A, A, B, B (`:874`–`:885`; a komment szerint „nincs kimérve”) | megvan, a komment helyesbítendő: kimérve |
+| tájolás | amelyik kevesebb lapot ad, döntetlennél az eredeti | az első kép alakja dönti el (`:1041`–`:1047`) | a lapszám szerinti választás |
+
+Fejlesztés: **#3647**.
+
+*Bizonyítottsági fok: megerősített* (utasításszinten, és független újralevezetéssel ld. lent). ⛔ Élőben nem mérve: a Colab-gépen nincs nyomtató (picasapy-agent #159).
+
+### 🔁 Független újralevezetés
+- **bíráló:** friss opus-ügynök (Agent, nem fork) (friss kontextus, a kutató magyarázata nélkül)
+- **címek:** `0x00778640`, `0x00778190`, `0x007774b0`
+- **eredmény:** EGYEZIK
+- **a bíráló tényei:** a túlcsorduló sor nem vész el: a lap lezárása és hozzáfűzése után (0x00778c58–0x00778da5) 0x00778dd5 jb 0x0077871a új lapot indít az érintetlen kép- és példányszámlálóval; a kimeneti tömb eleme egy lap (12 bájt, cellavektor); a 0x00778190 a kevesebb lapot adó tájolást választja, döntetlennél az eredetit, nulla lapnál a másikat, mindkettő nulla → −1.
+- **költség:** 116881 token
