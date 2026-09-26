@@ -1,4 +1,4 @@
-"""#3594 — a mentés 2. lépése a párbeszédben, VALÓDI kattintással.
+"""#3594 — a mentés 2. lépése a kiadás-panelen, VALÓDI kattintással.
 
 Az eredeti mentés-üzemmód 2. lépése (`backuprect2`, `biztonsagi-mentes.md`
 10.3):
@@ -14,12 +14,17 @@ Jelölje ki azokat a mappákat, … vagy »Az összes kijelölése« …
 ```
 
 A mért szöveg („Jelölje ki…") szerint a mappák ALAPBÓL nincsenek
-bepipálva: amíg nincs pipa, a „Back Up" nem nyomható.
+bepipálva: amíg nincs pipa, a „Lemezre írás" nem nyomható.
 
-Az átnézés (#3643) után a lista HÁTTÉRSZÁLON készül: amíg számol, a
-párbeszéd az eredeti `il_BurnPanel::calculating` feliratát mutatja
-(„Calculating…" / „Számítás…", `biztonsagi-mentes.md` 15.7), és egy
-kiválasztás-váltás EGYETLEN lekérdezést indít.
+Az átnézés (#3643) után a lista HÁTTÉRSZÁLON készül: amíg számol, a panel
+az eredeti `il_BurnPanel::calculating` feliratát mutatja („Calculating…" /
+„Számítás…", `biztonsagi-mentes.md` 15.7), és egy kiválasztás-váltás
+EGYETLEN lekérdezést indít.
+
+#3504: a felület a `BackupHost` + `PublishPanel` mentés-üzemmódja — a
+korábbi, külön ablakban futó `BackupDialog` helyett. A `BackupHost` már
+nem `Window`, ezért a valódi kattintáshoz `QQuickView`-ba ágyazva fut
+(`support.backup_host_harness`).
 """
 
 from __future__ import annotations
@@ -30,17 +35,16 @@ import picasapy.app
 import pytest
 import threading
 
-from PySide6.QtCore import QMetaObject, QPoint, Qt, QUrl, Slot
-from PySide6.QtQml import QQmlComponent, QQmlEngine
+from PySide6.QtCore import Q_ARG, QMetaObject, QPoint, Qt, Slot
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
+from support.backup_host_harness import epits_ablakot
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import varj_feltetelre, wait_for_signal
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
-_PARBESZED = (_QML / "PicasaPy" / "BackupDialog.qml").read_text(
-    encoding="utf-8")
+_PANEL = (_QML / "PicasaPy" / "PublishPanel.qml").read_text(encoding="utf-8")
 
 
 def _elem(gyoker, nev: str):
@@ -64,7 +68,7 @@ def _latszo_elemek(gyoker: QQuickItem, nev: str) -> list[QQuickItem]:
     return sorted(talalat, key=lambda e: e.mapToScene(e.position()).y())
 
 
-def _kattints(ablak, elem, qt_app):
+def _kattints(view, elem, qt_app):
     qt_app.processEvents()
     os_ = elem
     while os_ is not None:
@@ -72,7 +76,7 @@ def _kattints(ablak, elem, qt_app):
         os_ = os_.parentItem()
     kozep = elem.mapToScene(elem.boundingRect().center())
     QTest.mouseClick(
-        ablak, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        view, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
     )
     qt_app.processEvents()
@@ -110,33 +114,33 @@ def _epits(qt_app, tmp_path, monkeypatch, *, osztaly=None, nyaralas=2):
     vezerlo = (osztaly or BackupController)(db, (str(gyoker),))
     cel = tmp_path / "cel"
     vezerlo.ujKeszlet("Külső", str(cel), "minden", "lemez")
-    motor = QQmlEngine()
-    motor.addImportPath(str(_QML))
-    motor.rootContext().setContextProperty("backupController", vezerlo)
-    komponens = QQmlComponent(
-        motor, QUrl.fromLocalFile(str(_QML / "PicasaPy" / "BackupDialog.qml"))
-    )
-    ablak = komponens.create()
-    assert ablak is not None, komponens.errorString()
-    QMetaObject.invokeMethod(ablak, "open")
+    view, ablak = epits_ablakot(_QML, {"backupController": vezerlo})
+    QMetaObject.invokeMethod(ablak, "nyisd")
     ablak.setProperty("kivalasztott", 0)
     _vard_a_mappakat(ablak, qt_app)
-    # a motort ÉS a komponenst is életben kell tartani, különben az ablak
-    # velük együtt megszűnik
-    return ablak, vezerlo, cel, (motor, komponens)
+    return view, ablak, vezerlo, cel
 
 
 @pytest.fixture
-def parbeszed(qt_app, tmp_path, monkeypatch):
-    ablak, vezerlo, cel, motor = _epits(qt_app, tmp_path, monkeypatch)
-    yield ablak, vezerlo, cel
-    ablak.setProperty("visible", False)
-    ablak.deleteLater()
-    del motor
+def gazda(qt_app, tmp_path, monkeypatch):
+    view, ablak, vezerlo, cel = _epits(qt_app, tmp_path, monkeypatch)
+    yield view, ablak, vezerlo, cel
+    view.hide()
 
 
 def _pipak(ablak) -> list[QQuickItem]:
-    return _latszo_elemek(ablak.contentItem(), "backupFolderCheck")
+    return _latszo_elemek(ablak, "publishBackupFolderCheck")
+
+
+def _gordits_latvanyba(ablak, index: int, qt_app) -> None:
+    """A `backuprect2` MÉRT doboza (324×166) csak pár sort mutat egyszerre
+    — a valódi kattintáshoz a sort a `ListView`-nek kell látványba
+    görgetnie, ahogy egy felhasználó is görgetne (`ListView.Contain`)."""
+    lista = _elem(ablak, "publishBackupFolderList")
+    QMetaObject.invokeMethod(
+        lista, "positionViewAtIndex", Q_ARG(int, index), Q_ARG(int, 4)
+    )
+    qt_app.processEvents()
 
 
 class TestAMertSzovegek:
@@ -149,40 +153,41 @@ class TestAMertSzovegek:
         "Select None",
     ])
     def test_a_mert_felirat_ott_van(self, szoveg):
-        assert szoveg in _PARBESZED, szoveg
+        assert szoveg in _PANEL, szoveg
 
 
 class TestAMappaLista:
-    def test_a_mentetlen_mappak_latszanak_pipa_nelkul(self, parbeszed, qt_app):
-        ablak, _, _ = parbeszed
+    def test_a_mentetlen_mappak_latszanak_pipa_nelkul(self, gazda, qt_app):
+        _, ablak, _, _ = gazda
         pipak = _pipak(ablak)
         assert len(pipak) == 2
         assert [p.property("text") for p in pipak] == ["nyaralas", "szulinap"]
         assert all(p.property("checked") is False for p in pipak)
-        assert _elem(ablak, "backupRun").property("enabled") is False
+        assert _elem(ablak, "publishBackupGo").property("enabled") is False
 
-    def test_az_osszes_kijelolese_es_torlese(self, parbeszed, qt_app):
-        ablak, _, _ = parbeszed
-        _kattints(ablak, _elem(ablak, "backupSelectAll"), qt_app)
+    def test_az_osszes_kijelolese_es_torlese(self, gazda, qt_app):
+        view, ablak, _, _ = gazda
+        _kattints(view, _elem(ablak, "publishBackupSelectAll"), qt_app)
         assert all(p.property("checked") is True for p in _pipak(ablak))
-        assert _elem(ablak, "backupRun").property("enabled") is True
+        assert _elem(ablak, "publishBackupGo").property("enabled") is True
 
-        _kattints(ablak, _elem(ablak, "backupSelectNone"), qt_app)
+        _kattints(view, _elem(ablak, "publishBackupSelectNone"), qt_app)
         assert all(p.property("checked") is False for p in _pipak(ablak))
-        assert _elem(ablak, "backupRun").property("enabled") is False
+        assert _elem(ablak, "publishBackupGo").property("enabled") is False
 
 
 class TestAFutas:
     def test_csak_a_pipalt_mappa_megy_es_utana_eltunik(
-        self, parbeszed, qt_app
+        self, gazda, qt_app
     ):
-        ablak, vezerlo, cel = parbeszed
-        _kattints(ablak, _pipak(ablak)[1], qt_app)   # szulinap
+        view, ablak, vezerlo, cel = gazda
+        _gordits_latvanyba(ablak, 1, qt_app)
+        _kattints(view, _pipak(ablak)[1], qt_app)   # szulinap
         assert _pipak(ablak)[1].property("checked") is True
 
         wait_for_signal(
             vezerlo.futasKesz,
-            lambda: _kattints(ablak, _elem(ablak, "backupRun"), qt_app),
+            lambda: _kattints(view, _elem(ablak, "publishBackupGo"), qt_app),
             description="a pipált mappa mentése",
         )
         qt_app.processEvents()
@@ -199,11 +204,11 @@ class TestHatterbenSzamol:
     """[MAGAS] a lista háttérszálon készül, közben a mért felirat látszik."""
 
     def test_szamitas_kozben_a_calculating_felirat_latszik(
-        self, parbeszed, qt_app, monkeypatch
+        self, gazda, qt_app, monkeypatch
     ):
         import picasapy.app.backup_controller as modul
 
-        ablak, vezerlo, _ = parbeszed
+        _, ablak, vezerlo, _ = gazda
         engedd = threading.Event()
         eredeti = modul.tervezd_meg
 
@@ -215,14 +220,14 @@ class TestHatterbenSzamol:
         try:
             QMetaObject.invokeMethod(ablak, "frissitsdAMappakat")
             qt_app.processEvents()
-            felirat = _elem(ablak, "backupFolderLoading")
+            felirat = _elem(ablak, "publishBackupFolderLoading")
             assert felirat.isVisible()
             assert felirat.property("text") == "Calculating…"
             assert ablak.property("mappakToltodnek") is True
         finally:
             engedd.set()
         _vard_a_mappakat(ablak, qt_app)
-        assert not _elem(ablak, "backupFolderLoading").isVisible()
+        assert not _elem(ablak, "publishBackupFolderLoading").isVisible()
         assert [p.property("text") for p in _pipak(ablak)] == [
             "nyaralas", "szulinap"]
 
@@ -241,7 +246,7 @@ class TestHatterbenSzamol:
                 type(self).lekeresek += 1
                 return super().mentetlenMappakLekerese(keszlet_id)
 
-        ablak, vezerlo, cel, motor = _epits(
+        view, ablak, vezerlo, cel = _epits(
             qt_app, tmp_path, monkeypatch, osztaly=_Szamlalo)
         try:
             vezerlo.ujKeszlet("Másik", str(tmp_path / "cel2"), "minden")
@@ -257,9 +262,7 @@ class TestHatterbenSzamol:
             assert ablak.property("kivalasztott") == 0
             assert _Szamlalo.lekeresek == 1
         finally:
-            ablak.setProperty("visible", False)
-            ablak.deleteLater()
-            del motor
+            view.hide()
 
 
 class TestAFajlnevek:
@@ -269,10 +272,10 @@ class TestAFajlnevek:
     def test_sok_fajlnal_a_sor_a_darabot_es_a_folytatast_mutatja(
         self, qt_app, tmp_path, monkeypatch
     ):
-        ablak, vezerlo, cel, motor = _epits(
+        view, ablak, vezerlo, cel = _epits(
             qt_app, tmp_path, monkeypatch, nyaralas=25)
         try:
-            sorok = _latszo_elemek(ablak.contentItem(), "backupFolderFiles")
+            sorok = _latszo_elemek(ablak, "publishBackupFolderFiles")
             szoveg = sorok[0].property("text")
             assert szoveg.startswith("(25)  k00.jpg, ")
             assert "k19.jpg" in szoveg
@@ -281,9 +284,7 @@ class TestAFajlnevek:
             # a kevés fájlos mappa sorában nincs folytatásjel
             assert sorok[1].property("text") == "(1)  c.jpg"
         finally:
-            ablak.setProperty("visible", False)
-            ablak.deleteLater()
-            del motor
+            view.hide()
 
 
 class TestAMagyarFelirat:
@@ -303,4 +304,4 @@ class TestAMagyarFelirat:
 
         fordito = QTranslator()
         assert fordito.load("picasapy_hu", str(_QML.parent / "i18n"))
-        assert fordito.translate("BackupDialog", forras) == magyar
+        assert fordito.translate("PublishPanel", forras) == magyar
