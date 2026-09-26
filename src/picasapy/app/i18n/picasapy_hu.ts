@@ -601,10 +601,10 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <translation>Alapértelmezett rendszerbeállítás (%1)</translation>
     </message>
     <message>
-        <source>Change the language of the PicasaPy user interface?
+        <source>Change the language Picasa uses?
 
-The change takes effect the next time you start the program.</source>
-        <translation>Módosítja a PicasaPy kezelőfelületének nyelvét?
+It will change the next time Picasa is opened.</source>
+        <translation>Módosítja a Picasa kezelőfelületének nyelvét?
 
 A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
@@ -4684,10 +4684,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <!-- #3555: nyelvváltás megerősítése — az Eszközök → Nyelv menü útja -->
     <message>
-        <source>Change the language of the PicasaPy user interface?
+        <source>Change the language Picasa uses?
 
-The change takes effect the next time you start the program.</source>
-        <translation>Módosítja a PicasaPy kezelőfelületének nyelvét?
+It will change the next time Picasa is opened.</source>
+        <translation>Módosítja a Picasa kezelőfelületének nyelvét?
 
 A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>

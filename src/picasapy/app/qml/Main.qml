@@ -1797,7 +1797,8 @@ ApplicationWindow {
     }
 
     // #3555: a nyelvváltás megerősítése — az Eszközök → Nyelv menüből jön
-    // (`bar.languageConfirmRequested`, ld. fent). A `settingKey` üres: ez a
+    // (`bar.languageConfirmRequested`, ld. fent). A szöveg a hivatalos
+    // `CGeneralPrefsPage::LangChange`. A `settingKey` üres: ez a
     // választás sosem nyomható el a „Ne kérdezze újra" jelölővel — minden
     // váltás legalább egy kattintást kér, ahogy az eredeti is teszi.
     DeferredDialog {
@@ -1811,10 +1812,7 @@ ApplicationWindow {
                 property string candidateCode: ""
                 function askFor(code) {
                     candidateCode = code
-                    ask("", qsTr(
-                        "Change the language of the PicasaPy user "
-                        + "interface?\n\nThe change takes effect the next "
-                        + "time you start the program."))
+                    ask("", qsTr("Change the language Picasa uses?\n\nIt will change the next time Picasa is opened."))
                 }
                 onConfirmed: if (controller) controller.setLanguage(candidateCode)
             }

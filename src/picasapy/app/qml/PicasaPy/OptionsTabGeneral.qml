@@ -81,6 +81,11 @@ ColumnLayout {
         // tétele a rendszer szerinti, a nevek SAJÁT nyelvükön állnak (a
         // felület nyelvétől függetlenül), és a váltás csak megerősítés
         // UTÁN íródik — a következő indításig nem lép érvénybe.
+        // ⚠️ SZÁNDÉKOS ELTÉRÉS: az eredeti a kérdést (`CGeneralPrefsPage::
+        // LangChange`, spec E/1) a párbeszéd OK-jára teszi fel. Nálunk a
+        // Beállítások ablaknak nincs OK-ja — minden vezérlő azonnal ír —,
+        // ezért a kérdés a tétel KIVÁLASZTÁSAKOR jön. A szöveg és a két ág
+        // (Igen ⇒ függő választás, Nem ⇒ semmi) az eredetié.
         RowLayout {
             spacing: 8
             Text {
@@ -120,10 +125,7 @@ ColumnLayout {
                     var code = languageCombo.codes[index]
                     if (code === controller.pendingLanguage) return
                     languageConfirm.candidateCode = code
-                    languageConfirm.ask("", qsTr(
-                        "Change the language of the PicasaPy user "
-                        + "interface?\n\nThe change takes effect the next "
-                        + "time you start the program."))
+                    languageConfirm.ask("", qsTr("Change the language Picasa uses?\n\nIt will change the next time Picasa is opened."))
                 }
             }
         }

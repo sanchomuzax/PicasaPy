@@ -4,8 +4,13 @@ illesztés (Eszközök → Beállítások... menüpont bekötése) az integráto
 
 from __future__ import annotations
 
+import time
+
 import pytest
-from PySide6.QtCore import Property, QMetaObject, QObject, Qt, Signal, Slot
+from PySide6.QtCore import Property, QObject, QPointF, Qt, Signal, Slot
+from PySide6.QtTest import QTest
+
+from picasapy.app.language_controller import OWN_LANGUAGE_NAMES
 
 
 class FakeController(QObject):
@@ -19,7 +24,7 @@ class FakeController(QObject):
     languageChanged = Signal()
     pendingLanguageChanged = Signal()
 
-    _OWN_NAMES = {"en": "English", "hu": "Magyar"}
+    _OWN_NAMES = OWN_LANGUAGE_NAMES
 
     def __init__(self, language="en", pending_language=None):
         super().__init__()
@@ -256,18 +261,86 @@ class TestTabStructure:
         assert stack.property("currentIndex") == 2
 
 
+def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if feltetel():
+            return True
+        time.sleep(0.01)
+    qt_app.processEvents()
+    return bool(feltetel())
+
+
+def _kattints(window, qt_app, elem) -> None:
+    """Valódi bal kattintás a vezérlő KÖZEPÉRE (jelenet-koordinátában)."""
+    assert _var(qt_app, lambda: elem.width() > 0 and elem.height() > 0), (
+        f"{elem.objectName()}: nincs mérete, nem kattintható"
+    )
+    os_ = elem
+    while os_ is not None:
+        os_.ensurePolished()
+        os_ = os_.parentItem()
+    pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
+    QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont)
+    qt_app.processEvents()
+
+
+def _lathato_sorok(window):
+    """A nyitott legördülő LÁTHATÓ sorai, fentről lefelé. (A sor saját
+    `text`-je üres — a feliratot a belső `Text` rajzolja —, ezért a sorrend
+    azonosít: a modell sorrendje.)"""
+    sorok = []
+    sor = [window.contentItem().parentItem() or window.contentItem()]
+    while sor:
+        elem = sor.pop()
+        if elem.isVisible() and "ItemDelegate" in elem.metaObject().className():
+            sorok.append(elem)
+        sor.extend(elem.childItems())
+    return sorted(sorok, key=lambda e: e.mapToScene(QPointF(0, 0)).y())
+
+
+def _nyelvet_valaszt(window, qt_app, felirat) -> None:
+    """A Beállítások ablak nyelv-legördülőjének lenyitása és a `felirat`
+    sorának kiválasztása — mindkettő KATTINTÁS."""
+    window.setProperty("visible", True)
+    assert _var(qt_app, lambda: window.isExposed()), "a Beállítások ablak nem jelent meg"
+    combo = _child(window, "optionsLanguageCombo")
+    modell = combo.property("model")
+    assert felirat in modell, f"„{felirat}” nincs a listában: {modell}"
+    _kattints(window, qt_app, combo)
+    assert _var(qt_app, lambda: len(_lathato_sorok(window)) == len(modell)), (
+        "a legördülő lista nem nyílt le"
+    )
+    _kattints(window, qt_app, _lathato_sorok(window)[modell.index(felirat)])
+
+
+def _kerdes_nyitva(window) -> bool:
+    return _child(window, "optionsLanguageConfirmDialog").property("opened") is True
+
+
+def _valaszol(window, qt_app, *, igen: bool) -> None:
+    assert _var(qt_app, lambda: _kerdes_nyitva(window)), "a megerősítő kérdés nem nyílt meg"
+    gomb = "optionsLanguageConfirmYesButton" if igen else "optionsLanguageConfirmNoButton"
+    _kattints(window, qt_app, _child(window, gomb))
+    assert _var(qt_app, lambda: not _kerdes_nyitva(window)), "a kérdés nyitva maradt"
+
+
 class TestGeneralTabLiveLanguage:
     """A nyelvválasztás (#333/#3555) az OptionsDialogból is elérhető —
     ugyanaz a controller.pendingLanguage/setLanguage, mint az Eszközök →
     Nyelv menüben. A lista első tétele a rendszer szerinti (spec A szakasz);
     a `currentIndex` a FÜGGŐ (nem a mai) nyelvet tükrözi (spec D szakasz), és
-    a váltás csak a megerősítő kérdés UTÁN íródik."""
+    a váltás csak a megerősítő kérdés UTÁN íródik.
+
+    ⚠️ A legördülőre, a sorára és a kérdés gombjaira VALÓDI egérkattintás
+    megy — a jel kibocsátása a néma bekötési hibát nem fogná meg."""
 
     def test_combo_lists_system_first(self, dialog):
         window, _fc, _cs, _qt = dialog
         combo = _child(window, "optionsLanguageCombo")
         assert combo.property("model") == [
-            "System Default (hu-HU)", "English", "Magyar",
+            "System Default (hu-HU)", "English (US)", "Magyar",
         ]
 
     def test_combo_reflects_current_language(self, dialog):
@@ -283,9 +356,7 @@ class TestGeneralTabLiveLanguage:
         engine = QQmlEngine()
         engine.addImportPath(str(app_module._APP_DIR / "qml"))
         engine.rootContext().setContextProperty("controller", controller)
-        engine.rootContext().setContextProperty(
-            "confirmSettings", fake_confirm_settings
-        )
+        engine.rootContext().setContextProperty("confirmSettings", fake_confirm_settings)
         factory = QQmlComponent(
             engine,
             str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
@@ -299,44 +370,34 @@ class TestGeneralTabLiveLanguage:
 
     def test_choosing_a_language_asks_for_confirmation_first(self, dialog, qt_app):
         window, fake_controller, _cs, _qt = dialog
-        combo = _child(window, "optionsLanguageCombo")
-        combo.activated.emit(2)  # "hu"
-        qt_app.processEvents()
+        _nyelvet_valaszt(window, qt_app, "Magyar")
+        assert _var(qt_app, lambda: _kerdes_nyitva(window)), "a kérdés nem nyílt meg"
         assert fake_controller.set_language_calls == [], (
             "#3555: a váltás csak a megerősítés UTÁN íródhat"
         )
-        confirm = _child(window, "optionsLanguageConfirmDialog")
-        assert confirm.property("visible") is True
+        uzenet = _child(window, "optionsLanguageConfirmMessageLabel").property("text")
+        assert uzenet.startswith("Change the language Picasa uses?")
 
-    def test_confirming_calls_the_controller(self, dialog, qt_app):
+    def test_yes_click_calls_the_controller(self, dialog, qt_app):
         window, fake_controller, _cs, _qt = dialog
-        combo = _child(window, "optionsLanguageCombo")
-        combo.activated.emit(2)  # "hu"
-        qt_app.processEvents()
-        yes = _child(window, "optionsLanguageConfirmYesButton")
-        QMetaObject.invokeMethod(yes, "clicked", Qt.ConnectionType.DirectConnection)
-        qt_app.processEvents()
+        _nyelvet_valaszt(window, qt_app, "Magyar")
+        _valaszol(window, qt_app, igen=True)
         assert fake_controller.set_language_calls == ["hu"]
+        assert _child(window, "optionsLanguageCombo").property("currentIndex") == 2
 
-    def test_denying_leaves_the_controller_untouched(self, dialog, qt_app):
+    def test_no_click_leaves_the_controller_untouched(self, dialog, qt_app):
         window, fake_controller, _cs, _qt = dialog
-        combo = _child(window, "optionsLanguageCombo")
-        combo.activated.emit(2)  # "hu"
-        qt_app.processEvents()
-        no = _child(window, "optionsLanguageConfirmNoButton")
-        QMetaObject.invokeMethod(no, "clicked", Qt.ConnectionType.DirectConnection)
-        qt_app.processEvents()
+        _nyelvet_valaszt(window, qt_app, "Magyar")
+        _valaszol(window, qt_app, igen=False)
         assert fake_controller.set_language_calls == []
         assert _child(window, "optionsLanguageCombo").property("currentIndex") == 1
 
     def test_choosing_the_already_pending_language_asks_nothing(self, dialog, qt_app):
         window, fake_controller, _cs, _qt = dialog
-        combo = _child(window, "optionsLanguageCombo")
-        combo.activated.emit(1)  # már "en" — nincs eltérés
+        _nyelvet_valaszt(window, qt_app, "English (US)")  # már "en"
         qt_app.processEvents()
         assert fake_controller.set_language_calls == []
-        confirm = _child(window, "optionsLanguageConfirmDialog")
-        assert confirm.property("visible") is False
+        assert not _kerdes_nyitva(window)
 
 
 class TestGeneralTabLiveDeleteConfirmSuppression:

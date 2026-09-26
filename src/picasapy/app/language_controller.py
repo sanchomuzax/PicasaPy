@@ -5,8 +5,11 @@ modul csak azt dönti el, MELYIK nyelvet töltse be az alkalmazás.
 
 #3555 (a #3553 kutatása alapján): az eredeti Picasa a nyelvváltást a
 program KÖVETKEZŐ indításáig halasztja — a felhasználó a Beállítások OK-
-jára (vagy az Eszközök → Nyelv menüre) csak egy MEGERŐSÍTŐ kérdést kap, a
-futó felület nyelve nem vált. Ezért a tárolt állapot KÉT részre válik:
+jára csak egy MEGERŐSÍTŐ kérdést kap, a futó felület nyelve nem vált.
+Nálunk a Beállítások ablaknak nincs OK-ja (minden vezérlő azonnal ír), ezért
+a kérdés a tétel KIVÁLASZTÁSAKOR jön — a legördülőben és az Eszközök → Nyelv
+menüben egyaránt; a szöveg és a két ág az eredetié. Ezért a tárolt állapot
+KÉT részre válik:
 
 * `language` — az EBBEN a futásban érvényes, ténylegesen betöltött nyelv
   (`general/language` kulcs, mint eddig);
@@ -47,9 +50,11 @@ DEFAULT_LANGUAGE = "en"
 SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "hu")
 
 #: A nyelvek SAJÁT nyelvükön írt neve (`langnames.xml` mintájára) — ez a
-#: lista FÜGGETLEN a felület aktuális nyelvétől, ezért NEM qsTr-ezett.
+#: lista FÜGGETLEN a felület aktuális nyelvétől, ezért NEM qsTr-ezett. A mi
+#: `en` kódunk az eredeti `Lang::enUS` tétele (spec A, 6. sor), a felirata
+#: ezért a hivatalos „English (US)” (őre: `test_hivatalos_feliratok_3358`).
 OWN_LANGUAGE_NAMES: dict[str, str] = {
-    "en": "English",
+    "en": "English (US)",
     "hu": "Magyar",
 }
 
@@ -95,15 +100,39 @@ def resolve_system_language() -> str:
     return code if code in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
 
 
+#: Az országkód tartaléka (spec B: `0x0098d607`–`0x0098d670`).
+_FALLBACK_COUNTRY = "US"
+
+
+def format_system_suffix(language: str, country: str) -> str:
+    """A „rendszer szerinti” tétel felirat-utótagja (spec B szakasz).
+
+    `xx-YY`; hiányzó, számjegyes vagy háromnál hosszabb országkódnál az
+    ország `US`. Ha a nyelvkód már az országkódra végződik, csak a nyelvkód.
+    Ez utóbbi próba az eredetiben (`0x00987150`) kis-nagybetű-ÉRZÉKENY — a
+    spec példája „(hu-HU)”, nem „(hu)” —, ezért a szokásos kisbetűs nyelv- és
+    nagybetűs országkód-párnál nem teljesül; szándékosan így vesszük át.
+
+    A nem ISO nyelvkód (pl. a POSIX „C” locale-é) az alapnyelvre esik — a
+    `resolve_system_language` is ezt választja ilyenkor.
+    """
+    letters = language.replace("-", "")
+    if len(letters) < 2 or not (letters.isascii() and letters.isalpha()):
+        language = DEFAULT_LANGUAGE
+    if not country or len(country) > 3 or not country.isalpha():
+        country = _FALLBACK_COUNTRY
+    if language.endswith(country):
+        return language
+    return f"{language}-{country}"
+
+
 def system_language_suffix() -> str:
-    """A „rendszer szerinti” tétel felirat-utótagja: `xx-YY`, vagy — ha a
-    nyelvkód már az országkódra végződik — csak `xx` (spec B) szakasz)."""
+    """A gép területi beállításának utótagja, ld. `format_system_suffix`."""
     locale = QLocale.system()
-    name = locale.name()
-    lang, _, country = name.partition("_")
-    if not country or lang.endswith(country):
-        return lang
-    return f"{lang}-{country}"
+    return format_system_suffix(
+        QLocale.languageToCode(locale.language()),
+        QLocale.territoryToCode(locale.territory()),
+    )
 
 
 def resolve_startup_language(settings) -> str:

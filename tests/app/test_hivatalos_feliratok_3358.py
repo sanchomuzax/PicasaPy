@@ -20,6 +20,11 @@ from xml.etree import ElementTree
 QML = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "qml"
 TS = QML.parent / "i18n" / "picasapy_hu.ts"
 
+#: #3555: a `CGeneralPrefsPage::LangChange` angol alapszövege
+NYELVVALTAS_KERDES = (
+    "Change the language Picasa uses?\n\nIt will change the next time "
+    "Picasa is opened.")
+
 #: felirat → (hivatalos magyar, a `stringres` azonosítója)
 HIVATALOS = {
     "The passwords did not match.": (
@@ -44,6 +49,11 @@ HIVATALOS = {
     'Instructions:\n\n1) Manipulate the rectangle to fit the face of the person you want to add.\n\nYou can drag the rectangle to position it, and move its sides to refine the shape.\n\n2) Click on "Add a name" under the rectangle and type in the person\'s name.\n\n(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)': (
         'Utasítások:\n\n1) A négyszöget alakítsa úgy, hogy illeszkedjen a hozzáadni kívánt személy arcához.\n\nHúzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásával pedig pontosíthatja az alakját.\n\n2) Kattintson a négyszög alatt látható "Név hozzáadása" feliratra, és írja be a személy nevét.\n\n(Ne feledje, hogy a befejezéshez le kell nyomnia az Enter billentyűt, vagy az egyik automatikusan kiegészített névre kell kattintania.)',
         "manual_add::instructions"),
+    # #3555: a nyelvváltás megerősítő kérdése (a Beállítások és a menü útja)
+    NYELVVALTAS_KERDES: (
+        "Módosítja a Picasa kezelőfelületének nyelvét?\n\nA változás a "
+        "program következő megnyitásakor lép érvénybe.",
+        "CGeneralPrefsPage::LangChange"),
     "Feather": ("Lágy perem", "filter_dir_tint_label1"),
     "Color Preservation": ("Színek megőrzése", "filter_tint_label1"),
     "Left justify text": ("Szöveg balra igazítása", "edittextpanel/leftalign"),
@@ -228,9 +238,6 @@ BEALLITASOK = {
     ("OptionsTabFileTypes", "Display JPEG files and:"): (
         "Megjelenítés: JPEG-fájlok és", "options/label61.title"),
     ("OptionsTabFileTypes", "RAW"): ("RAW formátumok", "options/SupportRAW.title"),
-    # a nyelvlista saját nyelvű neveket mutat, fordítás NÉLKÜL — #3555 óta ez
-    # már nem is `qsTr()`-ezett literál, hanem a controller.ownLanguageName()
-    # adja (ld. tests/app/test_language_controller.py::TestOwnLanguageNames)
     ("OptionsTabGeneral", "Help improve PicasaPy:"): (
         "Részvétel a Picasa fejlesztésében:", "options/labelgroup16.title"),
     ("OptionsTabGeneral", "Import destination folder:"): (
@@ -368,3 +375,44 @@ def test_a_beallitasok_forditasa_a_qm_ben_is_ott_van() -> None:
     hianyzik = [magyar for magyar, _ in BEALLITASOK.values()
                 if magyar.encode("utf-16-be") not in adat]
     assert not hianyzik, f"a .qm-ből hiányzik (lrelease kell): {hianyzik}"
+
+
+#: #3555: a nyelvlista SAJÁT nyelvű nevei — fordítás nélkül, ezért nem
+#: `qsTr()`-ben élnek, hanem a `language_controller.OWN_LANGUAGE_NAMES`-ben
+#: (a Beállítások legördülője és az Eszközök ▸ Nyelv menü is innen veszi).
+#: kód → (hivatalos felirat, a `stringres` azonosítója)
+SAJAT_NYELVU_NEVEK = {
+    "en": ("English (US)", "Lang::enUS"),
+}
+
+
+def test_a_nyelvlista_a_hivatalos_sajat_nyelvu_nevet_mutatja() -> None:
+    from picasapy.app.language_controller import OWN_LANGUAGE_NAMES
+
+    for kod, (felirat, azonosito) in SAJAT_NYELVU_NEVEK.items():
+        assert OWN_LANGUAGE_NAMES.get(kod) == felirat, (
+            f"{kod}: „{OWN_LANGUAGE_NAMES.get(kod)}” ≠ a hivatalos "
+            f"„{felirat}” ({azonosito})")
+
+
+def test_a_nyelvlista_nevei_sehol_nincsenek_beegetve() -> None:
+    """A régi „English”/„Hungarian” sem `qsTr()`-ben, sem puszta
+    literálként nem maradhat a nyelvlistát építő QML-ekben — a név egyetlen
+    forrása az `OWN_LANGUAGE_NAMES`."""
+    hibak = []
+    for fajl in ("PicasaPy/PicasaMenuBar.qml", "PicasaPy/OptionsTabGeneral.qml"):
+        forras = (QML / fajl).read_text(encoding="utf-8")
+        for regi in ("English", "Hungarian", "Magyar"):
+            if re.search(rf'text:\s*(qsTr\()?"{regi}"', forras):
+                hibak.append(f"{fajl}: „{regi}”")
+    assert not hibak, "beégetett nyelvnév: " + ", ".join(hibak)
+
+
+def test_a_nyelvvaltas_kerdese_a_hivatalos_angolt_mondja() -> None:
+    """A kérdés a `CGeneralPrefsPage::LangChange` szövege — „Picasa”-val,
+    ahogy a többi átvett hivatalos kérdés is (pl. `RedEye::AutoFixedMessage`)."""
+    minta = 'qsTr("' + NYELVVALTAS_KERDES.replace("\n", "\\n") + '")'
+    for fajl in ("Main.qml", "PicasaPy/OptionsTabGeneral.qml"):
+        forras = (QML / fajl).read_text(encoding="utf-8")
+        assert minta in forras, f"{fajl}: hiányzik a {minta}"
+        assert "PicasaPy user" not in forras, f"{fajl}: a régi fogalmazás még él"

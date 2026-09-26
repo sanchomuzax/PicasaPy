@@ -20,6 +20,7 @@ from picasapy.app.language_controller import (
     SUPPORTED_LANGUAGES,
     SYSTEM_LANGUAGE_CODE,
     coerce_language,
+    format_system_suffix,
     resolve_startup_language,
     resolve_system_language,
 )
@@ -197,7 +198,8 @@ class TestLanguageSetting:
 class TestOwnLanguageNames:
     def test_names_are_not_translated(self, controller):
         # a nevek a SAJÁT nyelvükön állnak, a felület nyelvétől függetlenül
-        assert controller.ownLanguageName("en") == "English"
+        # a hivatalos `Lang::enUS` felirat — a mi `en` kódunk ez (spec A: #6)
+        assert controller.ownLanguageName("en") == "English (US)"
         assert controller.ownLanguageName("hu") == "Magyar"
 
     def test_system_suffix_is_a_locale_code(self, controller):
@@ -206,3 +208,57 @@ class TestOwnLanguageNames:
 
     def test_system_language_code_constant(self, controller):
         assert controller.systemLanguageCode == SYSTEM_LANGUAGE_CODE
+
+
+class TestSystemSuffixFormat:
+    """A rendszer-tétel utótagja (spec B): `xx-YY`; hiányzó, számjegyes vagy
+    háromnál hosszabb országkódnál az ország `US`."""
+
+    def test_language_and_country(self):
+        assert format_system_suffix("hu", "HU") == "hu-HU"
+
+    @pytest.mark.parametrize("country", ["", "419", "ABCD", "U1"])
+    def test_invalid_country_falls_back_to_us(self, country):
+        assert format_system_suffix("es", country) == "es-US"
+
+    def test_c_locale_is_not_a_language_code(self):
+        # a POSIX „C” locale nyelve nem ISO-kód — a felület alapnyelvére esik
+        assert format_system_suffix("C", "") == "en-US"
+
+    def test_language_already_ending_in_country_gives_language_only(self):
+        # az eredeti „végződik-e” próbája (0x00987150) KIS-NAGYBETŰ-ÉRZÉKENY:
+        # a spec példája `hu-HU`, tehát a `hu` nem „végződik” a `HU`-ra
+        assert format_system_suffix("xx-US", "US") == "xx-US"
+        assert format_system_suffix("fi", "FI") == "fi-FI"
+
+
+class TestApplicationLanguagePath:
+    """Az `application` két belépője (#3555): a futás KÖZBENI olvasás nem
+    érleli be a függő választást, csak az induláskori."""
+
+    def test_configured_language_is_read_only(self, settings, monkeypatch):
+        from picasapy.app import application
+
+        monkeypatch.delenv("PICASAPY_LANG", raising=False)
+        settings.setValue(LANGUAGE_KEY, "en")
+        settings.setValue(PENDING_LANGUAGE_KEY, "hu")
+        assert application._configured_language(settings) == "en"
+        assert settings.value(LANGUAGE_KEY) == "en"
+        assert settings.value(PENDING_LANGUAGE_KEY) == "hu"
+
+    def test_startup_language_applies_the_pending_choice(self, settings, monkeypatch):
+        from picasapy.app import application
+
+        monkeypatch.delenv("PICASAPY_LANG", raising=False)
+        settings.setValue(LANGUAGE_KEY, "en")
+        settings.setValue(PENDING_LANGUAGE_KEY, "hu")
+        assert application._startup_language(settings) == "hu"
+        assert application._configured_language(settings) == "hu"
+
+    def test_environment_wins_on_both_paths(self, settings, monkeypatch):
+        from picasapy.app import application
+
+        monkeypatch.setenv("PICASAPY_LANG", "hu_HU")
+        settings.setValue(PENDING_LANGUAGE_KEY, "en")
+        assert application._configured_language(settings) == "hu"
+        assert application._startup_language(settings) == "hu"

@@ -2093,7 +2093,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuLanguageEnglish"
-                text: "English"
+                text: controller ? controller.ownLanguageName("en") : "English (US)"
                 checkable: true
                 checked: controller ? controller.pendingLanguage === "en" : true
                 onTriggered: {
@@ -2105,7 +2105,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuLanguageHungarian"
-                text: "Magyar"
+                text: controller ? controller.ownLanguageName("hu") : "Magyar"
                 checkable: true
                 checked: controller ? controller.pendingLanguage === "hu" : false
                 onTriggered: {
