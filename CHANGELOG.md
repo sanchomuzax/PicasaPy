@@ -15,13 +15,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Telített kéknél és sárgánál a korábbi modell akár 71 szinttel eltért; a
   mérőkészleten az eltérés az eredetitől: Árnyalás ΔE 1,00 → 0,39, Áttűnés
   0,99 → 0,88, Neon 2,06 → 1,97.
-
-## [0.8.584] – 2026-09-26
-
-### Hozzáadva
-- **A személy-album fejlécén az arc ↔ teljes kép váltóval a képek a
-  személy arcára közelítve is megjeleníthetők (#2187).** A közelített kép
-  éles, kis arcnál is, mert a program ilyenkor nagyobb felbontásból vág.
+- **A Mappakezelő jobb oldalán, „Az aktuális mappa esetében:” csoport fölött
+  az eredeti Picasa utasítása áll (#3614).** A korábbi saját mondat helyett
+  most ez olvasható: „Minden mappa esetében megadhatja, hogy a Picasa
+  keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja,
+  hogy a program figyelje bennük az új képek megjelenését.”
+- **Az Emberek panel egyetlen fejlécet és egyetlen listát mutat, az eredeti
+  Picasa szabályai szerint (#3566).** Egy személy albumában a lista fejléce
+  „Szintén ezeken a fotókon:” (egy képnél is), megnevezett személy nélküli
+  képnél „Ki látható ezeken a fotókon?”, a képszerkesztőben pedig mindig
+  „Ezen a fotón:”; üres panelen a helyzethez illő útmutató szöveg áll. Egy
+  személy albumában kijelölés nélkül is ez az útmutató szöveg jelenik meg —
+  a korábbi, „kik szerepelnek még vele” listát felsoroló nézet helyett,
+  ahogy az eredeti Picasa is teszi.
 - **A Beállítások és az Eszközök → Nyelv nyelvválasztója az eredeti Picasa
   szerint viselkedik (#3555).** A lista első tétele a rendszer szerinti
   beállítás (a rendszer nyelv- és országkódjával), a nyelvek neve saját
@@ -33,6 +39,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   létrehozása, módosítása és törlése, a mappánkénti kijelölés (#3594) és a
   mappa/lemezkép kimenet (#3593) mind megvan, csak a könyvtár alján, a
   „Lemezre írás” gombbal.
+
+## [0.8.584] – 2026-09-26
+
+### Hozzáadva
+- **A személy-album fejlécén az arc ↔ teljes kép váltóval a képek a
+  személy arcára közelítve is megjeleníthetők (#2187).** A közelített kép
+  éles, kis arcnál is, mert a program ilyenkor nagyobb felbontásból vág.
 
 ## [0.8.583] – 2026-09-26
 
@@ -80,19 +93,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   (#3605).** A „Vissza” gomb és a bezáró × az üzenettel együtt egy
   középre igazított csoportot alkot, és az ablak átméretezésekor is középen
   marad.
-- **A Mappakezelő jobb oldalán, „Az aktuális mappa esetében:” csoport fölött
-  az eredeti Picasa utasítása áll (#3614).** A korábbi saját mondat helyett
-  most ez olvasható: „Minden mappa esetében megadhatja, hogy a Picasa
-  keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja,
-  hogy a program figyelje bennük az új képek megjelenését.”
-- **Az Emberek panel egyetlen fejlécet és egyetlen listát mutat, az eredeti
-  Picasa szabályai szerint (#3566).** Egy személy albumában a lista fejléce
-  „Szintén ezeken a fotókon:” (egy képnél is), megnevezett személy nélküli
-  képnél „Ki látható ezeken a fotókon?”, a képszerkesztőben pedig mindig
-  „Ezen a fotón:”; üres panelen a helyzethez illő útmutató szöveg áll. Egy
-  személy albumában kijelölés nélkül is ez az útmutató szöveg jelenik meg —
-  a korábbi, „kik szerepelnek még vele” listát felsoroló nézet helyett,
-  ahogy az eredeti Picasa is teszi.
 
 ## [0.8.580] – 2026-09-26
 
