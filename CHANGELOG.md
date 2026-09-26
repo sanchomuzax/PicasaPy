@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A nyomtatás a kiválasztott nyomatméretet (pl. 4×6) cellaként a papírra
+  rácsba rendezi, nem képenként külön oldalra teszi (#3647)**, ahogy az
+  eredeti Picasában: két 4×6-os kép egy Letter-lapra fér, öt pedig a
+  túlcsordulóval a következő lap elejétől folytatódik; a lapállás a
+  kevesebb lapot adót választja.
+
 ## [0.8.584] – 2026-09-26
 
 ### Hozzáadva

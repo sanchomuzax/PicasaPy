@@ -231,7 +231,13 @@ class TestKimenet:
         assert adat.startswith(b"%PDF")
         assert _pdf_oldalszam(adat) == 1
 
-    def test_ket_kijelolt_kep_ketoldalas_PDF_t_ad(self, qml_app, qt_app, tmp_path):
+    def test_ket_kijelolt_kep_egy_lapra_fer_a_racsban(self, qml_app, qt_app, tmp_path):
+        """#3647: az alapértelmezett nyomatméret (4×6) CELLÁKÉNT kerül a
+        papírra, nem egy kép egy oldalra — az alapértelmezett papíron két
+        4×6-os cella EGY lapra fér (a rácsba rendezés fekvő lapállást
+        választ, mert az kevesebb lapot ad). Ez a próba korábban a pontosan
+        EZT a hibát rögzítő „két kép = két lap" elvárást mérte — ld. a
+        jegy leletét (`print_controller.py` régi `:1126`)."""
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, [0, 1])
         parbeszed = _menubol_nyit(window, qt_app)
@@ -246,7 +252,7 @@ class TestKimenet:
         )
         qt_app.processEvents()
 
-        assert _pdf_oldalszam(cel.read_bytes()) == 2
+        assert _pdf_oldalszam(cel.read_bytes()) == 1
 
     def test_a_siker_visszajelzese_megjelenik(self, qml_app, qt_app, tmp_path):
         """A `printFinished` nem tűnhet el: a felhasználó lássa, hova ment."""
