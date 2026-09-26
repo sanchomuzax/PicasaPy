@@ -173,6 +173,58 @@ class TestACsereEszkozallapota:
         assert vezerlo._paint_strokes() == ()
 
 
+class TestASwapAaFocus:
+    """#3649: a `swapAaFocus` (a valódi fókuszváltás) a festett maszkot A
+    PÁRRAL cseréli, nem üríti — a félkész festés a saját felén marad."""
+
+    @pytest.fixture
+    def part(self, qt_app):
+        from picasapy.app.edit_controller import EditController
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        szolgaltato = EditPreviewProvider()
+        elso = EditController(szolgaltato)
+        masodik = EditController(szolgaltato, slot="masodik")
+        elso.link_aa_partner(masodik)
+        masodik.link_aa_partner(elso)
+        return elso, masodik
+
+    def test_a_festett_maszk_oda_vissza_cserelodik(self, part, foto):
+        elso, masodik = part
+        elso.beginEditInMemory("1", str(foto))
+        masodik.beginEditInMemory("1", str(foto))
+        elso.applyEffect("soften")
+        elso.paintStroke(0.5, 0.5)
+        assert elso._paint_strokes()
+        assert not masodik._paint_strokes()
+
+        elso.swapAaFocus()
+        assert not elso._paint_strokes()
+        assert masodik._paint_strokes()
+
+        elso.swapAaFocus()
+        assert elso._paint_strokes()
+        assert not masodik._paint_strokes()
+
+    def test_a_lanc_is_cserelodik(self, part, foto):
+        elso, masodik = part
+        elso.beginEditInMemory("1", str(foto))
+        masodik.beginEditInMemory("1", str(foto))
+        elso.applyEffect("bw")
+        lanc_elso = elso.chainValue
+        lanc_masodik = masodik.chainValue
+        elso.swapAaFocus()
+        assert elso.chainValue == lanc_masodik
+        assert masodik.chainValue == lanc_elso
+
+    def test_par_nelkul_no_op(self, vezerlo, foto):
+        vezerlo.beginEdit("1", str(foto))
+        vezerlo.applyEffect("soften")
+        vezerlo.paintStroke(0.5, 0.5)
+        vezerlo.swapAaFocus()
+        assert vezerlo._paint_strokes()
+
+
 class TestAHid:
     def test_a_hid_tovabbadja(self, vezerlo, foto):
         from picasapy.app.second_preview import SecondPreview

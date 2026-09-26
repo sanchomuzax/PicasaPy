@@ -1127,6 +1127,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # következő lépése).
     edit_controller_masodik = EditController(edit_preview, slot="masodik")
     second_preview = SecondPreview(edit_controller_masodik)
+    # #3649: a két „aa"-fél összekötése — a fókuszváltás (`swapAaFocus`)
+    # ezen át cseréli a festett maszkot a két fél között, ahelyett hogy
+    # kiürítené (docs/specs/ui-audit-editor.md 4/b.1).
+    edit_controller.link_aa_partner(edit_controller_masodik)
+    edit_controller_masodik.link_aa_partner(edit_controller)
     # #644: minden mentett szerkesztési lánc a TARTÓS naplóba is bekerül — ez
     # az egyetlen nyomunk, ha a párhuzamosan futó Picasa később felülírja a
     # `.picasa.ini`-t a saját adatbázis-rekordjával.

@@ -659,6 +659,8 @@ Rectangle {
     //: #3644: a nyitott eszköz a régi fél alkalmazatlan munkáját tartja
     //: (retusálás-folt, vörösszem-régió, vágókeret) — előbb zárul, mint a
     //: néző bezárásakor; a csere után a panel az ÚJ fél értékeit mutatja.
+    //: #3649: a festett maszk NEM ürül — a `swapAaFocus` a párral cseréli,
+    //: hogy a félkész festés a saját felén megmaradjon.
     function _aaFeleketCserel() {
         var fo = editController.chainValue
         var masik = viewer.masodikEditCtl.chainValue
@@ -668,8 +670,7 @@ Rectangle {
         editorPanel.retouchActive = false
         editorPanel.textActive = false
         editorPanel.redeyeActive = false
-        editController.setChainValue(masik)
-        viewer.masodikEditCtl.setChainValue(fo)
+        editController.swapAaFocus()
         viewer.syncTiltSlider()
     }
 
