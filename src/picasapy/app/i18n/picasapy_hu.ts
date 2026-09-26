@@ -3593,8 +3593,8 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="29"/>
-        <source>Choose which folders PicasaPy watches. New and changed pictures in watched folders appear automatically.</source>
-        <translation>Válassza ki, mely mappákat figyelje a PicasaPy. A figyelt mappákban megjelenő új és módosult képek automatikusan felbukkannak.</translation>
+        <source>For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures.</source>
+        <translation>Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="43"/>
