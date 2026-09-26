@@ -75,6 +75,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   (#3605).** A „Vissza” gomb és a bezáró × az üzenettel együtt egy
   középre igazított csoportot alkot, és az ablak átméretezésekor is középen
   marad.
+- **A Mappakezelő jobb oldalán, „Az aktuális mappa esetében:” csoport fölött
+  az eredeti Picasa utasítása áll (#3614).** A korábbi saját mondat helyett
+  most ez olvasható: „Minden mappa esetében megadhatja, hogy a Picasa
+  keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja,
+  hogy a program figyelje bennük az új képek megjelenését.”
 
 ## [0.8.580] – 2026-09-26
 
