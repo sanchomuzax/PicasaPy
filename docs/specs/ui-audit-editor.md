@@ -2197,6 +2197,53 @@ Mindkettőnek **kétrészes háttere** van (`editpanel/selection_label_bg_left` 
 ⇒ **2-up módban a jelvény mutatja, melyik oldal az aktív** — ez a
 `swap_2up_focus` vizuális visszajelzése.
 
+### 3/b ⭐ Élőben: a gombok helye, a jelvény kinézete és helye, a kattintásos fókuszváltás (2026-09-26, #3663)
+
+*Forrás: élő mérés, eredeti angol Picasa 3.9.141, 1280 × 1024 (picasa-colab-jobs #58; kulcsképek: `Colab EN 33 - Ketto kep (AB), Selected jelveny.png`, `Colab EN 34 - AB, kattintas a jobb kepre.png`, `Colab EN 35 - AB fuggoleges elrendezes.png`) · `respack.yt` (`editpanel/…`) · `editpanel.tre:964`–`:994`, `:1160`–`:1201` · `0x00569af0`.*
+
+**1. A gombok helye — a filmszalagtól JOBBRA.** A felső sáv sorrendje balról jobbra: Back to Library · (szerkesztő-gomb) · Play · ◀ · filmszalag · ▶ · **A | AB | AA** · **fókuszváltó** · **elrendezés-váltó**. Mérve (1280 px):
+
+| elem | x (képernyő) |
+|---|---|
+| ▶ (a filmszalag jobb nyila) vége | 917 |
+| A \| AB \| AA szegmens | 933–1047 (A 933–970 · AB 970–1010 · AA 1010–1047) |
+| `swap_2up_focus` | 1057–1091 |
+| `swap_2up_layout` | 1096–1130 |
+
+A `respack.yt` tervezővásznán ugyanez a sorrend: filmszalag 431–645, kapcsolók 635–712, segédgombok 720–756 és 759–795.
+
+**2. Az ikonok — rajzolt bitképek, nem szövegjelek.** A `respack.yt` rétegei:
+
+| elem | méret | a rajz |
+|---|---|---|
+| `only_1up_icon` | 20 × 15 | keretben egy „A” |
+| `ab_2up_icon` | 27 × 15 | kettéosztott keret: „A” \| „B” |
+| `aa_2up_icon` | 27 × 15 | kettéosztott keret: „A” \| „A” |
+| `swap_2up_focus_icon` | 21 × 15 | kettéosztott keret, a válaszvonalon át **vízszintes kétfejű nyíl** |
+| `swap_2up_layout_icon` | 22 × 17 | két átlósan elhelyezett négyzet (fent-jobbra sötét keret, lent-balra világos) **ívelt nyíllal** |
+
+**3. A „Kijelölve” jelvény — SZÜRKE, a képen KÍVÜL.**
+- Háttér: `selection_label_bg` (+ `_left`/`_right` végek), kitöltés **`#666666`** (102, 102, 102), lekerekített. Felirat: `m_displayfont18`, fehér, félkövér.
+- Élőben mérve **86 × 26 px**, a szürke margóban, a képek szélétől 27 px-re.
+- **A fókuszban lévő kép mellett, az OSZTÓ felőli végén** ül:
+  - vízszintes elrendezés, bal fókusz: a jelvény x 630–715, a bal kép jobb széle (775) előtt 60 px-rel, a képek teteje (275) fölött (y 223–248);
+  - jobb fókusz: x 849–934, a jobb kép bal széle (787) után 62 px-rel;
+  - függőleges elrendezés: a felső (fókuszban lévő) kép **bal** oldalán, az alsó végéhez közel.
+
+**4. A fókusz a KÉPRE KATTINTVA is vált.** AB módban a bal képre kattintva a jelvény a bal kép mellé kerül, a jobbra kattintva a jobb mellé. A `swap_2up_focus` gomb ugyanezt váltja. A jelvény elhelyezője a `0x00569af0` (a `previewclip`, a `previewclip2` és a `selection_label` elemet kéri ki). Hívói: a második előnézet beállítója (`0x00569720`), a két segédgomb kezelője (`0x0056a680`) és a `0x0056a160`.
+
+#### Eredeti / nálunk / teendő (mérve, `app/qml/PicasaPy/PhotoViewer.qml`)
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| a három kapcsoló és a két segédgomb helye | a filmszalag és a ▶ **után**, jobbra | a Play és a filmszalag **előtt** (`viewerLayoutGroup` `:1127`, `viewerSwapFocus` `:1157`, `viewerSwapLayout` `:1176`, `viewerPlayButton` `:1193`, `viewerFilmstrip` `:1256`) | a sorrend az eredeti szerint |
+| ikonok | bitképek (2. pont) | szövegjelek: `⇄`, `⬌`/`⬍`, `▯▯` (`:1165`, `:1184`, `:1151`) | az eredeti rajza szerint |
+| jelvény színe | `#666666` szürke, fehér félkövér felirat | `Theme.selectionBlue` kék (`:1807`) | szürke |
+| jelvény helye | a képen kívül, a fókuszban lévő kép mellett, az osztó felőli végén | a kép-terület sarkában, a kép **előtt** deklarálva (`:1801`–`:1835`), ezért a kép rárajzol | a mért hely; a kép fölött rajzolva |
+| kattintás a képre | vált fókuszt | nem vált (az `aktivOldal`-t csak a gomb írja, `:1169`) | kattintásra váltson |
+
+*Bizonyítottsági fok: megerősített* (élő mérés + `respack.yt` + `.tre`); a jelvény pontos helyének **képlete** a `0x00569af0`-ban NINCS kiolvasva, a fenti számok az élő mérésé (1280 × 1024, 1024 × 1024-es képek).
+
 ### 4. ⭐ A SZERKESZTÉSI ÜTKÖZÉS párbeszéde — teljes szöveggel
 
 A #434 megemlítette a `TwoUpEditConflictDialog`-ot; a tényleges
