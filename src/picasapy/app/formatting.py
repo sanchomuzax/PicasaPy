@@ -339,9 +339,47 @@ _ENUM_LABELS = {
     "Landscape": "Landscape",
     "sRGB": "sRGB",
     "Uncalibrated": "Uncalibrated",
+}
+
+#: #3535: a Tömörítés sor `EXIF::…` azonosítói → az eredeti alapszövege
+#: (spec `picasa-metaadat-tulajdonsagok.md` 14.). A magyar a `stringres`
+#: szerint a `picasapy_hu.ts`-ben; a `JBIG B&W`-nek nincs magyar szövege.
+_COMPRESSION_LABELS = {
     "Uncompressed": "Uncompressed",
+    "CCITT1D": "CCITT 1D",
+    "T4/Group3Fax": "T4/Group 3 Fax",
+    "T6/Group4Fax": "T6/Group 4 Fax",
+    "LZW": "LZW",
+    "JPEGOldStyle": "JPEG (old-style)",
     "JPEG": "JPEG",
     "AdobeDeflate": "Adobe Deflate",
+    "JBIGB&W": "JBIG B&W",
+    "JBIGColor": "JBIG Color",
+    "Kodak262": "Kodak 262",
+    "Next": "Next",
+    "SonyARWCompressed": "Sony ARW Compressed",
+    "EpsonERFCompressed": "Epson ERF Compressed",
+    "PackBits": "PackBits",
+    "Thunderscan": "Thunderscan",
+    "KodakKDCCompressed": "Kodak KDC Compressed",
+    "IT8CTPAD": "IT8CTPAD",
+    "IT8LW": "IT8LW",
+    "IT8MP": "IT8MP",
+    "IT8BL": "IT8BL",
+    "PixarFilm": "PixarFilm",
+    "PixarLog": "PixarLog",
+    "Deflate": "Deflate",
+    "DCS": "DCS",
+    "JBIG": "JBIG",
+    "SGILog": "SGILog",
+    "SGILog24": "SGILog24",
+    "JPEG2000": "JPEG 2000",
+    "NikonNEFCompressed": "Nikon NEF Compressed",
+    "MDIBinaryLevelCodec": "MDI Binary Level Codec",
+    "MDIProgressiveTransformCodec": "MDI Progressive Transform Codec",
+    "MDIVector": "MDI Vector",
+    "KodakDCRCompressed": "Kodak DCR Compressed",
+    "PentaxPEFCompressed": "Pentax PEF Compressed",
 }
 
 #: Az EXIF-tájolás nyolc értéke — a Picasa is szöveggel írja ki.
@@ -397,6 +435,15 @@ def _enum_entry(value, tr) -> str | None:
     """Felsorolt EXIF-érték → lefordított felirat (ismeretlenre: None)."""
     label = _ENUM_LABELS.get(value)
     return tr(label) if label else None
+
+
+def _compression_entry(value, tr) -> str | None:
+    """Tömörítési azonosító → felirat; ismeretlen kódnál (az olvasó a
+    számot adja) maga a szám, ahogy az eredeti `%ld`-je (#3535)."""
+    if value is None:
+        return None
+    label = _COMPRESSION_LABELS.get(value)
+    return tr(label) if label else value
 
 
 def exif_entries(photo, locale: QLocale, tr) -> list:
@@ -461,7 +508,7 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
         )
     add("Metering Mode", _enum_entry(details.metering_mode, tr))
     add("Exposure Program", _enum_entry(details.exposure_program, tr))
-    add("Compression", _enum_entry(details.compression, tr))
+    add("Compression", _compression_entry(details.compression, tr))
     add("Color Space", _enum_entry(details.color_space, tr))
     if details.has_icc_profile:
         add("ICC Profile", tr("Embedded"))
