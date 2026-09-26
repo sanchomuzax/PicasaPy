@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Tulajdonságok panel magyar nyelven magyar feliratokat mutat (#3639).**
+  A panel sorai (fájl, méret, dátum, fényképező, tömörítés), a kép alatti
+  infósáv és a kor-szűrő felirata eddig magyar beállítás mellett is angolul
+  jelentek meg.
+- **A Beállítások ablak 39 felirata a hivatalos magyar Picasa-szöveget
+  mutatja (#3572)**, például „Kezelőfelület:”, „Teljes mozgófilm” és
+  „Csak a csillagozott fotók szinkronizálása”; a Webalbumok fülön a
+  névcímke-feltöltés az eredeti szerint címke + jelölőnégyzet, a hosszú
+  megerősítés-felirat pedig tördelődik, nem lóg ki az ablakból.
+- **A Képpontnövelés (Shift + Képpontnagyítás) csúszkapanelt nyit
+  (#3515).** A fókuszpont, a hatás, a sugár, az élkeménység és a
+  fokozat élő előnézettel állítható, a Megfordítás jelölő pedig a kör
+  belsejét pixelesíti a széle helyett.
+
 ## [0.8.581] – 2026-09-26
 
 ### Hozzáadva

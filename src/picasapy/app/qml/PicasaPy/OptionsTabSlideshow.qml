@@ -20,14 +20,14 @@ ColumnLayout {
     CheckBox {
         id: playMusicCheck
         objectName: "optionsSlideshowPlayMusicCheck"
-        text: qsTr("Play MP3 music during slideshow")
+        text: qsTr("Play music tracks during slideshow")
     }
     RowLayout {
         // FEN: <bind attr="enabled" source="PlayMP3Tracks"> — a mappaválasztó
         // csak akkor aktív, ha a zenelejátszás be van kapcsolva
         enabled: playMusicCheck.checked
         spacing: 8
-        Text { text: qsTr("Select a music folder:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
+        Text { text: qsTr("Select a folder of music tracks:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
         TextField { objectName: "optionsSlideshowMusicPathField"; Layout.fillWidth: true; readOnly: true 
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}

@@ -99,6 +99,8 @@ Flickable {
         // homályosító csúszkája és a Pixelate képpontmérete
         case "Blur Edges": return qsTr("Blur Edges")
         case "Pixel Size": return qsTr("Pixel Size")
+        //: #3515: a Képpontnövelés `_chkReverse` jelölője
+        case "Reverse": return qsTr("Reverse")
         default: return key
         }
     }

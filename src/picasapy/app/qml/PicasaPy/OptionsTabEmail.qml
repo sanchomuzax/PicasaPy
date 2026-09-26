@@ -11,7 +11,7 @@ import QtQuick.Layouts
 // amíg az hiányzik, a null-őr miatt a mezők a mentett/alapértékkel
 // jelennek meg, csak írás nem történik).
 //
-// A "Send movies as"/HTML-jelölő MARADT tiltott placeholder: ezek csak
+// A "Send videos as"/HTML-jelölő MARADT tiltott placeholder: ezek csak
 // Windows/Outlook alatt értelmezettek voltak az eredetiben, és a
 // PicasaPy-nak nincs videó-e-mail vagy Outlook-integrációja.
 ColumnLayout {
@@ -44,7 +44,7 @@ ColumnLayout {
     }
     RadioButton {
         objectName: "optionsMailChooseRadio"
-        text: qsTr("Let me choose each time I send a picture")
+        text: qsTr("Let me choose each time I send pictures")
         ButtonGroup.group: mailGroup
         checked: root.mailCtl ? !root.mailCtl.useDefaultClient : false
         onToggled: if (root.mailCtl && checked) root.mailCtl.setUseDefaultClient(false)
@@ -52,7 +52,7 @@ ColumnLayout {
     // #2432: az eredetiben HÁROM gomb van (`options/radio42.title` = „A
     // Google Fiók használata”). A PicasaPy-nak nincs Google-fiók-
     // integrációja, ezért TILTOTT HELYŐRZŐ — ugyanaz a bevett alak, mint a
-    // „Send movies as” két gombjánál és az Outlook-jelölőnél lent.
+    // „Send videos as” két gombjánál és az Outlook-jelölőnél lent.
     //
     // ⚠️ Miért helyőrző, és nem elhagyás: a fül szerkezete így hű marad, és
     // a tiltás kimondja, hogy nem működik. Egy engedélyezett, de kattintásra
@@ -149,7 +149,7 @@ ColumnLayout {
     }
 
     Text {
-        text: qsTr("Send movies as:")
+        text: qsTr("Send videos as:")
         font.pixelSize: Theme.fontSize
         color: Theme.ink
     }
@@ -163,7 +163,7 @@ ColumnLayout {
     }
     RadioButton {
         objectName: "optionsMailMovieFullRadio"
-        text: qsTr("Full movie")
+        text: qsTr("Full film")
         ButtonGroup.group: movieGroup
         enabled: false
     }
@@ -171,7 +171,7 @@ ColumnLayout {
     // csak Windows/Outlook alatt volt értelmezve az eredetiben
     CheckBox {
         objectName: "optionsMailUseHtmlCheck"
-        text: qsTr("Send embedded pictures and captions (Outlook only)")
+        text: qsTr("Send inline photos and captions (Outlook only)")
         enabled: false
     }
 
