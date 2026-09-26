@@ -7,6 +7,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Kettős nézetben ugyanannak a fotónak mindkét fele külön
+  szerkeszthető, és kilépéskor a program rákérdez, melyiket tartsa meg
+  (#3014).** Az eredeti Picasához hasonlóan, ha a két fél eltérő
+  szerkesztést kapott, az elrendezés váltásakor, lapozáskor, a néző
+  bezárásakor és a program bezárásakor egy kérdés dönti el, melyik fél
+  munkája maradjon. A Mégse gombbal a kettős nézetben lehet maradni, így
+  egyik fél szerkesztése sem vész el észrevétlenül.
+- **A Képek biztonsági mentése mappánként pipálható, és csak a még el
+  nem mentett fájlokat mutatja (#3594).** Az „Az összes kijelölése” és a
+  kijelölés törlése gombbal egyszerre is lehet választani, a mentés pedig
+  csak a bepipált mappákat viszi. A mappák listája a háttérben készül,
+  közben a „Számítás…” felirat látszik, így nagy gyűjteménynél sem akad
+  meg az ablak.
+
+### Javítva
+- **A klipgyűjtő sáv gombjai középen állnak, mint az eredeti Picasában
+  (#3605).** A „Vissza” gomb és a bezáró × az üzenettel együtt egy
+  középre igazított csoportot alkot, és az ablak átméretezésekor is középen
+  marad.
+
 ## [0.8.580] – 2026-09-26
 
 ### Hozzáadva
