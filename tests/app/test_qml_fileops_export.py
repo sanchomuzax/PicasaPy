@@ -351,7 +351,7 @@ class TestDeleteConfirmDialogNoTrashAvailable:
         message_label = _child(window, "confirmMessageLabel")
         text = message_label.property("text")
         assert "cannot be moved to the Trash" in text
-        assert "cannot be undone" in text
+        assert "Are you sure you want to continue?" in text
 
     def test_confirming_deletes_permanently_not_via_trash(
         self, qml_app, qt_app, monkeypatch, tmp_path

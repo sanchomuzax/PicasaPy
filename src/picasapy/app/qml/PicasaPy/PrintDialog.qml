@@ -550,6 +550,7 @@ Window {
                         var db = q.small === 1
                             ? qsTr("%1 small picture found.").arg(q.small)
                             : qsTr("%1 small pictures found.").arg(q.small)
+                        //: `ThumbUIPrint::ReviewPrompt` (#3573)
                         return sor + " " + db + " "
                                + qsTr("Please review before printing.")
                     }

@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **25 megerősítő és figyelmeztető üzenet a hivatalos Picasa-szöveget
+  mondja (#3573)**, például „Kilép?”, „Nézze át nyomtatás előtt.” és
+  „Biztosan törli a(z) „…” mentési készletet?”; a mentés-készlet törlése
+  és a diszk-mentés záró üzenete a készlet nevét, illetve az eredeti
+  egységes „A mentés elkészült” szöveget mutatja.
+
 ## [0.8.584] – 2026-09-26
 
 ### Hozzáadva

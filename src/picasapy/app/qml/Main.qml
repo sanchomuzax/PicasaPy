@@ -1512,6 +1512,7 @@ ApplicationWindow {
         }
         onSaveSearchRequested: {
             if (controller.searchResultCount > 1000)
+                //: `CThumbUI::SaveSearchBig` — az eredeti szövege (#3573)
                 saveSearchDialog.ensure().ask("", qsTr(
                     "This will create an album with more than 1000 images."
                     + "  Do you want to continue?"))
@@ -1788,15 +1789,21 @@ ApplicationWindow {
                 function openFor(rowList) {
                     if (rowList.length === 0) return
                     rows = rowList
+                    //: `IDS_CONFIRMREVERT` / `IDS_CONFIRMREVERT_MULTIPLE` —
+                    //: az eredeti szövege, a záró kérdéssel együtt (#3573)
                     var text = rowList.length === 1
                         ? qsTr("This will remove all edits you have made to the"
-                               + " current picture.")
+                               + " current picture. Do you want to continue?")
                         : qsTr("This will remove all edits you have made to ALL of"
-                               + " the selected pictures.")
+                               + " the selected pictures. Do you want to continue?")
                     if (controller.selectionHasRedeye(rowList))
+                        //: `IDS_CONFIRM_REDEYE_REVERT` — az eredeti szövege
+                        //: (a képnevet nem soroljuk fel, mert a kijelölés
+                        //: több képre is vonatkozhat) (#3573)
                         text += "\n\n" + qsTr("Red eye fixes have been applied. If you"
                                               + " remove all edits, your red eye fixes"
-                                              + " cannot be recovered.")
+                                              + " cannot be recovered with redo. Are you"
+                                              + " sure you want to remove the fixes forever?")
                     ask("undoAllEdits", text)
                 }
                 onConfirmed: controller.clearAllEffectsMany(rows)
@@ -2573,7 +2580,7 @@ ApplicationWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left
                         anchors.leftMargin: 8
-                        //: `CSimSearch::updating` — az eredeti szövege.
+                        //: `CSimSearch::updating` — az eredeti szövege (#3573)
                         text: qsTr(
                             "Updating similarity database "
                             + "(will be fast next time)")
@@ -3034,14 +3041,16 @@ ApplicationWindow {
         function ask() {
             //: a `decisionKey` SZÁNDÉKOSAN üres: a futó munka leállítását
             //: nem lehet „ne kérdezze újra"-val elnyomni
+            //: `IBackgroundNotify::cancel` — az eredeti szövege (#3573)
             ensure().ask("", qsTr(
-                "Do you want to stop the operation running in the background?"))
+                "Do you want to cancel this operation?"))
         }
         sourceComponent: Component {
             ConfirmDialog {
                 objectName: "activityCancelConfirm"
                 namePrefix: "activityCancel"
-                title: qsTr("Stop the background operation")
+                //: `IBackgroundNotify::canceltitle` — az eredeti szövege (#3573)
+                title: qsTr("Want to Cancel?")
                 onConfirmed: controller.cancelActivity()
             }
         }
@@ -3345,6 +3354,9 @@ ApplicationWindow {
         interval: 400
         onTriggered: {
             if (brokenPhotoDialog.ensure().pendingIds.length > 0) {
+                //: `CThumbUI::GetBadImages` — az eredeti a két mondat közé a
+                //: hibás fájlok listáját szúrja be; ezt a felületünk (még)
+                //: nem jeleníti meg külön, ezért itt hiányzik (#3573)
                 brokenPhotoDialog.ensure().ask("", qsTr(
                     "Picasa had a problem loading this file(s). Would you "
                     + "like to hide the files on disk?"))
@@ -3911,10 +3923,13 @@ ApplicationWindow {
                 objectName: "resetFacesConfirm"
                 namePrefix: "resetFaces"
                 title: qsTr("Reset Faces")
-                message: qsTr("WARNING! This will move all the faces back to the "
-                              + "unnamed album and delete the face groups. Name tags "
-                              + "you have written into the photos are NOT touched. "
-                              + "Do you want to do this?")
+                //: `CThumbUI::ResetAllFaces` — az eredeti szövege (a
+                //: viselkedésen ez a jegy nem változtat, csak a
+                //: megjelenő szövegen) (#3573)
+                message: qsTr("WARNING! This will DELETE all people albums, "
+                              + "and move all the faces to the unnamed album. "
+                              + "This can REMOVE name tags on synced web "
+                              + "albums also. Do you want to do this?")
                 onConfirmed: {
                     if (typeof faceScanController !== "undefined" && faceScanController)
                         faceScanController.resetAllFaces()
