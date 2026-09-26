@@ -1615,8 +1615,8 @@ a `properties.xml`-be `<LightSource/>` kerülne.**
 | | eredeti | nálunk |
 |---|---|---|
 | „Fehéregyensúly” sor forrása | 94-es kulcs = EXIF `0xa403` | `_WHITE_BALANCE_TAG = 41987` (`0xa403`, `metadata/reader.py:52`) ✅ |
-| 0 / 1 | „Automatikus” / „Kézi” | `tr("Auto")` / `tr("Manual")` → „Automatikus” / „Kézi” (`formatting.py:457–461`) ✅ |
-| ismeretlen kód | a **szám** (`%ld`) | a sor **eltűnik** (`reader.py:191–194`: csak 0/1-re ad értéket) |
+| 0 / 1 | „Automatikus” / „Kézi” | `tr("Auto")` / `tr("Manual")` → „Automatikus” / „Kézi” (`formatting.py:520–526`) ✅ |
+| ismeretlen kód | a **szám** (`%ld`) | a **szám** (`reader.py:194`, `formatting.py:520–526`) ✅ (#3558) |
 | Fényforrás (`0x9208`) | a panel nem mutatja | nincs olvasó — **nem is kell** |
 
 *Bizonyítottsági fok: **megerősített** a 21 soros táblára (minden ág
