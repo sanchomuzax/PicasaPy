@@ -28,17 +28,47 @@ ColumnLayout {
             model: ["800px", "1024px", "1600px", qsTr("Original size")]
         }
     }
-    CheckBox { objectName: "optionsWebStripedUploadCheck"; text: qsTr("When syncing large files, upload previews first") }
-    CheckBox { objectName: "optionsWebKeepJpegQualityCheck"; text: qsTr("Preserve original image quality (uses more storage)") }
+    CheckBox {
+        objectName: "optionsWebStripedUploadCheck"
+        text: qsTr("When syncing large files, upload previews first")
+        // #3572: a hivatalos magyar felirat hosszabb az ablak legkisebb
+        // szélességénél — tördelődik, nem tolja ki a fület
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        contentItem: Text {
+            leftPadding: parent.indicator.width + parent.spacing
+            text: parent.text
+            font: parent.font
+            color: parent.palette.windowText
+            wrapMode: Text.WordWrap
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+    CheckBox {
+        objectName: "optionsWebKeepJpegQualityCheck"
+        text: qsTr("Preserve original image quality (uses more storage)")
+        // #3572: a hivatalos magyar felirat hosszabb az ablak legkisebb
+        // szélességénél — tördelődik, nem tolja ki a fület
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        contentItem: Text {
+            leftPadding: parent.indicator.width + parent.spacing
+            text: parent.text
+            font: parent.font
+            color: parent.palette.windowText
+            wrapMode: Text.WordWrap
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
     CheckBox { objectName: "optionsWebStarredOnlyCheck"; text: qsTr("Sync starred photos only") }
     // ld. a fájl fejlécében: ez a "confirmsync" globális döntés-kulcsot
     // némítaná el, NEM egy saját webalbum-beállítás
     CheckBox {
         objectName: "optionsWebConfirmSyncDisableCheck"
         text: qsTr("Don't confirm every sync (use the above settings)")
-        //: #3572: a hivatalos magyar felirat szélesebb az ablaknál — a
-        //: fül szélességét nem tolhatja ki (az a többi fül gombjait is
-        //: kilógatná), ezért tördelődik
+        // #3572: a hivatalos magyar felirat szélesebb az ablaknál — a
+        // fül szélességét nem tolhatja ki (az a többi fül gombjait is
+        // kilógatná), ezért tördelődik
         Layout.fillWidth: true
         Layout.preferredWidth: 0
         contentItem: Text {
