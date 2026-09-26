@@ -52,10 +52,12 @@ def controller(qt_app, tmp_path):
                 piexif.ImageIFD.Make: b"Canon",
                 piexif.ImageIFD.Model: b"EOS 550D",
                 piexif.ImageIFD.Compression: 6,
+                piexif.ImageIFD.Orientation: 1,
             },
             "Exif": {
                 piexif.ExifIFD.DateTimeOriginal: b"2025:05:01 07:00:00",
                 piexif.ExifIFD.WhiteBalance: 0,
+                piexif.ExifIFD.ExposureProgram: 7,  # Portrait
             },
         }
     )
@@ -101,6 +103,9 @@ def test_fenykepezo_sorai_es_tomorites_magyarul(controller, magyar):
     assert sorok["Fényképezőgép típusa"] == "EOS 550D"
     assert sorok["Fehéregyensúly"] == "Automatikus"
     assert sorok["Tömörítés"] == "JPEG (régi típusú)"
+    # az átnézés lelete: ezek a felsorolt értékek angolul maradtak
+    assert "Normál" in sorok.values(), sorok
+    assert "Álló" in sorok.values(), sorok
 
 
 def test_angolul_valtozatlan(controller):
