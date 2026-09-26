@@ -35,6 +35,16 @@ Rectangle {
     property var peopleWith: []
     property string currentPerson: ""
     property int selectionCount: 0
+    // #3585 (spec 9/b–9/d): a „Név nélküliek" album nyitva van, és a
+    // fejléc váltógombja csoportosított állapotban áll
+    property bool unnamedAlbumMode: false
+    property bool unnamedGrouped: true
+    // a többképes ág „van kép, nincs megnevezett személy" sora:
+    // `+0x2af` (csoportosított nézet) ? UnnamedCluster : Unnamed. Az
+    // egyképes ág és a betöltés-feliratok a #3566-é.
+    readonly property bool showUnnamedLabel:
+        panel.unnamedAlbumMode && panel.selectionCount > 1
+        && panel.peopleHere.length === 0 && panel.peopleWith.length === 0
 
     signal personChosen(string name)
     signal closeRequested()
@@ -52,6 +62,20 @@ Rectangle {
         //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
         //: (`RightDrawer`), nem a panelben. A darabszám-felirat a
         //: panelé marad — az a tartalomról szól, nem a fiókról.
+
+        // #3585: a „Név nélküliek" album fejléce — PeoplePanel::UnnamedCluster
+        // csoportosítva, PeoplePanel::Unnamed kibontva
+        Text {
+            objectName: "peoplePanelUnnamedLabel"
+            visible: panel.showUnnamedLabel
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: panel.unnamedGrouped
+                  ? qsTr("Unnamed people in these photos:")
+                  : qsTr("Unnamed groups of people:")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
 
         // -- 1. szakasz: akik a kijelölt képeken vannak ------------------
         Text {
@@ -105,6 +129,7 @@ Rectangle {
         Text {
             objectName: "peoplePanelEmptyText"
             visible: panel.peopleHere.length === 0 && panel.peopleWith.length === 0
+                     && !panel.showUnnamedLabel
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: panel.currentPerson.length > 0

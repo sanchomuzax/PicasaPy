@@ -7,8 +7,10 @@ Repeater/GridView delegate-jei nem érhetők el findChild-dal)."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QUrl, Slot
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt, QUrl, Signal, Slot
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from PySide6.QtQuick import QQuickWindow
+from PySide6.QtTest import QTest
 
 _KEEPALIVE = []
 
@@ -111,6 +113,12 @@ class _StubFaceScanController(QObject):
         self.calls.append(("unignoreFaces", list(face_ids)))
         return len(list(face_ids))
 
+    # a csoportosítás (lenyomat + csoportba sorolás) futásának jelzései
+    embeddingStarted = Signal()
+    embeddingFinished = Signal(int, int)
+    embeddingCancelled = Signal()
+    embeddingFailed = Signal(str)
+
 
 def _make_view(qt_app, controller=None):
     import picasapy.app.application as app_module
@@ -149,13 +157,13 @@ class TestUnnamedFacesViewWiring:
         model = view.property("groupsModel")
         assert len(model) == 1
 
-    def test_toggle_group_by_face_reloads(self, qt_app):
+    def test_expanding_reloads_the_full_groups(self, qt_app):
         stub = _StubFaceScanController()
         view = _make_view(qt_app, controller=stub)
         stub.calls.clear()
-        view.setProperty("groupByFace", False)
+        view.setProperty("grouped", False)
         qt_app.processEvents()
-        assert ("unnamedGroups", False, False) in stub.calls
+        assert ("unnamedGroups", True, True) in stub.calls
 
     def test_add_name_button_calls_assign_name_to_faces(self, qt_app):
         stub = _StubFaceScanController(assign_result=True)
@@ -320,3 +328,133 @@ class TestIgnoredAlbum:
         calls = [c for c in stub.calls if c[0] == "unignoreFaces"]
         assert len(calls) == 1
         assert list(calls[0][1]) == [3]
+
+
+# #3585: a fejléc egyetlen csoportosítás-váltógombja és a fejléc-utasítás
+# (spec `picasa-arcfelismeres.md` 9/d). A magyar alak a `stringres`-é, a
+# `.ts` hordozza; itt az angol forrásszöveget mérjük.
+_TOGGLE_GROUPED = (
+    'Select someone you know and add a name, or click the "x" to ignore '
+    "that person."
+)
+_TOGGLE_GROUP_IGNORE = "Select someone you know and add a name."
+_TOGGLE_UNGROUPED = "Select someone you know and add a name"
+_LOADING_GROUPED = "Grouping faces, please wait..."
+
+
+def _host_in_window(qt_app, view):
+    """A nézet egy valódi (offscreen) ablakba kerül, hogy egérrel lehessen
+    rá kattintani."""
+    window = QQuickWindow()
+    window.resize(1000, 600)
+    view.setParentItem(window.contentItem())
+    view.setProperty("width", 1000)
+    view.setProperty("height", 600)
+    window.show()
+    QTest.qWaitForWindowExposed(window)
+    qt_app.processEvents()
+    _KEEPALIVE.append(window)
+    return window
+
+
+def _click(window, item, qt_app):
+    center = item.mapToScene(item.boundingRect().center())
+    QTest.mouseClick(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        QPoint(round(center.x()), round(center.y())),
+    )
+    qt_app.processEvents()
+
+
+def _instructions(view):
+    return view.findChild(QObject, "unnamedInstructions").property("text")
+
+
+class TestClusterToggle:
+    """#3585: az eredetiben a `cluster` ↔ `showall` EGY váltógomb két arca
+    (`unknownfaceheaderpanel.tre:24–33`) — nem két független kapcsoló."""
+
+    def test_there_is_one_toggle_instead_of_two_checkboxes(self, qt_app):
+        view = _make_view(qt_app, controller=_StubFaceScanController())
+
+        assert view.findChild(QObject, "groupByFaceCheck") is None
+        assert view.findChild(QObject, "expandGroupsCheck") is None
+        assert view.findChild(QObject, "clusterToggleButton") is not None
+
+    def test_it_opens_grouped(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        toggle = view.findChild(QObject, "clusterToggleButton")
+
+        assert view.property("grouped") is True
+        assert ("unnamedGroups", True, False) in stub.calls
+        # csoportosítva a „Csoportok részletes nézete" gomb látszik
+        assert toggle.property("text") == "Expand groups"
+        assert _instructions(view) == _TOGGLE_GROUPED
+
+    def test_clicking_switches_state_label_and_instructions(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        window = _host_in_window(qt_app, view)
+        toggle = view.findChild(QObject, "clusterToggleButton")
+        stub.calls.clear()
+
+        _click(window, toggle, qt_app)
+
+        assert view.property("grouped") is False
+        assert toggle.property("text") == "Group by face"
+        assert _instructions(view) == _TOGGLE_UNGROUPED
+        assert ("unnamedGroups", True, True) in stub.calls
+
+        stub.calls.clear()
+        _click(window, toggle, qt_app)
+
+        assert view.property("grouped") is True
+        assert toggle.property("text") == "Expand groups"
+        assert _instructions(view) == _TOGGLE_GROUPED
+        assert ("unnamedGroups", True, False) in stub.calls
+
+    def test_reopening_the_album_starts_grouped_again(self, qt_app):
+        view = _make_view(qt_app, controller=_StubFaceScanController())
+        # ablak nélkül a láthatóság nem kapcsol vissza — a nézet a
+        # Main.qml-ben is ablakban él
+        _host_in_window(qt_app, view)
+        view.setProperty("grouped", False)
+        view.setProperty("visible", False)
+        qt_app.processEvents()
+
+        view.setProperty("visible", True)
+        qt_app.processEvents()
+
+        assert view.property("grouped") is True
+
+    def test_the_ignored_album_has_its_own_instructions(self, qt_app):
+        view = _make_view(qt_app, controller=_StubFaceScanController())
+        view.setProperty("mode", "ignored")
+        qt_app.processEvents()
+
+        assert _instructions(view) == _TOGGLE_GROUP_IGNORE
+        toggle = view.findChild(QObject, "clusterToggleButton")
+        assert toggle.property("visible") is False
+
+    def test_while_grouping_runs_it_asks_to_wait(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+
+        stub.embeddingStarted.emit()
+        qt_app.processEvents()
+        assert _instructions(view) == _LOADING_GROUPED
+
+        stub.embeddingFinished.emit(3, 2)
+        qt_app.processEvents()
+        assert _instructions(view) == _TOGGLE_GROUPED
+
+    def test_expanded_view_does_not_show_the_grouping_notice(self, qt_app):
+        """A „várjon" szöveg csak a csoportosított állapoté (`0x0074c2c8`)."""
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        view.setProperty("grouped", False)
+        stub.embeddingStarted.emit()
+        qt_app.processEvents()
+
+        assert _instructions(view) == _TOGGLE_UNGROUPED

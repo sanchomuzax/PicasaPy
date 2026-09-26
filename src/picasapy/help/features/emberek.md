@@ -48,8 +48,9 @@ a kijelölést.
 A bal hasáb **Névtelenek** bejegyzése a még el nem nevezett arcokat
 gyűjti. Itt:
 
-- A **Csoportosítás arc szerint** kapcsolóval egy emberhez tartozó
-  arcokat egyben látod. A **Csoportok kibontása** szétnyitja őket.
+- Az album csoportosítva nyílik: egy emberhez tartozó arcokat egyben
+  látod. A fejléc **Csoportok részletes nézete** gombja szétnyitja őket,
+  ugyanott a **Csoportosítás arcok szerint** visszacsukja.
 - Egy arc alá beírt névvel elnevezed. Ha a program tippel valakire, a név
   mellett kérdőjel áll — egy kattintás elfogadja.
 - A **Mellőzés** paranccsal félreteszed azokat az arcokat, amiket nem
