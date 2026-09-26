@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A személy-album javaslatának elvetése (Eltávolítás/Mellőzés) a
+  `.picasa.ini`-be is beírja a mért `]ignoreface` jelölést, nem csak a
+  saját indexbe (#3670).** Emiatt eddig egy másik gépre másolt könyvtárban,
+  vagy egy friss újraindexelés után az elvetett javaslat visszatérhetett.
+
 ## [0.8.584] – 2026-09-26
 
 ### Hozzáadva

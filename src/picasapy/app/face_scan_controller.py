@@ -53,12 +53,15 @@ from picasapy.faces.clustering import DEFAULT_SUGGEST_STEP, step_to_threshold
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
     all_photos,
+    face_ids_for_photo,
+    face_photo_paths,
     faces_missing_embedding,
     ignored_faces,
     group_unnamed_faces,
     javaslatokat_ujraszamol,
     lazitott_lepcso,
     mark_faces_ignored,
+    photo_ids_still_ignored,
     set_suggested_name,
     suggested_faces_for,
     unignore_faces,
@@ -73,7 +76,8 @@ from picasapy.index import (
     unnamed_album_photos,
     unnamed_faces,
 )
-from picasapy.ini import load_document, parse_faces
+from picasapy.ini import IniConflictError, IniSaveError, load_document, parse_album_refs, parse_faces, update_document
+from picasapy.ini.albums import IGNORE_FACE_ALBUM_TOKEN, ensure_album, with_album, without_album
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
@@ -82,6 +86,11 @@ from .worker_thread import BackgroundWorkerMixin
 from .display_mode_paint import current_display_mode_suffix
 
 _log = logging.getLogger(__name__)
+
+#: A `.picasa.ini`-írás hibái (#3670) — a `FacesHelper`/`photo_ops_
+#: controller.py` mintáját követve: tartós ütközés/olvasási hiba is
+#: KEZELT eset, nem néma adatvesztés/omlás.
+_INI_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
 # A detektálás bemenetének célmérete — a thumbs-cache alapértelmezett
 # méreténél (256) nagyobb, hogy a kisebb arcok is megtalálhatók legyenek,
@@ -770,13 +779,22 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         megmarad, csak `state = 'ignored'` lesz, így sem a „Névtelenek"
         albumban, sem a csoportosításban nem bukkan fel újra.
 
+        #3670 (a #2187 nyitva hagyott 8. pontja): az INDEX mellett a
+        `.picasa.ini`-be is beírjuk a mért `]ignoreface` tokent
+        (`_apply_ignore_marker`) — különben az elvetés más gépen, vagy egy
+        friss újraindexelés után elveszne, mert csak a saját SQLite-
+        indexünkben élt.
+
         A mellőzött arcok száma a visszatérési érték."""
         ids = [int(face_id) for face_id in face_ids]
         if not ids:
             return 0
         with open_index(self._db_path) as conn:
+            locations = face_photo_paths(conn, ids)
             mark_faces_ignored(conn, ids)
             conn.commit()
+        photo_paths = {path for _photo_id, path in locations.values()}
+        self._apply_ignore_marker(photo_paths, add=True)
         self.unnamedCountChanged.emit()
         return len(ids)
 
@@ -822,15 +840,60 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     @Slot(list, result=int)
     def unignoreFaces(self, face_ids) -> int:  # noqa: N802 — QML-slot-stílus
         """A mellőzés VISSZAVONÁSA: az arcok újra a „Névtelenek" albumba
-        kerülnek."""
+        kerülnek.
+
+        #3670: a `.picasa.ini` `]ignoreface` jelölését CSAK azokról a
+        fotókról vesszük le, amelyeknek MÁR nincs mellőzött arca — egy
+        fotón több javaslat is lehet, és a többi mellőzöttet ez a hívás
+        nem érinti."""
         ids = [int(face_id) for face_id in face_ids]
         if not ids:
             return 0
         with open_index(self._db_path) as conn:
+            locations = face_photo_paths(conn, ids)
             unignore_faces(conn, ids)
+            photo_ids = {photo_id for photo_id, _path in locations.values()}
+            still_ignored = photo_ids_still_ignored(conn, photo_ids)
             conn.commit()
+        cleared_paths = {
+            path for photo_id, path in locations.values() if photo_id not in still_ignored
+        }
+        self._apply_ignore_marker(cleared_paths, add=False)
         self.unnamedCountChanged.emit()
         return len(ids)
+
+    def _apply_ignore_marker(self, photo_paths, *, add: bool) -> None:
+        """A `]ignoreface` jelölés a `.picasa.ini`-be — #3670: a `faces=`
+        régiókhoz hasonlóan az ini/ API-n át íródik, MAPPÁNKÉNT egyetlen
+        atomikus íráskörben (`update_document`). Legjobb erőfeszítés: egy
+        ini-írási hiba (pl. csak olvasható fájl) itt csak naplózódik — az
+        elsődleges hatás, az INDEX állapota, ekkor már megtörtént."""
+        by_ini: dict[Path, set[str]] = {}
+        for path in photo_paths:
+            ini_path = path.parent / PICASA_INI_NAME
+            by_ini.setdefault(ini_path, set()).add(path.name)
+
+        def mutate(document, names: frozenset[str]):
+            result = document
+            if add:
+                result = ensure_album(result, IGNORE_FACE_ALBUM_TOKEN)
+            for name in names:
+                result = (
+                    with_album(result, name, IGNORE_FACE_ALBUM_TOKEN)
+                    if add
+                    else without_album(result, name, IGNORE_FACE_ALBUM_TOKEN)
+                )
+            return result
+
+        for ini_path, names in by_ini.items():
+            try:
+                update_document(
+                    ini_path,
+                    lambda document, names=frozenset(names): mutate(document, names),
+                    backup=True,
+                )
+            except _INI_WRITE_ERRORS as error:
+                _log.warning("]ignoreface ini-írás hiba (%s): %s", ini_path, error)
 
     @Slot()
     def computeEmbeddings(self) -> None:
@@ -889,6 +952,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         continue
                     faces = self._detect(photo_path)
                     replace_faces(conn, photo.id, faces)
+                    if faces and _is_ignore_marked_in_ini(photo_path):
+                        # #3670: a fotó a `.picasa.ini` `]ignoreface`
+                        # albumába van sorolva — a friss találatok NE
+                        # bukkanjanak fel újra javaslatként.
+                        mark_faces_ignored(
+                            conn, face_ids_for_photo(conn, photo.id)
+                        )
                     mark_face_scan(
                         conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
                     )
@@ -1015,3 +1085,24 @@ def _has_named_face(photo_path: Path) -> bool:
     except ValueError:
         return False
     return any(face.is_identified for face in faces)
+
+
+def _is_ignore_marked_in_ini(photo_path: Path) -> bool:
+    """Igaz, ha a fotó a `.picasa.ini` `]ignoreface` (Mellőzött emberek)
+    albumába van sorolva (#3670) — a `_apply_ignore_marker` írja.
+
+    Ez tartja meg az elvetést újraindexeléskor (vagy másik gépen): a
+    `_run_scan` a friss detektálás UTÁN ezzel dönti el, azonnal
+    `'ignored'`-ra állítsa-e az újonnan beszúrt sorokat, mielőtt azok
+    javaslatként felbukkannának. Hiányzó/olvashatatlan ini esetén hamis."""
+    ini_path = photo_path.parent / PICASA_INI_NAME
+    if not ini_path.exists():
+        return False
+    try:
+        document = load_document(ini_path)
+    except (OSError, ValueError):
+        return False
+    section = document.section(photo_path.name)
+    if section is None:
+        return False
+    return IGNORE_FACE_ALBUM_TOKEN in parse_album_refs(section.get("albums") or "")
