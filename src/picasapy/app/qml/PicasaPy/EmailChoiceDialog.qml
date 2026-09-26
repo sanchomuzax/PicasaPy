@@ -47,8 +47,8 @@ Dialog {
         CheckBox {
             id: emlekezzKapcsolo
             objectName: "emailChoiceRemember"
-            //: A mért „DoNotPromptForEmailPref" megfelelője
-            text: qsTr("Remember this choice and do not ask again")
+            //: `choose_mail/remember` — az eredeti szövege (#3573)
+            text: qsTr("Remember this setting, don't display this dialog again.")
         }
     }
 

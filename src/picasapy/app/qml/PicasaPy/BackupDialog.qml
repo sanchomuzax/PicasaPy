@@ -221,12 +221,11 @@ Window {
         }
         function onFutasKesz(darab, bajt) {
             backupWindow.fut = false
-            backupWindow.uzenet = darab === 0
-                ? qsTr("Everything was already backed up.")
-                //: #3189: a mért záró üzenet `il_BurnPanel::BackupCopy::3`
-                //: („Backup Complete" / „A mentés elkészült"). A darabszám
-                //: a másolás közbeni sorban látszik, ezért itt nem kell.
-                : qsTr("Backup Complete")
+            //: #3189, #3573: a mért záró üzenet `il_BurnPanel::BackupCopy::3`
+            //: („Backup Complete" / „A mentés elkészült") — az eredeti EGY
+            //: záró üzenetet ismer, akkor is, ha nem volt mit másolni. A
+            //: darabszám a másolás közbeni sorban látszik, ezért itt nem kell.
+            backupWindow.uzenet = qsTr("Backup Complete")
         }
         //: #2074: a lemezkép-ág vége — a felhasználó SZÁMOKAT kap: hány
         //: lemezkép készült és hány fájl van rajtuk.
@@ -625,10 +624,15 @@ Window {
                 visible: !backupWindow.szerkesztes
                 enabled: backupWindow.kivalasztott >= 0
                 text: qsTr("Delete Set")
-                //: Az eredeti megerősítést kér a törlés előtt.
-                onClicked: torlesMegerosites.ask(
-                    "", qsTr("Delete this backup set? The saved files stay "
-                             + "where they are."))
+                onClicked: {
+                    var k = backupWindow.kivalasztott >= 0
+                        ? backupWindow.keszletek[backupWindow.kivalasztott] : null
+                    //: `il_NewBkDialog_delete` — az eredeti szövege, a
+                    //: készlet nevével (#3573)
+                    torlesMegerosites.ask(
+                        "", qsTr("Are you sure you want to delete the backup set \"%1\"?")
+                                .arg(k ? k.nev : ""))
+                }
             }
             Item { Layout.fillWidth: true }
             PicasaButton {
@@ -683,8 +687,10 @@ Window {
                     //: #2074: a lemezszám-becslés is látszik, ahogy az
                     //: eredetiben („Est. %d CDs or %d DVDs") — a kapacitás
                     //: a mért képletből jön.
+                    //: #3573: nincs mit másolni — az eredeti ilyenkor is a
+                    //: záró „Backup Complete" üzenetet mutatja.
                     backupWindow.uzenet = terv.darab === 0
-                        ? qsTr("Everything was already backed up.")
+                        ? qsTr("Backup Complete")
                         : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
                             .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
                     if (backupWindow.valasztottTipus !== "cddvd") {
@@ -693,7 +699,7 @@ Window {
                     }
                     //: a lemezkép-ág a MÉRT kapacitással oszt lemezekre
                     backupWindow.uzenet = terv.darab === 0
-                        ? qsTr("Everything was already backed up.")
+                        ? qsTr("Backup Complete")
                         : qsTr("Writing %1 file(s) to disc image(s)...")
                             .arg(terv.darab)
                     backupController.futtasdLemezkepbe(

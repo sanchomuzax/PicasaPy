@@ -351,7 +351,7 @@
     </message>
     <message>
         <source>Please review before printing.</source>
-        <translation>Nyomtatás előtt ellenőrizze őket.</translation>
+        <translation>Nézze át nyomtatás előtt.</translation>
     </message>
     <message>
         <source>You are ready to print.</source>
@@ -1177,7 +1177,7 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>PicasaPy is compacting its database to save disk space. This may take several minutes.</source>
-        <translation>A PicasaPy tömöríti az adatbázisát, hogy lemezhelyet szabadítson fel. Ez több percig is eltarthat.</translation>
+        <translation>A PicasaPy tömöríti az adatbázisát, hogy takarékoskodjon a lemezterülettel. Ez percekig is tarthat.</translation>
     </message>
     <message>
         <source>Compacting...</source>
@@ -2880,7 +2880,7 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="2082"/>
         <source>This file is read only. In order to edit this file, Picasa needs to copy the file's folder. Would you like to make a copy now?</source>
-        <translation>Ez a fájl csak olvasható. A szerkesztéshez a Picasának le kellene másolnia a fájl mappáját. Szeretné, ha most készítenénk egy másolatot?</translation>
+        <translation>A fájl írásvédett; szerkesztéséhez a Picasának másolatot kell készítenie a fájl mappájáról. Szeretne most másolatot készíteni?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="2088"/>
@@ -3307,8 +3307,8 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         </translation>
     </message>
     <message>
-        <source>This file cannot be moved to the Trash and will be deleted immediately. This cannot be undone.</source>
-        <translation>Ez a fájl nem helyezhető át a Lomtárba, ezért azonnal, véglegesen törlődik. Ez nem vonható vissza.</translation>
+        <source>This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?</source>
+        <translation>A fájl nem helyezhető át a Kukába, a program azonnal törölni fogja. Biztosan folytatja a műveletet?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="101"/>
@@ -3331,7 +3331,7 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Please enter a new name for these files:</source>
-        <translation>Adjon új nevet ezeknek a fájloknak:</translation>
+        <translation>Kérjük, adjon új nevet ezeknek a fájloknak:</translation>
     </message>
     <message>
         <source>Rename</source>
@@ -3339,7 +3339,7 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Include in filename:</source>
-        <translation>A fájlnévben szerepeljen:</translation>
+        <translation>Befoglalás a fájlnévbe:</translation>
     </message>
     <message>
         <source>Date</source>
@@ -3499,15 +3499,15 @@ hiba(%2)</translation>
     </message>
     <message>
         <source>This cannot be undone and all changes will be lost.</source>
-        <translation>Ez nem vonható vissza, és minden változtatás elvész.</translation>
+        <translation>Ez a művelet nem vonható vissza, és az összes módosítás elvész.</translation>
     </message>
     <message>
         <source>Undo Save</source>
-        <translation>Utolsó mentés visszavonása</translation>
+        <translation>Mentés visszavonása</translation>
     </message>
     <message>
         <source>To undo the last save and keep edits click 'Undo Save'.</source>
-        <translation>Az utolsó mentés visszavonásához a szerkesztések megtartásával kattintson az „Utolsó mentés visszavonása” gombra.</translation>
+        <translation>Az utolsó mentés visszavonásához és a szerkesztések megtartásához kattintson a „Mentés visszavonása” gombra.</translation>
     </message>
     <message>
         <source>File operation failed</source>
@@ -3611,13 +3611,13 @@ hiba(%2)</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
-        <source>Watching an entire drive can slow down the system. It would be better to select several sub-folders.</source>
-        <translation>Egy teljes meghajtó figyelése lelassíthatja a rendszert. Érdemesebb néhány almappát kiválasztani.</translation>
+        <source>Watching an entire drive can slow down the system. It would be better to select several sub-folders. Are you sure you want to do this?</source>
+        <translation>Egy teljes meghajtó figyelése lelassíthatja a rendszert. Jobb lenne több almappát kiválasztani. Biztosan ezt kívánja tenni?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
-        <source>If you remove this folder, new items that you add to that folder on disk will not be automatically added to your library.</source>
-        <translation>Ha eltávolítja ezt a mappát, a lemezen később bele tett új képek nem kerülnek automatikusan a könyvtárba.</translation>
+        <source>If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to Picasa. Are you sure you want to do this?</source>
+        <translation>Ha egy figyelt mappát eltávolít, a lemezen oda mentett új fájlokat a Picasa nem veszi fel automatikusan. Biztosan ezt szeretné?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
@@ -4237,13 +4237,13 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <name>Main</name>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>Stop the background operation</source>
-        <translation>A háttérművelet leállítása</translation>
+        <source>Want to Cancel?</source>
+        <translation>Kilép?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>Do you want to stop the operation running in the background?</source>
-        <translation>Leállítja a háttérben futó műveletet?</translation>
+        <source>Do you want to cancel this operation?</source>
+        <translation>Megszakítja ezt a műveletet?</translation>
     </message>
     <!-- #754: a jobb fiók fejléc-címe — UGYANAZ a négy szöveg, mint a
          Nézet menü tételeié (a gyorsító és a billentyű-tipp nélkül) -->
@@ -4322,7 +4322,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 
     <message>
         <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-        <translation>Ez több mint 1000 képet tartalmazó albumot hoz létre.  Folytatja?</translation>
+        <translation>Ezzel a művelettel létrehoz egy több mint 1000 képből álló albumot. Folytatja?</translation>
     </message>
     <message>
         <source>Create Album</source>
@@ -4404,8 +4404,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <translation>Arcok alaphelyzetbe állítása</translation>
     </message>
     <message>
-        <source>WARNING! This will move all the faces back to the unnamed album and delete the face groups. Name tags you have written into the photos are NOT touched. Do you want to do this?</source>
-        <translation>FIGYELMEZTETÉS! Ez a művelet minden arcot visszahelyez a Névtelenek albumba, és törli az arc-csoportokat. A fotókba írt névcímkékhez NEM nyúl. Ezt szeretné tenni?</translation>
+        <source>WARNING! This will DELETE all people albums, and move all the faces to the unnamed album. This can REMOVE name tags on synced web albums also. Do you want to do this?</source>
+        <translation>FIGYELMEZTETÉS! Ez a művelet TÖRLI az összes személyi albumot, és a Név nélküliek albumba helyezi át az arcokat. A művelet a szinkronizált webalbumokból is ELTÁVOLÍTHATJA a névcímkéket. Ezt szeretné tenni?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
@@ -4436,18 +4436,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>Red eye fixes have been applied. If you remove all edits, your red eye fixes cannot be recovered.</source>
-        <translation>A képen vörösszem-javítás van. Ha eltávolítja az összes szerkesztést, a vörösszem-javítás nem állítható vissza.</translation>
+        <source>Red eye fixes have been applied. If you remove all edits, your red eye fixes cannot be recovered with redo. Are you sure you want to remove the fixes forever?</source>
+        <translation>Vörösszemjavítások történtek. Ha eltávolít minden szerkesztést, a vörösszemjavításokat később nem lehet újra alkalmazni. Biztos, hogy végleg eltávolítja a javításokat?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>This will remove all edits you have made to ALL of the selected pictures.</source>
-        <translation>Ezzel az ÖSSZES kijelölt képen eltávolít minden szerkesztést.</translation>
+        <source>This will remove all edits you have made to ALL of the selected pictures. Do you want to continue?</source>
+        <translation>Ezzel a művelettel eltávolít minden módosítást, amelyet az ÖSSZES kijelölt képre alkalmazott. Folytatja?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>This will remove all edits you have made to the current picture.</source>
-        <translation>Ezzel a jelenlegi képen eltávolít minden szerkesztést.</translation>
+        <source>This will remove all edits you have made to the current picture. Do you want to continue?</source>
+        <translation>Ezzel a művelettel eltávolít minden módosítást, amelyet eddig az aktuális képre alkalmazott. Folytatja?</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -4670,7 +4670,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <location filename="Main.qml" line="1037"/>
         <source>Picasa had a problem loading this file(s). Would you like to hide the files on disk?</source>
-        <translation>A Picasa nem tudta betölteni ezt/ezeket a fájlt/fájlokat. Szeretné elrejteni a fájlokat a lemezen?</translation>
+        <translation>A Picasa problémába ütközött a fájl(ok) betöltése során. El szeretné rejteni a lemezen található fájlokat?</translation>
     </message>
     <message>
         <source>Similarity Search Results</source>
@@ -4682,7 +4682,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <source>Updating similarity database (will be fast next time)</source>
-        <translation>A hasonlósági adatbázis épül (legközelebb gyors lesz)</translation>
+        <translation>Hasonlósági adatbázis frissítése (legközelebb gyors lesz)</translation>
     </message>
 </context>
 <context>
@@ -5008,12 +5008,12 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
         <source>Redeye fixes cannot be recovered with redo. Are you sure you want to undo?</source>
-        <translation>A vörösszem-javítás az Újra paranccsal nem állítható vissza. Biztosan visszavonja?</translation>
+        <translation>A vörösszemjavítások nem állíthatók helyre ismételt alkalmazással. Biztosan visszavonja a műveletet?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
         <source>Retouch fixes cannot be recovered with redo. Are you sure you want to undo?</source>
-        <translation>A retusálás az Újra paranccsal nem állítható vissza. Biztosan visszavonja?</translation>
+        <translation>A retusálási javítások nem állíthatók helyre ismételt alkalmazással. Biztosan visszavonja a műveletet?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
@@ -6279,10 +6279,6 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Compact Database...</source>
         <translation>Adatbázis tömörítése…</translation>
-    </message>
-    <message>
-        <source>Undo Save</source>
-        <translation>Utolsó mentés visszavonása</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
@@ -8624,7 +8620,7 @@ A Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan ki
     <message>
         <location filename="../qml/PicasaPy/EditorDialogs.qml"/>
         <source>This file is read only. In order to edit this file, Picasa needs to copy the file&apos;s folder. Would you like to make a copy now?</source>
-        <translation>Ez a fájl csak olvasható. A szerkesztéshez a Picasának le kellene másolnia a fájl mappáját. Szeretné, ha most készítenénk egy másolatot?</translation>
+        <translation>A fájl írásvédett; szerkesztéséhez a Picasának másolatot kell készítenie a fájl mappájáról. Szeretne most másolatot készíteni?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorDialogs.qml"/>
@@ -10049,8 +10045,8 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>A képek csatolmányként kerülnek egy új levélbe az alapértelmezett levelezőprogramban.</translation>
     </message>
     <message>
-        <source>Remember this choice and do not ask again</source>
-        <translation>Jegyezze meg ezt a beállítást, és ne kérdezze meg újra</translation>
+        <source>Remember this setting, don't display this dialog again.</source>
+        <translation>Jegyezze meg ezt a beállítást, ne jelenítse meg a párbeszédpanelt újra.</translation>
     </message>
 </context>
 <context>
@@ -10279,8 +10275,8 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Készlet törlése</translation>
     </message>
     <message>
-        <source>Delete this backup set? The saved files stay where they are.</source>
-        <translation>Törlöd ezt a mentés-készletet? Az elmentett fájlok a helyükön maradnak.</translation>
+        <source>Are you sure you want to delete the backup set &quot;%1&quot;?</source>
+        <translation>Biztosan törli a(z) „%1” mentési készletet?</translation>
     </message>
     <message>
         <source>Back Up</source>
