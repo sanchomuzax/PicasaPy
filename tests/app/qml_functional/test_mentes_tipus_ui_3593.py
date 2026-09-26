@@ -26,7 +26,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import wait_for_signal
+from support.qt_wait import varj_feltetelre, wait_for_signal
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
 
@@ -143,6 +143,12 @@ class TestAFutas:
         qt_app.processEvents()
 
         assert _elem(ablak, "backupOutputMode").property("visible") is False
+        # #3594: alapból nincs pipa — a futás a bepipált mappákat viszi;
+        # a mappa-lista háttérszálon készül, előbb be kell várni
+        assert varj_feltetelre(
+            qt_app, lambda: ablak.property("mappakToltodnek") is False)
+        qt_app.processEvents()
+        _kattints(ablak, _elem(ablak, "backupSelectAll"), qt_app)
         wait_for_signal(
             vezerlo.futasKesz,
             lambda: _kattints(ablak, _elem(ablak, "backupRun"), qt_app),
@@ -163,6 +169,12 @@ class TestAFutas:
         valaszto = _elem(ablak, "backupOutputMode")
         assert valaszto.property("visible") is True
         assert valaszto.property("count") == 2
+        # #3594: alapból nincs pipa — a futás a bepipált mappákat viszi;
+        # a mappa-lista háttérszálon készül, előbb be kell várni
+        assert varj_feltetelre(
+            qt_app, lambda: ablak.property("mappakToltodnek") is False)
+        qt_app.processEvents()
+        _kattints(ablak, _elem(ablak, "backupSelectAll"), qt_app)
         wait_for_signal(
             vezerlo.lemezkepekKeszek,
             lambda: _kattints(ablak, _elem(ablak, "backupRun"), qt_app),

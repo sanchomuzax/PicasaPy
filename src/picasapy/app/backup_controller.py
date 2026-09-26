@@ -17,6 +17,21 @@ elindítja a másolást.
 A figyelt gyökerek alatti fájlok. A szűrést a készlet fájlszűrője végzi
 (`backup.szuro`), tehát itt a teljes fájllistát adjuk át — a nem-média
 fájlt a szűrő úgyis kihagyja.
+
+## Mappánkénti választás (#3594)
+
+Az eredeti mentés-üzemmódja csak a még el nem mentett fájlokat mutatja,
+mappánként pipával (`backuptext2`, `backuptext3`). A `mentetlenMappak` ezt
+a nézetet adja, a `terv` és a két futtatás pedig a bepipált mappák
+listáját is elfogadja. Lista nélkül minden mappa megy (a régi út), üres
+listával semmi.
+
+A lista HÁTTÉRSZÁLON készül (`mentetlenMappakLekerese` →
+`mentetlenMappakKeszek`): a gyökerek bejárása, a fájlonkénti `stat()` és a
+fényképezőgép-szűrő EXIF-olvasása nagy gyűjteménynél percekig tart, és a
+GUI-szálon megfagyasztaná az ablakot — a #3009 ugyanezt szüntette meg a
+futásnál. Minden lekérdezés sorszámot kap; csak a legutóbbi válasza megy
+ki, tehát egy lassú, régebbi válasz nem írja felül az újabbat.
 """
 
 from __future__ import annotations
@@ -28,7 +43,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QStandardPaths, Signal, Slot
 
-from picasapy.backup import futtasd, tervezd_meg
+from picasapy.backup import futtasd, mappankent, tervezd_meg
 from picasapy.backup.lemezkep import LemezkepTetel, lemezkepekbe
 from picasapy.burn import CD, DVD, hasznalhato_kapacitas, lemezek_szama
 from picasapy.index import open_index
@@ -53,6 +68,11 @@ _log = logging.getLogger(__name__)
 #: a ténylegesen használható méretet.
 _CD_SZEKTOR = 360_000
 _DVD_SZEKTOR = 2_295_104
+
+#: #3594: mappánként legfeljebb ennyi fájlnév megy a felületre — a sor úgyis
+#: levágja, a darabszám pedig külön mező. Egy ezerfájlos mappa teljes
+#: névlistája csak a QML-átadást terhelné.
+_FAJLNEV_KORLAT = 20
 
 
 def _kepek_mappaja() -> str:
@@ -84,6 +104,9 @@ class BackupController(BackgroundWorkerMixin, QObject):
     #: #3009: elindult a másolás (a felület ilyenkor mutatja a
     #: haladás-sávot és a Megszakítás gombot)
     futasIndult = Signal(int)
+    #: #3594: (lekérdezés sorszáma, készlet-azonosító, mappa-sorok) — a
+    #: `mentetlenMappakLekerese` háttérben számolt eredménye
+    mentetlenMappakKeszek = Signal(int, int, "QVariantList")
 
     def __init__(self, db_path: Path, gyokerek: tuple[str, ...]) -> None:
         super().__init__()
@@ -92,6 +115,11 @@ class BackupController(BackgroundWorkerMixin, QObject):
         #: #3009: a megszakítás jelzője. Szálak között olvassuk/írjuk,
         #: ezért `Event` — a `bool` mezőre nincs memória-garancia.
         self._megszakitas = threading.Event()
+        #: #3594: a legutóbbi mappa-lekérdezés sorszáma. A GUI-szál írja, a
+        #: háttérszál olvassa; a zár a „megnézem, aztán küldöm" párt védi.
+        #: `RLock`: egy közvetlenül bekötött fogadó a jelzésből újra kérhet.
+        self._mappa_keres = 0
+        self._mappa_zar = threading.RLock()
 
     # -- készletek --------------------------------------------------------
 
@@ -215,6 +243,13 @@ class BackupController(BackgroundWorkerMixin, QObject):
                 return keszlet
         return None
 
+    def _tervezd(self, conn, keszlet, mappak):
+        """A készlet terve a figyelt gyökerekből, a pipákra szűkítve."""
+        return tervezd_meg(
+            conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek,
+            mappak=None if mappak is None else [str(m) for m in mappak],
+        )
+
     def _jeloltek(self) -> list[Path]:
         fajlok: list[Path] = []
         for gyoker in self._gyokerek:
@@ -224,17 +259,74 @@ class BackupController(BackgroundWorkerMixin, QObject):
             fajlok.extend(sorted(p for p in ut.rglob("*") if p.is_file()))
         return fajlok
 
+    def _mentetlen_sorok(self, keszlet_id: int) -> list[dict]:
+        """#3594: a készlet még el nem mentett fájljai, mappánként.
+
+        `backuptext2`: „A Picasa most azokat a fájlokat jeleníti meg,
+        amelyekről korábban nem készült biztonsági másolat." A teljesen
+        elmentett mappa nem kerül a listába. ÍRÁS NÉLKÜL. A `fajlok` az első
+        `_FAJLNEV_KORLAT` név; a teljes szám a `darab`."""
+        with open_index(self._db_path) as conn:
+            keszlet = self._keszlet(conn, keszlet_id)
+            if keszlet is None:
+                return []
+            terv = self._tervezd(conn, keszlet, None)
+        return [
+            {
+                "mappa": str(mappa),
+                "nev": mappa.name,
+                "fajlok": [
+                    tetel.forras.name for tetel in tetelek[:_FAJLNEV_KORLAT]
+                ],
+                "darab": len(tetelek),
+                "bajt": sum(tetel.meret for tetel in tetelek),
+            }
+            for mappa, tetelek in mappankent(terv).items()
+        ]
+
+    @Slot(int, result=int)
+    def mentetlenMappakLekerese(self, keszlet_id: int) -> int:  # noqa: N802
+        """A mentetlen mappák kiszámítása HÁTTÉRSZÁLON (#3594).
+
+        Azonnal visszatér a lekérdezés sorszámával; az eredmény a
+        `mentetlenMappakKeszek` jelzésen érkezik, és csak akkor, ha közben
+        nem indult újabb lekérdezés."""
+        with self._mappa_zar:
+            self._mappa_keres += 1
+            keres = self._mappa_keres
+        self._start_background(
+            self._mentetlen_hattereben,
+            args=(keres, int(keszlet_id)),
+            name="backup-folders",
+        )
+        return keres
+
+    def _mentetlen_hattereben(self, keres: int, keszlet_id: int) -> None:
+        """A mappa-lista törzse — háttérszálon fut."""
+        try:
+            sorok = self._mentetlen_sorok(keszlet_id)
+        except Exception as hiba:  # noqa: BLE001 — a felület ne várjon örökké
+            # a felület a válaszra zárja a „Számítás…" állapotot — hiba
+            # esetén is kell válasz, különben a párbeszéd beragad
+            _log.warning("a mentetlen mappák listája elszállt: %s", hiba)
+            sorok = []
+        with self._mappa_zar:
+            if keres != self._mappa_keres:
+                return  # közben újabb lekérdezés indult — ez elavult
+            self.mentetlenMappakKeszek.emit(keres, keszlet_id, sorok)
+
     @Slot(int, result="QVariantMap")
-    def terv(self, keszlet_id: int) -> dict:
-        """Mit vinne át a következő futás — ÍRÁS NÉLKÜL."""
+    @Slot(int, "QVariantList", result="QVariantMap")
+    def terv(self, keszlet_id: int, mappak=None) -> dict:
+        """Mit vinne át a következő futás — ÍRÁS NÉLKÜL.
+
+        #3594: a `mappak` a bepipált mappák; nélküle minden mappa."""
         with open_index(self._db_path) as conn:
             keszlet = self._keszlet(conn, keszlet_id)
             if keszlet is None:
                 self.hibatJelez.emit(self.tr("There is no such backup set."))
                 return {"darab": 0, "bajt": 0, "kihagyott": 0}
-            terv = tervezd_meg(
-                conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek
-            )
+            terv = self._tervezd(conn, keszlet, mappak)
         #: #2074: hány lemezre férne — az eredeti is megmutatja
         #: („Est. %d CDs or %d DVDs"). A kapacitás a MÉRT képletből jön
         #: (`szektor × 2048 − tartalék`, `0x0066be90`); a szektorszámok a
@@ -253,35 +345,51 @@ class BackupController(BackgroundWorkerMixin, QObject):
             ),
         }
 
+    @staticmethod
+    def _mappalista(mappak):
+        """A QML-ből jött lista szálbiztos másolata (`None` = minden)."""
+        return None if mappak is None else tuple(str(m) for m in mappak)
+
     @Slot(int)
-    def futtasdMost(self, keszlet_id: int) -> None:  # noqa: N802
+    @Slot(int, "QVariantList")
+    def futtasdMost(self, keszlet_id: int, mappak=None) -> None:  # noqa: N802
         """A készlet futtatása HÁTTÉRSZÁLON (#3009).
 
         A másolás a hívó szálon futott, tehát nagy gyűjteménynél az ablak a
         művelet idejére megállt. Az adatbázis-kapcsolat a szálon belül
-        nyílik: az `sqlite3` objektumok nem adhatók át szálak között."""
+        nyílik: az `sqlite3` objektumok nem adhatók át szálak között.
+
+        #3594: a `mappak` a bepipált mappák; nélküle minden mappa."""
         self._megszakitas.clear()
         self._start_background(
-            self._futtatas_hattereben, args=(int(keszlet_id),),
+            self._futtatas_hattereben,
+            args=(int(keszlet_id), self._mappalista(mappak)),
             name="backup-run",
         )
 
     @Slot(int, str)
-    def futtasdLemezkepbe(self, keszlet_id: int, media: str) -> None:  # noqa: N802
+    @Slot(int, str, "QVariantList")
+    def futtasdLemezkepbe(  # noqa: N802
+        self, keszlet_id: int, media: str, mappak=None
+    ) -> None:
         """A készlet mentése sorszámozott ISO-lemezképekbe (#2074).
 
         A tulajdonos 2026-09-18-án ezt az ágat kérte („a gyűjtemény mentése
         több lemezképre"). A kapacitás a MÉRT képletből jön; a `media` a
         felületen választott lemezfajta (`cd` vagy `dvd`).
+
+        #3594: a `mappak` a bepipált mappák; nélküle minden mappa.
         """
         self._megszakitas.clear()
         self._start_background(
             self._lemezkepek_hattereben,
-            args=(int(keszlet_id), str(media)),
+            args=(int(keszlet_id), str(media), self._mappalista(mappak)),
             name="backup-iso",
         )
 
-    def _lemezkepek_hattereben(self, keszlet_id: int, media: str) -> None:
+    def _lemezkepek_hattereben(
+        self, keszlet_id: int, media: str, mappak=None
+    ) -> None:
         """A lemezkép-írás törzse — háttérszálon fut.
 
         ⚠️ A nyilvántartás (a mentési készlet `BKTag`-je) a képek kiírása
@@ -297,9 +405,7 @@ class BackupController(BackgroundWorkerMixin, QObject):
                 if keszlet is None:
                     self.hibatJelez.emit(self.tr("There is no such backup set."))
                     return
-                terv = tervezd_meg(
-                    conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek
-                )
+                terv = self._tervezd(conn, keszlet, mappak)
                 if not terv.fajlok:
                     self.lemezkepekKeszek.emit(0, 0)
                     return
@@ -357,7 +463,7 @@ class BackupController(BackgroundWorkerMixin, QObject):
         munkát, csak elhalasztja."""
         self._megszakitas.set()
 
-    def _futtatas_hattereben(self, keszlet_id: int) -> None:
+    def _futtatas_hattereben(self, keszlet_id: int, mappak=None) -> None:
         """A másolás törzse — háttérszálon fut."""
         try:
             with open_index(self._db_path) as conn:
@@ -365,9 +471,7 @@ class BackupController(BackgroundWorkerMixin, QObject):
                 if keszlet is None:
                     self.hibatJelez.emit(self.tr("There is no such backup set."))
                     return
-                terv = tervezd_meg(
-                    conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek
-                )
+                terv = self._tervezd(conn, keszlet, mappak)
                 self.futasIndult.emit(len(terv.fajlok))
                 masoltak = futtasd(
                     conn,

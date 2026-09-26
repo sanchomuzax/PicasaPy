@@ -132,7 +132,8 @@ class TestALemezkepKimenet2074:
             assert f'qsTr("{felirat}")' in _PARBESZED, felirat
 
     def test_a_mappa_ag_a_REGI_utat_hivja(self):
-        assert "backupController.futtasdMost(k.id)" in _PARBESZED
+        # #3594: a bepipált mappák listájával
+        assert "backupController.futtasdMost(k.id, mappak)" in _PARBESZED
 
     def test_a_lemezkep_ag_a_MEDIA_kulcsot_adja_at(self):
         assert "futtasdLemezkepbe(" in _PARBESZED

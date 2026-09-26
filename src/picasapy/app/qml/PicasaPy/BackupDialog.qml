@@ -12,6 +12,12 @@ import QtQuick.Layouts
 // vagy hálózati megosztás.
 //
 // A New / Edit / Delete Set hármas az eredetié; a törlés megerősítést kér.
+//
+// #3594: a kiválasztott készlet alatt az eredeti mentés-üzemmódjának 2.
+// lépése (`backuprect2`, `biztonsagi-mentes.md` 10.3): csak a még el nem
+// mentett fájlok látszanak, mappánként pipával, „Az összes kijelölése" /
+// „Az összes kijelölés megszüntetése" gombbal, és a futás csak a bepipált
+// mappákat viszi. A mért szöveg („Jelölje ki…") szerint alapból nincs pipa.
 Window {
     id: backupWindow
     objectName: "backupDialog"
@@ -24,10 +30,11 @@ Window {
     modality: Qt.ApplicationModal
     //: #3593: a gombsor (három készlet-gomb, a CD/DVD-választó, a Mentés és
     //: a Bezárás) magyarul ennyi helyet kér — keskenyebben kilóg
+    //: #3594: a mappa-lista (2. lépés) a készlet-lista alá kerül
     width: 760
-    height: 460
+    height: 600
     minimumWidth: 720
-    minimumHeight: 380
+    minimumHeight: 520
     color: Theme.canvasBg
     //: #3593: a külön `Window` NEM örökli a főablak `palette`-jét — enélkül
     //: a mezők a rendszer (sötét) színeit kapták, a rádiógombok felirata
@@ -65,6 +72,76 @@ Window {
         : "lemez"
     property string uzenet: ""
 
+    //: #3594: a kiválasztott készlet még el nem mentett fájljai, mappánként
+    //: (`backupController.mentetlenMappakLekerese` → `mentetlenMappakKeszek`)
+    property var mentetlenek: []
+    //: #3594: a bepipált mappák útjai — csak ezeket viszi a futás
+    property var pipaltMappak: []
+    //: #3594: a lista háttérszálon készül (nagy gyűjteménynél percekig);
+    //: amíg nem jön meg, a „Számítás…" felirat látszik
+    property bool mappakToltodnek: false
+    //: a legutóbbi lekérdezés sorszáma — a régebbi válasz nem írja felül
+    property int mappaKeres: 0
+    //: #3594: a 2. lépés csak kiválasztott készletnél, űrlapon kívül él
+    readonly property bool mappaLepes:
+        !backupWindow.szerkesztes && backupWindow.kivalasztott >= 0
+        && backupWindow.kivalasztott < backupWindow.keszletek.length
+
+    //: másik készlet = más nyilvántartás, a régi pipák nem érvényesek
+    onKivalasztottChanged: {
+        backupWindow.pipaltMappak = []
+        backupWindow.frissitsdAMappakat()
+    }
+
+    function frissitsdAMappakat() {
+        if (typeof backupController === "undefined" || !backupController
+                || backupWindow.kivalasztott < 0
+                || backupWindow.kivalasztott >= backupWindow.keszletek.length) {
+            //: a függő válasz se érkezzen meg később
+            backupWindow.mappaKeres = -1
+            backupWindow.mappakToltodnek = false
+            backupWindow.mentetlenek = []
+            backupWindow.pipaltMappak = []
+            return
+        }
+        //: a régi lista elavult (pl. futás után a már elmentett mappa is
+        //: benne van) — ne lehessen belőle pipálni, amíg az új nem jön meg.
+        //: A pipák maradnak; a válasz a még élő mappákra szűkíti őket.
+        backupWindow.mentetlenek = []
+        backupWindow.mappakToltodnek = true
+        backupWindow.mappaKeres = backupController.mentetlenMappakLekerese(
+            backupWindow.keszletek[backupWindow.kivalasztott].id)
+    }
+
+    //: a háttérszál válasza — csak a legutóbbi kérésé számít
+    function fogadjAMappakat(keres, keszletId, sorok) {
+        if (keres !== backupWindow.mappaKeres) return
+        backupWindow.mentetlenek = sorok
+        backupWindow.mappakToltodnek = false
+        //: a már elmentett (eltűnt) mappa pipája sem maradhat meg
+        var elo = sorok.map(function (sor) { return sor.mappa })
+        backupWindow.pipaltMappak = backupWindow.pipaltMappak.filter(
+            function (mappa) { return elo.indexOf(mappa) >= 0 })
+    }
+
+    function pipald(mappa, be) {
+        var uj = backupWindow.pipaltMappak.filter(
+            function (m) { return m !== mappa })
+        if (be) uj.push(mappa)
+        backupWindow.pipaltMappak = uj
+    }
+
+    //: `publish/selectall` — „Az összes kijelölése"
+    function mindetPipald() {
+        backupWindow.pipaltMappak = backupWindow.mentetlenek.map(
+            function (sor) { return sor.mappa })
+    }
+
+    //: `publish/selectnone` — „Az összes kijelölés megszüntetése"
+    function egyiketSemPipald() {
+        backupWindow.pipaltMappak = []
+    }
+
     readonly property var szuroKulcsok: ["minden", "kepek", "fenykepezogep"]
     readonly property var szuroFeliratok: [
         qsTr("All file types"),
@@ -76,8 +153,13 @@ Window {
         if (typeof backupController === "undefined" || !backupController)
             return
         backupWindow.keszletek = backupController.keszletek()
+        var elozo = backupWindow.kivalasztott
         if (backupWindow.kivalasztott >= backupWindow.keszletek.length)
             backupWindow.kivalasztott = backupWindow.keszletek.length - 1
+        //: ha a kiválasztás átállt, az `onKivalasztottChanged` már kért
+        //: listát — még egy lekérdezés fölösleges bejárás volna
+        if (backupWindow.kivalasztott === elozo)
+            backupWindow.frissitsdAMappakat()
     }
 
     function open() {
@@ -134,6 +216,9 @@ Window {
         target: (typeof backupController !== "undefined") ? backupController : null
         function onHibatJelez(szoveg) { backupWindow.uzenet = szoveg }
         function onKeszletekValtoztak() { backupWindow.frissitsd() }
+        function onMentetlenMappakKeszek(keres, keszletId, sorok) {
+            backupWindow.fogadjAMappakat(keres, keszletId, sorok)
+        }
         function onFutasKesz(darab, bajt) {
             backupWindow.fut = false
             backupWindow.uzenet = darab === 0
@@ -196,7 +281,9 @@ Window {
         // -- a készletek listája ------------------------------------------
         Rectangle {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            //: #3594: a mappa-lépés mellett a készlet-lista csak sávnyi
+            Layout.fillHeight: !backupWindow.mappaLepes
+            Layout.preferredHeight: backupWindow.mappaLepes ? 128 : -1
             color: Theme.controlBase
             border.color: Theme.chromeBorder
             border.width: 1
@@ -250,6 +337,127 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
             }
+        }
+
+        // -- #3594: 2. lépés — a mentetlen mappák, pipával ------------------
+        //: a MÉRT feliratok (`publish/backupcdheader2`, `backuptext2`,
+        //: `backuptext3`, `selectall`, `selectnone`; `biztonsagi-mentes.md`
+        //: 10.3, `ui-lefedettseg.md`)
+        Text {
+            objectName: "backupFolderHeader"
+            Layout.fillWidth: true
+            visible: backupWindow.mappaLepes
+            text: qsTr("Choose folders & albums to back up")
+            font.pixelSize: Theme.fontSize
+            font.bold: true
+            color: Theme.ink
+        }
+        Text {
+            objectName: "backupFolderText"
+            Layout.fillWidth: true
+            visible: backupWindow.mappaLepes
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+            text: qsTr("Picasa is now showing the files you have not previously backed up.")
+                  + " "
+                  + qsTr("Check the folders you want to back up, or choose 'Select All' to choose everything.")
+        }
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: backupWindow.mappaLepes
+            color: Theme.controlBase
+            border.color: Theme.chromeBorder
+            border.width: 1
+            radius: 2
+
+            ListView {
+                id: mappaLista
+                objectName: "backupFolderList"
+                anchors.fill: parent
+                anchors.margins: 1
+                clip: true
+                model: backupWindow.mentetlenek
+                ScrollBar.vertical: ScrollBar {}
+                delegate: RowLayout {
+                    id: mappaSor
+                    required property var modelData
+                    width: mappaLista.width
+                    spacing: 6
+                    CheckBox {
+                        objectName: "backupFolderCheck"
+                        text: mappaSor.modelData.nev
+                        font.pixelSize: Theme.fontSize
+                        checked: backupWindow.pipaltMappak
+                                 .indexOf(mappaSor.modelData.mappa) >= 0
+                        onToggled: {
+                            backupWindow.pipald(mappaSor.modelData.mappa,
+                                                checked)
+                            //: a kattintás elvágja a kötést — vissza kell
+                            //: kötni, különben a „kijelölés megszüntetése"
+                            //: nem venné le ezt a pipát
+                            checked = Qt.binding(function () {
+                                return backupWindow.pipaltMappak
+                                    .indexOf(mappaSor.modelData.mappa) >= 0
+                            })
+                        }
+                    }
+                    //: a mappa még el nem mentett fájljai — ez a „rács".
+                    //: A vezérlő csak az első néhány nevet adja; ha több
+                    //: van, a darabszám mellett „…" jelzi a folytatást.
+                    Text {
+                        objectName: "backupFolderFiles"
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        font.pixelSize: Theme.fontSize - 1
+                        color: Theme.textGray
+                        text: "(" + mappaSor.modelData.darab + ")  "
+                              + mappaSor.modelData.fajlok.join(", ")
+                              + (mappaSor.modelData.darab
+                                 > mappaSor.modelData.fajlok.length
+                                 ? ", …" : "")
+                    }
+                }
+            }
+
+            //: #3594: amíg a háttérszál számol — `il_BurnPanel::calculating`
+            //: („Calculating…" / „Számítás…", `biztonsagi-mentes.md` 15.7)
+            Text {
+                objectName: "backupFolderLoading"
+                anchors.centerIn: parent
+                visible: backupWindow.mappakToltodnek
+                text: qsTr("Calculating…")
+                font.pixelSize: Theme.fontSize
+                color: Theme.textGray
+            }
+
+            Text {
+                anchors.centerIn: parent
+                visible: !backupWindow.mappakToltodnek
+                         && backupWindow.mentetlenek.length === 0
+                text: qsTr("Everything was already backed up.")
+                font.pixelSize: Theme.fontSize
+                color: Theme.textGray
+            }
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            visible: backupWindow.mappaLepes
+            spacing: 8
+            PicasaButton {
+                objectName: "backupSelectAll"
+                text: qsTr("Select All")
+                enabled: backupWindow.mentetlenek.length > 0
+                onClicked: backupWindow.mindetPipald()
+            }
+            PicasaButton {
+                objectName: "backupSelectNone"
+                text: qsTr("Select None")
+                enabled: backupWindow.pipaltMappak.length > 0
+                onClicked: backupWindow.egyiketSemPipald()
+            }
+            Item { Layout.fillWidth: true }
         }
 
         // -- új / módosítás űrlap ------------------------------------------
@@ -461,13 +669,17 @@ Window {
             PicasaButton {
                 objectName: "backupRun"
                 visible: !backupWindow.szerkesztes && !backupWindow.fut
+                //: #3594: pipa nélkül nincs mit menteni
                 enabled: backupWindow.kivalasztott >= 0
+                         && backupWindow.pipaltMappak.length > 0
                 text: qsTr("Back Up")
                 onClicked: {
                     if (typeof backupController === "undefined" || !backupController)
                         return
                     var k = backupWindow.keszletek[backupWindow.kivalasztott]
-                    var terv = backupController.terv(k.id)
+                    //: #3594: csak a bepipált mappák
+                    var mappak = backupWindow.pipaltMappak
+                    var terv = backupController.terv(k.id, mappak)
                     //: #2074: a lemezszám-becslés is látszik, ahogy az
                     //: eredetiben („Est. %d CDs or %d DVDs") — a kapacitás
                     //: a mért képletből jön.
@@ -476,7 +688,7 @@ Window {
                         : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
                             .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
                     if (backupWindow.valasztottTipus !== "cddvd") {
-                        backupController.futtasdMost(k.id)
+                        backupController.futtasdMost(k.id, mappak)
                         return
                     }
                     //: a lemezkép-ág a MÉRT kapacitással oszt lemezekre
@@ -486,7 +698,8 @@ Window {
                             .arg(terv.darab)
                     backupController.futtasdLemezkepbe(
                         k.id,
-                        backupOutputMode.mediak[backupOutputMode.currentIndex])
+                        backupOutputMode.mediak[backupOutputMode.currentIndex],
+                        mappak)
                 }
             }
             PicasaButton {

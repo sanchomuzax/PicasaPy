@@ -14,6 +14,7 @@ from .futtatas import (
     Terv,
     TervezettFajl,
     futtasd,
+    mappankent,
     tervezd_meg,
 )
 from .szuro import szurd_meg
@@ -23,6 +24,7 @@ __all__ = [
     "Terv",
     "TervezettFajl",
     "futtasd",
+    "mappankent",
     "szurd_meg",
     "tervezd_meg",
 ]
