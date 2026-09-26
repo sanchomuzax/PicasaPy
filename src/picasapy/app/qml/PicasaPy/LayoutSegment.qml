@@ -16,6 +16,10 @@ Rectangle {
     //: a gazda néző — tőle kérdezzük az aktív módot, és neki állítjuk
     required property var nezo
     property string jel: ""
+    //: #3663: opcionális rajzolt ikon (`respack.yt`-mérce) — ha van, a
+    //: `jel` szövegjelet váltja fel. Az A/AB/AA szegmens marad betűs
+    //: (`jel`), a két segédgomb (fókuszváltó, elrendezés-váltó) ikonos.
+    property url ikon: ""
     property string sugo: ""
 
     //: a próbáké is: a VEZÉRLŐRE kattintunk, nem a kezelőt hívjuk
@@ -42,9 +46,16 @@ Rectangle {
 
     Text {
         anchors.centerIn: parent
+        visible: szegmens.ikon == ""
         text: szegmens.jel
         font.pixelSize: Theme.fontSize
         color: Theme.ink
+    }
+    Image {
+        anchors.centerIn: parent
+        visible: szegmens.ikon != ""
+        source: szegmens.ikon
+        smooth: true
     }
 
     //: #885: LENYOMÁSRA sül el — a `.tre` a három elrendezés-váltóra

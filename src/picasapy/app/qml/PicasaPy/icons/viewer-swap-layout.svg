@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 17" width="22" height="17">
+  <!-- PicasaPy sajat rajz (#3663): a `swap_2up_layout` ikonja.
+
+       A jegy szerint az eredeti ikon (`respack.yt`, `swap_2up_layout_icon`,
+       22 x 17) felismerhetetlen szoveggliffel (`⬌`/`⬍`) volt helyettesitve.
+       A meres (`docs/specs/ui-audit-editor.md` 3/b.2) a rajzot igy irja
+       le: "ket atlosan elhelyezett negyzet (fent-jobbra sotet keret,
+       lent-balra vilagos) ivelt nyillal" - a ket negyzet a vizszintes/
+       fuggoleges elrendezes ket felet jelkepezi, az ivelt nyil a
+       kozottuk valo valtast.
+
+       A pontos pixelrajz a binarisbol nem all rendelkezesre (nincs
+       merokep ehhez a sessionhoz) - ez SAJAT rajz a leiras alapjan, a
+       toolbar tobbi ikonjaval azonos szurke tonusban (#5D5D5D), a
+       "vilagos" negyzet a keret sajat halvany valtozata. -->
+  <rect x="0.5" y="7.5" width="8" height="8" rx="1" fill="#DCDCDC" stroke="#9A9A9A" stroke-width="1"/>
+  <rect x="10.5" y="0.5" width="8" height="8" rx="1" fill="none" stroke="#5D5D5D" stroke-width="1.2"/>
+  <path d="M19 10.5 C19 13.5 16.5 15.5 13 15.8"
+        fill="none" stroke="#5D5D5D" stroke-width="1.2"/>
+  <path d="M14.6 14.2 L12.6 15.9 L15 17" fill="#5D5D5D"/>
+</svg>

@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A kettős nézet („A” / „AB” / „AA”) gombjai a filmszalag után, jobbra
+  kerültek, a „Kijelölve” jelvény szürke lett és mindig a kép fölött
+  rajzolódik, a bal/jobb (fent/lent) képre kattintás pedig átváltja rá a
+  fókuszt (#3663).**
+
 ## [0.8.584] – 2026-09-26
 
 ### Hozzáadva
