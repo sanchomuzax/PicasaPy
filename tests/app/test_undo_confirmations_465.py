@@ -82,3 +82,40 @@ class TestSelectionHasRedeye:
         ctl, library = controller
         (library / ".picasa.ini").write_text("nem ini tartalom\x00", encoding="utf-8")
         assert ctl.selectionHasRedeye(self._rows(ctl)) is False
+
+
+class TestRedeyeNamesInSelection:
+    """#3573: az eredeti figyelmeztetés a képet NÉVVEL mondja
+    (`IDS_CONFIRM_REDEYE_REVERT`: „Red eye fixes have been applied to %s.”)
+    — ehhez a vörösszemes képek nevét kell visszaadni, a kijelölés
+    sorrendjében."""
+
+    def _rows(self, ctl):
+        return list(range(ctl.photos.rowCount()))
+
+    def test_no_redeye_gives_empty_list(self, controller):
+        ctl, _library = controller
+        assert ctl.redeyeNamesInSelection(self._rows(ctl)) == []
+
+    def test_only_the_redeye_pictures_are_named(self, controller):
+        ctl, library = controller
+        (library / ".picasa.ini").write_text(
+            "[a.jpg]\nfilters=enhance=1;\n"
+            "[b.jpg]\nfilters=redeye=1,333333334ccd4ccd;\n",
+            encoding="utf-8",
+        )
+        assert ctl.redeyeNamesInSelection(self._rows(ctl)) == ["b.jpg"]
+
+    def test_every_redeye_picture_is_named(self, controller):
+        ctl, library = controller
+        (library / ".picasa.ini").write_text(
+            "[a.jpg]\nfilters=redeye=1;\n[b.jpg]\nfilters=redeye=1;\n",
+            encoding="utf-8",
+        )
+        assert sorted(ctl.redeyeNamesInSelection(self._rows(ctl))) == [
+            "a.jpg", "b.jpg"]
+
+    def test_broken_ini_gives_empty_list(self, controller):
+        ctl, library = controller
+        (library / ".picasa.ini").write_text("nem ini tartalom\x00", encoding="utf-8")
+        assert ctl.redeyeNamesInSelection(self._rows(ctl)) == []

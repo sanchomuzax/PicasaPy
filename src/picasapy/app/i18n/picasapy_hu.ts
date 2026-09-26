@@ -339,23 +339,25 @@
     </message>
     <message>
         <source>Smallest picture: %1 pixels/inch.</source>
-        <translation>A legkisebb kép: %1 képpont/hüvelyk.</translation>
+        <translation>Legkisebb kép: %1 képpont/hüvelyk</translation>
     </message>
     <message>
-        <source>%1 small picture found.</source>
-        <translation>%1 kis méretű kép található.</translation>
+        <source>picture</source>
+        <translation>kép</translation>
     </message>
     <message>
-        <source>%1 small pictures found.</source>
-        <translation>%1 kis méretű kép található.</translation>
+        <source>pictures</source>
+        <translation>kép</translation>
     </message>
     <message>
-        <source>Please review before printing.</source>
-        <translation>Nézze át nyomtatás előtt.</translation>
+        <source>Please review before printing.
+%1 small %2 found.</source>
+        <translation>Nézze át nyomtatás előtt.
+%1 kis %2 van.</translation>
     </message>
     <message>
         <source>You are ready to print.</source>
-        <translation>Nyomtatásra kész.</translation>
+        <translation>Készen áll a nyomtatásra.</translation>
     </message>
     <message>
         <source>Print...</source>
@@ -3515,7 +3517,7 @@ hiba(%2)</translation>
     </message>
     <message>
         <source>To undo the last save and keep edits click 'Undo Save'.</source>
-        <translation>Az utolsó mentés visszavonásához és a szerkesztések megtartásához kattintson a „Mentés visszavonása” gombra.</translation>
+        <translation>Az utolsó mentés visszavonásához és a szerkesztések megtartásához kattintson a &quot;Mentés visszavonása&quot; gombra.</translation>
     </message>
     <message>
         <source>File operation failed</source>
@@ -4521,17 +4523,21 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>Red eye fixes have been applied. If you remove all edits, your red eye fixes cannot be recovered with redo. Are you sure you want to remove the fixes forever?</source>
-        <translation>Vörösszemjavítások történtek. Ha eltávolít minden szerkesztést, a vörösszemjavításokat később nem lehet újra alkalmazni. Biztos, hogy végleg eltávolítja a javításokat?</translation>
+        <source>Red eye fixes have been applied to %1.
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
+Are you sure you want to remove the fixes forever?</source>
+        <translation>A(z) %1 képen vörösszemjavítások történtek.
+Ha eltávolít minden szerkesztést, a vörösszemjavításokat később nem lehet újra alkalmazni. 
+Biztos, hogy végleg eltávolítja a javításokat?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>This will remove all edits you have made to ALL of the selected pictures. Do you want to continue?</source>
+        <source>This will remove all edits you have made to ALL of the selected pictures.  Do you want to continue?</source>
         <translation>Ezzel a művelettel eltávolít minden módosítást, amelyet az ÖSSZES kijelölt képre alkalmazott. Folytatja?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>This will remove all edits you have made to the current picture. Do you want to continue?</source>
+        <source>This will remove all edits you have made to the current picture.  Do you want to continue?</source>
         <translation>Ezzel a művelettel eltávolít minden módosítást, amelyet eddig az aktuális képre alkalmazott. Folytatja?</translation>
     </message>
     <message>
@@ -4754,8 +4760,17 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="Main.qml" line="1037"/>
-        <source>Picasa had a problem loading this file(s). Would you like to hide the files on disk?</source>
-        <translation>A Picasa problémába ütközött a fájl(ok) betöltése során. El szeretné rejteni a lemezen található fájlokat?</translation>
+        <source>Picasa had a problem loading this file(s)
+</source>
+        <translation>A Picasa problémába ütközött a fájl(ok) betöltése során
+</translation>
+    </message>
+    <message>
+        <location filename="Main.qml" line="1037"/>
+        <source>
+Would you like to hide the files on disk?</source>
+        <translation>
+El szeretné rejteni a lemezen található fájlokat?</translation>
     </message>
     <message>
         <source>Similarity Search Results</source>
@@ -5101,13 +5116,17 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
-        <source>Redeye fixes cannot be recovered with redo. Are you sure you want to undo?</source>
-        <translation>A vörösszemjavítások nem állíthatók helyre ismételt alkalmazással. Biztosan visszavonja a műveletet?</translation>
+        <source>Redeye fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+        <translation>A vörösszemjavítások nem állíthatók helyre ismételt alkalmazással.
+Biztosan visszavonja a műveletet?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
-        <source>Retouch fixes cannot be recovered with redo. Are you sure you want to undo?</source>
-        <translation>A retusálási javítások nem állíthatók helyre ismételt alkalmazással. Biztosan visszavonja a műveletet?</translation>
+        <source>Retouch fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+        <translation>A retusálási javítások nem állíthatók helyre ismételt alkalmazással.
+Biztosan visszavonja a műveletet?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
@@ -10034,8 +10053,16 @@ Biztosan folytatja a műveletet?</translation>
         <translation>Jóváhagyás…</translation>
     </message>
     <message>
-        <source>Would you like to replace the existing one, or create a new one?</source>
-        <translation>Lecseréli a meglévőt, vagy újat hoz létre?</translation>
+        <source>You have been editing a previously created collage.
+
+Would you like to replace the existing collage or create an entirely new one?  (Note: All collages are saved in the &quot;Collages&quot; album).
+
+Press Cancel to continue editing the collage without saving.</source>
+        <translation>Eddig egy korábban készült kollázst szerkesztett.
+
+Lecseréli a meglévő kollázst, vagy teljesen újat hoz létre? (Megjegyzés: a program az összes kollázst a &quot;Kollázsok&quot; albumban tárolja.)
+
+A Mégse gombra kattintva mentés nélkül folytathatja a kollázs szerkesztését.</translation>
     </message>
     <message>
         <source>Replace Existing</source>
@@ -10326,7 +10353,7 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
     <message>
         <source>Are you sure you want to delete the backup set &quot;%1&quot;?</source>
-        <translation>Biztosan törli a(z) „%1” mentési készletet?</translation>
+        <translation>Biztosan törli a(z) &quot;%1&quot; mentési készletet?</translation>
     </message>
     <message>
         <source>Choose the backup location</source>

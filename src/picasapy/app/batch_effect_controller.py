@@ -265,21 +265,36 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         meg. Olvashatatlan ini-nél `False` (a #301-elv szerint: idegen/sérült
         adat nem szökhet ki kivétellel, és a hiánya nem hazudik javítást).
         """
-        by_folder: dict[str, set[str]] = {}
-        for photo in self._rows_to_photos(rows):
-            by_folder.setdefault(photo.folder_path, set()).add(photo.name)
-        for folder, names in by_folder.items():
-            try:
-                document = load_or_empty(Path(folder) / PICASA_INI_NAME)
-            except OSError:
+        return bool(self.redeyeNamesInSelection(rows))
+
+    @Slot(list, result=list)
+    def redeyeNamesInSelection(self, rows) -> list[str]:
+        """A kijelölés vörösszem-javítást hordozó képeinek neve (#3573).
+
+        Az eredeti figyelmeztetés a képet NÉVVEL mondja
+        (`IDS_CONFIRM_REDEYE_REVERT`: „Red eye fixes have been applied to
+        %s.”). A sorrend a kijelölésé; a `selectionHasRedeye` hibatűrése
+        érvényes itt is: olvashatatlan ini-ből nem jön név.
+        """
+        photos = self._rows_to_photos(rows)
+        documents: dict[str, object] = {}
+        names: list[str] = []
+        for photo in photos:
+            folder = photo.folder_path
+            if folder not in documents:
+                try:
+                    documents[folder] = load_or_empty(Path(folder) / PICASA_INI_NAME)
+                except OSError:
+                    documents[folder] = None
+            document = documents[folder]
+            if document is None:
                 continue
-            for name in names:
-                section = document.section(name)
-                if section is None:
-                    continue
-                if EditSession.from_value(section.get("filters")).has("redeye"):
-                    return True
-        return False
+            section = document.section(photo.name)
+            if section is None:
+                continue
+            if EditSession.from_value(section.get("filters")).has("redeye"):
+                names.append(photo.name)
+        return names
 
     @Slot(list)
     def clearAllEffectsMany(self, rows) -> None:

@@ -6,15 +6,17 @@ A `test_hivatalos_feliratok_3358.py` mintáját követi, de nem oda kerül:
 azok a sorok rövid, EGY darabban írt `qsTr("...")` hívások, itt viszont a
 legtöbb üzenet több `qsTr("a" + "b" + "c")` darabból áll össze (Main.qml és
 a legtöbb párbeszéd-fájl konvenciója) — a `qsTr("{felirat}")` szó szerinti
-keresés ezekre nem alkalmazható. Ehelyett a `.ts`-t nézzük: az dönti el,
-mit LÁT a felhasználó, a QML-oldali összefűzés helyességét pedig a
-meglévő funkcionális tesztek (pl. `test_qml_fileops_export.py`) fedik.
+keresés ezekre nem alkalmazható. Ehelyett a `.ts`-t nézzük, és a LEFORDÍTOTT
+`.qm`-et `QTranslator`-ral kérdezzük meg: az dönti el, mit LÁT a
+felhasználó. Hogy a QML-ben összefűzött forrásszöveg betűre egyezik-e a
+`.ts` kulcsával, azt a `test_i18n_completeness.py` méri (a valódi
+`lupdate`-tel).
 
-Egy sor — a CollageDialogs.qml „Would you like to replace the existing
-one…" — NEM szerepel itt: a jegy „mi tér el" oszlopa a hivatalos magyar
-szöveget „…"-tel rövidítve idézi, a teljes betűre pontos fordítás sehol
-nincs leírva (sem a jegyben, sem a `docs/specs/`-ben) — kitalálni ide
-tilos, ezért ez a sor változatlan maradt (ld. a jegy kommentjét).
+A hivatalos szöveg forrása a `stringres` szövegtár (`CCollageUI::ConfirmMsg`
+stb.). Az eredeti a sortörést `\\n`-nel (vagy `\\r\\n`-nel) írja, az
+idézőjel ASCII `"` — ezt mindkét nyelven megtartjuk.
+
+Amit ez az őr NEM mér: hogy az üzenet a képernyőn jól tördelődik-e.
 """
 
 from __future__ import annotations
@@ -41,28 +43,33 @@ HIVATALOS = {
         "szinkronizált webalbumokból is ELTÁVOLÍTHATJA a névcímkéket. Ezt "
         "szeretné tenni?",
         "CThumbUI::ResetAllFaces"),
-    "Red eye fixes have been applied. If you remove all edits, your red eye "
-    "fixes cannot be recovered with redo. Are you sure you want to remove "
-    "the fixes forever?": (
-        "Vörösszemjavítások történtek. Ha eltávolít minden szerkesztést, a "
-        "vörösszemjavításokat később nem lehet újra alkalmazni. Biztos, "
-        "hogy végleg eltávolítja a javításokat?",
+    # a képnévvel és a hivatalos sortörésekkel — a második sor végén az
+    # eredetiben is áll egy szóköz a sortörés előtt
+    "Red eye fixes have been applied to %1.\nIf you remove all edits, your "
+    "red eye fixes cannot be recovered with redo. \nAre you sure you want "
+    "to remove the fixes forever?": (
+        "A(z) %1 képen vörösszemjavítások történtek.\nHa eltávolít minden "
+        "szerkesztést, a vörösszemjavításokat később nem lehet újra "
+        "alkalmazni. \nBiztos, hogy végleg eltávolítja a javításokat?",
         "IDS_CONFIRM_REDEYE_REVERT"),
+    # a hivatalos angolban két szóköz áll a mondatok között
     "This will remove all edits you have made to ALL of the selected "
-    "pictures. Do you want to continue?": (
+    "pictures.  Do you want to continue?": (
         "Ezzel a művelettel eltávolít minden módosítást, amelyet az ÖSSZES "
         "kijelölt képre alkalmazott. Folytatja?",
         "IDS_CONFIRMREVERT_MULTIPLE"),
-    "This will remove all edits you have made to the current picture. Do "
+    "This will remove all edits you have made to the current picture.  Do "
     "you want to continue?": (
         "Ezzel a művelettel eltávolít minden módosítást, amelyet eddig az "
         "aktuális képre alkalmazott. Folytatja?",
         "IDS_CONFIRMREVERT"),
-    "Picasa had a problem loading this file(s). Would you like to hide the "
-    "files on disk?": (
-        "A Picasa problémába ütközött a fájl(ok) betöltése során. El "
-        "szeretné rejteni a lemezen található fájlokat?",
+    # az eredeti KÉT erőforrásból rakja össze, közéjük a fájllistát
+    "Picasa had a problem loading this file(s)\n": (
+        "A Picasa problémába ütközött a fájl(ok) betöltése során\n",
         "CThumbUI::GetBadImages"),
+    "\nWould you like to hide the files on disk?": (
+        "\nEl szeretné rejteni a lemezen található fájlokat?",
+        "CThumbUI::GetBadImages2"),
     "Updating similarity database (will be fast next time)": (
         "Hasonlósági adatbázis frissítése (legközelebb gyors lesz)",
         "CSimSearch::updating"),
@@ -101,27 +108,52 @@ HIVATALOS = {
         "Egy teljes meghajtó figyelése lelassíthatja a rendszert. Jobb "
         "lenne több almappát kiválasztani. Biztosan ezt kívánja tenni?",
         "IDS_ROOT_WATCH_WARNING"),
-    "Redeye fixes cannot be recovered with redo. Are you sure you want to "
+    "Redeye fixes cannot be recovered with redo.\nAre you sure you want to "
     "undo?": (
         "A vörösszemjavítások nem állíthatók helyre ismételt "
-        "alkalmazással. Biztosan visszavonja a műveletet?",
+        "alkalmazással.\nBiztosan visszavonja a műveletet?",
         "IDS_CONFIRM_UNDO_REDEYE"),
-    "Retouch fixes cannot be recovered with redo. Are you sure you want "
+    "Retouch fixes cannot be recovered with redo.\nAre you sure you want "
     "to undo?": (
         "A retusálási javítások nem állíthatók helyre ismételt "
-        "alkalmazással. Biztosan visszavonja a műveletet?",
+        "alkalmazással.\nBiztosan visszavonja a műveletet?",
         "IDS_CONFIRM_UNDO_RETOUCH"),
-    "Please review before printing.": (
-        "Nézze át nyomtatás előtt.", "ThumbUIPrint::ReviewPrompt"),
+    # a hivatalos sorrend: előbb a felszólítás, új sorban a darabszám
+    "Please review before printing.\n%1 small %2 found.": (
+        "Nézze át nyomtatás előtt.\n%1 kis %2 van.", "ThumbUIPrint::ReviewPrompt"),
     "This cannot be undone and all changes will be lost.": (
         "Ez a művelet nem vonható vissza, és az összes módosítás elvész.",
         "CThumbUI::FileRevert::message2"),
     "To undo the last save and keep edits click 'Undo Save'.": (
         "Az utolsó mentés visszavonásához és a szerkesztések "
-        "megtartásához kattintson a „Mentés visszavonása” gombra.",
+        'megtartásához kattintson a "Mentés visszavonása" gombra.',
         "CThumbUI::FileRevert::message1undo"),
     "Undo Save": ("Mentés visszavonása", "CThumbUI::FileRevert::undosave"),
     "Backup Complete": ("A mentés elkészült", "il_BurnPanel::BackupCopy::3"),
+    'Are you sure you want to delete the backup set "%1"?': (
+        'Biztosan törli a(z) "%1" mentési készletet?', "il_NewBkDialog_delete"),
+    "You have been editing a previously created collage.\n\nWould you like "
+    "to replace the existing collage or create an entirely new one?  (Note: "
+    'All collages are saved in the "Collages" album).\n\nPress Cancel to '
+    "continue editing the collage without saving.": (
+        "Eddig egy korábban készült kollázst szerkesztett.\n\nLecseréli a "
+        "meglévő kollázst, vagy teljesen újat hoz létre? (Megjegyzés: a "
+        'program az összes kollázst a "Kollázsok" albumban tárolja.)\n\nA '
+        "Mégse gombra kattintva mentés nélkül folytathatja a kollázs "
+        "szerkesztését.",
+        "CCollageUI::ConfirmMsg"),
+}
+
+#: (kontextus, felirat) → (hivatalos magyar, azonosító) — azok a rövid
+#: szavak és a nyomtatási minőségsor szomszédjai, amelyek más kontextusban
+#: mást is jelenthetnek, ezért csak a saját kontextusukban kötjük meg őket
+KONTEXTUSOS = {
+    ("PrintDialog", "picture"): ("kép", "ThumbUIPrint::picture"),
+    ("PrintDialog", "pictures"): ("kép", "ThumbUIPrint::pictures"),
+    ("PrintDialog", "Smallest picture: %1 pixels/inch."): (
+        "Legkisebb kép: %1 képpont/hüvelyk", "ThumbUIPrint::Smallest"),
+    ("PrintDialog", "You are ready to print."): (
+        "Készen áll a nyomtatásra.", "ThumbUIPrint::ReadyPrompt"),
 }
 
 #: amit a rossz alakból SEHOL nem szabad `<translation>`-ben látni — a
@@ -139,10 +171,13 @@ ELAVULT_FORDITAS = (
     "nyúl. Ezt szeretné tenni?",
     "A képen vörösszem-javítás van. Ha eltávolítja az összes szerkesztést, "
     "a vörösszem-javítás nem állítható vissza.",
+    # a #3677 első változata: képnév és sortörés nélkül
+    "<translation>Vörösszemjavítások történtek.",
     "Ezzel az ÖSSZES kijelölt képen eltávolít minden szerkesztést.",
     "Ezzel a jelenlegi képen eltávolít minden szerkesztést.",
     "A Picasa nem tudta betölteni ezt/ezeket a fájlt/fájlokat. Szeretné "
     "elrejteni a fájlokat a lemezen?",
+    "betöltése során. El szeretné rejteni",
     "A hasonlósági adatbázis épül (legközelebb gyors lesz)",
     "A PicasaPy tömöríti az adatbázisát, hogy lemezhelyet szabadítson fel. "
     "Ez több percig is eltarthat.",
@@ -162,27 +197,52 @@ ELAVULT_FORDITAS = (
     "Biztosan visszavonja?",
     "A retusálás az Újra paranccsal nem állítható vissza. Biztosan "
     "visszavonja?",
+    "alkalmazással. Biztosan visszavonja a műveletet?",
     "Nyomtatás előtt ellenőrizze őket.",
+    "kis méretű kép található",
     "Ez nem vonható vissza, és minden változtatás elvész.",
     "Az utolsó mentés visszavonásához a szerkesztések megtartásával "
     "kattintson az „Utolsó mentés visszavonása” gombra.",
+    # a hivatalos szöveg ASCII idézőjelet használ, nem „…”-t
+    "kattintson a „Mentés visszavonása” gombra.",
+    "Biztosan törli a(z) „%1” mentési készletet?",
     "Törlöd ezt a mentés-készletet? Az elmentett fájlok a helyükön "
     "maradnak.",
+    # a kollázs-csere régi, a hivatalos CÍMET üzenetként mondó törzse
+    "<source>Would you like to replace the existing one, or create a new one?",
 )
 
 
-def test_a_magyar_forditas_a_hivatalos_szoveg() -> None:
+def _uzenetek() -> list[tuple[str, str, str]]:
+    """A `.ts` összes üzenete: (kontextus, forrás, fordítás)."""
     fa = ElementTree.parse(TS)
+    sorok = []
+    for kontextus in fa.iter("context"):
+        nev = kontextus.findtext("name") or ""
+        for uzenet in kontextus.iter("message"):
+            sorok.append((nev, uzenet.findtext("source") or "",
+                          uzenet.findtext("translation") or ""))
+    return sorok
+
+
+def test_a_magyar_forditas_a_hivatalos_szoveg() -> None:
     talalt: dict[str, set[str]] = {}
-    for uzenet in fa.iter("message"):
-        forras = uzenet.findtext("source") or ""
+    for _kontextus, forras, forditas in _uzenetek():
         if forras in HIVATALOS:
-            talalt.setdefault(forras, set()).add(uzenet.findtext("translation") or "")
+            talalt.setdefault(forras, set()).add(forditas)
     for felirat, (magyar, _azonosito) in HIVATALOS.items():
         assert felirat in talalt, f"nincs fordítási bejegyzés: „{felirat}”"
         assert talalt[felirat] == {magyar}, (
             f"„{felirat}” fordítása {sorted(talalt[felirat])}, "
             f"a hivatalos „{magyar}”")
+
+
+def test_a_kontextusos_forditas_a_hivatalos_szoveg() -> None:
+    uzenetek = {(k, f): t for k, f, t in _uzenetek()}
+    for kulcs, (magyar, _azonosito) in KONTEXTUSOS.items():
+        assert kulcs in uzenetek, f"nincs fordítási bejegyzés: {kulcs}"
+        assert uzenetek[kulcs] == magyar, (
+            f"{kulcs} fordítása „{uzenetek[kulcs]}”, a hivatalos „{magyar}”")
 
 
 def test_a_regi_forditas_sehol_nem_maradt() -> None:
@@ -192,14 +252,59 @@ def test_a_regi_forditas_sehol_nem_maradt() -> None:
         f"„{h}”" for h in hibak)
 
 
-def test_a_qm_ujraforditva_frissebb_mint_a_ts() -> None:
-    qm = TS.with_suffix(".qm")
-    assert qm.exists(), "hiányzik a lefordított .qm"
-    adat = qm.read_bytes()
-    for _felirat, (magyar, _azon) in HIVATALOS.items():
-        assert magyar.encode("utf-16-be") in adat, (
-            f"a .qm nem tartalmazza a „{magyar}” fordítást — "
-            "újrafordítás kell (lrelease)")
+def test_a_leforditott_qm_a_hivatalos_szoveget_adja(qt_app) -> None:
+    """Az ÉLES `.qm`-et kérdezzük: amit a `QTranslator` a futó alkalmazásban
+    visszaad, azt látja a felhasználó — a `.ts` önmagában nem elég, ha az
+    újrafordítás (`lrelease`) elmaradt."""
+    from PySide6.QtCore import QTranslator
+
+    fordito = QTranslator()
+    assert fordito.load("picasapy_hu", str(TS.parent)), (
+        "a picasapy_hu.qm nem tölthető be")
+    kontextusok: dict[str, set[str]] = {}
+    for kontextus, forras, _forditas in _uzenetek():
+        kontextusok.setdefault(forras, set()).add(kontextus)
+    vart = {
+        **{(k, f): m for f, (m, _a) in HIVATALOS.items()
+           for k in kontextusok.get(f, ())},
+        **{kulcs: m for kulcs, (m, _a) in KONTEXTUSOS.items()},
+    }
+    assert vart
+    hibak = [
+        (kontextus, forras, fordito.translate(kontextus, forras), magyar)
+        for (kontextus, forras), magyar in vart.items()
+        if fordito.translate(kontextus, forras) != magyar
+    ]
+    assert not hibak, "a .qm nem a hivatalos szöveget adja — lrelease kell: " + (
+        "; ".join(f"{k}/„{f}” → „{t}” (várt: „{m}”)" for k, f, t, m in hibak))
+
+
+class TestQmlOldal:
+    """Ahol a hivatalos alakhoz a QML-nek is változnia kellett (név, lista,
+    sorrend) — ezt a `.ts` nem mutatja meg."""
+
+    def test_a_nyomtatasi_sor_a_hivatalos_sorrendet_koveti(self) -> None:
+        forras = (QML / "PicasaPy" / "PrintDialog.qml").read_text(encoding="utf-8")
+        assert 'qsTr("Please review before printing.\\n%1 small %2 found.")' in forras
+        assert 'qsTr("picture")' in forras and 'qsTr("pictures")' in forras
+        assert "small picture found." not in forras, (
+            "a régi, darabszámmal kezdődő mondat még él")
+
+    def test_a_vorosszem_figyelmeztetes_a_kepnevet_mondja(self) -> None:
+        forras = (QML / "Main.qml").read_text(encoding="utf-8")
+        assert "controller.redeyeNamesInSelection(" in forras
+        assert '"Red eye fixes have been applied to %1.\\n"' in forras
+
+    def test_a_serult_fajl_uzenet_a_fajllistat_is_mondja(self) -> None:
+        forras = (QML / "Main.qml").read_text(encoding="utf-8")
+        assert 'qsTr("Picasa had a problem loading this file(s)\\n")' in forras
+        assert 'qsTr("\\nWould you like to hide the files on disk?")' in forras
+        assert "pendingNames" in forras
+
+    def test_a_kollazs_csere_a_hivatalos_uzenetet_mondja(self) -> None:
+        forras = (QML / "PicasaPy" / "CollageDialogs.qml").read_text(encoding="utf-8")
+        assert '"You have been editing a previously created collage.\\n\\n"' in forras
+        assert "Would you like to replace the existing one, or " not in forras
 
 
 class TestBackupCloseMessage:

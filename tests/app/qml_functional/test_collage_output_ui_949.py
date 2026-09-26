@@ -18,6 +18,7 @@ Három dolog miatt kell ide kirajzolt teszt:
 from __future__ import annotations
 
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 import picasapy.app
 import pytest
@@ -393,6 +394,10 @@ _TS_FORRAS = (
 ).read_text(encoding="utf-8")
 
 
+def _xml(szoveg: str) -> str:
+    return escape(szoveg, {'"': "&quot;"})
+
+
 class TestHivatalosMagyar:
     """A párbeszédek szövege a `picasa-kollazs-felulet.md` 9.1–9.3-ból.
 
@@ -414,8 +419,17 @@ class TestHivatalosMagyar:
             ("Set Anyway", "Beállítás ennek ellenére"),
             ("Don't Set", "Beállítás mellőzése"),
             (
-                "Would you like to replace the existing one, or create a new one?",
-                "Lecseréli a meglévőt, vagy újat hoz létre?",
+                # #3573: a hivatalos `CCollageUI::ConfirmMsg` törzs
+                "You have been editing a previously created collage.\n\n"
+                "Would you like to replace the existing collage or create an "
+                "entirely new one?  (Note: All collages are saved in the "
+                '"Collages" album).\n\nPress Cancel to continue editing the '
+                "collage without saving.",
+                "Eddig egy korábban készült kollázst szerkesztett.\n\n"
+                "Lecseréli a meglévő kollázst, vagy teljesen újat hoz létre? "
+                '(Megjegyzés: a program az összes kollázst a "Kollázsok" '
+                "albumban tárolja.)\n\nA Mégse gombra kattintva mentés "
+                "nélkül folytathatja a kollázs szerkesztését.",
             ),
             ("Replace Existing", "Meglévő cseréje"),
             ("Create New", "Új létrehozása"),
@@ -444,5 +458,6 @@ class TestHivatalosMagyar:
         ],
     )
     def test_a_forras_es_a_forditas_parban_all(self, angol, magyar):
-        assert f"<source>{angol}</source>" in _TS_FORRAS, angol
-        assert f"<translation>{magyar}</translation>" in _TS_FORRAS, magyar
+        # a `.ts` XML: az idézőjel `&quot;`-ként áll benne (#3573)
+        assert f"<source>{_xml(angol)}</source>" in _TS_FORRAS, angol
+        assert f"<translation>{_xml(magyar)}</translation>" in _TS_FORRAS, magyar

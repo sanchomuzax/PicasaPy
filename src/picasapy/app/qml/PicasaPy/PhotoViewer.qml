@@ -1488,17 +1488,18 @@ Rectangle {
                     // #465: a retus és a vörösszem RÉGIÓ-ADATOT hordoz, és a
                     // visszavonás eldobja — az „Újra" nem hozza vissza.
                     // Az eredeti Picasa ezért külön rákérdez
-                    // (IDS_CONFIRM_UNDO_RETOUCH / IDS_CONFIRM_UNDO_REDEYE).
+                    // (IDS_CONFIRM_UNDO_RETOUCH / IDS_CONFIRM_UNDO_REDEYE) —
+                    // a két mondat között sortöréssel, ahogy ott (#3573).
                     onUndoRequested: {
                         var action = editController.undoAction
                         if (action === "retouch")
                             undoDataLossDialogLoader.ensure().askFor("retouch", qsTr(
-                                "Retouch fixes cannot be recovered with redo."
-                                + " Are you sure you want to undo?"))
+                                "Retouch fixes cannot be recovered with redo.\n"
+                                + "Are you sure you want to undo?"))
                         else if (action === "redeye")
                             undoDataLossDialogLoader.ensure().askFor("redeye", qsTr(
-                                "Redeye fixes cannot be recovered with redo."
-                                + " Are you sure you want to undo?"))
+                                "Redeye fixes cannot be recovered with redo.\n"
+                                + "Are you sure you want to undo?"))
                         else
                             editController.undo()
                     }
