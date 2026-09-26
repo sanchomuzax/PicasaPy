@@ -21,7 +21,12 @@ Rectangle {
     //: a próbáké is: a VEZÉRLŐRE kattintunk, nem a kezelőt hívjuk
     function kattints() {
         if (!szegmens.enabled) return
-        szegmens.nezo.layoutMode = szegmens.mod
+        //: #3014: a módváltás a nézőn át megy — az „aa" módból kilépve a
+        //: szerkesztési ütközés döntése előbb fut (és a Mégse meg is állítja)
+        if (typeof szegmens.nezo.modotValt === "function")
+            szegmens.nezo.modotValt(szegmens.mod)
+        else
+            szegmens.nezo.layoutMode = szegmens.mod
     }
 
     readonly property bool aktiv: szegmens.nezo.layoutMode === szegmens.mod

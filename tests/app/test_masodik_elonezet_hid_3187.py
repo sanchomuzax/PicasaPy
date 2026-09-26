@@ -29,7 +29,7 @@ def photo(tmp_path):
 
 
 class TestAFelulet:
-    def test_csak_harom_tagot_ad_a_QML_nek(self, hid):
+    def test_csak_a_szukseges_tagokat_adja_a_QML_nek(self, hid):
         """A híd felülete SZŰK — ez a lényege."""
         from PySide6.QtCore import QMetaMethod
 
@@ -45,8 +45,16 @@ class TestAFelulet:
             for i in range(meta.methodOffset(), meta.methodCount())
             if meta.method(i).methodType() == QMetaMethod.MethodType.Slot
         }
-        assert sajat == {"previewSource"}
-        assert slotok == {"beginEdit", "endEdit"}
+        # #3014: az „aa" mód második fele memóriás láncot kap — a csere és a
+        # kilépéskori kiírás ennyivel bővítette a felületet
+        assert sajat == {"previewSource", "chainValue"}
+        assert slotok == {
+            "beginEdit",
+            "endEdit",
+            "beginEditInMemory",
+            "setChainValue",
+            "persistChain",
+        }
 
     def test_munkamenet_nelkul_ures_a_forras(self, hid):
         assert hid.previewSource == ""

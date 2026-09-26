@@ -13,9 +13,10 @@ előnézet-rekesz (`EditController(slot="masodik")`) ezt oldja fel.
 
 - AB módban a másik kép forrása az `editpreview` szolgáltatóé, és a MÁSODIK
   rekesz kulcsát viszi (`@masodik`);
-- „aa" módban VÁLTOZATLANUL a nyers fájl — ott ez a fél a szerkesztés
-  ELŐTTI állapot (#3013 mérése), és a második rekesznek szándékosan nincs
-  munkamenete;
+- „aa" módban (#3014 óta) ez a fél is a második rekeszé: a két fél
+  ugyanannak a fotónak két önálló szerkesztése (`ui-audit-editor.md`
+  4/b.1). A #3013 „nyers fájl = szerkesztés előtti" viselkedését ez váltotta
+  fel — a részletes őr a `test_aa_utkozes_3014.py`;
 - a nézőből kilépve a második rekesz munkamenete is záruljon.
 
 ## Amit NEM állít
@@ -70,21 +71,21 @@ class TestABModban:
 
 
 class TestAAModban:
-    def test_az_aa_fel_TOVABBRA_is_a_nyers_fajl(self, qml_app, qt_app):
-        """#3013: ott ez a fél a szerkesztés ELŐTTI kép — nyers fájl."""
+    def test_az_aa_fel_is_a_MASODIK_rekeszbol_jon(self, qml_app, qt_app):
+        """#3014: a nyers fájl helyett a második fél saját szerkesztése."""
         window, _controller, _engine = qml_app
         _modba(window, qt_app, "aa")
 
         forras = _gyerek(window, "viewerImageElotte").property("source").toString()
-        assert forras.startswith("file:"), forras
-        assert "editpreview" not in forras
+        assert forras.startswith("image://editpreview/"), forras
+        assert "@masodik" in forras
 
-    def test_az_aa_modban_nincs_masodik_munkamenet(self, qml_app, qt_app):
+    def test_az_aa_modban_VAN_masodik_munkamenet(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         nezo = _modba(window, qt_app, "aa")
         masodik = nezo.property("masodikEditCtl")
         assert masodik is not None
-        assert masodik.property("previewSource") == ""
+        assert masodik.property("previewSource") != ""
 
 
 class TestLezaras:
