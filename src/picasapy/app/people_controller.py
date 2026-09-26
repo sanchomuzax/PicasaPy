@@ -161,7 +161,7 @@ class PeopleMixin:
         elapsed = time.perf_counter() - started
         self._filter_active = True
         self._filter_status = formatting.filter_status_text(
-            records, elapsed, QLocale(), self.tr
+            records, elapsed, QLocale(), formatting.fordit
         )
         self._show(records)
 

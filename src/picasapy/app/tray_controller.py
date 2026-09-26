@@ -356,8 +356,8 @@ class TrayMixin:
             return ""
         locale = QLocale()
         if len(rekordok) == 1:
-            return formatting.photo_info_text(rekordok[0], locale, self.tr)
-        return formatting.status_text(rekordok, locale, self.tr, self.tr)
+            return formatting.photo_info_text(rekordok[0], locale, formatting.fordit)
+        return formatting.status_text(rekordok, locale, formatting.fordit, self.tr)
 
     # -- műveletek --------------------------------------------------------
 

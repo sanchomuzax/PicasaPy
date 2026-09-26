@@ -1660,6 +1660,31 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <location filename="../formatting.py"/>
+        <source>Normal</source>
+        <translation>Normál</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Other</source>
+        <translation>Egyéb</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Portrait</source>
+        <translation>Álló</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Landscape</source>
+        <translation>Fekvő</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Creative</source>
+        <translation>Kreatív</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
         <source>Rotated 90° CW</source>
         <translation>90°-kal jobbra forgatva</translation>
     </message>

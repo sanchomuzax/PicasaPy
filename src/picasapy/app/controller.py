@@ -1126,7 +1126,7 @@ class AppController(
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return ""
-        return formatting.photo_info_text(photos[row], QLocale(), self.tr)
+        return formatting.photo_info_text(photos[row], QLocale(), formatting.fordit)
 
     @Slot("QVariantList", result=str)
     def selectionInfo(self, rows) -> str:
@@ -1155,7 +1155,9 @@ class AppController(
                 kijelolt.append(photos[row])
         if not kijelolt:
             return self._status
-        return formatting.status_text(kijelolt, QLocale(), self.tr, self.tr)
+        return formatting.status_text(
+            kijelolt, QLocale(), formatting.fordit, self.tr
+        )
 
     @Slot(int, result="QVariantList")
     def propertiesOf(self, row: int) -> list:
@@ -1163,7 +1165,9 @@ class AppController(
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return []
-        entries = formatting.properties_entries(photos[row], QLocale(), self.tr)
+        entries = formatting.properties_entries(
+            photos[row], QLocale(), formatting.fordit
+        )
         return [{"label": label, "value": value} for label, value in entries]
 
     @Slot(int, result=str)
@@ -1183,7 +1187,7 @@ class AppController(
         alap = formatting.photo_info_text(
             photo,
             QLocale(),
-            self.tr,
+            formatting.fordit,
             self.szamlalo_szoveg(row + 1, len(photos)),
         )
         return alap.replace(photo.name, f"{folder} > {photo.name}", 1)
@@ -1273,7 +1277,7 @@ class AppController(
         binárisból mérve (`kor_szuro.felirat`)."""
         if self._age_filter_days is None:
             return ""
-        return kor_szuro.felirat(self._age_filter_days, self.tr)
+        return kor_szuro.felirat(self._age_filter_days, formatting.fordit)
 
     # -- arc-szűrő (#1830) ---------------------------------------------------
 
@@ -1354,7 +1358,7 @@ class AppController(
         a beállítás sorrendben ELŐTTE áll."""
         self._filter_active = True
         self._filter_status = formatting.filter_status_text(
-            records, elapsed, QLocale(), self.tr
+            records, elapsed, QLocale(), formatting.fordit
         )
         self._show(records)
 
@@ -1548,6 +1552,6 @@ class AppController(
 
     def _update_status(self, records) -> None:
         self._status = formatting.status_text(
-            records, QLocale(), self.tr, self.tr
+            records, QLocale(), formatting.fordit, self.tr
         )
         self.statusChanged.emit()

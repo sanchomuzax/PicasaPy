@@ -29,6 +29,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   (#3605).** A „Vissza” gomb és a bezáró × az üzenettel együtt egy
   középre igazított csoportot alkot, és az ablak átméretezésekor is középen
   marad.
+### Javítva
+- **A Tulajdonságok panel magyar nyelven magyar feliratokat mutat (#3639).**
+  A panel sorai (fájl, méret, dátum, fényképező, tömörítés), a kép alatti
+  infósáv és a kor-szűrő felirata eddig magyar beállítás mellett is angolul
+  jelentek meg.
 
 ## [0.8.580] – 2026-09-26
 
