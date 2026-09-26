@@ -207,6 +207,9 @@ def _build_qml_app(
     edit_controller_masodik = EditController(edit_preview, slot="masodik")
     second_preview = SecondPreview(edit_controller_masodik)
     engine.rootContext().setContextProperty("secondPreview", second_preview)
+    # #3649: a két „aa"-fél összekötése — az application.py bekötésének tükre
+    edit_controller.link_aa_partner(edit_controller_masodik)
+    edit_controller_masodik.link_aa_partner(edit_controller)
     # fájlműveletek (#15) — az application.py bekötésének tükre
     fileops_controller = FileOpsController()
     app_module.wire_fileops(fileops_controller, controller)

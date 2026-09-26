@@ -431,6 +431,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         # a két fél ugyanazt a `filters=` sort írná felül egymás elől. A
         # kilépéskori döntés (`persistChain`) írja ki, ha ezt kell megtartani.
         self._memory_only = False
+        # #3649: az „aa" mód PÁRJA (`link_aa_partner`, application.py) — a
+        # fókuszváltás (`swapAaFocus`) ezen át cseréli a festett maszkot a
+        # két fél között, hogy a félkész festés ne ürüljön ki.
+        self._aa_partner: EditController | None = None
         # #516: a képfüggő effekt-tartományok (pl. `CornerRadius` 0..
         # min(W,H)/2) kiszámolásához — csak a fejlécet olvassuk (PIL nem
         # dekódolja a pixeleket), `beginEdit`-enként újraszámolva
@@ -1226,6 +1230,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._memory_only = False
         self._save()
 
+    def link_aa_partner(self, partner: EditController) -> None:
+        """#3649: a két „aa"-fél vezérlőjének összekötése (`application.py`).
+
+        A `swapAaFocus` ezen át éri el a párt — enélkül a fókuszváltás nem
+        tudná, KIVEL cserélje a festett maszkot."""
+        self._aa_partner = partner
+
     @Property(str, notify=toolsChanged)
     def chainValue(self) -> str:
         """#3014: a munkamenet jelenlegi `filters=` értéke (üres = nincs lánc).
@@ -1234,26 +1245,64 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         cseréli a fókuszváltáskor a két fél között."""
         return self._session.to_value()
 
+    def _apply_chain_value(self, value: str) -> None:
+        """A lánc lecserélése — az eszközpuffer sorsát a hívó dönti el.
+
+        `setChainValue` ürít, `swapAaFocus` (#3649) a párral cserél."""
+        self._require_active()
+        self._session = EditSession.from_value(value)
+        self._undo_stack = self._seed_undo_from_chain(self._session)
+        self._redo_stack.clear()
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
     @Slot(str)
     def setChainValue(self, value: str) -> None:
         """#3014: a lánc lecserélése (az „aa" mód fókuszváltásakor).
 
         A visszavonás-verem az új lánc rétegeiből épül újra — ugyanúgy, mint
         egy újranyitáskor (`beginEdit`). Memóriás munkamenetben nem ír."""
-        self._require_active()
-        self._session = EditSession.from_value(value)
-        self._undo_stack = self._seed_undo_from_chain(self._session)
-        self._redo_stack.clear()
+        self._apply_chain_value(value)
         # A fél ALKALMAZATLAN eszközpuffere a régi lánchoz tartozott — a
         # csere után a másik fél láncára kerülne (#3644 3.). Ugyanúgy ürül,
-        # mint egy újranyitáskor (`beginEdit`).
+        # mint egy újranyitáskor (`beginEdit`). Az „aa" fókuszváltás nem ezt
+        # hívja: az a festett maszkot megőrzi (`swapAaFocus`, #3649).
         self._reset_tool_buffers()
         if not self._paint_mask.ures:
             self._paint_mask.torold()
             self.paintMaskChanged.emit()
-        self._save()
-        self._bump_revision()
-        self.toolsChanged.emit()
+
+    @Slot()
+    def swapAaFocus(self) -> None:
+        """#3649: az „aa" mód fókuszváltása — a lánc cseréje mellett a fél
+        FESTETT MASZKJA is a párjával cserélődik (nem ürül), hogy a félkész
+        festés a saját felén megmaradjon.
+
+        A retusálás/vörösszem alkalmazatlan puffere továbbra is ürül: az a
+        modális eszköz bezárásakor (QML `retouchActive`/`redeyeActive` ->
+        `false`, ami `exitRetouchTool`/`exitRedeyeTool`-t hív) amúgy is
+        elvész, ugyanúgy, mint más fotóra lépéskor (`docs/specs/
+        ui-audit-editor.md` 4/b.1) — ezt nem ez a hívás dobja el.
+
+        Pár nélkül (`link_aa_partner` hiányában) no-op."""
+        partner = self._aa_partner
+        if partner is None:
+            return
+        my_chain = self.chainValue
+        partner_chain = partner.chainValue
+        if my_chain == partner_chain:
+            return
+        my_paint = self._paint_mask.vonasok
+        partner_paint = partner._paint_mask.vonasok
+        self._apply_chain_value(partner_chain)
+        self._reset_tool_buffers()
+        self._paint_mask.allit(partner_paint)
+        self.paintMaskChanged.emit()
+        partner._apply_chain_value(my_chain)
+        partner._reset_tool_buffers()
+        partner._paint_mask.allit(my_paint)
+        partner.paintMaskChanged.emit()
 
     def _reset_tool_buffers(self) -> None:
         """A retusálás- és a vörösszem-eszköz alkalmazatlan pufferének ürítése."""
