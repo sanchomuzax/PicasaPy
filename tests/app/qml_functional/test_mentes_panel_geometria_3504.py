@@ -31,7 +31,7 @@ from pathlib import Path
 
 import picasapy.app
 import pytest
-from PySide6.QtCore import QCoreApplication, QMetaObject, QTranslator
+from PySide6.QtCore import QPointF, QCoreApplication, QMetaObject, QTranslator
 from PySide6.QtQuick import QQuickItem
 
 from support.backup_host_harness import epits_ablakot
@@ -104,7 +104,10 @@ def _elem(gyoker, nev: str) -> QQuickItem:
 
 
 def _teglalap(elem: QQuickItem, viszony: QQuickItem):
-    bal_felso = elem.mapToItem(viszony, elem.boundingRect().topLeft())
+    # az elem SAJÁT geometriája: a `Text` boundingRect-je a kirajzolt
+    # szöveghez igazodik (középre zárásnál eltolt), a szélessége viszont
+    # az elemé — a kettő keverése betűkészlettől függő hamis kilógást adott
+    bal_felso = elem.mapToItem(viszony, QPointF(0, 0))
     return (bal_felso.x(), bal_felso.y(), elem.width(), elem.height())
 
 
