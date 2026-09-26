@@ -1793,17 +1793,21 @@ ApplicationWindow {
                     //: az eredeti szövege, a záró kérdéssel együtt (#3573)
                     var text = rowList.length === 1
                         ? qsTr("This will remove all edits you have made to the"
-                               + " current picture. Do you want to continue?")
+                               + " current picture.  Do you want to continue?")
                         : qsTr("This will remove all edits you have made to ALL of"
-                               + " the selected pictures. Do you want to continue?")
-                    if (controller.selectionHasRedeye(rowList))
-                        //: `IDS_CONFIRM_REDEYE_REVERT` — az eredeti szövege
-                        //: (a képnevet nem soroljuk fel, mert a kijelölés
-                        //: több képre is vonatkozhat) (#3573)
-                        text += "\n\n" + qsTr("Red eye fixes have been applied. If you"
-                                              + " remove all edits, your red eye fixes"
-                                              + " cannot be recovered with redo. Are you"
-                                              + " sure you want to remove the fixes forever?")
+                               + " the selected pictures.  Do you want to continue?")
+                    // #3573: az eredeti a képet NÉVVEL mondja; több
+                    // vörösszemes kép esetén a nevek vesszővel sorakoznak
+                    var redeyeNames = controller.redeyeNamesInSelection(rowList)
+                    if (redeyeNames.length > 0)
+                        //: `IDS_CONFIRM_REDEYE_REVERT` — az eredeti szövege a
+                        //: sortörésekkel; %1 a kép neve (#3573)
+                        text += "\n\n" + qsTr("Red eye fixes have been applied to %1.\n"
+                                              + "If you remove all edits, your red eye"
+                                              + " fixes cannot be recovered with redo. \n"
+                                              + "Are you sure you want to remove the"
+                                              + " fixes forever?")
+                                              .arg(redeyeNames.join(", "))
                     ask("undoAllEdits", text)
                 }
                 onConfirmed: controller.clearAllEffectsMany(rows)
@@ -3290,8 +3294,13 @@ ApplicationWindow {
         }
         function onBrokenPhotosDetected(items) {
             var ids = brokenPhotoDialog.ensure().pendingIds.slice()
-            for (var i = 0; i < items.length; i++) ids.push(items[i].id)
+            var names = brokenPhotoDialog.ensure().pendingNames.slice()
+            for (var i = 0; i < items.length; i++) {
+                ids.push(items[i].id)
+                names.push(items[i].name)
+            }
             brokenPhotoDialog.ensure().pendingIds = ids
+            brokenPhotoDialog.ensure().pendingNames = names
             // #459: rövid összegyűjtés — több törött kép is felbukkanhat
             // egymás után görgetés közben, ezeket EGY dialógusba fűzzük
             // ("this file(s)"), nem fotónként külön felugró ablakot.
@@ -3340,11 +3349,18 @@ ApplicationWindow {
                 yesText: qsTr("Hide Files")
                 noText: qsTr("Don't Hide")
                 property var pendingIds: []
+                //: #3573: a nevek az üzenet fájllistájához (a `pendingIds`
+                //: párja, ugyanabban a sorrendben)
+                property var pendingNames: []
                 onConfirmed: {
                     controller.hidePhotosByIds(brokenPhotoBelso.pendingIds)
                     brokenPhotoBelso.pendingIds = []
+                    brokenPhotoBelso.pendingNames = []
                 }
-                onDenied: brokenPhotoBelso.pendingIds = []
+                onDenied: {
+                    brokenPhotoBelso.pendingIds = []
+                    brokenPhotoBelso.pendingNames = []
+                }
             }
         }
     }
@@ -3354,12 +3370,16 @@ ApplicationWindow {
         interval: 400
         onTriggered: {
             if (brokenPhotoDialog.ensure().pendingIds.length > 0) {
-                //: `CThumbUI::GetBadImages` — az eredeti a két mondat közé a
-                //: hibás fájlok listáját szúrja be; ezt a felületünk (még)
-                //: nem jeleníti meg külön, ezért itt hiányzik (#3573)
-                brokenPhotoDialog.ensure().ask("", qsTr(
-                    "Picasa had a problem loading this file(s). Would you "
-                    + "like to hide the files on disk?"))
+                // #3573: az eredeti KÉT erőforrásból rakja össze az
+                // üzenetet, és a kettő közé soronként a hibás fájlok nevét
+                // szúrja be (`GetBadImages` + lista + `GetBadImages2`)
+                var dialog = brokenPhotoDialog.ensure()
+                dialog.ask("",
+                    //: `CThumbUI::GetBadImages` — utána a fájllista jön
+                    qsTr("Picasa had a problem loading this file(s)\n")
+                    + dialog.pendingNames.join("\n")
+                    //: `CThumbUI::GetBadImages2`
+                    + qsTr("\nWould you like to hide the files on disk?"))
             }
         }
     }

@@ -56,16 +56,17 @@ class TestAFeluletenMegvan:
         forras = _forras()
         for mondat in (
             "Smallest picture: %1 pixels/inch.",
-            "Please review before printing.",
+            "Please review before printing.\\n%1 small %2 found.",
             "You are ready to print.",
         ):
             assert mondat in forras, f"hiányzik: {mondat!r}"
 
     def test_az_egyes_es_a_tobbes_szam_KULON_van(self):
-        """Az eredetiben is két külön erőforrás (`::picture`/`::pictures`)."""
+        """Az eredetiben is két külön erőforrás (`::picture`/`::pictures`),
+        amelyet a `ReviewPrompt` `%2`-ként kap meg (#3573)."""
         forras = _forras()
-        assert "%1 small picture found." in forras
-        assert "%1 small pictures found." in forras
+        assert 'qsTr("picture")' in forras
+        assert 'qsTr("pictures")' in forras
 
 
 class TestAzEloFaban:

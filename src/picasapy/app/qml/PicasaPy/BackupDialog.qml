@@ -231,8 +231,10 @@ Window {
         //: lemezkép készült és hány fájl van rajtuk.
         function onLemezkepekKeszek(lemezek, fajlok) {
             backupWindow.fut = false
+            //: #3573: nincs mit lemezképre írni — az eredeti ilyenkor is
+            //: az egységes záró üzenetet mutatja (`il_BurnPanel::BackupCopy::3`)
             backupWindow.uzenet = lemezek === 0
-                ? qsTr("Everything was already backed up.")
+                ? qsTr("Backup Complete")
                 : qsTr("Done: %1 file(s) in %2 disc image(s).")
                     .arg(fajlok).arg(lemezek)
         }

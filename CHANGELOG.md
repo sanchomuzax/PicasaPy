@@ -10,9 +10,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ### Javítva
 - **25 megerősítő és figyelmeztető üzenet a hivatalos Picasa-szöveget
   mondja (#3573)**, például „Kilép?”, „Nézze át nyomtatás előtt.” és
-  „Biztosan törli a(z) „…” mentési készletet?”; a mentés-készlet törlése
-  és a diszk-mentés záró üzenete a készlet nevét, illetve az eredeti
-  egységes „A mentés elkészült” szöveget mutatja.
+  „Biztosan törli a(z) "…" mentési készletet?”. Ahol az eredeti nevet
+  vagy listát mond, most mi is: a mentés-készlet törlése a készlet
+  nevét, a vörösszem-javítás visszavonása a kép nevét, a sérült fájlok
+  üzenete a fájlok listáját idézi; a kollázs cseréjekor a teljes
+  magyarázó szöveg jelenik meg, a nyomtatás előtti figyelmeztetés pedig
+  az eredeti sorrendben és tördelésben. A diszk-mentés akkor is az
+  egységes „A mentés elkészült” üzenettel zárul, ha nem volt mit menteni.
 
 ## [0.8.584] – 2026-09-26
 

@@ -215,8 +215,14 @@ Item {
             Text {
                 objectName: "collageReplaceMessage"
                 Layout.preferredWidth: 360
-                text: qsTr("Would you like to replace the existing one, or "
-                           + "create a new one?")
+                //: `CCollageUI::ConfirmMsg` — az eredeti szövege a
+                //: sortörésekkel (#3573)
+                text: qsTr("You have been editing a previously created collage.\n\n"
+                           + "Would you like to replace the existing collage or "
+                           + "create an entirely new one?  (Note: All collages are "
+                           + "saved in the \"Collages\" album).\n\n"
+                           + "Press Cancel to continue editing the collage "
+                           + "without saving.")
                 wrapMode: Text.WordWrap
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
