@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az Emberek panel egyetlen fejlécet és egyetlen listát mutat, az eredeti
+  Picasa szabályai szerint (#3566).** Egy személy albumában a lista fejléce
+  „Szintén ezeken a fotókon:” (egy képnél is), megnevezett személy nélküli
+  képnél „Ki látható ezeken a fotókon?”, a képszerkesztőben pedig mindig
+  „Ezen a fotón:”; üres panelen a helyzethez illő útmutató szöveg áll.
+
 ## [0.8.580] – 2026-09-26
 
 ### Hozzáadva

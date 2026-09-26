@@ -2825,8 +2825,7 @@ Rectangle {
                 Layout.preferredWidth: 200
                 Layout.minimumWidth: 160
                 Layout.fillHeight: true
-                //: A nézett kép nevesített emberei, és akikkel a vizsgált
-                //: személy együtt szerepel.
+                //: A nézett kép nevesített emberei.
                 sourceComponent: PeoplePanel {
                     objectName: "viewerPeoplePanel"
                     selectionCount: viewer.drawerRows.length
@@ -2836,11 +2835,9 @@ Rectangle {
                         ? (viewer.photosModel.revision,
                            controller.peopleOfRows(viewer.drawerRows))
                         : []
-                    peopleWith: (viewer.photosModel && viewer.controllerReady
-                                 && controller.currentPersonName.length > 0)
-                        ? (viewer.photosModel.revision,
-                           controller.peopleWith(controller.currentPersonName))
-                        : []
+                    //: #3566: a szerkesztőben mindig az egyképes ág fut
+                    //: (az eredetiben az `editpanel/preview` látszik)
+                    editorView: true
                     //: a személy albuma a KÖNYVTÁR rácsán nyílik — a gazda
                     //: zárja a nézőt, és ő vált (ld. `findTaggedRequested`)
                     onPersonChosen: function(name) { viewer.personChosen(name) }

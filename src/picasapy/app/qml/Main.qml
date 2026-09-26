@@ -2820,10 +2820,9 @@ ApplicationWindow {
         onCloseRequested: window.ureseidAFiokot()
     }
 
-    // Emberek-panel (#26): a jobb fiók negyedik panelje. Két szakasza
-    // az eredeti szövegforrásából jön — „In this photo:" (a kijelölt
-    // képek nevesített emberei) és „Also in these photos:" (akik a
-    // nézett SZEMÉLLYEL együtt szerepelnek).
+    // Emberek-panel (#26): a jobb fiók negyedik panelje. EGY fejléc és
+    // EGY lista (#3566): a kijelölt képek nevesített emberei; a fejlécet
+    // a panel választja a spec 9/b fája szerint.
     PeoplePanel {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
@@ -2843,11 +2842,6 @@ ApplicationWindow {
         peopleHere: controller
             ? (controller.photos.revision,
                controller.peopleOfRows(window.selectedRows()))
-            : []
-        peopleWith: controller && !window.unnamedFacesOpen
-                    && controller.currentPersonName.length > 0
-            ? (controller.photos.revision,
-               controller.peopleWith(controller.currentPersonName))
             : []
         onPersonChosen: function(name) {
             if (!controller) return

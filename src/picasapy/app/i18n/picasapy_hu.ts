@@ -5221,6 +5221,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <translation>Ezen a fotón:</translation>
     </message>
     <message>
+        <source>Who is in these photos?</source>
+        <translation>Ki látható ezeken a fotókon?</translation>
+    </message>
+    <message>
         <source>People in these photos:</source>
         <translation>Személyek ezeken a fotókon:</translation>
     </message>

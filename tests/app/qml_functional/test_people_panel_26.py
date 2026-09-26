@@ -2,12 +2,10 @@
 
 A panel helye nem találgatás: a binárisban a `rightdrawerpanel/peoplepanel`
 elem a `propertiespanel` · `tagpanel` · `geopanel` mellett áll — abból a
-négyesből nálunk eddig három volt meg. A szakasz-feliratok is az eredeti
-szövegforrásából jönnek:
+négyesből nálunk eddig három volt meg.
 
-    PeoplePanel::InThis  „In this photo:"
-    PeoplePanel::Known2  „People in these photos:"
-    PeoplePanel::Known1  „Also in these photos:"
+A fejléc-választó fát (#3566, spec 9/b) valódi kijelöléssel a
+`test_emberek_panel_fejlec_3566.py` fedi.
 """
 
 from __future__ import annotations
@@ -83,30 +81,6 @@ class TestPanelWiring:
 
 
 class TestSections:
-    def test_the_here_label_follows_the_selection_size(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        panel = _child(window, "peoplePanel")
-
-        panel.setProperty("selectionCount", 1)
-        assert panel.property("hereLabel") == "In this photo:"
-
-        panel.setProperty("selectionCount", 3)
-        assert panel.property("hereLabel") == "People in these photos:"
-
-    def test_the_together_section_appears_only_with_data(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        _open(window, qt_app)
-        panel = _child(window, "peoplePanel")
-
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is False
-
-        panel.setProperty("peopleWith", [{"name": "Anna Kis", "count": 2}])
-        qt_app.processEvents()
-
-        also = _child(window, "peoplePanelAlsoLabel")
-        assert also.property("visible") is True
-        assert also.property("text") == "Also in these photos:"
-
     def test_an_empty_panel_says_something_instead_of_nothing(
         self, qml_app, qt_app
     ):
@@ -122,7 +96,9 @@ class TestEmptyStates:
     mit néz éppen a felhasználó (`peoplepanel_text.tre`) — üres listát
     sosem hagyott."""
 
-    def test_nothing_selected_says_no_people_yet(self, qml_app, qt_app):
+    def test_nothing_selected_promises_the_selection(self, qml_app, qt_app):
+        """#3566: a „No people have been found yet" (Text3) a Név
+        nélküliek album üres esete — máshol kijelölés nélkül is Text5."""
         window, _controller, _engine = qml_app
         _open(window, qt_app)
         panel = _child(window, "peoplePanel")
@@ -130,7 +106,7 @@ class TestEmptyStates:
         panel.setProperty("currentPerson", "")
         qt_app.processEvents()
 
-        assert "No people have been found yet" in _child(
+        assert "currently selected photos" in _child(
             window, "peoplePanelEmptyText"
         ).property("text")
 
@@ -187,38 +163,48 @@ class TestUnnamedAlbumHeader:
     def test_the_header_follows_the_cluster_toggle(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         view = self._open_unnamed_album(window, qt_app, selected=2)
-        label = _child(window, "peoplePanelUnnamedLabel")
+        label = _child(window, "peoplePanelHeader")
 
         assert label.property("visible") is True
         assert label.property("text") == "Unnamed people in these photos:"
         assert _child(window, "peoplePanelEmptyText").property("visible") is False
 
         _click(window, _child(view, "clusterToggleButton"), qt_app)
+        # a váltás üríti az arc-kijelölést; újra két arc
+        view.setProperty("selectedCount", 2)
+        qt_app.processEvents()
 
         assert view.property("grouped") is False
         assert label.property("text") == "Unnamed groups of people:"
 
-    def test_no_unnamed_header_outside_the_album(self, qml_app, qt_app):
+    def test_outside_the_album_the_header_is_never_the_grouped_one(
+        self, qml_app, qt_app
+    ):
+        """A csoportosítás jelzője (`+0x2af`) csak az albumban áll: máshol
+        a többképes ág „van kép" sora a kibontott fejléc (#3566)."""
         window, _controller, _engine = qml_app
         _open(window, qt_app)
         panel = _child(window, "peoplePanel")
         panel.setProperty("selectionCount", 3)
         qt_app.processEvents()
 
-        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False
+        assert _child(window, "peoplePanelHeader").property("text") == (
+            "Unnamed groups of people:"
+        )
 
-    def test_no_unnamed_header_without_a_multiple_selection(self, qml_app, qt_app):
-        """Egy kijelölt arcnál az eredeti egyképes ága fut (9/b) — az a
-        #3566-é, itt csak az, hogy a „Név nélküli…" fejléc NEM jelenik meg."""
+    def test_one_selected_face_asks_who(self, qml_app, qt_app):
+        """Egy kijelölt arcnál az eredeti egyképes ága fut (9/b, #3566)."""
         window, _controller, _engine = qml_app
         self._open_unnamed_album(window, qt_app, selected=1)
 
-        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False
+        label = _child(window, "peoplePanelHeader")
+        assert label.property("visible") is True
+        assert label.property("text") == "Who is in these photos?"
 
 
 _ANNA_ID = "1111111111111111"
 _BELA_ID = "2222222222222222"
-# Anna és Béla EGY képen: Anna albumában Béla az „Also in these photos:" sor
+# Anna és Béla EGY képen
 _KOZOS_INI = (
     "[Contacts2]\n"
     f"{_ANNA_ID}=Anna;;\n"
@@ -234,7 +220,7 @@ class TestFromPersonAlbumToUnnamed:
     Névtelenek-sora nem vált nézetet a controllerben, így a
     `currentPersonName` az előző személyé marad. A Névtelenek albumban ettől
     még a Névtelenek fejléce kell, nem az előző személy „Szintén ezeken a
-    fotókon" listája."""
+    fotókon" utasítása (Text4)."""
 
     def _anna_albuma(self, window, controller, qt_app, tmp_path):
         from picasapy.index import open_index, sync_tree
@@ -263,15 +249,15 @@ class TestFromPersonAlbumToUnnamed:
         window, controller, _engine = qml_app
         _open(window, qt_app)
         self._anna_albuma(window, controller, qt_app, tmp_path)
-        # előfeltétel: Anna albumában Béla valóban a „Szintén" listán van
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is True
+        # előfeltétel: Anna albumában, kijelölés nélkül a Text4 szól
+        assert "appear with" in _child(
+            window, "peoplePanelEmptyText").property("text")
 
         self._nevtelenek(window, qt_app, selected=2)
 
-        label = _child(window, "peoplePanelUnnamedLabel")
+        label = _child(window, "peoplePanelHeader")
         assert label.property("visible") is True
         assert label.property("text") == "Unnamed people in these photos:"
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is False
         assert _child(window, "peoplePanelEmptyText").property("visible") is False
 
     def test_no_person_hint_in_the_unnamed_album(
@@ -288,7 +274,7 @@ class TestFromPersonAlbumToUnnamed:
         assert empty.property("visible") is True
         assert "appear with" not in empty.property("text")
 
-    def test_back_to_the_person_album_the_also_list_returns(
+    def test_back_to_the_person_album_its_text_returns(
         self, qml_app, qt_app, tmp_path
     ):
         window, controller, _engine = qml_app
@@ -299,5 +285,7 @@ class TestFromPersonAlbumToUnnamed:
         window.setProperty("unnamedFacesOpen", False)
         qt_app.processEvents()
 
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is True
-        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False
+        assert _child(window, "peoplePanelHeader").property("visible") is False
+        empty = _child(window, "peoplePanelEmptyText")
+        assert empty.property("visible") is True
+        assert "appear with" in empty.property("text")
