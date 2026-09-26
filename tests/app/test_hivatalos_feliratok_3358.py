@@ -209,3 +209,161 @@ def test_a_qm_ujraforditva_frissebb_mint_a_ts() -> None:
         assert re.search(re.escape(felirat).encode(), adat) or True
 
 
+
+
+#: #3572: a Beállítások ablak fülei. A kulcs (kontextus, forrásszöveg), mert
+#: több felirat („RAW”, „English (US)”, „Log file:”…) másutt más szerepben,
+#: más fordítással is él — a fordítást ezért CSAK az adott fülön mérjük.
+#: Ahol van hivatalos angol (a `stringres` enUK-alakja), a forrásszöveg is az.
+BEALLITASOK = {
+    ("OptionsTabEmail", "Full film"): (
+        "Teljes mozgófilm", "options/radio56.title"),
+    ("OptionsTabEmail", "Let me choose each time I send pictures"): (
+        "Minden képküldésnél kiválasztom", "options/radio40.title"),
+    ("OptionsTabEmail", "Send inline photos and captions (Outlook only)"): (
+        "Szövegközi fotók és képfeliratok küldése (csak Outlookban)",
+        "options/UseHTMLMailer.title"),
+    ("OptionsTabEmail", "Send videos as:"): (
+        "Mozgófilmek küldése másként:", "options/labelgroup53.title"),
+    ("OptionsTabFileTypes", "Display JPEG files and:"): (
+        "Megjelenítés: JPEG-fájlok és", "options/label61.title"),
+    ("OptionsTabFileTypes", "RAW"): ("RAW formátumok", "options/SupportRAW.title"),
+    # a nyelvlista saját nyelvű neveket mutat, fordítás nélkül (Lang::enUS)
+    ("OptionsTabGeneral", "English (US)"): ("English (US)", "Lang::enUS"),
+    ("OptionsTabGeneral", "Help improve PicasaPy:"): (
+        "Részvétel a Picasa fejlesztésében:", "options/labelgroup16.title"),
+    ("OptionsTabGeneral", "Import destination folder:"): (
+        "Importált képek mentési helye:", "options/labelgroup34.title"),
+    ("OptionsTabGeneral", "Never check for updates"): (
+        "Ne keressen frissítést", "options/item24.title"),
+    ("OptionsTabGeneral", "Prompt before downloading updates"): (
+        "Mindig tegyen fel kérdést a frissítések letöltése előtt",
+        "options/item23.title"),
+    ("OptionsTabGeneral", "Send anonymous usage statistics"): (
+        "Névtelen használati statisztikák küldése a Google részére",
+        "options/usagestats.title"),
+    ("OptionsTabGeneral", "Single click to exit the editing view"): (
+        "Szerkesztési nézetből való kilépés egy kattintással",
+        "options/SingleClickExit.title"),
+    ("OptionsTabGeneral", "User interface:"): (
+        "Kezelőfelület:", "options/labelgroup4.title"),
+    ("OptionsTabNameTags", "Clustering threshold:"): (
+        "Csoportküszöb:", "options/labelgroup181.title"),
+    ("OptionsTabNameTags", "Enable face detection"): (
+        "Arcfelismerés bekapcsolása", "options/enablefacedetection.title"),
+    ("OptionsTabNameTags", "Store name tags in the file"): (
+        "Névcímkék tárolása a fotón", "options/persistfacetofile.title"),
+    ("OptionsTabNameTags", "Upload contact thumbnails to Google Contacts"): (
+        "Az Emberek album indexképeinek feltöltése a Google Címtárba",
+        "options/uploadcontactphotos.title"),
+    ("OptionsTabNetwork", "Detailed log information"): (
+        "Részletes naplóadatok", "options/item140.title"),
+    ("OptionsTabNetwork", "Disable logging"): (
+        "Naplózás letiltása", "options/item137.title"),
+    ("OptionsTabNetwork", "Log all network information"): (
+        "Az összes hálózati információ naplózása", "options/item141.title"),
+    ("OptionsTabNetwork", "Log file:"): ("Napló:", "options/labelgroup142.title"),
+    ("OptionsTabNetwork", "Minimal log information"): (
+        "Minimális mennyiségű naplóadat", "options/item139.title"),
+    ("OptionsTabNetwork", "Network logging level:"): (
+        "Hálózati események naplózási szintje:", "options/labelgroup135.title"),
+    ("OptionsTabNetwork", "Proxy password:"): (
+        "Jelszó a proxyhoz:", "options/labelgroup132.title"),
+    ("OptionsTabNetwork", "Proxy username (Windows only):"): (
+        "Felhasználónév a proxyhoz:", "options/labelgroup130.title"),
+    ("OptionsTabPrinting", "Available print sizes:"): (
+        "Rendelkezésre álló nyomtatási méretek:", "options/label107.title"),
+    ("OptionsTabPrinting", "Printer quality:"): (
+        "Nyomtató minősége:", "options/labelgroup120.title"),
+    ("OptionsTabPrinting", "Print resampler quality:"): (
+        "Nyomtatási mintavételezési minőség:", "options/labelgroup124.title"),
+    ("OptionsTabPrinting", "Use high quality previews (slower)"): (
+        "Magas minőségű előnézetek használata (lassabb)",
+        "options/PrintProxyPreview.title"),
+    ("OptionsTabPrinting", "Extra sharp (Lanczos-8)"): (
+        "Extra éles (Lanczos-8)", "options/radio127.title"),
+    ("OptionsTabSlideshow", "Play music tracks during slideshow"): (
+        "Zenelejátszás a diavetítés alatt", "options/PlayMP3Tracks.title"),
+    ("OptionsTabSlideshow", "Select a folder of music tracks:"): (
+        "Zeneszámok mappájának kiválasztása:", "options/label104.title"),
+    ("OptionsTabWebAlbums", "Add a watermark for all photo uploads:"): (
+        "Vízjel hozzáadása az összes feltöltendő fotóhoz:",
+        "options/haswatermark.title"),
+    ("OptionsTabWebAlbums", "Don't confirm every sync (use the above settings)"): (
+        "Nem kérek megerősítő üzenetet minden szinkronizáláskor "
+        "(a fenti beállításokat használom)", "options/confirmsync::disable.title"),
+    ("OptionsTabWebAlbums", "Preserve original image quality (uses more storage)"): (
+        "Az eredeti képminőség megőrzése (több tárterületet foglal)",
+        "options/PWAUseHiQualityJPEG.title"),
+    ("OptionsTabWebAlbums", "Sync starred photos only"): (
+        "Csak a csillagozott fotók szinkronizálása", "options/PWAStarred.title"),
+    # az eredetiben csoportcímke + jelölőnégyzet, nem egyetlen jelölő
+    ("OptionsTabWebAlbums", "Name Tags:"): ("Névcímkék:", "options/enablefruploads.title"),
+    ("OptionsTabWebAlbums", "Include with photo uploads"): (
+        "Feltöltés a fotókkal", "options/enablefruploads.title"),
+    ("OptionsTabWebAlbums", "When syncing large files, upload previews first"): (
+        "Nagyméretű fájlok szinkronizálásakor a program először az "
+        "előnézeteket töltse fel", "options/PWAStriped.title"),
+}
+
+#: #3572: a lecserélt angol forrásszövegek — a Beállítások füleiről eltűntek
+BEALLITASOK_ELAVULT = {
+    "OptionsTabEmail": (
+        "Full movie", "Let me choose each time I send a picture",
+        "Send embedded pictures and captions (Outlook only)", "Send movies as:"),
+    "OptionsTabFileTypes": ("In addition to JPEG, also show these file types:",),
+    "OptionsTabGeneral": ("English",),
+    "OptionsTabPrinting": (
+        "Printer quality (Windows only):", "Resizing algorithm quality:",
+        "Use high resolution previews (slower)", "Very sharp (Lanczos-8)"),
+    "OptionsTabSlideshow": (
+        "Play MP3 music during slideshow", "Select a music folder:"),
+    "OptionsTabWebAlbums": (
+        "Add a watermark to all photo uploads:",
+        "Don't confirm each sync (use previous settings)",
+        "Keep original picture quality (uses more storage)",
+        "Upload name tags", "Upload previews first for large files"),
+}
+
+
+def _kontextus_forditasai() -> dict[tuple[str, str], set[str]]:
+    talalt: dict[tuple[str, str], set[str]] = {}
+    for kontextus in ElementTree.parse(TS).getroot().iter("context"):
+        nev = kontextus.findtext("name") or ""
+        for uzenet in kontextus.iter("message"):
+            forditas = uzenet.find("translation")
+            if forditas is not None and forditas.get("type") in ("obsolete", "vanished"):
+                continue
+            talalt.setdefault((nev, uzenet.findtext("source") or ""), set()).add(
+                "" if forditas is None else (forditas.text or ""))
+    return talalt
+
+
+def test_a_beallitasok_fulei_a_hivatalos_angolt_mondjak() -> None:
+    hibak = []
+    for (kontextus, felirat) in BEALLITASOK:
+        forras = (QML / "PicasaPy" / f"{kontextus}.qml").read_text(encoding="utf-8")
+        if f'qsTr("{felirat}")' not in forras:
+            hibak.append(f"{kontextus}: hiányzik a qsTr(\"{felirat}\")")
+    for kontextus, regiek in BEALLITASOK_ELAVULT.items():
+        forras = (QML / "PicasaPy" / f"{kontextus}.qml").read_text(encoding="utf-8")
+        hibak += [f"{kontextus}: a régi „{regi}” még él"
+                  for regi in regiek if f'qsTr("{regi}")' in forras]
+    assert not hibak, "\n".join(hibak)
+
+
+def test_a_beallitasok_magyarja_a_hivatalos_szoveg() -> None:
+    talalt = _kontextus_forditasai()
+    hibak = []
+    for kulcs, (magyar, _azonosito) in BEALLITASOK.items():
+        if talalt.get(kulcs) != {magyar}:
+            hibak.append(f"{kulcs}: {sorted(talalt.get(kulcs, set()))} "
+                         f"≠ a hivatalos „{magyar}”")
+    assert not hibak, "\n".join(hibak)
+
+
+def test_a_beallitasok_forditasa_a_qm_ben_is_ott_van() -> None:
+    adat = TS.with_suffix(".qm").read_bytes()
+    hianyzik = [magyar for magyar, _ in BEALLITASOK.values()
+                if magyar.encode("utf-16-be") not in adat]
+    assert not hianyzik, f"a .qm-ből hiányzik (lrelease kell): {hianyzik}"

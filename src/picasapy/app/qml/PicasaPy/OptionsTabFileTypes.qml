@@ -15,7 +15,7 @@ ColumnLayout {
     enabled: false
 
     Text {
-        text: qsTr("In addition to JPEG, also show these file types:")
+        text: qsTr("Display JPEG files and:")
         font.pixelSize: Theme.fontSize
         color: Theme.ink
     }

@@ -34,11 +34,11 @@ ColumnLayout {
 
     CheckBox {
         objectName: "optionsPrintHiResPreviewCheck"
-        text: qsTr("Use high resolution previews (slower)")
+        text: qsTr("Use high quality previews (slower)")
     }
 
     Text {
-        text: qsTr("Printer quality (Windows only):")
+        text: qsTr("Printer quality:")
         font.pixelSize: Theme.fontSize
         color: Theme.ink
     }
@@ -47,13 +47,13 @@ ColumnLayout {
     RadioButton { objectName: "optionsPrintQualityHighRadio"; text: qsTr("High"); ButtonGroup.group: qualityGroup }
 
     Text {
-        text: qsTr("Resizing algorithm quality:")
+        text: qsTr("Print resampler quality:")
         font.pixelSize: Theme.fontSize
         color: Theme.ink
     }
     ButtonGroup { id: resizeGroup }
     RadioButton { objectName: "optionsPrintResizeGeneralRadio"; text: qsTr("General (Lanczos-3)"); ButtonGroup.group: resizeGroup; checked: true }
-    RadioButton { objectName: "optionsPrintResizeSharpRadio"; text: qsTr("Very sharp (Lanczos-8)"); ButtonGroup.group: resizeGroup }
+    RadioButton { objectName: "optionsPrintResizeSharpRadio"; text: qsTr("Extra sharp (Lanczos-8)"); ButtonGroup.group: resizeGroup }
 
     Item { Layout.fillHeight: true }
 }
