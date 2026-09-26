@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.582] – 2026-09-26
+
 ### Javítva
 - **A Tulajdonságok panel magyar nyelven magyar feliratokat mutat (#3639).**
   A panel sorai (fájl, méret, dátum, fényképező, tömörítés), a kép alatti
