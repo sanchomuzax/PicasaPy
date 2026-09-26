@@ -6021,6 +6021,34 @@ korpuszban ott a fájljuk. Egy hiányzó oszlopnév tehát elvben átcsúszhat.
 Picasát vesszük mintának. Saját tárolás bevezetése a mi döntésünk, és nem
 sérti az ini-kompatibilitást (a maszknak ott nincs mezője).
 
+### 5. ⛳ Festés NÉLKÜL az egész képre hat — a szerkesztőben, a bélyegképen és az exportban is (2026-09-26, #3541)
+
+*Forrás: élő mérés, eredeti angol Picasa 3.9.141 (picasa-colab-jobs #56, #57; kulcsképek: `Colab EN 31 - Pixelate panel.png`, `Colab EN 32 - Pixelate mentes nelkul, belyegkep.png`) · `0x00bb3ff0` · `0x00bc06b0` · `0x00bc0770`.*
+
+**A mechanizmus a binárisból.**
+- A `PaintEffectCanvas` kezelője (`0x00bb3ff0`) egyetlen saját attribútumot olvas (`_nBrushHardness`, `0x00cefbd8`, alapérték 0,0). Ezután létrehozza a `glimmer::PaintMaskPlusImageMask` objektumot (`0x00bc06b0`, vtábla `0x00cf0750`), amely a `_mctr.mask` nevet hordozza (`0x00cf0740`). A `0x008ee120` ezt változóként jegyzi be.
+- A maszk rajzolója (7. rés, `0x00bc0770`) a render-környezet `+0x28` objektumából dolgozik. Ha annak változat-mezője (`+0x9c`) 0, vagyis még nem festettek, a `+0x8c` alapmaszkot másolja (`0x00bc079d`–`0x00bc07a6`). Különben a festett réteget (`+0x64`) építi be (`0x00bc07d0`).
+- A keverés a teljes `MaskInstruction` (ld. B) fent): `t·m + b·(255 − m)`.
+
+**Élőben, a Pixelate-tel, egy részletgazdag képen:**
+
+| lépés | eredmény |
+|---|---|
+| a panel | Pixel Size · Blend Mode · Fade · Apply · Cancel — **ecset-vezérlő nincs** |
+| Pixel Size fel, festés nélkül | az **egész kép** pixeles |
+| egy kattintás a képre | nem változik |
+| Apply, majd Back to Library, **mentés nélkül** | a **bélyegkép** az egész képen pixeles |
+| Export (Ctrl+Shift+S) | az **exportált fájl** az egész képen pixeles (800 × 800) |
+| `.picasa.ini` | `filters=Pixelate=1,143.076019,9.000000,0.000000;`: csak a csúszkák, maszk nincs |
+
+⇒ **Festetlen állapotban az alapmaszk teljes fedésű**: az effekt a szerkesztőben, a bélyegképen és az exportban egyformán az egész képre hat. A PicasaPy ugyanezt teszi: a festetlen maszk `None`, és a lánc a maszk nélküli úton fut (`app/paint_mask.py:109`–`120`).
+
+⛔ **Helyesbítés:** az `app/paint_mask_controller.py` fejléce azt írja, hogy ezek az effektek „az eredetiben csak a BEFESTETT területre hatnak”. Festés nélkül ez nem igaz, a mérés szerint az egész képre hatnak.
+
+**Ami NYITVA marad, megnevezett úttal:** a **befestett** állapot. Az eredetiben a festés egérhúzással történik a vásznon; a panelen nincs rá vezérlő. A Colab-végrehajtó ma csak kattintani tud, ezért ez nem mérhető → **picasapy-agent #161** (húzás lépés). Ugyanitt dől el, hogyan állít ecsetméretet az eredeti. Nálunk a panelen „Brush Size” csúszka van (`EditorParamPanel.qml:308`–`340`), az eredeti panelén nincs.
+
+*Bizonyítottsági fok: megerősített* (a festetlen állapot: bináris + élő mérés, a szerkesztő, a bélyegkép és az export egyezik); a befestett állapot **NINCS MÉRVE**.
+
 ## ⛳⛳ A `GlowImageOperation` SOSEM fut belső ragyogásként — az `innerglow` attribútum nem létezik a binárisban (2026-09-14, 306. kör, #2982)
 
 *Forrás: `glimmer::GlowImageOperation::vftable` = `0x00cf0174` (RTTI), az
