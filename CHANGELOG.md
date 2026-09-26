@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.584] – 2026-09-26
+
 ### Hozzáadva
 - **A személy-album fejlécén az arc ↔ teljes kép váltóval a képek a
   személy arcára közelítve is megjeleníthetők (#2187).** A közelített kép
