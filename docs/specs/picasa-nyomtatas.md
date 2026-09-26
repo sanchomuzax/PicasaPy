@@ -782,7 +782,19 @@ Minden lap a saját második menetével kapja a térközét: a részben teli uto
 
 Fejlesztés: **#3647**.
 
-*Bizonyítottsági fok: megerősített* (utasításszinten, és független újralevezetéssel ld. lent). ⛔ Élőben nem mérve: a Colab-gépen nincs nyomtató (picasapy-agent #159).
+#### ✅ Élőben mérve (2026-09-26, picasa-colab-jobs #55; PDF-nyomtató, A4, 300 dpi)
+
+Eredeti angol Picasa 3.9.141, egy négyzetes tesztkép (`color_patches.jpg`), Crop to Fit:
+
+| beállítás | mért eredmény | a szabály szerint |
+|---|---|---|
+| 4 × 6, 1 példány | 1 lap, egy cella, a lapon középen | 1 cella; a térköz a maradék helyen egyenletes ✅ |
+| 4 × 6, 5 példány | **„1 of 3”**: 2 + 2 + 1 cella, egymás alatt; a 3. lapon az egy cella középen | túlcsordulás → új lap, folytatott számláló, laponkénti térköz ✅ |
+| Wallet, 5 példány | 1 lap, sorfolytonos rács: 3 + 2 | sorfolytonos rakás, sortörés ✅ |
+
+Kulcsképek: `research/testdata/screenshot/Colab EN 29 - Print, 4x6, 5 copies (1 of 3).png` és `Colab EN 30 - Print, Wallet, 5 copies.png` (a leltárban). A nyomtatási nézet méretgombjai angolul: Wallet · 3.5 x 5 · 4 x 6 · 5 x 7 · 8 x 10 · Full Page; az alapállás Full Page, Crop to Fit, „Copies per Photo” = 1.
+
+*Bizonyítottsági fok: megerősített* (utasításszinten, független újralevezetéssel ld. lent, és élő méréssel).
 
 ### 🔁 Független újralevezetés
 - **bíráló:** friss opus-ügynök (Agent, nem fork) (friss kontextus, a kutató magyarázata nélkül)
