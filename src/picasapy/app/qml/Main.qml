@@ -2823,13 +2823,18 @@ ApplicationWindow {
             ? unnamedFacesView.selectedCount : window.selectedRows().length
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
-        currentPerson: controller ? controller.currentPersonName : ""
+        // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a
+        // `currentPersonName` az előző személyé marad — az albumban nincs
+        // „nézett személy", tehát a „Szintén" lista sem
+        currentPerson: controller && !window.unnamedFacesOpen
+            ? controller.currentPersonName : ""
         // a photos.revision-nel együtt kötve: arc-írás után frissül
         peopleHere: controller
             ? (controller.photos.revision,
                controller.peopleOfRows(window.selectedRows()))
             : []
-        peopleWith: controller && controller.currentPersonName.length > 0
+        peopleWith: controller && !window.unnamedFacesOpen
+                    && controller.currentPersonName.length > 0
             ? (controller.photos.revision,
                controller.peopleWith(controller.currentPersonName))
             : []
