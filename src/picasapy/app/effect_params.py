@@ -472,6 +472,26 @@ def format_param_values(values, params=None) -> tuple[str, ...]:
                 raise ValueError(f"Érvénytelen szín (nem #rrggbb alakú): {value!r}")
             int(hex_value, 16)  # ValueError, ha nem hexa
             formatted.append("00" + hex_value.lower())
+        elif param.max_formula is not None:
+            formatted.append(f"{_keppontbol_szazalek(float(value), param):.6f}")
         else:
             formatted.append(f"{float(value):.6f}")
     return tuple(formatted)
+
+
+def _keppontbol_szazalek(value: float, param: EffectParam) -> float:
+    """#3596: a képfüggő tartományú csúszka a `.picasa.ini`-ben SZÁZALÉK.
+
+    Az eredeti `glimmer::DynamicRangeSlider` a tárolt `t`-t 0–100 közé
+    szorítja és `minimum + (maximum − minimum) · t / 100`-ként vetíti a
+    tartományra (`docs/specs/filters-decoded.md`, #3591; a render oldali
+    párja `render/dinamikus_csuszka.py`). A felület képpontban mutatja a
+    csúszkát, ezért íráskor ezt a vetítést fordítjuk meg — a `param`-nak
+    a `resolve_effect_params()`-szal FELOLDOTT tartományúnak kell lennie.
+    """
+    # apró képen a tartomány meg is fordulhat (`FocalZoom`: 10 … 3 egy
+    # 8 × 6-os képen) — a natív vetítés akkor is ugyanez a képlet
+    span = param.maximum - param.minimum
+    if span == 0:
+        return 0.0
+    return min(max((value - param.minimum) / span * 100.0, 0.0), 100.0)

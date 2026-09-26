@@ -37,6 +37,8 @@ from picasapy.render.effects import (
 )
 from picasapy.render.blur import apply_blur
 from picasapy.render.effects_artistic import apply_comicize
+from picasapy.render.dinamikus_csuszka import dinamikus_csuszka_ertek, fel_rovidebb_el
+from picasapy.render.elonezeti_arany import jelenlegi_arany
 from picasapy.render.focal import apply_focal_pixelate, apply_focal_zoom
 from picasapy.render.effects_creative_tone import apply_invert
 from picasapy.render import chain_glimmer_handlers as glimmer
@@ -613,6 +615,11 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 # csővezetékeire (`chain_glimmer_handlers.py`) — ez a két handler a régi,
 # `_effect_float`-tal pozíció szerint olvasó KÖZELÍTŐ modellen maradt.
 
+#: #3596: a két fókuszos `Radius` tartományának alsó vége (képpont) és az
+#: alapértéke — a leíró „a tartomány közepe", azaz 50 %.
+_FOKUSZSUGAR_MIN = 10.0
+_FOKUSZSUGAR_ALAP_SZAZALEK = 50.0
+
 
 def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     """`FocalZoom=1,x,y,Impact,Radius,Hardness,Fade` (#570).
@@ -621,15 +628,27 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     visszafejtése adta meg: a fókuszpont UTÁN az `Impact` jön — a korábbi
     kód a harmadik mezőt Radius-ként olvasta, ezért a két csúszka hatása
     fel volt cserélve.
+
+    #3596: a `Radius` SZÁZALÉK (`DynamicRangeSlider`), a tartománya
+    `10 … min(fullResImageWidth, fullResImageHeight)/2`. A teljes felbontás
+    az előnézeti arányból jön vissza; a kész sugarat a maszk a natív
+    `scale`-lel (`imageWidth / fullResImageWidth`) vetíti az előnézetre.
     """
+    arany = jelenlegi_arany()
+    height, width = image.shape[:2]
     return apply_focal_zoom(
         image,
         x=_effect_float(op, 0, 0.5),
         y=_effect_float(op, 1, 0.5),
         impact=_effect_float(op, 2, 50.0),
-        radius=_effect_float(op, 3, 10.0),
+        radius=dinamikus_csuszka_ertek(
+            _effect_float(op, 3, _FOKUSZSUGAR_ALAP_SZAZALEK),
+            _FOKUSZSUGAR_MIN,
+            fel_rovidebb_el(height / arany, width / arany),
+        ),
         hardness=_effect_float(op, 4, 50.0),
         fade=_effect_float(op, 5, 0.0),
+        scale=arany,
     )
 
 
@@ -641,13 +660,21 @@ def _apply_focal_pixelate_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     csúszka → a jelölőnégyzet `,%d`-ként. A leíró
     (`runtime/filterdesc.xml:859`) puckot, négy csúszkát (Impact, Radius,
     Hardness, Fade) és egy `_chkReverse` jelölőt ad.
+
+    #3596: a `Radius` SZÁZALÉK, tartománya `10 … min(W, H)/2` (az
+    `Impact` statikus csúszka, az nyers érték marad).
     """
+    height, width = image.shape[:2]
     return apply_focal_pixelate(
         image,
         x=_effect_float(op, 0, 0.5),
         y=_effect_float(op, 1, 0.5),
         impact=_effect_float(op, 2, 20.0),
-        radius=_effect_float(op, 3, 10.0),
+        radius=dinamikus_csuszka_ertek(
+            _effect_float(op, 3, _FOKUSZSUGAR_ALAP_SZAZALEK),
+            _FOKUSZSUGAR_MIN,
+            fel_rovidebb_el(height, width),
+        ),
         hardness=_effect_float(op, 4, 50.0),
         fade=_effect_float(op, 5, 0.0),
         reverse=_effect_float(op, 6, 0.0) != 0.0,
