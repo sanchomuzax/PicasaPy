@@ -2358,6 +2358,61 @@ tulajdonosi döntés**: a bináris megadta a viselkedést. A megvalósítás vis
 csak a párbeszéddel EGYÜTT mehet ki — állapot-pár kérdés nélkül némán
 eldobná az egyik fél munkáját.
 
+#### 4/c.1 ⭐ Melyik KILÉPÉSI út kérdez — a `0x0056aad0` összes hívója (2026-09-26, #3644)
+
+A 4/b létrája azt mondja meg, MIKOR kérdez a rutin; ez a szakasz azt, hogy
+HONNAN hívják. **Mérés:** a teljes `.text` pásztázása (`paszta.py`,
+2 884 879 utasítás; `call`/`jmp`/`push`/`mov` közvetlen operandusra) és a
+`.rdata`/`.data` dword-keresése a függvény címére. A `0x0056aad0`-t
+**pontosan hat hívóhely** éri el, adatból (vtáblából) egy sem — ez tehát
+**kimerítő**, nem az xref-index negatív találata:
+
+| hívóhely | függvény | mi ez | Mégse (`0xf4242`) után |
+|---|---|---|---|
+| `0x0056a271` | `0x0056a260` | belépés `aa`/`ab` módba (4/b.1) | a belépés elmarad |
+| `0x0056a728` | `0x0056a680` | `only_1up_toggle` | a mód marad |
+| `0x00578c68` | `0x00578c30` | **előző kép** — a `CThumbUI`+`0x2a4` interfész vtáblájának (`0x00c90754`) 10. rekesze; a lépés `0x007172a0` (`push -1` → `0x00717eb0`) | `cmp eax, 0xf4242` @ `0x00578c6d` → **nem lapoz** |
+| `0x00578df8` | `0x00578dc0` | **következő kép** — ugyanott, 11. rekesz; a lépés `0x00717260` (`push 1`) | `0x00578dfd` → **nem lapoz** |
+| `0x005deb29` | `0x005de8e0` (`CThumbUI` vtábla) | a `filmstripmove` esemény (filmszalag) | `jne 0x005e04d0` → visszatér |
+| `0x005e477d` | `0x005e45c0` | „elhagyható-e a nézet" — két hívóval, ld. lent | a `0xf4242`-t továbbadja |
+
+A `0x005e45c0` két hívója (szintén pásztázva): **`0x0057c4e0`** — a
+**programzárás**: a `CThumbUI` üzenetkezelője (`0x005e4ac0`) a
+`WM_SYSCOMMAND` (`0x112`) / `SC_CLOSE` (`0xf060`) párra hívja
+(`0x005e4d87`–`0x005e4d90`); Mégsére `cmp eax, 0xf4242` @ `0x0057c597` →
+`0xf4240`-nel tér vissza, **a program nem zárul be**. — **`0x005d3290`** az
+`lb_preclick` eseményre, ha a kattintott elem nem a jelenlegi
+(`0x005d34dd`); Mégsére a kattintás elmarad (`0x005d34f4`).
+
+**A „Vissza a könyvtárba" NEM kérdez.** Az `editpanel/albumview` vezérlő
+(`0x005d6a92`) a `0x00566270`-et hívja, amely a `0x005f8d80` („Apply
+changes…?") után a `thumbui/albumview`-ra vált — a `0x0056aad0`-t nem hívja,
+és a két fél állapotát sem oldja: a feloldók (`0x006abae0`, `0x006abd40`,
+`0x006ab7f0`) hívói között nincs ott, és a `previewclip2`-höz sem nyúl. **A
+két fél állapota tehát a `CThumbUI`-ban megmarad**; a kérdés a következő
+kilépési úton jön.
+
+⇒ **Az eredeti SEHOL nem dob el némán fél-szerkesztést:** minden útja
+kérdez és Mégsére megáll — a könyvtárba lépés pedig nem dönt, csak
+félreteszi a két állapotot.
+
+**Nálunk (#3644):** minden kilépési út egy kapun megy át
+(`PhotoViewer.aaKilepesKapu`): a módváltás, a **lapozás** (billentyű, gomb,
+filmszalag — a néző a párbeszéd idejére visszaáll a munkamenet fotójára, és
+a lapozás a VÁLASZ után ismétlődik), a **programzárás** (az ablak „X"-e és a
+Fájl ▸ Kilépés, `Main.qml` `aaKapu`) és a **néző elhagyása** (a „Vissza a
+könyvtárba" gomb, az Esc, a kollázs/film/keresés/személy kivezetők). Ez
+utóbbi szándékos eltérés: nálunk a néző bezárása mindkét munkamenetet
+lezárja (a két állapotot nem tudjuk a nézőn túl félretenni), ezért ott is a
+párbeszéd fut, és Mégsére a néző nyitva marad. A kérdés nélküli lezárás (az
+aktív fél marad) csak végső tartalék egy még nem kapuzott elrejtésre.
+
+> *Bizonyítottsági fok: **megerősített*** a hat hívóhelyre (kimerítő
+> pásztázás), a lapozás, az `SC_CLOSE` és a `filmstripmove` ágára
+> (utasításszinten olvasva). Az `lb_preclick` esemény felületi forrását
+> (melyik lista kattintása) nem követtem; a viselkedése (kérdez, Mégsére
+> elmarad) ettől független.
+
 ### 5. ⛔ `editpanel/wipe_2up_toggle` — a KÓD ismeri, a FELÜLET nem
 
 A bináris `0x005d59f0` vezérlő-listájában ott a **`editpanel/wipe_2up_toggle`**
@@ -2379,7 +2434,7 @@ megléte nem bizonyít élő vezérlőt — a felületleíró dönt.**
 | buboréksúgók | **hivatalos magyar** (fent) | **angol** eredeti (`ToolTip.text: qsTr("View only one image")` stb.) | a magyar szöveg a `.ts`-be |
 | `swap_2up_focus` · `swap_2up_layout` | megvan, **rejtett** amíg nincs 2-up | **megvan**, 2-up módban látszik (`viewerSwapFocus`, `viewerSwapLayout`) | ✅ |
 | „Kijelölve" jelvény | megvan, kétrészes háttérrel | **megvan** (`viewerFocusBadge`; a válogató parancsok is ezt követik) | a kétrészes háttér még hiányzik |
-| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **megvan** (#3014): `AaUtkozesDialog.qml`, a 4/b.1 döntési táblájával; az „aa" mód két fele két önálló szerkesztés (a kijelölt ír, a másik memóriás), a „ne kérdezd" a `DoNotAskOnEnd2Up` kulcs (#367) | a néző bezárásakor és lapozáskor párbeszéd nélkül az aktív fél marad (ott nincs „maradj" válasz — nem mért); a belépés előtti „Apply changes…?" kérdés (4/b.1, 2. lépés) még nincs |
+| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **megvan** (#3014): `AaUtkozesDialog.qml`, a 4/b.1 döntési táblájával; az „aa" mód két fele két önálló szerkesztés (a kijelölt ír, a másik memóriás), a „ne kérdezd" a `DoNotAskOnEnd2Up` kulcs (#367) | a lapozás, a programzárás és a néző elhagyása is kérdez, Mégsére megáll (4/c.1, #3644); a belépés előtti „Apply changes…?" kérdés (4/b.1, 2. lépés) még nincs |
 | `wipe_2up_toggle` | **nincs a felületen** | nincs | **nem kell megépíteni** |
 
 

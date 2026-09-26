@@ -1244,9 +1244,26 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._session = EditSession.from_value(value)
         self._undo_stack = self._seed_undo_from_chain(self._session)
         self._redo_stack.clear()
+        # A fél ALKALMAZATLAN eszközpuffere a régi lánchoz tartozott — a
+        # csere után a másik fél láncára kerülne (#3644 3.). Ugyanúgy ürül,
+        # mint egy újranyitáskor (`beginEdit`).
+        self._reset_tool_buffers()
+        if not self._paint_mask.ures:
+            self._paint_mask.torold()
+            self.paintMaskChanged.emit()
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+
+    def _reset_tool_buffers(self) -> None:
+        """A retusálás- és a vörösszem-eszköz alkalmazatlan pufferének ürítése."""
+        self._retouch_patches = ()
+        self._retouch_target = None
+        self._retouch_patch_undo = []
+        self._retouch_patch_redo = []
+        self._redeye_regions = ()
+        self._redeye_region_undo = []
+        self._redeye_found = -1
 
     @Slot(str)
     def toggleTool(self, name: str) -> None:

@@ -53,10 +53,17 @@ Dialog {
         root.valasztva(fel)
     }
 
+    function _megsem() {
+        root.close()
+        root.megse()
+    }
+
     ColumnLayout {
         spacing: 12
         //: Enter = az alapértelmezett (az aktív félé) gomb. A jelölő a
-        //: Return-t nem fogadja el, tehát onnan is ide jut.
+        //: Return-t nem fogadja el, tehát onnan is ide jut. #3644: a
+        //: Tabbal FÓKUSZBA vett gomb a saját Enterjét maga kezeli (lent),
+        //: tehát ide csak a gombon kívülről érkező Enter jut.
         focus: true
         Keys.onReturnPressed: root._valaszt(root.aktivFel)
         Keys.onEnterPressed: root._valaszt(root.aktivFel)
@@ -89,6 +96,8 @@ Dialog {
                 text: root.fuggoleges ? qsTr("Top") : qsTr("Left")
                 accent: alapertelmezett ? Theme.picasaGreen : "transparent"
                 onClicked: root._valaszt("elso")
+                Keys.onReturnPressed: root._valaszt("elso")
+                Keys.onEnterPressed: root._valaszt("elso")
             }
             //: 1. gomb — a MÁSODIK fél (`Confirm2upRight` / `Confirm2upBottom`)
             PicasaButton {
@@ -97,15 +106,16 @@ Dialog {
                 text: root.fuggoleges ? qsTr("Bottom") : qsTr("Right")
                 accent: alapertelmezett ? Theme.picasaGreen : "transparent"
                 onClicked: root._valaszt("masodik")
+                Keys.onReturnPressed: root._valaszt("masodik")
+                Keys.onEnterPressed: root._valaszt("masodik")
             }
             //: 2. gomb — `il_Cancel`
             PicasaButton {
                 objectName: "aaUtkozesMegseButton"
                 text: qsTr("Cancel")
-                onClicked: {
-                    root.close()
-                    root.megse()
-                }
+                onClicked: root._megsem()
+                Keys.onReturnPressed: root._megsem()
+                Keys.onEnterPressed: root._megsem()
             }
         }
     }

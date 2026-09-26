@@ -138,6 +138,41 @@ class TestALancCsere:
         assert "bw" in vezerlo.chainValue
 
 
+class TestACsereEszkozallapota:
+    """#3644 3.: a lánc-csere (fókuszváltás) a fél ALKALMAZATLAN
+    eszközpufferét nem viheti át a másik fél láncára."""
+
+    def test_a_retusalas_puffere_urul(self, vezerlo, foto):
+        vezerlo.beginEdit("1", str(foto))
+        vezerlo.enterRetouchTool()
+        vezerlo.beginRetouchPatch(0.2, 0.2)
+        vezerlo.commitRetouchPatch(0.6, 0.6)
+        vezerlo.beginRetouchPatch(0.3, 0.3)
+        assert vezerlo.retouchPendingCount == 1
+        vezerlo.setChainValue("")
+        assert vezerlo.retouchPendingCount == 0
+        assert not vezerlo.retouchPatchPending
+        assert not vezerlo.canUndoPatch
+
+    def test_a_vorosszem_regiok_urulnek(self, vezerlo, foto):
+        vezerlo.beginEdit("1", str(foto))
+        vezerlo.enterRedeyeTool()
+        vezerlo.addRedeyeRegion(0.1, 0.1, 0.3, 0.3)
+        assert vezerlo.redeyeRegionCount == 1
+        vezerlo.setChainValue("")
+        assert vezerlo.redeyeRegionCount == 0
+        assert not vezerlo.canUndoRedeyeRegion
+
+    def test_a_festett_maszk_urul(self, vezerlo, foto):
+        vezerlo.beginEdit("1", str(foto))
+        vezerlo.applyEffect("soften")
+        lanc = vezerlo.chainValue
+        vezerlo.paintStroke(0.5, 0.5)
+        assert vezerlo._paint_strokes()
+        vezerlo.setChainValue(lanc)
+        assert vezerlo._paint_strokes() == ()
+
+
 class TestAHid:
     def test_a_hid_tovabbadja(self, vezerlo, foto):
         from picasapy.app.second_preview import SecondPreview
