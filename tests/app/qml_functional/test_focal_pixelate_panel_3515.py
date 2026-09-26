@@ -22,7 +22,8 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtCore import QObject, Qt
+from PySide6.QtTest import QTest
 
 from picasapy.app.effect_params import (
     effect_params,
@@ -31,6 +32,7 @@ from picasapy.app.effect_params import (
 )
 from picasapy.ini import parse_filters
 from picasapy.render import apply_filters
+from tests.app.qml_functional.test_editor_panel_rendered_651 import _child
 from tests.app.qml_functional.test_effect_sliders import (
     _as_list,
     _click,
@@ -60,8 +62,8 @@ class TestAKatalogus:
         assert [(p.key, p.label, p.kind) for p in vezerlok] == [
             ("x", "Center X", "slider"),
             ("y", "Center Y", "slider"),
-            ("impact", "Pixel Size", "slider"),
-            ("radius", "Focal Size", "slider"),
+            ("impact", "Impact", "slider"),
+            ("radius", "Radius", "slider"),
             ("hardness", "Edge Hardness", "slider"),
             ("fade", "Fade", "slider"),
             ("reverse", "Reverse", "checkbox"),
@@ -97,7 +99,7 @@ class TestAPanelMegnyilik:
         assert ismetlo.property("count") == 7
         feliratok = [p["label"] for p in _as_list(panel.property("paramEffectParams"))]
         assert feliratok[2:] == [
-            "Pixel Size", "Focal Size", "Edge Hardness", "Fade", "Reverse",
+            "Impact", "Radius", "Edge Hardness", "Fade", "Reverse",
         ]
         # élő előnézet: a megnyitás az alapértékekkel rögtön renderel
         assert vezerlo.preview_calls and vezerlo.preview_calls[-1][0] == KULCS
@@ -117,13 +119,15 @@ class TestALancig:
         qt_app.processEvents()
         assert panel.property("paramPanelActive") is True
 
-        QMetaObject.invokeMethod(
-            panel,
-            "updateParamValue",
-            Qt.ConnectionType.DirectConnection,
-            Q_ARG("QVariant", 6),
-            Q_ARG("QVariant", 1),
-        )
+        # a Megfordítás jelölőre KATTINTUNK, nem a metódust hívjuk
+        jelolo = _child(panel, "effectParamCheckbox6")
+        assert jelolo.isVisible(), "a Megfordítás jelölő nem látszik a panelen"
+        # valódi egérkattintás a jelölő közepére (a CheckBox-nak nincs
+        # `buttonClicked` metódusa, a `toggled` csak felhasználói kattintásra jön)
+        kozep = jelolo.mapToScene(jelolo.boundingRect().center()).toPoint()
+        QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kozep)
+        qt_app.processEvents()
+        assert jelolo.property("checked") is True
         _click(panel.findChild(QObject, "effectParamApplyButton"))
         qt_app.processEvents()
 

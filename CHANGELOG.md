@@ -9,8 +9,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - **A Képpontnövelés (Shift + Képpontnagyítás) csúszkapanelt nyit
-  (#3515).** A fókuszpont, a képpontméret, a fókuszméret, az élkeménység és
-  a fokozat élő előnézettel állítható, a Megfordítás jelölő pedig a kör
+  (#3515).** A fókuszpont, a hatás, a sugár, az élkeménység és a
+  fokozat élő előnézettel állítható, a Megfordítás jelölő pedig a kör
   belsejét pixelesíti a széle helyett.
 
 ## [0.8.580] – 2026-09-26

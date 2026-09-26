@@ -57,13 +57,16 @@ nem követtük vissza).
 | `_sldrContrast` | **HDR** | Strength | **Erősség** | `0x008fd8ff` → `0x008fd8ed` |
 | `_sldrContrast` | **PencilSketch** | Strength | **Erősség** | `0x008fd96d` → `0x008fd95b` |
 | `_sldrContrast` | *minden más* (LocalContrast, NightVision, TwoTone) | Contrast | **Kontraszt** | `0x008fd97d` |
-| `_sldrImpact` | **PicnikFocalPixelate** (`FocalPixelate`), **Pixelate** | Pixel Size | **Képpontméret** | `0x008fdeda`, `0x008fdf30` → `0x008fdf6d` |
+| `_sldrImpact` | **PicnikFocalPixelate** (`FocalPixelate`) ⚠️, **Pixelate** | Pixel Size | **Képpontméret** | `0x008fdeda`, `0x008fdf30` → `0x008fdf6d` |
 | `_sldrImpact` | **FocalZoom** | Zoominess | **Suhanás** | `0x008fdfbb` → `0x008fe02a` |
 | `_sldrImpact` | **Soften** | Softness | **Lágyítás** | `0x008fe00a` → `0x008fe098` |
 | `_sldrImpact` | **Boost** | Strength | **Erősség** | `0x008fe078` → `0x008fe0f2` |
 | `_sldrImpact` | *minden más* | Impact | **Hatás** | `0x008fe0d4` |
-| `_sldrRadius` | **PicnikFocalPixelate** (`FocalPixelate`), **FocalZoom** | Focal Size | **Fókuszméret** | `0x008fe38b`, `0x008fe3de` → `0x008fe3e7` |
+| `_sldrRadius` | **PicnikFocalPixelate** (`FocalPixelate`) ⚠️, **FocalZoom** | Focal Size | **Fókuszméret** | `0x008fe38b`, `0x008fe3de` → `0x008fe3e7` |
 | `_sldrRadius` | *minden más* (HDR, LocalContrast, PencilSketch) | Radius | **Sugár** | `0x008fe405` |
+
+
+⚠️ **Ellentmondás (2026-09-26, #3515):** a tulajdonos referencia-képernyőképén (`3315-pixelate-parja/03-keppontnoveles-csuszkak.png`) a Képpontnövelés (PicnikFocalPixelate) panelje **Hatás · Sugár · Élkeménység · Fokozat** feliratot mutat, azaz a futó programban a fenti két `FocalPixelate`-felülírás NEM él (valószínűleg a névösszevetés nem egyezik a `PicnikFocalPixelate` névvel). A PicasaPy a referencia szerint épül; a felülírás tényleges feltétele kutatandó.
 
 ### Az effektfüggő színminta (`_clrsw`)
 
