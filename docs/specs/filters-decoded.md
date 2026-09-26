@@ -1983,9 +1983,7 @@ JPEG-zaj nagyságrendű; „pixelhű" ítélet veszteséges goldenen nem érhet�
 ### Ami NEM változott
 
 A **`radsat`** („Fókuszos FF") a régi közelítésen maradt: ugyanezt a natív
-maszkot használja, de **nincs hozzá egyetlen mért kimenet sem**, és a
-projekt szabálya szerint a natív mag megléte önmagában nem indok. A #317
-kalibrálhatja, ha készül hozzá referencia-export.
+maszkot használja, de ~~**nincs hozzá egyetlen mért kimenet sem**~~ → **MÉRVE (2026-09-26, #3517)**: az alábbi „TELJES” algoritmus a 684-es Picasa-exporton ΔE 0,03–0,13-mal egyezik, ld. ott.
 
 ### `radsat` („Telítetlenít egy középpont körül") — TELJES (2026-08-15, #317)
 
@@ -2049,7 +2047,19 @@ korábbi olvasatot.
 > B:1/8` egész közelítés). A Picasa **két különböző** luma-képletet használ,
 > effektcsaládtól függően.
 
-**Bizonyítottsági fok: megerősített.**
+#### ⭐ Mérve a Picasa-exporton (2026-09-26, #3517)
+
+A fenti algoritmus szó szerinti átültetése (a középpont `0,5, 0,5`), a tulajdonos 684-es mérőkészletén (`684-merokeszlet`, a Picasa saját exportja), átlagos CIE76 ΔE:
+
+| eset (`radsat=1,0.5,0.5,méret,élesség`) | Picasa ↔ forrás | a mai `render/effects.py::apply_radsat` ↔ Picasa | **az algoritmus ↔ Picasa** |
+|---|---:|---:|---:|
+| alap (0; 0,5) | 8,172 | 6,468 | **0,082** |
+| max (1; 1) | 3,657 | 3,657 (nem hat) | **0,128** |
+| min (−1; 0) | 10,163 | 2,730 | **0,034** |
+
+⇒ **A negyedik és ötödik ini-mező** (a lánc 3. és 4. paramétere): a **méret** (`[-1, 1]`, `r = min(W,H)/2 · (méret + 1)`) és az **élesség** (`[0, 1]`, `k = 1/(1 − 0,99·√élesség)`). A natív callback a szűrő-objektum `+0x28`/`+0x2c` mezőjéből olvassa őket (`0x008f86c8`, `0x008f86d1`), a középpontot a `+0x94` puck-téglalapból (`0x008f86a1` → `0x00a4a240`). ⛔ A **fordulópont a sugár FELÉNÉL** van (`t = 0,5`), nem a sugáron. A mai megvalósítás a teljes `r`-en belül érintetlenül hagyja a képet, ezért `max`-nál semmit sem változtat, alapállásban pedig gyenge. A Rec.601-luma és a lineáris átmenet szintén eltér a mért 77/151/28-tól és a smoothstep-táblától.
+
+**Bizonyítottsági fok: megerősített**, a bináris és a golden-mérés együtt.
 
 ### `dir_tint` (irányított színezés) — TELJES (2026-08-15, #317)
 
