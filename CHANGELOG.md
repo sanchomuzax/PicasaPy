@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Képek biztonsági mentése a kiadás-panel mentés-üzemmódjában nyílik,
+  nem külön ablakban (#3504)**, ahogy az eredeti Picasában: a készletek
+  létrehozása, módosítása és törlése, a mappánkénti kijelölés (#3594) és a
+  mappa/lemezkép kimenet (#3593) mind megvan, csak a könyvtár alján, a
+  „Lemezre írás” gombbal.
+
 ## [0.8.583] – 2026-09-26
 
 ### Javítva

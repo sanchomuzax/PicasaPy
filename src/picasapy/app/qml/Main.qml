@@ -1523,9 +1523,10 @@ ApplicationWindow {
             : fileOpsDialogs.ensure().openRename(window.selectedIndex)
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
-        //: #440: a mentés-készletek párbeszéde — halasztva épül fel, mint a
-        //: többi ritkán nyitott ablak.
-        onBackupRequested: backupDialog.ensure().open()
+        //: #3504: a kiadás-panel mentés-üzemmódja a könyvtár alján — a
+        //: korábbi külön ablak (`BackupDialog`) helyett, a `giftCdHost`
+        //: mintájára.
+        onBackupRequested: backupHost.nyisd()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
         // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
@@ -2241,7 +2242,9 @@ ApplicationWindow {
         anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
         //: #3503: nyitott Ajándék-CD panelnél a könyvtár a panel fölött ér
         //: véget — a panel nem takarhatja el a képeket
-        anchors.bottom: giftCdHost.visible ? giftCdHost.top : parent.bottom
+        //: #3504: ugyanez a mentés-panelre is vonatkozik
+        anchors.bottom: giftCdHost.visible ? giftCdHost.top
+                        : (backupHost.visible ? backupHost.top : parent.bottom)
         // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
         // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
         // a kijelölése (a #944 kimérte, a #985 tesztje állítja).
@@ -3353,6 +3356,17 @@ ApplicationWindow {
                  && window.libraryFrameVisible
     }
 
+    //: #3504: „Eszközök ▸ Képek biztonsági mentése…" — a kiadás-panel
+    //: mentés-üzemmódja, ugyanúgy a könyvtár alján, mint az Ajándék-CD.
+    BackupHost {
+        id: backupHost
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        visible: nyitva && !window.viewerOpen && !window.timelineOpen
+                 && window.libraryFrameVisible
+    }
+
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
     footer: TrayBar {
         id: trayBar
@@ -3913,12 +3927,6 @@ ApplicationWindow {
         id: moveDatabaseDialog
         anchors.fill: parent
         sourceComponent: Component { MoveDatabaseDialog { } }
-    }
-    // #440: Képek biztonsági mentése — mentés-készletek
-    DeferredDialog {
-        id: backupDialog
-        anchors.fill: parent
-        sourceComponent: Component { BackupDialog { } }
     }
     // #644: figyelmeztetés, ha egy másik program felülírta a szerkesztéseinket
     DeferredDialog {

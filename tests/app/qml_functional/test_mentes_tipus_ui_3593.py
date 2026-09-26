@@ -1,4 +1,5 @@
-"""#3593 — a mentési készlet típusa a párbeszédben, VALÓDI kattintással.
+"""#3593 — a mentési készlet típusa az Új/Módosítás párbeszédben, VALÓDI
+kattintással.
 
 A mért űrlap (`newbackupset.fen`):
 
@@ -8,10 +9,11 @@ Backup type:  ( ) CD or DVD backup
               [Choose...]   ← csak a lemez-lemez típusnál él
 ```
 
-⚠️ A mérés közben előkerült egy ÉLES hiba: a „Back Up" gomb egy
-`backupOutputMode` azonosítóra hivatkozott, ami nem létezett (csak
-`objectName` volt) — a kattintás hibára futott, és a mentés el sem
-indult. A `TestAFutas` osztály ezt a gombnyomástól a kész kimenetig méri.
+#3504: az űrlap ma a `BackupHost` felugró párbeszéde (`backupSetDialog`),
+amit a kiadás-panel mentés-üzemmódjának „New Set…"/„Edit Set…" gombja
+nyit; korábban ugyanez a `BackupDialog` beágyazott form-rácsa volt.
+
+A gombnyomástól a kész kimenetig a `TestAFutas` osztály méri.
 """
 
 from __future__ import annotations
@@ -20,11 +22,11 @@ from pathlib import Path
 
 import picasapy.app
 import pytest
-from PySide6.QtCore import QMetaObject, QPoint, Qt, QUrl
-from PySide6.QtQml import QQmlComponent, QQmlEngine
+from PySide6.QtCore import QMetaObject, QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
+from support.backup_host_harness import epits_ablakot
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import varj_feltetelre, wait_for_signal
 
@@ -37,12 +39,12 @@ def _elem(gyoker, nev: str):
     return elem
 
 
-def _kattints(ablak, elem, qt_app):
+def _kattints(view, elem, qt_app):
     """Valódi kattintás a vezérlő KÖZEPÉRE.
 
-    A láthatóság-váltás után az elrendezés (`RowLayout`) csak a következő
-    képkockán számol újra; offscreen addig a vezérlő a RÉGI helyén áll, és
-    a kattintás a szomszédjára esne. Ezért előbb kikényszerítjük az
+    A láthatóság-váltás után az elrendezés csak a következő képkockán
+    számol újra; offscreen addig a vezérlő a RÉGI helyén áll, és a
+    kattintás a szomszédjára esne. Ezért előbb kikényszerítjük az
     elrendezést a vezérlő ősein."""
     qt_app.processEvents()
     os_ = elem
@@ -51,14 +53,14 @@ def _kattints(ablak, elem, qt_app):
         os_ = os_.parentItem()
     kozep = elem.mapToScene(elem.boundingRect().center())
     QTest.mouseClick(
-        ablak, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        view, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
     )
     qt_app.processEvents()
 
 
 @pytest.fixture
-def parbeszed(qt_app, tmp_path, monkeypatch):
+def gazda(qt_app, tmp_path, monkeypatch):
     # a lemezkép-alaphely a tmp alá — SOHA ne a fejlesztő Képek mappájába
     monkeypatch.setattr(
         "picasapy.app.backup_controller._kepek_mappaja",
@@ -75,26 +77,18 @@ def parbeszed(qt_app, tmp_path, monkeypatch):
     with open_index(db) as conn:
         sync_tree(conn, gyoker)
     vezerlo = BackupController(db, (str(gyoker),))
-    motor = QQmlEngine()
-    motor.addImportPath(str(_QML))
-    motor.rootContext().setContextProperty("backupController", vezerlo)
-    komponens = QQmlComponent(
-        motor, QUrl.fromLocalFile(str(_QML / "PicasaPy" / "BackupDialog.qml"))
-    )
-    ablak = komponens.create()
-    assert ablak is not None, komponens.errorString()
-    QMetaObject.invokeMethod(ablak, "open")
+    view, ablak = epits_ablakot(_QML, {"backupController": vezerlo})
+    QMetaObject.invokeMethod(ablak, "nyisd")
     qt_app.processEvents()
-    yield ablak, vezerlo
-    ablak.setProperty("visible", False)
-    ablak.deleteLater()
+    yield view, ablak, vezerlo
+    view.hide()
 
 
 class TestAzUrlap:
-    def test_uj_keszlet_cd_dvd_tipussal(self, parbeszed, qt_app):
-        ablak, vezerlo = parbeszed
-        _kattints(ablak, _elem(ablak, "backupNewSet"), qt_app)
-        _kattints(ablak, _elem(ablak, "backupTypeCdDvd"), qt_app)
+    def test_uj_keszlet_cd_dvd_tipussal(self, gazda, qt_app):
+        view, ablak, vezerlo = gazda
+        _kattints(view, _elem(ablak, "publishNewBackupSet"), qt_app)
+        _kattints(view, _elem(ablak, "backupTypeCdDvd"), qt_app)
 
         # CD/DVD-típusnál a hely nem választható — a vezérlő alaphelye áll
         assert _elem(ablak, "backupChooseTarget").property("enabled") is False
@@ -102,30 +96,30 @@ class TestAzUrlap:
             vezerlo.lemezkepAlapHely()
         )
 
-        _kattints(ablak, _elem(ablak, "backupFormSave"), qt_app)
+        _kattints(view, _elem(ablak, "backupFormSave"), qt_app)
 
         keszletek = vezerlo.keszletek()
         assert [k["tipus"] for k in keszletek] == ["cddvd"], (
             ablak.property("uzenet"), ablak.property("urlapNev"),
             ablak.property("urlapTipus"), ablak.property("szerkesztes"))
 
-    def test_lemez_lemez_tipusnal_a_hely_valaszthato(self, parbeszed, qt_app):
-        ablak, _ = parbeszed
-        _kattints(ablak, _elem(ablak, "backupNewSet"), qt_app)
-        _kattints(ablak, _elem(ablak, "backupTypeDisk"), qt_app)
+    def test_lemez_lemez_tipusnal_a_hely_valaszthato(self, gazda, qt_app):
+        view, ablak, _ = gazda
+        _kattints(view, _elem(ablak, "publishNewBackupSet"), qt_app)
+        _kattints(view, _elem(ablak, "backupTypeDisk"), qt_app)
 
         assert _elem(ablak, "backupChooseTarget").property("enabled") is True
         assert _elem(ablak, "backupSetTarget").property("enabled") is True
 
     def test_a_szerkeszto_a_tarolt_tipust_mutatja(
-        self, parbeszed, qt_app, tmp_path
+        self, gazda, qt_app, tmp_path
     ):
-        ablak, vezerlo = parbeszed
+        view, ablak, vezerlo = gazda
         vezerlo.ujKeszlet("Lemezre", "", "minden", "cddvd")
         ablak.setProperty("kivalasztott", 0)
         QMetaObject.invokeMethod(ablak, "frissitsd")
 
-        _kattints(ablak, _elem(ablak, "backupEditSet"), qt_app)
+        _kattints(view, _elem(ablak, "publishEditBackupSet"), qt_app)
 
         assert _elem(ablak, "backupTypeCdDvd").property("checked") is True
         assert _elem(ablak, "backupTypeDisk").property("checked") is False
@@ -133,32 +127,32 @@ class TestAzUrlap:
 
 class TestAFutas:
     def test_lemez_lemez_keszlet_mappaba_ment(
-        self, parbeszed, qt_app, tmp_path
+        self, gazda, qt_app, tmp_path
     ):
-        ablak, vezerlo = parbeszed
+        view, ablak, vezerlo = gazda
         cel = tmp_path / "cel"
         vezerlo.ujKeszlet("Külső", str(cel), "minden", "lemez")
         QMetaObject.invokeMethod(ablak, "frissitsd")
         ablak.setProperty("kivalasztott", 0)
         qt_app.processEvents()
 
-        assert _elem(ablak, "backupOutputMode").property("visible") is False
+        assert _elem(ablak, "publishBackupOutputMode").property("visible") is False
         # #3594: alapból nincs pipa — a futás a bepipált mappákat viszi;
         # a mappa-lista háttérszálon készül, előbb be kell várni
         assert varj_feltetelre(
             qt_app, lambda: ablak.property("mappakToltodnek") is False)
         qt_app.processEvents()
-        _kattints(ablak, _elem(ablak, "backupSelectAll"), qt_app)
+        _kattints(view, _elem(ablak, "publishBackupSelectAll"), qt_app)
         wait_for_signal(
             vezerlo.futasKesz,
-            lambda: _kattints(ablak, _elem(ablak, "backupRun"), qt_app),
+            lambda: _kattints(view, _elem(ablak, "publishBackupGo"), qt_app),
             description="a mappába mentés",
         )
 
         assert sorted(p.name for p in cel.rglob("*.jpg")) == ["a.jpg", "b.jpg"]
 
-    def test_cd_dvd_keszlet_lemezkepet_ir(self, parbeszed, qt_app, tmp_path):
-        ablak, vezerlo = parbeszed
+    def test_cd_dvd_keszlet_lemezkepet_ir(self, gazda, qt_app, tmp_path):
+        view, ablak, vezerlo = gazda
         vezerlo.ujKeszlet("Lemezre", "", "minden", "cddvd")
         cel = Path(vezerlo.lemezkepAlapHely())
         assert tmp_path in cel.parents
@@ -166,7 +160,7 @@ class TestAFutas:
         ablak.setProperty("kivalasztott", 0)
         qt_app.processEvents()
 
-        valaszto = _elem(ablak, "backupOutputMode")
+        valaszto = _elem(ablak, "publishBackupOutputMode")
         assert valaszto.property("visible") is True
         assert valaszto.property("count") == 2
         # #3594: alapból nincs pipa — a futás a bepipált mappákat viszi;
@@ -174,10 +168,10 @@ class TestAFutas:
         assert varj_feltetelre(
             qt_app, lambda: ablak.property("mappakToltodnek") is False)
         qt_app.processEvents()
-        _kattints(ablak, _elem(ablak, "backupSelectAll"), qt_app)
+        _kattints(view, _elem(ablak, "publishBackupSelectAll"), qt_app)
         wait_for_signal(
             vezerlo.lemezkepekKeszek,
-            lambda: _kattints(ablak, _elem(ablak, "backupRun"), qt_app),
+            lambda: _kattints(view, _elem(ablak, "publishBackupGo"), qt_app),
             description="a lemezképbe mentés",
         )
 

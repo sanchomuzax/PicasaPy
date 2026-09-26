@@ -171,14 +171,16 @@ def test_az_uzemmod_valtja_a_csoportokat(panel) -> None:
     panel.setProperty("uzemmod", "cd")
 
 
-def test_csak_a_KESZ_uzemmod_van_bekotve() -> None:
+def test_csak_a_KESZ_uzemmodok_vannak_bekotve() -> None:
     """Egy tétlen felület rosszabb a hiánynál — ezért a panelt CSAK olyan
     üzemmódban szabad bekötni, amelynek a művelete kész.
 
-    #3503 óta az Ajándék-CD kész: egyetlen gazda (`GiftCdHost.qml`) köti
-    be, `cd` üzemmódban, és a „Lemezre írás" a vezérlő műveletét hívja. A
-    mentés és a feltöltés üzemmódja NINCS bekötve — ha valaki bekötné a
-    panelt más gazdában vagy más üzemmódban, ez a próba szól.
+    #3503 óta az Ajándék-CD kész: `GiftCdHost.qml` köti be, `cd`
+    üzemmódban, és a „Lemezre írás" a vezérlő műveletét hívja. #3504 óta a
+    mentés is kész: `BackupHost.qml` köti be, `backup` üzemmódban, és a
+    „Lemezre írás" a `backupController` műveleteit hívja. A feltöltés
+    üzemmódja NINCS bekötve — ha valaki bekötné a panelt más gazdában vagy
+    más üzemmódban, ez a próba szól.
     """
     qml = Path(app_module.__file__).parent / "qml"
     hivok = sorted(
@@ -186,7 +188,14 @@ def test_csak_a_KESZ_uzemmod_van_bekotve() -> None:
         if ut.name != "PublishPanel.qml"
         and "PublishPanel" in ut.read_text(encoding="utf-8")
     )
-    assert hivok == ["GiftCdHost.qml"], f"váratlan gazda: {hivok}"
-    gazda = (qml / "PicasaPy" / "GiftCdHost.qml").read_text(encoding="utf-8")
-    assert 'uzemmod: "cd"' in gazda
-    assert "ajandekCdIrasa" in gazda
+    assert hivok == ["BackupHost.qml", "GiftCdHost.qml"], (
+        f"váratlan gazda: {hivok}"
+    )
+    ajandek_cd = (qml / "PicasaPy" / "GiftCdHost.qml").read_text(encoding="utf-8")
+    assert 'uzemmod: "cd"' in ajandek_cd
+    assert "ajandekCdIrasa" in ajandek_cd
+
+    mentes = (qml / "PicasaPy" / "BackupHost.qml").read_text(encoding="utf-8")
+    assert 'uzemmod: "backup"' in mentes
+    assert "backupController.futtasdMost(" in mentes
+    assert "backupController.futtasdLemezkepbe(" in mentes
