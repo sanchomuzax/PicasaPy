@@ -10152,6 +10152,28 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <source>Backup Complete</source>
         <translation>A mentés elkészült</translation>
     </message>
+    <!-- #3594: a mentés-üzemmód 2. lépése (`backuprect2`), a MÉRT feliratok
+         (`docs/specs/biztonsagi-mentes.md` 10.3, `ui-lefedettseg.md`) -->
+    <message>
+        <source>Choose folders &amp; albums to back up</source>
+        <translation>Mappák és albumok kijelölése biztonsági másolat készítéséhez</translation>
+    </message>
+    <message>
+        <source>Picasa is now showing the files you have not previously backed up.</source>
+        <translation>A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat.</translation>
+    </message>
+    <message>
+        <source>Check the folders you want to back up, or choose &apos;Select All&apos; to choose everything.</source>
+        <translation>Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy &quot;Az összes kijelölése&quot; gombra kattintva az összes elemet jelölje ki.</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <source>Select None</source>
+        <translation>Az összes kijelölés megszüntetése</translation>
+    </message>
 </context>
 <context>
     <name>ConfigureButtonsDialog</name>
