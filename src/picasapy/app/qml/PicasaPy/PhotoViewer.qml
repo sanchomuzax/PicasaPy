@@ -132,14 +132,14 @@ Rectangle {
     readonly property var editCtl: editController
 
     //: #3187: a kettős nézet MÁSODIK felének szerkesztő-vezérlője (saját
-    //: előnézet-rekesz). Csak AB módban van munkamenete: ott a másik oldal
-    //: MÁS fotót mutat, és azt ugyanúgy a mentett láncával kell látni, mint
-    //: a rácsban vagy egy képes nézetben — ma a nyers fájl jött, tehát
-    //: ugyanaz a kép KÉTFÉLEKÉPP látszott a programban.
+    //: előnézet-rekesz). AB módban a másik oldal MÁS fotót mutat, és azt
+    //: ugyanúgy a mentett láncával kell látni, mint a rácsban vagy egy
+    //: képes nézetben.
     //:
-    //: ⚠️ „aa" módban SZÁNDÉKOSAN nincs munkamenete: ott a bal/felső fél a
-    //: szerkesztés ELŐTTI képet mutatja (#3013 mérése), és épp a nyers fájl
-    //: az, ami ezt megadja.
+    //: #3014: „aa" módban a NEM kijelölt fél önálló, CSAK MEMÓRIÁBAN élő
+    //: szerkesztési állapota (`docs/specs/ui-audit-editor.md` 4/b.1): a két
+    //: fél ugyanarról a láncról indul, és egymástól függetlenül szerkeszthető.
+    //: Ez a #3013 „bal = szerkesztés előtti" viselkedését váltja fel.
     //: #305-mintájú null-őr: a motor leépítésekor a kontextus eltűnhet.
     readonly property var masodikEditCtl:
         (typeof secondPreview !== "undefined") ? secondPreview : null
@@ -282,8 +282,8 @@ Rectangle {
     //: a MÉRT leképezés szerint számolt szorzó az ILLESZTETT mérethez képest
     //: #3013: a KETTŐS NÉZET üzemmódja — `editpanel/layout_2up_group`.
     //: `"1up"` (alapértelmezés, `Property setpressed 1`), `"aa"` (ugyanaz a
-    //: kép kétszer: balra a szerkesztés ELŐTTI, jobbra a mai), `"ab"` (két
-    //: különböző kép — a #3014 hozza).
+    //: kép kétszer, két önálló szerkesztéssel — #3014), `"ab"` (két
+    //: különböző kép — a #3014 hozza). Váltani a `modotValt()`-tal kell.
     property string layoutMode: "1up"
     //: melyik oldal az aktív — a „Kijelölve" jelvény ezt mutatja
     property string aktivOldal: "jobb"
@@ -458,8 +458,8 @@ Rectangle {
     // igazságforrásából szinkronizáljuk (a kötést a panel belső átírása
     // megtörné, ezért imperatív sync a toolsChanged-re).
     //: #3187: a MÁSODIK fél munkamenete. AB módban a másik sor fotójára
-    //: nyitunk (mentett lánccal), minden más módban zárjuk — a „aa" fél
-    //: nyers képe a #3013 szerint a szerkesztés ELŐTTI állapot.
+    //: nyitunk (mentett lánccal), egy képes módban zárjuk. #3014: „aa"
+    //: módban ugyanarra a fotóra, CSAK MEMÓRIÁBAN (ld. lent).
     //: #3187 3. lépés: a NEM kijelölt oldal sora. A fő vezérlő a KIJELÖLT
     //: oldalt szerkeszti (`aktivSor`), a második rekesz ezt a másikat kapja —
     //: így a szerkesztő-panel 104 kötése változatlan maradhat, a parancsok
@@ -480,7 +480,8 @@ Rectangle {
     }
 
     function _masodikSort() {
-        if (viewer.layoutMode !== "ab") return -1
+        //: #3014: „aa" módban is van második fél — ugyanaz a fotó
+        if (viewer.layoutMode === "1up") return -1
         return viewer.aktivOldal === "bal" ? viewer.currentIndex
                                            : viewer.abMasikSor
     }
@@ -488,14 +489,140 @@ Rectangle {
     function frissitsdAMasodikSzerkesztest() {
         if (!viewer.masodikEditCtl) return
         var sor = viewer._masodikSort()
-        if (!(viewer.visible && viewer.layoutMode === "ab"
+        if (!(viewer.visible && viewer.layoutMode !== "1up"
               && sor >= 0 && photosModel)
                 || photosModel.isVideoAt(sor)) {
+            viewer._aaLezaras()
             viewer.masodikEditCtl.endEdit()
             return
         }
-        viewer.masodikEditCtl.beginEdit(photosModel.idAt(sor),
-                                       photosModel.filePathAt(sor))
+        var azonosito = photosModel.idAt(sor)
+        if (viewer.layoutMode === "aa") {
+            //: #3014: a futó „aa" munkamenet ugyanerre a fotóra érintetlen
+            if (viewer.aaMunkamenet && viewer.aaFotoId === azonosito) return
+            viewer._aaLezaras()
+            viewer.masodikEditCtl.beginEditInMemory(azonosito,
+                                                   photosModel.filePathAt(sor))
+            //: 4/b.1: a két fél a kép JELENLEGI láncával indul, és ez a
+            //: „módosult" próba alapja is
+            viewer.aaKiindulas = viewer.masodikEditCtl.chainValue
+            viewer.aaFotoId = azonosito
+            viewer.aaMunkamenet = true
+            return
+        }
+        viewer._aaLezaras()
+        viewer.masodikEditCtl.beginEdit(azonosito, photosModel.filePathAt(sor))
+    }
+
+    // -- #3014: az „aa" mód két szerkesztési állapota ---------------------
+    //
+    // MÉRVE (`docs/specs/ui-audit-editor.md` 4/b, 4/b.1): az eredetiben az
+    // „aa" mód két fele két önálló szerkesztési állapot ugyanarról a fotóról.
+    // Belépéskor mindkettő a kép jelenlegi láncával indul; „módosult" = a fél
+    // lánca ≠ a belépéskori. Kilépéskor döntési tábla dönt, és ha mindkét fél
+    // KÜLÖNBÖZŐEN módosult, a `Confirm2up*` párbeszéd kérdez.
+    //
+    // A MI modellünk: a fő vezérlő a KIJELÖLT felet szerkeszti és írja az
+    // ini-t (a szerkesztő-panel kötései így változatlanok), a második rekesz
+    // a másikat CSAK MEMÓRIÁBAN. A fókuszváltás a két láncot CSERÉLI; a
+    // kilépés a memóriás felet írja ki, ha azt kell megtartani.
+
+    //: van-e futó „aa" munkamenet (a második fél memóriás lánccal)
+    property bool aaMunkamenet: false
+    //: a belépéskori lánc — MINDKÉT fél „módosult" próbájának alapja
+    property string aaKiindulas: ""
+    //: melyik fotóra fut a munkamenet (lapozáskor ebből tudjuk, hogy zárni kell)
+    property string aaFotoId: ""
+    //: a párbeszéd alatt várakozó célmód
+    property string aaFuggoMod: ""
+
+    //: a fél (`"elso"` = bal/fent, `"masodik"` = jobb/lent) jelenlegi lánca
+    function _aaFelLanca(fel) {
+        var aFoVezerloE = (fel === "elso") === (viewer.aktivOldal === "bal")
+        return aFoVezerloE ? editController.chainValue
+                           : viewer.masodikEditCtl.chainValue
+    }
+
+    function _aaAktivFel() {
+        return viewer.aktivOldal === "bal" ? "elso" : "masodik"
+    }
+
+    //: A kilépés döntési táblája (4/b.1). Eredmény: a megtartandó fél
+    //: (`"elso"`/`"masodik"`), `""` ha nincs teendő, `"kerdes"` ha a
+    //: párbeszéd dönt.
+    function _aaDontes(neKerdezzen) {
+        var elso = viewer._aaFelLanca("elso")
+        var masodik = viewer._aaFelLanca("masodik")
+        var elsoMod = elso !== viewer.aaKiindulas
+        var masodikMod = masodik !== viewer.aaKiindulas
+        if (elsoMod && !masodikMod) return "elso"
+        if (!elsoMod && masodikMod) return "masodik"
+        if (!elsoMod && !masodikMod) return ""
+        if (elso === masodik || neKerdezzen) return viewer._aaAktivFel()
+        return "kerdes"
+    }
+
+    //: A választott fél láncának véglegesítése. A kijelölt fél lánca már az
+    //: ini-ben áll (a fő vezérlő írja); a memóriás felet ki kell írni.
+    function _aaMegtart(fel) {
+        if (fel === "elso" || fel === "masodik") {
+            if (fel !== viewer._aaAktivFel())
+                viewer.masodikEditCtl.persistChain()
+        }
+        viewer.aaMunkamenet = false
+        viewer.aaFotoId = ""
+    }
+
+    //: Párbeszéd NÉLKÜLI lezárás — a néző bezárásakor és lapozáskor. Ott
+    //: nincs „maradj a módban" válasz, ezért a „Ne kérdezzen újra" ágát
+    //: követjük: különböző módosításnál az AKTÍV fél marad.
+    function _aaLezaras() {
+        if (!viewer.aaMunkamenet) return
+        viewer._aaMegtart(viewer._aaDontes(true))
+    }
+
+    function _aaNeKerdezzen() {
+        return typeof confirmSettings !== "undefined" && confirmSettings
+            ? confirmSettings.isSuppressed(aaUtkozes.beallitasKulcs) : false
+    }
+
+    //: #3014: a kettős nézet üzemmódjának váltása — a szegmensek ezt hívják.
+    //: Az „aa" módból kilépve előbb a döntési tábla fut; ha a párbeszéd kell,
+    //: a váltás a válaszig vár, és Mégsére elmarad.
+    function modotValt(uj) {
+        if (uj === viewer.layoutMode) return
+        if (viewer.layoutMode === "aa" && viewer.aaMunkamenet) {
+            var dontes = viewer._aaDontes(viewer._aaNeKerdezzen())
+            if (dontes === "kerdes") {
+                viewer.aaFuggoMod = uj
+                aaUtkozes.kerdez(viewer.fuggolegesElrendezes,
+                                 viewer._aaAktivFel())
+                return
+            }
+            viewer._aaMegtart(dontes)
+        }
+        viewer.layoutMode = uj
+    }
+
+    //: #3014: „aa" módban a fókuszváltás a két fél LÁNCÁT cseréli: a fő
+    //: vezérlő (és vele a szerkesztő-panel) mindig a kijelölt felet tartja.
+    function _aaFeleketCserel() {
+        var fo = editController.chainValue
+        var masik = viewer.masodikEditCtl.chainValue
+        if (fo === masik) return
+        editController.setChainValue(masik)
+        viewer.masodikEditCtl.setChainValue(fo)
+    }
+
+    AaUtkozesDialog {
+        id: aaUtkozes
+        onValasztva: function(fel) {
+            viewer._aaMegtart(fel)
+            var cel = viewer.aaFuggoMod
+            viewer.aaFuggoMod = ""
+            if (cel !== "") viewer.layoutMode = cel
+        }
+        onMegse: viewer.aaFuggoMod = ""
     }
 
     onAbMasikSorChanged: viewer.frissitsdAMasodikSzerkesztest()
@@ -505,7 +632,14 @@ Rectangle {
     }
     //: #3187: a fókuszváltás ÁTVISZI a szerkesztést a másik oldalra — a fő
     //: vezérlő a kijelöltet kapja, a második rekesz a régi kijelöltet.
+    //: #3014: „aa" módban ugyanaz a fotó áll mindkét félen — ott a LÁNCOK
+    //: cserélnek, újratöltés helyett (az ini-ben csak a kijelölt fél áll).
     onAktivOldalChanged: {
+        if (viewer.layoutMode === "aa" && viewer.aaMunkamenet
+                && viewer.masodikEditCtl) {
+            viewer._aaFeleketCserel()
+            return
+        }
         viewer.beginEditCurrent()
         viewer.frissitsdAMasodikSzerkesztest()
     }
@@ -516,6 +650,10 @@ Rectangle {
         //: `currentIndex`-et ad), tehát azokon a módokon semmi nem változik.
         var sor = viewer._kijeloltSort()
         if (!(visible && sor >= 0 && photosModel)) return
+        //: #3014: MÁSIK fotóra lépve a futó „aa" munkamenet zárul — még
+        //: azelőtt, hogy a fő vezérlő elhagyná a régi fotót
+        if (viewer.aaMunkamenet && viewer.aaFotoId !== photosModel.idAt(sor))
+            viewer._aaLezaras()
         // #218: a viewer.isCurrentVideo egy kötött property — a currentIndex
         // váltásakor NEM garantált, hogy már újraértékelődött, mire ez a
         // (szintén a currentIndexChanged-re futó) imperatív függvény lefut,
@@ -634,6 +772,8 @@ Rectangle {
             editorPanel.retouchActive = false
             editorPanel.textActive = false
             editorPanel.redeyeActive = false
+            //: #3014: a memóriás fél módosítása ne vesszen el a bezáráskor
+            viewer._aaLezaras()
             editController.endEdit()
             //: #3187: a második rekesz munkamenete is záruljon — nyitva
             //: hagyva a szolgáltató gyorsítótárában maradna a képe.
@@ -1558,17 +1698,15 @@ Rectangle {
                         //: `filters=` láncával, ahogy a rácsban és az egy
                         //: képes nézetben is látszik (a #3187 előtt itt a
                         //: nyers fájl jött, és ugyanaz a kép kétféleképp
-                        //: látszott a programban). „aa" módban változatlanul
-                        //: a NYERS fájl: ott ez a fél a szerkesztés ELŐTTI
-                        //: állapot (#3013 mérése), és a második rekesznek
-                        //: szándékosan nincs munkamenete.
+                        //: látszott a programban).
                         //: #3187: ez a fél az `abMasikSor` fotóját mutatja —
                         //: a fő rekeszből, ha a KIJELÖLT oldal ez, egyébként
-                        //: a másodikból. „aa" módban továbbra is a nyers fájl
-                        //: (ott ez a fél a szerkesztés ELŐTTI kép, #3013).
+                        //: a másodikból.
+                        //: #3014: „aa" módban UGYANÍGY — ott a két rekesz
+                        //: ugyanannak a fotónak két önálló szerkesztése.
                         source: viewer.isCurrentVideo
                             ? ""
-                            : (viewer.layoutMode !== "ab"
+                            : (viewer.layoutMode === "1up"
                                ? viewer.urlAt(viewer.abMasikSor)
                                : (viewer.aktivOldal === "bal"
                                   ? (viewer.editCtl
@@ -1680,7 +1818,7 @@ Rectangle {
                         //: ha a kijelölt a BAL, akkor ide a MÁSODIK rekesz
                         //: képe jön — a hozzárendelés a fókusszal cserél.
                         source: viewer.isCurrentVideo ? ""
-                                : (viewer.layoutMode === "ab"
+                                : (viewer.layoutMode !== "1up"
                                    && viewer.aktivOldal === "bal"
                                    ? (viewer.masodikEditCtl
                                       && viewer.masodikEditCtl.previewSource !== ""

@@ -2,6 +2,43 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>AaUtkozesDialog</name>
+    <!-- #3014: a `CThumbUI::Confirm2up*` párbeszéd — a MÉRT hivatalos magyar
+         szövegek (`docs/specs/ui-audit-editor.md` 4. szakasz) -->
+    <message>
+        <source>Choose Edits</source>
+        <translation>Szerkesztett változatok kiválasztása</translation>
+    </message>
+    <message>
+        <source>The same image has two different edits. Which one would you like to keep?</source>
+        <translation>A képnek két szerkesztett változata van. Melyiket szeretné megtartani?</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again, always use the selected image</source>
+        <translation>Ne kérdezzen újra, mindig használja a kijelölt képet</translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation>Fent</translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation>Bal</translation>
+    </message>
+    <message>
+        <source>Bottom</source>
+        <translation>Lent</translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation>Jobb</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
     <name>ActivityBadge</name>
     <message>
         <location filename="../qml/PicasaPy/ActivityBadge.qml"/>

@@ -1137,6 +1137,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # ezért közvetlenül a `recordSavedChains()`-t hívja — nincs második
     # jelzés-út, amit itt el lehetne felejteni bekötni.
     edit_controller.chainSaved.connect(controller.recordSavedChain)
+    # #3014: az „aa" mód memóriás fele a kilépéskor a második rekeszből ír —
+    # az a lánc is a naplóba való
+    edit_controller_masodik.chainSaved.connect(controller.recordSavedChain)
     # #3462: a mentés a szerkesztő munkamenetében élő festett maszkot is
     # beégeti — különben a festhető effekt a mentett fájlban az egész képre
     # kerülne, eltérően attól, amit az előnézet mutatott.

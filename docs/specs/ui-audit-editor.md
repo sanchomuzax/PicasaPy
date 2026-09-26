@@ -2379,7 +2379,7 @@ megléte nem bizonyít élő vezérlőt — a felületleíró dönt.**
 | buboréksúgók | **hivatalos magyar** (fent) | **angol** eredeti (`ToolTip.text: qsTr("View only one image")` stb.) | a magyar szöveg a `.ts`-be |
 | `swap_2up_focus` · `swap_2up_layout` | megvan, **rejtett** amíg nincs 2-up | **megvan**, 2-up módban látszik (`viewerSwapFocus`, `viewerSwapLayout`) | ✅ |
 | „Kijelölve" jelvény | megvan, kétrészes háttérrel | **megvan** (`viewerFocusBadge`; a válogató parancsok is ezt követik) | a kétrészes háttér még hiányzik |
-| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **nincs** — és az ELŐFELTÉTELE sincs meg (ld. a 7. szakaszt) | előbb a második, önállóan szerkeszthető előnézet |
+| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **megvan** (#3014): `AaUtkozesDialog.qml`, a 4/b.1 döntési táblájával; az „aa" mód két fele két önálló szerkesztés (a kijelölt ír, a másik memóriás), a „ne kérdezd" a `DoNotAskOnEnd2Up` kulcs (#367) | a néző bezárásakor és lapozáskor párbeszéd nélkül az aktív fél marad (ott nincs „maradj" válasz — nem mért); a belépés előtti „Apply changes…?" kérdés (4/b.1, 2. lépés) még nincs |
 | `wipe_2up_toggle` | **nincs a felületen** | nincs | **nem kell megépíteni** |
 
 

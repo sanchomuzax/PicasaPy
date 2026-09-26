@@ -427,6 +427,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._shift_figyeles = False
         self._photo_id = ""
         self._image_path: Path | None = None
+        # #3014: az „aa" mód NEM kijelölt fele csak memóriában szerkeszt —
+        # a két fél ugyanazt a `filters=` sort írná felül egymás elől. A
+        # kilépéskori döntés (`persistChain`) írja ki, ha ezt kell megtartani.
+        self._memory_only = False
         # #516: a képfüggő effekt-tartományok (pl. `CornerRadius` 0..
         # min(W,H)/2) kiszámolásához — csak a fejlécet olvassuk (PIL nem
         # dekódolja a pixeleket), `beginEdit`-enként újraszámolva
@@ -1065,6 +1069,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         # #1908: a festett ecset-maszk munkamenet-élettartamú — MÁS képre
         # váltva eldobódik (az eredeti sem tárolja)
         self._paint_mask_kepvaltas(photo_id)
+        # #3014: minden sima nyitás ÍRÓ munkamenet — a memóriás mód csak a
+        # `beginEditInMemory`-vel jár, és nem ragadhat át a következő fotóra
+        self._memory_only = False
         self._photo_id = photo_id
         self._image_path = path
         self._image_size = self._read_image_size(path)
@@ -1161,6 +1168,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._preview_job += 1
         if self._photo_id:
             self._provider.unregister(self._kulcs)
+        self._memory_only = False
         self._photo_id = ""
         self._image_path = None
         self._image_size = None
@@ -1196,6 +1204,48 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_align = _DEFAULT_TEXT_ALIGN
         self._bump_revision()
         self._bump_gpu_revision()
+        self.toolsChanged.emit()
+
+    def beginEditInMemory(self, photo_id: str, image_path: str) -> None:
+        """#3014: munkamenet a mentett lánccal, de ini-írás NÉLKÜL.
+
+        Az „aa" mód nem kijelölt fele: a kép jelenlegi láncával indul
+        (`docs/specs/ui-audit-editor.md` 4/b.1), a szerkesztései csak
+        memóriában élnek, amíg a kilépéskori döntés ki nem írja
+        (`persistChain`). Nem `@Slot`: a QML a `SecondPreview` hídján éri el."""
+        self.beginEdit(photo_id, image_path)
+        self._memory_only = True
+
+    def persistChain(self) -> None:
+        """#3014: a memóriában élő lánc kiírása a `.picasa.ini`-be.
+
+        Az „aa" mód kilépésekor fut, ha a döntés a memóriás felet tartja meg.
+        Munkamenet nélkül no-op."""
+        if not self._photo_id or self._ini_path is None:
+            return
+        self._memory_only = False
+        self._save()
+
+    @Property(str, notify=toolsChanged)
+    def chainValue(self) -> str:
+        """#3014: a munkamenet jelenlegi `filters=` értéke (üres = nincs lánc).
+
+        Az „aa" mód ebből dönti el, módosult-e egy fél a belépés óta, és ezt
+        cseréli a fókuszváltáskor a két fél között."""
+        return self._session.to_value()
+
+    @Slot(str)
+    def setChainValue(self, value: str) -> None:
+        """#3014: a lánc lecserélése (az „aa" mód fókuszváltásakor).
+
+        A visszavonás-verem az új lánc rétegeiből épül újra — ugyanúgy, mint
+        egy újranyitáskor (`beginEdit`). Memóriás munkamenetben nem ír."""
+        self._require_active()
+        self._session = EditSession.from_value(value)
+        self._undo_stack = self._seed_undo_from_chain(self._session)
+        self._redo_stack.clear()
+        self._save()
+        self._bump_revision()
         self.toolsChanged.emit()
 
     @Slot(str)
@@ -2192,6 +2242,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     def _save(self) -> None:
         assert self._ini_path is not None
+        if self._memory_only:
+            # #3014: az „aa" mód nem kijelölt fele — csak az előnézet frissül
+            self._register_preview_async()
+            return
         if not self._check_writable_before_save():
             return
 

@@ -36,6 +36,7 @@ ViewerContextMenu 1.0 ViewerContextMenu.qml
 VideoPlayerView 1.0 VideoPlayerView.qml
 SlideshowView 1.0 SlideshowView.qml
 LayoutSegment 1.0 LayoutSegment.qml
+AaUtkozesDialog 1.0 AaUtkozesDialog.qml
 RightDrawer 1.0 RightDrawer.qml
 DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
