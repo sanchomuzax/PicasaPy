@@ -5886,6 +5886,47 @@ Ez **nyitott kérdés**, jegyben: a mérés áll, a magyarázat nem.
 levezetése (a forrás a Picasa saját `filterdesc.xml`-je); **feltételes** a
 világosító tag telítődés-eredetű magyarázata — nincs megmérve.*
 
+### `HDR` — a natív `LocalContrastImageOperation` az EREDETIBŐL indul, nem az elmosottból (2026-09-26, 368. kör, #3520)
+
+*Forrás: vtábla `0x00cf0a7c` (RTTI `.?AVLocalContrastImageOperation@glimmer@@`, `0x00d48e18`) · lánc-építő `0x00bc41e0` · apply `0x00bc4730` · keverési sorszámok: `filterdesc-registry.md`, „A mód-feloldó”.*
+
+A `HDR` leírója egyetlen natív műveletet hív (`<LocalContrastImageOperation Radius Strength BlendAlpha>`). A művelet nem saját kernel: a `0x00bc41e0` **Glimmer-láncot épít** ugyanazokból az elemekből, mint a `LocalContrast` effekt XML-je. A sorrend azonban más, és ezért a képlet is más.
+
+| # | gyerek | cím | megjegyzés |
+|---|---|---|---|
+| 1 | `SetVar orig` (vtábla `0x00cf0820`) | `0x00bc425c`–`0x00bc4291` | |
+| 2 | `BlurImageOperation(1, 1, quality = 3)` → `+0x3c` | `0x00bc42f9`–`0x00bc4314` | `push 3` = a minőség |
+| 3 | `SetVar blur` (`0x00bc25d0`) | `0x00bc4399` | |
+| 4 | `GetVarImageOperation orig` (`0x00bbf740`, vtábla `0x00cf06f0`) | `0x00bc4416` | **az aktuális kép újra az EREDETI** |
+| 5 | `NestedImageOperation` (`0x00bc1250`) **`Add`** (0, `0x00bc4520`): `BlendImageOperation blur` **`Subtract`** (8; `0x00bbf780`, vtábla `0x00cf0b2c`), `MultiplyColorMatrixImageOperation` (`0x00bb7680`) → `+0x40` | `0x00bc4460`–`0x00bc4524` | `+ C·max(be − elm, 0)` |
+| 6 | `NestedImageOperation` **`Subtract`** (8, `0x00bc46ab`): `GetVarImageOperation blur`, `BlendImageOperation orig` **`Subtract`**, `MultiplyColorMatrixImageOperation` → `+0x44` | `0x00bc454f`–`0x00bc46b0` | `− C·max(elm − be, 0)` |
+
+Az apply (`0x00bc4730`) a `Strength`-et (`+0x2c`, alapérték 1) mindkét szorzó `+0x28`-ába írja, a `Radius`-t (`+0x34`, alapérték 1) az elmosás `+0x24`/`+0x2c`-jébe (x és y). Ezután lefuttatja a láncot (`0x00bc47fd call 0x009a8ca0`).
+
+```
+HDR:            ki = be  + C·(be − elm)      (8 bites, lépésenként vágva)
+LocalContrast:  ki = elm + C·(be − elm)  =  be + (C − 1)·(be − elm)
+```
+
+Ez a #688 „a `HDR` a csúszkát közvetlenül adja tovább, a `LocalContrast` `Contrast − 1`-et” mérésének **bináris oka**: a natív lánc 4. lépése visszacseréli a képet az eredetire, az XML-lánc viszont az elmosottból indul. ⇒ A `HDR` **`Contrast = 1`-nél is élesít** (`be + (be − elm)`); nem nulla-állapot.
+
+**Az elmosás a natív `BlurImageOperation`**, 3 menettel (`render/nativ_blur.blur_image_operation`). A mai `glimmer_ops.box_blur_trunc` az 1,3-as sugarat 1-es dobozra kerekíti, ez pedig azonosság. Ezért hatástalan nálunk a `min` állás: a kvantáló (`0x00bb5050`) az 1,3-at 1,3-nak hagyja, és a natív doboz ezzel is mos.
+
+#### Mérve a Picasa-exporton (684-es készlet, átlagos ΔE)
+
+| eset | Picasa ↔ forrás | mai ↔ Picasa | **natív lánc ↔ Picasa** |
+|---|---:|---:|---:|
+| `HDR` min (R 1,3 / C 1) | 1,120 | 1,120 — nem hat | **0,188** |
+| `HDR` alap (R 20 / C 3) | 7,615 | 0,489 | **0,265** |
+| `HDR` max (R 80 / C 7 / Fade 100) | 0,121 | 0,121 | 0,121 |
+| `LocalContrast` min (R 1,3 / C 1) — XML-lánc | 0,121 | 0,121 | 0,121 |
+| `LocalContrast` alap (R 15 / C 1,5) — XML-lánc | 3,193 | 0,225 | 0,263 |
+| `LocalContrast` max (R 40 / C 3) — XML-lánc | 9,561 | 0,520 | **0,258** |
+
+Az elmosás minősége is mérve: `quality` 1 / 2 / 3 mellett a `HDR` min 0,504 / 0,320 / **0,188**, az alap 2,964 / 1,359 / **0,265**. Ez egybevág a `push 3`-mal. A `HDR` XML-sorrendű lánccal (elmosottból indulva) a min 1,120 marad, az alap 1,417: a kiindulópont tehát mérhetően számít.
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten és a Picasa-exporton, független újralevezetéssel (ld. a #3520-at).*
+
 ### `Comicize` — három eltérés az eredetitől
 
 A `<filter id="Comicize">` csővezetékéből három olyan lépés hiányzik vagy
