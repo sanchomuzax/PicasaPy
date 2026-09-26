@@ -14,12 +14,12 @@ read only file: %s").
 
 from __future__ import annotations
 
-import os
 import stat
 
 import pytest
 from PySide6.QtCore import QCoreApplication
 from support.jpeg_factory import make_jpeg
+from support.platform_marks import csak_posix_jogosultsag
 
 from picasapy.index import open_index, sync_tree
 
@@ -101,11 +101,9 @@ class TestAzIras:
         assert eredmeny == {"kiirt": 0, "kihagyott": 0, "ok": ""}
 
 
-@pytest.mark.skipif(
-    os.name != "posix",
-    reason="#1864: a `chmod` csak POSIX-on érvényesíti a jogosultságot — "
-    "windowson a hibahelyzet elő sem áll, tehát az állítás hamisan zöld lenne",
-)
+# #3625: a közös jelölés a rootot is kizárja, mert rootként a `chmod` nem
+# korlátoz, a hibahelyzet nem áll elő (felhős munkamenet).
+@csak_posix_jogosultsag
 class TestAzIrasvedettHely:
     def test_a_koteg_nem_all_le_es_MEGNEVEZI_az_okot(self, vezerlo, konyvtar):
         """Az eredetiben is külön, megnevezett hibaeset a csak olvasható fájl."""

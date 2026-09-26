@@ -656,9 +656,9 @@ méretként az ősosztály elrendezőjének (`[vtbl+4]` = `0x00778190`):
 *(A szomszédos osztály — `0x00775680` — a `0x00cf3fd8` = **3,5**-öt adja: az
 a Zsebméret elrendezője. Ugyanaz a minta, méretenként egy osztály.)*
 
-### Ami NYITVA marad
+### ~~Ami NYITVA marad~~ → LEZÁRVA, ld. a lap végén (2026-09-26, #1401)
 
-**Hány példány fér egy lapra.** A darabszámot nem a `LayoutPassport` mondja
+~~**Hány példány fér egy lapra.**~~ A darabszámot nem a `LayoutPassport` mondja
 meg: a `0x00775660` a közös slot-1 előkészítőre (`0x00778190`) lép, amely
 kétszer hívja a tényleges slot-2 geometriai rutint (`0x00778640`). A célzott
 kiolvasás szerint a darabszám kérdésének útja ezért a `0x00778640` törzse és
@@ -730,3 +730,28 @@ visszakövetése.
 `0x00cf3b28` = 10,0 · `0x00c7cf84` = 8,0 · `0x00cf3fe8` = 2,5 ·
 `0x00c49618` = 3,0 · **`0x00cf3a48` = 2,0**; a cm-szorzó `0x00cf3fe0` =
 0,3937. A `LayoutPassport` vtáblája `0x00cb3f80`.*
+
+### ⛳ LEZÁRVA: hány útlevélkép kerül egy lapra — a példányszám dönti el, alapból EGY (2026-09-26, 363. kör, #1401)
+
+*Forrás: `0x00744d00` (az útlevél-út nyomtatási előkészítője) · `0x00860f60` (a nyomtatási beállításcsomag konstruktora) · `0x007782d0` (a rekordépítő) · `0x00778190` (slot-1) · `0x00778640` (slot-2, a rácselrendező).*
+
+A kérdés nem egy útlevélhez égetett darabszám. Az elrendező annyi cellát rak le, amennyit a **képenkénti példányszám × a képek száma** kér. Az útlevél-út ezt a példányszámot nem állítja, a kezdőértéke pedig **1**.
+
+1. **A nyomtatási munka.** A `0x00744d00` a munkát (`[ebp+0xec4]`, 0xa8 bájt) csak akkor hozza létre, ha még nincs (`0x00744d0c`–`0x00744d39`). A képlistába az egy képet teszi (`0x00744d69`). A méret-mezőt `[munka+0x1c]` a paraméterre, útlevélnél `0xf`-re írja (`0x00744dd1`–`0x00744dda`). A példányszámhoz nem nyúl.
+2. **A beállításcsomag kezdőértékei.** A munka `+0x14`-én álló csomagot a `0x00860f60` tölti fel: `[+0x08] = 1` (a méret, munkában `+0x1c`) és **`[+0x0c] = 1`** (a példányszám, munkában `+0x20`; `0x00860f70`–`0x00860f78`). A panel `IDS_COPIES` kijelzője ugyanezt a `[munka+0x20]`-at olvassa (`0x00745ac4`, ld. fent). ⚠️ Mivel a munka objektum újrahasznosul (`[ebp+0xec4]`), a munkamenetben korábban beállított példányszám megmarad.
+3. **A rekord.** A `0x007782d0` a csomagot mezőnként másolja a helyi elrendezés-rekordba: `+0x08`, `+0x0c` (példányszám), `+0x18/+0x1c` (a képlista), `+0x20…+0x50` (a lap- és margó-állapot; `0x007782ea`–`0x00778366`).
+4. **Tájolás.** A `0x00778190` a rácselrendezőt kétszer hívja, egyszer `(szélesség, magasság)`, egyszer felcserélve (`0x007781e1`, `0x00778207`), és a két eredményből választ (`0x00778238`–`0x00778276`). A 2,0 × 2,0-s útlevélnél a két eset azonos.
+5. **A rács.** A `0x00778640` a képlistán (`[rekord+0x1c] >> 1` kép) és képenként a példányszámon (`[rekord+0x0c]`) megy végig (`0x0077896e`–`0x0077899a`). Minden cella egy 0x1c bájtos rekord (`0x0077892a`, `rep movsd`, 7 duplaszó: kép, téglalap, sor, oszlop). A cellákat sorfolytonosan rakja a nyomtatható területre: vízszintesen, amíg a következő cella belefér (0,999-es tűréssel, `0xcf4a38`), aztán új sort kezd. Ha a következő sor már nem fér el, a menet kilép (`0x00778809` → `0x007789ba`). A második menetben a maradék helyet egyenletes térközként osztja szét. Ha a rés 0,2 alatti (`0xcf4748`, `0xc7e4b0`), a cellákat 0,975-szörösre kicsinyíti (`0xcf4a30`; `0x00778a46`–`0x00778aa7`). A végén a lap téglalapjára normalizál.
+
+⇒ **Az Útlevélkép parancs alapból EGY 2 × 2 hüvelykes képet tesz a lapra.** Többet a nyomtatási panel példányszámával (`numberprints`) lehet kérni; ekkor a képek sorfolytonos rácsban, egyenletes térközzel kerülnek a lapra. A lapszámot a panel a munka lap-tömbjéből számolja (`0x00745b52`, ld. fent); hogy a ki nem férő cellák hogyan kerülnek a következő lapra, azt ez a kör NEM vizsgálta, mert az útlevél alapesetében (1 kép) nem fordul elő. A laponkénti **befogadóképesség** a nyomtatható terület függvénye (nyomtatófüggő), állandó szám nincs.
+
+⛔ **Élőben nem mérhető (2026-09-26).** A Colab-gépen nincs telepített nyomtató: a Print gombra „A printer must be installed in order to print.” jön (picasa-colab-jobs #51). A tesztkönyvtárban arc sincs, amit az útlevél-felismerő elfogadna (#49, #50: négy képből négy „Can't find any faces”). Gépház-jegy: picasapy-agent #159. A vizuális egyezés tehát NINCS mérve; a fenti lánc a binárisból megerősített.
+
+*Bizonyítottsági fok: megerősített* (a példányszám kezdőértéke, a mezők útja, a két tájolás, a sorfolytonos rács); *erős* (a 0,2 / 0,975 térköz-szabály pontos alakja, amely a vizuális egyezés nélkül csak utasításszinten olvasott).
+
+### 🔁 Független újralevezetés
+- **bíráló:** friss opus-ügynök (Agent, nem fork) (friss kontextus, a kutató magyarázata nélkül)
+- **címek:** `0x00744d00`, `0x00860f60`, `0x007782d0`, `0x00778640`
+- **eredmény:** EGYEZIK
+- **a bíráló tényei:** a példányszám kezdőértéke 1 (0x00860f78, [+0xc]); a 0x00744d00 csak a méretet (0xf, [munka+0x1c]) írja; a rácselrendező a képlistát (+0x18/+0x1c) és a példányszámot (+0xc) a beállításcsomagból veszi, képenként példányszám darab cellát rak; 0xf → LayoutPassport a 0x00775890 táblájában (0x00775b24–0x00775b36); a következő sor túlcsordulásakor kilép (0x00778809 → 0x007789ba).
+- **költség:** 125761 token

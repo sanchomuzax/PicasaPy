@@ -20,6 +20,7 @@ from __future__ import annotations
 import importlib.util
 import subprocess
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -37,6 +38,8 @@ def _linux_plafonnal(monkeypatch):
     monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", False)
     monkeypatch.setattr(rt, "_platform", lambda: "linux")
     monkeypatch.setattr(rt, "_SCOPE_ELERHETO", None)
+    # #3636: Linuxot színlelünk, tehát a `resource` modult is — Windowson az `rt._resource` None
+    monkeypatch.setattr(rt, "_resource", rt._resource or types.SimpleNamespace())
 
 
 class _Eredmeny:
