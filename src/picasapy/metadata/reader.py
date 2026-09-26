@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import math
 import warnings
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -231,11 +232,13 @@ def _properties_extra(exif, ifd, path: str | Path) -> dict:
     point = gps_from_exif(exif)
     altitude = _rational(exif.get_ifd(_GPS_IFD).get(_GPS_ALTITUDE_TAG))
     icc = False
+    xmp = None
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", _Image.DecompressionBombWarning)
             with _Image.open(path) as image:
                 icc = bool(image.info.get("icc_profile"))
+                xmp = image.info.get("xmp")
     except _BOMB_EXCEPTIONS:
         pass
     # a beágyazott bélyegkép az EXIF 1. IFD-jében (thumbnail) él — a Pillow
@@ -260,7 +263,7 @@ def _properties_extra(exif, ifd, path: str | Path) -> dict:
         ),
         "lens": _objektiv(
             path, exif.get(_MAKE_TAG), text(ifd.get(_LENS_MODEL_TAG)),
-            text(exif.get(_MODEL_TAG))),
+            text(exif.get(_MODEL_TAG)), xmp_lens=_xmp_aux_lens(xmp)),
         "subject_distance_m": _rational(ifd.get(_SUBJECT_DISTANCE_TAG)),
         "metering_mode": enum(ifd.get(_METERING_MODE_TAG), _METERING_MODES),
         "exposure_program": enum(ifd.get(_EXPOSURE_PROGRAM_TAG), _EXPOSURE_PROGRAMS),
@@ -275,16 +278,53 @@ def _properties_extra(exif, ifd, path: str | Path) -> dict:
     }
 
 
+_XMP_AUX = "{http://ns.adobe.com/exif/1.0/aux/}"
+_XMP_RDF_DESCRIPTION = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description"
+
+
+def _xmp_aux_lens(xmp) -> str | None:
+    """Az XMP `aux:Lens` szövege (attribútum- vagy elemalakban), vagy None.
+
+    „Első nyer", mint a `ytXMPReader` beszúrása (spec 9.14): az első
+    `rdf:Description`-beli előfordulás számít. Üres/csak szóköz érték és
+    sérült csomag None — a sor ilyenkor a MakerNote-feloldásra esik vissza.
+    """
+    if isinstance(xmp, str):
+        xmp = xmp.encode("utf-8", "replace")
+    if not isinstance(xmp, bytes) or b"Lens" not in xmp:
+        return None
+    try:
+        gyoker = ET.fromstring(xmp.strip(b"\x00 \t\r\n"))
+    except (ET.ParseError, ValueError):
+        return None
+    for leiras in gyoker.iter(_XMP_RDF_DESCRIPTION):
+        ertek = leiras.get(_XMP_AUX + "Lens")
+        if ertek is None:
+            elem = leiras.find(_XMP_AUX + "Lens")
+            ertek = elem.text if elem is not None else None
+        if ertek is not None:
+            return ertek.strip() or None
+    return None
+
+
 def _objektiv(
-    path: str | Path, make, lens_model: str | None, model: str | None = None
+    path: str | Path, make, lens_model: str | None, model: str | None = None,
+    *, xmp_lens: str | None = None,
 ) -> str | None:
-    """Az eredeti „Lens" sora: a Picasa-belső 255-ös kulcs, azaz a
-    MakerNote-ból feloldott név (#3121 Canon, spec 9.12; #3495 Nikon, 9.13).
+    """Az eredeti „Lens" sora: a Picasa-belső 255-ös kulcs. Ezt az eredeti
+    **elsőként az XMP `aux:Lens`-ből** tölti (#3496, spec 9.14: a
+    `ytXMPReader` „első nyer" alapon, az objektív-elosztó előtt olvas), és
+    csak ha az nincs, akkor a MakerNote-ból feloldott névvel (#3121 Canon,
+    spec 9.12; #3495 Nikon, 9.13). Az elosztó „már megvan?" próbája miatt
+    nem üres `aux:Lens` mellett a MakerNote-ág nem fut.
 
     ⚠️ Eltérés: a 3.7 az EXIF `LensModel`-t (0xA434) nem ismeri. Nálunk a
-    sorrend táblanév → `LensModel` → tartalék-leírás: a tartalék
-    („50mm f/1.8") nem írhatja felül a pontosabb, ma is látszó nevet.
+    sorrend `aux:Lens` → táblanév → `LensModel` → tartalék-leírás: a
+    tartalék („50mm f/1.8") nem írhatja felül a pontosabb, ma is látszó
+    nevet.
     """
+    if xmp_lens:
+        return xmp_lens
     gyarto = make.strip().lower() if isinstance(make, str) else ""
     if not gyarto.startswith(("canon", "nikon")):
         return lens_model
