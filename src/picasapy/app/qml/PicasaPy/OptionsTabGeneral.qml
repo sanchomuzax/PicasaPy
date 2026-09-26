@@ -93,7 +93,7 @@ ColumnLayout {
                 readonly property var codes:
                     controller ? controller.availableLanguages : ["en"]
                 model: languageCombo.codes.map(function (code) {
-                    return code === "hu" ? qsTr("Hungarian") : qsTr("English")
+                    return code === "hu" ? qsTr("Hungarian") : qsTr("English (US)")
                 })
                 currentIndex: {
                     var idx = languageCombo.codes.indexOf(

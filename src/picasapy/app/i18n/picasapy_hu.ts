@@ -574,7 +574,7 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     <name>OptionsTabGeneral</name>
     <message>
         <source>User interface:</source>
-        <translation>Felhasználói felület:</translation>
+        <translation>Kezelőfelület:</translation>
     </message>
     <message>
         <source>Use special effects</source>
@@ -586,15 +586,15 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Single click to exit the editing view</source>
-        <translation>Kilépés a szerkesztőnézetből egy kattintással</translation>
+        <translation>Szerkesztési nézetből való kilépés egy kattintással</translation>
     </message>
     <message>
         <source>Language:</source>
         <translation>Nyelv:</translation>
     </message>
     <message>
-        <source>English</source>
-        <translation>Angol</translation>
+        <source>English (US)</source>
+        <translation>English (US)</translation>
     </message>
     <message>
         <source>Hungarian</source>
@@ -650,11 +650,11 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Help improve PicasaPy:</source>
-        <translation>Segítsen jobbá tenni a PicasaPy-t:</translation>
+        <translation>Részvétel a Picasa fejlesztésében:</translation>
     </message>
     <message>
         <source>Send anonymous usage statistics</source>
-        <translation>Névtelen használati statisztika küldése</translation>
+        <translation>Névtelen használati statisztikák küldése a Google részére</translation>
     </message>
     <message>
         <source>Automatic updates:</source>
@@ -666,15 +666,15 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Prompt before downloading updates</source>
-        <translation>Kérdezzen a frissítések letöltése előtt</translation>
+        <translation>Mindig tegyen fel kérdést a frissítések letöltése előtt</translation>
     </message>
     <message>
         <source>Never check for updates</source>
-        <translation>Soha ne keressen frissítést</translation>
+        <translation>Ne keressen frissítést</translation>
     </message>
     <message>
         <source>Import destination folder:</source>
-        <translation>Importálás célmappája:</translation>
+        <translation>Importált képek mentési helye:</translation>
     </message>
     <message>
         <source>Browse...</source>
@@ -688,8 +688,8 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <translation>A számítógép alapértelmezett levelezőprogramjának használata</translation>
     </message>
     <message>
-        <source>Let me choose each time I send a picture</source>
-        <translation>Minden képküldésnél választhassak</translation>
+        <source>Let me choose each time I send pictures</source>
+        <translation>Minden képküldésnél kiválasztom</translation>
     </message>
     <message>
         <source>Multiple photo size</source>
@@ -712,20 +712,20 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <translation>Eredeti méret</translation>
     </message>
     <message>
-        <source>Send movies as:</source>
-        <translation>Filmek küldése mint:</translation>
+        <source>Send videos as:</source>
+        <translation>Mozgófilmek küldése másként:</translation>
     </message>
     <message>
         <source>First frame</source>
         <translation>Első képkocka</translation>
     </message>
     <message>
-        <source>Full movie</source>
-        <translation>Teljes film</translation>
+        <source>Full film</source>
+        <translation>Teljes mozgófilm</translation>
     </message>
     <message>
-        <source>Send embedded pictures and captions (Outlook only)</source>
-        <translation>Beágyazott képek és képfeliratok küldése (csak Outlook)</translation>
+        <source>Send inline photos and captions (Outlook only)</source>
+        <translation>Szövegközi fotók és képfeliratok küldése (csak Outlookban)</translation>
     </message>
     <message>
         <source>Mail program:</source>
@@ -739,12 +739,12 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
 <context>
     <name>OptionsTabFileTypes</name>
     <message>
-        <source>In addition to JPEG, also show these file types:</source>
-        <translation>A JPEG mellett a következő fájltípusok megjelenítése:</translation>
+        <source>Display JPEG files and:</source>
+        <translation>Megjelenítés: JPEG-fájlok és</translation>
     </message>
     <message>
         <source>RAW</source>
-        <translation>RAW</translation>
+        <translation>RAW formátumok</translation>
     </message>
     <message>
         <source>Movies</source>
@@ -762,12 +762,12 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <translation>Diavetítés ismétlése</translation>
     </message>
     <message>
-        <source>Play MP3 music during slideshow</source>
-        <translation>MP3-zene lejátszása a diavetítés alatt</translation>
+        <source>Play music tracks during slideshow</source>
+        <translation>Zenelejátszás a diavetítés alatt</translation>
     </message>
     <message>
-        <source>Select a music folder:</source>
-        <translation>Válasszon zenemappát:</translation>
+        <source>Select a folder of music tracks:</source>
+        <translation>Zeneszámok mappájának kiválasztása:</translation>
     </message>
     <message>
         <source>Browse...</source>
@@ -778,19 +778,19 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     <name>OptionsTabPrinting</name>
     <message>
         <source>Available print sizes:</source>
-        <translation>Választható nyomtatási méretek:</translation>
+        <translation>Rendelkezésre álló nyomtatási méretek:</translation>
     </message>
     <message>
         <source>Print size %1:</source>
         <translation>Nyomtatási méret %1:</translation>
     </message>
     <message>
-        <source>Use high resolution previews (slower)</source>
-        <translation>Nagy felbontású előnézetek használata (lassabb)</translation>
+        <source>Use high quality previews (slower)</source>
+        <translation>Magas minőségű előnézetek használata (lassabb)</translation>
     </message>
     <message>
-        <source>Printer quality (Windows only):</source>
-        <translation>Nyomtatási minőség (csak Windows):</translation>
+        <source>Printer quality:</source>
+        <translation>Nyomtató minősége:</translation>
     </message>
     <message>
         <source>Standard</source>
@@ -801,27 +801,27 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <translation>Magas</translation>
     </message>
     <message>
-        <source>Resizing algorithm quality:</source>
-        <translation>Átméretező algoritmus minősége:</translation>
+        <source>Print resampler quality:</source>
+        <translation>Nyomtatási mintavételezési minőség:</translation>
     </message>
     <message>
         <source>General (Lanczos-3)</source>
         <translation>Általános (Lanczos-3)</translation>
     </message>
     <message>
-        <source>Very sharp (Lanczos-8)</source>
-        <translation>Nagyon éles (Lanczos-8)</translation>
+        <source>Extra sharp (Lanczos-8)</source>
+        <translation>Extra éles (Lanczos-8)</translation>
     </message>
 </context>
 <context>
     <name>OptionsTabNetwork</name>
     <message>
         <source>Proxy username (Windows only):</source>
-        <translation>Proxy-felhasználónév (csak Windows):</translation>
+        <translation>Felhasználónév a proxyhoz:</translation>
     </message>
     <message>
         <source>Proxy password:</source>
-        <translation>Proxy-jelszó:</translation>
+        <translation>Jelszó a proxyhoz:</translation>
     </message>
     <message>
         <source>Automatically detect network settings</source>
@@ -829,11 +829,11 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Network logging level:</source>
-        <translation>Hálózati naplózás szintje:</translation>
+        <translation>Hálózati események naplózási szintje:</translation>
     </message>
     <message>
         <source>Disable logging</source>
-        <translation>Naplózás kikapcsolása</translation>
+        <translation>Naplózás letiltása</translation>
     </message>
     <message>
         <source>Log errors only</source>
@@ -841,19 +841,19 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Minimal log information</source>
-        <translation>Minimális naplóinformáció</translation>
+        <translation>Minimális mennyiségű naplóadat</translation>
     </message>
     <message>
         <source>Detailed log information</source>
-        <translation>Részletes naplóinformáció</translation>
+        <translation>Részletes naplóadatok</translation>
     </message>
     <message>
         <source>Log all network information</source>
-        <translation>Minden hálózati információ naplózása</translation>
+        <translation>Az összes hálózati információ naplózása</translation>
     </message>
     <message>
         <source>Log file:</source>
-        <translation>Naplófájl:</translation>
+        <translation>Napló:</translation>
     </message>
     <message>
         <source>Browse...</source>
@@ -871,35 +871,39 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <translation>Eredeti méret</translation>
     </message>
     <message>
-        <source>Upload previews first for large files</source>
-        <translation>Nagy fájloknál előbb az előnézetek feltöltése</translation>
+        <source>When syncing large files, upload previews first</source>
+        <translation>Nagyméretű fájlok szinkronizálásakor a program először az előnézeteket töltse fel</translation>
     </message>
     <message>
-        <source>Keep original picture quality (uses more storage)</source>
-        <translation>Eredeti képminőség megőrzése (több tárhelyet használ)</translation>
+        <source>Preserve original image quality (uses more storage)</source>
+        <translation>Az eredeti képminőség megőrzése (több tárterületet foglal)</translation>
     </message>
     <message>
         <source>Sync starred photos only</source>
-        <translation>Csak a csillagozott fényképek szinkronizálása</translation>
+        <translation>Csak a csillagozott fotók szinkronizálása</translation>
     </message>
     <message>
-        <source>Don&apos;t confirm each sync (use previous settings)</source>
-        <translation>Ne erősítse meg minden szinkronizálásnál (előző beállítások használata)</translation>
+        <source>Don&apos;t confirm every sync (use the above settings)</source>
+        <translation>Nem kérek megerősítő üzenetet minden szinkronizáláskor (a fenti beállításokat használom)</translation>
     </message>
     <message>
-        <source>Upload name tags</source>
-        <translation>Névcímkék feltöltése</translation>
+        <source>Name Tags:</source>
+        <translation>Névcímkék:</translation>
     </message>
     <message>
-        <source>Add a watermark to all photo uploads:</source>
-        <translation>Vízjel hozzáadása minden feltöltött fényképhez:</translation>
+        <source>Add a watermark for all photo uploads:</source>
+        <translation>Vízjel hozzáadása az összes feltöltendő fotóhoz:</translation>
+    </message>
+    <message>
+        <source>Include with photo uploads</source>
+        <translation>Feltöltés a fotókkal</translation>
     </message>
 </context>
 <context>
     <name>OptionsTabNameTags</name>
     <message>
         <source>Enable face detection</source>
-        <translation>Arcfelismerés engedélyezése</translation>
+        <translation>Arcfelismerés bekapcsolása</translation>
     </message>
     <message>
         <source>Enable suggestions:</source>
@@ -911,15 +915,15 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <source>Clustering threshold:</source>
-        <translation>Csoportosítási küszöb:</translation>
+        <translation>Csoportküszöb:</translation>
     </message>
     <message>
         <source>Store name tags in the file</source>
-        <translation>Névcímkék tárolása a fájlban</translation>
+        <translation>Névcímkék tárolása a fotón</translation>
     </message>
     <message>
         <source>Upload contact thumbnails to Google Contacts</source>
-        <translation>Névjegy-bélyegképek feltöltése a Google Címtárba</translation>
+        <translation>Az Emberek album indexképeinek feltöltése a Google Címtárba</translation>
     </message>
 </context>
 <context>

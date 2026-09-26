@@ -34,6 +34,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A panel sorai (fájl, méret, dátum, fényképező, tömörítés), a kép alatti
   infósáv és a kor-szűrő felirata eddig magyar beállítás mellett is angolul
   jelentek meg.
+### Javítva
+- **A Beállítások ablak 39 felirata a hivatalos magyar Picasa-szöveget
+  mutatja (#3572)**, például „Kezelőfelület:”, „Teljes mozgófilm” és
+  „Csak a csillagozott fotók szinkronizálása”; a Webalbumok fülön a
+  névcímke-feltöltés az eredeti szerint címke + jelölőnégyzet, a hosszú
+  megerősítés-felirat pedig tördelődik, nem lóg ki az ablakból.
 
 ## [0.8.580] – 2026-09-26
 
