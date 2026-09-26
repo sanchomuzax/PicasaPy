@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Beállítások és az Eszközök → Nyelv nyelvválasztója az eredeti Picasa
+  szerint viselkedik (#3555).** A lista első tétele a rendszer szerinti
+  beállítás (a rendszer nyelv- és országkódjával), a nyelvek neve saját
+  nyelvükön áll, és a váltás — megerősítő kérdés után — csak a program
+  következő megnyitásakor lép érvénybe, a futó felület nyelve nem vált
+  azonnal.
+
 ## [0.8.583] – 2026-09-26
 
 ### Javítva

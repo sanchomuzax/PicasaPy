@@ -1638,6 +1638,12 @@ ApplicationWindow {
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
         // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
         onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(window.selectedRows())
+        // #3555: nyelvváltás — a menütétel csak jelez (a `ConfirmDialog` nem
+        // fér el a MenuBar gyermekeként), a kérdés és a `setLanguage`-hívás
+        // itt fut ki.
+        onLanguageConfirmRequested: function (code) {
+            languageConfirmDialog.ensure().askFor(code)
+        }
     }
 
     // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
@@ -1786,6 +1792,31 @@ ApplicationWindow {
                     ask("undoAllEdits", text)
                 }
                 onConfirmed: controller.clearAllEffectsMany(rows)
+            }
+        }
+    }
+
+    // #3555: a nyelvváltás megerősítése — az Eszközök → Nyelv menüből jön
+    // (`bar.languageConfirmRequested`, ld. fent). A `settingKey` üres: ez a
+    // választás sosem nyomható el a „Ne kérdezze újra" jelölővel — minden
+    // váltás legalább egy kattintást kér, ahogy az eredeti is teszi.
+    DeferredDialog {
+        id: languageConfirmDialog
+        objectName: "menuLanguageConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "menuLanguageConfirmDialog"
+                namePrefix: "menuLanguageConfirm"
+                property string candidateCode: ""
+                function askFor(code) {
+                    candidateCode = code
+                    ask("", qsTr(
+                        "Change the language of the PicasaPy user "
+                        + "interface?\n\nThe change takes effect the next "
+                        + "time you start the program."))
+                }
+                onConfirmed: if (controller) controller.setLanguage(candidateCode)
             }
         }
     }

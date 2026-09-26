@@ -592,13 +592,21 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         <source>Language:</source>
         <translation>Nyelv:</translation>
     </message>
+    <!-- #3555: a nyelvek neve SAJÁT nyelvükön áll (controller.ownLanguageName),
+         nem `qsTr()`-ezett — a régi "English (US)"/"Hungarian" tételek innen
+         törölve. A rendszer-tétel felirata és a nyelvváltás megerősítése
+         viszont a felület nyelvén jelenik meg, ezért fordítandó. -->
     <message>
-        <source>English (US)</source>
-        <translation>English (US)</translation>
+        <source>System Default (%1)</source>
+        <translation>Alapértelmezett rendszerbeállítás (%1)</translation>
     </message>
     <message>
-        <source>Hungarian</source>
-        <translation>Magyar</translation>
+        <source>Change the language of the PicasaPy user interface?
+
+The change takes effect the next time you start the program.</source>
+        <translation>Módosítja a PicasaPy kezelőfelületének nyelvét?
+
+A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
     <message>
         <source>Files:</source>
@@ -4674,6 +4682,15 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>Updating similarity database (will be fast next time)</source>
         <translation>A hasonlósági adatbázis épül (legközelebb gyors lesz)</translation>
     </message>
+    <!-- #3555: nyelvváltás megerősítése — az Eszközök → Nyelv menü útja -->
+    <message>
+        <source>Change the language of the PicasaPy user interface?
+
+The change takes effect the next time you start the program.</source>
+        <translation>Módosítja a PicasaPy kezelőfelületének nyelvét?
+
+A változás a program következő megnyitásakor lép érvénybe.</translation>
+    </message>
 </context>
 <context>
     <name>MainToolbar</name>
@@ -6252,15 +6269,16 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>Language</source>
         <translation>Nyelv</translation>
     </message>
+    <!-- #3555: "English"/"Hungarian" innen törölve — a menütételek neve
+         SAJÁT nyelvükön áll, nem `qsTr()`-ezett (ld. OptionsTabGeneral). A
+         rendszer-tétel felirata viszont a felület nyelvén jelenik meg. -->
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481"/>
-        <source>English</source>
-        <translation>Angol</translation>
+        <source>System Default (%1)</source>
+        <translation>Alapértelmezett rendszerbeállítás (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="488"/>
-        <source>Hungarian</source>
-        <translation>Magyar</translation>
+        <source>System Default</source>
+        <translation>Alapértelmezett rendszerbeállítás</translation>
     </message>
     <message>
         <source>Move Database...</source>
