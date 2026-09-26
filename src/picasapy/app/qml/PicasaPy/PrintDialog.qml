@@ -541,19 +541,24 @@ Window {
                 text: {
                     var q = printWindow.quality
                     if (!q || !q.total) return ""
+                    // #3573: az eredeti sorrendje és tördelése — a
+                    // `Smallest` sor végén sortörés, a `ReviewPrompt`
+                    // előbb felszólít, és csak új sorban mondja a számot
                     //: `ThumbUIPrint::Smallest`
                     var sor = qsTr("Smallest picture: %1 pixels/inch.")
                                   .arg(q.smallest)
                     if (q.small > 0) {
-                        //: `ThumbUIPrint::ReviewPrompt` — az egyes/többes
-                        //: szám az eredetiben is külön erőforrás
-                        var db = q.small === 1
-                            ? qsTr("%1 small picture found.").arg(q.small)
-                            : qsTr("%1 small pictures found.").arg(q.small)
-                        return sor + " " + db + " "
-                               + qsTr("Please review before printing.")
+                        //: `ThumbUIPrint::picture` / `::pictures` — az
+                        //: egyes/többes szám az eredetiben is külön erőforrás
+                        var mi = q.small === 1 ? qsTr("picture") : qsTr("pictures")
+                        //: `ThumbUIPrint::ReviewPrompt` — %1 a darabszám,
+                        //: %2 a „picture"/„pictures" szó
+                        return sor + "\n"
+                               + qsTr("Please review before printing.\n%1 small %2 found.")
+                                     .arg(q.small).arg(mi)
                     }
-                    return sor + " " + qsTr("You are ready to print.")
+                    //: `ThumbUIPrint::ReadyPrompt`
+                    return sor + "\n" + qsTr("You are ready to print.")
                 }
             }
 

@@ -1488,17 +1488,18 @@ Rectangle {
                     // #465: a retus és a vörösszem RÉGIÓ-ADATOT hordoz, és a
                     // visszavonás eldobja — az „Újra" nem hozza vissza.
                     // Az eredeti Picasa ezért külön rákérdez
-                    // (IDS_CONFIRM_UNDO_RETOUCH / IDS_CONFIRM_UNDO_REDEYE).
+                    // (IDS_CONFIRM_UNDO_RETOUCH / IDS_CONFIRM_UNDO_REDEYE) —
+                    // a két mondat között sortöréssel, ahogy ott (#3573).
                     onUndoRequested: {
                         var action = editController.undoAction
                         if (action === "retouch")
                             undoDataLossDialogLoader.ensure().askFor("retouch", qsTr(
-                                "Retouch fixes cannot be recovered with redo."
-                                + " Are you sure you want to undo?"))
+                                "Retouch fixes cannot be recovered with redo.\n"
+                                + "Are you sure you want to undo?"))
                         else if (action === "redeye")
                             undoDataLossDialogLoader.ensure().askFor("redeye", qsTr(
-                                "Redeye fixes cannot be recovered with redo."
-                                + " Are you sure you want to undo?"))
+                                "Redeye fixes cannot be recovered with redo.\n"
+                                + "Are you sure you want to undo?"))
                         else
                             editController.undo()
                     }
@@ -3037,8 +3038,7 @@ Rectangle {
                 Layout.preferredWidth: 200
                 Layout.minimumWidth: 160
                 Layout.fillHeight: true
-                //: A nézett kép nevesített emberei, és akikkel a vizsgált
-                //: személy együtt szerepel.
+                //: A nézett kép nevesített emberei.
                 sourceComponent: PeoplePanel {
                     objectName: "viewerPeoplePanel"
                     selectionCount: viewer.drawerRows.length
@@ -3048,11 +3048,9 @@ Rectangle {
                         ? (viewer.photosModel.revision,
                            controller.peopleOfRows(viewer.drawerRows))
                         : []
-                    peopleWith: (viewer.photosModel && viewer.controllerReady
-                                 && controller.currentPersonName.length > 0)
-                        ? (viewer.photosModel.revision,
-                           controller.peopleWith(controller.currentPersonName))
-                        : []
+                    //: #3566: a szerkesztőben mindig az egyképes ág fut
+                    //: (az eredetiben az `editpanel/preview` látszik)
+                    editorView: true
                     //: a személy albuma a KÖNYVTÁR rácsán nyílik — a gazda
                     //: zárja a nézőt, és ő vált (ld. `findTaggedRequested`)
                     onPersonChosen: function(name) { viewer.personChosen(name) }

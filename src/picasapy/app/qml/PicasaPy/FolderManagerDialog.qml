@@ -275,20 +275,23 @@ Window {
         if (!path) return
         if (state === "always" && folderManagerWindow.isWholeDrive(path)) {
             driveWarning.pendingPath = path
+            //: `IDS_ROOT_WATCH_WARNING` — az eredeti szövege, záró kérdéssel (#3573)
             driveWarning.ask(
                 "watchWholeDrive",
                 qsTr("Watching an entire drive can slow down the system. "
-                     + "It would be better to select several sub-folders."))
+                     + "It would be better to select several sub-folders. "
+                     + "Are you sure you want to do this?"))
             return
         }
         if (state === "none"
                 && controller && controller.watchedFolders.indexOf(path) !== -1) {
             removeWatchedConfirm.pendingPath = path
+            //: `IDS_HOTFOLDER_CONFIRM` — az eredeti szövege (#3573)
             removeWatchedConfirm.ask(
                 "removeWatchedFolder",
-                qsTr("If you remove this folder, new items that you add to "
-                     + "that folder on disk will not be automatically added "
-                     + "to your library."))
+                qsTr("If you remove a watched folder, new items that you add "
+                     + "to that folder on disk will not be automatically "
+                     + "added to Picasa. Are you sure you want to do this?"))
             return
         }
         folderManagerWindow.stageState(path, state)
@@ -403,18 +406,27 @@ Window {
                 Layout.fillHeight: true
                 spacing: 4
 
+                // #3614: az eredeti `foldermgr/instructions_text` szó szerint
+                // (az „inside it." utáni két szóköz a `foldermgr_text.tre`-é),
+                // 232×73-as dobozban a „For the current folder:" csoport fölött.
+                // A magyar szöveg 6 sor (~84 px): az eredetiben a keret csak
+                // 97-nél kezdődik, tehát ott is kifut a 73-ból — nálunk a
+                // doboz a tartalomhoz nő, hogy ne lógjon rá a keretre.
                 Text {
+                    id: folderManagerInstructions
+                    objectName: "folderManagerInstructions"
                     Layout.preferredWidth: 232
-                    Layout.preferredHeight: 73
+                    Layout.preferredHeight: Math.max(73, folderManagerInstructions.implicitHeight)
                     text: qsTr(
-                        "Choose which folders PicasaPy watches. New and changed "
-                        + "pictures in watched folders appear automatically.")
+                        "For each folder, you can choose whether or not to have Picasa find "
+                        + "pictures inside it.  You can also pick folders to watch for new pictures.")
                     wrapMode: Text.WordWrap
                     font.pixelSize: Theme.fontSize
-                    color: Theme.textGray
+                    color: Theme.ink
                 }
 
                 FolderStatePanel {
+                    objectName: "folderManagerStatePanel"
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     manager: folderManagerWindow

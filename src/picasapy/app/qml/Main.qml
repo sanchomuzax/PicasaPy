@@ -1512,6 +1512,7 @@ ApplicationWindow {
         }
         onSaveSearchRequested: {
             if (controller.searchResultCount > 1000)
+                //: `CThumbUI::SaveSearchBig` — az eredeti szövege (#3573)
                 saveSearchDialog.ensure().ask("", qsTr(
                     "This will create an album with more than 1000 images."
                     + "  Do you want to continue?"))
@@ -1537,9 +1538,10 @@ ApplicationWindow {
             : fileOpsDialogs.ensure().openRename(window.selectedIndex)
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
-        //: #440: a mentés-készletek párbeszéde — halasztva épül fel, mint a
-        //: többi ritkán nyitott ablak.
-        onBackupRequested: backupDialog.ensure().open()
+        //: #3504: a kiadás-panel mentés-üzemmódja a könyvtár alján — a
+        //: korábbi külön ablak (`BackupDialog`) helyett, a `giftCdHost`
+        //: mintájára.
+        onBackupRequested: backupHost.nyisd()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
         // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
@@ -1652,6 +1654,12 @@ ApplicationWindow {
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
         // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
         onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(window.selectedRows())
+        // #3555: nyelvváltás — a menütétel csak jelez (a `ConfirmDialog` nem
+        // fér el a MenuBar gyermekeként), a kérdés és a `setLanguage`-hívás
+        // itt fut ki.
+        onLanguageConfirmRequested: function (code) {
+            languageConfirmDialog.ensure().askFor(code)
+        }
     }
 
     // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
@@ -1788,18 +1796,51 @@ ApplicationWindow {
                 function openFor(rowList) {
                     if (rowList.length === 0) return
                     rows = rowList
+                    //: `IDS_CONFIRMREVERT` / `IDS_CONFIRMREVERT_MULTIPLE` —
+                    //: az eredeti szövege, a záró kérdéssel együtt (#3573)
                     var text = rowList.length === 1
                         ? qsTr("This will remove all edits you have made to the"
-                               + " current picture.")
+                               + " current picture.  Do you want to continue?")
                         : qsTr("This will remove all edits you have made to ALL of"
-                               + " the selected pictures.")
-                    if (controller.selectionHasRedeye(rowList))
-                        text += "\n\n" + qsTr("Red eye fixes have been applied. If you"
-                                              + " remove all edits, your red eye fixes"
-                                              + " cannot be recovered.")
+                               + " the selected pictures.  Do you want to continue?")
+                    // #3573: az eredeti a képet NÉVVEL mondja; több
+                    // vörösszemes kép esetén a nevek vesszővel sorakoznak
+                    var redeyeNames = controller.redeyeNamesInSelection(rowList)
+                    if (redeyeNames.length > 0)
+                        //: `IDS_CONFIRM_REDEYE_REVERT` — az eredeti szövege a
+                        //: sortörésekkel; %1 a kép neve (#3573)
+                        text += "\n\n" + qsTr("Red eye fixes have been applied to %1.\n"
+                                              + "If you remove all edits, your red eye"
+                                              + " fixes cannot be recovered with redo. \n"
+                                              + "Are you sure you want to remove the"
+                                              + " fixes forever?")
+                                              .arg(redeyeNames.join(", "))
                     ask("undoAllEdits", text)
                 }
                 onConfirmed: controller.clearAllEffectsMany(rows)
+            }
+        }
+    }
+
+    // #3555: a nyelvváltás megerősítése — az Eszközök → Nyelv menüből jön
+    // (`bar.languageConfirmRequested`, ld. fent). A szöveg a hivatalos
+    // `CGeneralPrefsPage::LangChange`. A `settingKey` üres: ez a
+    // választás sosem nyomható el a „Ne kérdezze újra" jelölővel — minden
+    // váltás legalább egy kattintást kér, ahogy az eredeti is teszi.
+    DeferredDialog {
+        id: languageConfirmDialog
+        objectName: "menuLanguageConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "menuLanguageConfirmDialog"
+                namePrefix: "menuLanguageConfirm"
+                property string candidateCode: ""
+                function askFor(code) {
+                    candidateCode = code
+                    ask("", qsTr("Change the language Picasa uses?\n\nIt will change the next time Picasa is opened."))
+                }
+                onConfirmed: if (controller) controller.setLanguage(candidateCode)
             }
         }
     }
@@ -2255,7 +2296,9 @@ ApplicationWindow {
         anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
         //: #3503: nyitott Ajándék-CD panelnél a könyvtár a panel fölött ér
         //: véget — a panel nem takarhatja el a képeket
-        anchors.bottom: giftCdHost.visible ? giftCdHost.top : parent.bottom
+        //: #3504: ugyanez a mentés-panelre is vonatkozik
+        anchors.bottom: giftCdHost.visible ? giftCdHost.top
+                        : (backupHost.visible ? backupHost.top : parent.bottom)
         // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
         // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
         // a kijelölése (a #944 kimérte, a #985 tesztje állítja).
@@ -2573,7 +2616,7 @@ ApplicationWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left
                         anchors.leftMargin: 8
-                        //: `CSimSearch::updating` — az eredeti szövege.
+                        //: `CSimSearch::updating` — az eredeti szövege (#3573)
                         text: qsTr(
                             "Updating similarity database "
                             + "(will be fast next time)")
@@ -2857,10 +2900,9 @@ ApplicationWindow {
         onCloseRequested: window.ureseidAFiokot()
     }
 
-    // Emberek-panel (#26): a jobb fiók negyedik panelje. Két szakasza
-    // az eredeti szövegforrásából jön — „In this photo:" (a kijelölt
-    // képek nevesített emberei) és „Also in these photos:" (akik a
-    // nézett SZEMÉLLYEL együtt szerepelnek).
+    // Emberek-panel (#26): a jobb fiók negyedik panelje. EGY fejléc és
+    // EGY lista (#3566): a kijelölt képek nevesített emberei; a fejlécet
+    // a panel választja a spec 9/b fája szerint.
     PeoplePanel {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
@@ -2880,11 +2922,6 @@ ApplicationWindow {
         peopleHere: controller
             ? (controller.photos.revision,
                controller.peopleOfRows(window.selectedRows()))
-            : []
-        peopleWith: controller && !window.unnamedFacesOpen
-                    && controller.currentPersonName.length > 0
-            ? (controller.photos.revision,
-               controller.peopleWith(controller.currentPersonName))
             : []
         onPersonChosen: function(name) {
             if (!controller) return
@@ -3034,14 +3071,16 @@ ApplicationWindow {
         function ask() {
             //: a `decisionKey` SZÁNDÉKOSAN üres: a futó munka leállítását
             //: nem lehet „ne kérdezze újra"-val elnyomni
+            //: `IBackgroundNotify::cancel` — az eredeti szövege (#3573)
             ensure().ask("", qsTr(
-                "Do you want to stop the operation running in the background?"))
+                "Do you want to cancel this operation?"))
         }
         sourceComponent: Component {
             ConfirmDialog {
                 objectName: "activityCancelConfirm"
                 namePrefix: "activityCancel"
-                title: qsTr("Stop the background operation")
+                //: `IBackgroundNotify::canceltitle` — az eredeti szövege (#3573)
+                title: qsTr("Want to Cancel?")
                 onConfirmed: controller.cancelActivity()
             }
         }
@@ -3281,8 +3320,13 @@ ApplicationWindow {
         }
         function onBrokenPhotosDetected(items) {
             var ids = brokenPhotoDialog.ensure().pendingIds.slice()
-            for (var i = 0; i < items.length; i++) ids.push(items[i].id)
+            var names = brokenPhotoDialog.ensure().pendingNames.slice()
+            for (var i = 0; i < items.length; i++) {
+                ids.push(items[i].id)
+                names.push(items[i].name)
+            }
             brokenPhotoDialog.ensure().pendingIds = ids
+            brokenPhotoDialog.ensure().pendingNames = names
             // #459: rövid összegyűjtés — több törött kép is felbukkanhat
             // egymás után görgetés közben, ezeket EGY dialógusba fűzzük
             // ("this file(s)"), nem fotónként külön felugró ablakot.
@@ -3331,11 +3375,18 @@ ApplicationWindow {
                 yesText: qsTr("Hide Files")
                 noText: qsTr("Don't Hide")
                 property var pendingIds: []
+                //: #3573: a nevek az üzenet fájllistájához (a `pendingIds`
+                //: párja, ugyanabban a sorrendben)
+                property var pendingNames: []
                 onConfirmed: {
                     controller.hidePhotosByIds(brokenPhotoBelso.pendingIds)
                     brokenPhotoBelso.pendingIds = []
+                    brokenPhotoBelso.pendingNames = []
                 }
-                onDenied: brokenPhotoBelso.pendingIds = []
+                onDenied: {
+                    brokenPhotoBelso.pendingIds = []
+                    brokenPhotoBelso.pendingNames = []
+                }
             }
         }
     }
@@ -3345,9 +3396,16 @@ ApplicationWindow {
         interval: 400
         onTriggered: {
             if (brokenPhotoDialog.ensure().pendingIds.length > 0) {
-                brokenPhotoDialog.ensure().ask("", qsTr(
-                    "Picasa had a problem loading this file(s). Would you "
-                    + "like to hide the files on disk?"))
+                // #3573: az eredeti KÉT erőforrásból rakja össze az
+                // üzenetet, és a kettő közé soronként a hibás fájlok nevét
+                // szúrja be (`GetBadImages` + lista + `GetBadImages2`)
+                var dialog = brokenPhotoDialog.ensure()
+                dialog.ask("",
+                    //: `CThumbUI::GetBadImages` — utána a fájllista jön
+                    qsTr("Picasa had a problem loading this file(s)\n")
+                    + dialog.pendingNames.join("\n")
+                    //: `CThumbUI::GetBadImages2`
+                    + qsTr("\nWould you like to hide the files on disk?"))
             }
         }
     }
@@ -3365,6 +3423,23 @@ ApplicationWindow {
         fileOps: typeof fileOpsController !== "undefined" ? fileOpsController : null
         visible: nyitva && !window.viewerOpen && !window.timelineOpen
                  && window.libraryFrameVisible
+        //: #3504: a kiadás-panel EGYSZERRE egy üzemmódban látszik — az
+        //: Ajándék-CD nyitása becsukja a mentést (az eredetiben is egy sáv
+        //: vált módot, `biztonsagi-mentes.md` 10.)
+        onNyitvaChanged: if (nyitva) backupHost.nyitva = false
+    }
+
+    //: #3504: „Eszközök ▸ Képek biztonsági mentése…" — a kiadás-panel
+    //: mentés-üzemmódja, ugyanúgy a könyvtár alján, mint az Ajándék-CD.
+    BackupHost {
+        id: backupHost
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        visible: nyitva && !window.viewerOpen && !window.timelineOpen
+                 && window.libraryFrameVisible
+        //: a mentés nyitása becsukja az Ajándék-CD-t (ld. fent)
+        onNyitvaChanged: if (nyitva) giftCdHost.nyitva = false
     }
 
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
@@ -3911,10 +3986,13 @@ ApplicationWindow {
                 objectName: "resetFacesConfirm"
                 namePrefix: "resetFaces"
                 title: qsTr("Reset Faces")
-                message: qsTr("WARNING! This will move all the faces back to the "
-                              + "unnamed album and delete the face groups. Name tags "
-                              + "you have written into the photos are NOT touched. "
-                              + "Do you want to do this?")
+                //: `CThumbUI::ResetAllFaces` — az eredeti szövege (a
+                //: viselkedésen ez a jegy nem változtat, csak a
+                //: megjelenő szövegen) (#3573)
+                message: qsTr("WARNING! This will DELETE all people albums, "
+                              + "and move all the faces to the unnamed album. "
+                              + "This can REMOVE name tags on synced web "
+                              + "albums also. Do you want to do this?")
                 onConfirmed: {
                     if (typeof faceScanController !== "undefined" && faceScanController)
                         faceScanController.resetAllFaces()
@@ -3927,12 +4005,6 @@ ApplicationWindow {
         id: moveDatabaseDialog
         anchors.fill: parent
         sourceComponent: Component { MoveDatabaseDialog { } }
-    }
-    // #440: Képek biztonsági mentése — mentés-készletek
-    DeferredDialog {
-        id: backupDialog
-        anchors.fill: parent
-        sourceComponent: Component { BackupDialog { } }
     }
     // #644: figyelmeztetés, ha egy másik program felülírta a szerkesztéseinket
     DeferredDialog {

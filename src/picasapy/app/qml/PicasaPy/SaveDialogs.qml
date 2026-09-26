@@ -248,7 +248,9 @@ Item {
         footer: DialogButtonBox {
             Button {
                 objectName: "revertUndoSaveButton"
-                //: `CThumbUI::FileRevert::undosave`
+                //: `CThumbUI::FileRevert::undosave` — a magyar fordítás a
+                //: #3573 nyomán igazodik a hint-sor (`message1undo`)
+                //: hivatalos szövegéhez, amely ugyanezt a gombnevet idézi
                 text: qsTr("Undo Save")
                 DialogButtonBox.buttonRole: DialogButtonBox.ActionRole
                 onClicked: {
@@ -279,6 +281,7 @@ Item {
             Text {
                 width: 380
                 wrapMode: Text.WordWrap
+                //: `CThumbUI::FileRevert::message2` (#3573)
                 text: qsTr("This cannot be undone and all changes will be lost.")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
@@ -287,8 +290,8 @@ Item {
                 objectName: "revertUndoSaveHint"
                 width: 380
                 wrapMode: Text.WordWrap
-                //: `CThumbUI::FileRevert::message1undo` — a gomb önmagában
-                //: nem árulja el, hogy a szerkesztések MEGMARADNAK
+                //: `CThumbUI::FileRevert::message1undo` (#3573) — a gomb
+                //: önmagában nem árulja el, hogy a szerkesztések MEGMARADNAK
                 text: qsTr("To undo the last save and keep edits click 'Undo Save'.")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink

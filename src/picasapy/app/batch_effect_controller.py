@@ -252,34 +252,34 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-batcheffect")
 
-    @Slot(list, result=bool)
-    def selectionHasRedeye(self, rows) -> bool:
-        """Van-e a kijelölésben vörösszem-javítás (#465)?
+    @Slot(list, result=list)
+    def redeyeNamesInSelection(self, rows) -> list[str]:
+        """A kijelölés vörösszem-javítást hordozó képeinek neve (#3573).
 
-        Az eredeti Picasa a teljes visszaállítás előtt KÜLÖN figyelmeztet
-        rá (`IDS_CONFIRM_REDEYE_REVERT`), mert a vörösszem régió-adatot
-        hordoz: a törléssel véglegesen elvész, az „Újra" nem hozza vissza.
-
-        A megerősítő dialógus hívja, tehát a GUI-szálon fut — ezért csak a
-        `.picasa.ini` fájlokat olvassa (mappánként egyszer), képet nem nyit
-        meg. Olvashatatlan ini-nél `False` (a #301-elv szerint: idegen/sérült
-        adat nem szökhet ki kivétellel, és a hiánya nem hazudik javítást).
+        Az eredeti figyelmeztetés a képet NÉVVEL mondja
+        (`IDS_CONFIRM_REDEYE_REVERT`: „Red eye fixes have been applied to
+        %s.”). A sorrend a kijelölésé; a hibatűrése
+        érvényes itt is: olvashatatlan ini-ből nem jön név.
         """
-        by_folder: dict[str, set[str]] = {}
-        for photo in self._rows_to_photos(rows):
-            by_folder.setdefault(photo.folder_path, set()).add(photo.name)
-        for folder, names in by_folder.items():
-            try:
-                document = load_or_empty(Path(folder) / PICASA_INI_NAME)
-            except OSError:
+        photos = self._rows_to_photos(rows)
+        documents: dict[str, object] = {}
+        names: list[str] = []
+        for photo in photos:
+            folder = photo.folder_path
+            if folder not in documents:
+                try:
+                    documents[folder] = load_or_empty(Path(folder) / PICASA_INI_NAME)
+                except OSError:
+                    documents[folder] = None
+            document = documents[folder]
+            if document is None:
                 continue
-            for name in names:
-                section = document.section(name)
-                if section is None:
-                    continue
-                if EditSession.from_value(section.get("filters")).has("redeye"):
-                    return True
-        return False
+            section = document.section(photo.name)
+            if section is None:
+                continue
+            if EditSession.from_value(section.get("filters")).has("redeye"):
+                names.append(photo.name)
+        return names
 
     @Slot(list)
     def clearAllEffectsMany(self, rows) -> None:

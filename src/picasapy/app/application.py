@@ -91,6 +91,7 @@ from .language_controller import (
     DEFAULT_LANGUAGE,
     LANGUAGE_KEY,
     coerce_language,
+    resolve_startup_language,
 )
 from .color_management_controller import wire_color_management
 from .display_mode_controller import wire_display_mode
@@ -814,18 +815,38 @@ def wire_dedup(dedup: DedupController, controller: AppController) -> None:
     dedup.photoRelocated.connect(lambda _source, new: controller.resyncOutputFolder(new))
 
 
-def _configured_language() -> str:
-    """A betöltendő nyelv: a környezeti változó nyer, utána a mentett
-    beállítás, végül az alapértelmezés (#333).
+def _configured_language(settings: QSettings | None = None) -> str:
+    """Az EBBEN a futásban érvényes nyelv: a környezeti változó nyer, utána
+    a mentett beállítás, végül az alapértelmezés (#333).
 
-    A rendszer nyelvét SZÁNDÉKOSAN nem nézzük: a felhasználó kérése szerint
-    az alapértelmezés az angol, és a váltás a beállításokban történik.
+    CSAK OLVAS (#3555): futás közben is hívják (pl. a kollázs mappanevéhez,
+    `collage_output._felulet_nyelve`), és ott a megerősített, de a KÖVETKEZŐ
+    indításra váró választás még nem érvényes. A beérést az induláskori
+    `_startup_language` végzi.
     """
     forced = os.environ.get("PICASAPY_LANG")
     if forced:
         return coerce_language(forced)
-    settings = QSettings("PicasaPy", "PicasaPy")
+    if settings is None:
+        settings = QSettings("PicasaPy", "PicasaPy")
     return coerce_language(settings.value(LANGUAGE_KEY, DEFAULT_LANGUAGE))
+
+
+def _startup_language(settings: QSettings | None = None) -> str:
+    """Az induláskor betöltendő nyelv — itt érik be a függő választás
+    (#3555, `resolve_startup_language`), a fordító betöltése előtt.
+
+    Ez a legkorábbi lehetséges hely; az `AppController` saját induláskori
+    hívása ugyanerre a `QSettings`-re már csak szinkronban talál mindent
+    (idempotens). A környezeti változó itt is nyer, és nem nyúl a
+    beállításhoz.
+    """
+    forced = os.environ.get("PICASAPY_LANG")
+    if forced:
+        return coerce_language(forced)
+    if settings is None:
+        settings = QSettings("PicasaPy", "PicasaPy")
+    return resolve_startup_language(settings)
 
 
 def _install_translator(app: QGuiApplication, language: str | None = None) -> QTranslator | None:
@@ -834,7 +855,7 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
     Az angolhoz nincs `.qm` — a forrásszövegek maguk angolok —, ezért ott
     nincs mit betölteni, és ez nem hiba.
     """
-    code = coerce_language(language) if language else _configured_language()
+    code = coerce_language(language) if language else _startup_language()
     if code == DEFAULT_LANGUAGE:
         return None
     translator = QTranslator(app)
@@ -1292,23 +1313,6 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # létrehozásakor jelentkezne — összevont szakaszban láthatatlan.
     timeline.mark("a többi vezérlő létrehozása")
     engine = QQmlApplicationEngine()
-
-    # Nyelvváltás futásidőben (#333): a régi fordító le, az új fel, majd a
-    # QML-kötések újraszámolása. A `retranslate` a qsTr-es kötéseket frissíti;
-    # a már megjelenített, C++/Python oldalon összeállított szövegek
-    # (pl. státuszsor) a következő frissítésükkor követik.
-    installed: list[QTranslator] = []
-
-    def _apply_language() -> None:
-        for old in installed:
-            app.removeTranslator(old)
-        installed.clear()
-        new = _install_translator(app, controller.language)
-        if new is not None:
-            installed.append(new)
-        engine.retranslate()
-
-    controller.languageChanged.connect(_apply_language)
 
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)

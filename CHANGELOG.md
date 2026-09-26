@@ -7,6 +7,48 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az Árnyalás (Tint) és a vele közös színezőt használó Áttűnés (Cross
+  Process), Neon és Ghoul Eye a Haeberli-szürkéből, a natív fényesség-tartó
+  táblával színez, nem Rec.601-es illesztett képlettel (#3631).** A tábla az eredeti
+  Picasáéval bitre egyezik (54 színen, mind a 256 fényességszinten).
+  Telített kéknél és sárgánál a korábbi modell akár 71 szinttel eltért; a
+  mérőkészleten az eltérés az eredetitől: Árnyalás ΔE 1,00 → 0,39, Áttűnés
+  0,99 → 0,88, Neon 2,06 → 1,97.
+- **A Mappakezelő jobb oldalán, „Az aktuális mappa esetében:” csoport fölött
+  az eredeti Picasa utasítása áll (#3614).** A korábbi saját mondat helyett
+  most ez olvasható: „Minden mappa esetében megadhatja, hogy a Picasa
+  keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja,
+  hogy a program figyelje bennük az új képek megjelenését.”
+- **Az Emberek panel egyetlen fejlécet és egyetlen listát mutat, az eredeti
+  Picasa szabályai szerint (#3566).** Egy személy albumában a lista fejléce
+  „Szintén ezeken a fotókon:” (egy képnél is), megnevezett személy nélküli
+  képnél „Ki látható ezeken a fotókon?”, a képszerkesztőben pedig mindig
+  „Ezen a fotón:”; üres panelen a helyzethez illő útmutató szöveg áll. Egy
+  személy albumában kijelölés nélkül is ez az útmutató szöveg jelenik meg —
+  a korábbi, „kik szerepelnek még vele” listát felsoroló nézet helyett,
+  ahogy az eredeti Picasa is teszi.
+- **A Beállítások és az Eszközök → Nyelv nyelvválasztója az eredeti Picasa
+  szerint viselkedik (#3555).** A lista első tétele a rendszer szerinti
+  beállítás (a rendszer nyelv- és országkódjával), a nyelvek neve saját
+  nyelvükön áll, és a váltás — megerősítő kérdés után — csak a program
+  következő megnyitásakor lép érvénybe, a futó felület nyelve nem vált
+  azonnal.
+- **A Képek biztonsági mentése a kiadás-panel mentés-üzemmódjában nyílik,
+  nem külön ablakban (#3504)**, ahogy az eredeti Picasában: a készletek
+  létrehozása, módosítása és törlése, a mappánkénti kijelölés (#3594) és a
+  mappa/lemezkép kimenet (#3593) mind megvan, csak a könyvtár alján, a
+  „Lemezre írás” gombbal.
+- **25 megerősítő és figyelmeztető üzenet a hivatalos Picasa-szöveget
+  mondja (#3573)**, például „Kilép?”, „Nézze át nyomtatás előtt.” és
+  „Biztosan törli a(z) "…" mentési készletet?”. Ahol az eredeti nevet
+  vagy listát mond, most mi is: a mentés-készlet törlése a készlet
+  nevét, a vörösszem-javítás visszavonása a kép nevét, a sérült fájlok
+  üzenete a fájlok listáját idézi; a kollázs cseréjekor a teljes
+  magyarázó szöveg jelenik meg, a nyomtatás előtti figyelmeztetés pedig
+  az eredeti sorrendben és tördelésben. A diszk-mentés akkor is az
+  egységes „A mentés elkészült” üzenettel zárul, ha nem volt mit menteni.
+
 ## [0.8.584] – 2026-09-26
 
 ### Hozzáadva

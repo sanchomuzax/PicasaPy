@@ -9,19 +9,30 @@ import QtQuick.Layouts
 // négyesből nálunk eddig három volt meg (Tulajdonságok, Címkék, Helyek).
 // A panel címe az eredetiben `PeoplePanel::title` = „People".
 //
-// A két szakasz is az eredeti szövegforrásából jön:
+// A panel EGY fejlécet és EGY listát mutat (#3566, spec
+// `picasa-arcfelismeres.md` 9/b–9/d). A fejlécet az eredetiben a
+// `0x00647df0` választja az eredeti szövegforrásából:
 //
-//   PeoplePanel::InThis  „In this photo:"          — egy kijelölt képnél
-//   PeoplePanel::Known2  „People in these photos:" — több kijelölt képnél
-//   PeoplePanel::Known1  „Also in these photos:"   — egy SZEMÉLY albumát
-//                                                    nézve: kik szerepelnek
-//                                                    vele együtt
+//   EGYKÉPES ág — a szerkesztőben, VAGY (1 kép ÉS nem személy-album):
+//     van személy → PeoplePanel::InThis „In this photo:"
+//     van kép     → PeoplePanel::Who    „Who is in these photos?"
+//     különben    → Text5 (lent)
+//   TÖBBKÉPES ág — minden más (több kép, 0 kép, személy-album):
+//     van személy → személy-album ? Known1 „Also in these photos:"
+//                                 : Known2 „People in these photos:"
+//     van kép     → csoportosítva ? UnnamedCluster : Unnamed
+//     különben    → személy-album ? Text4 : Text5
 //
-// Az utolsó a családi gyűjtemények természetes navigációja („ki van még
-// rajta ezeken a képeken?"), onnan egy kattintással a másik személy
-// albumába.
+// A „Szintén ezeken a fotókon:" tehát NEM második szakasz, hanem a
+// személy albumának fejléce ugyanarra a listára. A „van személy" a 9/c
+// szerint: a kijelölt képek arcai közül legalább egynek van neve.
 //
-// A panel buta komponens: a listákat kívülről kapja, a navigációt jellel
+// Nem jelenítjük meg: a betöltés-feliratokat (Loading1/2, Looking) — a
+// `peopleOfRows` szinkron, nálunk nincs betöltési állapot —, és az
+// „, %d ellenőrizetlen fájl." utótagot — folyamatos háttér-arcellenőrzés
+// híján nincs ilyen számunk.
+//
+// A panel buta komponens: a listát kívülről kapja, a navigációt jellel
 // kéri — a TagsPanel/PropertiesPanel mintája.
 Rectangle {
     id: panel
@@ -30,29 +41,46 @@ Rectangle {
 
     // a kijelölt képeken névvel szereplő emberek (`controller.peopleOfRows`)
     property var peopleHere: []
-    // ha épp egy SZEMÉLY albumát nézzük: kik szerepelnek vele együtt
-    // (`controller.peopleWith`) — egyébként üres
-    property var peopleWith: []
+    // a nézett SZEMÉLY-album neve — egyébként üres
     property string currentPerson: ""
     property int selectionCount: 0
+    // a szerkesztő (néző) példánya: az eredetiben az `editpanel/preview`
+    // láthatósága, ilyenkor mindig az egyképes ág fut
+    property bool editorView: false
     // #3585 (spec 9/b–9/d): a „Név nélküliek" album nyitva van, és a
     // fejléc váltógombja csoportosított állapotban áll
     property bool unnamedAlbumMode: false
     property bool unnamedGrouped: true
-    // a többképes ág „van kép, nincs megnevezett személy" sora:
-    // `+0x2af` (csoportosított nézet) ? UnnamedCluster : Unnamed. Az
-    // egyképes ág és a betöltés-feliratok a #3566-é.
-    readonly property bool showUnnamedLabel:
-        panel.unnamedAlbumMode && panel.selectionCount > 1
-        && panel.peopleHere.length === 0 && panel.peopleWith.length === 0
 
     signal personChosen(string name)
     signal closeRequested()
 
-    // az eredeti szakasz-feliratai (PeoplePanel::InThis / Known2 / Known1)
-    readonly property string hereLabel:
-        panel.selectionCount > 1 ? qsTr("People in these photos:")
-                                 : qsTr("In this photo:")
+    readonly property bool personAlbum:
+        panel.currentPerson.length > 0 && !panel.unnamedAlbumMode
+    readonly property bool singlePhotoBranch:
+        panel.editorView
+        || (panel.selectionCount === 1 && !panel.personAlbum)
+    // a Név nélküliek albumban a kijelölés névtelen arcoké — ott a rács
+    // kijelölésének neveit nem mutatjuk
+    readonly property var people:
+        panel.unnamedAlbumMode ? [] : panel.peopleHere
+    readonly property bool hasPeople: panel.people.length > 0
+    readonly property bool hasPhotos: panel.selectionCount > 0
+
+    // a fejléc (`status_label`); üres, ha az utasítás-szöveg látszik
+    readonly property string headerText:
+        panel.singlePhotoBranch
+            ? (panel.hasPeople ? qsTr("In this photo:")
+               : panel.hasPhotos ? qsTr("Who is in these photos?")
+               : "")
+            : (panel.hasPeople
+               ? (panel.personAlbum ? qsTr("Also in these photos:")
+                                    : qsTr("People in these photos:"))
+               : panel.hasPhotos
+                 ? (panel.unnamedAlbumMode && panel.unnamedGrouped
+                    ? qsTr("Unnamed people in these photos:")
+                    : qsTr("Unnamed groups of people:"))
+               : "")
 
     ColumnLayout {
         anchors.fill: parent
@@ -60,34 +88,19 @@ Rectangle {
         spacing: 6
 
         //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
-        //: (`RightDrawer`), nem a panelben. A darabszám-felirat a
-        //: panelé marad — az a tartalomról szól, nem a fiókról.
+        //: (`RightDrawer`), nem a panelben.
 
-        // #3585: a „Név nélküliek" album fejléce — PeoplePanel::UnnamedCluster
-        // csoportosítva, PeoplePanel::Unnamed kibontva
         Text {
-            objectName: "peoplePanelUnnamedLabel"
-            visible: panel.showUnnamedLabel
+            objectName: "peoplePanelHeader"
+            visible: panel.headerText.length > 0
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: panel.unnamedGrouped
-                  ? qsTr("Unnamed people in these photos:")
-                  : qsTr("Unnamed groups of people:")
-            font.pixelSize: Theme.fontSize - 1
-            color: Theme.textGray
-        }
-
-        // -- 1. szakasz: akik a kijelölt képeken vannak ------------------
-        Text {
-            objectName: "peoplePanelHereLabel"
-            visible: panel.peopleHere.length > 0
-            Layout.fillWidth: true
-            text: panel.hereLabel
+            text: panel.headerText
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
         }
         Repeater {
-            model: panel.peopleHere
+            model: panel.people
             delegate: PeoplePanelRow {
                 required property var modelData
                 Layout.fillWidth: true
@@ -97,50 +110,28 @@ Rectangle {
             }
         }
 
-        // -- 2. szakasz: akik EGYÜTT szerepelnek a nézett személlyel -----
-        Text {
-            objectName: "peoplePanelAlsoLabel"
-            visible: panel.peopleWith.length > 0
-            Layout.fillWidth: true
-            topPadding: 6
-            text: qsTr("Also in these photos:")
-            font.pixelSize: Theme.fontSize - 1
-            color: Theme.textGray
-        }
-        Repeater {
-            model: panel.peopleWith
-            delegate: PeoplePanelRow {
-                required property var modelData
-                Layout.fillWidth: true
-                personName: modelData.name
-                photoCount: modelData.count
-                onChosen: panel.personChosen(modelData.name)
-            }
-        }
-
-        // -- üres állapot: az eredetinek ÖT külön szövege volt aszerint,
-        // mit néz éppen a felhasználó (`peoplepanel_text.tre`) — üres
-        // listát sosem hagyott. Hármat tudunk értelmezni a mai nézeteinkre:
+        // -- utasítás-szöveg (`instructions`, `peoplepanel_text.tre`), ha
+        // nincs fejléc:
         //
-        //   3. „No people have been found yet…"     — nincs még találat
-        //   4. „Named People who appear WITH…"      — személy albuma nyitva
-        //   5. „People who appear in the currently
-        //       selected photos will be listed here." — van kijelölés
+        //   Text3 „No people have been found yet…"  — a Név nélküliek
+        //                                               album, 0 kijelölés
+        //   Text4 „Named people who appear WITH…"   — személy-album
+        //   Text5 „People who appear in the currently
+        //          selected photos will be listed here." — minden más
         Text {
             objectName: "peoplePanelEmptyText"
-            visible: panel.peopleHere.length === 0 && panel.peopleWith.length === 0
-                     && !panel.showUnnamedLabel
+            visible: panel.headerText.length === 0
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: panel.currentPerson.length > 0
-                  ? qsTr("Named people who appear with the currently "
-                         + "selected person will be listed here.")
-                  : panel.selectionCount > 0
-                    ? qsTr("People who appear in the currently selected "
+            text: panel.unnamedAlbumMode
+                  ? qsTr("No people have been found yet. As faces are "
+                         + "found and grouped, they will appear in the "
+                         + "Unnamed album.")
+                  : panel.personAlbum && !panel.singlePhotoBranch
+                    ? qsTr("Named people who appear with the currently "
+                           + "selected person will be listed here.")
+                    : qsTr("People who appear in the currently selected "
                            + "photos will be listed here.")
-                    : qsTr("No people have been found yet. As faces are "
-                           + "found and grouped, they will appear in the "
-                           + "Unnamed album.")
             font.pixelSize: Theme.fontSize - 1
             font.italic: true
             color: Theme.textGray

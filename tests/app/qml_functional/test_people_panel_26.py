@@ -2,17 +2,20 @@
 
 A panel helye nem találgatás: a binárisban a `rightdrawerpanel/peoplepanel`
 elem a `propertiespanel` · `tagpanel` · `geopanel` mellett áll — abból a
-négyesből nálunk eddig három volt meg. A szakasz-feliratok is az eredeti
-szövegforrásából jönnek:
+négyesből nálunk eddig három volt meg.
 
-    PeoplePanel::InThis  „In this photo:"
-    PeoplePanel::Known2  „People in these photos:"
-    PeoplePanel::Known1  „Also in these photos:"
+A fejléc-választó fát (#3566, spec 9/b) valódi kijelöléssel a
+`test_emberek_panel_fejlec_3566.py` fedi.
 """
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
+from PySide6.QtTest import QTest
+
+from picasapy.faces.detector import FaceDetection, FaceLandmarks
+from picasapy.index import open_index, replace_faces, sync_tree
+from support.jpeg_factory import make_jpeg
 
 
 def _child(root, name):
@@ -83,30 +86,6 @@ class TestPanelWiring:
 
 
 class TestSections:
-    def test_the_here_label_follows_the_selection_size(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        panel = _child(window, "peoplePanel")
-
-        panel.setProperty("selectionCount", 1)
-        assert panel.property("hereLabel") == "In this photo:"
-
-        panel.setProperty("selectionCount", 3)
-        assert panel.property("hereLabel") == "People in these photos:"
-
-    def test_the_together_section_appears_only_with_data(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        _open(window, qt_app)
-        panel = _child(window, "peoplePanel")
-
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is False
-
-        panel.setProperty("peopleWith", [{"name": "Anna Kis", "count": 2}])
-        qt_app.processEvents()
-
-        also = _child(window, "peoplePanelAlsoLabel")
-        assert also.property("visible") is True
-        assert also.property("text") == "Also in these photos:"
-
     def test_an_empty_panel_says_something_instead_of_nothing(
         self, qml_app, qt_app
     ):
@@ -122,7 +101,9 @@ class TestEmptyStates:
     mit néz éppen a felhasználó (`peoplepanel_text.tre`) — üres listát
     sosem hagyott."""
 
-    def test_nothing_selected_says_no_people_yet(self, qml_app, qt_app):
+    def test_nothing_selected_promises_the_selection(self, qml_app, qt_app):
+        """#3566: a „No people have been found yet" (Text3) a Név
+        nélküliek album üres esete — máshol kijelölés nélkül is Text5."""
         window, _controller, _engine = qml_app
         _open(window, qt_app)
         panel = _child(window, "peoplePanel")
@@ -130,7 +111,7 @@ class TestEmptyStates:
         panel.setProperty("currentPerson", "")
         qt_app.processEvents()
 
-        assert "No people have been found yet" in _child(
+        assert "currently selected photos" in _child(
             window, "peoplePanelEmptyText"
         ).property("text")
 
@@ -169,56 +150,143 @@ def _click(window, item, qt_app):
     qt_app.processEvents()
 
 
+_FACE_LANDMARKS = FaceLandmarks(
+    right_eye=(40.0, 30.0), left_eye=(70.0, 30.0), nose=(55.0, 45.0),
+    mouth_right=(45.0, 60.0), mouth_left=(65.0, 60.0),
+)
+
+
+def _walk(item):
+    for child in item.childItems():
+        yield child
+        yield from _walk(child)
+
+
 class TestUnnamedAlbumHeader:
     """#3585 / #3566 (spec 9/b, 9/d): a „Név nélküliek" albumban, több
     kijelölt arcnál a panel fejléce a csoportosítás-váltógombot követi —
     csoportosítva `PeoplePanel::UnnamedCluster`, kibontva
-    `PeoplePanel::Unnamed`."""
+    `PeoplePanel::Unnamed`.
 
-    def _open_unnamed_album(self, window, qt_app, selected):
+    A kijelölés VALÓDI kattintás az arc-rácson (a
+    `test_emberek_panel_fejlec_3566.py` mintája): előbb egy valódi,
+    `unnamed` állapotú arcot szúrunk az indexbe (`replace_faces` —
+    ugyanaz az út, mint a szkennelésé, csak detektor nélkül), utána
+    kattintunk a `faceTile_<id>` csempére."""
+
+    def _seed_unnamed_faces(self, tmp_path, count):
+        lib = tmp_path / "kepek"
+        names = [f"p{i}.jpg" for i in range(count)]
+        for name in names:
+            make_jpeg(lib / name, size=(120, 90))
+        face_ids = []
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, lib)
+            for name in names:
+                photo_id = conn.execute(
+                    "SELECT id FROM photos WHERE name = ?", (name,)
+                ).fetchone()["id"]
+                face = FaceDetection(
+                    left=20.0, top=10.0, right=90.0, bottom=80.0, score=0.9,
+                    landmarks=_FACE_LANDMARKS,
+                )
+                replace_faces(conn, photo_id, [face])
+                conn.commit()
+                face_ids.append(conn.execute(
+                    "SELECT id FROM face WHERE photo_id = ?", (photo_id,)
+                ).fetchone()["id"])
+        return face_ids
+
+    def _click_faces(self, window, qt_app, face_ids):
+        """A csempe a rács `reload()`-ja után, aszinkron jön létre, és a
+        helye az elrendezés végéig mozoghat — ezért megvárjuk, hogy
+        látsszon, és kattintás után azt is, hogy a kijelölés átmenjen
+        (a CI lassabb gépén az azonnali kattintás mellément)."""
+        view = _child(window, "unnamedFacesView")
+        for i, face_id in enumerate(face_ids):
+            target = f"faceTile_{face_id}"
+            item = None
+            for _ in range(150):
+                item = next(
+                    (it for it in _walk(window.contentItem())
+                     if it.objectName() == target and it.isVisible()
+                     and it.width() > 0),
+                    None,
+                )
+                if item is not None:
+                    break
+                QTest.qWait(20)
+            assert item is not None, f"{target} nem található/nem látszik a rácson"
+            QTest.qWait(50)
+            center = item.mapToScene(item.boundingRect().center())
+            QTest.mouseClick(
+                window, Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.ControlModifier if i
+                else Qt.KeyboardModifier.NoModifier,
+                QPoint(round(center.x()), round(center.y())),
+            )
+            for _ in range(100):
+                if view.property("selectedCount") >= i + 1:
+                    break
+                QTest.qWait(20)
+
+    def _open_unnamed_album(self, window, qt_app, tmp_path, selected):
+        face_ids = self._seed_unnamed_faces(tmp_path, selected)
         _open(window, qt_app)
         window.setProperty("unnamedFacesOpen", True)
         qt_app.processEvents()
         view = _child(window, "unnamedFacesView")
-        view.setProperty("selectedCount", selected)
-        qt_app.processEvents()
-        return view
+        self._click_faces(window, qt_app, face_ids)
+        assert view.property("selectedCount") == selected
+        return view, face_ids
 
-    def test_the_header_follows_the_cluster_toggle(self, qml_app, qt_app):
+    def test_the_header_follows_the_cluster_toggle(self, qml_app, qt_app, tmp_path):
         window, _controller, _engine = qml_app
-        view = self._open_unnamed_album(window, qt_app, selected=2)
-        label = _child(window, "peoplePanelUnnamedLabel")
+        view, face_ids = self._open_unnamed_album(window, qt_app, tmp_path, selected=2)
+        label = _child(window, "peoplePanelHeader")
 
         assert label.property("visible") is True
         assert label.property("text") == "Unnamed people in these photos:"
         assert _child(window, "peoplePanelEmptyText").property("visible") is False
 
         _click(window, _child(view, "clusterToggleButton"), qt_app)
+        # a váltás üríti az arc-kijelölést (onGroupedChanged: clearSelection +
+        # reload) — a két arcot valódi kattintással jelöljük ki újra
+        self._click_faces(window, qt_app, face_ids)
+        qt_app.processEvents()
 
         assert view.property("grouped") is False
+        assert view.property("selectedCount") == 2
         assert label.property("text") == "Unnamed groups of people:"
 
-    def test_no_unnamed_header_outside_the_album(self, qml_app, qt_app):
+    def test_outside_the_album_the_header_is_never_the_grouped_one(
+        self, qml_app, qt_app
+    ):
+        """A csoportosítás jelzője (`+0x2af`) csak az albumban áll: máshol
+        a többképes ág „van kép" sora a kibontott fejléc (#3566)."""
         window, _controller, _engine = qml_app
         _open(window, qt_app)
         panel = _child(window, "peoplePanel")
         panel.setProperty("selectionCount", 3)
         qt_app.processEvents()
 
-        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False
+        assert _child(window, "peoplePanelHeader").property("text") == (
+            "Unnamed groups of people:"
+        )
 
-    def test_no_unnamed_header_without_a_multiple_selection(self, qml_app, qt_app):
-        """Egy kijelölt arcnál az eredeti egyképes ága fut (9/b) — az a
-        #3566-é, itt csak az, hogy a „Név nélküli…" fejléc NEM jelenik meg."""
+    def test_one_selected_face_asks_who(self, qml_app, qt_app, tmp_path):
+        """Egy kijelölt arcnál az eredeti egyképes ága fut (9/b, #3566)."""
         window, _controller, _engine = qml_app
-        self._open_unnamed_album(window, qt_app, selected=1)
+        self._open_unnamed_album(window, qt_app, tmp_path, selected=1)
 
-        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False
+        label = _child(window, "peoplePanelHeader")
+        assert label.property("visible") is True
+        assert label.property("text") == "Who is in these photos?"
 
 
 _ANNA_ID = "1111111111111111"
 _BELA_ID = "2222222222222222"
-# Anna és Béla EGY képen: Anna albumában Béla az „Also in these photos:" sor
+# Anna és Béla EGY képen
 _KOZOS_INI = (
     "[Contacts2]\n"
     f"{_ANNA_ID}=Anna;;\n"
@@ -234,7 +302,7 @@ class TestFromPersonAlbumToUnnamed:
     Névtelenek-sora nem vált nézetet a controllerben, így a
     `currentPersonName` az előző személyé marad. A Névtelenek albumban ettől
     még a Névtelenek fejléce kell, nem az előző személy „Szintén ezeken a
-    fotókon" listája."""
+    fotókon" utasítása (Text4)."""
 
     def _anna_albuma(self, window, controller, qt_app, tmp_path):
         from picasapy.index import open_index, sync_tree
@@ -263,15 +331,15 @@ class TestFromPersonAlbumToUnnamed:
         window, controller, _engine = qml_app
         _open(window, qt_app)
         self._anna_albuma(window, controller, qt_app, tmp_path)
-        # előfeltétel: Anna albumában Béla valóban a „Szintén" listán van
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is True
+        # előfeltétel: Anna albumában, kijelölés nélkül a Text4 szól
+        assert "appear with" in _child(
+            window, "peoplePanelEmptyText").property("text")
 
         self._nevtelenek(window, qt_app, selected=2)
 
-        label = _child(window, "peoplePanelUnnamedLabel")
+        label = _child(window, "peoplePanelHeader")
         assert label.property("visible") is True
         assert label.property("text") == "Unnamed people in these photos:"
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is False
         assert _child(window, "peoplePanelEmptyText").property("visible") is False
 
     def test_no_person_hint_in_the_unnamed_album(
@@ -288,7 +356,7 @@ class TestFromPersonAlbumToUnnamed:
         assert empty.property("visible") is True
         assert "appear with" not in empty.property("text")
 
-    def test_back_to_the_person_album_the_also_list_returns(
+    def test_back_to_the_person_album_its_text_returns(
         self, qml_app, qt_app, tmp_path
     ):
         window, controller, _engine = qml_app
@@ -299,5 +367,7 @@ class TestFromPersonAlbumToUnnamed:
         window.setProperty("unnamedFacesOpen", False)
         qt_app.processEvents()
 
-        assert _child(window, "peoplePanelAlsoLabel").property("visible") is True
-        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False
+        assert _child(window, "peoplePanelHeader").property("visible") is False
+        empty = _child(window, "peoplePanelEmptyText")
+        assert empty.property("visible") is True
+        assert "appear with" in empty.property("text")

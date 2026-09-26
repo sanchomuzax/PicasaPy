@@ -5,8 +5,9 @@ A régi modell egy TÖMÖR SZÍNRÉTEGET kevert a képre `normal` módban, tehá
 ez ΔE 33,45 / SSIM 0,63 („ROSSZ").
 
 A helyes művelet a #878-ban megfejtett `tint_luma_preserving`: a bemenet
-luminanciáját bájtra megőrzi, és csak a krómát cseréli. Ugyanazt a
-`TintImageOperation`-t használja a `Neon` záró lépése is.
+luminanciáját bájtra megőrzi, és csak a krómát cseréli — a #3631 óta
+Haeberli-súlyokkal, NEM Rec.601-gyel. Ugyanazt a `TintImageOperation`-t
+használja a `Neon` záró lépése is.
 
 A mérőszett képei nem kerülhetnek a publikus repóba, ezért az őrök a
 csővezeték szerkezeti állításait rögzítik, plusz a golden párból MÉRT
@@ -19,7 +20,7 @@ import numpy as np
 import pytest
 
 from picasapy.render.glimmer_focal import apply_picnik_tint
-from picasapy.render.glimmer_ops import luma
+from picasapy.render.glimmer_ops import _haeberli_luma, luma
 
 #: `PicnikTint=1,0.000000,0080cfff;` — a filterdesc alapértéke, és a #685
 #: mérőszettjének esete is ez.
@@ -38,8 +39,9 @@ def _atmenet(szelesseg: int = 64) -> np.ndarray:
 class TestFenyessegTartas:
     @pytest.mark.parametrize("ertek", [0, 16, 64, 128, 200, 255])
     def test_a_luminancia_megmarad(self, ertek):
+        """A `Tint` a HAEBERLI-lumát tartja meg, NEM a Rec.601-et (#3631)."""
         eredmeny = apply_picnik_tint(_lapos(ertek), color=SZIN, fade=0.0)
-        assert abs(float(luma(eredmeny.astype(np.float32)).mean()) - ertek) <= 1.5
+        assert abs(float(_haeberli_luma(eredmeny.astype(np.float32)).mean()) - ertek) <= 1.5
 
     def test_a_kep_NEM_lesz_egyszinu(self):
         """A régi modell pont ezt csinálta: `Fade = 0`-nál tömör színfelület.
