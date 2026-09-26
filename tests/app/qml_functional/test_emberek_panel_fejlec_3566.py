@@ -28,7 +28,8 @@ from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
-from picasapy.index import open_index, sync_tree
+from picasapy.faces.detector import FaceDetection, FaceLandmarks
+from picasapy.index import open_index, replace_faces, sync_tree
 from support.jpeg_factory import make_jpeg
 
 _ANNA_ID = "1111111111111111"
@@ -248,19 +249,63 @@ class TestPersonAlbum:
         assert TEXT4 in _empty_text(window)
 
 
+_FACE_LANDMARKS = FaceLandmarks(
+    right_eye=(40.0, 30.0), left_eye=(70.0, 30.0), nose=(55.0, 45.0),
+    mouth_right=(45.0, 60.0), mouth_left=(65.0, 60.0),
+)
+
+
 class TestUnnamedAlbum:
-    def _unnamed(self, window, qt_app, selected):
+    def _open(self, window, qt_app):
+        """A Névtelenek album megnyitása — a `reload()`-ot az
+        `UnnamedFacesView.onVisibleChanged` futtatja le, tehát az arcot
+        MÁR a megnyitás előtt be kell szúrni az indexbe."""
         _child(window, "folderPane").unnamedFacesChosen.emit()
         _settle(qt_app)
-        _child(window, "unnamedFacesView").setProperty("selectedCount", selected)
-        _settle(qt_app)
+
+    def _seed_unnamed_face(self, tmp_path, photo_name: str) -> int:
+        """Egy VALÓDI (nem mockolt) `unnamed` állapotú arc beszúrása az
+        indexbe, ugyanazon az úton (`replace_faces`), mint a szkennelés —
+        csak a detektor nélkül. A visszaadott azonosító a QML-ben a
+        `faceTile_<id>` objectName-je (`_group_payload`, #26)."""
+        face = FaceDetection(
+            left=20.0, top=10.0, right=90.0, bottom=80.0, score=0.9,
+            landmarks=_FACE_LANDMARKS,
+        )
+        with open_index(tmp_path / "index.db") as conn:
+            photo_id = conn.execute(
+                "SELECT id FROM photos WHERE name = ?", (photo_name,)
+            ).fetchone()["id"]
+            replace_faces(conn, photo_id, [face])
+            conn.commit()
+            face_id = conn.execute(
+                "SELECT id FROM face WHERE photo_id = ?", (photo_id,)
+            ).fetchone()["id"]
+        return face_id
+
+    def _click_face_tile(self, window, qt_app, face_id: int):
+        """VALÓDI kattintás az arc-csempére a rácson — a fő fotórács
+        `_cell()`-jének mintája: a GridView delegate-jei `childItems()`-en
+        át érhetők el, `findChild`-dal NEM (MEMORY 2026-07-31, ld. a
+        `test_unnamed_faces_view.py` modul-docstringje)."""
+        target = f"faceTile_{face_id}"
+        for item in _walk(window.contentItem()):
+            if item.objectName() == target and item.isVisible():
+                center = item.mapToScene(item.boundingRect().center())
+                QTest.mouseClick(
+                    window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+                    QPoint(round(center.x()), round(center.y())),
+                )
+                _settle(qt_app)
+                return
+        raise AssertionError(f"{target} nem található/nem látszik a rácson")
 
     def test_nothing_selected_is_text3(self, qml_app, qt_app, tmp_path):
         """A Text3 a „Név nélküliek" mód üres esete — csak ott."""
         window, controller, _engine = qml_app
         _library(window, controller, qt_app, tmp_path)
 
-        self._unnamed(window, qt_app, 0)
+        self._open(window, qt_app)
 
         assert _header(window) is None
         assert TEXT3 in _empty_text(window)
@@ -271,8 +316,10 @@ class TestUnnamedAlbum:
         # a rács kijelölése (Anna képe) NEM számít: az albumban arcokat
         # jelölünk ki, és azok névtelenek
         _select(window, controller, qt_app, lib, "a.jpg")
+        face_id = self._seed_unnamed_face(tmp_path, "c.jpg")
 
-        self._unnamed(window, qt_app, 1)
+        self._open(window, qt_app)
+        self._click_face_tile(window, qt_app, face_id)
 
         assert _header(window) == "Who is in these photos?"
         assert _visible_rows(_child(window, "peoplePanel")) == []

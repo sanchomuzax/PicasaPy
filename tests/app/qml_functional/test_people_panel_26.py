@@ -10,7 +10,12 @@ A fejléc-választó fát (#3566, spec 9/b) valódi kijelöléssel a
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
+from PySide6.QtTest import QTest
+
+from picasapy.faces.detector import FaceDetection, FaceLandmarks
+from picasapy.index import open_index, replace_faces, sync_tree
+from support.jpeg_factory import make_jpeg
 
 
 def _child(root, name):
@@ -145,24 +150,84 @@ def _click(window, item, qt_app):
     qt_app.processEvents()
 
 
+_FACE_LANDMARKS = FaceLandmarks(
+    right_eye=(40.0, 30.0), left_eye=(70.0, 30.0), nose=(55.0, 45.0),
+    mouth_right=(45.0, 60.0), mouth_left=(65.0, 60.0),
+)
+
+
+def _walk(item):
+    for child in item.childItems():
+        yield child
+        yield from _walk(child)
+
+
 class TestUnnamedAlbumHeader:
     """#3585 / #3566 (spec 9/b, 9/d): a „Név nélküliek" albumban, több
     kijelölt arcnál a panel fejléce a csoportosítás-váltógombot követi —
     csoportosítva `PeoplePanel::UnnamedCluster`, kibontva
-    `PeoplePanel::Unnamed`."""
+    `PeoplePanel::Unnamed`.
 
-    def _open_unnamed_album(self, window, qt_app, selected):
+    A kijelölés VALÓDI kattintás az arc-rácson (a
+    `test_emberek_panel_fejlec_3566.py` mintája): előbb egy valódi,
+    `unnamed` állapotú arcot szúrunk az indexbe (`replace_faces` —
+    ugyanaz az út, mint a szkennelésé, csak detektor nélkül), utána
+    kattintunk a `faceTile_<id>` csempére."""
+
+    def _seed_unnamed_faces(self, tmp_path, count):
+        lib = tmp_path / "kepek"
+        names = [f"p{i}.jpg" for i in range(count)]
+        for name in names:
+            make_jpeg(lib / name, size=(120, 90))
+        face_ids = []
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, lib)
+            for name in names:
+                photo_id = conn.execute(
+                    "SELECT id FROM photos WHERE name = ?", (name,)
+                ).fetchone()["id"]
+                face = FaceDetection(
+                    left=20.0, top=10.0, right=90.0, bottom=80.0, score=0.9,
+                    landmarks=_FACE_LANDMARKS,
+                )
+                replace_faces(conn, photo_id, [face])
+                conn.commit()
+                face_ids.append(conn.execute(
+                    "SELECT id FROM face WHERE photo_id = ?", (photo_id,)
+                ).fetchone()["id"])
+        return face_ids
+
+    def _click_faces(self, window, qt_app, face_ids):
+        for i, face_id in enumerate(face_ids):
+            target = f"faceTile_{face_id}"
+            item = next(
+                (it for it in _walk(window.contentItem())
+                 if it.objectName() == target and it.isVisible()),
+                None,
+            )
+            assert item is not None, f"{target} nem található/nem látszik a rácson"
+            center = item.mapToScene(item.boundingRect().center())
+            QTest.mouseClick(
+                window, Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.ControlModifier if i
+                else Qt.KeyboardModifier.NoModifier,
+                QPoint(round(center.x()), round(center.y())),
+            )
+            qt_app.processEvents()
+
+    def _open_unnamed_album(self, window, qt_app, tmp_path, selected):
+        face_ids = self._seed_unnamed_faces(tmp_path, selected)
         _open(window, qt_app)
         window.setProperty("unnamedFacesOpen", True)
         qt_app.processEvents()
         view = _child(window, "unnamedFacesView")
-        view.setProperty("selectedCount", selected)
-        qt_app.processEvents()
-        return view
+        self._click_faces(window, qt_app, face_ids)
+        assert view.property("selectedCount") == selected
+        return view, face_ids
 
-    def test_the_header_follows_the_cluster_toggle(self, qml_app, qt_app):
+    def test_the_header_follows_the_cluster_toggle(self, qml_app, qt_app, tmp_path):
         window, _controller, _engine = qml_app
-        view = self._open_unnamed_album(window, qt_app, selected=2)
+        view, face_ids = self._open_unnamed_album(window, qt_app, tmp_path, selected=2)
         label = _child(window, "peoplePanelHeader")
 
         assert label.property("visible") is True
@@ -170,11 +235,13 @@ class TestUnnamedAlbumHeader:
         assert _child(window, "peoplePanelEmptyText").property("visible") is False
 
         _click(window, _child(view, "clusterToggleButton"), qt_app)
-        # a váltás üríti az arc-kijelölést; újra két arc
-        view.setProperty("selectedCount", 2)
+        # a váltás üríti az arc-kijelölést (onGroupedChanged: clearSelection +
+        # reload) — a két arcot valódi kattintással jelöljük ki újra
+        self._click_faces(window, qt_app, face_ids)
         qt_app.processEvents()
 
         assert view.property("grouped") is False
+        assert view.property("selectedCount") == 2
         assert label.property("text") == "Unnamed groups of people:"
 
     def test_outside_the_album_the_header_is_never_the_grouped_one(
@@ -192,10 +259,10 @@ class TestUnnamedAlbumHeader:
             "Unnamed groups of people:"
         )
 
-    def test_one_selected_face_asks_who(self, qml_app, qt_app):
+    def test_one_selected_face_asks_who(self, qml_app, qt_app, tmp_path):
         """Egy kijelölt arcnál az eredeti egyképes ága fut (9/b, #3566)."""
         window, _controller, _engine = qml_app
-        self._open_unnamed_album(window, qt_app, selected=1)
+        self._open_unnamed_album(window, qt_app, tmp_path, selected=1)
 
         label = _child(window, "peoplePanelHeader")
         assert label.property("visible") is True
