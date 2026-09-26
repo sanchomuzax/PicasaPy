@@ -7,6 +7,38 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **A Névtelenek album fejlécében egyetlen csoportosítás-váltógomb áll,
+  az eredeti Picasa szövegeivel (#3585).** A két jelölőnégyzet helyett egy
+  gomb vált a csoportosított és a részletes nézet között, és a fejléc az
+  eredeti utasításait mutatja. Az album mindig csoportosítva nyílik meg. Ha
+  egy személy albumából lép át a Névtelenekhez, az Emberek panel fejléce is
+  a Névteleneké lesz, nem a korábbi személyé.
+- **A Nyomtatás, a Mappakezelő, a Beállítások, az Importálás és a
+  weboldal-exportálás ablakában is működik a Shift+F1 és az F1 (#3544).**
+  A súgó az adott párbeszéd saját fejezetével nyílik meg, a párbeszéd előtt.
+
+### Javítva
+- **Négy effekt képmérettől függő csúszkája az eredeti Picasa szerint
+  tárolódik (#3596).** A Képpontnagyítás és a Fókusznagyítás sugarát, a
+  Kerekített élek sarkát, valamint a Szegély sarkát és feliratsávját a
+  program a képmérethez viszonyítva, százalékban menti, mint az eredeti.
+  Így egy szerkesztés bármekkora képen ugyanúgy néz ki, és a Picasában
+  készült beállítások is helyesen jelennek meg. A Képpontnagyítás
+  eltérése az eredeti exportjától a korábbi tizenharmadára csökkent, a
+  Kerekített élek legerősebb állása pedig most először egyezik vele.
+  ⚠️ A korábbi PicasaPy-változatok ezeket az értékeket képpontban
+  mentették, ezért a régebben mentett szerkesztéseken ez a négy effekt
+  most más erősséggel jelenhet meg.
+- **Az Objektív sor elsőként a kép XMP-adataiban tárolt objektívnevet
+  mutatja (#3496).** Ha a fájlban ott az objektív neve, az eredeti
+  Picasához hasonlóan ez jelenik meg a Tulajdonságok panelen, a gyártói
+  táblázatból kikeresett név helyett. Egy Nikon D7000-es felvételen
+  például „70.0-200.0 mm f/2.8”.
+- **A Tulajdonságok panel Tömörítés sora az eredeti Picasa mind a 36
+  tömörítéstípusát ismeri (#3535).** Ismeretlen típusnál a számát mutatja
+  ahelyett, hogy a sor üres maradna.
+
 ## [0.8.579] – 2026-09-26
 
 ### Javítva

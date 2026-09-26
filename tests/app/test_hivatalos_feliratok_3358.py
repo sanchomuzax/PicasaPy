@@ -76,6 +76,31 @@ HIVATALOS = {
         "quicktagconfig/autofill"),
     "Type in a tag to add:": (
         "Írjon be egy hozzáadandó címkét:", "tagpanel/add_tag_label"),
+    # #3585: a Névtelenek album csoportosítás-váltógombja és fejléc-
+    # utasítása (spec `picasa-arcfelismeres.md` 9/d), valamint az
+    # Emberek-panel két „Név nélküli…" fejléce (9/b)
+    "Group by face": (
+        "Csoportosítás arcok szerint", "unknownfaceheaderpanel/cluster"),
+    "Expand groups": (
+        "Csoportok részletes nézete", "unknownfaceheaderpanel/showall"),
+    "Grouping faces, please wait...": (
+        "Az arcok csoportosítása folyamatban van, kérjük, várjon...",
+        "CAlbumLabel::LoadingGrouped"),
+    "Select someone you know and add a name.": (
+        "Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet.",
+        "CAlbumLabel::ToggleGroupIgnore"),
+    'Select someone you know and add a name, or click the "x" to ignore that person.': (
+        'Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet, vagy '
+        'kattintson az "x" ikonra az adott személy mellőzéséhez.',
+        "CAlbumLabel::ToggleGrouped"),
+    "Select someone you know and add a name": (
+        "Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet",
+        "CAlbumLabel::ToggleUnGrouped"),
+    "Unnamed people in these photos:": (
+        "Meg nem nevezett emberek ezeken a fotókon:",
+        "PeoplePanel::UnnamedCluster"),
+    "Unnamed groups of people:": (
+        "Név nélküli személycsoportok:", "PeoplePanel::Unnamed"),
 }
 
 #: a Gyorscímkék-útmutató (a két szóköz a mondatok között az eredetié)
@@ -91,7 +116,14 @@ ELOFORDULASOK = {
     "PicasaPy/EditorParamPanel.qml": ["Feather", "Color Preservation"],
     "PicasaPy/EditorTextPanel.qml": [
         "Left justify text", "Center justify text", "Right justify text"],
-    "PicasaPy/UnnamedFacesView.qml": ["Ignore all of the selected faces"],
+    "PicasaPy/UnnamedFacesView.qml": [
+        "Ignore all of the selected faces",
+        # #3585
+        "Group by face", "Expand groups", "Grouping faces, please wait...",
+        "Select someone you know and add a name.",
+        "Select someone you know and add a name"],
+    "PicasaPy/PeoplePanel.qml": [
+        "Unnamed people in these photos:", "Unnamed groups of people:"],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
     # #3575
     "PicasaPy/CreateDialogs.qml": ["Frame Mosaic"],

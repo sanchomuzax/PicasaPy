@@ -3,8 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // #26 (3. lépcső): a „Névtelenek" album felülete — SAJÁT (YuNet/SFace)
-// arcfelismerés, a Picasa munkamenete szerint: „Group by face" / „Expand
-// groups" kapcsolók, arconkénti kijelölés, „Add a name" tömeges névadás.
+// arcfelismerés, a Picasa munkamenete szerint: csoportosítás-váltógomb,
+// arconkénti kijelölés, „Add a name" tömeges névadás.
 //
 // Szándékosan ÖNÁLLÓ komponens (nem a fő rács/`controller._show()` útján),
 // mert a `FaceScanController` is önálló QObject, NEM az `AppController`
@@ -23,8 +23,15 @@ ColumnLayout {
     // tartalom és a művelet-gombok mások.
     property string mode: "unnamed"
     readonly property bool ignoredMode: root.mode === "ignored"
-    property bool groupByFace: true
-    property bool expandGroups: false
+    // #3585 (spec 9/d): az eredetiben EGY váltógomb két arca
+    // (`unknownfaceheaderpanel/cluster` ↔ `showall`, egymást rejtik), nem
+    // két független kapcsoló. Csoportosítva a csoportok előnézete látszik,
+    // kibontva minden arcuk. Az album megnyitásakor csoportosítva indul
+    // (`0x0074cbbb`).
+    property bool grouped: true
+    // a csoportosítás (lenyomat + csoportba sorolás) épp fut — ilyenkor a
+    // fejléc-utasítás várakozást kér (`CAlbumLabel::LoadingGrouped`)
+    property bool groupingInProgress: false
     property var groupsModel: []
     property var selectedFaceIds: ({})
     property int selectedCount: 0
@@ -37,8 +44,7 @@ ColumnLayout {
         }
         root.groupsModel = (root.mode === "ignored")
             ? faceScanController.ignoredGroups()
-            : faceScanController.unnamedGroups(
-                root.groupByFace, root.expandGroups)
+            : faceScanController.unnamedGroups(true, !root.grouped)
     }
 
     function toggleFace(faceId) {
@@ -57,31 +63,60 @@ ColumnLayout {
         root.selectedCount = 0
     }
 
+    // #3585: a fejléc-utasítás a `0x0074c200` választása szerint — a
+    // `stringres` négy szövege (`CAlbumLabel::*`)
+    readonly property string instructionText:
+        root.grouped && root.groupingInProgress
+            ? qsTr("Grouping faces, please wait...")
+            : root.grouped && root.ignoredMode
+              ? qsTr("Select someone you know and add a name.")
+              : root.grouped
+                ? qsTr("Select someone you know and add a name, or click "
+                       + "the \"x\" to ignore that person.")
+                : qsTr("Select someone you know and add a name")
+
     Component.onCompleted: reload()
-    onModeChanged: root.reload()
-    onGroupByFaceChanged: { clearSelection(); reload() }
-    onExpandGroupsChanged: { clearSelection(); reload() }
-    onVisibleChanged: if (visible) reload()
+    onModeChanged: { root.grouped = true; root.reload() }
+    onGroupedChanged: { clearSelection(); reload() }
+    onVisibleChanged: if (visible) { root.grouped = true; reload() }
+
+    Connections {
+        target: root.faceScanController || null
+        ignoreUnknownSignals: true
+        function onEmbeddingStarted() { root.groupingInProgress = true }
+        function onEmbeddingFinished() {
+            root.groupingInProgress = false
+            if (root.visible) root.reload()
+        }
+        function onEmbeddingCancelled() { root.groupingInProgress = false }
+        function onEmbeddingFailed() { root.groupingInProgress = false }
+        function onEmbeddingModelUnavailable() {
+            root.groupingInProgress = false
+        }
+    }
+
+    Text {
+        objectName: "unnamedInstructions"
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+        text: root.instructionText
+        font.pixelSize: Theme.fontSize
+        color: Theme.textDark
+    }
 
     RowLayout {
         Layout.fillWidth: true
         spacing: 14
 
-        CheckBox {
-            id: groupByFaceCheck
-            objectName: "groupByFaceCheck"
+        // #3585: a felirat a KÖVETKEZŐ állapotot nevezi meg — csoportosítva
+        // a „Csoportok részletes nézete" (`showall`) látszik, kibontva a
+        // „Csoportosítás arcok szerint" (`cluster`)
+        Button {
+            id: clusterToggleButton
+            objectName: "clusterToggleButton"
             visible: !root.ignoredMode
-            text: qsTr("Group by face")
-            checked: root.groupByFace
-            onToggled: root.groupByFace = checked
-        }
-        CheckBox {
-            id: expandGroupsCheck
-            objectName: "expandGroupsCheck"
-            visible: !root.ignoredMode
-            text: qsTr("Expand groups")
-            checked: root.expandGroups
-            onToggled: root.expandGroups = checked
+            text: root.grouped ? qsTr("Expand groups") : qsTr("Group by face")
+            onClicked: root.grouped = !root.grouped
         }
         Item { Layout.fillWidth: true }
         Text {

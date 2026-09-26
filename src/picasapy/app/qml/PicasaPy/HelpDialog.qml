@@ -28,6 +28,11 @@ Dialog {
     //: elem `helpTopic`-jára; F1-re a főoldal nyílik.
     property string topic: ""
 
+    //: #3544: a vezérlő `typeof`-őrrel (#3005) — a súgó a külön ablakos
+    //: párbeszédekből is felépül (`HelpWindow.qml`), és vezérlő nélkül sem
+    //: dobhat `ReferenceError`-t.
+    readonly property var _vezerlo: typeof controller !== "undefined" ? controller : null
+
     // #2213: az előzmény-verem. A felhasználó jelentette, hogy a keresőből
     // megnyitott lapról nem lehet visszamenni sehová.
     //
@@ -51,7 +56,7 @@ Dialog {
         helpDialog._elozoTopic = ""
         helpDialog.topic = fejezet && fejezet.length > 0
             ? fejezet
-            : (controller ? controller.helpHomeTopic : "index.md")
+            : (helpDialog._vezerlo ? helpDialog._vezerlo.helpHomeTopic : "index.md")
         keresoMezo.text = ""
         helpDialog.open()
     }
@@ -67,15 +72,15 @@ Dialog {
     }
 
     function kezdolapra() {
-        if (!controller) return
+        if (!helpDialog._vezerlo) return
         // A keresés törlése is kell: kereséskor a bal hasáb a találatokat
         // mutatja, és a felhasználó a fejezetlistát várja vissza.
         keresoMezo.text = ""
-        helpDialog.topic = controller.helpHomeTopic
+        helpDialog.topic = helpDialog._vezerlo.helpHomeTopic
     }
 
     onTopicChanged: {
-        if (!controller) return
+        if (!helpDialog._vezerlo) return
         if (!helpDialog._visszalepesFolyamatban
                 && helpDialog._elozoTopic !== ""
                 && helpDialog._elozoTopic !== helpDialog.topic) {
@@ -84,7 +89,7 @@ Dialog {
             helpDialog.elozmeny = verem
         }
         helpDialog._elozoTopic = helpDialog.topic
-        szovegNezo.text = controller.helpTopicText(helpDialog.topic)
+        szovegNezo.text = helpDialog._vezerlo.helpTopicText(helpDialog.topic)
         szovegGorgeto.contentY = 0
     }
 
@@ -132,12 +137,12 @@ Dialog {
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
                 onTextChanged: {
-                    if (!controller) return
+                    if (!helpDialog._vezerlo) return
                     // Üres keresésre a FEJEZETLISTA jön vissza — a néző
                     // sosem marad üresen.
                     talalatModell.clear()
                     if (text.trim().length === 0) return
-                    var talalatok = controller.helpSearch(text)
+                    var talalatok = helpDialog._vezerlo.helpSearch(text)
                     for (var i = 0; i < talalatok.length; ++i)
                         talalatModell.append(talalatok[i])
                 }
@@ -152,7 +157,7 @@ Dialog {
                 clip: true
                 model: keresoMezo.text.trim().length > 0
                     ? talalatModell
-                    : (controller ? controller.helpTopics : [])
+                    : (helpDialog._vezerlo ? helpDialog._vezerlo.helpTopics : [])
                 // #2214: keresés közben a sor a CÍMET és a RÉSZLETET is
                 // mutatja. Korábban csak a cím látszott, a részlet pedig
                 // egérrámutatásra — mivel egy fejezet több sort is kapott,
@@ -230,8 +235,8 @@ Dialog {
                 // ilyenkor SEM lépünk sehova, de a `console.warn` kiírja —
                 // a néma nem-történik-semmi épp az a hiba, amit javítunk.
                 onLinkActivated: function (link) {
-                    if (!controller) return
-                    var cel = controller.helpResolveLink(helpDialog.topic, link)
+                    if (!helpDialog._vezerlo) return
+                    var cel = helpDialog._vezerlo.helpResolveLink(helpDialog.topic, link)
                     if (cel) {
                         helpDialog.topic = cel
                     } else {

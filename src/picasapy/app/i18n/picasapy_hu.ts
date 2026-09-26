@@ -1513,6 +1513,81 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
     </message>
     <message>
         <location filename="../formatting.py"/>
+        <source>T4/Group 3 Fax</source>
+        <translation>T4/Group 3 fax</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>T6/Group 4 Fax</source>
+        <translation>T6/Group 4 fax</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>JPEG (old-style)</source>
+        <translation>JPEG (régi típusú)</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>JBIG Color</source>
+        <translation>JBIG színes</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Next</source>
+        <translation>Következő</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Sony ARW Compressed</source>
+        <translation>Sony ARW-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Epson ERF Compressed</source>
+        <translation>Epson ERF-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Kodak KDC Compressed</source>
+        <translation>Kodak KDC-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Deflate</source>
+        <translation>Veszteség nélküli tömörítés</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Nikon NEF Compressed</source>
+        <translation>Nikon NEF-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>MDI Binary Level Codec</source>
+        <translation>MDI bináris szintű kodek</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>MDI Progressive Transform Codec</source>
+        <translation>MDI progresszív transzformációs kodek</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>MDI Vector</source>
+        <translation>MDI-vektor</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Kodak DCR Compressed</source>
+        <translation>Kodak DCR-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Pentax PEF Compressed</source>
+        <translation>Pentax PEF-tömörítésű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
         <source>Auto</source>
         <translation>Automatikus</translation>
     </message>
@@ -3793,11 +3868,27 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Group by face</source>
-        <translation>Csoportosítás arc szerint</translation>
+        <translation>Csoportosítás arcok szerint</translation>
     </message>
     <message>
         <source>Expand groups</source>
-        <translation>Csoportok kibontása</translation>
+        <translation>Csoportok részletes nézete</translation>
+    </message>
+    <message>
+        <source>Grouping faces, please wait...</source>
+        <translation>Az arcok csoportosítása folyamatban van, kérjük, várjon...</translation>
+    </message>
+    <message>
+        <source>Select someone you know and add a name.</source>
+        <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet.</translation>
+    </message>
+    <message>
+        <source>Select someone you know and add a name, or click the "x" to ignore that person.</source>
+        <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet, vagy kattintson az "x" ikonra az adott személy mellőzéséhez.</translation>
+    </message>
+    <message>
+        <source>Select someone you know and add a name</source>
+        <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet</translation>
     </message>
     <message>
         <source>%1 selected</source>
@@ -5132,6 +5223,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>People in these photos:</source>
         <translation>Személyek ezeken a fotókon:</translation>
+    </message>
+    <message>
+        <source>Unnamed people in these photos:</source>
+        <translation>Meg nem nevezett emberek ezeken a fotókon:</translation>
+    </message>
+    <message>
+        <source>Unnamed groups of people:</source>
+        <translation>Név nélküli személycsoportok:</translation>
     </message>
     <message>
         <source>Also in these photos:</source>

@@ -23,6 +23,12 @@ Window {
     objectName: "printDialog"
     title: qsTr("Print...")
     modality: Qt.ApplicationModal
+
+    //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
+    //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
+    //: külön ablakban nyitja.
+    property string helpTopic: "features/nyomtatas.md"
+    WindowHelp { tema: printWindow.helpTopic }
     width: 480
     height: 420
     minimumWidth: 420

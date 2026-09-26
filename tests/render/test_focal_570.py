@@ -14,6 +14,7 @@ import pytest
 
 from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import apply_filters
+from picasapy.render.dinamikus_csuszka import dinamikus_csuszka_ertek
 from picasapy.render.focal import (
     apply_focal_pixelate,
     apply_focal_zoom,
@@ -174,7 +175,8 @@ class TestParameterPositionsInTheChain:
                 x=0.25,
                 y=0.75,
                 impact=80.0,
-                radius=12.0,
+                # #3596: a `Radius` SZÁZALÉK a `10 … min(W, H)/2` tartományon
+                radius=dinamikus_csuszka_ertek(12.0, 10.0, min(photo.shape[:2]) / 2),
                 hardness=30.0,
                 fade=10.0,
             ),

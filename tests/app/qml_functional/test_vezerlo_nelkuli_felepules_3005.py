@@ -62,7 +62,6 @@ ALAPALLAPOT: frozenset[str] = frozenset(
         "CreateDialogs.qml",
         "FolderManagerDialog.qml",
         "FolderPane.qml",
-        "HelpDialog.qml",
         "LightboxFeed.qml",
         "MainToolbar.qml",
         "OptionsDialog.qml",

@@ -57,7 +57,7 @@ from PySide6.QtQuick import (
 )
 
 from picasapy.app.edit_controller import _EFFECT_INI_NAMES, _EFFECT_NAMES
-from picasapy.app.effect_params import effect_params, format_param_values
+from picasapy.app.effect_params import format_param_values, resolve_effect_params
 from picasapy.ini.filters import FilterOp, parse_filters
 from picasapy.render import apply_filters
 from picasapy.render.elonezeti_arany import elonezeti_arany
@@ -130,7 +130,10 @@ def _lanc_teteje(source: "np.ndarray", lanc: str) -> "np.ndarray":
 def _default_op(effect: str) -> FilterOp:
     """Az effekt alapértékes `FilterOp`-ja — ugyanazok az alapértékek, mint
     amivel a csúszkás alpanel (EditorPanel.qml `openParamPanel`) indul."""
-    params = effect_params(effect)
+    # #3596: a képfüggő csúszkák alapértéke a FELOLDOTT tartományon vetül
+    # százalékra — a százalék a képmérettől független, ezért a katalógus
+    # tartalék-mérete is ugyanazt adja, mint a valódi kép.
+    params = resolve_effect_params(effect)
     nev = _EFFECT_INI_NAMES.get(effect, effect)
     if not params:
         return FilterOp(name=nev, params=("1",))

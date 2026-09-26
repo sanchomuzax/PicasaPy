@@ -14,9 +14,9 @@ A főablak rétegében nyitott MODÁLIS párbeszéd alatt a Qt a főablak
 Shift+F1-ét letiltja: ezért a témát deklaráló réteg-párbeszédek saját,
 csak nyitott állapotban élő Shift+F1-et kapnak, a saját fejezetükkel.
 
-⚠️ A külön ablakos, alkalmazás-modális párbeszédek (Nyomtatás, Mappakezelő,
-Beállítások, Importálás forrásból) ebben a jegyben NEM kapnak témát: a súgó a
-főablak rétegében él, onnan nyitva a párbeszéd mögé kerülne — külön jegy.
+A külön ablakos, alkalmazás-modális párbeszédek (Nyomtatás, Mappakezelő,
+Beállítások, Importálás forrásból, Exportálás weboldalként) súgóját a #3544
+kötötte be, saját súgóablakkal: `test_sugo_kulon_ablakbol_3544.py`.
 """
 
 from __future__ import annotations

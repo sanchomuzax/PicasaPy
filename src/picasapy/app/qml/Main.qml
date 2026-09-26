@@ -923,14 +923,25 @@ ApplicationWindow {
         onActivated: window.kotegEffekt("enhance")
     }
 
+    //: #3544: amíg egy külön ablakos párbeszéd látszik, a főablak két
+    //: súgó-billentyűje HALLGAT. A Qt 6 az ablakszintű gyorsbillentyűt a
+    //: főablak TRANZIENS gyermekablakaiban is illeszti (és a főablak `active`-ja
+    //: is igaz marad), ott pedig a párbeszéd saját F1-e/Shift+F1-e
+    //: (`WindowHelp`) áll: a kettő kétértelmű, és MEGMÉRVE egyik sem sül el.
+    //: A párbeszédek alkalmazás-modálisak, a főablak addig úgysem kezelhető.
+    readonly property bool _kulonAblakosParbeszedNyitva:
+        [folderManager, importSourceDialog, optionsDialog, webExportDialog,
+         printDialog].some(function (d) { return d.item !== null && d.item.visible })
     Shortcut {
         objectName: "helpShortcut"
         sequence: "F1"
+        enabled: !window._kulonAblakosParbeszedNyitva
         onActivated: helpDialog.ensure().nyisdMeg("")
     }
     Shortcut {
         objectName: "helpContextShortcut"
         sequence: "Shift+F1"
+        enabled: !window._kulonAblakosParbeszedNyitva
         //: A mutató alatti elem súgója. A leképezés a `helpTopic`
         //: tulajdonságon át megy; ha a mutató alatt egyik ős sem
         //: deklarál ilyet, a FŐOLDAL nyílik — néma kudarc nincs.
@@ -2817,14 +2828,24 @@ ApplicationWindow {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
-        selectionCount: window.selectedRows().length
-        currentPerson: controller ? controller.currentPersonName : ""
+        // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
+        // fejléc a csoportosítás-váltógombot követi
+        selectionCount: window.unnamedFacesOpen
+            ? unnamedFacesView.selectedCount : window.selectedRows().length
+        unnamedAlbumMode: window.unnamedFacesOpen
+        unnamedGrouped: unnamedFacesView.grouped
+        // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a
+        // `currentPersonName` az előző személyé marad — az albumban nincs
+        // „nézett személy", tehát a „Szintén" lista sem
+        currentPerson: controller && !window.unnamedFacesOpen
+            ? controller.currentPersonName : ""
         // a photos.revision-nel együtt kötve: arc-írás után frissül
         peopleHere: controller
             ? (controller.photos.revision,
                controller.peopleOfRows(window.selectedRows()))
             : []
-        peopleWith: controller && controller.currentPersonName.length > 0
+        peopleWith: controller && !window.unnamedFacesOpen
+                    && controller.currentPersonName.length > 0
             ? (controller.photos.revision,
                controller.peopleWith(controller.currentPersonName))
             : []
