@@ -4045,6 +4045,17 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
 </context>
 <context>
+    <name>BackupFolderStrip</name>
+    <message>
+        <source>Calculating…</source>
+        <translation>Számítás…</translation>
+    </message>
+    <message>
+        <source>Everything was already backed up.</source>
+        <translation>Minden el volt már mentve.</translation>
+    </message>
+</context>
+<context>
     <name>PublishPanel</name>
     <message>
         <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
@@ -4140,6 +4151,72 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
         <source>Sync:</source>
         <translation>Szinkronizálás:</translation>
+    </message>
+    <!-- #3504: a mentés-üzemmód (`backup_group`) — a vezérlők a korábbi
+         `BackupDialog`-ból költöztek ide, a MÉRT helyükre. -->
+    <message>
+        <source>Create a Set or use an existing one</source>
+        <translation>Készlet létrehozása vagy egy meglévő használata</translation>
+    </message>
+    <message>
+        <source>Create a Backup CD</source>
+        <translation>Biztonsági másolat létrehozása CD-re/DVD-re</translation>
+    </message>
+    <message>
+        <source>New Set...</source>
+        <translation>Új készlet…</translation>
+    </message>
+    <message>
+        <source>Edit Set...</source>
+        <translation>Készlet módosítása…</translation>
+    </message>
+    <message>
+        <source>Delete Set</source>
+        <translation>Készlet törlése</translation>
+    </message>
+    <message>
+        <source>Choose folders &amp; albums to back up</source>
+        <translation>Mappák és albumok kijelölése biztonsági másolat készítéséhez</translation>
+    </message>
+    <message>
+        <source>Picasa is now showing the files you have not previously backed up.</source>
+        <translation>A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat.</translation>
+    </message>
+    <message>
+        <source>Check the folders you want to back up, or choose &apos;Select All&apos; to choose everything.</source>
+        <translation>Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy &quot;Az összes kijelölése&quot; gombra kattintva az összes elemet jelölje ki.</translation>
+    </message>
+    <message>
+        <source>A Backup Set records where to store backed-up files, and it also keeps a record of which files have been backed up already, so you don&apos;t have to back them up again.</source>
+        <translation>A Mentési készlet tárolja a biztonsági másolatok helyét, és azt is nyomon követi, hogy mely fájlokról készült már biztonsági másolat, így azokat nem kell újra menteni.</translation>
+    </message>
+    <message>
+        <source>%1 — last run: %2</source>
+        <translation>%1 — utolsó futás: %2</translation>
+    </message>
+    <message>
+        <source>%1 — not run yet</source>
+        <translation>%1 — még nem futott</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <source>Select None</source>
+        <translation>Az összes kijelölés megszüntetése</translation>
+    </message>
+    <message>
+        <source>To CD image (ISO)</source>
+        <translation>CD-lemezképbe (ISO)</translation>
+    </message>
+    <message>
+        <source>To DVD image (ISO)</source>
+        <translation>DVD-lemezképbe (ISO)</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Megszakítás</translation>
     </message>
 </context>
 <context>
@@ -10188,34 +10265,25 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
 </context>
 <context>
-    <name>BackupDialog</name>
+    <!-- #3504: a `BackupDialog` (külön ablak) helyett — a MÉRT
+         `backup_group` a `PublishPanel`-ben él, ez a kontextus a
+         maradék: az Új/Módosítás párbeszéd és az állapot-üzenetek. -->
+    <name>BackupHost</name>
     <message>
-        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
         <source>Backup type:</source>
         <translation>Mentés típusa:</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
         <source>CD or DVD backup</source>
         <translation>Mentés CD-re vagy DVD-re</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
         <source>Disk-to-disk backup (for external and network drives)</source>
         <translation>Lemezről lemezre mentés (külső és hálózati meghajtókhoz)</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/BackupDialog.qml" line="0"/>
         <source>Choose...</source>
         <translation>Kiválasztás...</translation>
-    </message>
-    <message>
-        <source>To CD image (ISO)</source>
-        <translation>CD-lemezképbe (ISO)</translation>
-    </message>
-    <message>
-        <source>To DVD image (ISO)</source>
-        <translation>DVD-lemezképbe (ISO)</translation>
     </message>
     <message>
         <source>Writing %1 file(s) to disc image(s)...</source>
@@ -10241,14 +10309,6 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Fájlok másolása (%1/%2)</translation>
     </message>
     <message>
-        <source>Stop</source>
-        <translation>Megszakítás</translation>
-    </message>
-    <message>
-        <source>Back Up Pictures</source>
-        <translation>Képek biztonsági mentése</translation>
-    </message>
-    <message>
         <source>All file types</source>
         <translation>Minden fájltípus</translation>
     </message>
@@ -10261,26 +10321,6 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Csak JPEG-ek fényképezőgép-adatokkal</translation>
     </message>
     <message>
-        <source>A backup set remembers where it saves and what it has already saved, so the next run only copies what is new.</source>
-        <translation>A mentés-készlet megjegyzi, hova ment és mit mentett már el, így a következő futás csak az újat másolja át.</translation>
-    </message>
-    <message>
-        <source>%1 — last run: %2</source>
-        <translation>%1 — utolsó futás: %2</translation>
-    </message>
-    <message>
-        <source>%1 — not run yet</source>
-        <translation>%1 — még nem futott</translation>
-    </message>
-    <message>
-        <source>No backup sets yet.</source>
-        <translation>Még nincs mentés-készlet.</translation>
-    </message>
-    <message>
-        <source>Name:</source>
-        <translation>Név:</translation>
-    </message>
-    <message>
         <source>Save to:</source>
         <translation>Mentés ide:</translation>
     </message>
@@ -10289,32 +10329,8 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Fájlok:</translation>
     </message>
     <message>
-        <source>New Set...</source>
-        <translation>Új készlet…</translation>
-    </message>
-    <message>
-        <source>Edit Set...</source>
-        <translation>Készlet módosítása…</translation>
-    </message>
-    <message>
-        <source>Delete Set</source>
-        <translation>Készlet törlése</translation>
-    </message>
-    <message>
         <source>Delete this backup set? The saved files stay where they are.</source>
         <translation>Törlöd ezt a mentés-készletet? Az elmentett fájlok a helyükön maradnak.</translation>
-    </message>
-    <message>
-        <source>Back Up</source>
-        <translation>Mentés</translation>
-    </message>
-    <message>
-        <source>Copying %1 file(s)...</source>
-        <translation>%1 fájl másolása…</translation>
-    </message>
-    <message>
-        <source>Backup complete: %1 file(s).</source>
-        <translation>A mentés kész: %1 fájl.</translation>
     </message>
     <message>
         <source>Everything was already backed up.</source>
@@ -10333,14 +10349,18 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Mégse</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation>Bezárás</translation>
+        <source>Delete Set</source>
+        <translation>Készlet törlése</translation>
     </message>
     <!-- #3189: a MÉRT feliratok (`docs/specs/ajandek-cd-kimenet.md` 13.2,
-         `docs/specs/biztonsagi-mentes.md` 9.) -->
+         `docs/specs/biztonsagi-mentes.md` 9., 10.2) -->
     <message>
         <source>Backup Set</source>
         <translation>Mentési készlet</translation>
+    </message>
+    <message>
+        <source>Edit Backup Set</source>
+        <translation>Mentési készlet szerkesztése</translation>
     </message>
     <message>
         <source>My Backup Set</source>
@@ -10353,34 +10373,6 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     <message>
         <source>Backup Complete</source>
         <translation>A mentés elkészült</translation>
-    </message>
-    <!-- #3594: a mentés-üzemmód 2. lépése (`backuprect2`), a MÉRT feliratok
-         (`docs/specs/biztonsagi-mentes.md` 10.3, `ui-lefedettseg.md`) -->
-    <message>
-        <source>Choose folders &amp; albums to back up</source>
-        <translation>Mappák és albumok kijelölése biztonsági másolat készítéséhez</translation>
-    </message>
-    <message>
-        <source>Picasa is now showing the files you have not previously backed up.</source>
-        <translation>A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat.</translation>
-    </message>
-    <message>
-        <source>Check the folders you want to back up, or choose &apos;Select All&apos; to choose everything.</source>
-        <translation>Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy &quot;Az összes kijelölése&quot; gombra kattintva az összes elemet jelölje ki.</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation>Az összes kijelölése</translation>
-    </message>
-    <message>
-        <source>Select None</source>
-        <translation>Az összes kijelölés megszüntetése</translation>
-    </message>
-    <!-- #3594: amíg a mappa-lista háttérszálon készül —
-         `il_BurnPanel::calculating` (`biztonsagi-mentes.md` 15.7) -->
-    <message>
-        <source>Calculating…</source>
-        <translation>Számítás…</translation>
     </message>
 </context>
 <context>

@@ -119,33 +119,52 @@ class TestAParbeszed:
     """A felület: haladás-sáv és Megszakítás gomb a másolás alatt."""
 
     def test_a_parbeszed_KOTI_a_haladast(self):
-        """Forrás-szintű állítás: a `BackupDialog` a három új jelzést
-        fogadja. A párbeszéd viselkedési próbái a #440 fájljában futnak;
+        """Forrás-szintű állítás: a `BackupHost` a három új jelzést
+        fogadja. A felület viselkedési próbái a #440 fájljában futnak;
         itt az a kérdés, hogy az új jelzéseknek VAN fogadója — enélkül a
-        háttérszál némán dolgozna."""
+        háttérszál némán dolgozna.
+
+        #3504: a gazda a `BackupHost`, a haladás-sáv és a Megszakítás
+        gomb pedig a MÉRT `PublishPanel`-ben él (a korábbi, külön
+        ablakban futó `BackupDialog` helyett)."""
         from pathlib import Path
 
         import picasapy.app
 
-        forras = (
+        gazda = (
             Path(picasapy.app.__file__).parent
-            / "qml" / "PicasaPy" / "BackupDialog.qml"
+            / "qml" / "PicasaPy" / "BackupHost.qml"
+        ).read_text(encoding="utf-8")
+        panel = (
+            Path(picasapy.app.__file__).parent
+            / "qml" / "PicasaPy" / "PublishPanel.qml"
         ).read_text(encoding="utf-8")
 
-        assert "function onHaladas(" in forras
-        assert "function onFutasIndult(" in forras
-        assert "backupCancelRun" in forras, "nincs Megszakítás gomb"
-        assert "backupProgressTrack" in forras, "nincs haladás-sáv"
+        assert "function onHaladas(" in gazda
+        assert "function onFutasIndult(" in gazda
+        assert "publishBackupStop" in panel, "nincs Megszakítás gomb"
+        assert "publishBackupProgressTrack" in panel, "nincs haladás-sáv"
 
     def test_a_megszakitas_gombja_a_VEZERLOT_hivja(self):
+        """A `publishBackupStop` a panelen jelez, a `BackupHost` a jelzésre
+        hívja a vezérlő `szakitsdMeg()`-jét (a `GiftCdHost`
+        jelez-csak-a-panel mintája, #3503)."""
         from pathlib import Path
 
         import picasapy.app
 
-        forras = (
+        panel = (
             Path(picasapy.app.__file__).parent
-            / "qml" / "PicasaPy" / "BackupDialog.qml"
+            / "qml" / "PicasaPy" / "PublishPanel.qml"
         ).read_text(encoding="utf-8")
-        szakasz = forras[forras.index("backupCancelRun"):]
-        szakasz = szakasz[: szakasz.index("backupRun")]
+        szakasz = panel[panel.index("publishBackupStop"):]
+        szakasz = szakasz[: szakasz.index("}", szakasz.index("onClicked"))]
+        assert "mentesMegszakitasKert()" in szakasz
+
+        gazda = (
+            Path(picasapy.app.__file__).parent
+            / "qml" / "PicasaPy" / "BackupHost.qml"
+        ).read_text(encoding="utf-8")
+        szakasz = gazda[gazda.index("onMentesMegszakitasKert"):]
+        szakasz = szakasz[: szakasz.index("onMentesMegseKert")]
         assert "szakitsdMeg()" in szakasz
