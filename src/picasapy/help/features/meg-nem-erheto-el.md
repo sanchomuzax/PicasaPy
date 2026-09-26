@@ -7,6 +7,12 @@ bekötve** — ezek **szürkék**, és nem történik semmi, ha rájuk kattintas
 Ez a lap felsorolja, mi az, ami ma nem működik, hogy ne keresgélj
 fölöslegesen.
 
+> **A szürke szín magában nem jelenti, hogy egy funkció hiányzik.** A
+> működő menüpontok is szürkék, amikor **épp nem használhatók** —
+> mondjuk kijelölés nélkül, vagy a nézőben. Ilyenkor jelölj ki egy képet,
+> vagy térj vissza a könyvtárba, és a tétel felélesedik. Csak az van
+> tartósan szürkén, ami ezen a lapon szerepel.
+
 ## Még nem készült el
 
 **Fájl**
@@ -52,7 +58,9 @@ fölöslegesen.
 
 - Poszter készítése…
 - Hozzáadás a képernyővédőhöz…
-- Ajándék CD készítése…
+
+(Az **Ajándék CD készítése…** már **működik** — lásd [Ajándék
+CD](ajandek-cd.md). Lemezt nem ír: lemezkép-fájlt készít.)
 
 **Eszközök**
 

@@ -90,7 +90,11 @@ jelennek meg.
 Felülről lefelé:
 
 **Menüsor** — Fájl, Szerkesztés, Nézet, Mappa, Kép, Létrehozás, Eszközök,
-Súgó. A szürke tételek még nem működnek. Bármikor **F1**-et nyomva
+Súgó. A **szürke** tétel vagy még nem működik, vagy **most nem
+használható** — például mert nincs kijelölt kép, vagy mert a nézőben
+állsz. Az utóbbi esetben elég kijelölni egy képet, és a tétel felélesedik.
+Ami soha nem lesz elérhető, arról az [Ami még nem érhető
+el](features/meg-nem-erheto-el.md) fejezet ír. Bármikor **F1**-et nyomva
 előjön ez a súgó (lásd [A beépített súgó](features/sugo.md)).
 
 **Eszköztár** — bal oldalt az **Importálás** gomb, az új album gombja, a

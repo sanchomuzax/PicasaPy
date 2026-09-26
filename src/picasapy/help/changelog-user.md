@@ -4,6 +4,83 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-26
+
+**Ajándék CD**
+
+- Megvan a **Létrehozás ▸ Ajándék CD készítése…** menüpont. A képtálcára
+  összegyűjtött képekből egyetlen lemezkép-fájlt készít: adsz neki nevet
+  (legfeljebb 16 karakter) és képméretet, a program pedig a
+  szerkesztéseiddel együtt beteszi a képeket egy **Képek** nevű mappába a
+  lemezen. A filmek változatlanul kerülnek rá. **Lemezt nem ír** — a kész
+  `.iso`-t bármelyik lemezíró programmal égetheted ki, vagy egyszerűen
+  felcsatolhatod. A végén a **CD kész** ablak **CD megjelenítése** gombja
+  megnyitja a fájl helyét. Lásd [Ajándék CD](features/ajandek-cd.md).
+
+**Biztonsági mentés**
+
+- Az **Új készlet…** párbeszédben megjelent a **Mentés típusa**:
+  **Lemezről lemezre mentés** (a képek mappába másolódnak) vagy **Mentés
+  CD-re vagy DVD-re** (lemezkép-fájlok készülnek). Korábban ezt a Mentés
+  gomb melletti választó döntötte el; mostantól a készlethez tartozik,
+  tehát nem kell minden futásnál újra beállítani. A CD/DVD-típusnál a
+  program adja a lemezképek helyét (a Képek mappádban a *Picasa
+  biztonsági másolat ▸ ISO-k* alatt).
+- **A Mentés gomb újra elindítja a mentést.** Egy ideig egyáltalán nem
+  történt semmi, ha rákattintottál. Lásd [Képek biztonsági
+  mentése](features/biztonsagi-mentes.md).
+- A célmappát választó gomb felirata **Kiválasztás…** (a hivatalos
+  szöveg).
+
+**Effektek az eredetihez igazítva**
+
+Ezeknél a kép látványa változik. A képeidhez korábban felvett beállítások
+érintetlenek — csak az kerül másképp a képre, amit a program kirajzol
+belőlük.
+
+- A **Lágyítás**, az **Orton-szerű**, a **Ceruzarajz**, a
+  **Holga-szerű**, a **Lomo-szerű** és az **Infravörös film**
+  elmosása mostantól ugyanaz az elmosás, amit az eredeti Picasa használt.
+  A hatás szemmel is más lehet, főleg a kép kontúrjain.
+- A **Lágyítás** nulla erősségnél **nem változtat a képen**. Eddig
+  minden képpontot egy hajszállal sötétített, pedig lágyítania sem
+  kellett volna.
+- Ahol egy effekt két képet **egymásra kever** (például a Lágyítás vagy a
+  Képpontnagyítás), ott a számolás az eredeti Picasa képletét követi, így
+  a végeredmény egy-két árnyalatnyival máshol áll — pontosan ott, ahol az
+  eredetiben.
+
+**Gyorsabb lett**
+
+- Az **Áttűnés** előnézete a háttérben készül el, ezért az ablak nem
+  akad meg, amíg számol. Lásd [A szerkesztő](features/szerkeszto.md).
+
+**Tulajdonságok**
+
+- A **Tulajdonságok** panel **Objektív** sora **Nikon-gépek képein** is a
+  valódi objektívnevet mutatja, nem csak az azonosítót — ahogy eddig a
+  Canonoknál. Ha az objektív nem szerepel a listában, a gyújtótávolságból
+  és a rekeszből összeállított név áll ott (például `18-55mm f/3.5-5.6`).
+  Lásd [A könyvtár](features/konyvtar.md).
+
+**Menük és feliratok**
+
+- A **szürke menütétel most már valóban szürkén látszik** akkor is, ha
+  csak épp nem használható (mondjuk kijelölés nélkül). Eddig ugyanolyan
+  feketén állt, mint az élő tételek, és nem volt látható, hogy nem fog
+  reagálni.
+- Több felirat az eredeti Picasa hivatalos szövegére cserélődött. Ahol ez
+  a súgót is érinti: a diavetítés vezérlősávján a diaidő felirata
+  **Megjelenítési idő**, és a szám mellett kiírva áll a „másodperc"; a
+  Címkék panel beíró mezője az **„Írjon be egy hozzáadandó címkét:"**
+  szöveget mutatja; az importálás célmappa-választása a **Mappa nevének
+  megadása**, a **Készítés dátuma** és a mai dátum közül választ.
+- Az arc kézi felvételekor a képernyőn megjelenő útmutató most azt is
+  kimondja, hogy a nevet **Enterrel** vagy a felajánlott névre kattintva
+  kell lezárni. A vörösszem-javítás sikerüzenete szintén bővebb: elmondja,
+  hogy a keretbe kattintva visszavonható a változás, és hogy a kimaradt
+  vörös szemeket kézzel is bejelölheted.
+
 ## 2026-09-25
 
 **Emberek**

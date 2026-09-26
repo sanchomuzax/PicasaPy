@@ -294,14 +294,16 @@ hosszabb. Videóra ma csak a három felső sor jön ki.
 ### Az objektív neve
 
 A legtöbb fényképezőgép nem írja le az objektív nevét emberi nyelven, csak
-egy azonosítót hagy a fájlban. **Canon-gépek képein** a program ezt az
-azonosítót feloldja, és az **Objektív** sorba a valódi objektívnevet írja —
-ugyanabból a listából, amit az eredeti Picasa is használt. Ha egy
+egy azonosítót hagy a fájlban. **Canon- és Nikon-gépek képein** a program
+ezt az azonosítót feloldja, és az **Objektív** sorba a valódi objektívnevet
+írja — ugyanabból a listából, amit az eredeti Picasa is használt. Ha egy
 azonosítóhoz több objektív tartozik, a gyújtótávolság és a rekesz alapján
 választ közülük.
 
 Ha a fájl maga is tartalmaz objektívnevet, de a feloldás nem ad találatot, a
-fájlban lévő név marad. Más gyártók gépeinél egyelőre az marad, amit a fájl
+fájlban lévő név marad. Ha az sincs, a program a fájlból kiolvasott
+gyújtótávolságból és rekeszből állít össze egy nevet — például
+`18-55mm f/3.5-5.6`. Más gyártók gépeinél egyelőre az marad, amit a fájl
 ír.
 
 ## Rejtett képek

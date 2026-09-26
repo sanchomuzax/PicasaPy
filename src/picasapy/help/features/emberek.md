@@ -70,7 +70,11 @@ nevet írhatsz.
 
 Ebben a módban **új arcot is felvehetsz**: húzz keretet az arc köré, majd
 kattints a keret alatt megjelenő **Név hozzáadása** feliratra. A keret a
-húzás után megmarad, tehát előbb pontosan ráigazíthatod az arcra.
+húzás után megmarad, tehát előbb pontosan ráigazíthatod az arcra — a
+képernyőn megjelenő útmutató is ezt írja.
+
+A név beírását **Enterrel** kell lezárni, vagy rá kell kattintani az
+egyik felajánlott névre. Enélkül a program nem tudja, hogy befejezted.
 
 Húzás közben a **Shift**, a **Ctrl** és az **Alt** megköti a keret
 oldalarányát, ugyanúgy, mint a vágónál — a részletek a
