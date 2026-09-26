@@ -661,11 +661,14 @@ class PhotoGridModel(QAbstractListModel):
         # delegate-eket és a revision-bump minden élő cellát újraköttetne,
         # így minden háttér-szinkron a teljes rácsot újrarajzolná
         # (a FolderListModel._set_rows mintája).
-        if photos == self._photos:
-            return
-        #: #2187: új tartalom = új nézet — az arc-nagyítás nem öröklődhet
+        #: #2187: minden betöltés új nézet — az arc-nagyítás nem öröklődhet
         #: egy mappára; a személy-album vezérlője a betöltés UTÁN újra
-        #: beállítja, ha kell
+        #: beállítja, ha kell. Azonos sorok mellett is törölni kell (pl.
+        #: ugyanazok a képek egy keresésben): ott a `set_face_zoom` jelez,
+        #: vágás nélkül pedig no-op, tehát a #142 nyeresége megmarad.
+        if photos == self._photos:
+            self.set_face_zoom(None)
+            return
         self._arc_teglalapok = None
         self.beginResetModel()
         self._photos = photos

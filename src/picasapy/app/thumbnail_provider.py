@@ -60,7 +60,8 @@ from .display_mode_paint import (
     apply_display_mode_to_qimage,
     display_mode_from_thumb_id,
 )
-from .arc_nagyitas_url import arc_from_thumb_id, arcra_vag
+from .arc_nagyitas_forras import arc_eredetibol
+from .arc_nagyitas_url import arc_from_thumb_id, arcra_vag, szukseges_hosszabb_el
 from .thumb_level_url import szint_from_thumb_id
 from .worker_thread import register_pool_owner
 
@@ -446,12 +447,13 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             if image.isNull():
                 image = _placeholder()
             else:
-                #: #2187: az arc-nagyítás (`&fz=`) a KÉSZ képet vágja — a
+                #: #2187: az arc-nagyítás (`&fz=`) a gyorstárak UTÁN vág — a
                 #: `_render` gyorstárai (lemez, `_FilteredThumbMemo`) a
-                #: teljes képet tartják, a váltás így nem kér új renderelést.
+                #: teljes képet tartják. Cimke nélkül ez egyetlen
+                #: sztring-próba: a rendes út nem változik.
                 arc = arc_from_thumb_id(photo_id)
                 if arc is not None:
-                    image = arcra_vag(image, arc)
+                    image = arcra_vag(self._arc_forras(photo_id, image, arc), arc)
             # Megjelenítési mód (#1596) — a render-mag UTÁN, a gyorstárakat
             # ÉRINTETLENÜL hagyva.
             #
@@ -478,6 +480,46 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             with self._active_lock:
                 self._active -= 1
                 self.activeCountChanged.emit(self._active)
+
+    def _arc_forras(self, photo_id: str, image: QImage, arc: tuple) -> QImage:
+        """Az arc-vágás forrásképe (#2187): akkora, hogy a kivágott négyzet
+        oldala elérje a kért cellát (`&sz=`, cimke nélkül a felső szint).
+
+        Sorrend, a legolcsóbbtól: a már kész `image`, ha elég; a tár egy
+        nagyobb szintje; az eredeti fájl (`arc_eredetibol`). Szerkesztett
+        képnél az eredeti fájl a `filters=` láncot nem hordozza, ezért ott a
+        felső szint a határ."""
+        cella = szint_from_thumb_id(photo_id) or self.top_level
+        hosszabb = szukseges_hosszabb_el(image.width(), image.height(), arc, cella)
+        if hosszabb is None:
+            return image
+        jelenlegi = max(image.width(), image.height())
+        for szint in self._cache.levels:
+            if jelenlegi < szint and szint >= hosszabb:
+                return self._render_szinten(photo_id, szint) or image
+        photo = self._registry.get(photo_id.split("?")[0])
+        if photo is not None and not self._resolved_ops(photo)[0]:
+            eredeti = arc_eredetibol(
+                Path(photo.folder_path) / photo.name,
+                hosszabb,
+                photo.rotate_steps,
+                int(getattr(photo, "flip_flags", 0) or 0),
+            )
+            if eredeti is not None and not eredeti.isNull():
+                return eredeti
+        if jelenlegi < self.top_level:
+            return self._render_szinten(photo_id, self.top_level) or image
+        return image
+
+    def _render_szinten(self, photo_id: str, szint: int) -> QImage | None:
+        """A `_render` a megadott szinten (az URL `&sz=` cimkéjét cseréljük);
+        `None`, ha nem készült el."""
+        alap, _, query = photo_id.partition("?")
+        parameterek = [
+            p for p in query.split("&") if p and not p.startswith("sz=")
+        ]
+        kep = self._render(f"{alap}?{'&'.join([*parameterek, f'sz={szint}'])}")
+        return None if kep.isNull() else kep
 
     def _render(self, photo_id: str) -> QImage:
         """A kész (szerkesztett, forgatott) thumbnail; null-QImage, ha a

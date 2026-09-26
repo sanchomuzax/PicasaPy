@@ -92,41 +92,104 @@ class TestAllapot:
         assert _gomb(fejlec, _KEP).property("checked") is False
 
 
-class TestJelzes:
-    def test_az_arc_gomb_arc_modot_ker(self, qml_app):
-        _, _, engine = qml_app
-        fejlec = _fejlec(engine, personName="Anna", faceZoom=False)
-        kert = []
-        fejlec.faceZoomToggled.connect(lambda arc: kert.append(arc))
-        _gomb(fejlec, _ARC).clicked.emit()
-        assert kert == [True]
+_ROY = "b8e4117cf1d6615b"
 
-    def test_a_kep_gomb_teljes_kepet_ker(self, qml_app):
-        _, _, engine = qml_app
-        fejlec = _fejlec(engine, personName="Anna", faceZoom=True)
-        kert = []
-        fejlec.faceZoomToggled.connect(lambda arc: kert.append(arc))
-        _gomb(fejlec, _KEP).clicked.emit()
-        assert kert == [False]
 
-    def test_a_benyomott_gomb_ujra_nem_ker(self, qml_app):
-        """Váltópár, nem kapcsoló: a már érvényes állapot gombja nem vált."""
-        _, _, engine = qml_app
-        fejlec = _fejlec(engine, personName="Anna", faceZoom=True)
-        kert = []
-        fejlec.faceZoomToggled.connect(lambda arc: kert.append(arc))
-        _gomb(fejlec, _ARC).clicked.emit()
-        assert kert == []
+def _szemely_album(qml_app, tmp_path, qt_app):
+    """A valódi app személy-albuma: `a.jpg`-n Roy MEGERŐSÍTETT arca.
 
-    def test_a_pipa_a_gazda_allapotat_koveti(self, qml_app):
-        """#1468 rádió-csapda: kattintás után a gomb a GAZDA állapotát
-        mutatja (itt nincs bekötött vezérlő, tehát nem változik)."""
-        _, _, engine = qml_app
-        fejlec = _fejlec(engine, personName="Anna", faceZoom=False)
-        arc = _gomb(fejlec, _ARC)
-        arc.clicked.emit()
-        assert arc.property("checked") is False
-        assert _gomb(fejlec, _KEP).property("checked") is True
+    A fixture könyvtára (`tmp_path/kepek`) már indexelt; az ini-t utólag
+    írjuk bele, és újraszinkronizálunk, hogy a személy megjelenjen."""
+    from picasapy.index import open_index, sync_tree
+
+    window, controller, _ = qml_app
+    lib = tmp_path / "kepek"
+    (lib / ".picasa.ini").write_text(
+        f"[Contacts2]\n{_ROY}=Roy Avery;;\n"
+        f"[a.jpg]\nfaces=rect64(40004000c000c000),{_ROY};\n",
+        encoding="utf-8",
+    )
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, lib)
+    controller.showPerson("Roy Avery")
+    qt_app.processEvents()
+    return window, controller
+
+
+def _vizualis_utodok(elem):
+    """Az elem összes VIZUÁLIS utódja. A `findChildren` a QObject-fát
+    járja, a képfolyam (`ListView`) delegáltjai viszont csak a vizuális
+    fában lógnak a gazdán — ott a fejléc nem található meg."""
+    for gyerek in elem.childItems():
+        yield gyerek
+        yield from _vizualis_utodok(gyerek)
+
+
+def _ablak_gombja(window, nev):
+    latok = [
+        g for g in _vizualis_utodok(window.contentItem())
+        if g.objectName() == nev and g.isVisible()
+    ]
+    assert len(latok) == 1, f"{nev}: {len(latok)} látható példány"
+    return latok[0]
+
+
+def _kattints(window, gomb, qt_app):
+    """VALÓDI egérkattintás a gomb közepére — nem `clicked.emit()`.
+
+    A gomb `checkable`: egy igazi kattintás a `checked`-et az `onClicked`
+    ELŐTT átbillenti (#1468). A jel közvetlen kibocsátása ezt a lépést
+    kihagyja, tehát épp a csapdát nem mérné."""
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+
+    qt_app.processEvents()
+    os_ = gomb
+    while os_ is not None:
+        os_.ensurePolished()
+        os_ = os_.parentItem()
+    kozep = gomb.mapToScene(gomb.boundingRect().center())
+    QTest.mouseClick(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        QPoint(round(kozep.x()), round(kozep.y())),
+    )
+    qt_app.processEvents()
+
+
+def _racs_url(controller):
+    return controller.photos.thumbUrlAt(0)
+
+
+class TestKattintas:
+    def test_az_arc_gomb_arcra_kozelit(self, qml_app, tmp_path, qt_app):
+        window, controller = _szemely_album(qml_app, tmp_path, qt_app)
+        assert controller.personFaceZoom is False
+        assert "&fz=" not in _racs_url(controller)
+        _kattints(window, _ablak_gombja(window, _ARC), qt_app)
+        assert controller.personFaceZoom is True
+        assert "&fz=" in _racs_url(controller)
+        assert _ablak_gombja(window, _ARC).property("checked") is True
+        assert _ablak_gombja(window, _KEP).property("checked") is False
+
+    def test_a_kep_gomb_visszavalt(self, qml_app, tmp_path, qt_app):
+        window, controller = _szemely_album(qml_app, tmp_path, qt_app)
+        _kattints(window, _ablak_gombja(window, _ARC), qt_app)
+        _kattints(window, _ablak_gombja(window, _KEP), qt_app)
+        assert controller.personFaceZoom is False
+        assert "&fz=" not in _racs_url(controller)
+        assert _ablak_gombja(window, _KEP).property("checked") is True
+        assert _ablak_gombja(window, _ARC).property("checked") is False
+
+    def test_a_benyomott_gomb_benyomva_marad(self, qml_app, tmp_path, qt_app):
+        """#1468 rádió-csapda: a már benyomott gombra kattintva a `checkable`
+        gomb kiugrana — a kötés-visszaállítás tartja benyomva, és a vezérlő
+        állapota sem változik."""
+        window, controller = _szemely_album(qml_app, tmp_path, qt_app)
+        _kattints(window, _ablak_gombja(window, _KEP), qt_app)
+        assert controller.personFaceZoom is False
+        assert _ablak_gombja(window, _KEP).property("checked") is True
+        assert _ablak_gombja(window, _ARC).property("checked") is False
+        assert "&fz=" not in _racs_url(controller)
 
 
 class TestSugo:

@@ -143,6 +143,30 @@ class TestModell:
         modell.set_photos((_rekord(1, "a.jpg"),))
         assert "&fz=" not in modell.itemAt(0)["thumbUrl"]
 
+    def test_azonos_sorokkal_sem_orokol(self, modell):
+        """Személy-albumból AZONOS sorú nézetbe (pl. ugyanazok a képek egy
+        keresésben) sem szivároghat át a vágás: a törlés nem függhet attól,
+        hogy a sorok változtak-e."""
+        sorok = modell.photos
+        modell.set_face_zoom({1: (0.1, 0.2, 0.3, 0.4)})
+        modell.set_photos(sorok)
+        assert "&fz=" not in modell.itemAt(0)["thumbUrl"]
+        assert "&fz=" not in modell.thumbUrlAt(0)
+
+    def test_azonos_sorok_torlese_leptet(self, modell):
+        """A törlés a látható cellákat is újrakéreti (revízió-lépés)."""
+        sorok = modell.photos
+        modell.set_face_zoom({1: (0.1, 0.2, 0.3, 0.4)})
+        elotte = modell.revision
+        modell.set_photos(sorok)
+        assert modell.revision > elotte
+
+    def test_vagas_nelkul_azonos_sorok_no_op(self, modell):
+        """A #142 no-op megmarad: vágás nélkül az azonos sorok nem léptetnek."""
+        elotte = modell.revision
+        modell.set_photos(modell.photos)
+        assert modell.revision == elotte
+
 
 # -- a szolgáltató -----------------------------------------------------------
 
@@ -169,6 +193,140 @@ class TestSzolgaltato:
         )
         assert vagott.width() == vagott.height()
         assert vagott.width() < teljes.width()
+
+
+# -- éles vágás: a kivágott négyzet legalább a cella méretű (#2187) --------
+
+#: A próbakép: 2000 × 1000, a KIS arc (a hosszabbik oldal 5 %-a) egy zöld
+#: téglalap a (0,3 ; 0,4) középpont körül. A 144-es szinten ebből a régi út
+#: ~14 képpontos kivágást nagyított fel a cellára.
+_NAGY = (2000, 1000)
+_KIS_ARC = (0.275, 0.35, 0.325, 0.45)
+_ZOLD = (0, 200, 0)
+
+
+def _kis_arcu_kep(ut: Path) -> None:
+    import numpy as np
+    from picasapy.lazy_cv2 import cv2
+
+    kep = np.full((_NAGY[1], _NAGY[0], 3), 255, np.uint8)
+    bal, fent, jobb, lent = _KIS_ARC
+    kep[int(fent * _NAGY[1]):int(lent * _NAGY[1]),
+        int(bal * _NAGY[0]):int(jobb * _NAGY[0])] = _ZOLD[::-1]
+    assert cv2.imwrite(str(ut), kep)
+
+
+def _szolgaltato(tmp_path, *, rotate_steps=0, meret=256):
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.index import PhotoRecord
+    from picasapy.thumbs import ThumbnailCache
+
+    _kis_arcu_kep(tmp_path / "kis.jpg")
+    stat = (tmp_path / "kis.jpg").stat()
+    rekord = PhotoRecord(
+        id=9, folder_path=str(tmp_path), name="kis.jpg", kind="photo",
+        size=stat.st_size, mtime_ns=stat.st_mtime_ns, star=False,
+        caption=None, keywords=None, rotate_steps=rotate_steps, filters=None,
+        taken_at=None, orientation=1, width=_NAGY[0], height=_NAGY[1],
+    )
+    provider = ThumbnailProvider(ThumbnailCache(tmp_path / "cache", size=meret))
+    provider.register_photos((rekord,))
+    return provider
+
+
+def _kozepe_zold(kep: QImage) -> bool:
+    szin = kep.pixelColor(kep.width() // 2, kep.height() // 2)
+    return szin.green() > 150 and szin.red() < 80 and szin.blue() < 80
+
+
+def _cimke(teglalap) -> str:
+    from picasapy.app.arc_nagyitas_url import arc_cimke
+
+    return arc_cimke(teglalap)
+
+
+class TestElesVagas:
+    @pytest.mark.parametrize("cella", [72, 144])
+    def test_kis_szinten_a_kivagas_eleri_a_cellat(self, qt_app, tmp_path, cella):
+        provider = _szolgaltato(tmp_path)
+        vagott = provider.requestImage(
+            f"9?r=0&sz={cella}{_cimke(_KIS_ARC)}", None, None
+        )
+        assert vagott.width() == vagott.height()
+        assert vagott.width() >= cella
+        assert _kozepe_zold(vagott)
+
+    def test_felso_szinten_az_eredeti_felbontas_a_hatar(self, qt_app, tmp_path):
+        """`&sz=` nélkül a felső szint (itt 256) a cella. Az arc az eredeti
+        2000 képpontos képen 100 képpontos, a négyzet tehát legfeljebb 200 —
+        ennyit kell adnia (a régi út 26-ot adott), nagyítás nélkül."""
+        provider = _szolgaltato(tmp_path)
+        vagott = provider.requestImage("9?r=0" + _cimke(_KIS_ARC), None, None)
+        assert vagott.width() == 200
+        assert _kozepe_zold(vagott)
+
+    def test_forgatott_kepen_is_az_arcot_vagja(self, qt_app, tmp_path):
+        """A keret a MEGJELENÍTETT (forgatott) képre vonatkozik — az eredeti
+        fájlból vágott kép is ezt kell kövesse."""
+        provider = _szolgaltato(tmp_path, rotate_steps=1)
+        bal, fent, jobb, lent = _KIS_ARC
+        # 90°-kal jobbra forgatva: (x, y) → (1 - y, x)
+        forgatott = (1 - lent, bal, 1 - fent, jobb)
+        vagott = provider.requestImage(
+            "9?r=1&sz=144" + _cimke(forgatott), None, None
+        )
+        assert vagott.width() >= 144
+        assert _kozepe_zold(vagott)
+
+    def test_nagy_arcnal_nem_nyul_az_eredetihez(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        """Ha a kész bélyegkép kivágása már elég nagy, az eredeti fájlt nem
+        dekódoljuk újra — a gyors út megmarad."""
+        from picasapy.app import thumbnail_provider as tp
+
+        provider = _szolgaltato(tmp_path)
+
+        def _tilos(*_a, **_k):
+            raise AssertionError("az eredeti fájlt nem kellett volna olvasni")
+
+        monkeypatch.setattr(tp, "arc_eredetibol", _tilos)
+        vagott = provider.requestImage(
+            "9?r=0&sz=72&fz=0.1,0.1,0.6,0.9", None, None
+        )
+        assert vagott.width() >= 72
+
+    def test_cimke_nelkul_valtozatlan_ut(self, qt_app, tmp_path, monkeypatch):
+        """A nem-arc út ugyanaz: sem az eredeti fájl, sem nagyobb szint nem
+        kerül elő."""
+        from picasapy.app import thumbnail_provider as tp
+
+        provider = _szolgaltato(tmp_path)
+
+        def _tilos(*_a, **_k):
+            raise AssertionError("cimke nélkül nincs arc-út")
+
+        monkeypatch.setattr(tp, "arc_eredetibol", _tilos)
+        kep = provider.requestImage("9?r=0&sz=144", None, None)
+        assert max(kep.width(), kep.height()) == 144
+
+
+class TestSzuksegesMeret:
+    def test_eleg_nagy_kivagasnal_none(self):
+        from picasapy.app.arc_nagyitas_url import szukseges_hosszabb_el
+
+        assert szukseges_hosszabb_el(144, 72, (0.1, 0.1, 0.6, 0.9), 72) is None
+
+    def test_kis_arcnal_a_szukseges_hosszabb_el(self):
+        from picasapy.app.arc_nagyitas_url import (
+            arc_vagas_oldala,
+            szukseges_hosszabb_el,
+        )
+
+        hosszabb = szukseges_hosszabb_el(144, 72, _KIS_ARC, 144)
+        assert hosszabb is not None and hosszabb > 144
+        # a kiszámolt méreten a kivágás tényleg eléri a cellát
+        assert arc_vagas_oldala(hosszabb, hosszabb // 2, _KIS_ARC) >= 144
 
 
 # -- a vezérlő ---------------------------------------------------------------
