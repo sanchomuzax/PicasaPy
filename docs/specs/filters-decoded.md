@@ -693,6 +693,18 @@ képváltozó):
 Ezeknél a `.picasa.ini` értéke **százalék** a fenti szabály szerint; minden
 más csúszkánál nyers érték. Nálunk mind az öt képpontként megy — fejlesztés: **#3596**.
 
+**✅ Újramérve a #3596 után (2026-09-27, 370. kör, #3583).** Ugyanaz a `684-merokeszlet` export, `tools/golden/analyze_validation_kit.py`, main `a1bfda27`:
+
+| effekt · beállítás | Picasa ↔ forrás | mi ↔ Picasa (előtte) | **mi ↔ Picasa (most)** |
+|---|---:|---:|---:|
+| `PicnikFocalPixelate` `alap` 20 · 105 · 50 · 0 | 2,889 | 4,25 | **0,321** |
+| `PicnikFocalPixelate` `min` 2 · 10 · 0 · 0 | 0,975 | 0,18 | **0,162** |
+| `PicnikFocalPixelate` `max` (Fade 100, kontroll) | 0,121 | 0,12 | 0,121 |
+| `FocalZoom` `alap` 50 · 105 · 50 · 0 | 7,572 | 14,7 (#3518) | 4,924 |
+| `FocalZoom` `min` 1 · 10 · 0 · 0 | 3,565 | — | 3,883 |
+
+⇒ A `PicnikFocalPixelate` sugara és maszkja a JPEG-zaj szintjén egyezik; a #3583 kalibrációs kérdése lezárva. A `FocalZoom` maradék eltérése nem a sugáré, mert a két effekt ugyanazt a sugár-szabályt és ugyanazt a maszkot használja. A zoom-kernelben van: **#3518**.
+
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
 
