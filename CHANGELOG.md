@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.583] – 2026-09-26
+
 ### Javítva
 - **A Tulajdonságok panel Fehéregyensúly sora ismeretlen értéknél a számot
   mutatja, nem tűnik el (#3558)**, ahogy az eredeti Picasában: az
