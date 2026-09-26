@@ -20,6 +20,12 @@ Window {
     objectName: "optionsDialog"
     title: qsTr("Options")
     modality: Qt.ApplicationModal
+
+    //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
+    //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
+    //: külön ablakban nyitja.
+    property string helpTopic: "features/beallitasok.md"
+    WindowHelp { tema: optionsWindow.helpTopic }
     width: 560
     height: 460
     minimumWidth: 480

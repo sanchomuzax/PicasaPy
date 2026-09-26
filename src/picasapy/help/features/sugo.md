@@ -50,10 +50,14 @@ A **Shift+F1** annak a felületrésznek a fejezetét nyitja meg, ami fölött
 Ha egy párbeszéd van nyitva (**Exportálás mappába**, **Átvétel a
 Picasából**), a Shift+F1 annak a fejezetét nyitja meg.
 
+A külön ablakban nyíló párbeszédekben (**Nyomtatás**, **Mappakezelő**,
+**Beállítások**, **Importálás forrásból**, **Exportálás weboldalként**) a
+Shift+F1 szintén a párbeszéd fejezetét nyitja meg, az F1 pedig a
+tartalomjegyzéket. A súgó ilyenkor saját ablakban, a párbeszéd előtt
+jelenik meg; bezárása után a párbeszédben folytathatod a munkát.
+
 Ahol a felületrésznek nincs saját fejezete, ott a tartalomjegyzék nyílik
-meg, ugyanaz, mint az F1-re. A külön ablakban nyíló párbeszédekben
-(például **Nyomtatás**, **Mappakezelő**, **Beállítások**) a Shift+F1 ma
-még nem nyit súgót.
+meg, ugyanaz, mint az F1-re.
 
 ## Szöveg kimásolása
 
