@@ -22,6 +22,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **A személy-album fejlécén az arc ↔ teljes kép váltóval a képek a
   személy arcára közelítve is megjeleníthetők (#2187).** A közelített kép
   éles, kis arcnál is, mert a program ilyenkor nagyobb felbontásból vág.
+- **A Beállítások és az Eszközök → Nyelv nyelvválasztója az eredeti Picasa
+  szerint viselkedik (#3555).** A lista első tétele a rendszer szerinti
+  beállítás (a rendszer nyelv- és országkódjával), a nyelvek neve saját
+  nyelvükön áll, és a váltás — megerősítő kérdés után — csak a program
+  következő megnyitásakor lép érvénybe, a futó felület nyelve nem vált
+  azonnal.
 
 ## [0.8.583] – 2026-09-26
 
