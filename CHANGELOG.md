@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.585] – 2026-09-27
+
 ### Javítva
 - **Az Árnyalás (Tint) és a vele közös színezőt használó Áttűnés (Cross
   Process), Neon és Ghoul Eye a Haeberli-szürkéből, a natív fényesség-tartó
