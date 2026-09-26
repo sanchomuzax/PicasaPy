@@ -724,6 +724,15 @@ ListView {
                 if (grid.appWindow && grid.appWindow.setPersonSuggestionsOnly)
                     grid.appWindow.setPersonSuggestionsOnly(csak)
             }
+            //: #2187: `face_zoom` ↔ `picture_zoom` — az állást a vezérlő
+            //: tartja, a fejléc csak mutatja és kéri a váltást
+            faceZoom: grid.appWindow
+                      && grid.appWindow.personFaceZoom !== undefined
+                      ? grid.appWindow.personFaceZoom : false
+            onFaceZoomToggled: function (arc) {
+                if (grid.appWindow && grid.appWindow.setPersonFaceZoom)
+                    grid.appWindow.setPersonFaceZoom(arc)
+            }
             //: #2187: `moresug` — a lazítás az egész készletre újraszámol
             onMoreSuggestionsRequested: {
                 if (grid.appWindow && grid.appWindow.findMoreSuggestions)

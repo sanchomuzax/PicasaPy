@@ -4143,6 +4143,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>View zoomed in to the face</source>
+        <translation>Megjelenítés az arcra közelítve</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>View zoomed out to the full picture</source>
+        <translation>Megjelenítés a teljes képre távolítva</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
         <source>Sync to Web</source>
         <translation>Szinkronizálás az internettel</translation>
     </message>

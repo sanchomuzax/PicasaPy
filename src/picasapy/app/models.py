@@ -31,6 +31,7 @@ from .display_mode_paint import (
 )
 from picasapy.ini.movie_trim import trim_from_filters
 
+from .arc_nagyitas_url import arc_cimke
 from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
 
 # Importált Windows-útvonalak is előfordulhatnak a folders táblában.
@@ -323,6 +324,7 @@ def _thumb_url(
     photo: PhotoRecord,
     display_mode: str | None = None,
     szint: int | None = None,
+    arc: tuple[float, float, float, float] | None = None,
 ) -> str:
     """Thumb-URL forgatás-, szerkesztés- és FÁJLVÁLTOZÁS-érzékeny
     cache-busterrel (#59, #1186), megjelenítési mód-cimkével (#1596).
@@ -369,6 +371,9 @@ def _thumb_url(
         #: szintről van szó — így a mai URL-ek bájtra változatlanok, és a
         #: meglévő gyorstár érvényes marad.
         f"{'' if szint is None else f'&sz={szint}'}"
+        #: #2187: az arc-nagyítás kerete — csak személy-album arc-módjában
+        #: kerül ki, tehát minden más URL bájtra változatlan
+        f"{'' if arc is None else arc_cimke(arc)}"
         f"{display_mode_url_suffix(display_mode)}"
     )
 
@@ -493,6 +498,39 @@ class PhotoGridModel(QAbstractListModel):
         #: #598: a rács bélyegkép-SZINTJE. `None` = a felső szint, azaz a
         #: mai viselkedés; a QML a csúszka fokozatából állítja be.
         self._thumb_level: int | None = None
+        #: #2187: az arc-nagyítás keretei fotó-azonosító szerint. `None` = a
+        #: teljes kép (a mai viselkedés); a személy-album vezérlője tölti.
+        self._arc_teglalapok: dict[int, tuple] | None = None
+
+    def set_face_zoom(self, teglalapok: dict[int, tuple] | None) -> None:
+        """Az arc-nagyítás (`face_zoom`) átvezetése a bélyegkép-URL-ekre
+        (#2187) — `{fotó-azonosító: (bal, fent, jobb, lent)}`, vagy `None` a
+        teljes képhez.
+
+        A `set_display_mode` mintáját követi: az URL-t írja át, tehát a
+        látható cellák újrakérik a képet. Keret nélküli sor (pl. egy
+        hiányos indexű kép) a teljes képet mutatja."""
+        uj = dict(teglalapok) if teglalapok is not None else None
+        if uj == self._arc_teglalapok:
+            return
+        self._arc_teglalapok = uj
+        self._revision += 1
+        self.revisionChanged.emit()
+        if self._photos:
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(len(self._photos) - 1, 0),
+                [self.ThumbUrlRole],
+            )
+
+    def _sor_url(self, photo: PhotoRecord) -> str:
+        """Egy sor bélyegkép-URL-je a modell mostani állapotával."""
+        arc = (
+            self._arc_teglalapok.get(photo.id)
+            if self._arc_teglalapok is not None
+            else None
+        )
+        return _thumb_url(photo, self._display_mode, self._thumb_level, arc)
 
     def set_thumb_level(self, level: int | None) -> None:
         """A rács bélyegkép-szintje (#598) — a cellaméretből.
@@ -625,6 +663,10 @@ class PhotoGridModel(QAbstractListModel):
         # (a FolderListModel._set_rows mintája).
         if photos == self._photos:
             return
+        #: #2187: új tartalom = új nézet — az arc-nagyítás nem öröklődhet
+        #: egy mappára; a személy-album vezérlője a betöltés UTÁN újra
+        #: beállítja, ha kell
+        self._arc_teglalapok = None
         self.beginResetModel()
         self._photos = photos
         self.endResetModel()
@@ -705,7 +747,7 @@ class PhotoGridModel(QAbstractListModel):
         if not 0 <= row < len(self._photos):
             return ""
         photo = self._photos[row]
-        return _thumb_url(photo, self._display_mode, self._thumb_level)
+        return self._sor_url(photo)
 
     @Slot(int, result="QVariantMap")
     def itemAt(self, row: int) -> dict:
@@ -717,7 +759,7 @@ class PhotoGridModel(QAbstractListModel):
         photo = self._photos[row]
         return {
             "name": photo.name,
-            "thumbUrl": _thumb_url(photo, self._display_mode, self._thumb_level),
+            "thumbUrl": self._sor_url(photo),
             "star": photo.star,
             "caption": photo.caption or "",
             "isVideo": photo.kind == "video",
@@ -1062,7 +1104,7 @@ class PhotoGridModel(QAbstractListModel):
             return photo.name
         if role == self.ThumbUrlRole:
             # cache-buster: forgatás/szerkesztés után új URL → friss kép (#59)
-            return _thumb_url(photo, self._display_mode, self._thumb_level)
+            return self._sor_url(photo)
         if role == self.StarRole:
             return photo.star
         if role == self.CaptionRole:

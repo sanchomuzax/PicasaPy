@@ -22,7 +22,10 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 from picasapy.index import open_index
-from picasapy.index.faces_detected import suggested_album_photos
+from picasapy.index.faces_detected import (
+    suggested_album_photos,
+    suggested_faces_for,
+)
 from picasapy.index.people import (
     PEOPLE_SORT_MODES,
     people_in_index,
@@ -107,6 +110,14 @@ class PeopleMixin:
         #: NEM tartjuk meg: a személy-album minden megnyitása a teljes
         #: listával indul, ahogy az eredeti fejléce is.
         self._csak_javaslatok = False
+        #: #2187: az arc ↔ teljes kép nagyításváltó (`face_zoom` ↔
+        #: `picture_zoom`) állása. A javaslat-szűrővel ellentétben a NÉZET
+        #: beállítása, nem az albumé: a következő személy-album is így nyílik.
+        #: Alapból a teljes kép — a váltó bevezetése előtti viselkedés.
+        self._arc_nagyitas = False
+        #: a személy-album legutóbb betöltött sorai — a váltó ezekre számol
+        #: keretet, új index-olvasás nélkül
+        self._szemely_rekordok: tuple = ()
         # #1608: a `currentPersonName` a NÉZETTEL változik, a `peopleChanged`
         # viszont csak az Emberek-LISTA frissülésekor megy ki
         # (`_load_people`). Emiatt a rá épülő QML-kötések a nézetváltás után
@@ -164,6 +175,7 @@ class PeopleMixin:
             records, elapsed, QLocale(), formatting.fordit
         )
         self._show(records)
+        self._arc_nagyitas_atvezetese(name, records)
 
     @staticmethod
     def _osszefuzve(
@@ -213,6 +225,72 @@ class PeopleMixin:
         self._csak_javaslatok = csak
         self._szemely_betoltese(param)
         self.personViewChanged.emit()
+
+    @Property(bool, notify=personViewChanged)
+    def personFaceZoom(self) -> bool:
+        """Az arc-nagyítás (`face_zoom`) állása — MÉRT súgók: „Megjelenítés
+        az arcra közelítve" / „Megjelenítés a teljes képre távolítva"."""
+        return self._arc_nagyitas
+
+    @Slot(bool)
+    def setPersonFaceZoom(self, arc: bool) -> None:  # noqa: N802
+        """Az arc ↔ teljes kép váltó (#2187).
+
+        Csak személy-album nézetben hat: máshol nincs „a személy arca", amire
+        közelíteni lehetne. Azonos értékre nem nyúl a rácshoz."""
+        arc = bool(arc)
+        mode, param = self._view_mode
+        if mode != "person" or not param or arc == self._arc_nagyitas:
+            return
+        self._arc_nagyitas = arc
+        self._arc_nagyitas_atvezetese(param, self._szemely_rekordok)
+        self.personViewChanged.emit()
+
+    def _arc_nagyitas_atvezetese(self, name: str, records) -> None:
+        """A váltó állásának átadása a rács modelljének: arc-módban a sorok
+        a személy arcának keretét kapják, különben a teljes kép jön."""
+        self._szemely_rekordok = tuple(records)
+        modell = getattr(self, "_photos", None)
+        if modell is None or not hasattr(modell, "set_face_zoom"):
+            return
+        if not self._arc_nagyitas:
+            modell.set_face_zoom(None)
+            return
+        modell.set_face_zoom(self._szemely_arc_keretei(name, records))
+
+    def _szemely_arc_keretei(self, name: str, records) -> dict[int, tuple]:
+        """`{fotó-azonosító: (bal, fent, jobb, lent)}` a személy arcára.
+
+        A MEGERŐSÍTETT arc a `.picasa.ini` `faces=` sorából jön (a Picasa
+        döntése szent, ezért ez nyer), a FÜGGŐ javaslat a saját `face`
+        táblánkból. Egy képen több arcnál az első számít. A `.picasa.ini`-t
+        mappánként egyszer olvassuk (#1146)."""
+        keretek: dict[int, tuple] = {}
+        with open_index(self._db_path) as conn:
+            for face in suggested_faces_for(conn, name):
+                if face.rect is not None:
+                    keretek.setdefault(face.photo_id, tuple(face.rect))
+        dokumentumok: dict[str, object | None] = {}
+        for photo in records:
+            kulcs = str(photo.folder_path)
+            if kulcs not in dokumentumok:
+                try:
+                    dokumentumok[kulcs] = load_document(
+                        Path(photo.folder_path) / PICASA_INI_NAME
+                    )
+                except (OSError, ValueError):
+                    dokumentumok[kulcs] = None
+            document = dokumentumok[kulcs]
+            if document is None:
+                continue
+            contact_id = find_contact_id(document, name)
+            if contact_id is None:
+                continue
+            rects = self._person_faces(document, photo.name, contact_id)
+            if rects:
+                rect = rects[0]
+                keretek[photo.id] = (rect.left, rect.top, rect.right, rect.bottom)
+        return keretek
 
     @Slot(str, result="QVariantList")
     def peopleWith(self, name: str):  # noqa: N802 — QML-slot-stílus
@@ -286,7 +364,10 @@ class PeopleMixin:
         if mode != "person":
             return False
         with open_index(self._db_path) as conn:
-            self._show(person_photos(conn, param))
+            records = person_photos(conn, param)
+        self._show(records)
+        #: #2187: az új tartalom törli a modell arc-kereteit — újra kell adni
+        self._arc_nagyitas_atvezetese(param, records)
         return True
 
     # -- #422 4. lépcső: az Emberek-album kép-szintű parancsai -------------

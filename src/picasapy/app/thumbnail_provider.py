@@ -60,6 +60,7 @@ from .display_mode_paint import (
     apply_display_mode_to_qimage,
     display_mode_from_thumb_id,
 )
+from .arc_nagyitas_url import arc_from_thumb_id, arcra_vag
 from .thumb_level_url import szint_from_thumb_id
 from .worker_thread import register_pool_owner
 
@@ -444,6 +445,13 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
                 image = QImage()
             if image.isNull():
                 image = _placeholder()
+            else:
+                #: #2187: az arc-nagyítás (`&fz=`) a KÉSZ képet vágja — a
+                #: `_render` gyorstárai (lemez, `_FilteredThumbMemo`) a
+                #: teljes képet tartják, a váltás így nem kér új renderelést.
+                arc = arc_from_thumb_id(photo_id)
+                if arc is not None:
+                    image = arcra_vag(image, arc)
             # Megjelenítési mód (#1596) — a render-mag UTÁN, a gyorstárakat
             # ÉRINTETLENÜL hagyva.
             #
