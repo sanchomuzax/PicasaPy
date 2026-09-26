@@ -28,6 +28,8 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+import functools
+
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
@@ -73,11 +75,12 @@ _KONTRASZT_TABLA: tuple[float, ...] = (
 #: korai kilépése) — #904.
 _CONTRAST_EPS = 1e-6
 
-#: `tint_luma_preserving`: hány kompenzáló menet fusson a gamut-levágás után.
-#: Menetenként legalább egy csatorna véglegesen kifut a tartományból, ezért
-#: három menet a három csatornás esetre elég — a negyedik biztonsági tartalék.
+#: `_resaturate_table_entry`: hány kompenzáló menet fusson a gamut-levágás
+#: után egy-egy táblabejegyzésre. Menetenként legalább egy csatorna
+#: véglegesen kifut a tartományból, ezért három menet a három csatornás
+#: esetre elég — a negyedik biztonsági tartalék (#3631).
 _TINT_GAMUT_PASSES = 4
-_TINT_EPSILON = np.float32(1e-6)
+_TINT_EPSILON = 1e-6
 
 #: Keverési mód neve (`_BLEND_FUNCS` kulcsa); az `apply_blend_mode` a natív
 #: sorszámot (`BLEND_MODE_BY_INDEX`) is elfogadja.
@@ -97,6 +100,17 @@ def to_float(image: np.ndarray) -> np.ndarray:
 def luma(image_f: np.ndarray) -> np.ndarray:
     """Rec.601 luminancia (H, W) float32 tömbként, float32 RGB bemenetből."""
     red_w, green_w, blue_w = _REC601_WEIGHTS
+    return (
+        np.float32(red_w) * image_f[..., 0]
+        + np.float32(green_w) * image_f[..., 1]
+        + np.float32(blue_w) * image_f[..., 2]
+    )
+
+
+def _haeberli_luma(image_f: np.ndarray) -> np.ndarray:
+    """Haeberli-luminancia (H, W) float32 tömbként — a `Tint` szürkítése
+    (#3631) ezt használja, NEM a Rec.601-es `luma`-t."""
+    red_w, green_w, blue_w = _HAEBERLI_WEIGHTS
     return (
         np.float32(red_w) * image_f[..., 0]
         + np.float32(green_w) * image_f[..., 1]
@@ -928,59 +942,88 @@ def tint_multiply(image: np.ndarray, color: tuple[int, int, int], alpha: float) 
     return to_uint8(apply_blend_mode(image_f, color_layer, "multiply", alpha))
 
 
+def _resaturate_color_luma(color: tuple[int, int, int]) -> int:
+    """A `Resaturate` táblaépítőjének `Lc`-je: a SZÍN Haeberli-fényessége,
+    a natív `0x00c29990` kerekítésével (`+0,5`, majd csonkolás — ugyanaz az
+    idióma, mint az `autofix` LUT-jáé). `docs/specs/filterdesc-registry.md`
+    „H) A `Tint` belseje" 3.1. pont."""
+    red_w, green_w, blue_w = _HAEBERLI_WEIGHTS
+    r, g, b = (float(c) for c in color)
+    value = red_w * r + green_w * g + blue_w * b + 0.5
+    return int(np.clip(np.floor(value), 0, 255))
+
+
+def _resaturate_table_entry(color: tuple[int, int, int], target: int) -> tuple[int, int, int]:
+    """`0x00bce2f0(szín, L)` — a `Resaturate` egyetlen táblabejegyzése: az a
+    RGB, amely `szín` krómáját adja, de a Haeberli-lumája PONTOSAN `L`.
+
+    A natív a `d > 0` esetet a `255 − x` tükrözéssel a `d ≤ 0` esetre vezeti
+    vissza (ugyanaz a levágás-kódút, csak fordítva bejárva). A két irány a
+    Haeberli-súlyok összege = 1 miatt algebrailag EGYENÉRTÉKŰ egyetlen,
+    mindkét irányban vágó ciklussal (0 ÉS 255 felé is), amíg a hiányzó
+    fényességet a MÉG SZABAD (nem levágott) csatornákra osztja szét — a
+    „saját súllyal" / „kiegészítő súllyal" osztás pontosan ennek felel meg,
+    ha a szabad csatornák súlyösszegével osztunk. A tükrözés emulálása
+    tehát nem szükséges a bitre egyező eredményhez.
+    """
+    weights = np.asarray(_HAEBERLI_WEIGHTS, dtype=np.float64)
+    lc = _resaturate_color_luma(color)
+    values = np.asarray(color, dtype=np.float64) + (float(target) - float(lc))
+
+    for _ in range(_TINT_GAMUT_PASSES):
+        clipped = np.clip(values, 0.0, 255.0)
+        free = (values > 0.0) & (values < 255.0)
+        free_weight = float((free * weights).sum())
+        if free_weight <= _TINT_EPSILON:
+            values = clipped
+            break
+        missing = float(target) - float((clipped * weights).sum())
+        values = clipped + (missing / free_weight) * free
+
+    # a végső csonkítás (`or 0xc00` + `fistp`, 0x00bce83a) — NEM kerekítés;
+    # a `round(…, 6)` csak a lebegőpontos zajt söpri el (pl. 199,99999999997
+    # helyett 200,0), a valódi tizedeseket (négy tizedesjegyű súlyokból,
+    # egész színekből és egész L-ekből) nem érinti.
+    truncated = np.trunc(np.clip(np.round(values, 6), 0.0, 255.0))
+    return int(truncated[0]), int(truncated[1]), int(truncated[2])
+
+
+@functools.lru_cache(maxsize=64)
+def _resaturate_table(color: tuple[int, int, int]) -> np.ndarray:
+    """A `Resaturate` 256 elemű táblája EGY színre, `0x00bce2f0(szín, i)`
+    minden `i = 0…255` Haeberli-fényességre — a szín szerint egyszer épül
+    (#3631), utána a képpontok csak indexelnek bele."""
+    table = np.array(
+        [_resaturate_table_entry(color, level) for level in range(256)],
+        dtype=np.uint8,
+    )
+    table.setflags(write=False)
+    return table
+
+
 def tint_luma_preserving(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
-    """`TintImageOperation(Color=…)` — FÉNYESSÉG-TARTÓ színezés (#878).
+    """`TintImageOperation(Color=…)` — a natív `ColorMatrix(s=−100)` +
+    `Resaturate` páros (#3631, `docs/specs/filterdesc-registry.md` „H) A
+    `Tint` belseje").
 
-    **Megfejtve a #685 mérőszettjének `picniktint__alap.jpg` golden párjából**
-    (`PicnikTint=1,0.000000,0080cfff;`): a művelet a bemenet Rec.601
-    luminanciáját **bájtra megőrzi**, és a szín krómáját adja hozzá. Formálisan
+    1. a bemenetet **Haeberli-szürkére** viszi (`0,3086/0,6094/0,0820`,
+       NEM Rec.601): `szürke = round(Haeberli-luma(képpont))`;
+    2. a szürke érték a `_resaturate_table(szín)` 256 elemű táblájának
+       indexe — a tábla a `0x00bce2f0(szín, L)` emuláltja `L = 0…255`-re.
 
-    ```
-    kimenet = luma(kép) + (szín − luma(szín))
-    ```
+    ⛔ **KORÁBBAN** (a #878 golden-illesztése): Rec.601-súlyok +
+    folytonos, per-képpont gamut-kompenzáció. Szürke bemeneten a modell
+    átlagosan 1–4, telített kéknél/sárgánál (`0x0000ff`, `0xffff00`) akár
+    **71 szinttel** tért el az emulált native táblától (#3631 lelete) — a
+    Haeberli-súlyok és a diszkrét, szín-szerinti tábla ezt zárja.
 
-    majd a tartományon kívülre kerülő csatornákat levágja, és a levágás
-    fényesség-veszteségét a MÉG SZABAD csatornákon kompenzálja, amíg a
-    luminancia újra a bemenetivel egyezik.
-
-    A mérés ezt három független ponton igazolja (a golden pár mediánjain,
-    a szín `0x80cfff`, `luma = 188,9`):
-
-    | bemeneti luma | mért kimenet (R, G, B) | a kimenet lumája |
-    |---:|---|---:|
-    | 16 | (0, 16, 65) | 16,8 |
-    | 128 | (69, 147, 195) | 129,1 |
-    | 248 | (231, 255, 255) | 247,9 |
-
-    A 248-as sor a döntő: két csatorna 255-ön áll, és a HARMADIK áll be arra
-    az értékre, amellyel a luminancia pontosan visszajön — vagyis a levágás
-    nem egyszerű `clip`, hanem fényesség-visszaállítással jár. A modell
-    csatornánkénti átlagos abszolút hibája a teljes golden páron **1,7–2,4
-    szint** (a JPEG-zaj nagyságrendje).
-
-    A `color` csatornasorrendje a `tint_multiply`-jal azonos: **RGB**.
+    A `color` csatornasorrendje **RGB**.
     """
     validate_image(image)
     image_f = to_float(image)
-    target = luma(image_f)[..., np.newaxis]
-
-    weights = np.array(_REC601_WEIGHTS, dtype=np.float32)
-    color_f = np.array(color, dtype=np.float32)
-    result = target + (color_f - float(color_f @ weights))
-
-    # a levágott csatornák fényesség-veszteségének kompenzálása a szabadokon
-    for _ in range(_TINT_GAMUT_PASSES):
-        clipped = np.clip(result, 0.0, 255.0)
-        free = ((result > 0.0) & (result < 255.0)).astype(np.float32)
-        free_weight = (free * weights).sum(axis=2, keepdims=True)
-        if not np.any(free_weight > _TINT_EPSILON):
-            break
-        missing = target - (clipped * weights).sum(axis=2, keepdims=True)
-        correction = np.where(
-            free_weight > _TINT_EPSILON, missing / np.maximum(free_weight, _TINT_EPSILON), 0.0
-        )
-        result = clipped + correction * free
-    return to_uint8(result)
+    gray = to_uint8(_haeberli_luma(image_f))
+    table = _resaturate_table((int(color[0]), int(color[1]), int(color[2])))
+    return table[gray]
 
 
 #: A Mitchell–Netravali mag paraméterei: **B = C = 0,4** (#2227). Mérve: az

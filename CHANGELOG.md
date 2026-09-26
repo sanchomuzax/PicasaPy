@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Színezés (és a rá épülő CrossProcess, Ghoul Eye, Neon) a Haeberli-
+  szürkéből, a natív fényesség-tartó táblával színez, nem Rec.601-es
+  illesztett képlettel (#3631).** Telített kéknél és sárgánál a korábbi
+  modell akár 71 szinttel eltért az eredeti Picasától; szürke színnel a
+  hatás változatlan.
+
 ## [0.8.584] – 2026-09-26
 
 ### Hozzáadva

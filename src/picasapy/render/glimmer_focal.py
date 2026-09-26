@@ -54,9 +54,9 @@ def apply_picnik_tint(image, color=(0x80, 0xCF, 0xFF), fade: float = 0.0):
                         Mask="{_mctr.mask}"/>
     ```
 
-    A `TintImageOperation` a bemenet Rec.601 luminanciáját **bájtra
-    megőrzi**, és csak a szín krómáját adja hozzá — a részletes képlet,
-    a gamut-kezelés és a mérési bizonyíték a
+    A `TintImageOperation` a bemenet Haeberli-luminanciáját (NEM Rec.601,
+    #3631) **bájtra megőrzi**, és csak a szín krómáját adja hozzá — a
+    részletes képlet, a gamut-kezelés és a mérési bizonyíték a
     `glimmer_ops.tint_luma_preserving` docstringjében.
 
     **A korábbi modell egy TÖMÖR SZÍNRÉTEGET kevert a képre `normal`
