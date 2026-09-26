@@ -10174,6 +10174,12 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <source>Select None</source>
         <translation>Az összes kijelölés megszüntetése</translation>
     </message>
+    <!-- #3594: amíg a mappa-lista háttérszálon készül —
+         `il_BurnPanel::calculating` (`biztonsagi-mentes.md` 15.7) -->
+    <message>
+        <source>Calculating…</source>
+        <translation>Számítás…</translation>
+    </message>
 </context>
 <context>
     <name>ConfigureButtonsDialog</name>

@@ -25,6 +25,13 @@ mappánként pipával (`backuptext2`, `backuptext3`). A `mentetlenMappak` ezt
 a nézetet adja, a `terv` és a két futtatás pedig a bepipált mappák
 listáját is elfogadja. Lista nélkül minden mappa megy (a régi út), üres
 listával semmi.
+
+A lista HÁTTÉRSZÁLON készül (`mentetlenMappakLekerese` →
+`mentetlenMappakKeszek`): a gyökerek bejárása, a fájlonkénti `stat()` és a
+fényképezőgép-szűrő EXIF-olvasása nagy gyűjteménynél percekig tart, és a
+GUI-szálon megfagyasztaná az ablakot — a #3009 ugyanezt szüntette meg a
+futásnál. Minden lekérdezés sorszámot kap; csak a legutóbbi válasza megy
+ki, tehát egy lassú, régebbi válasz nem írja felül az újabbat.
 """
 
 from __future__ import annotations
@@ -62,6 +69,11 @@ _log = logging.getLogger(__name__)
 _CD_SZEKTOR = 360_000
 _DVD_SZEKTOR = 2_295_104
 
+#: #3594: mappánként legfeljebb ennyi fájlnév megy a felületre — a sor úgyis
+#: levágja, a darabszám pedig külön mező. Egy ezerfájlos mappa teljes
+#: névlistája csak a QML-átadást terhelné.
+_FAJLNEV_KORLAT = 20
+
 
 def _kepek_mappaja() -> str:
     """A felhasználó Képek mappája — MODULSZINTŰ fogantyú: a teszt ezt
@@ -92,6 +104,9 @@ class BackupController(BackgroundWorkerMixin, QObject):
     #: #3009: elindult a másolás (a felület ilyenkor mutatja a
     #: haladás-sávot és a Megszakítás gombot)
     futasIndult = Signal(int)
+    #: #3594: (lekérdezés sorszáma, készlet-azonosító, mappa-sorok) — a
+    #: `mentetlenMappakLekerese` háttérben számolt eredménye
+    mentetlenMappakKeszek = Signal(int, int, "QVariantList")
 
     def __init__(self, db_path: Path, gyokerek: tuple[str, ...]) -> None:
         super().__init__()
@@ -100,6 +115,11 @@ class BackupController(BackgroundWorkerMixin, QObject):
         #: #3009: a megszakítás jelzője. Szálak között olvassuk/írjuk,
         #: ezért `Event` — a `bool` mezőre nincs memória-garancia.
         self._megszakitas = threading.Event()
+        #: #3594: a legutóbbi mappa-lekérdezés sorszáma. A GUI-szál írja, a
+        #: háttérszál olvassa; a zár a „megnézem, aztán küldöm" párt védi.
+        #: `RLock`: egy közvetlenül bekötött fogadó a jelzésből újra kérhet.
+        self._mappa_keres = 0
+        self._mappa_zar = threading.RLock()
 
     # -- készletek --------------------------------------------------------
 
@@ -239,13 +259,13 @@ class BackupController(BackgroundWorkerMixin, QObject):
             fajlok.extend(sorted(p for p in ut.rglob("*") if p.is_file()))
         return fajlok
 
-    @Slot(int, result="QVariantList")
-    def mentetlenMappak(self, keszlet_id: int) -> list[dict]:  # noqa: N802
+    def _mentetlen_sorok(self, keszlet_id: int) -> list[dict]:
         """#3594: a készlet még el nem mentett fájljai, mappánként.
 
         `backuptext2`: „A Picasa most azokat a fájlokat jeleníti meg,
         amelyekről korábban nem készült biztonsági másolat." A teljesen
-        elmentett mappa nem kerül a listába. ÍRÁS NÉLKÜL."""
+        elmentett mappa nem kerül a listába. ÍRÁS NÉLKÜL. A `fajlok` az első
+        `_FAJLNEV_KORLAT` név; a teljes szám a `darab`."""
         with open_index(self._db_path) as conn:
             keszlet = self._keszlet(conn, keszlet_id)
             if keszlet is None:
@@ -255,12 +275,45 @@ class BackupController(BackgroundWorkerMixin, QObject):
             {
                 "mappa": str(mappa),
                 "nev": mappa.name,
-                "fajlok": [tetel.forras.name for tetel in tetelek],
+                "fajlok": [
+                    tetel.forras.name for tetel in tetelek[:_FAJLNEV_KORLAT]
+                ],
                 "darab": len(tetelek),
                 "bajt": sum(tetel.meret for tetel in tetelek),
             }
             for mappa, tetelek in mappankent(terv).items()
         ]
+
+    @Slot(int, result=int)
+    def mentetlenMappakLekerese(self, keszlet_id: int) -> int:  # noqa: N802
+        """A mentetlen mappák kiszámítása HÁTTÉRSZÁLON (#3594).
+
+        Azonnal visszatér a lekérdezés sorszámával; az eredmény a
+        `mentetlenMappakKeszek` jelzésen érkezik, és csak akkor, ha közben
+        nem indult újabb lekérdezés."""
+        with self._mappa_zar:
+            self._mappa_keres += 1
+            keres = self._mappa_keres
+        self._start_background(
+            self._mentetlen_hattereben,
+            args=(keres, int(keszlet_id)),
+            name="backup-folders",
+        )
+        return keres
+
+    def _mentetlen_hattereben(self, keres: int, keszlet_id: int) -> None:
+        """A mappa-lista törzse — háttérszálon fut."""
+        try:
+            sorok = self._mentetlen_sorok(keszlet_id)
+        except Exception as hiba:  # noqa: BLE001 — a felület ne várjon örökké
+            # a felület a válaszra zárja a „Számítás…" állapotot — hiba
+            # esetén is kell válasz, különben a párbeszéd beragad
+            _log.warning("a mentetlen mappák listája elszállt: %s", hiba)
+            sorok = []
+        with self._mappa_zar:
+            if keres != self._mappa_keres:
+                return  # közben újabb lekérdezés indult — ez elavult
+            self.mentetlenMappakKeszek.emit(keres, keszlet_id, sorok)
 
     @Slot(int, result="QVariantMap")
     @Slot(int, "QVariantList", result="QVariantMap")

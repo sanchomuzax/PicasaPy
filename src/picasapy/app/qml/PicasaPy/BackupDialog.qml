@@ -73,10 +73,15 @@ Window {
     property string uzenet: ""
 
     //: #3594: a kiválasztott készlet még el nem mentett fájljai, mappánként
-    //: (`backupController.mentetlenMappak`)
+    //: (`backupController.mentetlenMappakLekerese` → `mentetlenMappakKeszek`)
     property var mentetlenek: []
     //: #3594: a bepipált mappák útjai — csak ezeket viszi a futás
     property var pipaltMappak: []
+    //: #3594: a lista háttérszálon készül (nagy gyűjteménynél percekig);
+    //: amíg nem jön meg, a „Számítás…" felirat látszik
+    property bool mappakToltodnek: false
+    //: a legutóbbi lekérdezés sorszáma — a régebbi válasz nem írja felül
+    property int mappaKeres: 0
     //: #3594: a 2. lépés csak kiválasztott készletnél, űrlapon kívül él
     readonly property bool mappaLepes:
         !backupWindow.szerkesztes && backupWindow.kivalasztott >= 0
@@ -92,13 +97,27 @@ Window {
         if (typeof backupController === "undefined" || !backupController
                 || backupWindow.kivalasztott < 0
                 || backupWindow.kivalasztott >= backupWindow.keszletek.length) {
+            //: a függő válasz se érkezzen meg később
+            backupWindow.mappaKeres = -1
+            backupWindow.mappakToltodnek = false
             backupWindow.mentetlenek = []
             backupWindow.pipaltMappak = []
             return
         }
-        var sorok = backupController.mentetlenMappak(
+        //: a régi lista elavult (pl. futás után a már elmentett mappa is
+        //: benne van) — ne lehessen belőle pipálni, amíg az új nem jön meg.
+        //: A pipák maradnak; a válasz a még élő mappákra szűkíti őket.
+        backupWindow.mentetlenek = []
+        backupWindow.mappakToltodnek = true
+        backupWindow.mappaKeres = backupController.mentetlenMappakLekerese(
             backupWindow.keszletek[backupWindow.kivalasztott].id)
+    }
+
+    //: a háttérszál válasza — csak a legutóbbi kérésé számít
+    function fogadjAMappakat(keres, keszletId, sorok) {
+        if (keres !== backupWindow.mappaKeres) return
         backupWindow.mentetlenek = sorok
+        backupWindow.mappakToltodnek = false
         //: a már elmentett (eltűnt) mappa pipája sem maradhat meg
         var elo = sorok.map(function (sor) { return sor.mappa })
         backupWindow.pipaltMappak = backupWindow.pipaltMappak.filter(
@@ -134,9 +153,13 @@ Window {
         if (typeof backupController === "undefined" || !backupController)
             return
         backupWindow.keszletek = backupController.keszletek()
+        var elozo = backupWindow.kivalasztott
         if (backupWindow.kivalasztott >= backupWindow.keszletek.length)
             backupWindow.kivalasztott = backupWindow.keszletek.length - 1
-        backupWindow.frissitsdAMappakat()
+        //: ha a kiválasztás átállt, az `onKivalasztottChanged` már kért
+        //: listát — még egy lekérdezés fölösleges bejárás volna
+        if (backupWindow.kivalasztott === elozo)
+            backupWindow.frissitsdAMappakat()
     }
 
     function open() {
@@ -193,6 +216,9 @@ Window {
         target: (typeof backupController !== "undefined") ? backupController : null
         function onHibatJelez(szoveg) { backupWindow.uzenet = szoveg }
         function onKeszletekValtoztak() { backupWindow.frissitsd() }
+        function onMentetlenMappakKeszek(keres, keszletId, sorok) {
+            backupWindow.fogadjAMappakat(keres, keszletId, sorok)
+        }
         function onFutasKesz(darab, bajt) {
             backupWindow.fut = false
             backupWindow.uzenet = darab === 0
@@ -377,21 +403,39 @@ Window {
                             })
                         }
                     }
-                    //: a mappa még el nem mentett fájljai — ez a „rács"
+                    //: a mappa még el nem mentett fájljai — ez a „rács".
+                    //: A vezérlő csak az első néhány nevet adja; ha több
+                    //: van, a darabszám mellett „…" jelzi a folytatást.
                     Text {
+                        objectName: "backupFolderFiles"
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                         font.pixelSize: Theme.fontSize - 1
                         color: Theme.textGray
                         text: "(" + mappaSor.modelData.darab + ")  "
                               + mappaSor.modelData.fajlok.join(", ")
+                              + (mappaSor.modelData.darab
+                                 > mappaSor.modelData.fajlok.length
+                                 ? ", …" : "")
                     }
                 }
             }
 
+            //: #3594: amíg a háttérszál számol — `il_BurnPanel::calculating`
+            //: („Calculating…" / „Számítás…", `biztonsagi-mentes.md` 15.7)
+            Text {
+                objectName: "backupFolderLoading"
+                anchors.centerIn: parent
+                visible: backupWindow.mappakToltodnek
+                text: qsTr("Calculating…")
+                font.pixelSize: Theme.fontSize
+                color: Theme.textGray
+            }
+
             Text {
                 anchors.centerIn: parent
-                visible: backupWindow.mentetlenek.length === 0
+                visible: !backupWindow.mappakToltodnek
+                         && backupWindow.mentetlenek.length === 0
                 text: qsTr("Everything was already backed up.")
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
