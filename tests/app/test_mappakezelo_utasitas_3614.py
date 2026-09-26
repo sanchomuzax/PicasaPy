@@ -118,3 +118,23 @@ def test_a_sugo_ablak_tartalma_valtozatlan():
     qml = _QML.read_text(encoding="utf-8")
     assert "Scan Always keeps watching the folder: pictures you add" in qml
     assert "Face detection is separate: you can watch a folder and" in qml
+
+
+def _folder_list_felirat_blokk() -> str:
+    qml = _QML.read_text(encoding="utf-8")
+    m = re.search(r'text: qsTr\("Folder List"\)(.*?)\n\s*\}', qml, re.S)
+    assert m, "nincs „Folder List” felirat a Mappakezelőben"
+    return m.group(1)
+
+
+def _color(blokk: str) -> str:
+    m = re.search(r"color:\s*(\S+)", blokk)
+    assert m, "a blokknak nincs `color` tulajdonsága"
+    return m.group(1)
+
+
+def test_az_utasitas_szine_egyezik_a_folder_list_feliratteval():
+    """A referencia-képen (Colab EN 10 - Folder Manager.png) az utasítás
+    szövege ugyanolyan sötét, mint a „Folder List” felirat — nem
+    Theme.textGray, hanem Theme.ink."""
+    assert _color(_utasitas_blokk()) == _color(_folder_list_felirat_blokk()) == "Theme.ink"

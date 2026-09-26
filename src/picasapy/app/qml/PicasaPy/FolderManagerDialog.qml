@@ -419,7 +419,7 @@ Window {
                         + "pictures inside it.  You can also pick folders to watch for new pictures.")
                     wrapMode: Text.WordWrap
                     font.pixelSize: Theme.fontSize
-                    color: Theme.textGray
+                    color: Theme.ink
                 }
 
                 FolderStatePanel {
