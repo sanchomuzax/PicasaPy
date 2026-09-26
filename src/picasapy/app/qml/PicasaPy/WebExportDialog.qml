@@ -18,6 +18,12 @@ Window {
     objectName: "webExportDialog"
     title: qsTr("Export as HTML Page...")
     modality: Qt.ApplicationModal
+
+    //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
+    //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
+    //: külön ablakban nyitja.
+    property string helpTopic: "features/exportalas.md"
+    WindowHelp { tema: webExportWindow.helpTopic }
     width: 520
     height: exporting || lastOutputFolder.length > 0 || lastError.length > 0 ? 420 : 360
     minimumWidth: 460

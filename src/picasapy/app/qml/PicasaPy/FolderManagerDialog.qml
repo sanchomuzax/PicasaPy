@@ -15,6 +15,12 @@ Window {
     objectName: "folderManagerDialog"
     title: qsTr("Folder Manager")
     modality: Qt.ApplicationModal
+
+    //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
+    //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
+    //: külön ablakban nyitja.
+    property string helpTopic: "features/mappakezelo.md"
+    WindowHelp { tema: folderManagerWindow.helpTopic }
     width: 550
     height: 450
     minimumWidth: 0

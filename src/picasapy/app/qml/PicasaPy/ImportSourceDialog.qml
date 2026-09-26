@@ -18,6 +18,12 @@ Window {
     objectName: "importSourceDialog"
     title: qsTr("Import from Source")
     modality: Qt.ApplicationModal
+
+    //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
+    //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
+    //: külön ablakban nyitja.
+    property string helpTopic: "features/importalas.md"
+    WindowHelp { tema: importSourceWindow.helpTopic }
     width: 640
     height: 680
     minimumWidth: 480
