@@ -2128,63 +2128,82 @@ Column {
                 }
             }
 
-            Text {
-                objectName: "traySingleActionMessage"
-                //: MÉRT: 335 × 26, JOBBRA igazítva (`textalign right`)
-                width: 335
-                height: 26
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.right: traySingleActionReturn.left
-                anchors.rightMargin: 9
-                horizontalAlignment: Text.AlignRight
-                verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap
-                elide: Text.ElideRight
-                color: Theme.ink
-                font.pixelSize: Theme.fontSize
-                //: a `thumbui/single_action_message` HIVATALOS magyar
-                //: fordítása (`referencia/panel-feliratok-hu.tsv:5187`)
-                text: qsTr("Select the items you want to add to the "
-                           + "project clip tray, then click \"Back\" to "
-                           + "return to the project")
-            }
+            // #3605: a három elem egy FIX, 481 × 30-as csoportban ül
+            // (`thumbui/single_action_group`, `m_centerXY`), és a csoport a
+            // sáv KÖZEPÉN marad — nem a jobb széléhez tapad. A csoport
+            // belseje: | 2 | üzenet 335 | 9 | Vissza 109 | 3 | × 18 | 5 |.
+            // A két szélső eltolás a jegy 1920 px-es számából: a sáv
+            // 702,8 … 1900, a csoport jobb széle 1541,9, a × jobb széle 1537
+            // ⇒ 5, a bal a maradék (481 − 474 − 5 = 2).
+            Item {
+                id: traySingleActionGroup
+                objectName: "traySingleActionGroup"
+                width: 481
+                height: 30
+                anchors.centerIn: parent
 
-            PicasaButton {
-                id: traySingleActionReturn
-                objectName: "traySingleActionReturn"
-                //: MÉRT: 109 × 43
-                width: 109
-                height: 43
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.right: traySingleActionClose.left
-                anchors.rightMargin: 3
-                accent: Theme.picasaGreen
-                // #2438: az eredetiben ez a `thumbui/single_action_return`, a
-                // 13 pulzáló elem egyike — a klip-gyűjtő módban EZ a fő
-                // cselekvés, tehát ez mutatja meg, hol lehet visszalépni.
-                throbbing: true
-                text: qsTr("Back to Collage")
-                ToolTip.text: qsTr("Go back to what you were editing")
-                ToolTip.visible: hovered
-                ToolTip.delay: Theme.tooltipDelay
-                onClicked: tray.backToCollageRequested()
-            }
+                Text {
+                    objectName: "traySingleActionMessage"
+                    //: MÉRT: 335 × 26, JOBBRA igazítva (`textalign right`)
+                    width: 335
+                    height: 26
+                    anchors.verticalCenter: parent.verticalCenter
+                    //: `m_offsetL` a csoportban
+                    anchors.left: parent.left
+                    anchors.leftMargin: 2
+                    horizontalAlignment: Text.AlignRight
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                    color: Theme.ink
+                    font.pixelSize: Theme.fontSize
+                    //: a `thumbui/single_action_message` HIVATALOS magyar
+                    //: fordítása (`referencia/panel-feliratok-hu.tsv:5187`)
+                    text: qsTr("Select the items you want to add to the "
+                               + "project clip tray, then click \"Back\" to "
+                               + "return to the project")
+                }
 
-            PicasaButton {
-                id: traySingleActionClose
-                objectName: "traySingleActionClose"
-                //: MÉRT: 18 × 18
-                width: 18
-                height: 18
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.right: parent.right
-                anchors.rightMargin: 16
-                text: "\u2715"
-                ToolTip.text: qsTr("Cancel \"Get more\"")
-                ToolTip.visible: hovered
-                ToolTip.delay: Theme.tooltipDelay
-                //: CSAK elrejt — a módból NEM lép ki (spec 2.3)
-                onClicked: traySingleActionBar.elrejtve = true
+                PicasaButton {
+                    id: traySingleActionReturn
+                    objectName: "traySingleActionReturn"
+                    //: MÉRT: 109 × 43
+                    width: 109
+                    height: 43
+                    anchors.verticalCenter: parent.verticalCenter
+                    //: `m_offsetR`; MÉRT rés a × előtt: 3 (az üzenet után 9 —
+                    //: 2 + 335 + 9 + 109 + 3 + 18 + 5 = 481)
+                    anchors.right: traySingleActionClose.left
+                    anchors.rightMargin: 3
+                    accent: Theme.picasaGreen
+                    // #2438: az eredetiben ez a `thumbui/single_action_return`, a
+                    // 13 pulzáló elem egyike — a klip-gyűjtő módban EZ a fő
+                    // cselekvés, tehát ez mutatja meg, hol lehet visszalépni.
+                    throbbing: true
+                    text: qsTr("Back to Collage")
+                    ToolTip.text: qsTr("Go back to what you were editing")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    onClicked: tray.backToCollageRequested()
+                }
+
+                PicasaButton {
+                    id: traySingleActionClose
+                    objectName: "traySingleActionClose"
+                    //: MÉRT: 18 × 18
+                    width: 18
+                    height: 18
+                    anchors.verticalCenter: parent.verticalCenter
+                    //: `m_offsetR` a csoportban
+                    anchors.right: parent.right
+                    anchors.rightMargin: 5
+                    text: "\u2715"
+                    ToolTip.text: qsTr("Cancel \"Get more\"")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    //: CSAK elrejt — a módból NEM lép ki (spec 2.3)
+                    onClicked: traySingleActionBar.elrejtve = true
+                }
             }
         }
     }
