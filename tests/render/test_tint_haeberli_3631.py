@@ -11,15 +11,10 @@ indexel. Szürke rámpán mérve a Rec.601-es modell telített kéknél/sárgán
 (`0x0000ff`, `0xffff00`) akár 71 szinttel tért el az emulált táblától — ez
 a jegy lelete.
 
-⚠️ **Amit ez a fájl NEM tud igazolni:** a `docs/specs/…` „Kész, ha" pontja
-bitre egyező, 256 szintes táblát kér az emulátorból
-(`~/picasapy-agent/eszkozok/nativ_emu/tint_lut.py`) legalább nyolc színre.
-Ez a munkamenet a privát `picasapy-agent` repót NEM éri el (a feladatleírás
-szerint), ezért a lenti tesztek a `docs/specs/filterdesc-registry.md`
-szövegéből LEVEZETETT algoritmust ellenőrzik — a golden párból MÉRT
-számhármasokkal (`test_neon_878.py`, `test_picniktint_884.py`) és a súlyok
-mutáció-érzékenységével, nem a bitre egyező emulált táblával. A hiányzó
-lépést a #3631 jegykommentje rögzíti.
+A bitre egyező mérce (a „Kész, ha" 2. pontja: az emulátorból generált,
+256 szintes tábla 54 színre) a `test_tint_resaturate_nativ_3631.py`-ban
+van; az itteni golden-hármasok (`atol=3`) és viselkedési próbák csak
+kiegészítik.
 """
 
 from __future__ import annotations

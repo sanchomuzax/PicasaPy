@@ -81,6 +81,9 @@ _CONTRAST_EPS = 1e-6
 #: esetre elég — a negyedik biztonsági tartalék (#3631).
 _TINT_GAMUT_PASSES = 4
 _TINT_EPSILON = 1e-6
+#: A végső csonkolás előtti lebegőpontos zajszűrő — a súlyösszeggel való
+#: osztás valódi tizedeseit nem érheti, ezért jóval az 1e-6 alatt van.
+_TINT_TRUNC_EPS = 1e-9
 
 #: Keverési mód neve (`_BLEND_FUNCS` kulcsa); az `apply_blend_mode` a natív
 #: sorszámot (`BLEND_MODE_BY_INDEX`) is elfogadja.
@@ -955,36 +958,53 @@ def _resaturate_color_luma(color: tuple[int, int, int]) -> int:
 
 def _resaturate_table_entry(color: tuple[int, int, int], target: int) -> tuple[int, int, int]:
     """`0x00bce2f0(szín, L)` — a `Resaturate` egyetlen táblabejegyzése: az a
-    RGB, amely `szín` krómáját adja, de a Haeberli-lumája PONTOSAN `L`.
+    RGB, amely `szín` krómáját adja, a Haeberli-lumája pedig (a levágásig)
+    `L`.
 
-    A natív a `d > 0` esetet a `255 − x` tükrözéssel a `d ≤ 0` esetre vezeti
-    vissza (ugyanaz a levágás-kódút, csak fordítva bejárva). A két irány a
-    Haeberli-súlyok összege = 1 miatt algebrailag EGYENÉRTÉKŰ egyetlen,
-    mindkét irányban vágó ciklussal (0 ÉS 255 felé is), amíg a hiányzó
-    fényességet a MÉG SZABAD (nem levágott) csatornákra osztja szét — a
-    „saját súllyal" / „kiegészítő súllyal" osztás pontosan ennek felel meg,
-    ha a szabad csatornák súlyösszegével osztunk. A tükrözés emulálása
-    tehát nem szükséges a bitre egyező eredményhez.
+    A natív lépései, ahogy az emulált táblával bitre egyeznek (54 szín ×
+    256 szint, `tests/render/test_tint_resaturate_nativ_3631.py`):
+
+    1. `d = L − Lc`, és `v = szín + d` csatornánként;
+    2. `d > 0`-nál TÜKRÖZÖTT térben számol (`v ← 255 − v`), így a 255 feletti
+       túlcsordulás is negatív lesz;
+    3. menetenként a negatív csatornák **súlyozott levágott összegét**
+       (`over = Σ w·(−v)`) a még SZABAD (pozitív) csatornákról vonja le,
+       a súlyösszegükkel osztva (`v −= over / Σ w_szabad`), a negatívakat
+       pedig 0-ra teszi;
+    4. csonkol (NEM kerekít), és tükrözött esetben `255 − trunc(v)`.
+
+    ⚠️ A tükrözés NEM egyenértékű egy közvetlen, 0 és 255 felé is vágó
+    ciklussal: a csonkolás a tükrözött térben lefelé, az eredetiben tehát
+    FELFELÉ kerekít, és a hiányt a levágott részből (nem a célfényességből)
+    számolja — a korábbi, „algebrailag egyenértékű” változat 52 színen tért
+    el a natívtól.
     """
     weights = np.asarray(_HAEBERLI_WEIGHTS, dtype=np.float64)
-    lc = _resaturate_color_luma(color)
-    values = np.asarray(color, dtype=np.float64) + (float(target) - float(lc))
+    delta = float(target) - float(_resaturate_color_luma(color))
+    values = np.asarray(color, dtype=np.float64) + delta
+    mirrored = delta > 0.0
+    if mirrored:
+        values = 255.0 - values
 
     for _ in range(_TINT_GAMUT_PASSES):
-        clipped = np.clip(values, 0.0, 255.0)
-        free = (values > 0.0) & (values < 255.0)
-        free_weight = float((free * weights).sum())
-        if free_weight <= _TINT_EPSILON:
-            values = clipped
+        negative = values < 0.0
+        if not negative.any():
             break
-        missing = float(target) - float((clipped * weights).sum())
-        values = clipped + (missing / free_weight) * free
+        over = float((weights * -values * negative).sum())
+        values = np.where(negative, 0.0, values)
+        free = values > 0.0
+        free_weight = float((weights * free).sum())
+        if free_weight <= _TINT_EPSILON:
+            break
+        values = values - free * (over / free_weight)
 
     # a végső csonkítás (`or 0xc00` + `fistp`, 0x00bce83a) — NEM kerekítés;
-    # a `round(…, 6)` csak a lebegőpontos zajt söpri el (pl. 199,99999999997
-    # helyett 200,0), a valódi tizedeseket (négy tizedesjegyű súlyokból,
-    # egész színekből és egész L-ekből) nem érinti.
-    truncated = np.trunc(np.clip(np.round(values, 6), 0.0, 255.0))
+    # a `+_TINT_TRUNC_EPS` csak a lebegőpontos zajt söpri el (pl. 199,99999999997
+    # helyett 200,0).
+    truncated = np.trunc(np.clip(values, 0.0, 255.0) + _TINT_TRUNC_EPS).astype(np.int64)
+    truncated = np.minimum(truncated, 255)
+    if mirrored:
+        truncated = 255 - truncated
     return int(truncated[0]), int(truncated[1]), int(truncated[2])
 
 
@@ -1009,7 +1029,10 @@ def tint_luma_preserving(image: np.ndarray, color: tuple[int, int, int]) -> np.n
     1. a bemenetet **Haeberli-szürkére** viszi (`0,3086/0,6094/0,0820`,
        NEM Rec.601): `szürke = round(Haeberli-luma(képpont))`;
     2. a szürke érték a `_resaturate_table(szín)` 256 elemű táblájának
-       indexe — a tábla a `0x00bce2f0(szín, L)` emuláltja `L = 0…255`-re.
+       indexe — a tábla a `0x00bce2f0(szín, L)` emuláltja `L = 0…255`-re,
+       az emulátor kimenetével bitre egyezően (54 szín,
+       `tests/render/test_tint_resaturate_nativ_3631.py`). Az 1. lépés
+       kerekítése viszont NINCS bitre igazolva.
 
     ⛔ **KORÁBBAN** (a #878 golden-illesztése): Rec.601-súlyok +
     folytonos, per-képpont gamut-kompenzáció. Szürke bemeneten a modell
@@ -1021,6 +1044,8 @@ def tint_luma_preserving(image: np.ndarray, color: tuple[int, int, int]) -> np.n
     """
     validate_image(image)
     image_f = to_float(image)
+    # ⚠️ a natív `ColorMatrix` kimenet-kerekítése nincs kimérve: a `rint`
+    # (float32) feltevés, a szürke index ±1-es csúszását nem zárja ki (#3631).
     gray = to_uint8(_haeberli_luma(image_f))
     table = _resaturate_table((int(color[0]), int(color[1]), int(color[2])))
     return table[gray]

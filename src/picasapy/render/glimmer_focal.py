@@ -55,7 +55,7 @@ def apply_picnik_tint(image, color=(0x80, 0xCF, 0xFF), fade: float = 0.0):
     ```
 
     A `TintImageOperation` a bemenet Haeberli-luminanciáját (NEM Rec.601,
-    #3631) **bájtra megőrzi**, és csak a szín krómáját adja hozzá — a
+    #3631) a csatornánkénti csonkolásig (~1 szint) megőrzi, és csak a szín krómáját adja hozzá — a
     részletes képlet, a gamut-kezelés és a mérési bizonyíték a
     `glimmer_ops.tint_luma_preserving` docstringjében.
 
