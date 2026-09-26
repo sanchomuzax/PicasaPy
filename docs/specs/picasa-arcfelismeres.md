@@ -770,10 +770,10 @@ személycsoportok:” (`Unnamed`).
 
 | | eredeti | nálunk |
 |---|---|---|
-| a kapcsoló | **egy** váltógomb, két állapot (csoportosítva / kibontva) | **két független** jelölőnégyzet: „Group by face” és „Expand groups” (`:70–84`) — négy kombináció |
-| kezdőállapot | csoportosítva | `groupByFace: true`, `expandGroups: false` (`:26–27`) ✅ |
-| a fejléc-utasítás | a fenti négy szöveg | nincs |
-| az Emberek-panel fejléce | az állapottól függ (fent) | #3566 |
+| a kapcsoló | **egy** váltógomb, két állapot (csoportosítva / kibontva) | ✅ egy váltógomb (`clusterToggleButton`), a felirat a másik állapotot nevezi meg (#3585) |
+| kezdőállapot | csoportosítva | ✅ `grouped: true`, az album minden megnyitásakor újra csoportosítva |
+| a fejléc-utasítás | a fenti négy szöveg | ✅ `unnamedInstructions`; a „várjon” a csoportosítás (lenyomat-számítás) futása alatt (#3585) |
+| az Emberek-panel fejléce | az állapottól függ (fent) | ✅ a többképes ág két „Név nélküli…” fejléce (#3585); a fa többi ága #3566 |
 
 Fejlesztés: **#3585** (a váltógomb és a fejléc-utasítás).
 

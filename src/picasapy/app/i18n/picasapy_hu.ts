@@ -3793,11 +3793,27 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Group by face</source>
-        <translation>Csoportosítás arc szerint</translation>
+        <translation>Csoportosítás arcok szerint</translation>
     </message>
     <message>
         <source>Expand groups</source>
-        <translation>Csoportok kibontása</translation>
+        <translation>Csoportok részletes nézete</translation>
+    </message>
+    <message>
+        <source>Grouping faces, please wait...</source>
+        <translation>Az arcok csoportosítása folyamatban van, kérjük, várjon...</translation>
+    </message>
+    <message>
+        <source>Select someone you know and add a name.</source>
+        <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet.</translation>
+    </message>
+    <message>
+        <source>Select someone you know and add a name, or click the "x" to ignore that person.</source>
+        <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet, vagy kattintson az "x" ikonra az adott személy mellőzéséhez.</translation>
+    </message>
+    <message>
+        <source>Select someone you know and add a name</source>
+        <translation>Jelöljön ki valakit, akit ismer, és adjon hozzá egy nevet</translation>
     </message>
     <message>
         <source>%1 selected</source>
@@ -5132,6 +5148,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>People in these photos:</source>
         <translation>Személyek ezeken a fotókon:</translation>
+    </message>
+    <message>
+        <source>Unnamed people in these photos:</source>
+        <translation>Meg nem nevezett emberek ezeken a fotókon:</translation>
+    </message>
+    <message>
+        <source>Unnamed groups of people:</source>
+        <translation>Név nélküli személycsoportok:</translation>
     </message>
     <message>
         <source>Also in these photos:</source>

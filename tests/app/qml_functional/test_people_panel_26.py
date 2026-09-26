@@ -146,3 +146,62 @@ class TestEmptyStates:
         assert "appear with" in _child(
             window, "peoplePanelEmptyText"
         ).property("text")
+
+
+def _click(window, item, qt_app):
+    from PySide6.QtCore import QPoint
+    from PySide6.QtTest import QTest
+
+    center = item.mapToScene(item.boundingRect().center())
+    QTest.mouseClick(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        QPoint(round(center.x()), round(center.y())),
+    )
+    qt_app.processEvents()
+
+
+class TestUnnamedAlbumHeader:
+    """#3585 / #3566 (spec 9/b, 9/d): a „Név nélküliek" albumban, több
+    kijelölt arcnál a panel fejléce a csoportosítás-váltógombot követi —
+    csoportosítva `PeoplePanel::UnnamedCluster`, kibontva
+    `PeoplePanel::Unnamed`."""
+
+    def _open_unnamed_album(self, window, qt_app, selected):
+        _open(window, qt_app)
+        window.setProperty("unnamedFacesOpen", True)
+        qt_app.processEvents()
+        view = _child(window, "unnamedFacesView")
+        view.setProperty("selectedCount", selected)
+        qt_app.processEvents()
+        return view
+
+    def test_the_header_follows_the_cluster_toggle(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        view = self._open_unnamed_album(window, qt_app, selected=2)
+        label = _child(window, "peoplePanelUnnamedLabel")
+
+        assert label.property("visible") is True
+        assert label.property("text") == "Unnamed people in these photos:"
+        assert _child(window, "peoplePanelEmptyText").property("visible") is False
+
+        _click(window, _child(view, "clusterToggleButton"), qt_app)
+
+        assert view.property("grouped") is False
+        assert label.property("text") == "Unnamed groups of people:"
+
+    def test_no_unnamed_header_outside_the_album(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        _open(window, qt_app)
+        panel = _child(window, "peoplePanel")
+        panel.setProperty("selectionCount", 3)
+        qt_app.processEvents()
+
+        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False
+
+    def test_no_unnamed_header_without_a_multiple_selection(self, qml_app, qt_app):
+        """Egy kijelölt arcnál az eredeti egyképes ága fut (9/b) — az a
+        #3566-é, itt csak az, hogy a „Név nélküli…" fejléc NEM jelenik meg."""
+        window, _controller, _engine = qml_app
+        self._open_unnamed_album(window, qt_app, selected=1)
+
+        assert _child(window, "peoplePanelUnnamedLabel").property("visible") is False

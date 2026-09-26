@@ -2817,7 +2817,12 @@ ApplicationWindow {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
-        selectionCount: window.selectedRows().length
+        // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
+        // fejléc a csoportosítás-váltógombot követi
+        selectionCount: window.unnamedFacesOpen
+            ? unnamedFacesView.selectedCount : window.selectedRows().length
+        unnamedAlbumMode: window.unnamedFacesOpen
+        unnamedGrouped: unnamedFacesView.grouped
         currentPerson: controller ? controller.currentPersonName : ""
         // a photos.revision-nel együtt kötve: arc-írás után frissül
         peopleHere: controller
