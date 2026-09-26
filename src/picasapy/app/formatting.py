@@ -2,8 +2,10 @@
 szövegépítése (#150 — az AppControllerből kiemelve).
 
 Tiszta függvények: nincs Qt-objektum-állapotuk, a lokalizációt a hívó adja
-át (`locale` + a fordítási kontextust őrző, kötött `tr`). Így a fordítások
-kontextusa változatlanul az `AppController` marad."""
+át (`locale` + egy `tr` fordító). A hívók a modul saját `fordit`-ját adják
+át: a `pyside6-lupdate` az itteni `tr("...")` hívásokat a `.ts` NÉVTELEN
+(`""`) kontextusába gyűjti, tehát futásidőben is ott kell keresni (#3639 — a
+vezérlő `self.tr`-je `AppController`-ben keresett, és a panel angol maradt)."""
 
 from __future__ import annotations
 
@@ -12,11 +14,24 @@ import re
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QDate, QDateTime, QLocale, QUrl
+from PySide6.QtCore import QCoreApplication, QDate, QDateTime, QLocale, QUrl
 
 from picasapy.metadata import read_exif_details
 
 from .photo_sort import photo_date
+
+#: A modul szövegeinek fordítási kontextusa — a `.ts` névtelen kontextusa,
+#: ahová a `pyside6-lupdate` a modulszintű `tr("...")` hívásokat gyűjti.
+_KONTEXTUS = ""
+
+
+def fordit(text: str) -> str:
+    """A formázók `tr`-je: a modul SAJÁT kontextusában fordít (#3639).
+
+    A hívó ezt adja át `tr`-ként, NEM a saját `self.tr`-jét: az a hívó
+    osztályának kontextusában keresne, ahol ezek a szövegek nincsenek."""
+    return QCoreApplication.translate(_KONTEXTUS, text)
+
 
 # útvonal-vég leválasztása mappa-névhez (per- és backslash-tűrő)
 PATH_TAIL = re.compile(r"[/\\]")

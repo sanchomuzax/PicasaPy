@@ -1072,7 +1072,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
         self._camera_summary = formatting.camera_summary_text(
-            read_exif_details(path), QLocale(), self.tr
+            read_exif_details(path), QLocale(), formatting.fordit
         )
         # Perzisztens, rétegenkénti undo (#116 visszajelzés): a mentett lánc
         # maga a réteg-verem — minden elemhez visszavonás-lépés jár, fordított

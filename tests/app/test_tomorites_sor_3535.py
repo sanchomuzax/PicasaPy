@@ -122,9 +122,9 @@ def test_magyar_felirat_a_szovegtar_szerint(tmp_path):
     """A lefordított `.qm`-en át: minden kód a `stringres` magyar szövegét adja.
 
     A kontextus a `formatting.py` többi Tulajdonságok-szövegéé (a `.ts`
-    névtelen kontextusa). ⚠️ A vezérlő ma `AppController.tr`-rel hívja a
-    panelt, abban a kontextusban viszont a panel szövegei nincsenek meg —
-    ez a #3535-től független, a teljes panelt érintő hiány.
+    névtelen kontextusa). A vezérlő a #3639 óta `formatting.fordit`-tal
+    hívja a panelt, ugyanebben a kontextusban (éles úton mérve:
+    `test_tulajdonsagok_forditas_3639.py`).
     """
     from PySide6.QtCore import QCoreApplication, QTranslator
 
