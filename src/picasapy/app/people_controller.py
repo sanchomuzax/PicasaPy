@@ -26,7 +26,6 @@ from picasapy.index.faces_detected import suggested_album_photos
 from picasapy.index.people import (
     PEOPLE_SORT_MODES,
     people_in_index,
-    people_with,
     person_photos,
     rendezd_szemelyeket,
 )
@@ -213,21 +212,6 @@ class PeopleMixin:
         self._csak_javaslatok = csak
         self._szemely_betoltese(param)
         self.personViewChanged.emit()
-
-    @Slot(str, result="QVariantList")
-    def peopleWith(self, name: str):  # noqa: N802 — QML-slot-stílus
-        """Akik EGYÜTT szerepelnek a megadott személlyel: `[{name, count}]`.
-
-        Az eredeti Emberek-panel negyedik állapota: *„Named People who
-        appear WITH the currently selected person will be listed here."* —
-        a családi gyűjtemények természetes navigációja („ki van még rajta
-        ezeken a képeken?"), onnan egy kattintással a másik személy
-        albumába. LISTA, nem tuple (a `people` property mintája)."""
-        with open_index(self._db_path) as conn:
-            return [
-                {"name": person.name, "count": person.photo_count}
-                for person in people_with(conn, name)
-            ]
 
     @Slot(list, result="QVariantList")
     def peopleOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
