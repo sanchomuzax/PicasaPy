@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.581] – 2026-09-26
+
 ### Hozzáadva
 - **Kettős nézetben ugyanannak a fotónak mindkét fele külön
   szerkeszthető, és kilépéskor a program rákérdez, melyiket tartsa meg
