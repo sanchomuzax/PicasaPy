@@ -74,6 +74,7 @@ Window {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             //: az eredeti `compacting.fen` magyarázó szövege
+            //: (`compacting/label5.title`), Picasa→PicasaPy névcserével (#3573)
             text: qsTr("PicasaPy is compacting its database to save disk "
                        + "space. This may take several minutes.")
             font.pixelSize: Theme.fontSize

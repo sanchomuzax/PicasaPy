@@ -67,6 +67,7 @@ Item {
             // tiltott (`yesEnabled: false`), és megválaszolhatatlan
             // kérdést feltenni indoklás nélkül rosszabb, mint világosan
             // megmondani, hogy ez a kiút még nem elérhető.
+            //: `CThumbUI::ReadOnlyPrompt` — az eredeti szövege (#3573)
             editReadOnlyDialog.ask("", qsTr(
                 "This file is read only. In order to edit this file, "
                 + "Picasa needs to copy the file's folder. Would you "

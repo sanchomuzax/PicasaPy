@@ -198,8 +198,13 @@ Rectangle {
 
         onMentesUjKeszletKert: host.ujKeszletUrlap()
         onMentesSzerkesztKert: host.szerkesztoUrlap()
-        onMentesTorolKert: torlesMegerosites.ask(
-            "", qsTr("Delete this backup set? The saved files stay where they are."))
+        onMentesTorolKert: {
+            var k = host.kivalasztott >= 0 ? host.keszletek[host.kivalasztott] : null
+            //: `il_NewBkDialog_delete` — az eredeti szövege, a készlet nevével (#3573)
+            torlesMegerosites.ask(
+                "", qsTr("Are you sure you want to delete the backup set \"%1\"?")
+                        .arg(k ? k.nev : ""))
+        }
         onMentesKeszletValasztva: function (index) { host.kivalasztott = index }
         onMentesMindetPipaldKert: host.mindetPipald()
         onMentesSenkitSePipaldKert: host.egyiketSemPipald()
@@ -219,14 +224,14 @@ Rectangle {
             var terv = backupController.terv(k.id, mappak)
             if (media === "") {
                 host.uzenet = terv.darab === 0
-                    ? qsTr("Everything was already backed up.")
+                    ? qsTr("Backup Complete")
                     : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
                         .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
                 backupController.futtasdMost(k.id, mappak)
                 return
             }
             host.uzenet = terv.darab === 0
-                ? qsTr("Everything was already backed up.")
+                ? qsTr("Backup Complete")
                 : qsTr("Writing %1 file(s) to disc image(s)...").arg(terv.darab)
             backupController.futtasdLemezkepbe(k.id, media, mappak)
         }
@@ -248,16 +253,15 @@ Rectangle {
         }
         function onFutasKesz(darab, bajt) {
             host.fut = false
-            host.uzenet = darab === 0
-                ? qsTr("Everything was already backed up.")
-                //: #3189: `il_BurnPanel::BackupCopy::3`
-                : qsTr("Backup Complete")
+            //: #3189, #3573: `il_BurnPanel::BackupCopy::3` — az eredeti EGY
+            //: záró üzenetet ismer, akkor is, ha nem volt mit másolni
+            host.uzenet = qsTr("Backup Complete")
         }
         //: #2074: a lemezkép-ág vége
         function onLemezkepekKeszek(lemezek, fajlok) {
             host.fut = false
             host.uzenet = lemezek === 0
-                ? qsTr("Everything was already backed up.")
+                ? qsTr("Backup Complete")
                 : qsTr("Done: %1 file(s) in %2 disc image(s).")
                     .arg(fajlok).arg(lemezek)
         }

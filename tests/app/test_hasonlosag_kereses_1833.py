@@ -204,7 +204,7 @@ class TestAFeliratok:
             ("Clear Sample", "Minta törlése"),
             (
                 "Updating similarity database (will be fast next time)",
-                "A hasonlósági adatbázis épül (legközelebb gyors lesz)",
+                "Hasonlósági adatbázis frissítése (legközelebb gyors lesz)",
             ),
         ],
     )

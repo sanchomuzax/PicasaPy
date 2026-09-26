@@ -39,6 +39,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   létrehozása, módosítása és törlése, a mappánkénti kijelölés (#3594) és a
   mappa/lemezkép kimenet (#3593) mind megvan, csak a könyvtár alján, a
   „Lemezre írás” gombbal.
+- **25 megerősítő és figyelmeztető üzenet a hivatalos Picasa-szöveget
+  mondja (#3573)**, például „Kilép?”, „Nézze át nyomtatás előtt.” és
+  „Biztosan törli a(z) „…” mentési készletet?”; a mentés-készlet törlése
+  és a diszk-mentés záró üzenete a készlet nevét, illetve az eredeti
+  egységes „A mentés elkészült” szöveget mutatja.
 
 ## [0.8.584] – 2026-09-26
 

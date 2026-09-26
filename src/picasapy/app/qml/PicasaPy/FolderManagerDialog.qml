@@ -275,20 +275,23 @@ Window {
         if (!path) return
         if (state === "always" && folderManagerWindow.isWholeDrive(path)) {
             driveWarning.pendingPath = path
+            //: `IDS_ROOT_WATCH_WARNING` — az eredeti szövege, záró kérdéssel (#3573)
             driveWarning.ask(
                 "watchWholeDrive",
                 qsTr("Watching an entire drive can slow down the system. "
-                     + "It would be better to select several sub-folders."))
+                     + "It would be better to select several sub-folders. "
+                     + "Are you sure you want to do this?"))
             return
         }
         if (state === "none"
                 && controller && controller.watchedFolders.indexOf(path) !== -1) {
             removeWatchedConfirm.pendingPath = path
+            //: `IDS_HOTFOLDER_CONFIRM` — az eredeti szövege (#3573)
             removeWatchedConfirm.ask(
                 "removeWatchedFolder",
-                qsTr("If you remove this folder, new items that you add to "
-                     + "that folder on disk will not be automatically added "
-                     + "to your library."))
+                qsTr("If you remove a watched folder, new items that you add "
+                     + "to that folder on disk will not be automatically "
+                     + "added to Picasa. Are you sure you want to do this?"))
             return
         }
         folderManagerWindow.stageState(path, state)

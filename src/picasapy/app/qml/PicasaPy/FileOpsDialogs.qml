@@ -437,8 +437,10 @@ Item {
                         "%n picture(s) will be moved to the system trash.",
                         "", pathList.length))
             } else {
+                //: `CThumbUI::ConfirmImmediateDeletion::Message` — az
+                //: eredeti szövege, záró kérdéssel (#3573)
                 ask("deletePermanently", qsTr(
-                    "This file cannot be moved to the Trash and will be deleted immediately. This cannot be undone."))
+                    "This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?"))
             }
         }
         onConfirmed: {
