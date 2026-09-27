@@ -79,15 +79,40 @@ def round_corners(
     return np.where(mask[..., np.newaxis] == 1, image, filled)
 
 
-def add_caption(image: np.ndarray, height_px: float, color: tuple[int, int, int]) -> np.ndarray:
-    """Aljára fűzött, egyszínű felirat-sáv (a szövegrajzolás nem #381 hatóköre)."""
-    validate_image(image)
-    px = max(0, int(round(height_px)))
-    if px == 0:
-        return image.copy()
-    strip = np.empty((px, image.shape[1], 3), dtype=image.dtype)
-    strip[:] = np.array(color, dtype=image.dtype)
-    return np.concatenate([image, strip], axis=0)
+#: A lekerekített sarkok élsimítása: képpontonként `n × n` részminta — a
+#: `border__max` exportját ezzel a modell ΔE 0,1 alatt adja vissza (#3768).
+_SAROK_RESZMINTA = 4
+
+
+def _sarok_fedes(sugar: int) -> np.ndarray:
+    """`sugar × sugar`-es float32 fedés a BAL FELSŐ sarokhoz: a kör
+    középpontja a négyzet jobb alsó csúcsa, `(sugar, sugar)`."""
+    n = _SAROK_RESZMINTA
+    reszek = (np.arange(n, dtype=np.float64) + 0.5) / n
+    tav = sugar - (np.arange(sugar, dtype=np.float64)[:, None] + reszek[None, :]).reshape(-1)
+    bent = (tav[:, None] ** 2 + tav[None, :] ** 2) <= float(sugar) ** 2
+    return bent.reshape(sugar, n, sugar, n).mean(axis=(1, 3)).astype(np.float32)
+
+
+def _sarok_folt(
+    kep_sarok: np.ndarray,
+    belso: int,
+    outer_color: tuple[int, int, int],
+    inner_color: tuple[int, int, int],
+) -> np.ndarray:
+    """A bal felső sarok `(R + belső)²`-es foltja: külső szín → a sáv
+    `R + belső` sugarú íve belső színnel → a kép `R` sugarú íve."""
+    sugar = kep_sarok.shape[0]
+    sav_fedes = _sarok_fedes(sugar + belso)[..., np.newaxis]
+    kulso = np.asarray(outer_color, dtype=np.float32)
+    bel = np.asarray(inner_color, dtype=np.float32)
+    alap = kulso * (1.0 - sav_fedes) + bel * sav_fedes
+    kep_fedes = _sarok_fedes(sugar)[..., np.newaxis]
+    kep_resz = alap[belso:, belso:] * (1.0 - kep_fedes) + kep_sarok.astype(np.float32) * kep_fedes
+    folt = np.concatenate(
+        [alap[:belso], np.concatenate([alap[belso:, :belso], kep_resz], axis=1)], axis=0
+    )
+    return np.clip(np.rint(folt), 0, 255).astype(np.uint8)
 
 
 def draw_border(
@@ -99,14 +124,44 @@ def draw_border(
     corner_radius_px: float = 0.0,
     caption_height_px: float = 0.0,
 ) -> np.ndarray:
-    """`BorderImageOperation`: belső gyűrű (a fotót érinti) → külső gyűrű →
-    sarok-lekerekítés → felirat-sáv, ebben a sorrendben (a Border/
-    RoundedEdges/MuseumMatte/Sixties közös implementációja).
+    """`BorderImageOperation` (a Border és a RoundedEdges közös motorja).
+
+    Koncentrikus geometria (#3768, mérve a `border__max` exportján,
+    `docs/specs/filterdesc-registry.md`): a vászon szögletes, külső színű;
+    a belső sáv `R + belső` sugarú lekerekített téglalap belső színnel; a
+    kép sarka `R` sugarú, a kimaradó rész alól a sáv látszik. `R = 0`
+    mellett a sáv is szögletes (a `border__alap` exportján mérve). A
+    feliratsáv a vászon alján, külső színnel; a magassága CSONKÍTOTT egész
+    (`0x008eea90`).
     """
-    ring = add_ring(image, inner_thickness, inner_color)
-    ring = add_ring(ring, outer_thickness, outer_color)
-    ring = round_corners(ring, corner_radius_px, outer_color)
-    return add_caption(ring, caption_height_px, outer_color)
+    validate_image(image)
+    height, width = image.shape[:2]
+    belso = max(0, int(round(inner_thickness)))
+    kulso = max(0, int(round(outer_thickness)))
+    felirat = max(0, int(caption_height_px))
+    sugar = max(0, min(int(round(corner_radius_px)), height // 2, width // 2))
+    keret = kulso + belso
+    vaszon = np.empty((height + 2 * keret + felirat, width + 2 * keret, 3), dtype=image.dtype)
+    vaszon[:] = np.asarray(outer_color, dtype=image.dtype)
+    vaszon[kulso : kulso + height + 2 * belso, kulso : kulso + width + 2 * belso] = np.asarray(
+        inner_color, dtype=image.dtype
+    )
+    vaszon[keret : keret + height, keret : keret + width] = image
+    if sugar == 0:
+        return vaszon
+    meret = sugar + belso
+    also = kulso + height + 2 * belso
+    jobb = kulso + width + 2 * belso
+    for fuggoleges, vizszintes in ((False, False), (False, True), (True, False), (True, True)):
+        sor = slice(None, None, -1 if fuggoleges else 1)
+        oszlop = slice(None, None, -1 if vizszintes else 1)
+        kep_sor = slice(height - sugar, height) if fuggoleges else slice(0, sugar)
+        kep_oszlop = slice(width - sugar, width) if vizszintes else slice(0, sugar)
+        folt = _sarok_folt(image[kep_sor, kep_oszlop][sor, oszlop], belso, outer_color, inner_color)
+        v_sor = slice(also - meret, also) if fuggoleges else slice(kulso, kulso + meret)
+        v_oszlop = slice(jobb - meret, jobb) if vizszintes else slice(kulso, kulso + meret)
+        vaszon[v_sor, v_oszlop] = folt[sor, oszlop]
+    return vaszon
 
 
 #: #649/#626: a `DropShadowImageOperation` (`0x00bbb720`) DÖNTETLEN-ELDÖNTŐ
@@ -327,7 +382,6 @@ __all__ = [
     "add_ring",
     "add_border_sides",
     "round_corners",
-    "add_caption",
     "draw_border",
     "compose_drop_shadow",
     "teglalap_alfa",
