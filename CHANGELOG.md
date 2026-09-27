@@ -7,14 +7,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-### Javítva
-- **Az Emberek panel „…appear with” szövege Windowson már nem ingadozik
-  (#3723).** A személy-albumban a panel üres-szövege ritkán a hibás („…appear
-  in”) ágat mutatta, mert egy teszt közvetlenül a kötött QML-tulajdonságot
-  írta felül — ezt egy késve érkező jelzés csendben visszaírta. A teszt most
-  a valódi `controller.showPerson()` úton át állítja be a nézetet, ami a
-  kötés forrását módosítja, nem harcol vele.
-
 ## [0.8.595] – 2026-09-27
 
 ### Javítva

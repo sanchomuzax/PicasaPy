@@ -30,9 +30,10 @@ def _open(window, qt_app):
     gyerek rejtettnek látszik.
 
     Előtte a nyitó mappa-betöltés háttérmunkája lefut: a vége
-    `statusChanged`-et küld, ami a panel kötéseit újraértékeli — enélkül
-    a teszt `setProperty`-s felülírását egy késve érkező jelzés némán
-    visszaírta (teljes fájlos futásban, sorrendfüggően)."""
+    `statusChanged`-et küld, ami a panel kötéseit újraértékeli. A panel
+    állapotát ezért a tesztek a kötések FORRÁSÁN át állítják (valódi
+    kattintás a rácson, `controller.showPerson()`), nem a panel
+    `setProperty`-jével — azt egy késve érkező jelzés némán visszaírná."""
     from picasapy.app.worker_thread import wait_for_all_background_workers
 
     assert wait_for_all_background_workers(30.0)
@@ -43,6 +44,61 @@ def _open(window, qt_app):
         Qt.ConnectionType.DirectConnection,
     )
     qt_app.processEvents()
+
+
+def _walk_items(item):
+    for child in item.childItems():
+        yield child
+        yield from _walk_items(child)
+
+
+def _library_of(window, controller, qt_app, tmp_path, count):
+    """A fixture két képe (`a.jpg`, `b.jpg`) mellé további sima képek —
+    egyiken sincs megnevezett arc. Az útvonalak rácssorrendben."""
+    from picasapy.app.worker_thread import wait_for_all_background_workers
+
+    lib = tmp_path / "kepek"
+    names = ["a.jpg", "b.jpg"] + [f"k{i}.jpg" for i in range(count - 2)]
+    for name in names[2:]:
+        make_jpeg(lib / name, size=(120, 90))
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, lib)
+    controller._reload_after_sync()
+    assert wait_for_all_background_workers(30.0)
+    for _ in range(5):
+        qt_app.processEvents()
+    return [lib / name for name in names]
+
+
+def _grid_cell(window, row):
+    for item in _walk_items(window.contentItem()):
+        if item.objectName() != "thumbMouseArea" or not item.isVisible():
+            continue
+        cell = item.parentItem()
+        if cell is not None and cell.property("index") == row:
+            return item
+    raise AssertionError(f"a(z) {row}. sor cellája nincs a rácson")
+
+
+def _select_photos(window, controller, qt_app, paths):
+    """VALÓDI kijelölés a rácson: kattintás az elsőre, Ctrl+kattintás a
+    többire (a `test_emberek_panel_fejlec_3566.py` mintája)."""
+    for i, path in enumerate(paths):
+        row = controller.photos.rowOfPath(str(path))
+        assert row >= 0, f"{path.name} nincs a rácson"
+        item = _grid_cell(window, row)
+        center = item.mapToScene(item.boundingRect().center())
+        QTest.mouseClick(
+            window, Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.ControlModifier if i
+            else Qt.KeyboardModifier.NoModifier,
+            QPoint(round(center.x()), round(center.y())),
+        )
+        for _ in range(5):
+            qt_app.processEvents()
+    assert _child(window, "peoplePanel").property("selectionCount") == len(
+        paths
+    )
 
 
 class TestPanelWiring:
@@ -107,24 +163,30 @@ class TestEmptyStates:
         window, _controller, _engine = qml_app
         _open(window, qt_app)
         panel = _child(window, "peoplePanel")
-        panel.setProperty("selectionCount", 0)
-        panel.setProperty("currentPerson", "")
-        qt_app.processEvents()
+        assert panel.property("selectionCount") == 0
+        assert panel.property("currentPerson") == ""
 
-        assert "currently selected photos" in _child(
-            window, "peoplePanelEmptyText"
-        ).property("text")
+        empty = _child(window, "peoplePanelEmptyText")
+        assert empty.property("visible") is True
+        assert "currently selected photos" in empty.property("text")
+        assert _child(window, "peoplePanelHeader").property("visible") is False
 
-    def test_a_selection_promises_the_people_on_it(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+    def test_a_selection_replaces_the_promise_with_a_header(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """Spec 9/b, többképes ág, „van kép" sor: két kijelölt kép,
+        megnevezett arc nélkül, a Név nélküliek albumon KÍVÜL — a fejléc a
+        kibontott „Unnamed groups of people:", és a Text5 ígérete eltűnik.
+        A 0 kijelölés esetétől (fent) épp ebben különbözik."""
+        window, controller, _engine = qml_app
+        paths = _library_of(window, controller, qt_app, tmp_path, 2)
         _open(window, qt_app)
-        panel = _child(window, "peoplePanel")
-        panel.setProperty("selectionCount", 2)
-        qt_app.processEvents()
+        _select_photos(window, controller, qt_app, paths)
 
-        assert "currently selected photos" in _child(
-            window, "peoplePanelEmptyText"
-        ).property("text")
+        header = _child(window, "peoplePanelHeader")
+        assert header.property("visible") is True
+        assert header.property("text") == "Unnamed groups of people:"
+        assert _child(window, "peoplePanelEmptyText").property("visible") is False
 
     def test_a_person_album_promises_who_appears_with_them(self, qml_app, qt_app):
         """#3723: a `currentPerson` a `Main.qml`-ben
@@ -290,15 +352,15 @@ class TestUnnamedAlbumHeader:
         assert label.property("text") == "Unnamed groups of people:"
 
     def test_outside_the_album_the_header_is_never_the_grouped_one(
-        self, qml_app, qt_app
+        self, qml_app, qt_app, tmp_path
     ):
         """A csoportosítás jelzője (`+0x2af`) csak az albumban áll: máshol
-        a többképes ág „van kép" sora a kibontott fejléc (#3566)."""
-        window, _controller, _engine = qml_app
+        a többképes ág „van kép" sora a kibontott fejléc (#3566). A három
+        kép kijelölése valódi kattintás a rácson."""
+        window, controller, _engine = qml_app
+        paths = _library_of(window, controller, qt_app, tmp_path, 3)
         _open(window, qt_app)
-        panel = _child(window, "peoplePanel")
-        panel.setProperty("selectionCount", 3)
-        qt_app.processEvents()
+        _select_photos(window, controller, qt_app, paths)
 
         assert _child(window, "peoplePanelHeader").property("text") == (
             "Unnamed groups of people:"
