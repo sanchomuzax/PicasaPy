@@ -1,31 +1,48 @@
-"""#2227 — a `Resize` mintavételezője Mitchell–Netravali (B = C = 0,4).
+"""#2227 + #3805 — a `Resize` mintavételezője: kicsinyítéskor és 1:1-nél
+DOBOZ, nagyításkor Mitchell–Netravali (B = C = 0,4), fixpontos súlyokkal.
 
 ## A lelet
 
 Az eredeti `ResizeImageOperation` alkalmazója (`0x00bc3650`) a végén
 ugyanazt a `0x00bcb5e0` segédfüggvényt hívja, amit a
 `RotateImageOperation` — az pedig a `ytResampler`-t hívja **explicit**
-móddal: lépték = 1 → **0-s (doboz)**, egyébként **3-as
-(Mitchell–Netravali, B = C = 0,4)**. A mi kódunk bilineáris volt.
+móddal (spec: `docs/specs/filterdesc-registry.md`, 5/c):
+
+* **A mód** a VÍZSZINTES cél/forrás léptékből: `≤ 1` (kicsinyítés vagy
+  1:1) → **0-s doboz**, egyébként **3-as Mitchell**. Ugyanaz a mód fut
+  MINDKÉT tengelyen.
+* **A doboz**: súly 1, ha `|x| < 0,5` (a határon álló csap nem számít), a
+  kicsinyítés léptékével nyújtva. Csap: `j + 0,5`, középpont
+  `c = (i + 0,5) · forrás/cél`.
+* **Egész súlyok**: `csonk(w · 16383 / Σw)`, a maradék a `csonk(c)` csapé.
+* **A kimenet**: `(Σ w·p + 255) >> 14`, 0..255-re szorítva; előbb a
+  vízszintes menet, 8 bites köztes képpel, utána a függőleges.
+
+A #2227 előtt bilineáris, a #3805 előtt tengelyenként döntő, lebegőpontos
+Mitchell volt — a `Pixelate` ettől elkent blokkszíneket adott (ΔE 4,64).
 
 ## Amit ezek a próbák mérnek
 
-A Mitchell-mag **negatív oldallebenyt** visel (`B = C = 0,4` mellett a
-támasz 1 és 2 között negatív), ezért egy éles élen **túllövést** ad — a
-bilineáris és a doboz soha nem lép a bemeneti szélsőértékeken kívülre.
-Ez az a különbség, ami a magot azonosítja, nem a „valamivel élesebb".
-
-⭐ **A KICSINYÍTÉSI viselkedés MÉRVE van** (#3321). Az eredeti
-újramintavevő 3-as ága (`0x00a3f660`) a mag alap-tartósugarát a
-LÉPTÉKKEL OSZTJA (`0x00a3f745`–`0x00a3f74b`): `scale < 1` mellett a mag a
-forrástérben szélesedik. A mi `max(1, skala)`-nyújtásunk tehát nem
-„szokásos feltevés", hanem a mért mechanizmus.
-
-⚠️ Amit ez NEM bizonyít: a képpontra azonos kimenetet az eredetivel — a
-mechanizmus statikus bizonyíték, a golden-egyezés külön mérési feladat.
+A Mitchell-mag **negatív oldallebenyt** visel, ezért nagyításkor egy éles
+élen **túllövést** ad — a doboz soha nem lép a bemeneti szélsőértékeken
+kívülre. A módválasztást ez a különbség azonosítja. A fixpontos képletet a
+jegy 960 → 48-as példája és egy független, ciklusos referencia rögzíti; a
+Picasa-egyezést a 684-es készlet golden-mérése.
 """
 
+# rontás-kontroll: a `glimmer_ops._RESIZE_EGYSEG` 16383 → 16384 → 14 failed
+# (a képletpróbák, a független referencia és a súlyösszegek); a `+ 255`
+# kerekítő elhagyva → 13 failed; a módválasztás `<=` → `<` (1:1-nél Mitchell)
+# → 1 failed (`csak_az_EGYIK_tengely`); `doboz = False` (a #3805 előtti
+# Mitchell-kicsinyítés, fixpontosan) → 10 failed, köztük a golden
+# `pixelate__alap`/`__min` és a két `picnikfocalpixelate`; a `focal.py`
+# visszaírva `cv2.INTER_AREA`-ra → 2 failed (a közös-út próba és a golden
+# `picnikfocalpixelate__alap`).
+
 from __future__ import annotations
+
+import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -40,59 +57,152 @@ def _elkep(szelesseg: int = 16, magassag: int = 16) -> np.ndarray:
     return kep
 
 
-class TestALeptekEgyDOBOZ:
-    """`lépték = 1 → 0-s (doboz)` — mérve. Doboz maggal ez azonosság."""
+# ---------------------------------------------------------------------------
+# Független, ciklusos referencia a spec 5/c pontjából
+# ---------------------------------------------------------------------------
+
+
+def _mitchell(x: float) -> float:
+    b = c = 0.4
+    t = abs(x)
+    if t < 1:
+        return ((12 - 9 * b - 6 * c) * t**3 + (-18 + 12 * b + 6 * c) * t**2 + (6 - 2 * b)) / 6
+    if t < 2:
+        return (
+            (-b - 6 * c) * t**3 + (6 * b + 30 * c) * t**2 + (-12 * b - 48 * c) * t + (8 * b + 24 * c)
+        ) / 6
+    return 0.0
+
+
+def _ref_tengely(sorok: np.ndarray, ki: int, doboz: bool) -> np.ndarray:
+    """Egy menet az ELSŐ tengely mentén: `sorok` alakja (n, ...)."""
+    n = sorok.shape[0]
+    skala = np.float32(n) / np.float32(ki)
+    nyujtas = max(1.0, float(skala))
+    sugar = (0.5 if doboz else 2.0) * nyujtas
+    kimenet = np.zeros((ki,) + sorok.shape[1:], dtype=np.int64)
+    for i in range(ki):
+        c = float(np.float32(np.float32(i + 0.5) * skala))
+        csapok = [j for j in range(n) if abs(j + 0.5 - c) < sugar]
+        if doboz:
+            w = [1.0] * len(csapok)
+        else:
+            w = [_mitchell((j + 0.5 - c) / nyujtas) for j in csapok]
+        osszeg = sum(w)
+        egesz = [int(v * 16383 / osszeg) for v in w]
+        also, felso = (csapok[0], csapok[-1]) if csapok else (0, n - 1)
+        maradek_csap = min(max(int(c), also), felso)
+        if maradek_csap not in csapok:
+            csapok.append(maradek_csap)
+            egesz.append(0)
+        egesz[csapok.index(maradek_csap)] += 16383 - sum(egesz)
+        acc = sum(wi * sorok[j].astype(np.int64) for wi, j in zip(egesz, csapok, strict=True))
+        kimenet[i] = np.clip(acc + 255, 0, 0x3FFFFF) >> 14
+    return kimenet.astype(np.uint8)
+
+
+def _referencia(kep: np.ndarray, szelesseg: int, magassag: int) -> np.ndarray:
+    doboz = szelesseg / kep.shape[1] <= 1.0
+    vizszintes = np.swapaxes(_ref_tengely(np.swapaxes(kep, 0, 1), szelesseg, doboz), 0, 1)
+    return _ref_tengely(vizszintes, magassag, doboz)
+
+
+class TestAFixpontosKeplet:
+    """A jegy „Kész, ha" képletpróbája és a független referencia."""
+
+    def test_960_48_a_jegy_keplete(self):
+        """Lépték 20: a 20 csap súlya 819, a maradék 3 a `20i + 10`-esé."""
+        sor = np.random.default_rng(3805).integers(0, 256, (1, 960, 3), dtype=np.uint8)
+        ki = resize_image(sor, 48, 1)
+        p = sor[0].astype(np.int64)
+        blokkok = p.reshape(48, 20, 3)
+        vart = (819 * blokkok.sum(axis=1) + 3 * p[10::20] + 255) >> 14
+        np.testing.assert_array_equal(ki[0], vart.astype(np.uint8))
+
+    def test_csonkol_nem_kerekit(self):
+        """`[1, 1, 0]` átlaga 0,67; a lebegőpontos `rint` 1-et adna, a
+        fixpontos `(2·5461 + 255) >> 14` 0-t."""
+        kep = np.array([[[1, 1, 1], [1, 1, 1], [0, 0, 0]]], dtype=np.uint8)
+        assert resize_image(kep, 1, 1)[0, 0].tolist() == [0, 0, 0]
+
+    def test_a_koztes_kep_8_bites(self):
+        """Két menet: a vízszintes kimenete egész, a függőleges erre épül.
+
+        Vízszintesen `[2, 2, 1]` → 1 és `[3, 3, 2]` → 2 (csonkolva);
+        függőlegesen `(8191·1 + 8192·2 + 255) >> 14 = 1`. Lebegőpontos
+        köztes képpel (1,67 és 2,67) ugyanez 2 lenne."""
+        kep = np.array([[[2] * 3, [2] * 3, [1] * 3], [[3] * 3, [3] * 3, [2] * 3]], dtype=np.uint8)
+        assert resize_image(kep, 1, 1)[0, 0].tolist() == [1, 1, 1]
+
+    @pytest.mark.parametrize(
+        ("be", "ki"),
+        [((13, 17), (5, 7)), ((9, 30), (4, 11)), ((6, 7), (13, 19)), ((10, 8), (3, 19)), ((5, 12), (11, 6))],
+        ids=["kicsinyites", "nem-egesz-leptek", "nagyitas", "vizszintes-nagy-fuggoleges-kicsi",
+             "vizszintes-kicsi-fuggoleges-nagy"],
+    )
+    def test_a_fuggetlen_referenciaval_BITRE(self, be, ki):
+        magas, szeles = be
+        kep = np.random.default_rng(sum(be) + sum(ki)).integers(
+            0, 256, (magas, szeles, 3), dtype=np.uint8
+        )
+        np.testing.assert_array_equal(
+            resize_image(kep, ki[1], ki[0]), _referencia(kep, ki[1], ki[0])
+        )
+
+
+class TestAModvalasztas:
+    """A VÍZSZINTES lépték dönt, és a mód mindkét tengelyre ugyanaz."""
 
     def test_azonos_meretre_VALTOZATLAN(self):
-        kep = np.random.default_rng(7).integers(
-            0, 256, (24, 32, 3), dtype=np.uint8
-        )
+        kep = np.random.default_rng(7).integers(0, 256, (24, 32, 3), dtype=np.uint8)
         assert np.array_equal(resize_image(kep, 32, 24), kep)
 
     def test_csak_az_EGYIK_tengely_valtozatlan(self):
-        """A lépték tengelyenként számolódik (`src/dst`, `0x00bc3700`)."""
-        kep = _elkep(16, 16)
-        eredmeny = resize_image(kep, 16, 32)
-        assert eredmeny.shape == (32, 16, 3)
-        # a vízszintes tengely léptéke 1 → az él pontosan ott marad
-        assert set(np.unique(eredmeny[:, :8])) == {0}
-        assert set(np.unique(eredmeny[:, 8:])) == {255}
+        """Vízszintes lépték 1 → doboz mindkét tengelyen: a függőleges
+        nagyítás sem lő túl, és a vízszintes menet azonosság."""
+        kep = np.full((16, 16, 3), 64, dtype=np.uint8)
+        kep[8:] = 192
+        kep[:, 3] = 10
+        eredmeny = resize_image(kep, 16, 40)
+        assert eredmeny.shape == (40, 16, 3)
+        assert eredmeny.min() == 10 and eredmeny.max() == 192
+        assert (eredmeny[:, 3] == 10).all()
+
+    def test_vizszintes_kicsinyites_a_fuggolegest_is_dobozolja(self):
+        kep = np.full((16, 16, 3), 64, dtype=np.uint8)
+        kep[8:] = 192
+        eredmeny = resize_image(kep, 8, 64)
+        assert eredmeny.min() == 64 and eredmeny.max() == 192
+
+    def test_vizszintes_nagyitas_a_fuggolegest_is_Mitchellel_futtatja(self):
+        """Függőleges KICSINYÍTÉS, mégis Mitchell: a vízszintes dönt."""
+        kep = np.full((64, 8, 3), 64, dtype=np.uint8)
+        kep[32:] = 192
+        eredmeny = resize_image(kep, 16, 24).astype(np.int32)
+        assert eredmeny.min() < 64 and eredmeny.max() > 192
 
 
 class TestAMitchellTULLOVES:
-    """A magot a negatív oldallebeny azonosítja."""
+    """Nagyításkor a magot a negatív oldallebeny azonosítja."""
 
     def test_nagyitaskor_TULLO_a_bemeneti_tartomanyon(self):
-        """SZÜRKE él, hogy a 0/255 levágás ne rejtse el a túllövést.
-
-        A negatív oldallebeny miatt az él két oldalán a kimenet a bemeneti
-        `[64, 192]` tartományon KÍVÜLRE lép. Bilineárisnál és doboznál ez
-        lehetetlen: azok konvex kombinációt adnak."""
+        """SZÜRKE él, hogy a 0/255 levágás ne rejtse el a túllövést."""
         kep = np.full((16, 16, 3), 64, dtype=np.uint8)
         kep[:, 8:] = 192
         eredmeny = resize_image(kep, 64, 16).astype(np.int32)
-        assert eredmeny.min() < 64, (
-            f"nincs alullövés (min = {eredmeny.min()}, a bemenet alja 64) — "
-            f"a mag nem visel negatív oldallebenyt"
-        )
-        assert eredmeny.max() > 192, (
-            f"nincs túllövés (max = {eredmeny.max()}, a bemenet teteje 192)"
-        )
+        assert eredmeny.min() < 64, f"nincs alullövés (min = {eredmeny.min()})"
+        assert eredmeny.max() > 192, f"nincs túllövés (max = {eredmeny.max()})"
 
     def test_a_BILINEARIS_kimenete_MAS(self):
-        """Ha valaki visszaírja bilineárisra, ez a próba elbukik."""
         import cv2
 
         kep = _elkep(16, 16)
         mienk = resize_image(kep, 64, 16)
         bilin = cv2.resize(kep, (64, 16), interpolation=cv2.INTER_LINEAR)
-        assert not np.array_equal(mienk, bilin), (
-            "a kimenet a bilineárissal azonos — a Mitchell-mag nincs bekötve"
-        )
+        assert not np.array_equal(mienk, bilin)
 
     def test_a_KOBOS_kimenete_is_MAS(self):
-        """Az OpenCV `INTER_CUBIC` Catmull–Rom-szerű (a = −0,75), NEM
-        Mitchell B = C = 0,4 — a kényelmes helyettesítés kizárva."""
+        """Az OpenCV `INTER_CUBIC` Catmull–Rom-szerű, NEM Mitchell."""
         import cv2
 
         kep = _elkep(16, 16)
@@ -102,36 +212,24 @@ class TestAMitchellTULLOVES:
 
 
 class TestAMagMAGA:
-    """A magot közvetlenül is mérjük — a képleten át, nem a kimeneten."""
-
     def test_a_mag_ertekei_a_KEPLETBOL(self):
         from picasapy.render.glimmer_ops import mitchell_netravali
 
-        # B = C = 0,4:  |x|<1 → (6|x|³ − 10,8|x|² + 5,2)/6
-        assert mitchell_netravali(np.array([0.0]))[0] == pytest.approx(
-            5.2 / 6, abs=1e-9
-        )
+        assert mitchell_netravali(np.array([0.0]))[0] == pytest.approx(5.2 / 6, abs=1e-9)
         assert mitchell_netravali(np.array([1.0]))[0] == pytest.approx(
             (-2.8 + 14.4 - 24 + 12.8) / 6, abs=1e-9
         )
-        assert mitchell_netravali(np.array([2.0]))[0] == pytest.approx(
-            0.0, abs=1e-9
-        )
+        assert mitchell_netravali(np.array([2.0]))[0] == pytest.approx(0.0, abs=1e-9)
 
     def test_a_mag_NEGATIV_az_oldallebenyen(self):
         from picasapy.render.glimmer_ops import mitchell_netravali
 
-        ertekek = mitchell_netravali(np.linspace(1.05, 1.95, 19))
-        assert (ertekek < 0).any(), (
-            "nincs negatív oldallebeny — ez nem Mitchell B = C = 0,4"
-        )
+        assert (mitchell_netravali(np.linspace(1.05, 1.95, 19)) < 0).any()
 
 
 class TestASmoothingAgaMarad:
     def test_smoothing_hamis_a_LEGKOZELEBBI_szomszed(self):
-        """⚠️ Ez NEM mérés: a bináris `smoothing=False` ága nincs
-        visszafejtve (a 0-s dobozmódot használja-e, vagy tényleg
-        legközelebbi szomszédot). A mai viselkedést rögzítjük."""
+        """Mérve (5/a): `smoothing=false` a 9-es, legközelebbi-szomszéd ág."""
         import cv2
 
         kep = _elkep(16, 16)
@@ -142,90 +240,131 @@ class TestASmoothingAgaMarad:
 
 
 class TestAKicsinyitesiNyujtas:
-    """#3321: a mag KICSINYÍTÉSKOR a léptékkel nyúlik — mérve.
+    """#3321: a mag KICSINYÍTÉSKOR a léptékkel nyúlik — mérve (5/b).
 
-    Az eredeti 3-as ága (`0x00a3f660`) a mag alap-tartósugarát a léptékkel
-    osztja (`0x00a3f745`–`0x00a3f74b`). A hatás élsimítás: `scale < 1`
-    mellett a szélesebb mag ÁTLAGOL, tehát a Nyquist-határon lévő minta
-    (egy képpont széles csíkok) nem alias-ol vissza.
-
-    A próba ezt a HATÁST méri, és a kontroll megmutatja, hogy az állításnak
-    van foga: ugyanaz a mag NYÚJTÁS NÉLKÜL látványos aliast ad.
+    A Mitchell-mag kicsinyítéskor csak akkor fut, ha a VÍZSZINTES tengely
+    nagyít, ezért a próba a függőleges tengelyt kicsinyíti vízszintes
+    csíkokkal. A kontroll megmutatja, hogy az állításnak van foga.
     """
 
     @staticmethod
-    def _csikos(szelesseg: int = 64, magassag: int = 8) -> np.ndarray:
-        """Egy képpont széles, függőleges fekete-fehér csíkok (Nyquist)."""
+    def _csikos(magassag: int = 64, szelesseg: int = 4) -> np.ndarray:
+        """Egy képpont magas, vízszintes fekete-fehér csíkok (Nyquist)."""
         kep = np.zeros((magassag, szelesseg, 3), dtype=np.uint8)
-        kep[:, ::2] = 255
+        kep[::2] = 255
         return kep
 
-    @staticmethod
-    def _nyujtas_nelkul(be_meret: int, ki_meret: int):
-        """A KONTROLL súlyai: ugyanaz a mag, de rögzített, 1-es nyújtással."""
-        from picasapy.render.glimmer_ops import mitchell_netravali
-
-        skala = be_meret / ki_meret
-        tamasz = 2.0
-        kozep = (np.arange(ki_meret) + 0.5) * skala - 0.5
-        elso = np.ceil(kozep - tamasz).astype(np.int64)
-        ablak = int(np.ceil(2 * tamasz)) + 1
-        indexek = elso[:, None] + np.arange(ablak)[None, :]
-        sulyok = mitchell_netravali(kozep[:, None] - indexek)
-        osszeg = sulyok.sum(axis=1, keepdims=True)
-        osszeg[osszeg == 0] = 1.0
-        return np.clip(indexek, 0, be_meret - 1), sulyok / osszeg
-
-    def _kontroll_sor(self, kep: np.ndarray, ki_szelesseg: int) -> np.ndarray:
-        indexek, sulyok = self._nyujtas_nelkul(kep.shape[1], ki_szelesseg)
-        sor = kep[0, :, 0].astype(np.float64)
-        return (sor[indexek] * sulyok).sum(axis=1)
-
-    #: A 64 → 9 arány SZÁNDÉKOS. A kettő hatványainál (64 → 8, 64 → 16) a
-    #: mintavételi fázis szimmetrikus a periódus-2 csíkokra, ezért a
-    #: NYÚJTÁS NÉLKÜLI kontroll is pontosan 127,5-öt ad (szórás 0,0) — a
-    #: próba ott vakon átmenne. Mérve: 64 → 9-nél a kontroll szórása 65,2,
-    #: a nyújtotté 9,8.
-    KI_SZELESSEG = 9
+    #: A 64 → 9 arány SZÁNDÉKOS: a kettő hatványainál a nyújtás nélküli
+    #: kontroll is pontosan középszürkét adna, és a próba vakon átmenne.
+    KI_MAGASSAG = 9
 
     def test_a_kicsinyites_ATLAGOL_nem_aliasol(self):
-        """A mért nyújtással a csíkok egyenletes szürkévé olvadnak."""
-        kep = self._csikos()
-        kicsi = resize_image(kep, self.KI_SZELESSEG, 8)
-        sor = kicsi[0, :, 0].astype(np.float64)
-        assert sor.std() < 12.0, (
-            f"a kimenet szórása {sor.std():.1f} — a szélesebb magnak "
-            "át kellene átlagolnia a csíkokat")
-        assert 96.0 < sor.mean() < 160.0, (
-            f"a fekete-fehér csíkok átlaga {sor.mean():.1f}, a várt "
-            "középszürke helyett")
+        kicsi = resize_image(self._csikos(), 8, self.KI_MAGASSAG)
+        oszlop = kicsi[:, 3, 0].astype(np.float64)
+        assert oszlop.std() < 12.0, f"a kimenet szórása {oszlop.std():.1f}"
+        assert 96.0 < oszlop.mean() < 160.0
 
     def test_a_NYUJTAS_NELKULI_mag_ELBUKNA(self):
-        """Ellenpróba: az állításnak van foga.
+        """Ellenpróba: ugyanaz a mag rögzített 2-es támasszal aliasol."""
+        from picasapy.render.glimmer_ops import mitchell_netravali
 
-        Ugyanaz a Mitchell-mag, rögzített 2-es támasszal — a kimenet a
-        csíkokra ül rá, tehát nagy szórást ad. Ha ez a kontroll egyszer
-        „átmenne", az azt jelentené, hogy a fenti próba bármit elfogad.
-        """
-        kep = self._csikos()
-        sor = self._kontroll_sor(kep, self.KI_SZELESSEG)
-        assert sor.std() > 50.0, (
-            f"a nyújtás nélküli mag szórása {sor.std():.1f} — a kontroll "
-            "nem különbözteti meg a két magot")
+        be, ki = 64, self.KI_MAGASSAG
+        kozep = (np.arange(ki) + 0.5) * (be / ki) - 0.5
+        indexek = np.ceil(kozep - 2.0).astype(np.int64)[:, None] + np.arange(5)[None, :]
+        sulyok = mitchell_netravali(kozep[:, None] - indexek)
+        sulyok /= sulyok.sum(axis=1, keepdims=True)
+        oszlop = (self._csikos()[np.clip(indexek, 0, be - 1), 0, 0] * sulyok).sum(axis=1)
+        assert oszlop.std() > 50.0
 
     def test_a_sulyok_a_MERT_nyujtast_hasznaljak(self):
-        """A súlyablak szélessége a léptékkel nő — a mechanizmus maga."""
-        from picasapy.render.glimmer_ops import _mintavetel_sulyok
+        from picasapy.render.glimmer_ops import _tengely_sulyok
 
-        _, kicsi = _mintavetel_sulyok(64, 8)
-        _, azonos = _mintavetel_sulyok(8, 8)
-        assert kicsi.shape[1] > azonos.shape[1], (
-            "kicsinyítéskor a mag NEM szélesedett — a mért osztás hiányzik")
+        _, kicsi = _tengely_sulyok(64, 8, doboz=False)
+        _, azonos = _tengely_sulyok(8, 8, doboz=False)
+        assert kicsi.shape[1] > azonos.shape[1]
 
     def test_nagyitaskor_NINCS_nyujtas(self):
-        """A mért képlet `max(1, skala)`: `scale > 1` esetén a mag marad."""
-        from picasapy.render.glimmer_ops import _mintavetel_sulyok
+        from picasapy.render.glimmer_ops import _tengely_sulyok
 
-        _, nagy = _mintavetel_sulyok(8, 64)
-        _, azonos = _mintavetel_sulyok(8, 8)
+        _, nagy = _tengely_sulyok(8, 64, doboz=False)
+        _, azonos = _tengely_sulyok(8, 8, doboz=False)
         assert nagy.shape[1] == azonos.shape[1]
+
+    @pytest.mark.parametrize(("be", "ki"), [(64, 8), (8, 64), (960, 48), (7, 3), (3, 7), (16, 40)])
+    @pytest.mark.parametrize("doboz", [True, False])
+    def test_a_sulyok_osszege_16383(self, be, ki, doboz):
+        from picasapy.render.glimmer_ops import _tengely_sulyok
+
+        _, sulyok = _tengely_sulyok(be, ki, doboz=doboz)
+        assert (sulyok.sum(axis=1) == 16383).all()
+
+
+class TestAFocalPixelateKozosUton:
+    """#3805: a `PicnikFocalPixelate` kicsinyítése is a közös `resize_image`."""
+
+    def test_maszk_nelkul_a_resize_image_blokkjai(self):
+        import cv2
+
+        from picasapy.render.focal import apply_focal_pixelate
+
+        kep = np.random.default_rng(11).integers(0, 256, (60, 90, 3), dtype=np.uint8)
+        # Reverse: a kör KÜLSEJE éles, a belseje pixeles — a nagy sugár a
+        # teljes képet lefedi, tehát a kimenet maga a pixelesített kép
+        ki = apply_focal_pixelate(kep, impact=7.0, radius=400.0, hardness=100.0, reverse=True)
+        kicsi = resize_image(kep, int(90 / 7.0), int(60 / 7.0), smoothing=True)
+        vart = resize_image(kicsi, 90, 60, smoothing=False)
+        np.testing.assert_array_equal(ki, vart)
+        area = cv2.resize(kep, (int(90 / 7.0), int(60 / 7.0)), interpolation=cv2.INTER_AREA)
+        assert not np.array_equal(kicsi, area), "a kontroll nem különbözteti meg a két utat"
+
+
+# ---------------------------------------------------------------------------
+# FEJLESZTŐI GÉPEN futó golden-mérés a valódi Picasa-exporttal; ha a készlet
+# nincs a gépen, skip.
+# ---------------------------------------------------------------------------
+
+_KIT = Path("/mnt/nas/My Pictures/684-merokeszlet")
+
+#: A mért érték + 0,05-ös tűrés.
+_TURES = 0.05
+
+#: (név, lánc, mért ΔE a #3805 után; a megjegyzésben a #3805 előtti)
+_GOLDEN_ESETEK = [
+    ("pixelate__alap", "Pixelate=1,20.000000,9.000000,0.000000;", 0.098),  # előtte 4,638
+    ("pixelate__min", "Pixelate=1,2.000000,0.000000,0.000000;", 0.128),  # előtte 0,783
+    ("pixelate__max", "Pixelate=1,150.000000,9.000000,100.000000;", 0.121),  # előtte 0,121
+    (
+        "picnikfocalpixelate__alap",
+        "PicnikFocalPixelate=1,0.500000,0.500000,20.000000,105.000000,50.000000,0.000000,0.000000;",
+        0.231,  # előtte 0,321 (`cv2.INTER_AREA`)
+    ),
+    (
+        "picnikfocalpixelate__min",
+        "PicnikFocalPixelate=1,0.500000,0.500000,2.000000,10.000000,0.000000,0.000000,0.000000;",
+        0.114,  # előtte 0,162 (`cv2.INTER_AREA`)
+    ),
+]
+
+
+def _golden_eszkozok():
+    gyoker = Path(__file__).resolve().parents[2]
+    utvonal = str(gyoker / "tools" / "golden")
+    if utvonal not in sys.path:
+        sys.path.insert(0, utvonal)
+    from analyze_validation_kit import load, mean_de
+
+    return load, mean_de
+
+
+@pytest.mark.parametrize(("nev", "lanc", "vart_de"), _GOLDEN_ESETEK, ids=[e[0] for e in _GOLDEN_ESETEK])
+def test_golden_a_hatarertek_alatt(nev, lanc, vart_de):
+    from picasapy.ini.filters import parse_filters
+    from picasapy.render.chain import apply_filters
+
+    export_ut = _KIT / "export" / f"{nev}.jpg"
+    if not export_ut.is_file():
+        pytest.skip(f"a mérőkészlet nem elérhető: {export_ut}")
+    load, mean_de = _golden_eszkozok()
+    kep = apply_filters(load(_KIT / f"{nev}.jpg"), parse_filters(lanc)).image
+    de = mean_de(kep, load(export_ut))
+    assert de <= vart_de + _TURES, f"{nev}: ΔE {de:.3f} > {vart_de + _TURES:.3f}"
