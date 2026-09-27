@@ -12,6 +12,7 @@ from picasapy.app.folder_hierarchy import (
     build_hierarchy,
     expandable_paths,
     flatten,
+    szurt_sorok,
 )
 
 _FOLDERS = [
@@ -144,6 +145,53 @@ class TestFlattening:
         assert "/mnt/photo/Kepek" in paths
         # a levélnek nincs mit kinyitni
         assert "/mnt/photo/Videok" not in paths
+
+
+class TestAMentesSzuro:
+    """#3681: a mentés-szűrő fája — a célmappák az őseikkel együtt, a
+    felhasználó nyitott/csukott állapotától FÜGGETLENÜL."""
+
+    def test_a_csukott_agban_levo_cel_is_latszik_az_oseivel(self):
+        root = build_hierarchy(_FOLDERS)
+
+        rows = szurt_sorok(root, frozenset({"/mnt/photo/Kepek/wallpapers/space"}))
+
+        assert [row["path"] for row in rows] == [
+            ROOT_PATH, "/", "/mnt", "/mnt/photo", "/mnt/photo/Kepek",
+            "/mnt/photo/Kepek/wallpapers", "/mnt/photo/Kepek/wallpapers/space",
+        ]
+        assert [row["mentetlen"] for row in rows] == [False] * 6 + [True]
+        assert all(row["expanded"] for row in rows[:-1])
+        assert rows[-1]["hasChildren"] is False
+
+    def test_a_nem_cel_testver_es_gyermek_kimarad(self):
+        root = build_hierarchy(_FOLDERS)
+
+        rows = szurt_sorok(root, frozenset({"/mnt/photo/Kepek/wallpapers"}))
+
+        utak = [row["path"] for row in rows]
+        assert "/mnt/photo/Kepek/AI" not in utak
+        assert "/mnt/photo/Videok" not in utak
+        # a cél alatti, nem mentetlen almappa sem jelenik meg
+        assert "/mnt/photo/Kepek/wallpapers/space" not in utak
+        cel = rows[-1]
+        assert cel["path"] == "/mnt/photo/Kepek/wallpapers"
+        assert cel["hasChildren"] is False
+
+    def test_ures_celhalmaznal_csak_a_gyoker(self):
+        rows = szurt_sorok(build_hierarchy(_FOLDERS), frozenset())
+
+        assert [row["path"] for row in rows] == [ROOT_PATH]
+        assert rows[0]["hasChildren"] is False
+
+    def test_az_osszehasonlitas_alakja_megadhato(self):
+        root = build_hierarchy([{"path": "C:/Kepek/Nyar", "count": 1}])
+
+        rows = szurt_sorok(
+            root, frozenset({"c:/kepek/nyar"}), alak=str.lower)
+
+        assert rows[-1]["path"] == "C:/Kepek/Nyar"
+        assert rows[-1]["mentetlen"] is True
 
 
 class TestDegenerateInput:

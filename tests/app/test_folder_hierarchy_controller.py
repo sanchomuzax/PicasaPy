@@ -305,3 +305,19 @@ class TestOsLancWindowsUtvonallal:
         assert _is_ancestor("/mnt/photo", "/mnt/photo/Kepek/AI")
         assert _is_ancestor("/mnt/photo/Kepek", "/mnt/photo/Kepek/AI")
         assert not _is_ancestor("/mnt/photo", "/mnt/photoXYZ")
+
+
+class TestMentesSorok:
+    """#3681: a mentés-szűrő sorai — a nyitott/csukott állapot változatlan."""
+
+    def test_a_csukott_fabol_is_a_cel_az_oseivel(self, controller):
+        elotte = controller.rows
+
+        sorok = controller.mentesSorok(["/mnt/photo/Kepek/wallpapers"])
+
+        assert sorok[-1]["path"] == "/mnt/photo/Kepek/wallpapers"
+        assert sorok[-1]["mentetlen"] is True
+        assert controller.rows == elotte, "a szűrő nem nyithat ki ágat"
+
+    def test_ures_listara_csak_a_gyoker(self, controller):
+        assert [s["path"] for s in controller.mentesSorok([])] == [""]

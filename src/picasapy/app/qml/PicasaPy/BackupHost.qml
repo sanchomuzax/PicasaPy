@@ -75,6 +75,12 @@ Rectangle {
         qsTr("Only JPEGs with camera data"),
     ]
 
+    //: #3681: bezáráskor (Mégse, vagy az Ajándék-CD nyitása) a pipák
+    //: törlődnek — az újranyitott panel ne a régi kijelöléssel induljon.
+    //: A folyamatban lévő futás a saját, kattintáskor lementett
+    //: mappalistáján megy tovább (`tervMappak`).
+    onNyitvaChanged: if (!nyitva) host.pipaltMappak = []
+
     function nyisd() {
         host.uzenet = ""
         host.szerkesztes = false
@@ -246,8 +252,8 @@ Rectangle {
             var k = host.keszletek[host.kivalasztott]
             //: #3645: a terv (bejárás + EXIF) HÁTTÉRSZÁLON készül — a
             //: kattintás azonnal visszatér, a gomb addig a hivatalos
-            //: „Számítás…" állapotot mutatja (`BackupFolderStrip` ugyanezt
-            //: a feliratot használja a mappalistánál)
+            //: „Számítás…" állapotot mutatja (a könyvtár mentés-szűrője
+            //: ugyanezt a feliratot használja a mappalistánál)
             host.tervMappak = host.pipaltMappak
             host.uzenet = qsTr("Calculating…")
             host.fut = true

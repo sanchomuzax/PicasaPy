@@ -35,10 +35,10 @@ Item {
     property int rowHeight: 22
 
     // #3681: a mentés-üzemmód szűrő-módja — a `FolderPane` közös
-    // szerződése (ld. `FolderPane.qml` fejkommentje). Aktív módban a fa a
-    // MÉG EL NEM MENTETT mappákra szűkül, pipával — a gyökérsor
-    // (`kind === "root"`) mindig megmarad, hogy a fa ne tűnjön el
-    // teljesen egy üres készletnél.
+    // szerződése (ld. `FolderPane.qml`). Aktív módban a fa a MÉG EL NEM
+    // MENTETT mappákra szűkül, pipával. Az őseik pipa nélkül megmaradnak,
+    // és az őket tartalmazó ágak kinyitva látszanak — a felhasználó
+    // csukott ága sem rejthet el mentendő mappát (`mentesSorok`).
     property bool mentesSzuroAktiv: false
     //: {mappa, nev, darab, fajlok, bajt} sorok — ld. `FolderPane.qml`
     property var mentesMentetlenMappak: []
@@ -48,14 +48,21 @@ Item {
 
     readonly property var _mentesUtak:
         root.mentesMentetlenMappak.map(function (sor) { return sor.mappa })
+    //: útvonal → a mentetlen mappa sora (darab, fájlnevek)
+    readonly property var _mentesTerkep: {
+        var terkep = {}
+        root.mentesMentetlenMappak.forEach(function (sor) { terkep[sor.mappa] = sor })
+        return terkep
+    }
     readonly property var _sorok: root.hierarchy ? root.hierarchy.rows : []
-    //: a TÉNYLEGESEN kirajzolt sorok — szűrő módban a gyökér + a
-    //: mentetlen mappák, egyébként a teljes fa
-    readonly property var _lathatoSorok: root.mentesSzuroAktiv
-        ? root._sorok.filter(function (sor) {
-              return sor.kind === "root" || root._mentesUtak.indexOf(sor.path) >= 0
-          })
-        : root._sorok
+    //: a TÉNYLEGESEN kirajzolt sorok — szűrő módban a mentetlen mappák az
+    //: őseikkel, egyébként a teljes (nyitott ágak szerinti) fa
+    readonly property var _lathatoSorok: {
+        //: a fa változására (új mappa, nézetváltás) is frissüljön
+        var teljes = root._sorok
+        if (!root.mentesSzuroAktiv || !root.hierarchy) return teljes
+        return root.hierarchy.mentesSorok(root._mentesUtak)
+    }
     //: a gazda (`FolderPane`) ebből számolja a komponens magasságát —
     //: szűrő módban ez KEVESEBB, mint `hierarchy.rows.length`
     readonly property alias rowCount: list.count
@@ -76,7 +83,19 @@ Item {
     }
 
     function toggle(path) {
+        //: #3681: szűrő módban a fa alakját a mentetlen mappák adják —
+        //: a nyitás/csukás itt nem látszana, csak a rejtett állapotot írná
+        if (root.mentesSzuroAktiv) return
         if (root.hierarchy) root.hierarchy.toggle(path)
+    }
+
+    //: #3681: a mentetlen mappa fájlnevei a sor végén (ami elfér) — a
+    //: `FolderPane.mentesFajlSor` párja
+    function mentesFajlSor(path) {
+        var sor = root._mentesTerkep[path]
+        if (!sor) return ""
+        return sor.fajlok.join(", ")
+            + (sor.darab > sor.fajlok.length ? ", …" : "")
     }
 
     // `Folder::ID_HIER_FOLDER_EXPAND` — „Expand All"
@@ -122,29 +141,40 @@ Item {
             readonly property bool isRoot: row.modelData.kind === "root"
             readonly property bool isSelected:
                 !row.isRoot && root.selectedPath === row.modelData.path
-            //: #3681: a modell MÁR szűrt (`root._lathatoSorok`), tehát itt
-            //: minden nem-gyökér sor mentetlen — a gyökér sosem pipálható
-            readonly property bool mentesJelolt: root.mentesSzuroAktiv && !row.isRoot
+            //: #3681: szűrő módban csak a mentetlen mappa pipálható — az
+            //: ősei és a gyökér nem
+            readonly property bool mentesJelolt:
+                root.mentesSzuroAktiv && row.modelData.mentetlen === true
+                && root._mentesTerkep[row.modelData.path] !== undefined
 
             color: row.isSelected ? Theme.panelSelectionActive
                    : (rowMouse.containsMouse ? Theme.selectionBlue : "transparent")
 
-            Row {
+            // #3681: a mentés-szűrő pipája — a sor BAL szélén, egy
+            // oszlopban (a lapos lista mintájára), hogy a fa behúzása ne
+            // tolja a mappanevet még beljebb. A kattintást a teljes sort
+            // lefedő `rowMouse` kezeli (lentebb), a pipa csak TÜKRÖZI az
+            // állapotot.
+            CheckBox {
+                objectName: "hierMentesCheck:" + row.modelData.path
+                visible: row.mentesJelolt
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left
-                anchors.leftMargin: 6 + row.modelData.depth * root.indentStep
-                spacing: 4
+                anchors.leftMargin: 2
+                topPadding: 0
+                bottomPadding: 0
+                checked: root.mentesPipaltMappak.indexOf(row.modelData.path) >= 0
+            }
 
-                // #3681: a mentés-szűrő pipája — a kattintást a teljes
-                // sort lefedő `rowMouse` kezeli (lentebb), a pipa csak
-                // TÜKRÖZI az állapotot (a lapos lista mintáját követve).
-                CheckBox {
-                    objectName: "hierMentesCheck:" + row.modelData.path
-                    visible: row.mentesJelolt
-                    topPadding: 0
-                    bottomPadding: 0
-                    checked: root.mentesPipaltMappak.indexOf(row.modelData.path) >= 0
-                }
+            Row {
+                id: sorTartalom
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left
+                //: szűrő módban a pipák oszlopa előtte áll (a lapos lista
+                //: 12 → 34 eltolásával azonos)
+                anchors.leftMargin: (root.mentesSzuroAktiv ? 28 : 6)
+                                    + row.modelData.depth * root.indentStep
+                spacing: 4
 
                 Text {
                     objectName: "hierArrow:" + row.modelData.path
@@ -157,7 +187,7 @@ Item {
                     MouseArea {
                         objectName: "hierArrowMouse:" + row.modelData.path
                         anchors.fill: parent
-                        enabled: row.modelData.hasChildren
+                        enabled: row.modelData.hasChildren && !root.mentesSzuroAktiv
                         onClicked: root.toggle(row.modelData.path)
                     }
                 }
@@ -249,11 +279,32 @@ Item {
                     // A fában a darabszám a RÉSZFA összes fotója
                     // (ui-audit 1.4: `Sajátgép (1 072)` = 227 + 842 + 3)
                     objectName: "hierCount:" + row.modelData.path
-                    text: "(" + row.modelData.count + ")"
+                    //: #3681: szűrő módban a még el nem mentett fájlok
+                    //: száma, és csak a mentetlen mappa során — az ős
+                    //: részfa-összege ott félrevezető volna
+                    visible: !root.mentesSzuroAktiv || row.mentesJelolt
+                    text: "(" + (row.mentesJelolt
+                        ? root._mentesTerkep[row.modelData.path].darab
+                        : row.modelData.count) + ")"
                     font.pixelSize: Theme.fontSize
                     color: row.isSelected ? Theme.panelSelectionText
                                           : Theme.folderDate
                 }
+            }
+
+            //: #3681: a mentetlen mappa fájlnevei — ami elfér
+            Text {
+                objectName: "hierMentesFiles:" + row.modelData.path
+                visible: row.mentesJelolt
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: sorTartalom.right
+                anchors.leftMargin: 6
+                anchors.right: parent.right
+                anchors.rightMargin: 6
+                elide: Text.ElideRight
+                text: row.mentesJelolt ? root.mentesFajlSor(row.modelData.path) : ""
+                font.pixelSize: Theme.fontSize - 1
+                color: row.isSelected ? Theme.panelSelectionText : Theme.folderDate
             }
 
             MouseArea {
@@ -267,15 +318,17 @@ Item {
                         if (!row.isRoot) root.openContextMenu(row.modelData.path)
                         return
                     }
-                    if (row.isRoot) { root.toggle(row.modelData.path); return }
-                    // #3681: mentés-szűrő módban a sor egy pipa — a
-                    // kattintás jelöl/jelöletlenít, nem nyit meg
+                    // #3681: mentés-szűrő módban a mentetlen sor egy pipa —
+                    // a kattintás jelöl/jelöletlenít, nem nyit meg; az ős
+                    // és a gyökér sora nem csinál semmit
                     if (root.mentesSzuroAktiv) {
-                        root.mentesPipaldKert(
-                            row.modelData.path,
-                            root.mentesPipaltMappak.indexOf(row.modelData.path) < 0)
+                        if (row.mentesJelolt)
+                            root.mentesPipaldKert(
+                                row.modelData.path,
+                                root.mentesPipaltMappak.indexOf(row.modelData.path) < 0)
                         return
                     }
+                    if (row.isRoot) { root.toggle(row.modelData.path); return }
                     root.choose(row.modelData.path)
                 }
                 onDoubleClicked: root.toggle(row.modelData.path)

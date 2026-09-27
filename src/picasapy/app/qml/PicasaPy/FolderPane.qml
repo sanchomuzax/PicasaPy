@@ -123,9 +123,50 @@ Rectangle {
     property var mentesPipaltMappak: []
     //: egy mappa pipája vált (a lapos listán vagy a fán)
     signal mentesPipaldKert(string mappa, bool be)
+    //: a mentetlen mappák listája háttérszálon készül (`BackupHost.
+    //: mappakToltodnek`) — addig a hasáb a „Számítás…" feliratot mutatja
+    property bool mentesToltodnek: false
+    //: van-e kiválasztott mentési készlet — nélküle a „minden el van
+    //: mentve" felirat hamis volna
+    property bool mentesVanKeszlet: false
     //: gyors tagság-ellenőrzéshez — csak az útvonalak, a `mentesMentetlenMappak` sorrendjében
     readonly property var mentesMentetlenUtak:
         pane.mentesMentetlenMappak.map(function (sor) { return sor.mappa })
+    //: útvonal → a mentetlen mappa sora (darab, fájlnevek)
+    readonly property var mentesTerkep: {
+        var terkep = {}
+        pane.mentesMentetlenMappak.forEach(function (sor) { terkep[sor.mappa] = sor })
+        return terkep
+    }
+    //: a mentetlen mappa fájlnevei a sor végén (ami elfér) — sok fájlnál
+    //: a vezérlő csak az első néhány nevet adja, a folytatást „…" jelzi
+    //: (a megszűnt külön mappasáv, #3594, alakjában)
+    function mentesFajlSor(path) {
+        var sor = pane.mentesTerkep[path]
+        if (!sor) return ""
+        return sor.fajlok.join(", ")
+            + (sor.darab > sor.fajlok.length ? ", …" : "")
+    }
+    //: a lapos listán TÉNYLEGESEN kirajzolt mentetlen sorok száma — csak az
+    //: a mappa kap sort, amely a lista modelljében is szerepel
+    readonly property int mentesLaposSorok: {
+        var modell = folderList.model
+        //: a modell változására is számoljon újra
+        var osszes = folderList.count
+        if (!pane.mentesSzuroAktiv || !modell || osszes === 0) return 0
+        return pane.mentesMentetlenUtak.filter(function (ut) {
+            return modell.rowOfPath(ut) >= 0
+        }).length
+    }
+    //: a szűrő-mód állapotfelirata: számolás közben, üres készletnél és
+    //: készlet nélkül a hasáb ne maradjon szó nélkül üres
+    readonly property string mentesAllapotSzoveg:
+        !pane.mentesSzuroAktiv ? ""
+        : !pane.mentesVanKeszlet ? qsTr("Create a Set or use an existing one")
+        : pane.mentesToltodnek ? qsTr("Calculating…")
+        //: `thumbui/lightbox_bgtext` Text2 — az eredeti mentés-ágának szövege
+        : pane.mentesMentetlenMappak.length === 0
+          ? qsTr("All Files are backed up in this set") : ""
 
     signal folderChosen(string path)
     // #3461: a Rejtett mappák fejlécének „Jelszó megadása/módosítása…" tétele
@@ -357,6 +398,9 @@ Rectangle {
     // kijelölt mappát lépteti (Picasa-viselkedés); a touchpad kis deltáit
     // egy teljes fokozatig (120) gyűjtjük.
     function stepFolder(delta) {
+        //: #3681: mentés-szűrő módban a sorra kattintás pipál, nem nyit meg
+        //: mappát — a léptetés sem nyithat meg (kiszűrt) mappát
+        if (pane.mentesSzuroAktiv) return
         if (!folderList.model) return
         var target = folderList.model.neighborFolder(pane.selectedPath, delta)
         if (target !== "" && target !== pane.selectedPath)
@@ -697,11 +741,10 @@ Rectangle {
                 //
                 // #3681: mentés-szűrő módban a lista a MENTETLEN mappákra
                 // szűkül (a delegate a többit 0 magasságúra állítja) — a
-                // sorszám ekkor a `mentesMentetlenMappak` hossza, nem a
-                // teljes (évszám-elválasztókkal együtt vett) `count`.
+                // sorszám ekkor a ténylegesen kirajzolt mentetlen soroké.
                 Layout.preferredHeight:
                     (pane.mentesSzuroAktiv
-                        ? pane.mentesMentetlenMappak.length
+                        ? pane.mentesLaposSorok
                         : folderList.count) * pane.rowHeight
                 clip: true
 
@@ -719,6 +762,9 @@ Rectangle {
                 // része fölött viszont a `paneFlickable` görget.
                 WheelHandler {
                     objectName: "folderStepWheelHandler"
+                    //: #3681: szűrő módban nem léptet — a görgő ilyenkor a
+                    //: hasábot görgeti (`paneFlickable`)
+                    enabled: !pane.mentesSzuroAktiv
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                     onWheel: function(event) { pane.wheelStep(event.angleDelta.y) }
                 }
@@ -766,7 +812,7 @@ Rectangle {
                     // 0 magasságú, hogy a lista ne hagyjon üres rést.
                     readonly property bool mentesJelolt:
                         pane.mentesSzuroAktiv && kind === "folder"
-                        && pane.mentesMentetlenUtak.indexOf(path) >= 0
+                        && pane.mentesTerkep[path] !== undefined
                     readonly property bool mentesRejtett:
                         pane.mentesSzuroAktiv && !mentesJelolt
                     visible: !mentesRejtett
@@ -827,6 +873,7 @@ Rectangle {
                         checked: pane.mentesPipaltMappak.indexOf(path) >= 0
                     }
                     Row {
+                        id: folderRowContent
                         // Audit (ui-audit-mainwindow.md, mappafa 1.3/8): az
                         // eredeti Picasa mappasorai nem nyithatók (nincs
                         // almappa-szint a lapos Mappák-listában), ezért nincs
@@ -900,7 +947,10 @@ Rectangle {
                         }
                         Text {
                             objectName: "folderRowLabel"
-                            text: name + " (" + count + ")"
+                            //: #3681: szűrő módban a darabszám a még el nem
+                            //: mentett fájloké, nem a mappa összes képéé
+                            text: name + " (" + (parent.parent.mentesJelolt
+                                  ? pane.mentesTerkep[path].darab : count) + ")"
                             font.pixelSize: Theme.fontSize
                             // #459/5: a nem elérhető mappa dőlt és halvány —
                             // a sor kattintható marad (a bélyegképek a
@@ -914,6 +964,21 @@ Rectangle {
                             color: isSelectedFolder || folderRowMouse.containsMouse
                                    ? Theme.panelSelectionText : Theme.ink
                         }
+                    }
+                    //: #3681: a mentetlen mappa fájlnevei — ami elfér
+                    Text {
+                        objectName: "folderRowMentesFiles"
+                        visible: parent.mentesJelolt
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: folderRowContent.right
+                        anchors.leftMargin: 6
+                        anchors.right: parent.right
+                        anchors.rightMargin: 6
+                        elide: Text.ElideRight
+                        text: parent.mentesJelolt ? pane.mentesFajlSor(path) : ""
+                        font.pixelSize: Theme.fontSize - 1
+                        color: parent.isSelectedFolder || folderRowMouse.containsMouse
+                               ? Theme.panelSelectionText : Theme.folderDate
                     }
                     // #2162: TUDATOS ELTÉRÉS — a teljes útvonal a súgóban.
                     //
@@ -1022,6 +1087,22 @@ Rectangle {
                     pane._movingFolder = path
                     moveFolderDialog.open()
                 }
+            }
+
+            // #3681: a mentés-szűrő állapotfelirata a mappák helyén —
+            // számolás közben, üres készletnél és készlet nélkül
+            Text {
+                objectName: "folderPaneMentesAllapot"
+                visible: pane.mentesAllapotSzoveg !== "" && !pane.foldersCollapsed
+                Layout.fillWidth: true
+                Layout.leftMargin: 12
+                Layout.rightMargin: 6
+                Layout.topMargin: 4
+                Layout.bottomMargin: 4
+                text: pane.mentesAllapotSzoveg
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.textGray
             }
 
             // #476: a felhasználói mappa-gyűjtemények (#320 óta léteznek, de

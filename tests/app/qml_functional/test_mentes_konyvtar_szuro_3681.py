@@ -258,11 +258,15 @@ Item {
             and elem.isVisible() and elem.height() > 0
         }
 
-    def test_csak_a_gyoker_es_a_mentetlen_mappak_latszanak(self, fa):
+    def test_a_mentetlen_mappak_es_az_oseik_latszanak(self, fa):
+        """Az ősök (`/`, `/kepek`) pipa NÉLKÜL maradnak — enélkül a mély
+        útvonalú mappa behúzása gazdátlanul lógna (az átnézés képén a
+        mappanév ki is csúszott a hasábból)."""
         _, root, _hier_view, _controller = fa
-        assert self._sor_utak(root) == {"", "/kepek/nyaralas", "/kepek/szulinap"}, (
-            "az elmentett mappa és a köztes csomópont nem tűnt el a szűrt fáról"
-        )
+        assert self._sor_utak(root) == {
+            "", "/", "/kepek", "/kepek/nyaralas", "/kepek/szulinap",
+        }, "az elmentett mappa nem tűnt el a szűrt fáról"
+        assert _latszo_elemek(root, "hierMentesCheck:/kepek") == []
 
     def test_a_pipak_alapbol_uresek(self, fa):
         _, root, _hier_view, _controller = fa

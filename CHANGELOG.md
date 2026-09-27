@@ -8,9 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- **Mentés-üzemmódban a könyvtár (a bal hasáb, lapos listán és mappafán is)
-  a még el nem mentett mappákra szűkül, pipálható sorokkal — a korábbi
-  külön mappalista-sáv megszűnt (#3681).**
+- A Képek biztonsági mentésekor a bal oldali mappalista (egyszerű és
+  fanézetben is) csak a még el nem mentett mappákat mutatja, pipával
+  kijelölhetően — mint az eredeti Picasában; a panel fölötti külön lista
+  megszűnt (#3681).
 
 ## [0.8.597] – 2026-09-27
 

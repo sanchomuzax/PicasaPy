@@ -30,7 +30,12 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from .folder_hierarchy import build_hierarchy, expandable_paths, flatten
+from .folder_hierarchy import (
+    build_hierarchy,
+    expandable_paths,
+    flatten,
+    szurt_sorok,
+)
 
 
 def _platform() -> str:
@@ -455,6 +460,14 @@ class FolderHierarchyController(QObject):
     def rows(self) -> list[dict]:
         """A megjelenítendő sorok (a csukott ágak gyermekei nélkül)."""
         return list(self._rows)
+
+    @Slot("QVariantList", result="QVariantList")
+    def mentesSorok(self, utak) -> list[dict]:  # noqa: N802 — QML-stílus
+        """#3681: a mentés-szűrő sorai — a még el nem mentett mappák az
+        őseikkel, a csukott ágakból is. A nyitott/csukott állapothoz nem
+        nyúl: a panel bezárása után a fa ugyanúgy néz ki, mint előtte."""
+        celok = frozenset(_osszehasonlito_alak(str(ut)) for ut in (utak or []))
+        return list(szurt_sorok(self._tree(), celok, _osszehasonlito_alak))
 
     # -- kinyitás / összecsukás -----------------------------------------
 
