@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A Képek biztonsági mentésekor a bal oldali mappalista (egyszerű és
+  fanézetben is) csak a még el nem mentett mappákat mutatja, pipával
+  kijelölhetően — mint az eredeti Picasában; a panel fölötti külön lista
+  megszűnt (#3681).
+
 - Nyomtatáskor elsőre a „FullPage” (teljes oldal) méret van kiválasztva,
   mint az eredeti Picasában — eddig 10x15 cm (angolul 4 x 6) volt. A
   korábban választott méretet a program továbbra is megjegyzi (#3733).
