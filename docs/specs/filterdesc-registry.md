@@ -5175,7 +5175,14 @@ Utána `(px & mask) | alphaOr`: a `channelOptions` 0. bitje az R-t, az 1. a G-t,
 | `Cinemascope` alap | 2,152 | **1,367** |
 | `Sixties` alap / min | 1,289 / 1,443 | **1,179 / 1,255** |
 
-A maradék képpontonként 3–5 szint, az átlagos eltérés −0,2 (torzítatlan). ⛔ A `PicnikGrain` itt nincs mérve: a #907 szerint az eredeti két alkalmazása független mintát ad, ami az állandó `randomSeed="1"`-gyel nem fér össze. Külön kérdés, erről ez a szakasz nem állít semmit.
+A maradék képpontonként 3–5 szint, az átlagos eltérés −0,2 (torzítatlan). **A `PicnikGrain` is determinisztikus (mérve 2026-09-27, #3757).** A #907 „két alkalmazás független mintát ad” mérése a **natív, kisbetűs `grain`** szűrőre vonatkozott (`grain=1;` és `grain=1;grain=1;`, callback `0x008f88e0`). A Glimmer `PicnikGrain` leírója rögzített `randomSeed="1"`-et ad. A 684-es exporton a szürke ágú Picasa-MT `randomSeed = 1`-gyel és a leíró szerinti Multiply móddal (`BlendMode` 5):
+
+| eset | a mai kód (véletlen mag, Darken) | Multiply + numpy-zaj | Darken + Picasa-MT | **Multiply + Picasa-MT** |
+|---|---:|---:|---:|---:|
+| alap (Grain 10) | 3,009 | 1,968 | 2,967 | **0,882** |
+| max (Grain 50) | 18,634 | 9,645 | 9,167 | **1,380** |
+
+Mindkét tényező kell, és a nagy ugrás csak a rögzített maggal jön: a zajminta tehát egyezik. A világosító ág (Screen, `BlendMode` 7) exportja nincs a készletben. Fejlesztés: #3757.
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és a golden-korrelációval.*
 
@@ -7602,7 +7609,7 @@ helyen), tehát a kiértékelőnek nincs ilyen szimbóluma; az előtag után a
 | alfa a keverés után | 255 | nem kezeljük (RGB-ben dolgozunk) | nincs teendő, amíg a lánc RGB |
 | `IR` ragyogás | Screen | ✅ **Screen** (#3441, v0.8.555) | kész — ΔE 6,04 → 1,28, mérve |
 | `Pixelate` csúszka | sorszám | ✅ **sorszám** (#3443, v0.8.556) — a Difference/Hardlight/Subtract lebegőpontosan | kész — `min`: ΔE 23,31 → 0,78, mérve; az egész képletek és a Softlight: #3442 |
-| `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **nem mérve** (a zaj magja véletlen, #907) |
+| `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **MÉRVE (2026-09-27, #3757):** Multiply + a Picasa-MT `randomSeed = 1`-gyel ΔE alap 3,01 → **0,88**, max 18,63 → **1,38**. A zaj NEM véletlen: a #907 a natív `grain` szűrőt mérte |
 
 *Bizonyítottsági fok:* a tábla, a kernelek, a keverő és a végrehajtó menete
 **megerősített** (diszasszemblátum + kimerítő bájtpáros próba); a veremszerep
