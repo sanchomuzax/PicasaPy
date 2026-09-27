@@ -1537,9 +1537,17 @@ Column {
                                 opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
                             }
                         }
-                        PicasaSlider {
+                        //: #3729: a `scaleslider` CSALÁD (`respack.yt`
+                        //: `scaleslider/sliderbase`+`thumb`) — ugyanaz a
+                        //: mért geometria, amit az `EditorSlider`
+                        //: `scaleCsalad` ága már használ (9 képpontos sín,
+                        //: 16 × 22-es fogantyú). Eddig a sima
+                        //: `PicasaSlider` alapértéke (4 / 14 × 14) rajzolt
+                        //: ide.
+                        EditorSlider {
                             id: sizeSlider
                             objectName: "traySizeSlider"
+                            csalad: "scaleslider"
                             // #718: null-őr — appWindow hiányában egy
                             // tetszőleges, a [from, to] tartományba eső érték.
                             from: 72; to: 256
@@ -1644,9 +1652,15 @@ Column {
                             anchors.verticalCenter: parent.verticalCenter
                             opacity: 0.65
                         }
-                        PicasaSlider {
+                        //: #3729: ugyanaz a mért `scaleslider` család, mint
+                        //: a könyvtár-mód `traySizeSlider`-jé (a két mód
+                        //: UGYANAZT a sávot tölti ki cserélt tartalommal,
+                        //: ld. a #2564 kommentjét fentebb) — a fogantyú nem
+                        //: ugorhat a mód váltásakor.
+                        EditorSlider {
                             id: zoomSlider
                             objectName: "zoomSlider"
+                            csalad: "scaleslider"
                             //: MÉRT szélesség (`editpanel/zoomslider_container`
                             //: x 399…526).
                             //:
@@ -1654,7 +1668,7 @@ Column {
                             //: **normalizált [0, 1]**, ahol 0 = illesztés és
                             //: 0,5 = valódi méret. A köztes leképezést a
                             //: néző `skalaErtekbol()`-ja végzi.
-                            width: 127; height: 20
+                            width: 127
                             anchors.verticalCenter: parent.verticalCenter
                             from: 0; to: 1
                             onMoved: tray.zoomValueRequested(value)

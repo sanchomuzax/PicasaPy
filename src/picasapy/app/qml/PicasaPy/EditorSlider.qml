@@ -6,6 +6,11 @@ import QtQuick
 // #2626 felirat-javítása épp azért ment át csak kettőn, mert három helyen
 // kellett volna.
 //
+// #3729: a `scaleslider` ágat a `TrayBar.qml` két csúszkája (`traySizeSlider`,
+// `zoomSlider`) is használja — a `respack.yt`-ben ugyanaz a `scaleslider`
+// erőforrás rajzolja a könyvtár bélyegkép-méretét ÉS a néző nagyítását is,
+// tehát a „szerkesztő" a névben ma már szűkebb, mint a tényleges kör.
+//
 // ⚠️ KÉT MÉRT CSALÁD van, és a különbség nem elírás:
 //
 //   editslider   (`editpanel/clip(editslider,editsliderN)`) — a finomhangoló

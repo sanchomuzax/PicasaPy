@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az alsó sáv nagyító-csúszkája a mért `scaleslider` geometriával rajzol,
+  nem az alapértelmezett vékony sínnel és kerek fogantyúval (#3729).** A
+  könyvtár bélyegkép-mérete és a néző nagyítás-hármasa csúszkája is 9
+  képpontos sávot és álló 16 × 22-es fogantyút kap, ugyanazt, amit az
+  `EditorSlider` `scaleslider` ága a szerkesztő paneljein már rajzol.
+
 ## [0.8.595] – 2026-09-27
 
 ### Javítva
