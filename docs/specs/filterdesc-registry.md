@@ -3587,6 +3587,47 @@ A leképezést építő `0x00bbbe20` (673 b) beolvasott konstansai:
 ⇒ **`h` fokban (0–360, körbefordítással), `s` és `v` SZÁZALÉKBAN (0–100)**,
 a szektorválasztás a szokásos hatodolás, a kimenet 0–255.
 
+### A HSV → RGB átalakítás — lebegőpontos, float32, CSONKOLVA (2026-09-28, 384. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+A `0x00bbbe20` (cdecl, három float32 argumentum: h, s, v) a megállók közti
+interpoláció után minden LUT-bejegyzést **közvetlenül** RGB-vé alakít:
+
+1. `h` körbefordítása `[0, 360)`-ba, `±360`-as ciklusokkal (`0x00bbbe52`,
+   `0x00bbbe65`–`0x00bbbe86`); `h = 360` → 0. Az `s` és a `v` `[0, 100]`-ra
+   szorul, `S = s/100`, `V = v/100` (`0x00bbbe93`–`0x00bbbf06`).
+2. `h6 = f32(f32(h/360) · 6)`, a szektor `i = csonk(h6)` (`0x00bbbf31`
+   `or eax, 0xc00`, `0x00bbbf3e` `fistp`), a törtrész `f = h6 − i`.
+3. `p = V(1 − S)`, `q = V(1 − f·S)`, `t = V(1 − S(1 − f))`; a szektorok
+   (R, G, B): 0 (V, t, p) · 1 (q, V, p) · 2 (p, V, t) · 3 (p, q, V) ·
+   4 (t, p, V) · 5 (V, p, q) (ugrótábla `0x00bbc0c4`).
+4. Csatornánként `csonk(x · 255,0)` (`0x00bbc031` `fld [0xcf39d0]`, `or
+   0xc00` + `fistp`). **Nincs +0,5.** A köztes értékek (h, S, V, h6, f,
+   p, q, t) float32 cellákban vannak.
+
+A `hueOffset` (`+0x44`) float32-ben adódik a keverés utáni színezethez
+(`0x00bbc52f` `fadd`), a körbefordítást az 1. lépés végzi. Példa:
+`(200°, 100, 100)` → `(0, 169, 255)`. A 169 a csonkolásból jön
+(`0,6666665 · 255 = 169,99996`), kerekítéssel 170 volna.
+
+**Nálunk** a `glimmer_ops.hsv_gradient_map` az OpenCV 8 bites HSV-jén
+megy át: a színezetet `h/2`, az `s`-t és a `v`-t `·2,55` egészre kerekíti,
+majd `cv2.COLOR_HSV2RGB`-vel alakít. Ez a kvantálás az eltérés oka.
+
+**Mérve** (`HeatMap`, 684-es készlet, ΔE a Picasa-exporthoz; a LUT a fenti
+lebegőpontos képlettel, a kimeneti kerekítést változtatva):
+
+| eset | ma (OpenCV HSV) | `rint` | **`csonk`** |
+|---|---:|---:|---:|
+| alap (Hue 0) | 1,014 | 0,673 | **0,554** |
+| min (Hue −180) | 1,130 | 0,696 | **0,577** |
+
+A maradék JPEG-zaj szintű: a saját kimenetünk 95-ös, 4:4:4-es JPEG-je
+önmagához képest 0,467 / 0,469, a Picasához 0,39 / 0,47.
+
+Fejlesztés: #3814.
+
 ### Az interpoláció — LINEÁRIS, a színezetben a RÖVIDEBB ÍVEN (2026-09-04, #2238)
 
 A megálló-keresést és a keverést a `0x00bbbcf0` (302 b) és a `0x00bbbbf0`
