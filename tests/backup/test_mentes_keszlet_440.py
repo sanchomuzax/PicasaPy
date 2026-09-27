@@ -13,6 +13,7 @@ jegy. Ezért a kiadási jegyzet sem állítja, hogy a funkció elérhető.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,7 @@ from picasapy.index.backup_sets import (
     SZURO_KEPEK,
     SZURO_MINDEN,
     elmentett_allapot,
+    jegyezd_fel_az_elmentettet,
     keszlet_letrehozasa,
     keszlet_modositasa,
     keszlet_nev_szerint,
@@ -123,6 +125,34 @@ class TestAzInkrementalitas:
         terv = tervezd_meg(conn, keszlet, _fajlok(gyujtemeny), gyokerek=[gyujtemeny])
         assert [f.forras.name for f in terv.fajlok] == ["a.jpg"]
         assert terv.fajlok[0].ok == "valtozott"
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="szimbolikus link csak POSIX-on")
+    def test_regi_feloldatlan_kulcsu_bejegyzes_is_szamit(
+        self, conn, tmp_path, gyujtemeny
+    ):
+        """#3776 [KÖZEPES javítás]: a #3776 ELŐTTI kód a nyilvántartásba a
+        symlinkes gyökér FELOLDATLAN útját írta; a javítás UTÁNI kód a
+        FELOLDOTT útról tervez. A kulcs-alak változása ettől nem
+        „felejtheti el”, hogy a fájlt korábban már elmentettük — az nem
+        kerülhet vissza a tervbe egy egyszeri, felesleges újramentésre."""
+        keszlet = keszlet_letrehozasa(conn, "K", str(tmp_path / "cel"))
+        link = tmp_path / "kepek_link"
+        link.symlink_to(gyujtemeny, target_is_directory=True)
+        regi_forras = link / "nyaralas" / "a.jpg"
+        allapot = (gyujtemeny / "nyaralas" / "a.jpg").stat()
+        jegyezd_fel_az_elmentettet(
+            conn, keszlet.id,
+            [(str(regi_forras), allapot.st_size, allapot.st_mtime_ns)],
+        )
+        conn.commit()
+
+        terv = tervezd_meg(conn, keszlet, _fajlok(gyujtemeny), gyokerek=[gyujtemeny])
+        nevek = [f.forras.name for f in terv.fajlok]
+        assert "a.jpg" not in nevek, (
+            "az a.jpg-t a régi (feloldatlan kulcsú) nyilvántartás alapján "
+            "kihagyta volna"
+        )
+        assert terv.kihagyott == 1
 
 
 class TestAMasolas:

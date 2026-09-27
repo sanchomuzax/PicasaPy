@@ -8,10 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- A biztonsági mentés symlinkes, Windows 8.3-rövidnevű vagy eltérő
-  betűzésű figyelt gyökere alatt a mentetlen mappák mostantól a bal oldali
-  hasábon is megjelennek szűrő módban — korábban a lapos lista pontos
-  útvonal-egyezéssel keresett, és nem találta meg őket (#3776).
+- Biztonsági mentéskor a még el nem mentett mappák akkor is megjelennek a
+  bal oldali mappalistában, ha a figyelt mappa hivatkozáson át, rövidített
+  vagy eltérő kis- és nagybetűs névvel van megadva; a mentés ilyenkor is
+  megtartja a mappaszerkezetet (#3776).
 
 ## [0.8.604] – 2026-09-27
 

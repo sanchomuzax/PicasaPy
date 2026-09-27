@@ -79,10 +79,11 @@ def flat_key(path: str) -> str:
     Windowson a fájlrendszer kis-nagybetű-érzéketlen, és mindkét
     elválasztó előfordulhat (`app/backup_controller.py`
     `Path.rglob`-ból, illetve az index natív alakjából) — POSIX-on viszont
-    a kis-nagybetű VALÓDI különbség, ott a foldolás adatvesztő volna.
-
-    ⚠️ A SORREND számít: a kis-nagybetűsítés UTÁN jön az elválasztó-csere,
-    ne fordítva — `str.lower()` nem alakítja át a perjelet, tehát a POSIX
-    alakú útvonalak (`/mnt/kepek/...`) érintetlenek maradnak."""
-    alak = path.lower() if _platform().startswith("win") else path
-    return alak.replace("\\", "/")
+    a kis-nagybetű VALÓDI különbség, ott a foldolás adatvesztő volna, ÉS a
+    `\\` ott ÉRVÉNYES névkarakter, tehát az elválasztó-csere is adatvesztő
+    volna (egy POSIX-fájlnévben szereplő `\\`-t tévesen elválasztóként
+    venné). Ezért mindkét átalakítás KIZÁRÓLAG Windowson fut; POSIX-on a
+    `flat_key` identitás."""
+    if not _platform().startswith("win"):
+        return path
+    return path.lower().replace("\\", "/")

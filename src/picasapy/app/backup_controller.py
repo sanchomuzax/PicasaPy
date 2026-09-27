@@ -252,9 +252,22 @@ class BackupController(BackgroundWorkerMixin, QObject):
         return None
 
     def _tervezd(self, conn, keszlet, mappak):
-        """A készlet terve a figyelt gyökerekből, a pipákra szűkítve."""
+        """A készlet terve a figyelt gyökerekből, a pipákra szűkítve.
+
+        #3776 [KRITIKUS javítás]: a `gyokerek` itt FELOLDVA megy tovább —
+        a `_jeloltek()` a fájlokat `normalize_path`-dal feloldott gyökerek
+        alól gyűjti (symlink, Windows 8.3-rövidnév, eltérő betűzés
+        feloldva), tehát a `_relativ_ut` (`backup/futtatas.py`) csak akkor
+        találja meg az egyező előtagot, ha a hozzá kapott gyökér UGYANÚGY
+        fel van oldva. Feloldatlan gyökérnél a `relative_to` mindig
+        `ValueError`-t dob, és a terv a `Path(fajl.parent.name) / fajl.name`
+        eséstartalékra esik — ez ELVESZTI a mappaszerkezetet, és két,
+        eltérő gyökér alatti, azonos nevű almappa (pl. `2023/nyaralas/` és
+        `2024/nyaralas/`) fájljai UGYANARRA a célútra másolódnak, egymást
+        felülírva."""
         return tervezd_meg(
-            conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek,
+            conn, keszlet, self._jeloltek(),
+            gyokerek=tuple(normalize_path(gy) for gy in self._gyokerek),
             mappak=None if mappak is None else [str(m) for m in mappak],
         )
 

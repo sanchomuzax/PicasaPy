@@ -92,6 +92,15 @@ class TestFlatKey:
         monkeypatch.setattr(modul, "_platform", lambda: "linux")
         assert flat_key("/mnt/kepek/nyar") == "/mnt/kepek/nyar"
 
+    def test_posix_backslash_is_a_filename_character(self, monkeypatch):
+        # POSIX-on a `\` ÉRVÉNYES névkarakter — a flat_key nem cserélheti
+        # perjelre, különben egy ilyen nevű fájl/mappa útvonala tévesen
+        # szegmensekre esne szét.
+        import picasapy.paths as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "linux")
+        assert flat_key("/mnt/kepek/A\\B") == "/mnt/kepek/A\\B"
+
     def test_windows_shaped_path_case_insensitive(self, monkeypatch):
         # nem valódi fájlrendszer-hívás — a `C:\...` alak Linuxon is
         # mérhető, mert a `flat_key` sosem old fel útvonalat

@@ -819,9 +819,14 @@ Rectangle {
                     // #3681: mentés-szűrő módban csak a MENTETLEN mappák
                     // maradnak — a többi (és az évszám-/rejtett-fejlécek)
                     // 0 magasságú, hogy a lista ne hagyjon üres rést.
+                    //
+                    // #3776 átnézés [ALACSONY]: a `mentesKulcs` soronként
+                    // KÉTSZER hívta ugyanazt a `path`-ot (itt és a
+                    // darabszám-feliratnál) — egyszeri kiszámítással.
+                    readonly property string mentesKulcsa: pane.mentesKulcs(path)
                     readonly property bool mentesJelolt:
                         pane.mentesSzuroAktiv && kind === "folder"
-                        && pane.mentesTerkep[pane.mentesKulcs(path)] !== undefined
+                        && pane.mentesTerkep[mentesKulcsa] !== undefined
                     readonly property bool mentesRejtett:
                         pane.mentesSzuroAktiv && !mentesJelolt
                     visible: !mentesRejtett
@@ -959,7 +964,8 @@ Rectangle {
                             //: #3681: szűrő módban a darabszám a még el nem
                             //: mentett fájloké, nem a mappa összes képéé
                             text: name + " (" + (parent.parent.mentesJelolt
-                                  ? pane.mentesTerkep[pane.mentesKulcs(path)].darab : count) + ")"
+                                  ? pane.mentesTerkep[parent.parent.mentesKulcsa].darab
+                                  : count) + ")"
                             font.pixelSize: Theme.fontSize
                             // #459/5: a nem elérhető mappa dőlt és halvány —
                             // a sor kattintható marad (a bélyegképek a
