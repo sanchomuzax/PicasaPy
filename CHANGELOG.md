@@ -15,6 +15,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   kapja, és a fülsor a rendelkezésre álló helynél szélesebb tartalmat
   levágva, görgethetően jeleníti meg.
 
+## [0.8.586] – 2026-09-27
+
+### Javítva
+- **A kettős nézet „aa” módjában a fókuszváltás megőrzi a félkész festett
+  maszkot: a két fél a saját festését kapja vissza, amikor visszaváltunk rá
+  (#3649).** Eddig a fókuszváltás mindkét fél festését törölte.
+
 ## [0.8.585] – 2026-09-27
 
 ### Javítva

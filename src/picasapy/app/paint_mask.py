@@ -106,6 +106,11 @@ class MaszkAllapot:
         """A teljes festés elvetése (a maszk üres lesz)."""
         self._vonasok = ()
 
+    def allit(self, vonasok) -> None:
+        """A vonások teljes cseréje (#3649: az „aa" fókuszváltás pufferje —
+        a két fél festése EGYMÁSSAL cserélődik, nem ürül)."""
+        self._vonasok = tuple(vonasok)
+
     def maszk(self, magassag: int, szelesseg: int) -> np.ndarray | None:
         """A vonásokból számolt (H, W) float32 [0,1] maszk, vagy `None`.
 
