@@ -2470,6 +2470,17 @@ ApplicationWindow {
                 if (controller && window.selectedIndexes.length > 0)
                     controller.addRowsToAlbum(window.selectedIndexes, token)
             }
+            // #3681: a mentés-panel közös szűrő-szerződése (ld.
+            // `FolderPane.qml`) — amíg a mentés-panel LÁTSZIK, a hasáb a
+            // MÉG EL NEM MENTETT mappákra szűkül, pipával. A `visible`
+            // (nem a `nyitva`) a mérce: nézegető, időrend vagy másik lap
+            // közben a panel nem látszik, a hasábnak sincs mit szűrnie.
+            mentesSzuroAktiv: backupHost.visible
+            mentesMentetlenMappak: backupHost.mentetlenek
+            mentesPipaltMappak: backupHost.pipaltMappak
+            mentesToltodnek: backupHost.mappakToltodnek
+            mentesVanKeszlet: backupHost.kivalasztott >= 0
+            onMentesPipaldKert: function (mappa, be) { backupHost.pipald(mappa, be) }
         }
 
         Rectangle {

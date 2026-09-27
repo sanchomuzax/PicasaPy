@@ -271,3 +271,52 @@ def flatten(root: HierNode, expanded) -> tuple[dict, ...]:
 
     emit(root, 0, "root")
     return tuple(rows)
+
+
+def szurt_sorok(root: HierNode, celok, alak=lambda path: path) -> tuple[dict, ...]:
+    """A mentés-szűrő (#3681) sorai: a `celok` mappái az ŐSEIKKEL együtt.
+
+    A `flatten` a felhasználó nyitott ágait követi, tehát egy csukott ágban
+    lévő célmappa el sem jutna a felületre. Itt minden ős, amely alatt cél
+    van, kinyitva szerepel (és csak az ilyen gyermekei), a nyitott/csukott
+    állapot pedig érintetlen marad. A sor alakja a `flatten`-é, egy
+    `mentetlen` mezővel: igaz, ha a sor maga is cél (a pipa csak ott jár).
+
+    `alak`: az útvonalak összehasonlító alakja (a Windows-útvonalak
+    kis-nagybetű-függetlenek) — a `celok` már ebben az alakban érkezik.
+    """
+    cel_halmaz = frozenset(celok)
+    tartalmaz: dict[int, bool] = {}
+
+    def van_benne_cel(node: HierNode) -> bool:
+        kulcs = id(node)
+        if kulcs not in tartalmaz:
+            tartalmaz[kulcs] = (
+                (node.path != ROOT_PATH and alak(node.path) in cel_halmaz)
+                or any(van_benne_cel(child) for child in node.children)
+            )
+        return tartalmaz[kulcs]
+
+    rows: list[dict] = []
+
+    def emit(node: HierNode, depth: int, kind: str) -> None:
+        gyermekek = [child for child in node.children if van_benne_cel(child)]
+        rows.append(
+            {
+                "kind": kind,
+                "name": node.name,
+                "path": node.path,
+                "depth": depth,
+                "count": node.total,
+                "own": node.own,
+                "hasChildren": bool(gyermekek),
+                "expanded": bool(gyermekek),
+                "mentetlen": node.path != ROOT_PATH
+                and alak(node.path) in cel_halmaz,
+            }
+        )
+        for child in gyermekek:
+            emit(child, depth + 1, "folder")
+
+    emit(root, 0, "root")
+    return tuple(rows)
