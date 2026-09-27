@@ -229,6 +229,10 @@
         <translation>Érvénytelen kimeneti útvonal.</translation>
     </message>
     <message>
+        <source>Invalid print settings: %1</source>
+        <translation>Érvénytelen nyomtatási beállítás: %1</translation>
+    </message>
+    <message>
         <source>Unknown printer: %1</source>
         <translation>Ismeretlen nyomtató: %1</translation>
     </message>

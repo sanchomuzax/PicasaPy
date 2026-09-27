@@ -73,8 +73,47 @@ def _vezerlo_harom_keppel(tmp_path):
     return PrintController(photo_source=lambda: fotok), fotok
 
 
+def _egyetlen_cellas_lapot_kenyszerit(monkeypatch):
+    """A lapgeometriát a nyomatméretnél (M4X6) csak KICSIT nagyobb, NÉGYZETES
+    lapra rögzíti, hogy a #3647-es rács MINDIG pontosan egy cellát fogadjon
+    laponként (a `test_nyomtatas_peldanyszam_1819.py` mintájára, #3685
+    átnézése) — a `_device_page_geometry`-t, tehát a VALÓDI (PDF-)
+    nyomtatási utat cseréli le, mert ez a fájl azt méri.
+
+    Ez a fájl a LAPONKÉNTI HALADÁS-JELZÉST méri, nem a rácsba-rendezést —
+    azt a `printing/test_nyomtatasi_racs_3647.py` fedi. A #3647 óta a
+    fizikai lapszám a nyomatmérettől és a papírtól függ (nem képenként egy
+    lap), ezért enélkül ezek a próbák a valódi (A4 alapértelmezésre eső)
+    rácsszámításon múlnának — jelen esetben a 200×120-as tesztképek simán
+    ELFÉRNÉNEK többedmagukkal egy A4-es lapon, tehát 3 kép NEM adna 3
+    külön lapot.
+
+    ⚠️ A lap oldala a nyomtató TÉNYLEGES felbontásához igazodik (a
+    nyomatméret hosszabb oldalának 7-szerese, nem egy rögzített pixelszám):
+    a #3685 átnézésekor egy korábbi próbálkozás rögzített `resolution × 15`
+    lapot használt, ami 1200 DPI-n 3×2 cellát is elfogadott volna
+    laponként — a 7-szeres szorzó mindkét cellatájolással (a
+    `choose_page_orientation` a papírt már NEM forgatja, csak a cellát,
+    ld. ott) PONTOSAN egy cellát enged, a gép tényleges DPI-jétől
+    függetlenül."""
+    import picasapy.app.print_controller as pc_modul
+
+    def hamis_eszkoz(printer, orientation):
+        printer.setPageOrientation(orientation)
+        oldal = printer.resolution() * 7.0
+        return pc_modul.PageGeometry(width=oldal, height=oldal, margin=0.0)
+
+    monkeypatch.setattr(
+        pc_modul.PrintController, "_device_page_geometry", staticmethod(hamis_eszkoz)
+    )
+
+
 class TestAHaladasJelzes:
-    def test_laponkent_jon_jelzes(self, qt_app, tmp_path):
+    def test_laponkent_jon_jelzes(self, qt_app, tmp_path, monkeypatch):
+        """#3685 átnézése: a #3647 óta a lapszám a nyomatmérettől és a
+        papírtól függ, nem képenként egy lap — a próba ezért EGYETLEN
+        cellás lapra kényszerítve méri, hogy a jelzés valóban laponként jön."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         vezerlo, _ = _vezerlo_harom_keppel(tmp_path)
         jelzesek: list[tuple[int, int]] = []
         vezerlo.printProgress.connect(lambda k, o: jelzesek.append((k, o)))
@@ -91,9 +130,12 @@ class TestAHaladasJelzes:
         assert keszek == sorted(keszek), f"a jelzések nem monoton nőnek: {keszek}"
         assert keszek[-1] == 3, f"az utolsó jelzés nem a teljes: {keszek}"
 
-    def test_a_peldanyszam_is_beleszamit(self, qt_app, tmp_path):
+    def test_a_peldanyszam_is_beleszamit(self, qt_app, tmp_path, monkeypatch):
         """#1819: két példány két képnél NÉGY lap — a jelző a LAPOKAT
-        számolja, nem a kijelölt fotókat."""
+        számolja, nem a kijelölt fotókat. EGYETLEN cellás lapra kényszerítve
+        (#3685 átnézése), különben a lapszám a papírtól/nyomatmérettől
+        függene, nem a példányszámtól."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         vezerlo, _ = _vezerlo_harom_keppel(tmp_path)
         jelzesek: list[tuple[int, int]] = []
         vezerlo.printProgress.connect(lambda k, o: jelzesek.append((k, o)))
@@ -220,7 +262,11 @@ class TestAFrissitesRITKITASA:
           (a feladat elején a ritkítás-óra nullázódik);
         * az **utolsó** — hogy a „kész" állapot ne késsen.
 
-        A köztes lapokat ritkítjuk; ez adja a mért nyereséget."""
+        A köztes lapokat ritkítjuk; ez adja a mért nyereséget.
+
+        EGYETLEN cellás lapra kényszerítve (#3685 átnézése) — a jelzés
+        laponkénti mivoltát ez a fájl méri, nem a rácsba-rendezést."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         hivasok = self._szamlalo(monkeypatch, 10_000.0)
         vezerlo, _ = _vezerlo_harom_keppel(tmp_path)
         jelzesek: list[int] = []
@@ -240,6 +286,8 @@ class TestAFrissitesRITKITASA:
     def test_nulla_kesleltetesnel_MINDEN_lap_enged(
         self, qt_app, tmp_path, monkeypatch
     ):
+        """EGYETLEN cellás lapra kényszerítve (#3685 átnézése)."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         hivasok = self._szamlalo(monkeypatch, 0.0)
         vezerlo, _ = _vezerlo_harom_keppel(tmp_path)
         assert vezerlo.renderPrintPreviewPdf(
