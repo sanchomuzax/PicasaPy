@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Mentés-üzemmódban a könyvtár (a bal hasáb, lapos listán és mappafán is)
+  a még el nem mentett mappákra szűkül, pipálható sorokkal — a korábbi
+  külön mappalista-sáv megszűnt (#3681).**
+
 ## [0.8.596] – 2026-09-27
 
 ### Javítva

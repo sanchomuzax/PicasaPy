@@ -34,6 +34,32 @@ Item {
     // komponens magasságát is, ezért felülírhatónak kell lennie.
     property int rowHeight: 22
 
+    // #3681: a mentés-üzemmód szűrő-módja — a `FolderPane` közös
+    // szerződése (ld. `FolderPane.qml` fejkommentje). Aktív módban a fa a
+    // MÉG EL NEM MENTETT mappákra szűkül, pipával — a gyökérsor
+    // (`kind === "root"`) mindig megmarad, hogy a fa ne tűnjön el
+    // teljesen egy üres készletnél.
+    property bool mentesSzuroAktiv: false
+    //: {mappa, nev, darab, fajlok, bajt} sorok — ld. `FolderPane.qml`
+    property var mentesMentetlenMappak: []
+    //: a bepipált mappák útjai
+    property var mentesPipaltMappak: []
+    signal mentesPipaldKert(string mappa, bool be)
+
+    readonly property var _mentesUtak:
+        root.mentesMentetlenMappak.map(function (sor) { return sor.mappa })
+    readonly property var _sorok: root.hierarchy ? root.hierarchy.rows : []
+    //: a TÉNYLEGESEN kirajzolt sorok — szűrő módban a gyökér + a
+    //: mentetlen mappák, egyébként a teljes fa
+    readonly property var _lathatoSorok: root.mentesSzuroAktiv
+        ? root._sorok.filter(function (sor) {
+              return sor.kind === "root" || root._mentesUtak.indexOf(sor.path) >= 0
+          })
+        : root._sorok
+    //: a gazda (`FolderPane`) ebből számolja a komponens magasságát —
+    //: szűrő módban ez KEVESEBB, mint `hierarchy.rows.length`
+    readonly property alias rowCount: list.count
+
     signal folderChosen(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
     // gazdában van (`FUN_00733a40`): a komponens csak jelez, nem cselekszik.
@@ -82,8 +108,9 @@ Item {
         // tehát itt nincs mit görgetni — ha viszont a lista `interactive`
         // maradna, elnyelné a görgő-eseményt, és a hasáb nem mozdulna.
         interactive: false
-        // #305 null-őr: a vezérlő bekötése előtt is érvényes modell kell
-        model: root.hierarchy ? root.hierarchy.rows : []
+        // #305 null-őr: a vezérlő bekötése előtt is érvényes modell kell.
+        // #3681: mentés-szűrő módban a SZŰKÍTETT lista.
+        model: root._lathatoSorok
 
         delegate: Rectangle {
             id: row
@@ -95,6 +122,9 @@ Item {
             readonly property bool isRoot: row.modelData.kind === "root"
             readonly property bool isSelected:
                 !row.isRoot && root.selectedPath === row.modelData.path
+            //: #3681: a modell MÁR szűrt (`root._lathatoSorok`), tehát itt
+            //: minden nem-gyökér sor mentetlen — a gyökér sosem pipálható
+            readonly property bool mentesJelolt: root.mentesSzuroAktiv && !row.isRoot
 
             color: row.isSelected ? Theme.panelSelectionActive
                    : (rowMouse.containsMouse ? Theme.selectionBlue : "transparent")
@@ -104,6 +134,17 @@ Item {
                 anchors.left: parent.left
                 anchors.leftMargin: 6 + row.modelData.depth * root.indentStep
                 spacing: 4
+
+                // #3681: a mentés-szűrő pipája — a kattintást a teljes
+                // sort lefedő `rowMouse` kezeli (lentebb), a pipa csak
+                // TÜKRÖZI az állapotot (a lapos lista mintáját követve).
+                CheckBox {
+                    objectName: "hierMentesCheck:" + row.modelData.path
+                    visible: row.mentesJelolt
+                    topPadding: 0
+                    bottomPadding: 0
+                    checked: root.mentesPipaltMappak.indexOf(row.modelData.path) >= 0
+                }
 
                 Text {
                     objectName: "hierArrow:" + row.modelData.path
@@ -226,8 +267,16 @@ Item {
                         if (!row.isRoot) root.openContextMenu(row.modelData.path)
                         return
                     }
-                    if (row.isRoot) root.toggle(row.modelData.path)
-                    else root.choose(row.modelData.path)
+                    if (row.isRoot) { root.toggle(row.modelData.path); return }
+                    // #3681: mentés-szűrő módban a sor egy pipa — a
+                    // kattintás jelöl/jelöletlenít, nem nyit meg
+                    if (root.mentesSzuroAktiv) {
+                        root.mentesPipaldKert(
+                            row.modelData.path,
+                            root.mentesPipaltMappak.indexOf(row.modelData.path) < 0)
+                        return
+                    }
+                    root.choose(row.modelData.path)
                 }
                 onDoubleClicked: root.toggle(row.modelData.path)
             }
