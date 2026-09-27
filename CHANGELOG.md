@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.586] – 2026-09-27
+
 ### Javítva
 - **A kettős nézet „aa” módjában a fókuszváltás megőrzi a félkész festett
   maszkot: a két fél a saját festését kapja vissza, amikor visszaváltunk rá
