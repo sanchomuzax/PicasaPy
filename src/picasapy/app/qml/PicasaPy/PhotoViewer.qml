@@ -2335,7 +2335,9 @@ Rectangle {
                                 ? viewer.editCtl.gpuPrefixSource : ""
                         asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true
-                        sourceSize.width: 2560
+                        // #3800: befoglaló doboz — álló képnél a csak szélességre
+                        // kért méret a V3D 4096-os textúraplafonja fölé nőne
+                        sourceSize: Qt.size(2560, 2560)
                     }
                     Image {
                         id: gpuLutImage

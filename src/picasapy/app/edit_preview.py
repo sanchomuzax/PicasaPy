@@ -738,6 +738,11 @@ class EditPreviewProvider(QQuickImageProvider):
         # elfedi a valódi hibákat a naplóban.
         if requested_size is not None and not image.isNull():
             width, height = requested_size.width(), requested_size.height()
+            # #3800: a GPU-előtag textúra — a befoglaló dobozba csak
+            # KICSINYÍTÜNK: a kis kép felnagyítása csak GPU-memóriát visz,
+            # a réteg úgyis a kirajzolt kép méretére nyújtja.
+            if is_gpu_prefix and _belefer(image, width, height):
+                width = height = 0
             smooth = Qt.TransformationMode.SmoothTransformation
             if width > 0 and height > 0:
                 image = image.scaled(requested_size, Qt.AspectRatioMode.KeepAspectRatio, smooth)
@@ -767,6 +772,14 @@ class EditPreviewProvider(QQuickImageProvider):
             size.setWidth(image.width())
             size.setHeight(image.height())
         return image
+
+
+def _belefer(image: QImage, width: int, height: int) -> bool:
+    """A kép a kért (`0` = korlátlan) dobozba már méretezés nélkül is
+    belefér (#3800)."""
+    return (width <= 0 or image.width() <= width) and (
+        height <= 0 or image.height() <= height
+    )
 
 
 @functools.lru_cache(maxsize=64)

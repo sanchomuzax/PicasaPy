@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A finomhangoló csúszkáinak húzás közbeni élő előnézete a nagyon magas
+  álló képeken (például a 9:16-os telefonos fotókon) is látszik — eddig
+  ezeknél húzás közben semmi nem változott a képen, csak a felengedés után (#3800).
+
 ## [0.8.612] – 2026-09-27
 
 ## [0.8.611] – 2026-09-27
