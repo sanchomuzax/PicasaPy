@@ -23,6 +23,7 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image
+from picasapy.render.glimmer_ops import resize_image
 
 #: A `Hardness` osztója a natív képletben. A 101 (nem 100!) szándékos: a
 #: `Hardness = 100` mellett is marad egy hajszálnyi átmenet, sosem lesz a
@@ -184,7 +185,8 @@ def apply_focal_pixelate(
 ) -> np.ndarray:
     """`PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade` (#570).
 
-    A natív recept: lekicsinyítés `W/Impact × H/Impact` méretre, majd
+    A natív recept: lekicsinyítés `W/Impact × H/Impact` méretre a közös
+    `Resize`-zal (`resize_image`, fixpontos doboz, #3805), majd
     visszanagyítás `W × H`-ra **`smoothing = false`** módban — vagyis
     legközelebbi-szomszéd, nem interpoláció (ettől lesznek éles blokkjai, nem
     elmosódott foltjai). Ugyanaz a körmaszk és `Fade`, mint a `FocalZoom`-nál.
@@ -212,11 +214,10 @@ def apply_focal_pixelate(
     factor = max(float(impact), 1.0)
     small_w = max(1, int(width / factor))
     small_h = max(1, int(height / factor))
-    small = cv2.resize(image, (small_w, small_h), interpolation=cv2.INTER_AREA)
-    # smoothing=false → NEAREST: a blokkok élei élesek maradnak
-    pixelated = cv2.resize(
-        small, (width, height), interpolation=cv2.INTER_NEAREST
-    ).astype(np.float32)
+    # a közös `Resize` (#3805): kicsinyítéskor a `ytResampler` fixpontos
+    # doboza, visszafelé `smoothing=false` → legközelebbi szomszéd
+    small = resize_image(image, small_w, small_h, smoothing=True)
+    pixelated = resize_image(small, width, height, smoothing=False).astype(np.float32)
 
     mask = focal_mask(
         height,

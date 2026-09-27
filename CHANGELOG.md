@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Képpontnagyítás” effekt blokkszínei most az eredeti Picasáéval
+  egyeznek: a kép kicsinyítése az eredeti szerint egyenlő súlyú átlagolással
+  történik, ezért a blokkok színe nem kenődik el (a mért eltérés ΔE 4,6-ról
+  0,1-re csökkent). Ugyanez pontosítja a „Képpontnövelés” blokkjait is (#3805).
+
 ## [0.8.612] – 2026-09-27
 
 ## [0.8.611] – 2026-09-27

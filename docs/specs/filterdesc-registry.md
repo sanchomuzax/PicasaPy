@@ -3035,14 +3035,13 @@ négy hívója van, köztük mindkettő.
 (`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
 `FUN_00c29990` logikai átalakítóval).
 
-> ✅ **Megvalósítva (#2227, 2026-09-04).** A `resize_image`
-> (`src/picasapy/render/glimmer_ops.py`) mostantól a mért viselkedést
-> követi: tengelyenként dönt a `forrás / cél` léptékből — **lépték = 1 →
-> azonosság** (a 0-s dobozmód ilyenkor pontosan az), egyébként **valódi
-> Mitchell–Netravali mag `B = C = 0,4`-gyel**, szeparábilisan. Nem
-> közelítés: a `mitchell_netravali()` a klasszikus képletet számolja, és a
-> próbák a mag értékeit a képletből ellenőrzik (`x = 0`, `1`, `2`), nem a
-> kimenetből.
+> ✅ **Megvalósítva (#2227, 2026-09-04; helyesbítve #3805, 2026-09-28).** A
+> `resize_image` (`src/picasapy/render/glimmer_ops.py`) az 5/c pont szerint
+> dolgozik: a **vízszintes** cél/forrás lépték `≤ 1` → fixpontos doboz,
+> egyébként Mitchell–Netravali `B = C = 0,4`, mindkét tengelyen ugyanaz a
+> mód. A #2227 és a #3805 között tengelyenként döntött (1:1 → azonosság,
+> egyébként lebegőpontos Mitchell) — ez volt a `Pixelate` ΔE 4,6-os
+> eltérésének oka.
 
 ### 5/a. `smoothing=false`: legközelebbi szomszéd, nem dobozmód
 
@@ -3070,11 +3069,11 @@ A wrapper utasításszinten külön ágazik (`0x00bcb602` `test bl,bl`):
 ugyanez a legközelebbi-szomszéd ág fut; a kimenet ilyenkor természetesen a
 forrás képpontjait adja vissza, de a választott mechanizmus nem a doboz.
 
-**Nálunk (MÉRVE):** a `resize_image(..., smoothing=False)` már
-`cv2.INTER_NEAREST`-et használ (`src/picasapy/render/glimmer_ops.py:961–969`),
-tehát a mechanizmus egyezik. A próba eddig ezt feltevésként jelölte
-(`tests/render/test_resize_mitchell_2227.py:127–136`); a kutatási lelet a
-megfelelő bináris kontrollt most megadta.
+**Nálunk (MÉRVE):** a `resize_image(..., smoothing=False)`
+`cv2.INTER_NEAREST`-et használ (`src/picasapy/render/glimmer_ops.py`,
+`resize_image`), tehát a mechanizmus egyezik; a próba
+(`tests/render/test_resize_mitchell_2227.py`,
+`test_smoothing_hamis_a_LEGKOZELEBBI_szomszed`) már mérésként hivatkozik rá.
 
 ### 5/b. A mag kicsinyítéskor a léptékkel nyúlik — LEZÁRVA
 
@@ -3103,18 +3102,18 @@ forrástérbeli tartósugár **nő**; a mag nem marad fix kétpixeles. A
 `0x00cf3db0` értékét ebben a körben nem adom át számszerűen: **NINCS MEG**
 kiolvasva, de az összeadás helye és szerepe a binárisból megvan.
 
-**Nálunk (MÉRVE):** a `src/picasapy/render/glimmer_ops.py:922–930`
-ugyanezt a szerkezetet használja: `skala = be_meret / ki_meret`,
-`nyujtas = max(1.0, skala)`, `tamasz = 2.0 * nyujtas`, majd a Mitchell-mag
-argumentuma `(kozep - index) / nyujtas`. A két érintett meglévő tesztfájl
-célzott futása: `45 passed in 1.71s`; ez a jelenlegi kód őrzése, **nem**
-Picasa-exporttal végzett pixelazonossági mérés.
+**Nálunk (MÉRVE, #3805 után):** a `_tengely_sulyok`
+(`src/picasapy/render/glimmer_ops.py`) mindkét módra ugyanezt a szerkezetet
+használja: `nyujtas = max(1, forrás/cél)`, a tartósugár doboznál
+`0,5 · nyujtas`, Mitchellnél `2 · nyujtas`, a mag argumentuma
+`(j + 0,5 − c) / nyujtas`. Kicsinyítéskor a Mitchell csak akkor fut, ha a
+vízszintes tengely nagyít (5/c).
 
 | | Eredeti | Nálunk (mért forrásállapot) | Teendő |
 |---|---|---|---|
-| `smoothing=true`, `scale < 1` | bináris `0x00a3f745`–`0x00a3f74b`: tartósugár / lépték | `glimmer_ops.py:922–930`: `max(1, scale)`-nyújtás | mechanizmus szerint nincs javítás |
-| `smoothing=true`, `scale = 1` | 0-s dobozmód, a `0x00bcb63f`–`0x00bcb655` ág szerint | `glimmer_ops.py:940–941`: azonosság | nincs javítás |
-| kimeneti pixelazonosság eredeti exporttal | **NINCS MEG** ebben a körben | **NINCS MEG** | külön golden-pár szükséges |
+| `smoothing=true`, `scale < 1` | bináris `0x00a3f745`–`0x00a3f74b`: tartósugár / lépték | `_tengely_sulyok`: `max(1, scale)`-nyújtás | nincs teendő |
+| `smoothing=true`, `scale = 1` | 0-s dobozmód, a `0x00bcb63f`–`0x00bcb655` ág szerint | 1:1-es doboz = azonosság (`(16383·p + 255) >> 14 = p`) | nincs teendő |
+| kimeneti pixelazonosság eredeti exporttal | ld. 5/c (#3805) | `Pixelate` alap ΔE 0,098 | lezárva, 5/c |
 
 **Bizonyítottsági fok: megerősített** a mechanizmusra (célzott Ghidra
 utasítás- és dekompilációs kiolvasás); **NINCS MEG** a Picasa eredeti és a mi
@@ -3204,13 +3203,37 @@ nem változik, tehát a lépték 1: a függőleges 0,95-ös zsugorítás is
 
 #### Eredeti / nálunk / teendő
 
-| | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`) | teendő |
+| | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`, #3805 után) | teendő |
 |---|---|---|---|
-| módválasztás | vízszintes cél/forrás ≤ 1 → doboz, egyébként Mitchell | tengelyenként: 1:1 → azonosság, egyébként Mitchell | ua. |
-| a doboz | `\|x\| < 0,5`, a léptékkel nyújtva | — | ua. |
-| súlyok | `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé | lebegőpontos | ua. |
-| kimenet | `(Σ w·p + 255) >> 14`, menetenként 8 bit (a Mitchell-nagyításnál is) | `rint`, egyetlen kerekítés a végén | ua. |
-| `PicnikFocalPixelate` | ugyanez a `Resize` | `render/focal.py`: `cv2.INTER_AREA` | a közös `resize_image`-re |
+| módválasztás | vízszintes cél/forrás ≤ 1 → doboz, egyébként Mitchell | ugyanígy, mindkét tengelyre | — |
+| a doboz | `\|x\| < 0,5`, a léptékkel nyújtva | ugyanígy (`_tengely_sulyok`) | — |
+| súlyok | `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé | ugyanígy, egész súlyok | — |
+| kimenet | `(Σ w·p + 255) >> 14`, menetenként 8 bit (a Mitchell-nagyításnál is) | ugyanígy, vízszintes menet elöl | — |
+| `PicnikFocalPixelate` | ugyanez a `Resize` | `render/focal.py` a közös `resize_image`-en | — |
+
+**Nálunk (MÉRVE, #3805, 684-es készlet, ΔE a Picasa-exporthoz):**
+
+| eset | előtte | utána |
+|---|---:|---:|
+| `Pixelate` alap (Impact 20) | 4,638 | **0,098** |
+| `Pixelate` min (Impact 2, Add) | 0,783 | **0,128** |
+| `Pixelate` max (Fade 100) | 0,121 | 0,121 |
+| `PicnikFocalPixelate` alap (Impact 20) | 0,321 (`INTER_AREA`) | **0,231** |
+| `PicnikFocalPixelate` min (Impact 2) | 0,162 (`INTER_AREA`) | **0,114** |
+| `PicnikFocalPixelate` max (Fade 100) | 0,121 | 0,121 |
+
+A `PicnikFocalPixelate`-nek tehát VAN exportja a készletben
+(`picnikfocalpixelate__*`); a fenti „nem mértem” a doboz-modell előtti
+állapotra szólt. Az őr: `tests/render/test_resize_mitchell_2227.py` (a jegy
+960 → 48-as képlete, független ciklusos referencia bitre, golden).
+
+⚠️ Nincs kimérve: (1) ha a dobozban egyetlen csap sincs (nagyításnál `c`
+pontosan képponthatárra esik — dobozmódban csak függőleges nagyításnál
+fordulhat elő), nálunk a teljes súly a `csonk(c)` csapé; (2) Mitchell-módban
+a 1:1-es tengely is a Mitchell-magon megy át (a spec szerint a mód mindkét
+tengelyre szól), ez enyhe elmosást ad; ezt Picasa-export nem igazolja;
+(3) a képszélen a képen kívüli csap nem kerül a listába (nincs
+peremismétlés) — a doboz egész léptéknél ettől független.
 
 Fejlesztés: #3805.
 
