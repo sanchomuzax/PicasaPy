@@ -1343,6 +1343,32 @@ class PrintController(QObject):
             return 0
         return len(grid)
 
+    @Slot(list, int, result=int)
+    @Slot(list, int, str, result=int)
+    def contactPageCount(  # noqa: N802
+        self, rows, columns: int, printer_name: str = ""
+    ) -> int:
+        """Hány LAP lenne az indexkép-nyomtatásból (#3712) — a darabszám-sor
+        ehhez mondja a tényleges lapszámot, ugyanúgy, ahogy a méret szerinti
+        nyomtatásnál a `printPageCount` teszi.
+
+        A tájolás itt SZÁNDÉKOSAN mindig portré: az élő indexkép-nyomtatás
+        (`_run_contact_sheet`) is a papír alapértelmezett állását tartja,
+        mert egy lapon sok kép van, nincs „a kép tájolása" (ld. ott a
+        megjegyzést)."""
+        darab = 0
+        for path in self._resolve_paths(rows):
+            if not QImage(str(path)).isNull():
+                darab += 1
+        if darab < 1:
+            return 0
+        oszlopok = int(columns) if int(columns or 0) > 0 else DEFAULT_COLUMNS
+        page = self._preview_page_geometry(printer_name, landscape=False)
+        try:
+            return len(sheet_pages(darab, page, oszlopok))
+        except ValueError:
+            return 0
+
     @staticmethod
     def _draw_options_page(
         painter: QPainter,

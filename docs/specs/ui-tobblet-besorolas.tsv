@@ -332,10 +332,8 @@ PicasaPy/PrintDialog.qml	Columns:	segedszoveg	Oszlopszam mezo felirata; nincs ta
 PicasaPy/PrintDialog.qml	Copies of each picture:	segedszoveg	Peldanyszam mezo felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	Fill the page (crop)	segedszoveg	Oldalhoz igazitas opcioja (kivagas); nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	Fit to page:	segedszoveg	Oldalhoz igazitas mezo felirata; nincs talalhato eredeti megfelelo.		
-PicasaPy/PrintDialog.qml	Layout:	segedszoveg	Elrendezes-valaszto mezo felirata; nincs talalhato eredeti megfelelo (natív nyomtato-dialogus tartalma volt eredetileg).		
-PicasaPy/PrintDialog.qml	No pictures to print.	segedszoveg	Ures kijeloles hibauzenete nyomtataskor; nincs talalhato eredeti megfelelo.		
-PicasaPy/PrintDialog.qml	One picture per page	segedszoveg	Elrendezes-opcio felirata; nincs talalhato eredeti megfelelo.		
-PicasaPy/PrintDialog.qml	PDF documents (*.pdf)	segedszoveg	Fajltipus-szuro a PDF mentes dialogusban; nincs talalhato eredeti megfelelo (natív fajl-dialogus szurője lett volna eredetileg).		
+PicasaPy/PrintDialog.qml	No pictures to print.	segedszoveg	Ures kijeloles hibauzenete nyomtataskor; nincs talalhato eredeti megfelelo.
+PicasaPy/PrintDialog.qml	PDF documents (*.pdf)	segedszoveg	Fajltipus-szuro a PDF mentes dialogusban; nincs talalhato eredeti megfelelo (natív fajl-dialogus szurője lett volna eredetileg).
 PicasaPy/PrintDialog.qml	Print size:	segedszoveg	Nyomtatasi meret mezo felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	Print to a PDF file...	segedszoveg	PDF-be nyomtatas gomb felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	Printing is unavailable: the Qt print support 	segedszoveg	Sajat hibauzenet: a Qt nyomtatas-tamogatas hianya; ez technikai/platform-fuggo helyzet, ami az eredetiben (natív Windows nyomtatas) nem all elo.		

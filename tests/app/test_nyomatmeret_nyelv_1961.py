@@ -134,5 +134,8 @@ class TestAFeliratokAQMLben:
             "TELJES_OLDAL": "FullPage",
             # `ytPrintSizes::ePassport` — csak az Útlevélkép állítja be (#1401)
             "PASSPORT": "Passport",
+            # #3712: az Indexképek a méretlista tétele, nem külön kapcsoló —
+            # a `CONTACT` a QML-only azonosító (nincs `NyomatMeret` tagja)
+            "CONTACT": "Contact sheet",
         }
         assert self._felirat_terkep() == vart

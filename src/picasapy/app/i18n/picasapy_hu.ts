@@ -414,20 +414,8 @@
         <translation>Ezeket a képeket nem lehetett kinyomtatni: %1</translation>
     </message>
     <message>
-        <source>Pictures to print: %1 (one per page)</source>
-        <translation>Nyomtatandó képek: %1 (oldalanként egy)</translation>
-    </message>
-    <message>
-        <source>Pictures to print: %1 (contact sheet)</source>
-        <translation>Nyomtatandó képek: %1 (indexkép)</translation>
-    </message>
-    <message>
-        <source>Layout:</source>
-        <translation>Elrendezés:</translation>
-    </message>
-    <message>
-        <source>One picture per page</source>
-        <translation>Képenként egy lap</translation>
+        <source>Pictures to print: %1 (%2 pages)</source>
+        <translation>Nyomtatandó képek: %1 (%2 lap)</translation>
     </message>
     <message>
         <source>Contact sheet</source>
