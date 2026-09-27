@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.589] – 2026-09-27
+
 ### Javítva
 - **A kettős nézet gombjai és „Kijelölve” jelzése az eredeti Picasa szerint
   (#3663).** Az „A”, „AB” és „AA” gomb a lapozó sáv jobb oldalán, a ▶ után
