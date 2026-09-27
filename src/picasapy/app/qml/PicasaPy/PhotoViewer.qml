@@ -370,18 +370,11 @@ Rectangle {
         // ~3,7-es arányt az 1,28 helyett — mérve a tulajdonos
         // képernyőmentésén 3–4-szeres túlnagyítás.
         //
-        // ⚠️ #3760: a FORGATÁS a `paintedWidth`-en NEM változtat semmit —
-        // a `kep` doboza (`width`/`height`) forgatáskor felcserélődik
-        // (`iniSteps % 2`), a `rotation:` pedig ezután, RÁ épülő
-        // képernyő-transzformációként forgatja el a már kiszámolt
-        // dobozt. A `PreserveAspectFit` illesztés a doboz elforgatás
-        // ELŐTTI méretéhez igazít, a BETÖLTÖTT (forgatatlan) kép saját
-        // (fájlbeli) arányával — ez a `paintedWidth`-et a fájl
-        // SZÉLESSÉGÉVEL tartja arányosnak, forgatástól függetlenül. A
-        // korábbi kód ezt fordítva vette: forgatott képnél a fájl
-        // MAGASSÁGÁVAL osztott — mérve: egy 300×500-as, 90°-kal
-        // forgatott képnél 1,73-szoros túlnagyítás az 1,04 helyes
-        // érték helyett.
+        // Invariáns (#3760): a `paintedWidth` a fájl SZÉLESSÉGÉVEL
+        // arányos, a `.picasa.ini` forgatásától függetlenül — a
+        // `PreserveAspectFit` a forgatatlan raszter arányával illeszt, a
+        // `rotation:` csak utána forgatja a kész dobozt. Ezért az arány
+        // forgatott képnél is `valodiSzelesseg / paintedWidth`.
         //: #3741: a fókuszban lévő fél képe — kettős nézetben bal
         //: fókusznál a `photoElotte`.
         var kep = photoArea.fokuszKep
