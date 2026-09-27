@@ -164,45 +164,35 @@ def draw_border(
     return vaszon
 
 
-#: #649/#626: a `DropShadowImageOperation` (`0x00bbb720`) DÖNTETLEN-ELDÖNTŐ
-#: eltolásai. A natív kód az árnyék eltolását így számolja:
+#: #649/#626/#3809: a `DropShadowImageOperation` árnyék-eltolása
+#: (`0x00bcdea0`):
 #:
-#:     dx = round( (cosf(szög·π/180) + 6.7e-06f) · távolság + 0.001825f )
-#:     dy = round( (sinf(szög·π/180) + 6.7e-06f) · távolság + 0.001825f )
+#:     dx = floor( (cos(szög·π/180) + 6,7e−06) · távolság + 0,001825 )
+#:     dy = floor( (sin(szög·π/180) + 6,7e−06) · távolság + 0,001825 )
 #:
-#: A két apró szám NEM paraméter: az egész értékhez közeli eseteknél dönti
-#: el, merre billen a kerekítés (`docs/specs/filterdesc-registry.md` 4.11).
+#: A két apró szám NEM paraméter, hanem lebegőpontos védelem: a 2,9999…
+#: alakban kijövő, valójában egész szorzatot emeli az egész fölé, mielőtt a
+#: `floor` lecsípné (`docs/specs/filterdesc-registry.md`, „A Polaroid
+#: geometriája”).
 _SHADOW_TIE_SLOPE = 6.7e-06
 _SHADOW_TIE_OFFSET = 0.001825
 
 
-def _c_round(value: float) -> int:
-    """A C `round()`-ja: a felet a nullától ELFELÉ kerekíti.
-
-    ⚠️ A Python `round()` bankári kerekítést végez (`round(0.5) == 0`),
-    tehát a natív képletet vele nem lehet reprodukálni — épp a döntetlen
-    eseteknél térne el, amikre a fenti két konstans készült."""
-    return (
-        int(math.floor(value + 0.5))
-        if value >= 0
-        else -int(math.floor(-value + 0.5))
-    )
-
-
 def shadow_offset(distance_px: float, angle: float) -> tuple[int, int]:
-    """Az árnyék (dx, dy) eltolása a MÉRT natív képlettel (#649).
+    """Az árnyék (dx, dy) eltolása a natív képlettel (#649, #3809).
 
-    A korábbi alak a döntetlen-igazítás nélkül, Python-kerekítéssel számolt:
-    a 12 × 360 (távolság, szög) kombinációból **42**-nél adott más értéket —
-    például 1 képpont távolságnál 30°-on `(1, 0)` helyett a natív `(1, 1)`.
+    A kerekítés `floor` (`0x00bcdece` `call 0x00c0b1e0`), nem C-`round`: a
+    (távolság 0–30, szög 0–359°) párok 71%-ánál a kettő eltér — például az
+    alapértelmezett 4 / 45°-nál `(2, 2)` a natív, nem `(3, 3)`. Tengelyirányú
+    szögnél (0°, 90°, 180°, 270°) a kettő egybeesik.
     """
     radian = math.radians(angle)
     return (
-        _c_round(
+        math.floor(
             (math.cos(radian) + _SHADOW_TIE_SLOPE) * distance_px
             + _SHADOW_TIE_OFFSET
         ),
-        _c_round(
+        math.floor(
             (math.sin(radian) + _SHADOW_TIE_SLOPE) * distance_px
             + _SHADOW_TIE_OFFSET
         ),
@@ -336,46 +326,83 @@ def draw_drop_shadow(
     )
 
 
+#: A mintavevő (`0x009e7060`) 16.16 fixpontban lép; a forrás képpontközepét
+#: a `− 32767` (`add edx, 0xffff8001`) teszi az egész koordinátára.
+_FIX_EGY = 65536
+_FIX_FEL = 32767
+
+
+def _fixpontos_bilinearis(
+    image: np.ndarray, matrix: tuple[float, ...], cel_w: int, cel_h: int,
+    border_color: tuple[int, int, int],
+) -> np.ndarray:
+    """A natív forgató mintavevő (`0x009e7060`, #3809) vektorosan.
+
+    Soronként `U = fistp(u(x+0,5, y+0,5) · 65536) − 32767`, a lépés
+    `fistp(m0 · 65536)`; `ix = U >> 16`, `fx = (U >> 8) & 0xFF`. A súly 8
+    bites: `lerp(a, b, f) = a + floor((b − a)·f/256)`, előbb vízszintesen. A
+    perem egy képpontos sávjában a kilógó szomszéd a szélső képpont; azon
+    kívül a cél a `border_color` marad. (`fistp` = páros felé kerekítés,
+    mint az `np.rint`.)
+    """
+    m0, m1, m2, m3, m4, m5 = matrix
+    src_h, src_w = image.shape[:2]
+    sor = np.arange(cel_h, dtype=np.float64) + 0.5
+    oszlop = np.arange(cel_w, dtype=np.int64)
+    u0 = np.rint((m0 * 0.5 + m1 * sor + m2) * _FIX_EGY).astype(np.int64) - _FIX_FEL
+    v0 = np.rint((m3 * 0.5 + m4 * sor + m5) * _FIX_EGY).astype(np.int64) - _FIX_FEL
+    u = u0[:, None] + oszlop[None, :] * int(np.rint(m0 * _FIX_EGY))
+    v = v0[:, None] + oszlop[None, :] * int(np.rint(m3 * _FIX_EGY))
+    ix, iy = u >> 16, v >> 16
+    ervenyes = (ix >= -1) & (ix <= src_w - 1) & (iy >= -1) & (iy <= src_h - 1)
+    ix, iy = ix[ervenyes], iy[ervenyes]
+    fx = ((u[ervenyes] >> 8) & 0xFF)[:, None]
+    fy = ((v[ervenyes] >> 8) & 0xFF)[:, None]
+    x0, x1 = np.clip(ix, 0, src_w - 1), np.clip(ix + 1, 0, src_w - 1)
+    y0, y1 = np.clip(iy, 0, src_h - 1), np.clip(iy + 1, 0, src_h - 1)
+    forras = image.astype(np.int32)
+    fent = forras[y0, x0] + (((forras[y0, x1] - forras[y0, x0]) * fx) >> 8)
+    lent = forras[y1, x0] + (((forras[y1, x1] - forras[y1, x0]) * fx) >> 8)
+    cel = np.empty((cel_h, cel_w, image.shape[2]), dtype=image.dtype)
+    cel[:] = np.array(border_color, dtype=image.dtype)
+    cel[ervenyes] = (fent + (((lent - fent) * fy) >> 8)).astype(image.dtype)
+    return cel
+
+
 def rotate_with_pad(
     image: np.ndarray, angle_deg: float, border_color: tuple[int, int, int]
 ) -> np.ndarray:
-    """`Rotate(..., padBorder, borderColor=...)`: elforgatás úgy, hogy a
-    vászon előbb kibővül (a forgatott téglalap befoglaló mérete), így a
-    sarkok (majdnem) nem vágódnak le — az üresen maradó sarkokat
+    """`Rotate(..., padBorder, borderColor=...)`: elforgatás a forgatott
+    téglalap befoglaló méretű vásznára; az üresen maradó sarkokat
     `border_color` tölti ki.
 
     #3420: a szög a Picasa `RotateImageOperation degAngle`-je, és POZITÍV
     értéknél az óramutató JÁRÁSA szerint forgat (a 684-es Polaroid-exporton
-    `Rotate = 5`-nél a keret felső éle jobbra lejt). Az OpenCV pozitív szöge
-    ennek fordítottja, ezért a mátrixnak az ellentettje megy.
+    `Rotate = 5`-nél a keret felső éle jobbra lejt).
 
-    #1144: a befoglaló méretet LEFELÉ kerekítjük (`floor`), nem felfelé — a
-    Polaroid `818×950`/`887×1004` mért kimenete csak `floor`-ral egyezik
-    (két különböző forgatási szöggel is ellenőrizve; `ceil` mindkét esetben
-    +1 képpontot ad mindkét irányban). A gyakorlatban ez a forgatott
-    téglalap sarkaiból tör le fél képpontnál kevesebbet.
+    #1144: a befoglaló méret `csonk(|W·cos θ| + |H·sin θ|)` ×
+    `csonk(|W·sin θ| + |H·cos θ|)` (`0x00bc7ca0`) — a Polaroid `818×950`/
+    `887×1004` mért kimenete csak így egyezik.
+
+    #3809: a cél → forrás mátrix `T(sW/2, sH/2) · R · T(−dW/2, −dH/2)`
+    (`0x00bc8060`), a képpont KÖZEPÉT vetíti vissza, tehát a forrás közepe
+    pontosan a cél közepére esik. A mintavétel a natív 8 bites fixpontos
+    bilineáris (`_fixpontos_bilinearis`). A korábbi út (a kép `//2`-vel a
+    vászonra, majd OpenCV-sarok-konvenciós `warpAffine`) fél képpontokat
+    tolt el, és a peremen a kitöltő színnel mosott össze.
     """
     validate_image(image)
-    height, width = image.shape[:2]
-    angle_rad = np.deg2rad(angle_deg)
-    cos_a, sin_a = abs(np.cos(angle_rad)), abs(np.sin(angle_rad))
-    new_w = int(np.floor(width * cos_a + height * sin_a))
-    new_h = int(np.floor(width * sin_a + height * cos_a))
-    canvas = np.empty((new_h, new_w, 3), dtype=image.dtype)
-    canvas[:] = np.array(border_color, dtype=image.dtype)
-    top = (new_h - height) // 2
-    left = (new_w - width) // 2
-    canvas[top : top + height, left : left + width] = image
-    center = (new_w / 2.0, new_h / 2.0)
-    matrix = cv2.getRotationMatrix2D(center, -angle_deg, 1.0)
-    return cv2.warpAffine(
-        canvas,
-        matrix,
-        (new_w, new_h),
-        flags=cv2.INTER_LINEAR,
-        borderMode=cv2.BORDER_CONSTANT,
-        borderValue=border_color,
+    src_h, src_w = image.shape[:2]
+    radian = math.radians(angle_deg)
+    cos_a, sin_a = math.cos(radian), math.sin(radian)
+    cel_w = int(math.floor(src_w * abs(cos_a) + src_h * abs(sin_a)))
+    cel_h = int(math.floor(src_w * abs(sin_a) + src_h * abs(cos_a)))
+    # cél → forrás: az óramutató szerinti forgatás inverze
+    matrix = (
+        cos_a, sin_a, src_w / 2.0 - cos_a * cel_w / 2.0 - sin_a * cel_h / 2.0,
+        -sin_a, cos_a, src_h / 2.0 + sin_a * cel_w / 2.0 - cos_a * cel_h / 2.0,
     )
+    return _fixpontos_bilinearis(image, matrix, cel_w, cel_h, border_color)
 
 
 __all__ = [

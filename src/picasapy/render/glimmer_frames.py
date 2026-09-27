@@ -18,15 +18,16 @@ from picasapy.render.glimmer_frame_ops import (
     compose_drop_shadow,
     draw_border,
     draw_drop_shadow,
+    drop_shadow_padding,
     rotate_with_pad,
 )
 
 #: Polaroid rögzített árnyék-recept (`DropShadowImageOperation` felülírás):
-#: `blur`/`distance` itt PIXELBEN értendő, nem a rövidebb oldal
-#: százalékában (#1144 — a `818×950`/`887×1004` mért kimenet csak ezzel a
-#: két konstanssal, `margin = blur + distance` képlettel egyezik; a
-#: `draw_drop_shadow` %-os modellje ide NEM alkalmazható, ld. annak
-#: docstringjét).
+#: `blur`/`distance` KÉPPONTBAN (#1144). A vászon ugyanaz az uniós margó,
+#: mint az önálló `DropShadow`-é (`drop_shadow_padding`, #3809): bal
+#: `11 − dx`, fent `11 − dy`, jobb `11 + dx`, lent `11 + dy`, ahol
+#: `11 = ceil(8 · 1,3501)`. A teljes méret ezért `+22` mindkét irányban —
+#: ezt mérte a #1144 (`818×950`/`887×1004`).
 _POLAROID_SHADOW_BLUR_PX = 8
 _POLAROID_SHADOW_DISTANCE_PX = 3
 
@@ -135,19 +136,19 @@ def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2)):
         cropped, side_border, side_border, top_border, bottom_border, _POLAROID_FRAME_COLOR
     )
     # shadowAlpha = 0,4 rögzített → fade_alpha(fade) = 0,4 ⇒ fade = 60.
-    # #1144: a margó `blur_px + distance_px` (NEM `2·blur_px + distance_px` —
-    # az a `draw_drop_shadow` %-os, ide nem érvényes modellje volt, ami a
-    # kimenetet 29%-kal megnövelte).
-    margin = _POLAROID_SHADOW_BLUR_PX + _POLAROID_SHADOW_DISTANCE_PX
+    # #3809: a vászon az eredeti és az eltolt-kiterjesztett doboz UNIÓJA
+    szog = 90.0 - rotate
+    _, _, pads = drop_shadow_padding(_POLAROID_SHADOW_DISTANCE_PX, szog, _POLAROID_SHADOW_BLUR_PX)
     shadowed = compose_drop_shadow(
         bordered,
         (0, 0, 0),
         color,
         distance_px=_POLAROID_SHADOW_DISTANCE_PX,
-        angle=90.0 - rotate,
+        angle=szog,
         blur_px=_POLAROID_SHADOW_BLUR_PX,
-        margin=margin,
+        margin=0,
         fade=60.0,
+        pads=pads,
     )
     return rotate_with_pad(shadowed, rotate, color)
 

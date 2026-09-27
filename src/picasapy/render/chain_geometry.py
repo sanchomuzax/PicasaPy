@@ -175,20 +175,23 @@ def _polaroid(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:
     m = _szorzat(_eltolas(oldalt, fent), m)
     sz, ma = sz + 2 * oldalt, ma + fent + lent
 
-    # 3. vetett árnyék (rögzített pixel-margóval)
-    margo = _POLAROID_SHADOW_BLUR_PX + _POLAROID_SHADOW_DISTANCE_PX
-    m = _szorzat(_eltolas(margo, margo), m)
-    sz, ma = sz + 2 * margo, ma + 2 * margo
+    # 3. vetett árnyék: az uniós margó, mint az önálló DropShadow-é (#3809)
+    _, _, (bal, fent_m, jobb, lent_m) = drop_shadow_padding(
+        _POLAROID_SHADOW_DISTANCE_PX, 90.0 - szog, _POLAROID_SHADOW_BLUR_PX
+    )
+    m = _szorzat(_eltolas(bal, fent_m), m)
+    sz, ma = sz + bal + jobb, ma + fent_m + lent_m
 
-    # 4. `rotate_with_pad`: előbb a bővített vászon közepére, majd forgatás
+    # 4. `rotate_with_pad`: a forrás KÖZEPE a cél közepére, képpontközéppel
+    # (#3809); a Picasa pozitív szöge az óramutató járása, ezért az
+    # OpenCV-képletű `_forgatas` az ellentettet kapja (#3420)
     radian = math.radians(szog)
     cos_a, sin_a = abs(math.cos(radian)), abs(math.sin(radian))
     uj_sz = int(math.floor(sz * cos_a + ma * sin_a))
     uj_ma = int(math.floor(sz * sin_a + ma * cos_a))
-    m = _szorzat(_eltolas((uj_sz - sz) // 2, (uj_ma - ma) // 2), m)
-    # a `rotate_with_pad` a Picasa irányát követi (pozitív = óramutató
-    # járása), ezért az OpenCV-képletű `_forgatas` az ellentettet kapja (#3420)
-    m = _szorzat(_forgatas(uj_sz / 2.0, uj_ma / 2.0, -szog), m)
+    m = _szorzat(_eltolas(0.5 - sz / 2.0, 0.5 - ma / 2.0), m)
+    m = _szorzat(_forgatas(0.0, 0.0, -szog), m)
+    m = _szorzat(_eltolas(uj_sz / 2.0 - 0.5, uj_ma / 2.0 - 0.5), m)
     return uj_sz, uj_ma, m
 
 
