@@ -15,6 +15,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   „A készlet valamennyi fájljáról készült biztonsági másolat" felirat
   jelenik meg (#3751).
 
+## [0.8.601] – 2026-09-27
+
+### Javítva
+- **Az Éjjellátó, a Holga-szerű, a Kinemaszkóp és a 60-as évek szemcséje
+  jobban hasonlít az eredeti Picasáéra (#3736).** A zajt mostantól a Picasa
+  saját véletlengenerátora adja, ugyanazzal a kezdőértékkel. Az eltérés a
+  Picasa képeitől (ΔE, kisebb a jobb): Éjjellátó 11,7 → 4,6, Holga-szerű
+  1,5 → 0,9, Kinemaszkóp 2,2 → 1,4, 60-as évek 1,3 → 1,2. A Filmszemcse nem
+  változott.
+
 ## [0.8.600] – 2026-09-27
 
 ### Javítva
@@ -22,7 +32,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   fanézetben is) csak a még el nem mentett mappákat mutatja, pipával
   kijelölhetően — mint az eredeti Picasában; a panel fölötti külön lista
   megszűnt (#3681).
-
 - Nyomtatáskor elsőre a „FullPage” (teljes oldal) méret van kiválasztva,
   mint az eredeti Picasában — eddig 10x15 cm (angolul 4 x 6) volt. A
   korábban választott méretet a program továbbra is megjegyzi (#3733).
@@ -93,6 +102,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   egyszerűen bezárul. A „Ne kérdezzen újból” jelölővel a módosítások a
   jövőben kérdés nélkül alkalmazódnak.
 
+### Javítva
+- **A felső eszköztár az eredeti Picasa szerint rendeződik (#3603).** Az
+  Importálás, az Új album és a nézetváltó gombok az eredeti helyükön állnak,
+  és keskeny ablakban sem tűnnek el. A szűrők és a keresőmező az ablakkal
+  együtt mozognak, a keresőmező kitölti a jobb oldalt egészen a
+  verziószámig. A verziószám rövidebb lett; a teljes változat a
+  buboréksúgóban olvasható.
+
 ## [0.8.592] – 2026-09-27
 
 ### Hozzáadva
@@ -146,15 +163,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A „Kijelölve” jelzés szürke, a kiválasztott kép mellett, a kép fölött
   áll, és nem kerül a kép mögé; a másik képre kattintva a kijelölés átvált
   rá.
-<<<<<<< HEAD
-- **A felső eszköztár az eredeti Picasa szerint rendeződik (#3603).** Az
-  Importálás, az Új album és a nézetváltó gombok az eredeti helyükön állnak,
-  és keskeny ablakban sem tűnnek el. A szűrők és a keresőmező az ablakkal
-  együtt mozognak, a keresőmező kitölti a jobb oldalt egészen a
-  verziószámig. A verziószám rövidebb lett; a teljes változat a
-  buboréksúgóban olvasható.
-=======
->>>>>>> origin/claude/picasapy-issue-3651-zls8dt
 
 ## [0.8.588] – 2026-09-27
 
@@ -889,7 +897,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ahogy az eredeti Picasában. A sáv maga marad a megszokott keskeny,
   lapos stílusban.
 
-
 ## [0.8.530] – 2026-09-19
 
 ### Hozzáadva
@@ -904,7 +911,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   a mentés a program nélkül is olvasható. A lemezkép felcsatolható, és
   bármelyik íróprogrammal lemezre írható; a program maga nem ír lemezt.
 
-
 ## [0.8.529] – 2026-09-19
 
 ### Hozzáadva
@@ -916,7 +922,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   megismételhető, és a végén megmondja, hány mappát érintett, hány
   kulcsszó, hely és név került be, és hány fotóhoz nem nyúltunk hozzá
   azért, mert ott már volt adat.
-
 
 ## [0.8.528] – 2026-09-19
 
@@ -2119,7 +2124,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Picasában. A fiók a fogantyúval továbbra is húzható.
 - **A tíz gyorscímke-gomb a mért 2-3-2-3 elrendezésbe került** (#754), az
   első két sor közt elválasztóval — eddig két ötös sorban álltak.
-
 
 ## [0.8.422] – 2026-09-12
 
@@ -3980,7 +3984,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   megmarad, és a Picasával készített dőlt/aláhúzott feliratokat is helyesen
   ismerjük fel.
 
-
 - *(Nincs látható változás.)* A **Poszterizálás** effektről eddig azt
   állítottuk a kódban, hogy a mi egyszerűsített számításunk egyenértékű az
   eredetivel — de ezt soha nem mértük meg. Most megmértük a valódi
@@ -3993,7 +3996,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   programunk hibára futott volna, és a vágás elveszik. **Egyelőre semmi nem
   hívja**, tehát a viselkedés változatlan; a beolvasásba a következő körben
   kerül be.
-
 
 - **A panel fő gombja most már finoman villog** (#2438) — ahogy az eredeti
   Picasában. Ez mutatja meg, melyik gombra kell nyomni a művelet
@@ -4475,7 +4477,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   olvassa a Picasa katalógusának útvonal-nyilvántartását teljes egészében
   (létrehozás és hozzáférés ideje, méret, fajta), és a bélyegkép-táblák
   slot-nyilvántartását is. Ez a régi Picasa-adatok importjához kell.
-
 
 ## [0.8.251] – 2026-09-03
 
@@ -6063,7 +6064,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   következő javítás önálló jegyen megy tovább.
 
 ## [0.8.106] – 2026-08-26
-
 
 ### Javítva
 - **A vágásnál az „Alaphelyzet" gomb végre azt teszi, amit ígér (#1528).**

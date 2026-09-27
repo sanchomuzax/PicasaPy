@@ -41,6 +41,8 @@ from picasapy.render.curves import (
     lut_ramp,
     validate_image,
 )
+from picasapy.render import nativ_noise
+from picasapy.render.nativ_noise import ALAP_CSATORNAK
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
@@ -790,11 +792,27 @@ def inner_glow(
 
 
 def noise_layer(
+    height: int,
+    width: int,
+    seed: int,
+    low: float,
+    high: float,
+    grayscale: bool,
+    channel_options: int = ALAP_CSATORNAK,
+) -> np.ndarray:
+    """`Noise`: a `NoiseImageOperation` natív zajrétege float32 [0,255] —
+    MT19937 a Picasa 1664525-ös magvetésével, képpontonként egy húzás
+    (#3736, ld. `nativ_noise.noise_layer`). Adott `seed` → a Picasáéval
+    képpontra azonos zajminta.
+    """
+    return nativ_noise.noise_layer(height, width, seed, low, high, grayscale, channel_options)
+
+
+def uniform_noise_layer(
     height: int, width: int, seed: int, low: float, high: float, grayscale: bool
 ) -> np.ndarray:
-    """`Noise`: egyenletes eloszlású zajréteg float32 [0,255], `seed`-del
-    determinisztikus (a Picasa saját PRNG-je nem publikus — a determinisztikus
-    reprodukálhatóság a lényeg, nem a bitre azonos zajminta).
+    """Egyenletes eloszlású `numpy`-zajréteg float32 [0,255] — a
+    `PicnikGrain` szemcséje (#907).
 
     ⚠️ **A RÖGZÍTETT mag csak tesztelési célra való** (#907). Az eredeti
     szemcséje nem determinisztikus: két egymás utáni alkalmazás FÜGGETLEN
@@ -802,13 +820,21 @@ def noise_layer(
     szórásnövekedés, nem a kétszeres amplitúdó). Aki termelő úton hívja ezt,
     **minden alkalmazáshoz új magot adjon** — különben kétszer alkalmazva
     kétszer akkora hatást kap, mint az eredetiben. A `glimmer_artistic.
-    apply_picnik_grain` ezt a `seed=None` alapértékkel oldja meg.
+    apply_picnik_grain` ezt a `seed=None` alapértékkel oldja meg. Ez az
+    ellentmondás (az állandó natív `randomSeed` mellett) nyitott, ezért a
+    `PicnikGrain` nem a natív `noise_layer`-t használja.
     """
     rng = np.random.default_rng(seed)
     if grayscale:
         plane = rng.uniform(low, high, size=(height, width)).astype(np.float32)
         return np.repeat(plane[..., np.newaxis], 3, axis=2)
     return rng.uniform(low, high, size=(height, width, 3)).astype(np.float32)
+
+
+def _blend_noise(
+    image: np.ndarray, noise: np.ndarray, blend_alpha: float, blend_mode: BlendMode
+) -> np.ndarray:
+    return to_uint8(apply_blend_mode(to_float(image), noise, blend_mode, blend_alpha))
 
 
 def apply_noise(
@@ -820,12 +846,29 @@ def apply_noise(
     blend_alpha: float,
     blend_mode: BlendMode,
 ) -> np.ndarray:
-    """Zajréteg generálása és `blend_mode`/`blend_alpha` szerinti keverése."""
+    """A natív zajréteg generálása és `blend_mode`/`blend_alpha` szerinti
+    keverése (a lánc `NoiseImageOperation`-je, #3736)."""
     validate_image(image)
     height, width = image.shape[:2]
     noise = noise_layer(height, width, seed, low, high, grayscale)
-    image_f = to_float(image)
-    return to_uint8(apply_blend_mode(image_f, noise, blend_mode, blend_alpha))
+    return _blend_noise(image, noise, blend_alpha, blend_mode)
+
+
+def apply_uniform_noise(
+    image: np.ndarray,
+    seed: int,
+    low: float,
+    high: float,
+    grayscale: bool,
+    blend_alpha: float,
+    blend_mode: BlendMode,
+) -> np.ndarray:
+    """Mint az `apply_noise`, de a `numpy`-os `uniform_noise_layer`-rel —
+    a `PicnikGrain` útja (#907)."""
+    validate_image(image)
+    height, width = image.shape[:2]
+    noise = uniform_noise_layer(height, width, seed, low, high, grayscale)
+    return _blend_noise(image, noise, blend_alpha, blend_mode)
 
 
 # --- Gradiens-leképezés (GradientMap / HSVGradientMap) ------------------
@@ -1232,7 +1275,9 @@ __all__ = [
     "local_contrast",
     "inner_glow",
     "noise_layer",
+    "uniform_noise_layer",
     "apply_noise",
+    "apply_uniform_noise",
     "gradient_map",
     "hsv_gradient_map",
     "circular_gradient_mask",
