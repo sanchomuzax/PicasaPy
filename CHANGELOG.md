@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.602] – 2026-09-27
+
 ### Javítva
 - **Kettős nézetben, ha a bal oldali kép van kijelölve, a megnyitott
   szerkesztőeszköz (Vágás, Retusálás, Szöveg, Vörösszem) mostantól ezen a
