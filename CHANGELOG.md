@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A mentés-panel indítógombja a kiválasztott készlet szerint „Biztonsági
+  mentés” vagy „Írás”, nem állandóan „Lemezre írás” (#3713).** Mappába
+  mentő készletnél a gomb így nem ígér lemezírást: ha van kiválasztott
+  készlet, „Biztonsági mentés” áll rajta, egyébként „Írás”.
+
 ## [0.8.593] – 2026-09-27
 
 ### Hozzáadva

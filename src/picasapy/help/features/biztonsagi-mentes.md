@@ -90,7 +90,7 @@ kell megjelölni, mi menjen át:
 - a keret alján lévő **Az összes kijelölése** gombbal jelöld be mindet —
   az **Az összes kijelölés megszüntetése** pedig mindet leveszi.
 
-Amíg egy pipa sincs, a **Lemezre írás** gomb szürke.
+Amíg egy pipa sincs, a **Biztonsági mentés**/**Írás** gomb szürke.
 
 A lista **a háttérben készül el**, mert a program végigolvassa a
 gyűjteményt; amíg számol, **Számítás…** áll a helyén. Készletváltáskor
@@ -102,10 +102,10 @@ Ha a készletből már minden el van mentve, a lista helyén ez áll:
 
 ## A mentés futtatása
 
-Válaszd ki a készletet, pipáld be a mappákat, majd **Lemezre írás**.
+Válaszd ki a készletet, pipáld be a mappákat, majd kattints a gombra.
 
-A gomb neve mindkét készlet-típusnál ugyanez — **mappába** mentésnél is
-ez indítja a másolást, nem ír lemezt.
+A gomb felirata **Biztonsági mentés**, ha van kiválasztott készlet;
+mappába mentésnél is ez indítja a másolást.
 
 A program először **megszámolja**, hány fájl menne át, és ezt kiírja.
 Mappába mentésnél azt is odaírja, **hány CD-re vagy DVD-re férne** ennyi
@@ -119,7 +119,8 @@ elkészült** —, akkor is, ha nem volt mit átmásolni.
 
 ### Megszakítás
 
-Amíg a másolás tart, a **Lemezre írás** gomb helyén **Megszakítás** áll.
+Amíg a másolás tart, a **Biztonsági mentés**/**Írás** gomb helyén
+**Megszakítás** áll.
 Erre kattintva a program az éppen futó fájl után abbahagyja.
 
 **A megszakítás nem veszít el munkát:** a már átmásolt fájlok bekerülnek

@@ -356,7 +356,7 @@ A `publish` panel **ugyanaz a sáv** három módban; a gombokat a
 
 | mód | a „mehet" gomb | a „mégse" gomb | további |
 |---|---|---|---|
-| **Biztonsági mentés** | `publish/backup_go` „Lemezre írás" | `publish/backup_cancel` | `backup_eject` „Kiadás", `newbackupset`, `editbackupset`, `deletebackupset` |
+| **Biztonsági mentés** | `publish/backup_go` „Lemezre írás" (a tényleges felirat futásidőben változik, ld. 15.3/1.) | `publish/backup_cancel` | `backup_eject` „Kiadás", `newbackupset`, `editbackupset`, `deletebackupset` |
 | **Ajándék-CD** | `publish/presentcd_go` „Lemezre írás" | `publish/presentcd_cancel` | `presentcd_eject`, `addmore` „Továbbiak hozzáadása…" |
 | **Webre töltés / szinkron** | `publish/replicate_go` „OK" | `publish/replicate_cancel`, `webpublish_cancel` | `rpoptionbox1..3`, `uploadallsync`, `uploadallsize`, `uploadallaccess`, `upgradestorage` |
 

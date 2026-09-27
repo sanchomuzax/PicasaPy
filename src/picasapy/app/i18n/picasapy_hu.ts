@@ -4205,6 +4205,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Backup</source>
+        <translation>Biztonsági mentés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Burn</source>
+        <translation>Írás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
         <source>Cancel</source>
         <translation>Mégse</translation>
     </message>
