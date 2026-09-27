@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15" width="20" height="15">
+  <!-- PicasaPy sajat rajz (#3663): az `only_1up_toggle` ikonja
+       (`editpanel/only_1up_icon`, 20 x 15).
+
+       A jegy szerint az eredeti ikon helyén a #3013 elvont "▭" jelet
+       adott, ezt a jegy "felismerhetetlen"-nek jelezte. Az élő felvétel
+       (`Colab EN 33`, a felső sáv 933-970 px-es szegmense nagyítva)
+       KERETES BETŰT mutat: egy vékony szegélyű, enyhén lekerekített
+       dobozban egy félkövér "A". A `respack.yt`-ből kinyert
+       `editpanel/only_1up_icon` réteg (20 x 15, csak MÉRÉSRE használva,
+       nem terjesztve — ld. `tools/picasa/respack.py` jogi megjegyzése)
+       ugyanezt a szerkezetet erősíti meg pixelszinten.
+
+       A doboz kerete a toolbar többi ikonjával azonos szürke (#5D5D5D). -->
+  <rect x="3.5" y="1.5" width="13" height="12" rx="1.5"
+        fill="none" stroke="#5D5D5D" stroke-width="1.2"/>
+  <text x="10" y="11" font-family="Arial, sans-serif" font-size="8"
+        font-weight="700" text-anchor="middle" fill="#3d3d3d">A</text>
+</svg>

@@ -8,10 +8,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- **A kettős nézet („A” / „AB” / „AA”) gombjai a filmszalag után, jobbra
-  kerültek, a „Kijelölve” jelvény szürke lett és mindig a kép fölött
+- **A kettős nézet („A” / „AB” / „AA”) gombjai a filmszalag után, a
+  fotóterület közepéhez igazítva jelennek meg (nem a lapozó sáv szélére
+  tolva), a „Kijelölve” jelvény szürke lett, a mért helyre (a fókuszban
+  lévő kép mellé, az osztó felől) került, és mindig a kép fölött
   rajzolódik, a bal/jobb (fent/lent) képre kattintás pedig átváltja rá a
-  fókuszt (#3663).**
+  fókuszt (#3663).** Az „A” / „AB” / „AA” kapcsoló és a két segédgomb
+  (fókuszváltás, elrendezés-váltás) az eredeti keretes rajzát és nagyobb,
+  jobban olvasható méretét kapta a korábbi apró, elvont jelek helyett, és
+  a felületen kettesben maradt, üres „A | AB | AA” helykitöltő sor
+  eltűnt.
 
 ## [0.8.584] – 2026-09-26
 

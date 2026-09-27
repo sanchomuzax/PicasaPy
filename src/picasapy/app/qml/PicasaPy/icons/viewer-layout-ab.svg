@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 27 15" width="27" height="15">
+  <!-- PicasaPy sajat rajz (#3663): az `ab_2up_toggle` ikonja
+       (`editpanel/ab_2up_icon`, 27 x 15).
+
+       Az élő felvétel (`Colab EN 33`, a felső sáv 970-1010 px-es
+       szegmense nagyítva) KÉT KÜLÖN KERETES BETŰT mutat egymás mellett,
+       kis réssel: "A" | "B" — nem egyetlen, válaszvonallal kettéosztott
+       doboz. A `respack.yt`-ből kinyert `editpanel/ab_2up_icon` réteg
+       (27 x 15, csak MÉRÉSRE, nem terjesztve — ld.
+       `tools/picasa/respack.py` jogi megjegyzése) ugyanezt erősíti meg. -->
+  <rect x="1" y="1.5" width="12" height="12" rx="1.5"
+        fill="none" stroke="#5D5D5D" stroke-width="1.2"/>
+  <rect x="14" y="1.5" width="12" height="12" rx="1.5"
+        fill="none" stroke="#5D5D5D" stroke-width="1.2"/>
+  <text x="7" y="11" font-family="Arial, sans-serif" font-size="8"
+        font-weight="700" text-anchor="middle" fill="#3d3d3d">A</text>
+  <text x="20" y="11" font-family="Arial, sans-serif" font-size="8"
+        font-weight="700" text-anchor="middle" fill="#3d3d3d">B</text>
+</svg>

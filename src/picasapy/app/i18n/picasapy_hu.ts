@@ -5198,18 +5198,6 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <translation>Diavetítés indítása</translation>
     </message>
     <message>
-        <source>View only one image</source>
-        <translation>Csak egy kép megjelenítése</translation>
-    </message>
-    <message>
-        <source>View two different images</source>
-        <translation>Két különböző kép megjelenítése</translation>
-    </message>
-    <message>
-        <source>View the same image twice</source>
-        <translation>Ugyanaz a kép kétszer</translation>
-    </message>
-    <message>
         <source>Previous picture</source>
         <translation>Előző kép</translation>
     </message>
