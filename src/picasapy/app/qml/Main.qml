@@ -1544,6 +1544,14 @@ ApplicationWindow {
         onBackupRequested: backupHost.nyisd()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
+        //: #1401: az Útlevélkép — a KIJELÖLÉS ELSŐ képére szól (az eredeti
+        //: is egyre), a `wallpaperRequested` mintájára.
+        onPassportPhotoRequested: {
+            var sorok = window.selectedIndexes
+            if (sorok.length > 0
+                    && typeof passportController !== "undefined" && passportController)
+                passportController.preparePassportPhoto(sorok[0])
+        }
         // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
         onPicasaDataImportRequested: picasaDataImportDialog.open()
         // #936: a Létrehozás menü jelzésének NEM VOLT kezelője — a
@@ -4091,6 +4099,29 @@ ApplicationWindow {
         id: compactDatabaseDialog
         anchors.fill: parent
         sourceComponent: Component { CompactDatabaseDialog { } }
+    }
+    // #1401: az Útlevélkép hibaablaka — a főablak tartalmában, tehát
+    // fölötte látszik. Egy arcnál párbeszéd nélkül a MEGLÉVŐ nyomtatási
+    // nézet nyílik (élő mérés, picasa-colab-jobs #54).
+    DeferredDialog {
+        id: passportErrorDialog
+        anchors.fill: parent
+        sourceComponent: Component { PassportErrorDialog { } }
+    }
+    Connections {
+        target: typeof passportController !== "undefined" ? passportController : null
+        function onPassportNoFace() {
+            passportErrorDialog.ensure().showError("noFace")
+        }
+        function onPassportMultipleFaces() {
+            passportErrorDialog.ensure().showError("multipleFaces")
+        }
+        function onPassportFailed(kind) {
+            passportErrorDialog.ensure().showError(kind)
+        }
+        function onPassportReady(url) {
+            printDialog.ensure().openForPassport(url)
+        }
     }
     // #3132: a db3-import párbeszéde — ritkán nyitott, ezért halasztott
     DeferredDialog {

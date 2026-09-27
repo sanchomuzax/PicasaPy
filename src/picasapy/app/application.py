@@ -100,6 +100,7 @@ from .folder_hierarchy_controller import FolderHierarchyController
 from .folder_tree_controller import FolderTreeController
 from .import_source_controller import ImportSourceController
 from .models import sorted_folder_rows
+from .passport_controller import PassportPhotoController
 
 # #1472: a nyomtatás vezérlője. Az import VÉDETT, mert a
 # `print_controller` a `PySide6.QtPrintSupport`-ra épül, azt pedig a
@@ -1366,6 +1367,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     engine.rootContext().setContextProperty("webExportController", web_export_controller)
     # #1472: a nyomtatás-párbeszéd hídja (`PrintDialog.qml`)
     engine.rootContext().setContextProperty("printController", print_controller)
+    # #1401: az Útlevélkép — arcfelismerés + kivágás háttérszálon; a kivágott
+    # képet a `Main.qml` a MEGLÉVŐ nyomtatási nézetnek adja
+    # (`PrintDialog.openForPassport` → `printController.setPassportSource`).
+    passport_controller = PassportPhotoController(photo_source=_lathato_fotok)
+    engine.rootContext().setContextProperty("passportController", passport_controller)
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
     relocate_controller = RelocateController(
         data_dir / "index.db", cache_dir / "thumbs", config_dir

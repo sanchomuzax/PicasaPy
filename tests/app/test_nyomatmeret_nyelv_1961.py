@@ -132,5 +132,7 @@ class TestAFeliratokAQMLben:
             "M13X18CM": "13 x 18 cm",
             "M20X25CM": "20 x 25 cm",
             "TELJES_OLDAL": "FullPage",
+            # `ytPrintSizes::ePassport` — csak az Útlevélkép állítja be (#1401)
+            "PASSPORT": "Passport",
         }
         assert self._felirat_terkep() == vart

@@ -191,6 +191,9 @@ MenuBar {
     signal wallpaperRequested()
     //: #1406: a címke albumként — a gazda nyitja a bekérő párbeszédet.
     signal showTagAsAlbumRequested()
+    //: #1401: az Útlevélkép — a gazda adja a kijelölt sort, és nyitja a
+    //: nyomtatási nézetet (arcfelismerés + kivágás után).
+    signal passportPhotoRequested()
     signal faceScanRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
     signal moveDatabaseRequested()
@@ -2026,6 +2029,22 @@ MenuBar {
                 objectName: "menuToolsShowTagAsAlbum"
                 text: qsTr("Show &tag as album...")
                 onTriggered: bar.showTagAsAlbumRequested()
+            }
+            //: #1401: `eMenuTools::ID_PASSPORT` — a Kísérleti almenü HATODIK
+            //: tétele (a mért kilenc: Publish via FTP… (tiltva) · Show
+            //: Duplicate Files · Search for ▸ · Save search results… ·
+            //: Show tag as album… · **Passport photo…** · Delete empty
+            //: online albums… (hatókörön kívül) · Choose database
+            //: location… · Write faces to XMP…) — a `Show &tag as album…`
+            //: után, a `Write faces to XMP…` előtt, a nálunk MEGLÉVŐ
+            //: szomszédok szerint (`docs/specs/picasa-menu-parancsok-
+            //: viselkedes.md`, 24. szakasz).
+            MenuItem {
+                objectName: "menuToolsPassportPhoto"
+                text: qsTr("&Passport photo...")
+                //: a kijelölt képre szól
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.passportPhotoRequested()
             }
             //: #1403: `eMenuTools::ID_WRITE_XMP_FACES` — a Kísérleti almenü
             //: UTOLSÓ tétele (`0xd6e838`, mérve). A MEGLÉVŐ XMP-építőt köti be
