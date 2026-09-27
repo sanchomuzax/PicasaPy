@@ -295,6 +295,19 @@ class TestKettosNezetForgatottKeppel:
     ):
         window = nezo_app({"a.png": lepes_a, "b.png": lepes_b})
         nezo = _ab_modba(window, qt_app)
+        # #3773: az alapfókusz a bal — a jobbhoz egy kattintással váltunk.
+        # ⚠️ A BAL oldalon (a próba előtti #3773 óta az alapfókusz) egy
+        # ODA-VISSZA kattintás kell: mérve, hogy a `photoElotte` (bal)
+        # `paintedWidth`-je HIBÁS marad (a kerete teljes magasságára nyúlik,
+        # a helyes szélesség-illesztés helyett), ha az `aktivOldal` a
+        # belépés óta egyszer sem változott — az `onAktivOldalChanged`
+        # (`Qt.callLater(viewer.clampPan)` + `beginEditCurrent()`) adja meg
+        # azt a plusz réteg-újraszámolást, ami a mérethez kell. Önmagában
+        # több `processEvents()`/`qWait()` ezt NEM pótolja (kipróbálva).
+        # A JOBB oldal ezt mindig megkapja az egyetlen fókuszváltó
+        # kattintástól, a BAL-nak ezért kettő kell (oda-vissza), hogy a
+        # kijelölt oldal a próba szerint BAL maradjon.
+        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         if oldal == "bal":
             _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         assert nezo.property("aktivOldal") == oldal
