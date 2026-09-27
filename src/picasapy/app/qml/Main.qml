@@ -2630,12 +2630,23 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.margins: 12
+                    //: #3604: a JOBB oldalon nincs kártya-rés — az eredetiben
+                    //: (`albumsback`) a rácsterület flush az ablak/fiók
+                    //: széléhez (`XConstraint 1, 1, 0`). A másik három oldal
+                    //: 12 px-es kerete a mi kártya-stílusunk, azt ez a jegy
+                    //: nem kérdőjelezi meg.
+                    Layout.rightMargin: 0
                     color: Theme.contentPanel
                     border.color: Theme.chromeBorder
 
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 14
+                        //: #3604: a jobb belső margó a fiók-fogó sávjának
+                        //: szélessége — így a rács görgetősávja pont odáig ér
+                        //: (`feedScrollBar` jobb éle == `jobbFiokFogo` bal
+                        //: éle), csukott fióknál tehát az ablak széléig.
+                        anchors.rightMargin: jobbFiokFogo.width
                         spacing: 4
 
                         // Könyvtár-feed (#64) — a komponens a PicasaPy
