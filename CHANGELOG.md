@@ -12,7 +12,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   egyeznek: a kép kicsinyítése az eredeti szerint egyenlő súlyú átlagolással
   történik, ezért a blokkok színe nem kenődik el (a mért eltérés ΔE 4,6-ról
   0,1-re csökkent). Ugyanez pontosítja a „Képpontnövelés” blokkjait is (#3805).
-
 - A finomhangoló csúszkáinak húzás közbeni élő előnézete a nagyon magas
   álló képeken (például a 9:16-os telefonos fotókon) is látszik — eddig
   ezeknél húzás közben semmi nem változott a képen, csak a felengedés után (#3800).
