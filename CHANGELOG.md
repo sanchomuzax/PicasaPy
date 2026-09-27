@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.587] – 2026-09-27
+
 ### Javítva
 - **A Nyomtatás a kiválasztott nyomatméretet (például 4×6) rácsba rendezi a
   papíron, nem képenként külön oldalra teszi (#3647)**, ahogy az eredeti
