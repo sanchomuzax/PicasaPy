@@ -46,7 +46,7 @@ class TestAKetGomb:
         for nev in ("toolbarFlatViewButton", "toolbarTreeViewButton"):
             blokk = _blokk(nev)
             assert "width: 30" in blokk and "height: 22" in blokk, nev
-        assert "Layout.preferredWidth: 60" in _blokk("toolbarFolderViewToggle")
+        assert "width: 60" in _blokk("toolbarFolderViewToggle")
 
     def test_ikonosak_nem_feliratosak(self):
         """A 30 × 22-be felirat nem fér — ugyanaz, mint az `newalbum`-nál."""
@@ -78,4 +78,3 @@ class TestAszukAblak:
     def test_a_csoport_elrejtozik(self):
         blokk = _blokk("toolbarFolderViewToggle")
         assert "visible: !toolbar.toolbarCompact" in blokk
-        assert "Layout.minimumWidth: 0" in blokk

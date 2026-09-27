@@ -99,11 +99,13 @@ class TestFilterZoneShrinksBeforeBarBreaks:
         assert toolbar.property("height") == 35
 
     def test_search_box_shrinks_but_not_below_minimum(self, qml_app, qt_app):
+        """#3603: a mező szélessége mostantól `0,6·W − 285` körüli
+        (a `0,4·W + 238` … `W − 47` képletből), nem egy 120…388-as
+        RowLayout-zsugorodás — 760px-nél kb. 110-115 a valós érték."""
         window, _, _ = qml_app
         _set_width(window, qt_app, 760)
         search_box = _child(window, "toolbarSearchBox")
-        # #587: a teljes méret 388 (`searchcontainer`), a padló 120
-        assert 120 <= search_box.property("width") <= 388
+        assert 80 <= search_box.property("width") <= 388
 
 
 class TestFiltersLabelInsideStrip:

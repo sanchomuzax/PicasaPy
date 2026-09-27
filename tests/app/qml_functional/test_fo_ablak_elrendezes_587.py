@@ -77,7 +77,13 @@ class TestFelsoSav:
 
 
 class TestFelsoSavElemei:
-    """`importbutton` 111 × 22, `searchcontainer` 388 × 30."""
+    """`importbutton` 111 × 22.
+
+    ⚠️ #3603: a `searchcontainer` 388 × 30 a TERVEZÉSI téglalap volt, nem
+    a látható mezőé — a mérés szerint a látható keret (`searchbase`) 24
+    magas, és a szélessége az ablaktól függ (`0,4·W + 238` … `W − 47`).
+    Ezt a `test_felso_sav_horgonyzas_3603.py` méri részletesen; itt csak
+    az importgomb mérete maradt (nem érintette a #3603)."""
 
     def test_import_gomb_merete(self, qml_app_module, qt_app):
         window, _, _ = qml_app_module
@@ -101,23 +107,6 @@ class TestFelsoSavElemei:
             "az Importálás felirata zsugorodni kényszerült a 111 × 22-es "
             "gombban — a doboz vagy a fordítás nem fér össze"
         )
-
-    def test_kereso_teljes_merete_szeles_ablaknal(self, qml_app_module, qt_app):
-        window, _, _ = qml_app_module
-        _szelesseg(window, qt_app, 1920)
-        kereso = _elem(window, "toolbarSearchBox")
-        assert kereso.property("width") == 388
-        assert kereso.property("height") == 30
-
-    def test_kereso_padloja_szuk_ablaknal(self, qml_app_module, qt_app):
-        """RELATÍV padló: szűk ablaknál a mező zsugorodhat (#423
-        zsugorodási sorrend), de a 120px-es padló alá nem mehet, és a
-        magassága nem változik."""
-        window, _, _ = qml_app_module
-        _szelesseg(window, qt_app, 760)
-        kereso = _elem(window, "toolbarSearchBox")
-        assert 120 <= kereso.property("width") <= 388
-        assert kereso.property("height") == 30
 
 
 class TestBalPanelNemSkalazodik:

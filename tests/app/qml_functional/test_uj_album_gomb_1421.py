@@ -55,8 +55,8 @@ class TestAGombLETEZIK:
         """29 × 22 — `konyvtar-ablak-meretek.md` 2. szakasz."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
         blokk = blokk_horgonyra(forras, 'objectName: "toolbarNewAlbumButton"')
-        assert "Layout.preferredWidth: 29" in blokk
-        assert "Layout.preferredHeight: 22" in blokk
+        assert "width: 29" in blokk
+        assert "height: 22" in blokk
 
     def test_van_hozza_buboreksugo(self):
         """Az eredeti `newalbum` súgója — a gomb ikon-méretű, felirat nélkül
@@ -84,16 +84,6 @@ class TestAszukAblak:
         forras = _TOOLBAR.read_text(encoding="utf-8")
         blokk = blokk_horgonyra(forras, 'objectName: "toolbarNewAlbumButton"')
         assert "visible: !toolbar.toolbarCompact" in blokk
-
-    def test_nem_novel_nem_zsugorodo_alapot(self):
-        """`Layout.minimumWidth: 0` — a zsugorodási sorrend érintetlen.
-
-        Fix `minimumWidth`-szel a sáv szűk ablaknál kilógna, és a #423
-        egész zsugorodás-tervét elrontaná."""
-        forras = _TOOLBAR.read_text(encoding="utf-8")
-        assert "Layout.minimumWidth: 0" in blokk_horgonyra(
-            forras, 'objectName: "toolbarNewAlbumButton"'
-        )
 
 
 class TestIdorendGomb:
