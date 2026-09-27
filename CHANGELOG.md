@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Képek biztonsági mentésének „Lemezre írás” gombja nagy, hálózati
+  meghajtón lévő gyűjteménynél sem fagyasztja le az ablakot (#3645).** A
+  program a háttérben számolja ki, mit kell menteni, közben a „Számítás…”
+  felirat látszik. Ha ekkor a Megszakításra kattint vagy bezárja a panelt, a
+  mentés el sem indul; ha a számítás hibára fut, a hibát írja ki, nem azt,
+  hogy a mentés elkészült.
+
 ## [0.8.587] – 2026-09-27
 
 ### Javítva

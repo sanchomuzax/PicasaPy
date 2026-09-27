@@ -53,6 +53,19 @@ Rectangle {
     property bool mappakToltodnek: false
     property int mappaKeres: 0
 
+    //: #3645: a mentés-gomb tervének lekérdezés-sorszáma, és az akkor
+    //: bepipált mappák — utóbbi lementve, hogy a válaszra a felhasználó
+    //: közbeni pipálgatása ne hasson (a terv és a futtatás ugyanazt a
+    //: mappalistát lássa)
+    property int tervKeres: 0
+    property var tervMappak: []
+    //: #3645 átnézés: igaz, amíg a `tervezdHattereben` válasza
+    //: (`tervKeszult`) még nem érkezett meg — ez különbözteti meg a
+    //: TERVEZÉS fázisát a már elindult másolástól/lemezkép-írástól. A
+    //: Stop/Mégse csak eddig avatkozhat be a `_terv_keres` növelésével
+    //: anélkül, hogy egy már folyó másolást is megszakítana.
+    property bool tervFolyamatban: false
+
     readonly property var szuroKulcsok: ["minden", "kepek", "fenykepezogep"]
     readonly property var szuroFeliratok: [
         qsTr("All file types"),
@@ -211,30 +224,90 @@ Rectangle {
         onMentesMegszakitasKert: {
             if (typeof backupController !== "undefined" && backupController)
                 backupController.szakitsdMeg()
+            //: #3645 átnézés [MAGAS]: a tervezés maga nem néz a
+            //: megszakításra — enélkül a terv elkészülte a Stop UTÁN is
+            //: elindítaná a futtatást (`fogadjATervet`). A vezérlő a
+            //: `_terv_keres` növelésével eldobja a kései választ; itt csak
+            //: az állapotot kell azonnal visszaállítani, mert az a válasz
+            //: soha nem érkezik meg.
+            if (host.tervFolyamatban) {
+                host.tervFolyamatban = false
+                host.fut = false
+                host.uzenet = ""
+            }
         }
-        onMentesMegseKert: host.nyitva = false
+        onMentesMegseKert: {
+            //: #3645 átnézés [KÖZEPES]: a panel bezárása tervezés KÖZBEN
+            //: ugyanúgy érvényteleníti a folyamatban lévő tervkérést, mint
+            //: a Stop — különben a bezárás UTÁN elkészülő terv a már
+            //: láthatatlan panelt is elindítaná (`fogadjATervet` →
+            //: `futtasdMost`). Valódi másolás/lemezkép-írás KÖZBEN (amikor
+            //: már nem tervezünk) a bezárás — a korábbi viselkedést
+            //: megőrizve — nem szakítja meg a háttérben futó mentést.
+            if (host.tervFolyamatban) {
+                if (typeof backupController !== "undefined" && backupController)
+                    backupController.szakitsdMeg()
+                host.tervFolyamatban = false
+                host.fut = false
+                host.uzenet = ""
+            }
+            host.nyitva = false
+        }
         onMentesFuttatasKert: function (media) {
             if (typeof backupController === "undefined" || !backupController
                     || host.kivalasztott < 0)
                 return
             var k = host.keszletek[host.kivalasztott]
-            var mappak = host.pipaltMappak
-            //: #2074: a lemezszám-becslés is látszik, ahogy az eredetiben
-            //: („Est. %d CDs or %d DVDs") — a kapacitás a mért képletből jön
-            var terv = backupController.terv(k.id, mappak)
-            if (media === "") {
-                host.uzenet = terv.darab === 0
-                    ? qsTr("Backup Complete")
-                    : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
-                        .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
-                backupController.futtasdMost(k.id, mappak)
-                return
-            }
+            //: #3645: a terv (bejárás + EXIF) HÁTTÉRSZÁLON készül — a
+            //: kattintás azonnal visszatér, a gomb addig a hivatalos
+            //: „Számítás…" állapotot mutatja (`BackupFolderStrip` ugyanezt
+            //: a feliratot használja a mappalistánál)
+            host.tervMappak = host.pipaltMappak
+            host.uzenet = qsTr("Calculating…")
+            host.fut = true
+            host.tervFolyamatban = true
+            host.tervKeres = backupController.tervezdHattereben(
+                k.id, host.tervMappak, media)
+        }
+    }
+
+    //: #3645: a `terv` háttérben elkészült — a kattintáskori mappalistával
+    //: fut tovább, hogy a közbeni pipálgatás vagy készlet-váltás ne
+    //: keverje össze a tervet a futtatással
+    function fogadjATervet(keres, keszletId, terv, media) {
+        if (keres !== host.tervKeres) return
+        host.tervFolyamatban = false
+        //: #3645 átnézés [KÖZEPES]: tervezési hiba (kivétel, vagy közben
+        //: törölt készlet) esetén a vezérlő `hiba: true`-t ad — a
+        //: `hibatJelez` már beállította a hibaüzenetet (a `Connections`
+        //: `onHibatJelez`-e a `terv()`/`_terv_hattereben` hívásából), ide
+        //: csak a "fut" állapot lezárása marad. NE fusson a futtatás egy
+        //: sikertelen terv felett.
+        if (terv.hiba === true) {
+            host.fut = false
+            return
+        }
+        if (host.kivalasztott < 0
+                || host.keszletek[host.kivalasztott].id !== keszletId) {
+            host.fut = false
+            host.uzenet = ""
+            return
+        }
+        var mappak = host.tervMappak
+        //: #2074: a lemezszám-becslés is látszik, ahogy az eredetiben
+        //: („Est. %d CDs or %d DVDs") — a kapacitás a mért képletből jön
+        if (media === "") {
             host.uzenet = terv.darab === 0
                 ? qsTr("Backup Complete")
-                : qsTr("Writing %1 file(s) to disc image(s)...").arg(terv.darab)
-            backupController.futtasdLemezkepbe(k.id, media, mappak)
+                : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
+                    .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
+            backupController.futtasdMost(keszletId, mappak)
+            return
         }
+        host.uzenet = terv.darab === 0
+            ? qsTr("Backup Complete")
+            : qsTr("Writing %1 file(s) to disc image(s)...").arg(terv.darab)
+        backupController.futtasdLemezkepbe(keszletId, media, mappak)
     }
 
     Connections {
@@ -250,6 +323,9 @@ Rectangle {
         function onKeszletekValtoztak() { host.frissitsd() }
         function onMentetlenMappakKeszek(keres, keszletId, sorok) {
             host.fogadjAMappakat(keres, keszletId, sorok)
+        }
+        function onTervKeszult(keres, keszletId, terv, media) {
+            host.fogadjATervet(keres, keszletId, terv, media)
         }
         function onFutasKesz(darab, bajt) {
             host.fut = false

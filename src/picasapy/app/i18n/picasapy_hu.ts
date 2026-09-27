@@ -10290,6 +10290,12 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <source>The backup did not finish: %1</source>
         <translation>A mentés nem fejeződött be: %1</translation>
     </message>
+    <!-- #3645 átnézés: tervezési hiba (kivétel, vagy közben törölt
+         készlet) a `terv()`/`_terv_hattereben` háttérszálán -->
+    <message>
+        <source>The backup plan could not be prepared: %1</source>
+        <translation>A mentés terve nem készült el: %1</translation>
+    </message>
 </context>
 <context>
     <!-- #3504: a `BackupDialog` (külön ablak) helyett — a MÉRT
@@ -10396,6 +10402,14 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     <message>
         <source>Backup Complete</source>
         <translation>A mentés elkészült</translation>
+    </message>
+    <!-- #3645 átnézés: a mentés-gomb "Számítás…" állapota — a
+         `BackupFolderStrip`-ben már megvolt (`il_BurnPanel::calculating`),
+         a `BackupHost`-ban a `onMentesFuttatasKert` is ezt a hivatalos
+         feliratot használja -->
+    <message>
+        <source>Calculating…</source>
+        <translation>Számítás…</translation>
     </message>
 </context>
 <context>
