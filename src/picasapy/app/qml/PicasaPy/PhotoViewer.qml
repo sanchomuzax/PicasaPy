@@ -319,6 +319,47 @@ Rectangle {
     readonly property bool balFokusz: viewer.layoutMode !== "1up"
                                       && viewer.aktivOldal === "bal"
 
+    //: #3663: a „Kijelölve" jelvény MÉRT mérete (`Colab EN 33`, 1280×1024)
+    //: és a KIRAJZOLT képtől mért rése: a képek síkjával PÁRHUZAMOS
+    //: tengelyen (vízszintesben az osztó felé, függőlegesben a bal margó
+    //: felé) ~61 px, a MERŐLEGES tengelyen ~27 px.
+    readonly property int jelvenySzel: 86
+    readonly property int jelvenyMag: 26
+    readonly property int jelvenyParhuzamosRes: 61
+    readonly property int jelvenyMerolegesRes: 27
+
+    //: #3756: a jelvény a kép MELLETT, a margóban áll — kettős nézetben
+    //: mindkét fél fenntartja neki a helyet: vízszintesen FELÜL
+    //: (magasság + merőleges rés), függőlegesen BALRA (szélesség +
+    //: párhuzamos rés). Ahol a kép saját margója ennél nagyobb (pl. a
+    //: #3663 négyzetes képeinél), a kép a helyén marad.
+    readonly property int jelvenyHelyFent: viewer.layoutMode !== "1up"
+        && !viewer.fuggolegesElrendezes
+        ? viewer.jelvenyMag + viewer.jelvenyMerolegesRes : 0
+    readonly property int jelvenyHelyBal: viewer.layoutMode !== "1up"
+        && viewer.fuggolegesElrendezes
+        ? viewer.jelvenySzel + viewer.jelvenyParhuzamosRes : 0
+
+    //: #3756: egy fél képének illesztési doboza a KÉPERNYŐN (forgatás
+    //: utáni tengelyekkel) a `keretSzel`×`keretMag` kereten belül, a
+    //: jelvény helyének fenntartásával. `arany` a képernyőn látszó
+    //: szélesség/magasság (0 = még nem ismert: ilyenkor a teljes keret).
+    //: Visszaad: `{szel, mag, dx, dy}` — a doboz mérete és a középpontjának
+    //: eltolása a keret közepéhez képest.
+    function illesztesiDoboz(keretSzel, keretMag, arany) {
+        var teljes = { szel: keretSzel, mag: keretMag, dx: 0, dy: 0 }
+        if (!(arany > 0)) return teljes
+        var kepSzel = Math.min(keretSzel, keretMag * arany)
+        var kepMag = kepSzel / arany
+        var fent = viewer.jelvenyHelyFent
+        if (fent > 0 && (keretMag - kepMag) / 2 < fent)
+            return { szel: keretSzel, mag: keretMag - fent, dx: 0, dy: fent / 2 }
+        var bal = viewer.jelvenyHelyBal
+        if (bal > 0 && (keretSzel - kepSzel) / 2 < bal)
+            return { szel: keretSzel - bal, mag: keretMag, dx: bal / 2, dy: 0 }
+        return teljes
+    }
+
     //: #3014: a ténylegesen megjelenített másik kép sora. AB módon kívül
     //: mindig a jelenlegi kép (az „aa" mód ugyanazt mutatja kétszer).
     readonly property int abMasikSor: viewer.layoutMode !== "ab"
@@ -2016,15 +2057,24 @@ Rectangle {
                                 ? (viewer.photosModel.revision,
                                    viewer.photosModel.rotateAt(viewer.abMasikSor))
                                 : 0
+                            //: #3756: a képernyőn látszó arány és a jelvény
+                            //: helyét fenntartó illesztési doboz.
+                            readonly property real kepArany:
+                                implicitWidth > 0 && implicitHeight > 0
+                                ? (iniSteps % 2 ? implicitHeight / implicitWidth
+                                                : implicitWidth / implicitHeight)
+                                : 0
+                            readonly property var doboz: viewer.illesztesiDoboz(
+                                parent.width, parent.height, kepArany)
                             anchors.centerIn: parent
-                            anchors.horizontalCenterOffset:
-                                viewer.balFokusz ? viewer.panX : 0
-                            anchors.verticalCenterOffset:
-                                viewer.balFokusz ? viewer.panY : 0
+                            anchors.horizontalCenterOffset: doboz.dx
+                                + (viewer.balFokusz ? viewer.panX : 0)
+                            anchors.verticalCenterOffset: doboz.dy
+                                + (viewer.balFokusz ? viewer.panY : 0)
                             scale: viewer.balFokusz ? viewer.zoomFactor : 1
                             transformOrigin: Item.Center
-                            width: iniSteps % 2 ? parent.height : parent.width
-                            height: iniSteps % 2 ? parent.width : parent.height
+                            width: iniSteps % 2 ? doboz.mag : doboz.szel
+                            height: iniSteps % 2 ? doboz.szel : doboz.mag
                             rotation: iniSteps * 90
                             //: #3014/#3187: AB módban itt a MÁSIK kép áll, a
                             //: SAJÁT előnézet-rekeszén át — tehát a mentett
@@ -2132,16 +2182,26 @@ Rectangle {
                             //: — a fél helyét és méretét a `photoKeret` adja.
                             //: #3741: a nagyítás és a pásztázás csak akkor
                             //: az övé, ha ez a fókuszban lévő fél.
+                            //: #3756: a `photoElotte` párja — a jelvény
+                            //: helyét fenntartó illesztési doboz (egy képen
+                            //: a teljes keret).
+                            readonly property real kepArany:
+                                implicitWidth > 0 && implicitHeight > 0
+                                ? (iniSteps % 2 ? implicitHeight / implicitWidth
+                                                : implicitWidth / implicitHeight)
+                                : 0
+                            readonly property var doboz: viewer.illesztesiDoboz(
+                                parent.width, parent.height, kepArany)
                             anchors.centerIn: parent
-                            anchors.horizontalCenterOffset:
-                                viewer.balFokusz ? 0 : viewer.panX
-                            anchors.verticalCenterOffset:
-                                viewer.balFokusz ? 0 : viewer.panY
+                            anchors.horizontalCenterOffset: doboz.dx
+                                + (viewer.balFokusz ? 0 : viewer.panX)
+                            anchors.verticalCenterOffset: doboz.dy
+                                + (viewer.balFokusz ? 0 : viewer.panY)
                             scale: viewer.balFokusz ? 1 : viewer.zoomFactor
                             transformOrigin: Item.Center
                             // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
-                            width: iniSteps % 2 ? parent.height : parent.width
-                            height: iniSteps % 2 ? parent.width : parent.height
+                            width: iniSteps % 2 ? doboz.mag : doboz.szel
+                            height: iniSteps % 2 ? doboz.szel : doboz.mag
                             rotation: iniSteps * 90
                             // nyitott szerkesztésnél a filters= láncot alkalmazó
                             // editpreview provider rendereli a képet (?rev=
@@ -2918,8 +2978,8 @@ Rectangle {
                     //: #3663: MÉRT méret (`Colab EN 33`, 1280×1024): 86×26,
                     //: enyhén lekerekített — NEM kapszula (a #3013 `height/2`
                     //: sugara azt adott).
-                    width: 86
-                    height: 26
+                    width: viewer.jelvenySzel
+                    height: viewer.jelvenyMag
                     radius: 4
                     color: Theme.viewerFocusBadgeBg
 
@@ -2966,14 +3026,19 @@ Rectangle {
                     //: függőlegesben a bal margó felé) ~61 px, a MERŐLEGES
                     //: tengelyen (vízszintesben fölfelé a margóba,
                     //: függőlegesben az osztó felé) ~27 px.
-                    readonly property int parhuzamosRes: 61
-                    readonly property int merolegesRes: 27
+                    readonly property int parhuzamosRes: viewer.jelvenyParhuzamosRes
+                    readonly property int merolegesRes: viewer.jelvenyMerolegesRes
 
                     x: viewer.fuggolegesElrendezes
                         ? kepBal - width - parhuzamosRes
                         : (viewer.aktivOldal === "bal"
                            ? kepJobb - parhuzamosRes - width
                            : kepBal + parhuzamosRes)
+                    //: #3756: a helyét a két fél illesztése tartja fenn
+                    //: (`viewer.illesztesiDoboz`) — álló képnél felül, széles
+                    //: képnél függőlegesen balra —, így a jelvény a kép arányától
+                    //: függetlenül a mért résen áll, és nem takarja sem a felső
+                    //: sávot, sem a bal panelt, sem a képet.
                     y: viewer.fuggolegesElrendezes
                         ? (viewer.aktivOldal === "bal"
                            ? kepLent - merolegesRes - height

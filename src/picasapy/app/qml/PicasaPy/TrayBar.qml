@@ -334,7 +334,8 @@ Column {
                   (!tray.ctl || !tray.appWindow) ? ""
                   : (tray.ctl.collageRendering === true ? tray.collageWaitText
                   : (tray.appWindow.viewerOpen
-                  ? tray.ctl.viewerInfo(tray.viewerIndex)
+                  ? (typeof tray.ctl.viewerInfo === "function"
+                     ? tray.ctl.viewerInfo(tray.viewerIndex) : "")
                   : (tray.trayInfoText !== "" ? tray.trayInfoText
                   : (tray.appWindow.selectedIndexes.length === 1
                      ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
@@ -1157,7 +1158,7 @@ Column {
                         contentItem: Item {
                         Image {
                             objectName: "trayStarIcon"
-                            source: (tray.ctl
+                            source: (tray.ctl && tray.ctl.photos
                                      ? (tray.ctl.photos.revision,
                                         tray.ctl.photos.starAt(trayStar.targetRow))
                                      : false)
