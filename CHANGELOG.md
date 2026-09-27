@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kettős nézetben (két különböző kép egymás mellett) belépéskor a bal
+  oldalon a jelenlegi kép áll, a jobbon a következő, és a bal van
+  kijelölve — eddig fordítva volt (#3773).
+
 ## [0.8.607] – 2026-09-27
 
 ### Javítva
@@ -25,11 +30,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   beállításon az eltérés az eredetitől 3,58-ról 0,10-re csökkent (ΔE), és a
   kép mérete képpontra egyezik. Mellékhatásként a „Kerekített élek” íve is
   simább lett, és közelebb került az eredetihez (ΔE 0,17 → 0,14) (#3768).
-
-### Javítva
-- Kettős nézetben (két különböző kép egymás mellett) belépéskor a bal
-  oldalon a jelenlegi kép áll, a jobbon a következő, és a bal van
-  kijelölve — eddig fordítva volt (#3773).
 
 ## [0.8.605] – 2026-09-27
 
