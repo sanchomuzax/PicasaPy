@@ -88,14 +88,14 @@ Slider {
     property real handleHeight: 14
     property real handleRadius: Math.min(handleWidth, handleHeight) / 2
 
-    // #3709: a RAJZOLT sáv belső behúzása a foglalat BAL szélétől — a
-    // jobb szél változatlan marad. Alapból 0 (a sáv a teljes
-    // `availableWidth`-et kitölti, ahogy eddig), a hívó helyen felülírható.
-    // A nagyítás-csúszkán (`TrayBar.qml` `traySizeSlider`) MÉRT 6 képpont:
-    // a `thumbui/scalecontainer` foglalata 127 széles, a benne rajzolódó
-    // `scaleslider/sliderbase` viszont csak 121 (a tulajdonos 1917 px-es
-    // képernyőképe, #3709) — a foglalat MÉRETE emiatt nem szűkül, csak a
-    // rajz kezdőpontja tolódik jobbra.
+    // #3709: a RAJZOLT sáv belső behúzása a foglalat MINDKÉT végén. Alapból
+    // 0 (a sáv a teljes `availableWidth`-et kitölti), a hívó helyen
+    // felülírható. A `respack.yt` `scaleslider` sablonjában a foglalat
+    // (`scaleslider/docbounds`) 0…127, a benne rajzolódó
+    // `scaleslider/sliderbase` 3…124: 3 képpont behúzás mindkét oldalon,
+    // 121 képpontos rajz. A tulajdonos 1920 px-es képernyőképén a sáv
+    // 1521…1641, a foglalat 1518…1645 — ugyanez. A foglalat mérete (és
+    // vele a kattintható terület) nem szűkül, csak a rajz.
     property real grooveInset: 0
 
     // visszafelé kompatibilis alias a NÉGYZETES fogantyú méretére
@@ -120,10 +120,9 @@ Slider {
                                    : (control.availableWidth - width) / 2)
         y: control.topPadding + (control.isHorizontal
                                   ? (control.availableHeight - height) / 2 : 0)
-        //: #3709: a behúzás csak a VÍZSZINTES sávot szűkíti — függőleges
-        //: csúszkán a `grooveInset` alapból 0, tehát nincs hatása.
+        // a behúzás csak a VÍZSZINTES sávra hat
         width: control.isHorizontal
-               ? control.availableWidth - control.grooveInset
+               ? control.availableWidth - 2 * control.grooveInset
                : control.grooveThickness
         height: control.isHorizontal ? control.grooveThickness : control.availableHeight
         radius: control.grooveThickness / 2

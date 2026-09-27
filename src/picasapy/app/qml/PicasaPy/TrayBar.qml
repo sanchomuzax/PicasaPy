@@ -1343,6 +1343,23 @@ Column {
                             readonly property bool balSzelso: index === 0
                             readonly property bool jobbSzelso:
                                 index === trayMetadataGroup.kapcsolok.length - 1
+                            //: #3709: a sáv KÜLSŐ kerete 1 képponttal
+                            //: beljebb fut, mint a 60 × 24-es cella. A
+                            //: `globalbuttons/left_segment_n`,
+                            //: `mid_segment_n`, `right_segment_n` képein
+                            //: (`respack.yt`) a keretvonal felül és alul az
+                            //: 1. és az utolsó előtti sorban áll, oldalt a
+                            //: bal szélső elem 1., a jobb szélső utolsó
+                            //: előtti oszlopában; a belső határokon a keret
+                            //: a cella szélén van. Mérve a tulajdonos 1920
+                            //: px-es képernyőképén is: a cellák 1665 · 1725 ·
+                            //: 1785 · 1845 · 1905, a keret oszlopai 1666 és
+                            //: 1903, az osztók 1724/1725, 1784/1785,
+                            //: 1844/1845, a keret 22 sor magas a 24-ből.
+                            topInset: 1
+                            bottomInset: 1
+                            leftInset: balSzelso ? 1 : 0
+                            rightInset: jobbSzelso ? 1 : 0
                             //: #718-minta: a főablak átmenetileg null lehet
                             //: az engine leépítésekor.
                             //:
@@ -1447,11 +1464,10 @@ Column {
                         // belépési pontja a `thumbui/loupehit`, egy 25 × 19-es
                         // gomb a `scale_group`-ban, a nagyítás-csúszka ELŐTT
                         // (`loupehit` x 366…391, `scalecontainer` x 398…525).
-                        // #3709: KERET NÉLKÜLI ikon — a `PicasaButton` mindig
-                        // rajzolt szegélye/gradiense a tulajdonos
-                        // képkivágatos összevetésén nem volt ott (az eredeti
-                        // `loupehit` puszta ikon, nem gomb-kromatika). Ezért
-                        // sima `Item` + `TapHandler`, PicasaButton nélkül.
+                        // #3709: KERET NÉLKÜLI ikon. A `loupehit` az eredetiben
+                        // `vbutton` (`respack.yt`: tömör, átlátszó réteg), a
+                        // látható rajz csak a `thumbui/loupe` ikon — ezért
+                        // sima `Item` + `TapHandler`, gombkeret nélkül.
                         Item {
                             id: trayLoupeButton
                             objectName: "trayLoupeButton"
@@ -1483,10 +1499,18 @@ Column {
                             ToolTip.text: qsTr("Click and drag over photos to magnify them")
                             ToolTip.visible: trayLoupeButton.hovered
                             ToolTip.delay: Theme.tooltipDelay
+                            Accessible.role: Accessible.Button
+                            Accessible.name: qsTr("Click and drag over photos to magnify them")
+                            Accessible.checkable: true
+                            Accessible.checked: aktiv
+                            Accessible.onPressAction: {
+                                if (!tray.appWindow) return
+                                tray.appWindow.loupeActive =
+                                    !tray.appWindow.loupeActive
+                            }
                             HoverHandler { id: loupeHover }
-                            //: felengedésre sül el — ugyanaz a viselkedés,
-                            //: mint a korábbi `Button.onClicked` (nem
-                            //: `lenyomasra`, ld. a `PicasaButton` mintáját).
+                            //: felengedésre sül el, mint a `PicasaButton`
+                            //: alapesete (nem `lenyomasra`)
                             TapHandler {
                                 acceptedButtons: Qt.LeftButton
                                 gesturePolicy: TapHandler.ReleaseWithinBounds
@@ -1499,15 +1523,17 @@ Column {
                             Image {
                                 objectName: "trayLoupeIcon"
                                 source: "icons/loupe.svg"
-                                //: `thumbui/loupe` — MÉRT 23 × 16 a 25 × 19-es
-                                //: gombon belül
+                                //: `thumbui/loupe` — MÉRT 23 × 16, a 25 × 19-es
+                                //: `loupehit`-en belül x 2, y 1 (`respack.yt`:
+                                //: `loupehit` 366…391 × 451…470, `loupe`
+                                //: 368…391 × 452…468) — a jobb szélhez zár,
+                                //: nem középre
+                                x: 2; y: 1
                                 width: 23; height: 16
                                 sourceSize.width: 23; sourceSize.height: 16
                                 fillMode: Image.PreserveAspectFit
-                                anchors.centerIn: parent
-                                //: a kikapcsolt állapot halványabb — a
-                                //: bekapcsolt állapotot az OPACITÁS jelzi
-                                //: (#3709: nincs többé külön háttér/keret)
+                                //: a kikapcsolt állapot halványabb, a
+                                //: bekapcsoltat az opacitás jelzi
                                 opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
                             }
                         }
@@ -1520,10 +1546,10 @@ Column {
                             value: tray.appWindow ? tray.appWindow.thumbSize : 128
                             //: `thumbui/scalecontainer` — FIX 127 képpont
                             width: 127
-                            //: #3709: a RAJZOLT sáv 6 képponttal beljebb
-                            //: kezdődik — a foglalat (127) nem szűkül, csak
-                            //: a `scaleslider/sliderbase` rajza (121).
-                            grooveInset: 6
+                            //: #3709: a RAJZOLT sáv (`scaleslider/sliderbase`,
+                            //: 121) mindkét végén 3 képponttal beljebb áll —
+                            //: a foglalat (127) nem szűkül
+                            grooveInset: 3
                             anchors.verticalCenter: parent.verticalCenter
                             onMoved: tray.appWindow
                                      && (tray.appWindow.thumbSize = value)
