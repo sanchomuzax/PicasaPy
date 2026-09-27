@@ -61,6 +61,33 @@ class _FakePhoto:
     name: str
 
 
+def _egyetlen_cellas_lapot_kenyszerit(monkeypatch, oldal: float = 700.0):
+    """A lapgeometriát egy nagy, NÉGYZETES lapra rögzíti, hogy a #3647-es
+    rács MINDIG pontosan egy cellát fogadjon laponként.
+
+    Ez a fájl a PÉLDÁNYSZÁM-számlálást és a lapozást méri, nem a
+    rácsba-rendezést — azt a `printing/test_nyomtatasi_racs_3647.py` fedi,
+    saját, kontrollált lapmérettel. Enélkül ezek a próbák a valódi (A4
+    alapértelmezésre eső) rácsszámításon múlnának, ami a nyomatmérettől és
+    a lapmérettől függ, nem attól, amit itt tesztelünk."""
+    import picasapy.app.print_controller as pc_modul
+
+    def hamis_elonezeti(self, printer_name, *, landscape):  # noqa: ARG001
+        return pc_modul.PageGeometry(width=oldal, height=oldal, margin=0.0)
+
+    def hamis_eszkoz(printer, orientation):
+        printer.setPageOrientation(orientation)
+        meret = max(printer.resolution() * 15.0, oldal)
+        return pc_modul.PageGeometry(width=meret, height=meret, margin=0.0)
+
+    monkeypatch.setattr(
+        pc_modul.PrintController, "_preview_page_geometry", hamis_elonezeti
+    )
+    monkeypatch.setattr(
+        pc_modul.PrintController, "_device_page_geometry", staticmethod(hamis_eszkoz)
+    )
+
+
 @pytest.fixture
 def ket_kep(qt_app, tmp_path):
     """⚠️ SAJÁT beállítás-tár, nem a gépé.
@@ -87,20 +114,29 @@ def ket_kep(qt_app, tmp_path):
 
 
 class TestALapszam:
-    def test_ket_kep_ket_peldany_NEGY_lap(self, ket_kep):
-        """A jegy „Kész, ha" pontja, szó szerint."""
+    """#3647 óta a fizikai lapszám a nyomatmérettől és a papírtól függ (a
+    rácsba rendezést önmagában a `printing/test_nyomtatasi_racs_3647.py`
+    méri) — ezért itt egyetlen cellás lapra kényszerítve az „N cella = N
+    lap" azonosság ellenőrizhető, a jegy #1819 eredeti szándéka szerint."""
+
+    def test_ket_kep_ket_peldany_NEGY_lap(self, ket_kep, monkeypatch):
+        """A #1819 jegy „Kész, ha" pontja, szó szerint."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         assert ket_kep.printPageCount([0, 1], 2) == 4
 
-    def test_egy_peldany_valtozatlan(self, ket_kep):
+    def test_egy_peldany_valtozatlan(self, ket_kep, monkeypatch):
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         assert ket_kep.printPageCount([0, 1], 1) == 2
 
-    def test_a_nulla_peldany_EGYNEK_szamit(self, ket_kep):
+    def test_a_nulla_peldany_EGYNEK_szamit(self, ket_kep, monkeypatch):
         """A nulla nem „ne nyomtass", hanem hibás bemenet — a +/− úgyis
         egynél áll meg."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         assert ket_kep.printPageCount([0, 1], 0) == 2
 
-    def test_a_nem_dekodolhato_kep_LAPOT_SEM_kap(self, qt_app, tmp_path):
+    def test_a_nem_dekodolhato_kep_LAPOT_SEM_kap(self, qt_app, tmp_path, monkeypatch):
         """Videó/sérült fájl: a lapszám sem tartalmazhatja."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         jo = make_jpeg(tmp_path / "jo.jpg", size=(100, 100))
         (tmp_path / "film.mp4").write_bytes(b"\x00" * 32)
         photos = [
@@ -123,15 +159,16 @@ class TestANyomtatasVALOBAN:
     def test_ket_kep_ket_peldany_NEGY_lapot_rajzol(
         self, ket_kep, tmp_path, monkeypatch
     ):
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         kapott: list[int] = []
         eredeti = PrintController._paint_pages
 
-        def figyelo(printer, images, mode, lap_kesz=None):
+        def figyelo(printer, grid, images, mode, lap_kesz=None):
             # #3016: a rajzolo egy OPCIONALIS laponkenti visszahivast is kap
             # — a dublornek at kell adnia, kulonben a haladas-jelzes nema
             # marad, es a `_run` kapuja sem mérodne
             kapott.append(len(images))
-            return eredeti(printer, images, mode, lap_kesz)
+            return eredeti(printer, grid, images, mode, lap_kesz)
 
         monkeypatch.setattr(
             PrintController, "_paint_pages", staticmethod(figyelo)
@@ -145,15 +182,16 @@ class TestANyomtatasVALOBAN:
     def test_egy_peldany_KET_lapot_rajzol(
         self, ket_kep, tmp_path, monkeypatch
     ):
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         kapott: list[int] = []
         eredeti = PrintController._paint_pages
 
-        def figyelo(printer, images, mode, lap_kesz=None):
+        def figyelo(printer, grid, images, mode, lap_kesz=None):
             # #3016: a rajzolo egy OPCIONALIS laponkenti visszahivast is kap
             # — a dublornek at kell adnia, kulonben a haladas-jelzes nema
             # marad, es a `_run` kapuja sem mérodne
             kapott.append(len(images))
-            return eredeti(printer, images, mode, lap_kesz)
+            return eredeti(printer, grid, images, mode, lap_kesz)
 
         monkeypatch.setattr(
             PrintController, "_paint_pages", staticmethod(figyelo)
@@ -184,31 +222,52 @@ class TestASokszorozas:
 
 
 class TestAzElonezetiLap:
-    def test_kirajzol_egy_lapot(self, ket_kep, tmp_path):
+    def test_kirajzol_egy_lapot(self, ket_kep, tmp_path, monkeypatch):
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         cel = tmp_path / "elonezet.png"
         ok = ket_kep.renderPreviewPage([0, 1], "fit", "auto", 1, 0, str(cel))
         assert ok is True
         assert cel.exists() and cel.stat().st_size > 0
 
-    def test_a_tartomanyon_KIVULI_lap_elutasitva(self, ket_kep, tmp_path):
+    def test_a_tartomanyon_KIVULI_lap_elutasitva(self, ket_kep, tmp_path, monkeypatch):
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         cel = tmp_path / "nincs.png"
         assert ket_kep.renderPreviewPage([0, 1], "fit", "auto", 1, 2, str(cel)) is False
         assert ket_kep.renderPreviewPage([0, 1], "fit", "auto", 1, -1, str(cel)) is False
 
-    def test_a_peldanyszam_UJ_lapokat_ad(self, ket_kep, tmp_path):
-        """Két képnél a 2. lap csak akkor létezik, ha két példány van."""
+    def test_a_peldanyszam_UJ_lapokat_ad(self, ket_kep, tmp_path, monkeypatch):
+        """Két képnél a 2. lap csak akkor létezik, ha két példány van —
+        EGYETLEN cellás lapra kényszerítve (#3647), különben a 2. lap egy
+        nagyobb papíron/kisebb nyomatméretnél MÁR az első példánnyal is
+        létezne, és a próba nem azt mérné, amit a neve ígér."""
+        _egyetlen_cellas_lapot_kenyszerit(monkeypatch)
         cel = tmp_path / "p.png"
         assert ket_kep.renderPreviewPage([0, 1], "fit", "auto", 1, 2, str(cel)) is False
         assert ket_kep.renderPreviewPage([0, 1], "fit", "auto", 2, 2, str(cel)) is True
 
-    def test_a_lap_ARANYA_a_valasztott_nyomatmereté(self, ket_kep, tmp_path):
-        """Az előnézet a VÁLASZTOTT méretet mutatja, nem a nyomtatóét —
-        akkor is, ha a gépen nincs nyomtató."""
+    def test_a_lap_a_PAPIRT_mutatja_nem_a_nyomatmeretet(
+        self, ket_kep, tmp_path, monkeypatch
+    ):
+        """#3647: az előnézet a PAPÍRT mutatja, rajta a cellákkal — nem a
+        választott nyomatméret arányát (a #2494-lecke: kirajzolt képen
+        mérve). Egy nem négyzetes, kontrollált papírméretre kényszerítve
+        az előnézeti PNG arányának a PAPÍRT kell követnie, nem az itt
+        beállított M8X10 nyomatméretet (8/10 = 0,8 — jól megkülönböztethető
+        a papír 0,5-ös arányától)."""
+        import picasapy.app.print_controller as pc_modul
+
+        def hamis_elonezeti(self, printer_name, *, landscape):  # noqa: ARG001
+            szeles, magas = (2000.0, 1000.0) if landscape else (1000.0, 2000.0)
+            return pc_modul.PageGeometry(width=szeles, height=magas, margin=0.0)
+
+        monkeypatch.setattr(
+            PrintController, "_preview_page_geometry", hamis_elonezeti
+        )
         ket_kep.setPrintSize("M8X10")
         cel = tmp_path / "nagy.png"
         assert ket_kep.renderPreviewPage([0], "fit", "portrait", 1, 0, str(cel))
         kep = QImage(str(cel))
-        assert kep.width() / kep.height() == pytest.approx(8.0 / 10.0, abs=0.01)
+        assert kep.width() / kep.height() == pytest.approx(1000.0 / 2000.0, abs=0.01)
 
     def test_az_elonezeti_fajl_URL_letezo_mappara_mutat(self, ket_kep):
         url = ket_kep.previewImageUrl()

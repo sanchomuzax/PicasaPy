@@ -165,8 +165,12 @@ Window {
             printWindow.previewSource = ""
             return
         }
+        // #3647: a lapszámot UGYANAZZAL a tájolással/nyomtatóval kérjük,
+        // mint amivel a `renderPreviewPage` lentebb ténylegesen rajzol —
+        // különben a lapozó számot mutatna, a rajzoló pedig mást.
         var lapok = printWindow.printCtl.printPageCount(
-            printWindow.rows, printWindow.copies)
+            printWindow.rows, printWindow.copies, printWindow.orientation,
+            printWindow.printerName)
         printWindow.previewPageCount = lapok
         if (lapok <= 0) {
             printWindow.previewSource = ""
@@ -179,7 +183,8 @@ Window {
         var cel = printWindow.elonezetiFajl()
         var ok = printWindow.printCtl.renderPreviewPage(
             printWindow.rows, printWindow.fitMode, printWindow.orientation,
-            printWindow.copies, printWindow.previewPage, cel)
+            printWindow.copies, printWindow.previewPage, cel,
+            printWindow.printerName)
         printWindow.elonezetValtozat += 1
         //: A cél MÁR URL (a vezérlő a `QUrl.fromLocalFile`-on át adja,
         //: #1019) — kézzel semmit nem fűzünk elé, csak a gyorstár-törő
