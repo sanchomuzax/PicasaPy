@@ -493,9 +493,12 @@ class TestSimpleColorMatrixLinked:
         assert result[0, 0, 0] == 255
 
     def test_kulonbozik_a_kulon_agtol(self):
+        # `brightness=10`-nél a két ág kerekítve véletlenül ugyanazt az
+        # egész pixelt adja (#3735: 184,125 vs 184,3125) — `brightness=20`
+        # már egyértelműen szétválik.
         pixel = np.array([[[150, 150, 150]]], dtype=np.uint8)
-        sep = g.simple_color_matrix(pixel, contrast=20.0, brightness=10.0, linked=False)
-        linked = g.simple_color_matrix(pixel, contrast=20.0, brightness=10.0, linked=True)
+        sep = g.simple_color_matrix(pixel, contrast=20.0, brightness=20.0, linked=False)
+        linked = g.simple_color_matrix(pixel, contrast=20.0, brightness=20.0, linked=True)
         assert int(sep[0, 0, 0]) != int(linked[0, 0, 0])
 
 

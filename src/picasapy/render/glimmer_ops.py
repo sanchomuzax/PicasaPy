@@ -470,16 +470,21 @@ def _kontraszt_gorbe(c: float) -> float:
     return (1.0 - f) * _KONTRASZT_TABLA[i] + f * _KONTRASZT_TABLA[i + 1]
 
 
-def _kontraszt_alkalmaz(image_f: np.ndarray, contrast: float) -> np.ndarray:
-    """A KÜLÖN kontraszt-ág (#904, `0x008f1bd0`): a forgáspont **63,5**,
-    nem 128 — `t = (1-k)·127·0,5`. `|k-1| < eps` esetén a művelet tétlen
-    (a natív korai kilépése)."""
+def _kontraszt_alkalmaz(image_f: np.ndarray, contrast: float, brightness: float = 0.0) -> np.ndarray:
+    """A KÜLÖN kontraszt+fényerő ág (#904/#3735, `0x008f1bd0`): a forgáspont
+    **63,5**, nem 128. A képpontra ható sorrend `X → BRIGHTNESS → CONTRAST`
+    (`docs/specs/filterdesc-registry.md`, „⛔ A `SimpleColorMatrix` KÉPPONTRA
+    ható sorrendje FORDÍTOTT", #3735): a kész mátrix a fényerőt a kontraszttal
+    EGYÜTT skálázza, tehát `out = k·(x+b) + (1-k)·63,5`, NEM `k·x + (1-k)·63,5
+    + b`. `|k-1| < eps` esetén a kontraszt-lépés tétlen (a natív korai
+    kilépése), de a fényerő ekkor is hat."""
     c = float(np.clip(contrast, -100.0, 100.0))
+    b = float(np.clip(brightness, -100.0, 100.0))
     k = 1.0 + _kontraszt_gorbe(c)
     if abs(k - 1.0) < _CONTRAST_EPS:
-        return image_f
+        return image_f + np.float32(b) if b else image_f
     t = (1.0 - k) * 127.0 * 0.5
-    return np.float32(k) * image_f + np.float32(t)
+    return np.float32(k) * (image_f + np.float32(b)) + np.float32(t)
 
 
 def _kontraszt_fenyero_egyuttes(
@@ -507,10 +512,12 @@ def simple_color_matrix(
     """`SimpleColorMatrix`: telítettség (Haeberli-színmátrix, #903 —
     `saturation=None` → nem érinti), majd — `linked` szerint — VAGY egy
     közös `ContrastAndBrightnessLinked` lépés (127,5-ös forgáspont), VAGY
-    a kontraszt (101 elemű táblázatos görbe, 63,5-ös forgáspont, korai
-    kilépés kis `k`-nál) és a fényerő (KÖZVETLEN additív, nincs ×2,55
-    skálázás) külön-külön, ebben a sorrendben (#904). A `brightness` és a
-    `contrast` is `[-100..100]`-ra vágva, a natív mintájára.
+    a fényerő (KÖZVETLEN additív, nincs ×2,55 skálázás) és a kontraszt
+    (101 elemű táblázatos görbe, 63,5-ös forgáspont, korai kilépés kis
+    `k`-nál) EGYÜTT, `out = k·(x+b) + (1-k)·63,5` alakban — a képpontra a
+    fényerő hat ELŐBB, a kontraszt UTÁNA (#3735, ld. `_kontraszt_alkalmaz`
+    docstringje). A `brightness` és a `contrast` is `[-100..100]`-ra vágva,
+    a natív mintájára.
     """
     validate_image(image)
     image_f = to_float(image)
@@ -521,11 +528,8 @@ def simple_color_matrix(
         if contrast or brightness:
             image_f = _kontraszt_fenyero_egyuttes(image_f, contrast, brightness)
     else:
-        if contrast:
-            image_f = _kontraszt_alkalmaz(image_f, contrast)
-        if brightness:
-            b = float(np.clip(brightness, -100.0, 100.0))
-            image_f = image_f + np.float32(b)
+        if contrast or brightness:
+            image_f = _kontraszt_alkalmaz(image_f, contrast, brightness)
     return to_uint8(image_f)
 
 

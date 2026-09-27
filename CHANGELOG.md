@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Felpörgetés, a Lomo-szerű, az Áttűnés és az Éjjellátó színei szinte
+  pontosan egyeznek az eredeti Picasáéval (#3735).** A program a fényerőt
+  eddig rossz sorrendben számolta. Mért eltérés az eredetitől (ΔE): a
+  Felpörgetés legerősebb állása 13,1 → 0,1, alapállása 2,7 → 0,1; a
+  Lomo-szerű 1,0 → 0,5; az Éjjellátó leggyengébb állása 10,8 → 5,4 (a
+  maradék a zajmintából jön, külön jegy).
+
 ## [0.8.598] – 2026-09-27
 
 ### Javítva
