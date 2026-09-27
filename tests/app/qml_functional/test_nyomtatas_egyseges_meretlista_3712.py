@@ -231,3 +231,34 @@ class TestADarabszamSorATenylegesLapszamotMondja:
 
         szoveg = str(_elem(dialog, "printSelectionText").property("text"))
         assert szoveg == "Pictures to print: 2 (2 page(s))", szoveg
+
+
+class TestAlapallasTeljesOldal:
+    """#3733: a menüből nyitott párbeszéd alapállása Teljes oldal
+    (FullPage), mint az eredetiben; a választott méret a bezárás és az
+    újranyitás után megmarad."""
+
+    def test_a_menubol_nyitva_a_teljes_oldal_van_kivalasztva(
+        self, qml_app, qt_app
+    ):
+        window, _controller, _engine = qml_app
+        dialog = _nyit_sima(window, qt_app, [0, 1])
+
+        box = _elem(dialog, "printSizeBox")
+        azonositok = _lista(dialog.property("printSizeIds"))
+        assert box.property("currentIndex") == azonositok.index("TELJES_OLDAL")
+        assert box.property("displayText") == "FullPage"
+
+    def test_a_valasztott_meret_ujranyitaskor_megmarad(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        dialog = _nyit_sima(window, qt_app, [0, 1])
+
+        _valassz_a_legorduloben(dialog, qt_app, "M5X7")
+        _kattints_kozepere(dialog, qt_app, _elem(dialog, "printCloseButton"))
+        assert dialog.property("visible") is False
+
+        dialog = _nyit_sima(window, qt_app, [0, 1])
+        box = _elem(dialog, "printSizeBox")
+        azonositok = _lista(dialog.property("printSizeIds"))
+        assert dialog.property("printSize") == "M5X7"
+        assert box.property("currentIndex") == azonositok.index("M5X7")

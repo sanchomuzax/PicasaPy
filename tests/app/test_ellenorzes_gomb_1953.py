@@ -200,3 +200,17 @@ class TestAKuszobBeallithato2359:
         assert osszegzes["total"] == 0
         assert osszegzes["smallest"] == 0
         assert osszegzes["ready"] is False
+
+
+class TestIsmeretlenMeretnev:
+    """#3733: az ismeretlen méretnév a párbeszéd ALAPÁLLÁSÁRA essen vissza
+    (Teljes oldal), ne egy attól független beégetett méretre — különben a
+    minőség-összegzés más méretről szólna, mint amit a párbeszéd mutat."""
+
+    def test_az_osszegzes_az_alapmeretet_hasznalja(self, vegyes):
+        assert vegyes.printQuality([0, 1, 2], "NINCS_ILYEN") == \
+            vegyes.printQuality([0, 1, 2], "TELJES_OLDAL")
+
+    def test_a_kifogasolt_lista_az_alapmeretet_hasznalja(self, vegyes):
+        assert vegyes.smallPictures([0, 1, 2], "NINCS_ILYEN") == \
+            vegyes.smallPictures([0, 1, 2], "TELJES_OLDAL")

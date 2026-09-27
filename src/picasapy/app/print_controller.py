@@ -348,7 +348,7 @@ class PrintController(QObject):
 
         Az ISMERETLEN méretű kép kicsinek számít — ha nem tudjuk, mekkora,
         ne nyugtassuk meg a felhasználót."""
-        meret = NyomatMeret.__members__.get(size_name, NyomatMeret.M4X6)
+        meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
         meretek = [
             (rekord.width or 0, rekord.height or 0)
             for rekord in self._resolve_records(rows)
@@ -377,7 +377,7 @@ class PrintController(QObject):
         A lista a **legrosszabbal kezdődik**: a felhasználót az érdekli
         először. Az ismeretlen méretű kép ugyanúgy kicsinek számít, mint
         az összegzésben — 0 DPI-vel."""
-        meret = NyomatMeret.__members__.get(size_name, NyomatMeret.M4X6)
+        meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
         tetelek = [
             {
                 "name": rekord.name,

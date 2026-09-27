@@ -37,6 +37,10 @@ from PySide6.QtTest import QTest
 
 import picasapy.app
 
+from tests.app.qml_functional.test_nyomtatas_egyseges_meretlista_3712 import (
+    _valassz_a_legorduloben,
+)
+
 # #664 mintája: a QtPrintSupport nem minden PySide6-telepítésben van benne
 # (a Debian/Ubuntu csomag modulokra bontja). Ahol hiányzik, ott a nyomtatás
 # felületi bekötése sem mérhető.
@@ -241,15 +245,11 @@ class TestKimenet:
 
         #3733: az alapállás Teljes oldal (FullPage) lett, ami A4-en nem
         enged két képet egy lapra — ezért itt EXPLICIT 4×6-ra állítjuk a
-        vezérlőt, a rácslogikát mérve, nem az alapállást."""
+        legördülőt (valódi kattintással), a rácslogikát mérve, nem az alapállást."""
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, [0, 1])
         parbeszed = _menubol_nyit(window, qt_app)
-        ctl = parbeszed.property("printCtl")
-        QMetaObject.invokeMethod(
-            ctl, "setPrintSize", Qt.ConnectionType.DirectConnection,
-            Q_ARG(str, "M4X6"),
-        )
+        _valassz_a_legorduloben(parbeszed, qt_app, "M4X6")
         cel = tmp_path / "ketto.pdf"
         parbeszed.setProperty("pdfTarget", cel.as_uri())
         qt_app.processEvents()

@@ -8,10 +8,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- **A Nyomtatás párbeszéd alapállása Teljes oldal (FullPage), mint az
-  eredetiben — nem a mért 4×6 / 10×15 cm (#3733).** Első megnyitáskor
-  (nincs még megjegyzett méret) mindkét felületi nyelven a Teljes oldal
-  van kiválasztva; a korábban megjegyzett méret továbbra is visszatöltődik.
+- Nyomtatáskor elsőre a „FullPage” (teljes oldal) méret van kiválasztva,
+  mint az eredeti Picasában — eddig 10x15 cm (angolul 4 x 6) volt. A
+  korábban választott méretet a program továbbra is megjegyzi (#3733).
 
 ## [0.8.597] – 2026-09-27
 
