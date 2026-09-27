@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.593] – 2026-09-27
+
 ### Hozzáadva
 - **Kérdés a nyitott szerkesztőeszköz módosításairól, mielőtt a kettős nézet
   megnyílik (#3651).** Ha a Vágás, a Retusálás, a Szöveg vagy a Vörösszem
