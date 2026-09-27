@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.604] – 2026-09-27
+
 ### Javítva
 - Kettős nézetben, ha a bal oldali kép van kijelölve, a „Kijelölve” jelvény
   már nem csúszik rá a felső gombsorra, és a kék információs sáv is a
