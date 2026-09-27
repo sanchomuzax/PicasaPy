@@ -138,8 +138,9 @@ class TestALemezkepKimenet2074:
             assert f'qsTr("{felirat}")' in _PANEL, felirat
 
     def test_a_mappa_ag_a_REGI_utat_hivja(self):
-        # #3594: a bepipált mappák listájával
-        assert "backupController.futtasdMost(k.id, mappak)" in _GAZDA
+        # #3594: a bepipált mappák listájával; #3645: a terv HÁTTÉRSZÁLON
+        # készül, a hívás a jelzésből érkező készlet-azonosítóval fut
+        assert "backupController.futtasdMost(keszletId, mappak)" in _GAZDA
 
     def test_a_lemezkep_ag_a_MEDIA_kulcsot_adja_at(self):
         assert "futtasdLemezkepbe(" in _GAZDA
