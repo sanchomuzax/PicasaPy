@@ -17,7 +17,7 @@ import "infosav.js" as InfoSav
 //     ┌────────────────────────── 105 px ──────────────────────────┐
 //     │ kék infó-csík (nálunk 20, az eredetiben 14 — szándékos)     │
 //     ├───────────── 36,5 % ─────┬─────────────────────────────────┤
-//     │ képtálca (81 px magas)   │ ★ ↺ ↻ … − nagyítás +            │
+//     │ képtálca (81 px magas)   │ ★ ↺ ↻ … nagyító ▭nagyítás▭      │
 //     │  bélyegképsor + 3 gomb   ├─ elválasztó (y 50…52) ──────────┤
 //     │                          │ [zöld 141×35] [Nyomtatás/E-mail…]│
 //     └──────────────────────────┴─────────────────────────────────┘
@@ -486,15 +486,20 @@ Column {
         //: csillag/forgatás csoport belelógott a csúszkába a 800 pontos
         //: minimumon (a #1367 őre ezt el is kapta).
         //:
-        //: A tényleges szélességeket használjuk, nem beégetett számot: a
-        //: csúszka − / + jelei BETŰFÜGGŐK (#1420), tehát a platformonként
-        //: eltérő igényt csak a mért érték adja vissza. Hurok nincs: egyik
+        //: A csúszka sora a #3602 óta betűfüggetlen; a mért szélességet a
+        //: viewer-sorral közös `max()` miatt használjuk. Hurok nincs: egyik
         //: csoport szélessége sem függ az ablakétól.
+        //:
+        //: #3602: a `trayZoomGroup` ↔ `trayMetadataGroup` rés MÉRT 20 (nem
+        //: 12), és a `trayMetadataGroup` jobb széle `W − 15` — 5 képponttal
+        //: BELJEBB, mint a `trayTopRow` (`W − rightMargin`) szélé. Az 5
+        //: képpontos maradék hely ezért itt is szerepel, különben a
+        //: minimumra állított ablakban a kapcsolók 5 képponttal kilógnának.
         readonly property real felsoSorIgenye: Math.ceil(
             (trayMainBar.rightMargin
              + trayStarGroup.width + 12
-             + trayZoomGroup.width + 12
-             + trayMetadataGroup.width
+             + trayZoomGroup.width + 20
+             + trayMetadataGroup.width + 5
              + trayMainBar.roundingReserve)
             / (1 - trayMainBar.splitRatio))
         readonly property real requiredWidth: Math.max(
@@ -885,7 +890,10 @@ Column {
             PicasaButton {
                 id: trayHoldBtn
                 objectName: "trayHoldButton"
-                x: parent.width - 5 - width
+                //: #3602: 7 képpont a `scratchback` jobb szélétől, nem 5
+                //: (`scratchhold`/`scratchclear`/`addtobuttcon` `m_offsetRT`,
+                //: `thumbui.tre:317,326,337`).
+                x: parent.width - 7 - width
                 y: 5
                 width: 34
                 height: 22
@@ -914,7 +922,10 @@ Column {
             PicasaButton {
                 id: trayClearBtn
                 objectName: "trayClearButton"
-                x: parent.width - 5 - width
+                //: #3602: 7 képpont a `scratchback` jobb szélétől, nem 5
+                //: (`scratchhold`/`scratchclear`/`addtobuttcon` `m_offsetRT`,
+                //: `thumbui.tre:317,326,337`).
+                x: parent.width - 7 - width
                 y: 27
                 width: 34
                 height: 20
@@ -944,7 +955,10 @@ Column {
             PicasaButton {
                 id: trayAddToBtn
                 objectName: "trayAddToButton"
-                x: parent.width - 5 - width
+                //: #3602: 7 képpont a `scratchback` jobb szélétől, nem 5
+                //: (`scratchhold`/`scratchclear`/`addtobuttcon` `m_offsetRT`,
+                //: `thumbui.tre:317,326,337`).
+                x: parent.width - 7 - width
                 y: 54
                 width: 34
                 height: 22
@@ -1081,7 +1095,11 @@ Column {
                 Row {
                     id: trayStarGroup
                     objectName: "trayStarGroup"
-                    x: 0
+                    //: #3602: `thumbui/startoggle` bal széle `S − 3`
+                    //: (`m_offsetRT` a 2 px széles `bcenterright`-on,
+                    //: `thumbui.tre:225`; a tulajdonos 1920 px-es
+                    //: képernyőképén 698 = 700,07 − 3).
+                    x: -3
                     height: parent.height
                     spacing: 1
 
@@ -1152,9 +1170,9 @@ Column {
                         }
                         }
                     }
-                    //: a csillag utáni 5 képpontos hézag (a `spacing` 1-ből
-                    //: már megvan egy)
-                    Item { width: 4; height: 1 }
+                    //: #3602: a csillag utáni rés `S+38 − (S−3) − 36 = 5`
+                    //: (a `spacing` 1-ből kettő már megvan a két oldalán)
+                    Item { width: 3; height: 1 }
                     PicasaButton {
                         id: trayRotateLeftBtn
                         objectName: "trayRotateLeft"
@@ -1281,7 +1299,13 @@ Column {
                     //: — `loupehit` 366…391 < `scalecontainer` 398…525 <
                     //: `metadata_group` 545…785. Vagyis a csúszka MEGELŐZI a
                     //: négy kapcsolót; korábban fordítva állt.
+                    //:
+                    //: #3602: a jobb szél `W − 15`, NEM a `trayTopRow`
+                    //: (`W − 10`-es) szélét örökli — a `metadata_group`-nak
+                    //: saját, 15-ös eltolása van a `.tre`-ben, a `rightMargin`
+                    //: (10) az `outputs` soré.
                     anchors.right: parent.right
+                    anchors.rightMargin: 5
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0            // a gombok ÉRINTKEZNEK (mérve)
 
@@ -1386,8 +1410,11 @@ Column {
                     objectName: "trayZoomGroup"
                     //: #2305: a négy panelkapcsoló ELŐTT (ld. ott a mért
                     //: x-tartományokat).
+                    //: #3602: a rés MÉRT 20 képpont (nem 12) — a
+                    //: `scale_group` és a `metadata_group` közti térköz a
+                    //: tulajdonos képernyőképén.
                     anchors.right: trayMetadataGroup.left
-                    anchors.rightMargin: 12
+                    anchors.rightMargin: 20
                     anchors.verticalCenter: parent.verticalCenter
                     width: Math.max(trayLibraryZoomRow.width,
                                     trayViewerZoomRow.width)
@@ -1401,7 +1428,11 @@ Column {
                         id: trayLibraryZoomRow
                         objectName: "trayLibraryZoomRow"
                         visible: !tray.viewerZoomAvailable
-                        spacing: 6
+                        //: #3602: a nagyító ↔ csúszka rés MÉRT 7 képpont.
+                        //: A korábbi `−`/`+` felirat-pár nem az eredetié
+                        //: (a `scale_group`-ban nincs ilyen elem) — a jelek
+                        //: eltűntek, a rés a kettő nélkül közvetlenül 7.
+                        spacing: 7
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
@@ -1465,12 +1496,6 @@ Column {
                                 opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
                             }
                         }
-                        Text {
-                            text: "−"
-                            color: Theme.textGray
-                            font.pixelSize: 13
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
                         PicasaSlider {
                             id: sizeSlider
                             objectName: "traySizeSlider"
@@ -1483,12 +1508,6 @@ Column {
                             anchors.verticalCenter: parent.verticalCenter
                             onMoved: tray.appWindow
                                      && (tray.appWindow.thumbSize = value)
-                        }
-                        Text {
-                            text: "+"
-                            color: Theme.textGray
-                            font.pixelSize: 13
-                            anchors.verticalCenter: parent.verticalCenter
                         }
                     }
 
@@ -1616,22 +1635,17 @@ Column {
                 color: Theme.trayBorder
             }
 
-            // `thumbui/webupload_rect`: 147 × 44 az osztóponttól 5
+            // `thumbui/webupload_rect`: 145 × 44 az osztóponttól 5
             // képponttal balra, benne a 141 × 35-ös gomb.
             //
-            // ⚠️ A kényszerek (`0, .365, -5` … `1, .365, 140`) 145
-            // képpontot adnak, a respack rétegfejléce 147-et. A KETTŐ
-            // KÖZÖTTI 2 képpont a hely ÜRES jobb margója: a benne
-            // középre zárt 141-es gomb jobb széle így is az osztópont +
-            // 139-nél van, tehát a +140-nél kezdődő műveletsorral nem
-            // ütközik. A képernyőképen a gomb 697…837 — az osztópont
-            // (700,07) − 3-tól, pontosan 141 képpont szélesen.
+            // 145 = a kényszerek (`0, .365, -5` … `1, .365, 140`); a
+            // respack-fejléc 147-e nem a doboz szélessége.
             Item {
                 id: trayUploadSlot
                 objectName: "trayUploadSlot"
                 x: -5
                 y: 36
-                width: 147
+                width: 145
                 height: 44
 
                 // az egyetlen zöld elsődleges tett (kézikönyv 01/08)

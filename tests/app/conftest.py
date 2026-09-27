@@ -6,7 +6,7 @@ import pytest
 
 from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.folder_hierarchy_wiring import wire_folder_hierarchy
-from support.print_wiring import wire_print
+from support.print_wiring import wire_passport, wire_print
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -278,6 +278,10 @@ def _build_qml_app(qt_app, tmp_path):
         engine,
         lambda: controller.photos.photos,
         settings=settings,
+    )
+    # #1401: az Útlevélkép vezérlője — a kivágás a teszt mappájába kerül
+    _passport_controller = wire_passport(
+        engine, lambda: controller.photos.photos, tmp_path / "utlevel-gyorstar"
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)

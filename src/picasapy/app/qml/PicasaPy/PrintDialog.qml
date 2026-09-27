@@ -102,6 +102,15 @@ Window {
     property bool contactSheet: false
     property int contactColumns: 4
 
+    //: #1401: az Útlevélkép nyitotta a nézetet — a nyomtatandó kép a
+    //: kivágott, ideiglenes fájl (`printController.setPassportSource`), a
+    //: méret `ePassport`. Az élő mérés (picasa-colab-jobs #54) szerint
+    //: ilyenkor Crop to Fit, 1 példány, és egyik kész méret sincs
+    //: kijelölve. A felhasználó ELŐZŐ illesztését és példányszámát a
+    //: következő sima nyitás visszakapja.
+    property bool passport: false
+    property var mentettBeallitas: null
+
     // #1782: a nyomatméret (`0x00743700`) és a hozzá tartozó
     // minőség-összegzés. A méret TARTÓS — az eredetiben a
     // `Preferences\PrintLastSize` őrzi; nálunk a vezérlő teszi el.
@@ -127,7 +136,10 @@ Window {
         "M10X15CM": qsTr("10 x 15 cm"),
         "M13X18CM": qsTr("13 x 18 cm"),
         "M20X25CM": qsTr("20 x 25 cm"),
-        "TELJES_OLDAL": qsTr("FullPage")
+        "TELJES_OLDAL": qsTr("FullPage"),
+        //: `ytPrintSizes::ePassport` — csak az Útlevélkép parancs állítja be
+        //: (#1401), a kész méretek listájában nincs
+        "PASSPORT": qsTr("Passport")
     })
     property var printSizeIds: []
     //: #1953: az „Ellenőrzés" gomb eredménye — a küszöb alatti képek
@@ -215,6 +227,35 @@ Window {
         && printWindow.rows.length > 0
         && (!printWindow.pdfSelected || printWindow.pdfTarget.length > 0)
 
+    //: #1401: az útlevél-mód be- vagy kikapcsolása a vezérlőn ÉS a nézeten.
+    //: Bekapcsoláskor a felhasználó illesztése és példányszáma félre-
+    //: kerül; a következő sima nyitás visszaadja őket.
+    function valtsdAzUtlevelet(utlevelUrl) {
+        if (printWindow.printCtl)
+            printWindow.printCtl.clearPassportSource()
+        var be = utlevelUrl.length > 0 && printWindow.printCtl !== null
+                 && printWindow.printCtl.setPassportSource(utlevelUrl)
+        if (be) {
+            if (printWindow.mentettBeallitas === null)
+                printWindow.mentettBeallitas = {
+                    fitMode: printWindow.fitMode, copies: printWindow.copies }
+            printWindow.fitMode = "fill"
+            printWindow.copies = 1
+        } else if (printWindow.mentettBeallitas !== null) {
+            printWindow.fitMode = printWindow.mentettBeallitas.fitMode
+            printWindow.copies = printWindow.mentettBeallitas.copies
+            printWindow.mentettBeallitas = null
+        }
+        printWindow.passport = be
+    }
+
+    //: #1401: a bezárt nézet nem hagyhatja a vezérlőt útlevél-módban —
+    //: a következő nyomtatás különben a kivágott képet nyomtatná.
+    onVisibleChanged: {
+        if (!printWindow.visible && printWindow.printCtl)
+            printWindow.printCtl.clearPassportSource()
+    }
+
     // #1590: a `Mappa ▸ Bélyegképek nyomtatása…` belépési pontja —
     // ugyanaz a párbeszéd, indexkép-elrendezésre állítva
     function openForContactSheet(targetRows) {
@@ -223,12 +264,26 @@ Window {
     }
 
     function openForRows(targetRows) {
+        printWindow.nyisd(targetRows, "")
+    }
+
+    //: #1401: az Útlevélkép belépési pontja — a `url` a kivágott kép.
+    function openForPassport(url) {
+        printWindow.nyisd([0], url)
+    }
+
+    function nyisd(targetRows, utlevelUrl) {
+        printWindow.valtsdAzUtlevelet(utlevelUrl)
         printWindow.rows = targetRows ? targetRows : []
         // #1782: a megjegyzett méret visszatöltése, majd a minőség-mérés
         if (printWindow.printCtl) {
             printWindow.printSizeIds = printWindow.printCtl.printSizes()
-            printWindow.printSize = printWindow.printCtl.printSize()
+            printWindow.printSize = printWindow.passport
+                ? "PASSPORT" : printWindow.printCtl.printSize()
         }
+        printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(
+            printWindow.printSize)
+        printWindow.previewPage = 0
         printWindow.frissitsdAMinoseget()
         printWindow.lastResult = ""
         printWindow.lastSkipped = []
@@ -408,8 +463,12 @@ Window {
                 objectName: "printSizeBox"
                 Layout.fillWidth: true
                 model: printWindow.printSizeLabels
-                currentIndex: Math.max(
-                    0, printWindow.printSizeIds.indexOf(printWindow.printSize))
+                currentIndex: printWindow.printSizeIds.indexOf(printWindow.printSize)
+                //: #1401: az Útlevél nincs a kész méretek között — ilyenkor
+                //: egyik tétel sincs kijelölve, a mező a méret nevét mutatja
+                displayText: currentIndex < 0
+                    ? (printWindow.printSizeLabelById[printWindow.printSize] || "")
+                    : currentText
                 onActivated: {
                     var azonosito = printWindow.printSizeIds[currentIndex]
                     if (!azonosito) return

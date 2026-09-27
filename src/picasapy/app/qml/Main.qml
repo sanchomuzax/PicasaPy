@@ -1544,6 +1544,14 @@ ApplicationWindow {
         onBackupRequested: backupHost.nyisd()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
+        //: #1401: az Útlevélkép — a KIJELÖLÉS ELSŐ képére szól (az eredeti
+        //: is egyre), a `wallpaperRequested` mintájára.
+        onPassportPhotoRequested: {
+            var sorok = window.selectedIndexes
+            if (sorok.length > 0
+                    && typeof passportController !== "undefined" && passportController)
+                passportController.preparePassportPhoto(sorok[0])
+        }
         // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
         onPicasaDataImportRequested: picasaDataImportDialog.open()
         // #936: a Létrehozás menü jelzésének NEM VOLT kezelője — a
@@ -1588,10 +1596,11 @@ ApplicationWindow {
         // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)
         currentAlbumToken: controller ? controller.currentAlbumToken : ""
         currentPersonName: controller ? controller.currentPersonName : ""
+        // #3539: megerősítéssel — a "Remove from album without
+        // confirmation" beállítással elnyomható (`removeFromAlbumDialog`)
         onRemoveFromAlbumRequested: {
-            if (controller)
-                controller.removeRowsFromAlbum(
-                    window.selectedRows(), controller.currentAlbumToken)
+            if (controller) removeFromAlbumDialog.ensure().openFor(
+                window.selectedRows(), controller.currentAlbumToken)
         }
         onRemoveFromPeopleAlbumRequested: {
             if (controller) removePeopleFacesDialog.ensure().openFor(
@@ -2630,12 +2639,23 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.margins: 12
+                    //: #3604: a JOBB oldalon nincs kártya-rés — az eredetiben
+                    //: (`albumsback`) a rácsterület flush az ablak/fiók
+                    //: széléhez (`XConstraint 1, 1, 0`). A másik három oldal
+                    //: 12 px-es kerete a mi kártya-stílusunk, azt ez a jegy
+                    //: nem kérdőjelezi meg.
+                    Layout.rightMargin: 0
                     color: Theme.contentPanel
                     border.color: Theme.chromeBorder
 
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 14
+                        //: #3604: a jobb belső margó a fiók-fogó sávjának
+                        //: szélessége — így a rács görgetősávja pont odáig ér
+                        //: (`feedScrollBar` jobb éle == `jobbFiokFogo` bal
+                        //: éle), csukott fióknál tehát az ablak széléig.
+                        anchors.rightMargin: jobbFiokFogo.width
                         spacing: 4
 
                         // Könyvtár-feed (#64) — a komponens a PicasaPy
@@ -3590,10 +3610,11 @@ ApplicationWindow {
         onAddToAlbumRequested: function(token) {
             if (controller) controller.addRowsToAlbum(window.selectedRows(), token)
         }
+        // #3539: megerősítéssel — a "Remove from album without
+        // confirmation" beállítással elnyomható (`removeFromAlbumDialog`)
         onRemoveFromAlbumRequested: {
-            if (controller)
-                controller.removeRowsFromAlbum(
-                    window.selectedRows(), controller.currentAlbumToken)
+            if (controller) removeFromAlbumDialog.ensure().openFor(
+                window.selectedRows(), controller.currentAlbumToken)
         }
         onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
         // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
@@ -3616,10 +3637,54 @@ ApplicationWindow {
         }
     }
 
+    // #3539: „Eltávolítás az albumból" — a kijelölt képek albumtagságát
+    // veszi le, megerősítéssel (a "Remove from album without confirmation"
+    // beállítással elnyomható, a #367 törlés-elnyomás mintája szerint).
+    //: #1612: halasztva — a megerősítés csak a menüpontból/billentyűből nyílik
+    DeferredDialog {
+        id: removeFromAlbumDialog
+        objectName: "removeFromAlbumDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "removeFromAlbumDialog"
+                namePrefix: "removeFromAlbum"
+                //: DeleteMessage::RemoveItemsTitle (spec picasa-fen-dialogs.md 3.3.1)
+                title: qsTr("Remove Items")
+                property var rows: []
+                property string token: ""
+                function openFor(rowList, albumToken) {
+                    if (rowList.length === 0 || albumToken.length === 0) return
+                    rows = rowList
+                    token = albumToken
+                    if (rowList.length <= 1) {
+                        //: DeleteMessage::RemoveSingleYesButton
+                        yesText = qsTr("Remove Image")
+                        //: DeleteMessage::RemoveSingle
+                        ask("removeFromAlbum", qsTr(
+                            "Are you sure you want to remove the selected "
+                            + "image from the current album?"))
+                    } else {
+                        //: DeleteMessage::RemoveMultipleYesButton
+                        yesText = qsTr("Remove Images")
+                        //: DeleteMessage::RemoveMultiple
+                        ask("removeFromAlbum", qsTr(
+                            "Are you sure you want to remove the %n selected "
+                            + "images from the current album?", "",
+                            rowList.length))
+                    }
+                }
+                onConfirmed: controller.removeRowsFromAlbum(rows, token)
+            }
+        }
+    }
+
     // #422: „Eltávolítás az Emberek albumból" — a kijelölt képekről leveszi
     // az ADOTT személy arc-címkéjét (a régió is eltűnik: a Picasa is az
     // arcot veszi le, nem csak a nevet). Megerősítéssel: a névcímke
     // visszaállítása csak újbóli felismeréssel/kézi felvétellel lehetséges.
+    // #3539: a cím és a szöveg a `DeleteMessage::` család szerint (spec
+    // 3.3.1) — a korábbi saját "arc-címke" szöveg helyett.
     //: #1612: halasztva — az arcok eltávolításának megerősítése csak a menüpontból nyílik
     DeferredDialog {
         id: removePeopleFacesDialog
@@ -3631,16 +3696,30 @@ ApplicationWindow {
             ConfirmDialog {
                 objectName: "removePeopleFacesDialog"
                 namePrefix: "removePeopleFaces"
-                title: qsTr("Remove from People Album")
+                //: DeleteMessage::UnknownPeopleTitle (a fajta=2 ágon, tárolón kívül)
+                title: qsTr("Remove People")
                 property var rows: []
                 property string person: ""
                 function openFor(rowList, name) {
                     if (rowList.length === 0 || name.length === 0) return
                     rows = rowList
                     person = name
-                    ask("removePeopleFaces", qsTr(
-                        "The face tag \"%1\" will be removed from %n selected"
-                        + " picture(s).", "", rowList.length).arg(name))
+                    if (rowList.length <= 1) {
+                        //: DeleteMessage::RemoveSingleYesButtonPeople
+                        yesText = qsTr("Remove Person")
+                        //: DeleteMessage::RemoveSinglePeople
+                        ask("removePeopleFaces", qsTr(
+                            "Are you sure you want to remove the selected "
+                            + "person from the current album?"))
+                    } else {
+                        //: DeleteMessage::RemoveMultipleYesButtonPeople
+                        yesText = qsTr("Remove People")
+                        //: DeleteMessage::RemoveMultiplePeople
+                        ask("removePeopleFaces", qsTr(
+                            "Are you sure you want to remove the %n selected "
+                            + "people from the current album?", "",
+                            rowList.length))
+                    }
                 }
                 onConfirmed: controller.removePersonFromRows(rows, person)
             }
@@ -4020,6 +4099,29 @@ ApplicationWindow {
         id: compactDatabaseDialog
         anchors.fill: parent
         sourceComponent: Component { CompactDatabaseDialog { } }
+    }
+    // #1401: az Útlevélkép hibaablaka — a főablak tartalmában, tehát
+    // fölötte látszik. Egy arcnál párbeszéd nélkül a MEGLÉVŐ nyomtatási
+    // nézet nyílik (élő mérés, picasa-colab-jobs #54).
+    DeferredDialog {
+        id: passportErrorDialog
+        anchors.fill: parent
+        sourceComponent: Component { PassportErrorDialog { } }
+    }
+    Connections {
+        target: typeof passportController !== "undefined" ? passportController : null
+        function onPassportNoFace() {
+            passportErrorDialog.ensure().showError("noFace")
+        }
+        function onPassportMultipleFaces() {
+            passportErrorDialog.ensure().showError("multipleFaces")
+        }
+        function onPassportFailed(kind) {
+            passportErrorDialog.ensure().showError(kind)
+        }
+        function onPassportReady(url) {
+            printDialog.ensure().openForPassport(url)
+        }
     }
     // #3132: a db3-import párbeszéde — ritkán nyitott, ezért halasztott
     DeferredDialog {

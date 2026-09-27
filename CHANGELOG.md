@@ -7,7 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Útlevélkép (Eszközök ▸ Kísérleti ▸ Útlevélkép…, #1401).** A kijelölt
+  képen megkeresi az arcot; ha pontosan egyet talál, négyzetre vágja úgy,
+  hogy a fej fölött és az áll alatt maradjon hely, majd a nyomtatási
+  nézetben 2×2 hüvelykes Útlevél mérettel, egy példányban a lapra teszi.
+  Ha nincs arc, vagy több van, egy OK gombos ablak jelzi, és másik képet
+  ajánl.
+
 ### Javítva
+- **A képtálca sávjában a csillag, a két forgatógomb és a tálca három
+  gombja most képpontra egyezik az eredetivel, és a nagyítás-csúszka
+  mellől eltűnt a fölösleges „−”/„+” jel (#3602).**
 - **A mentés-panel Windowson elhasalt tesztjei: a hosszú célút olvasható
   marad, a „Mentési készlet” felirat nem csonk, a CD/DVD-típusú készlet
   Windowson is létrejön (#3696).** A hiba a programot alig érintette: a
@@ -18,6 +29,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   hanem a futtató rendszer sajátjával; ez más gombméretet és
   feliratszélességet adott, és a mentés-készlet párbeszédének mentés
   gombja célt tévesztett.
+
+## [0.8.591] – 2026-09-27
+
+### Javítva
+- **A fájltörlés, az albumból eltávolítás és az Emberek-albumból eltávolítás
+  megerősítő ablaka az eredeti Picasa pontos címét, üzenetét és gombfeliratát
+  mutatja (#3539).**
+
+### Megváltozva
+- **Az albumból eltávolítás mostantól megerősítést kér** — az „Eltávolítás
+  az albumból megerősítés nélkül” beállítással (Beállítások → Általános)
+  kikapcsolhatóan (#3539).
+
+- **A rács görgetősávja a rácsterület jobb széléhez simul: csukott jobb
+  oldali panelnél az ablak széléig ér, nyitott panelnél a panel bal
+  széléig (#3604).** Eddig 20 képpontnyi fölösleges rés maradt a sáv jobb
+  oldalán minden ablakszélességen.
 
 ## [0.8.590] – 2026-09-27
 

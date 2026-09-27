@@ -229,13 +229,13 @@ Ugyanez a keret minden más mért ponton egyezik: Importálás 6, új album 124,
 | `hviewtoggle` → `flatview`, `folderview` | `buttonbarsets` · LT, x 160 / 190 (`:406–415`) | `toolbarFolderViewToggle` · 168 / 198 (`:179`) | ✅ | ✅ · ❌ +8 | #3603 |
 | `folderviewpopup` | `buttonbarsets` · LT, x 225 (`:421`) | ua. · x 238 (`:250`) | ✅ | ✅ · ❌ +13 | #3603 |
 | `searchcontainer` + belül `filterbase`, `searchbase` | `buttonbarsets` · `0,4·W` … `W − 70` (`:352–355`); benne szűrők LT, mező LTR, 24 magas | szűrőzóna + 388 × 30 doboz, jobbra tolva (`:350`, `:670`) | ✅ | ❌ **arányos + kifeszített ↔ fix szélességű, jobbra tolt**; 1920-on a szűrők 1144-nél (eredeti 766), a mező 1408 … 1796 (eredeti 1006 … 1872) | #3603 |
-| `startoggle`, `rotateleft`, `rotateright` | `bcenterright` (2 px széles, `S`-en) · RT (`:225–245`) | `trayStarGroup` < `trayTopRow` < `trayRightPane` (`S`-en) (`TrayBar.qml:1083`) | ⚠️ két burkoló réteg, látható hatás nélkül | ✅ `S`-hez kötve · ❌ +3 / +4 / +4 | #3602 |
-| `scratchhold`, `scratchclear`, `addtobuttcon` | `scratchback` · RT, jobbról 7 (`:317–337`) | `trayScratchBack` · jobbról 5 (`:887–946`) | ✅ | ✅ · ❌ +2 | #3602 |
+| `startoggle`, `rotateleft`, `rotateright` | `bcenterright` (2 px széles, `S`-en) · RT (`:225–245`) | `trayStarGroup` < `trayTopRow` < `trayRightPane` (`S`-en) (`TrayBar.qml:1083`) | ⚠️ két burkoló réteg, látható hatás nélkül | ✅ `S − 3` / `S + 38` / `S + 75`, javítva #3602 | — |
+| `scratchhold`, `scratchclear`, `addtobuttcon` | `scratchback` · RT, jobbról 7 (`:317–337`) | `trayScratchBack` · jobbról 7, javítva #3602 (`:887–946`) | ✅ | ✅ | — |
 | `scratch` | `scratchback` · 5 … −50, 5 … −5 (`:307`) | `trayScratchStrip` · 5 … −50, 5 … −5 (`:607`) | ✅ | ✅ | — |
 | `scratchlabel` | `scratchpadbase` (a `scratchback` LRB-kitöltője) · középen (`:300–304`) | `trayScratchBack` · `anchors.centerIn` (`:864`) | ⚠️ a díszítő `scratchpadbase` réteg hiányzik — ugyanakkora doboz | ✅ | — |
-| `scale_group` → `loupehit`, `scalecontainer` | `basecontrolset` · RT, jobbról 275; `loupehit` + 7 + 127 (`:286–294`) | `trayZoomGroup` · a kapcsolók bal széléhez −12; a csúszka jobb széle `W − 275` ✅, de közbe `−` és `+` jel (`:1386–1498`) | ✅ | ✅ osztály · ❌ nagyító −13, fölösleges `−`/`+` | #3602 |
-| `metadata_group` → a négy kapcsoló | `basecontrolset` · RT, jobbról **15** (`:258–283`) | `trayMetadataGroup` · jobbról 10 (`:1279`) | ✅ | ✅ · ❌ +5 | #3602 |
-| `webupload_rect` | `basecontrolset` · `S − 5` … `S + 140` (`:646`) | `trayUploadSlot` · `S − 5`, 147 széles | ✅ | ✅ · ❌ +2 szélesség | #3602 |
+| `scale_group` → `loupehit`, `scalecontainer` | `basecontrolset` · RT, jobbról 275; `loupehit` + 7 + 127 (`:286–294`) | `trayZoomGroup` · a kapcsolók bal széléhez −20, javítva #3602; a nagyító és a csúszka között 7, a fölösleges `−`/`+` jel eltávolítva (`:1386–1498`) | ✅ | ✅ | — |
+| `metadata_group` → a négy kapcsoló | `basecontrolset` · RT, jobbról **15** (`:258–283`) | `trayMetadataGroup` · jobbról 15, javítva #3602 (`:1279`) | ✅ | ✅ | — |
+| `webupload_rect` | `basecontrolset` · `S − 5` … `S + 140` (`:646`) | `trayUploadSlot` · `S − 5`, 145 széles, javítva #3602 | ✅ | ✅ | — |
 | `outputs` | `basecontrolset` · `S + 140` … `W − 10` (`:629`) | `trayActionRow` · `S + 140`, a befogadóképességet `W − 10`-hez méri (`TrayBar.qml:432–466`) | ✅ | ✅ | — |
 | `separator` | `basecontrolset` · `S − 3` … `W − 17`, y 50 … 52 (`:623`) | `traySeparator` · ua., mérve | ✅ | ✅ | — |
 | `infotext_clip` | `basecontrolset` · 20 … `W − 20`, felül (`:690`) | `trayInfoText` · 20 … `W − 20` | ✅ | ✅ | — |

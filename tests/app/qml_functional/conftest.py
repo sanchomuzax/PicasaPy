@@ -23,7 +23,7 @@ from picasapy.index import open_index, sync_tree
 from picasapy.version import version_string
 from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.folder_hierarchy_wiring import wire_folder_hierarchy
-from support.print_wiring import wire_print
+from support.print_wiring import wire_passport, wire_print
 from support.jpeg_factory import make_jpeg
 
 
@@ -272,6 +272,10 @@ def _build_qml_app(
         engine,
         lambda: controller.photos.photos,
         settings=settings,
+    )
+    # #1401: az Útlevélkép vezérlője — a kivágás a teszt mappájába kerül
+    _passport_controller = wire_passport(
+        engine, lambda: controller.photos.photos, tmp_path / "utlevel-gyorstar"
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)

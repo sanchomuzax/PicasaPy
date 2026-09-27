@@ -83,6 +83,16 @@ class NyomatMeret(Enum):
     #: helyen áll, hogy mérés esetén egyetlen sort kelljen átírni.
     TELJES_OLDAL = _cm(21.0, 29.7)
 
+    #: `ytPrintSizes::ePassport` — MÉRT, négyzet méret (#1401, az
+    #: ugrótábla `0x00776e20`/`0x00776ecb`: mindkét oldal ugyanaz a **2,0**
+    #: konstans). ⚠️ SZÁNDÉKOSAN nincs sem a `HUVELYK_KESZLET`-ben, sem a
+    #: `METRIKUS_KESZLET`-ben: az eredetiben az Útlevélkép parancs — nem a
+    #: kézi méretválasztó — állítja be, ugyanúgy, ahogy az `eContact`
+    #: (Indexképek) is a saját parancsán (`printContactSheet`) át érhető
+    #: el, nem a méretlistából (ld. a Colab-mérés hat gombja: Wallet ·
+    #: 3.5x5 · 4x6 · 5x7 · 8x10 · Full Page — Passport nincs köztük).
+    PASSPORT = (2.0, 2.0)
+
     @property
     def szeles_huvelyk(self) -> float:
         return self.value[0]
