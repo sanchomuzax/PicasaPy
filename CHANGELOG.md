@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.603] – 2026-09-27
+
 ### Javítva
 - A Képek biztonsági mentésekor a jobb oldali képrács is csak azokat a
   képeket mutatja, amelyekről még nem készült biztonsági másolat; a mentés
