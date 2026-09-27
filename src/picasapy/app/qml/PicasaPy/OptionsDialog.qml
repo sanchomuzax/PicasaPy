@@ -146,17 +146,20 @@ Window {
                     osszeg += tabBar.contentChildren[i].implicitWidth
                 return osszeg
             }
-            // ⚠️ Qt „Binding loop detected for property tulcsordul"
-            // figyelmeztetést ír ki emiatt a kötés miatt (a `leftPadding`
-            // változása újraszámoltatja a Fusion `TabBar` saját
-            // `implicitWidth`-jét, ami visszahat erre a kiértékelésre) —
-            // MÉRVE stabil, véges értéken áll meg (nem valódi végtelen
-            // ciklus), és a projekt szűrője (`qml_warning_filter.py`,
-            // #1599/#1748) SZÁNDÉKOSAN nem bukik el rajta: 38 másik
-            // párbeszéd is hordozza ugyanezt a mintát, a kikapcsolása külön,
-            // tucatnyi fájlt érintő javítás tárgya, nem ennek a jegynek.
-            readonly property bool tulcsordul:
-                tabBarRow.fulokSzukseglete > tabBar.width + 1
+            // A túlcsordulást NEM kötés számolja, hanem a `frissitsd()`
+            // állítja be (`Qt.callLater`-rel, a méretváltozások után): a
+            // nyilak megjelenése a `leftPadding`/`rightPadding`-en át a
+            // Fusion `TabBar` `implicitWidth`-jét is módosítja, és egy
+            // deklaratív `tulcsordul` kötés ezen át kötési hurkot adott
+            // (a #1599/#1748 őre, `test_nincs_kotesi_hurok`, CI-n elkapta).
+            // A `tabBar.width` a ráfedés miatt a paddingtól független,
+            // ezért az egyszeri újraszámolás stabil.
+            property bool tulcsordul: false
+            function frissitsd() {
+                tulcsordul = fulokSzukseglete > tabBar.width + 1
+            }
+            onFulokSzuksegleteChanged: Qt.callLater(frissitsd)
+            onWidthChanged: Qt.callLater(frissitsd)
             onTulcsordulChanged: Qt.callLater(tabBarRow.mutasdALathatoFulet)
 
             /** A kiválasztott fül MARGÓ NÉLKÜL, teljesen látható legyen a
@@ -176,7 +179,10 @@ Window {
                 else if (elem.x + elem.width > ci.contentX + ci.width)
                     ci.contentX = elem.x + elem.width - ci.width
             }
-            Component.onCompleted: Qt.callLater(mutasdALathatoFulet)
+            Component.onCompleted: {
+                frissitsd()
+                Qt.callLater(mutasdALathatoFulet)
+            }
 
             Button {
                 objectName: "optionsTabScrollLeftButton"
