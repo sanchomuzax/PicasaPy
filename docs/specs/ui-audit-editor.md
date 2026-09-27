@@ -2244,6 +2244,48 @@ A `respack.yt` tervezővásznán ugyanez a sorrend: filmszalag 431–645, kapcso
 
 *Bizonyítottsági fok: megerősített* (élő mérés + `respack.yt` + `.tre`); a jelvény pontos helyének **képlete** a `0x00569af0`-ban NINCS kiolvasva, a fenti számok az élő mérésé (1280 × 1024, 1024 × 1024-es képek).
 
+### 3/c ⛔ Fókuszváltáskor a nyitott eszköz NEM marad meg félenként — lezárul, kérdéssel (2026-09-27, 371. kör, #3686)
+
+*Forrás: a fókuszváltó `0x0056a160` · az eszköz-lezáró kapu `0x005f8d80` · a lezáró `0x005f90f0` · a módbeállító `0x0057bb50` · `stringres-en-hu.tsv`.*
+
+**1. A fókuszváltó.** Az aktív fél mezőjét (`[this+0x3280]`) a teljes `.text` pásztázása szerint öt helyen írják. A fókuszváltás a `0x0056a160` (`0x0056a1e2`); ezt hívja a képre kattintás és a `swap_2up_focus` is (3/b 4. pont). A rutin **a váltás ELŐTT** a `0x005f8d80(this, 1, 0, 1)`-et hívja (`0x0056a186`–`0x0056a18d`). Ha az nem `0`-val tér vissza, a váltás **elmarad** (`jne 0x0056a253`).
+
+**2. A kapu (`0x005f8d80`) — „Szerkesztés jóváhagyása”.** A `[this+0x30d4]` módkód szerint ágazik (`jmp [eax*4 + 0x005f90d4]`, `mód − 2`). A 2-es, 4-es és 6-os mód a kérdező ágra megy (`0x005f8db7`). A kérdés akkor jelenik meg, ha az eszköz állapota módosult (`0x005f8dc1`–`0x005f8e01`: az aktív fél `[+0x164]` objektumának `vtbl+0x3c` hívása, illetve a `0x00562d00` és a `0x005d23d0`), és a `Preferences/DoNotAskOnEndEditModality` nincs bekapcsolva (`0x005f8e07`–`0x005f8e30`):
+
+| elem | azonosító | angol | **hivatalos magyar** |
+|---|---|---|---|
+| cím | `IDS_ENDEDITMODALITY_TITLE` | Confirm Edit | **Szerkesztés jóváhagyása** |
+| szöveg | `IDS_ENDEDITMODALITY_MESSAGE` | Apply changes to the current image? | **Elfogadja az aktuális kép módosításait?** |
+| 0. gomb | `CThumbUI::ConfirmAbandonModifiedEditYesButton` | Apply Changes | **Módosítások alkalmazása** |
+| 1. gomb | `CThumbUI::ConfirmAbandonModifiedEditNoButton` | Discard Changes | **Módosítások elvetése** |
+| 2. gomb | `il_Cancel` — csak ha a 4. argumentum ≠ 0 (`0x005f8e36`) | Cancel | **Mégse** |
+| jelölő | `IDS_ENDEDITMODALITY_CHECKMESSAGE` | Don't ask me again, always apply changes. | **Ne kérdezzen újból, mindig fogadja el a módosításokat** |
+
+- **Alkalmazás** (0) ⇒ az eszköz a saját Alkalmaz gombjával zárul.
+- **Elvetés** (1) ⇒ az eszköz a saját Mégse gombjával zárul. A választ a `[esp+0x14] = (eredmény == 0)` jelző viszi tovább (`0x005f8f9e`).
+- **Mégse** (2) ⇒ `0xf4242` (`0x005f8ff3`–`0x005f900a`), és **a fókusz nem vált**.
+- A bejelölt jelölő a `DoNotAskOnEndEditModality`-t írja (`0x005f9018`–`0x005f9034`, REG_DWORD; Elvetésnél is, Mégsénél nem). Ezután a kapu kérdés nélkül **alkalmaz**: a jelző kezdőértéke `1`, `0x005f8d94`.
+- Ha nincs mit kérdezni, a kapu **akkor is lezárja** az eszközt, elvetéssel (`0x005f904d` → `0x005f907e`).
+
+**3. A lezárás.** A `0x005f90f0(alkalmaz)` a látható eszköz saját gombját indítja el: `retouchapply` / `retouchcancel`, `redeyeapply` / `redeyecancel`, `cropapply` / `cropcancel`, `edittextapply` / `edittextcancel`, `editpanel/ok` / `editpanel/cancel` (a függvény sztringjei).
+
+**4. A két eszköz módkódja: 2.** A módbeállító `0x0057bb50(this, 1, mód, …)` hívói közül a Vörösszem (`0x005f30e0`: `redselection`, `redeyeapply`) `push 2`-vel hívja (`0x005f374c`), a Retusálás (`0x005f7140`: `retouchapply`, `retouchoverlay`) szintén (`0x005f7445`). Ugyanígy a vágás (`0x005efe99`), a szöveg (`0x005f63ed`) és a Picnik (`0x005f2ccb`).
+
+⇒ **Az eredeti nem tart meg félenként nyitott eszközt.** Fókuszváltás előtt a nyitott eszköz lezárul:
+- ha módosult, kérdéssel: alkalmaz, elvet, vagy Mégse, és ekkor a fókusz marad;
+- bejelölt „ne kérdezzen” jelölővel kérdés nélkül alkalmaz.
+
+A félenként megmaradó rész a **festett maszk** (#3649); az eszköz nem ilyen.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (#3649 után) | teendő |
+|---|---|---|---|
+| nyitott Retusálás / Vörösszem fókuszváltáskor | a váltás előtt lezárul: kérdés (Alkalmaz / Elvet / Mégse), vagy a jelölő szerint kérdés nélkül alkalmaz | bezárul, a félkész állapot **szó nélkül elvész** | a „Szerkesztés jóváhagyása” kérdés; Mégsére a fókusz marad |
+| a jelölő | `DoNotAskOnEndEditModality`, bekapcsolva mindig alkalmaz | nincs | a beállítás és a jelölő |
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (ld. a #3686-ot).* Nem követtem végig: a „módosult” próbát adó `vtbl+0x3c` pontos jelentését, valamint a 4-es és a 6-os mód eszközeit.
+
 ### 4. ⭐ A SZERKESZTÉSI ÜTKÖZÉS párbeszéde — teljes szöveggel
 
 A #434 megemlítette a `TwoUpEditConflictDialog`-ot; a tényleges
