@@ -14,18 +14,44 @@ mérhető — a próbák ezért a KIRAJZOLT geometria-kötéseket nézik: a rét
 fél SAJÁT elemeiből (`viewerImageElotte`/`viewerImageElotteKeret`, illetve
 `viewerImage`/`viewerImageKeret`) számítjuk ki — FÜGGETLENÜL a vizsgált
 implementáció `fokuszKep`/`fokuszKeret` aliasától.
+
+A KIRAJZOLT képet a fájl végén álló `TestValodiGpu` méri, valódi OpenGL-en
+és valódi egérhúzással — ez csak a fejlesztői gépen fut, a CI-n kihagyja
+magát (ld. ott).
 """
 
 from __future__ import annotations
 
-import pytest
+import os
+import subprocess
+import sys
+from pathlib import Path
 
+import cv2
+import numpy as np
+import pytest
+from PySide6.QtCore import QPoint, QPointF, Qt
+from PySide6.QtQuick import QSGRendererInterface
+from PySide6.QtTest import QTest
+
+from tests.app.qml_functional.conftest import _build_qml_app
 from tests.app.qml_functional.test_kettos_nezet_fokusz_nagyitas_3741 import (
+    KEK,
+    NARANCS,
+    ZOLD,
     _bal_fokusz,
     _jobb_fokusz,
+    _kep,
+    _kozel,
+    _szin,
     ket_kep,  # noqa: F401 — pytest-fixture
 )
-from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import _gyerek
+from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import (
+    _gyerek,
+    _kep_teglalap,
+    _klikk,
+    _nezot_nyit,
+)
 
 
 def _sajat_geometria(kep, keret) -> dict[str, float]:
@@ -48,9 +74,16 @@ def _sajat_geometria(kep, keret) -> dict[str, float]:
 
 
 def _gpu_geometria(window) -> dict[str, float]:
+    """A réteg geometriája a `photoArea` koordinátarendszerében. A réteg
+    a fókuszkeretet követő vágó-`Item` gyereke (#3755, 2. pont), tehát
+    az `x`/`y`-ja ahhoz relatív."""
     reteg = _gyerek(window, "gpuFinetunePreview")
-    return {kulcs: reteg.property(kulcs)
-            for kulcs in ("x", "y", "width", "height", "rotation", "scale")}
+    vago = _gyerek(window, "gpuFinetuneVago")
+    geometria = {kulcs: reteg.property(kulcs)
+                 for kulcs in ("x", "y", "width", "height", "rotation", "scale")}
+    geometria["x"] += vago.property("x")
+    geometria["y"] += vago.property("y")
+    return geometria
 
 
 class TestAGpuElonezetAFokuszbanLevoFelen:
@@ -96,3 +129,276 @@ class TestAGpuElonezetAFokuszbanLevoFelen:
         assert reteg.property("scale") == pytest.approx(
             elotte.property("scale"), abs=0.01
         )
+
+    def test_nagyitva_a_vago_a_fokuszkeret_geometriajat_es_vagasat_koveti(
+        self, ket_kep, qt_app  # noqa: F811
+    ):
+        """#3755, 2. pont: nagyításnál a réteg a `photoArea` gyerekeként
+        átlógott a másik félre — a `fokuszKeret` vágása nem érte el. A
+        vágó-`Item` a keret geometriáját és `clip`-jét követi."""
+        window, _c, _e = ket_kep
+        nezo = _bal_fokusz(window, qt_app)
+        nezo.setProperty("zoomValue", 0.8)
+        qt_app.processEvents()
+        keret = _gyerek(window, "viewerImageElotteKeret")
+        vago = _gyerek(window, "gpuFinetuneVago")
+        assert keret.property("clip") is True
+        for kulcs in ("x", "y", "width", "height", "clip"):
+            assert vago.property(kulcs) == keret.property(kulcs), kulcs
+
+
+# -- valódi GPU, valódi egérhúzás (#3755, 3. pont) ----------------------------
+#
+# A fenti próbák offscreen alatt futnak, ahol a GPU-réteg sosem látszik. Az
+# alábbiak a KIRAJZOLT képet mérik egy valódi OpenGL-es Wayland-kompozitoron,
+# a Kiemelések csúszkát `QTest.mousePress`/`mouseMove`-val húzva, és a gomb
+# felengedése ELŐTT készítenek képet.
+#
+# A környezetet (QPA, RHI, render-loop) a Qt csak induláskor olvassa, a
+# `tests/app/conftest.py` pedig offscreent állít be — ezért a mérés egy
+# ALFOLYAMATBAN fut (`test_valodi_gpun_egerhuzassal`), amely ugyanezt a
+# fájlt a `TestValodiGpu` osztályra szűkítve, a GPU-s környezettel indítja.
+# A `TestValodiGpu` önmagában, a belső jelző nélkül, mindig kihagyja magát.
+#
+# ⚠️ Kihagyás (skip), ha nincs `/run/user/1000/wayland-headless/wayland-0`
+# socket, vagy a `GraphicsInfo.api` nem OpenGL. A CI-n (ubuntu, windows)
+# tehát MINDIG skip: ezt a próbát csak a fejlesztői gép futtatja.
+#
+# rontás-kontroll: a réteg geometriáját visszakötve a fix `photoKeret`/
+# `photo` párra (a PR előtti main) a `test_ab_bal_fokusz`, a
+# `test_aa_bal_fokusz` és a `test_ab_bal_fokusz_nagyitva` BUKIK (a bal kép
+# nem változik, a jobb igen); a vágó-`Item` nélkül (a réteg a `photoArea`
+# gyereke) egyedül a `test_ab_bal_fokusz_nagyitva` BUKIK (a jobb kép bal
+# széle is kivilágosodik). Lefuttatva 2026-09-27-én, valódi OpenGL-en.
+
+#: a NEM használt, különálló headless kompozitor — a felhasználó fizikai
+#: képernyőjére (`/run/user/1000/wayland-0`) ez a próba SOHA nem nyit ablakot
+_HEADLESS = Path("/run/user/1000/wayland-headless")
+_BELSO_JELZO = "PICASAPY_GPU_3755_BELSO"
+_GPU_KORNYEZET = {
+    "QT_QPA_PLATFORM": "wayland",
+    "QSG_RHI_BACKEND": "opengl",
+    #: kötelező: többszálas renderelésnél a `QTest.mousePress` GIL-holtpontra fut
+    "QSG_RENDER_LOOP": "basic",
+    "XDG_RUNTIME_DIR": str(_HEADLESS),
+    "WAYLAND_DISPLAY": "wayland-0",
+    _BELSO_JELZO: "1",
+}
+#: összegzett RGB-eltérés, ami fölött egy mintapont „megváltozott"
+_VALTOZAS_KUSZOB = 25
+
+
+def test_valodi_gpun_egerhuzassal(tmp_path):
+    if not (_HEADLESS / "wayland-0").exists():
+        pytest.skip(f"nincs headless Wayland-kompozitor ({_HEADLESS}/wayland-0)")
+    gyoker = Path(__file__).resolve().parents[3]
+    kornyezet = {**os.environ, **_GPU_KORNYEZET}
+    kornyezet.pop("DISPLAY", None)
+    eredmeny = subprocess.run(
+        [sys.executable, "-m", "pytest", f"{__file__}::TestValodiGpu",
+         "-q", "-rs", "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'bt'}"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=170, cwd=str(gyoker), env=kornyezet,
+    )
+    kimenet = eredmeny.stdout[-4000:] + eredmeny.stderr[-2000:]
+    if eredmeny.returncode == 0 and " passed" not in eredmeny.stdout:
+        pytest.skip(f"a GPU-s alfolyamat kihagyta magát:\n{kimenet}")
+    assert eredmeny.returncode == 0, kimenet
+    # részleges kihagyás nem zöld: minden esetnek ténylegesen mérnie kell
+    assert " skipped" not in eredmeny.stdout, kimenet
+
+
+def _kepek_gpu(lib) -> None:
+    """A B próbakép aránya legfeljebb 1,6 — a magasabb képek a külön
+    jegyben kezelt #3800-ba futnak."""
+    a = np.full((400, 640, 3), ZOLD[::-1], np.uint8)
+    b = np.full((480, 320, 3), NARANCS[::-1], np.uint8)
+    b[0:100, 0:100] = KEK[::-1]
+    cv2.imwrite(str(lib / "a.jpg"), a, [cv2.IMWRITE_JPEG_QUALITY, 98])
+    cv2.imwrite(str(lib / "b.jpg"), b, [cv2.IMWRITE_JPEG_QUALITY, 98])
+
+
+@pytest.fixture
+def ket_kep_gpu(qt_app, tmp_path):
+    if os.environ.get(_BELSO_JELZO) != "1":
+        pytest.skip("csak a `test_valodi_gpun_egerhuzassal` alfolyamatában fut")
+    yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_kepek_gpu)
+
+
+def _esemenyek(qt_app, n=10):
+    for _ in range(n):
+        qt_app.processEvents()
+
+
+def _also_kozep(r) -> tuple[float, float]:
+    """A kirajzolt kép vízszintes közepe, a magasság 80%-ánál — a B kép
+    kék sarka (bal felső 100×100) így nem esik bele."""
+    return ((r["bal"] + r["jobb"]) / 2, r["fent"] + 0.8 * (r["lent"] - r["fent"]))
+
+
+def _valtozott(elotte, utana) -> bool:
+    return sum(abs(a - b) for a, b in zip(elotte, utana, strict=True)) > _VALTOZAS_KUSZOB
+
+
+def _varj_a_gpu_forrasokra(window, qt_app, *, hatarido_ms=5000) -> None:
+    """A réteg két forrás-`Image`-e (a finetune2 előtti kép és a LUT)
+    valódi platformon ASZINKRON töltődik: amíg nincs kész, a réteg nem
+    rajzol, és a kép a húzás ellenére változatlannak látszana (mérve:
+    egyszer az egyképes esetben így bukott). Kész: teljes a `progress`, és
+    van valódi (implicit) képmérete — a `status` enumot a `property()` nem
+    tudja Pythonba fordítani (ld. `test_collage_background_1009.py`)."""
+    forrasok = [_gyerek(window, nev) for nev in ("gpuPrefixImage", "gpuLutImage")]
+
+    def _kesz(kep) -> bool:
+        return (kep.property("progress") == 1.0
+                and kep.property("implicitWidth") > 0
+                and kep.property("implicitHeight") > 0)
+
+    for _ in range(hatarido_ms // 50):
+        if all(_kesz(f) for f in forrasok):
+            break
+        QTest.qWait(50)
+    else:
+        allapot = {f.objectName(): (f.property("progress"), f.property("implicitWidth"))
+                   for f in forrasok}
+        raise AssertionError(f"a GPU-réteg forrásai nem töltődtek be: {allapot}")
+    QTest.qWait(300)
+
+
+def _huzas_kozben(window, qt_app, nezo, pontok, kepnev: Path):
+    """A Finomhangolás fülön megfogja és jobbra húzza a Kiemelések
+    csúszkát, és a gomb felengedése ELŐTT képet készít.
+
+    A `pontok(window)` adja a mért jelenet-pontokat nevesítve, mindegyikhez
+    a húzás ELŐTT várt színnel (pozitív kontroll: a pont tényleg a mért
+    képre esik). A pontokat a fül megnyitása UTÁN kérjük: a szerkesztőpanel
+    megjelenése átrendezi a képterületet. Az eredmény pontonként
+    (előtte, húzás közben)."""
+    api = window.rendererInterface().graphicsApi()
+    if api != QSGRendererInterface.GraphicsApi.OpenGL:
+        pytest.skip(f"a GraphicsInfo.api nem OpenGL: {api}")
+    _klikk(qt_app, window, _gyerek(window, "editTabFinetune"))
+    QTest.qWait(200)
+    assert nezo.property("gpuFinetuneEligible") is True, "OpenGL, de nem GPU-alkalmas"
+    elotte = _kep(window, qt_app)
+    mert = pontok(window)
+    for nev, (pont, vart) in mert.items():
+        assert _kozel(_szin(elotte, *pont), vart), (
+            f"a(z) {nev} pont nem a várt színre esik húzás előtt: "
+            f"{_szin(elotte, *pont)} ≠ {vart} @ {pont}"
+        )
+    csuszka = _gyerek(window, "finetuneHighlightsSlider")
+    bal = csuszka.mapToScene(QPointF(0, csuszka.property("height") / 2))
+    szel = csuszka.property("width")
+    p0 = QPoint(int(bal.x() + 0.05 * szel), int(bal.y()))
+    p1 = QPoint(int(bal.x() + 0.9 * szel), int(bal.y()))
+    gomb, mod = Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier
+    QTest.mousePress(window, gomb, mod, p0)
+    _esemenyek(qt_app)
+    for i in range(1, 11):
+        QTest.mouseMove(window, QPoint(p0.x() + (p1.x() - p0.x()) * i // 10, p0.y()))
+        _esemenyek(qt_app, 3)
+    _varj_a_gpu_forrasokra(window, qt_app)
+    try:
+        assert nezo.property("gpuFinetuneActive") is True
+        assert _gyerek(window, "gpuFinetunePreview").property("visible") is True
+        huzas = _kep(window, qt_app)
+    finally:
+        QTest.mouseRelease(window, gomb, mod, p1)
+        _esemenyek(qt_app)
+    elotte.save(str(kepnev.with_name(kepnev.stem + "_elotte.png")))
+    huzas.save(str(kepnev.with_name(kepnev.stem + "_huzas.png")))
+    return {nev: (_szin(elotte, *pont), _szin(huzas, *pont))
+            for nev, (pont, _vart) in mert.items()}
+
+
+#: a letterbox-sáv (a `photoArea` háttere) színe — RGB, tűréssel
+_SAV = (132, 130, 132)
+
+
+def _felek_pontjai(bal_szin, jobb_szin):
+    def pontok(window):
+        return {
+            "bal": (_also_kozep(_kep_teglalap(_gyerek(window, "viewerImageElotte"))),
+                    bal_szin),
+            "jobb": (_also_kozep(_kep_teglalap(_gyerek(window, "viewerImage"))),
+                     jobb_szin),
+        }
+    return pontok
+
+
+class TestValodiGpu:
+    def test_ab_bal_fokusz(self, ket_kep_gpu, qt_app, tmp_path):
+        window, _c, _e = ket_kep_gpu
+        nezo = _bal_fokusz(window, qt_app)
+        m = _huzas_kozben(window, qt_app, nezo, _felek_pontjai(NARANCS, ZOLD),
+                          tmp_path / "ab_bal.png")
+        assert _valtozott(*m["bal"]), f"a kijelölt bal fél nem változott: {m}"
+        assert not _valtozott(*m["jobb"]), f"a NEM kijelölt jobb fél változott: {m}"
+
+    def test_ab_jobb_fokusz(self, ket_kep_gpu, qt_app, tmp_path):
+        window, _c, _e = ket_kep_gpu
+        nezo = _jobb_fokusz(window, qt_app)
+        m = _huzas_kozben(window, qt_app, nezo, _felek_pontjai(NARANCS, ZOLD),
+                          tmp_path / "ab_jobb.png")
+        assert _valtozott(*m["jobb"]), f"a kijelölt jobb fél nem változott: {m}"
+        assert not _valtozott(*m["bal"]), f"a NEM kijelölt bal fél változott: {m}"
+
+    def test_aa_bal_fokusz(self, ket_kep_gpu, qt_app, tmp_path):
+        window, _c, _e = ket_kep_gpu
+        nezo = _nezot_nyit(window, qt_app)
+        nezo.setProperty("currentIndex", 1)
+        _klikk(qt_app, window, _gyerek(window, "viewerLayoutAa"))
+        QTest.qWait(300)
+        assert nezo.property("layoutMode") == "aa"
+        if nezo.property("aktivOldal") != "bal":
+            _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
+        assert nezo.property("aktivOldal") == "bal"
+        m = _huzas_kozben(window, qt_app, nezo, _felek_pontjai(NARANCS, NARANCS),
+                          tmp_path / "aa_bal.png")
+        assert _valtozott(*m["bal"]), f"a kijelölt bal fél nem változott: {m}"
+        assert not _valtozott(*m["jobb"]), f"a NEM kijelölt jobb fél változott: {m}"
+
+    def test_egykepes_nezet(self, ket_kep_gpu, qt_app, tmp_path):
+        """Egyképes nézetben a réteg a kirajzolt képre kerül, és nem lóg
+        ki belőle (a letterbox-sáv a kép mellett változatlan, #415)."""
+        window, _c, _e = ket_kep_gpu
+        nezo = _nezot_nyit(window, qt_app)
+        assert nezo.property("layoutMode") == "1up"
+
+        def pontok(window):
+            r = _kep_teglalap(_gyerek(window, "viewerImage"))
+            kozep_y = (r["fent"] + r["lent"]) / 2
+            return {"kep": (_also_kozep(r), ZOLD),
+                    "savban": ((r["bal"] - 6, kozep_y), _SAV)}
+
+        m = _huzas_kozben(window, qt_app, nezo, pontok, tmp_path / "egy.png")
+        assert _valtozott(*m["kep"]), f"a kép nem változott: {m}"
+        assert not _valtozott(*m["savban"]), f"a réteg kilógott a képből: {m}"
+
+    def test_ab_bal_fokusz_nagyitva(self, ket_kep_gpu, qt_app, tmp_path):
+        """#3755, 2. pont: nagyított bal képnél a réteg ne lógjon át a jobb
+        kép bal szélére (a `fokuszKeret` vágása őt is érje)."""
+        window, _c, _e = ket_kep_gpu
+        nezo = _bal_fokusz(window, qt_app)
+        nezo.setProperty("zoomValue", 0.8)
+        _esemenyek(qt_app)
+        QTest.qWait(200)
+        assert nezo.property("zoomFactor") > 2
+
+        def pontok(window):
+            keret = _gyerek(window, "viewerImageElotteKeret")
+            kozep = keret.mapToScene(QPointF(keret.property("width") / 2,
+                                             keret.property("height") / 2))
+            rj = _kep_teglalap(_gyerek(window, "viewerImage"))
+            eredmeny = {"bal": ((kozep.x(), kozep.y()), NARANCS)}
+            for i, arany in enumerate((0.2, 0.5, 0.8)):
+                pont = (rj["bal"] + 4, rj["fent"] + arany * (rj["lent"] - rj["fent"]))
+                eredmeny[f"jobb_szel_{i}"] = (pont, ZOLD)
+            return eredmeny
+
+        m = _huzas_kozben(window, qt_app, nezo, pontok, tmp_path / "ab_nagyitva.png")
+        assert _valtozott(*m["bal"]), f"a nagyított bal fél nem változott: {m}"
+        for nev in m:
+            if nev.startswith("jobb"):
+                assert not _valtozott(*m[nev]), f"a réteg átlógott a jobb képre: {m}"

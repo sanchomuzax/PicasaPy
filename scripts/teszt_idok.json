@@ -138,6 +138,7 @@
  "tests/app/qml_functional/test_gomb_tipografia_815.py": 7.65,
  "tests/app/qml_functional/test_gombmagassag_platformfuggetlen_2597.py": 3.56,
  "tests/app/qml_functional/test_gombsav_testreszabas_1792.py": 15.68,
+ "tests/app/qml_functional/test_gpu_finetune_fokusz_3755.py": 8.0,
  "tests/app/qml_functional/test_gpu_finetune_preview.py": 8.75,
  "tests/app/qml_functional/test_gyorsbillentyu_oszlop_3455.py": 5.04,
  "tests/app/qml_functional/test_gyorsbillentyuk_1616.py": 20.45,
