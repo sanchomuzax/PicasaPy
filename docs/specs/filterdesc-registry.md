@@ -2463,6 +2463,31 @@ szélesebb arányát. A Múzeumi matt ezt kétszer használja (belső világos, 
 sötét keret), közéjük két belső ragyogással — a csővezetéket a `filterdesc.xml`
 adja (`0x1a0e03` külső, `0xf0eae4` belső, 25 és 40 alapvastagság).
 
+#### ⭐ A `Border` sarka és feliratsávja — MÉRVE a Picasa-exporton (2026-09-27, 377. kör, #626)
+
+*Forrás: `684-merokeszlet` `border__max` (`Border=1,100,100,40,00000000,00ffffff,60`, 960 × 640 → 1360 × 1103) · a dinamikus csúszka `0x00bbd3d0` · a feliratsáv egésszé alakítása `0x00bbe553` → `0x008f1490` → `0x008eea90`.*
+
+**1. A feliratsáv magassága — float32-tartomány, csonkítva.** A dinamikus csúszka a `minimum` és a `maximum` kifejezést double-ként értékeli ki, de **float32-be menti** (`fstp dword` @ `0x00bbd40d`, `0x00bbd422`), és ebből vetít: `érték = min + (max − min) · t / 100`. A `captionheight`-et a `0x008eea90` **csonkítva** alakítja egésszé (`or eax, 0xc00` + `fistp`). 640-es képmagasságon: `f32(640/6) = 106,666664`, `· 60/100 = 63,9999985` → **63** képpont. A mi double-számításunk 64-et ad, ezért a kimenetünk **1 képponttal magasabb** (1104 ↔ 1103), és az elcsúszás önmagában ΔE 3,70-et okoz.
+
+**2. A sarok — koncentrikus ívek, közös középponttal.** Soronként mérve (a bal felső sarok, az ív első világos képpontja):
+
+| sor | export | kör, `R + belső = 228`, középpont (328, 328) |
+|---:|---:|---:|
+| 130 | 213 | 215 |
+| 190 | 146 | 146,5 |
+| 235 | 119 | 119 |
+
+Az átlón a kép 239-nél kezdődik; az `R = 128` sugarú, ugyanilyen középpontú ívből 237,5 jön ki. ⇒ Az eredeti:
+- a **vászon** sarka szögletes, külső színű;
+- a **belső sáv** külső éle `R + belső` sugarú lekerekített téglalap, belső színnel;
+- a **kép** sarka `R` sugarú, a kimaradó rész belső színű.
+
+A felirat nélküli alsó sarkok ugyanígy viselkednek: a belső sáv téglalapja a feliratsáv fölött ér véget.
+
+**A mérés:** ezzel a geometriával (4 × 4 almintás élsimítás, `R = 128`, belső = külső = 100, felirat 63) a modell az exportot **ΔE 0,097**-tel adja vissza, a képpontok 0,11 %-a tér el 40 szintnél többel. A mai kód két szögletes gyűrűt rak a kép köré, és a teljes vászon sarkát kerekíti: pontos mérettel (1. pont) is **3,584**.
+
+*Bizonyítottsági fok: **megerősített**: a méret bitre, a geometria a golden-méréssel; a csonkítás utasításszinten, független újralevezetéssel (ld. a #626-ot).* Fejlesztés: #3768. A sarok rajzoló kódját (`0x00bbe570`) nem olvastam végig; a geometria a mérésből jön, képpontonként ellenőrizve.
+
 #### `DropShadowImageOperation` (`0x00bbb720`)
 
 **Az árnyék eltolása** — polárkoordinátából, apró kerekítési igazítással:
