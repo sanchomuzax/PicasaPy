@@ -268,6 +268,13 @@ QtObject {
         readonly property color trayTokenHighlightText: "#ffffff"
         readonly property color viewerBg: tema.dark ? "#1a1a1a" : "#808080"
 
+        // #3663: a kettős nézet „Kijelölve" jelvénye a `respack.yt`
+        // felvételén MÉRT szürke — a #3013 tévesen a `selectionBlue`
+        // jelölő-kéket adta neki, ami a fotó fölé kiütött. Az eredetiben
+        // nincs sötét mód, a jelvény mindkét témán ugyanaz a szürke marad,
+        // mert a fotó-terület (`viewerBg`) is szinte azonos a két témán.
+        readonly property color viewerFocusBadgeBg: "#666666"
+
         // #2587: a képaláírás-sáv színei. MÉRVE a tulajdonos felvételén
         // (`research/felirat-ki-bekapcsolva/picasa3-felirat-bekapcsolva. 223224.jpg`,
         // a csík sora y 906…926): a sáv `#c6c6c6` — a KRÓM világosszürkéje, NEM
@@ -597,6 +604,7 @@ QtObject {
     readonly property color trayTokenHighlight: tema._szin("trayTokenHighlight", nyersTokenek.trayTokenHighlight)
     readonly property color trayTokenHighlightText: tema._szin("trayTokenHighlightText", nyersTokenek.trayTokenHighlightText)
     readonly property color viewerBg: tema._szin("viewerBg", nyersTokenek.viewerBg)
+    readonly property color viewerFocusBadgeBg: tema._szin("viewerFocusBadgeBg", nyersTokenek.viewerFocusBadgeBg)
     readonly property color captionBar: tema._szin("captionBar", nyersTokenek.captionBar)
     readonly property color captionBarText: tema._szin("captionBarText", nyersTokenek.captionBarText)
     readonly property color captionToggleBg: tema._szin("captionToggleBg", nyersTokenek.captionToggleBg)

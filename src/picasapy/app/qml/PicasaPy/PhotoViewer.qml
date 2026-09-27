@@ -1039,9 +1039,21 @@ Rectangle {
             Layout.fillWidth: true
             height: 46
             color: Theme.chromeBg
+            //: #3663 (átnézés, 2. kör): ez a csoport (Vissza a
+            //: könyvtárhoz + a két feltételes szerkesztő-gomb) a sáv BAL
+            //: szélén marad — csak a NAVIGÁTOR-csoport (lent) igazodik a
+            //: fotóterület közepéhez. Korábban EGY közös `RowLayout`
+            //: `anchors.fill: parent`-tel + egyetlen `Layout.fillWidth`
+            //: kitöltővel tolta a navigátor-csoportot jobbra — ez a
+            //: `Item` a placeholder-hármassal együtt a sáv JOBB SZÉLÉRE
+            //: tolta az egészet, nem a fotóterület közepére (a
+            //: tulajdonos e köri kifogása).
             RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 8; anchors.rightMargin: 8
+                id: viewerTopBarLeftGroup
+                objectName: "viewerTopBarLeftGroup"
+                anchors.left: parent.left
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
                 spacing: 8
                 // #1993: a MÉRT alak — ikonos, KÉTSOROS gomb.
                 //
@@ -1121,76 +1133,52 @@ Rectangle {
                     visible: viewer.currentIsSavedMovie
                     onClicked: viewer.editMovieRequested(viewer.currentFilePath)
                 }
-                Item { Layout.fillWidth: true }
-                //: #3013: a kettős nézet háromszegmenses kapcsolója
-                //: (`editpanel/layout_2up_group`), a mért sorrendben és a
-                //: hivatalos magyar buboréksúgókkal.
-                Row {
-                    objectName: "viewerLayoutGroup"
-                    spacing: 1
-                    LayoutSegment {
-                        objectName: "viewerLayoutOnly1up"
-                        nezo: viewer
-                        mod: "1up"
-                        jel: "▭"
-                        sugo: qsTr("Show only one picture")
-                    }
-                    //: #3014: a MÉRT sorrend `only_1up` · `ab_2up` ·
-                    //: `aa_2up` (a respack `LS`/`MS`/`RS` szegmensrajza,
-                    //: `docs/specs/ui-audit-editor.md` 1. táblája). A
-                    //: #3013 fordítva rakta le a két 2-up szegmenst.
-                    LayoutSegment {
-                        objectName: "viewerLayoutAb"
-                        nezo: viewer
-                        mod: "ab"
-                        jel: "▯▮"
-                        sugo: qsTr("Show two different pictures")
-                    }
-                    LayoutSegment {
-                        objectName: "viewerLayoutAa"
-                        nezo: viewer
-                        mod: "aa"
-                        jel: "▯▯"
-                        sugo: qsTr("Show the same picture twice")
-                    }
-                }
+            }
 
-                //: #3013: `swap_2up_focus` — csak 2-up módban látszik
-                LayoutSegment {
-                    objectName: "viewerSwapFocus"
-                    //: #885: a `.tre` `swap_2up_focus`-én NINCS `mousedown` —
-                    //: felengedésre sül el, a három elrendezés-váltóval
-                    //: ellentétben.
-                    lenyomasra: false
-                    nezo: viewer
-                    mod: ""
-                    jel: "⇄"
-                    sugo: qsTr("Switch focus between the pictures")
-                    visible: viewer.layoutMode !== "1up"
-                    function kattints() {
-                        viewer.aktivOldal =
-                            viewer.aktivOldal === "jobb" ? "bal" : "jobb"
-                    }
-                }
-
-                //: #3014: `swap_2up_layout` — szintén csak 2-up módban
-                //: (`editpanel.tre:1172`, `m_hidden` az alapállapot).
-                LayoutSegment {
-                    objectName: "viewerSwapLayout"
-                    //: #885: a `.tre` `swap_2up_layout`-én NINCS `mousedown` —
-                    //: felengedésre sül el, a három elrendezés-váltóval
-                    //: ellentétben.
-                    lenyomasra: false
-                    nezo: viewer
-                    mod: ""
-                    jel: viewer.fuggolegesElrendezes ? "⬍" : "⬌"
-                    sugo: qsTr("Switch between horizontal and vertical layout")
-                    visible: viewer.layoutMode !== "1up"
-                    function kattints() {
-                        viewer.fuggolegesElrendezes = !viewer.fuggolegesElrendezes
-                    }
-                }
-
+            //: #3663 (átnézés, 2. kör): NEM a navigátor-csoport egészének
+            //: középpontja igazodik a fotóterület közepéhez, hanem a
+            //: FILMSZALAGÉ — mérve (`ui-audit-editor.md` 3/b.1, 1280 px-en):
+            //: Play ~530–620, ◀ ~640–665, filmszalag ~670–885 (középpontja
+            //: ~777, a fotóterület közepe ~780), ▶ vége 917, A|AB|AA
+            //: szegmens 933–1047, fókuszváltó 1057–1091, elrendezés-váltó
+            //: 1096–1130. A csoport a filmszalag UTÁN nagyobb tömeget visz
+            //: (a három kapcsoló + két segédgomb), tehát a csoport SAJÁT
+            //: középpontja NEM esik egybe a fotóterületével — csak a
+            //: filmszalagé. A `Math.max` az `viewerTopBarLeftGroup`-ba
+            //: ütközést zárja ki keskeny ablaknál, a `Math.min` a sáv jobb
+            //: szélén való túlfutást.
+            RowLayout {
+                id: viewerNavigatorRow
+                objectName: "viewerNavigatorRow"
+                anchors.verticalCenter: viewerTopBar.verticalCenter
+                //: #3663 (átnézés, 2. kör): 5 px — a referencián mért
+                //: rések (5/10/16 px, `ui-audit-editor.md` 3/b.1)
+                //: átlagához közelebb áll, mint az eredeti `RowLayout`
+                //: 8 px-es alapértelmezése; 1280 px-en, öt fotós mappával
+                //: mérve mind a négy vizsgált szakasz (▶ vége, szegmens,
+                //: fókuszváltó, elrendezés-váltó) ±8 px-en belülre esik.
+                spacing: 5
+                //: ⚠️ a `photoArea.x` a SAJÁT szülőjéhez (a „fő
+                //: képterület” `Rectangle`-höz) képest helyi — az a
+                //: `leftDrawer` UTÁN áll ugyanabban a `RowLayout`-ban,
+                //: tehát a `viewerTopBar`-ral KÖZÖS (a felső `ColumnLayout`
+                //: gyökeréig visszavezethető) koordinátához a
+                //: `leftDrawer.width`-öt hozzá kell adni. Enélkül ez a
+                //: sáv pontosan a bal fiók szélességével (280 px) balra
+                //: tér el a fotóterület közepétől — ugyanaz a hibaosztály,
+                //: mint a „Kijelölve” jelvényé (ld. lent a `kepBal`
+                //: kommentjét).
+                readonly property real fototeruletKozepe:
+                    leftDrawer.width + photoArea.x + photoArea.width / 2
+                //: a `filmstrip.x`/`.width` a `filmstrip` SAJÁT (a sorhoz
+                //: képest helyi) pozíciója/szélessége — ebből adódik, hova
+                //: kell tolni a TELJES sort, hogy a szalag közepe essen a
+                //: fotóterület közepére.
+                x: Math.max(
+                       viewerTopBarLeftGroup.x + viewerTopBarLeftGroup.width + 12,
+                       Math.min(
+                           fototeruletKozepe - filmstrip.x - filmstrip.width / 2,
+                           viewerTopBar.width - width - 8))
                 PicasaButton {
                     objectName: "viewerPlayButton"
                     text: "▶ " + qsTr("Play")
@@ -1342,40 +1330,130 @@ Rectangle {
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
                 }
-                Item { Layout.fillWidth: true }
-                // #6: A/AB/AA összehasonlító nézetek — placeholder (a
-                // szerkesztő-összevetés a 2. fázisban élesedik)
-                //
-                // ⚠️ #1857: a buboréksúgó szövege KI VAN TÉVE, de amíg a
-                // gomb `enabled: false`, a Qt nem ad neki `hovered`-et,
-                // tehát a felhasználó nem látja. Ez nem hiba: a #434
-                // élesítésekor a súgó magától megjelenik, és a mért
-                // eredeti szöveg addig sem vész el.
-                PicasaButton {
-                    objectName: "compareButtonA"
-                    text: "A"; enabled: false
-                    Layout.preferredWidth: 28
-                    //: Az eredeti `only_1up_toggle` felirata.
-                    ToolTip.text: qsTr("View only one image")
-                    ToolTip.visible: hovered
-                    ToolTip.delay: Theme.tooltipDelay
+
+                //: #3663: a mért sorrend a filmszalag és a ▶ UTÁN áll — a
+                //: #3013 tévesen a Play/◀/szalag/▶ csoport ELÉ tette (a
+                //: bináris `editpanel.tre` 1280 px-en: ▶ vége x 917,
+                //: szegmens 933–1047, fókuszváltó 1057–1091,
+                //: elrendezés-váltó 1096–1130 — mind a szalag JOBB oldalán).
+                //:
+                //: #3013: a kettős nézet háromszegmenses kapcsolója
+                //: (`editpanel/layout_2up_group`), a mért sorrendben és a
+                //: hivatalos magyar buboréksúgókkal.
+                Row {
+                    objectName: "viewerLayoutGroup"
+                    //: #3663 (átnézés, 2. kör): a szegmens-hármas MÉRT
+                    //: teljes szélessége 114 px (933–1047) — a `spacing:0`
+                    //: és a 38 px-es szegmensszélesség adja ki pontosan
+                    //: (3 × 38 = 114); korábban 26 px-es szegmensekkel és
+                    //: 1 px réssel csak 80 px volt, alig olvashatóan apró.
+                    spacing: 0
+                    //: #3663: a KIRAJZOLT referencián (`Colab EN 33`, a
+                    //: felső sáv 933–970 px-es szegmense nagyítva) egy
+                    //: vékony szegélyű, önálló KERETES BETŰ áll a
+                    //: szegmensben — ez a `respack.yt` `only_1up_icon`
+                    //: (20×15) rétegével egyezik. A #3013 plain szöveget
+                    //: (`jel: "A"`) adott, amit csak az AKTÍV/hover
+                    //: állapotban kapott a `LayoutSegment` saját kerete —
+                    //: alapállapotban tehát nem volt keret, ellentétben a
+                    //: referenciával. Az `ikon` a `jel`-t váltja.
+                    LayoutSegment {
+                        objectName: "viewerLayoutOnly1up"
+                        nezo: viewer
+                        mod: "1up"
+                        width: 38
+                        ikon: "icons/viewer-layout-a.svg"
+                        sugo: qsTr("Show only one picture")
+                    }
+                    //: #3014: a MÉRT sorrend `only_1up` · `ab_2up` ·
+                    //: `aa_2up` (a respack `LS`/`MS`/`RS` szegmensrajza,
+                    //: `docs/specs/ui-audit-editor.md` 1. táblája). A
+                    //: #3013 fordítva rakta le a két 2-up szegmenst.
+                    //:
+                    //: #3663: `ab_2up_icon` (27×15) — a referencián (a
+                    //: felső sáv 970–1010 px-es szegmense) KÉT KÜLÖN
+                    //: keretes betű áll egymás mellett, kis réssel: „A" |
+                    //: „B" — nem egyetlen, válaszvonallal kettéosztott
+                    //: doboz.
+                    LayoutSegment {
+                        objectName: "viewerLayoutAb"
+                        nezo: viewer
+                        mod: "ab"
+                        width: 38
+                        ikon: "icons/viewer-layout-ab.svg"
+                        sugo: qsTr("Show two different pictures")
+                    }
+                    //: #3663: `aa_2up_icon` (27×15) — az `ab_2up_icon`
+                    //: ikerpárja, „A" | „A" felirattal.
+                    LayoutSegment {
+                        objectName: "viewerLayoutAa"
+                        nezo: viewer
+                        mod: "aa"
+                        width: 38
+                        ikon: "icons/viewer-layout-aa.svg"
+                        sugo: qsTr("Show the same picture twice")
+                    }
                 }
-                PicasaButton {
-                    objectName: "compareButtonAB"
-                    text: "AB"; enabled: false
-                    Layout.preferredWidth: 32
-                    ToolTip.text: qsTr("View two different images")
-                    ToolTip.visible: hovered
-                    ToolTip.delay: Theme.tooltipDelay
+
+                //: #3013: `swap_2up_focus` — csak 2-up módban látszik
+                //: #3663 (átnézés, 2. kör): MÉRT szélesség 34 px (1057–1091)
+                //: — a korábbi 26 px alig volt olvasható/kattintható.
+                LayoutSegment {
+                    objectName: "viewerSwapFocus"
+                    //: #885: a `.tre` `swap_2up_focus`-én NINCS `mousedown` —
+                    //: felengedésre sül el, a három elrendezés-váltóval
+                    //: ellentétben.
+                    lenyomasra: false
+                    nezo: viewer
+                    mod: ""
+                    width: 34
+                    //: #3663: a jegy „felismerhetetlen"-nek jelezte a
+                    //: korábbi szövegjelet (`⇄`) — most a mért rajz (ld.
+                    //: `ui-audit-editor.md` 3/b.2) szerinti saját ikon.
+                    ikon: "icons/viewer-swap-focus.svg"
+                    sugo: qsTr("Switch focus between the pictures")
+                    visible: viewer.layoutMode !== "1up"
+                    function kattints() {
+                        viewer.aktivOldal =
+                            viewer.aktivOldal === "jobb" ? "bal" : "jobb"
+                    }
                 }
-                PicasaButton {
-                    objectName: "compareButtonAA"
-                    text: "AA"; enabled: false
-                    Layout.preferredWidth: 32
-                    ToolTip.text: qsTr("View the same image twice")
-                    ToolTip.visible: hovered
-                    ToolTip.delay: Theme.tooltipDelay
+
+                //: #3014: `swap_2up_layout` — szintén csak 2-up módban
+                //: (`editpanel.tre:1172`, `m_hidden` az alapállapot).
+                //: #3663 (átnézés, 2. kör): MÉRT szélesség 34 px
+                //: (1096–1130).
+                LayoutSegment {
+                    objectName: "viewerSwapLayout"
+                    //: #885: a `.tre` `swap_2up_layout`-én NINCS `mousedown` —
+                    //: felengedésre sül el, a három elrendezés-váltóval
+                    //: ellentétben.
+                    lenyomasra: false
+                    nezo: viewer
+                    mod: ""
+                    width: 34
+                    //: #3663: a jegy „felismerhetetlen"-nek jelezte a
+                    //: korábbi szövegjelet (`⬌`/`⬍`) — most a mért rajz
+                    //: (ld. `ui-audit-editor.md` 3/b.2) szerinti saját ikon.
+                    ikon: "icons/viewer-swap-layout.svg"
+                    sugo: qsTr("Switch between horizontal and vertical layout")
+                    visible: viewer.layoutMode !== "1up"
+                    function kattints() {
+                        viewer.fuggolegesElrendezes = !viewer.fuggolegesElrendezes
+                    }
                 }
+
+                //: #3663: a korábbi `compareButtonA/AB/AA` letiltott
+                //: placeholder-hármas (`#6`/`#1857`, a szerkesztés-
+                //: összevetés 2. fázisára szánva) TÖRÖLVE — a referencia
+                //: (`Colab EN 33`–`35`) nem mutat ilyen sort a kettős nézet
+                //: fejlécén, és a valódi A/AB/AA váltó
+                //: (`viewerLayoutOnly1up/Ab/Aa`, fent) régóta megvan. A
+                //: placeholderek ELŐTT itt álló kitöltő `Item` is velük
+                //: távozott: az a spacer ŐKET tolta a sáv jobb szélére, a
+                //: `viewerSwapLayout` UTÁN maradva viszont pont az
+                //: ELLENKEZŐJÉT érte volna el — saját magát tolta volna a
+                //: szélre, a segédgombokat pedig balra, a középre.
             }
         }
 
@@ -1798,41 +1876,22 @@ Rectangle {
                         asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true
                         sourceSize.width: 2560
-                    }
 
-                    //: #3013: a „Kijelölve" jelvény az AKTÍV oldalon
-                    Rectangle {
-                        objectName: "viewerFocusBadge"
-                        visible: viewer.layoutMode !== "1up"
-                        width: jelvenySzoveg.implicitWidth + 12
-                        height: 18
-                        radius: 2
-                        color: Theme.selectionBlue
-                        //: #3014: a jelvény az AKTÍV FELET jelöli — a
-                        //: `swap_2up_layout` állásától függően bal/jobb
-                        //: vagy fent/lent (a spec 4. táblájának négy
-                        //: helyzet-gombja ugyanezt a két tengelyt méri).
-                        anchors.top: viewer.fuggolegesElrendezes
-                            ? (viewer.aktivOldal === "bal"
-                               ? parent.top : undefined)
-                            : parent.top
-                        anchors.bottom: viewer.fuggolegesElrendezes
-                            && viewer.aktivOldal === "jobb"
-                            ? parent.bottom : undefined
-                        anchors.horizontalCenter: viewer.fuggolegesElrendezes
-                            ? parent.horizontalCenter : undefined
-                        anchors.left: !viewer.fuggolegesElrendezes
-                            && viewer.aktivOldal === "bal"
-                            ? parent.left : undefined
-                        anchors.right: !viewer.fuggolegesElrendezes
-                            && viewer.aktivOldal === "jobb"
-                            ? parent.right : undefined
-                        Text {
-                            id: jelvenySzoveg
-                            anchors.centerIn: parent
-                            text: qsTr("Selected")
-                            font.pixelSize: Theme.fontSize - 2
-                            color: "#ffffff"
+                        //: #3663: a képre kattintás a BAL/FELSŐ felet
+                        //: aktiválja — a `swap_2up_focus` gomb ugyanezt
+                        //: teszi (ld. `ui-audit-editor.md` 3/b.4). Csak
+                        //: 2-up módban hat, és csak akkor, ha épp nincs
+                        //: aktív rajzos szerkesztő-eszköz a képen (azok
+                        //: kattintása MÁST jelent — célpont, minta, pötty).
+                        TapHandler {
+                            enabled: viewer.layoutMode !== "1up"
+                                && !editorPanel.cropActive
+                                && !editorPanel.redeyeActive
+                                && !editorPanel.retouchActive
+                                && !editorPanel.textActive
+                                && !editorPanel.neutralPickerActive
+                                && !paintMaskArea.aktiv
+                            onTapped: viewer.aktivOldal = "bal"
                         }
                     }
 
@@ -1914,6 +1973,19 @@ Rectangle {
                         asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true   // EXIF-orientáció
                         sourceSize.width: 2560
+
+                        //: #3663: a képre kattintás a JOBB/ALSÓ felet
+                        //: aktiválja — ld. a `photoElotte`-n lévő párját.
+                        TapHandler {
+                            enabled: viewer.layoutMode !== "1up"
+                                && !editorPanel.cropActive
+                                && !editorPanel.redeyeActive
+                                && !editorPanel.retouchActive
+                                && !editorPanel.textActive
+                                && !editorPanel.neutralPickerActive
+                                && !paintMaskArea.aktiv
+                            onTapped: viewer.aktivOldal = "jobb"
+                        }
                     }
 
                     // GPU élő-előnézet (#22): a `photo` FÖLÖTT, csak akkor
@@ -2556,6 +2628,84 @@ Rectangle {
                         }
                     }
                 }
+
+                //: #3663: a „Kijelölve” jelvény — a KÉPEN KÍVÜL, a szürke
+                //: margóban, a fókuszban lévő fél mellett, az osztó felőli
+                //: oldalon (mérve: `docs/specs/ui-audit-editor.md` 3/b.3,
+                //: élőben újramérve a `Colab EN 33`–`35` referenciákon).
+                //: A #3013 a `photoArea` GYEREKEként, a `photo` ELÉ tette —
+                //: ezért időnként a kép ALÁ került (a `photo` később
+                //: rajzolódott rá), és a `photoArea` `clip: true`-ja levágta
+                //: volna, ha a margóba lógna. Itt, a `photoArea` UTÁN,
+                //: TESTVÉRKÉNT áll: garantáltan a kép fölött rajzolódik, és
+                //: nem vágja le semmi.
+                Rectangle {
+                    objectName: "viewerFocusBadge"
+                    visible: viewer.layoutMode !== "1up"
+                    //: #3663: MÉRT méret (`Colab EN 33`, 1280×1024): 86×26,
+                    //: enyhén lekerekített — NEM kapszula (a #3013 `height/2`
+                    //: sugara azt adott).
+                    width: 86
+                    height: 26
+                    radius: 4
+                    color: Theme.viewerFocusBadgeBg
+
+                    //: #3663: a helyet a KIRAJZOLT kép téglalapjából
+                    //: számoljuk (`paintedWidth`/`paintedHeight`), NEM a
+                    //: befoglaló `photoElotte`/`photo` dobozból — az utóbbi
+                    //: a `photoArea` felét kapja, de a kép azon belül
+                    //: KÖZÉPRE igazítva, letterboxolva jelenik meg
+                    //: (`PreserveAspectFit`), tehát a doboz éle és a kép
+                    //: éle jellemzően NEM esik egybe.
+                    readonly property var fokuszKep:
+                        viewer.aktivOldal === "bal" ? photoElotte : photo
+                    //: ⚠️ a `fokuszKep.x`/`.y` a `photoArea`-hoz KÉPEST
+                    //: helyi (a `photo`/`photoElotte` a `photoArea` GYEREKE),
+                    //: a jelvény viszont a `photoArea` TESTVÉRE — tehát a
+                    //: KÖZÖS szülőhöz képesti koordinátához a `photoArea`
+                    //: saját eltolását is hozzá kell adni. Enélkül a jelvény
+                    //: pontosan a `photoArea` margójával (itt 14 px) tér el
+                    //: a várt helytől — ez okozta az első verzió 14 px-es
+                    //: eltérését minden mért esetben.
+                    readonly property real kepBal: photoArea.x + fokuszKep.x
+                        + (fokuszKep.width - fokuszKep.paintedWidth) / 2
+                    readonly property real kepJobb: kepBal + fokuszKep.paintedWidth
+                    readonly property real kepFent: photoArea.y + fokuszKep.y
+                        + (fokuszKep.height - fokuszKep.paintedHeight) / 2
+                    readonly property real kepLent: kepFent + fokuszKep.paintedHeight
+
+                    //: #3663: a `Colab EN 33`/`34` (vízszintes) és `35`
+                    //: (függőleges) referenciákon mért rés — mindkét
+                    //: elrendezésben ugyanaz a két állandó adja vissza a
+                    //: mért 60/62/27/61/26 px-es réseket: a KÉPEK SÍKJÁVAL
+                    //: PÁRHUZAMOS tengelyen (vízszintesben az osztó felé,
+                    //: függőlegesben a bal margó felé) ~61 px, a MERŐLEGES
+                    //: tengelyen (vízszintesben fölfelé a margóba,
+                    //: függőlegesben az osztó felé) ~27 px.
+                    readonly property int parhuzamosRes: 61
+                    readonly property int merolegesRes: 27
+
+                    x: viewer.fuggolegesElrendezes
+                        ? kepBal - width - parhuzamosRes
+                        : (viewer.aktivOldal === "bal"
+                           ? kepJobb - parhuzamosRes - width
+                           : kepBal + parhuzamosRes)
+                    y: viewer.fuggolegesElrendezes
+                        ? (viewer.aktivOldal === "bal"
+                           ? kepLent - merolegesRes - height
+                           : kepFent + merolegesRes)
+                        : kepFent - height - merolegesRes
+
+                    Text {
+                        id: jelvenySzoveg
+                        anchors.centerIn: parent
+                        text: qsTr("Selected")
+                        font.pixelSize: Theme.fontSize - 2
+                        font.bold: true
+                        color: "#ffffff"
+                    }
+                }
+
                 // #6: nagyított képen húzással pásztázás; dupla katt = fit.
                 // Illesztett nézetben inaktív — az események átmennek rajta.
                 MouseArea {

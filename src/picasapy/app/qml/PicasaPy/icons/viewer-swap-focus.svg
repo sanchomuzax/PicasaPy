@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 15" width="21" height="15">
+  <!-- PicasaPy sajat rajz (#3663): a `swap_2up_focus` ikonja.
+
+       A jegy szerint az eredeti ikon (`respack.yt`, `swap_2up_focus_icon`,
+       21 x 15) felismerhetetlen szoveggliffel (`⇄`) volt helyettesitve.
+       A meres (`docs/specs/ui-audit-editor.md` 3/b.2) a rajzot igy irja
+       le: "ketteosztott keret, a valaszvonalon at vizszintes ketfeju
+       nyil" - ket kepkeret egy fuggoleges valasztovonallal, a
+       valasztovonalon at egy vizszintes, mindket iranyba mutato nyil.
+
+       A pontos pixelrajz a binarisbol nem all rendelkezesre (nincs
+       merokep ehhez a sessionhoz) - ez SAJAT rajz a leiras alapjan, a
+       toolbar tobbi ikonjaval azonos szurke tonusban (#5D5D5D). -->
+  <rect x="0.5" y="0.5" width="9" height="14" rx="1" fill="none" stroke="#5D5D5D" stroke-width="1"/>
+  <rect x="11.5" y="0.5" width="9" height="14" rx="1" fill="none" stroke="#5D5D5D" stroke-width="1"/>
+  <path d="M4 7.5 L8.5 4.5 L8.5 6.5 L12.5 6.5 L12.5 4.5 L17 7.5 L12.5 10.5 L12.5 8.5 L8.5 8.5 L8.5 10.5 Z"
+        fill="#5D5D5D"/>
+</svg>
