@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.588] – 2026-09-27
+
 ### Javítva
 - **A Képek biztonsági mentésének „Lemezre írás” gombja nagy, hálózati
   meghajtón lévő gyűjteménynél sem fagyasztja le az ablakot (#3645).** A
