@@ -114,11 +114,31 @@ réteget, és nem nyúl a fájlhoz (`EditController.applyCrop`). Erről az
 eredetiről nincs adatunk; óvatossági döntés, ami semmit nem dob el, viszont
 megakadályozza, hogy a lánc minden felesleges gombnyomástól hízzon.
 
-### `bw` = Rec.601 luma
+### `bw` = egész luma: `(77·R + 151·G + 28·B) >> 8` (2026-09-27, #3613)
 
-Mért súlyok az RGB rámpákból: R **0,3005**, G **0,5877**, B **0,1102**
-(Σ=0,998) → a szabványos Rec.601 együtthatók (0,299 / 0,587 / 0,114).
-Implementáció: `gray = 0.299·R + 0.587·G + 0.114·B`, csatornánként visszaírva.
+*Forrás: a `bw` callback `0x008f84c0` · a telítetlenítő `0x009a9550` · élő export (picasa-colab-jobs #43).*
+
+A callback a képet a `0x009a9550` telítetlenítővel dolgozza fel, **`w = 0x100`** súllyal (`push 0x100` @ `0x008f8500`, hívás `0x008f850e`). Előtte a `0x009aabf0` csak sormásolást végez (`call 0xbf2350`, memcpy). A telítetlenítő ugyanaz, mint a `tint` 1. lépése (lent, „A TELJES csővezeték”):
+
+```
+Y = (77·R + 151·G + 28·B) >> 8          ; csonkítva
+C = C + (((Y − C) · w) >> 8)            ; w = 256  ⇒  C = Y
+```
+
+⇒ **`bw = (77·R + 151·G + 28·B) >> 8`, mindhárom csatornára.** Nem lebegőpontos Rec.601, és nem kerekített.
+
+**Mérve:** a Colab-gépen futó angol Picasa 3.9.141 exportja (`bw=1;`, a szintetikus `color_patches`, 800 × 800, JPEG 100, 4:4:4):
+
+| modell | eltérő képpont | legnagyobb eltérés |
+|---|---:|---:|
+| a mai `rint(0,299·R + 0,587·G + 0,114·B)` (`render/color.py::apply_bw`) | 37,5 % | 2 szint |
+| **`(77·R + 151·G + 28·B) >> 8`** | **0** | **0** |
+
+A mai modell a kék foltot 29-re viszi, a Picasa 27-re. A sárgát 226-ra, a Picasa 227-re. A cián 179, a bíbor 105, a Picasáé 178 és 104.
+
+~~Korábban: a rámpákból mért súlyok (R 0,3005, G 0,5877, B 0,1102) alapján a szabványos Rec.601-et vettük át.~~ A mérés nem zárta ki a 77/151/28 egész súlyokat (77/256 = 0,3008, 151/256 = 0,5898, 28/256 = 0,1094); a folt-mérés dönt köztük.
+
+*Bizonyítottsági fok: **megerősített**, a binárisból és a teljes képen bitre egyező élő exportból.*
 
 ### `finetune2=1,p1,p2,p3,p4,p5` — mind az 5 paraméter azonosítva
 
