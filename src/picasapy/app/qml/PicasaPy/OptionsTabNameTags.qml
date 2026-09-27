@@ -35,7 +35,22 @@ ColumnLayout {
         PicasaSlider { objectName: "optionsFaceClusterThresholdSlider"; from: 50; to: 95 }
     }
     CheckBox { objectName: "optionsFacePersistToFileCheck"; text: qsTr("Store name tags in the file") }
-    CheckBox { objectName: "optionsFaceUploadContactPhotosCheck"; text: qsTr("Upload contact thumbnails to Google Contacts") }
+    CheckBox {
+        objectName: "optionsFaceUploadContactPhotosCheck"
+        text: qsTr("Upload contact thumbnails to Google Contacts")
+        // #3661: a hivatalos magyar felirat hosszabb az ablak legkisebb
+        // szélességénél — tördelődik, nem tolja ki a fület (a #3572 mintája)
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        contentItem: Text {
+            leftPadding: parent.indicator.width + parent.spacing
+            text: parent.text
+            font: parent.font
+            color: parent.palette.windowText
+            wrapMode: Text.WordWrap
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
 
     Item { Layout.fillHeight: true }
 }

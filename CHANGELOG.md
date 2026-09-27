@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Beállítások ablak fülei elférnek, keskeny ablakban pedig görgethetők
+  (#3661).** Megnyitáskor mind a 8 magyar fülcím teljesen látszik. Ha az
+  ablakot a legkisebb szélességre húzza, a fülsor két nyíllal görgethető, a
+  kiválasztott fül mindig egészben látszik, és egyik fülön sem lóg ki semmi:
+  a hosszú feliratok több sorba törnek.
+
 ## [0.8.589] – 2026-09-27
 
 ### Javítva

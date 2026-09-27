@@ -257,6 +257,21 @@ ColumnLayout {
             objectName: "optionsUsageStatsCheck"
             text: qsTr("Send anonymous usage statistics")
             enabled: false
+            // #3661: a hivatalos magyar felirat („Névtelen használati
+            // statisztikák küldése a Google részére") 455 px-es implicit
+            // szélessége a legkisebb ablakon (456 px) 1 px-es tartalékkal
+            // fért csak el — a #3572 mintája szerint tördelődik, hogy ne
+            // legyen betűkészlet-függő élen egyensúlyozó méret.
+            Layout.fillWidth: true
+            Layout.preferredWidth: 0
+            contentItem: Text {
+                leftPadding: parent.indicator.width + parent.spacing
+                text: parent.text
+                font: parent.font
+                color: parent.palette.windowText
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+            }
         }
     }
 
