@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az Éjjellátó, a Holga-szerű, a Kinemaszkóp és a 60-as évek szemcséje
+  képpontra ugyanaz a minta lett, mint a Picasában (#3736).** A zajt eddig
+  saját véletlengenerátor adta, ezért a szemcse mintázata eltért az
+  eredetitől; most a Picasa saját generátorát számoljuk, ugyanazzal a
+  kezdőértékkel. Az eltérés a Picasa képeitől (ΔE, kisebb a jobb):
+  Éjjellátó 11,70 → 4,63 (leggyengébb állása 5,44 → 3,67), Holga-szerű
+  1,48 → 0,89, Kinemaszkóp 2,15 → 1,37, 60-as évek 1,29 → 1,18
+  (halványítás nélkül 1,44 → 1,26). A Filmszemcse nem változott.
+
 ## [0.8.599] – 2026-09-27
 
 ### Javítva
@@ -73,6 +83,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   egyszerűen bezárul. A „Ne kérdezzen újból” jelölővel a módosítások a
   jövőben kérdés nélkül alkalmazódnak.
 
+### Javítva
+- **A felső eszköztár az eredeti Picasa szerint rendeződik (#3603).** Az
+  Importálás, az Új album és a nézetváltó gombok az eredeti helyükön állnak,
+  és keskeny ablakban sem tűnnek el. A szűrők és a keresőmező az ablakkal
+  együtt mozognak, a keresőmező kitölti a jobb oldalt egészen a
+  verziószámig. A verziószám rövidebb lett; a teljes változat a
+  buboréksúgóban olvasható.
+
 ## [0.8.592] – 2026-09-27
 
 ### Hozzáadva
@@ -126,15 +144,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A „Kijelölve” jelzés szürke, a kiválasztott kép mellett, a kép fölött
   áll, és nem kerül a kép mögé; a másik képre kattintva a kijelölés átvált
   rá.
-<<<<<<< HEAD
-- **A felső eszköztár az eredeti Picasa szerint rendeződik (#3603).** Az
-  Importálás, az Új album és a nézetváltó gombok az eredeti helyükön állnak,
-  és keskeny ablakban sem tűnnek el. A szűrők és a keresőmező az ablakkal
-  együtt mozognak, a keresőmező kitölti a jobb oldalt egészen a
-  verziószámig. A verziószám rövidebb lett; a teljes változat a
-  buboréksúgóban olvasható.
-=======
->>>>>>> origin/claude/picasapy-issue-3651-zls8dt
 
 ## [0.8.588] – 2026-09-27
 

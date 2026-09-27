@@ -16,7 +16,7 @@ from picasapy.render.glimmer_ops import (
     BLEND_MODE_BY_INDEX,
     alpha_blend,
     apply_blend_mode,
-    apply_noise,
+    apply_uniform_noise,
     fade_alpha,
     resize_image,
     simple_color_matrix,
@@ -103,7 +103,7 @@ def _grain_seed(seed: int | None) -> int:
 
     A `secrets`-et SZÁNDÉKOSAN nem használjuk: nem biztonsági kérdés, és a
     `random.randrange` elég. A `np.random.default_rng` viszont `None`-ra is
-    saját entrópiát venne — de akkor a `noise_layer` docstringjének
+    saját entrópiát venne — de akkor az `uniform_noise_layer` docstringjének
     determinizmus-ígérete válna hamissá, ezért a magot ITT állítjuk elő, és
     a réteg továbbra is „adott mag → adott zaj" marad.
     """
@@ -143,7 +143,7 @@ def apply_picnik_grain(
         low, high, mode = 0.0, 2.55 * grain, "lighten"
     else:
         low, high, mode = 255.0 - 2.55 * grain, 255.0, "darken"
-    return apply_noise(
+    return apply_uniform_noise(
         image,
         seed=_grain_seed(seed),
         low=low,
