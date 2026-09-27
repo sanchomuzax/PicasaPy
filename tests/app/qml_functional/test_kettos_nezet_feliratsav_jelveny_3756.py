@@ -236,29 +236,35 @@ class TestAJelvenyFuggolegesen:
 
 
 class TestANegyzetesKepHelyeValtozatlan:
-    """A #3663 mért elrendezése négyzetes képnél KÉPPONTRA marad: a
-    jelvény helyfoglalása csak akkor mozdít a képen, ha a kép saját margója
-    nem elég (a számok a javítás előtti változat mérései, 1280×1024)."""
+    """A #3663 mért elrendezése négyzetes képnél változatlan: ha a kép saját
+    margója elég, a jelvény helyfoglalása nem mozdít a képen — a kép a saját
+    keretének KÖZEPÉN áll (a main-en mért viselkedés), a jelvény pedig a mért
+    61/27 px-es résre kerül. Abszolút koordinátát a teszt nem vár: a
+    fotóterület magassága a betűkészlettől függ (a CI DejaVu betűjével 2,5 px-
+    szel más, mint helyben), a középre állás és a rés viszont nem."""
+
+    @staticmethod
+    def _kozepen(kep: dict, keret: dict) -> None:
+        assert abs((kep["fent"] - keret["fent"]) - (keret["lent"] - kep["lent"])) <= 1.0, (kep, keret)
+        assert abs((kep["bal"] - keret["bal"]) - (keret["jobb"] - kep["jobb"])) <= 1.0, (kep, keret)
 
     def test_vizszintes(self, qml_app_negyzet_kepek, qt_app):
         window = qml_app_negyzet_kepek[0]
         _elrendez(window, qt_app, oldal="bal", fuggoleges=False)
         m = _meres(window, "bal")
-        assert m["bal_kep"] == {"bal": 294.0, "fent": 250.5,
-                                "jobb": 776.0, "lent": 732.5}
-        assert m["jobb_kep"] == {"bal": 784.0, "fent": 250.5,
-                                 "jobb": 1266.0, "lent": 732.5}
-        assert m["jelveny"] == {"bal": 629.0, "fent": 197.5,
-                                "jobb": 715.0, "lent": 223.5}
+        self._kozepen(m["bal_kep"], _elem_teglalap(_gyerek(window, "viewerImageElotteKeret")))
+        self._kozepen(m["jobb_kep"], _elem_teglalap(_gyerek(window, "viewerImageKeret")))
+        assert m["bal_kep"]["fent"] == m["jobb_kep"]["fent"]
+        parh, merol = _res(m, "bal", fuggoleges=False)
+        assert abs(parh - 61) <= 1 and abs(merol - 27) <= 1, (parh, merol)
 
     def test_fuggoleges(self, qml_app_negyzet_kepek, qt_app):
         window = qml_app_negyzet_kepek[0]
         _elrendez(window, qt_app, oldal="bal", fuggoleges=True)
         m = _meres(window, "bal")
-        assert m["bal_kep"] == {"bal": 583.5, "fent": 94.0,
-                                "jobb": 976.5, "lent": 487.0}
-        assert m["jelveny"] == {"bal": 436.5, "fent": 434.0,
-                                "jobb": 522.5, "lent": 460.0}
+        self._kozepen(m["bal_kep"], _elem_teglalap(_gyerek(window, "viewerImageElotteKeret")))
+        parh, merol = _res(m, "bal", fuggoleges=True)
+        assert abs(parh - 61) <= 1 and abs(merol - 27) <= 1, (parh, merol)
 
 
 # -- a feliratsáv és a csillag -------------------------------------------------
