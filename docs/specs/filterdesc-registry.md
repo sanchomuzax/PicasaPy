@@ -5202,12 +5202,25 @@ Utána `(px & mask) | alphaOr`: a `channelOptions` 0. bitje az R-t, az 1. a G-t,
 
 A maradék képpontonként 3–5 szint, az átlagos eltérés −0,2 (torzítatlan). **A `PicnikGrain` is determinisztikus (mérve 2026-09-27, #3757).** A #907 „két alkalmazás független mintát ad” mérése a **natív, kisbetűs `grain`** szűrőre vonatkozott (`grain=1;` és `grain=1;grain=1;`, callback `0x008f88e0`). A Glimmer `PicnikGrain` leírója rögzített `randomSeed="1"`-et ad. A 684-es exporton a szürke ágú Picasa-MT `randomSeed = 1`-gyel és a leíró szerinti Multiply móddal (`BlendMode` 5):
 
-| eset | a mai kód (véletlen mag, Darken) | Multiply + numpy-zaj | Darken + Picasa-MT | **Multiply + Picasa-MT** |
+| eset | a javítás előtti kód (véletlen mag, Darken) | Multiply + numpy-zaj | Darken + Picasa-MT | **Multiply + Picasa-MT** |
 |---|---:|---:|---:|---:|
 | alap (Grain 10) | 3,009 | 1,968 | 2,967 | **0,882** |
 | max (Grain 50) | 18,634 | 9,645 | 9,167 | **1,380** |
 
 Mindkét tényező kell, és a nagy ugrás csak a rögzített maggal jön: a zajminta tehát egyezik. A világosító ág (Screen, `BlendMode` 7) exportja nincs a készletben. Fejlesztés: #3757.
+
+**Nálunk (#3757, #3444):** az `apply_picnik_grain` a natív generátort (`nativ_noise`) hívja a rögzített `randomSeed = 1`-gyel, és a módot a sorszámmal adja át (7 Screen / 5 Multiply). Újramérve a beépítés után (`analyze_validation_kit.mean_de`):
+
+| eset | előtte | utána |
+|---|---:|---:|
+| 684 `picnikgrain__alap` (Grain 10) | 3,009 | **0,882** |
+| 684 `picnikgrain__max` (Grain 50) | 12,21 ¹ | **1,380** |
+| 684 `picnikgrain__min` (Grain 0) | 0,121 | 0,121 |
+| merokit-2 `szemcse_04` (Grain 30, eredeti export `export-202608151438`) | 7,79 | **0,981** |
+
+¹ A fenti táblázat 18,634-et ad a mai kódra; a beépítés előtti újramérés (három futás, véletlen maggal) 12,206–12,214-et adott, egyezésben a #3444 golden-nyilvántartásának 12,217-ével. Az eltérés oka nincs kiderítve; a javítás utáni értéket nem érinti.
+
+A (kimenet − bemenet) különbség csatornánkénti átlaga és szórása (#3444) a `max` esetén: Picasa −33,75/−33,19/−32,97 ± 30,0/29,5/29,6; előtte −13,2/−12,2/−12,2 ± 26,1/25,1/25,3; utána −33,74/−33,19/−32,97 ± 29,95/29,30/29,28. Tesztek: `tests/render/test_picnik_grain_3757.py`. A világosító ág Picasa-exportja továbbra sincs; ott a független referenciához mért bekötés a bizonyíték.
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és a golden-korrelációval.*
 
@@ -7612,7 +7625,7 @@ saját eltérése, külön kérdés.
 
 | effekt | kifejezés | mit ad |
 |---|---|---|
-| `PicnikGrain` | `{_radioLighten.selected?7:5}` | **7 = Screen** (világosító), **5 = Multiply** (sötétítő) — nálunk ma `lighten` / `darken` |
+| `PicnikGrain` | `{_radioLighten.selected?7:5}` | **7 = Screen** (világosító), **5 = Multiply** (sötétítő) — nálunk is (#3444, #3757) |
 | `Pixelate` | `{_sldrBlendMode.value}` | a csúszka értéke = sorszám (E/2) |
 | `PicnikTint` | `{_cbBlendMode.liveValue}` | a `_cbBlendMode` vezérlő **sehol nincs definiálva** a leíróban ⇒ a kifejezés nem értékelhető; a szöveges ág a `BlendMode.` előtag után a `liveValue}` maradékot hasonlítja ⇒ nincs találat ⇒ **mód −1**, csak átlátszóság-keverés. Összhangban a #884 mérésével (tiszta színezés, ΔE 1,50). |
 
@@ -7634,7 +7647,7 @@ helyen), tehát a kiértékelőnek nincs ilyen szimbóluma; az előtag után a
 | alfa a keverés után | 255 | nem kezeljük (RGB-ben dolgozunk) | nincs teendő, amíg a lánc RGB |
 | `IR` ragyogás | Screen | ✅ **Screen** (#3441, v0.8.555) | kész — ΔE 6,04 → 1,28, mérve |
 | `Pixelate` csúszka | sorszám | ✅ **sorszám** (#3443, v0.8.556) — a Difference/Hardlight/Subtract lebegőpontosan | kész — `min`: ΔE 23,31 → 0,78, mérve; az egész képletek és a Softlight: #3442 |
-| `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **MÉRVE (2026-09-27, #3757):** Multiply + a Picasa-MT `randomSeed = 1`-gyel ΔE alap 3,01 → **0,88**, max 18,63 → **1,38**. A zaj NEM véletlen: a #907 a natív `grain` szűrőt mérte |
+| `PicnikGrain` | Screen / Multiply | ✅ **Screen / Multiply**, Picasa-MT `randomSeed = 1` (#3444, #3757) | kész — ΔE alap 3,01 → **0,88**, max 12,21 → **1,38**, merokit-2 Grain 30: 7,79 → **0,98**, mérve. A zaj NEM véletlen: a #907 a natív `grain` szűrőt mérte |
 
 *Bizonyítottsági fok:* a tábla, a kernelek, a keverő és a végrehajtó menete
 **megerősített** (diszasszemblátum + kimerítő bájtpáros próba); a veremszerep
@@ -7649,9 +7662,11 @@ művelet saját fordító-slotjában nincs végigkövetve); az `IR` 7-ese
   KÍVÜL** (egy oszlop, golden-mérés nélkül nem építjük; 337. kör döntése);
 - a `Softlight` `& 0xFE`-je szándékos-e — **LEZÁRVA**: a kód ezt csinálja,
   utánépíteni így kell; a szándék nem kérdés a megvalósításhoz;
-- a `PicnikGrain` hatása a mért eltérésre — **LEZÁRVA mint nem mérhető
-  pixelre**: a mag véletlen (#907); a fejlesztői jegy statisztikai
-  (átlag/szórás) próbát ír elő.
+- a `PicnikGrain` hatása a mért eltérésre — **LEZÁRVA, pixelre mérve**
+  (#3757): a mag NEM véletlen, a leíró `randomSeed = 1`-et ad (a #907 a
+  natív `grain`-t mérte). A Screen/Multiply és a rögzített mag együtt: ΔE
+  alap 3,01 → 0,88, max 12,21 → 1,38; a #3444 statisztikai próbája is
+  teljesül (ld. G).
 
 `0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 

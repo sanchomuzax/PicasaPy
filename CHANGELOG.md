@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Filmszemcse effekt az eredeti Picasa szemcséjét adja: a szemcse
+  mintázata minden alkalommal ugyanaz, mint az eredetiben, és a sötétítő
+  változat szorzással, a világosító vetítéssel (Multiply, ill. Screen)
+  keveri a képre. Az erős állásban az eltérés az eredetitől a töredékére
+  csökkent (#3757, #3444).
+
 ## [0.8.608] – 2026-09-27
 
 ### Javítva

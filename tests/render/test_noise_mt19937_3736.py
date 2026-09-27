@@ -28,9 +28,8 @@ a Picasa-exporthoz):
 | `Cinemascope` alap | 2,152 | **1,367** |
 | `Sixties` alap / min | 1,289 / 1,443 | **1,179 / 1,255** |
 
-A `PicnikGrain` szándékosan a régi, magonként változó numpy-zajon marad
-(#907: két alkalmazás független mintát ad, ami az állandó `randomSeed`-del
-nem fér össze) — ezt a `TestPicnikGrainValtozatlan` őrzi.
+A `PicnikGrain` is ezt a generátort használja, a leíró `randomSeed = 1`-ével
+(#3757) — a tesztjei: `test_picnik_grain_3757.py`.
 """
 
 # rontás-kontroll: a `nativ_noise._MAGVETO_SZORZO` a szabványos 1812433253-ra
@@ -38,8 +37,7 @@ nem fér össze) — ezt a `TestPicnikGrainValtozatlan` őrzi.
 # maszkpróbák, a független referencia, mind a hat golden eset és a
 # korreláció); a bejárás alulról felfelé fordítva (`[::-1]` a húzások
 # rácsán) → 9 failed (`test_sorfolytonos_felulrol_lefele`, a független
-# referencia, a hat golden eset és a korreláció); a `PicnikGrain` a natív
-# `apply_noise`-ra kötve → a `TestPicnikGrainValtozatlan` bukik.
+# referencia, a hat golden eset és a korreláció).
 
 from __future__ import annotations
 
@@ -52,7 +50,6 @@ import pytest
 from picasapy.ini.filters import parse_filters
 from picasapy.render import glimmer_ops as g
 from picasapy.render.chain import apply_filters
-from picasapy.render.glimmer_artistic import apply_picnik_grain
 from picasapy.render.nativ_noise import picasa_mt19937
 
 # ---------------------------------------------------------------------------
@@ -171,20 +168,6 @@ class TestFuggetlenReferencia:
         np.testing.assert_array_equal(szines, vart)
         szurke = g.noise_layer(h, w, 7, 10, 30, True)
         np.testing.assert_array_equal(szurke[..., 0], (huzasok % r + 10).astype(np.float32))
-
-
-class TestPicnikGrainValtozatlan:
-    """#907: a `PicnikGrain` a régi, `numpy`-os egyenletes zajon marad."""
-
-    def test_a_regi_numpy_zajjal_egyezik(self):
-        rng = np.random.default_rng(0)
-        kep = rng.integers(0, 256, size=(12, 16, 3), dtype=np.uint8)
-        grain = 10.0
-        low, high = 255.0 - 2.55 * grain, 255.0
-        sik = np.random.default_rng(1234).uniform(low, high, size=(12, 16)).astype(np.float32)
-        zaj = np.repeat(sik[..., np.newaxis], 3, axis=2)
-        vart = g.to_uint8(g.apply_blend_mode(g.to_float(kep), zaj, "darken", 1.0))
-        np.testing.assert_array_equal(apply_picnik_grain(kep, grain, False, seed=1234), vart)
 
 
 # ---------------------------------------------------------------------------
