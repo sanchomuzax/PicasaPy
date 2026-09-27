@@ -4066,6 +4066,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Biztosan áthelyezi a(z) %1 kijelölt személyt a Mellőzött emberek albumba?</translation>
     </message>
     <message>
+        <source>Don&apos;t ask again, always ignore</source>
+        <translation>Ne kérdezzen újból, mindig hagyja figyelmen kívül</translation>
+    </message>
+    <message>
         <source>Group by face</source>
         <translation>Csoportosítás arcok szerint</translation>
     </message>

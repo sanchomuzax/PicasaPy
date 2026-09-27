@@ -195,3 +195,43 @@ class TestRemoveFace:
         faces = helper.facesFor(str(photo))
         assert len(faces) == 1
         assert faces[0]["name"] == "Béla"
+
+
+class TestRemoveIgnoredFace:
+    """#3670 (B3): a mellőzés visszavétele CSAK a pontos (régió,
+    `ffffffffffffffff`) párt törölheti — a `removeFace` keret alapján
+    töröl, és egy közben elnevezett régiót is vinne."""
+
+    _RECT = "10000000f1ddff49"
+
+    def test_it_removes_the_ffff_pair(self, helper, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            f"[IMG_0001.jpg]\nfaces=rect64({self._RECT}),ffffffffffffffff;\n",
+            encoding="utf-8",
+        )
+        rect = decode_rect64(self._RECT)
+
+        assert helper.removeIgnoredFace(
+            str(photo), rect.left, rect.top, rect.right, rect.bottom
+        )
+
+        assert helper.facesFor(str(photo)) == []
+
+    def test_it_keeps_a_named_face_on_the_same_region(self, helper, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[Contacts2]\n"
+            "8e62b2035b74b477=Roy Avery;;\n"
+            "[IMG_0001.jpg]\n"
+            f"faces=rect64({self._RECT}),8e62b2035b74b477;\n",
+            encoding="utf-8",
+        )
+        rect = decode_rect64(self._RECT)
+
+        assert helper.removeIgnoredFace(
+            str(photo), rect.left, rect.top, rect.right, rect.bottom
+        )
+
+        faces = helper.facesFor(str(photo))
+        assert [face["name"] for face in faces] == ["Roy Avery"]
