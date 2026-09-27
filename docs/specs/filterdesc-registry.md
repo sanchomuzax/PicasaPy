@@ -5139,6 +5139,46 @@ megnevezhető jelöltek.
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
 
+## ✅ A `NoiseImageOperation` véletlengenerátora: MT19937 nem szabványos magvetéssel (2026-09-27, 375. kör, #3736)
+
+*Forrás: apply `0x00bbefa0` · munkavégző `0x00bce8c0` · magvetés `0x00aa28f0` · twist `0x00aa2930` · `mag01` tábla `0x00c782c0` · golden: `684-merokeszlet`.*
+
+**Paraméterek.** Az attribútumok: `randomSeed` (+0x24, alapérték 0), `low` (+0x2c, 0), `high` (+0x34, 255), `channelOptions` (+0x3c, 7) és **`grayscale`** (+0x44, hamis; a binárisban kisbetűs „s”-sel). A `low` és a `high` előjel nélkül ≤ 255-re vágódik (`0x00bce8ce`–`0x00bce8ed`), a tartomány `r = high − low + 1`.
+
+**A generátor: MT19937.** 624 szavas állapot, szabványos twist (`mag01 = {0, 0x9908B0DF}`, M = 397) és szabványos temperálás (`0x00bce9d2`–`0x00bce9f8`). **Egyetlen eltérés a magvetés** (`0x00aa28f0`):
+
+```
+s[0] = randomSeed
+s[i] = 1664525 · (s[i−1] ^ (s[i−1] >> 30)) + i        (i = 1…623; a szabványos szorzó 1812433253)
+index = 624   ⇒ az első húzás twistet vált ki
+```
+
+**Bejárás.** Képpontonként pontosan **egy** 32 bites húzás, sorfolytonosan: a puffer első sorától (y = 0…H−1), soron belül balról jobbra. A mérés szerint a puffer első sora a kép **teteje** (lent).
+
+**Képpontérték** (`y` a temperált húzás, a képpont 0xAARRGGBB):
+
+| ág | B | G | R | alfa |
+|---|---|---|---|---|
+| színes (`grayscale` hamis) | `(y & 0xFF) % r + low` | `((y>>8) & 0xFF) % r + low` | `((y>>16) & 0xFF) % r + low` | `(y>>24) % r + low` |
+| szürke (`grayscale` igaz) | `y % r + low` — a TELJES 32 bites y-ból | ugyanaz | ugyanaz | `(y>>8) % r + low` |
+
+Utána `(px & mask) | alphaOr`: a `channelOptions` 0. bitje az R-t, az 1. a G-t, a 2. a B-t tartja meg (a letiltott csatorna 0), a 3. bit a zajos alfát. Ha a 3. bit nincs beállítva, az alfa fixen 0xFF. A bemeneti képet a munkavégző nem olvassa; a keverést a lánc `BlendMode`/`BlendAlpha`-ja végzi.
+
+**Mérve** (a kiolvasott generátor a mai `numpy`-zaj helyén, minden más változatlan; ΔE a Picasához):
+
+| effekt · eset | a mai zaj | **Picasa-MT** |
+|---|---:|---:|
+| `NightVision` alap | 11,696 | **4,626** (a magasfrekvenciás korreláció G 0,985 · R 0,90 · B 0,82) |
+| `NightVision` alap, alulról felfelé bejárva (kontroll) | — | 11,388 |
+| `NightVision` min | 10,813 | 10,946 · **3,673** a #3735 mátrix-sorrendjével együtt |
+| `Holga` alap | 1,476 | **0,890** |
+| `Cinemascope` alap | 2,152 | **1,367** |
+| `Sixties` alap / min | 1,289 / 1,443 | **1,179 / 1,255** |
+
+A maradék képpontonként 3–5 szint, az átlagos eltérés −0,2 (torzítatlan). ⛔ A `PicnikGrain` itt nincs mérve: a #907 szerint az eredeti két alkalmazása független mintát ad, ami az állandó `randomSeed="1"`-gyel nem fér össze. Külön kérdés, erről ez a szakasz nem állít semmit.
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és a golden-korrelációval.*
+
 ## ✅ A `QuantizePalette` teljes útja — a minta, a keresés és az elmosás (2026-09-24, #3084)
 
 A fenti szakaszok nyitva hagyták, hogyan áll elő az 50 × 50-es minta, és
