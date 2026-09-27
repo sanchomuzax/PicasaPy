@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.590] – 2026-09-27
+
 ### Javítva
 - **A Beállítások ablak fülei elférnek, keskeny ablakban pedig görgethetők
   (#3661).** Megnyitáskor mind a 8 magyar fülcím teljesen látszik. Ha az
