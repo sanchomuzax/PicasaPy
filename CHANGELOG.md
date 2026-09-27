@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.592] – 2026-09-27
+
 ### Hozzáadva
 - **Útlevélkép (Eszközök ▸ Kísérleti ▸ Útlevélkép…, #1401).** A kijelölt
   képen megkeresi az arcot; ha pontosan egyet talál, négyzetre vágja úgy,
