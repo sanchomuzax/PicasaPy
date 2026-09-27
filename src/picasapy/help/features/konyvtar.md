@@ -284,8 +284,9 @@ panelkapcsolójáról) a kijelölt kép adatait mutatja. Legfelül a **Fájl
 a **Fényképezőgép gyártmánya** és **típusa**, a felvétel és a digitalizálás
 ideje, a tájolás, a **Vaku** állása, az **Objektív** neve, a
 **Fókusztávolság**, az **Exponálási idő**, az **F-érték**, az ISO, a
-**Fehéregyensúly**, a **Fénymérés módja** és a **Színtér**, végül a
-**Kulcsszavak** és a GPS-koordináták.
+**Fehéregyensúly**, a **Fénymérés módja**, az **Exponálási program**, a
+**Tömörítés** és a **Színtér**, végül a **Kulcsszavak** és a
+GPS-koordináták.
 
 A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
 annak **a sora sem jelenik meg** — a panel tehát képenként rövidebb vagy
@@ -293,18 +294,35 @@ hosszabb. Videóra ma csak a három felső sor jön ki.
 
 ### Az objektív neve
 
-A legtöbb fényképezőgép nem írja le az objektív nevét emberi nyelven, csak
-egy azonosítót hagy a fájlban. **Canon- és Nikon-gépek képein** a program
-ezt az azonosítót feloldja, és az **Objektív** sorba a valódi objektívnevet
-írja — ugyanabból a listából, amit az eredeti Picasa is használt. Ha egy
-azonosítóhoz több objektív tartozik, a gyújtótávolság és a rekesz alapján
-választ közülük.
+Ha a képben **XMP-adat** is van — ilyet a legtöbb szerkesztőprogram ír a
+fájlba —, és abban ott az objektív neve, a program **azt** mutatja, és
+tovább nem is keres. Ez az eredeti Picasa sorrendje.
+
+Egyébként: a legtöbb fényképezőgép nem írja le az objektív nevét emberi
+nyelven, csak egy azonosítót hagy a fájlban. **Canon- és Nikon-gépek
+képein** a program ezt az azonosítót feloldja, és az **Objektív** sorba a
+valódi objektívnevet írja — ugyanabból a listából, amit az eredeti Picasa
+is használt. Ha egy azonosítóhoz több objektív tartozik, a gyújtótávolság
+és a rekesz alapján választ közülük.
 
 Ha a fájl maga is tartalmaz objektívnevet, de a feloldás nem ad találatot, a
 fájlban lévő név marad. Ha az sincs, a program a fájlból kiolvasott
 gyújtótávolságból és rekeszből állít össze egy nevet — például
 `18-55mm f/3.5-5.6`. Más gyártók gépeinél egyelőre az marad, amit a fájl
 ír.
+
+### Tömörítés és fehéregyensúly
+
+A **Tömörítés** sor a kép tárolási módját nevezi meg: **Tömörítetlen**,
+**JPEG**, **LZW**, **JPEG 2000**, **Veszteség nélküli tömörítés**,
+illetve a gyártó-specifikus nyers formátumok (**Nikon NEF-tömörítésű**,
+**Sony ARW-tömörítésű**, **Pentax PEF-tömörítésű** és a többi) —
+összesen 36-féle kódot ismer fel. Ha a fájlban olyan kód áll, amit a
+lista nem ismer, a **számot** írja ki.
+
+Ugyanez áll a **Fehéregyensúly** sorra: **Automatikus** vagy **Kézi**, és
+ha a fájl ettől eltérő kódot tárol, a szám látszik. Így a sor akkor sem
+marad üresen, ha a fényképezőgép valami szokatlant írt bele.
 
 ## Rejtett képek
 

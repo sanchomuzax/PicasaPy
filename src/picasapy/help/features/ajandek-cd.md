@@ -25,7 +25,10 @@ CD-re."
 
 ## A panel
 
-A panel a **könyvtár alján** nyílik ki, két lépés-keretben:
+A panel a **könyvtár alján** nyílik ki, két lépés-keretben. Ugyanez a
+panel szolgálja a [képek biztonsági mentését](biztonsagi-mentes.md) is,
+ezért **a kettő egyszerre nem lehet nyitva**: ha a mentést nyitod meg, az
+Ajándék CD panel becsukódik (a képtálca tartalma megmarad).
 
 **Kijelölés és beállítások**
 

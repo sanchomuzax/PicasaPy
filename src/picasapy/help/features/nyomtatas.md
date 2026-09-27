@@ -1,7 +1,7 @@
 # Nyomtatás
 
-Két nyomtatási mód van: **képenként egy lap**, és **indexkép** (sok kis
-kép egy lapon).
+Két nyomtatási mód van: **nyomatméret szerint** (a választott méretű
+nyomatok a papíron), és **indexkép** (sok kis kép egy lapon).
 
 ## Képek nyomtatása
 
@@ -17,12 +17,15 @@ A párbeszédben beállítható:
   lapbeállító ablakát nyitja meg (papírméret, tájolás, margók). Amit ott
   elfogadsz, azt a következő nyomtatás használni fogja. PDF-be
   nyomtatásnál a gomb szürke: ott nincs nyomtató, amit beállíts.
-- **Elrendezés**: **Képenként egy lap** vagy **Indexképek**.
+- **Elrendezés**: **Képenként egy lap** vagy **Indexképek**. Az első a
+  nyomatméret szerinti nyomtatás — a felirata ellenére egy lapra
+  **több** nyomat is felkerül, ha elfér (lásd lentebb).
 - **Nyomatméret**: 9×13, 10×15, 13×18, 20×25 cm, illetve a
   hüvelykes méretek (3,5×5, 4×6, 5×7, 8×10) és a **teljes oldal**.
 - **Tájolás**: **Automatikus**, **Álló** vagy **Fekvő**. A nyomtatási
-  feladat egyetlen tájolást használ; automatikus beállításnál a
-  kijelölés első képéhez igazodik.
+  feladat egyetlen lapállást használ. **Automatikus** beállításnál a
+  papír **álló** marad, és a program a nyomatot fordítja el, ha úgy
+  kevesebb lap kell; **Álló** vagy **Fekvő** választásával te döntöd el.
 - **Illesztés a laphoz**: a **Lapkitöltés (vágással)** választásával a
   kép kitölti a lapot, a széle pedig levágódik.
 - **Példány képenként**.
@@ -32,11 +35,43 @@ a papír neve, a mérete milliméterben és a tájolása — például
 `A4 — 210 × 297 mm, álló`. Ez a sor a nyomtató beállításait követi, tehát
 a **Nyomtató telepítése** ablak bezárása után rögtön frissül.
 
-A párbeszéd kiírja, hány képet fog nyomtatni. Ha a felbontás a
-választott mérethez kevés, figyelmeztet, hány kis méretű kép van, és
-hogy nyomtatás előtt érdemes ellenőrizni őket. Egy kép akkor számít
-kicsinek, ha a választott nyomatméretre kevesebb mint **150 képpont
-jut hüvelykenként**.
+A párbeszéd kiírja, hány képet fog nyomtatni. Alatta két sor a
+képminőségről: **Legkisebb kép: *N* képpont/hüvelyk**, és új sorban vagy
+**Készen áll a nyomtatásra.**, vagy — ha van kevés felbontású kép —
+**Nézze át nyomtatás előtt.** és hogy hány kis kép van. Egy kép akkor
+számít kicsinek, ha a választott nyomatméretre kevesebb mint **150
+képpont jut hüvelykenként**.
+
+Ha a beállításokból nem jön ki érvényes nyomtatás, a program megnevezi a
+hibát: **Érvénytelen nyomtatási beállítás:** és utána, mi a baj.
+
+## Ahogy a nyomatok a lapra kerülnek
+
+A választott **nyomatméret** nem az egész lapot jelenti: a program
+ekkora **helyeket** rak a papírra, **rácsban**, sorfolytonosan. Ha egy
+sor betelt, új sort kezd; ha a lapon már nem fér el több sor, **új lapon
+folytatja** ott, ahol abbahagyta. Egy A4-es lapra így például két 10×15
+cm-es nyomat is felkerül, nem csak egy.
+
+A maradék helyet a program laponként egyenletesen osztja szét a nyomatok
+közt. Egy félig teli utolsó sor a teli sorok oszlopaihoz igazodik, balra
+zárva.
+
+A **példány képenként** ezt a rácsot tölti: két kép × két példány négy
+helyet kér, és hogy ez hány lap, a nyomatmérettől és a papírtól függ.
+Egy kép példányai egymás után jönnek.
+
+Ha a választott nyomatméret **egyáltalán nem fér el** a papíron — ilyen
+a **teljes oldal**, vagy egy A4-nél alig nagyobb méret —, a program
+visszatér a régi működéshez: **egy kép egy lapra**, a teljes
+nyomtatható területre.
+
+## Az előnézet és a lapszám
+
+A nyomtató alatti kis előnézet a **tényleges lapot** mutatja, a rácsba
+rendezett nyomatokkal. Ha több lap lesz, az előnézet alatt lapozó áll,
+középen a **jelenlegi lap / összes lap** számmal — ebből tudod meg
+előre, hány lapot fogsz elhasználni.
 
 ## Szegély és felirat
 

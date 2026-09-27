@@ -36,8 +36,22 @@ részletek ugyanott.
 
 Megnyitás: **Nézet ▸ Emberek**, vagy a képtálca Emberek gombja.
 
-A panel megmutatja, kik szerepelnek az éppen kijelölt képen, és kik
-láthatók még a többi kiválasztott képen.
+A panel **egy fejlécet és egy listát** mutat: a kijelölt képeken
+megnevezett embereket. A fejléc szövege attól függ, hol állsz és mit
+jelöltél ki:
+
+| amikor | a fejléc |
+|---|---|
+| egy kép van kijelölve (vagy a nézőben állsz), és van rajta név | **Ezen a fotón:** |
+| egy kép van kijelölve, és még nincs rajta név | **Ki látható ezeken a fotókon?** |
+| több kép, és van rajtuk név | **Személyek ezeken a fotókon:** |
+| egy személy albumában (ott egy képnél is ez áll) | **Szintén ezeken a fotókon:** |
+| több kép, és nincs rajtuk név | **Név nélküli személycsoportok:** |
+| a Névtelenek albumban, csoportosított nézetben | **Meg nem nevezett emberek ezeken a fotókon:** |
+
+Ha nincs mit felsorolni, a fejléc helyén egy dőlt mondat mondja meg, mi
+kerül majd ide — személy albumában például: „Itt jelennek meg azok az
+elnevezett emberek, akik a kiválasztott személlyel együtt szerepelnek."
 
 A bal hasáb **Emberek** csoportjában minden névhez tartozik egy album. A
 névre jobbgombbal kattintva kijelölheted az összes képét, vagy törölheted
@@ -50,7 +64,12 @@ gyűjti. Itt:
 
 - Az album csoportosítva nyílik: egy emberhez tartozó arcokat egyben
   látod. A fejléc **Csoportok részletes nézete** gombja szétnyitja őket,
-  ugyanott a **Csoportosítás arcok szerint** visszacsukja.
+  ugyanott a **Csoportosítás arcok szerint** visszacsukja. A gomb alatt
+  egy sor mondja meg, mi a következő lépés: „Jelöljön ki valakit, akit
+  ismer, és adjon hozzá egy nevet" — szétnyitott csoportoknál azzal is,
+  hogy az „x" ikonra kattintva mellőzheted az illetőt. Amíg a program a
+  csoportokat számolja, ehelyett ez áll ott: „Az arcok csoportosítása
+  folyamatban van, kérjük, várjon…"
 - Egy arc alá beírt névvel elnevezed. Ha a program tippel valakire, a név
   mellett kérdőjel áll — egy kattintás elfogadja.
 - A **Mellőzés** paranccsal félreteszed azokat az arcokat, amiket nem
@@ -151,6 +170,23 @@ Más emberek javaslatai akkor sem kerülnek bele, ha ugyanazon a kijelölt
 képen vannak: a művelet csak annak a személynek a javaslataira hat, akinek
 az albumát épp nyitva tartod. Ha egy képen több arc is ezt a nevet
 javasolja, a kijelölése mindegyikre szól.
+
+### Arcra közelítve vagy a teljes képpel
+
+A fejléc **jobb felső sarkában** két kis gomb áll egymás mellett. Ezek
+döntik el, mit mutat a rács csempéje:
+
+- **Megjelenítés az arcra közelítve** — a csempéken csak maga az arc
+  látszik, kivágva és felnagyítva;
+- **Megjelenítés a teljes képre távolítva** — a szokásos bélyegkép, az
+  egész felvétel. Ez az alapállás.
+
+Ez **nézet-beállítás**, nem az albumé: amit itt választasz, a következő
+személy albumára is érvényes marad, amíg vissza nem váltod.
+
+Kis arcnál a program az **eredeti fájlból** olvassa ki a kivágást, hogy
+a csempe ne legyen elmosódott. Videón és nyers (RAW) fájlon marad a
+szokásos bélyegkép.
 
 ### Csak a javaslatokat mutasd
 

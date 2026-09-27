@@ -14,14 +14,33 @@
 > [Küldés e-mailben](email.md)). A többi vezérlő szürke — a helye
 > megvan, de a funkció mögötte még nem készült el. A **Bezárás** gomb
 > zárja az ablakot; nincs külön OK, mert az élő beállítások azonnal
-> hatnak.
+> hatnak (a nyelv a kivétel, lásd alább).
+
+Az ablak feliratai — a szürke vezérlők feliratai is — az **eredeti Picasa
+saját szövegei**, ezért néhol másképp fogalmaznak, mint amit a funkció
+alapján várnál.
 
 ### Nyelv
 
-Az **Általános** fülön a **Nyelv** választóval **magyar** és **angol**
-között válthatsz. A változás azonnal érvényes.
+Az **Általános** fülön a **Nyelv:** választóval döntöd el, milyen nyelvű
+legyen a felület. Ugyanez elérhető az **Eszközök ▸ Nyelv** menüből is.
 
-Ugyanez elérhető az **Eszközök ▸ Nyelv** menüből is.
+A lista **első tétele** az **Alapértelmezett rendszerbeállítás** — utána
+zárójelben a gépeden beállított nyelv. Ezt választva a program minden
+indításnál a rendszer nyelvéből dönt. Alatta a választható nyelvek
+állnak, mindegyik **a saját nyelvén** írva: **English (US)** és
+**Magyar**.
+
+**A nyelv nem vált át azonnal.** Amikor rákattintasz egy tételre, a
+program megkérdezi: „Módosítja a Picasa kezelőfelületének nyelvét? A
+változás a program következő megnyitásakor lép érvénybe." **Igen** esetén
+a választás elmentődik, és **a következő indításnál** lép életbe; **Nem**
+vagy **Mégse** esetén semmi nem változik. Az eredeti Picasa is így
+viselkedik.
+
+A választó és a menü **pipája a kért nyelvet mutatja**, tehát a válasz
+után a még nem érvényes nyelven áll — így látszik, mi fog betöltődni
+legközelebb.
 
 ### Törlés megerősítése
 
@@ -98,7 +117,8 @@ A PicasaPy megjegyzi és a következő indításnál visszaállítja:
 
 - az ablak méretét és helyét (maximalizált állapotban is),
 - a bal hasáb szélességét,
-- a sötét témát, a nyelvet és a **Színkezelés használata** kapcsolót,
+- a sötét témát és a **Színkezelés használata** kapcsolót,
+- a kért nyelvet (ez a következő indításnál lép életbe),
 - a mappák és a bal hasáb rendezését,
 - az indexképek felirat-módját és a feliratsáv állapotát,
 - a bal hasáb három nézet-kapcsolóját: a **mappanézet módját**, az

@@ -124,7 +124,7 @@ nem volt hozzájuk gomb:
 | Helyi kontraszt | a részletek helyi kiemelése |
 | Matt | matt, tompított felület |
 | Éjjellátó | zöldes, éjjellátó-szerű kép |
-| Lekerekített sarkok | lekerekített sarkú kép |
+| Kerekített élek | lekerekített sarkú kép |
 
 ## Régi effektek (7. fül)
 
@@ -145,6 +145,27 @@ hagyja, a másikat elmossa, és a kettő közt átmenetet ad. Az elmosás
 erőssége attól függ, **hol áll a korong vízszintesen** — ha csak
 fel-le mozgatod, a középvonalon hagyva, az effekt nem mos. Az eredeti
 Picasa is így viselkedik.
+
+## Csúszkák, amiknek a felső vége a képmérethez igazodik
+
+Öt csúszka felső vége nem fix szám, hanem **a kép méretéhez** igazodik:
+
+- **Képpontnövelés** ▸ **Sugár**,
+- **Fókusznagyítás** ▸ **Fókuszméret**,
+- **Kerekített élek** ▸ **Sarok sugara**,
+- **Szegély** ▸ **Sarok sugara** és **Képfelirat magassága**.
+
+Ezeknél a csúszka képpontban mutatja az értéket, a
+`.picasa.ini` fájlba viszont a tartomány **százalékában** kerül —
+ugyanúgy, ahogy az eredeti Picasa tárolja. Ezért ugyanaz a beállítás egy
+nagyobb és egy kisebb képen is arányosan ugyanúgy néz ki.
+
+Ennek egy következménye van: ha ezeket a csúszkákat **egy korábbi
+PicasaPy-változatban** állítottad be, az ott képpontban elmentett szám
+most százalékként értelmeződik, tehát az a néhány kép **másképp
+jelenhet meg**. Húzd meg újra a csúszkát, és a kép rendben lesz. Az
+eredeti Picasában készült szerkesztések ezzel a változással **helyesen**
+jelennek meg.
 
 ## Négy effekt, amit rá lehet festeni a képre
 
@@ -167,14 +188,22 @@ kapsz. Ezt az eredeti Picasa is így csinálta.
 | Effektek | Színátmenet | Sugaras árnyalás |
 | Kreatív | Hőtérkép | Éjjellátó |
 | Művészi | Vignetta | Matt |
-| Művészi | Szegély | Lekerekített sarkok |
+| Művészi | Szegély | Kerekített élek |
 | Művészi | Képpontnagyítás | Képpontnövelés |
 | További effektek | Filmszemcse | Régi filmszemcse |
 
-A **Képpontnövelés** a legújabb a sorban: nem az egész képet bontja durva
-képpontokra, hanem **csak a kör körül** — a kép egy pontja körüli folt éles
-marad, kifelé pedig fokozatosan elképpontosodik. Csúszkája ma nincs: a
-csempére kattintva a program a saját alapértékeivel teszi rá.
+A **Képpontnövelés** nem az egész képet bontja durva képpontokra, hanem
+**csak a kör körül** — a kép egy pontja körüli folt éles marad, kifelé
+pedig fokozatosan elképpontosodik. Rákattintva **saját csúszkapanel
+nyílik**, mint a többi effektnél:
+
+- a képen látható **korong** húzásával jelölöd ki, mi maradjon élesen;
+- **Hatás** — mekkorák legyenek a képpontok;
+- **Sugár** — milyen messzire ér az éles folt;
+- **Élkeménység** — mennyire élesen vált át az éles folt a képpontosba;
+- **Fokozat** — mennyire üssön át alóla az eredeti fotó;
+- **Megfordítás** — megcseréli a kettőt: a kör belseje lesz képpontos, a
+  külseje éles.
 
 A váltás **azonnali**: elég lenyomni a Shiftet, miközben az effekt-fülön
 állsz, és a tíz csempe felirata átvált; elengedve visszaáll.

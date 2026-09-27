@@ -26,11 +26,13 @@ megjeleníteni (például egy régi Picasa-változat effektje), a mentés előtt
 figyelmeztet: „A mentés ezek nélkül írja ki a képet, és a beállítások
 elvesznek. Ez nem vonható vissza."
 
-## Utolsó mentés visszavonása
+## Mentés visszavonása
 
-A mentés után megjelenő üzenetben az **Utolsó mentés visszavonása**
-gombbal visszahozod a fájl mentés előtti állapotát — a szerkesztéseid
-közben megmaradnak. Csak a legutóbbi mentésre hat.
+A mentés után megjelenő üzenetben a **Mentés visszavonása** gombbal
+visszahozod a fájl mentés előtti állapotát — a szerkesztéseid közben
+megmaradnak. Az üzenet ezt így mondja: „Az utolsó mentés visszavonásához
+és a szerkesztések megtartásához kattintson a »Mentés visszavonása«
+gombra." Csak a legutóbbi mentésre hat.
 
 ## Mentés másként és Másolat mentése
 
@@ -49,7 +51,8 @@ Ez a mentéskor készült biztonsági másolatot használja, ezért csak akkor
 kapcsolható be, ha van ilyen másolat.
 
 A program rákérdez: „Visszaállítja ezeket a fájlokat az eredeti
-változatra? Ez nem vonható vissza, és minden változtatás elvész."
+változatra? Ez a művelet nem vonható vissza, és az összes módosítás
+elvész."
 
 ## Összes szerkesztés visszavonása
 
@@ -57,12 +60,17 @@ változatra? Ez nem vonható vissza, és minden változtatás elvész."
 szerkesztések listáját törli. A fájl érintetlen marad; a kép egyszerűen
 újra úgy néz ki, mint eredetileg.
 
+A program rákérdez, és külön figyelmeztet, ha a képen
+**vörösszem-javítás** van: azt az **Újra** paranccsal sem lehet
+visszahozni. A figyelmeztetés **megnevezi a képet** (több képnél
+mindegyiket, vesszővel).
+
 ## Melyik mit csinál?
 
 | parancs | mire hat | elvész-e a szerkesztés |
 |---|---|---|
 | Mentés | a fájlra a lemezen | nem, csak beleég |
-| Utolsó mentés visszavonása | az utolsó lemezre írásra | nem |
+| Mentés visszavonása | az utolsó lemezre írásra | nem |
 | Visszaállítás | a fájlra a lemezen | igen |
 | Összes szerkesztés visszavonása | csak a szerkesztéslistára | igen (a fájl ép) |
 

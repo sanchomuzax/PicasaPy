@@ -24,8 +24,8 @@ mivel küldjön. A **Képek küldése e-mailben** párbeszédben hagyod jóvá,
 hogy a képek a számítógép alapértelmezett levelezőprogramjában nyíljanak
 meg új levélként.
 
-Ha bejelölöd a **Jegyezze meg ezt a beállítást, és ne kérdezze meg
-újra** pipát, legközelebb kérdés nélkül indul a küldés. (Ez ugyanaz a
+Ha bejelölöd a **Jegyezze meg ezt a beállítást, ne jelenítse meg a
+párbeszédpanelt újra** pipát, legközelebb kérdés nélkül indul a küldés. (Ez ugyanaz a
 kapcsoló, mint a Beállítások E-mail fülén — bármikor visszaállíthatod.)
 
 ## Beállítások ▸ E-mail
