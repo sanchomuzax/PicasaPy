@@ -24,14 +24,16 @@ sáv 105 helyett 103 képpontja):
 
 - **Beégetett** minden olyan méret, ami a QML-ben literálként áll és nem
   felirat-szélességből származik: 105 · 20 · 85 · 81 · 141 × 35 ·
-  147 × 44 · 59. Ezek betűtől és platformtól függetlenek.
+  145 × 44 (#3602 óta — ld. `TestAZoldGomb`) · 59. Ezek betűtől és
+  platformtól függetlenek.
 - **Relatív** az osztópont: nem képpontszám, hanem az ablakszélesség
   0,365-szörösének kerekítettje — ezért három ablakszélességen mérjük.
 - **Relatív** a szélesség-igény őrzése: a `requiredWidth` most már TISZTA
   GEOMETRIA (nincs benne feliratszélesség), de az őr akkor is ÉLŐBEN
   méri, hogy a minimumra állított ablakban tényleg nem lóg ki semmi — ez
-  fogja meg, ha egy betűfüggő elem (a − / + jelek, a „Kijelölés" felirat)
-  mégis megnő.
+  fogja meg, ha egy betűfüggő elem (a „Kijelölés" felirat) mégis megnő.
+  (A nagyítás-csúszka melletti `−`/`+` jel a #3602 óta nincs meg — az
+  eredetiben sosem volt ott, ld. `docs/specs/picasa-fo-ablak-elrendezes.md`.)
 """
 
 from __future__ import annotations
@@ -217,18 +219,23 @@ class TestAzOsztopont:
 
 
 class TestAZoldGomb:
-    """`webupload` 141 × 35 egy `webupload_rect` 147 × 44-es helyen, az
-    osztóponttól 5 képponttal balra kezdve."""
+    """`webupload` 141 × 35 egy `webupload_rect` 145 × 44-es helyen, az
+    osztóponttól 5 képponttal balra kezdve.
+
+    ⚠️ #3602 HELYESBÍTÉS: itt korábban 147 állt (a respack rétegfejléce),
+    a kényszerek (`0, .365, -5` … `1, .365, 140`) viszont 145-öt adnak — és
+    a #3582 képernyőkép-összevetése kimutatta, hogy 147-tel a benne
+    középre zárt gomb 1 képponttal máshol áll, mint az eredetiben."""
 
     @pytest.mark.parametrize("ablak", ABLAKOK)
-    def test_a_hely_147x44_az_osztopont_minusz_5_nel(
+    def test_a_hely_145x44_az_osztopont_minusz_5_nel(
         self, qml_app_module, qt_app, ablak
     ):
         window, _, _ = qml_app_module
         _szelesseg(window, qt_app, ablak)
         osztopont = _elem(window, "trayMainBar").property("splitX")
         hely = _elem(window, "trayUploadSlot")
-        assert hely.property("width") == 147
+        assert hely.property("width") == 145
         assert hely.property("height") == 44
         assert _x_a_savban(window, "trayUploadSlot") == pytest.approx(
             osztopont - 5, abs=TURES
