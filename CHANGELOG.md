@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Biztonsági mentéskor a még el nem mentett mappák akkor is megjelennek a
+  bal oldali mappalistában, ha a figyelt mappa hivatkozáson át, rövidített
+  vagy eltérő kis- és nagybetűs névvel van megadva; a mentés ilyenkor is
+  megtartja a mappaszerkezetet (#3776).
+
 ## [0.8.606] – 2026-09-27
 
 ### Javítva
