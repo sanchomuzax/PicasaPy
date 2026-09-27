@@ -35,6 +35,7 @@ from picasapy.index.backup_sets import (
     jegyezd_fel_a_futast,
     jegyezd_fel_az_elmentettet,
 )
+from picasapy.paths import normalize_path
 from picasapy.scanner import PICASA_INI_NAME
 
 from .szuro import szurd_meg
@@ -101,6 +102,15 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
         pipaltak = {Path(mappa) for mappa in mappak}
         fajlok = [f for f in fajlok if Path(f).parent in pipaltak]
     nyilvantartas = elmentett_allapot(conn, keszlet.id)
+    #: #3776 [KÖZEPES javítás]: a `fajlok` a #3776 óta FELOLDOTT
+    #: (symlink/8.3-rövidnév/betűzés szerint kanonikus) útvonalon
+    #: érkeznek, de a nyilvántartás régebbi sorai — a javítás előtti
+    #: kódból — a FELOLDATLAN útvonalat rögzítették. Pontos-egyezéses
+    #: kereséssel egy symlinkes gyökerű készlet első futása MINDENT
+    #: újnak látna, holott azt korábban már elmentettük. A feloldott
+    #: kulcsú másodpéldányt csak akkor építjük, ha kell (lusta, és csak
+    #: egyszer, a hívás egészére).
+    nyilvantartas_feloldva: dict[str, tuple[int, int]] | None = None
     tervezett: list[TervezettFajl] = []
     kihagyott = 0
     for fajl in szurd_meg(fajlok, keszlet.szuro):
@@ -110,6 +120,13 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
             # az eltűnt vagy olvashatatlan fájl nem dönti le a mentést
             continue
         korabbi = nyilvantartas.get(str(fajl))
+        if korabbi is None and nyilvantartas:
+            if nyilvantartas_feloldva is None:
+                nyilvantartas_feloldva = {
+                    normalize_path(forras): ertek
+                    for forras, ertek in nyilvantartas.items()
+                }
+            korabbi = nyilvantartas_feloldva.get(str(fajl))
         mostani = (allapot.st_size, allapot.st_mtime_ns)
         if korabbi == mostani:
             kihagyott += 1
