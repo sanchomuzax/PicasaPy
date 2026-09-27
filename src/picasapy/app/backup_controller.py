@@ -272,7 +272,11 @@ class BackupController(BackgroundWorkerMixin, QObject):
         `backuptext2`: „A Picasa most azokat a fájlokat jeleníti meg,
         amelyekről korábban nem készült biztonsági másolat." A teljesen
         elmentett mappa nem kerül a listába. ÍRÁS NÉLKÜL. A `fajlok` az első
-        `_FAJLNEV_KORLAT` név; a teljes szám a `darab`."""
+        `_FAJLNEV_KORLAT` név; a teljes szám a `darab`.
+
+        #3751: az `utak` a mappa ÖSSZES mentetlen fájljának teljes útvonala,
+        csonkítás nélkül — ebből szűkül a jobb oldali képrács fájl szerint
+        (`AppController.setBackupFilter`)."""
         with open_index(self._db_path) as conn:
             keszlet = self._keszlet(conn, keszlet_id)
             if keszlet is None:
@@ -285,6 +289,7 @@ class BackupController(BackgroundWorkerMixin, QObject):
                 "fajlok": [
                     tetel.forras.name for tetel in tetelek[:_FAJLNEV_KORLAT]
                 ],
+                "utak": [str(tetel.forras) for tetel in tetelek],
                 "darab": len(tetelek),
                 "bajt": sum(tetel.meret for tetel in tetelek),
             }

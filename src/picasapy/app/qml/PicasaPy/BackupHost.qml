@@ -81,6 +81,61 @@ Rectangle {
     //: mappalistáján megy tovább (`tervMappak`).
     onNyitvaChanged: if (!nyitva) host.pipaltMappak = []
 
+    //: #3751: a JOBB oldali képrács is csak a még el nem mentett FÁJLOKAT
+    //: mutatja (`backuptext2`) — a vezérlő szűri a `photos`/`feedGroups`
+    //: párost, fájl szerint. Számítás közben a rács a régi tartalmát
+    //: tartja; kiválasztott készlet nélkül üres, mint a bal hasáb; a panel
+    //: bezárásakor a szűrő lekerül.
+    //:
+    //: A szűrő a mentés-panel melletti KÖNYVTÁR-rácsé: keresésben,
+    //: időrendben vagy más lapon a teljes lista látszik. A szűrt rácsról
+    //: nyitott néző (és vetítés) viszont a szűrt listán lapoz — különben a
+    //: nyitás pillanatában elcsúsznának alatta a sorindexek.
+    //:
+    //: `racsLatszik`: a gazda (`Main.qml`) köti — nyitott panel mellett a
+    //: könyvtár-rács látszik (nincs néző, vetítés, időrend, keresés, és a
+    //: könyvtár-lap az aktív).
+    property bool racsLatszik: nyitva
+    //: néző vagy vetítés nyitva — a gazda köti
+    property bool nezoNyitva: false
+    //: a néző a szűrt rácsról nyílt-e — a nyitás pillanatában rögzül
+    property bool nezoSzurtRacsrol: false
+    readonly property bool racsSzuroKell:
+        nyitva && (racsLatszik || (nezoNyitva && nezoSzurtRacsrol))
+    onNezoNyitvaChanged: {
+        //: a szűrő levétele késleltetett (`onRacsSzuroKellChanged`), így
+        //: itt még a nyitás ELŐTTI állapot olvasható
+        host.nezoSzurtRacsrol = host.nezoNyitva
+            && typeof controller !== "undefined" && !!controller
+            && controller.backupFilterActive === true
+    }
+    //: késleltetve: a `racsLatszik` és a `nezoNyitva` ugyanarra a
+    //: változásra (néző nyitása) tetszőleges sorrendben értékelődik ki —
+    //: a döntés csak akkor születik, amikor mindkettő friss
+    onRacsSzuroKellChanged: Qt.callLater(host.racsSzurod)
+    onMentetlenekChanged: host.racsSzurod()
+    onMappakToltodnekChanged: host.racsSzurod()
+    function racsSzurod() {
+        if (typeof controller === "undefined" || !controller
+                || controller.setBackupFilter === undefined)
+            return
+        if (!host.racsSzuroKell) {
+            controller.clearBackupFilter()
+            return
+        }
+        if (host.kivalasztott < 0 || host.kivalasztott >= host.keszletek.length) {
+            controller.setBackupFilter([])
+            return
+        }
+        if (host.mappakToltodnek)
+            return
+        var utak = []
+        host.mentetlenek.forEach(function (sor) {
+            if (sor.utak) Array.prototype.push.apply(utak, sor.utak)
+        })
+        controller.setBackupFilter(utak)
+    }
+
     function nyisd() {
         host.uzenet = ""
         host.szerkesztes = false
@@ -108,8 +163,10 @@ Rectangle {
             host.pipaltMappak = []
             return
         }
-        host.mentetlenek = []
+        //: előbb a töltés jelzője: a rács-szűrő (`racsSzurod`) így az
+        //: átmenetileg üres listát nem veszi „minden el van mentve"-nek
         host.mappakToltodnek = true
+        host.mentetlenek = []
         host.mappaKeres = backupController.mentetlenMappakLekerese(
             host.keszletek[host.kivalasztott].id)
     }
