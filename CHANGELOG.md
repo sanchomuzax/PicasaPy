@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kettős nézetben, ha a bal oldali kép van kijelölve, a „Kijelölve” jelvény
+  már nem csúszik a felső sávra, és a feliratsáv (a kék infó-sáv) is a
+  kijelölt kép nevét, dátumát, méretét és sorszámát mutatja, nem a jobb
+  oldali képét (#3756).
+
 ## [0.8.602] – 2026-09-27
 
 ### Javítva

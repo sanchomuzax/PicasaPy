@@ -2974,11 +2974,19 @@ Rectangle {
                         : (viewer.aktivOldal === "bal"
                            ? kepJobb - parhuzamosRes - width
                            : kepBal + parhuzamosRes)
+                    //: #3756: vízszintes elrendezésben a fókuszban lévő fél
+                    //: SAJÁT letterbox-margója szabja a helyet — ALLÓ képnél
+                    //: (a rekesz magasságára illesztve) ez majdnem 0, és a
+                    //: jelvény a `viewerTopBar` SÁVJÁBA lógott (mérve: teteje
+                    //: 36 px, a sáv alja 75 px — takarta a ▶/◀ gombokat). A
+                    //: `Math.max(0, …)` a jelvényt a közös szülő (a
+                    //: `photoArea` TESTVÉRSZINTje, közvetlenül a felső sáv
+                    //: ALATT) tetejénél megállítja, függetlenül a kép arányától.
                     y: viewer.fuggolegesElrendezes
                         ? (viewer.aktivOldal === "bal"
                            ? kepLent - merolegesRes - height
                            : kepFent + merolegesRes)
-                        : kepFent - height - merolegesRes
+                        : Math.max(0, kepFent - height - merolegesRes)
 
                     Text {
                         id: jelvenySzoveg
