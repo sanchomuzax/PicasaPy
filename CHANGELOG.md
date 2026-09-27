@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.609] – 2026-09-27
+
 ### Javítva
 - A Filmszemcse effekt az eredeti Picasa szemcséjét adja: a szemcse
   mintázata minden alkalommal ugyanaz, mint az eredetiben, és a sötétítő
