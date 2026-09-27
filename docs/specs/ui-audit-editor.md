@@ -2378,7 +2378,9 @@ hívja (`push 1` @ `0x005d730b`), az `ab_2up_toggle`-ra ugyanezt `0`-val
 2. **`0x005f8d80(this, 1, 0, 0)`** — a *„Apply changes to the current
    image?”* kérdés, ha egy modális eszköz (vágás, finomhangolás…) nyitva van
    (ld. [`picasa-bezaras-es-kilepes.md`](picasa-bezaras-es-kilepes.md) 7.
-   (c)); ha nem `0`-val tér vissza (Mégse), a belépés elmarad;
+   (c)); itt **nincs Mégse gomb**, mert a 4. argumentum `0`, a Mégse pedig
+   csak nem nulla 4. argumentumnál kerül a párbeszédbe (`0x005f8e36`, 3/c
+   2. pont) — a belépés tehát alkalmazás és elvetés után is folytatódik;
 3. a második fél képe: `aa` (`arg2 ≠ 0`) esetén **a jelenlegi kép**
    (`[this+0xe64]`), `ab` esetén a szomszéd (`0x00718110`);
 4. **`0x006abd70(&[this+0x5f8], kép)`** és **`0x006abd70(&[this+0x92c], kép)`**
@@ -2523,7 +2525,7 @@ megléte nem bizonyít élő vezérlőt — a felületleíró dönt.**
 | buboréksúgók | **hivatalos magyar** (fent) | **angol** eredeti (`ToolTip.text: qsTr("View only one image")` stb.) | a magyar szöveg a `.ts`-be |
 | `swap_2up_focus` · `swap_2up_layout` | megvan, **rejtett** amíg nincs 2-up | **megvan**, 2-up módban látszik (`viewerSwapFocus`, `viewerSwapLayout`) | ✅ |
 | „Kijelölve" jelvény | megvan, kétrészes háttérrel | **megvan** (`viewerFocusBadge`; a válogató parancsok is ezt követik) | a kétrészes háttér még hiányzik |
-| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **megvan** (#3014): `AaUtkozesDialog.qml`, a 4/b.1 döntési táblájával; az „aa" mód két fele két önálló szerkesztés (a kijelölt ír, a másik memóriás), a „ne kérdezd" a `DoNotAskOnEnd2Up` kulcs (#367) | a lapozás, a programzárás és a néző elhagyása is kérdez, Mégsére megáll (4/c.1, #3644); a belépés előtti „Apply changes…?" kérdés (4/b.1, 2. lépés) még nincs |
+| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **megvan** (#3014): `AaUtkozesDialog.qml`, a 4/b.1 döntési táblájával; az „aa" mód két fele két önálló szerkesztés (a kijelölt ír, a másik memóriás), a „ne kérdezd" a `DoNotAskOnEnd2Up` kulcs (#367); a lapozás, a programzárás és a néző elhagyása is kérdez, Mégsére megáll (4/c.1, #3644); a belépés előtti „Apply changes…?" kérdés (4/b.1, 2. lépés) **megvan** (#3651): `EndEditModalityDialog.qml`, a „ne kérdezd" a `DoNotAskOnEndEditModality` kulcs | a fókuszváltás lezáró kapuja (3/c, #3686) még nincs |
 | `wipe_2up_toggle` | **nincs a felületen** | nincs | **nem kell megépíteni** |
 
 

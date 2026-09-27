@@ -78,21 +78,43 @@ Rectangle {
         width: parent.width; height: 1
         color: Theme.chromeBorder
     }
-    // #423: a sáv MINDIG egyetlen (ma 35px-es) csík marad — a RowLayout maga
-    // sosem tördel új sorba, de a régi kötések (fix preferredWidth minden
-    // elemen, sehol minimumWidth) szűk ablaknál egymásra csúszó/kilógó
-    // elemekhez vezettek, ami vizuálisan "törésnek" hatott. A javítás a
-    // zsugorodási sorrendet Layout.minimumWidth-ekkel rögzíti:
-    //   1. a bal oldali rugalmas térköz nyeli el az extra helyet elsőként;
-    //   2. a keresőmező zsugorodik 300px-ről 120px-ig;
-    //   3. a középső szűrő-zóna teljesen elrejtőzik `toolbarCompact` alatt;
-    //   4. az "Importálás" gomb és a verzió-címke SOHA nem zsugorodik —
-    //      a gomb Layout.minimumWidth == Layout.preferredWidth (fix).
-    readonly property bool toolbarCompact: width < 1080
-    RowLayout {
+    // #3603: a bal oldali NÉGY gomb fix bal-felső horgonyú (`m_offsetLT`,
+    // `thumbui.tre`) — nem egy balról-jobbra folyó sor térközeiből adódik
+    // ki, hanem explicit x/y-nal: 6 / 124 / 160 / 225, mind y=9 (a
+    // képernyőkép-mérés szerint a gombok teteje a sáv tetejétől 9). A
+    // szűrőzóna és a keresőmező az ABLAKSZÉLESSÉG arányában mozog
+    // (`searchcontainer.tre` `XConstraint 0,.4,0` … `1,1,-70`), ezért ők
+    // sem egy flow-tag részei, hanem a `toolbar.width`-ből számolt x/w —
+    // ld. lent `searchContainerLeft`/`searchContainerRight`.
+    //
+    // A #423 szűk ablakos elrejtése (`toolbarCompact`) csak ott dolgozik,
+    // ahol az eredeti képlete már nem fér ki. A négy bal gomb SOHA nem
+    // rejtőzik el (fix horgonyúak, 247-ig érnek). A képletben a szűrőzóna
+    // és a mező között állandó 16 px van (0,4·W + 222 … 0,4·W + 238), a
+    // verziófelirat pedig a mező mögötti 47 px-en él, tehát ezek nem
+    // ütközhetnek. Két határ marad:
+    //   - a szűrőzóna bal széle (0,4·W − 2) eléri a bal gombsort (247):
+    //     W < 622,5;
+    //   - a mező (0,6·W − 285 széles) a 120 px-es padló alá szorulna:
+    //     W < 675.
+    // A küszöb a kettő közül a nagyobb: 675 px. Ez alatt a szűrőzóna
+    // elrejtőzik, és a mező a gombsor mögé húzódik a felszabadult helyre
+    // (#3603). A főablak legkisebb szélessége (a tálca igénye) ma ennél
+    // nagyobb, a küszöb tehát a sáv saját biztosítéka.
+    readonly property real leftButtonsRight: 247
+    readonly property real searchMinWidth: 120
+    readonly property real compactWidth: Math.max(
+        (leftButtonsRight + 2) / 0.4,
+        (searchMinWidth + 285) / 0.6)
+    readonly property bool toolbarCompact: width < compactWidth
+    // `searchcontainer.tre:352-355` — a konténer bal/jobb éle
+    readonly property real searchContainerLeft: width * 0.4
+    readonly property real searchContainerRight: width - 70
+    // a látható mező (`searchbase`) jobb széle: a konténeren túl 23-mal
+    readonly property real searchBoxRight: searchContainerRight + 23
+    Item {
+        id: content
         anchors.fill: parent
-        anchors.leftMargin: 8; anchors.rightMargin: 8
-        spacing: 10
         PicasaButton {
             objectName: "toolbarImportButton"
             text: qsTr("Import")
@@ -102,9 +124,11 @@ Rectangle {
             // A magasság 22 azért fér el a feliratnak, mert a
             // `PicasaButton` függőleges kitöltése 0 (ld. ott a #992
             // kommentjét) — a 12px-es betű teljes sormagassága belefér.
-            Layout.preferredWidth: 111
-            Layout.minimumWidth: 111
-            Layout.preferredHeight: 22
+            // #3603: fix bal-felső horgony — x 6, y 9 (`thumbui.tre:452`,
+            // képernyőkép-mérve).
+            x: 6; y: 9
+            width: 111
+            height: 22
             //: #1929: `thumbui/importbutton` — az EREDETI súgója, szó
             //: szerint (`referencia/ui-leltar.csv`). Eddig nem volt súgója.
             ToolTip.text: qsTr("Get photos from a camera, scanner, or other media")
@@ -120,10 +144,6 @@ Rectangle {
         // Mért méret: 29 × 22 (`konyvtar-ablak-meretek.md` 2.). A gomb az
         // eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele).
         //
-        // ⚠️ Szűk ablaknál elrejtőzik, a szűrő-zóna mintájára (#423): a
-        // sávnak egyetlen csíkban kell maradnia, és minden fix szélességű
-        // elem a NEM zsugorodó alapot növeli. A rejtés a mi
-        // alkalmazkodásunk, nem az eredeti viselkedés.
         // #1421: az `newalbum` gomb — a FUNKCIÓ már megvolt (a Fájl ▸ Új
         // album… párbeszéde), csak az eszköztárról hiányzott. A bináris
         // szerint a menütétel maga is a `thumbui/newalbum` kattintást
@@ -137,15 +157,14 @@ Rectangle {
         // mondta meg, hogy ikonnak kell lennie — a glif a szűrő-zóna
         // idiómáját követi (★ ▶ ⚲).
         //
-        // A gomb az eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele);
-        // szűk ablaknál nálunk elrejtőzik (#423) — ld. a teszt indoklását.
+        // A gomb az eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele),
+        // és szűk ablakban sem rejtőzik el (#3603).
         Item {
             objectName: "toolbarNewAlbumButton"
-            visible: !toolbar.toolbarCompact
-            Layout.preferredWidth: 29
-            Layout.minimumWidth: 0
-            Layout.preferredHeight: 22
-            Layout.alignment: Qt.AlignVCenter
+            // #3603: fix bal-felső horgony — x 124, y 9 (`thumbui.tre:375`).
+            x: 124; y: 9
+            width: 29
+            height: 22
             Rectangle {
                 anchors.centerIn: parent
                 width: 22; height: 20; radius: 2
@@ -177,12 +196,11 @@ Rectangle {
         // 30 × 22-be felirat nem fér).
         Row {
             objectName: "toolbarFolderViewToggle"
-            visible: !toolbar.toolbarCompact
             spacing: 0
-            Layout.preferredWidth: 60
-            Layout.minimumWidth: 0
-            Layout.preferredHeight: 22
-            Layout.alignment: Qt.AlignVCenter
+            // #3603: fix bal-felső horgony — x 160, y 9 (`thumbui.tre:406-415`).
+            x: 160; y: 9
+            width: 60
+            height: 22
             Rectangle {
                 objectName: "toolbarFlatViewButton"
                 //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
@@ -248,11 +266,8 @@ Rectangle {
         // almenü tételei (spec 4/b) — ezért itt nem építünk új menüt.
         Rectangle {
             objectName: "toolbarFolderViewPopupButton"
-            visible: !toolbar.toolbarCompact
-            Layout.preferredWidth: 22
-            Layout.minimumWidth: 0
-            Layout.preferredHeight: 22
-            Layout.alignment: Qt.AlignVCenter
+            // #3603: fix bal-felső horgony — x 225, y 9 (`thumbui.tre:421`).
+            x: 225; y: 9
             width: 22; height: 22; radius: 2
             color: folderViewPopupHover.hovered ? "#ffffff" : "transparent"
             border.width: folderViewPopupHover.hovered ? 1 : 0
@@ -337,7 +352,6 @@ Rectangle {
         // ide egy későbbi kör „hiányzó gombként". A felfedezhetőséget a
         // gomb buboréksúgója adja („húzd a képek fölött"); az eredeti
         // erre nem ad támpontot — mérve külön egérmutatót SEM használ.
-        Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
         // `searchcontainer.tre`-jének `filter_label` kényszere szerint
         // (`YConstraint 0, 0, -4`) a csík TETEJÉTŐL −4px-re ül, azaz a
@@ -345,16 +359,20 @@ Rectangle {
         // sorba kerül (amit egy Column spacing:0 flow-ja nem tudna
         // kifejezni, mert az mindig a felirat alá, nem fölé/bele tenné
         // a következő sort).
+        //
+        // #3603: a bal széle `0,4 · W − 2` (`searchcontainer.tre:352-355`,
+        // `filterbase` `m_offsetLT`), tehát az ABLAKSZÉLESSÉGGEL mozog —
+        // nem a bal gombsor utáni folyó hely.
         Item {
             id: filterZone
             objectName: "toolbarFilterZone"
-            Layout.alignment: Qt.AlignVCenter
-            Layout.minimumWidth: 0
+            x: toolbar.searchContainerLeft - 2
+            y: Math.round((toolbar.height - height) / 2)
             // szűk ablaknál a középső szűrő-zóna rejtőzik el — a sáv maga
             // nem törik, csak ez a blokk tűnik el (#423)
             visible: !toolbar.toolbarCompact
-            implicitWidth: filterIconsRow.width
-            implicitHeight: filterIconsRow.y + filterIconsRow.height
+            width: filterIconsRow.width
+            height: filterIconsRow.y + filterIconsRow.height
             // #839: a szűrők súgója NEM lebegő buborékban jelenik meg, hanem
             // EZEN a feliraton — a `searchcontainer.tre` mind az öt
             // szűrőgombjára ugyanezt a sort adja:
@@ -657,20 +675,31 @@ Rectangle {
                 }
             }
         }
-        Item { width: 20; visible: filterZone.visible }
-        // Picasa-hű kereső: fehér mező nagyítóval, törlő ×-szel — a
-        // zsugorodási sorrend 2. lépése (#423): a teljes méretétől
-        // 120px-ig zsugorodhat, mielőtt bármi máshoz hozzányúlnánk.
+        // Picasa-hű kereső: fehér mező nagyítóval, törlő ×-szel.
         //
-        // #587: a teljes méret az eredeti `searchcontainer`-é: 388 × 30
-        // (`konyvtar-ablak-meretek.md` 2. szakasz). A `minimumWidth`
-        // marad 120 — a zsugorodási sorrendet a #423 rögzítette, ezt a
-        // kör nem írja felül.
+        // #3603: a 388 × 30 (`konyvtar-ablak-meretek.md` 2. szakasz) a
+        // `searchcontainer` TERVEZÉSI téglalapja volt, nem a látható
+        // mezőé — a látható keret (`searchbase`, `m_offsetLTR`) a mérés
+        // szerint 24 magas, és a szélessége az ablaktól függ: bal széle
+        // `0,4 · W + 238`, jobb széle `W − 47` (`searchcontainer.tre:352-
+        // 355`, a konténer 388-as tervezési szélességéhez mért −23
+        // eltolással).
+        //
+        // A verziófelirat (#706, saját elem — az eredetiben ott semmi
+        // nincs) a mező mögötti 47 px-en fér el, ezért a mező jobb széle
+        // mindig pontosan `W − 47`. Szűk ablakban (`toolbarCompact`) a bal
+        // széle a gombsor mögé kerül, a jobb széle akkor sem mozdul.
         Rectangle {
+            id: searchBox
             objectName: "toolbarSearchBox"
-            Layout.preferredWidth: 388
-            Layout.minimumWidth: 120
-            Layout.preferredHeight: 30
+            x: toolbar.toolbarCompact
+                ? toolbar.leftButtonsRight + 10
+                : toolbar.searchContainerLeft + 238
+            width: Math.max(0, toolbar.searchBoxRight - x)
+            height: 24
+            // a képernyőkép-mérés szerint a keret teteje a sáv tetejétől
+            // 7 (50 − 43)
+            y: 7
             radius: 3
             color: Theme.controlBase
             border.color: Theme.chromeBorder
@@ -745,15 +774,20 @@ Rectangle {
                 }
             }
         }
-        // Verzió + build a jobb felső sarokban — halványan, hogy
-        // zavartalanul, de bármikor ellenőrizhető legyen, PONTOSAN
-        // melyik commit fut (appVersion → version.version_string()).
+        // Verzió a jobb felső sarokban — halványan, a keresőmező mögötti
+        // 47 px-en (#3603). Ide csak a rövid verzió fér („v0.8.590”); a
+        // teljes címke a build-azonosítóval (appVersion →
+        // version.version_string()) a buboréksúgóban olvasható, hogy
+        // továbbra is ellenőrizhető legyen, PONTOSAN melyik commit fut.
         Text {
             id: versionLabel
             objectName: "versionLabel"
-            Layout.alignment: Qt.AlignVCenter
-            Layout.minimumWidth: 0
-            text: appVersion
+            anchors.right: content.right
+            anchors.rightMargin: 4
+            anchors.verticalCenter: content.verticalCenter
+            // a teljes címke, pl. „v0.8.590 (6120.ad7e5c7c)”
+            readonly property string fullText: appVersion
+            text: String(appVersion).split(" ")[0]
             font.pixelSize: 9
             // #706: rámutatásra és fókuszban aláhúzott — ránézésre is
             // látszódjon, hogy a szám kattintható hivatkozás.
@@ -774,7 +808,7 @@ Rectangle {
             // (Saját property, mert a csatolt `ToolTip.text` a Qt
             // metaobjektumán át nem olvasható ki teszteléskor.)
             readonly property string tooltipText:
-                qsTr("View releases on GitHub")
+                qsTr("View releases on GitHub") + "\n" + fullText
 
             function openReleases() {
                 Qt.openUrlExternally(versionLabel.releasesUrl)

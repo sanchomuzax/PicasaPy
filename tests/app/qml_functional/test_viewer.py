@@ -26,7 +26,10 @@ class TestVersionLabel:
         window, _controller, _engine = qml_app
         label = window.findChild(QObject, "versionLabel")
         assert label is not None, "versionLabel nem található"
-        assert label.property("text") == version_string()
+        # #3603: a sávban csak a rövid verzió fér el, a teljes címke
+        # (build-azonosítóval) a buboréksúgóban él
+        assert label.property("fullText") == version_string()
+        assert version_string().startswith(label.property("text") + " ")
 
 
 class TestViewerRotation:
