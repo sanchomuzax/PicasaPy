@@ -161,6 +161,18 @@ def _fanezet(engine, qt_app, be: bool) -> None:
     qt_app.processEvents()
 
 
+def _levelut(ut) -> str:
+    """Az INDEXELT mappa sorának útja a fában: a `build_hierarchy` a valódi
+    mappa útját betűre pontosan megtartja (`str(Path)`, Windowson `C:\\…`).
+    """
+    return str(ut)
+
+
+def _koztes_ut(ut) -> str:
+    """A fa által KÖZBEÜLTETETT szint útja (nincs az indexben): perjeles."""
+    return ut.as_posix()
+
+
 def _fa_utak(window) -> list[str]:
     elotag = "hierRow:"
     return [
@@ -181,7 +193,7 @@ class TestAFaBecsukottAggal:
         kinyitott_elotte = [
             sor["path"] for sor in fa.rows if sor["expanded"]
         ]
-        assert (lib / "2024").as_posix() not in kinyitott_elotte, (
+        assert _koztes_ut(lib / "2024") not in kinyitott_elotte, (
             "a próba feltétele: a 2024 ág a megnyitáskor csukva van"
         )
 
@@ -189,19 +201,19 @@ class TestAFaBecsukottAggal:
 
         utak = _fa_utak(window)
         for mappa in ("2024/nyaralas", "2024/szulinap", "masik"):
-            assert (lib / mappa).as_posix() in utak, (mappa, utak)
-        assert (lib / "elmentett").as_posix() not in utak, utak
+            assert _levelut(lib / mappa) in utak, (mappa, utak)
+        assert _levelut(lib / "elmentett") not in utak, utak
         # az ős megmarad, hogy a fa olvasható legyen — pipa NÉLKÜL
-        assert (lib / "2024").as_posix() in utak, utak
-        assert _latszo(window, "hierMentesCheck:" + (lib / "2024").as_posix()) == []
+        assert _koztes_ut(lib / "2024") in utak, utak
+        assert _latszo(window, "hierMentesCheck:" + _koztes_ut(lib / "2024")) == []
         assert len(_latszo(
-            window, "hierMentesCheck:" + (lib / "2024" / "nyaralas").as_posix())) == 1
+            window, "hierMentesCheck:" + _levelut(lib / "2024" / "nyaralas"))) == 1
 
     def test_a_beagyazott_sor_kattintasra_pipalodik(self, app, qt_app):
         window, controller, engine, _v, lib, _cel = app
         _fanezet(engine, qt_app, True)
         host = _nyisd_a_mentest(window, qt_app)
-        nyaralas = (lib / "2024" / "nyaralas").as_posix()
+        nyaralas = _levelut(lib / "2024" / "nyaralas")
         elotte = controller.property("currentFolder")
 
         _kattints(window, _latszo(window, "hierRowMouse:" + nyaralas)[0], qt_app)
@@ -217,7 +229,7 @@ class TestAFaBecsukottAggal:
         window, _c, engine, _v, lib, _cel = app
         _fanezet(engine, qt_app, True)
         _nyisd_a_mentest(window, qt_app)
-        ut = (lib / "2024" / "nyaralas").as_posix()
+        ut = _levelut(lib / "2024" / "nyaralas")
         darab = _latszo(window, "hierCount:" + ut)
         assert [d.property("text") for d in darab] == ["(2)"]
         # a fájlnevek csak akkor látszanak, ha elférnek (a mély próba-
@@ -238,7 +250,7 @@ class TestAFaBecsukottAggal:
         # a vezérlő nyitott/csukott állapota szerinti TELJES fa tér vissza —
         # a szűrő nem nyitott ki semmit tartósan
         assert _fa_utak(window) == [sor["path"] for sor in fa.rows]
-        assert (lib / "2024" / "nyaralas").as_posix() not in _fa_utak(window)
+        assert _levelut(lib / "2024" / "nyaralas") not in _fa_utak(window)
         assert _latszo(window, "hierMentesCheck:", elotag=True) == []
 
 
@@ -382,7 +394,7 @@ class TestAGombokEsAFutas:
             if c.property("text").startswith("masik")
         ]
         _kattints(window, masik[0], qt_app)
-        assert _lista(host.property("pipaltMappak")) == [(lib / "masik").as_posix()]
+        assert _lista(host.property("pipaltMappak")) == [str(lib / "masik")]
 
         wait_for_signal(
             vezerlo.futasKesz,

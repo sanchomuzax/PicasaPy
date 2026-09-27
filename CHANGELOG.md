@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Biztonsági mentéskor a fanézet a mentetlen mappák pipáját és darabszámát
+  akkor is mutatja, ha a mappa útja más alakban érkezik (Windowson fordított
+  perjellel vagy eltérő kis- és nagybetűvel) (#3681).**
+
 ## [0.8.603] – 2026-09-27
 
 ### Javítva

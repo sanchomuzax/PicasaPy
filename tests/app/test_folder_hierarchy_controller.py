@@ -321,3 +321,38 @@ class TestMentesSorok:
 
     def test_ures_listara_csak_a_gyoker(self, controller):
         assert [s["path"] for s in controller.mentesSorok([])] == [""]
+
+    def test_windowson_a_visszaperjeles_cel_a_perjeles_faban(
+        self, qt_app, monkeypatch
+    ):
+        """A `BackupController` `str(Path)`-t ad (Windowson `C:\\…`, más
+        betűzéssel is), a fa perjeles — a találkozás a vezérlőben normalizál,
+        és a sor a mentés-oldal EREDETI útját viszi tovább a pipához."""
+        from picasapy.app import folder_hierarchy_controller as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "win32")
+        ctrl = FolderHierarchyController()
+        ctrl.setFolders([
+            {"path": "C:/Users/sancho/Kepek/2024/nyaralas", "count": 2},
+            {"path": "C:/Users/sancho/Kepek/masik", "count": 1},
+        ])
+        cel = "c:\\users\\sancho\\Kepek\\2024\\nyaralas"
+
+        sorok = ctrl.mentesSorok([cel])
+
+        jeloltek = [s for s in sorok if s["mentetlen"]]
+        assert [s["path"] for s in jeloltek] == [
+            "C:/Users/sancho/Kepek/2024/nyaralas"]
+        assert jeloltek[0]["mentesUt"] == cel
+        assert "C:/Users/sancho/Kepek/masik" not in [s["path"] for s in sorok]
+
+    def test_posixon_a_mas_betuzesu_cel_nem_egyezik(self, qt_app, monkeypatch):
+        from picasapy.app import folder_hierarchy_controller as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "linux")
+        ctrl = FolderHierarchyController()
+        ctrl.setFolders([{"path": "/mnt/photo/Nyar", "count": 1}])
+
+        sorok = ctrl.mentesSorok(["/mnt/photo/nyar"])
+
+        assert [s["path"] for s in sorok] == [""]
