@@ -16,6 +16,7 @@
  "tests/app/qml_functional/test_album_ugro_gombok_857.py": 8.89,
  "tests/app/qml_functional/test_almenu_listas_tetel_kattintas_3470.py": 1.81,
  "tests/app/qml_functional/test_also_sav_elrendezes_1420.py": 2.84,
+ "tests/app/qml_functional/test_alsosav_horgonyzas_pontossag_3602.py": 3.0,
  "tests/app/qml_functional/test_arc_nagyitas_ui_2187.py": 6.78,
  "tests/app/qml_functional/test_arc_szuro_gomb_1830.py": 1.41,
  "tests/app/qml_functional/test_arckereses_bekotes_1473.py": 8.37,

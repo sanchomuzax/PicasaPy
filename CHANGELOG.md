@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A képtálca sávjában a csillag, a két forgatógomb és a tálca három
+  gombja most képpontra egyezik az eredetivel, és a nagyítás-csúszka
+  mellől eltűnt a fölösleges „−”/„+” jel (#3602).**
+
 ## [0.8.591] – 2026-09-27
 
 ### Javítva
