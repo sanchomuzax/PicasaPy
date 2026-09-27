@@ -13,6 +13,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   mutatja, és az albumból eltávolítás is megerősítést kér — a „Remove from
   album without confirmation” beállítással kikapcsolhatóan (#3539).**
 
+## [0.8.587] – 2026-09-27
+
+### Javítva
+- **A Nyomtatás a kiválasztott nyomatméretet (például 4×6) rácsba rendezi a
+  papíron, nem képenként külön oldalra teszi (#3647)**, ahogy az eredeti
+  Picasában: két 4×6-os kép egy lapra fér, a többi a következő lapon
+  folytatódik. A lap álló marad, a képek fordulnak el, ha így kevesebb lap
+  kell. A „Teljes oldal” méret és a lapra cellaként nem férő 8×10 laponként
+  egy képet nyomtat. „Lapkitöltés (vágással)” módban a kép nem lóg át a
+  szomszédjára.
+
 ## [0.8.586] – 2026-09-27
 
 ### Javítva
