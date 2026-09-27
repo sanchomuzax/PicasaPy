@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az alsó sáv jobb fele képpontra egyezik az eredetivel (#3709).** A
+  nagyítás-csúszka sávja mindkét végén 3 képponttal beljebb kezdődik, a
+  nagyító keret nélküli ikon lett, a négy panelkapcsoló kerete pedig —
+  ahogy az eredetiben — egy képponttal beljebb fut.
+
 ## [0.8.594] – 2026-09-27
 
 ### Javítva
