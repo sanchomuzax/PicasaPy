@@ -541,6 +541,10 @@ Rectangle {
     //: felül a várakozót (a lapozás a régi kötésekkel még egyszer ideérhet)
     property bool aaKerdesFut: false
 
+    //: #3651: a „Szerkesztés jóváhagyása" (`endEditModality`) párbeszéd alatt
+    //: várakozó módváltás — a VÁLASZ után fut, Mégsére elmarad.
+    property var endEditFolytatas: null
+
     //: a fél (`"elso"` = bal/fent, `"masodik"` = jobb/lent) jelenlegi lánca
     function _aaFelLanca(fel) {
         var aFoVezerloE = (fel === "elso") === (viewer.aktivOldal === "bal")
@@ -617,12 +621,73 @@ Rectangle {
         return true
     }
 
+    //: #3651: van-e nyitott ÉS módosult modális eszköz (4/b.1 2. lépés,
+    //: `0x005f8d80` — „ha egy modális eszköz nyitva van"). A „módosult" a
+    //: panel saját Alkalmaz-gombjának engedélyezettségi feltételét követi
+    //: (retusálás/szöveg — a 3/c szakasz szerint ugyanez a kapu nézi az
+    //: eszköz állapotát); a vágásnál a húzott/betöltött kijelölés a jele.
+    function _nyitottEszkozModosult() {
+        if (editorPanel.cropActive) return cropOverlay.hasSelection
+        if (editorPanel.retouchActive)
+            return editorPanel.retouchRegionCount > 0
+                || editorPanel.retouchPatchPending
+        if (editorPanel.textActive) return editorPanel.textPlacementPending
+        if (editorPanel.redeyeActive) return editorPanel.redeyeRegionCount > 0
+        return false
+    }
+
+    //: #3651: a nyitott eszköz lezárása a saját Alkalmaz/Mégse útján —
+    //: ugyanazok a hívások, amiket a panel gombjai indítanak (3/c 3. pont).
+    function _nyitottEszkozLezar(alkalmaz) {
+        if (editorPanel.cropActive) {
+            if (alkalmaz) viewer.applyCrop(false)
+            else {
+                cropOverlay.resetSelection()
+                editorPanel.cropActive = false
+            }
+        } else if (editorPanel.retouchActive) {
+            if (alkalmaz) editController.applyRetouch()
+            editorPanel.retouchActive = false
+        } else if (editorPanel.textActive) {
+            if (alkalmaz) editController.applyText()
+            editorPanel.textActive = false
+        } else if (editorPanel.redeyeActive) {
+            if (alkalmaz) editController.applyRedeye()
+            editorPanel.redeyeActive = false
+        }
+    }
+
+    //: #3651: a „Szerkesztés jóváhagyása" kapu (4/b.1 2. lépés) — az „aa"/
+    //: „ab" módba lépés előtt fut, MIUTÁN a 2-up kilépési létra (`aaKilepesKapu`)
+    //: már eldőlt. `true`: nincs (vagy már el is dőlt) a kérdés, a hívó MOST
+    //: folytathat. `false`: a párbeszéd nyitva; a `folytatas` a VÁLASZ után
+    //: fut, Mégsére elmarad.
+    function _eszkozZarasKapu(folytatas) {
+        if (!viewer._nyitottEszkozModosult()) return true
+        if (typeof confirmSettings !== "undefined" && confirmSettings
+                && confirmSettings.isSuppressed(endEditModality.beallitasKulcs)) {
+            viewer._nyitottEszkozLezar(true)
+            return true
+        }
+        viewer.endEditFolytatas = folytatas
+        endEditModality.kerdez()
+        return false
+    }
+
     //: #3014: a kettős nézet üzemmódjának váltása — a szegmensek ezt hívják.
     //: Az „aa" módból kilépve előbb a kapu fut; ha a párbeszéd kell, a váltás
-    //: a válaszig vár, és Mégsére elmarad.
+    //: a válaszig vár, és Mégsére elmarad. #3651: „aa"/„ab" módba LÉPÉSKOR
+    //: (a 2-up kilépési létra után) a nyitott modális eszköz kérdése jön.
     function modotValt(uj) {
         if (uj === viewer.layoutMode) return
-        if (!viewer.aaKilepesKapu(function () { viewer.layoutMode = uj }))
+        if (!viewer.aaKilepesKapu(function () { viewer._modotValtEszkozUtan(uj) }))
+            return
+        viewer._modotValtEszkozUtan(uj)
+    }
+
+    function _modotValtEszkozUtan(uj) {
+        if ((uj === "aa" || uj === "ab")
+                && !viewer._eszkozZarasKapu(function () { viewer.layoutMode = uj }))
             return
         viewer.layoutMode = uj
     }
@@ -687,6 +752,21 @@ Rectangle {
         onMegse: {
             viewer.aaKerdesFut = false
             viewer.aaFolytatas = null
+        }
+    }
+
+    //: #3651: 4/b.1 2. lépés — a nyitott modális eszköz lezárás-kérdése,
+    //: mielőtt a kettős nézet „aa"/„ab" módja megnyílna.
+    EndEditModalityDialog {
+        id: endEditModality
+        onEldontve: function(alkalmaz) {
+            viewer._nyitottEszkozLezar(alkalmaz)
+            var folytatas = viewer.endEditFolytatas
+            viewer.endEditFolytatas = null
+            if (folytatas) folytatas()
+        }
+        onMegse: {
+            viewer.endEditFolytatas = null
         }
     }
 

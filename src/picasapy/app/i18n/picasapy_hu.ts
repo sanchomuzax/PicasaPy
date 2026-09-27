@@ -39,6 +39,36 @@
     </message>
 </context>
 <context>
+    <name>EndEditModalityDialog</name>
+    <!-- #3651: `CThumbUI::ConfirmAbandonModifiedEdit*` (`0x005f8d80`) — a
+         MÉRT hivatalos magyar szövegek (`docs/specs/ui-audit-editor.md` 3/c
+         és 4/b.1 2. lépés) -->
+    <message>
+        <source>Confirm Edit</source>
+        <translation>Szerkesztés jóváhagyása</translation>
+    </message>
+    <message>
+        <source>Apply changes to the current image?</source>
+        <translation>Elfogadja az aktuális kép módosításait?</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask me again, always apply changes.</source>
+        <translation>Ne kérdezzen újból, mindig fogadja el a módosításokat</translation>
+    </message>
+    <message>
+        <source>Apply Changes</source>
+        <translation>Módosítások alkalmazása</translation>
+    </message>
+    <message>
+        <source>Discard Changes</source>
+        <translation>Módosítások elvetése</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
     <name>ActivityBadge</name>
     <message>
         <location filename="../qml/PicasaPy/ActivityBadge.qml"/>

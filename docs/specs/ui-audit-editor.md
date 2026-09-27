@@ -2523,7 +2523,7 @@ megléte nem bizonyít élő vezérlőt — a felületleíró dönt.**
 | buboréksúgók | **hivatalos magyar** (fent) | **angol** eredeti (`ToolTip.text: qsTr("View only one image")` stb.) | a magyar szöveg a `.ts`-be |
 | `swap_2up_focus` · `swap_2up_layout` | megvan, **rejtett** amíg nincs 2-up | **megvan**, 2-up módban látszik (`viewerSwapFocus`, `viewerSwapLayout`) | ✅ |
 | „Kijelölve" jelvény | megvan, kétrészes háttérrel | **megvan** (`viewerFocusBadge`; a válogató parancsok is ezt követik) | a kétrészes háttér még hiányzik |
-| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **megvan** (#3014): `AaUtkozesDialog.qml`, a 4/b.1 döntési táblájával; az „aa" mód két fele két önálló szerkesztés (a kijelölt ír, a másik memóriás), a „ne kérdezd" a `DoNotAskOnEnd2Up` kulcs (#367) | a lapozás, a programzárás és a néző elhagyása is kérdez, Mégsére megáll (4/c.1, #3644); a belépés előtti „Apply changes…?" kérdés (4/b.1, 2. lépés) még nincs |
+| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **megvan** (#3014): `AaUtkozesDialog.qml`, a 4/b.1 döntési táblájával; az „aa" mód két fele két önálló szerkesztés (a kijelölt ír, a másik memóriás), a „ne kérdezd" a `DoNotAskOnEnd2Up` kulcs (#367); a lapozás, a programzárás és a néző elhagyása is kérdez, Mégsére megáll (4/c.1, #3644); a belépés előtti „Apply changes…?" kérdés (4/b.1, 2. lépés) **megvan** (#3651): `EndEditModalityDialog.qml`, a „ne kérdezd" a `DoNotAskOnEndEditModality` kulcs | a fókuszváltás lezáró kapuja (3/c, #3686) még nincs |
 | `wipe_2up_toggle` | **nincs a felületen** | nincs | **nem kell megépíteni** |
 
 

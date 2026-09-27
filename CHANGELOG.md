@@ -15,6 +15,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A „Kijelölve” jelzés szürke, a kiválasztott kép mellett, a kép fölött
   áll, és nem kerül a kép mögé; a másik képre kattintva a kijelölés átvált
   rá.
+- **A kettős nézet „aa”/„ab” módjába lépéskor megjelenik a „Szerkesztés
+  jóváhagyása” kérdés, ha egy nyitott szerkesztő-eszközön (Vágás, Retusálás,
+  Szöveg, Vörösszem) mentetlen módosítás van (#3651).** A „Módosítások
+  alkalmazása”/„elvetése” gomb lezárja az eszközt és belép a módba; a
+  „Mégse” a váltást állítja meg, az eszköz nyitva marad. A „Ne kérdezzen
+  újból” jelölő MOSTANTÓL kérdés nélkül alkalmazza a módosításokat.
+
 ## [0.8.588] – 2026-09-27
 
 ### Javítva
