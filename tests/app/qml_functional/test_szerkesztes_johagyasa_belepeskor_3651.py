@@ -235,7 +235,12 @@ class TestAValaszok:
         _kattints(window, qt_app, "viewerLayoutAa")
         assert _nyitva(window)
 
-        assert window.findChild(QObject, "endEditModalityCancelButton") is None
+        # #3693: a Mégse gomb a fókuszváltás kapujával OSZTOTT elem — itt
+        # LÉTEZIK, csak rejtett (a `RowLayout` a rejtett elemet kihagyja a
+        # sorból, tehát a többi gomb helye nem csúszik el tőle).
+        gomb = window.findChild(QObject, "endEditModalityCancelButton")
+        assert gomb is not None
+        assert gomb.property("visible") is False
         QTest.keyClick(window, Qt.Key.Key_Escape)
         qt_app.processEvents()
 
