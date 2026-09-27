@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Nyomtatás párbeszédben megszűnt a téves „(oldalanként egy)” felirat:
+  az Indexképek most a méretlista egyik tétele (magyar felületen: 5x8 cm ·
+  9x13 cm · 10x15 cm · 13x18 cm · 20x25 cm · FullPage · Indexképek), a
+  „Képenként egy lap” kapcsoló eltűnt, és a darabszám-sor a tényleges
+  lapszámot mondja, egyes/többes számban helyesen (#3712).**
+
 ## [0.8.595] – 2026-09-27
 
 ### Javítva

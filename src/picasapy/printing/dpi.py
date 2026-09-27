@@ -102,16 +102,38 @@ class NyomatMeret(Enum):
         return self.value[1]
 
 
-#: A hüvelykes készlet, a mérés sorrendjében (#1782).
+#: A hüvelykes készlet, a `printpanel.tre` HAT gombjának sorrendjében
+#: (`walletbutton` · `3x5button` · `4x6button` · `5x7button` ·
+#: `8x10button` · `fullbutton`, ld. `docs/specs/picasa-nyomtatas.md`).
+#:
+#: ✅ JAVÍTVA (#3712-review): korábban ez a tuple csak ÖTÖS volt — a Tárca
+#: a VÉGÉN állt, és a `TELJES_OLDAL` egyáltalán hiányzott belőle. A
+#: `research/testdata/screenshot/Colab EN 29…`/`…30…` felvételek
+#: egyértelműen mutatják a hat gombot ABBAN a sorrendben, ami itt áll:
+#: Wallet elöl, Full Page a végén. A korábbi ötös a #1782 mérése volt, de
+#: az csak a MÉRETEKET igazolta, a listabeli POZÍCIÓJUKAT és a Full Page
+#: jelenlétét nem.
 HUVELYK_KESZLET: tuple[NyomatMeret, ...] = (
+    NyomatMeret.TARCA,
     NyomatMeret.M3_5X5,
     NyomatMeret.M4X6,
     NyomatMeret.M5X7,
     NyomatMeret.M8X10,
-    NyomatMeret.TARCA,
+    NyomatMeret.TELJES_OLDAL,
 )
 
 #: A metrikus készlet, a felvételen látott sorrendben (#1961).
+#:
+#: ⚠️ SZÁNDÉKOSAN NINCS Tárca-tagja. A `printpanel.tre` mind a 17
+#: `ytPrintSizes` mérethez UGYANAZT a hat gombhelyet
+#: (`walletbutton`/`3x5button`/`4x6button`/`5x7button`/`8x10button`/
+#: `fullbutton`) használja — a nyelv/terület csak azt dönti el, MELYIK
+#: méret kerül az egyes gombhelyekre. A tulajdonos felvétele (#1953,
+#: `#1953-nyomtatas-kep-kicsi.jpg`) szerint metrikus környezetben a
+#: `walletbutton` helyére is egy ötödik graduált metrikus méret kerül —
+#: a Tárca (nem metrikus fogalom) ilyenkor kiesik, a Full Page viszont
+#: MINDIG megmarad az utolsó helyen. Ez MÉRT viselkedés — a #3712-review
+#: ezt nem bántja, csak a hüvelykes ötöst egészíti ki hatosra.
 METRIKUS_KESZLET: tuple[NyomatMeret, ...] = (
     NyomatMeret.M5X8CM,
     NyomatMeret.M9X13CM,

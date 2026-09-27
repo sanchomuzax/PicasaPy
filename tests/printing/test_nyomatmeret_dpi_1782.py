@@ -38,12 +38,14 @@ from picasapy.printing.dpi import HUVELYK_KESZLET
 
 
 class TestNyomatMeretek:
-    def test_az_ot_mert_meret_megvan(self):
+    def test_a_mert_meretek_megvannak(self):
         """`0x00743700` / `0x00743980`: 3,5×5 · 4×6 · 5×7 · 8×10 + tárca.
 
         #1961: a felsorolás azóta a metrikus készletet is tartalmazza,
-        ezért a HÜVELYKES készletre állítunk — az maradt ötös."""
-        assert len(HUVELYK_KESZLET) == 5
+        ezért a HÜVELYKES készletre állítunk. #3712-review: a Full Page
+        (`TELJES_OLDAL`) is a hüvelykes készlet tagja lett — a
+        `printpanel.tre` hat gombja szerint —, tehát ma hatos, nem ötös."""
+        assert len(HUVELYK_KESZLET) == 6
 
     def test_minden_meretnek_van_hüvelykben_mert_oldala(self):
         for meret in NyomatMeret:

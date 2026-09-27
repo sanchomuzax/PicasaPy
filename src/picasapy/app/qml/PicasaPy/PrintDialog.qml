@@ -61,6 +61,12 @@ Window {
     //: kihagyott videó/sérült fájl lapot sem kap.
     property int previewPage: 0
     property int previewPageCount: 0
+    //: #3712: a darabszám-sor EZT mondja — méret szerinti nyomtatásnál a
+    //: `previewPageCount`-tal azonos, indexképnél a `contactPageCount()`-ból
+    //: jön. Külön property, mert a `previewPageCount` indexkép-módban
+    //: mindig 0 (nincs lapozható előnézet), a darabszám-sornak viszont
+    //: MINDKÉT módban a valódi lapszámot kell mondania.
+    property int printPageCount: 0
     property string previewSource: ""
     // a rendszer nyomtatóinak neve; a választóban EGGYEL eltolva jelennek
     // meg, mert a 0. tétel a PDF-fájl
@@ -139,7 +145,16 @@ Window {
         "TELJES_OLDAL": qsTr("FullPage"),
         //: `ytPrintSizes::ePassport` — csak az Útlevélkép parancs állítja be
         //: (#1401), a kész méretek listájában nincs
-        "PASSPORT": qsTr("Passport")
+        "PASSPORT": qsTr("Passport"),
+        //: #3712: az eredetiben az Indexképek (`ytPrintSizes::eContact`) a
+        //: méretlista egyik tétele — nem külön kapcsoló. A `CONTACT` a
+        //: vezérlőtől kapott `printSizeIds`-en KÍVÜLI, csak a QML-nek
+        //: ismert azonosító (a `NyomatMeret`-nek nincs, és nem is lehet
+        //: ilyen tagja — az indexkép nem CELLAMÉRET, ld. #1961).
+        //: #3712-review: a felirat a HIVATALOS szöveg ("Contact Sheet",
+        //: `stringres` 3491) — a korábbi kisbetűs "Contact sheet" saját
+        //: fogalmazás volt.
+        "CONTACT": qsTr("Contact Sheet")
     })
     property var printSizeIds: []
     //: #1953: az „Ellenőrzés" gomb eredménye — a küszöb alatti képek
@@ -172,9 +187,21 @@ Window {
     //: képpontokkal jelenne meg (a #1186 hibaosztálya).
     property int elonezetValtozat: 0
     function frissitsdAzElonezetet() {
-        if (!printWindow.printCtl || printWindow.contactSheet) {
+        if (!printWindow.printCtl) {
             printWindow.previewPageCount = 0
             printWindow.previewSource = ""
+            printWindow.printPageCount = 0
+            return
+        }
+        // #3712: az indexképnek nincs lapozható előnézete — de a
+        // darabszám-sornak MÉGIS a valódi lapszámot kell mondania, nem
+        // ígérhet olyat, amit a nyomtatás nem tesz meg.
+        if (printWindow.contactSheet) {
+            printWindow.previewPageCount = 0
+            printWindow.previewSource = ""
+            printWindow.printPageCount = printWindow.printCtl.contactPageCount(
+                printWindow.rows, printWindow.contactColumns,
+                printWindow.printerName)
             return
         }
         // #3647: a lapszámot UGYANAZZAL a tájolással/nyomtatóval kérjük,
@@ -184,6 +211,7 @@ Window {
             printWindow.rows, printWindow.copies, printWindow.orientation,
             printWindow.printerName)
         printWindow.previewPageCount = lapok
+        printWindow.printPageCount = lapok
         if (lapok <= 0) {
             printWindow.previewSource = ""
             return
@@ -256,41 +284,45 @@ Window {
             printWindow.printCtl.clearPassportSource()
     }
 
-    // #1590: a `Mappa ▸ Bélyegképek nyomtatása…` belépési pontja —
-    // ugyanaz a párbeszéd, indexkép-elrendezésre állítva
+    // #1590: a `Mappa ▸ Bélyegképek nyomtatása…` belépési pontja — ugyanaz
+    // a párbeszéd, indexkép-móddal nyitva (#3712: a méretlista egyik
+    // tétele, nem külön elrendezés-választó)
     function openForContactSheet(targetRows) {
-        printWindow.openForRows(targetRows)
-        printWindow.contactSheet = true
+        printWindow.nyisd(targetRows, "", true)
     }
 
     function openForRows(targetRows) {
-        printWindow.nyisd(targetRows, "")
+        printWindow.nyisd(targetRows, "", false)
     }
 
     //: #1401: az Útlevélkép belépési pontja — a `url` a kivágott kép.
     function openForPassport(url) {
-        printWindow.nyisd([0], url)
+        printWindow.nyisd([0], url, false)
     }
 
-    function nyisd(targetRows, utlevelUrl) {
+    function nyisd(targetRows, utlevelUrl, contactMode) {
         printWindow.valtsdAzUtlevelet(utlevelUrl)
         printWindow.rows = targetRows ? targetRows : []
+        // ⚠️ #1590/#3712: az elrendezés NEM élheti túl a bezárást — ezért a
+        // MEGNYITÁS módja dönt (paraméter), nem egy külön, utólagos
+        // állítás. Enélkül a Ctrl+P legközelebb szó nélkül indexképet
+        // nyomtatna, a felhasználó pedig méret szerintit vár.
+        printWindow.contactSheet = !!contactMode
         // #1782: a megjegyzett méret visszatöltése, majd a minőség-mérés
         if (printWindow.printCtl) {
-            printWindow.printSizeIds = printWindow.printCtl.printSizes()
+            // #3712: a `CONTACT` (Indexképek) a méretlista egyik tétele —
+            // a vezérlő `printSizes()`-e csak a valódi `NyomatMeret`-eket
+            // adja (#1961), a QML fűzi hozzá ezt az egyet.
+            printWindow.printSizeIds = printWindow.printCtl.printSizes().concat(["CONTACT"])
             printWindow.printSize = printWindow.passport
                 ? "PASSPORT" : printWindow.printCtl.printSize()
         }
         printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(
-            printWindow.printSize)
+            printWindow.contactSheet ? "CONTACT" : printWindow.printSize)
         printWindow.previewPage = 0
         printWindow.frissitsdAMinoseget()
         printWindow.lastResult = ""
         printWindow.lastSkipped = []
-        // ⚠️ #1590: az elrendezés NEM élheti túl a bezárást. Ha az
-        // indexkép-mód megmaradna, a Ctrl+P legközelebb szó nélkül
-        // indexképet nyomtatna — a felhasználó meg képenként egy lapot vár.
-        printWindow.contactSheet = false
         // ⚠️ a célfájl NEM élheti túl a bezárást. Ha megmaradna, a
         // következő nyitáskor a gomb azonnal élő lenne, a `FileDialog` meg
         // sem nyílna — tehát a Qt felülírás-kérdése sem —, és az előző PDF
@@ -384,53 +416,18 @@ Window {
         Text {
             objectName: "printSelectionText"
             Layout.fillWidth: true
-            text: printWindow.contactSheet
-                  ? qsTr("Pictures to print: %1 (contact sheet)")
-                        .arg(printWindow.rows.length)
-                  : qsTr("Pictures to print: %1 (one per page)")
-                        .arg(printWindow.rows.length)
+            //: #3712: a felirat NEM ígéri, hogy hány kép kerül egy lapra —
+            //: azt a tényleges lapszám mondja meg (méret szerinti
+            //: nyomtatásnál a rácselrendező, indexképnél a
+            //: `contactPageCount()` adja, ld. `frissitsdAzElonezetet()`).
+            //: #3712-review: a lapszám `%n`-es TÖBBES SZÁM — korábban a
+            //: szó szerinti "pages" mindig többes számban állt, tehát egy
+            //: lapnál is "(1 pages)" jelent meg.
+            text: qsTr("Pictures to print: %1 (%n page(s))", "",
+                       printWindow.printPageCount)
+                  .arg(printWindow.rows.length)
             font.pixelSize: Theme.fontSize
             color: Theme.ink
-        }
-
-        // -- elrendezés (#1590) -------------------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 2
-            Text {
-                text: qsTr("Layout:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            RowLayout {
-                spacing: 16
-                RadioButton {
-                    objectName: "printOnePerPageRadio"
-                    text: qsTr("One picture per page")
-                    checked: !printWindow.contactSheet
-                    onClicked: printWindow.contactSheet = false
-                }
-                RadioButton {
-                    objectName: "printContactSheetRadio"
-                    text: qsTr("Contact sheet")
-                    checked: printWindow.contactSheet
-                    onClicked: printWindow.contactSheet = true
-                }
-                Text {
-                    visible: printWindow.contactSheet
-                    text: qsTr("Columns:")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                }
-                SpinBox {
-                    objectName: "printContactColumnsBox"
-                    visible: printWindow.contactSheet
-                    from: 1
-                    to: 10
-                    value: printWindow.contactColumns
-                    onValueModified: printWindow.contactColumns = value
-                }
-            }
         }
 
         // -- szegély és felirat (#1780) -----------------------------------
@@ -452,18 +449,23 @@ Window {
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 2
-            visible: !printWindow.contactSheet
             Text {
                 text: qsTr("Print size:")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
+            //: #3712: EGYETLEN méretlista — az eredeti szerkezet szerint az
+            //: Indexképek (`ytPrintSizes::eContact`) a méretlista egyik
+            //: tétele, nem külön elrendezés-választó. A `printSizeIds`
+            //: ezért a vezérlő méretei UTÁN a QML-only `CONTACT` azonosítót
+            //: is tartalmazza (ld. `nyisd()`).
             PicasaComboBox {
                 id: printSizeBox
                 objectName: "printSizeBox"
                 Layout.fillWidth: true
                 model: printWindow.printSizeLabels
-                currentIndex: printWindow.printSizeIds.indexOf(printWindow.printSize)
+                currentIndex: printWindow.printSizeIds.indexOf(
+                    printWindow.contactSheet ? "CONTACT" : printWindow.printSize)
                 //: #1401: az Útlevél nincs a kész méretek között — ilyenkor
                 //: egyik tétel sincs kijelölve, a mező a méret nevét mutatja
                 displayText: currentIndex < 0
@@ -472,186 +474,227 @@ Window {
                 onActivated: {
                     var azonosito = printWindow.printSizeIds[currentIndex]
                     if (!azonosito) return
-                    printWindow.printSize = azonosito
-                    // a méret TARTÓS (`PrintLastSize`) — azonnal eltesszük
-                    if (printWindow.printCtl)
-                        printWindow.printCtl.setPrintSize(azonosito)
+                    if (azonosito === "CONTACT") {
+                        // #3712: az Indexképek nem CELLAMÉRET — a
+                        // `setPrintSize` a #1961 készletén kívüli nevet
+                        // úgyis elutasítaná, ezért nem is hívjuk.
+                        printWindow.contactSheet = true
+                    } else {
+                        printWindow.contactSheet = false
+                        printWindow.printSize = azonosito
+                        // a méret TARTÓS (`PrintLastSize`) — azonnal eltesszük
+                        if (printWindow.printCtl)
+                            printWindow.printCtl.setPrintSize(azonosito)
+                    }
                     printWindow.frissitsdAMinoseget()
                 }
             }
-            // #1819: KÉPENKÉNTI példányszám. A felirat az `IDS_COPIES`
-            // (`ThumbUIPrint::PrintCount`); a két gomb az `addprintsbutton`
-            // és a `subprintsbutton`.
+
+            // #1590/#3712: az indexkép rácsának oszlopszáma — csak akkor
+            // látszik, ha a fenti listában az Indexképek van kijelölve.
             RowLayout {
                 Layout.fillWidth: true
+                visible: printWindow.contactSheet
                 spacing: 6
                 Text {
-                    text: qsTr("Copies of each picture:")
+                    text: qsTr("Columns:")
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
-                PicasaButton {
-                    objectName: "printCopiesMinusButton"
-                    text: "–"
-                    Layout.preferredWidth: 26
-                    Layout.preferredHeight: 22
-                    //: Egy alá nem mehet: nulla példány nem nyomtatás,
-                    //: hanem a párbeszéd értelmetlen állapota.
-                    enabled: printWindow.copies > 1
-                    onClicked: {
-                        printWindow.copies -= 1
-                        printWindow.frissitsdAzElonezetet()
-                    }
-                }
-                Text {
-                    objectName: "printCopiesText"
-                    text: printWindow.copies
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                    Layout.minimumWidth: 20
-                    horizontalAlignment: Text.AlignHCenter
-                }
-                PicasaButton {
-                    objectName: "printCopiesPlusButton"
-                    text: "+"
-                    Layout.preferredWidth: 26
-                    Layout.preferredHeight: 22
-                    //: Buboréksúgó az eredetiből (`addprintsbutton`).
-                    ToolTip.text: qsTr(
-                        "Add another copy of each Photo to be printed")
-                    ToolTip.visible: hovered
-                    ToolTip.delay: Theme.tooltipDelay
-                    onClicked: {
-                        printWindow.copies += 1
+                SpinBox {
+                    objectName: "printContactColumnsBox"
+                    from: 1
+                    to: 10
+                    value: printWindow.contactColumns
+                    onValueModified: {
+                        printWindow.contactColumns = value
                         printWindow.frissitsdAzElonezetet()
                     }
                 }
                 Item { Layout.fillWidth: true }
             }
 
-            // #1819: LAPOZHATÓ előnézet. A párbeszédnek eddig egyáltalán
-            // nem volt előnézete — a felhasználó vakon nyomott nyomtatást.
+            // -- méret szerinti nyomtatás kizárólagos vezérlői -----------
+            // Az indexképnél nincs értelme: ott MINDIG a teljes kép
+            // látszik a cellában, és nincs képenkénti minőség-ellenőrzés.
             ColumnLayout {
-                objectName: "printPreviewBlock"
                 Layout.fillWidth: true
-                spacing: 4
-                visible: printWindow.previewPageCount > 0
-                Image {
-                    objectName: "printPreviewImage"
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredHeight: 150
-                    Layout.preferredWidth: 150
-                    fillMode: Image.PreserveAspectFit
-                    source: printWindow.previewSource
-                    asynchronous: true
-                    //: A gyorstár KIKAPCSOLVA: ugyanaz a fájlnév kap új
-                    //: tartalmat minden lapozáskor.
-                    cache: false
-                }
+                spacing: 2
+                visible: !printWindow.contactSheet
+                // #1819: KÉPENKÉNTI példányszám. A felirat az `IDS_COPIES`
+                // (`ThumbUIPrint::PrintCount`); a két gomb az
+                // `addprintsbutton` és a `subprintsbutton`.
                 RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 8
-                    PicasaButton {
-                        objectName: "printPreviewPrevButton"
-                        text: "◀"
-                        Layout.preferredWidth: 26
-                        Layout.preferredHeight: 22
-                        //: Az első lapon nincs hova visszalépni.
-                        enabled: printWindow.previewPage > 0
-                        onClicked: {
-                            printWindow.previewPage -= 1
-                            printWindow.frissitsdAzElonezetet()
-                        }
-                    }
+                    Layout.fillWidth: true
+                    spacing: 6
                     Text {
-                        objectName: "printPreviewPageText"
-                        //: #1960: a SORREND a fordításé, nem a kódé. Az
-                        //: eredeti angol erőforrása `%1$d of %2$d`
-                        //: (aktuális / összes), a magyar `%2$d / %1$d`
-                        //: (összes / aktuális) — `ThumbUIPrint::PrintCount`,
-                        //: `stringres` 2287. Ezért összefűzés helyett
-                        //: pozíció-argumentumos sablon: a `.ts` dönti el,
-                        //: melyik nyelv melyik sorrendet kapja.
-                        text: qsTr("%1 / %2")
-                              .arg(printWindow.previewPage + 1)
-                              .arg(printWindow.previewPageCount)
+                        text: qsTr("Copies of each picture:")
                         font.pixelSize: Theme.fontSize
                         color: Theme.ink
                     }
                     PicasaButton {
-                        objectName: "printPreviewNextButton"
-                        text: "▶"
+                        objectName: "printCopiesMinusButton"
+                        text: "–"
                         Layout.preferredWidth: 26
                         Layout.preferredHeight: 22
-                        enabled: printWindow.previewPage
-                                 < printWindow.previewPageCount - 1
+                        //: Egy alá nem mehet: nulla példány nem nyomtatás,
+                        //: hanem a párbeszéd értelmetlen állapota.
+                        enabled: printWindow.copies > 1
                         onClicked: {
-                            printWindow.previewPage += 1
+                            printWindow.copies -= 1
                             printWindow.frissitsdAzElonezetet()
                         }
                     }
-                }
-            }
-
-            Text {
-                objectName: "printQualityText"
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSize
-                //: figyelmeztetés esetén hangsúlyos, egyébként semleges
-                color: printWindow.quality.ready === false
-                       && printWindow.quality.total > 0
-                       ? Theme.brandRed : Theme.ink
-                text: {
-                    var q = printWindow.quality
-                    if (!q || !q.total) return ""
-                    // #3573: az eredeti sorrendje és tördelése — a
-                    // `Smallest` sor végén sortörés, a `ReviewPrompt`
-                    // előbb felszólít, és csak új sorban mondja a számot
-                    //: `ThumbUIPrint::Smallest`
-                    var sor = qsTr("Smallest picture: %1 pixels/inch.")
-                                  .arg(q.smallest)
-                    if (q.small > 0) {
-                        //: `ThumbUIPrint::picture` / `::pictures` — az
-                        //: egyes/többes szám az eredetiben is külön erőforrás
-                        var mi = q.small === 1 ? qsTr("picture") : qsTr("pictures")
-                        //: `ThumbUIPrint::ReviewPrompt` — %1 a darabszám,
-                        //: %2 a „picture"/„pictures" szó
-                        return sor + "\n"
-                               + qsTr("Please review before printing.\n%1 small %2 found.")
-                                     .arg(q.small).arg(mi)
+                    Text {
+                        objectName: "printCopiesText"
+                        text: printWindow.copies
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                        Layout.minimumWidth: 20
+                        horizontalAlignment: Text.AlignHCenter
                     }
-                    //: `ThumbUIPrint::ReadyPrompt`
-                    return sor + "\n" + qsTr("You are ready to print.")
+                    PicasaButton {
+                        objectName: "printCopiesPlusButton"
+                        text: "+"
+                        Layout.preferredWidth: 26
+                        Layout.preferredHeight: 22
+                        //: Buboréksúgó az eredetiből (`addprintsbutton`).
+                        ToolTip.text: qsTr(
+                            "Add another copy of each Photo to be printed")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: Theme.tooltipDelay
+                        onClicked: {
+                            printWindow.copies += 1
+                            printWindow.frissitsdAzElonezetet()
+                        }
+                    }
+                    Item { Layout.fillWidth: true }
                 }
-            }
 
-            // #1953: az üzenet megvolt, a GOMB nem — a felhasználó
-            // megtudta, hogy VAN kis felbontású kép, azt viszont nem,
-            // hogy MELYIK.
-            //
-            // Az eredetiben `printpanel/reviewnowbutton` (és `…button2`),
-            // felirat „Review", súgó „Make sure your photos are ready to
-            // print" (`ui-leltar.csv:1434–1437`). ⚠️ Hogy MIÉRT kettő, az
-            // NINCS mérve (a #1953 blokkolt kérdése); egy gomb elég.
-            PicasaButton {
-                objectName: "printReviewButton"
-                //: `printpanel/reviewnowbutton` felirata
-                text: qsTr("Review")
-                font.pixelSize: Theme.fontSize
-                //: `printpanel/reviewnowbutton` elemleírása
-                ToolTip.text: qsTr(
-                    "Make sure your photos are ready to print")
-                ToolTip.visible: hovered
-                ToolTip.delay: Theme.tooltipDelay
-                // Az eredetiben a „You are ready to print." ágon nincs
-                // mit ellenőrizni.
-                visible: printWindow.quality.small > 0
-                onClicked: {
-                    if (!printWindow.printCtl) return
-                    printWindow.reviewList = printWindow.printCtl.smallPictures(
-                        printWindow.rows, printWindow.printSize)
-                    printWindow.reviewOpen = true
+                // #1819: LAPOZHATÓ előnézet. A párbeszédnek eddig egyáltalán
+                // nem volt előnézete — a felhasználó vakon nyomott nyomtatást.
+                ColumnLayout {
+                    objectName: "printPreviewBlock"
+                    Layout.fillWidth: true
+                    spacing: 4
+                    visible: printWindow.previewPageCount > 0
+                    Image {
+                        objectName: "printPreviewImage"
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredHeight: 150
+                        Layout.preferredWidth: 150
+                        fillMode: Image.PreserveAspectFit
+                        source: printWindow.previewSource
+                        asynchronous: true
+                        //: A gyorstár KIKAPCSOLVA: ugyanaz a fájlnév kap új
+                        //: tartalmat minden lapozáskor.
+                        cache: false
+                    }
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 8
+                        PicasaButton {
+                            objectName: "printPreviewPrevButton"
+                            text: "◀"
+                            Layout.preferredWidth: 26
+                            Layout.preferredHeight: 22
+                            //: Az első lapon nincs hova visszalépni.
+                            enabled: printWindow.previewPage > 0
+                            onClicked: {
+                                printWindow.previewPage -= 1
+                                printWindow.frissitsdAzElonezetet()
+                            }
+                        }
+                        Text {
+                            objectName: "printPreviewPageText"
+                            //: #1960: a SORREND a fordításé, nem a kódé. Az
+                            //: eredeti angol erőforrása `%1$d of %2$d`
+                            //: (aktuális / összes), a magyar `%2$d / %1$d`
+                            //: (összes / aktuális) — `ThumbUIPrint::PrintCount`,
+                            //: `stringres` 2287. Ezért összefűzés helyett
+                            //: pozíció-argumentumos sablon: a `.ts` dönti el,
+                            //: melyik nyelv melyik sorrendet kapja.
+                            text: qsTr("%1 / %2")
+                                  .arg(printWindow.previewPage + 1)
+                                  .arg(printWindow.previewPageCount)
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.ink
+                        }
+                        PicasaButton {
+                            objectName: "printPreviewNextButton"
+                            text: "▶"
+                            Layout.preferredWidth: 26
+                            Layout.preferredHeight: 22
+                            enabled: printWindow.previewPage
+                                     < printWindow.previewPageCount - 1
+                            onClicked: {
+                                printWindow.previewPage += 1
+                                printWindow.frissitsdAzElonezetet()
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    objectName: "printQualityText"
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSize
+                    //: figyelmeztetés esetén hangsúlyos, egyébként semleges
+                    color: printWindow.quality.ready === false
+                           && printWindow.quality.total > 0
+                           ? Theme.brandRed : Theme.ink
+                    text: {
+                        var q = printWindow.quality
+                        if (!q || !q.total) return ""
+                        // #3573: az eredeti sorrendje és tördelése — a
+                        // `Smallest` sor végén sortörés, a `ReviewPrompt`
+                        // előbb felszólít, és csak új sorban mondja a számot
+                        //: `ThumbUIPrint::Smallest`
+                        var sor = qsTr("Smallest picture: %1 pixels/inch.")
+                                      .arg(q.smallest)
+                        if (q.small > 0) {
+                            //: `ThumbUIPrint::picture` / `::pictures` — az
+                            //: egyes/többes szám az eredetiben is külön erőforrás
+                            var mi = q.small === 1 ? qsTr("picture") : qsTr("pictures")
+                            //: `ThumbUIPrint::ReviewPrompt` — %1 a darabszám,
+                            //: %2 a „picture"/„pictures" szó
+                            return sor + "\n"
+                                   + qsTr("Please review before printing.\n%1 small %2 found.")
+                                         .arg(q.small).arg(mi)
+                        }
+                        //: `ThumbUIPrint::ReadyPrompt`
+                        return sor + "\n" + qsTr("You are ready to print.")
+                    }
+                }
+
+                // #1953: az üzenet megvolt, a GOMB nem — a felhasználó
+                // megtudta, hogy VAN kis felbontású kép, azt viszont nem,
+                // hogy MELYIK.
+                //
+                // Az eredetiben `printpanel/reviewnowbutton` (és `…button2`),
+                // felirat „Review", súgó „Make sure your photos are ready to
+                // print" (`ui-leltar.csv:1434–1437`). ⚠️ Hogy MIÉRT kettő, az
+                // NINCS mérve (a #1953 blokkolt kérdése); egy gomb elég.
+                PicasaButton {
+                    objectName: "printReviewButton"
+                    //: `printpanel/reviewnowbutton` felirata
+                    text: qsTr("Review")
+                    font.pixelSize: Theme.fontSize
+                    //: `printpanel/reviewnowbutton` elemleírása
+                    ToolTip.text: qsTr(
+                        "Make sure your photos are ready to print")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    // Az eredetiben a „You are ready to print." ágon nincs
+                    // mit ellenőrizni.
+                    visible: printWindow.quality.small > 0
+                    onClicked: {
+                        if (!printWindow.printCtl) return
+                        printWindow.reviewList = printWindow.printCtl.smallPictures(
+                            printWindow.rows, printWindow.printSize)
+                        printWindow.reviewOpen = true
+                    }
                 }
             }
         }
