@@ -3080,11 +3080,10 @@ A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
    (231 b) képpontonként számol: `hist_R[bájt0]`, `hist_G[bájt1]`,
    `hist_B[bájt2]` — **egyszerű darabszám, semmilyen vágás vagy súlyozás
    nincs benne**.
-2. **Ha a kép nagyobb 1000 képpontnál, KICSINYÍTVE mintavételez**
-   (`0x00bc2ea6` `cmp eax, 0x3e8`): a `0x00bc2f40` a `0x00cf3e10` =
-   **1000,0** és a képpontszám hányadosából számol léptéket. *(A léptéket
-   egy egyargumentumú CRT-függvény adja — a négyzetgyök a kézenfekvő
-   olvasat, de nem azonosítottam.)*
+2. **Ha a kép nagyobb 1000 képpontnál, egy kb. 1000 képpontos
+   PONTMINTÁN számol** (`0x00bc2ea6` `cmp eax, 0x3e8`; a minta a
+   `0x00bc2f40`-ben, a részletek a 6/a pontban). A tartományt (`lo`, `hi`)
+   tehát a minta adja, nem a teljes kép.
 3. **Csatornánként LUT** a `0x00bc3170` (232 b) függvénnyel, a
    `0x10` / `0x8` / `0x0` bit-eltolással (B / G / R a csomagolt képpontban).
 
@@ -3117,6 +3116,71 @@ alakítójával együtt adja a felfelé kerekítést. A `lo` keresése ötösév
 > `AutoFixImageOperation` viszont **másik kódút**, és **vágás nélküli
 > teljes min–max húzás**. A két függvény az eredetiben is különbözik; nálunk
 > ugyanaz. Jegy: **#2229**.
+
+### 6/a. ⭐ Az `AutoFix` mintája — kb. 1000 képpontos, legközelebbi szomszéd (2026-09-27, 380. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+*Forrás: `0x00bc2e50` (231 b) · `0x00bc2f40` (550 b) · `0x0049fe60` · `0x009e6df0`.*
+
+A 6. pont 2. lépése nyitva hagyta, hogyan kicsinyít a hisztogram-számoló.
+Utasításszinten kiolvasva:
+
+1. **A célméret.** `s = sqrt(1000,0 / (w·h))` float32-ben
+   (`0x00bc2f6a` `fdivr [0x00cf3e10]` = 1000,0; a gyök a `0x0049fe60`, ami
+   a `0x00c0b310` `sqrt`-burkolója). Utána
+   `nW = csonk(w·s + 0,5)` és `nH = csonk(h·s + 0,5)`, mindkettő legalább 1
+   (`0x00bc2fb5` `[0x00c72150]` = 0,5; a vezérlőszó `or 0xc00` = csonkolás;
+   `cmp eax, 1` / `ja`). Egy 960 × 640-es képen `nW = 39`, `nH = 26`, azaz
+   1014 mintaképpont.
+2. **A mátrix.** Tiszta skálázás, float32 elemekkel: `m0 = w / nW`,
+   `m4 = h / nH`, a többi 0, a sarok 1 (`0x00bc3077` `fdivp`,
+   `0x00bc309f` `fdivp`). A `0x009e6340` egy egységmátrixszal veszi össze.
+3. **A mintavétel pontminta.** A `0x009e6df0`-t `param_4 = 0`, `param_5 = 0`,
+   `param_6 = 0x100` értékkel hívja (`0x00bc3132`–`0x00bc3154`). Ugyanezt
+   az argumentumkészletet adja a `smoothing=false` átméretezés is, és ez
+   a `0x009e7420` legközelebbi-szomszéd ágat választja: a mintaképpont
+   közepét (`+0,5`) vetíti vissza a mátrixszal, 16.16 fixpontban, és
+   **egyetlen** forrásképpontot olvas. Ld. az 5/a pontot és „A
+   `QuantizePalette` teljes útja” szakaszt, ahol ugyanez a mintavevő fut.
+4. **A hisztogram** ezen a mintán fut (`0x00bc2ec5`–`0x00bc2f21`); a LUT
+   (`0x00bc3170`) viszont a **teljes** képre hat.
+
+**Miért számít.** A ritka szélső képpontok (például egy vékony vonal) a
+mintából kimaradnak. A tartomány így szűkebb, a húzás erősebb, mint teljes
+képes min–max húzásnál. A `PencilSketch` min esetében a második `AutoFix`
+bemenetének 2,5%-a (15 318 képpont) 162-es szintű, és legalább 0,5%-a ennél
+sötétebb (az alsó 0,5%-os percentilis 152). A teljes kép tartománya 74–255, a 39 × 26-os
+mintáé 162–255. Nálunk ezért 162 → 124 lett, az eredetiben 162 → 0.
+
+**Mérve** (684-es mérőkészlet, ΔE a Picasa-exporthoz; a kiolvasott
+mintavétel a mai teljes képes hisztogram helyén, minden más változatlan):
+
+| effekt · eset | ma (teljes kép) | **1000 képpontos pontminta** |
+|---|---:|---:|
+| `PencilSketch` alap | 1,953 | **0,129** |
+| `PencilSketch` min | 2,942 | **0,018** |
+| `Cinemascope` alap | 1,367 | **1,097** |
+| `Holga` alap / min | 0,890 / 0,678 | **0,750 / 0,500** |
+| `Sixties` alap / min | 1,179 / 1,255 | **1,033 / 1,136** |
+| `NightVision` alap / min | 4,626 / 3,673 | **4,595 / 3,663** |
+
+A `max` esetek (Fade 100) változatlanok, egyik eset sem romlik.
+
+*Mellékes lelet:* a `filterdesc.xml`-ben az `AutoFixImageOperation`-t a
+`Cinemascope`, a `Holga`, a `NightVision`, a `Sixties` és (kétszer) a
+`PencilSketch` hívja. A `HDR` leírója nem hívja; a mérésen a HDR-esetek
+nem is mozdultak.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`render/glimmer_ops.py`, `autofix`) | teendő |
+|---|---|---|---|
+| a hisztogram forrása | ≤ 1000 képpontnál a teljes kép, fölötte `nW × nH` pontminta | mindig a teljes kép | a pontminta |
+| a LUT | a teljes képre | a teljes képre | ✅ |
+| a docstring | — | „HDR-család” is hívja | helyesbítendő |
+
+Fejlesztés: #3797.
 
 ### 7. `AdjustCurvesImageOperation` — a négy görbe tagoffszete
 
@@ -5202,12 +5266,25 @@ Utána `(px & mask) | alphaOr`: a `channelOptions` 0. bitje az R-t, az 1. a G-t,
 
 A maradék képpontonként 3–5 szint, az átlagos eltérés −0,2 (torzítatlan). **A `PicnikGrain` is determinisztikus (mérve 2026-09-27, #3757).** A #907 „két alkalmazás független mintát ad” mérése a **natív, kisbetűs `grain`** szűrőre vonatkozott (`grain=1;` és `grain=1;grain=1;`, callback `0x008f88e0`). A Glimmer `PicnikGrain` leírója rögzített `randomSeed="1"`-et ad. A 684-es exporton a szürke ágú Picasa-MT `randomSeed = 1`-gyel és a leíró szerinti Multiply móddal (`BlendMode` 5):
 
-| eset | a mai kód (véletlen mag, Darken) | Multiply + numpy-zaj | Darken + Picasa-MT | **Multiply + Picasa-MT** |
+| eset | a javítás előtti kód (véletlen mag, Darken) | Multiply + numpy-zaj | Darken + Picasa-MT | **Multiply + Picasa-MT** |
 |---|---:|---:|---:|---:|
 | alap (Grain 10) | 3,009 | 1,968 | 2,967 | **0,882** |
 | max (Grain 50) | 18,634 | 9,645 | 9,167 | **1,380** |
 
 Mindkét tényező kell, és a nagy ugrás csak a rögzített maggal jön: a zajminta tehát egyezik. A világosító ág (Screen, `BlendMode` 7) exportja nincs a készletben. Fejlesztés: #3757.
+
+**Nálunk (#3757, #3444):** az `apply_picnik_grain` a natív generátort (`nativ_noise`) hívja a rögzített `randomSeed = 1`-gyel, és a módot a sorszámmal adja át (7 Screen / 5 Multiply). Újramérve a beépítés után (`analyze_validation_kit.mean_de`):
+
+| eset | előtte | utána |
+|---|---:|---:|
+| 684 `picnikgrain__alap` (Grain 10) | 3,009 | **0,882** |
+| 684 `picnikgrain__max` (Grain 50) | 12,21 ¹ | **1,380** |
+| 684 `picnikgrain__min` (Grain 0) | 0,121 | 0,121 |
+| merokit-2 `szemcse_04` (Grain 30, eredeti export `export-202608151438`) | 7,79 | **0,981** |
+
+¹ A fenti táblázat 18,634-et ad a mai kódra; a beépítés előtti újramérés (három futás, véletlen maggal) 12,206–12,214-et adott, egyezésben a #3444 golden-nyilvántartásának 12,217-ével. Az eltérés oka nincs kiderítve; a javítás utáni értéket nem érinti.
+
+A (kimenet − bemenet) különbség csatornánkénti átlaga és szórása (#3444) a `max` esetén: Picasa −33,75/−33,19/−32,97 ± 30,0/29,5/29,6; előtte −13,2/−12,2/−12,2 ± 26,1/25,1/25,3; utána −33,74/−33,19/−32,97 ± 29,95/29,30/29,28. Tesztek: `tests/render/test_picnik_grain_3757.py`. A világosító ág Picasa-exportja továbbra sincs; ott a független referenciához mért bekötés a bizonyíték.
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és a golden-korrelációval.*
 
@@ -7612,7 +7689,7 @@ saját eltérése, külön kérdés.
 
 | effekt | kifejezés | mit ad |
 |---|---|---|
-| `PicnikGrain` | `{_radioLighten.selected?7:5}` | **7 = Screen** (világosító), **5 = Multiply** (sötétítő) — nálunk ma `lighten` / `darken` |
+| `PicnikGrain` | `{_radioLighten.selected?7:5}` | **7 = Screen** (világosító), **5 = Multiply** (sötétítő) — nálunk is (#3444, #3757) |
 | `Pixelate` | `{_sldrBlendMode.value}` | a csúszka értéke = sorszám (E/2) |
 | `PicnikTint` | `{_cbBlendMode.liveValue}` | a `_cbBlendMode` vezérlő **sehol nincs definiálva** a leíróban ⇒ a kifejezés nem értékelhető; a szöveges ág a `BlendMode.` előtag után a `liveValue}` maradékot hasonlítja ⇒ nincs találat ⇒ **mód −1**, csak átlátszóság-keverés. Összhangban a #884 mérésével (tiszta színezés, ΔE 1,50). |
 
@@ -7634,7 +7711,7 @@ helyen), tehát a kiértékelőnek nincs ilyen szimbóluma; az előtag után a
 | alfa a keverés után | 255 | nem kezeljük (RGB-ben dolgozunk) | nincs teendő, amíg a lánc RGB |
 | `IR` ragyogás | Screen | ✅ **Screen** (#3441, v0.8.555) | kész — ΔE 6,04 → 1,28, mérve |
 | `Pixelate` csúszka | sorszám | ✅ **sorszám** (#3443, v0.8.556) — a Difference/Hardlight/Subtract lebegőpontosan | kész — `min`: ΔE 23,31 → 0,78, mérve; az egész képletek és a Softlight: #3442 |
-| `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **MÉRVE (2026-09-27, #3757):** Multiply + a Picasa-MT `randomSeed = 1`-gyel ΔE alap 3,01 → **0,88**, max 18,63 → **1,38**. A zaj NEM véletlen: a #907 a natív `grain` szűrőt mérte |
+| `PicnikGrain` | Screen / Multiply | ✅ **Screen / Multiply**, Picasa-MT `randomSeed = 1` (#3444, #3757) | kész — ΔE alap 3,01 → **0,88**, max 12,21 → **1,38**, merokit-2 Grain 30: 7,79 → **0,98**, mérve. A zaj NEM véletlen: a #907 a natív `grain` szűrőt mérte |
 
 *Bizonyítottsági fok:* a tábla, a kernelek, a keverő és a végrehajtó menete
 **megerősített** (diszasszemblátum + kimerítő bájtpáros próba); a veremszerep
@@ -7649,9 +7726,11 @@ művelet saját fordító-slotjában nincs végigkövetve); az `IR` 7-ese
   KÍVÜL** (egy oszlop, golden-mérés nélkül nem építjük; 337. kör döntése);
 - a `Softlight` `& 0xFE`-je szándékos-e — **LEZÁRVA**: a kód ezt csinálja,
   utánépíteni így kell; a szándék nem kérdés a megvalósításhoz;
-- a `PicnikGrain` hatása a mért eltérésre — **LEZÁRVA mint nem mérhető
-  pixelre**: a mag véletlen (#907); a fejlesztői jegy statisztikai
-  (átlag/szórás) próbát ír elő.
+- a `PicnikGrain` hatása a mért eltérésre — **LEZÁRVA, pixelre mérve**
+  (#3757): a mag NEM véletlen, a leíró `randomSeed = 1`-et ad (a #907 a
+  natív `grain`-t mérte). A Screen/Multiply és a rögzített mag együtt: ΔE
+  alap 3,01 → 0,88, max 12,21 → 1,38; a #3444 statisztikai próbája is
+  teljesül (ld. G).
 
 `0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 

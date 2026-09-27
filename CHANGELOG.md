@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.610] – 2026-09-27
+
+### Javítva
+- Windowson a biztonsági mentés módban a mappalista megbízhatóan mutatja a
+  még el nem mentett mappákat (#3799).
+
+## [0.8.609] – 2026-09-27
+
+### Javítva
+- A Filmszemcse effekt az eredeti Picasa szemcséjét adja: a szemcse
+  mintázata minden alkalommal ugyanaz, mint az eredetiben, és a sötétítő
+  változat szorzással, a világosító vetítéssel (Multiply, ill. Screen)
+  keveri a képre. Az erős állásban az eltérés az eredetitől a töredékére
+  csökkent (#3757, #3444).
+
 ### Javítva
 - Az „Orton-ish” effekt Fényerő-csúszkája most az eredeti Picasa szerinti
   mértékben tolja el a kép fényerejét — eddig a csúszka szélső állásain

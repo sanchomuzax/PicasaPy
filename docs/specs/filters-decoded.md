@@ -5803,8 +5803,8 @@ Három effekt módja **futásidőben változó**, ezért nem hasonlítható így
 > ✅ **Feloldva (2026-09-21, #626):** a szám a natív módtábla sorszáma
 > (`0x00cf0e98`: 0 Add · 1 Darken · 2 Difference · 3 Hardlight · 4 Lighten ·
 > 5 Multiply · 6 Overlay · 7 **Screen** · 8 Subtract · 9 Normal · 10
-> Softlight). ⇒ `PicnikGrain`: 7 = Screen, 5 = Multiply (nálunk ma
-> lighten/darken); `Pixelate`: a csúszka értéke maga a mód; `PicnikTint`: a
+> Softlight). ⇒ `PicnikGrain`: 7 = Screen, 5 = Multiply (nálunk is a
+> #3444/#3757 óta, a leíró rögzített `randomSeed = 1`-ével); `Pixelate`: a csúszka értéke maga a mód; `PicnikTint`: a
 > `_cbBlendMode` nem létezik, a mód −1 (csak átlátszóság). Részletek és a
 > képletek: `filterdesc-registry.md`, „A `BlendInstruction`: tizenegy
 > keverési mód”.
