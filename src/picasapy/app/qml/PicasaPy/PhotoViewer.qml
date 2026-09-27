@@ -355,9 +355,6 @@ Rectangle {
     readonly property int valodiSzelesseg: viewer.photosModel
         ? (viewer.photosModel.revision,
            viewer.photosModel.pixelWidthAt(viewer.aktivSor)) : 0
-    readonly property int valodiMagassag: viewer.photosModel
-        ? (viewer.photosModel.revision,
-           viewer.photosModel.pixelHeightAt(viewer.aktivSor)) : 0
 
     function actualZoomFactor() {
         // Ez a MÉRT képlet `r`-je: a VALÓDI és az ILLESZTETT méret
@@ -373,17 +370,25 @@ Rectangle {
         // ~3,7-es arányt az 1,28 helyett — mérve a tulajdonos
         // képernyőmentésén 3–4-szeres túlnagyítás.
         //
-        // ⚠️ A FORGATÁS számít: `iniSteps % 2` esetén a rajzolt szélesség
-        // a fájl MAGASSÁGÁNAK felel meg.
+        // ⚠️ #3760: a FORGATÁS a `paintedWidth`-en NEM változtat semmit —
+        // a `kep` doboza (`width`/`height`) forgatáskor felcserélődik
+        // (`iniSteps % 2`), a `rotation:` pedig ezután, RÁ épülő
+        // képernyő-transzformációként forgatja el a már kiszámolt
+        // dobozt. A `PreserveAspectFit` illesztés a doboz elforgatás
+        // ELŐTTI méretéhez igazít, a BETÖLTÖTT (forgatatlan) kép saját
+        // (fájlbeli) arányával — ez a `paintedWidth`-et a fájl
+        // SZÉLESSÉGÉVEL tartja arányosnak, forgatástól függetlenül. A
+        // korábbi kód ezt fordítva vette: forgatott képnél a fájl
+        // MAGASSÁGÁVAL osztott — mérve: egy 300×500-as, 90°-kal
+        // forgatott képnél 1,73-szoros túlnagyítás az 1,04 helyes
+        // érték helyett.
         //: #3741: a fókuszban lévő fél képe — kettős nézetben bal
         //: fókusznál a `photoElotte`.
         var kep = photoArea.fokuszKep
         if (kep.paintedWidth <= 0)
             return 1
-        var forgatott = kep.iniSteps % 2 !== 0
-        var vSzel = forgatott ? viewer.valodiMagassag : viewer.valodiSzelesseg
-        if (vSzel > 0)
-            return vSzel / kep.paintedWidth
+        if (viewer.valodiSzelesseg > 0)
+            return viewer.valodiSzelesseg / kep.paintedWidth
         // Tartalék, ha az index nem tud méretet adni (frissen felvett kép,
         // vagy olvashatatlan fejléc): a BETÖLTÖTT raszter mérete. Ez a
         // `sourceSize`-plafon miatt legfeljebb kisebb lehet a valódinál —
