@@ -9,11 +9,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - **A Beállítások ablak legkisebb szélességén (480 px) magyarul sem lóg ki a
-  fülsor (#3661).** A 8 fülcím korábban egyenlő, túl szűk részekre osztva,
+  fülsor, és a MEGNYITÁSKORI méreten mind a 8 fül görgetés nélkül látszik
+  (#3661).** A 8 fülcím korábban egyenlő, túl szűk részekre osztva,
   tördelés/rövidítés nélkül a szomszédos fülekre és az ablak szélén túlra
   folyt volna; most minden fül a saját feliratának megfelelő szélességet
-  kapja, és a fülsor a rendelkezésre álló helynél szélesebb tartalmat
-  levágva, görgethetően jeleníti meg.
+  kapja. A dialógus alapszélessége (680 px) akkora, hogy mind a 8 magyar
+  fülcím kiférjen görgetés nélkül; 480 px-en a fülsor két nyíllal láthatóan
+  görgethető, és a kiválasztott fül mindig teljesen látszik. A „Névcímkék” és
+  az „E-Mail” fülön egy-egy, korábban nem tördelődő jelölő felirata (a
+  legszélesebb tartalom a fülön) is tördelődik a legkisebb szélességen,
+  ahogy a többi fül hasonló jelölői a #3572 óta.
 
 ## [0.8.586] – 2026-09-27
 
