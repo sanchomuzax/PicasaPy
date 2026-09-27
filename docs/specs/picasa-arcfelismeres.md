@@ -192,7 +192,9 @@ faces=rect64(24d60000786452fc),0;rect64(6f0c29a7af61863f),0
 faces=rect64(4b332eb8747a7111),ffffffffffffffff;rect64(8785292cbb847c28),b720285ba3a656a7
 ```
 
-⚠️ **`ffffffffffffffff` = „ismeretlen / nincs személyhez rendelve"**
+⛔ **HELYESBÍTVE (2026-09-27, #3670, élő mérés — ld. 15.3/b.1): a `.picasa.ini`-ben a `ffffffffffffffff` a MELLŐZÖTT (Ignore) arc jele.** A felismert, de érintetlen névtelen arc egyáltalán nem kerül a fájlba. Az alábbi régi mondat a korpusz-eloszlásból következtetett, mérés nélkül:
+
+~~⚠️ **`ffffffffffffffff` = „ismeretlen / nincs személyhez rendelve"**~~
 szentinel, nem azonosító.
 
 ### 3.2 A képfájl maga — `PersistFaceToFile`
@@ -536,7 +538,7 @@ futásidejű váltó egyik állása, nem tárolt fotóhalmaz. *(Ez a #3002 máso
 hátralévő pontjának a mért válasza — nem elmaradt munka, hanem negatív
 lelet.)*
 
-⚠️ **Nyitva marad**, hova írja Picasa az egyedi arc „elvetve" állapotát. A 9/b
+✅ **MEGVÁLASZOLVA (15.3/b.1, #3670):** az elvetett arc a `.picasa.ini` `faces=` sorában `ffffffffffffffff` személy-mezőt kap; token nincs. ~~⚠️ **Nyitva marad**, hova írja Picasa az egyedi arc „elvetve" állapotát.~~ A 9/b
 pont ezt a `0x005c9b00`-ra alapozva a `.picasa.ini`-hez kötötte; ennek a
 függvénynek a sztringkészlete viszont `.picasaoriginals`, `Deleting Files` és
 `CThumbUI::DeleteProgress` tételeket is tartalmaz, tehát **legalábbis a
@@ -796,7 +798,7 @@ utasítás-, illetve forrásszinten olvasva.*
 | 3 | **`facedata` ini-kulcs** | írja, ha `FRWriteFaceDataINI` be | **nem ismertük**, de a round-trip **MEGŐRZI** (mérve) | ✅ **nincs teendő** — ld. 13/b |
 | 4 | `deferredface` / `deferredregion` import | két külön oszlop, átfedéssel | **nincs importálva** | ebből jön a `contact_id → név` tábla |
 | 5 | `facerect` értelmezése | **logikai jelző**, nem rect | a specünk „szentinel"-nek írta | helyesbítve (3.3) |
-| 6 | `ffffffffffffffff` | „ismeretlen" szentinel | — | ne személyként importáljuk |
+| 6 | `ffffffffffffffff` | a `.picasa.ini`-ben: **mellőzött arc** (mérve, 15.3/b.1) | — | ne személyként importáljuk; a „Mellőzött emberek” közé tartozik |
 | 7 | duplikált kontakt | előfordul (mérve) | — | az importáló tűrje |
 | 8 | **egy** beépített album, két tokennel | `]unknownface` ↔ `]ignoreface` váltó, **nem törölhető** | **nincs** | 8/b — a db3-ban nincs külön elvetett-tagság |
 | 9 | két küszöb | 50–95, ötösével, alap 85 | **nincs** | ha lesz motorunk, ugyanez a létra |
@@ -1240,6 +1242,46 @@ A `faceheaderpanel/ignore` és a `faceheaderpanel/removesel` **ugyanazt** a keze
 
 ⇒ A javaslat elvetése **nem** az adatbázisban marad: a `.picasa.ini`
 kapja meg — ugyanabban a rendszerben, amit a 3.1 pont ír le.
+
+#### b.1 ⭐ MÉRVE: mit ír valójában a `.picasa.ini`-be (2026-09-27, 372. kör, #3670)
+
+A fenti b) pont a `0x005c9b00` sztringkészletéből következtetett. **Ez két helyen téves:**
+- a kezelő a `]ignoreface` / `]unknownface` tokent **nem írja**, csak összeveti a jelenlegi album tokenjével (`repe cmpsb`, `0x005c9c17`–`0x005c9c21`, `0x005c9f72`–`0x005c9f7e`);
+- az arcot a „Figyelmen kívül hagyva” albumba sorolja át (`[db+0x2e94]`, `0x005c9f9e`–`0x005c9fb4`).
+
+Az elosztó így hívja: `ignore` → `0x005c9b00(ui, 1, 1, 0)` (`0x005e1675`–`0x005e167c`), `removesel` → `0x005c9b00(ui, 0, 0, 0)` (`0x005e17ab`–`0x005e17b2`).
+
+**Élő mérés az eredeti angol Picasa 3.9.141-en** (Colab-végrehajtó, picasa-colab-jobs #61–#68, `kimenet: picasa_ini`). A tesztmappa két valódi portrét tartalmaz, a Picasa 6 arcot talált:
+
+| lépés | a mappa `.picasa.ini`-je utána | job |
+|---|---|---|
+| felismerés, érintetlenül | **nincs `.picasa.ini`** | #61 |
+| az első arc „X”-e → *Ignore People* megerősítés → **Ignore Person** | `[portre_1_ff.jpg]` · `faces=rect64(27c00680d8ffdb3f),ffffffffffffffff` · `backuphash=49926` | #64 |
+| (ellenpróba) egy másik arc elnevezése (*New Person*) | `[Contacts2]` · `bf1dfa69cbadd03d=<név>;;` · `[portre_2_szines.jpg]` · `faces=rect64(29402955d87fb57f),bf1dfa69cbadd03d` | #66 |
+| (ellenpróba) ugyanennek az arcnak a **Remove**-ja a személy-albumból → vissza a névtelenek közé | a `faces=` sor **törlődik** (a szakasz csak `backuphash`-t tart) | #68 |
+
+⇒ **A `faces=` személy-mezője a `.picasa.ini`-ben:**
+
+| érték | jelentés |
+|---|---|
+| nincs `faces=` sor | névtelen (felismert, de nem mellőzött) arc; ezek csak az adatbázisban élnek |
+| 16 jegyű azonosító | elnevezett arc; a név a `[Contacts2]` szakaszban |
+| **`ffffffffffffffff`** | **mellőzött arc** („Mellőzött emberek” album) |
+
+**`]ignoreface` token a fájlban nincs.** A korpusz 1 995 `ffff…`-értéke tehát a tulajdonos mellőzött arcai. A `0` (696×) eredetét ez a mérés nem érintette.
+
+**A megerősítő kérdés** (kulcskép: `Colab EN 36 - Ignore People megerosites.png`):
+
+| elem | angol | **hivatalos magyar** |
+|---|---|---|
+| cím (`PeoplePanel::ConfirmRemoveTitle`) | Ignore People | **Személyek mellőzése** |
+| szöveg (`PeoplePanel::ConfirmRemoveMsg`) | Are you sure you want to move this person to the ignored people album? | **Biztosan áthelyezi ezt a személyt a Mellőzött emberek albumba?** |
+| jelölő (`PeoplePanel::ConfirmRemoveCheck`) | Don't ask again, always ignore | **Ne kérdezzen újból, mindig hagyja figyelmen kívül** |
+| gombok | Ignore Person · Cancel | **Személy mellőzése** · Mégse |
+
+A felismert névtelen arcok albuma az első megnyitáskor egy „Welcome to the Unnamed people album!” tájékoztatót mutat. Ebből: „To ignore a person, click the 'X' button on the face thumbnail.”
+
+*Bizonyítottsági fok: **megerősített**, élő méréssel és két ellenpróbával.* A bináris rész (az elosztó hívásai, a `0x005c9b00` összevetése és albumválasztása) utasításszinten olvasva.
 
 #### c) A „Név hozzáadása" a jobb oldali fiókot nyitja
 

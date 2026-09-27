@@ -65,7 +65,7 @@ számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 ### `[Contacts]` / `[Contacts2]` — személyek
 - `[Contacts]` (Google-fiókkal): `<person_id>=<user>_lh,<hex_id>`
 - `[Contacts2]` (csak lokális): `<person_id>=Név;;`  pl. `b8e4117cf1d6615b=Roy Avery;;`
-- `person_id`: 64 bites hex. Még nem megerősített / azonosítatlan arc: `ffffffffffffffff`.
+- `person_id`: 64 bites hex. **`ffffffffffffffff` = mellőzött (Ignore) arc** — élőben mérve, [`picasa-arcfelismeres.md`](picasa-arcfelismeres.md) 15.3/b.1 (#3670). A névtelen, nem mellőzött arc NEM kerül a fájlba.
 - A nevek elsődleges forrása a központi `contacts.xml` (ld. pmp-database.md).
 
 ⭐ **A három mező NEVE és a hármas szabály kimérve (2026-09-06, #2524).**
@@ -2942,8 +2942,8 @@ faces=rect64(<recthex>),<contactid>
 | `recthex` | **8–16 hex jegy** (16 az uralkodó: 8 612; előfordul 15/14/12/11/10/8 is) | **változó hosszú** rect64 — a parser `zfill(16)`-et kell alkalmazzon (a `#1398`-as tanulság élő adattal igazolva) |
 | `contactid` | **`0`**, **`ffffffffffffffff`**, vagy 16-jegyű azonosító | `0` és `ffffffffffffffff` = **nincs hozzárendelt személy** (1995× a `ffff…`, 696× a `0`); a 16-jegyűek a `[contacts2]`-beli azonosítók |
 
-A `ffffffffffffffff` (MAX_UINT64) tehát **„nincs személy" jelölő** — nem
-valódi kontakt. Ez a formátum most már élő adattal igazolt, nem csak a
+⛔ **HELYESBÍTVE (2026-09-27, #3670):** a `ffffffffffffffff` élőben mérve a **mellőzött** arc jele (az Ignore után íródik ki; az elnevezés névjegy-azonosítót ír, a visszavétel a névtelenek közé törli a sort) — [`picasa-arcfelismeres.md`](picasa-arcfelismeres.md) 15.3/b.1. ~~A `ffffffffffffffff` (MAX_UINT64) tehát **„nincs személy" jelölő** — nem
+valódi kontakt.~~ Ez a formátum most már élő adattal igazolt, nem csak a
 kód-visszafejtésből.
 
 *Bizonyítottsági fok: megerősített* (a teljes korpusz-eloszlás).
