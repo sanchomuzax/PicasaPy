@@ -542,8 +542,34 @@ Rectangle {
     property bool aaKerdesFut: false
 
     //: #3651: a „Szerkesztés jóváhagyása" (`endEditModality`) párbeszéd alatt
-    //: várakozó módváltás — a VÁLASZ után fut, Mégsére elmarad.
+    //: várakozó módváltás — a VÁLASZ (alkalmaz vagy elvet) után fut.
     property var endEditFolytatas: null
+
+    //: #3651: a Vágás megnyitásakor betöltött kijelölés (a kép mentett
+    //: vágása, vagy `null`) — a „módosult" próba ehhez méri a mostanit, így
+    //: egy már vágott kép érintetlen Vágás-eszköze nem számít módosultnak.
+    property var cropNyitaskoriKijeloles: null
+
+    function _cropKijeloles() {
+        if (!cropOverlay.hasSelection) return null
+        var r = cropOverlay.cropRect
+        return { "x": r.x, "y": r.y, "width": r.width, "height": r.height }
+    }
+
+    function _cropNyitaskoriMegjegyez() {
+        viewer.cropNyitaskoriKijeloles = viewer._cropKijeloles()
+    }
+
+    function _cropModosult() {
+        var most = viewer._cropKijeloles()
+        var volt = viewer.cropNyitaskoriKijeloles
+        if (most === null || volt === null) return most !== volt
+        var eps = 1e-6
+        return Math.abs(most.x - volt.x) > eps
+            || Math.abs(most.y - volt.y) > eps
+            || Math.abs(most.width - volt.width) > eps
+            || Math.abs(most.height - volt.height) > eps
+    }
 
     //: a fél (`"elso"` = bal/fent, `"masodik"` = jobb/lent) jelenlegi lánca
     function _aaFelLanca(fel) {
@@ -625,9 +651,11 @@ Rectangle {
     //: `0x005f8d80` — „ha egy modális eszköz nyitva van"). A „módosult" a
     //: panel saját Alkalmaz-gombjának engedélyezettségi feltételét követi
     //: (retusálás/szöveg — a 3/c szakasz szerint ugyanez a kapu nézi az
-    //: eszköz állapotát); a vágásnál a húzott/betöltött kijelölés a jele.
+    //: eszköz állapotát); a vágásnál az, hogy a kijelölés eltér-e a
+    //: megnyitáskoritól. A Kiegyenesítés kimarad, mert a 3/c a kapu kérdező
+    //: ágát (2-es módkód) csak erre a négy eszközre mérte, az övé nincs lekövetve.
     function _nyitottEszkozModosult() {
-        if (editorPanel.cropActive) return cropOverlay.hasSelection
+        if (editorPanel.cropActive) return viewer._cropModosult()
         if (editorPanel.retouchActive)
             return editorPanel.retouchRegionCount > 0
                 || editorPanel.retouchPatchPending
@@ -661,9 +689,13 @@ Rectangle {
     //: „ab" módba lépés előtt fut, MIUTÁN a 2-up kilépési létra (`aaKilepesKapu`)
     //: már eldőlt. `true`: nincs (vagy már el is dőlt) a kérdés, a hívó MOST
     //: folytathat. `false`: a párbeszéd nyitva; a `folytatas` a VÁLASZ után
-    //: fut, Mégsére elmarad.
+    //: fut. Ha nincs mit kérdezni, a nyitott eszköz akkor is lezárul,
+    //: elvetéssel (3/c 2. pont, `0x005f904d` → `0x005f907e`).
     function _eszkozZarasKapu(folytatas) {
-        if (!viewer._nyitottEszkozModosult()) return true
+        if (!viewer._nyitottEszkozModosult()) {
+            viewer._nyitottEszkozLezar(false)
+            return true
+        }
         if (typeof confirmSettings !== "undefined" && confirmSettings
                 && confirmSettings.isSuppressed(endEditModality.beallitasKulcs)) {
             viewer._nyitottEszkozLezar(true)
@@ -764,9 +796,6 @@ Rectangle {
             var folytatas = viewer.endEditFolytatas
             viewer.endEditFolytatas = null
             if (folytatas) folytatas()
-        }
-        onMegse: {
-            viewer.endEditFolytatas = null
         }
     }
 
@@ -949,6 +978,7 @@ Rectangle {
             if (editorPanel.cropActive) {
                 editController.enterCropTool()
                 cropOverlay.loadSelection(editController.cropSelection)
+                viewer._cropNyitaskoriMegjegyez()
             } else {
                 cropOverlay.resetSelection()
             }
@@ -979,6 +1009,7 @@ Rectangle {
                 viewer.zoomFit()   // #6: a vágó-overlay illesztett nézetet vár
                 editController.enterCropTool()
                 cropOverlay.loadSelection(editController.cropSelection)
+                viewer._cropNyitaskoriMegjegyez()
             } else {
                 editController.exitCropTool()
             }

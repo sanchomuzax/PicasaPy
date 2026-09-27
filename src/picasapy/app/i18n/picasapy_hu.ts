@@ -63,10 +63,6 @@
         <source>Discard Changes</source>
         <translation>Módosítások elvetése</translation>
     </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Mégse</translation>
-    </message>
 </context>
 <context>
     <name>ActivityBadge</name>

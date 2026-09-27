@@ -9,32 +9,33 @@ import QtQuick.Layouts
 //:
 //: A `0x0056a260` (belépés „aa"/„ab" módba) a 2-up kilépési létra (4/b) UTÁN
 //: hívja ezt a kaput, HA egy modális eszköz nyitva ÉS módosult. Alkalmaz/
-//: Elvet lezárja az eszközt, és a módváltás folytatódik; Mégse a módváltást
-//: állítja meg, az eszköz NYITVA marad.
+//: Elvet lezárja az eszközt, és a módváltás folytatódik.
+//:
+//: NINCS Mégse gomb: a belépés a kaput `0x005f8d80(this, 1, 0, 0)` alakban
+//: hívja, és a 2. gomb (`il_Cancel`) csak nem nulla 4. argumentumnál kerül a
+//: párbeszédbe (`0x005f8e36`, 3/c 2. pont). Ezért az Esc és a mellékattintás
+//: sem zárja be — a két gomb egyikével kell dönteni.
 //:
 //: A jelölő (`Preferences/DoNotAskOnEndEditModality`) ELVETÉSNÉL is beíródik
 //: — az eredeti mérve így viselkedik (`0x005f9018`, a 4/b.1 idézete): a
 //: jelző nem a MOSTANI választ ismétli, hanem azt dönti el, hogy MOSTANTÓL
-//: kérdés nélkül alkalmaz-e a kapu. Mégsére a jelölő állása figyelmen kívül
-//: marad, akkor sem ír, ha be volt pipálva.
+//: kérdés nélkül alkalmaz-e a kapu.
 Dialog {
     id: root
     objectName: "endEditModalityDialog"
     modal: true
     focus: true
     anchors.centerIn: parent ? Overlay.overlay : undefined
-    //: az Esc a Mégse útja; mellékattintás nem dönt semmiről
-    closePolicy: Popup.CloseOnEscape
-    onRejected: root._megsem()
+    //: Mégse nincs (ld. fent) — sem Esc, sem mellékattintás nem zár
+    closePolicy: Popup.NoAutoClose
     //: `IDS_ENDEDITMODALITY_TITLE`
     title: qsTr("Confirm Edit")
 
     //: a #367-es tár döntés-kulcsa — az eredeti beállítás neve
     readonly property string beallitasKulcs: "DoNotAskOnEndEditModality"
 
-    //: `true` = Alkalmaz, `false` = Elvet; Mégsére nem bocsát ki jelzést
+    //: `true` = Alkalmaz, `false` = Elvet
     signal eldontve(bool alkalmaz)
-    signal megse()
 
     function kerdez() {
         neKerdezzen.checked = false
@@ -47,11 +48,6 @@ Dialog {
             confirmSettings.setSuppressed(root.beallitasKulcs, true)
         root.close()
         root.eldontve(alkalmaz)
-    }
-
-    function _megsem() {
-        root.close()
-        root.megse()
     }
 
     ColumnLayout {
@@ -72,6 +68,7 @@ Dialog {
             objectName: "endEditModalityNeKerdezzenCheck"
             //: `IDS_ENDEDITMODALITY_CHECKMESSAGE`
             text: qsTr("Don't ask me again, always apply changes.")
+            font.pixelSize: Theme.fontSize
         }
 
         RowLayout {
@@ -90,12 +87,6 @@ Dialog {
                 objectName: "endEditModalityDiscardButton"
                 text: qsTr("Discard Changes")
                 onClicked: root._dont(false)
-            }
-            //: 2. gomb — `il_Cancel`
-            PicasaButton {
-                objectName: "endEditModalityCancelButton"
-                text: qsTr("Cancel")
-                onClicked: root._megsem()
             }
         }
     }

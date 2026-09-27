@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Kérdés a nyitott szerkesztőeszköz módosításairól, mielőtt a kettős nézet
+  megnyílik (#3651).** Ha a Vágás, a Retusálás, a Szöveg vagy a Vörösszem
+  eszközön még nem alkalmazott módosítás van, az AA vagy AB gombra kattintva
+  a program megkérdezi, alkalmazza vagy elvesse-e őket, és utána nyitja meg
+  a kettős nézetet. Módosítás nélkül nem kérdez, a nyitott eszköz ilyenkor
+  egyszerűen bezárul. A „Ne kérdezzen újból” jelölővel a módosítások a
+  jövőben kérdés nélkül alkalmazódnak.
+
 ### Javítva
 - **A kettős nézet gombjai és „Kijelölve” jelzése az eredeti Picasa szerint
   (#3663).** Az „A”, „AB” és „AA” gomb a lapozó sáv jobb oldalán, a ▶ után
@@ -15,12 +24,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A „Kijelölve” jelzés szürke, a kiválasztott kép mellett, a kép fölött
   áll, és nem kerül a kép mögé; a másik képre kattintva a kijelölés átvált
   rá.
-- **A kettős nézet „aa”/„ab” módjába lépéskor megjelenik a „Szerkesztés
-  jóváhagyása” kérdés, ha egy nyitott szerkesztő-eszközön (Vágás, Retusálás,
-  Szöveg, Vörösszem) mentetlen módosítás van (#3651).** A „Módosítások
-  alkalmazása”/„elvetése” gomb lezárja az eszközt és belép a módba; a
-  „Mégse” a váltást állítja meg, az eszköz nyitva marad. A „Ne kérdezzen
-  újból” jelölő MOSTANTÓL kérdés nélkül alkalmazza a módosításokat.
 
 ## [0.8.588] – 2026-09-27
 

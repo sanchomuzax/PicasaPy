@@ -2378,7 +2378,9 @@ hívja (`push 1` @ `0x005d730b`), az `ab_2up_toggle`-ra ugyanezt `0`-val
 2. **`0x005f8d80(this, 1, 0, 0)`** — a *„Apply changes to the current
    image?”* kérdés, ha egy modális eszköz (vágás, finomhangolás…) nyitva van
    (ld. [`picasa-bezaras-es-kilepes.md`](picasa-bezaras-es-kilepes.md) 7.
-   (c)); ha nem `0`-val tér vissza (Mégse), a belépés elmarad;
+   (c)); itt **nincs Mégse gomb**, mert a 4. argumentum `0`, a Mégse pedig
+   csak nem nulla 4. argumentumnál kerül a párbeszédbe (`0x005f8e36`, 3/c
+   2. pont) — a belépés tehát alkalmazás és elvetés után is folytatódik;
 3. a második fél képe: `aa` (`arg2 ≠ 0`) esetén **a jelenlegi kép**
    (`[this+0xe64]`), `ab` esetén a szomszéd (`0x00718110`);
 4. **`0x006abd70(&[this+0x5f8], kép)`** és **`0x006abd70(&[this+0x92c], kép)`**
