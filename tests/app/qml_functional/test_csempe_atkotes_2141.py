@@ -130,10 +130,10 @@ class TestAHaromCelSzuroTENYLEG_RENDEREL:
     """⚠️ Működő vezérlőt hatástalanra cserélni rosszabb, mint a hibás kötés.
 
     A golden-összevetés (a jegy 2. pontja) itt a MÉRHETŐ része: mind a
-    három cél-szűrő megváltoztatja a képet. A `PicnikGrain` `darken`
-    módú szürke zaj, ezért VILÁGOS képen mérendő — sötét mintán a
-    `min(kép, zaj)` a képet adja vissza, és tévesen »nem hat«-nak
-    látszik (ebbe menet közben belefutottam).
+    három cél-szűrő megváltoztatja a képet. A `PicnikGrain` sötétítő ága
+    Multiply módú szürke zaj (#3757), ezért VILÁGOS képen mérendő — sötét
+    mintán a szorzat alig tér el a képtől, és tévesen »nem hat«-nak
+    látszik.
     """
 
     def _elteres(self, kulcs, params, kep):
