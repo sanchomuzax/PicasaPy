@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az „Orton-ish” effekt Fényerő-csúszkája most az eredeti Picasa szerinti
+  mértékben tolja el a kép fényerejét — eddig a csúszka szélső állásain
+  túl erős volt a hatás (ΔE 4,4-ről 0,95-re csökkent a mért eltérés) (#3788).
+
 ## [0.8.608] – 2026-09-27
 
 ### Javítva
