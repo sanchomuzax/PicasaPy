@@ -8,6 +8,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A mentés-panel »Készlet módosítása…« gombjának felirata a hivatalos
+  »Készlet szerkesztése« lett (#3681).**
+
 - **Kérdés a nyitott szerkesztőeszköz módosításairól fókuszváltáskor is,
   kettős nézetben (#3693).** Ha a Vágás, a Retusálás, a Szöveg vagy a
   Vörösszem eszközön még nem alkalmazott módosítás van, a „Fókusz
