@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.601] – 2026-09-27
+
 ### Javítva
 - **Az Éjjellátó, a Holga-szerű, a Kinemaszkóp és a 60-as évek szemcséje
   jobban hasonlít az eredeti Picasáéra (#3736).** A zajt mostantól a Picasa
