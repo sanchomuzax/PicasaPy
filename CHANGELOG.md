@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.599] – 2026-09-27
+
 ### Javítva
 - **A Felpörgetés, a Lomo-szerű, az Áttűnés és az Éjjellátó színei szinte
   pontosan egyeznek az eredeti Picasáéval (#3735).** A program a fényerőt
