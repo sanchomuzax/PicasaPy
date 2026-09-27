@@ -131,6 +131,12 @@ class TestAddToAlbumWiring:
 
 
 class TestRemoveFromAlbumWiring:
+    """#3539: a `removeFromAlbumRequested` mostantól megerősítést nyit
+    (`removeFromAlbumDialog`), nem hívja azonnal a controllert — a
+    megerősítés SZÖVEGÉT és az elnyomható beállítást a
+    `test_torles_megerosites_hivatalos_szoveg_3539.py` méri részletesen,
+    itt csak a controller-hívás célja (a helyes albumtoken)."""
+
     def test_remove_uses_the_active_album_token(
         self, qml_app, qt_app, tmp_path
     ):
@@ -143,6 +149,13 @@ class TestRemoveFromAlbumWiring:
 
         menu = _child(window, "photoContextMenu")
         menu.removeFromAlbumRequested.emit()
+        qt_app.processEvents()
+
+        confirm = _child(window, "removeFromAlbumDialog")
+        assert confirm.property("visible") is True
+        QMetaObject.invokeMethod(
+            confirm, "confirmed", Qt.ConnectionType.DirectConnection
+        )
         qt_app.processEvents()
 
         ini = (lib / ".picasa.ini").read_text(encoding="utf-8")

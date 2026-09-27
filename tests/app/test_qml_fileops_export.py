@@ -256,7 +256,9 @@ class TestDeleteConfirmDialog:
         dialog = self._open_delete(window, qt_app, [missing])
         assert dialog.property("visible") is True
         message_label = _child(window, "confirmMessageLabel")
-        assert "1" in message_label.property("text")
+        # #3539: DeleteMessage::DeleteSingle — egyes szám esetén nincs
+        # darabszám a szövegben (a "selected file" a hivatalos alak)
+        assert "the selected file" in message_label.property("text")
         remember = _child(window, "confirmRememberCheck")
         assert remember.property("checked") is False
 
@@ -348,10 +350,13 @@ class TestDeleteConfirmDialogNoTrashAvailable:
         photo = self._make_nas_unavailable(monkeypatch, tmp_path)
         dialog = self._open_delete(window, qt_app, [str(photo)])
         assert dialog.property("visible") is True
+        # #3539: `DeleteMessage::NoUndoSingle` — a korábbi saját szöveg
+        # (és a #3573-ban tévesen idekötött
+        # `CThumbUI::ConfirmImmediateDeletion::Message`) helyett
         message_label = _child(window, "confirmMessageLabel")
         text = message_label.property("text")
-        assert "cannot be moved to the Trash" in text
-        assert "Are you sure you want to continue?" in text
+        assert "permanently delete" in text
+        assert "This cannot be undone." in text
 
     def test_confirming_deletes_permanently_not_via_trash(
         self, qml_app, qt_app, monkeypatch, tmp_path
@@ -374,7 +379,7 @@ class TestDeleteConfirmDialogNoTrashAvailable:
         photo = lib / "a.jpg"
         self._open_delete(window, qt_app, [str(photo)])
         message_label = _child(window, "confirmMessageLabel")
-        assert "system trash" in message_label.property("text")
+        assert "Recycle Bin" in message_label.property("text")
 
 
 class TestMenuBarFileActions:
