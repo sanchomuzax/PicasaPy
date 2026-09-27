@@ -83,6 +83,10 @@
         <source>No photos found</source>
         <translation>A program nem talált fotókat</translation>
     </message>
+    <message>
+        <source>All Files are backed up in this set</source>
+        <translation>A készlet valamennyi fájljáról készült biztonsági másolat</translation>
+    </message>
 </context>
 <context>
     <name>CollageDraftGuard</name>

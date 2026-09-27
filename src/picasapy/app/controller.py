@@ -76,6 +76,7 @@ from .perf_controller import PerfMonitorMixin
 from .tesztuzem_controller import TesztuzemMixin
 from .photo_ops_controller import _WRITE_ERRORS, PhotoOpsMixin
 from .dupe_search_controller import DupeSearchMixin
+from .mentes_racs_szuro import MentesRacsSzuroMixin
 from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
 from .side_pane_controller import SidePaneMixin
@@ -142,6 +143,9 @@ class AppController(
     # keresési MÓD (`dupesearch`), nem párbeszéd. Szintén lustán
     # inicializálja magát, tehát az `__init__`-hez nem kell nyúlni.
     DupeSearchMixin,
+    # #3751: a mentés-üzemmód képrács-szűrője — lusta állapot, az
+    # `__init__`-hez nem kell nyúlni
+    MentesRacsSzuroMixin,
     PhotoOpsMixin,
     BatchEffectMixin,
     ExportMixin,
@@ -1492,10 +1496,14 @@ class AppController(
             records = tuple(
                 r for r in records if r.folder_path not in closed_folders
             )
+        # #3751: mentés-üzemmódban csak a még el nem mentett fájlok
+        records = self._mentes_szurt(records)
         # #142: a mappaváltás-gyorsút pecsétje — csak a teljes feedet
         # mutató mappa-nézet érvényes hozzá (szűrt/keresett nézet nem)
         self._feed_stamp = (
-            self._index_stamp() if self._view_mode[0] == "folder" else None
+            self._index_stamp()
+            if self._view_mode[0] == "folder" and not self.backupFilterActive
+            else None
         )
         # #644: itt látjuk először a friss ini-állapotot — ha egy külső
         # program (a párhuzamosan futó Picasa) letörölte a mi mentett
