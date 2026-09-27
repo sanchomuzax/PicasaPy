@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.606] – 2026-09-27
+
 ### Javítva
 - A „Szegély” effekt lekerekített sarka most az eredeti Picasa szerint
   rajzolódik: a kép sarka és a körülötte futó belső sáv közös középpontú
