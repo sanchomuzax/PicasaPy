@@ -7,11 +7,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-### Javítva
-- A Képek biztonsági mentése panel Go gombjának letiltás-tesztje
-  mostantól a valódi állapotra vár, nem véletlenszerűen bukott el
-  (#3767).
-
 ## [0.8.602] – 2026-09-27
 
 ### Javítva

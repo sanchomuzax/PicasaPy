@@ -245,3 +245,10 @@ class TestDuplaKattintas:
             "a Go gomb nem tiltódott le a mentés utáni mappalista-"
             "frissítésre, holott nincs több mentetlen mappa"
         )
+        assert varj_feltetelre(
+            qt_app, lambda: ablak.property("mappakToltodnek") is False
+        ), "a mentés utáni mappalista-frissítés nem ért véget"
+        assert ablak.property("fut") is False, (
+            "a gomb a beragadt futás miatt tiltott"
+        )
+        assert ablak.property("pipaltMappak").property("length").toInt() == 0
