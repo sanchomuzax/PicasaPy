@@ -151,7 +151,10 @@ Window {
         //: vezérlőtől kapott `printSizeIds`-en KÍVÜLI, csak a QML-nek
         //: ismert azonosító (a `NyomatMeret`-nek nincs, és nem is lehet
         //: ilyen tagja — az indexkép nem CELLAMÉRET, ld. #1961).
-        "CONTACT": qsTr("Contact sheet")
+        //: #3712-review: a felirat a HIVATALOS szöveg ("Contact Sheet",
+        //: `stringres` 3491) — a korábbi kisbetűs "Contact sheet" saját
+        //: fogalmazás volt.
+        "CONTACT": qsTr("Contact Sheet")
     })
     property var printSizeIds: []
     //: #1953: az „Ellenőrzés" gomb eredménye — a küszöb alatti képek
@@ -417,8 +420,12 @@ Window {
             //: azt a tényleges lapszám mondja meg (méret szerinti
             //: nyomtatásnál a rácselrendező, indexképnél a
             //: `contactPageCount()` adja, ld. `frissitsdAzElonezetet()`).
-            text: qsTr("Pictures to print: %1 (%2 pages)")
-                  .arg(printWindow.rows.length).arg(printWindow.printPageCount)
+            //: #3712-review: a lapszám `%n`-es TÖBBES SZÁM — korábban a
+            //: szó szerinti "pages" mindig többes számban állt, tehát egy
+            //: lapnál is "(1 pages)" jelent meg.
+            text: qsTr("Pictures to print: %1 (%n page(s))", "",
+                       printWindow.printPageCount)
+                  .arg(printWindow.rows.length)
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }

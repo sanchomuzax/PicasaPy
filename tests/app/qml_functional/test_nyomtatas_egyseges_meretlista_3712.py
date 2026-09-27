@@ -18,11 +18,25 @@ Ez a kör a 2. utat választja: a rádiópár megszűnik, az „Indexképek" a
 méretlista egyik tétele lesz (a `NyomatMeret`-készlet — #1961 — nem
 változik, ez csak a QML-oldali választó szerkezete), és a darabszám-sor a
 TÉNYLEGES lapszámot mondja méret szerinti és indexkép nyomtatásnál is.
+
+## #3712-review: valódi kattintás, nem programozott jel
+
+A legördülő kiválasztását korábban a `activated` jel közvetlen
+`invokeMethod`-hívása szimulálta — ez a Qt `ComboBox`-nak azt üzente, hogy
+„a felhasználó ezt választotta", anélkül hogy a legördülő ténylegesen
+megnyílt vagy bármi látszott volna a képernyőn. Itt VALÓDI
+`QTest.mouseClick` nyitja meg a `printSizeBox`-ot, és VALÓDI kattintás
+választja a tételt a felugró listában — a `test_beallitasok_legkisebb_
+szelesseg_3572.py` `_kattints_kozepere`-mintája szerint.
 """
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+import time
+
+from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
+from PySide6.QtQml import QQmlExpression, qmlContext
+from PySide6.QtTest import QTest
 
 
 def _elem(root, nev):
@@ -55,6 +69,65 @@ def _lista(ertek):
     return ertek.toVariant() if hasattr(ertek, "toVariant") else ertek
 
 
+def _kattints_kozepere(ablak, qt_app, elem):
+    """Valódi bal kattintás `elem` közepére (a
+    `test_beallitasok_legkisebb_szelesseg_3572.py` `_kattints_kozepere`
+    mintája) — `ablak` az az egyetlen `QQuickWindow`, amelynek koordináta-
+    rendszerében `elem` él (a `PrintDialog.qml` maga is `Window`, a
+    felugró `Popup` tartalma ugyanennek az ablaknak az overlay-rétegén
+    jelenik meg, tehát ugyanaz az `ablak` illik mindkettőre)."""
+    pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
+    QTest.mouseClick(ablak, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont)
+    qt_app.processEvents()
+
+
+def _varakozzon(qt_app, feltetel, hatarido_mp=3):
+    hatarido = time.monotonic() + hatarido_mp
+    while time.monotonic() < hatarido and not feltetel():
+        qt_app.processEvents()
+        time.sleep(0.01)
+    return feltetel()
+
+
+def _legordulo_tetele(qt_app, lista, index):
+    """A `picasaComboList` (a `PicasaComboBox` felugró `ListView`-je)
+    `index`-edik delegate-je — a `ListView.itemAtIndex()` Qt-beépített
+    lekérdezése, `QQmlExpression`-ön át (a `test_almenu_listas_tetel_
+    kattintas_3470.py` mintája szerint), mert a delegate-nek nincs
+    `objectName`-je."""
+    kifejezes = QQmlExpression(qmlContext(lista), lista, f"itemAtIndex({index})")
+
+    def _van_tetel():
+        ertek, hiba = kifejezes.evaluate()
+        assert not hiba, kifejezes.error()
+        _van_tetel.eredmeny = ertek
+        return ertek is not None
+
+    _van_tetel.eredmeny = None
+    assert _varakozzon(qt_app, _van_tetel), (
+        f"a legördülő {index}. tétele nem épült fel"
+    )
+    return _van_tetel.eredmeny
+
+
+def _valassz_a_legorduloben(dialog, qt_app, cel_azonosito):
+    """A `printSizeBox` VALÓDI kattintással választ — megnyitja a
+    legördülőt, megkeresi `cel_azonosito` delegate-jét, és arra kattint.
+    Nem az `activated` jel programozott meghívása (#3712-review)."""
+    box = _elem(dialog, "printSizeBox")
+    azonositok = _lista(dialog.property("printSizeIds"))
+    cel_index = azonositok.index(cel_azonosito)
+
+    _kattints_kozepere(dialog, qt_app, box)
+    assert _varakozzon(
+        qt_app, lambda: box.findChild(QObject, "picasaComboList") is not None
+    ), "a legördülő nem nyílt meg (a felugró listája nem épült fel)"
+    lista = box.findChild(QObject, "picasaComboList")
+
+    tetel = _legordulo_tetele(qt_app, lista, cel_index)
+    _kattints_kozepere(dialog, qt_app, tetel)
+
+
 class TestAKulonElrendezesValasztoEltunt:
     def test_a_ket_regi_radio_mar_nem_letezik(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -72,7 +145,10 @@ class TestAMeretlistaResze:
         azonositok = _lista(dialog.property("printSizeIds"))
         feliratok = _lista(dialog.property("printSizeLabels"))
         assert "CONTACT" in azonositok, azonositok
-        assert "Contact sheet" in feliratok, feliratok
+        # #3712-review: a HIVATALOS `ytPrintSizes::eContact` szöveg
+        # "Contact Sheet" (stringres 3491), nem a korábbi kisbetűs saját
+        # fogalmazás.
+        assert "Contact Sheet" in feliratok, feliratok
 
     def test_a_legorduloben_kivalasztva_indexkep_modba_kapcsol(
         self, qml_app, qt_app
@@ -81,17 +157,8 @@ class TestAMeretlistaResze:
         dialog = _nyit_sima(window, qt_app, [0, 1])
         assert dialog.property("contactSheet") is False
 
-        box = _elem(dialog, "printSizeBox")
-        azonositok = _lista(dialog.property("printSizeIds"))
-        cel_index = azonositok.index("CONTACT")
-        box.setProperty("currentIndex", cel_index)
-        ok = QMetaObject.invokeMethod(
-            box, "activated", Qt.ConnectionType.DirectConnection,
-            Q_ARG("int", cel_index),
-        )
-        qt_app.processEvents()
+        _valassz_a_legorduloben(dialog, qt_app, "CONTACT")
 
-        assert ok
         assert dialog.property("contactSheet") is True
 
     def test_a_meret_visszavaltasa_kikapcsolja_az_indexkepet(
@@ -101,15 +168,7 @@ class TestAMeretlistaResze:
         dialog = _nyit_indexkeppel(window, qt_app, [0, 1])
         assert dialog.property("contactSheet") is True
 
-        box = _elem(dialog, "printSizeBox")
-        azonositok = _lista(dialog.property("printSizeIds"))
-        cel_index = azonositok.index("M4X6")
-        box.setProperty("currentIndex", cel_index)
-        QMetaObject.invokeMethod(
-            box, "activated", Qt.ConnectionType.DirectConnection,
-            Q_ARG("int", cel_index),
-        )
-        qt_app.processEvents()
+        _valassz_a_legorduloben(dialog, qt_app, "M4X6")
 
         assert dialog.property("contactSheet") is False
         assert dialog.property("printSize") == "M4X6"
@@ -141,9 +200,12 @@ class TestADarabszamSorATenylegesLapszamotMondja:
         szoveg = str(_elem(dialog, "printSelectionText").property("text"))
         lapszam = dialog.property("printPageCount")
 
-        assert "one per page" not in szoveg
-        assert "contact sheet" not in szoveg
-        assert str(lapszam) in szoveg, szoveg
+        # Két kép az alapértelmezett 4×6-tal ugyanarra a lapra kerül a
+        # rácselrendezőben (#3647) — a foga: ha ez valaha 2-re változna
+        # (pl. a rács vagy az alapméret módosulna), ennek a tesztnek
+        # SZÓLNIA kell, nem csendben zöldnek maradnia.
+        assert lapszam == 1, lapszam
+        assert szoveg == "Pictures to print: 2 (1 page(s))", szoveg
 
     def test_indexkep_nyomtatasnal(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -157,8 +219,8 @@ class TestADarabszamSorATenylegesLapszamotMondja:
         # Egy oszlop mellett A4-en egy sor fér ki soronként — két kép tehát
         # két lapra kerül (ugyanaz a beállítás, mint a valódi PDF-kimenetet
         # mérő `test_indexkep_nyomtatas_1590.py`-ben).
-        assert dialog.property("printPageCount") == 2
+        lapszam = dialog.property("printPageCount")
+        assert lapszam == 2, lapszam
 
         szoveg = str(_elem(dialog, "printSelectionText").property("text"))
-        assert "2" in szoveg, szoveg
-        assert "one per page" not in szoveg
+        assert szoveg == "Pictures to print: 2 (2 page(s))", szoveg

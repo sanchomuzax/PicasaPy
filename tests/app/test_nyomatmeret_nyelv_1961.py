@@ -1,8 +1,10 @@
 """A nyomatméret-vezérlő a felület NYELVÉHEZ igazodik (#1961).
 
 Magyar felületen a metrikus hatost kell felkínálnia (5×8 … 20×25 cm +
-Teljes oldal), angolon a mért hüvelykes ötöst. A készlet-definíció és a
-„miért a nyelv dönt" a `picasapy.printing.dpi`-ben áll.
+Teljes oldal), angolon a hüvelykes hatost (Tárca · 3,5×5 · 4×6 · 5×7 ·
+8×10 · Full Page — #3712-review: korábban tévesen ötös volt, Full Page
+nélkül, a Tárca a lista végén). A készlet-definíció és a „miért a nyelv
+dönt" a `picasapy.printing.dpi`-ben áll.
 
 A tárolt méret (`print/lastSize`, az eredeti `PrintLastSize`-ja) átélheti
 a nyelvváltást — ilyenkor a KÉSZLETEN KÍVÜLI értéket nem szabad
@@ -135,7 +137,10 @@ class TestAFeliratokAQMLben:
             # `ytPrintSizes::ePassport` — csak az Útlevélkép állítja be (#1401)
             "PASSPORT": "Passport",
             # #3712: az Indexképek a méretlista tétele, nem külön kapcsoló —
-            # a `CONTACT` a QML-only azonosító (nincs `NyomatMeret` tagja)
-            "CONTACT": "Contact sheet",
+            # a `CONTACT` a QML-only azonosító (nincs `NyomatMeret` tagja).
+            # #3712-review: a felirat a HIVATALOS `ytPrintSizes::eContact`
+            # szöveg ("Contact Sheet", stringres 3491) — nem saját kisbetűs
+            # fogalmazás.
+            "CONTACT": "Contact Sheet",
         }
         assert self._felirat_terkep() == vart

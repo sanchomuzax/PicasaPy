@@ -9,9 +9,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - **A Nyomtatás párbeszédben megszűnt a téves „(oldalanként egy)” felirat:
-  az Indexképek most a méretlista egyik tétele (Tárcaméret · 3,5×5 · 4×6 ·
-  5×7 · 8×10 · Teljes oldal · Indexképek), a „Képenként egy lap” kapcsoló
-  eltűnt, és a darabszám-sor a tényleges lapszámot mondja (#3712).**
+  az Indexképek most a méretlista egyik tétele (magyar felületen: 5x8 cm ·
+  9x13 cm · 10x15 cm · 13x18 cm · 20x25 cm · FullPage · Indexképek), a
+  „Képenként egy lap” kapcsoló eltűnt, és a darabszám-sor a tényleges
+  lapszámot mondja, egyes/többes számban helyesen (#3712).**
 
 ## [0.8.593] – 2026-09-27
 

@@ -17,6 +17,16 @@ felületen a **metrikus hatost** mutatja. A tulajdonos felvételén
 beállítás vagy a nyomtató papírmérete. Nálunk a **felület nyelve** dönt;
 ez a mi döntésünk, nem az eredeti másolása, és a `dpi.py` egyetlen
 helyén cserélhető, ha a mérés megszületik.
+
+## Utólagos javítás (#3712-review)
+
+A hüvelykes ötös **sorrendje és összetétele hibás volt**: a Tárca a lista
+VÉGÉN állt, és a `TELJES_OLDAL` (Full Page) egyáltalán hiányzott belőle —
+a `research/testdata/screenshot/Colab EN 29…`/`…30…` felvételek szerint
+az eredeti hat gombja Wallet elöl, Full Page a végén sorrendben áll. A
+metrikus hatos ÖSSZETÉTELE (nincs Tárca-tagja) ettől függetlenül MÉRT
+viselkedés marad — a `printing/dpi.py` `METRIKUS_KESZLET` docsztringje
+magyarázza, miért nem kap Tárcát.
 """
 
 from __future__ import annotations
@@ -38,14 +48,25 @@ class TestAKetKeszlet:
             "TELJES_OLDAL",
         ]
 
-    def test_a_huvelykes_otos_valtozatlan(self):
-        """A #1782 mért ötöse — ehhez ez a jegy nem nyúl."""
+    def test_a_huvelykes_hatos_a_panel_gombsorrendjeben(self):
+        """#3712-review: a korábbi ötös (Tárca a végén, Full Page nélkül)
+        NEM egyezett a `printpanel.tre` hat gombjával — ld. a modul
+        docsztringjét."""
         assert [m.name for m in HUVELYK_KESZLET] == [
-            "M3_5X5", "M4X6", "M5X7", "M8X10", "TARCA",
+            "TARCA", "M3_5X5", "M4X6", "M5X7", "M8X10", "TELJES_OLDAL",
         ]
 
-    def test_a_ket_keszlet_NEM_fedi_at_egymast(self):
-        assert not set(HUVELYK_KESZLET) & set(METRIKUS_KESZLET)
+    def test_a_gradualt_meretek_NEM_fedik_at_egymast(self):
+        """A TARCA/M3_5X5/… és az M5X8CM/… sosem ugyanaz a fizikai méret —
+        a `TELJES_OLDAL` viszont SZÁNDÉKOSAN közös tag (#3712-review): a
+        Full Page mindkét nyelven ugyanaz az A4 lap, csak más felirattal."""
+        gradualt_huvelykes = set(HUVELYK_KESZLET) - {NyomatMeret.TELJES_OLDAL}
+        gradualt_metrikus = set(METRIKUS_KESZLET) - {NyomatMeret.TELJES_OLDAL}
+        assert not gradualt_huvelykes & gradualt_metrikus
+
+    def test_a_teljes_oldal_kozos_tagja_mindket_keszletnek(self):
+        assert NyomatMeret.TELJES_OLDAL in HUVELYK_KESZLET
+        assert NyomatMeret.TELJES_OLDAL in METRIKUS_KESZLET
 
 
 class TestACentimeteresAtvaltas:

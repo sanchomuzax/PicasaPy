@@ -413,12 +413,14 @@
         <source>These pictures could not be printed: %1</source>
         <translation>Ezeket a képeket nem lehetett kinyomtatni: %1</translation>
     </message>
-    <message>
-        <source>Pictures to print: %1 (%2 pages)</source>
-        <translation>Nyomtatandó képek: %1 (%2 lap)</translation>
+    <message numerus="yes">
+        <source>Pictures to print: %1 (%n page(s))</source>
+        <translation>
+            <numerusform>Nyomtatandó képek: %1 (%n lap)</numerusform>
+        </translation>
     </message>
     <message>
-        <source>Contact sheet</source>
+        <source>Contact Sheet</source>
         <translation>Indexképek</translation>
     </message>
     <message>

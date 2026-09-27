@@ -223,7 +223,8 @@ class PrintController(QObject):
     def printSizes(self) -> list[str]:  # noqa: N802 — QML-stílus
         """A felület nyelvéhez tartozó nyomatméretek azonosítói (#1961).
 
-        Magyarul a metrikus hatos, angolul a mért hüvelykes ötös."""
+        Magyarul a metrikus hatos, angolul a mért hüvelykes hatos
+        (#3712-review: korábban tévesen ötös volt, Full Page nélkül)."""
         return [tag.name for tag in self._keszlet()]
 
     @Slot(result=str)
