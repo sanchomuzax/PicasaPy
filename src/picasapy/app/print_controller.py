@@ -28,9 +28,12 @@ hiányosság).
 
 A nyomtatási feladat EGYETLEN lapállást használ — a Qt `QPrinter` tájolása
 csak az első oldal `QPainter.begin()`-je ELŐTT állítható be megbízhatóan,
-laponkénti váltás így nem lenne robosztus. `orientation="auto"` esetén a
-KEVESEBB lapot adó lapállást választjuk (#3647, `_grid_for_job`); explicit
-kérésnél a kért lapállás rögzül."""
+laponkénti váltás így nem lenne robosztus. `orientation="auto"` esetén A
+LAPÁLLÁS A PAPÍRÉ MARAD (mindig portré) — a KEVESEBB lapot a CELLA
+tájolása (`(w,h)`/`(h,w)`) közül választjuk, nem a papír elforgatásával
+(#3647, #3685 önhelyesbítés, `_grid_for_job`); explicit kérésnél a kért
+lapállás rögzül. Ha a cella egyik cellatájolással sem fér el a papíron, a
+0. indexű (`eFullPage`) egyképes ágra esünk vissza (`full_page_pages`)."""
 
 from __future__ import annotations
 
@@ -80,6 +83,7 @@ from picasapy.printing.dpi import (
 from picasapy.printing.grid_layout import (
     GridPage,
     choose_page_orientation,
+    full_page_pages,
     grid_pages,
 )
 from picasapy.printing.layout import (
@@ -846,7 +850,12 @@ class PrintController(QObject):
                 PrintOrientation(orientation) if orientation else PrintOrientation.AUTO
             )
         except ValueError as error:
-            self.printFailed.emit(str(error))
+            # #3685 (7. lelet): a nyers kivétel-szöveg NEM fordítható — a
+            # felhasználó a saját nyelvén lássa a hibát, a részletet (%1)
+            # betoldva.
+            self.printFailed.emit(
+                self.tr("Invalid print settings: %1").replace("%1", str(error))
+            )
             return False
 
         images: list[QImage] = []
@@ -897,9 +906,11 @@ class PrintController(QObject):
         # állapotból készül. Alapállapotban megtartjuk a régi rajzolási ágat,
         # így a meglévő sebesség- és példányszám-kapuk változatlanok.
         options = self._print_options()
-        # #3647: a nyomatméretet CELLÁNAK tekintve rácsba rendezzük a papír
-        # nyomtatható területén — a tájolást a KEVESEBB lapot adó lapállás
-        # dönti el (AUTO-nál), explicit kérésnél a kért lapállás rögzül.
+        # #3647/#3685: a nyomatméretet CELLÁNAK tekintve rácsba rendezzük a
+        # papír nyomtatható területén — AUTO-nál a lapállás a papíré marad,
+        # a KEVESEBB lapot a CELLA tájolása dönti el; explicit kérésnél a
+        # kért lapállás rögzül. Ha egyik cellatájolással sem fér el, az
+        # egyképes (`eFullPage`) tartalék lép életbe (`_grid_for_job`).
         meret = NyomatMeret[self.printSize()]
         dpi = float(printer.resolution())
         portrait_page = self._device_page_geometry(
@@ -918,7 +929,14 @@ class PrintController(QObject):
                 requested,
             )
         except ValueError as error:
-            self.printFailed.emit(str(error))
+            # `_grid_for_job` a #3685 óta a `full_page_pages` tartalékra
+            # esik vissza, ha a cella egyik tájolással sem fér el — ez az
+            # ág gyakorlatilag csak érvénytelen (nem-pozitív) bemenetnél
+            # futhat le, de a néma nyers szöveg helyett itt is fordított
+            # üzenet megy ki.
+            self.printFailed.emit(
+                self.tr("Invalid print settings: %1").replace("%1", str(error))
+            )
             return False
         # `_page` nem kell külön: a `grid` celláinak abszolút koordinátái
         # már tartalmazzák a margót (`grid_layout.grid_pages`).
@@ -1007,25 +1025,42 @@ class PrintController(QObject):
     ) -> tuple[bool, PageGeometry, tuple[GridPage, ...]]:
         """(fekvő-e, a választott lapgeometria, a kész lapok) — #3647.
 
-        Explicit kérésnél (`PORTRAIT`/`LANDSCAPE`) az a lapállás rögzül;
-        `AUTO`-nál a KEVESEBB lapot adót választjuk, döntetlennél a portré
-        (az „eredeti") marad — ld. `grid_layout.choose_page_orientation`."""
-        if requested == PrintOrientation.LANDSCAPE:
-            return (
-                True,
-                landscape_page,
-                grid_pages(landscape_page, cell_width, cell_height, count),
+        Explicit kérésnél (`PORTRAIT`/`LANDSCAPE`) az a lapállás rögzül.
+        `AUTO`-nál — #3685 önhelyesbítés — A LAPÁLLÁS A PAPÍRÉ MARAD
+        (mindig portré): a KEVESEBB lapot a CELLA `(w,h)`/`(h,w)` tájolása
+        közül választjuk, döntetlennél az eredeti marad — ld.
+        `grid_layout.choose_page_orientation`. (Korábban ez a metódus
+        tévesen a PAPÍRT forgatta el; az élő referencia — Colab EN 29,
+        „1 of 3”, ÁLLÓ A4-en két FEKVŐ 6×4 cella egymás alatt — ezt
+        megdöntötte.)
+
+        Ha a cella EGYIK cellatájolással sem fér el a nyomtatható
+        területen (pl. „Teljes oldal”, vagy egy A4-nél alig nagyobb 8×10-es
+        nyomat), a spec 6. pontja szerint a 0. indexű (`eFullPage`)
+        elrendezővel próbálunk újra: egy kép a teljes nyomtatható
+        területen, laponként (`full_page_pages`) — enélkül a nyomtatás
+        `printPageCount = 0` lenne, előnézet és nyomat nélkül."""
+        try:
+            if requested == PrintOrientation.LANDSCAPE:
+                return (
+                    True,
+                    landscape_page,
+                    grid_pages(landscape_page, cell_width, cell_height, count),
+                )
+            if requested == PrintOrientation.PORTRAIT:
+                return (
+                    False,
+                    portrait_page,
+                    grid_pages(portrait_page, cell_width, cell_height, count),
+                )
+            _fekvo_cella, lapok = choose_page_orientation(
+                portrait_page, cell_width, cell_height, count
             )
-        if requested == PrintOrientation.PORTRAIT:
-            return (
-                False,
-                portrait_page,
-                grid_pages(portrait_page, cell_width, cell_height, count),
-            )
-        fekvo, lapok = choose_page_orientation(
-            portrait_page, landscape_page, cell_width, cell_height, count
-        )
-        return fekvo, (landscape_page if fekvo else portrait_page), lapok
+            return False, portrait_page, lapok
+        except ValueError:
+            fekvo = requested == PrintOrientation.LANDSCAPE
+            page = landscape_page if fekvo else portrait_page
+            return fekvo, page, full_page_pages(page, count)
 
     def _lap_kesz(self, kesz: int, ossz: int) -> None:
         """Egy lap megvan (#3016): jelzés + a felület továbbengedése.
@@ -1172,15 +1207,23 @@ class PrintController(QObject):
             return False
         try:
             for offset, cell in enumerate(lap_adat.cells):
+                cell_rect = QRectF(cell.x, cell.y, cell.width, cell.height)
+                # #3685 (4. lelet): Crop to Fit (FILL) módban a kép a
+                # cellánál nagyobbra nőhet — az előnézetnek UGYANÚGY vágnia
+                # kell cellánként, mint az élő nyomtatásnak, különben a
+                # levágott rész átlógna a szomszéd cellába.
+                painter.save()
+                painter.setClipRect(cell_rect)
                 self._draw_options_page(
                     painter,
-                    QRectF(cell.x, cell.y, cell.width, cell.height),
+                    cell_rect,
                     kepek[lap_adat.first + offset],
                     rekordok[lap_adat.first + offset],
                     mode,
                     options,
                     _ELONEZET_DPI,
                 )
+                painter.restore()
         finally:
             painter.end()
         return bool(lap.save(target, "PNG"))
@@ -1237,15 +1280,19 @@ class PrintController(QObject):
         options: PrintOptions,
         dpi: float,
     ) -> None:
-        """Egy oldal képe, szegélye és felirata közös geometriával."""
-        margin = min(
-            _MARGIN_MM / 25.4 * dpi,
-            page_rect.width() / 2 - 1,
-            page_rect.height() / 2 - 1,
-        )
-        margin = max(0.0, margin)
+        """Egy oldal képe, szegélye és felirata közös geometriával.
+
+        ⛔ **Önhelyesbítés (#3685 átnézése):** ez a metódus a `page_rect`-et
+        korábban egy TELJES lapnak tekintette, és emiatt még egy `_MARGIN_MM`
+        margót levont a szélein — de a #3647 óta a `page_rect` MÁR egy
+        RÁCSCELLA, aminek a lap-margóját a `grid_layout.grid_pages` a cella
+        POZÍCIÓJÁBAN már érvényesítette. A kettős margó az előnézetet
+        (`renderPreviewPage`) és a szegély-/felirat-ágas nyomtatást
+        (`_paint_pages_with_options`) SZŰKEBB képterületre rajzolta, mint az
+        egyszerű ág (`_paint_pages`) — a cella belseje itt margó nélküli,
+        pontosan úgy, ahogy az egyszerű ág is kezeli."""
         page = PageGeometry(
-            width=page_rect.width(), height=page_rect.height(), margin=margin
+            width=page_rect.width(), height=page_rect.height(), margin=0.0
         )
         text = PrintController._caption_text(record, options)
         font = PrintController._font_for_print(options, dpi)
@@ -1255,11 +1302,11 @@ class PrintController(QObject):
                 page.printable_height * 0.25,
                 max(float(font.pixelSize() + 8), float(font.pixelSize() * 3)),
             )
-        content_height = max(margin * 2 + 1, page.height - caption_height)
+        content_height = max(1.0, page.height - caption_height)
         content_page = PageGeometry(
             width=page.width,
             height=min(page.height, content_height),
-            margin=min(margin, max(0.0, min(page.width, content_height) / 2 - 1)),
+            margin=0.0,
         )
         placement = compute_print_layout(
             content_page, image.width(), image.height(), mode
@@ -1309,10 +1356,10 @@ class PrintController(QObject):
             )
         else:
             caption_rect = QRectF(
-                page_rect.x() + margin,
+                page_rect.x(),
                 page_rect.y() + content_page.height,
                 page.printable_width,
-                max(font.pixelSize() + 4, page.height - content_page.height - margin),
+                max(font.pixelSize() + 4, page.height - content_page.height),
             )
         painter.drawText(caption_rect, flags, text)
 
@@ -1329,7 +1376,12 @@ class PrintController(QObject):
         """A printoptions-ág lapfestése PDF-re és élő QPrinterre.
 
         #3647: laponként a `grid` cellái szerint fest — egy lapon TÖBB kép
-        is lehet (a nyomatméret CELLA), nem csak egy."""
+        is lehet (a nyomatméret CELLA), nem csak egy.
+
+        #3685 (4. lelet): Crop to Fit (`FILL`) módban a kép a cellánál
+        NAGYOBBRA is nőhet (a hosszabb irány levágódik) — a `painter`
+        vágóterületét ezért CELLÁNKÉNT a cella téglalapjára korlátozzuk,
+        különben a levágott rész átlógna a szomszéd cellába."""
         painter = QPainter()
         if not painter.begin(printer):
             raise RuntimeError("A nyomtatási feladat nem indítható")
@@ -1339,15 +1391,19 @@ class PrintController(QObject):
                 if index > 0:
                     printer.newPage()
                 for offset, cell in enumerate(lap.cells):
+                    cell_rect = QRectF(cell.x, cell.y, cell.width, cell.height)
+                    painter.save()
+                    painter.setClipRect(cell_rect)
                     PrintController._draw_options_page(
                         painter,
-                        QRectF(cell.x, cell.y, cell.width, cell.height),
+                        cell_rect,
                         images[lap.first + offset],
                         records[lap.first + offset],
                         mode,
                         options,
                         float(printer.resolution()),
                     )
+                    painter.restore()
                 if lap_kesz is not None:
                     lap_kesz(index + 1, ossz)
         finally:
@@ -1367,7 +1423,11 @@ class PrintController(QObject):
         lehet, rácsba rendezve, nem csak egy (ld. `grid_layout.grid_pages`).
 
         A visszahívás alapértelmezésben `None` — a rajzolás így önmagában
-        is használható marad (teszt, előnézet), jelzés nélkül."""
+        is használható marad (teszt, előnézet), jelzés nélkül.
+
+        #3685 (4. lelet): Crop to Fit (`FILL`) módban a kép a cellánál
+        NAGYOBBRA is nőhet — cellánként vágóterületre korlátozzuk a
+        `painter`-t, különben a levágott rész átlógna a szomszéd cellába."""
         painter = QPainter()
         if not painter.begin(printer):
             raise RuntimeError("A nyomtatási feladat nem indítható")
@@ -1390,7 +1450,12 @@ class PrintController(QObject):
                         placement.width,
                         placement.height,
                     )
+                    painter.save()
+                    painter.setClipRect(
+                        QRectF(cell.x, cell.y, cell.width, cell.height)
+                    )
                     painter.drawImage(target_rect, image)
+                    painter.restore()
                 if lap_kesz is not None:
                     lap_kesz(index + 1, ossz)
         finally:

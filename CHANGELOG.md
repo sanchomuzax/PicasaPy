@@ -11,8 +11,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **A nyomtatás a kiválasztott nyomatméretet (pl. 4×6) cellaként a papírra
   rácsba rendezi, nem képenként külön oldalra teszi (#3647)**, ahogy az
   eredeti Picasában: két 4×6-os kép egy Letter-lapra fér, öt pedig a
-  túlcsordulóval a következő lap elejétől folytatódik; a lapállás a
-  kevesebb lapot adót választja.
+  túlcsordulóval a következő lap elejétől folytatódik; a lapállás a papíré
+  marad, a kevesebb lapot a CELLA tájolása adja, nem a papír elforgatása.
+  A „Teljes oldal” vagy egy A4-nél alig nagyobb 8×10-es nyomat, amely
+  cellaként egyik tájolással sem fér el, a régi, egyképes, oldalra illesztő
+  ágra esik vissza — nem üres (0 lapos) előnézetet ad. Crop to Fit (vágás
+  illesztéshez) módban a kép cellánként vágódik, nem lóg át a szomszéd
+  cellába.
 
 ## [0.8.584] – 2026-09-26
 
