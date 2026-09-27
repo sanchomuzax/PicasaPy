@@ -201,6 +201,22 @@ class TestASzelessegIgenyMegMindigFedi:
                 f"{nev} jobbra lóg ki: {jobb} > {sav.property('width')}"
             )
 
+    def test_a_minimumon_a_nagyito_nem_log_a_forgato_gombra(
+        self, qml_app_module, qt_app
+    ):
+        window, _, _ = qml_app_module
+        minimum = int(window.property("minimumWidth"))
+        _szelesseg(window, qt_app, minimum)
+        forgato = _elem(window, "trayRotateRight")
+        forgato_jobb = _x_a_savban(window, "trayRotateRight") + forgato.property(
+            "width"
+        )
+        nagyito_bal = _x_a_savban(window, "trayZoomGroup")
+        assert nagyito_bal >= forgato_jobb - TURES, (
+            f"a nagyítócsoport ({nagyito_bal}) ráfut a jobbra forgató "
+            f"gombra ({forgato_jobb})"
+        )
+
 
 class TestAForrasSzintuOr:
     """A `−`/`+` `Text` a forrásból is eltűnik, nem csak a kirajzolt fából."""

@@ -486,11 +486,9 @@ Column {
         //: csillag/forgatás csoport belelógott a csúszkába a 800 pontos
         //: minimumon (a #1367 őre ezt el is kapta).
         //:
-        //: A tényleges szélességeket használjuk, nem beégetett számot: a
-        //: csúszka szélessége (a #3602 óta fix, jel nélküli) csak azért nem
-        //: beégetett szám itt, mert a betűtől független platformokon is
-        //: stabil maradjon a levezetés. Hurok nincs: egyik csoport
-        //: szélessége sem függ az ablakétól.
+        //: A csúszka sora a #3602 óta betűfüggetlen; a mért szélességet a
+        //: viewer-sorral közös `max()` miatt használjuk. Hurok nincs: egyik
+        //: csoport szélessége sem függ az ablakétól.
         //:
         //: #3602: a `trayZoomGroup` ↔ `trayMetadataGroup` rés MÉRT 20 (nem
         //: 12), és a `trayMetadataGroup` jobb széle `W − 15` — 5 képponttal
@@ -1640,16 +1638,8 @@ Column {
             // `thumbui/webupload_rect`: 145 × 44 az osztóponttól 5
             // képponttal balra, benne a 141 × 35-ös gomb.
             //
-            // ⚠️ #3602 HELYESBÍTÉS: itt korábban 147 állt, mert a respack
-            // rétegfejléce ennyit tárol a kényszerek (`0, .365, -5` …
-            // `1, .365, 140`) adta 145 helyett — és egy korábbi indoklás a
-            // 2 képpontos többletet a hely üres jobb margójának nevezte.
-            // Ez ÖNMAGÁBAN igaz volt (a doboz nem rajzol semmit), de a
-            // benne KÖZÉPRE zárt gomb pozícióját is 1 képponttal eltolta:
-            // 147-tel a gomb bal széle osztópont − 2, nem − 3. A #3582
-            // képernyőkép-összevetése ezt az 1 képpontos eltérést fogta
-            // meg — a kényszerek (145) adják a képernyőképpel (697 =
-            // osztópont − 3) egyező helyet.
+            // 145 = a kényszerek (`0, .365, -5` … `1, .365, 140`); a
+            // respack-fejléc 147-e nem a doboz szélessége.
             Item {
                 id: trayUploadSlot
                 objectName: "trayUploadSlot"
