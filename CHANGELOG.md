@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A rács görgetősávja a rácsterület jobb széléhez simul, csukott jobb
+  fióknál az ablak széléig, a fiók-fogó sávját leszámítva (#3604).** Eddig
+  20 fölösleges képpont üres rés maradt a sáv és a fogó között minden
+  ablakszélességen.
+
 ## [0.8.586] – 2026-09-27
 
 ### Javítva
