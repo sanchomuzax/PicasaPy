@@ -127,10 +127,40 @@ class TestEmptyStates:
         ).property("text")
 
     def test_a_person_album_promises_who_appears_with_them(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+        """#3723: a `currentPerson` a `Main.qml`-ben
+        `controller.currentPersonName`-hez van KÖTVE (`personViewChanged`-en
+        át, ami a `statusChanged`-hez kötött — `people_controller.py::
+        _init_people`). A valódi API (`controller.showPerson()`) a kötés
+        FORRÁSÁT állítja, ezért egy késve érkező `statusChanged` (a nyitó
+        mappa-szinkron háttérmunkájának vége — épp ez a Windows-CI hazárdja,
+        ld. lentebb a `test_a_late_status_signal_does_not_undo_it`-ot) nem
+        írja felül csendben — szemben egy közvetlen
+        `panel.setProperty("currentPerson", …)`-vel, ami magát a kötött QML-
+        tulajdonságot próbálja meg legyőzni."""
+        window, controller, _engine = qml_app
         _open(window, qt_app)
-        panel = _child(window, "peoplePanel")
-        panel.setProperty("currentPerson", "Roy Avery")
+        controller.showPerson("Roy Avery")
+        qt_app.processEvents()
+
+        assert "appear with" in _child(
+            window, "peoplePanelEmptyText"
+        ).property("text")
+
+    def test_a_late_status_signal_does_not_undo_it(self, qml_app, qt_app):
+        """#3723 (a Windows-CI ingadozásának reprodukálása, gép nélkül):
+        a nyitó mappa-szinkron háttérmunkája a teszt lépései UTÁN is
+        küldhet egy `statusChanged`-et (ez élesíti a `currentPersonName`
+        kötést, ld. fent) — ezt a CI-n MÉRT hazárdot itt kézzel váltjuk ki.
+        A valódi `controller.showPerson()`-on át beállított nézet egy ilyen
+        késve érkező jelzést is túlél, mert a jelzés csak azt a forrást
+        értékeli ki újra, amit mi is a valódi API-n át állítottunk —
+        szemben a `panel.setProperty()`-s felülírással, amit egy ilyen
+        jelzés némán visszaírna a kötés eredeti (üres) értékére."""
+        window, controller, _engine = qml_app
+        _open(window, qt_app)
+        controller.showPerson("Roy Avery")
+        qt_app.processEvents()
+        controller.statusChanged.emit()
         qt_app.processEvents()
 
         assert "appear with" in _child(
