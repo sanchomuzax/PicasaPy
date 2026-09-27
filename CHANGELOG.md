@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.605] – 2026-09-27
+
 ### Javítva
 - Az „1:1" nagyítás elforgatott (90°-kal vagy 270°-kal forgatott) képen
   mostantól a valós méretre nagyít — eddig a kép magasságát vetette össze a
