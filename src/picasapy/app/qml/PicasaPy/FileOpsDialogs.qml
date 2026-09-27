@@ -454,7 +454,7 @@ Item {
                     //: DeleteMessage::DeleteMultiple
                     ask("delete", qsTr(
                         "Are you sure you want to send the %n selected "
-                        + "item(s) to the Recycle Bin?\n(They will also be "
+                        + "items to the Recycle Bin?\n(They will also be "
                         + "removed from any albums in which they appear)",
                         "", pathList.length))
                 }
@@ -471,7 +471,7 @@ Item {
                 yesText = qsTr("Delete Files")
                 //: DeleteMessage::NoUndoMultiple
                 ask("deletePermanently", qsTr(
-                    "Are you sure you want to delete %n selected file(s)? "
+                    "Are you sure you want to delete %n selected files? "
                     + "(This cannot be undone.)", "", pathList.length))
             }
         }

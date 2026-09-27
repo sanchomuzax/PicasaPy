@@ -3651,7 +3651,7 @@ ApplicationWindow {
                         //: DeleteMessage::RemoveMultiple
                         ask("removeFromAlbum", qsTr(
                             "Are you sure you want to remove the %n selected "
-                            + "image(s) from the current album?", "",
+                            + "images from the current album?", "",
                             rowList.length))
                     }
                 }

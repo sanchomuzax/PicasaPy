@@ -3334,7 +3334,7 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
     <message numerus="yes">
         <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="455"/>
-        <source>Are you sure you want to send the %n selected item(s) to the Recycle Bin?
+        <source>Are you sure you want to send the %n selected items to the Recycle Bin?
 (They will also be removed from any albums in which they appear)</source>
         <extracomment>DeleteMessage::DeleteMultiple</extracomment>
         <translation>
@@ -3362,7 +3362,7 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
     <message numerus="yes">
         <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="474"/>
-        <source>Are you sure you want to delete %n selected file(s)? (This cannot be undone.)</source>
+        <source>Are you sure you want to delete %n selected files? (This cannot be undone.)</source>
         <extracomment>DeleteMessage::NoUndoMultiple</extracomment>
         <translation>
             <numerusform>Biztosan törli a kijelölt %n fájlt? (A művelet nem vonható vissza.)</numerusform>
@@ -4583,7 +4583,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message numerus="yes">
         <location filename="../qml/Main.qml"/>
-        <source>Are you sure you want to remove the %n selected image(s) from the current album?</source>
+        <source>Are you sure you want to remove the %n selected images from the current album?</source>
         <extracomment>DeleteMessage::RemoveMultiple</extracomment>
         <translation>
             <numerusform>Biztosan eltávolítja a kijelölt %n képet a jelenlegi albumból?</numerusform>

@@ -54,8 +54,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Q_ARG, QEvent, QMetaObject, QObject, Qt
+from PySide6.QtCore import Q_ARG, QEvent, QMetaObject, QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import QKeyEvent
+from PySide6.QtTest import QTest
 
 from picasapy.index import open_index, sync_tree
 from support.qml_halasztott import epitsd_fel_ha_fileops
@@ -128,15 +129,25 @@ def _megerositi_ha_nyilt(window, controller, qt_app):
     _varj(controller, qt_app)
 
 
+def _katt(window, elem) -> None:
+    """Valódi egérkattintás az elem közepére (MEMORY: a vezérlőre
+    kattints, ne a kezelő metódusát hívd) — a #3698 átnézésének javítása."""
+    kp = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
+    QTest.mouseClick(
+        window, Qt.LeftButton, Qt.NoModifier, QPoint(int(kp.x()), int(kp.y()))
+    )
+
+
 def _megerositi_az_albumbol_eltavolitast_ha_nyilt(window, qt_app):
     """#3539: az albumból eltávolítás is megerősítést kér — ha a dialógus
-    nyitva áll, lenyomja (a `_megerositi_ha_nyilt` album-változata)."""
+    nyitva áll, VALÓDI kattintással lenyomja a "Remove Image(s)" gombot (a
+    `_megerositi_ha_nyilt` album-változata)."""
     confirm = window.findChild(QObject, "removeFromAlbumDialog")
     if confirm is None or not confirm.property("visible"):
         return
-    QMetaObject.invokeMethod(
-        confirm, "confirmed", Qt.ConnectionType.DirectConnection
-    )
+    gomb = window.findChild(QObject, "removeFromAlbumYesButton")
+    assert gomb is not None, "nincs removeFromAlbumYesButton"
+    _katt(window, gomb)
     qt_app.processEvents()
 
 

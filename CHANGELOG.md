@@ -10,8 +10,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ### Javítva
 - **A fájltörlés, az albumból eltávolítás és az Emberek-albumból eltávolítás
   megerősítő ablaka az eredeti Picasa pontos címét, üzenetét és gombfeliratát
-  mutatja, és az albumból eltávolítás is megerősítést kér — a „Remove from
-  album without confirmation” beállítással kikapcsolhatóan (#3539).**
+  mutatja (#3539).**
+
+### Megváltozva
+- **Az albumból eltávolítás mostantól megerősítést kér** — az „Eltávolítás
+  az albumból megerősítés nélkül” beállítással (Beállítások → Általános)
+  kikapcsolhatóan (#3539).
 
 ## [0.8.587] – 2026-09-27
 
