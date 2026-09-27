@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Kérdés a nyitott szerkesztőeszköz módosításairól, mielőtt a kettős nézet
+  megnyílik (#3651).** Ha a Vágás, a Retusálás, a Szöveg vagy a Vörösszem
+  eszközön még nem alkalmazott módosítás van, az AA vagy AB gombra kattintva
+  a program megkérdezi, alkalmazza vagy elvesse-e őket, és utána nyitja meg
+  a kettős nézetet. Módosítás nélkül nem kérdez, a nyitott eszköz ilyenkor
+  egyszerűen bezárul. A „Ne kérdezzen újból” jelölővel a módosítások a
+  jövőben kérdés nélkül alkalmazódnak.
+
 ## [0.8.592] – 2026-09-27
 
 ### Hozzáadva
@@ -58,12 +67,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A „Kijelölve” jelzés szürke, a kiválasztott kép mellett, a kép fölött
   áll, és nem kerül a kép mögé; a másik képre kattintva a kijelölés átvált
   rá.
+<<<<<<< HEAD
 - **A felső eszköztár az eredeti Picasa szerint rendeződik (#3603).** Az
   Importálás, az Új album és a nézetváltó gombok az eredeti helyükön állnak,
   és keskeny ablakban sem tűnnek el. A szűrők és a keresőmező az ablakkal
   együtt mozognak, a keresőmező kitölti a jobb oldalt egészen a
   verziószámig. A verziószám rövidebb lett; a teljes változat a
   buboréksúgóban olvasható.
+=======
+>>>>>>> origin/claude/picasapy-issue-3651-zls8dt
 
 ## [0.8.588] – 2026-09-27
 
