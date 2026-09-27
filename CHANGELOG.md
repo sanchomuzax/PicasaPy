@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.591] – 2026-09-27
+
 ### Javítva
 - **A fájltörlés, az albumból eltávolítás és az Emberek-albumból eltávolítás
   megerősítő ablaka az eredeti Picasa pontos címét, üzenetét és gombfeliratát
