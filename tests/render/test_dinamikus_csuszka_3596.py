@@ -105,13 +105,13 @@ class TestLancKezelok:
         assert kapott["caption_height"] == pytest.approx(felirat)
 
     def test_valodi_render_felirat_savja_a_szazalekbol(self, kep):
-        # vég-a-végig: 100 % felirat 960 × 640-en `H/6 = 106,67` → 107 sor
-        # (az `add_caption` meglévő kerekítése)
+        # vég-a-végig: 100 % felirat 960 × 640-en `f32(H/6) = 106,666664`
+        # → CSONKÍTVA 106 sor (#3768, `0x008eea90`)
         kimenet, kihagyott = chain.apply_filters(
             kep, parse_filters("Border=1,0,0,0,00000000,00ffffff,100;")
         )
         assert kihagyott == ()
-        assert kimenet.shape[0] == _H + 107
+        assert kimenet.shape[0] == _H + 106
 
 
 def test_focal_modul_kulcsszavai_valtozatlanok():

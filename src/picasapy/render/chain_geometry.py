@@ -49,6 +49,7 @@ import math
 from dataclasses import dataclass
 
 from picasapy.ini.filters import FilterOp
+from picasapy.render.dinamikus_csuszka import felirat_sorok
 from picasapy.render.glimmer_frame_ops import drop_shadow_padding
 from picasapy.render.elonezeti_arany import skalazott_vastagsag
 
@@ -121,20 +122,16 @@ def _logikai(op: FilterOp, index: int, alap: bool) -> bool:
         return alap
 
 
-def _px(ertek: float) -> int:
-    """`add_ring` / `add_caption` kerekítése."""
-    return max(0, int(round(ertek)))
-
-
 # --- szűrőnkénti geometria ---------------------------------------------------
 
 
 def _border(w: int, h: int, op: FilterOp) -> tuple[int, int, Matrix]:
     # #3377: a vastagság az előnézeti aránnyal skálázódik (a renderelővel
-    # közös segéd), a feliratsáv NEM
+    # közös segéd), a feliratsáv NEM — az a (munka)kép magasságának
+    # százaléka, csonkítva (#3596, #3768)
     kulso = skalazott_vastagsag(_szam(op, 1, 20.0))
     belso = skalazott_vastagsag(_szam(op, 2, 5.0))
-    felirat = _px(_szam(op, 6, 0.0))
+    felirat = felirat_sorok(_szam(op, 6, 0.0), h)
     keret = kulso + belso
     return w + 2 * keret, h + 2 * keret + felirat, _eltolas(keret, keret)
 
