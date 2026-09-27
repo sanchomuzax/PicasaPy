@@ -230,4 +230,18 @@ class TestDuplaKattintas:
         )
 
         assert sorted(p.name for p in cel.rglob("*.jpg")) == ["a.jpg", "b.jpg"]
-        assert gomb.property("enabled") is True
+
+        # #3767 MÉRVE: a bukás NEM egyetlen képkockás kötés-késés (ahogy a
+        # jegy feltételezte) — a `futasKesz` előtt kiadott
+        # `keszletekValtoztak` jelzés a mentés UTÁN újra lekérdezi a
+        # mentetlen mappákat (`mentetlenMappakLekerese`, külön
+        # háttérszálon). Mivel MINDKÉT fájl elment, a válasz üres listát
+        # ad, ez pedig kipipálatlanítja az addig bejelölt mappát
+        # (`fogadjAMappakat`) — a Go gomb emiatt HELYESEN tiltódik le,
+        # nincs több menteni való. A régi assert csak addig volt zöld, amíg
+        # ez a második háttérlekérdezés még nem futott le; a BEÁLLT állapot
+        # mindig `enabled=False`. Ezért a valódi feltételre várunk.
+        assert varj_feltetelre(qt_app, lambda: gomb.property("enabled") is False), (
+            "a Go gomb nem tiltódott le a mentés utáni mappalista-"
+            "frissítésre, holott nincs több mentetlen mappa"
+        )
