@@ -17,6 +17,15 @@ stb.). Az eredeti a sortörést `\\n`-nel (vagy `\\r\\n`-nel) írja, az
 idézőjel ASCII `"` — ezt mindkét nyelven megtartjuk.
 
 Amit ez az őr NEM mér: hogy az üzenet a képernyőn jól tördelődik-e.
+
+#3539: a `CThumbUI::ConfirmImmediateDeletion::Message` bejegyzés KIKERÜLT
+innen — a `FileOpsDialogs.qml` `deleteConfirmDialog` lomtár-hiányos ága
+ezt a szöveget használta, de a `0x005fdc30` szövegválasztó argumentum-
+követéses mérése (`docs/specs/picasa-fen-dialogs.md` 3.3.1) kimutatta,
+hogy ehhez a dialógushoz valójában a `DeleteMessage::NoUndoSingle`/
+`NoUndoMultiple` tartozik — a #3573-as korábbi hozzárendelés tévedés
+volt. A régi (helyes szöveggel akkor lefordított) magyar szöveg most az
+`ELAVULT_FORDITAS`-ban áll, hogy ne térjen vissza csendben.
 """
 
 from __future__ import annotations
@@ -90,11 +99,6 @@ HIVATALOS = {
     "Include in filename:": ("Befoglalás a fájlnévbe:", "rename/labelgroup8.title"),
     "Please enter a new name for these files:": (
         "Kérjük, adjon új nevet ezeknek a fájloknak:", "rename/label5.title"),
-    "This file cannot be moved to the Trash and will be deleted "
-    "immediately. Are you sure you want to continue?": (
-        "A fájl nem helyezhető át a Kukába, a program azonnal törölni "
-        "fogja. Biztosan folytatja a műveletet?",
-        "CThumbUI::ConfirmImmediateDeletion::Message"),
     "If you remove a watched folder, new items that you add to that folder "
     "on disk will not be automatically added to Picasa. Are you sure you "
     "want to do this?": (
@@ -189,6 +193,11 @@ ELAVULT_FORDITAS = (
     "Adjon új nevet ezeknek a fájloknak:",
     "Ez a fájl nem helyezhető át a Lomtárba, ezért azonnal, véglegesen "
     "törlődik. Ez nem vonható vissza.",
+    # #3539: a #3573 idekötötte a ConfirmImmediateDeletion szöveget, de ez
+    # tévedés volt (ld. a modul docstringje) — a helyes DeleteMessage::
+    # NoUndoSingle/NoUndoMultiple váltotta fel
+    "A fájl nem helyezhető át a Kukába, a program azonnal törölni fogja. "
+    "Biztosan folytatja a műveletet?",
     "Ha eltávolítja ezt a mappát, a lemezen később bele tett új képek nem "
     "kerülnek automatikusan a könyvtárba.",
     "Egy teljes meghajtó figyelése lelassíthatja a rendszert. Érdemesebb "

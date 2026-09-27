@@ -422,10 +422,17 @@ Item {
     // (`DoNotConfirmDeleteFromDisk` — ld. picasa-fen-dialogs.md), a
     // végleges ágnak külön kulcsa van, hogy a NAS-figyelmeztetés soha ne
     // legyen elnémítható elnémítás-tévedésből.
+    //
+    // #3539: a cím, az üzenet és az igen-gomb a `0x005fdc30` szövegválasztó
+    // négy ága szerint (spec `picasa-fen-dialogs.md` 3.3.1) — a korábbi
+    // saját szöveg (és a #3573-ban tévesen idekötött
+    // `CThumbUI::ConfirmImmediateDeletion::Message`) helyett a valódi
+    // `DeleteMessage::` család. A cím mind a négy ágon ugyanaz.
     ConfirmDialog {
         id: deleteConfirmDialog
         objectName: "deleteConfirmDialog"
-        title: qsTr("Delete from Disk")
+        //: DeleteMessage::DeleteItemsTitle
+        title: qsTr("Delete Items")
         property var paths: []
         property bool trashAvailable: true
         function openFor(pathList) {
@@ -433,14 +440,39 @@ Item {
             paths = pathList
             trashAvailable = fileOpsController.trashAvailableFor(pathList)
             if (trashAvailable) {
-                ask("delete", qsTr(
-                        "%n picture(s) will be moved to the system trash.",
+                if (pathList.length <= 1) {
+                    //: DeleteMessage::DeleteSingleYesButton
+                    yesText = qsTr("Delete Image")
+                    //: DeleteMessage::DeleteSingle
+                    ask("delete", qsTr(
+                        "Are you sure you want to send the selected file to "
+                        + "the Recycle Bin? (It will also be removed from "
+                        + "any albums in which it appears)"))
+                } else {
+                    //: DeleteMessage::DeleteMultipleYesButton
+                    yesText = qsTr("Delete Items")
+                    //: DeleteMessage::DeleteMultiple
+                    ask("delete", qsTr(
+                        "Are you sure you want to send the %n selected "
+                        + "item(s) to the Recycle Bin?\n(They will also be "
+                        + "removed from any albums in which they appear)",
                         "", pathList.length))
-            } else {
-                //: `CThumbUI::ConfirmImmediateDeletion::Message` — az
-                //: eredeti szövege, záró kérdéssel (#3573)
+                }
+            } else if (pathList.length <= 1) {
+                //: DeletMessage::NoUndoSingleYesButton — a "Delet" elgépelés
+                //: az eredetiben is így áll, a magyar szöveg attól még megvan
+                yesText = qsTr("Delete File")
+                //: DeleteMessage::NoUndoSingle
                 ask("deletePermanently", qsTr(
-                    "This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?"))
+                    "Are you sure you want to permanently delete the "
+                    + "selected file? (This cannot be undone.)"))
+            } else {
+                //: DeleteMessage::NoUndoMultipleYesButton
+                yesText = qsTr("Delete Files")
+                //: DeleteMessage::NoUndoMultiple
+                ask("deletePermanently", qsTr(
+                    "Are you sure you want to delete %n selected file(s)? "
+                    + "(This cannot be undone.)", "", pathList.length))
             }
         }
         onConfirmed: {

@@ -231,13 +231,18 @@ ColumnLayout {
                     confirmSettings.setSuppressed("delete", checked)
             }
         }
-        // nincs megerősítő dialógus az albumból eltávolításnál (a
-        // PhotoContextMenu "Remove from Album" azonnal végrehajt) — ha ez
-        // változik, ide egy hasonló, "removeFromAlbum" kulcsú checkbox jön
+        // #3539: az albumból eltávolítás is megerősítést kér — ugyanaz a
+        // confirmSettings "removeFromAlbum" kulcs, amit a Main.qml
+        // removeFromAlbumDialog ConfirmDialog-ja ír (#367 mintája)
         CheckBox {
             objectName: "optionsSkipRemoveConfirmCheck"
             text: qsTr("Remove from album without confirmation")
-            enabled: false
+            checked: typeof confirmSettings !== "undefined" && confirmSettings
+                     ? confirmSettings.isSuppressed("removeFromAlbum") : false
+            onToggled: {
+                if (typeof confirmSettings !== "undefined" && confirmSettings)
+                    confirmSettings.setSuppressed("removeFromAlbum", checked)
+            }
         }
     }
 

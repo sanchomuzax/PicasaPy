@@ -128,6 +128,18 @@ def _megerositi_ha_nyilt(window, controller, qt_app):
     _varj(controller, qt_app)
 
 
+def _megerositi_az_albumbol_eltavolitast_ha_nyilt(window, qt_app):
+    """#3539: az albumból eltávolítás is megerősítést kér — ha a dialógus
+    nyitva áll, lenyomja (a `_megerositi_ha_nyilt` album-változata)."""
+    confirm = window.findChild(QObject, "removeFromAlbumDialog")
+    if confirm is None or not confirm.property("visible"):
+        return
+    QMetaObject.invokeMethod(
+        confirm, "confirmed", Qt.ConnectionType.DirectConnection
+    )
+    qt_app.processEvents()
+
+
 def _menu_nyit(window, qt_app, sor=0):
     """A kép helyi menüjét TÉNYLEGESEN felnyitja — zárt popupban a
     `visible` minden gyereken hamis (ld. #422 tesztjeinek tanulságát)."""
@@ -304,6 +316,7 @@ class TestAlbumNezetbenNemTorolARacsBillentyuje:
         _kijelol(window, qt_app)
 
         _ctrl_delete(window, qt_app)
+        _megerositi_az_albumbol_eltavolitast_ha_nyilt(window, qt_app)
 
         ini = (lib / ".picasa.ini").read_text(encoding="utf-8")
         assert f"albums={_TOKEN}" not in ini, (
@@ -424,6 +437,7 @@ class TestAHelyiMenupontraKattintva:
 
         _aktival(_gyerek(window, "contextMenuRemoveFromAlbum"), qt_app)
         _megerositi_ha_nyilt(window, controller, qt_app)
+        _megerositi_az_albumbol_eltavolitast_ha_nyilt(window, qt_app)
 
         assert (lib / "a.jpg").exists()
         assert _gyerek(window, "deleteConfirmDialog").property(
