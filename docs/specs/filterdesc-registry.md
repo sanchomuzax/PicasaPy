@@ -2492,14 +2492,18 @@ A felirat nélküli alsó sarkok ugyanígy viselkednek: a belső sáv téglalapj
 
 **Az árnyék eltolása** — polárkoordinátából, apró kerekítési igazítással:
 
+> ⛔ **Helyesbítve (2026-09-27, #626):** a kerekítés **`floor`**, nem `round`
+> (`0x00bcdece` `call 0x00c0b1e0`). Ld. „A Polaroid geometriája” szakaszt.
+
 ```c
-dx = round( (cosf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
-dy = round( (sinf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
+dx = floor( (cosf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
+dy = floor( (sinf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
 ```
 
-A `6,7e−06` és a `0,001825` nem paraméter, hanem **döntetlen-eldöntő eltolás**:
-enélkül a 0°/90°/180°/270° körüli egész értékeknél a kerekítés platformfüggően
-billenne. Át kell venni őket, ha képpontra pontos egyezést akarunk.
+A `6,7e−06` és a `0,001825` nem paraméter, hanem **lebegőpontos védelem**: a
+valójában egész, de 2,9999… alakban kijövő szorzatot emeli az egész fölé,
+mielőtt a `floor` lecsípné. Át kell venni őket, ha képpontra pontos egyezést
+akarunk.
 
 **A paraméterek vágása** (`0x00bcd640`):
 
@@ -6767,6 +6771,119 @@ A javítás a **#626** jegyen marad (ez a jegy a fejlesztői gazdája).
 `0x00cf4360` = 1,05 · `0x00cf4368` = 1,3501; a `Math.ceil` azonosítása a
 `0x00c7d85c`-es CRT-leíró-párból; a leíró-attribútumok
 `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml`.*
+
+## ⛳ A Polaroid geometriája: az árnyék eltolása FLOOR, a margó unió, a forgatás képpontközépre (2026-09-27, 382. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+A Polaroid három golden-állása a #3420 után 2,58 / 0,69 / 1,10 ΔE-vel tért
+el (`min` / `alap` / `max`). A hibatérkép szerint az eltérés **geometriai**:
+a tartalom 1–3 képponttal el volt tolva. Három ok együtt adja ki.
+
+### 1. Az árnyék eltolása `floor`, nem `round` — helyesbítés
+
+A `DropShadowImageOperation` szakasza (fent) `round`-ot írt, cím nélkül. Az
+`0x00bcdea0` utasításai:
+
+```asm
+0x00bcdea3  fld   dword ptr [edi+4]        ; szög (fok)
+0x00bcdea6  fmul  qword ptr [0xcf4080]     ; π
+0x00bcdeac  fdiv  qword ptr [0xcf3d48]     ; 180,0
+0x00bcdeb5  call  0xc29d20                 ; cos
+0x00bcdeba  fadd  qword ptr [0xcf4078]     ; 6,7e-06
+0x00bcdec3  fmul  dword ptr [edi]          ; × távolság
+0x00bcdec5  fadd  qword ptr [0xcf4070]     ; 0,001825
+0x00bcdece  call  0xc0b1e0                 ; floor
+0x00bcded6  call  0xc29990                 ; → egész (csonkol)
+            ...ugyanez sin-nel (0x00bcdee0 call 0xc285f0) a dy-ra
+```
+
+```
+dx = floor( (cos(szög·π/180) + 6,7e−06) · távolság + 0,001825 )
+dy = floor( (sin(szög·π/180) + 6,7e−06) · távolság + 0,001825 )
+```
+
+A `0x00c0b1e0` a `floor` (ld. „A kvótaosztás” sort a `QuantizePalette`
+szakaszban). A két kis tag tehát nem döntetlen-eldöntő, hanem **lebegőpontos
+védelem**: a 2,9999… alakú, valójában egész szorzatot emeli át az egészen,
+mielőtt a `floor` lecsípné. A Polaroidnál (`távolság = 3`, `szög = 90 − forgatás`):
+
+| forgatás | szög | `round` (a spec eddig) | **`floor`** |
+|---:|---:|---|---|
+| 5 | 85° | (0, 3) | **(0, 2)** |
+| 10 | 80° | (1, 3) | **(0, 2)** |
+| −10 | 100° | (−1, 3) | **(−1, 2)** |
+
+A két kerekítés a (távolság 0–30, szög 0–360°) párok **71%-ánál** eltér; az
+alapértelmezett 45° / 4-nél `(3, 3)` helyett `(2, 2)`. A DropShadow
+golden-esetei (0°, 90°, 360°) ezt nem mutatják, mert tengelyirányú szögnél a
+kettő egybeesik.
+
+### 2. A vászon az eredeti és az eltolt-kiterjesztett doboz UNIÓJA
+
+Ezt „A `DropShadow` vászon-margója” szakasz már leírta (`0x00bcd869`–
+`0x00bcd924`, egész aritmetika): `unió(eredeti, eredeti ± ceil(8 · 1,3501) +
+(dx, dy))`. Oldalanként: **bal `11 − dx`, fent `11 − dy`, jobb `11 + dx`,
+lent `11 + dy`** (`|dx|, |dy| < 11`). Az önálló `DropShadow` kódunk ezt már
+követi (`drop_shadow_padding`), a Polaroid-ág viszont mind a négy oldalra
+11-et tesz.
+
+### 3. A forgatás a képpontközepekre szimmetrikus
+
+A `0x00bc8060` a cél → forrás mátrixot így rakja össze (`0x009e6340`,
+balról szorozva): `T(sW/2, sH/2) · R · F · T(−dW/2, −dH/2)`. Itt `sW`, `sH`
+a forrás, `dW`, `dH` a cél mérete (`0x00bc817f`–`0x00bc81d6`,
+`0x00bc82c1`–`0x00bc8329`), `F` a tükrözés (±1, `0x00bc81e1`–`0x00bc8239`),
+`R` pedig a forgatás. A mintavevő a képpont közepét (`+0,5`) vetíti vissza,
+tehát a forrás középpontja **pontosan** a cél középpontjára esik. Nálunk a
+`rotate_with_pad` a képet egész osztással (`//2`) teszi a vászonra, és az
+OpenCV sarok-konvencióját használja, ami fél képpontokat tol el.
+
+A forgatás a wrapperben (`0x00bcb5e0`) **nem** a `ytResampler`-re megy:
+forgatásos mátrixnál (`0x009e6da0`: `|m1|` vagy `|m3|` > 0,0001) a
+`0x009e6df0` általános út fut, `param_4 = smoothing = 1` értékkel
+(`0x00bc832e` `push 1`), és ez a **`0x009e7060`**-at hívja (`0x009e6fda`).
+Ez **8 bites súlyú, fixpontos bilineáris** mintavevő:
+
+- soronként: `u = m0·(x + 0,5) + m1·(y + 0,5) + m2`, `U = fistp(u · 65536) − 32767`,
+  tehát a forrás képpontközepe is `i + 0,5`-nél van (`[0x00cf3cb0]` = 65536,0,
+  `add edx, 0xffff8001`); a lépés `fistp(m0 · 65536)`;
+- képpontonként: `ix = U >> 16`, `fx = (U >> 8) & 0xFF` (ugyanígy `y`), és
+  `lerp(a, b, f) = a + floor((b − a) · f / 256)`, előbb vízszintesen, aztán
+  függőlegesen, mind a négy csatornán (`0x009e7233`–`0x009e725b`, MMX);
+- a perem egy képpontos sávjában a kilógó szomszéd a szélső képpont
+  (`0x009e7269`–`0x009e72dd`); azon kívül a célképpont érintetlen marad, ott a
+  padBorder `borderColor`-ja áll.
+
+A cél mérete padBorderrel `csonk(|W·cos θ| + |H·sin θ|)` × `csonk(|W·sin θ| +
+|H·cos θ|)` (`0x00bc7ca0`); ez egyezik a kódunk `floor`-jával.
+
+### Mérve
+
+684-es mérőkészlet, ΔE a Picasa-exporthoz. A lépések egymásra épülnek, és
+minden más változatlan:
+
+| eset | ma | + `floor` | + unió-margó | **+ képpontközepes forgatás** |
+|---|---:|---:|---:|---:|
+| `Polaroid` alap (5°) | 0,694 | 0,673 | 0,354 | **0,149** |
+| `Polaroid` max (10°) | 1,095 | 1,069 | 0,822 | **0,155** |
+| `Polaroid` min (−10°) | 2,584 | 2,566 | 0,989 | **0,154** |
+| `DropShadow` alap / max / min | 0,084 / 0,054 / 0,083 | változatlan | — | — |
+
+A három ok közül egyik sem elég egyedül. A képpontközepes forgatást a
+`cv2.INTER_LINEAR` bilineárisával mértük; a 8 bites fixpontos lerpet nem
+modelleztük, a hatását ez a mérés nem mutatja.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| árnyék-eltolás | `floor(… + 0,001825)` | `_c_round(…)` (`glimmer_frame_ops.shadow_offset`) | `floor` — **minden DropShadow-ra** |
+| Polaroid-vászon | unió: bal `11 − dx`, fent `11 − dy`, jobb `11 + dx`, lent `11 + dy` | 11 minden oldalon (`glimmer_frames.apply_polaroid`) | a `pads` átadása |
+| forgatás | a forrás közepe a cél közepére, képpontközéppel | vászonra `//2`, OpenCV-sarok | pontos mátrix |
+| mintavevő | 8 bites súlyú bilineáris, `a + floor((b − a)·f/256)` | `cv2.INTER_LINEAR` | a fixpontos lerp |
+
+Fejlesztés: #3809.
 
 ## ⛳ A `DropShadow` `quality=3` natív elmosása: hat egydimenziós menet (2026-09-22, #626)
 
