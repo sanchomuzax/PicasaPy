@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A javasolt személy elvetése a névtelen arcok albumában mostantól a
+  `.picasa.ini`-be is beírja a mellőzést (a `faces=` érintett régiójának
+  személy-mezőjébe `ffffffffffffffff` kerül) — eddig csak a program saját
+  indexében élt, és más gépre másolt könyvtárban vagy egy friss
+  újraindexelés után elveszett (#3670).
+
 ## [0.8.606] – 2026-09-27
 
 ### Javítva

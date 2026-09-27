@@ -214,12 +214,29 @@ def unnamed_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
     (determinisztikus). A már névvel ellátott (`state != 'unnamed'`) arcokat
     ez a lekérdezés SOSEM adja vissza — az alapszabály (a Picasa döntései
     szentek) itt is szerkezeti kizárás, a `group_unnamed_faces` mintájára."""
-    return _faces_in_state(conn, "unnamed")
+    return _faces_where(conn, "WHERE f.state = ?", ("unnamed",))
 
 
 def _faces_in_state(conn: sqlite3.Connection, state: str) -> tuple[UnnamedFace, ...]:
     """A közös test: egy adott állapotú arcok kiolvasása. A `state`
     ÉRTÉKKÉNT (paraméterként) megy be, nem szövegbe fűzve."""
+    return _faces_where(conn, "WHERE f.state = ?", (state,))
+
+
+def faces_for_photo(conn: sqlite3.Connection, photo_id: int) -> tuple[UnnamedFace, ...]:
+    """A `photo_id` fotóhoz tartozó ÖSSZES saját arc-találat, ÁLLAPOTTÓL
+    FÜGGETLENÜL (#3670) — a `_run_scan` ezzel dönti el egy friss detektálás
+    UTÁN, melyik ÚJ találat esik egybe egy már a `.picasa.ini`-ben
+    mellőzöttként (`faces=…,ffffffffffffffff`) jelölt régióval, hogy azt ne
+    dobja vissza javaslatként."""
+    return _faces_where(conn, "WHERE f.photo_id = ?", (photo_id,))
+
+
+def _faces_where(
+    conn: sqlite3.Connection, where_sql: str, params: tuple
+) -> tuple[UnnamedFace, ...]:
+    """A közös lekérdezés-test: a `WHERE`-ág és a paraméterei jönnek
+    kívülről, ÉRTÉKKÉNT (nem szövegbe fűzve)."""
     rows = conn.execute(
         "SELECT f.id, f.photo_id, f.rect_left, f.rect_top, f.rect_right, "
         "f.rect_bottom, f.group_id, f.suggested_name, "
@@ -228,9 +245,9 @@ def _faces_in_state(conn: sqlite3.Connection, state: str) -> tuple[UnnamedFace, 
         "FROM face f "
         "JOIN photos p ON p.id = f.photo_id "
         "JOIN folders fo ON fo.id = p.folder_id "
-        "WHERE f.state = ? "
+        f"{where_sql} "
         "ORDER BY (f.group_id IS NULL), f.group_id, f.id",
-        (state,),
+        params,
     )
     result = []
     for row in rows:

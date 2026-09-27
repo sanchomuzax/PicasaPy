@@ -10,6 +10,7 @@ mintáját követi (a `controller.py`-beli bekötés az integrátor dolga)."""
 
 from __future__ import annotations
 
+import pytest
 from PySide6.QtCore import Qt
 
 from support.jpeg_factory import make_jpeg
@@ -90,6 +91,25 @@ def _make_controller(qt_app, tmp_path, library, detector=None, embedder=None):
         embedder=embedder if embedder is not None else _FakeEmbedder(),
     )
     return ctl
+
+
+def _make_controller_with_faces_helper(qt_app, tmp_path, library, detector=None):
+    """A `_make_controller` mintája, valódi `FacesHelper`-rel — a #3670
+    ini-írásos teszteknek."""
+    from picasapy.app.face_scan_controller import FaceScanController
+    from picasapy.app.faces_helper import FacesHelper
+    from picasapy.index import open_index, sync_tree
+
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, library)
+    faces_helper = FacesHelper()
+    ctl = FaceScanController(
+        tmp_path / "index.db",
+        detector=detector if detector is not None else _FakeDetector(),
+        embedder=_FakeEmbedder(),
+        faces_helper=faces_helper,
+    )
+    return ctl, faces_helper
 
 
 class TestModelUnavailable:
@@ -380,6 +400,232 @@ class TestAssignNameToFaces:
         groups = ctl.unnamedGroups(False, False)
         face_ids = [face["faceId"] for face in groups[0]["faces"]]
         assert ctl.assignNameToFaces(face_ids, "Roy Avery") is False
+
+
+# -- #3670: az elvetés/visszavétel az `ini/` API-n át a `faces=` régió -------
+# személy-mezőjébe ír — élőben mérve (picasa-arcfelismeres.md 15.3/b.1):
+# `ffffffffffffffff`, NEM `]ignoreface` token/album.
+
+
+class TestIgnoreFacesWritesIni:
+    def test_ignoring_writes_the_ffff_sentinel_for_the_region(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, _helper = _make_controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        face_id = ctl.unnamedGroups(False, False)[0]["faces"][0]["faceId"]
+
+        assert ctl.ignoreFaces([face_id]) == 1
+
+        from picasapy.ini import (
+            UNIDENTIFIED_CONTACT,
+            Rect64,
+            decode_rect64,
+            encode_rect64,
+            load_document,
+            parse_faces,
+        )
+
+        document = load_document(root / ".picasa.ini")
+        faces = parse_faces(document.section("a.jpg").get("faces"))
+        assert len(faces) == 1
+        # a fake detektor a (5,10,40,50) pixel-keretet adja egy 100×100-as
+        # képen — a rect64-rács pontosságára kerekítve
+        expected_rect = decode_rect64(encode_rect64(Rect64(0.05, 0.10, 0.40, 0.50)))
+        assert faces[0].rect == expected_rect
+        assert faces[0].contact_id == UNIDENTIFIED_CONTACT
+        assert not faces[0].is_identified
+
+        # az index oldala is mellőzött
+        assert ctl.unnamedCount == 0
+        assert ctl.ignoredCount() == 1
+
+    def test_ignoring_preserves_other_faces_on_the_photo(self, qt_app, tmp_path):
+        # ellenpróba: EGY MÁSIK régió elnevezése a fotón a mellőzés ELŐTT —
+        # a mellőzés nem írhatja felül/törölheti a `faces=` más bejegyzését
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, helper = _make_controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        face_id = ctl.unnamedGroups(False, False)[0]["faces"][0]["faceId"]
+        assert helper.addFace(str(root / "a.jpg"), 0.6, 0.6, 0.8, 0.8, "Roy Avery")
+
+        assert ctl.ignoreFaces([face_id]) == 1
+
+        from picasapy.ini import load_document, parse_faces
+
+        document = load_document(root / ".picasa.ini")
+        faces = parse_faces(document.section("a.jpg").get("faces"))
+        assert len(faces) == 2
+        named = [f for f in faces if f.is_identified]
+        assert len(named) == 1
+        assert named[0].rect.left == pytest.approx(0.6, abs=1e-3)
+
+    def test_unignoring_removes_only_the_ffff_entry(self, qt_app, tmp_path):
+        # ellenpróba: VISSZAVÉTEL — a névvel ellátott régió érintetlen marad
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, helper = _make_controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        face_id = ctl.unnamedGroups(False, False)[0]["faces"][0]["faceId"]
+        assert helper.addFace(str(root / "a.jpg"), 0.6, 0.6, 0.8, 0.8, "Roy Avery")
+        assert ctl.ignoreFaces([face_id]) == 1
+
+        assert ctl.unignoreFaces([face_id]) == 1
+
+        from picasapy.ini import load_document, parse_faces
+
+        document = load_document(root / ".picasa.ini")
+        faces = parse_faces(document.section("a.jpg").get("faces"))
+        assert len(faces) == 1
+        assert faces[0].is_identified
+        assert faces[0].rect.left == pytest.approx(0.6, abs=1e-3)
+        # az index oldala is visszaáll
+        assert ctl.unnamedCount == 1
+        assert ctl.ignoredCount() == 0
+
+    def test_unignoring_the_only_entry_drops_the_faces_key(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, _helper = _make_controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        face_id = ctl.unnamedGroups(False, False)[0]["faces"][0]["faceId"]
+        assert ctl.ignoreFaces([face_id]) == 1
+
+        assert ctl.unignoreFaces([face_id]) == 1
+
+        from picasapy.ini import load_document
+
+        document = load_document(root / ".picasa.ini")
+        section = document.section("a.jpg")
+        assert (section.get("faces") if section is not None else None) is None
+
+    def test_without_faces_helper_only_updates_the_index(self, qt_app, tmp_path):
+        # visszamenőleges kompatibilitás: `FacesHelper` nélkül (mint eddig)
+        # csak az index frissül, ini-írás nélkül — nem hibázik
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl = _make_controller(qt_app, tmp_path, root)  # faces_helper=None
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        face_id = ctl.unnamedGroups(False, False)[0]["faces"][0]["faceId"]
+
+        assert ctl.ignoreFaces([face_id]) == 1
+        assert ctl.ignoredCount() == 1
+        assert not (root / ".picasa.ini").exists()
+
+        assert ctl.unignoreFaces([face_id]) == 1
+        assert ctl.ignoredCount() == 0
+
+
+class TestIgnoreSurvivesRescan:
+    """#3670, „kész, ha" 4. pont: a `.picasa.ini`-ben mellőzöttként jelölt
+    régió egy friss újraindexelés után NEM kerül vissza a „Névtelenek"
+    közé — a felismerés a `faces=…,ffffffffffffffff` bejegyzést a saját
+    indexben is `'ignored'`-ra fordítja."""
+
+    def test_a_rescan_keeps_a_previously_ignored_face_ignored(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, _helper = _make_controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        face_id = ctl.unnamedGroups(False, False)[0]["faces"][0]["faceId"]
+        assert ctl.ignoreFaces([face_id]) == 1
+
+        from picasapy.index import forget_face_scan, open_index
+
+        with open_index(tmp_path / "index.db") as conn:
+            photo_id = conn.execute(
+                "SELECT id FROM photos WHERE name = 'a.jpg'"
+            ).fetchone()["id"]
+            forget_face_scan(conn, photo_id=photo_id)
+            conn.commit()
+
+        arrived, args = _run(ctl.scanFinished, ctl.scanForFaces)
+        assert arrived is True
+        found, scanned = args
+        assert scanned == 1
+        assert found == 1
+        assert ctl.waitForBackgroundWorkers(5.0)
+
+        # a friss találat AZONNAL mellőzöttként jelenik meg — nem
+        # javaslatként a „Névtelenek" albumban
+        assert ctl.unnamedCount == 0
+        assert ctl.ignoredCount() == 1
+
+    def test_rescan_only_reignores_the_matching_region(self, qt_app, tmp_path):
+        # a mellőzés RÉGIÓ-pontos: egy fotó MÁSIK, éppen most felbukkanó
+        # arca nem lesz automatikusan mellőzött csak azért, mert a fotón
+        # VAN egy másik, korábban mellőzött régió
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, _helper = _make_controller_with_faces_helper(
+            qt_app, tmp_path, root, detector=_TwoFaceDetector()
+        )
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        faces = ctl.unnamedGroups(False, False)[0]["faces"]
+        assert len(faces) == 2
+        ignored_id = faces[0]["faceId"]
+
+        assert ctl.ignoreFaces([ignored_id]) == 1
+        assert ctl.unnamedCount == 1
+        assert ctl.ignoredCount() == 1
+
+        from picasapy.index import forget_face_scan, open_index
+
+        with open_index(tmp_path / "index.db") as conn:
+            photo_id = conn.execute(
+                "SELECT id FROM photos WHERE name = 'a.jpg'"
+            ).fetchone()["id"]
+            forget_face_scan(conn, photo_id=photo_id)
+            conn.commit()
+
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+
+        # a második arc VÁLTOZATLANUL névtelen maradt — csak az elvetett
+        # régió lett újra mellőzött
+        assert ctl.unnamedCount == 1
+        assert ctl.ignoredCount() == 1
+
+
+class _TwoFaceDetector:
+    """Két, ELTÉRŐ régiójú arcot „talál" — a régió-pontos egyeztetés
+    teszteléséhez (#3670): a `_FakeDetector` mintáját követi, de két
+    `FaceDetection`-t ad vissza."""
+
+    def __init__(self, available=True):
+        self.available = available
+        self.calls: list = []
+
+    def detect(self, image):
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+
+        self.calls.append(image)
+        landmarks = FaceLandmarks(
+            right_eye=(10.0, 20.0),
+            left_eye=(30.0, 20.0),
+            nose=(20.0, 30.0),
+            mouth_right=(15.0, 40.0),
+            mouth_left=(25.0, 40.0),
+        )
+        return (
+            FaceDetection(left=5, top=10, right=40, bottom=50, score=0.9, landmarks=landmarks),
+            FaceDetection(left=55, top=55, right=90, bottom=95, score=0.8, landmarks=landmarks),
+        )
 
 
 class TestBaseRuleRegression:

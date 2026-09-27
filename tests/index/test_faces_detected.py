@@ -7,6 +7,7 @@ from picasapy.faces.detector import FaceDetection, FaceLandmarks
 from picasapy.index import (
     clear_faces,
     detected_face_count,
+    faces_for_photo,
     ignored_faces,
     mark_faces_ignored,
     mark_faces_named,
@@ -156,3 +157,36 @@ class TestIgnoredFaces:
             mark_faces_ignored(conn, [])
             unignore_faces(conn, [])
             assert ignored_faces(conn) == ()
+
+
+class TestFacesForPhoto:
+    """#3670: a `_run_scan` ezzel dönti el friss detektálás UTÁN, melyik ÚJ
+    találat esik egybe egy már a `.picasa.ini`-ben mellőzöttként jelölt
+    régióval — állapottól FÜGGETLENÜL kell látnia a fotó arcait."""
+
+    def test_returns_every_face_regardless_of_state(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face(), _face(score=0.4)])
+            ids = [f.id for f in unnamed_faces(conn)]
+            mark_faces_ignored(conn, ids[:1])
+
+            faces = faces_for_photo(conn, photo_ids["a.jpg"])
+
+        assert {f.id for f in faces} == set(ids)
+
+    def test_other_photos_are_not_included(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face()])
+            replace_faces(conn, photo_ids["b.jpg"], [_face()])
+
+            faces = faces_for_photo(conn, photo_ids["a.jpg"])
+
+        assert len(faces) == 1
+        assert faces[0].photo_id == photo_ids["a.jpg"]
+
+    def test_empty_for_a_photo_without_detections(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            assert faces_for_photo(conn, photo_ids["a.jpg"]) == ()
