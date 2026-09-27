@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.596] – 2026-09-27
+
 ### Javítva
 - **A Nyomtatás párbeszédben megszűnt a téves „(oldalanként egy)” felirat:
   az Indexképek most a méretlista egyik tétele (magyar felületen: 5x8 cm ·
