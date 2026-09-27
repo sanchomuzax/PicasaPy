@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A mentés-panel Windowson elhasalt tesztjei: a hosszú célút olvasható
+  marad, a „Mentési készlet” felirat nem csonk, a CD/DVD-típusú készlet
+  Windowson is létrejön (#3696).** A hiba a programot alig érintette: a
+  „Mentési készlet” felirat egyes betűkészleteken csonkult, ezt egy
+  hiányzó beállítás javítja. A tesztek Windowson azért haltak el, mert a
+  mentés-panel saját tesztkiszolgálója — a felület többi tesztjétől
+  eltérően — nem a program stílusával és csomagolt betűjével futott,
+  hanem a futtató rendszer sajátjával; ez más gombméretet és
+  feliratszélességet adott, és a mentés-készlet párbeszédének mentés
+  gombja célt tévesztett.
+
 ## [0.8.590] – 2026-09-27
 
 ### Javítva

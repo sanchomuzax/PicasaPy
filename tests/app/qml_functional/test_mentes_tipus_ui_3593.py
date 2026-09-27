@@ -23,7 +23,9 @@ from pathlib import Path
 import picasapy.app
 import pytest
 from PySide6.QtCore import QMetaObject, QPoint, Qt
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtQuick import QQuickItem
+from PySide6.QtQuickControls2 import QQuickStyle
 from PySide6.QtTest import QTest
 
 from support.backup_host_harness import epits_ablakot
@@ -82,6 +84,22 @@ def gazda(qt_app, tmp_path, monkeypatch):
     qt_app.processEvents()
     yield view, ablak, vezerlo
     view.hide()
+
+
+class TestAKiszolgaloAzAlkalmazasBeallitasaitHasznalja:
+    """#3696: a `backup_host_harness.epits_ablakot` a #901/#3279 óta a
+    teljes app kiszolgálójával (`qml_functional/conftest.py`) egyező
+    stílust és betűtípust állít be — enélkül a natív stílus (Windowson
+    más sormagasságokkal) eltolja a párbeszéd lábléc-gombjait, a
+    rendszerbetű pedig gépenként más feliratszélességet ad. A Windows-láb
+    ezen mérve bukott: a mentés-készlet lábléc-gombjának kattintása
+    célt tévesztett, és a mért feliratok csonkultak."""
+
+    def test_a_picasastyle_van_beallitva(self, gazda):
+        assert QQuickStyle.name() == "PicasaStyle"
+
+    def test_a_csomagolt_betu_van_beallitva(self, gazda):
+        assert QGuiApplication.instance().font().family() == "Open Sans"
 
 
 class TestAzUrlap:

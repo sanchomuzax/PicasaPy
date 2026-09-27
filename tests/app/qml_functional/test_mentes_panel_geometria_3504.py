@@ -201,7 +201,19 @@ class TestSemmiNemLogKi:
                 continue
             tul_szeles = elem.property("contentWidth") > elem.width() + 1
             tul_magas = elem.property("contentHeight") > elem.height() + 1
-            if elem.property("truncated") or tul_szeles or tul_magas:
+            # #3696: a `publishBackupInfo` a célutat FUTÁSIDŐBEN kapja
+            # (`PublishPanel.qml`, `elide: Text.ElideMiddle`), és
+            # SZÁNDÉKOSAN közepén rövidül, ha még a legkisebb betűméretnél
+            # sem fér el (a Windows-CI mélyen ágyazott ideiglenes útjainál
+            # ez a normális eset — a mappalista sorának fájlnév-elidálásához
+            # hasonlóan, ld. fentebb). A `truncated` zászló ilyenkor NEM
+            # hiba — a doboznál nagyobbra nyúlás viszont igen: azt a
+            # `tul_szeles`/`tul_magas` továbbra is elkapja.
+            kozepen_rovidulhet = elem.objectName() == "publishBackupInfo"
+            csonk = tul_szeles or tul_magas or (
+                elem.property("truncated") and not kozepen_rovidulhet
+            )
+            if csonk:
                 csonkok.append((elem.property("text"),
                                 elem.property("contentWidth"), elem.width(),
                                 elem.property("contentHeight"),
