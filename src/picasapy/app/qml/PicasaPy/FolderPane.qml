@@ -823,7 +823,16 @@ Rectangle {
                     // #3776 átnézés [ALACSONY]: a `mentesKulcs` soronként
                     // KÉTSZER hívta ugyanazt a `path`-ot (itt és a
                     // darabszám-feliratnál) — egyszeri kiszámítással.
-                    readonly property string mentesKulcsa: pane.mentesKulcs(path)
+                    //
+                    // #3799: a kulcs a `mentesSzuroAktiv`-tól függ, hogy a
+                    // szűrő bekapcsolásakor újraszámolódjon. A `mentesKulcs`
+                    // a `backupController`-t olvassa; a vezérlő bekötése
+                    // ELŐTT készült sor különben a nyers utat őrizné, a
+                    // `mentesTerkep` viszont `flat_key`-kulcsú (Windowson
+                    // kisbetűs, perjeles) — egyik sor sem találna.
+                    readonly property string mentesKulcsa:
+                        pane.mentesSzuroAktiv && kind === "folder"
+                        ? pane.mentesKulcs(path) : ""
                     readonly property bool mentesJelolt:
                         pane.mentesSzuroAktiv && kind === "folder"
                         && pane.mentesTerkep[mentesKulcsa] !== undefined

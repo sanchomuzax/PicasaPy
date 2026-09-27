@@ -108,8 +108,7 @@ def _lista(ertek):
     return ertek.toVariant() if hasattr(ertek, "toVariant") else list(ertek)
 
 
-@pytest.fixture
-def app(qt_app, tmp_path, monkeypatch):
+def _epitsd_az_appot(qt_app, tmp_path, monkeypatch):
     monkeypatch.setattr(
         "picasapy.app.backup_controller._kepek_mappaja",
         lambda: str(tmp_path / "Kepek"),
@@ -137,6 +136,24 @@ def app(qt_app, tmp_path, monkeypatch):
             next(gen)
         except StopIteration:
             pass
+
+
+@pytest.fixture
+def app(qt_app, tmp_path, monkeypatch):
+    yield from _epitsd_az_appot(qt_app, tmp_path, monkeypatch)
+
+
+@pytest.fixture
+def app_windows(qt_app, tmp_path, monkeypatch):
+    """#3799: a windowsos kulcsképzés Linuxon — a `flat_key` a
+    `picasapy.paths._platform` fogantyún (#1217) át windowsos ágra fut, és a
+    próbakönyvtár útja NAGYBETŰT is tartalmaz, hogy a kisbetűsítés
+    ténylegesen más kulcsot adjon, mint a nyers út (Linuxon a pytest
+    `tmp_path`-ja magában csupa kisbetű lehet)."""
+    monkeypatch.setattr("picasapy.paths._platform", lambda: "win32")
+    gyoker = tmp_path / "Windows-Alak"
+    gyoker.mkdir()
+    yield from _epitsd_az_appot(qt_app, gyoker, monkeypatch)
 
 
 def _nyisd_a_mentest(window, qt_app, *, keszlet: int = 0):
@@ -444,3 +461,29 @@ class TestABezaras:
         window.setProperty("viewerOpen", False)
         qt_app.processEvents()
         assert pane.property("mentesSzuroAktiv") is True
+
+
+class TestWindowsosKulcs:
+    """#3799: Windowson (a 0.8.607 óta) mentés módban üres volt a lapos
+    mappalista. A mérés: a lapos lista sorának `mentesKulcsa` kötése a
+    `FolderPane.mentesKulcs`-on át a `backupController` környezeti
+    tulajdonságot olvasta; ha a sor a vezérlő bekötése ELŐTT készült, a
+    kötés a nyers utat adta, a `mentesTerkep` viszont a `flat_key`
+    (Windowson kisbetűs, perjeles) kulcsát — a kettő nem találkozott.
+    Linuxon a `flat_key` identitás, ezért ott a hiba nem látszott; ez a
+    próba a windowsos ágat kapcsolja be."""
+
+    def test_a_lapos_lista_latszik_windowsos_kulccsal(
+        self, app_windows, qt_app
+    ):
+        window, _c, _e, _v, _lib, _cel = app_windows
+        _nyisd_a_mentest(window, qt_app)
+        cimkek = {
+            c.property("text") for c in _latszo(window, "folderRowLabel")
+        }
+        assert cimkek == {"nyaralas (2)", "szulinap (1)", "masik (1)"}
+        sorok = {
+            s.property("text") for s in _latszo(window, "folderRowMentesFiles")
+        }
+        assert sorok == {"a.jpg, b.jpg", "c.jpg", "e.jpg"}
+        assert len(_latszo(window, "folderRowMentesCheck")) == 3

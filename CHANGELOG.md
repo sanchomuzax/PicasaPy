@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Windowson a biztonsági mentés módban a mappalista megbízhatóan mutatja a
+  még el nem mentett mappákat (#3799).
+
 ## [0.8.609] – 2026-09-27
 
 ### Javítva
