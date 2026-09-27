@@ -34,6 +34,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   kapott, a név megmarad. A kép szélén túllógó arc mellőzése és elnevezése nem
   akad el hibával (#3670).
 
+### Javítva
+- A Ceruzarajz, a Holga, a 60-as évek, a Kinemaszkóp és az Éjjellátó
+  belső automatikus javítása az eredeti Picasa szerint egy kb. 1000
+  képpontos mintán állapítja meg a fény-árnyék tartományt, nem a teljes
+  képen — egy ritka, sötét részlet így nem gyengíti feleslegesen a
+  húzást (#3797).
+
 ## [0.8.610] – 2026-09-27
 
 ### Javítva

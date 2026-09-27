@@ -156,23 +156,55 @@ def keres(csp: _Csomopont, szin: tuple[int, int, int]) -> tuple[int, int, int]:
         csp = gyerek
 
 
-def mintakep(kep: np.ndarray) -> np.ndarray:
-    """Az 50 × 50-es minta (RGB, uint8) — ld. a modul 1. pontját."""
+def _oszlop_indexek(n: int, lepes: float) -> np.ndarray:
+    """A `0x00bb5bd0`-stílusú oszlopindex-tábla: egy fixpontos (16.16)
+    lépésköz ISMÉTELT hozzáadásával, egyszer felépítve — ugyanaz a tábla
+    minden sorra érvényes, ezért nem soronként számol."""
+    lepes_f = np.float32(lepes)
+    fix_lepes = int(np.floor(float(lepes_f) * _FIX))
+    kezdo = int(np.floor(float(np.float32(0.5 * float(lepes_f))) * _FIX))
+    return (kezdo + np.arange(n, dtype=np.int64) * fix_lepes) >> 16
+
+
+def _sor_indexek(n: int, lepes: float) -> np.ndarray:
+    """A sorindexek KÖZVETLEN, soronkénti fixpontos (16.16) vetítéssel —
+    a mátrix float32 (`0x00bb5c11 fstp dword`), és a visszavetített
+    koordináta is float32-be kerül, mielőtt 65536-tal szoroz (`0x009e74c3`)."""
+    lepes_f = np.float32(lepes)
+    koord = ((np.arange(n) + 0.5) * float(lepes_f)).astype(np.float32)
+    return np.floor(koord.astype(np.float64) * _FIX).astype(np.int64) >> 16
+
+
+def pontminta_racs(kep: np.ndarray, nW: int, nH: int, lepes_x: float, lepes_y: float) -> np.ndarray:
+    """Az `(nH, nW, 3)` legközelebbi-szomszéd pontminta: a mintaképpont
+    KÖZEPÉT (`+0,5`) vetíti vissza a `diag(lepes_x, lepes_y)` mátrixszal,
+    16.16 fixpontban, és egyetlen forrásképpontot olvas (`0x009e7420`). A
+    képen kívül eső mintaképpont fekete (`0x009a8d80`).
+
+    Ugyanez a mintavevő fut a `QuantizePalette`-ben (`mintakep`, lásd
+    lent) és az `AutoFix`-ban (`render/glimmer_ops.py`, #3797) — a hívó
+    csak az `nW`/`nH`/`lepes_x`/`lepes_y` paramétereket adja meg máshogy.
+    """
     validate_image(kep)
     magassag, szelesseg = kep.shape[:2]
-    #: a mátrix float32 (`0x00bb5c11 fstp dword`), és a visszavetített
-    #: koordináta is float32-be kerül, mielőtt 65536-tal szoroz (`0x009e74c3`)
-    leptek = np.float32(szelesseg / float(MINTA_OLDAL))
-    lepes = int(np.floor(float(leptek) * _FIX))
-    kezdo = int(np.floor(float(np.float32(0.5 * float(leptek))) * _FIX))
-    oszlopok = (kezdo + np.arange(MINTA_OLDAL, dtype=np.int64) * lepes) >> 16
-    sor_koord = ((np.arange(MINTA_OLDAL) + 0.5) * float(leptek)).astype(np.float32)
-    sorok = np.floor(sor_koord.astype(np.float64) * _FIX).astype(np.int64) >> 16
-    minta = np.zeros((MINTA_OLDAL, MINTA_OLDAL, 3), dtype=np.uint8)
+    oszlopok = _oszlop_indexek(nW, lepes_x)
+    sorok = _sor_indexek(nH, lepes_y)
+    minta = np.zeros((nH, nW, 3), dtype=np.uint8)
     jo_sor = sorok < magassag
     jo_oszlop = oszlopok < szelesseg
     minta[np.ix_(jo_sor, jo_oszlop)] = kep[np.ix_(sorok[jo_sor], oszlopok[jo_oszlop])]
     return minta
+
+
+def mintakep(kep: np.ndarray) -> np.ndarray:
+    """Az 50 × 50-es minta (RGB, uint8) — ld. a modul 1. pontját.
+
+    A `QuantizePalette` hívója (`0x00bb5bd0`) a lépték MINDKÉT irányban
+    `W / 50` — ez a kép saját quirkje, nem a `pontminta_racs` szabálya
+    (ld. ott a `diag(lepes_x, lepes_y)` megjegyzést)."""
+    szelesseg = kep.shape[1]
+    leptek = float(np.float32(szelesseg / float(MINTA_OLDAL)))
+    return pontminta_racs(kep, MINTA_OLDAL, MINTA_OLDAL, leptek, leptek)
 
 
 def oktree_epit(minta: np.ndarray, steps: int, melyseg: int = MELYSEG) -> _Csomopont:
@@ -204,4 +236,4 @@ def kvantal(kep: np.ndarray, steps: float) -> np.ndarray:
     return lut[(r & 0xE0) | ((g >> 3) & 0x1C) | (b >> 6)]
 
 
-__all__ = ["kvantal", "mintakep", "oktree_epit", "paletta_lut", "keres"]
+__all__ = ["kvantal", "mintakep", "oktree_epit", "paletta_lut", "keres", "pontminta_racs"]

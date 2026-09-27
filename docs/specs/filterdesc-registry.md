@@ -3267,13 +3267,22 @@ A `max` esetek (Fade 100) változatlanok, egyik eset sem romlik.
 `PencilSketch` hívja. A `HDR` leírója nem hívja; a mérésen a HDR-esetek
 nem is mozdultak.
 
-#### Eredeti / nálunk / teendő
+#### Eredeti / nálunk
 
-| | eredeti | nálunk (`render/glimmer_ops.py`, `autofix`) | teendő |
-|---|---|---|---|
-| a hisztogram forrása | ≤ 1000 képpontnál a teljes kép, fölötte `nW × nH` pontminta | mindig a teljes kép | a pontminta |
-| a LUT | a teljes képre | a teljes képre | ✅ |
-| a docstring | — | „HDR-család” is hívja | helyesbítendő |
+| | eredeti | nálunk (`render/glimmer_ops.py`, `autofix`) |
+|---|---|---|
+| a hisztogram forrása | ≤ 1000 képpontnál a teljes kép, fölötte `nW × nH` pontminta | ✅ ugyanaz (`_autofix_hisztogram_forras`, `render/quantize_palette.py` `pontminta_racs`-ot hívja) |
+| a LUT | a teljes képre | ✅ a teljes képre |
+| a docstring | — | ✅ javítva (a „HDR-család” hivatkozás törölve) |
+
+**Javítva (2026-09-27, #3797).** A pontminta a `render/quantize_palette.py`
+`mintakep`-jével közös `pontminta_racs` függvényt hívja (ugyanaz a
+`0x009e7420` mintavevő), csak más `nW`/`nH`/`lepes_x`/`lepes_y`
+paraméterekkel. Mérve (684-merokeszlet, ΔE a Picasa-exporthoz, a fenti
+táblázat szerint): `PencilSketch` alap 1,953 → 0,129, min 2,942 → 0,018,
+`Cinemascope` alap 1,367 → 1,097, `Holga` alap/min 0,890/0,678 →
+0,750/0,500, `Sixties` alap/min 1,179/1,255 → 1,033/1,136, `NightVision`
+alap/min 4,626/3,673 → 4,595/3,663 — egyik eset sem romlott.
 
 Fejlesztés: #3797.
 

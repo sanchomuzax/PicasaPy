@@ -182,23 +182,31 @@ _KIT = Path("/mnt/nas/My Pictures/684-merokeszlet")
 _TURES = 0.05
 
 #: (címke, fájlnév, lánc, a natív generátorral mért ΔE a jegyből)
+#:
+#: ⚠️ Az értékek 2026-09-27-én (#3797) frissültek: az `AutoFix` a
+#: hisztogramot 1000 képpont fölött már egy kb. 1000 képpontos pontmintán
+#: számolja (a natívval egyezően), nem a teljes képen — mind az öt effekt
+#: hívja belül az `AutoFix`-ot, tehát a pontminta mindegyik ΔE-jét
+#: (kis mértékben) csökkentette. A táblázat itt a NoiseImageOperation
+#: (#3736) hatását dokumentálja, a jelenlegi oszlop pedig már az #3797
+#: utáni mérés — a történeti „natív MT" oszlop szándékosan nem frissül.
 _GOLDEN_ESETEK = [
     (
         "NightVision alap",
         "nightvision__alap.jpg",
         "NightVision=1,0.000000,0.000000,0.000000;",
-        4.626,
+        4.595,
     ),
     (
         "NightVision min",
         "nightvision__min.jpg",
         "NightVision=1,-50.000000,-50.000000,0.000000;",
-        3.673,
+        3.663,
     ),
-    ("Holga alap", "holga__alap.jpg", "Holga=1,70.000000,30.000000,0.000000;", 0.890),
-    ("Cinemascope alap", "cinemascope__alap.jpg", "Cinemascope=1,0;", 1.367),
-    ("Sixties alap", "sixties__alap.jpg", "Sixties=1,20.000000,00ffffff,0;", 1.179),
-    ("Sixties min", "sixties__min.jpg", "Sixties=1,0.000000,00ffffff,0;", 1.255),
+    ("Holga alap", "holga__alap.jpg", "Holga=1,70.000000,30.000000,0.000000;", 0.750),
+    ("Cinemascope alap", "cinemascope__alap.jpg", "Cinemascope=1,0;", 1.097),
+    ("Sixties alap", "sixties__alap.jpg", "Sixties=1,20.000000,00ffffff,0;", 1.033),
+    ("Sixties min", "sixties__min.jpg", "Sixties=1,0.000000,00ffffff,0;", 1.136),
 ]
 
 
