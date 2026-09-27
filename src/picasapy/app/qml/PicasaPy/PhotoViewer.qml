@@ -259,13 +259,15 @@ Rectangle {
     // az ini-módosítást a photosModel/index NEM látja, ez a kényszerített
     // újraértékelés-kapcsoló a facesFor() friss lekérdezéséhez
     property int facesEditRevision: 0
+    //: #3741: a KIJELÖLT fél fotójáé (`aktivSor`) — kettős nézetben bal
+    //: fókusznál ez a bal kép, nem a `currentIndex`-é.
     readonly property var currentFaces: (!viewer.facesVisible || !photosModel
-                                          || currentIndex < 0
+                                          || viewer.aktivSor < 0
                                           || typeof facesHelper === "undefined"
                                           || !facesHelper)
         ? []
         : (photosModel.revision, viewer.facesEditRevision,
-           facesHelper.facesFor(photosModel.filePathAt(currentIndex)))
+           facesHelper.facesFor(photosModel.filePathAt(viewer.aktivSor)))
 
     // -- zoom-állapotgép (#6, #2492): fit / 1:1 / tetszőleges ------------
     //
@@ -311,6 +313,12 @@ Rectangle {
                                      && viewer.aktivOldal === "bal")
         ? viewer.abMasikSor : viewer.currentIndex
 
+    //: #3741: a kijelölt kép a BAL/FELSŐ félen áll (`photoElotte`). Egy
+    //: képes módban mindig hamis — az `aktivOldal` a módváltás után is
+    //: „bal" maradhat, de ott csak a `photo` látszik.
+    readonly property bool balFokusz: viewer.layoutMode !== "1up"
+                                      && viewer.aktivOldal === "bal"
+
     //: #3014: a ténylegesen megjelenített másik kép sora. AB módon kívül
     //: mindig a jelenlegi kép (az „aa" mód ugyanazt mutatja kétszer).
     readonly property int abMasikSor: viewer.layoutMode !== "ab"
@@ -346,10 +354,10 @@ Rectangle {
     //: referencia miatt képváltáskor és mentés után is újraértékelődik.
     readonly property int valodiSzelesseg: viewer.photosModel
         ? (viewer.photosModel.revision,
-           viewer.photosModel.pixelWidthAt(viewer.currentIndex)) : 0
+           viewer.photosModel.pixelWidthAt(viewer.aktivSor)) : 0
     readonly property int valodiMagassag: viewer.photosModel
         ? (viewer.photosModel.revision,
-           viewer.photosModel.pixelHeightAt(viewer.currentIndex)) : 0
+           viewer.photosModel.pixelHeightAt(viewer.aktivSor)) : 0
 
     function actualZoomFactor() {
         // Ez a MÉRT képlet `r`-je: a VALÓDI és az ILLESZTETT méret
@@ -367,19 +375,22 @@ Rectangle {
         //
         // ⚠️ A FORGATÁS számít: `iniSteps % 2` esetén a rajzolt szélesség
         // a fájl MAGASSÁGÁNAK felel meg.
-        if (photo.paintedWidth <= 0)
+        //: #3741: a fókuszban lévő fél képe — kettős nézetben bal
+        //: fókusznál a `photoElotte`.
+        var kep = photoArea.fokuszKep
+        if (kep.paintedWidth <= 0)
             return 1
-        var forgatott = photo.iniSteps % 2 !== 0
+        var forgatott = kep.iniSteps % 2 !== 0
         var vSzel = forgatott ? viewer.valodiMagassag : viewer.valodiSzelesseg
         if (vSzel > 0)
-            return vSzel / photo.paintedWidth
+            return vSzel / kep.paintedWidth
         // Tartalék, ha az index nem tud méretet adni (frissen felvett kép,
         // vagy olvashatatlan fejléc): a BETÖLTÖTT raszter mérete. Ez a
         // `sourceSize`-plafon miatt legfeljebb kisebb lehet a valódinál —
         // tehát a nagyítás legrosszabb esetben kevesebb, sosem több.
         // NEM a `sourceSize`: az a beállított plafont adná vissza.
-        return photo.implicitWidth > 0
-            ? photo.implicitWidth / photo.paintedWidth : 1
+        return kep.implicitWidth > 0
+            ? kep.implicitWidth / kep.paintedWidth : 1
     }
 
     //: A MÉRT leképezés (`0x00a601cf`–`0x00a60221`), két folytonos ágon:
@@ -424,13 +435,17 @@ Rectangle {
     //: lépésköz a MI választásunk, a beakadás és a vágás a mért.
     function wheelZoom(delta) { lepjZoom((delta / 120) * 0.05) }
     // a kép széle ne szakadjon el a látótértől pásztázáskor
+    //: #3741: a fókuszban lévő fél képét és a SAJÁT felét nézi — egy képen
+    //: ez a teljes `photoArea`, kettős nézetben a kép fele.
     function clampPan() {
-        var w = (photo.iniSteps % 2 ? photo.paintedHeight
-                                    : photo.paintedWidth) * zoomFactor
-        var h = (photo.iniSteps % 2 ? photo.paintedWidth
-                                    : photo.paintedHeight) * zoomFactor
-        var maxX = Math.max(0, (w - photoArea.width) / 2)
-        var maxY = Math.max(0, (h - photoArea.height) / 2)
+        var kep = photoArea.fokuszKep
+        var keret = photoArea.fokuszKeret
+        var w = (kep.iniSteps % 2 ? kep.paintedHeight
+                                  : kep.paintedWidth) * zoomFactor
+        var h = (kep.iniSteps % 2 ? kep.paintedWidth
+                                  : kep.paintedHeight) * zoomFactor
+        var maxX = Math.max(0, (w - keret.width) / 2)
+        var maxY = Math.max(0, (h - keret.height) / 2)
         panX = Math.max(-maxX, Math.min(maxX, panX))
         panY = Math.max(-maxY, Math.min(maxY, panY))
     }
@@ -831,6 +846,9 @@ Rectangle {
     //: #3014: „aa" módban ugyanaz a fotó áll mindkét félen — ott a LÁNCOK
     //: cserélnek, újratöltés helyett (az ini-ben csak a kijelölt fél áll).
     onAktivOldalChanged: {
+        //: #3741: a nagyítás a fókuszban lévő félre hat — a másik kép
+        //: mérete más, tehát a pásztázás határa is
+        Qt.callLater(viewer.clampPan)
         if (viewer.layoutMode === "aa" && viewer.aaMunkamenet
                 && viewer.masodikEditCtl) {
             viewer._aaFeleketCserel()
@@ -1629,8 +1647,10 @@ Rectangle {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left; anchors.right: parent.right
-                    imageAspect: photo.paintedHeight > 0
-                                 ? photo.paintedWidth / photo.paintedHeight
+                    //: #3741: a fókuszban lévő fél képéé
+                    imageAspect: photoArea.fokuszKep.paintedHeight > 0
+                                 ? photoArea.fokuszKep.paintedWidth
+                                   / photoArea.fokuszKep.paintedHeight
                                  : 4 / 3
                     // Visszavonás/Újra — a controller undo-verméből (#59).
                     // #465: a KÉSZ feliratot a controller adja
@@ -1955,14 +1975,12 @@ Rectangle {
                     //: ELŐTTI kép. A nyers fájl URL-je, a `filters=` lánc
                     //: nélkül: ez a „mi volt" oldal. Csak 2-up módban
                     //: látszik, és a fő képpel EGYFORMA méretet kap.
-                    Image {
-                        id: photoElotte
-                        objectName: "viewerImageElotte"
-                        visible: viewer.layoutMode !== "1up"
-                                 && !viewer.isCurrentVideo
-                        //: #3014: vízszintesen a BAL, függőlegesen a FELSŐ
-                        //: felet kapja — a `swap_2up_layout` ezt fordítja.
-                        //:
+                    //: #3741: a BAL/FELSŐ fél kerete — a `photoElotte` régi
+                    //: befoglaló doboza. Bal fókusznál a nagyított kép ezen
+                    //: belül marad (ld. a `photoKeret` párját).
+                    Item {
+                        id: photoElotteKeret
+                        objectName: "viewerImageElotteKeret"
                         //: ⚠️ Horgony helyett SZÁMOLT geometria: a
                         //: `anchors.bottom: … ? undefined : parent.bottom`
                         //: alakot a Qt nem bontja vissza, tehát függőleges
@@ -1981,156 +1999,230 @@ Rectangle {
                             : (viewer.fuggolegesElrendezes
                                ? Math.floor((parent.height - 8) / 2)
                                : parent.height)
-                        //: #3014/#3187: AB módban itt a MÁSIK kép áll, a
-                        //: SAJÁT előnézet-rekeszén át — tehát a mentett
-                        //: `filters=` láncával, ahogy a rácsban és az egy
-                        //: képes nézetben is látszik (a #3187 előtt itt a
-                        //: nyers fájl jött, és ugyanaz a kép kétféleképp
-                        //: látszott a programban).
-                        //: #3187: ez a fél az `abMasikSor` fotóját mutatja —
-                        //: a fő rekeszből, ha a KIJELÖLT oldal ez, egyébként
-                        //: a másodikból.
-                        //: #3014: „aa" módban UGYANÍGY — ott a két rekesz
-                        //: ugyanannak a fotónak két önálló szerkesztése.
-                        source: viewer.isCurrentVideo
-                            ? ""
-                            : (viewer.layoutMode === "1up"
-                               ? viewer.urlAt(viewer.abMasikSor)
-                               : (viewer.aktivOldal === "bal"
-                                  ? (viewer.editCtl
-                                     && viewer.editCtl.previewSource !== ""
-                                     ? viewer.editCtl.previewSource
-                                     : viewer.urlAt(viewer.abMasikSor))
-                                  : (viewer.masodikEditCtl
-                                     && viewer.masodikEditCtl.previewSource !== ""
-                                     ? viewer.masodikEditCtl.previewSource
-                                     : viewer.urlAt(viewer.abMasikSor))))
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: Qt.platform.pluginName !== "offscreen"
-                        autoTransform: true
-                        sourceSize.width: 2560
+                        clip: viewer.balFokusz && viewer.zoomFactor > 1
+                        Image {
+                            id: photoElotte
+                            objectName: "viewerImageElotte"
+                            visible: viewer.layoutMode !== "1up"
+                                     && !viewer.isCurrentVideo
+                            //: #3014: vízszintesen a BAL, függőlegesen a FELSŐ
+                            //: felet kapja — a `swap_2up_layout` ezt fordítja
+                            //: (a `photoElotteKeret` geometriája).
+                            //:
+                            //: #3741: a `photo` mintájára a SAJÁT forgatásával
+                            //: (`rotate=` az ini-ben) jelenik meg, és bal
+                            //: fókusznál övé a nagyítás és a pásztázás.
+                            readonly property int iniSteps: viewer.photosModel
+                                ? (viewer.photosModel.revision,
+                                   viewer.photosModel.rotateAt(viewer.abMasikSor))
+                                : 0
+                            anchors.centerIn: parent
+                            anchors.horizontalCenterOffset:
+                                viewer.balFokusz ? viewer.panX : 0
+                            anchors.verticalCenterOffset:
+                                viewer.balFokusz ? viewer.panY : 0
+                            scale: viewer.balFokusz ? viewer.zoomFactor : 1
+                            transformOrigin: Item.Center
+                            width: iniSteps % 2 ? parent.height : parent.width
+                            height: iniSteps % 2 ? parent.width : parent.height
+                            rotation: iniSteps * 90
+                            //: #3014/#3187: AB módban itt a MÁSIK kép áll, a
+                            //: SAJÁT előnézet-rekeszén át — tehát a mentett
+                            //: `filters=` láncával, ahogy a rácsban és az egy
+                            //: képes nézetben is látszik (a #3187 előtt itt a
+                            //: nyers fájl jött, és ugyanaz a kép kétféleképp
+                            //: látszott a programban).
+                            //: #3187: ez a fél az `abMasikSor` fotóját mutatja —
+                            //: a fő rekeszből, ha a KIJELÖLT oldal ez, egyébként
+                            //: a másodikból.
+                            //: #3014: „aa" módban UGYANÍGY — ott a két rekesz
+                            //: ugyanannak a fotónak két önálló szerkesztése.
+                            source: viewer.isCurrentVideo
+                                ? ""
+                                : (viewer.layoutMode === "1up"
+                                   ? viewer.urlAt(viewer.abMasikSor)
+                                   : (viewer.aktivOldal === "bal"
+                                      ? (viewer.editCtl
+                                         && viewer.editCtl.previewSource !== ""
+                                         ? viewer.editCtl.previewSource
+                                         : viewer.urlAt(viewer.abMasikSor))
+                                      : (viewer.masodikEditCtl
+                                         && viewer.masodikEditCtl.previewSource !== ""
+                                         ? viewer.masodikEditCtl.previewSource
+                                         : viewer.urlAt(viewer.abMasikSor))))
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: Qt.platform.pluginName !== "offscreen"
+                            autoTransform: true
+                            sourceSize.width: 2560
 
-                        //: #3663: a képre kattintás a BAL/FELSŐ felet
-                        //: aktiválja — a `swap_2up_focus` gomb ugyanezt
-                        //: teszi (ld. `ui-audit-editor.md` 3/b.4). Csak
-                        //: 2-up módban hat, és csak akkor, ha épp nincs
-                        //: aktív pontos-kattintású szerkesztő-eszköz a
-                        //: KÉPEN (azok kattintása MÁST jelent — célpont,
-                        //: minta, pötty — de a `retouchClickArea`/
-                        //: `neutralPickArea`/`paintMaskArea` mindegyike a
-                        //: `photo`-hoz van rögzítve, ide, a `photoElotte`-hoz
-                        //: nem, tehát itt a vágás/retusálás/szöveg/vörösszem
-                        //: nem old ütközést — #3693: azokat a fókuszváltás
-                        //: kapuja (`fokuszValt`) kezeli.
-                        TapHandler {
-                            enabled: viewer.layoutMode !== "1up"
-                                && !editorPanel.neutralPickerActive
-                                && !paintMaskArea.aktiv
-                            onTapped: viewer.fokuszValt("bal")
+                            //: #3663: a képre kattintás a BAL/FELSŐ felet
+                            //: aktiválja — a `swap_2up_focus` gomb ugyanezt
+                            //: teszi (ld. `ui-audit-editor.md` 3/b.4). Csak
+                            //: 2-up módban hat, és csak akkor, ha épp nincs
+                            //: aktív pontos-kattintású szerkesztő-eszköz a
+                            //: KÉPEN (azok kattintása MÁST jelent — célpont,
+                            //: minta, pötty). #3741: a `retouchClickArea`/
+                            //: `cropOverlay`/`textClickArea`/`redeyeOverlay` a
+                            //: `photoArea.fokuszKep`-re kerül — bal fókusznál
+                            //: épp IDE, tehát ilyenkor itt IS old ütközést,
+                            //: ugyanúgy, ahogy a `photo` párja jobb fókusznál.
+                            //: `neutralPickArea`/`paintMaskArea` marad kivétel
+                            //: MINDKÉT irányban (ld. a `photo` párját).
+                            TapHandler {
+                                enabled: viewer.layoutMode !== "1up"
+                                    && !editorPanel.neutralPickerActive
+                                    && !paintMaskArea.aktiv
+                                    && !(viewer.aktivOldal === "bal"
+                                         && (editorPanel.cropActive
+                                             || editorPanel.redeyeActive
+                                             || editorPanel.retouchActive
+                                             || editorPanel.textActive))
+                                onTapped: viewer.fokuszValt("bal")
+                            }
                         }
                     }
 
-                    Image {
-                        id: photo
-                        objectName: "viewerImage"
-                        // videónál a fotó-Image üres és rejtett (#14) — a
-                        // videofájlt nem próbáljuk képként dekódolni
-                        visible: !viewer.isCurrentVideo
-                        // a model.revision referencia miatt a kötés minden
-                        // modell-frissítésnél újraértékelődik
-                        readonly property int iniSteps: viewer.photosModel
-                            ? (viewer.photosModel.revision,
-                               viewer.photosModel.rotateAt(viewer.currentIndex))
-                            : 0
+                    //: #3741: a JOBB/ALSÓ fél kerete — a `photo` régi befoglaló
+                    //: doboza (ugyanaz a középpont és méret), hogy a nagyított
+                    //: kép a SAJÁT felén belül maradjon (`clip`), ne lógjon rá
+                    //: a másikra. Nagyítás nélkül nincs vágás: ilyenkor a kép
+                    //: amúgy is a felén belül van, a vágókeret fogantyúi pedig
+                    //: a résbe nyúlhatnak, ahogy eddig. Egy képen a keret a
+                    //: teljes `photoArea` (ott a `photoArea` maga vág).
+                    //: #3014: a fél középpontja a fél terület közepére
+                    //: kerül: eltolás = (méret + rés) / 4.
+                    Item {
+                        id: photoKeret
+                        objectName: "viewerImageKeret"
                         anchors.centerIn: parent
-                        // #6: zoom + pásztázás — a skála az illesztett
-                        // mérethez képest, az eltolás a pan-állapotból
-                        //
-                        //: #3014: 2-up módban a fő kép a MÁSIK felet kapja.
-                        //: A #3013 fél szélességet adott neki, de középre
-                        //: horgonyozva — így a két kép EGYMÁSRA csúszott. A
-                        //: fél elem középpontja a fél terület közepére kell:
-                        //: eltolás = (méret + rés) / 4.
-                        anchors.horizontalCenterOffset: viewer.panX
-                            + (viewer.layoutMode === "1up"
-                               || viewer.fuggolegesElrendezes
-                               ? 0 : (photoArea.width + 8) / 4)
-                        anchors.verticalCenterOffset: viewer.panY
-                            + (viewer.layoutMode !== "1up"
-                               && viewer.fuggolegesElrendezes
-                               ? (photoArea.height + 8) / 4 : 0)
-                        scale: viewer.zoomFactor
-                        transformOrigin: Item.Center
-                        // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
-                        //: #3013: 2-up módban a fő kép a JOBB felet kapja
-                        //: (ez a „mai" állapot), egy képen a teljes terület
-                        //: #3014: a fél oldal a `swap_2up_layout` állásától
-                        //: függ — vízszintesen a SZÉLESSÉG feleződik,
-                        //: függőlegesen a MAGASSÁG.
-                        readonly property real felSzelesseg:
+                        anchors.horizontalCenterOffset:
                             viewer.layoutMode === "1up"
+                                || viewer.fuggolegesElrendezes
+                            ? 0 : (photoArea.width + 8) / 4
+                        anchors.verticalCenterOffset:
+                            viewer.layoutMode !== "1up"
+                                && viewer.fuggolegesElrendezes
+                            ? (photoArea.height + 8) / 4 : 0
+                        width: viewer.layoutMode === "1up"
                                 || viewer.fuggolegesElrendezes
                             ? photoArea.width
                             : Math.floor((photoArea.width - 8) / 2)
-                        readonly property real felMagassag:
-                            viewer.layoutMode !== "1up"
+                        height: viewer.layoutMode !== "1up"
                                 && viewer.fuggolegesElrendezes
                             ? Math.floor((photoArea.height - 8) / 2)
                             : photoArea.height
-                        width: iniSteps % 2 ? felMagassag : felSzelesseg
-                        height: iniSteps % 2 ? felSzelesseg : felMagassag
-                        rotation: iniSteps * 90
-                        // nyitott szerkesztésnél a filters= láncot alkalmazó
-                        // editpreview provider rendereli a képet (?rev=
-                        // cache-buster minden módosításnál)
-                        // #305: null-őr
-                        //: #3187: ez a fél a `currentIndex` fotóját mutatja.
-                        //: A FŐ vezérlő a KIJELÖLT oldalt szerkeszti, tehát
-                        //: ha a kijelölt a BAL, akkor ide a MÁSODIK rekesz
-                        //: képe jön — a hozzárendelés a fókusszal cserél.
-                        source: viewer.isCurrentVideo ? ""
-                                : (viewer.layoutMode !== "1up"
-                                   && viewer.aktivOldal === "bal"
-                                   ? (viewer.masodikEditCtl
-                                      && viewer.masodikEditCtl.previewSource !== ""
-                                      ? viewer.masodikEditCtl.previewSource
-                                      : viewer.urlAt(viewer.currentIndex))
-                                   : (viewer.editCtl
-                                      && viewer.editCtl.previewSource !== ""
-                                      ? viewer.editCtl.previewSource
-                                      : viewer.urlAt(viewer.currentIndex)))
-                        fillMode: Image.PreserveAspectFit
-                        // #53: offscreen (teszt) platformon szinkron betöltés —
-                        // itt reprodukálódott a GIL-deadlock (a lapozás
-                        // setProperty-je vs. az image-provider szál). Szinkron
-                        // betöltésnél nincs provider-szál, így nincs holtpont;
-                        // produkcióban marad az async.
-                        asynchronous: Qt.platform.pluginName !== "offscreen"
-                        autoTransform: true   // EXIF-orientáció
-                        sourceSize.width: 2560
+                        clip: viewer.layoutMode !== "1up" && !viewer.balFokusz
+                              && viewer.zoomFactor > 1
+                        Image {
+                            id: photo
+                            objectName: "viewerImage"
+                            // videónál a fotó-Image üres és rejtett (#14) — a
+                            // videofájlt nem próbáljuk képként dekódolni
+                            visible: !viewer.isCurrentVideo
+                            // a model.revision referencia miatt a kötés minden
+                            // modell-frissítésnél újraértékelődik
+                            readonly property int iniSteps: viewer.photosModel
+                                ? (viewer.photosModel.revision,
+                                   viewer.photosModel.rotateAt(viewer.currentIndex))
+                                : 0
+                            // #6: zoom + pásztázás — a skála az illesztett
+                            // mérethez képest, az eltolás a pan-állapotból
+                            //
+                            //: #3014: 2-up módban a fő kép a MÁSIK felet kapja
+                            //: — a fél helyét és méretét a `photoKeret` adja.
+                            //: #3741: a nagyítás és a pásztázás csak akkor
+                            //: az övé, ha ez a fókuszban lévő fél.
+                            anchors.centerIn: parent
+                            anchors.horizontalCenterOffset:
+                                viewer.balFokusz ? 0 : viewer.panX
+                            anchors.verticalCenterOffset:
+                                viewer.balFokusz ? 0 : viewer.panY
+                            scale: viewer.balFokusz ? 1 : viewer.zoomFactor
+                            transformOrigin: Item.Center
+                            // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
+                            width: iniSteps % 2 ? parent.height : parent.width
+                            height: iniSteps % 2 ? parent.width : parent.height
+                            rotation: iniSteps * 90
+                            // nyitott szerkesztésnél a filters= láncot alkalmazó
+                            // editpreview provider rendereli a képet (?rev=
+                            // cache-buster minden módosításnál)
+                            // #305: null-őr
+                            //: #3187: ez a fél a `currentIndex` fotóját mutatja.
+                            //: A FŐ vezérlő a KIJELÖLT oldalt szerkeszti, tehát
+                            //: ha a kijelölt a BAL, akkor ide a MÁSODIK rekesz
+                            //: képe jön — a hozzárendelés a fókusszal cserél.
+                            source: viewer.isCurrentVideo ? ""
+                                    : (viewer.layoutMode !== "1up"
+                                       && viewer.aktivOldal === "bal"
+                                       ? (viewer.masodikEditCtl
+                                          && viewer.masodikEditCtl.previewSource !== ""
+                                          ? viewer.masodikEditCtl.previewSource
+                                          : viewer.urlAt(viewer.currentIndex))
+                                       : (viewer.editCtl
+                                          && viewer.editCtl.previewSource !== ""
+                                          ? viewer.editCtl.previewSource
+                                          : viewer.urlAt(viewer.currentIndex)))
+                            fillMode: Image.PreserveAspectFit
+                            // #53: offscreen (teszt) platformon szinkron betöltés —
+                            // itt reprodukálódott a GIL-deadlock (a lapozás
+                            // setProperty-je vs. az image-provider szál). Szinkron
+                            // betöltésnél nincs provider-szál, így nincs holtpont;
+                            // produkcióban marad az async.
+                            asynchronous: Qt.platform.pluginName !== "offscreen"
+                            autoTransform: true   // EXIF-orientáció
+                            sourceSize.width: 2560
 
-                        //: #3663: a képre kattintás a JOBB/ALSÓ felet
-                        //: aktiválja — ld. a `photoElotte`-n lévő párját.
-                        //: #3693: itt a `retouchClickArea`/`neutralPickArea`/
-                        //: `paintMaskArea` valódi átfedő `MouseArea`-k (mind
-                        //: a `photo`-hoz rögzítve), ezért a vágás/retusálás/
-                        //: szöveg/vörösszem alatt a kattintás MARAD az ő
-                        //: dolguk — a fókuszváltás innen a gombbal (vagy a
-                        //: `photoElotte`-ra kattintva) megy. Bal fókusznál
-                        //: sem engedhető: az átfedők akkor is itt, a NEM
-                        //: kijelölt félen ülnek (mérve), és ez az eszköz
-                        //: egyetlen egérfelülete.
-                        TapHandler {
-                            enabled: viewer.layoutMode !== "1up"
-                                && !editorPanel.cropActive
-                                && !editorPanel.redeyeActive
-                                && !editorPanel.retouchActive
-                                && !editorPanel.textActive
-                                && !editorPanel.neutralPickerActive
-                                && !paintMaskArea.aktiv
-                            onTapped: viewer.fokuszValt("jobb")
+                            //: #3663: a képre kattintás a JOBB/ALSÓ felet
+                            //: aktiválja — ld. a `photoElotte`-n lévő párját.
+                            //: #3693: itt a `retouchClickArea`/`cropOverlay`/
+                            //: `textClickArea`/`redeyeOverlay` valódi átfedő
+                            //: `MouseArea`-k, ezért amíg a fókusz JOBB (tehát az
+                            //: átfedő a `photoArea.fokuszKep`-en át épp ide, a
+                            //: `photo`-ra kerül, #3741), a kattintás MARAD az ő
+                            //: dolguk. #3741: BAL fókusznál az átfedő a MÁSIK
+                            //: félre, a `photoElotte`-ra kerül — itt ekkor nincs
+                            //: ütközés, tehát a kattintás mehet a kapun
+                            //: (`fokuszValt`) át, ahogy a `photoElotte` felől is
+                            //: már ment (#3693, `TestAKepreKattintassal`).
+                            //: `neutralPickArea`/`paintMaskArea` marad kivétel
+                            //: MINDKÉT irányban — ld. a `photoElotte` párját.
+                            TapHandler {
+                                enabled: viewer.layoutMode !== "1up"
+                                    && !editorPanel.neutralPickerActive
+                                    && !paintMaskArea.aktiv
+                                    && !(viewer.aktivOldal === "jobb"
+                                         && (editorPanel.cropActive
+                                             || editorPanel.redeyeActive
+                                             || editorPanel.retouchActive
+                                             || editorPanel.textActive))
+                                onTapped: viewer.fokuszValt("jobb")
+                            }
                         }
                     }
+
+                    //: #3741: az eszközátfedők (vágás/retusálás/szöveg/
+                    //: vörösszem, és a hozzájuk tartozó `frameContentArea`/
+                    //: `editorToolBar`/`paintMaskArea`/`neutralPickArea`)
+                    //: mind a TÉNYLEGESEN szerkesztett — a fő
+                    //: `editController` láncát viselő — félre kerülnek. Az
+                    //: melyik VIZUÁLIS fél ez, az `aktivOldal`-tól függ,
+                    //: ugyanaz a leképezés, mint a `viewerFocusBadge`
+                    //: (lentebb, a `photoArea` testvéreként deklarált
+                    //: „Kijelölve” jelvény) saját `fokuszKep`-jéé:
+                    //: `viewer.balFokusz` esetén a `photoElotte` (a
+                    //: `source`-kötés szerint EKKOR kapja az
+                    //: `editCtl.previewSource`-t), egyébként — egy képes
+                    //: módban MINDIG — a `photo`. A hiba előtt minden felsorolt
+                    //: elem fixen a `photo`-hoz volt rögzítve — helyes volt
+                    //: az alapértelmezett jobb fókusznál, de bal fókusznál a
+                    //: NEM kijelölt képen jelent meg (mérve, #3741).
+                    readonly property var fokuszKep:
+                        viewer.balFokusz ? photoElotte : photo
+                    //: a fókuszban lévő kép fele (`photoElotteKeret`/
+                    //: `photoKeret`) — a pásztázás határa és a nagyított
+                    //: kép vágása
+                    readonly property var fokuszKeret:
+                        viewer.balFokusz ? photoElotteKeret : photoKeret
 
                     // GPU élő-előnézet (#22): a `photo` FÖLÖTT, csak akkor
                     // látható, ha `gpuFinetuneActive && gpuFinetuneEligible`
@@ -2178,8 +2270,10 @@ Rectangle {
                         // bejelentett "kiugrást". A helyes geometria a
                         // `cropOverlay`/`facesOverlay` mintáját követi —
                         // `paintedWidth`/`paintedHeight`, középre igazítva.
-                        x: photo.x + (photo.width - photo.paintedWidth) / 2
-                        y: photo.y + (photo.height - photo.paintedHeight) / 2
+                        x: photoKeret.x + photo.x
+                           + (photo.width - photo.paintedWidth) / 2
+                        y: photoKeret.y + photo.y
+                           + (photo.height - photo.paintedHeight) / 2
                         width: photo.paintedWidth
                         height: photo.paintedHeight
                         rotation: photo.rotation
@@ -2333,10 +2427,14 @@ Rectangle {
                     // korábbi panel-gombok OBJEKTUMNEVÉT viszik tovább, hogy
                     // a rájuk épülő működés (és annak ellenőrzése) ne
                     // szakadjon meg.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a sáv a TÉNYLEGESEN szerkesztett félre kerül,
+                    //: bal fókusznál a `photoElotte`-ra (ld. a `fokuszKep`
+                    //: docsztringjét a `photo` alatt).
                     EditorToolBar {
                         id: editorToolBar
                         objectName: "editorToolBar"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         z: 20
                         //: #3320: a sáv KIZÁRÓLAG a kiegyenesítésé. A
                         //: `.tre` a `tool_container`-t a
@@ -2366,8 +2464,9 @@ Rectangle {
                                 editController.setTilt(ertek)
                         }
                         //: középre, és 10 képponttal a KIRAJZOLT kép alja fölé
-                        x: (photo.width - width) / 2
-                        y: (photo.height + photo.paintedHeight) / 2
+                        x: (photoArea.fokuszKep.width - width) / 2
+                        y: (photoArea.fokuszKep.height
+                            + photoArea.fokuszKep.paintedHeight) / 2
                            - height - 10
                         onApplyClicked: {
                             //: #3234: a döntés értéke MÁR ki van írva (a
@@ -2401,21 +2500,26 @@ Rectangle {
                     //
                     // Keret nélkül `hely === null`, és a terület pontosan a
                     // kirajzolt kép — vagyis a mai viselkedés.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő és a mérce — ez viszi a `cropOverlay`-t és a
+                    //: `facesOverlay`-t is a fókuszban lévő félre.
                     Item {
                         id: frameContentArea
                         objectName: "frameContentArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         readonly property var hely:
                             (typeof editController !== "undefined" && editController
                              && editController.framePlacement)
                                 ? editController.framePlacement : null
-                        width: photo.paintedWidth * (hely ? hely.szelesseg : 1)
-                        height: photo.paintedHeight * (hely ? hely.magassag : 1)
-                        x: (photo.width - photo.paintedWidth) / 2
-                           + (hely ? hely.kozepX * photo.paintedWidth : photo.paintedWidth / 2)
+                        readonly property real kepSzelesseg: photoArea.fokuszKep.paintedWidth
+                        readonly property real kepMagassag: photoArea.fokuszKep.paintedHeight
+                        width: kepSzelesseg * (hely ? hely.szelesseg : 1)
+                        height: kepMagassag * (hely ? hely.magassag : 1)
+                        x: (photoArea.fokuszKep.width - kepSzelesseg) / 2
+                           + (hely ? hely.kozepX * kepSzelesseg : kepSzelesseg / 2)
                            - width / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                           + (hely ? hely.kozepY * photo.paintedHeight : photo.paintedHeight / 2)
+                        y: (photoArea.fokuszKep.height - kepMagassag) / 2
+                           + (hely ? hely.kozepY * kepMagassag : kepMagassag / 2)
                            - height / 2
                         //: a renderelő szöge az óramutatóval ellentétes, a QML
                         //: `rotation`-je egyező irányú — innen az előjelváltás
@@ -2466,8 +2570,10 @@ Rectangle {
                         height: frameContentArea.height
                         faces: viewer.currentFaces
                         editMode: viewer.facesEditMode
-                        imagePath: viewer.photosModel && viewer.currentIndex >= 0
-                            ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
+                        //: #3741: a kijelölt fél fotója — az arcszerkesztés
+                        //: ennek a sorába ír (`currentFaces` ugyanígy)
+                        imagePath: viewer.photosModel && viewer.aktivSor >= 0
+                            ? viewer.photosModel.filePathAt(viewer.aktivSor) : ""
                         onEdited: viewer.facesEditRevision += 1
                     }
 
@@ -2489,10 +2595,12 @@ Rectangle {
                     // (`thumbui/circlecursor`, mérve), az átmérőjét a panel
                     // csúszkája adja; a vonás a KIRAJZOLT képhez normálva megy
                     // a vezérlőnek, tehát a nagyítástól független.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a festés a TÉNYLEGESEN szerkesztett félen megy.
                     MouseArea {
                         id: paintMaskArea
                         objectName: "paintMaskArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         z: 5
                         readonly property bool aktiv:
                             (editController && editController.paintMaskSupported
@@ -2501,10 +2609,12 @@ Rectangle {
                         visible: paintMaskArea.aktiv
                         enabled: paintMaskArea.aktiv
                         hoverEnabled: true
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         //: a rendszer-kurzort elrejtjük: a KÖR maga a mutató
                         cursorShape: Qt.BlankCursor
 
@@ -2543,16 +2653,20 @@ Rectangle {
                         }
                     }
 
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a pipetta a TÉNYLEGESEN szerkesztett félen ül.
                     MouseArea {
                         id: neutralPickArea
                         objectName: "neutralPickArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.neutralPickerActive
                         enabled: editorPanel.neutralPickerActive
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         cursorShape: Qt.CrossCursor
                         onClicked: function(mouse) {
                             if (!editController) return
@@ -2563,17 +2677,22 @@ Rectangle {
                         }
                     }
 
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a retusálás a TÉNYLEGESEN szerkesztett félen
+                    //: megy, ne a másik (nem kijelölt) képen.
                     MouseArea {
                         id: retouchClickArea
                         objectName: "retouchClickArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.retouchActive
                         enabled: editorPanel.retouchActive
                         hoverEnabled: true
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         cursorShape: Qt.CrossCursor
                         property bool ctrlPanning: false
                         property real panLastX: 0
@@ -2620,15 +2739,20 @@ Rectangle {
                     // `redeyeHideOutlines` a jegy „Preview changes without
                     // square outlines" jelölőnégyzete: csak a RAJZOT tünteti
                     // el, a javítást nem.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a vörösszem-átfedő a TÉNYLEGESEN szerkesztett
+                    //: félen jelenik meg.
                     Item {
                         id: redeyeOverlay
                         objectName: "redeyeOverlay"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.redeyeActive
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
 
                         Repeater {
                             model: editorPanel.redeyeHideOutlines
@@ -2754,16 +2878,21 @@ Rectangle {
                             }
                         }
                     }
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a szöveg-elhelyezés a TÉNYLEGESEN szerkesztett
+                    //: félen megy.
                     MouseArea {
                         id: textClickArea
                         objectName: "textClickArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.textActive
                         enabled: editorPanel.textActive
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         cursorShape: Qt.CrossCursor
                         onClicked: function(mouse) {
                             if (width <= 0 || height <= 0) return
@@ -2803,7 +2932,10 @@ Rectangle {
                     //: éle jellemzően NEM esik egybe.
                     readonly property var fokuszKep:
                         viewer.aktivOldal === "bal" ? photoElotte : photo
-                    //: ⚠️ a `fokuszKep.x`/`.y` a `photoArea`-hoz KÉPEST
+                    readonly property var fokuszKeret:
+                        viewer.aktivOldal === "bal" ? photoElotteKeret : photoKeret
+                    //: ⚠️ a `fokuszKep.x`/`.y` a SAJÁT felének keretéhez
+                    //: (`fokuszKeret`), az pedig a `photoArea`-hoz KÉPEST
                     //: helyi (a `photo`/`photoElotte` a `photoArea` GYEREKE),
                     //: a jelvény viszont a `photoArea` TESTVÉRE — tehát a
                     //: KÖZÖS szülőhöz képesti koordinátához a `photoArea`
@@ -2811,12 +2943,20 @@ Rectangle {
                     //: pontosan a `photoArea` margójával (itt 14 px) tér el
                     //: a várt helytől — ez okozta az első verzió 14 px-es
                     //: eltérését minden mért esetben.
-                    readonly property real kepBal: photoArea.x + fokuszKep.x
-                        + (fokuszKep.width - fokuszKep.paintedWidth) / 2
-                    readonly property real kepJobb: kepBal + fokuszKep.paintedWidth
-                    readonly property real kepFent: photoArea.y + fokuszKep.y
-                        + (fokuszKep.height - fokuszKep.paintedHeight) / 2
-                    readonly property real kepLent: kepFent + fokuszKep.paintedHeight
+                    //: #3741: a KÉPERNYŐN látszó méret — 90°/270°-os
+                    //: forgatásnál (`iniSteps` páratlan) a kirajzolt
+                    //: szélesség és magasság helyet cserél.
+                    readonly property bool forgatott: fokuszKep.iniSteps % 2 !== 0
+                    readonly property real kepSzel: forgatott
+                        ? fokuszKep.paintedHeight : fokuszKep.paintedWidth
+                    readonly property real kepMag: forgatott
+                        ? fokuszKep.paintedWidth : fokuszKep.paintedHeight
+                    readonly property real kepBal: photoArea.x + fokuszKeret.x
+                        + fokuszKep.x + (fokuszKep.width - kepSzel) / 2
+                    readonly property real kepJobb: kepBal + kepSzel
+                    readonly property real kepFent: photoArea.y + fokuszKeret.y
+                        + fokuszKep.y + (fokuszKep.height - kepMag) / 2
+                    readonly property real kepLent: kepFent + kepMag
 
                     //: #3663: a `Colab EN 33`/`34` (vízszintes) és `35`
                     //: (függőleges) referenciákon mért rés — mindkét

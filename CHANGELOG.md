@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Kettős nézetben, ha a bal oldali kép van kijelölve, a megnyitott
+  szerkesztőeszköz (Vágás, Retusálás, Szöveg, Vörösszem) mostantól ezen a
+  képen jelenik meg, nem a másikon (#3741).** Így a jobb oldali képre
+  kattintva is át lehet váltani a kijelölést. A nagyítás és a forgatás is a
+  kijelölt képre hat, és az arcok is a kijelölt kép arcai: az arcszerkesztés
+  az ő adataiba ír.
+
 ## [0.8.601] – 2026-09-27
 
 ### Javítva
