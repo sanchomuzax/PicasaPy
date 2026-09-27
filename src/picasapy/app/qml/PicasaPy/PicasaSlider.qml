@@ -88,6 +88,16 @@ Slider {
     property real handleHeight: 14
     property real handleRadius: Math.min(handleWidth, handleHeight) / 2
 
+    // #3709: a RAJZOLT sáv belső behúzása a foglalat MINDKÉT végén. Alapból
+    // 0 (a sáv a teljes `availableWidth`-et kitölti), a hívó helyen
+    // felülírható. A `respack.yt` `scaleslider` sablonjában a foglalat
+    // (`scaleslider/docbounds`) 0…127, a benne rajzolódó
+    // `scaleslider/sliderbase` 3…124: 3 képpont behúzás mindkét oldalon,
+    // 121 képpontos rajz. A tulajdonos 1920 px-es képernyőképén a sáv
+    // 1521…1641, a foglalat 1518…1645 — ugyanez. A foglalat mérete (és
+    // vele a kattintható terület) nem szűkül, csak a rajz.
+    property real grooveInset: 0
+
     // visszafelé kompatibilis alias a NÉGYZETES fogantyú méretére
     readonly property real handleSize: Math.max(handleWidth, handleHeight)
 
@@ -106,10 +116,14 @@ Slider {
 
     background: Rectangle {
         x: control.leftPadding + (control.isHorizontal
-                                   ? 0 : (control.availableWidth - width) / 2)
+                                   ? control.grooveInset
+                                   : (control.availableWidth - width) / 2)
         y: control.topPadding + (control.isHorizontal
                                   ? (control.availableHeight - height) / 2 : 0)
-        width: control.isHorizontal ? control.availableWidth : control.grooveThickness
+        // a behúzás csak a VÍZSZINTES sávra hat
+        width: control.isHorizontal
+               ? control.availableWidth - 2 * control.grooveInset
+               : control.grooveThickness
         height: control.isHorizontal ? control.grooveThickness : control.availableHeight
         radius: control.grooveThickness / 2
 
