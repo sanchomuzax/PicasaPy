@@ -9,14 +9,12 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
-import random
-
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import (
     BLEND_MODE_BY_INDEX,
     alpha_blend,
     apply_blend_mode,
-    apply_uniform_noise,
+    apply_noise,
     fade_alpha,
     resize_image,
     simple_color_matrix,
@@ -98,54 +96,40 @@ def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0, blend_mode: i
     return to_uint8(apply_blend_mode(to_float(image), to_float(pixelated), mode, fade_alpha(fade)))
 
 
-def _grain_seed(seed: int | None) -> int:
-    """A szemcse magja: a hívóé, vagy — alapból — friss véletlen.
+#: A `PicnikGrain` leírójának rögzített `randomSeed`-je (`filterdesc.xml`,
+#: `NoiseImageOperation randomSeed="1"`, #3757).
+_PICNIK_GRAIN_SEED = 1
 
-    A `secrets`-et SZÁNDÉKOSAN nem használjuk: nem biztonsági kérdés, és a
-    `random.randrange` elég. A `np.random.default_rng` viszont `None`-ra is
-    saját entrópiát venne — de akkor az `uniform_noise_layer` docstringjének
-    determinizmus-ígérete válna hamissá, ezért a magot ITT állítjuk elő, és
-    a réteg továbbra is „adott mag → adott zaj" marad.
-    """
-    if seed is not None:
-        return seed
-    return random.randrange(2**32)
+#: A leíró `BlendMode="{_radioLighten.selected?7:5}"`-je a natív módtábla
+#: (`0x00cf0e98`) sorszámait adja: 7 = Screen, 5 = Multiply (#3444).
+_PICNIK_GRAIN_VILAGOSITO_MOD = 7
+_PICNIK_GRAIN_SOTETITO_MOD = 5
 
 
-def apply_picnik_grain(
-    image, grain: float = 10.0, lighten: bool = False, *, seed: int | None = None
-):
-    """`PicnikGrain=1,Grain,Lighten` — szürke zaj, `Lighten` esetén
-    `[0, 2,55·Grain]` tartományon `lighten` móddal, egyébként
-    `[255−2,55·Grain, 255]` tartományon `darken` móddal (a `BlendMode`
-    csúszka `7`/`5` indexeit a `Lighten` jelölő NEVE alapján a `lighten`/
-    `darken` blend-módra képezzük — a `filterdesc.xml` konkrét mód-index
-    → névtáblát nem közli). Nincs Fade.
+def apply_picnik_grain(image, grain: float = 10.0, lighten: bool = False):
+    """`PicnikGrain=1,Grain,Lighten` — szürke zaj a `NoiseImageOperation`
+    natív generátorával (MT19937, Picasa-magvetés, #3736) a leíró rögzített
+    `randomSeed = 1`-ével. `Lighten` esetén a zaj `[0, 2,55·Grain]`, a mód
+    **Screen** (7); egyébként `[255 − 2,55·Grain, 255]`, a mód **Multiply**
+    (5) — a sorszámok a natív módtábla (`0x00cf0e98`) szerint (#3444).
+    Nincs Fade.
 
-    ## A zaj MAGJA alapból VÁLTOZIK (#907)
+    ## A mag RÖGZÍTETT (#3757)
 
-    Az eredeti szemcséje **nem determinisztikus**: két egymás utáni
-    alkalmazás FÜGGETLEN zajmintát ad. Ez a #685 mérőszettjéből számszerűen
-    kijött — `grain=1;` ΔE 1,804, `grain=1;grain=1;` ΔE **2,671**. Azonos
-    mintánál az amplitúdó duplázódna (~3,6 várható), függetlennél a szórás
-    √2-szeres (~2,55); a mért érték egyértelműen az utóbbi.
-
-    Fix maggal kétszer alkalmazva **kétszer akkora** hatást adnánk, mint az
-    eredeti — ezért a `seed` alapértéke `None`, és olyankor minden hívás
-    saját, véletlen magot kap.
-
-    ⚠️ A `seed` megadása **teszteléshez** való: attól a kimenet
-    reprodukálható lesz, de eltér az eredeti viselkedésétől, ha ugyanazt a
-    magot használják kétszer egymás után.
+    A #907 „két alkalmazás független mintát ad" mérése a natív, kisbetűs
+    `grain` szűrőre vonatkozott, nem erre. A `PicnikGrain` zaja a Picasában
+    képpontra ugyanaz: a 684-es exporton ΔE alap 3,01 → 0,88, max 12,21 →
+    1,38, a merokit-2 `Grain 30` esetén 7,79 → 0,98.
     """
     validate_image(image)
+    grain = min(max(grain, 0.0), 100.0)
     if lighten:
-        low, high, mode = 0.0, 2.55 * grain, "lighten"
+        low, high, mode = 0.0, 2.55 * grain, _PICNIK_GRAIN_VILAGOSITO_MOD
     else:
-        low, high, mode = 255.0 - 2.55 * grain, 255.0, "darken"
-    return apply_uniform_noise(
+        low, high, mode = 255.0 - 2.55 * grain, 255.0, _PICNIK_GRAIN_SOTETITO_MOD
+    return apply_noise(
         image,
-        seed=_grain_seed(seed),
+        seed=_PICNIK_GRAIN_SEED,
         low=low,
         high=high,
         grayscale=True,

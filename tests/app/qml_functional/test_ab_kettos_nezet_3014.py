@@ -24,7 +24,12 @@ Az albumba tétel (`TwoUpAddToAlbum`) és maga az ütközés-párbeszéd — a
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPointF, Qt
+import pytest
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt
+from PySide6.QtTest import QTest
+from support.jpeg_factory import make_jpeg
+
+from tests.app.qml_functional.conftest import _build_qml_app
 
 
 def _gyerek(gyoker, nev):
@@ -98,14 +103,19 @@ class TestAzABMod:
 
         A próba SZÁNDÉKA változatlan: a két fél NE ugyanabból a forrásból
         jöjjön. Ezt most a rekesz-kulcs (`@masodik`) mondja ki.
+
+        #3773: a bal (`viewerImageElotte`) a `currentIndex`-et, a jelenlegi
+        (kijelölt) képet mutatja — azt a FŐ vezérlő rendereli; a jobb
+        (`viewerImage`) a `abMasikSor`-t, a NEM kijelölt „másik" oldalt — azt
+        a második rekesz.
         """
         window, _controller, _engine = qml_app
         _ab_modba(window, qt_app)
 
-        forras = _gyerek(window, "viewerImageElotte").property("source").toString()
+        forras = _gyerek(window, "viewerImage").property("source").toString()
         assert forras.startswith("image://editpreview/"), forras
         assert "@masodik" in forras, forras
-        fo = _gyerek(window, "viewerImage").property("source").toString()
+        fo = _gyerek(window, "viewerImageElotte").property("source").toString()
         assert "@masodik" not in fo
 
     def test_mindket_kep_LATSZIK_AB_modban(self, qml_app, qt_app):
@@ -199,30 +209,111 @@ class TestAzElrendezesValto:
         )
 
 
+def _negy_kep(lib) -> None:
+    for nev in ("a", "b", "c", "d"):
+        make_jpeg(lib / f"{nev}.jpg", size=(120, 90))
+
+
+@pytest.fixture
+def negy_kepes_app(qt_app, tmp_path):
+    gen = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_negy_kep)
+    yield next(gen)
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _valodi_klikk(window, qt_app, elem) -> None:
+    """Valódi egérkattintás az elem közepére (`QTest.mouseClick`) — a
+    `TapHandler` tényleges célterületén át."""
+    pont = elem.mapToScene(QPointF(elem.property("width") / 2,
+                                   elem.property("height") / 2))
+    QTest.mouseClick(window, Qt.MouseButton.LeftButton,
+                     Qt.KeyboardModifier.NoModifier,
+                     QPoint(int(pont.x()), int(pont.y())))
+    for _ in range(20):
+        qt_app.processEvents()
+
+
+def _filmszalag_elem(window, sor: int):
+    film = _gyerek(window, "viewerFilmstrip")
+    for elem in film.property("contentItem").childItems():
+        if elem.property("racsSor") == sor:
+            return elem
+    raise AssertionError(f"a filmszalagon nincs {sor}. sor")
+
+
+def _ab_modba_latszo_ablakban(window, qt_app):
+    window.resize(1280, 1024)
+    window.show()
+    for _ in range(20):
+        qt_app.processEvents()
+    nezo = _nezot_nyit(window, qt_app)
+    _valodi_klikk(window, qt_app, _gyerek(window, "viewerLayoutAb"))
+    assert nezo.property("layoutMode") == "ab"
+    return nezo
+
+
 class TestAFilmszalag:
-    def test_AB_modban_a_BAL_oldal_kepet_valtja(self, qml_app, qt_app):
+    def test_AB_modban_a_JOBB_oldal_kepet_valtja(self, qml_app, qt_app):
         """A válogató munkafolyamat lelke: a `swap_2up_focus` választja
-        ki, melyik felet lapozzuk."""
+        ki, melyik felet lapozzuk. #3773: a bal a `currentIndex`-et
+        mutatja — a `masodikIndex` (a JOBB oldal) állítása ezért nem
+        mozdíthatja a fő képet."""
         window, _controller, _engine = qml_app
         nezo = _ab_modba(window, qt_app)
         _kattint(window, qt_app, "viewerSwapFocus")
-        assert nezo.property("aktivOldal") == "bal"
+        assert nezo.property("aktivOldal") == "jobb"
 
         elotte = nezo.property("currentIndex")
         nezo.setProperty("masodikIndex", elotte)
         qt_app.processEvents()
 
         assert nezo.property("currentIndex") == elotte, (
-            "a bal oldal lapozása elmozdította a fő képet"
+            "a jobb oldal lapozása elmozdította a fő képet"
         )
         assert nezo.property("abMasikSor") == elotte
 
-    def test_a_JOBB_oldal_a_fo_kepet_valtja(self, qml_app, qt_app):
+    def test_a_BAL_oldal_a_fo_kepet_valtja(self, qml_app, qt_app):
+        """#3773: a bal a `currentIndex`-et mutatja és alapból kijelölt —
+        a `currentIndex` közvetlen állítása ezért a bal oldalt lapozza."""
         window, _controller, _engine = qml_app
         nezo = _ab_modba(window, qt_app)
-        assert nezo.property("aktivOldal") == "jobb"
+        assert nezo.property("aktivOldal") == "bal"
 
         nezo.setProperty("currentIndex", 1)
         qt_app.processEvents()
 
         assert nezo.property("currentIndex") == 1
+
+    def test_filmszalag_kattintas_bal_fokusznal_a_BAL_kepet_csereli(
+        self, negy_kepes_app, qt_app
+    ):
+        """#3773: VALÓDI kattintás a filmszalag elemére — a kijelölt (bal)
+        oldal cserélődik, a jobb a következő képre áll vele."""
+        window = negy_kepes_app[0]
+        nezo = _ab_modba_latszo_ablakban(window, qt_app)
+        assert nezo.property("aktivOldal") == "bal"
+
+        _valodi_klikk(window, qt_app, _filmszalag_elem(window, 2))
+
+        assert nezo.property("currentIndex") == 2
+        assert nezo.property("aktivSor") == 2
+        assert nezo.property("abMasikSor") == 3
+
+    def test_filmszalag_kattintas_jobb_fokusznal_a_JOBB_kepet_csereli(
+        self, negy_kepes_app, qt_app
+    ):
+        """#3773: jobb fókusznál a kijelölt JOBB oldal cserélődik, a bal
+        (`currentIndex`) helyben marad."""
+        window = negy_kepes_app[0]
+        nezo = _ab_modba_latszo_ablakban(window, qt_app)
+        _valodi_klikk(window, qt_app, _gyerek(window, "viewerImage"))
+        assert nezo.property("aktivOldal") == "jobb"
+
+        _valodi_klikk(window, qt_app, _filmszalag_elem(window, 3))
+
+        assert nezo.property("currentIndex") == 0
+        assert nezo.property("abMasikSor") == 3
+        assert nezo.property("aktivSor") == 3

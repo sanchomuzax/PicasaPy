@@ -8,6 +8,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- Az „Orton-ish” effekt Fényerő-csúszkája most az eredeti Picasa szerinti
+  mértékben tolja el a kép fényerejét — eddig a csúszka szélső állásain
+  túl erős volt a hatás (ΔE 4,4-ről 0,95-re csökkent a mért eltérés) (#3788).
+- A `.picasa.ini`-be írt arcsor (`faces=`) végén nem marad felesleges
+  pontosvessző, az eredeti Picasa alakjával egyezően; a korábbi, záró
+  pontosvesszős sorainkat továbbra is beolvassuk (#3792).
+- Kettős nézetben a finomhangoló (Derítőfény/Fény/Árnyék/Hőmérséklet)
+  csúszkáinak húzás közbeni élő előnézete a kijelölt képen látszik — eddig
+  bal fókusznál is a jobb képre rajzolt. Nagyított képnél sem lóg át a
+  másik kép szélére (#3755).
 - Az arc mellőzése (a bélyegkép „X”-e és a fejléc *Mellőzés* gombja) a
   `.picasa.ini`-be is beírja a mellőzést, ahogy az eredeti Picasa: az arc
   régiójának `faces=` bejegyzése `ffffffffffffffff` személy-mezőt kap, a kép
@@ -21,6 +31,36 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - A mellőzés visszavétele csak a mellőzés jelét törli: ha az arc közben nevet
   kapott, a név megmarad. A kép szélén túllógó arc mellőzése és elnevezése nem
   akad el hibával (#3670).
+
+## [0.8.610] – 2026-09-27
+
+### Javítva
+- Windowson a biztonsági mentés módban a mappalista megbízhatóan mutatja a
+  még el nem mentett mappákat (#3799).
+
+## [0.8.609] – 2026-09-27
+
+### Javítva
+- A Filmszemcse effekt az eredeti Picasa szemcséjét adja: a szemcse
+  mintázata minden alkalommal ugyanaz, mint az eredetiben, és a sötétítő
+  változat szorzással, a világosító vetítéssel (Multiply, ill. Screen)
+  keveri a képre. Az erős állásban az eltérés az eredetitől a töredékére
+  csökkent (#3757, #3444).
+
+## [0.8.608] – 2026-09-27
+
+### Javítva
+- Kettős nézetben (két különböző kép egymás mellett) belépéskor a bal
+  oldalon a jelenlegi kép áll, a jobbon a következő, és a bal van
+  kijelölve — eddig fordítva volt (#3773).
+
+## [0.8.607] – 2026-09-27
+
+### Javítva
+- Biztonsági mentéskor a még el nem mentett mappák akkor is megjelennek a
+  bal oldali mappalistában, ha a figyelt mappa hivatkozáson át, rövidített
+  vagy eltérő kis- és nagybetűs névvel van megadva; a mentés ilyenkor is
+  megtartja a mappaszerkezetet (#3776).
 
 ## [0.8.606] – 2026-09-27
 

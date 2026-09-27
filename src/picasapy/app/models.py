@@ -23,6 +23,7 @@ from PySide6.QtCore import (
 
 from picasapy.metadata import megjelenitett_meret
 from picasapy.index import PhotoRecord
+from picasapy.paths import flat_key
 
 from .display_mode_paint import (
     current_display_mode,
@@ -249,9 +250,14 @@ class FolderListModel(QAbstractListModel):
     @Slot(str, result=int)
     def rowOfPath(self, path: str) -> int:
         """A mappa sor-indexe (évszám-sorokkal együtt számolva); -1, ha
-        nincs ilyen mappa — a lista ebből görgeti láthatóra a kijelöltet."""
+        nincs ilyen mappa — a lista ebből görgeti láthatóra a kijelöltet.
+
+        #3776: az összehasonlítás `flat_key`-jel megy — a nyers pontos
+        egyezés egy eltérő betűzésű Windows-gyökér alatt (a mentés-szűrő
+        lapos listáját hívja innen a `FolderPane`) hamis negatívot adna."""
+        kulcs = flat_key(path)
         for i, row in enumerate(self._rows):
-            if row[0] == "folder" and row[2] == path:
+            if row[0] == "folder" and flat_key(row[2]) == kulcs:
                 return i
         return -1
 

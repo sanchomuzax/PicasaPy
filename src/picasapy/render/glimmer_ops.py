@@ -808,31 +808,8 @@ def noise_layer(
     return nativ_noise.noise_layer(height, width, seed, low, high, grayscale, channel_options)
 
 
-def uniform_noise_layer(
-    height: int, width: int, seed: int, low: float, high: float, grayscale: bool
-) -> np.ndarray:
-    """Egyenletes eloszlású `numpy`-zajréteg float32 [0,255] — a
-    `PicnikGrain` szemcséje (#907).
-
-    ⚠️ **A RÖGZÍTETT mag csak tesztelési célra való** (#907). Az eredeti
-    szemcséje nem determinisztikus: két egymás utáni alkalmazás FÜGGETLEN
-    zajmintát ad (a #685 mérőszettjén ΔE 1,804 → 2,671, ami a √2-es
-    szórásnövekedés, nem a kétszeres amplitúdó). Aki termelő úton hívja ezt,
-    **minden alkalmazáshoz új magot adjon** — különben kétszer alkalmazva
-    kétszer akkora hatást kap, mint az eredetiben. A `glimmer_artistic.
-    apply_picnik_grain` ezt a `seed=None` alapértékkel oldja meg. Ez az
-    ellentmondás (az állandó natív `randomSeed` mellett) nyitott, ezért a
-    `PicnikGrain` nem a natív `noise_layer`-t használja.
-    """
-    rng = np.random.default_rng(seed)
-    if grayscale:
-        plane = rng.uniform(low, high, size=(height, width)).astype(np.float32)
-        return np.repeat(plane[..., np.newaxis], 3, axis=2)
-    return rng.uniform(low, high, size=(height, width, 3)).astype(np.float32)
-
-
 def _blend_noise(
-    image: np.ndarray, noise: np.ndarray, blend_alpha: float, blend_mode: BlendMode
+    image: np.ndarray, noise: np.ndarray, blend_alpha: float, blend_mode: BlendMode | int
 ) -> np.ndarray:
     return to_uint8(apply_blend_mode(to_float(image), noise, blend_mode, blend_alpha))
 
@@ -844,30 +821,14 @@ def apply_noise(
     high: float,
     grayscale: bool,
     blend_alpha: float,
-    blend_mode: BlendMode,
+    blend_mode: BlendMode | int,
 ) -> np.ndarray:
     """A natív zajréteg generálása és `blend_mode`/`blend_alpha` szerinti
-    keverése (a lánc `NoiseImageOperation`-je, #3736)."""
+    keverése (a lánc `NoiseImageOperation`-je, #3736). A `blend_mode` név
+    vagy a natív módtábla sorszáma (`BLEND_MODE_BY_INDEX`)."""
     validate_image(image)
     height, width = image.shape[:2]
     noise = noise_layer(height, width, seed, low, high, grayscale)
-    return _blend_noise(image, noise, blend_alpha, blend_mode)
-
-
-def apply_uniform_noise(
-    image: np.ndarray,
-    seed: int,
-    low: float,
-    high: float,
-    grayscale: bool,
-    blend_alpha: float,
-    blend_mode: BlendMode,
-) -> np.ndarray:
-    """Mint az `apply_noise`, de a `numpy`-os `uniform_noise_layer`-rel —
-    a `PicnikGrain` útja (#907)."""
-    validate_image(image)
-    height, width = image.shape[:2]
-    noise = uniform_noise_layer(height, width, seed, low, high, grayscale)
     return _blend_noise(image, noise, blend_alpha, blend_mode)
 
 
@@ -1275,9 +1236,7 @@ __all__ = [
     "local_contrast",
     "inner_glow",
     "noise_layer",
-    "uniform_noise_layer",
     "apply_noise",
-    "apply_uniform_noise",
     "gradient_map",
     "hsv_gradient_map",
     "circular_gradient_mask",

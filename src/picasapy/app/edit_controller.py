@@ -1069,6 +1069,14 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         # #546: a képváltás érvényteleníti a futó háttér-rendert — az az
         # ELŐZŐ fotó képét tárolná el (és emitálna rá revíziót)
         self._preview_job += 1
+        # #3773: MÁSIK fotóra nyitva a régi RENDERELT kép elengedése. A
+        # szolgáltató képtára két helyes, és a kettős nézetben két vezérlő
+        # tölti: bent hagyva a régi kép a MÁSIK vezérlő élő képét
+        # szoríthatja ki (mérve: „ab" módba lépéskor a bal fél a
+        # helykitöltőt kapta). A dekódolt forrás marad — a visszalapozás
+        # arra épít.
+        if self._photo_id and self._photo_id != photo_id:
+            self._provider.kepet_elenged(self._kulcs)
         path = Path(image_path)
         # #1908: a festett ecset-maszk munkamenet-élettartamú — MÁS képre
         # váltva eldobódik (az eredeti sem tárolja)

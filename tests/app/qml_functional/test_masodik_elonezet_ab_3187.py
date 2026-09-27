@@ -52,10 +52,12 @@ def _modba(window, qt_app, mod):
 
 class TestABModban:
     def test_a_masik_kep_a_MASODIK_rekeszbol_jon(self, qml_app, qt_app):
+        """#3773: a bal a `currentIndex`-et (a fő rekeszt) mutatja —
+        a MÁSIK kép a jobb oldalon áll, a második rekeszből."""
         window, _controller, _engine = qml_app
         _modba(window, qt_app, "ab")
 
-        forras = _gyerek(window, "viewerImageElotte").property("source").toString()
+        forras = _gyerek(window, "viewerImage").property("source").toString()
         assert forras.startswith("image://editpreview/"), forras
         assert "@masodik" in forras, forras
 
@@ -64,19 +66,20 @@ class TestABModban:
         window, _controller, _engine = qml_app
         _modba(window, qt_app, "ab")
 
-        fo = _gyerek(window, "viewerImage").property("source").toString()
-        masodik = _gyerek(window, "viewerImageElotte").property("source").toString()
+        fo = _gyerek(window, "viewerImageElotte").property("source").toString()
+        masodik = _gyerek(window, "viewerImage").property("source").toString()
         assert "@masodik" not in fo
         assert "@masodik" in masodik
 
 
 class TestAAModban:
     def test_az_aa_fel_is_a_MASODIK_rekeszbol_jon(self, qml_app, qt_app):
-        """#3014: a nyers fájl helyett a második fél saját szerkesztése."""
+        """#3014/#3773: a nyers fájl helyett a második fél saját
+        szerkesztése — a bal az alapfókusz (fő rekesz), a jobb a második."""
         window, _controller, _engine = qml_app
         _modba(window, qt_app, "aa")
 
-        forras = _gyerek(window, "viewerImageElotte").property("source").toString()
+        forras = _gyerek(window, "viewerImage").property("source").toString()
         assert forras.startswith("image://editpreview/"), forras
         assert "@masodik" in forras
 
