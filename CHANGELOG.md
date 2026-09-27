@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.613] – 2026-09-28
+
+### Javítva
+- A „Képpontnagyítás” effekt blokkszínei most az eredeti Picasáéval
+  egyeznek: a kép kicsinyítése az eredeti szerint egyenlő súlyú átlagolással
+  történik, ezért a blokkok színe nem kenődik el (a mért eltérés ΔE 4,6-ról
+  0,1-re csökkent). Ugyanez pontosítja a „Képpontnövelés” blokkjait is (#3805).
+- A finomhangoló csúszkáinak húzás közbeni élő előnézete a nagyon magas
+  álló képeken (például a 9:16-os telefonos fotókon) is látszik — eddig
+  ezeknél húzás közben semmi nem változott a képen, csak a felengedés után (#3800).
+
 ### Javítva
 - A Polaroid effekt képe és kerete most képpontra ott áll, ahol az eredeti
   Picasában, és az Árnyékvetés ferde szögeknél is az eredeti szerint tolja el

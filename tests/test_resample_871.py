@@ -238,14 +238,18 @@ class TestBekotes:
 
     def test_a_muveszi_szurok_kicsinyitese_valtozatlan(self):
         """A jegy szűk hatóköre: a pixelezéshez használt doboz-átlagolás
-        SZÁNDÉKOS, ahhoz nem nyúlunk (`effects_artistic`, `focal`)."""
+        SZÁNDÉKOS, ahhoz nem nyúlunk. Az `effects_artistic` az OpenCV
+        dobozát használja; a `focal` (PicnikFocalPixelate) a #3805 óta az
+        eredeti `ytResampler` fixpontos dobozát, a közös `resize_image`-en át."""
         from pathlib import Path
 
         gyoker = Path(__file__).resolve().parents[1] / "src" / "picasapy" / "render"
-        for nev in ("effects_artistic.py", "focal.py"):
-            szoveg = (gyoker / nev).read_text(encoding="utf-8")
-            assert "cv2.INTER_AREA" in szoveg, nev
-            assert "picasa_kicsinyites" not in szoveg, nev
+        artistic = (gyoker / "effects_artistic.py").read_text(encoding="utf-8")
+        assert "cv2.INTER_AREA" in artistic
+        focal = (gyoker / "focal.py").read_text(encoding="utf-8")
+        assert "resize_image(" in focal
+        for szoveg in (artistic, focal):
+            assert "picasa_kicsinyites" not in szoveg
 
 
 class TestGyorsFelezes:

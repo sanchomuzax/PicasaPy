@@ -463,6 +463,24 @@ class TestGpuPreviewImages:
         full_image = provider.requestImage("1", None, None)
         assert prefix_image != full_image
 
+    def test_gpu_prefix_small_image_is_not_upscaled(self, qt_app, tmp_path):
+        """#3800: a néző 2560×2560-as befoglaló dobozt kér — a kisebb
+        képet nem nagyítjuk fel rá."""
+        photo = _make_gradient_jpeg(tmp_path / "IMG_0001.jpg", size=(36, 64))
+        provider = _make_provider()
+        provider.register("1", photo, (), gpu_prefix_ops=())
+        image = provider.requestImage("1?gpuprefix=1&rev=1", None, QSize(2560, 2560))
+        assert (image.width(), image.height()) == (36, 64)
+
+    def test_gpu_prefix_tall_image_fits_the_box(self, qt_app, tmp_path):
+        """#3800: a 9:16-os álló kép a doboz MAGASSÁGÁHOZ igazodik, így
+        egyik éle sem lépi át a textúraplafont."""
+        photo = _make_gradient_jpeg(tmp_path / "IMG_0001.jpg", size=(90, 160))
+        provider = _make_provider()
+        provider.register("1", photo, (), gpu_prefix_ops=())
+        image = provider.requestImage("1?gpuprefix=1&rev=1", None, QSize(40, 40))
+        assert (image.width(), image.height()) == (22, 40)
+
     def test_gpu_lut_registers_256x1_image(self, qt_app, tmp_path):
         import numpy as np
 
