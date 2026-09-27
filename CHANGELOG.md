@@ -12,6 +12,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   fotót, a jobb a következőt, és belépéskor a bal oldal a kijelölt — eddig
   ez fordítva volt (#3773).
 
+## [0.8.605] – 2026-09-27
+
+### Javítva
+- Az „1:1" nagyítás elforgatott (90°-kal vagy 270°-kal forgatott) képen
+  mostantól a valós méretre nagyít — eddig a kép magasságát vetette össze a
+  kirajzolt szélességgel, ezért a nagyítás akár 1,7-szeresen is túllőtt a
+  célon (#3760).
+
+- **Biztonsági mentéskor a fanézet a mentetlen mappák pipáját és darabszámát
+  akkor is mutatja, ha a mappa útja más alakban érkezik (Windowson fordított
+  perjellel vagy eltérő kis- és nagybetűvel) (#3681).**
+
 ## [0.8.604] – 2026-09-27
 
 ### Javítva

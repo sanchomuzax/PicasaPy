@@ -898,9 +898,10 @@ class PhotoGridModel(QAbstractListModel):
     def pixelHeightAt(self, row: int) -> int:
         """A kép VALÓDI képpont-magassága (0, ha ismeretlen) — #2492.
 
-        A szélesség párja: forgatott képnél (`rotate_steps` páratlan) a
-        rajzolt szélesség a fájl MAGASSÁGÁNAK felel meg, tehát az arány
-        csak a kettővel együtt számolható."""
+        A szélesség párja, az EXIF-orientáció szerint megjelenített
+        alakban. A néző „1:1" aránya NEM ebből számol: a `.picasa.ini`
+        forgatása a kirajzolt kép `paintedWidth`-jét nem cseréli fel, az a
+        forgatástól függetlenül a szélességgel arányos (#3760)."""
         if not 0 <= row < len(self._photos):
             return 0
         return int(self._megjelenitett(row)[1] or 0)

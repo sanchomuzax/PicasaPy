@@ -402,9 +402,6 @@ Rectangle {
     readonly property int valodiSzelesseg: viewer.photosModel
         ? (viewer.photosModel.revision,
            viewer.photosModel.pixelWidthAt(viewer.aktivSor)) : 0
-    readonly property int valodiMagassag: viewer.photosModel
-        ? (viewer.photosModel.revision,
-           viewer.photosModel.pixelHeightAt(viewer.aktivSor)) : 0
 
     function actualZoomFactor() {
         // Ez a MÉRT képlet `r`-je: a VALÓDI és az ILLESZTETT méret
@@ -420,17 +417,18 @@ Rectangle {
         // ~3,7-es arányt az 1,28 helyett — mérve a tulajdonos
         // képernyőmentésén 3–4-szeres túlnagyítás.
         //
-        // ⚠️ A FORGATÁS számít: `iniSteps % 2` esetén a rajzolt szélesség
-        // a fájl MAGASSÁGÁNAK felel meg.
+        // Invariáns (#3760): a `paintedWidth` a fájl SZÉLESSÉGÉVEL
+        // arányos, a `.picasa.ini` forgatásától függetlenül — a
+        // `PreserveAspectFit` a forgatatlan raszter arányával illeszt, a
+        // `rotation:` csak utána forgatja a kész dobozt. Ezért az arány
+        // forgatott képnél is `valodiSzelesseg / paintedWidth`.
         //: #3741: a fókuszban lévő fél képe — kettős nézetben bal
         //: fókusznál a `photoElotte`.
         var kep = photoArea.fokuszKep
         if (kep.paintedWidth <= 0)
             return 1
-        var forgatott = kep.iniSteps % 2 !== 0
-        var vSzel = forgatott ? viewer.valodiMagassag : viewer.valodiSzelesseg
-        if (vSzel > 0)
-            return vSzel / kep.paintedWidth
+        if (viewer.valodiSzelesseg > 0)
+            return viewer.valodiSzelesseg / kep.paintedWidth
         // Tartalék, ha az index nem tud méretet adni (frissen felvett kép,
         // vagy olvashatatlan fejléc): a BETÖLTÖTT raszter mérete. Ez a
         // `sourceSize`-plafon miatt legfeljebb kisebb lehet a valódinál —
