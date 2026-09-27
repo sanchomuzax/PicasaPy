@@ -2042,6 +2042,8 @@ MenuBar {
             MenuItem {
                 objectName: "menuToolsPassportPhoto"
                 text: qsTr("&Passport photo...")
+                //: a kijelölt képre szól
+                enabled: bar.photoActionsEnabled
                 onTriggered: bar.passportPhotoRequested()
             }
             //: #1403: `eMenuTools::ID_WRITE_XMP_FACES` — a Kísérleti almenü

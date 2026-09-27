@@ -1367,9 +1367,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     engine.rootContext().setContextProperty("webExportController", web_export_controller)
     # #1472: a nyomtatás-párbeszéd hídja (`PrintDialog.qml`)
     engine.rootContext().setContextProperty("printController", print_controller)
-    # #1401: az Útlevélkép — arcfelismerés + kivágás a `PassportPrintDialog.qml`
-    # hídján; a tényleges nyomtatás a `printController`-en át fut (a kivágott,
-    # ideiglenes fájlt a nyomtatási előnézet gyorstárában tartja).
+    # #1401: az Útlevélkép — arcfelismerés + kivágás háttérszálon; a kivágott
+    # képet a `Main.qml` a MEGLÉVŐ nyomtatási nézetnek adja
+    # (`PrintDialog.openForPassport` → `printController.setPassportSource`).
     passport_controller = PassportPhotoController(photo_source=_lathato_fotok)
     engine.rootContext().setContextProperty("passportController", passport_controller)
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja

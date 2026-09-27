@@ -4029,27 +4029,27 @@ ApplicationWindow {
         anchors.fill: parent
         sourceComponent: Component { CompactDatabaseDialog { } }
     }
-    // #1401: az Útlevélkép hibaablaka + nyomtatási nézete
+    // #1401: az Útlevélkép hibaablaka — a főablak tartalmában, tehát
+    // fölötte látszik. Egy arcnál párbeszéd nélkül a MEGLÉVŐ nyomtatási
+    // nézet nyílik (élő mérés, picasa-colab-jobs #54).
     DeferredDialog {
-        id: passportPrintDialog
+        id: passportErrorDialog
         anchors.fill: parent
-        sourceComponent: Component { PassportPrintDialog { } }
+        sourceComponent: Component { PassportErrorDialog { } }
     }
     Connections {
         target: typeof passportController !== "undefined" ? passportController : null
-        //: `Passport0` — „Nem találhatók arcok"; az angol forrás az ÉLŐ
-        //: méréséből (picasa-colab-jobs #49/#50), nem a stringres-ből
         function onPassportNoFace() {
-            passportPrintDialog.ensure().showError(
-                qsTr("Can't find any faces"))
+            passportErrorDialog.ensure().showError("noFace")
         }
-        //: `Passport1` — „Úgy tűnik, több arc van a képen."
         function onPassportMultipleFaces() {
-            passportPrintDialog.ensure().showError(
-                qsTr("It looks like there's more than one face in this picture."))
+            passportErrorDialog.ensure().showError("multipleFaces")
         }
-        function onPassportReady(path) {
-            passportPrintDialog.ensure().showReady(path)
+        function onPassportFailed(kind) {
+            passportErrorDialog.ensure().showError(kind)
+        }
+        function onPassportReady(url) {
+            printDialog.ensure().openForPassport(url)
         }
     }
     // #3132: a db3-import párbeszéde — ritkán nyitott, ezért halasztott

@@ -192,6 +192,10 @@ class PrintController(QObject):
         #: `None`, amíg a felhasználó nem járt ott — ilyenkor a nyomtató a
         #: saját alapértelmezését hozza, ahogy eddig.
         self._oldalelrendezes: QPageLayout | None = None
+        #: #1401: az Útlevélkép kivágott képe és a hozzá tartozó méret-
+        #: felülírás (`setPassportSource`); `None`, ha nincs érvényben.
+        self._utlevel: PhotoRecord | None = None
+        self._meret_felulirva: NyomatMeret | None = None
 
     def _keszlet(self) -> tuple[NyomatMeret, ...]:
         """A felület nyelvéhez tartozó nyomatméret-készlet (#1961).
@@ -241,6 +245,7 @@ class PrintController(QObject):
         elrontaná a következő indulást."""
         if nev in {tag.name for tag in self._keszlet()}:
             self._settings.setValue("print/lastSize", nev)
+            self._meret_felulirva = None
 
     # -- Szegély- és felirat-opciók (#1780) -------------------------------
 
@@ -554,7 +559,12 @@ class PrintController(QObject):
         régóta így viselkedik.
 
         Üres tálcánál (vagy `tray_source` nélkül) marad a régi, sor-alapú
-        feloldás."""
+        feloldás.
+
+        #1401: az Útlevélkép kivágott képe (`setPassportSource`) mindkettőt
+        megelőzi — a nyomtatási nézet ilyenkor EZT az egy képet nyomtatja."""
+        if self._utlevel is not None:
+            return [self._utlevel]
         if self._tray_source is not None:
             talca = list(self._tray_source())
             if talca:
@@ -627,7 +637,7 @@ class PrintController(QObject):
             self.printFinished.emit(printer.printerName() or self.tr("default printer"))
         return ok
 
-    # -- Útlevélkép-nyomtatás (#1401) ------------------------------------
+    # -- Útlevélkép (#1401) ----------------------------------------------
 
     @staticmethod
     def _passport_record(path: Path) -> PhotoRecord:
@@ -660,81 +670,35 @@ class PrintController(QObject):
             height=magas,
         )
 
-    @Slot(str, str, int, result=bool)
-    def printPassportPhoto(
-        self, image_path: str, printer_name: str, copies: int = 1
-    ) -> bool:
-        """#1401: a MÁR arc-központúan kivágott útlevélkép nyomtatása,
-        rögzített `ePassport` (2,0 × 2,0 hüvelyk) mérettel.
+    @Slot(str, result=bool)
+    def setPassportSource(self, image_url: str) -> bool:  # noqa: N802 — QML-stílus
+        """#1401: a MÁR kivágott útlevélkép a kijelölés HELYÉRE lép.
 
-        Az `image_path` a `PassportPhotoController.preparePassportPhoto`
-        által elkészített, ideiglenes négyzet-kivágás — az EREDETI fájlhoz
-        ez a metódus nem nyúl. A lapra rendezés (rács, laptörés, példányonkénti
-        térköz) UGYANAZ a `_run`/`grid_layout` út, mint bármely más
-        nyomatméreté (#3647); a kezdő példányszám (1) a hívó (QML) dolga."""
-        target = to_local_path(image_path)
+        Amíg be van állítva, a sor-alapú feloldás (`_resolve_records`) ezt
+        az egy képet adja, a nyomatméret pedig `ePassport` (2,0 × 2,0
+        hüvelyk) — a lapszám, az előnézet és a nyomtatás így UGYANAZON az
+        úton megy, mint bármely más méretnél. A `setPrintSize` a méretet
+        felülírja, a képet nem; a `clearPassportSource` mindkettőt törli."""
+        target = to_local_path(image_url)
         if not target:
-            self.printFailed.emit(self.tr("Invalid output path."))
             return False
-        path = Path(target)
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        if printer_name:
-            info = QPrinterInfo.printerInfo(printer_name)
-            if info.isNull():
-                self.printFailed.emit(
-                    self.tr("Unknown printer: %1").replace("%1", printer_name)
-                )
-                return False
-            printer.setPrinterName(printer_name)
-        self._alkalmazd_az_oldalelrendezest(printer)
-        record = self._passport_record(path)
-        ok = self._run(
-            printer,
-            (),
-            "fit",
-            "auto",
-            copies,
-            paths_override=[path],
-            records_override=[record],
-            size_override=NyomatMeret.PASSPORT,
-        )
-        if ok:
-            self.printFinished.emit(printer.printerName() or self.tr("default printer"))
-        return ok
+        self._utlevel = self._passport_record(Path(target))
+        self._meret_felulirva = NyomatMeret.PASSPORT
+        return True
 
-    @Slot(str, str, int, result=bool)
-    def renderPassportPreviewPdf(
-        self, image_path: str, output_path: str, copies: int = 1
-    ) -> bool:
-        """A `printPassportPhoto` PDF-be renderelő párja — determinisztikus,
-        headless-ben tesztelhető nyomtatás-előkészítés (ld.
-        `renderPrintPreviewPdf`)."""
-        target = to_local_path(output_path)
-        if not target:
-            self.printFailed.emit(self.tr("Invalid output path."))
-            return False
-        source = to_local_path(image_path)
-        if not source:
-            self.printFailed.emit(self.tr("Invalid output path."))
-            return False
-        path = Path(source)
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(target)
-        record = self._passport_record(path)
-        ok = self._run(
-            printer,
-            (),
-            "fit",
-            "auto",
-            copies,
-            paths_override=[path],
-            records_override=[record],
-            size_override=NyomatMeret.PASSPORT,
-        )
-        if ok:
-            self.printFinished.emit(target)
-        return ok
+    @Slot()
+    def clearPassportSource(self) -> None:  # noqa: N802 — QML-stílus
+        """Vissza a kijelölés (vagy a képtálca) képeihez és a mentett
+        nyomatmérethez."""
+        self._utlevel = None
+        self._meret_felulirva = None
+
+    def _aktiv_meret(self) -> NyomatMeret:
+        """A feladat nyomatmérete: az Útlevélkép felülírása, különben a
+        megjegyzett méret."""
+        if self._meret_felulirva is not None:
+            return self._meret_felulirva
+        return NyomatMeret[self.printSize()]
 
     # -- Indexkép-nyomtatás (#1590) -------------------------------------
 
@@ -932,10 +896,6 @@ class PrintController(QObject):
         fit_mode: str,
         orientation: str,
         copies: int = 1,
-        *,
-        paths_override: Sequence[Path] | None = None,
-        records_override: Sequence[PhotoRecord] | None = None,
-        size_override: NyomatMeret | None = None,
     ) -> bool:
         # #3016: ⛔ ÚJBÓLI INDÍTÁS TILOS. A haladás-jelzés kedvéért a festés
         # ciklusa eseményeket pörget (`processEvents`), tehát a felhasználó
@@ -944,19 +904,8 @@ class PrintController(QObject):
         # a második hívás egyszerűen nem indul el.
         if self._nyomtatas_folyamatban:
             return False
-        # #1401: az Útlevélkép egy MÁR kivágott, ideiglenes fájllal hívja —
-        # az nem a `rows` kijelölésből jön, tehát a sor-alapú feloldást
-        # megkerüli (ld. `printPassportPhoto`/`renderPassportPreviewPdf`).
-        if paths_override is not None:
-            paths = list(paths_override)
-            records = (
-                list(records_override)
-                if records_override is not None
-                else list(paths_override)
-            )
-        else:
-            paths = self._resolve_paths(rows)
-            records = self._resolve_records(rows)
+        paths = self._resolve_paths(rows)
+        records = self._resolve_records(rows)
         if not paths:
             self.printFailed.emit(self.tr("No pictures to print."))
             return False
@@ -1035,7 +984,7 @@ class PrintController(QObject):
         # a KEVESEBB lapot a CELLA tájolása dönti el; explicit kérésnél a
         # kért lapállás rögzül. Ha egyik cellatájolással sem fér el, az
         # egyképes (`eFullPage`) tartalék lép életbe (`_grid_for_job`).
-        meret = size_override if size_override is not None else NyomatMeret[self.printSize()]
+        meret = self._aktiv_meret()
         dpi = float(printer.resolution())
         portrait_page = self._device_page_geometry(
             printer, QPageLayout.Orientation.Portrait
@@ -1301,7 +1250,7 @@ class PrintController(QObject):
         except ValueError:
             return False
 
-        meret = NyomatMeret[self.printSize()]
+        meret = self._aktiv_meret()
         portrait_page = self._preview_page_geometry(printer_name, landscape=False)
         landscape_page = self._preview_page_geometry(printer_name, landscape=True)
         try:
@@ -1378,7 +1327,7 @@ class PrintController(QObject):
             )
         except ValueError:
             kert = PrintOrientation.AUTO
-        meret = NyomatMeret[self.printSize()]
+        meret = self._aktiv_meret()
         portrait_page = self._preview_page_geometry(printer_name, landscape=False)
         landscape_page = self._preview_page_geometry(printer_name, landscape=True)
         try:

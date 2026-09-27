@@ -33,3 +33,21 @@ def wire_print(engine, photo_source, settings=None):
     )
     engine.rootContext().setContextProperty("printController", print_controller)
     return print_controller
+
+
+def wire_passport(engine, photo_source, cache_dir):
+    """Az Útlevélkép vezérlője (#1401) — az `application.py` tükre.
+
+    A `cache_dir` a teszt ideiglenes mappája: a kivágott kép így nem a
+    felhasználó valódi gyorstárába kerül. A detektort a teszt cseréli
+    (`use_detector`), mielőtt a menüpontot kiváltaná.
+    """
+    from picasapy.app.passport_controller import PassportPhotoController
+
+    passport_controller = PassportPhotoController(
+        photo_source=photo_source, cache_dir=cache_dir
+    )
+    engine.rootContext().setContextProperty(
+        "passportController", passport_controller
+    )
+    return passport_controller

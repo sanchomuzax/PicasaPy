@@ -338,6 +338,10 @@
         <translation>FullPage</translation>
     </message>
     <message>
+        <source>Passport</source>
+        <translation>Útlevél</translation>
+    </message>
+    <message>
         <source>Wallet</source>
         <translation>Tárcaméret</translation>
     </message>
@@ -1219,34 +1223,34 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
 </context>
 <context>
-    <!-- #1401: az Útlevélkép hibaablaka + nyomtatási nézete — SAJÁT,
-         minimális dialógus (nem a teljes `PrintDialog.qml`, ld. a
-         jelentést: a `rows`-alapú előnézet a KIJELÖLÉS sorindexeire épül,
-         a passport-kép viszont egy ideiglenes, gyorstárbeli fájl). -->
-    <name>PassportPrintDialog</name>
-    <message>
-        <source>Passport photo</source>
-        <translation>Útlevélkép</translation>
-    </message>
+    <name>PassportErrorDialog</name>
     <message>
         <source>Try another picture?</source>
         <translation>Megpróbálkozik egy másik képpel?</translation>
     </message>
     <message>
-        <source>Printer:</source>
-        <translation>Nyomtató:</translation>
+        <source>Can&apos;t find any faces</source>
+        <translation>Nem találhatók arcok</translation>
     </message>
     <message>
-        <source>Copies per Photo:</source>
-        <translation>Példányszám képenként:</translation>
+        <source>There appear to be multiple faces.</source>
+        <translation>Úgy tűnik, több arc van a képen.</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation>Mégse</translation>
+        <source>Passport photo</source>
+        <translation>Útlevélkép</translation>
     </message>
     <message>
-        <source>Print</source>
-        <translation>Nyomtatás</translation>
+        <source>The picture could not be read.</source>
+        <translation>A kép nem olvasható be.</translation>
+    </message>
+    <message>
+        <source>The cropped picture could not be saved.</source>
+        <translation>A kivágott kép nem menthető.</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
@@ -4357,18 +4361,6 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
-    <!-- #1401: az Útlevélkép két hibaüzenete, a hibaablak (`CThumbUI::
-         Passportfail`) alá — élő méréssel (picasa-colab-jobs #49/#50): a
-         `Passport0` angol forrása „Can't find any faces", a magyar a
-         stringresből: „Nem találhatók arcok" -->
-    <message>
-        <source>Can't find any faces</source>
-        <translation>Nem találhatók arcok</translation>
-    </message>
-    <message>
-        <source>It looks like there's more than one face in this picture.</source>
-        <translation>Úgy tűnik, több arc van a képen.</translation>
-    </message>
     <message>
         <location filename="../qml/Main.qml"/>
         <source>Want to Cancel?</source>
@@ -5566,11 +5558,9 @@ Biztosan visszavonja a műveletet?</translation>
         <translation>&amp;Címke megjelenítése albumként...</translation>
     </message>
 
-    <!-- #1401: `eMenuTools::ID_PASSPORT` — a mért angol forrás
-         `&amp;Passport photo...` -->
     <message>
         <source>&amp;Passport photo...</source>
-        <translation>&amp;Útlevélkép…</translation>
+        <translation>Útle&amp;vélkép...</translation>
     </message>
 
     <message>

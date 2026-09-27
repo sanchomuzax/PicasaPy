@@ -55,6 +55,14 @@ class TestAzUtlevelkepMenupont:
         )
         assert "bar.passportPhotoRequested()" in tetel
 
-    def test_a_MAGYAR_alak_a_dokumentaltbol_jon(self):
+    def test_csak_kijelolt_kepre_engedelyezett(self):
+        tetel = blokk_horgonyra(
+            _kiserleti_blokk(), 'objectName: "menuToolsPassportPhoto"'
+        )
+        assert "enabled: bar.photoActionsEnabled" in tetel
+
+    def test_a_MAGYAR_alak_a_hivatalos(self):
+        """`eMenuTools::ID_PASSPORT` magyarul: „Útle&vélkép..." — a
+        gyorsbillentyű a v-n, a végén három pont (nem ellipszis-jel)."""
         assert "<source>&amp;Passport photo...</source>" in _TS
-        assert "<translation>&amp;Útlevélkép…</translation>" in _TS
+        assert "<translation>Útle&amp;vélkép...</translation>" in _TS
