@@ -2392,7 +2392,7 @@ viszi, a széleket 0-ra — vagyis az `EdgeDetectionB` **fehér alapon sötét
 vonalas rajzot** ad, nem fekete alapon világos éleket. A `Neon` ezért
 invertál a végén, és ezért lesz a kimenete fekete alapon világos él.
 
-**Amit a bináris NEM ad meg** (mérésből, a fenti golden páron illesztve):
+~~**Amit a bináris NEM ad meg**~~ → **mind kiolvasva, ld. a következő szakaszt** (2026-09-27). Az eredeti szöveg (mérésből, a fenti golden páron illesztve):
 a Sobel-válasz osztója a 128-as eltolás előtt (`4,0`), és a 10. lépés
 keverési módja (`multiply` és `darken` egyaránt illeszkedik — a fehér alap
 mellett gyakorlatilag megkülönböztethetetlenek).
@@ -2400,6 +2400,55 @@ mellett gyakorlatilag megkülönböztethetetlenek).
 A `quality="2"` a Flash `BitmapFilterQuality` szerint az elmosás
 átfutásainak száma (4.5): két menet egy 2 képpont széles dobozszűrőből
 pontosan a `[1, 2, 1]/4` háromszög-mag.
+
+#### ⭐ `EdgeDetectionB` — a „mérésből illesztett” tényezők a binárisból, és a natív elmosás (2026-09-27, 383. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+A fenti lépéstábla három tényezőt „mérésből illesztettnek” jelölt. Mind a
+három kiolvasható:
+
+| tényező | eddig | a binárisból |
+|---|---|---|
+| a Sobel osztója | 4,0, illesztve | **4** — `0x00bb6895` `push 4`; `0x00bb732d` `cdq; idiv` |
+| a 128-as eltolás | feltevés | az akkumulátor kezdőértéke **512** (`0x00bb6faa` `shl eax, 7` a 4-ből; `0x00bb71b9` `mov eax, [edx+8]`) |
+| a `100 − detail` helye | „a kontraszt illeszkedett” | a gyerek `SimpleColorMatrix` **`+0x30` = contrast** mezője (`0x00bbce1b` `fsubr [0xcf3a08]` = 100,0; `0x00bbce24` `add eax, 0x30`) |
+| a 10. lépés módja | `multiply` vagy `darken` | **5 = Multiply** (`0x00bbcd76` `mov ecx, 5` → `0x00bbf780`) |
+
+**A Sobel egy csatornára:** `ki = clamp((512 + Σ kᵢ·pᵢ) idiv 4, 0, 255)` =
+`clamp(128 + floor(Σ/4), 0, 255)`. A skalár ág (`0x00bb7140`) nulla felé
+csonkol, a SIMD-ág (`0x00bb75a0`: `psrad` + `paddd [0x80…]`) lefelé kerekít;
+negatív osztandónál mindkettő 0-ra vág, tehát a kettő azonos. A B, G és R
+csatorna külön számol, az alfa 0xFF. A perem ismétlődik: a sarok- és
+élrészek saját eltolástáblát kapnak (`0x00bb6d1e`–`0x00bb6f23`). A két mag:
+`direction = 0` („horizontal”) `[−2 0 2; −4 0 4; −2 0 2]`, `direction = 1`
+`[2 4 2; 0 0 0; −2 −4 −2]` (`0x00bb6729`–`0x00bb67fa`).
+
+**Az 1. lépés elmosása a natív `BlurImageOperation(2, 2, quality = 2)`**
+(`0x00bbcaa5` `fld [0xcf3a48]` = 2,0, `push 2`). A modul eddig egy `[1, 2, 1]/4`
+háromszög-maggal közelítette („két menet egy 2 széles dobozból”). A natív
+elmosás (`render/nativ_blur.blur_image_operation`, #3474/#3580) ettől
+mérhetően eltér.
+
+**Mérve** (`Neon` alap, 684-es készlet, ΔE a Picasa-exporthoz; minden más
+változatlan):
+
+| változat | ΔE |
+|---|---:|
+| ma (`[1,2,1]/4`, lebegőpontos Sobel) | 1,967 |
+| natív elmosás | **0,493** |
+| natív elmosás + egész Sobel (`512`, `idiv 4`) | 0,493 |
+| … + a két Multiply csonkolva | 0,493 |
+| … + Darken a 10. lépésben (kontroll) | 0,517 |
+| a `100 − detail` a fényerőbe / telítettségbe (kontroll) | 4,362 / 5,870 |
+
+A maradék 0,49-ből 0,20 a fekete háttéren, 0,29 az éleken van. A Picasa
+exportja 4:4:4-es JPEG; a saját kimenetünk 95-ös minőségű, 4:4:4-es JPEG-je
+önmagához képest ezen a képen **0,315** ΔE. A maradék tehát ennek a képnek a
+JPEG-zajával egy nagyságrendben van. A `Neon` záró `Tint`-je már a natív
+táblát használja (#3631).
+
+Fejlesztés: #3812.
 
 #### `TintImageOperation` — FÉNYESSÉG-TARTÓ színezés (2026-08-17, #878)
 
