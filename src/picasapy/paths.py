@@ -26,11 +26,21 @@ gyökér-normalizálása (`index/sync.py`). Két függvény, két célra:
   kis-nagybetűre nem érzékeny), POSIX-on IDENTITÁS — Linuxon/macOS-en két
   eltérő nagybetűzésű mappa két KÜLÖNBÖZŐ, valódi mappa lehet, a foldolás
   ott adatvesztő összemosás volna.
+- `flat_key` (#3776): ugyanaz a kis-nagybetű-döntés, de TISZTA
+  string-műveletként, fájlrendszer-hozzáférés NÉLKÜL — a `path_key` a
+  `normalize_path`-on át `resolve()`-ot hív, ami egy Windows-alakú
+  útvonalon (`C:\\...`) Linuxon nem ad értelmes eredményt, tehát a
+  windowsos ág ott nem volna mérhető. A mentés-szűrő lapos listája
+  (`app/backup_controller.py::mentesKulcs`, `app/models.py::
+  FolderListModel.rowOfPath`) ezt hívja, mert mindkét oldala már
+  Python-Path-ból épült, azonos futáson belüli sztring — nincs mit
+  feloldani, csak összevetni.
 """
 
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 
@@ -55,3 +65,24 @@ def path_key(path: str | Path) -> str:
     kizárólag „ugyanaz-e a két útvonal" döntéshez (pl. `_roots`
     tagság-ellenőrzés, duplikátum-mappák csoportosítása)."""
     return os.path.normcase(normalize_path(path))
+
+
+def _platform() -> str:
+    """A futó platform — cserélhető fogantyú (#1217), hogy a `flat_key`
+    Windows-alakú bemeneten (`C:\\...`) Linuxon is mérhető legyen."""
+    return sys.platform
+
+
+def flat_key(path: str) -> str:
+    """A #3776 lapos mentés-listájának ÖSSZEHASONLÍTÓ alakja.
+
+    Windowson a fájlrendszer kis-nagybetű-érzéketlen, és mindkét
+    elválasztó előfordulhat (`app/backup_controller.py`
+    `Path.rglob`-ból, illetve az index natív alakjából) — POSIX-on viszont
+    a kis-nagybetű VALÓDI különbség, ott a foldolás adatvesztő volna.
+
+    ⚠️ A SORREND számít: a kis-nagybetűsítés UTÁN jön az elválasztó-csere,
+    ne fordítva — `str.lower()` nem alakítja át a perjelet, tehát a POSIX
+    alakú útvonalak (`/mnt/kepek/...`) érintetlenek maradnak."""
+    alak = path.lower() if _platform().startswith("win") else path
+    return alak.replace("\\", "/")

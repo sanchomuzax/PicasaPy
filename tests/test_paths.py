@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from picasapy.paths import normalize_path, path_key
+from picasapy.paths import flat_key, normalize_path, path_key
 
 
 class TestNormalizePath:
@@ -73,3 +73,35 @@ class TestPathKey:
         ]
         keys = {path_key(f) for f in forms}
         assert len(keys) == 1
+
+
+class TestFlatKey:
+    """#3776: a lapos mentés-lista összehasonlító kulcsa — TISZTA
+    string-művelet, ezért egy Windows-alakú útvonal (`C:\\...`) a
+    `_platform` fogantyú cseréjével Linuxon is mérhető (#1217)."""
+
+    def test_posix_case_sensitive(self, monkeypatch):
+        import picasapy.paths as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "linux")
+        assert flat_key("/mnt/Kepek/Nyar") != flat_key("/mnt/kepek/nyar")
+
+    def test_posix_separator_unchanged(self, monkeypatch):
+        import picasapy.paths as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "linux")
+        assert flat_key("/mnt/kepek/nyar") == "/mnt/kepek/nyar"
+
+    def test_windows_shaped_path_case_insensitive(self, monkeypatch):
+        # nem valódi fájlrendszer-hívás — a `C:\...` alak Linuxon is
+        # mérhető, mert a `flat_key` sosem old fel útvonalat
+        import picasapy.paths as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "win32")
+        assert flat_key("C:\\Kepek\\Nyar") == flat_key("c:/kepek/nyar")
+
+    def test_windows_shaped_path_normalises_separator(self, monkeypatch):
+        import picasapy.paths as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "win32")
+        assert flat_key("C:\\Kepek\\Nyar") == "c:/kepek/nyar"
