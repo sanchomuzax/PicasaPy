@@ -176,6 +176,8 @@
  "tests/app/qml_functional/test_kereso_helyimenu_1526.py": 3.52,
  "tests/app/qml_functional/test_keret_almenu_1151.py": 3.93,
  "tests/app/qml_functional/test_kettos_nezet_3013.py": 15.5,
+ "tests/app/qml_functional/test_kettos_nezet_atfedo_fokusz_3741.py": 45.81,
+ "tests/app/qml_functional/test_kettos_nezet_fokusz_nagyitas_3741.py": 70.69,
  "tests/app/qml_functional/test_kettos_nezet_gombsor_helye_3663.py": 21.6,
  "tests/app/qml_functional/test_kezi_sorrend_racs_1721.py": 11.42,
  "tests/app/qml_functional/test_kijeloles_aranykenyszer_891.py": 11.86,
