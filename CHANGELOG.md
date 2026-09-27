@@ -8,16 +8,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- **A Felpörgetés, a Lomo-szerű, az Áttűnés és az Éjjellátó a fényerőt a
-  kontraszttal EGYÜTT, nem utána adta hozzá — most az eredetihez szinte
-  pontosan egyező (#3735).** A `SimpleColorMatrix` belső sorrendje eddig
-  előbb a kontrasztot, majd külön a fényerőt alkalmazta; az eredeti Picasa
-  fordítva, a fényerőt a kontraszttal egy lépésben számolja. Mérve (ΔE az
-  eredeti Picasa exportjához): Felpörgetés legerősebb állása 13,1 → 0,1,
-  alapállása 2,7 → 0,1; Lomo-szerű alapállása 1,0 → 0,5; Éjjellátó
-  leggyengébb állása 10,8 → 5,4 (a maradék a zajmintázat eltérése, külön
-  jegy). Az Áttűnés és a kétszínezés (TwoTone) alig, illetve egyáltalán nem
-  változott.
+- **A Felpörgetés, a Lomo-szerű, az Áttűnés és az Éjjellátó színei szinte
+  pontosan egyeznek az eredeti Picasáéval (#3735).** A program a fényerőt
+  eddig rossz sorrendben számolta. Mért eltérés az eredetitől (ΔE): a
+  Felpörgetés legerősebb állása 13,1 → 0,1, alapállása 2,7 → 0,1; a
+  Lomo-szerű 1,0 → 0,5; az Éjjellátó leggyengébb állása 10,8 → 5,4 (a
+  maradék a zajmintából jön, külön jegy).
+
+## [0.8.598] – 2026-09-27
+
+### Javítva
+- **Az alsó sáv nagyító-csúszkája az eredetihez hasonlóan vastagabb sávot és
+  álló fogantyút kapott, a könyvtárban és a nézőben is (#3729).**
 
 ## [0.8.597] – 2026-09-27
 
