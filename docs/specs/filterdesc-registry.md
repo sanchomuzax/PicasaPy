@@ -3080,11 +3080,10 @@ A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
    (231 b) képpontonként számol: `hist_R[bájt0]`, `hist_G[bájt1]`,
    `hist_B[bájt2]` — **egyszerű darabszám, semmilyen vágás vagy súlyozás
    nincs benne**.
-2. **Ha a kép nagyobb 1000 képpontnál, KICSINYÍTVE mintavételez**
-   (`0x00bc2ea6` `cmp eax, 0x3e8`): a `0x00bc2f40` a `0x00cf3e10` =
-   **1000,0** és a képpontszám hányadosából számol léptéket. *(A léptéket
-   egy egyargumentumú CRT-függvény adja — a négyzetgyök a kézenfekvő
-   olvasat, de nem azonosítottam.)*
+2. **Ha a kép nagyobb 1000 képpontnál, egy kb. 1000 képpontos
+   PONTMINTÁN számol** (`0x00bc2ea6` `cmp eax, 0x3e8`; a minta a
+   `0x00bc2f40`-ben, a részletek a 6/a pontban). A tartományt (`lo`, `hi`)
+   tehát a minta adja, nem a teljes kép.
 3. **Csatornánként LUT** a `0x00bc3170` (232 b) függvénnyel, a
    `0x10` / `0x8` / `0x0` bit-eltolással (B / G / R a csomagolt képpontban).
 
@@ -3117,6 +3116,71 @@ alakítójával együtt adja a felfelé kerekítést. A `lo` keresése ötösév
 > `AutoFixImageOperation` viszont **másik kódút**, és **vágás nélküli
 > teljes min–max húzás**. A két függvény az eredetiben is különbözik; nálunk
 > ugyanaz. Jegy: **#2229**.
+
+### 6/a. ⭐ Az `AutoFix` mintája — kb. 1000 képpontos, legközelebbi szomszéd (2026-09-27, 380. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+*Forrás: `0x00bc2e50` (231 b) · `0x00bc2f40` (550 b) · `0x0049fe60` · `0x009e6df0`.*
+
+A 6. pont 2. lépése nyitva hagyta, hogyan kicsinyít a hisztogram-számoló.
+Utasításszinten kiolvasva:
+
+1. **A célméret.** `s = sqrt(1000,0 / (w·h))` float32-ben
+   (`0x00bc2f6a` `fdivr [0x00cf3e10]` = 1000,0; a gyök a `0x0049fe60`, ami
+   a `0x00c0b310` `sqrt`-burkolója). Utána
+   `nW = csonk(w·s + 0,5)` és `nH = csonk(h·s + 0,5)`, mindkettő legalább 1
+   (`0x00bc2fb5` `[0x00c72150]` = 0,5; a vezérlőszó `or 0xc00` = csonkolás;
+   `cmp eax, 1` / `ja`). Egy 960 × 640-es képen `nW = 39`, `nH = 26`, azaz
+   1014 mintaképpont.
+2. **A mátrix.** Tiszta skálázás, float32 elemekkel: `m0 = w / nW`,
+   `m4 = h / nH`, a többi 0, a sarok 1 (`0x00bc3077` `fdivp`,
+   `0x00bc309f` `fdivp`). A `0x009e6340` egy egységmátrixszal veszi össze.
+3. **A mintavétel pontminta.** A `0x009e6df0`-t `param_4 = 0`, `param_5 = 0`,
+   `param_6 = 0x100` értékkel hívja (`0x00bc3132`–`0x00bc3154`). Ugyanezt
+   az argumentumkészletet adja a `smoothing=false` átméretezés is, és ez
+   a `0x009e7420` legközelebbi-szomszéd ágat választja: a mintaképpont
+   közepét (`+0,5`) vetíti vissza a mátrixszal, 16.16 fixpontban, és
+   **egyetlen** forrásképpontot olvas. Ld. az 5/a pontot és „A
+   `QuantizePalette` teljes útja” szakaszt, ahol ugyanez a mintavevő fut.
+4. **A hisztogram** ezen a mintán fut (`0x00bc2ec5`–`0x00bc2f21`); a LUT
+   (`0x00bc3170`) viszont a **teljes** képre hat.
+
+**Miért számít.** A ritka szélső képpontok (például egy vékony vonal) a
+mintából kimaradnak. A tartomány így szűkebb, a húzás erősebb, mint teljes
+képes min–max húzásnál. A `PencilSketch` min esetében a második `AutoFix`
+bemenetének 2,5%-a (15 318 képpont) 162-es szintű, és legalább 0,5%-a ennél
+sötétebb (az alsó 0,5%-os percentilis 152). A teljes kép tartománya 74–255, a 39 × 26-os
+mintáé 162–255. Nálunk ezért 162 → 124 lett, az eredetiben 162 → 0.
+
+**Mérve** (684-es mérőkészlet, ΔE a Picasa-exporthoz; a kiolvasott
+mintavétel a mai teljes képes hisztogram helyén, minden más változatlan):
+
+| effekt · eset | ma (teljes kép) | **1000 képpontos pontminta** |
+|---|---:|---:|
+| `PencilSketch` alap | 1,953 | **0,129** |
+| `PencilSketch` min | 2,942 | **0,018** |
+| `Cinemascope` alap | 1,367 | **1,097** |
+| `Holga` alap / min | 0,890 / 0,678 | **0,750 / 0,500** |
+| `Sixties` alap / min | 1,179 / 1,255 | **1,033 / 1,136** |
+| `NightVision` alap / min | 4,626 / 3,673 | **4,595 / 3,663** |
+
+A `max` esetek (Fade 100) változatlanok, egyik eset sem romlik.
+
+*Mellékes lelet:* a `filterdesc.xml`-ben az `AutoFixImageOperation`-t a
+`Cinemascope`, a `Holga`, a `NightVision`, a `Sixties` és (kétszer) a
+`PencilSketch` hívja. A `HDR` leírója nem hívja; a mérésen a HDR-esetek
+nem is mozdultak.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`render/glimmer_ops.py`, `autofix`) | teendő |
+|---|---|---|---|
+| a hisztogram forrása | ≤ 1000 képpontnál a teljes kép, fölötte `nW × nH` pontminta | mindig a teljes kép | a pontminta |
+| a LUT | a teljes képre | a teljes képre | ✅ |
+| a docstring | — | „HDR-család” is hívja | helyesbítendő |
+
+Fejlesztés: #3797.
 
 ### 7. `AdjustCurvesImageOperation` — a négy görbe tagoffszete
 
