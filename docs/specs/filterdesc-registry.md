@@ -1044,6 +1044,35 @@ a valódi exporthoz:** `default` 1,277 · `size max` 1,667 · `size min` 0,000 �
 (FELTEVÉS: 50). Forrás: `referencia/lomo/Lomo no effect/…` — a `size min` és
 a `fade max` export bájtra ezzel azonos, ami a forrásválasztást is igazolja.
 
+##### ⛳ A golden zajszintje képfüggő — és a Glow-család a zajszint FÖLÖTT van (2026-09-28, 385. kör, #626)
+
+A 684-es mérőkészlet `Fade = 100`-as esetei 0,121-et adnak. Ez **nem** a
+mérés zajszintje: ott a forrás kódolódik újra ugyanazokkal a JPEG-táblákkal.
+Új tartalomnál a zajszint ennél nagyobb, és képfüggő. Mérni így lehet: a
+saját kimenetünket 95-ös minőségű, 4:4:4-es JPEG-be kódoljuk (a Picasa
+exportja 4:4:4), és önmagához hasonlítjuk.
+
+| eset | ΔE a Picasához | zajszint (mi ↔ mi-JPEG95) | verdikt |
+|---|---:|---:|---|
+| `CrossProcess` alap | 0,807 | 0,723 | **zajszinten** — nincs teendő |
+| `Holga` alap | 0,750 | 0,411 | fölötte |
+| `Matte` alap | 0,910 | 0,157 | **fölötte** |
+| `Vignette` alap | 0,585 | 0,147 | **fölötte** |
+| `MuseumMatte` alap / min / max | 0,773 / 0,842 / 0,645 | 0,196 / 0,088 / 0,267 | **fölötte** |
+
+A `CrossProcess` csatornánkénti előjeles eltérése a forrás minden
+tartományában ±0,2 körüli (a kéknél legfeljebb +0,9). Az egész Multiply és
+az egész átlátszóság-keverés nem változtat rajta (0,807 → 0,807).
+
+**A Glow-család** (belső ragyogás) viszont valódi modellhibát hordoz. A fenti
+kiolvasott darabokból épített emuláció nem áll össze: lekicsinyítés
+`0x00bb89b0`-val, teljes téglalap-maszk, 3 doboz `⌈(b_red − 1)/2⌉`
+sugárral és nullás peremmel, `(255 − A)·strength`, bilineáris vagy
+Mitchell-nagyítás, source-over. Ez **Vignette 6,12 / Matte 5,61**-et ad, a
+mai erf-modell 0,585 / 0,910-et. Hiányzik, milyen maszkot épít a
+`0x00bcbfb0`, és hogyan nagyít vissza a rajzoló (`0x00bb8f70`,
+`0x00bb91d3`–`0x00bb992d`). Kutatási jegy: **#3820**.
+
 #### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
 
 A `0x00c7e5a0` csempe-tábla rekordjai **hármasak** (elsődleges, másodlagos,
