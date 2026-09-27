@@ -2974,8 +2974,9 @@ négy hívója van, köztük mindkettő.
 
 ⇒ A lap `RotateImageOperation` szakaszának 2026-08-17-i helyesbítése **a
 `Resize`-ra is érvényes**: a mintavételező a **`ytResampler`**, a mód
-**explicit** — *lépték = 1 → **0-s (doboz)**, egyébként **3-as
-(Mitchell–Netravali, B = C = 0,4)***. **Nem bilineáris.**
+**explicit** — ~~*lépték = 1 → **0-s (doboz)**, egyébként **3-as
+(Mitchell–Netravali, B = C = 0,4)***~~ → helyesen: **kicsinyítéskor és
+1:1-nél 0-s doboz, csak nagyításkor 3-as Mitchell** (ld. 5/c). **Nem bilineáris.**
 
 **A `smoothing` attribútum:** tag `+0x34`, **alapértéke `true`**
 (`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
@@ -3070,6 +3071,96 @@ Mitchell-kicsinyítésünk pixelazonossági golden-mérése.
 kívül · 0 „csak nyitva”. A pixelazonossági golden nem ennek a bináris
 mechanizmus-kérdésnek a nyitva maradt része, hanem külön fejlesztési/mérési
 feladat; a kimeneti eltérés okát ebből a leletből nem állítom.
+### 5/c. ⭐ Kicsinyítéskor DOBOZ, nem Mitchell — és a fixpontos súlyok (2026-09-27, 381. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+*Forrás: `0x00bcb5e0` (`0x00bcb629`–`0x00bcb659`) · `0x00a3f660` (a 0-s ág `0x00a3fb03`, a súlynormálás `0x00a4031f`–`0x00a404a2`) · `0x00a426a0` (az alkalmazó `0x00a4273f`–`0x00a4283a`).*
+
+⛔ **Helyesbítés az 5. ponthoz.** Az 5. pont szerint `smoothing=true` esetén
+„lépték = 1 → 0-s doboz, egyébként 3-as Mitchell”. **Ez így téves.** A wrapper
+a vízszintes léptéket veti össze 1,0-val:
+
+```asm
+0x00bcb629  fld   dword ptr [ebp]        ; m0 = forrás/cél (vízszintes)
+0x00bcb62c  fld1
+0x00bcb62e  fld   st(0)
+0x00bcb630  fdivrp st(2)                 ; 1/m0 = cél/forrás
+0x00bcb634  fstp  dword ptr [esp+0x10]
+0x00bcb63f  fld1
+0x00bcb641  fcomp dword ptr [esp+0x10]   ; 1,0 vs cél/forrás
+0x00bcb647  test  ah, 5
+0x00bcb64a  jp    0xbcb653               ; C0 = 0 → 1,0 ≥ cél/forrás
+0x00bcb64c  mov   ecx, 3                 ; nagyítás → 3-as Mitchell
+0x00bcb653  xor   ecx, ecx               ; kicsinyítés VAGY 1:1 → 0-s doboz
+0x00bcb659  call  0xa3f490               ; ytResampler(ecx = mód)
+```
+
+1. **A mód:** ha a vízszintes cél/forrás lépték **legfeljebb 1** (kicsinyítés
+   vagy 1:1), a **0-s doboz** fut, egyébként a 3-as Mitchell. A döntés
+   **mindkét tengelyre** ugyanaz, és csak a vízszintes lépték dönti el.
+   Ha a mátrixban forgatás vagy nyírás van (`|m1|` vagy `|m3|` > 0,0001,
+   `0x009e6da0`, `[0x00cf3ab8]`), a wrapper a `0x009e6df0` általános utat
+   hívja; a tiszta átméretezésnél ez nem fordul elő.
+2. **A doboz:** sugara 0,5, és a kicsinyítés léptékével nyúlik (5/b). A csap
+   súlya 1, ha `|x| < 0,5`, egyébként 0 (`0x00a3fb12` `fcomp [0xc7dafc]` = 0,5,
+   `jp` → 0). A határon álló csap **nem** számít bele. A csap helye `j + 0,5`,
+   a kimeneti képpont középpontja `c = (i + 0,5) · forrás/cél`, float32-ben.
+3. **Egész súlyok:** `w_int = csonk(w · 16383 / Σw)`
+   (`0x00a4031f` `[this+0x2c]` = 1,0 × `[0x00cf3b70]` = 16383,0;
+   `0x00a4035d` `call 0xc29990` = `cvttsd2si`). A maradékot
+   (`16383 − Σ w_int`) a `csonk(c)` indexű csaphoz adja, a csaptartományba
+   szorítva (`0x00a40462`–`0x00a4049f`).
+4. **Az alkalmazó:** csatornánként `(Σ w_int · p + 255) >> 14`, telítéssel
+   (`0x00a427b0`–`0x00a4283a`: `imul` az int16 súllyal, `add 0xff`, a
+   `0x3fffff` fölötti és negatív összeg vágva, majd `>> 14`). Ez gyakorlatilag
+   **csonkolás**, nem kerekítés. Előbb a vízszintes menet fut, 8 bites
+   köztes képpel, utána a függőleges ugyanezzel a képlettel. *(A skalár út
+   kiolvasva; a SIMD-út (`0x00a428e0`, `0x00a413f0`) számolását nem néztük
+   meg, a mérés 94%-os bitegyezése nem mutat rá eltérést.)*
+
+A 3. és a 4. pont **módfüggetlen**: a nagyításkor futó Mitchell-mag súlyai
+is így lesznek egésszé, és ugyanez az alkalmazó futtatja őket (a Mitchell-mag
+határa kizáró: `|x| ≥ 2` → 0, `0x00a3fcde`).
+
+**Példa:** 960 → 48 képpont (lépték 20). A `c = 20i + 10`, a csapok
+`20i … 20i + 19` (20 darab), mindegyik súlya `csonk(16383/20)` = 819, a
+maradék 3 a `20i + 10`-es csapé (ott 822).
+
+**Mérve** (684-es mérőkészlet, ΔE a Picasa-exporthoz; a kiolvasott
+dobozmodell a mai Mitchell helyén, vízszintes menet elöl, minden más
+változatlan):
+
+| eset | ma (Mitchell) | **fixpontos doboz** |
+|---|---:|---:|
+| `Pixelate` alap (Impact 20) | 4,638 | **0,098** |
+| `Pixelate` min (Impact 2, Add) | 0,783 | **0,128** |
+| `Pixelate` max (Fade 100) | 0,121 | 0,121 |
+
+A 48 × 32-es kicsinyített kép blokkjainak **94,4%-a bitre egyezik** a
+Picasa-export blokkközepeivel (függőleges menet elöl: 93,3%). A terület-átlag
+(`cv2.INTER_AREA`, kerekít) ΔE-je 0,276, az ismételt 2×-es felezésé 4,637. Az
+eredeti tehát **egy lépésben** dobozol, felezés nélkül.
+
+**Érintett leírók** (`filterdesc.xml`): `Pixelate` és `PicnikFocalPixelate`
+(kicsinyítés, `imagewidth/Impact`); `Cinemascope` Letterbox-szal (a szélesség
+nem változik, tehát a lépték 1: a függőleges 0,95-ös zsugorítás is
+**dobozzal** fut). A Cinemascope mérőesete Letterbox nélküli, azon nincs
+átméretezés; a `PicnikFocalPixelate` a `render/focal.py` saját
+`cv2.INTER_AREA`-ját használja, arra a doboz-modellt nem mértem.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`) | teendő |
+|---|---|---|---|
+| módválasztás | vízszintes cél/forrás ≤ 1 → doboz, egyébként Mitchell | tengelyenként: 1:1 → azonosság, egyébként Mitchell | ua. |
+| a doboz | `\|x\| < 0,5`, a léptékkel nyújtva | — | ua. |
+| súlyok | `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé | lebegőpontos | ua. |
+| kimenet | `(Σ w·p + 255) >> 14`, menetenként 8 bit (a Mitchell-nagyításnál is) | `rint`, egyetlen kerekítés a végén | ua. |
+| `PicnikFocalPixelate` | ugyanez a `Resize` | `render/focal.py`: `cv2.INTER_AREA` | a közös `resize_image`-re |
+
+Fejlesztés: #3805.
+
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
 A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
@@ -3080,11 +3171,10 @@ A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
    (231 b) képpontonként számol: `hist_R[bájt0]`, `hist_G[bájt1]`,
    `hist_B[bájt2]` — **egyszerű darabszám, semmilyen vágás vagy súlyozás
    nincs benne**.
-2. **Ha a kép nagyobb 1000 képpontnál, KICSINYÍTVE mintavételez**
-   (`0x00bc2ea6` `cmp eax, 0x3e8`): a `0x00bc2f40` a `0x00cf3e10` =
-   **1000,0** és a képpontszám hányadosából számol léptéket. *(A léptéket
-   egy egyargumentumú CRT-függvény adja — a négyzetgyök a kézenfekvő
-   olvasat, de nem azonosítottam.)*
+2. **Ha a kép nagyobb 1000 képpontnál, egy kb. 1000 képpontos
+   PONTMINTÁN számol** (`0x00bc2ea6` `cmp eax, 0x3e8`; a minta a
+   `0x00bc2f40`-ben, a részletek a 6/a pontban). A tartományt (`lo`, `hi`)
+   tehát a minta adja, nem a teljes kép.
 3. **Csatornánként LUT** a `0x00bc3170` (232 b) függvénnyel, a
    `0x10` / `0x8` / `0x0` bit-eltolással (B / G / R a csomagolt képpontban).
 
@@ -3117,6 +3207,71 @@ alakítójával együtt adja a felfelé kerekítést. A `lo` keresése ötösév
 > `AutoFixImageOperation` viszont **másik kódút**, és **vágás nélküli
 > teljes min–max húzás**. A két függvény az eredetiben is különbözik; nálunk
 > ugyanaz. Jegy: **#2229**.
+
+### 6/a. ⭐ Az `AutoFix` mintája — kb. 1000 képpontos, legközelebbi szomszéd (2026-09-27, 380. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+*Forrás: `0x00bc2e50` (231 b) · `0x00bc2f40` (550 b) · `0x0049fe60` · `0x009e6df0`.*
+
+A 6. pont 2. lépése nyitva hagyta, hogyan kicsinyít a hisztogram-számoló.
+Utasításszinten kiolvasva:
+
+1. **A célméret.** `s = sqrt(1000,0 / (w·h))` float32-ben
+   (`0x00bc2f6a` `fdivr [0x00cf3e10]` = 1000,0; a gyök a `0x0049fe60`, ami
+   a `0x00c0b310` `sqrt`-burkolója). Utána
+   `nW = csonk(w·s + 0,5)` és `nH = csonk(h·s + 0,5)`, mindkettő legalább 1
+   (`0x00bc2fb5` `[0x00c72150]` = 0,5; a vezérlőszó `or 0xc00` = csonkolás;
+   `cmp eax, 1` / `ja`). Egy 960 × 640-es képen `nW = 39`, `nH = 26`, azaz
+   1014 mintaképpont.
+2. **A mátrix.** Tiszta skálázás, float32 elemekkel: `m0 = w / nW`,
+   `m4 = h / nH`, a többi 0, a sarok 1 (`0x00bc3077` `fdivp`,
+   `0x00bc309f` `fdivp`). A `0x009e6340` egy egységmátrixszal veszi össze.
+3. **A mintavétel pontminta.** A `0x009e6df0`-t `param_4 = 0`, `param_5 = 0`,
+   `param_6 = 0x100` értékkel hívja (`0x00bc3132`–`0x00bc3154`). Ugyanezt
+   az argumentumkészletet adja a `smoothing=false` átméretezés is, és ez
+   a `0x009e7420` legközelebbi-szomszéd ágat választja: a mintaképpont
+   közepét (`+0,5`) vetíti vissza a mátrixszal, 16.16 fixpontban, és
+   **egyetlen** forrásképpontot olvas. Ld. az 5/a pontot és „A
+   `QuantizePalette` teljes útja” szakaszt, ahol ugyanez a mintavevő fut.
+4. **A hisztogram** ezen a mintán fut (`0x00bc2ec5`–`0x00bc2f21`); a LUT
+   (`0x00bc3170`) viszont a **teljes** képre hat.
+
+**Miért számít.** A ritka szélső képpontok (például egy vékony vonal) a
+mintából kimaradnak. A tartomány így szűkebb, a húzás erősebb, mint teljes
+képes min–max húzásnál. A `PencilSketch` min esetében a második `AutoFix`
+bemenetének 2,5%-a (15 318 képpont) 162-es szintű, és legalább 0,5%-a ennél
+sötétebb (az alsó 0,5%-os percentilis 152). A teljes kép tartománya 74–255, a 39 × 26-os
+mintáé 162–255. Nálunk ezért 162 → 124 lett, az eredetiben 162 → 0.
+
+**Mérve** (684-es mérőkészlet, ΔE a Picasa-exporthoz; a kiolvasott
+mintavétel a mai teljes képes hisztogram helyén, minden más változatlan):
+
+| effekt · eset | ma (teljes kép) | **1000 képpontos pontminta** |
+|---|---:|---:|
+| `PencilSketch` alap | 1,953 | **0,129** |
+| `PencilSketch` min | 2,942 | **0,018** |
+| `Cinemascope` alap | 1,367 | **1,097** |
+| `Holga` alap / min | 0,890 / 0,678 | **0,750 / 0,500** |
+| `Sixties` alap / min | 1,179 / 1,255 | **1,033 / 1,136** |
+| `NightVision` alap / min | 4,626 / 3,673 | **4,595 / 3,663** |
+
+A `max` esetek (Fade 100) változatlanok, egyik eset sem romlik.
+
+*Mellékes lelet:* a `filterdesc.xml`-ben az `AutoFixImageOperation`-t a
+`Cinemascope`, a `Holga`, a `NightVision`, a `Sixties` és (kétszer) a
+`PencilSketch` hívja. A `HDR` leírója nem hívja; a mérésen a HDR-esetek
+nem is mozdultak.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`render/glimmer_ops.py`, `autofix`) | teendő |
+|---|---|---|---|
+| a hisztogram forrása | ≤ 1000 képpontnál a teljes kép, fölötte `nW × nH` pontminta | mindig a teljes kép | a pontminta |
+| a LUT | a teljes képre | a teljes képre | ✅ |
+| a docstring | — | „HDR-család” is hívja | helyesbítendő |
+
+Fejlesztés: #3797.
 
 ### 7. `AdjustCurvesImageOperation` — a négy görbe tagoffszete
 
@@ -5202,12 +5357,25 @@ Utána `(px & mask) | alphaOr`: a `channelOptions` 0. bitje az R-t, az 1. a G-t,
 
 A maradék képpontonként 3–5 szint, az átlagos eltérés −0,2 (torzítatlan). **A `PicnikGrain` is determinisztikus (mérve 2026-09-27, #3757).** A #907 „két alkalmazás független mintát ad” mérése a **natív, kisbetűs `grain`** szűrőre vonatkozott (`grain=1;` és `grain=1;grain=1;`, callback `0x008f88e0`). A Glimmer `PicnikGrain` leírója rögzített `randomSeed="1"`-et ad. A 684-es exporton a szürke ágú Picasa-MT `randomSeed = 1`-gyel és a leíró szerinti Multiply móddal (`BlendMode` 5):
 
-| eset | a mai kód (véletlen mag, Darken) | Multiply + numpy-zaj | Darken + Picasa-MT | **Multiply + Picasa-MT** |
+| eset | a javítás előtti kód (véletlen mag, Darken) | Multiply + numpy-zaj | Darken + Picasa-MT | **Multiply + Picasa-MT** |
 |---|---:|---:|---:|---:|
 | alap (Grain 10) | 3,009 | 1,968 | 2,967 | **0,882** |
 | max (Grain 50) | 18,634 | 9,645 | 9,167 | **1,380** |
 
 Mindkét tényező kell, és a nagy ugrás csak a rögzített maggal jön: a zajminta tehát egyezik. A világosító ág (Screen, `BlendMode` 7) exportja nincs a készletben. Fejlesztés: #3757.
+
+**Nálunk (#3757, #3444):** az `apply_picnik_grain` a natív generátort (`nativ_noise`) hívja a rögzített `randomSeed = 1`-gyel, és a módot a sorszámmal adja át (7 Screen / 5 Multiply). Újramérve a beépítés után (`analyze_validation_kit.mean_de`):
+
+| eset | előtte | utána |
+|---|---:|---:|
+| 684 `picnikgrain__alap` (Grain 10) | 3,009 | **0,882** |
+| 684 `picnikgrain__max` (Grain 50) | 12,21 ¹ | **1,380** |
+| 684 `picnikgrain__min` (Grain 0) | 0,121 | 0,121 |
+| merokit-2 `szemcse_04` (Grain 30, eredeti export `export-202608151438`) | 7,79 | **0,981** |
+
+¹ A fenti táblázat 18,634-et ad a mai kódra; a beépítés előtti újramérés (három futás, véletlen maggal) 12,206–12,214-et adott, egyezésben a #3444 golden-nyilvántartásának 12,217-ével. Az eltérés oka nincs kiderítve; a javítás utáni értéket nem érinti.
+
+A (kimenet − bemenet) különbség csatornánkénti átlaga és szórása (#3444) a `max` esetén: Picasa −33,75/−33,19/−32,97 ± 30,0/29,5/29,6; előtte −13,2/−12,2/−12,2 ± 26,1/25,1/25,3; utána −33,74/−33,19/−32,97 ± 29,95/29,30/29,28. Tesztek: `tests/render/test_picnik_grain_3757.py`. A világosító ág Picasa-exportja továbbra sincs; ott a független referenciához mért bekötés a bizonyíték.
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és a golden-korrelációval.*
 
@@ -7612,7 +7780,7 @@ saját eltérése, külön kérdés.
 
 | effekt | kifejezés | mit ad |
 |---|---|---|
-| `PicnikGrain` | `{_radioLighten.selected?7:5}` | **7 = Screen** (világosító), **5 = Multiply** (sötétítő) — nálunk ma `lighten` / `darken` |
+| `PicnikGrain` | `{_radioLighten.selected?7:5}` | **7 = Screen** (világosító), **5 = Multiply** (sötétítő) — nálunk is (#3444, #3757) |
 | `Pixelate` | `{_sldrBlendMode.value}` | a csúszka értéke = sorszám (E/2) |
 | `PicnikTint` | `{_cbBlendMode.liveValue}` | a `_cbBlendMode` vezérlő **sehol nincs definiálva** a leíróban ⇒ a kifejezés nem értékelhető; a szöveges ág a `BlendMode.` előtag után a `liveValue}` maradékot hasonlítja ⇒ nincs találat ⇒ **mód −1**, csak átlátszóság-keverés. Összhangban a #884 mérésével (tiszta színezés, ΔE 1,50). |
 
@@ -7634,7 +7802,7 @@ helyen), tehát a kiértékelőnek nincs ilyen szimbóluma; az előtag után a
 | alfa a keverés után | 255 | nem kezeljük (RGB-ben dolgozunk) | nincs teendő, amíg a lánc RGB |
 | `IR` ragyogás | Screen | ✅ **Screen** (#3441, v0.8.555) | kész — ΔE 6,04 → 1,28, mérve |
 | `Pixelate` csúszka | sorszám | ✅ **sorszám** (#3443, v0.8.556) — a Difference/Hardlight/Subtract lebegőpontosan | kész — `min`: ΔE 23,31 → 0,78, mérve; az egész képletek és a Softlight: #3442 |
-| `PicnikGrain` | Screen / Multiply | Lighten / Darken | csere — **MÉRVE (2026-09-27, #3757):** Multiply + a Picasa-MT `randomSeed = 1`-gyel ΔE alap 3,01 → **0,88**, max 18,63 → **1,38**. A zaj NEM véletlen: a #907 a natív `grain` szűrőt mérte |
+| `PicnikGrain` | Screen / Multiply | ✅ **Screen / Multiply**, Picasa-MT `randomSeed = 1` (#3444, #3757) | kész — ΔE alap 3,01 → **0,88**, max 12,21 → **1,38**, merokit-2 Grain 30: 7,79 → **0,98**, mérve. A zaj NEM véletlen: a #907 a natív `grain` szűrőt mérte |
 
 *Bizonyítottsági fok:* a tábla, a kernelek, a keverő és a végrehajtó menete
 **megerősített** (diszasszemblátum + kimerítő bájtpáros próba); a veremszerep
@@ -7649,9 +7817,11 @@ művelet saját fordító-slotjában nincs végigkövetve); az `IR` 7-ese
   KÍVÜL** (egy oszlop, golden-mérés nélkül nem építjük; 337. kör döntése);
 - a `Softlight` `& 0xFE`-je szándékos-e — **LEZÁRVA**: a kód ezt csinálja,
   utánépíteni így kell; a szándék nem kérdés a megvalósításhoz;
-- a `PicnikGrain` hatása a mért eltérésre — **LEZÁRVA mint nem mérhető
-  pixelre**: a mag véletlen (#907); a fejlesztői jegy statisztikai
-  (átlag/szórás) próbát ír elő.
+- a `PicnikGrain` hatása a mért eltérésre — **LEZÁRVA, pixelre mérve**
+  (#3757): a mag NEM véletlen, a leíró `randomSeed = 1`-et ad (a #907 a
+  natív `grain`-t mérte). A Screen/Multiply és a rögzített mag együtt: ΔE
+  alap 3,01 → 0,88, max 12,21 → 1,38; a #3444 statisztikai próbája is
+  teljesül (ld. G).
 
 `0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 
