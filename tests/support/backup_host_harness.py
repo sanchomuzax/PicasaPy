@@ -10,8 +10,11 @@ mintája, #947).
 from __future__ import annotations
 
 from PySide6.QtCore import QDeadlineTimer, QEventLoop, QTimer, QUrl
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickView
+
+import picasapy.app.application as _app_module
 
 #: életben tartja a `view`/`komponens` példányokat — enélkül a GC alól
 #: kicsúszna a QML-fa, még mielőtt a teszt végigfutna
@@ -30,7 +33,21 @@ def epits_ablakot(qml_dir, context_props: dict, width: int = 1024):
     változat `root.setHeight(250)`-nel felülírta a kötést, így a tesztek
     egy nem létező, magasabb panelt néztek — a lelógó gombokat nem látták
     (#3673 átnézése).
+
+    #3696: a `qml_functional/conftest.py` teljes-app kiszolgálója a
+    #901/#3279 óta a PicasaStyle-t és a csomagolt Open Sans betűt állítja
+    be, MIELŐTT a motor létrejön — enélkül a vezérlők (natív stílus) és a
+    feliratok (rendszerbetű) mérete GÉPENKÉNT/PLATFORMONKÉNT más. Ez a
+    kiszolgáló ezt kihagyta, és a Windows-láb natív stílusa/betűje a mért
+    panelnél csonkolt feliratot, a mentés-párbeszéd lábléc-gombjánál pedig
+    a natív stílus nagyobb sormagasságai miatt eltolt kattintási célpontot
+    adott (#3696). A sorrend itt is kötött: a motor létrejötte ELŐTT kell
+    futnia.
     """
+    _app_module.allitsd_be_a_stilust()
+    app = QGuiApplication.instance()
+    if app is not None:
+        _app_module._install_ui_font(app)
     view = QQuickView()
     engine = view.engine()
     engine.addImportPath(str(qml_dir))

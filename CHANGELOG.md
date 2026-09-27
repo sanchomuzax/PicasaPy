@@ -32,6 +32,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **A képtálca sávjában a csillag, a két forgatógomb és a tálca három
   gombja most képpontra egyezik az eredetivel, és a nagyítás-csúszka
   mellől eltűnt a fölösleges „−”/„+” jel (#3602).**
+- **A mentés-panelen a „Mentési készlet” felirat akkor sem csonkul le, ha a
+  program a saját betűtípusa helyett a rendszerét használja (#3696).**
 
 ## [0.8.591] – 2026-09-27
 

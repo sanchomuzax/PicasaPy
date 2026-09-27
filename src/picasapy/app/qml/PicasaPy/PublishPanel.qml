@@ -359,8 +359,14 @@ Item {
         MertFelirat {
             objectName: "publishLabelBackupName"
             x: 148; y: 134; width: 108; height: 16
+            //: #3696: a `MertFelirat` alap `ElideRight`-ja `fontSizeMode:
+            //: Text.Fit`-tel kombinálva a hivatalos magyar szöveget egy
+            //: platform betűkészletén (Windows) csonkolva jelenítette meg,
+            //: holott a kicsinyített szöveg a dobozba férne — a sablon
+            //: minden társa (fentebb) emiatt kapcsolja ki az elidálást
+            elide: Text.ElideNone
             fontSizeMode: Text.Fit
-            minimumPixelSize: 8
+            minimumPixelSize: 7
             text: qsTr("Backup Set")
         }
 
