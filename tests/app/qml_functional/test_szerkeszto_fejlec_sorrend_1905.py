@@ -21,6 +21,30 @@ Egymás mellé tett felvétel ugyanazon a mappán
 ⇒ Az `A`/`AB`/`AA` hármas nálunk a szalag ELÉ került; az eredetiben a
 szalag UTÁN, a sáv jobb szélén áll.
 
+⚠️ #3663 pontosított mérés (`ui-audit-editor.md` 3/b.1, élő 1280×1024-es
+felvétel): a hármas UTÁN két további segédgomb áll (a fókuszváltó és az
+elrendezés-váltó) — a valódi utolsó elem tehát az elrendezés-váltó, nem az
+`AA` szegmens. A lenti `SORREND` ezt a pontosabb mérést követi. A korábbi
+kör tévesen a nézőben akkor még nem létező, letiltott
+`compareButtonA/AB/AA` placeholdereket vonta be a próbába a valódi
+`viewerLayoutOnly1up/Ab/Aa` szegmensek helyett — a #3663 törölte a
+placeholdereket (nincs ilyen sor a referencián), a próba ezért a valódi
+szegmensekre és a két segédgombra tér át.
+
+⚠️⚠️ #3663 MÁSODIK átnézési kör (a fenti javítás után derült ki): „a sáv
+JOBB SZÉLÉN" tévedés volt — a mért abszolút pozíció (ugyanott, 3/b.1: `▶`
+vége 917, szegmens 933–1047, fókuszváltó 1057–1091, elrendezés-váltó
+1096–1130, 1280 px-en) azt mutatja, hogy a teljes navigátor-csoport (Play …
+elrendezés-váltó) a FOTÓTERÜLET vízszintes közepéhez igazodik — a
+filmszalag középpontja esik egybe a fotóterület középpontjával —, NEM a
+sáv jobb szeléhez. Az akkori „jobbszél"-próbát (`test_a_harmas_a_sav_JOBB_
+szelen_all`) ez a kör lecserélte egy ellenpróbára (a csoport NEM simul a
+szélhez); az abszolút pozíció és a fotóterület-közép szerinti igazodás
+pontos, ±8 px tűrésű próbája a
+`test_kettos_nezet_gombsor_helye_3663.py::TestANavigatorCsoportAbszolutHelye`
+osztályban él, öt fotós próbamappával (a filmszalag szélessége a mérthez
+közel essen).
+
 ### 3. A hisztogram-doboz helye — MÉRVE a felvételen
 
 Mindkét ablak bal panelje ugyanott ér véget (a kék infósáv `y = 926`-nál
@@ -120,20 +144,35 @@ def _nyisd_meg(qml_app, qt_app):
     return window
 
 
+def _valts_ket_kepre(window, qt_app):
+    """#3663: a fókuszváltó/elrendezés-váltó CSAK 2-up módban látszik
+    (`visible: viewer.layoutMode !== "1up"`) — a sorrend-teszthez ide kell
+    kapcsolni, különben a Row kihagyja őket az elrendezésből."""
+    nezo = _elem(window, "photoViewer")
+    nezo.setProperty("layoutMode", "ab")
+    qt_app.processEvents()
+
+
 class TestAVezerlokSorrendje:
-    #: balról jobbra, ahogy a felvételen az eredetiben állnak
+    #: balról jobbra, ahogy a felvételen az eredetiben állnak — #3663:
+    #: a valódi `A`/`AB`/`AA` szegmensek és a két segédgomb (a korábbi kör
+    #: letiltott `compareButtonA/AB/AA` placeholderei helyett, ld. a fenti
+    #: figyelmeztetést).
     SORREND = (
         "viewerPlayButton",
         "viewerPrevButton",
         "viewerFilmstrip",
         "viewerNextButton",
-        "compareButtonA",
-        "compareButtonAB",
-        "compareButtonAA",
+        "viewerLayoutOnly1up",
+        "viewerLayoutAb",
+        "viewerLayoutAa",
+        "viewerSwapFocus",
+        "viewerSwapLayout",
     )
 
     def test_a_sorrend_az_eredetit_koveti(self, qml_app, qt_app):
         window = _nyisd_meg(qml_app, qt_app)
+        _valts_ket_kepre(window, qt_app)
         elemek = [(nev, _elem(window, nev)) for nev in self.SORREND]
         hianyzo = [nev for nev, e in elemek if e is None]
         assert not hianyzo, f"nincs meg a fejlécben: {hianyzo}"
@@ -150,22 +189,32 @@ class TestAVezerlokSorrendje:
         """A foga: a hármast a szalag elé visszatéve ez bukik."""
         window = _nyisd_meg(qml_app, qt_app)
         szalag = _elem(window, "viewerFilmstrip")
-        for nev in ("compareButtonA", "compareButtonAB", "compareButtonAA"):
+        for nev in ("viewerLayoutOnly1up", "viewerLayoutAb", "viewerLayoutAa"):
             assert _bal_x(_elem(window, nev)) > _jobb_x(szalag), (
                 f"a(z) {nev} a filmszalag ELÉ került"
             )
 
-    def test_a_harmas_a_sav_JOBB_szelen_all(self, qml_app, qt_app):
-        """Nem elég a szalag után lennie: az eredetiben a sáv jobb szélén
-        áll, nem közvetlenül a szalag mellett."""
+    def test_a_harmas_UTAN_ket_segedgomb_all_es_NEM_a_sav_szelen(
+        self, qml_app, qt_app
+    ):
+        """#3663 MÁSODIK átnézési kör: a korábbi próba tévesen a sáv jobb
+        SZÉLÉHEZ simulást várta el — a mért abszolút pozíció szerint a
+        csoport a FOTÓTERÜLET közepéhez igazodik, tehát jelentős rés marad
+        a sáv jobb széléig (a pontos, ±8 px tűrésű abszolút próba:
+        `test_kettos_nezet_gombsor_helye_3663.py::
+        TestANavigatorCsoportAbszolutHelye`). Ez az ellenpróba csak azt
+        védi, hogy a sorrend (hármas → fókuszváltó → elrendezés-váltó)
+        megmaradjon, és a csoport NE csússzon vissza a szélre."""
         window = _nyisd_meg(qml_app, qt_app)
+        _valts_ket_kepre(window, qt_app)
         sav = _elem(window, "viewerTopBar")
         assert sav is not None, "nincs objectName-je a felső sávnak"
-        utolso = _elem(window, "compareButtonAA")
+        utolso = _elem(window, "viewerSwapLayout")
         hezag = _jobb_x(sav) - _jobb_x(utolso)
-        assert 0 <= hezag <= 16, (
-            f"az `AA` gomb {hezag:.0f} px-re áll a sáv jobb szélétől — "
-            "az eredetiben a szélhez simul"
+        assert hezag > 50, (
+            f"az elrendezés-váltó csak {hezag:.0f} px-re áll a sáv jobb "
+            "szélétől — úgy tűnik, a csoport megint a szélre tolódott, "
+            "nem a fotóterület közepére igazodik"
         )
 
 

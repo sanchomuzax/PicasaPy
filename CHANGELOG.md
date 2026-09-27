@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A kettős nézet gombjai és „Kijelölve” jelzése az eredeti Picasa szerint
+  (#3663).** Az „A”, „AB” és „AA” gomb a lapozó sáv jobb oldalán, a ▶ után
+  áll, a két segédgombbal együtt, keretes, jól felismerhető ikonnal; a
+  jobb szélen megmaradt, használhatatlan második „A | AB | AA” sor eltűnt.
+  A „Kijelölve” jelzés szürke, a kiválasztott kép mellett, a kép fölött
+  áll, és nem kerül a kép mögé; a másik képre kattintva a kijelölés átvált
+  rá.
 ## [0.8.588] – 2026-09-27
 
 ### Javítva

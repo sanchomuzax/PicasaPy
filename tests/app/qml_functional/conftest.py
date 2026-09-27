@@ -437,6 +437,54 @@ def qml_app_szines_belyegkep(qt_app, tmp_path):
     )
 
 
+def _negyzet_kepek(lib) -> None:
+    """#3663: két NÉGYZETES (1:1) próbakép — a `Colab EN 33`–`35`
+    referencia-felvételek is négyzetes (1024×1024) fotókat mutatnak, és a
+    kettős nézet jelvényének mért réseit (`ui-audit-editor.md` 3/b.3) csak
+    ugyanilyen arányú képen lehet visszamérni: egy 320×160-as próbaképnél a
+    `PreserveAspectFit` letterboxolása egészen más helyre tenné a kirajzolt
+    kép szélét, mint amit a referencián mértünk."""
+    make_jpeg(lib / "a.jpg", size=(600, 600))
+    make_jpeg(lib / "b.jpg", size=(600, 600))
+
+
+@pytest.fixture
+def qml_app_negyzet_kepek(qt_app, tmp_path):
+    """Teljes app KÉT NÉGYZETES próbaképpel — a #3663 kettős nézetes
+    jelvény-/gombsor-geometriájának a referenciával összevethető próbájához
+    (`test_kettos_nezet_gombsor_helye_3663.py`)."""
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_negyzet_kepek,
+    )
+
+
+def _ot_negyzet_kep(lib) -> None:
+    """#3663 (átnézés, 2. kör): ÖT négyzetes próbakép EGY mappában — a
+    filmszalag a mappa fotóit mutatja (`Math.min(7, mappaDarab) * 44`), és a
+    referencián mért ~215 px-es szalagszélesség (`ui-audit-editor.md`
+    3/b.1, 670–885) csak akkor reprodukálható, ha a mappában elég kép van
+    (5 × 44 = 220 px, a mérthez ±5 px-en belül). A 2 képes
+    `qml_app_negyzet_kepek` (44×2=88 px) ehhez a próbához túl keskeny
+    szalagot adna, és a navigátor-csoport abszolút helyzete pont a
+    hiányzó szalagszélesség felével tolódna el a referenciától."""
+    for i in range(5):
+        make_jpeg(lib / f"kep{i}.jpg", size=(600, 600))
+
+
+@pytest.fixture
+def qml_app_5_negyzet_kep(qt_app, tmp_path):
+    """Teljes app ÖT négyzetes próbaképpel — a navigátor-csoport (Play …
+    elrendezés-váltó) ABSZOLÚT pozíciójának a referenciával összevethető
+    próbájához (`test_kettos_nezet_gombsor_helye_3663.py`)."""
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_ot_negyzet_kep,
+    )
+
+
 @pytest.fixture
 def qml_app_valodi_belyegkep(qt_app, tmp_path):
     """Teljes app a VALÓDI bélyegkép-szolgáltatóval és próbaképekkel (#1596).

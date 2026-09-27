@@ -172,6 +172,26 @@ _VIEWER_HEADER_ICONS = (
     "viewer-back-arrow.svg",
 )
 
+#: #3663: a kettős nézet két segédgombjának ikonja
+#: (`swap_2up_focus_icon` 21 × 15, `swap_2up_layout_icon` 22 × 17,
+#: `docs/specs/ui-audit-editor.md` 3/b.2) — a jegy „felismerhetetlen"-nek
+#: jelezte a korábbi szövegjeleket (`⇄`, `⬌`/`⬍`).
+_VIEWER_SWAP_ICONS = (
+    "viewer-swap-focus.svg",
+    "viewer-swap-layout.svg",
+)
+
+#: #3663 (átnézési lelet): az `A`/`AB`/`AA` háromállású kapcsoló KERETES
+#: BETŰ ikonjai (`only_1up_icon` 20 × 15, `ab_2up_icon`/`aa_2up_icon`
+#: 27 × 15 — `docs/specs/ui-audit-editor.md` 3/b.2) — a korábbi kör plain
+#: szöveget (`jel: "A"`/`"AB"`/`"AA"`) adott, ami csak AKTÍV/hover
+#: állapotban kapott keretet a `LayoutSegment` saját hátterétől.
+_VIEWER_LAYOUT_TOGGLE_ICONS = (
+    "viewer-layout-a.svg",
+    "viewer-layout-ab.svg",
+    "viewer-layout-aa.svg",
+)
+
 #: #2311: a szerkesztő nagyítás-sávjának két gombja. A MÉRETÜK az
 #: eredetiből mért (`editpanel/fit_icon` 14 × 12, `editpanel/1to1_icon`
 #: 17 × 12), a RAJZ a miénk — a projekt egyetlen kicsomagolt Picasa-képet
@@ -187,6 +207,8 @@ _ALL_ICONS = (
     + _COLLAGE_PANEL_ICONS
     + _COLLAGE_CANVAS_ICONS
     + _VIEWER_HEADER_ICONS
+    + _VIEWER_SWAP_ICONS
+    + _VIEWER_LAYOUT_TOGGLE_ICONS
     + _ZOOM_BAR_ICONS
 )
 
@@ -246,6 +268,17 @@ _SZABAD_ARANYU_IKONOK = _CORNER_BADGES | frozenset({
     "viewer-step-left.svg",
     "viewer-step-right.svg",
     "viewer-back-arrow.svg",
+    # #3663: `swap_2up_layout_icon` mért aránya 22 × 17 (1,29) — se nem
+    # négyzetes, se nem 3:2; a `swap_2up_focus_icon` (21 × 15 = 1,4) épp
+    # beleesik a 3:2-sávba, ezért az NINCS itt.
+    "viewer-swap-layout.svg",
+    # #3663 (átnézési lelet): az `A`/`AB`/`AA` kapcsoló ikonjainak mérete a
+    # `respack.yt` rétegfejléceiből jön (`only_1up_icon` 20 × 15 = 1,33,
+    # `ab_2up_icon`/`aa_2up_icon` 27 × 15 = 1,8) — egyik sem esik a
+    # négyzetes/3:2 sávba, a mérés itt is nyer.
+    "viewer-layout-a.svg",
+    "viewer-layout-ab.svg",
+    "viewer-layout-aa.svg",
 })
 
 

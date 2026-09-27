@@ -30,14 +30,14 @@ _TS = (
     Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
 ).read_text(encoding="utf-8")
 
-#: A jegy kilenc gombja. A három összehasonlító gomb a #434-ig letiltott —
-#: a súgó szövege akkor is KI VAN TÉVE, csak a Qt nem mutatja meg, amíg
-#: `enabled: false` (letiltott gomb nem kap `hovered`-et).
-KILENC_GOMB = (
+#: A jegy eredetileg kilenc gombja. #3663: a három összehasonlító
+#: placeholder (`compareButtonA/AB/AA`, `enabled: false`, a #434 jövőbeli
+#: szerkesztés-összevetéséhez szánva) a nézőből TÖRÖLVE — a referencia
+#: (`Colab EN 33`–`35`) nem mutat ilyen sort a kettős nézet fejlécén, és a
+#: valódi A/AB/AA váltó (`viewerLayoutOnly1up/Ab/Aa`) régóta megvan. A
+#: maradék hat gomb súgó-követelménye VÁLTOZATLAN.
+HAT_GOMB = (
     "viewerPlayButton",
-    "compareButtonA",
-    "compareButtonAB",
-    "compareButtonAA",
     "viewerPrevButton",
     "viewerNextButton",
     "viewerCreateNowButton",
@@ -106,20 +106,20 @@ def _blokk(forras: str, object_name: str) -> str:
     return "\n".join(ki)
 
 
-class TestANezoKilencGombja:
-    @pytest.mark.parametrize("gomb", KILENC_GOMB)
+class TestANezoHatGombja:
+    @pytest.mark.parametrize("gomb", HAT_GOMB)
     def test_van_buboreksugoja(self, gomb):
         blokk = _gomb_blokkja(gomb)
         assert "ToolTip.text:" in blokk, f"{gomb}: nincs buboréksúgója"
 
-    @pytest.mark.parametrize("gomb", KILENC_GOMB)
+    @pytest.mark.parametrize("gomb", HAT_GOMB)
     def test_a_sugo_szovege_NEM_ures(self, gomb):
         blokk = _gomb_blokkja(gomb)
         talalat = re.search(r'ToolTip\.text: qsTr\("([^"]*)"\)', blokk)
         assert talalat, f"{gomb}: a súgó nem `qsTr`-rel fordítható"
         assert talalat.group(1).strip(), f"{gomb}: üres súgószöveg"
 
-    @pytest.mark.parametrize("gomb", KILENC_GOMB)
+    @pytest.mark.parametrize("gomb", HAT_GOMB)
     def test_a_testverek_mintajat_koveti(self, gomb):
         """`hovered` + a KÖZÖS késleltetés — a fájl saját konvenciója.
 
@@ -135,7 +135,7 @@ class TestANezoKilencGombja:
         assert "ToolTip.visible: hovered" in blokk
         assert "ToolTip.delay: Theme.tooltipDelay" in blokk
 
-    @pytest.mark.parametrize("gomb", KILENC_GOMB)
+    @pytest.mark.parametrize("gomb", HAT_GOMB)
     def test_a_sugo_le_van_forditva(self, gomb):
         blokk = _gomb_blokkja(gomb)
         angol = re.search(r'ToolTip\.text: qsTr\("([^"]*)"\)', blokk).group(1)

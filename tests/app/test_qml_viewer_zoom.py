@@ -195,13 +195,10 @@ class TestZoomBarAndPlaceholders:
         panel.setProperty("cropActive", False)
         qt_app.processEvents()
 
-    def test_compare_placeholders_disabled(self, qml_app, qt_app):
-        window, _controller, _lib, _engine = qml_app
-        _open_viewer(window, qt_app)
-        for name in ("compareButtonA", "compareButtonAB", "compareButtonAA"):
-            button = _child(window, name)
-            assert button.property("enabled") is False
-
+    #: #3663: a `compareButtonA/AB/AA` letiltott placeholder-hármas TÖRÖLVE —
+    #: a referencia (`Colab EN 33`–`35`) nem mutat ilyen sort, és a valódi
+    #: A/AB/AA váltó (`viewerLayoutOnly1up/Ab/Aa`) régóta megvan, tehát a
+    #: „letiltva várakozik" placeholder-teszt tárgytalanná vált.
 
 class TestZoomClipping:
     def test_photo_area_clips_zoomed_image(self, qml_app, qt_app):
