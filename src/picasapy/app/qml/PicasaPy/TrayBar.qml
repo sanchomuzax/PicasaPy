@@ -1669,6 +1669,11 @@ Column {
                             //: 0,5 = valódi méret. A köztes leképezést a
                             //: néző `skalaErtekbol()`-ja végzi.
                             width: 127
+                            //: #3709/#3729: a RAJZOLT sáv itt is 3 képponttal
+                            //: beljebb áll mindkét végén, mint a könyvtári
+                            //: `traySizeSlider`-nél — különben a sáv vége a
+                            //: módváltáskor 3 képpontot ugrana
+                            grooveInset: 3
                             anchors.verticalCenter: parent.verticalCenter
                             from: 0; to: 1
                             onMoved: tray.zoomValueRequested(value)
