@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kettős nézetben a finomhangoló (Derítőfény/Fény/Árnyék/Hőmérséklet)
+  élő GPU-előnézete mostantól a fókuszban lévő félre rajzol — eddig bal
+  fókusznál is a jobb (nem kijelölt) képre került volna (#3755).
+
 ## [0.8.608] – 2026-09-27
 
 ### Javítva

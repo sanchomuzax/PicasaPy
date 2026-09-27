@@ -2313,7 +2313,9 @@ Rectangle {
                     readonly property var fokuszKeret:
                         viewer.balFokusz ? photoElotteKeret : photoKeret
 
-                    // GPU élő-előnézet (#22): a `photo` FÖLÖTT, csak akkor
+                    // GPU élő-előnézet (#22): a `fokuszKep` FÖLÖTT (#3755:
+                    // ab/aa módban ez a kijelölt fél, `photoElotte` vagy
+                    // `photo` — l. lent a geometriánál), csak akkor
                     // látható, ha `gpuFinetuneActive && gpuFinetuneEligible`
                     // (ld. a fenti property-k docsztringjét). A két rejtett
                     // `Image` a forrás (a finetune2 ELŐTTI kép) és a
@@ -2321,7 +2323,7 @@ Rectangle {
                     // LUT-on kötelező (egzakt indexelés, ld.
                     // GpuPointFilterPreview.qml). GPU-képtelen
                     // futtatókörnyezetben (`gpuFinetuneEligible` mindig
-                    // false) ez a réteg SOSEM válik láthatóvá — a `photo`
+                    // false) ez a réteg SOSEM válik láthatóvá — a `fokuszKep`
                     // Image alatta változatlanul a rendes CPU-előnézetet
                     // mutatja, semmi nem törhet emiatt CI-ban.
                     Image {
@@ -2359,14 +2361,22 @@ Rectangle {
                         // bejelentett "kiugrást". A helyes geometria a
                         // `cropOverlay`/`facesOverlay` mintáját követi —
                         // `paintedWidth`/`paintedHeight`, középre igazítva.
-                        x: photoKeret.x + photo.x
-                           + (photo.width - photo.paintedWidth) / 2
-                        y: photoKeret.y + photo.y
-                           + (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
-                        rotation: photo.rotation
-                        scale: photo.scale
+                        //: #3755: fixen a `photo`-ra volt kötve — bal
+                        //: fókusznál (`photoArea.fokuszKep === photoElotte`)
+                        //: ezért a jobb, NEM kijelölt félre rajzolt a húzás
+                        //: alatt. A `fokuszKeret`/`fokuszKep` ugyanaz a
+                        //: leképezés, mint a `frameContentArea`/`cropOverlay`
+                        //: párjáé fent.
+                        x: photoArea.fokuszKeret.x + photoArea.fokuszKep.x
+                           + (photoArea.fokuszKep.width
+                              - photoArea.fokuszKep.paintedWidth) / 2
+                        y: photoArea.fokuszKeret.y + photoArea.fokuszKep.y
+                           + (photoArea.fokuszKep.height
+                              - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
+                        rotation: photoArea.fokuszKep.rotation
+                        scale: photoArea.fokuszKep.scale
                         transformOrigin: Item.Center
                         // #402: shader-hibánál (shaderOk=false) némán a
                         // CPU-előnézet marad
