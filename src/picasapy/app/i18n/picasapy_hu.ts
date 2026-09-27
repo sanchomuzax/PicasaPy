@@ -3309,20 +3309,64 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Áthelyezés új mappába…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="75"/>
-        <source>Delete from Disk</source>
-        <translation>Törlés lemezről</translation>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="435"/>
+        <source>Delete Items</source>
+        <extracomment>DeleteMessage::DeleteItemsTitle</extracomment>
+        <translation>Elemek törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="445"/>
+        <source>Delete Image</source>
+        <extracomment>DeleteMessage::DeleteSingleYesButton</extracomment>
+        <translation>Kép törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="447"/>
+        <source>Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)</source>
+        <extracomment>DeleteMessage::DeleteSingle</extracomment>
+        <translation>Biztosan a Kukába szeretné küldeni a kijelölt fájlt? (Így az összes olyan albumból is el fog tűnni, amelyben eddig látható volt.)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="453"/>
+        <source>Delete Items</source>
+        <extracomment>DeleteMessage::DeleteMultipleYesButton</extracomment>
+        <translation>Elemek törlése</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="91"/>
-        <source>%n picture(s) will be moved to the system trash.</source>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="455"/>
+        <source>Are you sure you want to send the %n selected items to the Recycle Bin?
+(They will also be removed from any albums in which they appear)</source>
+        <extracomment>DeleteMessage::DeleteMultiple</extracomment>
         <translation>
-            <numerusform>%n kép a rendszer lomtárába kerül.</numerusform>
+            <numerusform>Biztosan a Kukába szeretné küldeni a(z) %n kijelölt elemet?
+(Így az összes olyan albumból is el fognak tűnni, amelyben eddig láthatók voltak.)</numerusform>
         </translation>
     </message>
     <message>
-        <source>This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?</source>
-        <translation>A fájl nem helyezhető át a Kukába, a program azonnal törölni fogja. Biztosan folytatja a műveletet?</translation>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="464"/>
+        <source>Delete File</source>
+        <extracomment>DeletMessage::NoUndoSingleYesButton</extracomment>
+        <translation>Fájl törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="467"/>
+        <source>Are you sure you want to permanently delete the selected file? (This cannot be undone.)</source>
+        <extracomment>DeleteMessage::NoUndoSingle</extracomment>
+        <translation>Biztosan végleg törli a kijelölt fájlt? (A művelet nem vonható vissza.)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="471"/>
+        <source>Delete Files</source>
+        <extracomment>DeleteMessage::NoUndoMultipleYesButton</extracomment>
+        <translation>Fájlok törlése</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="474"/>
+        <source>Are you sure you want to delete %n selected files? (This cannot be undone.)</source>
+        <extracomment>DeleteMessage::NoUndoMultiple</extracomment>
+        <translation>
+            <numerusform>Biztosan törli a kijelölt %n fájlt? (A művelet nem vonható vissza.)</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="101"/>
@@ -4525,14 +4569,66 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml"/>
-        <source>Remove from People Album</source>
-        <translation>Eltávolítás az Emberek albumból</translation>
+        <source>Remove Items</source>
+        <extracomment>DeleteMessage::RemoveItemsTitle (spec picasa-fen-dialogs.md 3.3.1)</extracomment>
+        <translation>Elemek eltávolítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Remove Image</source>
+        <extracomment>DeleteMessage::RemoveSingleYesButton</extracomment>
+        <translation>Kép eltávolítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Are you sure you want to remove the selected image from the current album?</source>
+        <extracomment>DeleteMessage::RemoveSingle</extracomment>
+        <translation>Biztosan eltávolítja a kijelölt képet a jelenlegi albumból?</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Remove Images</source>
+        <extracomment>DeleteMessage::RemoveMultipleYesButton</extracomment>
+        <translation>Képek eltávolítása</translation>
     </message>
     <message numerus="yes">
         <location filename="../qml/Main.qml"/>
-        <source>The face tag &quot;%1&quot; will be removed from %n selected picture(s).</source>
+        <source>Are you sure you want to remove the %n selected images from the current album?</source>
+        <extracomment>DeleteMessage::RemoveMultiple</extracomment>
         <translation>
-            <numerusform>A(z) „%1” névcímke lekerül %n kijelölt képről.</numerusform>
+            <numerusform>Biztosan eltávolítja a kijelölt %n képet a jelenlegi albumból?</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Remove People</source>
+        <extracomment>DeleteMessage::UnknownPeopleTitle (a fajta=2 ágon, tárolón kívül)</extracomment>
+        <translation>Személyek eltávolítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Remove Person</source>
+        <extracomment>DeleteMessage::RemoveSingleYesButtonPeople</extracomment>
+        <translation>Személy eltávolítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Are you sure you want to remove the selected person from the current album?</source>
+        <extracomment>DeleteMessage::RemoveSinglePeople</extracomment>
+        <translation>Biztosan eltávolítja a kijelölt személyt az aktuális albumból?</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Remove People</source>
+        <extracomment>DeleteMessage::RemoveMultipleYesButtonPeople</extracomment>
+        <translation>Személyek eltávolítása</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qml/Main.qml"/>
+        <source>Are you sure you want to remove the %n selected people from the current album?</source>
+        <extracomment>DeleteMessage::RemoveMultiplePeople</extracomment>
+        <translation>
+            <numerusform>Biztosan eltávolítja a kijelölt %n személyt a jelenlegi albumból?</numerusform>
         </translation>
     </message>
     <message>

@@ -441,6 +441,47 @@ class TestGeneralTabLiveDeleteConfirmSuppression:
         assert fake_confirm_settings.isSuppressed("delete") is True
 
 
+class TestGeneralTabLiveRemoveFromAlbumConfirmSuppression:
+    """#3539: a "Eltávolítás az albumból megerősítés nélkül" checkbox a
+    confirmSettings "removeFromAlbum" döntés-kulcsát olvassa/írja — ugyanaz
+    a kulcs, amit a Main.qml album-eltávolító ConfirmDialog-ja használ."""
+
+    def test_unchecked_by_default(self, dialog):
+        window, *_ = dialog
+        checkbox = _child(window, "optionsSkipRemoveConfirmCheck")
+        assert checkbox.property("checked") is False
+
+    def test_reflects_already_suppressed_state(
+        self, qt_app, fake_controller
+    ):
+        import picasapy.app.application as app_module
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        confirm_settings = FakeConfirmSettings(suppressed={"removeFromAlbum": True})
+        engine = QQmlEngine()
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        engine.rootContext().setContextProperty("controller", fake_controller)
+        engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
+        factory = QQmlComponent(
+            engine,
+            str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
+        )
+        item = factory.create()
+        assert item is not None, factory.errorString()
+        checkbox = _child(item, "optionsSkipRemoveConfirmCheck")
+        assert checkbox.property("checked") is True
+        item.deleteLater()
+        qt_app.processEvents()
+
+    def test_toggling_writes_through_to_confirm_settings(self, dialog, qt_app):
+        window, _fc, fake_confirm_settings, _qt = dialog
+        checkbox = _child(window, "optionsSkipRemoveConfirmCheck")
+        checkbox.setProperty("checked", True)
+        checkbox.toggled.emit()
+        qt_app.processEvents()
+        assert fake_confirm_settings.isSuppressed("removeFromAlbum") is True
+
+
 class TestPlaceholderTabsAreDisabled:
     """A funkció nélküli fülek gyökér-tartalma tiltott — a struktúra a
     FEN-paritás kedvéért él, de nem sugall működést. Egy-egy jellemző
@@ -483,7 +524,9 @@ class TestPlaceholderTabsAreDisabled:
             # bélyegkép-gyorsítótár kézi ürítése ÉLŐ lett
             # (`controller.clearThumbnailCache`), az őre a
             # `test_belyegkep_szint_598.py`.
-            "optionsSkipRemoveConfirmCheck",
+            # #3539: az `optionsSkipRemoveConfirmCheck` KIKERÜLT innen — az
+            # albumból eltávolítás megerősítése ÉLŐ lett, ld.
+            # `TestGeneralTabLiveRemoveFromAlbumConfirmSuppression`.
             "optionsUsageStatsCheck",
         ],
     )
@@ -499,6 +542,10 @@ class TestPlaceholderTabsAreDisabled:
         assert _child(window, "optionsLanguageCombo").property("enabled") is True
         assert (
             _child(window, "optionsSkipDeleteConfirmCheck").property("enabled")
+            is True
+        )
+        assert (
+            _child(window, "optionsSkipRemoveConfirmCheck").property("enabled")
             is True
         )
 
