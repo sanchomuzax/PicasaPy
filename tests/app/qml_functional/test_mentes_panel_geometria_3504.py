@@ -32,6 +32,7 @@ from pathlib import Path
 import picasapy.app
 import pytest
 from PySide6.QtCore import QPointF, QCoreApplication, QMetaObject, QTranslator
+from PySide6.QtQml import QQmlExpression, QQmlProperty
 from PySide6.QtQuick import QQuickItem
 
 from support.backup_host_harness import epits_ablakot
@@ -136,6 +137,26 @@ def _benne(belso, kulso, turesz: float = 0.5) -> bool:
             and bx + bw <= kx + kw + turesz and by + bh <= ky + kh + turesz)
 
 
+def _kozepen_rovidulhet(elem: QQuickItem, engine) -> bool:
+    """Az elem `elide` tulajdonsága `Text.ElideMiddle`, ÉS a betűmérete már
+    elérte a `minimumPixelSize`-t (tehát a `fontSizeMode: Text.HorizontalFit`
+    előbb kicsinyített, és csak ezután, végső esetben rövidít). Az `elide`
+    a `QQuickText::TextElideMode` C++ enum, amit sem `QObject.property`, sem
+    `QQmlProperty.read` nem tud Python-értékre alakítani ("Can't find
+    converter for 'QQuickText::TextElideMode'") — ezért JS-kifejezésként,
+    `QQmlExpression`-nel kérdezzük le."""
+    ctx = engine.contextForObject(elem)
+    kifejezes = QQmlExpression(ctx, elem, "elide === Text.ElideMiddle")
+    elide_kozepen, _ = kifejezes.evaluate()
+    if not elide_kozepen:
+        return False
+    minimum = elem.property("minimumPixelSize")
+    if not minimum:
+        return False
+    betumeret = QQmlProperty(elem, "font.pixelSize").read()
+    return betumeret <= minimum
+
+
 class TestAKiszolgaloNemIrjaFelul:
     def test_a_gazda_a_sajat_magassagan_all(self, gazda):
         view, ablak = gazda
@@ -181,7 +202,8 @@ class TestSemmiNemLogKi:
         assert not kilogok, kilogok
 
     def test_egyetlen_lathato_felirat_sem_csonk(self, gazda):
-        _, ablak = gazda
+        view, ablak = gazda
+        engine = view.engine()
         lista = _elem(ablak, "publishBackupFolderList")
         csonkok = []
         for elem in _bejaras(ablak, vagasnal_megall=False):
@@ -201,7 +223,21 @@ class TestSemmiNemLogKi:
                 continue
             tul_szeles = elem.property("contentWidth") > elem.width() + 1
             tul_magas = elem.property("contentHeight") > elem.height() + 1
-            if elem.property("truncated") or tul_szeles or tul_magas:
+            # #3696: a `publishBackupInfo` a célutat FUTÁSIDŐBEN kapja
+            # (`PublishPanel.qml`, `elide: Text.ElideMiddle`), és
+            # SZÁNDÉKOSAN közepén rövidül, ha még a legkisebb betűméretnél
+            # sem fér el (a Windows-CI mélyen ágyazott ideiglenes útjainál
+            # ez a normális eset — a mappalista sorának fájlnév-elidálásához
+            # hasonlóan, ld. fentebb). A `truncated` zászló ilyenkor NEM
+            # hiba — a doboznál nagyobbra nyúlás viszont igen: azt a
+            # `tul_szeles`/`tul_magas` továbbra is elkapja. A kivétel csak
+            # azokra az elemekre él, amelyek TÉNYLEG `Text.ElideMiddle`-lel
+            # vannak felcímkézve, ÉS már elérték a `minimumPixelSize`-t.
+            kozepen_rovidulhet = _kozepen_rovidulhet(elem, engine)
+            csonk = tul_szeles or tul_magas or (
+                elem.property("truncated") and not kozepen_rovidulhet
+            )
+            if csonk:
                 csonkok.append((elem.property("text"),
                                 elem.property("contentWidth"), elem.width(),
                                 elem.property("contentHeight"),

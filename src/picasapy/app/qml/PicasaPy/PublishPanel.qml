@@ -359,8 +359,14 @@ Item {
         MertFelirat {
             objectName: "publishLabelBackupName"
             x: 148; y: 134; width: 108; height: 16
+            //: #3696: a `MertFelirat` alap `ElideRight`-ja `fontSizeMode:
+            //: Text.Fit`-tel kombinálva a hivatalos magyar szöveget egy
+            //: platform betűkészletén (Windows) csonkolva jelenítette meg,
+            //: holott a kicsinyített szöveg a dobozba férne — a sablon
+            //: minden társa (fentebb) emiatt kapcsolja ki az elidálást
+            elide: Text.ElideNone
             fontSizeMode: Text.Fit
-            minimumPixelSize: 8
+            minimumPixelSize: 7
             text: qsTr("Backup Set")
         }
 
@@ -469,12 +475,14 @@ Item {
                     : 0
             }
         }
-        //: `publish/backup_go` (777,37 – 875,65) — „Lemezre írás". Ugyanaz
-        //: a felirat, mint a CD-üzemmódban (`publishPresentCdGo`).
+        //: `publish/backup_go` (777,37 – 875,65) — a felirat a kiválasztott
+        //: készlet nevétől függ (`docs/specs/biztonsagi-mentes.md` 15.3/1.):
+        //: van kiválasztott készlet (neve nem üres) → „Biztonsági mentés";
+        //: nincs → „Írás".
         PicasaButton {
             objectName: "publishBackupGo"
             x: 777; y: 37; width: 98; height: 28
-            text: qsTr("Burn Disc")
+            text: panel.mentesVanKivalasztva ? qsTr("Backup") : qsTr("Burn")
             enabled: panel.mentesPipaltMappak.length > 0 && !panel.mentesFut
             onClicked: panel.mentesFuttatasKert(
                 panel.mentesValasztottTipus === "cddvd"

@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A mentés-panel indítógombja a kiválasztott készlet szerint „Biztonsági
+  mentés” vagy „Írás”, nem állandóan „Lemezre írás” (#3713).** Mappába
+  mentő készletnél a gomb így nem ígér lemezírást: ha van kiválasztott
+  készlet, „Biztonsági mentés” áll rajta, egyébként „Írás”.
+
 ## [0.8.593] – 2026-09-27
 
 ### Hozzáadva
@@ -32,6 +38,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **A képtálca sávjában a csillag, a két forgatógomb és a tálca három
   gombja most képpontra egyezik az eredetivel, és a nagyítás-csúszka
   mellől eltűnt a fölösleges „−”/„+” jel (#3602).**
+- **A mentés-panelen a „Mentési készlet” felirat akkor sem csonkul le, ha a
+  program a saját betűtípusa helyett a rendszerét használja (#3696).**
 
 ## [0.8.591] – 2026-09-27
 
