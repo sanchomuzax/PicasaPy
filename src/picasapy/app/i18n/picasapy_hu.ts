@@ -4289,7 +4289,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Edit Set...</source>
-        <translation>Készlet módosítása…</translation>
+        <translation>Készlet szerkesztése</translation>
     </message>
     <message>
         <source>Delete Set</source>

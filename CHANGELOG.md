@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A mentés-panel „Készlet módosítása…” gombja a hivatalos „Készlet
+  szerkesztése” feliratot kapja (#3681).**
+
 ## [0.8.594] – 2026-09-27
 
 ### Javítva
