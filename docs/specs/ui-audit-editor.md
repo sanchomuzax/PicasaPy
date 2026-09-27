@@ -2434,6 +2434,18 @@ nálunk a lánc-egyenlőség ugyanazt dönti el, ütközés nélkül.)
 > adatbázisból vagy a `.picasa.ini`-ből jön, a fenti viselkedést nem
 > változtatja — mindkét fél ugyanabból, ugyanazzal az azonosítóval tölt.
 
+#### 4/b.2 ⛔ A `DoNotAskOnEnd2Up` az eredetiben NEM állítható vissza (2026-09-27, 378. kör, #3650)
+
+**Mérés:** a `DoNotAskOnEnd2Up` sztring címének (`0x00c8ed34`) minden előfordulása a teljes fájlban, nyers bájtmintával keresve: **egyetlen** van, a `0x0056ac4f`-en (`push 0xc8ed34`). A kulcsot tehát kizárólag a `0x0056aad0` (az ütközés-párbeszéd) kezeli:
+- **olvassa** a `0x0056ac78`-on (`0x004019b0`);
+- **írja**, mindig `1`-re, a `0x0056af75`–`0x0056af7d`-n (`0x00401900`).
+
+Nullára író vagy törlő út nincs. A regisztrációs adatbázisból törlő importok (`RegDeleteKeyA`, `RegDeleteValueA`, `SHDeleteKeyA`, `SHDeleteValueA`) minden hívója más, megnevezett értéket töröl: ATL-regisztráció, `LoadImageCheck`, statisztika, `CleanExit`, `AppLocalDataPath`, feltöltési és OAuth-értékek. A név pedig máshol nem fordul elő.
+
+⇒ **Az eredetiben a bepipált „Ne kérdezzen újra, mindig használja a kijelölt képet” végleges.** Felületről nem állítható vissza, csak a regisztrációs adatbázis kézi szerkesztésével. A PicasaPy mai viselkedése (az Opciók csak a törlés-kérdést állítja vissza) ebben **egyezik** az eredetivel.
+
+*Bizonyítottsági fok: **megerősített**, kimerítő bájtminta-kereséssel (nem az xref-index negatív találatán).*
+
 #### 4/c ⛔ Amit ez a MI modellünkről mond
 
 A #3013 óta nálunk az „aa" mód bal fele a szerkesztés **ELŐTTI** képet mutatja
