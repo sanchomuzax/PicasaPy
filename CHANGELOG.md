@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.595] – 2026-09-27
+
 ### Javítva
 - **Az alsó sáv jobb fele képpontra egyezik az eredetivel (#3709).** A
   nagyítás-csúszka sávja mindkét végén 3 képponttal beljebb kezdődik, a
