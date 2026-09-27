@@ -19,16 +19,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **A képtálca sávjában a csillag, a két forgatógomb és a tálca három
   gombja most képpontra egyezik az eredetivel, és a nagyítás-csúszka
   mellől eltűnt a fölösleges „−”/„+” jel (#3602).**
-- **A mentés-panel Windowson elhasalt tesztjei: a hosszú célút olvasható
-  marad, a „Mentési készlet” felirat nem csonk, a CD/DVD-típusú készlet
-  Windowson is létrejön (#3696).** A hiba a programot alig érintette: a
-  „Mentési készlet” felirat egyes betűkészleteken csonkult, ezt egy
-  hiányzó beállítás javítja. A tesztek Windowson azért haltak el, mert a
-  mentés-panel saját tesztkiszolgálója — a felület többi tesztjétől
-  eltérően — nem a program stílusával és csomagolt betűjével futott,
-  hanem a futtató rendszer sajátjával; ez más gombméretet és
-  feliratszélességet adott, és a mentés-készlet párbeszédének mentés
-  gombja célt tévesztett.
+- **A mentés-panelen a „Mentési készlet” felirat akkor sem csonkul le, ha a
+  program a saját betűtípusa helyett a rendszerét használja (#3696).**
 
 ## [0.8.591] – 2026-09-27
 

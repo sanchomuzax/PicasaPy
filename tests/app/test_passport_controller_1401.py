@@ -14,6 +14,7 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -173,7 +174,7 @@ class TestArcSzamDontesiFa:
         assert url.isLocalFile()
         cropped_path = url.toLocalFile()
         # a kivágás a MEGADOTT gyorstárba kerül, nem a felhasználói ~/.cache-be
-        assert os.path.dirname(cropped_path) == str(gyorstar)
+        assert Path(cropped_path).parent == gyorstar
         vart = passport_crop_rect(50, 50, 100, 100, 200, 200)
         with Image.open(cropped_path) as kep:
             assert kep.size == (vart.width, vart.height)
