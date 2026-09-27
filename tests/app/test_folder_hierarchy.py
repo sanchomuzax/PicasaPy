@@ -193,6 +193,24 @@ class TestAMentesSzuro:
         assert rows[-1]["path"] == "C:/Kepek/Nyar"
         assert rows[-1]["mentetlen"] is True
 
+    def test_a_cel_eredeti_alakja_a_soron_marad(self):
+        """A fa perjeles, a cél a rendszer alakjában (`C:\\…`) érkezik.
+
+        A sor a fa útját tartja meg, a cél EREDETI alakját pedig külön
+        mezőben adja tovább — a felület ezzel keres a mentetlen mappák
+        között és ezzel pipál, a fa útjával ott nem találna."""
+        root = build_hierarchy([{"path": "C:/Kepek/2024/Nyar", "count": 2}])
+        cel = "C:\\Kepek\\2024\\Nyar"
+
+        rows = szurt_sorok(
+            root, [cel], alak=lambda ut: ut.lower().replace("\\", "/"))
+
+        assert [row["path"] for row in rows] == [
+            ROOT_PATH, "C:", "C:/Kepek", "C:/Kepek/2024", "C:/Kepek/2024/Nyar"]
+        assert rows[-1]["mentetlen"] is True
+        assert rows[-1]["mentesUt"] == cel
+        assert [row["mentesUt"] for row in rows[:-1]] == [""] * 4
+
 
 class TestDegenerateInput:
     def test_an_empty_list_gives_a_lone_root(self):

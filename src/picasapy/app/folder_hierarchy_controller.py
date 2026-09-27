@@ -465,8 +465,11 @@ class FolderHierarchyController(QObject):
     def mentesSorok(self, utak) -> list[dict]:  # noqa: N802 — QML-stílus
         """#3681: a mentés-szűrő sorai — a még el nem mentett mappák az
         őseikkel, a csukott ágakból is. A nyitott/csukott állapothoz nem
-        nyúl: a panel bezárása után a fa ugyanúgy néz ki, mint előtte."""
-        celok = frozenset(_osszehasonlito_alak(str(ut)) for ut in (utak or []))
+        nyúl: a panel bezárása után a fa ugyanúgy néz ki, mint előtte.
+
+        A cél sora `mentesUt`-ként a kapott utat adja vissza változatlanul
+        (Windowson `C:\\…`), a `path` pedig a fa alakja marad."""
+        celok = [str(ut) for ut in (utak or [])]
         return list(szurt_sorok(self._tree(), celok, _osszehasonlito_alak))
 
     # -- kinyitás / összecsukás -----------------------------------------

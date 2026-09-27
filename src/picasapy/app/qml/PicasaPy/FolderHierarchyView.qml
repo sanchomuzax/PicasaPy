@@ -139,13 +139,17 @@ Item {
             height: root.rowHeight
 
             readonly property bool isRoot: row.modelData.kind === "root"
+            //: #3681: a mentetlen mappa útja a MENTÉS-oldal alakjában — a
+            //: `path` a fa alakja (Windowson a köztes szint perjeles), a
+            //: mentetlen mappák listája és a pipák ezzel az úttal élnek
+            readonly property string mentesUt: row.modelData.mentesUt || ""
             readonly property bool isSelected:
                 !row.isRoot && root.selectedPath === row.modelData.path
             //: #3681: szűrő módban csak a mentetlen mappa pipálható — az
             //: ősei és a gyökér nem
             readonly property bool mentesJelolt:
-                root.mentesSzuroAktiv && row.modelData.mentetlen === true
-                && root._mentesTerkep[row.modelData.path] !== undefined
+                root.mentesSzuroAktiv && row.mentesUt !== ""
+                && root._mentesTerkep[row.mentesUt] !== undefined
 
             color: row.isSelected ? Theme.panelSelectionActive
                    : (rowMouse.containsMouse ? Theme.selectionBlue : "transparent")
@@ -163,7 +167,8 @@ Item {
                 anchors.leftMargin: 2
                 topPadding: 0
                 bottomPadding: 0
-                checked: root.mentesPipaltMappak.indexOf(row.modelData.path) >= 0
+                checked: row.mentesUt !== ""
+                         && root.mentesPipaltMappak.indexOf(row.mentesUt) >= 0
             }
 
             Row {
@@ -284,7 +289,7 @@ Item {
                     //: részfa-összege ott félrevezető volna
                     visible: !root.mentesSzuroAktiv || row.mentesJelolt
                     text: "(" + (row.mentesJelolt
-                        ? root._mentesTerkep[row.modelData.path].darab
+                        ? root._mentesTerkep[row.mentesUt].darab
                         : row.modelData.count) + ")"
                     font.pixelSize: Theme.fontSize
                     color: row.isSelected ? Theme.panelSelectionText
@@ -302,7 +307,7 @@ Item {
                 anchors.right: parent.right
                 anchors.rightMargin: 6
                 elide: Text.ElideRight
-                text: row.mentesJelolt ? root.mentesFajlSor(row.modelData.path) : ""
+                text: row.mentesJelolt ? root.mentesFajlSor(row.mentesUt) : ""
                 font.pixelSize: Theme.fontSize - 1
                 color: row.isSelected ? Theme.panelSelectionText : Theme.folderDate
             }
@@ -324,8 +329,8 @@ Item {
                     if (root.mentesSzuroAktiv) {
                         if (row.mentesJelolt)
                             root.mentesPipaldKert(
-                                row.modelData.path,
-                                root.mentesPipaltMappak.indexOf(row.modelData.path) < 0)
+                                row.mentesUt,
+                                root.mentesPipaltMappak.indexOf(row.mentesUt) < 0)
                         return
                     }
                     if (row.isRoot) { root.toggle(row.modelData.path); return }
