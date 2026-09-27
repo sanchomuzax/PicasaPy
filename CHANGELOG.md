@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.600] – 2026-09-27
+
 ### Javítva
 - A Képek biztonsági mentésekor a bal oldali mappalista (egyszerű és
   fanézetben is) csak a még el nem mentett mappákat mutatja, pipával
