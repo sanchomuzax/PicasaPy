@@ -2974,8 +2974,9 @@ négy hívója van, köztük mindkettő.
 
 ⇒ A lap `RotateImageOperation` szakaszának 2026-08-17-i helyesbítése **a
 `Resize`-ra is érvényes**: a mintavételező a **`ytResampler`**, a mód
-**explicit** — *lépték = 1 → **0-s (doboz)**, egyébként **3-as
-(Mitchell–Netravali, B = C = 0,4)***. **Nem bilineáris.**
+**explicit** — ~~*lépték = 1 → **0-s (doboz)**, egyébként **3-as
+(Mitchell–Netravali, B = C = 0,4)***~~ → helyesen: **kicsinyítéskor és
+1:1-nél 0-s doboz, csak nagyításkor 3-as Mitchell** (ld. 5/c). **Nem bilineáris.**
 
 **A `smoothing` attribútum:** tag `+0x34`, **alapértéke `true`**
 (`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
@@ -3070,6 +3071,96 @@ Mitchell-kicsinyítésünk pixelazonossági golden-mérése.
 kívül · 0 „csak nyitva”. A pixelazonossági golden nem ennek a bináris
 mechanizmus-kérdésnek a nyitva maradt része, hanem külön fejlesztési/mérési
 feladat; a kimeneti eltérés okát ebből a leletből nem állítom.
+### 5/c. ⭐ Kicsinyítéskor DOBOZ, nem Mitchell — és a fixpontos súlyok (2026-09-27, 381. kör, #626)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+*Forrás: `0x00bcb5e0` (`0x00bcb629`–`0x00bcb659`) · `0x00a3f660` (a 0-s ág `0x00a3fb03`, a súlynormálás `0x00a4031f`–`0x00a404a2`) · `0x00a426a0` (az alkalmazó `0x00a4273f`–`0x00a4283a`).*
+
+⛔ **Helyesbítés az 5. ponthoz.** Az 5. pont szerint `smoothing=true` esetén
+„lépték = 1 → 0-s doboz, egyébként 3-as Mitchell”. **Ez így téves.** A wrapper
+a vízszintes léptéket veti össze 1,0-val:
+
+```asm
+0x00bcb629  fld   dword ptr [ebp]        ; m0 = forrás/cél (vízszintes)
+0x00bcb62c  fld1
+0x00bcb62e  fld   st(0)
+0x00bcb630  fdivrp st(2)                 ; 1/m0 = cél/forrás
+0x00bcb634  fstp  dword ptr [esp+0x10]
+0x00bcb63f  fld1
+0x00bcb641  fcomp dword ptr [esp+0x10]   ; 1,0 vs cél/forrás
+0x00bcb647  test  ah, 5
+0x00bcb64a  jp    0xbcb653               ; C0 = 0 → 1,0 ≥ cél/forrás
+0x00bcb64c  mov   ecx, 3                 ; nagyítás → 3-as Mitchell
+0x00bcb653  xor   ecx, ecx               ; kicsinyítés VAGY 1:1 → 0-s doboz
+0x00bcb659  call  0xa3f490               ; ytResampler(ecx = mód)
+```
+
+1. **A mód:** ha a vízszintes cél/forrás lépték **legfeljebb 1** (kicsinyítés
+   vagy 1:1), a **0-s doboz** fut, egyébként a 3-as Mitchell. A döntés
+   **mindkét tengelyre** ugyanaz, és csak a vízszintes lépték dönti el.
+   Ha a mátrixban forgatás vagy nyírás van (`|m1|` vagy `|m3|` > 0,0001,
+   `0x009e6da0`, `[0x00cf3ab8]`), a wrapper a `0x009e6df0` általános utat
+   hívja; a tiszta átméretezésnél ez nem fordul elő.
+2. **A doboz:** sugara 0,5, és a kicsinyítés léptékével nyúlik (5/b). A csap
+   súlya 1, ha `|x| < 0,5`, egyébként 0 (`0x00a3fb12` `fcomp [0xc7dafc]` = 0,5,
+   `jp` → 0). A határon álló csap **nem** számít bele. A csap helye `j + 0,5`,
+   a kimeneti képpont középpontja `c = (i + 0,5) · forrás/cél`, float32-ben.
+3. **Egész súlyok:** `w_int = csonk(w · 16383 / Σw)`
+   (`0x00a4031f` `[this+0x2c]` = 1,0 × `[0x00cf3b70]` = 16383,0;
+   `0x00a4035d` `call 0xc29990` = `cvttsd2si`). A maradékot
+   (`16383 − Σ w_int`) a `csonk(c)` indexű csaphoz adja, a csaptartományba
+   szorítva (`0x00a40462`–`0x00a4049f`).
+4. **Az alkalmazó:** csatornánként `(Σ w_int · p + 255) >> 14`, telítéssel
+   (`0x00a427b0`–`0x00a4283a`: `imul` az int16 súllyal, `add 0xff`, a
+   `0x3fffff` fölötti és negatív összeg vágva, majd `>> 14`). Ez gyakorlatilag
+   **csonkolás**, nem kerekítés. Előbb a vízszintes menet fut, 8 bites
+   köztes képpel, utána a függőleges ugyanezzel a képlettel. *(A skalár út
+   kiolvasva; a SIMD-út (`0x00a428e0`, `0x00a413f0`) számolását nem néztük
+   meg, a mérés 94%-os bitegyezése nem mutat rá eltérést.)*
+
+A 3. és a 4. pont **módfüggetlen**: a nagyításkor futó Mitchell-mag súlyai
+is így lesznek egésszé, és ugyanez az alkalmazó futtatja őket (a Mitchell-mag
+határa kizáró: `|x| ≥ 2` → 0, `0x00a3fcde`).
+
+**Példa:** 960 → 48 képpont (lépték 20). A `c = 20i + 10`, a csapok
+`20i … 20i + 19` (20 darab), mindegyik súlya `csonk(16383/20)` = 819, a
+maradék 3 a `20i + 10`-es csapé (ott 822).
+
+**Mérve** (684-es mérőkészlet, ΔE a Picasa-exporthoz; a kiolvasott
+dobozmodell a mai Mitchell helyén, vízszintes menet elöl, minden más
+változatlan):
+
+| eset | ma (Mitchell) | **fixpontos doboz** |
+|---|---:|---:|
+| `Pixelate` alap (Impact 20) | 4,638 | **0,098** |
+| `Pixelate` min (Impact 2, Add) | 0,783 | **0,128** |
+| `Pixelate` max (Fade 100) | 0,121 | 0,121 |
+
+A 48 × 32-es kicsinyített kép blokkjainak **94,4%-a bitre egyezik** a
+Picasa-export blokkközepeivel (függőleges menet elöl: 93,3%). A terület-átlag
+(`cv2.INTER_AREA`, kerekít) ΔE-je 0,276, az ismételt 2×-es felezésé 4,637. Az
+eredeti tehát **egy lépésben** dobozol, felezés nélkül.
+
+**Érintett leírók** (`filterdesc.xml`): `Pixelate` és `PicnikFocalPixelate`
+(kicsinyítés, `imagewidth/Impact`); `Cinemascope` Letterbox-szal (a szélesség
+nem változik, tehát a lépték 1: a függőleges 0,95-ös zsugorítás is
+**dobozzal** fut). A Cinemascope mérőesete Letterbox nélküli, azon nincs
+átméretezés; a `PicnikFocalPixelate` a `render/focal.py` saját
+`cv2.INTER_AREA`-ját használja, arra a doboz-modellt nem mértem.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`) | teendő |
+|---|---|---|---|
+| módválasztás | vízszintes cél/forrás ≤ 1 → doboz, egyébként Mitchell | tengelyenként: 1:1 → azonosság, egyébként Mitchell | ua. |
+| a doboz | `\|x\| < 0,5`, a léptékkel nyújtva | — | ua. |
+| súlyok | `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé | lebegőpontos | ua. |
+| kimenet | `(Σ w·p + 255) >> 14`, menetenként 8 bit (a Mitchell-nagyításnál is) | `rint`, egyetlen kerekítés a végén | ua. |
+| `PicnikFocalPixelate` | ugyanez a `Resize` | `render/focal.py`: `cv2.INTER_AREA` | a közös `resize_image`-re |
+
+Fejlesztés: #3805.
+
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
 A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző

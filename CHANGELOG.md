@@ -8,9 +8,35 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- Az „Orton-ish” effekt Fényerő-csúszkája most az eredeti Picasa szerinti
+  mértékben tolja el a kép fényerejét — eddig a csúszka szélső állásain
+  túl erős volt a hatás (ΔE 4,4-ről 0,95-re csökkent a mért eltérés) (#3788).
 - A `.picasa.ini`-be írt arcsor (`faces=`) végén nem marad felesleges
   pontosvessző, az eredeti Picasa alakjával egyezően; a korábbi, záró
   pontosvesszős sorainkat továbbra is beolvassuk (#3792).
+- Kettős nézetben a finomhangoló (Derítőfény/Fény/Árnyék/Hőmérséklet)
+  csúszkáinak húzás közbeni élő előnézete a kijelölt képen látszik — eddig
+  bal fókusznál is a jobb képre rajzolt. Nagyított képnél sem lóg át a
+  másik kép szélére (#3755).
+- Az arc mellőzése (a bélyegkép „X”-e és a fejléc *Mellőzés* gombja) a
+  `.picasa.ini`-be is beírja a mellőzést, ahogy az eredeti Picasa: az arc
+  régiójának `faces=` bejegyzése `ffffffffffffffff` személy-mezőt kap, a kép
+  többi arca érintetlen marad. Eddig csak a program saját indexében élt, és más
+  gépre másolt könyvtárban vagy egy friss újraindexelés után elveszett. A
+  *Személyek mellőzése* kérdésben megjelent a „Ne kérdezzen újból, mindig
+  hagyja figyelmen kívül” jelölő (#3670).
+- Az eredeti Picasában mellőzött arcok a „Mellőzött emberek” albumban
+  jelennek meg, és a saját arckeresés sem teszi vissza őket a névtelenek közé
+  (a két program kerete eltér, ezért az egyeztetés átfedés alapú) (#3670).
+- A mellőzés visszavétele csak a mellőzés jelét törli: ha az arc közben nevet
+  kapott, a név megmarad. A kép szélén túllógó arc mellőzése és elnevezése nem
+  akad el hibával (#3670).
+
+## [0.8.610] – 2026-09-27
+
+### Javítva
+- Windowson a biztonsági mentés módban a mappalista megbízhatóan mutatja a
+  még el nem mentett mappákat (#3799).
 
 ## [0.8.609] – 2026-09-27
 
