@@ -283,17 +283,26 @@ def szurt_sorok(root: HierNode, celok, alak=lambda path: path) -> tuple[dict, ..
     `mentetlen` mezővel: igaz, ha a sor maga is cél (a pipa csak ott jár).
 
     `alak`: az útvonalak összehasonlító alakja (a Windows-útvonalak
-    kis-nagybetű-függetlenek) — a `celok` már ebben az alakban érkezik.
+    kis-nagybetű-függetlenek, és a fa perjeles, a cél pedig a rendszer
+    alakjában érkezhet) — a fa útja és a cél is ezen át találkozik.
+
+    A cél EREDETI alakja a `mentesUt` mezőben marad (nem cél sorban üres):
+    a hívó ezzel azonosítja a mappát a saját listájában, mert a sor
+    `path`-je a fa alakja, és a kettő betűre nem feltétlenül egyezik.
     """
-    cel_halmaz = frozenset(celok)
+    cel_terkep = {alak(str(cel)): str(cel) for cel in celok}
     tartalmaz: dict[int, bool] = {}
+
+    def mentes_ut(node: HierNode) -> str:
+        if node.path == ROOT_PATH:
+            return ""
+        return cel_terkep.get(alak(node.path), "")
 
     def van_benne_cel(node: HierNode) -> bool:
         kulcs = id(node)
         if kulcs not in tartalmaz:
-            tartalmaz[kulcs] = (
-                (node.path != ROOT_PATH and alak(node.path) in cel_halmaz)
-                or any(van_benne_cel(child) for child in node.children)
+            tartalmaz[kulcs] = bool(mentes_ut(node)) or any(
+                van_benne_cel(child) for child in node.children
             )
         return tartalmaz[kulcs]
 
@@ -301,6 +310,7 @@ def szurt_sorok(root: HierNode, celok, alak=lambda path: path) -> tuple[dict, ..
 
     def emit(node: HierNode, depth: int, kind: str) -> None:
         gyermekek = [child for child in node.children if van_benne_cel(child)]
+        cel = mentes_ut(node)
         rows.append(
             {
                 "kind": kind,
@@ -311,8 +321,8 @@ def szurt_sorok(root: HierNode, celok, alak=lambda path: path) -> tuple[dict, ..
                 "own": node.own,
                 "hasChildren": bool(gyermekek),
                 "expanded": bool(gyermekek),
-                "mentetlen": node.path != ROOT_PATH
-                and alak(node.path) in cel_halmaz,
+                "mentetlen": bool(cel),
+                "mentesUt": cel,
             }
         )
         for child in gyermekek:
