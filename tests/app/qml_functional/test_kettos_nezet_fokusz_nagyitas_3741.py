@@ -174,6 +174,37 @@ def _ini_szakasz(tmp_path, nev) -> str:
 # -- 1. arc-átfedő ------------------------------------------------------------
 
 
+class TestFrissBelepesLapozasNelkul:
+    """#3773: a friss belépés — lapozás és kattintás NÉLKÜL. A fenti
+    `_ab_modba` csomagoló belépés után lapoz, ami a belépéskori hibát
+    elfedte (a bal fél a helykitöltőt mutatta, amíg valami újra nem
+    töltötte). Itt a bal az A (zöld, 640×400, `currentIndex`), a jobb a B
+    (narancs)."""
+
+    def test_a_bal_fel_a_jelenlegi_kepet_rajzolja_ki(self, ket_kep, qt_app):
+        window, _c, _e = ket_kep
+        nezo = _ab_modba_alap(window, qt_app)
+        assert nezo.property("aktivOldal") == "bal"
+        kep = _kep(window, qt_app)
+        bal, jobb = _felek(window)
+
+        bal_kozep = _szin(kep, (bal["bal"] + bal["jobb"]) / 2,
+                          (bal["fent"] + bal["lent"]) / 2)
+        jobb_kozep = _szin(kep, (jobb["bal"] + jobb["jobb"]) / 2,
+                           (jobb["fent"] + jobb["lent"]) / 2)
+        assert _kozel(bal_kozep, ZOLD), bal_kozep
+        assert _kozel(jobb_kozep, NARANCS), jobb_kozep
+        szel = bal["jobb"] - bal["bal"]
+        mag = bal["lent"] - bal["fent"]
+        assert szel / mag == pytest.approx(640 / 400, abs=0.02), (szel, mag)
+
+    def test_a_szerkeszto_a_bal_kep_aranyat_kapja(self, ket_kep, qt_app):
+        window, _c, _e = ket_kep
+        _ab_modba_alap(window, qt_app)
+        panel = _gyerek(window, "viewerEditorPanel")
+        assert panel.property("imageAspect") == pytest.approx(640 / 400, abs=0.01)
+
+
 class TestAzArcAtfedoAKijeloltKepetMutatja:
     """Bal fókusznál a bal (B) kép arcai látszanak, és az arcszerkesztés a
     B fájl sorába ír — nem a jobb oldali A-éba."""

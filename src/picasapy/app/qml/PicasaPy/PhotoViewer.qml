@@ -368,12 +368,17 @@ Rectangle {
 
     //: #3014: a ténylegesen megjelenített másik kép sora. AB módon kívül
     //: mindig a jelenlegi kép (az „aa" mód ugyanazt mutatja kétszer).
-    readonly property int abMasikSor: viewer.layoutMode !== "ab"
-        ? viewer.currentIndex
-        : (viewer.masodikIndex >= 0
-           ? viewer.masodikIndex
-           : (viewer.hasNext() ? viewer.currentIndex + 1
-                               : Math.max(0, viewer.currentIndex - 1)))
+    //: #3773: a számítás FÜGGVÉNY (`_abMasikSort`), mert a kijelölt és a
+    //: második sort az imperatív kezelők is ebből számolják — a kötött
+    //: property ott még a RÉGI értéket adhatja (#218).
+    readonly property int abMasikSor: viewer._abMasikSort()
+
+    function _abMasikSort() {
+        if (viewer.layoutMode !== "ab") return viewer.currentIndex
+        if (viewer.masodikIndex >= 0) return viewer.masodikIndex
+        return viewer.hasNext() ? viewer.currentIndex + 1
+                                : Math.max(0, viewer.currentIndex - 1)
+    }
 
     readonly property real zoomFactor: viewer.skalaErtekbol(viewer.zoomValue)
     readonly property string zoomMode:
@@ -537,14 +542,14 @@ Rectangle {
     function _kijeloltSort() {
         //: #3773: a BAL fél a `currentIndex`-et mutatja (ld. `aktivSor`)
         return (viewer.layoutMode !== "1up" && viewer.aktivOldal === "jobb")
-            ? viewer.abMasikSor : viewer.currentIndex
+            ? viewer._abMasikSort() : viewer.currentIndex
     }
 
     function _masodikSort() {
         //: #3014: „aa" módban is van második fél — ugyanaz a fotó
         if (viewer.layoutMode === "1up") return -1
         return viewer.aktivOldal === "jobb" ? viewer.currentIndex
-                                            : viewer.abMasikSor
+                                            : viewer._abMasikSort()
     }
 
     function frissitsdAMasodikSzerkesztest() {
@@ -882,7 +887,13 @@ Rectangle {
         }
     }
 
-    onAbMasikSorChanged: viewer.frissitsdAMasodikSzerkesztest()
+    //: #3773: jobb fókusznál a JOBB fél (`abMasikSor`) a kijelölt — ha az
+    //: cserél (lapozás, filmszalag), a fő vezérlő is vele megy.
+    onAbMasikSorChanged: {
+        if (viewer.layoutMode === "ab" && viewer.aktivOldal === "jobb")
+            viewer.beginEditCurrent()
+        viewer.frissitsdAMasodikSzerkesztest()
+    }
     onLayoutModeChanged: {
         viewer.beginEditCurrent()            // #3187: a célpont módot vált
         viewer.frissitsdAMasodikSzerkesztest()
@@ -1055,6 +1066,12 @@ Rectangle {
         if (visible) {
             zoomFit()   // #6: lapozáskor vissza illesztett nézetbe
             beginEditCurrent()
+            //: #3773: jobb fókusznál a BAL fél (`currentIndex`) a második
+            //: rekeszé — rögzített másik képnél (`masodikIndex`) az
+            //: `abMasikSor` nem változik, tehát itt kell utánanyúlni.
+            if (viewer.layoutMode === "ab" && viewer.aktivOldal === "jobb"
+                    && viewer.masodikIndex >= 0)
+                frissitsdAMasodikSzerkesztest()
             // lapozáskor a csúszka az ÚJ kép mentett tilt-értékére áll —
             // suppressPreview miatt ez nem írja felül a preview-t (#131)
             syncTiltSlider()
@@ -1492,8 +1509,10 @@ Rectangle {
                             //: lelke (a `swap_2up_focus` választja ki,
                             //: melyik felet lapozzuk).
                             onTapped: {
+                                //: #3773: a JOBB fél a `masodikIndex`-é,
+                                //: a bal a `currentIndex`-é
                                 if (viewer.layoutMode === "ab"
-                                        && viewer.aktivOldal === "bal") {
+                                        && viewer.aktivOldal === "jobb") {
                                     viewer.masodikIndex = parent.racsSor
                                 } else {
                                     viewer.currentIndex = parent.racsSor

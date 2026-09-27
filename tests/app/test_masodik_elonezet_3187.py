@@ -161,3 +161,71 @@ class TestNincsKikerulesiUt:
             if "image://editpreview/" in sor and "self._photo_id" in sor
         ]
         assert gyanus == [], gyanus
+
+
+# -- #3773: a két rekesz a közös képtárban -----------------------------------
+
+
+@pytest.fixture
+def ket_vezerlo(qt_app):
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
+
+    szolgaltato = EditPreviewProvider()
+    fo = EditController(szolgaltato)
+    masodik = EditController(szolgaltato, slot="masodik")
+    yield szolgaltato, fo, masodik
+    fo.endEdit()
+    masodik.endEdit()
+
+
+@pytest.fixture
+def lru_kepek(tmp_path):
+    return [
+        make_jpeg(tmp_path / f"IMG_{i:04d}.jpg", size=(8, 6)) for i in range(1, 4)
+    ]
+
+
+def _kulcsok(szolgaltato):
+    return set(szolgaltato._images)
+
+
+class TestKetRekeszNemSzoritjaKiEgymast:
+    """A két előnézet-rekesz nem szorítja ki egymás képét (#3773).
+
+    A szolgáltató gyorsítótára két helyes (`_LRU_CAPACITY = 2`), és a kettős
+    nézetben két vezérlő tölti: a fő (`7`) és a második (`8@masodik`). Mérve a
+    #3773-on: „ab" módba lépéskor a második vezérlő előbb a jelenlegi képre
+    nyitott (`7@masodik`), majd a következőre (`8@masodik`) — a régi kulcsa
+    bent maradt, és kiszorította a FŐ vezérlő képét. A bal fél ezután a
+    helykitöltőt kapta.
+
+    A szabály: egy vezérlő egyszerre legfeljebb EGY kulcsot tart a
+    szolgáltató képtárában — másik fotóra nyitva a régi képét elengedi.
+    """
+
+    def test_a_masodik_rekesz_lapozasa_nem_szoritja_ki_a_fo_kepet(
+        self, ket_vezerlo, lru_kepek
+    ):
+        szolgaltato, fo, masodik = ket_vezerlo
+        fo.beginEdit("7", str(lru_kepek[0]))
+        masodik.beginEdit("7", str(lru_kepek[0]))
+        masodik.beginEdit("8", str(lru_kepek[1]))
+        assert _kulcsok(szolgaltato) == {"7", "8@masodik"}
+
+    def test_a_fo_rekesz_lapozasa_nem_szoritja_ki_a_masodik_kepet(
+        self, ket_vezerlo, lru_kepek
+    ):
+        szolgaltato, fo, masodik = ket_vezerlo
+        masodik.beginEdit("8", str(lru_kepek[1]))
+        fo.beginEdit("7", str(lru_kepek[0]))
+        fo.beginEdit("9", str(lru_kepek[2]))
+        assert _kulcsok(szolgaltato) == {"9", "8@masodik"}
+
+    def test_ugyanarra_a_fotora_nyitva_a_kep_bent_marad(
+        self, ket_vezerlo, lru_kepek
+    ):
+        szolgaltato, fo, _masodik = ket_vezerlo
+        fo.beginEdit("7", str(lru_kepek[0]))
+        fo.beginEdit("7", str(lru_kepek[0]))
+        assert _kulcsok(szolgaltato) == {"7"}

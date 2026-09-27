@@ -8,9 +8,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- Kettős nézetben „ab” módba lépéskor a bal oldali kép mutatja a jelenlegi
-  fotót, a jobb a következőt, és belépéskor a bal oldal a kijelölt — eddig
-  ez fordítva volt (#3773).
+- Kettős nézetben (két különböző kép egymás mellett) belépéskor a bal
+  oldalon a jelenlegi kép áll, a jobbon a következő, és a bal van
+  kijelölve — eddig fordítva volt (#3773).
 
 ## [0.8.605] – 2026-09-27
 
