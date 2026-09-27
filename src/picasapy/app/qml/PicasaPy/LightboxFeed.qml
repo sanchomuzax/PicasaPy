@@ -379,11 +379,15 @@ ListView {
     // positionViewAtIndex (index-alapú, pontos).
     property string anchorPath: ""
     property real anchorOffset: 0
+    //: #3751: a csoportok közti térköz (`spacing`) a FELETTE álló csoporthoz
+    //: tartozik — enélkül a térközben álló nézet horgonya a régi (vagy üres)
+    //: maradt, és a visszaállás rossz helyre ugrott. Mérve: DejaVu betűvel
+    //: a csoportok `305+291`, `610+…` helyen álltak, a 600 a résbe esett.
     function captureAnchor() {
         for (var i = 0; i < count; ++i) {
             var it = itemAtIndex(i)
             if (it && contentY >= it.y
-                    && contentY < it.y + it.height) {
+                    && contentY < it.y + it.height + spacing) {
                 anchorPath = model[i] ? model[i].path : ""
                 anchorOffset = contentY - it.y
                 return
@@ -550,18 +554,29 @@ ListView {
     //: (#1335) — rövid mappánál ettől a csoport tetejére ugrana. Itt a
     //: rács tartalma ugyanaz, mint a megnyitás előtt, tehát a teljes
     //: eltolás visszaállítható; a görgethető tartományra a `vagottY` vág.
+    //:
+    //: A vágás előtt a nézet a nyers célra áll: a ListView csak a látótérben
+    //: álló csoportokat példányosítja azonnal, a többi magasságát átlagból
+    //: BECSLI, így a `contentHeight` a visszaállás pillanatában jóval kisebb
+    //: lehet a valódinál. Mérve (DejaVu betűvel, a 48 képes csoport még nem
+    //: élt): `contentHeight` 901 a valódi 2035 helyett, a vágás a 600-as
+    //: célt 439-re tette, és a delegate-ek beérkezése után is ott maradt
+    //: (a CI ubuntu-lábán ugyanígy 428). A célra
+    //: állás a cél körüli csoportokat szinkron példányosítja — utána a
+    //: `vagottY` már a valódi magasságra vág.
     function mentesHelyzetVissza(helyzet) {
         restoring = true
         var idx = -1
         for (var i = 0; i < model.length; ++i)
             if (model[i].path === helyzet.path) { idx = i; break }
+        var cel = helyzet.y
         if (idx >= 0) {
             positionViewAtIndex(idx, ListView.Beginning)
             var it = itemAtIndex(idx)
-            contentY = vagottY(it ? it.y + helyzet.offset : helyzet.y)
-        } else {
-            contentY = vagottY(helyzet.y)
+            if (it) cel = it.y + helyzet.offset
         }
+        contentY = cel
+        contentY = vagottY(cel)
         savedY = contentY
         captureAnchor()
         restoring = false

@@ -23,7 +23,15 @@ import shutil
 import threading
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, Qt
+from PySide6.QtCore import (
+    Q_ARG,
+    Q_RETURN_ARG,
+    QMetaObject,
+    QObject,
+    QPoint,
+    QPointF,
+    Qt,
+)
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
@@ -274,6 +282,117 @@ class TestAGorgetesiHelyzet:
 
         assert grid.property("count") == 3
         assert grid.property("contentY") == pytest.approx(elotte)
+
+
+def _csoport_elem(grid, index: int):
+    """A `index`-edik mappacsoport delegate-je, vagy `None`, ha a ListView
+    még (vagy már) nem példányosította."""
+    return QMetaObject.invokeMethod(
+        grid, "itemAtIndex", Qt.ConnectionType.DirectConnection,
+        Q_RETURN_ARG("QQuickItem*"), Q_ARG("int", index),
+    )
+
+
+def _csoportkoz_y(grid, index: int) -> float:
+    """Az `index`-edik csoport ALATTI térköz (`spacing`) közepe — a viewport
+    teteje itt egyik csoport delegate-jébe sem esik bele."""
+    elem = _csoport_elem(grid, index)
+    assert elem is not None, f"a(z) {index}. csoport nincs példányosítva"
+    koz = float(grid.property("spacing"))
+    assert koz > 1, "a csoportok között nincs térköz — a próba értelmetlen"
+    return elem.y() + elem.height() + koz / 2
+
+
+class TestACsoportkozHorgony:
+    """[MAGAS] a csoportok közti térköz is a görgetési helyzet része.
+
+    A CI ubuntu-lábán (2026-09-27) a görgetési próba 600 helyett 428-ra állt
+    vissza. Helyben a DejaVu betűkészlettel reprodukálva: a csoportok
+    `0+291, 305+291, 610+1425` helyen álltak, tehát a `contentY = 600` a 2. és
+    a 3. csoport közti 14 px-es térközbe esett. A `captureAnchor` ilyenkor
+    egyik csoportot sem találta, a horgony régi (itt üres) maradt, és a
+    mentés bezárása a nyers `y`-ra esett vissza — azt pedig a még becsült
+    `contentHeight`-ra vágta (901 − 462 = 439)."""
+
+    def test_a_csoportkozben_allo_nezet_horgonya_a_felette_allo_csoport(
+        self, app, qt_app
+    ):
+        window, controller, _e, _v, _lib, _cel = app
+        grid = _elem(window, "photoGrid")
+        _varj(qt_app)
+        y = _csoportkoz_y(grid, 0)
+        grid.setProperty("contentY", y)
+        _varj(qt_app, 5)
+        assert grid.property("contentY") == pytest.approx(y)
+        assert grid.property("anchorPath") == controller.feedGroups[0]["path"]
+        assert grid.property("anchorOffset") == pytest.approx(
+            y - _csoport_elem(grid, 0).y())
+
+    def test_csoportkozbol_nyitva_bezaras_utan_ugyanott_all(self, app, qt_app):
+        window, _c, _e, _v, _lib, _cel = app
+        grid = _elem(window, "photoGrid")
+        _varj(qt_app)
+        y = _csoportkoz_y(grid, 1)
+        grid.setProperty("contentY", y)
+        _varj(qt_app, 5)
+        elotte = grid.property("contentY")
+        assert elotte == pytest.approx(y)
+
+        _nyisd_a_mentest(window, qt_app)
+        _varj(qt_app, 5)
+        assert grid.property("count") == 2, "a szűrő nem kapcsolt be"
+        _kattints(window, _panel(window, "publishBackupCancel"), qt_app)
+        _varj(qt_app)
+
+        assert grid.property("count") == 3
+        assert grid.property("contentY") == pytest.approx(elotte)
+
+
+class TestAVisszaallasBecsultMagassagnal:
+    """[MAGAS] a visszaállás nem vághat a még BECSÜLT tartalommagasságra.
+
+    A ListView a nem példányosított csoportok magasságát átlagból becsli; a
+    nagy (48 képes) csoport helyén így a `contentHeight` jóval kisebb a
+    valódinál. Mérve a CI-hiba helyi másán (DejaVu betűvel): a visszaállás
+    pillanatában `contentHeight` 901 (valódi: 2035), a rács magassága 462,
+    tehát a vágás 439-re tette a 600-as célt, és a delegate-ek beérkezése
+    után ott is maradt.
+
+    A helyzet a valódi mentés-nyitásból NEM idézhető elő determinisztikusan
+    (a bezárás és a delegate-ek példányosodása közti verseny), ezért itt a
+    visszaállító függvényt hívjuk, a versenyhelyzetet pedig pontosan
+    beállítjuk: nincs gyorsítótár-sáv, a nagy csoport nincs példányosítva."""
+
+    def test_a_nem_peldanyositott_csoportba_eso_cel_nem_vagodik(
+        self, app, qt_app
+    ):
+        window, controller, _e, _v, _lib, _cel = app
+        window.resize(1280, 700)
+        grid = _elem(window, "photoGrid")
+        grid.setProperty("cacheBuffer", 0)
+        _varj(qt_app)
+        utolso = int(grid.property("count")) - 1
+        # a cél a nagy csoport belsejében (a valódi geometriából)
+        grid.setProperty("contentY", _csoportkoz_y(grid, 0))
+        _varj(qt_app, 3)
+        cel = _csoportkoz_y(grid, utolso - 1) + 200.0
+        grid.setProperty("contentY", cel)
+        _varj(qt_app, 3)
+        assert grid.property("contentY") == pytest.approx(cel)
+
+        grid.setProperty("contentY", 0.0)
+        _varj(qt_app, 3)
+        assert _csoport_elem(grid, utolso) is None, (
+            "a próba előfeltétele: a nagy csoport nincs példányosítva")
+        assert grid.property("contentHeight") - grid.property("height") < cel, (
+            "a próba előfeltétele: a becsült tartalommagasság a cél alá vág")
+
+        QMetaObject.invokeMethod(
+            grid, "mentesHelyzetVissza", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", {"path": "", "offset": 0.0, "y": cel}),
+        )
+        _varj(qt_app, 3)
+        assert grid.property("contentY") == pytest.approx(cel)
 
 
 class TestATajekoztatasARacson:
