@@ -18,7 +18,8 @@ _KITERJESZTESEK = (".md", ".py", ".qml", ".ts", ".json", ".toml", ".yml", ".tsv"
 
 def _kovetett_fajlok() -> list[Path]:
     kimenet = subprocess.run(
-        ["git", "ls-files"], cwd=GYOKER, capture_output=True, text=True, check=True
+        ["git", "ls-files"], cwd=GYOKER, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", check=True,
     ).stdout
     return [
         GYOKER / sor
