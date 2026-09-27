@@ -107,6 +107,9 @@ class BackupController(BackgroundWorkerMixin, QObject):
     #: #3594: (lekérdezés sorszáma, készlet-azonosító, mappa-sorok) — a
     #: `mentetlenMappakLekerese` háttérben számolt eredménye
     mentetlenMappakKeszek = Signal(int, int, "QVariantList")
+    #: #3645: (lekérdezés sorszáma, készlet-azonosító, terv, kért média) — a
+    #: `tervezdHattereben` háttérben számolt eredménye
+    tervKeszult = Signal(int, int, "QVariantMap", str)
 
     def __init__(self, db_path: Path, gyokerek: tuple[str, ...]) -> None:
         super().__init__()
@@ -120,6 +123,10 @@ class BackupController(BackgroundWorkerMixin, QObject):
         #: `RLock`: egy közvetlenül bekötött fogadó a jelzésből újra kérhet.
         self._mappa_keres = 0
         self._mappa_zar = threading.RLock()
+        #: #3645: a legutóbbi terv-lekérdezés sorszáma — ugyanaz a minta,
+        #: mint a mappa-lekérdezésnél, külön számlálóval.
+        self._terv_keres = 0
+        self._terv_zar = threading.RLock()
 
     # -- készletek --------------------------------------------------------
 
@@ -315,17 +322,20 @@ class BackupController(BackgroundWorkerMixin, QObject):
                 return  # közben újabb lekérdezés indult — ez elavult
             self.mentetlenMappakKeszek.emit(keres, keszlet_id, sorok)
 
-    @Slot(int, result="QVariantMap")
-    @Slot(int, "QVariantList", result="QVariantMap")
     def terv(self, keszlet_id: int, mappak=None) -> dict:
         """Mit vinne át a következő futás — ÍRÁS NÉLKÜL.
 
-        #3594: a `mappak` a bepipált mappák; nélküle minden mappa."""
+        #3594: a `mappak` a bepipált mappák; nélküle minden mappa.
+
+        ⚠️ #3645 átnézés [KÖZEPES]: eltűnt készletnél a `hiba` jelzőt is
+        beállítja — a `_terv_hattereben` ezt adja tovább a `tervKeszult`
+        jelzésen, hogy a QML meg tudja különböztetni a valódi „nincs mit
+        menteni" (`darab == 0`) esettől, és NE indítsa el a futtatást."""
         with open_index(self._db_path) as conn:
             keszlet = self._keszlet(conn, keszlet_id)
             if keszlet is None:
                 self.hibatJelez.emit(self.tr("There is no such backup set."))
-                return {"darab": 0, "bajt": 0, "kihagyott": 0}
+                return {"darab": 0, "bajt": 0, "kihagyott": 0, "hiba": True}
             terv = self._tervezd(conn, keszlet, mappak)
         #: #2074: hány lemezre férne — az eredeti is megmutatja
         #: („Est. %d CDs or %d DVDs"). A kapacitás a MÉRT képletből jön
@@ -344,6 +354,56 @@ class BackupController(BackgroundWorkerMixin, QObject):
                 hasznalhato_kapacitas(DVD, szektorszam=_DVD_SZEKTOR),
             ),
         }
+
+    @Slot(int, "QVariantList", str, result=int)
+    def tervezdHattereben(  # noqa: N802 — QML-slot-stílus
+        self, keszlet_id: int, mappak, media: str
+    ) -> int:
+        """A terv kiszámítása HÁTTÉRSZÁLON (#3645).
+
+        A `terv` maga a gyökerek bejárását végzi (fájlonkénti `stat`,
+        fényképezőgép-szűrőnél EXIF-olvasás), ami nagy, NAS-on lévő
+        gyűjteménynél percekig tarthat — a mentés-gomb kattintása ettől
+        fagyott meg a GUI-szálon, a tényleges futás háttérszála (#3009)
+        ellenére. Azonnal visszatér a lekérdezés sorszámával; az eredmény a
+        `tervKeszult` jelzésen érkezik, és csak akkor, ha közben nem
+        indult újabb lekérdezés."""
+        with self._terv_zar:
+            self._terv_keres += 1
+            keres = self._terv_keres
+        self._start_background(
+            self._terv_hattereben,
+            args=(keres, int(keszlet_id), self._mappalista(mappak), str(media)),
+            name="backup-plan",
+        )
+        return keres
+
+    def _terv_hattereben(
+        self, keres: int, keszlet_id: int, mappak, media: str
+    ) -> None:
+        """A terv törzse — háttérszálon fut."""
+        try:
+            eredmeny = self.terv(keszlet_id, mappak)
+        except Exception as hiba:  # noqa: BLE001 — a felület ne várjon örökké
+            # a gomb a válaszra zárja a „Számítás…" állapotot — hiba esetén
+            # is kell válasz, különben a panel beragad
+            #
+            # #3645 átnézés [KÖZEPES]: korábban ide egyszerű `{"darab": 0}`
+            # ment ki, amit a QML a "nincs mit menteni" esettel azonosan
+            # kezelt — hamis "Backup Complete" ÉS a futtatás mégis
+            # elindult volna egy sikertelen terv felett. A `hiba` jelző (és
+            # a hangos `hibatJelez`) különbözteti meg a két esetet.
+            _log.warning("a mentés terve elszállt: %s", hiba)
+            self.hibatJelez.emit(
+                self.tr("The backup plan could not be prepared: %1").replace(
+                    "%1", str(hiba)
+                )
+            )
+            eredmeny = {"darab": 0, "bajt": 0, "kihagyott": 0, "hiba": True}
+        with self._terv_zar:
+            if keres != self._terv_keres:
+                return  # közben újabb lekérdezés indult — ez elavult
+            self.tervKeszult.emit(keres, int(keszlet_id), eredmeny, media)
 
     @staticmethod
     def _mappalista(mappak):
@@ -456,12 +516,26 @@ class BackupController(BackgroundWorkerMixin, QObject):
 
     @Slot()
     def szakitsdMeg(self) -> None:  # noqa: N802
-        """A futó mentés megszakítása (#3009).
+        """A futó mentés megszakítása (#3009), ÉS a folyamatban lévő
+        tervkérés érvénytelenítése (#3645 átnézés [MAGAS]).
 
         A már átmásolt fájlok a nyilvántartásba kerülnek, tehát a következő
         futás pontosan a hiányzókat viszi — a megszakítás nem veszít el
-        munkát, csak elhalasztja."""
+        munkát, csak elhalasztja.
+
+        ⚠️ A TERVEZÉS maga nem néz a `_megszakitas`-ra (csak a másolás
+        `futtasd()`-ciklusa) — enélkül a Stop/Mégse tervezés KÖZBENI
+        kattintása nem állítana meg semmit: a terv elkészülte után a QML
+        `fogadjATervet` úgyis elindítaná a futtatást, és a `futtasdMost`
+        elején a `_megszakitas.clear()` a jelzést is törölné. A
+        `_terv_keres` növelése a `mentetlenMappakLekerese` mintáját
+        követi: a KÉSVE érkező terv-válasz a sorszám-eltérés miatt a
+        `_terv_hattereben`-ben némán elmarad — a `tervKeszult` ilyenkor
+        nem is emitál, tehát a QML soha nem kapja meg és nem indítja el a
+        futtatást."""
         self._megszakitas.set()
+        with self._terv_zar:
+            self._terv_keres += 1
 
     def _futtatas_hattereben(self, keszlet_id: int, mappak=None) -> None:
         """A másolás törzse — háttérszálon fut."""
