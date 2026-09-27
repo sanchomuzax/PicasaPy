@@ -206,6 +206,10 @@ class UnnamedFace:
     #: eredeti kérdésként vetette fel („Anna?"), pipa/x gombbal — a
     #: javaslat nem döntés, az arc állapota `'unnamed'` marad.
     suggested_name: str | None = None
+    #: #3670: az arc állapota (`'unnamed'`/`'named'`/`'ignored'`) — a
+    #: `faces_for_photo` állapottól függetlenül ad vissza, és a mellőzés
+    #: átvétele csak a még névtelen arcot fordíthatja át
+    state: str | None = None
 
 
 def unnamed_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
@@ -239,7 +243,7 @@ def _faces_where(
     kívülről, ÉRTÉKKÉNT (nem szövegbe fűzve)."""
     rows = conn.execute(
         "SELECT f.id, f.photo_id, f.rect_left, f.rect_top, f.rect_right, "
-        "f.rect_bottom, f.group_id, f.suggested_name, "
+        "f.rect_bottom, f.group_id, f.suggested_name, f.state, "
         "fo.path AS folder_path, p.name AS name, "
         "p.width AS width, p.height AS height "
         "FROM face f "
@@ -268,6 +272,7 @@ def _faces_where(
                 group_id=row["group_id"],
                 rect=rect,
                 suggested_name=row["suggested_name"],
+                state=row["state"],
             )
         )
     return tuple(result)

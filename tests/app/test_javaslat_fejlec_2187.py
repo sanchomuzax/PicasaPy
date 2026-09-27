@@ -18,7 +18,7 @@ körének helyesbítése):
 A jóváhagyás tárolója az ADATBÁZIS (a `.picasa.ini`-írás a
 `FRWriteFaceDataINI` mögött van, alapértéke 0); az ELVETÉS az, ami
 közvetlenül ír. Nálunk a meglévő, egy arcra szóló út a mérce:
-`acceptSuggestion` a nevet ténylegesen ráírja, `rejectSuggestion` csak a
+`acceptSuggestion` a nevet ténylegesen ráírja; az elvetés csak a
 javaslatot törli, az arc névtelen marad.
 
 A KIJELÖLT hatókör (`confirmsel`, `removesel`) felületi bekötését a

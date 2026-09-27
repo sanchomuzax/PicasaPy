@@ -33,6 +33,7 @@ from picasapy.ini import (
     update_document,
     with_face,
     with_reassigned_face,
+    without_face,
     without_face_at_rect,
 )
 from picasapy.ini.faces import Face
@@ -124,6 +125,26 @@ class FacesHelper(QObject):
         return self._mutate(
             image_path,
             lambda document, photo_name, rect: without_face_at_rect(document, photo_name, rect),
+            left, top, right, bottom,
+        )
+
+    # Szándékosan NEM `@Slot`: csak a Pythonból hívja a `FaceScanController`
+    # (a `kepesseg_or.py` a QML-ből elérhetetlen slotot szakadásnak veszi).
+    def removeIgnoredFace(
+        self, image_path: str, left: float, top: float, right: float, bottom: float
+    ) -> bool:
+        """A mellőzés jelének (`faces=rect64(…),ffffffffffffffff`) törlése
+        — CSAK a pontos (régió, `ffffffffffffffff`) pár megy (#3670, B3).
+
+        A `removeFace` a keret alapján töröl, a `contact_id`-t nem nézi:
+        ha a mellőzött régióra közben névcímke került, azt vinné el. Itt a
+        névcímkés bejegyzés érintetlen marad (`ini.without_face`). A keret
+        a `.picasa.ini`-ben tárolt, rect64-rácsú érték legyen."""
+        return self._mutate(
+            image_path,
+            lambda document, photo_name, rect: without_face(
+                document, photo_name, Face(rect=rect, contact_id=UNIDENTIFIED_CONTACT)
+            ),
             left, top, right, bottom,
         )
 

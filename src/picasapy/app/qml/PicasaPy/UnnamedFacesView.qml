@@ -35,6 +35,14 @@ ColumnLayout {
     property var groupsModel: []
     property var selectedFaceIds: ({})
     property int selectedCount: 0
+    // #3670: a megerősítésre váró mellőzés arcai — a bélyegkép X-e EGY
+    // arcot kérdez meg (a kijelöléstől függetlenül), a Mellőzés gomb a
+    // kijelölést
+    property var pendingIgnoreIds: []
+    // #3670: a „Ne kérdezzen újból" jelölő döntés-kulcsa a közös
+    // `confirmSettings` tárban (#367). Az eredeti beállításkulcs neve
+    // nincs kimérve; a viselkedés a mért jelölőé.
+    readonly property string ignoreConfirmKey: "ignoreFaces"
     spacing: 8
 
     function reload() {
@@ -61,6 +69,15 @@ ColumnLayout {
     function clearSelection() {
         root.selectedFaceIds = ({})
         root.selectedCount = 0
+    }
+
+    // a kijelölés kulcsai: a saját arc száma, a csak a `.picasa.ini`-ben
+    // mellőzött arc (#3670) `ini:` kezdetű szöveges kulcsa
+    function selectedKeys() {
+        var keys = []
+        for (var key in root.selectedFaceIds)
+            keys.push(/^[0-9]+$/.test(key) ? parseInt(key) : key)
+        return keys
     }
 
     // #3585: a fejléc-utasítás a `0x0074c200` választása szerint — a
@@ -156,7 +173,7 @@ ColumnLayout {
             ToolTip.visible: hovered
             ToolTip.text: qsTr("Ignore all of the selected faces")
             ToolTip.delay: Theme.tooltipDelay
-            onClicked: ignoreConfirm.open()
+            onClicked: root.requestIgnore(root.selectedKeys())
         }
         // #3237: „További javaslatok keresése" — az eredeti `moresug`
         // parancsa (kezelő `0x00602890`). A felismerési küszöböt EGYSZERI
@@ -277,11 +294,42 @@ ColumnLayout {
                         onClicked: root.toggleFace(faceTile.modelData.faceId)
                     }
 
+                    // #3670: a bélyegkép „X"-e a mellőzés — az eredeti
+                    // tájékoztatója: „To ignore a person, click the 'X'
+                    // button on the face thumbnail." Ugyanazt a kérdést és
+                    // ugyanazt a `.picasa.ini`-írást adja, mint a fejléc
+                    // Mellőzés gombja (spec 15.3/b.1).
+                    Rectangle {
+                        objectName: "faceIgnoreX_" + faceTile.modelData.faceId
+                        visible: !root.ignoredMode
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 4
+                        width: 18
+                        height: 18
+                        radius: 9
+                        color: Theme.infoBar
+                        Text {
+                            anchors.centerIn: parent
+                            text: "✕"
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.infoBarText
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -2
+                            onClicked: root.requestIgnore(
+                                [faceTile.modelData.faceId])
+                        }
+                    }
+
                     // #26: név-javaslat — az eredeti KÉRDÉSKÉNT vetette
                     // fel („Anna?", `PeoplePanel::SuggestionFmt` = „%s?"),
-                    // és a felhasználó pipával erősítette meg, x-szel
-                    // vetette el (`PeopleAlbum::ConfirmText`). Sosem
-                    // döntött helyette.
+                    // és a felhasználó pipával erősítette meg
+                    // (`PeopleAlbum::ConfirmText`: „Press checkmark to
+                    // confirm match, press "x" to ignore."). Az „x" a
+                    // csempe sarkában ülő mellőzés (#3670) — a javaslat
+                    // csendes elvetése nem az eredeti művelete.
                     Rectangle {
                         objectName: "suggestionBar_" + faceTile.modelData.faceId
                         visible: (faceTile.modelData.suggestedName || "") !== ""
@@ -298,7 +346,7 @@ ColumnLayout {
                             spacing: 4
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 44
+                                width: parent.width - 22
                                 elide: Text.ElideRight
                                 //: a javasolt név kérdésként — az eredeti
                                 //: formátuma egyszerűen „%s?"
@@ -320,19 +368,6 @@ ColumnLayout {
                                         faceTile.modelData.faceId)
                                 }
                             }
-                            Text {
-                                objectName: "suggestionNo_"
-                                            + faceTile.modelData.faceId
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "✕"
-                                color: Theme.infoBarText
-                                MouseArea {
-                                    anchors.fill: parent
-                                    anchors.margins: -4
-                                    onClicked: root.rejectSuggestion(
-                                        faceTile.modelData.faceId)
-                                }
-                            }
                         }
                     }
                 }
@@ -341,8 +376,8 @@ ColumnLayout {
     }
 
     // Az eredeti megerősítés — szó szerinti szövegekkel
-    // (`DeleteMessage::IgnorePeopleTitle` / `RemoveSingleUnknown` /
-    // `RemoveMultipleUnknown` / `RemoveSingleYesButtonUnknown`).
+    // (`PeoplePanel::ConfirmRemoveTitle` / `ConfirmRemoveMsg` /
+    // `ConfirmRemoveYesButton` / `ConfirmRemoveCheck`, spec 15.3/b.1).
     Dialog {
         id: ignoreConfirm
         objectName: "ignoreFacesDialog"
@@ -351,26 +386,58 @@ ColumnLayout {
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.Yes | Dialog.Cancel
         onOpened: standardButton(Dialog.Yes).text =
-            root.selectedCount > 1 ? qsTr("Ignore People")
-                                   : qsTr("Ignore Person")
-        onAccepted: root.ignoreSelected()
+            root.pendingIgnoreIds.length > 1 ? qsTr("Ignore People")
+                                             : qsTr("Ignore Person")
+        onAccepted: {
+            if (dontAskCheck.checked && typeof confirmSettings !== "undefined"
+                    && confirmSettings)
+                confirmSettings.setSuppressed(root.ignoreConfirmKey, true)
+            root.ignorePending()
+        }
+        onRejected: root.pendingIgnoreIds = []
 
-        Text {
-            objectName: "ignoreFacesMessage"
-            width: 380
-            wrapMode: Text.WordWrap
-            text: root.selectedCount > 1
-                  ? qsTr("Are you sure you want to move the %1 selected "
-                         + "people to the ignored people album?")
-                    .arg(root.selectedCount)
-                  : qsTr("Are you sure you want to move this person to the "
-                         + "ignored people album?")
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
+        ColumnLayout {
+            spacing: 12
+            // Label: a párbeszéd palettáját örökli (a CheckBox is), így
+            // sötét párbeszéd-háttéren sem sötét a szöveg
+            Label {
+                objectName: "ignoreFacesMessage"
+                Layout.preferredWidth: 380
+                wrapMode: Text.WordWrap
+                text: root.pendingIgnoreIds.length > 1
+                      ? qsTr("Are you sure you want to move the %1 selected "
+                             + "people to the ignored people album?")
+                        .arg(root.pendingIgnoreIds.length)
+                      : qsTr("Are you sure you want to move this person to the "
+                             + "ignored people album?")
+                font.pixelSize: Theme.fontSize
+            }
+            CheckBox {
+                id: dontAskCheck
+                objectName: "ignoreFacesDontAskCheck"
+                //: `PeoplePanel::ConfirmRemoveCheck`
+                text: qsTr("Don't ask again, always ignore")
+                font.pixelSize: Theme.fontSize
+            }
         }
     }
 
-    // #26: a javaslat elfogadása/elvetése — külön, hívható függvényben
+    // #3670: a mellőzés belépési pontja (X és Mellőzés gomb) — kérdez,
+    // hacsak a felhasználó korábban be nem pipálta a „Ne kérdezzen
+    // újból"-t
+    function requestIgnore(ids) {
+        if (!root.faceScanController || !ids || ids.length === 0) return
+        root.pendingIgnoreIds = ids
+        if (typeof confirmSettings !== "undefined" && confirmSettings
+                && confirmSettings.isSuppressed(root.ignoreConfirmKey)) {
+            root.ignorePending()
+            return
+        }
+        dontAskCheck.checked = false
+        ignoreConfirm.open()
+    }
+
+    // #26: a javaslat elfogadása — külön, hívható függvényben
     // (tesztelhetőség: a GridView delegate-jei nem érhetők el findChild-dal)
     function acceptSuggestion(faceId) {
         if (!root.faceScanController) return false
@@ -382,17 +449,10 @@ ColumnLayout {
         }
         return ok
     }
-    function rejectSuggestion(faceId) {
-        if (!root.faceScanController) return
-        root.faceScanController.rejectSuggestion(faceId)
-        root.reload()
-    }
-
     // a mellőzés visszavonása — külön, hívható függvényben
     function unignoreSelected() {
         if (!root.faceScanController) return 0
-        var ids = []
-        for (var key in root.selectedFaceIds) ids.push(parseInt(key))
+        var ids = root.selectedKeys()
         if (ids.length === 0) return 0
         var count = root.faceScanController.unignoreFaces(ids)
         root.clearSelection()
@@ -402,10 +462,14 @@ ColumnLayout {
 
     // a tényleges mellőzés — külön, hívható függvényben (tesztelhetőség)
     function ignoreSelected() {
-        if (!root.faceScanController) return 0
-        var ids = []
-        for (var key in root.selectedFaceIds) ids.push(parseInt(key))
-        if (ids.length === 0) return 0
+        root.pendingIgnoreIds = root.selectedKeys()
+        return root.ignorePending()
+    }
+
+    function ignorePending() {
+        var ids = root.pendingIgnoreIds
+        root.pendingIgnoreIds = []
+        if (!root.faceScanController || ids.length === 0) return 0
         var count = root.faceScanController.ignoreFaces(ids)
         root.clearSelection()
         root.reload()

@@ -21,6 +21,7 @@ from .face_groups import (
     javaslatokat_ujraszamol,
     lazitott_lepcso,
 )
+from .ignored_ini_faces import IniIgnoredFace, ignored_ini_faces
 from .faces_detected import (
     PendingEmbeddingFace,
     UnnamedFace,
@@ -167,6 +168,8 @@ __all__ = [
     "delete_faces_in_folder",
     "face_scan_done",
     "faces_for_photo",
+    "IniIgnoredFace",
+    "ignored_ini_faces",
     "forget_face_scan",
     "mark_face_scan",
     "mark_folder_excluded",

@@ -73,10 +73,11 @@ class _StubFaceScanController(QObject):
     """Az `UnnamedFacesView.qml` felülete — `unnamedGroups`/`assignNameToFaces`
     hívást szimulál, valódi index/detektor nélkül."""
 
-    def __init__(self, groups=None, assign_result=True):
+    def __init__(self, groups=None, assign_result=True, ignored=None):
         super().__init__()
         self.calls: list = []
         self._groups = groups if groups is not None else []
+        self._ignored = ignored if ignored is not None else []
         self._assign_result = assign_result
 
     @Slot(bool, bool, result="QVariantList")
@@ -106,7 +107,7 @@ class _StubFaceScanController(QObject):
     @Slot(result="QVariantList")
     def ignoredGroups(self):
         self.calls.append(("ignoredGroups",))
-        return []
+        return self._ignored
 
     @Slot("QVariantList", result=int)
     def unignoreFaces(self, face_ids):
@@ -120,12 +121,15 @@ class _StubFaceScanController(QObject):
     embeddingFailed = Signal(str)
 
 
-def _make_view(qt_app, controller=None):
+def _make_view(qt_app, controller=None, context=None):
     import picasapy.app.application as app_module
 
     engine = QQmlEngine()
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", _StubController())
+    for name, value in (context or {}).items():
+        engine.rootContext().setContextProperty(name, value)
+        _KEEPALIVE.append(value)
     component = QQmlComponent(
         engine,
         QUrl.fromLocalFile(
@@ -252,6 +256,22 @@ class TestIgnorePeople:
 
         assert "ignored people album" in message
 
+    def test_the_message_uses_the_dialog_palette_like_the_checkbox(self, qt_app):
+        """A kérdés szövege a párbeszéd palettájának színével íródik, mint a
+        „Ne kérdezzen újból" jelölő — a téma sötét tintája sötét
+        párbeszéd-háttéren olvashatatlan volt (#3670 képernyőkép).
+        # rontás-kontroll: `Label` helyett `Text { color: Theme.ink }` → piros."""
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        qt_app.processEvents()
+
+        uzenet = view.findChild(QObject, "ignoreFacesMessage")
+        jelolo = view.findChild(QObject, "ignoreFacesDontAskCheck")
+        szoveg_szin = uzenet.property("color")
+        jelolo_szin = jelolo.property("contentItem").property("color")
+
+        assert szoveg_szin.name() == jelolo_szin.name()
+
 
 class TestNameSuggestion:
     """#26: az eredeti KÉRDÉSKÉNT vetette fel a nevet („Anna?"), pipa/x
@@ -271,21 +291,22 @@ class TestNameSuggestion:
 
         assert ("acceptSuggestion", 12) in stub.calls
 
-    def test_rejecting_only_drops_the_suggestion(self, qt_app):
-        """Az elvetés NEM mellőzi az arcot — az külön döntés."""
-        stub = _StubFaceScanController()
+    def test_the_x_on_a_suggested_face_ignores_it(self, qt_app):
+        """#3670: az „x" a mellőzés (`PeopleAlbum::ConfirmText`: „press
+        "x" to ignore"), nem a javaslat csendes elvetése — javaslatos
+        csempén is ugyanaz a kérdés jön, mint a Mellőzés gombnál."""
+        stub = _StubFaceScanController(groups=[{
+            "label": "G",
+            "faces": [{"faceId": 12, "thumbUrl": "", "suggestedName": "Anna"}],
+        }])
         view = _make_view(qt_app, controller=stub)
+        window = _host_in_window(qt_app, view)
 
-        QMetaObject.invokeMethod(
-            view,
-            "rejectSuggestion",
-            Qt.ConnectionType.DirectConnection,
-            Q_ARG("QVariant", 12),
-        )
-        qt_app.processEvents()
+        _click(window, _wait_item(window, "faceIgnoreX_12"), qt_app)
+        _click(window, _dialog_button(window, qt_app, "Ignore Person"), qt_app)
 
-        assert ("rejectSuggestion", 12) in stub.calls
-        assert [c for c in stub.calls if c[0] == "ignoreFaces"] == []
+        assert ("ignoreFaces", [12]) in stub.calls
+        assert [c for c in stub.calls if c[0] == "rejectSuggestion"] == []
 
 
 class TestIgnoredAlbum:
@@ -458,3 +479,225 @@ class TestClusterToggle:
         qt_app.processEvents()
 
         assert _instructions(view) == _TOGGLE_UNGROUPED
+
+
+# -- #3670: a bélyegkép „X"-e → megerősítés → `.picasa.ini` ----------------
+
+
+def _walk_items(item):
+    for child in item.childItems():
+        yield child
+        yield from _walk_items(child)
+
+
+def _wait_item(window, name, predicate=None):
+    """Egy delegate-elem (a GridView-é nem érhető el findChild-dal): a
+    rács aszinkron jön létre, ezért megvárjuk, hogy látsszon."""
+    for _ in range(150):
+        for item in _walk_items(window.contentItem()):
+            if (
+                item.objectName() == name and item.isVisible() and item.width() > 0
+                and (predicate is None or predicate(item))
+            ):
+                return item
+        QTest.qWait(20)
+    raise AssertionError(f"{name} nem látszik")
+
+
+def _dialog_button(window, qt_app, text):
+    """A megerősítő párbeszéd egy gombja, felirat szerint — a Popup az
+    ablak overlay-ében él, a nézet elemfáján kívül."""
+    for _ in range(150):
+        qt_app.processEvents()
+        for item in _walk_items(window.contentItem()):
+            if (
+                item.property("text") == text and item.isVisible()
+                and item.width() > 0 and item.metaObject().indexOfSignal("clicked()") >= 0
+            ):
+                return item
+        QTest.qWait(20)
+    raise AssertionError(f"a(z) {text!r} gomb nem látszik")
+
+
+def _dialog_open(view):
+    return view.findChild(QObject, "ignoreFacesDialog").property("visible") is True
+
+
+class _NoDetector:
+    available = False
+
+    def detect(self, image):
+        return ()
+
+
+def _real_controller(tmp_path):
+    """Valódi `FaceScanController` + `FacesHelper` egy egyarcos képpel —
+    a kattintás végén a `.picasa.ini`-t olvassuk vissza."""
+    from picasapy.app.face_scan_controller import FaceScanController
+    from picasapy.app.faces_helper import FacesHelper
+    from picasapy.faces.detector import FaceDetection, FaceLandmarks
+    from picasapy.index import open_index, replace_faces, sync_tree
+    from support.jpeg_factory import make_jpeg
+
+    lib = tmp_path / "kepek"
+    lib.mkdir()
+    make_jpeg(lib / "a.jpg", size=(100, 100))
+    landmarks = FaceLandmarks(
+        right_eye=(10.0, 20.0), left_eye=(30.0, 20.0), nose=(20.0, 30.0),
+        mouth_right=(15.0, 40.0), mouth_left=(25.0, 40.0),
+    )
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, lib)
+        photo_id = conn.execute("SELECT id FROM photos WHERE name = 'a.jpg'").fetchone()["id"]
+        replace_faces(conn, photo_id, [FaceDetection(
+            left=5.0, top=10.0, right=40.0, bottom=50.0, score=0.9, landmarks=landmarks,
+        )])
+        conn.commit()
+        face_id = conn.execute("SELECT id FROM face").fetchone()["id"]
+    helper = FacesHelper()
+    ctl = FaceScanController(
+        tmp_path / "index.db", detector=_NoDetector(), embedder=_NoDetector(),
+        faces_helper=helper,
+    )
+    _KEEPALIVE.extend([helper, ctl])
+    return ctl, lib, face_id
+
+
+def _confirm_settings(tmp_path):
+    from PySide6.QtCore import QSettings
+
+    from picasapy.app.confirm_settings_bridge import ConfirmSettingsBridge
+
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    return ConfirmSettingsBridge(settings), settings
+
+
+class TestThumbnailX:
+    """#3670 „kész, ha" 2. és 6. pont: a bélyegkép X-e ugyanazt a kérdést
+    adja, és ugyanazt írja a `.picasa.ini`-be, mint a Mellőzés gomb —
+    VALÓDI egérkattintással végigjárva.
+
+    # rontás-kontroll: az X visszakötve a `rejectSuggestion`-re (a régi,
+    # kérdés és ini-írás nélküli elvetés) → a megerősítő párbeszéd nem
+    # nyílik meg, `test_x_asks_then_writes_the_ini_line` bukik."""
+
+    def test_x_asks_then_writes_the_ini_line(self, qt_app, tmp_path):
+        ctl, lib, face_id = _real_controller(tmp_path)
+        view = _make_view(qt_app, controller=ctl)
+        window = _host_in_window(qt_app, view)
+
+        _click(window, _wait_item(window, f"faceIgnoreX_{face_id}"), qt_app)
+
+        assert _dialog_open(view)
+        assert not (lib / ".picasa.ini").exists()
+
+        _click(window, _dialog_button(window, qt_app, "Ignore Person"), qt_app)
+
+        from picasapy.ini import Rect64, encode_rect64
+
+        expected = f"rect64({encode_rect64(Rect64(0.05, 0.10, 0.40, 0.50))}),ffffffffffffffff"
+        text = (lib / ".picasa.ini").read_text(encoding="utf-8")
+        assert "[a.jpg]" in text
+        assert f"faces={expected}" in text
+        assert ctl.unnamedCount == 0
+
+    def test_cancel_writes_nothing(self, qt_app, tmp_path):
+        ctl, lib, face_id = _real_controller(tmp_path)
+        view = _make_view(qt_app, controller=ctl)
+        window = _host_in_window(qt_app, view)
+
+        _click(window, _wait_item(window, f"faceIgnoreX_{face_id}"), qt_app)
+        _click(window, _dialog_button(window, qt_app, "Cancel"), qt_app)
+
+        assert not (lib / ".picasa.ini").exists()
+        assert ctl.unnamedCount == 1
+
+    def test_the_x_is_not_offered_among_ignored_people(self, qt_app):
+        group = [{
+            "label": "G", "faces": [{"faceId": 3, "thumbUrl": "", "suggestedName": ""}],
+        }]
+        view = _make_view(
+            qt_app, controller=_StubFaceScanController(groups=group, ignored=group)
+        )
+        window = _host_in_window(qt_app, view)
+        _wait_item(window, "faceIgnoreX_3")
+
+        view.setProperty("mode", "ignored")
+        _wait_item(window, "faceTile_3")
+
+        assert not any(
+            item.objectName() == "faceIgnoreX_3" and item.isVisible()
+            for item in _walk_items(window.contentItem())
+        )
+
+
+def _two_face_stub():
+    return _StubFaceScanController(groups=[{
+        "label": "G",
+        "faces": [
+            {"faceId": 4, "thumbUrl": "", "suggestedName": ""},
+            {"faceId": 5, "thumbUrl": "", "suggestedName": ""},
+        ],
+    }])
+
+
+class TestDontAskAgain:
+    """#3670 „kész, ha" 3. pont: a *Személyek mellőzése* kérdés „Ne
+    kérdezzen újból, mindig hagyja figyelmen kívül" jelölője
+    (`PeoplePanel::ConfirmRemoveCheck`, spec 15.3/b.1). Bepipálva és
+    jóváhagyva a következő mellőzés kérdés nélkül megy.
+
+    # rontás-kontroll: a jóváhagyásból kivéve a `setSuppressed` hívás →
+    # a második X ismét kérdez, `test_checked_and_confirmed_stops_asking`
+    # bukik."""
+
+    def test_the_checkbox_has_the_official_text(self, qt_app):
+        view = _make_view(qt_app, controller=_StubFaceScanController())
+
+        check = view.findChild(QObject, "ignoreFacesDontAskCheck")
+
+        assert check is not None
+        assert check.property("text") == "Don't ask again, always ignore"
+
+    def test_checked_and_confirmed_stops_asking(self, qt_app, tmp_path):
+        bridge, settings = _confirm_settings(tmp_path)
+        stub = _two_face_stub()
+        view = _make_view(qt_app, controller=stub, context={"confirmSettings": bridge})
+        window = _host_in_window(qt_app, view)
+
+        _click(window, _wait_item(window, "faceIgnoreX_4"), qt_app)
+        _click(window, _dialog_button(window, qt_app, "Don't ask again, always ignore"), qt_app)
+        _click(window, _dialog_button(window, qt_app, "Ignore Person"), qt_app)
+        assert ("ignoreFaces", [4]) in stub.calls
+
+        _click(window, _wait_item(window, "faceIgnoreX_5"), qt_app)
+
+        assert ("ignoreFaces", [5]) in stub.calls
+        assert not _dialog_open(view)
+        assert bridge.isSuppressed("ignoreFaces") is True
+
+    def test_unchecked_keeps_asking(self, qt_app, tmp_path):
+        bridge, _settings = _confirm_settings(tmp_path)
+        stub = _two_face_stub()
+        view = _make_view(qt_app, controller=stub, context={"confirmSettings": bridge})
+        window = _host_in_window(qt_app, view)
+
+        _click(window, _wait_item(window, "faceIgnoreX_4"), qt_app)
+        _click(window, _dialog_button(window, qt_app, "Ignore Person"), qt_app)
+        _click(window, _wait_item(window, "faceIgnoreX_5"), qt_app)
+
+        assert _dialog_open(view)
+        assert [c for c in stub.calls if c[0] == "ignoreFaces"] == [("ignoreFaces", [4])]
+
+    def test_cancel_does_not_remember(self, qt_app, tmp_path):
+        bridge, _settings = _confirm_settings(tmp_path)
+        stub = _two_face_stub()
+        view = _make_view(qt_app, controller=stub, context={"confirmSettings": bridge})
+        window = _host_in_window(qt_app, view)
+
+        _click(window, _wait_item(window, "faceIgnoreX_4"), qt_app)
+        _click(window, _dialog_button(window, qt_app, "Don't ask again, always ignore"), qt_app)
+        _click(window, _dialog_button(window, qt_app, "Cancel"), qt_app)
+
+        assert bridge.isSuppressed("ignoreFaces") is False
+        assert [c for c in stub.calls if c[0] == "ignoreFaces"] == []
