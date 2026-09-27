@@ -122,11 +122,12 @@ class TestAMasodikKep:
 
         assert _gyerek(window, "viewerImageElotte").property("visible") is False
 
-    def test_a_bal_oldal_SAJAT_szerkesztes(self, qml_app, qt_app):
+    def test_a_jobb_oldal_SAJAT_szerkesztes(self, qml_app, qt_app):
         """#3014: a #3013 itt a nyers fájlt (a szerkesztés ELŐTTI képet)
         követelte. A bináris mérése (`ui-audit-editor.md` 4/b.1) szerint az
         „aa" mód két fele két önálló szerkesztés a kép JELENLEGI láncáról —
-        a bal fél tehát a második rekesz előnézete."""
+        a NEM kijelölt fél tehát a második rekesz előnézete. #3773: a bal
+        a kijelölt (alapérték), tehát a jobb kapja a második rekeszt."""
         window, _controller, _engine = qml_app
         _nezot_nyit(window, qt_app)
         QMetaObject.invokeMethod(
@@ -135,9 +136,9 @@ class TestAMasodikKep:
         )
         qt_app.processEvents()
 
-        elotte = _gyerek(window, "viewerImageElotte").property("source").toString()
-        assert elotte.startswith("image://editpreview/"), elotte
-        assert "@masodik" in elotte
+        fo = _gyerek(window, "viewerImage").property("source").toString()
+        assert fo.startswith("image://editpreview/"), fo
+        assert "@masodik" in fo
 
 
 class TestAFokusz:
@@ -150,7 +151,8 @@ class TestAFokusz:
         )
         qt_app.processEvents()
 
-        assert nezo.property("aktivOldal") == "jobb"
+        # #3773: az alapfókusz a bal
+        assert nezo.property("aktivOldal") == "bal"
         assert _gyerek(window, "viewerFocusBadge").property("visible") is True
 
     def test_a_swap_ATVISZI_a_fokuszt(self, qml_app, qt_app):
@@ -168,7 +170,8 @@ class TestAFokusz:
         )
         qt_app.processEvents()
 
-        assert nezo.property("aktivOldal") == "bal"
+        # #3773: az alapfókusz a bal, a swap után a jobb
+        assert nezo.property("aktivOldal") == "jobb"
 
     def test_a_swap_CSAK_2up_modban_latszik(self, qml_app, qt_app):
         window, _controller, _engine = qml_app

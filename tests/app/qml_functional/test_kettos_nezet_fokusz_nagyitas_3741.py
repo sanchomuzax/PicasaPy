@@ -1,20 +1,28 @@
 """#3741: kettős nézetben a FÓKUSZBAN lévő fél viszi a nagyítást, a
 pásztázást, a forgatást, az arc-átfedőt és az eszközök képarányát.
 
-„ab" módban a jobb fél (`viewerImage`) a `currentIndex` fotóját, a bal
-(`viewerImageElotte`) az `abMasikSor`-ét mutatja. Bal fókusznál a KIJELÖLT
-kép a bal — a szerkesztő, az eszközátfedő és minden, ami a képhez tartozik,
-ide kell kerüljön.
+„ab" módban a bal fél (`viewerImageElotte`) a `currentIndex` fotóját, a
+jobb (`viewerImage`) az `abMasikSor`-ét mutatja (#3773). Bal fókusznál a
+KIJELÖLT kép a bal — a szerkesztő, az eszközátfedő és minden, ami a
+képhez tartozik, ide kell kerüljön.
 
 A próbák a KIRAJZOLT képpontokat nézik (`grabWindow`), nem csak a
 geometriát: a tulajdonos szava szerint „a tesztednek látnia kellett volna,
 nem csak kiszámolnia".
 
 A próbaképek szándékosan eltérő arányúak és egyszínűek, egy sarokjellel:
-- `a.jpg` 640×400, zöld — a jobb fél;
-- `b.jpg` 300×500, narancs, a bal FELSŐ sarkában kék jellel — a bal fél.
+- `a.jpg` 640×400, zöld;
+- `b.jpg` 300×500, narancs, a bal FELSŐ sarkában kék jellel.
 A jel helyéből látszik, hogy a forgatás ténylegesen kirajzolódik-e.
-"""
+
+#3773: a próbák a B képet („jelölt", forgatható, arcos próbakép) akarják a
+BAL oldalon látni, a `_ab_modba` helyi csomagolója ezért a belépés után a
+`currentIndex`-et a B sorára állítja (a 2 fotós mappában ettől az
+`abMasikSor` — `hasNext()` hiányában visszafelé lépve — az A sorára esik).
+Ez a bal=B / jobb=A párosítás a `_bal_fokusz`/`_jobb_fokusz` segédekkel
+mindkét fókusz-irányban elérhető — tartalomban változatlan a #3773 előtti
+próbákhoz képest, csak a fókusz eléréséhez szükséges kattintás fordult meg
+(az alapfókusz mostantól a bal)."""
 
 from __future__ import annotations
 
@@ -32,7 +40,7 @@ from tests.app.qml_functional.test_fokuszvaltas_johagyasa_3693 import (
     _nyitva,
 )
 from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import (
-    _ab_modba,
+    _ab_modba as _ab_modba_alap,
     _elem_teglalap,
     _gyerek,
     _kep_teglalap,
@@ -77,10 +85,27 @@ def ket_kep_b_forgatva(qt_app, tmp_path):
 # -- segédek ---------------------------------------------------------------
 
 
+def _ab_modba(window, qt_app, *, meret=(1280, 1024)):
+    """#3773: a bal a `currentIndex`-et mutatja — a `currentIndex`-et a B
+    (jelölt próbakép) sorára állítjuk, hogy a bal=B / jobb=A párosítás a
+    #3773 előtti próbákkal megegyezzen (ld. a modul docstringjét)."""
+    nezo = _ab_modba_alap(window, qt_app, meret=meret)
+    nezo.setProperty("currentIndex", 1)
+    qt_app.processEvents()
+    return nezo
+
+
 def _bal_fokusz(window, qt_app):
+    """#3773: az alapfókusz a bal — nincs szükség váltásra."""
+    nezo = _ab_modba(window, qt_app)
+    assert nezo.property("aktivOldal") == "bal"
+    return nezo
+
+
+def _jobb_fokusz(window, qt_app):
     nezo = _ab_modba(window, qt_app)
     _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
-    assert nezo.property("aktivOldal") == "bal"
+    assert nezo.property("aktivOldal") == "jobb"
     return nezo
 
 
@@ -172,7 +197,7 @@ class TestAzArcAtfedoAKijeloltKepetMutatja:
 
     def test_jobb_fokusznal_az_a_arcai_valtozatlanul(self, ket_kep, qt_app):
         window, _c, _e = ket_kep
-        nezo = _ab_modba(window, qt_app)
+        nezo = _jobb_fokusz(window, qt_app)
         nezo.setProperty("facesVisible", True)
         qt_app.processEvents()
         atfedo = _gyerek(window, "facesOverlay")
@@ -262,7 +287,7 @@ class TestANagyitasAFokuszbanLevoFelen:
 
     def test_jobb_fokusznal_a_jobb_kep_nagyul_a_bal_nem(self, ket_kep, qt_app):
         window, _c, _e = ket_kep
-        nezo = _ab_modba(window, qt_app)
+        nezo = _jobb_fokusz(window, qt_app)
         nezo.setProperty("zoomValue", 0.7)
         qt_app.processEvents()
         assert _gyerek(window, "viewerImage").property("scale") > 1.5
@@ -297,7 +322,7 @@ class TestANagyitasAFokuszbanLevoFelen:
 
     def test_nagyitva_a_jobb_kep_nem_log_at_a_balra(self, ket_kep, qt_app):
         window, _c, _e = ket_kep
-        nezo = _ab_modba(window, qt_app)
+        nezo = _jobb_fokusz(window, qt_app)
         bal_r, _jobb = _felek(window)
         nezo.setProperty("zoomValue", 0.8)
         kep = _kep(window, qt_app)
@@ -338,7 +363,7 @@ class TestAForgatasAFelekenKirajzolva:
         """Jobb fókusz: a bal (B, `rotate(1)`) kép 90°-kal elforgatva — a
         kék sarokjel a bal FELSŐ sarokból a jobb FELSŐ-be kerül."""
         window, _c, _e = ket_kep_b_forgatva
-        _ab_modba(window, qt_app)
+        _jobb_fokusz(window, qt_app)
         kep = _kep(window, qt_app)
         bal_r = _elem_teglalap(_gyerek(window, "viewerImageElotteKeret"))
         elotte = _gyerek(window, "viewerImageElotte")
@@ -390,7 +415,7 @@ class TestAzEszkozokKeparanyaAKijeloltKepe:
 
     def test_jobb_fokusznal_az_a_kep_aranya(self, ket_kep, qt_app):
         window, _c, _e = ket_kep
-        _ab_modba(window, qt_app)
+        _jobb_fokusz(window, qt_app)
         panel = _gyerek(window, "viewerEditorPanel")
         assert panel.property("imageAspect") == pytest.approx(640 / 400, abs=0.01)
 
@@ -407,7 +432,7 @@ class TestAVagokeretKirajzolva:
         if oldal == "bal":
             _bal_fokusz(window, qt_app)
         else:
-            _ab_modba(window, qt_app)
+            _jobb_fokusz(window, qt_app)
         _panel, overlay = _vagas_kattintva(window, qt_app)
         kep = _kep(window, qt_app)
         bal_r, jobb_r = _felek(window)

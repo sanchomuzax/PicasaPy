@@ -98,14 +98,19 @@ class TestAzABMod:
 
         A próba SZÁNDÉKA változatlan: a két fél NE ugyanabból a forrásból
         jöjjön. Ezt most a rekesz-kulcs (`@masodik`) mondja ki.
+
+        #3773: a bal (`viewerImageElotte`) a `currentIndex`-et, a jelenlegi
+        (kijelölt) képet mutatja — azt a FŐ vezérlő rendereli; a jobb
+        (`viewerImage`) a `abMasikSor`-t, a NEM kijelölt „másik" oldalt — azt
+        a második rekesz.
         """
         window, _controller, _engine = qml_app
         _ab_modba(window, qt_app)
 
-        forras = _gyerek(window, "viewerImageElotte").property("source").toString()
+        forras = _gyerek(window, "viewerImage").property("source").toString()
         assert forras.startswith("image://editpreview/"), forras
         assert "@masodik" in forras, forras
-        fo = _gyerek(window, "viewerImage").property("source").toString()
+        fo = _gyerek(window, "viewerImageElotte").property("source").toString()
         assert "@masodik" not in fo
 
     def test_mindket_kep_LATSZIK_AB_modban(self, qml_app, qt_app):
@@ -200,27 +205,31 @@ class TestAzElrendezesValto:
 
 
 class TestAFilmszalag:
-    def test_AB_modban_a_BAL_oldal_kepet_valtja(self, qml_app, qt_app):
+    def test_AB_modban_a_JOBB_oldal_kepet_valtja(self, qml_app, qt_app):
         """A válogató munkafolyamat lelke: a `swap_2up_focus` választja
-        ki, melyik felet lapozzuk."""
+        ki, melyik felet lapozzuk. #3773: a bal a `currentIndex`-et
+        mutatja — a `masodikIndex` (a JOBB oldal) állítása ezért nem
+        mozdíthatja a fő képet."""
         window, _controller, _engine = qml_app
         nezo = _ab_modba(window, qt_app)
         _kattint(window, qt_app, "viewerSwapFocus")
-        assert nezo.property("aktivOldal") == "bal"
+        assert nezo.property("aktivOldal") == "jobb"
 
         elotte = nezo.property("currentIndex")
         nezo.setProperty("masodikIndex", elotte)
         qt_app.processEvents()
 
         assert nezo.property("currentIndex") == elotte, (
-            "a bal oldal lapozása elmozdította a fő képet"
+            "a jobb oldal lapozása elmozdította a fő képet"
         )
         assert nezo.property("abMasikSor") == elotte
 
-    def test_a_JOBB_oldal_a_fo_kepet_valtja(self, qml_app, qt_app):
+    def test_a_BAL_oldal_a_fo_kepet_valtja(self, qml_app, qt_app):
+        """#3773: a bal a `currentIndex`-et mutatja és alapból kijelölt —
+        a `currentIndex` közvetlen állítása ezért a bal oldalt lapozza."""
         window, _controller, _engine = qml_app
         nezo = _ab_modba(window, qt_app)
-        assert nezo.property("aktivOldal") == "jobb"
+        assert nezo.property("aktivOldal") == "bal"
 
         nezo.setProperty("currentIndex", 1)
         qt_app.processEvents()

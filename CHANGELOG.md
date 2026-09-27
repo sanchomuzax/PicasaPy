@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kettős nézetben „ab” módba lépéskor a bal oldali kép mutatja a jelenlegi
+  fotót, a jobb a következőt, és belépéskor a bal oldal a kijelölt — eddig
+  ez fordítva volt (#3773).
+
 ## [0.8.604] – 2026-09-27
 
 ### Javítva

@@ -287,8 +287,11 @@ Rectangle {
     //: kép kétszer, két önálló szerkesztéssel — #3014), `"ab"` (két
     //: különböző kép — a #3014 hozza). Váltani a `modotValt()`-tal kell.
     property string layoutMode: "1up"
-    //: melyik oldal az aktív — a „Kijelölve" jelvény ezt mutatja
-    property string aktivOldal: "jobb"
+    //: melyik oldal az aktív — a „Kijelölve" jelvény ezt mutatja.
+    //: #3773: az eredeti Picasában 2-up módba lépéskor a BAL a kijelölt
+    //: (a bal a `currentIndex`-et, a jelenlegi képet mutatja) — mérve a
+    //: `Colab EN 33` referencia-képen.
+    property string aktivOldal: "bal"
     //: #3014: `swap_2up_layout` — a két kép egymás MELLETT (hamis) vagy
     //: egymás ALATT (igaz). Az ütközés-párbeszéd gombfeliratai is ezen
     //: múlnak („Bal/Jobb" vs. „Fent/Lent"), ld. a spec 4. tábláját.
@@ -309,8 +312,11 @@ Rectangle {
     //: ⚠️ Imperatív kezelőben NE ezt a kötött property-t olvasd, hanem a
     //: `_kijeloltSort()`-ot: a kötés újraértékelése nem garantált, mire az
     //: ugyanarra a jelzésre futó kezelő lefut (#218, mérve a #3187-en).
+    //: #3773: a BAL fél a `currentIndex`-et mutatja, a JOBB a
+    //: `abMasikSor`-t (ld. lent, a `photoElotte`/`photo` forrása) — a
+    //: kijelölt sor ezért `jobb` fókusznál `abMasikSor`.
     readonly property int aktivSor: (viewer.layoutMode !== "1up"
-                                     && viewer.aktivOldal === "bal")
+                                     && viewer.aktivOldal === "jobb")
         ? viewer.abMasikSor : viewer.currentIndex
 
     //: #3741: a kijelölt kép a BAL/FELSŐ félen áll (`photoElotte`). Egy
@@ -531,15 +537,16 @@ Rectangle {
     //: kötések is ezt hívják (a QML a hívás alatt olvasott property-ket
     //: függőségként követi), a kezelők pedig friss értéket kapnak.
     function _kijeloltSort() {
-        return (viewer.layoutMode !== "1up" && viewer.aktivOldal === "bal")
+        //: #3773: a BAL fél a `currentIndex`-et mutatja (ld. `aktivSor`)
+        return (viewer.layoutMode !== "1up" && viewer.aktivOldal === "jobb")
             ? viewer.abMasikSor : viewer.currentIndex
     }
 
     function _masodikSort() {
         //: #3014: „aa" módban is van második fél — ugyanaz a fotó
         if (viewer.layoutMode === "1up") return -1
-        return viewer.aktivOldal === "bal" ? viewer.currentIndex
-                                           : viewer.abMasikSor
+        return viewer.aktivOldal === "jobb" ? viewer.currentIndex
+                                            : viewer.abMasikSor
     }
 
     function frissitsdAMasodikSzerkesztest() {
@@ -2055,7 +2062,7 @@ Rectangle {
                             //: fókusznál övé a nagyítás és a pásztázás.
                             readonly property int iniSteps: viewer.photosModel
                                 ? (viewer.photosModel.revision,
-                                   viewer.photosModel.rotateAt(viewer.abMasikSor))
+                                   viewer.photosModel.rotateAt(viewer.currentIndex))
                                 : 0
                             //: #3756: a képernyőn látszó arány és a jelvény
                             //: helyét fenntartó illesztési doboz.
@@ -2076,30 +2083,31 @@ Rectangle {
                             width: iniSteps % 2 ? doboz.mag : doboz.szel
                             height: iniSteps % 2 ? doboz.szel : doboz.mag
                             rotation: iniSteps * 90
-                            //: #3014/#3187: AB módban itt a MÁSIK kép áll, a
-                            //: SAJÁT előnézet-rekeszén át — tehát a mentett
-                            //: `filters=` láncával, ahogy a rácsban és az egy
-                            //: képes nézetben is látszik (a #3187 előtt itt a
-                            //: nyers fájl jött, és ugyanaz a kép kétféleképp
-                            //: látszott a programban).
-                            //: #3187: ez a fél az `abMasikSor` fotóját mutatja —
-                            //: a fő rekeszből, ha a KIJELÖLT oldal ez, egyébként
-                            //: a másodikból.
+                            //: #3014/#3187: AB módban itt a JELENLEGI kép áll
+                            //: (#3773: a bal a `currentIndex`-et mutatja, ld.
+                            //: `aktivSor`), a SAJÁT előnézet-rekeszén át —
+                            //: tehát a mentett `filters=` láncával, ahogy a
+                            //: rácsban és az egy képes nézetben is látszik (a
+                            //: #3187 előtt itt a nyers fájl jött, és ugyanaz a
+                            //: kép kétféleképp látszott a programban).
+                            //: #3187: ez a fél a `currentIndex` fotóját
+                            //: mutatja — a fő rekeszből, ha a KIJELÖLT oldal
+                            //: ez, egyébként a másodikból.
                             //: #3014: „aa" módban UGYANÍGY — ott a két rekesz
                             //: ugyanannak a fotónak két önálló szerkesztése.
                             source: viewer.isCurrentVideo
                                 ? ""
                                 : (viewer.layoutMode === "1up"
-                                   ? viewer.urlAt(viewer.abMasikSor)
+                                   ? viewer.urlAt(viewer.currentIndex)
                                    : (viewer.aktivOldal === "bal"
                                       ? (viewer.editCtl
                                          && viewer.editCtl.previewSource !== ""
                                          ? viewer.editCtl.previewSource
-                                         : viewer.urlAt(viewer.abMasikSor))
+                                         : viewer.urlAt(viewer.currentIndex))
                                       : (viewer.masodikEditCtl
                                          && viewer.masodikEditCtl.previewSource !== ""
                                          ? viewer.masodikEditCtl.previewSource
-                                         : viewer.urlAt(viewer.abMasikSor))))
+                                         : viewer.urlAt(viewer.currentIndex))))
                             fillMode: Image.PreserveAspectFit
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                             autoTransform: true
@@ -2173,13 +2181,15 @@ Rectangle {
                             // modell-frissítésnél újraértékelődik
                             readonly property int iniSteps: viewer.photosModel
                                 ? (viewer.photosModel.revision,
-                                   viewer.photosModel.rotateAt(viewer.currentIndex))
+                                   viewer.photosModel.rotateAt(viewer.abMasikSor))
                                 : 0
                             // #6: zoom + pásztázás — a skála az illesztett
                             // mérethez képest, az eltolás a pan-állapotból
                             //
-                            //: #3014: 2-up módban a fő kép a MÁSIK felet kapja
-                            //: — a fél helyét és méretét a `photoKeret` adja.
+                            //: #3014/#3773: 2-up módban a fő kép a MÁSIK
+                            //: (a `abMasikSor`) felet kapja — a bal a
+                            //: `currentIndex`-et — a fél helyét és méretét a
+                            //: `photoKeret` adja.
                             //: #3741: a nagyítás és a pásztázás csak akkor
                             //: az övé, ha ez a fókuszban lévő fél.
                             //: #3756: a `photoElotte` párja — a jelvény
@@ -2207,21 +2217,23 @@ Rectangle {
                             // editpreview provider rendereli a képet (?rev=
                             // cache-buster minden módosításnál)
                             // #305: null-őr
-                            //: #3187: ez a fél a `currentIndex` fotóját mutatja.
-                            //: A FŐ vezérlő a KIJELÖLT oldalt szerkeszti, tehát
-                            //: ha a kijelölt a BAL, akkor ide a MÁSODIK rekesz
-                            //: képe jön — a hozzárendelés a fókusszal cserél.
+                            //: #3187/#3773: ez a fél a `abMasikSor` fotóját
+                            //: mutatja. A FŐ vezérlő a KIJELÖLT oldalt
+                            //: szerkeszti, tehát egy képes módban (itt
+                            //: `abMasikSor === currentIndex`) és jobb
+                            //: fókusznál a FŐ vezérlő képe jön — a
+                            //: hozzárendelés a fókusszal cserél.
                             source: viewer.isCurrentVideo ? ""
-                                    : (viewer.layoutMode !== "1up"
-                                       && viewer.aktivOldal === "bal"
-                                       ? (viewer.masodikEditCtl
-                                          && viewer.masodikEditCtl.previewSource !== ""
-                                          ? viewer.masodikEditCtl.previewSource
-                                          : viewer.urlAt(viewer.currentIndex))
-                                       : (viewer.editCtl
+                                    : (viewer.layoutMode === "1up"
+                                       || viewer.aktivOldal === "jobb"
+                                       ? (viewer.editCtl
                                           && viewer.editCtl.previewSource !== ""
                                           ? viewer.editCtl.previewSource
-                                          : viewer.urlAt(viewer.currentIndex)))
+                                          : viewer.urlAt(viewer.abMasikSor))
+                                       : (viewer.masodikEditCtl
+                                          && viewer.masodikEditCtl.previewSource !== ""
+                                          ? viewer.masodikEditCtl.previewSource
+                                          : viewer.urlAt(viewer.abMasikSor)))
                             fillMode: Image.PreserveAspectFit
                             // #53: offscreen (teszt) platformon szinkron betöltés —
                             // itt reprodukálódott a GIL-deadlock (a lapozás

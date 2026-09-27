@@ -113,8 +113,12 @@ def _elrendez(window, qt_app, *, oldal: str, fuggoleges: bool):
     if fuggoleges:
         _klikk(qt_app, window, _gyerek(window, "viewerSwapLayout"))
         assert nezo.property("fuggolegesElrendezes") is True
+    # #3773: az alapfókusz a bal — mindkét oldalt KIFEJEZETTEN kattintással
+    # érjük el, hogy a próba ne az alapértéktől függjön.
     if oldal == "bal":
         _klikk(qt_app, window, _gyerek(window, "viewerImageElotte"))
+    else:
+        _klikk(qt_app, window, _gyerek(window, "viewerImage"))
     assert nezo.property("aktivOldal") == oldal
     for _ in range(10):
         qt_app.processEvents()
@@ -275,22 +279,24 @@ class TestAFeliratsavAKijeloltKepetKoveti:
         return _gyerek(window, "trayInfoText").property("nyersSzoveg")
 
     def test_bal_fokusznal_a_bal_kep_adatai(self, allo_kep, qt_app):
+        """#3773: a bal a `currentIndex`-et (a.jpg, 1/2) mutatja."""
         window = allo_kep[0]
         _elrendez(window, qt_app, oldal="bal", fuggoleges=False)
-        szoveg = self._szoveg(window)
-        assert "b.jpg" in szoveg and "a.jpg" not in szoveg, szoveg
-        assert str(B_EVE) in szoveg, f"nem a kijelölt kép dátuma: {szoveg!r}"
-        assert "300x500 pixels" in szoveg, szoveg
-        assert "(2 / 2)" in szoveg, szoveg
-
-    def test_jobb_fokusznal_a_jobb_kep_adatai(self, allo_kep, qt_app):
-        window = allo_kep[0]
-        _elrendez(window, qt_app, oldal="jobb", fuggoleges=False)
         szoveg = self._szoveg(window)
         assert "a.jpg" in szoveg and "b.jpg" not in szoveg, szoveg
         assert str(B_EVE) not in szoveg, szoveg
         assert "640x400 pixels" in szoveg, szoveg
         assert "(1 / 2)" in szoveg, szoveg
+
+    def test_jobb_fokusznal_a_jobb_kep_adatai(self, allo_kep, qt_app):
+        """#3773: a jobb a `abMasikSor`-t (b.jpg, 2/2) mutatja."""
+        window = allo_kep[0]
+        _elrendez(window, qt_app, oldal="jobb", fuggoleges=False)
+        szoveg = self._szoveg(window)
+        assert "b.jpg" in szoveg and "a.jpg" not in szoveg, szoveg
+        assert str(B_EVE) in szoveg, f"nem a kijelölt kép dátuma: {szoveg!r}"
+        assert "300x500 pixels" in szoveg, szoveg
+        assert "(2 / 2)" in szoveg, szoveg
 
     def test_gombbal_valtott_fokuszt_is_koveti(self, allo_kep, qt_app):
         window = allo_kep[0]
@@ -298,7 +304,7 @@ class TestAFeliratsavAKijeloltKepetKoveti:
         _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         assert nezo.property("aktivOldal") == "bal"
         szoveg = self._szoveg(window)
-        assert "b.jpg" in szoveg and "300x500 pixels" in szoveg, szoveg
+        assert "a.jpg" in szoveg and "640x400 pixels" in szoveg, szoveg
 
 
 class TestACsillagAKijeloltKepreHat:
@@ -306,7 +312,9 @@ class TestACsillagAKijeloltKepreHat:
         window, controller, _engine = allo_kep
         nezo = _elrendez(window, qt_app, oldal="bal", fuggoleges=False)
         bal_sor = nezo.property("aktivSor")
-        jobb_sor = nezo.property("currentIndex")
+        # #3773: a jobb (NEM kijelölt) oldal a `abMasikSor`-t mutatja — a
+        # bal a `currentIndex`-et
+        jobb_sor = nezo.property("abMasikSor")
         assert bal_sor != jobb_sor
         assert not controller.photos.starAt(bal_sor)
 

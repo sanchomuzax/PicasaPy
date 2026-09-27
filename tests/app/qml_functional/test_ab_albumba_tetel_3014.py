@@ -57,12 +57,14 @@ class TestAKijeloltOldal:
 
         assert nezo.property("aktivSor") == nezo.property("currentIndex")
 
-    def test_AB_modban_a_JOBB_oldal_az_alapertelmezes(self, qml_app, qt_app):
+    def test_AB_modban_a_BAL_oldal_az_alapertelmezes(self, qml_app, qt_app):
+        """#3773: belépéskor a bal a kijelölt — a bal a `currentIndex`-et
+        (a jelenlegi képet) mutatja."""
         window, _controller, _engine = qml_app
         nezo = _nezot_nyit(window, qt_app)
         _kattint(window, qt_app, "viewerLayoutAb")
 
-        assert nezo.property("aktivOldal") == "jobb"
+        assert nezo.property("aktivOldal") == "bal"
         assert nezo.property("aktivSor") == nezo.property("currentIndex")
 
     def test_a_fokuszvalto_ATVISZI_a_kijelolt_sort(self, qml_app, qt_app):
@@ -73,7 +75,7 @@ class TestAKijeloltOldal:
         _kattint(window, qt_app, "viewerLayoutAb")
         _kattint(window, qt_app, "viewerSwapFocus")
 
-        assert nezo.property("aktivOldal") == "bal"
+        assert nezo.property("aktivOldal") == "jobb"
         assert nezo.property("aktivSor") == nezo.property("abMasikSor")
         assert nezo.property("aktivSor") != nezo.property("currentIndex")
 

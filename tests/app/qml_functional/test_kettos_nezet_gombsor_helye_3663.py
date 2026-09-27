@@ -342,6 +342,8 @@ class TestAKattintasosFokuszvaltas:
         `swap_2up_focus` gomb tudta."""
         window, _controller, _engine = qml_app
         nezo = _ab_modba(window, qt_app)
+        # #3773: az alapfókusz a bal — a jobbhoz előbb váltani kell
+        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         assert nezo.property("aktivOldal") == "jobb"
 
         bal_kep = _gyerek(window, "viewerImageElotte")
@@ -356,7 +358,7 @@ class TestAKattintasosFokuszvaltas:
     def test_a_JOBB_kepre_kattintva_a_JOBB_lesz_aktiv(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         nezo = _ab_modba(window, qt_app)
-        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
+        # #3773: az alapfókusz már a bal
         assert nezo.property("aktivOldal") == "bal"
 
         jobb_kep = _gyerek(window, "viewerImage")
@@ -387,11 +389,13 @@ class TestAJelvenyHelyeVizszintesen:
     """#3663.1/.3: a jelvény helye a KIRAJZOLT képhez képest, vízszintes
     elrendezésben — négyzetes próbaképpel (ld. modul docstring)."""
 
-    def test_jobb_fokusz_alapertelmezett(self, qml_app_negyzet_kepek, qt_app):
-        """Az `aktivOldal` alapértéke „jobb" — a jelvénynek a JOBB kép bal
+    def test_jobb_fokusz_kepre_kattintva(self, qml_app_negyzet_kepek, qt_app):
+        """#3773: az `aktivOldal` alapértéke „bal" — a jobb fókuszhoz a
+        jobb képre kell kattintani. A jelvénynek ekkor a JOBB kép bal
         széle mellett kell állnia, az osztó felől."""
         window, _controller, _engine = qml_app_negyzet_kepek
         nezo = _ab_modba(window, qt_app)
+        _klikk(qt_app, window, _gyerek(window, "viewerImage"))
         assert nezo.property("aktivOldal") == "jobb"
 
         kep = _kep_teglalap(_gyerek(window, "viewerImage"))
@@ -436,16 +440,18 @@ class TestAJelvenyHelyeVizszintesen:
     def test_swapfocus_gomb_ugyanoda_viszi_mint_a_kattintas(
         self, qml_app_negyzet_kepek, qt_app
     ):
+        """#3773: az alapfókusz a bal — a `swap_2up_focus` gombnak a jobb
+        képre kattintással megegyező helyre kell vinnie a jelvényt."""
         window, _controller, _engine = qml_app_negyzet_kepek
         nezo = _ab_modba(window, qt_app)
-        assert nezo.property("aktivOldal") == "jobb"
-
-        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         assert nezo.property("aktivOldal") == "bal"
 
-        kep = _kep_teglalap(_gyerek(window, "viewerImageElotte"))
+        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
+        assert nezo.property("aktivOldal") == "jobb"
+
+        kep = _kep_teglalap(_gyerek(window, "viewerImage"))
         jelveny = _elem_teglalap(_gyerek(window, "viewerFocusBadge"))
-        res_x = kep["jobb"] - jelveny["jobb"]
+        res_x = jelveny["bal"] - kep["bal"]
         assert abs(res_x - PARHUZAMOS_RES) <= TURES_PARHUZAMOS
 
 
@@ -460,10 +466,12 @@ class TestAJelvenyHelyeFuggolegesen:
         return nezo
 
     def test_also_kep_fokuszalva(self, qml_app_negyzet_kepek, qt_app):
-        """Alapértelmezett `aktivOldal == "jobb"` — az ALSÓ kép a fókusz,
-        a jelvény a bal margóban, az osztó (a felső kép alja) felől."""
+        """#3773: az alapértelmezett `aktivOldal == "bal"` — a jobb (ALSÓ)
+        kép fókuszához előbb váltani kell. A jelvény a bal margóban, az
+        osztó (a felső kép alja) felől."""
         window, _controller, _engine = qml_app_negyzet_kepek
         nezo = self._fuggolegesre_valt(window, qt_app)
+        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         assert nezo.property("aktivOldal") == "jobb"
 
         kep = _kep_teglalap(_gyerek(window, "viewerImage"))

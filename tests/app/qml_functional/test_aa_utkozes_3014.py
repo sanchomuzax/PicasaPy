@@ -116,12 +116,13 @@ def _aa(window, qt_app):
 
 
 def _ket_kulonbozo(window, qt_app, jobb="bw", bal="sepia"):
-    """A jobb (alapból aktív) fél `jobb`-at kap, a bal `bal`-t; a végén a
-    BAL az aktív."""
+    """A bal (#3773 óta alapból aktív) fél `bal`-t kap, a jobb `jobb`-at;
+    a végén — ahogy korábban is — a BAL az aktív."""
     nezo = _aa(window, qt_app)
+    _szerkeszt(nezo, qt_app, bal)
+    _szegmens(window, qt_app, "viewerSwapFocus")
     _szerkeszt(nezo, qt_app, jobb)
     _szegmens(window, qt_app, "viewerSwapFocus")
-    _szerkeszt(nezo, qt_app, bal)
     return nezo
 
 
@@ -138,11 +139,14 @@ class TestABelepes:
         assert nezo.property("editCtl").property("chainValue") == mentett
         assert nezo.property("masodikEditCtl").property("chainValue") == mentett
 
-    def test_a_bal_fel_is_SZERKESZTETT_kepet_mutat(self, qml_app, qt_app):
-        """Nem a nyers fájl — a második rekesz előnézete."""
+    def test_a_jobb_fel_is_SZERKESZTETT_kepet_mutat(self, qml_app, qt_app):
+        """Nem a nyers fájl — a második rekesz előnézete.
+
+        #3773: belépéskor a BAL az aktív (a fő vezérlőé) — a NEM aktív
+        jobb fél kapja a második rekesz előnézetét."""
         window, _controller, _engine = qml_app
         _aa(window, qt_app)
-        forras = _gyerek(window, "viewerImageElotte").property("source").toString()
+        forras = _gyerek(window, "viewerImage").property("source").toString()
         assert forras.startswith("image://editpreview/"), forras
         assert "@masodik" in forras
 
@@ -151,10 +155,11 @@ class TestABelepes:
         nezo = _aa(window, qt_app)
         _szegmens(window, qt_app, "viewerSwapFocus")
         _szerkeszt(nezo, qt_app, "sepia")
-        # a bal az aktív ⇒ az ini-t a fő vezérlő (bal) írja, a jobb memóriás
+        # #3773: a jobb az aktív ⇒ az ini-t a fő vezérlő (jobb) írja, a bal
+        # memóriás
         assert "sepia" in _ini_lanc(nezo)
         _szegmens(window, qt_app, "viewerSwapFocus")
-        # csere után a jobb (érintetlen) lánca áll az ini-ben, a bal memóriás
+        # csere után a bal (érintetlen) lánca áll az ini-ben, a jobb memóriás
         assert "sepia" not in _ini_lanc(nezo)
         assert "sepia" in nezo.property("masodikEditCtl").property("chainValue")
 
