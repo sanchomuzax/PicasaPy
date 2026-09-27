@@ -13,6 +13,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   meg, nem a másikon (#3741).** Emiatt bal fókusznál is működik a jobb
   képre kattintva a fókuszváltás.
 
+## [0.8.598] – 2026-09-27
+
+### Javítva
+- **Az alsó sáv nagyító-csúszkája az eredetihez hasonlóan vastagabb sávot és
+  álló fogantyút kapott, a könyvtárban és a nézőben is (#3729).**
+
 ## [0.8.597] – 2026-09-27
 
 ### Javítva
