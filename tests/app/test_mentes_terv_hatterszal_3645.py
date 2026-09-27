@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import threading
 import time
-from pathlib import Path
 
 import pytest
 
@@ -117,20 +116,100 @@ class TestNemBlokkolja:
         assert kapott == [uj], "az elavult válasz is kiment"
 
 
-class TestAFelulet:
-    """Forrás-szintű állítás: a gomb NEM hívhatja szinkron a `terv`-et."""
+class TestAMegszakitasTervezesKozben:
+    """[MAGAS, #3645 átnézés] a Stop tervezés KÖZBEN a `terv()` maga nem
+    néz a `_megszakitas`-ra, tehát enélkül a terv elkészülte UTÁN is
+    elindulna a futtatás (a `futtasdMost` elején a `_megszakitas.clear()`
+    a jelzést is törölné). A `szakitsdMeg()` ezért a folyamatban lévő
+    tervkérést is érvényteleníti — ugyanaz a sorszám-minta, mint a
+    `mentetlenMappakLekerese`-nél.
 
-    def test_a_gomb_a_hatterszalas_tervet_hivja(self):
-        gazda = (
-            Path(__file__).parents[2]
-            / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "BackupHost.qml"
-        ).read_text(encoding="utf-8")
-        szakasz = gazda[gazda.index("onMentesFuttatasKert"):]
-        szakasz = szakasz[: szakasz.index("function fogadjATervet")]
-        assert "backupController.terv(" not in szakasz, (
-            "a szinkron terv() a GUI-szálon fagyasztaná az ablakot"
+    A VALÓDI kattintásos verzió (Go → Stop → a terv elengedése → semmi
+    nem másolódik) a `qml_functional/test_mentes_terv_klikk_3645.py`-ban."""
+
+    def test_szakitasmeg_utan_a_folyamatban_levo_terv_nem_jon_meg(
+        self, qt_app, vezerlo, monkeypatch
+    ):
+        import picasapy.app.backup_controller as modul
+
+        azonosito = vezerlo.keszletek()[0]["id"]
+        engedd = threading.Event()
+        eredeti = modul.tervezd_meg
+
+        def _lassu(*args, **kwargs):
+            engedd.wait(5.0)
+            return eredeti(*args, **kwargs)
+
+        monkeypatch.setattr(modul, "tervezd_meg", _lassu)
+        kapott: list[tuple] = []
+        vezerlo.tervKeszult.connect(
+            lambda keres, kid, terv, media: kapott.append((keres, kid, terv, media))
         )
-        assert "tervezdHattereben" in szakasz
-        assert "Calculating" in szakasz, "nincs busy-állapot a hivatalos felirattal"
-        assert "function onTervKeszult(" in gazda
-        assert "function fogadjATervet(" in gazda
+
+        vezerlo.tervezdHattereben(azonosito, None, "")
+        vezerlo.szakitsdMeg()
+        engedd.set()
+
+        assert vezerlo.waitForBackgroundWorkers(5.0)
+        qt_app.processEvents()
+        assert kapott == [], (
+            "a megszakított tervkérés válasza mégis kiment — a QML ezt "
+            "továbbra is futtatásnak nézné"
+        )
+
+
+class TestATervezesiHiba:
+    """[KÖZEPES, #3645 átnézés] tervezési hiba (kivétel, vagy közben
+    törölt készlet) esetén a válasz `hiba: True`-t hordoz, nem hamis
+    `{"darab": 0}`-t — enélkül a QML ezt a "nincs mit menteni" esettel
+    azonosan kezelte: hamis „Backup Complete" ÉS a futtatás mégis
+    elindult volna egy sikertelen terv felett."""
+
+    def test_kivetel_eseten_hiba_flaggel_es_hibauzenettel_jon_a_valasz(
+        self, qt_app, vezerlo, monkeypatch
+    ):
+        import picasapy.app.backup_controller as modul
+
+        azonosito = vezerlo.keszletek()[0]["id"]
+
+        def _hibas(*args, **kwargs):
+            raise RuntimeError("teszt-hiba")
+
+        monkeypatch.setattr(modul, "tervezd_meg", _hibas)
+
+        hibak: list[str] = []
+        vezerlo.hibatJelez.connect(hibak.append)
+        kapott: list[tuple] = []
+        vezerlo.tervKeszult.connect(
+            lambda keres, kid, terv, media: kapott.append((keres, kid, terv, media))
+        )
+
+        vezerlo.tervezdHattereben(azonosito, None, "")
+        assert varj_feltetelre(qt_app, lambda: bool(kapott))
+
+        assert hibak, "kivétel esetén sem ment ki hibaüzenet"
+        terv = kapott[-1][2]
+        assert terv.get("hiba") is True
+        assert terv["darab"] == 0
+
+    def test_kozben_torolt_keszletnel_is_hiba_flaggel_jon_a_valasz(
+        self, qt_app, vezerlo
+    ):
+        azonosito = vezerlo.keszletek()[0]["id"]
+        vezerlo.torisdAKeszletet(azonosito)
+
+        kapott: list[tuple] = []
+        vezerlo.tervKeszult.connect(
+            lambda keres, kid, terv, media: kapott.append((keres, kid, terv, media))
+        )
+        vezerlo.tervezdHattereben(azonosito, None, "")
+        assert varj_feltetelre(qt_app, lambda: bool(kapott))
+        terv = kapott[-1][2]
+        assert terv.get("hiba") is True
+
+# A korábbi, forrás-grep alapú `TestAFelulet` (csak azt nézte, hogy a
+# `backupController.terv(` szöveg nem szerepel az `onMentesFuttatasKert`
+# szakaszban) helyét a VALÓDI kattintásos felületi teszt vette át:
+# `qml_functional/test_mentes_terv_klikk_3645.py` — az valós Go/Stop/Mégse
+# kattintással, magyar `.qm`-mel ellenőrzi ugyanezt, plusz a Stop/Mégse
+# hatását és a dupla kattintást is (#3645 átnézés).
