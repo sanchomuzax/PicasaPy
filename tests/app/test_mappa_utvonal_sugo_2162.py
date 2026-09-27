@@ -72,7 +72,18 @@ def test_a_sugo_szovege_az_UTVONALAT_tartalmazza(forras: str) -> None:
 def test_a_LATHATO_felirat_valtozatlan_marad(forras: str) -> None:
     """A többlet CSAK a súgóban van: a sor felirata továbbra is az
     alapnév + darabszám, ahogy az eredetiben."""
-    assert 'text: name + " (" + count + ")"' in forras, (
+    # #3681: mentéskor a darabszám a még el nem mentett fájloké — a felirat
+    # alakja (alapnév + zárójeles darabszám) ekkor is ugyanaz, normál
+    # módban pedig a mappa `count`-ja áll benne
+    import re
+
+    kotes = re.search(
+        r'objectName: "folderRowLabel".*?text: (name \+ " \(" \+ .*?\+ "\)")',
+        forras, re.S)
+    assert kotes, (
         "a mappasor látható felirata megváltozott — az eltérésnek a "
         "súgóban kell maradnia, nem a feliratban"
+    )
+    assert re.search(r": count\)", kotes.group(1)) or ' + count + ' in kotes.group(1), (
+        "normál módban a felirat darabszáma a mappa `count`-ja kell legyen"
     )
