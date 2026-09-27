@@ -98,6 +98,12 @@ Slider {
     // vele a kattintható terület) nem szűkül, csak a rajz.
     property real grooveInset: 0
 
+    // #3729: a FOGANTYÚ függőleges eltolása a sávhoz képest (vízszintes
+    // csúszkán; lefelé pozitív). Alapból 0 — a fogantyú a sávval közös
+    // középvonalon áll —, és csak a `scaleslider` család kap mást (az
+    // `EditorSlider`-ben). A doboz mérete és a sáv helye nem változik.
+    property real handleOffsetY: 0
+
     // visszafelé kompatibilis alias a NÉGYZETES fogantyú méretére
     readonly property real handleSize: Math.max(handleWidth, handleHeight)
 
@@ -168,7 +174,7 @@ Slider {
                ? control.visualPosition * (control.availableWidth - width)
                : (control.availableWidth - width) / 2)
         y: control.topPadding + (control.isHorizontal
-               ? (control.availableHeight - height) / 2
+               ? (control.availableHeight - height) / 2 + control.handleOffsetY
                : (1 - control.visualPosition) * (control.availableHeight - height))
         implicitWidth: control.handleWidth
         implicitHeight: control.handleHeight

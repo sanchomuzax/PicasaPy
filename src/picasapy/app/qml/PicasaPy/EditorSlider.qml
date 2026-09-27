@@ -6,6 +6,11 @@ import QtQuick
 // #2626 felirat-javítása épp azért ment át csak kettőn, mert három helyen
 // kellett volna.
 //
+// #3729: a `scaleslider` ágat a `TrayBar.qml` két csúszkája (`traySizeSlider`,
+// `zoomSlider`) is használja — a `respack.yt`-ben ugyanaz a `scaleslider`
+// erőforrás rajzolja a könyvtár bélyegkép-méretét ÉS a néző nagyítását is,
+// tehát a „szerkesztő" a névben ma már szűkebb, mint a tényleges kör.
+//
 // ⚠️ KÉT MÉRT CSALÁD van, és a különbség nem elírás:
 //
 //   editslider   (`editpanel/clip(editslider,editsliderN)`) — a finomhangoló
@@ -69,4 +74,17 @@ PicasaSlider {
     handleWidth: 16
     handleHeight: editorSlider.scaleCsalad ? 22 : 26
     handleRadius: 3
+
+    //: #3729: a `scaleslider` fogantyúja NEM a sáv középvonalán áll, hanem
+    //: 2 képponttal lejjebb. A tulajdonos 1920 px-es képernyőképén
+    //: (`research/testdata/screenshot/Képernyőkép 2026-07-18 150933.png`) a
+    //: fogantyú rajzának legfelső sora 5 sorral a sáv fölött, az alsó
+    //: 19. sora 5 sorral a 9 soros sáv alatt van (utána a 3 soros árnyék);
+    //: a középre állított 22 magas doboz ezt 7 / 3-nak rajzolná. A
+    //: `respack.yt` rétegei a helyzetet nem adják ki önmagukban: a
+    //: `scaleslider/thumb` réteg y 4…26, a `sliderbase` y 8…17 (4 sor
+    //: különbség), a `.tre` viszont a futás idején újra elhelyezi
+    //: (`scaleslider.tre`: `YConstraint 0.5, 0.5, -1`) — a mérce ezért a
+    //: képernyőkép. Az `editslider` család ezt nem kapja.
+    handleOffsetY: editorSlider.scaleCsalad ? 2 : 0
 }
