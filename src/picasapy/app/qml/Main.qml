@@ -3495,7 +3495,10 @@ ApplicationWindow {
         // vászon kapja meg.
         visible: window.libraryFrameVisible
         appWindow: window
-        viewerIndex: photoViewer.currentIndex
+        //: #3756: a `currentIndex` MINDIG a jobb/alsó félé (ld.
+        //: `PhotoViewer.qml` `photo` `source`-a) — kettős nézetben bal
+        //: fókusznál a sávnak a KIJELÖLT (`aktivSor`) képet kell mutatnia.
+        viewerIndex: photoViewer.aktivSor
         // #2564: a szerkesztő nagyítás-hármasa az ALSÓ SÁVBAN ül (mérve),
         // de a nagyítás állapota a nézőé — az állapot ide jön, a művelet
         // jelzésként megy vissza. Enélkül a tálcának ismernie kellene a

@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kettős nézetben, ha a bal oldali kép van kijelölve, a „Kijelölve” jelvény
+  már nem csúszik rá a felső gombsorra, és a kék információs sáv is a
+  kijelölt kép nevét, dátumát, méretét és sorszámát mutatja; a csillag gomb
+  is erre a képre hat (#3756).
+
 ## [0.8.603] – 2026-09-27
 
 ### Javítva
