@@ -15,12 +15,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A „Kijelölve” jelzés szürke, a kiválasztott kép mellett, a kép fölött
   áll, és nem kerül a kép mögé; a másik képre kattintva a kijelölés átvált
   rá.
-- **A felső eszköztár Importálás, Új album és nézetváltó gombja az eredeti
-  Picasa helyén áll, a keresőmező pedig az ablakkal együtt nyúlik (#3603).**
-  A négy bal oldali gomb 2–13 képponttal balrébb került (6 / 124 / 160 /
-  225), a teteje pedig a sáv tetejétől 9 képpontra; a szűrők és a
-  keresőmező bal széle az ablakszélesség 40%-ától indul, nem egy fix
-  helyről.
+- **A felső eszköztár az eredeti Picasa szerint rendeződik (#3603).** Az
+  Importálás, az Új album és a nézetváltó gombok az eredeti helyükön állnak,
+  és keskeny ablakban sem tűnnek el. A szűrők és a keresőmező az ablakkal
+  együtt mozognak, a keresőmező kitölti a jobb oldalt egészen a
+  verziószámig. A verziószám rövidebb lett; a teljes változat a
+  buboréksúgóban olvasható.
+
 ## [0.8.588] – 2026-09-27
 
 ### Javítva

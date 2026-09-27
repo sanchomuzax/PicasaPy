@@ -80,10 +80,12 @@ class TestUGYANAZ_az_ut:
 class TestAszukAblak:
     """#423: a sávnak egyetlen csíkban kell maradnia."""
 
-    def test_szuk_ablaknal_elrejtozik(self):
+    def test_szuk_ablakban_sem_rejtozik_el(self):
+        """#3603: a fix horgonyú bal gombsor szűk ablakban sem tűnik el —
+        a kirajzolt mérés a `test_felso_sav_horgonyzas_3603.py`-ban."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
         blokk = blokk_horgonyra(forras, 'objectName: "toolbarNewAlbumButton"')
-        assert "visible: !toolbar.toolbarCompact" in blokk
+        assert "toolbarCompact" not in blokk
 
 
 class TestIdorendGomb:

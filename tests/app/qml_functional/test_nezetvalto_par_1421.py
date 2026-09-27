@@ -75,6 +75,8 @@ class TestAKizarolagossag:
 
 
 class TestAszukAblak:
-    def test_a_csoport_elrejtozik(self):
+    def test_a_csoport_nem_rejtozik_el(self):
+        """#3603: a fix horgonyú bal gombsor szűk ablakban sem tűnik el —
+        a kirajzolt mérés a `test_felso_sav_horgonyzas_3603.py`-ban."""
         blokk = _blokk("toolbarFolderViewToggle")
-        assert "visible: !toolbar.toolbarCompact" in blokk
+        assert "toolbarCompact" not in blokk

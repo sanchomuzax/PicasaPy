@@ -87,15 +87,31 @@ Rectangle {
     // sem egy flow-tag részei, hanem a `toolbar.width`-ből számolt x/w —
     // ld. lent `searchContainerLeft`/`searchContainerRight`.
     //
-    // A #423 szűk ablakos elrejtése (`toolbarCompact`) saját
-    // alkalmazkodás marad, csak addig indokolt, amíg a fix bal gombsor
-    // (225 + 22 = 247-ig ér) és a 0,4·W − 2-nél kezdődő szűrőzóna
-    // ütközne — a képlet szerint ez kb. 650px alatt történne meg, az
-    // 1080-as küszöb tehát bőven a biztonságos oldalon marad (#3603).
-    readonly property bool toolbarCompact: width < 1080
+    // A #423 szűk ablakos elrejtése (`toolbarCompact`) csak ott dolgozik,
+    // ahol az eredeti képlete már nem fér ki. A négy bal gomb SOHA nem
+    // rejtőzik el (fix horgonyúak, 247-ig érnek). A képletben a szűrőzóna
+    // és a mező között állandó 16 px van (0,4·W + 222 … 0,4·W + 238), a
+    // verziófelirat pedig a mező mögötti 47 px-en él, tehát ezek nem
+    // ütközhetnek. Két határ marad:
+    //   - a szűrőzóna bal széle (0,4·W − 2) eléri a bal gombsort (247):
+    //     W < 622,5;
+    //   - a mező (0,6·W − 285 széles) a 120 px-es padló alá szorulna:
+    //     W < 675.
+    // A küszöb a kettő közül a nagyobb: 675 px. Ez alatt a szűrőzóna
+    // elrejtőzik, és a mező a gombsor mögé húzódik a felszabadult helyre
+    // (#3603). A főablak legkisebb szélessége (a tálca igénye) ma ennél
+    // nagyobb, a küszöb tehát a sáv saját biztosítéka.
+    readonly property real leftButtonsRight: 247
+    readonly property real searchMinWidth: 120
+    readonly property real compactWidth: Math.max(
+        (leftButtonsRight + 2) / 0.4,
+        (searchMinWidth + 285) / 0.6)
+    readonly property bool toolbarCompact: width < compactWidth
     // `searchcontainer.tre:352-355` — a konténer bal/jobb éle
     readonly property real searchContainerLeft: width * 0.4
     readonly property real searchContainerRight: width - 70
+    // a látható mező (`searchbase`) jobb széle: a konténeren túl 23-mal
+    readonly property real searchBoxRight: searchContainerRight + 23
     Item {
         id: content
         anchors.fill: parent
@@ -128,10 +144,6 @@ Rectangle {
         // Mért méret: 29 × 22 (`konyvtar-ablak-meretek.md` 2.). A gomb az
         // eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele).
         //
-        // ⚠️ Szűk ablaknál elrejtőzik, a szűrő-zóna mintájára (#423): a
-        // sávnak egyetlen csíkban kell maradnia, és minden fix szélességű
-        // elem a NEM zsugorodó alapot növeli. A rejtés a mi
-        // alkalmazkodásunk, nem az eredeti viselkedés.
         // #1421: az `newalbum` gomb — a FUNKCIÓ már megvolt (a Fájl ▸ Új
         // album… párbeszéde), csak az eszköztárról hiányzott. A bináris
         // szerint a menütétel maga is a `thumbui/newalbum` kattintást
@@ -145,11 +157,10 @@ Rectangle {
         // mondta meg, hogy ikonnak kell lennie — a glif a szűrő-zóna
         // idiómáját követi (★ ▶ ⚲).
         //
-        // A gomb az eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele);
-        // szűk ablaknál nálunk elrejtőzik (#423) — ld. a teszt indoklását.
+        // A gomb az eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele),
+        // és szűk ablakban sem rejtőzik el (#3603).
         Item {
             objectName: "toolbarNewAlbumButton"
-            visible: !toolbar.toolbarCompact
             // #3603: fix bal-felső horgony — x 124, y 9 (`thumbui.tre:375`).
             x: 124; y: 9
             width: 29
@@ -185,7 +196,6 @@ Rectangle {
         // 30 × 22-be felirat nem fér).
         Row {
             objectName: "toolbarFolderViewToggle"
-            visible: !toolbar.toolbarCompact
             spacing: 0
             // #3603: fix bal-felső horgony — x 160, y 9 (`thumbui.tre:406-415`).
             x: 160; y: 9
@@ -256,7 +266,6 @@ Rectangle {
         // almenü tételei (spec 4/b) — ezért itt nem építünk új menüt.
         Rectangle {
             objectName: "toolbarFolderViewPopupButton"
-            visible: !toolbar.toolbarCompact
             // #3603: fix bal-felső horgony — x 225, y 9 (`thumbui.tre:421`).
             x: 225; y: 9
             width: 22; height: 22; radius: 2
@@ -676,25 +685,21 @@ Rectangle {
         // 355`, a konténer 388-as tervezési szélességéhez mért −23
         // eltolással).
         //
-        // ⚠️ A jobb szél a képlet szerint `W − 47` lenne, ez viszont
-        // ÜTKÖZNE a verzió-címkével (#706 — Picasa eredetijében ott
-        // semmi nincs, ez a mi hozzáadott elemünk). Amíg a
-        // verzió-címke marad, a mező jobb széle ELŐTTE áll meg — ez a
-        // #3603 tulajdonosi döntést igénylő pontja, ld. a jegy
-        // jelentését.
+        // A verziófelirat (#706, saját elem — az eredetiben ott semmi
+        // nincs) a mező mögötti 47 px-en fér el, ezért a mező jobb széle
+        // mindig pontosan `W − 47`. Szűk ablakban (`toolbarCompact`) a bal
+        // széle a gombsor mögé kerül, a jobb széle akkor sem mozdul.
         Rectangle {
             id: searchBox
             objectName: "toolbarSearchBox"
-            x: toolbar.searchContainerLeft + 238
-            width: Math.max(
-                80,
-                Math.min(
-                    toolbar.searchContainerRight + 23,
-                    versionLabel.x - 12
-                ) - x
-            )
+            x: toolbar.toolbarCompact
+                ? toolbar.leftButtonsRight + 10
+                : toolbar.searchContainerLeft + 238
+            width: Math.max(0, toolbar.searchBoxRight - x)
             height: 24
-            y: Math.round((toolbar.height - height) / 2)
+            // a képernyőkép-mérés szerint a keret teteje a sáv tetejétől
+            // 7 (50 − 43)
+            y: 7
             radius: 3
             color: Theme.controlBase
             border.color: Theme.chromeBorder
@@ -769,16 +774,20 @@ Rectangle {
                 }
             }
         }
-        // Verzió + build a jobb felső sarokban — halványan, hogy
-        // zavartalanul, de bármikor ellenőrizhető legyen, PONTOSAN
-        // melyik commit fut (appVersion → version.version_string()).
+        // Verzió a jobb felső sarokban — halványan, a keresőmező mögötti
+        // 47 px-en (#3603). Ide csak a rövid verzió fér („v0.8.590”); a
+        // teljes címke a build-azonosítóval (appVersion →
+        // version.version_string()) a buboréksúgóban olvasható, hogy
+        // továbbra is ellenőrizhető legyen, PONTOSAN melyik commit fut.
         Text {
             id: versionLabel
             objectName: "versionLabel"
             anchors.right: content.right
-            anchors.rightMargin: 8
+            anchors.rightMargin: 4
             anchors.verticalCenter: content.verticalCenter
-            text: appVersion
+            // a teljes címke, pl. „v0.8.590 (6120.ad7e5c7c)”
+            readonly property string fullText: appVersion
+            text: String(appVersion).split(" ")[0]
             font.pixelSize: 9
             // #706: rámutatásra és fókuszban aláhúzott — ránézésre is
             // látszódjon, hogy a szám kattintható hivatkozás.
@@ -799,7 +808,7 @@ Rectangle {
             // (Saját property, mert a csatolt `ToolTip.text` a Qt
             // metaobjektumán át nem olvasható ki teszteléskor.)
             readonly property string tooltipText:
-                qsTr("View releases on GitHub")
+                qsTr("View releases on GitHub") + "\n" + fullText
 
             function openReleases() {
                 Qt.openUrlExternally(versionLabel.releasesUrl)

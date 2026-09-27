@@ -90,8 +90,9 @@ class TestFilterZoneShrinksBeforeBarBreaks:
         assert zone.property("visible") is True
 
     def test_filter_zone_hidden_at_narrow_width(self, qml_app, qt_app):
+        # #3603: a küszöb a számolt ütközési pont, 675 px — alatta rejtőzik
         window, _, _ = qml_app
-        _set_width(window, qt_app, 760)
+        _set_width(window, qt_app, 650)
         zone = _child(window, "toolbarFilterZone")
         assert zone.property("visible") is False
         # a sáv ettől még nem törik — 35px marad
@@ -99,13 +100,13 @@ class TestFilterZoneShrinksBeforeBarBreaks:
         assert toolbar.property("height") == 35
 
     def test_search_box_shrinks_but_not_below_minimum(self, qml_app, qt_app):
-        """#3603: a mező szélessége mostantól `0,6·W − 285` körüli
-        (a `0,4·W + 238` … `W − 47` képletből), nem egy 120…388-as
-        RowLayout-zsugorodás — 760px-nél kb. 110-115 a valós érték."""
+        """#3603: a mező szélessége `0,6·W − 285` (a `0,4·W + 238` …
+        `W − 47` képletből) — 760px-nél 171; a 120-as padló alá a
+        szűk ablakos küszöb (675 px) miatt nem megy."""
         window, _, _ = qml_app
         _set_width(window, qt_app, 760)
         search_box = _child(window, "toolbarSearchBox")
-        assert 80 <= search_box.property("width") <= 388
+        assert search_box.property("width") == 0.6 * 760 - 285
 
 
 class TestFiltersLabelInsideStrip:
