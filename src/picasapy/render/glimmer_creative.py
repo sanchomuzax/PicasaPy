@@ -81,7 +81,7 @@ def apply_orton(image, bloom: float = 25.0, brightness: float = 50.0, fade: floa
     """`Orton=1,Bloom,Brightness,Fade` — `overlay`-módú elmosott réteg
     (`Bloom` `[0..50]`, alap 25; `BlurImageOperation xblur = yblur = Bloom`,
     `quality = 3`) → mestergörbe középpont-emelés
-    `(128, 128+(Brightness−50)·96/50)` (`Brightness` `[0..100]`, alap 50).
+    `(128, 128+(Brightness−50)·75/50)` (`Brightness` `[0..100]`, alap 50).
     """
     validate_image(image)
     image_f = to_float(image)
@@ -94,12 +94,12 @@ def apply_orton(image, bloom: float = 25.0, brightness: float = 50.0, fade: floa
     # szórása `xblur/2` —, ezért a sugár maga a `Bloom`.
     blurred = to_float(blur_image_operation(image, bloom, bloom, quality=3))
     overlaid = apply_blend_mode(image_f, blurred, "overlay", 1.0)
-    # #317: a mestergörbe középpontjának kitérése MÉRVE ±96 (nem ±75) a
-    # csúszka két végén (`referencia/ortonish/`: Brightness=0 → 26,
-    # Brightness=100 → 219; az eltérés 8,51/5,34 → 3,85/3,17). A maradék
-    # eltérés a görbe ALAKJÁBÓL jön (a Picasa vélhetően spline-t húz a
-    # három pont közé, mi töröttvonalat) — ez külön kérdés.
-    mid = 128.0 + (brightness - 50.0) * 96.0 / 50.0
+    # #317: a mestergörbe középpontjának kitérését akkoriban ±96-nak MÉRTÜK
+    # (nem ±75), mert a görbe akkor töröttvonal volt; a spline-ra állás
+    # (`filterdesc-registry.md`) után a `filterdesc.xml` saját ±75-je adja a
+    # jó eredményt — a #626 mérése szerint a 684-es `min` ΔE 3,21 → 0,15, a
+    # `referencia/ortonish` Fényerő max/min 4,45/4,18 → 0,95/0,82 (#3788).
+    mid = 128.0 + (brightness - 50.0) * 75.0 / 50.0
     curved = adjust_curves(to_uint8(overlaid), master=((0.0, 0.0), (128.0, mid), (255.0, 255.0)))
     return to_uint8(alpha_blend(image_f, to_float(curved), fade_alpha(fade)))
 
