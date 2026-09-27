@@ -16,7 +16,7 @@ kijelölt képen.
 
 ## A javítás
 
-A `photoArea.fokuszKep` (`aktivOldal === "bal" ? photoElotte : photo`) az
+A `photoArea.fokuszKep` (`viewer.balFokusz ? photoElotte : photo`) az
 összes eszközátfedő szülője, ugyanaz a mintázat, mint a „Kijelölve"
 jelvényé. Emiatt a `photo`/`photoElotte` TapHandlere is frissült: bal
 fókusznál az átfedő már a `photoElotte`-n ül, tehát a `photo` kattintása
@@ -109,12 +109,13 @@ class TestAzAtfedoAFokuszbanLevoFelenAll:
             f"{overlay_nev} még mindig a JOBB (nem fókuszban lévő) képen áll"
         )
 
+    @pytest.mark.parametrize(("overlay_nev", "allapot"), _ESZKOZOK)
     def test_aa_modban_is_a_fokuszbanlevo_felen(
-        self, qml_app_negyzet_kepek, qt_app
+        self, qml_app_negyzet_kepek, qt_app, overlay_nev, allapot
     ):
-        """Kész-ha 1. pont: „aa" módban is — itt a két fél ugyanazt a
-        fotót mutatja, tehát a hiba csak az átfedő SAJÁT pozíciójából
-        derül ki, nem a képtartalomból."""
+        """Kész-ha 1. pont: „aa" módban is, mind a négy eszközre — itt a
+        két fél ugyanazt a fotót mutatja, tehát a hiba csak az átfedő SAJÁT
+        pozíciójából derül ki, nem a képtartalomból."""
         window, _controller, _engine = qml_app_negyzet_kepek
         nezo = _ab_modba(window, qt_app)
         _klikk(qt_app, window, _gyerek(window, "viewerLayoutAa"))
@@ -123,13 +124,13 @@ class TestAzAtfedoAFokuszbanLevoFelenAll:
         assert nezo.property("aktivOldal") == "bal"
         panel = _gyerek(window, "viewerEditorPanel")
 
-        atfedo_r = _atfedo_teglalapja(
-            window, qt_app, panel, "cropOverlay", "cropActive"
-        )
+        atfedo_r = _atfedo_teglalapja(window, qt_app, panel, overlay_nev, allapot)
         bal_kep_r = _kep_teglalap(_gyerek(window, "viewerImageElotte"))
+        jobb_kep_r = _kep_teglalap(_gyerek(window, "viewerImage"))
 
         for kulcs in ("bal", "fent", "jobb", "lent"):
             assert abs(bal_kep_r[kulcs] - atfedo_r[kulcs]) <= _TURES
+        assert abs(atfedo_r["bal"] - jobb_kep_r["bal"]) > 10
 
 
 class TestAJobbKepreKattintasBalFokusznal:

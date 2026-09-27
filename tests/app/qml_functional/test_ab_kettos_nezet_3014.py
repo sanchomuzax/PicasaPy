@@ -24,7 +24,7 @@ Az albumba tétel (`TwoUpAddToAlbum`) és maga az ütközés-párbeszéd — a
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPointF, Qt
 
 
 def _gyerek(gyoker, nev):
@@ -173,12 +173,15 @@ class TestAzElrendezesValto:
         window, _controller, _engine = qml_app
         _ab_modba(window, qt_app)
 
+        # #3741: a két kép a saját felének keretében áll — a közös
+        # koordináta a jelenet, nem a szülőhöz képesti `x`
         bal = _gyerek(window, "viewerImageElotte")
         jobb = _gyerek(window, "viewerImage")
-        bal_jobb_szele = bal.property("x") + bal.property("width")
-        assert jobb.property("x") >= bal_jobb_szele - 1, (
+        bal_jobb_szele = bal.mapToScene(QPointF(bal.property("width"), 0)).x()
+        jobb_kezdete = jobb.mapToScene(QPointF(0, 0)).x()
+        assert jobb_kezdete >= bal_jobb_szele - 1, (
             "a fő kép átlóg a másik kép területére "
-            f"(bal vége: {bal_jobb_szele}, fő kezdete: {jobb.property('x')})"
+            f"(bal vége: {bal_jobb_szele}, fő kezdete: {jobb_kezdete})"
         )
 
     def test_FUGGOLEGESEN_a_ket_kep_EGYMAS_ALATT_all(self, qml_app, qt_app):
@@ -188,10 +191,11 @@ class TestAzElrendezesValto:
 
         felso = _gyerek(window, "viewerImageElotte")
         also = _gyerek(window, "viewerImage")
-        felso_alja = felso.property("y") + felso.property("height")
-        assert also.property("y") >= felso_alja - 1, (
+        felso_alja = felso.mapToScene(QPointF(0, felso.property("height"))).y()
+        also_teteje = also.mapToScene(QPointF(0, 0)).y()
+        assert also_teteje >= felso_alja - 1, (
             "a fő kép átlóg a felső kép területére "
-            f"(felső alja: {felso_alja}, fő teteje: {also.property('y')})"
+            f"(felső alja: {felso_alja}, fő teteje: {also_teteje})"
         )
 
 

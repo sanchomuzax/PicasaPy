@@ -8,10 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- **Kettős nézetben, bal fókusznál a nyitott szerkesztőeszköz (Vágás,
-  Retusálás, Szöveg, Vörösszem) átfedője a kijelölt (bal) képen jelenik
-  meg, nem a másikon (#3741).** Emiatt bal fókusznál is működik a jobb
-  képre kattintva a fókuszváltás.
+- **Kettős nézetben, ha a bal oldali kép van kijelölve, a megnyitott
+  szerkesztőeszköz (Vágás, Retusálás, Szöveg, Vörösszem) mostantól ezen a
+  képen jelenik meg, nem a másikon (#3741).** Így a jobb oldali képre
+  kattintva is át lehet váltani a kijelölést.
 
 ## [0.8.598] – 2026-09-27
 
