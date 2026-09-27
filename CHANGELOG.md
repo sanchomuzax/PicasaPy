@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.594] – 2026-09-27
+
 ### Javítva
 - **A mentés-panel indítógombja a kiválasztott készlet szerint „Biztonsági
   mentés” vagy „Írás”, nem állandóan „Lemezre írás” (#3713).** Mappába
