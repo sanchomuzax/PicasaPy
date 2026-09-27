@@ -4,6 +4,146 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-27
+
+**Nyomtatás**
+
+- A **nyomatméret** mostantól valóban nyomatméret: a program ekkora
+  helyeket rak a papírra **rácsban**, és ha a lapon elfér több, akkor
+  többet tesz rá — egy A4-esre például két 10×15 cm-es képet is.
+  Ami nem fér el, az a következő lapra kerül. Eddig minden képnek külön
+  lapot adott. Az előnézet a valódi lapot mutatja, és több lapnál
+  lapozható, tehát előre látod, hány lapot fogsz elhasználni.
+- **Automatikus** tájolásnál a papír álló marad, és a program a nyomatot
+  fordítja el, ha úgy kevesebb lap kell. Eddig a papírt forgatta el.
+- A képminőség két sorát az eredeti Picasa szövegével írja ki, és ha a
+  beállításokból nem jön ki érvényes nyomtatás, a hibát is **magyarul**
+  mondja meg. Lásd [Nyomtatás](features/nyomtatas.md).
+
+**Képek biztonsági mentése**
+
+- A mentés **nem külön ablakban**, hanem a **könyvtár alján kicsúszó
+  panelen** dolgozik — ugyanott, ahol az Ajándék CD. A két panel közül
+  egyszerre csak az egyik lehet nyitva.
+- Új lépés: **melyik mappa menjen át**. A panel fölött megjelennek azok a
+  mappák, amelyekből még nem mentettél el mindent, mindegyik előtt egy
+  pipával. Alapból egy sincs bepipálva, és amíg nincs, a mentés nem
+  indul; az **Az összes kijelölése** gombbal egy kattintással
+  megjelölöd mindet. A lista a háttérben készül el, addig
+  **Számítás…** áll a helyén.
+- A mentést indító gomb neve **Lemezre írás** (ez indítja a mappába
+  másolást is), és a záró üzenet mindig **A mentés elkészült**.
+- A **Készlet törlése** kérdésében ott van a **készlet neve**. Az
+  egyetlen készletet — ahogy az eredetiben — nem lehet törölni, csak
+  módosítani. Lásd [Képek biztonsági
+  mentése](features/biztonsagi-mentes.md).
+
+**Néző: ugyanaz a kép kétszer**
+
+- A kettős nézet „ugyanaz a kép kétszer" módja **két önálló
+  szerkesztés** lett: mindkét oldal a kép mostani állapotával indul, és
+  **külön-külön szerkesztheted** őket — két változatot próbálhatsz ki
+  egymás mellett. Eddig a bal oldal a szerkesztés előtti képet mutatta,
+  és csak a jobb oldalt lehetett alakítani.
+- Kilépéskor a program megkérdezi, melyik változatot tartsa meg
+  (**Bal**/**Jobb**, illetve **Fent**/**Lent**), és a **Mégse** nem dob
+  el semmit. A kérdés minden kilépési úton előjön: módváltás, lapozás, a
+  néző bezárása, a program bezárása — így egyik oldal munkája sem veszik
+  el némán.
+- **Fókuszváltásnál a félbehagyott festés az oldalánál marad.** Ha
+  ecsettel ráfestettél egy effektet, és átváltasz a másik oldalra, a
+  festés ott marad, ahol hagytad. Lásd
+  [Nézegetés](features/nezegetes.md).
+
+**Emberek**
+
+- Egy személy albumának fejlécében új váltópár: a csempék vagy **az arcra
+  közelítve**, vagy **a teljes képet** mutatják. Kis arcnál a program az
+  eredeti fájlból olvassa ki a kivágást, hogy ne legyen elmosódott.
+- Az **Emberek panel** egy fejlécet és egy listát mutat, ahogy az
+  eredetiben: a kijelölt képek megnevezett embereit. A korábbi külön
+  „Szintén ezeken a fotókon:" szakasz megszűnt, a fejléc szövege pedig
+  ahhoz igazodik, hol állsz. Lásd [Emberek és
+  arcok](features/emberek.md).
+
+**Szerkesztő**
+
+- A **Képpontnövelés** (a Képpontnagyítás Shift-párja) végre **saját
+  csúszkapanelt nyit**: **Hatás**, **Sugár**, **Élkeménység**,
+  **Fokozat** és egy **Megfordítás** jelölő, a korong pedig a képen
+  húzható. Eddig csak a program alapértékeivel került a képre.
+- Öt olyan csúszka, aminek a felső vége a képmérethez igazodik (a
+  Képpontnövelés **Sugár**, a Fókusznagyítás **Fókuszméret**, a
+  Kerekített élek és a Szegély **Sarok sugara**, a Szegély **Képfelirat
+  magassága**), a `.picasa.ini`-be mostantól a tartomány **százalékát**
+  írja, ahogy az eredeti Picasa. Ettől az eredetiben készült
+  szerkesztések helyesen jelennek meg — viszont ha ezeket a csúszkákat
+  egy **korábbi PicasaPy-változatban** állítottad be, az a néhány kép
+  másképp nézhet ki; húzd meg újra a csúszkát. Lásd
+  [Effektek](features/effektek.md).
+
+**Effektek az eredetihez igazítva**
+
+Ezeknél a kép látványa változik. A képeidhez korábban felvett beállítások
+érintetlenek — csak az kerül másképp a képre, amit a program kirajzol
+belőlük.
+
+- Az **Árnyalás**, az **Áttűnés** és a **Neon** színezése az eredeti
+  Picasa módszerét követi: a program máshogy számol szürkét, és a színt
+  egy saját táblából veszi. Telített kék és sárga területeken a
+  különbség jól látszik.
+
+**Nyelvválasztás**
+
+- A **Nyelv** választó (és az **Eszközök ▸ Nyelv** menü) az eredeti
+  Picasa szerint működik: a lista az **Alapértelmezett
+  rendszerbeállítás** tétellel kezdődik, a nyelvek a **saját nyelvükön**
+  állnak (**English (US)**, **Magyar**), és a program **rákérdez** a
+  váltásra. A változás **a következő indításnál** lép életbe — futás
+  közben a felület nem vált nyelvet. Lásd
+  [Beállítások](features/beallitasok.md).
+
+**Képadatok**
+
+- A **Tulajdonságok** panel **Objektív** sora először a képbe írt
+  **XMP-adatot** olvassa; ott szokta hagyni a nevet a legtöbb
+  szerkesztőprogram. Csak ha ott nincs, jön a fényképezőgép
+  azonosítójának feloldása.
+- A **Tömörítés** sor 4 helyett **36 formátumot** ismer fel — a nyers
+  (RAW) formátumok tömörítését is —, és ha a kód ismeretlen, a számot
+  írja ki. A **Fehéregyensúly** sor ugyanígy: eddig eltűnt, ha a
+  fényképezőgép szokatlan kódot írt bele.
+- A panel néhány értéke (**Tájolás**, **Exponálási program**) magyar
+  felületen is angolul állt — például „Normal" a „Normál" helyett. Ez
+  rendbe jött, ahogy az infósáv és a kor-szűrő felirata is. Lásd [A
+  könyvtár](features/konyvtar.md).
+
+**Feliratok és üzenetek**
+
+- Huszonöt megerősítő és figyelmeztető üzenet az eredeti Picasa **saját
+  szövegét** mondja. Ahol ez a súgót is érinti: a mentés utáni gomb neve
+  **Mentés visszavonása** (eddig „Utolsó mentés visszavonása"); a
+  szerkesztések eldobása előtti kérdés a képet **név szerint** említi, ha
+  vörösszem-javítás van rajta; a nem betölthető fájlokról szóló kérdés
+  **felsorolja a fájlneveket**; a kollázs-csere kérdése elmondja, hogy a
+  kollázsok a **Kollázsok** albumba mentődnek.
+- A **Beállítások** ablak 39 felirata szintén a hivatalos szövegre
+  cserélődött, és a **Mappakezelő** jobb oldalán az eredeti útmutató
+  mondat áll. Lásd [Mentés](features/mentes.md) és
+  [Mappakezelő](features/mappakezelo.md).
+
+**Apróságok**
+
+- A **Nyomtatás**, a **Mappakezelő**, a **Beállítások**, az
+  **Importálás forrásból** és az **Exportálás weboldalként** ablakban a
+  **Shift+F1** a párbeszéd saját fejezetét nyitja meg, az **F1** a
+  tartalomjegyzéket — a súgó a párbeszéd előtt, külön ablakban jelenik
+  meg. Lásd [A beépített súgó](features/sugo.md).
+- A **Névtelenek** album fejléce alatt az eredeti útmutató szövegei
+  állnak, és a csoportosítás számolása alatt a „kérjük, várjon" sor.
+- A „Továbbiak" gyűjtősáv üzenete és gombjai a sáv **közepén** állnak,
+  nem a jobb szélére tapadva.
+
 ## 2026-09-26
 
 **Ajándék CD**

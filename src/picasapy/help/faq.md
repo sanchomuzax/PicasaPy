@@ -40,8 +40,10 @@ a figyelt mappákat.
 
 ### Hogyan váltok magyarról angolra?
 
-**Eszközök ▸ Nyelv ▸ Angol**, vagy a **Beállítások ▸ Általános** fülön a
-**Nyelv** választóval. Azonnal hat.
+**Eszközök ▸ Nyelv ▸ English (US)**, vagy a **Beállítások ▸ Általános**
+fülön a **Nyelv:** választóval. A program rákérdez, és a váltás **a
+következő indításnál** lép életbe — lásd
+[Beállítások, nyelv, megjelenés](features/beallitasok.md).
 
 ## Hibaüzenetek
 

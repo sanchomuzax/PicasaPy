@@ -126,7 +126,7 @@ lesz** működő szolgáltatás:
 - Közzététel a Bloggeren…
 - Feltöltéskezelő…, Csoportos feltöltés…, Feltöltés
 - Feltöltés a Picasa Webalbumokba…, Feltöltés a Google Fotókba…,
-  Gyors feltöltés, Feltöltés blokkolása, Online műveletek
+  Gyors feltöltés, Feltöltés tiltása, Online műveletek
 - Picasa-fórumok, Online információ, Termékkiadási tájékoztató,
   Adatvédelmi irányelvek, Általános Szerződési Feltételek
 - Megjelenítési mód ▸ Távoli asztal — kifejezetten a windowsos távoli

@@ -129,8 +129,10 @@ azok a figyelt mappáid alatt vannak. Ide néhány másodpercen belül bekerül
 az új kép akkor is, ha nem a PicasaPy készítette, hanem a régi Picasa egy
 másik gépről, hálózati meghajtón.
 
-Ha a kép már létezik ezen a néven, választhatsz: **Meglévő cseréje** vagy
-**Új létrehozása**.
+Ha egy korábban készült kollázst szerkesztettél tovább, a program
+megkérdezi, mit tegyen: **Meglévő cseréje** vagy **Új létrehozása** — a
+kollázsok mindig a **Kollázsok** albumba mentődnek. A **Mégse** itt sem
+dob el semmit: mentés nélkül folytathatod a szerkesztést.
 
 A panel **Asztali háttérkép** gombja egy lépésben elkészíti a kollázst,
 és rögtön be is állítja az asztalod háttérképének. Részletek:

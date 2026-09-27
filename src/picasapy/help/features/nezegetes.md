@@ -34,12 +34,7 @@ egymás mellett. Ezek döntik el, hány kép látszik:
 |---|---|
 | **Csak egy kép megjelenítése** | a szokásos, egyképes nézet — ez az alapállás |
 | **Két különböző kép megjelenítése** | két **különböző** kép egymás mellett — válogatáshoz |
-| **Ugyanazon kép megjelenítése kétszer** | ugyanaz a kép kétszer: **balra a szerkesztés előtti**, jobbra a mostani állapot |
-
-Az **Ugyanazon kép megjelenítése kétszer** a szerkesztés
-összehasonlítására való: a bal oldalon a nyers fájl van, minden effekt
-és javítás nélkül, a jobb oldalon pedig az, amit éppen csinálsz belőle.
-Így egy pillantással látod, mennyit változott a kép.
+| **Ugyanazon kép megjelenítése kétszer** | ugyanaz a kép kétszer, **két önálló szerkesztéssel** — két változatot próbálhatsz ki egymás mellett |
 
 A **Két különböző kép megjelenítése** a válogatásra való: két felvétel
 egymás mellett, és eldöntöd, melyik a jobb. Mindkét kép a **mentett
@@ -58,8 +53,45 @@ módosítja, és az albumba is az kerül. A képek közt a filmszalagon
 válogatsz: mindkét megjelenített kép kiemelve látszik ott, és egy
 bélyegképre kattintva **az aktív oldal** képét cseréled le.
 
-(Az „ugyanaz a kép kétszer" összevetésben a bal oldal szándékosan a
-szerkesztés előtti állapot, tehát ott mindig a jobb oldalt szerkeszted.)
+### Ugyanaz a kép kétszer: két változat egymás mellett
+
+Ebben a módban **mindkét oldal ugyanazt a képet mutatja**, és mindkettő a
+kép **mostani** állapotával indul. Innentől a két oldal **külön-külön
+szerkeszthető**: állítsd be az egyiket, váltsd át a fókuszt, és próbálj
+ki valami mást a másikon — a kettő egymás mellett látszik, tehát
+összevetheted őket.
+
+A szerkesztő mindig a **kijelölt** oldalt módosítja. A másik oldal
+változatai közben **csak a memóriában** élnek: a lemezre az kerül, amit a
+végén megtartasz.
+
+A **fókusz váltásakor** a félbehagyott munkád az oldalánál marad: ha az
+egyik oldalra **ecsettel festettél** egy effektet, és átváltasz, a
+festés ott marad, ahol hagytad, és visszaváltva folytathatod. A
+váltáskor viszont **bezárul a nyitott eszköz** — a vágás, a döntés, a
+retusálás, a vörösszem-javítás és a szövegbeírás —, és ami bennük még
+nincs alkalmazva, elvész: ugyanúgy, mint amikor más képre lépsz.
+
+### Amikor kilépsz a módból
+
+Ha a két oldalt **másképp** szerkesztetted, a program megkérdezi,
+melyiket tartsa meg. Ez akkor jön elő, amikor elhagyod ezt a módot:
+másik nézetre váltasz, továbblapozol, kilépsz a nézőből vagy bezárod a
+programot.
+
+A **Szerkesztett változatok kiválasztása** ablak ezt írja: „A képnek két
+szerkesztett változata van. Melyiket szeretné megtartani?" A két gomb azt
+mondja meg, **hol** van a változat: vízszintes elrendezésben **Bal** és
+**Jobb**, egymás alatti elrendezésben **Fent** és **Lent**. Az Enter a
+kijelölt oldalt választja.
+
+- A **Mégse** nem dob el semmit: a kettős nézet nyitva marad, mindkét
+  változattal, és folytathatod.
+- A **Ne kérdezzen újra, mindig használja a kijelölt képet** pipával
+  legközelebb kérdés nélkül a kijelölt oldal marad meg.
+
+Ha csak az egyik oldalt szerkesztetted, vagy a kettő ugyanoda jutott,
+nincs kérdés: a program magától azt tartja meg, amit szerkesztettél.
 
 Videónál a kettős nézet nem használható.
 

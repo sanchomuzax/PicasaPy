@@ -9,8 +9,12 @@ Megnyitás: **Eszközök ▸ Mappakezelő…** vagy **Fájl ▸ Mappa hozzáadá
 Picasához…**
 
 Bal oldalt a **Mappalista**, jobb oldalt **A jelenlegi mappára**
-vonatkozó beállítások. Ha még nem választottál semmit, ez áll ott:
-„Jelölj ki egy mappát bal oldalt."
+vonatkozó beállítások. A jobb oldal tetején az eredeti Picasa útmutató
+szövege áll: „Minden mappa esetében megadhatja, hogy a Picasa keressen-e
+bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a
+program figyelje bennük az új képek megjelenését." Ha még nem
+választottál mappát, alatta ez olvasható: „Jelölj ki egy mappát bal
+oldalt."
 
 ### Beállítások mappánként
 
@@ -18,12 +22,18 @@ vonatkozó beállítások. Ha még nem választottál semmit, ez áll ott:
   maguktól megjelennek.
 - **Keresés egyszer** — most átnézi, de utána nem figyeli tovább.
 - **Eltávolítás a Picasából** — a mappa kikerül a nézetből. A lemezen
-  lévő fájlokhoz **nem nyúl**.
+  lévő fájlokhoz **nem nyúl**. Figyelt mappánál a program rákérdez: „Ha
+  egy figyelt mappát eltávolít, a lemezen oda mentett új fájlokat a
+  Picasa nem veszi fel automatikusan. Biztosan ezt szeretné?"
 - **Arcfelismerés bekapcsolva / kikapcsolva** — mappánként külön
   eldöntheted, keressen-e arcokat. A beállítás a mappára **és az alfáira**
   is vonatkozik.
 
 Az **OK** gomb menti a változtatásokat, a **Mégse** elveti őket.
+
+Ha **egy egész meghajtót** vennél fel figyelésre, a program szól: „Egy
+teljes meghajtó figyelése lelassíthatja a rendszert. Jobb lenne több
+almappát kiválasztani. Biztosan ezt kívánja tenni?"
 
 ### Ha kikapcsolod az arcfelismerést
 
