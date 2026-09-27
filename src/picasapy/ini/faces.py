@@ -45,8 +45,11 @@ def parse_faces(value: str) -> tuple[Face, ...]:
 
 
 def serialize_faces(faces: tuple[Face, ...]) -> str:
-    return "".join(
-        f"rect64({encode_rect64(face.rect)}),{face.contact_id};" for face in faces
+    # #3792: a mért alak (docs/specs/picasa-arcfelismeres.md 190-192. sor)
+    # pontosvesszővel VÁLASZTJA EL a bejegyzéseket, záró pontosvesszőt nem
+    # tesz a sor végére.
+    return ";".join(
+        f"rect64({encode_rect64(face.rect)}),{face.contact_id}" for face in faces
     )
 
 

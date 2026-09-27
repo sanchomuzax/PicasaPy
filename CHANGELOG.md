@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A `.picasa.ini`-be írt arcsor (`faces=`) végén nem marad felesleges
+  pontosvessző, az eredeti Picasa alakjával egyezően; a korábbi, záró
+  pontosvesszős sorainkat továbbra is beolvassuk (#3792).
+
 ## [0.8.609] – 2026-09-27
 
 ### Javítva
