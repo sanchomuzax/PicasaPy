@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Beállítások ablak legkisebb szélességén (480 px) magyarul sem lóg ki a
+  fülsor (#3661).** A 8 fülcím korábban egyenlő, túl szűk részekre osztva,
+  tördelés/rövidítés nélkül a szomszédos fülekre és az ablak szélén túlra
+  folyt volna; most minden fül a saját feliratának megfelelő szélességet
+  kapja, és a fülsor a rendelkezésre álló helynél szélesebb tartalmat
+  levágva, görgethetően jeleníti meg.
+
 ## [0.8.585] – 2026-09-27
 
 ### Javítva

@@ -36,6 +36,19 @@ ColumnLayout {
         objectName: "optionsMailDefaultRadio"
         text: qsTr("Use this computer's default email program")
         ButtonGroup.group: mailGroup
+        // #3661: a hivatalos magyar felirat („A számítógép alapértelmezett
+        // levelezőprogramjának használata") az ablak legkisebb szélességén
+        // kitolja a fület — a #3572 mintája szerint tördelődik helyette.
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        contentItem: Text {
+            leftPadding: parent.indicator.width + parent.spacing
+            text: parent.text
+            font: parent.font
+            color: parent.palette.windowText
+            wrapMode: Text.WordWrap
+            verticalAlignment: Text.AlignVCenter
+        }
         // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
         // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
         checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)

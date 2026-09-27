@@ -45,15 +45,25 @@ Window {
             id: tabBar
             objectName: "optionsTabBar"
             Layout.fillWidth: true
+            // #3661: a Fusion-stílus a fülgombok szélességét egyenlő
+            // részekre osztaná (`bar.width / count`), és a fülcím-Text nem
+            // tördelődik/nem "elide"-olódik — a magyar feliratok ezért
+            // szomszédos fülekre folynának át, a legkijjebbi pedig a fülsor
+            // szélén túl. A `width: implicitWidth` kikapcsolja az egyenlő
+            // osztást (minden fül a saját feliratának megfelelő szélességet
+            // kapja), a `clip: true` pedig a fülsoron túli részt levágja —
+            // így 480 px-en a fülsor GÖRGETHETŐ (a ListView már flickelhető)
+            // lesz, nem kilógó vagy egymást átfedő.
+            clip: true
 
-            TabButton { objectName: "optionsTabGeneral"; text: qsTr("General") }
-            TabButton { objectName: "optionsTabEmail"; text: qsTr("E-Mail") }
-            TabButton { objectName: "optionsTabFileTypes"; text: qsTr("File Types") }
-            TabButton { objectName: "optionsTabSlideshow"; text: qsTr("Slideshow") }
-            TabButton { objectName: "optionsTabPrinting"; text: qsTr("Printing") }
-            TabButton { objectName: "optionsTabNetwork"; text: qsTr("Network") }
-            TabButton { objectName: "optionsTabWebAlbums"; text: qsTr("Web Albums") }
-            TabButton { objectName: "optionsTabNameTags"; text: qsTr("Name Tags") }
+            TabButton { objectName: "optionsTabGeneral"; text: qsTr("General"); width: implicitWidth }
+            TabButton { objectName: "optionsTabEmail"; text: qsTr("E-Mail"); width: implicitWidth }
+            TabButton { objectName: "optionsTabFileTypes"; text: qsTr("File Types"); width: implicitWidth }
+            TabButton { objectName: "optionsTabSlideshow"; text: qsTr("Slideshow"); width: implicitWidth }
+            TabButton { objectName: "optionsTabPrinting"; text: qsTr("Printing"); width: implicitWidth }
+            TabButton { objectName: "optionsTabNetwork"; text: qsTr("Network"); width: implicitWidth }
+            TabButton { objectName: "optionsTabWebAlbums"; text: qsTr("Web Albums"); width: implicitWidth }
+            TabButton { objectName: "optionsTabNameTags"; text: qsTr("Name Tags"); width: implicitWidth }
         }
 
         StackLayout {

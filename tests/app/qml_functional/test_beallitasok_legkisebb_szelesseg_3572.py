@@ -7,8 +7,14 @@ kitolja a fül tartalmát, és vele a fülsort és a „Tallózás…” gomboka
 Az őr a VALÓDI `OptionsDialog`-ot tölti be a magyar `.qm`-mel a legkisebb
 szélességen, és kimondja: a Webalbumok fül hosszú feliratai tördelődnek, és
 nem szélesítik a fület. Geometriát mér, képet nem hasonlít referenciához.
-(A teljes ablak kilógása betűkészlet-függő — a CI-n nincs, a helyi gépen van —,
-ezért nem itt mérjük: #3661.)
+
+#3661 — a fülsor: a korábbi, ad-hoc mérés (nem a csomagolt Open Sans-szal,
+nem a `PicasaStyle`/`Fusion` stílussal) betűkészlet-függőnek látta a teljes
+ablak kilógását. A `qml_app` fixture viszont UGYANAZT a csomagolt betűt és
+stílust tölti be, amivel az éles app is indul (#901/#3279) — ezzel mérve a
+8 magyar fülcím összesen ~499 px-et kér 456 px rendelkezésre álló helyen,
+függetlenül a futtató gép rendszerbetűitől. Ezt a lenti
+`test_a_fulsor_gorgethetov_valik_es_nem_log_ki` mondja ki.
 """
 
 from __future__ import annotations
@@ -80,3 +86,38 @@ def test_a_webalbum_hosszu_feliratai_tordelodnek(magyar_beallitasok, qt_app):
     # a leghosszabb feliratnak ténylegesen több sorba kell törnie
     hosszu = ablak.findChild(QObject, "optionsWebStripedUploadCheck")
     assert hosszu.property("contentItem").property("lineCount") > 1, "nem tördelődik"
+
+
+_FUL_NEVEK = (
+    "optionsTabGeneral",
+    "optionsTabEmail",
+    "optionsTabFileTypes",
+    "optionsTabSlideshow",
+    "optionsTabPrinting",
+    "optionsTabNetwork",
+    "optionsTabWebAlbums",
+    "optionsTabNameTags",
+)
+
+
+def test_a_fulsor_gorgethetov_valik_es_nem_log_ki(magyar_beallitasok, qt_app):
+    """#3661: a 8 magyar fülcím (csomagolt Open Sans-szal mérve, ahogy az
+    éles app is indul) összesen szélesebb, mint a legkisebb ablakszélesség
+    (mérve: ~499 px a rendelkezésre álló 456 px-hez). A `TabBar` Fusion-
+    stílusa ezt eddig egyenlő, túl szűk részekre osztotta el — a fülcímek
+    (`IconLabel`/`Text`) nem tördelődnek és nem "elide"-olódnak, ezért a
+    szomszédos fülekre, a legutolsó pedig a fülsoron túlra folyt volna.
+
+    A javítás után minden fülgomb a SAJÁT feliratának megfelelő (implicit)
+    szélességet kapja — tehát semelyik gombot nem szűkíti a fülsor —, a
+    `TabBar` pedig `clip: true`, így a 456 px-en túli rész nem látható
+    tartalom, hanem a görgethető (`ListView`-alapú) fülsoron kívül eső,
+    levágott rész."""
+    ablak = magyar_beallitasok
+    tabBar = ablak.findChild(QObject, "optionsTabBar")
+    assert tabBar.property("clip") is True, "a fülsoron túli rész kilóghat"
+    for nev in _FUL_NEVEK:
+        gomb = ablak.findChild(QObject, nev)
+        assert gomb.property("width") == pytest.approx(
+            gomb.property("implicitWidth"), abs=_TURES
+        ), f"{nev}: a fülsor összeszűkítette a saját feliratánál"
