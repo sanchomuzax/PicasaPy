@@ -63,6 +63,11 @@
         <source>Discard Changes</source>
         <translation>Módosítások elvetése</translation>
     </message>
+    <!-- #3693: a fókuszváltás kapujának 2. gombja (`il_Cancel`, 3/c 2. pont) -->
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
 </context>
 <context>
     <name>ActivityBadge</name>
@@ -4279,7 +4284,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Edit Set...</source>
-        <translation>Készlet módosítása…</translation>
+        <translation>Készlet szerkesztése</translation>
     </message>
     <message>
         <source>Delete Set</source>
