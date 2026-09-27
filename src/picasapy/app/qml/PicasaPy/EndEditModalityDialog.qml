@@ -45,6 +45,12 @@ Dialog {
         neKerdezzen.checked = false
         root.megseLathato = megseEngedve === true
         root.open()
+        //: a Mégse láthatóságának változása (és a megnyitás) a sorokat csak
+        //: a KÖVETKEZŐ képkocka polírozásakor rendezné újra — addig a Mégse
+        //: az Alkalmaz helyén állna, és a párbeszéd a régi szélességű
+        //: volna. Az újrarendezés itt, azonnal lefut.
+        tartalom.ensurePolished()
+        gombsor.ensurePolished()
     }
 
     function _dont(alkalmaz) {
@@ -61,6 +67,8 @@ Dialog {
     }
 
     ColumnLayout {
+        id: tartalom
+        objectName: "endEditModalityTartalom"
         spacing: 12
 
         Text {
@@ -81,53 +89,34 @@ Dialog {
             font.pixelSize: Theme.fontSize
         }
 
-        //: ⚠️ NEM `Row`/`RowLayout`: mérve, hogy egyik pozicionáló SEM
-        //: sorolja újra a testvéreket, amikor a KEZDETBEN rejtett
-        //: (`visible: false`) Mégse gomb később láthatóvá válik
-        //: (`megseLathato` a `kerdez()`-ben) — a gomb az Alkalmazéval AZONOS
-        //: helyen ragad (a kattintás a Mégsét találja el Alkalmaz helyett).
-        //: Ezért az `x` itt KÉZZEL, sima property-kötéssel megy — az MINDIG
-        //: újraértékelődik a függőségek (a testvér `width`/`visible`)
-        //: változásakor, pozicionáló-gyorsítótár nélkül.
-        //:
-        //: ⚠️ Az `implicitWidth` SZÁNDÉKOSAN FÜGGETLEN `cancelBtn.visible`-től
-        //: (mindig a Mégse gombbal együtt számol): mérve, hogy a `Dialog`
-        //: SAJÁT szélessége (a `contentItem` implicit méretéből) NEM követi,
-        //: ha a tartalom implicit szélessége a `kerdez()` UTÁN nő — a Mégse
-        //: gomb ilyenkor a Dialog RENDERELT/kattintható területén KÍVÜLRE
-        //: esik (a kattintás célt hibázna). Az árnyoldala egy üres sáv a
-        //: mód-belépés dialógusán (ahol a gomb rejtett) — ez csak esztétikai.
-        Item {
+        //: a rejtett Mégse gombot a `RowLayout` kihagyja a sorból és a
+        //: szélesség-számításból is — a mód-belépés párbeszéde így
+        //: képpontra a Mégse nélküli kétgombos sor marad (#3651).
+        RowLayout {
             id: gombsor
+            objectName: "endEditModalityGombsor"
             Layout.alignment: Qt.AlignRight
-            implicitWidth: cancelBtn.x + cancelBtn.width
-            implicitHeight: applyBtn.height
+            spacing: 8
 
             //: 0. gomb — `CThumbUI::ConfirmAbandonModifiedEditYesButton`
             PicasaButton {
-                id: applyBtn
                 objectName: "endEditModalityApplyButton"
                 text: qsTr("Apply Changes")
                 accent: Theme.picasaGreen
-                x: 0
                 onClicked: root._dont(true)
             }
             //: 1. gomb — `CThumbUI::ConfirmAbandonModifiedEditNoButton`
             PicasaButton {
-                id: discardBtn
                 objectName: "endEditModalityDiscardButton"
                 text: qsTr("Discard Changes")
-                x: applyBtn.x + applyBtn.width + 8
                 onClicked: root._dont(false)
             }
             //: 2. gomb — `il_Cancel`, csak `megseLathato` esetén látszik
             //: (3/c 2. pont). A #3651 tesztje a `visible` property-t nézi,
             //: nem a gomb létét.
             PicasaButton {
-                id: cancelBtn
                 objectName: "endEditModalityCancelButton"
                 text: qsTr("Cancel")
-                x: discardBtn.x + discardBtn.width + 8
                 visible: root.megseLathato
                 onClicked: root._megseDont()
             }

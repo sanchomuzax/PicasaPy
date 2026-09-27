@@ -2116,7 +2116,10 @@ Rectangle {
                         //: a `photo`-hoz rögzítve), ezért a vágás/retusálás/
                         //: szöveg/vörösszem alatt a kattintás MARAD az ő
                         //: dolguk — a fókuszváltás innen a gombbal (vagy a
-                        //: `photoElotte`-ra kattintva) megy.
+                        //: `photoElotte`-ra kattintva) megy. Bal fókusznál
+                        //: sem engedhető: az átfedők akkor is itt, a NEM
+                        //: kijelölt félen ülnek (mérve), és ez az eszköz
+                        //: egyetlen egérfelülete.
                         TapHandler {
                             enabled: viewer.layoutMode !== "1up"
                                 && !editorPanel.cropActive
