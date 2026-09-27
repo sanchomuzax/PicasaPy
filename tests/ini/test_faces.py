@@ -16,6 +16,12 @@ from picasapy.ini import (
 )
 
 TWO_FACES = "rect64(3f845bcb59418507),8e62b2035b74b477;rect64(10000000f1ddff49),ffffffffffffffff;"
+# A mért alak (#3792, docs/specs/picasa-arcfelismeres.md 190-192. sor):
+# a `faces=` sorban NINCS záró pontosvessző, a bejegyzések közt viszont van.
+TWO_FACES_MEASURED = (
+    "rect64(3f845bcb59418507),8e62b2035b74b477;"
+    "rect64(10000000f1ddff49),ffffffffffffffff"
+)
 
 
 class TestParse:
@@ -44,6 +50,11 @@ class TestParse:
         without = parse_faces(TWO_FACES.rstrip(";"))
         assert with_semi == without
 
+    def test_old_trailing_semicolon_form_still_parses(self):
+        # A régi (hibás) írónk záró pontosvesszős sorait is be kell tudnunk
+        # olvasni visszafelé kompatibilisen (#3792 Kész-ha).
+        assert parse_faces(TWO_FACES) == parse_faces(TWO_FACES_MEASURED)
+
     @pytest.mark.parametrize(
         "bad",
         [
@@ -70,12 +81,19 @@ class TestParse:
 
 
 class TestSerialize:
-    def test_roundtrip_exact_for_full_length_rects(self):
-        assert serialize_faces(parse_faces(TWO_FACES)) == TWO_FACES
+    def test_roundtrip_exact_for_measured_form(self):
+        # #3792: a mért alak nem tesz záró pontosvesszőt a `faces=` végére.
+        assert serialize_faces(parse_faces(TWO_FACES_MEASURED)) == TWO_FACES_MEASURED
 
     def test_serialize_from_face(self):
         face = Face(rect=decode_rect64("3f845bcb59418507"), contact_id="8e62b2035b74b477")
-        assert serialize_faces((face,)) == "rect64(3f845bcb59418507),8e62b2035b74b477;"
+        assert serialize_faces((face,)) == "rect64(3f845bcb59418507),8e62b2035b74b477"
+
+    def test_serialize_multiple_faces_no_trailing_semicolon(self):
+        faces = parse_faces(TWO_FACES_MEASURED)
+        result = serialize_faces(faces)
+        assert result == TWO_FACES_MEASURED
+        assert not result.endswith(";")
 
 
 class TestImmutability:

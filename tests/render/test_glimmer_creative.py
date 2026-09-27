@@ -4,6 +4,8 @@ Neon min/alap/max határeset-tesztjei.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -234,3 +236,86 @@ class TestNeon:
 
     def test_fade_100_valtozatlan(self, image):
         np.testing.assert_array_equal(c.apply_neon(image, fade=100.0), image)
+
+
+# ---------------------------------------------------------------------------
+# #3788: az Orton mestergörbe-középpontja ±75 (nem ±96) — golden-mérés a
+# valódi Picasa-exporttal. Két forrás, mindkettő csak a FEJLESZTŐI GÉPEN
+# elérhető (CI-n és felhős körben mindkettő kihagyja magát):
+#   - a 684-merokeszlet (NAS) `orton__min`/`orton__alap` párja;
+#   - a privát `picasapy-agent/referencia/ortonish` egyetlen forrásképe
+#     (`Orton-ish fade max` bájtra azonos az eredetivel — `Fade=100` a
+#     `apply_orton`-ban is visszaadja az eredetit), a Bloom/Brightness öt
+#     csúszkaállásának Picasa-exportjával összevetve.
+#
+# rontás-kontroll: a `mid` képlet 75/50 helyett 96/50-re visszaírva a
+# `test_684_merokeszlet_orton` mindkét esete (min, alap) és a
+# `test_ortonish_referencia` négy Brightness-függő esete (brightness_max,
+# brightness_min, alap, bloom_max, bloom_min) közül a brightness-es kettő
+# bukik (4,45/4,18 ΔE messze a 0,96/0,83 határ fölött); a Brightness-t nem
+# érintő alap/bloom-esetek változatlanok maradnak — ez önmagában igazolja,
+# hogy a teszt a `mid`-képletet méri, nem valami mást. Ellenőrizve lefuttatva.
+# ---------------------------------------------------------------------------
+
+
+class TestOrtonGolden:
+    _KIT = Path("/mnt/nas/My Pictures/684-merokeszlet")
+
+    #: (név, lánc, a #3788 után mért ΔE) — a határ a mért érték + 0,01.
+    _KIT_GOLDEN = [
+        ("orton__min", "Orton=1,0,0,0;", 0.153),
+        ("orton__alap", "Orton=1,25,50,0;", 0.211),
+    ]
+
+    @pytest.mark.skipif(not _KIT.is_dir(), reason="a 684-merokeszlet NAS-os mérőkészlet nem elérhető")
+    @pytest.mark.parametrize(("nev", "lanc", "vart_de"), _KIT_GOLDEN, ids=[e[0] for e in _KIT_GOLDEN])
+    def test_684_merokeszlet_orton(self, nev, lanc, vart_de):
+        gyoker = Path(__file__).resolve().parents[2]
+        if str(gyoker / "tools" / "golden") not in sys.path:
+            sys.path.insert(0, str(gyoker / "tools" / "golden"))
+        from compare_render import _read_rgb, delta_e_cie76
+        from picasapy.ini.filters import parse_filters
+        from picasapy.render.chain import apply_filters
+
+        forras = _read_rgb(self._KIT / f"{nev}.jpg")
+        export = _read_rgb(self._KIT / "export" / f"{nev}.jpg")
+        kimenet = apply_filters(forras, parse_filters(lanc)).image
+        assert kimenet.shape == export.shape
+        de = float(delta_e_cie76(kimenet, export).mean())
+        assert de <= vart_de + 0.01, f"{nev}: ΔE {de:.3f} > {vart_de + 0.01:.3f}"
+
+    _ORTONISH = Path.home() / "picasapy-agent/referencia/ortonish"
+
+    #: (név, mappa, bloom, brightness, fade, a #3788 után mért ΔE)
+    _ORTONISH_GOLDEN = [
+        ("brightness_max", "Orton-ish brightness max", 25.0, 100.0, 0.0, 0.950),
+        ("brightness_min", "Orton-ish brightness min", 25.0, 0.0, 0.0, 0.815),
+        ("alap", "Orton-ish default", 25.0, 50.0, 0.0, 0.840),
+        ("bloom_max", "Orton-ish bloom max", 50.0, 50.0, 0.0, 0.850),
+        ("bloom_min", "Orton-ish bloom min", 0.0, 50.0, 0.0, 0.963),
+    ]
+
+    @pytest.mark.skipif(
+        not _ORTONISH.is_dir(), reason="a privát ortonish golden-anyag nincs a gépen"
+    )
+    @pytest.mark.parametrize(
+        ("nev", "mappa", "bloom", "brightness", "fade", "vart_de"),
+        _ORTONISH_GOLDEN,
+        ids=[e[0] for e in _ORTONISH_GOLDEN],
+    )
+    def test_ortonish_referencia(self, nev, mappa, bloom, brightness, fade, vart_de):
+        gyoker = Path(__file__).resolve().parents[2]
+        if str(gyoker / "tools" / "golden") not in sys.path:
+            sys.path.insert(0, str(gyoker / "tools" / "golden"))
+        from compare_render import _read_rgb, delta_e_cie76
+
+        kep = "Empty Space by Glenn Rayat.jpg"
+        # a `Fade=100` az `apply_orton`-ban is bit-azonosan visszaadja az
+        # eredetit (ld. `TestOrton.test_fade_100_valtozatlan`) — a
+        # `Orton-ish fade max` export ezért a valódi, szűretlen forrás.
+        forras = _read_rgb(self._ORTONISH / "Orton-ish fade max" / kep)
+        export = _read_rgb(self._ORTONISH / mappa / kep)
+        kimenet = c.apply_orton(forras, bloom=bloom, brightness=brightness, fade=fade)
+        assert kimenet.shape == export.shape
+        de = float(delta_e_cie76(kimenet, export).mean())
+        assert de <= vart_de + 0.01, f"{nev}: ΔE {de:.3f} > {vart_de + 0.01:.3f}"

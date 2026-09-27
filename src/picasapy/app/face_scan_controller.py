@@ -53,9 +53,11 @@ from picasapy.faces.clustering import DEFAULT_SUGGEST_STEP, step_to_threshold
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
     all_photos,
+    faces_for_photo,
     faces_missing_embedding,
     ignored_faces,
     group_unnamed_faces,
+    ignored_ini_faces,
     javaslatokat_ujraszamol,
     lazitott_lepcso,
     mark_faces_ignored,
@@ -73,10 +75,19 @@ from picasapy.index import (
     unnamed_album_photos,
     unnamed_faces,
 )
-from picasapy.ini import load_document, parse_faces
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.index.faces_detected import UnnamedFace
+from picasapy.index.ignored_ini_faces import IniIgnoredFace
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
+from .face_ignore_ini import (
+    best_region,
+    ignored_regions,
+    ini_face_key,
+    ini_faces_of,
+    match_regions,
+    parse_ini_face_key,
+    quantize_rect,
+)
 from .faces_helper import FacesHelper
 from .worker_thread import BackgroundWorkerMixin
 from .display_mode_paint import current_display_mode_suffix
@@ -189,6 +200,11 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         # `unnamedGroups`-ot önmagában tesztelő esetekben) — ekkor
         # `assignNameToFaces` egyszerűen hamis eredményt ad, nem hibázik.
         self._faces_helper = faces_helper
+        #: #3670: az ini-kből olvasott, Picasa által mellőzött arcok — a bal
+        #: hasáb darabszáma minden rács-frissítéskor kéri, a söprés viszont
+        #: NAS-on drága. Az album megnyitása, a mellőzés/visszavétel és a
+        #: keresés vége frissíti.
+        self._ini_ignored_cache: tuple[IniIgnoredFace, ...] | None = None
         self._stop_event: threading.Event | None = None
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
@@ -550,7 +566,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             if face is None:
                 all_ok = False
                 continue
-            left, top, right, bottom = face.rect
+            # J1: a kereten túllógó arc keretét a rect64 tartományára vágjuk
+            left, top, right, bottom = quantize_rect(face.rect)
             written = self._faces_helper.addFace(
                 str(face.photo_path), left, top, right, bottom, clean_name
             )
@@ -620,14 +637,6 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if not name:
             return False
         return self.assignNameToFaces([int(face_id)], name)
-
-    @Slot(int)
-    def rejectSuggestion(self, face_id: int) -> None:  # noqa: N802
-        """A név-javaslat ELVETÉSE (x): a javaslat eltűnik, az arc marad
-        névtelen. Az arcot magát NEM mellőzzük — az külön döntés."""
-        with open_index(self._db_path) as conn:
-            set_suggested_name(conn, int(face_id), None)
-            conn.commit()
 
     @Slot(str, result=int)
     def personSuggestionCount(self, name: str) -> int:  # noqa: N802
@@ -705,8 +714,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         """A személy javaslatainak ELVETÉSE — `removesel`.
 
         Az elvetés nem névadás és nem mellőzés: a javaslat eltűnik, az arc
-        NÉVTELEN marad, hogy egy későbbi futás újra megvizsgálhassa (az
-        egy arcra szóló `rejectSuggestion` szerződése)."""
+        NÉVTELEN marad, hogy egy későbbi futás újra megvizsgálhassa. (A
+        „Névtelenek" album csempéjének „x"-e ezzel szemben a MELLŐZÉS,
+        #3670 — `ignoreFaces`.)"""
         celok = self._szemely_javaslatai(name, face_ids)
         if not celok:
             return 0
@@ -770,15 +780,45 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         megmarad, csak `state = 'ignored'` lesz, így sem a „Névtelenek"
         albumban, sem a csoportosításban nem bukkan fel újra.
 
+        #3670: élőben mérve (picasa-arcfelismeres.md 15.3/b.1) a mellőzés a
+        `.picasa.ini`-be is beír — a `faces=` kulcs érintett régiójának
+        személy-mezőjébe `ffffffffffffffff` kerül, a fotó többi arca
+        érintetlen marad. Enélkül az elvetés más gépre másolt könyvtárban,
+        vagy egy friss újraindexelés után elveszne, mert csak a saját
+        SQLite-indexünkben élt. Az írás a MEGLÉVŐ `FacesHelper.addFace()`
+        úton megy (üres névvel — ez pontosan az azonosítatlan sentinelt
+        írja), `None` `FacesHelper` mellett csak az index frissül.
+
         A mellőzött arcok száma a visszatérési érték."""
         ids = [int(face_id) for face_id in face_ids]
         if not ids:
             return 0
         with open_index(self._db_path) as conn:
+            by_id = {face.id: face for face in unnamed_faces(conn) if face.rect is not None}
             mark_faces_ignored(conn, ids)
             conn.commit()
+        self._write_ignore_markers([by_id[i] for i in ids if i in by_id])
+        self._ini_ignored_cache = None
         self.unnamedCountChanged.emit()
         return len(ids)
+
+    def _write_ignore_markers(self, targets: list[UnnamedFace]) -> None:
+        """A `faces=rect64(…),ffffffffffffffff` bejegyzések írása (#3670) a
+        MEGLÉVŐ `FacesHelper.addFace()` úton (üres név = a mellőzés jele).
+
+        A keret a rect64 tartományára vágva és rácsára kerekítve megy (J1:
+        a kereten túllógó arc különben `ValueError`-t dobna, és a köteg
+        többi arca kimaradna). Ha a Picasa ugyanezt az arcot már mellőzte
+        (saját, eltérő keretével), nem írunk mellé egy második bejegyzést.
+        `None` `FacesHelper` mellett csak az index frissül."""
+        if self._faces_helper is None:
+            return
+        for face in targets:
+            rect = quantize_rect(face.rect)
+            existing = ignored_regions(ini_faces_of(face.photo_path))
+            if best_region(rect, existing) is not None:
+                continue
+            self._faces_helper.addFace(str(face.photo_path), *rect, "")
 
     @Slot(result=int)
     def resetAllFaces(self) -> int:  # noqa: N802 — QML-slot-stílus
@@ -797,9 +837,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     @Slot(result=int)
     def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus
-        """Hány arc van a „Mellőzött emberek" albumban."""
+        """Hány arc van a „Mellőzött emberek" albumban — a saját indexben
+        mellőzöttek és az eredeti Picasa által mellőzöttek (#3670) együtt."""
         with open_index(self._db_path) as conn:
-            return len(ignored_faces(conn))
+            own = ignored_faces(conn)
+            if self._ini_ignored_cache is None:
+                self._ini_ignored_cache = ignored_ini_faces(conn)
+        return len(own) + len(_ini_only(own, self._ini_ignored_cache))
 
     @Slot(result="QVariantList")
     def ignoredGroups(self) -> list[dict]:  # noqa: N802 — QML-slot-stílus
@@ -808,29 +852,69 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
         Az eredetiben ez egy ALBUM volt (`CAlbumLabel::Ignored` =
         „Ignored people"), nem egy elrejtett szemetes: meg lehetett nézni,
-        tehát vissza is lehetett venni belőle."""
+        tehát vissza is lehetett venni belőle.
+
+        #3670 (B2): az eredeti Picasa által mellőzött arcok
+        (`faces=…,ffffffffffffffff`) is itt vannak. Ha egy saját, mellőzött
+        találat átfedi (`face_ignore_ini.match_regions`), a saját sor
+        képviseli; különben az ini-régió önálló elemként, `ini:` kulcsú
+        `faceId`-vel jelenik meg."""
         with open_index(self._db_path) as conn:
             faces = [face for face in ignored_faces(conn) if face.rect is not None]
-        if not faces:
+            self._ini_ignored_cache = ignored_ini_faces(conn)
+        extra = _ini_only(faces, self._ini_ignored_cache)
+        total = len(faces) + len(extra)
+        if not total:
             return []
+        payload = _group_payload(faces, self.tr("Ignored people ({0})").format(total))
         return [
-            _group_payload(
-                faces, self.tr("Ignored people ({0})").format(len(faces))
-            )
+            {
+                **payload,
+                "faces": [*payload["faces"], *(_ini_face_payload(item) for item in extra)],
+            }
         ]
 
     @Slot(list, result=int)
     def unignoreFaces(self, face_ids) -> int:  # noqa: N802 — QML-slot-stílus
         """A mellőzés VISSZAVONÁSA: az arcok újra a „Névtelenek" albumba
-        kerülnek."""
-        ids = [int(face_id) for face_id in face_ids]
-        if not ids:
+        kerülnek.
+
+        #3670: a `.picasa.ini`-ben ez a mellőzés jelének törlése (mérve: „a
+        visszavétel a névtelenek közé törli a `faces=` bejegyzést"). CSAK a
+        pontos (régió, `ffffffffffffffff`) pár megy (`FacesHelper.
+        removeIgnoredFace`, B3): ha a régióra közben névcímke került, az
+        ember által adott név marad. A saját archoz az átfedés szerint
+        illeszkedő ini-régió tartozik (a Picasa kerete eltér a miénktől);
+        az `ini:` kulcsú elem a saját ini-régióját viszi."""
+        own_ids: list[int] = []
+        ini_items: list[tuple[int, tuple[float, float, float, float]]] = []
+        for key in face_ids:
+            parsed = parse_ini_face_key(key)
+            if parsed is not None:
+                ini_items.append(parsed)
+            else:
+                own_ids.append(int(key))
+        if not own_ids and not ini_items:
             return 0
         with open_index(self._db_path) as conn:
-            unignore_faces(conn, ids)
+            by_id = {face.id: face for face in ignored_faces(conn) if face.rect is not None}
+            unignore_faces(conn, own_ids)
             conn.commit()
+            paths = _photo_paths(conn, {photo_id for photo_id, _rect in ini_items})
+        targets = [
+            (face.photo_path, best_region(
+                quantize_rect(face.rect), ignored_regions(ini_faces_of(face.photo_path))
+            ))
+            for face in (by_id[i] for i in own_ids if i in by_id)
+        ]
+        targets += [(paths[pid], rect) for pid, rect in ini_items if pid in paths]
+        if self._faces_helper is not None:
+            for path, region in targets:
+                if region is not None:
+                    self._faces_helper.removeIgnoredFace(str(path), *region)
+        self._ini_ignored_cache = None
         self.unnamedCountChanged.emit()
-        return len(ids)
+        return len(own_ids) + len(ini_items)
 
     @Slot()
     def computeEmbeddings(self) -> None:
@@ -871,7 +955,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         self.scanCancelled.emit()
                         return
                     photo_path = Path(photo.folder_path) / photo.name
-                    if _has_named_face(photo_path):
+                    ini_faces = ini_faces_of(photo_path)
+                    if any(face.is_identified for face in ini_faces):
                         # a Picasa döntése szent — nem értékeljük újra
                         self._report_scan(done, total)
                         continue
@@ -885,10 +970,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     if face_scan_done(
                         conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
                     ):
+                        # #3670: a Picasa a mi keresésünk UTÁN is mellőzhette
+                        _mark_previously_ignored(conn, photo.id, ini_faces)
                         self._report_scan(done, total)
                         continue
                     faces = self._detect(photo_path)
                     replace_faces(conn, photo.id, faces)
+                    _mark_previously_ignored(conn, photo.id, ini_faces)
                     mark_face_scan(
                         conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
                     )
@@ -903,6 +991,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             self.scanFailed.emit(str(error))
             return
         finally:
+            self._ini_ignored_cache = None
             if self._stop_event is stop_event:
                 self._stop_event = None
             # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
@@ -992,26 +1081,68 @@ def _group_payload(faces, label: str) -> dict:
     }
 
 
-def _has_named_face(photo_path: Path) -> bool:
-    """Igaz, ha a fotóhoz MÁR van ember által adott névcímke a
-    `.picasa.ini`-ben — ilyenkor a saját detektorunk kihagyja a fotót
-    (a Picasa döntései szentek, ld. modul-docstring). Hiányzó/olvashatatlan
-    ini esetén hamis (nincs mit tiszteletben tartani)."""
-    ini_path = photo_path.parent / PICASA_INI_NAME
-    if not ini_path.exists():
-        return False
-    try:
-        document = load_document(ini_path)
-    except (OSError, ValueError):
-        return False
-    section = document.section(photo_path.name)
-    if section is None:
-        return False
-    raw_faces = section.get("faces")
-    if not raw_faces:
-        return False
-    try:
-        faces = parse_faces(raw_faces)
-    except ValueError:
-        return False
-    return any(face.is_identified for face in faces)
+def _mark_previously_ignored(conn, photo_id: int, ini_faces) -> None:
+    """#3670, „kész, ha" 4. pont: a `.picasa.ini`-ben MÁR mellőzöttként
+    (`faces=…,ffffffffffffffff`) jelölt régiók saját találatai `'ignored'`
+    állapotba kerülnek — egy újraindexelés ne dobja vissza őket a
+    „Névtelenek" közé.
+
+    Átfedés alapú, páronkénti egyeztetés (`face_ignore_ini`): a Picasa
+    kerete a miénknél mérten nagyobb, bitre sosem egyezik. Egy régió
+    legfeljebb egy találatot visz, és csak a még névtelent fordítja át —
+    a fotó többi arca névtelen marad."""
+    regions = ignored_regions(ini_faces)
+    if not regions:
+        return
+    faces = [face for face in faces_for_photo(conn, photo_id) if face.rect is not None]
+    matched = match_regions([(face.id, face.rect) for face in faces], regions)
+    unnamed_ids = [face.id for face in faces if face.id in matched and face.state == "unnamed"]
+    if unnamed_ids:
+        mark_faces_ignored(conn, unnamed_ids)
+
+
+def _ini_only(
+    own: tuple[UnnamedFace, ...] | list[UnnamedFace],
+    ini_faces: tuple[IniIgnoredFace, ...],
+) -> list[IniIgnoredFace]:
+    """Az ini-ben mellőzött arcok közül azok, amelyeket egyetlen saját,
+    mellőzött találat sem fed át (#3670, B2) — a többit a saját sor
+    képviseli az albumban, így egy arc nem jelenik meg kétszer."""
+    own_by_photo: dict[int, list[UnnamedFace]] = {}
+    for face in own:
+        if face.rect is not None:
+            own_by_photo.setdefault(face.photo_id, []).append(face)
+    ini_by_photo: dict[int, list[IniIgnoredFace]] = {}
+    for item in ini_faces:
+        ini_by_photo.setdefault(item.photo_id, []).append(item)
+    result: list[IniIgnoredFace] = []
+    for photo_id, items in ini_by_photo.items():
+        mine = own_by_photo.get(photo_id, [])
+        used = set(
+            match_regions([(face.id, face.rect) for face in mine], [i.rect for i in items]).values()
+        )
+        result.extend(item for item in items if item.rect not in used)
+    return result
+
+
+def _ini_face_payload(item: IniIgnoredFace) -> dict:
+    """Egy csak az ini-ben mellőzött arc az album QML-alakjában."""
+    return {
+        "faceId": ini_face_key(item.photo_id, item.rect),
+        "thumbUrl": f"image://thumbs/{item.photo_id}{current_display_mode_suffix()}",
+        "suggestedName": "",
+    }
+
+
+def _photo_paths(conn, photo_ids: set[int]) -> dict[int, Path]:
+    """Fotó-azonosító → teljes útvonal, a megadott azonosítókra."""
+    if not photo_ids:
+        return {}
+    ids = sorted(photo_ids)
+    rows = conn.execute(
+        "SELECT p.id, fo.path AS folder_path, p.name FROM photos p "
+        "JOIN folders fo ON fo.id = p.folder_id "
+        f"WHERE p.id IN ({','.join('?' * len(ids))})",
+        ids,
+    )
+    return {int(row["id"]): Path(row["folder_path"]) / row["name"] for row in rows}

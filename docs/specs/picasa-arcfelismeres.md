@@ -192,6 +192,13 @@ faces=rect64(24d60000786452fc),0;rect64(6f0c29a7af61863f),0
 faces=rect64(4b332eb8747a7111),ffffffffffffffff;rect64(8785292cbb847c28),b720285ba3a656a7
 ```
 
+#### Nálunk (mérve, `serialize_faces`, #3792 után)
+
+A `faces=` sor a bejegyzéseket pontosvesszővel VÁLASZTJA EL, záró
+pontosvesszőt a sor végére NEM tesz — ez egyezik a fenti mért alakkal. A
+parser (`parse_faces`) visszafelé kompatibilis: a korábbi (hibás), záró
+pontosvesszős íróink sorait is beolvassa.
+
 ⛔ **HELYESBÍTVE (2026-09-27, #3670, élő mérés — ld. 15.3/b.1): a `.picasa.ini`-ben a `ffffffffffffffff` a MELLŐZÖTT (Ignore) arc jele.** A felismert, de érintetlen névtelen arc egyáltalán nem kerül a fájlba. Az alábbi régi mondat a korpusz-eloszlásból következtetett, mérés nélkül:
 
 ~~⚠️ **`ffffffffffffffff` = „ismeretlen / nincs személyhez rendelve"**~~
