@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.598] – 2026-09-27
+
 ### Javítva
 - **Az alsó sáv nagyító-csúszkája az eredetihez hasonlóan vastagabb sávot és
   álló fogantyút kapott, a könyvtárban és a nézőben is (#3729).**
