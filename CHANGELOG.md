@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A fájltörlés, az albumból eltávolítás és az Emberek-albumból eltávolítás
+  megerősítő ablaka az eredeti Picasa pontos címét, üzenetét és gombfeliratát
+  mutatja (#3539).**
+
+### Megváltozva
+- **Az albumból eltávolítás mostantól megerősítést kér** — az „Eltávolítás
+  az albumból megerősítés nélkül” beállítással (Beállítások → Általános)
+  kikapcsolhatóan (#3539).
+
 - **A rács görgetősávja a rácsterület jobb széléhez simul: csukott jobb
   oldali panelnél az ablak széléig ér, nyitott panelnél a panel bal
   széléig (#3604).** Eddig 20 képpontnyi fölösleges rés maradt a sáv jobb

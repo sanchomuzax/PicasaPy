@@ -17,6 +17,15 @@ stb.). Az eredeti a sortörést `\\n`-nel (vagy `\\r\\n`-nel) írja, az
 idézőjel ASCII `"` — ezt mindkét nyelven megtartjuk.
 
 Amit ez az őr NEM mér: hogy az üzenet a képernyőn jól tördelődik-e.
+
+#3539: a `CThumbUI::ConfirmImmediateDeletion::Message` bejegyzés KIKERÜLT
+innen — a `FileOpsDialogs.qml` `deleteConfirmDialog` lomtár-hiányos ága
+ezt a szöveget használta, de a `0x005fdc30` szövegválasztó argumentum-
+követéses mérése (`docs/specs/picasa-fen-dialogs.md` 3.3.1) kimutatta,
+hogy ehhez a dialógushoz valójában a `DeleteMessage::NoUndoSingle`/
+`NoUndoMultiple` tartozik — a #3573-as korábbi hozzárendelés tévedés
+volt. A régi (helyes szöveggel akkor lefordított) magyar szöveg most az
+`ELAVULT_FORDITAS`-ban áll, hogy ne térjen vissza csendben.
 """
 
 from __future__ import annotations
@@ -90,11 +99,6 @@ HIVATALOS = {
     "Include in filename:": ("Befoglalás a fájlnévbe:", "rename/labelgroup8.title"),
     "Please enter a new name for these files:": (
         "Kérjük, adjon új nevet ezeknek a fájloknak:", "rename/label5.title"),
-    "This file cannot be moved to the Trash and will be deleted "
-    "immediately. Are you sure you want to continue?": (
-        "A fájl nem helyezhető át a Kukába, a program azonnal törölni "
-        "fogja. Biztosan folytatja a műveletet?",
-        "CThumbUI::ConfirmImmediateDeletion::Message"),
     "If you remove a watched folder, new items that you add to that folder "
     "on disk will not be automatically added to Picasa. Are you sure you "
     "want to do this?": (
@@ -142,6 +146,62 @@ HIVATALOS = {
         "Mégse gombra kattintva mentés nélkül folytathatja a kollázs "
         "szerkesztését.",
         "CCollageUI::ConfirmMsg"),
+    # #3539: a törlés-/eltávolítás-megerősítések `DeleteMessage::` családja
+    # (spec `picasa-fen-dialogs.md` 3.3.1). 16 egyedi forrásszöveg — a
+    # családnak 18 `DeleteMessage::`-taggelt bejegyzése van, de a
+    # DeleteMultipleYesButton/DeleteItemsTitle és a
+    # RemoveMultipleYesButtonPeople/UnknownPeopleTitle egy-egy párja
+    # SZÓ SZERINT azonos angol szöveget használ, tehát csak egy-egy kulcsot
+    # ad. (A `DeletMessage::NoUndoSingleYesButton` — az eredeti "Delet"
+    # elgépelésével — ezen a listán KÍVÜL marad, mert nem a
+    # `DeleteMessage::` névtérben van.)
+    "Delete Items": ("Elemek törlése", "DeleteMessage::DeleteItemsTitle"),
+    "Delete Image": ("Kép törlése", "DeleteMessage::DeleteSingleYesButton"),
+    "Are you sure you want to send the selected file to the Recycle Bin? "
+    "(It will also be removed from any albums in which it appears)": (
+        "Biztosan a Kukába szeretné küldeni a kijelölt fájlt? (Így az "
+        "összes olyan albumból is el fog tűnni, amelyben eddig látható "
+        "volt.)",
+        "DeleteMessage::DeleteSingle"),
+    "Are you sure you want to send the %n selected items to the Recycle "
+    "Bin?\n(They will also be removed from any albums in which they "
+    "appear)": (
+        "Biztosan a Kukába szeretné küldeni a(z) %n kijelölt elemet?\n"
+        "(Így az összes olyan albumból is el fognak tűnni, amelyben "
+        "eddig láthatók voltak.)",
+        "DeleteMessage::DeleteMultiple"),
+    "Are you sure you want to permanently delete the selected file? "
+    "(This cannot be undone.)": (
+        "Biztosan végleg törli a kijelölt fájlt? (A művelet nem vonható "
+        "vissza.)",
+        "DeleteMessage::NoUndoSingle"),
+    "Delete Files": ("Fájlok törlése", "DeleteMessage::NoUndoMultipleYesButton"),
+    "Are you sure you want to delete %n selected files? (This cannot be "
+    "undone.)": (
+        "Biztosan törli a kijelölt %n fájlt? (A művelet nem vonható "
+        "vissza.)",
+        "DeleteMessage::NoUndoMultiple"),
+    "Remove Items": ("Elemek eltávolítása", "DeleteMessage::RemoveItemsTitle"),
+    "Remove Image": ("Kép eltávolítása", "DeleteMessage::RemoveSingleYesButton"),
+    "Are you sure you want to remove the selected image from the current "
+    "album?": (
+        "Biztosan eltávolítja a kijelölt képet a jelenlegi albumból?",
+        "DeleteMessage::RemoveSingle"),
+    "Remove Images": ("Képek eltávolítása", "DeleteMessage::RemoveMultipleYesButton"),
+    "Are you sure you want to remove the %n selected images from the "
+    "current album?": (
+        "Biztosan eltávolítja a kijelölt %n képet a jelenlegi albumból?",
+        "DeleteMessage::RemoveMultiple"),
+    "Remove People": ("Személyek eltávolítása", "DeleteMessage::UnknownPeopleTitle"),
+    "Remove Person": ("Személy eltávolítása", "DeleteMessage::RemoveSingleYesButtonPeople"),
+    "Are you sure you want to remove the selected person from the current "
+    "album?": (
+        "Biztosan eltávolítja a kijelölt személyt az aktuális albumból?",
+        "DeleteMessage::RemoveSinglePeople"),
+    "Are you sure you want to remove the %n selected people from the "
+    "current album?": (
+        "Biztosan eltávolítja a kijelölt %n személyt a jelenlegi albumból?",
+        "DeleteMessage::RemoveMultiplePeople"),
 }
 
 #: (kontextus, felirat) → (hivatalos magyar, azonosító) — azok a rövid
@@ -189,6 +249,11 @@ ELAVULT_FORDITAS = (
     "Adjon új nevet ezeknek a fájloknak:",
     "Ez a fájl nem helyezhető át a Lomtárba, ezért azonnal, véglegesen "
     "törlődik. Ez nem vonható vissza.",
+    # #3539: a #3573 idekötötte a ConfirmImmediateDeletion szöveget, de ez
+    # tévedés volt (ld. a modul docstringje) — a helyes DeleteMessage::
+    # NoUndoSingle/NoUndoMultiple váltotta fel
+    "A fájl nem helyezhető át a Kukába, a program azonnal törölni fogja. "
+    "Biztosan folytatja a műveletet?",
     "Ha eltávolítja ezt a mappát, a lemezen később bele tett új képek nem "
     "kerülnek automatikusan a könyvtárba.",
     "Egy teljes meghajtó figyelése lelassíthatja a rendszert. Érdemesebb "
@@ -214,14 +279,23 @@ ELAVULT_FORDITAS = (
 
 
 def _uzenetek() -> list[tuple[str, str, str]]:
-    """A `.ts` összes üzenete: (kontextus, forrás, fordítás)."""
+    """A `.ts` összes üzenete: (kontextus, forrás, fordítás).
+
+    #3539: a `DeleteMessage::` család fele `numerus="yes"` (`%n`-es) — ott a
+    fordítás NEM a `<translation>` elem közvetlen szövege (az csak
+    whitespace a beágyazott `<numerusform>` előtt), hanem magáé a
+    `<numerusform>`-é. A magyar `.ts`-ben ezekhez mindig EGY forma tartozik
+    (a magyar nyelvi szabály szerint), ezért az első forma elég."""
     fa = ElementTree.parse(TS)
     sorok = []
     for kontextus in fa.iter("context"):
         nev = kontextus.findtext("name") or ""
         for uzenet in kontextus.iter("message"):
-            sorok.append((nev, uzenet.findtext("source") or "",
-                          uzenet.findtext("translation") or ""))
+            if uzenet.get("numerus") == "yes":
+                forditas = uzenet.findtext("translation/numerusform") or ""
+            else:
+                forditas = uzenet.findtext("translation") or ""
+            sorok.append((nev, uzenet.findtext("source") or "", forditas))
     return sorok
 
 

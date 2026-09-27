@@ -45,12 +45,13 @@ HALASZTOTT = (
     ("panelClearGeotagDialogLoader", "panelClearGeotagConfirm"),
     ("undoAllEditsDialogLoader", "undoAllEditsDialog"),
     ("brokenPhotoDialogLoader", "brokenPhotoDialog"),
+    ("removeFromAlbumDialogLoader", "removeFromAlbumDialog"),
     ("removePeopleFacesDialogLoader", "removePeopleFacesDialog"),
     ("resetFacesConfirmLoader", "resetFacesConfirm"),
 )
 
 #: ALSÓ KORLÁT: ha valaki kiüríti a listát, az őr néma maradna.
-MIN_HALASZTOTT = 7
+MIN_HALASZTOTT = 8
 
 
 def test_a_lista_nem_urulhet_ki():
