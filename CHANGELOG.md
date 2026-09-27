@@ -7,6 +7,25 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.607] – 2026-09-27
+
+### Javítva
+- Biztonsági mentéskor a még el nem mentett mappák akkor is megjelennek a
+  bal oldali mappalistában, ha a figyelt mappa hivatkozáson át, rövidített
+  vagy eltérő kis- és nagybetűs névvel van megadva; a mentés ilyenkor is
+  megtartja a mappaszerkezetet (#3776).
+
+## [0.8.606] – 2026-09-27
+
+### Javítva
+- A „Szegély” effekt lekerekített sarka most az eredeti Picasa szerint
+  rajzolódik: a kép sarka és a körülötte futó belső sáv közös középpontú
+  ívvel kerekedik, a keret külső sarka pedig szögletes marad. A feliratsáv
+  sem lesz többé egy képponttal magasabb az eredetinél. A legerősebb
+  beállításon az eltérés az eredetitől 3,58-ról 0,10-re csökkent (ΔE), és a
+  kép mérete képpontra egyezik. Mellékhatásként a „Kerekített élek” íve is
+  simább lett, és közelebb került az eredetihez (ΔE 0,17 → 0,14) (#3768).
+
 ### Javítva
 - Kettős nézetben (két különböző kép egymás mellett) belépéskor a bal
   oldalon a jelenlegi kép áll, a jobbon a következő, és a bal van

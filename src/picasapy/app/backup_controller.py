@@ -47,6 +47,7 @@ from picasapy.backup import futtasd, mappankent, tervezd_meg
 from picasapy.backup.lemezkep import LemezkepTetel, lemezkepekbe
 from picasapy.burn import CD, DVD, hasznalhato_kapacitas, lemezek_szama
 from picasapy.index import open_index
+from picasapy.paths import flat_key, normalize_path
 from .worker_thread import BackgroundWorkerMixin
 from picasapy.index.backup_sets import (
     SZUROK,
@@ -251,16 +252,34 @@ class BackupController(BackgroundWorkerMixin, QObject):
         return None
 
     def _tervezd(self, conn, keszlet, mappak):
-        """A készlet terve a figyelt gyökerekből, a pipákra szűkítve."""
+        """A készlet terve a figyelt gyökerekből, a pipákra szűkítve.
+
+        #3776 [KRITIKUS javítás]: a `gyokerek` itt FELOLDVA megy tovább —
+        a `_jeloltek()` a fájlokat `normalize_path`-dal feloldott gyökerek
+        alól gyűjti (symlink, Windows 8.3-rövidnév, eltérő betűzés
+        feloldva), tehát a `_relativ_ut` (`backup/futtatas.py`) csak akkor
+        találja meg az egyező előtagot, ha a hozzá kapott gyökér UGYANÚGY
+        fel van oldva. Feloldatlan gyökérnél a `relative_to` mindig
+        `ValueError`-t dob, és a terv a `Path(fajl.parent.name) / fajl.name`
+        eséstartalékra esik — ez ELVESZTI a mappaszerkezetet, és két,
+        eltérő gyökér alatti, azonos nevű almappa (pl. `2023/nyaralas/` és
+        `2024/nyaralas/`) fájljai UGYANARRA a célútra másolódnak, egymást
+        felülírva."""
         return tervezd_meg(
-            conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek,
+            conn, keszlet, self._jeloltek(),
+            gyokerek=tuple(normalize_path(gy) for gy in self._gyokerek),
             mappak=None if mappak is None else [str(m) for m in mappak],
         )
 
     def _jeloltek(self) -> list[Path]:
+        """#3776: a gyökér FELOLDVA — a szkenner (`scanner/walker.py`)
+        ugyanígy `normalize_path`-dal jár el. Feloldás nélkül egy
+        symlinkes, Windows 8.3-rövidnevű vagy eltérő betűzésű gyökér alatti
+        fájl útja eltérne az index kulcsától, és a mentetlen mappa a lapos
+        listában (`FolderPane.mentesTerkep`) nem találna rá."""
         fajlok: list[Path] = []
         for gyoker in self._gyokerek:
-            ut = Path(gyoker)
+            ut = Path(normalize_path(gyoker))
             if not ut.is_dir():
                 continue
             fajlok.extend(sorted(p for p in ut.rglob("*") if p.is_file()))
@@ -295,6 +314,14 @@ class BackupController(BackgroundWorkerMixin, QObject):
             }
             for mappa, tetelek in mappankent(terv).items()
         ]
+
+    @Slot(str, result=str)
+    def mentesKulcs(self, path: str) -> str:  # noqa: N802 — QML-slot-stílus
+        """#3776: a lapos mappalista (`FolderPane.mentesTerkep`,
+        `FolderListModel.rowOfPath`) összehasonlító kulcsa — ugyanaz a
+        tiszta függvény mindkét oldalon, hogy egy eltérő betűzésű
+        Windows-gyökér se okozzon pontos-egyezés-hibát."""
+        return flat_key(str(path))
 
     @Slot(int, result=int)
     def mentetlenMappakLekerese(self, keszlet_id: int) -> int:  # noqa: N802
