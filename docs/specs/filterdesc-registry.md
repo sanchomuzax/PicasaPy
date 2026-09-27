@@ -1873,6 +1873,37 @@ A töréspont-keresés **bináris keresés**.
 > Ez **hússzorosa** a ditherelés ±1-es tűrésének — szemmel látható.
 > A kétpontos görbéknél (Invert, Neon, PencilSketch) a kettő azonos.
 
+#### ⛔ A `SimpleColorMatrix` KÉPPONTRA ható sorrendje FORDÍTOTT: színárnyalat → fényerő → kontraszt → telítettség (2026-09-27, 374. kör, #626)
+
+*Forrás: a mag `0x00bb6400` · a szorzó `0x008f28d0` · a fényerő-építő `0x008f1af0` · a kontraszt-építő `0x008f1bd0` · az alkalmazó `0x008f2640` · golden: `684-merokeszlet`.*
+
+Az alábbi (régebbi) blokk az **építési** sorrendet írja: telítettség, kontraszt, fényerő, majd az ötödik lépés (`0x008f1e70`, színárnyalat-forgatás: a paraméter `[−180, 180]`-ra vágva, fokból radiánba, sin/cos). A képpontra ható sorrend ennek a **fordítottja**:
+- a szorzó a gyűjtőt **jobbról** szorozza az új részmátrixszal: `G ← G × Ú` (a gyűjtő az `eax`, az új az `ecx`; `0x008f1b40`/`0x008f1b47`; eredmény vissza a gyűjtő sorába);
+- a kész mátrix **oszlopvektort** szoroz: `out = M · [R, G, B, A, 1]ᵀ`. A sor a kimeneti csatorna, a 4. oszlop az eltolás. A fényerő a `M[0..2][4]`-be kerül (`0x008f1ba0`–`0x008f1ba8`), az alkalmazó `out_R = M[0][0]·R + … + M[0][4]`.
+
+⇒ `M = S · C · B · X`, tehát a képpontra **előbb X (színárnyalat), aztán B (fényerő), aztán C (kontraszt), végül S (telítettség)** hat. Összekapcsolás nélkül, színárnyalat és telítettség nélkül csatornánként:
+
+```
+out = k·(x + b) + (1 − k)·63,5        (vágás 0..255-re csak a végén, egyszer)
+```
+
+**Mérve** (a Picasa exportjai, `analyze_validation_kit.py`, átlagos ΔE a Picasához; „fordított” = képpontra fényerő → kontraszt → telítettség):
+
+| effekt · eset | a mai (kontraszt → fényerő, a telítettség elöl) | **fordított** |
+|---|---:|---:|
+| `Boost` max (100) | 13,071 (ROSSZ, #3516) | **0,095** |
+| `Boost` alap (50) | 2,686 | **0,143** |
+| `Lomo` alap / min | 1,046 / 1,021 | **0,453 / 0,442** |
+| `CrossProcess` alap | 0,883 | **0,807** |
+| `NightVision` min (−50 / −50) | 10,813 | **5,436** |
+| `NightVision` alap (0 / 0) | 11,696 | 11,696 (nincs mátrixlépés) |
+
+Független ellenőrzés az exportokból: a `NightVision` `min` és `alap` exportja (azonos forrásból) elmosva csatornánként `min ≈ 0,50·alap + 6,7`. A fenti képlet `k = 0,5`, `b = −50` mellett `0,5·x + 6,75`-öt ad; a fordított sorrend `0,5·x − 18,25`-öt adna.
+
+A `NightVision` maradék eltérése a **zaj mintázata**: elmosott képeken az `alap` eltérése csak 1,67, a zaj szórása egyezik (G 28,8 ↔ 27,5), a képpontonkénti véletlenmintázat nem. Ez külön kérdés.
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és a golden-méréssel.* Feltételes: a gyűjtő kezdőértéke felhasználói mátrix nélkül identitás (a `0x00c7d620` identitás-tábla, a `0xbc1860` csak `[this+0x24] ≠ 0` esetén ír). Balról állna, tehát a sorrendet nem befolyásolja.
+
 #### `SimpleColorMatrix` — a `ContrastAndBrightnessLinked` jelentése (8 effekt)
 
 A mag (`0x00bb6400`) öt attribútumot olvas, majd **a jelzőtől függően más
