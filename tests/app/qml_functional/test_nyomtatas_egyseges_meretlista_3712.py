@@ -197,13 +197,20 @@ class TestADarabszamSorATenylegesLapszamotMondja:
         dialog = _nyit_sima(window, qt_app, [0, 1])
         qt_app.processEvents()
 
+        # #3733: az alapállás Teljes oldal (FullPage) lett — az a méret
+        # A4-en NEM enged két képet egy lapra. A darabszám-sor TÉNYLEGES
+        # lapszám-logikáját ezért egy olyan méretre kattintva mérjük,
+        # ahol ez a jegy szándéka szerint kettő fér egy lapra.
+        _valassz_a_legorduloben(dialog, qt_app, "M4X6")
+        qt_app.processEvents()
+
         szoveg = str(_elem(dialog, "printSelectionText").property("text"))
         lapszam = dialog.property("printPageCount")
 
-        # Két kép az alapértelmezett 4×6-tal ugyanarra a lapra kerül a
-        # rácselrendezőben (#3647) — a foga: ha ez valaha 2-re változna
-        # (pl. a rács vagy az alapméret módosulna), ennek a tesztnek
-        # SZÓLNIA kell, nem csendben zöldnek maradnia.
+        # Két kép 4×6-tal ugyanarra a lapra kerül a rácselrendezőben
+        # (#3647) — a foga: ha ez valaha 2-re változna (pl. a rács
+        # módosulna), ennek a tesztnek SZÓLNIA kell, nem csendben zöldnek
+        # maradnia.
         assert lapszam == 1, lapszam
         assert szoveg == "Pictures to print: 2 (1 page(s))", szoveg
 

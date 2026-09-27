@@ -119,8 +119,11 @@ Window {
 
     // #1782: a nyomatméret (`0x00743700`) és a hozzá tartozó
     // minőség-összegzés. A méret TARTÓS — az eredetiben a
-    // `Preferences\PrintLastSize` őrzi; nálunk a vezérlő teszi el.
-    property string printSize: "M4X6"
+    // `Preferences\PrintLastSize` őrzi; nálunk a vezérlő teszi el. Ez a
+    // kezdőérték csak a nyisd()-előtti pillanatra vonatkozik — a
+    // `nyisd()` minden megnyitáskor felülírja a vezérlő `printSize()`-
+    // ával (#3733: az alapállás Teljes oldal, ld. ott).
+    property string printSize: "TELJES_OLDAL"
     //: #1961: a feliratok a HIVATALOS `ytPrintSizes::` szövegcsaládból
     //: valók (`stringres` 3478–3494), nem saját fogalmazás. A készletet a
     //: vezérlő adja a felület nyelve szerint (magyarul metrikus hatos),

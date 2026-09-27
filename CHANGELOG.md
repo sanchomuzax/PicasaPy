@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Nyomtatás párbeszéd alapállása Teljes oldal (FullPage), mint az
+  eredetiben — nem a mért 4×6 / 10×15 cm (#3733).** Első megnyitáskor
+  (nincs még megjegyzett méret) mindkét felületi nyelven a Teljes oldal
+  van kiválasztva; a korábban megjegyzett méret továbbra is visszatöltődik.
+
 ## [0.8.596] – 2026-09-27
 
 ### Javítva
