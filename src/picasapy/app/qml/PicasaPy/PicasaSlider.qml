@@ -88,6 +88,16 @@ Slider {
     property real handleHeight: 14
     property real handleRadius: Math.min(handleWidth, handleHeight) / 2
 
+    // #3709: a RAJZOLT sáv belső behúzása a foglalat BAL szélétől — a
+    // jobb szél változatlan marad. Alapból 0 (a sáv a teljes
+    // `availableWidth`-et kitölti, ahogy eddig), a hívó helyen felülírható.
+    // A nagyítás-csúszkán (`TrayBar.qml` `traySizeSlider`) MÉRT 6 képpont:
+    // a `thumbui/scalecontainer` foglalata 127 széles, a benne rajzolódó
+    // `scaleslider/sliderbase` viszont csak 121 (a tulajdonos 1917 px-es
+    // képernyőképe, #3709) — a foglalat MÉRETE emiatt nem szűkül, csak a
+    // rajz kezdőpontja tolódik jobbra.
+    property real grooveInset: 0
+
     // visszafelé kompatibilis alias a NÉGYZETES fogantyú méretére
     readonly property real handleSize: Math.max(handleWidth, handleHeight)
 
@@ -106,10 +116,15 @@ Slider {
 
     background: Rectangle {
         x: control.leftPadding + (control.isHorizontal
-                                   ? 0 : (control.availableWidth - width) / 2)
+                                   ? control.grooveInset
+                                   : (control.availableWidth - width) / 2)
         y: control.topPadding + (control.isHorizontal
                                   ? (control.availableHeight - height) / 2 : 0)
-        width: control.isHorizontal ? control.availableWidth : control.grooveThickness
+        //: #3709: a behúzás csak a VÍZSZINTES sávot szűkíti — függőleges
+        //: csúszkán a `grooveInset` alapból 0, tehát nincs hatása.
+        width: control.isHorizontal
+               ? control.availableWidth - control.grooveInset
+               : control.grooveThickness
         height: control.isHorizontal ? control.grooveThickness : control.availableHeight
         radius: control.grooveThickness / 2
 

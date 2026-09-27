@@ -1447,7 +1447,12 @@ Column {
                         // belépési pontja a `thumbui/loupehit`, egy 25 × 19-es
                         // gomb a `scale_group`-ban, a nagyítás-csúszka ELŐTT
                         // (`loupehit` x 366…391, `scalecontainer` x 398…525).
-                        PicasaButton {
+                        // #3709: KERET NÉLKÜLI ikon — a `PicasaButton` mindig
+                        // rajzolt szegélye/gradiense a tulajdonos
+                        // képkivágatos összevetésén nem volt ott (az eredeti
+                        // `loupehit` puszta ikon, nem gomb-kromatika). Ezért
+                        // sima `Item` + `TapHandler`, PicasaButton nélkül.
+                        Item {
                             id: trayLoupeButton
                             objectName: "trayLoupeButton"
                             //: MÉRT méret (`thumbui/loupehit`)
@@ -1455,18 +1460,19 @@ Column {
                             height: 19
                             anchors.verticalCenter: parent.verticalCenter
                             //: ⚠️ NEM `checkable` + kötött `checked` — az a
-                            //: projekt ismert rádió-csapdája (#1773): a gomb
-                            //: kattintáskor MAGA is átírja a `checked`-et, és
-                            //: ezzel eltöri a kötést, amiből olvassuk. A
-                            //: bekapcsolt állapotot ezért — a panelkapcsolók
-                            //: mintájára — az `accent` jelzi, a `loupeActive`
-                            //: pedig az EGYETLEN igazságforrás.
+                            //: projekt ismert rádió-csapdája (#1773): egy
+                            //: `Button` kattintáskor MAGA írná át a
+                            //: `checked`-et, és ezzel eltörné a kötést,
+                            //: amiből olvassuk. A `loupeActive` marad az
+                            //: EGYETLEN igazságforrás; a bekapcsolt
+                            //: állapotot egyedül az ikon opacitása jelzi
+                            //: (ld. lentebb) — KERET vagy kitöltés nélkül.
                             //:
                             //: A saját tesztje ezt élesben fogta meg: a
                             //: kikapcsolás nem jutott el a rács rétegéhez.
                             readonly property bool aktiv: tray.appWindow
                                 ? tray.appWindow.loupeActive === true : false
-                            accent: aktiv ? Theme.selectionBlue : "transparent"
+                            readonly property bool hovered: loupeHover.hovered
                             //: ⚠️ A felfedezhetőség a MI döntésünk: az eredeti
                             //: nem ad rá támpontot — mérve (spec 2. szakasz)
                             //: külön egérmutatót SEM használ. A #1911 viszont
@@ -1475,14 +1481,22 @@ Column {
                             //: #3476: az eredeti SAJÁT szövegével
                             //: (`thumbui/loupehit`, hivatalos magyarral).
                             ToolTip.text: qsTr("Click and drag over photos to magnify them")
-                            ToolTip.visible: hovered
+                            ToolTip.visible: trayLoupeButton.hovered
                             ToolTip.delay: Theme.tooltipDelay
-                            onClicked: {
-                                if (!tray.appWindow) return
-                                tray.appWindow.loupeActive =
-                                    !tray.appWindow.loupeActive
+                            HoverHandler { id: loupeHover }
+                            //: felengedésre sül el — ugyanaz a viselkedés,
+                            //: mint a korábbi `Button.onClicked` (nem
+                            //: `lenyomasra`, ld. a `PicasaButton` mintáját).
+                            TapHandler {
+                                acceptedButtons: Qt.LeftButton
+                                gesturePolicy: TapHandler.ReleaseWithinBounds
+                                onSingleTapped: {
+                                    if (!tray.appWindow) return
+                                    tray.appWindow.loupeActive =
+                                        !tray.appWindow.loupeActive
+                                }
                             }
-                            contentItem: Image {
+                            Image {
                                 objectName: "trayLoupeIcon"
                                 source: "icons/loupe.svg"
                                 //: `thumbui/loupe` — MÉRT 23 × 16 a 25 × 19-es
@@ -1491,8 +1505,9 @@ Column {
                                 sourceSize.width: 23; sourceSize.height: 16
                                 fillMode: Image.PreserveAspectFit
                                 anchors.centerIn: parent
-                                //: a kikapcsolt állapot halványabb — a bekapcsolt
-                                //: állapotot a gomb saját `checked` háttere jelzi
+                                //: a kikapcsolt állapot halványabb — a
+                                //: bekapcsolt állapotot az OPACITÁS jelzi
+                                //: (#3709: nincs többé külön háttér/keret)
                                 opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
                             }
                         }
@@ -1505,6 +1520,10 @@ Column {
                             value: tray.appWindow ? tray.appWindow.thumbSize : 128
                             //: `thumbui/scalecontainer` — FIX 127 képpont
                             width: 127
+                            //: #3709: a RAJZOLT sáv 6 képponttal beljebb
+                            //: kezdődik — a foglalat (127) nem szűkül, csak
+                            //: a `scaleslider/sliderbase` rajza (121).
+                            grooveInset: 6
                             anchors.verticalCenter: parent.verticalCenter
                             onMoved: tray.appWindow
                                      && (tray.appWindow.thumbSize = value)

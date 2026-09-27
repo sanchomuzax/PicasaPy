@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az alsó sáv nagyítás-csúszkájának rajzolt sávja most a mért 6 képpontos
+  belső behúzással indul, a nagyító pedig keret nélküli ikon lett, ahogy az
+  eredetiben (#3709).**
+
 ## [0.8.593] – 2026-09-27
 
 ### Hozzáadva
