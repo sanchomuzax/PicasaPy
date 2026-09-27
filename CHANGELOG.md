@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Kettős nézetben, bal fókusznál a nyitott szerkesztőeszköz (Vágás,
+  Retusálás, Szöveg, Vörösszem) átfedője a kijelölt (bal) képen jelenik
+  meg, nem a másikon (#3741).** Emiatt bal fókusznál is működik a jobb
+  képre kattintva a fókuszváltás.
+
 ## [0.8.597] – 2026-09-27
 
 ### Javítva

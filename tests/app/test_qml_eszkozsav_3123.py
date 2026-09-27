@@ -214,7 +214,10 @@ class TestAKepFolott:
             Path(__file__).resolve().parents[2]
             / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
         ).read_text(encoding="utf-8")
-        # középre (m_centerX) és 10 képponttal a kirajzolt kép alja fölé
-        assert "x: (photo.width - width) / 2" in f
-        assert "(photo.height + photo.paintedHeight) / 2" in f
+        # középre (m_centerX) és 10 képponttal a kirajzolt kép alja fölé —
+        # #3741: a mérce a `photo` helyett a `photoArea.fokuszKep`-hez
+        # (a fókuszban lévő félhez) igazodik, a képlet változatlan.
+        assert "x: (photoArea.fokuszKep.width - width) / 2" in f
+        assert "(photoArea.fokuszKep.height" in f
+        assert "+ photoArea.fokuszKep.paintedHeight) / 2" in f
         assert "- height - 10" in f

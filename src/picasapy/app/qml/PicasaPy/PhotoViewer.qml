@@ -2016,16 +2016,22 @@ Rectangle {
                         //: 2-up módban hat, és csak akkor, ha épp nincs
                         //: aktív pontos-kattintású szerkesztő-eszköz a
                         //: KÉPEN (azok kattintása MÁST jelent — célpont,
-                        //: minta, pötty — de a `retouchClickArea`/
-                        //: `neutralPickArea`/`paintMaskArea` mindegyike a
-                        //: `photo`-hoz van rögzítve, ide, a `photoElotte`-hoz
-                        //: nem, tehát itt a vágás/retusálás/szöveg/vörösszem
-                        //: nem old ütközést — #3693: azokat a fókuszváltás
-                        //: kapuja (`fokuszValt`) kezeli.
+                        //: minta, pötty). #3741: a `retouchClickArea`/
+                        //: `cropOverlay`/`textClickArea`/`redeyeOverlay` a
+                        //: `photoArea.fokuszKep`-re kerül — bal fókusznál
+                        //: épp IDE, tehát ilyenkor itt IS old ütközést,
+                        //: ugyanúgy, ahogy a `photo` párja jobb fókusznál.
+                        //: `neutralPickArea`/`paintMaskArea` marad kivétel
+                        //: MINDKÉT irányban (ld. a `photo` párját).
                         TapHandler {
                             enabled: viewer.layoutMode !== "1up"
                                 && !editorPanel.neutralPickerActive
                                 && !paintMaskArea.aktiv
+                                && !(viewer.aktivOldal === "bal"
+                                     && (editorPanel.cropActive
+                                         || editorPanel.redeyeActive
+                                         || editorPanel.retouchActive
+                                         || editorPanel.textActive))
                             onTapped: viewer.fokuszValt("bal")
                         }
                     }
@@ -2111,26 +2117,49 @@ Rectangle {
 
                         //: #3663: a képre kattintás a JOBB/ALSÓ felet
                         //: aktiválja — ld. a `photoElotte`-n lévő párját.
-                        //: #3693: itt a `retouchClickArea`/`neutralPickArea`/
-                        //: `paintMaskArea` valódi átfedő `MouseArea`-k (mind
-                        //: a `photo`-hoz rögzítve), ezért a vágás/retusálás/
-                        //: szöveg/vörösszem alatt a kattintás MARAD az ő
-                        //: dolguk — a fókuszváltás innen a gombbal (vagy a
-                        //: `photoElotte`-ra kattintva) megy. Bal fókusznál
-                        //: sem engedhető: az átfedők akkor is itt, a NEM
-                        //: kijelölt félen ülnek (mérve), és ez az eszköz
-                        //: egyetlen egérfelülete.
+                        //: #3693: itt a `retouchClickArea`/`cropOverlay`/
+                        //: `textClickArea`/`redeyeOverlay` valódi átfedő
+                        //: `MouseArea`-k, ezért amíg a fókusz JOBB (tehát az
+                        //: átfedő a `photoArea.fokuszKep`-en át épp ide, a
+                        //: `photo`-ra kerül, #3741), a kattintás MARAD az ő
+                        //: dolguk. #3741: BAL fókusznál az átfedő a MÁSIK
+                        //: félre, a `photoElotte`-ra kerül — itt ekkor nincs
+                        //: ütközés, tehát a kattintás mehet a kapun
+                        //: (`fokuszValt`) át, ahogy a `photoElotte` felől is
+                        //: már ment (#3693, `TestAKepreKattintassal`).
+                        //: `neutralPickArea`/`paintMaskArea` marad kivétel
+                        //: MINDKÉT irányban — ld. a `photoElotte` párját.
                         TapHandler {
                             enabled: viewer.layoutMode !== "1up"
-                                && !editorPanel.cropActive
-                                && !editorPanel.redeyeActive
-                                && !editorPanel.retouchActive
-                                && !editorPanel.textActive
                                 && !editorPanel.neutralPickerActive
                                 && !paintMaskArea.aktiv
+                                && !(viewer.aktivOldal === "jobb"
+                                     && (editorPanel.cropActive
+                                         || editorPanel.redeyeActive
+                                         || editorPanel.retouchActive
+                                         || editorPanel.textActive))
                             onTapped: viewer.fokuszValt("jobb")
                         }
                     }
+
+                    //: #3741: az eszközátfedők (vágás/retusálás/szöveg/
+                    //: vörösszem, és a hozzájuk tartozó `frameContentArea`/
+                    //: `editorToolBar`/`paintMaskArea`/`neutralPickArea`)
+                    //: mind a TÉNYLEGESEN szerkesztett — a fő
+                    //: `editController` láncát viselő — félre kerülnek. Az
+                    //: melyik VIZUÁLIS fél ez, az `aktivOldal`-tól függ,
+                    //: ugyanaz a leképezés, mint a `viewerFocusBadge`
+                    //: (lentebb, a `photoArea` testvéreként deklarált
+                    //: „Kijelölve” jelvény) saját `fokuszKep`-jéé:
+                    //: `aktivOldal === "bal"` esetén a `photoElotte` (a
+                    //: `source`-kötés szerint EKKOR kapja az
+                    //: `editCtl.previewSource`-t),
+                    //: egyébként a `photo`. A hiba előtt minden felsorolt
+                    //: elem fixen a `photo`-hoz volt rögzítve — helyes volt
+                    //: az alapértelmezett jobb fókusznál, de bal fókusznál a
+                    //: NEM kijelölt képen jelent meg (mérve, #3741).
+                    readonly property var fokuszKep:
+                        viewer.aktivOldal === "bal" ? photoElotte : photo
 
                     // GPU élő-előnézet (#22): a `photo` FÖLÖTT, csak akkor
                     // látható, ha `gpuFinetuneActive && gpuFinetuneEligible`
@@ -2333,10 +2362,14 @@ Rectangle {
                     // korábbi panel-gombok OBJEKTUMNEVÉT viszik tovább, hogy
                     // a rájuk épülő működés (és annak ellenőrzése) ne
                     // szakadjon meg.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a sáv a TÉNYLEGESEN szerkesztett félre kerül,
+                    //: bal fókusznál a `photoElotte`-ra (ld. a `fokuszKep`
+                    //: docsztringjét a `photo` alatt).
                     EditorToolBar {
                         id: editorToolBar
                         objectName: "editorToolBar"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         z: 20
                         //: #3320: a sáv KIZÁRÓLAG a kiegyenesítésé. A
                         //: `.tre` a `tool_container`-t a
@@ -2366,8 +2399,9 @@ Rectangle {
                                 editController.setTilt(ertek)
                         }
                         //: középre, és 10 képponttal a KIRAJZOLT kép alja fölé
-                        x: (photo.width - width) / 2
-                        y: (photo.height + photo.paintedHeight) / 2
+                        x: (photoArea.fokuszKep.width - width) / 2
+                        y: (photoArea.fokuszKep.height
+                            + photoArea.fokuszKep.paintedHeight) / 2
                            - height - 10
                         onApplyClicked: {
                             //: #3234: a döntés értéke MÁR ki van írva (a
@@ -2401,21 +2435,26 @@ Rectangle {
                     //
                     // Keret nélkül `hely === null`, és a terület pontosan a
                     // kirajzolt kép — vagyis a mai viselkedés.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő és a mérce — ez viszi a `cropOverlay`-t és a
+                    //: `facesOverlay`-t is a fókuszban lévő félre.
                     Item {
                         id: frameContentArea
                         objectName: "frameContentArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         readonly property var hely:
                             (typeof editController !== "undefined" && editController
                              && editController.framePlacement)
                                 ? editController.framePlacement : null
-                        width: photo.paintedWidth * (hely ? hely.szelesseg : 1)
-                        height: photo.paintedHeight * (hely ? hely.magassag : 1)
-                        x: (photo.width - photo.paintedWidth) / 2
-                           + (hely ? hely.kozepX * photo.paintedWidth : photo.paintedWidth / 2)
+                        readonly property real kepSzelesseg: photoArea.fokuszKep.paintedWidth
+                        readonly property real kepMagassag: photoArea.fokuszKep.paintedHeight
+                        width: kepSzelesseg * (hely ? hely.szelesseg : 1)
+                        height: kepMagassag * (hely ? hely.magassag : 1)
+                        x: (photoArea.fokuszKep.width - kepSzelesseg) / 2
+                           + (hely ? hely.kozepX * kepSzelesseg : kepSzelesseg / 2)
                            - width / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                           + (hely ? hely.kozepY * photo.paintedHeight : photo.paintedHeight / 2)
+                        y: (photoArea.fokuszKep.height - kepMagassag) / 2
+                           + (hely ? hely.kozepY * kepMagassag : kepMagassag / 2)
                            - height / 2
                         //: a renderelő szöge az óramutatóval ellentétes, a QML
                         //: `rotation`-je egyező irányú — innen az előjelváltás
@@ -2489,10 +2528,12 @@ Rectangle {
                     // (`thumbui/circlecursor`, mérve), az átmérőjét a panel
                     // csúszkája adja; a vonás a KIRAJZOLT képhez normálva megy
                     // a vezérlőnek, tehát a nagyítástól független.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a festés a TÉNYLEGESEN szerkesztett félen megy.
                     MouseArea {
                         id: paintMaskArea
                         objectName: "paintMaskArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         z: 5
                         readonly property bool aktiv:
                             (editController && editController.paintMaskSupported
@@ -2501,10 +2542,12 @@ Rectangle {
                         visible: paintMaskArea.aktiv
                         enabled: paintMaskArea.aktiv
                         hoverEnabled: true
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         //: a rendszer-kurzort elrejtjük: a KÖR maga a mutató
                         cursorShape: Qt.BlankCursor
 
@@ -2543,16 +2586,20 @@ Rectangle {
                         }
                     }
 
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a pipetta a TÉNYLEGESEN szerkesztett félen ül.
                     MouseArea {
                         id: neutralPickArea
                         objectName: "neutralPickArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.neutralPickerActive
                         enabled: editorPanel.neutralPickerActive
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         cursorShape: Qt.CrossCursor
                         onClicked: function(mouse) {
                             if (!editController) return
@@ -2563,17 +2610,22 @@ Rectangle {
                         }
                     }
 
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a retusálás a TÉNYLEGESEN szerkesztett félen
+                    //: megy, ne a másik (nem kijelölt) képen.
                     MouseArea {
                         id: retouchClickArea
                         objectName: "retouchClickArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.retouchActive
                         enabled: editorPanel.retouchActive
                         hoverEnabled: true
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         cursorShape: Qt.CrossCursor
                         property bool ctrlPanning: false
                         property real panLastX: 0
@@ -2620,15 +2672,20 @@ Rectangle {
                     // `redeyeHideOutlines` a jegy „Preview changes without
                     // square outlines" jelölőnégyzete: csak a RAJZOT tünteti
                     // el, a javítást nem.
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a vörösszem-átfedő a TÉNYLEGESEN szerkesztett
+                    //: félen jelenik meg.
                     Item {
                         id: redeyeOverlay
                         objectName: "redeyeOverlay"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.redeyeActive
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
 
                         Repeater {
                             model: editorPanel.redeyeHideOutlines
@@ -2754,16 +2811,21 @@ Rectangle {
                             }
                         }
                     }
+                    //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
+                    //: szülő — a szöveg-elhelyezés a TÉNYLEGESEN szerkesztett
+                    //: félen megy.
                     MouseArea {
                         id: textClickArea
                         objectName: "textClickArea"
-                        parent: photo
+                        parent: photoArea.fokuszKep
                         visible: editorPanel.textActive
                         enabled: editorPanel.textActive
-                        x: (photo.width - photo.paintedWidth) / 2
-                        y: (photo.height - photo.paintedHeight) / 2
-                        width: photo.paintedWidth
-                        height: photo.paintedHeight
+                        x: (photoArea.fokuszKep.width
+                            - photoArea.fokuszKep.paintedWidth) / 2
+                        y: (photoArea.fokuszKep.height
+                            - photoArea.fokuszKep.paintedHeight) / 2
+                        width: photoArea.fokuszKep.paintedWidth
+                        height: photoArea.fokuszKep.paintedHeight
                         cursorShape: Qt.CrossCursor
                         onClicked: function(mouse) {
                             if (width <= 0 || height <= 0) return
