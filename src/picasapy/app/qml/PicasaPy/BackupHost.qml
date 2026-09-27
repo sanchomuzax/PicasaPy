@@ -106,7 +106,7 @@ Rectangle {
         //: a szűrő levétele késleltetett (`onRacsSzuroKellChanged`), így
         //: itt még a nyitás ELŐTTI állapot olvasható
         host.nezoSzurtRacsrol = host.nezoNyitva
-            && typeof controller !== "undefined" && !!controller
+            && typeof controller !== "undefined" && controller
             && controller.backupFilterActive === true
     }
     //: késleltetve: a `racsLatszik` és a `nezoNyitva` ugyanarra a
