@@ -687,11 +687,14 @@ Rectangle {
 
     //: #3651: a „Szerkesztés jóváhagyása" kapu (4/b.1 2. lépés) — az „aa"/
     //: „ab" módba lépés előtt fut, MIUTÁN a 2-up kilépési létra (`aaKilepesKapu`)
-    //: már eldőlt. `true`: nincs (vagy már el is dőlt) a kérdés, a hívó MOST
-    //: folytathat. `false`: a párbeszéd nyitva; a `folytatas` a VÁLASZ után
-    //: fut. Ha nincs mit kérdezni, a nyitott eszköz akkor is lezárul,
+    //: már eldőlt. #3693: a fókuszváltás (`fokuszValt`) is ezt hívja,
+    //: `megseEngedve = true`-val — a két hívó a 3/c szerint a kapu MÁSIK
+    //: argumentumával megy (mód-belépés: nincs Mégse; fókuszváltás: van).
+    //: `true`: nincs (vagy már el is dőlt) a kérdés, a hívó MOST folytathat.
+    //: `false`: a párbeszéd nyitva; a `folytatas` a VÁLASZ után fut, Mégsére
+    //: elmarad. Ha nincs mit kérdezni, a nyitott eszköz akkor is lezárul,
     //: elvetéssel (3/c 2. pont, `0x005f904d` → `0x005f907e`).
-    function _eszkozZarasKapu(folytatas) {
+    function _eszkozZarasKapu(folytatas, megseEngedve) {
         if (!viewer._nyitottEszkozModosult()) {
             viewer._nyitottEszkozLezar(false)
             return true
@@ -702,7 +705,7 @@ Rectangle {
             return true
         }
         viewer.endEditFolytatas = folytatas
-        endEditModality.kerdez()
+        endEditModality.kerdez(megseEngedve === true)
         return false
     }
 
@@ -722,6 +725,20 @@ Rectangle {
                 && !viewer._eszkozZarasKapu(function () { viewer.layoutMode = uj }))
             return
         viewer.layoutMode = uj
+    }
+
+    //: #3693: a FÓKUSZVÁLTÁS kapuja — a kép kattintása és a „Fókusz
+    //: váltása" gomb egyaránt ide fut. Ugyanaz a kapu, mint a mód-váltásnál
+    //: (#3651, `_eszkozZarasKapu`), de a 3/c mérés szerint a fókuszváltó
+    //: (`0x0056a160`) a kaput `megseEngedve = true`-val hívja: a nyitott ÉS
+    //: módosult modális eszköznél a „Szerkesztés jóváhagyása" kérdés VAN
+    //: Mégse gombbal — Mégsére a fókusz NEM vált, az eszköz nyitva marad.
+    function fokuszValt(uj) {
+        if (uj === viewer.aktivOldal) return
+        if (!viewer._eszkozZarasKapu(
+                function () { viewer.aktivOldal = uj }, true))
+            return
+        viewer.aktivOldal = uj
     }
 
     //: #3644: a LAPOZÁS kapuja — a `currentIndex` már az új soron áll, amikor
@@ -788,7 +805,8 @@ Rectangle {
     }
 
     //: #3651: 4/b.1 2. lépés — a nyitott modális eszköz lezárás-kérdése,
-    //: mielőtt a kettős nézet „aa"/„ab" módja megnyílna.
+    //: mielőtt a kettős nézet „aa"/„ab" módja megnyílna. #3693: ugyanez a
+    //: fókuszváltás előtt is; ott a Mégse gomb is elérhető (3/c 2. pont).
     EndEditModalityDialog {
         id: endEditModality
         onEldontve: function(alkalmaz) {
@@ -796,6 +814,10 @@ Rectangle {
             var folytatas = viewer.endEditFolytatas
             viewer.endEditFolytatas = null
             if (folytatas) folytatas()
+        }
+        //: #3693: Mégse — az eszköz nyitva marad, a folytatás elmarad
+        onMegse: {
+            viewer.endEditFolytatas = null
         }
     }
 
@@ -1525,8 +1547,8 @@ Rectangle {
                     sugo: qsTr("Switch focus between the pictures")
                     visible: viewer.layoutMode !== "1up"
                     function kattints() {
-                        viewer.aktivOldal =
-                            viewer.aktivOldal === "jobb" ? "bal" : "jobb"
+                        viewer.fokuszValt(
+                            viewer.aktivOldal === "jobb" ? "bal" : "jobb")
                     }
                 }
 
@@ -1992,17 +2014,19 @@ Rectangle {
                         //: aktiválja — a `swap_2up_focus` gomb ugyanezt
                         //: teszi (ld. `ui-audit-editor.md` 3/b.4). Csak
                         //: 2-up módban hat, és csak akkor, ha épp nincs
-                        //: aktív rajzos szerkesztő-eszköz a képen (azok
-                        //: kattintása MÁST jelent — célpont, minta, pötty).
+                        //: aktív pontos-kattintású szerkesztő-eszköz a
+                        //: KÉPEN (azok kattintása MÁST jelent — célpont,
+                        //: minta, pötty — de a `retouchClickArea`/
+                        //: `neutralPickArea`/`paintMaskArea` mindegyike a
+                        //: `photo`-hoz van rögzítve, ide, a `photoElotte`-hoz
+                        //: nem, tehát itt a vágás/retusálás/szöveg/vörösszem
+                        //: nem old ütközést — #3693: azokat a fókuszváltás
+                        //: kapuja (`fokuszValt`) kezeli.
                         TapHandler {
                             enabled: viewer.layoutMode !== "1up"
-                                && !editorPanel.cropActive
-                                && !editorPanel.redeyeActive
-                                && !editorPanel.retouchActive
-                                && !editorPanel.textActive
                                 && !editorPanel.neutralPickerActive
                                 && !paintMaskArea.aktiv
-                            onTapped: viewer.aktivOldal = "bal"
+                            onTapped: viewer.fokuszValt("bal")
                         }
                     }
 
@@ -2087,6 +2111,12 @@ Rectangle {
 
                         //: #3663: a képre kattintás a JOBB/ALSÓ felet
                         //: aktiválja — ld. a `photoElotte`-n lévő párját.
+                        //: #3693: itt a `retouchClickArea`/`neutralPickArea`/
+                        //: `paintMaskArea` valódi átfedő `MouseArea`-k (mind
+                        //: a `photo`-hoz rögzítve), ezért a vágás/retusálás/
+                        //: szöveg/vörösszem alatt a kattintás MARAD az ő
+                        //: dolguk — a fókuszváltás innen a gombbal (vagy a
+                        //: `photoElotte`-ra kattintva) megy.
                         TapHandler {
                             enabled: viewer.layoutMode !== "1up"
                                 && !editorPanel.cropActive
@@ -2095,7 +2125,7 @@ Rectangle {
                                 && !editorPanel.textActive
                                 && !editorPanel.neutralPickerActive
                                 && !paintMaskArea.aktiv
-                            onTapped: viewer.aktivOldal = "jobb"
+                            onTapped: viewer.fokuszValt("jobb")
                         }
                     }
 
