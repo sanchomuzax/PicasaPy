@@ -46,13 +46,15 @@ class TestAFelulet:
             if meta.method(i).methodType() == QMetaMethod.MethodType.Slot
         }
         # #3014: az „aa" mód második fele memóriás láncot kap — a csere és a
-        # kilépéskori kiírás ennyivel bővítette a felületet
+        # kilépéskori kiírás ennyivel bővítette a felületet.
+        # #3649: a `setChainValue` hídtag törölve — a fókuszváltás
+        # (`swapAaFocus`) a `link_aa_partner` kötésen át közvetlenül a
+        # vezérlőket éri el, nem ezen a hídon.
         assert sajat == {"previewSource", "chainValue"}
         assert slotok == {
             "beginEdit",
             "endEdit",
             "beginEditInMemory",
-            "setChainValue",
             "persistChain",
         }
 

@@ -117,6 +117,15 @@ class PaintMaskMixin:
             return ()
         return self._paint_mask.vonasok
 
+    def _swap_paint_with(self, partner: "PaintMaskMixin") -> None:
+        """#3649: a festett maszk cseréje a PÁRTÓL — mindkét oldalon egyszerre,
+        hogy a hívó (`EditController.swapAaFocus`) ne érje el közvetlenül a
+        párja `_paint_mask` mezőjét."""
+        my_paint = self._paint_mask.vonasok
+        partner_paint = partner._paint_mask.vonasok
+        self._paint_mask.allit(partner_paint)
+        partner._paint_mask.allit(my_paint)
+
     def paint_strokes_for_path(self, path) -> tuple:
         """A mentés kérdezi (#3462): a MOST szerkesztett kép festésének
         vonásai, ha a kért út épp ez a kép — különben üres. A festés
