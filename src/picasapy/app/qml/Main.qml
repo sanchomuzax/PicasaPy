@@ -1544,6 +1544,14 @@ ApplicationWindow {
         onBackupRequested: backupHost.nyisd()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
+        //: #1401: az Útlevélkép — a KIJELÖLÉS ELSŐ képére szól (az eredeti
+        //: is egyre), a `wallpaperRequested` mintájára.
+        onPassportPhotoRequested: {
+            var sorok = window.selectedIndexes
+            if (sorok.length > 0
+                    && typeof passportController !== "undefined" && passportController)
+                passportController.preparePassportPhoto(sorok[0])
+        }
         // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
         onPicasaDataImportRequested: picasaDataImportDialog.open()
         // #936: a Létrehozás menü jelzésének NEM VOLT kezelője — a
@@ -4020,6 +4028,29 @@ ApplicationWindow {
         id: compactDatabaseDialog
         anchors.fill: parent
         sourceComponent: Component { CompactDatabaseDialog { } }
+    }
+    // #1401: az Útlevélkép hibaablaka + nyomtatási nézete
+    DeferredDialog {
+        id: passportPrintDialog
+        anchors.fill: parent
+        sourceComponent: Component { PassportPrintDialog { } }
+    }
+    Connections {
+        target: typeof passportController !== "undefined" ? passportController : null
+        //: `Passport0` — „Nem találhatók arcok"; az angol forrás az ÉLŐ
+        //: méréséből (picasa-colab-jobs #49/#50), nem a stringres-ből
+        function onPassportNoFace() {
+            passportPrintDialog.ensure().showError(
+                qsTr("Can't find any faces"))
+        }
+        //: `Passport1` — „Úgy tűnik, több arc van a képen."
+        function onPassportMultipleFaces() {
+            passportPrintDialog.ensure().showError(
+                qsTr("It looks like there's more than one face in this picture."))
+        }
+        function onPassportReady(path) {
+            passportPrintDialog.ensure().showReady(path)
+        }
     }
     // #3132: a db3-import párbeszéde — ritkán nyitott, ezért halasztott
     DeferredDialog {

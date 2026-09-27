@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Eszközök ▸ Kísérleti ▸ Útlevélkép… — arcfelismeréssel kivágott,
+  útlevél-méretű nyomat (#1401).** A kijelölt képen a program megkeresi az
+  arcot: pontosan egynél a fej fölött és a váll alatt ráhagyással négyzetre
+  vágja, majd megnyitja a nyomtatási nézetet 2×2 hüvelykes mérettel és 1-es
+  kezdő példányszámmal (a példányszám emelésével a képek rácsban kerülnek a
+  lapra). Nulla vagy több arcnál egyetlen OK gombos ablak kéri, hogy
+  próbálkozzon másik képpel. A kép maga nem módosul, tartós adat nem íródik.
+
 ## [0.8.588] – 2026-09-27
 
 ### Javítva

@@ -74,6 +74,21 @@ class TestACentimeteresAtvaltas:
         assert tag.magas_huvelyk == pytest.approx(29.7 / 2.54, abs=1e-6)
 
 
+class TestAzUtlevelMeret:
+    """#1401: `ePassport` — négyzet, és SZÁNDÉKOSAN egyik készletben sincs."""
+
+    def test_negyzet_2x2_huvelyk(self):
+        tag = NyomatMeret.PASSPORT
+        assert tag.szeles_huvelyk == pytest.approx(2.0, abs=1e-9)
+        assert tag.magas_huvelyk == pytest.approx(2.0, abs=1e-9)
+
+    def test_nincs_a_huvelykes_keszletben(self):
+        assert NyomatMeret.PASSPORT not in HUVELYK_KESZLET
+
+    def test_nincs_a_metrikus_keszletben(self):
+        assert NyomatMeret.PASSPORT not in METRIKUS_KESZLET
+
+
 class TestANyelvValasztas:
     def test_magyarul_metrikus(self):
         assert keszlet_nyelvhez("hu") == METRIKUS_KESZLET

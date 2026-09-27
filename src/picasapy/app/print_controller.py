@@ -627,6 +627,115 @@ class PrintController(QObject):
             self.printFinished.emit(printer.printerName() or self.tr("default printer"))
         return ok
 
+    # -- Útlevélkép-nyomtatás (#1401) ------------------------------------
+
+    @staticmethod
+    def _passport_record(path: Path) -> PhotoRecord:
+        """Egy AD HOC `PhotoRecord` a MÁR kivágott, ideiglenes passport-
+        fájlhoz — ugyanaz a minta, mint a teszteké/webexporté (ld.
+        `index/queries.py`, a `PhotoRecord` docstringje): a nyomtatási
+        csővezeték egyetlen bemenete a `PhotoRecord`, tehát egy kézzel
+        épített példány zökkenőmentesen átmegy rajta, index- vagy
+        ini-beavatkozás nélkül. A fájl a `PassportPhotoController`
+        gyorstárában él — nem a fotókönyvtárban, ld. a jegy negyedik
+        feltételét („a kép maga nem módosul, tartós adat nem íródik")."""
+        image = QImage(str(path))
+        szeles = image.width() if not image.isNull() else None
+        magas = image.height() if not image.isNull() else None
+        return PhotoRecord(
+            id=-1,
+            folder_path=str(path.parent),
+            name=path.name,
+            kind="image",
+            size=0,
+            mtime_ns=0,
+            star=False,
+            caption=None,
+            keywords=None,
+            rotate_steps=0,
+            filters=None,
+            taken_at=None,
+            orientation=0,
+            width=szeles,
+            height=magas,
+        )
+
+    @Slot(str, str, int, result=bool)
+    def printPassportPhoto(
+        self, image_path: str, printer_name: str, copies: int = 1
+    ) -> bool:
+        """#1401: a MÁR arc-központúan kivágott útlevélkép nyomtatása,
+        rögzített `ePassport` (2,0 × 2,0 hüvelyk) mérettel.
+
+        Az `image_path` a `PassportPhotoController.preparePassportPhoto`
+        által elkészített, ideiglenes négyzet-kivágás — az EREDETI fájlhoz
+        ez a metódus nem nyúl. A lapra rendezés (rács, laptörés, példányonkénti
+        térköz) UGYANAZ a `_run`/`grid_layout` út, mint bármely más
+        nyomatméreté (#3647); a kezdő példányszám (1) a hívó (QML) dolga."""
+        target = to_local_path(image_path)
+        if not target:
+            self.printFailed.emit(self.tr("Invalid output path."))
+            return False
+        path = Path(target)
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        if printer_name:
+            info = QPrinterInfo.printerInfo(printer_name)
+            if info.isNull():
+                self.printFailed.emit(
+                    self.tr("Unknown printer: %1").replace("%1", printer_name)
+                )
+                return False
+            printer.setPrinterName(printer_name)
+        self._alkalmazd_az_oldalelrendezest(printer)
+        record = self._passport_record(path)
+        ok = self._run(
+            printer,
+            (),
+            "fit",
+            "auto",
+            copies,
+            paths_override=[path],
+            records_override=[record],
+            size_override=NyomatMeret.PASSPORT,
+        )
+        if ok:
+            self.printFinished.emit(printer.printerName() or self.tr("default printer"))
+        return ok
+
+    @Slot(str, str, int, result=bool)
+    def renderPassportPreviewPdf(
+        self, image_path: str, output_path: str, copies: int = 1
+    ) -> bool:
+        """A `printPassportPhoto` PDF-be renderelő párja — determinisztikus,
+        headless-ben tesztelhető nyomtatás-előkészítés (ld.
+        `renderPrintPreviewPdf`)."""
+        target = to_local_path(output_path)
+        if not target:
+            self.printFailed.emit(self.tr("Invalid output path."))
+            return False
+        source = to_local_path(image_path)
+        if not source:
+            self.printFailed.emit(self.tr("Invalid output path."))
+            return False
+        path = Path(source)
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        printer.setOutputFileName(target)
+        record = self._passport_record(path)
+        ok = self._run(
+            printer,
+            (),
+            "fit",
+            "auto",
+            copies,
+            paths_override=[path],
+            records_override=[record],
+            size_override=NyomatMeret.PASSPORT,
+        )
+        if ok:
+            self.printFinished.emit(target)
+        return ok
+
     # -- Indexkép-nyomtatás (#1590) -------------------------------------
 
     @Slot(list, int, str, result=bool)
@@ -823,6 +932,10 @@ class PrintController(QObject):
         fit_mode: str,
         orientation: str,
         copies: int = 1,
+        *,
+        paths_override: Sequence[Path] | None = None,
+        records_override: Sequence[PhotoRecord] | None = None,
+        size_override: NyomatMeret | None = None,
     ) -> bool:
         # #3016: ⛔ ÚJBÓLI INDÍTÁS TILOS. A haladás-jelzés kedvéért a festés
         # ciklusa eseményeket pörget (`processEvents`), tehát a felhasználó
@@ -831,8 +944,19 @@ class PrintController(QObject):
         # a második hívás egyszerűen nem indul el.
         if self._nyomtatas_folyamatban:
             return False
-        paths = self._resolve_paths(rows)
-        records = self._resolve_records(rows)
+        # #1401: az Útlevélkép egy MÁR kivágott, ideiglenes fájllal hívja —
+        # az nem a `rows` kijelölésből jön, tehát a sor-alapú feloldást
+        # megkerüli (ld. `printPassportPhoto`/`renderPassportPreviewPdf`).
+        if paths_override is not None:
+            paths = list(paths_override)
+            records = (
+                list(records_override)
+                if records_override is not None
+                else list(paths_override)
+            )
+        else:
+            paths = self._resolve_paths(rows)
+            records = self._resolve_records(rows)
         if not paths:
             self.printFailed.emit(self.tr("No pictures to print."))
             return False
@@ -911,7 +1035,7 @@ class PrintController(QObject):
         # a KEVESEBB lapot a CELLA tájolása dönti el; explicit kérésnél a
         # kért lapállás rögzül. Ha egyik cellatájolással sem fér el, az
         # egyképes (`eFullPage`) tartalék lép életbe (`_grid_for_job`).
-        meret = NyomatMeret[self.printSize()]
+        meret = size_override if size_override is not None else NyomatMeret[self.printSize()]
         dpi = float(printer.resolution())
         portrait_page = self._device_page_geometry(
             printer, QPageLayout.Orientation.Portrait

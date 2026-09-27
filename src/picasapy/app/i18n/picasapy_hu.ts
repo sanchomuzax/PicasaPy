@@ -1219,6 +1219,37 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
 </context>
 <context>
+    <!-- #1401: az Útlevélkép hibaablaka + nyomtatási nézete — SAJÁT,
+         minimális dialógus (nem a teljes `PrintDialog.qml`, ld. a
+         jelentést: a `rows`-alapú előnézet a KIJELÖLÉS sorindexeire épül,
+         a passport-kép viszont egy ideiglenes, gyorstárbeli fájl). -->
+    <name>PassportPrintDialog</name>
+    <message>
+        <source>Passport photo</source>
+        <translation>Útlevélkép</translation>
+    </message>
+    <message>
+        <source>Try another picture?</source>
+        <translation>Megpróbálkozik egy másik képpel?</translation>
+    </message>
+    <message>
+        <source>Printer:</source>
+        <translation>Nyomtató:</translation>
+    </message>
+    <message>
+        <source>Copies per Photo:</source>
+        <translation>Példányszám képenként:</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation>Nyomtatás</translation>
+    </message>
+</context>
+<context>
     <name>StartupRelocateWindow</name>
     <message>
         <source>Moving the database</source>
@@ -4326,6 +4357,18 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
+    <!-- #1401: az Útlevélkép két hibaüzenete, a hibaablak (`CThumbUI::
+         Passportfail`) alá — élő méréssel (picasa-colab-jobs #49/#50): a
+         `Passport0` angol forrása „Can't find any faces", a magyar a
+         stringresből: „Nem találhatók arcok" -->
+    <message>
+        <source>Can't find any faces</source>
+        <translation>Nem találhatók arcok</translation>
+    </message>
+    <message>
+        <source>It looks like there's more than one face in this picture.</source>
+        <translation>Úgy tűnik, több arc van a képen.</translation>
+    </message>
     <message>
         <location filename="../qml/Main.qml"/>
         <source>Want to Cancel?</source>
@@ -5521,6 +5564,13 @@ Biztosan visszavonja a műveletet?</translation>
     <message>
         <source>Show &amp;tag as album...</source>
         <translation>&amp;Címke megjelenítése albumként...</translation>
+    </message>
+
+    <!-- #1401: `eMenuTools::ID_PASSPORT` — a mért angol forrás
+         `&amp;Passport photo...` -->
+    <message>
+        <source>&amp;Passport photo...</source>
+        <translation>&amp;Útlevélkép…</translation>
     </message>
 
     <message>
