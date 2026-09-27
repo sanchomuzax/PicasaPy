@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Útlevélkép (Eszközök ▸ Kísérleti ▸ Útlevélkép…, #1401).** A kijelölt
+  képen megkeresi az arcot; ha pontosan egyet talál, négyzetre vágja úgy,
+  hogy a fej fölött és az áll alatt maradjon hely, majd a nyomtatási
+  nézetben 2×2 hüvelykes Útlevél mérettel, egy példányban a lapra teszi.
+  Ha nincs arc, vagy több van, egy OK gombos ablak jelzi, és másik képet
+  ajánl.
+
 ### Javítva
 - **A képtálca sávjában a csillag, a két forgatógomb és a tálca három
   gombja most képpontra egyezik az eredetivel, és a nagyítás-csúszka

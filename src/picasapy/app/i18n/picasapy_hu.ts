@@ -338,6 +338,10 @@
         <translation>FullPage</translation>
     </message>
     <message>
+        <source>Passport</source>
+        <translation>Útlevél</translation>
+    </message>
+    <message>
         <source>Wallet</source>
         <translation>Tárcaméret</translation>
     </message>
@@ -1216,6 +1220,37 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message>
         <source>Close</source>
         <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
+    <name>PassportErrorDialog</name>
+    <message>
+        <source>Try another picture?</source>
+        <translation>Megpróbálkozik egy másik képpel?</translation>
+    </message>
+    <message>
+        <source>Can&apos;t find any faces</source>
+        <translation>Nem találhatók arcok</translation>
+    </message>
+    <message>
+        <source>There appear to be multiple faces.</source>
+        <translation>Úgy tűnik, több arc van a képen.</translation>
+    </message>
+    <message>
+        <source>Passport photo</source>
+        <translation>Útlevélkép</translation>
+    </message>
+    <message>
+        <source>The picture could not be read.</source>
+        <translation>A kép nem olvasható be.</translation>
+    </message>
+    <message>
+        <source>The cropped picture could not be saved.</source>
+        <translation>A kivágott kép nem menthető.</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
@@ -5605,6 +5640,11 @@ Biztosan visszavonja a műveletet?</translation>
     <message>
         <source>Show &amp;tag as album...</source>
         <translation>&amp;Címke megjelenítése albumként...</translation>
+    </message>
+
+    <message>
+        <source>&amp;Passport photo...</source>
+        <translation>Útle&amp;vélkép...</translation>
     </message>
 
     <message>
