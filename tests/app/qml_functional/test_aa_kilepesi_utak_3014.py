@@ -126,7 +126,12 @@ def _csak_a_memorias_modosult(window, qt_app):
 
 
 def _ket_kulonbozo(window, qt_app):
-    """Jobb = `bw` (memóriás), bal = `sepia` (aktív, az ini-ben)."""
+    """Bal = `bw` (memóriás), jobb = `sepia` (aktív, az ini-ben).
+
+    #3773: a belépéskori alapfókusz a bal (`aktivOldal` alapértéke „bal"),
+    ezért a bal (`elso`) fél kapja ELŐSZÖR a szerkesztést, a fókuszváltás
+    után pedig a jobb (`masodik`) — a korábbi (jobb-elsőbbségű alapfókusz
+    melletti) sorrend fordítottja."""
     nezo = _aa(window, qt_app)
     _szerkeszt(nezo, qt_app, "bw")
     _szegmens(window, qt_app, "viewerSwapFocus")
@@ -230,10 +235,10 @@ class TestAProgramBezarasa:
         window.close()
         qt_app.processEvents()
 
-        _kattints(window, qt_app, "aaUtkozesMasodikButton")  # a jobb: bw
+        _kattints(window, qt_app, "aaUtkozesMasodikButton")  # a jobb: sepia
 
-        assert "bw" in _ini_lanc(fajl)
-        assert "sepia" not in _ini_lanc(fajl)
+        assert "sepia" in _ini_lanc(fajl)
+        assert "bw" not in _ini_lanc(fajl)
         assert _kilepes_tovabbment(window, figyelo)
 
 
@@ -276,12 +281,12 @@ class TestALapozas:
         fajl = _fajl(nezo)
         _billentyu(window, qt_app, Qt.Key.Key_Right)
 
-        _kattints(window, qt_app, "aaUtkozesMasodikButton")  # a jobb: bw
+        _kattints(window, qt_app, "aaUtkozesMasodikButton")  # a jobb: sepia
 
         assert not _nyitva(window)
         assert nezo.property("currentIndex") == 1
-        assert "bw" in _ini_lanc(fajl)
-        assert "sepia" not in _ini_lanc(fajl)
+        assert "sepia" in _ini_lanc(fajl)
+        assert "bw" not in _ini_lanc(fajl)
 
     def test_csak_a_memorias_modosult_KERDES_NELKUL_irodik(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -333,11 +338,11 @@ class TestANezoElhagyasa:
         fajl = _fajl(nezo)
         _kattints(window, qt_app, "viewerBackButton")
 
-        _kattints(window, qt_app, "aaUtkozesMasodikButton")
+        _kattints(window, qt_app, "aaUtkozesMasodikButton")  # a jobb: sepia
 
         assert window.property("viewerOpen") is False
-        assert "bw" in _ini_lanc(fajl)
-        assert "sepia" not in _ini_lanc(fajl)
+        assert "sepia" in _ini_lanc(fajl)
+        assert "bw" not in _ini_lanc(fajl)
 
     def test_a_KOLLAZS_lapra_valtas_is_KERDEZ(self, qml_app, qt_app):
         """A néző a Main.qml közvetlen útjain is bezárulhat (kollázs, keresés,

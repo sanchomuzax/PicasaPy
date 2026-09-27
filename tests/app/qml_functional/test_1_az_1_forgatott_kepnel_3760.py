@@ -295,7 +295,8 @@ class TestKettosNezetForgatottKeppel:
     ):
         window = nezo_app({"a.png": lepes_a, "b.png": lepes_b})
         nezo = _ab_modba(window, qt_app)
-        if oldal == "bal":
+        # #3773: az alapfókusz a bal — a jobbhoz egy kattintással váltunk
+        if oldal == "jobb":
             _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         assert nezo.property("aktivOldal") == oldal
         kep = _gyerek(

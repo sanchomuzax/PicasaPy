@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kettős nézetben (két különböző kép egymás mellett) belépéskor a bal
+  oldalon a jelenlegi kép áll, a jobbon a következő, és a bal van
+  kijelölve — eddig fordítva volt (#3773).
+
 ## [0.8.607] – 2026-09-27
 
 ### Javítva

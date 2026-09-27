@@ -71,28 +71,32 @@ def _lancok(gyoker: Path) -> dict[str, str]:
 
 
 class TestAFoVezerloAKijeloltOldalt:
-    def test_fokuszvaltas_utan_a_BAL_fotot_szerkeszti(self, qml_app, qt_app):
+    def test_fokuszvaltas_utan_a_JOBB_fotot_szerkeszti(self, qml_app, qt_app):
+        """#3773: a bal az alapfókusz — egy fókuszváltás a JOBB oldalra
+        (a `abMasikSor` fotójára) viszi a fő vezérlőt."""
         window, _controller, _engine = qml_app
         nezo = _nezot_nyit(window, qt_app)
         _kattint(window, qt_app, "viewerLayoutAb")
         _kattint(window, qt_app, "viewerSwapFocus")
 
         modell = nezo.property("photosModel")
-        bal_azonosito = modell.idAt(nezo.property("abMasikSor"))
+        jobb_azonosito = modell.idAt(nezo.property("abMasikSor"))
         assert nezo.property("editCtl").property("previewSource").startswith(
-            f"image://editpreview/{bal_azonosito}?"
+            f"image://editpreview/{jobb_azonosito}?"
         )
 
     def test_a_masodik_rekesz_a_MASIK_oldalt_kapja(self, qml_app, qt_app):
+        """#3773: fókuszváltás után a bal (a `currentIndex` fotója) a NEM
+        kijelölt — a második rekeszből jön."""
         window, _controller, _engine = qml_app
         nezo = _nezot_nyit(window, qt_app)
         _kattint(window, qt_app, "viewerLayoutAb")
         _kattint(window, qt_app, "viewerSwapFocus")
 
         modell = nezo.property("photosModel")
-        jobb_azonosito = modell.idAt(nezo.property("currentIndex"))
+        bal_azonosito = modell.idAt(nezo.property("currentIndex"))
         assert nezo.property("masodikEditCtl").property("previewSource").startswith(
-            f"image://editpreview/{jobb_azonosito}@masodik?"
+            f"image://editpreview/{bal_azonosito}@masodik?"
         )
 
     def test_a_ket_kep_forrasa_CSEREL(self, qml_app, qt_app):
@@ -101,33 +105,35 @@ class TestAFoVezerloAKijeloltOldalt:
         _nezot_nyit(window, qt_app)
         _kattint(window, qt_app, "viewerLayoutAb")
 
-        # alapból a JOBB az aktív: a fő kép a fő rekeszből
-        assert "@masodik" not in _forras(window, "viewerImage")
-        assert "@masodik" in _forras(window, "viewerImageElotte")
+        # #3773: alapból a BAL az aktív: a fő kép a fő rekeszből
+        assert "@masodik" not in _forras(window, "viewerImageElotte")
+        assert "@masodik" in _forras(window, "viewerImage")
 
         _kattint(window, qt_app, "viewerSwapFocus")
 
-        assert "@masodik" in _forras(window, "viewerImage")
-        assert "@masodik" not in _forras(window, "viewerImageElotte")
+        assert "@masodik" in _forras(window, "viewerImageElotte")
+        assert "@masodik" not in _forras(window, "viewerImage")
 
 
 class TestAzEffektACELPONTBA:
     def test_az_effekt_a_KIJELOLT_oldal_inijebe_kerul(self, qml_app, qt_app, tmp_path):
+        """#3773: a bal az alapfókusz — a váltás után a JOBB (a
+        `abMasikSor` fotója) a kijelölt, az effekt oda kerül."""
         window, _controller, _engine = qml_app
         nezo = _nezot_nyit(window, qt_app)
         _kattint(window, qt_app, "viewerLayoutAb")
         _kattint(window, qt_app, "viewerSwapFocus")
 
         modell = nezo.property("photosModel")
-        bal_fajl = Path(modell.filePathAt(nezo.property("abMasikSor"))).name
-        jobb_fajl = Path(modell.filePathAt(nezo.property("currentIndex"))).name
+        jobb_fajl = Path(modell.filePathAt(nezo.property("abMasikSor"))).name
+        bal_fajl = Path(modell.filePathAt(nezo.property("currentIndex"))).name
 
         nezo.property("editCtl").applyEffect("bw")
         qt_app.processEvents()
 
         lancok = _lancok(tmp_path)
-        assert "bw" in lancok.get(bal_fajl, ""), lancok
-        assert "bw" not in lancok.get(jobb_fajl, ""), lancok
+        assert "bw" in lancok.get(jobb_fajl, ""), lancok
+        assert "bw" not in lancok.get(bal_fajl, ""), lancok
 
 
 class TestAmiVALTOZATLAN:
@@ -142,8 +148,10 @@ class TestAmiVALTOZATLAN:
         )
 
     def test_aa_modban_a_fokuszvaltas_nem_valt_celpontot(self, qml_app, qt_app):
-        """Ugyanaz a fotó áll mindkét félen: a fő vezérlő ezen marad, a bal
-        fél pedig (#3014) a második rekesz saját szerkesztése."""
+        """Ugyanaz a fotó áll mindkét félen: a fő vezérlő ezen marad, a jobb
+        fél pedig (#3014) a második rekesz saját szerkesztése.
+
+        #3773: az alapfókusz a bal — a váltás után a JOBB a kijelölt."""
         window, _controller, _engine = qml_app
         nezo = _nezot_nyit(window, qt_app)
         _kattint(window, qt_app, "viewerLayoutAa")
@@ -154,6 +162,6 @@ class TestAmiVALTOZATLAN:
         assert nezo.property("editCtl").property("previewSource").startswith(
             f"image://editpreview/{azonosito}?"
         )
-        # a bal most a KIJELÖLT: a fő rekeszből jön, a jobb a másodikból
-        assert "@masodik" not in _forras(window, "viewerImageElotte")
-        assert "@masodik" in _forras(window, "viewerImage")
+        # a jobb most a KIJELÖLT: a fő rekeszből jön, a bal a másodikból
+        assert "@masodik" not in _forras(window, "viewerImage")
+        assert "@masodik" in _forras(window, "viewerImageElotte")

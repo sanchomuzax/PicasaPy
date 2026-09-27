@@ -415,6 +415,22 @@ class EditPreviewProvider(QQuickImageProvider):
             self._gpu_prefix_images.pop(key, None)
             self._gpu_lut_images.pop(key, None)
 
+    def kepet_elenged(self, photo_id: str) -> None:
+        """A fotó RENDERELT képeinek elengedése, a dekódolt forrás marad.
+
+        #3773: a képtár két helyes, és a kettős nézet két vezérlője közösen
+        tölti — a másik fotóra lépő vezérlő régi képe különben a másik
+        vezérlő élő képét szorítaná ki. A forrás (`_sources`) és a
+        lánc-prefix gyorsítótár érintetlen: a visszalapozás így sem dekódol
+        újra (#128)."""
+        key = str(photo_id)
+        with self._lock:
+            self._images.pop(key, None)
+            self._histograms.pop(key, None)
+            self._placements.pop(key, None)
+            self._gpu_prefix_images.pop(key, None)
+            self._gpu_lut_images.pop(key, None)
+
     def sample_color(self, photo_id: str, nx: float, ny: float):
         """A MEGJELENÍTETT előnézet színe a (nx, ny) normált ponton (#464).
 

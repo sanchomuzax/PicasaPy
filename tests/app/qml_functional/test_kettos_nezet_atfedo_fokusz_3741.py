@@ -71,6 +71,8 @@ class TestAzAtfedoAFokuszbanLevoFelenAll:
     ):
         window, _controller, _engine = qml_app_negyzet_kepek
         nezo = _ab_modba(window, qt_app)
+        # #3773: az alapfókusz a bal — a jobb fókuszhoz váltani kell
+        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
         assert nezo.property("aktivOldal") == "jobb"
         panel = _gyerek(window, "viewerEditorPanel")
 
@@ -89,7 +91,7 @@ class TestAzAtfedoAFokuszbanLevoFelenAll:
     ):
         window, _controller, _engine = qml_app_negyzet_kepek
         nezo = _ab_modba(window, qt_app)
-        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
+        # #3773: az alapfókusz a bal — nincs szükség váltásra
         assert nezo.property("aktivOldal") == "bal"
         panel = _gyerek(window, "viewerEditorPanel")
 
@@ -120,7 +122,8 @@ class TestAzAtfedoAFokuszbanLevoFelenAll:
         nezo = _ab_modba(window, qt_app)
         _klikk(qt_app, window, _gyerek(window, "viewerLayoutAa"))
         assert nezo.property("layoutMode") == "aa"
-        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
+        # #3773: az alapfókusz a bal — a módváltás nem érinti, nincs
+        # szükség váltásra
         assert nezo.property("aktivOldal") == "bal"
         panel = _gyerek(window, "viewerEditorPanel")
 
@@ -151,7 +154,7 @@ class TestAJobbKepreKattintasBalFokusznal:
     ):
         window, _controller, _engine = qml_app
         nezo = _ab_modba(window, qt_app)
-        _klikk(qt_app, window, _gyerek(window, "viewerSwapFocus"))
+        # #3773: az alapfókusz a bal — nincs szükség váltásra
         assert nezo.property("aktivOldal") == "bal"
         panel = _gyerek(window, "viewerEditorPanel")
         panel.setProperty("cropActive", True)

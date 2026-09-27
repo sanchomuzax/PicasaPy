@@ -231,8 +231,11 @@ class TestAValaszok:
 
 class TestAKepreKattintassal:
     """A fókuszváltás a MÁSIK képre kattintva is ugyanezen a kapun megy —
-    a `viewerImageElotte` TapHandlere a #3693 előtt tiltva volt nyitott
-    eszköznél (blokkolta a váltást); most a kapun át enged."""
+    a nem aktív oldal Image-ének TapHandlere a #3693 előtt tiltva volt
+    nyitott eszköznél (blokkolta a váltást); most a kapun át enged.
+
+    #3773: belépéskor a BAL az aktív (`aktivOldal` alapértéke „bal"), a
+    MÁSIK — nem aktív — oldal tehát a `viewerImage` (jobb)."""
 
     def test_modositott_retusalasnal_a_kepre_kattintva_is_kerdez(
         self, qml_app, qt_app
@@ -246,7 +249,7 @@ class TestAKepreKattintassal:
         panel.setProperty("retouchPatchPending", True)
         qt_app.processEvents()
 
-        _kattints(window, qt_app, "viewerImageElotte")
+        _kattints(window, qt_app, "viewerImage")
 
         assert _nyitva(window)
         assert nezo.property("aktivOldal") == eredeti
@@ -270,7 +273,7 @@ class TestAKepreKattintassal:
         panel.setProperty("retouchPatchPending", True)
         qt_app.processEvents()
 
-        _kattints(window, qt_app, "viewerImageElotte")
+        _kattints(window, qt_app, "viewerImage")
         _kattints(window, qt_app, "endEditModalityCancelButton")
 
         assert nezo.property("aktivOldal") == eredeti
