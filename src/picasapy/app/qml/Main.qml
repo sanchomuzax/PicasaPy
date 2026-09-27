@@ -2682,6 +2682,13 @@ ApplicationWindow {
                                 ? (!controller.searchActive && !window.unnamedFacesOpen)
                                 : true
                             appWindow: window
+                            // #3751: a mentés-panel állapota a rács
+                            // feliratához — ugyanazok a bemenetek, mint a
+                            // `FolderPane`-é (ld. ott a #3681-es jegyzetet);
+                            // a tartalmat a vezérlő szűri (`BackupHost`).
+                            mentesSzuroAktiv: backupHost.visible
+                            mentesToltodnek: backupHost.mappakToltodnek
+                            mentesVanKeszlet: backupHost.kivalasztott >= 0
                             onOpenRequested: function(row) {
                                 window.viewerOpen = true
                                 photoViewer.show(row)
@@ -3469,6 +3476,10 @@ ApplicationWindow {
         anchors.bottom: parent.bottom
         visible: nyitva && !window.viewerOpen && !window.timelineOpen
                  && window.libraryFrameVisible
+        //: #3751: a rács-szűrő csak a panel melletti könyvtár-rácsra hat —
+        //: keresésben, időrendben, más lapon a teljes lista látszik
+        racsLatszik: visible && !(controller && controller.searchActive)
+        nezoNyitva: window.viewerOpen || window.slideshowRunning
         //: a mentés nyitása becsukja az Ajándék-CD-t (ld. fent)
         onNyitvaChanged: if (nyitva) giftCdHost.nyitva = false
     }

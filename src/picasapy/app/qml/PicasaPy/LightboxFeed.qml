@@ -27,6 +27,21 @@ ListView {
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
 
+    // #3751: a mentés-üzemmód — a `BackupHost` állítja (`Main.qml`-en át),
+    // amíg a mentés-panel látszik. A rács TARTALMÁT nem itt szűrjük: a
+    // vezérlő szűkíti a `photos`/`feedGroups` párost a még el nem mentett
+    // fájlokra (`setBackupFilter`), így a sorindexek, a navigáció és a néző
+    // lapozása is a szűrt listán dolgozik. Ez a három bemenet csak a rács
+    // közepén álló feliratot dönti el.
+    property bool mentesSzuroAktiv: false
+    //: a mentetlen fájlok listája háttérszálon készül — addig a vezérlő a
+    //: rács RÉGI tartalmát hagyja állni (`BackupHost.racsSzurod`), a felirat
+    //: pedig nem mondhatja, hogy minden el van mentve
+    property bool mentesToltodnek: false
+    //: van-e kiválasztott mentési készlet — nélküle a „minden el van
+    //: mentve" felirat hamis volna (a `FolderPane` azonos bemenete)
+    property bool mentesVanKeszlet: false
+
     clip: true
     model: grid.ctl ? grid.ctl.feedGroups : []
 
@@ -49,15 +64,25 @@ ListView {
     Text {
         objectName: "gridEmptyText"
         anchors.centerIn: grid
+        //: #3751: mentés-üzemmódban, ha nincs mit mutatni, a `Text2`
+        //: kontextus-szöveg jön a `Text1` („No photos found") helyett —
+        //: ugyanaz, amit a `FolderPane.mentesAllapotSzoveg` is használ.
         //: `thumbui_text.tre` Text1 — az eredeti felirata
-        text: qsTr("No photos found")
+        text: grid.mentesSzuroAktiv
+              ? qsTr("All Files are backed up in this set")
+              : qsTr("No photos found")
         font.pointSize: 18
         color: Theme.textGray
         // Munka közben a rács is üres, de attól még nem igaz, hogy nincs
         // kép — a mondat ilyenkor hazudna (#1798 osztálya: hazudó állapot).
+        // #3751: mentés-üzemmódban a mondat csak kiválasztott, kész
+        // számítású készletre igaz — készlet nélkül és a `Számítás…` alatt
+        // nem mondhatja, hogy mindenről van másolat.
         visible: grid.count === 0
                  && !(grid.ctl && grid.ctl.isWorking !== undefined
                       ? grid.ctl.isWorking : false)
+                 && (!grid.mentesSzuroAktiv
+                     || (grid.mentesVanKeszlet && !grid.mentesToltodnek))
     }
     spacing: 14
     cacheBuffer: 600
@@ -467,7 +492,19 @@ ListView {
         function onFeedChanged() {
             if (grid.pendingPath !== "")
                 return   // mappaválasztás — oda ugrunk úgyis
+            // #3751: a mentés-szűrő új tartalma (bekapcsolás, másik
+            // készlet, újraszámolás) a rács tetejéről indul
+            var tetejere = grid.mentesTetejere
+            grid.mentesTetejere = false
             Qt.callLater(function() {
+                if (tetejere) {
+                    grid.restoring = true
+                    grid.contentY = grid.vagottY(grid.originY)
+                    grid.savedY = grid.contentY
+                    grid.captureAnchor()
+                    grid.restoring = false
+                    return
+                }
                 // nézőből visszatérve a megnyitás előtti nyers
                 // pozíciót állítjuk vissza, nem a szerkezeti
                 // horgonyt (#173)
@@ -479,6 +516,62 @@ ListView {
                 grid.restoreAnchor()
                 grid.restoring = false
             })
+        }
+    }
+
+    // -- mentés-üzemmód: a görgetési helyzet megőrzése (#3751) ----
+    // A mentés-szűrő modellcsere: az új szűrt tartalom (bekapcsolás, másik
+    // készlet, újraszámolás) a tetejéről indul, bezáráskor pedig a MEGNYITÁS
+    // ELŐTTI helyzet áll vissza — nem a szűrt rácson utoljára látott
+    // horgony. A vezérlő új szűrőnél a `feedChanged` ELŐTT, kikapcsoláskor
+    // UTÁNA jelez; a visszaállítás ezért a `feedChanged` saját
+    // visszaállítása után fut (`Qt.callLater` sorrend).
+    property bool mentesTetejere: false
+    property var mentesElottiHelyzet: null
+    function mentesSzuroValtott(aktiv) {
+        if (aktiv) {
+            cancelRevealAfterViewer()
+            if (!mentesElottiHelyzet)
+                mentesElottiHelyzet = {
+                    path: anchorPath, offset: anchorOffset, y: savedY }
+            // a jelzőt a `feedChanged` szinkron kezelője fogyasztja el; ha
+            // a szűrő nem változtatott a rácson, ne maradjon élesítve
+            mentesTetejere = true
+            Qt.callLater(function() { grid.mentesTetejere = false })
+            return
+        }
+        mentesTetejere = false
+        var helyzet = mentesElottiHelyzet
+        mentesElottiHelyzet = null
+        if (!helyzet) return
+        Qt.callLater(function() { grid.mentesHelyzetVissza(helyzet) })
+    }
+    //: A `restoreAnchor` a horgony-eltolást a csoport magasságára vágja
+    //: (#1335) — rövid mappánál ettől a csoport tetejére ugrana. Itt a
+    //: rács tartalma ugyanaz, mint a megnyitás előtt, tehát a teljes
+    //: eltolás visszaállítható; a görgethető tartományra a `vagottY` vág.
+    function mentesHelyzetVissza(helyzet) {
+        restoring = true
+        var idx = -1
+        for (var i = 0; i < model.length; ++i)
+            if (model[i].path === helyzet.path) { idx = i; break }
+        if (idx >= 0) {
+            positionViewAtIndex(idx, ListView.Beginning)
+            var it = itemAtIndex(idx)
+            contentY = vagottY(it ? it.y + helyzet.offset : helyzet.y)
+        } else {
+            contentY = vagottY(helyzet.y)
+        }
+        savedY = contentY
+        captureAnchor()
+        restoring = false
+    }
+    Connections {
+        target: grid.ctl
+        //: a próbák stub-vezérlőjén a jelzés nincs meg
+        ignoreUnknownSignals: true
+        function onBackupFilterChanged() {
+            grid.mentesSzuroValtott(grid.ctl.backupFilterActive === true)
         }
     }
 
