@@ -16,6 +16,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A kérdésen itt Mégse gomb is van: ekkor a fókusz nem vált, az eszköz
   nyitva marad. Módosítás nélkül nem kérdez.
 
+## [0.8.595] – 2026-09-27
+
+### Javítva
+- **Az alsó sáv jobb fele képpontra egyezik az eredetivel (#3709).** A
+  nagyítás-csúszka sávja mindkét végén 3 képponttal beljebb kezdődik, a
+  nagyító keret nélküli ikon lett, a négy panelkapcsoló kerete pedig —
+  ahogy az eredetiben — egy képponttal beljebb fut.
+
 ## [0.8.594] – 2026-09-27
 
 ### Javítva
