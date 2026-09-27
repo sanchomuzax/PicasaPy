@@ -74,7 +74,6 @@ from picasapy.printing.contact_sheet import (
 )
 from picasapy.printing.dpi import (
     KICSI_KUSZOB_DPI,
-    METRIKUS_KESZLET,
     NyomatMeret,
     effektiv_dpi,
     keszlet_nyelvhez,
@@ -206,16 +205,15 @@ class PrintController(QObject):
         return keszlet_nyelvhez(self._settings.value(LANGUAGE_KEY))
 
     def _alapmeret(self) -> NyomatMeret:
-        """A készlet alapértelmezett mérete.
+        """A készlet alapértelmezett mérete: **Teljes oldal** (#3733).
 
-        A hüvelykesé a mért 4×6; a metrikusé a **10×15 cm** — ugyanaz a
-        méret más mértékegységben, és a legelterjedtebb fotóméret. DÖNTÉS:
-        az eredetiben a `PrintLastSize` hiányakor betöltött érték nincs
-        mérve."""
-        keszlet = self._keszlet()
-        alap = NyomatMeret.M10X15CM if keszlet is METRIKUS_KESZLET \
-            else NyomatMeret.M4X6
-        return alap if alap in keszlet else keszlet[0]
+        A `docs/specs/picasa-nyomtatas.md` élő mérése (Colab EN 29/30,
+        picasa-colab-jobs #55) szerint az eredeti nyomtatási nézet
+        alapállása FullPage — mindkét készletben ez az utolsó tétel
+        (`TELJES_OLDAL`), ugyanaz a méret mindkét nyelven. Korábban itt
+        a mért 4×6/10×15 cm állt, ami az eredetiben csak GOMB, nem
+        alapállás."""
+        return NyomatMeret.TELJES_OLDAL
 
     #: A QML-nek átadott méretnevek — a `NyomatMeret` tagjainak nevei.
     #: A felirat a QML dolga, ide csak az azonosító kell.
@@ -229,7 +227,7 @@ class PrintController(QObject):
 
     @Slot(result=str)
     def printSize(self) -> str:  # noqa: N802 — QML-stílus
-        """A megjegyzett nyomatméret (`PrintLastSize`), alapból 4×6.
+        """A megjegyzett nyomatméret (`PrintLastSize`), alapból Teljes oldal.
 
         #1961: a tárolt érték túléli a nyelvváltást, ezért a MÁSIK készlet
         tételét nem adhatjuk vissza — a párbeszéd olyan méretet mutatna,
@@ -350,7 +348,7 @@ class PrintController(QObject):
 
         Az ISMERETLEN méretű kép kicsinek számít — ha nem tudjuk, mekkora,
         ne nyugtassuk meg a felhasználót."""
-        meret = NyomatMeret.__members__.get(size_name, NyomatMeret.M4X6)
+        meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
         meretek = [
             (rekord.width or 0, rekord.height or 0)
             for rekord in self._resolve_records(rows)
@@ -379,7 +377,7 @@ class PrintController(QObject):
         A lista a **legrosszabbal kezdődik**: a felhasználót az érdekli
         először. Az ismeretlen méretű kép ugyanúgy kicsinek számít, mint
         az összegzésben — 0 DPI-vel."""
-        meret = NyomatMeret.__members__.get(size_name, NyomatMeret.M4X6)
+        meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
         tetelek = [
             {
                 "name": rekord.name,

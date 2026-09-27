@@ -3885,6 +3885,21 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>FolderPane</name>
+    <!-- #3681: a mentés-szűrő állapotfeliratai a bal hasábban (a megszűnt
+         `BackupFolderStrip` helyett). `il_BurnPanel::calculating`;
+         `thumbui/lightbox_bgtext` Text2; `publish/backupcdheader` -->
+    <message>
+        <source>Calculating…</source>
+        <translation>Számítás…</translation>
+    </message>
+    <message>
+        <source>All Files are backed up in this set</source>
+        <translation>A készlet valamennyi fájljáról készült biztonsági másolat</translation>
+    </message>
+    <message>
+        <source>Create a Set or use an existing one</source>
+        <translation>Készlet létrehozása vagy egy meglévő használata</translation>
+    </message>
     <message>
         <source>Default View</source>
         <translation>Alapértelmezett nézet</translation>
@@ -4148,17 +4163,6 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="90"/>
         <source>Cancel</source>
         <translation>Mégse</translation>
-    </message>
-</context>
-<context>
-    <name>BackupFolderStrip</name>
-    <message>
-        <source>Calculating…</source>
-        <translation>Számítás…</translation>
-    </message>
-    <message>
-        <source>Everything was already backed up.</source>
-        <translation>Minden el volt már mentve.</translation>
     </message>
 </context>
 <context>
@@ -10558,10 +10562,9 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <source>Backup Complete</source>
         <translation>A mentés elkészült</translation>
     </message>
-    <!-- #3645 átnézés: a mentés-gomb "Számítás…" állapota — a
-         `BackupFolderStrip`-ben már megvolt (`il_BurnPanel::calculating`),
-         a `BackupHost`-ban a `onMentesFuttatasKert` is ezt a hivatalos
-         feliratot használja -->
+    <!-- #3645 átnézés: a mentés-gomb "Számítás…" állapota
+         (`il_BurnPanel::calculating`) — a `BackupHost`-ban a
+         `onMentesFuttatasKert` ezt a hivatalos feliratot használja -->
     <message>
         <source>Calculating…</source>
         <translation>Számítás…</translation>

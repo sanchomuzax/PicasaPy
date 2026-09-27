@@ -20,10 +20,12 @@ Rectangle {
     //: a panel nyitva van-e (a gazda nyitja a menüből)
     property bool nyitva: false
     visible: nyitva
-    //: a mért panel (212) + fölötte a mappalista sávja (#3594) — a lista
-    //: az eredetiben a könyvtárban látszik, a mért vásznon nincs helye
-    //: (`BackupFolderStrip` fejkommentje)
-    height: mappaSav.y + mappaSav.height + panel.height
+    //: #3681: a mappalista a KÖNYVTÁRBAN látszik (a bal hasábon,
+    //: `FolderPane`/`FolderHierarchyView`, `mentesSzuroAktiv` szerződés),
+    //: az eredeti Picasa `backuptext2`/`backuptext3` viselkedését követve
+    //: — a korábbi külön `BackupFolderStrip` sáv emiatt megszűnt. A mért
+    //: panel (212) marad a hoszt egyetlen tartalma.
+    height: panel.height
     color: Theme.chromeBg
     clip: true
 
@@ -72,6 +74,12 @@ Rectangle {
         qsTr("All pictures (no movies)"),
         qsTr("Only JPEGs with camera data"),
     ]
+
+    //: #3681: bezáráskor (Mégse, vagy az Ajándék-CD nyitása) a pipák
+    //: törlődnek — az újranyitott panel ne a régi kijelöléssel induljon.
+    //: A folyamatban lévő futás a saját, kattintáskor lementett
+    //: mappalistáján megy tovább (`tervMappak`).
+    onNyitvaChanged: if (!nyitva) host.pipaltMappak = []
 
     function nyisd() {
         host.uzenet = ""
@@ -180,25 +188,9 @@ Rectangle {
         }
     }
 
-    //: #3594: a még el nem mentett mappák, pipával — a panel FÖLÖTT, a
-    //: 2. lépés alatt kezdődő és a két lépés-keret szélességét követő
-    //: sávban (`backuprect` 128 … `backuprect2` 772)
-    BackupFolderStrip {
-        id: mappaSav
-        x: 128
-        y: 6
-        width: 772 - 128
-        height: implicitHeight
-        mentetlenek: host.mentetlenek
-        pipaltMappak: host.pipaltMappak
-        toltodnek: host.mappakToltodnek
-        vanKeszlet: host.kivalasztott >= 0
-        onPipaldKert: function (mappa, be) { host.pipald(mappa, be) }
-    }
-
     PublishPanel {
         id: panel
-        y: mappaSav.y + mappaSav.height
+        y: 0
         uzemmod: "backup"
         mentesKeszletek: host.keszletek
         mentesKivalasztottIndex: host.kivalasztott
@@ -260,8 +252,8 @@ Rectangle {
             var k = host.keszletek[host.kivalasztott]
             //: #3645: a terv (bejárás + EXIF) HÁTTÉRSZÁLON készül — a
             //: kattintás azonnal visszatér, a gomb addig a hivatalos
-            //: „Számítás…" állapotot mutatja (`BackupFolderStrip` ugyanezt
-            //: a feliratot használja a mappalistánál)
+            //: „Számítás…" állapotot mutatja (a könyvtár mentés-szűrője
+            //: ugyanezt a feliratot használja a mappalistánál)
             host.tervMappak = host.pipaltMappak
             host.uzenet = qsTr("Calculating…")
             host.fut = true

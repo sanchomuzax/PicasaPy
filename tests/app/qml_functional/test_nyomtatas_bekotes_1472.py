@@ -37,6 +37,10 @@ from PySide6.QtTest import QTest
 
 import picasapy.app
 
+from tests.app.qml_functional.test_nyomtatas_egyseges_meretlista_3712 import (
+    _valassz_a_legorduloben,
+)
+
 # #664 mintája: a QtPrintSupport nem minden PySide6-telepítésben van benne
 # (a Debian/Ubuntu csomag modulokra bontja). Ahol hiányzik, ott a nyomtatás
 # felületi bekötése sem mérhető.
@@ -232,15 +236,20 @@ class TestKimenet:
         assert _pdf_oldalszam(adat) == 1
 
     def test_ket_kijelolt_kep_egy_lapra_fer_a_racsban(self, qml_app, qt_app, tmp_path):
-        """#3647: az alapértelmezett nyomatméret (4×6) CELLÁKÉNT kerül a
-        papírra, nem egy kép egy oldalra — az alapértelmezett papíron két
-        4×6-os cella EGY lapra fér (a rácsba rendezés fekvő lapállást
-        választ, mert az kevesebb lapot ad). Ez a próba korábban a pontosan
-        EZT a hibát rögzítő „két kép = két lap" elvárást mérte — ld. a
-        jegy leletét (`print_controller.py` régi `:1126`)."""
+        """#3647: a 4×6-os nyomatméret CELLÁKÉNT kerül a papírra, nem egy
+        kép egy oldalra — az alapértelmezett papíron két 4×6-os cella EGY
+        lapra fér (a rácsba rendezés fekvő lapállást választ, mert az
+        kevesebb lapot ad). Ez a próba korábban a pontosan EZT a hibát
+        rögzítő „két kép = két lap" elvárást mérte — ld. a jegy leletét
+        (`print_controller.py` régi `:1126`).
+
+        #3733: az alapállás Teljes oldal (FullPage) lett, ami A4-en nem
+        enged két képet egy lapra — ezért itt EXPLICIT 4×6-ra állítjuk a
+        legördülőt (valódi kattintással), a rácslogikát mérve, nem az alapállást."""
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, [0, 1])
         parbeszed = _menubol_nyit(window, qt_app)
+        _valassz_a_legorduloben(parbeszed, qt_app, "M4X6")
         cel = tmp_path / "ketto.pdf"
         parbeszed.setProperty("pdfTarget", cel.as_uri())
         qt_app.processEvents()

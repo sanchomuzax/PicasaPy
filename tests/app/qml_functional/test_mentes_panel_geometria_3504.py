@@ -1,14 +1,18 @@
 """#3504 — a mentés-panel a VALÓDI magasságán, angolul ÉS magyarul: semmi
-nem lóg ki, és a mappalista legalább három sort mutat.
+nem lóg ki.
 
 ## Miért kell ez az őr
 
 Az átnézés (#3673) egy offscreen renderelt képen látta, hogy a „Select
 All/None" gombok fele lelóg a panel aljáról, a magyar „Az összes
-kijelölés megszüntetése" jobbra is kilóg a 2. lépés keretéből, a
-mappalista másfél sort mutat, és a fejlécek csonkok. A régi tesztek ezt
-nem látták: a közös kiszolgáló `root.setHeight(250)`-je FELÜLÍRTA a gazda
-`height` kötését, tehát a tesztek egy magasabb, nem létező panelt néztek.
+kijelölés megszüntetése" jobbra is kilóg a 2. lépés keretéből, és a
+fejlécek csonkok. A régi tesztek ezt nem látták: a közös kiszolgáló
+`root.setHeight(250)`-je FELÜLÍRTA a gazda `height` kötését, tehát a
+tesztek egy magasabb, nem létező panelt néztek.
+
+⚠️ #3681: a mappalista (korábban ITT, a `BackupFolderStrip` sávjában)
+azóta a KÖNYVTÁRBA (`FolderPane`/`FolderHierarchyView`) költözött — ennek
+geometriáját `test_mentes_konyvtar_szuro_3681.py` méri, nem ez a fájl.
 
 Ez a fájl ezért a gazdát a SAJÁT magasságán rendereli (a kiszolgáló nem
 nyúl hozzá), és minden látható vezérlőre kimondja:
@@ -204,22 +208,11 @@ class TestSemmiNemLogKi:
     def test_egyetlen_lathato_felirat_sem_csonk(self, gazda):
         view, ablak = gazda
         engine = view.engine()
-        lista = _elem(ablak, "publishBackupFolderList")
         csonkok = []
         for elem in _bejaras(ablak, vagasnal_megall=False):
             if not _latszik(elem) or elem.property("truncated") is None:
                 continue
             if elem.property("text") in (None, ""):
-                continue
-            # a mappalista fájlnév-sora szándékosan elidál (sok fájlnév)
-            os_ = elem.parentItem()
-            listaban = False
-            while os_ is not None:
-                if os_ is lista:
-                    listaban = True
-                    break
-                os_ = os_.parentItem()
-            if listaban:
                 continue
             tul_szeles = elem.property("contentWidth") > elem.width() + 1
             tul_magas = elem.property("contentHeight") > elem.height() + 1
@@ -243,23 +236,3 @@ class TestSemmiNemLogKi:
                                 elem.property("contentHeight"),
                                 elem.height()))
         assert not csonkok, csonkok
-
-
-class TestAMappalista:
-    def test_legalabb_harom_sort_mutat(self, gazda, qt_app):
-        _, ablak = gazda
-        lista = _elem(ablak, "publishBackupFolderList")
-        sorok = [
-            e for e in _bejaras(lista, vagasnal_megall=False)
-            if e.objectName() == "publishBackupFolderCheck" and _latszik(e)
-        ]
-        # a `ListView` csak a látványban lévő sorokat építi meg — öt
-        # mappából legalább háromnak TELJESEN látszania kell
-        assert len(sorok) >= 3
-        teljesen_lathato = [
-            s for s in sorok
-            if _benne(_teglalap(s, lista), (0, 0, lista.width(),
-                                             lista.height()))
-        ]
-        assert len(teljesen_lathato) >= 3, (
-            len(teljesen_lathato), lista.height())

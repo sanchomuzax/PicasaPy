@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.600] – 2026-09-27
+
+### Javítva
+- A Képek biztonsági mentésekor a bal oldali mappalista (egyszerű és
+  fanézetben is) csak a még el nem mentett mappákat mutatja, pipával
+  kijelölhetően — mint az eredeti Picasában; a panel fölötti külön lista
+  megszűnt (#3681).
+
+- Nyomtatáskor elsőre a „FullPage” (teljes oldal) méret van kiválasztva,
+  mint az eredeti Picasában — eddig 10x15 cm (angolul 4 x 6) volt. A
+  korábban választott méretet a program továbbra is megjegyzi (#3733).
+
 ### Javítva
 - **Az Éjjellátó, a Holga-szerű, a Kinemaszkóp és a 60-as évek szemcséje
   képpontra ugyanaz a minta lett, mint a Picasában (#3736).** A zajt eddig

@@ -64,8 +64,8 @@ Item {
     //: a kiválasztott készlet SORINDEXE a `mentesKeszletek`-ben, -1 = nincs
     property int mentesKivalasztottIndex: -1
     //: #3594: a kiválasztott készlet még el nem mentett fájljai, mappánként
-    //: (a lista a gazda `BackupFolderStrip`-jében látszik; itt a
-    //: „Select All" dönt belőle)
+    //: (a lista a könyvtárban látszik, a hasáb mentés-szűrőjében —
+    //: `FolderPane.mentesSzuroAktiv`, #3681; itt a „Select All" dönt belőle)
     property var mentesMentetlenek: []
     //: #3594: a bepipált mappák útjai
     property var mentesPipaltMappak: []
@@ -261,12 +261,12 @@ Item {
     //      tájékoztató szöveg és az „Az összes kijelölése / megszüntetése"
     //      gombpár (`selectall` 505,162 · `selectnone` 608,162, 98×28).
     //
-    // ⚠️ A 2. lépés MAPPALISTÁJA nincs a mért vásznon: az eredetiben a
+    // A 2. lépés MAPPALISTÁJA nincs a mért vásznon: az eredetiben a
     // KÖNYVTÁR maga mutatja a még el nem mentett fájlokat, pipás mappákkal
-    // (`backuptext2`: „A Picasa most azokat a fájlokat jeleníti meg…"). A
-    // mi könyvtárunknak nincs ilyen szűrő-módja, ezért a lista a panel
-    // FÖLÖTTI sávban ül (`BackupFolderStrip`, a gazda helyezi el) — így a
-    // mért 212 képpontos vászon érintetlen marad.
+    // (`backuptext2`: „A Picasa most azokat a fájlokat jeleníti meg…").
+    // Nálunk is így van: amíg a mentés-panel látszik, a bal hasáb a még el
+    // nem mentett mappákra szűkül (`FolderPane.mentesSzuroAktiv`, #3681),
+    // a mért 212 képpontos vászon érintetlen.
     //
     // A feliratok a mért dobozukba TÖRDELVE és szükség szerint kicsinyítve
     // férnek el (`Text.Fit`, a `giftcdtext` mintája): a hivatalos magyar
