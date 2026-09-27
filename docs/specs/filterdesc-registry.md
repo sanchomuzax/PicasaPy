@@ -535,7 +535,7 @@ a #2456 helyesbítése (a hetes alakkal még nem mértünk) érvényben marad.
 | `MuseumMatte` | szín Outer (#1a0e03), OuterThickness 0–100 (25), szín Inner (#f0eae4), InnerThickness 0–100 (40) |
 | `Neon` | szín (#f00), Fade 0–100 (0) |
 | `NightVision` | Brightness −50–50 (0), Contrast −50–50 (0), Fade 0–100 (0) |
-| `Orton` | Bloom 0–50 (25), Brightness 0–100 (50), Fade 0–100 (0) |
+| `Orton` | Bloom 0–50 (25), Brightness 0–100 (50), Fade 0–100 (0)  — ⭐ a mestergörbe középpontja a leíró szerint `128 + (Brightness − 50)·75/50`, a természetes spline-nal MÉRVE (2026-09-27, #626): a 684-es `min` ΔE 3,21 → 0,15, a `referencia/ortonish` Fényerő max/min 4,45/4,18 → 0,95/0,82; a korábbi ±96 töröttvonalhoz illesztett érték volt → #3788 |
 | `PencilSketch` | Radius 1,3–5 (2), Contrast 0–200 (100), Fade 0–100 (0) |
 | `Pixelate` | Impact 2–150 (20), BlendMode 0–9 (9 = Normal; a sorszám a natív módtábla indexe, ld. „A `BlendInstruction`” szakasz), Fade 0–100 (0) |
 | `Polaroid` | szín Outer (#E2E2E2), Rotate −10–10 (5) |
