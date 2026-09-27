@@ -147,6 +147,23 @@ class TestAGpuElonezetAFokuszbanLevoFelen:
             assert vago.property(kulcs) == keret.property(kulcs), kulcs
 
 
+class TestAzElotagTexturaMerete:
+    """#3800: a `gpuPrefixImage` forrásmérete BEFOGLALÓ doboz — csak
+    szélességgel egy magas (1,6-nál nagyobb arányú) kép a textúraplafon
+    (V3D: 4096) fölé nőtt. A szolgáltató ma a hosszabb élt 2560-ra
+    korlátozza, és nem nagyít; ez az őr akkor is fog, ha az a korlát
+    egyszer elmozdul."""
+
+    #: a legkisebb általánosan elérhető GL-textúraplafon ezen a vonalon
+    TEXTURA_PLAFON = 4096
+
+    def test_a_forrasmeret_mindket_iranyban_korlatos(self, ket_kep, qt_app):  # noqa: F811
+        window, _c, _e = ket_kep
+        meret = _gyerek(window, "gpuPrefixImage").property("sourceSize")
+        assert 0 < meret.width() <= self.TEXTURA_PLAFON, meret
+        assert 0 < meret.height() <= self.TEXTURA_PLAFON, meret
+
+
 # -- valódi GPU, valódi egérhúzás (#3755, 3. pont) ----------------------------
 #
 # A fenti próbák offscreen alatt futnak, ahol a GPU-réteg sosem látszik. Az
@@ -170,6 +187,15 @@ class TestAGpuElonezetAFokuszbanLevoFelen:
 # nem változik, a jobb igen); a vágó-`Item` nélkül (a réteg a `photoArea`
 # gyereke) egyedül a `test_ab_bal_fokusz_nagyitva` BUKIK (a jobb kép bal
 # széle is kivilágosodik). Lefuttatva 2026-09-27-én, valódi OpenGL-en.
+#
+# rontás-kontroll (#3800): a PR előtti állapotban (`sourceSize.width: 2560`
+# a `gpuPrefixImage`-en, és a szolgáltató a `gpuprefix=1` képet is
+# felnagyítja) a `TestValodiGpuAlloKep` mindkét esete BUKIK — a 9:16-os kép
+# húzás közben változatlan (57,162,57), a textúra 2560×4551. Csak a
+# QML-sort visszaállítva a `TestAzElotagTexturaMerete` BUKIK (magasság 0);
+# csak a szolgáltatót visszaállítva a `test_kis_kepet_nem_nagyit_fel` (és a
+# `test_edit_preview.py` kis képes esete: 1440×2560). Lefuttatva
+# 2026-09-28-án, valódi OpenGL-en.
 
 #: a NEM használt, különálló headless kompozitor — a felhasználó fizikai
 #: képernyőjére (`/run/user/1000/wayland-0`) ez a próba SOHA nem nyit ablakot
@@ -196,9 +222,10 @@ def test_valodi_gpun_egerhuzassal(tmp_path):
     kornyezet.pop("DISPLAY", None)
     eredmeny = subprocess.run(
         [sys.executable, "-m", "pytest", f"{__file__}::TestValodiGpu",
+         f"{__file__}::TestValodiGpuAlloKep",
          "-q", "-rs", "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'bt'}"],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
-        timeout=170, cwd=str(gyoker), env=kornyezet,
+        timeout=240, cwd=str(gyoker), env=kornyezet,
     )
     kimenet = eredmeny.stdout[-4000:] + eredmeny.stderr[-2000:]
     if eredmeny.returncode == 0 and " passed" not in eredmeny.stdout:
@@ -209,8 +236,8 @@ def test_valodi_gpun_egerhuzassal(tmp_path):
 
 
 def _kepek_gpu(lib) -> None:
-    """A B próbakép aránya legfeljebb 1,6 — a magasabb képek a külön
-    jegyben kezelt #3800-ba futnak."""
+    """A B próbakép aránya legfeljebb 1,6 — a magasabb (9:16-os) képet a
+    `TestValodiGpuAlloKep` méri (#3800)."""
     a = np.full((400, 640, 3), ZOLD[::-1], np.uint8)
     b = np.full((480, 320, 3), NARANCS[::-1], np.uint8)
     b[0:100, 0:100] = KEK[::-1]
@@ -223,6 +250,24 @@ def ket_kep_gpu(qt_app, tmp_path):
     if os.environ.get(_BELSO_JELZO) != "1":
         pytest.skip("csak a `test_valodi_gpun_egerhuzassal` alfolyamatában fut")
     yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_kepek_gpu)
+
+
+#: #3800: 9:16-os telefonos álló kép — a régi `sourceSize.width: 2560`
+#: ezt 2560×4551-es textúrára nagyította (a V3D plafonja 4096)
+_ALLO_MERET = (360, 640)
+
+
+def _allo_kep_gpu(lib) -> None:
+    szel, mag = _ALLO_MERET
+    cv2.imwrite(str(lib / "allo.jpg"), np.full((mag, szel, 3), ZOLD[::-1], np.uint8),
+                [cv2.IMWRITE_JPEG_QUALITY, 98])
+
+
+@pytest.fixture
+def allo_kep_gpu(qt_app, tmp_path):
+    if os.environ.get(_BELSO_JELZO) != "1":
+        pytest.skip("csak a `test_valodi_gpun_egerhuzassal` alfolyamatában fut")
+    yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_allo_kep_gpu)
 
 
 def _esemenyek(qt_app, n=10):
@@ -402,3 +447,36 @@ class TestValodiGpu:
         for nev in m:
             if nev.startswith("jobb"):
                 assert not _valtozott(*m[nev]), f"a réteg átlógott a jobb képre: {m}"
+
+
+class TestValodiGpuAlloKep:
+    """#3800: 1,6-nál magasabb arányú (9:16-os) álló képnél a húzás alatt
+    SEMMI nem látszott — az előtag-textúra 4096 px fölé nőtt, és a V3D-n
+    átlátszó maradt, a CPU-előnézet pedig a GPU-út miatt nem indult."""
+
+    def test_egykepes_nezetben_huzas_kozben_vilagosodik(
+        self, allo_kep_gpu, qt_app, tmp_path
+    ):
+        window, _c, _e = allo_kep_gpu
+        nezo = _nezot_nyit(window, qt_app)
+        assert nezo.property("layoutMode") == "1up"
+
+        def pontok(window):
+            return {"kep": (_also_kozep(_kep_teglalap(_gyerek(window, "viewerImage"))),
+                            ZOLD)}
+
+        kepnev = Path(os.environ.get("PICASAPY_GPU_3800_KEP", tmp_path / "allo.png"))
+        m = _huzas_kozben(window, qt_app, nezo, pontok, kepnev)
+        elotte, huzas = m["kep"]
+        assert _valtozott(elotte, huzas), f"az álló kép nem változott: {m}"
+        assert sum(huzas) > sum(elotte), f"az álló kép nem világosodott: {m}"
+
+    def test_kis_kepet_nem_nagyit_fel(self, allo_kep_gpu, qt_app, tmp_path):
+        """A textúra a kép saját méretét kapja: a kis képet nem nagyítja a
+        befoglaló dobozra (a régi kötés 2560 szélesre nagyította)."""
+        window, _c, _e = allo_kep_gpu
+        nezo = _nezot_nyit(window, qt_app)
+        _huzas_kozben(window, qt_app, nezo, lambda _w: {}, tmp_path / "kicsi.png")
+        elotag = _gyerek(window, "gpuPrefixImage")
+        assert (elotag.property("implicitWidth"),
+                elotag.property("implicitHeight")) == _ALLO_MERET
