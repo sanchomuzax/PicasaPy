@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.607] – 2026-09-27
+
 ### Javítva
 - Biztonsági mentéskor a még el nem mentett mappák akkor is megjelennek a
   bal oldali mappalistában, ha a figyelt mappa hivatkozáson át, rövidített
