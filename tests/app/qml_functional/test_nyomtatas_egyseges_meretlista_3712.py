@@ -197,13 +197,20 @@ class TestADarabszamSorATenylegesLapszamotMondja:
         dialog = _nyit_sima(window, qt_app, [0, 1])
         qt_app.processEvents()
 
+        # #3733: az alapállás Teljes oldal (FullPage) lett — az a méret
+        # A4-en NEM enged két képet egy lapra. A darabszám-sor TÉNYLEGES
+        # lapszám-logikáját ezért egy olyan méretre kattintva mérjük,
+        # ahol ez a jegy szándéka szerint kettő fér egy lapra.
+        _valassz_a_legorduloben(dialog, qt_app, "M4X6")
+        qt_app.processEvents()
+
         szoveg = str(_elem(dialog, "printSelectionText").property("text"))
         lapszam = dialog.property("printPageCount")
 
-        # Két kép az alapértelmezett 4×6-tal ugyanarra a lapra kerül a
-        # rácselrendezőben (#3647) — a foga: ha ez valaha 2-re változna
-        # (pl. a rács vagy az alapméret módosulna), ennek a tesztnek
-        # SZÓLNIA kell, nem csendben zöldnek maradnia.
+        # Két kép 4×6-tal ugyanarra a lapra kerül a rácselrendezőben
+        # (#3647) — a foga: ha ez valaha 2-re változna (pl. a rács
+        # módosulna), ennek a tesztnek SZÓLNIA kell, nem csendben zöldnek
+        # maradnia.
         assert lapszam == 1, lapszam
         assert szoveg == "Pictures to print: 2 (1 page(s))", szoveg
 
@@ -224,3 +231,34 @@ class TestADarabszamSorATenylegesLapszamotMondja:
 
         szoveg = str(_elem(dialog, "printSelectionText").property("text"))
         assert szoveg == "Pictures to print: 2 (2 page(s))", szoveg
+
+
+class TestAlapallasTeljesOldal:
+    """#3733: a menüből nyitott párbeszéd alapállása Teljes oldal
+    (FullPage), mint az eredetiben; a választott méret a bezárás és az
+    újranyitás után megmarad."""
+
+    def test_a_menubol_nyitva_a_teljes_oldal_van_kivalasztva(
+        self, qml_app, qt_app
+    ):
+        window, _controller, _engine = qml_app
+        dialog = _nyit_sima(window, qt_app, [0, 1])
+
+        box = _elem(dialog, "printSizeBox")
+        azonositok = _lista(dialog.property("printSizeIds"))
+        assert box.property("currentIndex") == azonositok.index("TELJES_OLDAL")
+        assert box.property("displayText") == "FullPage"
+
+    def test_a_valasztott_meret_ujranyitaskor_megmarad(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        dialog = _nyit_sima(window, qt_app, [0, 1])
+
+        _valassz_a_legorduloben(dialog, qt_app, "M5X7")
+        _kattints_kozepere(dialog, qt_app, _elem(dialog, "printCloseButton"))
+        assert dialog.property("visible") is False
+
+        dialog = _nyit_sima(window, qt_app, [0, 1])
+        box = _elem(dialog, "printSizeBox")
+        azonositok = _lista(dialog.property("printSizeIds"))
+        assert dialog.property("printSize") == "M5X7"
+        assert box.property("currentIndex") == azonositok.index("M5X7")

@@ -47,19 +47,20 @@ class TestAFelkinaltKeszlet:
 
 
 class TestATaroltMeret:
-    def test_a_magyar_alapertelmezes_a_10x15(self, tmp_path):
-        """A metrikus készlet legelterjedtebb fotómérete — a hüvelykes
-        4×6 megfelelője."""
-        assert _vezerlo(tmp_path, "hu").printSize() == "M10X15CM"
+    def test_a_magyar_alapertelmezes_a_teljes_oldal(self, tmp_path):
+        """#3733: az eredetiben az első megnyitás alapállása FullPage
+        (`docs/specs/picasa-nyomtatas.md`, a Colab EN 29/30 élő mérése:
+        „az alapállás Full Page") — mindkét nyelven ugyanez."""
+        assert _vezerlo(tmp_path, "hu").printSize() == "TELJES_OLDAL"
 
-    def test_az_angol_alapertelmezes_a_4x6(self, tmp_path):
-        assert _vezerlo(tmp_path, "en").printSize() == "M4X6"
+    def test_az_angol_alapertelmezes_a_teljes_oldal(self, tmp_path):
+        assert _vezerlo(tmp_path, "en").printSize() == "TELJES_OLDAL"
 
     @pytest.mark.parametrize(
         "nyelv,idegen,vart",
         [
-            ("hu", "M8X10", "M10X15CM"),
-            ("en", "M20X25CM", "M4X6"),
+            ("hu", "M8X10", "TELJES_OLDAL"),
+            ("en", "M20X25CM", "TELJES_OLDAL"),
         ],
     )
     def test_a_MASIK_keszlet_erteket_nem_adja_vissza(

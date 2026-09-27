@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Nyomtatáskor elsőre a „FullPage” (teljes oldal) méret van kiválasztva,
+  mint az eredeti Picasában — eddig 10x15 cm (angolul 4 x 6) volt. A
+  korábban választott méretet a program továbbra is megjegyzi (#3733).
+
 ## [0.8.599] – 2026-09-27
 
 ### Javítva
