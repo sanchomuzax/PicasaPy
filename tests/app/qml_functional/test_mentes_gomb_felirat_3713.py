@@ -16,7 +16,7 @@ from pathlib import Path
 import picasapy.app
 import pytest
 from PySide6.QtCore import (
-    QCoreApplication, QMetaObject, QPoint, Qt, QTranslator,
+    QCoreApplication, QMetaObject, QPoint, QPointF, Qt, QTranslator,
 )
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
@@ -47,6 +47,32 @@ def _kattints(view, elem, qt_app):
         QPoint(round(kozep.x()), round(kozep.y())),
     )
     qt_app.processEvents()
+
+
+def _lathato_sorok(view):
+    """A nyitott legördülő LÁTHATÓ sorai, fentről lefelé — a
+    `test_qml_options_dialog._lathato_sorok` mintája (a sor saját `text`-je
+    üres, a feliratot a belső `Text` rajzolja, ezért a sorrend azonosít)."""
+    sorok = []
+    verem = [view.contentItem()]
+    while verem:
+        elem = verem.pop()
+        cn = elem.metaObject().className()
+        if elem.isVisible() and ("ItemDelegate" in cn or "MenuItem" in cn):
+            sorok.append(elem)
+        verem.extend(elem.childItems())
+    return sorted(sorok, key=lambda e: e.mapToScene(QPointF(0, 0)).y())
+
+
+def _valassz_keszletet(view, qt_app, kombo, index):
+    """A `publishBackupSetMenu` legördülő lenyitása és az `index`. sorának
+    kiválasztása — mindkettő VALÓDI kattintás."""
+    modell = kombo.property("model")
+    _kattints(view, kombo, qt_app)
+    assert varj_feltetelre(
+        qt_app, lambda: len(_lathato_sorok(view)) == len(modell)
+    ), "a legördülő lista nem nyílt le"
+    _kattints(view, _lathato_sorok(view)[index], qt_app)
 
 
 @pytest.fixture
@@ -99,8 +125,8 @@ class TestAGombFelirata:
         view, ablak, vezerlo = gazda
         vezerlo.ujKeszlet("Külső", str(tmp_path / "cel"), "minden")
         QMetaObject.invokeMethod(ablak, "frissitsd")
-        ablak.setProperty("kivalasztott", 0)
         qt_app.processEvents()
+        _valassz_keszletet(view, qt_app, _elem(ablak, "publishBackupSetMenu"), 0)
 
         assert _elem(ablak, "publishBackupGo").property("text") == (
             "Biztonsági mentés"
@@ -109,19 +135,26 @@ class TestAGombFelirata:
     def test_masik_keszletre_valtva_a_felirat_visszavaltozik(
         self, gazda, qt_app, tmp_path
     ):
-        """A gomb felirata a KIVÁLASZTÁSSAL együtt vált, nem csak induláskor."""
+        """A gomb felirata a KIVÁLASZTÁSSAL együtt vált, nem csak induláskor
+        — a váltás VALÓDI kattintással a `publishBackupSetMenu` legördülőn."""
         view, ablak, vezerlo = gazda
         vezerlo.ujKeszlet("Külső", str(tmp_path / "cel"), "minden")
+        vezerlo.ujKeszlet("Második", str(tmp_path / "cel2"), "minden")
         QMetaObject.invokeMethod(ablak, "frissitsd")
-        gomb = _elem(ablak, "publishBackupGo")
-
-        ablak.setProperty("kivalasztott", 0)
         qt_app.processEvents()
+        gomb = _elem(ablak, "publishBackupGo")
+        kombo = _elem(ablak, "publishBackupSetMenu")
+
+        assert ablak.property("kivalasztott") == -1
+        assert gomb.property("text") == "Írás"
+
+        _valassz_keszletet(view, qt_app, kombo, 0)
+        assert ablak.property("kivalasztott") == 0
         assert gomb.property("text") == "Biztonsági mentés"
 
-        ablak.setProperty("kivalasztott", -1)
-        qt_app.processEvents()
-        assert gomb.property("text") == "Írás"
+        _valassz_keszletet(view, qt_app, kombo, 1)
+        assert ablak.property("kivalasztott") == 1
+        assert gomb.property("text") == "Biztonsági mentés"
 
 
 class TestAKattintasFunkciojaMegmarad:

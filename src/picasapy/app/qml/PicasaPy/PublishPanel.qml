@@ -470,11 +470,9 @@ Item {
             }
         }
         //: `publish/backup_go` (777,37 – 875,65) — a felirat a kiválasztott
-        //: készlet nevétől függ (spec 15.3/1. szabály, 0x0067051b–0x00670581):
+        //: készlet nevétől függ (`docs/specs/biztonsagi-mentes.md` 15.3/1.):
         //: van kiválasztott készlet (neve nem üres) → „Biztonsági mentés";
-        //: nincs → „Írás". #3713: korábban állandóan „Lemezre írás" volt,
-        //: pedig ez a felirat nem a CD-üzemmódéval (`publishPresentCdGo`)
-        //: közös.
+        //: nincs → „Írás".
         PicasaButton {
             objectName: "publishBackupGo"
             x: 777; y: 37; width: 98; height: 28
