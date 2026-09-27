@@ -107,6 +107,9 @@ class BackupController(BackgroundWorkerMixin, QObject):
     #: #3594: (lekérdezés sorszáma, készlet-azonosító, mappa-sorok) — a
     #: `mentetlenMappakLekerese` háttérben számolt eredménye
     mentetlenMappakKeszek = Signal(int, int, "QVariantList")
+    #: #3645: (lekérdezés sorszáma, készlet-azonosító, terv, kért média) — a
+    #: `tervezdHattereben` háttérben számolt eredménye
+    tervKeszult = Signal(int, int, "QVariantMap", str)
 
     def __init__(self, db_path: Path, gyokerek: tuple[str, ...]) -> None:
         super().__init__()
@@ -120,6 +123,10 @@ class BackupController(BackgroundWorkerMixin, QObject):
         #: `RLock`: egy közvetlenül bekötött fogadó a jelzésből újra kérhet.
         self._mappa_keres = 0
         self._mappa_zar = threading.RLock()
+        #: #3645: a legutóbbi terv-lekérdezés sorszáma — ugyanaz a minta,
+        #: mint a mappa-lekérdezésnél, külön számlálóval.
+        self._terv_keres = 0
+        self._terv_zar = threading.RLock()
 
     # -- készletek --------------------------------------------------------
 
@@ -344,6 +351,45 @@ class BackupController(BackgroundWorkerMixin, QObject):
                 hasznalhato_kapacitas(DVD, szektorszam=_DVD_SZEKTOR),
             ),
         }
+
+    @Slot(int, "QVariantList", str, result=int)
+    def tervezdHattereben(  # noqa: N802 — QML-slot-stílus
+        self, keszlet_id: int, mappak, media: str
+    ) -> int:
+        """A terv kiszámítása HÁTTÉRSZÁLON (#3645).
+
+        A `terv` maga a gyökerek bejárását végzi (fájlonkénti `stat`,
+        fényképezőgép-szűrőnél EXIF-olvasás), ami nagy, NAS-on lévő
+        gyűjteménynél percekig tarthat — a mentés-gomb kattintása ettől
+        fagyott meg a GUI-szálon, a tényleges futás háttérszála (#3009)
+        ellenére. Azonnal visszatér a lekérdezés sorszámával; az eredmény a
+        `tervKeszult` jelzésen érkezik, és csak akkor, ha közben nem
+        indult újabb lekérdezés."""
+        with self._terv_zar:
+            self._terv_keres += 1
+            keres = self._terv_keres
+        self._start_background(
+            self._terv_hattereben,
+            args=(keres, int(keszlet_id), self._mappalista(mappak), str(media)),
+            name="backup-plan",
+        )
+        return keres
+
+    def _terv_hattereben(
+        self, keres: int, keszlet_id: int, mappak, media: str
+    ) -> None:
+        """A terv törzse — háttérszálon fut."""
+        try:
+            eredmeny = self.terv(keszlet_id, mappak)
+        except Exception as hiba:  # noqa: BLE001 — a felület ne várjon örökké
+            # a gomb a válaszra zárja a „Számítás…" állapotot — hiba esetén
+            # is kell válasz, különben a panel beragad
+            _log.warning("a mentés terve elszállt: %s", hiba)
+            eredmeny = {"darab": 0, "bajt": 0, "kihagyott": 0}
+        with self._terv_zar:
+            if keres != self._terv_keres:
+                return  # közben újabb lekérdezés indult — ez elavult
+            self.tervKeszult.emit(keres, int(keszlet_id), eredmeny, media)
 
     @staticmethod
     def _mappalista(mappak):

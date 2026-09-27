@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Képek biztonsági mentésének „Mentés” gombja nagy, NAS-on lévő
+  gyűjteménynél sem fagyasztja meg az ablakot (#3645).** A mentés
+  tervének kiszámítása (a gyökerek bejárása, fájlonkénti méretlekérdezés,
+  fényképezőgép-szűrőnél EXIF-olvasás) háttérszálon fut; a gomb addig a
+  „Számítás…” állapotot mutatja, a kattintás azonnal visszatér.
+
 ## [0.8.585] – 2026-09-27
 
 ### Javítva
