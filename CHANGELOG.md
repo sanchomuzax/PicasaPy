@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.608] – 2026-09-27
+
 ### Javítva
 - Kettős nézetben (két különböző kép egymás mellett) belépéskor a bal
   oldalon a jelenlegi kép áll, a jobbon a következő, és a bal van
