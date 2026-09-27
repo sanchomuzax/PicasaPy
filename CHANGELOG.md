@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Képek biztonsági mentésekor a jobb oldali képrács is csak a még el nem
+  mentett mappák képeit mutatja, mint a bal oldali mappalista (#3681);
+  kilépéskor a rács visszaáll a teljes nézetre, és ha a kiválasztott
+  készletről mindenről már készült biztonsági másolat, a rács közepén a
+  „A készlet valamennyi fájljáról készült biztonsági másolat" felirat
+  jelenik meg (#3751).
+
 ## [0.8.600] – 2026-09-27
 
 ### Javítva

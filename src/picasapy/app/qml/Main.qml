@@ -2682,6 +2682,12 @@ ApplicationWindow {
                                 ? (!controller.searchActive && !window.unnamedFacesOpen)
                                 : true
                             appWindow: window
+                            // #3751: a mentés-panel közös szűrő-szerződése —
+                            // ugyanaz a három bemenet, mint a `FolderPane`-é
+                            // (ld. ott a #3681-es jegyzetet).
+                            mentesSzuroAktiv: backupHost.visible
+                            mentesMentetlenMappak: backupHost.mentetlenek
+                            mentesToltodnek: backupHost.mappakToltodnek
                             onOpenRequested: function(row) {
                                 window.viewerOpen = true
                                 photoViewer.show(row)

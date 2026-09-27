@@ -27,8 +27,34 @@ ListView {
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
 
+    // #3751: a mentés-üzemmód SZŰRŐ-módja — a `BackupHost` állítja
+    // (`Main.qml`-en át), amíg a mentés-panel nyitva van, ugyanazzal a
+    // szerződéssel, mint a bal hasáb (`FolderPane`/`FolderHierarchyView`,
+    // #3681): a JOBB oldali képrács is a MÉG EL NEM MENTETT mappák
+    // képeire szűkül, kilépéskor visszaáll.
+    property bool mentesSzuroAktiv: false
+    //: {mappa, nev, darab, fajlok, bajt} sorok — ugyanaz a lista, amit a
+    //: `FolderPane.mentesMentetlenMappak` is kap (`BackupHost.mentetlenek`)
+    property var mentesMentetlenMappak: []
+    //: a lista háttérszálon készül — amíg tart, a rács a RÉGI tartalmát
+    //: tartsa (ne csapjon át egy pillanatra "minden el van mentve" szövegre)
+    property bool mentesToltodnek: false
+    //: gyors tagság-ellenőrzéshez — csak az útvonalak
+    readonly property var mentesMentetlenUtak:
+        grid.mentesMentetlenMappak.map(function (sor) { return sor.mappa })
+
     clip: true
-    model: grid.ctl ? grid.ctl.feedGroups : []
+    model: {
+        var csoportok = grid.ctl ? grid.ctl.feedGroups : []
+        if (!grid.mentesSzuroAktiv) return csoportok
+        // #3751: csak azok a mappa-csoportok maradnak, amik a
+        // BackupController szerint még tartalmaznak el nem mentett fájlt —
+        // a `start`/`count` a teljes (szűretlen) fotólistára mutat, tehát
+        // a sorindexek a kiszűrt csoportokon belül is érvényesek maradnak.
+        return csoportok.filter(function (csoport) {
+            return grid.mentesMentetlenUtak.indexOf(csoport.path) >= 0
+        })
+    }
 
     // #1945: az üres rács NE legyen néma. Az eredetiben a rács közepén
     // egyetlen sor áll (`layer:thumbui/static(nothing): lightbox_bgtext`,
@@ -49,15 +75,23 @@ ListView {
     Text {
         objectName: "gridEmptyText"
         anchors.centerIn: grid
+        //: #3751: mentés-szűrő módban, ha nincs mit mutatni, ez a `Text2`
+        //: kontextus-szöveg jön a `Text1` („No photos found") helyett —
+        //: ugyanaz, amit a `FolderPane.mentesAllapotSzoveg` is használ.
         //: `thumbui_text.tre` Text1 — az eredeti felirata
-        text: qsTr("No photos found")
+        text: grid.mentesSzuroAktiv
+              ? qsTr("All Files are backed up in this set")
+              : qsTr("No photos found")
         font.pointSize: 18
         color: Theme.textGray
         // Munka közben a rács is üres, de attól még nem igaz, hogy nincs
         // kép — a mondat ilyenkor hazudna (#1798 osztálya: hazudó állapot).
+        // #3751: a mentetlen mappák háttérszámítása közben (`Számítás…`)
+        // sem — a lista addig üres, de attól még nincs mindenről mentés.
         visible: grid.count === 0
                  && !(grid.ctl && grid.ctl.isWorking !== undefined
                       ? grid.ctl.isWorking : false)
+                 && !(grid.mentesSzuroAktiv && grid.mentesToltodnek)
     }
     spacing: 14
     cacheBuffer: 600
