@@ -2014,8 +2014,9 @@ JPEG-zaj nagyságrendű; „pixelhű" ítélet veszteséges goldenen nem érhet�
 
 ### Ami NEM változott
 
-A **`radsat`** („Fókuszos FF") a régi közelítésen maradt: ugyanezt a natív
-maszkot használja, de ~~**nincs hozzá egyetlen mért kimenet sem**~~ → **MÉRVE (2026-09-26, #3517)**: az alábbi „TELJES” algoritmus a 684-es Picasa-exporton ΔE 0,03–0,13-mal egyezik, ld. ott.
+A **`radsat`** („Fókuszos FF") ~~a régi közelítésen maradt~~ → **nálunk
+is az alábbi „TELJES” algoritmus fut (2026-09-28, #3517)**: ugyanezt a natív
+maszkot használja, és a 684-es Picasa-exporton ΔE 0,03–0,13-mal egyezik, ld. ott.
 
 ### `radsat` („Telítetlenít egy középpont körül") — TELJES (2026-08-15, #317)
 
@@ -2089,7 +2090,9 @@ A fenti algoritmus szó szerinti átültetése (a középpont `0,5, 0,5`), a tul
 | max (1; 1) | 3,657 | 3,657 (nem hat) | **0,128** |
 | min (−1; 0) | 10,163 | 2,730 | **0,034** |
 
-⇒ **A negyedik és ötödik ini-mező** (a lánc 3. és 4. paramétere): a **méret** (`[-1, 1]`, `r = min(W,H)/2 · (méret + 1)`) és az **élesség** (`[0, 1]`, `k = 1/(1 − 0,99·√élesség)`). A natív callback a szűrő-objektum `+0x28`/`+0x2c` mezőjéből olvassa őket (`0x008f86c8`, `0x008f86d1`), a középpontot a `+0x94` puck-téglalapból (`0x008f86a1` → `0x00a4a240`). ⛔ A **fordulópont a sugár FELÉNÉL** van (`t = 0,5`), nem a sugáron. A mai megvalósítás a teljes `r`-en belül érintetlenül hagyja a képet, ezért `max`-nál semmit sem változtat, alapállásban pedig gyenge. A Rec.601-luma és a lineáris átmenet szintén eltér a mért 77/151/28-tól és a smoothstep-táblától.
+⇒ **A negyedik és ötödik ini-mező** (a lánc 3. és 4. paramétere): a **méret** (`[-1, 1]`, `r = min(W,H)/2 · (méret + 1)`) és az **élesség** (`[0, 1]`, `k = 1/(1 − 0,99·√élesség)`). A natív callback a szűrő-objektum `+0x28`/`+0x2c` mezőjéből olvassa őket (`0x008f86c8`, `0x008f86d1`), a középpontot a `+0x94` puck-téglalapból (`0x008f86a1` → `0x00a4a240`). ⛔ A **fordulópont a sugár FELÉNÉL** van (`t = 0,5`), nem a sugáron. A régi megvalósítás a teljes `r`-en belül érintetlenül hagyta a képet, ezért `max`-nál semmit sem változtatott, alapállásban pedig gyenge volt; a Rec.601-luma és a lineáris átmenet szintén eltért a mért 77/151/28-tól és a smoothstep-táblától.
+
+**Nálunk — ✅ MEGVAN (2026-09-28, #3517).** A `render/effects.py::apply_radsat` ezt az algoritmust valósítja meg: a táblát a `radblur`-rel közös `render/radial_mask.py::radial_weight_table` építi `√élesség`-gel (így `1/(1 − 0,99·√élesség)` a meredekség), az indexet a `squared_distance_index` (`(dx² + dy²) >> shift`, `round(W·x)`, `round(H·y)` középpont). A `méret = −1` (nulla sugár) esetén a tábla 0. eleme is 0 — a spec `√(i/r²)`-e ott 0/0, és a mért `min` eset ezzel adja a 0,034-et. Mérve a golden-teszttel (`tests/render/test_effects.py::test_radsat_golden_a_picasa_exporthoz`): alap **0,082**, max **0,128**, min **0,034**.
 
 **Bizonyítottsági fok: megerősített**, a bináris és a golden-mérés együtt.
 
