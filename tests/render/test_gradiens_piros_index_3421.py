@@ -153,3 +153,18 @@ def test_heatmap_a_684_merokeszlettel(valtozat, lanc, kuszob):
     report = apply_filters(_read_rgb(_KIT / nev), parse_filters(lanc))
     de = float(delta_e_cie76(report.image, _read_rgb(_KIT / "export" / nev)).mean())
     assert de <= kuszob, f"HeatMap {valtozat}: ΔE {de:.3f} > {kuszob:.3f}"
+
+
+def test_az_extrem_hue_egy_lepesben_fordul_korbe() -> None:
+    """Kézzel szerkesztett ini-ből jöhet nagyon nagy `Hue`: a körbefordítás
+    egyetlen vektoros lépés, nem ciklus (a #3835 átnézése: 1e7-nél 0,4 mp).
+    A 14 400 200 még pontosan ábrázolható float32-ben (2^24 alatt)."""
+    import time
+
+    kezd = time.perf_counter()
+    nagy = g._hsv_rgb_lut_f32(
+        np.array([200.0 + 360.0 * 40000]), np.array([100.0]), np.array([100.0])
+    )
+    assert time.perf_counter() - kezd < 0.05
+    kicsi = g._hsv_rgb_lut_f32(np.array([200.0]), np.array([100.0]), np.array([100.0]))
+    np.testing.assert_array_equal(nagy, kicsi)

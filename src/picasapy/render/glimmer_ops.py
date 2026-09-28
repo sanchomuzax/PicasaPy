@@ -909,11 +909,7 @@ def _hsv_rgb_lut_f32(hue: np.ndarray, sat: np.ndarray, val: np.ndarray) -> np.nd
     Spec: `docs/specs/filterdesc-registry.md`, „A HSV → RGB átalakítás".
     """
     f32 = np.float32
-    h = hue.astype(f32)
-    while np.any(h < 0):
-        h = np.where(h < 0, h + f32(360.0), h)
-    while np.any(h >= 360):
-        h = np.where(h >= 360, h - f32(360.0), h)
+    h = np.mod(hue.astype(f32), f32(360.0))
     s = np.clip(sat.astype(f32), 0, 100) / f32(100.0)
     v = np.clip(val.astype(f32), 0, 100) / f32(100.0)
     h6 = (h / f32(360.0)) * f32(6.0)
