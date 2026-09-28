@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A nézőben a jobb fiók (Emberek/Helyek/Címkék/Tulajdonságok) megnyitásának
+  tesztje terhelt gépen időnként hamisan bukott: a tálca gombja a háttérben
+  a könyvtár nem látszó fiókját is animáltan nyitja, és a teszt eddig nem
+  várta meg ennek az animációnak a végét. A teszt mostantól a fiók
+  végleges szélességére vár, nem csak a nézőbeli panelre (#3901).
+
 ## [0.8.624] – 2026-09-28
 
 ### Javítva
@@ -15,13 +22,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   átrendezett sorrendnél ugyanaz a kép marad látható, áttűnés nélkül; ha
   maga a látott kép törlődik, a következő fotóra lép (az utolsó kép után az
   elsőre, mint a léptetésnél), üres könyvtárnál pedig leáll (#3881).
-
-### Javítva
-- A nézőben a jobb fiók (Emberek/Helyek/Címkék/Tulajdonságok) megnyitásának
-  tesztje terhelt gépen időnként hamisan bukott: a tálca gombja a háttérben
-  a könyvtár nem látszó fiókját is animáltan nyitja, és a teszt eddig nem
-  várta meg ennek az animációnak a végét. A teszt mostantól a fiók
-  végleges szélességére vár, nem csak a nézőbeli panelre (#3901).
 
 ## [0.8.623] – 2026-09-28
 
