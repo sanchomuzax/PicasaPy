@@ -134,8 +134,9 @@ _EDIT_CACHE_VERSION = 5
 # 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
 # Éjjellátó, Képregény) a natív lánccal számol — a régi, erf-modelles
 # szerkesztett bélyegképek újragenerálódnak.
-# 5 (#3913): a Ragyogás (`glow`, `glow2`) az eredeti egész
-# aritmetikájával számol — a lebegőpontos modelles szerkesztett
+# 5 (#3913, #3917): a Ragyogás (`glow`, `glow2`) az eredeti egész
+# aritmetikájával, a Lágy fókusz (`radblur`) elmosási sugara a bináris
+# 0,01-es képszélesség-hányadával számol — az érintett szerkesztett
 # bélyegképek újragenerálódnak.
 
 

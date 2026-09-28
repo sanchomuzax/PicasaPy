@@ -53,19 +53,19 @@ _VIGNETTE_REF_STRENGTH = 1.4
 GLOW_V1_INTENSITY = 0.432749
 GLOW_V1_RADIUS = 2.469705
 
-#: A `radblur` elmosási sugarának képszélesség-hányada. A 4.2.4 dekompilátum
-#: `0,01`-et olvas; a négy golden-pár (három kép, két Amount-érték) illesztési
-#: minimuma egybehangzóan **0,009**-nél van, ezért a MÉRT értékkel futunk. Az
-#: eltérés oka nyitott — a #317 effekt-kalibráció dolga eldönteni.
-RADBLUR_WIDTH_FRACTION = 0.009
+#: A `radblur` elmosási sugarának képszélesség-hányada: a binárisban álló
+#: `0,01` (`[0xcf40b8]`, a callback `0x008f85c1`–`0x008f8617` szakasza).
+#: A korábbi, illesztett `0,009` a közös elmosó mag régi együtthatóját
+#: kompenzálta (#3916, #3917).
+RADBLUR_WIDTH_FRACTION = 0.01
 
 #: A natív képlet additív tagja (`+ 0,001`) — az Amount = −1 végponton ez
 #: tartja a sugarat pozitívan.
 RADBLUR_EPSILON = 0.001
 
-#: A `radblur`-nak nincs „Élesség" csúszkája: a közös sugaras maszk
-#: `Sharpness` bemenete nála 0 — ezt a négy golden-pár illesztése is
-#: megerősíti (0 a minimum, 0,1-től már monoton romlik).
+#: A `radblur`-nak nincs „Élesség" csúszkája: a callback a maszkoló-keverőnek
+#: (`0x0090b050`) beégetett `0,0`-t ad át (`0x008f8645` `fldz`) — ez a
+#: bináris értéke, nem illesztés (#3916).
 RADBLUR_SHARPNESS = 0.0
 
 
@@ -194,8 +194,8 @@ def glow_blend(original: np.ndarray, blurred: np.ndarray, weight: int) -> np.nda
 def radblur_blur_radius(width: int, amount: float) -> float:
     """A `radblur` elmosási sugara képpontban — a KÉPSZÉLESSÉGHEZ kötve.
 
-    `sugár = szélesség · 0,009 · (Amount + 1) + 0,001` (4.2.4 szerkezet,
-    MÉRT együtthatóval). Ezért néz ki a Lágy fókusz ugyanúgy kicsi és nagy
+    `sugár = szélesség · 0,01 · (Amount + 1) + 0,001` — a bináris képlete
+    (`0x008f8520`). Ezért néz ki a Lágy fókusz ugyanúgy kicsi és nagy
     képen — **ellentétben a `glow`-val**, amelynek a sugara képpontban
     abszolút (4.2.5).
     """
@@ -240,7 +240,7 @@ def apply_radblur(
     megcáfolja: ott a peremen a kép átlagosan 26 szintnyit változik.
 
     Ellenőrizve négy golden-páron (`chart_color`, `photo01`, `photo04`,
-    `chart_ramp`): átlagos ΔE 0,27…0,85, míg a korábbi közelítésé
+    `chart_ramp`): átlagos ΔE 0,09…0,68 (#3917), míg a korábbi közelítésé
     1,92…11,88 volt.
     """
     validate_image(image)

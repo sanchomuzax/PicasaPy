@@ -152,13 +152,19 @@ class TestGlowAltalanos:
 
 
 class TestRadblurSugar:
-    """A `radblur` elmosási sugara a KÉPSZÉLESSÉGHEZ kötött (4.2.4)."""
+    """A `radblur` elmosási sugara a KÉPSZÉLESSÉGHEZ kötött (4.2.4).
+
+    A hányad a binárisban álló `0,01` (`[0xcf40b8]`, #3916/#3917): a korábbi
+    `0,009` a közös elmosó mag régi együtthatóját kompenzálta. A 684-es
+    készleten a `0,01` az `alap` és a `max` esetet 0,640 → 0,330 és
+    0,530 → 0,335 ΔE-re viszi (zajszint ~0,30).
+    """
 
     @pytest.mark.parametrize(
         "width,amount,expected",
-        [(1920, 0.0, 17.281), (1600, 0.5, 21.601), (1600, -1.0, 0.001)],
+        [(1920, 0.0, 19.201), (1600, 0.5, 24.001), (1600, -1.0, 0.001)],
     )
-    def test_mert_sugar(self, width: int, amount: float, expected: float) -> None:
+    def test_binaris_sugar(self, width: int, amount: float, expected: float) -> None:
         assert radblur_blur_radius(width, amount) == pytest.approx(
             expected, abs=0.01
         )

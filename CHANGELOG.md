@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A Lágy fókusz a kép szélén annyira mos el, mint az eredeti Picasa: eddig
+  kissé gyengébben mosott (a mért eltérés ΔE 0,64-ről 0,33-ra, a legerősebb
+  állásban 0,53-ról 0,34-re csökkent) (#3917).
+
 - A Ragyogás és a régi Ragyogás effekt úgy világosít, mint az eredeti Picasa:
   a mért eltérés alapbeállításon ΔE 0,33-ról 0,26-ra, a legerősebb állásban
   0,51-ről 0,28-ra csökkent (#3913).
