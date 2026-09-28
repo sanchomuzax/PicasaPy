@@ -1158,11 +1158,32 @@ def _ytresampler(kep: np.ndarray, width: int, height: int) -> np.ndarray:
     return kimenet.copy() if kimenet is kep else kimenet
 
 
+def _bw_coefficients(color: tuple[int, int, int]) -> tuple[int, int, int]:
+    """A `bw_tint` fixpontos csatornaegyütthatói (`c = trunc(w·2048 + 0,5)`,
+    int16) a `color` szűrőszínre. `0xff6666`-tal `c = 1080 / 853 / 115`
+    (#3930, #3931 „Kész, ha")."""
+    red_w, green_w, blue_w = _HAEBERLI_WEIGHTS
+    raw_weights = np.array(
+        [red_w * color[0], green_w * color[1], blue_w * color[2]], dtype=np.float64
+    )
+    total = float(raw_weights.sum())
+    if total > 0:
+        weights = raw_weights / total
+    else:
+        weights = np.array([red_w, green_w, blue_w], dtype=np.float64)
+    # `c = trunc(w·2048 + 0,5)` — a súlyok itt mindig ≥ 0 (a `color` bájtjai
+    # és a Haeberli-súlyok is nem-negatívak), ezért a natív „nullától
+    # elfelé kerekítés" mindig a `+0,5` ágon fut.
+    coeffs = np.trunc(weights * 2048.0 + 0.5).astype(np.int64)
+    return int(coeffs[0]), int(coeffs[1]), int(coeffs[2])
+
+
 def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     """`BW(filtercolor=...)`: **valódi szürkeárnyalat** (R=G=B minden
     képponton) — a `filtercolor` NEM színezi be a kimenetet, hanem a
-    szürkítéshez használt Rec.601 csatornasúlyokat modulálja, mint egy
-    színszűrő a fekete-fehér film előtt.
+    szürkítéshez használt HAEBERLI csatornasúlyokat modulálja, mint egy
+    színszűrő a fekete-fehér film előtt, majd a natív FIXPONTOS
+    színmátrix-alkalmazóval számol.
 
     **Bizonyíték (#504), mérve az eredeti windowsos Picasa Holga-kimenetéhez
     (a privát `picasapy-agent` repó `referencia/holga/` hét mappás
@@ -1172,36 +1193,39 @@ def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     volt a hiba, nem a csatornák sorrendje (#510 tévedett) és nem is
     „minden rendben" (#515 is tévedett).
 
-    A helyes képlet, a referenciából levezetve és szabad illesztéssel
-    ellenőrizve (a levezetett képlet maradéka 10,92, az elméleti alsó
-    korlát 10,89 — 4 paraméteres szabad illesztéssel):
+    **A pontos képlet (#3930, utasításszintű bináris-kutatás, a `BW`
+    közös színmátrix-alkalmazójára — `0x00bc16b0`/`0x00bbdd80`/`0x008f2500`):**
 
-        w_c = luma_c · szín_c / Σ_k(luma_k · szín_k)
+        w_c = haeberli_c · szín_c / Σ_k(haeberli_k · szín_k)
+        c_c = trunc(w_c · 2048 + 0,5)                         (int16)
+        Y   = clamp(((Σ_c (c_c · pixel_c) >> 9) + 2) >> 2, 0, 255)
 
-    ahol `luma_c` a Rec.601-súly (`_REC601_WEIGHTS`). `0xff6666`-tal ez
-    B 0,079 / G 0,405 / R 0,516. A kimenet: `gray = Σ_c(w_c · pixel_c)`,
-    majd `R = G = B = gray` — NEM a képen belüli (a `color`-tól független)
-    lumát színezzük, hanem a `color`-ral modulált súlyokkal újraszámoljuk
-    a szürkét.
+    ahol `haeberli_c` a Haeberli-súly (`_HAEBERLI_WEIGHTS`, NEM Rec.601 —
+    a #504 mérésből illesztett lebegőpontos modell ezt tévesen feltételezte,
+    #3931). `0xff6666`-tal `c = 1080 / 853 / 115` (`_bw_coefficients`). A
+    kettő a hetedes fixpontos kvantálás miatt NEM ugyanaz, mint a
+    lebegőpontos `rint(Σ w·x)`: a teljes RGB-kockán 27%-ban eltérnek (pl.
+    `(0,0,98)` fixpontosan 6, lebegőpontosan 5).
+
+    Nulla összegnél (fekete szűrőszín) a natív kód a Haeberli-súlyokat
+    használja módosítatlanul — ez az ág egyetlen hívónál sem fordul elő
+    (a `color` mindig `0xff6666`), és a natív viselkedést erre az esetre
+    **nem olvastuk ki** a bináris-kutatás során; a `0x00cf3a00` fallback
+    egyenértékűsége a Haeberli-súlyokkal feltételezés, nem igazolt tény.
+    `R = G = B = Y` — NEM a képen belüli (a `color`-tól független) lumát
+    színezzük, hanem a `color`-ral modulált, fixpontosított súlyokkal
+    újraszámoljuk a szürkét.
 
     `color` csatornasorrendje **RGB** (megegyezik a `image` tömb saját
     sorrendjével) — ld. `tint_multiply` docstringjét a #510-es tanulságról.
     """
     validate_image(image)
-    image_f = to_float(image)
-    red_w, green_w, blue_w = _REC601_WEIGHTS
-    raw_weights = np.array(
-        [red_w * color[0], green_w * color[1], blue_w * color[2]], dtype=np.float64
-    )
-    total = float(raw_weights.sum())
-    if total > 1e-9:
-        weights = (raw_weights / total).astype(np.float32)
-    else:
-        weights = np.array([red_w, green_w, blue_w], dtype=np.float32)
-    gray = (
-        weights[0] * image_f[..., 0] + weights[1] * image_f[..., 1] + weights[2] * image_f[..., 2]
-    )
-    return to_uint8(np.repeat(gray[..., np.newaxis], 3, axis=-1))
+    coeffs = np.array(_bw_coefficients(color), dtype=np.int64)
+    pixels = image.astype(np.int64)
+    channel_terms = (pixels * coeffs) >> 9
+    gray = (channel_terms.sum(axis=-1) + 2) >> 2
+    gray = np.clip(gray, 0, 255).astype(np.uint8)
+    return np.repeat(gray[..., np.newaxis], 3, axis=-1)
 
 
 __all__ = [
