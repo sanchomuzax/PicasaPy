@@ -357,6 +357,46 @@ körben mérendő célzott próbákkal.
   mérve: p=0,2 → 1,0702 (számított 1,0704), p=0,05 → 1,0178 (1,0178). A kimeneti
   képméret változatlan. A 2. ini-paraméter (skála) a teszteinkben 0 volt;
   szerepe további mérést igényel, ha nem-nulla értékkel találkozunk.
+  → **2026-09-28 (#3843): a natív út a 2. paramétert nem olvassa; ld. a következő szakaszt.**
+
+### `tilt` — a natív út kiolvasva: képpontközepes forgatás, fixpontos bilineáris (2026-09-28, 389. kör, #3843)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel. A fenti, mérésből levezetett szög és autoskála egyezik vele.*
+
+A visszahívás (`0x008f8810`) egyetlen paramétert ad tovább: a `+0x28`
+floatot (`p`). A munkavégző a `0x0090a720`:
+
+1. **Szög:** `θ = p · 0,2` radián (`0x0090a72e` `fmul [0xcf4748]` = 0,2).
+2. **Skála:** a két sarkot, `(W/2, H/2)`-t és `(W/2, −H/2)`-t `R(θ)`-val
+   elforgatja, és `s = min(1, min_sarok(W/2 / |x′|, H/2 / |y′|))`
+   (`0x0090a8f9` sqrt, `0x0090aa1b`–`0x0090aa7c` min és 1-es korlát). Fekvő
+   képnél ez `1 / (cos θ + (W/H)·sin θ)`, a mért autoskála reciproka.
+   **A szűrő 2. paraméterét ez az út nem olvassa.**
+3. **Mátrix (cél → forrás):**
+   `M = T(W/2, H/2) · R(θ) · S(s) · T(−W/2, −H/2)`, `R = [[c, −s_θ], [s_θ, c]]`
+   (`0x0090aa80`–`0x0090abc7`, a `0x009e6340` balról szoroz). A középpont
+   `W/2`, `H/2`, egész felezés nélkül.
+4. **Mintavevő:** `0x009e6df0(dst, src, &M, 1, 0, 0x100)` → **`0x009e7060`**,
+   ugyanaz a képpontközepes, 8 bites súlyú fixpontos bilineáris, mint a
+   Polaroid forgatásánál (ld. `filterdesc-registry.md`, „A Polaroid
+   geometriája”). A kimenet W × H.
+
+**Számpélda:** 960 × 640, `p = 1` → `θ` = 11,459°, `s` = 0,782429,
+`M = [[0,766833, −0,155445, 161,6625], [0,155445, 0,766833, ≈0]]`.
+
+**Nálunk** (`render/ops.py`, `apply_tilt`): `cv2.getRotationMatrix2D` a
+`(W/2, H/2)` középponttal, egész képpont-konvencióval — a képpontközép
+nélkül fél képpontot tol, és `cv2.INTER_LINEAR` a mintavevő.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz):
+
+| eset | ma | képpontközepes mátrix, `cv2.INTER_LINEAR` | **natív (fixpontos bilineáris)** | zajszint |
+|---|---:|---:|---:|---:|
+| max (`p = 1`) | 0,920 | 0,282 | **0,244** | 0,194 |
+| min (`p = −1`) | 0,429 | 0,277 | **0,241** | 0,193 |
+| alap (`p = 0`) | 0,156 | 0,156 | — | 0,083 |
+
+Fejlesztés: #3846.
 
 ### `unsharp` / `unsharp2` — MEGFEJTVE (közelítő modell)
 
