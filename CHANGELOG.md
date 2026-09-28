@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Projektor és a többi képpontot átfestő megjelenítési módban a diavetítés
+  az EXIF szerint elforgatott álló fotót is állva mutatja — eddig fekve
+  jelent meg (#3832).
+- A diavetítés a képet a valódi méretéből számolva tölti be, legfeljebb
+  2560 képpontos élekkel és soha nem az eredetinél nagyobban. Eddig egy
+  álló telefonfotó 2560×4551-es textúrát kapott, a videokártya 4096-os
+  plafonja fölött: a kép megjelent, mert a rendszer csendben lekicsinyítette,
+  de képenként ~46 MB memóriát és fölösleges számítást vitt; egy kis kép
+  pedig 2560 szélesre nagyítódott. Lépéskor a képek sem töltődnek be
+  többször (#3832).
+
 ## [0.8.622] – 2026-09-28
 
 ### Javítva
@@ -29,18 +41,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   egérelengedéssel azonos módon azonnal ír; ugyanez a javítás érinti a
   Finomhangolás és a Gyakori javítások fülének Kitöltő fény, Kiemelések,
   Árnyékok és Színhőmérséklet csúszkáját is (#3865).
-
-### Javítva
-- A diavetítés a képet a valódi méretéből számolva tölti be, legfeljebb
-  2560 képpontos élekkel és soha nem az eredetinél nagyobban. Eddig egy
-  álló telefonfotó 2560×4551-es textúrát kapott, a videokártya 4096-os
-  plafonja fölött: a kép megjelent, mert a rendszer csendben lekicsinyítette,
-  de képenként ~46 MB memóriát és fölösleges számítást vitt; egy kis kép
-  pedig 2560 szélesre nagyítódott. Lépéskor a képek sem töltődnek be
-  többször (#3832).
-- Projektor és a többi képpontot átfestő megjelenítési módban a diavetítés
-  az EXIF szerint elforgatott álló fotót is állva mutatja — eddig fekve
-  jelent meg (#3832).
 
 ## [0.8.620] – 2026-09-28
 
