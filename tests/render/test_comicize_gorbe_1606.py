@@ -250,7 +250,9 @@ class TestARaszterMegvan:
     #: ⚠️ A #3522 óta (a `filterdesc.xml` szerinti lánc) újramérve: 8,8331.
     #: A fenti mutációs tábla még a régi küszöb-modellé; az új lánc hűségét a
     #: 15 exportos mérés őrzi (`TestA15ExportonMerve`).
-    RASZTER_SZORAS = 8.8331
+    #: ⚠️ A #3827 óta (a belső ragyogás natív lánca, a kép szélén más
+    #: sötétítés) újramérve: 8,7961.
+    RASZTER_SZORAS = 8.7961
 
     def test_sik_kozeptonon_a_raszter_a_mert_erossegen_all(self):
         """700 px széles kép ⇒ 11 px csempe: a raszter a mért erősségén áll."""
