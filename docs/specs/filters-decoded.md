@@ -825,6 +825,7 @@ más csúszkánál nyers érték. Nálunk mind az öt képpontként megy — fej
 | `FocalZoom` `min` 1 · 10 · 0 · 0 | 3,565 | 3,884 (#3518) | 3,883 |
 
 ⇒ A `PicnikFocalPixelate` sugara és maszkja a JPEG-zaj szintjén egyezik; a #3583 kalibrációs kérdése lezárva. A `FocalZoom` maradék eltérése nem a sugáré, mert a két effekt ugyanazt a sugár-szabályt és ugyanazt a maszkot használja. A zoom-kernelben van: **#3518**.
+A zoom-kernel a #3883 szerint javítva (#3884): `FocalZoom` `alap` **0,311**, `min` **0,212**.
 
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
@@ -7779,3 +7780,9 @@ százalékos sugár), a keverés a `MaskInstruction` egész képlete:
 A `max` sor (`Fade = 100`) változatlanul 0,121.
 
 Fejlesztés: #3884.
+
+**✅ Megvalósítva (#3884, 2026-09-28):** `render/focal.py`, `zoom_blur`. A
+`tools/golden/analyze_validation_kit.py` a 684-es készleten: `alap` **0,311**,
+`min` **0,212** (mindkettő `JO`), `max` 0,121. A csúszka húzása közbeni élő
+előnézet (`gyors_elonezet`) ugyanazokkal a mintaindexekkel, de OpenCV-keveréssel,
+sávhiba nélkül fut (0,741 / 1,994); mentés, export és bélyegkép a natív úton.
