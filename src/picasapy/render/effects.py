@@ -33,6 +33,7 @@ import numpy as np
 
 from picasapy.render.curves import validate_image
 from picasapy.render.iir_blur import apply_picasa_blur
+from picasapy.render.native_tone import native_gamma_lut
 from picasapy.render.radial_mask import (
     RADIAL_TABLE_SIZE,
     apply_radial_mask,
@@ -144,12 +145,13 @@ def glow_gamma_lut() -> np.ndarray:
     """A Ragyogás előgörbéjének 256 elemű gamma-táblája (#3912, #3913).
 
     A natív `0x00aa40a0` (argumentum `0,5` → kitevő `1 / 0,5 = 2`):
-    `LUT[i] = rint(255 · (f32(i / 255))²)` — az `i / 255` egyszeres
-    pontosságú szorzat (`fmul [0xcf4138]`), a hatványozás és a `· 255`
-    dupla pontosságú, a `fistp` a legközelebbi egészre kerekít.
+    `LUT[i] = rint(255 · (f32(i / 255))²)`. A tábla-építő maga
+    `render/native_tone.py::native_gamma_lut`-ban él — a `gamma` szűrő
+    (`apply_gamma`) ugyanazt a natív függvényt hívja, csak más `g`-vel
+    (#3939). A közösítés a kimenetet bitre nem változtatja (a regresszió a
+    `tests/render/test_glow_radblur_668.py`-ban van).
     """
-    unit = (np.arange(256, dtype=np.float32) * np.float32(1.0 / 255.0)).astype(np.float64)
-    return np.rint(255.0 * unit**2).astype(np.uint8)
+    return native_gamma_lut(0.5)
 
 
 def glow_premultiply(image: np.ndarray) -> np.ndarray:

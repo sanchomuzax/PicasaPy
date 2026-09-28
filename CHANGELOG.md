@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Gamma Correct” effekt most az eredeti Picasa 8 bites, kerekített
+  gamma-táblájával számol, dither nélkül — eddig a szinthúzó 16 bites,
+  ditheres tábláján futott, ami a bemeneti szintek kb. felén eggyel
+  sötétebb eredményt adott (#3939).
+
 ## [0.8.630] – 2026-09-28
 
 ### Javítva

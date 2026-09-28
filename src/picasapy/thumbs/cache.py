@@ -128,7 +128,7 @@ _EDIT_BASE_CAP = 2048
 # hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
 # (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
 # (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 8
+_EDIT_CACHE_VERSION = 9
 # 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
 # skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
 # 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
@@ -145,6 +145,9 @@ _EDIT_CACHE_VERSION = 8
 # lebegőpontos modellel készült szerkesztett bélyegképek újragenerálódnak.
 # 8 (#3928): a régi Szemcse (`grain`/`grain2`) csomós, középtónusban erős
 # zajt ad az eddigi egyenletes Gauss-zaj helyett — az érintett szerkesztett
+# bélyegképek újragenerálódnak.
+# 9 (#3939): a Gamma Correct (`gamma`) a 8 bites gamma-táblán fut, dither
+# nélkül — a régi, 16 bites ditheres szinthúzón renderelt szerkesztett
 # bélyegképek újragenerálódnak.
 
 
