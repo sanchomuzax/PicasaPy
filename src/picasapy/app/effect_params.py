@@ -151,7 +151,9 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "radsat": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
-        _p("radius", "Radius", 0.0, 1.0, 0.3, 0.01),
+        # #3826: a tartomány fele elérhetetlen volt (min 0 -> −1), az
+        # alapérték pedig a regiszter/spec szerinti 0 helyett 0,3 volt.
+        _p("radius", "Radius", -1.0, 1.0, 0.0, 0.01),
         _p("sharpness", "Sharpness", 0.0, 1.0, 0.5, 0.01),
     ),
     # tint=1,!!megőrzés,#szín (#717: a szín korábban hiányzott a láncból)
