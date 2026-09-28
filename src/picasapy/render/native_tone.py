@@ -277,20 +277,55 @@ def apply_native_contrast(
     )
 
 
-def apply_gamma(image: np.ndarray, level: float) -> np.ndarray:
-    """`gamma` („Gamma Correct") — a szinthúzó LUT tiszta gamma-ága.
+def native_gamma_lut(g: float) -> np.ndarray:
+    """A 8 bites gamma-tábla (`0x00aa40a0`) — 256 elem, dither NÉLKÜL.
 
-    A burkoló (`0x008f8e30`) az egyetlen csúszkából `exp(szint)`-et számol
-    (`0x0040eac0` = `exp`), és ezt adja tovább GAMMA-ként; a LUT-építő
-    `1/gamma`-val emel hatványra, tehát a tényleges kitevő `exp(−szint)`.
-    Pozitív szint világosít, negatív sötétít, a 0 azonosság, és a két
-    végpont (0 és 255) helyben marad.
+    ```c
+    invG   = f32(1.0 / g);
+    LUT[i] = rint(f32(pow(f32(i * (1.0 / 255.0)), invG) * 255.0));
+    ```
 
-    A #685 mérőszettjén ez a leképezés adódott (mindhárom csúszkaálláson
-    ΔE **0,34–0,41**, míg a fordított irány 8,3–45,7) — vagyis a kitevő
-    iránya nem feltevés, hanem mért.
+    ⛛ **Ez NEM a szinthúzó** (`0x0090c1e0` / `native_level_lut`) — külön
+    natív függvény, 8 bites egyszerű táblázatos cserével (dekompilálva,
+    `docs/specs/picasa-native-filter-workers.md` 5.3/b, #3937). A `gamma`
+    szűrő (`apply_gamma`) és a régi Ragyogás előgörbéje
+    (`render/effects.py::glow_gamma_lut`, `g = 0,5`) ugyanezt a táblát
+    használja — a két hívó itt közösíti (#3939).
+
+    A köztes lépések pontossága a mérésből jön: az `i/255` szorzat és az
+    `invG` egyszeres (float32), a hatványozás dupla (float64) pontosságú,
+    a végeredmény pedig `fstp dword`-dal float32-re kerekül a `fistp`
+    (legközelebbi egész) előtt.
     """
-    return apply_native_levels(image, 0.0, 1.0, gamma=math.exp(level))
+    if g <= 0.0:
+        raise ValueError(f"A gamma pozitív kell legyen, nem {g}")
+    inv_g = np.float32(1.0) / np.float32(g)
+    unit = (np.arange(256, dtype=np.float32) * np.float32(1.0 / 255.0)).astype(
+        np.float64
+    )
+    powered = unit ** float(inv_g)
+    scaled = np.float32(np.float64(255.0) * powered)
+    return np.rint(scaled.astype(np.float64)).astype(np.uint8)
+
+
+def apply_gamma(image: np.ndarray, level: float) -> np.ndarray:
+    """`gamma` („Gamma Correct") — a `0x00aa40a0` 8 bites gamma-tábla.
+
+    A burkoló (`0x008f8e30`) az egyetlen csúszkából `g = f32(exp(szint))`-et
+    számol (`0x0040eac0` = `exp`), és a `0x00aa40a0` tábla-építőt hívja
+    `(g, 0)` argumentummal — **nem** a szinthúzón (`0x0090c1e0` /
+    `apply_native_levels`) fut, ahogy korábban hittük (spec 5.3/b, #3937,
+    #3939). A tábla-építő `1/g`-vel emel hatványra, tehát a tényleges
+    kitevő `exp(−szint)`. Pozitív szint világosít, negatív sötétít, a 0
+    azonosság, és a két végpont (0 és 255) helyben marad. Dither NINCS: ez
+    a 2.2-es, 16 bites, ditheres szinthúzótól (`apply_native_lut16`)
+    független, egyszerű 8 bites táblázatos csere.
+
+    A 684-es mérőkészleten (a kimenetet a Picasa-export saját
+    kvantálótábláival tömörítve) ΔE 0,00 mindhárom csúszkaálláson (#3939) —
+    a korábbi, szinthúzón futó modell 0,22–0,27-et adott.
+    """
+    return native_gamma_lut(math.exp(level))[image]
 
 
 __all__ = [
@@ -300,5 +335,6 @@ __all__ = [
     "apply_native_levels",
     "apply_native_lut16",
     "native_contrast_lut",
+    "native_gamma_lut",
     "native_level_lut",
 ]
