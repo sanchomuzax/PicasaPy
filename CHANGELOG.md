@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A négy régi, színkerekes effekt („Árnyalás (régi)”, „Szűrt FF”,
+  „Színátmenet”, „Sugaras árnyalás”) PicasaPy-ban beállított színe most
+  pontosan úgy mentődik, ahogy a Picasa menti. Ettől a PicasaPy-ban
+  beállított fehér „Színátmenet” a Picasában és nálunk is ugyanúgy, egy
+  árnyalatnyit sötétít — eddig a Picasa az így mentett effektet
+  sötétítés nélkül mutatta (#3908).
+- A Picasában fehér színnel beállított „Színátmenet” effekt a PicasaPy-ban
+  is úgy jelenik meg, mint az eredetiben: a színezett részen egy
+  árnyalatnyit sötétít, így a kép pontosabban egyezik az eredeti
+  exportjával (#3902).
+
 ## [0.8.627] – 2026-09-28
 
 ### Javítva

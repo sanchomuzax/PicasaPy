@@ -232,21 +232,28 @@ tint=1,79.842102,ffff                             → Color Preservation, szín
 ansel=1,ffffffff                                  → szín
 ```
 
+*(A `tint` sora a paraméter-SORRENDET mutatja, de nem valós export: a saját
+golden-kitünk kézzel írt mérőfájljából való — ld. alább.)*
+
 Szabály: **`puck` kurzoros szűrőnél a fókuszpont (x, y) megy elöl**, utána a
 csúszkák `id` sorrendben, a színparaméter a végén. A `dir_tint` mért
 alapértékei (0,25 / 0,25) pontosan a `filterdesc.xml` `default` értékei —
 a csúszkanevek tehát ezzel a sorrenddel egyeznek.
 
-**Színformátum-figyelmeztetés:** a `tint` `ffff` (4 hex), az `ansel` és a
-`dir_tint` `ffffffff` (8 hex). A parszernek **változó hosszú** hex-színt kell
-elfogadnia.
+**Színformátum:** a Picasa a színt **mindig nyolc jeggyel** írja (`%08x`),
+a `tint`-et is; a régi, színkerekes effektek (`tint`, `ansel`, `dir_tint`,
+`radtint`) `ff` alfával. A fenti `ffff` a saját golden-kitünk terméke, nem a
+Picasáé. A parszer változó hosszú hex-színt is elfogad, de ez csak
+robusztussági kényelem. Részletek: [`filters-decoded.md`](filters-decoded.md),
+„A `tint` 4 hex jegyet ír — SAJÁT TESZTADAT-ARTEFAKTUM (2026-08-16)".
 
 > ~~A `colorwheel` verziókülönbsége (v0 vs v1) magyarázza a hex-hosszt.~~
-> **MEGCÁFOLVA (2026-08-15):** a fenti táblázat szerint a `dir_tint` és a
-> `radtint` **is `version="0"`**, mégis 8 jegyet ír. A `version` és a
-> hex-hossz nem korrelál. A legvalószínűbb magyarázat prózai: az író
-> **elhagyja a vezető nullákat**. Részletek és a színkezelés-lelet:
-> [`filters-decoded.md`](filters-decoded.md), `tint` szakasz.
+> **MEGCÁFOLVA (2026-08-15):** a `dir_tint` és a `radtint` **is
+> `version="0"`**, mégis 8 jegyet ír. ~~A legvalószínűbb magyarázat prózai:
+> az író **elhagyja a vezető nullákat**.~~ **MEGHALADVA (2026-08-16):** az
+> író nem hagy el semmit — a binárisban egyetlen hex-darabka van (`,%08x`),
+> és a valós korpusz mind a 11 `tint`/`dir_tint` sora 8 jegyes. A 4 jegyes
+> `tint` a saját tesztadatunk volt.
 
 ## 4. Glimmer-effektek — a teljes csővezeték
 

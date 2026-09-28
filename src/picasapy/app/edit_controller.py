@@ -2264,7 +2264,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             for index, param in enumerate(catalogue)
         ]
         try:
-            formatted = format_param_values(resolved, catalogue)
+            formatted = format_param_values(resolved, catalogue, effect=key)
         except (TypeError, ValueError):
             return None
         return self._session.append_effect(

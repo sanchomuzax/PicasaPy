@@ -13,6 +13,8 @@ from __future__ import annotations
 import pytest
 
 from picasapy.app.effect_params import (
+    _CATALOGUE,
+    LEGACY_COLORWHEEL_EFFECTS,
     PARAMETERLESS_EFFECTS,
     EffectParam,
     effect_params,
@@ -20,7 +22,7 @@ from picasapy.app.effect_params import (
     has_params,
     resolve_effect_params,
 )
-from picasapy.app.edit_controller import _EFFECT_NAMES
+from picasapy.app.edit_controller import _EFFECT_INI_NAMES, _EFFECT_NAMES
 from picasapy.render.chain import _HANDLERS
 
 
@@ -288,20 +290,112 @@ class TestFormatting:
 
     def test_checkbox_values_are_plain_integers(self):
         params = effect_params("sixties")
-        formatted = format_param_values([20.0, "#ffffff", True], params)
+        formatted = format_param_values(
+            [20.0, "#ffffff", True], params, effect="sixties"
+        )
         assert formatted[2] == "1"
-        formatted_off = format_param_values([20.0, "#ffffff", False], params)
+        formatted_off = format_param_values(
+            [20.0, "#ffffff", False], params, effect="sixties"
+        )
         assert formatted_off[2] == "0"
 
     def test_color_values_use_the_00rrggbb_filters_hex(self):
         params = effect_params("vignette")
-        formatted = format_param_values([35.0, 1.4, 0.0, "#ff8800"], params)
+        formatted = format_param_values(
+            [35.0, 1.4, 0.0, "#ff8800"], params, effect="vignette"
+        )
         assert formatted[3] == "00ff8800"
+
+    def test_color_without_an_effect_name_is_rejected(self):
+        # #3908: az alfa az effekten múlik (`ff` a régi négyesnél, `00` a
+        # többinél) — effektnév nélkül a szín alfája nem dönthető el, ezért
+        # hangos hiba, nem csendes `00` (ami a `tint`-nél épp a rossz alfa).
+        params = effect_params("tint")
+        with pytest.raises(ValueError):
+            format_param_values([0.5, "#336699"], params)
+
+    def test_colorless_params_need_no_effect_name(self):
+        # szín nélküli katalógusnál az alfa-kérdés föl sem merül
+        params = effect_params("boost")
+        assert format_param_values([50.0], params) == ("50.000000",)
+
+    @pytest.mark.parametrize("effect", ["tint", "ansel", "dir_tint", "radtint"])
+    def test_the_four_legacy_colorwheel_effects_use_ff_alpha(self, effect):
+        # #3908: a Picasa a régi, színkerekes effektek színét `ff` alfával
+        # írja (`%08x`), szemben a Picnik-generációs effektek `00`-jével.
+        params = effect_params(effect)
+        color_index = next(
+            index for index, param in enumerate(params) if param.kind == "color"
+        )
+        values = [
+            "#336699"
+            if index == color_index
+            else (param.color if param.kind == "color" else param.default)
+            for index, param in enumerate(params)
+        ]
+        formatted = format_param_values(values, params, effect=effect)
+        assert formatted[color_index] == "ff336699"
+
+    @pytest.mark.parametrize(
+        "effect", ["vignette", "border", "dropshadow", "neon", "sixties"]
+    )
+    def test_picnik_generation_effects_keep_00_alpha(self, effect):
+        # #3908: ezek az effektek MARADNAK `00` alfásak — a katalógus-kulcs
+        # átadása nem sodorja bele őket a régi négyes csoportba.
+        params = effect_params(effect)
+        color_index = next(
+            index for index, param in enumerate(params) if param.kind == "color"
+        )
+        values = [
+            "#336699"
+            if index == color_index
+            else (param.color if param.kind == "color" else param.default)
+            for index, param in enumerate(params)
+        ]
+        formatted = format_param_values(values, params, effect=effect)
+        assert formatted[color_index] == "00336699"
 
     def test_invalid_color_is_rejected(self):
         params = effect_params("vignette")
         with pytest.raises(ValueError):
             format_param_values([35.0, 1.4, 0.0, "nem szín"], params)
+
+
+class TestColorAlphaGroupGuard:
+    """#3908 őre: a színes katalógus-effektek két csoportra oszlanak — a
+    régi, natív, színkerekes négyes (`LEGACY_COLORWHEEL_EFFECTS`, `ff` alfa,
+    kisbetűs ini-név) és a Picnik-generáció (`00` alfa, CamelCase ini-név).
+    Egy új, natív (kisbetűs ini-nevű) színes effekt csendben a `00` ágra
+    esne — ez az őr kiszúrja, és a felvevőnek el kell döntenie, melyik
+    csoportba tartozik."""
+
+    @staticmethod
+    def _colored_catalogue_keys() -> list[str]:
+        return sorted(
+            key
+            for key, params in _CATALOGUE.items()
+            if any(param.kind == "color" for param in params)
+        )
+
+    def test_every_colored_effect_belongs_to_a_known_alpha_group(self):
+        orphans = [
+            (key, _EFFECT_INI_NAMES.get(key, key))
+            for key in self._colored_catalogue_keys()
+            if key not in LEGACY_COLORWHEEL_EFFECTS
+            and not _EFFECT_INI_NAMES.get(key, key)[:1].isupper()
+        ]
+        assert not orphans, (
+            "natív (kisbetűs ini-nevű) színes effekt a régi négyesen kívül — "
+            f"döntsd el, `ff` vagy `00` alfával ír-e a Picasa: {orphans}"
+        )
+
+    def test_the_legacy_group_is_the_lowercase_colored_natives(self):
+        # a csoport tagjai valóban színesek és natív (kisbetűs) nevűek —
+        # elavult vagy elírt tag nem ülhet benne
+        colored = set(self._colored_catalogue_keys())
+        for key in LEGACY_COLORWHEEL_EFFECTS:
+            assert key in colored, key
+            assert _EFFECT_INI_NAMES.get(key, key) == key, key
 
 
 class TestPicnikFocalPixelateAndMaskEffectsAreDeliberatelySkipped:
