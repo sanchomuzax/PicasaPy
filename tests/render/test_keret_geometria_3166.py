@@ -273,3 +273,28 @@ def test_a_hibara_futo_keret_kimarad_az_elhelyezesbol():
     ).content_placement
     # a RoundedEdges nem változtat méretet, tehát a két hely azonos
     assert hely == csak_border
+
+
+@pytest.mark.parametrize("szog", [0.0, 5.0, 10.0, -10.0])
+def test_a_polaroid_lekepezese_tized_kepontra_pontos(szog):
+    """#3809: a Polaroid uniós árnyék-margóval és képpontközepes forgatással
+    helyez — a leképezés ezt tized képpontra követi (a sávos mérés 1,5
+    képpontos tűrése ezt nem látná).
+
+    Egy 3 × 3-as jelölő súlypontja a renderelt kimenetben vs. a mátrix."""
+    from picasapy.render.glimmer_frames import apply_polaroid
+
+    magas, szeles = 300, 400
+    alap = np.full((magas, szeles, 3), 100, np.uint8)
+    (a, b, c), (d, e, f) = keret_geometria(
+        tuple(parse_filters(f"Polaroid=1,{szog},e2e2e2")), szeles, magas
+    ).matrix
+    nelkul = apply_polaroid(alap, szog).astype(np.int32)
+    for x, y in ((120, 80), (250, 200)):
+        kep = alap.copy()
+        kep[y - 1 : y + 2, x - 1 : x + 2] = 250
+        elteres = np.abs(apply_polaroid(kep, szog).astype(np.int32) - nelkul).sum(axis=2)
+        sorok, oszlopok = np.nonzero(elteres)
+        suly = elteres[sorok, oszlopok].astype(np.float64)
+        mert = ((oszlopok * suly).sum() / suly.sum(), (sorok * suly).sum() / suly.sum())
+        assert mert == pytest.approx((a * x + b * y + c, d * x + e * y + f), abs=0.1)

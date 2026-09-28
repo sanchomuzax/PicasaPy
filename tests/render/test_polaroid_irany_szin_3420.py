@@ -14,14 +14,44 @@ kimondja:
    keret felső éle jobbra LEJT); az OpenCV pozitív szöge fordítva forgat.
 
 ⚠️ A golden-képek a NAS-on vannak, ezért ez a próba szintetikus képen méri
-a két szerkezeti tulajdonságot; a golden-ΔE a PR-ben áll.
+a két szerkezeti tulajdonságot.
+
+## #3809 — a geometria: floor-os eltolás, uniós margó, képpontközepes forgatás
+
+A tartalom 1–3 képponttal el volt tolva (golden ΔE 0,69 / 1,10 / 2,58).
+Három ok (`docs/specs/filterdesc-registry.md`, „A Polaroid geometriája”):
+
+1. az árnyék eltolása `floor` (`test_arnyek_eltolas_649.py`);
+2. az árnyék vászna az eredeti és az eltolt-kiterjesztett doboz UNIÓJA:
+   bal `11 − dx`, fent `11 − dy`, jobb `11 + dx`, lent `11 + dy`;
+3. a forgatás (`0x00bc8060`) `T(sW/2, sH/2) · R · T(−dW/2, −dH/2)`, a
+   képpont közepét (`+0,5`) vetíti vissza, és a mintavevő (`0x009e7060`)
+   8 bites súlyú fixpontos bilineáris: `a + floor((b − a)·f/256)`, a perem
+   egy képpontos sávjában a szélső képpont ismétlődik, azon kívül a vászon
+   színe marad.
+
+A golden-mérés a fájl végén (684-merokeszlet, a Picasa-exporthoz).
 """
 
+# rontás-kontroll: az `apply_polaroid` a régi `pads=(11, 11, 11, 11)`-gyel →
+# 8 failed (a `TestUniosMargo` öt próbája és a három Polaroid-golden); a
+# mintavevő `- 32767` helyett `- 0`-val (sarok-konvenció) → 10 failed (a
+# 180°/90°/0°-os pontos próbák, a négy fixpontos próba, a három golden); a
+# perem egy képpontos sávja nélkül (`0 ≤ ix ≤ W − 2`) → 7 failed; a lerp
+# `floor` helyett kerekítéssel (`+ 128`) → 4 failed (a fixpontos próbák —
+# a golden ezt NEM látja). Ellenőrizve lefuttatva.
+
 from __future__ import annotations
+
+import math
+import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
 
+from picasapy.render import glimmer_frames
+from picasapy.render.glimmer_frame_ops import drop_shadow_padding, rotate_with_pad
 from picasapy.render.glimmer_frames import apply_polaroid
 
 HATTER = (0xE2, 0xE2, 0xE2)
@@ -68,3 +98,191 @@ class TestForgatasIranya:
         w = ki.shape[1]
         bal, jobb = _felso_feher_sor(ki, w // 3), _felso_feher_sor(ki, 2 * w // 3)
         assert jobb < bal, (bal, jobb)
+
+
+# ---------------------------------------------------------------------------
+# #3809 — az árnyék vásznának uniós margója
+# ---------------------------------------------------------------------------
+
+
+class TestUniosMargo:
+    @pytest.mark.parametrize("szog", [5.0, 10.0, -10.0, 0.0])
+    def test_a_pads_a_drop_shadow_kiterjesztoje(self, szog, monkeypatch):
+        """Az `apply_polaroid` ugyanazt az uniós margót adja át, mint az
+        önálló `DropShadow` (`drop_shadow_padding(3, 90 − forgatás, 8)`)."""
+        atadott = {}
+        eredeti = glimmer_frames.compose_drop_shadow
+
+        def figyelo(*args, **kwargs):
+            atadott["pads"] = kwargs.get("pads")
+            return eredeti(*args, **kwargs)
+
+        monkeypatch.setattr(glimmer_frames, "compose_drop_shadow", figyelo)
+        apply_polaroid(_kep(), szog, HATTER)
+        _, _, vart = drop_shadow_padding(3, 90.0 - szog, 8)
+        assert atadott["pads"] == vart
+
+    def test_forgatas_nelkul_a_keret_teteje_a_8_sorban(self):
+        """0°-nál `(dx, dy) = (0, 3)`, tehát fent `11 − 3 = 8` képpont a
+        margó (nem 11), bal oldalt 11."""
+        ki = apply_polaroid(_kep(), 0.0, HATTER)
+        w = ki.shape[1]
+        assert _felso_feher_sor(ki, w // 2) == 8
+        bal = np.flatnonzero(np.all(ki[ki.shape[0] // 2] >= 250, axis=-1))
+        assert int(bal[0]) == 11
+
+
+# ---------------------------------------------------------------------------
+# #3809 — a képpontközepes forgatás és a fixpontos mintavevő
+# ---------------------------------------------------------------------------
+
+
+def _veletlen(magas: int, szeles: int, seed: int = 3) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    return rng.integers(0, 256, size=(magas, szeles, 3), dtype=np.uint8)
+
+
+def _referencia_forgatas(kep: np.ndarray, szog: float, szin) -> np.ndarray:
+    """A spec pontjai képpontonként, ciklussal (a kód vektoros — ez a
+    független párja). `fistp` = páros felé kerekítés (Python `round`)."""
+    sh, sw = kep.shape[:2]
+    rad = math.radians(szog)
+    c, s = math.cos(rad), math.sin(rad)
+    dw = int(math.floor(sw * abs(c) + sh * abs(s)))
+    dh = int(math.floor(sw * abs(s) + sh * abs(c)))
+    # cél → forrás: T(sW/2, sH/2) · R⁻¹ · T(−dW/2, −dH/2), óramutató szerint
+    m0, m1, m2 = c, s, sw / 2 - c * dw / 2 - s * dh / 2
+    m3, m4, m5 = -s, c, sh / 2 + s * dw / 2 - c * dh / 2
+    ki = np.empty((dh, dw, 3), dtype=np.int64)
+    ki[:] = szin
+    lepes_u, lepes_v = round(m0 * 65536), round(m3 * 65536)
+    src = kep.astype(np.int64)
+    for y in range(dh):
+        u0 = round((m0 * 0.5 + m1 * (y + 0.5) + m2) * 65536) - 32767
+        v0 = round((m3 * 0.5 + m4 * (y + 0.5) + m5) * 65536) - 32767
+        for x in range(dw):
+            uu, vv = u0 + x * lepes_u, v0 + x * lepes_v
+            ix, iy = uu >> 16, vv >> 16
+            if not (-1 <= ix <= sw - 1 and -1 <= iy <= sh - 1):
+                continue
+            fx, fy = (uu >> 8) & 0xFF, (vv >> 8) & 0xFF
+            x0, x1 = max(ix, 0), min(ix + 1, sw - 1)
+            y0, y1 = max(iy, 0), min(iy + 1, sh - 1)
+            fent = src[y0, x0] + (((src[y0, x1] - src[y0, x0]) * fx) >> 8)
+            lent = src[y1, x0] + (((src[y1, x1] - src[y1, x0]) * fx) >> 8)
+            ki[y, x] = fent + (((lent - fent) * fy) >> 8)
+    return ki.astype(np.uint8)
+
+
+class TestKeppontkozepesForgatas:
+    def test_180_fok_pontos_tukrozes(self):
+        """A forrás közepe a cél közepére esik: 180°-nál minden képpont
+        pontosan a tükörpárjára kerül — fél képpontos csúszás nélkül."""
+        kep = _veletlen(7, 10)
+        ki = rotate_with_pad(kep, 180.0, (1, 2, 3))
+        np.testing.assert_array_equal(ki, kep[::-1, ::-1])
+
+    def test_90_fok_paratlan_kulonbseggel_is_pontos(self):
+        """`W − H` páratlan: az egész osztásos (`//2`) vászonra rakás itt
+        fél képpontot tolt, a képpontközepes mátrix nem."""
+        kep = _veletlen(5, 8)
+        ki = rotate_with_pad(kep, 90.0, (1, 2, 3))
+        np.testing.assert_array_equal(ki, np.rot90(kep, k=-1))
+
+    def test_nulla_fok_azonossag(self):
+        kep = _veletlen(6, 9)
+        np.testing.assert_array_equal(rotate_with_pad(kep, 0.0, (1, 2, 3)), kep)
+
+    def test_a_perem_nem_keveredik_a_vaszon_szinevel(self):
+        """Egyszínű képnél a kimenetben CSAK a kép és a vászon színe
+        fordul elő: a perem sávja a szélső képpontot ismétli, nem a
+        kitöltő színnel mos össze."""
+        kep = np.full((40, 60, 3), 90, dtype=np.uint8)
+        ki = rotate_with_pad(kep, 5.0, (200, 200, 200))
+        szinek = {tuple(int(v) for v in p) for p in ki.reshape(-1, 3)}
+        assert szinek == {(90, 90, 90), (200, 200, 200)}
+
+    @pytest.mark.parametrize("szog", [5.0, -10.0, 10.0, 33.0])
+    def test_a_fixpontos_mintavevo_kepontra(self, szog):
+        kep = _veletlen(13, 17, seed=11)
+        vart = _referencia_forgatas(kep, szog, (7, 8, 9))
+        np.testing.assert_array_equal(rotate_with_pad(kep, szog, (7, 8, 9)), vart)
+
+
+# ---------------------------------------------------------------------------
+# FEJLESZTŐI GÉPEN futó golden-mérés a valódi Picasa-exporttal (684-
+# merokeszlet), a `test_glimmer_autofix_2229.py` mintájára.
+# ---------------------------------------------------------------------------
+
+_KIT = Path("/mnt/nas/My Pictures/684-merokeszlet")
+
+#: (címke, fájlnév, lánc, határ). A Polaroid határa a mért érték + 0,05,
+#: legfeljebb 0,2 (#3809); a DropShadow-é a javítás előtti érték + 0,01 —
+#: az nem romolhat.
+#:
+#: Mérve (`analyze_validation_kit.mean_de`, CIE76 átlag-ΔE):
+#:
+#: | eset | a #3809 előtt | a #3809 után |
+#: |---|---:|---:|
+#: | Polaroid alap (5°) | 0,694 | **0,118** |
+#: | Polaroid max (10°) | 1,095 | **0,131** |
+#: | Polaroid min (−10°) | 2,584 | **0,131** |
+#: | DropShadow alap / max / min | 0,084 / 0,054 / 0,084 | változatlan |
+#:
+#: A jegy `cv2.INTER_LINEAR`-es mérése 0,149 / 0,155 / 0,154 volt; a natív
+#: fixpontos mintavevő ennél is közelebb visz.
+_TURES = 0.05
+_PLAFON = 0.2
+_GOLDEN_ESETEK = [
+    ("Polaroid alap", "polaroid__alap.jpg", "Polaroid=1,5.000000,00e2e2e2;",
+     min(0.118 + _TURES, _PLAFON)),
+    ("Polaroid max", "polaroid__max.jpg", "Polaroid=1,10.000000,00e2e2e2;",
+     min(0.131 + _TURES, _PLAFON)),
+    ("Polaroid min", "polaroid__min.jpg", "Polaroid=1,-10.000000,00e2e2e2;",
+     min(0.131 + _TURES, _PLAFON)),
+    (
+        "DropShadow alap",
+        "dropshadow__alap.jpg",
+        "DropShadow=1,4.000000,90.000000,10.000000,00000000,00ffffff,30.000000;",
+        0.084 + 0.01,
+    ),
+    (
+        "DropShadow max",
+        "dropshadow__max.jpg",
+        "DropShadow=1,30.000000,360.000000,100.000000,00000000,00ffffff,100.000000;",
+        0.054 + 0.01,
+    ),
+    (
+        "DropShadow min",
+        "dropshadow__min.jpg",
+        "DropShadow=1,0.000000,0.000000,0.000000,00000000,00ffffff,0.000000;",
+        0.084 + 0.01,
+    ),
+]
+
+
+def _golden_eszkozok():
+    gyoker = Path(__file__).resolve().parents[2]
+    utvonal = str(gyoker / "tools" / "golden")
+    if utvonal not in sys.path:
+        sys.path.insert(0, utvonal)
+    from analyze_validation_kit import load, mean_de
+
+    return load, mean_de
+
+
+@pytest.mark.skipif(not _KIT.is_dir(), reason="a 684-merokeszlet NAS-os mérőkészlet nem elérhető")
+@pytest.mark.parametrize(
+    ("cimke", "nev", "lanc", "hatar"), _GOLDEN_ESETEK, ids=[e[0] for e in _GOLDEN_ESETEK]
+)
+def test_golden_a_684_merokeszlettel_a_hatarertek_alatt(cimke, nev, lanc, hatar):
+    load, mean_de = _golden_eszkozok()
+    from picasapy.ini.filters import parse_filters
+    from picasapy.render.chain import apply_filters
+
+    forras = load(_KIT / nev)
+    export = load(_KIT / "export" / nev)
+    kep = apply_filters(forras, parse_filters(lanc)).image
+    assert kep.shape == export.shape
+    de = mean_de(kep, export)
+    assert de <= hatar, f"{cimke}: ΔE {de:.3f} > {hatar:.3f}"

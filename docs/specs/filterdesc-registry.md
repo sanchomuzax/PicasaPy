@@ -7025,14 +7025,19 @@ A három ok közül egyik sem elég egyedül. A képpontközepes forgatást a
 `cv2.INTER_LINEAR` bilineárisával mértük; a 8 bites fixpontos lerpet nem
 modelleztük, a hatását ez a mérés nem mutatja.
 
-#### Eredeti / nálunk / teendő
+A megvalósítás (#3809) a fixpontos mintavevőt is átvette. Vele a három eset
+**0,118 / 0,131 / 0,131** (alap / max / min), a `DropShadow` három esete
+változatlan (0,084 / 0,054 / 0,084). A fixpontos lerp tehát további
+0,02–0,03-at hoz a `cv2.INTER_LINEAR`-hez képest.
 
-| | eredeti | nálunk | teendő |
-|---|---|---|---|
-| árnyék-eltolás | `floor(… + 0,001825)` | `_c_round(…)` (`glimmer_frame_ops.shadow_offset`) | `floor` — **minden DropShadow-ra** |
-| Polaroid-vászon | unió: bal `11 − dx`, fent `11 − dy`, jobb `11 + dx`, lent `11 + dy` | 11 minden oldalon (`glimmer_frames.apply_polaroid`) | a `pads` átadása |
-| forgatás | a forrás közepe a cél közepére, képpontközéppel | vászonra `//2`, OpenCV-sarok | pontos mátrix |
-| mintavevő | 8 bites súlyú bilineáris, `a + floor((b − a)·f/256)` | `cv2.INTER_LINEAR` | a fixpontos lerp |
+#### Eredeti / nálunk
+
+| | eredeti | nálunk (#3809 óta) |
+|---|---|---|
+| árnyék-eltolás | `floor(… + 0,001825)` | `math.floor(…)` (`glimmer_frame_ops.shadow_offset`) — minden DropShadow-ra |
+| Polaroid-vászon | unió: bal `11 − dx`, fent `11 − dy`, jobb `11 + dx`, lent `11 + dy` | `drop_shadow_padding` → `pads` (`glimmer_frames.apply_polaroid`) |
+| forgatás | a forrás közepe a cél közepére, képpontközéppel | ugyanez a mátrix (`glimmer_frame_ops.rotate_with_pad`) |
+| mintavevő | 8 bites súlyú bilineáris, `a + floor((b − a)·f/256)` | ugyanez (`glimmer_frame_ops._fixpontos_bilinearis`) |
 
 Fejlesztés: #3809.
 

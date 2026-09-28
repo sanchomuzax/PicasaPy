@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Polaroid effekt képe és kerete most képpontra ott áll, ahol az eredeti
+  Picasában, és az Árnyékvetés ferde szögeknél is az eredeti szerint tolja el
+  az árnyékot — eddig 1–3 képponttal elcsúszott (a mért eltérés ΔE
+  0,69–2,58-ról 0,12–0,13-ra csökkent) (#3809).
+
 ## [0.8.613] – 2026-09-28
 
 ### Javítva

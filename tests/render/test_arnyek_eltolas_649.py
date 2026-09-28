@@ -1,16 +1,24 @@
-"""#649/#626: a vetett árnyék eltolása a MÉRT natív képlettel.
+"""#649/#626/#3809: a vetett árnyék eltolása a natív képlettel.
 
-A `DropShadowImageOperation` (`0x00bbb720`) az eltolást így számolja
-(`docs/specs/filterdesc-registry.md` 4.11):
+A `DropShadowImageOperation` az eltolást így számolja (`0x00bcdea0`,
+`docs/specs/filterdesc-registry.md`, „A Polaroid geometriája”):
 
-    dx = round( (cosf(szög·π/180) + 6.7e-06f) · távolság + 0.001825f )
-    dy = round( (sinf(szög·π/180) + 6.7e-06f) · távolság + 0.001825f )
+    dx = floor( (cos(szög·π/180) + 6,7e−06) · távolság + 0,001825 )
+    dy = floor( (sin(szög·π/180) + 6,7e−06) · távolság + 0,001825 )
 
-A két apró szám **döntetlen-eldöntő**: az egész értékhez közeli eseteknél
-dönti el, merre billen a kerekítés. A korábbi alakunk ezeket nem ismerte, és
-Python-kerekítést használt — ami bankári (`round(0.5) == 0`), tehát épp a
-döntetlen eseteknél tért el.
+A kerekítés **`floor`** (`0x00bcdece` `call 0x00c0b1e0`). A két apró tag nem
+döntetlen-eldöntő, hanem lebegőpontos védelem: a 2,9999… alakban kijövő,
+valójában egész szorzatot emeli az egész fölé, mielőtt a `floor` lecsípné.
+
+A #649 még C-kerekítést (`round`) feltételezett; a #3809 helyesbítette.
 """
+
+# rontás-kontroll: a `shadow_offset` `math.floor` helyett a régi C-kerekítéssel
+# (`floor(v + 0,5)`, a nullától elfelé) → 10 failed (a jegy táblájának négy
+# nem tengelyirányú esete, a `TestAFloorEltero` hat próbája); ugyanekkor a
+# `test_polaroid_irany_szin_3420.py` golden-je mindhárom Polaroid-állásban
+# bukik. A két kis tag nélkül (`floor(cos·d)`) → 3 failed (a 71%-os hatókör,
+# és a `TestAVedelem` 270°-os és 360°-os esete). Ellenőrizve lefuttatva.
 
 from __future__ import annotations
 
@@ -21,63 +29,81 @@ import pytest
 from picasapy.render.glimmer_frame_ops import shadow_offset
 
 
-def _regi_alak(distance: float, angle: float) -> tuple[int, int]:
-    """A javítás ELŐTTI számítás — a teszt ehhez méri az eltérést."""
+def _c_round_alak(distance: float, angle: float) -> tuple[int, int]:
+    """A #3809 ELŐTTI számítás (C-kerekítés) — a teszt ehhez méri az eltérést."""
+
+    def c_round(v: float) -> int:
+        return int(math.floor(v + 0.5)) if v >= 0 else -int(math.floor(-v + 0.5))
+
     radian = math.radians(angle)
     return (
-        int(round(distance * math.cos(radian))),
-        int(round(distance * math.sin(radian))),
+        c_round((math.cos(radian) + 6.7e-06) * distance + 0.001825),
+        c_round((math.sin(radian) + 6.7e-06) * distance + 0.001825),
     )
 
 
-class TestAMertKepletEltero:
-    """Ezek a konkrét esetek MÁS értéket adnak, mint a régi alak — ez maga a
-    javítás tartalma, számmal."""
+class TestAJegyTablaja:
+    """A #3809 „Kész, ha” első pontja, számra."""
 
     @pytest.mark.parametrize(
         "distance,angle,vart",
         [
-            (1, 30, (1, 1)),
-            (1, 150, (-1, 1)),
-            (1, 210, (-1, 0)),
-            (1, 240, (0, -1)),
-            (1, 330, (1, 0)),
-            (3, 30, (3, 2)),
-            (3, 150, (-3, 2)),
-            (3, 210, (-3, -1)),
-            (3, 240, (-1, -3)),
-            (3, 330, (3, -1)),
+            (3, 85, (0, 2)),
+            (3, 100, (-1, 2)),
+            (4, 45, (2, 2)),
+            (3, 90, (0, 3)),
+            (3, 80, (0, 2)),
         ],
     )
-    def test_a_MERT_erteket_adja(self, distance, angle, vart):
+    def test_a_floor_os_erteket_adja(self, distance, angle, vart):
         assert shadow_offset(distance, angle) == vart
-        assert _regi_alak(distance, angle) != vart, "ez az eset nem tért el"
 
-    def test_a_teljes_tartomanyban_42_eset_ter_el(self):
-        """A javítás HATÓKÖRE, számmal: 12 × 360 kombinációból 42."""
-        eltero = [
-            (d, szog)
-            for d in range(1, 13)
+
+class TestAFloorEltero:
+    """Ezek az esetek a régi C-kerekítéssel MÁST adtak — ez a javítás
+    tartalma, számmal."""
+
+    @pytest.mark.parametrize(
+        "distance,angle,vart",
+        [
+            (1, 30, (0, 0)),
+            (1, 60, (0, 0)),
+            (1, 120, (-1, 0)),
+            (3, 30, (2, 1)),
+            (3, 85, (0, 2)),
+        ],
+    )
+    def test_a_regi_alak_mast_adott(self, distance, angle, vart):
+        assert shadow_offset(distance, angle) == vart
+        assert _c_round_alak(distance, angle) != vart, "ez az eset nem tért el"
+
+    def test_a_parok_71_szazaleka_elter(self):
+        """A javítás HATÓKÖRE: (távolság 0–30, szög 0–359°) → 7980 / 11160."""
+        eltero = sum(
+            shadow_offset(d, szog) != _c_round_alak(d, szog)
+            for d in range(31)
             for szog in range(360)
-            if shadow_offset(d, szog) != _regi_alak(d, szog)
-        ]
-        assert len(eltero) == 42
+        )
+        assert eltero == 7980
 
 
-class TestAKerekitesIranya:
-    def test_a_fel_a_nullatol_ELFELE_kerekit(self):
-        """A C `round()` a felet elfelé kerekíti — a Python bankári módon a
-        páros felé, tehát `round(0.5) == 0`. A natív képletet csak az
-        előbbivel lehet reprodukálni."""
-        assert round(0.5) == 0  # a Python viselkedése, dokumentálva
-        assert shadow_offset(1, 60)[0] == 1  # cos 60° = 0,5 → 1
+class TestAVedelem:
+    """A két kis tag nélkül a `cos 90°` (6e−17) és a `cos 180°` (−1) körüli
+    lebegőpontos zaj a `floor` alatt egy képpontot csíphetne le."""
 
-    def test_a_negativ_oldalon_a_NULLA_fele_billen(self):
-        """A döntetlen-igazítás POZITÍV (+0,001825), tehát a −0,5-öt a nulla
-        felé tolja: `cos 120° = −0,5` → `−0,4982` → **0**, nem −1. Ez nem
-        elírás, hanem a mért képlet következménye — a két konstans épp ezt a
-        billenést dönti el, egységesen mindkét oldalon."""
-        assert shadow_offset(1, 120)[0] == 0
+    @pytest.mark.parametrize(
+        "distance,angle,vart",
+        [
+            (1, 90, (0, 1)),
+            (3, 90, (0, 3)),
+            (5, 180, (-5, 0)),
+            (5, 270, (0, -5)),
+            (30, 0, (30, 0)),
+            (30, 360, (30, 0)),
+        ],
+    )
+    def test_a_tengelyiranyu_eltolas_egesz(self, distance, angle, vart):
+        assert shadow_offset(distance, angle) == vart
 
 
 class TestAKorlat:
@@ -94,20 +120,6 @@ class TestAKorlat:
         assert shadow_offset(0, 45) == (0, 0)
 
 
-class TestAKompozitalasHasznalja:
-    def test_a_drop_shadow_a_MERT_eltolassal_rajzol(self):
-        """A mag tényleg ezt hívja: az árnyék a 30°-os esetben LEJJEBB
-        kerül, mint a régi alakkal — ez a képen is látszó egy képpont."""
-        import numpy as np
 
-        from picasapy.render.glimmer_frame_ops import compose_drop_shadow
-
-        kep = np.full((10, 10, 3), 255, dtype=np.uint8)
-        vaszon = compose_drop_shadow(
-            kep, (0, 0, 0), (255, 255, 255),
-            distance_px=3, angle=30, blur_px=1, margin=6,
-        )
-        # a kép a margóban ül, az árnyék tőle jobbra-lefelé (dx=3, dy=2)
-        assert vaszon.shape == (22, 22, 3)
-        alatta = vaszon[6 + 10 + 1, 6 + 5]
-        assert alatta.mean() < 250, "az árnyék nem került a kép alá"
+# A kompozitálás ugyanezt az eltolást használja: `test_dropshadow_nativ_3474.py`
+# `test_az_elmosas_a_nativ_ut` a várt képet a `shadow_offset`-ből rakja össze.
