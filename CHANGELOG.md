@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.630] – 2026-09-28
+
 ### Javítva
 - A Holga effekt fekete-fehér lépése úgy szürkít, mint az eredeti Picasa: a
   mért eltérés a leggyengébb állásban ΔE 0,25-ről 0,10-re, alapbeállításon
