@@ -699,7 +699,10 @@ A három mag (`dir_brite` `0x0090d8b0`, `dir_sat` `0x0090dbb0`, `dir_sharp`
 | `dir_sat` alap | 1,851 | **0,184** | 0,151 |
 | `dir_sharp` alap | 5,198 | **0,384** | 0,351 |
 
-Fejlesztés: #3859.
+**Megvalósítva (#3859):** `render/directional.py` — `directional_weight`
+(`dir_brite`, `dir_sat`) és `dir_sharp_amount`; a mi kódunk a fenti
+„natív súly” oszlopot adja (0,187 / 0,184 / 0,384), a golden-teszt
+`tests/render/test_directional.py` → `TestDirGolden3859`.
 
 ## 2.8 Melegítés (`warm` / „Melegítés") — beégetett tábla, MEGVALÓSÍTVA (#611)
 
