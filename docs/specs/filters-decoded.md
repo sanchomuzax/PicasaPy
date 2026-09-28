@@ -3119,7 +3119,60 @@ szimuláció két független mérőkészlet kilenc exportját reprodukálja (a
 `merokit-2` hármát újratömörítve 99,1%-ban bitre). Nincs szabad paraméter: a
 lánc minden száma a binárisból jön.*
 
+### ⛳ `grain` / `grain2` — a munkafüggvény kiolvasva: MT19937-zaj, háromszoros kétirányú simítás, középtónus-súlyozás (2026-09-28, 402. kör, #3927)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, emulációval és statisztikai golden-méréssel. Független újralevezetés (#3927): EGYEZIK. ⛔ Az alábbi régi szakasz („MSVC `rand()`, majd vízszintes simítás”) zajforrása és simítása TÉVES; a „mag képenként más” következtetése áll.*
+
+A callback (`0x008f88e0`) a képet `0x009aabf0`-val a célba másolja, és `0x0090a2e0(dst, 0,5f)`-et hív (`[0xc7dafc]`). A munkafüggvény lépései:
+
+1. **Zajpuffer** W × H × 32 bit (`0x0090a331` → `0x009a8a30`).
+2. **Generátor: helyi MT19937** (`0x0090a341` a 0x9cc bájtos állapotot nullázza a veremben). Mag = `r3 ^ ((r2 ^ (r1 << 12)) << 12)`, ahol `r1..r3` három egymást követő CRT-`rand()` (`0x0090a349`–`0x0090a364`), az inicializáló a `0x00aa28f0` (szorzó `0x19660D`, ld. `picasa-megjelenitesi-modok.md` 5.3/b), a twist a `0x00aa2930`, a temperálás a szabványos (`0x9d2c5680`, `0xefc60000` maszk, `0x0090a3f9`–`0x0090a41f`). A `rand()` folyama nem áll vissza, ezért a mag hívásonként más.
+3. **Erősség:** `a = min(a, 1)` (`0x0090a36f`–`0x0090a388`), `k = trunc(256 − 256·a)` (`[0xcf39d8]` = 256,0; `or 0xc00` csonkoló `fistp`, `0x0090a3b9`) — `a = 0,5`-nél **`k = 128`**.
+4. **Első zajmező**, képpontonként egy MT-szó, sorfolytonosan: `v = t | 0xff000000`, és csatornánként (32 bites, két csatornát egyszerre kezelő egész aritmetikával, `0x0090a427`–`0x0090a464`):
+   ```
+   rb = v & 0x00ff00ff;  rb = (rb + ((0x007f007f − rb)·k >> 8)) & 0x00ff00ff
+   g  = v & 0x0000ff00;  g  = (g  + ((0x00007f00 − g )·k >> 8)) & 0x0000ff00
+   ```
+   (uint32, logikai eltolás) — a három csatorna FÜGGETLEN bájt, a 127 felé húzva.
+5. **Simítás háromszor** (`0x0090a497`, `0x0090a4a4`, `0x0090a4b1` → **`0x009dbb40`**), mind a négy bájtra, helyben, nem rekurzívan (az előző szomszédot a tárolás előtt olvassa, `0x009dbbf4`/`0x009dbcbf`):
+   ```
+   sorok 0 … H−2,  x = 1 … W−1:   p[y][x] = (3·p[y][x] + p_eredeti[y][x−1]) >> 2
+   oszlopok 0 … W−2, y = 1 … H−1: p[y][x] = (3·p[y][x] + p_eredeti[y−1][x]) >> 2
+   ```
+   Az utolsó sort a vízszintes, az utolsó oszlopot a függőleges menet kihagyja.
+6. **Friss zaj visszakeverése**, képpontonként egy új MT-szó `s` (`0x0090a4ef`–`0x0090a577`):
+   ```
+   rb = (s_rb + ((p_rb − s_rb)·210 >> 8)) & 0x00ff00ff      ; 0xd2 = 210
+   g  = (s_g  + ((p_g  − s_g )·210 >> 8)) & 0x0000ff00
+   ```
+   (uint32, logikai eltolás; a friss `s` NEM húzott a 127 felé).
+7. **Szürkítés** `w = 200`-zal (`push 0xc8`, `0x0090a5c7` → `0x009a9550`): `Y = (28·B + 151·G + 77·R) >> 8`, `C = clamp(C + (((Y − C)·200) >> 8))` (előjeles eltolás).
+8. **A képre** (`0x0090a5f4`–`0x0090a6e2`), csatornánként, `c` a kép, `n` a zaj:
+   ```
+   ki = clamp(c + (((160 − |128 − c|) · (n − 128)) >> 8), 0, 255)     ; előjeles eltolás
+   ```
+   A súly a középtónusban 160/256, a két végen 32/256 — ezért ott a legerősebb a szemcse.
+
+**Mérve** (684-es mérőkészlet, `grain__alap`, 960 × 640; a különbség `ki − be` a három csatorna átlagán; az emuláció a fenti lépések Python-mása, tetszőleges maggal):
+
+| | Picasa-export | emuláció | a mai kódunk |
+|---|---:|---:|---:|
+| átlagos eltolás | −1,97 | −1,96 | +0,01 |
+| szórás (összes) | 4,65 | 4,33 | 7,97 |
+| szórás tónussávonként (0–40 / 40–90 / 90–170 / 170–215 / 215–255) | 2,4 / 4,7 / 6,0 / 4,7 / 2,3 | 2,5 / 4,4 / 5,5 / 4,4 / 2,4 | 7,9 / 8,0 / 8,0 / 8,0 / 7,9 |
+| vízszintes / függőleges szomszéd-korreláció | 0,25 / 0,27 | 0,28 / 0,28 | 0,00 / 0,00 |
+| R–B csatorna-korreláció | 0,93 | 0,87 | 1,00 |
+| ΔE a Picasa-exporthoz | — | **2,67** | 3,23 |
+
+Két független emuláció egymáshoz mért ΔE-je 2,81: a 2,67 a véletlen mag okozta alsó határon van, ennél közelebb képpontra nem lehet jutni. A Picasa nagyobb szórása és kisebb szomszéd-korrelációja az export JPEG-zaja.
+
+Ezzel lezárul a régi szakasz feltételes pontja (egyenlő vízszintes és függőleges korreláció): a simítás kétirányú. A Picasa `−1,97`-es átlagos sötétítését az emuláció magától, illesztés nélkül visszaadja (`−1,96`); a mai kódunk átlaga 0.
+
+**Nálunk** (`render/color.py::apply_grain`): egyenletes szórású, korrelálatlan, tónusfüggetlen Gauss-zaj → fejlesztés: #3928.
+
 ### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
+
+> ⛔ **HELYESBÍTVE (2026-09-28, #3927):** a zajforrás MT19937 (a `rand()` csak a magot adja), a simítás háromszoros és KÉTIRÁNYÚ, a képre középtónus-súlyozással kerül — ld. a fenti ⛳ szakaszt. A „mag képenként más” mérés és következtetés áll.
 
 A callback konstans `0.5f`-fel hív (`FUN_0090a2e0(dst, 0.5f)`), amiből
 `keveres = round(256 − 0,5·256) = 128`. A zajmező az **MSVC szabványos
