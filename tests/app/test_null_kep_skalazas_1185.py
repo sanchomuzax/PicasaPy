@@ -55,10 +55,11 @@ class TestNullKep:
 
     def test_a_rendes_keres_tovabbra_is_placeholdert_kap(self, qt_app):
         """Megőrző: a NEM gpu-jelzős kérés placeholderre esik vissza, és
-        azt szabályosan át is méretezi."""
+        a kért méretet nem lépi túl. #3819 óta a kisebb képet (a 16 képpontos
+        helyőrzőt is) nem nagyítjuk fel a kért méretre."""
         from picasapy.app.edit_preview import EditPreviewProvider
 
         provider = EditPreviewProvider()
         kep = provider.requestImage("nincs-ilyen", None, QSize(64, 0))
         assert not kep.isNull()
-        assert kep.width() == 64
+        assert 0 < kep.width() <= 64
