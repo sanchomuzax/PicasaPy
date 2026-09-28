@@ -670,6 +670,8 @@ igen. Jegy: **#2456**.
 **`FocalZoom` natív kernel:** `N = min(trunc(Impact) + 5, 30)` zoomminta, a
 legnagyobb zoomeltolás `floor(width · Impact / 200)` pixel.
 
+> ⛔ **KIEGÉSZÍTVE (#3883):** a minták NEM átlagolódnak — állandó 38/217-es súllyal egymás után keverednek, legközelebbi szomszéddal, és az SSE2-ágban sávhibával. Ld. „⛳ A FocalZoom zoom-kernele teljesen”.
+
 **`PicnikFocalPixelate`:** lekicsinyítés `W/Impact × H/Impact` méretre, majd
 visszanagyítás `W × H`-ra **`smoothing = false`** módban. A bináris ezt a
 `ResizeImageOperation` közös útján (`0x00bc3650` → `0x00bcb5e0`) a
@@ -7659,3 +7661,84 @@ fázistérképen nincs szerkezet: a hiba minden fázisban és minden
 tónussávban ugyanakkora (+1 szint). Ezt a 4. lépés viszi el.
 
 Fejlesztés: #3878.
+
+## ⛳ A FocalZoom zoom-kernele teljesen: ismételt keverés, legközelebbi szomszéd — és egy sávhiba (2026-09-28, 394. kör, #3883)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A „`FocalZoom` natív kernel” pont (#570) két képlete változatlan; a „halmozott nagyító-menetek átlaga” modell HELYESBÍTVE.*
+
+A `RadialBlurImageOperation` alkalmazója (`0x00bc24e0`) az `x`, `y` és az
+egésszé csonkolt `amount` attribútumot adja át a magnak (`0x00bcf4b0`).
+
+### 1. A mintaciklus
+
+- `N = min(amount + 5, 30)`, `D = ⌊W · amount / 200⌋` (`0x00bcf4cb`–`0x00bcf4f7`;
+  a függőleges eltoláshoz is `W`).
+- A kiinduló akkumulátor a forrás másolata (`0x00bcf504` → `0x009a8fe0`).
+- `k = N … 1` sorrendben `off = ⌊k·D / N⌋` (`esi = N·D`, `div ecx`
+  `0x00bcf58e`, `esi −= D` `0x00bcf93e`): a legnagyobb eltolás jön először.
+
+### 2. A mátrix (cél → forrás)
+
+Az FPU-vermet követve (`0x00bcf576`–`0x00bcf6e9`, `0x009e6340` = B·A):
+
+```
+M = [[W/(W+off), 0,          off·x/W],
+     [0,         H/(H+off),  off·y/H]]
+```
+
+float32 elemekkel. A mintavevő a cél képpont KÖZEPÉT, `(X + 0,5, Y + 0,5)`-öt
+vetíti vele a forrásba. Két következmény: a fix pont `x·(W+off)/W`, nem
+pontosan `x`, és a nagyítás két tengelyen más (`off` mindkettőn ugyanaz).
+
+### 3. Mintavétel és keverés
+
+**Legközelebbi szomszéd**, 16.16 fixpontban: `U = ⌊65536 · u⌋`, a forrásindex
+`U >> 16` (SSE2: `0x00bcefb0`, táblák `0x00bcf0d7`–`0x00bcf1d5`, index
+`pmaddwd [edx+0x40]` = `[1, W]`; SSE2 nélkül `0x009e6df0` → `0x009e7420`).
+Nincs interpoláció.
+
+Minden minta **ráfeszül** az akkumulátorra, állandó súllyal:
+
+| ág | képlet | cím |
+|---|---|---|
+| SSE2 (minden mai gép, `[0xd695d2]` = CPUID.1 EDX 26) | `acc = (38·minta + 217·acc) >> 8` | `0x00bcf0f9`–`0x00bcf0fe`: `38 = 0x26`, `217 = 0xff − 0x26` |
+| SSE2 nélkül | `acc = (218·acc + 37·minta) >> 8` | `0x009dc3d0` → `0x009dc040` (`k′ = 0x26 − 1`) |
+
+A súlyok összege 255, az osztó 256: mintánként legfeljebb egy szintnyi
+sötétedés (a `min` exportja is egyenletesen ~2,5 szinttel sötétebb).
+
+### 4. ⚠️ Sávhiba az SSE2-ágban — a Picasa kimenete ezt hordozza
+
+A négysávos ciklus a négy célképpontot beolvassa (`0x00bcf341` `movupd
+xmm5, [edi]`), de csak az első kettőt bontja szavakra (`0x00bcf345`
+`punpcklbw xmm5, xmm7`), és a `0x00bcf349` `movdqa xmm6, xmm5` ugyanezt a
+kettőt másolja. A 2. és a 3. sáv (`0x00bcf3d5`, `0x00bcf3f5`) így **a 0. és az
+1. képpont akkumulátorával** kever:
+
+```
+ki[4g]   = (38·s[4g]   + 217·acc[4g])   >> 8
+ki[4g+1] = (38·s[4g+1] + 217·acc[4g+1]) >> 8
+ki[4g+2] = (38·s[4g+2] + 217·acc[4g])   >> 8
+ki[4g+3] = (38·s[4g+3] + 217·acc[4g+1]) >> 8
+```
+
+A sor végi maradék (≤ 3 képpont, `0x00bcf444`) helyes. A csoport a sor első
+érvényes képpontjától indul (a nagyítás mindig a képen belül mintáz, tehát a
+`0`-tól). Ettől lesz a Picasa kimenetén a négyes periódusú, képpontszintű minta
+(pl. egy sötét sávban `157 230 156 229`).
+
+### Mérve
+
+684-es készlet, ΔE a Picasa-exporthoz; a körmaszk a mai (`focal_mask`, #3596
+százalékos sugár), a keverés a `MaskInstruction` egész képlete:
+
+| lépés | alap (50 / 105 / 50 / 0) | min (1 / 10 / 0 / 0) |
+|---|---:|---:|
+| ma (bilineáris nagyítások átlaga) | 4,924 | 3,883 |
+| + ismételt keverés, legközelebbi szomszéd, pontos mátrix | 0,741 | 1,994 |
+| **+ a sávhiba** | **0,311** | **0,212** |
+| zajszint (mi ↔ mi-JPEG95) | 0,226 | 0,163 |
+
+A `max` sor (`Fade = 100`) változatlanul 0,121.
+
+Fejlesztés: #3884.
