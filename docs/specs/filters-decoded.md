@@ -2186,6 +2186,42 @@ elmosottal. Két illesztett skalár:
   máshonnan kapja a szélességet.~~ → **A KÉT ÁG KÖZÜL AZ EGYIK LEZÁRVA
   (2026-08-16), ld. lent.**
 
+#### ⛳ A sugár-hányad `0,01`, ahogy a bináris írja — a `0,009` a régi IIR-t kompenzálta (2026-09-28, 400. kör, #3916)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A fenti „két illesztett skalár” mindkettő a binárisból jön.*
+
+**A sugár** (`0x008f8520`, `0x008f85c1`–`0x008f8617`):
+
+```
+r = f32( f32(W · 0,01) · Amount + f32(W · 0,01) + 0,001 )     ; mindkét tengelyre
+    W     = a munkakép szélessége ([esi+8])
+    0,01  = [0xcf40b8]
+    0,001 = [0xcf3db0]
+    Amount = [szűrő+0x2c]
+```
+
+azaz `W · 0,01 · (Amount + 1) + 0,001`.
+
+**A „Sharpness”** a maszkoló-keverőnek (`0x0090b050`, hívás `0x008f8670`)
+átadott, beégetett `0,0` (`0x008f8645` `fldz`): a maszk keménységszorzója, a `0x0090aeb0` táblaépítőben `g = 1/(1 − 0,99·z)` (`[0xcf4210]` = 0,99), `z = 0`-nál `g = 1`, semleges. A #668 illesztési minimuma
+tehát a binárisban álló érték.
+
+**Miért illesztett a #668 `0,009`-et?** A mérés 2026-08-15-én a közös IIR-mag
+akkori, szintén illesztett együtthatójával (`exp(−1/R)`, 65536-os skála)
+futott; a mag natív alakja (`trunc((1 − 0,1^(1/R)) · 32767)`, #2773) csak
+2026-09-08-án került be, és a `radblur` hányadát azóta senki nem mérte újra.
+A `0,9`-es szorzó a régi együttható eltérését nyelte el.
+
+**Mérve** (684-es készlet, a mai, natív IIR-rel; ΔE a Picasa-exporthoz):
+
+| eset | `0,009` (ma) | **`0,01` (bináris)** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| alap (0,5 / 0,5 / 0 / 0) | 0,640 | **0,330** | 0,300 |
+| max (… / 1 / 1) | 0,530 | **0,335** | 0,291 |
+| min (… / −1 / −1) | 0,340 | 0,340 | 0,306 |
+
+Fejlesztés: #3917.
+
 > Az `Amount = 0` **NEM azonosság** — a korábbi kód annak vette. A
 > `golden-kit` `radblur=1,0.411585,0.611111,0,0` exportján a kép átlagosan
 > 12,5 (photo01) és 26,4 (photo04) szintnyit tér el a forrástól.
