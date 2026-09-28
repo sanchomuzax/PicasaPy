@@ -825,6 +825,7 @@ más csúszkánál nyers érték. Nálunk mind az öt képpontként megy — fej
 | `FocalZoom` `min` 1 · 10 · 0 · 0 | 3,565 | 3,884 (#3518) | 3,883 |
 
 ⇒ A `PicnikFocalPixelate` sugara és maszkja a JPEG-zaj szintjén egyezik; a #3583 kalibrációs kérdése lezárva. A `FocalZoom` maradék eltérése nem a sugáré, mert a két effekt ugyanazt a sugár-szabályt és ugyanazt a maszkot használja. A zoom-kernelben van: **#3518**.
+A zoom-kernel a #3883 szerint javítva (#3884): `FocalZoom` `alap` **0,311**, `min` **0,212**.
 
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
@@ -1422,6 +1423,14 @@ B = 119 + (−69·128 >> 8) = 84. `a = −1` (`k = 0`): mindhárom 119.
 | zajszint (mi ↔ mi-JPEG95) | 0,021 | — |
 
 Fejlesztés: #3889.
+
+✅ **Megvalósítva (#3889):** `render/color.py` `_apply_negative_saturation`;
+`sat__min` ΔE 0,346 → **0,036** (a `sat__alap` 0,152 és a `sat__max` 0,452
+változatlan). A GPU-előnézet negatív ága (`PointFilter.frag`
+`applyNegativeSaturation`) ugyanezt az egész lumát és keverést futtatja, és a
+`saturation_gain()` a negatív oldalon pontosan `1 + a`-t ad: a shader numpy-mása
+minden állásnál bitre a CPU-t adja. (A programban a sat GPU-ága jelenleg nincs
+bekötve: a néző `satGain: 1.0`-t ad át.)
 
 #### A `sat` TELJES algoritmusa (2026-08-15, a csatorna-hozzárendelés lezárva)
 
@@ -2095,7 +2104,7 @@ ki  = be + Intenzitás · (255 − be) · hom / 255   ← SCREEN
   nélkül. A `blur-meres` öt csúszkaállásán az él-profil átlagos hibája
   0,48–1,63 szint (a régi Gauss-modellé 0,68–10,19).
 - **Előgörbe:** a sík foltok tónusemelése `(255−c)·c²` alakú, nem
-  `(255−c)·c`. A kitevő illesztése **éles minimumot ad 2,0-nál** (1,9-nél és
+  `(255−c)·c`. (⛔ #3912: a kitevő a binárisból 2, ld. „⛳ A `glow` egész aritmetikája”.) A kitevő illesztése **éles minimumot ad 2,0-nál** (1,9-nél és
   2,1-nél az átlagos hiba a kétszeresére nő). Ez fedi a natív burkoló
   puffer-előkészítő lépését (`FUN_009aabf0` + `FUN_00aa40a0`).
 - **Súly:** maga az Intenzitás — nincs illesztett szorzó. (A korábbi modell
@@ -2115,6 +2124,51 @@ A sík szürke foltok mért és modellezett értéke (a `chart_color` goldenről
 > A 3. kör „128 → 144 / 151" horgonya tehát **téves volt** — a Gauss-modell
 > saját kimenetét rögzítette, nem a goldenét. A tesztek javítva.
 
+### ⛳ A `glow` egész aritmetikája a binárisból (2026-09-28, 399. kör, #3912)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A fenti modell két illesztett eleme (a 2,0-s kitevő és a súly) kiolvasva; a keverés egész.*
+
+**A callback** (`0x008f8f70`, `glow` = `glow2`): a `[szűrő+0x28]` (Intenzitás)
+**abszolút értékét** (`0x0049f5c0` = `fabs`) és a `[szűrő+0x2c]`-t (sugár)
+adja a magnak.
+
+**A mag** (`0x0090d4b0`):
+
+1. **Vágások:** sugár `[0, 250]` (`0x0090d4ba`–`0x0090d4e5`; `[0xcf48e0]` =
+   250,0, pótérték `[0xcf48dc]` = 250,0), Intenzitás `[−1, 1]`
+   (`[0xcf3ed0]` = −1,0, `fld1`); a súly `k = |csonk(256 · i)|`, legfeljebb 256
+   (`0x0090d51a` `fmul [0xcf39d8]` = 256,0; `0x0090d591`).
+2. **Előgörbe** (`0x00aa40a0`, `0x0090d55d`, argumentum `0,5` = `[0xc7dafc]`):
+   egy 256 elemű gamma-tábla, kitevő `1 / 0,5 = 2`:
+   `LUT[i] = rint(255 · (f32(i / 255))²)` (`0x00aa4122` `fmul [0xcf4138]` =
+   1/255, `0x005568e0` = `pow`, `fmul [0xcf39d0]` = 255,0, `fistp` legközelebbire),
+   a három színcsatornára (`0x00aa4195`–`0x00aa41b9`) egy másolaton.
+3. **Elmosás:** a közös IIR-mag (`0x009dd0d0`), mindkét irányban a sugárral; `0`-s sugárnál azonnal visszatér (nincs elmosás).
+4. **Keverés** (`0x009ac3f0`, `256 − k` súllyal; `o` az eredeti, `t` az
+   elmosott négyzetes kép), csatornánként, csomagolt egész aritmetikával:
+
+```
+s   = 255 − (((255 − t) · (255 − o)) >> 8)        ; Screen, >> 8 (0x009ac47d–0x009ac4e4)
+ki  = s + (((o − s) · (256 − k)) >> 8)            ; visszakeverés (0x009ac4ea–0x009ac52a)
+```
+
+`k = 0`-nál (Intenzitás 0) `ki = o` pontosan; `k = 256`-nál `ki = s`.
+
+**Nálunk** (`render/effects.py`, `apply_glow`): lebegőpontos
+`be + I·(255 − be)·hom/255`, a négyzetes előgörbe `be²/255` lebegőpontosan, és
+0-s sugárnál egy tartalék sugár (`GLOW_V1_RADIUS`) fut — a natív 0-s sugárnál
+nem mos el.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz; `glow` és `glow2` azonos):
+
+| eset | ma | **natív** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| alap (0,65 / 3,0) | 0,327 | **0,264** | 0,233 |
+| max (1,0 / 1,0) | 0,514 | **0,284** | 0,251 |
+| min (0 / 0) | 0,121 | **0,121** | 0,083 |
+
+Fejlesztés: #3913.
+
 ### A `radblur` megfejtett modellje
 
 Natív elmosó mag + a 4.2.4 sugaras smoothstep-maszkja
@@ -2131,6 +2185,42 @@ elmosottal. Két illesztett skalár:
   hogy a dekompilált konstans olvasata pontatlan-e, vagy a natív hívás
   máshonnan kapja a szélességet.~~ → **A KÉT ÁG KÖZÜL AZ EGYIK LEZÁRVA
   (2026-08-16), ld. lent.**
+
+#### ⛳ A sugár-hányad `0,01`, ahogy a bináris írja — a `0,009` a régi IIR-t kompenzálta (2026-09-28, 400. kör, #3916)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A fenti „két illesztett skalár” mindkettő a binárisból jön.*
+
+**A sugár** (`0x008f8520`, `0x008f85c1`–`0x008f8617`):
+
+```
+r = f32( f32(W · 0,01) · Amount + f32(W · 0,01) + 0,001 )     ; mindkét tengelyre
+    W     = a munkakép szélessége ([esi+8])
+    0,01  = [0xcf40b8]
+    0,001 = [0xcf3db0]
+    Amount = [szűrő+0x2c]
+```
+
+azaz `W · 0,01 · (Amount + 1) + 0,001`.
+
+**A „Sharpness”** a maszkoló-keverőnek (`0x0090b050`, hívás `0x008f8670`)
+átadott, beégetett `0,0` (`0x008f8645` `fldz`): a maszk keménységszorzója, a `0x0090aeb0` táblaépítőben `g = 1/(1 − 0,99·z)` (`[0xcf4210]` = 0,99), `z = 0`-nál `g = 1`, semleges. A #668 illesztési minimuma
+tehát a binárisban álló érték.
+
+**Miért illesztett a #668 `0,009`-et?** A mérés 2026-08-15-én a közös IIR-mag
+akkori, szintén illesztett együtthatójával (`exp(−1/R)`, 65536-os skála)
+futott; a mag natív alakja (`trunc((1 − 0,1^(1/R)) · 32767)`, #2773) csak
+2026-09-08-án került be, és a `radblur` hányadát azóta senki nem mérte újra.
+A `0,9`-es szorzó a régi együttható eltérését nyelte el.
+
+**Mérve** (684-es készlet, a mai, natív IIR-rel; ΔE a Picasa-exporthoz):
+
+| eset | `0,009` (ma) | **`0,01` (bináris)** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| alap (0,5 / 0,5 / 0 / 0) | 0,640 | **0,330** | 0,300 |
+| max (… / 1 / 1) | 0,530 | **0,335** | 0,291 |
+| min (… / −1 / −1) | 0,340 | 0,340 | 0,306 |
+
+Fejlesztés: #3917.
 
 > Az `Amount = 0` **NEM azonosság** — a korábbi kód annak vette. A
 > `golden-kit` `radblur=1,0.411585,0.611111,0,0` exportján a kép átlagosan
@@ -7875,3 +7965,9 @@ százalékos sugár), a keverés a `MaskInstruction` egész képlete:
 A `max` sor (`Fade = 100`) változatlanul 0,121.
 
 Fejlesztés: #3884.
+
+**✅ Megvalósítva (#3884, 2026-09-28):** `render/focal.py`, `zoom_blur`. A
+`tools/golden/analyze_validation_kit.py` a 684-es készleten: `alap` **0,311**,
+`min` **0,212** (mindkettő `JO`), `max` 0,121. A csúszka húzása közbeni élő
+előnézet (`gyors_elonezet`) ugyanazokkal a mintaindexekkel, de OpenCV-keveréssel,
+sávhiba nélkül fut (0,741 / 1,994); mentés, export és bélyegkép a natív úton.

@@ -164,23 +164,6 @@ class TestAzElotagTexturaMerete:
         assert 0 < meret.height() <= self.TEXTURA_PLAFON, meret
 
 
-class TestAFoFotoForrasmerete:
-    """#3819: a fő fotó két fele és a két előtöltő CSAK szélességet kér
-    (2560). A befoglaló doboz (`Qt.size(2560, 2560)`) a nyers fájlokat is a
-    dobozra méretezte: a QML-teszteken mérve +850 MiB, a CI 2400 MiB-os
-    plafonja fölé. A textúraplafont a szolgáltató oldja meg — a dobozba csak
-    kicsinyít (`test_edit_preview.py`), a GPU-s eset lent a pontos
-    textúraméretet méri."""
-
-    @pytest.mark.parametrize("nev", ["viewerImage", "viewerImageElotte",
-                                     "viewerPreloadNext", "viewerPreloadPrev"])
-    def test_a_forrasmeret_csak_szelesseg(self, ket_kep, qt_app, nev):  # noqa: F811
-        window, _c, _e = ket_kep
-        meret = _gyerek(window, nev).property("sourceSize")
-        assert meret.width() == 2560, meret
-        assert meret.height() <= 0, meret
-
-
 # -- valódi GPU, valódi egérhúzás (#3755, 3. pont) ----------------------------
 #
 # A fenti próbák offscreen alatt futnak, ahol a GPU-réteg sosem látszik. Az
@@ -219,6 +202,7 @@ class TestAFoFotoForrasmerete:
 # felnagyítja) a `test_a_fo_foto_nem_nagyit_es_kirajzolodik` mindkét esete
 # és a `test_kettos_nezetben_mindket_fel_kirajzolodik` BUKIK — a textúra
 # 360×640-es és 1440×2560-as képnél is 2560×4551 —, a `TestAFoFotoForrasmerete`
+# (#3877 óta a `test_nezo_forrasmeret_3877.py`-ban)
 # mind a négy esete is (magasság 0). ⚠️ A kép a 4096-os plafon fölött IS
 # látszott: a Qt feltöltéskor maga zsugorítja a textúrát, tehát a
 # színpróba magában nem bukik, a méret-állítás fog. Csak a szolgáltatót
@@ -255,6 +239,9 @@ def test_valodi_gpun_egerhuzassal(tmp_path):
         [sys.executable, "-m", "pytest", f"{__file__}::TestValodiGpu",
          f"{__file__}::TestValodiGpuAlloKep",
          f"{__file__}::TestValodiGpuDiavetites",
+         #: #3877: a néző nyers fájlos elemeinek textúrája
+         f"{Path(__file__).with_name('test_nezo_forrasmeret_3877.py')}"
+         "::TestValodiGpuNezoTextura",
          "-q", "-rs", "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'bt'}"],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         timeout=240, cwd=str(gyoker), env=kornyezet,

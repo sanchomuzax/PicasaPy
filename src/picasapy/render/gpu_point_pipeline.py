@@ -19,10 +19,10 @@ igazságforrás (`picasapy.render.tone`/`color`) EGYSZER kiszámolt eredménye:
   termelési kód literális újrafelhasználása.
 - a `sat` (telítettség) és `bw` (fekete-fehér) NEM csatornánkénti LUT (a
   luma mindhárom csatornától függ), ezért ezeket a fragment shader
-  analitikusan számolja. A `sat` **negatív** ága luma-tartó skalár
-  erősítés (`mix()`), az erősítést a CPU adja uniformként
-  (`saturation_gain()` — ugyanaz az interpolált tábla, mint
-  `picasapy.render.color.apply_saturation` negatív ága). A `sat`
+  analitikusan számolja. A `sat` **negatív** ága a natív egész luma-
+  keverés (#3889, `simulate_negative_saturation_shader()`), az erősítést
+  a CPU adja uniformként (`saturation_gain()`: a negatív oldalon pontosan
+  `1 + amount`, így bitre a CPU-t adja). A `sat`
   **pozitív** ága (#696, a #693 következménye) NEM erősítés — a
   `picasapy.render.saturation_positive` szerint csatornánkénti, MÁS
   kitevőjű gamma a `csatorna/luma` arányon, amire semmilyen skalár
@@ -146,9 +146,9 @@ def build_finetune2_lut(
 
 
 def saturation_gain(strength: float) -> float:
-    """A `sat` NEGATÍV ágának mért erősítés-táblája — azonos
-    `picasapy.render.color.apply_saturation` negatív ágával, a skalár
-    erősítést adja vissza (a shader ezt kapja `satGain` uniformként).
+    """A `sat` NEGATÍV ágának skalár erősítése — pontosan `1 + amount`,
+    mint a natív callback és a CPU-út (`apply_saturation`, #3889); a shader
+    ezt kapja `satGain` uniformként.
 
     A POZITÍV ágra (#696, #693) ez a függvény már NEM alkalmazandó — arra
     a shader `simulate_positive_saturation_shader()` szerinti gamma-
@@ -209,6 +209,24 @@ def simulate_positive_saturation_shader(image: np.ndarray, amount: float) -> np.
     )
     blended = np.where(nem_fekete[..., np.newaxis], normalized, channels)
     return np.clip(np.round(blended), 0, 255).astype(np.uint8)
+
+
+def simulate_negative_saturation_shader(image: np.ndarray, gain: float) -> np.ndarray:
+    """A `PointFilter.frag` `applyNegativeSaturation()`-jének numpy-mása (#3889).
+
+    A natív negatív mag (`0x0090e200`, `docs/specs/filters-decoded.md`, „A
+    `sat` NEGATÍV ága"): `L = (2R + 5G + B + 4) >> 3`, majd
+    `ki = L + floor((c − L) · k / 256)`, ahol `k = floor(256 · gain)`. A
+    shaderben minden tag egész értékű float, tehát a `floor` pontosan az
+    egész aritmetikai eltolást adja. A `gain` a `saturation_gain()`
+    értéke (`1 + a`), így minden negatív állásnál bitre egyezik a CPU-val."""
+    k = np.floor(256.0 * float(gain))
+    channels = image.astype(np.float64)
+    luma = np.floor(
+        (2.0 * channels[..., 0] + 5.0 * channels[..., 1] + channels[..., 2] + 4.0) / 8.0
+    )[..., np.newaxis]
+    blended = luma + np.floor((channels - luma) * k / 256.0)
+    return np.clip(blended, 0, 255).astype(np.uint8)
 
 
 @dataclass(frozen=True)
@@ -278,6 +296,7 @@ __all__ = [
     "build_finetune2_lut",
     "build_point_pipeline_uniforms",
     "saturation_gain",
+    "simulate_negative_saturation_shader",
     "simulate_positive_saturation_shader",
 ]
 

@@ -8203,9 +8203,28 @@ A 0-s sugarú `BlurImageOperation` nem lép ki: `0x00bb5050` 1 alatti sugárra 0
 alá esik, ezért a sor „mindkettő tétlen” besorolást kapott, és a kód erre
 hivatkozva hagyta ki a keverést. A 684-es készlet 56 „tétlen” sora közül
 ilyen eltolódást a `soften__min` (−1,00) és a `dir_tint__min` (−0,50)
-mutat; a többinél az export a forrással azonos.
+mutat, helyi, egyirányút pedig a `roundededges__alap` (+2,10, a sarkok
+fehérje); a többinél az eltolódás legfeljebb 0,12.
 
 Fejlesztés: #3895.
+
+> ✅ **Megvalósítva (#3895, 2026-09-28).** Az `apply_soften` 0-s sugárnál is
+> keveri a (változatlan) képet önmagával: `soften__min` ΔE 0,470 → **0,121**
+> (`alap` 0,196, `max` 0,121 — változatlan). Az elemző `mean_shift`-je a
+> `|átlagos előjeles eltolódás| ≥ 0,25` sort már nem sorolja tétlennek
+> (JPEG-zaj ≤ 0,003, a legkisebb valódi jel a `dir_tint__min` −0,50-e): a
+> `soften__min` a javítás nélkül `NEM_IMPLEMENTALT`, vele `JO`.
+>
+> A teljes 684-es készlet újramérve (előtte `main`, utána ez az ág;
+> `docs/benchmarks/2026-09-19-golden-meroszett-684.md`): `JO` 113 → 115,
+> `MINDKETTO_TETLEN` 56 → 53, `NEM_IMPLEMENTALT` 0 → 1, a többi változatlan.
+> Három sor fordul át a „mindkettő tétlen”-ből: `soften__min` → `JO`
+> (ΔE 0,470 → 0,121), `roundededges__alap` → `JO` (ΔE 0,143; a sarkok
+> fehérje mindkét oldalon +2,1 szint), és `dir_tint__min` →
+> **`NEM_IMPLEMENTALT`** (ΔE 0,296; a Picasa az átmenet vonala fölötti felet
+> pontosan eggyel sötétíti — ugyanaz a `(255·b) >> 8` minta —, mi a
+> bemenetet másoljuk). Ez utóbbi eddig rejtett eltérés; egy 0,5-ös küszöb
+> (mért eltolódás −0,498) nem fogta volna meg.
 
 ### E) Két mért hiba nálunk — a bináris itt az OKOT is megadja
 

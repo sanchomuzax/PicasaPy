@@ -623,6 +623,10 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     `10 … min(fullResImageWidth, fullResImageHeight)/2`. A teljes felbontás
     az előnézeti arányból jön vissza; a kész sugarat a maszk a natív
     `scale`-lel (`imageWidth / fullResImageWidth`) vetíti az előnézetre.
+
+    #3884: a csúszka húzása közben (`gyors_elonezet` blokk) a zoom-kernel
+    gyors OpenCV-úton fut, minden más esetben (mentés, export, bélyegkép,
+    elengedés) a natívon.
     """
     arany = jelenlegi_arany()
     height, width = image.shape[:2]
@@ -639,6 +643,7 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
         hardness=_effect_float(op, 4, 50.0),
         fade=_effect_float(op, 5, 0.0),
         scale=arany,
+        gyors=gyors_elonezet_aktiv(),
     )
 
 
