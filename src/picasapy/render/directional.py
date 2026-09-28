@@ -15,7 +15,13 @@ A burkolók (`0x008f8fb0`, `0x008f9050`) a két csúszkát **közvetlenül**
 adják tovább (`param+0x28`, `param+0x2c`) — a felületi korong (`puck`)
 csak beállítja őket, a `filters=` láncban nem jelenik meg külön.
 
-Ld. `docs/specs/picasa-native-filter-workers.md` 2.7.
+A képpontsúly mindhárom magban `w = csonk(128 · (x + y))`, ahol `x` és `y`
+két float32 akkumulátor (`−a`-ról, ill. `−b`-ről indul, `a / (W >> 1)`,
+ill. `b / (H >> 1)` lépéssel). A súly tehát a rámpa 128-szorosa, NEM
+256-szorosa: a hatás a teljes kitérés felét adja (#3858, #3859).
+
+Ld. `docs/specs/picasa-native-filter-workers.md` 2.7, „A súly szorzója
+128, csonkolva”.
 """
 
 from __future__ import annotations
@@ -25,31 +31,91 @@ import numpy as np
 from picasapy.render.curves import validate_image
 from picasapy.render.iir_blur import apply_picasa_blur
 
-#: A natív magok a rámpa-súlyt 8.8 fixpontban használják (`round(s * 256)`),
-#: és `>> 8`-cal osztanak vissza.
+#: A natív magok a súlyt `>> 8`-cal osztják vissza (8.8 fixpont).
 _WEIGHT_SCALE = 256.0
+
+#: A rámpa szorzója a súlyhoz: `w = csonk(128 · (x + y))` — `[0xcf3a38]`
+#: = 128,0 (double), a `dir_sharp`-ban `[0xcf3d58]` = −128,0 (#3858).
+_WEIGHT_MULTIPLIER = 128.0
 
 #: A `dir_sharp` burkolója (`0x008f9090`) ezzel az osztóval számol
 #: elmosási sugarat a rövidebb oldalból: `min(W, H) >> 3`.
 _DIR_SHARP_RADIUS_DIVISOR = 8
 
 
+def _clamped_sliders(horizontal: float, vertical: float) -> tuple[np.float32, np.float32]:
+    """A két csúszka, a natív kód szerint `[−1, 1]`-re vágva, float32-ben."""
+    return (
+        np.float32(np.clip(horizontal, -1.0, 1.0)),
+        np.float32(np.clip(vertical, -1.0, 1.0)),
+    )
+
+
+def _accumulator(count: int, start: np.float32) -> np.ndarray:
+    """A natív float32 akkumulátor egy tengely mentén.
+
+    `−start`-ról indul, és minden képpont után `start / (count >> 1)`-et
+    ad hozzá, az eredményt float32-be VISSZAÍRVA (`0x0090db3c`,
+    `0x0090db82`). A `np.add.accumulate` float32-ben sorban összegez, tehát
+    a kerekítési hibák ugyanúgy halmozódnak, mint a natív hurokban.
+    """
+    # egy képpontos tengelynél a natív osztó 0 volna — ott a rámpa úgyis
+    # csak a kezdőértékét veszi fel, ezért 1-gyel osztunk
+    step = np.float32(float(start) / max(count >> 1, 1))
+    terms = np.full(count, step, dtype=np.float32)
+    terms[0] = -start
+    return np.add.accumulate(terms, dtype=np.float32)
+
+
 def directional_ramp(
     height: int, width: int, horizontal: float, vertical: float
 ) -> np.ndarray:
-    """A `dir_*` család közös, képpontonkénti súlya, `(H, W)` alakban.
+    """A `dir_*` család közös rámpája (`x + y`), `(H, W)` alakban.
 
-    A natív kód a bal felső saroktól `−a`-ról indul és `+a`-ig nő (a
-    függőleges tengelyre ugyanígy), tehát a képpont KÖZEPÉT nem tolja el —
-    a rámpa a `[0, W)` egészek felett fut.
+    A natív kód a bal felső saroktól `−a`-ról indul és (majdnem) `+a`-ig nő
+    (a függőleges tengelyre ugyanígy), két float32 akkumulátorral — a
+    képpont KÖZEPÉT nem tolja el, a rámpa a `[0, W)` egészek felett fut. A
+    két akkumulátor összege az x87-veremen áll össze, ezért itt float64.
     """
     if height <= 0 or width <= 0:
         raise ValueError(f"Érvénytelen képméret: {width}×{height}")
-    a = float(np.clip(horizontal, -1.0, 1.0))
-    b = float(np.clip(vertical, -1.0, 1.0))
-    xs = np.arange(width, dtype=np.float32) * np.float32(2.0 / width) - np.float32(1.0)
-    ys = np.arange(height, dtype=np.float32) * np.float32(2.0 / height) - np.float32(1.0)
-    return np.float32(a) * xs[np.newaxis, :] + np.float32(b) * ys[:, np.newaxis]
+    a, b = _clamped_sliders(horizontal, vertical)
+    xs = _accumulator(width, a).astype(np.float64)
+    ys = _accumulator(height, b).astype(np.float64)
+    return xs[np.newaxis, :] + ys[:, np.newaxis]
+
+
+def directional_weight(
+    height: int, width: int, horizontal: float, vertical: float
+) -> np.ndarray:
+    """A `dir_brite` és a `dir_sat` képpontsúlya: `csonk(128 · (x + y))`.
+
+    Egész értékű float32 tömb, `[−256, 256]`-ban — vágás nincs, mert a
+    rámpa legfeljebb `|a| + |b| ≤ 2` (`0x0090da70`–`0x0090da7a`).
+    """
+    ramp = directional_ramp(height, width, horizontal, vertical)
+    return np.trunc(ramp * _WEIGHT_MULTIPLIER).astype(np.float32)
+
+
+def dir_sharp_amount(
+    height: int, width: int, horizontal: float, vertical: float
+) -> np.ndarray:
+    """A `dir_sharp` képpontonkénti élesítési ereje (`0x0090d600`).
+
+    ```c
+    K = trunc(128 * (fabs(a) + fabs(b)));      // globális horgony
+    w = trunc(-128 * (x + y));                 // képpontsúly
+    amount = (K - w) * 2;
+    ```
+
+    Az erő a rámpa NEGATÍV sarkában nulla, a pozitívban `≈ 2 · 2K`: az
+    élesítés tehát oda esik, ahová a rámpa mutat.
+    """
+    ramp = directional_ramp(height, width, horizontal, vertical)
+    a, b = _clamped_sliders(horizontal, vertical)
+    anchor = np.trunc(_WEIGHT_MULTIPLIER * (abs(float(a)) + abs(float(b))))
+    weight = np.trunc(ramp * -_WEIGHT_MULTIPLIER)
+    return ((anchor - weight) * 2.0).astype(np.float32)
 
 
 def apply_dir_sat(
@@ -59,7 +125,7 @@ def apply_dir_sat(
 
     ```c
     L = (2*R + 5*G + B) >> 3;                 // súlyozott luma
-    a = round(s(x,y) * 256);
+    a = trunc(128 * (x + y));                 // ld. directional_weight
     if (a < 0) { a += 256; out_c = L + (((c - L) * a) >> 8); }        // telítetlenítés
     else       { out_c = clamp(c + (((c - L) * a) >> 8), 0, 255); }   // telítés
     ```
@@ -70,8 +136,7 @@ def apply_dir_sat(
     """
     validate_image(image)
     height, width = image.shape[:2]
-    ramp = directional_ramp(height, width, horizontal, vertical)
-    weight = np.round(ramp * np.float32(_WEIGHT_SCALE))
+    weight = directional_weight(height, width, horizontal, vertical)
 
     values = image.astype(np.float32)
     luma = np.floor(
@@ -102,30 +167,23 @@ def apply_dir_brite(
     ```c
     // a burkoló az ötödik argumentumot 0-nak adja: az előkorrekciós
     // középtónus-parabola tehát AZONOSSÁG, nem kell külön LUT
-    v = c;
-    if (s >= 0) v ^= 0xff;                          // világosításhoz tükrözés
+    w = trunc(128 * (x + y));                       // ld. directional_weight
+    v = c;  a = |w|;
+    if (w > 0) v ^= 0xff;                           // világosításhoz tükrözés
     v = (((v*v*v) >> 16) * a + (256 - a) * v) >> 8; // keverés a KÖBÖS görbével
-    if (s >= 0) v ^= 0xff;
+    if (w > 0) v ^= 0xff;
     ```
 
     Vagyis **köbös tónusgörbe** (sötétítés), a világosítás pedig ugyanez
-    **invertált tartományon**. A rámpa csak azt szabja meg, képpontonként
+    **invertált tartományon**. A súly csak azt szabja meg, képpontonként
     mennyit keverünk a köbösből: 0-nál változatlan, 256-nál teljesen köbös.
+    A 0-s súly a sötétítő ágra esik, de ott azonosság.
     """
     validate_image(image)
     height, width = image.shape[:2]
-    # A rámpa `|a| + |b| > 1` esetén ±1-en TÚL is futna. A natív mag ott
-    # ELŐJEL NÉLKÜL és VÁGATLANUL számol, és csak az alsó bájtot tárolja —
-    # vagyis körbefordul. Ezt a viselkedést a dekompilátum nem igazolja
-    # egyértelműen (a rámpa skálázása is nyitott kérdés a specifikációban),
-    # ezért itt a bizonyíthatóan bájtra egyező tartományra vágunk: a
-    # `[-1, 1]`-en belül a mi kimenetünk a natív egész aritmetikával
-    # KÉPPONTRA azonos (#623, hurkos referencia-újraírással mérve).
-    # A `dir_sat` NEM kap ilyen vágást: ott a natív ág `|s| > 1`-nél is
-    # jól definiált, vágott eredményt ad.
-    ramp = np.clip(directional_ramp(height, width, horizontal, vertical), -1.0, 1.0)
-    amount = np.abs(np.round(ramp * np.float32(_WEIGHT_SCALE)))
-    lighten = (ramp >= 0)[..., np.newaxis]
+    weight = directional_weight(height, width, horizontal, vertical)
+    amount = np.abs(weight)
+    lighten = (weight > 0)[..., np.newaxis]
 
     values = image.astype(np.float32)
     mirrored = np.where(lighten, np.float32(255.0) - values, values)
@@ -161,49 +219,24 @@ def apply_dir_sharp(
     """Irányított unsharp mask — a natív `0x0090d600` mag.
 
     ```c
-    k = round(...);                       // GLOBÁLIS horgony (x87-veremen)
-    amount = (k − round(rámpa(x,y))) * 2;
+    K = trunc(128 * (fabs(a) + fabs(b)));  // globális horgony
+    w = trunc(-128 * (x + y));             // képpontsúly
+    amount = (K - w) * 2;                  // ld. dir_sharp_amount
     if (amount > 0)
         out_c = clamp(c + (((c − elmosott_c) * amount) >> 8), 0, 255);
     ```
 
     A mag maga **nem konvolvál**: az elmosott puffert a burkoló készíti el,
-    `min(W, H) / 8` sugárral, a közös IIR-maggal (`iir_blur`).
-
-    ## KÖZELÍTÉS — a horgony (`k`) értéke
-
-    A `k`-t a natív kód a két csúszka **abszolút értékéből** számolja
-    (`FUN_0049f5c0(a); FUN_0049f5c0(b);` majd egy kerekítés), de a művelet
-    maga az x87-veremen történik, ezért a dekompilátor elvesztette. Itt a
-    `k = round((|a| + |b|) · 256)` feltevéssel élünk, mert:
-
-    - a két `ABS` hívás pontosan ahhoz kell, hogy a horgony a csúszkák
-      ELŐJELÉTŐL függetlenül a rámpa maximumára (`max s = |a| + |b|`)
-      essen;
-    - így az `amount` a teljes képen nemnegatív (a natív `if (0 < amount)`
-      ág értelmet nyer), a rámpa legpozitívabb sarkában pontosan nullára
-      fut ki, a szemközti sarokban maximális;
-    - `a = b = 0` mellett a hatás azonosság — a csúszkák alapállásában a
-      kép nem változhat.
-
-    Ez **erős következtetés, nem mérés**: a horgony skáláját (és így a
-    hatás abszolút erősségét) egy referencia-export döntheti el. A
-    kalibráció a #317-es jegyben fut.
+    `min(W, H) / 8` sugárral, a közös IIR-maggal (`iir_blur`). Az élesítés
+    a rámpa **pozitív** sarkában a legerősebb (`≈ 2·2K`), a negatívban nulla
+    (#3858).
     """
     validate_image(image)
     height, width = image.shape[:2]
     radius = float(dir_sharp_blur_radius(height, width))
     blurred = apply_picasa_blur(image, radius, radius).astype(np.float32)
 
-    ramp = directional_ramp(height, width, horizontal, vertical)
-    weight = np.round(ramp * np.float32(_WEIGHT_SCALE))
-    anchor = float(
-        np.round(
-            (min(abs(float(horizontal)), 1.0) + min(abs(float(vertical)), 1.0))
-            * _WEIGHT_SCALE
-        )
-    )
-    amount = (np.float32(anchor) - weight) * np.float32(2.0)
+    amount = dir_sharp_amount(height, width, horizontal, vertical)
 
     values = image.astype(np.float32)
     # a natív `>> 8` PADLÓ (nem kerekítés), és csak a pozitív erősségű

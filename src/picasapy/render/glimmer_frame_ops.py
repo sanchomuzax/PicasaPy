@@ -328,7 +328,11 @@ def draw_drop_shadow(
 
 
 def rotate_with_pad(
-    image: np.ndarray, angle_deg: float, border_color: tuple[int, int, int]
+    image: np.ndarray,
+    angle_deg: float,
+    border_color: tuple[int, int, int],
+    *,
+    gyors: bool = False,
 ) -> np.ndarray:
     """`Rotate(..., padBorder, borderColor=...)`: elforgatás a forgatott
     téglalap befoglaló méretű vásznára; az üresen maradó sarkokat
@@ -348,6 +352,13 @@ def rotate_with_pad(
     bilineáris (`fixpontos_mintavevo.fixpontos_bilinearis`). A korábbi út (a kép `//2`-vel a
     vászonra, majd OpenCV-sarok-konvenciós `warpAffine`) fél képpontokat
     tolt el, és a peremen a kitöltő színnel mosott össze.
+
+    `gyors=True` (#3862): CSAK a Polaroid effekt-csúszkájának húzása közbeni
+    élő előnézetnek — ugyanaz a képpontközepes mátrix, de `cv2.INTER_LINEAR`
+    a mintavevő (az `ops.apply_tilt` `gyors` ágának mintájára, #3846). A
+    kilógó sarkokat itt `border_color` tölti ki (nem `BORDER_REPLICATE`,
+    mint a Kiegyenesítésnél), mert a Polaroid vásznán VALÓDI, kitöltendő
+    sarkok vannak, nem csak a fixpontos mintavevő kerekítési maradéka.
     """
     validate_image(image)
     src_h, src_w = image.shape[:2]
@@ -360,6 +371,20 @@ def rotate_with_pad(
         cos_a, sin_a, src_w / 2.0 - cos_a * cel_w / 2.0 - sin_a * cel_h / 2.0,
         -sin_a, cos_a, src_h / 2.0 + sin_a * cel_w / 2.0 - cos_a * cel_h / 2.0,
     )
+    if gyors:
+        m0, m1, m2, m3, m4, m5 = matrix
+        # képpontközepes → képpont-index: G = T(−0,5) · M · T(0,5)
+        index_matrix = np.array(
+            [[m0, m1, m2 + 0.5 * (m0 + m1) - 0.5], [m3, m4, m5 + 0.5 * (m3 + m4) - 0.5]]
+        )
+        return cv2.warpAffine(
+            image,
+            index_matrix,
+            (cel_w, cel_h),
+            flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=border_color,
+        )
     return fixpontos_bilinearis(image, matrix, cel_w, cel_h, border_color)
 
 

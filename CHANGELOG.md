@@ -7,6 +7,29 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.622] – 2026-09-28
+
+### Javítva
+- Az „Irányított fényesség”, az „Irányított telítettség” és az „Irányított
+  élesítés” most az eredeti Picasa erejével hat: eddig kétszer erősebb volt,
+  az élesítés ráadásul a kép ellenkező sarkát élesítette (a mért eltérés
+  ΔE 4,28-ról 0,19-re, 1,85-ről 0,18-ra, ill. 5,20-ról 0,38-ra csökkent)
+  (#3859).
+
+## [0.8.621] – 2026-09-28
+
+### Javítva
+- A „Polaroid” effekt előnézete a csúszka húzása közben most jóval gyorsabb
+  (a forgatás a gyors mintavevőre vált, ahogy a Kiegyenesítésnél is) —
+  mentéskor, exportkor és a bélyegképnél a kép változatlanul az eredeti,
+  pontos módszerrel készül (#3862).
+
+- A „Kiegyenesítés” csúszkájának billentyűs léptetése (`+`/`-`) eddig nem
+  mentette a szöget a képre lapozásig vagy bezárásig — most az
+  egérelengedéssel azonos módon azonnal ír; ugyanez a javítás érinti a
+  Finomhangolás és a Gyakori javítások fülének Kitöltő fény, Kiemelések,
+  Árnyékok és Színhőmérséklet csúszkáját is (#3865).
+
 ### Javítva
 - A diavetítés a képet a valódi méretéből számolva tölti be, legfeljebb
   2560 képpontos élekkel és soha nem az eredetinél nagyobban. Eddig egy

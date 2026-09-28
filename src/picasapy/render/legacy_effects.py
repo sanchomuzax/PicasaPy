@@ -65,8 +65,8 @@ LEGACY_EFFECTS: tuple[LegacyEffect, ...] = (
     LegacyEffect("fill", "Fill Light (slider)"),
     # --- irányított család: a natív magokat a #568 fejtette vissza, a
     #     megvalósítás a #623-ban készült el — mind a négy renderel
-    #     (a `dir_sharp` horgonya és a `linblur` sugár-leképezése
-    #     közelítés, ld. az `apply_*` docstringeket) --------------------
+    #     (a `linblur` sugár-leképezése közelítés, ld. az
+    #     `apply_linblur` docstringjét) ---------------------------------
     LegacyEffect("linblur", "Linear Blur"),
     LegacyEffect("dir_sat", "Directional Saturation"),
     LegacyEffect("dir_brite", "Directional Brightness"),

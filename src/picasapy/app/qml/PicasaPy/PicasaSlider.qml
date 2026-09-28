@@ -61,7 +61,31 @@ Slider {
         var uj = control.value + irany * control.billentyuLepes
         control.value = Math.max(control.from, Math.min(control.to, uj))
         control.moved()
+        // #3865: a véglegesítés a billentyű ELENGEDÉSEKOR jön (lent), mint
+        // az egérnél a húzás végén — a lenyomva tartott billentyű
+        // ismétlései így nem írnak minden lépésnél .picasa.ini-t és
+        // visszavonás-bejegyzést.
+        control._billentyuVeglegesitendo = true
     }
+
+    property bool _billentyuVeglegesitendo: false
+
+    function _billentyuVeglegesitese() {
+        if (!control._billentyuVeglegesitendo)
+            return
+        control._billentyuVeglegesitendo = false
+        control.veglegesult(control.value)
+    }
+
+    // #3865: a HASZNÁLÓK eddig a `pressed` váltásán véglegesítettek
+    // (`onPressedChanged: if (!pressed) …`) — ez a húzás VÉGÉT jelzi, de a
+    // billentyűs léptetés a `pressed`-hez sosem nyúl, ezért nála a
+    // véglegesítés (pl. `.picasa.ini`-be írás) elmaradt. Ez a jel a KÖZÖS
+    // véglegesítés-pont: egér-elengedéskor (lent) ÉS billentyűs lépésnél
+    // (`leptesd()`) egyaránt tüzel — a hívók erre iratkoznak fel, nem
+    // közvetlenül a `pressed`-re.
+    signal veglegesult(real ertek)
+    onPressedChanged: if (!control.pressed) control.veglegesult(control.value)
 
     //: a léptetés a FÓKUSZBAN lévő csúszkára hat — enélkül a billentyű
     //: sosem ér célba
@@ -76,6 +100,16 @@ Slider {
             event.accepted = true
         }
     }
+    Keys.onReleased: function (event) {
+        // az ismétlődő (autorepeat) elengedéseket kihagyjuk: a sorozat
+        // végén, a valódi elengedéskor egyszer véglegesítünk
+        if (event.isAutoRepeat)
+            return
+        control._billentyuVeglegesitese()
+    }
+    // ha a fókusz a lenyomott billentyű közben megy el, az elengedés már
+    // nem ide érkezik — ilyenkor is véglegesítünk
+    onActiveFocusChanged: if (!control.activeFocus) control._billentyuVeglegesitese()
 
     // #700: a sín vastagsága és a fogantyú mérete a HÍVÓ helyen felülírható.
     // Az alapértékek változatlanok (kerek, 14 px-es fogantyú, 4 px-es sín),

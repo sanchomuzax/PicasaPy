@@ -2200,12 +2200,18 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     def previewEffect(self, name: str, values) -> None:
         """Élő előnézet a csúszkák húzása közben: a képet a pillanatnyi
         értékekkel újrarendereli, de NEM ír ini-be és NEM tol undo-lépést
-        (a previewFinetune mintájára, #20)."""
+        (a previewFinetune mintájára, #20).
+
+        #3862: a `gyors_elonezet()` blokk (a `previewTilt` mintájára) a
+        Polaroid forgatását is a gyors mintavevőre váltja húzás közben — az
+        `applyEffectWithParams` (elengedéskor/Alkalmaz) már a blokkon kívül,
+        natívan renderel."""
         self._require_active()
         preview_session = self._session_with_effect(name, values)
         if preview_session is None:
             return
-        self._register_preview(preview_session)
+        with gyors_elonezet():
+            self._register_preview(preview_session)
         self._bump_revision()
 
     @Slot()
