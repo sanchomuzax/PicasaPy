@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A néző a közvetlenül fájlból betöltött képeket (az elő-betöltők, és a
+  kép, amíg nincs szerkesztési előnézete) a valódi méretükből számolva
+  tölti be, legfeljebb 2560 képpontos élekkel és soha nem az eredetinél
+  nagyobban — eddig egy álló telefonfotó 2560×4551-es textúrát kapott, a
+  videokártya 4096-os plafonja fölött, egy kis kép pedig 2560 szélesre
+  nagyítódott (ugyanaz a hiba, amit a #3832 a diavetítésben javított).
+  Kettős nézetre váltáskor a kép egyszer töltődik be, nem kétszer-háromszor
+  (#3877).
+
 ## [0.8.626] – 2026-09-28
 
 ### Javítva
@@ -36,16 +46,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   átrendezett sorrendnél ugyanaz a kép marad látható, áttűnés nélkül; ha
   maga a látott kép törlődik, a következő fotóra lép (az utolsó kép után az
   elsőre, mint a léptetésnél), üres könyvtárnál pedig leáll (#3881).
-
-### Javítva
-- A néző a közvetlenül fájlból betöltött képeket (az elő-betöltők, és a
-  kép, amíg nincs szerkesztési előnézete) a valódi méretükből számolva
-  tölti be, legfeljebb 2560 képpontos élekkel és soha nem az eredetinél
-  nagyobban — eddig egy álló telefonfotó 2560×4551-es textúrát kapott, a
-  videokártya 4096-os plafonja fölött, egy kis kép pedig 2560 szélesre
-  nagyítódott (ugyanaz a hiba, amit a #3832 a diavetítésben javított).
-  Kettős nézetre váltáskor a kép egyszer töltődik be, nem kétszer-háromszor
-  (#3877).
 
 ## [0.8.623] – 2026-09-28
 
