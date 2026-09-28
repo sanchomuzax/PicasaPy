@@ -128,12 +128,14 @@ _EDIT_BASE_CAP = 2048
 # hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
 # (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
 # (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 4
+_EDIT_CACHE_VERSION = 5
 # 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
 # skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
 # 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
 # Éjjellátó, Képregény) a natív lánccal számol — a régi, erf-modelles
 # szerkesztett bélyegképek újragenerálódnak.
+# 5 (#3917): a Lágy fókusz (`radblur`) elmosási sugara a bináris 0,01-es
+# képszélesség-hányadával számol (a korábbi 0,009 helyett).
 
 
 def _edit_base_size(target_size: int) -> int:
