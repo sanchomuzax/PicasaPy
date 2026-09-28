@@ -215,3 +215,65 @@ class TestNativeGammaLut:
             native_gamma_lut(0.0)
         with pytest.raises(ValueError):
             native_gamma_lut(-1.0)
+
+    def test_nem_veges_g_hibat_dob(self):
+        """NaN, vagy ami float32-ben 0-ra/végtelenre kerekül — a #3944
+        átnézése szerint az őrnek a float32-re CSONKOLT `g`-t kell néznie,
+        nem a bejövő double-t."""
+        with pytest.raises(ValueError):
+            native_gamma_lut(float("nan"))
+        with pytest.raises(ValueError):
+            # a legkisebb pozitív double is 0.0-ra kerekül float32-ben
+            native_gamma_lut(1e-46)
+
+    @pytest.mark.parametrize(
+        ("szint", "index", "vart"),
+        [
+            (-0.641, 205, 168),
+            (-0.623, 122, 64),
+            (0.748, 193, 223),
+        ],
+    )
+    def test_1_per_255_dupla_pontossagu_allando(self, szint, index, vart):
+        """#3944 átnézés (J1): `[0xcf4138]` = 1/255 **dupla** pontosságú —
+        az `i · (1/255)` szorzatot dupla pontosságban kell számolni, és
+        csak az EREDMÉNYT kerekíteni float32-re a `pow` előtt. Ha a
+        szorzás sorrendje megfordul (előbb `i` kerekül float32-re, utána
+        szorzunk egy float32 állandóval), ez a három érték eggyel eltér."""
+        g = math.exp(szint)
+        lut = native_gamma_lut(g)
+        assert int(lut[index]) == vart
+
+    @pytest.mark.parametrize(
+        ("szint", "index", "vart"),
+        [
+            (0.861, 141, 198),
+            (-0.1194, 206, 200),
+        ],
+    )
+    def test_a_vegso_kerekites_legkozelebbi_paros(self, szint, index, vart):
+        """#3944 átnézés (J2/B): a `fistp` a legközelebbi egészre kerekít
+        (kötött esetben a páros felé, azaz `rint`), NEM `floor(x + 0,5)`
+        (ami félúton mindig felfelé kerekítene). A második eset (`szint =
+        −0,1194`) pontosan `x,5`-re esik: `rint` a páros 200-at adja,
+        `floor(x + 0,5)` a 201-et adná."""
+        g = math.exp(szint)
+        lut = native_gamma_lut(g)
+        assert int(lut[index]) == vart
+
+    @pytest.mark.parametrize(
+        ("szint", "index", "vart"),
+        [
+            (0.305, 79, 108),
+            (0.415, 42, 78),
+            (0.1441, 90, 104),
+        ],
+    )
+    def test_koztes_lepesek_float32_kerekitese_szamit(self, szint, index, vart):
+        """#3944 átnézés (J2/C): a hatványozás előtti szorzat ÉS a `· 255`
+        utáni szorzat is float32-re kerekül a `pow`/`rint` előtt (a natív
+        `fstp dword`). Ha a teljes számítást tiszta float64-ben végezzük
+        (a köztes float32-lépések nélkül), ez a három érték eltér."""
+        g = math.exp(szint)
+        lut = native_gamma_lut(g)
+        assert int(lut[index]) == vart

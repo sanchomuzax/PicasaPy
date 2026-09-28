@@ -285,25 +285,27 @@ def native_gamma_lut(g: float) -> np.ndarray:
     LUT[i] = rint(f32(pow(f32(i * (1.0 / 255.0)), invG) * 255.0));
     ```
 
-    ⛛ **Ez NEM a szinthúzó** (`0x0090c1e0` / `native_level_lut`) — külön
+    ⛔ **Ez NEM a szinthúzó** (`0x0090c1e0` / `native_level_lut`) — külön
     natív függvény, 8 bites egyszerű táblázatos cserével (dekompilálva,
     `docs/specs/picasa-native-filter-workers.md` 5.3/b, #3937). A `gamma`
     szűrő (`apply_gamma`) és a régi Ragyogás előgörbéje
     (`render/effects.py::glow_gamma_lut`, `g = 0,5`) ugyanezt a táblát
     használja — a két hívó itt közösíti (#3939).
 
-    A köztes lépések pontossága a mérésből jön: az `i/255` szorzat és az
-    `invG` egyszeres (float32), a hatványozás dupla (float64) pontosságú,
-    a végeredmény pedig `fstp dword`-dal float32-re kerekül a `fistp`
-    (legközelebbi egész) előtt.
+    A köztes lépések pontossága a mérésből jön: `[0xcf4138]` = 1/255
+    **dupla** pontosságú állandó, tehát az `i · (1/255)` szorzat dupla
+    pontosságban számol (`i` egész, pontosan ábrázolható), és csak a
+    szorzat kerekül egyszeres (float32) pontosságra, mielőtt a `pow`
+    alapja lenne. Az `invG` egyszeres, a hatványozás (és az azt követő
+    `· 255`) dupla pontosságú, a végeredmény pedig `fstp dword`-dal
+    float32-re kerekül a `fistp` (legközelebbi egész) előtt.
     """
-    if g <= 0.0:
+    g32 = np.float32(g)
+    if not np.isfinite(g32) or g32 <= 0:
         raise ValueError(f"A gamma pozitív kell legyen, nem {g}")
-    inv_g = np.float32(1.0) / np.float32(g)
-    unit = (np.arange(256, dtype=np.float32) * np.float32(1.0 / 255.0)).astype(
-        np.float64
-    )
-    powered = unit ** float(inv_g)
+    inv_g = np.float32(1.0) / g32
+    unit = np.float32(np.arange(256, dtype=np.float64) * (1.0 / 255.0))
+    powered = unit.astype(np.float64) ** float(inv_g)
     scaled = np.float32(np.float64(255.0) * powered)
     return np.rint(scaled.astype(np.float64)).astype(np.uint8)
 
@@ -314,8 +316,8 @@ def apply_gamma(image: np.ndarray, level: float) -> np.ndarray:
     A burkoló (`0x008f8e30`) az egyetlen csúszkából `g = f32(exp(szint))`-et
     számol (`0x0040eac0` = `exp`), és a `0x00aa40a0` tábla-építőt hívja
     `(g, 0)` argumentummal — **nem** a szinthúzón (`0x0090c1e0` /
-    `apply_native_levels`) fut, ahogy korábban hittük (spec 5.3/b, #3937,
-    #3939). A tábla-építő `1/g`-vel emel hatványra, tehát a tényleges
+    `apply_native_levels`) fut (spec 5.3/b, #3937, #3939). A tábla-építő
+    `1/g`-vel emel hatványra, tehát a tényleges
     kitevő `exp(−szint)`. Pozitív szint világosít, negatív sötétít, a 0
     azonosság, és a két végpont (0 és 255) helyben marad. Dither NINCS: ez
     a 2.2-es, 16 bites, ditheres szinthúzótól (`apply_native_lut16`)
