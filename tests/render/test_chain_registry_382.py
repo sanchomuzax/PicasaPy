@@ -60,10 +60,11 @@ _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 #: `dir_sat` / `dir_brite` / `dir_sharp` / `linblur`: #623 — a négy natív mag
 #: (`0x0090dbb0`, `0x0090d8b0`, `0x0090d600`, `0x0090de10`) és a közös elmosó
 #: (`0x009dd0d0`) visszafejtéséből; ld. tests/render/test_directional.py,
-#: test_linear_blur.py, test_iir_blur.py. A `dir_sharp` rámpa-horgonya és a
-#: `linblur` sugár-leképezése KÖZELÍTÉS maradt (az x87-veremen mentek, a
-#: dekompilátum nem őrizte meg őket) — a hatás JELLEGE és a pixel-matematika
-#: viszont egzakt, ezért rendereljük; a kalibráció a #317-ben fut.
+#: test_linear_blur.py, test_iir_blur.py. A `dir_sharp` rámpa-horgonya
+#: azóta kiolvasva (#3858, megvalósítva: #3859); a `linblur`
+#: sugár-leképezése KÖZELÍTÉS maradt (az x87-veremen ment, a dekompilátum
+#: nem őrizte meg) — a hatás JELLEGE és a pixel-matematika viszont egzakt,
+#: ezért rendereljük; a kalibráció a #317-ben fut.
 #: #687: a `triple`/`triple2`/`triple3`, az `autocontrast`, a `colortemp`, a
 #: `contrast`, a `gamma` és a `backlight` is átkerült — a #685 mérőszettje
 #: kimutatta, hogy az eredeti Picasa ténylegesen végrehajtja őket, a

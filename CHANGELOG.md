@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az „Irányított fényesség”, az „Irányított telítettség” és az „Irányított
+  élesítés” most az eredeti Picasa erejével hat: eddig kétszer erősebb volt,
+  az élesítés ráadásul a kép ellenkező sarkát élesítette (a mért eltérés
+  ΔE 4,28-ról 0,19-re, 1,85-ről 0,18-ra, ill. 5,20-ról 0,38-ra csökkent)
+  (#3859).
+
 ## [0.8.621] – 2026-09-28
 
 ### Javítva

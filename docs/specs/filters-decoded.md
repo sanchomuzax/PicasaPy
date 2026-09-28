@@ -601,9 +601,9 @@ Picasa-hű lenne.
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell, vagy a natív kódból kinyert beégetett tábla | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át), `warm` (256×3 beégetett tábla a `0x0090c040`/`0x00d33b70`-ből kinyerve, #611 — ld. `docs/specs/picasa-native-filter-workers.md` 2.8) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#565, #317, #3453)** | a natív közös sugaras maszk (`0x0090b050` + `0x0090aeb0`, élesség 0, sugár `min(W,H)/2·(Feather+1)`); a 684-es golden három Feather-állásán ΔE 0,70 / 0,73 / 0,74 | `radtint` (radiális **szorzó**-tint a `render/radial_mask.py` maszkjával) |
-| **MEGFEJTVE A BINÁRISBÓL (#623)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve) — nincs benne feltételezett skalár | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`) |
+| **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#623, #3858, #3859)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve), a súly `csonk(128·(x+y))` float32 akkumulátorokból — nincs benne feltételezett skalár; a 684-es golden `a = b = 0,5`-ön ΔE 0,187 / 0,184 / 0,384 | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`), `dir_sharp` (`0x0090d600`, horgony `K = csonk(128·(\|a\|+\|b\|))`) |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#668)** | a natív elmosó mag (`0x009dd0d0`) alá állítva, és MINDEN szabad skalár valódi Picasa-exportból mérve — 12 golden-párból 12 „közelítés", átlagos ΔE 0,09…1,19 | `glow`/`glow2` (`0x0090d4b0`: négyzetre emelő előgörbe → IIR-elmosás → screen, súly = Intenzitás), `radblur` (`0x008f8520`: IIR-elmosás + natív smoothstep sugaras maszk) |
-| **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | `dir_sharp` (`0x0090d600`; ~~a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve~~ → **2026-08-30 Ghidra-C: `k = 2·Δ` (a két `FUN_00c29990` különbségének duplája)**), `linblur` (`0x0090de10`; ~~a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára~~ → **2026-08-30 Ghidra-C: a sugár a `param_5`-ből közvetlenül** — a #623 feltevése megdőlt, ld. lentebb) |
+| **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | ~~`dir_sharp` (`0x0090d600`; a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve → 2026-08-30 Ghidra-C: `k = 2·Δ`)~~ → **kiolvasva és mérve (#3858, #3859), ld. fent**, `linblur` (`0x0090de10`; ~~a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára~~ → **2026-08-30 Ghidra-C: a sugár a `param_5`-ből közvetlenül** — a #623 feltevése megdőlt, ld. lentebb) |
 
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
 csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
@@ -1904,6 +1904,11 @@ részlet-élesítés), a `linblur` burkolója pedig **kétszer** futtatja le.
    ⛔ **LEZÁRVA (#3858):** a horgony kiolvasva, `K = csonk(128·(|a|+|b|))`,
    és a súly szorzója mindhárom magban 128, nem 256 — ld.
    `picasa-native-filter-workers.md` 2.7, „A súly szorzója 128, csonkolva”.
+   **Megvalósítva (#3859):** `render/directional.py` (`directional_weight`,
+   `dir_sharp_amount`, float32 akkumulátorokkal); a 684-es készleten
+   (`a = b = 0,5`) ΔE `dir_brite` 4,281 → 0,187, `dir_sat` 1,851 → 0,184,
+   `dir_sharp` 5,198 → 0,384 — mindhárom a zajszint közelében. A pont
+   ezzel nem közelítés többé.
 2. `linblur` — a „Mennyiség" → sugár leképezés (a testvér `radblur`
    burkolójának alakjával: `W/100·(Amount+1) + 0,001`).
 3. `linblur` — a súlytábla utolsó rekeszei. A natív
@@ -6775,7 +6780,7 @@ Modell **minden** effekt mögött van; a törzs „ezért `blocked`" mondata
 | effekt | miért kell rá export |
 |---|---|
 | `Comicize` · `FocalZoom` · `PicnikFocalPixelate` | a csővezeték egzakt, de a **mintavételezés perem-/interpolációs szabálya** golden-összevetésre vár (#569, #570) |
-| `dir_sharp` | egy skalár az x87-veremen ment át, a helyén **indokolt feltevés** áll (#623) |
+| ~~`dir_sharp`~~ | ~~egy skalár az x87-veremen ment át, a helyén indokolt feltevés áll (#623)~~ → a horgony kiolvasva (#3858), megvalósítva és golden-mérve, ΔE 0,384 (#3859) |
 | `grain` (v1) | saját mérése nincs — a `grain2` modelljét futtatjuk rá (#347) |
 | `tint` · `dir_tint` | **MÉRT, DE ELTÉR**: ΔE 20,6 és 9 |
 | `ansel` | ΔE 5,6 — miközben a színsúlyok a binárisból **megerősítettek** (#939, 286. kör) ⇒ az eltérés a lánc **más** tagjában van, és ez nincs kimérve |
