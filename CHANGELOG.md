@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A „Színátmenet” (Graduated Tint) effekt fehér színnel is ugyanúgy egy
+  árnyalatnyit sötétít a színezett részen, mint az eredeti Picasa, így a
+  kép pontosabban egyezik az eredeti exportjával (#3902).
+
 - A négy régi, színkerekes effekt (Színezés, Ansel, Irányított színezés,
   Sugaras színezés) szerkesztőpanelen beállított színe most `ff` alfával
   íródik a `.picasa.ini`-be, ahogy az eredeti Picasa — eddig `00` alfával
