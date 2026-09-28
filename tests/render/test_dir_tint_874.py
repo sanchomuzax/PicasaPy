@@ -17,6 +17,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from picasapy.ini.filters import parse_filters
+from picasapy.render.chain import apply_filters
 from picasapy.render.dir_tint import (
     DIR_TINT_FEATHER_FLOOR,
     apply_dir_tint,
@@ -100,11 +102,18 @@ class TestFeatherPadlo:
 
 class TestShadeMegforditva:
     def test_shade_nulla_semleges_szinnel_valtozatlan(self) -> None:
-        # Shade = 0 → q = 1 → p = 1 → a tónusgörbe AZONOSSÁG; fehér
-        # színnel a natív a szorzást is kihagyja, tehát a kép változatlan
+        # Shade = 0 → q = 1 → p = 1 → a tónusgörbe AZONOSSÁG; az alfa
+        # nélküli `00ffffff` fehérnél a natív a szorzást is kihagyja (#3902),
+        # tehát a kép változatlan
         image = _kep(137)
         result = apply_dir_tint(
-            image, x=0.5, y=0.5, gradient=0.25, shade=0.0, color=(255, 255, 255)
+            image,
+            x=0.5,
+            y=0.5,
+            gradient=0.25,
+            shade=0.0,
+            color=(255, 255, 255),
+            alpha=0x00,
         )
         np.testing.assert_array_equal(result, image)
 
@@ -240,11 +249,17 @@ class TestSzorzoSzinezes:
         assert int(result[0, 4, 2]) <= 2
 
     def test_a_feher_szin_nem_szoroz(self) -> None:
-        # a natív `cmp [esp+0x3e8], 0xffffff` a tiszta fehérnél kihagyja a
-        # szorzást — ez 1 egységnyi különbség a 254/255-ös osztásnál
+        # a natív `cmp [esp+0x3e8], 0xffffff` a `00ffffff` színnél kihagyja
+        # a szorzást — ez 1 egységnyi különbség a 254/255-ös osztásnál
         image = _kep(255, height=8, width=8)
         result = apply_dir_tint(
-            image, x=0.5, y=0.5, gradient=1.0, shade=0.0, color=(255, 255, 255)
+            image,
+            x=0.5,
+            y=0.5,
+            gradient=1.0,
+            shade=0.0,
+            color=(255, 255, 255),
+            alpha=0x00,
         )
         np.testing.assert_array_equal(result, image)
 
@@ -268,3 +283,46 @@ class TestAlapok:
                 shade=0.5,
                 color=(255, 255, 255),
             )
+
+
+class TestFeherDword3902:
+    """#3902: a natív a TELJES 32 bites színt hasonlítja `0x00ffffff`-hez
+    (`0x0090f525  cmp dword ptr [esp+0x3e8], 0xffffff`), az alfa-bájttal
+    együtt. Az ini `ffffffff` fehérjénél tehát a szorzás lefut
+    (`v · 255 >> 8`), a kihagyás csak a `00ffffff` alakra él."""
+
+    #: teljes súly: a 0,001-es Feather-padló a felső sorokban telíti a
+    #: rámpát (súly 255), a `Shade = 0` pedig azonossá teszi a tónusgörbét
+    _TELJES = dict(x=0.5, y=0.5, gradient=0.0, shade=0.0, color=(255, 255, 255))
+
+    def _sor(self, alpha: int) -> np.ndarray:
+        values = np.array([0, 1, 2, 255], dtype=np.uint8)
+        image = np.tile(values.reshape(1, 4, 1), (16, 1, 3))
+        return apply_dir_tint(image, alpha=alpha, **self._TELJES)[0, :, 0]
+
+    def test_ffffffff_szoroz(self) -> None:
+        np.testing.assert_array_equal(self._sor(0xFF), [0, 0, 1, 254])
+
+    def test_00ffffff_valtozatlan(self) -> None:
+        np.testing.assert_array_equal(self._sor(0x00), [0, 1, 2, 255])
+
+    def test_az_alapertelmezes_a_konstruktor_ffffffff(self) -> None:
+        # a natív konstruktor alapértéke `0xFFFFFFFF` (`0x008f6ba9`)
+        image = _kep(137, height=16, width=4)
+        np.testing.assert_array_equal(
+            apply_dir_tint(image, **self._TELJES),
+            apply_dir_tint(image, alpha=0xFF, **self._TELJES),
+        )
+
+    @pytest.mark.parametrize(
+        ("szin", "felso"),
+        [(",ffffffff", 136), (",00ffffff", 137), ("", 136)],
+    )
+    def test_a_lanc_az_ini_alfajat_adja_at(self, szin: str, felso: int) -> None:
+        # szín nélkül a konstruktor `0xFFFFFFFF` alapértéke fut → szoroz
+        image = _kep(137, height=16, width=4)
+        ops = parse_filters(f"dir_tint=1,0.500000,0.500000,0.000000,0.000000{szin};")
+        eredmeny, kihagyott = apply_filters(image, ops)
+        assert kihagyott == ()
+        assert int(eredmeny[0, 0, 0]) == felso
+        np.testing.assert_array_equal(eredmeny[-1], image[-1])

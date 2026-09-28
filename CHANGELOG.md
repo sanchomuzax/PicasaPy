@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Színátmenet” (Graduated Tint) effekt fehér színnel is ugyanúgy egy
+  árnyalatnyit sötétít a színezett részen, mint az eredeti Picasa, így a
+  kép pontosabban egyezik az eredeti exportjával (#3902).
+
 ## [0.8.624] – 2026-09-28
 
 ### Javítva
