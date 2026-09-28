@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A „HDR-szerű” effekt a legkisebb „Sugár” állásán is élesít, ahogy az
+  eredeti Picasa, és a „Helyi kontraszt” effekttel együtt közelebb került az
+  eredetihez (a mért eltérés ΔE 0,49–1,12-ről 0,19–0,27-re csökkent) (#3520).
+
 - A „Hőtérkép” effekt színátmenete most az eredeti Picasa szerint számol:
   a színek eddig kissé eltértek, mert az átmenet durva lépcsőkben
   alakult színné (a mért eltérés ΔE 1,01–1,13-ról 0,55–0,56-ra csökkent)

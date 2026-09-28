@@ -6,7 +6,7 @@ Minden csővezeték a `docs/specs/filterdesc-registry.md` 4. fejezetében
 (a `filterdesc.xml`-ből) rögzített LÉPÉSSORREND és SZÁMÉRTÉK szerint fut —
 ez a modul a korábbi `effects_creative_tone.py`/`effects.py` KÖZELÍTŐ
 modelljeinek egzakt utódja. A `picasapy.render.glimmer_ops` primitíveket
-használja (`inner_glow`, `local_contrast`, `adjust_curves`, `apply_noise`,
+használja (`inner_glow`, `hdr_local_contrast`, `adjust_curves`, `apply_noise`,
 `hsv_gradient_map` stb.) — az alacsony szintű kernelek (Gauss-elmosás,
 LERP-interpoláció) szokásos, jól bevált megfelelői a Picasa nem publikus
 C++ motorjának, de a PARAMÉTEREZÉS és a LÉPÉSSORREND bitre a `filterdesc.xml`
@@ -30,12 +30,13 @@ from picasapy.render.glimmer_ops import (
     glow_sigma,
     fade_alpha,
     hsv_gradient_map,
+    hdr_local_contrast,
     inner_glow,
-    local_contrast,
     simple_color_matrix,
     tint_luma_preserving,
     to_float,
     to_uint8,
+    xml_local_contrast,
 )
 
 # --- Vignette / Matte: GlowImageOperation(innerglow=true) ------------------
@@ -175,60 +176,29 @@ def apply_matte(
 # --- HDR / LocalContrast: LocalContrastImageOperation -----------------------
 
 
-#: #688: a `LocalContrast` `Contrast` csúszkája `[1..3]`, és az ALSÓ vége a
-#: NULLA-ÁLLAPOT — a natív műveletnek átadott `Strength` tehát `Contrast − 1`.
-#: A `HDR` ugyanezt a motort hajtja, de a `Strength`-et KÖZVETLENÜL adja
-#: tovább; a két effekt csővezetéke nem azonos (a `filterdesc-registry.md`
-#: szerint a `LocalContrast` `SetVar`/`GetVar` párokra bontva építi fel).
-#:
-#: Bizonyíték — a #685 mérőszettje (valódi Picasa-export; a modell eltérése
-#: a Picasa kimenetétől, ΔE CIE76 átlag):
-#:
-#:     eset                     Picasa Δ   s=Contrast   s=Contrast−1
-#:     min  (R=1,3  C=1,0)         0,18       1,85          0,18
-#:     alap (R=15   C=1,5)         3,08       2,24          0,37
-#:     max  (R=40   C=3,0)         9,43       2,77          0,87
-#:
-#: (A 0,18 a mérőszett JPEG-zajszintje, azaz a `min` esetben a Picasa és az
-#: eltolt modell EGYARÁNT tétlen.) Ugyanez az eltolás a `HDR`-en ROSSZABB
-#: illeszkedést ad (alap: 1,71 vele, 1,24 nélküle), ezért KIZÁRÓLAG a
-#: `LocalContrast`-é.
-LOCAL_CONTRAST_STRENGTH_OFFSET = 1.0
-
-
 def apply_local_contrast(image, radius: float = 15.0, strength: float = 1.5):
-    """`LocalContrast=1,Radius,Contrast` — a `HDR`-ével AZONOS motor, Fade
+    """`LocalContrast=1,Radius,Contrast` — a `filterdesc.xml` lánca, Fade
     nélkül. Radius `[1,3..40]` (alap 15), Contrast `[1..3]` (alap 1,5).
 
-    #545: a Gauss-szigma a `Radius` FELE, és a művelethez `Strength`-arányos
-    világosítás is tartozik (ld. `glimmer_ops.local_contrast`).
-
-    #688: a csúszka ALSÓ vége (`Contrast = 1`) a nulla-állapot, ezért a
-    motornak `Contrast − 1` megy át — `Contrast = 1`-nél a kimenet bitre
-    azonos a bemenettel (ld. `LOCAL_CONTRAST_STRENGTH_OFFSET`).
+    #3520: `ki = elm + C·(be − elm)` (`glimmer_ops.xml_local_contrast`),
+    tehát `Contrast = 1`-nél a kimenet bitre azonos a bemenettel (#688) —
+    ehhez már nem kell külön `Contrast − 1` eltolás.
     """
     validate_image(image)
-    effective = max(strength - LOCAL_CONTRAST_STRENGTH_OFFSET, 0.0)
-    if effective == 0.0:
-        return image.copy()
-    return to_uint8(local_contrast(to_float(image), radius, effective))
+    return xml_local_contrast(image, radius, strength)
 
 
 def apply_hdr(image, radius: float = 20.0, strength: float = 3.0, fade: float = 0.0):
-    """`HDR=1,Radius,Contrast,Fade` — ugyanaz, mint `LocalContrast`, majd
-    Fade-keverés. Radius `[1,3..80]` (alap 20), Strength `[1..7]` (alap 3).
+    """`HDR=1,Radius,Contrast,Fade` — a natív `LocalContrastImageOperation`,
+    majd Fade-keverés. Radius `[1,3..80]` (alap 20), Strength `[1..7]` (alap 3).
 
-    #545: a `referencia/hdrish/` kilenc exportján mérve a modell átlagos
-    eltérése a valódi Picasa-kimenettől **2,45** (az érintetlen képé 20,85;
-    a korábbi változaté 11,2 — vagyis az alig volt jobb a semminél). A
-    mérés két dolgot javított: a Gauss-szigma a `Radius` FELE (a négy
-    Radius-állás egymástól függetlenül ugyanezt adta), és a lokális
-    kontraszt mellett `Strength`-arányos világosítás is fut.
+    #3520: a natív lánc az EREDETIBŐL indul, `ki = be + C·(be − elm)`
+    (`glimmer_ops.hdr_local_contrast`), ezért `Contrast = 1`-nél is élesít.
+    A `LocalContrast`-tól ez különbözteti meg.
     """
     validate_image(image)
-    image_f = to_float(image)
-    contrasted = local_contrast(image_f, radius, strength)
-    return to_uint8(alpha_blend(image_f, contrasted, fade_alpha(fade)))
+    contrasted = to_float(hdr_local_contrast(image, radius, strength))
+    return to_uint8(alpha_blend(to_float(image), contrasted, fade_alpha(fade)))
 
 
 # --- CrossProcess ------------------------------------------------------------
