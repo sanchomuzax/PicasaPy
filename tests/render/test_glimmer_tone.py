@@ -5,6 +5,8 @@ határeset-tesztjei, a `filterdesc-registry.md` 4.2 tartományai szerint.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -226,47 +228,18 @@ class TestQuantizePalette:
 
 
 class TestHdrMeasuredModel:
-    """#545 → #1607: a HDR/LocalContrast mért modellje.
+    """#545 → #1607 → #3520: a HDR/LocalContrast modellje.
 
-    ⚠️ **Két állítás megfordult.** A #545 köre egy illesztett
-    `+2,9·Strength` világosító tagot épített a modellbe, és a Gauss-szigmát
-    a `Radius` felére állította — mindkettő a `referencia/hdrish/`
-    exportjaira illeszkedett, magyarázat nélkül.
+    A #1607 a `quality="3"` háromszoros dobozelmosásban találta meg a #545
+    illesztett konstansainak (Radius/2, `+2,9·Strength`) okát. A #3520 a
+    bináris láncából (`0x00bc41e0`) két további tényt hozott:
 
-    A #1607 megtalálta a KÖZÖS okot: a `filterdesc.xml` szerinti
-    `BlurImageOperation quality="3"` **háromszoros dobozelmosás**, menetenként
-    x-ben és y-ban egész osztással. Ebből mindkettő MAGÁTÓL adódik:
-
-    * a háromszoros doboz szórása `σ ≈ w/2` — innen a felezés;
-    * a hat egész osztás az elmosást rendszeresen ~2,7 szinttel a valódi
-      átlag alá viszi, és a `be + (be−elmosott)·strength` képlet ezt
-      `+2,7·strength` világosításként adja vissza — innen a 2,9.
-
-    ⇒ A világosító tag nem külön lépés volt, hanem a hiányzó csonkítás
-    lenyomata. A modell most a valódi dobozelmosást számolja, a tag
-    megszűnt, és a SÍK felület (égbolt, sima fal) többé nem világosodik ok
-    nélkül.
+    * az elmosás a natív `BlurImageOperation` (`render/nativ_blur`), amely
+      az 1,3-as sugárral is mos — a saját dobozunk 1-re kerekítette, és a
+      `HDR` `min` állása hatástalan lett;
+    * a `HDR` natív lánca az EREDETIBŐL indul (`be + C·(be − elm)`), a
+      `LocalContrast` XML-lánca az elmosottból (`elm + C·(be − elm)`).
     """
-
-    def test_a_dobozelmosas_a_gauss_ala_visz(self):
-        """A mechanizmus MAGA, számmal — ez a jegy tárgya.
-
-        A csonkító háromszoros doboz rendszeresen a Gauss-átlag ALATT van,
-        és a torzítás a sugártól gyakorlatilag független (hat osztás,
-        egyenként fél szint).
-        """
-        from picasapy.render import glimmer_ops as ops
-
-        photo = _real_photo_rgb(300, 400, seed=5)
-        image_f = ops.to_float(photo)
-        for radius in (15.0, 20.0, 40.0):
-            doboz = ops.box_blur_trunc(image_f, radius)
-            gauss = ops.gaussian_blur_f(image_f, radius / 2.0)
-            elteres = float(np.mean(doboz - gauss))
-            assert -3.2 < elteres < -1.8, (
-                f"Radius {radius}: a csonkítás torzítása {elteres:.3f}, "
-                "a várt −2,7 körüli sávon kívül"
-            )
 
     def test_sik_kepen_AZONOSSAG(self):
         """A régi modell síkon is világosított (`Strength=3` → +8,7 szint),
@@ -278,19 +251,49 @@ class TestHdrMeasuredModel:
                 t.apply_hdr(flat, radius=20.0, strength=strength, fade=0.0), flat
             )
 
-    def test_a_modell_a_dobozelmosast_hasznalja(self):
-        """Egyenértékűség-mérés: ha valaki visszaállítaná a Gauss-elmosást
-        vagy a világosító tagot, ez bukik."""
-        from picasapy.render import glimmer_ops as ops
+    @staticmethod
+    def _fuggetlen_lanc(photo, radius, c, eredetibol):
+        """Független átirat a `filters-decoded.md` „`HDR` — a natív
+        `LocalContrastImageOperation`…" táblájából, lépésenként 8 bitre vágva."""
+        from picasapy.render.nativ_blur import blur_image_operation
 
-        photo = _real_photo_rgb(200, 300, seed=3)
-        through_hdr = t.apply_hdr(photo, radius=20.0, strength=3.0, fade=0.0)
+        be = photo.astype(np.int64)
+        elm = blur_image_operation(photo, radius, radius, 3).astype(np.int64)
+        fel = np.clip(np.rint(np.clip(be - elm, 0, 255) * c), 0, 255).astype(np.int64)
+        le = np.clip(np.rint(np.clip(elm - be, 0, 255) * c), 0, 255).astype(np.int64)
+        if eredetibol:
+            return np.clip(np.clip(be + fel, 0, 255) - le, 0, 255).astype(np.uint8)
+        return np.clip(np.clip(elm - le, 0, 255) + fel, 0, 255).astype(np.uint8)
 
-        image_f = ops.to_float(photo)
-        blurred = ops.box_blur_trunc(image_f, 20.0)
-        expected = ops.to_uint8(image_f + (image_f - blurred) * 3.0)
+    @pytest.mark.parametrize("radius,c", [(1.3, 1.0), (20.0, 3.0), (80.0, 7.0)])
+    def test_a_hdr_a_nativ_lanc_szerint_szamol(self, radius, c):
+        photo = _real_photo_rgb(120, 160, seed=3)
+        np.testing.assert_array_equal(
+            t.apply_hdr(photo, radius=radius, strength=c, fade=0.0),
+            self._fuggetlen_lanc(photo, radius, c, eredetibol=True),
+        )
 
-        np.testing.assert_array_equal(through_hdr, expected)
+    @pytest.mark.parametrize("radius,c", [(1.3, 1.0), (15.0, 1.5), (40.0, 3.0)])
+    def test_a_localcontrast_az_xml_lanc_szerint_szamol(self, radius, c):
+        photo = _real_photo_rgb(120, 160, seed=4)
+        np.testing.assert_array_equal(
+            t.apply_local_contrast(photo, radius=radius, strength=c),
+            self._fuggetlen_lanc(photo, radius, c, eredetibol=False),
+        )
+
+    def test_hdr_min_allasa_hat(self):
+        """#3520: `R 1,3 / C 1` a Picasában ΔE 1,1-et mozdít — nálunk is hasson."""
+        photo = _real_photo_rgb(120, 160, seed=5)
+        eredmeny = t.apply_hdr(photo, radius=1.3, strength=1.0, fade=0.0)
+        assert np.mean(np.abs(eredmeny.astype(np.int16) - photo)) > 0.5
+
+    def test_localcontrast_c1_azonossag(self):
+        """#688: a `LocalContrast` alsó vége bitre azonosság — az XML-láncból."""
+        photo = _real_photo_rgb(120, 160, seed=6)
+        for radius in (1.3, 15.0, 40.0):
+            np.testing.assert_array_equal(
+                t.apply_local_contrast(photo, radius=radius, strength=1.0), photo
+            )
 
     def test_fade_100_valtozatlan_marad(self):
         photo = _real_photo_rgb(60, 80, seed=9)
@@ -299,3 +302,64 @@ class TestHdrMeasuredModel:
         )
 
 
+
+
+# ---------------------------------------------------------------------------
+# #3520 — FEJLESZTŐI GÉPEN futó golden-mérés a 684-es készlet Picasa-
+# exportjával; ha a készlet nincs a gépen, skip. A `HDR` natív lánca
+# (`LocalContrastImageOperation`, `0x00bc41e0`) `be + C·(be − elm)`, a
+# `LocalContrast` XML-lánca `elm + C·(be − elm)`; mindkettő a natív
+# `BlurImageOperation`-nel (`quality = 3`) mos, ami az 1,3-as sugárral is hat.
+# Mérve (CIE76 átlag-ΔE a Picasa-exporthoz, `analyze_validation_kit.mean_de`):
+#
+# | eset                         | előtte | utána |
+# |------------------------------|-------:|------:|
+# | HDR min (R 1,3 / C 1)        | 1,120  | 0,188 |
+# | HDR alap (R 20 / C 3)        | 0,489  | 0,265 |
+# | HDR max (R 80 / C 7 / F 100) | 0,121  | 0,121 |
+# | LocalContrast min (R 1,3/C 1)| 0,121  | 0,121 |
+# | LocalContrast alap (R 15/1,5)| 0,225  | 0,207 |
+# | LocalContrast max (R 40/C 3) | 0,520  | 0,258 |
+# ---------------------------------------------------------------------------
+
+# rontás-kontroll: a `hdr_local_contrast` az elmosottból indítva → 6 failed
+# (a három natív-lánc-egyezés, a `min` hatása, a golden HDR `min` és `alap`);
+# az elmosás `quality=1`-re → 9 failed (öt lánc-egyezés, négy golden); a
+# szorzó `rint` helyett `floor` → 2 failed (LocalContrast-lánc 1,5-tel és a
+# golden `localcontrast__alap`); a `LocalContrast` az eredetiből indítva →
+# 7 failed (három lánc-egyezés, a `C = 1` azonosság és a három golden).
+
+_KIT_684 = Path("/mnt/nas/My Pictures/684-merokeszlet")
+
+#: A mért érték + 0,05-ös tűrés.
+_HDR_TURES = 0.05
+
+_HDR_GOLDEN = [
+    ("hdr__min", "HDR=1,1.300000,1.000000,0.000000;", 0.188),
+    ("hdr__alap", "HDR=1,20.000000,3.000000,0.000000;", 0.265),
+    ("hdr__max", "HDR=1,80.000000,7.000000,100.000000;", 0.121),
+    ("localcontrast__min", "LocalContrast=1,1.300000,1.000000;", 0.121),
+    ("localcontrast__alap", "LocalContrast=1,15.000000,1.500000;", 0.207),
+    ("localcontrast__max", "LocalContrast=1,40.000000,3.000000;", 0.258),
+]
+
+
+@pytest.mark.parametrize(
+    ("eset", "lanc", "vart_de"), _HDR_GOLDEN, ids=[e[0] for e in _HDR_GOLDEN]
+)
+def test_hdr_golden_a_picasa_exporthoz(eset: str, lanc: str, vart_de: float) -> None:
+    forras_ut = _KIT_684 / f"{eset}.jpg"
+    export_ut = _KIT_684 / "export" / f"{eset}.jpg"
+    if not export_ut.is_file():
+        pytest.skip(f"a mérőkészlet nem elérhető: {export_ut}")
+    utvonal = str(Path(__file__).resolve().parents[2] / "tools" / "golden")
+    if utvonal not in sys.path:
+        sys.path.insert(0, utvonal)
+    from analyze_validation_kit import load, mean_de
+
+    from picasapy.ini.filters import parse_filters
+    from picasapy.render.chain import apply_filters
+
+    kep = apply_filters(load(forras_ut), parse_filters(lanc)).image
+    de = mean_de(kep, load(export_ut))
+    assert de <= vart_de + _HDR_TURES, f"{eset}: ΔE {de:.3f} > {vart_de + _HDR_TURES:.3f}"

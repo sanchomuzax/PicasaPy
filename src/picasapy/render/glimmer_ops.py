@@ -42,6 +42,7 @@ from picasapy.render.curves import (
     validate_image,
 )
 from picasapy.render import nativ_noise
+from picasapy.render.nativ_blur import blur_image_operation
 from picasapy.render.nativ_noise import ALAP_CSATORNAK
 from picasapy.render.quantize_palette import pontminta_racs
 
@@ -586,114 +587,57 @@ def simple_color_matrix(
 #: Ugyanaz a 2-es szorzó, mint a Vignette/MuseumMatte/Orton elmosásainál
 #: (#317) — a Flash-örökségű sugár-paraméter és a Gauss-szigma között.
 #:
-#: ⚠️ #1607: a `local_contrast` MÁR NEM ezt használja — a `quality="3"`
-#: háromszoros dobozelmosást számolja közvetlenül (`box_blur_trunc`),
-#: amiből a felezés (`σ² = 3(w²−1)/12`, nagy `w`-re `σ ≈ w/2`) magától
-#: adódik. A konstans a többi, Gauss-szal közelítő hívónak marad meg, és
-#: dokumentumként: a #545 mérése így vált levezetett értékké.
-
-#: A KORÁBBI, illesztett világosító tag (#545) — **megszűnt** (#1607).
-#:
-#: A `+2,9·Strength` a `referencia/hdrish/` exportjaira volt illesztve,
-#: magyarázat nélkül, és a `filterdesc.xml` csővezetékében nincs megfelelője.
-#: A #1607 két hipotézist járt végig:
-#:
-#: 1. **„a 8 bites telítődés pótléka"** — MEGMÉRVE, MEGDŐLT: a blokkonként
-#:    8 bitre vágó, XML-hű modell ΔE 26,5-öt adott a mai 4,6 helyett
-#:    (`referencia/hdrish/HDS-ish default`, az egyetlen szabad paraméter
-#:    nélküli minta; alap a `research/lomo-referencia/Lomo no effect`).
-#: 2. **„a csonkító dobozelmosás torzítása"** — MEGMÉRVE, ÁLL: a
-#:    `quality="3"` hat egész osztása az elmosást rendszeresen ~2,7
-#:    szinttel a Gauss-átlag alá viszi, és a `be + (be−elmosott)·strength`
-#:    képlet ezt pontosan `+2,7·strength` világosításként adja vissza.
-#:
-#: ⇒ A tag nem külön lépés volt, hanem a HIÁNYZÓ csonkítás lenyomata.
-#: A modell ezért a `box_blur_trunc`-ot használja, és a konstans elfogyott.
-#: Részletek: `local_contrast` docstringje.
+#: ⚠️ #3520: a `HDR` és a `LocalContrast` MÁR NEM Gauss-szal mos, hanem a
+#: natív `BlurImageOperation`-nel (`quality = 3`,
+#: `render/nativ_blur.blur_image_operation`). A felezés
+#: (`σ² = 3(w²−1)/12`, nagy `w`-re `σ ≈ w/2`) abból magától adódik; ez a
+#: megjegyzés a #545 mérésének dokumentuma.
 
 
-def _box1d_trunc(a: np.ndarray, width: int, axis: int) -> np.ndarray:
-    """Egy dobozelmosás-menet EGÉSZ osztással — tehát CSONKÍTVA.
+def _szorzott_resz(kulonbseg: np.ndarray, strength: float) -> np.ndarray:
+    """`Blend … Subtract` + `MultiplyColorMatrix`: a telítő (0-ra vágott)
+    különbség `strength`-szerese, 8 bitre kerekítve és vágva."""
+    resz = np.clip(kulonbseg, 0.0, 255.0) * np.float32(strength)
+    return np.clip(np.rint(resz), 0.0, 255.0)
 
-    A csonkítás nem részletkérdés, hanem ennek a modellnek a lényege:
-    minden menet átlagosan fél szinttel LEJJEBB viszi az eredményt, mint a
-    valódi átlag. Az összeg itt mindig NEMNEGATÍV (képpontértékek futó
-    összegének különbsége), ezért a `//` padlózása és a natív `idiv`
-    csonkítása egybeesik — a `//` itt hű. Ld. `local_contrast` és a #926-ot.
+
+def _elmosott(image: np.ndarray, radius: float) -> np.ndarray:
+    return blur_image_operation(image, radius, radius, quality=3).astype(np.float32)
+
+
+def hdr_local_contrast(image: np.ndarray, radius: float, strength: float) -> np.ndarray:
+    """A natív `glimmer::LocalContrastImageOperation` (lánc-építő
+    `0x00bc41e0`, #3520) — a `HDR` motorja. A lánc az EREDETIBŐL indul::
+
+        a  = sat(be + sat(C · sat(be − elm)))
+        ki = sat(a  − sat(C · sat(elm − be)))
+
+    azaz `ki = be + C·(be − elm)`, 8 biten lépésenként vágva. `C = 1`-nél
+    sem azonosság. Az elmosás a natív `BlurImageOperation(R, R, 3)`, ami az
+    1,3-as sugárral is mos. Bemenet és kimenet `uint8` RGB.
     """
-    pad = width // 2
-    kitoltes = [(pad, pad) if i == axis else (0, 0) for i in range(a.ndim)]
-    kiterjesztett = np.pad(a, kitoltes, mode="reflect")
-    osszeg = np.cumsum(kiterjesztett, axis=axis, dtype=np.int64)
-    nulla = np.zeros_like(np.take(osszeg, [0], axis=axis))
-    osszeg = np.concatenate([nulla, osszeg], axis=axis)
-    n = kiterjesztett.shape[axis] - width + 1
-    felso = np.take(osszeg, range(width, width + n), axis=axis)
-    also = np.take(osszeg, range(0, n), axis=axis)
-    return (felso - also) // width
+    be = image.astype(np.float32)
+    elm = _elmosott(image, radius)
+    a = np.clip(be + _szorzott_resz(be - elm, strength), 0.0, 255.0)
+    ki = np.clip(a - _szorzott_resz(elm - be, strength), 0.0, 255.0)
+    return ki.astype(np.uint8)
 
 
-def box_blur_trunc(image_f: np.ndarray, radius: float) -> np.ndarray:
-    """`BlurImageOperation quality="3"` — HÁROMSZOROS dobozelmosás, menetenként
-    (x és y) egész osztással, ahogy egy natív 8 bites megvalósítás számol.
+def xml_local_contrast(image: np.ndarray, radius: float, strength: float) -> np.ndarray:
+    """A `filterdesc.xml` `LocalContrast` lánca (#3520) — az ELMOSOTTBÓL
+    indul::
 
-    Az ablakszélesség a `Radius` (páratlanra kerekítve); a háromszoros doboz
-    szórása `σ ≈ Radius/2`, épp az a felezés, amit a #545 négy Radius-állása
-    egymástól függetlenül kimért.
+        a  = sat(elm − sat(C · sat(elm − be)))
+        ki = sat(a   + sat(C · sat(be − elm)))
+
+    azaz `ki = elm + C·(be − elm)`; `C = 1`-nél bitre azonosság (#688).
+    Az elmosás a natív `BlurImageOperation(R, R, 3)`. `uint8` RGB be és ki.
     """
-    szelesseg = max(1, int(round(radius)))
-    if szelesseg % 2 == 0:
-        szelesseg += 1
-    egesz = np.rint(image_f).astype(np.int64)
-    for _ in range(3):
-        egesz = _box1d_trunc(egesz, szelesseg, 1)
-        egesz = _box1d_trunc(egesz, szelesseg, 0)
-    return egesz.astype(np.float32)
-
-
-def local_contrast(image_f: np.ndarray, radius: float, strength: float) -> np.ndarray:
-    """`LocalContrastImageOperation`: `ki = be + (be − elmosott)·strength`,
-    ahol az elmosás a `filterdesc.xml` szerinti `quality="3"` **csonkító**
-    háromszoros dobozelmosás.
-
-    ## Miért nincs itt külön világosító tag (#1607)
-
-    A korábbi modell `+ 2,9·strength`-et adott hozzá. A konstans a
-    `referencia/hdrish/` exportjaira volt ILLESZTVE, magyarázat nélkül — és
-    a `filterdesc.xml` csővezetékében nincs világosító lépés. A #1607
-    kimérte, hogy a 8 bites telítődés nem magyarázza; a kérdés nyitva
-    maradt.
-
-    **A magyarázat a BLUR-ban van, nem külön tagban.** A
-    `BlurImageOperation quality="3"` három dobozelmosás-menet, mindegyik
-    x-ben és y-ban — hat egész osztás, egyenként átlagosan fél szint
-    lefelé. Az így kapott elmosás **rendszeresen ~2,7 szinttel a valódi
-    (lebegőpontos Gauss) átlag ALATT van**, és mivel a képlet
-    `be + (be − elmosott)·strength`, ez pontosan `+2,7·strength`
-    világosításként jelenik meg. Mérve, 400×400-as textúrán:
-
-        Radius 15 → −2,696 · Radius 20 → −2,689 · Radius 40 → −2,566
-
-    — a sugártól gyakorlatilag függetlenül, ahogy egy hat osztásból jövő
-    torzításnak lennie kell. Az illesztett 2,9 ennek a becslése volt.
-
-    ## Amit ez JAVÍT — a SÍK felület
-
-    A régi tag SÍK képen is világosított (`Strength=3`-nál +8,7 szinttel),
-    pedig ott nincs mit kiemelni: a csonkítás sík felületen nulla torzítást
-    ad (mérve: 3e-05). Az égbolt és a sima falak tehát ok nélkül
-    világosodtak. Az új modell síkon **azonosság**.
-
-    Textúrás képen a két modell a mérési zaj alatt marad egymástól
-    (átlagos eltérés 0,15…0,94 szint, `Radius` 15…40, `strength` 0,5…3),
-    tehát a #545/#688 golden-illesztés NEM romlik el.
-
-    ⚠️ A `referencia/hdrish/` a privát repóban él, a CI-ben nem futtatható;
-    az itteni számok a módszerrel együtt élnek, hogy megismételhetők
-    legyenek.
-    """
-    blurred = box_blur_trunc(image_f, radius)
-    return image_f + (image_f - blurred) * np.float32(strength)
+    be = image.astype(np.float32)
+    elm = _elmosott(image, radius)
+    a = np.clip(elm - _szorzott_resz(elm - be, strength), 0.0, 255.0)
+    ki = np.clip(a + _szorzott_resz(be - elm, strength), 0.0, 255.0)
+    return ki.astype(np.uint8)
 
 
 # --- A ragyogás SZIGMÁJA: a filterdesc blur ÁTMÉRŐ, a σ a fele (#3158) ----
@@ -902,6 +846,30 @@ def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) ->
     return np.stack([tables[channel][gray_index] for channel in range(3)], axis=-1)
 
 
+def _hsv_rgb_lut_f32(hue: np.ndarray, sat: np.ndarray, val: np.ndarray) -> np.ndarray:
+    """A natív HSV → RGB (`0x00bbbe20`, #3814): float32 köztes értékek,
+    `h` körbe `[0, 360)`-ba, `s`/`v` százalékban `[0, 100]`-ra szorítva,
+    hatodolás, és a végén csatornánként `csonk(x · 255)` — nincs +0,5.
+    Spec: `docs/specs/filterdesc-registry.md`, „A HSV → RGB átalakítás".
+    """
+    f32 = np.float32
+    h = np.mod(hue.astype(f32), f32(360.0))
+    s = np.clip(sat.astype(f32), 0, 100) / f32(100.0)
+    v = np.clip(val.astype(f32), 0, 100) / f32(100.0)
+    h6 = (h / f32(360.0)) * f32(6.0)
+    i = np.trunc(h6).astype(np.int64)
+    f = h6 - i.astype(f32)
+    p = v * (f32(1.0) - s)
+    q = v * (f32(1.0) - f * s)
+    t = v * (f32(1.0) - s * (f32(1.0) - f))
+    szektor = i % 6
+    r = np.choose(szektor, (v, q, p, p, t, v))
+    gr = np.choose(szektor, (t, v, v, q, p, p))
+    b = np.choose(szektor, (p, p, t, v, v, q))
+    rgb = np.stack([r, gr, b], axis=-1).astype(np.float64) * 255.0
+    return np.clip(np.trunc(rgb), 0, 255).astype(np.uint8)
+
+
 def hsv_gradient_map(
     image: np.ndarray,
     stops: tuple[tuple[float, float, float, float], ...],
@@ -910,6 +878,10 @@ def hsv_gradient_map(
     """`HSVGradientMap`: a PIROS csatornához (#3421) rendelt (pozíció,
     hue°, sat%, val%) töréspontok interpolációja HSV-térben, majd RGB-re
     konvertálva — a `HeatMap` effekt implementációja.
+
+    #3814: az RGB-re alakítás a natív lebegőpontos képlettel, csonkolva
+    történik (`_hsv_rgb_lut_f32`); a `hueOffset` float32-ben adódik a
+    keverés utáni színezethez, a körbefordítást az átalakító végzi.
     """
     validate_image(image)
     positions = np.array([stop[0] for stop in stops], dtype=np.float64)
@@ -917,14 +889,10 @@ def hsv_gradient_map(
     sats = np.array([stop[2] for stop in stops], dtype=np.float64)
     vals = np.array([stop[3] for stop in stops], dtype=np.float64)
     idx = np.arange(256, dtype=np.float64)
-    hue_lut = (np.interp(idx, positions, hues) + hue_offset) % 360.0
+    hue_lut = np.interp(idx, positions, hues).astype(np.float32) + np.float32(hue_offset)
     sat_lut = np.interp(idx, positions, sats)
     val_lut = np.interp(idx, positions, vals)
-    hsv_lut = np.stack(
-        [hue_lut / 2.0, sat_lut * 2.55, val_lut * 2.55], axis=-1
-    )
-    hsv_lut = np.clip(np.rint(hsv_lut), 0, 255).astype(np.uint8).reshape(1, 256, 3)
-    rgb_lut = cv2.cvtColor(hsv_lut, cv2.COLOR_HSV2RGB).reshape(256, 3)
+    rgb_lut = _hsv_rgb_lut_f32(hue_lut, sat_lut, val_lut)
     return rgb_lut[image[..., _GRADIENS_INDEX_CSATORNA]]
 
 
@@ -1312,7 +1280,8 @@ __all__ = [
     "gaussian_blur_f",
     "autofix",
     "simple_color_matrix",
-    "local_contrast",
+    "hdr_local_contrast",
+    "xml_local_contrast",
     "inner_glow",
     "noise_layer",
     "apply_noise",
