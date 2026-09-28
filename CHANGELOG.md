@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.616] – 2026-09-28
+
 ### Javítva
 - A „Fókuszos FF” effekt „Sugár” csúszkája most −1 és 1 között mozog, 0
   alapállással, ahogy az eredeti Picasában: eddig 0 és 1 között, 0,3

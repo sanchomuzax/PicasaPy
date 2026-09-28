@@ -357,16 +357,93 @@ körben mérendő célzott próbákkal.
   mérve: p=0,2 → 1,0702 (számított 1,0704), p=0,05 → 1,0178 (1,0178). A kimeneti
   képméret változatlan. A 2. ini-paraméter (skála) a teszteinkben 0 volt;
   szerepe további mérést igényel, ha nem-nulla értékkel találkozunk.
+  → **2026-09-28 (#3843): a natív út a 2. paramétert nem olvassa; ld. a következő szakaszt.**
+
+### `tilt` — a natív út kiolvasva: képpontközepes forgatás, fixpontos bilineáris (2026-09-28, 389. kör, #3843)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel. A fenti, mérésből levezetett szög és autoskála egyezik vele.*
+
+A visszahívás (`0x008f8810`) egyetlen paramétert ad tovább: a `+0x28`
+floatot (`p`). A munkavégző a `0x0090a720`:
+
+1. **Szög:** `θ = p · 0,2` radián (`0x0090a72e` `fmul [0xcf4748]` = 0,2).
+2. **Skála:** a két sarkot, `(W/2, H/2)`-t és `(W/2, −H/2)`-t `R(θ)`-val
+   elforgatja, és `s = min(1, min_sarok(W/2 / |x′|, H/2 / |y′|))`
+   (`0x0090a8f9` sqrt, `0x0090aa1b`–`0x0090aa7c` min és 1-es korlát). Fekvő
+   képnél ez `1 / (cos θ + (W/H)·sin θ)`, a mért autoskála reciproka.
+   **A szűrő 2. paraméterét ez az út nem olvassa.**
+3. **Mátrix (cél → forrás):**
+   `M = T(W/2, H/2) · R(θ) · S(s) · T(−W/2, −H/2)`, `R = [[c, −s_θ], [s_θ, c]]`
+   (`0x0090aa80`–`0x0090abc7`, a `0x009e6340` balról szoroz). A középpont
+   `W/2`, `H/2`, egész felezés nélkül.
+4. **Mintavevő:** `0x009e6df0(dst, src, &M, 1, 0, 0x100)` → **`0x009e7060`**,
+   ugyanaz a képpontközepes, 8 bites súlyú fixpontos bilineáris, mint a
+   Polaroid forgatásánál (ld. `filterdesc-registry.md`, „A Polaroid
+   geometriája”). A kimenet W × H.
+
+**Számpélda:** 960 × 640, `p = 1` → `θ` = 11,459°, `s` = 0,782429,
+`M = [[0,766833, −0,155445, 161,6625], [0,155445, 0,766833, ≈0]]`.
+
+**Nálunk** (`render/ops.py`, `apply_tilt`): `cv2.getRotationMatrix2D` a
+`(W/2, H/2)` középponttal, egész képpont-konvencióval — a képpontközép
+nélkül fél képpontot tol, és `cv2.INTER_LINEAR` a mintavevő.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz):
+
+| eset | ma | képpontközepes mátrix, `cv2.INTER_LINEAR` | **natív (fixpontos bilineáris)** | zajszint |
+|---|---:|---:|---:|---:|
+| max (`p = 1`) | 0,920 | 0,282 | **0,244** | 0,194 |
+| min (`p = −1`) | 0,429 | 0,277 | **0,241** | 0,193 |
+| alap (`p = 0`) | 0,156 | 0,156 | — | 0,083 |
+
+Fejlesztés: #3846.
 
 ### `unsharp` / `unsharp2` — MEGFEJTVE (közelítő modell)
 
 - **`unsharp=1` (v1, param nélkül) = `unsharp2=1,0.600000`** — bitre azonos
   kimenet (átlag|Δ|, max, szórás egyezik). Ismételt alkalmazás kumulatív.
+- ⛔ **2026-09-28 (#3850): az erősítés `2·s`, egész keveréssel — ld. a következő szakaszokat.**
 - Modell: Gauss-alapú unsharp mask, **σ ≈ 1,0 px**, erősítés ≈ **1,21·s**
   (RMSE 2,2/255 valódi fotón). A pontos kernel finomítása **továbbra is nyitva**
   (nem tökéletesen Gauss) — jegy: **#762**, a diszpécser (`0x00a42c20`) fel van
   térképezve, a konvolúció a `0xa43230`/`0x9e6340`-ben van. B/W teszteknél
   figyelem: telített értékeken a túllövés klippel.
+
+### `unsharp` / `unsharp2` — a keverés és az erősség kiolvasva: `2·s`, egész aritmetika (2026-09-28, 390. kör, #3850)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+A fenti szakaszok az elmosómagot már kiolvasták (köbös B-spline, 1,5-szeres
+szélesítéssel; pontosabban a lépték `1/(1,5 + 0,001)`, `0x00a3f728`–`0x00a3f741`, `[0xcf3db0]` = 0,001). Az erősség eddig mérésből illesztett volt (`1,21·s`). A
+keverés:
+
+1. A visszahívás (`0x008f8f30`) a `+0x28` floatot (`s`) és a beégetett
+   **1,5**-öt (`[0xcf3ec4]`) adja a munkavégzőnek (`0x0090c4a0`).
+2. `K = csonk(512 · s)` (`0x0090c582` `fmul [0xcf4c48]` = 512,0; `0x00c29990`).
+   Ha a szélesítő 1,0 alatt volna, `K`-t a négyzetével osztaná
+   (`0x0090c5a3`–`0x0090c5af`); az 1,5-nél ez az ág nem fut.
+3. Képpontonként, csatornánként (A = eredeti, B = elmosott):
+   `ki = clamp(A + (((A − B) · K) >> 8), 0, 255)` (a `>>` aritmetikai, `sar`), az alfa A-é. Példa: A = 100, B = 90 → `s = 0,6`: `K = 307`, ki = 111; `s = 3,0`: `K = 1536`, ki = 160
+   (`0x0090c5f5`–`0x0090c667`).
+
+⇒ Az erősítés **`K/256 = 2·s`**. `s = 0,6`-nál 1,2 (a mért 1,21 ennek
+közelítése), `s = 3,0`-nál viszont **6,0**, nem 3,63: a mért lineáris
+illesztés a nagy erősségeken rossz.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz; az elmosás a mai
+lebegőpontos B-spline, illetve a fixpontos átméretező — `csonk(w·16383/Σw)`,
+`(Σ w·p + 255) >> 14`, ld. `filterdesc-registry.md` 5/c):
+
+| eset | ma (`1,21·s`) | `2·s`, lebegőpontos elmosás | **`2·s`, fixpontos elmosás** | zajszint |
+|---|---:|---:|---:|---:|
+| `unsharp2` alap (s = 0,6) | 0,359 | 0,256 | **0,172** | 0,120 |
+| `unsharp2` max (s = 3,0) | 0,983 | 0,861 | **0,277** | 0,210 |
+| `unsharp` (v1, s = 0,6) | 0,359 | 0,256 | **0,172** | 0,120 |
+
+A max állásban a fixpontos elmosás a döntő: a nagy erősítés a köztes
+elmosott kép egész kerekítését is felnagyítja.
+
+Fejlesztés: #3851.
 
 ### `Vignette=1,35.0,1.4,0.0,00000000` — maszk lemérve
 
