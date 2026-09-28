@@ -728,7 +728,7 @@ class EditPreviewProvider(QQuickImageProvider):
             display_mode = self._display_mode
         if image.isNull() and not (is_gpu_prefix or is_gpu_lut):
             image = _placeholder()
-        # A néző sourceSize.width-del (magasság nélkül) kér: a (w, 0) a
+        # Fél-dimenziós kérés (csak `sourceSize.width`, magasság nélkül): a (w, 0) a
         # QSize.isValid() szerint érvényes, de a scaled() üres képet adna
         # (#48). Fél-dimenziós kérésnél képaránytartó scaledToWidth/Height.
         # #1185: null képet NEM méretezünk — a `gpuprefix=1`/`gpulut=1`
@@ -738,10 +738,10 @@ class EditPreviewProvider(QQuickImageProvider):
         # elfedi a valódi hibákat a naplóban.
         if requested_size is not None and not image.isNull():
             width, height = requested_size.width(), requested_size.height()
-            # #3800: a GPU-előtag textúra — a befoglaló dobozba csak
-            # KICSINYÍTÜNK: a kis kép felnagyítása csak GPU-memóriát visz,
-            # a réteg úgyis a kirajzolt kép méretére nyújtja.
-            if is_gpu_prefix and _belefer(image, width, height):
+            # #3800 (GPU-előtag), #3819 (fő fotó): a befoglaló dobozba
+            # csak KICSINYÍTÜNK — a kis kép felnagyítása csak memóriát és
+            # méretezési időt visz, a kirajzolás úgyis a kép méretére nyújt.
+            if _belefer(image, width, height):
                 width = height = 0
             smooth = Qt.TransformationMode.SmoothTransformation
             if width > 0 and height > 0:

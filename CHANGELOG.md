@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A nagy nézőben a magas, álló fotók (például a telefonos 9:16-os képek) már
+  nem kapnak fölöslegesen felnagyított, a grafikus kártya korlátja fölötti
+  méretű képet: a kis kép a saját méretén töltődik be, így kevesebb memóriát
+  és időt visz, és a Raspberry Pi 5-ön sem kerül a korlát fölé (#3819).
+
 ## [0.8.614] – 2026-09-28
 
 ### Javítva
