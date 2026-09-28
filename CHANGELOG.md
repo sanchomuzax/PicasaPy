@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.622] – 2026-09-28
+
 ### Javítva
 - Az „Irányított fényesség”, az „Irányított telítettség” és az „Irányított
   élesítés” most az eredeti Picasa erejével hat: eddig kétszer erősebb volt,
