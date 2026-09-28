@@ -300,7 +300,21 @@ class TestANezoHelyetHagyAFioknak:
         kep = _elem(window, "viewerPhotoArea")
         assert _var(qt_app, lambda: kep.width() > 0)
         elotte = kep.width()
+        #: #3901: a tálca gombja a KÖZÖS `activeDrawerTab`-ot írja, ami a
+        #: nézőbeli panellel EGYÜTT a nem látszó KÖNYVTÁRI fiókot
+        #: (`rightDrawer`) is elindítja — az pedig 400 ms-os ANIMÁCIÓVAL
+        #: tolódik be (#3035), láthatatlanul is. A CI terhelt gépén ez a
+        #: háttérben futó animáció elszívhatja az időt a nézőbeli mérés
+        #: elől, és az alábbi `_var` időnként kifutott, mielőtt a kép
+        #: elérte volna a végleges szélességét. Ezért itt előbb a fiók
+        #: animációjának VALÓDI VÉGÉRE várunk (a szélesség végleges
+        #: értékére), és csak azután mérünk.
+        fiok = _elem(window, "rightDrawer")
         _kattints(window, _talca_gomb(window, "tags"), qt_app)
+        assert _var(qt_app, lambda: fiok.width() == fiok.property("alapSzelesseg")), (
+            f"a (nem látszó) könyvtári fiók nem érte el a végleges "
+            f"szélességét: {fiok.width():.0f}"
+        )
         panel = _elem(window, "viewerTagsPanel")
         assert _var(qt_app, lambda: panel.width() > 0 and kep.width() < elotte)
         assert abs((elotte - kep.width()) - panel.width()) <= 2, (
@@ -308,6 +322,10 @@ class TestANezoHelyetHagyAFioknak:
             f"{panel.width():.0f} px széles — nem egyezik"
         )
         _fiokot_urit(window, qt_app)
+        assert _var(qt_app, lambda: fiok.width() == 0), (
+            f"a (nem látszó) könyvtári fiók nem záródott végleg: "
+            f"{fiok.width():.0f}"
+        )
         assert _var(qt_app, lambda: abs(kep.width() - elotte) <= 1), (
             "a fiók bezárása után a kép nem kapta vissza a helyét"
         )
