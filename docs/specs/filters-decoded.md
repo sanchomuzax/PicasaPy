@@ -1031,7 +1031,7 @@ for (i = 0; i < 1024; i++) {
     t = sqrtf(i * (1.0f/1024.0f) * (1024.0f/r2));
     v = 0.5f + (1.0f/(1.0f - elesseg*0.99f)) * (t - 0.5f);
     v = 1.0f - clampf(v, 0.0f, 1.0f);
-    tabla[i] = lroundf((3.0f - 2.0f*v) * v * v * 255.0f);   // smoothstep
+    tabla[i] = trunc((3.0f - 2.0f*v) * v * v * 255.0f);   // smoothstep — CSONKOL (#3945; korábban tévesen lroundf)
 }
 ```
 
@@ -1068,6 +1068,46 @@ szorzó-tint, élesség 0). A 684-es golden ΔE-je Feather 0 / 0,25 / 1 mellett
 11,79 / 8,91 / 4,37 → **0,70 / 0,73 / 0,74**. A szorzó-tint osztása egész
 (padló): a goldenen jobb a kerekítésnél (0,70 vs 0,81), a natív osztás módja
 maga nincs kiolvasva.
+
+
+#### ⛳ A `radtint` munkafüggvénye kiolvasva — a tint SZÍNÉT keveri a fehér felé, és a sugaras tábla CSONKOL (2026-09-29, 407. kör, #3945)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, és a Picasa-exporttal bitre egyezik. Független újralevezetés (#3945): EGYEZIK, a saját emulációja 0 eltérő képponttal; kerekítő táblával 107–193 ezer. ⛔ A fenti „5. az átmeneti sávban lineáris keverés fut az eredeti és a szorzott kép között” és a táblaépítő `lroundf`-je TÉVES.*
+
+**A súlytábla csonkol** (`0x0090aeb0`): a `fistp` előtt `or eax, 0xc00` (`0x0090b01f`) a vezérlőszót csonkolásra állítja, tehát
+
+```
+tabla[i] = trunc( (3 − 2v)·v²·255 )          ; nem lroundf
+```
+
+Ez a tábla közös a `radblur`-ral és a `radsat`-tal (ld. ott).
+
+**A munkafüggvény** (`0x0090b370`), `t` a tint színe (`ffRRGGBB`), `w` a táblaelem:
+
+```
+cx = trunc(f32(W · x)),  cy = trunc(f32(H · y))           ; 0x0090b3f6, 0x0090b449 (or 0xc00 → csonkoló fistp)
+idx = ((X − cx)² + (Y − cy)²) >> shift                     ; 64 bites, 0x0090b4a0–0x0090b4fb
+idx > 0x3ff:   ki_c = (be_c · t_c) >> 8                      ; 0x0090b510–0x0090b55f
+különben:      t′_c = 255 − (((255 − t_c) · (256 − w)) >> 8)   ; 0x0090b566–0x0090b5b5, csomagolt ~/xor
+               ki_c = (be_c · t′_c) >> 8                     ; 0x0090b5c0–0x0090b5ff
+az alfa marad
+```
+
+A golden-párok `x = y = 0,5`-tel készültek, ahol csonkolás és kerekítés azonos középpontot ad — a középpont csonkolását a kód bizonyítja (`or 0xc00` a `fistp` előtt), a mérés nem választja szét.
+
+A maszk tehát nem a tintelt és az eredeti képet keveri, hanem **a tint színét húzza a fehér felé**, és a képet egyszer szorozza vele. A középen (`w = 255`) `t′ = 255`, azaz `ki = (be·255) >> 8`.
+
+**Mérve** (684-es mérőkészlet, a mi kimenetünket a Picasa-export saját kvantálótábláival tömörítve):
+
+| eset | a mai kód (képkeverés, `round` középpont, `rint` tábla) | kiolvasott munkafüggvény, `rint` tábla | **kiolvasott munkafüggvény, `trunc` tábla** |
+|---|---:|---:|---:|
+| `radtint__min` (Feather 0) | 0,231 | 0,156 | **0,000** |
+| `radtint__alap` (0,25) | 0,325 | 0,215 | **0,000** |
+| `radtint__max` (1,0) | 0,408 | 0,283 | **0,000** |
+
+A csonkoló tábla a közös maszkot használó másik két effektet is a zajszintre viszi: `radblur` alap/max 0,060/0,118 → 0,004/0,007, `radsat` alap 0,013 → 0,000. A fókuszos effektek (`focalbw`, `picnikfocalpixelate`, `focalzoom`) nem változnak.
+
+**Nálunk:** `render/tinting.py::apply_radtint` (képkeverés) és `render/radial_mask.py::radial_weight_table` (`np.rint`) → fejlesztés: #3946.
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 
@@ -2292,7 +2332,7 @@ for (i = 0; i < 1024; i++) {
     t = sqrtf(i / r2);                           // normalizált sugár (0…1)
     v = clampf(0.5f + k * (t - 0.5f), 0.0f, 1.0f);
     v = 1.0f - v;
-    tabla[i] = (uint8_t)lroundf((3.0f - 2.0f*v) * v * v * 255.0f);   // SMOOTHSTEP
+    tabla[i] = (uint8_t)trunc((3.0f - 2.0f*v) * v * v * 255.0f);   // SMOOTHSTEP — CSONKOL (#3945)
 }
 ```
 
