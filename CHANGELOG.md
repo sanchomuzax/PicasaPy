@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.614] – 2026-09-28
+
 ### Javítva
 - A Polaroid effekt képe és kerete most képpontra ott áll, ahol az eredeti
   Picasában, és az Árnyékvetés ferde szögeknél is az eredeti szerint tolja el
