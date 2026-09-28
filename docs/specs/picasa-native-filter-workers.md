@@ -1426,7 +1426,38 @@ csatorna-hiba a mért görbéhez):
 | −1,0 | **0,44** | 45,3 |
 
 Vagyis a burkoló által számolt `exp(szint)` a **gamma**, és a LUT-építő
-`1/gamma`-val emel hatványra (2.3) — pozitív csúszka világosít.
+`1/gamma`-val emel hatványra — pozitív csúszka világosít. ⛔ A tábla nem a 2.3-as szinthúzóé, hanem a `0x00aa40a0`-é (ld. 5.3/b, #3937).
+
+
+## 5.3/b ⛳ A `gamma` NEM a szinthúzón fut: 8 bites gamma-tábla (`0x00aa40a0`), kerekítve, dither nélkül (2026-09-28, 405. kör, #3937)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, és a Picasa-exporttal bitre egyezik. Független újralevezetés (#3937): EGYEZIK, a saját emulációja is bitpontos. Az 5.3 iránya (`exp(+szint)` a gamma, a kitevő `1/gamma`) áll; a „LUT-építő” azonban NEM a 2.3-as szinthúzó.*
+
+A burkoló (`0x008f8e30`) a képet a célba másolja (`0x008f8e5b` → `0x009aabf0`), a csúszkából `g = f32(exp(szint))`-et számol (`0x008f8e76` → `0x0040eac0`), és a **`0x00aa40a0`**-t hívja `(g, 0)` argumentummal (`0x008f8e83`) — ugyanazt a gamma-tábla építőt, amelyet a régi `glow` előgörbéje is használ (ld. `filters-decoded.md`, „A `glow` egész aritmetikája”).
+
+A `0x00aa40a0`:
+
+```
+invG = f32(1 / g)                                         ; 0x00aa40f3–0x00aa40f9
+LUT[i] = rint( f32( pow( f32(i · (1/255)), invG ) · 255 ) ) ; i = 0 … 255, fistp legközelebbire
+ki_c = LUT[be_c]                                          ; csatornánként, az alfa marad
+```
+
+- `[0xcf4138]` = 1/255 (double), `[0xcf39d0]` = 255,0, a hatványozó a `0x005568e0`, a tárolás `fstp dword` (float32) a `fistp` előtt (`0x00aa413b`–`0x00aa4143`);
+- **8 bites tábla, dither NINCS** (`0x00aa4195`–`0x00aa41b9` egyszerű táblázatos csere) — szemben a 2.2-es 16 bites, ditheres alkalmazóval;
+- két különleges ág: `g = 0` → a statikusan előre kitöltött `0xd32bd0` tábla; `g = 2,2` (`[0xcf3d18]`) → a lustán épített `0xd32cd0` gyorsítótár (az első bájt `0xff` = még nincs kész, `0x00aa40ee`). Minden más `g` helyi táblát épít, minden hívásnál újra. A `gamma` burkolónál egyik ág sem futhat: `exp(szint) > 0`, és a float32 `g` sosem egyenlő a double 2,2-vel.
+
+**Mérve** (684-es mérőkészlet; a kimenetünket a Picasa-export saját kvantálótábláival tömörítve):
+
+| állás | a mai kód (16 bites szinthúzó + dither) | **8 bites tábla (`0x00aa40a0`)** |
+|---|---:|---:|
+| alap (0,1618) | 0,271 | **0,000** |
+| max (1,0) | 0,259 | **0,000** |
+| min (−1,0) | 0,222 | **0,000** |
+
+A mai kód a bemeneti szintek kb. felén eggyel alacsonyabbat ad (a 16 bites tábla `v >> 8`-a lefelé csonkol, a natív 8 bites tábla kerekít). Tömörítés nélkül a mai kód 0,30–0,35-öt, a 8 bites tábla 0,15–0,17-et ad — ez utóbbi pontosan a zajszint.
+
+**Nálunk** (`render/native_tone.py::apply_gamma` → `apply_native_levels`): a 2.3-as szinthúzó → fejlesztés: #3939.
 
 ## 5.4 MEGOLDVA: az `shadow` súly-skálája
 
