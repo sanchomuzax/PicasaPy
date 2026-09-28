@@ -162,6 +162,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # `photoOpFinished`-re várnak: egy másik, később sorra kerülő jelzésen
     # érkező utómunka a várakozás UTÁN futna le — néma versenyhelyzet.
     _photoFieldUpdated = Signal(int, object, object)
+    #: #3830: a sikertelen írás hiba-utómunkája (hívható) — a GUI-szálon,
+    #: a `photoOpFailed` ELŐTT fut le (ugyanabból a szálból küldött, sorba
+    #: állított jelzések sorrendje megmarad), így a hibára váró hívó már a
+    #: kitakarított állapotot látja.
+    _photoWriteAborted = Signal(object)
     photoOpFailed = Signal(str)
     #: #1526: a SZÖVEG-vágólap tartalma változott — ettől él/szürkül a
     #: „Szöveg beillesztése" menütétel. A Qt vágólapjának `dataChanged`-jére
@@ -260,6 +265,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self._photoFieldUpdated.connect(self._on_photo_field_updated)
         self.photoOpFailed.connect(self._on_photo_write_failed)
         self._renameBatchDone.connect(self._on_rename_batch_done)
+        self._photoWriteAborted.connect(self._on_photo_write_aborted)
         #: #3830: az egyképes forgatás (`rotateRight`/`rotateLeft`) FUTÓ
         #: írásainak és a rájuk közben érkezett újabb célértékeknek a
         #: nyilvántartása — ld. `_apply_rotate`.
@@ -280,9 +286,16 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # fut — így a `photoOpFinished`-re váró hívó (QML, teszt) már a
         # végleges nézetet látja. `record is None` esetén is lefut: ha a kép
         # eltűnt az indexből, a nézetnek pláne frissülnie kell.
-        if after is not None:
-            after()
-        self.photoOpFinished.emit()
+        # #3830: ha az utómunka `True`-t ad, újabb írás indult a láncban
+        # (gyors egymás utáni forgatás) — a befejezés-jelzés majd a lánc
+        # VÉGÉN megy ki, különben a rá váró hívó félkész állapotot látna.
+        folytatodik = after() if after is not None else None
+        if folytatodik is not True:
+            self.photoOpFinished.emit()
+
+    @Slot(object)
+    def _on_photo_write_aborted(self, on_error) -> None:
+        on_error()
 
     def jelentsdAzIrasiHibat(self, error: BaseException | str) -> None:
         """Ini-írási hiba a LÁTHATÓ csatornán (#2506).
@@ -305,7 +318,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self.syncFailed.emit(message)
         self.photoOpFinished.emit()
 
-    def _run_photo_write(self, photo_id: int, perform, after=None) -> None:
+    def _run_photo_write(
+        self, photo_id: int, perform, after=None, on_error=None
+    ) -> None:
         """Ini/IPTC-írás (NAS: backup+temp+fsync) + célzott index-UPDATE
         háttérszálon (#141). A `perform()` a teljes lassú munkát végzi (fájl-
         írás + a {oszlop: érték} dict összeállítása), és teljes egészében a
@@ -314,8 +329,17 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         `after`: opcionális utómunka (#1443), amit a GUI-szálon, a rács-sor
         frissítése után hívunk. Írási hiba esetén NEM fut le — olyankor a
-        nézet tartalma sem változott."""
+        nézet tartalma sem változott. Ha `True`-t ad vissza, a
+        `photoOpFinished` elmarad (a hívó újabb írást indított, #3830).
+
+        `on_error`: opcionális hiba-utómunka (#3830) a GUI-szálon — a
+        várt írási hibánál (`_WRITE_ERRORS`) ÉS nem várt kivételnél is
+        lefut, hogy a hívó eldobhassa a függő állapotát."""
         self._ensure_photo_ops_wired()
+
+        def hiba_utomunka() -> None:
+            if on_error is not None:
+                self._photoWriteAborted.emit(on_error)
 
         def worker() -> None:
             try:
@@ -325,8 +349,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                         update_photo_fields(conn, photo_id, **fields)
                     record = photo_by_id(conn, photo_id)
             except _WRITE_ERRORS as error:
+                hiba_utomunka()
                 self.photoOpFailed.emit(str(error))
                 return
+            except BaseException:
+                hiba_utomunka()
+                raise
             self._photoFieldUpdated.emit(photo_id, record, after)
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
@@ -1252,8 +1280,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         #3830: az írás háttérszálon fut (`_run_photo_write`), a modell
         (`self._photos`) pedig csak a befejezéskor frissül. Egy GYORS
         második forgatás — mielőtt az első írás jelezne — a RÉGI
-        `photo.rotate_steps`-ből számolna, és elveszne (a Windows-CI lassú
-        gépén, vírusirtóval mért NAS-írásnál ez nem elméleti). Ezért a
+        `photo.rotate_steps`-ből számolna, és elveszne (lassú, NAS-ra vagy
+        vírusirtó mögé írásnál ez nem elméleti). Ezért a
         célértéket (`_rotate_target`) magunk tartjuk nyilván a fotó
         `id`-jére kulcsolva: a futó írásra érkező újabb kérés csak ezt
         frissíti, és a befejezés után (`after`) azonnal indul a következő
@@ -1286,15 +1314,33 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             update_document(ini_path, mutate, backup=True)
             return {"rotate_steps": steps}
 
-        def after() -> None:
-            self._rotate_running.discard(photo.id)
-            if self._rotate_target.get(photo.id) == steps:
-                del self._rotate_target[photo.id]
-            else:
-                # #3830: közben újabb forgatás érkezett — folytatjuk
-                self._start_rotate_write(photo)
+        photo_id = photo.id
 
-        self._run_photo_write(photo.id, perform, after=after)
+        def after() -> bool:
+            self._rotate_running.discard(photo_id)
+            cel = self._rotate_target.get(photo_id)
+            if cel is None or cel == steps:
+                self._rotate_target.pop(photo_id, None)
+                return False
+            # #3830: közben újabb forgatás érkezett — a FRISS rekorddal
+            # folytatjuk (a kép közben átnevezés/áthelyezés miatt
+            # megváltozhatott); ha kikerült a nézetből, a célérték elvész.
+            friss = next(
+                (p for p in self._photos.photos if p.id == photo_id), None
+            )
+            if friss is None:
+                self._rotate_target.pop(photo_id, None)
+                return False
+            self._start_rotate_write(friss)
+            return True
+
+        def on_error() -> None:
+            # #3830: a modellbeli (lemezre ténylegesen kiírt) érték marad az
+            # igazság — a függő célérték elvész, a kép újra forgatható
+            self._rotate_running.discard(photo_id)
+            self._rotate_target.pop(photo_id, None)
+
+        self._run_photo_write(photo_id, perform, after=after, on_error=on_error)
 
     # -- „Az összes effektus másolása/beillesztése" (#426) -------------------
 

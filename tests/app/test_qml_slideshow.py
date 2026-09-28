@@ -6,7 +6,12 @@ bekötése — a közös qml_app fixture-ön (Main.qml betöltve offscreen).
 """
 
 
+import threading
+from pathlib import Path
+
 from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer
+
+from support.qt_wait import varj_feltetelre
 
 #: #673: a videó-dekódolás mostantól a `cv2.CAP_FFMPEG` hátteret KÉNYSZERÍTI,
 #: ezért az OpenCV nem eshet vissza a GStreamerre — az a visszaesés vitte el
@@ -33,6 +38,21 @@ def _invoke(qt_app, obj, name, *args):
 def _start(window, qt_app, index=-1):
     _invoke(qt_app, window, "startSlideshow", index)
     return _child(window, "slideshowView")
+
+
+def _start_szunetelve(window, qt_app, index=-1):
+    """Diavetítés indítása, a léptető időzítő szüneteltetésével (#3830).
+
+    A `stepTimer` alapból 3 mp után a következő képre lép. A fotóművelet
+    befejeződésére váró eseményhurok ezt is lefuttatja, így a lassú
+    windowsos futón a második művelet már a MÁSIK képet érte (mérve:
+    `rotateAt(0)` 1 maradt, `rotateAt(1)` 3 lett). A művelet-tesztek a
+    műveletet mérik, nem a léptetést — ezért szüneteltetünk.
+    """
+    show = _start(window, qt_app, index)
+    show.setProperty("playing", False)
+    qt_app.processEvents()
+    return show
 
 
 def _wait_ms(qt_app, ms):
@@ -206,7 +226,7 @@ class TestSlideshowVideoSkip:
 class TestSlideshowActions:
     def test_rotate_during_show_writes_ini(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app
-        show = _start(window, qt_app, 0)
+        show = _start_szunetelve(window, qt_app, 0)
         _invoke_photo_op(qt_app, controller, show, "rotateCurrent", 1)
         assert controller.photos.rotateAt(0) == 1
         _invoke_photo_op(qt_app, controller, show, "rotateCurrent", -1)
@@ -215,11 +235,61 @@ class TestSlideshowActions:
 
     def test_star_during_show(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app
-        show = _start(window, qt_app, 0)
+        show = _start_szunetelve(window, qt_app, 0)
         _invoke_photo_op(qt_app, controller, show, "starCurrent")
         assert controller.photos.starAt(0) is True
         _invoke_photo_op(qt_app, controller, show, "starCurrent")
         assert controller.photos.starAt(0) is False
+        _invoke(qt_app, show, "stop")
+
+    def test_ket_gyors_forgatas_egyik_sem_veszik_el(
+        self, qml_app, qt_app, monkeypatch
+    ):
+        """#3830: a forgatás-gomb GYORS, egymást követő kattintása.
+
+        A `.picasa.ini`-írás háttérszálon fut (`_run_photo_write`, #141), a
+        modell csak a befejezéskor frissül. A második kattintás, ami az első
+        írás befejezése ELŐTT érkezik, korábban a RÉGI lépésszámból
+        számolt, és elveszett. A gomb SAJÁT `clicked` jelzésén át kattint (a
+        `test_csillag_belepesi_pontok_1438.py` mintája — egy elrontott kötés
+        csak így vált pirosra); az ini-írást egy `threading.Event` tartja
+        fel, így a második kattintás GARANTÁLTAN a futó írás alatt érkezik,
+        nem egy időzítéstől függő ablakban."""
+        from picasapy.app import photo_ops_controller as ops
+
+        window, controller, _lib, _engine = qml_app
+        show = _start_szunetelve(window, qt_app, 0)
+        assert show.property("currentIndex") == 0
+        assert controller.photos.rotateAt(0) == 0
+
+        eredeti_update_document = ops.update_document
+        engedd_tovabb = threading.Event()
+
+        def feltartott(*args, **kwargs):
+            engedd_tovabb.wait(30.0)
+            return eredeti_update_document(*args, **kwargs)
+
+        monkeypatch.setattr(ops, "update_document", feltartott)
+        gomb = _child(window, "slideshowRotateRightButton")
+        try:
+            # 1. kattintás: 0 -> 1, ELAKAD az ini-írásban; a 2. kattintáskor
+            # a modell MÉG 0-t mutat
+            for _ in range(2):
+                QMetaObject.invokeMethod(
+                    gomb, "clicked", Qt.ConnectionType.DirectConnection
+                )
+                qt_app.processEvents()
+        finally:
+            engedd_tovabb.set()
+
+        assert varj_feltetelre(
+            qt_app, lambda: controller.photos.rotateAt(0) == 2, 15.0
+        ), (
+            "két gyors '+1' forgatás után a lépésszámnak 2-nek kell "
+            "lennie — ha 1, a második kattintás elveszett (#3830)"
+        )
+        ini = Path(controller.photos.photos[0].folder_path) / ".picasa.ini"
+        assert "rotate(2)" in ini.read_text(encoding="utf-8").split("[a.jpg]")[1]
         _invoke(qt_app, show, "stop")
 
 
