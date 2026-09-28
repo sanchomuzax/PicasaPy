@@ -333,36 +333,43 @@ class TestBwTint:
     def test_semleges_szinnel_visszaadja_a_haeberli_lumat(self):
         """Ha `color` mindhárom csatornája egyenlő (pl. fehér), a súlyok a
         sima Haeberli-lumára egyszerűsödnek — nincs modulálás (a fixpontos
-        kvantálás (`>>9`, `>>2`) miatt csatornánként legfeljebb néhány
-        szintnyi eltéréssel a lebegőpontos lumához képest)."""
+        kvantálás (`>>9`, `>>2`) miatt csatornánként legfeljebb 1 szintnyi
+        eltéréssel a lebegőpontos lumához képest — mérve a legnagyobb
+        eltérés 1)."""
         rng = np.random.default_rng(4)
         img = rng.integers(0, 255, size=(8, 8, 3), dtype=np.uint8)
         result = g.bw_tint(img, (255, 255, 255))
         image_f = img.astype(np.float32)
         expected = g._haeberli_luma(image_f)
         np.testing.assert_allclose(
-            result[..., 0].astype(np.float32), np.clip(np.rint(expected), 0, 255), atol=2.0
+            result[..., 0].astype(np.float32), np.clip(np.rint(expected), 0, 255), atol=1.0
         )
 
     def test_holga_szinnel_a_nativ_egyutthatok_1080_853_115(self):
         """#3931 „Kész, ha": a `0xff6666` szűrőszínre a fixpontos
-        együtthatók pontosan `c = 1080 / 853 / 115` (a #3930 levezetése)."""
-        color = (255, 102, 102)
-        red_plane = np.zeros((1, 1, 3), dtype=np.uint8)
-        red_plane[0, 0, 0] = 255
-        green_plane = np.zeros((1, 1, 3), dtype=np.uint8)
-        green_plane[0, 0, 1] = 255
-        blue_plane = np.zeros((1, 1, 3), dtype=np.uint8)
-        blue_plane[0, 0, 2] = 255
+        együtthatók pontosan `c = 1080 / 853 / 115` (a #3930 levezetése).
 
-        # `Y = ((c·255) >> 9 + 2) >> 2` — a tiszta síkokból visszafejthető c:
-        # a képlet csak c többszöröseire monoton, ezért a végponti (255,0,0)
-        # stb. eseteket az alábbi teszt ellenőrzi közvetlenül a kerek
-        # pixelértékekkel; itt csak azt, hogy determinisztikus és a fenti
-        # súlyteszttel konzisztens (nem `float`, hanem egész kvantálás).
-        for plane in (red_plane, green_plane, blue_plane):
-            result = g.bw_tint(plane, color)
-            assert result[0, 0, 0] == result[0, 0, 1] == result[0, 0, 2]
+        A korábbi alak csak azt ellenőrizte, hogy egy tiszta csatornasíkon
+        `R = G = B` — az együtthatók számértékét sosem nézte meg, tehát egy
+        hibás `c` mellett is zöld maradt volna. Itt a `_bw_coefficients`
+        segédfüggvényt hívjuk közvetlenül (#3933 review)."""
+        assert g._bw_coefficients((255, 102, 102)) == (1080, 853, 115)
+
+    def test_fixpontos_kerekites_eltero_a_lebegopontostol(self):
+        """A fixpontos alkalmazó (`c = trunc(w·2048 + 0,5)`,
+        `Y = ((Σ c·x >> 9) + 2) >> 2`) NEM ugyanaz, mint a lebegőpontos
+        Haeberli-képlet (`rint(Σ w·x)`) — a teljes RGB-kockán 27%-ban
+        eltérnek (#3933 review). E két megkülönböztető képpont buktatná,
+        ha valaki a `bw_tint`-et lebegőpontosra írná vissza."""
+        color = (255, 102, 102)
+
+        pixel_98 = np.array([[[0, 0, 98]]], dtype=np.uint8)
+        result_98 = g.bw_tint(pixel_98, color)
+        assert int(result_98[0, 0, 0]) == 6
+
+        pixel_187 = np.array([[[0, 0, 187]]], dtype=np.uint8)
+        result_187 = g.bw_tint(pixel_187, color)
+        assert int(result_187[0, 0, 0]) == 11
 
     @pytest.mark.parametrize(
         ("rgb", "expected"),
