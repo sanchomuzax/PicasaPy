@@ -3519,3 +3519,53 @@ a két félbevágás már e szerint működik.
 - Melyik oldal kapja a szerkesztett képet, és hogyan dől el ütközéskor —
   az a #3014 `Confirm2up*` párbeszédéé, ami a #3187 lezárása után vehető
   fel.
+
+## ⛳ A Kiegyenesítés négyzethálója — csempézett bitkép a kép fölött, a kép középpontjához rögzítve (2026-09-28, 401. kör, #3922)
+
+*Bizonyítottsági fok: **megerősített** — erőforrás (`respack.yt`), utasításszint és két élő felvétel az eredeti angol 3.9.141-ről (Colab, picasa-colab-jobs #69, #70). Független újralevezetés (#3922): a bitkép, a keverés, a kapcsolás és a rajzoló EGYEZIK; a vonalak helyére a bíráló a kép középpontját adta — ezt a harmadik felvétel (#71) cáfolja, ld. lent.*
+
+**Mi rajzolja.** Nem vonalrajzolás: a `respack.yt` egy 44 × 44-es bitképét (`editpanel/#gridtile`, RLE, 648 bájt) egy csempéző elem (`ytTiledBitmapNode`) teríti szét. Az elrendezés (`editpanel.tre`):
+
+```
+editpanel/overlay_group: editpanel/previewimage    m_scaleXY            ; a kép maga
+editpanel/gridtileclip:  editpanel/overlay_group   m_scaleXY            ; kivágás = a kép
+editpanel/gridtilecont:  editpanel/gridtileclip    m_centerXY m_hidden  ; tbitmap(editpanel/#gridtile)
+                                                   usealpha 1           ; rétegtéglalap 498 × 306
+```
+
+**A csempe** (mind a 44 × 44 képpont kiolvasva; minden más képpont `(0,0,0,0)`):
+
+| hely | képpont (B,G,R premultiplikált, A) | minta a 0…43 indexen |
+|---|---|---|
+| 41. oszlop és 41. sor | `(128,128,128)`, A = 128 | `G..GGG..GGG..GGG..GGG..GGG..GGG..GGG..GGG.GG` |
+| 42. oszlop és 42. sor | `(0,0,0)`, A = 77 | `kk..kkk..kkk..kkk..kkk..kkk..kkk..kkk..kkG.k` |
+
+Egy szaggatott, 1 képpont széles szürke vonal (3 be, 2 ki, az utolsó szakasz a csempe szélén csonkul), és alatta / tőle jobbra egy képponttal eltolt, ugyanolyan szaggatású fekete árnyék. A cella **44 képernyőképpont**.
+
+**A keverés premultiplikált „over”** (`usealpha 1`; a csempéző blittere `0x009ab100`): forrásképpont `csempe[(y − y₀) mod 44][(x − x₀) mod 44]`, `k = 256 − A`, `ki = ((kép · k) >> 8) + csempe` csatornánként. Mérve (#69, 800 × 800, 1:1): a szürke vonal fekete képen 128, fehéren 255 (eltűnik), vörösön `(255,128,128)`; az árnyék fehéren 178, vörösön `(177,0,0)`, feketén 0 (eltűnik). A háló így minden képen látszik — sötéten a szürke vonal, világoson az árnyéka.
+
+**Mikor látszik.** Az eszközt megnyitó ág a nevet a `tilt` sztringhez hasonlítja (`0x005f875e` `cmp …, 0xc814ac` → `sete`), és ezt a jelzőt adja át a panelváltónak (`0x0057bb50`, 4. argumentum). Ott `0x0057bf9f` `cmp byte [ebp+0x14], 0` után a `gridtilecont` a `tool_container`, az `ok` és a `cancel` elemmel együtt megjelenik (`0x0057bfa9` → `0x009cd760`, `vtbl+0x6c`); az eszköz zárásakor, ha látható (`0x0057c186` → `0x009e39b0`), elrejtődik (`0x0057c194` → `0x009cd730`, `vtbl+0x68`). Más eszköz ezt az elemet nem kapcsolja. Mérve: a Mégse után és a következő képre lapozva (#70, 8–11. kép) nincs háló; ha nyitott eszköz mellett a → billentyű a következő képre lapoz, az eszköz bezárul, és ott sincs háló (#70/15).
+
+**Hol vannak a vonalak.** A csempéző rajzoló metódusa (`ytTiledBitmapNode` vtábla `0x00cda36c`, 17. hely = `0x00a66cc0`) az aktuális transzformáció két eltolás-tagját (`[+0x3c]`, `[+0x48]`) csonkolva (`0x00c29990`, `cvttsd2si`) teszi a csempe kezdőpontjává (`[+0x27c]`, `[+0x280]`), és a kivágásra terít. A kivágás a kép téglalapja **(−1, −1) képponttal eltolva** — mérve: #69-en a kép előtti 381. oszlopban már van háló (y = 111, 112, 155, …), a kép utolsó, 1181. oszlopában és 887. sorában nincs (a rács nélküli #70/8-cal képpontonként összevetve). Nagyítás a csempére nem hat: a metódus csak az eltolást olvassa, és a `tilt` szűrő amúgy is kitöltő nagyítást kér (`filterdesc.xml`: `<zoom forcefit="1"/>`).
+
+Mérve három képen (picasa-colab-jobs #69, #70, #71; ablak 1280 × 1005):
+
+| kép | a kép a képernyőn | szürke függőleges vonalak | szürke vízszintes vonalak |
+|---|---|---|---|
+| 800 × 800, 1:1 (#69, #70/6) | x 382…1181, y 88…887 | x = 397, 441, … 1145 (lépés 44) | y = 111, 155, … 815 |
+| 768 × 512, 1:1 (#70/12) | x 398…1165, y 232…743 | x = 441, 485, … 1145 | y = 243, 287, … 727 |
+| 1024 × 1024, kicsinyítve (#71/9) | x 378…1184, y 84…889 | x = 397, 441, … 1145 | y = 111, 155, … 815 |
+
+A vonalak mindhárom képen **ugyanazokon a képernyőpontokon** futnak, pedig a harmadik kép középpontja fél, illetve egy képponttal máshova esik. A háló tehát nem a kép kerekített helyéhez, hanem a **kép-terület** (a `previewimage`, amelyben a kép középre kerül) középpontjához igazodik. Ez a terület ebben az ablakban x 283…1279 (a bal panel széle `282`-ig, mérve), y 79…895 (az eszköztár alsó éle `78`-ig, a képaláírás-sáv `895`-től, mérve #70/15-ön) — közepe `(781,5; 487,5)`. A 498 × 306-os réteg bal felső sarka, csonkolva:
+
+```
+x₀ = trunc(781,5 − 249) = 532      y₀ = trunc(487,5 − 153) = 334
+szürke vonal:  x₀ + 41 + 44k = 441 + 44k (mod 44 egyezik)   y₀ + 41 + 44k = 111 + 44k
+árnyék:        +1 mindkét irányban
+```
+
+— mindhárom felvétellel képpontra egyezik. A szaggatás fázisa is a csempéé: a 441-es oszlopban y = 232-től `#..###..###` (#70/12), és a y = 232 a csempe 30. sora (a csempesorok `334 − 3·44 = 202`-től indulnak), a minta 30. helye pedig `G..GGG` kezdetű — egyezik.
+
+**Forgatás közben a háló ÁLL** (#70/6, a csúszka jobbra kattintva): a kép fordul el alatta, a vonalak vízszintesek és függőlegesek maradnak, ugyanazokon a képpontokon.
+
+**Nálunk:** a néző (`PhotoViewer.qml`) a Kiegyenesítés közben nem rajzol hálót → fejlesztés: #3924.
