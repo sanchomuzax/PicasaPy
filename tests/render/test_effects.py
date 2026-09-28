@@ -2,15 +2,20 @@
 mérési pontjai ellen (`docs/specs/filters-decoded.md`, 3–4. kör).
 
 Ahol van mért adat (Vignette-maszk, glow középemelés), ott ±1/255 a tűrés;
-a többi (radblur, radsat térbeli modellje) dokumentált közelítés, ott a
-tesztek a kvalitatív viselkedést rögzítik.
+a `radsat` a spec képpontonkénti alakjához bájtra egyezik (#3517), és a
+684-es Picasa-exporthoz is mérve van (lent, golden).
 """
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import numpy as np
 import pytest
 
+from picasapy.ini.filters import parse_filters
+from picasapy.render.chain import apply_filters
 from picasapy.render.effects import (
     GLOW_V1_INTENSITY,
     GLOW_V1_RADIUS,
@@ -26,6 +31,41 @@ def _uniform_image(
     value: int | tuple[int, int, int], height: int = 6, width: int = 8
 ) -> np.ndarray:
     return np.full((height, width, 3), value, dtype=np.uint8)
+
+
+def _radsat_referencia(
+    image: np.ndarray, x: float, y: float, size: float, sharpness: float
+) -> np.ndarray:
+    """Független, képpontonkénti átirat a `filters-decoded.md` „radsat —
+    TELJES" (#317) C-alakjából (`0x0090aeb0` tábla + `0x0090b660` mag)."""
+    import math
+
+    height, width = image.shape[:2]
+    r = min(width / 2.0, height / 2.0) * (size + 1.0)
+    r2 = r * r
+    shift = 0
+    while r2 > 1024.0:
+        r2 *= 0.5
+        shift += 1
+    k = 1.0 / (1.0 - 0.99 * math.sqrt(sharpness))
+    tabla = []
+    for i in range(1024):
+        t = math.sqrt(i / r2) if r2 > 0 else math.inf
+        v = 1.0 - min(max(0.5 + k * (t - 0.5), 0.0), 1.0)
+        tabla.append(round((3.0 - 2.0 * v) * v * v * 255.0))
+    cx, cy = round(width * x), round(height * y)
+    out = np.empty_like(image)
+    for py in range(height):
+        for px in range(width):
+            red, green, blue = (int(c) for c in image[py, px])
+            luma = (77 * red + 151 * green + 28 * blue) >> 8
+            idx = ((px - cx) ** 2 + (py - cy) ** 2) >> shift
+            if idx < 1024:
+                w = 256 - tabla[idx]
+                out[py, px] = [c + (((luma - c) * w) >> 8) for c in (red, green, blue)]
+            else:
+                out[py, px] = [luma, luma, luma]
+    return out
 
 
 class TestVignetteGain:
@@ -174,10 +214,16 @@ class TestApplyRadblur:
 
 
 class TestApplyRadsat:
+    """#3517: a `radsat` („Fókuszos FF") a `filters-decoded.md` „radsat —
+    TELJES" algoritmusa szerint számol (smoothstep-tábla, 77/151/28 luma,
+    fordulópont a sugár FELÉNÉL, a táblán túl teljes szürke)."""
+
     def test_kozeppont_telitettsege_megmarad(self) -> None:
+        # A középen a tábla 255, a súly tehát 1/256: legfeljebb egy szint.
         image = _uniform_image((200, 80, 80), height=41, width=41)
         result = apply_radsat(image, 0.5, 0.5, 0.4, 1.0)
-        np.testing.assert_array_equal(result[20, 20], image[20, 20])
+        diff = np.abs(result[20, 20].astype(int) - image[20, 20].astype(int))
+        assert int(diff.max()) <= 1
 
     def test_sarok_szurkul(self) -> None:
         image = _uniform_image((200, 80, 80), height=41, width=41)
@@ -185,16 +231,39 @@ class TestApplyRadsat:
         corner = result[0, 0]
         assert int(corner[0]) == int(corner[1]) == int(corner[2])
 
-    def test_sarok_lumaja_megmarad(self) -> None:
+    def test_sarok_lumaja_a_77_151_28_sulyokkal(self) -> None:
         image = _uniform_image((200, 80, 80), height=41, width=41)
         result = apply_radsat(image, 0.5, 0.5, 0.2, 1.0)
-        luma = 0.299 * 200 + 0.587 * 80 + 0.114 * 80
-        assert abs(int(result[0, 0, 0]) - round(luma)) <= 1
+        luma = (77 * 200 + 151 * 80 + 28 * 80) >> 8
+        assert int(result[0, 0, 0]) == luma
 
-    def test_nagy_sugar_identitas(self) -> None:
+    def test_maximum_allas_is_hat(self) -> None:
+        """A régi modell `méret = 1`-nél a teljes képet érintetlenül hagyta
+        (#3517 „max: nem hat"); az eredetiben a fordulópont a sugár felénél
+        van, tehát a sarok ott is szürke."""
         image = _uniform_image((200, 80, 80), height=21, width=21)
         result = apply_radsat(image, 0.5, 0.5, 1.0, 1.0)
-        np.testing.assert_array_equal(result, image)
+        corner = result[0, 0]
+        assert int(corner[0]) == int(corner[1]) == int(corner[2])
+
+    @pytest.mark.parametrize(
+        ("height", "width", "x", "y", "size", "sharpness"),
+        [
+            (23, 31, 0.5, 0.5, 0.0, 0.5),
+            (40, 70, 0.3, 0.6, 1.0, 1.0),
+            (37, 29, 0.5, 0.5, -1.0, 0.0),
+            (64, 48, 0.8, 0.2, 0.4, 0.25),
+        ],
+    )
+    def test_egyezik_a_spec_kepontonkenti_alakjaval(
+        self, height: int, width: int, x: float, y: float, size: float, sharpness: float
+    ) -> None:
+        rng = np.random.default_rng(3517)
+        image = rng.integers(0, 256, size=(height, width, 3), dtype=np.uint8)
+        np.testing.assert_array_equal(
+            apply_radsat(image, x, y, size, sharpness),
+            _radsat_referencia(image, x, y, size, sharpness),
+        )
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _uniform_image((150, 60, 40), height=15, width=15)
@@ -240,3 +309,51 @@ class TestApplyRadsat:
         horizontal_1_1 = result_1_1[150, 150 + distance]
 
         np.testing.assert_array_equal(horizontal_4_3, horizontal_1_1)
+
+
+# ---------------------------------------------------------------------------
+# #3517 — FEJLESZTŐI GÉPEN futó golden-mérés a 684-es készlet Picasa-
+# exportjával (`radsat__alap/max/min`); ha a készlet nincs a gépen, skip.
+# Mérve (CIE76 átlag-ΔE a Picasa-exporthoz, `analyze_validation_kit.mean_de`):
+#
+# | eset                 | előtte (régi közelítés) | utána (spec) |
+# |----------------------|------------------------:|-------------:|
+# | alap (méret 0; 0,5)  | 6,468                   | 0,082        |
+# | max  (méret 1; 1)    | 3,657 — nem hatott      | 0,128        |
+# | min  (méret −1; 0)   | 2,730                   | 0,034        |
+# ---------------------------------------------------------------------------
+
+# rontás-kontroll: az `apply_radsat` lumája 76/150/30-ra átírva → 6 failed
+# (a sarok-luma, mind a négy spec-egyezés és a golden `min`); az élesség
+# gyöke elhagyva → 3 failed (két spec-egyezés és a golden `alap`); a táblán
+# túl a kép érintetlenül hagyva → 4 failed (két spec-egyezés, a golden
+# `alap` és `min`).
+
+_KIT_684 = Path("/mnt/nas/My Pictures/684-merokeszlet")
+
+#: A mért érték + 0,05-ös tűrés.
+_RADSAT_TURES = 0.05
+
+_RADSAT_GOLDEN = [
+    ("alap", "radsat=1,0.500000,0.500000,0.000000,0.500000;", 0.082),
+    ("max", "radsat=1,0.500000,0.500000,1.000000,1.000000;", 0.128),
+    ("min", "radsat=1,0.500000,0.500000,-1.000000,0.000000;", 0.034),
+]
+
+
+@pytest.mark.parametrize(
+    ("eset", "lanc", "vart_de"), _RADSAT_GOLDEN, ids=[e[0] for e in _RADSAT_GOLDEN]
+)
+def test_radsat_golden_a_picasa_exporthoz(eset: str, lanc: str, vart_de: float) -> None:
+    forras_ut = _KIT_684 / f"radsat__{eset}.jpg"
+    export_ut = _KIT_684 / "export" / f"radsat__{eset}.jpg"
+    if not export_ut.is_file():
+        pytest.skip(f"a mérőkészlet nem elérhető: {export_ut}")
+    utvonal = str(Path(__file__).resolve().parents[2] / "tools" / "golden")
+    if utvonal not in sys.path:
+        sys.path.insert(0, utvonal)
+    from analyze_validation_kit import load, mean_de
+
+    kep = apply_filters(load(forras_ut), parse_filters(lanc)).image
+    de = mean_de(kep, load(export_ut))
+    assert de <= vart_de + _RADSAT_TURES, f"{eset}: ΔE {de:.3f} > {vart_de + _RADSAT_TURES:.3f}"

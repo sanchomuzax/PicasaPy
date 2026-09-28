@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Fókuszos FF” effekt most az eredeti Picasa szerint szürkíti a képet a
+  kiválasztott pont körül: alapállásban eddig jóval gyengébb volt, a
+  „Sugár” és az „Élesség” legnagyobb állásán pedig egyáltalán nem hatott
+  (a mért eltérés ΔE 2,7–6,5-ről 0,03–0,13-ra csökkent) (#3517).
+
 ## [0.8.614] – 2026-09-28
 
 ### Javítva

@@ -54,8 +54,8 @@ def native_radius_pixels(width: int, height: int, size: float) -> float:
     Ez a KÖZÖS natív függvény adja a `radblur` ÉS a `radsat` sugarát is —
     IZOTRÓP, a kép RÖVIDEBB oldalához méretezve, nem tengelyenként. A
     `radblur` ezen a függvényen át kapja a sugarát (`radial_weight_table`),
-    a `radsat`-nak (`render/effects.py: apply_radsat`) UGYANEZT a
-    segédfüggvényt kell hívnia — így a két effekt nem mondhat ellent
+    a `radsat` (`render/effects.py: apply_radsat`) szintén a
+    `radial_weight_table`-on át — így a két effekt nem mondhat ellent
     egymásnak.
     """
     return min(width, height) / 2.0 * (float(size) + 1.0)
@@ -64,11 +64,9 @@ def native_radius_pixels(width: int, height: int, size: float) -> float:
 def pixel_distance_grid(height: int, width: int, x: float, y: float) -> np.ndarray:
     """Izotróp képpont-távolság az (x, y) középponttól, NYERS képpontban.
 
-    A `radblur` a súlytáblához négyzetes (egész aritmetikás) alakban méri
-    ugyanezt (`_squared_distance`); a `radsat` (`render/effects.py`) ezt a
-    float alakot hívja közvetlenül, mert nem indexel táblát. Mindkettő
-    egyaránt PIXELBEN, tengelyek közt torzítás nélkül számol (#859) — ez a
-    lényeg, nem a bitpontos egyezés a natív egész-aritmetikával.
+    A `radblur` és a `radsat` a súlytáblához négyzetes (egész aritmetikás)
+    alakban méri ugyanezt (`squared_distance_index`); ez a float alak
+    PIXELBEN, tengelyek közt torzítás nélkül számol (#859).
     """
     center_x = width * float(x)
     center_y = height * float(y)
@@ -102,15 +100,23 @@ def radial_weight_table(
     return table.astype(np.int64), shift
 
 
-def _squared_distance(
+def squared_distance_index(
     width: int, height: int, x: float, y: float, shift: int
 ) -> np.ndarray:
-    """A natív `idx = (dx² + dy²) >> shift` rács (egész aritmetikával)."""
+    """A natív `idx = (dx² + dy²) >> shift` rács (egész aritmetikával).
+
+    A középpont `round(W·x)`, `round(H·y)`. A `radblur` keverése és a
+    `radsat` magja (`0x0090b660`) egyaránt így indexeli a súlytáblát.
+    """
     center_x = round(width * float(x))
     center_y = round(height * float(y))
     columns = (np.arange(width, dtype=np.int64) - center_x) ** 2
     rows = (np.arange(height, dtype=np.int64) - center_y) ** 2
     return (rows[:, np.newaxis] + columns[np.newaxis, :]) >> shift
+
+
+#: A #926 őre ezen a néven hívja.
+_squared_distance = squared_distance_index
 
 
 def apply_radial_mask(
@@ -161,4 +167,5 @@ __all__ = [
     "native_radius_pixels",
     "pixel_distance_grid",
     "radial_weight_table",
+    "squared_distance_index",
 ]
