@@ -5474,6 +5474,12 @@ A callback emellett egy feltételes, egyképpontos színtranszformációt (`[ctx
 
 Fejlesztés: #3902.
 
+✅ **Megvalósítva** (#3902, 2026-09-28): a `render/dir_tint.py` a teljes
+`(alfa << 24) | RGB` dwordot hasonlítja `0x00FFFFFF`-hez; a lánc az ini
+színének alfa-bájtját is átadja, szín nélkül a konstruktor `0xFF`-je fut.
+Mérve a 684-es készleten (ΔE a Picasa-exporthoz, előtte → utána):
+alap 0,321 → **0,170**, max 0,318 → **0,199**, min 0,296 → **0,121**.
+
 ### A tónusgörbe-LUT (`0x0090ecd0`, 200 b) — 256 × `uint16`
 
 ```asm

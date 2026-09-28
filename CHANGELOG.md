@@ -7,6 +7,32 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.628] – 2026-09-28
+
+### Javítva
+- A négy régi, színkerekes effekt („Árnyalás (régi)”, „Szűrt FF”,
+  „Színátmenet”, „Sugaras árnyalás”) PicasaPy-ban beállított színe most
+  pontosan úgy mentődik, ahogy a Picasa menti. Ettől a PicasaPy-ban
+  beállított fehér „Színátmenet” a Picasában és nálunk is ugyanúgy, egy
+  árnyalatnyit sötétít — eddig a Picasa az így mentett effektet
+  sötétítés nélkül mutatta (#3908).
+- A Picasában fehér színnel beállított „Színátmenet” effekt a PicasaPy-ban
+  is úgy jelenik meg, mint az eredetiben: a színezett részen egy
+  árnyalatnyit sötétít, így a kép pontosabban egyezik az eredeti
+  exportjával (#3902).
+
+## [0.8.627] – 2026-09-28
+
+### Javítva
+- A néző a közvetlenül fájlból betöltött képeket (az elő-betöltők, és a
+  kép, amíg nincs szerkesztési előnézete) a valódi méretükből számolva
+  tölti be, legfeljebb 2560 képpontos élekkel és soha nem az eredetinél
+  nagyobban — eddig egy álló telefonfotó 2560×4551-es textúrát kapott, a
+  videokártya 4096-os plafonja fölött, egy kis kép pedig 2560 szélesre
+  nagyítódott (ugyanaz a hiba, amit a #3832 a diavetítésben javított).
+  Kettős nézetre váltáskor a kép egyszer töltődik be, nem kétszer-háromszor
+  (#3877).
+
 ### Javítva
 - A Lágy fókusz a kép szélén annyira mos el, mint az eredeti Picasa: eddig
   kissé gyengébben mosott (a mért eltérés ΔE 0,64-ről 0,33-ra, a legerősebb
