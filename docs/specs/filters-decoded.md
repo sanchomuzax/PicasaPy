@@ -387,7 +387,7 @@ floatot (`p`). A munkavégző a `0x0090a720`:
 **Nálunk** (`render/ops.py`, #3846): a natív út. A `tilt_scale` a sarok-képlet
 (a 2. paramétert a lánc sem olvassa), a `tilt_matrix` a fenti `M`
 képpontközepes koordinátában, az `apply_tilt` pedig a Polaroiddal közös
-`_fixpontos_bilinearis` mintavevővel forgat (`render/glimmer_frame_ops.py`).
+`fixpontos_bilinearis` mintavevővel forgat (`render/fixpontos_mintavevo.py`).
 A leképezés (`render/op_geometry.py`) ugyanebből a mátrixból számol,
 képpont-indexre átváltva. A javítás előtt `cv2.getRotationMatrix2D` volt a
 `(W/2, H/2)` középponttal, egész képpont-konvencióval — ez fél képpontot

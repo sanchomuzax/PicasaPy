@@ -148,13 +148,13 @@ class TestApplyTilt:
         assert tilt_scale(szeles, magas, 0.0) == 1.0
 
     def test_a_polaroiddal_kozos_fixpontos_mintavevot_hasznalja(self) -> None:
-        """Képpontra ugyanaz, mint a `_fixpontos_bilinearis` a natív
+        """Képpontra ugyanaz, mint a `fixpontos_bilinearis` a natív
         mátrixszal — nem saját mintavevő."""
-        from picasapy.render.glimmer_frame_ops import _fixpontos_bilinearis
+        from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
 
         rng = np.random.default_rng(3846)
         image = rng.integers(0, 256, (48, 64, 3), dtype=np.uint8)
-        varhato = _fixpontos_bilinearis(image, tilt_matrix(64, 48, 0.2), 64, 48, (0, 0, 0))
+        varhato = fixpontos_bilinearis(image, tilt_matrix(64, 48, 0.2), 64, 48, (0, 0, 0))
         np.testing.assert_array_equal(apply_tilt(image, angle=0.2), varhato)
 
     def test_a_gyors_elonezeti_ut_ugyanazt_a_matrixot_hasznalja(self) -> None:

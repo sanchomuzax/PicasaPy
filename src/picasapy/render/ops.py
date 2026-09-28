@@ -46,7 +46,7 @@ from picasapy.render.curves import (
     lut_ramp,
     validate_image,
 )
-from picasapy.render.glimmer_frame_ops import _fixpontos_bilinearis
+from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
 
 _REDEYE_DOMINANCE_RATIO = 1.4
 _REDEYE_MIN_RED = 60
@@ -118,7 +118,7 @@ def tilt_matrix(width: int, height: int, angle: float) -> tuple[float, ...]:
 
     `M = T(W/2, H/2) · R(θ) · S(s) · T(−W/2, −H/2)`, `R = [[c, −s_θ], [s_θ,
     c]]`, `s = tilt_scale(...)`. KÉPPONTKÖZEPES koordinátában értendő: a cél
-    `(x + 0,5, y + 0,5)` pontját vetíti a forrásba (a `_fixpontos_bilinearis`
+    `(x + 0,5, y + 0,5)` pontját vetíti a forrásba (a `fixpontos_bilinearis`
     konvenciója) — a középpont `W/2`, `H/2`, egész felezés nélkül. Az OpenCV
     egész-képpont konvenciója ugyanezzel a középponttal fél képpontot tolt.
     Kimenet: `(m0, m1, m2, m3, m4, m5)`, `u = m0·x + m1·y + m2`.
@@ -164,7 +164,7 @@ def apply_tilt(image: np.ndarray, angle: float, *, gyors: bool = False) -> np.nd
             flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
             borderMode=cv2.BORDER_REPLICATE,
         )
-    return _fixpontos_bilinearis(image, matrix, width, height, (0, 0, 0))
+    return fixpontos_bilinearis(image, matrix, width, height, (0, 0, 0))
 
 
 def _levels_clip_threshold(pixel_count: int) -> int:

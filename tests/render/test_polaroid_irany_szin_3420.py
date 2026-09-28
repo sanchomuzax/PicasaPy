@@ -210,7 +210,8 @@ class TestKeppontkozepesForgatas:
 
 
 def _regi_numpy_mintavevo(image, matrix, cel_w, cel_h, border_color):
-    """A #3809-es, numpy-s `_fixpontos_bilinearis` VÁLTOZATLANUL — a #3846
+    """A #3809-es, numpy-s `_fixpontos_bilinearis` (akkor még a
+    `glimmer_frame_ops`-ban) VÁLTOZATLANUL — a #3846
     gyorsított (`cv2.remap` + `cv2.multiply`) alakjának referenciája."""
     m0, m1, m2, m3, m4, m5 = matrix
     src_h, src_w = image.shape[:2]
@@ -239,7 +240,51 @@ def _regi_numpy_mintavevo(image, matrix, cel_w, cel_h, border_color):
 # rontás-kontroll (#3846, a gyors mintavevő): a `_lerp8` floor helyett
 # kerekítéssel (`+ 128`) → 26 failed; a remap-ág x/y eltolása felcserélve →
 # 29 failed; a numpy-s (32 767 fölötti) gyűjtő ág `x1`-e `ix + 1` helyett
-# `ix` → 1 failed (a kényszerített ág próbája). Ellenőrizve lefuttatva.
+# `ix` → 1 failed (a kényszerített ág próbája). A sávolás: ha a sáv
+# sorindexe minden sávban 0-ról indul (`arange(0, utolso − elso)`) → 9
+# failed (a hat sávos próba és a nagy képes goldenek); ha eggyel elcsúszik
+# (`arange(elso + 1, …)`) → 39 failed. Ellenőrizve lefuttatva.
+
+
+class TestSavosMintavevo:
+    """#3846: a mintavevő `_SAV_SOROK` soros sávokban dolgozik (a csúcsmemória
+    így egy sávnyi). A sávhatár nem látszhat: 3 soros sávval a kimenet bitre
+    ugyanaz, mint egyetlen sávval és mint a régi numpy-s referencia."""
+
+    @staticmethod
+    def _harom_modon(monkeypatch, kep, m, cw, ch, szin):
+        from picasapy.render import fixpontos_mintavevo
+
+        monkeypatch.setattr(fixpontos_mintavevo, "_SAV_SOROK", 1_000_000)
+        egyben = fixpontos_mintavevo.fixpontos_bilinearis(kep, m, cw, ch, szin)
+        monkeypatch.setattr(fixpontos_mintavevo, "_SAV_SOROK", 3)
+        savos = fixpontos_mintavevo.fixpontos_bilinearis(kep, m, cw, ch, szin)
+        return egyben, savos, _regi_numpy_mintavevo(kep, m, cw, ch, szin)
+
+    @pytest.mark.parametrize(("cel_w", "cel_h"), [(41, 37), (40, 30), (29, 4), (33, 2)])
+    def test_nem_oszthato_magassag_es_kilogo_vaszon(self, monkeypatch, cel_w, cel_h):
+        kep = _veletlen(31, 27, seed=cel_h)
+        c, s = math.cos(0.4), math.sin(0.4)
+        m = (c, s, 13.5 - c * cel_w / 2 - s * cel_h / 2, -s, c, 15.5 + s * cel_w / 2 - c * cel_h / 2)
+        egyben, savos, regi = self._harom_modon(monkeypatch, kep, m, cel_w, cel_h, (9, 8, 7))
+        np.testing.assert_array_equal(savos, egyben)
+        np.testing.assert_array_equal(savos, regi)
+
+    def test_egy_soros_kep_es_egy_soros_cel(self, monkeypatch):
+        kep = _veletlen(1, 23, seed=4)
+        m = (0.93, 0.0, 0.8, 0.0, 1.0, 0.0)
+        egyben, savos, regi = self._harom_modon(monkeypatch, kep, m, 25, 1, (1, 1, 1))
+        np.testing.assert_array_equal(savos, egyben)
+        np.testing.assert_array_equal(savos, regi)
+
+    def test_a_kiegyenesites_savosan(self, monkeypatch):
+        from picasapy.render.ops import tilt_matrix
+
+        kep = _veletlen(47, 64, seed=6)
+        m = tilt_matrix(64, 47, 0.2)
+        egyben, savos, regi = self._harom_modon(monkeypatch, kep, m, 64, 47, (0, 0, 0))
+        np.testing.assert_array_equal(savos, egyben)
+        np.testing.assert_array_equal(savos, regi)
 
 
 class TestGyorsMintavevoBitreAzonos:
@@ -251,7 +296,7 @@ class TestGyorsMintavevoBitreAzonos:
     def test_kiloge_vaszonnal(self, szog, magas, szeles):
         """A `rotate_with_pad` mátrixa: a vászon nagyobb, a sarkok kilógnak
         (a kitöltő szín és a perem egy képpontos sávja is szerepel)."""
-        from picasapy.render.glimmer_frame_ops import _fixpontos_bilinearis
+        from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
 
         kep = _veletlen(magas, szeles, seed=int(abs(szog) * 10) + magas)
         rad = math.radians(szog)
@@ -261,43 +306,43 @@ class TestGyorsMintavevoBitreAzonos:
         m = (c, s, szeles / 2 - c * cw / 2 - s * ch / 2,
              -s, c, magas / 2 + s * cw / 2 - c * ch / 2)
         np.testing.assert_array_equal(
-            _fixpontos_bilinearis(kep, m, cw, ch, (226, 1, 77)),
+            fixpontos_bilinearis(kep, m, cw, ch, (226, 1, 77)),
             _regi_numpy_mintavevo(kep, m, cw, ch, (226, 1, 77)),
         )
 
     @pytest.mark.parametrize("p", [1.0, -1.0, 0.37, -0.05])
     def test_a_kiegyenesites_matrixaval(self, p):
-        from picasapy.render.glimmer_frame_ops import _fixpontos_bilinearis
+        from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
         from picasapy.render.ops import tilt_matrix
 
         kep = _veletlen(64, 96, seed=5)
         m = tilt_matrix(96, 64, 0.2 * p)
         np.testing.assert_array_equal(
-            _fixpontos_bilinearis(kep, m, 96, 64, (0, 0, 0)),
+            fixpontos_bilinearis(kep, m, 96, 64, (0, 0, 0)),
             _regi_numpy_mintavevo(kep, m, 96, 64, (0, 0, 0)),
         )
 
     def test_nagyitas_es_kicsinyites_skalaval(self):
         """Nem csak forgatás: skálázó és nyíró mátrix is bitre azonos."""
-        from picasapy.render.glimmer_frame_ops import _fixpontos_bilinearis
+        from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
 
         kep = _veletlen(50, 70, seed=9)
         for m in ((0.37, 0.11, 3.3, -0.08, 0.52, 7.9), (1.9, -0.4, -12.0, 0.3, 2.2, -20.5)):
             np.testing.assert_array_equal(
-                _fixpontos_bilinearis(kep, m, 88, 61, (5, 6, 7)),
+                fixpontos_bilinearis(kep, m, 88, 61, (5, 6, 7)),
                 _regi_numpy_mintavevo(kep, m, 88, 61, (5, 6, 7)),
             )
 
     def test_a_remap_korlatja_folott_a_numpy_gyujtes_ugyanaz(self, monkeypatch):
         """A `cv2.remap` csak 32 767 képpont alatt fut; a fölötti ág (numpy-s
         gyűjtés) is bitre azonos — itt a határt lecsökkentve kényszerítjük."""
-        from picasapy.render import glimmer_frame_ops
+        from picasapy.render import fixpontos_mintavevo
 
         kep = _veletlen(40, 60, seed=21)
         m = (0.9, 0.2, 1.5, -0.2, 0.9, 9.0)
-        gyors = glimmer_frame_ops._fixpontos_bilinearis(kep, m, 66, 47, (1, 2, 3))
-        monkeypatch.setattr(glimmer_frame_ops, "_REMAP_HATAR", 0)
-        numpys = glimmer_frame_ops._fixpontos_bilinearis(kep, m, 66, 47, (1, 2, 3))
+        gyors = fixpontos_mintavevo.fixpontos_bilinearis(kep, m, 66, 47, (1, 2, 3))
+        monkeypatch.setattr(fixpontos_mintavevo, "_REMAP_HATAR", 0)
+        numpys = fixpontos_mintavevo.fixpontos_bilinearis(kep, m, 66, 47, (1, 2, 3))
         np.testing.assert_array_equal(numpys, gyors)
         np.testing.assert_array_equal(gyors, _regi_numpy_mintavevo(kep, m, 66, 47, (1, 2, 3)))
 
