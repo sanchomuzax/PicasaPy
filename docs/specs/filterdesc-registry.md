@@ -2534,9 +2534,11 @@ a Sobel-válasz osztója a 128-as eltolás előtt (`4,0`), és a 10. lépés
 keverési módja (`multiply` és `darken` egyaránt illeszkedik — a fehér alap
 mellett gyakorlatilag megkülönböztethetetlenek).
 
-A `quality="2"` a Flash `BitmapFilterQuality` szerint az elmosás
+~~A `quality="2"` a Flash `BitmapFilterQuality` szerint az elmosás
 átfutásainak száma (4.5): két menet egy 2 képpont széles dobozszűrőből
-pontosan a `[1, 2, 1]/4` háromszög-mag.
+pontosan a `[1, 2, 1]/4` háromszög-mag.~~ → **helyesbítve** (#3812): a
+`quality` valóban menetszám, de a menet a natív, tört súlyú dobozszűrő
+(`nativ_blur`), nem 2 képpont széles doboz; ld. a következő szakaszt.
 
 #### ⭐ `EdgeDetectionB` — a „mérésből illesztett” tényezők a binárisból, és a natív elmosás (2026-09-27, 383. kör, #626)
 
@@ -2585,7 +2587,15 @@ exportja 4:4:4-es JPEG; a saját kimenetünk 95-ös minőségű, 4:4:4-es JPEG-j
 JPEG-zajával egy nagyságrendben van. A `Neon` záró `Tint`-je már a natív
 táblát használja (#3631).
 
-Fejlesztés: #3812.
+**Nálunk (MÉRVE, #3812 után):** a `render/glimmer_edges.edge_detection_b`
+az 1. lépésben a `nativ_blur.blur_image_operation(kép, 2.0, 2.0, quality=2)`-t
+hívja, a Sobelt egész aritmetikával számolja (`(512 + Σ) // 4`, a peremen
+ismétlődő képponttal, `[0, 255]`-re vágva), a 10. lépésben az 5-ös
+(Multiply) móddal kever. A `Neon` alap a 684-es készleten **ΔE 0,493**
+(előtte 1,967), a `Neon` max (`Fade 100`) 0,121 (változatlan). Az egész és
+a lebegőpontos Sobel ezen a képen ΔE-ben nem válik el (mindkettő 0,493),
+de bitre eltér: a `−2`-es összeg `floor`-ral 127, kerekítve 128 lenne. Őr:
+`tests/render/test_neon_878.py` (független referencia + golden).
 
 #### `TintImageOperation` — FÉNYESSÉG-TARTÓ színezés (2026-08-17, #878)
 
