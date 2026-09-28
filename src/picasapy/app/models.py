@@ -912,6 +912,21 @@ class PhotoGridModel(QAbstractListModel):
             return 0
         return int(self._megjelenitett(row)[1] or 0)
 
+    @Slot(int, result=bool)
+    def pixelSidesSwappedAt(self, row: int) -> bool:
+        """Az EXIF-orientáció felcseréli-e a kép oldalait (5–8 állás) — #3832.
+
+        A diavetítés a `sourceSize`-t a megjelenített méretből számolja, de
+        a Qt fájlbetöltője (`PreserveAspectFit` + `autoTransform`) a kért
+        méretet a fájlban TÁROLT tájolásra alkalmazza (mérve: egy 6-os
+        állású, 5333×3000-es képnek 1440×2560-at kérve 2560×4551 jött
+        vissza, 2560×1440-et kérve a helyes 1440×2560). Ehhez kell tudnia,
+        hogy a kettő mikor tér el."""
+        if not 0 <= row < len(self._photos):
+            return False
+        allas = getattr(self._photos[row], "orientation", None)
+        return megjelenitett_meret(1, 2, allas) == (2, 1)
+
     @Slot(int, result=str)
     def idAt(self, row: int) -> str:
         """A sor fotó-azonosítója — az EditController/editpreview kulcsa."""

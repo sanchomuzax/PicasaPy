@@ -47,13 +47,14 @@ import logging
 from urllib.parse import parse_qs, unquote
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.app.display_mode_paint import (
     DISPLAY_MODE_QUERY_KEY,
     apply_display_mode_to_qimage,
 )
+from picasapy.render.display_modes import display_mode_changes_pixels
 
 _log = logging.getLogger(__name__)
 
@@ -88,25 +89,72 @@ class DisplayPhotoProvider(QQuickImageProvider):
 
     def requestImage(self, id: str, size, requestedSize) -> QImage:  # noqa: A002
         utvonal, mod = _szetszed(id)
-        kep = QImage(utvonal)
+        # #3832: az EXIF-orientációt ALKALMAZNI kell — a sima `QImage(út)`
+        # nem teszi (mérve: egy 6-os állású álló kép a Projektor módú
+        # diavetítésben fekve, 1440×810-en jelent meg), a Qt pedig a
+        # szolgáltató képét nem forgatja utólag. A nyers `file://` út ezt az
+        # `autoTransform`-mal kapja meg; a QML a méretet is a megjelenített
+        # tájolásban kéri (`SlideshowView.forrasMeret`).
+        olvaso = QImageReader(utvonal)
+        olvaso.setAutoTransform(True)
+        kep = olvaso.read()
         if kep.isNull():
             # A hívónak a Qt `Error` státuszt ad; a diavetítés ilyenkor a
             # következő képre lép — ez ugyanaz, mint a nyers fájl útján.
             _log.warning("a diavetítés képe nem tölthető be: %s", utvonal)
             return QImage()
+        # #3832: képpontot mozdító módban (a szín a KIRAJZOLT képpontokon
+        # dől el, ld. `apply_display_mode_to_qimage`) a jelölésnek a
+        # TÉNYLEGES, méretezett képen kell megtörténnie — natív méreten
+        # jelölve a kirajzolás nyújtaná szét a jelölőszínt a szomszédokba
+        # (ugyanaz az elv, mint `edit_preview.EditPreviewProvider
+        # .requestImage`-ben, #3819).
+        jelol = display_mode_changes_pixels(mod)
         if requestedSize is not None and requestedSize.width() > 0:
             # ⚠️ A `mode=1` NEM működik (mérve: `ValueError: … called with
             # wrong argument values` a QML-hívásban, #1640) — a PySide az
             # enumot várja. A hiba csak a QML-úton jött elő: az egységpróba
             # `None` méretet adott át, tehát ez az ág méretlen volt.
-            kep = kep.scaledToWidth(
-                requestedSize.width(), Qt.TransformationMode.SmoothTransformation
-            )
+            width, height = requestedSize.width(), requestedSize.height()
+            # #3832: a kért méret befoglaló doboz — a kép mindkét éle
+            # belefér (a régi, feltétel nélküli `scaledToWidth` egy 9:16-os,
+            # legalább 2560 széles telefonfotót 2560×4551-esre nyújtott, a
+            # V3D 4096-os textúraplafonja fölé).
+            #
+            # Jelölő módban a méretezés akkor is megtörténik, ha a kép már
+            # belefér, hogy a jelölés a VÉGLEGES képpontrácson történjen —
+            # ezért egy kis kép a dobozra NAGYÍTÓDIK. A diavetítés ezt
+            # kerüli el: ismert képméretnél a PONTOS, natívnál nem nagyobb
+            # méretet kéri (`SlideshowView.forrasMeret`), tehát itt csak
+            # kicsinyítés történik; felnagyítás csak ismeretlen méretű
+            # képnél (2560-as doboz) marad.
+            #
+            # ⚠️ A „belefér, nem méretezünk" ág a diavetítésből NEM
+            # érhető el: a `displayUrlAt` csak képpontot mozdító módnál ad
+            # `displayphoto` URL-t, tehát ott a `jelol` mindig igaz. Az ág
+            # a szolgáltató saját szerződése (nem jelölő mód → nincs
+            # fölösleges méretezés), más hívónak és az egységpróbának.
+            if not (_belefer(kep, width, height) and not jelol):
+                smooth = Qt.TransformationMode.SmoothTransformation
+                if width > 0 and height > 0:
+                    kep = kep.scaled(requestedSize, Qt.AspectRatioMode.KeepAspectRatio, smooth)
+                elif width > 0:
+                    kep = kep.scaledToWidth(width, smooth)
+                elif height > 0:
+                    kep = kep.scaledToHeight(height, smooth)
         kep = apply_display_mode_to_qimage(kep, mod)
         if size is not None:
             size.setWidth(kep.width())
             size.setHeight(kep.height())
         return kep
+
+
+def _belefer(image: QImage, width: int, height: int) -> bool:
+    """A kép a kért (`0` = korlátlan) dobozba már méretezés nélkül is
+    belefér (#3832, ld. `edit_preview._belefer`)."""
+    return (width <= 0 or image.width() <= width) and (
+        height <= 0 or image.height() <= height
+    )
 
 
 __all__ = ["PROVIDER_NAME", "DisplayPhotoProvider"]

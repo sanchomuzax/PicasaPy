@@ -180,3 +180,114 @@ class TestAKirajzoltDia:
             "a módból kilépve a festetlen képnek kell visszajönnie: "
             f"{sorted(szinek)[:4]}"
         )
+
+
+# -- #3832: a futó diavetítés forrásmérete ------------------------------------
+#
+# A betöltött `sourceSize` és a kapott kép (`implicitWidth/Height`) a VALÓDI
+# képméretből: a 2560-as dobozba illő, legfeljebb natív méret. A valódi GPU-s
+# párja (a textúra a V3D-n + a kirajzolt szín): `test_gpu_finetune_fokusz_3755
+# .TestValodiGpuDiavetites`.
+#
+# rontás-kontroll: a `forrasMeret`-ből az oldalcserét kivéve mód nélkül az
+# EXIF-es kép BUKIK (1440×2560 helyett 2560×4551); a `_betolt`-ból a forrás
+# előzetes ürítését kivéve a `test_lepeskor_nincs_rossz_paru_betoltes` BUKIK
+# (1440×1080 és 168×300 is szerepel a kérések között); az elő-betöltő
+# `fillMode`-ja nélkül ugyanez BUKIK (a képek újra kérve). A szolgáltatóban a
+# `QImageReader` helyett `QImage(út)`-tal a `test_az_EXIF_orientaciot_alkalmazza`
+# BUKIK. Lefuttatva 2026-09-28-án.
+
+#: név → (a fájlban tárolt méret, EXIF-állás)
+_FORRAS_KEPEK = {
+    "a.jpg": ((400, 300), None),
+    "b.jpg": ((1440, 2560), None),
+    "c.jpg": ((3000, 5333), None),
+    "d.jpg": ((5333, 3000), 6),  # megjelenítve 3000×5333
+}
+#: a megjelenített, 2560-as dobozba illő, natívnál nem nagyobb kép
+_FORRAS_VART = {
+    "a.jpg": (400, 300),
+    "b.jpg": (1440, 2560),
+    "c.jpg": (1440, 2560),
+    "d.jpg": (1440, 2560),
+}
+
+
+def _forras_kepek(lib) -> None:
+    from PIL import Image as PilImage
+
+    for nev, ((szel, mag), allas) in _FORRAS_KEPEK.items():
+        exif = PilImage.Exif()
+        if allas:
+            exif[0x0112] = allas
+        PilImage.new("RGB", (szel, mag), (200, 200, 200)).save(
+            lib / nev, quality=90, exif=exif.tobytes()
+        )
+
+
+@pytest.fixture
+def forras_diavetites(qt_app, tmp_path, monkeypatch):
+    """Négy különböző méretű kép + a `displayphoto` szolgáltató kéréseinek
+    naplója (a kapott, még festetlen kép mérete)."""
+    import picasapy.app.display_photo_provider as szolgaltato
+    from tests.app.qml_functional.conftest import _build_qml_app
+
+    naplo = []
+    eredeti = szolgaltato.apply_display_mode_to_qimage
+
+    def _naplozo(kep, mod):
+        naplo.append((kep.width(), kep.height()))
+        return eredeti(kep, mod)
+
+    monkeypatch.setattr(szolgaltato, "apply_display_mode_to_qimage", _naplozo)
+    for window, _controller, _engine in _build_qml_app(
+        qt_app, tmp_path, kepeket_keszit=_forras_kepek
+    ):
+        yield window, naplo
+
+
+def _indit_es_meri(window, qt_app, mod: str) -> dict:
+    if mod:
+        _kattint(window, mod)
+        qt_app.processEvents()
+    QMetaObject.invokeMethod(
+        window, "startSlideshow", Qt.ConnectionType.DirectConnection,
+        Q_ARG("QVariant", 0),
+    )
+    show = _child(window, "slideshowView")
+    show.setProperty("playing", False)
+    modell = show.property("photosModel")
+    dia = _child(window, "slideshowImage")
+    mert = {}
+    for nev in _FORRAS_KEPEK:
+        sor = next(i for i in range(modell.rowCount())
+                   if modell.filePathAt(i).endswith("/" + nev))
+        show.setProperty("currentIndex", sor)
+        qt_app.processEvents()
+        mert[nev] = (int(dia.property("implicitWidth")),
+                     int(dia.property("implicitHeight")))
+    return mert
+
+
+class TestAForrasmeret:
+    @pytest.mark.parametrize("mod", ["", TETEL_PROJEKTOR])
+    def test_a_dobozba_illo_nativnal_nem_nagyobb(
+        self, forras_diavetites, qt_app, mod
+    ) -> None:
+        window, _naplo = forras_diavetites
+        mert = _indit_es_meri(window, qt_app, mod)
+        assert mert == _FORRAS_VART, f"{mod or 'mód nélkül'}: {mert}"
+
+    def test_lepeskor_nincs_rossz_paru_betoltes(
+        self, forras_diavetites, qt_app
+    ) -> None:
+        """A dia forrását és forrásméretét EGYÜTT írjuk: két külön kötésnél
+        a Qt lépéskor a rossz párral is betöltött (a régi kép az új mérettel
+        vagy fordítva), és az elő-betöltő eltérő `fillMode`-ja miatt a
+        gyorstár sem talált."""
+        window, naplo = forras_diavetites
+        _indit_es_meri(window, qt_app, TETEL_PROJEKTOR)
+        rossz = [m for m in naplo if m not in _FORRAS_VART.values()]
+        assert not rossz, f"rossz párú betöltés: {naplo}"
+        # az első kép + képenként legfeljebb egy (elő-)betöltés
+        assert len(naplo) <= len(_FORRAS_KEPEK) + 1, naplo
