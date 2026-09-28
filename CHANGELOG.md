@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A „Polaroid” effekt előnézete a csúszka húzása közben most jóval gyorsabb
+  (a forgatás a gyors mintavevőre vált, ahogy a Kiegyenesítésnél is) —
+  mentéskor, exportkor és a bélyegképnél a kép változatlanul az eredeti,
+  pontos módszerrel készül (#3862).
+
 - A „Kiegyenesítés” csúszkájának billentyűs léptetése (`+`/`-`) eddig nem
   mentette a szöget a képre lapozásig vagy bezárásig — most az
   egérelengedéssel azonos módon azonnal ír; ugyanez a javítás érinti a

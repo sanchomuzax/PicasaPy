@@ -112,13 +112,17 @@ def apply_museum_matte(
     return add_ring(glowed_outer, outer_thickness, outer_color)
 
 
-def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2)):
+def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2), *, gyors: bool = False):
     """`Polaroid=1,Rotate,szín` — négyzetes középvágás → aszimmetrikus
     FEHÉR keret (oldalt 6,45%, fent 9,68%, lent 25,8% a négyzet oldalából)
     → vetett árnyék (`distance 3`, `angle = 90−Rotate`, `blur 8`,
     `shadowAlpha 0,4`, háttér: `szín`) → `padBorder` forgatás `Rotate`
     `[-10..10]` fokkal, pozitívnál az óramutató járása szerint, a sarkokban
     `szín` kitöltéssel.
+
+    `gyors=True` (#3862): a záró forgatás a `rotate_with_pad` gyors útját
+    választja — CSAK a Rotate-csúszka húzása közbeni élő előnézetnek, ld.
+    ott a docsztringet.
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -149,7 +153,7 @@ def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2)):
         fade=60.0,
         pads=pads,
     )
-    return rotate_with_pad(shadowed, rotate, color)
+    return rotate_with_pad(shadowed, rotate, color, gyors=gyors)
 
 
 __all__ = [

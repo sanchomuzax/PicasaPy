@@ -20,7 +20,7 @@ from picasapy.render import glimmer_focal as focal
 from picasapy.render import glimmer_frames as frames
 from picasapy.render import glimmer_tone as tone
 from picasapy.render.dinamikus_csuszka import dinamikus_csuszka_ertek, fel_rovidebb_el, felirat_maximum
-from picasapy.render.elonezeti_arany import skalazott_vastagsag
+from picasapy.render.elonezeti_arany import gyors_elonezet_aktiv, skalazott_vastagsag
 from picasapy.render.tinting import parse_rgb_hex
 
 
@@ -260,8 +260,14 @@ def apply_museum_matte_op(image, op: FilterOp):
 
 
 def apply_polaroid_op(image, op: FilterOp):
+    # #3862: húzás közben (`EditController.previewEffect`, a `previewTilt`
+    # mintájára) a Rotate a gyors mintavevővel fut; Alkalmaz/mentés/export/
+    # bélyegkép a blokkon kívül, natívan.
     return frames.apply_polaroid(
-        image, rotate=_float_at(op, 0, 5.0), color=_color_at(op, 1, (0xE2, 0xE2, 0xE2))
+        image,
+        rotate=_float_at(op, 0, 5.0),
+        color=_color_at(op, 1, (0xE2, 0xE2, 0xE2)),
+        gyors=gyors_elonezet_aktiv(),
     )
 
 
