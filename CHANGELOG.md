@@ -7,6 +7,36 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.626] – 2026-09-28
+
+### Javítva
+- A Telítettség csúszka balra húzva (a szürkítés felé) úgy számol, mint az
+  eredeti Picasa: a teljesen szürkére húzott kép mért eltérése ΔE 0,35-ről
+  0,04-re csökkent (#3889).
+
+- A „Lágyítás” 0-s erősségnél is úgy hat, mint az eredeti Picasában: a kép
+  nem fekete képpontjai eggyel sötétebbek lesznek (eddig változatlanok
+  maradtak; a mért eltérés ΔE 0,47-ről 0,12-re csökkent) (#3895).
+
+## [0.8.625] – 2026-09-28
+
+### Javítva
+- A Fókuszos nagyítás elmosása most az eredeti Picasa módszerével készül:
+  a nagyított képeket egymás után, éles képpontokkal keveri rá a fotóra,
+  az eredeti apró, négyképpontos mintázatával együtt. A kép ettől szinte
+  pontosan olyan lett, mint a Picasában (eddig láthatóan eltért tőle). A
+  csúszka húzása közben az előnézet egy gyorsabb, szemre alig eltérő
+  változattal fut; mentéskor és exportkor az eredeti módszer (#3884).
+
+## [0.8.624] – 2026-09-28
+
+### Javítva
+- A diavetítés most a látott képet követi, ha vetítés közben változik a
+  képek listája: egy másik kép törlésekor vagy a mappa újraolvasásakor
+  átrendezett sorrendnél ugyanaz a kép marad látható, áttűnés nélkül; ha
+  maga a látott kép törlődik, a következő fotóra lép (az utolsó kép után az
+  elsőre, mint a léptetésnél), üres könyvtárnál pedig leáll (#3881).
+
 ### Javítva
 - A néző a közvetlenül fájlból betöltött képeket (az elő-betöltők, és a
   kép, amíg nincs szerkesztési előnézete) a valódi méretükből számolva

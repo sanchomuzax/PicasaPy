@@ -73,6 +73,20 @@ vec3 applyPositiveSaturation(vec3 toned, float strength) {
     return clamp(normalized / 255.0, 0.0, 1.0);
 }
 
+// A `sat` NEGATÍV ága (#3889): a natív mag (picasapy.render.color.
+// _apply_negative_saturation) egész lumája és egész keverése —
+// L = (2R + 5G + B + 4) >> 3, ki = L + (((c - L) * k) >> 8), k = floor(256*gain).
+// Minden tag egész értékű float, így a floor() pontosan az aritmetikai
+// eltolás. numpy-mása: gpu_point_pipeline.simulate_negative_saturation_shader.
+const vec3 NEGATIVE_SAT_LUMA_WEIGHTS = vec3(2.0, 5.0, 1.0);
+
+vec3 applyNegativeSaturation(vec3 toned, float gain) {
+    vec3 channel255 = floor(toned * 255.0 + 0.5);
+    float luma = floor((dot(channel255, NEGATIVE_SAT_LUMA_WEIGHTS) + 4.0) / 8.0);
+    float k = floor(256.0 * gain);
+    return (vec3(luma) + floor((channel255 - vec3(luma)) * k / 256.0)) / 255.0;
+}
+
 void main() {
     vec4 color = texture(source, qt_TexCoord0);
 
@@ -91,13 +105,8 @@ void main() {
         // POZITÍV ág: csatornánkénti gamma, NEM erősítés (ld. fent)
         saturated = applyPositiveSaturation(toned, satPositiveStrength);
     } else {
-        // NEGATÍV ág (és az azonosság): luma-tartó skalár erősítés
-        // (picasapy.render.color.apply_saturation negatív ága:
-        // ki = luma + gain*(be - luma))
-        float luma = dot(toned, LUMA_WEIGHTS);
-        saturated = mix(vec3(luma), toned, satGain);
-        // (a fenti mix ekvivalens: luma + satGain*(toned-luma), mert
-        // mix(a,b,t) = a + t*(b-a); itt a=luma, b=toned, t=satGain)
+        // NEGATÍV ág (és az azonosság): a natív egész luma-keverés (#3889)
+        saturated = applyNegativeSaturation(toned, satGain);
     }
 
     // 3) fekete-fehér keverés (picasapy.render.color.apply_bw: Rec.601 luma

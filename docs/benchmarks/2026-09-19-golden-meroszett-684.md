@@ -96,3 +96,47 @@ a kérés is számolt vele („a hiányzó kép is eredmény").
   csúszkaállást mér, nem a teljes tartományt.
 * A méret-eltérés (`dropshadow`) külön súlyos: ott nem a színek térnek el,
   hanem a kimenet GEOMETRIÁJA.
+
+## Az eltolódás-szabály után (#3895)
+
+*Mérve 2026-09-28-án, ugyanazon a 180 láncon.* Az elemző új szabályt kapott:
+a „tétlen” sor átlagos **előjeles** eltolódása (`mean_shift`, szintben) sem
+érheti el a `SHIFT_LEVEL = 0,25`-öt, különben a sor művelet, akkor is, ha a
+ΔE 1 alatt marad. A küszöb indoka: a JPEG-újratömörítés zaja előjelesen
+kiegyenlítődik (≤ 0,003), a legkisebb valódi jel a `dir_tint__min` −0,50-e.
+A szett legnagyobb küszöb alatti eltolódása 0,12
+(`picnikfocalpixelate__min`, a Picasánál és nálunk egyformán).
+
+„Előtte” = a `main` elemzője és renderje (`562c571d`); „utána” = a #3895-ös
+ág (elemző + a Lágyítás 0-s erősségű keverése).
+
+| verdikt | előtte | utána |
+|---|---:|---:|
+| `JO` | 113 | 115 |
+| `MINDKETTO_TETLEN` | 56 | 53 |
+| `KOZELITO` | 10 | 10 |
+| `NEM_IMPLEMENTALT` | 0 | **1** |
+| `HIANYZO_EXPORT` | 1 | 1 |
+
+**Az átforduló sorok — mind a három:**
+
+| sor | előtte | utána | ΔE Picasa↔eredeti | ΔE mi↔Picasa (előtte → utána) | eltolódás Picasa / mi (utána) |
+|---|---|---|---:|---:|---:|
+| `soften__min` | `MINDKETTO_TETLEN` | `JO` | 0,470 | 0,470 → 0,121 | −0,996 / −0,999 |
+| `roundededges__alap` | `MINDKETTO_TETLEN` | `JO` | 0,935 | 0,143 → 0,143 | +2,096 / +2,080 |
+| `dir_tint__min` | `MINDKETTO_TETLEN` | **`NEM_IMPLEMENTALT`** | 0,296 | 0,296 → 0,296 | −0,498 / 0,000 |
+
+* A `soften__min` a #3895 javítása: a Picasa −1-es keverését most mi is
+  elvégezzük.
+* A `roundededges__alap`-nál a sarkok fehérje mindkét oldalon ugyanúgy
+  világosít (+2,1 szint): a sor eddig rejtetten volt jó, most látszik, hogy az.
+  Nem `FOLOSLEGES`, mert a Picasa is ugyanannyit mozdít.
+* A `dir_tint__min` **eddig rejtett eltérés.** A Picasa-export felső fele
+  (az átmenet vonala, `y = 0,5` fölött) pontosan eggyel sötétebb (sávátlag
+  −0,995), az alsó fele változatlan (−0,001); érték szerint 0 → 0,08,
+  1 → 0,03, 2 → 1,00, 128 → 127,62 — a `soften__min`-ből ismert
+  `(255·b) >> 8` minta. A mi renderünk a bemenet másolata (ΔE 0,000). Egy
+  0,5-ös küszöb ezt a sort (−0,498) épp nem fogta volna meg.
+
+A 0,5-ös és a 0,25-ös küszöb között a szett egyetlen sorban tér el: a
+`dir_tint__min`-ben.

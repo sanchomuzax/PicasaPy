@@ -67,8 +67,17 @@ class TestSoften:
     def test_hatarok(self, image, impact, fade):
         _assert_valid(a.apply_soften(image, impact=impact, fade=fade), image.shape)
 
-    def test_impact_0_valtozatlan(self, image):
-        np.testing.assert_array_equal(a.apply_soften(image, impact=0.0), image)
+    @pytest.mark.parametrize("be,ki", [(0, 0), (1, 0), (2, 1), (128, 127), (255, 254)])
+    def test_impact_0_fade_0_eggyel_sotetit(self, be, ki):
+        """#3895/#3894: 0-s sugárnál az elmosás azonosság, de a natív egész
+        keverés (`α = 0,8`, `w = 203`) lefut: `(255·b) >> 8` → `b − 1`, a 0
+        marad 0."""
+        kep = np.full((3, 5, 3), be, dtype=np.uint8)
+        np.testing.assert_array_equal(a.apply_soften(kep, impact=0.0, fade=0.0), np.full_like(kep, ki))
+
+    def test_impact_0_fade_100_valtozatlan(self, image):
+        """`α ≈ 0` → a végrehajtó a keverést kihagyja: a bemenet marad."""
+        np.testing.assert_array_equal(a.apply_soften(image, impact=0.0, fade=100.0), image)
 
 
 class TestPixelate:
