@@ -116,6 +116,94 @@ class TestEditorWiring:
         ini_text = ini_path.read_text(encoding="utf-8")
         assert "filters=tilt=1,0.300000,0.000000;" in ini_text
 
+    def test_tilt_keyboard_step_commits_like_mouse_release(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#3865: a `+`/`-` billentyűs léptetés az egérelengedéssel azonos
+        módon véglegesítsen. Korábban a `csuszkaElengedve` (és vele a
+        `setTilt`) csak a `pressed` váltásán tüzelt; a billentyű a
+        `pressed`-hez sosem nyúlt, ezért a szög billentyűvel sosem íródott
+        ki a `.picasa.ini`-be."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("tiltActive", True)
+        qt_app.processEvents()
+        slider = window.findChild(QObject, "tiltSlider")
+        assert slider is not None, "tiltSlider nem található"
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+
+        slider.setProperty("focus", True)
+        qt_app.processEvents()
+        assert slider.property("activeFocus") is True, (
+            "a csúszka nem kapott fókuszt — a mérés nem érvényes"
+        )
+
+        QTest.keyClick(window, Qt.Key.Key_Plus)
+        qt_app.processEvents()
+
+        assert ini_path.exists(), (
+            "a billentyűs léptetés nem írt .picasa.ini-t — az "
+            "egérelengedéssel azonos módon kellene véglegesítenie"
+        )
+        ini_text = ini_path.read_text(encoding="utf-8")
+        assert "filters=tilt=1,0.040000,0.000000;" in ini_text
+
+    def test_tilt_keyboard_step_then_cancel_restores_opening_value(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#3865, „Kész, ha" 2. pontja: billentyűs léptetés után az Alkalmaz
+        a szöget kiírja (fentebb mérve), a Mégse pedig visszaáll — ehhez a
+        Mégse-nek látnia kell, hogy a billentyű ÍRT, különben a
+        `tiltParam !== tiltErtekNyitaskor` őr sosem üt be."""
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+        from PySide6.QtTest import QTest
+
+        window, _, _ = qml_app
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+        ini_path.write_text(
+            "[a.jpg]\nfilters=tilt=1,0.100000,0.000000;\n", encoding="utf-8"
+        )
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        QMetaObject.invokeMethod(
+            panel,
+            "handleToolClick",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "tilt"),
+        )
+        qt_app.processEvents()
+        slider = window.findChild(QObject, "tiltSlider")
+        assert slider is not None, "tiltSlider nem található"
+        assert slider.property("value") == pytest.approx(0.1)
+
+        slider.setProperty("focus", True)
+        qt_app.processEvents()
+        assert slider.property("activeFocus") is True
+
+        QTest.keyClick(window, Qt.Key.Key_Plus)
+        qt_app.processEvents()
+        assert "filters=tilt=1,0.140000,0.000000;" in ini_path.read_text(
+            encoding="utf-8"
+        ), "a billentyűs léptetés nem írta ki az új szöget"
+
+        cancel_button = window.findChild(QObject, "tiltCancelButton")
+        assert cancel_button is not None, "tiltCancelButton nem található"
+        QMetaObject.invokeMethod(
+            cancel_button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        ini_text = ini_path.read_text(encoding="utf-8")
+        assert "filters=tilt=1,0.100000,0.000000;" in ini_text, (
+            "a Mégse nem állította vissza a nyitáskori szöget a billentyűs "
+            "léptetés után"
+        )
+        assert panel.property("tiltActive") is False
+
     def test_tilt_tool_opens_with_saved_value_not_zero(
         self, qml_app, qt_app, tmp_path
     ):

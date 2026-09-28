@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Kiegyenesítés” csúszkájának billentyűs léptetése (`+`/`-`) eddig nem
+  mentette a szöget a képre lapozásig vagy bezárásig — most az
+  egérelengedéssel azonos módon azonnal ír; ugyanez a javítás érinti a
+  Finomhangolás és a Gyakori javítások fülének Kitöltő fény, Kiemelések,
+  Árnyékok és Színhőmérséklet csúszkáját is (#3865).
+
 ## [0.8.620] – 2026-09-28
 
 ### Javítva

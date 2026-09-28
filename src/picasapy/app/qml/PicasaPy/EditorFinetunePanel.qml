@@ -137,7 +137,8 @@ ColumnLayout {
         from: 0; to: 1; value: 0
         // #337: a Gyakori javítások fülön lévő párjával közös állapot
         onValueChanged: panel.fillLightMoved(value)
-        onPressedChanged: if (!pressed) panel.fillLightCommitted()
+        //: #3865: ld. az `EditorTabCommonFixes.qml` párja
+        onVeglegesult: panel.fillLightCommitted()
     }
 
     // --- Kiemelések + Árnyékok, jobbra a megvilágítás-pálcával ------------
@@ -165,7 +166,8 @@ ColumnLayout {
                 from: 0; to: 0.48; value: 0
                 onValueChanged: if (!panel.suppressFinetune)
                     panel.emitFinetunePreview()
-                onPressedChanged: if (!pressed) panel.emitFinetuneCommit()
+                //: #3865: ld. a Kitöltő fény párja fentebb
+                onVeglegesult: panel.emitFinetuneCommit()
             }
 
             SliderCaption { text: qsTr("Shadows") }
@@ -181,7 +183,8 @@ ColumnLayout {
                 from: 0; to: 0.48; value: 0
                 onValueChanged: if (!panel.suppressFinetune)
                     panel.emitFinetunePreview()
-                onPressedChanged: if (!pressed) panel.emitFinetuneCommit()
+                //: #3865: ld. a Kitöltő fény párja fentebb
+                onVeglegesult: panel.emitFinetuneCommit()
             }
         }
 
@@ -206,7 +209,8 @@ ColumnLayout {
         Layout.leftMargin: finetunePanel.csuszkaEltolas
         from: -1; to: 1; value: 0
         onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
-        onPressedChanged: if (!pressed) panel.emitFinetuneCommit()
+        //: #3865: ld. a Kitöltő fény párja fentebb
+        onVeglegesult: panel.emitFinetuneCommit()
     }
 
     // --- Alapszínválasztás: színminta + pipetta, jobbra a szín-pálcával ---

@@ -213,7 +213,10 @@ ColumnLayout {
                 Layout.preferredHeight: 27
                 from: 0; to: 1; value: 0
                 onValueChanged: panel.fillLightMoved(value)
-                onPressedChanged: if (!pressed) panel.fillLightCommitted()
+                //: #3865: a `veglegesult` az egérelengedéssel ÉS a
+                //: billentyűs léptetéssel is tüzel — a `pressed`-re épülő
+                //: korábbi kezelő a billentyűt sosem érte el.
+                onVeglegesult: panel.fillLightCommitted()
             }
         }
     }

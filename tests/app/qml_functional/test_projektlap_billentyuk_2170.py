@@ -314,3 +314,61 @@ class TestACsuszkaLeptetesELOBEN:
         assert _wait_for(
             qt_app, lambda: abs(elem.property("value") - 0.04) < 1e-6
         ), f"a `+` billentyű nem léptetett (érték: {elem.property('value')})"
+
+    # ------------------------------------------------------------------
+    # #3865 — a billentyűs léptetés az EGÉRELENGEDÉSSEL azonos módon
+    # véglegesítsen. A `PicasaSlider`-t használó eszköztár-sáv és
+    # finomhangoló csúszkák a `pressed` váltásán véglegesítettek
+    # (`onPressedChanged: if (!pressed) …`) — ez a húzás VÉGÉT jelzi, de a
+    # billentyűs lépés a `pressed`-hez sosem nyúl, ezért a Kiegyenesítés
+    # szöge (és a vele azonos mintájú finomhangoló-csúszkák) billentyűvel
+    # sosem íródott ki. Ez a KÖZÖS `veglegesult` jel — ez a pont, amire a
+    # hívóknak fel kell iratkozniuk a `pressed`-re épülő, billentyűt
+    # kihagyó minta helyett.
+    # ------------------------------------------------------------------
+
+    def test_a_leptetes_veglegesit(self, csuszka):
+        elem, _view_, qt_app = csuszka
+        latott = []
+        elem.veglegesult.connect(lambda ertek: latott.append(round(ertek, 3)))
+
+        elem.leptesd(1)
+        qt_app.processEvents()
+
+        assert latott == [0.04], (
+            "a `leptesd()` (a billentyűs léptetés törzse) nem adott "
+            "`veglegesult` jelet — az egérelengedéssel egyező "
+            "véglegesítés emiatt marad el billentyűnél"
+        )
+
+    def test_az_egerelengedes_is_veglegesit(self, csuszka):
+        """A régi `pressed`-alapú út ne romoljon el: az elengedés
+        továbbra is véglegesít, csak most a közös jelen keresztül."""
+        elem, _view_, qt_app = csuszka
+        latott = []
+        elem.veglegesult.connect(lambda ertek: latott.append(round(ertek, 3)))
+
+        elem.setProperty("value", 0.25)
+        elem.setProperty("pressed", True)
+        qt_app.processEvents()
+        assert latott == [], "lenyomáskor még nem véglegesítünk"
+
+        elem.setProperty("pressed", False)
+        qt_app.processEvents()
+
+        assert latott == [0.25]
+
+    def test_a_valodi_BILLENTYU_is_veglegesit(self, csuszka):
+        """A teljes lánc: fókusz → valódi `QTest.keyClick` → `veglegesult`."""
+        elem, view, qt_app = csuszka
+        assert _wait_for(qt_app, view.isActive)
+        latott = []
+        elem.veglegesult.connect(lambda ertek: latott.append(round(ertek, 3)))
+
+        elem.setProperty("focus", True)
+        qt_app.processEvents()
+        QTest.keyClick(view, Qt.Key.Key_Plus)
+
+        assert _wait_for(qt_app, lambda: latott == [0.04]), (
+            f"a `+` billentyű nem adott `veglegesult` jelet (látott: {latott})"
+        )

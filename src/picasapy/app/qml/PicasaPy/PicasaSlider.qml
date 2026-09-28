@@ -61,7 +61,21 @@ Slider {
         var uj = control.value + irany * control.billentyuLepes
         control.value = Math.max(control.from, Math.min(control.to, uj))
         control.moved()
+        // #3865: a billentyűs léptetés az EGÉRELENGEDÉSSEL azonos módon
+        // véglegesít — a billentyű sosem érinti a `pressed`-et, tehát az
+        // arra épülő véglegesítés (lásd lejjebb) nélküle sosem tüzelne.
+        control.veglegesult(control.value)
     }
+
+    // #3865: a HASZNÁLÓK eddig a `pressed` váltásán véglegesítettek
+    // (`onPressedChanged: if (!pressed) …`) — ez a húzás VÉGÉT jelzi, de a
+    // billentyűs léptetés a `pressed`-hez sosem nyúl, ezért nála a
+    // véglegesítés (pl. `.picasa.ini`-be írás) elmaradt. Ez a jel a KÖZÖS
+    // véglegesítés-pont: egér-elengedéskor (lent) ÉS billentyűs lépésnél
+    // (`leptesd()`) egyaránt tüzel — a hívók erre iratkoznak fel, nem
+    // közvetlenül a `pressed`-re.
+    signal veglegesult(real ertek)
+    onPressedChanged: if (!control.pressed) control.veglegesult(control.value)
 
     //: a léptetés a FÓKUSZBAN lévő csúszkára hat — enélkül a billentyű
     //: sosem ér célba
