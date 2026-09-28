@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Lágyítás” 0-s erősségnél is úgy hat, mint az eredeti Picasában: a kép
+  nem fekete képpontjai eggyel sötétebbek lesznek (eddig változatlanok
+  maradtak; a mért eltérés ΔE 0,47-ről 0,12-re csökkent) (#3895).
+
 ## [0.8.625] – 2026-09-28
 
 ### Javítva

@@ -116,3 +116,61 @@ def test_nincs_ketszer_ugyanaz_a_lanc(kit):
     _, rows, _ = kit
     chains = [row["lanc"] for row in rows]
     assert len(chains) == len(set(chains))
+
+
+def _load_analyzer():
+    sys.path.insert(0, str(REPO / "tools/golden"))
+    path = REPO / "tools/golden/analyze_validation_kit.py"
+    spec = importlib.util.spec_from_file_location("analyze_validation_kit", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_az_egyenletes_egyszintes_eltolodas_nem_tetlen():
+    """#3895: a `soften__min` exportja minden csatornán pontosan eggyel
+    sötétebb (ΔE ≈ 0,47 < `NOOP_DE`). Ez valódi művelet, nem JPEG-zaj — az
+    elemző nem sorolhatja „mindkettő tétlennek", különben elrejti, hogy
+    nálunk hiányzik."""
+    import numpy as np
+
+    module = _load_analyzer()
+    rng = np.random.default_rng(3895)
+    source = rng.integers(20, 235, size=(32, 48, 3), dtype=np.uint8)
+    darker = (source - 1).astype(np.uint8)
+    assert module.mean_de(source, darker) < module.NOOP_DE
+    shift = module.mean_shift(source, darker)
+    assert shift == pytest.approx(-1.0)
+    # a Picasa sötétített, mi nem: ez hiány, nem tétlenség
+    assert module.classify(0.47, 0.47, 0.0, shift, 0.0) == "NEM_IMPLEMENTALT"
+    # mindketten sötétítettünk, egyezően
+    assert module.classify(0.47, 0.121, 0.40, shift, shift) == "JO"
+
+
+def test_a_legkisebb_valodi_eltolodas_muvelet_a_jpeg_zaj_nem():
+    """#3895-átnézés: a küszöb nem eshet a legkisebb valódi jelre.
+
+    A `dir_tint__min` Picasa-eltolódása −0,50 (spec) — ez művelet; a mért
+    JPEG-zaj legfeljebb ±0,003 — az nem.
+    """
+    module = _load_analyzer()
+    assert module.classify(0.3, 0.3, 0.0, -0.50, 0.0) == "NEM_IMPLEMENTALT"
+    assert module.classify(0.3, 0.3, 0.0, 0.0, -0.50) == "FOLOSLEGES"
+    # a 684-es szetten MÉRT érték −0,498: egy 0,5-ös küszöb alól kicsúszott
+    assert module.classify(0.296, 0.296, 0.0, -0.498, 0.0) == (
+        "NEM_IMPLEMENTALT"
+    )
+    for noise in (0.003, -0.003):
+        assert module.classify(0.3, 0.3, 0.3, noise, noise) == (
+            "MINDKETTO_TETLEN"
+        )
+
+
+def test_a_valodi_tetlenseg_tetlen_marad():
+    import numpy as np
+
+    module = _load_analyzer()
+    source = np.full((8, 8, 3), 128, dtype=np.uint8)
+    assert module.mean_shift(source, source) == 0.0
+    assert module.classify(0.12, 0.12, 0.0, 0.1, 0.0) == "MINDKETTO_TETLEN"
