@@ -124,6 +124,71 @@ class TestASzolgaltato:
         provider = DisplayPhotoProvider()
         assert provider.requestImage(str(tmp_path / "nincs.png"), None, None).isNull()
 
+    def test_a_kis_kepet_a_doboz_nem_nagyitja_fel(self, tmp_path: Path) -> None:
+        """#3832: a néző 2560×2560-as befoglaló dobozt kér — a kisebb
+        képet nem nagyítjuk fel rá (a régi feltétel nélküli
+        `scaledToWidth` a szélességre igazítva felnagyította volna).
+        Képpontot NEM mozdító módban (itt: `auto`) — a jelölő mód
+        SZÁNDÉKOSAN kivétel, ld. `test_a_jelolt_mod_a_kis_kepet_is_a_dobozra_meretezi`."""
+        from PySide6.QtCore import QSize
+
+        ut = tmp_path / "kicsi.png"
+        tomb = np.full((64, 36, 3), 200, dtype=np.uint8)
+        QImage(tomb.data, 36, 64, 36 * 3, QImage.Format.Format_RGB888).copy().save(str(ut))
+        provider = DisplayPhotoProvider()
+        eredmeny = provider.requestImage(f"{ut}?d=auto", None, QSize(2560, 2560))
+        assert (eredmeny.width(), eredmeny.height()) == (36, 64), (
+            "a kis kép nem maradt natív méretén — a doboz felnagyította"
+        )
+
+    def test_az_allo_kepet_a_doboz_mindket_elre_szoritja(self, tmp_path: Path) -> None:
+        """#3832: egy 9:16-hoz közeli álló kép a régi csak-szélességes
+        kéréssel (`scaledToWidth`) a magasságon szabadon túlnőtt volna a
+        dobozon — a jegy szerint egy 2560 széles telefonfotó 2560×4551-et
+        kapott, a V3D 4096-os textúraplafonja fölött. A doboznak MINDKÉT
+        élt korlátoznia kell (vö. `edit_preview.test_gpu_prefix_tall_image_fits_the_box`,
+        ugyanaz a 90×160 → 22×40 arány)."""
+        from PySide6.QtCore import QSize
+
+        ut = tmp_path / "allo.png"
+        tomb = np.full((160, 90, 3), 150, dtype=np.uint8)
+        QImage(tomb.data, 90, 160, 90 * 3, QImage.Format.Format_RGB888).copy().save(str(ut))
+        provider = DisplayPhotoProvider()
+        eredmeny = provider.requestImage(f"{ut}?d=projector", None, QSize(40, 40))
+        assert (eredmeny.width(), eredmeny.height()) == (22, 40), (
+            "az álló kép magassága túllépte a dobozt — a régi kód csak a "
+            "szélességet korlátozta"
+        )
+
+    def test_a_jelolt_mod_a_kis_kepet_is_a_dobozra_meretezi(self, tmp_path: Path) -> None:
+        """#3832 + #1576: képpontot mozdító módban (itt: túlcsordult
+        képpontok) a kis képet IS a dobozra méretezzük, és csak UTÁNA
+        jelölünk — natív méreten jelölve a kirajzolás nyújtaná szét a
+        jelölőszínt (ugyanaz az elv, mint az `edit_preview.py`
+        `_belefer`+`jelol` párja, #3819)."""
+        from PIL import Image as PilImage
+        from PySide6.QtCore import QSize
+
+        kep = PilImage.new("RGB", (32, 16), (200, 200, 200))
+        for x in range(16):
+            for y in range(16):
+                kep.putpixel((x, y), (255, 255, 255))
+        ut = tmp_path / "felig.png"
+        kep.save(ut)
+
+        provider = DisplayPhotoProvider()
+        jelolt = provider.requestImage(f"{ut}?d=overflow", None, QSize(2560, 2560))
+        assert (jelolt.width(), jelolt.height()) == (2560, 1280)
+        szinek = set()
+        for y in range(0, 1280, 7):
+            for x in range(0, 2560, 3):
+                szin = jelolt.pixelColor(x, y)
+                szinek.add((szin.red(), szin.green(), szin.blue()))
+        assert (255, 127, 127) in szinek
+        # a próbakép szürke, tehát minden vöröses képpont a jelölésből jön
+        lazac = {s for s in szinek if s[0] > s[1]}
+        assert lazac == {(255, 127, 127)}, lazac
+
 
 @pytest.fixture
 def modell(qt_app, tmp_path: Path):
@@ -198,4 +263,24 @@ class TestAQmlKotes:
         assert "controller.displayMode" in qml, (
             "a kötésnek hivatkoznia kell a módra, különben váltáskor nem "
             "értékelődik újra"
+        )
+
+    def test_a_sourceSize_befoglalo_doboz_mod_aktivalasakor(self) -> None:
+        """#3832: a `displayphoto` szolgáltatóra mutató kép a `sourceSize`
+        MAGASSÁGÁT is korlátozza — a csak-szélességes kérés a szolgáltatónak
+        0 magasságot (korlátlan) küldött, és egy álló kép a V3D 4096-os
+        textúraplafonja fölé nőhetett. A NYERS `file://` úton (mód nélkül)
+        ez marad korlátlan (vö. a főnéző #3819 óta szándékos döntésével: a
+        nyers fájlokra a befoglaló doboz felméretezést, +850 MiB-ot mért)."""
+        qml = (
+            Path(__file__).resolve().parents[2]
+            / "src/picasapy/app/qml/PicasaPy/SlideshowView.qml"
+        ).read_text(encoding="utf-8")
+        assert qml.count("sourceSize.width: 2560") == 3, (
+            "a diavetítés három Image-ének (előző dia, dia, elő-betöltés) "
+            "mindegyikén szélesség-korlátnak kell maradnia"
+        )
+        assert qml.count("displayphoto") >= 3, (
+            "a sourceSize.height-nak a szolgáltatóra mutató URL-hez kell "
+            "kötődnie, hogy a doboz csak akkor aktiválódjon"
         )

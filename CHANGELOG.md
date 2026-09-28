@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A diavetítésben Megjelenítési móddal (pl. Projektor, Túlcsordult
+  képpontok) nézve egy álló, telefonos fotó eddig a videokártya
+  textúraplafonja fölé nőhetett és nem jelent meg — a vetített kép mérete
+  mostantól mindkét élén korlátozott, felnagyítás nélkül (#3832).
+
 ## [0.8.620] – 2026-09-28
 
 ### Javítva

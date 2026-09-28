@@ -262,6 +262,15 @@ Rectangle {
         asynchronous: false
         autoTransform: true
         sourceSize.width: 2560
+        // #3832: befoglaló doboz, DE csak a szolgáltatóra mutató URL-nél —
+        // a `displayphoto` a dobozba csak kicsinyít (nem nagyít fel), így
+        // egy álló kép sem nőhet a V3D 4096-os textúraplafonja fölé. A
+        // nyers `file://` úton (mód nélkül) a magasság szándékosan
+        // korlátlan marad: a főnéző #3819 óta ismert tanulsága, hogy a
+        // befoglaló doboz a nyers fájlokat is felméretezte (+850 MiB a
+        // teszteken) — azt itt nem ismételjük meg.
+        sourceSize.height: elozoSlide.source.toString().indexOf(
+                                "image://displayphoto/") === 0 ? 2560 : 0
     }
 
     Image {
@@ -293,6 +302,10 @@ Rectangle {
         asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true
         sourceSize.width: 2560
+        // #3832: ld. az `elozoSlide` melletti magyarázatot — befoglaló
+        // doboz, de csak a szolgáltatóra mutató URL-nél.
+        sourceSize.height: slide.source.toString().indexOf(
+                                "image://displayphoto/") === 0 ? 2560 : 0
 
         //: #433 „Pan and Zoom" (`kenburns`): a dia a tartózkodása alatt
         //: LASSAN nagyít. Nem átmenet, hanem a diára rakott mozgás — ezért
@@ -325,6 +338,7 @@ Rectangle {
     // elő-betöltés a következő fotóra (DoD): mire a timer lép, a kép
     // már dekódolva van
     Image {
+        id: elobetoltoSlide
         visible: false
         // #1640: az elő-betöltés is a mód-tudatos URL-t kérje — különben a
         // következő dia egy pillanatra a festetlen képet villantaná
@@ -335,6 +349,10 @@ Rectangle {
         asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true
         sourceSize.width: 2560
+        // #3832: ld. az `elozoSlide` melletti magyarázatot — befoglaló
+        // doboz, de csak a szolgáltatóra mutató URL-nél.
+        sourceSize.height: elobetoltoSlide.source.toString().indexOf(
+                                "image://displayphoto/") === 0 ? 2560 : 0
     }
 
     // vezérlő-overlay: egérmozgásra jelenik meg, pár másodperc múlva
