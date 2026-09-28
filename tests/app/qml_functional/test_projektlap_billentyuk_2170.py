@@ -327,19 +327,52 @@ class TestACsuszkaLeptetesELOBEN:
     # kihagyó minta helyett.
     # ------------------------------------------------------------------
 
-    def test_a_leptetes_veglegesit(self, csuszka):
+    def test_a_leptetes_az_elengedesig_nem_veglegesit(self, csuszka):
+        """A `leptesd()` csak léptet; a véglegesítés a billentyű
+        elengedésekor jön (a lenyomva tartott billentyű ne írjon
+        lépésenként — #3869 átnézése)."""
         elem, _view_, qt_app = csuszka
         latott = []
         elem.veglegesult.connect(lambda ertek: latott.append(round(ertek, 3)))
 
         elem.leptesd(1)
         qt_app.processEvents()
+        assert latott == []
 
-        assert latott == [0.04], (
-            "a `leptesd()` (a billentyűs léptetés törzse) nem adott "
-            "`veglegesult` jelet — az egérelengedéssel egyező "
-            "véglegesítés emiatt marad el billentyűnél"
-        )
+        elem._billentyuVeglegesitese()
+        qt_app.processEvents()
+        assert latott == [0.04]
+
+    def test_a_lenyomva_tartott_billentyu_egyszer_veglegesit(self, csuszka):
+        """Autorepeat: öt ismétlődő lenyomás és elengedés után is csak a
+        valódi elengedés véglegesít, egyszer, a végső értékkel.
+        # rontás-kontroll: a `Keys.onReleased` autorepeat-szűrője nélkül
+        # öt `veglegesult` jön — piros."""
+        from PySide6.QtCore import QCoreApplication, QEvent
+        from PySide6.QtGui import QKeyEvent
+
+        elem, view, qt_app = csuszka
+        assert _wait_for(qt_app, view.isActive)
+        latott = []
+        elem.veglegesult.connect(lambda ertek: latott.append(round(ertek, 3)))
+        elem.setProperty("focus", True)
+        qt_app.processEvents()
+
+        def kuld(tipus, ismetles):
+            esemeny = QKeyEvent(
+                tipus, Qt.Key.Key_Plus, Qt.KeyboardModifier.NoModifier, "+", ismetles
+            )
+            QCoreApplication.sendEvent(view, esemeny)
+            qt_app.processEvents()
+
+        kuld(QEvent.Type.KeyPress, False)
+        for _ in range(5):
+            kuld(QEvent.Type.KeyRelease, True)
+            kuld(QEvent.Type.KeyPress, True)
+        assert latott == [], f"ismétlés közben nem véglegesítünk (látott: {latott})"
+        kuld(QEvent.Type.KeyRelease, False)
+
+        assert latott == [0.24], latott
 
     def test_az_egerelengedes_is_veglegesit(self, csuszka):
         """A régi `pressed`-alapú út ne romoljon el: az elengedés

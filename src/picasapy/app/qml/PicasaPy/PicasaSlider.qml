@@ -61,9 +61,19 @@ Slider {
         var uj = control.value + irany * control.billentyuLepes
         control.value = Math.max(control.from, Math.min(control.to, uj))
         control.moved()
-        // #3865: a billentyűs léptetés az EGÉRELENGEDÉSSEL azonos módon
-        // véglegesít — a billentyű sosem érinti a `pressed`-et, tehát az
-        // arra épülő véglegesítés (lásd lejjebb) nélküle sosem tüzelne.
+        // #3865: a véglegesítés a billentyű ELENGEDÉSEKOR jön (lent), mint
+        // az egérnél a húzás végén — a lenyomva tartott billentyű
+        // ismétlései így nem írnak minden lépésnél .picasa.ini-t és
+        // visszavonás-bejegyzést.
+        control._billentyuVeglegesitendo = true
+    }
+
+    property bool _billentyuVeglegesitendo: false
+
+    function _billentyuVeglegesitese() {
+        if (!control._billentyuVeglegesitendo)
+            return
+        control._billentyuVeglegesitendo = false
         control.veglegesult(control.value)
     }
 
@@ -90,6 +100,16 @@ Slider {
             event.accepted = true
         }
     }
+    Keys.onReleased: function (event) {
+        // az ismétlődő (autorepeat) elengedéseket kihagyjuk: a sorozat
+        // végén, a valódi elengedéskor egyszer véglegesítünk
+        if (event.isAutoRepeat)
+            return
+        control._billentyuVeglegesitese()
+    }
+    // ha a fókusz a lenyomott billentyű közben megy el, az elengedés már
+    // nem ide érkezik — ilyenkor is véglegesítünk
+    onActiveFocusChanged: if (!control.activeFocus) control._billentyuVeglegesitese()
 
     // #700: a sín vastagsága és a fogantyú mérete a HÍVÓ helyen felülírható.
     // Az alapértékek változatlanok (kerek, 14 px-es fogantyú, 4 px-es sín),
