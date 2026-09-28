@@ -296,6 +296,18 @@ class TestPhotoGridModel:
         assert model.captionAt(0) == ""
         assert model.captionAt(-1) == ""
 
+    def test_row_of_path(self, qt_app, conn, library):
+        # #3881: a diavetítés a modell teljes resetje után EGY hívással
+        # keresi vissza a látott fájlt — a `filePathAt` alakjában
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        for sor in range(model.rowCount()):
+            assert model.rowOfPath(model.filePathAt(sor)) == sor
+        assert model.rowOfPath(str(library / "nincs.jpg")) == -1
+        assert model.rowOfPath("") == -1
+
     def test_set_photos_resets(self, qt_app, conn, library):
         from picasapy.app.models import PhotoGridModel
 

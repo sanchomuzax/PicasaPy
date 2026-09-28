@@ -8,9 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- A diavetítés most akkor is a látott képet mutatja tovább, ha az vetítés
-  közben törlődik (a következő fotóra lép, üres könyvtárnál leáll), vagy ha
-  a mappa újraolvasása átrendezi a képek sorrendjét (#3881).
+- A diavetítés most a látott képet követi, ha vetítés közben változik a
+  képek listája: egy másik kép törlésekor vagy a mappa újraolvasásakor
+  átrendezett sorrendnél ugyanaz a kép marad látható, áttűnés nélkül; ha
+  maga a látott kép törlődik, a következő fotóra lép (az utolsó kép után az
+  elsőre, mint a léptetésnél), üres könyvtárnál pedig leáll (#3881).
 
 ## [0.8.623] – 2026-09-28
 

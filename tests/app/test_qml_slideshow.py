@@ -313,30 +313,121 @@ class TestSlideshowEntryPoints:
         assert button.property("enabled") is True
 
 
+def _negy_kep(controller, lib, qt_app):
+    """A fixture két képe (a, b) mellé c és d — négy kép, hogy a „következő"
+    és az „előző" kép különbözzön (két képnél a kettő egybeesik)."""
+    from picasapy.index import open_index, sync_tree
+    from support.jpeg_factory import make_jpeg
+
+    make_jpeg(lib / "c.jpg", size=(100, 100))
+    make_jpeg(lib / "d.jpg", size=(100, 100))
+    with open_index(controller._db_path) as conn:
+        sync_tree(conn, lib)
+    controller._reload()
+    qt_app.processEvents()
+    nevek = [
+        controller.photos.filePathAt(i).rsplit("/", 1)[-1]
+        for i in range(controller.photos.rowCount())
+    ]
+    assert nevek == ["a.jpg", "b.jpg", "c.jpg", "d.jpg"]
+
+
+def _torol(controller, qt_app, nev):
+    for sor in range(controller.photos.rowCount()):
+        ut = controller.photos.filePathAt(sor)
+        if ut.endswith("/" + nev):
+            assert controller.photos.remove_by_path(ut) is True
+            qt_app.processEvents()
+            return
+    raise AssertionError(f"{nev} nincs a modellben")
+
+
+def _lathato(window):
+    return _child(window, "slideshowImage").property("source").toString()
+
+
+def _nincs_atmenet(window):
+    """Az átmenet NEM indult: az animáció áll, a kimenő másolat rejtve."""
+    assert _child(window, "slideshowTransition").property("running") is False
+    assert _child(window, "slideshowPrevImage").property("opacity") == 0
+
+
 class TestSlideshowModelFollows:
     """#3881: a látott kép a modell törlésére/átrendezésére reagál — nem
     ragad a törölt vagy elmozdult sor eredeti indexén."""
 
     def test_torolt_lathato_kep_utan_tovabblep(self, qml_app, qt_app):
         window, controller, lib, _engine = qml_app
-        from support.jpeg_factory import make_jpeg
+        _negy_kep(controller, lib, qt_app)
+        show = _start_szunetelve(window, qt_app, 1)   # b.jpg
+        _torol(controller, qt_app, "b.jpg")
+        assert show.property("visible") is True
+        assert show.property("currentIndex") == 1
+        assert "c.jpg" in _lathato(window)
+        _invoke(qt_app, show, "stop")
 
-        make_jpeg(lib / "c.jpg", size=(100, 100))
-        from picasapy.index import open_index, sync_tree
+    def test_korabbi_sor_torlesekor_a_kep_marad_atmenet_nelkul(
+        self, qml_app, qt_app
+    ):
+        # a leggyakoribb eset: egy MÁSIK, korábbi kép törlődik — az index
+        # eggyel csökken, a látott kép marad, és nem indul áttűnés
+        window, controller, lib, _engine = qml_app
+        _negy_kep(controller, lib, qt_app)
+        show = _start_szunetelve(window, qt_app, 2)   # c.jpg
+        _nincs_atmenet(window)
+        _torol(controller, qt_app, "a.jpg")
+        assert show.property("currentIndex") == 1
+        assert "c.jpg" in _lathato(window)
+        _nincs_atmenet(window)
+        _invoke(qt_app, show, "stop")
 
-        with open_index(controller._db_path) as conn:
-            sync_tree(conn, lib)
-        controller._reload()
+    def test_ujrainditas_ugyanarra_az_indexre_a_latott_kepet_koveti(
+        self, qml_app, qt_app
+    ):
+        # a PR #3887 átnézésében próbával igazolt sorozat: a `start()`
+        # ugyanarra a számra indít, tehát az `onCurrentIndexChanged` nem fut
+        # le — a követett útvonal nem maradhat a REJTVE törölt sor előtti
+        window, controller, lib, _engine = qml_app
+        _negy_kep(controller, lib, qt_app)
+        show = _start_szunetelve(window, qt_app, 1)   # b.jpg
+        _invoke(qt_app, show, "stop")
+        _torol(controller, qt_app, "a.jpg")           # rejtve: b, c, d
+        show = _start_szunetelve(window, qt_app, 1)   # c.jpg
+        assert "c.jpg" in _lathato(window)
+        _torol(controller, qt_app, "d.jpg")           # független kép
+        assert show.property("currentIndex") == 1
+        assert "c.jpg" in _lathato(window)
+        _invoke(qt_app, show, "stop")
+
+    def test_ujrainditas_utan_az_atrendezes_is_a_latott_kepet_koveti(
+        self, qml_app, qt_app
+    ):
+        # ugyanaz a sorozat, de a végén teljes reset (átrendezés): ott a
+        # követett útvonal dönt, tehát az elavult útvonal a RÉGI képre ugrana
+        window, controller, lib, _engine = qml_app
+        _negy_kep(controller, lib, qt_app)
+        show = _start_szunetelve(window, qt_app, 1)   # b.jpg
+        _invoke(qt_app, show, "stop")
+        _torol(controller, qt_app, "a.jpg")           # rejtve: b, c, d
+        show = _start_szunetelve(window, qt_app, 1)   # c.jpg
+        b, c, d = controller.photos.photos
+        controller.photos.set_photos((d, b, c))
         qt_app.processEvents()
-        show = _start(window, qt_app, 0)   # a.jpg
-        assert show.property("currentIndex") == 0
-        a_path = controller.photos.filePathAt(0)
-        assert controller.photos.remove_by_path(a_path) is True
-        qt_app.processEvents()
+        assert show.property("currentIndex") == 2
+        assert "c.jpg" in _lathato(window)
+        _invoke(qt_app, show, "stop")
+
+    def test_utolso_sor_torlesekor_korbe_az_elso_kepre_lep(
+        self, qml_app, qt_app
+    ):
+        # ahogy az `advance()`: a lista végén a KÖVETKEZŐ kép a 0. sor
+        window, controller, lib, _engine = qml_app
+        _negy_kep(controller, lib, qt_app)
+        show = _start_szunetelve(window, qt_app, 3)   # d.jpg
+        _torol(controller, qt_app, "d.jpg")
         assert show.property("visible") is True
         assert show.property("currentIndex") == 0
-        kep = _child(window, "slideshowImage")
-        assert "b.jpg" in kep.property("source").toString()
+        assert "a.jpg" in _lathato(window)
         _invoke(qt_app, show, "stop")
 
     def test_utolso_lathato_kep_torlese_leallitja_a_vetitest(
@@ -350,22 +441,56 @@ class TestSlideshowModelFollows:
         qt_app.processEvents()
         assert show.property("visible") is True
         assert show.property("currentIndex") == 0   # a.jpg-re lép
+        window.setProperty("selectedIndex", -1)
+        window.setProperty("selectedIndexes", [])
         a_path = controller.photos.filePathAt(0)
         assert controller.photos.remove_by_path(a_path) is True
         qt_app.processEvents()
         assert show.property("visible") is False
         assert show.property("playing") is False
+        # üres listán nincs látott kép: a kilépés nem jelöl ki nem létező sort
+        assert show.property("currentIndex") == -1
+        assert window.property("selectedIndex") == -1
 
     def test_atrendezeskor_ugyanaz_a_fajl_marad_lathato(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app
-        show = _start(window, qt_app, 0)   # a.jpg
+        show = _start_szunetelve(window, qt_app, 0)   # a.jpg
         assert show.property("currentIndex") == 0
         atrendezve = tuple(reversed(controller.photos.photos))   # b, a
         controller.photos.set_photos(atrendezve)
         qt_app.processEvents()
         assert show.property("currentIndex") == 1
-        kep = _child(window, "slideshowImage")
-        assert "a.jpg" in kep.property("source").toString()
+        assert "a.jpg" in _lathato(window)
+        _nincs_atmenet(window)
+        _invoke(qt_app, show, "stop")
+
+    def test_reset_utan_helyben_maradt_kepnel_friss_az_elobetolto(
+        self, qml_app, qt_app
+    ):
+        # a látott kép a helyén marad, de a következő más lett — az
+        # elő-betöltő a FRISS következőt tartsa
+        window, controller, lib, _engine = qml_app
+        _negy_kep(controller, lib, qt_app)
+        show = _start_szunetelve(window, qt_app, 0)   # a.jpg, utána b
+        elotolto = _child(window, "slideshowPreloadImage")
+        assert "b.jpg" in elotolto.property("source").toString()
+        a, b, c, d = controller.photos.photos
+        controller.photos.set_photos((a, c, b, d))
+        qt_app.processEvents()
+        assert show.property("currentIndex") == 0
+        assert "c.jpg" in elotolto.property("source").toString()
+        _invoke(qt_app, show, "stop")
+
+    def test_reset_utan_eltunt_utolso_kepnel_korbe_lep(self, qml_app, qt_app):
+        window, controller, lib, _engine = qml_app
+        _negy_kep(controller, lib, qt_app)
+        show = _start_szunetelve(window, qt_app, 3)   # d.jpg
+        a, b, c, _d = controller.photos.photos
+        controller.photos.set_photos((a, b, c))
+        qt_app.processEvents()
+        assert show.property("visible") is True
+        assert show.property("currentIndex") == 0
+        assert "a.jpg" in _lathato(window)
         _invoke(qt_app, show, "stop")
 
 
