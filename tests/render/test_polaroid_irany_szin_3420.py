@@ -47,6 +47,7 @@ import math
 import sys
 from pathlib import Path
 
+import cv2
 import numpy as np
 import pytest
 
@@ -207,6 +208,70 @@ class TestKeppontkozepesForgatas:
         kep = _veletlen(13, 17, seed=11)
         vart = _referencia_forgatas(kep, szog, (7, 8, 9))
         np.testing.assert_array_equal(rotate_with_pad(kep, szog, (7, 8, 9)), vart)
+
+
+# ---------------------------------------------------------------------------
+# #3862 — a Polaroid gyors előnézeti útja (a Kiegyenesítés #3846-os
+# mintájára): a Rotate-csúszka HÚZÁSA közben a záró forgatás
+# képpontközepes mátrixot + `cv2.INTER_LINEAR`-t használ, nem a natív
+# fixpontos mintavevőt.
+# ---------------------------------------------------------------------------
+
+
+class TestGyorsElonezetiForgatas:
+    def test_a_gyors_ut_a_kepindexes_matrixot_hasznalja_bordervalue_kitoltessel(self):
+        """A gyors út a `rotate_with_pad` képpontközepes mátrixát
+        képpont-indexre váltva adja a `cv2.warpAffine`-nek, `BORDER_CONSTANT`
+        kitöltéssel — a Polaroid vásznán a kilógó sarok VALÓDI, kitöltendő
+        terület, nem csak a mintavevő kerekítési maradéka (ezért nem
+        `BORDER_REPLICATE`, mint a Kiegyenesítésnél)."""
+        rng = np.random.default_rng(3862)
+        kep = rng.integers(0, 256, (48, 64, 3), dtype=np.uint8)
+        szog, szin = 7.0, (200, 100, 50)
+
+        radian = math.radians(szog)
+        c, s = math.cos(radian), math.sin(radian)
+        src_h, src_w = kep.shape[:2]
+        cel_w = int(math.floor(src_w * abs(c) + src_h * abs(s)))
+        cel_h = int(math.floor(src_w * abs(s) + src_h * abs(c)))
+        m0, m1, m2 = c, s, src_w / 2.0 - c * cel_w / 2.0 - s * cel_h / 2.0
+        m3, m4, m5 = -s, c, src_h / 2.0 + s * cel_w / 2.0 - c * cel_h / 2.0
+        index = np.array(
+            [[m0, m1, m2 + 0.5 * (m0 + m1) - 0.5], [m3, m4, m5 + 0.5 * (m3 + m4) - 0.5]]
+        )
+        varhato = cv2.warpAffine(
+            kep, index, (cel_w, cel_h), flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
+            borderMode=cv2.BORDER_CONSTANT, borderValue=szin,
+        )
+        gyors = rotate_with_pad(kep, szog, szin, gyors=True)
+        np.testing.assert_array_equal(gyors, varhato)
+        assert not np.array_equal(gyors, rotate_with_pad(kep, szog, szin))
+
+    def test_alap_esetben_a_lassu_ut_marad_a_nativ(self):
+        """A `gyors` alapértéke `False` — a hívók (mentés/export/bélyegkép)
+        változtatás nélkül a natív mintavevőt kapják."""
+        rng = np.random.default_rng(38620)
+        kep = rng.integers(0, 256, (30, 40, 3), dtype=np.uint8)
+        np.testing.assert_array_equal(
+            rotate_with_pad(kep, 4.0, (1, 2, 3)),
+            rotate_with_pad(kep, 4.0, (1, 2, 3), gyors=False),
+        )
+
+    def test_apply_polaroid_athuzza_a_gyors_jelzot_a_forgatasnak(self, monkeypatch):
+        """Az `apply_polaroid` a `gyors` kwargot a záró `rotate_with_pad`-nak
+        adja tovább — a keret és az árnyék natívan renderel."""
+        atadott = {}
+        eredeti = glimmer_frames.rotate_with_pad
+
+        def figyelo(*args, **kwargs):
+            atadott["gyors"] = kwargs.get("gyors", False)
+            return eredeti(*args, **kwargs)
+
+        monkeypatch.setattr(glimmer_frames, "rotate_with_pad", figyelo)
+        apply_polaroid(_kep(), 5.0, HATTER, gyors=True)
+        assert atadott["gyors"] is True
+        apply_polaroid(_kep(), 5.0, HATTER)
+        assert atadott["gyors"] is False
 
 
 def _regi_numpy_mintavevo(image, matrix, cel_w, cel_h, border_color):

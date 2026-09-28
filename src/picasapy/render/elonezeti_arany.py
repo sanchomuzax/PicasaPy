@@ -19,6 +19,12 @@ csúszkájának HÚZÁSA közben (`EditController.previewTilt`) a `gyors_eloneze
 blokkban renderel; ilyenkor a tilt a natív fixpontos mintavevő helyett az
 OpenCV bilineárisával fut (ugyanazzal a képpontközepes mátrixszal). Mentés,
 export, bélyegkép és az elengedés utáni kép a blokkon KÍVÜL fut, tehát natív.
+
+#3862: a `EditController.previewEffect` (az effekt-csúszkák — pl. a Polaroid
+Rotate-ja — közös húzás közbeni előnézeti útja) ugyanide kötve nyitja a
+blokkot, tehát a Polaroid forgatása is a gyors mintavevőre vált húzás közben
+(`glimmer_frame_ops.rotate_with_pad(..., gyors=...)`); az Alkalmaz gomb
+(`applyEffectWithParams`) már a blokkon kívül, natívan renderel.
 """
 
 from __future__ import annotations

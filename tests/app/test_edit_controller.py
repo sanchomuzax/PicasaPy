@@ -528,6 +528,37 @@ class TestPreviewTilt:
         assert "filters=tilt=1,0.600000,0.000000;" in ini_text
 
 
+class TestPreviewEffectGyorsPolaroid:
+    """#3862: az effekt-csúszkák (pl. a Polaroid Rotate-ja) közös húzás
+    közbeni előnézeti útja (`previewEffect`) a `previewTilt` mintájára a
+    `gyors_elonezet()` blokkban renderel — a Polaroid forgatása ilyenkor a
+    gyors mintavevővel fut; az Alkalmaz gomb már a blokkon kívül, natívan."""
+
+    def test_huzas_kozben_gyors_ut_alkalmazasra_nativ(self, controller, photo, monkeypatch):
+        # rontás-kontroll: a `previewEffect` a `gyors_elonezet()` blokk
+        # nélkül → ez a próba FAILED; az `apply_polaroid_op` a jelzőt
+        # figyelmen kívül hagyva → FAILED.
+        from picasapy.render import glimmer_frames
+
+        hivasok = []
+        eredeti = glimmer_frames.apply_polaroid
+
+        def kem(image, rotate=5.0, color=(0xE2, 0xE2, 0xE2), *, gyors=False):
+            hivasok.append(gyors)
+            return eredeti(image, rotate, color, gyors=gyors)
+
+        monkeypatch.setattr(glimmer_frames, "apply_polaroid", kem)
+        controller.beginEdit("1", str(photo))
+        assert controller.waitForBackgroundWorkers(10.0)
+        hivasok.clear()
+        controller.previewEffect("polaroid", [5.0])
+        assert hivasok and all(hivasok)
+        huzas = len(hivasok)
+        controller.applyEffectWithParams("polaroid", [5.0])
+        assert controller.waitForBackgroundWorkers(10.0)
+        assert hivasok[huzas:] and not any(hivasok[huzas:])
+
+
 class TestUndoRedoStack:
     """#59: valódi undo/redo verem művelet-nevekkel."""
 
