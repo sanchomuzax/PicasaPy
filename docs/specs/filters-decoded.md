@@ -1386,6 +1386,43 @@ lineáris modell ezt sosem adja vissza, és a hiba a csúszka végén nő meg.
 
 Negatív csúszkánál egy külön előlépés fut (`0x0090e200`, `amount + 1.0`).
 
+> ⛔ **PONTOSÍTVA (#3888):** nem előlépés — negatív csúszkánál EZ az egyetlen mag. Ld. lent: „A `sat` NEGATÍV ága”.
+
+#### A `sat` NEGATÍV ága — egész luma és keverés (2026-09-28, 395. kör, #3888)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel.*
+
+**Ágválasztás** (`0x008f8ff0`): `fldz` / `fcomp [+0x28]` / `test ah, 0x41` /
+`jne` — ha a csúszka `a ≥ 0`, csak a pozitív mag fut (`0x0090b930`); ha
+`a < 0`, **csak** a `0x0090e200`, `g = a + 1,0` erősítéssel (`0x008f9014`
+`fadd [0xc7e328]` = 1,0). A „külön előlépés” tehát nem előlépés: a negatív
+oldalon ez az egyetlen mag.
+
+**A mag** (`0x0090e200`), ha `0 ≤ g ≤ 1`:
+
+1. `k = csonk(256 · g)` (`0x0090e2b4` `fmul [0xcf39d8]` = 256,0; `0x00c29990`);
+   `g < 0` → 0 (`0x0090e264`–`0x0090e274`);
+2. képpontonként (BGRA): `L = (2R + 5G + B + 4) >> 3` (`0x0090e2f0`–`0x0090e2fa`);
+3. `ki_c = L + (((c − L) · k) >> 8)` csatornánként, aritmetikai eltolással,
+   vágás nélkül (`0x0090e2fd`–`0x0090e319`; `L` és `c` közé esik); az alfa 255.
+
+**Számpélda:** R = 200, G = 100, B = 50 → `L = 954 >> 3 = 119`.
+`a = −0,5` (`k = 128`): R = 119 + (81·128 >> 8) = 159, G = 119 + (−19·128 >> 8) = 109,
+B = 119 + (−69·128 >> 8) = 84. `a = −1` (`k = 0`): mindhárom 119.
+
+**Nálunk** (`render/color.py`, `apply_saturation`): Rec.601 lebegőpontos luma
+(`0,299/0,587/0,114`), lebegőpontos keverés és kerekítés.
+
+**Mérve** (684-es készlet, `sat__min`, `a = −1`; ΔE a Picasa-exporthoz):
+
+| modell | ΔE | a zöld csatorna bitegyezése |
+|---|---:|---:|
+| ma | 0,346 | — |
+| **a fenti mag** | **0,036** | 91,2% |
+| zajszint (mi ↔ mi-JPEG95) | 0,021 | — |
+
+Fejlesztés: #3889.
+
 #### A `sat` TELJES algoritmusa (2026-08-15, a csatorna-hozzárendelés lezárva)
 
 A képpontok **BGRA** sorrendben állnak (`p[0]=B`, `p[1]=G`, `p[2]=R`), ezért a
