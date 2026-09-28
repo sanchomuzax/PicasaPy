@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A diavetítés forgatás-gombjának két gyors, egymást követő kattintása
+  eddig lassú (pl. hálózati) meghajtón elveszíthette a második forgatást;
+  most mindkettő biztosan érvényesül (#3830).
+
 ## [0.8.616] – 2026-09-28
 
 ### Javítva

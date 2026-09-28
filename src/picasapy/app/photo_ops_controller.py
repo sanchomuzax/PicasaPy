@@ -260,6 +260,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self._photoFieldUpdated.connect(self._on_photo_field_updated)
         self.photoOpFailed.connect(self._on_photo_write_failed)
         self._renameBatchDone.connect(self._on_rename_batch_done)
+        #: #3830: az egyképes forgatás (`rotateRight`/`rotateLeft`) FUTÓ
+        #: írásainak és a rájuk közben érkezett újabb célértékeknek a
+        #: nyilvántartása — ld. `_apply_rotate`.
+        self._rotate_running: set[int] = set()
+        self._rotate_target: dict[int, int] = {}
 
     @Slot(int, object, object)
     def _on_photo_field_updated(self, photo_id: int, record, after=None) -> None:
@@ -1242,14 +1247,35 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         indoklás („n=0-nál a kulcs törlődik, így a kör bitre pontos")
         MEGDŐLT: a Picasa a `rotate(0)`-t tekinti alapértéknek és ki is
         írja, tehát a törlés épp a Picasa-eredetű fájlokon rontotta el a
-        round-tripet."""
+        round-tripet.
+
+        #3830: az írás háttérszálon fut (`_run_photo_write`), a modell
+        (`self._photos`) pedig csak a befejezéskor frissül. Egy GYORS
+        második forgatás — mielőtt az első írás jelezne — a RÉGI
+        `photo.rotate_steps`-ből számolna, és elveszne (a Windows-CI lassú
+        gépén, vírusirtóval mért NAS-írásnál ez nem elméleti). Ezért a
+        célértéket (`_rotate_target`) magunk tartjuk nyilván a fotó
+        `id`-jére kulcsolva: a futó írásra érkező újabb kérés csak ezt
+        frissíti, és a befejezés után (`after`) azonnal indul a következő
+        írás a LEGFRISSEBB célértékkel — egyetlen kattintás sem vész el,
+        és nem is indul kattintásonként külön szál."""
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return
         photo = photos[row]
         if photo.kind == "video":
             return  # #103: videóra nem írunk rotate= kulcsot (QML-őr mellett)
-        steps = (photo.rotate_steps + delta) % 4
+        self._ensure_photo_ops_wired()
+        base = self._rotate_target.get(photo.id, photo.rotate_steps)
+        self._rotate_target[photo.id] = (base + delta) % 4
+        if photo.id in self._rotate_running:
+            return  # a futó írás `after`-je a friss célértékkel folytatja
+        self._start_rotate_write(photo)
+
+    def _start_rotate_write(self, photo) -> None:
+        """`_apply_rotate` egy írás-lépése — a legfrissebb célértékkel."""
+        steps = self._rotate_target[photo.id]
+        self._rotate_running.add(photo.id)
 
         def perform() -> dict:
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
@@ -1260,7 +1286,15 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             update_document(ini_path, mutate, backup=True)
             return {"rotate_steps": steps}
 
-        self._run_photo_write(photo.id, perform)
+        def after() -> None:
+            self._rotate_running.discard(photo.id)
+            if self._rotate_target.get(photo.id) == steps:
+                del self._rotate_target[photo.id]
+            else:
+                # #3830: közben újabb forgatás érkezett — folytatjuk
+                self._start_rotate_write(photo)
+
+        self._run_photo_write(photo.id, perform, after=after)
 
     # -- „Az összes effektus másolása/beillesztése" (#426) -------------------
 
