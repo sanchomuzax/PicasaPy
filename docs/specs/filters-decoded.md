@@ -5801,11 +5801,15 @@ alapértelmezett (0).
 > indul, és **nincs semmilyen szegély-kiterjesztés**. A jobb és alsó szélen
 > részlegesen kilógó csempéket egyszerűen **levágja a kép határa**. Nincs
 > tükrözés, nincs ismétlés, nincs szélső képpont-nyújtás.
+>
+> ⛔ **HELYESBÍTVE (#3876):** a rács NEM a `(0,0)` + `offset` pontból indul, hanem középre igazított: origó `int((W − ⌈W/t⌉·t)/2) + int(offset)` (`0x00bba7a1`–`0x00bba822`). Ld. „⛳ A Comicize maradéka”.
 
 A második fázis fél csempével eltolt — és a **pixelesítés is**: a 793. sor
 `PixelateImageOperation`-je eltolás nélküli, a 807. soré viszont
 `offsetX = offsetY = _nDotSize/2`. A két ág tehát **a maszkban ÉS a
 pixelesítésben is** el van tolva.
+
+> ⛔ **HELYESBÍTVE (#3876):** a `PixelateImageOperation` az `offsetX`/`offsetY`-t kiértékeli, de nem adja tovább a magnak (`0x00bbd1d7`–`0x00bbd207`) — a két ág pixelesítése AZONOS, csak a maszk tolódik. Ld. „⛳ A Comicize maradéka”.
 
 `alphaMin="0.0"` kimondott; az `alphaMax` hiányzik → alapértelmezett.
 
@@ -7569,3 +7573,89 @@ spline, már leírva) nem kellett a raszterhez.
 *Bizonyítottsági fok: a hiányzó lépés **megerősített** (`filterdesc.xml`
 788. sor + a 15 exporton mért amplitúdó). A maradék ΔE (≈ 2,46) forrása
 **nincs mérve** — jelöltek a #3522-ben.*
+
+## ⛳ A Comicize maradéka: négy lánclépés natív viselkedése (2026-09-28, 393. kör, #3876)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A fenti „a rács a `(0,0)` + `offset` pontból indul” és „a pixelesítés is el van tolva” állítás HELYESBÍTVE.*
+
+A #3522 átvezetése után a 684-es készleten a `Comicize` 2,3–2,7 ΔE-vel tért
+el. A maradék négy lépésből jön; mindegyik a binárisból, illesztés nélkül.
+
+### 1. Az elő-elmosás a natív `BlurImageOperation`, nem Gauss
+
+A leíró `_opBlur`-ja (`xblur = yblur = 1 + 20·BlurXY/100`, `quality="3"`) a
+közös natív elmosót futtatja (`0x00bb4de0`; a kvantáló és a menetek:
+`nativ_blur.blur_image_operation`, #3812). A mai kód ezt Gauss-szigmának
+veszi (`cv2.GaussianBlur`).
+
+### 2. A `Pixelate` az eltolást ELDOBJA, a rácsot középre igazítja
+
+Az alkalmazó (`0x00bbd150`) mind a négy attribútumot kiértékeli, de az
+`offsetX`/`offsetY` eredményét (`0x00bbd1d7`, `0x00bbd1e5` → `[esp+0x18]`)
+**senki nem olvassa**: a mag (`0x00bcdf10`) csak a képet és a két
+blokkméretet kapja (`0x00bbd1ed`–`0x00bbd207`). A leíró 807. sorának
+eltolása tehát hatástalan; a két ág pixelesítése **azonos**.
+
+A mag:
+
+1. `nW = ⌈W / pw⌉`, `nH = ⌈H / ph⌉` (float32 osztás, `0x00529e10` →
+   `0x00c090f0` = `Math.ceil`, csonkoló `fistp`; `0x00bcdf6d`–`0x00bce009`);
+2. kicsinyítés `nW × nH`-ra a közös wrapperrel, `smoothing = 1`
+   (`0x00bce120` `push 1` → `0x00bcb5e0`): kicsinyítésnél ez a fixpontos
+   **doboz** (`filterdesc-registry.md` 5/c);
+3. visszanagyítás `smoothing = 0`-val (`0x00bce29b` `push ebx` = 0 →
+   `0x00bcb5e0`), tehát a `0x009e7420` legközelebbi-szomszéd mintavevővel
+   (5/a), `pw`-szeres léptékkel és **`(W − nW·pw)/2`** eltolással
+   (`0x00bce178`–`0x00bce1b0`: `W − nW·pw`, szorozva `[0xc72150]` = 0,5-del;
+   függőlegesen ugyanígy). A rács tehát **középre igazított**: a kilógó rész
+   a két szélen egyenlően oszlik meg.
+
+Egy 960 × 640-es képen `pw = 15`: vízszintesen `nW = 64`, nincs kilógás;
+függőlegesen `nH = 43`, a rács 645 sor, 2,5 sor lóg ki fent és lent.
+
+### 3. A `TiledImageMask` rácsa is középre igazított, és képpontindexből mér
+
+- **A rács mérete** `⌈W/t⌉·t × ⌈H/t⌉·t` (`0x00bbb070`: `0x00c090f0` ceil,
+  szorzás a csempemérettel, `0x00c29990`).
+- **Az origó** `(W − rácsszélesség)/2`, **nulla felé csonkoló** egész
+  osztással (`cdq` / `sub` / `sar 1`, `0x00bba7b7`–`0x00bba7ca`), plusz a
+  **csonkolt** `offsetX` (`or 0xc00` + `fistp`, `0x00bba7a5`–`0x00bba7dc`);
+  függőlegesen ugyanígy (`0x00bba7de`–`0x00bba822`). A 960 × 640-es képen
+  az első maszk origója `(0, −2)`, a másodiké `(7, 5)` — az `offset = 7,5`
+  7-re csonkol.
+- **A csempe közepe** a doboz fele (`0x008f38a6` `[0xc72150]` = 0,5), és a
+  rácsoló az első képpontot a `(0, 0)` pontban értékeli ki (`0x008f3b61`–
+  `0x008f3b67` `fldz`), tehát a **képpont indexéből** mér, nem a közepéből.
+  A pont közepe egy 15-ös csempében a 7,5-ös koordinátán van.
+
+A mai kód (`halftone.tiled_dot_ramp`) a rácsot `(0,0) + offset`-ből indítja,
+az eltolást nem csonkolja, és a képpont közepéből (`x + 0,5`) mér: a pontok
+így 2 sorral lejjebb és fél képponttal balra-feljebb ülnek.
+
+### 4. A záró keverés egész aritmetikájú
+
+A `_opColorSpots` blokk `multiply`-a `⌊b·t/255⌋`, a `BlendAlpha` pedig a
+`0x009dc4b0` keverője: `w = trunc(α·256) − 1`, `ki = (b·(255 − w) + t·w) >> 8`
+(`filterdesc-registry.md`, „A `BlendInstruction`”, 337. kör). A súlyok
+összege 255, az osztó 256, ezért a kimenet egy szinttel sötétebb lehet. A
+mai kód lebegőpontosan kever, és kerekít.
+
+### Mérve
+
+684-es készlet, ΔE a Picasa-exporthoz, a lépéseket egymásra rakva:
+
+| lépés | alap (20/50/50) | max (100/100/100) | min (0/0/0) |
+|---|---:|---:|---:|
+| ma | 2,687 | 2,328 | 2,294 |
+| + natív elő-elmosás (1.) | 1,235 | 0,207 | 1,398 |
+| + natív `Pixelate` (2.) | 1,208 | 0,207 | 1,342 |
+| + natív maszkrács (3.) | 0,649 | 0,207 | 0,650 |
+| **+ egész keverés (4.)** | **0,461** | **0,207** | **0,416** |
+| zajszint (mi ↔ mi-JPEG95) | 0,374 | 0,173 | 0,317 |
+
+A `max` sorban a `DotFade = 100` kikapcsolja a rasztert (`BlendAlpha = 0`),
+ott csak az 1. lépés számít. A 3. lépés után a csempén belüli
+fázistérképen nincs szerkezet: a hiba minden fázisban és minden
+tónussávban ugyanakkora (+1 szint). Ezt a 4. lépés viszi el.
+
+Fejlesztés: #3878.
