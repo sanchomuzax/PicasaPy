@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A diavetítés most a látott képet követi, ha vetítés közben változik a
+  képek listája: egy másik kép törlésekor vagy a mappa újraolvasásakor
+  átrendezett sorrendnél ugyanaz a kép marad látható, áttűnés nélkül; ha
+  maga a látott kép törlődik, a következő fotóra lép (az utolsó kép után az
+  elsőre, mint a léptetésnél), üres könyvtárnál pedig leáll (#3881).
+
 ## [0.8.623] – 2026-09-28
 
 ### Javítva
