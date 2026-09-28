@@ -548,7 +548,7 @@ s(x, y) = a · (2x/W − 1) + b · (2y/H − 1)
 
 ```c
 L = (2*R + 5*G + B) >> 3;               // súlyozott luma: 0,25 R / 0,625 G / 0,125 B
-a = round(s(x,y) * 256);                // képpontonkénti súly
+a = round(s(x,y) * 256);                // ⛔ HELYESBÍTVE: csonk(128·s), ld. lent (#3858)
 if (a < 0) { a += 256; out_c = L + (((c - L) * a) >> 8); }        // telítetlenítés L felé
 else       { out_c = clamp(c + (((c - L) * a) >> 8), 0, 255); }   // telítés L-től el
 ```
@@ -590,6 +590,51 @@ köbös görbéből — 0-nál változatlan, 256-nál teljes köbös.
 > rámpa-horgonya és a `linblur` sugár-leképezése pedig indokolt
 > FELTEVÉSSEL fut — ld. a két `apply_*` docstringjét és a
 > `filters-decoded.md` státusz-tábláját. A kalibráció a #317-ben fut.
+
+### A súly szorzója 128, csonkolva — kiolvasva (2026-09-28, 391. kör, #3858)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A fenti `round(s·256)` és a 3.2-es `dir_sharp`-horgony (`round((|a|+|b|)·256)`) HELYESBÍTVE.*
+
+A három mag (`dir_brite` `0x0090d8b0`, `dir_sat` `0x0090dbb0`, `dir_sharp`
+`0x0090d600`) ugyanúgy képezi a súlyt:
+
+1. **Rámpa.** `a`, `b` `[−1, 1]`-re vágva (`[0xcf3ed0]` = −1,0, `fld1`). Az
+   x-akkumulátor `−a`-ról indul, lépése `a / (W >> 1)`; az y ugyanígy `−b`-ről,
+   `b / (H >> 1)` lépéssel (`0x0090d998`–`0x0090d9d9`). Mindkét akkumulátor
+   **float32**, lépésenként visszaírva (`0x0090db3c`, `0x0090db82`). `W`, `H` a
+   cél és a forrás méretének minimuma (`0x0090d8e3`–`0x0090d8fd`).
+2. **Súly:** `w = csonk(128 · (x + y))` (`0x0090da70`–`0x0090da7a`;
+   `[0xcf3a38]` = 128,0 double; `0x00c29990`). A súly tehát legfeljebb
+   `128 · (|a| + |b|) ≤ 256`, vágás nélkül.
+3. **`dir_brite`:** `w > 0` → világosítás (a csatornák `^ 0xff`-fel tükrözve),
+   különben `A = −w` sötétítés (`0x0090da7f`–`0x0090dac1`); a keverés
+   `((v³ >> 16) · A + (256 − A) · v) >> 8` (`0x0090dac3`–`0x0090db11`). A 0-s
+   súly a sötétítő ágra esik, de ott azonosság.
+4. **`dir_sat`:** `L = (2R + 5G + B) >> 3` (`0x0090dd04`–`0x0090dd0d`);
+   `w < 0` → `L + (((c − L)·(w + 256)) >> 8)`, különben
+   `clamp(c + (((c − L)·w) >> 8))` (`0x0090dd10`–`0x0090dd91`), a fenti képlet
+   szerint, csak a súly más.
+5. **`dir_sharp`:** a horgony `K = csonk(128 · (|a| + |b|))` (`0x0090d6b7`–`0x0090d6d9`,
+   `0x0049f5c0` = `fabs`), a képpontsúly `w = csonk(−128 · (x + y))`
+   (`[0xcf3d58]` = −128,0), és `amount = (K − w) · 2` (`0x0090d7a6`–`0x0090d7ae`).
+   Az élesítés tehát a rámpa **pozitív** sarkában a legerősebb (`2·2K`), a
+   negatívban nulla; `amount > 0` esetén
+   `clamp(c + (((c − elmosott) · amount) >> 8))` (`0x0090d7b4`–`0x0090d829`).
+
+**Számpélda** (960 × 640, `a = b = 0,5`): a bal felső képpontban
+`x + y = −1,0` → `w = −128`, a `dir_brite` fele erővel sötétít; a mi
+`round(s·256)`-unk itt −256-ot, teljes köbös görbét adott.
+
+**Mérve** (684-es készlet, `a = b = 0,5`, ΔE a Picasa-exporthoz; a
+`dir_sharp` elmosása a mai IIR, `min(W, H) >> 3` sugárral):
+
+| eset | ma | **natív súly** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| `dir_brite` alap | 4,281 | **0,187** | 0,152 |
+| `dir_sat` alap | 1,851 | **0,184** | 0,151 |
+| `dir_sharp` alap | 5,198 | **0,384** | 0,351 |
+
+Fejlesztés: #3859.
 
 ## 2.8 Melegítés (`warm` / „Melegítés") — beégetett tábla, MEGVALÓSÍTVA (#611)
 
@@ -728,6 +773,10 @@ készül. A megvalósításunkhoz tehát: elmosás → irányított unsharp-öss
 > nemnegatív, a rámpa legpozitívabb sarkában nullára fut ki, és `a = b = 0`
 > mellett a kép változatlan. **Erős következtetés, nem mérés** — a
 > kalibráció a #317-ben.
+>
+> ⛔ **HELYESBÍTVE (#3858):** kiolvasva `K = csonk(128·(|a|+|b|))`, a
+> képpontsúly `csonk(−128·(x+y))`, tehát az élesítés a rámpa **pozitív**
+> sarkában a legerősebb — ld. 2.7, „A súly szorzója 128, csonkolva”.
 
 ## 3.3 `linblur` — köbös B-spline súlytábla + csomagolt keverés
 

@@ -1879,6 +1879,9 @@ részlet-élesítés), a `linblur` burkolója pedig **kétszer** futtatja le.
    feltevés mellett szól, hogy a két `ABS` hívás pontosan a rámpa
    maximumához (`max s = |a|+|b|`) kell, hogy az `amount` a képen
    nemnegatív legyen, és hogy 0 csúszkaállásnál a kép változatlan.
+   ⛔ **LEZÁRVA (#3858):** a horgony kiolvasva, `K = csonk(128·(|a|+|b|))`,
+   és a súly szorzója mindhárom magban 128, nem 256 — ld.
+   `picasa-native-filter-workers.md` 2.7, „A súly szorzója 128, csonkolva”.
 2. `linblur` — a „Mennyiség" → sugár leképezés (a testvér `radblur`
    burkolójának alakjával: `W/100·(Amount+1) + 0,001`).
 3. `linblur` — a súlytábla utolsó rekeszei. A natív
