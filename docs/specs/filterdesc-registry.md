@@ -8163,6 +8163,43 @@ ott az ALSÓ elemre esik. A csomagolt (`0x00FF00FF`) aritmetika átvitele
 negatív különbségnél sincs modellezve. Ez egyetlen képpontoszlopot érint;
 utánépíteni csak akkor érdemes, ha egy golden-mérés kimutatja.
 
+
+#### ⛳ A keverés tétlen műveletnél is lefut — a `Soften` 0-s erősségnél eggyel sötétít (2026-09-28, 396. kör, #3894)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel.*
+
+A végrehajtó a keverést a **mód és az `α`** alapján hagyja ki (2. és 3. lépés
+fent), **nem** aszerint, hogy a művelet változtatott-e a képen. A `Soften`
+leírója (`filterdesc.xml` 1348: `BlurImageOperation`, `xblur = yblur =
+Impact·20/50`, `BlendAlpha = (100 − Fade)·0,8/100`) `Impact = 0`, `Fade = 0`
+mellett 0-s sugarat és `α = 0,8`-et ad: az elmosás azonosság, de a
+`0x009dc4b0` keverése lefut, `w = trunc(0,8·256) − 1 = 203` súllyal:
+
+```
+ki = (b·(255 − 203) + b·203) >> 8 = (255·b) >> 8 = b − 1   (b ≥ 1),   0 → 0
+```
+
+A 0-s sugarú `BlurImageOperation` nem lép ki: `0x00bb5050` 1 alatti sugárra 0-t ad, a `0x00bc5680` ilyenkor a `0x00bc5960` soronkénti másolását hívja. A keverés mód nélkül és `α = 0,8`-nál lefut (`0x00bd0816` `jae 0x00bd0a2a` → `0x00bd0aaa` `call 0x009dc4b0`). Páratlan szélességnél az utolsó oszlopot a skalár farok (`0x009dc646`–`0x009dc6fb`) `E + (((S − E)·w′) >> 8)` alakban számolja, ami `t = b`-nél pontosan `b`-t ad.
+
+**Mérve** (684-es készlet, `soften__min`): az export minden csatornán
+átlagosan −1,00 szinttel sötétebb a forrásnál; érték szerint 0 → 0,04,
+1 → 0,03, 2 → 1,01, 128 → 127,01, 255 → 254,0.
+
+| modell | ΔE a Picasa-exporthoz |
+|---|---:|
+| ma (0-s sugárnál a bemenet másolata) | 0,470 |
+| **a fenti keverés** | **0,121** |
+| zajszint (mi ↔ mi-JPEG95) | 0,083 |
+
+⚠️ **A mérőeszköz vakfoltja.** A `tools/golden/analyze_validation_kit.py`
+„tétlen” küszöbe `NOOP_DE = 1,0`; az egyenletes −1-es eltolódás (ΔE 0,47) ez
+alá esik, ezért a sor „mindkettő tétlen” besorolást kapott, és a kód erre
+hivatkozva hagyta ki a keverést. A 684-es készlet 56 „tétlen” sora közül
+ilyen eltolódást a `soften__min` (−1,00) és a `dir_tint__min` (−0,50)
+mutat; a többinél az export a forrással azonos.
+
+Fejlesztés: #3895.
+
 ### E) Két mért hiba nálunk — a bináris itt az OKOT is megadja
 
 **1. Az `IR` zöld ragyogása SCREEN, nem LIGHTEN.** Az `IR` konstruktora a
