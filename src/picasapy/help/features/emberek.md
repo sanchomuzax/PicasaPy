@@ -73,14 +73,33 @@ gyűjti. Itt:
 - Egy arc alá beírt névvel elnevezed. Ha a program tippel valakire, a név
   mellett kérdőjel áll — egy kattintás elfogadja.
 - A **Mellőzés** paranccsal félreteszed azokat az arcokat, amiket nem
-  akarsz elnevezni (járókelők, plakátok). A mellőzött arcok a **Mellőzött
-  emberek** alá kerülnek, ahonnan a **Mellőzés visszavonása** hozza őket
-  vissza.
+  akarsz elnevezni (járókelők, plakátok). Ugyanezt teszi a csempe
+  sarkában lévő **✕**. A program rákérdez — „Biztosan áthelyezi ezt a
+  személyt a Mellőzött emberek albumba?" —, és a **Ne kérdezzen újból,
+  mindig hagyja figyelmen kívül** pipával legközelebb kérdés nélkül
+  mellőz. A mellőzött arcok a **Mellőzött emberek** alá kerülnek, ahonnan
+  a **Mellőzés visszavonása** hozza őket vissza.
 - A **További javaslatok keresése** gombbal egyetlen kattintással több
   névjavaslatot kérsz: a program egyszer lejjebb viszi a felismerési
   küszöbét, és újra megnézi, kire tud tippelni. A **tárolt beállítás nem
   változik** — a következő keresés megint a szokásos szigorúsággal fut.
   A mellőzött arcok nézetében ez a gomb nem látszik.
+
+### A mellőzés az eredeti Picasával is közös
+
+A mellőzést a program **a kép mellé, a `.picasa.ini` fájlba** is
+bejegyzi, ugyanazzal a jelöléssel, amit az eredeti Picasa használ. Ennek
+két látható következménye van:
+
+- ha egy mappát korábban az **eredeti Picasában** dolgoztál fel, az ott
+  mellőzött arcok itt is a **Mellőzött emberek** albumban jelennek meg —
+  akkor is, ha a PicasaPy arckeresője magától nem talált ott arcot;
+- amit itt mellőzöl, azt az eredeti Picasa is mellőzöttnek látja, és egy
+  későbbi arckeresés sem kínálja fel újra.
+
+Mivel a két program arckeresője nem ugyanaz, a keretek nem pontosan
+egyeznek: a PicasaPy az egymást nagyrészt átfedő kereteket **ugyanannak
+az arcnak** tekinti, és nem mutatja kétszer.
 
 ## Arcok a nézőben
 

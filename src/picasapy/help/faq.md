@@ -178,6 +178,21 @@ képet; állítsd be kézzel a rendszer saját beállításaiban. Lásd
 Az elsőnél nincs kijelölve semmi. A másodiknál a felsorolt fájlok nem
 olvashatók — nézd meg, léteznek-e még.
 
+### „Nem találhatók arcok" / „Úgy tűnik, több arc van a képen."
+
+Az **Útlevélkép** parancs üzenetei, a **Megpróbálkozik egy másik
+képpel?** kérdés alatt: a program vagy egyetlen arcot sem talált a képen,
+vagy egynél többet. Útlevélképhez pontosan egy arc kell — válassz olyan
+képet, amin egy, jól látható arc van. Részletek:
+[Útlevélkép](features/utlevelkep.md).
+
+### „A kép nem olvasható be." / „A kivágott kép nem menthető."
+
+Szintén az **Útlevélkép** parancsé, **Útlevélkép** címmel. Az első azt
+jelenti, hogy a képfájlt nem sikerült megnyitni (nézd meg, létezik-e még,
+és olvasható-e). A második azt, hogy a kivágást nem sikerült ideiglenes
+fájlba kiírni — általában akkor, ha tele a lemez.
+
 ### „Előbb jelölj ki képeket a könyvtárban, vagy tedd őket a képtálcára."
 
 Kollázs vagy film készítéséhez legalább egy kép kell.

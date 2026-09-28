@@ -42,8 +42,8 @@ pedig addig nem, amíg csak egy van — az utolsó készletet nem lehet
 törölni, csak módosítani.
 
 A panel alján egy sor mutatja, **hova** ment a kiválasztott készlet, és
-**mikor futott utoljára** — ha még nem futott, azt is kiírja. Másolás
-közben ugyanitt jelenik meg a haladás.
+**mikor futott utoljára** — ha még nem futott, a célhely után „még nem
+futott" áll. Másolás közben ugyanitt jelenik meg a haladás.
 
 ## Új készlet
 
@@ -66,29 +66,43 @@ Az **Új készlet…** gombbal négy dolgot adsz meg:
     benne van a fényképezőgép neve. Ezzel a képernyőképek és a letöltött
     képek kimaradnak a mentésből.
 
-A készlet-űrlap **külön felugró ablakban** nyílik; a **Módosítás** gomb
-zárja le. Ha a program nem fogadja el a készletet, az űrlap **nyitva
-marad**, a beírt adatok megmaradnak, és a hiba oka ott olvasható.
+A készlet-űrlap **külön felugró ablakban** nyílik, **Mentési készlet**
+címmel; az **OK** gomb zárja le, a **Mégse** elveti. Ha a program nem
+fogadja el a készletet, az űrlap **nyitva marad**, a beírt adatok
+megmaradnak, és a hiba oka ott olvasható.
 
 A **Készlet módosítása…** ugyanezeket a mezőket nyitja meg egy meglévő
-készleten — a típusát is átállíthatod. A **Készlet törlése** rákérdez, és
-a kérdésben **a készlet nevét is kiírja**; **a már elmentett fájlokat nem
-bántja**, csak a nyilvántartást szünteti meg.
+készleten — a típusát is átállíthatod. Ilyenkor az ablak címe **Mentési
+készlet szerkesztése**, a záró gomb pedig **Módosítás**.
+
+A **Készlet törlése** rákérdez, és a kérdésben **a készlet nevét is
+kiírja**; **a már elmentett fájlokat nem bántja**, csak a nyilvántartást
+szünteti meg.
 
 ## Melyik mappa menjen át
 
-A jobb oldali keret fölött, a panel és a könyvtár közt egy **mappalista**
-jelenik meg: **azok a mappák, amelyekből még nem mentetted el mindent**.
-A már teljesen elmentett mappa nem látszik itt. A keret szövege is ezt
-mondja: „A Picasa most azokat a fájlokat jeleníti meg, amelyekről
-korábban nem készült biztonsági másolat."
+Amíg a mentés-panel nyitva van, **az egész könyvtár átáll mentés-módba**,
+és csak azt mutatja, ami még nincs elmentve:
 
-Minden mappa előtt **pipa** áll. **Alapból egy sincs bepipálva** — neked
-kell megjelölni, mi menjen át:
+- a **bal hasáb** azokra a mappákra szűkül, amelyekből még nem mentetted
+  el mindent — a már teljesen elmentett mappa nem látszik. Ez a lapos
+  mappalistára és a fanézetre egyaránt áll; a fán a mentetlen mappák a
+  **szülőmappáikkal együtt**, kinyitva jelennek meg, hogy lásd, hol
+  vannak. A panel bezárása után a fa ugyanúgy áll, ahogy előtte;
+- a **képrács** is csak a **még el nem mentett fájlokat** mutatja. Egy
+  félig elmentett mappából tehát csak az újak és a megváltozottak
+  látszanak. A panel bezárásakor a rács visszaáll, oda is, ahol előtte
+  álltál.
+
+A panel maga is kiírja, mi történik: „A Picasa most azokat a fájlokat
+jeleníti meg, amelyekről korábban nem készült biztonsági másolat."
+
+A bal hasábon minden megjelenő mappa előtt **pipa** áll. **Alapból egy
+sincs bepipálva** — neked kell megjelölni, mi menjen át:
 
 - kattints a mappák pipájára egyenként, vagy
-- a keret alján lévő **Az összes kijelölése** gombbal jelöld be mindet —
-  az **Az összes kijelölés megszüntetése** pedig mindet leveszi.
+- a panel **Az összes kijelölése** gombjával jelöld be mindet — az **Az
+  összes kijelölés megszüntetése** pedig mindet leveszi.
 
 Amíg egy pipa sincs, a **Biztonsági mentés**/**Írás** gomb szürke.
 
@@ -97,8 +111,13 @@ gyűjteményt; amíg számol, **Számítás…** áll a helyén. Készletváltá
 egyszer újraszámol. Nagy gyűjteménynél ez eltarthat egy ideig, de a
 program közben használható marad.
 
-Ha a készletből már minden el van mentve, a lista helyén ez áll:
-„Minden el volt már mentve."
+Két eset, amikor a hasábon a mappák helyén egy mondat áll:
+
+- **Készlet létrehozása vagy egy meglévő használata** — még nem
+  választottál készletet, tehát nincs mihez hasonlítani;
+- **A készlet valamennyi fájljáról készült biztonsági másolat** — ebben a
+  készletben már minden el van mentve, nincs mit átvinni. Ugyanez a
+  mondat a képrács helyén is megjelenik.
 
 ## A mentés futtatása
 
@@ -119,9 +138,9 @@ elkészült** —, akkor is, ha nem volt mit átmásolni.
 
 ### Megszakítás
 
-Amíg a másolás tart, a **Biztonsági mentés**/**Írás** gomb helyén
-**Megszakítás** áll.
-Erre kattintva a program az éppen futó fájl után abbahagyja.
+Amíg a másolás tart, a panel jobb szélén megjelenik a **Megszakítás**
+gomb (az indító gomb ilyenkor szürke). Erre kattintva a program az éppen
+futó fájl után abbahagyja.
 
 **A megszakítás nem veszít el munkát:** a már átmásolt fájlok bekerülnek
 a nyilvántartásba, tehát a következő futás pontosan a hiányzókkal

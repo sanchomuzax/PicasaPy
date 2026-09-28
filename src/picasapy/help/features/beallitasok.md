@@ -7,14 +7,19 @@
 **Webalbumok**, **Névcímkék**.
 
 > **Fontos:** ma két fülön van élő vezérlő. Az **Általános** fülön a
-> **nyelv**, a **Törlés a lemezről megerősítés nélkül** és a
-> **Duplikátumok észlelése importáláskor** kapcsoló, valamint a
-> **Gyorsítótár ürítése…** gomb; az **E-mail** fülön a levelezőprogram
-> megválasztása és a küldött képek mérete (lásd
-> [Küldés e-mailben](email.md)). A többi vezérlő szürke — a helye
-> megvan, de a funkció mögötte még nem készült el. A **Bezárás** gomb
-> zárja az ablakot; nincs külön OK, mert az élő beállítások azonnal
-> hatnak (a nyelv a kivétel, lásd alább).
+> **nyelv**, a **Törlés a lemezről megerősítés nélkül**, az
+> **Eltávolítás az albumból megerősítés nélkül** és a **Duplikátumok
+> észlelése importáláskor** kapcsoló, valamint a **Gyorsítótár ürítése…**
+> gomb; az **E-mail** fülön a levelezőprogram megválasztása és a küldött
+> képek mérete (lásd [Küldés e-mailben](email.md)). A többi vezérlő
+> szürke — a helye megvan, de a funkció mögötte még nem készült el. A
+> **Bezárás** gomb zárja az ablakot; nincs külön OK, mert az élő
+> beállítások azonnal hatnak (a nyelv a kivétel, lásd alább).
+
+Ha az ablakot **keskenyre** húzod, a nyolc fül nem szorul össze
+olvashatatlanra: a fülsor vízszintesen **görgethetővé** válik, a két
+szélén egy-egy **‹** és **›** nyíllal. A kiválasztott fül mindig
+láthatóra görög.
 
 Az ablak feliratai — a szürke vezérlők feliratai is — az **eredeti Picasa
 saját szövegei**, ezért néhol másképp fogalmaznak, mint amit a funkció

@@ -70,8 +70,22 @@ felirata, és akkor csak az összeállításból veszi ki a képet — a fájlho
 nem nyúl. Mappában áll a **Törlés lemezről** felirat, és ott tényleg
 törli a fájlt.
 
-A program megerősítést kér. A megerősítést a **Beállítások ▸ Általános**
-lapon ki lehet kapcsolni („Törlés a lemezről megerősítés nélkül").
+A program megerősítést kér. A kérdés ablaka **Elemek törlése**, és a
+szövege attól függ, **hova** kerül a fájl:
+
+- ha a rendszer **Kukája** használható, a program oda küldi a fájlt, és
+  ezt kérdezi: „Biztosan a Kukába szeretné küldeni a kijelölt fájlt? (Így
+  az összes olyan albumból is el fog tűnni, amelyben eddig látható
+  volt.)" A jóváhagyó gomb **Kép törlése**, több képnél **Elemek
+  törlése**;
+- ha a Kuka **nem használható** — például hálózati megosztáson vagy
+  pendrive-on lévő fájlnál —, a törlés **véglegesen** történik, és a
+  kérdés ezt ki is mondja: „Biztosan végleg törli a kijelölt fájlt? (A
+  művelet nem vonható vissza.)" A gomb ekkor **Fájl törlése**, illetve
+  **Fájlok törlése**.
+
+A megerősítést a **Beállítások ▸ Általános** lapon ki lehet kapcsolni
+(„Törlés a lemezről megerősítés nélkül").
 
 ## Keresés a lemezen
 
