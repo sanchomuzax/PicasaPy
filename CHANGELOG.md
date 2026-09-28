@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.620] – 2026-09-28
+
 ### Javítva
 - A „Kiegyenesítés” eszközzel elforgatott kép most pontosan ott áll, ahol az
   eredeti Picasában: eddig fél képponttal elcsúszott, és a forgatás kissé
