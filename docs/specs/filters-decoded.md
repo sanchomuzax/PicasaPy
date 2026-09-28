@@ -2096,7 +2096,7 @@ ki  = be + Intenzitás · (255 − be) · hom / 255   ← SCREEN
   nélkül. A `blur-meres` öt csúszkaállásán az él-profil átlagos hibája
   0,48–1,63 szint (a régi Gauss-modellé 0,68–10,19).
 - **Előgörbe:** a sík foltok tónusemelése `(255−c)·c²` alakú, nem
-  `(255−c)·c`. A kitevő illesztése **éles minimumot ad 2,0-nál** (1,9-nél és
+  `(255−c)·c`. (⛔ #3912: a kitevő a binárisból 2, ld. „⛳ A `glow` egész aritmetikája”.) A kitevő illesztése **éles minimumot ad 2,0-nál** (1,9-nél és
   2,1-nél az átlagos hiba a kétszeresére nő). Ez fedi a natív burkoló
   puffer-előkészítő lépését (`FUN_009aabf0` + `FUN_00aa40a0`).
 - **Súly:** maga az Intenzitás — nincs illesztett szorzó. (A korábbi modell
@@ -2115,6 +2115,51 @@ A sík szürke foltok mért és modellezett értéke (a `chart_color` goldenről
 
 > A 3. kör „128 → 144 / 151" horgonya tehát **téves volt** — a Gauss-modell
 > saját kimenetét rögzítette, nem a goldenét. A tesztek javítva.
+
+### ⛳ A `glow` egész aritmetikája a binárisból (2026-09-28, 399. kör, #3912)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A fenti modell két illesztett eleme (a 2,0-s kitevő és a súly) kiolvasva; a keverés egész.*
+
+**A callback** (`0x008f8f70`, `glow` = `glow2`): a `[szűrő+0x28]` (Intenzitás)
+**abszolút értékét** (`0x0049f5c0` = `fabs`) és a `[szűrő+0x2c]`-t (sugár)
+adja a magnak.
+
+**A mag** (`0x0090d4b0`):
+
+1. **Vágások:** sugár `[0, 250]` (`0x0090d4ba`–`0x0090d4e5`; `[0xcf48e0]` =
+   250,0, pótérték `[0xcf48dc]` = 250,0), Intenzitás `[−1, 1]`
+   (`[0xcf3ed0]` = −1,0, `fld1`); a súly `k = |csonk(256 · i)|`, legfeljebb 256
+   (`0x0090d51a` `fmul [0xcf39d8]` = 256,0; `0x0090d591`).
+2. **Előgörbe** (`0x00aa40a0`, `0x0090d55d`, argumentum `0,5` = `[0xc7dafc]`):
+   egy 256 elemű gamma-tábla, kitevő `1 / 0,5 = 2`:
+   `LUT[i] = rint(255 · (f32(i / 255))²)` (`0x00aa4122` `fmul [0xcf4138]` =
+   1/255, `0x005568e0` = `pow`, `fmul [0xcf39d0]` = 255,0, `fistp` legközelebbire),
+   a három színcsatornára (`0x00aa4195`–`0x00aa41b9`) egy másolaton.
+3. **Elmosás:** a közös IIR-mag (`0x009dd0d0`), mindkét irányban a sugárral; `0`-s sugárnál azonnal visszatér (nincs elmosás).
+4. **Keverés** (`0x009ac3f0`, `256 − k` súllyal; `o` az eredeti, `t` az
+   elmosott négyzetes kép), csatornánként, csomagolt egész aritmetikával:
+
+```
+s   = 255 − (((255 − t) · (255 − o)) >> 8)        ; Screen, >> 8 (0x009ac47d–0x009ac4e4)
+ki  = s + (((o − s) · (256 − k)) >> 8)            ; visszakeverés (0x009ac4ea–0x009ac52a)
+```
+
+`k = 0`-nál (Intenzitás 0) `ki = o` pontosan; `k = 256`-nál `ki = s`.
+
+**Nálunk** (`render/effects.py`, `apply_glow`): lebegőpontos
+`be + I·(255 − be)·hom/255`, a négyzetes előgörbe `be²/255` lebegőpontosan, és
+0-s sugárnál egy tartalék sugár (`GLOW_V1_RADIUS`) fut — a natív 0-s sugárnál
+nem mos el.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz; `glow` és `glow2` azonos):
+
+| eset | ma | **natív** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| alap (0,65 / 3,0) | 0,327 | **0,264** | 0,233 |
+| max (1,0 / 1,0) | 0,514 | **0,284** | 0,251 |
+| min (0 / 0) | 0,121 | **0,121** | 0,083 |
+
+Fejlesztés: #3913.
 
 ### A `radblur` megfejtett modellje
 
