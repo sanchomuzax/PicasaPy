@@ -354,9 +354,74 @@ képpont-sorrend (2.2/b) és a csempézés hiánya (ez a szakasz) együtt ezt ad
 ki. A golden-teszt ezért **tűrés nélkül** írható meg, ha a mérés
 egyszálú, egy képre vonatkozik.
 
+## 2.2/d Csökkenő tábla: a `(delta · r)` eltolása ELŐJEL NÉLKÜLI (2026-09-28, 392. kör, #3867)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel.*
+
+A 2.2 képlete a szorzat eltolását `>>`-nek írja. Mindkét alkalmazóban
+(`0x0090bc60` és a helyben dolgozó testvére, `0x0090be70`) ez **logikai**
+eltolás, a `delta >> 1` és a végső `>> 8` viszont aritmetikai:
+
+```
+0x0090bf7a  imul eax, esi        ; delta · r   (r = minta & 0xff)
+0x0090bf7d  sar  ecx, 1          ; delta >> 1   — előjeles
+0x0090bf7f  shr  eax, 8          ; (delta · r) >> 8 — ELŐJEL NÉLKÜLI
+0x0090bfa8  sar  eax, 8          ; v >> 8       — előjeles
+0x0090bfb1  … clamp(0, 255)      ; előjeles összehasonlítás
+```
+
+(`0x0090bc60`-ban ugyanez: `0x0090bd9a` `imul`, `0x0090bd9f` `shr eax, 8`.)
+
+Növekvő táblánál (`delta ≥ 0`) ez azonos a 2.2 képletével. **Csökkenő
+táblánál** (`delta < 0`, `r > 0`) a szorzat 32 bites előjel nélküli
+eltolása `2²⁴ + ⌊delta·r / 256⌋`-ot ad, a `v >> 8` így 65 536 körül
+jár, és a vágás **255**-öt ír. Csak két eset marad sötét:
+
+- `r = 0` (a képpontok ≈ 1/256-a): a kimenet a tábla értéke, `(lo − (delta >> 1)) >> 8`;
+- `delta = 0`: a tábla vízszintes szakasza, köztük a `LUT[256] = LUT[255]`
+  másolat miatt a **255-ös bemenet** — ez a tábla utolsó értékét kapja.
+
+**Mikor csökken a tábla?** A táblaépítő (`0x0090c1e0`) a skálát
+`1 / (fehér − fekete)`-ként számolja (`0x0090c211` `fsub`, `0x0090c213`
+`fdivp`; egyenlőségnél 1,0), és a kimenetet **előjelesen** vágja
+`[0, 0xFF00]`-ra (`0x0090c287` `jge`, `0x0090c28f` `cmp eax, 0xff00` /
+`jle`). A `finetune`/`finetune2` hívója (`0x008f7cf0`, `0x008f7ee0`) `fekete = Árnyékok`,
+`fehér = max(1 − Kiemelések, 0,001)` értékkel hívja; ha `Árnyékok > 1 −
+Kiemelések`, a skála negatív, és a tábla `LUT[i] = clamp(rint((i/255 − fekete)
+· 65280 / (fehér − fekete)))`, tehát csökkenő. A 684-es készlet `max` soraiban
+(`Árnyékok = 1`, `Kiemelések = 0,5`) `LUT[255] = 0`, a kicsi bemenetek pedig
+`0xFF00`-ra telítődnek.
+
+⇒ A kimenet a képpontok ~255/256-odán **fehér**, a **255-ös bemenet fekete**,
+és szétszórtan (`r = 0`) a tábla invertált értéke látszik. Ez a mechanizmus,
+nem egy „teljes fehér” tábla.
+
+**A véletlen generátor maga szabványos MT19937.** A 2.2 temperálási sora
+(`<<7 & 0xff3a58ad`, `<<15 & 0xffffdf8c`) a maszkolást az eltolás ELŐTT
+végzi (`0x0090bf2e` `and edx, 0xff3a58ad` → `0x0090bf34` `shl edx, 7`);
+eltolva ez `0x9d2c5680`, illetve `0xefc60000`, a szabványos állandók.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz; a mai lánc, csak a tábla
+és az eltolás a fenti szerint, vetőmag `0x2D8228BE`):
+
+| eset | ma („teljes fehér” tábla) | **natív tábla + logikai eltolás** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| `finetune` max | 3,665 | **0,632** | 0,262 |
+| `finetune2` max | 3,392 | **0,569** | 0,205 |
+| `finetune` / `finetune2` alap | 0,381 / 0,574 | 0,381 / 0,574 | 0,317 / 0,536 |
+
+A maradék az `r = 0` képpontok **helye**: a Picasa-exportban 960, nálunk
+973 ilyen van (a várt ≈ 1/256-os arány), de csak 3 esik egybe. A vetőmagtól
+számított első 60 millió mintában nincs olyan kezdőpont, amelyből a Picasa
+sötét képpontjai kijönnének; a generátor állapota folyamat-globális
+(2.2/c.3), tehát egy sorozatban exportált kép helyei a vetőmagból nem
+számíthatók ki. A darabszámuk és a mechanizmus igen.
+
+Fejlesztés: #3871.
+
 ## 2.3 Szinthúzás (Kiemelések / Árnyékok) — `0x0090c3b0`
 
-Két lépés: LUT-építés (`0x0090c1e0`) + a fenti alkalmazó.
+Két lépés: LUT-építés (`0x0090c1e0`) + a fenti alkalmazó. Fordított fekete-/fehérpontnál (fekete > fehér) a tábla csökkenő — a viselkedést a 2.2/d írja le (#3867).
 
 ```c
 // FUN_0090c1e0(float black, float white, float gamma)
