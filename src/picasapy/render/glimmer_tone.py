@@ -133,8 +133,10 @@ def apply_crossprocess(image, fade: float = 0.0):
 
 # A `filterdesc.xml` `Sixties` görbéi szó szerint (#3451). A csatornagörbék
 # ELSŐ pontja emeli a feketét (piros 59, zöld 22, kék 9) — ez adja a meleg,
-# fakó alapot. A `curve_lut` a töréspontokon kívül a szélső értéket tartja,
-# tehát a pontokat nem kell 0-ig vagy 255-ig kiegészíteni.
+# fakó alapot. Az `adjust_curves`-lánc (#3942) a saját töréspontjain túl
+# EXTRAPOLÁL (a mestergörbe 243 fölötti kimenete a kék csatornát is a
+# 255-ös töréspontján túl viszi), tehát a pontokat itt sem kell 0-ig vagy
+# 255-ig kiegészíteni.
 _SIXTIES_MASTER = ((0.0, 0.0), (150.0, 104.0), (243.0, 255.0))
 _SIXTIES_RED = ((0.0, 59.0), (96.0, 156.0), (210.0, 255.0))
 _SIXTIES_GREEN = ((0.0, 22.0), (150.0, 166.0), (255.0, 216.0))
