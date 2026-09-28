@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.618] – 2026-09-28
+
 ### Javítva
 - Az „Élesítés” effekt most az eredeti Picasa szerint élesít: a csúszka
   felső állásain eddig jóval gyengébb volt az eredetinél, mostantól ugyanolyan
