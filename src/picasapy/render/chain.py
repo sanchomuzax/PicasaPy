@@ -98,9 +98,12 @@ KNOWN_UNRENDERED_OPS = frozenset(
     {
         # `grain` (v1) a #347 lezáró auditban (2026-08-06) KIKERÜLT innen:
         # a `filterdesc-registry.md` szerint a `grain2`-vel MEGEGYEZŐ,
-        # paraméter nélküli "Film Grain" oneclick család régi tagja, ezért
-        # a `grain2` golden-mért modelljét (`_apply_grain_op`) használja
-        # (ld. lent a `_HANDLERS`-ben).
+        # paraméter nélküli "Film Grain" oneclick család régi tagja. A
+        # #3927/#3928 a natív munkafüggvényt (0x0090a2e0) a bináriból
+        # olvasta ki: a callback mindkettőt azonos `a = 0,5`-tel hívja,
+        # tehát nem "más algoritmus, kölcsönzött modellel", hanem EGYETLEN
+        # algoritmus — ezért fut mindkettő az `_apply_grain_op`-on (ld.
+        # lent a `_HANDLERS`-ben).
         # `radtint` a #565-ben KIKERÜLT innen: a natív regisztráció
         # (0x8f8730), a feldolgozó mag (0x90b370) és a maszk-LUT (0x90aeb0)
         # visszafejtésével az algoritmuscsalád és a pixelművelet (radiális
@@ -718,7 +721,7 @@ _HANDLERS = {
     "sat": _apply_sat_op,
     "unsharp": _apply_unsharp_op,
     "unsharp2": _apply_unsharp_op,
-    "grain": _apply_grain_op,  # v1 — közelítés, ld. _apply_grain_op docsztringje
+    "grain": _apply_grain_op,  # v1 — a grain2-vel EGYEZŐ, kiolvasott algoritmus, ld. _apply_grain_op docsztringje
     "grain2": _apply_grain_op,
     "glow": _apply_glow_op,
     "glow2": _apply_glow_op,

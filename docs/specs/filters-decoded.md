@@ -587,7 +587,7 @@ Picasa-hű lenne.
 
 | minőség | mit jelent | effektek |
 |---|---|---|
-| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat`, `grain2` (statisztikai) |
+| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat` |
 | **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6) |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL ÉS VÉGIGMÉRVE (#878)** | a `filterdesc.xml` receptje mellé a natív `glimmer::EdgeDetectionBImageOperation` (`0x00bbca60`) TELJES belső lépéssora is megvan, és a `TintImageOperation` pixelmatematikája golden párból MÉRVE (fényesség-tartó színezés); a #685 mérőszettjén ΔE 113,89 → **4,72**, SSIM −0,002 → **0,866** | `Neon` |
@@ -597,7 +597,7 @@ Picasa-hű lenne.
 | **MEGFEJTVE, DE ÜRES ECSET-MASZKKAL INDUL (#688)** | a pixel-matematika egzakt, de az effekt **befestés nélkül nem csinál semmit**: a #685 exportján a Picasa a `min` és az `alap` álláson egyaránt érintetlenül hagyta a mérőképet (ΔE 0,18 = JPEG-zaj), miközben a korábbi, teljes képes modellünk ΔE 57,5 / 54,6 mértékben átfestette. Maszk nélkül tehát AZONOSSÁG; a `mask` paraméterrel a visszafejtett csővezeték lefut | `ReanimatedEyeColor` |
 | **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | — |
 | **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL, EGY RÉSZLET NYITVA (#569, #570)** | a csővezeték (lépések, paraméter-sorrend, képletek, keverési módok) egzakt; egyedül a mintavételezés perem-/interpolációs szabálya vár golden-összevetésre | `Comicize`, `FocalZoom`, `PicnikFocalPixelate` |
-| **KÖZELÍTŐ (másik, mért v2-modell újrahasznosítva) — #347 lezáró audit (2026-08-06)** | a filterdesc szerint a v1/v2 pár paraméter nélküli, azonos "oneclick" család (nincs csúszka/szín, ami megkülönböztetné őket) — a v1-re önmagára nincs golden-mérés, ezért a már mért v2-modellt futtatjuk rá | `grain` (v1, a `grain2` modelljét használja) |
+| **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#3927, #3928, #3936)** | a callback (`0x008f88e0`) a `grain` és a `grain2` esetén EGYFORMÁN, konstans `a = 0,5`-tel hívja ugyanazt a munkafüggvényt (`0x0090a2e0`) — nem két külön modell, hanem egyetlen, bináris­ból kiolvasott nyolclépéses algoritmus (helyi MT19937-zaj, háromszoros kétirányú simítás, középtónus-súlyozás); a `grain-kit`-en (8 mag átlaga) ΔE 2,674 | `grain` / `grain2` |
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell, vagy a natív kódból kinyert beégetett tábla | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át), `warm` (256×3 beégetett tábla a `0x0090c040`/`0x00d33b70`-ből kinyerve, #611 — ld. `docs/specs/picasa-native-filter-workers.md` 2.8) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#565, #317, #3453)** | a natív közös sugaras maszk (`0x0090b050` + `0x0090aeb0`, élesség 0, sugár `min(W,H)/2·(Feather+1)`); a 684-es golden három Feather-állásán ΔE 0,70 / 0,73 / 0,74 | `radtint` (radiális **szorzó**-tint a `render/radial_mask.py` maszkjával) |
@@ -627,8 +627,10 @@ A kalibráció (a maradék KÖZELÍTŐ effektekhez
 **#347 lezáró audit (2026-08-06):** a jegy eredeti hét neve közül HAT
 mostanra rendezett — `glow` (v1) golden-mérve MÉRT, `RoundedEdges`/`Matte`/
 `NightVision` a #381 filterdesc-csővezetéken MEGFEJTVE, `picnik` no-op
-jelzőként azonosítva, `grain` (v1) a `grain2` mért modelljét újrahasznosítva
-renderel. A hetedik, `radtint` a **#565**-ben rendeződött: nem golden-mérésből,
+jelzőként azonosítva, `grain` (v1) pedig — **#3927/#3928 óta** — nem egy
+másik, mért v2-modellt újrahasznosítva, hanem a `grain2`-vel EGYEZŐ,
+bináris­ból kiolvasott algoritmussal renderel (a callback mindkettőt azonos
+`a = 0,5`-tel hívja). A hetedik, `radtint` a **#565**-ben rendeződött: nem golden-mérésből,
 hanem a natív kód visszafejtéséből (regisztrációs render callback `0x8f8730`,
 feldolgozó mag `0x90b370`, maszk-LUT segédfüggvény `0x90aeb0`). Ezzel a #347
 mind a hét neve renderel.
@@ -3168,17 +3170,17 @@ Két független emuláció egymáshoz mért ΔE-je 2,81: a 2,67 a véletlen mag 
 
 Ezzel lezárul a régi szakasz feltételes pontja (egyenlő vízszintes és függőleges korreláció): a simítás kétirányú. A Picasa `−1,97`-es átlagos sötétítését az emuláció magától, illesztés nélkül visszaadja (`−1,96`); a mai kódunk átlaga 0.
 
-**Nálunk** (`render/color.py::apply_grain`, a nyolc lépés `render/native_grain.py`-ban): egyenletes szórású, korrelálatlan, tónusfüggetlen Gauss-zaj volt → **✅ Megvalósítva (2026-09-28, #3928)**.
+**Nálunk** (`render/color.py::apply_grain`, a nyolc lépés `render/native_grain.py`-ban): egyenletes szórású, korrelálatlan, tónusfüggetlen Gauss-zaj volt → **✅ Megvalósítva (2026-09-28, #3928, a simítás iránya helyesbítve #3936-ban)**.
 
-A nyolc lépés átültetésekor az 5. pont (a háromszori kétirányú simítás) iránya nem volt egyértelmű a dekompilátumból: a **vízszintes menet kaszkádolva** (balról jobbra haladva a már frissített bal szomszédot olvasva, futó/rekurzív szűrőként), a **függőleges menet** viszont a hívás eleji pillanatképet (`p_eredeti`) olvasva szomszédként — ez a kombináció adta vissza a táblázat mind a négy oszlopát a legszorosabban; a tisztán kétirányú kaszkád ΔE 2,58-at, a tisztán kétirányú pillanatkép-alapú változat ΔE 2,72-t adott (684-merokeszlet, `grain__alap`, seed=0):
+Az 5. pont mindkét menete pillanatkép-alapú, NEM rekurzív, ugyanazzal a képlettel (a spec szó szerint: „helyben, nem rekurzívan, az előző szomszédot a tárolás előtt olvassa"): a **vízszintes menet** a menet ELŐTTI állapotot olvassa szomszédként, a **függőleges menet** pedig a VÍZSZINTES menet UTÁNI (a függőleges menet előtti) állapotot — nem a háromszori ismétlés eleji pillanatképet. Mérve (`grain-kit`, `grain__alap`, 8 mag átlaga, seed=0):
 
-| | emuláció (fent) | a mai kódunk (#3928 után) |
+| | emuláció (fent) | a mai kódunk (#3936 után) |
 |---|---:|---:|
-| átlagos eltolás | −1,96 | **−1,96** |
-| szórás tónussávonként (0–40 / 40–90 / 90–170 / 170–215 / 215–255) | 2,5 / 4,4 / 5,5 / 4,4 / 2,4 | **2,49 / 4,39 / 5,50 / 4,39 / 2,36** |
-| vízszintes / függőleges szomszéd-korreláció | 0,28 / 0,28 | **0,23 / 0,29** |
+| átlagos eltolás | −1,96 | **−1,95** |
+| szórás tónussávonként (0–40 / 40–90 / 90–170 / 170–215 / 215–255) | 2,5 / 4,4 / 5,5 / 4,4 / 2,4 | **2,49 / 4,42 / 5,51 / 4,39 / 2,36** |
+| vízszintes / függőleges szomszéd-korreláció | 0,28 / 0,28 | **0,283 / 0,283** |
 | R–B csatorna-korreláció | 0,87 | **0,87** |
-| ΔE a Picasa-exporthoz | 2,67 | **2,67** |
+| ΔE a Picasa-exporthoz | 2,67 | **2,674** |
 
 A mag (`seed`) a hívó felelőssége: az élő előnézetben rögzített (`seed=0`, hogy a szemcse ne „villogjon"), az elfogadás statisztikai — a Picasa natív magja úgyis hívásonként más, bájtra pontos reprodukció nincs.
 
@@ -7043,7 +7045,7 @@ Modell **minden** effekt mögött van; a törzs „ezért `blocked`" mondata
 |---|---|
 | `Comicize` · `FocalZoom` · `PicnikFocalPixelate` | a csővezeték egzakt, de a **mintavételezés perem-/interpolációs szabálya** golden-összevetésre vár (#569, #570) |
 | ~~`dir_sharp`~~ | ~~egy skalár az x87-veremen ment át, a helyén indokolt feltevés áll (#623)~~ → a horgony kiolvasva (#3858), megvalósítva és golden-mérve, ΔE 0,384 (#3859) |
-| `grain` (v1) | saját mérése nincs — a `grain2` modelljét futtatjuk rá (#347) |
+| ~~`grain` (v1)~~ | ~~saját mérése nincs — a `grain2` modelljét futtatjuk rá (#347)~~ → a callback mindkettőt azonos `a = 0,5`-tel hívja, `grain` és `grain2` ugyanaz a bináris­ból kiolvasott algoritmus, végigmérve (#3927, #3928, #3936) |
 | `tint` · `dir_tint` | **MÉRT, DE ELTÉR**: ΔE 20,6 és 9 |
 | `ansel` | ΔE 5,6 — miközben a színsúlyok a binárisból **megerősítettek** (#939, 286. kör) ⇒ az eltérés a lánc **más** tagjában van, és ez nincs kimérve |
 | `Lomo` | ΔE 9,0–9,5, a maradék a `GlowImageOperation` kernelében (#2982) |

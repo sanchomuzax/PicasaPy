@@ -15,21 +15,19 @@ erősségű oneclick pár (#347, #3927). A nyolc lépés, egész aritmetikával:
 4. első zajmező, képpontonként egy MT-szó, csatornánként (R = 2., G = 1.,
    B = 0. bájt, mint a `nativ_noise.noise_layer`-ben) a 127 felé húzva
    `k`-val: `bájt' = bájt + ((127 − bájt)·k) >> 8`;
-5. simítás háromszor, mindegyik kétirányú (vízszintes, majd függőleges):
+5. simítás háromszor, mindegyik kétirányú (vízszintes, majd függőleges),
+   **helyben, nem rekurzívan** — a spec szó szerint: „az előző szomszédot a
+   tárolás előtt olvassa", ugyanazzal a képlettel mindkét tengelyen:
    ```
-   sorok 0…H−2,  x = 1…W−1:  p[y][x] = (3·p[y][x]      + p[y][x−1])      >> 2
-   oszlopok 0…W−2, y = 1…H−1: p[y][x] = (3·p_víz[y][x] + p_eredeti[y−1][x]) >> 2
+   sorok 0…H−2,  x = 1…W−1:  p[y][x] = (3·p_bemenet[y][x] + p_bemenet[y][x−1]) >> 2
+   oszlopok 0…W−2, y = 1…H−1: p[y][x] = (3·p_bemenet[y][x] + p_bemenet[y−1][x]) >> 2
    ```
-   a vízszintes menet **kaszkádol** (balról jobbra haladva a MÁR frissített
-   bal szomszédot olvassa — egyetlen soron belüli, sorfüggetlen futó szűrő);
-   a függőleges menet viszont a HÍVÁS ELEJÉN vett pillanatképet
-   (`p_eredeti`) olvassa szomszédként, a „3×" tag jön csak a vízszintes
-   után frissített tömbből. Ez a kombináció (mérve, #3928) adja vissza a
-   spec táblázatának mind a négy oszlopát ±0,05-ön belül; a tisztán
-   kétirányú kaszkád és a tisztán kétirányú pillanatkép-alapú változat
-   egyaránt eltér (ΔE 2,58, ill. 2,72 a célzott 2,67-hez képest).
-   Az utolsó sort a vízszintes, az utolsó oszlopot a függőleges menet
-   kihagyja;
+   ahol `p_bemenet` az adott MENET (nem a háromszori ismétlés) eleji
+   pillanatkép: a vízszintes menetnél az előző menet kimenete, a
+   függőleges menetnél a VÍZSZINTES menet kimenete (nem a hívás eleji
+   állapot). Mindkét menet teljes egészében vektorizálható, Python-ciklus
+   nélkül. Az utolsó sort a vízszintes, az utolsó oszlopot a függőleges
+   menet kihagyja;
 6. friss zaj visszakeverése, képpontonként egy ÚJ MT-szóval (a folyam
    folytatásából, NEM a 127 felé húzva): `p' = friss + ((p − friss)·210) >> 8`;
 7. szürkítés `w = 200`-zal: `Y = (28·B + 151·G + 77·R) >> 8`,
@@ -37,10 +35,11 @@ erősségű oneclick pár (#347, #3927). A nyolc lépés, egész aritmetikával:
 8. a képre, csatornánként: középtónus-súllyal
    `ki = clamp(c + (((160 − |128 − c|)·(n − 128)) >> 8), 0, 255)`.
 
-Mérve (684-merokeszlet, `grain__alap`): ΔE a Picasa-exporthoz **2,67**
-(korábban, egyenletes Gauss-zajjal: 3,23), a tónussávonkénti szórás és a
-szomszéd-korreláció a spec „kiolvasott algoritmus" oszlopa szerinti, az
-átlagos eltolás −1,96 körüli — ld. a fenti szakaszt a teljes táblázatért.
+Mérve (grain-kit, `grain__alap`, 8 mag átlaga): ΔE a Picasa-exporthoz
+**2,674**, átlagos eltolás **−1,95**, tónussávonkénti szórás
+**2,49 / 4,42 / 5,51 / 4,39 / 2,36**, vízszintes/függőleges
+szomszéd-korreláció **0,283 / 0,283** — a spec táblázatának mind a négy
+oszlopát visszaadja, ld. a fenti szakaszt a teljes táblázatért.
 """
 
 from __future__ import annotations
@@ -68,8 +67,18 @@ _KOZEPTONUS_KOZEP = 128
 
 
 def _bajtok_rgb(szavak: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Egy (H, W) `uint32` zajmezőből R/G/B `int32` bájtsíkok (2./1./0. bájt)."""
-    bajtok = szavak.astype("<u4").view(np.uint8).reshape(*szavak.shape, 4).astype(np.int32)
+    """Egy (H, W) `uint32` zajmezőből R/G/B `int16` bájtsíkok (2./1./0. bájt).
+
+    `int16` (nem `int32`): a 4. lépés (`_pull_127_fele`) és az 5. lépés
+    háromszori kétirányú simítása (`_simit_haromszor`) — a legtöbbször
+    futtatott, teljes képméretű numpy-hívások — matematikailag bizonyítottan
+    a `[63, 191]` tartományban maradnak (a `_pull_127_fele` a bájtot a 127
+    felé húzza, a simítás pedig konvex kombináció, tehát nem léphet ki a
+    bemenet tartományából), így `int16`-ban felezett memóriasávszélességgel,
+    hűen futnak. A `apply_native_grain` a visszakeverés (6. lépés) ELŐTT
+    `int32`-re bővíti vissza — az ottani `·210` szorzás a mért tartományban
+    (kb. −38 000…35 000) már `int16`-ban túlcsordulna."""
+    bajtok = szavak.astype("<u4").view(np.uint8).reshape(*szavak.shape, 4).astype(np.int16)
     return bajtok[..., 2], bajtok[..., 1], bajtok[..., 0]
 
 
@@ -78,43 +87,39 @@ def _pull_127_fele(sik: np.ndarray, k: int) -> np.ndarray:
     return sik + (((127 - sik) * k) >> 8)
 
 
-def _vizszintes_kaszkad(p0: np.ndarray, height: int, width: int) -> np.ndarray:
-    """A vízszintes menet: soronként (sorfüggetlenül, tehát a H tengely
-    marad vektorizált) balról jobbra kaszkádol — az `x`. oszlop a MÁR
-    frissített `x−1`. oszlopot olvassa szomszédként. A `width` szerinti
-    ciklus elkerülhetetlen (ez egy futó/rekurzív szűrő), de csatornánként
-    és a 3 ismétlésen belül csak `width − 1` numpy-hívás, nem
-    képpontonkénti Python-ciklus.
-    """
-    p = p0.copy()
+def _vizszintes_pillanatkep(p_eredeti: np.ndarray, height: int, width: int) -> np.ndarray:
+    """A vízszintes menet: pillanatkép-alapú, NEM rekurzív — mind az önmagát,
+    mind a szomszédot adó tag a menet ELŐTTI (`p_eredeti`) állapotból jön
+    (a spec 5. lépése: „az előző szomszédot a tárolás előtt olvassa"), tehát
+    teljes egészében vektorizálható, soronkénti Python-ciklus nélkül."""
     utolso_sor = height - 1
-    for x in range(1, width):
-        p[:utolso_sor, x] = (3 * p[:utolso_sor, x] + p[:utolso_sor, x - 1]) >> 2
+    p = p_eredeti.copy()
+    p[:utolso_sor, 1:] = (3 * p_eredeti[:utolso_sor, 1:] + p_eredeti[:utolso_sor, :-1]) >> 2
     return p
 
 
-def _fuggoleges_pillanatkep(p_viz: np.ndarray, p_eredeti: np.ndarray, width: int) -> np.ndarray:
-    """A függőleges menet: a `3×` tag a vízszintes UTÁNI tömbből jön, a
-    szomszéd viszont a hívás ELEJI (`p_eredeti`) pillanatképből — ez teljes
-    egészében vektorizálható, ciklus nélkül."""
+def _fuggoleges_pillanatkep(p_viz: np.ndarray, width: int) -> np.ndarray:
+    """A függőleges menet: pillanatkép-alapú, NEM rekurzív — mind az önmagát,
+    mind a szomszédot adó tag a vízszintes menet UTÁNI (a függőleges menet
+    ELŐTTI) `p_viz` állapotból jön, ugyanazzal a képlettel, mint a
+    vízszintes menet. Teljes egészében vektorizálható."""
     utolso_oszlop = width - 1
     p = p_viz.copy()
-    p[1:, :utolso_oszlop] = (
-        3 * p_viz[1:, :utolso_oszlop] + p_eredeti[:-1, :utolso_oszlop]
-    ) >> 2
+    p[1:, :utolso_oszlop] = (3 * p_viz[1:, :utolso_oszlop] + p_viz[:-1, :utolso_oszlop]) >> 2
     return p
 
 
 def _simit_haromszor(sik: np.ndarray) -> np.ndarray:
-    """Az 5. lépés: háromszor kétirányú simítás — vízszintesen kaszkádolva,
-    függőlegesen a hívás eleji pillanatképet szomszédként olvasva (a két
-    irány mérve, #3928, eltérő karakterű: ld. a modul docstringjét)."""
+    """Az 5. lépés: háromszor kétirányú simítás, mindkét irány pillanatkép-
+    alapú (nem rekurzív), azonos képlettel — a spec szó szerint: „helyben,
+    nem rekurzívan (az előző szomszédot a tárolás előtt olvassa)". A
+    függőleges menet szomszédja a vízszintes menet UTÁNI (a függőleges menet
+    ELŐTTI) állapot, nem a háromszori ismétlés eleji."""
     height, width = sik.shape
     p = sik
     for _ in range(3):
-        p_eredeti = p.copy()
-        p_viz = _vizszintes_kaszkad(p_eredeti, height, width)
-        p = _fuggoleges_pillanatkep(p_viz, p_eredeti, width)
+        p = _vizszintes_pillanatkep(p, height, width)
+        p = _fuggoleges_pillanatkep(p, width)
     return p
 
 
@@ -136,9 +141,17 @@ def apply_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
     b = _simit_haromszor(_pull_127_fele(b, _K_BEEGETETT))
 
     friss_r, friss_g, friss_b = _bajtok_rgb(friss_szavak)
-    r = friss_r + (((r - friss_r) * _VISSZAKEVERES_SULY) >> 8)
-    g = friss_g + (((g - friss_g) * _VISSZAKEVERES_SULY) >> 8)
-    b = friss_b + (((b - friss_b) * _VISSZAKEVERES_SULY) >> 8)
+    # int32-re bővítve: a `·210` szorzás túlcsordulna `int16`-ban (ld.
+    # `_bajtok_rgb` docsztringje).
+    r = friss_r.astype(np.int32) + (
+        ((r.astype(np.int32) - friss_r) * _VISSZAKEVERES_SULY) >> 8
+    )
+    g = friss_g.astype(np.int32) + (
+        ((g.astype(np.int32) - friss_g) * _VISSZAKEVERES_SULY) >> 8
+    )
+    b = friss_b.astype(np.int32) + (
+        ((b.astype(np.int32) - friss_b) * _VISSZAKEVERES_SULY) >> 8
+    )
 
     y = (_Y_B * b + _Y_G * g + _Y_R * r) >> 8
     r = np.clip(r + (((y - r) * _SZURKITES_SULY) >> 8), 0, 255)
