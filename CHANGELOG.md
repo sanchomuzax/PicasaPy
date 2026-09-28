@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Hőtérkép” effekt színátmenete most az eredeti Picasa szerint számol:
+  a színek eddig kissé eltértek, mert az átmenet durva lépcsőkben
+  alakult színné (a mért eltérés ΔE 1,01–1,13-ról 0,55–0,56-ra csökkent)
+  (#3814).
+
 ## [0.8.615] – 2026-09-28
 
 ### Javítva

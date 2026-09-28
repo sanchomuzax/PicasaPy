@@ -3728,9 +3728,14 @@ A `hueOffset` (`+0x44`) float32-ben adódik a keverés utáni színezethez
 `(200°, 100, 100)` → `(0, 169, 255)`. A 169 a csonkolásból jön
 (`0,6666665 · 255 = 169,99996`), kerekítéssel 170 volna.
 
-**Nálunk** a `glimmer_ops.hsv_gradient_map` az OpenCV 8 bites HSV-jén
-megy át: a színezetet `h/2`, az `s`-t és a `v`-t `·2,55` egészre kerekíti,
-majd `cv2.COLOR_HSV2RGB`-vel alakít. Ez a kvantálás az eltérés oka.
+**Nálunk** (#3814 óta) a `glimmer_ops.hsv_gradient_map` a fenti képlettel
+építi a LUT-ot (`_hsv_rgb_lut_f32`): float32 köztes értékek, `±360`-as
+körbefordítás, hatodolás és `csonk(x · 255)`, OpenCV nélkül. A `hueOffset`
+float32-ben adódik az interpolált színezethez. Korábban az OpenCV 8 bites
+HSV-jén ment át (`h/2`, `·2,55`, egészre kerekítve, `cv2.COLOR_HSV2RGB`) —
+ez a kvantálás volt az 1,0–1,1-es eltérés oka. A javítás után mérve: alap
+**0,548**, min **0,558**, max 0,121 (változatlan: a Fade 100 mellett a keverési
+súly 0, a gradiens nem kerül a képre).
 
 **Mérve** (`HeatMap`, 684-es készlet, ΔE a Picasa-exporthoz; a LUT a fenti
 lebegőpontos képlettel, a kimeneti kerekítést változtatva):
