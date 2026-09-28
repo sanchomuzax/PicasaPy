@@ -1138,6 +1138,49 @@ ebben a körben nem mértük a lánccal.
 
 Fejlesztés: #3827.
 
+##### ⭐ A teljes felbontású ág és a MuseumMatte — emulálva a zajszint közelében (2026-09-28, 387. kör, #626)
+
+*Bizonyítottsági fok: **megerősített** a láncra (utasításszinten, független újralevezetéssel: EGYEZIK), **mért** az `imagewidth` jelentésére.*
+
+A `MuseumMatte` ragyogása kis blurral fut: `xblur = 2·0,02·max(W,H)/4`, egy
+960 × 640-es képen **9,6**. A `0x00bb89b0` ekkor 1,0-t ad (`p < 33,33`), tehát a
+rajzoló a **teljes felbontású** ágon marad
+(`0x00bb8ff3`–`0x00bb9013`):
+
+- a maszképítő (`0x00bcc2e0`) a **bemeneti képet** kapja, a **valódi**
+  színnel és változatlan blurral, és közvetlenül a kimenetbe ír; utána nincs
+  átméretezés, színmátrix vagy további keverés (`0x00bb918b`–`0x00bb91ce`);
+- a maszk, az elmosás és a súly ugyanaz, mint a lekicsinyített ágon (fent);
+- fekete színnél és átlátszatlan forrásnál a kimenet
+  `ki = ((256 − e) · S) >> 8`, ahol `e = min(255, (M · trunc(strength·256)) >> 8)`
+  (`0x00bcbd60`; a szín-tag feketénél 0);
+- a művelet `BlendAlpha`-ja utána a lánc keverője (`0x00bd0700` →
+  `0x009dc4b0`): `k′ = trunc(α·256) − 1`, `ki = (be·(255 − k′) + t·k′) >> 8`,
+  és az alfa 255 lesz. *(Páratlan szélességnél az utolsó oszlopot a skalár ág
+  fordított súllyal keveri, `0x009dc646`–`0x009dc6fb`; a hatását nem mértük.)*
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz; a két ragyogás a fenti
+lánccal, a két gyűrű a mai `add_ring`-gel):
+
+| eset | ma | **natív lánc** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| `MuseumMatte` min (vastagság 0 / 0) | 0,842 | **0,128** | 0,088 |
+| `MuseumMatte` alap (25 / 40) | 0,773 | **0,230** | 0,196 |
+| `MuseumMatte` max (100 / 100) | 0,645 | **0,287** | 0,267 |
+
+**Az `imagewidth` a második ragyogásnál az EREDETI kép mérete, mérve.** A
+második ragyogás a belső gyűrű UTÁN fut, már a nagyobb képen. Ha a blurt
+ennek a méretéből számoljuk, az alap 0,251 és a max 0,343; az eredeti méretből
+0,230 és 0,287. A leíró `imagewidth`-je tehát nem a lánc aktuális képére
+vonatkozik. Ezt a binárisból nem olvastuk ki, a két értelmezés közül a mérés
+dönt.
+
+⇒ A mai kód `/8`-as, illesztett sugara (`VIGNETTE_RADIUS_FACTOR`, #317) a
+fenti lánccal feleslegessé válik: a blur a leíró `/4`-es képlete, változatlanul.
+
+Fejlesztés: a **#3827** (a belső ragyogás lánca) kiegészül a teljes felbontású
+ággal és a MuseumMatte-tal.
+
 #### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
 
 A `0x00c7e5a0` csempe-tábla rekordjai **hármasak** (elsődleges, másodlagos,
