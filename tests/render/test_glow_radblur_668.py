@@ -33,6 +33,7 @@ from picasapy.render.effects import (
     apply_radblur,
     glow_gamma_lut,
     glow_premultiply,
+    glow_weight,
     radblur_blur_radius,
 )
 from picasapy.render.iir_blur import apply_picasa_blur
@@ -280,6 +281,16 @@ class TestGlowEgeszAritmetika3913:
     """A binárisból kiolvasott egész aritmetika (spec: „⛳ A `glow` egész
     aritmetikája a binárisból”, #3912): gamma-tábla, Screen `>> 8`,
     visszakeverés `256 − k` súllyal."""
+
+    @pytest.mark.parametrize(
+        ("intenzitas", "vart_k"),
+        [(0.432749, 110), (0.65, 166), (-0.65, 166), (0.00390625, 1), (1.5, 256), (-2.0, 256)],
+    )
+    def test_a_suly_csonkolt_es_vagott(self, intenzitas: float, vart_k: int) -> None:
+        """`k = min(|trunc(256·i)|, 256)`, az `i` előtte `[−1, 1]`-re vágva —
+        CSONKOL, nem kerekít (a v1 alapérték 110,78 → 110, kerekítve 111
+        lenne)."""
+        assert glow_weight(intenzitas) == vart_k
 
     def test_a_gamma_tabla_ertekei(self) -> None:
         lut = glow_gamma_lut()
