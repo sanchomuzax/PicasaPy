@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.621] – 2026-09-28
+
 ### Javítva
 - A „Polaroid” effekt előnézete a csúszka húzása közben most jóval gyorsabb
   (a forgatás a gyors mintavevőre vált, ahogy a Kiegyenesítésnél is) —
