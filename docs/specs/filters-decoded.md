@@ -456,6 +456,17 @@ elmosott kép egész kerekítését is felnagyítja.
 
 Fejlesztés: #3851.
 
+**Nálunk — ✅ MEGVAN (2026-09-28, #3851).** A `render/sharpen.py::apply_unsharp`
+ezt számolja: `K = csonk(512 · s)`, `ki = clamp(A + (((A − B) · K) >> 8), 0, 255)`
+(`unsharp_blend`), az elmosás (`unsharp_blur`) a fixpontos B-spline
+`1/(1,5 + 0,001)` léptékkel — belső mag `0 · 538 · 4029 · 7249 · 4029 · 538 · 0`,
+a szélen képpontonként újranormálva, `(Σ w·p + 255) >> 14`, előbb vízszintesen,
+8 bites köztes képpel. Az illesztett `1,21·s` megszűnt. Egy független,
+képpontonkénti referenciával bitre egyezik (`tests/render/test_sharpen.py`).
+Mérve a golden-teszttel (ugyanott): `unsharp2` alap **0,172**, max **0,277**,
+`unsharp` (v1) alap **0,172**, min 0,121. A szerkesztő Élesítés csúszkája, a
+régi Élesítés csempe és az export mind ezen a függvényen megy át.
+
 ### `Vignette=1,35.0,1.4,0.0,00000000` — maszk lemérve
 
 Multiplikatív radiális maszk: közép 1,000 · r≈0,25: 0,994 · r≈0,45: 0,729 ·
@@ -1890,6 +1901,9 @@ részlet-élesítés), a `linblur` burkolója pedig **kétszer** futtatja le.
    feltevés mellett szól, hogy a két `ABS` hívás pontosan a rámpa
    maximumához (`max s = |a|+|b|`) kell, hogy az `amount` a képen
    nemnegatív legyen, és hogy 0 csúszkaállásnál a kép változatlan.
+   ⛔ **LEZÁRVA (#3858):** a horgony kiolvasva, `K = csonk(128·(|a|+|b|))`,
+   és a súly szorzója mindhárom magban 128, nem 256 — ld.
+   `picasa-native-filter-workers.md` 2.7, „A súly szorzója 128, csonkolva”.
 2. `linblur` — a „Mennyiség" → sugár leképezés (a testvér `radblur`
    burkolójának alakjával: `W/100·(Amount+1) + 0,001`).
 3. `linblur` — a súlytábla utolsó rekeszei. A natív
@@ -4417,6 +4431,11 @@ az egyetlen hatása a **szűrőmag elkenése** — a `1,5f` az így kapott mag
 szélessége.
 
 ### ⚠️ Nálunk ez ma Gauss
+
+> ⚠️ **Elavult (#762, #3851):** az alábbi a korai állapotot írja le. A
+> #762 óta az elmosás köbös B-spline, a #3851 óta fixpontos, és a keverés a
+> natív `2·s` (ld. „`unsharp` / `unsharp2` — a keverés és az erősség
+> kiolvasva" szakasz „Nálunk” bekezdését).
 
 `src/picasapy/render/sharpen.py:31` — `cv2.GaussianBlur(kép, (0,0), 1.0)`,
 majd `erősség × 1,21`:

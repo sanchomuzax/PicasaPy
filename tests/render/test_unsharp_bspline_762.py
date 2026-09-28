@@ -9,6 +9,9 @@ mérőszett képei nincsenek a repóban (csak a verdikt-JSON), tehát a váltás
 ΔE-újramérése új exportot igényelne. Amit a ΔE-ről tudunk: a korábbi
 Gauss-közelítés eltérése max erősségen 0,466 volt („JÓ" verdikt) — ez a
 változás **finomítás, nem hibajavítás**.
+
+#3851 óta a mag fixpontos (az átméretező egész súlyai), a keverés `2·s` —
+a ΔE-t a `test_sharpen.py` golden-mérése méri a 684-es készleten.
 """
 
 from __future__ import annotations
@@ -24,31 +27,42 @@ from picasapy.render.sharpen import (
     unsharp_blur_kernel,
 )
 
-#: A #762 mérésének súlyai, négy tizedesre.
+#: A #762 mérésének súlyai, négy tizedesre (lebegőpontos, 1,5-ös lépték).
 MERT_SULYOK = (0.0, 0.0328, 0.2459, 0.4426, 0.2459, 0.0328, 0.0)
+
+#: #3851: a mag FIXPONTOS (`csonk(w·16383/Σw)`, a maradék a középső csapé),
+#: a lépték `1/(1,5 + 0,001)` — ezek a belső képpontok egész súlyai.
+FIXPONTOS_SULYOK = (0, 538, 4029, 7249, 4029, 538, 0)
 
 
 class TestAMag:
-    def test_a_MERT_sulyok(self):
+    def test_a_FIXPONTOS_sulyok(self):
         kernel = unsharp_blur_kernel()
+        assert tuple(int(k) for k in kernel) == FIXPONTOS_SULYOK
+
+    def test_a_MERT_sulyokhoz_kozel(self):
+        """A #762 lebegőpontos mérése és az egész mag 0,0005-ön belül egyezik
+        (a különbség a +0,001-es léptéktöbblet és a csonkolás)."""
+        kernel = unsharp_blur_kernel() / 16383.0
         assert len(kernel) == 7
         for kapott, vart in zip(kernel, MERT_SULYOK, strict=True):
-            assert round(float(kapott), 4) == vart
+            assert float(kapott) == pytest.approx(vart, abs=5e-4)
 
-    def test_a_sulyok_osszege_egy(self):
-        assert float(unsharp_blur_kernel().sum()) == pytest.approx(1.0, abs=1e-6)
+    def test_a_sulyok_osszege_16383(self):
+        assert int(unsharp_blur_kernel().sum()) == 16383
 
     def test_SZIMMETRIKUS(self):
         kernel = unsharp_blur_kernel()
         assert np.allclose(kernel, kernel[::-1])
 
-    def test_a_SZORAS_0_8684_nem_1_0(self):
+    def test_a_SZORAS_0_87_nem_1_0(self):
         """Ez a lényegi különbség a korábbi Gauss σ = 1,0-hoz képest: a mért
-        mag egy hajszállal kevesebbet mos."""
-        kernel = unsharp_blur_kernel().astype(np.float64)
+        mag egy hajszállal kevesebbet mos (lebegőpontosan 0,8684, az egész
+        maggal 0,8687)."""
+        kernel = unsharp_blur_kernel().astype(np.float64) / 16383.0
         idx = np.arange(-3, 4)
         szoras = math.sqrt(float((kernel * idx * idx).sum()))
-        assert round(szoras, 4) == 0.8684
+        assert round(szoras, 4) == 0.8687
 
     def test_a_KULSO_csap_pontosan_nulla(self):
         """`B₃(2) = 0`, tehát a mag valójában 5 csapos — a hetes szélesség a

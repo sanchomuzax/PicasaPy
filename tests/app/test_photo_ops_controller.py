@@ -15,7 +15,7 @@ import configparser
 import pytest
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import hangos_hurok
+from support.qt_wait import hangos_hurok, varj_feltetelre
 
 
 @pytest.fixture
@@ -392,3 +392,199 @@ class TestGuardRejectionIsHandled:
         loop.exec()
 
         assert loop.jelzes_argumentumai[0] == "A szerkesztés nem menthető: teszt."
+
+
+# rontás-kontroll: a `_run_photo_write` hiba-utómunkáját kikapcsolva és a
+# láncot a régi `photo` rekorddal folytatva az alábbi osztály első három
+# tesztje PIROS (mérve, #3848 javítás); a PR előtti `_apply_rotate`-tel
+# mind az öt piros.
+class TestGyorsForgatasLanc3830:
+    """#3830: az egyképes forgatás láncolt írása (`_apply_rotate`).
+
+    A második kattintás, ami a futó írás közben érkezik, csak a célértéket
+    frissíti; a futó írás végén a lánc a legfrissebb célértékkel folytatja.
+    Ezek az őrök a lánc HATÁRESETEIT mérik: írási hiba, közben átnevezett
+    vagy eltűnt kép, és a befejezés-jelzés darabszáma. Az írást egy
+    `threading.Event` tartja fel, így a második kattintás GARANTÁLTAN a
+    futó írás alatt érkezik — nem időzítésre bízva."""
+
+    @staticmethod
+    def _feltartott_iras(monkeypatch, *, hibas_hivas: int | None = None):
+        """`update_document`-csere: az ELSŐ hívás a kapun vár, a
+        `hibas_hivas`-adik hívás `PermissionError`-t dob."""
+        import threading
+
+        import picasapy.app.photo_ops_controller as ops
+
+        eredeti = ops.update_document
+        allapot = {
+            "hivasok": [],
+            "kapu": threading.Event(),
+            "belepett": threading.Event(),
+        }
+
+        def feltartott(path, mutate, backup=True):
+            allapot["hivasok"].append(path)
+            sorszam = len(allapot["hivasok"])
+            if sorszam == 1:
+                allapot["belepett"].set()
+                allapot["kapu"].wait(30.0)
+            if sorszam == hibas_hivas:
+                raise PermissionError("írásvédett mappa (teszt)")
+            return eredeti(path, mutate, backup=backup)
+
+        monkeypatch.setattr(ops, "update_document", feltartott)
+        return allapot
+
+    @staticmethod
+    def _lepes(controller, photo_id: int) -> int | None:
+        for photo in controller.photos.photos:
+            if photo.id == photo_id:
+                return photo.rotate_steps
+        return None
+
+    @staticmethod
+    def _hatter_leall() -> None:
+        from picasapy.app.worker_thread import wait_for_all_background_workers
+
+        assert wait_for_all_background_workers(30.0)
+
+    def test_sikertelen_iras_utan_a_kep_tovabb_forgathato(
+        self, qt_app, controller, library, monkeypatch
+    ):
+        """Blokkoló lelet a #3848-on: egy sikertelen írás után a kép
+        NEM volt többé forgatható (a futás-jelző beragadt)."""
+        allapot = self._feltartott_iras(monkeypatch, hibas_hivas=1)
+        (row,) = _rows_by_name(controller, "a.jpg")
+        photo_id = controller.photos.photos[row].id
+
+        hiba = hangos_hurok(controller.photoOpFailed)
+        allapot["kapu"].set()
+        controller.rotateRight(row)
+        hiba.exec()
+        assert self._lepes(controller, photo_id) == 0, (
+            "sikertelen írás után a modell a LEMEZEN lévő értéket mutassa"
+        )
+
+        kesz = hangos_hurok(controller.photoOpFinished)
+        controller.rotateRight(row)
+        kesz.exec()
+        assert len(allapot["hivasok"]) == 2, (
+            "a hiba utáni forgatás nem indított írást — a kép beragadt"
+        )
+        assert self._lepes(controller, photo_id) == 1
+        assert _ini_section(library, "a.jpg").get("rotate") == "rotate(1)"
+        self._hatter_leall()
+
+    def test_hiba_a_lanc_kozben_eldobja_a_fuggo_celerteket(
+        self, qt_app, controller, library, monkeypatch
+    ):
+        allapot = self._feltartott_iras(monkeypatch, hibas_hivas=1)
+        (row,) = _rows_by_name(controller, "a.jpg")
+        photo_id = controller.photos.photos[row].id
+
+        hiba = hangos_hurok(controller.photoOpFailed)
+        try:
+            controller.rotateRight(row)
+            assert allapot["belepett"].wait(10.0)
+            controller.rotateRight(row)  # a függő célérték: 2
+        finally:
+            allapot["kapu"].set()
+        hiba.exec()
+        assert varj_feltetelre(qt_app, lambda: not controller._rotate_running, 15.0)
+        assert len(allapot["hivasok"]) == 1, (
+            "a hibára futott írás után a függő célérték NEM írható ki"
+        )
+        assert self._lepes(controller, photo_id) == 0
+
+        kesz = hangos_hurok(controller.photoOpFinished)
+        controller.rotateRight(row)
+        kesz.exec()
+        assert self._lepes(controller, photo_id) == 1, (
+            "a hiba után a lépésszám a lemezen lévő értékből induljon"
+        )
+        self._hatter_leall()
+
+    def test_a_lanc_a_FRISS_rekorddal_folytat(
+        self, qt_app, controller, library, monkeypatch, tmp_path
+    ):
+        """Ha a kép a futó írás alatt átnevezés miatt megváltozik, a
+        folytatás az ÚJ nevű szakaszba írjon, ne a régibe."""
+        from picasapy.index import open_index
+
+        allapot = self._feltartott_iras(monkeypatch)
+        (row,) = _rows_by_name(controller, "a.jpg")
+        photo_id = controller.photos.photos[row].id
+        try:
+            controller.rotateRight(row)
+            assert allapot["belepett"].wait(10.0)
+            controller.rotateRight(row)  # a modell még 0-t mutat
+            with open_index(tmp_path / "index.db") as conn:
+                conn.execute(
+                    "UPDATE photos SET name = ? WHERE id = ?", ("z.jpg", photo_id)
+                )
+                conn.commit()
+        finally:
+            allapot["kapu"].set()
+
+        assert varj_feltetelre(
+            qt_app, lambda: self._lepes(controller, photo_id) == 2, 15.0
+        )
+        assert _ini_section(library, "z.jpg").get("rotate") == "rotate(2)", (
+            "a folytatás a RÉGI rekorddal (régi névvel) írt"
+        )
+        assert _ini_section(library, "a.jpg").get("rotate") == "rotate(1)"
+        self._hatter_leall()
+
+    def test_eltunt_kepnel_a_lanc_nem_folytatodik(
+        self, qt_app, controller, library, monkeypatch
+    ):
+        allapot = self._feltartott_iras(monkeypatch)
+        (row,) = _rows_by_name(controller, "a.jpg")
+        photo_id = controller.photos.photos[row].id
+        kesz = hangos_hurok(controller.photoOpFinished)
+        try:
+            controller.rotateRight(row)
+            assert allapot["belepett"].wait(10.0)
+            controller.rotateRight(row)
+            maradek = tuple(
+                p for p in controller.photos.photos if p.id != photo_id
+            )
+            controller.photos.set_photos(maradek)
+        finally:
+            allapot["kapu"].set()
+        kesz.exec()
+        assert varj_feltetelre(qt_app, lambda: not controller._rotate_running, 15.0)
+        assert len(allapot["hivasok"]) == 1, (
+            "a nézetből eltűnt képre a lánc nem írhat tovább"
+        )
+        assert photo_id not in controller._rotate_target
+        self._hatter_leall()
+
+    def test_a_befejezes_jelzes_a_lanc_vegen_egyszer_megy_ki(
+        self, qt_app, controller, library, monkeypatch
+    ):
+        allapot = self._feltartott_iras(monkeypatch)
+        (row,) = _rows_by_name(controller, "a.jpg")
+        photo_id = controller.photos.photos[row].id
+        jelzesek: list[int | None] = []
+        controller.photoOpFinished.connect(
+            lambda: jelzesek.append(self._lepes(controller, photo_id))
+        )
+        try:
+            controller.rotateRight(row)
+            assert allapot["belepett"].wait(10.0)
+            controller.rotateRight(row)
+        finally:
+            allapot["kapu"].set()
+        assert varj_feltetelre(
+            qt_app,
+            lambda: len(allapot["hivasok"]) == 2 and not controller._rotate_running,
+            15.0,
+        )
+        qt_app.processEvents()
+        assert jelzesek == [2], (
+            "a `photoOpFinished` a lánc VÉGÉN, egyszer menjen ki — a rá "
+            f"várakozó hívó különben félkész állapotot lát ({jelzesek})"
+        )
+        self._hatter_leall()

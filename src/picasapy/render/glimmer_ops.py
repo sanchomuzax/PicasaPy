@@ -640,136 +640,6 @@ def xml_local_contrast(image: np.ndarray, radius: float, strength: float) -> np.
     return ki.astype(np.uint8)
 
 
-# --- A ragyogás SZIGMÁJA: a filterdesc blur ÁTMÉRŐ, a σ a fele (#3158) ----
-
-#: A `filterdesc.xml` `xblur`/`yblur` értéke a Flash `GlowFilter`-é, ami
-#: **átmérő-jellegű** elmosás-paraméter; a mi `inner_glow`-unk Gauss-**σ**-t
-#: vár. A kettő hányadosa 2 — ezt a szám MÉRÉSSEL igazolja, nem illesztéssel.
-#:
-#: ## Mit váltott le (#504 → #3158)
-#:
-#: A korábbi modell egy közös **255-ös korlátot** (`GLOW_RADIUS_MAX`) tett a
-#: képletre, a Flash `blurX ∈ [0, 255]` dokumentált tartománya alapján. Az a
-#: korlát a hiányzó felezést pótolta, és épp ezért nem tudott mindkét
-#: használónak megfelelni (#3158: a Lomo 450-et, a Holga 255-öt „kért").
-#:
-#: ## A mérés (`referencia/lomo` és `referencia/holga`, 2560 × 1702)
-#:
-#: Mindkét effekt a SAJÁT alapértékeivel (Lomo: Blur 50, Fade 0 · Holga:
-#: Blur 70, Grain 30, Fade 0 — a `filterdesc.xml` `value=` mezőiből), a
-#: referencia-export ugyanezekkel készült:
-#:
-#: | | régi (255-ös korlát) | **új (felezés)** | az ÉRINTETLEN kép |
-#: |---|---:|---:|---:|
-#: | Lomo ΔE | 9,09 | **1,94** | 16,27 |
-#: | Lomo nullátmenet | 0,625 | **0,405** | — |
-#: | Holga ΔE | 1,95 | **1,12** | 23,19 |
-#: | Holga nullátmenet | 0,435 | **0,425** | — |
-#:
-#: A referencia-export nullátmenete **0,425** (a sugár-profil előjelváltása a
-#: kép közepétől, a képátló feléhez viszonyítva, 100 gyűrűn). ⇒ a felezés
-#: MINDKÉT effekten és MINDKÉT mérőszámon javít, a Holga nullátmenete pedig
-#: pontosan a mértre esik.
-#:
-#: ⭐ **Független megerősítés a `Vignette`-ből (#518):** annak a leírója `/4`-et
-#: ad, a legjobb illesztés viszont a képlet `/8`-a — a hányados ugyanaz a 2-es
-#: szorzó. Két, egymástól független effekt-mérés mondja tehát ugyanazt.
-#:
-#: ⚠️ **A korábbi 255-ös korlát (#504) nem volt „rossz mérés", hanem a hiányzó
-#: felezést pótolta:** a Lomón 896 → 255 (a felezés 448-at ad), a Holgán a
-#: 640/512-es tengelypár → 255/255 (a felezés 320/256-ot, a leíró arányát).
-#: Ezért tudott a Holgán majdnem jó lenni (1,95) és a Lomón nem (9,09).
-def glow_sigma(blur: float) -> float:
-    """A `filterdesc` blur-értékéből Gauss-σ: a FELE (#3158).
-
-    Minden méretfüggő ragyogás-számítás ide fusson be, hogy a felezés egy
-    helyen legyen dokumentálva és karbantartva. Korlát NINCS: a 255-ös
-    vágás (#504) a hiányzó felezést pótolta, és a Lomo 448-as σ-ját
-    levágva mérhetően rosszabb képet adott.
-    """
-    return float(blur) / 2.0
-
-
-# --- Belső ragyogás (GlowImageOperation innerglow) ----------------------
-
-# `erf` közelítés (Abramowitz–Stegun 7.1.26, |hiba| < 1,5·10⁻⁷) — a projekt
-# nem függ a scipy-től, ez a néhány ezer elemű (egy-egy tengelyre eső)
-# tömbön bőven elég pontos, és `numpy`-only marad.
-_ERF_A = (0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429)
-_ERF_P = 0.3275911
-
-
-def _erf(x: np.ndarray) -> np.ndarray:
-    sign = np.sign(x)
-    ax = np.abs(x)
-    t = 1.0 / (1.0 + _ERF_P * ax)
-    poly = ((((_ERF_A[4] * t + _ERF_A[3]) * t + _ERF_A[2]) * t + _ERF_A[1]) * t + _ERF_A[0]) * t
-    y = 1.0 - poly * np.exp(-ax * ax)
-    return sign * y
-
-
-def _box_blur_axis(length: int, sigma: float) -> np.ndarray:
-    """Az `[0, length)` tömör (mindenütt 1) szakasz Gauss-elmosása
-    `sigma` szigmával, zárt alakban (`erf`-fel), a szakasz pixelközepein
-    kiértékelve — a `covered` (borítottság) egyik tengelye `inner_glow`-ban.
-    """
-    sigma = max(float(sigma), 1e-6)
-    denom = np.sqrt(2.0) * sigma
-    idx = np.arange(length, dtype=np.float64) + 0.5
-    return 0.5 * (_erf(idx / denom) - _erf((idx - length) / denom))
-
-
-def inner_glow(
-    image: np.ndarray,
-    color: tuple[int, int, int],
-    xblur: float,
-    yblur: float,
-    strength: float,
-    alpha: float = 1.0,
-    mask: np.ndarray | None = None,
-) -> np.ndarray:
-    """`GlowImageOperation(innerglow=true)`: a kép SZÉLÉTŐL befelé ható
-    „izzás" a `color` színnel — a Picasa ezt Vignette-hez (fekete) és
-    Matte-hoz (fehér) használja, MuseumMatte-nál pedig a paszpartu-vonalak
-    mellett.
-
-    **Analitikus modell (#522, a #509-es min-max normálás felváltása).**
-    A belső ragyogás bemenete mindig egy TÖMÖR téglalap alfa-maszk (a teljes
-    kép — a régi „keret-impulzus" ennek az élén futó Gauss-elmosás
-    közelítése volt). Egy tömör téglalap Gauss-elmosása a szeparábilis
-    kernel miatt tengelyenként EGY-EGY `erf`-fel, zárt alakban számolható
-    (`_box_blur_axis`), a 2D borítottság a két tengely SZORZATA:
-
-        covered = ay[:, None] · ax[None, :]
-        weight  = (1 − covered) · strength
-
-    Ez a szélen ad NAGY (a `strength`-hez közeli), a középen ~0 súlyt —
-    és a `strength` a súly VALÓDI mélységét szabja, nem csak az alakot: itt
-    nincs saját min/maxra nyújtás, tehát (ellentétben a #509 min-max
-    modelljével) nagy szigmánál a `strength` ténylegesen elhalványul, nem
-    marad mesterségesen 1-re pumpálva. Nincs konvolúciós kernel, nincs
-    le-fel skálázás — a költség a kép méretével lineáris és a σ-tól
-    FÜGGETLEN (a `_box_blur_axis` csak a szélesség/magasság hosszú 1D
-    tömbökön dolgozik, a 2D `covered` egyetlen külső szorzat).
-
-    `mask` (opcionális, H×W [0,1]) a hatást TOVÁBB korlátozza (pl.
-    MuseumMatte csak a vonal sávján). `color` csatornasorrendje **RGB** —
-    ld. `tint_multiply` docstringjét (#510).
-    """
-    validate_image(image)
-    height, width = image.shape[:2]
-    ax = _box_blur_axis(width, xblur)
-    ay = _box_blur_axis(height, yblur)
-    covered = (ay[:, np.newaxis] * ax[np.newaxis, :]).astype(np.float32)
-    weight = np.clip((1.0 - covered) * np.float32(strength), 0.0, 1.0) * np.float32(alpha)
-    if mask is not None:
-        weight = weight * mask
-    color_arr = np.array(color, dtype=np.float32)
-    image_f = to_float(image)
-    result = image_f * (1.0 - weight[..., np.newaxis]) + color_arr * weight[..., np.newaxis]
-    return to_uint8(result)
-
-
 # --- Zaj (Noise) ---------------------------------------------------------
 
 
@@ -1212,12 +1082,80 @@ def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = T
     height = max(1, int(round(height)))
     if not smoothing:
         return cv2.resize(image, (width, height), interpolation=cv2.INTER_NEAREST)
-    if width == image.shape[1] and height == image.shape[0]:
-        return image.copy()
-    doboz = width <= image.shape[1]
-    vizszintes = _tengely_menten(image, width, 1, doboz)
+    return _ytresampler(image, width, height)
+
+
+def resize_plane(plane: np.ndarray, width: int, height: int) -> np.ndarray:
+    """Egyetlen `HxW` uint8 sík átméretezése ugyanazzal a `ytResampler`-rel.
+
+    A belső ragyogás a súlyát így nagyítja vissza (#3827): a natív kód a
+    négy bájtot egymástól függetlenül, azonos súlyokkal méretezi, és a
+    ragyogás színe állandó, tehát csak az alfa változik.
+    """
+    if plane.ndim != 2 or plane.dtype != np.uint8:
+        raise ValueError("resize_plane: HxW uint8 tömb kell")
+    return _ytresampler(plane, max(1, int(round(width))), max(1, int(round(height))))
+
+
+def _csap_alairas(oszlop_index: np.ndarray, sulyok: np.ndarray) -> np.ndarray:
+    """A kimeneti oszlopok `(oszlop, súly)` aláírása; az egyetlen oszlopra
+    eső csapok kanonikus alakot kapnak (`[c, −1, …] + [16383, 0, …]`)."""
+    van = sulyok != 0
+    index = np.where(van, oszlop_index, -1)
+    elso = index[np.arange(index.shape[0]), np.argmax(van, axis=1)]
+    egyforma = np.all((index == elso[:, None]) | ~van, axis=1)
+    kanon_index = np.full_like(index, -1)
+    kanon_index[:, 0] = elso
+    kanon_suly = np.zeros_like(sulyok)
+    kanon_suly[:, 0] = _RESIZE_EGYSEG
+    index = np.where(egyforma[:, None], kanon_index, index)
+    suly = np.where(egyforma[:, None], kanon_suly, sulyok)
+    return np.concatenate([index, suly], axis=1)
+
+
+def resize_column_plane(
+    oszlopok: np.ndarray, vissza: np.ndarray, width: int, height: int
+) -> np.ndarray:
+    """`resize_plane(oszlopok[:, vissza], width, height)` — bitre ugyanaz, gyorsabban.
+
+    A sík kevés különböző oszlopból áll (`oszlopok`, `H×n`; `vissza` a `W`
+    hosszú oszlopindex). Egy kimeneti oszlopot a vízszintes menet csapjainak
+    `(oszlop, súly)` párjai határoznak meg; az azonos párú kimeneti oszlopok
+    azonosak, ezért mindkét menet csak a különböző párokra fut, és a teljes
+    méretű síkot egyetlen indexelés adja (#3827). Ha egy kimeneti oszlop
+    minden nem nulla súlyú csapja ugyanarra az oszlopra esik, a kimenet maga
+    az az oszlop (a súlyok összege 16383, `(16383·p + 255) >> 14 = p`), ezért
+    ezek egy közös párt kapnak.
+    """
+    magas, be_szeles = oszlopok.shape[0], vissza.size
+    width = max(1, int(round(width)))
+    height = max(1, int(round(height)))
+    doboz = width <= be_szeles
+    if width == be_szeles:
+        kulonbozo, kimeneti = oszlopok, vissza
+    else:
+        indexek, sulyok = _tengely_sulyok(be_szeles, width, doboz)
+        alairas = _csap_alairas(vissza[indexek], sulyok)
+        parok, kimeneti = np.unique(alairas, axis=0, return_inverse=True)
+        csapok = indexek.shape[1]
+        gyujto = np.full((magas, parok.shape[0]), _RESIZE_KEREKITO, dtype=np.int32)
+        for k in range(csapok):
+            sor_suly = parok[:, csapok + k].astype(np.int32)
+            gyujto += oszlopok[:, parok[:, k]].astype(np.int32) * sor_suly
+        np.clip(gyujto, 0, _RESIZE_FELSO, out=gyujto)
+        kulonbozo = (gyujto >> _RESIZE_ELTOLAS).astype(np.uint8)
+    fuggoleges = _tengely_menten(kulonbozo, height, 0, doboz)
+    return fuggoleges[:, np.asarray(kimeneti).reshape(-1)]
+
+
+def _ytresampler(kep: np.ndarray, width: int, height: int) -> np.ndarray:
+    """A mód a vízszintes léptékből; előbb vízszintes, aztán függőleges menet."""
+    if width == kep.shape[1] and height == kep.shape[0]:
+        return kep.copy()
+    doboz = width <= kep.shape[1]
+    vizszintes = _tengely_menten(kep, width, 1, doboz)
     kimenet = _tengely_menten(vizszintes, height, 0, doboz)
-    return kimenet.copy() if kimenet is image else kimenet
+    return kimenet.copy() if kimenet is kep else kimenet
 
 
 def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
@@ -1272,7 +1210,6 @@ __all__ = [
     "luma",
     "fade_alpha",
     "alpha_blend",
-    "glow_sigma",
     "adjust_curves",
     "invert_curve",
     "apply_blend_mode",
@@ -1282,7 +1219,6 @@ __all__ = [
     "simple_color_matrix",
     "hdr_local_contrast",
     "xml_local_contrast",
-    "inner_glow",
     "noise_layer",
     "apply_noise",
     "gradient_map",
@@ -1290,5 +1226,7 @@ __all__ = [
     "circular_gradient_mask",
     "tint_multiply",
     "resize_image",
+    "resize_plane",
+    "resize_column_plane",
     "bw_tint",
 ]

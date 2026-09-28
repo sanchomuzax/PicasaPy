@@ -121,7 +121,9 @@ class DisplayModeMixin:
         self.displayModeChanged.emit()
 
 
-def wire_display_mode(controller, edit_controller, preview_provider):
+def wire_display_mode(
+    controller, edit_controller, preview_provider, edit_controller_masodik=None
+):
     """A mód ÁTVEZETÉSE a megjelenítési útra (#1576, #1596).
 
     Négy szereplő, egy irány:
@@ -129,8 +131,8 @@ def wire_display_mode(controller, edit_controller, preview_provider):
     1. a vezérlő (`DisplayModeMixin`) tartja, melyik mód aktív,
     2. az edit-előnézet **szolgáltatója** teszi rá a hatást a KIADOTT képre
        (a tárolt képet érintetlenül hagyva, ld. ott a docstringet),
-    3. az `EditController` lépteti a `previewSource` cache-busterét, hogy a
-       QML tényleg újrakérje a képet,
+    3. az `EditController` (a kettős nézetben MINDKETTŐ, ld. lent) lépteti a
+       `previewSource` cache-busterét, hogy a QML tényleg újrakérje a képet,
     4. a **rács modellje** mód-cimkét tesz a bélyegkép-URL-ekre, és
        újraköti a látható cellákat (#1596).
 
@@ -151,6 +153,17 @@ def wire_display_mode(controller, edit_controller, preview_provider):
     #1575/#1576/#1577 vezérlő-csonkjai miatt van, amelyek csak a
     `DisplayModeMixin`-t példányosítják, rács nélkül.
 
+    `edit_controller_masodik` (#3187 kettős nézet, `@masodik` rekesz)
+    OPCIONÁLIS: a #1575/#1576 vezérlő-csonkjai és a régebbi hívóhelyek
+    rács/második vezérlő nélkül is működjenek. Mérve (#3837): a
+    `preview_provider.set_display_mode()` a szolgáltatón KÖZÖS, tehát a
+    második fél KIADOTT képe is helyesen számolna — a hiba a QML
+    `Image`-cache szintjén ült, mert a második fél `previewSource`-a
+    bumpolás nélkül a régi URL-t (és a mögötte gyorsítótárazott, régi
+    képet) tartotta meg. Enélkül a paraméter nélkül a kettős nézet
+    második fele (Projektor/Túlcsordult/Alulcsordult képpontok módban)
+    a módváltás után is a régi képet mutatja.
+
     A kezdeti állapotot is átviszi — enélkül a szolgáltató a vezérlőtől
     eltérő módban indulna, amíg a felhasználó nem vált egyet.
 
@@ -168,6 +181,8 @@ def wire_display_mode(controller, edit_controller, preview_provider):
         set_current_display_mode(mode)
         preview_provider.set_display_mode(mode)
         edit_controller.refresh_displayed_image()
+        if edit_controller_masodik is not None:
+            edit_controller_masodik.refresh_displayed_image()
         if photo_model is not None:
             photo_model.set_display_mode(mode)
 

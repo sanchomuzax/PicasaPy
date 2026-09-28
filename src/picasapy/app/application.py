@@ -1184,7 +1184,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # megjelenítési mód (#1575/#1576): a `Nézet ▸ Megjelenítési mód` almenü
     # állapota a KÉPERNYŐRE ható átalakítóig. A visszaadott átvezetőt névre
     # kötjük, hogy a kapcsolat a motor életében biztosan éljen.
-    _display_mode_bridge = wire_display_mode(controller, edit_controller, edit_preview)
+    # #3837: a kettős nézet MÁSODIK vezérlője (`@masodik` rekesz) is
+    # frissüljön módváltáskor — enélkül a második fél a régi (jelöletlen)
+    # képet mutatta tovább.
+    _display_mode_bridge = wire_display_mode(
+        controller, edit_controller, edit_preview, edit_controller_masodik
+    )
 
     # színkezelés (#1725): a `Nézet ▸ Színkezelés használata` kapcsoló a
     # beágyazott ICC-profil érvényesítéséig. Ugyanaz a névre kötés, mint

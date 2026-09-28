@@ -100,8 +100,8 @@ _EDIT_BASE_FACTOR = 4
 
 # #525: a Glimmer-effektek (Holga, Lomo, Vignette, ...) sugár-/elmosás-
 # képletei RÉSZBEN abszolút képpontszámban vannak megadva (a Flash
-# `blurX`/`blurY` 255-ös korlátjának öröksége, ld. `glimmer_ops.
-# glow_sigma`) — ha a láncot a MÁR kicsinyített (pl. 96–256px-es)
+# `blurX`/`blurY` 255-ös korlátjának öröksége, ld. `belso_ragyogas.
+# blur_atvalto`) — ha a láncot a MÁR kicsinyített (pl. 96–256px-es)
 # thumbnailra futtatjuk, ez a sugár relatíve sokszorosan szélesebb
 # vignettát rajzol, mint amit Picasa nagy (2560px-es) exportján látni
 # (mérve: #525 jegy, `referencia/holga` és `referencia/lomo`). A puszta
@@ -128,9 +128,12 @@ _EDIT_BASE_CAP = 2048
 # hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
 # (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
 # (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 3
+_EDIT_CACHE_VERSION = 4
 # 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
 # skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
+# 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
+# Éjjellátó, Képregény) a natív lánccal számol — a régi, erf-modelles
+# szerkesztett bélyegképek újragenerálódnak.
 
 
 def _edit_base_size(target_size: int) -> int:

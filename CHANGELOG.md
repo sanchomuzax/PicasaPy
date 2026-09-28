@@ -7,6 +7,37 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.619] – 2026-09-28
+
+### Javítva
+- Kettős nézetben a Megjelenítési mód (pl. Projektor, Túlcsordult
+  képpontok) módváltáskor eddig csak a bal (fő) képen látszott — a jobb
+  (második) kép a régi, jelöletlen képet mutatta tovább (#3837).
+
+- A „Vignetta”, a „Matt” és a „Múzeumi matt” effekt széle felé sötétedő
+  (illetve világosodó) sávja most az eredeti Picasa módszerével készül, és
+  alig tér el tőle (a mért eltérés ΔE 0,59–0,91-ről 0,13–0,29-re csökkent); a
+  „Lomo-szerű”, a „Holga-szerű”, az „Éjjellátó” és a „Képregény” effekt, amely
+  ugyanezt a sötétítést használja, szintén közelebb került az eredetihez
+  (#3827).
+
+## [0.8.618] – 2026-09-28
+
+### Javítva
+- Az „Élesítés” effekt most az eredeti Picasa szerint élesít: a csúszka
+  felső állásain eddig jóval gyengébb volt az eredetinél, mostantól ugyanolyan
+  erős (a mért eltérés ΔE 0,98-ról 0,28-ra, az alapállásban 0,36-ról 0,17-re
+  csökkent) (#3851).
+
+- A diavetítés forgatás-gombjának két gyors, egymást követő kattintása
+  eddig lassú (pl. hálózati) meghajtón elveszíthette a második forgatást;
+  most mindkettő biztosan érvényesül (#3830).
+
+- A „Fókuszos FF” effekt „Sugár” csúszkája most −1 és 1 között mozog, 0
+  alapállással, ahogy az eredeti Picasában: eddig 0 és 1 között, 0,3
+  alapállással volt beállítva, ezért a negatív méret felületről nem volt
+  elérhető (#3826).
+
 ### Javítva
 - A „Kiegyenesítés” eszközzel elforgatott kép most pontosan ott áll, ahol az
   eredeti Picasában: eddig fél képponttal elcsúszott, és a forgatás kissé
