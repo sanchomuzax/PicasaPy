@@ -8,7 +8,6 @@ teljes renderelést (#301).
 from __future__ import annotations
 
 import logging
-import math
 
 import numpy as np
 
@@ -38,7 +37,7 @@ from picasapy.render.effects import (
 from picasapy.render.blur import apply_blur
 from picasapy.render.effects_artistic import apply_comicize
 from picasapy.render.dinamikus_csuszka import dinamikus_csuszka_ertek, fel_rovidebb_el
-from picasapy.render.elonezeti_arany import jelenlegi_arany
+from picasapy.render.elonezeti_arany import gyors_elonezet_aktiv, jelenlegi_arany
 from picasapy.render.focal import apply_focal_pixelate, apply_focal_zoom
 from picasapy.render.effects_creative_tone import apply_invert
 from picasapy.render import chain_glimmer_handlers as glimmer
@@ -241,36 +240,21 @@ DEAD_LEGACY_WARNING_TEMPLATE = (
 _NOOP_MARKERS = frozenset({"picnik", "save", "rot", "crop", "moviestart", "movieend"})
 
 
-def tilt_cover_scale(width: int, height: int, angle: float) -> float:
-    """A forgatás utáni levágás elkerüléséhez szükséges minimális skála.
-
-    `angle` radiánban. Az elforgatott téglalapot úgy skálázzuk, hogy a
-    forgatott kép mindenütt lefedje az eredeti (width, height) vásznat:
-    `s = max(cos|a| + (w/h)*sin|a|, cos|a| + (h/w)*sin|a|)`.
-    (Fekvő képen ez a mérten igazolt `cos θ + (W/H)·sin θ` képlet.)
-    """
-    if width <= 0 or height <= 0:
-        raise ValueError(f"A méretek pozitívak kell legyenek: {width}x{height}")
-    cos_a = abs(math.cos(angle))
-    sin_a = abs(math.sin(angle))
-    width_ratio = width / height
-    height_ratio = height / width
-    return max(cos_a + width_ratio * sin_a, cos_a + height_ratio * sin_a)
-
-
 def _apply_tilt_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`tilt=1,p,<2. mező>` — a Kiegyenesítés.
+
+    #3846: a natív visszahívás (`0x008f8810`) CSAK a szöget (`p`) adja
+    tovább; a 2. mezőt (a Picasa 3.x jellemzően `0.000000`-t ír bele, #73)
+    a natív út nem olvassa, ezért mi sem. A skálát az `apply_tilt` maga
+    számolja (`ops.tilt_scale`). A csúszka húzása közben (`gyors_elonezet`
+    blokk) a gyors mintavevővel fut, minden más esetben a natívval.
+    """
     params = op.float_params()
     if not params:
         raise ValueError(f"A tilt szűrőnek legalább egy paramétere kell legyen: {op}")
-    angle = params[0] * _TILT_RADIANS_PER_UNIT
-    if len(params) >= 2 and params[1] > 0:
-        scale = params[1]
-    else:
-        # A Picasa 3.x a skála-mezőbe jellemzően 0.000000-t ír (#73): a 0
-        # vagy hiányzó érték jelentése „számold ki a kitöltő skálát".
-        height, width = image.shape[:2]
-        scale = tilt_cover_scale(width, height, angle)
-    return apply_tilt(image, angle=angle, scale=scale)
+    return apply_tilt(
+        image, angle=params[0] * _TILT_RADIANS_PER_UNIT, gyors=gyors_elonezet_aktiv()
+    )
 
 
 def _apply_crop_op(image: np.ndarray, op: FilterOp) -> np.ndarray:

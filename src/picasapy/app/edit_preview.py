@@ -31,7 +31,7 @@ from picasapy.lazy_cv2 import cv2
 from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
 from picasapy.render import apply_filters, count_redeye_spots
 from picasapy.render.chain_geometry import TartalomHely
-from picasapy.render.elonezeti_arany import elonezeti_arany
+from picasapy.render.elonezeti_arany import elonezeti_arany, gyors_elonezet_aktiv
 from picasapy.render.op_geometry import LancHelyzet
 from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
@@ -138,7 +138,9 @@ class EditPreviewProvider(QQuickImageProvider):
         # egyetlen rekeszben tároljuk (kulcs, prefix-lánc, forrás-referencia,
         # prefix-kép, lánc-helyzet), így interakció közben csak az utolsó op
         # fut újra. A lánc-helyzet (#3229) azért kell bele, mert a folytatás
-        # koordinátái az EREDETI képre vonatkoznak.
+        # koordinátái az EREDETI képre vonatkoznak. Az utolsó mező a gyors
+        # élő-előnézet jelzője (#3846): a húzás közbeni gyors Kiegyenesítés
+        # köztes képe nem szolgálhatja ki az elengedés utáni natív renderelést.
         self._prefix_cache: (
             tuple[
                 str,
@@ -146,6 +148,7 @@ class EditPreviewProvider(QQuickImageProvider):
                 np.ndarray,
                 np.ndarray,
                 LancHelyzet,
+                bool,
             ]
             | None
         ) = None
@@ -160,9 +163,9 @@ class EditPreviewProvider(QQuickImageProvider):
         # alattiak. A gyakori esetben (finetune2 a lánc VÉGén) a két
         # prefix EGYEZIK (`gpu_prefix_ops == ops[:-1]`) — ott a `register()`
         # mindkét rekeszt frissen tartja, nincs dupla munka.
-        self._gpu_prefix_cache: tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray] | None = (
-            None
-        )
+        self._gpu_prefix_cache: (
+            tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray, bool] | None
+        ) = None
         # GPU élő-előnézet (#22): a finetune2 ELŐTTI köztes kép, illetve a
         # jelenlegi finetune2-LUT, 256×1 QImage-ként — a GpuPointFilterPreview.qml
         # ezeket tölti be `sourceItem`/`lutItem`-ként. Ugyanazzal az LRU-
@@ -660,11 +663,13 @@ class EditPreviewProvider(QQuickImageProvider):
         eredeti — a `crop64` koordinátái arra vonatkoznak (#330), és a
         keret-elhelyezés is a forrás helyét mondja meg a kimenetben."""
         cached = self._prefix_cache
+        gyors = gyors_elonezet_aktiv()
         if (
             cached is not None
             and cached[0] == key
             and cached[1] == prefix_ops
             and cached[2] is source_array
+            and cached[5] == gyors
         ):
             return cached[3], cached[4]
         if prefix_ops:
@@ -675,7 +680,7 @@ class EditPreviewProvider(QQuickImageProvider):
             prefix_array = source_array
             magassag, szelesseg = source_array.shape[:2]
             helyzet = LancHelyzet.kezdo(szelesseg, magassag)
-        self._prefix_cache = (key, prefix_ops, source_array, prefix_array, helyzet)
+        self._prefix_cache = (key, prefix_ops, source_array, prefix_array, helyzet, gyors)
         return prefix_array, helyzet
 
     def _cached_gpu_prefix(
@@ -694,18 +699,20 @@ class EditPreviewProvider(QQuickImageProvider):
         referencia más — az `apply_filters` itt is lefut, de a KÖVETKEZŐ,
         AZONOS prefixű hívásnál már ez a rekesz is talál."""
         cached = self._gpu_prefix_cache
+        gyors = gyors_elonezet_aktiv()
         if (
             cached is not None
             and cached[0] == key
             and cached[1] == prefix_ops
             and cached[2] is source_array
+            and cached[4] == gyors
         ):
             return cached[3]
         if prefix_ops:
             prefix_array, _skipped = apply_filters(source_array, prefix_ops)
         else:
             prefix_array = source_array
-        self._gpu_prefix_cache = (key, prefix_ops, source_array, prefix_array)
+        self._gpu_prefix_cache = (key, prefix_ops, source_array, prefix_array, gyors)
         return prefix_array
 
     def requestImage(self, photo_id, size, requested_size):

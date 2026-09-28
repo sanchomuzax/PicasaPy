@@ -279,6 +279,29 @@ class TestPrefixCache:
         # leregisztrálás után nincs cache-találat: prefix + utolsó op fut
         assert calls == [(fill,), (tilt,)]
 
+    def test_a_gyors_elonezet_prefixe_nem_szolgalja_ki_a_nativ_rendert(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        """#3846: a húzás közbeni gyors Kiegyenesítés köztes képe (ha a tilt a
+        prefixben áll) nem kerülhet az elengedés utáni natív renderbe."""
+        # rontás-kontroll: a prefix-kulcs a jelző nélkül → ez a próba FAILED.
+        from picasapy.render.elonezeti_arany import gyors_elonezet
+
+        calls = self._counting_apply_filters(monkeypatch)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        fill, tilt = self._ops()
+        with gyors_elonezet():
+            provider.register("1", photo, (tilt, fill))
+        calls.clear()
+        provider.register("1", photo, (tilt, fill))
+        # a prefix (a tilt) újra lefut, most a natív úton
+        assert calls == [(tilt,), (fill,)]
+        calls.clear()
+        provider.register("1", photo, (tilt, fill))
+        # azonos jelzővel viszont a gyorsítótár talál
+        assert calls == [(fill,)]
+
 
 class TestLruEviction:
     """#128: lapozáskor a provider nem nőhet korlátlanul — kis LRU tartja

@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Kiegyenesítés” eszközzel elforgatott kép most pontosan ott áll, ahol az
+  eredeti Picasában: eddig fél képponttal elcsúszott, és a forgatás kissé
+  másként mosta össze a képpontokat (a mért eltérés ΔE 0,92-ről 0,24-re
+  csökkent) (#3846).
+
 ## [0.8.617] – 2026-09-28
 
 ### Javítva

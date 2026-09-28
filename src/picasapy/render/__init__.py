@@ -7,7 +7,6 @@ from picasapy.render.chain import (
     MEASURED_IDLE_OPS,
     ChainReport,
     apply_filters,
-    tilt_cover_scale,
 )
 from picasapy.render.color import (
     apply_bw,
@@ -73,6 +72,8 @@ from picasapy.render.ops import (
     apply_enhance,
     apply_redeye,
     apply_tilt,
+    tilt_matrix,
+    tilt_scale,
     count_redeye_spots,
 )
 from picasapy.render.native_colortemp import apply_native_colortemp
@@ -196,6 +197,7 @@ __all__ = [
     "parse_rgb_hex",
     "saturation_gain",
     "simulate_positive_saturation_shader",
-    "tilt_cover_scale",
+    "tilt_matrix",
+    "tilt_scale",
     "vignette_gain",
 ]

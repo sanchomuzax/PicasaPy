@@ -492,6 +492,31 @@ class TestPreviewTilt:
         with pytest.raises(ValueError):
             controller.previewTilt(0.3)
 
+    def test_huzas_kozben_gyors_ut_elengedesre_nativ(self, controller, photo, monkeypatch):
+        """#3846: a csúszka HÚZÁSA közben a Kiegyenesítés a gyors mintavevővel
+        fut; az elengedéskori (mentett) render már a natív úton."""
+        # rontás-kontroll: a `previewTilt` a `gyors_elonezet()` blokk nélkül →
+        # ez a próba FAILED; a lánc a jelzőt figyelmen kívül hagyva → FAILED.
+        from picasapy.render import chain, ops
+
+        hivasok = []
+
+        def kem(image, angle, *, gyors=False):
+            hivasok.append(gyors)
+            return ops.apply_tilt(image, angle, gyors=gyors)
+
+        monkeypatch.setattr(chain, "apply_tilt", kem)
+        controller.beginEdit("1", str(photo))
+        assert controller.waitForBackgroundWorkers(10.0)
+        hivasok.clear()
+        controller.previewTilt(0.3)
+        # a rendes és a GPU-előtag render is a húzás blokkjában fut
+        assert hivasok and all(hivasok)
+        huzas = len(hivasok)
+        controller.setTilt(0.3)
+        assert controller.waitForBackgroundWorkers(10.0)
+        assert hivasok[huzas:] and not any(hivasok[huzas:])
+
     def test_set_tilt_after_preview_persists_and_allows_undo(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.previewTilt(0.3)
