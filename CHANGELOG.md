@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.617] – 2026-09-28
+
 ### Javítva
 - A „Neon” effekt vonalai most olyan vastagok és annyi neonszín dereng
   körülöttük, mint az eredeti Picasában: eddig vékonyabbak voltak, és a
