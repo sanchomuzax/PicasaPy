@@ -37,6 +37,14 @@ from compare_render import _read_rgb, delta_e_cie76, ssim  # noqa: E402
 
 #: Amin belül „nem történt semmi" — JPEG-újratömörítés ennyit simán mozdít.
 NOOP_DE = 1.0
+#: Az átlagos ELŐJELES eltolódás (szintben), ami fölött egy kis ΔE is valódi
+#: művelet (#3895). A JPEG-újratömörítés zaja előjelesen kiegyenlítődik: mérve
+#: legfeljebb ±0,003. A legkisebb valódi jel a `dir_tint__min` −0,50-e (spec),
+#: a `soften__min` −1-e ennél nagyobb. A küszöb a kettő közé, a jeltől
+#: biztonságos távolságra esik: 0,5-re téve a `dir_tint__min` mért −0,498-a
+#: épp kicsúszott alóla. (A 684-es szett legnagyobb küszöb alatti eltolódása
+#: 0,12 — `picnikfocalpixelate__min`, a Picasánál és nálunk egyformán.)
+SHIFT_LEVEL = 0.25
 #: Pixelhűnek tekintett egyezés a Picasa-exporttal.
 MATCH_DE = 2.0
 #: E fölött a modellünk érdemben mást csinál.
@@ -67,9 +75,33 @@ def mean_de(first: np.ndarray, second: np.ndarray) -> float:
     return float(delta_e_cie76(first, second).mean())
 
 
-def classify(de_base: float, de_ours: float, ours_de_base: float) -> str:
-    picasa_acted = de_base > NOOP_DE
-    we_acted = ours_de_base > NOOP_DE
+def mean_shift(first: np.ndarray, second: np.ndarray) -> float:
+    """`second − first` átlaga minden csatornán, szintben (előjelesen).
+
+    Nem csak az egész képre kiterjedő, egyenletes sötétítést méri: bármilyen
+    egyirányú változást elkap, a helyit is (például a lekerekített sarkok
+    fehérjét), ha az a teljes képre átlagolva eléri a `SHIFT_LEVEL`-t.
+    """
+    if first.shape != second.shape:
+        second = cv2.resize(
+            second, (first.shape[1], first.shape[0]), interpolation=cv2.INTER_AREA
+        )
+    return float(second.astype(np.float64).mean() - first.astype(np.float64).mean())
+
+
+def _acted(de: float, shift: float) -> bool:
+    return de > NOOP_DE or abs(shift) >= SHIFT_LEVEL
+
+
+def classify(
+    de_base: float,
+    de_ours: float,
+    ours_de_base: float,
+    shift_base: float = 0.0,
+    ours_shift_base: float = 0.0,
+) -> str:
+    picasa_acted = _acted(de_base, shift_base)
+    we_acted = _acted(ours_de_base, ours_shift_base)
     if not picasa_acted and not we_acted:
         return "MINDKETTO_TETLEN"
     if picasa_acted and not we_acted:
@@ -118,7 +150,10 @@ def main() -> int:
                 "verdikt": classify(
                     mean_de(source, golden), mean_de(golden, ours),
                     mean_de(source, ours),
+                    mean_shift(source, golden), mean_shift(source, ours),
                 ),
+                "eltolodas_picasa": round(mean_shift(source, golden), 3),
+                "eltolodas_mienk": round(mean_shift(source, ours), 3),
                 "de_picasa_vs_eredeti": round(mean_de(source, golden), 3),
                 "de_mienk_vs_picasa": round(mean_de(golden, ours), 3),
                 "de_mienk_vs_eredeti": round(mean_de(source, ours), 3),

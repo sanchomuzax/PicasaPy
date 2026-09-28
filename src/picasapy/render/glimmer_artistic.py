@@ -54,17 +54,19 @@ def apply_soften(image, impact: float = 50.0, fade: float = 50.0):
 
     Az elmosás a natív dobozszűrő (`render/nativ_blur.blur_image_operation`,
     #3580), nem Gauss-közelítés: a háromszoros doboz szórása ≈ `xblur/2`.
+
+    0-s sugárnál az elmosás azonosság (a natív út soronként másol), de a
+    végrehajtó a keverést az `α` alapján futtatja, nem aszerint, hogy a
+    művelet változtatott-e: `Fade < 100` mellett a kép eggyel sötétebb
+    (`(255·b) >> 8`), a 0 marad 0 (#3894, #3895).
     """
     validate_image(image)
     radius = impact * 20.0 / 50.0
-    if radius <= 0.0:
-        # 0-s sugárnál nincs elmosás, és keverés sincs: a Picasa exportja itt a
-        # bemenettel azonos (684-es golden, `soften__min`: MINDKETTO_TETLEN). Az
-        # egész keverés (#3442) két azonos réteget is `>>8`-cal osztana, ami
-        # minden képpontot eggyel sötétítene.
-        return image.copy()
     image_f = to_float(image)
-    blurred = to_float(blur_image_operation(image, radius, radius, quality=3))
+    if radius <= 0.0:
+        blurred = image_f
+    else:
+        blurred = to_float(blur_image_operation(image, radius, radius, quality=3))
     alpha = max(0.0, min(1.0, (100.0 - fade) * 0.8 / 100.0))
     return to_uint8(alpha_blend(image_f, blurred, alpha))
 
