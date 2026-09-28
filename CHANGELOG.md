@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- Kettős nézetben a Megjelenítési mód (pl. Projektor, Túlcsordult
+  képpontok) módváltáskor eddig csak a bal (fő) képen látszott — a jobb
+  (második) kép a régi, jelöletlen képet mutatta tovább (#3837).
+
 - A „Vignetta”, a „Matt” és a „Múzeumi matt” effekt széle felé sötétedő
   (illetve világosodó) sávja most az eredeti Picasa módszerével készül, és
   alig tér el tőle (a mért eltérés ΔE 0,59–0,91-ről 0,13–0,29-re csökkent); a
