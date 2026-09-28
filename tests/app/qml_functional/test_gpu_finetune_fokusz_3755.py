@@ -164,116 +164,6 @@ class TestAzElotagTexturaMerete:
         assert 0 < meret.height() <= self.TEXTURA_PLAFON, meret
 
 
-class TestAFoFotoForrasmerete:
-    """#3877 (korábban #3819: a fő fotó két fele és a két előtöltő CSAK
-    szélességet kért, 2560 — a Qt fájlbetöltője erre valódi GPU-n MÉRVE
-    felnagyított, ld. `SlideshowView.qml` #3832-es docsztringje és a lenti
-    `TestValodiGpuAlloKep`).
-
-    A javítás a kép VALÓDI méretéből (`pixelWidthAt`/`pixelHeightAt`)
-    számolt, a `viewer.texturaEl` (2560) dobozba illő, legfeljebb natív
-    `sourceSize`-t kér (`viewer.forrasMeret`, a `SlideshowView.qml`
-    `forrasMeret`-jének mintájára). A `ket_kep` fixture (a.jpg 640×400,
-    b.jpg 300×500) mindkét képe a plafon ALATT van — a dobozba-illesztést
-    (natívnál nagyobb kép) a `TestAFoFotoForrasmereteDobozNagysagnal` (lent,
-    offscreen) és a `TestValodiGpuAlloKep`/`test_diavetites_mod_a_kepernyon_1640.py`
-    (valódi GPU) fedi.
-
-    Ez a próba a QML-oldali `sourceSize` KÖTÉST és a ténylegesen betöltött
-    kép `implicitWidth`/`implicitHeight`-jét méri — a valódi GPU-s
-    textúraellenőrzést a helyi kör végzi."""
-
-    @pytest.mark.parametrize("index,nev,var_meret", [
-        (0, "viewerImageElotte", (640, 400)),
-        (1, "viewerImageElotte", (300, 500)),
-        (0, "viewerImage", (640, 400)),
-        (1, "viewerImage", (300, 500)),
-        # a mappahatáron a lépés helyben marad (`folderNeighbor`, #84):
-        # `currentIndex=0`-nál az előző A_JPG-n marad, a következő B_JPG-re lép
-        (0, "viewerPreloadNext", (300, 500)),
-        (0, "viewerPreloadPrev", (640, 400)),
-    ])
-    def test_a_forrasmeret_a_kep_VALODI_merete(
-        self, ket_kep, qt_app, index, nev, var_meret  # noqa: F811
-    ):
-        window, _c, _e = ket_kep
-        nezo = _nezot_nyit(window, qt_app)
-        if index != 0:
-            nezo.setProperty("currentIndex", index)
-            qt_app.processEvents()
-        kep = _gyerek(window, nev)
-        meret = kep.property("sourceSize")
-        assert (meret.width(), meret.height()) == var_meret, (
-            f"{nev}: sourceSize={meret.width()}x{meret.height()}, "
-            f"várt={var_meret}"
-        )
-        # a DÖNTŐ próba: a ténylegesen BETÖLTÖTT kép se nagyult fel — a
-        # `sourceSize` visszaolvasva a BEÁLLÍTOTT (nem a betöltött) méretet
-        # adná akkor is, ha a Qt fájlbetöltője felnagyítana (#2492 tanulsága)
-        for _ in range(60):
-            if kep.property("implicitWidth") > 0:
-                break
-            QTest.qWait(50)
-            qt_app.processEvents()
-        assert (
-            kep.property("implicitWidth"), kep.property("implicitHeight")
-        ) == var_meret, (
-            f"{nev}: a betöltött kép felnagyult (implicit="
-            f"{kep.property('implicitWidth')}x{kep.property('implicitHeight')}, "
-            f"várt={var_meret})"
-        )
-
-
-#: #3877: a `ket_kep` egyik képe sem lépi túl a 2560-as textúraplafont — a
-#: dobozba-illesztést (natívnál nagyobb kép) külön, nagyobb képpel kell
-#: mérni. Ugyanaz a pár, mint a diavetítés #3832-es próbájáé (lent,
-#: `_DIA_KEPEK`/`_DIA_TEXTURA`, „c.jpg"): 3000×5333 → a 2560-as dobozba
-#: illő, legfeljebb natív 1440×2560 — nem a Qt fájlbetöltőjének régen
-#: MÉRT, felnagyított 2560×4551-e.
-_TUL_NAGY_MERET = (3000, 5333)
-_TUL_NAGY_TEXTURA = (1440, 2560)
-
-
-def _tul_nagy_kep(lib) -> None:
-    szel, mag = _TUL_NAGY_MERET
-    cv2.imwrite(
-        str(lib / "nagy.jpg"),
-        np.full((mag, szel, 3), 200, np.uint8),
-        [cv2.IMWRITE_JPEG_QUALITY, 90],
-    )
-
-
-@pytest.fixture
-def tul_nagy_kep(qt_app, tmp_path):
-    yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_tul_nagy_kep)
-
-
-class TestAFoFotoForrasmereteDobozNagysagnal:
-    """#3877: a natív méret a 2560-as textúraplafon FÖLÖTT — a `sourceSize`
-    a dobozba illő, legfeljebb natív méret, felnagyítás nincs."""
-
-    def test_a_sourceSize_a_dobozba_illik_es_nem_nagyit_fel(
-        self, tul_nagy_kep, qt_app
-    ):
-        window, _c, _e = tul_nagy_kep
-        _nezot_nyit(window, qt_app)
-        kep = _gyerek(window, "viewerImage")
-        meret = kep.property("sourceSize")
-        assert (meret.width(), meret.height()) == _TUL_NAGY_TEXTURA, meret
-        assert meret.width() <= 2560 and meret.height() <= 2560, meret
-        for _ in range(60):
-            if kep.property("implicitWidth") > 0:
-                break
-            QTest.qWait(50)
-            qt_app.processEvents()
-        assert (
-            kep.property("implicitWidth"), kep.property("implicitHeight")
-        ) == _TUL_NAGY_TEXTURA, (
-            f"a betöltött kép a plafon fölé nagyult: implicit="
-            f"{kep.property('implicitWidth')}x{kep.property('implicitHeight')}"
-        )
-
-
 # -- valódi GPU, valódi egérhúzás (#3755, 3. pont) ----------------------------
 #
 # A fenti próbák offscreen alatt futnak, ahol a GPU-réteg sosem látszik. Az
@@ -312,6 +202,7 @@ class TestAFoFotoForrasmereteDobozNagysagnal:
 # felnagyítja) a `test_a_fo_foto_nem_nagyit_es_kirajzolodik` mindkét esete
 # és a `test_kettos_nezetben_mindket_fel_kirajzolodik` BUKIK — a textúra
 # 360×640-es és 1440×2560-as képnél is 2560×4551 —, a `TestAFoFotoForrasmerete`
+# (#3877 óta a `test_nezo_forrasmeret_3877.py`-ban)
 # mind a négy esete is (magasság 0). ⚠️ A kép a 4096-os plafon fölött IS
 # látszott: a Qt feltöltéskor maga zsugorítja a textúrát, tehát a
 # színpróba magában nem bukik, a méret-állítás fog. Csak a szolgáltatót
@@ -348,6 +239,9 @@ def test_valodi_gpun_egerhuzassal(tmp_path):
         [sys.executable, "-m", "pytest", f"{__file__}::TestValodiGpu",
          f"{__file__}::TestValodiGpuAlloKep",
          f"{__file__}::TestValodiGpuDiavetites",
+         #: #3877: a néző nyers fájlos elemeinek textúrája
+         f"{Path(__file__).with_name('test_nezo_forrasmeret_3877.py')}"
+         "::TestValodiGpuNezoTextura",
          "-q", "-rs", "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'bt'}"],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         timeout=240, cwd=str(gyoker), env=kornyezet,
