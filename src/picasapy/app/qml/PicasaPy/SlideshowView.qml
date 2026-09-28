@@ -20,6 +20,14 @@ Rectangle {
     // működött: a dia a nyers fájlnál maradt.
     property string displayMode: ""
     property int currentIndex: -1
+    //: #3881: a LÁTHATÓ kép útvonala — ezen keresztül követjük a modellt
+    //: (törlés, átrendezés), mert a nyers index a modell szerkezeti
+    //: változásakor (sor-eltolódás, teljes reset) mást jelenthet, mint
+    //: amit a felhasználó épp néz.
+    property string _currentFilePath: ""
+    //: igazra állítva az `onCurrentIndexChanged` nem indít átmenetet — a
+    //: `_modellKovetes` csendben igazítja az indexet ugyanarra a fájlra
+    property bool _resyncing: false
     //: #2992: a diaidő MÁSODPERCBEN, a sáv ± gombjaival állítható
     //: (`tpslabel`/`minusone`/`tps`/`plusone`). Az alapérték 3 — mérve
     //: (`SlideshowEffectTime`, `0x007facd3`). A hívó a vezérlőhöz köti,
@@ -188,14 +196,62 @@ Rectangle {
     //: idegen képként". A mérés (három kép, két váltás): a második
     //: áttűnés kimenő képe az ELSŐ kép volt, pedig a MÁSODIKAT nézte.
     onCurrentIndexChanged: {
+        show._currentFilePath = show.photosModel && show.currentIndex >= 0
+            ? show.photosModel.filePathAt(show.currentIndex) : ""
         var kimeno = slide.source
-        if (show.visible && kimeno !== "")
+        if (show.visible && kimeno !== "" && !show._resyncing)
             show._atmenetIndit(kimeno)
         show._diakBetolt()
     }
     onVisibleChanged: show._diakBetolt()
     onPhotosModelChanged: show._diakBetolt()
     onDisplayModeChanged: show._diakBetolt()
+
+    //: #3881: a modell szerkezeti jelére (törlés vagy teljes reset —
+    //: pl. átrendezés) a LÁTHATÓ kép útvonalát követjük, nem a nyers
+    //: indexet: a sorok eltolódhatnak vagy átrendeződhetnek anélkül, hogy
+    //: a nézett kép megváltozna.
+    Connections {
+        target: show.photosModel
+        function onRowsRemoved() { show._modellKovetes() }
+        function onModelReset() { show._modellKovetes() }
+        function onLayoutChanged() { show._modellKovetes() }
+    }
+
+    //: ha a látott fájl még megvan (csak elmozdult) az index CSENDBEN
+    //: követi; ha eltűnt (ő maga törlődött), a vetítés a következő fotóra
+    //: lép — üres lista esetén leáll.
+    function _modellKovetes() {
+        if (!show.visible || !show.photosModel) return
+        if (show.count() === 0) { show.stop(); return }
+        if (show._currentFilePath === "") return
+        for (var i = 0; i < show.count(); ++i) {
+            if (show.photosModel.filePathAt(i) === show._currentFilePath) {
+                if (i !== show.currentIndex) {
+                    show._resyncing = true
+                    show.currentIndex = i
+                    show._resyncing = false
+                }
+                return
+            }
+        }
+        // a látott kép nincs többé a modellben — a törölt sor helyén (vagy
+        // az utolsó sor törlésekor az előtte állón) már a következő fotó áll
+        var jelolt = Math.min(show.currentIndex, show.count() - 1)
+        var kovetkezo = show.clampToPhoto(jelolt)
+        if (kovetkezo < 0) { show.stop(); return }
+        if (kovetkezo === show.currentIndex) {
+            // a numerikus index nem változott, de alatta más kép áll —
+            // azonos értékre az onCurrentIndexChanged nem fut le, ezért
+            // kézzel indítjuk az átmenetet és a betöltést
+            var kimeno = slide.source
+            show._currentFilePath = show.photosModel.filePathAt(kovetkezo)
+            if (kimeno !== "") show._atmenetIndit(kimeno)
+            show._diakBetolt()
+        } else {
+            show.currentIndex = kovetkezo
+        }
+    }
 
     //: a vetített kép URL-je (#1640: a mód VALÓDI argumentum), üres, ha
     //: nincs mit vetíteni

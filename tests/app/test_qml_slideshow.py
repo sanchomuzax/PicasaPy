@@ -313,6 +313,62 @@ class TestSlideshowEntryPoints:
         assert button.property("enabled") is True
 
 
+class TestSlideshowModelFollows:
+    """#3881: a látott kép a modell törlésére/átrendezésére reagál — nem
+    ragad a törölt vagy elmozdult sor eredeti indexén."""
+
+    def test_torolt_lathato_kep_utan_tovabblep(self, qml_app, qt_app):
+        window, controller, lib, _engine = qml_app
+        from support.jpeg_factory import make_jpeg
+
+        make_jpeg(lib / "c.jpg", size=(100, 100))
+        from picasapy.index import open_index, sync_tree
+
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, lib)
+        controller._reload()
+        qt_app.processEvents()
+        show = _start(window, qt_app, 0)   # a.jpg
+        assert show.property("currentIndex") == 0
+        a_path = controller.photos.filePathAt(0)
+        assert controller.photos.remove_by_path(a_path) is True
+        qt_app.processEvents()
+        assert show.property("visible") is True
+        assert show.property("currentIndex") == 0
+        kep = _child(window, "slideshowImage")
+        assert "b.jpg" in kep.property("source").toString()
+        _invoke(qt_app, show, "stop")
+
+    def test_utolso_lathato_kep_torlese_leallitja_a_vetitest(
+        self, qml_app, qt_app
+    ):
+        window, controller, _lib, _engine = qml_app
+        show = _start(window, qt_app, 1)   # b.jpg (2 fotó: a, b)
+        assert show.property("currentIndex") == 1
+        b_path = controller.photos.filePathAt(1)
+        assert controller.photos.remove_by_path(b_path) is True
+        qt_app.processEvents()
+        assert show.property("visible") is True
+        assert show.property("currentIndex") == 0   # a.jpg-re lép
+        a_path = controller.photos.filePathAt(0)
+        assert controller.photos.remove_by_path(a_path) is True
+        qt_app.processEvents()
+        assert show.property("visible") is False
+        assert show.property("playing") is False
+
+    def test_atrendezeskor_ugyanaz_a_fajl_marad_lathato(self, qml_app, qt_app):
+        window, controller, _lib, _engine = qml_app
+        show = _start(window, qt_app, 0)   # a.jpg
+        assert show.property("currentIndex") == 0
+        atrendezve = tuple(reversed(controller.photos.photos))   # b, a
+        controller.photos.set_photos(atrendezve)
+        qt_app.processEvents()
+        assert show.property("currentIndex") == 1
+        kep = _child(window, "slideshowImage")
+        assert "a.jpg" in kep.property("source").toString()
+        _invoke(qt_app, show, "stop")
+
+
 class TestSlideshowControlSizing:
     def test_buttons_share_uniform_height(self, qml_app, qt_app):
         # felhasználói visszajelzés (#8 után): a csillag-gomb nagyobb volt a
