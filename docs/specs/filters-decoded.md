@@ -5326,6 +5326,49 @@ verdiktjének a fő oka.
 0x0090f623  call 0x90ecd0               ; a tónusgörbe-LUT feltöltése
 ```
 
+### ⛳ A fehér-kihagyás csak a `0x00ffffff` színre él — az ini `ffffffff` színénél a Picasa is szoroz (2026-09-28, 397. kör, #3900)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel és golden-méréssel. A fenti „tiszta fehérnél kihagyja a szorzást” pontosítva.*
+
+A munkafüggvény a színt **teljes dwordként** hasonlítja:
+
+```
+0x0090f525  cmp dword ptr [esp+0x3e8], 0xffffff   ; alfa-bájttal együtt
+0x0090f530  setne byte ptr [esp+0x1f]
+…
+0x0090f809  cmp byte ptr [esp+0x1f], 0 / je        ; egyenlőnél kihagyja
+0x0090f810–0x0090f83e  c = (szín_c · c) >> 8       ; csatornánként (shr 8)
+```
+
+A callback a `[szűrő+0x50]` dwordot maszkolás nélkül adja tovább
+(`0x008f98dd` `mov edx, [ebx+0x50]`). A mező az ini beolvasásakor
+`sscanf(token, "%08x", …)`-szel **teljes dwordként** töltődik
+(`0x008fb7c0`–`0x008fb80a`, formátum `0x00cd0988`); a konstruktor
+alapértéke `0xFFFFFFFF` (`0x008f6ba9`), az író `",%08x"`-szel tér vissza
+(`0x008fac40`). A `.picasa.ini` 8 jegyű színe
+(`ffffffff`, a Picasa által írt alak) tehát **nem** egyenlő `0x00ffffff`-fel:
+a szorzás lefut, és fehér színnél `v · 255 >> 8 = v − 1` (0 → 0). A kihagyás
+csak egy `00ffffff` alakú (alfa nélküli) fehérre él.
+
+A teljes súlyú képponton (`w = 255`) a keverés
+`v + (((v − 1 − v) · 255) >> 8) = v − 1`; a súlytalan felén változatlan.
+
+**Mérve** (684-es készlet, mindhárom sor `ffffffff` színnel; ΔE a
+Picasa-exporthoz):
+
+| eset | ma (fehérnél kihagyva) | **szorzással** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| alap (Feather 0,25 · Shade 0,25) | 0,321 | **0,170** | 0,143 |
+| max (1,0 · 1,0) | 0,318 | **0,199** | 0,166 |
+| min (0 · 0) | 0,296 | **0,121** | 0,083 |
+
+A `min` exportjában a fókuszvonal feletti fél pontosan −1 szinttel sötétebb
+(0 → 0,04, 2 → 1,01, 255 → 254,0), az alatta lévő változatlan.
+
+A callback emellett egy feltételes, egyképpontos színtranszformációt (`[ctx+8]`, `0x008f98f8`–`0x008f9906`) is futtathat a színen; a készlet exportján a szorzásos modell a zajszintre esik, tehát ott nem változtatott.
+
+Fejlesztés: #3902.
+
 ### A tónusgörbe-LUT (`0x0090ecd0`, 200 b) — 256 × `uint16`
 
 ```asm
