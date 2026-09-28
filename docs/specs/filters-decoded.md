@@ -2422,6 +2422,9 @@ Az `(0xffff − v)·v` ismét **parabola**: a középtónusokat mozdítja a
 legjobban, a fekete és a fehér pontot nem. Vagyis ez egy **S-görbés
 kontrasztemelés**, aminek az erősségét a 2. lépésben mért `k` adja.
 
+> ⛔ **2026-09-28 (#3839): a `sum → k` skálázás és a pontos súly kiolvasva,
+> ld. a következő szakaszt — a parabola `(256 − j)·j`, nem `(255 − j)·j`.**
+>
 > **Bizonyítottsági fok:** a **szerkezet megerősített** (mindkét parabola és a
 > hisztogram-építés a dekompilátumból). Ami **nyitott**: a `sum → k` közti
 > skálázás, mert a köztes számítás az FPU-veremben megy, és a dekompilátor
@@ -2429,6 +2432,50 @@ kontrasztemelés**, aminek az erősségét a 2. lépésben mért `k` adja.
 >
 > **Ez méréssel olcsón pótolható:** két-három golden-pár elég a `k` arányának
 > illesztéséhez, mert a görbe alakja már ismert.
+
+### `ansel` — a `k` erősség kiolvasva, a mag TELJES (2026-09-28, 388. kör, #3839)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+A „hisztogram-lépés” szakasz nyitva hagyta, hogyan lesz a hisztogramból a
+`k` erősség, és a kódunk ezért egy mért töréspontsorral (`_ANSEL_ANCHOR_CURVE`)
+közelített. A `0x0090e680` teljes számítása:
+
+1. **Súlyok.** `w_c = szín_c / 255` (`0x008f8410`), összeggel normálva, majd
+   `W_c = csonk(256 · w_c)` (`0x0090e6ee` `[0xcf39d8]` = 256,0; `0x00c29990`).
+   Fehér szűrőnél `W = (85, 85, 85)` (`256 · f32(1/3)` = 85,33 → 85; az összeg 255). Fekete szűrőnél az összeg 0, amit a mag nem kezel.
+2. **Első menet** (`0x0090e76d`–`0x0090e831`), képpontonként:
+   - `Y = clamp(W_r·R + W_g·G + W_b·B, 0, 0xffff)` (16 bites szürke, eltárolva);
+   - `S₁ += (2R + 5G + B + 4) >> 3` — gyors luma (`0x0090e7c0`–`0x0090e7cd`);
+   - `S₂ += Y >> 8`, és `hist[Y >> 8] += 1`.
+3. **`N` és `k`** (`0x0090e851`–`0x0090e920`):
+   - `N = Σⱼ hist[j] · (((256 − j)·j) >> 6)` — parabola-súly (a ciklus 256-tal indul: `0x0090e851` `lea edx, [ecx+3]`, `ecx = 0xfd`); ⛔ a fenti „hisztogram-lépés” szakasz `(255 − j)`-t írt;
+   - `N = 0` → a mag második menet nélkül kilép, a kimenetben a nyers `Y` dwordok maradnak (`0x0090e8cc`);
+   - `t = f32((S₁ − S₂) / N)`, `[−1, 1]`-re szorítva (`[0xcf3ed0]` = −1,0, `fld1`);
+   - `k = csonk(256 · t)`.
+   A `k` tehát azt méri, mennyivel sötétebb a szűrt szürke a természetes
+   lumánál, a középtónusok mennyiségére vetítve.
+4. **Második menet** (`0x0090e939`–`0x0090e9c1`):
+   `v = clamp(Y + ((((0xffff − Y)·Y) >> 14) · k >> 8), 0, 0xffff)`,
+   a kimenet `R = G = B = v >> 8`, alfa `0xff`.
+
+**Mérve** (684-es készlet, `ansel__alap`, fehér szűrő; ΔE a Picasa-exporthoz):
+
+| modell | ΔE | a szürke csatorna bitegyezése |
+|---|---:|---:|
+| ma (mért töréspontsor) | 1,259 | — |
+| **natív mag** (a fenti képletek, `k = 1`) | **0,038** | 90,6% (átlagos \|Δ\| 0,094) |
+| zajszint (mi ↔ mi-JPEG95) | 0,021 | — |
+
+A fehér szűrőnél a hatás java a súlyokból jön: `85·(R+G+B) >> 8` a pontos
+átlagnál egy leheletnyivel sötétebb (a 255-ös fehér 254 lesz), és ezt a
+`k = 1`-es S-görbe alig emeli. A mért töréspontsor ezt a kis eltolást
+közelítette. Színes szűrőre a `k` nagyobb lehet; arra golden nincs.
+
+A `desat` örökölt kulcs ugyanezt a magot hívja (`0x0050ce70`), tehát rá is
+érvényes.
+
+Fejlesztés: #3840.
 
 ## `warm`, `grain`, `unsharp`, `blur` — natív visszafejtés (2026-08-15, #317)
 
