@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.624] – 2026-09-28
+
 ### Javítva
 - A diavetítés most a látott képet követi, ha vetítés közben változik a
   képek listája: egy másik kép törlésekor vagy a mappa újraolvasásakor
