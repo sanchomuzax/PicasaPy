@@ -37,8 +37,13 @@ egymás mellett. Ezek döntik el, hány kép látszik:
 | **Ugyanazon kép megjelenítése kétszer** | ugyanaz a kép kétszer, **két önálló szerkesztéssel** — két változatot próbálhatsz ki egymás mellett |
 
 A **Két különböző kép megjelenítése** a válogatásra való: két felvétel
-egymás mellett, és eldöntöd, melyik a jobb. Mindkét kép a **mentett
-szerkesztéseivel** látszik, ugyanúgy, mint a rácsban.
+egymás mellett, és eldöntöd, melyik a jobb. Bekapcsolva **bal oldalon az
+eddig látott kép** áll, jobb oldalon a **következő** a filmszalag
+sorrendje szerint (ha nincs következő, az előző) — és a **bal oldal a
+kijelölt**. Egymás alatti elrendezésben a felső a kijelölt.
+
+Mindkét kép a **mentett szerkesztéseivel** látszik, ugyanúgy, mint a
+rácsban.
 
 Ha két kép látszik, megjelenik mellettük két további szegmens:
 
@@ -49,9 +54,17 @@ Ha két kép látszik, megjelenik mellettük két további szegmens:
 
 A kijelölt oldal nem csak jelzés: **minden parancs arra hat**. A
 szerkesztő effektjei, a visszavonás és a mentés a kijelölt oldal képét
-módosítja, és az albumba is az kerül. A képek közt a filmszalagon
-válogatsz: mindkét megjelenített kép kiemelve látszik ott, és egy
-bélyegképre kattintva **az aktív oldal** képét cseréled le.
+módosítja, és az albumba is az kerül. Ugyanígy a **nagyítás**, az
+**arckeretek** és a szerkesztő eszközei (vágás, retusálás, szöveg,
+vörösszem) is a kijelölt oldal képén dolgoznak, és az alsó **kék
+információs sáv** is arról ír.
+
+A képek közt a filmszalagon válogatsz: mindkét megjelenített kép kiemelve
+látszik ott, és egy bélyegképre kattintva **az aktív oldal** képét
+cseréled le.
+
+Fókuszt kétféleképp váltasz: a **Fókusz váltása a képek között**
+szegmenssel, vagy egyszerűen **rákattintasz a másik képre**.
 
 ### Ugyanaz a kép kétszer: két változat egymás mellett
 
@@ -69,8 +82,30 @@ A **fókusz váltásakor** a félbehagyott munkád az oldalánál marad: ha az
 egyik oldalra **ecsettel festettél** egy effektet, és átváltasz, a
 festés ott marad, ahol hagytad, és visszaváltva folytathatod. A
 váltáskor viszont **bezárul a nyitott eszköz** — a vágás, a döntés, a
-retusálás, a vörösszem-javítás és a szövegbeírás —, és ami bennük még
-nincs alkalmazva, elvész: ugyanúgy, mint amikor más képre lépsz.
+retusálás, a vörösszem-javítás és a szövegbeírás.
+
+### Amikor a program megkérdezi, mi legyen a nyitott eszközzel
+
+Ha egy eszközben már **dolgoztál is** — kijelölted a vágókeretet,
+megjelöltél egy retusálandó pontot vagy egy vörös szemet, vagy
+elhelyezted a szöveget —, a program nem dobja el szó nélkül. Megjelenik a
+**Szerkesztés jóváhagyása** ablak: „Elfogadja az aktuális kép
+módosításait?"
+
+- **Módosítások alkalmazása** — a program úgy zárja le az eszközt,
+  mintha az **Alkalmaz** gombjára kattintottál volna;
+- **Módosítások elvetése** — az eszköz munkája elvész;
+- a **Ne kérdezzen újból, mindig fogadja el a módosításokat** pipával
+  legközelebb kérdés nélkül alkalmazza.
+
+Ez a kérdés kétszer jöhet elő: amikor **belépsz** a kettős nézet
+valamelyik módjába, és amikor **fókuszt váltasz** a két oldal közt. A
+kettő közt egy különbség van: fókuszváltásnál van **Mégse** gomb is — a
+Mégse visszalép, az eszköz nyitva marad, a fókusz nem vált. A módba
+lépéskor Mégse nincs.
+
+A **Kiegyenesítés** csúszkája nem tartozik ide: az kérdés nélkül
+bezárul.
 
 ### Amikor kilépsz a módból
 
@@ -118,9 +153,10 @@ nem használható.
 ## A kék információs sáv
 
 Az alsó sáv kék csíkja a könyvtárban a kijelölésről ír; **a nézőben az
-éppen látott képről**, ebben a sorrendben: a mappa neve és a fájlnév, a
-kép dátuma, a felbontás képpontban, a fájl mérete, a **hányadik kép** a
-mappában, végül a **Címkék:** felsorolás.
+éppen látott képről** — kettős nézetben a **kijelölt oldal** képéről —,
+ebben a sorrendben: a mappa neve és a fájlnév, a kép dátuma, a felbontás
+képpontban, a fájl mérete, a **hányadik kép** a mappában, végül a
+**Címkék:** felsorolás.
 
 Ha a szöveg nem fér ki — kisebb ablakban vagy hosszú fájlnévnél —, két
 lépésben rövidül:

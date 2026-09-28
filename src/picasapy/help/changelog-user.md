@@ -4,6 +4,131 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-28
+
+**Új: Útlevélkép**
+
+- Az **Eszközök ▸ Kísérleti ▸ Útlevélkép…** parancs megkeresi az arcot a
+  kijelölt képen, négyzetre vágja körülötte — fölé fejtérrel, alá
+  vállnyi ráhagyással —, és megnyitja vele a nyomtatási nézetet
+  **Útlevél** nyomatmérettel (2 × 2 hüvelyk). A kép maga **nem
+  változik**: a kivágás ideiglenes fájlba készül. Ha nincs arc a képen,
+  vagy egynél több van, a program szól. Lásd
+  [Útlevélkép](features/utlevelkep.md).
+
+**Nyomtatás**
+
+- A **Nyomatméret** és az **Indexképek** mostantól **egyetlen lista**: a
+  külön **Elrendezés** választó megszűnt, mert az eredeti Picasában sem
+  volt ilyen. Az indexkép a lista utolsó tétele; ha kiválasztod,
+  megjelenik mellette az **Oszlopok** mező, és eltűnik a példányszám, a
+  kis előnézet és a képminőség két sora — indexképnél ezeknek nincs
+  értelme.
+- A lista magyar felületen **hat metrikus méretet** kínál (5 × 8, 9 × 13,
+  10 × 15, 13 × 18, 20 × 25 cm és a FullPage), angolon a hüvelykes
+  hatost. Eddig a hüvelykes lista ötös volt, és kimaradt belőle a teljes
+  oldal.
+- A párbeszéd **alapból a FullPage** méreten nyílik, mint az eredeti.
+- Az indexkép-mód **nem ragad meg**: bezárás után a következő Ctrl+P
+  megint méret szerinti nyomtatással nyílik. Lásd
+  [Nyomtatás](features/nyomtatas.md).
+
+**Néző: két kép egymás mellett**
+
+- A **Két különböző kép megjelenítése** módba lépve **bal oldalon az
+  eddig látott kép** áll, jobb oldalon a **következő**, és a bal oldal a
+  kijelölt. Eddig ez fordítva volt.
+- A **kijelölt oldal** mostantól mindenben a kijelölt: a nagyítás, az
+  arckeretek, a szerkesztő eszközei és az alsó **kék információs sáv** is
+  az ő képéről szól. Fókuszt a szegmens mellett úgy is váltasz, hogy
+  **rákattintasz a másik képre**.
+- Ha egy nyitott eszközben (vágás, retusálás, szöveg, vörösszem) már
+  dolgoztál, a program **nem dobja el szó nélkül**: megjelenik a
+  **Szerkesztés jóváhagyása** kérdés — *Módosítások alkalmazása* vagy
+  *Módosítások elvetése* —, és „Ne kérdezzen újból" pipával elnémítható.
+  A kérdés a kettős nézetbe lépéskor és fókuszváltáskor is előjön;
+  fókuszváltásnál **Mégse** is van.
+- A finomhangoló csúszkáinak **élő előnézete álló képnél is látszik**, és
+  kettős nézetben a **fókuszban lévő félre** rajzol.
+- Az **1:1 nagyítás elforgatott képnél** is pontos.
+- A kettős nézet gombsora és a **Kijelölve** jelvénye, a nagyító-csúszka
+  vastagsága és fogantyúja, a felső eszköztár és az alsó sáv az eredeti
+  Picasa rajza szerint áll; a rács görgetősávja a jobb szélre került.
+  Lásd [Nézegetés](features/nezegetes.md).
+
+**Képek biztonsági mentése**
+
+- Amíg a mentés-panel nyitva van, **az egész könyvtár** csak a még el nem
+  mentett tartalmat mutatja: a **bal hasáb** a mentetlen mappákra szűkül
+  (a fanézeten a szülőmappáikkal együtt, kinyitva), a **képrács** pedig a
+  mentetlen fájlokra. Eddig ehhez egy külön mappasáv jelent meg a panel
+  fölött. A panel bezárása után minden visszaáll, a görgetési helyzet is.
+- A mentés **terve háttérszálon** készül: amíg a program megszámolja, mi
+  menne át, **az ablak nem fagy le**. A **Megszakítás** ilyenkor is hat:
+  a másolás nem indul el.
+- A mentést indító gomb felirata **Biztonsági mentés**, készlet nélkül
+  **Írás**; a futó másolást a **Megszakítás** gomb állítja le.
+- Windowson megbízhatóvá lett a mentetlen mappák felismerése: a
+  meghajtóbetű eltérő írásmódja (`C:` vagy `c:`) már nem téveszti meg a
+  programot. Lásd [Képek biztonsági
+  mentése](features/biztonsagi-mentes.md).
+
+**Emberek**
+
+- A **mellőzés** mostantól a kép melletti `.picasa.ini` fájlba is
+  bekerül, ugyanazzal a jelöléssel, amit az eredeti Picasa használ. Így a
+  **Mellőzött emberek** albumban megjelennek azok az arcok is, amiket
+  korábban az eredeti Picasában mellőztél, és amit itt mellőzöl, azt a
+  Picasa is mellőzöttnek látja. Lásd [Emberek és
+  arcok](features/emberek.md).
+
+**Törlés és eltávolítás**
+
+- Az **Eltávolítás az albumból** mostantól **rákérdez** (*Elemek
+  eltávolítása*), és a kérdés a **Beállítások ▸ Általános** lapon
+  kikapcsolható — a kapcsoló eddig szürke volt.
+- A **Törlés lemezről** kérdése megmondja, hova kerül a fájl: a Kukába,
+  vagy — ha oda nem tehető, például hálózati megosztáson — **véglegesen**.
+  Ez utóbbinál a kérdés ki is mondja, hogy a művelet nem vonható vissza.
+  Lásd [Fájlműveletek](features/fajlmuveletek.md).
+
+**Beállítások**
+
+- Keskeny ablakban a nyolc **fül** nem szorul össze olvashatatlanra: a
+  fülsor vízszintesen görgethető, a szélein **‹** és **›** nyíllal. A
+  hosszú magyar jelölő-feliratok pedig tördelődnek, nem tolják ki a
+  lapot. Lásd [Beállítások](features/beallitasok.md).
+
+**Effektek: az eredetihez illeszkedő színek és geometria**
+
+Ezek az effektek most olyan képet adnak, amilyet az eredeti Picasa adott.
+Ugyanaz a beállítás tehát másképp nézhet ki, mint a korábbi
+PicasaPy-változatokban:
+
+- **Filmszemcse** — a szemcse rögzített mintázatú (ugyanaz a beállítás
+  mindig ugyanazt a képet adja), és a keverése az eredetit követi;
+- **Éjjellátó**, **Holga-szerű**, **Kinemaszkóp**, **60-as évek** — a
+  zajrétegük az eredeti véletlenszám-sorozatát használja, és a bennük
+  futó automatikus kontraszt-igazítás a képnek csak egy **ritkított
+  pontmintáját** nézi, ahogy az eredeti. Emiatt egy-egy vékony sötét
+  vagy világos részlet már nem húzza el az egész kép tónusát. Ugyanez a
+  kontraszt-igazítás áll a **Ceruzarajz** mögött is;
+- **Felpörgetés**, **Lomo-szerű**, **Áttűnés** — a fényerő a kontraszt
+  **előtt** adódik a képhez, mint az eredetiben;
+- **Orton-szerű** — a fényerő-csúszka a leírásnak megfelelő, kisebb
+  lépéssel mozdít;
+- **Szegély** — a sarka koncentrikus ívekből áll, a feliratsáv magassága
+  pedig az eredeti számításmódját követi;
+- **Polaroid** — az árnyék eltolása, a körülötte lévő margó és a forgatás
+  az eredeti szerint;
+- **Képpontnagyítás** és **Fókusznagyítás** — a kockákra bontás az
+  eredeti Picasa kicsinyítő eljárásával készül, ezért a kockák széle és
+  színe is az eredetit követi.
+
+Emellett az arcokat leíró `.picasa.ini` sorok mostantól pontosan olyan
+alakúak, amilyeneket az eredeti Picasa ír — egy fölösleges pontosvessző
+sem marad a végükön.
+
 ## 2026-09-27
 
 **Nyomtatás**

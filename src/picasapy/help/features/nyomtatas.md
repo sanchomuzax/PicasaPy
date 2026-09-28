@@ -1,7 +1,9 @@
 # Nyomtatás
 
 Két nyomtatási mód van: **nyomatméret szerint** (a választott méretű
-nyomatok a papíron), és **indexkép** (sok kis kép egy lapon).
+nyomatok a papíron), és **indexkép** (sok kis kép egy lapon). A kettő
+közt nincs külön választó: az **indexkép a nyomatméretek listájának
+egyik tétele**, ahogy az eredeti Picasában is.
 
 ## Képek nyomtatása
 
@@ -17,18 +19,31 @@ A párbeszédben beállítható:
   lapbeállító ablakát nyitja meg (papírméret, tájolás, margók). Amit ott
   elfogadsz, azt a következő nyomtatás használni fogja. PDF-be
   nyomtatásnál a gomb szürke: ott nincs nyomtató, amit beállíts.
-- **Elrendezés**: **Képenként egy lap** vagy **Indexképek**. Az első a
-  nyomatméret szerinti nyomtatás — a felirata ellenére egy lapra
-  **több** nyomat is felkerül, ha elfér (lásd lentebb).
-- **Nyomatméret**: 9×13, 10×15, 13×18, 20×25 cm, illetve a
-  hüvelykes méretek (3,5×5, 4×6, 5×7, 8×10) és a **teljes oldal**.
+- **Nyomatméret** — hét tétel. Magyar felületen a hat méret metrikus:
+  **5 × 8 cm**, **9 × 13 cm**, **10 × 15 cm**, **13 × 18 cm**,
+  **20 × 25 cm** és a **FullPage** (a teljes oldal); angol felületen a
+  hüvelykes hatos áll a helyükön (**Tárcaméret**, 3,5 × 5, 4 × 6,
+  5 × 7, 8 × 10 és a FullPage). A hetedik tétel az **Indexképek** — ez
+  nem méret, hanem a sok kis kép egy lapra (lásd lentebb). A lista
+  **alapból a FullPage**-en áll; a választásod megmarad a következő
+  nyomtatásig.
+
+  A **FullPage** felirata magyar felületen is angolul áll: az eredeti
+  Picasa is így írta, és ezen nem változtatunk.
 - **Tájolás**: **Automatikus**, **Álló** vagy **Fekvő**. A nyomtatási
   feladat egyetlen lapállást használ. **Automatikus** beállításnál a
   papír **álló** marad, és a program a nyomatot fordítja el, ha úgy
   kevesebb lap kell; **Álló** vagy **Fekvő** választásával te döntöd el.
-- **Illesztés a laphoz**: a **Lapkitöltés (vágással)** választásával a
-  kép kitölti a lapot, a széle pedig levágódik.
+- **Illesztés a laphoz**: **A teljes kép**, vagy a **Lapkitöltés
+  (vágással)** — utóbbinál a kép kitölti a helyét, a széle pedig
+  levágódik.
 - **Példány képenként**.
+
+Ha a nyomatméret helyén az **Indexképek** áll, a **Példány képenként**, a
+kis előnézet és a képminőség két sora **eltűnik** — indexképnél ezeknek
+nincs értelme, ott mindig a teljes kép kerül a cellába. Helyettük az
+**Oszlopok** mező jelenik meg. A nyomtató, a tájolás és az illesztés
+marad.
 
 A nyomtató neve alatt egy sor mutatja, **milyen lapra** fogsz nyomtatni:
 a papír neve, a mérete milliméterben és a tájolása — például
@@ -62,9 +77,15 @@ helyet kér, és hogy ez hány lap, a nyomatmérettől és a papírtól függ.
 Egy kép példányai egymás után jönnek.
 
 Ha a választott nyomatméret **egyáltalán nem fér el** a papíron — ilyen
-a **teljes oldal**, vagy egy A4-nél alig nagyobb méret —, a program
+a **FullPage**, vagy egy A4-nél alig nagyobb méret —, a program
 visszatér a régi működéshez: **egy kép egy lapra**, a teljes
 nyomtatható területre.
+
+## Útlevélkép
+
+Az **Eszközök ▸ Kísérleti ▸ Útlevélkép…** szintén ezt a párbeszédet
+nyitja meg, arcra vágott képpel és **Útlevél** nyomatmérettel — a
+részletek: [Útlevélkép](utlevelkep.md).
 
 ## Az előnézet és a lapszám
 
@@ -104,8 +125,13 @@ gomb nem indít újabb feladatot.
 **Mappa ▸ Indexképek nyomtatása…** (Ctrl+Shift+P) egy lapra sok kis képet
 tesz. Az **Oszlopok** mezővel állítod, hány kép legyen egy sorban.
 
-Ugyanez az **Elrendezés ▸ Indexképek** beállítással a szokásos
-nyomtatási párbeszédből is elérhető.
+Ugyanide jutsz a szokásos nyomtatási párbeszédből is: válaszd a
+**Nyomatméret** lista utolsó tételét, az **Indexképek**-et. Ilyenkor
+lapozható előnézet nincs, de a darabszám-sor megmondja, **hány lap** lesz
+belőle.
+
+Az indexkép-mód **nem ragad meg**: ha a nyomtatást bezárod, a következő
+Ctrl+P megint méret szerinti nyomtatással nyílik.
 
 ## Megjegyzés a nyomtató-választóhoz
 

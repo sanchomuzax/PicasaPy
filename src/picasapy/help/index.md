@@ -38,6 +38,7 @@ szerkesztő fülei ugyanott vannak.
 - [Importálás](features/importalas.md)
 - [Exportálás mappába, HTML-oldal, Google Earth](features/exportalas.md)
 - [Nyomtatás](features/nyomtatas.md)
+- [Útlevélkép](features/utlevelkep.md)
 - [Küldés e-mailben](features/email.md)
 - [Kollázs](features/kollazs.md)
 - [Ajándék CD](features/ajandek-cd.md)

@@ -164,7 +164,12 @@ több albumban is szerepelhet.
   nem történik semmi.
 - Meglévő albumhoz a kép helyi menüjének **Hozzáadás az albumhoz**
   almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca album-gombjával.
-- Kivenni a **Eltávolítás az albumból** paranccsal tudsz.
+- Kivenni a **Eltávolítás az albumból** paranccsal tudsz. A program
+  rákérdez — az ablak **Elemek eltávolítása**, a gomb **Kép
+  eltávolítása** (több képnél **Képek eltávolítása**) —, és a fájlhoz nem
+  nyúl, csak az összeállításból veszi ki. A kérdés a **Beállítások ▸
+  Általános** lapon kikapcsolható („Eltávolítás az albumból megerősítés
+  nélkül").
 - Képeket egy meglévő album sorára húzva azok **abba az albumba**
   kerülnek. Amíg egyetlen albumod sincs, az **Albumok** csoport alatt ott
   áll a „Képeket idehúzva új albumot hozhat létre." sor — erre ejtve a
