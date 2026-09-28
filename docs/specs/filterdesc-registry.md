@@ -7666,6 +7666,47 @@ Ghidra-kimenet `FUN_00bb9d20`, `FUN_00bb9e00`, `FUN_008f2c70`,
 `src/picasapy/render/glimmer_ops.py:125–148`,
 `tests/render/test_curves_spline_629.py:28–145`.*
 
+
+## ⛳ Az `AdjustCurves` görbe-lánca: a mester-érték NEM kerekül és NEM vágódik, a spline a töréspontokon túl EXTRAPOLÁL (2026-09-29, 406. kör, #3941)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, és a Picasa-exporttal bitre egyezik. Független újralevezetés (#3941): EGYEZIK, ugyanazokkal a táblaértékekkel. A fenti 4.8 kompozíciós sorrendje áll; a köztes érték és a tartományon kívüli viselkedés eddig nem volt kiolvasva.*
+
+A LUT-építő (`0x00bcd1e0`) mind a 256 bemenetre EGY menetben:
+
+```
+v   = f32( Master(i) )                      ; 0x00bcd226 → 0x00bcd360, NINCS kerekítés, NINCS vágás
+R_i = clamp( trunc( Red(v)   + 0,5 ), 0, 255 )   ; 0x00bcd23a, 0x00bcd25b–0x00bcd270, [0xc72150] = 0,5
+G_i = clamp( trunc( Green(v) + 0,5 ), 0, 255 )
+B_i = clamp( trunc( Blue(v)  + 0,5 ), 0, 255 )   ; 0x00bcd282–0x00bcd28d
+```
+
+- **A görbe-kiértékelő** (`0x008f3290`) a Numerical Recipes `splint` alakja felezéses intervallum-kereséssel (`0x008f32e4`–`0x008f331a`). A töréspontokon **kívüli** bemenetre a szélső intervallumot adja, és annak köbös polinomját **extrapolálja** — nem vág és nem tartja a szélső értéket. Kettőnél kevesebb pontnál a bemenetet adja vissza (`0x008f329e`, identitás).
+- **A mester-kiértékelő** (`0x00bcd360`): `y₀ = x`, `y_{k+1} = f(y_k)` összesen `n` lépésben, az eredmény `y_n + s · (f(y_n) − y_n)` (`0x00bcd364`–`0x00bcd396`), ahol `n = [+0x60]`, `s = [+0x64]`. A készlet konstruktora (`0x00bcd180`) `n = 1`-et és `s = 0`-t állít be, tehát alapesetben `v = f(x)`. Az `n`-t és az `s`-t csak az `ExposureAdjust` attribútum írja át (`0x00bcd4b0`: `n = trunc(|p|)`, `s = |p| − n`); a görbe-XML nem.
+- **Üres görbe:** a kiértékelő a bemenetet adja vissza (identitás, `0x008f3295`–`0x008f32a8`).
+
+**Hatókörön kívül** (egyik effekt sem használja, a `filterdesc.xml` 12 `AdjustCurves`-sorából egyik sem ad `ExposureAdjust`-ot, és mindegyikben van görbe): a négy üres görbe esete (az építő ekkor egy elemet sem ír, `0x00bcd202`) és az `ExposureAdjust` + `MasterCurve` együttes megadása.
+
+**Példa — a 60-as évek kék csatornája** (Master `(0,0),(150,104),(243,255)`, Blue `(0,9),(126,98),(255,231)`):
+
+| `i` | `v = Master(i)` | natív `B` | a mai kód |
+|---:|---:|---:|---:|
+| 240 | 249,6 | 225 | 225 |
+| 245 | 258,6 | 235 | 231 |
+| 250 | 267,6 | 245 | 231 |
+| 255 | 276,6 | 255 | 231 |
+
+**Mérve** (684-es mérőkészlet, a mi kimenetünket a Picasa-export saját kvantálótábláival tömörítve; minden golden-pár lefutott, csak a változók):
+
+| eset | a mai kód (két LUT, köztes kerekítés és vágás, szélső érték tartva) | **natív lánc** |
+|---|---:|---:|
+| `sixties__min` | 0,433 | **0,000** |
+| `sixties__alap` | 0,376 | **0,000** |
+| `cinemascope__alap` | 0,354 | **0,079** |
+
+A többi görbés effekt (kétpontos vagy tartományon belüli görbék) nem változik.
+
+**Nálunk** (`render/glimmer_ops.py::adjust_curves`, `render/curves.py::curve_lut`): két egymás utáni 8 bites LUT, a görbe a tartományon kívül a szélső értéket tartja → fejlesztés: #3942.
+
 ## ⛳ A `Border` négy attribútumának EGYSÉGE — és a rejtett átméretezési tényező (2026-09-19, 325. kör, #626)
 
 *A jegy 3. prioritása a `Border` (Border · MuseumMatte · RoundedEdges ·
