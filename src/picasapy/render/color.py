@@ -45,9 +45,10 @@ _SEPIA_TINT = (155, 125, 99)
 #: a táblát egyszer számoljuk ki (a `sepia_lut_array` gyorstára)
 _SEPIA_LUT: np.ndarray | None = None
 
-# A sat mért gain-táblája (nem 1+s!); s=−1 → teljes telítetlenítés.
-_SATURATION_KNOTS = (-1.0, -0.333, 0.0, 0.25, 0.5, 1.0)
-_SATURATION_GAINS = (0.0, 0.683, 1.0, 1.399, 1.729, 2.241)
+# A sat pozitív oldalának mért gain-táblája (nem 1+s!); a negatív oldal
+# pontosan 1+s (`saturation_gain`, #3889).
+_SATURATION_KNOTS = (0.0, 0.25, 0.5, 1.0)
+_SATURATION_GAINS = (1.0, 1.399, 1.729, 2.241)
 
 
 def _to_uint8(values: np.ndarray) -> np.ndarray:
@@ -239,17 +240,19 @@ def _apply_negative_saturation(image: np.ndarray, amount: float) -> np.ndarray:
 def saturation_gain(strength: float) -> float:
     """A `sat` erősítés-skalárja a GPU-előnézethez (#22).
 
-    ⚠️ **A NEGATÍV ágon −1-nél és 0-nál pontos, közbenső állásnál a
-    CPU pontosan `1 + amount`-tal számol, a tábla ettől kissé eltér (#3889);
-    a POZITÍVON KÖZELÍTÉS (#693).** A CPU-út
+    A **NEGATÍV** oldalon pontosan `1 + amount` — a natív callback ezt adja
+    át (`0x008f9014` `fadd`), így a shader negatív ága bitre a CPU-t adja
+    (#3889). ⚠️ **A POZITÍVON KÖZELÍTÉS (#693).** A CPU-út
     (`apply_saturation`) a pozitív oldalon már a natív, csatornánkénti
     gamma-modellt futtatja, amire **semmilyen skalár erősítés nem
     illeszthető**. A GPU-shader viszont ezt az egyetlen uniformot kapja,
     ezért élő csúszka-húzás közben az előnézet a pozitív oldalon eltér a
-    véglegestől (a mérőszetten a különbség 13,3 vs. 0,7 szint). A tábla
-    értékei ezért maradnak: ezek a MÉRT legjobb egy-skalár illesztések,
-    tehát az előnézet így áll a legközelebb a végleges képhez.
+    véglegestől (a mérőszetten a különbség 13,3 vs. 0,7 szint). A pozitív
+    tábla értékei ezért maradnak: ezek a MÉRT legjobb egy-skalár
+    illesztések, tehát az előnézet így áll a legközelebb a végleges képhez.
 
     A GPU-oldal rendes lefedése külön jegy."""
     clamped = min(max(strength, -1.0), 1.0)
+    if clamped <= 0.0:
+        return 1.0 + clamped
     return float(np.interp(clamped, _SATURATION_KNOTS, _SATURATION_GAINS))

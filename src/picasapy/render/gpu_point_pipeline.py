@@ -21,9 +21,8 @@ igazságforrás (`picasapy.render.tone`/`color`) EGYSZER kiszámolt eredménye:
   luma mindhárom csatornától függ), ezért ezeket a fragment shader
   analitikusan számolja. A `sat` **negatív** ága a natív egész luma-
   keverés (#3889, `simulate_negative_saturation_shader()`), az erősítést
-  a CPU adja uniformként (`saturation_gain()` interpolált táblája; a CPU
-  pontosan `1 + amount`-tal számol, a kettő közbenső állásnál pár szintet
-  eltérhet). A `sat`
+  a CPU adja uniformként (`saturation_gain()`: a negatív oldalon pontosan
+  `1 + amount`, így bitre a CPU-t adja). A `sat`
   **pozitív** ága (#696, a #693 következménye) NEM erősítés — a
   `picasapy.render.saturation_positive` szerint csatornánkénti, MÁS
   kitevőjű gamma a `csatorna/luma` arányon, amire semmilyen skalár
@@ -147,10 +146,9 @@ def build_finetune2_lut(
 
 
 def saturation_gain(strength: float) -> float:
-    """A `sat` NEGATÍV ágának mért erősítés-táblája — a skalár erősítést
-    adja vissza (a shader ezt kapja `satGain` uniformként). A CPU-út
-    (`apply_saturation`) pontosan `1 + amount`-tal számol; a tábla ettől
-    közbenső állásnál kissé eltér (−0,333-nál 0,683), −1-nél és 0-nál azonos.
+    """A `sat` NEGATÍV ágának skalár erősítése — pontosan `1 + amount`,
+    mint a natív callback és a CPU-út (`apply_saturation`, #3889); a shader
+    ezt kapja `satGain` uniformként.
 
     A POZITÍV ágra (#696, #693) ez a függvény már NEM alkalmazandó — arra
     a shader `simulate_positive_saturation_shader()` szerinti gamma-
@@ -220,9 +218,8 @@ def simulate_negative_saturation_shader(image: np.ndarray, gain: float) -> np.nd
     `sat` NEGATÍV ága"): `L = (2R + 5G + B + 4) >> 3`, majd
     `ki = L + floor((c − L) · k / 256)`, ahol `k = floor(256 · gain)`. A
     shaderben minden tag egész értékű float, tehát a `floor` pontosan az
-    egész aritmetikai eltolást adja. A `gain` a `saturation_gain()` táblája
-    — `a = −1`-nél bitre egyezik a CPU-val, közbenső állásnál a tábla
-    `1 + a`-tól való eltérése miatt legfeljebb pár szint a különbség."""
+    egész aritmetikai eltolást adja. A `gain` a `saturation_gain()`
+    értéke (`1 + a`), így minden negatív állásnál bitre egyezik a CPU-val."""
     k = np.floor(256.0 * float(gain))
     channels = image.astype(np.float64)
     luma = np.floor(

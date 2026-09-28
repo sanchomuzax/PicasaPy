@@ -170,6 +170,10 @@ class TestSaturationGain:
     def test_full_desaturate_gain_is_zero(self):
         assert saturation_gain(-1.0) == pytest.approx(0.0)
 
+    @pytest.mark.parametrize("amount", [-0.75, -0.5, -0.333, -0.1])
+    def test_negative_side_is_exactly_one_plus_amount(self, amount):
+        assert saturation_gain(amount) == pytest.approx(1.0 + amount)
+
     def test_clamps_out_of_range(self):
         assert saturation_gain(5.0) == saturation_gain(1.0)
         assert saturation_gain(-5.0) == saturation_gain(-1.0)
@@ -214,18 +218,16 @@ class TestNegativeSaturationShader3889:
             apply_saturation(kep, -1.0),
         )
 
-    @pytest.mark.parametrize("amount", [-0.5, -0.333, -0.1])
-    def test_kozbenso_allasok_a_parity_turesen_belul(self, amount):
-        # a `saturation_gain` táblája a negatív oldalon sem pontosan `1 + a`
-        # (−0,333-nál 0,683), ezért itt a GPU-parity teszt 3 szintes tűrése
-        # a mérce, nem a bitegyezés.
+    @pytest.mark.parametrize("amount", [-0.75, -0.5, -0.333, -0.25, -0.1])
+    def test_kozbenso_allasok_bitre_egyeznek_a_cpu_val(self, amount):
+        # a negatív oldalon a `saturation_gain` pontosan `1 + a` (a natív
+        # callback `amount + 1.0f`-et ad át), így a shader bitre a CPU-t adja
         from picasapy.render import apply_saturation
         from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
 
-        kep = self._kep()
-        gpu = simulate_negative_saturation_shader(kep, saturation_gain(amount)).astype(int)
-        cpu = apply_saturation(kep, amount).astype(int)
-        assert np.abs(gpu - cpu).max() <= 3
+        kep = np.random.default_rng(64).integers(0, 256, size=(64, 64, 3), dtype=np.uint8)
+        gpu = simulate_negative_saturation_shader(kep, saturation_gain(amount))
+        np.testing.assert_array_equal(gpu, apply_saturation(kep, amount))
 
     def test_azonossag_gain_1_nel(self):
         from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
