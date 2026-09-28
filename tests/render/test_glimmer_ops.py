@@ -533,3 +533,23 @@ class TestFrameOps:
     def test_rotate_zero_megtartja_meretet(self, image):
         result = gf.rotate_with_pad(image, 0.0, (255, 255, 255))
         assert result.shape == image.shape
+
+
+
+def test_a_ragyogas_nem_veges_parameterre_valtozatlan() -> None:
+    """Kézzel írt ini-ből jöhet inf/NaN: nem dob, a kép változatlan (#3827)."""
+    from picasapy.render.belso_ragyogas import inner_glow
+
+    kep = np.full((8, 8, 3), 120, dtype=np.uint8)
+    for x, y, s in ((float("inf"), 5.0, 1.0), (5.0, float("nan"), 1.0), (5.0, 5.0, float("nan"))):
+        np.testing.assert_array_equal(inner_glow(kep, (0, 0, 0), x, y, s), kep)
+
+
+def test_a_ragyogas_paranyi_alfaja_sem_fordul_korbe() -> None:
+    """1/256 alatti alfánál a k′ −1 lenne: a tábla nem fordulhat körbe
+    (0 helyett 255), a kép gyakorlatilag változatlan (#3827, PR-átnézés)."""
+    from picasapy.render.belso_ragyogas import inner_glow
+
+    kep = np.full((16, 16, 3), 200, dtype=np.uint8)
+    ki = inner_glow(kep, (255, 255, 255), 6.0, 6.0, 1.0, alpha=0.001)
+    assert int(np.abs(ki.astype(int) - kep.astype(int)).max()) <= 1

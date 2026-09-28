@@ -178,8 +178,9 @@ def _lekicsinyitett_tabla(szin: int) -> np.ndarray:
 def _blend_alpha_tabla(tabla: np.ndarray, alpha: float) -> np.ndarray:
     """A művelet `BlendAlpha`-ja (`0x009dc4b0`): `k′ = csonk(α·256) − 1`,
     `(be·(255 − k′) + ki·k′) >> 8`."""
-    k = int(math.trunc(float(np.float32(alpha)) * _FIXPONT)) - 1
-    return (_S * (_TELJES - k) + tabla * k) >> 8
+    alfa = min(max(float(np.float32(alpha)), 0.0), 1.0)
+    k = max(int(math.trunc(alfa * _FIXPONT)) - 1, 0)
+    return np.clip((_S * (_TELJES - k) + tabla * k) >> 8, 0, _TELJES)
 
 
 def _kever(image: np.ndarray, suly: np.ndarray, tablak: list[np.ndarray]) -> np.ndarray:
@@ -227,6 +228,10 @@ def inner_glow(
     """
     validate_image(image)
     if not alpha > 0.0:
+        return image.copy()
+    # kézzel írt .picasa.ini-ből jöhet inf/NaN: a nem véges érték ne dobjon
+    # kivételt a fixpontos átváltásnál (a PR-átnézés)
+    if not (math.isfinite(xblur) and math.isfinite(yblur) and math.isfinite(strength)):
         return image.copy()
     height, width = image.shape[:2]
     minoseg = min(max(int(quality), 1), 15)
