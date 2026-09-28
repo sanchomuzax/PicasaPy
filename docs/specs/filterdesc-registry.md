@@ -1071,7 +1071,72 @@ sugárral és nullás peremmel, `(255 − A)·strength`, bilineáris vagy
 Mitchell-nagyítás, source-over. Ez **Vignette 6,12 / Matte 5,61**-et ad, a
 mai erf-modell 0,585 / 0,910-et. Hiányzik, milyen maszkot épít a
 `0x00bcbfb0`, és hogyan nagyít vissza a rajzoló (`0x00bb8f70`,
-`0x00bb91d3`–`0x00bb992d`). Kutatási jegy: **#3820**.
+`0x00bb91d3`–`0x00bb992d`). Kutatási jegy: **#3820** — megválaszolva a következő szakaszban.
+
+##### ⭐ A belső ragyogás TELJES lánca a lekicsinyített ágon — emulálva 0,28 (2026-09-28, 386. kör, #3820)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+A #2159 kiolvasta a darabokat (a lekicsinyítés aránya, a sugár, a 8.8-as
+`strength`), de a lánc nem állt össze. Két dolog hiányzott: **mit mos el a
+maszképítő**, és **milyen dobozzal**. Most megvan, és a Picasa-exporton mérve
+a mai erf-modellnél jobb.
+
+**1. A munkapuffer.** Ha a `0x00bb89b0` aránya (`f`) 1 alatt van, a rajzoló
+(`0x00bb8f70`) `W' = csonk(f_x·W)`, `H' = csonk(f_y·H)` méretű pufferbe
+**tömör téglalapot** fest (`0x009acb60`, `0xff0000ff`). Ez a maszk forrása,
+nem a kép. A maszképítő a `f·xblur`, `f·yblur` blurt kapja.
+
+**2. A maszk.** A `0x00bcbbd0` a forrás alfájának inverzét (`0xff − α`,
+`0x00bcbcb6`) teszi egy `r_x`/`r_y`-nal kibővített 8 bites pufferbe; a perem
+255 (`memset 0xff`). Tömör téglalapnál a belső rész 0, a perem 255.
+
+**3. Az elmosás (`0x00bcc7b0`).** Tengelyenként **`quality` darab menet**
+(itt 3), előbb vízszintesen (`0x00bccbd0`), utána függőlegesen (`0x00bcce20`).
+A blurt előbb a méret felére vágja (`0x0049fab0` = fmin, `× 0,5`). A doboz
+paramétereit a `0x00bc5360` adja a blurból (`b`):
+
+```
+n = trunc(b);  s = 6;  amíg n > 1: s −= 1, n >>= 1
+v = trunc((b − 1)·2^(s−1));  a = v & (2^s − 1);  r = (v >> s) + 1;  div = 2^s + 2v
+ki[x] = ( a·(be[x−r] + be[x+r]) + 2^s·Σ(be[x−r+1 … x+r−1]) ) / div      (csonkolva)
+```
+
+(`b ≥ 64`-nél: `s = a = 0`, `r = 1 − trunc(⌈b−1⌉·(−0,5))`, `div = 2r − 1`.)
+A doboz **teljes szélessége a blur maga**, tört súlyú szélső képpontokkal.
+A puffer szélén minden menetben **255 a pótlás**. Példa: `b = 33,33` →
+33 képpontos, egyenletes doboz (`⌊Σ₃₃/33⌋`).
+
+**4. A súly, a szín, a visszanagyítás, a keverés.** 
+
+- a súly: `a = min(255, (M · trunc(strength · 256)) >> 8)` (`0x00bcc1f0`
+  `imul`/`sar 8`, `0x00408af0` min; `0x00cf39d8` = 256,0);
+- a maszképítő a lekicsinyített ágon **rögzített vörös** színt kap
+  (`0xffff0000`, `0x00bb91dd`–`0x00bb91f9`), így a súly a vörös csatornába
+  kerül; a valódi színt a `0x008f2500` színmátrixa teszi rá (R, G, B = a szín,
+  alfa = a súly, nem előszorozva);
+- a `glowalpha` **holt paraméter**: a szín alfa-bájtja `k = a = 0`-val megy be
+  (`0x00bcc285`), a SIMD-ág pedig nullázza (`pslld 8`/`psrld 8`);
+- a visszanagyítás `0x00bcb5e0(…, diag(w'/W, h'/H), smoothing = 1)`
+  (`0x00bb9796`): nagyítás, tehát a **3-as Mitchell (B = C = 0,4)** (ld. 5/c);
+- a keverés `0x008f59d0`: `ki = ⌊(G·a + S·(255 − a)) / 255⌋`, a ragyogás a
+  forrás fölött.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz; az emuláció a fenti lánc):
+
+| eset | ma (erf-modell) | **natív lánc** | zajszint (mi ↔ mi-JPEG95) |
+|---|---:|---:|---:|
+| `Vignette` alap (Blur 35, Strength 1,4) | 0,585 | **0,283** | 0,147 |
+| `Matte` alap (Blur 40, Strength 1,2) | 0,910 | **0,286** | 0,157 |
+
+Soronkénti profil a `Vignette` alap középső sorában (a kép bal szélétől 0, 5,
+20, 50 képpontra): Picasa 77,7 / 81,7 / 104,0 / 142,7 · natív lánc 76,3 /
+80,7 / 103,7 / 143,7 · ma 71,0 / 78,7 / 100,7 / 142,7.
+
+A többi Glow-felhasználót (`Lomo`, `Holga`, `NightVision`, `MuseumMatte`)
+ebben a körben nem mértük a lánccal.
+
+Fejlesztés: #3827.
 
 #### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
 
