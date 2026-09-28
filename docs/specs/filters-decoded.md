@@ -1423,6 +1423,13 @@ B = 119 + (−69·128 >> 8) = 84. `a = −1` (`k = 0`): mindhárom 119.
 
 Fejlesztés: #3889.
 
+✅ **Megvalósítva (#3889):** `render/color.py` `_apply_negative_saturation`;
+`sat__min` ΔE 0,346 → **0,036** (a `sat__alap` 0,152 és a `sat__max` 0,452
+változatlan). A GPU-előnézet negatív ága (`PointFilter.frag`
+`applyNegativeSaturation`) ugyanezt az egész lumát és keverést futtatja; az
+erősítése továbbra is a `saturation_gain()` táblája, ami közbenső állásnál kissé
+eltér `1 + a`-tól.
+
 #### A `sat` TELJES algoritmusa (2026-08-15, a csatorna-hozzárendelés lezárva)
 
 A képpontok **BGRA** sorrendben állnak (`p[0]=B`, `p[1]=G`, `p[2]=R`), ezért a

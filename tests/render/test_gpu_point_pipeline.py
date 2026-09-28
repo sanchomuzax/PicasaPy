@@ -190,3 +190,55 @@ class TestBuildPointPipelineUniforms:
     def test_saturation_feeds_through_to_gain(self):
         uniforms = build_point_pipeline_uniforms(saturation=-1.0)
         assert uniforms.sat_gain == pytest.approx(0.0)
+
+
+class TestNegativeSaturationShader3889:
+    """#3889: a GPU-előnézet negatív `sat` ága a natív egész lumát kövesse.
+
+    A valódi GL-út itt nem mérhető (a `test_gpu_point_filter_shader.py`
+    SKIP-el, nincs RHI); ez a `PointFilter.frag` negatív ágának numpy-mását
+    (`simulate_negative_saturation_shader`) veti össze a CPU-igazsággal, és
+    egy forrás-őrrel azt, hogy a shader valóban ezt a képletet futtatja."""
+
+    @staticmethod
+    def _kep() -> np.ndarray:
+        return np.random.default_rng(19).integers(0, 256, size=(32, 32, 3), dtype=np.uint8)
+
+    def test_teljes_szurkites_bitre_egyezik_a_cpu_val(self):
+        from picasapy.render import apply_saturation
+        from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
+
+        kep = self._kep()
+        np.testing.assert_array_equal(
+            simulate_negative_saturation_shader(kep, saturation_gain(-1.0)),
+            apply_saturation(kep, -1.0),
+        )
+
+    @pytest.mark.parametrize("amount", [-0.5, -0.333, -0.1])
+    def test_kozbenso_allasok_a_parity_turesen_belul(self, amount):
+        # a `saturation_gain` táblája a negatív oldalon sem pontosan `1 + a`
+        # (−0,333-nál 0,683), ezért itt a GPU-parity teszt 3 szintes tűrése
+        # a mérce, nem a bitegyezés.
+        from picasapy.render import apply_saturation
+        from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
+
+        kep = self._kep()
+        gpu = simulate_negative_saturation_shader(kep, saturation_gain(amount)).astype(int)
+        cpu = apply_saturation(kep, amount).astype(int)
+        assert np.abs(gpu - cpu).max() <= 3
+
+    def test_azonossag_gain_1_nel(self):
+        from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
+
+        kep = self._kep()
+        np.testing.assert_array_equal(simulate_negative_saturation_shader(kep, 1.0), kep)
+
+    def test_a_shader_negativ_aga_az_egesz_lumat_futtatja(self):
+        from pathlib import Path
+
+        frag = (
+            Path(__file__).resolve().parents[2]
+            / "src/picasapy/app/qml/PicasaPy/Gpu/PointFilter.frag"
+        ).read_text(encoding="utf-8")
+        assert "applyNegativeSaturation(toned, satGain)" in frag
+        assert "floor((dot(channel255, NEGATIVE_SAT_LUMA_WEIGHTS) + 4.0) / 8.0)" in frag

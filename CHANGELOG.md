@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Telítettség csúszka balra húzva (a szürkítés felé) úgy számol, mint az
+  eredeti Picasa: a teljesen szürkére húzott kép mért eltérése ΔE 0,35-ről
+  0,04-re csökkent, és a húzás közbeni előnézet is ugyanezt a szürkét mutatja
+  (#3889).
+
 ## [0.8.623] – 2026-09-28
 
 ### Javítva
