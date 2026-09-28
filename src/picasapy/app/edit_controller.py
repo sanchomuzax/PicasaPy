@@ -4,6 +4,7 @@ közti híd. A bekötést (QML-regisztráció, jelzések) az integrátor végzi.
 from __future__ import annotations
 
 from dataclasses import replace
+import itertools
 
 import logging
 from pathlib import Path
@@ -77,6 +78,14 @@ from .edit_action_names import redo_label, undo_label
 from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
 from .worker_thread import BackgroundWorkerMixin
+
+#: #3819: a `?rev=` cache-buster FOLYAMATSZINTŰ számlálókból jön, nem
+#: példányonként 0-ról. A Qt kép-gyorstára folyamatszintű, kulcsa az URL és a
+#: kért méret; ha egy újabb vezérlő-példány ugyanarra a fotóra ugyanazt a
+#: számot adná, a Qt a RÉGI képet adná vissza a szolgáltató megkérdezése
+#: nélkül (mérve: a megjelenítési mód váltása így nem jutott a képernyőre).
+_REVIZIO = itertools.count(1)
+_GPU_REVIZIO = itertools.count(1)
 
 _log = logging.getLogger(__name__)
 
@@ -2742,13 +2751,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         }
 
     def _bump_revision(self) -> None:
-        self._revision += 1
+        self._revision = next(_REVIZIO)
         self.revisionChanged.emit()
 
     def _bump_gpu_revision(self) -> None:
         """A gpuPrefixSource/gpuLutSource cache-bustere (#22) — KÜLÖN a
         `revisionChanged`-től, ld. a `gpuRevisionChanged` docsztringjét."""
-        self._gpu_revision += 1
+        self._gpu_revision = next(_GPU_REVIZIO)
         self.gpuRevisionChanged.emit()
 
 

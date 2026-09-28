@@ -39,8 +39,32 @@ class TestBeginEdit:
         controller.beginEdit("1", str(photo))
         assert controller.hasSavedRedeye is False  # #2393: átnevezve
         assert "enhance" not in controller.effectChainCounts
-        assert controller.revision == 1
-        assert controller.previewSource == "image://editpreview/1?rev=1"
+        # #3819: a szám folyamaton belül egyedi, nem feltétlenül 1
+        assert controller.revision >= 1
+        assert controller.previewSource == (
+            f"image://editpreview/1?rev={controller.revision}"
+        )
+
+    def test_preview_url_is_unique_across_controllers(self, qt_app, provider, photo):
+        """#3819: a Qt kép-gyorstára FOLYAMATSZINTŰ, és az URL + a kért
+        méret a kulcsa. Ha két vezérlő-példány (pl. két, egymás után
+        felépített alkalmazás egy folyamatban) ugyanarra a fotóra ugyanazt a
+        `?rev=` számot adná, a második a gyorstárból az ELSŐ képét kapná — a
+        szolgáltató meg sem hívódna, így a közben váltott megjelenítési mód
+        sem látszana. A cache-buster ezért folyamaton belül egyedi."""
+        # rontás-kontroll: a `_bump_revision` példányonkénti `+= 1`-re
+        # visszaírva mindkét vezérlő `?rev=1`-et ad → piros; a QML-ben ez a
+        # #1598 képernyős tesztjének bukása volt (a Projektor mód képe maradt
+        # fent a Túlcsordult képpontok helyett).
+        from picasapy.app.edit_controller import EditController
+
+        elso = EditController(provider)
+        masodik = EditController(provider)
+        elso.beginEdit("1", str(photo))
+        masodik.beginEdit("1", str(photo))
+        assert elso.previewSource != masodik.previewSource
+        assert elso.gpuPrefixSource != masodik.gpuPrefixSource
+        assert elso.gpuLutSource != masodik.gpuLutSource
 
     def test_existing_filters_loaded(self, controller, photo):
         ini = photo.parent / ".picasa.ini"

@@ -491,6 +491,40 @@ class TestGpuPreviewImages:
         image = provider.requestImage("1?rev=1", None, QSize(2560, 2560))
         assert (image.width(), image.height()) == (36, 64)
 
+    def test_marking_mode_marks_on_the_upscaled_pixels(self, qt_app, tmp_path):
+        """#3819 + #1576: képpontot mozdító megjelenítési módban a kis képet
+        IS a dobozra méretezzük, és csak UTÁNA jelölünk. Natív méreten
+        jelölve a kirajzolás nyújtaná szét a jelölőszínt, és a foltok széle
+        a szomszédokkal összemosódna — itt a képpont vagy pontosan a
+        jelölőszín, vagy jelöletlen: köztes lazac árnyalat nincs."""
+        # rontás-kontroll: az `edit_preview.py` `_belefer` feltételéből a
+        # `and not jelol` részt törölve a kép 32×16 marad → piros.
+        kep = Image.new("RGB", (32, 16), (200, 200, 200))
+        for x in range(16):
+            for y in range(16):
+                kep.putpixel((x, y), (255, 255, 255))
+        photo = tmp_path / "IMG_0001.png"
+        kep.save(photo)
+        provider = _make_provider()
+        provider.register("1", photo, ())
+
+        provider.set_display_mode("auto")
+        nativ = provider.requestImage("1?rev=1", None, QSize(2560, 2560))
+        assert (nativ.width(), nativ.height()) == (32, 16)
+
+        provider.set_display_mode("overflow")
+        jelolt = provider.requestImage("1?rev=2", None, QSize(2560, 2560))
+        assert (jelolt.width(), jelolt.height()) == (2560, 1280)
+        szinek = set()
+        for y in range(0, 1280, 7):
+            for x in range(0, 2560, 3):
+                szin = jelolt.pixelColor(x, y)
+                szinek.add((szin.red(), szin.green(), szin.blue()))
+        assert (255, 127, 127) in szinek
+        # a próbakép szürke, tehát minden vöröses képpont a jelölésből jön
+        lazac = {s for s in szinek if s[0] > s[1]}
+        assert lazac == {(255, 127, 127)}, lazac
+
     def test_main_image_tall_fits_the_box(self, qt_app, tmp_path):
         """#3819: a nagyobb álló kép a doboz MAGASSÁGÁHOZ igazodik."""
         photo = _make_gradient_jpeg(tmp_path / "IMG_0001.jpg", size=(90, 160))

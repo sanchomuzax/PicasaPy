@@ -736,12 +736,18 @@ class EditPreviewProvider(QQuickImageProvider):
         # kép null marad, a Qt pedig minden ilyen kérésnél kiírja, hogy
         # „QImage::scaleWidth: Image is a null image". Ártalmatlan, de
         # elfedi a valódi hibákat a naplóban.
+        jelol = not (is_gpu_prefix or is_gpu_lut) and display_mode_changes_pixels(
+            display_mode
+        )
         if requested_size is not None and not image.isNull():
             width, height = requested_size.width(), requested_size.height()
             # #3800 (GPU-előtag), #3819 (fő fotó): a befoglaló dobozba
             # csak KICSINYÍTÜNK — a kis kép felnagyítása csak memóriát és
             # méretezési időt visz, a kirajzolás úgyis a kép méretére nyújt.
-            if _belefer(image, width, height):
+            # KIVÉTEL a képpontot mozdító megjelenítési mód: az lent, a
+            # méretezés UTÁN jelöl, és natív méreten jelölve a kirajzolás
+            # nyújtaná szét a jelölőszínt a szomszédokba (#1576).
+            if _belefer(image, width, height) and not jelol:
                 width = height = 0
             smooth = Qt.TransformationMode.SmoothTransformation
             if width > 0 and height > 0:
@@ -760,11 +766,7 @@ class EditPreviewProvider(QQuickImageProvider):
         #
         # A GPU-ágak (`gpuprefix=1`/`gpulut=1`) KIMARADNAK: a LUT adat, nem
         # kép — átfestve a shader hibás tábláról mintavételezne.
-        if (
-            not (is_gpu_prefix or is_gpu_lut)
-            and display_mode_changes_pixels(display_mode)
-            and not image.isNull()
-        ):
+        if jelol and not image.isNull():
             image = _rgb_array_to_qimage(
                 apply_display_mode(_qimage_to_rgb_array(image), display_mode)
             )
