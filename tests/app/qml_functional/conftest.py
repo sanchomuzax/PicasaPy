@@ -136,10 +136,18 @@ def _build_qml_app(
     # szerkesztő-híd (#19) — az application.py bekötésének tükre
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
+    # #3187: a kettős nézet MÁSODIK felének vezérlője — az application.py
+    # bekötésének tükre. Itt (a `wire_display_mode` ELŐTT) kell létrejönnie,
+    # hogy a #3837 javítása (mindkét fél frissül módváltáskor) a
+    # teszt-oldalon is bekötve legyen; a `SecondPreview`/`link_aa_partner`
+    # a lenti, engine-hez kötött szakaszban követi, mint eddig.
+    from picasapy.app.second_preview import SecondPreview
+
+    edit_controller_masodik = EditController(edit_preview, slot="masodik")
     # megjelenítési mód (#1575/#1576) — az application.py bekötésének tükre.
     # A név életben tartja az átvezetőt, amíg a motor él.
     _display_mode_bridge = app_module.wire_display_mode(
-        controller, edit_controller, edit_preview
+        controller, edit_controller, edit_preview, edit_controller_masodik
     )
     # színkezelés (#1725) — az application.py bekötésének tükre
     _color_management_bridge = app_module.wire_color_management(
@@ -200,11 +208,9 @@ def _build_qml_app(
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
-    # #3187: a kettős nézet második felének vezérlője — az application.py
+    # #3187: a kettős nézet második felének vezérlője (fent, a
+    # `wire_display_mode` előtt létrehozva, #3837) — az application.py
     # bekötésének tükre (ld. a szolgáltató-listánál írt figyelmeztetést)
-    from picasapy.app.second_preview import SecondPreview
-
-    edit_controller_masodik = EditController(edit_preview, slot="masodik")
     second_preview = SecondPreview(edit_controller_masodik)
     engine.rootContext().setContextProperty("secondPreview", second_preview)
     # #3649: a két „aa"-fél összekötése — az application.py bekötésének tükre

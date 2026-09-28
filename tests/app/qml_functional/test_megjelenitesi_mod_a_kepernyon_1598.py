@@ -51,6 +51,12 @@ from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
 
+from tests.app.qml_functional.conftest import _build_qml_app
+from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import (
+    _ab_modba,
+    _kep_teglalap,
+)
+
 #: A menütételek `objectName`-jei (a #1575 névsorából).
 TETEL_PROJEKTOR = "menuViewDisplayModeProjector"
 TETEL_TULCSORDULAS = "menuViewDisplayModeOverflow"
@@ -76,6 +82,23 @@ def _child(root, name):
     obj = root.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj
+
+
+def _dict_folt(tomb: np.ndarray, teglalap: dict, felul: float, alul: float) -> np.ndarray:
+    """Mint `_folt`, csak a `_kep_teglalap` (bal/fent/jobb/lent kulcsos)
+    alakján — a kettős nézet két fele ezt a formát adja vissza (#3837)."""
+    bal, fent, jobb, lent = (
+        teglalap["bal"],
+        teglalap["fent"],
+        teglalap["jobb"],
+        teglalap["lent"],
+    )
+    szeles = jobb - bal
+    magas = lent - fent
+    return tomb[
+        int(fent + magas * felul) : int(fent + magas * alul),
+        int(bal + szeles * 0.2) : int(bal + szeles * 0.8),
+    ]
 
 
 def _kattint(root, name):
@@ -283,4 +306,91 @@ class TestVisszaesesiAg:
         ) == {PROJEKTOROS_HATTER}, (
             "a néző szerkesztési munkamenet nélkül a NYERS fájlt rajzolta ki, "
             "és némán elnyelte a megjelenítési módot"
+        )
+
+
+def _egyenletes_ab_kepek(lib) -> None:
+    """Két AZONOS tartalmú próbakép (`nyitott_nezo` mintája) — a kettős
+    nézet mindkét fele ugyanazt a HATTER/FEHER mintát mutatja, így a
+    projektor-mód hatása mindkét oldalon UGYANAZZAL a várt színnel
+    ellenőrizhető (#3837)."""
+    kep = np.full((160, 320, 3), 200, dtype=np.uint8)
+    kep[:40, :] = 255
+    for nev in ("a.jpg", "b.jpg"):
+        assert cv2.imwrite(
+            str(lib / nev), kep, [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+        )
+
+
+@pytest.fixture
+def ab_nezet_ket_egyenletes_kep(qt_app, tmp_path):
+    gen = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_egyenletes_ab_kepek)
+    yield next(gen)
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _varva_szinek_dict(window, qt_app, elem_nev: str, sav, vart) -> set:
+    """Mint `_varva_szinek`, de a téglalapot MINDEN körben újra méri a
+    `_kep_teglalap`-pal — a kettős nézet két Image-eleméhez ez a segéd
+    tartozik (#3837)."""
+    for _ in range(5):
+        qt_app.processEvents()
+        QTest.qWait(20)
+    hatarido = time.monotonic() + HATARIDO
+    while True:
+        qt_app.processEvents()
+        teglalap = _kep_teglalap(_child(window, elem_nev))
+        szinek = _szinek(_dict_folt(_tombbe(window.grabWindow()), teglalap, *sav))
+        if szinek == vart or time.monotonic() > hatarido:
+            return szinek
+        time.sleep(0.02)
+
+
+class TestKettosNezetMindketFelFrissul:
+    """#3837: „ab" kettős nézetben a `wire_display_mode` MINDKÉT
+    `EditController`-t frissítse módváltáskor, ne csak az elsőt.
+
+    A bal fél (`viewerImageElotte`) a fő `edit_controller`-ből rajzol, a
+    jobb (`viewerImage`) a második, `@masodik` rekeszes vezérlőből
+    (`edit_controller_masodik`, `test_masodik_elonezet_ab_3187.py`). A
+    `wire_display_mode` (`display_mode_controller.py`) eddig csak az
+    ELSŐ vezérlő `refresh_displayed_image()`-ét hívta — a szolgáltató
+    (`edit_preview`) módja közös, de a QML `Image` URL-cache-e a MÁSODIK
+    fél `previewSource`-ának bumpolása nélkül a régi (jelöletlen) képet
+    tartja meg. Ez az őr a KIRAJZOLT ablakon, mindkét fél KÖZEPÉN mér —
+    a `test_megjelenitesi_mod_a_kepernyon_1598.py` fájl módszerével
+    (`grabWindow`), a kettős nézet geometriájához a `_kep_teglalap`-pal
+    (`test_kettos_nezet_gombsor_helye_3663.py`).
+    """
+
+    def test_projektor_mod_mindket_felen_sotetit(
+        self, ab_nezet_ket_egyenletes_kep, qt_app
+    ):
+        window, controller, _engine = ab_nezet_ket_egyenletes_kep
+        _ab_modba(window, qt_app)
+
+        assert _varva_szinek_dict(
+            window, qt_app, "viewerImageElotte", HATTER_SAV, {HATTER}
+        ) == {HATTER}
+        assert _varva_szinek_dict(
+            window, qt_app, "viewerImage", HATTER_SAV, {HATTER}
+        ) == {HATTER}
+
+        _kattint(window, TETEL_PROJEKTOR)
+        qt_app.processEvents()
+        assert controller.property("displayMode") == "projector"
+
+        assert _varva_szinek_dict(
+            window, qt_app, "viewerImageElotte", HATTER_SAV, {PROJEKTOROS_HATTER}
+        ) == {PROJEKTOROS_HATTER}, (
+            "a kettős nézet BAL (fő) fele módváltáskor nem sötétedett"
+        )
+        assert _varva_szinek_dict(
+            window, qt_app, "viewerImage", HATTER_SAV, {PROJEKTOROS_HATTER}
+        ) == {PROJEKTOROS_HATTER}, (
+            "a kettős nézet MÁSODIK (jobb) fele módváltáskor nem sötétedett — "
+            "a wire_display_mode csak az első edit_controllert frissíti"
         )
