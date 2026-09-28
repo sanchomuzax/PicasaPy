@@ -164,6 +164,23 @@ class TestAzElotagTexturaMerete:
         assert 0 < meret.height() <= self.TEXTURA_PLAFON, meret
 
 
+class TestAFoFotoForrasmerete:
+    """#3819: a fő fotó két fele és a két előtöltő CSAK szélességet kér
+    (2560). A befoglaló doboz (`Qt.size(2560, 2560)`) a nyers fájlokat is a
+    dobozra méretezte: a QML-teszteken mérve +850 MiB, a CI 2400 MiB-os
+    plafonja fölé. A textúraplafont a szolgáltató oldja meg — a dobozba csak
+    kicsinyít (`test_edit_preview.py`), a GPU-s eset lent a pontos
+    textúraméretet méri."""
+
+    @pytest.mark.parametrize("nev", ["viewerImage", "viewerImageElotte",
+                                     "viewerPreloadNext", "viewerPreloadPrev"])
+    def test_a_forrasmeret_csak_szelesseg(self, ket_kep, qt_app, nev):  # noqa: F811
+        window, _c, _e = ket_kep
+        meret = _gyerek(window, nev).property("sourceSize")
+        assert meret.width() == 2560, meret
+        assert meret.height() <= 0, meret
+
+
 # -- valódi GPU, valódi egérhúzás (#3755, 3. pont) ----------------------------
 #
 # A fenti próbák offscreen alatt futnak, ahol a GPU-réteg sosem látszik. Az
@@ -195,6 +212,20 @@ class TestAzElotagTexturaMerete:
 # QML-sort visszaállítva a `TestAzElotagTexturaMerete` BUKIK (magasság 0);
 # csak a szolgáltatót visszaállítva a `test_kis_kepet_nem_nagyit_fel` (és a
 # `test_edit_preview.py` kis képes esete: 1440×2560). Lefuttatva
+# 2026-09-28-án, valódi OpenGL-en.
+#
+# rontás-kontroll (#3819): a javítás előtti main-en (csak szélességes
+# `sourceSize.width: 2560` a fő fotón, a szolgáltató a fő képet is
+# felnagyítja) a `test_a_fo_foto_nem_nagyit_es_kirajzolodik` mindkét esete
+# és a `test_kettos_nezetben_mindket_fel_kirajzolodik` BUKIK — a textúra
+# 360×640-es és 1440×2560-as képnél is 2560×4551 —, a `TestAFoFotoForrasmerete`
+# mind a négy esete is (magasság 0). ⚠️ A kép a 4096-os plafon fölött IS
+# látszott: a Qt feltöltéskor maga zsugorítja a textúrát, tehát a
+# színpróba magában nem bukik, a méret-állítás fog. Csak a szolgáltatót
+# visszaállítva a kis képes eset és a kettős nézet BUKIK (1440×2560 ≠
+# 360×640); csak a QML-t visszaállítva egyedül a `TestAFoFotoForrasmerete`
+# BUKIK (a szolgáltató a 2560-as élkorlát miatt ekkor már nem nagyít, a
+# dobozt a nyers fájlos út és az előtöltők igénylik). Lefuttatva
 # 2026-09-28-án, valódi OpenGL-en.
 
 #: a NEM használt, különálló headless kompozitor — a felhasználó fizikai
@@ -480,3 +511,94 @@ class TestValodiGpuAlloKep:
         elotag = _gyerek(window, "gpuPrefixImage")
         assert (elotag.property("implicitWidth"),
                 elotag.property("implicitHeight")) == _ALLO_MERET
+
+    @pytest.mark.parametrize("sor", [0, 1])
+    def test_a_fo_foto_nem_nagyit_es_kirajzolodik(
+        self, ket_allo_kep_gpu, qt_app, tmp_path, sor
+    ):
+        """#3819: a fő fotó textúrája a kép SAJÁT mérete (nem 2560×4551),
+        és a kép a kirajzolt ablakon megjelenik — a kék felső sáv a
+        helyén, alatta az alapszín."""
+        window, _c, _e = ket_allo_kep_gpu
+        nezo = _nezot_nyit(window, qt_app)
+        nezo.setProperty("currentIndex", sor)
+        meret, alap = _FO_KEPEK[sor]
+        kep = _gyerek(window, "viewerImage")
+        _varj_betoltesre(qt_app, kep, meret)
+        assert _implicit(kep) == meret
+        kepnev = os.environ.get("PICASAPY_GPU_3819_KEP")
+        _savos_kep_latszik(window, qt_app, kep, alap,
+                           Path(kepnev) if kepnev and sor == 1 else None)
+
+    def test_kettos_nezetben_mindket_fel_kirajzolodik(
+        self, ket_allo_kep_gpu, qt_app, tmp_path
+    ):
+        """#3819: ab módban a bal fél az `editpreview`-ból, a jobb a nyers
+        fájlból tölt — mindkettő a saját méretén, és mindkettő látszik."""
+        window, _c, _e = ket_allo_kep_gpu
+        _bal_fokusz(window, qt_app)
+        latott = set()
+        for nev in ("viewerImageElotte", "viewerImage"):
+            kep = _gyerek(window, nev)
+            _varj_betoltesre(qt_app, kep, _FO_KEPEK[0][0])
+            # melyik kép van ezen a felén: az alapszínéből
+            r = _kep_teglalap(kep)
+            szin = _szin(_kep(window, qt_app), (r["bal"] + r["jobb"]) / 2,
+                         r["fent"] + 0.6 * (r["lent"] - r["fent"]))
+            sor = next((s for s, (_m, alap) in _FO_KEPEK.items() if _kozel(szin, alap)),
+                       None)
+            assert sor is not None, f"{nev}: ismeretlen alapszín {szin}"
+            latott.add(sor)
+            meret, alap = _FO_KEPEK[sor]
+            assert _implicit(kep) == meret, nev
+            _savos_kep_latszik(window, qt_app, kep, alap, None)
+        assert latott == set(_FO_KEPEK), f"a két fél nem a két képet mutatja: {latott}"
+
+
+#: #3819: egy kis és egy nagy 9:16-os kép — a nagyé a szolgáltató
+#: 2560-as élkorlátjának pontos határa
+_FO_KEPEK = {0: ((360, 640), ZOLD), 1: ((1440, 2560), NARANCS)}
+
+
+def _fo_kepek_gpu(lib) -> None:
+    for sor, nev in ((0, "a.jpg"), (1, "b.jpg")):
+        (szel, mag), alap = _FO_KEPEK[sor]
+        kep = np.full((mag, szel, 3), alap[::-1], np.uint8)
+        kep[: mag // 4] = KEK[::-1]
+        cv2.imwrite(str(lib / nev), kep, [cv2.IMWRITE_JPEG_QUALITY, 98])
+
+
+@pytest.fixture
+def ket_allo_kep_gpu(qt_app, tmp_path):
+    if os.environ.get(_BELSO_JELZO) != "1":
+        pytest.skip("csak a `test_valodi_gpun_egerhuzassal` alfolyamatában fut")
+    yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_fo_kepek_gpu)
+
+
+def _implicit(kep) -> tuple[int, int]:
+    return (int(kep.property("implicitWidth")), int(kep.property("implicitHeight")))
+
+
+def _varj_betoltesre(qt_app, kep, meret, *, hatarido_ms=5000) -> None:
+    """Az aszinkron betöltés vége: teljes `progress` és a várt képarány
+    (a mérete maga az állítás tárgya, arra itt nem várunk)."""
+    arany = meret[0] / meret[1]
+    for _ in range(hatarido_ms // 50):
+        szel, mag = _implicit(kep)
+        if (kep.property("progress") == 1.0 and mag > 0
+                and abs(szel / mag - arany) < 0.01):
+            break
+        QTest.qWait(50)
+    QTest.qWait(300)
+
+
+def _savos_kep_latszik(window, qt_app, kep, alap, kepnev: Path | None) -> None:
+    r = _kep_teglalap(kep)
+    kozep_x = (r["bal"] + r["jobb"]) / 2
+    ablak = _kep(window, qt_app)
+    if kepnev is not None:
+        ablak.save(str(kepnev))
+    for arany, vart in ((0.1, KEK), (0.6, alap)):
+        pont = (kozep_x, r["fent"] + arany * (r["lent"] - r["fent"]))
+        assert _kozel(_szin(ablak, *pont), vart), (
+            f"{kep.objectName()} {arany:.0%}-nál: {_szin(ablak, *pont)} ≠ {vart}")

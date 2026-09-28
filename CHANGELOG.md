@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.616] – 2026-09-28
+
+### Javítva
+- A „HDR-szerű” effekt a legkisebb „Sugár” állásán is élesít, ahogy az
+  eredeti Picasa, és a „Helyi kontraszt” effekttel együtt közelebb került az
+  eredetihez (a mért eltérés ΔE 0,49–1,12-ről 0,19–0,27-re csökkent) (#3520).
+
+- A „Hőtérkép” effekt színátmenete most az eredeti Picasa szerint számol:
+  a színek eddig kissé eltértek, mert az átmenet durva lépcsőkben
+  alakult színné (a mért eltérés ΔE 1,01–1,13-ról 0,55–0,56-ra csökkent)
+  (#3814).
+
+- A nagy nézőben a magas, álló fotók (például a telefonos 9:16-os képek) már
+  nem kapnak fölöslegesen felnagyított, a grafikus kártya korlátja fölötti
+  méretű képet: a kis kép a saját méretén töltődik be, így kevesebb memóriát
+  és időt visz, és a Raspberry Pi 5-ön sem kerül a korlát fölé (#3819).
+
 ### Javítva
 - A „Neon” effekt vonalai most olyan vastagok és annyi neonszín dereng
   körülöttük, mint az eredeti Picasában: eddig vékonyabbak voltak, és a

@@ -2260,6 +2260,10 @@ Rectangle {
                             // produkcióban marad az async.
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                             autoTransform: true   // EXIF-orientáció
+                            // #3819: csak szélesség — a befoglaló doboz a
+                            // nyers fájlokat is a dobozra méretezte (mérve
+                            // +850 MiB a QML-teszteken); a textúraplafont a
+                            // szolgáltató oldja meg: nem nagyít fel
                             sourceSize.width: 2560
 
                             //: #3663: a képre kattintás a JOBB/ALSÓ felet
@@ -3464,6 +3468,7 @@ Rectangle {
                 // a nyers currentIndex±1, hogy ne a szomszéd mappa képét
                 // töltsük elő feleslegesen a mappahatárnál
                 Image {
+                    objectName: "viewerPreloadNext"
                     visible: false
                     source: viewer.photosModel
                         ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, 1))
@@ -3472,6 +3477,7 @@ Rectangle {
                     sourceSize.width: 2560
                 }
                 Image {
+                    objectName: "viewerPreloadPrev"
                     visible: false
                     source: viewer.photosModel
                         ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, -1))
