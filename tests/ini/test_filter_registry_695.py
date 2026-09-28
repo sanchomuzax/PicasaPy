@@ -250,7 +250,6 @@ class TestRegiszterTeljesseg:
         "MuseumMatte=1,25.000000,40.000000,001a0e03,00f0eae4;",
         "Polaroid=1,5.000000,00e2e2e2;",
         "grain=1;",
-        "radtint=1,0.500000,0.500000,0.500000,00ff0000;",
         "RoundedEdges=1,20.000000;",
         "Matte=1,00ffffff;",
         "NightVision=1;",
@@ -258,18 +257,34 @@ class TestRegiszterTeljesseg:
         "radblur=1,0.500000,0.500000,0.300000,0.500000;",
         "dir_tint=1,0.432422,0.554167,0.250000,0.250000,ffffffff;",
         # #3908: a valós korpuszból (`filters-decoded.md`) — a régi,
-        # színkerekes effektek `ff` alfával írnak, más hosszal is (`tint`
-        # 4, `dir_tint` 8 jegy, a vezető nullák elhagyásával).
+        # színkerekes effektek `ff` alfával írnak. A Picasa MINDIG nyolc
+        # jegyet ír (`%08x`, ld. `filters-decoded.md`, „A `tint` 4 hex
+        # jegyet ír — SAJÁT TESZTADAT-ARTEFAKTUM" szakasz).
         "tint=1,0.000000,fffccc01;",
         "dir_tint=1,0.432422,0.554167,0.250000,0.250000,ffbba6a2;",
         "glow2=1,0.650000,3.000000;",
-        "tint=1,79.842102,ffff;",
         "ansel=1,ffffffff;",
         "Vignette=1,35.000000,1.400000,0.000000,00000000;",
         "enhance=1;",
         "finetune2=1,0.333333,0.176842,0.193684,00000000,0.000000;",
     )
 
+    #: SAJÁT, nem a Picasától származó minták — az író kapuján ezeknek is
+    #: át kell menniük, de a „mért valóság” fékjébe nem számítanak bele.
+    SAJAT_MINTAK = (
+        # a #347 exe-string-bányászata csak a `radtint` NEVET adta; a
+        # paraméterek és a `00` alfájú szín kitalált minta, nem export
+        "radtint=1,0.500000,0.500000,0.500000,00ff0000;",
+        # a saját golden-kit kézzel írt sora — a 4 jegyes szín nem a Picasa
+        # alakja (az mindig `%08x`), ld. `filters-decoded.md`, „A `tint`
+        # 4 hex jegyet ír — SAJÁT TESZTADAT-ARTEFAKTUM"
+        "tint=1,79.842102,ffff;",
+    )
+
     @pytest.mark.parametrize("minta", VALODI_MINTAK)
     def test_valodi_picasa_minta_atmegy_az_iro_kapun(self, minta):
+        assert serialize_filters_for_write(parse_filters(minta)) == minta
+
+    @pytest.mark.parametrize("minta", SAJAT_MINTAK)
+    def test_sajat_minta_is_atmegy_az_iro_kapun(self, minta):
         assert serialize_filters_for_write(parse_filters(minta)) == minta

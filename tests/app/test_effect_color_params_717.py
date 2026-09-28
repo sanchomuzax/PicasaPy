@@ -25,9 +25,12 @@ segéd a `test_effect_slider_controller.py` mintáját követi.
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from picasapy.app.effect_params import effect_params, has_params
+from picasapy.ini.filters import parse_filters
+from picasapy.render.chain import apply_filters
 from support.jpeg_factory import make_jpeg
 
 
@@ -129,12 +132,11 @@ class TestChainCarriesTheFullParameterSet:
         szorzás lefut, és a fehér felület eggyel sötétedik
         (`v·255 >> 8 = v−1`, `docs/specs/filters-decoded.md`, #3900).
 
-        A saját rendererünk ezt a teljes dword-összehasonlítást MÉG NEM
-        követi (`render/dir_tint.py` csak az RGB-t nézi) — az a #3902 külön
-        jegye. Ez a próba a LÁNCBA ÍRT alakot ellenőrzi, ami a #3902
-        javításának előfeltétele: `00ffffff` mellett a mi rendererünk is,
-        a Picasa is kihagyná a szorzást, `ffffffff` mellett a Picasa
-        sötétít — a mi láncunknak ezért az utóbbit kell írnia.
+        A saját rendererünk a #3902 óta ugyanígy a teljes dwordot
+        hasonlítja (`render/dir_tint.py`). Ez a próba a LÁNCBA ÍRT alakot
+        ellenőrzi: `00ffffff` mellett a szorzás kimaradna, `ffffffff`
+        mellett lefut — a mi láncunknak ezért az utóbbit kell írnia. A
+        kirajzolt eredményt a `TestWhiteDirTintEndToEnd` méri.
         """
         editing.applyEffectWithParams("dir_tint", [0.5, 0.5, 0.25, 0.25, "#ffffff"])
         assert _chain(editing) == (
@@ -164,3 +166,45 @@ class TestChainCarriesTheFullParameterSet:
     def test_radtint_default_apply_writes_the_full_set(self, editing):
         editing.applyEffectWithParams("radtint", [])
         assert _chain(editing) == "radtint=1,0.500000,0.500000,0.250000,ffffffff;"
+
+
+class TestWhiteDirTintEndToEnd:
+    """#3908 + #3902, végponttól végpontig: a felületen alkalmazott fehér
+    Színátmenet (`applyEffectWithParams` → `format_param_values` → a mentett
+    lánc → `parse_filters` → `apply_filters`) a színezett félen ugyanúgy egy
+    árnyalatnyit sötétít, mint a Picasa (`v · 255 >> 8`: 200 → 199, 0 → 0),
+    a régi, `00ffffff`-es sor pedig továbbra is változatlanul hagyja a képet.
+
+    A beállítás teljes súlyt ad a felső sorokra: a `Gradient = 0` a natív
+    Feather-padlóra esik (a rámpa telít), a `Shade = 0` pedig azonossá
+    teszi a tónusgörbét — így a sötétedés KIZÁRÓLAG a színszorzásból jöhet.
+    Az alsó sor a súly nélküli fél.
+    """
+
+    _WHITE_FULL_WEIGHT = [0.5, 0.5, 0.0, 0.0, "#ffffff"]
+
+    @staticmethod
+    def _render(chain: str, value: int) -> np.ndarray:
+        image = np.full((16, 4, 3), value, dtype=np.uint8)
+        result, skipped = apply_filters(image, parse_filters(chain))
+        assert skipped == ()
+        return result
+
+    @pytest.mark.parametrize(("value", "darkened"), [(200, 199), (0, 0)])
+    def test_the_applied_white_darkens_like_picasa(self, editing, value, darkened):
+        editing.applyEffectWithParams("dir_tint", self._WHITE_FULL_WEIGHT)
+        result = self._render(_chain(editing), value)
+        assert result[0].tolist() == [[darkened] * 3] * 4, (
+            "a PicasaPy-ban alkalmazott fehér Színátmenet a színezett félen "
+            f"{value} → {darkened} helyett {result[0, 0].tolist()}-t ad"
+        )
+        assert result[-1].tolist() == [[value] * 3] * 4
+
+    @pytest.mark.parametrize("value", [200, 0])
+    def test_a_legacy_00ffffff_row_stays_unchanged(self, value):
+        result = self._render(
+            "dir_tint=1,0.500000,0.500000,0.000000,0.000000,00ffffff;", value
+        )
+        np.testing.assert_array_equal(
+            result, np.full((16, 4, 3), value, dtype=np.uint8)
+        )

@@ -98,11 +98,16 @@ PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "invert")
 
 
 #: A négy régi, színkerekes effekt (#3908) — a Picasa ezeknél `ff` alfával
-#: írja a színt (`%08x`, a vezető nullák elhagyásával: `tint` 4, `ansel`/
-#: `dir_tint`/`radtint` 8 jegyet — ld. `docs/specs/filters-decoded.md` a
-#: `tint` szakaszban, `filterdesc-registry.md` 3. szakasz). A Picnik-
+#: írja a színt. Az író mindig nyolc jegyet ír (`%08x`, az egyetlen
+#: hex-darabka a binárisban); a valós korpusz mind a 11 `tint`/`dir_tint`
+#: sora (pl. `fffccc01`, `ffbba6a2`) `ff`-fel kezdődik. A korábbi
+#: 4 jegyes `tint` (`ffff`) a saját golden-kitünk kézzel írt terméke, nem a
+#: Picasáé — ld. `docs/specs/filters-decoded.md`, „A `tint` 4 hex jegyet
+#: ír — SAJÁT TESZTADAT-ARTEFAKTUM" szakasz. A `radtint` `ff` alfája
+#: LEVEZETETT (azonos író és színkerék), valós mintával nem mért. A Picnik-
 #: generációs effektek (Border, DropShadow, Neon, Vignette stb.) `00` alfát
-#: kapnak — ez marad a katalógus többi színválasztójának alapértelmezése.
+#: kapnak; a két csoport határát a `test_effect_params.py`
+#: `TestColorAlphaGroupGuard` őrzi.
 LEGACY_COLORWHEEL_EFFECTS: frozenset[str] = frozenset(
     {"tint", "ansel", "dir_tint", "radtint"}
 )
@@ -492,7 +497,8 @@ def format_param_values(values, params=None, effect: str | None = None) -> tuple
     Az alfa `00`, KIVÉVE a négy régi, színkerekes effektet
     (`LEGACY_COLORWHEEL_EFFECTS`) — azoknál a Picasa `ff`-fel ír (#3908).
     Ehhez az `effect` nevet is át kell adni (a katalógus-kulcs, kis-nagybetű
-    közömbös); `effect` nélkül a hívó a régi, `00` alfás viselkedést kapja.
+    közömbös). Színes vezérlőnél az `effect` KÖTELEZŐ: nélküle az alfa nem
+    dönthető el, ezért `ValueError` jön, nem csendes `00`.
     """
     if params is None:
         return tuple(f"{float(value):.6f}" for value in values)
@@ -506,6 +512,11 @@ def format_param_values(values, params=None, effect: str | None = None) -> tuple
         if param.kind == "checkbox":
             formatted.append("1" if value else "0")
         elif param.kind == "color":
+            if not isinstance(effect, str):
+                raise ValueError(
+                    "Színes vezérlőhöz az effekt neve is kell (az alfa azon "
+                    f"múlik, #3908): {param.key!r}"
+                )
             hex_value = str(value).strip().lstrip("#")
             if len(hex_value) != 6:
                 raise ValueError(f"Érvénytelen szín (nem #rrggbb alakú): {value!r}")

@@ -16,7 +16,7 @@ _W, _H = 960.0, 640.0
 
 
 def _ini(name: str, values) -> tuple[str, ...]:
-    return format_param_values(values, resolve_effect_params(name, _W, _H))
+    return format_param_values(values, resolve_effect_params(name, _W, _H), effect=name)
 
 
 class TestKeppontbolSzazalek:

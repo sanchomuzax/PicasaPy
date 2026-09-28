@@ -8,16 +8,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- A „Színátmenet” (Graduated Tint) effekt fehér színnel is ugyanúgy egy
-  árnyalatnyit sötétít a színezett részen, mint az eredeti Picasa, így a
-  kép pontosabban egyezik az eredeti exportjával (#3902).
+- A Picasában fehér színnel beállított „Színátmenet” effekt a PicasaPy-ban
+  is úgy jelenik meg, mint az eredetiben: a színezett részen egy
+  árnyalatnyit sötétít, így a kép pontosabban egyezik az eredeti
+  exportjával (#3902).
 
-- A négy régi, színkerekes effekt (Színezés, Ansel, Irányított színezés,
-  Sugaras színezés) szerkesztőpanelen beállított színe most `ff` alfával
-  íródik a `.picasa.ini`-be, ahogy az eredeti Picasa — eddig `00` alfával
-  mentettük, ezért egy Picasából betöltött és a PicasaPy-ban változatlanul
-  visszamentett beállítás csendben elveszítette a Picasa-oldali (enyhén
-  sötétítő) hatását (#3908).
+- A négy régi, színkerekes effekt („Árnyalás (régi)”, „Szűrt FF”,
+  „Színátmenet”, „Sugaras árnyalás”) PicasaPy-ban beállított színe most
+  pontosan úgy mentődik, ahogy a Picasa menti. Ettől a PicasaPy-ban
+  beállított fehér „Színátmenet” a Picasában és nálunk is ugyanúgy, egy
+  árnyalatnyit sötétít — eddig a Picasa az így mentett effektet
+  sötétítés nélkül mutatta (#3908).
 
 ## [0.8.624] – 2026-09-28
 

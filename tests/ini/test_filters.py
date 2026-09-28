@@ -130,6 +130,9 @@ class TestExeStringBanyaszatUjNevek347:
 
     UJ_NEVEK = [
         "grain=1;",
+        # csak a NÉV jön a binárisból; a paraméterek és a `00` alfájú szín
+        # kitalált minta, nem Picasa-export (a Picasa a `radtint` színét —
+        # levezetve, nem mérve — `ff` alfával írná, #3908)
         "radtint=1,0.500000,0.500000,0.500000,00ff0000;",
         "RoundedEdges=1,20.000000;",
         "Matte=1,00ffffff;",
