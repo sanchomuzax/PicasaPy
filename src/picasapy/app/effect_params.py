@@ -97,6 +97,17 @@ class EffectParam:
 PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "invert")
 
 
+#: A négy régi, színkerekes effekt (#3908) — a Picasa ezeknél `ff` alfával
+#: írja a színt (`%08x`, a vezető nullák elhagyásával: `tint` 4, `ansel`/
+#: `dir_tint`/`radtint` 8 jegyet — ld. `docs/specs/filters-decoded.md` a
+#: `tint` szakaszban, `filterdesc-registry.md` 3. szakasz). A Picnik-
+#: generációs effektek (Border, DropShadow, Neon, Vignette stb.) `00` alfát
+#: kapnak — ez marad a katalógus többi színválasztójának alapértelmezése.
+LEGACY_COLORWHEEL_EFFECTS: frozenset[str] = frozenset(
+    {"tint", "ansel", "dir_tint", "radtint"}
+)
+
+
 def _slider(key, label, minimum, maximum, default, step=1.0, max_formula=None, default_formula=None) -> EffectParam:
     return EffectParam(
         key, label, "slider", minimum, maximum, default, step,
@@ -467,19 +478,29 @@ def has_params(name: str) -> bool:
     return bool(effect_params(name))
 
 
-def format_param_values(values, params=None) -> tuple[str, ...]:
+def format_param_values(values, params=None, effect: str | None = None) -> tuple[str, ...]:
     """A vezérlő-értékek a Picasa `filters=` alakjában (round-trip elv).
 
     `params` nélkül (visszafelé kompatibilis mód) minden érték számként, a
     Picasa `%.6f` alakjában megy — ez az EREDETI (#316) viselkedés. `params`
     átadásával (a katalógus vezérlőivel PÁRHUZAMOSAN) a `kind` szerint
     formázunk: `checkbox` egész `0`/`1`-ként (a Picasa is így írja a
-    jelölőnégyzeteket, tizedesjegy nélkül), `color` `"00rrggbb"` hexaként
-    (a `filters=` `AARRGGBB` alakja, alfa `00`), a többi (`slider`)
-    változatlanul `%.6f`-ként.
+    jelölőnégyzeteket, tizedesjegy nélkül), `color` `"aarrggbb"` hexaként (a
+    `filters=` `AARRGGBB` alakja), a többi (`slider`) változatlanul
+    `%.6f`-ként.
+
+    Az alfa `00`, KIVÉVE a négy régi, színkerekes effektet
+    (`LEGACY_COLORWHEEL_EFFECTS`) — azoknál a Picasa `ff`-fel ír (#3908).
+    Ehhez az `effect` nevet is át kell adni (a katalógus-kulcs, kis-nagybetű
+    közömbös); `effect` nélkül a hívó a régi, `00` alfás viselkedést kapja.
     """
     if params is None:
         return tuple(f"{float(value):.6f}" for value in values)
+    alpha = (
+        "ff"
+        if isinstance(effect, str) and effect.casefold() in LEGACY_COLORWHEEL_EFFECTS
+        else "00"
+    )
     formatted: list[str] = []
     for value, param in zip(values, params, strict=False):
         if param.kind == "checkbox":
@@ -489,7 +510,7 @@ def format_param_values(values, params=None) -> tuple[str, ...]:
             if len(hex_value) != 6:
                 raise ValueError(f"Érvénytelen szín (nem #rrggbb alakú): {value!r}")
             int(hex_value, 16)  # ValueError, ha nem hexa
-            formatted.append("00" + hex_value.lower())
+            formatted.append(alpha + hex_value.lower())
         elif param.max_formula is not None:
             formatted.append(f"{_keppontbol_szazalek(float(value), param):.6f}")
         else:

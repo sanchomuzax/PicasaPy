@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A négy régi, színkerekes effekt (Színezés, Ansel, Irányított színezés,
+  Sugaras színezés) szerkesztőpanelen beállított színe most `ff` alfával
+  íródik a `.picasa.ini`-be, ahogy az eredeti Picasa — eddig `00` alfával
+  mentettük, ezért egy Picasából betöltött és a PicasaPy-ban változatlanul
+  visszamentett beállítás csendben elveszítette a Picasa-oldali (enyhén
+  sötétítő) hatását (#3908).
+
 ## [0.8.624] – 2026-09-28
 
 ### Javítva

@@ -257,6 +257,11 @@ class TestRegiszterTeljesseg:
         "picnik=1;",
         "radblur=1,0.500000,0.500000,0.300000,0.500000;",
         "dir_tint=1,0.432422,0.554167,0.250000,0.250000,ffffffff;",
+        # #3908: a valós korpuszból (`filters-decoded.md`) — a régi,
+        # színkerekes effektek `ff` alfával írnak, más hosszal is (`tint`
+        # 4, `dir_tint` 8 jegy, a vezető nullák elhagyásával).
+        "tint=1,0.000000,fffccc01;",
+        "dir_tint=1,0.432422,0.554167,0.250000,0.250000,ffbba6a2;",
         "glow2=1,0.650000,3.000000;",
         "tint=1,79.842102,ffff;",
         "ansel=1,ffffffff;",

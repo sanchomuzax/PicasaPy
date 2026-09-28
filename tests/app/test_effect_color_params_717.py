@@ -102,24 +102,44 @@ class TestChainCarriesTheFullParameterSet:
         csempe `ValueError`-t adna. A próba eredeti SZÁNDÉKA is teljesül
         megint: a lánc a teljes paraméter-készletet viszi, a színt is."""
         editing.applyEffectWithParams("tint", [0.5, "#336699"])
-        assert _chain(editing) == "tint=1,0.500000,00336699;", (
+        assert _chain(editing) == "tint=1,0.500000,ff336699;", (
             "a `tint` nem alkalmazható a felületről — pedig a #2146 óta a "
             "Shiftes csempe ezt hívja"
         )
 
     def test_ansel_writes_the_color(self, editing):
         editing.applyEffectWithParams("ansel", ["#336699"])
-        assert _chain(editing) == "ansel=1,00336699;"
+        assert _chain(editing) == "ansel=1,ff336699;"
 
     def test_dir_tint_writes_the_color(self, editing):
         editing.applyEffectWithParams("dir_tint", [0.5, 0.5, 0.25, 0.25, "#336699"])
         assert _chain(editing) == (
-            "dir_tint=1,0.500000,0.500000,0.250000,0.250000,00336699;"
+            "dir_tint=1,0.500000,0.500000,0.250000,0.250000,ff336699;"
         )
 
     def test_radtint_writes_the_color(self, editing):
         editing.applyEffectWithParams("radtint", [0.5, 0.5, 0.25, "#336699"])
-        assert _chain(editing) == "radtint=1,0.500000,0.500000,0.250000,00336699;"
+        assert _chain(editing) == "radtint=1,0.500000,0.500000,0.250000,ff336699;"
+
+    def test_white_dir_tint_writes_the_darkening_alpha(self, editing):
+        """#3908: a fehér `dir_tint` a Picasában NEM néma — a natív
+        `0x0090f525` a TELJES dword-öt hasonlítja `0x00ffffff`-fel, és a
+        Picasa a színt mindig `ff` alfával írja, tehát a betöltött dword
+        (`0xffffffff`) sosem egyezik a `0x00ffffff` kihagyó konstanssal: a
+        szorzás lefut, és a fehér felület eggyel sötétedik
+        (`v·255 >> 8 = v−1`, `docs/specs/filters-decoded.md`, #3900).
+
+        A saját rendererünk ezt a teljes dword-összehasonlítást MÉG NEM
+        követi (`render/dir_tint.py` csak az RGB-t nézi) — az a #3902 külön
+        jegye. Ez a próba a LÁNCBA ÍRT alakot ellenőrzi, ami a #3902
+        javításának előfeltétele: `00ffffff` mellett a mi rendererünk is,
+        a Picasa is kihagyná a szorzást, `ffffffff` mellett a Picasa
+        sötétít — a mi láncunknak ezért az utóbbit kell írnia.
+        """
+        editing.applyEffectWithParams("dir_tint", [0.5, 0.5, 0.25, 0.25, "#ffffff"])
+        assert _chain(editing) == (
+            "dir_tint=1,0.500000,0.500000,0.250000,0.250000,ffffffff;"
+        )
 
     def test_focalzoom_writes_all_six_parameters(self, editing):
         # #3596: a sugár SZÁZALÉKKÉNT megy a láncba — a 8 × 6-os képen a
@@ -134,10 +154,13 @@ class TestChainCarriesTheFullParameterSet:
         # szín-paramétert — a mi íróoldalunk ezt nem tükrözi (mindig
         # kiírjuk), de a fehér ugyanaz az alapérték, mint a renderelő
         # `_DEFAULT_TINT_COLOR`-ja (`render/chain.py`), tehát a hiányzó
-        # paraméter esetén is ugyanazt a képet adja
+        # paraméter esetén is ugyanazt a képet adja.
+        # #3908: az alfa `ff` — a négy régi, színkerekes effekt (`tint`/
+        # `ansel`/`dir_tint`/`radtint`) a Picnik-generációs effektektől
+        # eltérően `ff`-fel ír, a valós korpusz szerint (`filters-decoded.md`).
         editing.applyEffectWithParams("ansel", [])
-        assert _chain(editing) == "ansel=1,00ffffff;"
+        assert _chain(editing) == "ansel=1,ffffffff;"
 
     def test_radtint_default_apply_writes_the_full_set(self, editing):
         editing.applyEffectWithParams("radtint", [])
-        assert _chain(editing) == "radtint=1,0.500000,0.500000,0.250000,00ffffff;"
+        assert _chain(editing) == "radtint=1,0.500000,0.500000,0.250000,ffffffff;"

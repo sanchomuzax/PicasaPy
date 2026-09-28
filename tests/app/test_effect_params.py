@@ -298,6 +298,50 @@ class TestFormatting:
         formatted = format_param_values([35.0, 1.4, 0.0, "#ff8800"], params)
         assert formatted[3] == "00ff8800"
 
+    def test_color_without_an_effect_name_stays_00_alpha(self):
+        # visszafelé kompatibilis: `effect` nélkül a régi, `00` alfás
+        # viselkedés marad — ez a meglévő hívók (pl. a Picnik-effektek)
+        # útja, akik nem adnak át effektnevet.
+        params = effect_params("tint")
+        formatted = format_param_values([0.5, "#336699"], params)
+        assert formatted[1] == "00336699"
+
+    @pytest.mark.parametrize("effect", ["tint", "ansel", "dir_tint", "radtint"])
+    def test_the_four_legacy_colorwheel_effects_use_ff_alpha(self, effect):
+        # #3908: a Picasa a régi, színkerekes effektek színét `ff` alfával
+        # írja (`%08x`), szemben a Picnik-generációs effektek `00`-jével.
+        params = effect_params(effect)
+        color_index = next(
+            index for index, param in enumerate(params) if param.kind == "color"
+        )
+        values = [
+            "#336699"
+            if index == color_index
+            else (param.color if param.kind == "color" else param.default)
+            for index, param in enumerate(params)
+        ]
+        formatted = format_param_values(values, params, effect=effect)
+        assert formatted[color_index] == "ff336699"
+
+    @pytest.mark.parametrize(
+        "effect", ["vignette", "border", "dropshadow", "neon", "sixties"]
+    )
+    def test_picnik_generation_effects_keep_00_alpha(self, effect):
+        # #3908: ezek az effektek MARADNAK `00` alfásak — a katalógus-kulcs
+        # átadása nem sodorja bele őket a régi négyes csoportba.
+        params = effect_params(effect)
+        color_index = next(
+            index for index, param in enumerate(params) if param.kind == "color"
+        )
+        values = [
+            "#336699"
+            if index == color_index
+            else (param.color if param.kind == "color" else param.default)
+            for index, param in enumerate(params)
+        ]
+        formatted = format_param_values(values, params, effect=effect)
+        assert formatted[color_index] == "00336699"
+
     def test_invalid_color_is_rejected(self):
         params = effect_params("vignette")
         with pytest.raises(ValueError):

@@ -141,7 +141,7 @@ def _default_op(effect: str) -> FilterOp:
     # értelmezetlen) numerikus `default` mező — az `openParamPanel()` QML-
     # függvény ugyanígy dönt
     values = [p.color if p.kind == "color" else p.default for p in params]
-    formatted = format_param_values(values, params)
+    formatted = format_param_values(values, params, effect=effect)
     return FilterOp(name=nev, params=("1", *formatted))
 
 
