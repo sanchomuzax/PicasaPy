@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Neon” effekt vonalai most olyan vastagok és annyi neonszín dereng
+  körülöttük, mint az eredeti Picasában: eddig vékonyabbak voltak, és a
+  színes derengés nagy része hiányzott (a mért eltérés ΔE 1,97-ről 0,49-re
+  csökkent) (#3812).
+
 ## [0.8.616] – 2026-09-28
 
 ### Javítva
@@ -23,12 +29,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   nem kapnak fölöslegesen felnagyított, a grafikus kártya korlátja fölötti
   méretű képet: a kis kép a saját méretén töltődik be, így kevesebb memóriát
   és időt visz, és a Raspberry Pi 5-ön sem kerül a korlát fölé (#3819).
-
-### Javítva
-- A „Neon” effekt vonalai most olyan vastagok és annyi neonszín dereng
-  körülöttük, mint az eredeti Picasában: eddig vékonyabbak voltak, és a
-  színes derengés nagy része hiányzott (a mért eltérés ΔE 1,97-ről 0,49-re
-  csökkent) (#3812).
 
 ## [0.8.615] – 2026-09-28
 
