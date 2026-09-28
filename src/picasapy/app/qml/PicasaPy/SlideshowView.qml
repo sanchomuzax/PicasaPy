@@ -443,11 +443,13 @@ Rectangle {
                 onClicked: show.advance()
             }
             PicasaButton {
+                objectName: "slideshowRotateLeftButton"
                 text: "↺"; width: 34
                 height: controlsRow.buttonHeight
                 onClicked: show.rotateCurrent(-1)
             }
             PicasaButton {
+                objectName: "slideshowRotateRightButton"
                 text: "↻"; width: 34
                 height: controlsRow.buttonHeight
                 onClicked: show.rotateCurrent(1)
