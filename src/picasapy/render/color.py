@@ -12,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 
 from picasapy.render.curves import apply_channel_luts, validate_image
+from picasapy.render.native_grain import apply_native_grain
 from picasapy.render.saturation_positive import apply_positive_saturation
 from picasapy.render.warmify_lut import warmify_lut_array
 
@@ -164,33 +165,25 @@ def apply_warm(image: np.ndarray) -> np.ndarray:
     return apply_channel_luts(image, luts)
 
 
-#: Golden mérés (`docs/specs/filters-decoded.md`): meredekség ≈1,000,
-#: eltolás ≈−2,7 — a grain2 átlagban identitás, a kerekítés/clip miatti
-#: apró eltolás itt elhanyagolható, a zajat zérus középértékkel modellezzük.
-_GRAIN_DEFAULT_SIGMA = 8.0
+def apply_grain(image: np.ndarray, seed: int | None = None) -> np.ndarray:
+    """Filmszemcse (`grain`/`grain2`) — a natív nyolc lépés (#3928).
 
-
-def apply_grain(
-    image: np.ndarray, sigma: float = _GRAIN_DEFAULT_SIGMA, seed: int | None = None
-) -> np.ndarray:
-    """Filmszemcse (grain2) — sztochasztikus, pixelhűen NEM reprodukálható.
-
-    A golden-elemzés szerint (`docs/specs/filters-decoded.md`) a grain2
-    átlagban identitás (meredekség ≈1,000, eltolás ≈−2,7), zérus körüli
-    additív zaj véletlen maggal — az elfogadási teszt statisztikai
-    (zaj-σ, spektrum), NEM pixel-diff. Ugyanaz a zajérték kerül mindhárom
-    csatornára pixelenként (monokróm szemcse, nem színes „snow"), így a
-    kép átlaga megmarad, csak a szórása nő.
+    A golden-elemzés szerint (`docs/specs/filters-decoded.md`, „⛳ `grain` /
+    `grain2` — a munkafüggvény kiolvasva") a szemcse **csomós** (a szomszéd
+    képpontok korrelálnak), **középtónusban erős** (a súly a 128 körül
+    160/256, a két végén 32/256), és a képet átlagban ~2 szinttel
+    **sötétíti**. A tényleges munkát `native_grain.apply_native_grain`
+    végzi; az elfogadási teszt statisztikai (tónussávonkénti szórás,
+    szomszéd-korreláció, átlagos eltolás), NEM pixel-diff — a Picasa natív
+    magja hívásonként más, ezért bájtra pontosan úgysem reprodukálható.
 
     `seed`-del determinisztikus/reprodukálható; `seed=None` esetén a zaj
-    valóban véletlen (`numpy` alapértelmezett generátora).
+    valóban véletlen mag (`numpy` alapértelmezett generátorától kérve).
     """
     validate_image(image)
-    height, width = image.shape[:2]
-    rng = np.random.default_rng(seed)
-    noise = rng.normal(loc=0.0, scale=sigma, size=(height, width)).astype(np.float32)
-    noisy = image.astype(np.float32) + noise[..., np.newaxis]
-    return _to_uint8(noisy)
+    if seed is None:
+        seed = int(np.random.default_rng().integers(0, 2**32 - 1, dtype=np.uint32))
+    return apply_native_grain(image, seed)
 
 
 def apply_saturation(image: np.ndarray, strength: float) -> np.ndarray:

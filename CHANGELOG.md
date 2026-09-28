@@ -8,6 +8,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A régi „Szemcse” effekt most csomós, középtónusban erős filmszemcsét ad,
+  ahogy az eredeti Picasa — eddig egyenletes szórású, tónusfüggetlen zajt
+  rajzolt (a mért eltérés ΔE 3,23-ról 2,67-re csökkent) (#3928).
 - A nézőben a jobb fiók (Emberek/Helyek/Címkék/Tulajdonságok) megnyitásának
   tesztje terhelt gépen időnként hamisan bukott: a tálca gombja a háttérben
   a könyvtár nem látszó fiókját is animáltan nyitja, és a teszt eddig nem

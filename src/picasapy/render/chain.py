@@ -380,19 +380,18 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # A grain2 sztochasztikus (véletlen mag); az élő előnézetben viszont
+    # A szemcse sztochasztikus (véletlen mag); az élő előnézetben viszont
     # rögzített maggal futtatjuk (seed=0), hogy egy változatlan lánc újra-
     # renderelésekor a szemcse ne "villogjon" — a spec elfogadási teszthez
     # (statisztikai) ez nem szükséges, csak az UI-élmény miatt választott mag.
     #
     # Ugyanez a handler szolgálja ki a `grain` (v1) bejegyzést is (#347
-    # lezáró audit, 2026-08-06): a filterdesc-regiszter szerint a `grain`
-    # ("Film Grain (Old)") és a `grain2` ("Film Grain") egyaránt paraméter
-    # nélküli oneclick — nincs se csúszka, se szín, ami megkülönböztetné
-    # őket, csak a `fullres+slow` sávjelző. A `grain` v1-re önmagára nincs
-    # külön golden-mérés, ezért ez KÖZELÍTÉS (a már mért grain2-modell
-    # újrahasznosítása) — ugyanaz a minta, mint a glow/glow2,
-    # unsharp/unsharp2, finetune/finetune2 v1/v2 párosításoknál.
+    # lezáró audit, 2026-08-06, megerősítve #3927-ben): a natív callback
+    # (`0x008f88e0`) mindkét tokenre UGYANAZ — nincs se csúszka, se szín,
+    # ami megkülönböztetné őket, csak a `fullres+slow` sávjelző. Ez tehát
+    # NEM közelítés: a `grain` (v1) és a `grain2` egyaránt ugyanazt a
+    # kiolvasott, nyolc lépéses natív algoritmust futtatja
+    # (`native_grain.apply_native_grain`, #3928).
     return apply_grain(image, seed=0)
 
 

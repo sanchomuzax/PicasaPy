@@ -3168,7 +3168,19 @@ Két független emuláció egymáshoz mért ΔE-je 2,81: a 2,67 a véletlen mag 
 
 Ezzel lezárul a régi szakasz feltételes pontja (egyenlő vízszintes és függőleges korreláció): a simítás kétirányú. A Picasa `−1,97`-es átlagos sötétítését az emuláció magától, illesztés nélkül visszaadja (`−1,96`); a mai kódunk átlaga 0.
 
-**Nálunk** (`render/color.py::apply_grain`): egyenletes szórású, korrelálatlan, tónusfüggetlen Gauss-zaj → fejlesztés: #3928.
+**Nálunk** (`render/color.py::apply_grain`, a nyolc lépés `render/native_grain.py`-ban): egyenletes szórású, korrelálatlan, tónusfüggetlen Gauss-zaj volt → **✅ Megvalósítva (2026-09-28, #3928)**.
+
+A nyolc lépés átültetésekor az 5. pont (a háromszori kétirányú simítás) iránya nem volt egyértelmű a dekompilátumból: a **vízszintes menet kaszkádolva** (balról jobbra haladva a már frissített bal szomszédot olvasva, futó/rekurzív szűrőként), a **függőleges menet** viszont a hívás eleji pillanatképet (`p_eredeti`) olvasva szomszédként — ez a kombináció adta vissza a táblázat mind a négy oszlopát a legszorosabban; a tisztán kétirányú kaszkád ΔE 2,58-at, a tisztán kétirányú pillanatkép-alapú változat ΔE 2,72-t adott (684-merokeszlet, `grain__alap`, seed=0):
+
+| | emuláció (fent) | a mai kódunk (#3928 után) |
+|---|---:|---:|
+| átlagos eltolás | −1,96 | **−1,96** |
+| szórás tónussávonként (0–40 / 40–90 / 90–170 / 170–215 / 215–255) | 2,5 / 4,4 / 5,5 / 4,4 / 2,4 | **2,49 / 4,39 / 5,50 / 4,39 / 2,36** |
+| vízszintes / függőleges szomszéd-korreláció | 0,28 / 0,28 | **0,23 / 0,29** |
+| R–B csatorna-korreláció | 0,87 | **0,87** |
+| ΔE a Picasa-exporthoz | 2,67 | **2,67** |
+
+A mag (`seed`) a hívó felelőssége: az élő előnézetben rögzített (`seed=0`, hogy a szemcse ne „villogjon"), az elfogadás statisztikai — a Picasa natív magja úgyis hívásonként más, bájtra pontos reprodukció nincs.
 
 ### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
 
