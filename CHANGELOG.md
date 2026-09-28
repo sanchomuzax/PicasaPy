@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.625] – 2026-09-28
+
 ### Javítva
 - A Fókuszos nagyítás elmosása most az eredeti Picasa módszerével készül:
   a nagyított képeket egymás után, éles képpontokkal keveri rá a fotóra,
