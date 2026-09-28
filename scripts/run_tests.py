@@ -264,10 +264,14 @@ _ROOT = Path(__file__).resolve().parents[1]
 #: már nem ad hamis pirosat. Ha a készlet érdemben nőne, ezt a számot a
 #: MÉRT futásidőhöz kell újrahangolni — a `tests/tools/test_run_tests_
 #: idokorlat_2632.py` őrzi az arányt.
-_NON_APP_TIMEOUT_S = 600
+#:
+#: #3849 (2026-09-28): újrahangolva. A windows-láb ezen a részfutáson
+#: `9361 passed, 175 skipped … in 561.39s` (run 36370789833) — a 600 mp így
+#: már csak 1,07-szerese volt, és a #3842-n hamis `TIMEOUT (600s)`-t adott.
+_NON_APP_TIMEOUT_S = 1200
 #: A mért windows-futásidő, amihez a fenti korlát kalibrálva van (mp).
 #: Az őr ehhez köti a korlátot — enélkül csak egy szám lenne.
-_NON_APP_MERT_FUTASIDO_S = 249
+_NON_APP_MERT_FUTASIDO_S = 561
 _APP_FILE_TIMEOUT_S = 180
 
 #: Fájlok, amelyeket a futtató KIHAGY, mert a mért futásidejük meghaladja a
