@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A „Fókuszos FF” effekt „Sugár” csúszkája most −1 és 1 között mozog, 0
+  alapállással, ahogy az eredeti Picasában: eddig 0 és 1 között, 0,3
+  alapállással volt beállítva, ezért a negatív méret felületről nem volt
+  elérhető (#3826).
+
 - A „HDR-szerű” effekt a legkisebb „Sugár” állásán is élesít, ahogy az
   eredeti Picasa, és a „Helyi kontraszt” effekttel együtt közelebb került az
   eredetihez (a mért eltérés ΔE 0,49–1,12-ről 0,19–0,27-re csökkent) (#3520).

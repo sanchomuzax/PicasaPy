@@ -36,6 +36,10 @@ JAVITANDO = [
     ("glow2", "intensity", "default", 0.65),
     ("radblur", "size", "minimum", -1.0),
     ("radblur", "amount", "minimum", -1.0),
+    # #3826: a Sugár csúszka [0, 1] volt 0,3 alapértékkel — a regiszter/spec
+    # szerint [-1, 1], alapja 0.
+    ("radsat", "radius", "minimum", -1.0),
+    ("radsat", "radius", "default", 0.0),
     ("sat", "saturation", "minimum", -1.0),
     ("sat", "saturation", "default", 0.1618),
     ("tint", "preserve", "minimum", -1.0),
