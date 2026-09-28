@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.628] – 2026-09-28
+
 ### Javítva
 - A négy régi, színkerekes effekt („Árnyalás (régi)”, „Szűrt FF”,
   „Színátmenet”, „Sugaras árnyalás”) PicasaPy-ban beállított színe most
