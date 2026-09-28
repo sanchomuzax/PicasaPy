@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.623] – 2026-09-28
+
 ### Javítva
 - Projektor és a többi képpontot átfestő megjelenítési módban a diavetítés
   az EXIF szerint elforgatott álló fotót is állva mutatja — eddig fekve
