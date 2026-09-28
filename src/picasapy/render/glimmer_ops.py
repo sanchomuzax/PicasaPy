@@ -902,6 +902,30 @@ def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) ->
     return np.stack([tables[channel][gray_index] for channel in range(3)], axis=-1)
 
 
+def _hsv_rgb_lut_f32(hue: np.ndarray, sat: np.ndarray, val: np.ndarray) -> np.ndarray:
+    """A natív HSV → RGB (`0x00bbbe20`, #3814): float32 köztes értékek,
+    `h` körbe `[0, 360)`-ba, `s`/`v` százalékban `[0, 100]`-ra szorítva,
+    hatodolás, és a végén csatornánként `csonk(x · 255)` — nincs +0,5.
+    Spec: `docs/specs/filterdesc-registry.md`, „A HSV → RGB átalakítás".
+    """
+    f32 = np.float32
+    h = np.mod(hue.astype(f32), f32(360.0))
+    s = np.clip(sat.astype(f32), 0, 100) / f32(100.0)
+    v = np.clip(val.astype(f32), 0, 100) / f32(100.0)
+    h6 = (h / f32(360.0)) * f32(6.0)
+    i = np.trunc(h6).astype(np.int64)
+    f = h6 - i.astype(f32)
+    p = v * (f32(1.0) - s)
+    q = v * (f32(1.0) - f * s)
+    t = v * (f32(1.0) - s * (f32(1.0) - f))
+    szektor = i % 6
+    r = np.choose(szektor, (v, q, p, p, t, v))
+    gr = np.choose(szektor, (t, v, v, q, p, p))
+    b = np.choose(szektor, (p, p, t, v, v, q))
+    rgb = np.stack([r, gr, b], axis=-1).astype(np.float64) * 255.0
+    return np.clip(np.trunc(rgb), 0, 255).astype(np.uint8)
+
+
 def hsv_gradient_map(
     image: np.ndarray,
     stops: tuple[tuple[float, float, float, float], ...],
@@ -910,6 +934,10 @@ def hsv_gradient_map(
     """`HSVGradientMap`: a PIROS csatornához (#3421) rendelt (pozíció,
     hue°, sat%, val%) töréspontok interpolációja HSV-térben, majd RGB-re
     konvertálva — a `HeatMap` effekt implementációja.
+
+    #3814: az RGB-re alakítás a natív lebegőpontos képlettel, csonkolva
+    történik (`_hsv_rgb_lut_f32`); a `hueOffset` float32-ben adódik a
+    keverés utáni színezethez, a körbefordítást az átalakító végzi.
     """
     validate_image(image)
     positions = np.array([stop[0] for stop in stops], dtype=np.float64)
@@ -917,14 +945,10 @@ def hsv_gradient_map(
     sats = np.array([stop[2] for stop in stops], dtype=np.float64)
     vals = np.array([stop[3] for stop in stops], dtype=np.float64)
     idx = np.arange(256, dtype=np.float64)
-    hue_lut = (np.interp(idx, positions, hues) + hue_offset) % 360.0
+    hue_lut = np.interp(idx, positions, hues).astype(np.float32) + np.float32(hue_offset)
     sat_lut = np.interp(idx, positions, sats)
     val_lut = np.interp(idx, positions, vals)
-    hsv_lut = np.stack(
-        [hue_lut / 2.0, sat_lut * 2.55, val_lut * 2.55], axis=-1
-    )
-    hsv_lut = np.clip(np.rint(hsv_lut), 0, 255).astype(np.uint8).reshape(1, 256, 3)
-    rgb_lut = cv2.cvtColor(hsv_lut, cv2.COLOR_HSV2RGB).reshape(256, 3)
+    rgb_lut = _hsv_rgb_lut_f32(hue_lut, sat_lut, val_lut)
     return rgb_lut[image[..., _GRADIENS_INDEX_CSATORNA]]
 
 
