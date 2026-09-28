@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.619] – 2026-09-28
+
 ### Javítva
 - Kettős nézetben a Megjelenítési mód (pl. Projektor, Túlcsordult
   képpontok) módváltáskor eddig csak a bal (fő) képen látszott — a jobb
