@@ -105,15 +105,33 @@ class TestApplySaturation:
         result = apply_saturation(image, 0.5)
         assert tuple(int(v) for v in result[0, 0]) == (246, 78, 73)
 
-    def test_csokkentes_dokumentalt_gain(self) -> None:
-        # #693: a negatív ág erősítése PONTOSAN `1 + amount` — a natív
-        # callback ezt adja át (`FUN_0090e200(dst, amount + 1.0f)`), és a
-        # mérés is ezt igazolja. Korábban 0,683 állt itt (interpolált tábla).
+    def test_negativ_ag_szampelda_felerosseg(self) -> None:
+        """#3889: a negatív ág az eredeti egész lumával és keveréssel.
+
+        A `filters-decoded.md` („A `sat` NEGATÍV ága") számpéldája, kézzel:
+        L = (2·200 + 5·100 + 50 + 4) >> 3 = 119;  a = −0,5 → k = 128
+        R = 119 + (81·128 >> 8) = 159, G = 119 + (−19·128 >> 8) = 109,
+        B = 119 + (−69·128 >> 8) = 84 (aritmetikai eltolás: lefelé kerekít).
+        """
+        image = _uniform_image((200, 100, 50))
+        result = apply_saturation(image, -0.5)
+        assert tuple(int(v) for v in result[0, 0]) == (159, 109, 84)
+
+    def test_negativ_ag_szampelda_teljes_szurkites(self) -> None:
+        # #3889: a = −1 → k = 0, mindhárom csatorna az egész luma (119),
+        # nem a Rec.601-es 119,85 kerekítése (120).
+        image = _uniform_image((200, 100, 50))
+        result = apply_saturation(image, -1.0)
+        assert tuple(int(v) for v in result[0, 0]) == (119, 119, 119)
+
+    def test_negativ_ag_k_csonkolt(self) -> None:
+        # #3889: k = csonk(256·(a + 1)) float32-ben — a = −0,333 → 170
+        # (170,75 csonkolva, nem kerekítve). (200, 100, 100): L = 1004 >> 3
+        # = 125; R = 125 + (75·170 >> 8) = 174, G = 125 + (−25·170 >> 8)
+        # = 108, B = 125 + (−25·170 >> 8) = 108.
         image = _uniform_image((200, 100, 100))
         result = apply_saturation(image, -0.333)
-        luma = 0.299 * 200 + 0.587 * 100 + 0.114 * 100
-        expected_r = luma + (1.0 - 0.333) * (200 - luma)
-        assert abs(int(result[0, 0, 0]) - expected_r) <= 1
+        assert tuple(int(v) for v in result[0, 0]) == (174, 108, 108)
 
     def test_clip_255(self) -> None:
         image = _uniform_image((250, 30, 30))

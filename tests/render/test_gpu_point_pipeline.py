@@ -170,6 +170,10 @@ class TestSaturationGain:
     def test_full_desaturate_gain_is_zero(self):
         assert saturation_gain(-1.0) == pytest.approx(0.0)
 
+    @pytest.mark.parametrize("amount", [-0.75, -0.5, -0.333, -0.1])
+    def test_negative_side_is_exactly_one_plus_amount(self, amount):
+        assert saturation_gain(amount) == pytest.approx(1.0 + amount)
+
     def test_clamps_out_of_range(self):
         assert saturation_gain(5.0) == saturation_gain(1.0)
         assert saturation_gain(-5.0) == saturation_gain(-1.0)
@@ -190,3 +194,53 @@ class TestBuildPointPipelineUniforms:
     def test_saturation_feeds_through_to_gain(self):
         uniforms = build_point_pipeline_uniforms(saturation=-1.0)
         assert uniforms.sat_gain == pytest.approx(0.0)
+
+
+class TestNegativeSaturationShader3889:
+    """#3889: a GPU-előnézet negatív `sat` ága a natív egész lumát kövesse.
+
+    A valódi GL-út itt nem mérhető (a `test_gpu_point_filter_shader.py`
+    SKIP-el, nincs RHI); ez a `PointFilter.frag` negatív ágának numpy-mását
+    (`simulate_negative_saturation_shader`) veti össze a CPU-igazsággal, és
+    egy forrás-őrrel azt, hogy a shader valóban ezt a képletet futtatja."""
+
+    @staticmethod
+    def _kep() -> np.ndarray:
+        return np.random.default_rng(19).integers(0, 256, size=(32, 32, 3), dtype=np.uint8)
+
+    def test_teljes_szurkites_bitre_egyezik_a_cpu_val(self):
+        from picasapy.render import apply_saturation
+        from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
+
+        kep = self._kep()
+        np.testing.assert_array_equal(
+            simulate_negative_saturation_shader(kep, saturation_gain(-1.0)),
+            apply_saturation(kep, -1.0),
+        )
+
+    @pytest.mark.parametrize("amount", [-0.75, -0.5, -0.333, -0.25, -0.1])
+    def test_kozbenso_allasok_bitre_egyeznek_a_cpu_val(self, amount):
+        # a negatív oldalon a `saturation_gain` pontosan `1 + a` (a natív
+        # callback `amount + 1.0f`-et ad át), így a shader bitre a CPU-t adja
+        from picasapy.render import apply_saturation
+        from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
+
+        kep = np.random.default_rng(64).integers(0, 256, size=(64, 64, 3), dtype=np.uint8)
+        gpu = simulate_negative_saturation_shader(kep, saturation_gain(amount))
+        np.testing.assert_array_equal(gpu, apply_saturation(kep, amount))
+
+    def test_azonossag_gain_1_nel(self):
+        from picasapy.render.gpu_point_pipeline import simulate_negative_saturation_shader
+
+        kep = self._kep()
+        np.testing.assert_array_equal(simulate_negative_saturation_shader(kep, 1.0), kep)
+
+    def test_a_shader_negativ_aga_az_egesz_lumat_futtatja(self):
+        from pathlib import Path
+
+        frag = (
+            Path(__file__).resolve().parents[2]
+            / "src/picasapy/app/qml/PicasaPy/Gpu/PointFilter.frag"
+        ).read_text(encoding="utf-8")
+        assert "applyNegativeSaturation(toned, satGain)" in frag
+        assert "floor((dot(channel255, NEGATIVE_SAT_LUMA_WEIGHTS) + 4.0) / 8.0)" in frag
