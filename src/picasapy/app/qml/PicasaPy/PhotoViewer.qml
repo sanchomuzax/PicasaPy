@@ -366,6 +366,46 @@ Rectangle {
         return teljes
     }
 
+    //: #3877: a `photo`/`photoElotte`/az elő-betöltők textúra-plafonja —
+    //: ld. `SlideshowView.qml` `texturaEl` (#3832), ugyanaz a V3D-korlát.
+    readonly property int texturaEl: 2560
+
+    //: #3877: a kép `sourceSize`-a a VALÓDI méretéből (`pixelWidthAt`/
+    //: `pixelHeightAt`, #2492 — a megjelenített, EXIF-orientált méret): a
+    //: `texturaEl` dobozba illő, legfeljebb natív méret — felnagyítás
+    //: nincs. Ugyanaz a mintázat, mint a `SlideshowView.qml`
+    //: `forrasMeret`-je (#3832): a Qt fájlbetöltője a kért méretet a
+    //: fájlban TÁROLT tájolásra alkalmazza, nem a megjelenítettre, ezért a
+    //: nyers `file://` úton (`szolgaltato === false`) a pár fordítva kell
+    //: (`pixelSidesSwappedAt`). Az `image://editpreview/…` szolgáltató már
+    //: a megjelenített tájolásban dolgozik, és csak kicsinyít
+    //: (`edit_preview.py` `_belefer`) — ott a pontos méret csak a
+    //: fölösleges dekódolást kerüli el, oldalcsere nem kell.
+    function forrasMeret(index, szolgaltato) {
+        var el = viewer.texturaEl
+        if (!viewer.photosModel || index < 0
+                || typeof viewer.photosModel.pixelWidthAt !== "function")
+            return Qt.size(el, 0)
+        // a revision-referencia kötelező: a pixelWidthAt/pixelHeightAt
+        // Slot-hívás, önmagában nem hoz létre kötés-függőséget (ld.
+        // `valodiSzelesseg` ugyanezt a mintát fent)
+        var szel = (viewer.photosModel.revision,
+                    viewer.photosModel.pixelWidthAt(index))
+        var mag = viewer.photosModel.pixelHeightAt(index)
+        if (szel <= 0 || mag <= 0)
+            return Qt.size(el, szolgaltato ? el : 0)
+        var w = Math.min(el, szel)
+        var h = Math.round(mag * w / szel)
+        if (h > el) {
+            h = el
+            w = Math.round(szel * el / mag)
+        }
+        if (!szolgaltato && typeof viewer.photosModel.pixelSidesSwappedAt === "function"
+                && viewer.photosModel.pixelSidesSwappedAt(index))
+            return Qt.size(h, w)
+        return Qt.size(w, h)
+    }
+
     //: #3014: a ténylegesen megjelenített másik kép sora. AB módon kívül
     //: mindig a jelenlegi kép (az „aa" mód ugyanazt mutatja kétszer).
     //: #3773: a számítás FÜGGVÉNY (`_abMasikSort`), mert a kijelölt és a
@@ -2113,7 +2153,12 @@ Rectangle {
                             //: ez, egyébként a másodikból.
                             //: #3014: „aa" módban UGYANÍGY — ott a két rekesz
                             //: ugyanannak a fotónak két önálló szerkesztése.
-                            source: viewer.isCurrentVideo
+                            //: #3877: a `kepUrl` külön property — a
+                            //: `sourceSize`-nak is kell tudnia, szolgáltatón
+                            //: (`image://editpreview/…`) vagy nyers
+                            //: `file://` úton jön-e a kép (ld.
+                            //: `viewer.forrasMeret`).
+                            readonly property string kepUrl: viewer.isCurrentVideo
                                 ? ""
                                 : (viewer.layoutMode === "1up"
                                    ? viewer.urlAt(viewer.currentIndex)
@@ -2126,10 +2171,14 @@ Rectangle {
                                          && viewer.masodikEditCtl.previewSource !== ""
                                          ? viewer.masodikEditCtl.previewSource
                                          : viewer.urlAt(viewer.currentIndex))))
+                            source: kepUrl
                             fillMode: Image.PreserveAspectFit
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                             autoTransform: true
-                            sourceSize.width: 2560
+                            //: #3877: felnagyítás nincs — ld.
+                            //: `viewer.forrasMeret`.
+                            sourceSize: viewer.forrasMeret(viewer.currentIndex,
+                                kepUrl.indexOf("image://editpreview/") === 0)
 
                             //: #3663: a képre kattintás a BAL/FELSŐ felet
                             //: aktiválja — a `swap_2up_focus` gomb ugyanezt
@@ -2241,7 +2290,11 @@ Rectangle {
                             //: `abMasikSor === currentIndex`) és jobb
                             //: fókusznál a FŐ vezérlő képe jön — a
                             //: hozzárendelés a fókusszal cserél.
-                            source: viewer.isCurrentVideo ? ""
+                            //: #3877: a `photoElotte` mintája — külön
+                            //: `kepUrl`, a `sourceSize`-nak is kell tudnia,
+                            //: szolgáltatón vagy nyers `file://` úton jön-e
+                            //: a kép.
+                            readonly property string kepUrl: viewer.isCurrentVideo ? ""
                                     : (viewer.layoutMode === "1up"
                                        || viewer.aktivOldal === "jobb"
                                        ? (viewer.editCtl
@@ -2252,6 +2305,7 @@ Rectangle {
                                           && viewer.masodikEditCtl.previewSource !== ""
                                           ? viewer.masodikEditCtl.previewSource
                                           : viewer.urlAt(viewer.abMasikSor)))
+                            source: kepUrl
                             fillMode: Image.PreserveAspectFit
                             // #53: offscreen (teszt) platformon szinkron betöltés —
                             // itt reprodukálódott a GIL-deadlock (a lapozás
@@ -2260,11 +2314,12 @@ Rectangle {
                             // produkcióban marad az async.
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                             autoTransform: true   // EXIF-orientáció
-                            // #3819: csak szélesség — a befoglaló doboz a
-                            // nyers fájlokat is a dobozra méretezte (mérve
-                            // +850 MiB a QML-teszteken); a textúraplafont a
-                            // szolgáltató oldja meg: nem nagyít fel
-                            sourceSize.width: 2560
+                            // #3877 (korábban #3819): a kép VALÓDI méretéből
+                            // számolt, pontos forrásméret — felnagyítás
+                            // nincs (ld. `viewer.forrasMeret`, a
+                            // `SlideshowView.qml` #3832-es mintája)
+                            sourceSize: viewer.forrasMeret(viewer.abMasikSor,
+                                kepUrl.indexOf("image://editpreview/") === 0)
 
                             //: #3663: a képre kattintás a JOBB/ALSÓ felet
                             //: aktiválja — ld. a `photoElotte`-n lévő párját.
@@ -3470,20 +3525,28 @@ Rectangle {
                 Image {
                     objectName: "viewerPreloadNext"
                     visible: false
+                    //: #3877: mindig nyers `file://` úton tölt
+                    //: (`preloadUrlAt`/`urlAt`, nincs szerkesztési
+                    //: előnézet) — a `forrasMeret` második argumentuma
+                    //: ezért fixen `false`.
+                    readonly property int elotoltIndex: viewer.photosModel
+                        ? viewer.photosModel.folderNeighbor(viewer.currentIndex, 1) : -1
                     source: viewer.photosModel
-                        ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, 1))
+                        ? viewer.preloadUrlAt(elotoltIndex)
                         : ""
                     asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
-                    sourceSize.width: 2560
+                    sourceSize: viewer.forrasMeret(elotoltIndex, false)
                 }
                 Image {
                     objectName: "viewerPreloadPrev"
                     visible: false
+                    readonly property int elotoltIndex: viewer.photosModel
+                        ? viewer.photosModel.folderNeighbor(viewer.currentIndex, -1) : -1
                     source: viewer.photosModel
-                        ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, -1))
+                        ? viewer.preloadUrlAt(elotoltIndex)
                         : ""
                     asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
-                    sourceSize.width: 2560
+                    sourceSize: viewer.forrasMeret(elotoltIndex, false)
                 }
             }
 
