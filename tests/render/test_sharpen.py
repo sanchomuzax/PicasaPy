@@ -175,12 +175,13 @@ _KIT = Path("/mnt/nas/My Pictures/684-merokeszlet")
 #: A mért érték + 0,05-ös tűrés.
 _TURES = 0.05
 
-#: (név, lánc, mért ΔE) — a jegy küszöbe: alap ≤ 0,2, max ≤ 0,3.
+#: (név, lánc, mért ΔE, a jegy küszöbe) — a határ a kettő közül a kisebb:
+#: a tűrés nem viheti át a jegy „alap ≤ 0,2, max ≤ 0,3” küszöbét.
 _GOLDEN_ESETEK = [
-    ("unsharp2__alap", "unsharp2=1,0.600000;", 0.172),
-    ("unsharp2__max", "unsharp2=1,3.000000;", 0.277),
-    ("unsharp__alap", "unsharp=1,0.600000;", 0.172),
-    ("unsharp2__min", "unsharp2=1,0.000000;", 0.121),
+    ("unsharp2__alap", "unsharp2=1,0.600000;", 0.172, 0.2),
+    ("unsharp2__max", "unsharp2=1,3.000000;", 0.277, 0.3),
+    ("unsharp__alap", "unsharp=1,0.600000;", 0.172, 0.2),
+    ("unsharp2__min", "unsharp2=1,0.000000;", 0.121, 1.0),
 ]
 
 
@@ -195,13 +196,28 @@ def _golden_eszkozok():
 
 
 @pytest.mark.parametrize(
-    ("nev", "lanc", "vart_de"), _GOLDEN_ESETEK, ids=[e[0] for e in _GOLDEN_ESETEK]
+    ("nev", "lanc", "vart_de", "jegy_kuszob"), _GOLDEN_ESETEK,
+    ids=[e[0] for e in _GOLDEN_ESETEK],
 )
-def test_golden_684_a_hatarertek_alatt(nev: str, lanc: str, vart_de: float) -> None:
+def test_golden_684_a_hatarertek_alatt(
+    nev: str, lanc: str, vart_de: float, jegy_kuszob: float
+) -> None:
     export_ut = _KIT / "export" / f"{nev}.jpg"
     if not export_ut.is_file():
         pytest.skip(f"a mérőkészlet nem elérhető: {export_ut}")
     load, mean_de = _golden_eszkozok()
     kep = apply_filters(load(_KIT / f"{nev}.jpg"), parse_filters(lanc)).image
     de = mean_de(kep, load(export_ut))
-    assert de <= vart_de + _TURES, f"{nev}: ΔE {de:.3f} > {vart_de + _TURES:.3f}"
+    hatar = min(vart_de + _TURES, jegy_kuszob)
+    assert de <= hatar, f"{nev}: ΔE {de:.3f} > {hatar:.3f}"
+
+
+def test_nagy_erosseg_nem_fordul_korbe() -> None:
+    """A közvetlen API-n is telít, nem fordul körbe (int32; PR-átnézés)."""
+    from picasapy.render.sharpen import unsharp_blend
+
+    a = np.full((2, 2, 3), 200, dtype=np.uint8)
+    b = np.full((2, 2, 3), 100, dtype=np.uint8)
+    for s in (1e5, 1e6, 1e9):
+        np.testing.assert_array_equal(unsharp_blend(a, b, s), np.full_like(a, 255))
+        np.testing.assert_array_equal(unsharp_blend(b, a, s), np.zeros_like(a))

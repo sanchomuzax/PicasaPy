@@ -171,10 +171,15 @@ def unsharp_blur(image: np.ndarray) -> np.ndarray:
     return _tengely_menten(_tengely_menten(image, 1), 0)
 
 
+_K_PLAFON = 1 << 22
+
+
 def unsharp_blend(original: np.ndarray, blurred: np.ndarray, strength: float) -> np.ndarray:
     """A natív keverés: `clamp(A + (((A − B) · K) >> 8), 0, 255)`,
     `K = csonk(512 · s)` (#3851)."""
-    k = int(_KEVERES_SKALA * strength)
+    # a 2^22-es plafon fölött a kimenet úgyis telített; alatta a
+    # `255 · K` belefér az int32-be (a PR-átnézés: s > 16 400 körbefordult)
+    k = min(int(_KEVERES_SKALA * strength), _K_PLAFON)
     eredeti = original.astype(np.int32)
     kulonbseg = eredeti - blurred.astype(np.int32)
     kimenet = eredeti + ((kulonbseg * k) >> _KEVERES_ELTOLAS)
