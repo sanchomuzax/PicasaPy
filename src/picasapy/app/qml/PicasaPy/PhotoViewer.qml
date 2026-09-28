@@ -417,7 +417,7 @@ Rectangle {
         // ⚠️ #2492: KORÁBBAN `photo.sourceSize.width / photo.paintedWidth`
         // állt itt — HIBÁSAN. A Qt olvasáskor a BEÁLLÍTOTT `sourceSize`-t
         // adja vissza, ez az elem pedig 2560-as plafont kap
-        // (`sourceSize: Qt.size(2560, 2560)` lent). Így a képlet a valódi mérettől
+        // (`sourceSize.width: 2560` lent). Így a képlet a valódi mérettől
         // FÜGGETLENÜL 2560-cal számolt: egy 896 képpont széles képnél
         // ~3,7-es arányt az 1,28 helyett — mérve a tulajdonos
         // képernyőmentésén 3–4-szeres túlnagyítás.
@@ -2129,8 +2129,7 @@ Rectangle {
                             fillMode: Image.PreserveAspectFit
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                             autoTransform: true
-                            //: #3819: befoglaló doboz, ld. a `photo` párját
-                            sourceSize: Qt.size(2560, 2560)
+                            sourceSize.width: 2560
 
                             //: #3663: a képre kattintás a BAL/FELSŐ felet
                             //: aktiválja — a `swap_2up_focus` gomb ugyanezt
@@ -2261,11 +2260,11 @@ Rectangle {
                             // produkcióban marad az async.
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                             autoTransform: true   // EXIF-orientáció
-                            //: #3819: befoglaló doboz — a csak szélességes
-                            //: kérés egy 9:16-os képet 2560×4551-re nagyított,
-                            //: a V3D 4096-os textúraplafonja fölé; a
-                            //: szolgáltató a dobozba csak kicsinyít
-                            sourceSize: Qt.size(2560, 2560)
+                            // #3819: csak szélesség — a befoglaló doboz a
+                            // nyers fájlokat is a dobozra méretezte (mérve
+                            // +850 MiB a QML-teszteken); a textúraplafont a
+                            // szolgáltató oldja meg: nem nagyít fel
+                            sourceSize.width: 2560
 
                             //: #3663: a képre kattintás a JOBB/ALSÓ felet
                             //: aktiválja — ld. a `photoElotte`-n lévő párját.
@@ -3475,9 +3474,7 @@ Rectangle {
                         ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, 1))
                         : ""
                     asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
-                    // #3819: ugyanaz a doboz, mint a `photo`-é — különben
-                    // a gyorstárban más méretű kép várna
-                    sourceSize: Qt.size(2560, 2560)
+                    sourceSize.width: 2560
                 }
                 Image {
                     objectName: "viewerPreloadPrev"
@@ -3486,9 +3483,7 @@ Rectangle {
                         ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, -1))
                         : ""
                     asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
-                    // #3819: ugyanaz a doboz, mint a `photo`-é — különben
-                    // a gyorstárban más méretű kép várna
-                    sourceSize: Qt.size(2560, 2560)
+                    sourceSize.width: 2560
                 }
             }
 

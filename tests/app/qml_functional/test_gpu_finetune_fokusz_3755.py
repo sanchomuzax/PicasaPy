@@ -165,18 +165,20 @@ class TestAzElotagTexturaMerete:
 
 
 class TestAFoFotoForrasmerete:
-    """#3819: a fő fotó két fele és a két előtöltő is befoglaló dobozt kér
-    — a csak szélességes `sourceSize.width: 2560` egy 9:16-os képet
-    2560×4551-re kért (a textúraplafon fölé)."""
+    """#3819: a fő fotó két fele és a két előtöltő CSAK szélességet kér
+    (2560). A befoglaló doboz (`Qt.size(2560, 2560)`) a nyers fájlokat is a
+    dobozra méretezte: a QML-teszteken mérve +850 MiB, a CI 2400 MiB-os
+    plafonja fölé. A textúraplafont a szolgáltató oldja meg — a dobozba csak
+    kicsinyít (`test_edit_preview.py`), a GPU-s eset lent a pontos
+    textúraméretet méri."""
 
     @pytest.mark.parametrize("nev", ["viewerImage", "viewerImageElotte",
                                      "viewerPreloadNext", "viewerPreloadPrev"])
-    def test_a_forrasmeret_mindket_iranyban_korlatos(self, ket_kep, qt_app, nev):  # noqa: F811
+    def test_a_forrasmeret_csak_szelesseg(self, ket_kep, qt_app, nev):  # noqa: F811
         window, _c, _e = ket_kep
         meret = _gyerek(window, nev).property("sourceSize")
-        plafon = TestAzElotagTexturaMerete.TEXTURA_PLAFON
-        assert 0 < meret.width() <= plafon, meret
-        assert 0 < meret.height() <= plafon, meret
+        assert meret.width() == 2560, meret
+        assert meret.height() <= 0, meret
 
 
 # -- valódi GPU, valódi egérhúzás (#3755, 3. pont) ----------------------------
