@@ -7748,6 +7748,12 @@ A min ágon a ±3…6 szintes eltérés 50 ezer képpontról 100-ra esik, a mara
 
 **Nálunk** (`render/glimmer_ops.py::bw_tint`): Rec.601-súlyok, lebegőpontosan → fejlesztés: #3931.
 
+✅ **Megvalósítva (#3931):** a `bw_tint` a Haeberli-súlyokat a fenti fixpontos
+alkalmazóval számolja (`c = trunc(w·2048 + 0,5)`,
+`Y = ((Σᵢ (cᵢ·xᵢ) >> 9) + 2) >> 2`). Mérve a 684-es Holga-készleten:
+Holga min ΔE 0,253 → **0,099**, Holga alap ΔE 0,604 → **0,516** — pontosan a
+fenti táblázat harmadik sorával egyezik.
+
 ### 2. A maszkos `GetVar` — `GetVarInstruction` → `PartialMask` → `Pop`
 
 A `GetVarImageOperation` fordítója (`0x00bbf810`) egyetlen

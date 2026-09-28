@@ -8,6 +8,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A Holga effekt fekete-fehér lépése úgy szürkít, mint az eredeti Picasa: a
+  mért eltérés a leggyengébb állásban ΔE 0,25-ről 0,10-re, alapbeállításon
+  0,60-ról 0,52-re csökkent (#3931).
 - A nézőben a jobb fiók (Emberek/Helyek/Címkék/Tulajdonságok) megnyitásának
   tesztje terhelt gépen időnként hamisan bukott: a tálca gombja a háttérben
   a könyvtár nem látszó fiókját is animáltan nyitja, és a teszt eddig nem
