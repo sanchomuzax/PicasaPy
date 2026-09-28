@@ -8200,6 +8200,12 @@ mutat; a többinél az export a forrással azonos.
 
 Fejlesztés: #3895.
 
+> ✅ **Megvalósítva (#3895, 2026-09-28).** Az `apply_soften` 0-s sugárnál is
+> keveri a (változatlan) képet önmagával: `soften__min` ΔE 0,470 → **0,121**
+> (`alap` 0,196, `max` 0,121 — változatlan). Az elemző `mean_shift`-je a
+> `|átlagos előjeles eltolódás| ≥ 0,5` sort már nem sorolja tétlennek: a
+> `soften__min` a javítás nélkül `NEM_IMPLEMENTALT`, vele `JO`.
+
 ### E) Két mért hiba nálunk — a bináris itt az OKOT is megadja
 
 **1. Az `IR` zöld ragyogása SCREEN, nem LIGHTEN.** Az `IR` konstruktora a
