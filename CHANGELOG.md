@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A diavetítés forgatás-gombjának két gyors, egymást követő kattintása
+  eddig lassú (pl. hálózati) meghajtón elveszíthette a második forgatást;
+  most mindkettő biztosan érvényesül (#3830).
+
 - A „Fókuszos FF” effekt „Sugár” csúszkája most −1 és 1 között mozog, 0
   alapállással, ahogy az eredeti Picasában: eddig 0 és 1 között, 0,3
   alapállással volt beállítva, ezért a negatív méret felületről nem volt
