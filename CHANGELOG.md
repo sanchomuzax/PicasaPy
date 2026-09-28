@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.627] – 2026-09-28
+
 ### Javítva
 - A néző a közvetlenül fájlból betöltött képeket (az elő-betöltők, és a
   kép, amíg nincs szerkesztési előnézete) a valódi méretükből számolva
