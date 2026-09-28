@@ -98,9 +98,12 @@ KNOWN_UNRENDERED_OPS = frozenset(
     {
         # `grain` (v1) a #347 lezáró auditban (2026-08-06) KIKERÜLT innen:
         # a `filterdesc-registry.md` szerint a `grain2`-vel MEGEGYEZŐ,
-        # paraméter nélküli "Film Grain" oneclick család régi tagja, ezért
-        # a `grain2` golden-mért modelljét (`_apply_grain_op`) használja
-        # (ld. lent a `_HANDLERS`-ben).
+        # paraméter nélküli "Film Grain" oneclick család régi tagja. A
+        # #3927/#3928 a natív munkafüggvényt (0x0090a2e0) a bináriból
+        # olvasta ki: a callback mindkettőt azonos `a = 0,5`-tel hívja,
+        # tehát nem "más algoritmus, kölcsönzött modellel", hanem EGYETLEN
+        # algoritmus — ezért fut mindkettő az `_apply_grain_op`-on (ld.
+        # lent a `_HANDLERS`-ben).
         # `radtint` a #565-ben KIKERÜLT innen: a natív regisztráció
         # (0x8f8730), a feldolgozó mag (0x90b370) és a maszk-LUT (0x90aeb0)
         # visszafejtésével az algoritmuscsalád és a pixelművelet (radiális
@@ -380,19 +383,18 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # A grain2 sztochasztikus (véletlen mag); az élő előnézetben viszont
+    # A szemcse sztochasztikus (véletlen mag); az élő előnézetben viszont
     # rögzített maggal futtatjuk (seed=0), hogy egy változatlan lánc újra-
     # renderelésekor a szemcse ne "villogjon" — a spec elfogadási teszthez
     # (statisztikai) ez nem szükséges, csak az UI-élmény miatt választott mag.
     #
     # Ugyanez a handler szolgálja ki a `grain` (v1) bejegyzést is (#347
-    # lezáró audit, 2026-08-06): a filterdesc-regiszter szerint a `grain`
-    # ("Film Grain (Old)") és a `grain2` ("Film Grain") egyaránt paraméter
-    # nélküli oneclick — nincs se csúszka, se szín, ami megkülönböztetné
-    # őket, csak a `fullres+slow` sávjelző. A `grain` v1-re önmagára nincs
-    # külön golden-mérés, ezért ez KÖZELÍTÉS (a már mért grain2-modell
-    # újrahasznosítása) — ugyanaz a minta, mint a glow/glow2,
-    # unsharp/unsharp2, finetune/finetune2 v1/v2 párosításoknál.
+    # lezáró audit, 2026-08-06, megerősítve #3927-ben): a natív callback
+    # (`0x008f88e0`) mindkét tokenre UGYANAZ — nincs se csúszka, se szín,
+    # ami megkülönböztetné őket, csak a `fullres+slow` sávjelző. Ez tehát
+    # NEM közelítés: a `grain` (v1) és a `grain2` egyaránt ugyanazt a
+    # kiolvasott, nyolc lépéses natív algoritmust futtatja
+    # (`native_grain.apply_native_grain`, #3928).
     return apply_grain(image, seed=0)
 
 
@@ -719,7 +721,7 @@ _HANDLERS = {
     "sat": _apply_sat_op,
     "unsharp": _apply_unsharp_op,
     "unsharp2": _apply_unsharp_op,
-    "grain": _apply_grain_op,  # v1 — közelítés, ld. _apply_grain_op docsztringje
+    "grain": _apply_grain_op,  # v1 — a grain2-vel EGYEZŐ, kiolvasott algoritmus, ld. _apply_grain_op docsztringje
     "grain2": _apply_grain_op,
     "glow": _apply_glow_op,
     "glow2": _apply_glow_op,

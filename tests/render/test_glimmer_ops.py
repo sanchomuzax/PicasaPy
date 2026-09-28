@@ -288,10 +288,17 @@ class TestInnerGlow:
 
 class TestBwTint:
     """#504 (Holga-referencia): a `BW(filtercolor=...)` NEM színez, hanem a
-    szürkítés Rec.601-csatornasúlyait modulálja a `color`-ral — a Picasa
+    szürkítés csatornasúlyait modulálja a `color`-ral — a Picasa
     Holga-kimenete minden mért képponton R=G=B. A korábbi implementáció
     (`ki = luma/255 · color`) SZÍNES kimenetet adott — ez volt a #504 hibája,
-    nem a csatornasorrend (#510 tévedett)."""
+    nem a csatornasorrend (#510 tévedett).
+
+    #3931 (a #3930 bináris-kutatás alapján): a súlyok Haeberli-alapúak (NEM
+    Rec.601, ahogy a #504 mérésből illesztett modell feltételezte), és a
+    natív kód FIXPONTOSAN alkalmazza őket
+    (`c = trunc(w·2048 + 0,5)`, `Y = ((Σᵢ (cᵢ·xᵢ) >> 9) + 2) >> 2`) —
+    ld. `docs/specs/filters-decoded.md`, „A színmátrix-alkalmazó fixpontos
+    aritmetikája"."""
 
     def test_kimenet_szurke_minden_pixelen(self):
         rng = np.random.default_rng(3)
@@ -302,8 +309,8 @@ class TestBwTint:
 
     def test_sulyok_a_referencia_kepletnek_megfeleloen(self):
         """A `0xff6666` (255,102,102) szín melletti effektív súlyok a
-        referencia-méréssel egyeznek: R 0,516 / G 0,405 / B 0,079 (2 tizedes
-        tűréssel) — `w_c = luma_c·szín_c / Σ(luma_k·szín_k)`."""
+        Haeberli-képletnek megfelelnek: R 0,527 / G 0,417 / B 0,056
+        (`w_c = 0,3086/0,6094/0,0820 · szín_c / Σ`, #3930)."""
         # Tiszta piros/zöld/kék síkokon a bw_tint eredménye pontosan a
         # hozzá tartozó súly (255-tel szorozva), mert a másik két csatorna
         # bemenete nulla.
@@ -319,21 +326,71 @@ class TestBwTint:
         green_w = float(g.bw_tint(green_plane, color)[0, 0, 0]) / 255.0
         blue_w = float(g.bw_tint(blue_plane, color)[0, 0, 0]) / 255.0
 
-        assert red_w == pytest.approx(0.516, abs=0.02)
-        assert green_w == pytest.approx(0.405, abs=0.02)
-        assert blue_w == pytest.approx(0.079, abs=0.02)
+        assert red_w == pytest.approx(0.527, abs=0.02)
+        assert green_w == pytest.approx(0.417, abs=0.02)
+        assert blue_w == pytest.approx(0.056, abs=0.02)
 
-    def test_semleges_szinnel_visszaadja_a_rec601_lumat(self):
+    def test_semleges_szinnel_visszaadja_a_haeberli_lumat(self):
         """Ha `color` mindhárom csatornája egyenlő (pl. fehér), a súlyok a
-        sima Rec.601-re egyszerűsödnek — nincs modulálás."""
+        sima Haeberli-lumára egyszerűsödnek — nincs modulálás (a fixpontos
+        kvantálás (`>>9`, `>>2`) miatt csatornánként legfeljebb 1 szintnyi
+        eltéréssel a lebegőpontos lumához képest — mérve a legnagyobb
+        eltérés 1)."""
         rng = np.random.default_rng(4)
         img = rng.integers(0, 255, size=(8, 8, 3), dtype=np.uint8)
         result = g.bw_tint(img, (255, 255, 255))
         image_f = img.astype(np.float32)
-        expected = g.luma(image_f)
+        expected = g._haeberli_luma(image_f)
         np.testing.assert_allclose(
             result[..., 0].astype(np.float32), np.clip(np.rint(expected), 0, 255), atol=1.0
         )
+
+    def test_holga_szinnel_a_nativ_egyutthatok_1080_853_115(self):
+        """#3931 „Kész, ha": a `0xff6666` szűrőszínre a fixpontos
+        együtthatók pontosan `c = 1080 / 853 / 115` (a #3930 levezetése).
+
+        A korábbi alak csak azt ellenőrizte, hogy egy tiszta csatornasíkon
+        `R = G = B` — az együtthatók számértékét sosem nézte meg, tehát egy
+        hibás `c` mellett is zöld maradt volna. Itt a `_bw_coefficients`
+        segédfüggvényt hívjuk közvetlenül (#3933 review)."""
+        assert g._bw_coefficients((255, 102, 102)) == (1080, 853, 115)
+
+    def test_fixpontos_kerekites_eltero_a_lebegopontostol(self):
+        """A fixpontos alkalmazó (`c = trunc(w·2048 + 0,5)`,
+        `Y = ((Σ c·x >> 9) + 2) >> 2`) NEM ugyanaz, mint a lebegőpontos
+        Haeberli-képlet (`rint(Σ w·x)`) — a teljes RGB-kockán 27%-ban
+        eltérnek (#3933 review). E két megkülönböztető képpont buktatná,
+        ha valaki a `bw_tint`-et lebegőpontosra írná vissza."""
+        color = (255, 102, 102)
+
+        pixel_98 = np.array([[[0, 0, 98]]], dtype=np.uint8)
+        result_98 = g.bw_tint(pixel_98, color)
+        assert int(result_98[0, 0, 0]) == 6
+
+        pixel_187 = np.array([[[0, 0, 187]]], dtype=np.uint8)
+        result_187 = g.bw_tint(pixel_187, color)
+        assert int(result_187[0, 0, 0]) == 11
+
+    @pytest.mark.parametrize(
+        ("rgb", "expected"),
+        [
+            ((255, 0, 0), 134),
+            ((0, 255, 0), 106),
+            ((0, 0, 255), 14),
+            ((200, 100, 50), 150),
+            ((128, 128, 128), 128),
+            ((255, 255, 255), 255),
+        ],
+    )
+    def test_holga_pixelkepletek_a_jegybol(self, rgb, expected):
+        """#3931 „Kész, ha": a hat rögzített képpont pontosan az elvárt
+        szürkeszintre esik a `0xff6666` szűrőszínnel (`c = 1080/853/115`,
+        `Y = ((Σᵢ (cᵢ·xᵢ) >> 9) + 2) >> 2`)."""
+        pixel = np.array([[list(rgb)]], dtype=np.uint8)
+        result = g.bw_tint(pixel, (255, 102, 102))
+        assert int(result[0, 0, 0]) == expected
+        assert int(result[0, 0, 1]) == expected
+        assert int(result[0, 0, 2]) == expected
 
 
 class TestNoiseAndGradient:
