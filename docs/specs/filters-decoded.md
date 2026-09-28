@@ -396,7 +396,7 @@ nélkül fél képpontot tol, és `cv2.INTER_LINEAR` a mintavevő.
 | min (`p = −1`) | 0,429 | 0,277 | **0,241** | 0,193 |
 | alap (`p = 0`) | 0,156 | 0,156 | — | 0,083 |
 
-Fejlesztés: #.
+Fejlesztés: #3846.
 
 ### `unsharp` / `unsharp2` — MEGFEJTVE (közelítő modell)
 
