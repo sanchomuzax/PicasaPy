@@ -7807,6 +7807,53 @@ A sor végi maradék (≤ 3 képpont, `0x00bcf444`) helyes. A csoport a sor els�
 `0`-tól). Ettől lesz a Picasa kimenetén a négyes periódusú, képpontszintű minta
 (pl. egy sötét sávban `157 230 156 229`).
 
+### 5. A két peremeset: a képen túli minta és a `D = 0` (2026-09-28, 398. kör, #3893)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK). Golden-pár erre a két esetre nincs.*
+
+**A képen túli minta — a célképpont abban a lépésben KIMARAD.** A SSE2-ág
+(`0x00bcefb0`) nem vág a szélső képpontra, hanem csak azokat a célképpontokat
+dolgozza fel, amelyek mintája a képen belül esik:
+
+1. **Céltéglalap:** a forrás `(0, 0, W, H)` téglalapját az `M` inverzével
+   (`0x00a4a140`) átviszi a célba (`0x00a4a240`, mind a négy sarok), veszi a
+   sarkok minimumát és maximumát, és mindegyikből `0,499`-et levonva
+   `fistp`-vel egészre kerekít (`0x00a4a49f`–`0x00a4a4ff`, `[0xcf4160]` =
+   0,499; a jobb/alsó szél kizáró). A `0x009aaae0` ezt a célképhez vágja; ha
+   üres, a lépés kimarad.
+2. **Soronkénti vágás** (`0x00bcf28c`–`0x00bcf2e9`): a sor **jobb végéről**
+   addig vág, amíg az utolsó képpont mintája `(u >> 16) ≥ W` vagy
+   `(v >> 16) ≥ H`; csak a felső korlátot nézi (zoom-nagyításnál a minta
+   nem lehet negatív).
+3. **A kimaradt célképpont akkumulátora változatlan** abban a lépésben — a
+   mag helyben olvassa és írja a célképet, és oda nem ír.
+
+A négyes SIMD-csoportok a téglalap **bal szélétől** indulnak
+(`0x00bcf20f`–`0x00bcf239`); a vágás utáni `w′ & 3` maradék képpontot a skalár
+farok (`0x00bcf444`–`0x00bcf47c`) helyesen, a saját akkumulátorával keveri — a
+4. pont sávhibája tehát csak a teljes négyes csoportokat érinti.
+
+⇒ Egy fekvő képen a függőleges eltolás is `off`-fal nő, ezért magas `y` fókusz
+és nagy Impact mellett az alsó sorok az erős (nagy `off`-ú) lépéseket
+**kihagyják**, és csak a gyengébbeket kapják meg. Szélső képpontra szorítva
+(ahogy ma a megvalósítás, `zoom_sample_indices`) ezek a sorok a kép utolsó
+sorából mintáznak — ez más kép.
+
+**`D = 0` — nincs korai kilépés.** A hívó (`0x00bc24e0`) feltétel nélkül hívja
+a magot; a mag egyetlen kilépése `N = 0` (`0x00bcf517` `jbe`), `N = amount + 5`
+pedig legalább 5. `D = 0`-nál (`amount = 0`, vagy `W · amount < 200`) tehát `N`
+lépés fut `off = 0`-val: `M` egységmátrix, a téglalap `(0, 0, W, H)`, és a
+minta pontosan az adott képpont (az eredeti forrásból). Lépésenként
+`acc = (38·v + 217·acc) >> 8`, ami az első lépésben `⌊255·v/256⌋ = v − 1`
+(`v ≥ 1`), majd tovább csökken. `N = 5`-re: 255 → 250, 200 → 195, 128 → 124,
+2 → 1, 1 → 0 (az alfára is). A sávhiba itt is hat: a csoport 2–3. képpontja a
+0–1. képpont akkumulátorával kever.
+
+**Nálunk** (#3884, PR #3892): a képen túli mintát a szélső képpontra szorítjuk,
+`D = 0`-nál a képet változatlanul hagyjuk — mindkettő eltér.
+
+Fejlesztés: a **#3884** kiegészül ezzel a két szabállyal (komment).
+
 ### Mérve
 
 684-es készlet, ΔE a Picasa-exporthoz; a körmaszk a mai (`focal_mask`, #3596
