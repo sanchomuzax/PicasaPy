@@ -402,11 +402,48 @@ Fejlesztés: #3846.
 
 - **`unsharp=1` (v1, param nélkül) = `unsharp2=1,0.600000`** — bitre azonos
   kimenet (átlag|Δ|, max, szórás egyezik). Ismételt alkalmazás kumulatív.
+- ⛔ **2026-09-28 (#3850): az erősítés `2·s`, egész keveréssel — ld. a következő szakaszokat.**
 - Modell: Gauss-alapú unsharp mask, **σ ≈ 1,0 px**, erősítés ≈ **1,21·s**
   (RMSE 2,2/255 valódi fotón). A pontos kernel finomítása **továbbra is nyitva**
   (nem tökéletesen Gauss) — jegy: **#762**, a diszpécser (`0x00a42c20`) fel van
   térképezve, a konvolúció a `0xa43230`/`0x9e6340`-ben van. B/W teszteknél
   figyelem: telített értékeken a túllövés klippel.
+
+### `unsharp` / `unsharp2` — a keverés és az erősség kiolvasva: `2·s`, egész aritmetika (2026-09-28, 390. kör, #3850)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és golden-méréssel.*
+
+A fenti szakaszok az elmosómagot már kiolvasták (köbös B-spline, 1,5-szeres
+szélesítéssel; pontosabban a lépték `1/(1,5 + 0,001)`, `0x00a3f728`–`0x00a3f741`, `[0xcf3db0]` = 0,001). Az erősség eddig mérésből illesztett volt (`1,21·s`). A
+keverés:
+
+1. A visszahívás (`0x008f8f30`) a `+0x28` floatot (`s`) és a beégetett
+   **1,5**-öt (`[0xcf3ec4]`) adja a munkavégzőnek (`0x0090c4a0`).
+2. `K = csonk(512 · s)` (`0x0090c582` `fmul [0xcf4c48]` = 512,0; `0x00c29990`).
+   Ha a szélesítő 1,0 alatt volna, `K`-t a négyzetével osztaná
+   (`0x0090c5a3`–`0x0090c5af`); az 1,5-nél ez az ág nem fut.
+3. Képpontonként, csatornánként (A = eredeti, B = elmosott):
+   `ki = clamp(A + (((A − B) · K) >> 8), 0, 255)` (a `>>` aritmetikai, `sar`), az alfa A-é. Példa: A = 100, B = 90 → `s = 0,6`: `K = 307`, ki = 111; `s = 3,0`: `K = 1536`, ki = 160
+   (`0x0090c5f5`–`0x0090c667`).
+
+⇒ Az erősítés **`K/256 = 2·s`**. `s = 0,6`-nál 1,2 (a mért 1,21 ennek
+közelítése), `s = 3,0`-nál viszont **6,0**, nem 3,63: a mért lineáris
+illesztés a nagy erősségeken rossz.
+
+**Mérve** (684-es készlet, ΔE a Picasa-exporthoz; az elmosás a mai
+lebegőpontos B-spline, illetve a fixpontos átméretező — `csonk(w·16383/Σw)`,
+`(Σ w·p + 255) >> 14`, ld. `filterdesc-registry.md` 5/c):
+
+| eset | ma (`1,21·s`) | `2·s`, lebegőpontos elmosás | **`2·s`, fixpontos elmosás** | zajszint |
+|---|---:|---:|---:|---:|
+| `unsharp2` alap (s = 0,6) | 0,359 | 0,256 | **0,172** | 0,120 |
+| `unsharp2` max (s = 3,0) | 0,983 | 0,861 | **0,277** | 0,210 |
+| `unsharp` (v1, s = 0,6) | 0,359 | 0,256 | **0,172** | 0,120 |
+
+A max állásban a fixpontos elmosás a döntő: a nagy erősítés a köztes
+elmosott kép egész kerekítését is felnagyítja.
+
+Fejlesztés: #3851.
 
 ### `Vignette=1,35.0,1.4,0.0,00000000` — maszk lemérve
 
