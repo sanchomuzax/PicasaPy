@@ -7002,6 +7002,30 @@ A teljes láncon még két mérés:
    amit nálunk más kernel közelít. **Ez a következő gépi irány** — nem
    csúszka-kalibráció.
 
+
+### ⛳ A Holga alapállásának maradéka a Picasa-export JPEG-je, nem a lánc — a zajszintet a Picasa saját kvantálótábláival kell mérni (2026-09-28, 404. kör, #3934)
+
+*Bizonyítottsági fok: **megerősített**, méréssel. Független újramérés (#3934, friss ügynök, saját CIE76-számítással): EGYEZIK.*
+
+A natív BW-vel (#3930, #3931) a 684-es Holga alap ΔE-je 0,516, a min ágé 0,099. A 95-ös minőségű zajszint (a mi kimenetünk ↔ ugyanaz JPEG95-ben) 0,412, illetve 0,070 — ez alapján zajszint fölöttinek látszott.
+
+**A maradék nem a láncé:**
+
+- a hiba átlaga minden sugárgyűrűben és tónussávban 0 (±0,15), a szórása a világossággal nő, és a szomszéd-korrelációja −0,27 — nagyfrekvenciás, a JPEG-re jellemző;
+- a szemcse mezője képpontra ugyanaz: a `(Picasa − zajmentes lánc)` és a `(mienk − zajmentes lánc)` korrelációja **0,909** eltolás nélkül (±1 képpontos eltolással 0,34), a képpontonkénti arány-átlag 0,9463 vs 0,9459 — a `NoiseImageOperation` (`randomSeed = 5`) mezője egyezik;
+- **döntő:** a mi kimenetünket a Picasa-export SAJÁT kvantálótábláival és mintavételezésével (4:4:4) tömörítve a Picasához mért ΔE **0,060** (alap).
+
+| | ΔE a Picasa-exporthoz | zajszint, JPEG95 | **zajszint, a Picasa kvantálótábláival** |
+|---|---:|---:|---:|
+| Holga alap | 0,516 | 0,412 | **0,512** |
+| Holga min | 0,099 | 0,070 | **0,088** |
+
+Ugyanígy tömörítve a min ág ΔE-je 0,034. Mindkét ágon a medián 0, és a képpontok 88,6, illetve 92,2%-a bitre azonos (független újramérés).
+
+⇒ **A Holga a natív BW-vel (#3931) a JPEG-határon belül egyezik**; a láncban nincs további eltérés. A független újramérés a középtónusokban egy +0,04…+0,09 szürkeszintnyi előjeles eltolódást is látott (a Picasa a világosabb). Ez egy szintnél jóval kisebb, és a Picasa tömörítés előtti kimenete nélkül nem választható el a két JPEG-kódoló eltérésétől — a mérés felbontása alatt van, teendőt nem ad.
+
+**Módszertani következmény:** a Picasa exportja nem 95-ös minőségű (az első luma-kvantáló sor `2, 2, 1, 2, 3, 6, 7, 9`), és a szemcsés, nagyfrekvenciás képen a különbség számít. A zajszintet ezért a **Picasa-export saját táblájával** kell mérni (`PIL`: `Image.open(export).quantization` és `JpegImagePlugin.get_sampling`), vagy még jobb: a mi kimenetünket ugyanazzal a táblával tömörítve kell a Picasához hasonlítani. A 95-ös zajszint a szemcsés effekteknél (Holga, NightVision, grain) alulbecsül, és hamis maradékot mutat.
+
 ## ⛳ A RENDER-LEFEDETTSÉG KIMÉRVE: 84 = 77 + 6 + 1, hézag NINCS (2026-09-11, 291. kör, #684)
 
 A #684 törzse kimondja az indítási feltételét: *„Csak akkor, ha a dev
