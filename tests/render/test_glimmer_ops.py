@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from picasapy.render import glimmer_frame_ops as gf
+from picasapy.render import belso_ragyogas as br
 from picasapy.render import glimmer_ops as g
 
 
@@ -135,162 +136,154 @@ class TestAdjustCurves:
         np.testing.assert_array_equal(g.invert_curve(result), image)
 
 
+class TestDobozParameterek:
+    """#3827: a `0x00bc5360` dobozparaméterei a jegy két kiszámolt példáján."""
+
+    def test_33_33_egy_33_szeles_egyenletes_doboz(self):
+        s, a, r, div = br.doboz_parameterek(33.33)
+        assert (s, a, r, div) == (1, 0, 17, 66)
+        sulyok = [a] + [1 << s] * (2 * r - 1) + [a]
+        nem_nulla = [w for w in sulyok if w]
+        assert len(nem_nulla) == 33
+        assert len(set(nem_nulla)) == 1
+        assert sum(sulyok) == div
+
+    def test_10_5_tort_sulyu_szelekkel(self):
+        assert br.doboz_parameterek(10.5) == (3, 6, 5, 84)
+
+    def test_a_perem_szelessege(self):
+        assert br.peremsugar(33.33) == 52
+        assert br.peremsugar(253.0) == 255
+
+
+def _referencia_maszk(magas, szeles, bx, by, q=3):
+    """Független újralevezetés (386. kör): kibővített puffer 255-ös peremmel,
+    kumulált összegű dobozmenetek, 255-ös pótlás a puffer szélén."""
+    import math
+
+    def menet(m, b, tengely):
+        s, a, r, div = br.doboz_parameterek(b)
+        p = np.moveaxis(m, tengely, -1).astype(np.int64)
+        n = p.shape[-1]
+        pp = np.pad(p, [(0, 0)] * (p.ndim - 1) + [(r, r)], constant_values=255)
+        c = np.concatenate([np.zeros(p.shape[:-1] + (1,), np.int64), np.cumsum(pp, axis=-1)], -1)
+        i = np.arange(n) + r
+        belso = c[..., i + r] - c[..., i - r + 1]
+        szel = pp[..., i - r] + pp[..., i + r]
+        return np.moveaxis((a * szel + (belso << s)) // div, -1, tengely)
+
+    bx, by = min(bx, 253.0), min(by, 253.0)
+    rx = min(255, int(math.ceil((bx - 1) * 0.5) * q + 1))
+    ry = min(255, int(math.ceil((by - 1) * 0.5) * q + 1))
+    m = np.full((magas + 2 * ry, szeles + 2 * rx), 255, np.int64)
+    m[ry:ry + magas, rx:rx + szeles] = 0
+    bxx, byy = min(bx, m.shape[1] * 0.5), min(by, m.shape[0] * 0.5)
+    for _ in range(q):
+        if bxx > 1.0:
+            m = menet(m, bxx, 1)
+    for _ in range(q):
+        if byy > 1.0:
+            m = menet(m, byy, 0)
+    return m[ry:ry + magas, rx:rx + szeles].astype(np.uint8)
+
+
+class TestBelsoRagyogasMaszk:
+    """#3827: a maszk bitre egyezik a kibővített pufferes újralevezetéssel
+    (a mi utunk konstans 255-ös peremmel és oszlop-egyedítéssel számol)."""
+
+    @pytest.mark.parametrize(
+        "magas,szeles,bx,by",
+        [
+            (40, 60, 9.6, 9.6),
+            (61, 47, 33.33, 20.5),
+            (120, 180, 64.0, 70.7),
+            (7, 5, 30.0, 30.0),
+            (200, 90, 253.0, 120.25),
+            (30, 30, 1.0, 0.0),
+        ],
+    )
+    def test_bitre_egyezik_a_referenciaval(self, magas, szeles, bx, by):
+        sajat = br.ragyogas_maszk(magas, szeles, bx, by)
+        np.testing.assert_array_equal(sajat, _referencia_maszk(magas, szeles, bx, by))
+
+    def test_a_suly_8_8_as_fixpont(self):
+        maszk = np.array([[0, 100, 180, 255]], dtype=np.uint8)
+        # csonk(1,4·256) = 358: 100·358 >> 8 = 139, 180·358 >> 8 = 251, 255 → 255
+        np.testing.assert_array_equal(br.ragyogas_suly(maszk, 1.4), [[0, 139, 251, 255]])
+        np.testing.assert_array_equal(br.ragyogas_suly(maszk, 1.0), maszk)
+
+
+class TestResizeColumnPlane:
+    """#3827: a tömör oszlopalakú átméretezés bitre a `resize_plane`-t adja."""
+
+    @pytest.mark.parametrize(
+        "magas,szeles,cel_w,cel_h",
+        [(50, 70, 131, 97), (50, 70, 70, 97), (50, 70, 40, 30), (61, 83, 100, 61), (5, 7, 400, 300)],
+    )
+    def test_bitre_egyezik(self, magas, szeles, cel_w, cel_h):
+        rng = np.random.default_rng(magas * szeles)
+        oszlopok = rng.integers(0, 256, size=(magas, 6), dtype=np.uint8)
+        vissza = np.sort(rng.integers(0, 6, size=szeles))
+        teljes = oszlopok[:, vissza]
+        np.testing.assert_array_equal(
+            g.resize_column_plane(oszlopok, vissza, cel_w, cel_h),
+            g.resize_plane(teljes, cel_w, cel_h),
+        )
+
+
 class TestInnerGlow:
     def test_alfa_nulla_valtozatlan(self, image):
-        result = g.inner_glow(image, (0, 0, 0), 5.0, 5.0, 1.4, alpha=0.0)
+        result = br.inner_glow(image, (0, 0, 0), 10.0, 10.0, 1.4, alpha=0.0)
         np.testing.assert_array_equal(result, image)
 
-    def test_pozitiv_alfa_valtoztat(self, image):
-        result = g.inner_glow(image, (0, 0, 0), 5.0, 5.0, 1.4, alpha=1.0)
-        assert not np.array_equal(result, image)
+    def test_nulla_blur_azonossag(self, image):
+        np.testing.assert_array_equal(br.inner_glow(image, (0, 0, 0), 0.0, 0.0, 2.0), image)
 
     def test_szelek_sotetebbek_feher_alapon(self):
         white = np.full((40, 60, 3), 255, dtype=np.uint8)
-        result = g.inner_glow(white, (0, 0, 0), 6.0, 6.0, 1.4, alpha=1.0)
+        result = br.inner_glow(white, (0, 0, 0), 12.0, 12.0, 1.4)
         assert int(result[0, 30, 0]) < int(result[20, 30, 0])
 
-    @pytest.mark.parametrize("sigma", [5.0, 20.0, 60.0])
-    def test_kis_szigmanal_a_kozeppont_sulya_kozel_nulla(self, sigma):
-        """#522: az analitikus modellben (a #509 min-max normálásának
-        felváltása) a középpont súlya akkor tart nullához, ha σ jóval
-        kisebb a kép méreténél — ez a VALÓS üzemi tartomány (a
-        `clamp_glow_radius` 255-re vágja σ-t, a fényképek pedig ennél
-        nagyságrendekkel nagyobbak, ld. `TestAnalyticWeightMapProperties`).
-        Ezen a 600×800-as képen az 5–60 tartomány σ << méret."""
+    def test_teljes_felbontasu_ag_kepletre(self):
+        """`p < 33,33`: `((256 − e)·S + e·G) >> 8`, a maszk a teljes képen."""
+        rng = np.random.default_rng(3)
+        kep = rng.integers(0, 256, size=(50, 70, 3), dtype=np.uint8)
+        e = br.ragyogas_suly(_referencia_maszk(50, 70, 9.6, 9.6), 1.3).astype(np.int64)[..., None]
+        vart = ((256 - e) * kep.astype(np.int64)) >> 8
+        np.testing.assert_array_equal(br.inner_glow(kep, (0, 0, 0), 9.6, 9.6, 1.3), vart)
+
+    def test_blend_alpha_a_lanc_keverojevel(self):
+        """MuseumMatte: `k′ = csonk(α·256) − 1`, `(be·(255 − k′) + t·k′) >> 8`."""
+        rng = np.random.default_rng(4)
+        kep = rng.integers(0, 256, size=(40, 40, 3), dtype=np.uint8)
+        teljes = br.inner_glow(kep, (0, 0, 0), 9.6, 9.6, 1.3).astype(np.int64)
+        k = 178  # csonk(0,7·256) − 1
+        vart = (kep.astype(np.int64) * (255 - k) + teljes * k) >> 8
+        np.testing.assert_array_equal(br.inner_glow(kep, (0, 0, 0), 9.6, 9.6, 1.3, alpha=0.7), vart)
+
+    def test_lekicsinyitett_ag_kepletre(self):
+        """`p ≥ 33,33`: a súly a `csonk(f·W) × csonk(f·H)` pufferben, Mitchell-
+        nagyítás, `⌊(G·a + S·(255 − a)) / 255⌋`."""
+        rng = np.random.default_rng(5)
+        kep = rng.integers(0, 256, size=(320, 480, 3), dtype=np.uint8)
+        p = 35 * 0.02 * 480 / 4  # 84: a Vignette alap
+        f = np.float32(br.blur_atvalto(p, 480.0))
+        assert f < 1.0
+        kis_w, kis_h = int(np.float32(f * np.float32(480))), int(np.float32(f * np.float32(320)))
+        b = float(np.float32(f * np.float32(p)))
+        a = br.ragyogas_suly(_referencia_maszk(kis_h, kis_w, b, b), 1.4)
+        nagy = g.resize_plane(a, 480, 320).astype(np.int64)[..., None]
+        vart = (255 * nagy + kep.astype(np.int64) * (255 - nagy)) // 255
+        np.testing.assert_array_equal(br.inner_glow(kep, (255, 255, 255), p, p, 1.4), vart)
+
+    def test_nagy_kepen_a_szel_sotetebb_a_kozepnel(self):
+        """A Lomo 800 képpontos képen: a lekicsinyített ágon a ragyogás a
+        közepet is érinti, de a szél a legsötétebb, és a kép nem fekszik be."""
         white = np.full((600, 800, 3), 255, dtype=np.uint8)
-        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.1, alpha=1.0)
-        center = result[300, 400]
-        assert center.astype(np.float64).mean() > 250.0
-
-    @pytest.mark.parametrize("sigma", [140.0, 280.0])
-    def test_nagy_szigmanal_a_kozep_is_erintve_analitikus_modellben(self, sigma):
-        """#522: ELTÉRÉS a korábbi (#504-es) teszttől — SZÁNDÉKOSAN.
-
-        A #509-es min-max modell ezen a 600×800-as képen MESTERSÉGESEN
-        ~0-n tartotta a közép súlyát FÜGGETLENÜL σ-tól (a saját min/maxára
-        nyújtott) — ez volt pontosan a #522 jegyben megnevezett hiba: a σ
-        nem csak az ALAKOT, hanem tévesen a MÉLYSÉGET is befolyásolta. Az
-        analitikus modellben, ha σ összemérhető a kép méretével, a közép
-        LEGITIM módon kap ragyogást — ez a valódi fizika, amit a
-        referencia-mérés igazol (Holga-eltérés 31,64→14,19, Lomo-eltérés
-        14,63→8,55, ld. a PR-jelentést). A teszt csak azt várja el, hogy a
-        hatás MÉRHETŐ (nem nullázott mesterségesen), és σ növelésével nő.
-        """
-        white = np.full((600, 800, 3), 255, dtype=np.uint8)
-        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.1, alpha=1.0)
-        center = result[300, 400].astype(np.float64).mean()
-        assert center < 250.0
-
-    def test_nagy_szigmanal_a_kozep_hatasa_no_sigmaval(self):
-        """#522: a 140→280 σ-emelés a fenti (600×800-as, összemérhető méretű)
-        képen ERŐSÍTI a közép-hatást — ez a valódi, renormalizálatlan
-        mélység-viselkedés."""
-        white = np.full((600, 800, 3), 255, dtype=np.uint8)
-        center_140 = g.inner_glow(white, (0, 0, 0), 140.0, 140.0, 1.1, alpha=1.0)[300, 400].mean()
-        center_280 = g.inner_glow(white, (0, 0, 0), 280.0, 280.0, 1.1, alpha=1.0)[300, 400].mean()
-        assert center_280 < center_140
-
-    def test_nagy_kepen_sem_feketedik_be_a_kozep(self):
-        """A #504 jelentés konkrét mérete (800×600) valódi zajképen."""
-        rng = np.random.default_rng(7)
-        img = rng.integers(20, 235, size=(600, 800, 3), dtype=np.uint8)
-        radius = 35.0 * 0.02 * max(img.shape[:2]) / 2.0  # apply_lomo sugara ~280
-        result = g.inner_glow(img, (0, 0, 0), radius, radius, 1.1, alpha=1.0)
-        assert result.mean() > 20.0
-
-
-class TestAnalyticWeightMapProperties:
-    """#522: az analitikus súlytérkép (`covered = ay·ax`, `weight =
-    (1−covered)·strength`) ELVÁRT tulajdonságai VALÓS fényképméretű
-    (2560×1702, a referencia-fotó mérete) képen, a `GLOW_RADIUS_MAX`-ig
-    (255) terjedő TETSZŐLEGES σ-ra — ezt a #509-es min-max normálás NEM
-    tudta garantálni (a saját min/maxára nyújtott, ami σ-tól függően
-    torzította a tényleges mélységet)."""
-
-    _HEIGHT, _WIDTH = 1702, 2560
-
-    @pytest.mark.parametrize("sigma", [1.0, 10.0, 50.0, 100.0, 200.0, 255.0])
-    def test_kozeppont_sulya_kozel_nulla_barmely_korlatozott_sigmara(self, sigma):
-        white = np.full((self._HEIGHT, self._WIDTH, 3), 255, dtype=np.uint8)
-        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.4, alpha=1.0)
-        center = result[self._HEIGHT // 2, self._WIDTH // 2].astype(np.float64).mean()
-        assert center > 245.0, f"σ={sigma}: közép={center:.1f}, várt >245"
-
-    @pytest.mark.parametrize("sigma", [1.0, 10.0, 50.0, 100.0, 200.0, 255.0])
-    def test_szel_sulya_szigoruan_nagyobb_mint_a_kozepe(self, sigma):
-        white = np.full((self._HEIGHT, self._WIDTH, 3), 255, dtype=np.uint8)
-        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.4, alpha=1.0)
-        edge = float(result[0, self._WIDTH // 2, 0])
-        center = float(result[self._HEIGHT // 2, self._WIDTH // 2, 0])
-        assert edge <= center
-
-    def test_szel_sulya_monoton_kozeliti_a_strengtht_sigma_novelesevel(self):
-        """A σ növelésével a szél EGYRE SÖTÉTEBB (a `strength`-hez egyre
-        közelebbi VALÓDI mélységet kap) — ez a renormalizálatlan mélység-
-        hatás, amit a min-max modell elfedett (ott a szél súlya σ-tól
-        gyakorlatilag függetlenül ~1-re volt nyújtva)."""
-        white = np.full((self._HEIGHT, self._WIDTH, 3), 255, dtype=np.uint8)
-        strength = 1.4
-        sigmas = [1.0, 20.0, 80.0, 150.0, 255.0]
-        edges = [
-            float(g.inner_glow(white, (0, 0, 0), s, s, strength, alpha=1.0)[0, self._WIDTH // 2, 0])
-            for s in sigmas
-        ]
-        assert edges == sorted(edges, reverse=True)
-
-
-class TestGlowSigma:
-    """#3158: a `filterdesc` blur-értéke ÁTMÉRŐ, a Gauss-σ a FELE.
-
-    Ez váltotta le a #504 közös, 255-ös korlátját. A korlát a hiányzó
-    felezést pótolta. A `referencia/lomo` és `referencia/holga` készleten,
-    mindkét effekt SAJÁT alapértékeivel mérve a felezés a Lomo ΔE-jét
-    9,09-ról **1,94**-re, a Holgáét 1,95-ről **1,12**-re viszi; a
-    nullátmenet a Lomón 0,625 → **0,405**, a Holgán 0,435 → **0,425** — a
-    referenciáé 0,425. A `Vignette` FÜGGETLENÜL ugyanezt adta (#518): a leíró
-    `/4`-et ad, a legjobb illesztés a képlet `/8`-a.
-    """
-
-    def test_a_szigma_a_blur_FELE(self):
-        assert g.glow_sigma(896.0) == 448.0
-        assert g.glow_sigma(0.0) == 0.0
-
-    def test_nagy_kepen_NINCS_vagas(self):
-        """A Lomo képlete egy 4000×3000-es fotón 1400 — a σ ennek a fele.
-
-        A régi modell itt 255-re vágott; a mérés szerint az a Lomo σ-ját
-        (448 a referencia-képen) levágva mérhetően rosszabb képet adott.
-        """
-        height, width = 3000, 4000
-        keplet = 35.0 * 0.02 * max(height, width) / 2.0
-        assert g.glow_sigma(keplet) == pytest.approx(keplet / 2.0)
-        assert g.glow_sigma(keplet) > 255.0
-
-    def test_kis_kepen_ugyanaz_a_SZABALY(self):
-        """A felezés méretfüggetlen — nincs tartomány, ahol más szabály él."""
-        height, width = 72, 96
-        keplet = 35.0 * 0.02 * max(height, width) / 2.0
-        assert g.glow_sigma(keplet) == pytest.approx(keplet / 2.0)
-
-
-class TestGlowSigmaTengelyenkent:
-    """A Holga anizotrop sugarai (`0,5·R` és `0,4·R`) megtartják az ARÁNYT.
-
-    ⚠️ Ez MEGFORDÍTJA a #504 egyik részállítását. Ott a referencia
-    illesztése a `255/255` párt hozta ki jobbnak (RMS 0,112) az arányt
-    megtartó `255/204`-nél (0,137) — de MINDKETTŐ a hibás (felezés nélküli)
-    modellen belül. A #3158 végponttól végpontig mért összevetése a teljes
-    láncon a felezést hozza ki jobbnak (Holga ΔE 13,89 → 12,01), és ott az
-    arány a leíróé marad: 320/256 = 0,8.
-    """
-
-    def test_a_ket_tengely_aranya_a_LEIROE(self):
-        outer_r = max(2560, 1702) / 2.0
-        xblur = g.glow_sigma(0.5 * outer_r)
-        yblur = g.glow_sigma(0.4 * outer_r)
-        assert xblur == pytest.approx(320.0)
-        assert yblur == pytest.approx(256.0)
-        assert yblur / xblur == pytest.approx(0.8)
+        p = 35.0 * 0.02 * 800 / 2.0  # a Lomo xblur-je
+        result = br.inner_glow(white, (0, 0, 0), p, p, 1.1)[..., 0].astype(int)
+        assert result[0, 0] < result[0, 400] < result[300, 400]
+        assert result[300, 400] > 200
 
 
 class TestBwTint:

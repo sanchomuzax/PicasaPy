@@ -39,8 +39,8 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import curve_lut, validate_image
-from picasapy.render.glimmer_ops import inner_glow
-from picasapy.render.glimmer_tone import vignette_radius
+from picasapy.render.belso_ragyogas import inner_glow
+from picasapy.render.glimmer_tone import VIGNETTE_XBLUR_FACTOR
 from picasapy.render.halftone import dot_size_for, native_dot_mask
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
@@ -302,7 +302,7 @@ def apply_comicize(
        a. **fekete belső ragyogás** (788. sor: `GlowImageOperation color="0"
           innerglow="true" strength="1.1" quality="3"`,
           `xblur = yblur = 35·0,02·max(W,H)/2` — ez a `Vignette`
-          `Blur = 70`-es sugara, `glimmer_tone.vignette_radius`);
+          `Blur = 70`-es láncával egyezik, a natív `belso_ragyogas.inner_glow`);
        b. `AdjustCurves` a `DotContrast` ötpontos görbéjével
           (`comicize_master_curve`);
        c. két ág, a második fél csempével eltolva (793. és 807. sor): saját
@@ -350,10 +350,10 @@ def apply_comicize(
     darkened = np.minimum(image_f, blurred)
 
     # 2a. a blokkot nyitó fekete belső ragyogás (788. sor)
-    sugar = vignette_radius(_COMICIZE_GLOW_BLUR, width, height)
+    xblur = _COMICIZE_GLOW_BLUR * VIGNETTE_XBLUR_FACTOR * max(width, height)
     glowed = inner_glow(
         np.clip(np.rint(darkened), 0.0, 255.0).astype(np.uint8),
-        (0, 0, 0), sugar, sugar, _COMICIZE_GLOW_STRENGTH, alpha=1.0,
+        (0, 0, 0), xblur, xblur, _COMICIZE_GLOW_STRENGTH,
     )
 
     # 2b. a DotContrast-görbe — LUT-indexeléssel (#2477: a natív művelet 8

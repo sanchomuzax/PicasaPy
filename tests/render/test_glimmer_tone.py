@@ -363,3 +363,80 @@ def test_hdr_golden_a_picasa_exporthoz(eset: str, lanc: str, vart_de: float) -> 
     kep = apply_filters(load(forras_ut), parse_filters(lanc)).image
     de = mean_de(kep, load(export_ut))
     assert de <= vart_de + _HDR_TURES, f"{eset}: ΔE {de:.3f} > {vart_de + _HDR_TURES:.3f}"
+
+
+# ---------------------------------------------------------------------------
+# #3827 — a belső ragyogás natív lánca, golden a 684-es készleten (fejlesztői
+# gépen; ha a készlet nincs meg, skip). Mérve (CIE76 átlag-ΔE a Picasa-
+# exporthoz, `analyze_validation_kit.mean_de`):
+#
+# | eset               | előtte (erf-modell) | utána (natív lánc) |
+# |--------------------|--------------------:|-------------------:|
+# | Vignette alap      | 0,585 | 0,169 |
+# | Matte alap         | 0,910 | 0,176 |
+# | MuseumMatte min    | 0,842 | 0,128 |
+# | MuseumMatte alap   | 0,773 | 0,230 |
+# | MuseumMatte max    | 0,645 | 0,287 |
+# | Lomo alap / min    | 0,453 / 0,442 | 0,289 / 0,280 |
+# | Holga alap / min   | 0,750 / 0,500 | 0,604 / 0,253 |
+# | NightVision alap / min | 4,595 / 3,663 | 4,528 / 3,624 |
+# | Comicize alap / max / min | 2,689 / 2,328 / 2,299 | 2,687 / 2,328 / 2,294 |
+#
+# A `Blur = 0` és a `Fade = 100` esetek (0,121) az újrakódolás zajszintje.
+# A küszöb a mért érték + 0,05, de legfeljebb a jegy felső korlátja
+# (Vignette, Matte, MuseumMatte), illetve a javítás előtti érték.
+# ---------------------------------------------------------------------------
+
+# rontás-kontroll: a súly 255-ös vágása elhagyva → 1 failed a
+# `test_glimmer_ops.py`-ban (8.8-as súly) és 2 golden;
+# a maszk 255-ös pereme elhagyva (a puffer = a kép) → 7 + 13 failed; a
+# Mitchell-nagyítás helyett doboz → 4 + 7 failed; a MuseumMatte második
+# blurja a gyűrűs kép méretéből → 2 golden (MuseumMatte alap, max).
+# ⚠️ A perem-pótlás 255 → a szélső érték ismétlése NEM mutáció: a puffer
+# szélén a maszk mindig 255, a kettő ott azonos (lefuttatva: 0 failed).
+
+_GLOW_TURES = 0.05
+
+#: (eset, lánc, mért ΔE a javítás után, a küszöb felső korlátja)
+_GLOW_GOLDEN = [
+    ("vignette__alap", "Vignette=1,35,1.400000,0,00000000;", 0.169, 0.3),
+    ("vignette__min", "Vignette=1,0,1.000000,0,00000000;", 0.121, 0.122),
+    ("matte__alap", "Matte=1,40.000000,1.200000,0.000000,00ffffff;", 0.176, 0.3),
+    ("matte__min", "Matte=1,0.000000,1.000000,0.000000,00ffffff;", 0.121, 0.122),
+    ("museummatte__min", "MuseumMatte=1,0.000000,0.000000,001a0e03,00f0eae4;", 0.128, 0.15),
+    ("museummatte__alap", "MuseumMatte=1,25.000000,40.000000,001a0e03,00f0eae4;", 0.230, 0.25),
+    ("museummatte__max", "MuseumMatte=1,100.000000,100.000000,001a0e03,00f0eae4;", 0.287, 0.3),
+    ("lomo__alap", "Lomo=1,50.000000,0.000000;", 0.289, 0.453),
+    ("lomo__min", "Lomo=1,0.000000,0.000000;", 0.280, 0.442),
+    ("holga__alap", "Holga=1,70.000000,30.000000,0.000000;", 0.604, 0.750),
+    ("holga__min", "Holga=1,0.000000,0.000000,0.000000;", 0.253, 0.500),
+    ("nightvision__alap", "NightVision=1,0.000000,0.000000,0.000000;", 4.528, 4.595),
+    ("nightvision__min", "NightVision=1,-50.000000,-50.000000,0.000000;", 3.624, 3.663),
+    ("comicize__alap", "Comicize=1,20.000000,50.000000,50.000000;", 2.687, 2.690),
+    ("comicize__max", "Comicize=1,100.000000,100.000000,100.000000;", 2.328, 2.329),
+    ("comicize__min", "Comicize=1,0.000000,0.000000,0.000000;", 2.294, 2.300),
+]
+
+
+@pytest.mark.parametrize(
+    ("eset", "lanc", "mert_de", "korlat"), _GLOW_GOLDEN, ids=[e[0] for e in _GLOW_GOLDEN]
+)
+def test_belso_ragyogas_golden_a_picasa_exporthoz(
+    eset: str, lanc: str, mert_de: float, korlat: float
+) -> None:
+    forras_ut = _KIT_684 / f"{eset}.jpg"
+    export_ut = _KIT_684 / "export" / f"{eset}.jpg"
+    if not export_ut.is_file():
+        pytest.skip(f"a mérőkészlet nem elérhető: {export_ut}")
+    utvonal = str(Path(__file__).resolve().parents[2] / "tools" / "golden")
+    if utvonal not in sys.path:
+        sys.path.insert(0, utvonal)
+    from analyze_validation_kit import load, mean_de
+
+    from picasapy.ini.filters import parse_filters
+    from picasapy.render.chain import apply_filters
+
+    kep = apply_filters(load(forras_ut), parse_filters(lanc)).image
+    kuszob = min(mert_de + _GLOW_TURES, korlat)
+    de = mean_de(kep, load(export_ut))
+    assert de <= kuszob, f"{eset}: ΔE {de:.3f} > {kuszob:.3f}"

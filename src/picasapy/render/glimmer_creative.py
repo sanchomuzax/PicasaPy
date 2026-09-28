@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from picasapy.render.belso_ragyogas import inner_glow
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_edges import edge_detection_b
 from picasapy.render.glimmer_frame_ops import add_border_sides
@@ -29,9 +30,7 @@ from picasapy.render.glimmer_ops import (
     autofix,
     bw_tint,
     circular_gradient_mask,
-    glow_sigma,
     fade_alpha,
-    inner_glow,
     masked_blend,
     resize_image,
     simple_color_matrix,
@@ -144,14 +143,7 @@ def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.
     outer_r = max(height, width) / 2.0
     mask = circular_gradient_mask(height, width, outer_r * 0.9, outer_r * (2.0 - blur / 100.0))
     fixed = autofix(image)
-    glowed = inner_glow(
-        fixed,
-        (0, 0, 0),
-        glow_sigma(0.5 * outer_r),
-        glow_sigma(0.4 * outer_r),
-        1.4,
-        alpha=1.0,
-    )
+    glowed = inner_glow(fixed, (0, 0, 0), 0.5 * outer_r, 0.4 * outer_r, 1.4)
     blurred = to_float(blur_image_operation(glowed, 18.0, 20.0, quality=3))
     masked = to_uint8(masked_blend(to_float(glowed), blurred, mask))
     tinted = bw_tint(masked, (255, 102, 102))
@@ -173,8 +165,8 @@ def apply_lomo(image, blur: float = 50.0, fade: float = 0.0):
     height, width = image.shape[:2]
     outer_r = max(height, width) / 2.0
     mask = circular_gradient_mask(height, width, outer_r * 0.5, outer_r * (2.0 - blur / 100.0))
-    radius = glow_sigma(35.0 * 0.02 * max(height, width) / 2.0)
-    glowed = inner_glow(image, (0, 0, 0), radius, radius, 1.1, alpha=1.0)
+    xblur = 35.0 * 0.02 * max(height, width) / 2.0
+    glowed = inner_glow(image, (0, 0, 0), xblur, xblur, 1.1)
     blurred = to_float(blur_image_operation(glowed, 20.0, 20.0, quality=3))
     masked = to_uint8(masked_blend(to_float(glowed), blurred, mask))
     matrixed = simple_color_matrix(masked, brightness=5.0, contrast=35.0, saturation=20.0)
