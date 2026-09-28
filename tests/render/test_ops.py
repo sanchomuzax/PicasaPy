@@ -3,6 +3,10 @@ fájl-IO nélkül, determinisztikus asszertekkel."""
 
 from __future__ import annotations
 
+import math
+import sys
+from pathlib import Path
+
 import cv2
 import numpy as np
 import pytest
@@ -23,6 +27,8 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
     count_redeye_spots,
+    tilt_matrix,
+    tilt_scale,
 )
 from tests.support.realistic_photo import make_realistic_photo
 
@@ -79,22 +85,160 @@ class TestApplyCrop:
         np.testing.assert_array_equal(result, image)
 
 
+# rontás-kontroll (#3846): az `apply_tilt` a régi OpenCV-úttal
+# (`getRotationMatrix2D` + `warpAffine`) → itt 4 failed, a
+# `test_op_geometria_3229.py`-ban 2; a `tilt_matrix` képpontközép nélkül
+# (`W/2 − 0,5`) → 5 failed; helyes mátrix, de `cv2.INTER_LINEAR` a fixpontos
+# mintavevő helyett → 4 failed (a közös mintavevő próbája, a gyors út
+# „nem azonos a natívval” feltétele és a két golden);
+# skála nélkül (`s = 1`) → 3 failed; az `op_geometry` képpontközép-átváltás
+# nélkül → 2 failed a `test_op_geometria_3229.py`-ban. A lánc a gyors-előnézet
+# jelzőjét figyelmen kívül hagyva (mindig natív) → 1 failed itt és 1 a
+# `tests/app/test_edit_controller.py`-ban. Ellenőrizve lefuttatva.
+
+
 class TestApplyTilt:
-    def test_nulla_szog_identitas_meret(self) -> None:
+    """#3846: a Kiegyenesítés a natív úton (`0x0090a720`) forgat — cél →
+    forrás `M = T(W/2, H/2) · R(θ) · S(s) · T(−W/2, −H/2)`, a képpont KÖZEPÉT
+    vetíti vissza, és a Polaroiddal közös 16.16 fixpontos bilineáris
+    mintavevő (`0x009e7060`) mintáz. Spec: `docs/specs/filters-decoded.md`,
+    „`tilt` — a natív út kiolvasva”."""
+
+    def test_nulla_szognel_a_kep_valtozatlan(self) -> None:
         image = _gradient_image()
-        result = apply_tilt(image, angle=0.0, scale=1.0)
-        assert result.shape == image.shape
+        np.testing.assert_array_equal(apply_tilt(image, angle=0.0), image)
 
     def test_kimenet_merete_megegyezik_bemenettel(self) -> None:
         image = _gradient_image(width=30, height=15)
-        result = apply_tilt(image, angle=0.2, scale=1.1)
-        assert result.shape == image.shape
+        assert apply_tilt(image, angle=0.2).shape == image.shape
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _gradient_image()
         original = image.copy()
-        apply_tilt(image, angle=0.3, scale=1.0)
+        apply_tilt(image, angle=0.3)
         np.testing.assert_array_equal(image, original)
+
+    def test_a_jegy_szampeldaja_960x640_p1(self) -> None:
+        """A jegy és a spec számpéldája: `s = 0,782429`, `M` első sora
+        `[0,766833, −0,155445, 161,6625]`."""
+        assert tilt_scale(960, 640, 0.2) == pytest.approx(0.782429, abs=1e-6)
+        m0, m1, m2, m3, m4, m5 = tilt_matrix(960, 640, 0.2)
+        assert (m0, m1, m2) == pytest.approx((0.766833, -0.155445, 161.6625), abs=1e-4)
+        assert (m3, m4, m5) == pytest.approx((0.155445, 0.766833, 0.0), abs=1e-3)
+
+    def test_a_kozeppont_helyben_marad(self) -> None:
+        """A kép közepe (képpontközepes koordinátában `W/2`, `H/2`) fix pont."""
+        m0, m1, m2, m3, m4, m5 = tilt_matrix(301, 200, -0.17)
+        assert m0 * 150.5 + m1 * 100.0 + m2 == pytest.approx(150.5)
+        assert m3 * 150.5 + m4 * 100.0 + m5 == pytest.approx(100.0)
+
+    @pytest.mark.parametrize(("szeles", "magas"), [(960, 640), (640, 960), (500, 500)])
+    def test_a_skala_a_sarkok_kepletet_koveti(self, szeles, magas) -> None:
+        """`s = min(1, min_sarok(W/2 / |x′|, H/2 / |y′|))`, a `(W/2, ±H/2)`
+        sarkokat `R(θ)`-val forgatva — álló és négyzetes képre, mindkét
+        szögirányra."""
+        for szog in (0.2, -0.2, 0.05):
+            c, s = math.cos(szog), math.sin(szog)
+            varhato = 1.0
+            for sy in (1.0, -1.0):
+                x, y = szeles / 2.0, sy * magas / 2.0
+                xr, yr = c * x - s * y, s * x + c * y
+                varhato = min(varhato, szeles / 2.0 / abs(xr), magas / 2.0 / abs(yr))
+            assert tilt_scale(szeles, magas, szog) == pytest.approx(varhato, rel=1e-12)
+        assert tilt_scale(szeles, magas, 0.0) == 1.0
+
+    def test_a_polaroiddal_kozos_fixpontos_mintavevot_hasznalja(self) -> None:
+        """Képpontra ugyanaz, mint a `fixpontos_bilinearis` a natív
+        mátrixszal — nem saját mintavevő."""
+        from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
+
+        rng = np.random.default_rng(3846)
+        image = rng.integers(0, 256, (48, 64, 3), dtype=np.uint8)
+        varhato = fixpontos_bilinearis(image, tilt_matrix(64, 48, 0.2), 64, 48, (0, 0, 0))
+        np.testing.assert_array_equal(apply_tilt(image, angle=0.2), varhato)
+
+    def test_a_gyors_elonezeti_ut_ugyanazt_a_matrixot_hasznalja(self) -> None:
+        """A húzás közbeni gyors út: a képpontközepes mátrix képpont-indexre
+        váltva, `cv2.INTER_LINEAR`-rel — nem a régi OpenCV-középpont."""
+        rng = np.random.default_rng(38460)
+        image = rng.integers(0, 256, (48, 64, 3), dtype=np.uint8)
+        m0, m1, m2, m3, m4, m5 = tilt_matrix(64, 48, 0.2)
+        index = np.array(
+            [[m0, m1, m2 + 0.5 * (m0 + m1) - 0.5], [m3, m4, m5 + 0.5 * (m3 + m4) - 0.5]]
+        )
+        varhato = cv2.warpAffine(
+            image, index, (64, 48), flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
+            borderMode=cv2.BORDER_REPLICATE,
+        )
+        gyors = apply_tilt(image, angle=0.2, gyors=True)
+        np.testing.assert_array_equal(gyors, varhato)
+        assert not np.array_equal(gyors, apply_tilt(image, angle=0.2))
+
+    def test_a_lanc_csak_a_gyors_elonezet_blokkban_valt_gyors_utra(self) -> None:
+        from picasapy.ini.filters import FilterOp
+        from picasapy.render.chain import apply_filters
+        from picasapy.render.elonezeti_arany import gyors_elonezet
+
+        rng = np.random.default_rng(3847)
+        image = rng.integers(0, 256, (40, 60, 3), dtype=np.uint8)
+        lanc = (FilterOp("tilt", ("1", "1.0", "0")),)
+        with gyors_elonezet():
+            elo = apply_filters(image, lanc).image
+        mentett = apply_filters(image, lanc).image
+        np.testing.assert_array_equal(elo, apply_tilt(image, angle=0.2, gyors=True))
+        np.testing.assert_array_equal(mentett, apply_tilt(image, angle=0.2))
+
+    def test_fel_kepponttal_sem_csuszik_el(self) -> None:
+        """A középső 2 × 2-es blokk súlypontja a forgatás után is a kép
+        közepén marad (az OpenCV-sarokkonvenció fél képponttal elvitte)."""
+        image = np.zeros((40, 60, 3), dtype=np.uint8)
+        image[19:21, 29:31] = 200
+        kimenet = apply_tilt(image, angle=0.2).astype(np.float64)[:, :, 0]
+        sorok, oszlopok = np.nonzero(kimenet)
+        suly = kimenet[sorok, oszlopok]
+        assert (oszlopok * suly).sum() / suly.sum() == pytest.approx(29.5, abs=0.05)
+        assert (sorok * suly).sum() / suly.sum() == pytest.approx(19.5, abs=0.05)
+
+
+# FEJLESZTŐI GÉPEN futó golden-mérés a valódi Picasa-exporttal (684-
+# merokeszlet), a `test_polaroid_irany_szin_3420.py` mintájára. Mérve
+# (`analyze_validation_kit.mean_de`, CIE76 átlag-ΔE; a zajszint ~0,19):
+#
+# | eset | a #3846 előtt | a #3846 után |
+# |---|---:|---:|
+# | tilt alap (`p = 0`) | 0,156 | 0,156 |
+# | tilt max (`p = 1`) | 0,920 | **0,244** |
+# | tilt min (`p = −1`) | 0,429 | **0,240** |
+#
+# A határ a mért érték + 0,05, de legfeljebb a jegy 0,26-os plafonja; az alap
+# nem romolhat (a javítás előtti érték + 0,01).
+_KIT_684 = Path("/mnt/nas/My Pictures/684-merokeszlet")
+_TILT_PLAFON = 0.26
+_TILT_GOLDEN = [
+    ("tilt alap", "tilt__alap.jpg", "tilt=1,0.000000,0.000000;", 0.156 + 0.01),
+    ("tilt max", "tilt__max.jpg", "tilt=1,1.000000,0.000000;", min(0.244 + 0.05, _TILT_PLAFON)),
+    ("tilt min", "tilt__min.jpg", "tilt=1,-1.000000,0.000000;", min(0.240 + 0.05, _TILT_PLAFON)),
+]
+
+
+@pytest.mark.skipif(not _KIT_684.is_dir(), reason="a 684-merokeszlet NAS-os mérőkészlet nem elérhető")
+@pytest.mark.parametrize(
+    ("cimke", "nev", "lanc", "hatar"), _TILT_GOLDEN, ids=[e[0] for e in _TILT_GOLDEN]
+)
+def test_tilt_golden_a_684_merokeszlettel(cimke, nev, lanc, hatar) -> None:
+    utvonal = str(Path(__file__).resolve().parents[2] / "tools" / "golden")
+    if utvonal not in sys.path:
+        sys.path.insert(0, utvonal)
+    from analyze_validation_kit import load, mean_de
+
+    from picasapy.ini.filters import parse_filters
+    from picasapy.render.chain import apply_filters
+
+    export = load(_KIT_684 / "export" / nev)
+    kep = apply_filters(load(_KIT_684 / nev), parse_filters(lanc)).image
+    assert kep.shape == export.shape
+    de = mean_de(kep, export)
+    assert de <= hatar, f"{cimke}: ΔE {de:.3f} > {hatar:.3f}"
 
 
 class TestApplyAutolight:

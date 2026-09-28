@@ -66,6 +66,7 @@ from picasapy.render.chain import (
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.registry import chain_flags
 from picasapy.render.registry import one_click_keys
+from picasapy.render.elonezeti_arany import gyors_elonezet
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
 from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_TEXT_FAMILY
@@ -2026,7 +2027,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         történik."""
         self._require_active()
         preview_session = self._session.set_tilt(param, 0.0)
-        self._register_preview(preview_session)
+        # #3846: húzás közben a gyors mintavevő (a natív 2560 px-en >10× lassabb); az
+        # elengedéskori `setTilt` már a natív úton renderel
+        with gyors_elonezet():
+            self._register_preview(preview_session)
         self._bump_revision()
 
     @Slot(float, float, float, float)

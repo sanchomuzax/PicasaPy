@@ -40,7 +40,6 @@ leképezés a kép HELYÉRŐL szól, nem a tartalmáról. Aki képpont-egyezést
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 
 from picasapy.ini.filters import FilterOp
@@ -156,30 +155,26 @@ def _crop_geometria(szelesseg: int, magassag: int, op: FilterOp) -> tuple[int, i
 def _tilt_geometria(szelesseg: int, magassag: int, op: FilterOp) -> tuple[int, int, Matrix]:
     """A `tilt` MÉRET-TARTÓ forgatás a kép közepe körül (`ops.apply_tilt`).
 
-    A `chain._apply_tilt_op` átalakítását tükrözzük, KONSTANST NEM DUPLIKÁLVA:
-    a szög `paraméter · _TILT_RADIANS_PER_UNIT`, és ha a skála 0 vagy hiányzik
-    (a Picasa 3.x jellemzően `0.000000`-t ír, #73), akkor a KITÖLTŐ skála
-    (`tilt_cover_scale`) — különben a megjósolt leképezés más lenne, mint amit
-    a lánc tényleg renderel.
+    KONSTANST ÉS KÉPLETET NEM DUPLIKÁLUNK: a szög a lánc
+    `_TILT_RADIANS_PER_UNIT`-ja, a mátrix a renderelő `ops.tilt_matrix`-a (a
+    2. paramétert egyik sem olvassa, #3846). Az a cél → forrás leképezés
+    KÉPPONTKÖZEPES koordinátában (`x + 0,5`); itt képpont-INDEXBEN kell,
+    ezért `G = T(−0,5) · M · T(0,5)`, és a forrás → kimenet ennek inverze.
     """
-    from picasapy.render.chain import _TILT_RADIANS_PER_UNIT, tilt_cover_scale
+    from picasapy.render.chain import _TILT_RADIANS_PER_UNIT
+    from picasapy.render.ops import tilt_matrix
 
     params = op.float_params()
     if not params:
         raise ValueError(f"A tilt szűrőnek legalább egy paramétere kell: {op}")
-    szog = params[0] * _TILT_RADIANS_PER_UNIT
-    if len(params) >= 2 and params[1] > 0:
-        skala = params[1]
-    else:
-        skala = tilt_cover_scale(szelesseg, magassag, szog)
-    kozep_x, kozep_y = szelesseg / 2.0, magassag / 2.0
-    alfa = math.cos(szog) * skala
-    beta = math.sin(szog) * skala
-    matrix: Matrix = (
-        (alfa, beta, (1.0 - alfa) * kozep_x - beta * kozep_y),
-        (-beta, alfa, beta * kozep_x + (1.0 - alfa) * kozep_y),
+    m0, m1, m2, m3, m4, m5 = tilt_matrix(
+        szelesseg, magassag, params[0] * _TILT_RADIANS_PER_UNIT
     )
-    return szelesseg, magassag, matrix
+    cel_forras: Matrix = (
+        (m0, m1, m2 + 0.5 * (m0 + m1) - 0.5),
+        (m3, m4, m5 + 0.5 * (m3 + m4) - 0.5),
+    )
+    return szelesseg, magassag, invertal(cel_forras)
 
 
 #: Kulcs → geometria-függvény. Ami NINCS benne, az egység-leképezést ad — és

@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import math
-
 import numpy as np
-import pytest
 
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import Rect64
 from picasapy.ini.retouch import RetouchPatch, build_retouch_op, build_retouch_patches_op
-from picasapy.render.chain import apply_filters, tilt_cover_scale
+from picasapy.render.chain import apply_filters
 from picasapy.render.color import apply_bw
-from picasapy.render.ops import apply_autocolor, apply_autolight, apply_crop
+from picasapy.render.ops import apply_autocolor, apply_autolight, apply_crop, apply_tilt
 from picasapy.render.retouch import apply_retouch, apply_retouch_patches
 from picasapy.render.tinting import apply_tint
 from picasapy.render.tone import apply_fill, apply_finetune2
@@ -24,17 +21,20 @@ def _gradient_image(width: int = 20, height: int = 10) -> np.ndarray:
     return np.stack([image, image, image], axis=-1).astype(np.uint8)
 
 
-class TestTiltCoverScale:
-    def test_nulla_szognel_egy(self) -> None:
-        assert tilt_cover_scale(100, 50, 0.0) == pytest.approx(1.0)
+class TestTiltLanc:
+    def test_a_szog_p_szer_0_2_radian(self) -> None:
+        """A lánc `θ = p · 0,2` radiánnal hívja az `apply_tilt`-et."""
+        image = np.random.default_rng(73).integers(0, 256, (30, 40, 3), dtype=np.uint8)
+        result, _ = apply_filters(image, (FilterOp("tilt", ("1", "0.5", "0")),))
+        np.testing.assert_array_equal(result, apply_tilt(image, angle=0.1))
 
-    def test_pozitiv_szognel_nagyobb_mint_egy(self) -> None:
-        assert tilt_cover_scale(100, 50, math.radians(10)) > 1.0
-
-    def test_negativ_szog_ugyanaz_mint_pozitiv(self) -> None:
-        pos = tilt_cover_scale(100, 60, math.radians(15))
-        neg = tilt_cover_scale(100, 60, math.radians(-15))
-        assert pos == pytest.approx(neg)
+    def test_a_masodik_parametert_a_nativ_ut_nem_olvassa(self) -> None:
+        """#3846: a natív visszahívás (`0x008f8810`) csak a szöget adja
+        tovább; a 2. mező (skála) akármi lehet, a kép ugyanaz."""
+        image = _gradient_image(width=40, height=30)
+        nulla, _ = apply_filters(image, (FilterOp("tilt", ("1", "0.7", "0.000000")),))
+        mas, _ = apply_filters(image, (FilterOp("tilt", ("1", "0.7", "1.300000")),))
+        np.testing.assert_array_equal(nulla, mas)
 
 
 class TestApplyFilters:

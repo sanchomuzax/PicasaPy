@@ -384,19 +384,30 @@ floatot (`p`). A munkavégző a `0x0090a720`:
 **Számpélda:** 960 × 640, `p = 1` → `θ` = 11,459°, `s` = 0,782429,
 `M = [[0,766833, −0,155445, 161,6625], [0,155445, 0,766833, ≈0]]`.
 
-**Nálunk** (`render/ops.py`, `apply_tilt`): `cv2.getRotationMatrix2D` a
-`(W/2, H/2)` középponttal, egész képpont-konvencióval — a képpontközép
-nélkül fél képpontot tol, és `cv2.INTER_LINEAR` a mintavevő.
+**Nálunk** (`render/ops.py`, #3846): a natív út. A `tilt_scale` a sarok-képlet
+(a 2. paramétert a lánc sem olvassa), a `tilt_matrix` a fenti `M`
+képpontközepes koordinátában, az `apply_tilt` pedig a Polaroiddal közös
+`fixpontos_bilinearis` mintavevővel forgat (`render/fixpontos_mintavevo.py`).
+A leképezés (`render/op_geometry.py`) ugyanebből a mátrixból számol,
+képpont-indexre átváltva. A javítás előtt `cv2.getRotationMatrix2D` volt a
+`(W/2, H/2)` középponttal, egész képpont-konvencióval — ez fél képpontot
+tolt —, és `cv2.INTER_LINEAR` a mintavevő.
+
+A szerkesztő csúszkájának HÚZÁSA közben (`EditController.previewTilt`, a
+`gyors_elonezet()` blokk) ugyanez a mátrix `cv2.INTER_LINEAR`-rel fut (ΔE
+0,28 a natív 0,24 helyett) — ez tartja az élő előnézetet a korábbi
+sebességen. Mentés, export, bélyegkép és az elengedés utáni kép a natív út.
 
 **Mérve** (684-es készlet, ΔE a Picasa-exporthoz):
 
-| eset | ma | képpontközepes mátrix, `cv2.INTER_LINEAR` | **natív (fixpontos bilineáris)** | zajszint |
+| eset | a #3846 előtt | képpontközepes mátrix, `cv2.INTER_LINEAR` | **natív (fixpontos bilineáris)** | zajszint |
 |---|---:|---:|---:|---:|
 | max (`p = 1`) | 0,920 | 0,282 | **0,244** | 0,194 |
 | min (`p = −1`) | 0,429 | 0,277 | **0,241** | 0,193 |
 | alap (`p = 0`) | 0,156 | 0,156 | — | 0,083 |
 
-Fejlesztés: #3846.
+Fejlesztés: #3846 — a megvalósítás a natív oszlopot adja (max 0,244,
+min 0,240, alap 0,156; golden: `tests/render/test_ops.py`).
 
 ### `unsharp` / `unsharp2` — MEGFEJTVE (közelítő modell)
 

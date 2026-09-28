@@ -129,6 +129,28 @@ class TestAzInverz:
         assert ia * x2 + ib * y2 + ic == pytest.approx(x, abs=1e-9)
         assert id_ * x2 + ie * y2 + if_ == pytest.approx(y, abs=1e-9)
 
+    @pytest.mark.parametrize("lanc", ["tilt=1,1.000000,0.000000;", "tilt=1,-0.6,1.3;"])
+    def test_a_tilt_lekepezese_tized_kepontra_pontos(self, lanc):
+        """#3846: a Kiegyenesítés képpontközepes mátrixszal forgat — a
+        leképezés ezt tized képpontra követi. A mérce a renderelt kimenet:
+        egy 3 × 3-as jelölő súlypontja vs. a mátrix (a #3809 mintája)."""
+        from picasapy.render.chain import apply_filters
+
+        magas, szeles = 300, 400
+        op = parse_filters(lanc)[0]
+        (a, b, c), (d, e, f) = op_geometria(op, szeles, magas).matrix
+        alap = np.full((magas, szeles, 3), 100, np.uint8)
+        nelkul = apply_filters(alap, (op,)).image.astype(np.int32)
+        for x, y in ((120, 80), (250, 200)):
+            kep = alap.copy()
+            kep[y - 1 : y + 2, x - 1 : x + 2] = 250
+            kimenet = apply_filters(kep, (op,)).image.astype(np.int32)
+            elteres = np.abs(kimenet - nelkul).sum(axis=2)
+            sorok, oszlopok = np.nonzero(elteres)
+            suly = elteres[sorok, oszlopok].astype(np.float64)
+            mert = ((oszlopok * suly).sum() / suly.sum(), (sorok * suly).sum() / suly.sum())
+            assert mert == pytest.approx((a * x + b * y + c, d * x + e * y + f), abs=0.1)
+
 
 class TestASzinmuveletekEgysegek:
     @pytest.mark.parametrize("nev", ["sepia", "bw", "warm", "sat", "contrast"])

@@ -16,6 +16,7 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image
+from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
 from picasapy.render.glimmer_ops import fade_alpha
 from picasapy.render.nativ_blur import nativ_blur_csatorna
 
@@ -326,49 +327,6 @@ def draw_drop_shadow(
     )
 
 
-#: A mintavevő (`0x009e7060`) 16.16 fixpontban lép; a forrás képpontközepét
-#: a `− 32767` (`add edx, 0xffff8001`) teszi az egész koordinátára.
-_FIX_EGY = 65536
-_FIX_FEL = 32767
-
-
-def _fixpontos_bilinearis(
-    image: np.ndarray, matrix: tuple[float, ...], cel_w: int, cel_h: int,
-    border_color: tuple[int, int, int],
-) -> np.ndarray:
-    """A natív forgató mintavevő (`0x009e7060`, #3809) vektorosan.
-
-    Soronként `U = fistp(u(x+0,5, y+0,5) · 65536) − 32767`, a lépés
-    `fistp(m0 · 65536)`; `ix = U >> 16`, `fx = (U >> 8) & 0xFF`. A súly 8
-    bites: `lerp(a, b, f) = a + floor((b − a)·f/256)`, előbb vízszintesen. A
-    perem egy képpontos sávjában a kilógó szomszéd a szélső képpont; azon
-    kívül a cél a `border_color` marad. (`fistp` = páros felé kerekítés,
-    mint az `np.rint`.)
-    """
-    m0, m1, m2, m3, m4, m5 = matrix
-    src_h, src_w = image.shape[:2]
-    sor = np.arange(cel_h, dtype=np.float64) + 0.5
-    oszlop = np.arange(cel_w, dtype=np.int64)
-    u0 = np.rint((m0 * 0.5 + m1 * sor + m2) * _FIX_EGY).astype(np.int64) - _FIX_FEL
-    v0 = np.rint((m3 * 0.5 + m4 * sor + m5) * _FIX_EGY).astype(np.int64) - _FIX_FEL
-    u = u0[:, None] + oszlop[None, :] * int(np.rint(m0 * _FIX_EGY))
-    v = v0[:, None] + oszlop[None, :] * int(np.rint(m3 * _FIX_EGY))
-    ix, iy = u >> 16, v >> 16
-    ervenyes = (ix >= -1) & (ix <= src_w - 1) & (iy >= -1) & (iy <= src_h - 1)
-    ix, iy = ix[ervenyes], iy[ervenyes]
-    fx = ((u[ervenyes] >> 8) & 0xFF)[:, None]
-    fy = ((v[ervenyes] >> 8) & 0xFF)[:, None]
-    x0, x1 = np.clip(ix, 0, src_w - 1), np.clip(ix + 1, 0, src_w - 1)
-    y0, y1 = np.clip(iy, 0, src_h - 1), np.clip(iy + 1, 0, src_h - 1)
-    forras = image.astype(np.int32)
-    fent = forras[y0, x0] + (((forras[y0, x1] - forras[y0, x0]) * fx) >> 8)
-    lent = forras[y1, x0] + (((forras[y1, x1] - forras[y1, x0]) * fx) >> 8)
-    cel = np.empty((cel_h, cel_w, image.shape[2]), dtype=image.dtype)
-    cel[:] = np.array(border_color, dtype=image.dtype)
-    cel[ervenyes] = (fent + (((lent - fent) * fy) >> 8)).astype(image.dtype)
-    return cel
-
-
 def rotate_with_pad(
     image: np.ndarray, angle_deg: float, border_color: tuple[int, int, int]
 ) -> np.ndarray:
@@ -387,7 +345,7 @@ def rotate_with_pad(
     #3809: a cél → forrás mátrix `T(sW/2, sH/2) · R · T(−dW/2, −dH/2)`
     (`0x00bc8060`), a képpont KÖZEPÉT vetíti vissza, tehát a forrás közepe
     pontosan a cél közepére esik. A mintavétel a natív 8 bites fixpontos
-    bilineáris (`_fixpontos_bilinearis`). A korábbi út (a kép `//2`-vel a
+    bilineáris (`fixpontos_mintavevo.fixpontos_bilinearis`). A korábbi út (a kép `//2`-vel a
     vászonra, majd OpenCV-sarok-konvenciós `warpAffine`) fél képpontokat
     tolt el, és a peremen a kitöltő színnel mosott össze.
     """
@@ -402,7 +360,7 @@ def rotate_with_pad(
         cos_a, sin_a, src_w / 2.0 - cos_a * cel_w / 2.0 - sin_a * cel_h / 2.0,
         -sin_a, cos_a, src_h / 2.0 + sin_a * cel_w / 2.0 - cos_a * cel_h / 2.0,
     )
-    return _fixpontos_bilinearis(image, matrix, cel_w, cel_h, border_color)
+    return fixpontos_bilinearis(image, matrix, cel_w, cel_h, border_color)
 
 
 __all__ = [

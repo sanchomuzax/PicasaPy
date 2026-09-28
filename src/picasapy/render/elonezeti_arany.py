@@ -13,6 +13,12 @@ jut el hozzájuk: a hívó (a szerkesztő előnézete) az `elonezeti_arany()`
 blokkban futtatja a láncot, a kezelők a `jelenlegi_arany()`-t olvassák. A
 `ContextVar` szálanként külön él, tehát a háttér-render (#546) sem látja a
 GUI-szál értékét.
+
+#3846: ugyanígy él a GYORS ÉLŐ-ELŐNÉZET jelzője. A szerkesztő a Kiegyenesítés
+csúszkájának HÚZÁSA közben (`EditController.previewTilt`) a `gyors_elonezet()`
+blokkban renderel; ilyenkor a tilt a natív fixpontos mintavevő helyett az
+OpenCV bilineárisával fut (ugyanazzal a képpontközepes mátrixszal). Mentés,
+export, bélyegkép és az elengedés utáni kép a blokkon KÍVÜL fut, tehát natív.
 """
 
 from __future__ import annotations
@@ -23,6 +29,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 
 _ARANY: ContextVar[float] = ContextVar("elonezeti_arany", default=1.0)
+_GYORS: ContextVar[bool] = ContextVar("gyors_elonezet", default=False)
 
 
 def jelenlegi_arany() -> float:
@@ -48,3 +55,18 @@ def skalazott_vastagsag(vastagsag: float) -> int:
     """A keret-vastagság a munkavászonra: `× arány`, majd csonkítás (az
     eredeti `fldcw`-vel váltott kerekítési módja)."""
     return max(0, math.trunc(vastagsag * jelenlegi_arany()))
+
+
+def gyors_elonezet_aktiv() -> bool:
+    """Csúszka-húzás közbeni gyors előnézet fut-e (#3846) — blokkon kívül nem."""
+    return _GYORS.get()
+
+
+@contextmanager
+def gyors_elonezet() -> Iterator[None]:
+    """A blokkban futó láncok a gyors előnézeti utat választhatják (#3846)."""
+    token = _GYORS.set(True)
+    try:
+        yield
+    finally:
+        _GYORS.reset(token)

@@ -7185,7 +7185,7 @@ változatlan (0,084 / 0,054 / 0,084). A fixpontos lerp tehát további
 | árnyék-eltolás | `floor(… + 0,001825)` | `math.floor(…)` (`glimmer_frame_ops.shadow_offset`) — minden DropShadow-ra |
 | Polaroid-vászon | unió: bal `11 − dx`, fent `11 − dy`, jobb `11 + dx`, lent `11 + dy` | `drop_shadow_padding` → `pads` (`glimmer_frames.apply_polaroid`) |
 | forgatás | a forrás közepe a cél közepére, képpontközéppel | ugyanez a mátrix (`glimmer_frame_ops.rotate_with_pad`) |
-| mintavevő | 8 bites súlyú bilineáris, `a + floor((b − a)·f/256)` | ugyanez (`glimmer_frame_ops._fixpontos_bilinearis`) |
+| mintavevő | 8 bites súlyú bilineáris, `a + floor((b − a)·f/256)` | ugyanez (`fixpontos_mintavevo.fixpontos_bilinearis`, #3846) |
 
 Fejlesztés: #3809.
 
