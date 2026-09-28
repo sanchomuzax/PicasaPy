@@ -195,8 +195,11 @@ Item {
                 from: sav.csuszkaMin
                 to: sav.csuszkaMax
                 onValueChanged: sav.csuszkaMozgott(toolCsuszka.value)
-                onPressedChanged: if (!toolCsuszka.pressed)
-                                      sav.csuszkaElengedve(toolCsuszka.value)
+                //: #3865: a véglegesítés a KÖZÖS `veglegesult` jelen megy —
+                //: az egérelengedéssel és a billentyűs léptetéssel egyaránt
+                //: tüzel (a `pressed`-re épülő korábbi kezelő a billentyűt
+                //: sosem érte el).
+                onVeglegesult: (ertek) => sav.csuszkaElengedve(ertek)
             }
         }
 
