@@ -20,6 +20,14 @@ Rectangle {
     // működött: a dia a nyers fájlnál maradt.
     property string displayMode: ""
     property int currentIndex: -1
+    //: #3881: a LÁTHATÓ kép útvonala — ezen keresztül követjük a modellt
+    //: (törlés, átrendezés), mert a nyers index a modell szerkezeti
+    //: változásakor (sor-eltolódás, teljes reset) mást jelenthet, mint
+    //: amit a felhasználó épp néz.
+    property string _currentFilePath: ""
+    //: igazra állítva az `onCurrentIndexChanged` nem indít átmenetet — a
+    //: `_modellKovetes` csendben igazítja az indexet ugyanarra a fájlra
+    property bool _resyncing: false
     //: #2992: a diaidő MÁSODPERCBEN, a sáv ± gombjaival állítható
     //: (`tpslabel`/`minusone`/`tps`/`plusone`). Az alapérték 3 — mérve
     //: (`SlideshowEffectTime`, `0x007facd3`). A hívó a vezérlőhöz köti,
@@ -157,6 +165,10 @@ Rectangle {
         var target = clampToPhoto(index)
         if (target < 0) return   // nincs vetíthető fotó
         currentIndex = target
+        //: #3881: azonos számra indítva az `onCurrentIndexChanged` nem fut
+        //: le — ha a modell közben (rejtve) változott, a követett útvonal
+        //: elavult volna, ezért itt mindig újraírjuk
+        show._kovetettUtFrissit()
         playing = true
         visible = true
         forceActiveFocus()
@@ -188,14 +200,102 @@ Rectangle {
     //: idegen képként". A mérés (három kép, két váltás): a második
     //: áttűnés kimenő képe az ELSŐ kép volt, pedig a MÁSODIKAT nézte.
     onCurrentIndexChanged: {
+        show._kovetettUtFrissit()
         var kimeno = slide.source
-        if (show.visible && kimeno !== "")
+        if (show.visible && kimeno !== "" && !show._resyncing)
             show._atmenetIndit(kimeno)
         show._diakBetolt()
     }
     onVisibleChanged: show._diakBetolt()
-    onPhotosModelChanged: show._diakBetolt()
+    onPhotosModelChanged: {
+        show._kovetettUtFrissit()
+        show._diakBetolt()
+    }
     onDisplayModeChanged: show._diakBetolt()
+
+    //: #3881: a látott kép útvonala a JELEN indexből
+    function _kovetettUtFrissit() {
+        show._currentFilePath = show.photosModel && show.currentIndex >= 0
+            ? show.photosModel.filePathAt(show.currentIndex) : ""
+    }
+
+    //: #3881: a modell szerkezeti jelére (sortörlés, teljes reset — pl.
+    //: átrendezés) a LÁTHATÓ képet követjük, nem a nyers indexet: a sorok
+    //: eltolódhatnak vagy átrendeződhetnek anélkül, hogy a nézett kép
+    //: megváltozna. A `layoutChanged`-et a `PhotoGridModel` nem küldi (az
+    //: átrendezés teljes reset), ezért arra nincs kezelő.
+    Connections {
+        target: show.photosModel
+        function onRowsRemoved(parent, first, last) {
+            show._sorokTorolve(first, last)
+        }
+        function onModelReset() { show._modellReset() }
+    }
+
+    //: az index CSENDBEN (átmenet nélkül) áll a megadott sorra
+    function _indexCsendben(index) {
+        show._resyncing = true
+        show.currentIndex = index
+        show._resyncing = false
+    }
+
+    //: kiürült lista: nincs látott kép, tehát a kilépés se jelöljön ki
+    //: nem létező sort (`exitSlideshow` a -1-et kihagyja)
+    function _uresListaLeall() {
+        show._indexCsendben(-1)
+        show.stop()
+    }
+
+    //: a törlés a jel argumentumaiból dől el, a lista bejárása nélkül
+    function _sorokTorolve(first, last) {
+        if (!show.visible || !show.photosModel) return
+        if (show.count() === 0) { show._uresListaLeall(); return }
+        var i = show.currentIndex
+        if (i < 0) return
+        if (last < i) {
+            show._indexCsendben(i - (last - first + 1))
+        } else if (first <= i) {
+            // a látott kép törlődött: a helyén a KÖVETKEZŐ áll, a lista
+            // végén — ahogy az `advance()` — körbe a 0. sor
+            show._kovetkezoreLep(first)
+        } else {
+            // későbbi sor: a látott kép marad, de a következő változhatott
+            show._diakBetolt()
+        }
+    }
+
+    //: teljes reset után a látott fájlt EGY Python-hívás keresi vissza
+    function _modellReset() {
+        if (!show.visible || !show.photosModel) return
+        if (show.count() === 0) { show._uresListaLeall(); return }
+        if (show._currentFilePath === "") return
+        var sor = show.photosModel.rowOfPath(show._currentFilePath)
+        if (sor >= 0) {
+            if (sor !== show.currentIndex)
+                show._indexCsendben(sor)
+            else
+                show._diakBetolt()   // az elő-betöltő a friss következőt
+            return
+        }
+        show._kovetkezoreLep(show.currentIndex)
+    }
+
+    //: a látott kép eltűnt; `jelolt` az a sor, ahol most a következő áll
+    function _kovetkezoreLep(jelolt) {
+        var kezdo = jelolt >= 0 && jelolt < show.count() ? jelolt : 0
+        var kovetkezo = show.clampToPhoto(kezdo)
+        if (kovetkezo < 0) { show._uresListaLeall(); return }
+        if (kovetkezo !== show.currentIndex) {
+            show.currentIndex = kovetkezo
+            return
+        }
+        // a szám nem változott, de alatta más kép áll — azonos értékre az
+        // `onCurrentIndexChanged` nem fut le, ezért kézzel váltunk
+        var kimeno = slide.source
+        show._kovetettUtFrissit()
+        if (kimeno !== "") show._atmenetIndit(kimeno)
+        show._diakBetolt()
+    }
 
     //: a vetített kép URL-je (#1640: a mód VALÓDI argumentum), üres, ha
     //: nincs mit vetíteni
@@ -431,6 +531,7 @@ Rectangle {
     // már dekódolva van
     Image {
         id: elobetoltoSlide
+        objectName: "slideshowPreloadImage"
         visible: false
         // #1640 + #3832: a forrást és a forrásméretet a `_diakBetolt` írja
         // — ugyanazt a párt, amit a dia kér majd erre a képre, így a lépéskor
