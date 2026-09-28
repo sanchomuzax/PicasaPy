@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Fókuszos nagyítás elmosása most az eredeti Picasa módszerével készül:
+  a nagyított képeket egymás után, éles képpontokkal keveri rá a fotóra,
+  az eredeti apró, négyképpontos mintázatával együtt. A kép ettől szinte
+  pontosan olyan lett, mint a Picasában (eddig láthatóan eltért tőle). A
+  csúszka húzása közben az előnézet egy gyorsabb, szemre alig eltérő
+  változattal fut; mentéskor és exportkor az eredeti módszer (#3884).
+
 ## [0.8.624] – 2026-09-28
 
 ### Javítva
@@ -15,14 +23,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   átrendezett sorrendnél ugyanaz a kép marad látható, áttűnés nélkül; ha
   maga a látott kép törlődik, a következő fotóra lép (az utolsó kép után az
   elsőre, mint a léptetésnél), üres könyvtárnál pedig leáll (#3881).
-
-### Javítva
-- A Fókuszos nagyítás elmosása most az eredeti Picasa módszerével készül:
-  a nagyított képeket egymás után, éles képpontokkal keveri rá a fotóra,
-  az eredeti apró, négyképpontos mintázatával együtt. A kép ettől szinte
-  pontosan olyan lett, mint a Picasában (eddig láthatóan eltért tőle). A
-  csúszka húzása közben az előnézet egy gyorsabb, szemre alig eltérő
-  változattal fut; mentéskor és exportkor az eredeti módszer (#3884).
 
 ## [0.8.623] – 2026-09-28
 
