@@ -1,32 +1,22 @@
-"""#2159: a vignetta-sugár LEVEZETETT, nem illesztett.
+"""#2159 → #3827: a Glow blur-átváltója (`0x00bb89b0`) és a belőle
+következő lekicsinyítés.
 
 A `filterdesc.xml` `xblur`-je (`Blur · 0,02 · max(W,H) / 4`) átmegy a natív
-blur-átváltón (`0x00bb89b0`), a maszképítő a **lekicsinyített** térben
-`[1, 253]`-ra vág, és menetenkénti dobozsugarat számol — teljes felbontásba
-visszaváltva ez adja a sugarat. A korábbi `/8`-as konstans ugyanennek az
-illesztett alakja volt.
+blur-átváltón, és a ragyogás a `csonk(f·W) × csonk(f·H)` pufferben készül. A
+#2159 ebből egy teljes felbontású „levezetett sugarat" (`vignette_radius`)
+számolt a régi erf-modellhez; a #3827 óta a natív lánc maga kicsinyít
+(`belso_ragyogas.inner_glow`), a sugár-közelítés és az illesztett `/8`-as
+konstans megszűnt.
 
-Az őr a LEVEZETÉS három pontját méri a spec táblájához
-(`docs/specs/filterdesc-registry.md`, „A levezetett sugár"), mert ott a
-számok független Blur-állásokból jöttek — nem egy illesztésből.
-
-⚠️ Amit ez az őr NEM mér: a látványt. A ΔE-számok a
-`referencia/vignette/` nyolc valódi exportján állnak (privát repó, a CI nem
-látja őket); a hozzá tartozó mérő az `eszkozok/export_keszletek_meres.py`
-mintája szerint helyben fut.
+Az őr az átváltó három mért pontját méri a spec táblájához
+(`docs/specs/filterdesc-registry.md`, „A levezetett sugár").
 """
 
 from __future__ import annotations
 
-import math
-
 import pytest
 
-from picasapy.render.glimmer_tone import (
-    VIGNETTE_RADIUS_FACTOR,
-    blur_atvalto,
-    vignette_radius,
-)
+from picasapy.render.belso_ragyogas import blur_atvalto
 
 #: A referenciakép mérete — a spec táblája ezen a képen készült.
 SZELESSEG, MAGASSAG = 2560, 1702
@@ -80,81 +70,21 @@ class TestABlurAtvalto:
         assert blur_atvalto(0.0, float(SZELESSEG)) > 0.0
 
 
-class TestALevezetettSugar:
-    @pytest.mark.parametrize(
-        "blur,vart",
-        [(10.0, 65.3), (35.0, 221.4), (50.0, 316.2)],
-    )
-    def test_a_spec_tablajat_adja(self, blur, vart):
-        """A három pont a specben FÜGGETLEN Blur-állásokból jött."""
-        assert vignette_radius(blur, SZELESSEG, MAGASSAG) == pytest.approx(
-            vart, abs=0.1
-        )
+class TestAMuzeumiMattALeiroKepletevel:
+    """#3827: a Múzeumi matt a leíró `/4`-es képletét adja a natív láncnak,
+    az illesztett `/8`-as `VIGNETTE_RADIUS_FACTOR` (#317) nélkül."""
 
-    @pytest.mark.parametrize(
-        "blur,illesztett,levezetett",
-        [(10.0, 64.0, 65.28), (35.0, 224.0, 221.365), (50.0, 320.0, 316.235)],
-    )
-    def test_az_illesztett_konstanshoz_2_szazalekon_belul(
-        self, blur, illesztett, levezetett
-    ):
-        """A régi `/8` nem tévedés volt, hanem ugyanennek a közelítése —
-        ezért nem mozdul el a látvány észrevehetően.
+    def test_a_konstans_megszunt(self):
+        import picasapy.render.glimmer_tone as tone
 
-        A két érték MÉRT eltérése: `Blur 10` **+2,00 %**, `Blur 35`
-        **−1,18 %**, `Blur 50` **−1,18 %**. A kis Blur-nál a legnagyobb,
-        mert ott a `f = 1` ág fut, és a `⌈(p−1)/2⌉` kerekítés fölfelé
-        billen."""
-        assert vignette_radius(blur, SZELESSEG, MAGASSAG) == pytest.approx(
-            levezetett, abs=0.005
-        )
-        assert blur * VIGNETTE_RADIUS_FACTOR * max(SZELESSEG, MAGASSAG) == (
-            pytest.approx(illesztett)
-        )
-        assert abs(levezetett - illesztett) / illesztett <= 0.021
+        assert not hasattr(tone, "VIGNETTE_RADIUS_FACTOR")
+        assert not hasattr(tone, "vignette_radius")
 
-    def test_a_nulla_blur_nulla_sugarat_ad(self):
-        """A `size min` export bájtra az érintetlen kép — a sugár ott 0."""
-        assert vignette_radius(0.0, SZELESSEG, MAGASSAG) == 0.0
-
-    def test_a_sugar_MONOTON_a_blurban(self):
-        """A `Blur=35` és a `Blur=50` export ΔE 10,2-vel különbözik, tehát a
-        sugárnak nőnie kell — a korábbi kör „minden Blur > 13,2 azonos"
-        változata épp ezen bukott meg."""
-        ertekek = [vignette_radius(b, SZELESSEG, MAGASSAG) for b in (10, 20, 35, 50)]
-        assert ertekek == sorted(ertekek)
-        assert ertekek[-1] > ertekek[0] * 4
-
-    def test_a_kepmerettel_aranyos(self):
-        """Kisebb képen kisebb a sugár — a hatás a kép arányában marad."""
-        kicsi = vignette_radius(35.0, 640, 426)
-        nagy = vignette_radius(35.0, SZELESSEG, MAGASSAG)
-        assert kicsi < nagy
-
-    def test_a_dobozsugar_EGESZ(self):
-        """A maszképítő egész menetenkénti sugárral dolgozik: a `rp` egész,
-        a teljes felbontású érték ennek az `f`-fel visszaváltott alakja."""
-        for blur in (10.0, 35.0, 50.0):
-            xblur = blur * (0.02 / 4.0) * max(SZELESSEG, MAGASSAG)
-            f = blur_atvalto(xblur, float(SZELESSEG))
-            rp = vignette_radius(blur, SZELESSEG, MAGASSAG) * f
-            assert rp == pytest.approx(round(rp), abs=1e-6)
-            assert rp == math.ceil((min(xblur * f, 253.0) - 1.0) / 2.0)
-
-
-class TestAMuzeumiMattErintetlen:
-    """A `VIGNETTE_RADIUS_FACTOR` MEGMARAD: a Múzeumi matt ragyogása a saját,
-    független mérésén nyugszik (`referencia/museummatte/`, 3,67 → 2,07), azt
-    ez a jegy nem érinti."""
-
-    def test_a_konstans_megvan(self):
-        assert VIGNETTE_RADIUS_FACTOR == pytest.approx(0.02 / 8.0)
-
-    def test_a_matt_ezt_hasznalja(self):
+    def test_a_matt_a_leiro_kepletet_hasznalja(self):
         from pathlib import Path
 
         import picasapy.render.glimmer_frames as frames
 
         forras = Path(frames.__file__).read_text(encoding="utf-8")
-        assert "VIGNETTE_RADIUS_FACTOR" in forras
-        assert "vignette_radius" not in forras
+        assert "VIGNETTE_RADIUS_FACTOR" not in forras
+        assert "xblur = 2.0 * 0.02 * max(height, width) / 4.0" in forras

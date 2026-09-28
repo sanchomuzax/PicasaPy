@@ -92,24 +92,23 @@ def apply_museum_matte(
     inner_thickness: float = 40.0,
 ):
     """`MuseumMatte=1,OuterThickness,InnerThickness,színOuter,színInner` —
-    belső ragyogás (fekete, `sugár = 2·0,02·max(W,H)/8`, `strength 1,3`,
+    belső ragyogás (fekete, `xblur = 2·0,02·max(W,H)/4`, `strength 1,3`,
     `alfa 0,7`) → belső gyűrű (`Inner`) → újra ragyogás (`alfa 0,6`) →
     külső gyűrű (`Outer`).
     """
+    from picasapy.render.belso_ragyogas import inner_glow
     from picasapy.render.glimmer_frame_ops import add_ring
-    from picasapy.render.glimmer_ops import inner_glow
-    from picasapy.render.glimmer_tone import VIGNETTE_RADIUS_FACTOR
 
     validate_image(image)
     height, width = image.shape[:2]
-    # #317: ugyanaz a `/8`-as szorzó, mint a Vignette-nél — a
-    # `referencia/museummatte/` FÜGGETLENÜL ugyanezt adta (a
-    # `filterdesc.xml` `/4`-es képlete helyett): az alapértelmezett
-    # exporttól való eltérés 3,67 → 2,07.
-    radius = 2.0 * VIGNETTE_RADIUS_FACTOR * max(height, width)
-    glowed_inner = inner_glow(image, (0, 0, 0), radius, radius, 1.3, alpha=0.7)
+    # #3827: a leíró `/4`-es képlete, a natív lánc maga kicsinyít és vág. A
+    # második ragyogás blurja is az EREDETI kép méretéből számol (mérve: a
+    # gyűrűs kép méretéből az alap 0,251 és a max 0,343 lenne, így 0,230 és
+    # 0,287). Az alfa a művelet `BlendAlpha`-ja.
+    xblur = 2.0 * 0.02 * max(height, width) / 4.0
+    glowed_inner = inner_glow(image, (0, 0, 0), xblur, xblur, 1.3, alpha=0.7)
     ringed_inner = add_ring(glowed_inner, inner_thickness, inner_color)
-    glowed_outer = inner_glow(ringed_inner, (0, 0, 0), radius, radius, 1.3, alpha=0.6)
+    glowed_outer = inner_glow(ringed_inner, (0, 0, 0), xblur, xblur, 1.3, alpha=0.6)
     return add_ring(glowed_outer, outer_thickness, outer_color)
 
 

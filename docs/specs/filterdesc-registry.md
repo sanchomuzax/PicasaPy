@@ -848,21 +848,22 @@ klasszikus **8.8-as fixpontos** ábrázolásban ⇒
 A `[0, 255]`-ös bemeneti vágás miatt a szorzó **1,0 fölé is mehet** (egészen
 255-ig) — tehát a `strength` **erősíthet**, nem csak halványíthat.
 
-##### Nálunk (mérve) — két eltérés
+##### Nálunk (#3827 óta) — a natív lánc
 
-`src/picasapy/render/glimmer_ops.py`:
+`src/picasapy/render/belso_ragyogas.py` (`inner_glow`):
 
-| | eredeti (mérve) | nálunk ma (mérve) |
+| | eredeti (mérve) | nálunk |
 |---|---|---|
-| blur-sugár | **egész**: `min(255, trunc(ceil((b−1)/2)·quality + 1))`, `b` ∈ [0, 253], `quality` ∈ [1, 15] (alap 3) | a nyers `xblur`/`yblur` **közvetlenül szigmaként** az analitikus `erf`-modellbe (`_box_blur_axis`, `:575`) |
-| `strength` | 8.8-as **szorzó**, `trunc(s × 256)`, a bemenet [0, 255] | keverési súly, **[0, 1]-re vágva**: `np.clip((1−covered)·strength, 0, 1)` (`:578`) |
-| `glowalpha` | bájt: `trunc(a × 255)`, a bemenet [0, 1] | `* np.float32(alpha)` (`:578`) — nincs bájtra kvantálás |
-| sugár-korlát | a **bemenet** 253, a **kimenet** 255 | `GLOW_RADIUS_MAX = 255.0` a sugárra (`:495`) |
+| blur-sugár | **egész**: `min(255, trunc(ceil((b−1)/2)·quality + 1))`, `b` ∈ [0, 253], `quality` ∈ [1, 15] (alap 3) | ugyanez (`peremsugar`, `ragyogas_maszk`); a doboz a `0x00bc5360` paramétereivel (`nativ_blur.sugar_egyutthatok`) |
+| `strength` | 8.8-as **szorzó**, `trunc(s × 256)`, a bemenet [0, 255] | ugyanez (`ragyogas_suly`) |
+| `glowalpha` | holt paraméter | nem kerül a láncba; a MuseumMatte 0,7/0,6-a a `BlendAlpha` (`k′ = trunc(α·256) − 1`) |
+| sugár-korlát | a **bemenet** 253, a **kimenet** 255 | ugyanez |
 
-⚠️ **Megfejtve, de a mért eltérésre gyakorolt hatása NINCS mérve.** Sem a
-Vignette-, sem a Comicize-goldenen nem futott összevetés ezzel a
-modellel — a fenti két eltérés önmagában **nem bizonyítja**, hogy a
-javításuk csökkenti a ΔE-t. Megvalósítás és mérés: **#2159**.
+A régi analitikus `erf`-modell (`_box_blur_axis`), a `glow_sigma`-felezés
+(#3158), az illesztett `VIGNETTE_RADIUS_FACTOR` (#317) és a levezetett
+`vignette_radius` (#2159) megszűnt: a hívók a `filterdesc.xml` `xblur`-jét
+adják át változatlanul. A mérés a lenti „A belső ragyogás TELJES lánca"
+szakasz végén.
 
 **Bizalmi fok: megerősített** a vágásokra, a két sugár-képletre, a `ceilf`
 azonosítására és a 8.8-as szorzóra (mind közvetlen kiolvasás).
@@ -1136,7 +1137,27 @@ Soronkénti profil a `Vignette` alap középső sorában (a kép bal szélétől
 A többi Glow-felhasználót (`Lomo`, `Holga`, `NightVision`, `MuseumMatte`)
 ebben a körben nem mértük a lánccal.
 
-Fejlesztés: #3827.
+**Nálunk (#3827 óta)** a `render/belso_ragyogas.py` ezt a láncot számolja,
+mindkét ágon ugyanazzal a maszkkal és elmosással. A maszkot bitre ugyanúgy
+kapja, mint a kibővített pufferes újralevezetés (teszt), de gyorsabban: a
+vízszintes menetek után minden belső sor azonos, ezért a függőleges menetek
+csak a sor különböző értékein futnak (legfeljebb 256 oszlop). A
+visszanagyítás a fixpontos `ytResampler` (`resize_plane`, #3805), a keverés
+`⌊…/255⌋`. Mérve (684-es készlet, ΔE a Picasa-exporthoz):
+
+| eset | az erf-modell | **nálunk** |
+|---|---:|---:|
+| `Vignette` alap | 0,585 | **0,169** |
+| `Matte` alap | 0,910 | **0,176** |
+| `Lomo` alap / min | 0,453 / 0,442 | **0,289 / 0,280** |
+| `Holga` alap / min | 0,750 / 0,500 | **0,604 / 0,253** |
+| `NightVision` alap / min | 4,595 / 3,663 | **4,528 / 3,624** |
+| `Comicize` alap / max / min | 2,689 / 2,328 / 2,299 | **2,687 / 2,328 / 2,294** |
+
+A fenti 0,283/0,286-nál jobb érték a fixpontos Mitchell-nagyításból és az
+egész keverésből jön (a kutatási mérés lebegőpontos nagyítással és
+`rint`-tel futott). A `NightVision` és a `Comicize` maradék hibája nem a
+ragyogásban ül.
 
 ##### ⭐ A teljes felbontású ág és a MuseumMatte — emulálva a zajszint közelében (2026-09-28, 387. kör, #626)
 
@@ -1175,11 +1196,15 @@ ennek a méretéből számoljuk, az alap 0,251 és a max 0,343; az eredeti mére
 vonatkozik. Ezt a binárisból nem olvastuk ki, a két értelmezés közül a mérés
 dönt.
 
-⇒ A mai kód `/8`-as, illesztett sugara (`VIGNETTE_RADIUS_FACTOR`, #317) a
-fenti lánccal feleslegessé válik: a blur a leíró `/4`-es képlete, változatlanul.
+⇒ A korábbi `/8`-as, illesztett sugár (`VIGNETTE_RADIUS_FACTOR`, #317) a
+fenti lánccal feleslegessé vált: a blur a leíró `/4`-es képlete, változatlanul.
 
-Fejlesztés: a **#3827** (a belső ragyogás lánca) kiegészül a teljes felbontású
-ággal és a MuseumMatte-tal.
+**Nálunk (#3827 óta)** a `glimmer_frames.apply_museum_matte` így számol, a
+második ragyogás blurja is az eredeti kép méretéből. Mérve: min **0,128**,
+alap **0,230**, max **0,287** (előtte 0,842 / 0,773 / 0,645). ⚠️ A teljes
+felbontású ágon a nem fekete szín tagját (`e·G`) nem mértük: a
+`((256 − e)·S + e·G) >> 8` alak feketére bizonyított, más színre a képlet
+folytatása.
 
 #### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
 

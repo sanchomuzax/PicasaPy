@@ -182,34 +182,6 @@ class TestHolgaRealPhoto504510:
             f"vs 700px={_black_pct(large):.1f}% — {diff:.1f}pp eltérés"
         )
 
-    @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
-    def test_a_felezes_csokkenti_a_fekete_aranyat(self, effect_name, apply_fn, monkeypatch):
-        """#3158: a σ a `filterdesc` blur FELE — ha valaki visszavenné a
-        felezést (vagyis a nyers képletet adná σ-ként), a belső ragyogás
-        sokkal többet feketítene. Ez a próba ezt méri KÖZVETLENÜL, ugyanazon
-        a képen.
-
-        A korábbi változat a #504 255-ös korlátját mérte ugyanígy
-        (`GLOW_RADIUS_MAX` óriásira állítva); a korlát megszűnt, a mérés
-        szándéka változatlan.
-        """
-        photo = _real_photo_rgb(1600, 1200)
-        felezve = apply_fn(photo)
-        monkeypatch.setattr(
-            "picasapy.render.glimmer_ops.glow_sigma", lambda blur: float(blur)
-        )
-        monkeypatch.setattr(
-            "picasapy.render.glimmer_creative.glow_sigma", lambda blur: float(blur)
-        )
-        nyers = apply_fn(photo)
-        felezve_pct = _black_pct(felezve)
-        nyers_pct = _black_pct(nyers)
-        kuszob = felezve_pct + max(0.1, felezve_pct * 0.15)
-        assert nyers_pct > kuszob, (
-            f"{effect_name}: felezve {felezve_pct:.2f}%, nyers képlettel "
-            f"{nyers_pct:.2f}% — a felezés hatása nem mérhető"
-        )
-
     def test_holga_perf_nagy_kepen(self):
         """j5: a ragyogás-lépés (közös `_border_glow`) nagy képen is
         gyors maradjon (a javítás előtt egy 4000×3000-es fotón egyetlen

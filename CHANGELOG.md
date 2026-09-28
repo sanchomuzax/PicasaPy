@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Vignetta”, a „Matt” és a „Múzeumi matt” effekt széle felé sötétedő
+  (illetve világosodó) sávja most az eredeti Picasa módszerével készül, és
+  alig tér el tőle (a mért eltérés ΔE 0,59–0,91-ről 0,13–0,29-re csökkent); a
+  „Lomo-szerű”, a „Holga-szerű”, az „Éjjellátó” és a „Képregény” effekt, amely
+  ugyanezt a sötétítést használja, szintén közelebb került az eredetihez
+  (#3827).
+
 ## [0.8.618] – 2026-09-28
 
 ### Javítva
