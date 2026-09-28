@@ -7712,8 +7712,41 @@ A `BW` a közös színmátrix-alkalmazót (`0x00bc16b0`) futtatja; a mátrixát 
 ⇒ Alapértelmezett `filtercolor` mellett a kimenet mindhárom csatornán
 `0,3086·R + 0,6094·G + 0,0820·B` — a Haeberli-súlyok, ugyanazok, mint a
 `SimpleColorMatrix` telítettség-ágáé (`glimmer_ops._HAEBERLI_WEIGHTS`).
-**Nincs küszöb.** A színmátrix-alkalmazó kerekítése itt nincs kiolvasva
-(→ #3511).
+**Nincs küszöb.** A színmátrix-alkalmazó kerekítése ~~itt nincs kiolvasva
+(→ #3511)~~ — kiolvasva, ld. közvetlenül alább (#3930).
+
+#### ⛳ A színmátrix-alkalmazó fixpontos aritmetikája — és a Holga `BW(0xff6666)`-je (2026-09-28, 403. kör, #3930)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, golden-méréssel. Független újralevezetés (#3930): EGYEZIK. Ez a fenti „a színmátrix-alkalmazó kerekítése itt nincs kiolvasva” pontot zárja le.*
+
+A `0x00bc16b0` a mátrixot a `0x008f2500`-ba adja. Ott a `0x008f21a0` váltja az együtthatókat fixpontosra, a `0x008f25f0` betölti őket az XMM-regiszterekbe, a `0x008f2640` pedig soronként alkalmazza:
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| együttható | `c = trunc(w · 2048 ± 0,5)` (nullától elfelé kerekítve), `int16` | `0x008f21a0`–`0x008f243c`; `[0xcf3ba0]` = 2048,0, `[0xc72150]` = 0,5 |
+| bias | `b = trunc(bias · 4 ± 0,5) + 2` (`int32`, a `+2` a végső `>> 2` kerekítése) | `0x008f2448`–`0x008f24ea`; `[0xcf3d30]` = 4,0, `add eax, 2` @ `0x008f2469` |
+| képpont | `ki = clamp((Σᵢ ((cᵢ · sᵢ) >> 9) + b) >> 2, 0, 255)`, tagonként előjeles eltolás | skalár: `0x008f2674`–; SIMD: `0x008f2853`–`0x008f28ae` |
+
+A **SIMD-ág** (`0xd695d2`/`0xd695d3` jelző, `0x008f281f`) ugyanezt számolja: tagonként `pmaddwd` (a párosított felső szó 0) és `psrad 9`, a biasszal indított összeg, `psrad 2`, majd `packssdw` + `packuswb` telítéssel. Nincs eltérés a skalár úttól.
+
+**A `BW(filtercolor=0xff6666)` ezzel** (a súlyok a fenti táblából, `0x00bbdd80`): `w = (0,3086·255, 0,6094·102, 0,0820·102) / Σ` = 0,5274 / 0,4166 / 0,0560, egészben **`c = 1080 / 853 / 115`**, bias 0 → `b = 2`:
+
+```
+Y = (((1080·R) >> 9) + ((853·G) >> 9) + ((115·B) >> 9) + 2) >> 2      ; R = G = B = Y
+```
+
+**Mérve** (684-es mérőkészlet; a lánc többi lépése változatlan, csak a BW cserélve):
+
+| BW-változat | Holga min | Holga alap |
+|---|---:|---:|
+| mai `bw_tint` (Rec.601 súlyok, mérésből illesztve, #504) | 0,253 | 0,604 |
+| Haeberli-súlyok, lebegőpontosan, kerekítve | 0,119 | 0,522 |
+| **Haeberli-súlyok, a fenti fixpontos alkalmazóval** | **0,099** | **0,516** |
+| zajszint (mi ↔ mi-JPEG95) | 0,070 | 0,412 |
+
+A min ágon a ±3…6 szintes eltérés 50 ezer képpontról 100-ra esik, a maradék ±1. Az alap ág (Blur 70, Grain 30) zajszint fölötti maradéka a BW-től független: ott a maszkolt elmosás és a szemcse is dolgozik (a munkasorban külön tétel).
+
+**Nálunk** (`render/glimmer_ops.py::bw_tint`): Rec.601-súlyok, lebegőpontosan → fejlesztés: #3931.
 
 ### 2. A maszkos `GetVar` — `GetVarInstruction` → `PartialMask` → `Pop`
 
