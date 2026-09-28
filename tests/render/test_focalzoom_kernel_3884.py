@@ -186,10 +186,19 @@ class TestSampling:
 
     def test_centre_focus_never_needs_the_clamp(self):
         """Középfókusznál (a mért eset) a képlet magától a képen belül marad:
-        `max u < W`, amíg `x < W²/(W+off)`."""
+        a vágás előtti utolsó index is `< W`."""
         for off in (1, 250, 853, 1280):
-            u_max = (2559.5 * 2560 / (2560 + off)) + off * 1280 / 2560
-            assert u_max < 2560
+            u_max = (np.float32(2559.5) * np.float32(2560 / (2560 + off))) + np.float32(
+                off * 1280 / 2560
+            )
+            assert int(np.floor(u_max * np.float32(65536.0))) >> 16 < 2560
+
+    def test_the_max_offset_uses_the_truncated_impact(self):
+        """A mag az egésszé csonkolt `amount`-ot kapja (`0x00bcf4d7 mul`):
+        `D = ⌊W·trunc(Impact)/200⌋` — kézzel írt tört Impactnél is."""
+        assert zoom_max_offset(2560, 50.6) == 640
+        assert zoom_max_offset(2560, 50.0) == 640
+        assert zoom_max_offset(150, 1.9) == 0
 
     def test_zero_offset_is_identity_sampling(self):
         assert zoom_sample_indices(17, 0, 8.5).tolist() == list(range(17))
@@ -236,12 +245,34 @@ class TestKernelEndToEnd:
         assert zoom_offsets(6, 2) == (2, 1, 1, 1, 0, 0)
         assert np.all(out < 200)
 
-    def test_the_unmeasured_border_assumption_is_gone(self):
-        """A mintavétel mindig a képen belül esik: a `BORDER_REPLICATE`-es
-        „méretlen feltevés” megjegyzésnek nincs tárgya."""
+    def test_the_old_border_replicate_path_is_gone(self):
+        """A régi `warpAffine` + `BORDER_REPLICATE` út és a „méretlen
+        feltevés” megjegyzése kikerült; a képen túli minta mai kezelése
+        (szélső képpont) a #3893 kutatásáig kimondott feltevés."""
         source = inspect.getsource(focal)
         assert "BORDER_REPLICATE" not in source
         assert "MÉRETLEN FELTEVÉS" not in source
+        assert "#3893" in inspect.getsource(focal.zoom_sample_indices)
+
+    @pytest.mark.parametrize("shape", [(1, 1, 3), (2, 3, 3), (3, 2, 3), (5, 7, 3)])
+    @pytest.mark.parametrize(("x", "y"), [(0.0, 0.0), (1.0, 1.0), (0.0, 1.0), (0.5, 0.5)])
+    def test_tiny_images_and_edge_focus_do_not_fail(self, shape, x, y):
+        rng = np.random.default_rng(shape[0] * 10 + shape[1])
+        image = rng.integers(0, 256, size=shape, dtype=np.uint8)
+        for impact in (0.0, 1.0, 100.0, 1000.0):
+            for gyors in (False, True):
+                out = apply_focal_zoom(
+                    image, x=x, y=y, impact=impact, radius=0.0, fade=0.0, gyors=gyors
+                )
+                assert out.shape == image.shape and out.dtype == np.uint8
+
+    def test_zero_offset_leaves_the_image_unchanged(self):
+        """`D = 0` (keskeny kép vagy `Impact < 1`): a kép bitre változatlan —
+        a #3893 kutatásáig kimondott feltevés."""
+        rng = np.random.default_rng(3)
+        image = rng.integers(0, 256, size=(20, 150, 3), dtype=np.uint8)
+        out = apply_focal_zoom(image, x=0.5, y=0.5, impact=1.0, radius=0.0, fade=0.0)
+        np.testing.assert_array_equal(out, image)
 
 
 class TestFastLivePreview:

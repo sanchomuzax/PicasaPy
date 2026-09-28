@@ -108,8 +108,11 @@ def zoom_sample_count(impact: float) -> int:
 
 
 def zoom_max_offset(width: int, impact: float) -> int:
-    """`floor(width · Impact / 200)` — a legnagyobb zoomeltolás pixelben."""
-    return int(np.floor(width * max(impact, 0.0) / _ZOOM_OFFSET_DIVISOR))
+    """`⌊width · trunc(Impact) / 200⌋` — a legnagyobb zoomeltolás pixelben.
+
+    A mag az egésszé csonkolt `amount`-ot kapja, és egészben szoroz
+    (`0x00bcf4d7 mul edx`), tehát kézzel írt tört Impactnél is csonkolunk."""
+    return (width * int(max(impact, 0.0))) // _ZOOM_OFFSET_DIVISOR
 
 
 def zoom_offsets(samples: int, max_offset: int) -> tuple[int, ...]:
@@ -130,9 +133,11 @@ def zoom_sample_indices(length: int, offset: int, focus_px: float) -> np.ndarray
     `f·(L+off)/L`, nem pontosan `f`.
 
     A képlet a képen belül marad, amíg `f < L²/(L+off)` — a középfókusz
-    (a golden-készlet minden esete) mindig ilyen. Ennél szélsőbb fókusznál a
-    sor vége a képen túl mintázna; ott a szélső képpontot vesszük (vágás).
-    Ezt a peremesetet golden-pár nem méri.
+    (a golden-készlet minden esete) mindig ilyen. Mivel a függőleges eltolás
+    is a szélességből jön, fekvő képen a függőleges tengely már közepes
+    fókusznál túllép (2560×1707, Impact 100: `y = 0,6`-tól). Ott a szélső
+    képpontot vesszük (vágás) — ez a MI feltevésünk, a Picasa viselkedése
+    nincs kiolvasva (#3893), és golden-pár sem méri.
     """
     scale = np.float32(length / (length + offset))
     shift = np.float32(offset * focus_px / length)
@@ -154,12 +159,11 @@ def zoom_blend_step(acc: np.ndarray, sample: np.ndarray) -> np.ndarray:
     négyes periódusú mintát hordozza, tehát nekünk is kell.
     """
     full = (acc.shape[1] // 4) * 4
-    weighted_acc = acc.astype(np.uint16)
-    weighted_acc *= np.uint16(_ZOOM_ACC_WEIGHT)
-    weighted_acc[:, 2:full:4] = weighted_acc[:, 0:full:4]
-    weighted_acc[:, 3:full:4] = weighted_acc[:, 1:full:4]
-    mixed = sample.astype(np.uint16)
-    mixed *= np.uint16(_ZOOM_SAMPLE_WEIGHT)
+    kevert_acc = acc.copy()
+    kevert_acc[:, 2:full:4] = acc[:, 0:full:4]
+    kevert_acc[:, 3:full:4] = acc[:, 1:full:4]
+    weighted_acc = np.multiply(kevert_acc, _ZOOM_ACC_WEIGHT, dtype=np.uint16)
+    mixed = np.multiply(sample, _ZOOM_SAMPLE_WEIGHT, dtype=np.uint16)
     mixed += weighted_acc  # legfeljebb 255·255 — elfér uint16-ban
     mixed >>= 8
     return mixed.astype(np.uint8)
@@ -254,11 +258,13 @@ def apply_focal_zoom(
     A natív mag (`zoom_blur`, #3883) `N = min(trunc(Impact) + 5, 30)`
     legközelebbi-szomszéd mintát kever egymás után az akkumulátorra
     (38/217-es súllyal, a Picasa sávhibájával); a legnagyobb zoomeltolás
-    `floor(width · Impact / 200)` pixel. A kész elmosás a **körmaszk**
+    `⌊width · trunc(Impact) / 200⌋` pixel. A kész elmosás a **körmaszk**
     szerint, a `MaskInstruction` egész képletével keveredik az élesen maradó
     középpontra, végül a `Fade` a szokásos `1 − Fade/100` súllyal zár.
 
-    `D = 0` mellett (keskeny kép vagy `Impact = 0`) a kép változatlan.
+    `D = 0` mellett (keskeny kép vagy `Impact < 1`) a kép változatlan — a
+    spec ciklusa ilyenkor is keverne; hogy a mag itt kilép-e, nincs kiolvasva
+    (#3893), ez a mi feltevésünk.
     A `gyors` a húzás közbeni élő előnézet útja (`zoom_blur`).
     """
     validate_image(image)
