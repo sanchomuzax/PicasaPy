@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „Neon” effekt vonalai most olyan vastagok és annyi neonszín dereng
+  körülöttük, mint az eredeti Picasában: eddig vékonyabbak voltak, és a
+  színes derengés nagy része hiányzott (a mért eltérés ΔE 1,97-ről 0,49-re
+  csökkent) (#3812).
+
 ## [0.8.616] – 2026-09-28
 
 ### Javítva

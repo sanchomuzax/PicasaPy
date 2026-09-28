@@ -290,7 +290,9 @@ def apply_neon(image, color=(255, 0, 0), fade: float = 0.0):
     semmi köze nem volt a Picasáéhoz — a sík felületekre is TISZTA PIROS
     képet rajzolt. A fenti csővezetékkel ugyanazon a golden páron
     (`neon__alap.jpg`, `tools/golden/compare_render.py` mércéjével)
-    **ΔE 4,72 / SSIM 0,866**; a `Fade = 100` eset bájtra változatlan.
+    **ΔE 4,72 / SSIM 0,866**; a `Fade = 100` eset bájtra változatlan. A natív
+    elmosással és egész Sobellel (#3812) a 684-es készlet `neon__alap` párján
+    ΔE 0,493.
     """
     validate_image(image)
     edge = edge_detection_b(image, _NEON_EDGE_DETAIL)

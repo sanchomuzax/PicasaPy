@@ -1,5 +1,5 @@
 """`glimmer::EdgeDetectionBImageOperation` — a Picasa élkiemelő ÖSSZETETT
-művelete (#878).
+művelete (#878, #3812).
 
 A `filterdesc.xml` egyetlen attribútumot ad neki (`detail="50"`), a tényleges
 csővezetéket a natív kód építi fel **kódban**: az osztály a
@@ -29,24 +29,26 @@ mivel a 128-at 255-re viszi, a **sík felületekből FEHÉR** lesz, az erős
 élekből fekete. Az `EdgeDetectionB` tehát fehér alapon sötét vonalas rajzot
 ad — a Neon ezt keveri önmagával, invertálja, és színezi.
 
-## Ami MÉRÉSBŐL való (a binárisból nem derül ki)
+## A binárisból kiolvasott tényezők (#3812)
 
-- **A Sobel-kimenet skálája** (`_SOBEL_SCALE`): a natív konvolúció a 128-as
-  eltolás előtti osztóját a dekompilátum nem őrizte meg. A #685 mérőszettje
-  `neon__alap.jpg` golden párján illesztve.
-- **A 10. lépés keverési módja**: a `BlendImageOperation` alapja a móddal
-  együtt regiszterben érkezik. A `multiply` és a `darken` a mérésen egyaránt
-  illeszkedik (a különbségük a fehér alapon elhanyagolható); `multiply`-t
-  használunk.
-- **A 2. lépés melyik `SimpleColorMatrix` paramétere** — a kontraszt
-  illeszkedett a legjobban.
+Spec: `docs/specs/filterdesc-registry.md`, 4.11, „EdgeDetectionB — a
+»mérésből illesztett« tényezők a binárisból”.
+
+- **Az 1. lépés elmosása** a natív `BlurImageOperation(2, 2, quality = 2)`
+  (`0x00bbcaa5`): `nativ_blur.blur_image_operation`.
+- **A Sobel egy csatornára** (`0x00bb6620`, skalár ág `0x00bb7140`):
+  `clamp((512 + Σ kᵢ·pᵢ) idiv 4, 0, 255)` = `clamp(128 + floor(Σ/4))`, egész
+  aritmetikával; az osztó `0x00bb6895` (`push 4`), a 512-es kezdőérték
+  `0x00bb6faa`. A perem ismétlődik.
+- **A `100 − detail` helye** a gyerek `SimpleColorMatrix` **kontrasztja**
+  (`+0x30`, `0x00bbce24`).
+- **A 10. lépés keverési módja** 5 = Multiply (`0x00bbcd76`).
 
 Bemenet/kimenet: `uint8` RGB `numpy.ndarray` (H, W, 3), tiszta függvény.
 """
 
 from __future__ import annotations
 
-from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image
@@ -57,35 +59,46 @@ from picasapy.render.glimmer_ops import (
     to_float,
     to_uint8,
 )
+from picasapy.render.nativ_blur import blur_image_operation
 
 #: A natív `EdgeDetectionSobel` 6. slotja (`0x00bb6620`) két 3×3 magot
 #: választ — a klasszikus Sobel KÉTSZERES súlyokkal (±2/±4 a ±1/±2 helyett).
-_SOBEL_VERTICAL = np.array(
-    [[-2.0, 0.0, 2.0], [-4.0, 0.0, 4.0], [-2.0, 0.0, 2.0]], dtype=np.float32
-)
-_SOBEL_HORIZONTAL = np.array(
-    [[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]], dtype=np.float32
-)
+_SOBEL_VERTICAL = np.array([[-2, 0, 2], [-4, 0, 4], [-2, 0, 2]], dtype=np.int32)
+_SOBEL_HORIZONTAL = np.array([[2, 4, 2], [0, 0, 0], [-2, -4, -2]], dtype=np.int32)
 
-#: `BlurImageOperation(xblur=2, yblur=2, quality=2)`: a Flash-örökségű
-#: elmosás `quality` menetben futtat egy `xblur` széles dobozszűrőt. Két
-#: menet egy 2 képpont széles dobozból pontosan a `[1,2,1]/4` háromszög-mag
-#: (a `BitmapFilterQuality` Flash-konstansról ld. `filterdesc-registry.md` 4.5).
-_BLUR_KERNEL = np.array([1.0, 2.0, 1.0], dtype=np.float32) / np.float32(4.0)
+#: `BlurImageOperation(xblur=2, yblur=2, quality=2)` — `0x00bbcaa5`.
+_BLUR_RADIUS = 2.0
+_BLUR_QUALITY = 2
 
-#: A Sobel-kimenet 128 köré tolása előtti osztó — MÉRT skalár (ld. a
-#: modul-docstring „Ami mérésből való" szakaszát).
-_SOBEL_SCALE = np.float32(4.0)
+#: A Sobel-akkumulátor kezdőértéke (`0x00bb6faa`) és osztója (`0x00bb6895`):
+#: `(512 + Σ) idiv 4` = `128 + floor(Σ/4)`.
+_SOBEL_BIAS = 512
+_SOBEL_DIVISOR = 4
+
+#: A natív keverési mód sorszáma a 10. lépésben: 5 = Multiply (`0x00bbcd76`).
+_MULTIPLY = 5
 
 #: A két irány közös görbéje — a natív a MasterCurve-öt szó szerint
 #: `"{[{x:0, y:0}, {x:128, y:255}, {x:255, y:0}]}"` sztringként adja át.
 _EDGE_CURVE = ((0.0, 0.0), (128.0, 255.0), (255.0, 0.0))
 
 
-def _sobel_direction(image_f: np.ndarray, kernel: np.ndarray) -> np.ndarray:
-    """Egy irány Sobel-válasza, 128 köré tolva és `[0,255]`-re vágva."""
-    response = cv2.filter2D(image_f, -1, kernel, borderType=cv2.BORDER_REPLICATE)
-    return np.clip(np.float32(128.0) + response / _SOBEL_SCALE, 0.0, 255.0)
+def _sobel_direction(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+    """Egy irány natív Sobel-válasza `uint8` képen, egész aritmetikával.
+
+    `clamp((512 + Σ kᵢ·pᵢ) idiv 4, 0, 255)`, a peremen ismétlődő képponttal.
+    Nemnegatív osztandónál az `idiv` csonkolása egyezik a `floor`-ral, a
+    negatív osztandó pedig mindkét úton 0-ra vágódik — ezért `//` elég.
+    """
+    height, width = image.shape[:2]
+    padded = np.pad(image.astype(np.int32), ((1, 1), (1, 1), (0, 0)), mode="edge")
+    total = np.full(image.shape, _SOBEL_BIAS, dtype=np.int32)
+    for dy in range(3):
+        for dx in range(3):
+            weight = int(kernel[dy, dx])
+            if weight:
+                total += weight * padded[dy : dy + height, dx : dx + width]
+    return np.clip(total // _SOBEL_DIVISOR, 0, 255).astype(np.uint8)
 
 
 def edge_detection_b(image: np.ndarray, detail: float = 50.0) -> np.ndarray:
@@ -99,18 +112,16 @@ def edge_detection_b(image: np.ndarray, detail: float = 50.0) -> np.ndarray:
     if not 0.0 <= detail <= 100.0:
         raise ValueError(f"A detail 0..100 tartományba kell essen: {detail}")
 
-    blurred = cv2.sepFilter2D(
-        to_float(image), -1, _BLUR_KERNEL, _BLUR_KERNEL, borderType=cv2.BORDER_REPLICATE
-    )
-    prepared = to_float(simple_color_matrix(to_uint8(blurred), contrast=100.0 - detail))
+    blurred = blur_image_operation(image, _BLUR_RADIUS, _BLUR_RADIUS, quality=_BLUR_QUALITY)
+    prepared = simple_color_matrix(blurred, contrast=100.0 - detail)
 
     vertical = to_float(
-        adjust_curves(to_uint8(_sobel_direction(prepared, _SOBEL_VERTICAL)), master=_EDGE_CURVE)
+        adjust_curves(_sobel_direction(prepared, _SOBEL_VERTICAL), master=_EDGE_CURVE)
     )
     horizontal = to_float(
-        adjust_curves(to_uint8(_sobel_direction(prepared, _SOBEL_HORIZONTAL)), master=_EDGE_CURVE)
+        adjust_curves(_sobel_direction(prepared, _SOBEL_HORIZONTAL), master=_EDGE_CURVE)
     )
-    return to_uint8(apply_blend_mode(horizontal, vertical, "multiply", 1.0))
+    return to_uint8(apply_blend_mode(horizontal, vertical, _MULTIPLY, 1.0))
 
 
 __all__ = ["edge_detection_b"]
