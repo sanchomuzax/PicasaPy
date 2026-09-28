@@ -73,7 +73,7 @@ class TestEffektKorpusz:
             (param.color if param.kind == "color" else param.default)
             for param in catalogue
         ]
-        formatted = format_param_values(resolved, catalogue)
+        formatted = format_param_values(resolved, catalogue, effect=key)
         _assert_elfogadhato(
             _chain_for(_EFFECT_INI_NAMES.get(key, key), ("1", *formatted))
         )

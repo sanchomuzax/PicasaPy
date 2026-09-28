@@ -64,7 +64,7 @@ from picasapy.render.directional import (
     apply_dir_sat,
     apply_dir_sharp,
 )
-from picasapy.render.dir_tint import apply_dir_tint
+from picasapy.render.dir_tint import DIR_TINT_DEFAULT_ALPHA, apply_dir_tint
 from picasapy.render.linear_blur import apply_linblur
 from picasapy.render.registry import FILTER_REGISTRY, chain_flags
 from picasapy.render.retouch import apply_retouch, apply_retouch_patches
@@ -73,6 +73,7 @@ from picasapy.render.tinting import (
     apply_ansel,
     apply_radtint,
     apply_tint,
+    parse_alpha_hex,
     parse_rgb_hex,
 )
 from picasapy.render.native_colortemp import apply_native_colortemp
@@ -583,7 +584,11 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # opcionális (#357), hiányában az alapértelmezett színnel futunk.
     if len(op.params) < 5:
         raise ValueError(f"A dir_tint szűrőnek x,y,gradiens,árnyalás kell: {op}")
-    color = parse_rgb_hex(op.params[5]) if len(op.params) > 5 else _DEFAULT_TINT_COLOR
+    # A fehér-kihagyás a TELJES színdwordon múlik (#3902), ezért az alfa is
+    # átmegy; szín nélkül a natív konstruktor `0xFFFFFFFF`-e fut.
+    has_color = len(op.params) > 5
+    color = parse_rgb_hex(op.params[5]) if has_color else _DEFAULT_TINT_COLOR
+    alpha = parse_alpha_hex(op.params[5]) if has_color else DIR_TINT_DEFAULT_ALPHA
     return apply_dir_tint(
         image,
         x=float(op.params[1]),
@@ -591,6 +596,7 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
         gradient=float(op.params[3]),
         shade=float(op.params[4]),
         color=color,
+        alpha=alpha,
     )
 
 
@@ -617,6 +623,10 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     `10 … min(fullResImageWidth, fullResImageHeight)/2`. A teljes felbontás
     az előnézeti arányból jön vissza; a kész sugarat a maszk a natív
     `scale`-lel (`imageWidth / fullResImageWidth`) vetíti az előnézetre.
+
+    #3884: a csúszka húzása közben (`gyors_elonezet` blokk) a zoom-kernel
+    gyors OpenCV-úton fut, minden más esetben (mentés, export, bélyegkép,
+    elengedés) a natívon.
     """
     arany = jelenlegi_arany()
     height, width = image.shape[:2]
@@ -633,6 +643,7 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
         hardness=_effect_float(op, 4, 50.0),
         fade=_effect_float(op, 5, 0.0),
         scale=arany,
+        gyors=gyors_elonezet_aktiv(),
     )
 
 

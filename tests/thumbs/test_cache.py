@@ -509,3 +509,12 @@ class TestEditedThumbnailCacheInvalidation:
 
         assert fresh is not None
         assert fresh != stale
+
+    def test_the_dir_tint_dword_change_invalidated_the_edited_cache(self):
+        """#3902: a Színátmenet a teljes 32 bites színt hasonlítja, így a
+        meglévő `ffffffff`-es `dir_tint` láncok egy szinttel sötétebben
+        renderelnek — a régi szerkesztett bélyegképeknek újra kell
+        generálódniuk, tehát a verziónak a #3827-es 4 fölé kellett lépnie."""
+        import picasapy.thumbs.cache as cache_module
+
+        assert cache_module._EDIT_CACHE_VERSION >= 5

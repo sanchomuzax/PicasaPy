@@ -88,9 +88,15 @@ _ANGLE_SPAN_DEG = 30.0
 #: A lépésvektor 16.16 fixpontos skálája (`0xcf3cb0`).
 _FIXED_ONE = 65536.0
 
-#: A natív a tiszta fehérnél (`cmp dword ptr [esp+0x3e8], 0xffffff`,
-#: `0x0090f525`) KIHAGYJA a szorzást — enélkül a 255-ös csatorna 254 lenne.
-_NEUTRAL_COLOR = (0xFF, 0xFF, 0xFF)
+#: A natív a TELJES 32 bites színdwordot hasonlítja, az alfa-bájttal együtt
+#: (`0x0090f525  cmp dword ptr [esp+0x3e8], 0xffffff`), és csak egyezésnél
+#: hagyja ki a szorzást (#3902). Az ini `ffffffff` fehérje tehát szoroz
+#: (`v · 255 >> 8`), a kihagyás csak az alfa nélküli `00ffffff`-re él.
+_NEUTRAL_COLOR = 0x00FFFFFF
+
+#: Az alfa-bájt alapértéke: a natív konstruktor a színt `0xFFFFFFFF`-re
+#: állítja (`0x008f6ba9`).
+DIR_TINT_DEFAULT_ALPHA = 0xFF
 
 #: A szorzó színezés osztója (`shr ebx, 8`, `0x0090f81b`).
 _TINT_SHIFT = 8
@@ -233,13 +239,16 @@ def apply_dir_tint(
     shade: float,
     color: tuple[int, int, int],
     direction: int = 0,
+    alpha: int = DIR_TINT_DEFAULT_ALPHA,
 ) -> np.ndarray:
     """Irányított (átmenetes) színezés a natív modell szerint (#874).
 
     A `gradient` a **Feather** csúszka (0. paraméter), a `shade` a
     **Shade** (1. paraméter). A `direction` a natív `[szűrő+0xc4]`
     negyedválasztója; a `.picasa.ini` `dir_tint=` alakja nem hordozza,
-    ezért az alapértéke `0` — a natív a `-1`-et is nullának veszi.
+    ezért az alapértéke `0` — a natív a `-1`-et is nullának veszi. Az
+    `alpha` a `.picasa.ini` 8 jegyű színének felső bájtja; alapértéke a
+    natív konstruktoré (`0xFF`).
 
     A lépések:
 
@@ -251,11 +260,14 @@ def apply_dir_tint(
        olvasott S-rámpából jön;
     5. a képpont értékét egy 256 elemű, `uint16` tónusgörbe hajlítja, a
        görbe paramétere `p = 1 / clamp(1 − Shade, 0,01, 99,9)`;
-    6. a színezés **szorzás** (`tónus × szín / 256`) — tiszta fehérnél a
-       natív ki is hagyja —, végül lineáris keverés az eredetivel a súly
-       szerint.
+    6. a színezés **szorzás** (`tónus × szín / 256`) — a natív csak akkor
+       hagyja ki, ha a teljes színdword `0x00FFFFFF`, azaz az alfa nélküli
+       fehér; az ini `ffffffff` fehérje szoroz (#3902) —, végül lineáris
+       keverés az eredetivel a súly szerint.
 
-    `Shade = 0` esetén a görbe azonosság, tehát a kép **változatlan**.
+    `Shade = 0` esetén a görbe azonosság, tehát a kép a `00ffffff` színnel
+    **változatlan**; `ffffffff`-fel a súlyozott részen legfeljebb eggyel
+    sötétebb.
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -268,7 +280,9 @@ def apply_dir_tint(
     lut = dir_tint_tone_lut(1.0 / param)
     source = image.astype(np.int32)
     toned = (lut[image] >> 8).astype(np.int32)
-    if tuple(int(channel) for channel in color) != _NEUTRAL_COLOR:
+    red, green, blue = (int(channel) for channel in color)
+    dword = (int(alpha) << 24) | (red << 16) | (green << 8) | blue
+    if dword != _NEUTRAL_COLOR:
         tint = np.array(color, dtype=np.int32)
         toned = (toned * tint) >> _TINT_SHIFT
     blended = source + (((toned - source) * weight[..., np.newaxis]) >> 8)

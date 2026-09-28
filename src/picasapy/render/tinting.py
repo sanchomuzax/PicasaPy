@@ -77,6 +77,19 @@ def parse_rgb_hex(value: str) -> tuple[int, int, int]:
     return (int(field[2:4], 16), int(field[4:6], 16), int(field[6:8], 16))
 
 
+def parse_alpha_hex(value: str) -> int:
+    """A filters-beli hex színparaméter (AARRGGBB) alfa-bájtja (#3902).
+
+    Ugyanazzal a kiegészítéssel és csonkítással, mint a `parse_rgb_hex`:
+    a rövidebb mező balra nullázva (`ffffff` → alfa `0`), a hosszabbnak
+    az első 8 jegye számít.
+    """
+    text = value.strip()
+    if not _HEX_PATTERN.match(text):
+        raise ValueError(f"Érvénytelen hex színérték: {value!r}")
+    return int(text[:_HEX_FIELD_DIGITS].rjust(_HEX_FIELD_DIGITS, "0")[:2], 16)
+
+
 def _to_uint8(values: np.ndarray) -> np.ndarray:
     return np.clip(np.rint(values), 0, 255).astype(np.uint8)
 

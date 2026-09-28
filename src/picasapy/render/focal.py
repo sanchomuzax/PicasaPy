@@ -19,11 +19,11 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
-from picasapy.lazy_cv2 import cv2
 import numpy as np
 
+from picasapy.lazy_cv2 import cv2
 from picasapy.render.curves import validate_image
-from picasapy.render.glimmer_ops import resize_image
+from picasapy.render.glimmer_ops import masked_blend, resize_image
 
 #: A `Hardness` osztója a natív képletben. A 101 (nem 100!) szándékos: a
 #: `Hardness = 100` mellett is marad egy hajszálnyi átmenet, sosem lesz a
@@ -36,6 +36,17 @@ _ZOOM_SAMPLE_MAX = 30
 
 #: A maximális zoomeltolás osztója: `floor(width * Impact / 200)`.
 _ZOOM_OFFSET_DIVISOR = 200.0
+
+#: A keverés súlyai a Picasa SSE2-ágában (`0x00bcf0f9`–`0x00bcf0fe`, #3883):
+#: `acc = (38·minta + 217·acc) >> 8` — összegük 255, az osztó 256.
+_ZOOM_SAMPLE_WEIGHT = 38
+_ZOOM_ACC_WEIGHT = 217
+
+#: Ennyi soronként dolgozik a `zoom_blur` (gyorsítótár-méret, nem natív adat).
+_ZOOM_BAND_ROWS = 64
+
+#: A `cv2.remap` egész (`CV_16SC2`) indextérképének felső határa.
+_REMAP_MAX_SIZE = 32767
 
 
 def focal_mask(
@@ -97,8 +108,136 @@ def zoom_sample_count(impact: float) -> int:
 
 
 def zoom_max_offset(width: int, impact: float) -> int:
-    """`floor(width · Impact / 200)` — a legnagyobb zoomeltolás pixelben."""
-    return int(np.floor(width * max(impact, 0.0) / _ZOOM_OFFSET_DIVISOR))
+    """`⌊width · trunc(Impact) / 200⌋` — a legnagyobb zoomeltolás pixelben.
+
+    A mag az egésszé csonkolt `amount`-ot kapja, és egészben szoroz
+    (`0x00bcf4d7 mul edx`), tehát kézzel írt tört Impactnél is csonkolunk."""
+    return (width * int(max(impact, 0.0))) // _ZOOM_OFFSET_DIVISOR
+
+
+def zoom_offsets(samples: int, max_offset: int) -> tuple[int, ...]:
+    """A minták eltolása a natív sorrendben (#3883): `k = N … 1`,
+    `off = ⌊k·D / N⌋` — a legnagyobb eltolás jön ELŐSZÖR (`0x00bcf58e`,
+    `0x00bcf93e`)."""
+    if samples <= 0:
+        return ()
+    return tuple((k * max_offset) // samples for k in range(samples, 0, -1))
+
+
+def zoom_sample_indices(length: int, offset: int, focus_px: float) -> np.ndarray:
+    """Egy tengely legközelebbi-szomszéd forrásindexei (#3883), `int64`.
+
+    A cél → forrás mátrix egy tengelyre `u = (X + 0,5)·L/(L+off) + off·f/L`
+    (`f` a fókusz képpontban), float32-ben; az index `⌊65536·u⌋ >> 16` — a
+    natív 16.16 fixpont, interpoláció nélkül. A mátrix fix pontja
+    `f·(L+off)/L`, nem pontosan `f`.
+
+    A képlet a képen belül marad, amíg `f < L²/(L+off)` — a középfókusz
+    (a golden-készlet minden esete) mindig ilyen. Mivel a függőleges eltolás
+    is a szélességből jön, fekvő képen a függőleges tengely már közepes
+    fókusznál túllép (2560×1707, Impact 100: `y = 0,6`-tól). Ott a szélső
+    képpontot vesszük (vágás) — ez a MI feltevésünk, a Picasa viselkedése
+    nincs kiolvasva (#3893), és golden-pár sem méri.
+    """
+    scale = np.float32(length / (length + offset))
+    shift = np.float32(offset * focus_px / length)
+    pos = np.arange(length, dtype=np.float32) + np.float32(0.5)
+    u = pos * scale + shift
+    fixed = np.floor(u * np.float32(65536.0)).astype(np.int64)
+    return np.clip(fixed >> 16, 0, length - 1)
+
+
+def zoom_blend_step(acc: np.ndarray, sample: np.ndarray) -> np.ndarray:
+    """Egy minta ráfeszítése az akkumulátorra (#3883), `uint8` → `uint8`.
+
+    `acc = (38·minta + 217·acc) >> 8` — a Picasa SSE2-ágának súlya
+    (`0x00bcf0f9`), egészben. **A sávhibával együtt:** a négysávos ciklus
+    csak a csoport első két képpontját bontja ki (`0x00bcf345`,
+    `0x00bcf349`), ezért soronként a négyes csoportok 2. és 3. képpontja a
+    0. és az 1. képpont (előző) akkumulátorával kever. A sor végi ≤ 3
+    képpontos maradék (`0x00bcf444`) a sajátjával. A Picasa kimenete ezt a
+    négyes periódusú mintát hordozza, tehát nekünk is kell.
+    """
+    full = (acc.shape[1] // 4) * 4
+    kevert_acc = acc.copy()
+    kevert_acc[:, 2:full:4] = acc[:, 0:full:4]
+    kevert_acc[:, 3:full:4] = acc[:, 1:full:4]
+    weighted_acc = np.multiply(kevert_acc, _ZOOM_ACC_WEIGHT, dtype=np.uint16)
+    mixed = np.multiply(sample, _ZOOM_SAMPLE_WEIGHT, dtype=np.uint16)
+    mixed += weighted_acc  # legfeljebb 255·255 — elfér uint16-ban
+    mixed >>= 8
+    return mixed.astype(np.uint8)
+
+
+def zoom_blur(
+    image: np.ndarray, x: float, y: float, impact: float, *, gyors: bool = False
+) -> np.ndarray:
+    """A `RadialBlurImageOperation` magja (`0x00bcf4b0`, #3883) — `uint8`.
+
+    Az akkumulátor a forrás másolata; `zoom_offsets` sorrendjében minden
+    eltoláshoz a forrásból legközelebbi szomszéddal vett minta
+    (`zoom_sample_indices`, a két tengely külön — a mátrix átlós) keveredik
+    rá (`zoom_blend_step`). A függőleges eltoláshoz is a `W`-ből számolt
+    `D` tartozik, de a léptékarány tengelyenként más: `H/(H+off)`.
+
+    `gyors=True`: CSAK a csúszka-húzás közbeni élő előnézetnek (a
+    `gyors_elonezet` blokk, #3846 mintájára). Ugyanazok a mintaindexek, de
+    OpenCV-vel (`remap` + `addWeighted`): kerekítve, sávhiba nélkül. A natív
+    út 2560 px-en ~1,7× lassabb a régi, átlagoló OpenCV-útnál; a gyors út
+    ennél is gyorsabb, és szemre ugyanazt a zoomot adja.
+    """
+    height, width = image.shape[:2]
+    offsets = zoom_offsets(zoom_sample_count(impact), zoom_max_offset(width, impact))
+    focus_x = float(x) * width
+    focus_y = float(y) * height
+    steps = [
+        (
+            zoom_sample_indices(height, off, focus_y),
+            zoom_sample_indices(width, off, focus_x),
+        )
+        for off in offsets
+    ]
+    if gyors and max(height, width) <= _REMAP_MAX_SIZE:
+        return _zoom_blur_gyors(image, steps)
+    return _zoom_blur_nativ(image, steps)
+
+
+def _zoom_blur_gyors(
+    image: np.ndarray, steps: list[tuple[np.ndarray, np.ndarray]]
+) -> np.ndarray:
+    """Az élő előnézet útja: `remap` egész indextérképpel (pontosan a natív
+    minta), `addWeighted` 38/256 · 217/256 súllyal (sávhiba nélkül)."""
+    height, width = image.shape[:2]
+    index_map = np.empty((height, width, 2), dtype=np.int16)
+    acc = image
+    for rows, cols in steps:
+        index_map[..., 0] = cols[np.newaxis, :]
+        index_map[..., 1] = rows[:, np.newaxis]
+        sample = cv2.remap(image, index_map, None, cv2.INTER_NEAREST)
+        # a −0,5 a natív `>> 8` csonkítását közelíti (a kerekítés helyett)
+        acc = cv2.addWeighted(
+            sample, _ZOOM_SAMPLE_WEIGHT / 256.0, acc, _ZOOM_ACC_WEIGHT / 256.0, -0.5
+        )
+    return acc.copy() if acc is image else acc
+
+
+def _zoom_blur_nativ(
+    image: np.ndarray, steps: list[tuple[np.ndarray, np.ndarray]]
+) -> np.ndarray:
+    """A natív út: `zoom_blend_step` egészben, a sávhibával."""
+    height = image.shape[0]
+    # A sorok egymástól függetlenek (a minta a FORRÁSBÓL jön, a keverés
+    # soron belüli), ezért sávonként végigvihető minden lépés: a sáv a
+    # gyorsítótárban marad, és nem kell teljes képméretű köztes tömb.
+    out = np.empty_like(image)
+    for top in range(0, height, _ZOOM_BAND_ROWS):
+        bottom = min(top + _ZOOM_BAND_ROWS, height)
+        acc = image[top:bottom].copy()
+        for rows, cols in steps:
+            sample = np.take(np.take(image, rows[top:bottom], axis=0), cols, axis=1)
+            acc = zoom_blend_step(acc, sample)
+        out[top:bottom] = acc
+    return out
 
 
 def apply_focal_zoom(
@@ -110,15 +249,23 @@ def apply_focal_zoom(
     hardness: float = 50.0,
     fade: float = 0.0,
     scale: float = 1.0,
+    *,
+    gyors: bool = False,
 ) -> np.ndarray:
     """`FocalZoom=1,x,y,Impact,Radius,Hardness,Fade` — sugárirányú (zoom)
     elmosás a fókuszpont körül (#570).
 
-    A natív mag szerint `N = min(trunc(Impact) + 5, 30)` zoommintát átlagol,
-    a legnagyobb zoomeltolás `floor(width · Impact / 200)` pixel. A minták a
-    fókuszpont körül egyre nagyobb léptékben újramintavételezett képek; a
-    kész elmosás a **körmaszk** szerint keveredik az élesen maradó
+    A natív mag (`zoom_blur`, #3883) `N = min(trunc(Impact) + 5, 30)`
+    legközelebbi-szomszéd mintát kever egymás után az akkumulátorra
+    (38/217-es súllyal, a Picasa sávhibájával); a legnagyobb zoomeltolás
+    `⌊width · trunc(Impact) / 200⌋` pixel. A kész elmosás a **körmaszk**
+    szerint, a `MaskInstruction` egész képletével keveredik az élesen maradó
     középpontra, végül a `Fade` a szokásos `1 − Fade/100` súllyal zár.
+
+    `D = 0` mellett (keskeny kép vagy `Impact < 1`) a kép változatlan — a
+    spec ciklusa ilyenkor is keverne; hogy a mag itt kilép-e, nincs kiolvasva
+    (#3893), ez a mi feltevésünk.
+    A `gyors` a húzás közbeni élő előnézet útja (`zoom_blur`).
     """
     validate_image(image)
     if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
@@ -133,41 +280,16 @@ def apply_focal_zoom(
             raise ValueError(f"A(z) {name} nem lehet negatív: {value}")
 
     height, width = image.shape[:2]
-    samples = zoom_sample_count(impact)
-    max_offset = zoom_max_offset(width, impact)
-    image_f = image.astype(np.float32)
-    if max_offset <= 0 or samples <= 1:
-        blurred = image_f
+    if zoom_max_offset(width, impact) <= 0:
+        blurred = image
     else:
-        # a legnagyobb minta ennyivel nagyobb a képnél — pixelben megadott
-        # eltolásból léptékarány
-        max_scale = 1.0 + max_offset / max(width, 1)
-        center = (x * width, y * height)
-        accum = np.zeros_like(image_f)
-        for step in range(samples):
-            zoom = 1.0 + (max_scale - 1.0) * step / (samples - 1)
-            matrix = cv2.getRotationMatrix2D(center, 0.0, zoom)
-            accum += cv2.warpAffine(
-                image,
-                matrix,
-                (width, height),
-                flags=cv2.INTER_LINEAR,
-                # ⚠️ #1351: MÉRETLEN FELTEVÉS, nem adat. A `Comicize`
-                # peremszabálya kiderült a szállított `filterdesc.xml`-ből
-                # (nulla padding, képméretre feszített rács), a `FocalZoom`
-                # halmozásáé NEM: az a NATÍV magban van (`0xbcf4b0`), ami
-                # nincs visszafejtve, és golden-párunk sincs rá.
-                #
-                # A `BORDER_REPLICATE` a mi választásunk — józan, de nem
-                # igazolt. Aki méréssel eldönti, cserélje ki, és vegye ki
-                # ezt a megjegyzést; addig NE hivatkozzon rá úgy, mintha
-                # az eredeti viselkedése volna.
-                borderMode=cv2.BORDER_REPLICATE,
-            ).astype(np.float32)
-        blurred = accum / np.float32(samples)
+        blurred = zoom_blur(image, x, y, impact, gyors=gyors)
 
-    mask = focal_mask(height, width, x, y, radius, hardness, scale)[..., np.newaxis]
-    focused = image_f + mask * (blurred - image_f)
+    # a körmaszk a `MaskInstruction` egész képletével keveri a kernelt az
+    # élesen maradó középpontra (`masked_blend`, #3442)
+    mask = focal_mask(height, width, x, y, radius, hardness, scale)
+    image_f = image.astype(np.float32)
+    focused = masked_blend(image_f, blurred.astype(np.float32), mask)
     weight = np.float32(np.clip(1.0 - fade / 100.0, 0.0, 1.0))
     return _to_uint8(image_f + weight * (focused - image_f))
 
@@ -243,6 +365,10 @@ __all__ = [
     "apply_focal_pixelate",
     "apply_focal_zoom",
     "focal_mask",
+    "zoom_blend_step",
+    "zoom_blur",
     "zoom_max_offset",
+    "zoom_offsets",
     "zoom_sample_count",
+    "zoom_sample_indices",
 ]

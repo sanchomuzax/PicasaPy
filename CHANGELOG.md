@@ -7,6 +7,53 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.628] – 2026-09-28
+
+### Javítva
+- A négy régi, színkerekes effekt („Árnyalás (régi)”, „Szűrt FF”,
+  „Színátmenet”, „Sugaras árnyalás”) PicasaPy-ban beállított színe most
+  pontosan úgy mentődik, ahogy a Picasa menti. Ettől a PicasaPy-ban
+  beállított fehér „Színátmenet” a Picasában és nálunk is ugyanúgy, egy
+  árnyalatnyit sötétít — eddig a Picasa az így mentett effektet
+  sötétítés nélkül mutatta (#3908).
+- A Picasában fehér színnel beállított „Színátmenet” effekt a PicasaPy-ban
+  is úgy jelenik meg, mint az eredetiben: a színezett részen egy
+  árnyalatnyit sötétít, így a kép pontosabban egyezik az eredeti
+  exportjával (#3902).
+
+## [0.8.627] – 2026-09-28
+
+### Javítva
+- A néző a közvetlenül fájlból betöltött képeket (az elő-betöltők, és a
+  kép, amíg nincs szerkesztési előnézete) a valódi méretükből számolva
+  tölti be, legfeljebb 2560 képpontos élekkel és soha nem az eredetinél
+  nagyobban — eddig egy álló telefonfotó 2560×4551-es textúrát kapott, a
+  videokártya 4096-os plafonja fölött, egy kis kép pedig 2560 szélesre
+  nagyítódott (ugyanaz a hiba, amit a #3832 a diavetítésben javított).
+  Kettős nézetre váltáskor a kép egyszer töltődik be, nem kétszer-háromszor
+  (#3877).
+
+## [0.8.626] – 2026-09-28
+
+### Javítva
+- A Telítettség csúszka balra húzva (a szürkítés felé) úgy számol, mint az
+  eredeti Picasa: a teljesen szürkére húzott kép mért eltérése ΔE 0,35-ről
+  0,04-re csökkent (#3889).
+
+- A „Lágyítás” 0-s erősségnél is úgy hat, mint az eredeti Picasában: a kép
+  nem fekete képpontjai eggyel sötétebbek lesznek (eddig változatlanok
+  maradtak; a mért eltérés ΔE 0,47-ről 0,12-re csökkent) (#3895).
+
+## [0.8.625] – 2026-09-28
+
+### Javítva
+- A Fókuszos nagyítás elmosása most az eredeti Picasa módszerével készül:
+  a nagyított képeket egymás után, éles képpontokkal keveri rá a fotóra,
+  az eredeti apró, négyképpontos mintázatával együtt. A kép ettől szinte
+  pontosan olyan lett, mint a Picasában (eddig láthatóan eltért tőle). A
+  csúszka húzása közben az előnézet egy gyorsabb, szemre alig eltérő
+  változattal fut; mentéskor és exportkor az eredeti módszer (#3884).
+
 ### Javítva
 - A nézőben a jobb fiók (Emberek/Helyek/Címkék/Tulajdonságok) megnyitásának
   tesztje terhelt gépen időnként hamisan bukott: a tálca gombja a háttérben

@@ -17,6 +17,7 @@ from picasapy.render.tinting import (
     apply_ansel,
     apply_dir_tint,
     apply_tint,
+    parse_alpha_hex,
     parse_rgb_hex,
 )
 
@@ -57,6 +58,25 @@ class TestParseRgbHex:
         # #1142: az eredeti beolvasó az ELSŐ 8 jegyet veszi — ez korábban
         # kivételt dobott, amitől a lánc egész tagja elesett
         assert parse_rgb_hex("123456789") == parse_rgb_hex("12345678")
+
+
+class TestParseAlphaHex:
+    """#3902: a `dir_tint` fehér-kihagyása a teljes dwordon múlik, ezért az
+    alfa-bájtot ugyanazzal a kiegészítéssel kell kiolvasni."""
+
+    def test_a_nyolcjegyu_alak_felso_bajtja(self) -> None:
+        assert parse_alpha_hex("ffffffff") == 0xFF
+        assert parse_alpha_hex("00ffffff") == 0x00
+
+    def test_a_rovid_alak_alfaja_nulla(self) -> None:
+        assert parse_alpha_hex("ffffff") == 0x00
+
+    def test_a_hosszabb_mezo_az_elso_nyolcra_vagodik(self) -> None:
+        assert parse_alpha_hex("12345678ff") == 0x12
+
+    def test_hibas_value_error(self) -> None:
+        with pytest.raises(ValueError):
+            parse_alpha_hex("xyz")
 
 
 class TestApplyTint:
@@ -263,9 +283,17 @@ class TestApplyDirTint:
         assert int(result[0, 0, 0]) < 100
 
     def test_nulla_shade_identitas(self) -> None:
+        # az identitás csak az alfa nélküli `00ffffff` fehérre áll: az ini
+        # `ffffffff`-jénél a natív szoroz is (#3902)
         image = _uniform_image((80, 120, 160), height=20, width=10)
         result = apply_dir_tint(
-            image, x=0.5, y=0.5, gradient=0.25, shade=0.0, color=(0xFF, 0xFF, 0xFF)
+            image,
+            x=0.5,
+            y=0.5,
+            gradient=0.25,
+            shade=0.0,
+            color=(0xFF, 0xFF, 0xFF),
+            alpha=0x00,
         )
         np.testing.assert_array_equal(result, image)
 

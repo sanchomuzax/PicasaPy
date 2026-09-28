@@ -91,8 +91,11 @@ def test_soften_a_nativ_elmosast_keveri_vissza():
     np.testing.assert_array_equal(glimmer_artistic.apply_soften(kep, impact=50.0, fade=50.0), vart)
 
 
-def test_soften_nulla_impactnal_nem_mos():
-    """`Impact = 0` → a kvantáló 0-t ad → a natív út nem mos (a Gauss-út 1e-6
-    szigmával szintén azonosság volt)."""
+def test_soften_nulla_impactnal_nem_mos_de_kever():
+    """`Impact = 0` → a kvantáló 0-t ad → a natív út nem mos, de a keverés a
+    bemenettel mint felső réteggel lefut (#3895): a kimenet a kép önmagával
+    kevert változata."""
     kep = _kep(5)
-    np.testing.assert_array_equal(glimmer_artistic.apply_soften(kep, impact=0.0, fade=0.0), kep)
+    kep_f = glimmer_ops.to_float(kep)
+    vart = glimmer_ops.to_uint8(glimmer_ops.alpha_blend(kep_f, kep_f, 0.8))
+    np.testing.assert_array_equal(glimmer_artistic.apply_soften(kep, impact=0.0, fade=0.0), vart)

@@ -232,21 +232,28 @@ tint=1,79.842102,ffff                             → Color Preservation, szín
 ansel=1,ffffffff                                  → szín
 ```
 
+*(A `tint` sora a paraméter-SORRENDET mutatja, de nem valós export: a saját
+golden-kitünk kézzel írt mérőfájljából való — ld. alább.)*
+
 Szabály: **`puck` kurzoros szűrőnél a fókuszpont (x, y) megy elöl**, utána a
 csúszkák `id` sorrendben, a színparaméter a végén. A `dir_tint` mért
 alapértékei (0,25 / 0,25) pontosan a `filterdesc.xml` `default` értékei —
 a csúszkanevek tehát ezzel a sorrenddel egyeznek.
 
-**Színformátum-figyelmeztetés:** a `tint` `ffff` (4 hex), az `ansel` és a
-`dir_tint` `ffffffff` (8 hex). A parszernek **változó hosszú** hex-színt kell
-elfogadnia.
+**Színformátum:** a Picasa a színt **mindig nyolc jeggyel** írja (`%08x`),
+a `tint`-et is; a régi, színkerekes effektek (`tint`, `ansel`, `dir_tint`,
+`radtint`) `ff` alfával. A fenti `ffff` a saját golden-kitünk terméke, nem a
+Picasáé. A parszer változó hosszú hex-színt is elfogad, de ez csak
+robusztussági kényelem. Részletek: [`filters-decoded.md`](filters-decoded.md),
+„A `tint` 4 hex jegyet ír — SAJÁT TESZTADAT-ARTEFAKTUM (2026-08-16)".
 
 > ~~A `colorwheel` verziókülönbsége (v0 vs v1) magyarázza a hex-hosszt.~~
-> **MEGCÁFOLVA (2026-08-15):** a fenti táblázat szerint a `dir_tint` és a
-> `radtint` **is `version="0"`**, mégis 8 jegyet ír. A `version` és a
-> hex-hossz nem korrelál. A legvalószínűbb magyarázat prózai: az író
-> **elhagyja a vezető nullákat**. Részletek és a színkezelés-lelet:
-> [`filters-decoded.md`](filters-decoded.md), `tint` szakasz.
+> **MEGCÁFOLVA (2026-08-15):** a `dir_tint` és a `radtint` **is
+> `version="0"`**, mégis 8 jegyet ír. ~~A legvalószínűbb magyarázat prózai:
+> az író **elhagyja a vezető nullákat**.~~ **MEGHALADVA (2026-08-16):** az
+> író nem hagy el semmit — a binárisban egyetlen hex-darabka van (`,%08x`),
+> és a valós korpusz mind a 11 `tint`/`dir_tint` sora 8 jegyes. A 4 jegyes
+> `tint` a saját tesztadatunk volt.
 
 ## 4. Glimmer-effektek — a teljes csővezeték
 
@@ -8196,9 +8203,28 @@ A 0-s sugarú `BlurImageOperation` nem lép ki: `0x00bb5050` 1 alatti sugárra 0
 alá esik, ezért a sor „mindkettő tétlen” besorolást kapott, és a kód erre
 hivatkozva hagyta ki a keverést. A 684-es készlet 56 „tétlen” sora közül
 ilyen eltolódást a `soften__min` (−1,00) és a `dir_tint__min` (−0,50)
-mutat; a többinél az export a forrással azonos.
+mutat, helyi, egyirányút pedig a `roundededges__alap` (+2,10, a sarkok
+fehérje); a többinél az eltolódás legfeljebb 0,12.
 
 Fejlesztés: #3895.
+
+> ✅ **Megvalósítva (#3895, 2026-09-28).** Az `apply_soften` 0-s sugárnál is
+> keveri a (változatlan) képet önmagával: `soften__min` ΔE 0,470 → **0,121**
+> (`alap` 0,196, `max` 0,121 — változatlan). Az elemző `mean_shift`-je a
+> `|átlagos előjeles eltolódás| ≥ 0,25` sort már nem sorolja tétlennek
+> (JPEG-zaj ≤ 0,003, a legkisebb valódi jel a `dir_tint__min` −0,50-e): a
+> `soften__min` a javítás nélkül `NEM_IMPLEMENTALT`, vele `JO`.
+>
+> A teljes 684-es készlet újramérve (előtte `main`, utána ez az ág;
+> `docs/benchmarks/2026-09-19-golden-meroszett-684.md`): `JO` 113 → 115,
+> `MINDKETTO_TETLEN` 56 → 53, `NEM_IMPLEMENTALT` 0 → 1, a többi változatlan.
+> Három sor fordul át a „mindkettő tétlen”-ből: `soften__min` → `JO`
+> (ΔE 0,470 → 0,121), `roundededges__alap` → `JO` (ΔE 0,143; a sarkok
+> fehérje mindkét oldalon +2,1 szint), és `dir_tint__min` →
+> **`NEM_IMPLEMENTALT`** (ΔE 0,296; a Picasa az átmenet vonala fölötti felet
+> pontosan eggyel sötétíti — ugyanaz a `(255·b) >> 8` minta —, mi a
+> bemenetet másoljuk). Ez utóbbi eddig rejtett eltérés; egy 0,5-ös küszöb
+> (mért eltolódás −0,498) nem fogta volna meg.
 
 ### E) Két mért hiba nálunk — a bináris itt az OKOT is megadja
 
