@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A „HDR-szerű” effekt a legkisebb „Sugár” állásán is élesít, ahogy az
+  eredeti Picasa, és a „Helyi kontraszt” effekttel együtt közelebb került az
+  eredetihez (a mért eltérés ΔE 0,49–1,12-ről 0,19–0,27-re csökkent) (#3520).
+
 ## [0.8.615] – 2026-09-28
 
 ### Javítva

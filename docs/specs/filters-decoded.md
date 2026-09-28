@@ -5909,6 +5909,8 @@ Ebből **két, eddig pusztán goldenre illesztett konstansunk levezethető**:
    nagy `w`-re `σ ≈ w/2`. A mért felezés tehát a Flash-örökségű
    háromlépéses dobozelmosás pontos következménye, nem illesztési műtermék.
 
+> ⚠️ **Elavult (#1607, #3520):** az alábbi bekezdés a korábbi modellt írja le. A `+ 2,9·strength` tagot a #1607 a csonkító dobozelmosás lenyomataként azonosította, a #3520 óta pedig a `LocalContrast` a fenti XML-láncot számolja a natív elmosással, `Contrast − 1` eltolás nélkül (ld. a következő, `HDR`-ről szóló szakasz „Nálunk” bekezdését).
+
 **Ami NEM vezethető le:** a `local_contrast()` harmadik tagja,
 a `+ 2,9·strength` világosítás (`LOCAL_CONTRAST_BRIGHTNESS_PER_STRENGTH`,
 `glimmer_ops.py:391`). Az XML csővezetékében **ennek nincs megfelelője**.
@@ -5945,7 +5947,7 @@ LocalContrast:  ki = elm + C·(be − elm)  =  be + (C − 1)·(be − elm)
 
 Ez a #688 „a `HDR` a csúszkát közvetlenül adja tovább, a `LocalContrast` `Contrast − 1`-et” mérésének **bináris oka**: a natív lánc 4. lépése visszacseréli a képet az eredetire, az XML-lánc viszont az elmosottból indul. ⇒ A `HDR` **`Contrast = 1`-nél is élesít** (`be + (be − elm)`); nem nulla-állapot.
 
-**Az elmosás a natív `BlurImageOperation`**, 3 menettel (`render/nativ_blur.blur_image_operation`). A mai `glimmer_ops.box_blur_trunc` az 1,3-as sugarat 1-es dobozra kerekíti, ez pedig azonosság. Ezért hatástalan nálunk a `min` állás: a kvantáló (`0x00bb5050`) az 1,3-at 1,3-nak hagyja, és a natív doboz ezzel is mos.
+**Az elmosás a natív `BlurImageOperation`**, 3 menettel (`render/nativ_blur.blur_image_operation`). A korábbi `glimmer_ops.box_blur_trunc` az 1,3-as sugarat 1-es dobozra kerekítette, ez pedig azonosság — ezért volt hatástalan nálunk a `min` állás: a kvantáló (`0x00bb5050`) az 1,3-at 1,3-nak hagyja, és a natív doboz ezzel is mos.
 
 #### Mérve a Picasa-exporton (684-es készlet, átlagos ΔE)
 
@@ -5961,6 +5963,8 @@ Ez a #688 „a `HDR` a csúszkát közvetlenül adja tovább, a `LocalContrast` 
 Az elmosás minősége is mérve: `quality` 1 / 2 / 3 mellett a `HDR` min 0,504 / 0,320 / **0,188**, az alap 2,964 / 1,359 / **0,265**. Ez egybevág a `push 3`-mal. A `HDR` XML-sorrendű lánccal (elmosottból indulva) a min 1,120 marad, az alap 1,417: a kiindulópont tehát mérhetően számít.
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten és a Picasa-exporton, független újralevezetéssel (ld. a #3520-at).*
+
+**Nálunk (#3520):** a `HDR` a `glimmer_ops.hdr_local_contrast`, a `LocalContrast` a `glimmer_ops.xml_local_contrast` szerint számol, mindkettő a natív `blur_image_operation(kép, R, R, 3)`-mal. A szorzó (`MultiplyColorMatrix`) kimenetét 8 bitre **kerekítjük** — ezt nem a bináris, hanem a mérés dönti el: egész `C`-nél (a `HDR` mért állásai) mindegy, a `LocalContrast` alap (`C = 1,5`) állásán kerekítve 0,207, csonkítva 0,277, lebegőpontosan 0,220. A `LOCAL_CONTRAST_STRENGTH_OFFSET` (`Contrast − 1`) és a `box_blur_trunc` megszűnt: az XML-lánc `C = 1`-nél magától azonosság. Mérve a 684-es készleten (golden: `tests/render/test_glimmer_tone.py`): `HDR` min **0,188**, alap **0,265**, max 0,121; `LocalContrast` min 0,121, alap **0,207**, max **0,258**.
 
 ### `Comicize` — három eltérés az eredetitől
 
