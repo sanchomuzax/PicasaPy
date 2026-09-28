@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A nézőben a jobb fiók (Emberek/Helyek/Címkék/Tulajdonságok) megnyitásának
+  tesztje terhelt gépen időnként hamisan bukott: a tálca gombja a háttérben
+  a könyvtár nem látszó fiókját is animáltan nyitja, és a teszt eddig nem
+  várta meg ennek az animációnak a végét. A teszt mostantól a fiók
+  végleges szélességére vár, nem csak a nézőbeli panelre (#3901).
+
 ## [0.8.629] – 2026-09-28
 
 ### Javítva
@@ -16,13 +23,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - A Lágy fókusz a kép szélén annyira mos el, mint az eredeti Picasa: eddig
   kissé gyengébben mosott (a mért eltérés ΔE 0,64-ről 0,33-ra, a legerősebb
   állásban 0,53-ról 0,34-re csökkent) (#3917).
-
-### Javítva
-- A nézőben a jobb fiók (Emberek/Helyek/Címkék/Tulajdonságok) megnyitásának
-  tesztje terhelt gépen időnként hamisan bukott: a tálca gombja a háttérben
-  a könyvtár nem látszó fiókját is animáltan nyitja, és a teszt eddig nem
-  várta meg ennek az animációnak a végét. A teszt mostantól a fiók
-  végleges szélességére vár, nem csak a nézőbeli panelre (#3901).
 
 ## [0.8.628] – 2026-09-28
 
