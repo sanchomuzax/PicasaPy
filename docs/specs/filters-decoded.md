@@ -2154,7 +2154,7 @@ ki  = s + (((o − s) · (256 − k)) >> 8)            ; visszakeverés (0x009ac
 
 `k = 0`-nál (Intenzitás 0) `ki = o` pontosan; `k = 256`-nál `ki = s`.
 
-**Nálunk** (`render/effects.py`, `apply_glow`): lebegőpontos
+**Nálunk a #3913 előtt** (`render/effects.py`, `apply_glow`): lebegőpontos
 `be + I·(255 − be)·hom/255`, a négyzetes előgörbe `be²/255` lebegőpontosan, és
 0-s sugárnál egy tartalék sugár (`GLOW_V1_RADIUS`) fut — a natív 0-s sugárnál
 nem mos el.
@@ -2169,6 +2169,14 @@ nem mos el.
 
 Fejlesztés: #3913.
 
+✅ **Megvalósítva (#3913):** `render/effects.py` — `glow_gamma_lut`,
+`glow_weight`, `glow_blend`, `apply_glow` (numpy, vektoros; a sugár
+`[0, 250]`-re vágva, 0-nál nincs elmosás, a `GLOW_V1_RADIUS` tartalék csak a
+paraméter nélküli láncelem alapértéke maradt). Mérve a 684-es készleten
+(átlag-ΔE a Picasa-exporthoz, `glow` = `glow2`): alap 0,327 → **0,264**,
+max 0,514 → **0,284**, min 0,121 → **0,121** — a „natív” oszlop értékei
+három tizedesre.
+
 ### A `radblur` megfejtett modellje
 
 Natív elmosó mag + a 4.2.4 sugaras smoothstep-maszkja
@@ -2178,7 +2186,7 @@ elmosottal. Két illesztett skalár:
 - **`Sharpness = 0`** — a `radblur`-nak nincs „Élesség" csúszkája; a négy
   golden-pár illesztési minimuma egybehangzóan a 0-nál van (0,1-től monoton
   romlik).
-- **a sugár képszélesség-hányada `0,009`** — a 4.2.4 dekompilátum `0,01`-et
+- **a sugár képszélesség-hányada ~~`0,009`~~ → `0,01` (#3917, ld. lent)** — a 4.2.4 dekompilátum `0,01`-et
   olvas, de mind a négy pár (két Amount-érték, három kép) minimuma
   következetesen a `0,9 ×` értéknél van, és az `(Amount+1)` arányosság
   pontosan teljesül. ~~**Az eltérés oka nyitott** — a #317 dolga eldönteni,
@@ -2221,6 +2229,13 @@ A `0,9`-es szorzó a régi együttható eltérését nyelte el.
 | min (… / −1 / −1) | 0,340 | 0,340 | 0,306 |
 
 Fejlesztés: #3917.
+
+✅ **Megvalósítva (#3917):** `render/effects.py` `RADBLUR_WIDTH_FRACTION = 0.01`,
+`RADBLUR_SHARPNESS = 0.0` a bináris `fldz`-jére hivatkozva. Mérve a 684-es
+készleten: alap 0,640 → **0,330**, max 0,530 → **0,335**, min 0,340 → 0,340
+(pontosan a fenti „bináris” oszlop). A régi golden-kit párjai mind javultak:
+`chart_color` 0,56 → 0,50, `photo01` 0,25 → 0,09, `photo04` 0,84 → 0,68
+(`golden-kit/09-effects`), `chart_ramp` 0,44 → 0,25 (`golden-kit3/16-effects-ramp`).
 
 > Az `Amount = 0` **NEM azonosság** — a korábbi kód annak vette. A
 > `golden-kit` `radblur=1,0.411585,0.611111,0,0` exportján a kép átlagosan
