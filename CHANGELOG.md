@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az „Élesítés” effekt most az eredeti Picasa szerint élesít: a csúszka
+  felső állásain eddig jóval gyengébb volt az eredetinél, mostantól ugyanolyan
+  erős (a mért eltérés ΔE 0,98-ról 0,28-ra, az alapállásban 0,36-ról 0,17-re
+  csökkent) (#3851).
+
 ## [0.8.616] – 2026-09-28
 
 ### Javítva
