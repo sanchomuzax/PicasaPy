@@ -189,6 +189,24 @@ class TestASzolgaltato:
         lazac = {s for s in szinek if s[0] > s[1]}
         assert lazac == {(255, 127, 127)}, lazac
 
+    def test_az_EXIF_orientaciot_alkalmazza(self, tmp_path: Path) -> None:
+        """#3832: a szolgáltató az EXIF-orientációt ALKALMAZZA — a sima
+        `QImage(út)` nem tette, és egy 6-os állású álló kép a Projektor
+        módú diavetítésben fekve jelent meg. A QML a méretet a
+        MEGJELENÍTETT tájolásban kéri, tehát a doboz is arra illik."""
+        from PIL import Image as PilImage
+        from PySide6.QtCore import QSize
+
+        ut = tmp_path / "exif6.jpg"
+        exif = PilImage.Exif()
+        exif[0x0112] = 6  # 90°-kal elforgatva megjelenítendő
+        PilImage.new("RGB", (160, 90), (200, 200, 200)).save(ut, exif=exif.tobytes())
+        provider = DisplayPhotoProvider()
+        natv = provider.requestImage(f"{ut}?d=projector", None, None)
+        assert (natv.width(), natv.height()) == (90, 160)
+        meretezett = provider.requestImage(f"{ut}?d=projector", None, QSize(45, 80))
+        assert (meretezett.width(), meretezett.height()) == (45, 80)
+
 
 @pytest.fixture
 def modell(qt_app, tmp_path: Path):
@@ -219,6 +237,27 @@ def modell(qt_app, tmp_path: Path):
         )
     )
     return model
+
+
+class TestAzOldalcsere:
+    """#3832: a diavetítés `sourceSize`-a a Qt fájlbetöltőjének a TÁROLT
+    tájolásban kell — ehhez a modell megmondja, cserél-e oldalt az EXIF."""
+
+    @pytest.mark.parametrize(
+        ("allas", "cserel"),
+        [(1, False), (3, False), (5, True), (6, True), (8, True), (None, False)],
+    )
+    def test_az_allas_szerint(self, modell, allas, cserel) -> None:
+        import dataclasses
+
+        foto = dataclasses.replace(modell._photos[0], orientation=allas)
+        modell.set_photos((foto,))
+        assert modell.pixelSidesSwappedAt(0) is cserel
+        vart = (8, 12) if cserel else (12, 8)
+        assert (modell.pixelWidthAt(0), modell.pixelHeightAt(0)) == vart
+
+    def test_ervenytelen_indexre_hamis(self, modell) -> None:
+        assert modell.pixelSidesSwappedAt(99) is False
 
 
 class TestAModellUrlje:
@@ -263,24 +302,4 @@ class TestAQmlKotes:
         assert "controller.displayMode" in qml, (
             "a kötésnek hivatkoznia kell a módra, különben váltáskor nem "
             "értékelődik újra"
-        )
-
-    def test_a_sourceSize_befoglalo_doboz_mod_aktivalasakor(self) -> None:
-        """#3832: a `displayphoto` szolgáltatóra mutató kép a `sourceSize`
-        MAGASSÁGÁT is korlátozza — a csak-szélességes kérés a szolgáltatónak
-        0 magasságot (korlátlan) küldött, és egy álló kép a V3D 4096-os
-        textúraplafonja fölé nőhetett. A NYERS `file://` úton (mód nélkül)
-        ez marad korlátlan (vö. a főnéző #3819 óta szándékos döntésével: a
-        nyers fájlokra a befoglaló doboz felméretezést, +850 MiB-ot mért)."""
-        qml = (
-            Path(__file__).resolve().parents[2]
-            / "src/picasapy/app/qml/PicasaPy/SlideshowView.qml"
-        ).read_text(encoding="utf-8")
-        assert qml.count("sourceSize.width: 2560") == 3, (
-            "a diavetítés három Image-ének (előző dia, dia, elő-betöltés) "
-            "mindegyikén szélesség-korlátnak kell maradnia"
-        )
-        assert qml.count("displayphoto") >= 3, (
-            "a sourceSize.height-nak a szolgáltatóra mutató URL-hez kell "
-            "kötődnie, hogy a doboz csak akkor aktiválódjon"
         )

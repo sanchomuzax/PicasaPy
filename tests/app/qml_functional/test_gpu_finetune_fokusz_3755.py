@@ -254,6 +254,7 @@ def test_valodi_gpun_egerhuzassal(tmp_path):
     eredmeny = subprocess.run(
         [sys.executable, "-m", "pytest", f"{__file__}::TestValodiGpu",
          f"{__file__}::TestValodiGpuAlloKep",
+         f"{__file__}::TestValodiGpuDiavetites",
          "-q", "-rs", "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'bt'}"],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         timeout=240, cwd=str(gyoker), env=kornyezet,
@@ -602,3 +603,113 @@ def _savos_kep_latszik(window, qt_app, kep, alap, kepnev: Path | None) -> None:
         pont = (kozep_x, r["fent"] + arany * (r["lent"] - r["fent"]))
         assert _kozel(_szin(ablak, *pont), vart), (
             f"{kep.objectName()} {arany:.0%}-nál: {_szin(ablak, *pont)} ≠ {vart}")
+
+
+# -- #3832: a diavetítés textúrája, valódi GPU-n ------------------------------
+#
+# A Qt fájlbetöltője `PreserveAspectFit` mellett a kért `sourceSize`-ra
+# FELNAGYÍT: a régi csak-szélességes 2560-as kérés 1440×2560-ból és
+# 3000×5333-ból is 2560×4551-es textúrát csinált (V3D-plafon: 4096), egy
+# 400×300-as képből 2560×1920-at. A diavetítés ezért a kép valódi méretéből
+# számolt PONTOS, natívnál nem nagyobb méretet kér (`forrasMeret`).
+#
+# rontás-kontroll (#3832): a main `SlideshowView.qml`-jével és
+# szolgáltatójával (csak-szélességes 2560) mód nélkül és Projektor módban is
+# BUKIK: 400×300 → 2560×1920, 1440×2560 és 3000×5333 → 2560×4551. A PR első
+# változatával (2560-as doboz csak a szolgáltatónak) mód nélkül ugyanez a
+# három érték, Projektor módban a 400×300-as kép bukik (2560×1920, a
+# jelölő mód a dobozra nagyít). A színpróba egyikben sem bukik: a Qt a
+# plafon fölötti textúrát feltöltéskor csendben lekicsinyíti — a méret-
+# állítás fog. Lefuttatva 2026-09-28-án, valódi OpenGL-en (V3D).
+
+PIROS = (200, 40, 40)
+#: név → (méret, alapszín); a felső negyed mindegyiken kék sáv
+_DIA_KEPEK = {
+    "a.jpg": ((400, 300), ZOLD),
+    "b.jpg": ((1440, 2560), NARANCS),
+    "c.jpg": ((3000, 5333), PIROS),
+}
+#: a várt textúra: 2560-as dobozba illő, legfeljebb natív méret
+_DIA_TEXTURA = {"a.jpg": (400, 300), "b.jpg": (1440, 2560), "c.jpg": (1440, 2560)}
+
+
+def _dia_kepek_gpu(lib) -> None:
+    for nev, ((szel, mag), alap) in _DIA_KEPEK.items():
+        kep = np.full((mag, szel, 3), alap[::-1], np.uint8)
+        kep[: mag // 4] = KEK[::-1]
+        cv2.imwrite(str(lib / nev), kep, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+
+@pytest.fixture
+def dia_kepek_gpu(qt_app, tmp_path):
+    if os.environ.get(_BELSO_JELZO) != "1":
+        pytest.skip("csak a `test_valodi_gpun_egerhuzassal` alfolyamatában fut")
+    yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_dia_kepek_gpu)
+
+
+def _diavetites(window, qt_app, mod: str):
+    """Elindított, megállított, vágásos átmenetű diavetítés — a `mod`
+    menütételével (üres = mód nélkül)."""
+    from PySide6.QtCore import QMetaObject, QObject, Q_ARG
+
+    from tests.app.qml_functional.test_diavetites_mod_a_kepernyon_1640 import _kattint
+
+    api = window.rendererInterface().graphicsApi()
+    if api != QSGRendererInterface.GraphicsApi.OpenGL:
+        pytest.skip(f"a GraphicsInfo.api nem OpenGL: {api}")
+    if mod:
+        _kattint(window, mod)
+        _esemenyek(qt_app)
+    QMetaObject.invokeMethod(window, "startSlideshow",
+                             Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0))
+    _esemenyek(qt_app)
+    show = window.findChild(QObject, "slideshowView")
+    assert show.property("visible") is True, "a diavetítés nem indult el"
+    show.setProperty("playing", False)
+    show.setProperty("transitionKind", "cut")
+    return show
+
+
+def _diara_lep(qt_app, show, nev: str, *, hatarido_ms=15000):
+    """A `nev` képre lép, és megvárja, hogy a dia BETÖLTSE (aszinkron)."""
+    from PySide6.QtCore import QObject
+
+    modell = show.property("photosModel")
+    sor = next(i for i in range(modell.rowCount())
+               if modell.filePathAt(i).endswith("/" + nev))
+    show.setProperty("currentIndex", sor)
+    dia = show.findChild(QObject, "slideshowImage")
+    for _ in range(hatarido_ms // 50):
+        if (nev in dia.property("source").toString()
+                and dia.property("progress") == 1.0
+                and dia.property("implicitWidth") > 0):
+            break
+        QTest.qWait(50)
+    else:
+        raise AssertionError(f"{nev}: a dia nem töltődött be")
+    QTest.qWait(300)
+    return dia
+
+
+class TestValodiGpuDiavetites:
+    TEXTURA_PLAFON = 4096
+
+    @pytest.mark.parametrize("mod", ["", "menuViewDisplayModeProjector"])
+    def test_a_textura_a_dobozban_nativnal_nem_nagyobb_es_kirajzolodik(
+        self, dia_kepek_gpu, qt_app, mod
+    ):
+        window, _c, _e = dia_kepek_gpu
+        show = _diavetites(window, qt_app, mod)
+        kepnev = os.environ.get("PICASAPY_GPU_3832_KEP")
+        mert = {}
+        for nev in ("b.jpg", "c.jpg", "a.jpg"):
+            dia = _diara_lep(qt_app, show, nev)
+            mert[nev] = _implicit(dia)
+            ment = Path(kepnev) if kepnev and not mod and nev == "c.jpg" else None
+            _savos_kep_latszik(window, qt_app, dia, _DIA_KEPEK[nev][1], ment)
+        # az összes mért méret egyszerre — a bukás a teljes táblát mutassa
+        assert mert == _DIA_TEXTURA, f"{mod or 'mód nélkül'}: {mert}"
+        for nev, (szel, mag) in mert.items():
+            natv_szel, natv_mag = _DIA_KEPEK[nev][0]
+            assert max(szel, mag) <= self.TEXTURA_PLAFON, nev
+            assert szel <= natv_szel and mag <= natv_mag, f"{nev} felnagyítva"

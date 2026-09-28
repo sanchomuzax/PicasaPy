@@ -78,6 +78,56 @@ Rectangle {
     signal transitionPicked(string kulcs)
     signal captionModePicked(string mod)
 
+    //: #3832: a vetített kép textúrájának leghosszabb éle. A V3D
+    //: textúraplafonja 4096 — ez alatt marad, és egy 4K-s kijelzőt is
+    //: kitölt.
+    readonly property int texturaEl: 2560
+
+    //: #3832: a kép `sourceSize`-a a VALÓDI méretéből (`pixelWidthAt`/
+    //: `pixelHeightAt`, #2492 — a megjelenített, EXIF-orientált méret): a
+    //: `texturaEl` dobozba illő, legfeljebb natív méret, MINDKÉT élen
+    //: kitöltve.
+    //:
+    //: ⚠️ Miért pontos méret, és miért nem doboz. Valódi GPU-n MÉRVE a Qt
+    //: saját fájlbetöltője FELNAGYÍT a kért méretre: a csak-szélességes
+    //: 2560-as kérés egy 1440×2560-as és egy 3000×5333-as képből is
+    //: 2560×4551-es textúrát csinált (a 4096-os plafon fölött — a Qt
+    //: ilyenkor csendben lekicsinyít, a kár képenként ~46 MB memória és a
+    //: CPU-idő), a `Qt.size(2560, 2560)` doboz pedig egy 400×300-as képből
+    //: 3413×2560-at. A pontos, natívnál nem nagyobb méretre nincs mit
+    //: felnagyítani.
+    //:
+    //: Ismeretlen méretnél (0, pl. még nem indexelt kép) a korábbi út: csak
+    //: szélesség a nyers fájlnak, 2560-as doboz a `displayphoto`
+    //: szolgáltatónak (az a dobozba nem nagyít fel).
+    function forrasMeret(index) {
+        var el = show.texturaEl
+        if (!photosModel || index < 0
+                || typeof photosModel.pixelWidthAt !== "function")
+            return Qt.size(el, 0)
+        var szolgaltato = photosModel.displayUrlAt(index, show.displayMode)
+                          .indexOf("image://displayphoto/") === 0
+        var szel = photosModel.pixelWidthAt(index)
+        var mag = photosModel.pixelHeightAt(index)
+        if (szel <= 0 || mag <= 0)
+            return Qt.size(el, szolgaltato ? el : 0)
+        var w = Math.min(el, szel)
+        var h = Math.round(mag * w / szel)
+        if (h > el) {
+            h = el
+            w = Math.round(szel * el / mag)
+        }
+        //: ⚠️ A Qt fájlbetöltője a kért méretet a fájlban TÁROLT tájolásra
+        //: alkalmazza, nem a megjelenítettre (mérve: egy 6-os EXIF-állású
+        //: 5333×3000-es képnek 1440×2560-at kérve 2560×4551 lett) — ott a
+        //: pár fordítva kell. A `displayphoto` a megjelenített tájolásban
+        //: dolgozik, annak nem.
+        if (!szolgaltato && typeof photosModel.pixelSidesSwappedAt === "function"
+                && photosModel.pixelSidesSwappedAt(index))
+            return Qt.size(h, w)
+        return Qt.size(w, h)
+    }
+
     function count() {
         return photosModel ? photosModel.rowCount() : 0
     }
@@ -130,7 +180,7 @@ Rectangle {
     }
 
     //: #433: a váltás pillanatában a `slide.source` MÉG a kimenő kép URL-je
-    //: (a kötés csak a kezelő után fordul át) — ezt adjuk az áttűnésnek.
+    //: (a `_diakBetolt` csak utána írja át) — ezt adjuk az áttűnésnek.
     //:
     //: ⚠️ #3018 — MÉRVE, és ez volt a hiba. Korábban egy külön `elozoUrl`
     //: tárolón át ment, és EGY LÉPÉSSEL eltolódott: az áttűnés a KÉT
@@ -141,6 +191,55 @@ Rectangle {
         var kimeno = slide.source
         if (show.visible && kimeno !== "")
             show._atmenetIndit(kimeno)
+        show._diakBetolt()
+    }
+    onVisibleChanged: show._diakBetolt()
+    onPhotosModelChanged: show._diakBetolt()
+    onDisplayModeChanged: show._diakBetolt()
+
+    //: a vetített kép URL-je (#1640: a mód VALÓDI argumentum), üres, ha
+    //: nincs mit vetíteni
+    function _diaUrl(index) {
+        return show.visible && show.photosModel && index >= 0
+            ? show.photosModel.displayUrlAt(index, show.displayMode) : ""
+    }
+
+    //: #3832: a forrás és a forrásméret EGYÜTT, egyetlen betöltéssel.
+    //:
+    //: ⚠️ Miért nem két kötés. A Qt az `Image` `source`-ának ÉS a
+    //: `sourceSize`-ának minden egyes változására AZONNAL betölt. Két
+    //: kötésnél lépéskor az egyik előbb fordul át, és a kép egyszer a
+    //: rossz párral is betöltődik (a régi kép az új mérettel, vagy az új a
+    //: régivel) — a gyorstárban egyik sincs meg, tehát teljes dekódolás.
+    //: MÉRVE a `displayphoto` úton, három különböző méretű képen, három
+    //: lépésben: két kötéssel 17 szolgáltató-kérés, köztük rossz párok (egy
+    //: 400×300-as kép 1440×1080-ra, egy álló kép 168×300-ra méretezve);
+    //: ezzel az úttal (és az elő-betöltő egyező `fillMode`-jával) 5.
+    //: Ezért méretváltáskor a forrás előbb kiürül (üres forrásra a Qt nem
+    //: tölt), a méret beáll, és csak utána jön az új forrás.
+    function _betolt(kep, url, meret) {
+        var regi = kep.sourceSize
+        var ujMeret = regi.width !== meret.width || regi.height !== meret.height
+        if (!ujMeret && kep.source.toString() === String(url))
+            return
+        if (ujMeret) {
+            kep.source = ""
+            kep.sourceSize = meret
+        }
+        kep.source = url
+    }
+
+    //: a dia és az elő-betöltő forrása — minden olyan változáskor, amitől a
+    //: vetített kép függ (index, láthatóság, modell, megjelenítési mód)
+    function _diakBetolt() {
+        show._betolt(slide, show._diaUrl(show.currentIndex),
+                     show.forrasMeret(show.currentIndex))
+        var kovetkezo = show.visible && show.photosModel
+            ? show.nextPhotoIndex(show.currentIndex, 1) : -1
+        // #1640: az elő-betöltés is a mód-tudatos URL-t kérje — különben a
+        // következő dia egy pillanatra a festetlen képet villantaná
+        show._betolt(elobetoltoSlide, show._diaUrl(kovetkezo),
+                     show.forrasMeret(kovetkezo))
     }
 
     function togglePause() { playing = !playing }
@@ -183,7 +282,9 @@ Rectangle {
             fatyol.opacity = 0
             return
         }
-        elozoSlide.source = elozoUrl
+        //: #3832: a kimenő kép a SAJÁT forrásméretével (a dia még azt
+        //: tartja) — ugyanaz a pár, tehát a Qt gyorstárából jön
+        show._betolt(elozoSlide, elozoUrl, slide.sourceSize)
         elozoSlide.opacity = 1
         slide.opacity = show.transitionKind === "dissolve" ? 0 : 1
         fatyol.color = show.transitionKind === "dissolvewhite"
@@ -261,16 +362,9 @@ Rectangle {
         fillMode: Image.PreserveAspectFit
         asynchronous: false
         autoTransform: true
-        sourceSize.width: 2560
-        // #3832: befoglaló doboz, DE csak a szolgáltatóra mutató URL-nél —
-        // a `displayphoto` a dobozba csak kicsinyít (nem nagyít fel), így
-        // egy álló kép sem nőhet a V3D 4096-os textúraplafonja fölé. A
-        // nyers `file://` úton (mód nélkül) a magasság szándékosan
-        // korlátlan marad: a főnéző #3819 óta ismert tanulsága, hogy a
-        // befoglaló doboz a nyers fájlokat is felméretezte (+850 MiB a
-        // teszteken) — azt itt nem ismételjük meg.
-        sourceSize.height: elozoSlide.source.toString().indexOf(
-                                "image://displayphoto/") === 0 ? 2560 : 0
+        //: #3832: a kimenő dia a KIMENŐ kép forrásméretét kapja (az
+        //: `_atmenetIndit` írja a forrással együtt) — ez csak a kezdőérték
+        sourceSize: show.forrasMeret(-1)
     }
 
     Image {
@@ -294,18 +388,16 @@ Rectangle {
         // változat `(controller.displayMode, …)` alakú vessző-kifejezés volt,
         // és MÉRVE nem hozott létre kötés-függőséget: módváltás után a dia
         // URL-je a nyers fájlé maradt, a mód némán elveszett.
-        source: show.visible && show.photosModel && show.currentIndex >= 0
-                ? show.photosModel.displayUrlAt(
-                      show.currentIndex, show.displayMode)
-                : ""
+        //
+        // #3832: a `source`-ot és a `sourceSize`-t a `_diakBetolt` írja,
+        // EGYÜTT — két külön kötés lépésenként fölösleges betöltést okozott
+        // (ld. `_betolt`). A módváltást az `onDisplayModeChanged` követi.
         fillMode: Image.PreserveAspectFit
         asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true
-        sourceSize.width: 2560
-        // #3832: ld. az `elozoSlide` melletti magyarázatot — befoglaló
-        // doboz, de csak a szolgáltatóra mutató URL-nél.
-        sourceSize.height: slide.source.toString().indexOf(
-                                "image://displayphoto/") === 0 ? 2560 : 0
+        //: #3832: a kép VALÓDI méretéből számolt, pontos forrásméret (ld.
+        //: `forrasMeret`); a `_diakBetolt` írja. Ez csak a kezdőérték.
+        sourceSize: show.forrasMeret(-1)
 
         //: #433 „Pan and Zoom" (`kenburns`): a dia a tartózkodása alatt
         //: LASSAN nagyít. Nem átmenet, hanem a diára rakott mozgás — ezért
@@ -340,19 +432,17 @@ Rectangle {
     Image {
         id: elobetoltoSlide
         visible: false
-        // #1640: az elő-betöltés is a mód-tudatos URL-t kérje — különben a
-        // következő dia egy pillanatra a festetlen képet villantaná
-        source: show.visible && show.photosModel
-                ? show.photosModel.displayUrlAt(
-                      show.nextPhotoIndex(show.currentIndex, 1), show.displayMode)
-                : ""
+        // #1640 + #3832: a forrást és a forrásméretet a `_diakBetolt` írja
+        // — ugyanazt a párt, amit a dia kér majd erre a képre, így a lépéskor
+        // a Qt gyorstárából jön
+        //: #3832: a kitöltési mód is a gyorstár kulcsának része (a Qt a
+        //: betöltőnek átadja) — eltérő `fillMode`-dal az elő-betöltött kép
+        //: nem volt a diáé, és lépéskor újra dekódolódott (MÉRVE: minden
+        //: lépés kétszer kérte ugyanazt a képet a szolgáltatótól)
+        fillMode: Image.PreserveAspectFit
         asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true
-        sourceSize.width: 2560
-        // #3832: ld. az `elozoSlide` melletti magyarázatot — befoglaló
-        // doboz, de csak a szolgáltatóra mutató URL-nél.
-        sourceSize.height: elobetoltoSlide.source.toString().indexOf(
-                                "image://displayphoto/") === 0 ? 2560 : 0
+        sourceSize: show.forrasMeret(-1)
     }
 
     // vezérlő-overlay: egérmozgásra jelenik meg, pár másodperc múlva

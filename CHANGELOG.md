@@ -8,10 +8,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- A diavetítésben Megjelenítési móddal (pl. Projektor, Túlcsordult
-  képpontok) nézve egy álló, telefonos fotó eddig a videokártya
-  textúraplafonja fölé nőhetett és nem jelent meg — a vetített kép mérete
-  mostantól mindkét élén korlátozott, felnagyítás nélkül (#3832).
+- A diavetítés a képet a valódi méretéből számolva tölti be, legfeljebb
+  2560 képpontos élekkel és soha nem az eredetinél nagyobban. Eddig egy
+  álló telefonfotó 2560×4551-es textúrát kapott, a videokártya 4096-os
+  plafonja fölött: a kép megjelent, mert a rendszer csendben lekicsinyítette,
+  de képenként ~46 MB memóriát és fölösleges számítást vitt; egy kis kép
+  pedig 2560 szélesre nagyítódott. Lépéskor a képek sem töltődnek be
+  többször (#3832).
+- Projektor és a többi képpontot átfestő megjelenítési módban a diavetítés
+  az EXIF szerint elforgatott álló fotót is állva mutatja — eddig fekve
+  jelent meg (#3832).
 
 ## [0.8.620] – 2026-09-28
 

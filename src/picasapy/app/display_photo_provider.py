@@ -47,7 +47,7 @@ import logging
 from urllib.parse import parse_qs, unquote
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.app.display_mode_paint import (
@@ -89,7 +89,15 @@ class DisplayPhotoProvider(QQuickImageProvider):
 
     def requestImage(self, id: str, size, requestedSize) -> QImage:  # noqa: A002
         utvonal, mod = _szetszed(id)
-        kep = QImage(utvonal)
+        # #3832: az EXIF-orientációt ALKALMAZNI kell — a sima `QImage(út)`
+        # nem teszi (mérve: egy 6-os állású álló kép a Projektor módú
+        # diavetítésben fekve, 1440×810-en jelent meg), a Qt pedig a
+        # szolgáltató képét nem forgatja utólag. A nyers `file://` út ezt az
+        # `autoTransform`-mal kapja meg; a QML a méretet is a megjelenített
+        # tájolásban kéri (`SlideshowView.forrasMeret`).
+        olvaso = QImageReader(utvonal)
+        olvaso.setAutoTransform(True)
+        kep = olvaso.read()
         if kep.isNull():
             # A hívónak a Qt `Error` státuszt ad; a diavetítés ilyenkor a
             # következő képre lép — ez ugyanaz, mint a nyers fájl útján.
@@ -108,13 +116,24 @@ class DisplayPhotoProvider(QQuickImageProvider):
             # enumot várja. A hiba csak a QML-úton jött elő: az egységpróba
             # `None` méretet adott át, tehát ez az ág méretlen volt.
             width, height = requestedSize.width(), requestedSize.height()
-            # #3832: a `sourceSize` a QML-ben befoglaló doboz — csak
-            # KICSINYÍTÜNK bele, a kis képet nem nagyítjuk fel (a régi,
-            # feltétel nélküli `scaledToWidth` egy 9:16-os, legalább 2560
-            # széles telefonfotót 2560×4551-esre nyújtott, a V3D 4096-os
-            # textúraplafonja fölé). A KIVÉTEL a jelölő mód: ott a
-            # méretezés akkor is megtörténik, ha a kép már belefér, hogy a
-            # jelölés a VÉGLEGES képpontrácson történjen.
+            # #3832: a kért méret befoglaló doboz — a kép mindkét éle
+            # belefér (a régi, feltétel nélküli `scaledToWidth` egy 9:16-os,
+            # legalább 2560 széles telefonfotót 2560×4551-esre nyújtott, a
+            # V3D 4096-os textúraplafonja fölé).
+            #
+            # Jelölő módban a méretezés akkor is megtörténik, ha a kép már
+            # belefér, hogy a jelölés a VÉGLEGES képpontrácson történjen —
+            # ezért egy kis kép a dobozra NAGYÍTÓDIK. A diavetítés ezt
+            # kerüli el: ismert képméretnél a PONTOS, natívnál nem nagyobb
+            # méretet kéri (`SlideshowView.forrasMeret`), tehát itt csak
+            # kicsinyítés történik; felnagyítás csak ismeretlen méretű
+            # képnél (2560-as doboz) marad.
+            #
+            # ⚠️ A „belefér, nem méretezünk" ág a diavetítésből NEM
+            # érhető el: a `displayUrlAt` csak képpontot mozdító módnál ad
+            # `displayphoto` URL-t, tehát ott a `jelol` mindig igaz. Az ág
+            # a szolgáltató saját szerződése (nem jelölő mód → nincs
+            # fölösleges méretezés), más hívónak és az egységpróbának.
             if not (_belefer(kep, width, height) and not jelol):
                 smooth = Qt.TransformationMode.SmoothTransformation
                 if width > 0 and height > 0:
