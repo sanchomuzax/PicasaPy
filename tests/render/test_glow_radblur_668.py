@@ -31,6 +31,7 @@ import pytest
 from picasapy.render.effects import (
     apply_glow,
     apply_radblur,
+    glow_gamma_lut,
     glow_premultiply,
     radblur_blur_radius,
 )
@@ -105,14 +106,16 @@ class TestGlowElProfil:
         # a JPEG-tömörítés miatt ±3 szint a tűrés
         assert np.allclose(profile, self._MERT_PROFIL, atol=3.0)
 
-    def test_teljes_intenzitason_a_sotet_oldal_a_puszta_elmosas(self) -> None:
-        # Intenzitás = 1 mellett a fekete oldalon a kimenet a KÖZÖS mag
-        # elmosása (screen a 0-val = maga az elmosott érték)
+    def test_teljes_intenzitason_a_sotet_oldal_az_elmosas_screenje(self) -> None:
+        # Intenzitás = 1 mellett (k = 256) a fekete oldalon a kimenet a KÖZÖS
+        # mag elmosásának Screenje a 0-val: `255 − (((255 − t) · 255) >> 8)`
+        # — a natív `>> 8` miatt legfeljebb 1 szinttel az elmosott fölött
         image = _step_edge()
         radius = 250.0**0.5
-        blurred = apply_picasa_blur(image, radius, radius)
-        result = apply_glow(image, 1.0, radius)
-        np.testing.assert_array_equal(result[:, :400], blurred[:, :400])
+        blurred = apply_picasa_blur(image, radius, radius)[:, :400].astype(int)
+        result = apply_glow(image, 1.0, radius)[:, :400].astype(int)
+        np.testing.assert_array_equal(result, 255 - (((255 - blurred) * 255) >> 8))
+        assert int((result - blurred).max()) <= 1
 
     def test_a_feher_oldal_255_marad(self) -> None:
         result = apply_glow(_step_edge(), 1.0, 250.0**0.5)
@@ -249,3 +252,85 @@ class TestRadblurNativ:
         original = image.copy()
         apply_radblur(image, 0.5, 0.5, 0.2, 0.7)
         np.testing.assert_array_equal(image, original)
+
+
+def _nativ_keveres(original: np.ndarray, blurred: np.ndarray, k: int) -> np.ndarray:
+    """A spec egész keverése képpontonként, SKALÁR Python-egészekkel (#3913).
+
+    Szándékosan nem vektoros: a független újraszámolás a vektoros
+    megvalósítás őre. A negatív szorzat `>>` -je Pythonban is lefelé kerekít,
+    ahogy a csomagolt 16 bites út modulo-256-os összeadása.
+    """
+    out = np.empty_like(original)
+    for index, (o_val, t_val) in enumerate(
+        zip(original.reshape(-1).tolist(), blurred.reshape(-1).tolist(), strict=True)
+    ):
+        s_val = 255 - (((255 - t_val) * (255 - o_val)) >> 8)
+        out.reshape(-1)[index] = s_val + (((o_val - s_val) * (256 - k)) >> 8)
+    return out
+
+
+class TestGlowEgeszAritmetika3913:
+    """A binárisból kiolvasott egész aritmetika (spec: „⛳ A `glow` egész
+    aritmetikája a binárisból”, #3912): gamma-tábla, Screen `>> 8`,
+    visszakeverés `256 − k` súllyal."""
+
+    def test_a_gamma_tabla_ertekei(self) -> None:
+        lut = glow_gamma_lut()
+        assert lut.dtype == np.uint8
+        assert lut.shape == (256,)
+        assert int(lut[0]) == 0
+        assert int(lut[128]) == 64
+        assert int(lut[200]) == 157
+        assert int(lut[255]) == 255
+
+    def test_az_elogorbe_a_gamma_tabla(self) -> None:
+        image = np.arange(256, dtype=np.uint8).reshape(16, 16, 1).repeat(3, axis=2)
+        np.testing.assert_array_equal(glow_premultiply(image), glow_gamma_lut()[image])
+
+    def test_k_nulla_a_kimenet_a_bemenet(self) -> None:
+        # 256 · 0,0039 = 0,998 → csonkolva k = 0 → ki = o, bitre
+        rng = np.random.default_rng(3913)
+        image = rng.integers(0, 256, size=(32, 32, 3), dtype=np.uint8)
+        np.testing.assert_array_equal(apply_glow(image, 0.0039, 3.0), image)
+        np.testing.assert_array_equal(apply_glow(image, 0.0, 3.0), image)
+        # fehér mezőben egy fekete képpont: a lebegőpontos súly (0,0039) már
+        # 1 szintet emelne rajta, a csonkolt k = 0 nem
+        dot = _uniform(255, size=16)
+        dot[8, 8] = 0
+        np.testing.assert_array_equal(apply_glow(dot, 0.0039, 3.0), dot)
+
+    @pytest.mark.parametrize("intensity,k", [(0.65, 166), (1.0, 256), (0.5, 128)])
+    def test_nulla_sugarnal_nincs_elmosas_es_a_keveres_bitre(
+        self, intensity: float, k: int
+    ) -> None:
+        # 0-s sugárnál a natív mag azonnal visszatér: t = LUT[o]
+        rng = np.random.default_rng(k)
+        image = rng.integers(0, 256, size=(12, 12, 3), dtype=np.uint8)
+        expected = _nativ_keveres(image, glow_gamma_lut()[image], k)
+        np.testing.assert_array_equal(apply_glow(image, intensity, 0.0), expected)
+
+    def test_a_keveres_bitre_elmosassal(self) -> None:
+        rng = np.random.default_rng(7)
+        image = rng.integers(0, 256, size=(20, 20, 3), dtype=np.uint8)
+        blurred = apply_picasa_blur(glow_premultiply(image), 3.0, 3.0)
+        expected = _nativ_keveres(image, blurred, 166)
+        np.testing.assert_array_equal(apply_glow(image, 0.65, 3.0), expected)
+
+    def test_negativ_intenzitas_az_abszolut_erteke(self) -> None:
+        # a callback `fabs`-szal adja tovább az Intenzitást (0x0049f5c0)
+        rng = np.random.default_rng(5)
+        image = rng.integers(0, 256, size=(16, 16, 3), dtype=np.uint8)
+        np.testing.assert_array_equal(
+            apply_glow(image, -0.65, 3.0), apply_glow(image, 0.65, 3.0)
+        )
+
+    def test_a_sugar_250_re_vagva(self) -> None:
+        image = _step_edge(width=1200, height=8)
+        np.testing.assert_array_equal(
+            apply_glow(image, 1.0, 400.0), apply_glow(image, 1.0, 250.0)
+        )
+
+    def test_teljes_intenzitason_a_fekete_egy_szintet_emelkedik(self) -> None:
+        # k = 256 → ki = s; o = t = 0 → s = 255 − (65025 >> 8) = 1
+        np.testing.assert_array_equal(apply_glow(_uniform(0, size=8), 1.0, 3.0), 1)

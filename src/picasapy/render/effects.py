@@ -8,9 +8,9 @@ Mért alapok (`docs/specs/filters-decoded.md`):
   sarok 0,250). A paraméterek analitikus modellje nyitott — a nem
   alapértelmezett paraméterek hatása itt KÖZELÍTÉS (sugár- és
   erősség-skálázás a mért profilon).
-- **glow/glow2** (#668): a KÖZÖS NATÍV elmosó magon (`render/iir_blur.py`,
-  `0x009dd0d0`) fut, nem Gauss-közelítéssel. A teljes modell nyolc valódi
-  Picasa-exporton MÉRVE — ld. `apply_glow`.
+- **glow/glow2** (#668, #3913): a KÖZÖS NATÍV elmosó magon (`render/iir_blur.py`,
+  `0x009dd0d0`) fut, a binárisból kiolvasott egész aritmetikával (gamma-tábla,
+  Screen `>> 8`, visszakeverés) — ld. `apply_glow`.
 - **radblur** (#668): a natív elmosó mag + a natív sugaras smoothstep-maszk
   (`render/radial_mask.py`) — négy golden-páron MÉRVE, ld. `apply_radblur`.
 - **radsat** (#3517): a `filters-decoded.md` „radsat — TELJES" (#317)
@@ -133,19 +133,62 @@ def apply_vignette(
     return _to_uint8(image.astype(np.float32) * mask[..., np.newaxis])
 
 
-def glow_premultiply(image: np.ndarray) -> np.ndarray:
-    """A Ragyogás előgörbéje: a kép **önmagával szorozva** (`be²/255`).
+#: A `glow` sugarának felső korlátja (`[0xcf48e0]` = 250,0, #3912).
+GLOW_MAX_RADIUS = 250.0
 
-    A natív burkoló (`0x0090d4b0`) az elmosás előtt előkészíti a puffert
-    (`FUN_009aabf0` / `FUN_00aa40a0`); hogy ez pontosan négyzetre emelés,
-    az MÉRÉSBŐL derült ki: a valódi Picasa-export sík foltjain a tónus-
-    emelés `(255−c)·c²` alakú, nem `(255−c)·c` (ami a puszta screen lenne).
-    A kitevő illesztése éles minimumot ad 2,0-nál (1,9-nél és 2,1-nél az
-    átlagos hiba a kétszeresére nő).
+#: A `glow` súlyának skálája és felső korlátja: `k = |csonk(256 · i)|` ≤ 256.
+_GLOW_WEIGHT_SCALE = 256
+
+
+def glow_gamma_lut() -> np.ndarray:
+    """A Ragyogás előgörbéjének 256 elemű gamma-táblája (#3912, #3913).
+
+    A natív `0x00aa40a0` (argumentum `0,5` → kitevő `1 / 0,5 = 2`):
+    `LUT[i] = rint(255 · (f32(i / 255))²)` — az `i / 255` egyszeres
+    pontosságú szorzat (`fmul [0xcf4138]`), a hatványozás és a `· 255`
+    dupla pontosságú, a `fistp` a legközelebbi egészre kerekít.
+    """
+    unit = (np.arange(256, dtype=np.float32) * np.float32(1.0 / 255.0)).astype(np.float64)
+    return np.rint(255.0 * unit**2).astype(np.uint8)
+
+
+def glow_premultiply(image: np.ndarray) -> np.ndarray:
+    """A Ragyogás előgörbéje: a kép a gamma-táblán át (`glow_gamma_lut`).
+
+    Kitevő 2 — a binárisból kiolvasva (#3912), a korábbi mérés (#668) a
+    `(255−c)·c²` alakú tónusemeléssel ugyanezt illesztette.
     """
     validate_image(image)
-    squared = image.astype(np.int64) ** 2
-    return ((squared + 127) // 255).astype(np.uint8)
+    return glow_gamma_lut()[image]
+
+
+def glow_weight(intensity: float) -> int:
+    """A visszakeverés súlya: `k = min(|csonk(256 · i)|, 256)`, `i ∈ [−1, 1]`.
+
+    A callback (`0x008f8f70`) az Intenzitás abszolút értékét adja tovább;
+    a mag `[−1, 1]`-re vág és csonkol (#3912).
+    """
+    clipped = np.clip(np.float32(intensity), np.float32(-1.0), np.float32(1.0))
+    scaled = abs(int(np.trunc(np.float32(clipped) * np.float32(_GLOW_WEIGHT_SCALE))))
+    return min(scaled, _GLOW_WEIGHT_SCALE)
+
+
+def glow_blend(original: np.ndarray, blurred: np.ndarray, weight: int) -> np.ndarray:
+    """A natív keverés (`0x009ac3f0`) csatornánként, egész aritmetikával.
+
+    ```
+    s  = 255 − (((255 − t) · (255 − o)) >> 8)     ← Screen
+    ki = s + (((o − s) · (256 − k)) >> 8)         ← visszakeverés
+    ```
+
+    A negatív szorzat `>>`-je lefelé kerekít — a csomagolt 16 bites út
+    modulo-256-os összeadása ugyanezt adja. `k = 0`-nál `ki = o` pontosan.
+    """
+    o_val = original.astype(np.int32)
+    t_val = blurred.astype(np.int32)
+    screen = 255 - (((255 - t_val) * (255 - o_val)) >> 8)
+    result = screen + (((o_val - screen) * (_GLOW_WEIGHT_SCALE - weight)) >> 8)
+    return result.astype(np.uint8)
 
 
 def radblur_blur_radius(width: int, amount: float) -> float:
@@ -160,37 +203,26 @@ def radblur_blur_radius(width: int, amount: float) -> float:
 
 
 def apply_glow(image: np.ndarray, intensity: float, radius: float) -> np.ndarray:
-    """Ragyogás (`glow`, `glow2`) — a KÖZÖS NATÍV elmosó magon (#668).
+    """Ragyogás (`glow`, `glow2`) — a natív egész aritmetika (#3912, #3913).
 
     ```
-    elő = be² / 255                      ← multiply önmagával
-    hom = iir_blur(elő, R, R)            ← a natív mag, R képpontban
-    ki  = be + Intenzitás · (255 − be) · hom / 255      ← screen
+    k   = min(|csonk(256 · Intenzitás)|, 256)       ← Intenzitás [−1, 1]-re vágva
+    elő = LUT[be]                                   ← gamma-tábla, kitevő 2
+    t   = iir_blur(elő, R, R)                       ← a natív mag, R ∈ [0, 250]
+    ki  = glow_blend(be, t, k)                      ← Screen + visszakeverés
     ```
 
-    Mindhárom összetevő MÉRT:
-
-    - a **sugár** a tárolt (logaritmikusan leképezett) paraméter képpontban,
-      a `blur-meres` öt csúszkaállásán igazolva (4.2.5);
-    - az **előgörbe** négyzetre emelés (ld. `glow_premultiply`);
-    - a **súly** maga az Intenzitás — nincs illesztett szorzó.
-
-    Ellenőrizve nyolc valódi Picasa-exporton (golden-kit `chart_color`,
-    `photo01`, `photo04` × `glow1`/`glow2`, golden-kit3 `chart_ramp` ×
-    `glow1`/`glow2`): átlagos ΔE 0,15…1,19, míg a korábbi Gauss-közelítésé
-    1,74…4,25 volt. A sík foltok tónusa ±0,4 szinten belül egyezik.
+    A sugár képpontban abszolút (4.2.5); 0-s sugárnál a natív mag nem mos
+    el. Mérve a 684-es készlet Picasa-exportján (átlag-ΔE, `glow` = `glow2`):
+    alap 0,327 → 0,264, max 0,514 → 0,284, min 0,121.
     """
     validate_image(image)
-    if intensity < 0:
-        raise ValueError(f"A glow intenzitása nem lehet negatív: {intensity}")
-    weight = min(float(intensity), 1.0)
-    if weight == 0.0:
+    weight = glow_weight(intensity)
+    if weight == 0:
         return image.copy()
-    span = radius if radius > 0 else GLOW_V1_RADIUS
+    span = float(np.clip(radius, 0.0, GLOW_MAX_RADIUS))
     blurred = apply_picasa_blur(glow_premultiply(image), span, span)
-    image_f = image.astype(np.float32)
-    lift = (255.0 - image_f) * blurred.astype(np.float32) / np.float32(255.0)
-    return _to_uint8(image_f + np.float32(weight) * lift)
+    return glow_blend(image, blurred, weight)
 
 
 def apply_radblur(

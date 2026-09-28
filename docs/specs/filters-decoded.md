@@ -2154,7 +2154,7 @@ ki  = s + (((o − s) · (256 − k)) >> 8)            ; visszakeverés (0x009ac
 
 `k = 0`-nál (Intenzitás 0) `ki = o` pontosan; `k = 256`-nál `ki = s`.
 
-**Nálunk** (`render/effects.py`, `apply_glow`): lebegőpontos
+**Nálunk a #3913 előtt** (`render/effects.py`, `apply_glow`): lebegőpontos
 `be + I·(255 − be)·hom/255`, a négyzetes előgörbe `be²/255` lebegőpontosan, és
 0-s sugárnál egy tartalék sugár (`GLOW_V1_RADIUS`) fut — a natív 0-s sugárnál
 nem mos el.
@@ -2168,6 +2168,14 @@ nem mos el.
 | min (0 / 0) | 0,121 | **0,121** | 0,083 |
 
 Fejlesztés: #3913.
+
+✅ **Megvalósítva (#3913):** `render/effects.py` — `glow_gamma_lut`,
+`glow_weight`, `glow_blend`, `apply_glow` (numpy, vektoros; a sugár
+`[0, 250]`-re vágva, 0-nál nincs elmosás, a `GLOW_V1_RADIUS` tartalék csak a
+paraméter nélküli láncelem alapértéke maradt). Mérve a 684-es készleten
+(átlag-ΔE a Picasa-exporthoz, `glow` = `glow2`): alap 0,327 → **0,264**,
+max 0,514 → **0,284**, min 0,121 → **0,121** — a „natív” oszlop értékei
+három tizedesre.
 
 ### A `radblur` megfejtett modellje
 

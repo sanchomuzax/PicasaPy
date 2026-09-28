@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Ragyogás és a régi Ragyogás effekt úgy világosít, mint az eredeti Picasa:
+  a mért eltérés alapbeállításon ΔE 0,33-ról 0,26-ra, a legerősebb állásban
+  0,51-ről 0,28-ra csökkent (#3913).
+
 ## [0.8.626] – 2026-09-28
 
 ### Javítva
