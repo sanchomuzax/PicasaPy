@@ -37,10 +37,14 @@ from compare_render import _read_rgb, delta_e_cie76, ssim  # noqa: E402
 
 #: Amin belül „nem történt semmi" — JPEG-újratömörítés ennyit simán mozdít.
 NOOP_DE = 1.0
-#: Az átlagos ELŐJELES eltolódás, ami fölött egy kis ΔE is valódi művelet: a
-#: JPEG-zaj előjele kiegyenlítődik, egy egyenletes egész szintnyi sötétítés
-#: (a `soften__min` −1-e, ΔE ≈ 0,47) viszont nem (#3895).
-SHIFT_LEVEL = 0.5
+#: Az átlagos ELŐJELES eltolódás (szintben), ami fölött egy kis ΔE is valódi
+#: művelet (#3895). A JPEG-újratömörítés zaja előjelesen kiegyenlítődik: mérve
+#: legfeljebb ±0,003. A legkisebb valódi jel a `dir_tint__min` −0,50-e (spec),
+#: a `soften__min` −1-e ennél nagyobb. A küszöb a kettő közé, a jeltől
+#: biztonságos távolságra esik: 0,5-re téve a `dir_tint__min` mért −0,498-a
+#: épp kicsúszott alóla. (A 684-es szett legnagyobb küszöb alatti eltolódása
+#: 0,12 — `picnikfocalpixelate__min`, a Picasánál és nálunk egyformán.)
+SHIFT_LEVEL = 0.25
 #: Pixelhűnek tekintett egyezés a Picasa-exporttal.
 MATCH_DE = 2.0
 #: E fölött a modellünk érdemben mást csinál.
@@ -72,7 +76,12 @@ def mean_de(first: np.ndarray, second: np.ndarray) -> float:
 
 
 def mean_shift(first: np.ndarray, second: np.ndarray) -> float:
-    """`second − first` átlaga minden csatornán, szintben (előjelesen)."""
+    """`second − first` átlaga minden csatornán, szintben (előjelesen).
+
+    Nem csak az egész képre kiterjedő, egyenletes sötétítést méri: bármilyen
+    egyirányú változást elkap, a helyit is (például a lekerekített sarkok
+    fehérjét), ha az a teljes képre átlagolva eléri a `SHIFT_LEVEL`-t.
+    """
     if first.shape != second.shape:
         second = cv2.resize(
             second, (first.shape[1], first.shape[0]), interpolation=cv2.INTER_AREA

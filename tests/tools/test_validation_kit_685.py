@@ -148,6 +148,25 @@ def test_az_egyenletes_egyszintes_eltolodas_nem_tetlen():
     assert module.classify(0.47, 0.121, 0.40, shift, shift) == "JO"
 
 
+def test_a_legkisebb_valodi_eltolodas_muvelet_a_jpeg_zaj_nem():
+    """#3895-átnézés: a küszöb nem eshet a legkisebb valódi jelre.
+
+    A `dir_tint__min` Picasa-eltolódása −0,50 (spec) — ez művelet; a mért
+    JPEG-zaj legfeljebb ±0,003 — az nem.
+    """
+    module = _load_analyzer()
+    assert module.classify(0.3, 0.3, 0.0, -0.50, 0.0) == "NEM_IMPLEMENTALT"
+    assert module.classify(0.3, 0.3, 0.0, 0.0, -0.50) == "FOLOSLEGES"
+    # a 684-es szetten MÉRT érték −0,498: egy 0,5-ös küszöb alól kicsúszott
+    assert module.classify(0.296, 0.296, 0.0, -0.498, 0.0) == (
+        "NEM_IMPLEMENTALT"
+    )
+    for noise in (0.003, -0.003):
+        assert module.classify(0.3, 0.3, 0.3, noise, noise) == (
+            "MINDKETTO_TETLEN"
+        )
+
+
 def test_a_valodi_tetlenseg_tetlen_marad():
     import numpy as np
 
