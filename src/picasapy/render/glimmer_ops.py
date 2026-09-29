@@ -524,36 +524,126 @@ def _kontraszt_gorbe(c: float) -> float:
     return (1.0 - f) * _KONTRASZT_TABLA[i] + f * _KONTRASZT_TABLA[i + 1]
 
 
-def _kontraszt_alkalmaz(image_f: np.ndarray, contrast: float, brightness: float = 0.0) -> np.ndarray:
-    """A KÜLÖN kontraszt+fényerő ág (#904/#3735, `0x008f1bd0`): a forgáspont
-    **63,5**, nem 128. A képpontra ható sorrend `X → BRIGHTNESS → CONTRAST`
-    (`docs/specs/filterdesc-registry.md`, „⛔ A `SimpleColorMatrix` KÉPPONTRA
-    ható sorrendje FORDÍTOTT", #3735): a kész mátrix a fényerőt a kontraszttal
-    EGYÜTT skálázza, tehát `out = k·(x+b) + (1-k)·63,5`, NEM `k·x + (1-k)·63,5
-    + b`. `|k-1| < eps` esetén a kontraszt-lépés tétlen (a natív korai
-    kilépése), de a fényerő ekkor is hat."""
+def _homogen(matrix: np.ndarray | None = None, offset: float = 0.0) -> np.ndarray:
+    """4×4-es homogén float32 mátrix: bal felső 3×3 = `matrix` (alap:
+    egység), a 4. oszlop első három eleme = `offset`."""
+    result = np.eye(4, dtype=np.float32)
+    if matrix is not None:
+        result[:3, :3] = matrix
+    result[:3, 3] = np.float32(offset)
+    return result
+
+
+def _szorzas_x87(gyujto: np.ndarray, uj: np.ndarray) -> np.ndarray:
+    """`G ← G × Ú` a natív szorzó (`0x008f28d0`) módján: 4×4-es, float32-ként
+    tárolt elemek, x87-FPU. Egy elem: `acc = 0,0` (`[0xcf3a60]`); `l = 0…3`:
+    `acc = f32(f64(acc) + f64(G[i,l]) · f64(Ú[l,j]))` — minden részösszeg
+    float32-be tárolódik (`fstp dword`), tehát a sorrend és a köztes
+    kerekítés számít."""
+    result = np.zeros((4, 4), dtype=np.float32)
+    for i in range(4):
+        for j in range(4):
+            acc = np.float32(0.0)
+            for n in range(4):
+                acc = np.float32(float(acc) + float(gyujto[i, n]) * float(uj[n, j]))
+            result[i, j] = acc
+    return result
+
+
+def _kontraszt_matrix(contrast: float) -> np.ndarray | None:
+    """A KÜLÖN kontraszt-lépés (#904/#3735, `0x008f1bd0`) homogén mátrixa:
+    skála `k`, eltolás `(1-k)·63,5` — a forgáspont **63,5**, nem 128.
+    `|k-1| < eps` esetén a lépés tétlen (a natív korai kilépése): `None`."""
     c = float(np.clip(contrast, -100.0, 100.0))
-    b = float(np.clip(brightness, -100.0, 100.0))
     k = 1.0 + _kontraszt_gorbe(c)
     if abs(k - 1.0) < _CONTRAST_EPS:
-        return image_f + np.float32(b) if b else image_f
-    t = (1.0 - k) * 127.0 * 0.5
-    return np.float32(k) * (image_f + np.float32(b)) + np.float32(t)
+        return None
+    result = _homogen(np.eye(3, dtype=np.float32) * np.float32(k), (1.0 - k) * 127.0 * 0.5)
+    return result
 
 
-def _kontraszt_fenyero_egyuttes(
-    image_f: np.ndarray, contrast: float, brightness: float
-) -> np.ndarray:
-    """A `ContrastAndBrightnessLinked` ág (#904, `0x008f2040`) — KÜLÖN
-    kódút, nem a különálló kontraszt+fényerő egymás után alkalmazva: a
-    forgáspont **127,5** (a valódi középszürke), és a fényerő-tag súlya a
-    kontraszttól függ (`(k+1)·127,5/100`), tehát erős kontraszt mellett a
-    fényerő is erősebben hat."""
+def _fenyero_matrix(brightness: float) -> np.ndarray:
+    """A fényerő-lépés (`0x008f1af0`) homogén mátrixa: egység + a fényerő a
+    4. oszlopban (KÖZVETLEN additív, nincs ×2,55 skálázás)."""
+    return _homogen(None, float(np.clip(brightness, -100.0, 100.0)))
+
+
+def _kontraszt_fenyero_egyuttes_matrix(contrast: float, brightness: float) -> np.ndarray:
+    """A `ContrastAndBrightnessLinked` ág (#904, `0x008f2040`) homogén
+    mátrixa — KÜLÖN kódút, nem a különálló kontraszt+fényerő egymás után:
+    a forgáspont **127,5**, és a fényerő-tag súlya a kontraszttól függ
+    (`(k+1)·127,5/100`)."""
     c = float(np.clip(contrast, -100.0, 100.0))
     b = float(np.clip(brightness, -100.0, 100.0))
     k = 1.0 + _kontraszt_gorbe(c)
     t = ((k + 1.0) * 127.5 * b) / 100.0 + (127.5 - k * 127.5)
-    return np.float32(k) * image_f + np.float32(t)
+    return _homogen(np.eye(3, dtype=np.float32) * np.float32(k), t)
+
+
+def _szinmatrix_osszefuzve(
+    saturation: float | None, contrast: float, brightness: float, linked: bool
+) -> tuple[np.ndarray, np.ndarray]:
+    """A `SimpleColorMatrix` kész `(3×3 mátrix, 3 eltolás)` párja, a natív
+    összefűzés módján (#3951, `docs/specs/filterdesc-registry.md`, #3950):
+    `M = S · C · B` (linked: `M = S · L`), a gyűjtő `G ← G × Ú`
+    (`_szorzas_x87`: `l = 0…3`, float32 részösszegek). A `S` telítettség
+    nélkül egység. A képpontra a fényerő hat előbb, a kontraszt utána, majd a
+    telítettség (#3735)."""
+    gyujto = _homogen(_saturation_matrix(float(saturation)) if saturation is not None else None)
+    if linked:
+        if contrast or brightness:
+            gyujto = _szorzas_x87(gyujto, _kontraszt_fenyero_egyuttes_matrix(contrast, brightness))
+    elif contrast or brightness:
+        kontraszt = _kontraszt_matrix(contrast)
+        if kontraszt is not None:
+            gyujto = _szorzas_x87(gyujto, kontraszt)
+        gyujto = _szorzas_x87(gyujto, _fenyero_matrix(brightness))
+    return gyujto[:3, :3].copy(), gyujto[:3, 3].copy()
+
+
+def _fixpont_egyutthato(matrix: np.ndarray) -> np.ndarray:
+    """A közös színmátrix-alkalmazó (`0x008f21a0`) együtthatói:
+    `c = trunc(m·2048 ± 0,5)` — a `±` az `m` előjele (nullától elfelé
+    kerekítés; NEM `rint`, az a felezőpontot páros felé viszi). A szorzás
+    float64-ben megy (a natív a `double` konstansokkal, `[0xcf3ba0]` =
+    2048,0, `[0xc72150]` = 0,5).
+
+    ⚠️ A natív a `c`-t int16-ként tárolja (`0x008f240f`), tehát `|c| < 32768`,
+    azaz `|m| < 16`. A mai presetekben `|m| ≤ ~10,5` (a telítettség- és a
+    kontraszt-csúszka szélső, egyidejű állásában — pl. `s = c = 100` — a
+    mátrix ezt meghaladná; ott a natív is csonkolna, ezt NEM utánozzuk,
+    és nem is `assert`-eljük, hogy egy szélső csúszkaállás ne dobjon
+    kivételt)."""
+    scaled = np.asarray(matrix, dtype=np.float64) * 2048.0
+    return np.trunc(scaled + np.where(scaled < 0.0, -0.5, 0.5)).astype(np.int64)
+
+
+def _fixpont_bias(offset: np.ndarray) -> np.ndarray:
+    """A közös alkalmazó eltolása (`0x008f2448`): `b = trunc(eltolás·4 ± 0,5)
+    + 2` — a `+2` a végső `>> 2` kerekítése (`add eax, 2` @ `0x008f2469`)."""
+    scaled = np.asarray(offset, dtype=np.float64) * 4.0
+    return np.trunc(scaled + np.where(scaled < 0.0, -0.5, 0.5)).astype(np.int64) + 2
+
+
+def _fixpontos_szinmatrix(image: np.ndarray, matrix: np.ndarray, offset: np.ndarray) -> np.ndarray:
+    """A közös FIXPONTOS színmátrix-alkalmazó (#3930/#3950/#3951,
+    `0x008f2500` → `0x008f2640`), a `SimpleColorMatrix`, a `Tint` szürkítése
+    és a `BW` közös útja. A lebegőpontos `matrix` (`n × 3`) és `offset`
+    (`n`) egész együtthatókra váltva (`_fixpont_egyutthato`, `_fixpont_bias`),
+    képpontonként:
+
+        ki_i = clamp((Σ_j ((c_ij · x_j) >> 9) + b_i) >> 2, 0, 255)
+
+    A `>> 9` MINDEN taggal külön fut (előjeles, lefelé), az összeg a
+    biasszal indul. Bemenet `uint8` RGB, kimenet `uint8` `(H, W, n)`."""
+    coeffs = _fixpont_egyutthato(matrix)
+    bias = _fixpont_bias(offset)
+    pixels = image.astype(np.int64)
+    out = np.empty(image.shape[:2] + (coeffs.shape[0],), dtype=np.uint8)
+    for row in range(coeffs.shape[0]):
+        acc = ((pixels * coeffs[row]) >> 9).sum(axis=-1) + bias[row]
+        out[..., row] = np.clip(acc >> 2, 0, 255)
+    return out
 
 
 def simple_color_matrix(
@@ -569,22 +659,13 @@ def simple_color_matrix(
     a fényerő (KÖZVETLEN additív, nincs ×2,55 skálázás) és a kontraszt
     (101 elemű táblázatos görbe, 63,5-ös forgáspont, korai kilépés kis
     `k`-nál) EGYÜTT, `out = k·(x+b) + (1-k)·63,5` alakban — a képpontra a
-    fényerő hat ELŐBB, a kontraszt UTÁNA (#3735, ld. `_kontraszt_alkalmaz`
-    docstringje). A `brightness` és a `contrast` is `[-100..100]`-ra vágva,
+    fényerő hat ELŐBB, a kontraszt UTÁNA (#3735, ld. `_kontraszt_matrix`
+    és `_szinmatrix_osszefuzve` docstringje). A `brightness` és a `contrast` is `[-100..100]`-ra vágva,
     a natív mintájára.
     """
     validate_image(image)
-    image_f = to_float(image)
-    if saturation is not None:
-        matrix = _saturation_matrix(float(saturation))
-        image_f = image_f @ matrix.T
-    if linked:
-        if contrast or brightness:
-            image_f = _kontraszt_fenyero_egyuttes(image_f, contrast, brightness)
-    else:
-        if contrast or brightness:
-            image_f = _kontraszt_alkalmaz(image_f, contrast, brightness)
-    return to_uint8(image_f)
+    matrix, offset = _szinmatrix_osszefuzve(saturation, contrast, brightness, linked)
+    return _fixpontos_szinmatrix(image, matrix, offset)
 
 
 #: A `LocalContrast` Gauss-szigmája a `Radius` csúszka FELE (#545). A
@@ -924,12 +1005,13 @@ def tint_luma_preserving(image: np.ndarray, color: tuple[int, int, int]) -> np.n
     `Tint` belseje").
 
     1. a bemenetet **Haeberli-szürkére** viszi (`0,3086/0,6094/0,0820`,
-       NEM Rec.601): `szürke = round(Haeberli-luma(képpont))`;
+       NEM Rec.601), a közös FIXPONTOS alkalmazóval (#3951):
+       `szürke = ((632·R >> 9) + (1248·G >> 9) + (168·B >> 9) + 2) >> 2`;
     2. a szürke érték a `_resaturate_table(szín)` 256 elemű táblájának
        indexe — a tábla a `0x00bce2f0(szín, L)` emuláltja `L = 0…255`-re,
        az emulátor kimenetével bitre egyezően (54 szín,
        `tests/render/test_tint_resaturate_nativ_3631.py`). Az 1. lépés
-       kerekítése viszont NINCS bitre igazolva.
+       kerekítése a #3950 kutatás óta kiolvasott (fixpontos, nem `rint`).
 
     ⛔ **KORÁBBAN** (a #878 golden-illesztése): Rec.601-súlyok +
     folytonos, per-képpont gamut-kompenzáció. Szürke bemeneten a modell
@@ -940,10 +1022,9 @@ def tint_luma_preserving(image: np.ndarray, color: tuple[int, int, int]) -> np.n
     A `color` csatornasorrendje **RGB**.
     """
     validate_image(image)
-    image_f = to_float(image)
-    # ⚠️ a natív `ColorMatrix` kimenet-kerekítése nincs kimérve: a `rint`
-    # (float32) feltevés, a szürke index ±1-es csúszását nem zárja ki (#3631).
-    gray = to_uint8(_haeberli_luma(image_f))
+    # A `ColorMatrix(s = −100)` a közös FIXPONTOS alkalmazón fut (#3951,
+    # `c = 632 / 1248 / 168`, `b = 2`), a Haeberli-szürke ennek az indexe.
+    gray = _fixpontos_szinmatrix(image, _saturation_matrix(-100.0)[:1], np.zeros(1))[..., 0]
     table = _resaturate_table((int(color[0]), int(color[1]), int(color[2])))
     return table[gray]
 
@@ -1184,10 +1265,7 @@ def _bw_coefficients(color: tuple[int, int, int]) -> tuple[int, int, int]:
         weights = raw_weights / total
     else:
         weights = np.array([red_w, green_w, blue_w], dtype=np.float64)
-    # `c = trunc(w·2048 + 0,5)` — a súlyok itt mindig ≥ 0 (a `color` bájtjai
-    # és a Haeberli-súlyok is nem-negatívak), ezért a natív „nullától
-    # elfelé kerekítés" mindig a `+0,5` ágon fut.
-    coeffs = np.trunc(weights * 2048.0 + 0.5).astype(np.int64)
+    coeffs = _fixpont_egyutthato(weights)
     return int(coeffs[0]), int(coeffs[1]), int(coeffs[2])
 
 
@@ -1233,11 +1311,10 @@ def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     sorrendjével) — ld. `tint_multiply` docstringjét a #510-es tanulságról.
     """
     validate_image(image)
-    coeffs = np.array(_bw_coefficients(color), dtype=np.int64)
-    pixels = image.astype(np.int64)
-    channel_terms = (pixels * coeffs) >> 9
-    gray = (channel_terms.sum(axis=-1) + 2) >> 2
-    gray = np.clip(gray, 0, 255).astype(np.uint8)
+    coeffs = np.array([_bw_coefficients(color)], dtype=np.float64)
+    # A `_bw_coefficients` már egész `c`; a közös alkalmazó a `c / 2048`
+    # mátrixot pontosan ugyanerre az egészre váltja vissza.
+    gray = _fixpontos_szinmatrix(image, coeffs / 2048.0, np.zeros(1))[..., 0]
     return np.repeat(gray[..., np.newaxis], 3, axis=-1)
 
 

@@ -2110,7 +2110,11 @@ ki_i = clamp( ( Σ_j ((c_ij · x_j) >> 9) + b_i ) >> 2 , 0, 255)                
 
 A Neonon a két lépés külön is mérve: csak a fixpontos kontraszt 0,280 → 0,016, a `Tint` fixpontos szürkítésével együtt 0,000.
 
+**A mátrix-összefűzés pontossága:** a szorzó (`0x008f28d0`) x87-FPU-n megy, `G ← G × Ú`, az összegzés `l = 0…3` sorrendben, a gyűjtő kezdőértéke `0,0` (`[0xcf3a60]`), és minden részösszeg float32-be tárolódik (`fstp dword`): egy elem `acc = 0; l = 0…3: acc = f32(f64(acc) + f64(G[i,l])·f64(Ú[l,j]))`; ezért az eltolás nem `k·b + t` (az csak `S` soronkénti összege = 1 esetén pontos): `s = −100, c = −25, b = −75` → −40,374996 (`b = −159`), linked `s = −100, c = −100, b = −65` → `b = 180`.
+
 **Nálunk:** `render/glimmer_ops.py::simple_color_matrix` (lebegőpontos, `to_uint8`) és `tint_luma_preserving` (`rint` Haeberli) → fejlesztés: #3951.
+
+✅ **Megvalósítva (#3951):** a `simple_color_matrix`, a `tint_luma_preserving` és a `bw_tint` közös fixpontos alkalmazón fut (`glimmer_ops._fixpontos_szinmatrix`; `c = trunc(m·2048 ± 0,5)`, `b = trunc(eltolás·4 ± 0,5) + 2`, tagonként `>> 9`, összeg + `b`, `>> 2`, vágás). A telítettség-, kontraszt- és fényerő-mátrix a natív módján (`_szorzas_x87`, `M = S · C · B`, float32 részösszegek) szorzódik össze. Mérve (684-es mérőkészlet, a Picasa-export kvantálótábláival és mintavételezésével tömörítve, CIE76): `neon__alap` 0,280 → **0,000**; `lomo__alap` / `lomo__min` 0,198 / 0,184 → 0,063 / 0,033; `boost__alap` 0,059 → 0,000; `holga__alap` / `holga__min` 0,060 / 0,034 → 0,010 / 0,003; `crossprocess__alap` 0,225 → 0,000; `cinemascope__alap` 0,079 → 0,000 (a #3942 görbe-lánccal a mai mainen); `picniktint__alap` 0,019 → 0,000. Egyik golden-pár ΔE-je sem romlott.
 
 #### `SimpleColorMatrix` — a `ContrastAndBrightnessLinked` jelentése (8 effekt)
 

@@ -28,8 +28,8 @@ A `TwoTone` (a `ContrastAndBrightnessLinked` ág, `linked=True`) NEM érintett:
 ΔE alap/max/min = 0,546 / 0,121 / 0,670 — változatlan a javítás előtt/után.
 """
 
-# rontás-kontroll: glimmer_ops._kontraszt_alkalmaz visszaállítva a régi
-# sorrendre (`k*image_f + t + b`, a fényerő a kontraszt UTÁN, skálázás
+# rontás-kontroll: a kontraszt+fényerő összefűzése
+# (`glimmer_ops._szinmatrix_osszefuzve`) visszaállítva a régi sorrendre (`k*image_f + t + b`, a fényerő a kontraszt UTÁN, skálázás
 # nélkül) → 14 failed (a `TestAKepletSorrendjeCiBiztos` mind a 8 CI-biztos
 # esete + a `test_a_684_merokeszlettel_a_hatarertek_alatt` mind a 6 golden
 # esete; a `test_a_twotone_linked_ag_...` NEM buktat, mert a `linked=True`
@@ -90,7 +90,9 @@ class TestAKepletSorrendjeCiBiztos:
     def test_a_helyes_keplettel_egyezik(self, x, contrast, brightness):
         pixel = np.array([[[x, x, x]]], dtype=np.uint8)
         result = g.simple_color_matrix(pixel, brightness=brightness, contrast=contrast)
-        vart = round(_vart_helyes_sorrend(x, contrast, brightness))
+        # #3951: a fixpontos alkalmazó (`+ 2`, `>> 2`) a felezőpontot FELFELÉ
+        # kerekíti (`202,5 → 203`), a Python `round` páros felé (`→ 202`).
+        vart = int(np.floor(_vart_helyes_sorrend(x, contrast, brightness) + 0.5))
         assert int(result[0, 0, 0]) == vart
 
     @pytest.mark.parametrize(("x", "contrast", "brightness"), _REPREZENTATIV_ESETEK)
