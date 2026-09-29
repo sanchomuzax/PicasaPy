@@ -7770,6 +7770,47 @@ termékkódot ebben a körben nem módosítottam.
 `tests/render/test_comicize_569.py`, `test_comicize_gorbe_1606.py` és
 `test_comicize_maszk_kuszob_2476.py` fájlokon.*
 
+
+#### ⛳ A körmaszk képpontonként: egész koordináta, SIMD-kerekítés, 16 bites pozíció — a Lomo és a Holga bitre egyezik (2026-09-29, 410. kör, #3957)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten, és a Picasa-exporttal bitre egyezik. Független újralevezetés (#3957): EGYEZIK, ugyanazokkal a képpontértékekkel. A fenti bájt-út (#3390) áll; ez a szakasz a `CircularGradientImageMask` koordinátáit, a SIMD-ág kerekítését és a mi eltérésünket teszi hozzá.*
+
+**A megálló-tábla** a `CircularGradientImageMask`-hoz (`0x00bc2a50`, ld. „A körmaszk alakja kiolvasva”, #3583): `R = max(inner, outer)`, az első megálló `p₁ = csonk(255·inner/R)` alfa `csonk(255·innerAlpha)`, a második 255-nél `csonk(255·outerAlpha)`. A rekeszek a `0x008f3700` szerint `T[i] = trunc(a₀ + (a₁ − a₀)·f32((i − p₁)/(255 − p₁)))`; `p₁` előtt `a₀`, 255-től 256-ig `a₁` (`rep stosd`, `0x008f39d2`, `0x008f3aba`) — 257 elem.
+
+**A pozíció** (`0x008f3970`):
+
+```
+u = (x − cx) · 65280 / R,   v = (y − cy) · 65280 / R      ; x, y EGÉSZ képpontindex (0-tól, fldz @ 0x008f3b67), nincs +0,5
+P = min( round(√(u² + v²)), 0xff00 )                        ; SIMD: sqrtps + cvtps2dq (legközelebbire) — SSE2-es gépen ez fut
+                                                            ; skalár: fistp csonkoló (or 0xc00 @ 0x008f405d) — csak SSE2 nélkül
+i = P >> 8,  f = P & 0xff
+alfa = (T[i+1]·f + T[i]·(256 − f)) >> 8                     ; 0x008f4086–0x008f411d (skalár), 0x008f3d44–0x008f3df1 (SIMD)
+```
+
+A lépték: a `0x008f3840` a befoglaló téglalapot (`0x00bd05f0`: `2R × 2R`, bal felső sarok `(cx − R, cy − R)`) a Flash-színátmenet `1638,4`-es egységére képezi (`[0xcf47f0]`), ennek inverzét (`0x00a4a140`) a `[0xcf48f0] = 79,6875 = 65280/819,2` szorozza (`0x008f3b1f`) — együtt `65280 / R` képpontonként. A SIMD-ágat az SSE2-jelző választja (`[0xd695d2]`, a `0x00c33d30` állítja be CPUID EDX 26-ból; `0x008f3b14`, `je 0x008f3fe7` a skalár ágra). A két ág ritkán eltér: a (0, 320) képpontnál `√ = 43 519,996` → SIMD 43 520 (alfa 127), skalár 43 519 (alfa 126).
+
+**Példa** — 960 × 640, Lomo `Blur = 50` (`inner = 240`, `outer = R = 720`, `p₁ = 85`):
+
+| (x, y) | `P` | `i`, `f` | alfa |
+|---|---:|---|---:|
+| (480, 320) | 0 | 0, 0 | 0 |
+| (0, 320) | 43 520 | 170, 0 | 127 |
+| (0, 0) | 52 305 | 204, 81 | 178 |
+| (100, 100) | 39 811 | 155, 131 | 105 |
+
+**Mérve** (684-es mérőkészlet, a mi kimenetünket a Picasa-export saját kvantálótábláival tömörítve; minden golden-pár lefutott, csak a változók):
+
+| maszk-változat | `lomo__alap` | `lomo__min` |
+|---|---:|---:|
+| a mai kód (folytonos, `+0,5` képpontközép, `rint(255·arány)`) | 0,063 | 0,033 |
+| 16 bites pozíció, egész koordináta, **csonkolva** | 0,0007 | 0,0007 |
+| 16 bites pozíció, egész koordináta, **kerekítve** (SIMD) | **0,0000** | **0,0000** |
+| ugyanez, `+0,5` képpontközéppel | 0,036 | 0,024 |
+
+A `holga__alap` a #3931/#3951 után maradt 0,010-e is 0,000. Más golden-pár nem változik (a fókuszos effektek saját maszkfüggvényt használnak).
+
+**Nálunk:** `render/glimmer_ops.py::circular_gradient_mask` (folytonos float maszk, képpontközéppel) → fejlesztés: #3958.
+
 ## A Comicize ágának két lépése a binárisból: a BW NEM küszöböl, a maszkos GetVar pontosan `PartialMask` (2026-09-23, #3507)
 
 *A #3401 mérése szerint a `filterdesc.xml` szó szerinti ága a mi olvasatunkban
