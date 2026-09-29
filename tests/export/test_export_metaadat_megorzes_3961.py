@@ -575,7 +575,7 @@ class TestSerultBlokk:
 
         futas = subprocess.run(
             [sys.executable, "-c", _BOMBA, str(_TIFF_HELYBEN)],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
         )
         sor = next(
             (s for s in futas.stdout.splitlines() if s.startswith("EREDMENY")), None
