@@ -22,10 +22,9 @@ import pytest
 
 from picasapy.render.effects_artistic import (
     apply_comicize,
-    blend_alpha_native,
     pixelate_centered,
 )
-from picasapy.render.glimmer_ops import resize_image
+from picasapy.render.glimmer_ops import alpha_blend, resize_image
 from picasapy.render.halftone import (
     DOT_SCALE,
     dot_size_for,
@@ -130,24 +129,24 @@ class TestAZaroKeveresEgesz:
     def test_alfa_nulla_az_also_elem(self):
         b = _veletlen(4, 5)
         t = _veletlen(4, 5, 1)
-        np.testing.assert_array_equal(blend_alpha_native(b, t, 0.0), b)
+        np.testing.assert_array_equal(alpha_blend(b, t, 0.0).astype(np.uint8), b)
 
     def test_alfa_egy_a_felso_elem(self):
         b = _veletlen(4, 5)
         t = _veletlen(4, 5, 1)
-        np.testing.assert_array_equal(blend_alpha_native(b, t, 1.0), t)
+        np.testing.assert_array_equal(alpha_blend(b, t, 1.0).astype(np.uint8), t)
 
     @pytest.mark.parametrize("alfa,w", [(0.5, 127), (0.25, 63), (0.3, 75)])
     def test_a_suly_csonkolt_es_eggyel_kisebb(self, alfa, w):
         b = np.array([[[255, 200, 0]]], dtype=np.uint8)
         t = np.array([[[255, 100, 255]]], dtype=np.uint8)
         vart = (b.astype(np.int64) * (255 - w) + t.astype(np.int64) * w) >> 8
-        np.testing.assert_array_equal(blend_alpha_native(b, t, alfa), vart.astype(np.uint8))
+        np.testing.assert_array_equal(alpha_blend(b, t, alfa).astype(np.uint8), vart.astype(np.uint8))
 
     def test_ket_255_os_bemenetbol_254(self):
         """A súlyok összege 255, az osztó 256 — egy szinttel sötétebb."""
         f = np.full((1, 1, 3), 255, dtype=np.uint8)
-        assert blend_alpha_native(f, f, 0.5)[0, 0, 0] == 254
+        assert alpha_blend(f, f, 0.5)[0, 0, 0] == 254
 
     def test_feher_kepen_a_kimenet_egy_szinttel_sotetebb(self):
         """Sík fehér: a raszter fehér, `⌊255·255/255⌋ = 255`, a keverés 254-et ad
@@ -155,3 +154,26 @@ class TestAZaroKeveresEgesz:
         feher = np.full((200, 700, 3), 255, dtype=np.uint8)
         ki = apply_comicize(feher, 20.0, 50.0, 50.0)
         assert ki[100, 350, 0] == 254
+
+
+class TestAMestergorbeKerekitese:
+    """A mestergörbe bájtra `trunc(x + 0,5)` (nem `rint`: a ,5 mindig felfelé)."""
+
+    @pytest.mark.parametrize("bemenet,vart", [(10, 11), (11, 12), (12, 13)])
+    def test_a_pontosan_fel_ertek_felfele_kerekul(self, monkeypatch, bemenet, vart):
+        import picasapy.render.effects_artistic as ea
+
+        lut = np.arange(256, dtype=np.float64)
+        lut[10:13] = (10.5, 11.5, 12.5)  # `rint` 10, 12, 12 lenne
+        monkeypatch.setattr(ea, "comicize_master_curve", lambda _dc: lut)
+        monkeypatch.setattr(ea, "inner_glow", lambda img, *a, **kw: img)
+        latott = {}
+        eredeti = ea.pixelate_centered
+
+        def figyel(curved, *a, **kw):
+            latott["curved"] = curved
+            return eredeti(curved, *a, **kw)
+
+        monkeypatch.setattr(ea, "pixelate_centered", figyel)
+        ea.apply_comicize(np.full((8, 8, 3), bemenet, dtype=np.uint8))
+        assert np.all(latott["curved"] == vart)

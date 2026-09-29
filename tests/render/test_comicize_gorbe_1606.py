@@ -288,7 +288,7 @@ def _amplitudo(kep: np.ndarray, csempe: int) -> float:
 
 @pytest.mark.skipif(_sweep() is None, reason="a research/comicize-sweep mérőkészlet nincs meg")
 class TestA15ExportonMerve:
-    """A 15 eredeti Picasa-export (#3522): átl. amplitúdó-hiba 0,0276, ΔE76 2,4640."""
+    """A 15 eredeti Picasa-export (#3522): átl. amplitúdó-hiba 0,040, ΔE76 1,2155 (#3878)."""
 
     def test_az_amplitudo_es_a_delta_e(self):
         import configparser
@@ -323,4 +323,4 @@ class TestA15ExportonMerve:
                 de.append(float(cr.delta_e_cie76(mi, ref).mean()))
         assert len(hibak) == 15
         assert np.mean(hibak) <= 0.05, f"amplitúdó-hiba {np.mean(hibak):.4f}"
-        assert np.mean(de) <= 2.47, f"ΔE76 {np.mean(de):.4f}"
+        assert np.mean(de) <= 1.23, f"ΔE76 {np.mean(de):.4f}"

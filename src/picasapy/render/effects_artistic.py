@@ -40,7 +40,7 @@ import numpy as np
 
 from picasapy.render.curves import curve_lut, validate_image
 from picasapy.render.belso_ragyogas import inner_glow
-from picasapy.render.glimmer_ops import resize_image
+from picasapy.render.glimmer_ops import alpha_blend, resize_image
 from picasapy.render.glimmer_tone import VIGNETTE_XBLUR_FACTOR
 from picasapy.render.halftone import dot_size_for, native_dot_mask, tiled_mask_origin
 from picasapy.render.nativ_blur import blur_image_operation
@@ -291,36 +291,6 @@ def _comicize_dot_branch(pixelated: np.ndarray, tile: int, offset: float) -> np.
     return np.minimum(np.float32(255.0), kuszob[..., np.newaxis] + pixelated_f)
 
 
-def _float_bits(ertek: float) -> int:
-    return int(np.array(ertek, dtype=np.float32).view(np.int32))
-
-
-def _kozel(alfa: float, cel: float) -> bool:
-    """A végrehajtó „≈”-je: a float32 bitminták eltérése < 8 (`0x00bd0742`–)."""
-    return abs(_float_bits(alfa) - _float_bits(cel)) < 8
-
-
-def blend_alpha_native(bottom: np.ndarray, top: np.ndarray, alpha: float) -> np.ndarray:
-    """A `BlendAlpha` átlátszóság-keverése (`0x009dc4b0`), egész aritmetikával.
-
-    `filterdesc-registry.md`, „A `BlendInstruction`” D) (#626): `α` [0, 1]-re
-    vágva; `α ≈ 0` → az alsó elem, `α ≈ 1` → a felső elem változatlanul;
-    egyébként `w = trunc(α·256)`, `w − 1` ha `w > 0`, és
-    `ki = (b·(255 − w) + t·w) >> 8`. A súlyok összege 255, az osztó 256: a
-    kimenet egy szinttel sötétebb lehet (két 255-ösből 254).
-    """
-    alfa = float(np.clip(np.float32(alpha), 0.0, 1.0))
-    if _kozel(alfa, 1.0):
-        return top.astype(np.uint8)
-    if _kozel(alfa, 0.0):
-        return bottom.astype(np.uint8)
-    w = int(np.float32(alfa) * np.float32(256.0))
-    if w > 0:
-        w -= 1
-    ki = (bottom.astype(np.int32) * (255 - w) + top.astype(np.int32) * w) >> 8
-    return ki.astype(np.uint8)
-
-
 def apply_comicize(
     image: np.ndarray,
     blur_xy: float = 20.0,
@@ -358,7 +328,7 @@ def apply_comicize(
 
     3. a blokk `multiply`-jal (`⌊b·t/255⌋`) kerül a `darkened`-re, `BlendAlpha =
        0,5 − DotFade/200` alfával, a natív egész keverővel
-       (`blend_alpha_native`: `w = trunc(α·256) − 1`,
+       (`glimmer_ops.alpha_blend`: `w = trunc(α·256) − 1`,
        `(b·(255 − w) + t·w) >> 8`; #3878).
 
     ## Mérve (#3522)
@@ -387,8 +357,9 @@ def apply_comicize(
     | max (100/100/100) | 2,328 | 0,207 | 0,173 |
     | min (0/0/0) | 2,294 | 0,416 | 0,317 |
 
-    Ezt a számot a #3876 kutatókódja mérte; ennek a megvalósításnak a
-    golden-mérése a #3878 lezárásának feltétele.
+    Mérve ezen a megvalósításon (#3878): a 684-es készleten alap 0,461,
+    max 0,207, min 0,416 ΔE; a `research/comicize-sweep` 15 exportján az
+    átlag ΔE76 1,2155, az amplitúdó-hiba 0,040.
     """
     validate_image(image)
     for name, value in (
@@ -414,7 +385,8 @@ def apply_comicize(
     # 2b. a DotContrast-görbe — LUT-indexeléssel; a natív művelet 8 bites
     # pufferbe ír (#2477), a `Pixelate` már bájtképet kap
     curve = comicize_master_curve(min(dot_contrast, 100.0))
-    curved = np.clip(np.rint(curve), 0.0, 255.0).astype(np.uint8)[glowed]
+    # bájtra `trunc(x + 0,5)` (`filterdesc-registry.md`, az AdjustCurves görbe-lánca)
+    curved = np.clip(np.floor(curve + 0.5), 0.0, 255.0).astype(np.uint8)[glowed]
 
     # 2c-d. a két ág: AZONOS pixelesítés, a maszk fél csempével eltolva;
     # DARKEN-nel
@@ -428,4 +400,4 @@ def apply_comicize(
     # 3. MULTIPLY (`⌊b·t/255⌋`), majd a blokk alfájával a darkened-re
     alpha = float(np.clip(0.5 - min(dot_fade, 100.0) / 200.0, 0.0, 1.0))
     multiplied = (darkened.astype(np.int32) * raster_u8.astype(np.int32)) // 255
-    return blend_alpha_native(darkened, multiplied, alpha)
+    return alpha_blend(darkened, multiplied, alpha).astype(np.uint8)
