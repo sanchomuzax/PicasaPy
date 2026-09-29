@@ -339,7 +339,7 @@ körben mérendő célzott próbákkal.
 
 - `tint` (szín=ffff): R-csatorna nullázódik, B=G marad → a 16 bites
   színparaméter értelmezése tisztázandó.
-- `ansel`: semleges (B=G=R), enyhe középemelés — B/W + tónusgörbe.
+- `ansel`: semleges (B=G=R) — súlyozott egész luma + képfüggő S-görbe (a `k` erősség a képből, #3840).
 - `glow` v1/v2: középemelés (144/151) — térbeli komponens elemzése hátravan.
   **Felülírva (#668):** a 144/151 a Gauss-modellhez tapadt; a `chart_color`
   golden sík szürke foltjain a VALÓDI érték **128 → 141,9 (v1)** és
@@ -565,7 +565,7 @@ végpontok felé tér el).
 | `glow2` | eltér (2.68) → **közelítés (0,18–1,19)** (#668) | ✅ kész |
 | `radblur` | eltér (3.18) → **közelítés (0,09–0,68)** (#668) | ✅ kész |
 | `Vignette` | eltér (4.65) | ✅ analitikus modell MEGVAN · **a zóna ELLIPSZIS — eredeti exportokkal igazolva (2026-08-18)** |
-| `ansel` | eltér (5.60) → **fehér szűrővel 0,53** (#317) | ✅ fehérre kész · ⚠️ SZÍNES szűrőre nincs export |
+| `ansel` | eltér (5.60) → fehér szűrővel 0,53 (#317) → **0,038 a natív maggal** (#3840) | ✅ fehérre kész · ⚠️ SZÍNES szűrőre nincs export |
 | `dir_tint` | eltér (9.36) | ❌ |
 | `tint` | eltér (13.6 a mai mérésben) | ❌ **a fő ok MEGVAN** (#872): a `preserve` skálája −1…255, plusz hiányzó szinthúzás és gamma |
 
@@ -588,7 +588,7 @@ Picasa-hű lenne.
 | minőség | mit jelent | effektek |
 |---|---|---|
 | **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat` |
-| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6) |
+| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9); az `ansel` (5,6) a #3840 óta 0,038 |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL ÉS VÉGIGMÉRVE (#878)** | a `filterdesc.xml` receptje mellé a natív `glimmer::EdgeDetectionBImageOperation` (`0x00bbca60`) TELJES belső lépéssora is megvan, és a `TintImageOperation` pixelmatematikája golden párból MÉRVE (fényesség-tartó színezés); a #685 mérőszettjén ΔE 113,89 → **4,72**, SSIM −0,002 → **0,866** | `Neon` |
 | **MEGFEJTVE A FILTERDESC-BŐL ÉS VÉGIGMÉRVE (#884, #3631)** | a művelet a #878-ban megfejtett, FÉNYESSÉG-TARTÓ `TintImageOperation` (a `Neon` záró lépésével közös): a bemenet Haeberli-lumáját (NEM Rec.601, #3631) a csatornánkénti csonkolásig (~1 szint) megőrzi, egy 256 elemű, szín szerint épített táblával, amely a natívéval bitre egyezik (54 szín, `tests/render/test_tint_resaturate_nativ_3631.py`). A korábbi modell tömör színréteget kevert a képre, tehát `Fade = 0`-nál egyszínű felületet adott (ΔE 33,45 / SSIM 0,63); a #884 golden-illesztése ezt **ΔE 1,50 / SSIM 0,9991**-re javította Rec.601-súlyokkal, a #3631 pedig a natív Haeberli-táblára: a #684-es készlet `picniktint__alap` esetén ΔE 1,00 → 0,39, és telített kéknél/sárgánál a tábla akár 71 szinttel közelebb került az eredetihez. Ecset-eszköz híján továbbra is a TELJES KÉPRE fut, amit a #685 exportja igazol | `PicnikTint` |
@@ -1596,9 +1596,10 @@ majd mindhármat **256,0**-lal (`[0xcf39d8]`) szorozva egészre kerekíti
 >
 > ⇒ **A súlyozás NEM következtetés többé, hanem megerősített.** A színes
 > szűrős export a *képlet eldöntéséhez* **nem szükséges**; legfeljebb
-> végponttól végpontig tartó visszaigazolás lenne — az viszont a
-> **tónusgörbét** ellenőrizné, ami a színtől független, és fehér szűrővel
-> már 0,53-on áll.
+> végponttól végpontig tartó visszaigazolás lenne. ⚠️ Helyesbítés (#3840):
+> a tónusgörbe NEM színtől független — a `k` erősség a súlyokból és a
+> képből számolódik (lásd „`ansel` — a `k` erősség kiolvasva”); fehér
+> szűrővel a natív maggal 0,038.
 
 *Bizonyítottsági fok: **megerősített** — mindkét konstans a fájlból
 kiolvasva (`255.0`, `256.0`), a normalizálás lépésről lépésre a
@@ -7111,7 +7112,7 @@ Modell **minden** effekt mögött van; a törzs „ezért `blocked`" mondata
 | ~~`dir_sharp`~~ | ~~egy skalár az x87-veremen ment át, a helyén indokolt feltevés áll (#623)~~ → a horgony kiolvasva (#3858), megvalósítva és golden-mérve, ΔE 0,384 (#3859) |
 | ~~`grain` (v1)~~ | ~~saját mérése nincs — a `grain2` modelljét futtatjuk rá (#347)~~ → a callback mindkettőt azonos `a = 0,5`-tel hívja, `grain` és `grain2` ugyanaz a bináris­ból kiolvasott algoritmus, végigmérve (#3927, #3928, #3936) |
 | `tint` · `dir_tint` | **MÉRT, DE ELTÉR**: ΔE 20,6 és 9 |
-| `ansel` | ΔE 5,6 — miközben a színsúlyok a binárisból **megerősítettek** (#939, 286. kör) ⇒ az eltérés a lánc **más** tagjában van, és ez nincs kimérve |
+| `ansel` | ~~ΔE 5,6~~ → a #3840 óta 0,038: az eltérés a képfüggő S-görbéből jött (a natív mag `k` erőssége, „`ansel` — a `k` erősség kiolvasva”) |
 | `Lomo` | ΔE 9,0–9,5, a maradék a `GlowImageOperation` kernelében (#2982) |
 
 ⚠️ **`PicnikTint` NEM tartozik ide:** a státusztábla „MÉRT, DE ELTÉR" sora a
