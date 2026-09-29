@@ -2011,7 +2011,7 @@ a törlések láncolódnak):
 
 ⭐ **Az Interop `0x1001`/`0x1002` a FORRÁS pixelmérete, nem a kimenetié:** a 3229-es
 export 1650 × 1250 (`0xa002`/`0xa003`), az Interop-mezők viszont 1600 × 1200 — a
-keret nélküli forrás mérete. Ez a E) tábla `0xad`/`0xae` sorát mérésből is igazolja.
+keret nélküli forrás mérete. Ez az E) tábla `0xad`/`0xae` sorát mérésből is igazolja.
 
 ⭐ **Az EXIF nélküli forrás exportja is kap bélyegképet** (IFD1, `0x201`/`0x202`):
 a mért két mintán 160 × 112, illetve 160 × 128, 3573 és 1987 bájt. A bélyegkép
