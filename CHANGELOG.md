@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.635] – 2026-09-29
+
 ### Javítva
 - Az exportált kép metaadatai úgy frissülnek, mint az eredeti Picasánál: a
   módosítás dátuma az export ideje, a kép mérete a kimenet tényleges mérete
