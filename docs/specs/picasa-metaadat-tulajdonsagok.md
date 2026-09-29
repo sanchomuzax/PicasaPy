@@ -1760,7 +1760,7 @@ Fejlesztés: **#3961**.
   nem foglal. Önellenőrzés: a forrás minden más bájtja változatlan, ÉS a
   kimenetet visszaolvasva (IFD0 → Exif → IFD1) minden forrás-tag típusa,
   darabszáma és értéke egyezik a szándékosan írtakon kívül — az egy IFD-ben
-  kétszer szereplő tag MINDEN példánya is (#3968; ilyen tag cseréje nem
+  kétszer szereplő tag MINDEN példánya is (#3968; ilyen tag cseréje — a helyben írás is — nem
   egyértelmű, ott a forrás bájtjai mennek).
 - A frissített mezők: `DateTime` = az export ideje; `PixelX/YDimension` = a
   kimenet mérete; a hiányzó `Software`/`Artist` (`PicasaPy`, #1642),

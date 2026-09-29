@@ -1024,3 +1024,32 @@ class TestElonezetHosszDarab:
         kezdet = struct.unpack("<I", olvasott[0x0201][3])[0]
         hossz = struct.unpack("<I", olvasott[0x0202][3])[0]
         assert ki[kezdet : kezdet + hossz] == uj_kep
+
+
+class TestKetszerSzereploHelybenIrhatoTag:
+    """#3968: a kétszer szereplő tagnak a HELYBEN írása sem egyértelmű (az
+    exiftool az elsőt, a PIL az utolsót olvassa) — `TiffHiba`, és a hívó a
+    tartalék útra esik, amely a tájolás minden példányát 1-re írja."""
+
+    @staticmethod
+    def _ket_tajolas_ifd(e="<"):
+        return struct.pack(e + "H", 2) + struct.pack(e + "HHIHH", 0x0112, 3, 1, 6, 0) * 2
+
+    def test_ifd0_ketszer_szereplo_tajolas_tiffhiba(self):
+        th = _th()
+        tiff = b"II*\x00\x08\x00\x00\x00" + self._ket_tajolas_ifd() + b"\x00" * 4
+        v = th.Valtozas("0th", 0x0112, th.Ertek(th.SHORT, 1), csak_ha_megvan=True)
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(tiff, [v])
+        ki = th.tajolas_1_helyben(tiff)
+        assert [struct.unpack_from("<H", ki, 10 + 12 * i + 8)[0] for i in range(2)] == [1, 1]
+
+    def test_ifd1_ketszer_szereplo_tajolas_tiffhiba(self):
+        th = _th()
+        e = "<"
+        ifd0 = struct.pack(e + "H", 1) + struct.pack(e + "HHIHH", 0x0112, 3, 1, 6, 0)
+        ifd1_off = 8 + len(ifd0) + 4
+        tiff = b"II*\x00\x08\x00\x00\x00" + ifd0 + struct.pack(e + "I", ifd1_off) + self._ket_tajolas_ifd() + b"\x00" * 4
+        v = th.Valtozas("1st", 0x0112, th.Ertek(th.SHORT, 1), csak_ha_megvan=True)
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(tiff, [v])

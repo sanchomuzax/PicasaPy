@@ -246,6 +246,8 @@ def _alkalmaz(
         meglevo = tagek.get(v.tag)
         if meglevo is None and v.csak_ha_megvan:
             continue
+        if meglevo is not None and not v.csak_ha_hianyzik:
+            _nem_ketszer_szereplo(bejegyzesek, v.tag)
         if meglevo is not None and (v.csak_ha_hianyzik or _helyben_irhato(blokk, meglevo, v.ertek)):
             continue
         uj[v.tag] = _nyers(blokk, v.ertek)
@@ -303,7 +305,16 @@ def _helyben_1st(blokk: _Blokk, ifd1: list[_Bejegyzes], valtozasok: list[Valtoza
     for v in valtozasok:
         meglevo = tagek.get(v.tag)
         if meglevo is not None and not v.csak_ha_hianyzik:
+            _nem_ketszer_szereplo(ifd1, v.tag)
             _helyben_irhato(blokk, meglevo, v.ertek)
+
+
+def _nem_ketszer_szereplo(bejegyzesek: list[_Bejegyzes], tag: int) -> None:
+    """A kétszer szereplő tag felülírása nem egyértelmű (az olvasók hol az
+    elsőt, hol az utolsót veszik): `TiffHiba`, a hívó a forrás bájtjaira esik
+    vissza (#3968)."""
+    if sum(b.tag == tag for b in bejegyzesek) > 1:
+        raise TiffHiba(f"kétszer szereplő tag nem írható: 0x{tag:04x}")
 
 
 def tajolas_1_helyben(tiff: bytes) -> bytes:
