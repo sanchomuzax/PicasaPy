@@ -1944,3 +1944,94 @@ A 6.1 szakasz egy mezővel eltolt határral olvasta. A „kulcs = `id` + 1” sz
 | EXIF `0x0112` | **törölve** | a forrásé marad (a kép közben el van forgatva → kétszer fordul, #3966) |
 | XMP `tiff:Orientation` | **törölve** | a forrásé marad |
 | ICC | mindig törölve | nem visszük át — egyezik |
+
+### G) ✅ Az EXIF utófeldolgozó: csak a HIÁNYZÓT pótolja, és a csak verziót tartalmazó al-IFD-t kiveszi (2026-09-29, 415. kör, #3985)
+
+A `0x00a761e0` a leíró-tábla ciklusa (E, F) után hívja a **`0x00a78de0`**-t
+(`0x00a764ef`), és csak utána a szerializálót (`0x00a7a2b0`, `0x00a764fa`). Ez
+a lépés **soha nem ír felül meglévő értéket**: minden írást létezésvizsgálat
+előz meg (`0x00a7d360`; a `Software`-nél `0x00a7e070` + `cmp [edx+eax*4], ebx`).
+
+⚠️ **KÉT ikerváltozat van, és a mért exportokon az Intel futott.** A
+`0x00a725a0` a `0x00a72200`-zal a forrás TIFF-fejlécét olvassa (`II` → jelző 0,
+`0x00a72272`; `MM` → jelző 1, `0x00a72281`); `MM`-nél a `0x00a761e0` →
+`0x00a78de0` fut (`0x00a7263f`), **minden más esetben — az EXIF nélküli forrásnál
+is — a `0x00a76930` → `0x00a7b260`** (`0x00a72695`). A mért 186 export mind `II`.
+
+| iker | Motorola (`MM`) | Intel (`II`) | egyezés |
+|---|---|---|---|
+| bejáró ciklus | `0x00a761e0` (1069 b) | `0x00a76930` (1069 b) | mnemonikok **1,000** (348 utasítás) |
+| utófeldolgozó | `0x00a78de0` | `0x00a7b260` (4807 b) | **99,1 %** (1501 : 1496; eltérés: a bájtcsere két hívása és három NOP) |
+| címke-író | `0x00a78470` (1121 b) | `0x00a7a930` (1116 b) | **0,999** (csak a `0x00a71450` bájtcsere hiányzik) |
+| címke-törlő | `0x00a7a0d0` | `0x00a7c540` | **1,000** |
+
+A típus-ugrótábla is azonos szerkezetű: `0xa788d4` (`MM`) és `0xa7ad8c` (`II`)
+egyaránt `{1, 2} → „van-e érték” ág`, `{3..6} → írás`, a 0-típus a `ja`-n át a
+törlő ágra. ⇒ **Az E) és F) szakasz állításai (a `0x00a78470` törlő ága) az `II`
+úton is érvényesek** — ott a `0x00a7a930` végzi ugyanazt.
+
+**A döntési tábla** (az `MM` változat címei; végrehajtási sorrend; a sorrend számít,
+a törlések láncolódnak):
+
+| # | IFD / címke | feltétel | művelet | cím |
+|---|---|---|---|---|
+| 1 | IFD0 `0x0131` Software | a bejegyzés megvan (értéke tetszőleges) | **meghagyja** | `0x00a78e2d`, `0x00a78e3d` `cmp [edx+eax*4], ebx`, `0x00a78e40 jne 0xa78f2e` |
+| 1b | IFD0 `0x0131` | hiányzik (üres IFD-listánál is) | **beírja: ASCII `Picasa`** (`0xc7f0fc`) | `0x00a78ee4`–`0x00a78f1f` |
+| 2a | GPS IFD | üres | semmi | `0x00a78f3d` |
+| 2b | GPS `0x0000` GPSVersionID | megvan, és az IFD-ben ez az egyetlen | **kiveszi az egész GPS IFD-t és az IFD0 `0x8825` mutatót** | `0x00a78f7b`–`0x00a78fbe` |
+| 2c | GPS `0x0000` | hiányzik | **beírja: BYTE[4] = 2,2,0,0** | `0x00a79251`–`0x00a79286` |
+| 2e | GPS `0x0005` GPSAltitudeRef | hiányzik (a GPSAltitude meglétét nem nézi) | **beírja: BYTE 0** | `0x00a794b4`–`0x00a794cb` |
+| 3b | Interop `0x0002` InteropVersion | megvan, és az IFD-ben ez az egyetlen | **kiveszi az Interop IFD-t és az Exif IFD `0xa005` mutatóját** | `0x00a79525`–`0x00a79566` |
+| 3d | Interop `0x0002` | hiányzik (és az Interop IFD nem üres) | **beírja: UNDEFINED[4] `0100`**; az `InteropIndex`-et (`0x0001`) NEM írja | `0x00a795dd`–`0x00a79610` |
+| 4b | Exif `0x9000` ExifVersion | megvan, és az IFD-ben ez az egyetlen | **kiveszi az Exif IFD-t és az IFD0 `0x8769` mutatót** | `0x00a79639`–`0x00a79689` |
+| 4d | Exif `0x9000` | hiányzik (és az Exif IFD nem üres) | **beírja: UNDEFINED[4] `0220`** | `0x00a79700`–`0x00a79731` |
+| 5b | IFD1 `0x0103` Compression | az IFD1 nem üres, és a címke hiányzik | **SHORT 6** | `0x00a79763`–`0x00a7999c` |
+| 5c | IFD1 `0x011a` XResolution | ugyanígy | **RATIONAL 72/1** | `0x00a799af`–`0x00a79c08` |
+| 5d | IFD1 `0x011b` YResolution | ugyanígy | **RATIONAL 72/1** | `0x00a79c1b`–`0x00a79e48` |
+| 5e | IFD1 `0x0128` ResolutionUnit | ugyanígy | **SHORT 2** | `0x00a79e5b`–`0x00a7a070` |
+| 6 | 4-es névtér `0x0011` | mindig, sikeres futásnál | **törli** (a névtér a leíró-táblából Nikon-mintának látszik, nem bizonyított) | `0x00a7a083` |
+
+- Az **IFD0 felbontás- és tömörítés-címkéihez a függvény nem nyúl**: a leírókat csak
+  mintának másolja le, és a névteret átírja `0x1a`-ra (IFD1).
+- A `0x8769`, `0x8825` és `0xa005` mutatót **csak kiveszi, létrehozni nem hozza létre**.
+- A `0x4d`/`0x4e` kulcs kiolvasása **hatástalan**: mindkét eredmény ugyanabba a
+  helyi változóba kerül, és a `0x00a78e1a` `mov [esp+0x14], 0x131` azonnal felülírja.
+  A `PixelX/YDimension` értékét a tábla-ciklus teszi be a halmazból (E).
+- A `0x131` itt a `Software` **címke**, nem az arc-tulajdonságkulcs.
+
+**Mérve** (helyi mérőadat-másolat, 186 forrás–export pár, saját TIFF-olvasóval):
+
+| | 184 EXIF nélküli forrás | 2 GIMP-es `II` forrás |
+|---|---|---|
+| IFD0 | `0x131` = `Picasa`, `0x132`, `0x13b`, `0x8769`; **nincs** `0x11a`/`0x11b`/`0x128` | `Software` = `GIMP 2.8.14` **marad** |
+| Exif | `0x9000` = `0220`, `0x9003`, `0xa002`, `0xa003`, `0xa005`, `0xa420` | `ExifVersion` = `0230` **marad** |
+| Interop | `0x0002` = `0100`, `0x1001`, `0x1002`; **nincs** `0x0001` | ugyanez |
+| IFD1 | `0x103` = 6, `0x11a` = 72/1, `0x11b` = 72/1, `0x128` = 2, `0x201`, `0x202` | a négy érték a forrásban is ez volt |
+| GPS | nincs | nincs |
+
+⭐ **Az Interop `0x1001`/`0x1002` a FORRÁS pixelmérete, nem a kimenetié:** a 3229-es
+export 1650 × 1250 (`0xa002`/`0xa003`), az Interop-mezők viszont 1600 × 1200 — a
+keret nélküli forrás mérete. Ez az E) tábla `0xad`/`0xae` sorát mérésből is igazolja.
+
+⭐ **Az EXIF nélküli forrás exportja is kap bélyegképet** (IFD1, `0x201`/`0x202`):
+a mért két mintán 160 × 112, illetve 160 × 128, 3573 és 1987 bájt. A bélyegkép
+előállítása nincs feltárva → **#3987**.
+
+| | Eredeti | Nálunk (`export_metadata.py`) |
+|---|---|---|
+| `Software`, `Artist`, `ExifVersion` | csak ha hiányzik | csak ha hiányzik — **egyezik** |
+| Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | mindig, ha a forrásnak van mérete | nincs (a 16. C) is nyitva hagyta) |
+| IFD1 bélyegkép + `0x103`/`0x11a`/`0x11b`/`0x128` | mindig | csak a forrás meglévő IFD1-e |
+| GPS `0x0000`/`0x0005` pótlása, csak verziót tartalmazó al-IFD kivétele | igen (erős, nem mért) | nincs |
+
+**Nyitott kérdések mérlege — 3 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 „csak nyitva”:**
+
+1. ~~Melyik címkét mikor pótolja~~ — **LEZÁRVA** (a fenti tábla; két független olvasás egyezik, a mérés egyezik).
+2. **HATÓKÖRÖN KÍVÜL** — hol születik a `0x8769`/`0x8825`/`0xa005` mutató egy újonnan megtelt al-IFD-hez: szerializálási részlet, a kimenetben látható eredménye (a mutató megvan, ha az al-IFD nem üres) mért; egy szabványos TIFF-író ugyanezt adja.
+3. ~~Az `MM` és `II` út azonossága~~ — **LEZÁRVA** (a négy iker-pár mnemonikegyezése fent). A mérőkészletben nincs `MM` forrás; a viselkedés ettől független, mert a kód azonos, csak a bájtsorrend-váltás hiányzik.
+4. **HATÓKÖRÖN KÍVÜL** — a GPS-ág (2b–2e) és a 6. sor futásidejű mérése: geocímkés forrás és Nikon-forrás exportja kell, a mérőkészletben nincs; a kód olvasása utasításszinten kiolvasott (**erős**). Fejlesztői oldalról a #3961 nem függ tőle.
+5. ~~Az EXIF-bélyegkép előállítása~~ — **új jegy: #3987** (megnevezett irány, a mért két mintával és a belépési címmel).
+
+*Bizonyítottsági fok: **megerősített** az 1–5. sorra és az iker-egyezésre (két független opus-olvasás egyezik a mért 186 exporttal); **erős** a 2b–2e, 3b, 4b és 6. sorra (utasításszinten kiolvasva, mérés nincs).*
+
+*Forrás: `0x00a761e0`, `0x00a76930`, `0x00a78de0` (4820 b), `0x00a7b260` (4807 b), `0x00a78470`, `0x00a7a930`, `0x00a7a0d0`, `0x00a7c540`, `0x00a725a0`, `0x00a72200`; a mérés a helyi `meroadat.tar` 684-, 3229-, 3084- és 951-es mappájából.*
