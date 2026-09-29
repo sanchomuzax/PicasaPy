@@ -2,7 +2,8 @@
 
 A `tint` tesztjei a binárisból megerősített hatlépéses receptet rögzítik
 (#872): szinthúzás, egész telítetlenítés, gamma-LUT és `mx`-normalizált
-szorzás. Az `ansel` semleges (R=G=B) kimenetet ad mért tónusgörbével; a
+szorzás. Az `ansel` semleges (R=G=B) kimenetet ad a natív mag szerint (a
+részletes, kézzel levezetett próbák a `test_ansel_native_3840.py`-ban).
 A `dir_tint` a saját moduljában él (#874), a tesztjei a
 `test_dir_tint_874.py`-ban — itt csak az újraexport útvonala őrzött.
 """
@@ -208,12 +209,12 @@ class TestApplyAnsel:
         result = apply_ansel(image, color=(0xFF, 0xFF, 0xFF))
         assert result[0, 0, 0] == result[0, 0, 1] == result[0, 0, 2]
 
-    def test_enyhe_kozepemeles(self) -> None:
-        # mért jelleg: enyhe középemelés — a pontos görbe közelítés
+    def test_kozepszurke_helyben_marad(self) -> None:
+        # #3840: a natív magban fehér szűrővel k = 1 — a középszürke nem
+        # emelkedik (a korábbi mért töréspontsor 133-at adott)
         image = _uniform_image(128)
         result = apply_ansel(image, color=(0xFF, 0xFF, 0xFF))
-        mid = int(result[0, 0, 0])
-        assert 128 < mid <= 150
+        assert int(result[0, 0, 0]) == 128
 
     def test_vegpontok_kozel_helyben_maradnak(self) -> None:
         """#317: a mért görbe a feketét pontosan tartja, a fehéret viszont
@@ -231,17 +232,22 @@ class TestApplyAnsel:
         bele a szürkébe (a Picasa palettája sárga/narancs/vörös/zöld
         szűrőkből áll, ld. `referencia/filteredbw/panel-screenshot-2.png`).
         """
-        red_patch = _uniform_image((200, 40, 40))
-        through_red = apply_ansel(red_patch, color=(0xFF, 0x00, 0x00))
-        through_blue = apply_ansel(red_patch, color=(0x00, 0x00, 0xFF))
+        # #3840: a natív mag `k` erőssége a KÉP EGÉSZÉBŐL jön, és egy
+        # egyszínű foltot a gyors luma felé húz — ezért a szűrő hatása a
+        # foltok EGYMÁSHOZ viszonyított világosságán látszik
+        patches = _uniform_image((200, 40, 40))
+        patches[:, 4:] = (40, 40, 200)
+        through_red = apply_ansel(patches, color=(0xFF, 0x00, 0x00))
+        through_blue = apply_ansel(patches, color=(0x00, 0x00, 0xFF))
 
         for result in (through_red, through_blue):
-            pixel = result[0, 0]
-            assert int(pixel[0]) == int(pixel[1]) == int(pixel[2]), (
+            assert (result[..., 0] == result[..., 1]).all()
+            assert (result[..., 1] == result[..., 2]).all(), (
                 "a Filtered B&W kimenete nem lehet színes"
             )
-        # vörös szűrőn át a vörös folt VILÁGOS, kék szűrőn át sötét
-        assert int(through_red[0, 0, 0]) > int(through_blue[0, 0, 0]) + 100
+        # vörös szűrőn át a vörös folt a VILÁGOS, kék szűrőn át a kék
+        assert int(through_red[0, 0, 0]) > int(through_red[0, 7, 0]) + 100
+        assert int(through_blue[0, 7, 0]) > int(through_blue[0, 0, 0]) + 100
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _uniform_image((90, 20, 250))
