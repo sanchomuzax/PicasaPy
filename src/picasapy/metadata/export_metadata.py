@@ -21,6 +21,9 @@ hibánál a régi bájtmásolás a kimenet (`bajtmasolas`).
   `DateTime` = az export ideje; `PixelX/YDimension` = a KIMENET mérete;
   `Software`, `Artist` (`PicasaPy`, #1642), `DateTimeOriginal` (a
   forrásfájl ideje), `ExifVersion` (`0220`) csak ha HIÁNYZIK.
+  `Orientation` = `1`, csak ha MEGVAN (#3966): a dekódolás a képpontokat
+  már elforgatta, a forrás tagje kétszer fordítaná a képet (16. E: a
+  meglévő `0x0d` kulcs üres értékkel kerül a halmazba).
   Az IFD1 beágyazott előnézete a kimenetből újragenerálva (160×120-ba),
   ha a forrásnak volt; ha nem generálható, a forrásé marad.
 * XMP: a meglévő megmarad, `xmp:ModifyDate` = az export ideje, az `exif:`
@@ -175,6 +178,8 @@ def _exif_valtozasok(
         Valtozas("Exif", 0x9000, Ertek(UNDEFINED, _EXIF_VERZIO), csak_ha_hianyzik=True),
         Valtozas("Exif", 0xA002, Ertek(SHORT, int(size[0]))),  # PixelXDimension
         Valtozas("Exif", 0xA003, Ertek(SHORT, int(size[1]))),  # PixelYDimension
+        # Orientation (#3966): a képpontok már állnak, a tag nem forgathat újra
+        Valtozas("0th", 0x0112, Ertek(SHORT, 1), csak_ha_megvan=True),
     ]
     if taken_at is not None:
         valtozasok.append(

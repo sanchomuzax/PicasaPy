@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az elforgatott (álló) fényképek exportja nem fordul el kétszer: a kimenet
+  tájolás-jelzője alaphelyzetbe áll, mert a képpontok már a helyes állásban
+  vannak; a változatlan másolat a forrás jelzőjét megtartja (#3966).
+
 ## [0.8.635] – 2026-09-29
 
 ### Javítva

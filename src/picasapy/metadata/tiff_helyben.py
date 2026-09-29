@@ -75,12 +75,14 @@ class Ertek:
 
 @dataclass(frozen=True)
 class Valtozas:
-    """`ifd`: `"0th"` vagy `"Exif"`; `csak_ha_hianyzik`: a meglévőt nem írja felül."""
+    """`ifd`: `"0th"` vagy `"Exif"`; `csak_ha_hianyzik`: a meglévőt nem írja
+    felül; `csak_ha_megvan`: a hiányzót nem pótolja (#3966)."""
 
     ifd: str
     tag: int
     ertek: Ertek
     csak_ha_hianyzik: bool = False
+    csak_ha_megvan: bool = False
 
 
 @dataclass(frozen=True)
@@ -238,6 +240,8 @@ def _alkalmaz(
     tagek = {b.tag: b for b in bejegyzesek}
     for v in valtozasok:
         meglevo = tagek.get(v.tag)
+        if meglevo is None and v.csak_ha_megvan:
+            continue
         if meglevo is not None and (v.csak_ha_hianyzik or _helyben_irhato(blokk, meglevo, v.ertek)):
             continue
         uj[v.tag] = _nyers(blokk, v.ertek)

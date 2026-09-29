@@ -1783,6 +1783,13 @@ Fejlesztés: **#3961**.
   frissítése egymástól független. Az egész körül is háló van: bármely
   váratlan hibánál a régi bájtmásolás a kimenet — a kép exportja a
   metaadat miatt soha nem bukik el.
+- **Tájolás (#3966):** a meglévő `Orientation` (`0x0112`) `1` lesz, a helyén
+  írva; hiányzót nem pótolunk. Alap: az E) táblázat `0x0d` sora (a 6.1 szerint
+  = `0x0112`) — a forrásban megvan → **üres** értékkel a halmazba; és a
+  dekódolás a képpontokat már elforgatta. ⚠️ Hogy az eredeti EXIF-írója az
+  üres értékből **törlést** vagy `1`-et csinál, **nincs mérve** (a 16. A)
+  mérés tájolás-tagos forrást nem említ); az XMP `tiff:Orientation`
+  sorsa sincs feltárva, azt nem írjuk.
 - Minden más APP1 (a **kiterjesztett XMP** `xmp/extension` szegmensei, egy
   második EXIF, ismeretlen APP1) és az APP13 bájtra megy, a forrás
   sorrendjében.
