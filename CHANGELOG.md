@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az exportált kép EXIF-je akkor sem veszít el adatot, ha a forrásfájlban egy
+  mező kétszer szerepel, és szabálytalan bélyegkép-hossznál a forrás EXIF-je
+  változatlanul megy tovább (#3968).
+
 ## [0.8.637] – 2026-09-29
 
 ### Javítva

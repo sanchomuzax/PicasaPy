@@ -912,3 +912,115 @@ class TestCsonkoltBlokk:
         ki = _th().frissitett_tiff(tiff, self._valtozasok())
         assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
         assert (_meret(ki, 0xA002), _meret(ki, 0xA003)) == (64, 48)
+
+
+# --- #3968: kétszer szereplő tag, a bélyegkép-hossz darabszáma ----------------
+
+
+def _ifd_lista(tiff, off):
+    """Az IFD bejegyzései SORRENDBEN, listaként: [(tag, típus, darab, érték-bájtok)]
+    — a kétszer szereplő tag mindkét példánya megjelenik."""
+    e = "<" if tiff[:2] == b"II" else ">"
+    (n,) = struct.unpack_from(e + "H", tiff, off)
+    out = []
+    for i in range(n):
+        tag, tipus, darab = struct.unpack_from(e + "HHI", tiff, off + 2 + 12 * i)
+        meret = _MERET.get(tipus, 1) * darab
+        mezo = off + 2 + 12 * i + 8
+        hely = mezo if meret <= 4 else struct.unpack_from(e + "I", tiff, mezo)[0]
+        out.append((tag, tipus, darab, tiff[hely : hely + meret]))
+    return out
+
+
+def _dupla_make_tiff(*make):
+    """Csak IFD0: a `Make` (0x010F) annyiszor, ahány érték jön; `DateTime` nincs
+    (hozzá kell adni, tehát az IFD0 áthelyeződik)."""
+    return b"II*\x00\x08\x00\x00\x00" + _ifd([(0x010F, 2, len(m), m) for m in make], 8, 0)
+
+
+class TestKetszerSzereploTag:
+    def test_athelyezett_ifd_mindket_peldanyt_viszi(self):
+        """A „semmi nem vész el” elv: az áthelyezett IFD0-ban a kétszer szereplő
+        `Make` mindkét példánya megvan, változatlan értékkel."""
+        tiff = _dupla_make_tiff(b"Canon\x00", b"Nikon\x00")
+        ki = _th().frissitett_tiff(tiff, _datetime_valtozas())
+        uj = _ifd_lista(ki, struct.unpack_from("<I", ki, 4)[0])
+        assert [s for s in uj if s[0] == 0x010F] == [
+            (0x010F, 2, 6, b"Canon\x00"),
+            (0x010F, 2, 6, b"Nikon\x00"),
+        ]
+        assert (0x0132, 2, 20, b"2026:09:29 10:00:00\x00") in uj
+
+    def test_onellenorzes_listakent_hasonlit(self):
+        """Ha a kimenetből az egyik példány hiányzik, a szerkezeti önellenőrzés
+        `TiffHiba`-t ad (szótárként a két példány összevonódott, és nem vette észre)."""
+        th = _th()
+        forras = _dupla_make_tiff(b"Canon\x00", b"Nikon\x00")
+        kimenet = _dupla_make_tiff(b"Nikon\x00")
+        with pytest.raises(th.TiffHiba):
+            th._ellenoriz_szerkezet(forras, kimenet, set())
+
+    def test_onellenorzes_megfogja_az_elvesztett_peldanyt(self, monkeypatch):
+        """Ha az áthelyezés mégis elhagyná az egyik példányt, a fő út `TiffHiba`-val
+        a forrás bájtjaira esik vissza."""
+        th = _th()
+        eredeti = th._athelyez
+
+        def elhagyo(blokk, bejegyzesek, uj, kovetkezo):
+            egyszer = list({b.tag: b for b in bejegyzesek}.values())
+            return eredeti(blokk, egyszer, uj, kovetkezo)
+
+        monkeypatch.setattr(th, "_athelyez", elhagyo)
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(_dupla_make_tiff(b"Canon\x00", b"Nikon\x00"), _datetime_valtozas())
+
+    def test_ketszer_szereplo_irando_tag_nem_athelyezheto(self):
+        """A kétszer szereplő `DateTime` (a helyén nem írható, túl rövid) nem
+        egyértelmű: melyik példányt cserélje? `TiffHiba`, a hívó a forrást adja."""
+        th = _th()
+        tiff = b"II*\x00\x08\x00\x00\x00" + _ifd(
+            [(0x0132, 2, 10, b"2020:01:0\x00"), (0x0132, 2, 10, b"2021:01:0\x00")], 8, 0
+        )
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(tiff, _datetime_valtozas())
+
+
+def _hosszu_hossz_tiff():
+    """IFD0 → IFD1, amelyben a `JPEGInterchangeFormatLength` (0x0202) LONG, de
+    két elemű: a mezője eltolás, nem hossz."""
+
+    def epit(ifd1_off, thumb_off):
+        ifd0 = _ifd([(0x010F, 2, 6, b"Canon\x00")], 8, ifd1_off)
+        ifd1 = _ifd(
+            [
+                (0x0201, 4, 1, struct.pack("<I", thumb_off)),
+                (0x0202, 4, 2, struct.pack("<II", 16, 16)),
+            ],
+            ifd1_off,
+            0,
+        )
+        return ifd0, ifd1
+
+    ifd0, ifd1 = epit(0, 0)
+    ifd1_off = 8 + len(ifd0)
+    thumb_off = ifd1_off + len(ifd1)
+    ifd0, ifd1 = epit(ifd1_off, thumb_off)
+    return b"II*\x00\x08\x00\x00\x00" + ifd0 + ifd1 + b"\xab" * 16
+
+
+class TestElonezetHosszDarab:
+    def test_tobb_elemu_hossz_tiffhiba(self):
+        th = _th()
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(
+                _hosszu_hossz_tiff(), _datetime_valtozas(), elonezet=lambda: b"\xff\xd8UJ\xff\xd9"
+            )
+
+    def test_egy_elemu_hossz_tovabbra_is_cserelodik(self):
+        tiff, _off, _kep = _elonezet_bajtjaiba_mutato_tiff()
+        uj_kep = b"\xff\xd8UJ-ELONEZET\xff\xd9"
+        ki = _th().frissitett_tiff(tiff, _datetime_valtozas(), elonezet=lambda: uj_kep)
+        olvasott = _olvas(ki)["1st"]
+        kezdet = struct.unpack("<I", olvasott[0x0201][3])[0]
+        hossz = struct.unpack("<I", olvasott[0x0202][3])[0]
+        assert ki[kezdet : kezdet + hossz] == uj_kep

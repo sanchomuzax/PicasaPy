@@ -37,7 +37,8 @@ A végén két önellenőrzés fut: (1) a kimenet a forrás hosszáig bájtra eg
 a forrással, kivéve a helyben írt tartományokat (és a lecserélt előnézetet);
 (2) a kimenetet visszaolvasva (IFD0, Exif, GPS, Interop, IFD1 és a nem cserélt
 előnézet bájtjai) minden forrás-tag típusa, darabszáma és értéke egyezik,
-kivéve a szándékosan írtakat.
+kivéve a szándékosan írtakat. Az egy IFD-ben kétszer szereplő tag minden
+példánya átkerül, és az ellenőrzés listaként hasonlít (#3968).
 Bármi váratlanra `TiffHiba` — a hívó ilyenkor a forrás bájtjait adja tovább.
 """
 
@@ -257,13 +258,22 @@ def _athelyez(
     uj: dict[int, tuple[int, int, bytes]],
     kovetkezo: int,
 ) -> int:
-    """Az IFD bővített másolata a blokk végére; visszaadja az új eltolását."""
+    """Az IFD bővített másolata a blokk végére; visszaadja az új eltolását.
+
+    A kétszer szereplő tag minden példánya átkerül, a forrásbeli sorrendjükben
+    (#3968); az ilyen tag cseréje nem egyértelmű, ezért `TiffHiba`."""
+    cserelt = [b.tag for b in bejegyzesek if b.tag in uj]
+    if len(cserelt) != len(set(cserelt)):
+        raise TiffHiba("kétszer szereplő tag nem cserélhető")
     # a mező a JELENLEGI bájtokból: a helyben írt érték is átkerüljön
-    sorok = {
-        b.tag: (b.tipus, b.darab, bytes(blokk.buf[b.hely + 8 : b.hely + 12]), False)
+    sorok = [
+        (b.tag, b.tipus, b.darab, bytes(blokk.buf[b.hely + 8 : b.hely + 12]), False)
         for b in bejegyzesek
-    }
-    sorok.update({tag: (t, d, nyers, True) for tag, (t, d, nyers) in uj.items()})
+        if b.tag not in uj
+    ]
+    sorok += [(tag, t, d, nyers, True) for tag, (t, d, nyers) in uj.items()]
+    # stabil rendezés: az azonos tagek egymás közti sorrendje marad
+    sorok.sort(key=lambda sor: sor[0])
     if len(sorok) > 0xFFFF:
         raise TiffHiba("túl sok bejegyzés")
     if len(blokk.buf) % 2:
@@ -271,8 +281,7 @@ def _athelyez(
     kezdet = len(blokk.buf)
     adat_kezdet = kezdet + 2 + 12 * len(sorok) + 4
     fej, adat = struct.pack(blokk.e + "H", len(sorok)), bytearray()
-    for tag in sorted(sorok):
-        tipus, darab, tartalom, uj_ertek = sorok[tag]
+    for tag, tipus, darab, tartalom, uj_ertek in sorok:
         if uj_ertek and len(tartalom) > 4:
             if (adat_kezdet + len(adat)) % 2:
                 adat.append(0)
@@ -322,6 +331,9 @@ def _elonezet_csere(blokk: _Blokk, ifd1: list[_Bejegyzes], uj_kep: bytes) -> boo
     hely, hossz = tagek.get(_JPEG_ELONEZET), tagek.get(_JPEG_ELONEZET_HOSSZ)
     if not hely or not hossz or {hely.tipus, hossz.tipus} != {LONG} or hely.darab != 1:
         return False
+    if hossz.darab != 1:
+        # a több elemű LONG mezője eltolás, nem hossz (#3968)
+        raise TiffHiba("az előnézet hosszának darabszáma nem 1")
     regi_kezdet, regi_hossz = blokk.u32(hely.hely + 8), blokk.u32(hossz.hely + 8)
     if (
         regi_kezdet + regi_hossz == blokk.eredeti_hossz == len(blokk.buf)
@@ -399,29 +411,34 @@ def _elonezet_bajtok(blokk: _Blokk, ifd1: list[_Bejegyzes], forras_hossz: int) -
     return bytes(blokk.buf[kezdet:veg])
 
 
-def _szerkezet(tiff: bytes, forras_hossz: int) -> dict[tuple[str, int], tuple[int, int, bytes]]:
+def _szerkezet(
+    tiff: bytes, forras_hossz: int
+) -> dict[tuple[str, int], list[tuple[int, int, bytes]]]:
     """A blokk tagjei visszaolvasva: IFD0 → Exif (→ Interop) → GPS → IFD1, és az
-    előnézet bájtjai."""
+    előnézet bájtjai. Kulcsonként LISTA: a kétszer szereplő tag minden példánya
+    külön elem, sorrendben (#3968)."""
     blokk = _Blokk(tiff)
     ifd0, ifd1_off = blokk.ifd(blokk.u32(4))
-    out = {("0th", b.tag): _tartalom(blokk, b, forras_hossz) for b in ifd0}
+    out: dict[tuple[str, int], list[tuple[int, int, bytes]]] = {}
+
+    def felvesz(nev: str, tagek: list[_Bejegyzes]) -> None:
+        for b in tagek:
+            out.setdefault((nev, b.tag), []).append(_tartalom(blokk, b, forras_hossz))
+
+    felvesz("0th", ifd0)
     mutato = next((b for b in ifd0 if b.tag == _EXIF_MUTATO), None)
     if mutato is not None and mutato.tipus in (LONG, 13) and mutato.darab == 1:
         exif = blokk.ifd(blokk.u32(mutato.hely + 8))[0]
-        for b in exif:
-            out[("Exif", b.tag)] = _tartalom(blokk, b, forras_hossz)
+        felvesz("Exif", exif)
         interop = _mutatott_ifd(blokk, next((b for b in exif if b.tag == _INTEROP_MUTATO), None))
-        for b in interop:
-            out[("Interop", b.tag)] = _tartalom(blokk, b, forras_hossz)
+        felvesz("Interop", interop)
     gps = _mutatott_ifd(blokk, next((b for b in ifd0 if b.tag == _GPS_MUTATO), None))
-    for b in gps:
-        out[("GPS", b.tag)] = _tartalom(blokk, b, forras_hossz)
+    felvesz("GPS", gps)
     ifd1 = _ifd1_tagek(blokk, ifd1_off)
-    for b in ifd1:
-        out[("1st", b.tag)] = _tartalom(blokk, b, forras_hossz)
+    felvesz("1st", ifd1)
     kep = _elonezet_bajtok(blokk, ifd1, forras_hossz)
     if kep is not None:
-        out[("1st", _ELONEZET_BAJTOK)] = (0, len(kep), kep)
+        out[("1st", _ELONEZET_BAJTOK)] = [(0, len(kep), kep)]
     return out
 
 
