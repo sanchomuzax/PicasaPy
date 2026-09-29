@@ -39,6 +39,12 @@ a forrással, kivéve a helyben írt tartományokat (és a lecserélt előnézet
 előnézet bájtjai) minden forrás-tag típusa, darabszáma és értéke egyezik,
 kivéve a szándékosan írtakat. Az egy IFD-ben kétszer szereplő tag minden
 példánya átkerül, és az ellenőrzés listaként hasonlít (#3968).
+
+Az InteropIFD (`"Interop"` változás, #3989) ugyanezen az úton bővül: a meglévő
+Interop IFD bővített másolata a blokk végére kerül, és csak az Exif IFD
+`0xa005` mutatója íródik helyben; ha nincs Interop IFD, újat fűz a végére, és
+a mutató az (átmásolt) Exif IFD-be kerül. Csak `csak_ha_hianyzik` tag adható
+hozzá; érvénytelen vagy kétszer szereplő `0xa005`-nél az Interop érintetlen.
 Bármi váratlanra `TiffHiba` — a hívó ilyenkor a forrás bájtjait adja tovább.
 """
 
@@ -79,8 +85,9 @@ class Ertek:
 
 @dataclass(frozen=True)
 class Valtozas:
-    """`ifd`: `"0th"`, `"Exif"` vagy `"1st"` (utóbbi csak meglévő tagot ír, helyben); `csak_ha_hianyzik`: a meglévőt nem írja
-    felül; `csak_ha_megvan`: a hiányzót nem pótolja (#3966)."""
+    """`ifd`: `"0th"`, `"Exif"`, `"Interop"` (#3989, csak `csak_ha_hianyzik`) vagy
+    `"1st"` (utóbbi csak meglévő tagot ír, helyben); `csak_ha_hianyzik`: a
+    meglévőt nem írja felül; `csak_ha_megvan`: a hiányzót nem pótolja (#3966)."""
 
     ifd: str
     tag: int
@@ -465,9 +472,13 @@ def _ellenoriz_szerkezet(
             raise TiffHiba(f"önellenőrzés: megváltozott tag {kulcs[0]}/{kulcs[1]:#06x}")
 
 
-def _szandekolt(valtozasok: list[Valtozas], elonezet_csere: bool) -> set[tuple[str, int]]:
+def _szandekolt(
+    valtozasok: list[Valtozas], elonezet_csere: bool, interop_mutato: bool
+) -> set[tuple[str, int]]:
     kulcsok = {(v.ifd, v.tag) for v in valtozasok if not v.csak_ha_hianyzik}
     kulcsok.add(("0th", _EXIF_MUTATO))
+    if interop_mutato:
+        kulcsok.add(("Exif", _INTEROP_MUTATO))
     if elonezet_csere:
         kulcsok |= {("1st", _JPEG_ELONEZET), ("1st", _JPEG_ELONEZET_HOSSZ)}
         kulcsok.add(("1st", _ELONEZET_BAJTOK))
@@ -482,6 +493,29 @@ def _exif_ifd(
     if exif_mutato.tipus not in (LONG, 13) or exif_mutato.darab != 1:
         raise TiffHiba("ExifIFD-mutató típusa")
     return blokk.ifd(blokk.u32(exif_mutato.hely + 8))
+
+
+def _interop_ifd(
+    blokk: _Blokk, exif: list[_Bejegyzes]
+) -> tuple[_Bejegyzes | None, list[_Bejegyzes], int] | None:
+    """Az Exif IFD `0xa005` mutatója, a mutatott Interop IFD tagjei és
+    következő-mutatója. `(None, [], 0)`: nincs mutató; `None`: a mutató
+    érvénytelen, kétszer szerepel, vagy a táblája nem olvasható — ilyenkor az
+    Interop IFD-hez nem nyúlunk (második mutatót sem adunk mellé)."""
+    mutatok = [b for b in exif if b.tag == _INTEROP_MUTATO]
+    if not mutatok:
+        return None, [], 0
+    if len(mutatok) > 1:
+        # az első mutató táblája ettől még olvasott: a `_cel_szabad` védi
+        _mutatott_ifd(blokk, mutatok[0])
+        return None
+    if mutatok[0].tipus not in (LONG, 13) or mutatok[0].darab != 1:
+        return None
+    try:
+        tagek, kovetkezo = blokk.ifd(blokk.u32(mutatok[0].hely + 8))
+    except TiffHiba:
+        return None
+    return mutatok[0], tagek, kovetkezo
 
 
 def frissitett_tiff(
@@ -500,17 +534,20 @@ def frissitett_tiff(
     ifd0_off = blokk.u32(4)
     ifd0, ifd1_off = blokk.ifd(ifd0_off)
     exif_valtozasok = [v for v in valtozasok if v.ifd == "Exif"]
+    interop_valtozasok = [v for v in valtozasok if v.ifd == "Interop"]
+    if any(not v.csak_ha_hianyzik for v in interop_valtozasok):
+        raise TiffHiba("az Interop IFD-be csak hiányzó tag adható")
     exif_mutato = next((b for b in ifd0 if b.tag == _EXIF_MUTATO), None)
     # minden érintett IFD-tábla a helyben írás ELŐTT beolvasva: a célkorlát
     # (`_cel_szabad`) mindegyiket ismeri
-    if exif_valtozasok:
+    if exif_valtozasok or interop_valtozasok:
         exif, exif_kov = _exif_ifd(blokk, exif_mutato)
     else:
         exif, exif_kov = _mutatott_ifd(blokk, exif_mutato), 0
     # a GPS- és az InteropIFD táblája (és értékei) is olvasott: érvénytelen
     # mutatónál kimarad
     _mutatott_ifd(blokk, next((b for b in ifd0 if b.tag == _GPS_MUTATO), None))
-    _mutatott_ifd(blokk, next((b for b in exif if b.tag == _INTEROP_MUTATO), None))
+    interop = _interop_ifd(blokk, exif)
     ifd1 = _ifd1_tagek(blokk, ifd1_off)
     elonezet_csere = False
     if ifd1 and elonezet is not None:
@@ -521,19 +558,33 @@ def frissitett_tiff(
 
     uj0 = _alkalmaz(blokk, ifd0, [v for v in valtozasok if v.ifd == "0th"])
     _helyben_1st(blokk, ifd1, [v for v in valtozasok if v.ifd == "1st"])
+    uj_exif: dict[int, tuple[int, int, bytes]] = {}
+    interop_mutato = False
     if exif_valtozasok:
         uj_exif = _alkalmaz(blokk, exif, exif_valtozasok)
-        if uj_exif:
-            uj_off = _athelyez(blokk, exif, uj_exif, exif_kov)
-            if exif_mutato is not None:
-                blokk.ir_helyben(exif_mutato.hely + 8, blokk.egesz(LONG, uj_off))
+    if interop_valtozasok and interop is not None:
+        # az Interop IFD az Exif IFD ELŐTT: a mutatója az Exif IFD másolatába is
+        # a JELENLEGI bájtokból kerül át
+        mutato, interop_tagek, interop_kov = interop
+        uj_interop = _alkalmaz(blokk, interop_tagek, interop_valtozasok)
+        if uj_interop:
+            interop_off = _athelyez(blokk, interop_tagek, uj_interop, interop_kov)
+            interop_mutato = True
+            if mutato is not None:
+                blokk.ir_helyben(mutato.hely + 8, blokk.egesz(LONG, interop_off))
             else:
-                uj0[_EXIF_MUTATO] = (LONG, 1, blokk.egesz(LONG, uj_off))
+                uj_exif[_INTEROP_MUTATO] = (LONG, 1, blokk.egesz(LONG, interop_off))
+    if uj_exif:
+        uj_off = _athelyez(blokk, exif, uj_exif, exif_kov)
+        if exif_mutato is not None:
+            blokk.ir_helyben(exif_mutato.hely + 8, blokk.egesz(LONG, uj_off))
+        else:
+            uj0[_EXIF_MUTATO] = (LONG, 1, blokk.egesz(LONG, uj_off))
     if uj0:
         uj_ifd0 = _athelyez(blokk, ifd0, uj0, ifd1_off)
         blokk.buf[4:8] = blokk.egesz(LONG, uj_ifd0)
     kimenet = bytes(blokk.buf)
     if tiff is not None:
         _ellenoriz(forras, blokk, csonk)
-        _ellenoriz_szerkezet(forras, kimenet, _szandekolt(valtozasok, elonezet_csere))
+        _ellenoriz_szerkezet(forras, kimenet, _szandekolt(valtozasok, elonezet_csere, interop_mutato))
     return kimenet

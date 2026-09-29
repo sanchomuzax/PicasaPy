@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az exportált JPEG-be az eredeti Picasához hasonlóan Interop-blokk kerül (`InteropVersion` 0100, a forrás pixelmérete), a meglévő Interop-mezők érintetlenül maradnak (#3989).
+
 ## [0.8.640] – 2026-09-29
 
 ### Javítva

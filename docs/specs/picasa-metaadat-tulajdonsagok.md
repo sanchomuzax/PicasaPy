@@ -1870,6 +1870,8 @@ feltételes kulcsnál ugyanaz a minta: `[ebp+0x18]` vödrök, `div [ebp+0x10]`,
 | GPS `0x8b`–`0xa9` | GPS | a Picasa geocímkéje eltér a forrásétól | a Picasa geocímkéje | `0x0045c8c1`–`0x0045c961` |
 | `0x131` | arcok | a „PersistFaceToFile” beállítás igaz | az arcok | `0x0045ce9f` → `0x00485bd0` |
 
+**Nyitott kérdés:** hogy a tájolt (Orientation 5–8) forrásnál a forrás `0x4d`/`0x4e`-je a tárolt vagy a felcserélt méret, nincs mérve és nincs bináris olvasata; a PicasaPy a SOF tárolt méretét írja, a kutatás jegye: #3996.
+
 **Ebből a mért XMP mezőről mezőre levezethető** (a `0x00bad9a0`-lánccal, B):
 
 - **Metaadat nélküli forrás:**
@@ -2022,7 +2024,7 @@ előállítása nincs feltárva → **#3987**.
 | | Eredeti | Nálunk (`export_metadata.py`) |
 |---|---|---|
 | `Software`, `Artist`, `ExifVersion` | csak ha hiányzik | csak ha hiányzik — **egyezik** |
-| Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | mindig, ha a forrásnak van mérete | nincs (a 16. C) is nyitva hagyta) |
+| Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | mindig, ha a forrásnak van mérete | **megvan** (#3989; a tájolt forrás mérete nincs mérve) |
 | IFD1 bélyegkép + `0x103`/`0x11a`/`0x11b`/`0x128` | mindig | csak a forrás meglévő IFD1-e |
 | GPS `0x0000`/`0x0005` pótlása, csak verziót tartalmazó al-IFD kivétele | igen (erős, nem mért) | nincs |
 

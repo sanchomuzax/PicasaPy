@@ -34,8 +34,14 @@ hibánál a régi bájtmásolás a kimenet (`bajtmasolas`).
   forrásnál mérte). A burok (`x:xmpmeta`) nélküli vagy értelmezhetetlen
   XMP nem cserélődik le: bájtra megy.
 
+* Interop IFD (#3989, 16. G): minden kimenetben; `InteropVersion` = `0100`
+  (csak ha hiányzik), `0x1001`/`0x1002` = a FORRÁS pixelmérete (csak ha
+  hiányzik), az `InteropIndex` NEM kerül be. A forrás mérete a JPEG SOF-jából
+  jön, és a tájolás szerint állítva (5–8: felcserélve), mert a kimenet mérete
+  is a már elforgatott képé — a tájolt forrás esete nincs mérve.
+
 Amit a spec NEM rögzít, azt nem találjuk ki: az `ImageUniqueID` képzése
-(16. C) 1.), az InteropIFD pótlása és az APP13 tartalma nincs feltárva.
+(16. C) 1.) és az APP13 tartalma nincs feltárva.
 """
 
 from __future__ import annotations
@@ -55,6 +61,7 @@ from picasapy.metadata.copy_signature import (
     source_taken_at,
 )
 from picasapy.metadata.tiff_helyben import (
+    LONG,
     SHORT,
     UNDEFINED,
     Ertek,
@@ -80,6 +87,9 @@ _NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #: az `exif:` névtérből ezek maradnak (spec 16. B) 5.)
 _EXIF_MARAD = frozenset({"DateTimeOriginal", "DateTimeDigitized"})
 _EXIF_VERZIO = b"0220"  # a metaadat nélküli forrás eredeti exportjában mért
+_INTEROP_VERZIO = b"0100"  # spec 16. G) 3d
+#: a JPEG SOF-markerei (a 0xC4 DHT, 0xC8 JPG és 0xCC DAC nem az)
+_SOF_MARKEREK = frozenset({0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF})
 _ELONEZET_MAX = (160, 120)
 _XPACKET_KEZDET = '<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
 _XPACKET_VEG = '\n<?xpacket end="w"?>'
@@ -182,6 +192,28 @@ def _elonezet(encoded: bytes, size: tuple[int, int] = (0, 0)) -> bytes | None:
     return buf.tobytes() if ok else None
 
 
+def _forras_meret(forras_bajt: bytes) -> tuple[int, int] | None:
+    """A forrás-JPEG TÁROLT `(szélesség, magasság)`-a a SOF-ból, vagy `None`."""
+    for marker, seg in _szegmensek(forras_bajt):
+        if marker in _SOF_MARKEREK and len(seg) >= 9:
+            mag = int.from_bytes(seg[5:7], "big")
+            szel = int.from_bytes(seg[7:9], "big")
+            return (szel, mag) if szel > 0 and mag > 0 else None
+    return None
+
+
+def _interop_valtozasok(forras_meret: tuple[int, int] | None) -> list[Valtozas]:
+    """Csak ha a forrásnak van mérete (spec 16. G): egyébként az Interop IFD
+    üres lenne. Minden tag csak HIÁNYZÓKÉNT íródik; `InteropIndex` nincs."""
+    if forras_meret is None:
+        return []
+    return [
+        Valtozas("Interop", 0x0002, Ertek(UNDEFINED, _INTEROP_VERZIO), csak_ha_hianyzik=True),
+        Valtozas("Interop", 0x1001, Ertek(LONG, int(forras_meret[0])), csak_ha_hianyzik=True),
+        Valtozas("Interop", 0x1002, Ertek(LONG, int(forras_meret[1])), csak_ha_hianyzik=True),
+    ]
+
+
 def _exif_valtozasok(
     size: tuple[int, int], now: datetime, taken_at: datetime | None
 ) -> list[Valtozas]:
@@ -214,9 +246,12 @@ def _exif_szegmens(
     encoded: bytes,
     size: tuple[int, int],
     now: datetime,
+    forras_meret: tuple[int, int] | None = None,
 ) -> bytes | None:
     """A frissített EXIF-APP1, vagy `None` (akkor a forrásé megy bájtra)."""
     valtozasok = _exif_valtozasok(size, now, source_taken_at(source))
+    if forras_meret is not None:
+        valtozasok += _interop_valtozasok(forras_meret)
     torzs = frissitett_tiff(
         tiff, valtozasok, elonezet=lambda: _vedett("előnézet", lambda: _elonezet(encoded, size))
     )
@@ -328,6 +363,15 @@ def _elso(szegmensek: list[bytes], azonosito: bytes) -> int | None:
     )
 
 
+def _vedett_meret(fuggveny) -> tuple[int, int] | None:
+    """A forrás méretének háló: hibánál `None` (Interop IFD nélkül megy tovább)."""
+    try:
+        return fuggveny()
+    except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
+        _LOG.warning("export: a forrás mérete nem állapítható meg", exc_info=True)
+        return None
+
+
 def _vedett(nev: str, fuggveny) -> bytes | None:
     """Mezőnkénti háló: hibánál `None` (a forrás szegmense megy bájtra)."""
     try:
@@ -338,7 +382,12 @@ def _vedett(nev: str, fuggveny) -> bytes | None:
 
 
 def _frissitett_szegmensek(
-    source: Path, szegmensek: list[bytes], encoded: bytes, size: tuple[int, int], now: datetime
+    source: Path,
+    szegmensek: list[bytes],
+    encoded: bytes,
+    size: tuple[int, int],
+    now: datetime,
+    forras_meret: tuple[int, int] | None = None,
 ) -> list[bytes]:
     exif_i, xmp_i = _elso(szegmensek, _EXIF_ID), _elso(szegmensek, _XMP_ID)
     exif_uj = _vedett(
@@ -349,6 +398,7 @@ def _frissitett_szegmensek(
             encoded=encoded,
             size=size,
             now=now,
+            forras_meret=forras_meret,
         ),
     )
     xmp_uj = _vedett(
@@ -398,7 +448,10 @@ def frissitett_metaadat(
     ido = now if now is not None else datetime.now()
     szegmensek = _masolando(forras_bajt)
     try:
-        uj = _frissitett_szegmensek(source, szegmensek, encoded, size, ido)
+        forras_meret = _vedett_meret(lambda: _forras_meret(forras_bajt))
+        uj = _frissitett_szegmensek(
+            source, szegmensek, encoded, size, ido, forras_meret=forras_meret
+        )
     except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
         _LOG.warning("export: a metaadat-frissítés kimaradt, bájtmásolás", exc_info=True)
         uj = [_tajolas_egyre(s) for s in szegmensek]
