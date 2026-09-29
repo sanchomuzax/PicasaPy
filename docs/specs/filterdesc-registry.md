@@ -2073,6 +2073,42 @@ A `NightVision` maradék eltérése a **zaj mintázata**: elmosott képeken az `
 
 *Bizonyítottsági fok: **megerősített**, utasításszinten, független újralevezetéssel (EGYEZIK) és a golden-méréssel.* Feltételes: a gyűjtő kezdőértéke felhasználói mátrix nélkül identitás (a `0x00c7d620` identitás-tábla, a `0xbc1860` csak `[this+0x24] ≠ 0` esetén ír). Balról állna, tehát a sorrendet nem befolyásolja.
 
+
+#### ⛳ A `SimpleColorMatrix` és a `Tint` szürkítése is a FIXPONTOS alkalmazón fut — a lebegőpontos modell a Neon, a Lomo és a Holga maradéka (2026-09-29, 408. kör, #3950)
+
+*Bizonyítottsági fok: **megerősített**, utasításszinten (a közös alkalmazó a #3930-ban kiolvasva), és a Picasa-exporttal a Neonon bitre egyezik. Független újralevezetés (#3950): EGYEZIK, ugyanazokkal a képpontértékekkel.*
+
+A `SimpleColorMatrix` (és a `Tint` első lépése, a `ColorMatrix(s = −100)`) a kész lebegőpontos mátrixot (a fenti `M = S · C · B · X`) ugyanazon a közös alkalmazón futtatja, mint a `BW` (`0x00bc16b0` → `0x008f2500`; ld. „⛳ A színmátrix-alkalmazó fixpontos aritmetikája”, #3930):
+
+```
+c_ij = trunc(M_ij · 2048 ± 0,5)          b_i = trunc(eltolás_i · 4 ± 0,5) + 2     ; 0x008f21a0
+ki_i = clamp( ( Σ_j ((c_ij · x_j) >> 9) + b_i ) >> 2 , 0, 255)                   ; 0x008f2640
+```
+
+**Példa — `Contrast = 50`** (az `EdgeDetectionB` előkészítő lépése a Neonban, `100 − detail`): `k = 2,0`, eltolás `(1 − k)·63,5 = −63,5`, tehát `c = 4096`, `b = −252`, `ki = (8x − 252) >> 2 = clamp(2x − 63)` (a kontraszt-tábla `T[50] = 1,0`, `0x00c7d688`; `f = (1·127 + 127)/127 = 2,0`, `0x008f2990`):
+
+| `x` | 0 | 32 | 63 | 64 | 100 | 128 | 200 | 255 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| fixpontos | 0 | 1 | 63 | 65 | 137 | 193 | 255 | 255 |
+| a mai kód (`rint(2x − 63,5)`) | 0 | 0 | 62 | 64 | 136 | 192 | 255 | 255 |
+
+**A `Tint` szürkítése** Haeberli-súlyokkal: `c = 632 / 1248 / 168`, `b = 2` — a `Resaturate`-tábla indexe ez, nem a lebegőpontos `rint`.
+
+**Mérve** (684-es mérőkészlet, a mi kimenetünket a Picasa-export saját kvantálótábláival tömörítve; minden golden-pár lefutott, csak a változók, romlás nincs):
+
+| eset | a mai kód (lebegőpontos mátrix) | **fixpontos alkalmazó** |
+|---|---:|---:|
+| `neon__alap` | 0,280 | **0,000** |
+| `lomo__alap` / `lomo__min` | 0,198 / 0,184 | 0,063 / 0,033 |
+| `boost__alap` | 0,059 | 0,000 |
+| `holga__alap` / `holga__min` | 0,060 / 0,034 | 0,010 / 0,003 |
+| `cinemascope__alap` | 0,354 | 0,307 (a görbe-lánccal, #3942, tovább esik) |
+| `picniktint__alap` | 0,019 | 0,000 |
+
+A Neonon a két lépés külön is mérve: csak a fixpontos kontraszt 0,280 → 0,016, a `Tint` fixpontos szürkítésével együtt 0,000.
+
+**Nálunk:** `render/glimmer_ops.py::simple_color_matrix` (lebegőpontos, `to_uint8`) és `tint_luma_preserving` (`rint` Haeberli) → fejlesztés: #3951.
+
 #### `SimpleColorMatrix` — a `ContrastAndBrightnessLinked` jelentése (8 effekt)
 
 A mag (`0x00bb6400`) öt attribútumot olvas, majd **a jelzőtől függően más
