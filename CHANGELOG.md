@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.637] – 2026-09-29
+
 ### Javítva
 - A Sugaras árnyalás az eredeti Picasa módján színez: a kör közepe felé nem
   az eredeti és a színezett képet keveri, hanem magát a színt világosítja
