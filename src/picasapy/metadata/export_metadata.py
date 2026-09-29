@@ -21,6 +21,9 @@ hibánál a régi bájtmásolás a kimenet (`bajtmasolas`).
   `DateTime` = az export ideje; `PixelX/YDimension` = a KIMENET mérete;
   `Software`, `Artist` (`PicasaPy`, #1642), `DateTimeOriginal` (a
   forrásfájl ideje), `ExifVersion` (`0220`) csak ha HIÁNYZIK.
+  `Orientation` = `1`, csak ha MEGVAN (#3966): a dekódolás a képpontokat
+  már elforgatta, a forrás tagje kétszer fordítaná a képet (16. E: a
+  meglévő `0x0d` kulcs üres értékkel kerül a halmazba).
   Az IFD1 beágyazott előnézete a kimenetből újragenerálva (160×120-ba),
   ha a forrásnak volt; ha nem generálható, a forrásé marad.
 * XMP: a meglévő megmarad, `xmp:ModifyDate` = az export ideje, az `exif:`
@@ -58,6 +61,7 @@ from picasapy.metadata.tiff_helyben import (
     Valtozas,
     ascii_ertek,
     frissitett_tiff,
+    tajolas_1_helyben,
 )
 
 _LOG = logging.getLogger(__name__)
@@ -119,6 +123,20 @@ def _masolando(forras_bajt: bytes) -> list[bytes]:
     return [s for m, s in _szegmensek(forras_bajt) if m in _MASOLT_MARKEREK]
 
 
+def _tajolas_egyre(szegmens: bytes) -> bytes:
+    """Tartalék út (#3966): a forrás EXIF-szegmensében a meglévő tájolás-tagek
+    (IFD0, IFD1) helyben `1`-re — a képpontok már állnak. Más szegmens, vagy
+    hiba esetén a szegmens változatlan (a kép akkor is kimegy, figyelmeztetéssel)."""
+    if szegmens[1:2] != b"\xe1" or not szegmens[4:].startswith(_EXIF_ID):
+        return szegmens
+    try:
+        torzs = tajolas_1_helyben(szegmens[4 + len(_EXIF_ID) :])
+        return szegmens[: 4 + len(_EXIF_ID)] + torzs
+    except Exception:  # noqa: BLE001 — a kép a tájolás miatt sem bukhat el
+        _LOG.warning("export: a tájolás-tag nem írható át, a forrásé marad", exc_info=True)
+        return szegmens
+
+
 def bajtmasolas(source: Path, encoded: bytes) -> bytes:
     """A régi út (#136): a forrás APP1/APP13-szegmensei bájtra, változatlanul.
     Ez a háló, ha a spec szerinti frissítés bármiért nem sikerül."""
@@ -128,7 +146,7 @@ def bajtmasolas(source: Path, encoded: bytes) -> bytes:
         return encoded
     if not forras_bajt.startswith(_SOI) or not encoded.startswith(_SOI):
         return encoded
-    return _beszur(encoded, _masolando(forras_bajt))
+    return _beszur(encoded, [_tajolas_egyre(s) for s in _masolando(forras_bajt)])
 
 
 # --- EXIF ---------------------------------------------------------------------
@@ -175,6 +193,10 @@ def _exif_valtozasok(
         Valtozas("Exif", 0x9000, Ertek(UNDEFINED, _EXIF_VERZIO), csak_ha_hianyzik=True),
         Valtozas("Exif", 0xA002, Ertek(SHORT, int(size[0]))),  # PixelXDimension
         Valtozas("Exif", 0xA003, Ertek(SHORT, int(size[1]))),  # PixelYDimension
+        # Orientation (#3966): a képpontok már állnak, a tag nem forgathat újra
+        Valtozas("0th", 0x0112, Ertek(SHORT, 1), csak_ha_megvan=True),
+        # az IFD1 (előnézet) tagje is: az újragenerált előnézet már áll
+        Valtozas("1st", 0x0112, Ertek(SHORT, 1), csak_ha_megvan=True),
     ]
     if taken_at is not None:
         valtozasok.append(
@@ -339,6 +361,8 @@ def _frissitett_szegmensek(
         ),
     )
     ki = list(szegmensek)
+    if exif_uj is None and exif_i is not None:
+        ki[exif_i] = _tajolas_egyre(ki[exif_i])  # a forrásé megy: a tájolása 1
     if xmp_uj is not None:
         if xmp_i is not None:
             ki[xmp_i] = xmp_uj
@@ -377,5 +401,5 @@ def frissitett_metaadat(
         uj = _frissitett_szegmensek(source, szegmensek, encoded, size, ido)
     except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
         _LOG.warning("export: a metaadat-frissítés kimaradt, bájtmásolás", exc_info=True)
-        uj = szegmensek
+        uj = [_tajolas_egyre(s) for s in szegmensek]
     return _beszur(encoded, uj)

@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Sugaras árnyalás az eredeti Picasa módján színez: a kör közepe felé nem
+  az eredeti és a színezett képet keveri, hanem magát a színt világosítja
+  fehérig; a Lágy fókusz, a Fókuszos telítetlenítés és a Sugaras árnyalás
+  közös, kör alakú átmenete pedig az eredeti szerint lefelé kerekít (#3946).
+- Az elforgatott (álló) fényképek exportja nem fordul el kétszer: a kimenet
+  tájolás-jelzője alaphelyzetbe áll, mert a képpontok már a helyes állásban
+  vannak; a változatlan másolat a forrás jelzőjét megtartja (#3966).
+
 ## [0.8.636] – 2026-09-29
 
 ### Javítva

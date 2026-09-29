@@ -316,7 +316,12 @@ def test_valodi_xiaomi_jpeg_exif_bajtra_megmarad(tmp_path):
     kimenet = _export(source, tmp_path, max_dimension=400)
     eredeti, ki = (_olvas(_app1_torzs(p, _EXIF_ID)) for p in (source, kimenet))
     valtozhat = {("0th", 0x0132), ("0th", 0x8769), ("1st", 0x0201), ("1st", 0x0202),
-                 ("Exif", 0xA002), ("Exif", 0xA003)}
+                 ("Exif", 0xA002), ("Exif", 0xA003),
+                 ("0th", 0x0112), ("1st", 0x0112)}  # 0x0112: #3966, lent külön: értéke 1
+    bo = "<" if _app1_torzs(kimenet, _EXIF_ID)[:2] == b"II" else ">"
+    for ifd in ("0th", "1st"):
+        if 0x0112 in eredeti[ifd]:
+            assert struct.unpack(bo + "H", ki[ifd][0x0112][3][:2])[0] == 1, ifd
     for ifd, tagek in eredeti.items():
         for tag, (tipus, darab, _hely, ertek) in tagek.items():
             if (ifd, tag) not in valtozhat:

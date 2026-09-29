@@ -32,7 +32,11 @@ import numpy as np
 from picasapy.render.curves import validate_image
 from picasapy.render.dir_tint import apply_dir_tint
 from picasapy.render.ops import apply_channel_levels_stretch
-from picasapy.render.radial_mask import apply_radial_mask
+from picasapy.render.radial_mask import (
+    RADIAL_TABLE_SIZE,
+    radial_weight_table,
+    squared_distance_index,
+)
 
 _HEX_PATTERN = re.compile(r"^[0-9a-fA-F]+$")
 
@@ -211,11 +215,9 @@ def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     return np.stack([gray, gray, gray], axis=-1)
 
 
-#: A `radtint` szorzó-tint osztója a natív magban (`0x90b370`):
-#: `tinted = source * tint / 256`. Az egész osztás (padló) a 684-es goldenen
-#: mérve jobb a kerekítésnél (ΔE 0,70 vs 0,81, #3453); a natív osztás módja
-#: nincs kiolvasva.
-_RADTINT_TINT_DIVISOR = 256
+#: A `radtint` szorzásának eltolása a natív magban (`0x0090b370`):
+#: `ki = (be · t) >> 8` (#3945).
+_RADTINT_SHIFT = 8
 
 
 def apply_radtint(
@@ -225,23 +227,33 @@ def apply_radtint(
     feather: float,
     color: tuple[int, int, int],
 ) -> np.ndarray:
-    """Sugaras árnyalás (`radtint`) — radiális **szorzó** színezés (#565, #3453).
+    """Sugaras árnyalás (`radtint`) — radiális **szorzó** színezés (#565, #3946).
 
-    A natív mag (`0x90b370`) a `radblur`/`radsat` közös sugaras maszkját
-    hívja (`0x0090b050` + `0x0090aeb0`, `render/radial_mask.py`),
-    `FUN_0090aeb0(0, Feather)` alakban (spec: `filters-decoded.md`, #317):
+    A natív munkafüggvény (`0x0090b370`) a `radblur`/`radsat` közös
+    súlytábláját építi (`0x0090aeb0`, `render/radial_mask.py`)
+    `FUN_0090aeb0(0, Feather)` alakban: a sugár `min(W, H)/2 · (Feather + 1)`,
+    az élesség beégetett nulla. A képpont-ciklus viszont a sajátja (spec:
+    `filters-decoded.md`, „⛳ A `radtint` munkafüggvénye kiolvasva", #3945):
 
-    - a sugár `min(W, H)/2 · (Feather + 1)` — izotróp, képpontban;
-    - az élesség beégetett nulla, tehát a smoothstep a középponttól a
-      sugárig végig fut;
-    - a középen az eredeti kép, a sugáron túl a teljes tint, amely
-      csatornánként `source · tint / 256` (szorzás, nem a szín FELÉ
-      keverés — ez a lényegi különbség a `dir_tint`-hez képest).
+    - a középpont CSONKOLT: `cx = trunc(W·x)`, `cy = trunc(H·y)`;
+    - `idx = ((X − cx)² + (Y − cy)²) >> shift`;
+    - a táblán belül a maszk a tint SZÍNÉT húzza a fehér felé:
+      `t′ = 255 − (((255 − t)·(256 − w)) >> 8)`, kívül `t′ = t`;
+    - a képet egyszer szorozza: `ki = (be·t′) >> 8`.
+
     """
     validate_image(image)
+    height, width = image.shape[:2]
+    table, shift = radial_weight_table(width, height, feather, 0.0)
+    index = squared_distance_index(
+        width, height, x, y, shift, truncate_center=True
+    )
     tint = np.array(color, dtype=np.int64)
-    tinted = (image.astype(np.int64) * tint // _RADTINT_TINT_DIVISOR).astype(np.uint8)
-    return apply_radial_mask(image, tinted, x, y, feather, 0.0)
+    inside = (index < RADIAL_TABLE_SIZE)[..., np.newaxis]
+    weight = table[np.clip(index, 0, RADIAL_TABLE_SIZE - 1)][..., np.newaxis]
+    toward_white = 255 - (((255 - tint) * (256 - weight)) >> _RADTINT_SHIFT)
+    factor = np.where(inside, toward_white, tint)
+    return ((image.astype(np.int64) * factor) >> _RADTINT_SHIFT).astype(np.uint8)
 
 
 #: A `dir_tint` a saját moduljában él (#874) — a régi importútvonal

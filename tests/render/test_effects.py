@@ -52,7 +52,8 @@ def _radsat_referencia(
     for i in range(1024):
         t = math.sqrt(i / r2) if r2 > 0 else math.inf
         v = 1.0 - min(max(0.5 + k * (t - 0.5), 0.0), 1.0)
-        tabla.append(round((3.0 - 2.0 * v) * v * v * 255.0))
+        # a tábla CSONKOL (`or eax, 0xc00` a `fistp` előtt, #3946)
+        tabla.append(math.trunc((3.0 - 2.0 * v) * v * v * 255.0))
     cx, cy = round(width * x), round(height * y)
     out = np.empty_like(image)
     for py in range(height):
