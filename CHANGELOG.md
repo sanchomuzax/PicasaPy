@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.632] – 2026-09-29
+
 ### Javítva
 - A 60-as évek és a Kinemaszkóp effekt görbéi a legvilágosabb tónusokban is
   úgy futnak ki, mint az eredeti Picasa: a mestergörbe eredménye eddig a
