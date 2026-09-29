@@ -2037,3 +2037,105 @@ előállítása nincs feltárva → **#3987**.
 *Bizonyítottsági fok: **megerősített** az 1–5. sorra és az iker-egyezésre (két független opus-olvasás egyezik a mért 186 exporttal); **erős** a 2b–2e, 3b, 4b és 6. sorra (utasításszinten kiolvasva, mérés nincs).*
 
 *Forrás: `0x00a761e0`, `0x00a76930`, `0x00a78de0` (4820 b), `0x00a7b260` (4807 b), `0x00a78470`, `0x00a7a930`, `0x00a7a0d0`, `0x00a7c540`, `0x00a725a0`, `0x00a72200`; a mérés a helyi `meroadat.tar` 684-, 3229-, 3084- és 951-es mappájából.*
+
+### H) ✅ Az EXIF-bélyegkép előállítása: 160 pixeles, Lanczos-3, 85-ös minőség, csak 300 pixelnél nagyobb képre (2026-09-30, 416. kör, #3987)
+
+A `0x009ed6e0` 1-es jelzőbitje a `0x009ecdb0`-t hívja; ez építi az EXIF-blokkot és benne a bélyegképet
+(az `MM`/`II` iker a lejjebb álló író, `0x00a7ade0` / `0x00a78920`: a G) szakasz).
+
+**1. Mikor készül** (`0x009ece70`–`0x009ece8c`, `cmp [ebp+8], 0x12c` és `cmp [ebp+0xc], 0x12c`, mindkettő `jbe`):
+
+| feltétel | mód (`push edi`, `0x009ed0ef`) | eredmény |
+|---|---|---|
+| szélesség > 300 **és** magasság > 300 | 1 (`mov edi, 1`, `0x009ed0b9`) | új IFD1-bélyegkép (`0x201`, `0x202`) |
+| bármelyik ≤ 300 | 2 (`mov edi, 2`) | az IFD1 teljesen kiürül, nincs bélyegkép |
+
+A `0x00a7ade0` a módot kezeli (`0x00a7aec5`–`0x00a7af03`): minden 0-tól különböző módnál kiüríti az
+IFD1-listát. A 0-s mód (a forrás meglévő bélyegképének megtartása) létezik, de a `0x009ecdb0` **soha nem
+adja át** ⇒ **a forrás bélyegképe ezen az úton sosem kerül át.** A mért kamerás forrás (3084) IFD1-e is
+az újonnan épített.
+
+**2. A méret** (`0x009b4aa0`, hívás: `0x009ece92`–`0x009ecee4`, doboz {0,0,160,160}):
+
+```
+s  = min(160,499 / w , 160,499 / h)               ; 0,499 = [0xcf4160]
+w′ = fistp(float32(w·s + 1e-5))                    ; 1e-5  = [0xcf41e0]   (0x009b4b17–0x009b4b3a)
+h′ = fistp(float32(h·s + 1e-5))
+W  = (w′ + 7) & ~7 ,  H = (h′ + 7) & ~7            ; 0x009ecef7–0x009ecf0e
+```
+
+A célkép W × H, 32 bites (`0x009a9b30`); a **teljes** forrás nyújtva tölti ki, szegély nincs. A hosszabb oldal
+mindig 160 (a szorzata 160,499 → 160, és a 160 a 8 többszöröse).
+
+A 13 mért méret (186 export) mind egyezik: `960×640 → 160×112`, `964×644 → 160×112`, `988×668 → 160×112`,
+`1010×690 → 160×112`, `1090×770 → 160×120`, `1232×912 → 160×120`, `1360×1040 → 160×128`,
+`1360×1103 → 160×136`, `1600×1200 → 160×120`, `1650×1250 → 160×128`, `2560×1696 → 160×112`,
+`818×950 → 144×160`, `887×1004 → 144×160`.
+
+⚠️ **A mért készlet nem választja szét a képletet két egyszerűbb szabálytól:** mind a 13 méreten megegyezik
+a „hosszabb oldal 160, a másik arányosan, fel 8-ra” és a „levágó” (csonkoló) változat is. A bináris a
+mérvadó; szétválasztó bemenetek: `1000×651` (képlet: 160×104, naiv szabály: 160×112) és `1000×702`
+(legközelebbire: 160×120, csonkolva: 160×112) — élő mérése a #3995 tárgya. A `fistp` kerekítési módja
+(legközelebbi, az alapállás) ezért **erős**, nem megerősített.
+
+**3. A kicsinyítő** — ⚠️ **helyesbítés a kutatói olvasathoz:** a `ytResampler` konstruktora (`0x00a3f490`, `−1`
+mód) a „Preferences / ResampleFilter2” beállításból veszi a módot (alapérték 6 = Lanczos-4, `0x00a3f507`–
+`0x00a3f57a`), **de a `0x009ecfb8 mov [obj+0x28], 5` felülírja: a bélyegkép 5-ös módban fut.**
+
+| mód | sugár (`0x00a40550` tábla) | mag (`0x00a40574` tábla) |
+|---|---|---|
+| 5 | 3,0 (`[0xc49618]`, `0x00a3f6e3`) | `0x00a3fdf5`: `|x| ≥ 3` → 0, különben `sin(π|x|)/(π|x|) · sin(π|x|/3)/(π|x|/3)` (3,0 = `[0xcf39f8]`) ⇒ **Lanczos-3** |
+| 6 | 4,0 (`[0xc7e4a4]`) | `0x00a3feed`: ugyanez 4-gyel ⇒ Lanczos-4 (ezt a bélyegkép NEM használja) |
+
+A többi lépés a szűrők Resize-ával azonos (filterdesc-registry 5/c): egész súlyok `csonk(w·16383/Σw)`, a
+maradék a `csonk(c)` csapé, `(Σ w·p + 255) >> 14`, előbb a vízszintes menet; a sugár kicsinyítéskor a
+léptékkel nyúlik. A mintavevő objektum `[+0x34]` = 1 (2×-es előfelezés, `0x00a43230`) és `[+0x36]` = 0
+(`0x009ecfa9`, `0x009ecfb1`) — az előfelezés nincs vizsgálva → #3995.
+
+*Mérve* (19 export, a fő kép ⟶ Lanczos-3 / Lanczos-4 / Mitchell / doboz ⟶ 85-ös JPEG-oda-vissza, átlagos
+abszolút eltérés a Picasa bélyegképétől): **3,49 / 3,62 / 3,98 / 4,77**; fájlonként a Lanczos-3 nyer 13-ban,
+a Mitchell 5-ben, a Lanczos-4 1-ben. A különbségek kicsik, a mérés a kódolvasatot csak támogatja — a döntést
+a `0x009ecfb8` felülírás hozza. A pixelpontos egyezés nem mérhető (a JPEG-tömörítés előtti kép nincs meg).
+
+**4. A JPEG-kódolás** (`0x009ed088`–`0x009ed0ad`: `0x009d61e0(&kimenet, &kép, {1, 4, q})`, lánc `0x009d61e0` →
+`0x009d64e0` → `0x009d7120` → `0x009d53e0`):
+
+- minőség `q` = `[esp+0x64]` = `0x55` = **85** (`0x009ecdd2`); `jpeg_set_quality` = `0x00ad3b30`, a táblák az IJG
+  szabványos luma/chroma táblái (`0x00c75260`, `0x00c75360`). **Mérve: mind a 186 bélyegképen a luma és a
+  chroma tábla pontosan az IJG-alap 85-ös skálázása** (`(b·30 + 50) / 100`, természetes sorrend);
+- az első mező = 1 → `optimize_coding` (`0x009d53ff`, `0x00ad3d7d`): **optimalizált Huffman-táblák** (mérve:
+  minden bélyegképen 4 DHT, egyik sem a szabványos); `force_baseline` hamis, a mód baseline (SOF0);
+- a második mező = 4 → a mintavétel az alapérték: **4:2:0** (`0x00ad3e93`–`0x00ad3ec5`; mérve mind a 186-on);
+- **JFIF 1.01** fejléc, sűrűségegység 0, sűrűség 1:1 (`0x00ad3daa`–`0x00ad3dca`), nincs Adobe-jelölő;
+- **minőség-visszalépés:** ha az EXIF-író hibát ad, vagy a blokk > `0xfffd` bájt (`0x009ed10b`–`0x009ed115`), a
+  minőség 15-tel csökken (`0x009ed12e`–`0x009ed141`): 85 → 70 → 55 → 40 → 25 → 10; 10-en sem fér el → az EXIF
+  teljesen kiürül (`0x009ed1be`). A mért legnagyobb APP1 6858 bájt, tehát mindig az első próba ment át.
+
+**5. Elhelyezés az EXIF-blokkban** (`0x00a7ade0` 1-es mód, `0x00a7afcd`–`0x00a7b0bd`; kiírás `0x00a7c720`):
+két új tag az IFD1-ben, `0x201` és `0x202` (LONG, darabszám 1); a kiíró a bélyegképet a TIFF-puffer **végére**
+másolja (`0x00a7cab3`), páratlan hossznál 1 nullbájt követi (`0x00a7cabb`–`0x00a7cb3f`), a `0x201` értékmezőjébe
+a kezdőeltolás kerül (`0x00a7cb67`). Mérve: 421 bélyegképből 421-nél a kép a blokk végén áll; 289-nél 1 nullbájt
+követi, pontosan ott, ahol a vége páratlan eltolásra esik.
+
+**6. Az ICC-profil szerepe** (nem a bélyegkép kapuja): `[this+0x24]` a `0x2c` kulcsú `BinaryMetadata`, azaz a
+forrás beágyazott ICC-profilja. Csak akkor használja, ha mindkét oldal > 300 **és** a színkezelés globális
+jelzője be van kapcsolva (`[[0xd67920]+0x5c]`): a `0x009ece0f` (LittleCMS profilnyitó `0x00af3eb0`) megnyitja, a
+kicsinyítés után a `0x009ed05e`–`0x009ed085` a bélyegkép képpontjait a globális profilra alakítja
+(`0x00a3f2f0`). Hogy ez export közben lefut-e, nincs kiolvasva → #3995.
+
+| | Eredeti | Nálunk (`export_metadata.py`) |
+|---|---|---|
+| bélyegkép | minden > 300 px-es kép, újonnan készítve | nincs → fejlesztés **#3998** |
+| a forrás meglévő IFD1-e / bélyegképe | mindig eldobva | megőrizve (`csak_ha_megvan`) |
+| `resize_image` módjai | 0 doboz, 5 Lanczos-3, 6 Lanczos-4, 3 Mitchell, … | csak doboz és Mitchell |
+
+**Nyitott kérdések mérlege — 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”:**
+
+1. ~~Mikor készül~~ — **LEZÁRVA** (két független olvasás; ≤ 300 px élő mérése a #3995-ben).
+2. ~~A méret szabálya~~ — **LEZÁRVA** a binárisból; a kerekítési változatok élő szétválasztása → **#3995**.
+3. ~~A kicsinyítő~~ — **LEZÁRVA**: 5-ös mód = Lanczos-3 (a kutatói „Lanczos-4” a konstruktor alapértékéből jött, a felülírás helyesbítette); az előfelezés, a SIMD-ág és az ICC-lépés → **#3995**.
+4. ~~A JPEG-kódolás~~ — **LEZÁRVA** (mérve mind a 186-on).
+
+*Bizonyítottsági fok: **megerősített** az 1., 4., 5. pontra és a kernel azonosítására (két független opus-olvasás + a hívó saját ellenőrzése a felülírásnál; a q85, a 4:2:0, a Huffman, a méret-szabály a 186 exporton mérve); **erős** a `fistp` kerekítési módjára és a pixelpontos egyezésre.*
+
+*Forrás: `0x009ecdb0`, `0x009b4aa0`, `0x00a3f490`, `0x00a3f660`, `0x00a3fdf5`, `0x00a3feed`, `0x009d61e0`–`0x009d53e0`, `0x00ad3b30`, `0x00a7ade0`, `0x00a78920`, `0x00a7c720`; mérés: a helyi `meroadat.tar` 421 bélyegképe.*
