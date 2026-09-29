@@ -1881,3 +1881,53 @@ aktuális idő, a `0x37` a fájl időbélyege (a mérés egyezik: 3229 → `mtim
 - a `0x9efe80` `0x35`-ös mellékága;
 - az olvasómaszkok bitjei;
 - a `Software` mező (a mérés szerint csak hiányzónál `Picasa`), amely nem ebből a halmazból jön.
+
+### F) ✅ A tájolás és az ICC: az üres bejegyzés TÖRLÉS — az EXIF-ben és az XMP-ben is (2026-09-29, 414. kör, #3978)
+
+Az E) tábla `0x0d` és `0x2c` sora üres értéket tesz a halmazba. **Mindkét író ebből törlést csinál**, 1-et vagy más értéket egyik sem ír.
+
+**EXIF — `0x0112` Orientation (kulcs `0x0d`):**
+
+| lépés | cím |
+|---|---|
+| a halmazba üres érték kerül, ha a forrásban van tájolás | `0x0045cdbe` `0x0049c900(halmaz, 0x0d, {0,0,0})` |
+| az EXIF-író a leíró tábla (`0x00c782f0`) rekordjain visszafelé megy, és mindegyik kulcsát kikeresi a halmazból | `0x00a76330`–`0x00a764e8` (a `0x00a761e0`-ban), lookup `0x00a76565` → `0x009f0760` |
+| az üres bejegyzés egyelemű, 0-típusú vektort ad → `0x00a78470` | `0x00a76576`, `0x00a764c3` |
+| típus − 1 = `0xffffffff` > 5 → az ugrótábla (`0xa788d4`) helyett a **törlő ág** | `0x00a784b3`–`0x00a784b9` `ja 0xa784d1` |
+| a meglévő címke felszabadítva és kivéve az IFD-listából | `0x00a784d1`–`0x00a786a3` |
+
+**XMP — `tiff:Orientation`:** a `tiff:` névtér-író (`0x00badea0`) ugyanazt a
+jelzős mintát követi, mint az `exif:`-író (B):
+- `0x00badfce` `mov eax, 0xd` → `0x009eee30`;
+- a jelző = `[obj+0xc]==0` = 1;
+- `0x00bb0670(…, "http://ns.adobe.com/tiff/1.0/", "Orientation", 0xd, 1)`.
+
+A jelző ≠ 0 → `DeleteProperty`. ⇒ a forrás `tiff:Orientation`-je **törlődik**.
+
+**ICC — `0x8773` (kulcs `0x2c`):** a leíró tábla ezen rekordjának `+0xc`
+bájt-jelzője 1. A ciklus az ilyen rekordnál csak azt nézi, **megvan-e** a
+kulcs a halmazban (`0x00a76336` → `0x009f1b30`); ha igen, a címkét törli
+(`0x00a7634f` → `0x00a7a0d0`), és helyette semmit nem ír. A mentő a `0x2c`-t
+mindig beteszi (E) ⇒ **az ICC-profil mindig kikerül** — ez egyezik a 204
+export 0/204 ICC-jével (A).
+
+⚠️ **A leíró tábla rekordhatára:** a ciklus címzése szerint a rekord
+- `+0` névtér/IFD,
+- `+4` címke,
+- `+8` típus,
+- `+0xc` jelző,
+- `+0x10` darabszám,
+- `+0x14` al-IFD,
+- **`+0x18` a kulcs**.
+
+A 6.1 szakasz egy mezővel eltolt határral olvasta. A „kulcs = `id` + 1” szabály ugyanezt írja le, csak másik oldalról: a kulcs a rekord utolsó mezője, és megegyezik a következő rekord első mezőjének eggyel növelt értékével. A kulcs–címke párok mindkét olvasatban azonosak.
+
+*Bizonyítottsági fok: **megerősített** — két független olvasás egyezik (ld. a
+#3978 újralevezetés-blokkját); a `{0,0,0}` bejegyzést a 413. kör olvasata adta
+(`0x0045cdbe`). Futásidejű mérés (elforgatott JPEG exportja) nincs.*
+
+| | Eredeti | Nálunk (main) |
+|---|---|---|
+| EXIF `0x0112` | **törölve** | a forrásé marad (a kép közben el van forgatva → kétszer fordul, #3966) |
+| XMP `tiff:Orientation` | **törölve** | a forrásé marad |
+| ICC | mindig törölve | nem visszük át — egyezik |
