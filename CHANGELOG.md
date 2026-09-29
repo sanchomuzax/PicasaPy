@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.636] – 2026-09-29
+
+### Javítva
+- A Finomhangolás szélsőséges (fordított fekete-/fehérpontú) beállításánál
+  a kép már nem egyszínű fehér: az eredeti Picasához hasonlóan szinte csupa
+  fehér, a tiszta fehér képpontok feketék, és szórtan a fordított tónus
+  látszik (#3871).
+- A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
+  az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
+  helyükön ülnek, és az árnyalatok nem térnek el egy-egy szinttel (#3878).
+
 ### Javítva
 - Az elforgatott (álló) fényképek exportja nem fordul el kétszer: a kimenet
   tájolás-jelzője alaphelyzetbe áll, mert a képpontok már a helyes állásban
