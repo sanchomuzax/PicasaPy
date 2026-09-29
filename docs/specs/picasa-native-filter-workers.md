@@ -1457,7 +1457,7 @@ ki_c = LUT[be_c]                                          ; csatornánként, az 
 
 A mai kód a bemeneti szintek kb. felén eggyel alacsonyabbat ad (a 16 bites tábla `v >> 8`-a lefelé csonkol, a natív 8 bites tábla kerekít). Tömörítés nélkül a mai kód 0,30–0,35-öt, a 8 bites tábla 0,15–0,17-et ad — ez utóbbi pontosan a zajszint.
 
-**Nálunk** (`render/native_tone.py::apply_gamma` → `apply_native_levels`): a 2.3-as szinthúzó → fejlesztés: #3939.
+**✅ Megvalósítva (#3939):** `render/native_tone.py::apply_gamma` → `native_gamma_lut` (a `0x00aa40a0` 8 bites tábla, dither nélkül) — a régi Ragyogás-előgörbével (`render/effects.py::glow_gamma_lut`, `g = 0,5`) közösített segédfüggvény. A 684-es mérőkészleten, a kimenetet a Picasa-export saját JPEG-kvantálótábláival (és 4:4:4 mintavételezésével) tömörítve: `gamma__alap` ΔE **0,0000**, `gamma__max` **0,0000**, `gamma__min` **0,0000** — a korábbi (szinthúzón futó) modell ugyanígy mérve 0,2715 / 0,2592 / 0,2220 volt.
 
 ## 5.4 MEGOLDVA: az `shadow` súly-skálája
 
