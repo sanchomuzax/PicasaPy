@@ -511,12 +511,12 @@ class TestTiffHelyben:
         maszk = lambda b: b[8:mutato] + b[mutato + 4 :]  # noqa: E731
         assert maszk(ki[: len(tiff)]) == maszk(tiff)
 
-    def test_blokkon_kivuli_eltolas_tiffhiba(self):
-        from picasapy.metadata.tiff_helyben import TiffHiba
-
+    def test_blokkon_kivuli_eltolas_hozzafuzessel_frissul(self):
+        """A blokkon kívülre mutató DateTime helyben nem írható: hozzáfűzéssel
+        kerül át, a frissítés nem marad el (#3964)."""
         tiff = b"II*\x00\x08\x00\x00\x00" + struct.pack("<H", 1) + struct.pack("<HHII", 0x0132, 2, 20, 9999) + b"\x00" * 4
-        with pytest.raises(TiffHiba):
-            em.frissitett_tiff(tiff, self._valtozasok(1, 1))
+        ki = em.frissitett_tiff(tiff, self._valtozasok(1, 1))
+        assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
 
     def test_ures_forrasbol_uj_blokk(self):
         ki = em.frissitett_tiff(None, self._valtozasok(64, 48))
@@ -713,3 +713,197 @@ class TestLegalsoVedohalo:
             assert kep.size == (80, 60)
         assert _app1_torzs(kimenet, _EXIF_ID) is None
         assert any("metaadat nélkül" in r.getMessage() for r in caplog.records)
+
+
+# --- a #3964 harmadik átnézése: mutató a GPS/Interop/előnézet bájtjaiba, csonkolt blokk --
+
+
+def _datetime_mutato_ide(tiff, ifd0_off, sorszam, mutato):
+    """Az IFD0 `sorszam`-adik bejegyzésének (DateTime) értékmutatóját `mutato`-ra írja."""
+    tiff = bytearray(tiff)
+    hely = ifd0_off + 2 + 12 * sorszam + 8
+    tiff[hely : hely + 4] = struct.pack("<I", mutato)
+    return bytes(tiff)
+
+
+def _ifd0_gps_tiff():
+    """IFD0 (Make, DateTime, GPS-mutató) + GPS IFD; a DateTime a GPS-tábla belsejébe mutat."""
+    gps_bej = [(1, 2, 2, b"N\x00"), (2, 5, 3, bytes(range(24)))]
+    gps_hossz = len(_ifd(gps_bej, 0, 0))
+
+    def epit(gps_off):
+        ifd0 = _ifd(
+            [
+                (0x010F, 2, 6, b"Canon\x00"),
+                (0x0132, 2, 20, b"2020:01:01 00:00:00\x00"),
+                (0x8825, 4, 1, struct.pack("<I", gps_off)),
+            ],
+            8,
+            0,
+        )
+        return ifd0
+
+    ifd0 = epit(0)
+    gps_off = 8 + len(ifd0)
+    ifd0 = epit(gps_off)
+    gps = _ifd(gps_bej, gps_off, 0)
+    assert len(gps) == gps_hossz
+    tiff = b"II*\x00\x08\x00\x00\x00" + ifd0 + gps + b"\x00" * 8
+    return _datetime_mutato_ide(tiff, 8, 1, gps_off + 2), gps_off, len(gps)
+
+
+def _exif_interop_tiff():
+    """IFD0 → Exif → Interop; a DateTime az Interop-tábla belsejébe mutat."""
+    interop_bej = [(0x0001, 2, 4, b"R98\x00")]
+
+    def epit(exif_off, interop_off):
+        ifd0 = _ifd(
+            [
+                (0x010F, 2, 6, b"Canon\x00"),
+                (0x0132, 2, 20, b"2020:01:01 00:00:00\x00"),
+                (0x8769, 4, 1, struct.pack("<I", exif_off)),
+            ],
+            8,
+            0,
+        )
+        exif = _ifd(
+            [(0x9000, 7, 4, b"0230"), (0xA005, 4, 1, struct.pack("<I", interop_off))],
+            exif_off,
+            0,
+        )
+        return ifd0, exif
+
+    ifd0, exif = epit(0, 0)
+    exif_off = 8 + len(ifd0)
+    interop_off = exif_off + len(exif)
+    ifd0, exif = epit(exif_off, interop_off)
+    interop = _ifd(interop_bej, interop_off, 0)
+    tiff = b"II*\x00\x08\x00\x00\x00" + ifd0 + exif + interop + b"\x00" * 8
+    return _datetime_mutato_ide(tiff, 8, 1, interop_off), interop_off, len(interop)
+
+
+def _elonezet_bajtjaiba_mutato_tiff():
+    """IFD0 → IFD1 (előnézet a blokk közepén, mögötte még adat); a DateTime az előnézetbe mutat."""
+
+    def epit(ifd1_off, thumb_off):
+        ifd0 = _ifd(
+            [(0x010F, 2, 6, b"Canon\x00"), (0x0132, 2, 20, b"2020:01:01 00:00:00\x00")],
+            8,
+            ifd1_off,
+        )
+        ifd1 = _ifd(
+            [(0x0201, 4, 1, struct.pack("<I", thumb_off)), (0x0202, 4, 1, struct.pack("<I", 40))],
+            ifd1_off,
+            0,
+        )
+        return ifd0, ifd1
+
+    ifd0, ifd1 = epit(0, 0)
+    ifd1_off = 8 + len(ifd0)
+    thumb_off = ifd1_off + len(ifd1)
+    ifd0, ifd1 = epit(ifd1_off, thumb_off)
+    kep = bytes([0xCD]) * 40
+    tiff = b"II*\x00\x08\x00\x00\x00" + ifd0 + ifd1 + kep + b"\x00" * 8
+    return _datetime_mutato_ide(tiff, 8, 1, thumb_off + 4), thumb_off, kep
+
+
+class TestSerultBlokkHarmadik:
+    def test_gps_tablara_mutato_datetime_nem_irja_felul_a_gps_ifd_t(self):
+        tiff, gps_off, gps_hossz = _ifd0_gps_tiff()
+        ki = _th().frissitett_tiff(tiff, _datetime_valtozas())
+        assert ki[gps_off : gps_off + gps_hossz] == tiff[gps_off : gps_off + gps_hossz]
+        assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+        assert _olvas(ki)["0th"][0x010F][3] == b"Canon\x00"
+
+    def test_gps_tabla_onellenorzese_megfogja_az_irast(self, monkeypatch):
+        th = _th()
+        monkeypatch.setattr(th, "_cel_szabad", lambda *_a, **_k: True)
+        tiff, _off, _hossz = _ifd0_gps_tiff()
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(tiff, _datetime_valtozas())
+
+    def test_interop_tablara_mutato_datetime_nem_irja_felul_az_interopot(self):
+        tiff, interop_off, hossz = _exif_interop_tiff()
+        ki = _th().frissitett_tiff(tiff, _datetime_valtozas())
+        assert ki[interop_off : interop_off + hossz] == tiff[interop_off : interop_off + hossz]
+        assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+
+    def test_interop_tabla_onellenorzese_megfogja_az_irast(self, monkeypatch):
+        th = _th()
+        monkeypatch.setattr(th, "_cel_szabad", lambda *_a, **_k: True)
+        tiff, _off, _hossz = _exif_interop_tiff()
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(tiff, _datetime_valtozas())
+
+    def test_ervenytelen_gps_mutato_nem_dob_hibat(self):
+        tiff, _off, _hossz = _ifd0_gps_tiff()
+        tiff = bytearray(tiff)
+        gps_mezo = 8 + 2 + 12 * 2 + 8  # a GPS-mutató értékmezője
+        tiff[gps_mezo : gps_mezo + 4] = struct.pack("<I", 99999)
+        tiff[8 + 2 + 12 + 8 : 8 + 2 + 12 + 12] = struct.pack("<I", 8 + 2 + 36 + 4 + 6)
+        ki = _th().frissitett_tiff(bytes(tiff), _datetime_valtozas())
+        assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+
+    def test_elonezet_bajtjaiba_mutato_datetime_nem_irja_felul_az_elonezetet(self):
+        tiff, thumb_off, kep = _elonezet_bajtjaiba_mutato_tiff()
+        ki = _th().frissitett_tiff(tiff, _datetime_valtozas())
+        assert ki[thumb_off : thumb_off + len(kep)] == kep
+        assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+
+    def test_elonezet_onellenorzese_megfogja_az_irast(self, monkeypatch):
+        th = _th()
+        monkeypatch.setattr(th, "_cel_szabad", lambda *_a, **_k: True)
+        tiff, _off, _kep = _elonezet_bajtjaiba_mutato_tiff()
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(tiff, _datetime_valtozas())
+
+
+class TestCsonkoltBlokk:
+    def _valtozasok(self):
+        th = _th()
+        return [
+            th.Valtozas("0th", 0x0132, th.ascii_ertek("2026:09:29 10:00:00")),
+            th.Valtozas("Exif", 0xA002, th.Ertek(th.SHORT, 64)),
+            th.Valtozas("Exif", 0xA003, th.Ertek(th.SHORT, 48)),
+        ]
+
+    def test_a_blokk_vegen_tuli_mutato_nem_okoz_visszaesest(self):
+        """J-b: a MakerNote mutatója a forrás hosszán túlra mutat; a DateTime
+        és a méret ettől még frissül (nem `TiffHiba`)."""
+        tiff = _kis_tiff(
+            [(0x9000, 7, 4, b"0230"), (0x927C, 7, 64, _MAKERNOTE)],
+            ifd0_extra=[(0x0132, 2, 20, b"2020:01:01 00:00:00\x00")],
+        )
+        csonk = tiff[:-64]  # a MakerNote adata lemarad, a mutatója a végére mutat
+        ki = _th().frissitett_tiff(csonk, self._valtozasok())
+        olvasott = _olvas(ki)
+        assert olvasott["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+        assert (_meret(ki, 0xA002), _meret(ki, 0xA003)) == (64, 48)
+
+    def test_olvashatatlan_ifd1_nem_viszi_el_a_frissitest(self):
+        """J-c: az IFD1-mutató a blokkon kívülre mutat: a DateTime és a méret
+        frissül, a következő-mutató érintetlen marad."""
+        tiff = bytearray(
+            _kis_tiff([(0x9000, 7, 4, b"0230")], ifd0_extra=[(0x0132, 2, 20, b"2020:01:01 00:00:00\x00")])
+        )
+        kov_hely = 8 + 2 + 12 * 2  # az IFD0 két bejegyzése után
+        tiff[kov_hely : kov_hely + 4] = struct.pack("<I", 99999)
+        ki = _th().frissitett_tiff(bytes(tiff), self._valtozasok())
+        uj_ifd0 = struct.unpack_from("<I", ki, 4)[0]
+        (n,) = struct.unpack_from("<H", ki, uj_ifd0)
+        assert struct.unpack_from("<I", ki, uj_ifd0 + 2 + 12 * n)[0] == 99999
+        olvashato = bytearray(ki)  # az `_olvas` az IFD1-mutatót is követné
+        olvashato[uj_ifd0 + 2 + 12 * n : uj_ifd0 + 2 + 12 * n + 4] = b"\x00" * 4
+        assert _olvas(bytes(olvashato))["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+        assert (_meret(bytes(olvashato), 0xA002), _meret(bytes(olvashato), 0xA003)) == (64, 48)
+
+    def test_a_forras_vegen_tuli_datetime_mutato_nem_okoz_visszaesest(self):
+        """Maga az írandó DateTime mutat a forrás vége mögé (csonkolt APP1): a tag
+        hozzáfűzéssel kerül át, a frissítés nem marad el."""
+        tiff = _kis_tiff(
+            [(0x9000, 7, 4, b"0230")], ifd0_extra=[(0x0132, 2, 20, b"2020:01:01 00:00:00\x00")]
+        )
+        tiff = _datetime_mutato_ide(tiff, 8, 0, len(tiff) - 5)
+        ki = _th().frissitett_tiff(tiff, self._valtozasok())
+        assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+        assert (_meret(ki, 0xA002), _meret(ki, 0xA003)) == (64, 48)
