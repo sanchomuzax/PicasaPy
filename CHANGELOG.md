@@ -7,14 +7,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.631] – 2026-09-29
-
-### Javítva
-- A „Gamma Correct” effekt most az eredeti Picasa 8 bites, kerekített
-  gamma-táblájával számol, dither nélkül — eddig a szinthúzó 16 bites,
-  ditheres tábláján futott, ami a bemeneti szintek kb. felén eggyel
-  sötétebb eredményt adott (#3939).
-
 ### Javítva
 - A 60-as évek és a Kinemaszkóp effekt görbéi a legvilágosabb tónusokban is
   úgy futnak ki, mint az eredeti Picasa: a mestergörbe eredménye eddig a
@@ -22,6 +14,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   töréspontjain túl a szélső értéket tartotta — a mért eltérés a 60-as évek
   effektnél ΔE 0,43/0,38-ról 0,00-ra, a Kinemaszkópnál 0,35-ről 0,08-ra
   csökkent (#3942).
+
+## [0.8.631] – 2026-09-29
+
+### Javítva
+- A „Gamma Correct” effekt most az eredeti Picasa 8 bites, kerekített
+  gamma-táblájával számol, dither nélkül — eddig a szinthúzó 16 bites,
+  ditheres tábláján futott, ami a bemeneti szintek kb. felén eggyel
+  sötétebb eredményt adott (#3939).
 
 ## [0.8.630] – 2026-09-28
 
