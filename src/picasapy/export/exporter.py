@@ -28,7 +28,7 @@ from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
 from picasapy.metadata.export_metadata import bajtmasolas, frissitett_metaadat
 from picasapy.render import apply_filters
-from picasapy.render.flip import apply_flip
+from picasapy.render.flip import FLIP_MASK, apply_flip
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
@@ -490,13 +490,14 @@ def _encode_with_source_qtables(image: np.ndarray, source: Path) -> bytes | None
 def _is_noop_copy(
     source: Path, item: ExportItem, settings: ExportSettings, ops: tuple[FilterOp, ...]
 ) -> bool:
-    """Nincs mit beégetni: se forgatás, se átméretezés, se szerkesztés, se
-    vízjel — és a forrás már JPEG. Ilyenkor a sima másolás a helyes (bájthű,
+    """Nincs mit beégetni: se forgatás, se tükrözés (#3977), se átméretezés,
+    se szerkesztés, se vízjel — és a forrás már JPEG. Ilyenkor a sima másolás a helyes (bájthű,
     mtime-őrző); a sorszámozás (#369) csak a fájlnevet érinti, a bájthű
     másolást nem zárja ki."""
     return (
         source.suffix.lower() in _JPEG_EXTENSIONS
         and item.rotate_steps % 4 == 0
+        and not int(item.flip_flags or 0) & FLIP_MASK
         and settings.max_dimension is None
         and not settings.watermark_text
         and not ops
