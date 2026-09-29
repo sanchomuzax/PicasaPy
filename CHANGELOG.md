@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Finomhangolás szélsőséges (fordított fekete-/fehérpontú) beállításánál
+  a kép már nem egyszínű fehér: az eredeti Picasához hasonlóan szinte csupa
+  fehér, a tiszta fehér képpontok feketék, és szórtan a fordított tónus
+  látszik (#3871).
+
 ## [0.8.633] – 2026-09-29
 
 ### Javítva

@@ -75,9 +75,9 @@ _FILL_WEIGHT_FULL = 0xFF00
 #: NYERS érték (klemp nélkül) ΔE=0,57-et. A klemp tehát maga volt a hiba: a
 #: `.picasa.ini`-be bekerülő nyers érték a natív képletet éri el
 #: KORLÁTOZÁS NÉLKÜL — a 0,48 csak azt szabja meg, meddig húzható a
-#: csúszka, nem azt, mit fogad el a renderelő. (A `native_level_lut`
-#: `black > white` ága — ld. ott — külön kezeli azt a szélsőséget, amikor a
-#: nyers Shadows a Highlights-nál is nagyobb feketepontot adna.)
+#: csúszka, nem azt, mit fogad el a renderelő. (Ha a nyers Shadows a
+#: Highlights-nál is nagyobb feketepontot ad, a natív tábla csökkenő — #3871,
+#: ld. `native_level_lut`.)
 #:
 #: ⚠️ **A `chain.py`/`chain_report.py` szintjén EGY MÁSIK, ettől FÜGGETLEN
 #: vágás is létezett** (`_RANGE_VALIDATED_PARAM_POSITIONS`, #382): az

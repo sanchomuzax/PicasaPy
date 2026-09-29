@@ -48,8 +48,9 @@ def _eredeti_szintvago_lut(highlights: float, shadows: float) -> np.ndarray:
         ki       = LUT16[i] >> 8
 
     (Degenerált `a1 == a0` párnál a natív kód 1,0-s skálával megy tovább;
-    `a0 > a1`-nél — #3418 — a natív kimenet teljes fehér, ld.
-    `native_level_lut`.)
+    `a0 > a1`-nél — #3871, spec 2.2/d — a tábla csökkenő, és a kimenetet
+    az alkalmazó előjel nélküli eltolása adja; ezt a referencia NEM fedi, a
+    készlet paraméterei mind `a0 ≤ a1`-esek.)
 
     A képlet itt SZÁNDÉKOSAN újra le van írva, nem a megvalósításból hívva:
     így az elvárást nem tudja némán magával vinni egy átírás.
@@ -60,8 +61,6 @@ def _eredeti_szintvago_lut(highlights: float, shadows: float) -> np.ndarray:
     """
     black = max(shadows, 0.0)
     white = max(1.0 - max(highlights, 0.0), 0.001)
-    if black > white:
-        return np.full(256, 255, dtype=np.uint8)
     scale = 1.0 / (white - black) if white != black else 1.0
     values = (np.arange(256, dtype=np.float64) * 256.0 - black * 65280.0) * scale
     return (np.clip(np.rint(values), 0, 0xFF00).astype(np.int64) >> 8).astype(np.uint8)
@@ -438,15 +437,15 @@ class TestFinetuneKozosLut:
             result[0, :, 0], _eredeti_szintvago_lut(highlights, shadows)
         )
 
-    def test_invertalt_feketepont_teljes_feher(self) -> None:
-        """#3418: `Shadows > 1 − Highlights` (feketepont a fehérpont fölött)
-        → a natív szinthúzó a TELJES képet fehérre teszi.
+    def test_invertalt_feketepont_szinte_feher_a_feher_fekete(self) -> None:
+        """#3871 (spec 2.2/d): `Shadows > 1 − Highlights` (feketepont a
+        fehérpont fölött) → csökkenő tábla; a ditherelt natív alkalmazó a
+        képpontok 255/256-odára fehéret ír, a 255-ös bemenetre `LUT[255] >> 8`-at.
 
-        A 684-es mérőkészlet `finetune__max`/`finetune2__max` esete méri
-        (Highlights=0,5, Shadows=1,0): a korábbi, invertált-rámpás modellünk
-        ΔE=43-47-et adott a valódi (gyakorlatilag egyenletes fehér)
-        exporthoz képest; a teljes-fehér modell ΔE=3,4-3,7-et (a JPEG saját
-        zajszintjével egyező nagyságrend).
+        A 684-es készlet `finetune__max`/`finetune2__max` sora (Highlights=0,5,
+        Shadows=1,0): `LUT[255] = 0` ⇒ a tiszta fehér FEKETE lesz. A zajmentes
+        út a többségi (fehér) értéket adja; a ditherelt eset a
+        `test_csokkeno_tabla_3871`-ben.
         """
         with dither_nelkul():
             result = apply_finetune2(
@@ -457,4 +456,6 @@ class TestFinetuneKozosLut:
                 neutral=None,
                 temperature=0.0,
             )
-        np.testing.assert_array_equal(result[0, :, 0], np.full(256, 255, dtype=np.uint8))
+        vart = np.full(256, 255, dtype=np.uint8)
+        vart[255] = 0
+        np.testing.assert_array_equal(result[0, :, 0], vart)
