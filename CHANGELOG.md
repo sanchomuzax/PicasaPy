@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.633] – 2026-09-29
+
 ### Javítva
 - A Neon, a Boost, az Áttűnés és a PicnikTint effekt színei bitre egyeznek
   az eredeti Picasáéval, a Lomóé és a Holgáé pedig szinte (a maradék ΔE 0,063,
