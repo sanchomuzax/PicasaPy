@@ -143,13 +143,13 @@ _EDIT_CACHE_VERSION = 9
 # 7 (#3931): a Holga fekete-fehér lépése (`bw_tint`) Haeberli-súlyokkal és
 # a natív fixpontos színmátrix-alkalmazóval számol — a régi, Rec.601-es
 # lebegőpontos modellel készült szerkesztett bélyegképek újragenerálódnak.
-# 8 (#3942): az `AdjustCurves`-lánc a mestergörbe értékét kerekítés és
-# vágás nélkül adja tovább a csatornagörbének, ami a töréspontokon túl
-# extrapolál — az érintett (Sixties, Cinemascope, CrossProcess stb.)
-# szerkesztett bélyegképek újragenerálódnak.
 # 8 (#3928): a régi Szemcse (`grain`/`grain2`) csomós, középtónusban erős
 # zajt ad az eddigi egyenletes Gauss-zaj helyett — az érintett szerkesztett
 # bélyegképek újragenerálódnak.
+# 9 (#3942): az `AdjustCurves`-lánc a mestergörbe értékét kerekítés és
+# vágás nélkül adja tovább a csatornagörbének, ami a töréspontokon túl
+# extrapolál — az érintett (Sixties, Cinemascope, CrossProcess stb.)
+# szerkesztett bélyegképek újragenerálódnak.
 
 
 def _edit_base_size(target_size: int) -> int:

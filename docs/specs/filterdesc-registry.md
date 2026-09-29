@@ -7715,7 +7715,7 @@ A többi görbés effekt (kétpontos vagy tartományon belüli görbék) nem vá
 | `sixties__alap` | 0,376 | **0,000** |
 | `cinemascope__alap` | 0,354 | **0,079** |
 
-A többi görbés effekt (`crossprocess`, `orton`, `pencilsketch`, `neon`, `reanimatedeyecolor`) ΔE-je nem romlott (bitre azonos maradt a régi és az új lánccal).
+A többi görbés effekt (`crossprocess`, `orton`, `pencilsketch`, `neon`, `reanimatedeyecolor`) ΔE-je nem romlott. A tábla bitre azonos maradt a régi és az új lánccal, kivéve az `orton` `brightness≠50` állásait: `brightness=25`-nél (`mid = 90,5`) 3 táblaelem 1 szinttel eltér — a `trunc(x + 0,5)` kerekítés a ,5-ös döntetlent felfelé viszi, a régi `rint` párosra —, a spec szerinti irányba (a `brightness=50` alapállás azonos).
 
 ## ⛳ A `Border` négy attribútumának EGYSÉGE — és a rejtett átméretezési tényező (2026-09-19, 325. kör, #626)
 

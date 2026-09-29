@@ -199,6 +199,9 @@ def adjust_curves(
     validate_image(image)
     levels = np.arange(256, dtype=np.float64)
     master_out = evaluate_curve_extrapolated(master, levels) if master is not None else levels
+    # A spec `v = f32(Master(i))` lépése (`0x00bcd226` → `0x00bcd360`). Egyik mai
+    # hívó görbéjén sem ad eltérő táblaelemet, ezért teszt nem fogja meg.
+    master_out = master_out.astype(np.float32).astype(np.float64)
 
     def _channel_table(curve: CurvePoints | None) -> np.ndarray:
         values = evaluate_curve_extrapolated(curve, master_out) if curve is not None else master_out

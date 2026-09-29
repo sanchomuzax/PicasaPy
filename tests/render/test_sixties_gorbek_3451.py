@@ -13,8 +13,9 @@ a fekete feketén maradt, holott a leíró 59-re emeli (a zöld 22-re, a kék 9-
 — ez a meleg, fakó „régi fotó" alapja. A 684-es golden ΔE-je a javítással:
 alap 15,81 → 1,72, min 20,06 → 1,62.
 
-A görbe-számoló (`curves.curve_lut`) a töréspontokon kívül a szélső értéket
-tartja, ezért a pontok kiegészítés nélkül, a leíró szerint adhatók meg.
+A `curves.curve_lut` a töréspontokon kívül a szélső értéket tartja, az
+`adjust_curves` lánca viszont (#3942) extrapolál; mindkét esetben a pontok
+kiegészítés nélkül, a leíró szerint adhatók meg.
 """
 
 from __future__ import annotations

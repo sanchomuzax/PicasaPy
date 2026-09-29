@@ -148,6 +148,10 @@ def evaluate_curve_extrapolated(points: CurvePoints, x: np.ndarray) -> np.ndarra
     0..255 tartományon. A `curve_lut` (256 elemű, 0..255 indexű LUT, a
     tartományon kívül a szélső értéket tartja) minden MÁS hívónál
     változatlan marad — ld. a docstringjét.
+
+    Eltérés a natívtól: kettőnél kevesebb töréspontra a natív a bemenetet adja
+    vissza (identitás, `0x008f329e`), ez a függvény `ValueError`-t dob. Egyik
+    mai effekt görbéje sem ilyen; a viselkedést szándékosan nem változtattuk.
     """
     xs, ys = _validate_points(points)
     return _evaluate_natural_spline(xs, ys, np.asarray(x, dtype=np.float64))
