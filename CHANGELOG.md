@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Lomo és a Holga sötét pereme bitre egyezik az eredeti Picasáéval: a kör
+  alakú átmenetet eddig folytonosan számoltuk, az eredeti egész
+  képpontkoordinátákkal és rögzített lépcsőkkel, és a különbség az elmosott
+  szélen felnagyítva látszott — a mért eltérés a Lomónál 0,063-ról, a Holgánál
+  0,010-ről a mérési zaj alá csökkent (#3958).
+
 ## [0.8.633] – 2026-09-29
 
 ### Javítva
