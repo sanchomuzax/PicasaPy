@@ -299,16 +299,20 @@ def _helyben_1st(blokk: _Blokk, ifd1: list[_Bejegyzes], valtozasok: list[Valtoza
 
 def tajolas_1_helyben(tiff: bytes) -> bytes:
     """Tartalék út (#3966): az IFD0 és az IFD1 meglévő `Orientation` (0x0112)
-    tagje a helyén `1`-re; semmi más nem változik. Hibánál `TiffHiba`."""
+    tagje a helyén `1`-re; semmi más nem változik. Hibánál `TiffHiba`: a helyén
+    nem írható tag, és az is, ha a visszaolvasott kimenetben a tájoláson kívül
+    bármi más megváltozott (ugyanaz a szerkezeti önellenőrzés, mint a fő úton)."""
     blokk = _Blokk(tiff)
     ifd0, ifd1_off = blokk.ifd(blokk.u32(4))
     ifd1 = _ifd1_tagek(blokk, ifd1_off)
     ertek = Ertek(SHORT, 1)
     for tagek in (ifd0, ifd1):
         for b in tagek:
-            if b.tag == _TAJOLAS:
-                _helyben_irhato(blokk, b, ertek)
-    return bytes(blokk.buf)
+            if b.tag == _TAJOLAS and not _helyben_irhato(blokk, b, ertek):
+                raise TiffHiba("a tájolás-tag a helyén nem írható")
+    kimenet = bytes(blokk.buf)
+    _ellenoriz_szerkezet(tiff, kimenet, {("0th", _TAJOLAS), ("1st", _TAJOLAS)})
+    return kimenet
 
 
 def _elonezet_csere(blokk: _Blokk, ifd1: list[_Bejegyzes], uj_kep: bytes) -> bool:

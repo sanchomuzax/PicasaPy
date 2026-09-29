@@ -216,3 +216,42 @@ class TestTartalekAgak:
             kimenet = _export(_forras_elonezettel(tmp_path), tmp_path, max_dimension=1000)
         assert kimenet.is_file()
         assert any("tájolás" in r.getMessage() for r in caplog.records)
+
+
+class TestTartalekIroSzigorusaga:
+    """A `tajolas_1_helyben` (tartalék út) ugyanúgy önellenőriz, mint a fő út."""
+
+    def test_nem_helyben_irhato_tajolas_tiffhiba_nem_nema_kihagyas(self):
+        # LONG, 2 darab: a helyén nem írható → hangos hiba (a hívó naplózza)
+        e = "<"
+        tiff = (
+            b"II*\x00\x08\x00\x00\x00"
+            + struct.pack(e + "H", 1)
+            + struct.pack(e + "HHII", 0x0112, 4, 2, 26)
+            + b"\x00" * 4
+            + struct.pack(e + "II", 6, 6)
+        )
+        with pytest.raises(th.TiffHiba):
+            th.tajolas_1_helyben(tiff)
+
+    def test_idegen_tag_serulese_tiffhiba(self, monkeypatch):
+        # ha az írás a tájoláson kívül bármi mást is megváltoztatna, az
+        # önellenőrzés megfogja (rontás-kontroll: az ellenőrzés nélkül átmegy)
+        tiff = piexif.dump({"0th": {piexif.ImageIFD.Orientation: 6, piexif.ImageIFD.Make: b"Canon"}})[6:]
+        eredeti = th._helyben_irhato
+
+        def rongalo(blokk, meglevo, ertek):
+            ok = eredeti(blokk, meglevo, ertek)
+            make = next(b for b in blokk.ifd(blokk.u32(4))[0] if b.tag == 0x010F)
+            blokk.buf[blokk.u32(make.hely + 8)] ^= 0xFF
+            return ok
+
+        monkeypatch.setattr(th, "_helyben_irhato", rongalo)
+        with pytest.raises(th.TiffHiba):
+            th.tajolas_1_helyben(tiff)
+
+    def test_ep_blokkon_csak_a_tajolas_valtozik(self):
+        tiff = piexif.dump({"0th": {piexif.ImageIFD.Orientation: 8, piexif.ImageIFD.Make: b"Canon"}})[6:]
+        ki = th.tajolas_1_helyben(tiff)
+        assert piexif.load(_EXIF_ID + ki)["0th"][piexif.ImageIFD.Orientation] == 1
+        assert sum(a != b for a, b in zip(tiff, ki, strict=True)) == 1 and len(ki) == len(tiff)
