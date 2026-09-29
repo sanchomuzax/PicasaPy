@@ -25,7 +25,7 @@ from picasapy.cvimage import dekodolj_forrast, scale_down
 from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
-from picasapy.metadata.export_metadata import frissitett_metaadat
+from picasapy.metadata.export_metadata import bajtmasolas, frissitett_metaadat
 from picasapy.render import apply_filters
 from picasapy.render.flip import apply_flip
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
@@ -624,8 +624,14 @@ def _transfer_metadata(
     A `cv2.imencode` a metaadatot elhagyja. A forrás EXIF-je és XMP-je NEM
     bájtra kerül át: az export ideje, a kimeneti méret és a hiányzó mezők
     a `metadata/export_metadata.py` leírása szerint frissülnek; az IPTC
-    (APP13) változatlanul megy. `size` a kimeneti kép (szélesség, magasság)."""
-    return frissitett_metaadat(source, encoded, size=size)
+    (APP13) változatlanul megy. `size` a kimeneti kép (szélesség, magasság).
+
+    A kép exportja SOHA nem bukhat el a metaadat miatt: bármely hibánál a
+    régi, bájtra másoló út (#136) a kimenet."""
+    try:
+        return frissitett_metaadat(source, encoded, size=size)
+    except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
+        return bajtmasolas(source, encoded)
 
 
 def _unique_target(target_dir: Path, stem: str, suffix: str) -> Path:
