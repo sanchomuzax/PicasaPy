@@ -13,16 +13,19 @@ a fekete feketén maradt, holott a leíró 59-re emeli (a zöld 22-re, a kék 9-
 — ez a meleg, fakó „régi fotó" alapja. A 684-es golden ΔE-je a javítással:
 alap 15,81 → 1,72, min 20,06 → 1,62.
 
-A görbe-számoló (`curves.curve_lut`) a töréspontokon kívül a szélső értéket
-tartja, ezért a pontok kiegészítés nélkül, a leíró szerint adhatók meg.
+A `curves.curve_lut` a töréspontokon kívül a szélső értéket tartja, az
+`adjust_curves` lánca viszont (#3942) extrapolál; mindkét esetben a pontok
+kiegészítés nélkül, a leíró szerint adhatók meg.
 """
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from picasapy.render import glimmer_tone as t
 from picasapy.render.curves import curve_lut
+from picasapy.render.glimmer_ops import adjust_curves
 
 LEIRO = {
     "_SIXTIES_MASTER": ((0.0, 0.0), (150.0, 104.0), (243.0, 255.0)),
@@ -50,3 +53,20 @@ def test_a_master_243_folott_telitett_feher():
     lut = curve_lut(t._SIXTIES_MASTER)
     assert lut[243] == pytest.approx(255.0)
     assert lut[250] == pytest.approx(255.0)
+
+
+def test_a_kek_lanc_a_mesterertek_extrapolaciojaval_szamol():
+    """#3942: a mestergörbe kimenete a láncban NEM kerekül és NEM vágódik a
+    255-ös töréspontnál — a kék csatornagörbe a saját 255 fölötti bemenetre
+    a szélső szakaszát EXTRAPOLÁLJA, nem tartja a szélső értéket.
+
+    `i = 240, 245, 250, 255` → `Master(i) = 249,6 / 258,6 / 267,6 / 276,6`
+    (nem vágva 255-re) → `Blue(v)` extrapolálva → `225, 235, 245, 255`
+    (a jegy „Kész, ha" listája, #3941 spec).
+    """
+    image = np.zeros((1, 4, 3), dtype=np.uint8)
+    image[0, :, 2] = [240, 245, 250, 255]
+
+    lanc = adjust_curves(image, master=t._SIXTIES_MASTER, blue=t._SIXTIES_BLUE)
+
+    np.testing.assert_array_equal(lanc[0, :, 2], [225, 235, 245, 255])

@@ -7746,6 +7746,16 @@ A többi görbés effekt (kétpontos vagy tartományon belüli görbék) nem vá
 
 **Nálunk** (`render/glimmer_ops.py::adjust_curves`, `render/curves.py::curve_lut`): két egymás utáni 8 bites LUT, a görbe a tartományon kívül a szélső értéket tartja → fejlesztés: #3942.
 
+✅ **Megvalósítva (#3942).** Az `adjust_curves` a natív egy-menetes képletre állt (`curves.evaluate_curve_extrapolated`, csak ezt az utat használja); a `curve_lut` (256 elemű, 0..255 indexű LUT) MINDEN MÁS hívónál változatlan — a tartományon kívül továbbra is a szélső értéket tartja, mert azoknak a töréspontjai a teljes 0..255 tartományt lefedik. Mérve (684-es kvantálótáblás ΔE):
+
+| eset | előtte | utána |
+|---|---:|---:|
+| `sixties__min` | 0,433 | **0,000** |
+| `sixties__alap` | 0,376 | **0,000** |
+| `cinemascope__alap` | 0,354 | **0,079** |
+
+A többi görbés effekt (`crossprocess`, `orton`, `pencilsketch`, `neon`, `reanimatedeyecolor`) ΔE-je nem romlott. A tábla bitre azonos maradt a régi és az új lánccal, kivéve az `orton` `brightness≠50` állásait: `brightness=25`-nél (`mid = 90,5`) 3 táblaelem 1 szinttel eltér — a `trunc(x + 0,5)` kerekítés a ,5-ös döntetlent felfelé viszi, a régi `rint` párosra —, a spec szerinti irányba (a `brightness=50` alapállás azonos).
+
 ## ⛳ A `Border` négy attribútumának EGYSÉGE — és a rejtett átméretezési tényező (2026-09-19, 325. kör, #626)
 
 *A jegy 3. prioritása a `Border` (Border · MuseumMatte · RoundedEdges ·

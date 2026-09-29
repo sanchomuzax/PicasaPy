@@ -35,10 +35,9 @@ import numpy as np
 
 from picasapy.render.curves import (
     CurvePoints,
-    apply_channel_luts,
-    apply_lut,
+    apply_byte_luts,
     curve_lut,
-    lut_ramp,
+    evaluate_curve_extrapolated,
     validate_image,
 )
 from picasapy.render import nativ_noise
@@ -184,20 +183,34 @@ def adjust_curves(
     """`AdjustCurves`: opcionális mestergörbe MINDEN csatornára, utána
     opcionális, csatornánként ELTÉRŐ görbe — a `filterdesc.xml` sorrendje
     szerint (master előbb, csak utána a csatorna-specifikus finomítás).
+
+    **#3942: a natív a 256 bemenetre EGY menetben számol** (a LUT-építő
+    `0x00bcd1e0`), nem két egymást követő 8 bites LUT-tal:
+
+        v   = f32( Master(i) )                       ; NINCS kerekítés, NINCS vágás
+        C_i = clamp( trunc( Csatorna(v) + 0,5 ), 0, 255 )  ; C = R, G, B
+
+    A mestergörbe kimenete (`v`) a saját töréspontjain túl EXTRAPOLÁL
+    (`evaluate_curve_extrapolated`), és FOLYTONOSAN (kerekítés/vágás
+    nélkül) adódik át a csatornagörbének — ami emiatt a 0..255-ön KÍVÜL eső
+    bemenetet is kaphat, és ott is extrapolál, nem a szélső értéket tartja.
+    Hiányzó görbe = identitás. A végén EGYETLEN kerekítés és vágás történik.
     """
     validate_image(image)
-    result = image
-    if master is not None:
-        result = apply_lut(result, curve_lut(master))
-    if red is not None or green is not None or blue is not None:
-        ramp = lut_ramp()
-        luts = (
-            curve_lut(red) if red is not None else ramp,
-            curve_lut(green) if green is not None else ramp,
-            curve_lut(blue) if blue is not None else ramp,
-        )
-        result = apply_channel_luts(result, luts)
-    return result
+    levels = np.arange(256, dtype=np.float64)
+    master_out = evaluate_curve_extrapolated(master, levels) if master is not None else levels
+    # A spec `v = f32(Master(i))` lépése (`0x00bcd226` → `0x00bcd360`). Egyik mai
+    # hívó görbéjén sem ad eltérő táblaelemet, ezért teszt nem fogja meg.
+    master_out = master_out.astype(np.float32).astype(np.float64)
+
+    def _channel_table(curve: CurvePoints | None) -> np.ndarray:
+        values = evaluate_curve_extrapolated(curve, master_out) if curve is not None else master_out
+        return np.clip(np.trunc(values + 0.5), 0, 255).astype(np.uint8)
+
+    tables = np.stack(
+        [_channel_table(red), _channel_table(green), _channel_table(blue)], axis=-1
+    )
+    return apply_byte_luts(image, tables)
 
 
 def invert_curve(image: np.ndarray) -> np.ndarray:

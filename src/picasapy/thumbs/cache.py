@@ -128,7 +128,7 @@ _EDIT_BASE_CAP = 2048
 # hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
 # (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
 # (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 9
+_EDIT_CACHE_VERSION = 10
 # 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
 # skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
 # 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
@@ -149,6 +149,10 @@ _EDIT_CACHE_VERSION = 9
 # 9 (#3939): a Gamma Correct (`gamma`) a 8 bites gamma-táblán fut, dither
 # nélkül — a régi, 16 bites ditheres szinthúzón renderelt szerkesztett
 # bélyegképek újragenerálódnak.
+# 10 (#3942): az `AdjustCurves`-lánc a mestergörbe értékét kerekítés és
+# vágás nélkül adja tovább a csatornagörbének, ami a töréspontokon túl
+# extrapolál — az érintett (Sixties, Cinemascope, CrossProcess stb.)
+# szerkesztett bélyegképek újragenerálódnak.
 
 
 def _edit_base_size(target_size: int) -> int:

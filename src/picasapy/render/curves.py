@@ -55,8 +55,19 @@ def _natural_spline_second_derivatives(
     return second
 
 
-def curve_lut(points: CurvePoints) -> np.ndarray:
-    """Töréspontokból 256 elemű float64 LUT, TERMÉSZETES KÖBÖS SPLINE-nal.
+def _validate_points(points: CurvePoints) -> tuple[np.ndarray, np.ndarray]:
+    if len(points) < 2:
+        raise ValueError(f"Legalább két töréspont kell, kaptunk: {points!r}")
+    xs = np.array([point[0] for point in points], dtype=np.float64)
+    ys = np.array([point[1] for point in points], dtype=np.float64)
+    if np.any(np.diff(xs) <= 0):
+        raise ValueError(f"A töréspontok x-e szigorúan növekvő kell legyen: {points!r}")
+    return xs, ys
+
+
+def _evaluate_natural_spline(xs: np.ndarray, ys: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """A természetes köbös spline kiértékelése `x` TETSZŐLEGES (a
+    töréspontok tartományán kívül eső) pontjaiban is — EXTRAPOLÁLVA (#3941).
 
     **#629: az eredeti nem lineárisan interpolál.** A `0x008f3290`
     munkafüggvény (a Numerical Recipes `splint` mintája) a szakaszon belül
@@ -66,36 +77,20 @@ def curve_lut(points: CurvePoints) -> np.ndarray:
         A = (x[j+1] − x)/h          B = (x − x[j])/h
         y = A·y[j] + B·y[j+1] + ((A³−A)·y2[j] + (B³−B)·y2[j+1]) · h²/6
 
-    A korábbi lineáris közelítés a valódi `filterdesc.xml` görbéken a
-    **60-as évek** effektnél 21,6, a **Kinemaszkópnál** 17,5 szintet tévedett
-    — hússzorosa a ditherelés ±1-es tűrésének, tehát szemmel látható.
-
-    **Kétpontos görbénél a kettő azonos** (mindkét végén nulla a második
-    derivált, így a köbös tag eltűnik) — a Színinvertálás, a Neon és a
-    Ceruzarajz kimenete bájtra változatlan.
-
-    A töréspontok tartományán KÍVÜL a szélső értéket tartjuk (nem
-    extrapolálunk): a szűrők görbéi 0..255-ig érnek, a köbös extrapoláció
-    viszont túllőne. A bemeneti pontok x-e szigorúan növekvő kell legyen.
+    A töréspontok tartományán KÍVÜL a natív a szélső intervallum köbös
+    polinomját EXTRAPOLÁLJA (#3941 kutatás) — ezt a `searchsorted` indexének
+    a szélső szakaszra való vágása (`np.clip(..., 1, len(xs) - 1)`) magától
+    megadja: a súlyok `[0, 1]`-en KÍVÜLRE is kerülhetnek, a képlet emiatt
+    a szélső szakasz görbéjét folytatja.
     """
-    if len(points) < 2:
-        raise ValueError(f"Legalább két töréspont kell, kaptunk: {points!r}")
-    xs = np.array([point[0] for point in points], dtype=np.float64)
-    ys = np.array([point[1] for point in points], dtype=np.float64)
-    if np.any(np.diff(xs) <= 0):
-        raise ValueError(f"A töréspontok x-e szigorúan növekvő kell legyen: {points!r}")
-
-    levels = np.arange(256, dtype=np.float64)
     second = _natural_spline_second_derivatives(xs, ys)
-    # a szakasz megkeresése (a natív bináris keresésének megfelelője):
-    # minden szinthez a befoglaló [x[j], x[j+1]] intervallum indexe
-    upper = np.clip(np.searchsorted(xs, levels, side="right"), 1, len(xs) - 1)
+    upper = np.clip(np.searchsorted(xs, x, side="right"), 1, len(xs) - 1)
     lower = upper - 1
 
     width = xs[upper] - xs[lower]
-    left_weight = (xs[upper] - levels) / width
-    right_weight = (levels - xs[lower]) / width
-    values = (
+    left_weight = (xs[upper] - x) / width
+    right_weight = (x - xs[lower]) / width
+    return (
         left_weight * ys[lower]
         + right_weight * ys[upper]
         + (
@@ -106,10 +101,60 @@ def curve_lut(points: CurvePoints) -> np.ndarray:
         * width
         / 6.0
     )
+
+
+def curve_lut(points: CurvePoints) -> np.ndarray:
+    """Töréspontokból 256 elemű float64 LUT, TERMÉSZETES KÖBÖS SPLINE-nal.
+
+    A korábbi lineáris közelítés a valódi `filterdesc.xml` görbéken a
+    **60-as évek** effektnél 21,6, a **Kinemaszkópnál** 17,5 szintet tévedett
+    — hússzorosa a ditherelés ±1-es tűrésének, tehát szemmel látható.
+
+    **Kétpontos görbénél a kettő azonos** (mindkét végén nulla a második
+    derivált, így a köbös tag eltűnik) — a Színinvertálás, a Neon és a
+    Ceruzarajz kimenete bájtra változatlan.
+
+    A töréspontok tartományán KÍVÜL a szélső értéket tartjuk (nem
+    extrapolálunk): ez a 256 elemű, 0..255 indexű LUT-hoz igazodó
+    egyszerűsítés, ÖNMAGÁBAN álló görbékre (a jelenlegi hívók mindegyikénél
+    a töréspontok lefedik a teljes 0..255 tartományt, tehát ez nem térne
+    el az extrapolációtól). **Az `AdjustCurves`-lánc** (mestergörbe →
+    csatornagörbe) viszont a natívval megegyezően EXTRAPOLÁL — ott a
+    mestergörbe kimenete túlfuthat a 0..255 tartományon, és ezt a
+    csatornagörbének extrapolálva kell fogadnia (#3941, ld.
+    `evaluate_curve_extrapolated` és `glimmer_ops.adjust_curves`). Ha ide
+    valaha olyan hívó kerülne, aminek a töréspontjai NEM fedik a teljes
+    0..255 tartományt, és a natív ott is extrapolál, azt új hívóként az
+    `evaluate_curve_extrapolated`-del kell megoldani, ezt a függvényt nem
+    szabad átállítani (más, már validált hívói erre a „tartás" viselkedésre
+    építenek).
+    """
+    xs, ys = _validate_points(points)
+    levels = np.arange(256, dtype=np.float64)
+    values = _evaluate_natural_spline(xs, ys, levels)
     # a tartományon kívül a szélső érték (ld. a docstringet)
     return np.where(
         levels < xs[0], ys[0], np.where(levels > xs[-1], ys[-1], values)
     )
+
+
+def evaluate_curve_extrapolated(points: CurvePoints, x: np.ndarray) -> np.ndarray:
+    """A töréspontos görbe kiértékelése TETSZŐLEGES (akár 0..255-ön kívüli)
+    `x` float-tömbre, a natív `0x008f3290` szerint EXTRAPOLÁLVA a szélső
+    szakasz köbös polinomjával — nem vágva, nem kerekítve (#3941).
+
+    Kizárólag az `AdjustCurves`-lánc (`glimmer_ops.adjust_curves`) használja:
+    ott a mestergörbe kimenete a csatornagörbének továbbadva túlfuthat a
+    0..255 tartományon. A `curve_lut` (256 elemű, 0..255 indexű LUT, a
+    tartományon kívül a szélső értéket tartja) minden MÁS hívónál
+    változatlan marad — ld. a docstringjét.
+
+    Eltérés a natívtól: kettőnél kevesebb töréspontra a natív a bemenetet adja
+    vissza (identitás, `0x008f329e`), ez a függvény `ValueError`-t dob. Egyik
+    mai effekt görbéje sem ilyen; a viselkedést szándékosan nem változtattuk.
+    """
+    xs, ys = _validate_points(points)
+    return _evaluate_natural_spline(xs, ys, np.asarray(x, dtype=np.float64))
 
 
 def blend_luts(first: np.ndarray, second: np.ndarray, weight: float) -> np.ndarray:

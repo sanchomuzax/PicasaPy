@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A 60-as évek és a Kinemaszkóp effekt görbéi a legvilágosabb tónusokban is
+  úgy futnak ki, mint az eredeti Picasa: a mestergörbe eredménye eddig a
+  csatornagörbe elé kerekítve és 255-re vágva ment tovább, és a görbe a
+  töréspontjain túl a szélső értéket tartotta — a mért eltérés a 60-as évek
+  effektnél ΔE 0,43/0,38-ról 0,00-ra, a Kinemaszkópnál 0,35-ről 0,08-ra
+  csökkent (#3942).
+
 ## [0.8.631] – 2026-09-29
 
 ### Javítva
