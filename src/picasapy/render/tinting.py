@@ -9,8 +9,9 @@ Mért és binárisból megerősített alapok (`docs/specs/filters-decoded.md`):
   nálunk nem beállítás; a Picasa alapértelmezett KI ágát használjuk.
 - **ansel** (Filtered B&W) — a színparaméter **SZŰRŐ**, nem festék: a
   csatornák súlyát adja a szürkévé alakításban, a kimenet mindig semleges
-  (R=G=B). A tónusgörbe a `referencia/filteredbw/` fehér szűrős exportjából
-  MÉRT (#317), nem gamma-közelítés. Ld. `apply_ansel` docstringjét.
+  (R=G=B). A natív mag (`0x0090e680`) egész aritmetikáját követi: fixpontos
+  súlyok, a képből számolt `k` erősségű S-görbe (#3840). Ld. `apply_ansel`
+  docstringjét.
 - **dir_tint** (Graduated Tint) — a natív modell visszafejtve és a
   Picasa-referenciához MÉRVE (#874): elforgatható átmenet, tónusgörbés
   szorzó színezés. A megvalósítás a `picasapy.render.dir_tint` modulban
@@ -50,16 +51,11 @@ _HEX_FIELD_DIGITS = 8
 #: alapértelmezett 0,30-as vágópont-keverést választja (#872).
 _TINT_LEVELS_BLEND = 0.30
 
-#: `ansel` (Filtered B&W) MÉRT tónusgörbéje — `referencia/filteredbw/`
-#: (fehér szűrőszínnel exportált 2560×1702-es kép, #317): a szűrt szürke
-#: 0, 16, 32 … 240, 255 értékeihez tartozó kimenet. Enyhe S-alak, a
-#: korábbi gamma-közelítésnél (0,93) mérhetően jobb: az eltérés a valódi
-#: Picasa-kimenettől **6,11 → 0,53** (az érintetlen képé 15,15).
-_ANSEL_ANCHOR_INPUTS = tuple(range(0, 256, 16)) + (255,)
-_ANSEL_ANCHOR_CURVE = (
-    0.1, 16.8, 34.0, 51.0, 67.7, 84.3, 100.7, 117.0, 133.0, 148.9,
-    164.5, 180.0, 195.3, 210.4, 225.4, 240.0, 253.8,
-)
+#: `ansel` (Filtered B&W) natív magja (`0x0090e680`, #3840): a súlyok és a
+#: 16 bites szürke fixpontja (`W_c = csonk(256 · w_c)`, `[0xcf39d8]` = 256,0).
+_ANSEL_WEIGHT_SCALE = 256
+_ANSEL_Y_MAX = 0xFFFF
+
 
 def parse_rgb_hex(value: str) -> tuple[int, int, int]:
     """A filters-beli hex színparaméter (AARRGGBB) értelmezése (R, G, B)-ként.
@@ -92,10 +88,6 @@ def parse_alpha_hex(value: str) -> int:
     if not _HEX_PATTERN.match(text):
         raise ValueError(f"Érvénytelen hex színérték: {value!r}")
     return int(text[:_HEX_FIELD_DIGITS].rjust(_HEX_FIELD_DIGITS, "0")[:2], 16)
-
-
-def _to_uint8(values: np.ndarray) -> np.ndarray:
-    return np.clip(np.rint(values), 0, 255).astype(np.uint8)
 
 
 def _desaturate_native(image: np.ndarray, preserve: float) -> np.ndarray:
@@ -175,6 +167,75 @@ def apply_tint(
     return _multiply_by_normalized_tint(gamma_adjusted, color)
 
 
+def _ansel_weights(color: tuple[int, int, int]) -> tuple[int, int, int]:
+    """Az `ansel` fixpontos csatornasúlyai a natív mag szerint (#3840).
+
+    A visszahívás (`0x008f8410`) `szín_c / 255`-öt ad át `float`-ként, a mag
+    az összeggel normál (`1/Σ`, `f32`), majd `256`-tal szoroz és CSONKOL
+    (`0x00c29990`). Fehér szűrőnél `256 · f32(1/3)` = 85,33 → **85**, a
+    súlyok összege tehát 255, nem 256.
+
+    A fekete szűrőt (összeg 0) az eredeti NEM kezeli: 0-val oszt. Mi
+    ilyenkor a semleges, egyenlő súlyt adjuk — ugyanazt, mint a fehér
+    szűrő —, hogy a kép ne romoljon el.
+    """
+    raw = [float(np.float32(channel / 255.0)) for channel in color]
+    total = sum(raw)
+    if total <= 0.0:
+        raw, total = [1.0, 1.0, 1.0], 3.0
+    inverse = 1.0 / total
+    scale = np.float32(_ANSEL_WEIGHT_SCALE)
+    red, green, blue = (
+        int(np.trunc(scale * np.float32(weight * inverse))) for weight in raw
+    )
+    return red, green, blue
+
+
+def _ansel_gray16(image: np.ndarray, weights: tuple[int, int, int]) -> np.ndarray:
+    """A 16 bites szűrt szürke: `Y = clamp(W·RGB, 0, 0xffff)`.
+
+    `int32` elég: `W_c ≤ 256`, így `Y < 2¹⁸`, és a második menet
+    `(0xffff − Y)·Y` szorzata is `2³⁰` alatt marad.
+    """
+    channels = image.astype(np.int32)
+    gray = (
+        weights[0] * channels[..., 0]
+        + weights[1] * channels[..., 1]
+        + weights[2] * channels[..., 2]
+    )
+    return np.clip(gray, 0, _ANSEL_Y_MAX)
+
+
+def _ansel_strength(
+    image: np.ndarray,
+    weights: tuple[int, int, int],
+    gray: np.ndarray | None = None,
+) -> int | None:
+    """A natív mag `k` erőssége az első menet összegeiből (#3840).
+
+    `S₁ = Σ (2R + 5G + B + 4) >> 3` (gyors luma), `S₂ = Σ Y >> 8`,
+    `N = Σⱼ hist[j]·(((256 − j)·j) >> 6)`; `t = f32((S₁ − S₂) / N)`
+    `[−1, 1]`-re szorítva, `k = csonk(256 · t)`. `N = 0` esetén (minden
+    `Y < 256`) a mag második menet nélkül kilép — ezt `None` jelzi.
+    """
+    if gray is None:
+        gray = _ansel_gray16(image, weights)
+    channels = image.astype(np.int32)
+    fast_luma = (
+        2 * channels[..., 0] + 5 * channels[..., 1] + channels[..., 2] + 4
+    ) >> 3
+    bins = gray >> 8
+    histogram = np.bincount(bins.ravel(), minlength=256)
+    levels = np.arange(256, dtype=np.int64)
+    midtone = int(histogram @ (((256 - levels) * levels) >> 6))
+    if midtone == 0:
+        return None
+    difference = int(fast_luma.sum(dtype=np.int64)) - int(bins.sum(dtype=np.int64))
+    ratio = np.float32(difference / midtone)
+    ratio = min(max(ratio, np.float32(-1.0)), np.float32(1.0))
+    return int(np.trunc(np.float32(_ANSEL_WEIGHT_SCALE) * ratio))
+
+
 def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     """Filtered B&W (`ansel`): a szín **SZŰRŐ**, nem festék — a kimenet
     mindig szürke (#317).
@@ -182,37 +243,31 @@ def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     A `color` a fényképészeti szűrők szerepét játssza (a Picasa saját
     palettája sárga/narancs/vörös/zöld szűrőkből áll, ld.
     `referencia/filteredbw/panel-screenshot-2.png`): a csatornák súlyát
-    adja meg a szürkévé alakításnál — `szürke = Σ(szín_c · c) / Σ szín_c` —,
-    NEM színezi a végeredményt. A korábbi változat a kimenetet a színnel
-    festette; a fehér szűrős exportnál ez nem látszott (fehérrel a festés
-    semleges), a mérés viszont a súlyokat is eldöntötte: fehér szűrővel a
-    három csatorna súlya 0,345 / 0,336 / 0,326 — gyakorlatilag EGYENLŐ,
-    tehát a szín az egyetlen súlyforrás (nem szorzódik rá a Rec.601 luma).
+    adja meg a szürkévé alakításnál, NEM színezi a végeredményt.
 
-    A szűrt szürkére a MÉRT tónusgörbe kerül (`_ANSEL_ANCHOR_CURVE`); a
-    fehér szűrős exporttól való átlagos eltérés **0,53** (a korábbi
-    modellé 6,11, az érintetlen képé 15,15).
+    A számítás a natív mag (`0x0090e680`) egész aritmetikája (#3840; spec:
+    `docs/specs/filters-decoded.md`, „`ansel` — a `k` erősség kiolvasva, a
+    mag TELJES"), a korábbi mért töréspontsor helyett:
 
-    A súlyozás 2026-08-23 óta **MEGERŐSÍTETT, nem következtetés** (#939):
-    a natív visszahívás (`0x008f8410`) a szín három bájtját `255,0`-val
-    osztja, a mag (`0x0090e680`) pedig **első lépésben normalizálja őket
-    az ÖSSZEGÜKKEL** (`1/(w1+w2+w3)`, `0x0090e6ca`–`0x0090e6e8`), majd
-    `256,0`-lal szoroz a fixpontos súlyokhoz. A `/255` a normalizálásban
-    kiesik, tehát a natív számítás azonos az itteni képlettel. Levezetés:
-    `docs/specs/filters-decoded.md`, „`ansel` — a SÚLYOZÁS igazolva".
+    1. fixpontos súlyok (`_ansel_weights`), `Y = clamp(W·RGB, 0, 0xffff)`;
+    2. a kép egészéből egy `k` erősség (`_ansel_strength`);
+    3. S-görbe: `v = clamp(Y + ((((0xffff − Y)·Y) >> 14)·k >> 8), 0,
+       0xffff)`, a kimenet `R = G = B = v >> 8`.
+
+    `N = 0` esetén az eredeti a második menet nélkül kilép, és a nyers
+    16 bites `Y` dwordokat hagyja a pufferben. Mi ilyenkor a `k = 0` ágat
+    adjuk (`v = Y`); mivel ekkor minden `Y < 256`, a kimenet fekete.
+
+    A `desat` örökölt kulcs ugyanezt a magot hívja (#711), a lánc ezért
+    ide vezeti.
     """
     validate_image(image)
-    weights = np.array(color, dtype=np.float32)
-    total = float(weights.sum())
-    if total <= 0.0:
-        # elfajult (fekete) szűrő: nincs mit súlyozni — egyenletes szürke
-        weights = np.full(3, 1.0 / 3.0, dtype=np.float32)
-    else:
-        weights = weights / np.float32(total)
-    filtered = (image.astype(np.float32) * weights).sum(axis=-1)
-    toned = np.interp(filtered, _ANSEL_ANCHOR_INPUTS, _ANSEL_ANCHOR_CURVE)
-    gray = _to_uint8(toned)
-    return np.stack([gray, gray, gray], axis=-1)
+    weights = _ansel_weights(color)
+    gray = _ansel_gray16(image, weights)
+    strength = _ansel_strength(image, weights, gray) or 0
+    lifted = (((_ANSEL_Y_MAX - gray) * gray) >> 14) * strength >> 8
+    level = (np.clip(gray + lifted, 0, _ANSEL_Y_MAX) >> 8).astype(np.uint8)
+    return np.stack([level, level, level], axis=-1)
 
 
 #: A `radtint` szorzásának eltolása a natív magban (`0x0090b370`):
