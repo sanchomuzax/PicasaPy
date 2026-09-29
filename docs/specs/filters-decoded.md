@@ -7811,6 +7811,8 @@ A `holga__alap` a #3931/#3951 után maradt 0,010-e is 0,000. Más golden-pár ne
 
 **Nálunk:** `render/glimmer_ops.py::circular_gradient_mask` (folytonos float maszk, képpontközéppel) → fejlesztés: #3958.
 
+**✅ Megvalósítva (2026-09-29, #3958):** `circular_gradient_mask` a fenti megálló-táblával, egész koordinátával és 16 bites, legközelebbire kerekített pozícióval számol (a `u`, `v`, `√` float64, a tábla törtje float32; a kimenet `alfa/255`). Mérve a 684-es készleten, Picasa-kvantálótáblákkal (előtte → utána): `lomo__alap` 0,0633 → 0,00003; `lomo__min` 0,0327 → 0,0000; `holga__alap` 0,0096 → 0,00005; `holga__min` 0,0027 → 0,00001; `lomo__max`, `holga__max` 0,0000 → 0,0000 (a kimenet bájtra azonos). A négy példaérték (480,320)→0, (0,320)→127, (0,0)→178, (100,100)→105 egységteszttel őrzött. ⚠️ Az `outer ≤ inner` eset (a spec nem rögzíti) a korábbi kemény lépcső maradt; a hívók oda nem jutnak.
+
 ## A Comicize ágának két lépése a binárisból: a BW NEM küszöböl, a maszkos GetVar pontosan `PartialMask` (2026-09-23, #3507)
 
 *A #3401 mérése szerint a `filterdesc.xml` szó szerinti ága a mi olvasatunkban

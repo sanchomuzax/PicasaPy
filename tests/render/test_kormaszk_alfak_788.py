@@ -26,6 +26,8 @@ tudna hordozni.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pytest
 
@@ -47,7 +49,9 @@ class TestFocalMaskAlfak:
             60, 90, 0.5, 0.5, radius=20.0, hardness=50.0,
             inner_alpha=1.0, outer_alpha=0.0,
         )
-        assert np.allclose(forditott, 1.0 - alap, atol=1e-6)
+        # #3958: a megálló-tábla csonkol és a keverés `>> 8`-cal oszt, ezért a
+        # fordított rámpa nem tükrözi bitre az alapot — legfeljebb 2 szint.
+        assert np.allclose(forditott, 1.0 - alap, atol=2.0 / 255.0)
 
     def test_az_alfak_a_tartomanyra_vagodnak(self):
         """A natív olvasó `[0,1]`-re vág (`0x00bd0391`, `0x00bd03e1`)."""
@@ -76,7 +80,9 @@ class TestKormaszkAlfak:
         forditott = circular_gradient_mask(
             50, 70, 5.0, 25.0, inner_alpha=1.0, outer_alpha=0.0
         )
-        assert np.allclose(forditott, 1.0 - alap, atol=1e-6)
+        # #3958: a megálló-tábla csonkol és a keverés `>> 8`-cal oszt, ezért a
+        # fordított rámpa nem tükrözi bitre az alapot — legfeljebb 2 szint.
+        assert np.allclose(forditott, 1.0 - alap, atol=2.0 / 255.0)
 
     def test_elfajult_sugarnal_is_hat_az_alfa(self):
         """`outer <= inner`: kemény lépcső, de az alfák akkor is érvényesek."""
@@ -87,6 +93,52 @@ class TestKormaszkAlfak:
         assert len(ertekek) == 2
         assert ertekek[0] == pytest.approx(0.2, abs=1e-6)
         assert ertekek[1] == pytest.approx(0.8, abs=1e-6)
+
+
+class TestKormaszkKepponkent3958:
+    """#3958: 16 bites pozíció, egész koordináta, megálló-tábla (spec:
+    „A körmaszk képpontonként”, #3957)."""
+
+    @staticmethod
+    def _bajt(y: int, x: int) -> int:
+        maszk = circular_gradient_mask(640, 960, 240.0, 720.0)
+        return int(np.rint(maszk[y, x] * 255.0))
+
+    @pytest.mark.parametrize(
+        ("x", "y", "alfa"),
+        [(480, 320, 0), (0, 320, 127), (0, 0, 178), (100, 100, 105)],
+    )
+    def test_a_spec_peldai(self, x, y, alfa):
+        assert self._bajt(y, x) == alfa
+
+    @pytest.mark.parametrize("belso_alfa", [0.0, 0.3])
+    def test_kepponkent_egyezik_a_spec_szerinti_skalar_szamitassal(self, belso_alfa):
+        """Független, egész aritmetikás modell a spec képletéből: egész
+        koordináta, 16 bites (LEGKÖZELEBBRE kerekített) pozíció, csonkolt
+        megálló-tábla. Lebegőpontos pozíció vagy `+0,5` képpontközép,
+        csonkolt pozíció itt pirosat ad."""
+        h, w, inner, outer = 40, 60, 15.0, 45.0
+        a0 = int(255 * belso_alfa)
+        p1 = int(255 * inner / outer)
+        tabla = [a0] * 257
+        for i in range(p1, 255):
+            tabla[i] = int(a0 + (255 - a0) * float(np.float32((i - p1) / (255 - p1))))
+        tabla[255] = tabla[256] = 255
+        maszk = circular_gradient_mask(
+            h, w, inner, outer, inner_alpha=belso_alfa, outer_alpha=1.0
+        )
+        for y in range(h):
+            for x in range(w):
+                u = (x - w / 2.0) * 65280 / outer
+                v = (y - h / 2.0) * 65280 / outer
+                pozicio = min(round(math.sqrt(u * u + v * v)), 0xFF00)
+                i, f = pozicio >> 8, pozicio & 0xFF
+                alfa = (tabla[i + 1] * f + tabla[i] * (256 - f)) >> 8
+                assert round(float(maszk[y, x]) * 255.0) == alfa, (x, y)
+
+    def test_egesz_bajtra_esik_a_maszk(self):
+        maszk = circular_gradient_mask(64, 96, 24.0, 72.0)
+        assert np.array_equal(maszk, np.rint(maszk * 255.0) / 255.0)
 
 
 class TestFordítottJelolo:
