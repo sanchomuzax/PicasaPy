@@ -28,8 +28,8 @@ A `TwoTone` (a `ContrastAndBrightnessLinked` ág, `linked=True`) NEM érintett:
 ΔE alap/max/min = 0,546 / 0,121 / 0,670 — változatlan a javítás előtt/után.
 """
 
-# rontás-kontroll: glimmer_ops._kontraszt_alkalmaz visszaállítva a régi
-# sorrendre (`k*image_f + t + b`, a fényerő a kontraszt UTÁN, skálázás
+# rontás-kontroll: a kontraszt+fényerő összefűzése
+# (`glimmer_ops._szinmatrix_osszefuzve`) visszaállítva a régi sorrendre (`k*image_f + t + b`, a fényerő a kontraszt UTÁN, skálázás
 # nélkül) → 14 failed (a `TestAKepletSorrendjeCiBiztos` mind a 8 CI-biztos
 # esete + a `test_a_684_merokeszlettel_a_hatarertek_alatt` mind a 6 golden
 # esete; a `test_a_twotone_linked_ag_...` NEM buktat, mert a `linked=True`
