@@ -209,15 +209,20 @@ class TestMetadataTransfer:
     """#136: az EXIF/IPTC a Picasa exportjához hasonlóan átkerül az
     újrakódolt (forgatott/átméretezett/szerkesztett) célfájlba is."""
 
-    def test_exif_datetime_survives_reencode(self, tmp_path):
+    def test_exif_taken_date_survives_reencode(self, tmp_path):
+        # #3961: a `DateTime` (módosítás) az export ideje lesz, ahogy az
+        # eredeti Picasánál (spec 16.); a FELVÉTEL dátuma marad a forrásé.
         source = make_jpeg(
-            tmp_path / "kép.jpg", datetime_0th="2020:05:17 12:00:00"
+            tmp_path / "kép.jpg",
+            datetime_0th="2020:05:17 12:00:00",
+            taken_at="2020:05:17 11:00:00",
         )
         report = export_photos(
             [ExportItem(source, rotate_steps=1)], tmp_path / "out"
         )
         exif = piexif.load(str(report.exported[0]))
-        assert exif["0th"][piexif.ImageIFD.DateTime] == b"2020:05:17 12:00:00"
+        assert exif["Exif"][piexif.ExifIFD.DateTimeOriginal] == b"2020:05:17 11:00:00"
+        assert exif["0th"][piexif.ImageIFD.DateTime] != b"2020:05:17 12:00:00"
 
     def test_iptc_caption_and_keywords_survive_reencode(self, tmp_path):
         source = make_jpeg(

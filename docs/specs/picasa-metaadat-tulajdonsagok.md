@@ -1743,6 +1743,17 @@ utazik.
 
 Fejlesztés: **#3961**.
 
+**✅ Megvalósítva (2026-09-29, #3961):** `metadata/export_metadata.py`
+(`frissitett_metaadat`), az `export/exporter.py` `_transfer_metadata`-ja hívja.
+`DateTime` = az export ideje; `PixelX/YDimension` = a kimenet mérete; a hiányzó
+`Software`/`Artist` (`PicasaPy`, #1642), `DateTimeOriginal` (a forrásfájl
+mtime-ja), `ExifVersion` (`0220`) pótolva, a meglévő marad; az XMP a B) szerint
+(meglévő megmarad, `xmp:ModifyDate`, az `exif:` a két dátumon kívül üres; üres
+forrásnál a `copy_signature` csomagja); az APP13 a forrásé. **Nem része:**
+`ImageUniqueID`, az APP13 tartalma, az InteropIFD; a szerkesztetlen,
+átméretezetlen JPEG továbbra is bájthű másolat (nincs rá mérés). Teszt:
+`tests/export/test_export_metaadat_3961.py`.
+
 *Forrás: `0x009ed6e0` (388 b), `0x00ba7540`, `0x00bad9a0` (410 b), `0x00ba75f0`,
 `0x009eee30`, `0x00bae5b0` (3863 b), `0x00bb0670`, `0x00bb0310`; mérés: 204
 eredeti export a NAS-on.*
