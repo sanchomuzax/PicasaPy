@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Neon, a Boost, az Áttűnés és a PicnikTint effekt színei bitre egyeznek
+  az eredeti Picasáéval, a Lomóé és a Holgáé pedig szinte (a maradék ΔE 0,063,
+  illetve 0,010): a színmátrixot és a szürkítést eddig lebegőpontosan
+  számoltuk, az eredeti egész számokkal, és a különbség a Neon élkeresésén
+  felnagyítva látszott — a mért eltérés a Neonnál ΔE 0,28-ról 0,00-ra, a
+  Lomónál 0,20-ról 0,06-ra, a Holgánál 0,06-ról 0,01-re csökkent (#3951).
+
 ## [0.8.632] – 2026-09-29
 
 ### Javítva
@@ -16,12 +24,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   töréspontjain túl a szélső értéket tartotta — a mért eltérés a 60-as évek
   effektnél ΔE 0,43/0,38-ról 0,00-ra, a Kinemaszkópnál 0,35-ről 0,08-ra
   csökkent (#3942).
-- A Neon, a Boost, az Áttűnés és a PicnikTint effekt színei bitre egyeznek
-  az eredeti Picasáéval, a Lomóé és a Holgáé pedig szinte (a maradék ΔE 0,063,
-  illetve 0,010): a színmátrixot és a szürkítést eddig lebegőpontosan
-  számoltuk, az eredeti egész számokkal, és a különbség a Neon élkeresésén
-  felnagyítva látszott — a mért eltérés a Neonnál ΔE 0,28-ról 0,00-ra, a
-  Lomónál 0,20-ról 0,06-ra, a Holgánál 0,06-ról 0,01-re csökkent (#3951).
 
 ## [0.8.631] – 2026-09-29
 
