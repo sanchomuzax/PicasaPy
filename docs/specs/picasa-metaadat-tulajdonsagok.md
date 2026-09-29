@@ -1623,3 +1623,126 @@ a `properties.xml`-be `<LightSource/>` kerülne.**
 programmal kiolvasva, 0 olvasatlan), a 66-os és a 94-es kulcsra, a két
 formázóra, a `properties.xml` tartalmára és arra, hogy a panel csak a
 `properties.xml` láncán ír ki sort — mind utasításszinten olvasva.*
+
+## 16. ⛳ Mit ír az EXPORT a kép metaadataiba — mérve 204 exporton, és az XMP-író lánca (2026-09-29, 411. kör, #3960)
+
+*A 12. D) szakasz az XMP névtereit mérte; ez a szakasz az export **teljes**
+metaadat-kimenetét: melyik mezőt állítja be vagy frissíti az eredeti, és
+melyiket hagyja a forrásból.*
+
+### A) Mérve — minden NAS-on lévő eredeti export
+
+Forrás: `/mnt/nas/My Pictures/*/export/**/*.jpg`, **204** Picasa 3.9-export
+(ebből 202 metaadat nélküli, szintetikus forrásból, 2 egy kamerás, Lightroom-XMP-s
+forrásból: `3084-poszterizalas/Warm grasses by dcsearle.t21.jpg`).
+
+| mező | mind a 204 exportban | a kamerás forrásnál |
+|---|---|---|
+| EXIF `DateTime` (`0x0132`) | ✅ **az export időpontja** | a forrás `2014:09:09 15:40:30`-e **felülírva** |
+| EXIF `Software` (`0x0131`) | ✅ | a forrás `GIMP 2.8.14`-e **marad**; üres forrásnál `Picasa` |
+| EXIF `Artist` (`0x013b`) | ✅ | a forrás `David C Searle`-je **marad**; üres forrásnál `Picasa` |
+| EXIF `ExifVersion` (`0x9000`) | ✅ | a forrásé marad |
+| EXIF `DateTimeOriginal` (`0x9003`) | ✅ | a forrásé marad; üres forrásnál a forrásfájl módosítási ideje (3229: `2026:09:16 08:00:14` = a fájl `mtime`-ja) |
+| EXIF `PixelXDimension`/`PixelYDimension` (`0xa002`/`0xa003`) | ✅ **204/204 = a kimeneti kép mérete** | a forrásban nem volt, **hozzáadva** |
+| EXIF `InteropIFD` (`0xa005`) | ✅ | hozzáadva |
+| EXIF `ImageUniqueID` (`0xa420`) | ✅ 32 hexa jegy | hozzáadva |
+| APP13 (`Photoshop 3.0`, 78 bájt) | ✅ **204/204** | hozzáadva |
+| APP2 ICC-profil | ❌ **0/204** | a forrás 3160 bájtos ICC-je **elhagyva** |
+| XMP `xmp:ModifyDate` | ✅ az export időpontja | hozzáadva a forrás XMP-jéhez |
+| XMP `exif:DateTimeOriginal`, `dc:creator` = `Picasa` | csak a metaadat nélküli forrásnál | **nincs** — a forrás 38 kamerás EXIF-mezőjéből **egy sem** került az XMP-be |
+| a forrás többi XMP-je (`aux:`, `crs:`, `photoshop:`, `xmpMM:`) | — | **megmarad**, az XMP Toolkit 5.1.2 újraszerializálja (7700 → 4619 bájt) |
+
+A kamerás forrás 38 kamerás EXIF-mezője (`ExposureTime`, `FNumber`,
+`ISOSpeedRatings`, `FocalLength` …) az EXIF-blokkban **érintetlenül** kimegy.
+
+⭐ **Az `ImageUniqueID` a forrásképhez kötött, nem a kimenethez:** a 204
+exportban **6** különböző érték van, és egy forrásból készült exportok
+(különböző effektekkel is) mind ugyanazt kapják — a 3229-es készlet négy,
+eltérő láncú exportja egyaránt `56ed44f5ae31fc12a2eb7966a33f1a25`. **Nem** a
+forrásfájl MD5-je (`251a3fa3…`), és **nem** a dekódolt RGB-, BGR-, BGRA-,
+szürke képpontok vagy a tömörített szkennelési adat MD5-je (mind kipróbálva,
+egyik sem egyezik). A képzése **NINCS MEG**.
+
+### B) ⭐ A binárisból: az `exif:` névtér-író az export útján TÖRÖL, nem ír
+
+⚠️ **Helyesbítés a kör saját első olvasatához** (a #3960 törzse még azt írta,
+hogy „az író a 71 mező bármelyikét kiírná”). A független újralevezetés és a
+visszaellenőrzés szerint ezen az úton a 71 mezőből **69-et töröl** az XMP-ből,
+és csak a két dátummezőt írja.
+
+**A lánc:**
+
+```
+0x009ed6e0  metaadat-blokkok frissítése, a [esi+0x30] jelzőbitjei szerint
+   ├─ 8 → 0x009f0560(propset, 0x2c) — BinaryMetadata-objektum ([esi+0x24])
+   ├─ 1 → 0x009ecdb0                 — [esi+4] blokk (az `Exif\0\0`-szomszédság alapján valószínűleg az EXIF)
+   ├─ 2 → 0x00ab0620 + 0x009e9030(…, 0xe)   — 14 bájtos előtagú blokk ([esi+0x14])
+   └─ 4 → 0x00ba7540 + 0x009e9030(…, 0x1d)  — az APP1-XMP ([esi+0xc]; 0x1d = 29 = `http://ns.adobe.com/xap/1.0/\0`)
+0x00ba7540  veremobjektum: {vtábla 0xcef54c, +4 propset, +8 0, +0xc bájt 0, +0x10 0}
+0x00bad9a0  ha kimenet==0 → 4; kapu 0x00ba75f0([propset+8]) hamis → 0xF4240 (változatlan XMP);
+            különben 0x00bb2010 beolvassa a MEGLÉVŐ XMP-t, sorban hívja a névtér-írókat
+            (badb50 · badc80 · badea0 · bae420 aux: · bae5b0 exif: · baf4d0 · baf880 · bafb00 · bafde0 · bb17e0),
+            0x00bb2060 újraszerializál
+```
+
+**Egy `exif:` mező sorsa a `0x00bae5b0`-ban** (mind a 71 mezőre ugyanaz a minta):
+
+1. `0x009eee30(címke)` a címke **csoportbitjét** adja (pl. `0x4c` → `0x100`,
+   `0x37` → `4`; ugrótábla `0x9eeeec`/`0x9eef30`), és `test [propset+8], eax` —
+   ha a csoportból semmi nincs a halmazban, a mező kimarad;
+2. a típus-író (`0x00bb0670` egész, `0x00bb0440` szöveg, `0x00bb0930` `%d/%d`,
+   `0x00bb1400` GPS `%d,%d.%.2d%s` …) `0x009f0560`-nal a propset hash-táblájában
+   keresi a kulcsot; nincs meg → nincs írás;
+3. **69 mezőnél** az 5. argumentum a jelző: `cmp byte [obj+0xc], 0; sete al`.
+   A `0x00ba7540` az `[obj+0xc]`-t **0-ra** állítja, tehát a jelző **1**;
+4. a típus-íróban jelző ≠ 0 → a szövegépítés kimarad (`0x00bb0709 jne 0xbb0758`),
+   és a `0x00bb0310` üres szöveggel a **`0x00bb1f20`** ágra megy
+   (`0x00bb0355`; nem üres szövegnél a `0x00bb1ec0`/`0x00bb1e00` a SetProperty).
+   A `0x00bb1f20` → `0x00bda350(xmp, ns, név)` → `0x00be8a70` háromargumentumos
+   burkoló az XMP SDK `DeleteProperty`-mintája ⇒ **a meglévő `exif:<név>` törlődik**;
+5. a **`DateTimeOriginal` (`0x37`) és `DateTimeDigitized` (`0x38`)** a jelző
+   nélküli `0x00bb1170`-hez megy, és sikeres átalakítás után **beíródik**.
+
+Az `aux:` (`0x00bae420`) és a `badb50`/`badc80` író `push 0`-t ad jelzőnek —
+azok tényleg írnak (ld. a 9.14 D) `aux:Lens`).
+
+**Ez egybevág az A) méréssel:** a kamerás forrás 38 EXIF-mezőjéből egy sem
+jelenik meg `exif:`-ként, a metaadat nélküli forrásnál pedig egyedül az
+`exif:DateTimeOriginal`. A Picasa tehát az XMP-ben **nem tükrözi** az EXIF-et,
+hanem az `exif:` névteret kiüríti a dátumokon kívül — az EXIF-adat az EXIF-blokkban
+utazik.
+
+| állítás | fok |
+|---|---|
+| a jelzőbitek, a 4-es bit → `0x00ba7540`, a kapu (`0x8000A1FF` maszk) és a `0xF4240` szerepe | megerősített (két független olvasás) |
+| jelző = 1 ezen az úton, jelző ≠ 0 → üres szöveg → `0x00bb1f20` | megerősített |
+| a `0x00bb1f20` lánca `DeleteProperty` | erős (az SDK-minta; kimondott „Delete” sztring nincs) |
+| az 1-es bit az EXIF-, a 2-es a Photoshop/IPTC-blokk | feltételes (hosszból és szomszédos sztringből) |
+
+### C) Eredeti / nálunk / nyitva
+
+| | Eredeti | Nálunk (`export/exporter.py`, `_transfer_metadata`) |
+|---|---|---|
+| EXIF `DateTime` | az export ideje | a forrásé, változatlanul |
+| EXIF `PixelX/YDimension` | a kimenet mérete | a forrásé (átméretezésnél **hamis**), vagy nincs |
+| EXIF `Software`/`Artist` | csak ha hiányzik (`Picasa`) | a forrásé; hiányzónál semmi |
+| EXIF `DateTimeOriginal` | hiányzónál a forrásfájl `mtime`-ja | a forrásé; hiányzónál semmi |
+| `ImageUniqueID`, InteropIFD | hozzáadja | nincs |
+| XMP | a meglévőt újraszerializálja, `xmp:ModifyDate`, `exif:` kiürítve a dátumokon kívül; üres forrásnál új csomag | a forrás APP1-XMP-je bájtra |
+| APP2 ICC | **elhagyja** | nem viszi át (csak `0xE1`, `0xED`) — **egyezik** |
+| APP13 | mindig van | csak ha a forrásban volt |
+
+**NYITOTT, megnevezve:**
+
+1. Az `ImageUniqueID` képzése — a forráshoz kötött, de nem fájl- és nem
+   képpont-MD5 (A). Út: az EXIF-oldali író (`0x009ecdb0` lánca) `0xa420`-as
+   címkéjének kiolvasása.
+2. Miért nincs `exif:DateTimeOriginal` a kamerás forrás exportjában, holott az
+   EXIF-ben megvan: a `0x00bb1170` a `0x35` és `0x13e` címkét is felhasználja,
+   és sikertelen átalakításnál üres szöveggel TÖRÖL. Út: a `0x00bb1170` ágai.
+
+Fejlesztés: **#3961**.
+
+*Forrás: `0x009ed6e0` (388 b), `0x00ba7540`, `0x00bad9a0` (410 b), `0x00ba75f0`,
+`0x009eee30`, `0x00bae5b0` (3863 b), `0x00bb0670`, `0x00bb0310`; mérés: 204
+eredeti export a NAS-on.*
