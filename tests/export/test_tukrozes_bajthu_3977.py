@@ -101,14 +101,14 @@ def test_jelzo_nelkul_a_bajthu_ag_valtozatlan(tmp_path):
         kimenet.unlink()
 
 
-def test_webexport_es_email_ugyanazt_az_utat_hasznalja():
-    """Mindkettő `ExportItem(flip_flags=...)`-ot ad az `export_photos`-nak,
-    tehát a döntés egyetlen helyen (`_is_noop_copy`) születik."""
+def test_a_webexport_ugyanazt_az_utat_hasznalja():
+    """A webexport `ExportItem(flip_flags=...)`-ot ad az `export_photos`-nak, tehát
+    a döntés egyetlen helyen (`_is_noop_copy`) születik. Forrásszöveg-őr, a
+    kimenetet nem méri. Az e-mail eredeti méretű ága NEM ezt az utat járja
+    (a nyers forrásfájlt csatolja) — az a #3993 tárgya."""
     import inspect
 
-    from picasapy.app import email_controller
     from picasapy.webexport import images
 
-    for modul in (email_controller, images):
-        forras = inspect.getsource(modul)
-        assert "flip_flags=" in forras and "export_photos(" in forras
+    forras = inspect.getsource(images)
+    assert "flip_flags=" in forras and "export_photos(" in forras

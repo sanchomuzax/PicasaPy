@@ -8,7 +8,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- A csak tükrözött fénykép exportja (és a webes export, az e-mail csatolmány) nem veszíti el a tükrözést: a kimenet a tükrözött képpontokkal, újrakódolva készül, nem bájthű másolatként (#3977).
+- A csak tükrözött fénykép exportja (és a webes export eredeti méretben) nem veszíti el a tükrözést: a kimenet a tükrözött képpontokkal, újrakódolva készül, nem bájthű másolatként (#3977).
 
 ## [0.8.638] – 2026-09-29
 
