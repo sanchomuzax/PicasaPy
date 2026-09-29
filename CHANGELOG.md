@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Finomhangolás szélsőséges (fordított fekete-/fehérpontú) beállításánál
+  a kép már nem egyszínű fehér: az eredeti Picasához hasonlóan szinte csupa
+  fehér, a tiszta fehér képpontok feketék, és szórtan a fordított tónus
+  látszik (#3871).
+- A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
+  az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
+  helyükön ülnek, és az árnyalatok nem térnek el egy-egy szinttel (#3878).
+
 ## [0.8.635] – 2026-09-29
 
 ### Javítva
@@ -27,16 +36,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   képpontkoordinátákkal és rögzített lépcsőkkel, és a különbség az elmosott
   szélen felnagyítva látszott — a mért eltérés a Lomónál 0,063-ról, a Holgánál
   0,010-ről a mérési zaj alá csökkent (#3958).
-
-### Javítva
-- A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
-  az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
-  helyükön ülnek, és az árnyalatok nem térnek el egy-egy szinttel (#3878).
-
-- A Finomhangolás szélsőséges (fordított fekete-/fehérpontú) beállításánál
-  a kép már nem egyszínű fehér: az eredeti Picasához hasonlóan szinte csupa
-  fehér, a tiszta fehér képpontok feketék, és szórtan a fordított tónus
-  látszik (#3871).
 
 ## [0.8.633] – 2026-09-29
 
