@@ -2112,6 +2112,8 @@ A Neonon a két lépés külön is mérve: csak a fixpontos kontraszt 0,280 → 
 
 **Nálunk:** `render/glimmer_ops.py::simple_color_matrix` (lebegőpontos, `to_uint8`) és `tint_luma_preserving` (`rint` Haeberli) → fejlesztés: #3951.
 
+✅ **Megvalósítva (#3951):** a `simple_color_matrix`, a `tint_luma_preserving` és a `bw_tint` közös fixpontos alkalmazón fut (`glimmer_ops._fixpontos_szinmatrix`; `c = trunc(m·2048 ± 0,5)`, `b = trunc(eltolás·4 ± 0,5) + 2`, tagonként `>> 9`, összeg + `b`, `>> 2`, vágás). A telítettség-, kontraszt- és fényerő-mátrix a régi sorrendben, lebegőpontosan (float32) szorzódik össze. Mérve (684-es mérőkészlet, a Picasa-export kvantálótábláival és mintavételezésével tömörítve, CIE76): `neon__alap` 0,280 → **0,000**; `lomo__alap` / `lomo__min` 0,198 / 0,184 → 0,063 / 0,033; `boost__alap` 0,059 → 0,000; `holga__alap` / `holga__min` 0,060 / 0,034 → 0,010 / 0,003; `crossprocess__alap` 0,225 → 0,000; `cinemascope__alap` 0,079 → 0,000 (a #3942 görbe-lánccal a mai mainen); `picniktint__alap` 0,019 → 0,000. Egyik golden-pár ΔE-je sem romlott.
+
 #### `SimpleColorMatrix` — a `ContrastAndBrightnessLinked` jelentése (8 effekt)
 
 A mag (`0x00bb6400`) öt attribútumot olvas, majd **a jelzőtől függően más

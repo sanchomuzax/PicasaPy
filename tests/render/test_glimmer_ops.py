@@ -463,6 +463,107 @@ class TestSimpleColorMatrixSaturation:
         np.testing.assert_array_equal(result, image)
 
 
+class TestFixpontosSzinmatrix:
+    """#3951 (a #3950 kutatás): a `SimpleColorMatrix` és a `Tint` szürkítése
+    is a közös FIXPONTOS színmátrix-alkalmazón fut (`0x008f21a0` /
+    `0x008f2640`): `c = trunc(m·2048 ± 0,5)`, `b = trunc(eltolás·4 ± 0,5) + 2`,
+    `ki = clamp((Σ ((c·x) >> 9) + b) >> 2)`."""
+
+    def test_kontraszt_50_a_spec_tablaja(self):
+        """Spec „Példa — Contrast = 50": `c = 4096`, `b = −252`,
+        `ki = clamp(2x − 63)` — a mai `rint(2x − 63,5)` 0/0/62/64/136/192-t adna."""
+        x = np.array([0, 32, 63, 64, 100, 128, 200, 255], dtype=np.uint8)
+        pixels = np.repeat(x[np.newaxis, :, np.newaxis], 3, axis=2)
+        result = g.simple_color_matrix(pixels, contrast=50.0)
+        assert result[0, :, 0].tolist() == [0, 1, 63, 65, 137, 193, 255, 255]
+        assert np.all(result[..., 0] == result[..., 1])
+        assert np.all(result[..., 1] == result[..., 2])
+
+    def test_kontraszt_50_egyutthato_es_bias(self):
+        matrix = np.eye(3, dtype=np.float32) * np.float32(2.0)
+        offset = np.full(3, -63.5, dtype=np.float32)
+        assert g._fixpont_egyutthato(matrix)[0].tolist() == [4096, 0, 0]
+        assert g._fixpont_bias(offset).tolist() == [-252, -252, -252]
+
+    def test_az_egyutthato_nullatol_elfele_kerekit_nem_rint(self):
+        """`trunc(m·2048 ± 0,5)`: a `±` az `m` előjele. `100,5` → 101 (a
+        `rint` páros felé 100-at adna), `−100,5` → −101 (`rint`: −100)."""
+        m = np.array([[100.5 / 2048.0, -100.5 / 2048.0, 101.5 / 2048.0]])
+        assert g._fixpont_egyutthato(m)[0].tolist() == [101, -101, 102]
+
+    def test_a_bias_nullatol_elfele_kerekit_es_ketto_az_alapja(self):
+        """`b = trunc(eltolás·4 ± 0,5) + 2`: `0,125·4 = 0,5` → 1 + 2 = 3
+        (`rint`: 0 + 2), `−0,125·4` → −1 + 2, nulla → 2."""
+        offset = np.array([0.125, -0.125, 0.0])
+        assert g._fixpont_bias(offset).tolist() == [3, 1, 2]
+
+    def test_tagonkenti_eltolas_nem_az_osszeg_utan(self):
+        """A `>> 9` MINDEN taggal külön fut: `(c·x) >> 9` tagonként lefelé
+        csonkol, ezért az összeg utáni eltolástól eltér."""
+        # c = 511, x = 1: tagonként 511 >> 9 = 0; az összegre 1533 >> 9 = 2,
+        # és ((2) + 2) >> 2 = 1 lenne.
+        image = np.ones((1, 1, 3), dtype=np.uint8)
+        matrix = np.full((1, 3), 511.0 / 2048.0)
+        out = g._fixpontos_szinmatrix(image, matrix, np.zeros(1))
+        assert int(out[0, 0, 0]) == 0  # ((0+0+0) + 2) >> 2
+
+    def test_a_kimenet_vagott(self):
+        image = np.array([[[255, 255, 255], [0, 0, 0]]], dtype=np.uint8)
+        matrix = np.eye(3) * 4.0
+        out = g._fixpontos_szinmatrix(image, matrix, np.array([10.0, 10.0, 10.0]))
+        assert out[0, 0].tolist() == [255, 255, 255]
+        out_neg = g._fixpontos_szinmatrix(image, matrix, np.array([-300.0] * 3))
+        assert out_neg[0, 1].tolist() == [0, 0, 0]
+
+    def test_azonossag_bitre_visszaadja_a_kepet(self):
+        rng = np.random.default_rng(11)
+        image = rng.integers(0, 256, size=(9, 7, 3), dtype=np.uint8)
+        out = g._fixpontos_szinmatrix(image, np.eye(3), np.zeros(3))
+        np.testing.assert_array_equal(out, image)
+
+    def test_a_tint_szurke_egyutthatoi_632_1248_168(self):
+        """A `ColorMatrix(s = −100)` sora: `c = 632 / 1248 / 168`, `b = 2`."""
+        matrix = g._saturation_matrix(-100.0)
+        assert g._fixpont_egyutthato(matrix)[0].tolist() == [632, 1248, 168]
+        assert g._fixpont_bias(np.zeros(3)).tolist() == [2, 2, 2]
+
+    def test_a_tint_szurke_indexe_fixpontos_nem_rint(self):
+        """A Resaturate-tábla indexe a fixpontos Haeberli-szürke. Ezen a
+        képponton a lebegőpontos `rint` és a fixpontos érték eltér."""
+        color = (200, 120, 40)
+        rgb = None
+        for r in range(0, 256, 5):
+            for gg in range(0, 256, 7):
+                for b in range(0, 256, 11):
+                    fix = (
+                        ((632 * r) >> 9) + ((1248 * gg) >> 9) + ((168 * b) >> 9) + 2
+                    ) >> 2
+                    flt = int(np.rint(0.3086 * r + 0.6094 * gg + 0.0820 * b))
+                    if fix != flt:
+                        table = g._resaturate_table(color)
+                        if not np.array_equal(table[fix], table[flt]):
+                            rgb = (r, gg, b, fix)
+                            break
+                if rgb:
+                    break
+            if rgb:
+                break
+        assert rgb is not None
+        r, gg, b, fix = rgb
+        pixel = np.array([[[r, gg, b]]], dtype=np.uint8)
+        result = g.tint_luma_preserving(pixel, color)
+        assert result[0, 0].tolist() == g._resaturate_table(color)[fix].tolist()
+
+    def test_a_bw_tint_a_kozos_alkalmazon_fut(self):
+        """A Holga `BW` és a `SimpleColorMatrix` ugyanazon az alkalmazón fut:
+        a `bw_tint` egyenlő egy `c = 1080/853/115`, `b = 2` mátrixszal."""
+        rng = np.random.default_rng(21)
+        image = rng.integers(0, 256, size=(12, 12, 3), dtype=np.uint8)
+        coeffs = np.array([g._bw_coefficients((255, 102, 102))], dtype=np.float64)
+        direct = g._fixpontos_szinmatrix(image, coeffs / 2048.0, np.zeros(1))
+        np.testing.assert_array_equal(g.bw_tint(image, (255, 102, 102))[..., 0], direct[..., 0])
+
+
 class TestSimpleColorMatrixContrast:
     """#904: 101 elemű táblázatos kontraszt-görbe, 63,5-ös forgáspont,
     korai kilépés kis `k`-nál."""

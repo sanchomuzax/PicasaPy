@@ -128,7 +128,7 @@ _EDIT_BASE_CAP = 2048
 # hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
 # (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
 # (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 10
+_EDIT_CACHE_VERSION = 11
 # 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
 # skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
 # 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
@@ -153,6 +153,10 @@ _EDIT_CACHE_VERSION = 10
 # vágás nélkül adja tovább a csatornagörbének, ami a töréspontokon túl
 # extrapolál — az érintett (Sixties, Cinemascope, CrossProcess stb.)
 # szerkesztett bélyegképek újragenerálódnak.
+# 11 (#3951): a `SimpleColorMatrix` és a `Tint` szürkítése az eredeti
+# fixpontos színmátrix-alkalmazóval számol (Neon, Lomo, Boost, Holga,
+# Áttűnés, Kinemaszkóp, PicnikTint) — az érintett szerkesztett
+# bélyegképek újragenerálódnak.
 
 
 def _edit_base_size(target_size: int) -> int:

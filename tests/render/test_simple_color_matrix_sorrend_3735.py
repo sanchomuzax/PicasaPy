@@ -90,7 +90,9 @@ class TestAKepletSorrendjeCiBiztos:
     def test_a_helyes_keplettel_egyezik(self, x, contrast, brightness):
         pixel = np.array([[[x, x, x]]], dtype=np.uint8)
         result = g.simple_color_matrix(pixel, brightness=brightness, contrast=contrast)
-        vart = round(_vart_helyes_sorrend(x, contrast, brightness))
+        # #3951: a fixpontos alkalmazó (`+ 2`, `>> 2`) a felezőpontot FELFELÉ
+        # kerekíti (`202,5 → 203`), a Python `round` páros felé (`→ 202`).
+        vart = int(np.floor(_vart_helyes_sorrend(x, contrast, brightness) + 0.5))
         assert int(result[0, 0, 0]) == vart
 
     @pytest.mark.parametrize(("x", "contrast", "brightness"), _REPREZENTATIV_ESETEK)
