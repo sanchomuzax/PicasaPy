@@ -60,6 +60,9 @@ _JPEG_ELONEZET, _JPEG_ELONEZET_HOSSZ = 0x0201, 0x0202
 _URES_TIFF = b"MM\x00\x2a\x00\x00\x00\x08" + b"\x00\x00" + b"\x00\x00\x00\x00"
 
 
+_TAJOLAS = 0x0112
+
+
 class TiffHiba(ValueError):
     """A blokk nem értelmezhető vagy nem írható biztonságosan."""
 
@@ -75,7 +78,7 @@ class Ertek:
 
 @dataclass(frozen=True)
 class Valtozas:
-    """`ifd`: `"0th"` vagy `"Exif"`; `csak_ha_hianyzik`: a meglévőt nem írja
+    """`ifd`: `"0th"`, `"Exif"` vagy `"1st"` (utóbbi csak meglévő tagot ír, helyben); `csak_ha_hianyzik`: a meglévőt nem írja
     felül; `csak_ha_megvan`: a hiányzót nem pótolja (#3966)."""
 
     ifd: str
@@ -284,6 +287,30 @@ def _athelyez(
     return kezdet
 
 
+def _helyben_1st(blokk: _Blokk, ifd1: list[_Bejegyzes], valtozasok: list[Valtozas]) -> None:
+    """Az IFD1 MEGLÉVŐ tagjei helyben; új tagot nem ad hozzá, és amit a helyén
+    nem lehet felülírni, azt érintetlenül hagyja (#3966)."""
+    tagek = {b.tag: b for b in ifd1}
+    for v in valtozasok:
+        meglevo = tagek.get(v.tag)
+        if meglevo is not None and not v.csak_ha_hianyzik:
+            _helyben_irhato(blokk, meglevo, v.ertek)
+
+
+def tajolas_1_helyben(tiff: bytes) -> bytes:
+    """Tartalék út (#3966): az IFD0 és az IFD1 meglévő `Orientation` (0x0112)
+    tagje a helyén `1`-re; semmi más nem változik. Hibánál `TiffHiba`."""
+    blokk = _Blokk(tiff)
+    ifd0, ifd1_off = blokk.ifd(blokk.u32(4))
+    ifd1 = _ifd1_tagek(blokk, ifd1_off)
+    ertek = Ertek(SHORT, 1)
+    for tagek in (ifd0, ifd1):
+        for b in tagek:
+            if b.tag == _TAJOLAS:
+                _helyben_irhato(blokk, b, ertek)
+    return bytes(blokk.buf)
+
+
 def _elonezet_csere(blokk: _Blokk, ifd1: list[_Bejegyzes], uj_kep: bytes) -> bool:
     """Az IFD1 JPEG-előnézete helyett `uj_kep`; nem megfelelő IFD1-nél kimarad
     (`False`)."""
@@ -461,6 +488,7 @@ def frissitett_tiff(
     csonk = blokk.eredeti_hossz
 
     uj0 = _alkalmaz(blokk, ifd0, [v for v in valtozasok if v.ifd == "0th"])
+    _helyben_1st(blokk, ifd1, [v for v in valtozasok if v.ifd == "1st"])
     if exif_valtozasok:
         uj_exif = _alkalmaz(blokk, exif, exif_valtozasok)
         if uj_exif:

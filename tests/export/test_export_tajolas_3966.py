@@ -53,6 +53,38 @@ def _nezoben(path):
         return np.asarray(ImageOps.exif_transpose(kep).convert("RGB"), dtype=np.int16)
 
 
+def _forras_elonezettel(tmp_path, tajolas=6):
+    """Mint `_forras`, de az IFD1-ben is van JPEG-előnézet ÉS `Orientation`."""
+    tomb = np.zeros((20, 60, 3), np.uint8)
+    tomb[:, :20] = (255, 0, 0)
+    tomb[:, 20:] = (0, 0, 255)
+    elo = tmp_path / "elo.jpg"
+    Image.fromarray(tomb[:, :, :]).resize((30, 10)).save(elo, "JPEG")
+    exif = piexif.dump(
+        {
+            "0th": {piexif.ImageIFD.Orientation: tajolas},
+            "Exif": {},
+            "1st": {piexif.ImageIFD.Orientation: tajolas},
+            "thumbnail": elo.read_bytes(),
+        }
+    )
+    path = tmp_path / "elonezettel.jpg"
+    Image.fromarray(tomb).save(path, "JPEG", quality=95, exif=exif)
+    return path
+
+
+def _tajolasok(path):
+    """(IFD0, IFD1) `Orientation` az első EXIF-szegmensből."""
+    for marker, seg in _szegmensek(path.read_bytes()):
+        if marker == 0xE1 and seg[4:].startswith(_EXIF_ID):
+            d = piexif.load(seg[4 + len(_EXIF_ID) :])
+            return (
+                d["0th"].get(piexif.ImageIFD.Orientation),
+                d["1st"].get(piexif.ImageIFD.Orientation),
+            )
+    return None, None
+
+
 def _export(source, tmp_path, **settings):
     report = export_photos([ExportItem(source)], tmp_path / "out", ExportSettings(**settings))
     assert report.failed == ()
@@ -120,3 +152,67 @@ class TestTiffSzinten:
         tag, tipus, darab, ertek = struct.unpack_from(e + "HHIH", ki, ifd0 + 2)
         assert (tag, tipus, darab, ertek) == (0x0112, th.SHORT, 1, 1)
 
+
+
+def test_az_ifd1_tajolas_tagje_is_1_lesz(tmp_path):
+    source = _forras_elonezettel(tmp_path)
+    assert _tajolasok(source) == (6, 6)
+    kimenet = _export(source, tmp_path, max_dimension=1000)
+    assert _tajolasok(kimenet) == (1, 1)
+
+
+def test_az_ifd1_hianyzo_tajolas_nem_potlodik(tmp_path):
+    tiff = piexif.dump({"0th": {piexif.ImageIFD.Orientation: 6}, "1st": {}})[6:]
+    v = th.Valtozas("1st", 0x0112, th.Ertek(th.SHORT, 1), csak_ha_megvan=True)
+    ki = th.frissitett_tiff(tiff, [v])
+    assert piexif.load(b"Exif\x00\x00" + ki)["1st"].get(0x0112) is None
+
+
+class TestTartalekAgak:
+    """Ha az EXIF-frissítés kimarad, a forrás tagje sem mehet ki 6-osan."""
+
+    def test_exif_hiba_eseten_a_tajolas_1(self, tmp_path, monkeypatch):
+        from picasapy.metadata import export_metadata as em
+
+        def hiba(*a, **k):
+            raise RuntimeError("kényszerített EXIF-hiba")
+
+        monkeypatch.setattr(em, "_exif_szegmens", hiba)
+        source = _forras_elonezettel(tmp_path)
+        kimenet = _export(source, tmp_path, max_dimension=1000)
+        assert _tajolasok(kimenet) == (1, 1)
+        with Image.open(kimenet) as kep:
+            assert kep.size == (20, 60)  # álló: a képpontok egyszer fordultak
+
+    def test_egesz_frissites_hibaja_eseten_a_tajolas_1(self, tmp_path, monkeypatch):
+        from picasapy.metadata import export_metadata as em
+
+        def hiba(*a, **k):
+            raise RuntimeError("kényszerített hiba")
+
+        monkeypatch.setattr(em, "_frissitett_szegmensek", hiba)
+        kimenet = _export(_forras_elonezettel(tmp_path), tmp_path, max_dimension=1000)
+        assert _tajolasok(kimenet) == (1, 1)
+
+    def test_bajtmasolas_haloja_is_1_re_irja(self, tmp_path, monkeypatch):
+        from picasapy.export import exporter as ex
+
+        def hiba(*a, **k):
+            raise RuntimeError("kényszerített hiba")
+
+        monkeypatch.setattr(ex, "frissitett_metaadat", hiba)
+        kimenet = _export(_forras_elonezettel(tmp_path), tmp_path, max_dimension=1000)
+        assert _tajolasok(kimenet) == (1, 1)
+
+    def test_a_tajolas_iras_hibaja_nem_buktatja_a_kepet(self, tmp_path, monkeypatch, caplog):
+        from picasapy.metadata import export_metadata as em
+
+        def hiba(*a, **k):
+            raise RuntimeError("kényszerített hiba")
+
+        monkeypatch.setattr(em, "_exif_szegmens", hiba)
+        monkeypatch.setattr(em, "tajolas_1_helyben", hiba)
+        with caplog.at_level("WARNING"):
+            kimenet = _export(_forras_elonezettel(tmp_path), tmp_path, max_dimension=1000)
+        assert kimenet.is_file()
+        assert any("tájolás" in r.getMessage() for r in caplog.records)
