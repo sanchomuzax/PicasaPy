@@ -306,6 +306,9 @@ class TestKitMode:
         image = _color_image()
         name = "chart__bw.jpg"
         cv2.imwrite(str(folder / name), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+        # a kit a JPEG-ből dekódolt forrást rendereli — az „export" is abból
+        # készül, különben a JPEG-zaj a képlettől függően átlépi a tűrést (#3613)
+        image = cv2.cvtColor(cv2.imread(str(folder / name)), cv2.COLOR_BGR2RGB)
         rendered, _ = apply_filters(image, parse_filters("bw=1;"))
         if torzit:
             rendered = np.clip(

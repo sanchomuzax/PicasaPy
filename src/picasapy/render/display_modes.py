@@ -92,9 +92,9 @@ Egész, 8 bites BT.601-közeli luma. A súlyok összege pontosan 256, tehát a
 
 ⚠️ **Ez NEM a szerkesztő `bw` effektje.** Az (`render/color.py:apply_bw`) a
 mentett képre ír és a `filters=` láncba kerül; ez itt csak a képernyőre
-hat, a fájlhoz és a `.picasa.ini`-hez nem nyúl. A két képlet ráadásul
-KÜLÖNBÖZIK (amaz lebegőpontos Rec.601), tehát a kimenetük sem azonos —
-összevonni paritás-vesztés volna.
+hat, a fájlhoz és a `.picasa.ini`-hez nem nyúl. A képletük a #3613 óta
+UGYANAZ (az effekt is ezt az egész lumát számolja, bitre azonos kimenettel):
+a különbség a hatókörben van, nem a képpontokban.
 
 ## `sepia` — Szépia (megjelenítési mód) (#1657)
 
@@ -497,7 +497,7 @@ def apply_display_bw(rgb: np.ndarray) -> np.ndarray:
 
     ⚠️ **Nem azonos a szerkesztő `bw` effektjével** (`render/color.py`):
     az a mentett képre ír és a `filters=` láncba kerül, ez csak a
-    képernyőre hat. A képletük is különbözik, ld. a modul-docstringet.
+    képernyőre hat. A képletük a #3613 óta ugyanaz, ld. a modul-docstringet.
     """
     if not _rgb_kep_e(rgb):
         return rgb
