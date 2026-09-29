@@ -7,21 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Szűrős fekete-fehér pontosan az eredeti Picasa számítását követi: a
+  szürke tónusait a képből számolt, az eredetivel egyező erősségű görbe
+  alakítja a korábbi, mérésből illesztett közelítés helyett (#3840).
+- Az exportált kép EXIF-je akkor sem veszít el adatot, ha a forrásfájlban egy
+  mező kétszer szerepel, és szabálytalan bélyegkép-hossznál a forrás EXIF-je
+  változatlanul megy tovább (#3968).
+
 ## [0.8.638] – 2026-09-29
 
 ### Javítva
 - **A Fekete-fehér effekt pontosan úgy szürkít, mint az eredeti Picasa
   (#3613).** Eddig a telített színeken (kék, sárga, cián, bíbor) legfeljebb
   2 szinttel eltért tőle.
-
-### Javítva
-- Az exportált kép EXIF-je akkor sem veszít el adatot, ha a forrásfájlban egy
-  mező kétszer szerepel, és szabálytalan bélyegkép-hossznál a forrás EXIF-je
-  változatlanul megy tovább (#3968).
-
-- A Szűrős fekete-fehér pontosan az eredeti Picasa számítását követi: a
-  szürke tónusait a képből számolt, az eredetivel egyező erősségű görbe
-  alakítja a korábbi, mérésből illesztett közelítés helyett (#3840).
 
 ## [0.8.637] – 2026-09-29
 
