@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.634] – 2026-09-29
+
 ### Javítva
 - A Lomo és a Holga sötét pereme bitre egyezik az eredeti Picasáéval: a kör
   alakú átmenetet eddig folytonosan számoltuk, az eredeti egész
