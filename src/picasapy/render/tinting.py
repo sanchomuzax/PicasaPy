@@ -241,7 +241,6 @@ def apply_radtint(
       `t′ = 255 − (((255 − t)·(256 − w)) >> 8)`, kívül `t′ = t`;
     - a képet egyszer szorozza: `ki = (be·t′) >> 8`.
 
-    Nem az eredeti és a tintelt képet keveri — ez a #3453-as modell volt.
     """
     validate_image(image)
     height, width = image.shape[:2]
