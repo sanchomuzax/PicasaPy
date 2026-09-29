@@ -1741,6 +1741,58 @@ utazik.
 
 Fejlesztés: **#3961**.
 
+**✅ Megvalósítva (2026-09-29, #3961):** `metadata/export_metadata.py`
+(`frissitett_metaadat`) és `metadata/tiff_helyben.py`, az `export/exporter.py`
+`_transfer_metadata`-ja hívja.
+
+*Főszabály:* a frissítés csak **kiegészítés** — amit a régi, bájtra másoló
+út (#136) megtartott, azt az új sem veszítheti el. Ezért:
+
+- Az EXIF-blokkot **nem** szerializáljuk újra (a `piexif` oda-vissza útja
+  a valódi Xiaomi 14T JPEG-en csonkolta a nulla nélküli ASCII-t —
+  `ExifVersion` `0220` → `022` —, eldobta az ismeretlen tageket és az
+  InteropIFD-t, és elcsúsztatta a MakerNote eltolását). A forrás blokkja
+  **bájtra marad**: a meglévő, elférő érték helyben íródik (`DateTime`,
+  `PixelX/YDimension`), az új tag pedig az IFD **másolatába** kerül, amely a
+  blokk VÉGÉRE fűződik; csak a rá mutató eltolás változik, a régi IFD árván
+  marad. Helyben írni csak a fejléc utáni, a forráson belüli, IFD-táblát nem
+  fedő helyre szabad; a fájlból olvasott darabszám a határellenőrzés előtt
+  nem foglal. Önellenőrzés: a forrás minden más bájtja változatlan, ÉS a
+  kimenetet visszaolvasva (IFD0 → Exif → IFD1) minden forrás-tag típusa,
+  darabszáma és értéke egyezik a szándékosan írtakon kívül.
+- A frissített mezők: `DateTime` = az export ideje; `PixelX/YDimension` = a
+  kimenet mérete; a hiányzó `Software`/`Artist` (`PicasaPy`, #1642),
+  `DateTimeOriginal` (a forrásfájl mtime-ja), `ExifVersion` (`0220`) pótolva,
+  a meglévő marad. Ez a 16. A) táblázat általános szabálya; az olyan forrás,
+  amelynek van EXIF-je, de a `Software`/`Artist`/`DateTimeOriginal` hiányzik
+  belőle, **külön nincs mérve** — ott is az általános szabályt követjük.
+- **IFD1-előnézet:** ha a forrásnak volt JPEG-előnézete, a kimenetből
+  újragenerálva (160×120-ba férő JPEG); ha nem generálható, vagy vele a
+  szegmens túllépné a 64 KiB-ot, a forrásé marad. Előnézet nélküli forráshoz
+  nem adunk újat (arra nincs mérés).
+- XMP a B) szerint (meglévő megmarad, `xmp:ModifyDate`, az `exif:` a két
+  dátumon kívül üres — attribútum- és elemalakban egyaránt). XMP nélküli
+  forrásnál: ha a forrásnak **se EXIF-je, se XMP-je** nincs, a
+  `copy_signature` mért csomagja (`dc:creator`, `exif:DateTimeOriginal`);
+  ha van EXIF-je, **csak** egy `xmp:ModifyDate`-es csomag — a `dc:creator` és
+  az `exif:DateTimeOriginal` a mérésben csak a metaadat nélküli forrásnál
+  jelent meg, a mindig jelenlévő `xmp:ModifyDate` viszont mind a 204 exportban.
+- **Visszaesés:** sérült EXIF, író-kivétel, 64 KiB fölé nővő APP1, sérült
+  vagy `x:xmpmeta` burok nélküli XMP (a csupasz `rdf:RDF` érvényes, de nem
+  írjuk át) esetén AZ a szegmens a forrás bájtjaival megy; az EXIF és az XMP
+  frissítése egymástól független. Az egész körül is háló van: bármely
+  váratlan hibánál a régi bájtmásolás a kimenet — a kép exportja a
+  metaadat miatt soha nem bukik el.
+- Minden más APP1 (a **kiterjesztett XMP** `xmp/extension` szegmensei, egy
+  második EXIF, ismeretlen APP1) és az APP13 bájtra megy, a forrás
+  sorrendjében.
+
+**Nem része:** `ImageUniqueID` (a képzése nyitott, C) 1.), az InteropIFD
+**pótlása** (a meglévő megmarad), az APP13 tartalma; a szerkesztetlen,
+átméretezetlen JPEG továbbra is bájthű másolat (nincs rá mérés). Teszt:
+`tests/export/test_export_metaadat_3961.py`,
+`tests/export/test_export_metaadat_megorzes_3961.py`.
+
 *Forrás: `0x009ed6e0` (388 b), `0x00ba7540`, `0x00bad9a0` (410 b), `0x00ba75f0`,
 `0x009eee30`, `0x00bae5b0` (3863 b), `0x00bb0670`, `0x00bb0310`; mérés: 204
 eredeti export a NAS-on.*
