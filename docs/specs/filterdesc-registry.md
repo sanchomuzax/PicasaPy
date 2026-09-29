@@ -2102,8 +2102,11 @@ ki_i = clamp( ( Σ_j ((c_ij · x_j) >> 9) + b_i ) >> 2 , 0, 255)                
 | `lomo__alap` / `lomo__min` | 0,198 / 0,184 | 0,063 / 0,033 |
 | `boost__alap` | 0,059 | 0,000 |
 | `holga__alap` / `holga__min` | 0,060 / 0,034 | 0,010 / 0,003 |
-| `cinemascope__alap` | 0,354 | 0,307 (a görbe-lánccal, #3942, tovább esik) |
+| `crossprocess__alap` | 0,225 | **0,000** |
+| `cinemascope__alap` | 0,354 | 0,307; a görbe-lánccal (#3941/#3942) együtt **0,000** |
 | `picniktint__alap` | 0,019 | 0,000 |
+
+*Kiegészítés (409. kör): az első felmérés foltozása a `glimmer_tone` modult nem érte el, ezért az Áttűnés (`CrossProcess`) kimaradt; minden modulban foltozva a táblázat többi sora változatlan, az Áttűnés bitre egyezik. A Lomo maradéka (0,063 / 0,033) mindhárom kiolvasott javítás mellett is megmarad — ez a lánc egy másik lépéséből jön.*
 
 A Neonon a két lépés külön is mérve: csak a fixpontos kontraszt 0,280 → 0,016, a `Tint` fixpontos szürkítésével együtt 0,000.
 
