@@ -16,8 +16,6 @@ from picasapy.render.native_grain import apply_native_grain
 from picasapy.render.saturation_positive import apply_positive_saturation
 from picasapy.render.warmify_lut import warmify_lut_array
 
-_REC601_WEIGHTS = (0.299, 0.587, 0.114)
-
 #: A szépia luma-súlyai. #317: a `referencia/sepia/` exportján a
 #: Flash-örökségű (0,3 / 0,59 / 0,11) súlyozás adta a legkisebb szórást a
 #: luma-vödrökön belül (1,21) — a Rec.601 (1,26) és a Rec.709 (2,29)
@@ -60,18 +58,6 @@ def _to_uint8(values: np.ndarray) -> np.ndarray:
     return np.clip(np.rint(values), 0, 255).astype(np.uint8)
 
 
-def _luma(image: np.ndarray) -> np.ndarray:
-    """Rec.601 luminancia float32 (H, W) tömbként.
-
-    float32 munkatér (#140): a 8 bites kimenethez bőven elegendő pontosság,
-    fele akkora memóriaforgalommal, mint a float64.
-    """
-    red_w, green_w, blue_w = _REC601_WEIGHTS
-    return (
-        np.float32(red_w) * image[..., 0].astype(np.float32)
-        + np.float32(green_w) * image[..., 1].astype(np.float32)
-        + np.float32(blue_w) * image[..., 2].astype(np.float32)
-    )
 
 
 def apply_bw(image: np.ndarray) -> np.ndarray:
@@ -98,12 +84,6 @@ def apply_bw(image: np.ndarray) -> np.ndarray:
     return np.stack([gray, gray, gray], axis=-1)
 
 
-def _monochrome_tone(image: np.ndarray, linear: tuple) -> np.ndarray:
-    """Luma-alapú monokróm tónus a mért lineáris csatornagörbékkel."""
-    validate_image(image)
-    gray = _luma(image)
-    channels = [slope * gray + offset for slope, offset in linear]
-    return _to_uint8(np.stack(channels, axis=-1))
 
 
 def sepia_lut_array() -> np.ndarray:
