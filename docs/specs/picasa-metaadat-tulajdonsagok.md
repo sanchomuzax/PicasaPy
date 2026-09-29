@@ -1776,16 +1776,56 @@ exportja — effekttől függetlenül — ugyanazt kapja.
 megerősített kulcs összefűzése, a lánc utasításszinten kiolvasva, és
 186/186 bitpontos mérés.*
 
-**A 2. nyitott pont szűkítve:** az `exif:DateTimeOriginal`-t a `0x00bb1170` csak
-akkor írja, ha a `0x37` kulcs a propsetben van (`0x00bb11b9 call 0x009f0560`;
-nincs meg → kilép írás és törlés nélkül). A mért exportokon minden XMP-mező
-azzal egyezik, hogy a XMP-építőnek átadott tulajdonsághalmaz csak az export
-által **pótolt vagy frissített** kulcsokat tartalmazza:
-- metaadat nélküli forrásnál `dc:creator` = `Picasa` és `exif:DateTimeOriginal`
-  (a pótolt `Artist` és `DateTimeOriginal`);
-- a kamerás forrásnál egyik sem (ezek a forrásban megvoltak).
+**A 2. nyitott pont:** ~~feltételes~~ — **LEZÁRVA**, ld. E).
 
-Ez **feltételes**, nincs kiolvasva: a `0x0045cfa0` a `0x009ed6e0` előtt egy
-helyi halmazt épít (`0x0045d619` `0x009aa3c0`, `0x0045d627` `0x009aa110`,
-`0x0045d636` `0x009aa270`), és ezek töltését ez a kör nem követte végig. **Út:**
-e három függvény kulcsai.
+### E) ✅ Az XMP-építő egy FRISS halmazt kap: csak a mentő által pótolt vagy frissített kulcsokat (2026-09-29, 413. kör, #3963)
+
+A `0x0045cfa0` JPEG-mentő a `0x009ed6e0` előtt **üres** tulajdonsághalmazt épít
+(`0x0045d3f8 call 0x009ef010`: vtábla `0xce3e94`, 97 vödör), ezt adja a
+`0x0045e120`-nak, az pedig a `0x0045c870`-nek (9. argumentum). A forrás
+metaadatai egy **külön** táblába kerülnek (`0x0045e2d3`–`0x0045e33d`, olvasó
+maszk `0xc7e`/`0x1c7e`), és ez a `0x0045c870` 7. argumentuma (`ebp`). Minden
+feltételes kulcsnál ugyanaz a minta: `[ebp+0x18]` vödrök, `div [ebp+0x10]`,
+`cmp [csomópont+8], kulcs`. **Ha a forrásban megvan, a halmazba NEM kerül.**
+
+| kulcs | EXIF | a halmazba kerül, ha … | érték | cím |
+|---|---|---|---|---|
+| `0x1c` | `0x0132` DateTime | mindig (ha a halmaz nem üres) | a mentés ideje | `0x0045cf05`, `0x0045cf1a` |
+| `0x1d` | `0x013b` Artist | a forrásban nincs | `"Picasa"` (`0xc7f0fc`) | `0x0045cc35`–`0x0045cc7e` |
+| `0x37` | `0x9003` DateTimeOriginal | a forrásban nincs | a forrásfájl időbélyege | `0x0045cece`–`0x0045cf00` |
+| `0x68` | `0xa420` ImageUniqueID | a forrásban nincs | `originfast ‖ originslow` (D) | `0x0045cb9c`–`0x0045cc29` |
+| `0x4d`/`0x4e` | `0xa002`/`0xa003` PixelX/YDimension | a mentő méretet ad (`0x0045d42b`) | a kimenet mérete | `0x0045ccf2`–`0x0045cd6b` |
+| `0xad`/`0xae` | Interop `0x1001`/`0x1002` | a forrásban nincs, és a forrás `0x4d`/`0x4e`-je nem 0 | a forrás `0x4d`/`0x4e`-je | `0x0045cdc3`–`0x0045ce76` |
+| `0x2c` | `0x8773` ICC-profil | mindig, **üres** értékkel, hacsak a forrás `0x2c`-je nem egy bizonyos `BinaryMetadata` (`0x00a357a0`) | üres | `0x0045cea7`–`0x0045cec4` |
+| `0xe4` | IPTC 2:120 Caption | mindig | a képaláírás | `0x0045c97e`–`0x0045c992` |
+| `0xca` | IPTC 2:25 Keywords | mindig | a forrás és a Picasa kulcsszavai, összefésülve | `0x0045c9aa`–`0x0045cb97` |
+| `0x0d` | — | a forrásban megvan | üres | `0x0045cdbe` |
+| GPS `0x8b`–`0xa9` | GPS | a Picasa geocímkéje eltér a forrásétól | a Picasa geocímkéje | `0x0045c8c1`–`0x0045c961` |
+| `0x131` | arcok | a „PersistFaceToFile” beállítás igaz | az arcok | `0x0045ce9f` → `0x00485bd0` |
+
+**Ebből a mért XMP mezőről mezőre levezethető** (a `0x00bad9a0`-lánccal, B):
+
+- **Metaadat nélküli forrás:**
+  - a `0x1d` = `Picasa` → `dc:creator`;
+  - a `0x37` = a fájl ideje → `exif:DateTimeOriginal` (jelző nélküli író);
+  - a `0x1c` → `xmp:ModifyDate`;
+  - a `0x4d`/`0x4e`/`0x68` → `exif:`, de **törlés**-jelzővel, tehát nem jelenik meg.
+- **Kamerás forrás:**
+  - az `Artist` és a `DateTimeOriginal` megvolt → sem `dc:creator`, sem `exif:DateTimeOriginal` nem kerül be;
+  - csak az `xmp:ModifyDate` (a `0x1c`).
+- **Az ICC-profil elhagyása** a `0x2c` üres értékéből jön.
+
+⚠️ **Tartalék út:** ha a forrás nem JPEG (fájltípus ≠ 2) és nem `.thm`-párú videó
+(`0x12`), vagy a forrás-tábla üres, a `0x0045e351`–`0x0045e39d` ág a forrás
+**összes** metaadatát `0xffffffff` maszkkal közvetlenül a halmazba olvassa, és az
+`ebp` maga a halmaz. Ilyenkor a „forrásban nincs” feltételek a halmazra
+vonatkoznak.
+
+*Bizonyítottsági fok: **megerősített** — a kulcsok és a feltételek két független
+olvasásban egyeznek (ld. a #3963 újralevezetés-blokkját). Erős: a `0x1c` az
+aktuális idő, a `0x37` a fájl időbélyege (a mérés egyezik: 3229 → `mtime`).*
+
+**Nem vizsgálva, de nem is kérdés:**
+- a `0x9efe80` `0x35`-ös mellékága;
+- az olvasómaszkok bitjei;
+- a `Software` mező (a mérés szerint csak hiányzónál `Picasa`), amely nem ebből a halmazból jön.
