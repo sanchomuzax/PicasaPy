@@ -2052,8 +2052,8 @@ A `0x009ed6e0` 1-es jelzőbitje a `0x009ecdb0`-t hívja; ez építi az EXIF-blok
 
 A `0x00a7ade0` a módot kezeli (`0x00a7aec5`–`0x00a7af03`): minden 0-tól különböző módnál kiüríti az
 IFD1-listát. A 0-s mód (a forrás meglévő bélyegképének megtartása) létezik, de a `0x009ecdb0` **soha nem
-adja át** ⇒ **a forrás bélyegképe ezen az úton sosem kerül át.** A mért kamerás forrás (3084) IFD1-e is
-az újonnan épített.
+adja át** ⇒ **a forrás bélyegképe ezen az úton sosem kerül át** (kódolvasat; a mérőkészlet forrásainál a
+meglévő és az újonnan épített IFD1 nem választható szét, ld. a G) szakasz IFD1-sorát).
 
 **2. A méret** (`0x009b4aa0`, hívás: `0x009ece92`–`0x009ecee4`, doboz {0,0,160,160}):
 
