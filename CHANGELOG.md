@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Szűrős fekete-fehér pontosan az eredeti Picasa számítását követi: a
+  szürke tónusait a képből számolt, az eredetivel egyező erősségű görbe
+  alakítja a korábbi, mérésből illesztett közelítés helyett (#3840).
+
 ## [0.8.637] – 2026-09-29
 
 ### Javítva

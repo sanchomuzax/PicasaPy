@@ -1657,9 +1657,9 @@ figyelembe veszi a `Preferences/CarefulEnhance` beállítást.
 ### Ami maradt
 
 - a `sat` luminancia-súlyainak csatorna-hozzárendelése (5:1:2);
-- ~~az `ansel` hisztogram utáni lépése~~ — a mért tónusgörbe
-  (`_ANSEL_ANCHOR_CURVE`) fehér szűrővel **0,53**-ra viszi az eltérést
-  (volt 6,11);
+- ~~az `ansel` hisztogram utáni lépése~~ — kiolvasva (#3839), a kód a
+  natív mag egész aritmetikáját követi (#3840); a korábbi mért
+  töréspontsor (`_ANSEL_ANCHOR_CURVE`) megszűnt;
 - `dir_tint`, `radsat` számszerű feldolgozása (a nyers kimenet megvan).
 
 **Ezekhez már nem a felhasználó Picasája kell**, hanem a meglévő
