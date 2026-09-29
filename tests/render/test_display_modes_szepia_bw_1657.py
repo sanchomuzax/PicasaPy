@@ -262,9 +262,11 @@ class TestNemAKeteffekt:
     képernyőre hat. **A különbség a HATÓKÖRBEN van, nem szükségképpen a
     képpontokban.**
 
-    ⚠️ #619: a `bw`-nél a képlet is más (lebegőpontos Rec.601), a
-    **szépiánál viszont MÁR NEM**. Amíg a szépia effekt 17 mért
-    horgonypontból interpolált (#317), a két kimenet eltért; a #619 óta az
+    ⚠️ #619 / #3613: a képlet MÁR egyiknél sem más. A `bw` effekt a #3613
+    óta a natív egész lumát számolja (a közös telítetlenítő `w = 0x100`-zal),
+    ami bitre a megjelenítési mód lumája. A **szépiánál**: amíg az effekt
+    17 mért horgonypontból interpolált (#317), a két kimenet eltért; a #619
+    óta az
     effekt a TELJES visszafejtett algoritmust futtatja (egész BT.601,
     `218/256` halványítás, overlay a `#9B7D63` tintával) — és ez
     **ugyanaz**, amit a megjelenítési mód mért műveletsora (#1657) végez.
@@ -276,11 +278,13 @@ class TestNemAKeteffekt:
     mint megkövetelni, hogy az egyik rossz legyen.
     """
 
-    def test_a_bw_kimenete_kulonbozik_az_effektetol(self):
+    def test_a_bw_kimenete_UGYANAZ_mint_az_effekte(self):
+        """#3613: a `bw` effekt is a `(77·R + 151·G + 28·B) >> 8` lumát
+        számolja — két független kiolvasás, ugyanaz a képlet."""
         from picasapy.render.color import apply_bw
 
         be = _folt(VEGYES)
-        assert not np.array_equal(apply_display_bw(be), apply_bw(be))
+        assert np.array_equal(apply_display_bw(be), apply_bw(be))
 
     def test_a_szepia_kimenete_UGYANAZ_mint_az_effekte(self):
         """#619: a két mért algoritmus egybeesik — a hatókör marad a különbség.

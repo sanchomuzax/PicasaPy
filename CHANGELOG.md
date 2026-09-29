@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Fekete-fehér effekt pontosan úgy szürkít, mint az eredeti Picasa
+  (#3613).** Eddig a telített színeken (kék, sárga, cián, bíbor) legfeljebb
+  2 szinttel eltért tőle.
+
 ## [0.8.637] – 2026-09-29
 
 ### Javítva

@@ -1,7 +1,7 @@
 """Szín-műveletek: bw, sepia, warm, sat.
 
 A számértékek a golden-elemzés mérési eredményei
-(`docs/specs/filters-decoded.md`): a bw pontosan Rec.601; a sepia a mért
+(`docs/specs/filters-decoded.md`): a bw a natív egész luma (#3613); a sepia a mért
 csatornagörbék lineáris közelítése; a warm a binárisból kinyert, beégetett
 tábla PONTOS leképezése (#611); a sat a mért gain-tábla interpolációja
 luma-tartó króma-erősítésként.
@@ -15,8 +15,6 @@ from picasapy.render.curves import apply_channel_luts, validate_image
 from picasapy.render.native_grain import apply_native_grain
 from picasapy.render.saturation_positive import apply_positive_saturation
 from picasapy.render.warmify_lut import warmify_lut_array
-
-_REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
 #: A szépia luma-súlyai. #317: a `referencia/sepia/` exportján a
 #: Flash-örökségű (0,3 / 0,59 / 0,11) súlyozás adta a legkisebb szórást a
@@ -43,6 +41,10 @@ _SEPIA_INT_LUMA = (77, 151, 28)
 _SEPIA_FADE = 218
 _SEPIA_TINT = (155, 125, 99)
 
+#: #3613: a közös telítetlenítő (`0x009a9550`) súlyai — a `bw` ugyanezt a
+#: lumát számolja, mint a szépia 1. lépése (`filters-decoded.md`).
+_DESAT_INT_LUMA = _SEPIA_INT_LUMA
+
 #: a táblát egyszer számoljuk ki (a `sepia_lut_array` gyorstára)
 _SEPIA_LUT: np.ndarray | None = None
 
@@ -56,33 +58,32 @@ def _to_uint8(values: np.ndarray) -> np.ndarray:
     return np.clip(np.rint(values), 0, 255).astype(np.uint8)
 
 
-def _luma(image: np.ndarray) -> np.ndarray:
-    """Rec.601 luminancia float32 (H, W) tömbként.
-
-    float32 munkatér (#140): a 8 bites kimenethez bőven elegendő pontosság,
-    fele akkora memóriaforgalommal, mint a float64.
-    """
-    red_w, green_w, blue_w = _REC601_WEIGHTS
-    return (
-        np.float32(red_w) * image[..., 0].astype(np.float32)
-        + np.float32(green_w) * image[..., 1].astype(np.float32)
-        + np.float32(blue_w) * image[..., 2].astype(np.float32)
-    )
 
 
 def apply_bw(image: np.ndarray) -> np.ndarray:
-    """Fekete-fehér: Rec.601 luma csatornánként visszaírva (mérten pontos)."""
+    """Fekete-fehér: a natív egész luma mindhárom csatornára (#3613).
+
+    A `bw` callback (`0x008f84c0`) a közös telítetlenítőt (`0x009a9550`)
+    `w = 0x100` súllyal hívja (`docs/specs/filters-decoded.md`, „`bw` =
+    egész luma"):
+
+        Y  = (77·R + 151·G + 28·B) >> 8          ; csonkítva
+        C' = C + (((Y − C) · w) >> 8)            ; w = 256  ⇒  C' = Y
+
+    Tehát `C' = Y`, egész aritmetikával és csonkítva — NEM a lebegőpontos
+    Rec.601 kerekítése. Az az élő exporton (Colab #43, `color_patches`) a
+    képpontok 37,5%-án legfeljebb 2 szinttel eltért; ez a képlet bitre egyezik.
+    """
     validate_image(image)
-    gray = _to_uint8(_luma(image))
+    red_w, green_w, blue_w = _DESAT_INT_LUMA
+    channels = image.astype(np.int32)
+    gray = (
+        (red_w * channels[..., 0] + green_w * channels[..., 1] + blue_w * channels[..., 2])
+        >> 8
+    ).astype(np.uint8)
     return np.stack([gray, gray, gray], axis=-1)
 
 
-def _monochrome_tone(image: np.ndarray, linear: tuple) -> np.ndarray:
-    """Luma-alapú monokróm tónus a mért lineáris csatornagörbékkel."""
-    validate_image(image)
-    gray = _luma(image)
-    channels = [slope * gray + offset for slope, offset in linear]
-    return _to_uint8(np.stack(channels, axis=-1))
 
 
 def sepia_lut_array() -> np.ndarray:

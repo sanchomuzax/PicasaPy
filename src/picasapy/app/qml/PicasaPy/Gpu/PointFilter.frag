@@ -109,9 +109,10 @@ void main() {
         saturated = applyNegativeSaturation(toned, satGain);
     }
 
-    // 3) fekete-fehér keverés (picasapy.render.color.apply_bw: Rec.601 luma
-    // mindhárom csatornára) — bwMix folytonos, hogy jövőbeli csúszka is
-    // használhassa, az egykattintásos UI ma 0.0/1.0-t küld.
+    // 3) fekete-fehér keverés — a CPU-s apply_bw az eredeti EGÉSZ lumáját
+    // számolja ((77·R + 151·G + 28·B) >> 8, csonkítva, #3613); ez itt annak
+    // lebegőpontos közelítése, képpontra nem egyezik vele. bwMix folytonos,
+    // hogy jövőbeli csúszka is használhassa; a néző ma 0.0-t küld.
     vec3 finalColor = mix(saturated, vec3(dot(saturated, LUMA_WEIGHTS)), bwMix);
 
     fragColor = vec4(finalColor, color.a) * qt_Opacity;
