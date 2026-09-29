@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.636] – 2026-09-29
+
 ### Javítva
 - A Finomhangolás szélsőséges (fordított fekete-/fehérpontú) beállításánál
   a kép már nem egyszínű fehér: az eredeti Picasához hasonlóan szinte csupa
