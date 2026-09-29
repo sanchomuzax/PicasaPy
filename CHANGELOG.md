@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.640] – 2026-09-29
+
+### Javítva
+- A csak tükrözött fénykép exportja (és a webes export eredeti méretben) nem veszíti el a tükrözést: a kimenet a tükrözött képpontokkal, újrakódolva készül, nem bájthű másolatként (#3977).
+
 ### Javítva
 - Az exportált JPEG-be az eredeti Picasához hasonlóan Interop-blokk kerül (`InteropVersion` 0100, a forrás pixelmérete), a meglévő Interop-mezők érintetlenül maradnak (#3989).
 
