@@ -522,3 +522,194 @@ class TestTiffHelyben:
         ki = em.frissitett_tiff(None, self._valtozasok(64, 48))
         assert (_meret(ki, 0xA002), _meret(ki, 0xA003)) == (64, 48)
         assert _olvas(ki)["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+
+
+# --- a #3964 második átnézése: sérült blokk, hibás előnézet, védőháló ----------
+
+_TIFF_HELYBEN = Path(__file__).parents[2] / "src/picasapy/metadata/tiff_helyben.py"
+
+#: A gyermekfolyamat csak a (stdlib-es) modult tölti be, 1 GiB címtér-plafonnal:
+#: a régi sorrend (előbb foglal, aztán ellenőriz) itt `MemoryError`-ral hal meg,
+#: a gépet nem viszi el.
+_BOMBA = """
+import importlib.util, resource, struct, sys
+resource.setrlimit(resource.RLIMIT_AS, (1 << 30, 1 << 30))
+spec = importlib.util.spec_from_file_location("th", sys.argv[1])
+th = importlib.util.module_from_spec(spec)
+sys.modules["th"] = th
+spec.loader.exec_module(th)
+tiff = (b"II*\\x00\\x08\\x00\\x00\\x00" + struct.pack("<H", 1)
+        + struct.pack("<HHII", 0x0132, 2, 1_500_000_000, 26) + b"\\x00" * 4
+        + b"2020:01:01 00:00:00\\x00")
+try:
+    th.frissitett_tiff(tiff, [th.Valtozas("0th", 0x0132, th.ascii_ertek("2026:09:29 10:00:00"))])
+    nev = "OK"
+except Exception as hiba:
+    nev = type(hiba).__name__
+# a `ru_maxrss` az exec-en át a (nagy) pytest-szülő csúcsát örökli, ezért a
+# saját memóriatérkép csúcsa (`VmHWM`, KiB) a mérce
+with open("/proc/self/status") as f:
+    csucs = next(int(s.split()[1]) for s in f if s.startswith("VmHWM:"))
+print("EREDMENY", nev, csucs)
+"""
+
+
+def _th():
+    from picasapy.metadata import tiff_helyben as th
+
+    return th
+
+
+def _datetime_valtozas(datum="2026:09:29 10:00:00"):
+    th = _th()
+    return [th.Valtozas("0th", 0x0132, th.ascii_ertek(datum))]
+
+
+class TestSerultBlokk:
+    @pytest.mark.skipif(not Path("/proc/self/status").is_file(), reason="Linux /proc kell")
+    def test_serult_darabszam_nem_foglal_memoriat(self):
+        """B1: a fájlból olvasott u32 darabszám (1,5 milliárd) nem foglalhat
+        a határellenőrzés előtt."""
+        import subprocess
+        import sys
+
+        futas = subprocess.run(
+            [sys.executable, "-c", _BOMBA, str(_TIFF_HELYBEN)],
+            capture_output=True, text=True, timeout=60,
+        )
+        sor = next(
+            (s for s in futas.stdout.splitlines() if s.startswith("EREDMENY")), None
+        )
+        assert sor is not None, futas.stderr[-2000:]
+        _cimke, nev, csucs_kib = sor.split()
+        assert nev in ("TiffHiba", "OK")
+        assert int(csucs_kib) < 200 * 1024
+
+    def _datetime_mutatoval(self, mutato):
+        """IFD0: Make + DateTime (20 bájt, a mutatója `mutato`) + Model."""
+        tiff = bytearray(
+            b"II*\x00\x08\x00\x00\x00"
+            + _ifd(
+                [
+                    (0x010F, 2, 6, b"Canon\x00"),
+                    (0x0110, 2, 9, b"EOS 5D 2\x00"),
+                    (0x0132, 2, 20, b"2020:01:01 00:00:00\x00"),
+                ],
+                8,
+                0,
+            )
+        )
+        hely = 8 + 2 + 12 * 2 + 8  # a DateTime értékmezője
+        tiff[hely : hely + 4] = struct.pack("<I", mutato)
+        return bytes(tiff)
+
+    @pytest.mark.parametrize("mutato", [0, 4, 10, 20])
+    def test_fejlecre_vagy_ifd_tablara_mutato_ertek_nem_irodik_helyben(self, mutato):
+        """J1: a `DateTime` értékmutatója a fejlécbe vagy az IFD0-táblába mutat:
+        helyben írva a fejléc/a szomszéd bejegyzés íródna felül."""
+        tiff = self._datetime_mutatoval(mutato)
+        ki = _th().frissitett_tiff(tiff, _datetime_valtozas())
+        olvasott = _olvas(ki)["0th"]
+        assert olvasott[0x010F][3] == b"Canon\x00"
+        assert olvasott[0x0110][3] == b"EOS 5D 2\x00"
+        assert olvasott[0x0132][3] == b"2026:09:29 10:00:00\x00"
+
+    def test_onellenorzes_megfogja_a_tablara_irast(self, monkeypatch):
+        """J1, második védvonal: ha a célkorlát kimaradna, a szerkezeti
+        visszaolvasás `TiffHiba`-t ad (a hívó ilyenkor a forrást adja tovább)."""
+        th = _th()
+        monkeypatch.setattr(th, "_cel_szabad", lambda *_a: True)
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(self._datetime_mutatoval(10), _datetime_valtozas())
+
+    def _nullas_elonezettel(self):
+        """IFD0 → IFD1, az IFD1 előnézete a 0. bájttól a blokk végéig „ül”."""
+        ifd0 = _ifd([(0x010F, 2, 6, b"Canon\x00")], 8, 0)
+        ifd1_off = 8 + len(ifd0)
+        ifd0 = _ifd([(0x010F, 2, 6, b"Canon\x00")], 8, ifd1_off)
+        ifd1_hossz = len(_ifd([(0x0201, 4, 1, b"\x00" * 4), (0x0202, 4, 1, b"\x00" * 4)], ifd1_off, 0))
+        teljes = ifd1_off + ifd1_hossz + 16
+        ifd1 = _ifd(
+            [(0x0201, 4, 1, struct.pack("<I", 0)), (0x0202, 4, 1, struct.pack("<I", teljes))],
+            ifd1_off,
+            0,
+        )
+        tiff = b"II*\x00\x08\x00\x00\x00" + ifd0 + ifd1 + b"\xab" * 16
+        assert len(tiff) == teljes
+        return tiff
+
+    def test_nullatol_indulo_vegso_elonezet_nem_dobja_el_a_blokkot(self):
+        """J1: a „végén ülő” előnézet a 0. bájttól indul — a `del buf[0:]` az
+        egész blokkot eldobná."""
+        tiff = self._nullas_elonezettel()
+        uj_kep = b"\xff\xd8UJ-ELONEZET\xff\xd9"
+        ki = _th().frissitett_tiff(tiff, _datetime_valtozas(), elonezet=lambda: uj_kep)
+        olvasott = _olvas(ki)
+        assert olvasott["0th"][0x010F][3] == b"Canon\x00"
+        assert olvasott["0th"][0x0132][3] == b"2026:09:29 10:00:00\x00"
+        kezdet = struct.unpack("<I", olvasott["1st"][0x0201][3])[0]
+        hossz = struct.unpack("<I", olvasott["1st"][0x0202][3])[0]
+        assert ki[kezdet : kezdet + hossz] == uj_kep
+        assert kezdet >= len(tiff)  # a régi „előnézet” helye nem íródott felül
+
+    def test_onellenorzes_megfogja_az_elonezet_blokkvesztest(self, monkeypatch):
+        th = _th()
+        monkeypatch.setattr(th, "_cel_szabad", lambda *_a: True)
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(
+                self._nullas_elonezettel(), _datetime_valtozas(), elonezet=lambda: b"\xff\xd8X"
+            )
+
+    def test_onellenorzes_minden_forras_taget_visszaolvas(self, monkeypatch):
+        """A szerkezeti önellenőrzés: egy nem szándékolt tag változása `TiffHiba`."""
+        th = _th()
+        eredeti = th._athelyez
+
+        def ronto(blokk, bejegyzesek, uj, kovetkezo):
+            off = eredeti(blokk, bejegyzesek, uj, kovetkezo)
+            n = struct.unpack_from(blokk.e + "H", blokk.buf, off)[0]
+            for i in range(n):  # a Make értékének darabszáma elromlik
+                hely = off + 2 + 12 * i
+                if struct.unpack_from(blokk.e + "H", blokk.buf, hely)[0] == 0x010F:
+                    blokk.buf[hely + 4 : hely + 8] = struct.pack(blokk.e + "I", 5)
+            return off
+
+        monkeypatch.setattr(th, "_athelyez", ronto)
+        tiff = _kis_tiff([(0x9000, 7, 4, b"0230")], ifd0_extra=[(0x010F, 2, 6, b"Canon\x00")])
+        with pytest.raises(th.TiffHiba):
+            th.frissitett_tiff(tiff, _datetime_valtozas())
+
+
+class TestElonezetHiba:
+    def test_elonezet_kivetele_csak_az_elonezetet_viszi_el(self, tmp_path, monkeypatch):
+        """J2: a `_elonezet` kivétele után a `DateTime` és a méret frissül,
+        csak az előnézet marad a forrásé."""
+
+        def hibas(*_a, **_k):
+            raise RuntimeError("előnézet-hiba")
+
+        monkeypatch.setattr(em, "_elonezet", hibas)
+        tiff = _kameras_tiff()
+        ki = _app1_torzs(_export(_forras(tmp_path, _app1(_EXIF_ID, tiff)), tmp_path), _EXIF_ID)
+        eredeti, uj = _olvas(tiff), _olvas(ki)
+        assert uj["0th"][0x0132][3] != eredeti["0th"][0x0132][3]
+        assert 0xA002 in uj["Exif"] and 0xA003 in uj["Exif"]
+        assert uj["1st"][0x0201][3] == eredeti["1st"][0x0201][3]
+        assert uj["1st"][0x0202][3] == eredeti["1st"][0x0202][3]
+
+
+class TestLegalsoVedohalo:
+    def test_a_beszuras_hibaja_utan_is_megvan_a_kep(self, tmp_path, monkeypatch, caplog):
+        """J3: a fő út ÉS a bájtmásolás is dob — a kép metaadat nélkül megy ki."""
+
+        def hibas(*_a, **_k):
+            raise RuntimeError("beszúrás-hiba")
+
+        monkeypatch.setattr(em, "_beszur", hibas)
+        source = _forras(tmp_path, _app1(_EXIF_ID, _kameras_tiff()))
+        with caplog.at_level("WARNING"):
+            kimenet = _export(source, tmp_path)
+        with Image.open(kimenet) as kep:
+            assert kep.size == (80, 60)
+        assert _app1_torzs(kimenet, _EXIF_ID) is None
+        assert any("metaadat nélkül" in r.getMessage() for r in caplog.records)

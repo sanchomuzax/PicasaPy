@@ -1757,11 +1757,17 @@ Fejlesztés: **#3961**.
   **bájtra marad**: a meglévő, elférő érték helyben íródik (`DateTime`,
   `PixelX/YDimension`), az új tag pedig az IFD **másolatába** kerül, amely a
   blokk VÉGÉRE fűződik; csak a rá mutató eltolás változik, a régi IFD árván
-  marad. Önellenőrzés: a forrás minden más bájtja változatlan.
+  marad. Helyben írni csak a fejléc utáni, a forráson belüli, IFD-táblát nem
+  fedő helyre szabad; a fájlból olvasott darabszám a határellenőrzés előtt
+  nem foglal. Önellenőrzés: a forrás minden más bájtja változatlan, ÉS a
+  kimenetet visszaolvasva (IFD0 → Exif → IFD1) minden forrás-tag típusa,
+  darabszáma és értéke egyezik a szándékosan írtakon kívül.
 - A frissített mezők: `DateTime` = az export ideje; `PixelX/YDimension` = a
   kimenet mérete; a hiányzó `Software`/`Artist` (`PicasaPy`, #1642),
   `DateTimeOriginal` (a forrásfájl mtime-ja), `ExifVersion` (`0220`) pótolva,
-  a meglévő marad.
+  a meglévő marad. Ez a 16. A) táblázat általános szabálya; az olyan forrás,
+  amelynek van EXIF-je, de a `Software`/`Artist`/`DateTimeOriginal` hiányzik
+  belőle, **külön nincs mérve** — ott is az általános szabályt követjük.
 - **IFD1-előnézet:** ha a forrásnak volt JPEG-előnézete, a kimenetből
   újragenerálva (160×120-ba férő JPEG); ha nem generálható, vagy vele a
   szegmens túllépné a 64 KiB-ot, a forrásé marad. Előnézet nélküli forráshoz

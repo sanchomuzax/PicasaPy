@@ -27,8 +27,14 @@ A beágyazott előnézet (IFD1) cseréje ugyanígy: ha a régi előnézet a blok
 végén ül, az helyére kerül az új; ha nem, az új a végére fűződik. Az IFD1
 `JPEGInterchangeFormat`/`…Length` mezője helyben íródik.
 
-A végén egy önellenőrzés fut: a kimenet a forrás hosszáig bájtra egyezik a
-forrással, kivéve a helyben írt tartományokat (és a lecserélt előnézetet).
+A helyben írás célja csak a fejléc (8 bájt) utáni, a forrás hosszán belüli,
+egyik olvasott IFD-táblát sem fedő tartomány lehet; a fájlból olvasott
+darabszám a határellenőrzés ELŐTT nem foglalhat (#3964).
+
+A végén két önellenőrzés fut: (1) a kimenet a forrás hosszáig bájtra egyezik
+a forrással, kivéve a helyben írt tartományokat (és a lecserélt előnézetet);
+(2) a kimenetet visszaolvasva (IFD0 → Exif → IFD1) minden forrás-tag típusa,
+darabszáma és értéke egyezik, kivéve a szándékosan írtakat.
 Bármi váratlanra `TiffHiba` — a hívó ilyenkor a forrás bájtjait adja tovább.
 """
 
@@ -93,6 +99,7 @@ class _Blokk:
         self.buf = bytearray(tiff)
         self.eredeti_hossz = len(tiff)
         self.irt: list[tuple[int, int]] = []  # helyben írt [kezdet, vég)
+        self.tablak: list[tuple[int, int]] = []  # olvasott IFD-táblák [kezdet, vég)
 
     # --- olvasás ---
     def u16(self, off: int) -> int:
@@ -110,6 +117,7 @@ class _Blokk:
     def ifd(self, off: int) -> tuple[list[_Bejegyzes], int]:
         n = self.u16(off)
         self._hatar(off, 2 + 12 * n + 4)
+        self.tablak.append((off, off + 2 + 12 * n + 4))
         bejegyzesek = []
         for i in range(n):
             hely = off + 2 + 12 * i
@@ -144,6 +152,15 @@ def _nyers(blokk: _Blokk, ertek: Ertek) -> tuple[int, int, bytes]:
     return ertek.tipus, len(ertek.tartalom), ertek.tartalom
 
 
+def _cel_szabad(blokk: _Blokk, kezdet: int, hossz: int) -> bool:
+    """A `[kezdet, kezdet+hossz)` a fejléc után, a forrás hosszán belül van,
+    és egyik olvasott IFD-táblát sem fedi — ide szabad írni/cserélni."""
+    veg = kezdet + hossz
+    if kezdet < 8 or veg > blokk.eredeti_hossz:
+        return False
+    return not any(kezdet < t_veg and t_kezdet < veg for t_kezdet, t_veg in blokk.tablak)
+
+
 def _helyben_irhato(blokk: _Blokk, meglevo: _Bejegyzes, ertek: Ertek) -> bool:
     """Felülírja a meglévő értéket a saját helyén, ha lehet."""
     if isinstance(ertek.tartalom, int):
@@ -155,9 +172,17 @@ def _helyben_irhato(blokk: _Blokk, meglevo: _Bejegyzes, ertek: Ertek) -> bool:
         return True
     if meglevo.tipus != ertek.tipus or meglevo.darab < len(ertek.tartalom):
         return False
-    adat = ertek.tartalom.ljust(meglevo.darab, b"\x00")
-    hely = meglevo.hely + 8 if len(adat) <= 4 else blokk.u32(meglevo.hely + 8)
-    blokk.ir_helyben(hely, adat)
+    # a fájlból olvasott darabszám (akár 0xFFFFFFFF) előbb a határon megy át,
+    # csak utána foglal (#3964 B1)
+    meret = _TIPUS_MERET.get(meglevo.tipus, 1) * meglevo.darab
+    if meret <= 4:
+        hely = meglevo.hely + 8
+    else:
+        hely = blokk.u32(meglevo.hely + 8)
+        blokk._hatar(hely, meret)
+        if not _cel_szabad(blokk, hely, meret):
+            return False
+    blokk.ir_helyben(hely, ertek.tartalom.ljust(meret, b"\x00"))
     return True
 
 
@@ -188,6 +213,8 @@ def _athelyez(
         for b in bejegyzesek
     }
     sorok.update({tag: (t, d, nyers, True) for tag, (t, d, nyers) in uj.items()})
+    if len(sorok) > 0xFFFF:
+        raise TiffHiba("túl sok bejegyzés")
     if len(blokk.buf) % 2:
         blokk.buf.append(0)
     kezdet = len(blokk.buf)
@@ -209,14 +236,18 @@ def _athelyez(
     return kezdet
 
 
-def _elonezet_csere(blokk: _Blokk, ifd1_off: int, uj_kep: bytes) -> None:
-    """Az IFD1 JPEG-előnézete helyett `uj_kep`; nem megfelelő IFD1-nél kimarad."""
-    tagek = {b.tag: b for b in blokk.ifd(ifd1_off)[0]}
+def _elonezet_csere(blokk: _Blokk, ifd1: list[_Bejegyzes], uj_kep: bytes) -> bool:
+    """Az IFD1 JPEG-előnézete helyett `uj_kep`; nem megfelelő IFD1-nél kimarad
+    (`False`)."""
+    tagek = {b.tag: b for b in ifd1}
     hely, hossz = tagek.get(_JPEG_ELONEZET), tagek.get(_JPEG_ELONEZET_HOSSZ)
     if not hely or not hossz or {hely.tipus, hossz.tipus} != {LONG} or hely.darab != 1:
-        return
+        return False
     regi_kezdet, regi_hossz = blokk.u32(hely.hely + 8), blokk.u32(hossz.hely + 8)
-    if regi_kezdet + regi_hossz == blokk.eredeti_hossz == len(blokk.buf):
+    if (
+        regi_kezdet + regi_hossz == blokk.eredeti_hossz == len(blokk.buf)
+        and _cel_szabad(blokk, regi_kezdet, regi_hossz)
+    ):
         # a régi előnézet a blokk végén: a helyére kerül az új
         del blokk.buf[regi_kezdet:]
         blokk.eredeti_hossz = regi_kezdet
@@ -226,6 +257,7 @@ def _elonezet_csere(blokk: _Blokk, ifd1_off: int, uj_kep: bytes) -> None:
         kezdet = blokk.hozzafuz(uj_kep)
     blokk.ir_helyben(hely.hely + 8, blokk.egesz(LONG, kezdet))
     blokk.ir_helyben(hossz.hely + 8, blokk.egesz(LONG, len(uj_kep)))
+    return True
 
 
 def _ellenoriz(forras: bytes, blokk: _Blokk, csonk: int) -> None:
@@ -237,6 +269,61 @@ def _ellenoriz(forras: bytes, blokk: _Blokk, csonk: int) -> None:
         if kezdet > pos and blokk.buf[pos:kezdet] != forras[pos:kezdet]:
             raise TiffHiba("önellenőrzés: elmozdult forrásbájt")
         pos = max(pos, veg)
+
+
+def _tartalom(blokk: _Blokk, b: _Bejegyzes) -> tuple[int, int, bytes]:
+    """(típus, darab, érték-bájtok); ismeretlen típusnál a nyers 4 bájtos
+    mező. A szelet a blokk hosszán túl nem foglal."""
+    mezo = bytes(blokk.buf[b.hely + 8 : b.hely + 12])
+    elem = _TIPUS_MERET.get(b.tipus)
+    if elem is None or elem * b.darab <= 4:
+        return b.tipus, b.darab, mezo
+    off = blokk.u32(b.hely + 8)
+    return b.tipus, b.darab, bytes(blokk.buf[off : off + elem * b.darab])
+
+
+def _szerkezet(tiff: bytes) -> dict[tuple[str, int], tuple[int, int, bytes]]:
+    """A blokk tagjei visszaolvasva: IFD0 → Exif → IFD1."""
+    blokk = _Blokk(tiff)
+    ifd0, ifd1_off = blokk.ifd(blokk.u32(4))
+    out = {("0th", b.tag): _tartalom(blokk, b) for b in ifd0}
+    mutato = next((b for b in ifd0 if b.tag == _EXIF_MUTATO), None)
+    if mutato is not None and mutato.tipus in (LONG, 13) and mutato.darab == 1:
+        for b in blokk.ifd(blokk.u32(mutato.hely + 8))[0]:
+            out[("Exif", b.tag)] = _tartalom(blokk, b)
+    if ifd1_off:
+        for b in blokk.ifd(ifd1_off)[0]:
+            out[("1st", b.tag)] = _tartalom(blokk, b)
+    return out
+
+
+def _ellenoriz_szerkezet(
+    forras: bytes, kimenet: bytes, szandekolt: set[tuple[str, int]]
+) -> None:
+    """Minden forrás-tag — a szándékosan írtakon kívül — típusra, darabra és
+    értékre változatlanul olvasható vissza a kimenetből."""
+    regi, uj = _szerkezet(forras), _szerkezet(kimenet)
+    for kulcs, ertek in regi.items():
+        if kulcs not in szandekolt and uj.get(kulcs) != ertek:
+            raise TiffHiba(f"önellenőrzés: megváltozott tag {kulcs[0]}/{kulcs[1]:#06x}")
+
+
+def _szandekolt(valtozasok: list[Valtozas], elonezet_csere: bool) -> set[tuple[str, int]]:
+    kulcsok = {(v.ifd, v.tag) for v in valtozasok if not v.csak_ha_hianyzik}
+    kulcsok.add(("0th", _EXIF_MUTATO))
+    if elonezet_csere:
+        kulcsok |= {("1st", _JPEG_ELONEZET), ("1st", _JPEG_ELONEZET_HOSSZ)}
+    return kulcsok
+
+
+def _exif_ifd(
+    blokk: _Blokk, exif_mutato: _Bejegyzes | None
+) -> tuple[list[_Bejegyzes], int]:
+    if exif_mutato is None:
+        return [], 0
+    if exif_mutato.tipus not in (LONG, 13) or exif_mutato.darab != 1:
+        raise TiffHiba("ExifIFD-mutató típusa")
+    return blokk.ifd(blokk.u32(exif_mutato.hely + 8))
 
 
 def frissitett_tiff(
@@ -254,23 +341,21 @@ def frissitett_tiff(
     blokk = _Blokk(forras)
     ifd0_off = blokk.u32(4)
     ifd0, ifd1_off = blokk.ifd(ifd0_off)
-    if ifd1_off and elonezet is not None:
+    exif_valtozasok = [v for v in valtozasok if v.ifd == "Exif"]
+    exif_mutato = next((b for b in ifd0 if b.tag == _EXIF_MUTATO), None)
+    # minden érintett IFD-tábla a helyben írás ELŐTT beolvasva: a célkorlát
+    # (`_cel_szabad`) mindegyiket ismeri
+    exif, exif_kov = _exif_ifd(blokk, exif_mutato) if exif_valtozasok else ([], 0)
+    ifd1 = blokk.ifd(ifd1_off)[0] if ifd1_off else []
+    elonezet_csere = False
+    if ifd1 and elonezet is not None:
         uj_kep = elonezet()
         if uj_kep:
-            _elonezet_csere(blokk, ifd1_off, uj_kep)
+            elonezet_csere = _elonezet_csere(blokk, ifd1, uj_kep)
     csonk = blokk.eredeti_hossz
 
     uj0 = _alkalmaz(blokk, ifd0, [v for v in valtozasok if v.ifd == "0th"])
-    exif_valtozasok = [v for v in valtozasok if v.ifd == "Exif"]
-    exif_mutato = next((b for b in ifd0 if b.tag == _EXIF_MUTATO), None)
     if exif_valtozasok:
-        if exif_mutato is not None:
-            if exif_mutato.tipus not in (LONG, 13) or exif_mutato.darab != 1:
-                raise TiffHiba("ExifIFD-mutató típusa")
-            exif_off = blokk.u32(exif_mutato.hely + 8)
-            exif, exif_kov = blokk.ifd(exif_off)
-        else:
-            exif, exif_kov = [], 0
         uj_exif = _alkalmaz(blokk, exif, exif_valtozasok)
         if uj_exif:
             uj_off = _athelyez(blokk, exif, uj_exif, exif_kov)
@@ -281,6 +366,8 @@ def frissitett_tiff(
     if uj0:
         uj_ifd0 = _athelyez(blokk, ifd0, uj0, ifd1_off)
         blokk.buf[4:8] = blokk.egesz(LONG, uj_ifd0)
+    kimenet = bytes(blokk.buf)
     if tiff is not None:
         _ellenoriz(forras, blokk, csonk)
-    return bytes(blokk.buf)
+        _ellenoriz_szerkezet(forras, kimenet, _szandekolt(valtozasok, elonezet_csere))
+    return kimenet

@@ -195,7 +195,9 @@ def _exif_szegmens(
 ) -> bytes | None:
     """A frissített EXIF-APP1, vagy `None` (akkor a forrásé megy bájtra)."""
     valtozasok = _exif_valtozasok(size, now, source_taken_at(source))
-    torzs = frissitett_tiff(tiff, valtozasok, elonezet=lambda: _elonezet(encoded, size))
+    torzs = frissitett_tiff(
+        tiff, valtozasok, elonezet=lambda: _vedett("előnézet", lambda: _elonezet(encoded, size))
+    )
     szegmens = _app1_ha_elfer(_EXIF_ID, torzs)
     if szegmens is None:
         # az új előnézettel nem fér el: a forrás előnézete marad

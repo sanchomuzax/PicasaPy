@@ -12,6 +12,7 @@ QML) az integrátor lépése."""
 from __future__ import annotations
 
 import io
+import logging
 import shutil
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -31,6 +32,8 @@ from picasapy.render.flip import apply_flip
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
+
+_LOG = logging.getLogger(__name__)
 
 # #1611: FÜGGVÉNY, nem modulszintű konstans — modulszinten a `cv2.ROTATE_*`
 # olvasása a BETÖLTÉSKOR behozná az OpenCV-t, és az `export` az indulási
@@ -627,11 +630,17 @@ def _transfer_metadata(
     (APP13) változatlanul megy. `size` a kimeneti kép (szélesség, magasság).
 
     A kép exportja SOHA nem bukhat el a metaadat miatt: bármely hibánál a
-    régi, bájtra másoló út (#136) a kimenet."""
+    régi, bájtra másoló út (#136) a kimenet; ha az is dob (ugyanazt a
+    szegmens-kódot használja), a kép metaadat nélkül megy ki."""
     try:
         return frissitett_metaadat(source, encoded, size=size)
     except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
+        _LOG.warning("export: a metaadat-frissítés hibázott, bájtmásolás", exc_info=True)
+    try:
         return bajtmasolas(source, encoded)
+    except Exception:  # noqa: BLE001 — a kép SOHA nem eshet ki az exportból
+        _LOG.warning("export: %s metaadat nélkül exportálva", source, exc_info=True)
+        return encoded
 
 
 def _unique_target(target_dir: Path, stem: str, suffix: str) -> Path:
