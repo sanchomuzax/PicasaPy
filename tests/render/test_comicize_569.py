@@ -209,10 +209,16 @@ class TestComicizeOutput:
 
     def test_white_stays_white_in_the_centre_the_glow_darkens_the_edge(self):
         """A blokkot nyitó fekete belső ragyogás (788. sor, #3522) a kép
-        szélét sötétíti — a közép fehér marad."""
+        szélét sötétíti — a közép fehér marad.
+
+        A középen 254, nem 255: a `BlendAlpha` egész keverője (#3878,
+        `w = trunc(α·256) − 1`, `>> 8`) két 255-ös bemenetből 254-et ad."""
         ki = apply_comicize(np.full((200, 700, 3), 255, np.uint8))
-        assert ki[90:110, 340:360].min() == 255
-        assert ki[0, 0, 0] < 230
+        assert ki[90:110, 340:360].min() == 254
+        assert ki[90:110, 340:360].max() == 254
+        # a sarok-csempe pontja: a rács középre igazított (#3878), a (0,0)
+        # képpont nem feltétlenül esik pontra
+        assert ki[:11, :11, 0].min() < 230
 
     def test_input_is_not_mutated(self):
         image = _flat(120)

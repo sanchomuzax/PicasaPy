@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
+  az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
+  helyükön ülnek, és az árnyalatok nem térnek el egy-egy szinttel (#3878).
+
 - A Finomhangolás szélsőséges (fordított fekete-/fehérpontú) beállításánál
   a kép már nem egyszínű fehér: az eredeti Picasához hasonlóan szinte csupa
   fehér, a tiszta fehér képpontok feketék, és szórtan a fordított tónus
