@@ -1107,7 +1107,7 @@ A maszk tehát nem a tintelt és az eredeti képet keveri, hanem **a tint szín�
 
 A csonkoló tábla a közös maszkot használó másik két effektet is a zajszintre viszi: `radblur` alap/max 0,060/0,118 → 0,004/0,007, `radsat` alap 0,013 → 0,000. A fókuszos effektek (`focalbw`, `picnikfocalpixelate`, `focalzoom`) nem változnak.
 
-**Nálunk:** `render/tinting.py::apply_radtint` (képkeverés) és `render/radial_mask.py::radial_weight_table` (`np.rint`) → fejlesztés: #3946.
+**Nálunk:** `render/tinting.py::apply_radtint` (képkeverés) és `render/radial_mask.py::radial_weight_table` (`np.rint`) → fejlesztés: #3946. A #3946 óta a kód a fenti munkafüggvényt futtatja (csonkolt középpont, `t′` a fehér felé, `trunc` tábla); őre: `tests/render/test_radtint_munkafuggveny_3946.py`. A 684-es golden-mérés (újratömörítve) a beolvasztás előtt: `radtint` min/alap/max 0,000/0,000/0,000 (bitre egyezik), `radblur` alap/max 0,004/0,007, `radsat` alap 0,000; más sor nem változott.
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 

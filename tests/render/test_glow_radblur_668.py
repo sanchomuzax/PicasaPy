@@ -192,11 +192,11 @@ class TestRadialMaskTabla:
     def test_smoothstep_alaku_es_nem_linearis(self) -> None:
         # 400×400, Size = 0 → a korong sugara 200 px, a lépték 2^6.
         # A normált 0,25 / 0,5 / 0,75 sugárnál a natív smoothstep
-        # (`(3−2u)·u²·255`) rendre 215 / 128 / 40 — a LINEÁRIS átmenet
-        # ugyanitt 191 / 128 / 64 volna.
+        # (`(3−2u)·u²·255`, CSONKOLVA — #3946) rendre 215 / 127 / 39 — a
+        # LINEÁRIS átmenet ugyanitt 191 / 127 / 63 volna.
         table, shift = radial_weight_table(400, 400, 0.0, 0.0)
         assert shift == 6
-        assert [int(table[i]) for i in (39, 156, 352)] == [215, 128, 40]
+        assert [int(table[i]) for i in (39, 156, 352)] == [215, 127, 39]
 
     def test_az_elesseg_meredekebb_atmenetet_ad(self) -> None:
         lagy, _ = radial_weight_table(1600, 1200, 0.3, 0.0)

@@ -54,8 +54,8 @@ _RANGE_VALIDATED_PARAM_POSITIONS: dict[str, tuple[tuple[int, int], ...]] = {
     #: képlet a nyers `.picasa.ini`-értéket kapja. A `finetune_level_lut`
     #: (`tone.py`) ezért NEM vág 0,48-ra; a szélsőséges, feketepontot a
     #: fehérpont fölé toló esetet (`finetune__max`/`finetune2__max`,
-    #: Shadows=1,0) a `native_level_lut` `black > white` ága kezeli külön
-    #: (teljes fehér, ld. ott). A Derítőfény(0) és a Színhőmérséklet(3)
+    #: Shadows=1,0) a natív képlet csökkenő táblaként kezeli (#3871, spec
+    #: 2.2/d, ld. `native_level_lut`). A Derítőfény(0) és a Színhőmérséklet(3)
     #: pozíció marad vágva — azok a golden-mérésben nem voltak hibaforrás.
     #:
     #: ⚠️ Ez a tábla ÉS a `tone.finetune_level_lut` KÉT FÜGGETLEN vágás

@@ -7,6 +7,28 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.637] – 2026-09-29
+
+### Javítva
+- A Sugaras árnyalás az eredeti Picasa módján színez: a kör közepe felé nem
+  az eredeti és a színezett képet keveri, hanem magát a színt világosítja
+  fehérig; a Lágy fókusz, a Fókuszos telítetlenítés és a Sugaras árnyalás
+  közös, kör alakú átmenete pedig az eredeti szerint lefelé kerekít (#3946).
+- Az elforgatott (álló) fényképek exportja nem fordul el kétszer: a kimenet
+  tájolás-jelzője alaphelyzetbe áll, mert a képpontok már a helyes állásban
+  vannak; a változatlan másolat a forrás jelzőjét megtartja (#3966).
+
+## [0.8.636] – 2026-09-29
+
+### Javítva
+- A Finomhangolás szélsőséges (fordított fekete-/fehérpontú) beállításánál
+  a kép már nem egyszínű fehér: az eredeti Picasához hasonlóan szinte csupa
+  fehér, a tiszta fehér képpontok feketék, és szórtan a fordított tónus
+  látszik (#3871).
+- A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
+  az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
+  helyükön ülnek, és az árnyalatok nem térnek el egy-egy szinttel (#3878).
+
 ### Javítva
 - **A Fekete-fehér effekt pontosan úgy szürkít, mint az eredeti Picasa
   (#3613).** Eddig a telített színeken (kék, sárga, cián, bíbor) legfeljebb

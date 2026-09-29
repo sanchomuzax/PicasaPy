@@ -23,6 +23,8 @@ a kék csatorna EGY dwordbe csomagolva megy, és a lezáró osztás `shr`:
     add    ecx, esi
 
 Az őr ezt a blokkot bitpontosan újrajátssza, és a mi képletünkhöz méri.
+A súlytábla, amellyel a natív mást eteti, a #3946 óta CSONKOL (`0x0090aeb0`,
+`or eax, 0xc00` a `fistp` előtt) — ezt az őr külön is rögzíti.
 """
 
 from __future__ import annotations
@@ -117,6 +119,18 @@ class TestAlkalmazoPadloz:
         assert eredmeny.max() <= 201
         kozeppont = int(eredmeny[magassag // 2, szelesseg // 2, 0])
         assert kozeppont == 20
+
+    def test_a_nativ_masnak_adott_tabla_csonkol(self) -> None:
+        """#3946: a tábla `trunc((3 − 2v)·v²·255)`, nem kerekített."""
+        from picasapy.render.radial_mask import radial_weight_table
+
+        tabla, eltolas = radial_weight_table(20, 16, 0.8, 0.2)
+        r2 = (min(20, 16) / 2.0 * 1.8) ** 2 / 2**eltolas
+        i = np.arange(tabla.size, dtype=np.float64)
+        v = 1.0 - np.clip(0.5 + (np.sqrt(i / r2) - 0.5) / (1.0 - 0.2 * 0.99), 0, 1)
+        nyers = (3.0 - 2.0 * v) * v * v * 255.0
+        np.testing.assert_array_equal(tabla, np.trunc(nyers).astype(np.int64))
+        assert np.any(np.rint(nyers) != np.trunc(nyers)), "az őr vak"
 
     def test_a_teljes_kep_egyezik_a_nativ_blokkal(self) -> None:
         """Képpontonkénti egyezés a bitpontos natív mással."""

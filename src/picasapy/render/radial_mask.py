@@ -10,7 +10,7 @@ r  = min(szélesség, magasság) / 2 · (Size + 1,0)
 r2 = r²;  shift = 0
 while (r2 > 1024) { r2 ·= 0,5;  shift++ }
 
-tábla[i] = round( (3 − 2u)·u²·255 ),  ahol
+tábla[i] = trunc( (3 − 2u)·u²·255 ),  ahol     ← CSONKOL (#3946)
     d = sqrt( (i/1024) · (1024/r2) )        ← normált sugár, d = táv / r
     v = clamp( 0,5 + (d − 0,5) / (1 − Sharpness·0,99), 0, 1 )
     u = 1 − v
@@ -96,20 +96,34 @@ def radial_weight_table(
     span = 1.0 - float(sharpness) * _SHARPNESS_SCALE
     edge = np.clip(0.5 + (normalized - 0.5) / max(span, 1e-9), 0.0, 1.0)
     inner = 1.0 - edge
-    table = np.rint((3.0 - 2.0 * inner) * inner * inner * 255.0)
+    # CSONKOL, nem kerekít (#3945/#3946): a `0x0090aeb0` a `fistp` előtt
+    # `or eax, 0xc00`-val (`0x0090b01f`) csonkolásra állítja a vezérlőszót.
+    table = np.trunc((3.0 - 2.0 * inner) * inner * inner * 255.0)
     return table.astype(np.int64), shift
 
 
 def squared_distance_index(
-    width: int, height: int, x: float, y: float, shift: int
+    width: int,
+    height: int,
+    x: float,
+    y: float,
+    shift: int,
+    *,
+    truncate_center: bool = False,
 ) -> np.ndarray:
     """A natív `idx = (dx² + dy²) >> shift` rács (egész aritmetikával).
 
-    A középpont `round(W·x)`, `round(H·y)`. A `radblur` keverése és a
-    `radsat` magja (`0x0090b660`) egyaránt így indexeli a súlytáblát.
+    A középpont alapból `round(W·x)`, `round(H·y)` — a `radblur` keverése és
+    a `radsat` magja (`0x0090b660`) így indexeli a súlytáblát. A `radtint`
+    munkafüggvénye (`0x0090b370`) a középpontot csonkolja: `trunc(f32(W·x))`
+    (`or 0xc00` a `fistp` előtt, #3946) — ezt a `truncate_center` kéri.
     """
-    center_x = round(width * float(x))
-    center_y = round(height * float(y))
+    if truncate_center:
+        center_x = int(np.float32(width) * np.float32(x))
+        center_y = int(np.float32(height) * np.float32(y))
+    else:
+        center_x = round(width * float(x))
+        center_y = round(height * float(y))
     columns = (np.arange(width, dtype=np.int64) - center_x) ** 2
     rows = (np.arange(height, dtype=np.int64) - center_y) ** 2
     return (rows[:, np.newaxis] + columns[np.newaxis, :]) >> shift

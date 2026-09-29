@@ -56,6 +56,32 @@ def dot_size_for(width: int) -> int:
     return int(round(width / _DOT_SIZE_DIVISOR)) + 1
 
 
+def tiled_mask_origin(
+    width: int, height: int, tile: int, offset_x: float = 0.0, offset_y: float = 0.0
+) -> tuple[int, int]:
+    """A `TiledImageMask` rácsának origója képpontban (#3876, #3878).
+
+    A rács `⌈W/t⌉·t × ⌈H/t⌉·t` méretű (`0x00bbb070`), és KÖZÉPRE igazított:
+    az origó `(W − rácsszélesség)/2`, **nulla felé csonkoló** egész osztással
+    (`cdq` / `sub` / `sar 1`, `0x00bba7b7`–`0x00bba7ca`), plusz a szintén
+    csonkolt eltolás (`or 0xc00` + `fistp`, `0x00bba7a5`–`0x00bba7dc`);
+    függőlegesen ugyanígy. 960 × 640-en, `t = 15`-tel `(0, −2)`, fél csempés
+    (7,5-ös) eltolással `(7, 5)`.
+
+    A csempe közepe az origótól `t/2`-re van, és a rácsoló a képpont
+    INDEXÉBŐL mér (`0x008f3b61` `fldz`): a `tiled_dot_ramp` ezt
+    `offset = origó + 0,5`-tel adja vissza.
+    """
+    if tile < 1:
+        raise ValueError(f"Érvénytelen csempeméret: {tile}")
+
+    def _tengely(meret: int, eltolas: float) -> int:
+        racs = int(np.ceil(np.float32(meret) / np.float32(tile))) * tile
+        return int((meret - racs) / 2) + int(eltolas)
+
+    return _tengely(width, offset_x), _tengely(height, offset_y)
+
+
 def tiled_dot_ramp(
     height: int,
     width: int,
@@ -157,4 +183,5 @@ __all__ = [
     "native_dot_mask",
     "tiled_dot_mask",
     "tiled_dot_ramp",
+    "tiled_mask_origin",
 ]
