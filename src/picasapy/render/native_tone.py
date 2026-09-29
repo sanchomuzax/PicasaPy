@@ -34,8 +34,9 @@ mindhárom csatornára, csempézés és szálindítás nélkül.
 | `contrast__min` | 0,2954 | 0,3347 | 44,56 |
 
 ⚠️ **A ΔE tehát NEM javult, hanem kicsit ROMLOTT** (+0,04…+0,08) — és ennek
-megvan az oka: a mi zajmintánk **nem azonos** a natívéval (más temperáló
-maszkok, és a natív generátor állapota folyamat-globális), ezért a két zaj
+megvan az oka: a mi zajmintánk **nem azonos** a natívéval (a generátor
+ugyanaz a szabványos MT19937, de a natív állapota folyamat-globális, így a
+minták helye a képen nem reprodukálható — spec 2.2/c.3, 2.2/d), ezért a két zaj
 nem oltja ki egymást, hanem **összeadódik**. Bitre egyezésre a jegy
 kimondottan nem törekszik.
 
@@ -104,26 +105,19 @@ def native_level_lut(
     csúszkaállásában (fekete = fehér = 1,0) éppen ez adja a mérésben látott
     fekete képet.
 
-    ⛔ **#3418: `black > white` (INVERTÁLT feketepont) → TELJES FEHÉR.** A
-    `finetune`/`finetune2` szűrő wire-formátuma nem korlátozza a Shadows
-    (`black`) paramétert a `filterdesc.xml` UI-tartományára — az csak a
-    csúszkát fogja vissza, a `.picasa.ini`-be kézzel/hibásan írt, tartományon
-    kívüli érték a natív kódot **is** eléri. A 684-es golden mérőkészlet
-    `finetune__max`/`finetune2__max` esete pont ezt méri (Shadows=1,0,
-    Highlights=0,5 → `black=1,0 > white=0,5`): a képlet fenti alakja ekkor
-    egy INVERTÁLT rámpát adna (a sötét bemenet fehér, a világos fekete
-    lenne), a valódi Picasa-export viszont gyakorlatilag **egyenletes
-    fehér** (ΔE a tiszta fehértől 3,4–3,7 — a JPEG zajszintjével egyező
-    nagyságrend). Az invertált-rámpás modellünk ugyanerre 43–47 ΔE-t adott.
-    Nincs dekompilált bizonyíték ARRA, hogyan jut el a natív kód a teljes
-    fehérhez (feltehetően egy előjel nélküli/fixpontos reciprok-tábla
-    „elszáll" negatív osztónál) — ez itt a MÉRÉSBŐL illesztett viselkedés,
-    nem visszafejtett képlet.
+    **Fordított fekete-/fehérpont (`black > white`) → CSÖKKENŐ tábla**
+    (spec 2.2/d, #3867, #3871). A natív építő ilyenkor sem ágazik el: a
+    skála `1 / (white − black)` negatív (`0x0090c211` `fsub`, `0x0090c213`
+    `fdivp`), és a kimenetet előjelesen vágja `[0, 0xFF00]`-ra (`0x0090c287`
+    `jge`, `0x0090c28f` `cmp eax, 0xff00`). A `finetune`/`finetune2` ide jut,
+    ha a `.picasa.ini` nyers értékeinél `Árnyékok > 1 − Kiemelések` (a 684-es
+    készlet `max` sora: `LUT[255] = 0`, a kicsi bemenetek `0xFF00`-ra
+    telítődnek). Hogy ebből miért lesz szinte csupa fehér kép, fekete tiszta
+    fehérrel, azt az alkalmazó előjel nélküli eltolása adja
+    (`apply_native_lut16`).
     """
     if gamma <= 0.0:
         raise ValueError(f"A gamma pozitív kell legyen, nem {gamma}")
-    if black > white:
-        return np.full(256, NATIVE_LUT_FULL, dtype=np.int64)
     scale = 1.0 / (white - black) if white != black else 1.0
     curve = np.power(_LEVELS / 255.0, 1.0 / gamma)
     values = (curve * NATIVE_LUT_FULL - black * NATIVE_LUT_FULL) * scale
@@ -169,8 +163,12 @@ def _dither_minta(darab: int) -> np.ndarray:
 
     MT19937, a mért vetőmaggal — a `numpy` `RandomState`-je **ugyanaz az
     algoritmus** (624 szavas állapot, ugyanaz a temperálás: `>>11`,
-    `<<7 & 0x9d2c5680`… ⚠️ a natív temperáló maszkjai ettől ELTÉRNEK
-    (`0xff3a58ad`, `0xffffdf8c`), tehát a mintasorozat NEM azonos.
+    `<<7 & 0x9d2c5680`, `<<15 & 0xefc60000`, `>>18`). A natív kód a
+    maszkolást az eltolás ELŐTT végzi (`0x0090bf2e` `and edx, 0xff3a58ad` →
+    `0x0090bf34` `shl edx, 7`); eltolva a `0xff3a58ad` / `0xffffdf8c` éppen a
+    szabványos `0x9d2c5680` / `0xefc60000` — a generátor tehát szabványos
+    MT19937 (spec 2.2/d, #3867). A mintasorozat HELYE a képen mégsem
+    reprodukálható, mert a natív generátor állapota folyamat-globális (lent).
 
     Ez tudatos döntés, és a jegy (#3092) ki is mondja: **bitre egyezésre nem
     törekszünk**, mert a natív generátor állapota folyamat-globális (index
@@ -205,7 +203,17 @@ def apply_native_lut16(
     éppen ezért nem sávosodik.
 
     Egy minta jut egy képpontra, mindhárom csatornára ugyanaz ⇒ a zaj
-    **szürke**, nem színes (2.2/b.2)."""
+    **szürke**, nem színes (2.2/b.2).
+
+    **A `(delta · r) >> 8` ELŐJEL NÉLKÜLI** (spec 2.2/d, #3867, #3871): a
+    natív kód `shr`-rel tolja a 32 bites szorzatot (`0x0090bd9f`), a
+    `delta >> 1` és a végső `v >> 8` viszont `sar`, a vágás előjeles.
+    Növekvő táblánál (`delta ≥ 0`) ez nem változtat semmin. Csökkenő
+    táblánál (fordított fekete-/fehérpont, `native_level_lut`) `r > 0`-ra a
+    szorzat `2²⁴ + ⌊delta·r / 256⌋`-ként jön vissza, a kimenet 255; `r = 0`
+    (a képpontok ≈ 1/256-a) a tábla értékét adja, `delta = 0` — köztük a
+    255-ös bemenet a `LUT[256] = LUT[255]` másolat miatt — pedig
+    `LUT[255] >> 8`-at."""
     validate_image(image)
     tabla = np.asarray(lut16, dtype=np.int64)
     if not dither:
@@ -213,7 +221,14 @@ def apply_native_lut16(
         #: A dither ±0,5 szintnyi zajt visz a kimenetbe, ami a golden-lapok
         #: görbe-illesztését elmossa: ott a LUT alakja a mérés tárgya, nem a
         #: zaj. A terméki utak mind a ditherelt ágon mennek.
-        return np.clip(tabla[:256] >> 8, 0, 255).astype(np.uint8)[image]
+        #:
+        #: A csökkenő szakaszokon (`delta < 0`, fordított fekete-/fehérpont)
+        #: a ditherelt ág a képpontok 255/256-odára 255-öt ír (ld. fent);
+        #: itt ezt a többségi értéket adjuk, hogy a zajmentes út (pl. a GPU-s
+        #: előnézet LUT-ja) ne egy invertált rámpát mutasson (#3871).
+        teljes = tabla[:257] if tabla.size >= 257 else np.append(tabla, tabla[-1])
+        sima = np.where(np.diff(teljes) < 0, NATIVE_LUT_FULL, teljes[:256])
+        return np.clip(sima >> 8, 0, 255).astype(np.uint8)[image]
     if _azonossag_lut(tabla):
         #: ⛳ A SEMLEGES beállítás AZONOSSÁG marad — a dither nem nyúl hozzá.
         #:
@@ -241,7 +256,9 @@ def apply_native_lut16(
     #: sorfolytonos bejárás: a minta a KÉPPONTHOZ tartozik, nem a csatornához
     minta = _dither_minta(magassag * szelesseg).reshape(magassag, szelesseg, 1)
 
-    ertek = lo + ((delta * minta) >> 8) - (delta >> 1)
+    #: `shr` a 32 bites szorzaton (előjel nélkül), `sar` a többin (2.2/d)
+    szorzat = ((delta * minta) & 0xFFFFFFFF) >> 8
+    ertek = lo + szorzat - (delta >> 1)
     return np.clip(ertek >> 8, 0, 255).astype(np.uint8)
 
 

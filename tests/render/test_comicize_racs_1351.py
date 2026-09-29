@@ -10,22 +10,23 @@ dekompiláció, se golden-export**:
 * a rács `width`/`height`-ja az `imagewidth`/`imageheight` ⇒ **pontosan a
   kép méretére** feszül;
 * a 793. sor `PixelateImageOperation`-je eltolás nélküli, a 807. soré
-  viszont `offsetX = offsetY = _nDotSize/2` ⇒ a két fázis **a maszkban ÉS
-  a pixelesítésben is** el van tolva fél csempével.
+  viszont `offsetX = offsetY = _nDotSize/2`.
 
-## Amit ez az őr külön állít
-
-A harmadik pont volt a valódi hiány: nálunk a pixelesítés EGYSZER futott,
-eltolás nélkül, és csak a maszk-ág tolódott el. A két fázisnak a
-pixelesítése is különböznie kell — enélkül a fél csempés eltolás fele
-elveszik, és a raszter szabályosabb lesz a kelleténél.
+⛔ **HELYESBÍTVE (#3876, #3878):** a natív alkalmazó (`0x00bbd150`) az
+`offsetX`/`offsetY`-t kiértékeli, de NEM adja tovább a magnak
+(`0x00bbd1d7`–`0x00bbd207`) — a két fázis pixelesítése AZONOS, csak a
+maszk tolódik. A maszk- és a pixelesítő rács ráadásul középre igazított,
+nem a `(0,0)` sarokból indul; ezeket a `test_comicize_maradek_3878.py`
+őrzi. Ez a fájl a rács méretét és a részleges csempe kezelését őrzi.
 """
 from __future__ import annotations
+
+import inspect
 
 import numpy as np
 import pytest
 
-from picasapy.render.effects_artistic import apply_comicize, pixelate_shifted
+from picasapy.render.effects_artistic import apply_comicize, pixelate_centered
 from picasapy.render.halftone import dot_size_for, tiled_dot_ramp
 
 
@@ -72,24 +73,15 @@ class TestARacsAKepMereteReFeszul:
         assert ramp[1, 1] < ramp[3, 3]
 
 
-class TestAMasodikFazisAPixelesitestIsTolja:
-    """#1351 harmadik pontja — ez volt a valódi hiány."""
+class TestAPixelesitesnekNincsEltolasa:
+    """#3878: a 807. sor eltolása a `Pixelate`-ben hatástalan."""
 
-    def test_a_ket_eltolas_KULONBOZO_pixelesitest_ad(self, kep):
-        alap = pixelate_shifted(kep.astype(np.float32), 4, 0.0, 0.0)
-        tolt = pixelate_shifted(kep.astype(np.float32), 4, 2.0, 2.0)
-        assert not np.allclose(alap, tolt), (
-            "a fél csempés eltolás nem érvényesül a pixelesítésben"
-        )
-
-    def test_az_eltolas_nelkuli_ag_valtozatlan_maradt(self, kep):
-        """Az első fázis eltolás nélküli — ezt nem szabad elmozdítani."""
-        a = pixelate_shifted(kep.astype(np.float32), 4, 0.0, 0.0)
-        b = pixelate_shifted(kep.astype(np.float32), 4, 0.0, 0.0)
-        assert np.array_equal(a, b)
+    def test_a_pixelesitonek_nincs_eltolas_parametere(self):
+        parameterek = list(inspect.signature(pixelate_centered).parameters)
+        assert parameterek == ["image", "block_w", "block_h"]
 
     def test_a_pixelesites_megorzi_a_kep_alakjat(self, kep):
-        ki = pixelate_shifted(kep.astype(np.float32), 4, 2.0, 2.0)
+        ki = pixelate_centered(kep, 4, 4)
         assert ki.shape == kep.shape
 
 
