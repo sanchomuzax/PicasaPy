@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Sugaras árnyalás az eredeti Picasa módján színez: a kör közepe felé nem
+  az eredeti és a színezett képet keveri, hanem magát a színt világosítja
+  fehérig; a Lágy fókusz, a Fókuszos telítetlenítés és a Sugaras árnyalás
+  közös, kör alakú átmenete pedig az eredeti szerint lefelé kerekít (#3946).
+- Az elforgatott (álló) fényképek exportja nem fordul el kétszer: a kimenet
+  tájolás-jelzője alaphelyzetbe áll, mert a képpontok már a helyes állásban
+  vannak; a változatlan másolat a forrás jelzőjét megtartja (#3966).
+
 ## [0.8.636] – 2026-09-29
 
 ### Javítva
@@ -17,11 +26,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
   az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
   helyükön ülnek, és az árnyalatok nem térnek el egy-egy szinttel (#3878).
-
-### Javítva
-- Az elforgatott (álló) fényképek exportja nem fordul el kétszer: a kimenet
-  tájolás-jelzője alaphelyzetbe áll, mert a képpontok már a helyes állásban
-  vannak; a változatlan másolat a forrás jelzőjét megtartja (#3966).
 
 ## [0.8.635] – 2026-09-29
 
@@ -34,11 +38,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   megmaradnak, a beágyazott kis előnézet a kész képből készül újra, és ha a
   frissítés bármiért nem sikerül, a kép a forrás metaadataival megy ki —
   az export emiatt soha nem akad el (#3961).
-
-- A Sugaras árnyalás az eredeti Picasa módján színez: a kör közepe felé nem
-  az eredeti és a színezett képet keveri, hanem magát a színt világosítja
-  fehérig; a Lágy fókusz, a Fókuszos telítetlenítés és a Sugaras árnyalás
-  közös, kör alakú átmenete pedig az eredeti szerint lefelé kerekít (#3946).
 
 ## [0.8.634] – 2026-09-29
 
