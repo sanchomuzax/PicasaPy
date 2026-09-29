@@ -8,6 +8,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- Az elforgatott (álló) fényképek exportja nem fordul el kétszer: a kimenet
+  tájolás-jelzője alaphelyzetbe áll, mert a képpontok már a helyes állásban
+  vannak; a változatlan másolat a forrás jelzőjét megtartja (#3966).
+
+## [0.8.635] – 2026-09-29
+
+### Javítva
+- Az exportált kép metaadatai úgy frissülnek, mint az eredeti Picasánál: a
+  módosítás dátuma az export ideje, a kép mérete a kimenet tényleges mérete
+  (átméretezésnél és vágásnál is), a hiányzó szerző, program, készítési dátum
+  és EXIF-verzió pótlódik, és az XMP-ben is frissül a módosítás ideje. A
+  fényképezőgép saját adatai (gyártói jegyzet, ismeretlen mezők) bájtra
+  megmaradnak, a beágyazott kis előnézet a kész képből készül újra, és ha a
+  frissítés bármiért nem sikerül, a kép a forrás metaadataival megy ki —
+  az export emiatt soha nem akad el (#3961).
+
 - A Sugaras árnyalás az eredeti Picasa módján színez: a kör közepe felé nem
   az eredeti és a színezett képet keveri, hanem magát a színt világosítja
   fehérig; a Lágy fókusz, a Fókuszos telítetlenítés és a Sugaras árnyalás
