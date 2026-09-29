@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A csak tükrözött fénykép exportja (és a webes export eredeti méretben) nem veszíti el a tükrözést: a kimenet a tükrözött képpontokkal, újrakódolva készül, nem bájthű másolatként (#3977).
+
 ## [0.8.639] – 2026-09-29
 
 ### Javítva
@@ -16,9 +19,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - Az exportált kép EXIF-je akkor sem veszít el adatot, ha a forrásfájlban egy
   mező kétszer szerepel, és szabálytalan bélyegkép-hossznál a forrás EXIF-je
   változatlanul megy tovább (#3968).
-
-### Javítva
-- A csak tükrözött fénykép exportja (és a webes export eredeti méretben) nem veszíti el a tükrözést: a kimenet a tükrözött képpontokkal, újrakódolva készül, nem bájthű másolatként (#3977).
 
 ## [0.8.638] – 2026-09-29
 
