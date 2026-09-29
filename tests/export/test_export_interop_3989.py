@@ -269,6 +269,45 @@ class TestSzerkezetVedelem:
         assert b"R98\x00" in ki
         assert 0x1001 not in _olvas(ki)["Interop"]
 
+    def test_ket_interop_mutato_es_az_interop_tablara_mutato_datetime_nem_bukik(self):
+        """A kétszer szereplő `0xa005` mellett az Interop-tábla akkor is védett
+        (a `_cel_szabad` látja), ha egy másik tag értéke oda mutat: a `DateTime`
+        áthelyeződik, a kimenet sikeres (nem `TiffHiba`), az Interop-tábla sértetlen."""
+        e = "<"
+        forras = bytearray(_tiff(interop=[(0x0001, 2, 4, b"R98\x00")]))
+        exif_hely = _bejegyzes_helye(forras, 0x8769)
+        interop_off = struct.unpack_from(
+            e + "I", forras, _bejegyzes_helye(forras, 0xA005) + 8
+        )[0]
+        forras += b"\x00" * 32  # szabad hely az Interop-tábla után: a DateTime-érték oda is nyúlhat
+        uj_exif_off = len(forras)
+        uj_exif = _ifd(
+            [(0x9000, 7, 4, b"0230"), (0xA005, 4, 1, _u32(e, interop_off)),
+             (0xA005, 4, 1, _u32(e, interop_off))],
+            uj_exif_off, 0, e,
+        )
+        uj_ifd0_off = uj_exif_off + len(uj_exif)
+        uj_ifd0 = _ifd(
+            [(0x010F, 2, 6, b"Test\x00"), (0x0132, 2, 20, b"2020:01:01 00:00:00\x00"),
+             (0x8769, 4, 1, _u32(e, uj_exif_off))],
+            uj_ifd0_off, 0, e,
+        )
+        assert exif_hely
+        forras += uj_exif + uj_ifd0
+        struct.pack_into(e + "I", forras, 4, uj_ifd0_off)
+        # a DateTime értékmutatója az Interop-táblára
+        dt_hely = _bejegyzes_helye(forras, 0x0132)
+        struct.pack_into(e + "I", forras, dt_hely + 8, interop_off)
+        ki = th.frissitett_tiff(
+            bytes(forras),
+            [th.Valtozas("0th", 0x0132, th.ascii_ertek("2026:09:29 12:00:00")), *_INTEROP],
+        )
+        olv = _olvas(ki)
+        assert olv["0th"][0x0132] == [(2, 20, b"2026:09:29 12:00:00\x00")]
+        assert olv["Interop"][0x0001] == [(2, 4, b"R98\x00")]
+        assert _bejegyzes_tag_darab(ki, 0xA005) == 2
+        assert 0x1001 not in olv["Interop"]
+
     def test_tiff_szinten_interop_valtozas_es_onellenorzes(self):
         forras = _tiff(interop=[(0x0001, 2, 4, b"R98\x00")])
         ki = th.frissitett_tiff(
@@ -304,12 +343,14 @@ class TestSzerkezetVedelem:
 
 
 class TestForrasMeret:
-    def test_tajolt_forras_a_dekodolt_meret(self, tmp_path):
-        # tárolt 1600×1200, Orientation 6 → a dekódolt (kimenettel azonos állású) 1200×1600
+    def test_tajolt_forras_a_tarolt_meretet_kapja(self, tmp_path):
+        """A tájolt (5-8) forrásnál a SOF TÁROLT mérete kerül az Interopba:
+        a felcserélésre nincs sem mérés, sem bináris olvasat (spec 16. E: a forrás
+        `0x4d`/`0x4e`-je). A tájolt eset NINCS mérve, nyitott kérdés: #3996."""
         forras = _forras(tmp_path, _tiff(tajolas=6))
         ki = _kimenet_exif(forras, (1250, 1650))
-        assert ki["Interop"][0x1001][0][2] == struct.pack("<I", 1200)
-        assert ki["Interop"][0x1002][0][2] == struct.pack("<I", 1600)
+        assert ki["Interop"][0x1001][0][2] == struct.pack("<I", 1600)
+        assert ki["Interop"][0x1002][0][2] == struct.pack("<I", 1200)
 
     def test_sof_olvasas(self, tmp_path):
         assert em._forras_meret(_jpeg((123, 45))) == (123, 45)

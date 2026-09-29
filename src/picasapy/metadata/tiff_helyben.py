@@ -342,16 +342,6 @@ def tajolas_1_helyben(tiff: bytes) -> bytes:
     return kimenet
 
 
-def tajolas_olvas(tiff: bytes) -> int | None:
-    """Az IFD0 `Orientation` (0x0112) értéke, ha pontosan egy SHORT×1 tag van;
-    egyébként `None`. Csak olvas."""
-    blokk = _Blokk(tiff)
-    tagek = [b for b in blokk.ifd(blokk.u32(4))[0] if b.tag == _TAJOLAS]
-    if len(tagek) != 1 or tagek[0].tipus != SHORT or tagek[0].darab != 1:
-        return None
-    return blokk.u16(tagek[0].hely + 8)
-
-
 def _elonezet_csere(blokk: _Blokk, ifd1: list[_Bejegyzes], uj_kep: bytes) -> bool:
     """Az IFD1 JPEG-előnézete helyett `uj_kep`; nem megfelelő IFD1-nél kimarad
     (`False`)."""
@@ -515,7 +505,11 @@ def _interop_ifd(
     mutatok = [b for b in exif if b.tag == _INTEROP_MUTATO]
     if not mutatok:
         return None, [], 0
-    if len(mutatok) > 1 or mutatok[0].tipus not in (LONG, 13) or mutatok[0].darab != 1:
+    if len(mutatok) > 1:
+        # az első mutató táblája ettől még olvasott: a `_cel_szabad` védi
+        _mutatott_ifd(blokk, mutatok[0])
+        return None
+    if mutatok[0].tipus not in (LONG, 13) or mutatok[0].darab != 1:
         return None
     try:
         tagek, kovetkezo = blokk.ifd(blokk.u32(mutatok[0].hely + 8))

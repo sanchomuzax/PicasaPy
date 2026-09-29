@@ -21,6 +21,7 @@ from PIL import Image
 from picasapy.export import ExportItem, ExportSettings, export_photos
 from picasapy.export import exporter as exporter_mod
 from picasapy.metadata import export_metadata as em
+from picasapy.metadata import tiff_helyben as th
 
 _EXIF_ID = b"Exif\x00\x00"
 _XMP_ID = b"http://ns.adobe.com/xap/1.0/\x00"
@@ -323,6 +324,7 @@ def test_valodi_xiaomi_jpeg_exif_bajtra_megmarad(tmp_path):
     eredeti, ki = (_olvas(_app1_torzs(p, _EXIF_ID)) for p in (source, kimenet))
     valtozhat = {("0th", 0x0132), ("0th", 0x8769), ("1st", 0x0201), ("1st", 0x0202),
                  ("Exif", 0xA002), ("Exif", 0xA003),
+                 ("Exif", 0xA005),  # #3989: az Interop-tábla áthelyeződik
                  ("0th", 0x0112), ("1st", 0x0112)}  # 0x0112: #3966, lent külön: értéke 1
     bo = "<" if _app1_torzs(kimenet, _EXIF_ID)[:2] == b"II" else ">"
     for ifd in ("0th", "1st"):
@@ -334,6 +336,17 @@ def test_valodi_xiaomi_jpeg_exif_bajtra_megmarad(tmp_path):
                 assert ki[ifd][tag][:2] == (tipus, darab), (ifd, hex(tag))
                 assert ki[ifd][tag][3] == ertek, (ifd, hex(tag))
     assert ki["Exif"][0x927C][2] == eredeti["Exif"][0x927C][2]
+    # #3989: a forrás Interop-mezői változatlanok, a méretek megjelentek. A projekt
+    # saját olvasója (`_szerkezet`): a piexif üres Interop-szótárat ad.
+    forras_tiff, ki_tiff = (_app1_torzs(p, _EXIF_ID) for p in (source, kimenet))
+    forras_szerk = th._szerkezet(forras_tiff, len(forras_tiff))
+    ki_szerk = th._szerkezet(ki_tiff, len(forras_tiff))
+    for tag in (0x0001, 0x0002):
+        assert forras_szerk[("Interop", tag)], hex(tag)
+        assert ki_szerk[("Interop", tag)] == forras_szerk[("Interop", tag)], hex(tag)
+    assert forras_szerk[("Interop", 0x0001)][0][2] == b"R98\x00"
+    assert ("Interop", 0x1001) not in forras_szerk
+    assert ("Interop", 0x1002) in ki_szerk and ("Interop", 0x1001) in ki_szerk
     with Image.open(kimenet) as kep:
         meret = kep.size
     x, y = (ki["Exif"][t] for t in (0xA002, 0xA003))

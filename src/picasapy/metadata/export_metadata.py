@@ -69,7 +69,6 @@ from picasapy.metadata.tiff_helyben import (
     ascii_ertek,
     frissitett_tiff,
     tajolas_1_helyben,
-    tajolas_olvas,
 )
 
 _LOG = logging.getLogger(__name__)
@@ -203,14 +202,6 @@ def _forras_meret(forras_bajt: bytes) -> tuple[int, int] | None:
     return None
 
 
-def _dekodolt_meret(meret: tuple[int, int], tiff: bytes | None) -> tuple[int, int]:
-    """A tárolt méret a tájolás szerint (5–8: felcserélve): a dekódolás a
-    képpontokat elforgatja, a kimenet mérete is ilyen."""
-    if tiff is not None and (tajolas_olvas(tiff) or 1) >= 5:
-        return meret[1], meret[0]
-    return meret
-
-
 def _interop_valtozasok(forras_meret: tuple[int, int] | None) -> list[Valtozas]:
     """Csak ha a forrásnak van mérete (spec 16. G): egyébként az Interop IFD
     üres lenne. Minden tag csak HIÁNYZÓKÉNT íródik; `InteropIndex` nincs."""
@@ -260,9 +251,7 @@ def _exif_szegmens(
     """A frissített EXIF-APP1, vagy `None` (akkor a forrásé megy bájtra)."""
     valtozasok = _exif_valtozasok(size, now, source_taken_at(source))
     if forras_meret is not None:
-        valtozasok += _interop_valtozasok(
-            _vedett_meret(lambda: _dekodolt_meret(forras_meret, tiff))
-        )
+        valtozasok += _interop_valtozasok(forras_meret)
     torzs = frissitett_tiff(
         tiff, valtozasok, elonezet=lambda: _vedett("előnézet", lambda: _elonezet(encoded, size))
     )
