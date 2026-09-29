@@ -40,10 +40,10 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from picasapy.lazy_cv2 import cv2
 
 from picasapy.render.effects_artistic import apply_comicize, comicize_master_curve
 from picasapy.render.halftone import dot_size_for
+from picasapy.render.nativ_blur import blur_image_operation
 
 
 @pytest.fixture
@@ -158,10 +158,9 @@ class TestAzElmosasBenneMaradAKimenetben:
 
     @staticmethod
     def _sotetitett(image: np.ndarray, blur_xy: float) -> np.ndarray:
-        sigma = 1.0 + 20.0 * min(blur_xy, 100.0) / 100.0
-        kep_f = image.astype(np.float32)
-        elmosott = cv2.GaussianBlur(kep_f, (0, 0), sigmaX=sigma, sigmaY=sigma)
-        return np.clip(np.rint(np.minimum(kep_f, elmosott)), 0, 255).astype(np.uint8)
+        # a natív `BlurImageOperation` (#3878; korábban Gauss-szigma)
+        xb = 1.0 + 20.0 * min(blur_xy, 100.0) / 100.0
+        return np.minimum(image, blur_image_operation(image, xb, xb, 3))
 
     def test_dot_fade_100_az_ELMOSOTT_kepet_adja(self, atmenet):
         """Alfa = 0,5 − 100/200 = 0 ⇒ a kimenet PONTOSAN az alap."""
@@ -252,7 +251,9 @@ class TestARaszterMegvan:
     #: 15 exportos mérés őrzi (`TestA15ExportonMerve`).
     #: ⚠️ A #3827 óta (a belső ragyogás natív lánca, a kép szélén más
     #: sötétítés) újramérve: 8,7961.
-    RASZTER_SZORAS = 8.7961
+    #: ⚠️ A #3878 óta (középre igazított maszkrács és `Pixelate`, egész
+    #: keverés; spec: „⛳ A Comicize maradéka”) újramérve: 8,4140.
+    RASZTER_SZORAS = 8.4140
 
     def test_sik_kozeptonon_a_raszter_a_mert_erossegen_all(self):
         """700 px széles kép ⇒ 11 px csempe: a raszter a mért erősségén áll."""

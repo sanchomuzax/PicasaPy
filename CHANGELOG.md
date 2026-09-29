@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
+  az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
+  helyükön ülnek, és az árnyalatok nem térnek el egy-egy szinttel (#3878).
+
 ## [0.8.633] – 2026-09-29
 
 ### Javítva

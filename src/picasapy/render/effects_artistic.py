@@ -40,8 +40,10 @@ import numpy as np
 
 from picasapy.render.curves import curve_lut, validate_image
 from picasapy.render.belso_ragyogas import inner_glow
+from picasapy.render.glimmer_ops import resize_image
 from picasapy.render.glimmer_tone import VIGNETTE_XBLUR_FACTOR
-from picasapy.render.halftone import dot_size_for, native_dot_mask
+from picasapy.render.halftone import dot_size_for, native_dot_mask, tiled_mask_origin
+from picasapy.render.nativ_blur import blur_image_operation
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
@@ -180,41 +182,42 @@ def apply_pencil_sketch(
     return _to_uint8(gray_rgb + mix * (image_f - gray_rgb))
 
 
-def pixelate_shifted(image: np.ndarray, tile: int, offset_x: float, offset_y: float) -> np.ndarray:
-    """Csempeméretű pixelesítés, `offset`-tel eltolt rácson (#1351).
+def _kozepre_racs(meret: int, blokk: int, darab: int) -> np.ndarray:
+    """A legközelebbi-szomszéd visszanagyítás forrásindexe egy tengelyen.
 
-    A `glimmer` `PixelateImageOperation`-je `offsetX`/`offsetY`
-    paramétert is kap; a `Comicize` második fázisában ez
-    `_nDotSize/2` — a rács fél csempével el van tolva.
-
-    ⚠️ **NINCS szegély-kiterjesztés**: a `filterdesc.xml`-ben egyik maszk
-    sem ad meg `padding` értéket, tehát mind a négy 0, és a rács pontosan
-    a kép méretére feszül. A jobb/alsó szélen kilógó csempét a KÉPHATÁR
-    vágja — ezért dolgozunk `cv2.INTER_AREA`/`INTER_NEAREST` párral egy
-    eltolt vágáson, és nem `copyMakeBorder`-rel.
+    A mintavevő (`0x009e7420`) a cél képpont KÖZEPÉT vetíti vissza,
+    `blokk`-szoros léptékkel és `(meret − darab·blokk)/2` eltolással
+    (`0x00bce178`–`0x00bce1b0`), majd lefelé csonkol; a kilógó rész a két
+    szélen egyenlően oszlik meg.
     """
-    height, width = image.shape[:2]
-    dx = int(round(offset_x)) % max(1, tile)
-    dy = int(round(offset_y)) % max(1, tile)
-    if dx == 0 and dy == 0:
-        kicsi = cv2.resize(
-            image,
-            (max(1, width // tile), max(1, height // tile)),
-            interpolation=cv2.INTER_AREA,
-        )
-        return cv2.resize(kicsi, (width, height), interpolation=cv2.INTER_NEAREST)
+    eltolas = (meret - darab * blokk) / 2.0
+    forras = np.floor((np.arange(meret, dtype=np.float64) + 0.5 - eltolas) / blokk)
+    return np.clip(forras, 0, darab - 1).astype(np.intp)
 
-    #: az eltolt rácshoz a képet elcsúsztatva pixelesítjük, majd
-    #: visszacsúsztatjuk — a kilógó rész a képhatáron kívül marad, épp
-    #: úgy, ahogy a nulla padding megköveteli.
-    csuszt = np.roll(image, shift=(-dy, -dx), axis=(0, 1))
-    kicsi = cv2.resize(
-        csuszt,
-        (max(1, width // tile), max(1, height // tile)),
-        interpolation=cv2.INTER_AREA,
-    )
-    nagy = cv2.resize(kicsi, (width, height), interpolation=cv2.INTER_NEAREST)
-    return np.roll(nagy, shift=(dy, dx), axis=(0, 1))
+
+def pixelate_centered(image: np.ndarray, block_w: int, block_h: int) -> np.ndarray:
+    """A `PixelateImageOperation` magja (`0x00bcdf10`), #3876 / #3878.
+
+    1. `nW = ⌈W/pw⌉`, `nH = ⌈H/ph⌉` (float32 osztás, `Math.ceil`);
+    2. kicsinyítés `nW × nH`-ra a közös wrapperrel, `smoothing = 1` — ez
+       kicsinyítésnél a fixpontos doboz (`glimmer_ops.resize_image`);
+    3. visszanagyítás legközelebbi szomszéddal, KÖZÉPRE igazított rácson
+       (`_kozepre_racs`).
+
+    ⚠️ **Eltolás nincs.** Az alkalmazó (`0x00bbd150`) az `offsetX`/`offsetY`
+    attribútumot kiértékeli, de nem adja tovább a magnak (`0x00bbd1d7`–
+    `0x00bbd207`): a `Comicize` két ágának pixelesítése AZONOS, csak a
+    maszkjuk tolódik. (A #1351 eltolt pixelesítése ezzel HELYESBÍTVE.)
+    """
+    validate_image(image)
+    height, width = image.shape[:2]
+    block_w, block_h = max(1, int(block_w)), max(1, int(block_h))
+    n_w = int(np.ceil(np.float32(width) / np.float32(block_w)))
+    n_h = int(np.ceil(np.float32(height) / np.float32(block_h)))
+    kicsi = resize_image(image, n_w, n_h, smoothing=True)
+    sorok = _kozepre_racs(height, block_h, n_h)
+    oszlopok = _kozepre_racs(width, block_w, n_w)
+    return kicsi[sorok[:, np.newaxis], oszlopok[np.newaxis, :]]
 
 
 #: A `Comicize` fő küszöbgörbéjének RÖGZÍTETT töréspontjai — a
@@ -272,16 +275,50 @@ _COMICIZE_KUSZOB = np.clip(
 ).astype(np.float32)
 
 
-def _comicize_dot_branch(curved: np.ndarray, tile: int, offset_x: float, offset_y: float) -> np.ndarray:
-    """Egy raszter-ág (2c): pixelesítés → szürke → a pontmaszk mint
-    `PartialMask` a fehér fölé → küszöbgörbe → `add` a pixelesített színnel."""
-    height, width = curved.shape[:2]
-    pixelated = pixelate_shifted(curved, tile, offset_x, offset_y)
-    szurke = _luma(pixelated)
-    maszk = native_dot_mask(height, width, tile, offset_x, offset_y) / np.float32(255.0)
+def _comicize_dot_branch(pixelated: np.ndarray, tile: int, offset: float) -> np.ndarray:
+    """Egy raszter-ág (2c): a (két ágban azonos) pixelesített kép szürkéje →
+    a pontmaszk mint `PartialMask` a fehér fölé → küszöbgörbe → `add` a
+    pixelesített színnel. Az ágak csak a maszk rácsában különböznek."""
+    height, width = pixelated.shape[:2]
+    pixelated_f = pixelated.astype(np.float32)
+    szurke = _luma(pixelated_f)
+    # a rács középre igazított origója; a `tiled_dot_ramp` a képpont
+    # közepéből mér, a natív rácsoló az indexéből — ezért a `+ 0,5` (#3878)
+    ox, oy = tiled_mask_origin(width, height, tile, offset, offset)
+    maszk = native_dot_mask(height, width, tile, ox + 0.5, oy + 0.5) / np.float32(255.0)
     fedett = np.float32(255.0) + (szurke - np.float32(255.0)) * maszk
     kuszob = _COMICIZE_KUSZOB[np.clip(np.rint(fedett), 0, 255).astype(np.uint8)]
-    return np.minimum(np.float32(255.0), kuszob[..., np.newaxis] + pixelated)
+    return np.minimum(np.float32(255.0), kuszob[..., np.newaxis] + pixelated_f)
+
+
+def _float_bits(ertek: float) -> int:
+    return int(np.array(ertek, dtype=np.float32).view(np.int32))
+
+
+def _kozel(alfa: float, cel: float) -> bool:
+    """A végrehajtó „≈”-je: a float32 bitminták eltérése < 8 (`0x00bd0742`–)."""
+    return abs(_float_bits(alfa) - _float_bits(cel)) < 8
+
+
+def blend_alpha_native(bottom: np.ndarray, top: np.ndarray, alpha: float) -> np.ndarray:
+    """A `BlendAlpha` átlátszóság-keverése (`0x009dc4b0`), egész aritmetikával.
+
+    `filterdesc-registry.md`, „A `BlendInstruction`” D) (#626): `α` [0, 1]-re
+    vágva; `α ≈ 0` → az alsó elem, `α ≈ 1` → a felső elem változatlanul;
+    egyébként `w = trunc(α·256)`, `w − 1` ha `w > 0`, és
+    `ki = (b·(255 − w) + t·w) >> 8`. A súlyok összege 255, az osztó 256: a
+    kimenet egy szinttel sötétebb lehet (két 255-ösből 254).
+    """
+    alfa = float(np.clip(np.float32(alpha), 0.0, 1.0))
+    if _kozel(alfa, 1.0):
+        return top.astype(np.uint8)
+    if _kozel(alfa, 0.0):
+        return bottom.astype(np.uint8)
+    w = int(np.float32(alfa) * np.float32(256.0))
+    if w > 0:
+        w -= 1
+    ki = (bottom.astype(np.int32) * (255 - w) + top.astype(np.int32) * w) >> 8
+    return ki.astype(np.uint8)
 
 
 def apply_comicize(
@@ -291,12 +328,14 @@ def apply_comicize(
     dot_fade: float = 50.0,
 ) -> np.ndarray:
     """Képregény (Comicize) — nyomdai féltónusos raszter, a `filterdesc.xml`
-    szó szerinti lánca szerint (772–824. sor; #569, #3522).
+    szó szerinti lánca szerint (772–824. sor; #569, #3522, #3878).
 
     A lánc — MINDEN lépés együtt (#3511, #3522):
 
-    1. `darkened = min(kép, elmosás)` (`_opBlur`, `BlendMode=darken`), az
-       elmosás szigmája `1 + 20·BlurXY/100`;
+    1. `darkened = min(kép, elmosás)` (`_opBlur`, `BlendMode=darken`), uint8;
+       az elmosás a natív `BlurImageOperation`
+       (`nativ_blur.blur_image_operation`, `xblur = yblur = 1 + 20·BlurXY/100`,
+       `quality = 3`; #3878 — korábban Gauss-szigma volt);
     2. a `_opColorSpots` blokk a `darkened`-en:
 
        a. **fekete belső ragyogás** (788. sor: `GlowImageOperation color="0"
@@ -305,16 +344,22 @@ def apply_comicize(
           `Blur = 70`-es láncával egyezik, a natív `belso_ragyogas.inner_glow`);
        b. `AdjustCurves` a `DotContrast` ötpontos görbéjével
           (`comicize_master_curve`);
-       c. két ág, a második fél csempével eltolva (793. és 807. sor): saját
-          `Pixelate`, Haeberli-szürke (#3507), a natív 8.8-as pontmaszk
-          (`halftone.native_dot_mask`, #3390) mint `PartialMask` a FEHÉR
-          fölé — `255 + (szürke − 255) · m` —, a
+       c. két ág (793. és 807. sor): a `Pixelate` MINDKETTŐBEN AZONOS — a
+          natív alkalmazó az eltolást eldobja; `⌈W/pw⌉ × ⌈H/ph⌉` blokk,
+          doboz-kicsinyítés, középre igazított visszanagyítás
+          (`pixelate_centered`, #3878) —, Haeberli-szürke (#3507), a natív
+          8.8-as pontmaszk (`halftone.native_dot_mask`, #3390) középre
+          igazított, képpontindexből mérő rácson (`halftone.tiled_mask_origin`;
+          a második ág maszkja a csonkolt fél csempével eltolva) mint
+          `PartialMask` a FEHÉR fölé — `255 + (szürke − 255) · m` —, a
           `[0,0][150,0][160,255][255,255]` küszöbgörbe, majd `add` a
           pixelesített színnel;
        d. a két ág `darken`-nel;
 
-    3. a blokk `multiply`-jal kerül a `darkened`-re, `BlendAlpha =
-       0,5 − DotFade/200` alfával.
+    3. a blokk `multiply`-jal (`⌊b·t/255⌋`) kerül a `darkened`-re, `BlendAlpha =
+       0,5 − DotFade/200` alfával, a natív egész keverővel
+       (`blend_alpha_native`: `w = trunc(α·256) − 1`,
+       `(b·(255 − w) + t·w) >> 8`; #3878).
 
     ## Mérve (#3522)
 
@@ -327,9 +372,23 @@ def apply_comicize(
     | **ez a lánc** | **0,0276** | **2,4640** |
 
     ⚠️ A #1606 a Glow-t, a `multiply`-t és a küszöbgörbét EGYENKÉNT próbálta,
-    és egyenként mindegyik rontott — csak együtt helyesek. A maradék ΔE
-    (≈2,46) forrása nincs mérve (jelöltek: a Gauss-elmosás a natív helyett,
-    a szürke kerekítése).
+    és egyenként mindegyik rontott — csak együtt helyesek.
+
+    A fenti lánc maradék ΔE-jének (≈2,46) forrását a #3876 MÉRTE: négy
+    lánclépés nem a natív szerint számolt — a Gauss-elmosás a natív
+    `BlurImageOperation` helyett, az eltolt és nem középre igazított
+    `Pixelate`, a `(0,0)`-ból induló és a képpont közepéből mérő maszkrács,
+    valamint a lebegőpontos keverés. A 684-es készleten a négy javítás
+    együtt (spec: `filters-decoded.md`, „⛳ A Comicize maradéka”):
+
+    | eset | előtte | a négy javítással | zajszint |
+    |---|---:|---:|---:|
+    | alap (20/50/50) | 2,687 | 0,461 | 0,374 |
+    | max (100/100/100) | 2,328 | 0,207 | 0,173 |
+    | min (0/0/0) | 2,294 | 0,416 | 0,317 |
+
+    Ezt a számot a #3876 kutatókódja mérte; ennek a megvalósításnak a
+    golden-mérése a #3878 lezárásának feltétele.
     """
     validate_image(image)
     for name, value in (
@@ -342,34 +401,31 @@ def apply_comicize(
 
     height, width = image.shape[:2]
     dot = dot_size_for(width)
-    image_f = image.astype(np.float32)
 
-    # 1. elő-elmosás DARKEN módban (a sötétebb nyer)
-    sigma = 1.0 + 20.0 * min(blur_xy, 100.0) / 100.0
-    blurred = cv2.GaussianBlur(image_f, (0, 0), sigmaX=sigma, sigmaY=sigma)
-    darkened = np.minimum(image_f, blurred)
+    # 1. elő-elmosás DARKEN módban (a sötétebb nyer) — a natív
+    # `BlurImageOperation`, `xblur = yblur = 1 + 20·BlurXY/100`, quality 3
+    xb = 1.0 + 20.0 * min(blur_xy, 100.0) / 100.0
+    darkened = np.minimum(image, blur_image_operation(image, xb, xb, 3))
 
     # 2a. a blokkot nyitó fekete belső ragyogás (788. sor)
     xblur = _COMICIZE_GLOW_BLUR * VIGNETTE_XBLUR_FACTOR * max(width, height)
-    glowed = inner_glow(
-        np.clip(np.rint(darkened), 0.0, 255.0).astype(np.uint8),
-        (0, 0, 0), xblur, xblur, _COMICIZE_GLOW_STRENGTH,
-    )
+    glowed = inner_glow(darkened, (0, 0, 0), xblur, xblur, _COMICIZE_GLOW_STRENGTH)
 
-    # 2b. a DotContrast-görbe — LUT-indexeléssel (#2477: a natív művelet 8
-    # bites pufferbe ír)
+    # 2b. a DotContrast-görbe — LUT-indexeléssel; a natív művelet 8 bites
+    # pufferbe ír (#2477), a `Pixelate` már bájtképet kap
     curve = comicize_master_curve(min(dot_contrast, 100.0))
-    curved = curve[glowed].astype(np.float32)
+    curved = np.clip(np.rint(curve), 0.0, 255.0).astype(np.uint8)[glowed]
 
-    # 2c-d. a két, fél csempével eltolt ág, DARKEN-nel
+    # 2c-d. a két ág: AZONOS pixelesítés, a maszk fél csempével eltolva;
+    # DARKEN-nel
+    pixelated = pixelate_centered(curved, dot, dot)
     raster = np.minimum(
-        _comicize_dot_branch(curved, dot, 0.0, 0.0),
-        _comicize_dot_branch(curved, dot, dot / 2.0, dot / 2.0),
+        _comicize_dot_branch(pixelated, dot, 0.0),
+        _comicize_dot_branch(pixelated, dot, dot / 2.0),
     )
+    raster_u8 = np.clip(np.rint(raster), 0.0, 255.0).astype(np.uint8)
 
-    # 3. MULTIPLY a darkened-re, a blokk alfájával
+    # 3. MULTIPLY (`⌊b·t/255⌋`), majd a blokk alfájával a darkened-re
     alpha = float(np.clip(0.5 - min(dot_fade, 100.0) / 200.0, 0.0, 1.0))
-    combined = darkened * raster / np.float32(255.0)
-    return _to_uint8(darkened + alpha * (combined - darkened))
-
-
+    multiplied = (darkened.astype(np.int32) * raster_u8.astype(np.int32)) // 255
+    return blend_alpha_native(darkened, multiplied, alpha)
