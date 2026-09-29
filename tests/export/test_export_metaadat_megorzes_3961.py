@@ -220,6 +220,7 @@ class TestExifMegorzes:
         valtozhat = {
             ("0th", 0x0132),  # DateTime: az export ideje
             ("0th", 0x8769),  # mutató: az IFD áthelyeződhet
+            ("Exif", 0xA005),  # mutató: a bővülő Interop IFD áthelyeződik (#3989)
             ("1st", 0x0201),  # az újragenerált előnézet helye
             ("1st", 0x0202),  # és hossza
         }
@@ -244,7 +245,12 @@ class TestExifMegorzes:
         # ExifIFD-re) és az IFD1 két előnézet-mezője
         ifd1_ertekek = {
             hely + k
-            for hely in (e["0th"][0x8769][2], e["1st"][0x0201][2], e["1st"][0x0202][2])
+            for hely in (
+                e["0th"][0x8769][2],
+                e["Exif"][0xA005][2],  # az Interop IFD bővül: a mutatója az újra (#3989)
+                e["1st"][0x0201][2],
+                e["1st"][0x0202][2],
+            )
             for k in range(4)
         }
         assert all(

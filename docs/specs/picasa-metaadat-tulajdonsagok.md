@@ -2022,7 +2022,7 @@ előállítása nincs feltárva → **#3987**.
 | | Eredeti | Nálunk (`export_metadata.py`) |
 |---|---|---|
 | `Software`, `Artist`, `ExifVersion` | csak ha hiányzik | csak ha hiányzik — **egyezik** |
-| Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | mindig, ha a forrásnak van mérete | nincs (a 16. C) is nyitva hagyta) |
+| Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | mindig, ha a forrásnak van mérete | **megvan** (#3989; a tájolt forrás mérete nincs mérve) |
 | IFD1 bélyegkép + `0x103`/`0x11a`/`0x11b`/`0x128` | mindig | csak a forrás meglévő IFD1-e |
 | GPS `0x0000`/`0x0005` pótlása, csak verziót tartalmazó al-IFD kivétele | igen (erős, nem mért) | nincs |
 
