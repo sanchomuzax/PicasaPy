@@ -9,6 +9,11 @@ hívja, `FUN_0090aeb0(0, Feather)` alakban:
   sugáron végig fut, nincs külön „átmeneti sáv";
 * a közép az eredeti kép, a sugáron túl a teljes szorzó-tint.
 
+⚠️ A #3453 itt még az eredeti és a tintelt kép KEVERÉSÉT rögzítette
+(`apply_radial_mask`). A #3945 kiolvasta a munkafüggvényt (`0x0090b370`):
+a maszk a tint SZÍNÉT húzza a fehér felé, és a képet egyszer szorozza — ezt
+a `test_radtint_munkafuggveny_3946.py` őrzi; a képkeverő teszt kikerült.
+
 A kódunk ehelyett tengelyenként normált (elliptikus) távolságon, a
 `(0,5 ± Feather/2) · r_max` sávban keverett. A 684-es golden ΔE-je:
 min 11,79 → 0,70, alap 8,91 → 0,73, max 4,37 → 0,74.
@@ -17,28 +22,10 @@ min 11,79 → 0,70, alap 8,91 → 0,73, max 4,37 → 0,74.
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
-from picasapy.render.radial_mask import apply_radial_mask
 from picasapy.render.tinting import apply_radtint
 
 SZIN = (255, 128, 64)
-
-
-def _kep() -> np.ndarray:
-    rng = np.random.default_rng(3453)
-    return rng.integers(0, 256, size=(40, 90, 3), dtype=np.uint8)
-
-
-def _teljes_tint(kep: np.ndarray) -> np.ndarray:
-    return (kep.astype(np.int64) * np.array(SZIN) // 256).astype(np.uint8)
-
-
-@pytest.mark.parametrize("feather", [0.0, 0.25, 1.0])
-def test_a_kozos_nativ_maszkkal_kever(feather):
-    kep = _kep()
-    vart = apply_radial_mask(kep, _teljes_tint(kep), 0.3, 0.6, feather, 0.0)
-    np.testing.assert_array_equal(apply_radtint(kep, 0.3, 0.6, feather, SZIN), vart)
 
 
 def test_a_sugar_izotrop_kepontban():
