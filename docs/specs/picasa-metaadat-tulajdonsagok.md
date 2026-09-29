@@ -1661,7 +1661,7 @@ exportban **6** különböző érték van, és egy forrásból készült exporto
 eltérő láncú exportja egyaránt `56ed44f5ae31fc12a2eb7966a33f1a25`. **Nem** a
 forrásfájl MD5-je (`251a3fa3…`), és **nem** a dekódolt RGB-, BGR-, BGRA-,
 szürke képpontok vagy a tömörített szkennelési adat MD5-je (mind kipróbálva,
-egyik sem egyezik). A képzése **NINCS MEG**.
+egyik sem egyezik). ✅ **A képzése MEGVAN (412. kör, #3963), ld. D).**
 
 ### B) ⭐ A binárisból: az `exif:` névtér-író az export útján TÖRÖL, nem ír
 
@@ -1734,9 +1734,7 @@ utazik.
 
 **NYITOTT, megnevezve:**
 
-1. Az `ImageUniqueID` képzése — a forráshoz kötött, de nem fájl- és nem
-   képpont-MD5 (A). Út: az EXIF-oldali író (`0x009ecdb0` lánca) `0xa420`-as
-   címkéjének kiolvasása.
+1. ~~Az `ImageUniqueID` képzése~~ — **LEZÁRVA**, ld. D).
 2. Miért nincs `exif:DateTimeOriginal` a kamerás forrás exportjában, holott az
    EXIF-ben megvan: a `0x00bb1170` a `0x35` és `0x13e` címkét is felhasználja,
    és sikertelen átalakításnál üres szöveggel TÖRÖL. Út: a `0x00bb1170` ágai.
@@ -1746,3 +1744,48 @@ Fejlesztés: **#3961**.
 *Forrás: `0x009ed6e0` (388 b), `0x00ba7540`, `0x00bad9a0` (410 b), `0x00ba75f0`,
 `0x009eee30`, `0x00bae5b0` (3863 b), `0x00bb0670`, `0x00bb0310`; mérés: 204
 eredeti export a NAS-on.*
+
+### D) ✅ Az `ImageUniqueID` = a forrásfájl `originhash`-e (2026-09-29, 412. kör, #3963)
+
+```
+ImageUniqueID = hex16(originfast(forrás)) ‖ hex16(originslow(forrás))     ; 32 kisbetűs hexa jegy
+```
+
+A két tartalomkulcs képlete a `picasa-tartalomkulcs.md`-ben (1. szakasz és
+„Az `originslow` MEGFEJTVE”); a termékben `dedup/fastkey.py`
+(`picasa_fast_key`) és `dedup/slowkey.py` (`picasa_slow_key`), mindkettő
+kis-endián `%016x`.
+
+**A lánc a binárisban:**
+
+| lépés | cím |
+|---|---|
+| a JPEG-mentő hívja a kulcsképzőt | `0x0045cfa0` → `0x0045e120` (`0x0045d463`, `0x0045dbc0`) → `0x0045c870` |
+| a két kulcs kiszámítása, `%016I64x` ×2 | `0x0045cbdc call 0x004353a0`, `0x0045cbfc`, `0x0045cc15` (a `picasa-tartalomkulcs.md` „A bináris oldal — a TERMELŐ megvan” szakasza) |
+| beszúrás a **`0x68`** tulajdonságba | `0x0045cba1 mov edi, 0x68` → `0x0045cc29 call 0x0049c640` |
+| a `0x68` kulcs = EXIF `0xa420` ImageUniqueID | e lap 2. és 6.1 szakasza (rekord `0x00c78e34`) |
+| ugyanaz a mentő építi az EXIF/XMP-blokkot | `0x0045d652` és `0x0045df16` `call 0x009ed6e0` |
+
+**Mérve:** a helyi mérőadat-másolaton (`meroadat.tar`: 684, 3229, 3084, 951)
+**186 / 186** export `ImageUniqueID`-je bitre egyezik a forrásfájl
+`originfast ‖ originslow`-jával. A kulcs a forrás **mentéskori** bájtjaiból
+számolódik (a `0x004353a0` a fájlt olvassa), ezért egy forrás minden
+exportja — effekttől függetlenül — ugyanazt kapja.
+
+*Bizonyítottsági fok: **megerősített** — a képzés a két, korábban
+megerősített kulcs összefűzése, a lánc utasításszinten kiolvasva, és
+186/186 bitpontos mérés.*
+
+**A 2. nyitott pont szűkítve:** az `exif:DateTimeOriginal`-t a `0x00bb1170` csak
+akkor írja, ha a `0x37` kulcs a propsetben van (`0x00bb11b9 call 0x009f0560`;
+nincs meg → kilép írás és törlés nélkül). A mért exportokon minden XMP-mező
+azzal egyezik, hogy a XMP-építőnek átadott tulajdonsághalmaz csak az export
+által **pótolt vagy frissített** kulcsokat tartalmazza:
+- metaadat nélküli forrásnál `dc:creator` = `Picasa` és `exif:DateTimeOriginal`
+  (a pótolt `Artist` és `DateTimeOriginal`);
+- a kamerás forrásnál egyik sem (ezek a forrásban megvoltak).
+
+Ez **feltételes**, nincs kiolvasva: a `0x0045cfa0` a `0x009ed6e0` előtt egy
+helyi halmazt épít (`0x0045d619` `0x009aa3c0`, `0x0045d627` `0x009aa110`,
+`0x0045d636` `0x009aa270`), és ezek töltését ez a kör nem követte végig. **Út:**
+e három függvény kulcsai.
