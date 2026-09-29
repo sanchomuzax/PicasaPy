@@ -12,6 +12,7 @@ QML) az integrátor lépése."""
 from __future__ import annotations
 
 import io
+import logging
 import shutil
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -25,11 +26,14 @@ from picasapy.cvimage import dekodolj_forrast, scale_down
 from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
+from picasapy.metadata.export_metadata import bajtmasolas, frissitett_metaadat
 from picasapy.render import apply_filters
 from picasapy.render.flip import apply_flip
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
+
+_LOG = logging.getLogger(__name__)
 
 # #1611: FÜGGVÉNY, nem modulszintű konstans — modulszinten a `cv2.ROTATE_*`
 # olvasása a BETÖLTÉSKOR behozná az OpenCV-t, és az `export` az indulási
@@ -45,12 +49,6 @@ def _rotations() -> dict[int, int]:
 # formátumot mindenképp JPEG-be kell kódolni (meglévő viselkedés).
 _JPEG_EXTENSIONS = frozenset({".jpg", ".jpeg"})
 
-# JPEG-fejléc: SOI + a metaadatot hordozó APP-szegmensek markerei.
-# 0xE0 = APP0 (JFIF, a cv2.imencode ezt írja — érintetlenül hagyjuk),
-# 0xE1 = APP1 (EXIF és/vagy XMP), 0xED = APP13 (Photoshop/IPTC).
-_SOI = b"\xff\xd8"
-_SOS_MARKER = 0xDA
-_METADATA_MARKERS = frozenset({0xE1, 0xED})
 
 
 @dataclass(frozen=True)
@@ -379,7 +377,10 @@ def _export_one(
     image = _apply_rotation(image, item.rotate_steps)
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
-    payload = _transfer_metadata(source, _encode_jpeg(image, settings, source))
+    height, width = image.shape[:2]
+    payload = _transfer_metadata(
+        source, _encode_jpeg(image, settings, source), (width, height)
+    )
     target = _unique_target(target_dir, number_prefix + source.stem, ".jpg")
     # Közös helper (#129): fsync + atomikus csere — félkész célfájl sose
     # maradjon (NAS/tele lemez).
@@ -618,58 +619,28 @@ def _apply_rotation(image: np.ndarray, rotate_steps: int) -> np.ndarray:
     return cv2.rotate(image, _rotations()[steps])
 
 
-def _transfer_metadata(source: Path, encoded: bytes) -> bytes:
-    """A forrás EXIF (APP1) és IPTC/Photoshop (APP13) szegmenseinek átvitele
-    az újrakódolt JPEG-bájtokba (#136) — a `cv2.imencode` ezeket elhagyja,
-    a Picasa exportja viszont megőrzi a dátumot, GPS-t, kameraadatot,
-    feliratot és kulcsszavakat.
+def _transfer_metadata(
+    source: Path, encoded: bytes, size: tuple[int, int]
+) -> bytes:
+    """Az újrakódolt JPEG metaadatai az eredeti Picasa szerint (#136, #3961).
 
-    Szegmens-szintű, nyers másolás: nem kell értelmezni a tartalmat, a
-    forrás bájtjai kerülnek át változatlanul, a cv2 által írt JFIF (APP0)
-    UTÁN beszúrva (szabványos sorrend). Sérült/nem-JPEG forrásnál, vagy ha
-    nincs átvihető szegmens, a bemenet változatlanul visszaadva."""
+    A `cv2.imencode` a metaadatot elhagyja. A forrás EXIF-je és XMP-je NEM
+    bájtra kerül át: az export ideje, a kimeneti méret és a hiányzó mezők
+    a `metadata/export_metadata.py` leírása szerint frissülnek; az IPTC
+    (APP13) változatlanul megy. `size` a kimeneti kép (szélesség, magasság).
+
+    A kép exportja SOHA nem bukhat el a metaadat miatt: bármely hibánál a
+    régi, bájtra másoló út (#136) a kimenet; ha az is dob (ugyanazt a
+    szegmens-kódot használja), a kép metaadat nélkül megy ki."""
     try:
-        source_bytes = source.read_bytes()
-    except OSError:
+        return frissitett_metaadat(source, encoded, size=size)
+    except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
+        _LOG.warning("export: a metaadat-frissítés hibázott, bájtmásolás", exc_info=True)
+    try:
+        return bajtmasolas(source, encoded)
+    except Exception:  # noqa: BLE001 — a kép SOHA nem eshet ki az exportból
+        _LOG.warning("export: %s metaadat nélkül exportálva", source, exc_info=True)
         return encoded
-    if not source_bytes.startswith(_SOI) or not encoded.startswith(_SOI):
-        return encoded
-    segments = _extract_app_segments(source_bytes, _METADATA_MARKERS)
-    if not segments:
-        return encoded
-    insert_at = _after_app0(encoded)
-    return encoded[:insert_at] + b"".join(segments) + encoded[insert_at:]
-
-
-def _extract_app_segments(data: bytes, markers: frozenset[int]) -> list[bytes]:
-    """A SOI utáni, kért markerű APP-szegmensek nyers bájtjai, sorrendben."""
-    segments: list[bytes] = []
-    pos = 2
-    while pos + 4 <= len(data):
-        if data[pos] != 0xFF:
-            break
-        marker = data[pos + 1]
-        if marker == 0xFF:  # kitöltő bájt
-            pos += 1
-            continue
-        if marker == _SOS_MARKER:
-            break
-        length = int.from_bytes(data[pos + 2 : pos + 4], "big")
-        if length < 2 or pos + 2 + length > len(data):
-            break
-        if marker in markers:
-            segments.append(data[pos : pos + 2 + length])
-        pos += 2 + length
-    return segments
-
-
-def _after_app0(data: bytes) -> int:
-    """A beszúrási pont: a vezető APP0 (JFIF) szegmens után, vagy az SOI
-    után, ha nincs APP0."""
-    if len(data) >= 4 and data[2] == 0xFF and data[3] == 0xE0:
-        length = int.from_bytes(data[4:6], "big")
-        return 4 + length
-    return 2
 
 
 def _unique_target(target_dir: Path, stem: str, suffix: str) -> Path:

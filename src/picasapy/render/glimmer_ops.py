@@ -877,6 +877,14 @@ def circular_gradient_mask(
     `outer_radius`-on túl, lineárisan a kettő között. `center` alapból a kép
     közepe, pixel-egységben.
 
+    #3958: a maszk az eredeti szerint 16 bites pozícióval, egész
+    koordinátával és megálló-táblával számol (`R = max(inner, outer)`), a
+    kimenet egész bájtokból (`alfa / 255`) áll. `outer <= inner` esetén a
+    spec képlete is érvényes (`R = max` miatt `p₁ = 255`, a fordított alfa
+    `trunc`-kal csonkol); a korábbi kemény lépcsőt csak azért tartjuk meg,
+    mert `inner = outer = 0` mellett az új út nullával osztana. Egyedül a
+    páratlan méret középpontja (`cx = W/2`) nem rögzített.
+
     #788: a két alfa a natív `CircularGradientImageMask`
     `innerAlpha`/`outerAlpha` attribútuma; az alapértékek a KIOLVASOTT
     tartalékok (`0,0` → `1,0`), tehát az alapeset változatlan. A natív olvasó
@@ -889,17 +897,76 @@ def circular_gradient_mask(
     találgatást hordozhatna (`docs/specs/filters-decoded.md`).
     """
     cx, cy = center if center is not None else (width / 2.0, height / 2.0)
-    ys, xs = np.mgrid[0:height, 0:width].astype(np.float32)
-    dist = np.hypot(xs + 0.5 - cx, ys + 0.5 - cy)
     belso = float(np.clip(inner_alpha, 0.0, 1.0))
     kulso = float(np.clip(outer_alpha, 0.0, 1.0))
     if outer_radius <= inner_radius:
+        # A spec képlete erre is érvényes, de `inner = outer = 0` mellett az
+        # új út `R = 0`-val osztana: ezért marad a korábbi kemény lépcső (a
+        # hívók, `Lomo` és `Holga`, ide sosem jutnak).
+        ys, xs = np.mgrid[0:height, 0:width].astype(np.float32)
+        dist = np.hypot(xs + 0.5 - cx, ys + 0.5 - cy)
         arany = (dist >= inner_radius).astype(np.float32)
-    else:
-        arany = np.clip(
-            (dist - inner_radius) / (outer_radius - inner_radius), 0.0, 1.0
-        ).astype(np.float32)
-    return (np.float32(belso) + arany * np.float32(kulso - belso)).astype(np.float32)
+        return (np.float32(belso) + arany * np.float32(kulso - belso)).astype(np.float32)
+    tabla = _kormaszk_megallo_tabla(inner_radius, outer_radius, belso, kulso)
+    pozicio = _kormaszk_pozicio(height, width, cx, cy, outer_radius)
+    rekesz = pozicio >> 8
+    tort = pozicio & 0xFF
+    alfa = (tabla[rekesz + 1] * tort + tabla[rekesz] * (256 - tort)) >> 8
+    return (alfa.astype(np.float32) / np.float32(255.0)).astype(np.float32)
+
+
+#: A körmaszk pozíciójának teljes skálája (`0xff00`, 16 bites; a Flash
+#: színátmenet 255 rekesze × 256).
+_KORMASZK_POZICIO_MAX = 0xFF00
+
+
+def _kormaszk_megallo_tabla(
+    inner_radius: float, outer_radius: float, inner_alpha: float, outer_alpha: float
+) -> np.ndarray:
+    """A `CircularGradientImageMask` 257 elemű megálló-táblája (`0x008f3700`,
+    #3957): `p₁ = csonk(255·inner/R)`, `T[i] = csonk(a₀ + (a₁−a₀)·f32((i−p₁)/
+    (255−p₁)))` a `p₁ ≤ i < 255` rekeszekre, `a₀` előtte, `a₁` 255-től 256-ig.
+    """
+    sugar = max(inner_radius, outer_radius)
+    a0 = int(np.trunc(255.0 * inner_alpha))
+    a1 = int(np.trunc(255.0 * outer_alpha))
+    p1 = int(np.trunc(255.0 * inner_radius / sugar))
+    tabla = np.full(257, a0, dtype=np.int64)
+    if p1 < 255:
+        i = np.arange(p1, 255)
+        arany = ((i - p1).astype(np.float32) / np.float32(255 - p1)).astype(np.float64)
+        tabla[p1:255] = np.trunc(a0 + (a1 - a0) * arany).astype(np.int64)
+    tabla[255:] = a1
+    return tabla
+
+
+def _kormaszk_tavolsag(
+    height: int, width: int, cx: float, cy: float, sugar: float
+) -> np.ndarray:
+    """A pozíció kerekítés előtti értéke, `√(u²+v²)`, float32-ben (`sqrtps`,
+    egyszeres pontosság — a spec rögzíti). Az `u`/`v` float64-ben képződik,
+    és float32-re csonkul; az `u²+v²` összeg és a gyök már float32."""
+    skala = _KORMASZK_POZICIO_MAX / sugar
+    u = ((np.arange(width, dtype=np.float64) - cx) * skala).astype(np.float32)
+    v = ((np.arange(height, dtype=np.float64) - cy) * skala).astype(np.float32)
+    return np.sqrt(v[:, np.newaxis] * v[:, np.newaxis] + u[np.newaxis, :] * u[np.newaxis, :])
+
+
+def _kormaszk_pozicio(
+    height: int, width: int, cx: float, cy: float, sugar: float
+) -> np.ndarray:
+    """A 16 bites pozíció (`0x008f3970`, #3957): `u = (x−cx)·65280/R` EGÉSZ
+    képpontindexből (nincs `+0,5`), `P = min(round(√(u²+v²)), 0xff00)` —
+    az SSE2-ág (`sqrtps` + `cvtps2dq`) legközelebbire kerekít.
+
+    Rögzített (spec): a `√` egyszeres pontosságú (float32), a `rint` a
+    float32 eredményen fut. NEM rögzített: az `u`/`v` képzésének pontos alakja
+    (a bináris a befoglaló téglalapot a `1638,4`-es Flash-egységre képezi, és
+    `79,6875`-tel szoroz; mi `(x−cx)·65280/R`-t használunk float64-ben, majd
+    float32-re váltunk). A két alak néhány ezer képpontban egy egységgel
+    eltérhet."""
+    tavolsag = _kormaszk_tavolsag(height, width, cx, cy, sugar)
+    return np.minimum(np.rint(tavolsag), _KORMASZK_POZICIO_MAX).astype(np.int64)
 
 
 def tint_multiply(image: np.ndarray, color: tuple[int, int, int], alpha: float) -> np.ndarray:

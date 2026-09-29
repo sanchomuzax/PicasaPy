@@ -7,6 +7,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.635] – 2026-09-29
+
+### Javítva
+- Az exportált kép metaadatai úgy frissülnek, mint az eredeti Picasánál: a
+  módosítás dátuma az export ideje, a kép mérete a kimenet tényleges mérete
+  (átméretezésnél és vágásnál is), a hiányzó szerző, program, készítési dátum
+  és EXIF-verzió pótlódik, és az XMP-ben is frissül a módosítás ideje. A
+  fényképezőgép saját adatai (gyártói jegyzet, ismeretlen mezők) bájtra
+  megmaradnak, a beágyazott kis előnézet a kész képből készül újra, és ha a
+  frissítés bármiért nem sikerül, a kép a forrás metaadataival megy ki —
+  az export emiatt soha nem akad el (#3961).
+
+## [0.8.634] – 2026-09-29
+
+### Javítva
+- A Lomo és a Holga sötét pereme bitre egyezik az eredeti Picasáéval: a kör
+  alakú átmenetet eddig folytonosan számoltuk, az eredeti egész
+  képpontkoordinátákkal és rögzített lépcsőkkel, és a különbség az elmosott
+  szélen felnagyítva látszott — a mért eltérés a Lomónál 0,063-ról, a Holgánál
+  0,010-ről a mérési zaj alá csökkent (#3958).
+
 ### Javítva
 - A Képregény effekt elő-elmosása, pixelesítése, pontrácsa és záró keverése
   az eredeti Picasa szerint számol: a pontok a képen középre igazítva, a
