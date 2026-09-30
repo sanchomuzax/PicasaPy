@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.646] – 2026-09-30
+
 ### Javítva
 - Ha egy kép szerkesztési bejegyzését a PicasaPy nem ismeri fel (pl. eltérő kis- és nagybetűk miatt), az export az eredetihez hasonlóan új JPEG-et ír a teljes Exif- és Interop-adattal, nem változatlan másolatot (#3997).
 
