@@ -2127,9 +2127,9 @@ kicsinyítés után a `0x009ed05e`–`0x009ed085` a bélyegkép képpontjait a g
 
 | | Eredeti | Nálunk (`export_metadata.py`) |
 |---|---|---|
-| bélyegkép | minden > 300 px-es kép, újonnan készítve | nincs → fejlesztés **#3998** |
-| a forrás meglévő IFD1-e / bélyegképe | mindig eldobva | megőrizve (`csak_ha_megvan`) |
-| `resize_image` módjai | 0 doboz, 5 Lanczos-3, 6 Lanczos-4, 3 Mitchell, … | csak doboz és Mitchell |
+| bélyegkép | minden > 300 px-es kép, újonnan készítve | ✅ megvan (#3998: `metadata/exif_belyegkep.py`) |
+| a forrás meglévő IFD1-e / bélyegképe | mindig eldobva | ✅ eldobva (#3998; a bájthű másolás útján, ha nincs mit beégetni, marad) |
+| `resize_image` módjai | 0 doboz, 5 Lanczos-3, 6 Lanczos-4, 3 Mitchell, … | doboz, Mitchell és Lanczos-3 (`lanczos3=True`, #3998) |
 
 **Nyitott kérdések mérlege — 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”:**
 
@@ -2196,7 +2196,7 @@ eltérés 0,48 (19 fájl átlaga). A mért készlet a két Lanczos-t és az elő
 
 | | Eredeti | Nálunk |
 |---|---|---|
-| kicsinyítés | 2×2 előfelezés `⌊Σ/4⌋` ismételve, majd Lanczos-3 | nincs bélyegkép (#3998) |
+| kicsinyítés | 2×2 előfelezés `⌊Σ/4⌋` ismételve, majd Lanczos-3 | ✅ ugyanez (#3998; a kimenet JPEG-jét dekódolva, a valódi exporttal való összevetés a helyi kör dolga) |
 | ICC-átalakítás | alapból kikapcsolva | nincs — egyezik |
 
 **Nyitott kérdések mérlege — 3 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 „csak nyitva”:**

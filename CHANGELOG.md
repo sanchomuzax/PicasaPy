@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az exportált JPEG Exif-blokkjába kerül bélyegkép (160 képpontos, 85-ös minőségű), ha a kép mindkét oldala 300 pixelnél nagyobb, mint az eredeti Picasa exportjában; a forrás saját bélyegképe már nem másolódik át (#3998).
+
 ## [0.8.642] – 2026-09-30
 
 ### Javítva
