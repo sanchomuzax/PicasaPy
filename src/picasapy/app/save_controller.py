@@ -40,9 +40,10 @@ from picasapy.edit.save_copy import (
     save_copy,
 )
 from picasapy.edit.session import EditSession
-from picasapy.ini import IniConflictError, IniSaveError
-from picasapy.render.chain import apply_filters, can_render_filter
+from picasapy.ini import IniConflictError, IniSaveError, PhotoCropReader
+from picasapy.render.chain import apply_filters, can_render_filter, normalize_crop_ops
 from picasapy.render.flip import apply_flip
+from picasapy.scanner import PICASA_INI_NAME
 
 from .paint_mask import maszk_vonasokbol
 from .save_error_kind import save_error_code, save_error_kind
@@ -66,6 +67,7 @@ _SAVE_ERRORS = (OSError, ValueError, SaveError, IniSaveError, IniConflictError)
 #: `_EXPORT_FAILED_DETAILS_LIMIT` mintája) — tömeges hibánál a teljes lista
 #: inkább zavaró, mint hasznos.
 _FAILED_DETAILS_LIMIT = 5
+_CROP_READER = PhotoCropReader()
 
 
 def _render_for_save(
@@ -119,6 +121,15 @@ def _render_for_save(
     for _ in range(steps):
         image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
     ops = EditSession.from_value(filters).ops
+    crop, crop_ini_readable = _CROP_READER.read(
+        path.parent / PICASA_INI_NAME, path.name
+    )
+    ops = normalize_crop_ops(
+        ops,
+        crop,
+        crop_ini_readable=crop_ini_readable,
+        warning_key=str(path),
+    )
     if not ops:
         return image
     if maszk is not None:

@@ -28,7 +28,7 @@ from picasapy.cvimage import (
 from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
 from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
-from picasapy.render import apply_filters
+from picasapy.render import apply_filters, normalize_crop_ops
 from picasapy.render.elonezeti_arany import elonezeti_arany
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
@@ -339,6 +339,9 @@ class ThumbnailCache:
         size_bytes: int,
         ops: tuple[FilterOp, ...],
         level: int | None = None,
+        *,
+        crop: str | None,
+        crop_ini_readable: bool = True,
     ) -> Path | None:
         """Szerkesztett bélyegkép: a `filters=` láncot nagy felbontású
         bázison alkalmazza, majd a végeredményt kicsinyíti a célméretre
@@ -348,10 +351,16 @@ class ThumbnailCache:
         történik (a hívó a kész — kicsi — bélyegképen forgat, ami veszteség-
         mentes). A cache-kulcs tartalmazza a láncot, így a szerkesztett
         bélyegkép külön fájlba kerül és görgetéskor nem kell újraszámolni."""
-        if not ops:
+        effective_ops = normalize_crop_ops(
+            ops,
+            crop,
+            crop_ini_readable=crop_ini_readable,
+            warning_key=str(photo_path),
+        )
+        if not effective_ops:
             return self.get_or_create(photo_path, mtime_ns, size_bytes, level)
         source = Path(photo_path)
-        lanc = serialize_filters(ops)
+        lanc = serialize_filters(effective_ops)
         px = self._size if level is None else self.level_for(level)
         target = self.edited_thumbnail_path(
             source, mtime_ns, size_bytes, lanc, px
@@ -362,7 +371,14 @@ class ThumbnailCache:
         #: áll elő — a `filters=` láncot sosem futtatjuk kétszer ugyanarra a
         #: képre. A lánc drága (nagy bázison fut), a kicsinyítés nem.
         if px != self._size:
-            nagy = self.get_or_create_edited(source, mtime_ns, size_bytes, ops)
+            nagy = self.get_or_create_edited(
+                source,
+                mtime_ns,
+                size_bytes,
+                ops,
+                crop=crop,
+                crop_ini_readable=crop_ini_readable,
+            )
             if nagy is None:
                 return None
             payload = read_image_bytes(nagy)
@@ -397,7 +413,7 @@ class ThumbnailCache:
         # fullResImageWidth`, ld. `render/elonezeti_arany.py`), különben a
         # bélyegképen sokszorosan vastagabb, mint a mentett képen.
         with elonezeti_arany(_bazis_arany(source, base, rgb)):
-            rendered, _skipped = apply_filters(rgb, ops)
+            rendered, _skipped = apply_filters(rgb, effective_ops)
         thumb = cv2.cvtColor(scale_down_picasa_mag(rendered, self._size),
                              cv2.COLOR_RGB2BGR)
         ok, encoded = cv2.imencode(

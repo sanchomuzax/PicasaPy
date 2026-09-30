@@ -2,7 +2,7 @@
 
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index, photos_in_folder, sync_tree
-from picasapy.ini.rect64 import Rect64
+from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.thumbs import ThumbnailCache
 from support.jpeg_factory import make_jpeg
 
@@ -20,10 +20,13 @@ def _library(tmp_path, ini_body: str | None = None, count: int = 1):
 
 
 def _crop_ini(names) -> str:
-    value = EditSession().append_crop(
-        Rect64(left=0.0, top=0.0, right=0.5, bottom=1.0)
-    ).to_value()
-    return "".join(f"[{name}]\nfilters={value}\n" for name in names)
+    rect = Rect64(left=0.0, top=0.0, right=0.5, bottom=1.0)
+    session = EditSession().append_crop(rect)
+    value = session.to_value()
+    crop = f"rect64({encode_rect64(rect)})"
+    return "".join(
+        f"[{name}]\nfilters={value}\ncrop={crop}\n" for name in names
+    )
 
 
 def _provider(tmp_path, records, **kwargs):

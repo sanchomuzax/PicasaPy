@@ -223,10 +223,22 @@ def _crop_op(left, top, right, bottom):
     return FilterOp("crop64", ("1", rect))
 
 
+def _crop_value(left, top, right, bottom):
+    return f"rect64({_crop_op(left, top, right, bottom).params[1]})"
+
+
 class TestEditedThumbnail:
     """#163: a szerkesztett (vágott) bélyegkép ne legyen homályos — a
     filter-láncot NAGY bázison futtatjuk, a VÉGEREDMÉNYT kicsinyítjük a
     célméretre, nem a kész kis thumbnailt vágjuk tovább."""
+
+    def test_crop_argument_is_mandatory(self):
+        import inspect
+
+        parameter = inspect.signature(ThumbnailCache.get_or_create_edited).parameters[
+            "crop"
+        ]
+        assert parameter.default is inspect.Parameter.empty
 
     def test_cropped_thumbnail_kept_at_target_size(self, cache, tmp_path):
         # 50%-os középre vágás: a kész bélyegkép leghosszabb oldala a TELJES
@@ -234,7 +246,12 @@ class TestEditedThumbnail:
         # felnagyítva homályosan mutatna.
         photo = _gradient_jpeg(tmp_path / "nagy.jpg", size=(800, 800))
         ops = (_crop_op(0.25, 0.25, 0.75, 0.75),)
-        thumb = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        thumb = cache.get_or_create_edited(
+            photo,
+            *_stat_key(photo),
+            ops,
+            crop=_crop_value(0.25, 0.25, 0.75, 0.75),
+        )
         assert thumb is not None and thumb.exists()
         import cv2
 
@@ -266,7 +283,12 @@ class TestEditedThumbnail:
         )
         photo = tmp_path / "reszletes.jpg"
         ops = (_crop_op(0.25, 0.25, 0.75, 0.75),)
-        edited = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        edited = cache.get_or_create_edited(
+            photo,
+            *_stat_key(photo),
+            ops,
+            crop=_crop_value(0.25, 0.25, 0.75, 0.75),
+        )
         good = cv2.imread(str(edited))
 
         # naiv referencia: a kész 64-es thumbot vágjuk 50%-ra, majd vissza 64-re
@@ -277,25 +299,32 @@ class TestEditedThumbnail:
         assert np.std(good) > np.std(naive)
 
     def test_no_ops_delegates_to_plain(self, cache, photo):
-        edited = cache.get_or_create_edited(photo, *_stat_key(photo), ())
+        edited = cache.get_or_create_edited(photo, *_stat_key(photo), (), crop=None)
         plain = cache.get_or_create(photo, *_stat_key(photo))
         assert edited == plain
 
     def test_edited_cache_hit_does_not_regenerate(self, cache, tmp_path):
         photo = _gradient_jpeg(tmp_path / "hit.jpg", size=(400, 400))
         ops = (_crop_op(0.1, 0.1, 0.9, 0.9),)
-        first = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        crop = _crop_value(0.1, 0.1, 0.9, 0.9)
+        first = cache.get_or_create_edited(photo, *_stat_key(photo), ops, crop=crop)
         first_mtime = first.stat().st_mtime_ns
-        second = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        second = cache.get_or_create_edited(photo, *_stat_key(photo), ops, crop=crop)
         assert second == first and second.stat().st_mtime_ns == first_mtime
 
     def test_different_chain_different_file(self, cache, tmp_path):
         photo = _gradient_jpeg(tmp_path / "ketto.jpg", size=(400, 400))
         a = cache.get_or_create_edited(
-            photo, *_stat_key(photo), (_crop_op(0.1, 0.1, 0.9, 0.9),)
+            photo,
+            *_stat_key(photo),
+            (_crop_op(0.1, 0.1, 0.9, 0.9),),
+            crop=_crop_value(0.1, 0.1, 0.9, 0.9),
         )
         b = cache.get_or_create_edited(
-            photo, *_stat_key(photo), (_crop_op(0.2, 0.2, 0.8, 0.8),)
+            photo,
+            *_stat_key(photo),
+            (_crop_op(0.2, 0.2, 0.8, 0.8),),
+            crop=_crop_value(0.2, 0.2, 0.8, 0.8),
         )
         assert a != b
 
@@ -304,7 +333,10 @@ class TestEditedThumbnail:
         photo = _gradient_jpeg(tmp_path / "kulon.jpg", size=(400, 400))
         plain = cache.get_or_create(photo, *_stat_key(photo))
         edited = cache.get_or_create_edited(
-            photo, *_stat_key(photo), (_crop_op(0.1, 0.1, 0.9, 0.9),)
+            photo,
+            *_stat_key(photo),
+            (_crop_op(0.1, 0.1, 0.9, 0.9),),
+            crop=_crop_value(0.1, 0.1, 0.9, 0.9),
         )
         assert edited != plain
 
@@ -315,12 +347,17 @@ class TestEditedThumbnail:
 
         photo = _gradient_jpeg(tmp_path / "hibas.jpg", size=(400, 400))
         bad = (FilterOp("crop64", ("1",)),)  # hiányzó rect64 → ValueError
-        thumb = cache.get_or_create_edited(photo, *_stat_key(photo), bad)
+        thumb = cache.get_or_create_edited(
+            photo, *_stat_key(photo), bad, crop=None, crop_ini_readable=False
+        )
         assert thumb is not None and thumb.exists()
 
     def test_edited_missing_source_returns_none(self, cache, tmp_path):
         ops = (_crop_op(0.1, 0.1, 0.9, 0.9),)
-        assert cache.get_or_create_edited(tmp_path / "nincs.jpg", 1, 7, ops) is None
+        assert (
+            cache.get_or_create_edited(tmp_path / "nincs.jpg", 1, 7, ops, crop=None)
+            is None
+        )
 
 
 def _holga_op():
@@ -381,7 +418,9 @@ class TestEditedThumbnailSizeParity:
         target_size = 96
 
         cache = ThumbnailCache(tmp_path / "cache", size=target_size)
-        thumb_path = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        thumb_path = cache.get_or_create_edited(
+            photo, *_stat_key(photo), ops, crop=None
+        )
         assert thumb_path is not None
         thumb_rgb = cv2.cvtColor(cv2.imread(str(thumb_path)), cv2.COLOR_BGR2RGB)
 
@@ -424,8 +463,12 @@ class TestEditedThumbnailSizeParity:
 
         small_cache = ThumbnailCache(tmp_path / "c96", size=96)
         big_cache = ThumbnailCache(tmp_path / "c256", size=256)
-        small_path = small_cache.get_or_create_edited(photo, *_stat_key(photo), ops)
-        big_path = big_cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        small_path = small_cache.get_or_create_edited(
+            photo, *_stat_key(photo), ops, crop=None
+        )
+        big_path = big_cache.get_or_create_edited(
+            photo, *_stat_key(photo), ops, crop=None
+        )
 
         small_rgb = cv2.cvtColor(cv2.imread(str(small_path)), cv2.COLOR_BGR2RGB)
         big_rgb = cv2.cvtColor(cv2.imread(str(big_path)), cv2.COLOR_BGR2RGB)
@@ -472,11 +515,12 @@ class TestEditedThumbnailCacheInvalidation:
         photo = _gradient_jpeg(tmp_path / "verzio.jpg", size=(400, 400))
         ops = (_crop_op(0.1, 0.1, 0.9, 0.9),)
 
-        old = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        crop = _crop_value(0.1, 0.1, 0.9, 0.9)
+        old = cache.get_or_create_edited(photo, *_stat_key(photo), ops, crop=crop)
         assert old is not None and old.exists()
 
         monkeypatch.setattr(cache_module, "_EDIT_CACHE_VERSION", 999)
-        new = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        new = cache.get_or_create_edited(photo, *_stat_key(photo), ops, crop=crop)
 
         assert new is not None and new.exists()
         assert new != old
@@ -497,7 +541,7 @@ class TestEditedThumbnailCacheInvalidation:
 
         monkeypatch.setattr(cache_module, "_EDIT_BASE_MIN", 200)
         monkeypatch.setattr(cache_module, "_EDIT_BASE_CAP", 200)
-        stale = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        stale = cache.get_or_create_edited(photo, *_stat_key(photo), ops, crop=None)
         assert stale is not None
 
         monkeypatch.setattr(cache_module, "_EDIT_BASE_MIN", 1536)
@@ -505,7 +549,7 @@ class TestEditedThumbnailCacheInvalidation:
         monkeypatch.setattr(
             cache_module, "_EDIT_CACHE_VERSION", cache_module._EDIT_CACHE_VERSION + 1
         )
-        fresh = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        fresh = cache.get_or_create_edited(photo, *_stat_key(photo), ops, crop=None)
 
         assert fresh is not None
         assert fresh != stale

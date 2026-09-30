@@ -53,8 +53,10 @@ from PySide6.QtQuick import (
 
 from picasapy.edit.session import EditSession
 from picasapy.index import PhotoRecord
+from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import serialize_filters
 from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
+from picasapy.scanner import PICASA_INI_NAME
 from picasapy.thumbs import ThumbnailCache
 from .display_mode_paint import (
     apply_display_mode_to_qimage,
@@ -108,10 +110,10 @@ def _chain_crc(ops: tuple) -> int:
 
 class _FilteredThumbMemo:
     """Második cache-szint a szűrt bélyegképeknek (#144): kulcs a forrás
-    azonosítói + crc32(filters) + rotate, érték a KÉSZ (szűrt, forgatott)
-    QImage. Találatnál se a filters-lánc, se a lemez-dekód, se a forgatás
-    nem fut újra. LRU-kilakoltatás, szál-biztos (a pool több szála is
-    olvassa/írja)."""
+    azonosítói + filters CRC + aktuális crop + rotate, érték a KÉSZ (szűrt,
+    forgatott) QImage. Találatnál se a filters-lánc, se a lemez-dekód, se a
+    forgatás nem fut újra. LRU-kilakoltatás, szál-biztos (a pool több szála
+    is olvassa/írja)."""
 
     def __init__(self, capacity: int = _FILTERED_MEMO_CAPACITY):
         self._capacity = capacity
@@ -281,6 +283,10 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         # filters= sztring, érték az (ops, crc32) pár
         self._ops_cache: dict[str, tuple[tuple, int]] = {}
         self._ops_lock = threading.Lock()
+        # A crop nincs az indexben: az igazságforrás a képszekció ini-je.
+        # A közös olvasó dokumentum-szinten gyorsítótáraz, és a fájl
+        # változásakor automatikusan újraolvas.
+        self._crop_reader = PhotoCropReader()
         self._active = 0
         self._active_lock = threading.Lock()
         self._memo = _FilteredThumbMemo()
@@ -535,9 +541,24 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         #: ugyanúgy a KÉSZ kis bélyegképen történik.
         flip = int(getattr(photo, "flip_flags", 0) or 0)
         ops, chain_crc = self._resolved_ops(photo)
+        crop, crop_ini_readable = (
+            self._crop_reader.read(path.parent / PICASA_INI_NAME, photo.name)
+            if ops
+            else (None, True)
+        )
         # #144: szűrt képnél előbb a memóriacache — találatnál a filters-
-        # lánc, a lemez-dekód és a forgatás is kimarad
-        memo_key = (str(path), mtime_ns, size_bytes, chain_crc, rotate, flip)
+        # lánc, a lemez-dekód és a forgatás is kimarad. A crop kulcs is a
+        # kulcs része, mert az nem szerepel a PhotoRecord indexrekordjában.
+        memo_key = (
+            str(path),
+            mtime_ns,
+            size_bytes,
+            chain_crc,
+            crop,
+            crop_ini_readable,
+            rotate,
+            flip,
+        )
         if ops:
             cached = self._memo.get(memo_key)
             if cached is not None:
@@ -554,7 +575,13 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         szint = szint_from_thumb_id(photo_id)
         if ops:
             thumb = self._cache.get_or_create_edited(
-                path, mtime_ns, size_bytes, ops, szint
+                path,
+                mtime_ns,
+                size_bytes,
+                ops,
+                szint,
+                crop=crop,
+                crop_ini_readable=crop_ini_readable,
             )
         else:
             thumb = self._cache.get_or_create(path, mtime_ns, size_bytes, szint)

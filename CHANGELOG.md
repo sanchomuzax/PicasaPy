@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A néző és a bélyegképek már nem vágják meg a képet egy korábbi, visszavont vágás alapján — ugyanazt mutatják, mint az export (#4013).
+
 ## [0.8.646] – 2026-09-30
 
 ### Javítva

@@ -26,10 +26,11 @@ from PySide6.QtGui import QColorSpace, QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.cvimage import scale_down
+from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp
 from picasapy.lazy_cv2 import cv2
 from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
-from picasapy.render import apply_filters, count_redeye_spots
+from picasapy.render import apply_filters, count_redeye_spots, normalize_crop_ops
 from picasapy.render.chain_geometry import TartalomHely
 from picasapy.render.elonezeti_arany import elonezeti_arany, gyors_elonezet_aktiv
 from picasapy.render.op_geometry import LancHelyzet
@@ -40,6 +41,7 @@ from picasapy.render.display_modes import (
 )
 from picasapy.render.text_fonts import DEFAULT_FAMILY
 from picasapy.render.text_overlay import apply_text_overlay
+from picasapy.scanner import PICASA_INI_NAME
 
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
 
@@ -201,6 +203,10 @@ class EditPreviewProvider(QQuickImageProvider):
         self._display_mode = ""
         # #1725: a `Színkezelés használata` — a forrás dekódolására hat
         self._color_management = False
+        # A crop kulcs a `.picasa.ini`-ben van, nem az indexrekordban. Az
+        # olvasó fájlváltozáskor frissül, de a csúszka-húzások nem parse-olják
+        # újra minden alkalommal a teljes dokumentumot.
+        self._crop_reader = PhotoCropReader()
 
     def set_color_management(self, enabled: bool) -> None:
         """A `Színkezelés használata` állapota (#1725) — a FORRÁSRA hat.
@@ -250,6 +256,8 @@ class EditPreviewProvider(QQuickImageProvider):
         shared_cache: bool = True,
         is_current: Callable[[], bool] | None = None,
         paint_strokes: tuple = (),
+        crop: str | None = None,
+        crop_ini_readable: bool | None = None,
     ) -> None:
         """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
 
@@ -281,6 +289,8 @@ class EditPreviewProvider(QQuickImageProvider):
             shared_cache=shared_cache,
             paint_strokes=paint_strokes,
             is_current=is_current,
+            crop=crop,
+            crop_ini_readable=crop_ini_readable,
         )
 
     def _register_impl(
@@ -294,10 +304,29 @@ class EditPreviewProvider(QQuickImageProvider):
         shared_cache: bool = True,
         is_current: Callable[[], bool] | None = None,
         paint_strokes: tuple = (),
+        crop: str | None = None,
+        crop_ini_readable: bool | None = None,
     ) -> None:
         """A `register()` törzse (#546)."""
         key = str(photo_id)
         path = Path(path)
+        if crop_ini_readable is None:
+            crop, crop_ini_readable = self._crop_reader.read(
+                path.parent / PICASA_INI_NAME, path.name
+            )
+        ops = normalize_crop_ops(
+            tuple(ops),
+            crop,
+            crop_ini_readable=crop_ini_readable,
+            warning_key=str(path),
+        )
+        if gpu_prefix_ops is not None:
+            gpu_prefix_ops = normalize_crop_ops(
+                tuple(gpu_prefix_ops),
+                crop,
+                crop_ini_readable=crop_ini_readable,
+                warning_key=str(path),
+            )
         try:
             mtime = path.stat().st_mtime
         except OSError:

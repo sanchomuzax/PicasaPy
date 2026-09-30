@@ -7,6 +7,7 @@ from picasapy.render.chain import (
     MEASURED_IDLE_OPS,
     ChainReport,
     apply_filters,
+    normalize_crop_ops,
 )
 from picasapy.render.color import (
     apply_bw,
@@ -163,6 +164,7 @@ __all__ = [
     "apply_enhance",
     "apply_fill",
     "apply_filters",
+    "normalize_crop_ops",
     "apply_finetune2",
     "apply_gamma",
     "apply_glow",
