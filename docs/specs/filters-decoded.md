@@ -9,21 +9,67 @@ Módszertan: szintetikus chartok (0–255 szürke rámpa, RGB rámpák, színmez
 sakktáblák) + valódi fotók; a Picasa exportja („Use Original Size / Maximum")
 gyakorlatilag veszteségmentes (újratömörítési alapzaj: |Δ|≈0,04).
 
-## 1. kör — MEGFEJTVE ✅
+## 1. kör — exportmérés (#4008)
 
-### `crop` renderelési szabály (KRITIKUS spec-javítás)
+### A `crop=` és a `crop64` szerepe (#4008)
 
-A `filters=crop64=1,<hex>;` **önmagában NEM vág** — csak a szerkesztési
-történet része. A tényleges vágást a képszekció külön kulcsa hajtja:
+**A #4008 egyetlen mért exportesete:** a
+`3229-lanc-sorrend/04-vagas-utan-vignetta.jpg` képszekciójában nincs `crop=`,
+a `filters=` láncban viszont van `crop64=1,3c3c8c8c`. Az eredeti Picasa-export
+mérete 1600×1200, vagyis ebben az esetben a láncbeli `crop64` előzmény nem
+vágja meg az exportot.
 
-```
+**PicasaPy-implementációs döntés, nem mérési eredmény:** ha érvényes `crop=`
+van, de a láncban nincs `crop64`, az export nem vág és nem szúr be új
+`crop64` tagot. A korpuszban nincs ilyen eset. A mért, `crop=` nélküli 04-es
+esetben az export kihagyja a lánc `crop64` tagját. A néző és a bélyegkép
+korábbi útja közvetlenül a láncbeli `crop64` tagot renderelte; ezt a #4013
+az export szabályához igazítja.
+
+```ini
 [kep.jpg]
 crop=rect64(<hex>)
 filters=crop64=1,<hex>;...
 ```
 
-A PicasaPy-nak íráskor MINDKETTŐT írnia kell; olvasáskor a `crop=` az érvényes.
-(A tilt ezzel szemben a filters-láncból közvetlenül renderelődik.)
+**PicasaPy írási szabálya:** aktív vágás mentésekor mindkét mezőt kiírja
+(`crop=` és a láncbeli `crop64`; `EditController.applyCrop` és
+`EditController._save`).
+
+PicasaPy exportimplementációja érvényes `crop=` és meglévő `crop64` esetén
+megtartja a lánc sorrendjét, és az utolsó `crop64` értékét a kulcsra állítja
+annak láncbeli helyén. Hibás kulcsnál figyelmeztet, és a lánc utolsó
+`crop64` tagját használja; ha a `.picasa.ini` nem olvasható, a lánc
+változatlanul marad.
+
+**Közös PicasaPy render-szabály (#4013):** a fogyasztó utak a
+`render/chain.py::normalize_crop_ops` függvényt hívják a lánc renderelése
+előtt: az export, a néző, a bélyegkép, a szerkesztő előnézete és a lemezre
+mentés. Hiányzó `crop=` esetén minden láncbeli `crop64` előzmény kimarad;
+érvényes kulcsnál az utolsó `crop64` a láncbeli helyén a `crop=` értékét
+kapja. Ha nincs `crop64`, nem szúrunk be újat. Érvénytelen értéknél az
+eredeti lánc marad, képenként egyszeri figyelmeztetéssel; olvashatatlan ini
+esetén a `PhotoCropReader` ini-fájlonként egyszer naplózza a visszaesést, a
+normalizáló nem ismétli meg. A megmaradó tagok sorrendje nem változik, a
+renderelés a mért `mert_sorrend=True` ágon fut.
+
+A PicasaPy **felhasználó által alkalmazott saját vágása** mindkét kulcsot
+kiírja, és a renderelő a szerkesztési munkamenet crop állapotát használja.
+Ha megnyitáskor hiányzik a `crop=`, a korábbi `crop64` önmagában nem aktív:
+egy független effekt nem teszi vágottá a képet, saját új vágás viszont igen.
+**A v0.3.0 (#47) egynapos ablakában** készült saját vágások csak `crop64`-et
+írtak, `crop=` nélkül maradtak; ezeket a #4013-tól a néző és a többi
+megjelenítési út vágatlanul mutatja, amíg a felhasználó új vágást nem
+alkalmaz. **Az eredeti Picasa nézőjének `crop=` nélküli viselkedése nincs
+külön megmérve**; a #4008 közvetlenül csak az exportot mérte.
+
+**A bináris bizonyítéka korlátozott:** a `FUN_00438820` lánc-normalizáló
+eltávolítja a korábbi `crop64` tagokat, majd egy frisset fűz a lista végére
+(lásd a #3169 szakaszt). Ez az író/normalizáló útvonalat mutatja; nem bizonyítja,
+hogy a renderelő is ezt a listát kapja, és nem magyarázza meg önmagában a
+#4008-ban mért exportméretet.
+
+(A tilt ezzel szemben mindhárom úton a filters-láncból renderelődik.)
 
 #### Több `crop64` a láncban: az UTOLSÓ a hatályos (#1550)
 
@@ -7340,18 +7386,28 @@ futtató **képet is kap** a tömb mellé: a jelölteket a paraméterlistájuk
 (tömb + kép/felület) alapján kell szűrni, nem a `FilterArray` érintése
 alapján.
 
-### ⛔ Egy saját ellentmondás, amit ez a kör felszínre hozott
+### A #4008 exportmérése; a néző/bélyegkép kérdése nyitott (#4013)
 
-| lap | mit állít a vágásról |
-|---|---|
-| `filters-decoded.md` **1. kör** (a lap legrégebbi szakasza) | a `filters=`-beli `crop64` „önmagában NEM vág", a vágást a külön `crop=rect64(...)` kulcs hajtja |
-| `picasa-ini-format.md` (2026-09-05) | a renderelő a **lánc `crop64` tokenjéből** veszi a vágást, és „ez egyezik az eredetivel" |
+A #4008 mérése a `3229-lanc-sorrend/04-vagas-utan-vignetta.jpg` esetre
+korlátozódik: a képszekcióban nincs `crop=`, a `filters=` viszont tartalmazza
+a `crop64=1,3c3c8c8c` tagot, és az eredeti Picasa-export mérete 1600×1200.
+Ez azt mutatja, hogy ebben a negatív ágban a Picasa exportja nem kezeli aktív
+kivágásként a láncban maradt `crop64` előzményt.
 
-A kettő nem fér meg egymás mellett. A fenti mérés a **lánc-tokenes** olvasat
-felé mutat (a `crop64` valódi lánc-tétel, saját osztály-viselkedéssel), de
-az 1. kör állítása **golden-exportokból** jött, tehát nem söpörhető félre
-mérés nélkül. **A feloldás a #3169 hatóköre**; addig egyik lapot sem
-írtam át.
+PicasaPy exportjában a hiányzó `crop=` esetén a `crop64` tagok kihagyása a
+mért esetre épül. Más ágak — különösen az érvényes `crop=` kulcs, de
+`crop64` tag nélküli lánc — kezelése PicasaPy-implementációs döntés; a
+korpuszban erre nulla példa. A néző és a bélyegkép jelenleg a láncbeli
+`crop64`-et rendereli. Ennek és a Picasa eredeti viselkedésének ellentmondása
+nyitott, külön jegye a #4013.
+
+A binárisban a `FUN_00438820` a korábbi `crop64` elemek eltávolítása után egy
+újat fűz a lánc végére (`0x00438bcc`, `0x00438bd7`, `0x00438c86`). Ez a
+lánc-normalizáló/író útvonalának bizonyítéka, nem bizonyíték arra, hogy a
+renderelő is e normalizált listát kapja. A renderelő `crop=`-et olvas-e
+közvetlenül, a binárisból nem állapítottuk meg. A 761/761-es egyezés a
+`crop=` és az utolsó `crop64` között a mentett adatok korrelációja; önmagában
+nem bizonyítja a futásidejű olvasási útvonalat.
 
 ---
 

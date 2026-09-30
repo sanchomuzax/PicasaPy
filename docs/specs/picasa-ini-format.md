@@ -150,7 +150,7 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 
 | Szűrő | Paraméterek | Leírás |
 |---|---|---|
-| `crop64` | `1,RECT64` | kivágás — a Picasa MELLÉ külön `crop=rect64(...)` kulcsot is ír. Egy láncban TÖBB is lehet (élesben 38 ilyen lánc); ilyenkor az **utolsó** a hatályos, a korábbiak csak történet — ld. `filters-decoded.md`, „Több `crop64` a láncban” (#1550). Az újravágás **hozzáfűz**, nem cserél (#1553) — ugyanott, „Az ÍRÁS oldala” |
+| `crop64` | `1,RECT64` | vágást leíró lánctag; a Picasa emellett külön `crop=rect64(...)` kulcsot is ír. Egy láncban TÖBB is lehet (élesben 38 ilyen lánc); a renderelőben az utolsó tag a hatályos, a korábbiak csak történet — ld. `filters-decoded.md`, „Több `crop64` a láncban” (#1550). Az újravágás **hozzáfűz**, nem cserél (#1553) — ugyanott, „Az ÍRÁS oldala” |
 | `tilt` | `1,!szög,!skála` | döntés; a skála-mező élesben jellemzően `0.000000` = „számítsd ki a kitöltő skálát" (#73) |
 | `redeye` | `1` | vörösszem-eltávolítás |
 | `enhance` | `1` | „I'm Feeling Lucky" automata |
@@ -722,21 +722,44 @@ lehet találkozni, amit Picasa 3 még sosem nyitott meg.**
 
 #### Mit jelent ez nálunk
 
-A vágást a renderelő a **`filters=` lánc `crop64` tokenjéből** veszi
-(`render/chain.py:258`), nem a `crop=` kulcsból — ez **egyezik** az
-eredetivel. A régi alakot viszont **nem ismerjük fel**: nálunk a
-`decode_rect64` `rect64(...)`-et vagy csupasz hexet vár
-(`ini/rect64.py:28–35`), az `a,b,c,d,e;` alakra **kivételt dob**.
+A két mező szerepét a megjelenítési út szerint kell értelmezni. A PicasaPy
+nézője, bélyegkép-renderelője, szerkesztői előnézete, mentése és exportja
+egyaránt a `crop=` kulcsot követi (#4013): kulcs nélkül a láncbeli `crop64`
+előzmények kimaradnak; érvényes kulcsnál az utolsó `crop64` a helyén frissül,
+új tag pedig nem kerül a láncba. Ez az exportban alkalmazott PicasaPy-szabály,
+nem új mérési eredmény. A korpuszban továbbra sincs
+olyan `crop=` kulcs, amelyhez ne tartozna `crop64`. A szabályt az egyes
+fogyasztó utak a `render/chain.py::normalize_crop_ops` függvénnyel
+alkalmazzák; a láncrenderelő önmagában nem olvassa az ini-t.
 
-⇒ Egy Picasa 3-mal még sosem megnyitott, Picasa 2-es korú gyűjteményben
-a **vágás nem érvényesülne** nálunk. Jegy: **#2008** (alacsony
-prioritás — a tulajdonos korpuszában nulla előfordulás). **2026-09-05 óta
-a #2008 megvalósítható**: a mezőfelosztás megvan (fent).
+A #4008 mérőesetében a `3229-lanc-sorrend/04-vagas-utan-vignetta.jpg`
+képszekciójában nincs `crop=`; a `filters=` tartalmaz `crop64=1,3c3c8c8c`
+előzményt. A forrás és az eredeti Picasa exportja egyaránt 1600×1200, ezért
+az exportnak itt nem szabad a láncbeli történetet aktív vágásként kezelnie.
+Ez volt a #4008 exportmérés következtetése; a #4013 óta ugyanezt a PicasaPy
+közös render-szabálya érvényesíti a nézőben, a bélyegképben, az előnézetben
+és a mentésben is. **Az eredeti Picasa nézőjének `crop=` nélküli viselkedése
+nincs külön megmérve** — a rendelkezésre álló eset csak az exportot mérte.
 
-**A kiírás oldalán viszont EGYEZÜNK** (mérve, `app/edit_controller.py:2026`–
-`:2032`): ha nincs vágás, a `crop` kulcsot **töröljük**
-(`document.with_removed(..., "crop")`) — pontosan úgy, ahogy az eredeti
-`or eax,esi ; je` ága (`0x0068b610`). Nincs teendő.
+A régi, ötszámos `crop=` alakot a `decode_rect64` nem ismeri fel: az
+`ini/rect64.py:28–35` szerint `rect64(...)`-et vagy csupasz hexet vár, az
+`a,b,c,d,e;` alakra kivételt dob. Az `ini/legacy_crop.py::parse_legacy_crop`
+viszont felismeri ezt a régi alakot; a renderelés még nincs rákötve erre a
+parserre. A #2008 lezárt. A korpuszban ilyen régi alakot nem mértünk
+(0/859 ini-fájl). #4008 alatt hibás kulcsnál az export naplózva a lánc utolsó
+`crop64` tagjára esik vissza.
+
+**A PicasaPy felhasználó által alkalmazott, lemezre mentett vágás esetén
+MINDKETTŐT írja** (`crop=` és a láncbeli `crop64`; `EditController._save`).
+Ha nincs hatályos vágás, a `crop` kulcsot **töröljük**
+(`document.with_removed(..., "crop")`) — ez egyezik az eredeti
+`or eax,esi ; je` ágával (`0x0068b610`). A fenti, „migráció után a `crop=`
+eltűnhet, és a vágás csak a `filters=`-ben él” állítás a Picasa 3
+legacy-migrációjának hipotetikus eredményére vonatkozik; nem írja le a
+PicasaPy szerkesztőjének írási szabályát. A megnyitáskor `crop=` nélküli
+régi `crop64` egy független effekt mentésekor nem válik aktív vágássá. A
+v0.3.0 (#47) egynapos ablakában készült saját vágások `crop=` nélkül
+maradtak; a #4013-tól ezeket a megjelenítési utak vágatlanul mutatják.
 
 #### Nyitott kérdések mérlege (a legacy `crop=`-ra)
 

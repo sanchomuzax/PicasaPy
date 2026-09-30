@@ -62,6 +62,7 @@ from .io import (
     save_document,
     update_document,
 )
+from .photo_crop import PhotoCropReader
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
 __all__ = [
@@ -76,6 +77,7 @@ __all__ = [
     "IniConflictError",
     "IniDocument",
     "IniSaveError",
+    "PhotoCropReader",
     "KeyValueLine",
     "Line",
     "NO_SOURCE_FILE",

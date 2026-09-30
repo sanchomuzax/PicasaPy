@@ -1,8 +1,9 @@
 """Kijelölt képek exportja célmappába (Ctrl+Shift+S) — issue #16, #136.
 
-A render-motor (V2) előtti első kör: a forgatás (rotate_steps) és a
-`filters=` lánc beleégetése, opcionális átméretezés OpenCV-vel, állítható
-JPEG-minőséggel. Ha egy elemen nincs mit beégetni, bájthű másolás történik
+A render-motor (V2) előtti első kör: a forgatás (rotate_steps), a
+`filters=` lánc és a külön `crop=` kulcs beleégetése, opcionális
+átméretezés OpenCV-vel, állítható JPEG-minőséggel. Ha egy elemen nincs mit
+beégetni, bájthű másolás történik
 (mtime-őrző) — nincs felesleges generációs veszteség. A videók bitre pontos
 másolással kerülnek át. Az újrakódolt JPEG-ekbe a forrás EXIF/IPTC-adata
 (dátum, GPS, kameraadat, felirat, kulcsszavak) szegmens-szinten átkerül,
@@ -23,11 +24,18 @@ import numpy as np
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
 from picasapy.cvimage import dekodolj_forrast, scale_down
-from picasapy.ini import IniConflictError, IniSaveError, update_document
+from picasapy.ini import (
+    IniConflictError,
+    IniDocument,
+    IniSaveError,
+    load_or_empty,
+    update_document,
+)
+from picasapy.ini.photo_crop import log_unreadable_ini_once
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
 from picasapy.metadata.export_metadata import bajtmasolas, frissitett_metaadat
-from picasapy.render import apply_filters
+from picasapy.render import apply_filters, normalize_crop_ops
 from picasapy.render.flip import FLIP_MASK, apply_flip
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
@@ -155,7 +163,8 @@ def resolve_export_quality(preset: str, custom: int) -> int:
 class ExportItem:
     """Egy exportálandó elem: forrásfájl + beégetendő forgatás (90°-os
     lépések) + opcionális `filters=` lánc (nyers, szerializált formában,
-    ahogy a `.picasa.ini`-ben/indexben áll)."""
+    ahogy a `.picasa.ini`-ben/indexben áll). Az aktuális cropot külön,
+    a forrás képszekciójának `crop=` kulcsából olvassuk."""
 
     source: Path
     rotate_steps: int = 0
@@ -232,6 +241,7 @@ def export_photos(
     exported: list[Path] = []
     failed: list[Path] = []
     reasons: list[str] = []
+    source_ini_cache: dict[Path, IniDocument] = {}
     # #369: a sorszám-szélesség a teljes kötegméretből számol, hogy a
     # fájlrendszer ábécésorrendje 1000+ elemnél se törje meg a sorrendet
     # ("0999-..." < "1000-..." csak azonos szélesség mellett igaz).
@@ -240,7 +250,27 @@ def export_photos(
         source = Path(item.source)
         prefix = f"{index:0{number_width}d}-" if settings.add_numbers else ""
         try:
-            exported.append(_export_one(source, item, target_dir, settings, prefix))
+            crop_ini_readable = True
+            crop = None
+            if source.suffix.lower() not in VIDEO_EXTENSIONS:
+                try:
+                    crop = _source_crop(source, source_ini_cache)
+                except OSError as error:
+                    crop_ini_readable = False
+                    log_unreadable_ini_once(
+                        source.parent / PICASA_INI_NAME, error
+                    )
+            exported.append(
+                _export_one(
+                    source,
+                    item,
+                    target_dir,
+                    settings,
+                    prefix,
+                    crop,
+                    crop_ini_readable,
+                )
+            )
         except Exception as error:  # noqa: BLE001 — egy rossz elem nem állíthatja le a köteget
             failed.append(source)
             reasons.append(str(error))
@@ -331,7 +361,8 @@ def _write_ini_metadata(
 
 def _export_one(
     source: Path, item: ExportItem, target_dir: Path, settings: ExportSettings,
-    number_prefix: str = "",
+    number_prefix: str = "", crop: str | None = None,
+    crop_ini_readable: bool = True,
 ) -> Path:
     if source.suffix.lower() in VIDEO_EXTENSIONS:
         if not settings.movie_full:
@@ -355,7 +386,20 @@ def _export_one(
     # exportot. A felhasználó ettől kapott KEVESEBB képet, mint amennyit
     # kijelölt.
     ops = parse_filters_prefix(item.filters) if item.filters else ()
-    if _is_noop_copy(source, item, settings, ops):
+    has_unparsed_filter_chain = bool(item.filters) and not ops
+    ops = _export_filter_ops(
+        ops,
+        crop,
+        crop_ini_readable=crop_ini_readable,
+        warning_key=str(source),
+    )
+    if _is_noop_copy(
+        source,
+        item,
+        settings,
+        ops,
+        has_unparsed_filter_chain=has_unparsed_filter_chain,
+    ):
         # Az érvényesség-ellenőrzéshez dekódolunk (a sérült/nem-kép forrás
         # így is a `failed` listára kerül), de az eredményt eldobjuk — a
         # célfájlba a forrás EREDETI bájtjai kerülnek, generációs veszteség
@@ -488,12 +532,19 @@ def _encode_with_source_qtables(image: np.ndarray, source: Path) -> bytes | None
 
 
 def _is_noop_copy(
-    source: Path, item: ExportItem, settings: ExportSettings, ops: tuple[FilterOp, ...]
+    source: Path,
+    item: ExportItem,
+    settings: ExportSettings,
+    ops: tuple[FilterOp, ...],
+    *,
+    has_unparsed_filter_chain: bool = False,
 ) -> bool:
     """Nincs mit beégetni: se forgatás, se tükrözés (#3977), se átméretezés,
     se szerkesztés, se vízjel — és a forrás már JPEG. Ilyenkor a sima másolás a helyes (bájthű,
     mtime-őrző); a sorszámozás (#369) csak a fájlnevet érinti, a bájthű
-    másolást nem zárja ki."""
+    másolást nem zárja ki. Ha a nem üres filters-láncot az olvasó teljesen
+    elvetette, akkor is újrakódolunk: az eredeti Picasa exportja ilyenkor is
+    új JPEG-et ír, és az export-metaadatoknak is le kell futniuk (#3997)."""
     return (
         source.suffix.lower() in _JPEG_EXTENSIONS
         and item.rotate_steps % 4 == 0
@@ -501,6 +552,7 @@ def _is_noop_copy(
         and settings.max_dimension is None
         and not settings.watermark_text
         and not ops
+        and not has_unparsed_filter_chain
     )
 
 
@@ -586,8 +638,12 @@ def _apply_watermark(image: np.ndarray, text: str | None) -> np.ndarray:
 
 
 def _apply_filter_chain(image: np.ndarray, ops: tuple[FilterOp, ...]) -> np.ndarray:
-    """A `filters=` lánc beleégetése — a meglévő render-lánccal (RGB-térben,
-    mint a bélyegkép-gyorsítótár, ld. `thumbs/cache.py`).
+    """A szűrőlánc és az aktuális crop kulcs beleégetése — a meglévő
+    render-lánccal (RGB-térben, mint a bélyegkép-gyorsítótár,
+    ld. `thumbs/cache.py`).
+
+    A `_export_filter_ops` a forrás képszekciójának `crop=` mezőjét az
+    utolsó `crop64` tételen érvényesíti, annak láncbeli helyét megtartva.
 
     Hibás/idegen lánc-bejegyzésnél (#73-elv) a szűretlen kép a helyes
     visszaesés, nem az export teljes meghiúsulása — ezt a #301 óta maga az
@@ -597,6 +653,38 @@ def _apply_filter_chain(image: np.ndarray, ops: tuple[FilterOp, ...]) -> np.ndar
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     rendered, _skipped = apply_filters(rgb, ops)
     return cv2.cvtColor(rendered, cv2.COLOR_RGB2BGR)
+
+
+def _source_crop(source: Path, cache: dict[Path, IniDocument]) -> str | None:
+    """A Picasa aktuális kivágása a képszekció `crop=` kulcsában áll (#4008).
+
+    A forrásmappánkénti dokumentum-cache elkerüli, hogy egy tömeges export
+    ugyanazt a `.picasa.ini`-t minden képnél újraolvassa. Olvasási hibát a
+    hívó naplóz és az eredeti filters-lánccal esik vissza.
+    """
+    ini_path = source.parent / PICASA_INI_NAME
+    document = cache.get(ini_path)
+    if document is None:
+        document = load_or_empty(ini_path)
+        cache[ini_path] = document
+    section = document.section(source.name)
+    return section.get("crop") if section is not None else None
+
+
+def _export_filter_ops(
+    ops: tuple[FilterOp, ...],
+    crop: str | None,
+    *,
+    crop_ini_readable: bool = True,
+    warning_key: str | None = None,
+) -> tuple[FilterOp, ...]:
+    """Az export közös render-előkészítője (#4008, #4013)."""
+    return normalize_crop_ops(
+        ops,
+        crop,
+        crop_ini_readable=crop_ini_readable,
+        warning_key=warning_key,
+    )
 
 
 def _decode_image(source: Path) -> np.ndarray:

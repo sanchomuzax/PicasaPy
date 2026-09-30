@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.647] – 2026-09-30
+
+### Javítva
+- A néző és a bélyegképek már nem vágják meg a képet egy korábbi, visszavont vágás alapján — ugyanazt mutatják, mint az export (#4013).
+
+## [0.8.646] – 2026-09-30
+
+### Javítva
+- Ha egy kép szerkesztési bejegyzését a PicasaPy nem ismeri fel (pl. eltérő kis- és nagybetűk miatt), az export az eredetihez hasonlóan új JPEG-et ír a teljes Exif- és Interop-adattal, nem változatlan másolatot (#3997).
+
+## [0.8.645] – 2026-09-30
+
+### Javítva
+- Az exportált képet már nem vágja meg a szerkesztési előzményben maradt régi vágás — ugyanúgy, mint az eredeti Picasában (#4008).
+
 - A Kiegyenesítés eszközön álló négyzetháló jelenik meg; az Alkalmaz,
   a Mégse és a lapozás eltünteti (#3924).
 
