@@ -1142,8 +1142,16 @@ def mitchell_netravali(x: np.ndarray) -> np.ndarray:
     return np.where(tav < 1, belso, np.where(tav < 2, kulso, 0.0))
 
 
+def lanczos3(x: np.ndarray) -> np.ndarray:
+    """A Lanczos-3 mag (`ytResampler` 5-ös mód, `0x00a3fdf5`, #3998):
+    `|x| >= 3` → 0, egyébként `sinc(π|x|) · sinc(π|x|/3)`. Az oldallebenyek
+    negatívak (1 és 2 között), a sugár 3."""
+    tav = np.abs(np.asarray(x, dtype=np.float64))
+    return np.where(tav < 3.0, np.sinc(tav) * np.sinc(tav / 3.0), 0.0)
+
+
 def _tengely_sulyok(
-    be_meret: int, ki_meret: int, doboz: bool
+    be_meret: int, ki_meret: int, doboz: bool, lanczos: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
     """Egy tengely csapindexei és EGÉSZ súlyai, a `ytResampler` szerint.
 
@@ -1153,7 +1161,8 @@ def _tengely_sulyok(
 
     * **doboz** (0-s mód): súly 1, ha `|x| < 0,5` — a határon álló csap nem
       számít (`0x00a3fb12`);
-    * **Mitchell** (3-as mód): `B = C = 0,4`, `|x| < 2`.
+    * **Mitchell** (3-as mód): `B = C = 0,4`, `|x| < 2`;
+    * **Lanczos-3** (5-ös mód, `lanczos=True`, #3998): `|x| < 3`.
 
     Az egész súly `csonk(w · 16383 / Σw)` (`0x00a4035d`), a maradékot
     (`16383 − Σ`) a `csonk(c)` indexű csap kapja, a csaptartományba
@@ -1167,7 +1176,7 @@ def _tengely_sulyok(
     """
     skala = np.float32(be_meret) / np.float32(ki_meret)
     nyujtas = max(1.0, float(skala))
-    sugar = (0.5 if doboz else 2.0) * nyujtas
+    sugar = (0.5 if doboz else 3.0 if lanczos else 2.0) * nyujtas
     kozep = ((np.arange(ki_meret, dtype=np.float32) + np.float32(0.5)) * skala).astype(np.float64)
     elso = np.floor(kozep - sugar - 0.5).astype(np.int64)
     ablak = int(np.ceil(2 * sugar)) + 2
@@ -1177,7 +1186,8 @@ def _tengely_sulyok(
     if doboz:
         nyers = ervenyes.astype(np.float64)
     else:
-        nyers = np.where(ervenyes, mitchell_netravali(tav / nyujtas), 0.0)
+        mag = lanczos3 if lanczos else mitchell_netravali
+        nyers = np.where(ervenyes, mag(tav / nyujtas), 0.0)
     osszeg = nyers.sum(axis=1, keepdims=True)
     osztott = np.divide(
         nyers * _RESIZE_EGYSEG, osszeg, out=np.zeros_like(nyers), where=osszeg != 0
@@ -1195,13 +1205,16 @@ def _tengely_sulyok(
     return np.clip(indexek, 0, be_meret - 1), sulyok
 
 
-def _tengely_menten(kep: np.ndarray, ki_meret: int, tengely: int, doboz: bool) -> np.ndarray:
+def _tengely_menten(
+    kep: np.ndarray, ki_meret: int, tengely: int, doboz: bool, lanczos: bool = False
+) -> np.ndarray:
     """Egy menet EGY tengely mentén: `(Σ w·p + 255) >> 14`, 8 bites kimenet."""
     be_meret = kep.shape[tengely]
-    if doboz and ki_meret == be_meret:
-        # 1:1-es doboz: egyetlen csap, súlya 16383 — `(16383·p + 255) >> 14 = p`
+    if (doboz or lanczos) and ki_meret == be_meret:
+        # 1:1-es menet: a középső csap súlya 16383 (a Lanczos többi csapja az
+        # egész távolságokon 0) — `(16383·p + 255) >> 14 = p`
         return kep
-    indexek, sulyok = _tengely_sulyok(be_meret, ki_meret, doboz)
+    indexek, sulyok = _tengely_sulyok(be_meret, ki_meret, doboz, lanczos)
     alak = [1] * kep.ndim
     alak[tengely] = ki_meret
     gyujto = np.zeros(
@@ -1217,7 +1230,13 @@ def _tengely_menten(kep: np.ndarray, ki_meret: int, tengely: int, doboz: bool) -
     return (gyujto >> _RESIZE_ELTOLAS).astype(np.uint8)
 
 
-def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = True) -> np.ndarray:
+def resize_image(
+    image: np.ndarray,
+    width: int,
+    height: int,
+    smoothing: bool = True,
+    lanczos3: bool = False,
+) -> np.ndarray:
     """`Resize`: a kép átméretezése.
 
     `smoothing=True` (az alapérték, mérve: `0x00bc36ac`) a `ytResampler`-t
@@ -1235,6 +1254,9 @@ def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = T
       Előbb a vízszintes menet fut, 8 bites köztes képpel, utána a
       függőleges.
 
+    `lanczos3=True` a 5-ös mód (#3998, spec 16. H) 3.): mindkét tengelyen
+    Lanczos-3 (`lanczos3`), a többi lépés ugyanaz. Az EXIF-bélyegkép használja.
+
     `smoothing=False` a 9-es, legközelebbi-szomszéd ág (mérve, 5/a):
     `INTER_NEAREST`.
     """
@@ -1243,7 +1265,7 @@ def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = T
     height = max(1, int(round(height)))
     if not smoothing:
         return cv2.resize(image, (width, height), interpolation=cv2.INTER_NEAREST)
-    return _ytresampler(image, width, height)
+    return _ytresampler(image, width, height, lanczos3)
 
 
 def resize_plane(plane: np.ndarray, width: int, height: int) -> np.ndarray:
@@ -1309,13 +1331,14 @@ def resize_column_plane(
     return fuggoleges[:, np.asarray(kimeneti).reshape(-1)]
 
 
-def _ytresampler(kep: np.ndarray, width: int, height: int) -> np.ndarray:
-    """A mód a vízszintes léptékből; előbb vízszintes, aztán függőleges menet."""
+def _ytresampler(kep: np.ndarray, width: int, height: int, lanczos: bool = False) -> np.ndarray:
+    """A mód a vízszintes léptékből (`lanczos`: az 5-ös mód, mindkét tengelyen);
+    előbb vízszintes, aztán függőleges menet."""
     if width == kep.shape[1] and height == kep.shape[0]:
         return kep.copy()
-    doboz = width <= kep.shape[1]
-    vizszintes = _tengely_menten(kep, width, 1, doboz)
-    kimenet = _tengely_menten(vizszintes, height, 0, doboz)
+    doboz = width <= kep.shape[1] and not lanczos
+    vizszintes = _tengely_menten(kep, width, 1, doboz, lanczos)
+    kimenet = _tengely_menten(vizszintes, height, 0, doboz, lanczos)
     return kimenet.copy() if kimenet is kep else kimenet
 
 
@@ -1387,6 +1410,7 @@ def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
 
 __all__ = [
     "to_uint8",
+    "lanczos3",
     "to_float",
     "luma",
     "fade_alpha",

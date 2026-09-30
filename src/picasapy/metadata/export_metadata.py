@@ -24,8 +24,13 @@ hibánál a régi bájtmásolás a kimenet (`bajtmasolas`).
   `Orientation` = `1`, csak ha MEGVAN (#3966): a dekódolás a képpontokat
   már elforgatta, a forrás tagje kétszer fordítaná a képet (16. E: a
   meglévő `0x0d` kulcs üres értékkel kerül a halmazba).
-  Az IFD1 beágyazott előnézete a kimenetből újragenerálva (160×120-ba),
-  ha a forrásnak volt; ha nem generálható, a forrásé marad.
+  Az IFD1 (EXIF-bélyegkép, #3998, 16. H) MINDIG a kimenetből épül újra,
+  a forrásé sosem kerül át: ha a kimenet mindkét oldala > 300 px, új
+  bélyegkép (`exif_belyegkep`: 160 px, előfelezés + Lanczos-3, q85) kerül a
+  blokk végére, akkor is, ha a forrásban nem volt EXIF; egyébként nincs IFD1.
+  Ha az APP1 nem fér a 64 KiB-ba, a bélyegkép minősége 15-tel csökken
+  (85 → 10); 10-en sem fér el → bélyegkép nélkül megy tovább az EXIF (az
+  eredeti itt az egész EXIF-et eldobja; mi a forrás többi tagjét megtartjuk).
 * XMP: a meglévő megmarad, `xmp:ModifyDate` = az export ideje, az `exif:`
   névtérből csak a két dátum marad (16. B). Ha a forrásnak nincs XMP-je:
   metaadat nélküli forrásnál (se EXIF, se XMP) a `copy_signature` mért
@@ -52,6 +57,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 
+from picasapy.metadata import exif_belyegkep
 from picasapy.metadata.copy_signature import (
     ALAIRAS,
     _app1,
@@ -90,7 +96,6 @@ _EXIF_VERZIO = b"0220"  # a metaadat nélküli forrás eredeti exportjában mér
 _INTEROP_VERZIO = b"0100"  # spec 16. G) 3d
 #: a JPEG SOF-markerei (a 0xC4 DHT, 0xC8 JPG és 0xCC DAC nem az)
 _SOF_MARKEREK = frozenset({0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF})
-_ELONEZET_MAX = (160, 120)
 _XPACKET_KEZDET = '<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
 _XPACKET_VEG = '\n<?xpacket end="w"?>'
 
@@ -162,34 +167,27 @@ def bajtmasolas(source: Path, encoded: bytes) -> bytes:
 # --- EXIF ---------------------------------------------------------------------
 
 
-def _elonezet(encoded: bytes, size: tuple[int, int] = (0, 0)) -> bytes | None:
-    """A kimenet 160×120-ba férő JPEG-előnézete, vagy `None`."""
+def _kicsinyitett_kep(encoded: bytes):
+    """A kimenet kicsinyített képpontjai a bélyegképhez, vagy `None` (a kimenet
+    mindkét oldala nem > 300, vagy nem dekódolható). A méretet a dekódolt kép
+    adja."""
     import cv2
     import numpy as np
 
-    szel, mag = size
-    flag = next(
-        (
-            flag
-            for f, flag in (
-                (8, cv2.IMREAD_REDUCED_COLOR_8),
-                (4, cv2.IMREAD_REDUCED_COLOR_4),
-                (2, cv2.IMREAD_REDUCED_COLOR_2),
-            )
-            if szel // f >= _ELONEZET_MAX[0] and mag // f >= _ELONEZET_MAX[1]
-        ),
-        cv2.IMREAD_COLOR,
+    kep = cv2.imdecode(
+        np.frombuffer(encoded, np.uint8), cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION
     )
-    kep = cv2.imdecode(np.frombuffer(encoded, np.uint8), flag)
-    if kep is None:
+    if kep is None or not exif_belyegkep.kell_belyegkep((kep.shape[1], kep.shape[0])):
         return None
-    h, w = kep.shape[:2]
-    arany = min(_ELONEZET_MAX[0] / w, _ELONEZET_MAX[1] / h, 1.0)
-    uj = (max(1, round(w * arany)), max(1, round(h * arany)))
-    if uj != (w, h):
-        kep = cv2.resize(kep, uj, interpolation=cv2.INTER_AREA)
-    ok, buf = cv2.imencode(".jpg", kep, [cv2.IMWRITE_JPEG_QUALITY, 80])
-    return buf.tobytes() if ok else None
+    return exif_belyegkep.kicsinyitett(kep)
+
+
+def _belyegkep_jpeg(kicsi, minoseg: int) -> bytes | None:
+    try:
+        return exif_belyegkep.kodol(kicsi, minoseg)
+    except Exception:  # noqa: BLE001 — a bélyegkép sem buktathat exportot
+        _LOG.warning("export: a bélyegkép kódolása kimaradt", exc_info=True)
+        return None
 
 
 def _forras_meret(forras_bajt: bytes) -> tuple[int, int] | None:
@@ -227,8 +225,6 @@ def _exif_valtozasok(
         Valtozas("Exif", 0xA003, Ertek(SHORT, int(size[1]))),  # PixelYDimension
         # Orientation (#3966): a képpontok már állnak, a tag nem forgathat újra
         Valtozas("0th", 0x0112, Ertek(SHORT, 1), csak_ha_megvan=True),
-        # az IFD1 (előnézet) tagje is: az újragenerált előnézet már áll
-        Valtozas("1st", 0x0112, Ertek(SHORT, 1), csak_ha_megvan=True),
     ]
     if taken_at is not None:
         valtozasok.append(
@@ -252,14 +248,19 @@ def _exif_szegmens(
     valtozasok = _exif_valtozasok(size, now, source_taken_at(source))
     if forras_meret is not None:
         valtozasok += _interop_valtozasok(forras_meret)
-    torzs = frissitett_tiff(
-        tiff, valtozasok, elonezet=lambda: _vedett("előnézet", lambda: _elonezet(encoded, size))
-    )
-    szegmens = _app1_ha_elfer(_EXIF_ID, torzs)
-    if szegmens is None:
-        # az új előnézettel nem fér el: a forrás előnézete marad
-        szegmens = _app1_ha_elfer(_EXIF_ID, frissitett_tiff(tiff, valtozasok))
-    return szegmens
+    kicsi = _vedett_kep("bélyegkép", lambda: _kicsinyitett_kep(encoded))
+    if kicsi is not None:
+        for minoseg in exif_belyegkep.MINOSEGEK:
+            jpeg = _belyegkep_jpeg(kicsi, minoseg)
+            if jpeg is None:
+                break
+            szegmens = _app1_ha_elfer(
+                _EXIF_ID, frissitett_tiff(tiff, valtozasok, uj_ifd1=lambda jpeg=jpeg: jpeg)
+            )
+            if szegmens is not None:
+                return szegmens
+    # nincs (vagy nem fér el) bélyegkép: az IFD1 akkor sem a forrásé
+    return _app1_ha_elfer(_EXIF_ID, frissitett_tiff(tiff, valtozasok, uj_ifd1=lambda: None))
 
 
 # --- XMP ----------------------------------------------------------------------
@@ -369,6 +370,15 @@ def _vedett_meret(fuggveny) -> tuple[int, int] | None:
         return fuggveny()
     except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
         _LOG.warning("export: a forrás mérete nem állapítható meg", exc_info=True)
+        return None
+
+
+def _vedett_kep(nev: str, fuggveny):
+    """Mint `_vedett`, tetszőleges visszatéréssel: hibánál `None`."""
+    try:
+        return fuggveny()
+    except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
+        _LOG.warning("export: a(z) %s elkészítése kimaradt", nev, exc_info=True)
         return None
 
 

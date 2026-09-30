@@ -154,11 +154,13 @@ class TestTiffSzinten:
 
 
 
-def test_az_ifd1_tajolas_tagje_is_1_lesz(tmp_path):
+def test_az_ifd1_tajolas_tagje_nem_marad_6(tmp_path):
+    """#3998: a forrás IFD1-e (és annak `Orientation`-je) nem kerül át; a
+    20×60-as kimenetnek (≤ 300 px) nincs IFD1-e."""
     source = _forras_elonezettel(tmp_path)
     assert _tajolasok(source) == (6, 6)
     kimenet = _export(source, tmp_path, max_dimension=1000)
-    assert _tajolasok(kimenet) == (1, 1)
+    assert _tajolasok(kimenet) == (1, None)
 
 
 def test_az_ifd1_hianyzo_tajolas_nem_potlodik(tmp_path):

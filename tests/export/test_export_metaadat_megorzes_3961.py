@@ -226,6 +226,8 @@ class TestExifMegorzes:
             ("1st", 0x0202),  # és hossza
         }
         for ifd, tagek in eredeti.items():
+            if ifd == "1st":  # az IFD1 mindig újraépül (#3998): a forrásé nem kerül át
+                continue
             for tag, (tipus, darab, _hely, ertek) in tagek.items():
                 if (ifd, tag) in valtozhat:
                     continue
@@ -278,30 +280,27 @@ class TestExifMegorzes:
 
 
 class TestElonezetIfd1:
-    """J3: az eredeti az előnézetet újragenerálja; mi a kimenetből, 160×120-ba."""
+    """#3998: az IFD1 mindig újraépül; ≤ 300 px-es kimenetnél nincs, a forrás
+    előnézete sosem kerül át (a bélyegképet a `test_export_belyegkep_3998.py` méri)."""
 
-    def test_elonezet_a_kimenetbol_ujrageneralva(self, tmp_path):
+    def test_300_px_alatti_kimenetnek_nincs_ifd1(self, tmp_path):
         tiff = _kameras_tiff()
         source = _forras(tmp_path, _app1(_EXIF_ID, tiff), size=(80, 40))
         report = export_photos(
             [ExportItem(source, rotate_steps=1)], tmp_path / "out"
         )
         ki = _app1_torzs(report.exported[0], _EXIF_ID)
-        ifd1 = _olvas(ki)["1st"]
-        kezdet = struct.unpack("<I", ifd1[0x0201][3])[0]
-        hossz = struct.unpack("<I", ifd1[0x0202][3])[0]
-        with Image.open(io.BytesIO(ki[kezdet : kezdet + hossz])) as kep:
-            # a forgatott (40×80) kimenet előnézete: álló, 160×120-ba fér
-            assert kep.size[0] < kep.size[1]
-            assert kep.size[0] <= 160 and kep.size[1] <= 120
+        assert _olvas(ki)["1st"] == {}
 
-    def test_ha_nem_generalhato_a_forrase_marad(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(em, "_elonezet", lambda *_a: None)
+    def test_ha_nem_generalhato_a_forras_elonezete_sem_marad(self, tmp_path, monkeypatch):
+        def hiba(*_a):
+            raise RuntimeError("előnézet-hiba")
+
+        monkeypatch.setattr(em, "_kicsinyitett_kep", hiba)
         tiff = _kameras_tiff()
         ki = _app1_torzs(_export(_forras(tmp_path, _app1(_EXIF_ID, tiff)), tmp_path), _EXIF_ID)
-        eredeti, uj = _olvas(tiff)["1st"], _olvas(ki)["1st"]
-        assert uj[0x0201][3] == eredeti[0x0201][3]
-        assert uj[0x0202][3] == eredeti[0x0202][3]
+        assert _olvas(ki)["1st"] == {}
+        assert _jpeg_bajt((32, 24), "blue") not in ki
 
 
 @pytest.mark.skipif(
@@ -327,10 +326,12 @@ def test_valodi_xiaomi_jpeg_exif_bajtra_megmarad(tmp_path):
                  ("Exif", 0xA005),  # #3989: az Interop-tábla áthelyeződik
                  ("0th", 0x0112), ("1st", 0x0112)}  # 0x0112: #3966, lent külön: értéke 1
     bo = "<" if _app1_torzs(kimenet, _EXIF_ID)[:2] == b"II" else ">"
-    for ifd in ("0th", "1st"):
+    for ifd in ("0th",):
         if 0x0112 in eredeti[ifd]:
             assert struct.unpack(bo + "H", ki[ifd][0x0112][3][:2])[0] == 1, ifd
     for ifd, tagek in eredeti.items():
+        if ifd == "1st":  # az IFD1 újraépül (#3998)
+            continue
         for tag, (tipus, darab, _hely, ertek) in tagek.items():
             if (ifd, tag) not in valtozhat:
                 assert ki[ifd][tag][:2] == (tipus, darab), (ifd, hex(tag))
@@ -706,20 +707,19 @@ class TestSerultBlokk:
 
 class TestElonezetHiba:
     def test_elonezet_kivetele_csak_az_elonezetet_viszi_el(self, tmp_path, monkeypatch):
-        """J2: a `_elonezet` kivétele után a `DateTime` és a méret frissül,
-        csak az előnézet marad a forrásé."""
+        """J2 (#3998): a bélyegkép-készítés kivétele után a `DateTime` és a méret
+        frissül, az IFD1 marad el (a forrásé sem kerül át)."""
 
         def hibas(*_a, **_k):
             raise RuntimeError("előnézet-hiba")
 
-        monkeypatch.setattr(em, "_elonezet", hibas)
+        monkeypatch.setattr(em, "_kicsinyitett_kep", hibas)
         tiff = _kameras_tiff()
         ki = _app1_torzs(_export(_forras(tmp_path, _app1(_EXIF_ID, tiff)), tmp_path), _EXIF_ID)
         eredeti, uj = _olvas(tiff), _olvas(ki)
         assert uj["0th"][0x0132][3] != eredeti["0th"][0x0132][3]
         assert 0xA002 in uj["Exif"] and 0xA003 in uj["Exif"]
-        assert uj["1st"][0x0201][3] == eredeti["1st"][0x0201][3]
-        assert uj["1st"][0x0202][3] == eredeti["1st"][0x0202][3]
+        assert uj["1st"] == {}
 
 
 class TestLegalsoVedohalo:
