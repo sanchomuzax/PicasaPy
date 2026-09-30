@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.645] – 2026-09-30
+
 ### Javítva
 - Az exportált képet már nem vágja meg a szerkesztési előzményben maradt régi vágás — ugyanúgy, mint az eredeti Picasában (#4008).
 
