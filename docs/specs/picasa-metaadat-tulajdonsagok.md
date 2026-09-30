@@ -2141,3 +2141,74 @@ kicsinyítés után a `0x009ed05e`–`0x009ed085` a bélyegkép képpontjait a g
 *Bizonyítottsági fok: **megerősített** az 1., 4., 5. pontra és a kernel azonosítására (két független opus-olvasás + a hívó saját ellenőrzése a felülírásnál; a q85, a 4:2:0, a Huffman, a méret-szabály a 186 exporton mérve); **erős** a `fistp` kerekítési módjára és a pixelpontos egyezésre.*
 
 *Forrás: `0x009ecdb0`, `0x009b4aa0`, `0x00a3f490`, `0x00a3f660`, `0x00a3fdf5`, `0x00a3feed`, `0x009d61e0`–`0x009d53e0`, `0x00ad3b30`, `0x00a7ade0`, `0x00a78920`, `0x00a7c720`; mérés: a helyi `meroadat.tar` 421 bélyegképe.*
+
+### I) ✅ A bélyegkép kicsinyítése: ELŐBB 2×2-es előfelezés, azután Lanczos-3 — pixelpontossági kérdések lezárva (2026-09-30, 417. kör, #3995)
+
+A H) 3. pontja az előfelezést, a gyorsított sorkezelőt és az ICC-lépést nyitva hagyta. Mindhárom kiolvasva
+(két független opus-olvasás egyezik).
+
+**1. Az előfelezés** — a `0x009ecfa9 mov byte [esp+0x108], 1` az objektum `+0x34` bájtját 1-re állítja
+(a konstruktor 0-ra tette, `0x00a3f56e`). Kapu: `0x00a42d8d cmp byte [ebx+0x34], 0` (`0x00a42c20`-ban).
+
+```
+amíg  src.w ≥ 2·dst.w  ÉS  src.h ≥ 2·dst.h :          ; előjel nélküli, az egyenlőség is felez
+    tmp = 2×2 doboz-átlag(src)                          ; 0x00a43230; méret ⌊w/2⌋ × ⌊h/2⌋
+    src = tmp                                           ; a 0x00a42c20 önmagát hívja (vtábla +0x24 = 0xce3fd8)
+utána egyetlen Lanczos-3 menet src′ → dst                ; a lépték float32(dst / src′)
+```
+
+- **Átlag:** csatornánként `⌊(a+b+c+d)/4⌋` (`0x00a43290`–`0x00a43337`: `0x00ff00ff` maszkos összegzés, `shr 2`,
+  **nincs `+2` kerekítés**); az alfát is átlagolja, de a végső menet 0xFF-re állítja (`[obj+0x36]` = 0).
+- **Szélek:** a kimenet ⌊W/2⌋ × ⌊H/2⌋; a páratlan utolsó oszlop/sor **eldobódik** (nincs átlagolás, nincs ismétlés).
+  Zárt alak: `k = max{k : 2^k·w ≤ W és 2^k·h ≤ H}`, a végső forrás `⌊W/2^k⌋ × ⌊H/2^k⌋`; a forrás jobb és alsó
+  szélén legfeljebb `2^k − 1` képpont kimarad (3000 sorból 2992 számít).
+- A végső menet előtt a `+0x34` ideiglenesen 0 (`0x00a42f62`/`0x00a42f6f`), utána visszaáll; a folyamatos
+  felező ágak (`0x00a40a90`, `0x00a42af0`) ezért nem futnak.
+- Példák: 4000×3000 → 4 felezés → 250×187 → 160×120; 1600×1200 → 3 → 200×150; 960×640 → 2 → 240×160 → 160×112.
+- Az objektum `+0x36` bájtja az alfa-szűrést vezérli (0: csak 3 csatorna, az alfa 0xFF; `0x00a426de`, `0x00a428ee`).
+
+**2. A gyorsított sorkezelő** — `[obj+0x37] = [0xd695d2] ∥ [0xd695d3]` (`0x00a3f496`–`0x00a3f4b9`). A `[0xd695d2]` a
+`CPUID(1).EDX` 26. bitje (SSE2; a statikus inicializáló `0x00c33d48`–`0x00c33d56`); a `[0xd695d3]` sehol nem íródik
+(26 olvasás, `.bss`, mindig 0). ⇒ SSE2-es gépen, Wine alatt is a SIMD-ág fut (`0x00a426a0` → `0x00a428e0`).
+**Az aritmetika bitre azonos a skalárral:** a kezdőérték `{255,255,255,255}` (`0xd47560`), `pmaddwd` (int16 súly ×
+0..255 képpont, 16 bites túlcsordulás nincs), `psrad 14`, `packssdw`, `packuswb` ⇒ `sat_u8((Σ + 255) >> 14)`.
+
+**3. Az ICC-átalakítás** — a `[0xd67920]` a globális színkezelő (a `0x0097e410` hozza létre): `+0` a LittleCMS beépített
+sRGB profilja, `+8` a monitorprofil, `+0x5c` = `HKCU\SOFTWARE\Google\Picasa\Picasa2\Preferences\EnableColorManagement`
+(`0x00a3df8a`, **alapérték 0**). A forrás ICC-jét a JPEG-olvasó az `[obj+0x24]`-be teszi (`0x009eaad0`); a `0x00a357a0`
+dönt, hogy a friss halmazba `0x2c` kerül-e (RGB/GRAY profil, ha a megnyitás sikerül — ez is a `+0x5c` mögött áll).
+Az átalakítás **csak együtt** fut le, ha (a) az EnableColorManagement = 1, (b) a forrás JPEG RGB vagy GRAY ICC-t hordoz,
+(c) a kimenet mindkét oldala > 300; a **cél a beépített sRGB** (`0x009ece3e`), perceptuális szándék, `TYPE_BGRA_8`, a
+Lanczos után és a q85 előtt (`0x009ed083 call [xf+8]`). **Alapbeállításnál soha nem fut** ⇒ a H) 6. pontja szűkül.
+
+**Mérve** (19 export, a fő kép ⟶ jelölt ⟶ q85 JPEG-oda-vissza, átlagos abszolút eltérés a Picasa bélyegképétől):
+
+| jelölt | eltérés | fájlonkénti győzelem |
+|---|---:|---:|
+| **Lanczos-3 + előfelezés** | **0,58** | **18** |
+| Lanczos-4 + előfelezés | 1,19 | 0 |
+| Mitchell + előfelezés | 2,92 | 1 |
+| Lanczos-3, előfelezés nélkül | 3,49 | 0 |
+| doboz + előfelezés | 5,11 | 0 |
+
+A jelölt a JPEG-zaj padlóértékén van: a Picasa saját bélyegképét ugyanazzal a q85-ös kódolóval újrakódolva az
+eltérés 0,48 (19 fájl átlaga). A mért készlet a két Lanczos-t és az előfelezést egyértelműen szétválasztja.
+
+| | Eredeti | Nálunk |
+|---|---|---|
+| kicsinyítés | 2×2 előfelezés `⌊Σ/4⌋` ismételve, majd Lanczos-3 | nincs bélyegkép (#3998) |
+| ICC-átalakítás | alapból kikapcsolva | nincs — egyezik |
+
+**Nyitott kérdések mérlege — 3 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 „csak nyitva”:**
+
+1. ~~Az előfelezés~~ — **LEZÁRVA** (két független olvasás + mérés: 3,49 → 0,58).
+2. ~~A SIMD-ág egyezése~~ — **LEZÁRVA** (bitre azonos aritmetika).
+3. ~~Az ICC-lépés feltétele~~ — **LEZÁRVA** (alapból kikapcsolva).
+4. **HATÓKÖRÖN KÍVÜL** — a kerekítés (`1000×651`, `1000×702`) és a küszöb (`300×400`, `301×301`) élő mérése: a Colab-végrehajtóban nincs export-lépéssor és tetszőleges méretű tesztkép; a különbség legfeljebb a bélyegkép rövid oldalának egy 8 pixeles lépése, csak határesetben; a bináris mérvadó, a 30 mért méret (a mérőkészlet és a `research/testdata`) egyike sem választja szét a változatokat.
+5. **HATÓKÖRÖN KÍVÜL** — az ICC-átalakítás élő mérése bekapcsolt színkezeléssel (AdobeRGB-profilú JPEG): az alapbeállítás nem fut, a felhasználó ezt nem éri el az export útján; a `0x00a3e3a0` és a `0x00a357a0` kapuját a kód egyértelműen mutatja.
+
+*Bizonyítottsági fok: **megerősített** az előfelezésre, a SIMD-egyezésre és a `+0x5c` = EnableColorManagement (alapérték 0) tényre; **erős** az ICC-lépés teljes feltételére (nem-JPEG forrásnál nem olvasva).*
+
+*Mellékes lelet, külön jegyen (#4004): a függőleges menetek a sor utolsó `W mod 4` oszlopát `+255` nélkül számolják — egy olvasat, a bélyegképet nem érinti.*
+
+*Forrás: `0x009ecdb0`, `0x00a42c20`, `0x00a43230`, `0x00a426a0`, `0x00a428e0`, `0x00a3f490`, `0x00a3df50`, `0x00a357a0`, `0x009f0560`, `0x00af2d20`; mérés: a helyi `meroadat.tar`.*
