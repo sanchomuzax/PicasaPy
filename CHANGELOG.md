@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.644] – 2026-09-30
+
 ### Javítva
 - Az exportált JPEG Exif-blokkja, ha az eredetiben nem volt Exif, a Picasához hasonlóan kis végű (II) bájtsorrendű; a meglévő Exif-blokk bájtsorrendje változatlan marad (#4009).
 
