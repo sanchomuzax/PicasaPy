@@ -194,6 +194,23 @@ class TestNoopCopy:
         )
         assert report.exported[0].read_bytes() != original
 
+    @pytest.mark.parametrize("lanc", ["Tint=1,79.842102,ffff;", "sepia;bw=1;"])
+    def test_felismeretlen_nem_ures_lanc_ujrakodol_interoppal(self, tmp_path, lanc):
+        """#3997: a nem üres, de az olvasó által teljesen elvetett lánc
+        (a mért Picasa-exportok mind újrakódoltak) nem bájthű másolat, és a
+        kimenet megkapja az Exif- és Interop-adatot (`InteropVersion` 0100)."""
+        source = _make_half_and_half(tmp_path / "kép.jpg")
+        original = source.read_bytes()
+        report = export_photos([ExportItem(source, filters=lanc)], tmp_path / "out")
+        kimenet = report.exported[0].read_bytes()
+        assert kimenet != original
+        assert b"Exif\x00\x00" in kimenet and b"0100" in kimenet
+
+    def test_ures_lanc_bajthu_marad(self, tmp_path):
+        source = _make_half_and_half(tmp_path / "kép.jpg")
+        report = export_photos([ExportItem(source, filters="")], tmp_path / "out")
+        assert report.exported[0].read_bytes() == source.read_bytes()
+
 
 class TestVideoExport:
     def test_video_mtime_is_preserved(self, tmp_path):
