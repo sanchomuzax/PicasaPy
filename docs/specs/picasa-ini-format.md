@@ -150,7 +150,7 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 
 | Szűrő | Paraméterek | Leírás |
 |---|---|---|
-| `crop64` | `1,RECT64` | kivágás — a Picasa MELLÉ külön `crop=rect64(...)` kulcsot is ír. Egy láncban TÖBB is lehet (élesben 38 ilyen lánc); ilyenkor az **utolsó** a hatályos, a korábbiak csak történet — ld. `filters-decoded.md`, „Több `crop64` a láncban” (#1550). Az újravágás **hozzáfűz**, nem cserél (#1553) — ugyanott, „Az ÍRÁS oldala” |
+| `crop64` | `1,RECT64` | vágást leíró lánctag; a Picasa emellett külön `crop=rect64(...)` kulcsot is ír. Egy láncban TÖBB is lehet (élesben 38 ilyen lánc); a renderelőben az utolsó tag a hatályos, a korábbiak csak történet — ld. `filters-decoded.md`, „Több `crop64` a láncban” (#1550). Az újravágás **hozzáfűz**, nem cserél (#1553) — ugyanott, „Az ÍRÁS oldala” |
 | `tilt` | `1,!szög,!skála` | döntés; a skála-mező élesben jellemzően `0.000000` = „számítsd ki a kitöltő skálát" (#73) |
 | `redeye` | `1` | vörösszem-eltávolítás |
 | `enhance` | `1` | „I'm Feeling Lucky" automata |
@@ -722,21 +722,38 @@ lehet találkozni, amit Picasa 3 még sosem nyitott meg.**
 
 #### Mit jelent ez nálunk
 
-A vágást a renderelő a **`filters=` lánc `crop64` tokenjéből** veszi
-(`render/chain.py:258`), nem a `crop=` kulcsból — ez **egyezik** az
-eredetivel. A régi alakot viszont **nem ismerjük fel**: nálunk a
-`decode_rect64` `rect64(...)`-et vagy csupasz hexet vár
-(`ini/rect64.py:28–35`), az `a,b,c,d,e;` alakra **kivételt dob**.
+A két mező szerepét a megjelenítési út szerint kell értelmezni. A PicasaPy
+nézője és bélyegkép-renderelője jelenleg a `filters=` lánc utolsó `crop64`
+tagját rendereli; az eredeti Picasával való egyezés nyitott (#4013). A #4008
+mérőesete csak azt mutatta meg, hogy `crop=` nélkül a Picasa-exportot nem
+vágja meg a láncban maradt `crop64` előzmény. A PicasaPy exportjának további
+szabálya — meglévő `crop64` tag frissítése a `crop=` értékére, illetve új tag
+be nem szúrása, ha nincs a láncban — az implementáció viselkedése; az utóbbi
+esetre a korpuszban nincs példa.
 
-⇒ Egy Picasa 3-mal még sosem megnyitott, Picasa 2-es korú gyűjteményben
-a **vágás nem érvényesülne** nálunk. Jegy: **#2008** (alacsony
-prioritás — a tulajdonos korpuszában nulla előfordulás). **2026-09-05 óta
-a #2008 megvalósítható**: a mezőfelosztás megvan (fent).
+A #4008 mérőesetében a `3229-lanc-sorrend/04-vagas-utan-vignetta.jpg`
+képszekciójában nincs `crop=`; a `filters=` tartalmaz `crop64=1,3c3c8c8c`
+előzményt. A forrás és az eredeti Picasa exportja egyaránt 1600×1200, ezért
+az exportnak itt nem szabad a láncbeli történetet aktív vágásként kezelnie.
+Ez az export viselkedését rögzíti; a néző és a bélyegkép láncbeli vágása
+külön kérdés.
 
-**A kiírás oldalán viszont EGYEZÜNK** (mérve, `app/edit_controller.py:2026`–
-`:2032`): ha nincs vágás, a `crop` kulcsot **töröljük**
-(`document.with_removed(..., "crop")`) — pontosan úgy, ahogy az eredeti
-`or eax,esi ; je` ága (`0x0068b610`). Nincs teendő.
+A régi, ötszámos `crop=` alakot a `decode_rect64` nem ismeri fel: az
+`ini/rect64.py:28–35` szerint `rect64(...)`-et vagy csupasz hexet vár, az
+`a,b,c,d,e;` alakra kivételt dob. Az `ini/legacy_crop.py::parse_legacy_crop`
+viszont felismeri ezt a régi alakot; a renderelés még nincs rákötve erre a
+parserre. A #2008 lezárt. A korpuszban ilyen régi alakot nem mértünk
+(0/859 ini-fájl). #4008 alatt hibás kulcsnál az export naplózva a lánc utolsó
+`crop64` tagjára esik vissza.
+
+**A PicasaPy íráskor aktív vágás esetén MINDKETTŐT írja** (`crop=` és a
+láncbeli `crop64`; `app/edit_controller.py:1388–1402` és `:2346–2370`). Ha
+nincs vágás, a `crop` kulcsot **töröljük** (`document.with_removed(..., "crop")`;
+`app/edit_controller.py:2369–2370`) — ez egyezik az eredeti
+`or eax,esi ; je` ágával (`0x0068b610`). A fenti, „migráció után a `crop=`
+eltűnhet, és a vágás csak a `filters=`-ben él” állítás a Picasa 3
+legacy-migrációjának hipotetikus eredményére vonatkozik; nem írja le a
+PicasaPy szerkesztőjének írási szabályát.
 
 #### Nyitott kérdések mérlege (a legacy `crop=`-ra)
 
