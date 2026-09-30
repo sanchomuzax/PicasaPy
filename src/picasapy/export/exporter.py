@@ -389,8 +389,15 @@ def _export_one(
     # exportot. A felhasználó ettől kapott KEVESEBB képet, mint amennyit
     # kijelölt.
     ops = parse_filters_prefix(item.filters) if item.filters else ()
+    has_unparsed_filter_chain = bool(item.filters) and not ops
     ops = _export_filter_ops(ops, crop, crop_ini_readable=crop_ini_readable)
-    if _is_noop_copy(source, item, settings, ops):
+    if _is_noop_copy(
+        source,
+        item,
+        settings,
+        ops,
+        has_unparsed_filter_chain=has_unparsed_filter_chain,
+    ):
         # Az érvényesség-ellenőrzéshez dekódolunk (a sérült/nem-kép forrás
         # így is a `failed` listára kerül), de az eredményt eldobjuk — a
         # célfájlba a forrás EREDETI bájtjai kerülnek, generációs veszteség
@@ -523,12 +530,19 @@ def _encode_with_source_qtables(image: np.ndarray, source: Path) -> bytes | None
 
 
 def _is_noop_copy(
-    source: Path, item: ExportItem, settings: ExportSettings, ops: tuple[FilterOp, ...]
+    source: Path,
+    item: ExportItem,
+    settings: ExportSettings,
+    ops: tuple[FilterOp, ...],
+    *,
+    has_unparsed_filter_chain: bool = False,
 ) -> bool:
     """Nincs mit beégetni: se forgatás, se tükrözés (#3977), se átméretezés,
     se szerkesztés, se vízjel — és a forrás már JPEG. Ilyenkor a sima másolás a helyes (bájthű,
     mtime-őrző); a sorszámozás (#369) csak a fájlnevet érinti, a bájthű
-    másolást nem zárja ki."""
+    másolást nem zárja ki. Ha a nem üres filters-láncot az olvasó teljesen
+    elvetette, akkor is újrakódolunk: az eredeti Picasa exportja ilyenkor is
+    új JPEG-et ír, és az export-metaadatoknak is le kell futniuk (#3997)."""
     return (
         source.suffix.lower() in _JPEG_EXTENSIONS
         and item.rotate_steps % 4 == 0
@@ -536,6 +550,7 @@ def _is_noop_copy(
         and settings.max_dimension is None
         and not settings.watermark_text
         and not ops
+        and not has_unparsed_filter_chain
     )
 
 

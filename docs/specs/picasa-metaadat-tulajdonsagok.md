@@ -2215,3 +2215,44 @@ eltérés 0,48 (19 fájl átlaga). A mért készlet a két Lanczos-t és az elő
 *Mellékes lelet, külön jegyen (#4004): a függőleges menetek a sor utolsó `W mod 4` oszlopát `+255` nélkül számolják — egy olvasat, a bélyegképet nem érinti.*
 
 *Forrás: `0x009ecdb0`, `0x00a42c20`, `0x00a43230`, `0x00a426a0`, `0x00a428e0`, `0x00a3f490`, `0x00a3df50`, `0x00a357a0`, `0x009f0560`, `0x00af2d20`; mérés: a helyi `meroadat.tar`.*
+
+### J) ✅ A `tint__hex4` és `tint__hex8` export is újrakódolja a képet (2026-09-30, #3997)
+
+A `684-merokeszlet/.picasa.ini` két lánca `Tint=1,79.842102,ffff;` és
+`Tint=1,79.842102,0000ffff;`. A PicasaPy kis-/nagybetű-érzékeny olvasója mindkettőt
+üres effektlistára ejti, a bájthű másolási ág mégis hibás volna: az eredeti Picasa
+mindkét képet újrakódolta.
+
+| mérőeset | forrás → Picasa-export | SOF mintavételezés | APP-szegmensek | azonos dekódolt RGB-pixelek |
+|---|---:|---|---|---:|
+| `tint__hex4` | 61 548 → 48 384 bájt | 4:2:0 → 4:4:4 | APP0 → APP0, APP1, APP1, APP13 | 533 660 / 614 400 |
+| `tint__hex8` | 61 548 → 48 384 bájt | 4:2:0 → 4:4:4 | APP0 → APP0, APP1, APP1, APP13 | 533 660 / 614 400 |
+
+A DQT-k is eltérnek (az értékek a fájlbeli cikcakk sorrendben): a forrás 0. táblájának első nyolc értéke `1,1,1,1,1,1,1,1`,
+a Picasa-exporté `2,2,2,2,2,1,2,2`; a 1. táblán ugyanez `1,1,1,1,1,1,3,2` →
+`2,3,3,3,3,3,7,4`. A dekódolt csatornák abszolút eltérése legfeljebb 12
+(MAE 0,155143), ezért ez nem puszta EXIF-beillesztés.
+
+**Ugyanez a többi mért elvetett láncon:** a `meroadat.tar` minden olyan exportja,
+amelynek `filters=` lánca nem üres, de a mi olvasónk egyetlen műveletet sem ad
+vissza, **újrakódolt** — ellenpélda nincs: a `merokit-2` hat lánca
+(`Tint`/`TINT`/`tInT`/`vignette`/`VIGNETTE`/`Sepia`) két exportban
+(`export-202608151438`, `export-202608202215`), a `merokit-3` `sepia;bw=1;` lánca
+(`export-202608151633`), és a `meroszett` két `tint__hex` esete (a forrásképek
+bájtra azonosak a 684-esekkel; 15 különböző lánc–forrás eset, 17 kimenet).
+⚠️ Hogy a Picasa ezeket a tagokat **elveti-e**, az NEM egységes: a `merokit-2`
+első exportjában a képpontok csak JPEG-zaj mértékben változtak (MAE 0,164), a
+másodikban MAE 25,6–58,9 — ez az ellentmondás a #4019 tárgya. Az újrakódolás
+ténye ettől független, és minden mért kimeneten fennáll.
+⚠️ A mintavételezés sem egységes: a 684-es két kimenet 4:4:4, a `merokit-2` és a
+`meroszett` kimenetei 4:2:0; a mi kimenetünk mindig 4:2:0 (#4017).
+
+**Következmény:** ha a `filters=` lánc nem üres, de az olvasó egyetlen műveletet
+sem adott vissza, az export újrakódol; utána a szokásos metadata-út írja az
+Interop IFD-t. Az üres `filters=` lánc továbbra is bájthű másolat. Nem mérve (#4018):
+a teljesen szerkesztetlen kép, a csak `crop64`-előzményt tartalmazó (`crop=` nélküli)
+lánc és a `;` lánc — ezekre a mostani döntés a mi feltevésünk.
+
+*Bizonyítottsági fok: **megerősített** az újrakódolásra (17/17 mért kimenet); a
+regressziós teszt a két 684-es fájlon ellenőrzi a méretet, a DQT-t, a SOF-ot, az
+APP-markereket, a dekódolt képpontokat és az Interop IFD-t.*
