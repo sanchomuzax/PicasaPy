@@ -2025,7 +2025,7 @@ előállítása nincs feltárva → **#3987**.
 |---|---|---|
 | `Software`, `Artist`, `ExifVersion` | csak ha hiányzik | csak ha hiányzik — **egyezik** |
 | Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | mindig, ha a forrásnak van mérete | **megvan** (#3989; a tájolt forrás mérete nincs mérve) |
-| IFD1 bélyegkép + `0x103`/`0x11a`/`0x11b`/`0x128` | mindig | csak a forrás meglévő IFD1-e |
+| IFD1 bélyegkép + `0x103`/`0x11a`/`0x11b`/`0x128` | mindig | a #3998 óta új, a kimenetből épülő bélyegkép (16. H); a forrás IFD1-e sosem kerül át |
 | GPS `0x0000`/`0x0005` pótlása, csak verziót tartalmazó al-IFD kivétele | igen (erős, nem mért) | nincs |
 
 **Nyitott kérdések mérlege — 3 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 „csak nyitva”:**
@@ -2112,6 +2112,9 @@ a `0x009ecfb8` felülírás hozza. A pixelpontos egyezés nem mérhető (a JPEG-
 - **minőség-visszalépés:** ha az EXIF-író hibát ad, vagy a blokk > `0xfffd` bájt (`0x009ed10b`–`0x009ed115`), a
   minőség 15-tel csökken (`0x009ed12e`–`0x009ed141`): 85 → 70 → 55 → 40 → 25 → 10; 10-en sem fér el → az EXIF
   teljesen kiürül (`0x009ed1be`). A mért legnagyobb APP1 6858 bájt, tehát mindig az első próba ment át.
+  **Nálunk (tudatos eltérés, #3998):** ha 10-en sem fér el, a bélyegkép nélküli EXIF megy tovább (az eredeti
+  az egészet eldobja). Indok: az ág a mérés szerint elérhetetlen, és ha mégis előfordulna, a forrás dátum-,
+  szerző- és tájolás-adatainak elvesztése rosszabb, mint egy hiányzó bélyegkép.
 
 **5. Elhelyezés az EXIF-blokkban** (`0x00a7ade0` 1-es mód, `0x00a7afcd`–`0x00a7b0bd`; kiírás `0x00a7c720`):
 két új tag az IFD1-ben, `0x201` és `0x202` (LONG, darabszám 1); a kiíró a bélyegképet a TIFF-puffer **végére**
