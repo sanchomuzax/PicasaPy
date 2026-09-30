@@ -75,8 +75,9 @@ _INTEROP_MUTATO = 0xA005
 #: az előnézet bájtjainak kulcsa az önellenőrző szerkezetben (nem valódi tag)
 _ELONEZET_BAJTOK = 0x10000
 _JPEG_ELONEZET, _JPEG_ELONEZET_HOSSZ = 0x0201, 0x0202
-#: üres (metaadat nélküli) forráshoz: nagy végű fejléc + 0 bejegyzéses IFD0
-_URES_TIFF = b"MM\x00\x2a\x00\x00\x00\x08" + b"\x00\x00" + b"\x00\x00\x00\x00"
+#: üres (metaadat nélküli) forráshoz: kis végű (II) fejléc + 0 bejegyzéses IFD0;
+#: a Picasa is II-t ír (#4009). A meglévő blokk bájtsorrendje nem változik.
+_URES_TIFF = b"II\x2a\x00\x08\x00\x00\x00" + b"\x00\x00" + b"\x00\x00\x00\x00"
 
 
 _TAJOLAS = 0x0112

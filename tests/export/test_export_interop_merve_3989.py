@@ -39,6 +39,14 @@ def _kibont(tmp_path: Path) -> Path:
     return tmp_path / _MAPPA
 
 
+def _bajtsorrend(path: Path) -> bytes:
+    """A TIFF-blokk fejlécének első két bájtja (`II`/`MM`)."""
+    for marker, seg in _szegmensek(path.read_bytes()):
+        if marker == 0xE1 and seg[4:].startswith(_EXIF_ID):
+            return seg[4 + len(_EXIF_ID) :][:2]
+    raise AssertionError(f"nincs EXIF: {path.name}")
+
+
 def _interop(path: Path) -> dict[int, int | bytes]:
     """{tag: érték}: LONG → egész (a fájl bájtsorrendjében), egyébként bájtok."""
     for marker, seg in _szegmensek(path.read_bytes()):
@@ -74,5 +82,7 @@ def test_interop_egyezik_a_valodi_picasa_exporttal(tmp_path):
         assert 0x0001 not in picasa, nev  # a Picasa nem ír InteropIndexet
         assert 0x0001 not in sajat, nev
         assert sajat == picasa, nev
+        # #4009: a bájtsorrend is egyezik (EXIF nélküli forrásnál a Picasáé II)
+        assert _bajtsorrend(tmp_path / "sajat" / nev) == _bajtsorrend(mappa / "export" / nev), nev
         assert picasa[0x0002] == b"0100", nev
         assert (picasa[0x1001], picasa[0x1002]) == (1600, 1200), nev
