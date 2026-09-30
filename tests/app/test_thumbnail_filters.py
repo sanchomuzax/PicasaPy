@@ -2,7 +2,7 @@
 
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index, photos_in_folder, sync_tree
-from picasapy.ini.rect64 import Rect64
+from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.thumbs import ThumbnailCache
 from support.jpeg_factory import make_jpeg
 
@@ -11,11 +11,11 @@ def _library_with_crop(tmp_path):
     lib = tmp_path / "kepek"
     lib.mkdir()
     make_jpeg(lib / "a.jpg", size=(320, 160))
-    value = EditSession().append_crop(
-        Rect64(left=0.0, top=0.0, right=0.5, bottom=1.0)
-    ).to_value()
+    rect = Rect64(left=0.0, top=0.0, right=0.5, bottom=1.0)
+    value = EditSession().append_crop(rect).to_value()
     (lib / ".picasa.ini").write_text(
-        f"[a.jpg]\nfilters={value}\n", encoding="utf-8"
+        f"[a.jpg]\nfilters={value}\ncrop=rect64({encode_rect64(rect)})\n",
+        encoding="utf-8",
     )
     with open_index(tmp_path / "i.db") as conn:
         sync_tree(conn, lib)
@@ -63,7 +63,8 @@ class TestPicasaCompatRendering:
         from picasapy.app.thumbnail_provider import ThumbnailProvider
 
         records = _library_with_ini(
-            tmp_path, "[a.jpg]\nfilters=crop64=1;\n"  # hiányzó rect64 param
+            tmp_path,
+            "[a.jpg]\nfilters=crop64=1;\ncrop=1,2,3,4,5;\n",
         )
         provider = ThumbnailProvider(ThumbnailCache(tmp_path / "th", size=64))
         provider.register_photos(records)

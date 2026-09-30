@@ -77,6 +77,10 @@ class TestFilterApplication:
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         rect = Rect64(left=0.0, top=0.0, right=0.5, bottom=0.5)
         op = FilterOp("crop64", ("1", encode_rect64(rect)))
+        (photo.parent / ".picasa.ini").write_text(
+            f"[{photo.name}]\ncrop=rect64({encode_rect64(rect)})\n",
+            encoding="utf-8",
+        )
         provider.register("1", photo, (op,))
         image = provider.requestImage("1", None, None)
         assert (image.width(), image.height()) == (4, 3)

@@ -31,11 +31,11 @@ from picasapy.ini import (
     load_or_empty,
     update_document,
 )
+from picasapy.ini.photo_crop import log_unreadable_ini_once
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
-from picasapy.ini.rect64 import decode_rect64
 from picasapy.ioutil import write_atomic
 from picasapy.metadata.export_metadata import bajtmasolas, frissitett_metaadat
-from picasapy.render import apply_filters
+from picasapy.render import apply_filters, normalize_crop_ops
 from picasapy.render.flip import FLIP_MASK, apply_flip
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
@@ -257,11 +257,8 @@ def export_photos(
                     crop = _source_crop(source, source_ini_cache)
                 except OSError as error:
                     crop_ini_readable = False
-                    _LOG.warning(
-                        "A forrás .picasa.ini fájlja nem olvasható; az export "
-                        "a filters= láncot változatlanul használja (%s): %s",
-                        source.parent / PICASA_INI_NAME,
-                        error,
+                    log_unreadable_ini_once(
+                        source.parent / PICASA_INI_NAME, error
                     )
             exported.append(
                 _export_one(
@@ -390,7 +387,12 @@ def _export_one(
     # kijelölt.
     ops = parse_filters_prefix(item.filters) if item.filters else ()
     has_unparsed_filter_chain = bool(item.filters) and not ops
-    ops = _export_filter_ops(ops, crop, crop_ini_readable=crop_ini_readable)
+    ops = _export_filter_ops(
+        ops,
+        crop,
+        crop_ini_readable=crop_ini_readable,
+        warning_key=str(source),
+    )
     if _is_noop_copy(
         source,
         item,
@@ -670,57 +672,19 @@ def _source_crop(source: Path, cache: dict[Path, IniDocument]) -> str | None:
 
 
 def _export_filter_ops(
-    ops: tuple[FilterOp, ...], crop: str | None, *, crop_ini_readable: bool = True
+    ops: tuple[FilterOp, ...],
+    crop: str | None,
+    *,
+    crop_ini_readable: bool = True,
+    warning_key: str | None = None,
 ) -> tuple[FilterOp, ...]:
-    """A külön `crop=` mezőt egyezteti a lánc utolsó `crop64` tagjával (#4008).
-
-    A lánc sorrendje és a crop64 helye változatlan marad. Kulcs nélküli
-    képszekciónál a crop64 bejegyzések szerkesztési előzmények, ezért
-    kimaradnak az exportból. Hibás crop értéknél az eredeti lánc marad meg,
-    benne az effektív, utolsó crop64 taggal.
-    """
-    if not crop_ini_readable:
-        return ops
-
-    crop_indices = [index for index, op in enumerate(ops) if op.name == "crop64"]
-    if crop is None:
-        return tuple(op for op in ops if op.name != "crop64")
-
-    try:
-        current_rect = decode_rect64(crop)
-    except ValueError:
-        fallback = (
-            "az export a filters= lánc utolsó crop64 elemére esik vissza"
-            if crop_indices
-            else "az export nem alkalmaz kivágást"
-        )
-        _LOG.warning(
-            "Érvénytelen crop= érték a forrás .picasa.ini fájljában (%r); %s",
-            crop,
-            fallback,
-        )
-        return ops
-
-    if not crop_indices:
-        return ops
-
-    last_index = crop_indices[-1]
-    last_crop = ops[last_index]
-    try:
-        last_rect = decode_rect64(last_crop.params[1])
-    except (IndexError, ValueError):
-        last_rect = None
-    if last_rect == current_rect:
-        return ops
-
-    params = list(last_crop.params)
-    if len(params) < 2:
-        params = ["1", crop]
-    else:
-        params[1] = crop
-    updated = list(ops)
-    updated[last_index] = FilterOp(last_crop.name, tuple(params))
-    return tuple(updated)
+    """Az export közös render-előkészítője (#4008, #4013)."""
+    return normalize_crop_ops(
+        ops,
+        crop,
+        crop_ini_readable=crop_ini_readable,
+        warning_key=warning_key,
+    )
 
 
 def _decode_image(source: Path) -> np.ndarray:

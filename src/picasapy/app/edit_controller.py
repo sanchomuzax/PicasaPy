@@ -31,9 +31,11 @@ from picasapy.app.effect_params import (
 from picasapy.edit.session import EditSession
 from picasapy.fileops import is_folder_writable
 from picasapy.ini import (
+    FilterOp,
     FilterWriteError,
     IniConflictError,
     IniSaveError,
+    PhotoCropReader,
     load_document,
     load_or_empty,
     parse_faces,
@@ -62,6 +64,7 @@ from picasapy.metadata import read_exif_details
 from picasapy.render.chain import (
     DEAD_LEGACY_OPS,
     can_offer_filter_control,
+    normalize_crop_ops,
 )
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.registry import chain_flags
@@ -451,6 +454,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._image_size: tuple[int, int] | None = None
         self._ini_path: Path | None = None
         self._section_name = ""
+        self._crop_reader = PhotoCropReader()
+        self._opening_crop: str | None = None
+        self._opening_crop_ini_readable = True
+        self._opening_crop_ops: tuple[FilterOp, ...] = ()
         self._session = EditSession()
         self._revision = 0
         # GPU élő-előnézet (#22): önálló számláló, ld. gpuRevisionChanged
@@ -1020,13 +1027,39 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     @Property(bool, notify=toolsChanged)
     def hasCrop(self) -> bool:
         """Van-e alkalmazott vágás — a „Visszavonás: Vágás" gombhoz (#51)."""
-        return self._session.crop() is not None
+        return self.crop() is not None
+
+    @staticmethod
+    def _crop_ops(session: EditSession) -> tuple[FilterOp, ...]:
+        """A szerkesztési lánc vágás-rétegei, az eredeti sorrendben."""
+        return tuple(op for op in session.ops if op.matches("crop64"))
+
+    def _crop_value_for_session(self, session: EditSession) -> tuple[str | None, bool]:
+        """A megnyitáskori crop= vagy az azóta, a felhasználó által vágott crop.
+
+        Régi crop64 rétegek csak akkor lesznek hatályosak, ha a képszekció
+        megnyitásakor már volt crop=, vagy a felhasználó azóta módosította a
+        vágás-rétegeket. Így egy független effekt nem éleszti fel az előzményt.
+        """
+        if self._crop_ops(session) != self._opening_crop_ops:
+            rect = session.crop()
+            value = f"rect64({encode_rect64(rect)})" if rect is not None else None
+            return value, True
+        return self._opening_crop, self._opening_crop_ini_readable
+
+    def crop(self) -> Rect64 | None:
+        """A munkamenet hatályos vágása a megnyitáskori crop= szabályával."""
+        # ugyanabból a normalizálásból, amelyik renderel: a felület és a kép
+        # nem válhat el (árva `crop=` lánc-vágás nélkül → nincs aktív vágás)
+        value, readable = self._crop_value_for_session(self._session)
+        ops = normalize_crop_ops(self._session.ops, value, crop_ini_readable=readable)
+        return EditSession(ops=ops).crop()
 
     @Property("QVariant", notify=toolsChanged)
     def cropSelection(self):
         """A jelenlegi crop64 relatív [0..1] téglalapja (#71), vagy None ha
         nincs vágás — a Vágás eszköz ezzel tölti elő a meglévő kijelölést."""
-        rect = self._session.crop()
+        rect = self.crop()
         if rect is None:
             return None
         return {
@@ -1100,6 +1133,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
+        self._opening_crop, self._opening_crop_ini_readable = (
+            self._crop_reader.read(self._ini_path, self._section_name)
+        )
+        self._opening_crop_ops = self._crop_ops(self._session)
         self._camera_summary = formatting.camera_summary_text(
             read_exif_details(path), QLocale(), formatting.fordit
         )
@@ -1394,7 +1431,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         # dob el; cserébe a #1550 elvárása („a változtatás nélküli Alkalmaz
         # nem írhatja át a képet") a fájl szintjén is teljesül: ilyenkor
         # hozzá sem nyúlunk az inihez.
-        hatalyos = self._session.crop()
+        hatalyos = self.crop()
         if hatalyos is not None and encode_rect64(hatalyos) == encode_rect64(rect):
             return
         self._push_undo("crop")
@@ -2361,7 +2398,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
                 )
             # Picasa-paritás (#73): a vágás a filters= mellett külön
             # crop=rect64(...) kulcsba is kerül — a Picasa 3.x is így ír.
-            crop = self._session.crop()
+            crop = self.crop()
             if crop is not None:
                 document = document.with_value(
                     self._section_name, "crop", f"rect64({encode_rect64(crop)})"
@@ -2454,6 +2491,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         active_session = session if session is not None else self._session
         gpu_prefix_ops = active_session.gpu_finetune_prefix()
         gpu_lut = self._gpu_lut_for(active_session) if gpu_prefix_ops is not None else None
+        crop, crop_ini_readable = self._crop_value_for_session(active_session)
         return {
             "photo_id": self._kulcs,
             "path": self._image_path,
@@ -2462,6 +2500,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             "gpu_prefix_ops": gpu_prefix_ops,
             "gpu_lut": gpu_lut,
             "paint_strokes": self._paint_strokes(),
+            "crop": crop,
+            "crop_ini_readable": crop_ini_readable,
         }
 
     def _register_preview(self, session: EditSession | None = None) -> None:

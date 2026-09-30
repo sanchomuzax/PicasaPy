@@ -52,7 +52,7 @@ def test_a_szerkesztett_belyegkep_kerete_a_mentett_kepevel_egyezik(tmp_path, nag
     cache = ThumbnailCache(tmp_path / "cache", size=256)
     info = nagy_foto.stat()
     ut = cache.get_or_create_edited(
-        nagy_foto, info.st_mtime_ns, info.st_size, parse_filters(KERET)
+        nagy_foto, info.st_mtime_ns, info.st_size, parse_filters(KERET), crop=None
     )
     belyeg = cv2.imread(str(ut))
     vart = _mentett_kicsiben(nagy_foto, belyeg.shape[0])

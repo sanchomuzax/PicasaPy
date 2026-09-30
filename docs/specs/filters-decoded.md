@@ -23,8 +23,8 @@ vágja meg az exportot.
 van, de a láncban nincs `crop64`, az export nem vág és nem szúr be új
 `crop64` tagot. A korpuszban nincs ilyen eset. A mért, `crop=` nélküli 04-es
 esetben az export kihagyja a lánc `crop64` tagját. A néző és a bélyegkép
-jelenlegi útja közvetlenül a láncbeli `crop64` tagot rendereli; hogy ez
-egyezik-e a Picasával, a #4013 nyitott kérdése.
+korábbi útja közvetlenül a láncbeli `crop64` tagot renderelte; ezt a #4013
+az export szabályához igazítja.
 
 ```ini
 [kep.jpg]
@@ -33,14 +33,35 @@ filters=crop64=1,<hex>;...
 ```
 
 **PicasaPy írási szabálya:** aktív vágás mentésekor mindkét mezőt kiírja
-(`crop=` és a láncbeli `crop64`; `app/edit_controller.py:1388–1402` és
-`:2346–2370`).
+(`crop=` és a láncbeli `crop64`; `EditController.applyCrop` és
+`EditController._save`).
 
 PicasaPy exportimplementációja érvényes `crop=` és meglévő `crop64` esetén
 megtartja a lánc sorrendjét, és az utolsó `crop64` értékét a kulcsra állítja
 annak láncbeli helyén. Hibás kulcsnál figyelmeztet, és a lánc utolsó
 `crop64` tagját használja; ha a `.picasa.ini` nem olvasható, a lánc
 változatlanul marad.
+
+**Közös PicasaPy render-szabály (#4013):** a fogyasztó utak a
+`render/chain.py::normalize_crop_ops` függvényt hívják a lánc renderelése
+előtt: az export, a néző, a bélyegkép, a szerkesztő előnézete és a lemezre
+mentés. Hiányzó `crop=` esetén minden láncbeli `crop64` előzmény kimarad;
+érvényes kulcsnál az utolsó `crop64` a láncbeli helyén a `crop=` értékét
+kapja. Ha nincs `crop64`, nem szúrunk be újat. Érvénytelen értéknél az
+eredeti lánc marad, képenként egyszeri figyelmeztetéssel; olvashatatlan ini
+esetén a `PhotoCropReader` ini-fájlonként egyszer naplózza a visszaesést, a
+normalizáló nem ismétli meg. A megmaradó tagok sorrendje nem változik, a
+renderelés a mért `mert_sorrend=True` ágon fut.
+
+A PicasaPy **felhasználó által alkalmazott saját vágása** mindkét kulcsot
+kiírja, és a renderelő a szerkesztési munkamenet crop állapotát használja.
+Ha megnyitáskor hiányzik a `crop=`, a korábbi `crop64` önmagában nem aktív:
+egy független effekt nem teszi vágottá a képet, saját új vágás viszont igen.
+**A v0.3.0 (#47) egynapos ablakában** készült saját vágások csak `crop64`-et
+írtak, `crop=` nélkül maradtak; ezeket a #4013-tól a néző és a többi
+megjelenítési út vágatlanul mutatja, amíg a felhasználó új vágást nem
+alkalmaz. **Az eredeti Picasa nézőjének `crop=` nélküli viselkedése nincs
+külön megmérve**; a #4008 közvetlenül csak az exportot mérte.
 
 **A bináris bizonyítéka korlátozott:** a `FUN_00438820` lánc-normalizáló
 eltávolítja a korábbi `crop64` tagokat, majd egy frisset fűz a lista végére
