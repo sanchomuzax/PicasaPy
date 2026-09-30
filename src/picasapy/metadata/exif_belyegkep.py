@@ -21,9 +21,9 @@ csatornánként azonosak).
 
 from __future__ import annotations
 
-import cv2
 import numpy as np
 
+from picasapy.lazy_cv2 import cv2
 from picasapy.render.glimmer_ops import resize_image
 
 #: a küszöb: a szélesség és a magasság ennél NAGYOBB kell legyen
