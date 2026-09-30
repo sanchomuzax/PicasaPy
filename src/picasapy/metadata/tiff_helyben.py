@@ -266,31 +266,39 @@ def _alkalmaz(
 
 def _rendez(sorok: list[tuple]) -> list[tuple]:
     """Az érvényes típusú sorok tag szerint (stabilan: az azonos tagek sorrendje
-    marad); az érvénytelen (0-s vagy ismeretlen) típusúak a forrásbeli relatív
-    helyükön maradnak: ugyanazt az érvényes sort előzik meg, mint a forrásban (a végén állók a végén)
-    (#3999). Az IFD elejére kerülő 0-s típusra az exiftool az egész IFD-t eldobja.
+    marad); az érvénytelen (0-s vagy ismeretlen) típusú sor a forrásban ELŐTTE
+    álló érvényes sor után marad, a forrás végén álló a végén (#3999). Így az
+    IFD elejére csak az kerülhet, ami a forrásban is elöl állt — az IFD elején
+    álló 0-s típusra az exiftool az egész IFD-t eldobja.
 
     `sorok`: a forrás sorai forrássorrendben (5. elem False), utánuk az újak."""
-    ervenytelen = {i for i, sor in enumerate(sorok) if sor[1] not in _TIPUS_MERET}
-    if not ervenytelen:
+    if all(sor[1] in _TIPUS_MERET for sor in sorok):
         return sorted(sorok, key=lambda sor: sor[0])
-    horgony: dict[int, int | None] = {}  # érvénytelen sor → az utána álló érvényes sor
-    kovetkezo = None
+    # érvénytelen sorok, amelyek UTÁN még áll forrásbeli érvényes sor
+    kozepen: set[int] = set()
+    van_utana = False
     for i in reversed(range(len(sorok))):
-        if i in ervenytelen:
-            horgony[i] = kovetkezo
-        elif not sorok[i][4]:  # az új sor nem forrásbeli horgony
-            kovetkezo = i
-    horgony = dict(sorted(horgony.items()))
+        if sorok[i][1] not in _TIPUS_MERET:
+            if van_utana:
+                kozepen.add(i)
+        elif not sorok[i][4]:
+            van_utana = True
+    utana: dict[int | None, list[int]] = {}  # előző érvényes forrássor → szemét
+    vegen: list[int] = []
+    elozo: int | None = None
+    for i, sor in enumerate(sorok):
+        if sor[1] not in _TIPUS_MERET:
+            (utana.setdefault(elozo, []) if i in kozepen else vegen).append(i)
+        elif not sor[4]:
+            elozo = i
     ervenyes = sorted(
-        (i for i in range(len(sorok)) if i not in ervenytelen), key=lambda i: sorok[i][0]
+        (i for i, sor in enumerate(sorok) if sor[1] in _TIPUS_MERET), key=lambda i: sorok[i][0]
     )
-    rend: list[int] = []
+    rend = list(utana.get(None, []))
     for i in ervenyes:
-        rend += [j for j in horgony if horgony[j] == i]
         rend.append(i)
-    rend += [j for j in horgony if horgony[j] is None]
-    return [sorok[i] for i in rend]
+        rend += utana.get(i, [])
+    return [sorok[i] for i in rend + vegen]
 
 
 def _athelyez(
