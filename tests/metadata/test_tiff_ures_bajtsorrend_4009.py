@@ -71,7 +71,7 @@ def test_a_ketszer_szereplo_tag_orzese_mindket_sorrendre(e, fej):
         th.frissitett_tiff(forras, _valtozasok())
 
 
-def test_ii_ures_blokk_gps_es_exif_is_epul():
+def test_ii_ures_blokkban_az_exif_ifd_is_epul():
     ki = th.frissitett_tiff(None, [th.Valtozas("Exif", 0x9003, _DT)])
     assert ki[:2] == b"II"
     assert 0x8769 in _ifd0(ki, "<")

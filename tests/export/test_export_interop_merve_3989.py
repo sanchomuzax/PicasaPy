@@ -8,7 +8,8 @@ A tarból csak a `3229-lanc-sorrend/` tagjai bomlanak ki (`tmp_path` alá), a
 teljes tar nem. Az olvasás a projekt saját `tiff_helyben._szerkezet`-ével
 történik. Az összevetés az Interop-mezők ÉRTÉKÉRE szól (egész számként, a saját
 bájtsorrendjük szerint): a bájtsorrend a teljes EXIF-blokk tulajdonsága, nem az
-Interop IFD-é, és nem ennek a jegynek a tárgya."""
+Interop IFD-é. A #4009 óta a teszt azt is állítja, hogy az EXIF nélküli
+forrásból épülő blokk bájtsorrendje a Picasáéval egyező `II`."""
 
 from __future__ import annotations
 
