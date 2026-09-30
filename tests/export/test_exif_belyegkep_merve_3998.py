@@ -159,6 +159,8 @@ def test_a_belyegkep_tulajdonsagai_egyeznek(mero, sajat, mappa, nev):
     p_tagek, p_jpeg, p_tiff, p_hely, p_meret = _ifd1(mero / mappa / "export" / nev)
     s_tagek, s_jpeg, s_tiff, s_hely, s_meret = _ifd1(sajat / mappa / nev)
     pj, sj = _jpeg_jellemzok(p_jpeg), _jpeg_jellemzok(s_jpeg)
+    # #4009: a TIFF-blokk bájtsorrendje (II/MM) is egyezik a Picasáéval
+    assert s_tiff[:2] == p_tiff[:2], nev
 
     # a méret a saját főkép méretéből jön a spec képletével, mindkét exportban
     assert pj["meret"] == bk.belyegkep_meret(*_fokep_meret(mero / mappa / "export" / nev)), nev

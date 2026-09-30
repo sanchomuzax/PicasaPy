@@ -181,12 +181,12 @@ class TestMertEset:
         ki = _kimenet_exif(_forras(tmp_path, None), (1650, 1250))
         interop = ki["Interop"]
         assert interop[0x0002] == [(7, 4, b"0100")]
-        # metaadat nélküli forrás: az üres blokk nagy végű
-        assert interop[0x1001] == [(4, 1, struct.pack(">I", 1600))]
-        assert interop[0x1002] == [(4, 1, struct.pack(">I", 1200))]
+        # metaadat nélküli forrás: az üres blokk kis végű (II, #4009)
+        assert interop[0x1001] == [(4, 1, struct.pack("<I", 1600))]
+        assert interop[0x1002] == [(4, 1, struct.pack("<I", 1200))]
         assert 0x0001 not in interop  # InteropIndex nincs
-        assert ki["Exif"][0xA002][0][2] == struct.pack(">H", 1650)
-        assert ki["Exif"][0xA003][0][2] == struct.pack(">H", 1250)
+        assert ki["Exif"][0xA002][0][2] == struct.pack("<H", 1650)
+        assert ki["Exif"][0xA003][0][2] == struct.pack("<H", 1250)
 
     def test_exif_nelkuli_forras_is_kap_interopot(self, tmp_path):
         ki = _kimenet_exif(_forras(tmp_path, None), (800, 600))
@@ -379,6 +379,6 @@ def test_export_vegponttol_vegpontig(tmp_path):
         if marker == 0xE1 and seg[4:].startswith(_EXIF_ID):
             interop = _olvas(seg[4 + len(_EXIF_ID) :])["Interop"]
             assert interop[0x0002] == [(7, 4, b"0100")]
-            assert interop[0x1001][0][2] == struct.pack(">I", 160)
+            assert interop[0x1001][0][2] == struct.pack("<I", 160)
             return
     pytest.fail("nincs EXIF")
