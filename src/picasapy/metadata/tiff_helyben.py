@@ -45,6 +45,9 @@ Interop IFD bővített másolata a blokk végére kerül, és csak az Exif IFD
 `0xa005` mutatója íródik helyben; ha nincs Interop IFD, újat fűz a végére, és
 a mutató az (átmásolt) Exif IFD-be kerül. Csak `csak_ha_hianyzik` tag adható
 hozzá; érvénytelen vagy kétszer szereplő `0xa005`-nél az Interop érintetlen.
+Az érvénytelen (0-s vagy ismeretlen) típusú bejegyzés az áthelyezéskor a forrásbeli
+relatív helyén marad (a forrás végén állók a végén), csak az érvényesek rendeződnek
+tag szerint (#3999).
 Bármi váratlanra `TiffHiba` — a hívó ilyenkor a forrás bájtjait adja tovább.
 """
 
@@ -261,6 +264,35 @@ def _alkalmaz(
     return uj
 
 
+def _rendez(sorok: list[tuple]) -> list[tuple]:
+    """Az érvényes típusú sorok tag szerint (stabilan: az azonos tagek sorrendje
+    marad); az érvénytelen (0-s vagy ismeretlen) típusúak a forrásbeli relatív
+    helyükön maradnak: ugyanazt az érvényes sort előzik meg, mint a forrásban (a végén állók a végén)
+    (#3999). Az IFD elejére kerülő 0-s típusra az exiftool az egész IFD-t eldobja.
+
+    `sorok`: a forrás sorai forrássorrendben (5. elem False), utánuk az újak."""
+    ervenytelen = {i for i, sor in enumerate(sorok) if sor[1] not in _TIPUS_MERET}
+    if not ervenytelen:
+        return sorted(sorok, key=lambda sor: sor[0])
+    horgony: dict[int, int | None] = {}  # érvénytelen sor → az utána álló érvényes sor
+    kovetkezo = None
+    for i in reversed(range(len(sorok))):
+        if i in ervenytelen:
+            horgony[i] = kovetkezo
+        elif not sorok[i][4]:  # az új sor nem forrásbeli horgony
+            kovetkezo = i
+    horgony = dict(sorted(horgony.items()))
+    ervenyes = sorted(
+        (i for i in range(len(sorok)) if i not in ervenytelen), key=lambda i: sorok[i][0]
+    )
+    rend: list[int] = []
+    for i in ervenyes:
+        rend += [j for j in horgony if horgony[j] == i]
+        rend.append(i)
+    rend += [j for j in horgony if horgony[j] is None]
+    return [sorok[i] for i in rend]
+
+
 def _athelyez(
     blokk: _Blokk,
     bejegyzesek: list[_Bejegyzes],
@@ -281,8 +313,7 @@ def _athelyez(
         if b.tag not in uj
     ]
     sorok += [(tag, t, d, nyers, True) for tag, (t, d, nyers) in uj.items()]
-    # stabil rendezés: az azonos tagek egymás közti sorrendje marad
-    sorok.sort(key=lambda sor: sor[0])
+    sorok = _rendez(sorok)
     if len(sorok) > 0xFFFF:
         raise TiffHiba("túl sok bejegyzés")
     if len(blokk.buf) % 2:

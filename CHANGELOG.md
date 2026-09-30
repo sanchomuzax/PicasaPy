@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az exportált JPEG Exif-blokkjában a hibás (0-s típusú) bejegyzés nem kerül a lista elejére, így a metaadat-olvasók nem dobják el miatta az egész Exif-részt (#3999).
+
 ## [0.8.641] – 2026-09-30
 
 ### Javítva
