@@ -216,8 +216,14 @@ class TestAKepFolott:
         ).read_text(encoding="utf-8")
         # középre (m_centerX) és 10 képponttal a kirajzolt kép alja fölé —
         # #3741: a mérce a `photo` helyett a `photoArea.fokuszKep`-hez
-        # (a fókuszban lévő félhez) igazodik, a képlet változatlan.
-        assert "x: (photoArea.fokuszKep.width - width) / 2" in f
+        # igazodik. A sáv sibling a forgatatlan photoArea-rétegen, ezért a
+        # mért helyi középpontot mapToItem/mapFromItem viszi át, majd a kép
+        # transzformációját külön örökli; az élő geometriai próbák ezt mérik.
+        assert "(photoArea.fokuszKep.width - width) / 2" in f
         assert "(photoArea.fokuszKep.height" in f
         assert "+ photoArea.fokuszKep.paintedHeight) / 2" in f
         assert "- height - 10" in f
+        assert "var cel = kep.mapToItem(" in f
+        assert "parent.mapFromItem(" in f
+        assert "rotation: photoArea.fokuszKep.rotation" in f
+        assert "scale: photoArea.fokuszKep.scale" in f

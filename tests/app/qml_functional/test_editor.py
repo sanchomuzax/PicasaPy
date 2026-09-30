@@ -229,12 +229,10 @@ class TestEditorWiring:
         assert slider is not None, "tiltSlider nem található"
         assert slider.property("value") == pytest.approx(0.4)
 
-    def test_navigation_with_tilt_tool_active_preserves_next_photo_preview(
+    def test_navigation_with_tilt_tool_active_closes_it_for_the_next_photo(
         self, qml_app, qt_app, tmp_path
     ):
-        """#131: aktív döntés-eszköz melletti lapozás NEM nullázza a
-        következő kép előnézetét — a csúszka a mentett tilt-értékére áll,
-        a 0-ra állás nem vált ki previewTilt(0)-t."""
+        """#3924: lapozáskor a Picasa bezárja a döntés-eszközt és a rácsot."""
         window, _, _ = qml_app
         ini_path = tmp_path / "kepek" / ".picasa.ini"
         ini_path.write_text(
@@ -246,14 +244,10 @@ class TestEditorWiring:
         panel = window.findChild(QObject, "viewerEditorPanel")
         panel.setProperty("tiltActive", True)
         qt_app.processEvents()
-        slider = window.findChild(QObject, "tiltSlider")
-        assert slider is not None, "tiltSlider nem található"
-
         viewer.setProperty("currentIndex", 1)
         qt_app.processEvents()
 
-        # a csúszka a b.jpg mentett tilt-értékére állt, NEM 0-ra
-        assert slider.property("value") == pytest.approx(-0.2)
+        assert panel.property("tiltActive") is False
         # a b.jpg mentett tilt-je az ini-ben érintetlen maradt
         ini_text = ini_path.read_text(encoding="utf-8")
         assert "filters=tilt=1,-0.200000,0.000000;" in ini_text

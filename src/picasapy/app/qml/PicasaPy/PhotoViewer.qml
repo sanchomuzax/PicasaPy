@@ -1178,6 +1178,9 @@ Rectangle {
     }
     onCurrentIndexChanged: {
         if (visible) {
+            // #3924: a Picasa lapozáskor lezárja a Kiegyenesítést; a rács
+            // csak az eszköz nyitott állapotában látszik.
+            editorPanel.tiltActive = false
             zoomFit()   // #6: lapozáskor vissza illesztett nézetbe
             beginEditCurrent()
             //: #3773: jobb fókusznál a BAL fél (`currentIndex`) a második
@@ -2420,6 +2423,300 @@ Rectangle {
                     readonly property var fokuszKeret:
                         viewer.balFokusz ? photoElotteKeret : photoKeret
 
+                    //: #3924, „⛳ A Kiegyenesítés négyzethálója”:
+                    //: a csempézett rács a kép fölött áll, a kép forgása alatt.
+                    //: A becsomagolt 44×44-es mintát az Image.Tile
+                    //: változatlan logikai képpontméretben ismétli a képre.
+                    Item {
+                        id: straightenGridOverlay
+                        objectName: "straightenGridOverlay"
+                        // A közös, forgatatlan szülőben a Qt clip mind a négy
+                        // egész képernyőszélt azonosan raszterezi; a rács
+                        // így a 90°-os képeknél sem veszít el perempixelt.
+                        parent: photoArea
+                        z: 1
+                        scale: 1
+                        rotation: 0
+                        clip: true
+                        visible: editorPanel.tiltActive
+                                 && editorPanel.activeTab === 0
+                                 && !viewer.isCurrentVideo
+
+                        property int racsKezdoX: 0
+                        property int racsKezdoY: 0
+                        property int vagasJelenetX: 0
+                        property int vagasJelenetY: 0
+                        property real gombparBal: 0
+                        property real gombparFelso: 0
+                        property real gombparJobb: 0
+                        property real gombparAlso: 0
+                        property bool gombparMaszkAktiv: false
+
+                        function frissitGombparMaszk() {
+                            if (!editorToolBar.visible)
+                            {
+                                gombparMaszkAktiv = false
+                                return
+                            }
+
+                            var gombok = [
+                                editorToolBar.cancelButtonItem,
+                                editorToolBar.applyButtonItem,
+                            ]
+                            var xek = []
+                            var yek = []
+                            for (var i = 0; i < gombok.length; ++i) {
+                                var gomb = gombok[i]
+                                var sarkok = [
+                                    gomb.mapToItem(straightenGridOverlay, 0, 0),
+                                    gomb.mapToItem(straightenGridOverlay,
+                                                   gomb.width, 0),
+                                    gomb.mapToItem(straightenGridOverlay,
+                                                   0, gomb.height),
+                                    gomb.mapToItem(straightenGridOverlay,
+                                                   gomb.width, gomb.height),
+                                ]
+                                for (var j = 0; j < sarkok.length; ++j) {
+                                    xek.push(sarkok[j].x)
+                                    yek.push(sarkok[j].y)
+                                }
+                            }
+
+                            var bal = Math.min.apply(null, xek)
+                            var fent = Math.min.apply(null, yek)
+                            var jobb = Math.max.apply(null, xek)
+                            var lent = Math.max.apply(null, yek)
+                            gombparBal = Math.max(0, Math.min(width, bal))
+                            gombparFelso = Math.max(0, Math.min(height, fent))
+                            gombparJobb = Math.max(0, Math.min(width, jobb))
+                            gombparAlso = Math.max(0, Math.min(height, lent))
+                            gombparMaszkAktiv = gombparJobb > gombparBal
+                                && gombparAlso > gombparFelso
+                        }
+
+                        function racsSzeletX(szeletX) {
+                            var jelenetX = vagasJelenetX + szeletX
+                            return racsKezdoX
+                                + Math.floor((jelenetX - racsKezdoX) / 44) * 44
+                                - jelenetX
+                        }
+
+                        function racsSzeletY(szeletY) {
+                            var jelenetY = vagasJelenetY + szeletY
+                            return racsKezdoY
+                                + Math.floor((jelenetY - racsKezdoY) / 44) * 44
+                                - jelenetY
+                        }
+
+                        function frissitGeometria() {
+                            var kep = photoArea.fokuszKep
+                            if (kep.paintedWidth <= 0 || kep.paintedHeight <= 0)
+                                return
+
+                            var kozep = kep.mapToItem(
+                                null, kep.width / 2, kep.height / 2)
+                            var nagyitas = Math.abs(kep.scale)
+                            var fordult = kep.iniSteps % 2 !== 0
+                            var kepSzel = (fordult
+                                ? kep.paintedHeight : kep.paintedWidth) * nagyitas
+                            var kepMag = (fordult
+                                ? kep.paintedWidth : kep.paintedHeight) * nagyitas
+                            var bal = Math.floor(kozep.x - kepSzel / 2)
+                            var jobb = Math.floor(kozep.x + kepSzel / 2)
+                            var fent = Math.floor(kozep.y - kepMag / 2)
+                            var lent = Math.floor(kozep.y + kepMag / 2)
+                            var helyiKezdo = parent.mapFromItem(
+                                null, bal, fent)
+
+                            width = jobb - bal
+                            height = lent - fent
+                            x = helyiKezdo.x
+                            y = helyiKezdo.y
+                            vagasJelenetX = bal
+                            vagasJelenetY = fent
+
+                            var teruletKozep = photoArea.mapToItem(
+                                null, photoArea.width / 2, photoArea.height / 2)
+                            racsKezdoX = Math.trunc(teruletKozep.x - 249)
+                            racsKezdoY = Math.trunc(teruletKozep.y - 153)
+                            Qt.callLater(frissitGombparMaszk)
+                        }
+
+                        onVisibleChanged: {
+                            if (visible) Qt.callLater(frissitGeometria)
+                        }
+                        Component.onCompleted: Qt.callLater(frissitGeometria)
+
+                        //: Négy, egymást nem fedő csempézett rész alkotja a
+                        //: rácsot. A középső bal/jobb résszel a teljes gombpár
+                        //: téglalapja marad üres; a csúszkasáv fölött továbbra
+                        //: is látszik a rács. A QtQuick.Effects nem fut minden
+                        //: célgépen, ezért a kivágás egyszerű QtQuick-clip.
+                        // Felső sáv: a gombpár fölötti teljes képterület.
+                        Item {
+                            x: 0
+                            y: 0
+                            width: straightenGridOverlay.width
+                            height: straightenGridOverlay.gombparMaszkAktiv
+                                    ? straightenGridOverlay.gombparFelso
+                                    : straightenGridOverlay.height
+                            clip: true
+                            visible: width > 0 && height > 0
+                            Image {
+                                objectName: "straightenGridImage"
+                                x: straightenGridOverlay.racsSzeletX(parent.x)
+                                y: straightenGridOverlay.racsSzeletY(parent.y)
+                                width: parent.width + 88
+                                height: parent.height + 88
+                                source: "../../assets/tools/straighten_grid.png"
+                                sourceSize: Qt.size(44, 44)
+                                fillMode: Image.Tile
+                                horizontalAlignment: Image.AlignLeft
+                                verticalAlignment: Image.AlignTop
+                                smooth: false
+                                cache: false
+                                asynchronous: false
+                            }
+                        }
+                        // A gombok bal oldalán megmarad a háló, a résen nem.
+                        Item {
+                            x: 0
+                            y: straightenGridOverlay.gombparFelso
+                            width: straightenGridOverlay.gombparBal
+                            height: straightenGridOverlay.gombparAlso
+                                    - straightenGridOverlay.gombparFelso
+                            clip: true
+                            visible: straightenGridOverlay.gombparMaszkAktiv
+                                     && width > 0 && height > 0
+                            Image {
+                                x: straightenGridOverlay.racsSzeletX(parent.x)
+                                y: straightenGridOverlay.racsSzeletY(parent.y)
+                                width: parent.width + 88
+                                height: parent.height + 88
+                                source: "../../assets/tools/straighten_grid.png"
+                                sourceSize: Qt.size(44, 44)
+                                fillMode: Image.Tile
+                                horizontalAlignment: Image.AlignLeft
+                                verticalAlignment: Image.AlignTop
+                                smooth: false
+                                cache: false
+                                asynchronous: false
+                            }
+                        }
+                        // A gombok jobb oldalán megmarad a háló.
+                        Item {
+                            x: straightenGridOverlay.gombparJobb
+                            y: straightenGridOverlay.gombparFelso
+                            width: straightenGridOverlay.width
+                                    - straightenGridOverlay.gombparJobb
+                            height: straightenGridOverlay.gombparAlso
+                                    - straightenGridOverlay.gombparFelso
+                            clip: true
+                            visible: straightenGridOverlay.gombparMaszkAktiv
+                                     && width > 0 && height > 0
+                            Image {
+                                x: straightenGridOverlay.racsSzeletX(parent.x)
+                                y: straightenGridOverlay.racsSzeletY(parent.y)
+                                width: parent.width + 88
+                                height: parent.height + 88
+                                source: "../../assets/tools/straighten_grid.png"
+                                sourceSize: Qt.size(44, 44)
+                                fillMode: Image.Tile
+                                horizontalAlignment: Image.AlignLeft
+                                verticalAlignment: Image.AlignTop
+                                smooth: false
+                                cache: false
+                                asynchronous: false
+                            }
+                        }
+                        // Alsó sáv: a gombpár alatti teljes képterület.
+                        Item {
+                            x: 0
+                            y: straightenGridOverlay.gombparMaszkAktiv
+                               ? straightenGridOverlay.gombparAlso : 0
+                            width: straightenGridOverlay.width
+                            height: straightenGridOverlay.gombparMaszkAktiv
+                                    ? straightenGridOverlay.height
+                                      - straightenGridOverlay.gombparAlso
+                                    : 0
+                            clip: true
+                            visible: width > 0 && height > 0
+                            Image {
+                                x: straightenGridOverlay.racsSzeletX(parent.x)
+                                y: straightenGridOverlay.racsSzeletY(parent.y)
+                                width: parent.width + 88
+                                height: parent.height + 88
+                                source: "../../assets/tools/straighten_grid.png"
+                                sourceSize: Qt.size(44, 44)
+                                fillMode: Image.Tile
+                                horizontalAlignment: Image.AlignLeft
+                                verticalAlignment: Image.AlignTop
+                                smooth: false
+                                cache: false
+                                asynchronous: false
+                            }
+                        }
+                        Connections {
+                            target: photoArea.fokuszKep
+                            function frissit() {
+                                Qt.callLater(straightenGridOverlay.frissitGeometria)
+                            }
+                            function onXChanged() { frissit() }
+                            function onYChanged() { frissit() }
+                            function onWidthChanged() { frissit() }
+                            function onHeightChanged() { frissit() }
+                            function onPaintedWidthChanged() { frissit() }
+                            function onPaintedHeightChanged() { frissit() }
+                            function onScaleChanged() { frissit() }
+                            function onRotationChanged() { frissit() }
+                            function onIniStepsChanged() { frissit() }
+                        }
+                        Connections {
+                            target: photoArea
+                            function frissit() {
+                                Qt.callLater(straightenGridOverlay.frissitGeometria)
+                            }
+                            function onXChanged() { frissit() }
+                            function onYChanged() { frissit() }
+                            function onWidthChanged() { frissit() }
+                            function onHeightChanged() { frissit() }
+                        }
+                        Connections {
+                            target: photoArea.parent
+                            function frissit() {
+                                Qt.callLater(straightenGridOverlay.frissitGeometria)
+                            }
+                            function onXChanged() { frissit() }
+                            function onYChanged() { frissit() }
+                            function onWidthChanged() { frissit() }
+                            function onHeightChanged() { frissit() }
+                        }
+                        Connections {
+                            target: viewer
+                            function frissit() {
+                                Qt.callLater(straightenGridOverlay.frissitGeometria)
+                            }
+                            function onXChanged() { frissit() }
+                            function onYChanged() { frissit() }
+                            function onWidthChanged() { frissit() }
+                            function onHeightChanged() { frissit() }
+                        }
+                        Connections {
+                            target: editorToolBar
+                            function frissit() {
+                                Qt.callLater(
+                                    straightenGridOverlay.frissitGombparMaszk)
+                            }
+                            function onXChanged() { frissit() }
+                            function onYChanged() { frissit() }
+                            function onWidthChanged() { frissit() }
+                            function onHeightChanged() { frissit() }
+                            function onScaleChanged() { frissit() }
+                            function onRotationChanged() { frissit() }
+                            function onVisibleChanged() { frissit() }
+                        }
+                    }
+
                     // GPU élő-előnézet (#22): a `fokuszKep` FÖLÖTT (#3755:
                     // ab/aa módban ez a kijelölt fél, `photoElotte` vagy
                     // `photo` — l. lent a geometriánál), csak akkor
@@ -2660,7 +2957,7 @@ Rectangle {
                     EditorToolBar {
                         id: editorToolBar
                         objectName: "editorToolBar"
-                        parent: photoArea.fokuszKep
+                        parent: photoArea
                         z: 20
                         //: #3320: a sáv KIZÁRÓLAG a kiegyenesítésé. A
                         //: `.tre` a `tool_container`-t a
@@ -2690,10 +2987,39 @@ Rectangle {
                                 editController.setTilt(ertek)
                         }
                         //: középre, és 10 képponttal a KIRAJZOLT kép alja fölé
-                        x: (photoArea.fokuszKep.width - width) / 2
-                        y: (photoArea.fokuszKep.height
-                            + photoArea.fokuszKep.paintedHeight) / 2
-                           - height - 10
+                        readonly property real kepHelyiX:
+                            (photoArea.fokuszKep.width - width) / 2
+                        readonly property real kepHelyiY:
+                            (photoArea.fokuszKep.height
+                             + photoArea.fokuszKep.paintedHeight) / 2
+                            - height - 10
+                        readonly property point kepernyoKozep:
+                            {
+                                var kep = photoArea.fokuszKep
+                                //: A mapToItem() a transzformált pontot
+                                //: helyesen adja vissza, de a QML-kötés nem
+                                //: iratkozik fel a belső x/y/scale/rotation
+                                //: olvasások változására. A nullával szorzott
+                                //: tagok ezeket függőséggé teszik.
+                                var kepX = kep.x
+                                var kepY = kep.y
+                                var kepScale = kep.scale
+                                var kepRotation = kep.rotation
+                                var cel = kep.mapToItem(
+                                    null, kepHelyiX + width / 2,
+                                    kepHelyiY + height / 2)
+                                return Qt.point(
+                                    cel.x + (kepX + kepScale) * 0,
+                                    cel.y + (kepY + kepRotation) * 0)
+                            }
+                        readonly property point szuloKozep:
+                            parent.mapFromItem(
+                                null, kepernyoKozep.x, kepernyoKozep.y)
+                        x: szuloKozep.x - width / 2
+                        y: szuloKozep.y - height / 2
+                        rotation: photoArea.fokuszKep.rotation
+                        scale: photoArea.fokuszKep.scale
+                        transformOrigin: Item.Center
                         onApplyClicked: {
                             //: #3234: a döntés értéke MÁR ki van írva (a
                             //: csúszka elengedésekor, #72) — az Alkalmaz
