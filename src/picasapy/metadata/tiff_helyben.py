@@ -45,6 +45,9 @@ Interop IFD bővített másolata a blokk végére kerül, és csak az Exif IFD
 `0xa005` mutatója íródik helyben; ha nincs Interop IFD, újat fűz a végére, és
 a mutató az (átmásolt) Exif IFD-be kerül. Csak `csak_ha_hianyzik` tag adható
 hozzá; érvénytelen vagy kétszer szereplő `0xa005`-nél az Interop érintetlen.
+Az érvénytelen (0-s vagy ismeretlen) típusú bejegyzés az áthelyezéskor a forrásbeli
+relatív helyén marad (a forrás végén állók a végén), csak az érvényesek rendeződnek
+tag szerint (#3999).
 Bármi váratlanra `TiffHiba` — a hívó ilyenkor a forrás bájtjait adja tovább.
 """
 
@@ -261,6 +264,43 @@ def _alkalmaz(
     return uj
 
 
+def _rendez(sorok: list[tuple]) -> list[tuple]:
+    """Az érvényes típusú sorok tag szerint (stabilan: az azonos tagek sorrendje
+    marad); az érvénytelen (0-s vagy ismeretlen) típusú sor a forrásban ELŐTTE
+    álló érvényes sor után marad, a forrás végén álló a végén (#3999). Így az
+    IFD elejére csak az kerülhet, ami a forrásban is elöl állt — az IFD elején
+    álló 0-s típusra az exiftool az egész IFD-t eldobja.
+
+    `sorok`: a forrás sorai forrássorrendben (5. elem False), utánuk az újak."""
+    if all(sor[1] in _TIPUS_MERET for sor in sorok):
+        return sorted(sorok, key=lambda sor: sor[0])
+    # érvénytelen sorok, amelyek UTÁN még áll forrásbeli érvényes sor
+    kozepen: set[int] = set()
+    van_utana = False
+    for i in reversed(range(len(sorok))):
+        if sorok[i][1] not in _TIPUS_MERET:
+            if van_utana:
+                kozepen.add(i)
+        elif not sorok[i][4]:
+            van_utana = True
+    utana: dict[int | None, list[int]] = {}  # előző érvényes forrássor → szemét
+    vegen: list[int] = []
+    elozo: int | None = None
+    for i, sor in enumerate(sorok):
+        if sor[1] not in _TIPUS_MERET:
+            (utana.setdefault(elozo, []) if i in kozepen else vegen).append(i)
+        elif not sor[4]:
+            elozo = i
+    ervenyes = sorted(
+        (i for i, sor in enumerate(sorok) if sor[1] in _TIPUS_MERET), key=lambda i: sorok[i][0]
+    )
+    rend = list(utana.get(None, []))
+    for i in ervenyes:
+        rend.append(i)
+        rend += utana.get(i, [])
+    return [sorok[i] for i in rend + vegen]
+
+
 def _athelyez(
     blokk: _Blokk,
     bejegyzesek: list[_Bejegyzes],
@@ -281,8 +321,7 @@ def _athelyez(
         if b.tag not in uj
     ]
     sorok += [(tag, t, d, nyers, True) for tag, (t, d, nyers) in uj.items()]
-    # stabil rendezés: az azonos tagek egymás közti sorrendje marad
-    sorok.sort(key=lambda sor: sor[0])
+    sorok = _rendez(sorok)
     if len(sorok) > 0xFFFF:
         raise TiffHiba("túl sok bejegyzés")
     if len(blokk.buf) % 2:
