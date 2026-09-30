@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Kiegyenesítés eszközön álló négyzetháló jelenik meg; az Alkalmaz,
+  a Mégse és a lapozás eltünteti (#3924).
+
 ## [0.8.647] – 2026-09-30
 
 ### Javítva
@@ -21,9 +25,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - Az exportált képet már nem vágja meg a szerkesztési előzményben maradt régi vágás — ugyanúgy, mint az eredeti Picasában (#4008).
-
-- A Kiegyenesítés eszközön álló négyzetháló jelenik meg; az Alkalmaz,
-  a Mégse és a lapozás eltünteti (#3924).
 
 ## [0.8.644] – 2026-09-30
 
