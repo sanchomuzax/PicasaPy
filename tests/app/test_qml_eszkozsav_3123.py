@@ -206,8 +206,11 @@ class TestSzinek:
     def test_a_renderelt_gomb_a_69_felvetel_mintaihoz_egyezik(self, kirajzolt_gombok):
         """A #4029 #69 mintái: kitöltés 111/70, keret 210 (±2 szint)."""
         kep = kirajzolt_gombok
-        _assert_rgb_kozel(kep, 20, 14, (111, 111, 111))
-        _assert_rgb_kozel(kep, 160, 14, (70, 70, 70))
+        # a kitöltést a felirat FÖLÖTTI sorban mérjük (y = 5): a nagybetűs
+        # felirat szélessége betűkészlet-függő (Windowson szélesebb), és a
+        # középső sor szövegre eshet (#4037, CI windows)
+        _assert_rgb_kozel(kep, 20, 5, (111, 111, 111))
+        _assert_rgb_kozel(kep, 160, 5, (70, 70, 70))
         _assert_rgb_kozel(kep, 41, 0, (210, 209, 209))
 
     def test_a_renderelt_keret_ket_keppont_vastag(self, kirajzolt_gombok):
@@ -233,7 +236,9 @@ class TestSzinek:
             (87, 63, 15, (70, 70, 70), 2),
         ):
             for x in range(bal + eltol, bal + eltol + szelesseg):
-                y = 14
+                # a felirat fölötti sor: a nagybetűs felirat betűkészletfüggő
+                # szélessége a középső sorba is belelóghat (#4037)
+                y = 5
                 kapott = kep.pixelColor(x, y)
                 rgb = (kapott.red(), kapott.green(), kapott.blue())
                 assert all(
@@ -247,7 +252,11 @@ class TestSzinek:
     def test_a_felirat_lathato_pixeleinek_doboza_kozepen_all(
         self, kirajzolt_gombok
     ):
-        """A megjelenő felirat befoglaló dobozának közepe ±1 px-en belül van."""
+        """A megjelenő felirat befoglaló dobozának közepe ±2 px-en belül van.
+
+        A tűrés a betűkészlet oldalsó térközeiből jön (a Windows-os CI-n a
+        CANCEL 1,5 px-szel tér el); a mért #69-eltérés ±1, ott más a betűkép.
+        """
         kep = kirajzolt_gombok
         for bal in (0, 87):
             pixelek = [
@@ -268,7 +277,7 @@ class TestSzinek:
             jobb_x = max(x for x, _y in pixelek)
             felirat_kozepe = (bal_x + jobb_x) / 2
             gomb_kozepe = bal + (82 - 1) / 2
-            assert abs(felirat_kozepe - gomb_kozepe) <= 1, (
+            assert abs(felirat_kozepe - gomb_kozepe) <= 2, (
                 f"a {bal}px-nél álló gomb feliratdobozának közepe "
                 f"{felirat_kozepe:.1f}px, a gombé {gomb_kozepe:.1f}px"
             )
