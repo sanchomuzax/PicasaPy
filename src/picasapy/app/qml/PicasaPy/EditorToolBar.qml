@@ -140,11 +140,15 @@ Item {
         Text {
             anchors.centerIn: parent
             text: gomb.felirat
-            //: #4037: a mért m_buttonfontC stílus 12 px, félkövér,
-            //: −1 px betűközű; a szöveget a nyelvi erőforrás adja.
-            font.pixelSize: Theme.fontSize
-            font.weight: Font.DemiBold
-            font.letterSpacing: -1
+            //: #4052: a #69 felvétel mérése (ugyanazzal a ≥170-es küszöbbel):
+            //: az eredeti APPLY 28×7, CANCEL 37×7 px, vonásszélesség ≈2,4 px.
+            //: Az OpenSans csak Normal és Bold súlyban van csomagolva: a 12 px
+            //: DemiBold(=Bold) 33×9 és +73% tinta (túl nagy), a 10 px Normal
+            //: 26×8 és vonás 1,4 px (túl vékony); a 10 px Bold, −0,5 px
+            //: betűközzel 29×8 / 36×8 és vonás 2,2 px — ez áll legközelebb.
+            font.pixelSize: 10
+            font.weight: Font.Bold
+            font.letterSpacing: -0.5
             //: a felirat FFFFFFFF, az egér alatt CCFFFFFF (80%)
             color: "#ffffff"
             opacity: terulet.containsMouse && gomb.buttonEnabled ? 0.8 : 1.0
