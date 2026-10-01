@@ -1,4 +1,4 @@
-"""Egy Alkalmaz/Mégse JEL szolgálja ki mindkét panelt — a #710 őre.
+"""A panelgombok közös jele megmarad, a kép fölötti sávé eltűnik (#4037).
 
 ## Amit az audit mond
 
@@ -22,25 +22,26 @@ A rajzolt jel minden betűtípussal ugyanazt adja.
 
 ## Amit ez a lap kiköt
 
-Egyetlen komponens (`EditorActionBadge`), mindkét panelen, és a régi
-Unicode-os alak ne szivárogjon vissza.
+Egyetlen komponens (`EditorActionBadge`) a paraméter-panelen. A kiegyenesítés
+sávján nincs jel; a felirat nyelvi erőforrásból jön: `APPLY` / `CANCEL`,
+magyarul `ALKALMAZ` / `MÉGSE`.
 """
 
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import picasapy.app
+from PySide6.QtCore import QTranslator
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_I18N = Path(picasapy.app.__file__).parent / "i18n"
 
-#: A két hely, aminek az auditja szerint UGYANAZ a gombja.
+#: A két felület, ahol a jel maradását/eltűnését együtt őrizzük.
 #:
-#: ⚠️ #3123: a vágás Alkalmaz/Mégse párja KIKERÜLT a panelből — az
-#: eredetiben a KÉP FÖLÖTT lebeg (`editpanel/tool_container: editpanel/preview`).
-#: A jel vele együtt költözött, tehát a kapu az `EditorToolBar.qml`-t nézi a
-#: `EditorCropPanel.qml` helyett. A kikötés változatlan: EGY komponens, és a
-#: Unicode-os alak ne szivárogjon vissza.
+#: #4037: a `tool_ok`/`tool_cancel` gombokon nincs jel; a paraméter-panel
+#: gombjain viszont marad az `EditorActionBadge`.
 PANELEK = ("EditorToolBar.qml", "EditorParamPanel.qml")
 
 
@@ -61,12 +62,16 @@ class TestAKozosKomponens:
             "a komponens nincs a qmldir-ben — a QML-import nem találná meg"
         )
 
-    def test_MINDKET_panel_ezt_hasznalja(self) -> None:
-        for nev in PANELEK:
-            forras = (_QML / nev).read_text(encoding="utf-8")
-            assert "EditorActionBadge {" in forras, (
-                f"{nev}: nem a közös jelet használja"
-            )
+    def test_a_jel_a_parampanelen_marad_de_a_savrol_lekerul(self) -> None:
+        sav, panel = PANELEK
+        sav_forras = _kod_sorok(_QML / sav)
+        panel_forras = _kod_sorok(_QML / panel)
+        assert "EditorActionBadge {" not in sav_forras, (
+            "EditorToolBar: a kiegyenesítés sávján az eredetiben nincs jel"
+        )
+        assert "EditorActionBadge {" in panel_forras, (
+            "EditorParamPanel: a panelgombok közös jele eltűnt"
+        )
 
     def test_a_panelen_beluli_masolat_MEGSZUNT(self) -> None:
         """A #700 `component ActionBadge`-e kikerült a panelből — különben
@@ -97,22 +102,44 @@ class TestAUnicodeJelNemJonVISSZA:
                 )
 
     def test_a_feliratok_tisztak_maradtak(self) -> None:
-        """A gomb felirata a puszta szó — a jelet a komponens adja."""
+        """A sáv nagybetűs forrásszövege a nyelvi fájl kulcsa."""
         forras = (_QML / "EditorToolBar.qml").read_text(encoding="utf-8")
-        assert 'qsTr("Apply")' in forras
-        assert 'qsTr("Cancel")' in forras
+        assert 'qsTr("APPLY")' in forras
+        assert 'qsTr("CANCEL")' in forras
+
+
+class TestASavForditasa:
+    def test_a_ts_a_kulon_savfeliratokat_tartalmazza(self) -> None:
+        ts = ET.parse(_I18N / "picasapy_hu.ts")
+        editor_toolbar = next(
+            context
+            for context in ts.findall("context")
+            if context.findtext("name") == "EditorToolBar"
+        )
+        forditasok = {
+            uzenet.findtext("source"): uzenet.findtext("translation")
+            for uzenet in editor_toolbar.findall("message")
+        }
+        assert forditasok.get("APPLY") == "ALKALMAZ"
+        assert forditasok.get("CANCEL") == "MÉGSE"
+
+    def test_a_forditott_qm_fajl_is_a_nagybetus_feliratot_adja(self) -> None:
+        ford = QTranslator()
+        assert ford.load(str(_I18N / "picasapy_hu.qm")), "a magyar .qm nem tölthető be"
+        assert ford.translate("EditorToolBar", "APPLY") == "ALKALMAZ"
+        assert ford.translate("EditorToolBar", "CANCEL") == "MÉGSE"
 
 
 class TestAJelHELYE:
-    """Az audit mérése: a jel a gomb jobb szélétől 9 képponton ül."""
+    """A paraméter-panel jele a gomb jobb szélétől 9 képpontra ül."""
 
-    def test_mindket_panel_9_kepponttal_horgonyoz(self) -> None:
-        for nev in PANELEK:
-            forras = (_QML / nev).read_text(encoding="utf-8")
-            blokkok = forras.split("EditorActionBadge {")[1:]
-            assert blokkok, f"{nev}: nincs jel-blokk"
-            for blokk in blokkok:
-                fej = blokk[:400]
-                assert "anchors.rightMargin: 9" in fej, (
-                    f"{nev}: a jel nem a jobb széltől 9 képpontra ül"
-                )
+    def test_a_parampanel_9_kepponttal_horgonyoz(self) -> None:
+        nev = "EditorParamPanel.qml"
+        forras = (_QML / nev).read_text(encoding="utf-8")
+        blokkok = forras.split("EditorActionBadge {")[1:]
+        assert blokkok, f"{nev}: nincs jel-blokk"
+        for blokk in blokkok:
+            fej = blokk[:400]
+            assert "anchors.rightMargin: 9" in fej, (
+                f"{nev}: a jel nem a jobb széltől 9 képpontra ül"
+            )
