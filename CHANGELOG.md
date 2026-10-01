@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.657] – 2026-10-01
+
 ### Javítva
 - Az eszközsáv Alkalmaz/Mégse feliratainak mérete az eredeti Picasáéhoz igazodik (kisebbek, mint eddig) (#4052).
 
