@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Kiegyenesítés és a teljes képre ható eszközök megnyitásakor a fotó
+  kitöltő nézetre áll, és bezárás után is ott marad (#4021).
+
 ## [0.8.651] – 2026-10-01
 
 ### Javítva
@@ -16,9 +20,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - A szerkesztő eszközsáv Alkalmaz/Mégse gombjai most a Picasához hasonlóan áttetszők (#4029).
-
-- A Kiegyenesítés és a teljes képre ható eszközök megnyitásakor a fotó
-  kitöltő nézetre áll, és bezárás után is ott marad (#4021).
 
 ## [0.8.649] – 2026-10-01
 
