@@ -59,10 +59,13 @@ def _kepek(lib, *, b_forgatva=False) -> None:
     cv2.imwrite(str(lib / "a.jpg"), a, [cv2.IMWRITE_JPEG_QUALITY, 98])
     cv2.imwrite(str(lib / "b.jpg"), b, [cv2.IMWRITE_JPEG_QUALITY, 98])
     ini = (
+        "[Contacts2]\n"
+        "1111111111111111=Anna;;\n"
+        "2222222222222222=Béla;;\n"
         "[a.jpg]\n"
-        "faces=rect64(1000100050005000),ffffffffffffffff\n"
+        "faces=rect64(1000100050005000),1111111111111111\n"
         "[b.jpg]\n"
-        "faces=rect64(80006000c000a000),ffffffffffffffff\n"
+        "faces=rect64(80006000c000a000),2222222222222222\n"
     )
     if b_forgatva:
         ini += "rotate=rotate(1)\n"
@@ -274,7 +277,7 @@ class TestAzArcAtfedoAKijeloltKepetMutatja:
 
         from tests.app.qml_functional.test_viewer_faces_edit import _invoke
         _invoke(atfedo, "openEditorFor", arc["left"], arc["top"],
-                arc["right"], arc["bottom"], "", False)
+                arc["right"], arc["bottom"], arc["name"], False)
         qt_app.processEvents()
         _gyerek(window, "faceNameField").setProperty("text", "Kis Éva")
         _invoke(atfedo, "commitEditor")

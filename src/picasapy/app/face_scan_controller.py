@@ -785,9 +785,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         személy-mezőjébe `ffffffffffffffff` kerül, a fotó többi arca
         érintetlen marad. Enélkül az elvetés más gépre másolt könyvtárban,
         vagy egy friss újraindexelés után elveszne, mert csak a saját
-        SQLite-indexünkben élt. Az írás a MEGLÉVŐ `FacesHelper.addFace()`
-        úton megy (üres névvel — ez pontosan az azonosítatlan sentinelt
-        írja), `None` `FacesHelper` mellett csak az index frissül.
+        SQLite-indexünkben élt. Az írás a `FacesHelper.addIgnoredFace()`
+        műveleten át megy; `None` `FacesHelper` mellett csak az index
+        frissül.
 
         A mellőzött arcok száma a visszatérési érték."""
         ids = [int(face_id) for face_id in face_ids]
@@ -803,8 +803,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         return len(ids)
 
     def _write_ignore_markers(self, targets: list[UnnamedFace]) -> None:
-        """A `faces=rect64(…),ffffffffffffffff` bejegyzések írása (#3670) a
-        MEGLÉVŐ `FacesHelper.addFace()` úton (üres név = a mellőzés jele).
+        """A `faces=rect64(…),ffffffffffffffff` bejegyzések írása (#3670).
 
         A keret a rect64 tartományára vágva és rácsára kerekítve megy (J1:
         a kereten túllógó arc különben `ValueError`-t dobna, és a köteg
@@ -818,7 +817,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             existing = ignored_regions(ini_faces_of(face.photo_path))
             if best_region(rect, existing) is not None:
                 continue
-            self._faces_helper.addFace(str(face.photo_path), *rect, "")
+            self._faces_helper.addIgnoredFace(str(face.photo_path), *rect)
 
     @Slot(result=int)
     def resetAllFaces(self) -> int:  # noqa: N802 — QML-slot-stílus

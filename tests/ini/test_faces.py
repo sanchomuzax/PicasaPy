@@ -31,11 +31,17 @@ class TestParse:
         assert faces[0].contact_id == "8e62b2035b74b477"
         assert faces[0].rect == decode_rect64("3f845bcb59418507")
 
-    def test_unidentified_face(self):
+    def test_ignored_face_is_not_identified(self):
         faces = parse_faces(TWO_FACES)
         assert faces[0].is_identified
         assert not faces[1].is_identified
+        assert faces[1].is_ignored
         assert faces[1].contact_id == UNIDENTIFIED_CONTACT
+
+    def test_zero_contact_is_neither_identified_nor_ignored(self):
+        face = parse_faces("rect64(3f845bcb59418507),0")[0]
+        assert not face.is_identified
+        assert not face.is_ignored
 
     def test_short_rect_hex(self):
         # A Picasa a rect64-ben is elhagyhatja a vezető nullákat.
@@ -75,9 +81,10 @@ class TestParse:
         faces = parse_faces("rect64(3f845bcb59418507),8e62;")
         assert faces[0].contact_id == "8e62"
 
-    def test_uppercase_unidentified_id(self):
+    def test_uppercase_ignored_id(self):
         faces = parse_faces("rect64(3f845bcb59418507),FFFFFFFFFFFFFFFF;")
         assert not faces[0].is_identified
+        assert faces[0].is_ignored
 
 
 class TestSerialize:

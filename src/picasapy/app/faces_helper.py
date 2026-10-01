@@ -57,10 +57,10 @@ class FacesHelper(QObject):
         """A `faces=` bejegyzések a megadott fotóhoz, névvel feloldva.
 
         Minden elem: {left, top, right, bottom} relatív [0..1] koordináták
-        (rect64) és `name` (a [Contacts2]-ből, vagy üres, ha a contact_id
-        azonosítatlan vagy nincs névbejegyzés). Hiányzó ini/szekció/kulcs,
-        vagy hibás `faces=` érték esetén üres lista — a néző ilyenkor
-        egyszerűen nem rajzol keretet, nem omlik össze."""
+        (rect64) és `name` (a [Contacts2]-ből, vagy üres, ha nincs
+        névbejegyzés). A mellőzést (`ffffffffffffffff`) és a nulla
+        contact_id-jú bejegyzést kihagyja. Hiányzó ini/szekció/kulcs, vagy
+        hibás `faces=` érték esetén üres lista."""
         if not image_path:
             return []
         document, path = self._load(image_path)
@@ -75,7 +75,11 @@ class FacesHelper(QObject):
         except ValueError:
             return []
         names = {contact.person_id.casefold(): contact.name for contact in contacts_of(document)}
-        return [_face_to_dict(face, names) for face in faces]
+        return [
+            _face_to_dict(face, names)
+            for face in faces
+            if face.is_identified
+        ]
 
     @Slot(str, result="QVariantList")
     def knownNames(self, image_path: str) -> list[str]:
@@ -94,24 +98,59 @@ class FacesHelper(QObject):
     def addFace(
         self, image_path: str, left: float, top: float, right: float, bottom: float, name: str
     ) -> bool:
-        """Új arc-téglalap felvétele — üres `name`-nél azonosítatlanul (a
-        régió megrajzolható a névadás előtt is, Picasa-mintára)."""
+        """Új, megnevezett arc-téglalap felvétele.
+
+        Üres vagy szóközös névnél sikeres no-op: a Picasa nem ment névtelen
+        kézi négyszöget.
+        """
+        if not image_path:
+            return False
+        clean_name = (name or "").strip()
+        if not clean_name:
+            return True
+
         def mutate(document, photo_name, rect):
-            _document, contact_id = self._resolve_contact_id(document, name)
+            _document, contact_id = self._resolve_contact_id(document, clean_name)
             return with_face(_document, photo_name, Face(rect=rect, contact_id=contact_id))
 
         return self._mutate(image_path, mutate, left, top, right, bottom)
+
+    # Szándékosan nem QML-slot: a mellőzés jelét kizárólag a
+    # FaceScanController írhatja a felismert arcok elvetésekor (#3670).
+    def addIgnoredFace(
+        self, image_path: str, left: float, top: float, right: float, bottom: float
+    ) -> bool:
+        """A mellőzés-jel hozzáadása a megadott régióhoz."""
+        return self._mutate(
+            image_path,
+            lambda document, photo_name, rect: with_face(
+                document,
+                photo_name,
+                Face(rect=rect, contact_id=UNIDENTIFIED_CONTACT),
+            ),
+            left, top, right, bottom,
+        )
 
     @Slot(str, float, float, float, float, str, result=bool)
     def renameFace(
         self, image_path: str, left: float, top: float, right: float, bottom: float, name: str
     ) -> bool:
-        """A `(left,top,right,bottom)` régiót viselő MEGLÉVŐ arc névhozzá-
-        rendelésének cseréje — a régió maga változatlan. Üres `name`:
-        névcímke levétele (a régió azonosítatlanná válik, Picasa-viselkedés).
-        Nem létező régiónál no-op (igaz eredménnyel — nem hiba)."""
+        """A meglévő régió átnevezése; üres névnél a régió törlődik.
+
+        Nem létező régiónál no-op (igaz eredménnyel — nem hiba).
+        """
+        clean_name = (name or "").strip()
+        if not clean_name:
+            return self._mutate(
+                image_path,
+                lambda document, photo_name, rect: without_face_at_rect(
+                    document, photo_name, rect
+                ),
+                left, top, right, bottom,
+            )
+
         def mutate(document, photo_name, rect):
-            _document, contact_id = self._resolve_contact_id(document, name)
+            _document, contact_id = self._resolve_contact_id(document, clean_name)
             return with_reassigned_face(_document, photo_name, rect, contact_id)
 
         return self._mutate(image_path, mutate, left, top, right, bottom)
@@ -161,11 +200,8 @@ class FacesHelper(QObject):
         """A `name` személy contact_id-ja EBBEN a dokumentumban — meglévőt
         újrahasznosít (`find_contact_id`), újat csak akkor hoz létre, ha
         nincs ilyen nevű kontakt még (64 bites véletlen hex, a Picasa-
-        formátum szerint). Üres név: azonosítatlan (`UNIDENTIFIED_CONTACT`),
-        a dokumentum változatlan."""
+        formátum szerint). A hívó nem üres, levágott nevet ad."""
         clean_name = (name or "").strip()
-        if not clean_name:
-            return document, UNIDENTIFIED_CONTACT
         existing = find_contact_id(document, clean_name)
         if existing is not None:
             return document, existing

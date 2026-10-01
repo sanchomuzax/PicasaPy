@@ -51,16 +51,33 @@ class TestFacesFor:
         assert face["right"] == pytest.approx(expected.right)
         assert face["bottom"] == pytest.approx(expected.bottom)
 
-    def test_unidentified_face_has_empty_name(self, helper, photo):
+    def test_ignored_face_is_not_returned(self, helper, photo):
         ini = photo.parent / ".picasa.ini"
         ini.write_text(
             "[IMG_0001.jpg]\n"
             "faces=rect64(10000000f1ddff49),ffffffffffffffff;\n",
             encoding="utf-8",
         )
+        assert helper.facesFor(str(photo)) == []
+
+    def test_zero_contact_is_not_returned_and_ini_bytes_are_preserved(
+        self, helper, photo
+    ):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_bytes(
+            b"[Contacts2]\r\n8e62b2035b74b477=Kis Eva;;\r\n"
+            b"[IMG_0001.jpg]\r\n"
+            b"faces=rect64(3f845bcb59418507),8e62b2035b74b477;"
+            b"rect64(10000000f1ddff49),0;"
+            b"rect64(20000000f1ddff49),ffffffffffffffff\r\n"
+            b"; ezt a sort is meg kell orizni\r\n"
+        )
+        before = ini.read_bytes()
+
         faces = helper.facesFor(str(photo))
-        assert len(faces) == 1
-        assert faces[0]["name"] == ""
+
+        assert [face["name"] for face in faces] == ["Kis Eva"]
+        assert ini.read_bytes() == before
 
     def test_identified_face_without_contact_entry_has_empty_name(self, helper, photo):
         ini = photo.parent / ".picasa.ini"
@@ -72,20 +89,22 @@ class TestFacesFor:
         faces = helper.facesFor(str(photo))
         assert faces[0]["name"] == ""
 
-    def test_two_faces_preserve_order(self, helper, photo):
+    def test_ignored_face_is_filtered_without_reordering_named_faces(
+        self, helper, photo
+    ):
         ini = photo.parent / ".picasa.ini"
         ini.write_text(
             "[Contacts2]\n"
             "8e62b2035b74b477=Kis Éva;;\n"
+            "17be12be040e4089=Anna;;\n"
             "[IMG_0001.jpg]\n"
             "faces=rect64(3f845bcb59418507),8e62b2035b74b477;"
-            "rect64(10000000f1ddff49),ffffffffffffffff;\n",
+            "rect64(10000000f1ddff49),ffffffffffffffff;"
+            "rect64(20000000f1ddff49),17be12be040e4089\n",
             encoding="utf-8",
         )
         faces = helper.facesFor(str(photo))
-        assert len(faces) == 2
-        assert faces[0]["name"] == "Kis Éva"
-        assert faces[1]["name"] == ""
+        assert [face["name"] for face in faces] == ["Kis Éva", "Anna"]
 
     def test_malformed_faces_value_gives_empty_list(self, helper, photo):
         ini = photo.parent / ".picasa.ini"
@@ -119,14 +138,18 @@ class TestKnownNames:
 
 
 class TestAddFace:
-    def test_adds_unidentified_region_for_empty_name(self, helper, photo):
+    @pytest.mark.parametrize("name", ["", "   ", " \t "])
+    def test_empty_name_does_not_modify_ini(self, helper, photo, name):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_bytes(b"[IMG_0001.jpg]\r\nstar=yes\r\n; maradjon\r\n")
+        before = ini.read_bytes()
+
         ok = helper.addFace(
-            str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, ""
+            str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, name
         )
+
         assert ok is True
-        faces = helper.facesFor(str(photo))
-        assert len(faces) == 1
-        assert faces[0]["name"] == ""
+        assert ini.read_bytes() == before
 
     def test_adds_region_with_new_name_creates_contact(self, helper, photo):
         ok = helper.addFace(
@@ -157,19 +180,27 @@ class TestAddFace:
 
 class TestRenameFace:
     def test_assigns_name_to_existing_region(self, helper, photo):
-        helper.addFace(str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, "")
+        helper.addFace(
+            str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, "Kata"
+        )
         ok = helper.renameFace(
             str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, "Anna"
         )
         assert ok is True
         assert helper.facesFor(str(photo))[0]["name"] == "Anna"
 
-    def test_clearing_name_keeps_region_unidentified(self, helper, photo):
+    def test_clearing_name_removes_region(self, helper, photo):
         helper.addFace(str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, "Anna")
-        helper.renameFace(str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, "")
+        ok = helper.renameFace(
+            str(photo), _RECT.left, _RECT.top, _RECT.right, _RECT.bottom, "  "
+        )
+
+        assert ok is True
         faces = helper.facesFor(str(photo))
-        assert len(faces) == 1
-        assert faces[0]["name"] == ""
+        assert faces == []
+        assert "faces=" not in (photo.parent / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
 
     def test_unknown_rect_is_a_no_op(self, helper, photo):
         ok = helper.renameFace(
