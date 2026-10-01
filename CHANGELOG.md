@@ -7,6 +7,31 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.657] – 2026-10-01
+
+### Javítva
+- Az eszközsáv Alkalmaz/Mégse feliratainak mérete az eredeti Picasáéhoz igazodik (kisebbek, mint eddig) (#4052).
+
+## [0.8.656] – 2026-10-01
+
+### Javítva
+- Az eredeti méretű e-mail-csatolmány is beégeti a forgatást, a tükrözést és a szerkesztéseket, ahogy az eredeti Picasában; a módosítatlan JPEG bájthű másolat marad (#3993).
+
+## [0.8.655] – 2026-10-01
+
+### Javítva
+- A Kiegyenesítés eszközsávjának ALKALMAZ és MÉGSE felirata nagybetűs, és a gombokról eltűnt a pipa/X jel (#4037).
+
+## [0.8.654] – 2026-10-01
+
+### Javítva
+- Személy-albumban az Emberek panel „Szintén ezeken a fotókon” listája már nem mutatja a nézett személyt (#3678).
+
+## [0.8.653] – 2026-10-01
+
+### Javítva
+- A szerkesztő eszközsáv gombjainak kerete 2 képpont vastag, sarka pedig az eredeti Picasához igazodva kerekebb (#4035).
+
 - A néző elrejti a mellőzött és érvénytelen arcbejegyzéseket, az üres névvel rajzolt négyszöget nem menti el, a név törlése pedig az arcbejegyzést is eltávolítja (#3793).
 
 ## [0.8.652] – 2026-10-01

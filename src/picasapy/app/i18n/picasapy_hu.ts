@@ -7853,12 +7853,12 @@ A MŰVELET NEM VONHATÓ VISSZA.
 <context>
     <name>EditorToolBar</name>
     <message>
-        <source>Apply</source>
-        <translation>Alkalmaz</translation>
+        <source>APPLY</source>
+        <translation>ALKALMAZ</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation>Mégse</translation>
+        <source>CANCEL</source>
+        <translation>MÉGSE</translation>
     </message>
 </context>
 <context>

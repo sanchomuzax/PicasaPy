@@ -17,6 +17,14 @@ m_buttontypecolor3 = FFFFFFFF · CCFFFFFF · FFFFFFFF
 #4029: a #69 felvételén a két 229-es alfa hatásos értéke 206
 (round(229²/255)); a renderelt minták 111 / 70 / 210.
 
+#4035: ugyanazon a felvételen a gombkeret 2 képpont, a sarok sugara 7
+#képpont. A próba a sugárt a QML-objektumon, a keret vastagságát és a
+#sarok kontúrját pedig renderelt képpontokon ellenőrzi.
+
+#4037: a sávban nincs EditorActionBadge; a felirat APPLY/CANCEL. A renderelt
+#69-mérés a gomb jobb szélső 21 pixelén egyszínű kitöltést mutat, és a két
+#gomb között 5 háttérpixel látszik.
+
 ⚠️ A teljes nézőképet ez a fájl nem veti össze a Picasa felvételével.
 A #4029-es próba viszont a gombok renderelt mintapontjait hasonlítja a #69
 felvétel számaihoz; a többi próba a geometriát, állapotokat és bekötést méri.
@@ -61,7 +69,7 @@ Item {
         color: "#f0f0f0"
     }
     Rectangle {
-        x: 86
+        x: 87
         width: 82
         height: 28
         color: "#1e1e1e"
@@ -151,6 +159,24 @@ def _assert_rgb_kozel(image, x, y, expected):
     )
 
 
+def _felirat_doboza(image, gomb_bal):
+    """A látható, világos betűképpontok doboza; a keretet és a kitöltést kizárja."""
+    pixelek = []
+    for y in range(4, 24):
+        for x in range(gomb_bal + 4, gomb_bal + 78):
+            szin = image.pixelColor(x, y)
+            rgb = (szin.red(), szin.green(), szin.blue())
+            if min(rgb) >= 190 and max(rgb) - min(rgb) <= 15:
+                pixelek.append((x, y))
+    assert pixelek, f"a {gomb_bal}px-nél álló gomb felirata nem rajzolódott ki"
+    return (
+        min(x for x, _y in pixelek),
+        min(y for _x, y in pixelek),
+        max(x for x, _y in pixelek),
+        max(y for _x, y in pixelek),
+    )
+
+
 class TestGeometria:
     def test_a_gombok_merete_82x28(self, betoltott):
         for nev in ("cropApplyButton", "cropCancelButton"):
@@ -158,21 +184,25 @@ class TestGeometria:
             assert gomb.property("width") == 82
             assert gomb.property("height") == 28
 
+    def test_a_gomb_sarkanak_sugara_a_69_felvetelen_merve_7(self, betoltott):
+        gomb = _gomb(betoltott, "cropApplyButton")
+        assert gomb.property("radius") == 7
+
     def test_a_sav_magassaga_a_gombe(self, betoltott):
         assert betoltott.property("height") == 28
 
     def test_a_sav_szelessege_ket_gomb_es_a_koz(self, betoltott):
-        assert betoltott.property("width") == 82 + 4 + 82
+        assert betoltott.property("width") == 82 + 5 + 82
 
     def test_tiltnel_az_alkalmaz_balra_a_megse_jobbra_all(
         self, betoltott_tilt
     ):
-        """A #69 felvétel sorrendje és 4 px-es közös gombköze maradjon."""
+        """A #69 felvétel sorrendje és 5 px-es gombköze maradjon."""
         apply = _gomb(betoltott_tilt, "tiltApplyButton")
         cancel = _gomb(betoltott_tilt, "tiltCancelButton")
 
-        assert apply.property("x") == 267 + 4
-        assert cancel.property("x") == 267 + 4 + 82 + 4
+        assert apply.property("x") == 267 + 5
+        assert cancel.property("x") == 267 + 5 + 82 + 5
 
 
 class TestSzinek:
@@ -194,9 +224,66 @@ class TestSzinek:
     def test_a_renderelt_gomb_a_69_felvetel_mintaihoz_egyezik(self, kirajzolt_gombok):
         """A #4029 #69 mintái: kitöltés 111/70, keret 210 (±2 szint)."""
         kep = kirajzolt_gombok
-        _assert_rgb_kozel(kep, 20, 14, (111, 111, 111))
-        _assert_rgb_kozel(kep, 106, 14, (70, 70, 70))
+        # a kitöltést a felirat FÖLÖTTI sorban mérjük (y = 5): a nagybetűs
+        # felirat szélessége betűkészlet-függő (Windowson szélesebb), és a
+        # középső sor szövegre eshet (#4037, CI windows)
+        _assert_rgb_kozel(kep, 20, 5, (111, 111, 111))
+        _assert_rgb_kozel(kep, 160, 5, (70, 70, 70))
         _assert_rgb_kozel(kep, 41, 0, (210, 209, 209))
+
+    def test_a_renderelt_keret_ket_keppont_vastag(self, kirajzolt_gombok):
+        """A #69-en az első két sor a keret, a harmadik már kitöltés."""
+        kep = kirajzolt_gombok
+        _assert_rgb_kozel(kep, 41, 1, (210, 209, 209))
+        _assert_rgb_kozel(kep, 41, 2, (111, 111, 111))
+
+    def test_a_renderelt_sarok_konturja_a_69_meresehez_egyezik(
+        self, kirajzolt_gombok
+    ):
+        """A #69-en a bal felső sarok (0,0), (7,0), (0,7) mintái."""
+        kep = kirajzolt_gombok
+        _assert_rgb_kozel(kep, 0, 0, (240, 240, 240))
+        _assert_rgb_kozel(kep, 7, 0, (210, 209, 209))
+        _assert_rgb_kozel(kep, 0, 7, (210, 209, 209))
+
+    def test_a_gombok_jobb_szeli_21_pixele_csak_kitoltes(self, kirajzolt_gombok):
+        """A #69 középső mintasorán az APPLY x=893–913 között végig 111."""
+        kep = kirajzolt_gombok
+        for bal, eltol, szelesseg, vart, turelem in (
+            (0, 58, 21, (111, 111, 111), 0),
+            (87, 63, 15, (70, 70, 70), 2),
+        ):
+            for x in range(bal + eltol, bal + eltol + szelesseg):
+                # a felirat fölötti sor: a nagybetűs felirat betűkészletfüggő
+                # szélessége a középső sorba is belelóghat (#4037)
+                y = 5
+                kapott = kep.pixelColor(x, y)
+                rgb = (kapott.red(), kapott.green(), kapott.blue())
+                assert all(
+                    abs(a - b) <= turelem
+                    for a, b in zip(rgb, vart, strict=True)
+                ), (
+                    f"a {bal}px-nél álló gomb jobb szélső mintasorában "
+                    f"({x}, {y}) {rgb} jelent meg a kitöltés helyett ({vart})"
+                )
+
+    # A felirat dobozának képpontmérete betűkészlet-függő (helyben 29×8, az
+    # ubuntus CI-n 32×8, Windowson más), ezért CI-tesztként nem rögzíthető; a
+    # mért érték (#69: 28×7 / 37×7; a jegyben és a kiadási képen) a betűbeállítás
+    # forrás-őrén át védett (`test_a_sav_felirata_nagybetus_es_jel_nelkuli`).
+    def test_a_felirat_lathato_pixeleinek_doboza_kozepen_all(
+        self, kirajzolt_gombok
+    ):
+        """A tényleges betűképpontok közepe a gomb közepétől legfeljebb 2 px-re tér el."""
+        kep = kirajzolt_gombok
+        for bal in (0, 87):
+            bal_x, _felso_y, jobb_x, _also_y = _felirat_doboza(kep, bal)
+            felirat_kozepe = (bal_x + jobb_x) / 2
+            gomb_kozepe = bal + (82 - 1) / 2
+            assert abs(felirat_kozepe - gomb_kozepe) <= 3, (
+                f"a {bal}px-nél álló gomb feliratdobozának közepe "
+                f"{felirat_kozepe:.1f}px, a gombé {gomb_kozepe:.1f}px"
+            )
 
 
 class TestAllapotok:
@@ -254,6 +341,14 @@ class TestForras:
     def test_az_eger_alatt_CSAK_a_felirat_halvanyodik(self):
         """A csomagban nincs `_n`/`_h`/`_p` változat: egyetlen rajz van."""
         assert "containsMouse && gomb.buttonEnabled ? 0.8 : 1.0" in self.forras
+
+    def test_a_sav_felirata_nagybetus_es_jel_nelkuli(self):
+        assert 'qsTr("APPLY")' in self.forras
+        assert 'qsTr("CANCEL")' in self.forras
+        assert "font.pixelSize: 10" in self.forras
+        assert "font.weight: Font.Bold" in self.forras
+        assert "font.letterSpacing: -0.5" in self.forras
+        assert "EditorActionBadge {" not in self.forras
 
 
 class TestAKepFolott:

@@ -1,5 +1,5 @@
 """`picasapy.app.email_controller.EmailController` (#32, RÉSZLEGES kör) —
-a `subprocess`/tényleges küldés mockolva; az átméretezés-előkészítés és a
+a `subprocess`/tényleges küldés mockolva; a képelőkészítés és a
 parancs-összeállítás valódi, determinisztikus logikával."""
 
 from __future__ import annotations
@@ -7,7 +7,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import os
+import tempfile
 from dataclasses import dataclass
+from types import SimpleNamespace
 from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -15,7 +17,9 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import pytest
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QGuiApplication
+from PIL import Image, ImageDraw
 
+from picasapy.app import email_controller as email_controller_module
 from picasapy.app.email_controller import EmailController
 from support.jpeg_factory import make_jpeg
 
@@ -43,6 +47,48 @@ def _settings(tmp_path):
 def _controller(photos, tmp_path):
     return EmailController(
         photo_source=lambda: photos, settings=_settings(tmp_path)
+    )
+
+
+@pytest.fixture(autouse=True)
+def _email_temp_directory_in_worktree(tmp_path, monkeypatch):
+    """A vezérlő minden ideiglenes exportja a közös pytest-basetempbe kerüljön."""
+    target = tmp_path / "email-temp"
+    target.mkdir()
+    real_mkdtemp = tempfile.mkdtemp
+    monkeypatch.setattr(
+        email_controller_module,
+        "tempfile",
+        SimpleNamespace(
+            mkdtemp=lambda prefix: real_mkdtemp(prefix=prefix, dir=target)
+        ),
+    )
+
+
+def _make_quadrant_jpeg(path):
+    colors = {
+        "red": (255, 0, 0),
+        "green": (0, 255, 0),
+        "blue": (0, 0, 255),
+        "yellow": (255, 255, 0),
+    }
+    image = Image.new("RGB", (80, 48))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((0, 0, 39, 23), fill=colors["red"])
+    draw.rectangle((40, 0, 79, 23), fill=colors["green"])
+    draw.rectangle((0, 24, 39, 47), fill=colors["blue"])
+    draw.rectangle((40, 24, 79, 47), fill=colors["yellow"])
+    image.save(path, "JPEG", quality=100, subsampling=0)
+    return colors
+
+
+def _quadrant_pixels(image):
+    width, height = image.size
+    return (
+        image.getpixel((width // 4, height // 4)),
+        image.getpixel((3 * width // 4, height // 4)),
+        image.getpixel((width // 4, 3 * height // 4)),
+        image.getpixel((3 * width // 4, 3 * height // 4)),
     )
 
 
@@ -151,13 +197,75 @@ class TestRegiBeallitasAtvetele:
 
 
 class TestPrepareAttachments:
-    def test_original_size_returns_source_path_unchanged(self, qt_app, tmp_path):
-        source = make_jpeg(tmp_path / "kép.jpg", size=(300, 200))
-        photo = _FakePhoto(folder_path=str(tmp_path), name=source.name)
+    @pytest.mark.parametrize(
+        "rotate_steps,flip_flags,filters,expected_size,expected_quadrants,grayscale",
+        [
+            (0, 1, None, (80, 48), ("green", "red", "yellow", "blue"), False),
+            (1, 0, None, (48, 80), ("blue", "red", "yellow", "green"), False),
+            (3, 0, None, (48, 80), ("green", "yellow", "red", "blue"), False),
+            (0, 0, "bw=1;", (80, 48), None, True),
+            (0, 0, None, (80, 48), ("red", "green", "blue", "yellow"), False),
+        ],
+        ids=(
+            "tukrozes",
+            "90-fok-jobbra",
+            "90-fok-balra",
+            "fekete-feher",
+            "valtozatlan",
+        ),
+    )
+    def test_original_size_attachment_contains_rendered_jpeg_pixels(
+        self,
+        qt_app,
+        tmp_path,
+        rotate_steps,
+        flip_flags,
+        filters,
+        expected_size,
+        expected_quadrants,
+        grayscale,
+    ):
+        """Eredeti méretnél is a beégetett változat megy csatolmányként."""
+        source = tmp_path / "negynegyed.jpg"
+        colors = _make_quadrant_jpeg(source)
+        photo = _FakePhoto(
+            folder_path=str(tmp_path),
+            name=source.name,
+            rotate_steps=rotate_steps,
+            flip_flags=flip_flags,
+            filters=filters,
+        )
         controller = _controller([photo], tmp_path)
         controller.setSinglePictureOriginal(True)  # #2020: KAPCSOLÓ
-        result = controller.prepareAttachments([0], False)
-        assert result == [str(source)]
+        attachments = controller.prepareAttachments([0], False)
+
+        # rontás-kontroll: javítás nélkül mind az öt eset a forrás útvonalát
+        # kapja vissza, ezért ez az állítás minden parametrizált tesztben piros.
+        assert len(attachments) == 1
+        attachment = Path(attachments[0])
+
+        with Image.open(attachment) as exported:
+            assert exported.format == "JPEG"
+            assert exported.size == expected_size
+            rendered = exported.convert("RGB")
+
+        if grayscale:
+            assert all(max(pixel) - min(pixel) <= 8 for pixel in rendered.getdata())
+        else:
+            expected_colors = [colors[name] for name in expected_quadrants]
+            for actual, expected in zip(
+                _quadrant_pixels(rendered), expected_colors, strict=True
+            ):
+                assert all(
+                    abs(channel - target) <= 35
+                    for channel, target in zip(actual, expected, strict=True)
+                )
+
+        if filters is None and not rotate_steps and not flip_flags:
+            with Image.open(source) as original:
+                assert list(rendered.getdata()) == list(original.convert("RGB").getdata())
+
+        assert attachment != source
 
     def test_smaller_preset_creates_a_resized_copy(self, qt_app, tmp_path):
         source = make_jpeg(tmp_path / "kép.jpg", size=(2000, 1000))
@@ -167,8 +275,6 @@ class TestPrepareAttachments:
         result = controller.prepareAttachments([0], True)
         assert len(result) == 1
         assert result[0] != str(source)
-        from PIL import Image
-
         with Image.open(result[0]) as image:
             assert max(image.size) <= 640
 
