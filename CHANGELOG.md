@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.651] – 2026-10-01
+
+### Javítva
+- A Kiegyenesítés eszközsávján az Alkalmaz gomb a Mégse elé került, a Picasa sorrendjét követve (#4027).
+
+## [0.8.650] – 2026-10-01
+
+### Javítva
+- A szerkesztő eszközsáv Alkalmaz/Mégse gombjai most a Picasához hasonlóan áttetszők (#4029).
+
 - A Kiegyenesítés és a teljes képre ható eszközök megnyitásakor a fotó
   kitöltő nézetre áll, és bezárás után is ott marad (#4021).
 

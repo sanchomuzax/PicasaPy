@@ -14,9 +14,12 @@ layer:editpanel/button(CANCEL): tool_cancel   82 × 28
 m_buttontypecolor3 = FFFFFFFF · CCFFFFFF · FFFFFFFF
 ```
 
-⚠️ Amit ez a fájl NEM mér: a LÁTVÁNYT. A sötét sáv a világos képen jól
-látszik-e, arra referencia-képernyőkép kellene. Itt a geometria, a színek,
-az állapotok és a bekötés van mérve.
+#4029: a #69 felvételén a két 229-es alfa hatásos értéke 206
+(round(229²/255)); a renderelt minták 111 / 70 / 210.
+
+⚠️ A teljes nézőképet ez a fájl nem veti össze a Picasa felvételével.
+A #4029-es próba viszont a gombok renderelt mintapontjait hasonlítja a #69
+felvétel számaihoz; a többi próba a geometriát, állapotokat és bekötést méri.
 """
 
 from pathlib import Path
@@ -25,6 +28,7 @@ import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
 from PySide6.QtGui import QColor
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from PySide6.QtQuick import QQuickView
 
 _KEEPALIVE = []
 
@@ -38,6 +42,32 @@ Item {
     EditorToolBar {
         id: sav
         objectName: "azSav"
+        tool: "crop"
+    }
+}
+"""
+
+_TILT_SAV_QML = _SAV_QML.replace('tool: "crop"', 'tool: "tilt"')
+
+_RENDER_QML = """
+import QtQuick
+import PicasaPy 1.0
+
+Item {
+    width: 400
+    height: 200
+    Rectangle {
+        anchors.fill: parent
+        color: "#f0f0f0"
+    }
+    Rectangle {
+        x: 86
+        width: 82
+        height: 28
+        color: "#1e1e1e"
+    }
+    EditorToolBar {
+        objectName: "kirajzoltSav"
         tool: "crop"
     }
 }
@@ -63,10 +93,62 @@ def betoltott(qt_app):
     engine.deleteLater()
 
 
+@pytest.fixture
+def betoltott_tilt(qt_app):
+    import picasapy.app.application as app_module
+
+    engine = QQmlEngine()
+    engine.addImportPath(str(app_module._APP_DIR / "qml"))
+    component = QQmlComponent(engine)
+    component.setData(_TILT_SAV_QML.encode("utf-8"), QUrl())
+    obj = component.create()
+    assert [e.toString() for e in component.errors()] == []
+    assert obj is not None
+    QQmlEngine.setObjectOwnership(obj, QQmlEngine.ObjectOwnership.CppOwnership)
+    _KEEPALIVE.extend([component, obj])
+    sav = obj.findChild(QObject, "azSav")
+    assert sav is not None
+    yield sav
+    engine.deleteLater()
+
+
+@pytest.fixture
+def kirajzolt_gombok(qt_app):
+    """Két különböző tónusú háttérre kirajzolt gombok képpontjai."""
+    import picasapy.app.application as app_module
+
+    view = QQuickView()
+    view.engine().addImportPath(str(app_module._APP_DIR / "qml"))
+    component = QQmlComponent(view.engine())
+    component.setData(_RENDER_QML.encode("utf-8"), QUrl())
+    root = component.create()
+    assert [error.toString() for error in component.errors()] == []
+    assert root is not None
+    root.setParentItem(view.contentItem())
+    view.resize(400, 200)
+    view.show()
+    for _ in range(5):
+        qt_app.processEvents()
+    image = view.grabWindow()
+    assert not image.isNull(), "az eszköz-sáv QML-je nem rajzolódott ki"
+    _KEEPALIVE.extend((view, component, root))
+    yield image
+    view.close()
+
+
 def _gomb(sav, nev):
     obj = sav.findChild(QObject, nev)
     assert obj is not None, f"{nev} nem található"
     return obj
+
+
+def _assert_rgb_kozel(image, x, y, expected):
+    actual = image.pixelColor(x, y)
+    kapott = (actual.red(), actual.green(), actual.blue())
+    assert all(abs(a - b) <= 2 for a, b in zip(kapott, expected, strict=True)), (
+        f"a kirajzolt ({x}, {y}) képpont RGB-je {kapott}, "
+        f"a #69 mérés szerint {expected} (±2)"
+    )
 
 
 class TestGeometria:
@@ -82,6 +164,16 @@ class TestGeometria:
     def test_a_sav_szelessege_ket_gomb_es_a_koz(self, betoltott):
         assert betoltott.property("width") == 82 + 4 + 82
 
+    def test_tiltnel_az_alkalmaz_balra_a_megse_jobbra_all(
+        self, betoltott_tilt
+    ):
+        """A #69 felvétel sorrendje és 4 px-es közös gombköze maradjon."""
+        apply = _gomb(betoltott_tilt, "tiltApplyButton")
+        cancel = _gomb(betoltott_tilt, "tiltCancelButton")
+
+        assert apply.property("x") == 267 + 4
+        assert cancel.property("x") == 267 + 4 + 82 + 4
+
 
 class TestSzinek:
     def test_a_kitoltes_es_a_keret_a_MERT_ertek(self, betoltott):
@@ -93,9 +185,18 @@ class TestSzinek:
         keret = QColor(betoltott.property("keretSzin"))
         assert QColor(betoltott.property("kitoltesSzin")) == kitoltes
         assert (kitoltes.red(), kitoltes.green(), kitoltes.blue()) == (0x50, 0x50, 0x50)
-        assert kitoltes.alpha() == 229
+        # #4029, a #69 renderelt mintái: a 229-es alfa kétszeri hatása
+        # 229²/255 = 205,65, tehát a QML-ben mért hatásos alfa 206.
+        assert kitoltes.alpha() == round(229 * 229 / 255) == 206
         assert (keret.red(), keret.green(), keret.blue()) == (0xCB, 0xCA, 0xCA)
-        assert keret.alpha() == 229
+        assert keret.alpha() == round(229 * 229 / 255) == 206
+
+    def test_a_renderelt_gomb_a_69_felvetel_mintaihoz_egyezik(self, kirajzolt_gombok):
+        """A #4029 #69 mintái: kitöltés 111/70, keret 210 (±2 szint)."""
+        kep = kirajzolt_gombok
+        _assert_rgb_kozel(kep, 20, 14, (111, 111, 111))
+        _assert_rgb_kozel(kep, 106, 14, (70, 70, 70))
+        _assert_rgb_kozel(kep, 41, 0, (210, 209, 209))
 
 
 class TestAllapotok:
