@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A szerkesztő eszközsáv gombjainak kerete 2 képpont vastag, sarka pedig az eredeti Picasához igazodva kerekebb (#4035).
+
 ## [0.8.652] – 2026-10-01
 
 ### Javítva
