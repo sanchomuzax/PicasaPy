@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az eredeti méretű e-mail-csatolmány is beégeti a forgatást, a tükrözést és a szerkesztéseket, ahogy az eredeti Picasában; a módosítatlan JPEG bájthű másolat marad (#3993).
+
 ## [0.8.655] – 2026-10-01
 
 ### Javítva
@@ -16,8 +19,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - Személy-albumban az Emberek panel „Szintén ezeken a fotókon” listája már nem mutatja a nézett személyt (#3678).
-
-- #3993: Az eredeti méretű e-mail-csatolmányok is beégetik a forgatást, tükrözést és szerkesztéseket; a módosítatlan JPEG-eket bájthűen másoljuk, hogy elkerüljük az újrakódolási veszteséget.
 
 ## [0.8.653] – 2026-10-01
 
