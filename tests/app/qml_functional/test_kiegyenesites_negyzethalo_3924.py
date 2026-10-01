@@ -68,9 +68,9 @@ def _forrasok(
     )
 
 
-def _beallit_ablak(window, qt_app) -> None:
-    window.setProperty("width", ABLAK[0])
-    window.setProperty("height", ABLAK[1])
+def _beallit_ablak(window, qt_app, ablak: tuple[int, int] = ABLAK) -> None:
+    window.setProperty("width", ablak[0])
+    window.setProperty("height", ablak[1])
     for _ in range(5):
         qt_app.processEvents()
 
@@ -229,8 +229,8 @@ def _tile_tipus(x: int, y: int, x0: int, y0: int) -> str:
     return "."
 
 
-def _kep_kivagas_scene(image) -> tuple[int, int, int, int]:
-    """A forgatott kép tört téglalapjának floor-ral csonkolt határai."""
+def _kep_teglalap_scene(image) -> tuple[float, float, float, float]:
+    """A kirajzolt kép folytonos téglalapja a jelenet koordinátáiban."""
     bal = (image.width() - image.property("paintedWidth")) / 2
     fent = (image.height() - image.property("paintedHeight")) / 2
     szel = image.property("paintedWidth")
@@ -241,11 +241,36 @@ def _kep_kivagas_scene(image) -> tuple[int, int, int, int]:
         image.mapToScene(QPointF(bal, fent + mag)),
         image.mapToScene(QPointF(bal + szel, fent + mag)),
     ]
-    bal = math.floor(min(p.x() for p in pontok))
-    jobb = math.floor(max(p.x() for p in pontok))
-    fent = math.floor(min(p.y() for p in pontok))
-    lent = math.floor(max(p.y() for p in pontok))
+    return (
+        min(p.x() for p in pontok),
+        min(p.y() for p in pontok),
+        max(p.x() for p in pontok),
+        max(p.y() for p in pontok),
+    )
+
+
+def _kep_kivagas_scene(image) -> tuple[int, int, int, int]:
+    """A forgatott kép tört téglalapjának floor-ral csonkolt határai."""
+    bal, fent, jobb, lent = _kep_teglalap_scene(image)
+    bal = math.floor(bal)
+    jobb = math.floor(jobb)
+    fent = math.floor(fent)
+    lent = math.floor(lent)
     return bal, fent, jobb - bal, lent - fent
+
+
+def _kep_pixel_teljesen_fedett(image, kep: QImage, x: int, y: int) -> bool:
+    """A teljes képernyőpixel a kép tört téglalapján belül van-e."""
+    bal, fent, jobb, lent = _kep_teglalap_scene(image)
+    pixel_meret = 1 / kep.devicePixelRatio()
+    pixel_bal = x * pixel_meret
+    pixel_fent = y * pixel_meret
+    return (
+        bal <= pixel_bal
+        and pixel_bal + pixel_meret <= jobb
+        and fent <= pixel_fent
+        and pixel_fent + pixel_meret <= lent
+    )
 
 
 def _assert_racs_szelen(
@@ -255,7 +280,11 @@ def _assert_racs_szelen(
     image,
     toolbar,
 ) -> None:
-    """A négy képszél mindkét oldalán a renderelt kivágást ellenőrzi."""
+    """A négy képszélen a teljes képpontokat szigorúan ellenőrzi.
+
+    A tört képkerettel metsződő szélpixelek színe a háttér és a klip
+    lefedettségétől is függ, ezért azokon nem várható teljes csempeszín.
+    """
     kozep = area.mapToScene(QPointF(area.width() / 2, area.height() / 2))
     x0 = math.trunc(kozep.x() - 249)
     y0 = math.trunc(kozep.y() - 153)
@@ -279,6 +308,11 @@ def _assert_racs_szelen(
             if not area_rect.contains(x, y):
                 continue
             if toolbar_rect.contains(x, y):
+                continue
+            # A képszélre eső tört pixel csak részben fedi a fotót: a
+            # néző háttérszínével is keveredik. A teljes képpontokat továbbra
+            # is pontosan a specifikáció szerint ellenőrizzük.
+            if not _kep_pixel_teljesen_fedett(image, racsos, x, y):
                 continue
             tipus = _tile_tipus(x, y, x0, y0)
             if tipus == ".":
@@ -639,11 +673,23 @@ def qml_app_forgatott_kep(qt_app, tmp_path):
     )
 
 
+@pytest.mark.parametrize(
+    "ablak",
+    [
+        pytest.param((1280, 1000), id="tort-szelen-ugyanaz-a-hiba"),
+        pytest.param((1280, 1002), id="magassag-minusz-3"),
+        pytest.param((1280, 1004), id="magassag-minusz-1"),
+        pytest.param((1279, 1005), id="szelesseg-minusz-1"),
+        pytest.param(ABLAK, id="alap"),
+        pytest.param((1281, 1005), id="szelesseg-plusz-1"),
+        pytest.param((1280, 1006), id="magassag-plusz-1"),
+    ],
+)
 def test_rotate_1_300x500_kepehez_igazodik_a_negy_oldali_kivagas(
-    qml_app_forgatott_kep, qt_app, tmp_path
+    qml_app_forgatott_kep, qt_app, tmp_path, ablak
 ):
     window, _controller, _ = qml_app_forgatott_kep
-    _beallit_ablak(window, qt_app)
+    _beallit_ablak(window, qt_app, ablak)
     _nezobe_lep(window, qt_app)
     image = _item(window, "viewerImage")
     assert image.property("iniSteps") == 1
@@ -664,6 +710,14 @@ def test_rotate_1_300x500_kepehez_igazodik_a_negy_oldali_kivagas(
     clip_x, clip_y, clip_szel, clip_mag = _kep_kivagas_scene(image)
     bal_fent = overlay.mapToScene(QPointF(0, 0))
     jobb_lent = overlay.mapToScene(QPointF(overlay.width(), overlay.height()))
+    assert any(
+        value != math.trunc(value)
+        for value in _kep_teglalap_scene(image)
+    ), "a paraméterezett esetnek tört képszélt kell előállítania"
+    if ablak == (1280, 1000):
+        assert not _kep_pixel_teljesen_fedett(
+            image, racsos, clip_x, clip_y + 4
+        ), "a helyi reprodukció CI-pontja a tört bal szélső pixelre essen"
     assert (math.floor(bal_fent.x()), math.floor(bal_fent.y())) == (clip_x, clip_y)
     assert (math.floor(jobb_lent.x()), math.floor(jobb_lent.y())) == (
         clip_x + clip_szel,
