@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.648] – 2026-10-01
+
+### Javítva
+- Az effektcsempék már az aktuális vágást mutatják: a régi vágási előzmény
+  önmagában nem vágja le a képet (#4024).
+
 ### Javítva
 - A Kiegyenesítés eszközön álló négyzetháló jelenik meg; az Alkalmaz,
   a Mégse és a lapozás eltünteti (#3924).

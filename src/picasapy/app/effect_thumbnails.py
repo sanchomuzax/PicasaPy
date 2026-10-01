@@ -58,9 +58,11 @@ from PySide6.QtQuick import (
 
 from picasapy.app.edit_controller import _EFFECT_INI_NAMES, _EFFECT_NAMES
 from picasapy.app.effect_params import format_param_values, resolve_effect_params
+from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp, parse_filters
-from picasapy.render import apply_filters
+from picasapy.render import apply_filters, normalize_crop_ops
 from picasapy.render.elonezeti_arany import elonezeti_arany
+from picasapy.scanner import PICASA_INI_NAME
 
 from .thumbnail_provider import PLACEHOLDER_COLOR
 from .worker_thread import register_pool_owner
@@ -109,18 +111,32 @@ _KNOWN_EFFECTS: frozenset[str] = frozenset(EFFECT_NAMES) | frozenset(_TOOL_PREVI
 PhotoLookup = Callable[[str], "PhotoRecord | None"]
 
 
-def _lanc_teteje(source: "np.ndarray", lanc: str) -> "np.ndarray":
+def _lanc_teteje(
+    source: "np.ndarray",
+    lanc: str,
+    crop: str | None,
+    crop_ini_readable: bool,
+    warning_key: str,
+) -> "np.ndarray":
     """A meglévő `filters=` lánc ráfuttatása a kis forrásra (#2273).
 
     Üres láncnál a forrást adja vissza változatlanul — a lánc nélküli
     fotóknál tehát semmi nem lassul. Hibás vagy ismeretlen lánc esetén is
     a nyers forrás jön vissza: egy csempe-előnézet SOSEM dönthet le
-    semmit, és a rossz előnézet is jobb, mint az üres cella.
+    semmit, és a rossz előnézet is jobb, mint az üres cella. A `crop64`
+    előzményeket ugyanazzal a `crop=`/olvashatóság párral normalizáljuk,
+    mint a szerkesztő előnézetében (#4024).
     """
     if not lanc.strip():
         return source
     try:
-        eredmeny, _skipped = apply_filters(source, parse_filters(lanc))
+        ops = normalize_crop_ops(
+            parse_filters(lanc),
+            crop,
+            crop_ini_readable=crop_ini_readable,
+            warning_key=warning_key,
+        )
+        eredmeny, _skipped = apply_filters(source, ops)
     except Exception:  # noqa: BLE001 — az előnézet nem szállhat el
         _log.exception("a csempe-előnézet lánca nem futott le: %r", lanc)
         return source
@@ -352,6 +368,7 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         self._lookup = photo_lookup
         self._source_cache: OrderedDict[tuple, np.ndarray] = OrderedDict()
         self._source_lock = threading.Lock()
+        self._crop_reader = PhotoCropReader()
         self._thumb_cache = _ThumbCache()
         # saját, KIS pool (#338): nem versenyezhet a nagy thumbnail-rács
         # generálásával a közös CPU-kapacitásért
@@ -437,7 +454,12 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
             return QImage()
         path = Path(photo.folder_path) / photo.name
         lanc = getattr(photo, "filters", "") or ""
-        cache_key = self._cache_key(path, photo.mtime_ns, effect_key, lanc)
+        crop, crop_ini_readable = self._crop_reader.read(
+            path.parent / PICASA_INI_NAME, path.name
+        )
+        cache_key = self._cache_key(
+            path, photo.mtime_ns, effect_key, lanc, crop, crop_ini_readable
+        )
         cached = self._thumb_cache.get(cache_key)
         if cached is not None:
             return cached
@@ -458,7 +480,9 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         # vastagsága ezért a csempe és a teljes kép arányában skálázódik
         # (`render/elonezeti_arany.py`), a mentett képpel arányosan.
         with elonezeti_arany(_csempe_arany(str(path), photo.mtime_ns, source)):
-            source = _lanc_teteje(source, lanc)
+            source = _lanc_teteje(
+                source, lanc, crop, crop_ini_readable, str(path)
+            )
             op = _default_op(effect_key)
             result, _skipped = apply_filters(source, (op,))
         image = _scale_to_thumb(_rgb_array_to_qimage(result))
@@ -467,16 +491,25 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
 
     @staticmethod
     def _cache_key(
-        path: Path, mtime_ns: int, effect_key: str, lanc: str
+        path: Path,
+        mtime_ns: int,
+        effect_key: str,
+        lanc: str,
+        crop: str | None,
+        crop_ini_readable: bool,
     ) -> tuple:
         """A bélyegkép-cache kulcsa — a LÁNC ujjlenyomatával együtt (#2273).
 
         A régi kulcs `(útvonal, mtime, effekt)` volt: a lánc változása után
         a RÉGI bélyegkép jött vissza, hiszen a fájl maga nem változott. A
         `.picasa.ini` szerkesztése nem nyúl a fotó `mtime`-jához, tehát a
-        hármas önmagában nem tudta megkülönböztetni a két állapotot.
+        hármas önmagában nem tudta megkülönböztetni a két állapotot. A crop
+        értéke és az ini olvashatósága ugyanígy része a megjelenített képnek
+        (#4024).
         """
-        return (str(path), mtime_ns, effect_key, lanc)
+        return (
+            str(path), mtime_ns, effect_key, lanc, crop, crop_ini_readable
+        )
 
     def _source_for(self, path: Path, mtime_ns: int) -> np.ndarray | None:
         key = (str(path), mtime_ns)
