@@ -516,6 +516,18 @@ Rectangle {
     //: pontosan ott áll meg.
     readonly property real zoomDetent: 0.5
 
+    // Ezek a teljes képre ható eszközök megnyitáskor kitöltő nézetet kérnek.
+    // Bezáráskor a kitöltő nézet marad: az eredeti nagyítást nem mentjük el.
+    readonly property var forceFitFilters: [
+        "tilt", "radblur", "radsat", "linblur", "dir_tint",
+        "radtint", "dir_sat", "dir_brite", "dir_sharp"
+    ]
+
+    function forceFitForFilter(filterName) {
+        if (viewer.forceFitFilters.indexOf(filterName) >= 0)
+            viewer.zoomFit()
+    }
+
     //: #2492: a kép VALÓDI képpont-mérete a modellből — a `revision`
     //: referencia miatt képváltáskor és mentés után is újraértékelődik.
     readonly property int valodiSzelesseg: viewer.photosModel
@@ -1224,6 +1236,14 @@ Rectangle {
     // (Mégse) a rendes, crop64-et is tartalmazó előnézet visszaáll
     Connections {
         target: editorPanel
+        function onTiltActiveChanged() {
+            if (editorPanel.tiltActive)
+                viewer.forceFitForFilter("tilt")
+        }
+        function onParamPanelActiveChanged() {
+            if (editorPanel.paramPanelActive)
+                viewer.forceFitForFilter(editorPanel.paramEffectName)
+        }
         function onCropActiveChanged() {
             if (editorPanel.cropActive) {
                 viewer.zoomFit()   // #6: a vágó-overlay illesztett nézetet vár
@@ -1877,7 +1897,10 @@ Rectangle {
                         viewer.gpuFinetunePointSafe = true
                         editController.setFinetune(f, h, s, t)
                     }
-                    onEffectRequested: (name) => editController.applyEffect(name)
+                    onEffectRequested: (name) => {
+                        viewer.forceFitForFilter(name)
+                        editController.applyEffect(name)
+                    }
                     // #551: a szín-varázspálca a finetune2 p4 mezőjét írja
                     onColorWandRequested: editController.applyColorWand()
                     onToolActivated: function(tool) {
