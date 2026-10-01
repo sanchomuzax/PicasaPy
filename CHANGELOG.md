@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Kiegyenesítés eszközön álló négyzetháló jelenik meg; az Alkalmaz,
+  a Mégse és a lapozás eltünteti (#3924).
+
 ## [0.8.648] – 2026-10-01
 
 ### Javítva

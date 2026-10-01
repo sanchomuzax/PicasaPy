@@ -55,9 +55,8 @@ Item {
     signal applyClicked()
     signal cancelClicked()
 
-    //: MÉRT kitöltés és keret (`respack.yt`, alfa 229 = 0xE5). Itt, egy
-    //: helyen — a gomb ezekre hivatkozik, és a próba is ezeket olvassa (a
-    //: `border.color` a QObject-property-n nem olvasható ki).
+    //: MÉRT kitöltés és keret (`respack.yt`), alfa 229 (0xE5). A háló
+    //: gombok alatti részét a PhotoViewer maszkolja, a gomb áttetsző marad.
     readonly property color kitoltesSzin: "#E5505050"
     readonly property color keretSzin: "#E5CBCACA"
 
@@ -89,6 +88,9 @@ Item {
     //: tölti be rajta, és a próbák is ezen szólítják meg
     property alias csuszkaErtek: toolCsuszka.value
     property alias csuszkaLenyomva: toolCsuszka.pressed
+    //: A néző a két gomb együttes befoglaló téglalapját kivágja a rácsból.
+    property alias cancelButtonItem: cancelGomb
+    property alias applyButtonItem: applyGomb
 
     //: minden értékváltozás (élő előnézet), illetve az elengedés
     //: (véglegesítés) — a kettő szétválasztása a #72 döntése
@@ -204,12 +206,14 @@ Item {
         }
 
         SavGomb {
+            id: cancelGomb
             objectName: sav.tool + "CancelButton"
             felirat: qsTr("Cancel")
             pipa: false
             onButtonClicked: sav.cancelClicked()
         }
         SavGomb {
+            id: applyGomb
             objectName: sav.tool + "ApplyButton"
             felirat: qsTr("Apply")
             buttonEnabled: sav.applyEnabled
