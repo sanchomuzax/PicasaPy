@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az eredeti méretű e-mail-csatolmány is beégeti a forgatást, a tükrözést és a szerkesztéseket, ahogy az eredeti Picasában; a módosítatlan JPEG bájthű másolat marad (#3993).
+
 ## [0.8.655] – 2026-10-01
 
 ### Javítva
