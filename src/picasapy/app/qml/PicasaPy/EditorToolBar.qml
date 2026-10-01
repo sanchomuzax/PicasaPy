@@ -207,19 +207,20 @@ Item {
             }
         }
 
-        SavGomb {
-            id: cancelGomb
-            objectName: sav.tool + "CancelButton"
-            felirat: qsTr("Cancel")
-            pipa: false
-            onButtonClicked: sav.cancelClicked()
-        }
+        //: #4027: balról jobbra Alkalmaz, majd Mégse — ahogy a Picasában.
         SavGomb {
             id: applyGomb
             objectName: sav.tool + "ApplyButton"
             felirat: qsTr("Apply")
             buttonEnabled: sav.applyEnabled
             onButtonClicked: sav.applyClicked()
+        }
+        SavGomb {
+            id: cancelGomb
+            objectName: sav.tool + "CancelButton"
+            felirat: qsTr("Cancel")
+            pipa: false
+            onButtonClicked: sav.cancelClicked()
         }
     }
 }

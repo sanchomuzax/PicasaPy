@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Kiegyenesítés eszközsávján az Alkalmaz gomb a Mégse elé került, a Picasa sorrendjét követve (#4027).
+
 ## [0.8.650] – 2026-10-01
 
 ### Javítva

@@ -47,6 +47,8 @@ Item {
 }
 """
 
+_TILT_SAV_QML = _SAV_QML.replace('tool: "crop"', 'tool: "tilt"')
+
 _RENDER_QML = """
 import QtQuick
 import PicasaPy 1.0
@@ -80,6 +82,25 @@ def betoltott(qt_app):
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     component = QQmlComponent(engine)
     component.setData(_SAV_QML.encode("utf-8"), QUrl())
+    obj = component.create()
+    assert [e.toString() for e in component.errors()] == []
+    assert obj is not None
+    QQmlEngine.setObjectOwnership(obj, QQmlEngine.ObjectOwnership.CppOwnership)
+    _KEEPALIVE.extend([component, obj])
+    sav = obj.findChild(QObject, "azSav")
+    assert sav is not None
+    yield sav
+    engine.deleteLater()
+
+
+@pytest.fixture
+def betoltott_tilt(qt_app):
+    import picasapy.app.application as app_module
+
+    engine = QQmlEngine()
+    engine.addImportPath(str(app_module._APP_DIR / "qml"))
+    component = QQmlComponent(engine)
+    component.setData(_TILT_SAV_QML.encode("utf-8"), QUrl())
     obj = component.create()
     assert [e.toString() for e in component.errors()] == []
     assert obj is not None
@@ -142,6 +163,16 @@ class TestGeometria:
 
     def test_a_sav_szelessege_ket_gomb_es_a_koz(self, betoltott):
         assert betoltott.property("width") == 82 + 4 + 82
+
+    def test_tiltnel_az_alkalmaz_balra_a_megse_jobbra_all(
+        self, betoltott_tilt
+    ):
+        """A #69 felvétel sorrendje és 4 px-es közös gombköze maradjon."""
+        apply = _gomb(betoltott_tilt, "tiltApplyButton")
+        cancel = _gomb(betoltott_tilt, "tiltCancelButton")
+
+        assert apply.property("x") == 267 + 4
+        assert cancel.property("x") == 267 + 4 + 82 + 4
 
 
 class TestSzinek:
