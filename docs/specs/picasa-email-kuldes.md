@@ -98,7 +98,7 @@ képek mérete". A kulcs tényleges jelentése a binárisból:
 | `EmailSinglePicture` **kapcsoló** (alapérték 0), nem méret | `0x007430a6` olvasás alapértékkel 0; a `0x007430f6` ágban csak `== 1`-re vizsgálja |
 | ha a kimenet darabszáma **1** ÉS `EmailSinglePicture == 1` ⇒ a méret **0 lesz** (eredeti méret) | `0x007430ec` `call [edx+0x38]`, `cmp eax, 1`; majd `0x007430ff` `cmp eax, 1`; `0x00743104` `xor edi, edi` |
 | `EmailMovie == 1` ⇒ `option_preservemovies = 1` (a videó teljes egészében megy, nem egy képkocka) | `0x0074313e`–`0x0074315a` |
-| a méretre hozott mellékletek a **`temp\email\`** mappába kerülnek | `0x0073f320` |
+| a méretre hozott mellékletek a **`temp\email\`** mappába kerülnek | `0x0073f320` — ⛔ **HELYESBÍTVE (#3993): csak a SAJÁT levelezőprogramos (3-as mód) ágé; a `0x00743030` Gmail-ág (5) nem ír oda — ld. a 3/c szakaszt** |
 
 A teljes döntési sor, ahogy a kód végrehajtja:
 
@@ -120,6 +120,56 @@ ha EmailMovie == 1:
 > `EmailSinglePicture` név együttes jelentése). Ugyanabban a függvényben a
 > `[+0x30]` és a `[+0x34]` szintén darabszám-jellegű (két egymásba ágyazott
 > ciklus határa), tehát a szomszédos rések is számlálók.
+
+### 3/c ⛳ Mit csatol az eredeti EREDETI MÉRETNÉL? — KÉT KÜLÖN ÚT, és a szerkesztések mindkettőn beleégnek (2026-10-01, #4002, #3993)
+
+*Forrás: `0x00742a2c` · `0x00531710` · `0x00531810` · `0x0073eed0` · `0x0073f320` · `0x0074072e` · `0x007406c6`–`0x0074079c` · `0x0045cfa0` (`0x0045d381`) · `0x00743030` · `0x00699cd0` · `0x006952e0` · `0x0069b240` · `0x004296a0` · `0x0068eea0` — három egymástól független olvasat egyezik (lásd a bizonyítottsági fokot).*
+
+**A kérdés (#3993):** a szerkesztett, forgatott vagy tükrözött képnél mit csatol az eredeti Picasa eredeti méretnél — a mentett (szerkesztett) változatot vagy a nyers forrásfájlt?
+
+**Válasz — megerősített: a SZERKESZTETT változatot.** Hogy pontosan mit, az a levelezési módtól függ; a `0x00742a2c` `cmp dword ptr [ebp+0x10], 3` két, egymást kizáró ágra választ szét (a `0x00743030` és a `0x0073f320` **nem egy lánc**, hanem alternatív ág):
+
+| mód (`EmailPrepType`, ld. 6.4) | ág | csatolmány-készítő |
+|---|---|---|
+| **3** = `mymail`, a felhasználó SAJÁT levelezőprogramja | `0x00742a2c` → `0x00531710` → `0x00531810(3)` → `CImageOutput` (`0x0073eed0`) → futtató `0x0073f320`, `temp\email\` (`0x007417ec` ugrótábla 3. és 4. esete) | **saját kimenet-készítő, NEM használ `option_*` kulcsot** |
+| **5** = `gsender`, Gmail | `0x00743030` → `0x00699cd0(1)` → új `PrepareCollection` (`0x00699e7a`, `0x00699ead`) | a motor képenkénti döntése (`0x0069b240`) |
+
+**1. A saját levelezőprogramos ág (3-as mód) — a PicasaPy `xdg-email` útjának megfelelője.**
+
+A futtató MINDEN nem-videó elemnél feltétel nélkül bekapcsol egy kényszerítő bájtot (`0x0074072e mov byte ptr [esp+0x5c], 1`; az opció-struktúra `+0xc` tagja). A renderelőben (`0x0045cfa0`) ez a `[ebp+0x24]`, és a döntés minden más vizsgálat ELŐTT áll: `0x0045d381 cmp byte ptr [ebp+0x24], bl` / `jne 0x0045d860` ⇒ a fájlmásoló ág (`0x0045d757`) és a veszteségmentes JPEG-forgatás (`0x0045d3a5`) **nem érhető el**. A „módosított?" vizsgálat (`0x004296a0`) képeknél hívódik (`0x0045d329`), de az eredménye hatástalan (a `0x0045d384` ugrás előbb kiviszi a render-ágra).
+
+| elem | mi kerül a `temp\email\`-be |
+|---|---|
+| **módosítatlan JPEG** | **újrarenderelt, újrakódolt JPEG** (nyers fájl SOHA); minőség **85**, baseline, optimalizált Huffman, 4:2:0 |
+| szerkesztett (`filters=`, vágás, szöveg) · forgatott · tükrözött | ugyanaz, **a szerkesztések beleégetve** (az `EditStack` renderel: `0x006a9650`; a szerkesztés-leírást a `0x0042a800` állítja össze a `filters`, `rotate(%d)`, `flipped(%d)` lekérdezésekből) |
+| PNG, TIFF, GIF, BMP, PSD, RAW, TGA | `.jpg`, minőség 85, **4:4:4** (nem-JPEG forrásnál a mintavételezés 1×1) |
+| WebP | WebP marad, újrakódolva, minőség 75,0 |
+| videó (`EmailMovie` bekapcsolva, nem HTML/Outlook-változat) | módosítatlan: **nyers másolat** (`CopyFile`, `0x007401b8`); módosított: a szerkesztésekkel exportálva (`0x00467090`) |
+| videó egyébként | JPEG állókép, egy jelvénykép a bal alsó sarokban 4 px margóval |
+
+- **A 85 állandó** (`0x007406d7 mov esi, 0x55`, mert `[ebx+0xad4] == 0`; az opció-konstruktor, `0x00414500`, alapértéke is 0x55), nem beállítás és nem az export-opció objektum értéke.
+- **A méret** az `EmailExportSize` (`0x0073f575`); **0**, ha egy elem van és az `EmailSinglePicture` = 1 (`0x0073f56c`–`0x0073f597`), VAGY ha a Shift billentyű le van nyomva (`GetAsyncKeyState(0x10)`, `0x0073f59e`–`0x0073f5ba`, egy `[0xd67849]` jelzőhöz kötve). **0-s méretnél nincs átméretezés** (a `0x0045cfa0` nem kérdezi le a méreteket, a render-kérés szélessége és magassága 0) — *erős*: hogy az `EditStack` a 0-t teljes felbontásnak veszi, a renderelő belsejében nincs végigkövetve.
+
+**2. A Gmail-ág (5-ös mód) és az Ajándék-CD — a `PrepareCollection`-motor.** Az `option_useorig` értékét a motor **sehol nem olvassa**: a `0x006952e0` a 16 beállítást a feladatobjektum `+0xd8…`-ába másolja (`0x00695361`), onnan senki nem olvassa a `+0xd8`-at. Egyetlen hatása a beállító (`0x0068eea0`) mellékhatása: ha a `+0x454` nem nulla, kinullázza a `copysrctotempdest`-et (`0x0068f0b2`), a `thumbsize`-ot (`0x0068f0b8`) és a `createhtml`-t (`0x0068f0be`). Az „eredeti méretet" az **`option_imagesizelimit == 0`** adja (konstruktor-alapérték, `0x0068ca0c`; a hívóhely méret 0-nál nem írja át: CD `0x0066f783`, e-mail `0x0074311e`). A képenkénti döntés a `0x0069b240` (a „másolat" jelző: `0x0069b35d`–`0x0069b4a9`):
+
+| elem | eredmény |
+|---|---|
+| módosítatlan JPEG | **nyers, és `CopyFile` sincs**: a kimeneti útvonal maga a forrásfájl (`0x0069b61e`–`0x0069b643`; mert a `copysrctotempdest` = 0) |
+| szerkesztett (`filters`, `crop64`, aktív szöveg) | újraírás: teljes renderelés (`0x0045cfa0`), új JPEG, minőség = `jpegquality` (alap 85), átméretezés nélkül |
+| csak forgatott JPEG | **veszteségmentes** JPEG-forgatás (`0x00a3ca10`, `0x0045d485`; libjpeg-transzformáció, 90°×n) új fájlba; ha az 3-mal tér vissza: dekódolás + forgatás + újrakódolás. Nem-JPEG: teljes renderelés |
+| csak tükrözött kép | újraírás (teljes renderelés) |
+| nem-JPEG, módosítatlan | `convertnonjpeg` ≠ 0 (konstruktor-alap 1): `.jpg`-be renderelve; 0 esetén nyers, helyben |
+| videó | `preservemovies` ≠ 0: nyers, helyben (az e-mail ezt csak `EmailMovie` = 1 mellett állítja, a CD mindig) |
+
+A „módosított?" vizsgálat (`0x004296a0`) értékei: 1 — aktív szöveg (`textactive` + `text`), nem üres `filters`, érvényes `crop64`, vagy `flipped(n>0)`; **2 — `rotate(n)`, ahol n mod 4 ≠ 0** (a forgatást a tükrözés ELŐTT nézi). Az imagedata-oszlopok a katalógus-objektumon: `filters` `+0x16b8`, `text` `+0x1718`, `textactive` `+0x1778`, `crop64` `+0x14d0`, `rotate` `+0x1470`, `flipped` `+0x1538`.
+
+⛔ **Helyesbítés a 3/b-hez** (a fenti „A méret-beállítás SZEMANTIKÁJA"): (1) a `0x00743030` **csak a Gmail-ág** — nem ír a `temp\email\`-be; a `temp\email\` a `0x0073f320`-é, a saját levelezőprogramos ágé (a 3/b táblája a kettőt összemosta). (2) Az `option_useorig = (méret == 0)` írása helyes, de az érték **nincs olvasva**; az „eredeti méret" a motorban az `option_imagesizelimit == 0`. (3) A saját levelezőprogramos ág egyetlen `option_*` kulcsot sem használ.
+
+**Nálunk (mérve, olvasással — `origin/main`):** `app/email_controller.py:348`–`376` `_keszitsd_elo`: eredeti méretnél (`resolve_email_max_dimension(...) is None`) a **forrásfájlt** adja vissza (`return [str(item.source) for item in items]`), és meg sem hívja az `export_photos`-t ⇒ a csatolmányból elvész a tükrözés, a forgatás és minden szerkesztés. A küldés `xdg-email`-lel megy (`_kuldes`) — ez a 3-as mód megfelelője. Átméretezett fokozatnál az `export_photos`-on át készül (`ExportSettings(max_dimension=…, jpeg_quality=85)`) ✅.
+
+**Teendő:** eredeti méretnél is az `export_photos` útján (`ExportSettings(max_dimension=None, jpeg_quality=85)`), hogy a szerkesztések, a forgatás és a tükrözés beleégjen. ⚠️ **Szándékos eltérés, kimondva:** az eredeti a módosítatlan JPEG-et is újrakódolja (85-ös minőséggel); az `export_photos` mai szabálya (módosítatlan JPEG, nincs átméretezés ⇒ bájthű másolat, `exporter.py:543`–`552`) ezt kihagyja — nincs generációs veszteség, a képpontok azonosak, a fájl bájtjai eltérnek. Ezt a jegy rögzíti, nem a tesztek feltételezik.
+
+*Bizonyítottsági fok: **megerősített** — a 3-as mód kényszerített teljes renderelése (`0x0074072e`, `0x0045d381`; a szerző a két utasítást közvetlenül is kiolvasta), a minőség-állandó (`0x007406d7`), a két ág szétválása (`0x00742a2c`), az `option_useorig` olvasó-nélkülisége (`0x0068eea0`, `0x00695361`), a `0x0069b240` döntési útvonala; **három egymástól független olvasat egyezik** (az első a specekkel és az eredeti jegy kérdésével, a második és a harmadik a specek és az előző válasz nélkül, friss Opus-ügynök). **Erős:** a 0-s méretnél nincs átméretezés; hogy a `0x00a3ca10` veszteségmentes (libjpeg-szerű hívások, `__setjmp3`, `.tmp`, a 3-as visszatérésnél újrakódoló tartalék). **Feltételes:** a videójelvény tartalma; a 3-as mód mögötti felületi opció azonosítása („saját levelezőprogram" = `choose_mail/mymail` → 3, ld. 6.4). **NINCS MÉRVE:** élő felvétel (a Colab-végrehajtó csak képernyőképet ad, a `temp\email\` tartalmát nem); forgatott ÉS tükrözött JPEG a Gmail-ágon (a `0x004296a0` forgatásnál 2-vel tér vissza, a tükrözést már nem nézi — hogy a `0x00a3ca10` alkalmazza-e, nem tudjuk).*
 
 ### 3/b A Beállítások **E-mail** fülének teljes tartalma — LEZÁRVA (2026-09-05)
 

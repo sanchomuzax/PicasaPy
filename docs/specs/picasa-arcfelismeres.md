@@ -176,6 +176,8 @@ négy 16 bites szavának XOR-ja, `"%d"`-vel formázva
 > **Amit ez a megvalósításra jelent:** `facedata`-t **írni nem kell**; a
 > round-trip parsernek viszont **meg kell őriznie**, ha valaha előfordul.
 
+⛔ **HELYESBÍTVE (2026-10-01, #3793, erős): a `FRWriteFaceDataINI` kapcsoló csak a `facedata`-t kapuzza; a `faces=` mindig kiíródik, és az alábbi pozícióhű `0`-kitöltés a `facedata` értékét építi — ld. a 9/f szakaszt.**
+
 **Az érték-összefűzés alakja** (`0x00484f28`–`0x00484f64`): pontosvesszővel
 elválasztott, **pozícióhű** lista, ahol a hiányzó helyeket **`0`** tölti ki:
 
@@ -793,6 +795,104 @@ Fejlesztés: **#3585** (a váltógomb és a fejléc-utasítás).
 *Bizonyítottsági fok: **megerősített** — a beállító, egyetlen hívója, a
 parancskezelő névösszevetése, a kezdőállapot és a `.tre` váltópár mind
 utasítás-, illetve forrásszinten olvasva.*
+
+#### 9/e A személy-album „Szintén ezeken a fotókon:” listája KIHAGYJA a nézett személyt (2026-10-01, #3678)
+
+*Forrás: `0x0064c340` · `0x0064d197`–`0x0064d260` · `0x0063df90` (`0x0063e02c`) · `0x006c1ac0` (`0x006c1cfc`, `0x006c1d06`) · **`0x006c4630`** (`0x006c46f3`) · `0x0064d660` · `0x00647df0` — két egymástól független olvasat (lásd a bizonyítottsági fokot).*
+
+**Kérdés (#3678):** a személy albumában a lista a kijelölt képek megnevezett embereit mutatja; szerepel-e benne maga a nézett személy is?
+
+**Válasz — megerősített: NEM, a Picasa kihagyja.**
+
+A lista rácsnézetben **nem** a 9/c-ben leírt általános lekérdezőből (`0x006c63d0`) jön, hanem egy külön, **személy-album-gyűjtőből**:
+
+```
+0x0064d197  call 0x57d500      ; az album személy-sorindexe: [[app+0xeac]+0x3c0], album híján -1
+0x0064d1ab  call 0x448c90      ; nem személy-album → edi = 0 (0x0064d1b4 xor edi,edi)
+0x0064d248  setg al / 0x0064d24b mov [ebx+0x2ac], al     ; a „személy-album” jelző (edi > 0)
+0x0064d241  call 0x63df90      ; 4. argumentum = push edi → a kérés +0x44 mezője (0x0063e02c)
+…háttérszál (0x006c7dd4) → 0x006c1ac0:
+0x006c1cfc  cmp [edi+0x44], ebp   ; ha ≠ 0 és van kijelölés:
+0x006c1d06  call 0x6c4630         ; a SZEMÉLY-ALBUM gyűjtője   (különben 0x006c1d32: 0x6c63d0, az általános)
+```
+
+A `0x006c4630` két ciklusa (a külső a kijelölt elemeken, a belső a hozzájuk tartozó kép arcain):
+
+| cím | utasítás | mit hagy ki |
+|---|---|---|
+| `0x006c4662` | `call 0x44a6b0`, `je 0x6c49c8` | az elemet, ha nem arc-rekord (`filetype == 0x3e9`, ld. 9/c) |
+| `0x006c46ce` | `cmp eax,[ecx+ebp*4]`, `je 0x6c4997` | a kijelölt arcot magát |
+| `0x006c46e7` | `cmp ebp,ebx`, `je 0x6c4997` | a név nélküli arcot (`personalbumid` = 0) |
+| **`0x006c46f3`** | **`cmp ebp, dword ptr [edi+0x44]`, `je 0x6c4997`** | **azt az arcot, amelynek `personalbumid`-je a NÉZETT album sorindexe** |
+| `0x006c4705` | `call 0x4930c0`, `jne 0x6c4997` | az ismétlődést (egy személy a teljes kijelölésre legfeljebb egyszer) |
+
+A felvett arcból egyelemű csoport lesz (`0x006c48c5`, `0x006c4974`), és `0x006c498d`-nél `mov byte [edi+0x4d], 1` jelzi, hogy van megjeleníthető megnevezett személy; a kitöltés `0x0064d660` (`0x0064d765`, `0x0064d77d`, `0x0064d7a9` → a panel `+0x344`, `+0x34c`, `+0x364` mezői), a sorokat a `0x0064ae90` építi, csoportonként egyet.
+
+| helyzet (személy-album, rácsnézet) | mit mutat |
+|---|---|
+| a kijelölt képeken **csak a nézett személy** van | **nincs sor, `+0x364` = 0** → a fejléc **üres**, az `instructions` a **3-as** változat (`Text4`: „Itt látható majd az aktuálisan kijelölt személlyel együtt megjelenő, megnevezett szereplők listája.”); a „Szintén ezeken a fotókon:” **nem jelenik meg** üres listával (`0x00648032` → `0x00648057` → `mov eax,3` `0x00648069` → `0x005123e0`) |
+| a nézett személy mellett **két másik megnevezett** személy | **két sor**, a nézett személy NINCS köztük, a fejléc „Szintén ezeken a fotókon:” (`0x00648017`); több kijelölt képnél a többi személy uniója, ismétlés nélkül |
+| a **szerkesztő** nézete (előnézet látszik) | **MÁS ág**: a kérés `+0x44` mezője itt mindig 0 (`0x0064bc90`, `0x0064bca7`), a `0x006c63d0` és a `0x006c4a30` pedig nem is olvassa a `+0x44`-et ⇒ a nézett személy **benne van** az „Ezen a fotón:” listában (az egyképes ág: `0x00647f73` → `0x00648070`; a fejléc „Ezen a fotón:”, ha van megnevezett személy) |
+
+⇒ A 9/c leírása a **szerkesztő** útját (általános lekérdező) írja le, nem a rácsnézetét: ott a nézett személy kihagyása a `0x006c4630`-ban él.
+
+**Nálunk (mérve, olvasással — `origin/main`):** `PeoplePanel.qml:66` a `people` tulajdonság a `peopleHere`-t adja változtatás nélkül, a `peopleOfRows` (`people_controller.py:295`) pedig a kijelölt képek MINDEN megnevezett emberét számolja — a nézett személyt is. A `currentPerson` a fejléc-választásra megy (`personAlbum`), a lista szűrésére nem. ⇒ személy-albumban a nézett személy **szerepel** a listában; eltér az eredetitől.
+
+**Teendő:** a `PeoplePanel.qml`-ben, ha `personAlbum && !editorView`, a `people` lista **hagyja ki** a `currentPerson` nevű (kis-nagybetű-tűrően összevetett) elemet; ha így a lista üres, az üres-lista ágat kell mutatni (`Text4`, üres fejléc), nem a „Szintén ezeken a fotókon:” fejlécet üres listával. A szerkesztőben (`editorView`) a szűrés NEM fut.
+
+⛔ **Pontosítás a 9/b-hez — két olvasat egyezik, a hatása NINCS kivizsgálva.** A 9/b a `+0x348 >> 1`-et „a kijelölt képek száma”-ként nevezte meg (`0x00647f79`). A két független olvasat szerint a `+0x344` a **gyűjtő eredménye** (`0x0064d765`, `0x0064c23d`: a kérés `+0x18` tömbje, **csoportonként egy** személy-sor), tehát a `+0x348 >> 1` az **eredménysorok** száma, nem a képeké; a kijelölt képek számát a `[ebx+0x294]` objektum `+0xdc`-je adja (`0x00647fb1`–`0x00647fc7`, a „Loading %d files” ág). Ha ez igaz, a 9/b döntési fa „1 kép ÉS nem személy-album” feltétele („egyképes ág”, `0x00647f84`–`0x00647f8d`) valójában „pontosan 1 eredménysor ÉS nem személy-album”. Ez a jegy (#3678) tárgyát nem érinti; külön kutatási jegy követi: **#4045**.
+
+*Bizonyítottsági fok: **megerősített** — a kihagyó összehasonlítás (`0x006c46f3`), a kijelölt arc és a név nélküli arc kihagyása, az ismétlésszűrés, a `+0x44` útja az album sorindexétől a gyűjtőig, és a felirat-választó két ága utasításszinten olvasva, **két független olvasat egyezik** (a második a specek és a korábbi válasz nélkül, friss Opus-ügynök). **Erős:** a két képtípus táblázata (a kódútból olvasva, élő mérés nincs); hogy a `0x3e9` típus arc-rekordot jelent (következtetés: a rekord szülője a `+0x20`). **NINCS MÉRVE:** a sorok végső sorrendje (`0x0064ae90`), és élő felvétel a személy-album panelről (a Colab-végrehajtón egy névadás + személy-album lépéssor kell hozzá).*
+
+#### 9/f A mellőzött arc a nézőben; a kézi hozzáadás; a személy-mező értékkészlete (2026-10-01, #3793)
+
+*Forrás: élő mérés (eredeti angol Picasa 3.9.141, `picasa-colab-jobs` #72, #73, #74, #75; kulcsképek: `Colab EN 37 - Mellozott arc a nezoben.png`, `Colab EN 38 - Nem mellozott nev nelkuli arc a nezoben.png`) · `0x00483cb0` (`0x00483ff0`–`0x00484012`) · `0x0064c340` → `0x0064bb70` (`0x0064c227`) → `0x006c63d0` (`0x006c63fd`) · `0x00642c10` · `0x00641960` · `0x004841f0` (`0x004842c2`–`0x004842f9`) · `0x0049d560` · `0x0092c450` (`0x0092c476`) · `0x00484820` · `0x0049d390` · `0x007d55f0` · `0x00644900` · `0x006443e0` · `0x0064a410` — két egymástól független olvasat egyezik.*
+
+**A kérdés (#3793):** mit mutat az eredeti nézője a mellőzött (`ffffffffffffffff`) arcon?
+
+**Válasz — megerősített: SEMMIT.** A mellőzött arcnak a szerkesztőben **nincs kerete és nincs „Add a name” felirata**, és az Emberek panel sem sorolja fel.
+
+| állapot (szerkesztő, Emberek panel nyitva) | mit látni | forrás |
+|---|---|---|
+| **mellőzött** arc (`portre_1_ff.jpg`, `faces=rect64(27c00680d8ffdb3f),ffffffffffffffff`) | a képen **nincs keret**, az arc helyére kattintva sem; **nincs „Type a name”**; a panel: „People who appear in the currently selected photos will be listed here.” (`Text5`) + „Add a person manually” | #72 `kepernyo__15`, `__17`; #75 `__19`, `__21`; `Colab EN 37` |
+| **nem mellőzött névtelen** arc (`portre_2_szines.jpg`) | alapból nincs keret; az **arcra kattintva** keret + „Type a name” a kép alatt; a panelben arcbélyeg + „X” + „Add a name” mező, a fejléc „Who is in these photos?” | #73 `kepernyo__09`; #74 `__09`; `Colab EN 38` |
+
+**A mechanizmus.** A néző NEM a `-1` azonosítót veti össze, hanem azt, tagja-e az arc a `]ignoreface` albumnak:
+- az arc-lekérdező egyetlen arcforrása a `0x00483cb0` (a `0x006c63d0` hívja `0x006c63fd`-nál; a `0x00483cb0`-nak ez az egyetlen hívóhelye); `0x00483ff5 mov eax,[ebx+0x2e94]` (a `]ignoreface` token, `0x00c80e58`) → `0x0048400b call 0x4db180` (album-tagság) → `0x00484012 jne 0x484023`: **az album tagját nem másolja a listába**;
+- az eredmény a panel `+0x344` listájába kerül (`0x0064c23d`); a keretrajzoló (`0x00642c10`, `faceoverlay/%d`) és a felirat (`0x00641960`, üres névnél „Add a name”, `0x00641a5e`) csak ebből a listából dolgozik ⇒ a mellőzött arcnak **nincs** keret-rétege és felirata;
+- a `-1` összevetés csak az ini **betöltésekor** van (`0x004841f0`, `0x004842c2 and eax,ebp` / `cmp eax,-1`): ha az arcnak nincs személy-albuma, a `0x004842f9 call 0x4d9aa0` beteszi a `]ignoreface` albumba (`[db+0x2e94]`); az új arc előbb a `]unknownface`-be kerül (`0x0047fcc2`) — onnan a `]ignoreface`-be kerülés **nem** távolítja ki (erős).
+
+**A személy-mező értékkészlete — betöltés és írás.**
+
+| `faces=` személy-mező | betöltéskor | íráskor |
+|---|---|---|
+| 16 jegyű hexa | arc-rekord + kontakt (ha ismeretlen: „<Unknown Person>” kontakt jön létre); mindkét speciális albumból kikerül (`0x004844f0`) | megnevezett arc: `%I64x` (kisbetűs, nincs kitöltve, `0x0049d390`, `0x0049d493`) |
+| **`ffffffffffffffff`** | arc-rekord → a **`]ignoreface`** albumba (`0x004842c2`–`0x004842f9`) ⇒ a nézőben nincs | **mellőzött** arc (`0x00484bc3 call 0x449a00` igaz → `push -1; push -1`, `0x00484bd0`) — az `ffff…` EGYETLEN forrása a mellőzés |
+| **`0`** | **nem keletkezik arc**: a személy-mező olvasója (`0x0092c450`) a `"0"` sztringre `-1`-et ad (`0x0092c476 mov esi,0xc7fe6c`, `repe cmpsb`, `0x0092c4ba or eax,-1`), a bontó (`0x0049d560`, `0x0049d725`–`0x0049d72c`) a bejegyzést **a négyszöggel együtt eldobja** | a `0x00484820` **soha nem ír `0`-t**; a felismert, nem megnevezett, nem mellőzött arc **kimarad** a `faces=` sorból |
+
+- A korpusz 696 darab `,0` értékének eredete a **Web Albums letöltés** metaadat-írója (`0x007d55f0`, hívója a „Web Albums”/`feed.rss` sztringet használja): az azonosító kezdőértéke 0 (`0x007d5a07`), csak nem üres név és `[arc+0x24] == 1` mellett oldódik fel (`0x007d5a37`–`0x007d5a62`), a rekord ettől függetlenül bekerül (`0x007d5b42`–`0x007d5c85`). A `0x00484820` és az export-író (`0x0068b320`, a `0x004855c0` hívja, `push 1`) `0`-t nem ír.
+- A `faces=` formázónak (`0x0049d390`) pontosan három hívóhelye van (`0x00485061`, `0x0068ba9a`, `0x007d5d10`; indextől független pásztázás).
+
+**A kézi hozzáadás („Add a person manually”) névtelen négyszöget NEM ment.** Az arcot a négyszögből és a kontakt-azonosítóból egyedül a `0x00644900` hozza létre (`0x00644b94 call 0x4841f0`; a `0x004841f0` hívói indextől függetlenül csak `0x0045b85c`, `0x0045ba5c`, `0x00644b94`), és csak **nem nulla kontakt-azonosítóval** hívódik (`0x00644671 or eax,ecx` / `0x00644673 je 0x6446e8`):
+- **Escape:** a véglegesítő ág le sem fut (`0x0064455e cmp byte [ebp+0xc],bl` / `jne 0x644716`);
+- **üres Enter / elvetett kontakt-párbeszéd:** a kontakt-azonosító 0 marad, `0x00644900` nem hívódik; a `peoplepanel/manual_cancel` kezelője (`0x0064a410`) csak a felületet állítja vissza (nincs adatbázis- vagy ini-hívás);
+- **névvel** (Enter vagy az automatikus kiegészítésből választott név, `0x006441d4`/`0x006446cd`): `faces=rect64(…),<16 jegyű kontakt-azonosító>`, a kontakt a `[Contacts2]`-be kerül.
+⇒ **Névtelen kézi négyszög a `.picasa.ini`-be nem kerülhet: se `0`, se `ffffffffffffffff`.**
+
+**Nálunk (mérve, olvasással — `origin/main`):**
+- `app/faces_helper.py:56` `facesFor`: **minden** `faces=` bejegyzést visszaad, az `ffffffffffffffff`-et is (üres névvel) ⇒ a `FacesOverlay.qml` mellőzött arcra is keretet és „Add a name” feliratot rajzol;
+- `FacesHelper.addFace` / `renameFace` üres névnél a `UNIDENTIFIED_CONTACT = "ffffffffffffffff"` (`ini/faces.py:16`) azonosítót írja (`_resolve_contact_id`, `faces_helper.py:160`); a `FacesOverlay.qml:329`–`334` `commitEditor` üres névvel is hívja ⇒ a kézzel rajzolt, meg nem nevezett négyszög a Picasa szerint **mellőzött** arcként töltődik be;
+- `Face.is_identified` (`ini/faces.py:28`) és a modul docstringje a régi, téves jelentésre épül („azonosítatlan arc contact_id-ja csupa `f`”);
+- az arckeretek megjelenítésének módja nálunk (állandó keret vs. kattintásra) **nincs mérve**.
+
+**Teendő:**
+1. `facesFor` (a néző/szerkesztő arc-rétege): az `ffffffffffffffff` személy-mezőjű bejegyzést **hagyja ki** (nincs keret, nincs „Add a name”); a **`0`** személy-mezőjű bejegyzést se mutassa. A round-trip-hez a sorok a `.picasa.ini`-ben **érintetlenek** maradnak.
+2. `commitEditor` / `addFace` / `renameFace`: **üres névnél ne írjon semmit** (a kézi négyszög névvel menthető); a `0`-t és az `ffffffffffffffff`-et se írja ki meg nem nevezett arcra. Az `renameFace` üres névvel (a név levétele) az eredetiben a bejegyzés **törlése**, nem `ffff…` (mért: `picasa-colab-jobs` #68, ld. a 15.3/b.1 táblát).
+3. Az `ffffffffffffffff` írója **kizárólag** a mellőzés (`FaceScanController`, #3670); a `Face.is_identified` jelentése és a docstring helyesbítve.
+
+⛔ **Helyesbítés a 3.1 és a 18.2 szakaszhoz (erős):** a `Preferences\FRWriteFaceDataINI` kapcsoló (`0x00484dcf`/`0x00484e1d`) csak a **`facedata`** kulcsot kapuzza; a `faces=` MINDEN esetben kiíródik (`0x0048516d`). A „pozícióhű `0`-kitöltés” (`0x00484f28`–`0x00484f64`, `push 0x30` `0x00484f38`) a `facedata` értékét építi, nem a `faces=`-t.
+
+*Bizonyítottsági fok: **megerősített** — az élő mérés (a nézőben nincs keret/felirat a mellőzött arcon; a nem mellőzöttön van), a `]ignoreface`-szűrés (`0x00483ff0`), a személy-mező értékkészlete az írón és az olvasón, a kézi hozzáadás névtelen négyszögének nem-mentése; **két egymástól független olvasat egyezik** (az első a specekkel, a második a specek és az első válasz nélkül, friss Opus-ügynök). **Erős:** az `ffff` arc a `]unknownface`-ben is benne marad; a `FRWriteFaceDataINI` csak a `facedata`-t kapuzza (egy olvasat). **NINCS MÉRVE:** a mellőzött arc megjelenése a Névtelenek albumban/People-nézetben (`0x00474630`, `0x004755d0` a következő lépés); az arckeretek megjelenítési módja nálunk; a Colab-végrehajtó húzás-lépése nélkül kézi négyszög élőben nem rajzolható.*
 
 ---
 
