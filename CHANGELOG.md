@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- #3993: Az eredeti méretű e-mail-csatolmányok is beégetik a forgatást, tükrözést és szerkesztéseket; a módosítatlan JPEG-eket bájthűen másoljuk, hogy elkerüljük az újrakódolási veszteséget.
+
 ## [0.8.653] – 2026-10-01
 
 ### Javítva
