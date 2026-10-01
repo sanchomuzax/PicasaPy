@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.650] – 2026-10-01
+
 ### Javítva
 - A szerkesztő eszközsáv Alkalmaz/Mégse gombjai most a Picasához hasonlóan áttetszők (#4029).
 
