@@ -109,8 +109,8 @@ class TestGeometria:
         assert csuszka.property("handleHeight") == 24
 
     def test_a_sav_szelessege_a_csuszkaval_egyutt_no(self, sav):
-        """267 (csúszka) + 4 (köz) + 82 + 4 + 82 (a két gomb)."""
-        assert sav.property("width") == 267 + 4 + 82 + 4 + 82
+        """267 (csúszka) + 5 (köz) + 82 + 5 + 82 (a két gomb)."""
+        assert sav.property("width") == 267 + 5 + 82 + 5 + 82
 
     def test_a_sav_magassaga_valtozatlanul_28(self, sav):
         assert sav.property("height") == 28
@@ -124,7 +124,7 @@ class TestLathatosag:
         sav.setProperty("tool", eszkoz)
 
         assert _gyerek(sav, "toolSliderContainer").property("visible") is False
-        assert sav.property("width") == 82 + 4 + 82
+        assert sav.property("width") == 82 + 5 + 82
 
     def test_a_kiegyenesitesen_latszik(self, sav):
         assert _gyerek(sav, "toolSliderContainer").property("visible") is True

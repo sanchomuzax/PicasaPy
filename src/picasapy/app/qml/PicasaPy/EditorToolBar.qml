@@ -66,9 +66,8 @@ Item {
     //: MÉRT gombméret (`respack.yt`), és a sáv magassága ugyanennyi
     readonly property int gombSzelesseg: 82
     readonly property int gombMagassag: 28
-    //: a két gomb közti köz — az eredetiben a jobb szélhez igazodnak,
-    //: egymás mellett; a rajzuk közt 4 képpont marad
-    readonly property int koz: 4
+    //: #4037: a #69 felvételen 5 háttérképpont marad a két gombkeret között.
+    readonly property int koz: 5
 
     //: #3234: MÉRT csúszka-geometria (`respack.yt`). A konténer 267, a
     //: sáv 253 az x = 7-en (a két oldalon 7-7 képpont marad), a fogantyú
@@ -124,8 +123,6 @@ Item {
     component SavGomb: Rectangle {
         id: gomb
         property string felirat: ""
-        //: igaz = pipa (Alkalmaz), hamis = X (Mégse)
-        property bool pipa: true
         property bool buttonEnabled: true
         signal buttonClicked()
 
@@ -143,21 +140,14 @@ Item {
         Text {
             anchors.centerIn: parent
             text: gomb.felirat
+            //: #4037: a mért m_buttonfontC stílus 12 px, félkövér,
+            //: −1 px betűközű; a szöveget a nyelvi erőforrás adja.
             font.pixelSize: Theme.fontSize
+            font.weight: Font.DemiBold
+            font.letterSpacing: -1
             //: a felirat FFFFFFFF, az egér alatt CCFFFFFF (80%)
             color: "#ffffff"
             opacity: terulet.containsMouse && gomb.buttonEnabled ? 0.8 : 1.0
-        }
-
-        //: #710: a pipa/X a KÖZÖS rajzolt jel (`EditorActionBadge`), a gomb
-        //: jobb szélétől 9 képpontra (audit 7.4) — nem Unicode-glif, mert az
-        //: betűtípusfüggő, és hiányzó glifnél NYOMTALANUL eltűnik. A jel a
-        //: párral együtt költözött ide a panelekből (#3123).
-        EditorActionBadge {
-            tick: gomb.pipa
-            anchors.right: parent.right
-            anchors.rightMargin: 9
-            anchors.verticalCenter: parent.verticalCenter
         }
 
         MouseArea {
@@ -212,15 +202,14 @@ Item {
         SavGomb {
             id: applyGomb
             objectName: sav.tool + "ApplyButton"
-            felirat: qsTr("Apply")
+            felirat: qsTr("APPLY")
             buttonEnabled: sav.applyEnabled
             onButtonClicked: sav.applyClicked()
         }
         SavGomb {
             id: cancelGomb
             objectName: sav.tool + "CancelButton"
-            felirat: qsTr("Cancel")
-            pipa: false
+            felirat: qsTr("CANCEL")
             onButtonClicked: sav.cancelClicked()
         }
     }

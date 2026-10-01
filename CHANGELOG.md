@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Kiegyenesítés eszközsávjának ALKALMAZ és MÉGSE felirata nagybetűs, és a gombokról eltűnt a pipa/X jel (#4037).
+
 ## [0.8.653] – 2026-10-01
 
 ### Javítva
