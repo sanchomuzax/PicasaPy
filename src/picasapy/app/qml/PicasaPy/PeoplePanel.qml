@@ -63,13 +63,21 @@ Rectangle {
     // a Név nélküliek albumban a kijelölés névtelen arcoké — ott a rács
     // kijelölésének neveit nem mutatjuk
     readonly property var people:
-        panel.unnamedAlbumMode ? [] : panel.peopleHere
+        panel.unnamedAlbumMode ? []
+        : panel.personAlbum && !panel.editorView
+          ? panel.peopleHere.filter(function(person) {
+              return String(person.name).toLowerCase()
+                  !== panel.currentPerson.toLowerCase()
+          })
+          : panel.peopleHere
     readonly property bool hasPeople: panel.people.length > 0
     readonly property bool hasPhotos: panel.selectionCount > 0
 
     // a fejléc (`status_label`); üres, ha az utasítás-szöveg látszik
     readonly property string headerText:
-        panel.singlePhotoBranch
+        panel.personAlbum && !panel.editorView && !panel.hasPeople
+            ? ""
+            : panel.singlePhotoBranch
             ? (panel.hasPeople ? qsTr("In this photo:")
                : panel.hasPhotos ? qsTr("Who is in these photos?")
                : "")

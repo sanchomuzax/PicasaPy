@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.654] – 2026-10-01
+
+### Javítva
+- Személy-albumban az Emberek panel „Szintén ezeken a fotókon” listája már nem mutatja a nézett személyt (#3678).
+
 - A Kiegyenesítés eszközsávjának ALKALMAZ és MÉGSE felirata nagybetűs, és a gombokról eltűnt a pipa/X jel (#4037).
 
 ## [0.8.653] – 2026-10-01
