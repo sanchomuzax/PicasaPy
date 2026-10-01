@@ -7182,10 +7182,12 @@ parser-szigora helyes, a #4019 nem indokol fejlesztői módosítást.
 *Bizonyítottsági fok: **megerősített** a mért hat névre és a vizsgált tint-, vignette-,
 sepia-családra (két független út: utasításszintű bináris-olvasás + Picasa-kimenet
 mérése); **feltételes** minden más effektnévre — ott csak a bináris-lánc áll
-rendelkezésre, és a fenti két láncszem (`NINCS MEG`) következtetés. **Nem ellenőrzött:**
-a `merokit-3` második exportja (`export-202608202207`) valószínűleg ugyanilyen
-PicasaPy-kimenet; Picasa-bizonyítékként addig nem szabad idézni, amíg a szegmens-szerkezete
-(APP-markerek, Huffman-táblák, sidecar) nem igazolja az eredetét.*
+rendelkezésre, és a fenti két láncszem (`NINCS MEG`) következtetés. **Ugyanez a
+`merokit-3` második exportján** (`export-202608202207`) is mérve: csak APP0, minden
+kvantálóérték 1, standard 181 bájtos Huffman-táblák (a Picasa-export,
+`export-202608151633`: APP0 + 2×APP1 + APP13, kvantálótáblák `1,1,1,1,1,1,3,2`,
+optimalizált Huffman-táblák) — az is PicasaPy-kimenet, Picasa-bizonyítékként nem
+idézhető.*
 
 
 ### ⛳ A Holga alapállásának maradéka a Picasa-export JPEG-je, nem a lánc — a zajszintet a Picasa saját kvantálótábláival kell mérni (2026-09-28, 404. kör, #3934)
