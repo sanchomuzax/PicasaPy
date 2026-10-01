@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az effektcsempék már az aktuális vágást mutatják: a régi vágási előzmény
+  önmagában nem vágja le a képet (#4024).
+
 ## [0.8.647] – 2026-09-30
 
 ### Javítva

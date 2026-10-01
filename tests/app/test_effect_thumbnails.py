@@ -5,7 +5,10 @@ a kapott kép mérete, hogy két különböző effekt bélyegképe ténylegesen 
 és hogy a gyorsítótár találatnál nem számol újra (sem a filter-láncot, sem
 a lemez-dekódot)."""
 
+from dataclasses import replace
+
 from picasapy.index import open_index, photos_in_folder, sync_tree
+from picasapy.ini.rect64 import Rect64, encode_rect64
 from support.jpeg_factory import make_jpeg
 
 
@@ -48,6 +51,49 @@ class TestSyncRender:
         assert 64 <= max(image.width(), image.height()) <= 96
         # a forrás 320x200 (16:10) — az arány a kicsinyítés után is közel áll
         assert abs(image.width() / image.height() - 320 / 200) < 0.1
+
+    def test_crop64_előzmény_crop_kulcs_nélkül_nem_vágja_az_effektcsempét(
+        self, qt_app, tmp_path
+    ):
+        records = _library(tmp_path)
+        photo = tmp_path / "kepek" / records[0].name
+        history_crop = encode_rect64(Rect64(0.1, 0.0, 0.9, 1.0))
+        filters = f"crop64=1,{history_crop};"
+        (photo.parent / ".picasa.ini").write_text(
+            f"[{photo.name}]\nfilters={filters}\n", encoding="utf-8"
+        )
+        record = replace(records[0], filters=filters)
+        provider = _provider((record,))
+
+        image = provider.requestImage(f"{record.id}/sepia", None, None)
+
+        assert (image.width(), image.height()) == (80, 50)
+
+    def test_sajat_crop_kulcs_utan_a_csempe_a_vagast_koveti_es_a_cache_frissul(
+        self, qt_app, tmp_path
+    ):
+        records = _library(tmp_path)
+        photo = tmp_path / "kepek" / records[0].name
+        history_crop = encode_rect64(Rect64(0.1, 0.0, 0.9, 1.0))
+        own_crop = encode_rect64(Rect64(0.25, 0.0, 0.75, 1.0))
+        filters = f"crop64=1,{history_crop};"
+        ini_path = photo.parent / ".picasa.ini"
+        ini_path.write_text(
+            f"[{photo.name}]\nfilters={filters}\n", encoding="utf-8"
+        )
+        record = replace(records[0], filters=filters)
+        provider = _provider((record,))
+        provider.requestImage(f"{record.id}/sepia", None, None)
+
+        ini_path.write_text(
+            f"[{photo.name}]\nfilters={filters}\n"
+            f"crop=rect64({own_crop})\n",
+            encoding="utf-8",
+        )
+
+        image = provider.requestImage(f"{record.id}/sepia", None, None)
+
+        assert (image.width(), image.height()) == (64, 80)
 
     def test_two_different_effects_produce_different_thumbnails(
         self, qt_app, tmp_path
