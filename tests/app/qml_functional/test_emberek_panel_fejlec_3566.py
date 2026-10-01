@@ -216,7 +216,7 @@ class TestPersonAlbum:
         _select(window, controller, qt_app, lib, "a.jpg")
 
         assert _header(window) == "Also in these photos:"
-        assert _visible_rows(_child(window, "peoplePanel")) == ["Anna", "Béla"]
+        assert _visible_rows(_child(window, "peoplePanel")) == ["Béla"]
 
     def test_one_header_one_list(self, qml_app, qt_app, tmp_path):
         window, controller, _engine = qml_app
@@ -227,8 +227,9 @@ class TestPersonAlbum:
 
         panel = _child(window, "peoplePanel")
         assert _header(window) == "Also in these photos:"
-        # EGY lista: minden név egyszer szerepel, nincs második szakasz
-        assert _visible_rows(panel) == ["Anna", "Béla"]
+        # EGY lista: minden név egyszer szerepel, nincs második szakasz;
+        # a nézett személy (Anna) kimarad (#3678)
+        assert _visible_rows(panel) == ["Béla"]
         visible_texts = [
             item.property("text") for item in _walk(panel)
             if item.isVisible() and item.property("text") in (

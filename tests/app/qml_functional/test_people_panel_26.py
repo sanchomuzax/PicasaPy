@@ -388,6 +388,136 @@ _KOZOS_INI = (
     f"rect64(5000280075006e00),{_BELA_ID}\n"
 )
 
+_CECILIA_ID = "3333333333333333"
+_SZEMELY_ALBUM_INI = (
+    "[Contacts2]\n"
+    f"{_ANNA_ID}=Anna;;\n"
+    f"{_BELA_ID}=Béla;;\n"
+    f"{_CECILIA_ID}=Cecília;;\n"
+    "[a.jpg]\n"
+    f"faces=rect64(1e00280045006e00),{_ANNA_ID};"
+    f"rect64(5000280075006e00),{_BELA_ID};"
+    f"rect64(7000280095006e00),{_CECILIA_ID}\n"
+    "[b.jpg]\n"
+    f"faces=rect64(1e00280045006e00),{_ANNA_ID}\n"
+)
+
+
+def _szemely_album_kepek(window, controller, qt_app, tmp_path):
+    from picasapy.app.worker_thread import wait_for_all_background_workers
+
+    lib = tmp_path / "kepek"
+    for name in ("a.jpg", "b.jpg"):
+        make_jpeg(lib / name, size=(120, 90))
+    (lib / ".picasa.ini").write_text(_SZEMELY_ALBUM_INI, encoding="utf-8")
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, lib)
+    controller._reload_after_sync()
+    assert wait_for_all_background_workers(30.0)
+    for _ in range(5):
+        qt_app.processEvents()
+    _open(window, qt_app)
+    controller.showPerson("Anna")
+    for _ in range(5):
+        qt_app.processEvents()
+    return lib
+
+
+def _lathato_szemelyek(panel):
+    return sorted(
+        item.objectName().removeprefix("peoplePanelRow_")
+        for item in _walk_items(panel)
+        if item.objectName().startswith("peoplePanelRow_") and item.isVisible()
+    )
+
+
+def _lathato_szemely_darabszamok(panel):
+    return {
+        item.objectName().removeprefix("peoplePanelCount_"):
+            item.property("text")
+        for item in _walk_items(panel)
+        if item.objectName().startswith("peoplePanelCount_") and item.isVisible()
+    }
+
+
+class TestPersonAlbumExcludesViewedPerson:
+    # rontás-kontroll: szűrés nélkül az Anna-sor is látszik; a csak-Annás
+    # képnél pedig a hibás fejléc-ág „Unnamed groups…” feliratot mutat.
+    def test_a_photo_with_three_people_shows_only_the_other_two(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _engine = qml_app
+        lib = _szemely_album_kepek(window, controller, qt_app, tmp_path)
+
+        _select_photos(window, controller, qt_app, [lib / "a.jpg"])
+        panel = _child(window, "peoplePanel")
+        # Az eltérő írásmód a kis- és nagybetűt nem érzékeny összevetést is méri.
+        panel.setProperty("currentPerson", "aNnA")
+
+        assert _child(window, "peoplePanelHeader").property("text") == (
+            "Also in these photos:"
+        )
+        assert _lathato_szemelyek(panel) == ["Béla", "Cecília"]
+        assert _lathato_szemely_darabszamok(panel) == {
+            "Béla": "1 photos",
+            "Cecília": "1 photos",
+        }
+
+    def test_a_photo_with_only_the_viewed_person_shows_text4(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _engine = qml_app
+        lib = _szemely_album_kepek(window, controller, qt_app, tmp_path)
+
+        _select_photos(window, controller, qt_app, [lib / "b.jpg"])
+
+        panel = _child(window, "peoplePanel")
+        header = _child(window, "peoplePanelHeader")
+        empty = _child(window, "peoplePanelEmptyText")
+        assert _lathato_szemelyek(panel) == []
+        assert header.property("visible") is False
+        assert empty.property("visible") is True
+        assert empty.property("text") == (
+            "Named people who appear with the currently selected person "
+            "will be listed here."
+        )
+
+    def test_two_selected_photos_count_each_other_person_once(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _engine = qml_app
+        lib = _szemely_album_kepek(window, controller, qt_app, tmp_path)
+
+        _select_photos(
+            window, controller, qt_app, [lib / "a.jpg", lib / "b.jpg"]
+        )
+
+        panel = _child(window, "peoplePanel")
+        assert _lathato_szemelyek(panel) == ["Béla", "Cecília"]
+        assert _lathato_szemely_darabszamok(panel) == {
+            "Béla": "1 photos",
+            "Cecília": "1 photos",
+        }
+
+    def test_editor_view_keeps_the_viewed_person_in_the_list(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _engine = qml_app
+        lib = _szemely_album_kepek(window, controller, qt_app, tmp_path)
+        _select_photos(window, controller, qt_app, [lib / "b.jpg"])
+
+        row = controller.photos.rowOfPath(str(lib / "b.jpg"))
+        window.setProperty("viewerOpen", True)
+        viewer = _child(window, "photoViewer")
+        viewer.setProperty("currentIndex", row)
+        window.setProperty("activeDrawerTab", "people")
+        for _ in range(10):
+            qt_app.processEvents()
+
+        panel = _child(window, "viewerPeoplePanel")
+        assert _lathato_szemelyek(panel) == ["Anna"]
+        assert _lathato_szemely_darabszamok(panel) == {"Anna": "1 photos"}
+
 
 class TestFromPersonAlbumToUnnamed:
     """#3585 (átnézési lelet): „személy albuma → Névtelenek". A bal hasáb
