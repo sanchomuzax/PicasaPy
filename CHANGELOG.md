@@ -7,13 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Az eszközsáv Alkalmaz/Mégse feliratainak mérete az eredeti Picasáéhoz igazodik (kisebbek, mint eddig) (#4052).
+
 ## [0.8.656] – 2026-10-01
 
 ### Javítva
 - Az eredeti méretű e-mail-csatolmány is beégeti a forgatást, a tükrözést és a szerkesztéseket, ahogy az eredeti Picasában; a módosítatlan JPEG bájthű másolat marad (#3993).
-
-### Javítva
-- Az eszközsáv Alkalmaz/Mégse feliratainak mérete az eredeti Picasáéhoz igazodik (kisebbek, mint eddig) (#4052).
 
 ## [0.8.655] – 2026-10-01
 
