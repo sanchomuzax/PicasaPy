@@ -2236,14 +2236,18 @@ a Picasa-exporté `2,2,2,2,2,1,2,2`; a 1. táblán ugyanez `1,1,1,1,1,1,3,2` →
 **Ugyanez a többi mért elvetett láncon:** a `meroadat.tar` minden olyan exportja,
 amelynek `filters=` lánca nem üres, de a mi olvasónk egyetlen műveletet sem ad
 vissza, **újrakódolt** — ellenpélda nincs: a `merokit-2` hat lánca
-(`Tint`/`TINT`/`tInT`/`vignette`/`VIGNETTE`/`Sepia`) két exportban
-(`export-202608151438`, `export-202608202215`), a `merokit-3` `sepia;bw=1;` lánca
+(`Tint`/`TINT`/`tInT`/`vignette`/`VIGNETTE`/`Sepia`) az első exportban
+(`export-202608151438`), a `merokit-3` `sepia;bw=1;` lánca
 (`export-202608151633`), és a `meroszett` két `tint__hex` esete (a forrásképek
-bájtra azonosak a 684-esekkel; 15 különböző lánc–forrás eset, 17 kimenet).
-⚠️ Hogy a Picasa ezeket a tagokat **elveti-e**, az NEM egységes: a `merokit-2`
-első exportjában a képpontok csak JPEG-zaj mértékben változtak (MAE 0,164), a
-másodikban MAE 25,6–58,9 — ez az ellentmondás a #4019 tárgya. Az újrakódolás
-ténye ettől független, és minden mért kimeneten fennáll.
+bájtra azonosak a 684-esekkel; 15 különböző lánc–forrás eset, 11 Picasa-kimenet).
+⚠️ A `merokit-2` második exportja (`export-202608202215`) **PicasaPy-kimenet, nem
+Picasa-bizonyíték** (#4019, `filters-decoded.md`), ezért nincs a számban.
+A Picasa a nem kanonikus nevű tagokat **elveti**: a `merokit-2` első exportjában a
+képpontok csak JPEG-zaj mértékben változtak (MAE 0,164, a kanonikus kontrollokon
+25,9–58,8). A második exportban mért MAE 25,6–58,9 nem a Picasa viselkedése: a
+PicasaPy akkori, kis-/nagybetű-független parsere alkalmazta az effektet (a #1141
+előtt). Az újrakódolás ténye ettől független, és minden mért Picasa-kimeneten
+fennáll.
 ⚠️ A mintavételezés sem egységes: a 684-es két kimenet 4:4:4, a `merokit-2` és a
 `meroszett` kimenetei 4:2:0; a mi kimenetünk mindig 4:2:0 (#4017).
 
@@ -2253,6 +2257,6 @@ Interop IFD-t. Az üres `filters=` lánc továbbra is bájthű másolat. Nem mé
 a teljesen szerkesztetlen kép, a csak `crop64`-előzményt tartalmazó (`crop=` nélküli)
 lánc és a `;` lánc — ezekre a mostani döntés a mi feltevésünk.
 
-*Bizonyítottsági fok: **megerősített** az újrakódolásra (17/17 mért kimenet); a
+*Bizonyítottsági fok: **megerősített** az újrakódolásra (11/11 mért Picasa-kimenet); a
 regressziós teszt a két 684-es fájlon ellenőrzi a méretet, a DQT-t, a SOF-ot, az
 APP-markereket, a dekódolt képpontokat és az Interop IFD-t.*

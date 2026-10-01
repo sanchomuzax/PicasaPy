@@ -7089,6 +7089,104 @@ A teljes láncon még két mérés:
    amit nálunk más kernel közelít. **Ez a következő gépi irány** — nem
    csúszka-kalibráció.
 
+## ✅ #4019 — a Picasa a kis-/nagybetűs effektnevet nem oldja fel; a `merokit-2` második exportja PicasaPy-kimenet (2026-10-01)
+
+A #1141 szerinti parser-szabály — ismert effekt csak a kanonikus írásmóddal
+fogadható el — a Picasa mért viselkedésével és a bináris névfeloldó útjával
+egyezik. A `merokit-2` két exportja közti látszólagos ellentmondás **nem a
+Picasa viselkedéséből** jön: a második export nem Picasa-kimenet, hanem a
+PicasaPy saját exportere állította elő a #1141 előtt.
+
+### A bináris névfeloldó útja
+
+`FUN_00907740` a `filters=` láncot pontosvesszőnként (`0x3b`) bontja, majd
+`FUN_00908360`-nak adja át a tagot. Ez az `=`-nél (`0x3d`) bont, és a
+`[0x00d67f68]` objektum `vftbl+4` műveletét hívja. A `CImageFilterFactory`
+vftáblája `0x00c7f6c0`-nál van; nyers bejegyzései: `[+0]=0x00401f90`,
+`[+4]=0x008f9fe0`, `[+8]=0x008fa400`. A közvetítő `FUN_008f9fe0` a `vftbl+8`
+útján hívja a `FUN_008fa400` névtábla-keresőt, amely `FUN_00901c30`-n keresztül
+`FUN_0063dd70`-et hívja. Utóbbi a két karaktert közvetlenül hasonlítja össze
+(`mov dl,[eax]; cmp dl,[ecx]`), eltéréskor elágazik, és a lezáró NUL-ig megy
+(`0x0063ddc7`–`0x0063dde1`); a hat vizsgált függvényben nincs kisbetűsítés
+(`tolower`, `& 0xDF`, `| 0x20`) és nincs kis-/nagybetű-független egyezés. A
+kulcs-sztringet építő `0x00985ff0` sima másolás; a külön kezelt `crop`/`desat`
+alakokat `repe cmpsb` választja el, pontos literál-összehasonlítással.
+
+A `FUN_008fa400` másik ága egy **statikus, 49 tételes natív-névtábla**
+(`0x00cd0658`, 0x10 lépték) bejegyzéseit hasonlítja bájtpontosan
+(`0x008fa1a0`–`0x008fa1e1`); a tábla minden neve kisbetűs (`tint`, `sepia`,
+`blur`, …), a `vignette` nincs benne. Ez az ág csak akkor fut, ha az első
+(`this+0x1454`) névtábla-keresés már talált leírót; nem kanonikus nevet tehát
+a `0x008fa400` keresés dob el (`-1`).
+
+**Hatókör:** a vizsgált névtábla-út kulcsegyezése pontos, kis-/nagybetű-érzékeny
+(`FUN_00908360` → `FUN_008f9fe0` → `FUN_008fa400` → `FUN_00901c30` →
+`FUN_0063dd70`; vftábla: `0x00c7f6c0`). **NINCS MEG:** hogy a `[0x00d67f68]`
+objektum vtáblája tényleg `0x00c7f6c0` (következtetés: `0x008f9fe0` a saját
+`this`-én hívja a `vftbl+8`-at), és hogy ki tölti fel a `this+0x1454` táblát
+(indextől független `.text`-pásztázás kellene).
+
+### A két export tényleges eredménye
+
+A `meroadat.tar` gyökérbeli `merokit-2/.picasa.ini`-je kilenc külön
+`nev_01.jpg`–`nev_09.jpg` szakaszban, egytagú láncot tartalmaz. A hat
+nem kanonikus sor: `Tint`, `TINT`, `tInT`, `vignette`, `VIGNETTE`, `Sepia`;
+mindegyikhez ugyanabban az effektcsaládban van kanonikus kontroll,
+azonos paraméterekkel. A kilenc bemeneti JPEG bájtra azonos
+(SHA-256: `170510965b768d685ceef017859c51acc6ce848c2d22be192a53ece49096f55e`).
+
+| Megfigyelés | Eredmény |
+|---|---:|
+| `export-202608151438` (Picasa): a hat nem kanonikus kimenet MAE-je a bemenethez képest | mind a hat `0.163641493` (az effekt nem futott) |
+| `export-202608151438` (Picasa): kontrollok (`tint`, `Vignette`, `sepia`) MAE-je | `58.846858724`; `28.780666233`; `25.865946181` |
+| `export-202608202215` (PicasaPy): a Tint-, Vignette- és Sepia-csoport MAE-je a bemenethez képest | `58.856325955`; `29.243814562`; `25.574040256` |
+| `export-202608202215` (PicasaPy): a nem kanonikus kép byte-egyezése a saját kanonikus kontrolljával | mindhárom csoportban byte-ra azonos |
+
+*Mérés: `meroadat.tar`, `PicasaPy merokit-2/`; a kimeneti és bemeneti JPEG-ek
+OpenCV 4.10.0-val (és PIL-lel) dekódolva, csatornánkénti abszolút eltérés átlaga
+(MAE); két, egymástól független futás azonos számokat adott.*
+
+### Miért nem Picasa-kimenet a második export
+
+| Jegy | Első export (`export-202608151438`) | Második export (`export-202608202215`) |
+|---|---|---|
+| JPEG-szegmensek | APP0 + 2×APP1 (EXIF/XMP) + APP13 | csak APP0 |
+| Huffman-táblák | optimalizált (`C4` 100 és 50 bájt) | standard (a forrás szerkezete) |
+| kvantálótáblák | a forráséval azonos (`1,1,1,1,1,2,3,4`) | minden érték 1 |
+| sidecar | 65 bájtos CRLF `[Picasa]` (`P2category=PicasaPy-merokit~export`, `date=46249.609491` = 2026-08-15 14:37:40) | nincs |
+| a „változatlan” 15 fájl | — | bájtra azonos a forrás `PIL q=100, 4:2:0` újrakódolásával (86 847 bájt) |
+
+**Reprodukció (cáfoló kísérlet a „másképp viselkedik a Picasa” feltevésre).** A
+PicasaPy `export_photos` függvénye (`jpeg_quality=100`) az `e605439a` állapotban,
+a forrás `.picasa.ini`-vel futtatva a második export mind a 49 fájlját **bájtra
+azonosan** előállítja — a Tint-, Vignette-, Sepia-, grain- és
+PicnikFocalPixelate-képeket is. A #1141 szülője (`a0f13a05^`, 2026-08-23) szintén
+49/49; maga a `a0f13a05` (#1141) 43/49 — pontosan a hat nem kanonikus kép tér el.
+Ok: a PicasaPy parsere a #1141 előtt kis-/nagybetű-független volt, a második
+export (2026-08-20) a #1141 előtti. A forrás `.picasa.ini` mtime-ja (13:14:23, LF,
+nincs `[Picasa]` szakasz, eredeti írásmód) átírásra nem utal. A nem név-eltérések is
+ugyanígy megmagyarázódnak (a második exportban `blur=1,2.0` változatlan, `halott_14`
+alkalmazva, `tintszin_04` változatlan, a grain-hármas azonos).
+
+A tar időbélyegei (Budapest ideje): a forrás `.picasa.ini` 2026-08-15 13:14:23; az
+első export 2026-08-15 14:37:41–14:38:02 (sidecar 14:38:04); a második export
+2026-08-20 22:15:58–22:16:53. A `merokit-2` mappa nem tartalmaz Picasa-gyorsítótárat
+vagy futásnaplót.
+
+### Következtetés
+
+A Picasa a vizsgált útvonalon kis-/nagybetű-érzékeny: a bináris bájtpontos
+névösszehasonlítása és az első (Picasa-)export hat mért képe egyezik, a #1141
+parser-szigora helyes, a #4019 nem indokol fejlesztői módosítást.
+
+*Bizonyítottsági fok: **megerősített** a mért hat névre és a vizsgált tint-, vignette-,
+sepia-családra (két független út: utasításszintű bináris-olvasás + Picasa-kimenet
+mérése); **feltételes** minden más effektnévre — ott csak a bináris-lánc áll
+rendelkezésre, és a fenti két láncszem (`NINCS MEG`) következtetés. **Nem ellenőrzött:**
+a `merokit-3` második exportja (`export-202608202207`) valószínűleg ugyanilyen
+PicasaPy-kimenet; Picasa-bizonyítékként addig nem szabad idézni, amíg a szegmens-szerkezete
+(APP-markerek, Huffman-táblák, sidecar) nem igazolja az eredetét.*
+
 
 ### ⛳ A Holga alapállásának maradéka a Picasa-export JPEG-je, nem a lánc — a zajszintet a Picasa saját kvantálótábláival kell mérni (2026-09-28, 404. kör, #3934)
 
