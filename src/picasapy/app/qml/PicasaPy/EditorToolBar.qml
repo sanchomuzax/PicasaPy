@@ -140,11 +140,13 @@ Item {
         Text {
             anchors.centerIn: parent
             text: gomb.felirat
-            //: #4037: a mért m_buttonfontC stílus 12 px, félkövér,
-            //: −1 px betűközű; a szöveget a nyelvi erőforrás adja.
-            font.pixelSize: Theme.fontSize
-            font.weight: Font.DemiBold
-            font.letterSpacing: -1
+            //: #4037 még 12 px-es, DemiBold súlyú és −1 px betűközű volt.
+            //: #4052: a #69 felvétel helyi Linux-renderén a 10 px Normál,
+            //: −0,5 px beállítás APPLY 27×7 és CANCEL 35×7 px-es dobozt ad;
+            //: a referencia 26×7, illetve 36×7 px.
+            font.pixelSize: 10
+            font.weight: Font.Normal
+            font.letterSpacing: -0.5
             //: a felirat FFFFFFFF, az egér alatt CCFFFFFF (80%)
             color: "#ffffff"
             opacity: terulet.containsMouse && gomb.buttonEnabled ? 0.8 : 1.0

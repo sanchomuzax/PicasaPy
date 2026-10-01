@@ -159,6 +159,24 @@ def _assert_rgb_kozel(image, x, y, expected):
     )
 
 
+def _felirat_doboza(image, gomb_bal):
+    """A látható, világos betűképpontok doboza; a keretet és a kitöltést kizárja."""
+    pixelek = []
+    for y in range(4, 24):
+        for x in range(gomb_bal + 4, gomb_bal + 78):
+            szin = image.pixelColor(x, y)
+            rgb = (szin.red(), szin.green(), szin.blue())
+            if min(rgb) >= 190 and max(rgb) - min(rgb) <= 15:
+                pixelek.append((x, y))
+    assert pixelek, f"a {gomb_bal}px-nél álló gomb felirata nem rajzolódott ki"
+    return (
+        min(x for x, _y in pixelek),
+        min(y for _x, y in pixelek),
+        max(x for x, _y in pixelek),
+        max(y for _x, y in pixelek),
+    )
+
+
 class TestGeometria:
     def test_a_gombok_merete_82x28(self, betoltott):
         for nev in ("cropApplyButton", "cropCancelButton"):
@@ -249,32 +267,31 @@ class TestSzinek:
                     f"({x}, {y}) {rgb} jelent meg a kitöltés helyett ({vart})"
                 )
 
+    # rontás-kontroll: EditorToolBar.qml.font = (12, DemiBold, -1) → 3 failed
+    @pytest.mark.parametrize(
+        ("gomb_bal", "felirat", "vart_meret"),
+        ((0, "APPLY", (26, 7)), (87, "CANCEL", (36, 7))),
+    )
+    def test_a_felirat_merete_a_69_meresehez_egyezik(
+        self, kirajzolt_gombok, gomb_bal, felirat, vart_meret
+    ):
+        """A #69-en APPLY 26×7, CANCEL 36×7 px; CI-n ±2 px tűrés."""
+        kep = kirajzolt_gombok
+        bal_x, felso_y, jobb_x, also_y = _felirat_doboza(kep, gomb_bal)
+        meret = (jobb_x - bal_x + 1, also_y - felso_y + 1)
+
+        assert all(
+            abs(kapott - vart) <= 2
+            for kapott, vart in zip(meret, vart_meret, strict=True)
+        ), f"a {felirat} felirat mérete {meret}px, a #69 szerint {vart_meret}px (±2)"
+
     def test_a_felirat_lathato_pixeleinek_doboza_kozepen_all(
         self, kirajzolt_gombok
     ):
-        """A megjelenő felirat befoglaló dobozának közepe ±2 px-en belül van.
-
-        A tűrés a betűkészlet oldalsó térközeiből jön (a Windows-os CI-n a
-        CANCEL 1,5 px-szel tér el); a mért #69-eltérés ±1, ott más a betűkép.
-        """
+        """A tényleges betűképpontok közepe a gomb közepétől legfeljebb 2 px-re tér el."""
         kep = kirajzolt_gombok
         for bal in (0, 87):
-            pixelek = [
-                (x, y)
-                for y in range(2, 26)
-                for x in range(bal + 2, bal + 80)
-                if all(
-                    csatorna >= 170
-                    for csatorna in (
-                        kep.pixelColor(x, y).red(),
-                        kep.pixelColor(x, y).green(),
-                        kep.pixelColor(x, y).blue(),
-                    )
-                )
-            ]
-            assert pixelek, f"a {bal}px-nél álló gomb felirata nem rajzolódott ki"
-            bal_x = min(x for x, _y in pixelek)
-            jobb_x = max(x for x, _y in pixelek)
+            bal_x, _felso_y, jobb_x, _also_y = _felirat_doboza(kep, bal)
             felirat_kozepe = (bal_x + jobb_x) / 2
             gomb_kozepe = bal + (82 - 1) / 2
             assert abs(felirat_kozepe - gomb_kozepe) <= 2, (
@@ -342,8 +359,9 @@ class TestForras:
     def test_a_sav_felirata_nagybetus_es_jel_nelkuli(self):
         assert 'qsTr("APPLY")' in self.forras
         assert 'qsTr("CANCEL")' in self.forras
-        assert "font.weight: Font.DemiBold" in self.forras
-        assert "font.letterSpacing: -1" in self.forras
+        assert "font.pixelSize: 10" in self.forras
+        assert "font.weight: Font.Normal" in self.forras
+        assert "font.letterSpacing: -0.5" in self.forras
         assert "EditorActionBadge {" not in self.forras
 
 
