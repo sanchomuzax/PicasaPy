@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.652] – 2026-10-01
+
+### Javítva
+- A Kiegyenesítés és a teljes képre ható eszközök megnyitásakor a fotó
+  kitöltő nézetre áll, és bezárás után is ott marad (#4021).
+
 - A szerkesztő eszközsáv gombjainak kerete 2 képpont vastag, sarka pedig az eredeti Picasához igazodva kerekebb (#4035).
 
 ## [0.8.651] – 2026-10-01

@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, QPointF, QRect, QSize, Qt
-from PySide6.QtGui import QColor, QImage, QPainter
+from PySide6.QtGui import QColor, QGuiApplication, QImage, QKeyEvent, QPainter
 from PySide6.QtTest import QTest
 import pytest
 
@@ -24,6 +24,17 @@ def _item(gyoker, nev: str):
     elem = gyoker.findChild(QObject, nev)
     assert elem is not None, f"{nev} nem található a kirajzolt fában"
     return elem
+
+
+def _vizualis_item(gyoker, nev: str):
+    """A Repeater-csempéket a vizuális fa járja be, ne a QObject-fát."""
+    kovetkezok = [gyoker]
+    while kovetkezok:
+        elem = kovetkezok.pop()
+        if elem.objectName() == nev:
+            return elem
+        kovetkezok.extend(elem.childItems())
+    raise AssertionError(f"{nev} nem található a kirajzolt fában")
 
 
 def _kep_mentese(
@@ -90,6 +101,15 @@ def _kattint(window, elem, qt_app) -> None:
     )
     for _ in range(5):
         qt_app.processEvents()
+
+
+def _kuldd_shift(tipus) -> None:
+    esemeny = QKeyEvent(
+        tipus,
+        Qt.Key.Key_Shift,
+        Qt.KeyboardModifier.ShiftModifier,
+    )
+    QGuiApplication.sendEvent(QGuiApplication.instance(), esemeny)
 
 
 def _nezobe_lep(window, qt_app, index: int = 0):
@@ -337,6 +357,108 @@ def _assert_racs_szelen(
             assert _rgb(racsos, QPoint(x, y)) == _rgb(racs_nelkul, QPoint(x, y)), (
                 f"a {nev} szélen túllógott a háló a {x},{y} képpontnál"
             )
+
+
+@pytest.mark.parametrize(
+    ("filter_id", "tab_name", "button_name", "shift"),
+    [
+        ("tilt", "editTabFixes", "editToolTilt", False),
+        ("radblur", "editTabEffects", "effectRadblur", False),
+        ("radsat", "editTabEffects", "effectRadsat", False),
+        ("dir_tint", "editTabEffects", "effectDirTint", False),
+        ("radtint", "editTabEffects", "effectDirTint", True),
+        ("linblur", "editTabLegacy", "legacyEffect_linblur", False),
+        ("dir_sat", "editTabLegacy", "legacyEffect_dir_sat", False),
+        ("dir_brite", "editTabLegacy", "legacyEffect_dir_brite", False),
+        ("dir_sharp", "editTabLegacy", "legacyEffect_dir_sharp", False),
+    ],
+)
+def test_forcefit_szuro_nyitasa_illesztesre_valt(
+    qml_app_negyzet_kepek, qt_app, filter_id, tab_name, button_name, shift
+):
+    """#4021: a `filterdesc.xml` mind a kilenc forcefit szűrője illesszen."""
+    window, controller, _ = qml_app_negyzet_kepek
+    _forrasok(controller)
+    _beallit_ablak(window, qt_app)
+    viewer = _nezobe_lep(window, qt_app)
+    panel = _item(window, "viewerEditorPanel")
+    viewer.setProperty("zoomValue", 0.7)
+    for _ in range(8):
+        qt_app.processEvents()
+    assert viewer.property("zoomFactor") > 1.01, "a próbaképnek nagyítva kell lennie"
+
+    _kattint(window, _item(window, tab_name), qt_app)
+    if tab_name == "editTabLegacy":
+        assert panel.property("activeTab") == 6
+        legacy_column = _item(window, "legacyEffectsColumn")
+        assert legacy_column.property("visible") is True
+        assert legacy_column.property("effects"), "a régi effektfül katalógusa üres"
+        button = _vizualis_item(legacy_column, button_name)
+    else:
+        button = _item(window, button_name)
+    if shift:
+        _kuldd_shift(QKeyEvent.Type.KeyPress)
+    try:
+        if shift:
+            assert panel.property("shiftMasodlagos") is True
+        _kattint(window, button, qt_app)
+    finally:
+        if shift:
+            _kuldd_shift(QKeyEvent.Type.KeyRelease)
+    qt_app.processEvents()
+
+    if filter_id == "tilt":
+        assert panel.property("tiltActive") is True
+    elif filter_id in {"radblur", "radsat", "dir_tint", "radtint"}:
+        assert panel.property("paramPanelActive") is True
+        assert panel.property("paramEffectName") == filter_id
+    else:
+        effect_counts = viewer.property("editCtl").property("effectChainCounts")
+        assert effect_counts.get(filter_id, 0) == 1, (
+            f"a {filter_id} legacy eszköz felületi kattintása nem alkalmazódott"
+        )
+
+    assert viewer.property("zoomValue") == 0, (
+        f"a {filter_id} eszköz megnyitása után a néző maradjon kitöltő nézetben"
+    )
+
+
+def test_nagyitott_nezobol_nyitott_kiegyenesitesnel_a_racs_a_teljes_kepet_fedi(
+    qml_app_negyzet_kepek, qt_app, tmp_path
+):
+    """#4021: a valódi felvételen a háló a teljes képtéglalapot fedi."""
+    window, controller, _ = qml_app_negyzet_kepek
+    _forrasok(controller)
+    _beallit_ablak(window, qt_app)
+    viewer = _nezobe_lep(window, qt_app)
+    viewer.setProperty("zoomValue", 0.7)
+    for _ in range(8):
+        qt_app.processEvents()
+    assert viewer.property("zoomFactor") > 1.01, "a próbaképnek nagyítva kell lennie"
+
+    _kattint(window, _item(window, "editToolTilt"), qt_app)
+    overlay = _item(window, "straightenGridOverlay")
+    area = _item(window, "viewerPhotoArea")
+    image = _item(window, "viewerImage")
+    toolbar = _item(window, "editorToolBar")
+    area.setProperty("clip", False)
+    overlay.setProperty("visible", False)
+    for _ in range(5):
+        qt_app.processEvents()
+    racs_nelkul = _felvetel(window, tmp_path / "forcefit-racs-nelkul.png")
+    overlay.setProperty("visible", True)
+    for _ in range(5):
+        qt_app.processEvents()
+    racsos = _felvetel(window, tmp_path / "forcefit-racs.png")
+
+    _assert_racs_szelen(racsos, racs_nelkul, area, image, toolbar)
+    assert viewer.property("zoomValue") == 0, (
+        "a Kiegyenesítés megnyitása után a nézőnek illesztett nézetre kell váltania"
+    )
+    _kattint(window, _item(window, "tiltCancelButton"), qt_app)
+    assert viewer.property("zoomValue") == 0, (
+        "bezáráskor az illesztett nagyítás maradjon meg"
+    )
 
 
 def test_a_racs_latszik_es_alkalmazas_megse_vagy_lapozas_utan_eltunik(
