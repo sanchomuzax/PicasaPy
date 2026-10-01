@@ -25,6 +25,7 @@ import QtQuick
 //   layer:editpanel/button(APPLY):  tool_ok      82 × 28
 //   layer:editpanel/button(CANCEL): tool_cancel  82 × 28
 //     kitöltés #505050, keret #CBCACA, mindkettőn kétszer hat a 229-es alfa
+//   #4035 (#69): a látható keret 2 képpont, a lekerekítés sugara 7 képpont
 //   #4029 (#69): a hatásos alfa round(229²/255) = 206 (0xCE); renderelt
 //   minták: #F0 fölött kitöltés 111, #1E fölött 70, a keret #F0 fölött 210.
 //   felirat: m_buttontypecolor3 = FFFFFFFF · CCFFFFFF · FFFFFFFF
@@ -132,10 +133,10 @@ Item {
 
         width: sav.gombSzelesseg
         height: sav.gombMagassag
-        radius: 2
+        radius: 7
         //: A #4029-es hatásos alfa már a fenti színekben szerepel.
         color: sav.kitoltesSzin
-        border.width: 1
+        border.width: 2
         border.color: sav.keretSzin
         opacity: gomb.buttonEnabled ? 1 : 0.55
 

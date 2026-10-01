@@ -17,6 +17,10 @@ m_buttontypecolor3 = FFFFFFFF · CCFFFFFF · FFFFFFFF
 #4029: a #69 felvételén a két 229-es alfa hatásos értéke 206
 (round(229²/255)); a renderelt minták 111 / 70 / 210.
 
+#4035: ugyanazon a felvételen a gombkeret 2 képpont, a sarok sugara 7
+#képpont. A próba a sugárt a QML-objektumon, a keret vastagságát és a
+#sarok kontúrját pedig renderelt képpontokon ellenőrzi.
+
 ⚠️ A teljes nézőképet ez a fájl nem veti össze a Picasa felvételével.
 A #4029-es próba viszont a gombok renderelt mintapontjait hasonlítja a #69
 felvétel számaihoz; a többi próba a geometriát, állapotokat és bekötést méri.
@@ -158,6 +162,10 @@ class TestGeometria:
             assert gomb.property("width") == 82
             assert gomb.property("height") == 28
 
+    def test_a_gomb_sarkanak_sugara_a_69_felvetelen_merve_7(self, betoltott):
+        gomb = _gomb(betoltott, "cropApplyButton")
+        assert gomb.property("radius") == 7
+
     def test_a_sav_magassaga_a_gombe(self, betoltott):
         assert betoltott.property("height") == 28
 
@@ -197,6 +205,21 @@ class TestSzinek:
         _assert_rgb_kozel(kep, 20, 14, (111, 111, 111))
         _assert_rgb_kozel(kep, 106, 14, (70, 70, 70))
         _assert_rgb_kozel(kep, 41, 0, (210, 209, 209))
+
+    def test_a_renderelt_keret_ket_keppont_vastag(self, kirajzolt_gombok):
+        """A #69-en az első két sor a keret, a harmadik már kitöltés."""
+        kep = kirajzolt_gombok
+        _assert_rgb_kozel(kep, 41, 1, (210, 209, 209))
+        _assert_rgb_kozel(kep, 41, 2, (111, 111, 111))
+
+    def test_a_renderelt_sarok_konturja_a_69_meresehez_egyezik(
+        self, kirajzolt_gombok
+    ):
+        """A #69-en a bal felső sarok (0,0), (7,0), (0,7) mintái."""
+        kep = kirajzolt_gombok
+        _assert_rgb_kozel(kep, 0, 0, (240, 240, 240))
+        _assert_rgb_kozel(kep, 7, 0, (210, 209, 209))
+        _assert_rgb_kozel(kep, 0, 7, (210, 209, 209))
 
 
 class TestAllapotok:
