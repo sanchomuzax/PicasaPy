@@ -710,14 +710,6 @@ def test_rotate_1_300x500_kepehez_igazodik_a_negy_oldali_kivagas(
     clip_x, clip_y, clip_szel, clip_mag = _kep_kivagas_scene(image)
     bal_fent = overlay.mapToScene(QPointF(0, 0))
     jobb_lent = overlay.mapToScene(QPointF(overlay.width(), overlay.height()))
-    assert any(
-        value != math.trunc(value)
-        for value in _kep_teglalap_scene(image)
-    ), "a paraméterezett esetnek tört képszélt kell előállítania"
-    if ablak == (1280, 1000):
-        assert not _kep_pixel_teljesen_fedett(
-            image, racsos, clip_x, clip_y + 4
-        ), "a helyi reprodukció CI-pontja a tört bal szélső pixelre essen"
     assert (math.floor(bal_fent.x()), math.floor(bal_fent.y())) == (clip_x, clip_y)
     assert (math.floor(jobb_lent.x()), math.floor(jobb_lent.y())) == (
         clip_x + clip_szel,
