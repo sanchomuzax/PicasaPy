@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A néző elrejti a mellőzött és érvénytelen arcbejegyzéseket, az üres névvel rajzolt négyszöget nem menti el, a név törlése pedig az arcbejegyzést is eltávolítja (#3793).
+
 ## [0.8.657] – 2026-10-01
 
 ### Javítva
@@ -31,8 +34,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - A szerkesztő eszközsáv gombjainak kerete 2 képpont vastag, sarka pedig az eredeti Picasához igazodva kerekebb (#4035).
-
-- A néző elrejti a mellőzött és érvénytelen arcbejegyzéseket, az üres névvel rajzolt négyszöget nem menti el, a név törlése pedig az arcbejegyzést is eltávolítja (#3793).
 
 ## [0.8.652] – 2026-10-01
 
