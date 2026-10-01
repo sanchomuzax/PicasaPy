@@ -24,7 +24,9 @@ import QtQuick
 //
 //   layer:editpanel/button(APPLY):  tool_ok      82 × 28
 //   layer:editpanel/button(CANCEL): tool_cancel  82 × 28
-//     kitöltés #505050, alfa 229 · keret #CBCACA, alfa 229
+//     kitöltés #505050, keret #CBCACA, mindkettőn kétszer hat a 229-es alfa
+//   #4029 (#69): a hatásos alfa round(229²/255) = 206 (0xCE); renderelt
+//   minták: #F0 fölött kitöltés 111, #1E fölött 70, a keret #F0 fölött 210.
 //   felirat: m_buttontypecolor3 = FFFFFFFF · CCFFFFFF · FFFFFFFF
 //
 // ⇒ A gomb rajzának **egyetlen** állapota van (a csomagban nincs `_n`/`_h`/
@@ -55,10 +57,10 @@ Item {
     signal applyClicked()
     signal cancelClicked()
 
-    //: MÉRT kitöltés és keret (`respack.yt`), alfa 229 (0xE5). A háló
-    //: gombok alatti részét a PhotoViewer maszkolja, a gomb áttetsző marad.
-    readonly property color kitoltesSzin: "#E5505050"
-    readonly property color keretSzin: "#E5CBCACA"
+    //: #4029: a mért 229-es alfa kétszeri hatása `round(229²/255)` = 206.
+    //: Így a renderelt kitöltés/keret képpontjai a #69 mintáihoz egyeznek.
+    readonly property color kitoltesSzin: "#CE505050"
+    readonly property color keretSzin: "#CECBCACA"
 
     //: MÉRT gombméret (`respack.yt`), és a sáv magassága ugyanennyi
     readonly property int gombSzelesseg: 82
@@ -131,7 +133,7 @@ Item {
         width: sav.gombSzelesseg
         height: sav.gombMagassag
         radius: 2
-        //: MÉRT kitöltés és keret — alfa 229 (0xE5)
+        //: A #4029-es hatásos alfa már a fenti színekben szerepel.
         color: sav.kitoltesSzin
         border.width: 1
         border.color: sav.keretSzin
