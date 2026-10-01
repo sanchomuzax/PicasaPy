@@ -581,6 +581,9 @@ m_hidden                                        # alapból rejtett
    objektumnevüket vitték vissza (`cropApplyButton`, `retouchCancelButton`,
    …), tehát a rájuk épülő működés és annak ellenőrzése nem szakadt meg. A
    jel mindenütt a közös, RAJZOLT `EditorActionBadge` (#710).
+   ⛔ **HELYESBÍTÉS (2026-10-01, #4037):** a „mindenütt" a **kép fölötti sávra
+   NEM igaz** — annak két gombján az eredetiben **nincs jel** (ld. a
+   „A sáv gombjainak FELIRATA és JELE" szakaszt a lap végén).
 
    ⚠️ A mai állapot tehát: **a kép fölött csak a kiegyenesítés sávja
    jelenik meg**; a panelbeli gombok a szokásos `PanelButton` rajzát
@@ -598,3 +601,43 @@ rétegeiben van — onnan jött a gombok 82 × 28-as mérete is. A `MaintainOffs
 jelzők azt mondják, mi marad fix átméretezéskor, nem azt, mennyi.
 
 *(Ez ismétlődő tanulság: a `.tre` a viszonyt adja, a respack a helyet.)*
+
+### ⛳ A sáv gombjainak FELIRATA és JELE — csupa nagybetű, jel NÉLKÜL (2026-10-01, #4037)
+
+*Forrás: `referencia/i18n/{enUS,hu}/tooltips.xml:186–191` (a `Picasa3i18n.dll` XMLF-erőforrásából kinyerve, ld. `referencia/i18n/OLVASS-EL.md`) · `referencia/tre-eroforrasok/editpanel.tre:21–34` (a sáv gombjai) és `:805–826` (a vágás gombjai) · `editpaneltext.tre:53–57` · `macros.tre:133–155` · `fontmacros_win.tre:122–132`, `:204–214` · élő felvétel: `picasa-colab-jobs` #69, `kepernyo__04.png` (angol 3.9.141, Wine, 1280 × 1024).*
+
+A #4029 mérése azt jelezte, hogy az eredeti sáv gombjai csupa nagybetűsek és jel nélkül állnak. A kérdés: mi a **magyar** felirat, és van-e jel a gomb mellett.
+
+**1. A felirat — megerősített.** A két gomb szövege **külön szövegsor**, nem a vágás-panel gombjaié:
+
+| elem | angol (`enUS`) | magyar (`hu`) | forrás |
+|---|---|---|---|
+| `editpanel/tool_ok` | **APPLY** | **ALKALMAZ** | `tooltips.xml:186–188` (`Label(editpanel/tool_ok)`) |
+| `editpanel/tool_cancel` | **CANCEL** | **MÉGSE** (az É = U+00C9) | `tooltips.xml:189–191` (`Label(editpanel/tool_cancel)`) |
+| `editpanel/cropapply` · `retouchapply` · `redeyeapply` | Apply | Alkalmaz | vágás: `tooltips.xml:357–367`; a másik kettő: `panel-feliratok-hu.tsv:4994–5012` |
+| `editpanel/cropcancel` · `retouchcancel` · `redeyecancel` | Cancel | Mégse | uo. |
+
+- A nagybetű **a szövegben van**, nem a megjelenítés alakítja át: egyetlen `.tre`-ben sincs nagybetűsítő tulajdonság (`upper|caps|textcase` → 0 találat), az angol alapszöveg is `APPLY`/`CANCEL` (`editpaneltext.tre:53–57`).
+- ⚠️ A nagybetű **nem általános szabály a nyelvekre**: a német `Übernehmen`, a finn `Peruuta` és az `enUK` `Cancel` vegyes betűs. Ezért a felirat **nyelvenként kapott szöveg**, nem egy `toUpperCase()`.
+- ⚠️ **Amit NEM láttunk:** magyar nyelvű Picasa felvétele nincs. A magyar nagybetűt a nyelvi erőforrás szövege adja (két független forrás egyezik: a DLL és a `.tre`), nem közvetlen látás.
+
+**2. A jel — megerősített: a sávon NINCS.**
+- `editpanel.tre:21–34`: a `tool_ok` és a `tool_cancel` mellett **csak** egy `-label` gyerek áll (`m_buttonfontC`); `_icon` gyerek nincs. A teljes `tre-eroforrasok/` mappában a két név csak ezekben a sorokban és az `editpaneltext.tre`-ben fordul elő.
+- A vágás, a retusálás és a vörösszem gombjának viszont **van** `_icon` gyereke (`cropapply_icon`, `cropcancel_icon`, … `m_buttoniconright`, a jobb szélhez `XConstraint 1, 1, -9`, `macros.tre:153–155`), és a feliratuk a jelnek helyet hagyó, aszimmetrikus `m_buttonfontLC` (bal 8, jobb 32 képpont). Tehát a **jel a panelbeli gombok** tulajdona, a sávé nem.
+- Élő felvétel (`#69`, `kepernyo__04.png`), mért képpontok: az APPLY gomb kerete x 835–916 × y 850–877 (82 × 28), a CANCEL-é x 922–1003 × y 850–877; a gombok belseje — a szöveg befoglaló doboza nélkül — **egyszínű** (az APPLY 1416 képpontjából 1416 a 111-es kitöltés, a jobb szélső sáv x 893–913 mind 111; a CANCEL jobb széle x 985–999 a fekete minta fölött 70). Nincs pipa, X vagy más jel.
+
+**3. A felirat helye a gombon — megerősített.** A `m_buttonfontC` szimmetrikus: `Praxis Semi Bold/Heavy`, `fontsize 12`, `fonttrack -1`, `textalign center`, `XConstraint 0, 0, 5` és `1, 1, -5`, `YConstraint 0.5, 0.5, 0` (`fontmacros_win.tre:204–214`). A felvételen az APPLY szövege x 862–889 × y 860–867: a gombon belül mindkét irányban középen áll (bal és jobb rés 27 képpont). A szövegszín `m_buttontypecolor3` = `FFFFFFFF CCFFFFFF FFFFFFFF` (`macros.tre:139`); hogy a három érték melyik gombállapothoz tartozik, az **NINCS MÉRVE** (a mai kód a másodikat az egér alatti állapothoz használja).
+
+**4. A két gomb köze — mérve, eltér a mai kódtól.** A #69 felvételén az APPLY kerete a 916., a CANCEL-é a 922. oszlopon kezdődik/végződik: a két keret között **5 képpont** háttér látszik (x 917–921). A mai `EditorToolBar.qml` `koz: 4`-et használ („a rajzuk közt 4 képpont marad"). ⚠️ **A hatás nincs mérve nálunk** — a renderelt összevetésben (a #4037 „Kész, ha" 3. pontja) ez is kiderül; ha a kép 5-öt mutat, a kép a mérce.
+
+**Nálunk (`EditorToolBar.qml`, `origin/main` `75502697`, mérve olvasással):**
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| felirat (angol) | `APPLY` · `CANCEL` | `qsTr("Apply")` · `qsTr("Cancel")` (`:214`, `:221`) → angolul `Apply`/`Cancel` | `qsTr("APPLY")` · `qsTr("CANCEL")` |
+| felirat (magyar) | `ALKALMAZ` · `MÉGSE` | `Alkalmaz` · `Mégse` (`picasapy_hu.ts`, `EditorToolBar` környezet) | új fordítás: `APPLY` → `ALKALMAZ`, `CANCEL` → `MÉGSE`; a többi panel `Apply`/`Cancel` fordítása változatlan |
+| jel | nincs | `EditorActionBadge` mindkét gombon, a jobb szélhez 9 képpontra (`:155`–`:159`) | a `SavGomb`-ból a jel kikerül |
+| felirat helye | a gomb közepén | `anchors.centerIn: parent` (`:143`) — jellel együtt is középen | változatlan |
+| köz a két keret közt | 5 képpont (#69) | `koz: 4` | a renderelt összevetés dönt |
+
+*Bizonyítottsági fok:* a felirat, a jel hiánya és a felirat helye **megerősített** (a nyelvi erőforrás, a `.tre` és az élő felvétel egyezik; független újralevezetés: egyezik). A **magyar** nagybetű közvetlen látása és a gombállapotok (rámutatott, lenyomott) színe **NINCS MÉRVE** (a felvételen csak nyugalmi állapot van).
