@@ -267,15 +267,15 @@ class TestSzinek:
                     f"({x}, {y}) {rgb} jelent meg a kitöltés helyett ({vart})"
                 )
 
-    # rontás-kontroll: EditorToolBar.qml.font = (12, DemiBold, -1) → 3 failed
+    # rontás-kontroll: EditorToolBar.qml.font = (12, DemiBold, -1) → 3 failed (33×9 / 41×9)
     @pytest.mark.parametrize(
         ("gomb_bal", "felirat", "vart_meret"),
-        ((0, "APPLY", (26, 7)), (87, "CANCEL", (36, 7))),
+        ((0, "APPLY", (28, 7)), (87, "CANCEL", (37, 7))),
     )
     def test_a_felirat_merete_a_69_meresehez_egyezik(
         self, kirajzolt_gombok, gomb_bal, felirat, vart_meret
     ):
-        """A #69-en APPLY 26×7, CANCEL 36×7 px; CI-n ±2 px tűrés."""
+        """A #69-en (≥170-es küszöbbel) APPLY 28×7, CANCEL 37×7 px; ±2 px tűrés."""
         kep = kirajzolt_gombok
         bal_x, felso_y, jobb_x, also_y = _felirat_doboza(kep, gomb_bal)
         meret = (jobb_x - bal_x + 1, also_y - felso_y + 1)
@@ -360,7 +360,7 @@ class TestForras:
         assert 'qsTr("APPLY")' in self.forras
         assert 'qsTr("CANCEL")' in self.forras
         assert "font.pixelSize: 10" in self.forras
-        assert "font.weight: Font.Normal" in self.forras
+        assert "font.weight: Font.Bold" in self.forras
         assert "font.letterSpacing: -0.5" in self.forras
         assert "EditorActionBadge {" not in self.forras
 

@@ -140,12 +140,14 @@ Item {
         Text {
             anchors.centerIn: parent
             text: gomb.felirat
-            //: #4037 még 12 px-es, DemiBold súlyú és −1 px betűközű volt.
-            //: #4052: a #69 felvétel helyi Linux-renderén a 10 px Normál,
-            //: −0,5 px beállítás APPLY 27×7 és CANCEL 35×7 px-es dobozt ad;
-            //: a referencia 26×7, illetve 36×7 px.
+            //: #4052: a #69 felvétel mérése (ugyanazzal a ≥170-es küszöbbel):
+            //: az eredeti APPLY 28×7, CANCEL 37×7 px, vonásszélesség ≈2,4 px.
+            //: Az OpenSans csak Normal és Bold súlyban van csomagolva: a 12 px
+            //: DemiBold(=Bold) 33×9 és +73% tinta (túl nagy), a 10 px Normal
+            //: 26×8 és vonás 1,4 px (túl vékony); a 10 px Bold, −0,5 px
+            //: betűközzel 29×8 / 36×8 és vonás 2,2 px — ez áll legközelebb.
             font.pixelSize: 10
-            font.weight: Font.Normal
+            font.weight: Font.Bold
             font.letterSpacing: -0.5
             //: a felirat FFFFFFFF, az egér alatt CCFFFFFF (80%)
             color: "#ffffff"
