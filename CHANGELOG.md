@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Személy-albumban az Emberek panel „Szintén ezeken a fotókon” listája már nem mutatja a nézett személyt (#3678).
+
 ## [0.8.652] – 2026-10-01
 
 ### Javítva

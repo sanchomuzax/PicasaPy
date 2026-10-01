@@ -680,7 +680,8 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 |---|---|---|
 | 1 kép, van megnevezett személy | „Ezen a fotón:” | ✅ |
 | több kép, van személy | „Személyek ezeken a fotókon:” | ✅ |
-| személy albuma | **egyetlen** lista „Szintén ezeken a fotókon:” fejléccel (1 képnél is) | ✅ egy fejléc, egy lista: a kijelölt képek megnevezett emberei (#3566) |
+| személy albuma | **egyetlen** lista „Szintén ezeken a fotókon:” fejléccel (1 képnél is) | ✅ egy fejléc, egy lista: a kijelölt képek megnevezett emberei a nézett személy nélkül (#3678) |
+| személy-album, a kijelölt képeken nincs más megnevezett személy | üres fejléc, instructions 3 (Text4) | ✅ üres fejléc és Text4 akkor is, ha a kijelölt képen csak a nézett személy szerepel (#3678) |
 | 1 kép, nincs megnevezett személy | „Ki látható ezeken a fotókon?” | ✅ (#3566) |
 | több kép, nincs megnevezett személy | „Név nélküli személycsoportok:” (a Névtelenek csoportosított nézetében „Meg nem nevezett emberek…”) | ✅ a fejléc (#3566, #3585); a csoportlista a motortól függ (#26) |
 | betöltés közben | „Arcok betöltése…” / „További személyek keresése...” | ⛔ nincs: a `peopleOfRows` szinkron, nincs betöltési állapotunk |
@@ -689,7 +690,7 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 | üres, személy-album | instructions 3 (Text4) | ✅ |
 | „Név nélküliek” mód, 0 kijelölés | instructions 2 (Text3) | ✅ (#3566) |
 | „Név nélküliek” mód, üres gyűjtemény | üres fejléc, instructions 0/1 (Text1/Text2) | ⛔ nincs: a két szöveg nincs meg nálunk; Text3 áll helyette |
-| a szerkesztőben | mindig az egyképes ág | ✅ a néző panelje (`editorView`, #3566) |
+| a szerkesztőben | mindig az egyképes ág; a nézett személy is szerepel | ✅ a néző panelje (`editorView`), szűrés nélkül (#3566, #3678) |
 
 *Bizonyítottsági fok: **megerősített** a döntési fára, a feliratokra, az öt
 utasítás-módra, a személy-album jelzőre, a darabszámra és az ellenőrizetlen
