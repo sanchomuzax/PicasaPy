@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Kiegyenesítés csúszkájának háttere áttetsző sötét kitöltést és világos
+  keretet kapott, mint az Alkalmaz és a Mégse gomb (#4036).
+
 ## [0.8.661] – 2026-10-02
 
 ### Javítva
@@ -18,9 +22,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   tükrözött képen is. Az exportálás és a bélyegkép mentés előtt még az egész
   képet mutatja; ezt külön jegy kezeli (#3541).
 - A Felpörgetés, a Képpontnagyítás, a Lágyítás és az Árnyalás ecset nélkül az egész képre hatnak; a Vámpírszem ecsete csak olyan képnél jelenik meg, amelyen már szerepel ez az effekt (#3541).
-
-- A Kiegyenesítés csúszkájának háttere áttetsző sötét kitöltést és világos
-  keretet kapott, mint az Alkalmaz és a Mégse gomb (#4036).
 
 ## [0.8.660] – 2026-10-02
 
