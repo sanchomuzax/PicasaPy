@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.661] – 2026-10-02
+
 ### Javítva
 - **Az ecsettel festett hatás a mentett képen is csak ott látszik, ahová
   festetted (#3462)** — a Felpörgetés, a Képpontnagyítás, a Lágyítás és az
