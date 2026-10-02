@@ -2480,6 +2480,7 @@ Rectangle {
                         property real gombparJobb: 0
                         property real gombparAlso: 0
                         property bool gombparMaszkAktiv: false
+                        property bool elsoKirajzolasUtaniMaszkFrissult: false
 
                         function frissitGombparMaszk() {
                             if (!editorToolBar.visible)
@@ -2572,7 +2573,10 @@ Rectangle {
                         }
 
                         onVisibleChanged: {
-                            if (visible) Qt.callLater(frissitGeometria)
+                            if (visible) {
+                                elsoKirajzolasUtaniMaszkFrissult = false
+                                Qt.callLater(frissitGeometria)
+                            }
                         }
                         Component.onCompleted: Qt.callLater(frissitGeometria)
 
@@ -2743,6 +2747,46 @@ Rectangle {
                             function onScaleChanged() { frissit() }
                             function onRotationChanged() { frissit() }
                             function onVisibleChanged() { frissit() }
+                        }
+                        // A Row gyermekei az első megnyitás elrendezési
+                        // körében kapják meg a végleges x/y-t. Az első
+                        // animációs/layout kör után olvassuk ki a gombpár
+                        // tényleges helyét, így a háló első kirajzolása sem
+                        // régi koordinátával indul.
+                        Connections {
+                            target: straightenGridOverlay.Window.window
+                            function onAfterAnimating() {
+                                if (straightenGridOverlay.visible
+                                        && editorToolBar.visible
+                                        && !straightenGridOverlay
+                                             .elsoKirajzolasUtaniMaszkFrissult) {
+                                    straightenGridOverlay
+                                        .elsoKirajzolasUtaniMaszkFrissult = true
+                                    straightenGridOverlay.frissitGombparMaszk()
+                                }
+                            }
+                        }
+                        Connections {
+                            target: editorToolBar.applyButtonItem
+                            function frissit() {
+                                Qt.callLater(
+                                    straightenGridOverlay.frissitGombparMaszk)
+                            }
+                            function onXChanged() { frissit() }
+                            function onYChanged() { frissit() }
+                            function onWidthChanged() { frissit() }
+                            function onHeightChanged() { frissit() }
+                        }
+                        Connections {
+                            target: editorToolBar.cancelButtonItem
+                            function frissit() {
+                                Qt.callLater(
+                                    straightenGridOverlay.frissitGombparMaszk)
+                            }
+                            function onXChanged() { frissit() }
+                            function onYChanged() { frissit() }
+                            function onWidthChanged() { frissit() }
+                            function onHeightChanged() { frissit() }
                         }
                     }
 

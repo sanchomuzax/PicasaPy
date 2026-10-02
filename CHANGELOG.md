@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Kiegyenesítés csúszkájának háttere áttetsző sötét kitöltést és világos
+  keretet kapott, mint az Alkalmaz és a Mégse gomb (#4036).
+
 ## [0.8.660] – 2026-10-02
 
 - Nyitott Kiegyenesítés mellett a szerkesztőpanel eszközei és a Derítőfény letiltva jelennek meg, így egy csempekattintás nem zárja be a műveletet (#4062).
