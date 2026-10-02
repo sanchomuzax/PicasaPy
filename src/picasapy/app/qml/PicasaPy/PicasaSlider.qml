@@ -126,6 +126,12 @@ Slider {
     property real handleHeight: 14
     property real handleRadius: Math.min(handleWidth, handleHeight) / 2
 
+    //: A sáv gazdája felülírhatja a kitöltést és a keretet; az alapértékek
+    //: minden más csúszkán a korábbi, mért témaszíneket tartják meg.
+    property color grooveColor: Theme.sliderGroove
+    property color grooveBorderColor: Theme.sliderGrooveBorder
+    property real grooveBorderWidth: 1
+
     // #3709: a RAJZOLT sáv belső behúzása a foglalat MINDKÉT végén. Alapból
     // 0 (a sáv a teljes `availableWidth`-et kitölti), a hívó helyen
     // felülírható. A `respack.yt` `scaleslider` sablonjában a foglalat
@@ -171,14 +177,12 @@ Slider {
         height: control.isHorizontal ? control.grooveThickness : control.availableHeight
         radius: control.grooveThickness / 2
 
-        // #2627: a sáv színe a `respack.yt`-ből, nem szemre. A
-        // `scaleslider/sliderbase` és az `editslider/sliderbase` ugyanazt
-        // adja: kitöltés `#cad5e5`, felső szegély `#9aa2ae` — kékesszürke,
-        // nem a króm semleges szürkéje. A tokenek a Theme.qml-ben állnak,
-        // ott a mérés is.
-        color: Theme.sliderGroove
-        border.width: 1
-        border.color: Theme.sliderGrooveBorder
+        // #2627: az alapérték a `respack.yt`-ből mért kékesszürke
+        // (`#cad5e5`, felső szegély `#9aa2ae`), nem a króm semleges szürkéje.
+        // A gazda felülírhatja a két színt, a geometria ettől nem változik.
+        color: control.grooveColor
+        border.width: control.grooveBorderWidth
+        border.color: control.grooveBorderColor
 
         // #2627: HÁROM jelölő-vonal — a két vég és a KÖZÉP. A mérés
         // (`scaleslider/sliderbase`, 121 képpont széles) a világos
