@@ -465,15 +465,11 @@ class TestIgnoreFacesWritesIni:
         assert len(named) == 1
         assert named[0].rect.left == pytest.approx(0.6, abs=1e-3)
 
-    def test_unignoring_removes_only_the_ffff_entry(self, qt_app, tmp_path):
-        """B3: mellőzés → a nézőben UGYANERRE a régióra névcímke kerül
-        (`renameFace`) → visszavétel. A névcímke ember által adott döntés,
-        a visszavétel nem viheti el; egy másik régió névcímkéje sem.
-
-        # rontás-kontroll: az `unignoreFaces` ini-ága visszaállítva a PR
-        # eredeti alakjára (`removeFace` a saját, kerekített keretre,
-        # `without_face_at_rect`) → ez a teszt bukik (a „Roy Avery"
-        # bejegyzés eltűnik)."""
+    def test_ignored_face_is_hidden_and_unignore_removes_its_ffff_entry(
+        self, qt_app, tmp_path
+    ):
+        """A nézőből a mellőzött arc kimarad, a visszavétel pedig csak az
+        ini mellőzési jelét távolítja el."""
         root = tmp_path / "kepek"
         root.mkdir()
         make_jpeg(root / "a.jpg", size=(100, 100))
@@ -484,14 +480,7 @@ class TestIgnoreFacesWritesIni:
         photo = str(root / "a.jpg")
         assert helper.addFace(photo, 0.6, 0.6, 0.8, 0.8, "Kis Éva")
         assert ctl.ignoreFaces([face_id]) == 1
-        ignored = [f for f in helper.facesFor(photo) if f["name"] == ""]
-        assert len(ignored) == 1
-        region = ignored[0]
-        # a néző a `facesFor` kereteit adja vissza a névadásnál
-        assert helper.renameFace(
-            photo, region["left"], region["top"], region["right"],
-            region["bottom"], "Roy Avery",
-        )
+        assert [face["name"] for face in helper.facesFor(photo)] == ["Kis Éva"]
 
         assert ctl.unignoreFaces([face_id]) == 1
 
@@ -499,11 +488,9 @@ class TestIgnoreFacesWritesIni:
 
         document = load_document(root / ".picasa.ini")
         faces = parse_faces(document.section("a.jpg").get("faces"))
-        assert len(faces) == 2
+        assert len(faces) == 1
         assert all(face.is_identified for face in faces)
-        assert sorted(f["name"] for f in helper.facesFor(photo)) == [
-            "Kis Éva", "Roy Avery",
-        ]
+        assert [face["name"] for face in helper.facesFor(photo)] == ["Kis Éva"]
         assert ctl.unnamedCount == 1
 
     def test_unignoring_keeps_a_name_given_on_the_same_region(self, qt_app, tmp_path):

@@ -8,6 +8,45 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 - A Felpörgetés, a Képpontnagyítás, a Lágyítás és az Árnyalás ecset nélkül az egész képre hatnak; a Vámpírszem ecsete csak olyan képnél jelenik meg, amelyen már szerepel ez az effekt (#3541).
 
+## [0.8.660] – 2026-10-02
+
+- Nyitott Kiegyenesítés mellett a szerkesztőpanel eszközei és a Derítőfény letiltva jelennek meg, így egy csempekattintás nem zárja be a műveletet (#4062).
+
+## [0.8.659] – 2026-10-02
+
+### Javítva
+- A Kiegyenesítés Mégse gombja visszaállítja a megnyitáskori képet, és nem hagy szerkesztést az indexben vagy az előzmények között (#4058).
+
+## [0.8.658] – 2026-10-01
+
+### Javítva
+- A néző elrejti a mellőzött és érvénytelen arcbejegyzéseket, az üres névvel rajzolt négyszöget nem menti el, a név törlése pedig az arcbejegyzést is eltávolítja (#3793).
+
+## [0.8.657] – 2026-10-01
+
+### Javítva
+- Az eszközsáv Alkalmaz/Mégse feliratainak mérete az eredeti Picasáéhoz igazodik (kisebbek, mint eddig) (#4052).
+
+## [0.8.656] – 2026-10-01
+
+### Javítva
+- Az eredeti méretű e-mail-csatolmány is beégeti a forgatást, a tükrözést és a szerkesztéseket, ahogy az eredeti Picasában; a módosítatlan JPEG bájthű másolat marad (#3993).
+
+## [0.8.655] – 2026-10-01
+
+### Javítva
+- A Kiegyenesítés eszközsávjának ALKALMAZ és MÉGSE felirata nagybetűs, és a gombokról eltűnt a pipa/X jel (#4037).
+
+## [0.8.654] – 2026-10-01
+
+### Javítva
+- Személy-albumban az Emberek panel „Szintén ezeken a fotókon” listája már nem mutatja a nézett személyt (#3678).
+
+## [0.8.653] – 2026-10-01
+
+### Javítva
+- A szerkesztő eszközsáv gombjainak kerete 2 képpont vastag, sarka pedig az eredeti Picasához igazodva kerekebb (#4035).
+
 ## [0.8.652] – 2026-10-01
 
 ### Javítva

@@ -6465,6 +6465,8 @@ nyitva".*
 
 ## ⛳ A festhető maszk: ÖT effekt, KÉT család — és a maszk nem lánc-paraméter (2026-09-12, 296. kör, #1908)
 
+⛔ **HELYESBÍTVE (2026-10-01, #3541): a „ÖT festhető effekt" és a „kettőt ismerünk az ötből" állítás a `Mask`-ot kapó szűrők HALMAZÁRA igaz (a `filterdesc.xml` öt sora), de FESTHETŐ csak EGY: a `ReanimatedEyeColor`.** A `cnt:PaintEffectCanvas` mód-táblázati értéke 0, ezért a `Boost`, `Pixelate`, `Soften`, `PicnikTint` `Mask="{_mctr.mask}"` hivatkozása nem oldódik fel, és az effekt az egész képre hat — ld. a `### 6.` szakaszt (lent). (A szakasz címe az `tests/render/test_festheto_maszk_ot_effekt_3055.py` kapaszkodója, ezért változatlan.)
+
 A #1908 azt kérdezte, hogy a festett maszk **foglal-e lánc-paramétert**, és
 **visszatölthető-e**. A `filterdesc.xml` mindkettőre válaszol — és közben
 kiderül, hogy a jegy (és a kódunk) **kettőt** ismer az **ötből**.
@@ -6500,6 +6502,8 @@ bemenetei ezzel szemben a csúszkák és a színválasztó — például a
 ⇒ a `filters=` lánc **csak a deklarált értékeket** hordozhatja; a maszknak
 **nincs mezője**. Ebből következik a #1908 3. kérdésének válasza is: a
 `.picasa.ini`-n keresztül a festett maszk **nem jön vissza**.
+
+⛔ **HELYESBÍTVE (2026-10-01, #3541): a `ReanimatedEyeColor`-ra ez TÉVES.** A festett vonások a lánc-elem vonáslistájában élnek, és a `filters=` sorba is kiíródnak, majd visszaolvasódnak — ld. a `### 6.` szakaszt. A másik négy effektnek (`Boost`, `Pixelate`, `Soften`, `PicnikTint`) pedig egyáltalán nincs festhető maszkja.
 
 ⚠️ **A hatókör kimondva:** ez azt bizonyítja, hogy az **ini-lánc** nem
 hordozza. Hogy a Picasa **máshol** (pl. a `db3`-ban) tárolja-e, ezt a mérés
@@ -6648,6 +6652,8 @@ sérti az ini-kompatibilitást (a maszknak ott nincs mezője).
 
 ### 5. ⛳ Festés NÉLKÜL az egész képre hat — a szerkesztőben, a bélyegképen és az exportban is (2026-09-26, #3541)
 
+⛔ **HELYESBÍTVE (2026-10-01, #3541): az alábbi „A mechanizmus a binárisból" és a „teljes fedésű alapmaszk" magyarázat TÉVES** — a `PaintEffectCanvas` mód-táblázati értéke 0, ezért a `0x00bb3ff0` a négy effektnél SOHA nem fut; a helyes olvasat a **6. szakasz** (lent). A mért (élő) tábla és a következtetés — festés nélkül az egész kép, a szerkesztőben, a bélyegképen és az exportban — helyes maradt, sőt a 6. szakasz ezt a négy effektre **általánosítja**: nem csak festés nélkül, hanem **egyáltalán** nem festhetők.
+
 *Forrás: élő mérés, eredeti angol Picasa 3.9.141 (picasa-colab-jobs #56, #57; kulcsképek: `Colab EN 31 - Pixelate panel.png`, `Colab EN 32 - Pixelate mentes nelkul, belyegkep.png`) · `0x00bb3ff0` · `0x00bc06b0` · `0x00bc0770`.*
 
 **A mechanizmus a binárisból.**
@@ -6673,6 +6679,69 @@ sérti az ini-kompatibilitást (a maszknak ott nincs mezője).
 **Ami NYITVA marad, megnevezett úttal:** a **befestett** állapot. Az eredetiben a festés egérhúzással történik a vásznon; a panelen nincs rá vezérlő. A Colab-végrehajtó ma csak kattintani tud, ezért ez nem mérhető → **picasapy-agent #161** (húzás lépés). Ugyanitt dől el, hogyan állít ecsetméretet az eredeti. Nálunk a panelen „Brush Size” csúszka van (`EditorParamPanel.qml:308`–`340`), az eredeti panelén nincs.
 
 *Bizonyítottsági fok: megerősített* (a festetlen állapot: bináris + élő mérés, a szerkesztő, a bélyegkép és az export egyezik); a befestett állapot **NINCS MÉRVE**.
+
+### 6. ⛳ HELYESBÍTÉS: négy effektnek NINCS festhető maszkja — csak a `ReanimatedEyeColor` festhető, és a vonásai a `filters=` sorban élnek (2026-10-01, #3541)
+
+*Forrás: a kanavász-mód-tábla `0x00d261e0`–`0x00d26210` (kiolvasva a fájlból) · az olvasó `0x00bb4301` · a kezelő `0x00bb23d0` (`0x00bb23e5`–`0x00bb2401`) · `0x00bb3ff0` · `0x00bc06b0` · `0x00bc0770` · `0x00bc0a62`–`0x00bc0a7c` · `0x00bc0ee4` · `0x00bc4ae0` (`0x00bc4d20`…, `0x00bc4e0d`, `0x00bc4e4b`, `0x00bc5088`) · `0x008e3980` · `0x008e3c70` · `0x008f4810` · `0x008f7140` · a vonás-sorosítás `0x008fac40` (14. rés), `0x008fb120` (42. rés), `0x008fa8d0` (3. rés), `0x008fbf10` (22. rés), `0x009079b0` · a bélyegkép `0x0069f510` → `0x00907f30` · élő mérés: `picasa-colab-jobs` #56, #57 · mért export: #685, #688.*
+
+**A kérdés (#3541):** mit mutat az eredeti a bélyegképen és az exportban, ha egy festhető-maszkos effekt MENTETLEN, és be van festve?
+
+**Válasz — két, egymástól független olvasat egyezik a döntő pontban** (a második a specek és az első válasz nélkül, friss Opus-ügynök; az első olvasat a `0x00bb3ff0`-ból indult, a mód-táblát nem nézte — emiatt jutott ellentmondásra, amit a második olvasat oldott fel):
+
+**1. A mód-tábla dönt, nem a kezelő.** A kanavász-tábla 12 bájtos elemekből áll (névtér, név, mód):
+
+| név | mód | mit csinál a kezelő (`0x00bb23d0`) |
+|---|---:|---|
+| `cnt:EffectCanvas` | 0 | semmit (`0x00bb23f5` `jne 0x00bb24f5`) |
+| **`cnt:PaintEffectCanvas`** | **0** | **semmit** — a `0x00bb3ff0` NEM fut |
+| `cnt:CircularOverlayEffectCanvas` | 1 | az `xFocus`/`yFocus` ág (`0x00bb2406`) |
+| **`eff:PaintOnEffectBase`** | **2** | **ez hívja a `0x00bb3ff0`-t** (`0x00bb2401`) — az egyetlen út, amely `glimmer::PaintMaskPlusImageMask`-ot épít |
+
+A módot a `0x00bb4301` `mov eax, [eax*4 + 0x00d261e8]` olvassa; a kezelő a `0x00bb23e5`-nél `sub eax,1; je` (1-es mód) és `sub eax,1; jne 0x00bb24f5` (0: kilép), a 2-es mód esik át a `call 0x00bb3ff0`-ra. A `0x00bb3ff0`-nak egyetlen hívója a `0x00bb2401`, a `0x00bc06b0`-nak egyetlen hívója a `0x00bb4106` (indextől független teljes `.text`-pásztázás, a független olvasat).
+
+**2. Mi következik ebből.**
+
+| effekt | vászon · mód | festhető? | üresen (nincs vonás) | bélyegkép és export |
+|---|---|---|---|---|
+| `Boost` | `PaintEffectCanvas` · 0 | **NEM** | **egész kép** | egész kép (= a szerkesztő) |
+| `Pixelate` | uo. | **NEM** | **egész kép** (élő: #56, #57) | egész kép (élő: a bélyegkép és az export mért) |
+| `Soften` | uo. | **NEM** | **egész kép** (#685: ΔE 5,5) | egész kép |
+| `PicnikTint` | uo. | **NEM** | **egész kép** (#685: ΔE 36,9) | egész kép |
+| `ReanimatedEyeColor` („Vámpírszem") | `PaintOnEffectBase` · 2 | **IGEN** (`BrushSizeAndEraserButton`, `_nBrushHardness`) | **nincs effekt** (#688: ΔE 0,18) | a vonásokból újraépített maszk: **csak a festett terület** |
+
+**Miért az egész kép a négy effektnél:** a `Mask="{_mctr.mask}"` hivatkozás nem talál semmit, mert a mód-0 vászon nem épít `_mctr.mask` nevű maszkot. A `glimmer::BlendImageOperation` maszk-rése (`0x00bc4ae0`) a „Mask" attribútumot név szerint keresi a leíró maszklistájában (`0x00bc4d20`…); ha talál, `MaskInstruction`-t tesz be (`0x00bc4e0d`), **ha nem talál: `0x00bc4e4b` → `0x00bc5088`, csak egy `PopInstruction`, maszk nélkül** ⇒ az effekt az egész képre hat. Ez magyarázza az élő mérést (a Pixelate panelén nincs ecset-vezérlő, és festés nélkül az egész kép pixeles), és a #688 mérését (`ReanimatedEyeColor` üresen változatlan, `PicnikTint`/`Soften` az egész képen).
+
+**3. A festett réteg a `ReanimatedEyeColor`-nál.** A festés NEM a render-környezetben, hanem a lánc-elem (`CGenericFilter`) `+0x00bc` vonáslistájában él:
+- az egérkezelő (22. rés `0x008fbf10`) a normalizált pontot (x/szélesség, y/magasság) a `0x008e3dd0`-val új vonásként a lista végére fűzi (`0x008e408e`), folytatás `0x008e4130`;
+- a maszk-réteg (a `0x008e3c70` konstruktorú objektum `+0x64` tagja) **származtatott gyorsítótár**: a vonásokból lustán épül újra — a bemenet méretén foglal, **nullára törli** (`0x00bc0a62`–`0x00bc0a7c` → `0x009a8d80`), és vonásonként rárajzolja (`0x00bc0ee4` → `0x008ec3a0`); a bemenet változásakor eldobja (`0x00bc07d0`);
+- a keverő (`0x008f4810`, SIMD) a maszk alfáját veszi: `effekt·a + alatta·(255 − a)` ⇒ a nulla réteg = **nincs effekt**;
+- a `+0x8c`/`+0x9c` NEM „változat-mező / teljes fedésű alapmaszk" (az 5. szakasz olvasata téves): a `+0x8c` a maszk-művelet alatti (bemeneti) kép másolata, a `+0x9c` ennek adatmutatója, nulla csak az első rajzolás előtt.
+
+**4. A vonások a `filters=` sorban vannak, és a bélyegkép/export onnan építi újra.**
+- A lánc-szerializáló (`0x009079b0`) szűrőnként a `vtbl+0x38`-at hívja (`0x00907a2f`), formátum `"%s=%s%c"`; a szűrő 14. rése (`0x008fac40`) a csúszkák UTÁN **vonásonként** kiírja: `,%f:%g:%g:%d` + (új ecsetnél) `:%g:%g` + `:%g|%g|%g|…` (sztringek: `0x00cd0970`, `0x00cd0980`, `0x00cd097c`, `0x00cd0984`; ciklus `0x008faf93`–`0x008fb10e`; **nem feltételes**). A mért `Pixelate=1,143.076019,9.000000,0.000000;` ennek a vonás NÉLKÜLI kimenete.
+- Az elemző (42. rés `0x008fb120`) a maradékot `:` mentén 5 vagy 7 részre (`0x008fb947`), a pontokat `|` mentén (`0x008fbbb1`) bontja, és hozzáfűzi a vonáslistához (`0x008fbb5e`). A klón (3. rés `0x008fa8d0`) mélymásolja.
+- A bélyegkép (`0x0069f510` „filters" sor → `0x00907f30` → `0x008f7140`) és a renderfeladat (`0x006b2db2`) a láncot **sztringből** építi újra, új render-környezettel (`0x008f7140`) — tehát a vonásokat is. A render-környezetet kizárólag a `0x008f7140` hozza létre; a vonások mindkét úton (sztring, klón) megvannak.
+- **Beégetés nincs**: ideiglenes képfájlt vagy a festett eredmény más tárolását nem találtunk; a tartós adat maga a vonáslista.
+- A korpusz 23 `Boost=1,<érték>` sora mind vonás nélküli — ez egybevág azzal, hogy a `Boost` nem festhető. `ReanimatedEyeColor` a korpuszban nincs, ezért **valódi, befestett ini-sor nincs**.
+
+**Válasz #3541-re:**
+- **`Boost`, `Pixelate`, `Soften`, `PicnikTint`:** festett állapot **nincs** — az eredetiben ezek nem festhetők; a szerkesztőben, a bélyegképen és az exportban egyformán az **egész képen** látszik az effekt.
+- **`ReanimatedEyeColor`:** a bélyegkép és az export a `filters=` sorból, a vonásokból építi újra a maszkot ⇒ **a szerkesztővel azonosan, csak a festett területen** látszik az effekt (mentés nem kell hozzá).
+
+**Nálunk (mérve, olvasással — `origin/main`):**
+- `PAINTABLE_MASK_OPS` ötelemű (`render/chain_glimmer_handlers.py:351`: `boost`, `pixelate`, `soften`, `picniktint`, `reanimatedeyecolor`), a `paintMaskSupported` (`app/paint_mask_controller.py`) bármelyiknél igaz ⇒ a négy effektnél is megjelenik a „Brush Size" csúszka (`EditorParamPanel.qml:308`–`340`) és a festés; a festett maszk csak a szerkesztő munkamenetében él (a mentés beégeti, #3462), a bélyegkép és az export maszk nélkül fut;
+- a `paintable_mask_warning` a négy effektre „a Picasa ecsettel kijelölt területre hatna" szöveget ad — **téves**, az eredeti az egész képre hat;
+- `EMPTY_MASK_DEFAULT_OPS = {reanimatedeyecolor}` (üres maszkkal indul) **helyes**.
+
+**Amit NEM tudunk (megnevezett úttal):**
+1. **A vonás-rekord mezői** (`,%f:%g:%g:%d[:%g:%g]:%g|%g|…`: mit jelent az `f`, a két `g`, a `d`, az ecset-méret, a pontok) — az írót és az elemzőt kell mezőnként összevetni a vonás-objektummal (`0x008e3dd0`, `0x008e4130`); valódi minta nincs. Külön kutatási jegy.
+2. **Az Apply / Cancel / Back to Library kezelője** (ki hívja a `CGenericFilter` 11. és 12. rését) — nincs azonosítva; a vonások tartóssága az ini-sorra épül, ez nem kell hozzá.
+3. **Az export renderútja** a `0x006952e0` vtábla-hívásain át nincs utasításig követve; a `0x008f7140` az egyetlen render-környezet-gyár, ezért a következtetés **erős**, nem megerősített.
+4. **Élő minta** a befestett állapotról: a Colab-végrehajtó húzás-lépése kell (picasapy-agent #161).
+
+*Bizonyítottsági fok: **megerősített** — a mód-tábla és a kezelő dispatchje (a mód-táblát és a kezelő elágazását a kör szerzője a fájlból közvetlenül is kiolvasta), hogy a négy effekt nem festhető, és a `0x00bb3ff0` egyetlen hívója; az üres maszk = nincs effekt (keverő); a vonás-sorosítás/elemzés/klón megléte (két olvasat). **Erős:** hogy a bélyegkép és az export a vonásokat visszaépíti (a betöltő- és renderfeladat-lánc megvan, az export vtábla-útja nem). **NINCS MÉRVE:** a vonás-rekord mezői; élő felvétel befestett állapotról.*
+
+⛔ **Önhelyesbítés:** az 5. szakasz „mechanizmus"-olvasatát (a `PaintEffectCanvas` kezelője építi a maszkot; `+0x9c` változat-mező; teljes fedésű alapmaszk) ez a kutatói szál írta egy körrel korábban, a kezelő függvény olvasásából, a hívóját és a mód-táblát nem nézve. A hibát az első olvasat ellentmondása (`maszk = 0` vs. az élő „egész kép") és a független olvasat együtt hozta felszínre.
 
 ## ⛳⛳ A `GlowImageOperation` SOSEM fut belső ragyogásként — az `innerglow` attribútum nem létezik a binárisban (2026-09-14, 306. kör, #2982)
 

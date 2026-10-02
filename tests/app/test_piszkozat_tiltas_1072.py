@@ -24,6 +24,7 @@ e-mail csatolmány-előkészítésén.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from dataclasses import dataclass
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -152,8 +153,14 @@ class TestEmail:
         # (`EmailSinglePicture` alapja 0), tehát alapból ÁTMÉRETEZÉS történne,
         # és a visszaadott út egy ideiglenes másolaté lenne. Ez a teszt nem a
         # méretről szól, hanem arról, hogy a KÉSZ kollázst nem tiltja a
-        # piszkozat-őr — ezért az eredeti méretet kérjük, ahol a forrásút
-        # változatlanul jön vissza, és az állítás továbbra is éles marad.
+        # piszkozat-őr — ezért az eredeti méretet kérjük. #3993: eredeti
+        # méretnél is az `export_photos` készíti a csatolmányt (a módosítatlan
+        # JPEG bájthű másolata kerül az ideiglenes mappába), tehát az út
+        # új, a TARTALOM viszont a kész kollázsé; az állítás így is éles.
         vezerlo.setSinglePictureOriginal(True)
 
-        assert vezerlo.prepareAttachments([0], False) == [str(kesz)]
+        csatolmanyok = vezerlo.prepareAttachments([0], False)
+
+        assert len(csatolmanyok) == 1
+        assert Path(csatolmanyok[0]).name == kesz.name
+        assert Path(csatolmanyok[0]).read_bytes() == kesz.read_bytes()

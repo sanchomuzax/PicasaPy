@@ -326,8 +326,12 @@ Item {
     function commitEditor() {
         if (!overlay.hasHelper) { overlay.closeEditor(); return }
         var r = overlay.pendingRect
-        var name = nameField.text
+        var name = (nameField.text || "").trim()
         var ok
+        if (overlay.pendingIsNew && !name) {
+            overlay.closeEditor()
+            return
+        }
         if (overlay.pendingIsNew)
             ok = facesHelper.addFace(overlay.imagePath, r.x, r.y, r.x + r.width, r.y + r.height, name)
         else

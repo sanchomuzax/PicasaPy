@@ -90,10 +90,12 @@ class TestEditorWiring:
         assert viewer.property("currentIndex") == 1
         assert panel.property("cropActive") is True
 
-    def test_tilt_drag_previews_live_then_commits_on_release(
+    def test_tilt_drag_previews_until_apply_button(
         self, qml_app, qt_app, tmp_path
     ):
-        """#72: húzás közben élő előnézet, ini-mentés nélkül; elengedéskor ír."""
+        """#72/#4058: húzás és elengedés előnézet; csak az Alkalmaz ír ini-t."""
+        from PySide6.QtCore import QMetaObject, Qt
+
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         panel = window.findChild(QObject, "viewerEditorPanel")
@@ -113,18 +115,22 @@ class TestEditorWiring:
         slider.setProperty("pressed", True)
         slider.setProperty("pressed", False)
         qt_app.processEvents()
+        assert not ini_path.exists(), "elengedéskor még nem szabadna ini-be írni"
+
+        apply_button = window.findChild(QObject, "tiltApplyButton")
+        assert apply_button is not None, "tiltApplyButton nem található"
+        QMetaObject.invokeMethod(
+            apply_button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
         ini_text = ini_path.read_text(encoding="utf-8")
         assert "filters=tilt=1,0.300000,0.000000;" in ini_text
 
-    def test_tilt_keyboard_step_commits_like_mouse_release(
+    def test_tilt_keyboard_step_previews_until_apply_button(
         self, qml_app, qt_app, tmp_path
     ):
-        """#3865: a `+`/`-` billentyűs léptetés az egérelengedéssel azonos
-        módon véglegesítsen. Korábban a `csuszkaElengedve` (és vele a
-        `setTilt`) csak a `pressed` váltásán tüzelt; a billentyű a
-        `pressed`-hez sosem nyúlt, ezért a szög billentyűvel sosem íródott
-        ki a `.picasa.ini`-be."""
-        from PySide6.QtCore import Qt
+        """#3865/#4058: billentyűs léptetéskor is előnézet, majd Apply ment."""
+        from PySide6.QtCore import Qt, QMetaObject
         from PySide6.QtTest import QTest
 
         window, _, _ = qml_app
@@ -145,20 +151,21 @@ class TestEditorWiring:
         QTest.keyClick(window, Qt.Key.Key_Plus)
         qt_app.processEvents()
 
-        assert ini_path.exists(), (
-            "a billentyűs léptetés nem írt .picasa.ini-t — az "
-            "egérelengedéssel azonos módon kellene véglegesítenie"
+        assert not ini_path.exists(), "a billentyűs előnézet nem írhat ini-be"
+        apply_button = window.findChild(QObject, "tiltApplyButton")
+        assert apply_button is not None, "tiltApplyButton nem található"
+        QMetaObject.invokeMethod(
+            apply_button, "buttonClicked", Qt.ConnectionType.DirectConnection
         )
+        qt_app.processEvents()
+        assert ini_path.exists(), "az Alkalmaz nem véglegesítette a billentyűs értéket"
         ini_text = ini_path.read_text(encoding="utf-8")
         assert "filters=tilt=1,0.040000,0.000000;" in ini_text
 
     def test_tilt_keyboard_step_then_cancel_restores_opening_value(
         self, qml_app, qt_app, tmp_path
     ):
-        """#3865, „Kész, ha" 2. pontja: billentyűs léptetés után az Alkalmaz
-        a szöget kiírja (fentebb mérve), a Mégse pedig visszaáll — ehhez a
-        Mégse-nek látnia kell, hogy a billentyű ÍRT, különben a
-        `tiltParam !== tiltErtekNyitaskor` őr sosem üt be."""
+        """#3865/#4058: Mégse eldobja a billentyűs előnézetet mentés nélkül."""
         from PySide6.QtCore import Q_ARG, QMetaObject, Qt
         from PySide6.QtTest import QTest
 
@@ -186,9 +193,9 @@ class TestEditorWiring:
 
         QTest.keyClick(window, Qt.Key.Key_Plus)
         qt_app.processEvents()
-        assert "filters=tilt=1,0.140000,0.000000;" in ini_path.read_text(
+        assert "filters=tilt=1,0.100000,0.000000;" in ini_path.read_text(
             encoding="utf-8"
-        ), "a billentyűs léptetés nem írta ki az új szöget"
+        ), "a billentyűs előnézet átírta a mentett szöget"
 
         cancel_button = window.findChild(QObject, "tiltCancelButton")
         assert cancel_button is not None, "tiltCancelButton nem található"

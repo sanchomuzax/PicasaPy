@@ -111,7 +111,8 @@ def _meret(value, default: int) -> int:
 
 class EmailController(QObject):
     """A `OptionsTabEmail.qml` méret-beállításai + a küldés-előkészítés
-    (átméretezés) és a tényleges elküldés (subprocess/mailto) hídja."""
+    (átméretezés és szerkesztés-beégetés) és a tényleges elküldés
+    (subprocess/mailto) hídja."""
 
     emailSizeChanged = Signal()
     singlePictureOriginalChanged = Signal()
@@ -329,8 +330,8 @@ class EmailController(QObject):
         lánc a `picasapy.export.export_photos` motorral égetve bele, mint
         exportnál) egy ideiglenes mappába. `multi`: melyik méret-beállítást
         (`multiSizeIndex`/`singleSizeIndex`) alkalmazza. Eredeti méretnél
-        (utolsó fokozat) a forrásfájlt közvetlenül adja vissza — nincs
-        felesleges másolat."""
+        sincs átméretezés, de az állóképek a beégetett szerkesztésekkel
+        kerülnek a csatolmányok közé."""
         items = self._resolve_items(rows)
         if not items:
             return []
@@ -363,8 +364,6 @@ class EmailController(QObject):
             else self._email_size
         )
         max_dimension = resolve_email_max_dimension(meret)
-        if max_dimension is None:
-            return [str(item.source) for item in items]
         target_dir = Path(tempfile.mkdtemp(prefix="picasapy-mail-"))
         settings = ExportSettings(max_dimension=max_dimension, jpeg_quality=85)
         report = export_photos(items, target_dir, settings)

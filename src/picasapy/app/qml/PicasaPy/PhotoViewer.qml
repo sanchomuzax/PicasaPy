@@ -1111,6 +1111,9 @@ Rectangle {
     //: a szerepe viszont változatlan: a programozott értékadás NE
     //: váltson ki előnézetet.
     property bool tiltSzinkronFut: false
+    //: #4058: az Alkalmaz már mentett és újrarenderelt; az ezt követő
+    //: eszközbezárás ne kérje le még egyszer a mentett láncot.
+    property bool tiltAlkalmazasFut: false
     //: #3234: a döntés értéke az eszköz NYITÁSAKOR — ezt állítja vissza a
     //: sáv Mégse gombja (`tool_cancel`, `Property escapekey 1`).
     property real tiltErtekNyitaskor: 0
@@ -1239,6 +1242,9 @@ Rectangle {
         function onTiltActiveChanged() {
             if (editorPanel.tiltActive)
                 viewer.forceFitForFilter("tilt")
+            else if (!viewer.tiltAlkalmazasFut
+                     && editController.previewSource !== "")
+                editController.discardTiltPreview()
         }
         function onParamPanelActiveChanged() {
             if (editorPanel.paramPanelActive)
@@ -3004,10 +3010,11 @@ Rectangle {
                             if (editorPanel.tiltActive && !viewer.tiltSzinkronFut)
                                 editController.previewTilt(ertek)
                         }
-                        //: elengedéskor ír + undo-lépést tol (#72)
+                        //: #4058: az elengedés csak az előnézetet frissíti;
+                        //: menteni az Alkalmaz gomb fog.
                         onCsuszkaElengedve: (ertek) => {
                             if (editorPanel.tiltActive)
-                                editController.setTilt(ertek)
+                                editController.previewTilt(ertek)
                         }
                         //: középre, és 10 képponttal a KIRAJZOLT kép alja fölé
                         readonly property real kepHelyiX:
@@ -3044,22 +3051,25 @@ Rectangle {
                         scale: photoArea.fokuszKep.scale
                         transformOrigin: Item.Center
                         onApplyClicked: {
-                            //: #3234: a döntés értéke MÁR ki van írva (a
-                            //: csúszka elengedésekor, #72) — az Alkalmaz
-                            //: ezért csak bezárja az eszközt.
-                            if (tool === "tilt") editorPanel.tiltActive = false
+                            //: #4058: a Kiegyenesítés egyetlen mentése az
+                            //: Alkalmazás. Változatlan értéknél ne keletkezzen
+                            //: fölösleges réteg vagy Visszavonás-lépés.
+                            if (tool === "tilt") {
+                                if (editorToolBar.csuszkaErtek
+                                        !== viewer.tiltErtekNyitaskor)
+                                    editController.setTilt(
+                                        editorToolBar.csuszkaErtek)
+                                viewer.tiltAlkalmazasFut = true
+                                editorPanel.tiltActive = false
+                                viewer.tiltAlkalmazasFut = false
+                            }
                         }
                         onCancelClicked: {
-                            //: #3234: a Mégse a NYITÁSKORI döntés-értéket
-                            //: állítja vissza. Ha közben nem változott,
-                            //: nem írunk — különben fölösleges
-                            //: undo-lépést tolnánk.
-                            if (tool === "tilt") {
-                                if (editController.tiltParam
-                                        !== viewer.tiltErtekNyitaskor)
-                                    editController.setTilt(viewer.tiltErtekNyitaskor)
+                            //: #4058: a Mégse a nyitáskori mentett láncot
+                            //: rendereli újra; a mentett lánc és az előzmény
+                            //: addig változatlan maradt.
+                            if (tool === "tilt")
                                 editorPanel.tiltActive = false
-                            }
                         }
                     }
 

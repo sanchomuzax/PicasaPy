@@ -25,6 +25,7 @@ import QtQuick
 //   layer:editpanel/button(APPLY):  tool_ok      82 × 28
 //   layer:editpanel/button(CANCEL): tool_cancel  82 × 28
 //     kitöltés #505050, keret #CBCACA, mindkettőn kétszer hat a 229-es alfa
+//   #4035 (#69): a látható keret 2 képpont, a lekerekítés sugara 7 képpont
 //   #4029 (#69): a hatásos alfa round(229²/255) = 206 (0xCE); renderelt
 //   minták: #F0 fölött kitöltés 111, #1E fölött 70, a keret #F0 fölött 210.
 //   felirat: m_buttontypecolor3 = FFFFFFFF · CCFFFFFF · FFFFFFFF
@@ -65,9 +66,8 @@ Item {
     //: MÉRT gombméret (`respack.yt`), és a sáv magassága ugyanennyi
     readonly property int gombSzelesseg: 82
     readonly property int gombMagassag: 28
-    //: a két gomb közti köz — az eredetiben a jobb szélhez igazodnak,
-    //: egymás mellett; a rajzuk közt 4 képpont marad
-    readonly property int koz: 4
+    //: #4037: a #69 felvételen 5 háttérképpont marad a két gombkeret között.
+    readonly property int koz: 5
 
     //: #3234: MÉRT csúszka-geometria (`respack.yt`). A konténer 267, a
     //: sáv 253 az x = 7-en (a két oldalon 7-7 képpont marad), a fogantyú
@@ -123,8 +123,6 @@ Item {
     component SavGomb: Rectangle {
         id: gomb
         property string felirat: ""
-        //: igaz = pipa (Alkalmaz), hamis = X (Mégse)
-        property bool pipa: true
         property bool buttonEnabled: true
         signal buttonClicked()
 
@@ -132,31 +130,28 @@ Item {
 
         width: sav.gombSzelesseg
         height: sav.gombMagassag
-        radius: 2
+        radius: 7
         //: A #4029-es hatásos alfa már a fenti színekben szerepel.
         color: sav.kitoltesSzin
-        border.width: 1
+        border.width: 2
         border.color: sav.keretSzin
         opacity: gomb.buttonEnabled ? 1 : 0.55
 
         Text {
             anchors.centerIn: parent
             text: gomb.felirat
-            font.pixelSize: Theme.fontSize
+            //: #4052: a #69 felvétel mérése (ugyanazzal a ≥170-es küszöbbel):
+            //: az eredeti APPLY 28×7, CANCEL 37×7 px, vonásszélesség ≈2,4 px.
+            //: Az OpenSans csak Normal és Bold súlyban van csomagolva: a 12 px
+            //: DemiBold(=Bold) 33×9 és +73% tinta (túl nagy), a 10 px Normal
+            //: 26×8 és vonás 1,4 px (túl vékony); a 10 px Bold, −0,5 px
+            //: betűközzel 29×8 / 36×8 és vonás 2,2 px — ez áll legközelebb.
+            font.pixelSize: 10
+            font.weight: Font.Bold
+            font.letterSpacing: -0.5
             //: a felirat FFFFFFFF, az egér alatt CCFFFFFF (80%)
             color: "#ffffff"
             opacity: terulet.containsMouse && gomb.buttonEnabled ? 0.8 : 1.0
-        }
-
-        //: #710: a pipa/X a KÖZÖS rajzolt jel (`EditorActionBadge`), a gomb
-        //: jobb szélétől 9 képpontra (audit 7.4) — nem Unicode-glif, mert az
-        //: betűtípusfüggő, és hiányzó glifnél NYOMTALANUL eltűnik. A jel a
-        //: párral együtt költözött ide a panelekből (#3123).
-        EditorActionBadge {
-            tick: gomb.pipa
-            anchors.right: parent.right
-            anchors.rightMargin: 9
-            anchors.verticalCenter: parent.verticalCenter
         }
 
         MouseArea {
@@ -211,15 +206,14 @@ Item {
         SavGomb {
             id: applyGomb
             objectName: sav.tool + "ApplyButton"
-            felirat: qsTr("Apply")
+            felirat: qsTr("APPLY")
             buttonEnabled: sav.applyEnabled
             onButtonClicked: sav.applyClicked()
         }
         SavGomb {
             id: cancelGomb
             objectName: sav.tool + "CancelButton"
-            felirat: qsTr("Cancel")
-            pipa: false
+            felirat: qsTr("CANCEL")
             onButtonClicked: sav.cancelClicked()
         }
     }
