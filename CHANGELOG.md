@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.659] – 2026-10-02
+
 ### Javítva
 - A Kiegyenesítés Mégse gombja visszaállítja a megnyitáskori képet, és nem hagy szerkesztést az indexben vagy az előzmények között (#4058).
 
