@@ -3637,8 +3637,16 @@ Rectangle {
                 // #6: nagyított képen húzással pásztázás; dupla katt = fit.
                 // Illesztett nézetben inaktív — az események átmennek rajta.
                 MouseArea {
+                    id: viewerPanArea
                     objectName: "viewerPanArea"
-                    anchors.fill: photoArea
+                    // #4078: a `photoArea` belső rétegében a pásztázó a
+                    // képek fölött, a Kiegyenesítés sávja (z=20) alatt áll.
+                    // Így a képen húzás — kettős nézetben a képi TapHandler
+                    // fölött is — továbbra is pásztáz, a sáv pedig megkapja
+                    // a saját kattintásait és csúszkahúzását.
+                    parent: photoArea
+                    anchors.fill: parent
+                    z: 10
                     enabled: viewer.zoomFactor > 1.01
                              && !editorPanel.cropActive
                              && !viewer.isCurrentVideo

@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Nagyított nézetben a Kiegyenesítés sávjának Alkalmaz és Mégse gombja, valamint csúszkája mostantól egérrel használható: a kép pásztázója eddig elnyelte a kattintást, a csúszka húzása pedig a képet mozgatta (#4078).
+
 ## [0.8.664] – 2026-10-02
 
 ### Javítva
