@@ -17,6 +17,8 @@ from __future__ import annotations
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
+_VAMPIRSZEM_LANC = "ReanimatedEyeColor=1,6.000000,20.000000;"
+
 
 def _gyerek(gyoker, nev):
     objektum = gyoker.findChild(QObject, nev)
@@ -76,7 +78,7 @@ class TestAFokuszvaltasKattintassal:
         edit_ctl = nezo.property("editCtl")
         masik_hid = nezo.property("masodikEditCtl")
 
-        edit_ctl.applyEffect("soften")
+        edit_ctl.setChainValue(_VAMPIRSZEM_LANC)
         qt_app.processEvents()
         edit_ctl.paintStroke(0.5, 0.5)
         qt_app.processEvents()
@@ -109,9 +111,9 @@ class TestAFokuszvaltasKattintassal:
         edit_ctl = nezo.property("editCtl")
         masik_hid = nezo.property("masodikEditCtl")
 
-        edit_ctl.applyEffect("soften")
+        edit_ctl.setChainValue(_VAMPIRSZEM_LANC)
         qt_app.processEvents()
-        masik_hid.controller.applyEffect("soften")
+        masik_hid.controller.setChainValue(_VAMPIRSZEM_LANC)
         qt_app.processEvents()
         assert edit_ctl.property("chainValue") == masik_hid.property("chainValue")
 

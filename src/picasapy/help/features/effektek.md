@@ -167,11 +167,14 @@ jelenhet meg**. Húzd meg újra a csúszkát, és a kép rendben lesz. Az
 eredeti Picasában készült szerkesztések ezzel a változással **helyesen**
 jelennek meg.
 
-## Négy effekt, amit rá lehet festeni a képre
+## Négy effekt, amelyek ecset nélkül az egész képre hatnak
 
 A **Felpörgetés**, a **Képpontnagyítás**, a **Lágyítás** és az
-**Árnyalás** nem az egész képre hat, hanem arra, amit ecsettel
-felfestesz. Az ecset használata: [A szerkesztő](szerkeszto.md).
+**Árnyalás** ecset nélkül működnek: a szerkesztőben, a bélyegképen és
+exportáláskor is az egész képre hatnak. A **Vámpírszem** az egyetlen
+festhető effekt; az ecset vezérlője csak olyan képnél jelenik meg,
+amelynek beállításai között már szerepel a Vámpírszem, például egy
+Picasában szerkesztett képnél. Részletek: [A szerkesztő](szerkeszto.md).
 
 ## Rejtett párok: a Shift billentyű
 

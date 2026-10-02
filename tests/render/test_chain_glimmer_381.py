@@ -99,9 +99,8 @@ class TestParamSweepIsPropagated:
 
 
 class TestPaintableMaskWarning:
-    """#381 elfogadási feltétel: a festhető-maszkos effektek (PicnikTint,
-    ReanimatedEyeColor) a TELJES KÉPRE futnak (nincs ecset-eszköz), és ezt a
-    `ChainReport.range_warnings` jelzi."""
+    """A Vámpírszem üres festhető maszkja figyelmeztet; a négy teljes képre
+    ható effekt már nem tartozik a festhető-maszkos halmazhoz (#3541)."""
 
     @pytest.mark.parametrize("key", sorted(PAINTABLE_MASK_OPS))
     def test_figyelmeztetes_a_range_warnings_ban(self, key, sample):

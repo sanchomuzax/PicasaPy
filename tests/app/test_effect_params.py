@@ -398,11 +398,10 @@ class TestColorAlphaGroupGuard:
             assert _EFFECT_INI_NAMES.get(key, key) == key, key
 
 
-class TestPicnikFocalPixelateAndMaskEffectsAreDeliberatelySkipped:
-    """#516 jelentés: a festhető maszkos effektek (ReanimatedEyeColor,
-    Soften, PicnikTint) és a renderer nélküli `PicnikFocalPixelate` NEM
-    kaptak vezérlőt — ez SZÁNDÉKOS, ld. a `effect_params.py` modul-
-    docsztringjét."""
+class TestReanimatedEyeColorAndFocalPixelate:
+    """A Vámpírszem nem önálló effektpanel-bejegyzés; a másik négy effekt
+    egész képre fut (#3541). A renderer nélküli `PicnikFocalPixelate` külön
+    okból marad ki."""
 
     def test_reanimated_eye_color_has_no_ui_effect_name(self):
         assert "reanimatedeyecolor" not in _EFFECT_NAMES
@@ -412,9 +411,8 @@ class TestPicnikFocalPixelateAndMaskEffectsAreDeliberatelySkipped:
 
         A #516 azért hagyta ki, mert nincs ecset-eszközünk. A #685
         mérőszettjének exportja viszont azt mutatja, hogy az EREDETI
-        Picasa is a **teljes képre** futtatja befestés nélkül
-        (ΔE 36,9 — ld. `EMPTY_MASK_DEFAULT_OPS` kommentje), tehát a mi
-        viselkedésünk itt megegyezik az eredetivel. Az 1. effekt-fül 6.
+        Picasa is a **teljes képre** futtatja befestés nélkül (#3541), tehát
+        a mi viselkedésünk itt megegyezik az eredetivel. Az 1. effekt-fül 6.
         csempéje az eredeti csempe-táblája szerint a `PicnikTint`."""
         assert "picniktint" in _EFFECT_NAMES
 

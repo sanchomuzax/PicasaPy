@@ -3164,9 +3164,8 @@ Rectangle {
                     // kattintás színmintát vesz (nem navigál). A kattintás
                     // helyét a KIRAJZOLT képhez képest normálva adjuk át, így
                     // a nagyítástól/illesztéstől független.
-                    // #1908: az ECSET — a festhető-maszkos effektek (Boost,
-                    // Képpontnagyítás, Lágyítás, Árnyalás, Ghoul Eye) csak a
-                    // befestett területre hatnak. A mutató KÖR alakú
+                    // #3541: az ECSET csak a Vámpírszemnél aktív; a négy
+                    // teljes képre ható effekt nem festhető. A mutató KÖR alakú
                     // (`thumbui/circlecursor`, mérve), az átmérőjét a panel
                     // csúszkája adja; a vonás a KIRAJZOLT képhez normálva megy
                     // a vezérlőnek, tehát a nagyítástól független.

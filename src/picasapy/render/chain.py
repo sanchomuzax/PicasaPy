@@ -1096,10 +1096,8 @@ def apply_filters(
             skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS and paint_mask is not None:
-            # #1908: a festett maszk MEGVAN — az effekt a maszkon át kerül a
-            # képre (`NestedImageOperation Mask=`, a mért szemantika). A
-            # „nincs ecset-eszköz" figyelmeztetés ilyenkor félrevezető
-            # lenne, ezért NEM megy ki.
+            # #3541: a festhető effekt itt a Vámpírszem; a meglévő ecsetmaszk
+            # közvetlenül az effektnek jut el.
             op, op_warnings = validate_and_clamp_op(op)
             range_warnings.extend(op_warnings)
             try:
@@ -1109,12 +1107,11 @@ def apply_filters(
                 skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
-            # #381/#688: az ecset-maszk hiányzik — a `PicnikTint` és a
-            # `Soften` ilyenkor a TELJES KÉPRE fut, a `ReanimatedEyeColor`
-            # (üres maszkkal indul) változatlanul hagyja a képet.
-            # #3055: a halmaz MIND AZ ÖT mért effektet tartalmazza — a
-            # `Boost`, a `Pixelate` és a `Soften` korábban kimaradt belőle.
-            range_warnings.append(glimmer.paintable_mask_warning(op.name))
+            # #3541: a Vámpírszem ecsetmaszk nélkül változatlan marad; a másik
+            # négy effekt a saját ágán, az egész képen fut.
+            warning = glimmer.paintable_mask_warning(op.name)
+            if warning:
+                range_warnings.append(warning)
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         elotte_h, elotte_w = result.shape[:2]

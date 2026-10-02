@@ -1,25 +1,24 @@
-"""Glimmer-effektek — festhető maszkos csővezetékek (#381): `PicnikTint`,
-`ReanimatedEyeColor`.
+"""Glimmer-effektek — `PicnikTint` és `ReanimatedEyeColor` (#381, #3541).
 
-**A festhető-maszk kérdés (#381, majd #688):** mindkét effekt a Picnik
-`_mctr.mask` ecset-eszközével kijelölt RÉGIÓRA hat, és a PicasaPy-nak MÉG
-NINCS ecset-eszköze. A #685 mérőszettje (valódi Picasa-export) viszont
-kimutatta, hogy a kettő ALAPÁLLAPOTA nem ugyanaz:
+**A festhető-maszk kérdés (#3541, #688):** csak a `ReanimatedEyeColor`
+festhető; a `PicnikTint` ecset nélkül a teljes képre hat. A #685
+mérőszettje (valódi Picasa-export) azt is kimutatta, hogy az üres
+`ReanimatedEyeColor`-maszk és a `PicnikTint` alapállapota nem ugyanaz:
 
-* **`PicnikTint`** befestés nélkül is a TELJES KÉPRE fut — az exporton a
-  Picasa maga is átszínezte az egész mérőképet (ΔE 36,9). Nálunk tehát
-  marad a teljes képes hatás. **A kalibrációs eltérés a #884-ben lezárult:**
+* **`PicnikTint`** a TELJES KÉPRE fut — az exporton a Picasa maga is
+  átszínezte az egész mérőképet (ΔE 36,9). Nálunk tehát marad a teljes képes
+  hatás. **A kalibrációs eltérés a #884-ben lezárult:**
   a művelet a #878-ban megfejtett, fényesség-tartó `TintImageOperation`,
   és ugyanezen a golden páron ΔE 1,50 / SSIM 0,9991 (JPEG-zaj szint).
-* **`ReanimatedEyeColor`** („Ghoul Eye") ÜRES maszkkal indul: a Picasa
+* **`ReanimatedEyeColor`** („Vámpírszem", „Ghoul Eye") ÜRES maszkkal indul: a Picasa
   ugyanezen az exporton semmit nem változtatott (ΔE 0,18 = JPEG-zaj),
   miközben a mi modellünk ΔE 57,5-tel átfestette a képet (#688, P1).
   Ezért maszk nélkül AZONOSSÁGOT adunk vissza; a visszafejtett pixel-
   matematika megmarad, és `mask` átadásával fut le.
 
-(Kontroll ugyanabból az exportból: a szintén ecsetelhető `Soften` is a
-teljes képre futott a Picasában — vagyis nem „minden ecsetes effekt
-tétlen", hanem kifejezetten a `ReanimatedEyeColor` indul üres maszkkal.)
+(Kontroll ugyanabból az exportból: a `Soften` is a teljes képre futott a
+Picasában ecset nélkül. A Vámpírszem festett vonásainak tartós tárolása a
+PicasaPy-ban még külön feladat (#4046).)
 
 Bemenet/kimenet: `uint8` RGB `numpy.ndarray` (H, W, 3). Minden függvény
 TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.

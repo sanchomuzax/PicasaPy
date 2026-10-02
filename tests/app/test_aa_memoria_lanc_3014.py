@@ -24,6 +24,13 @@ import pytest
 
 from support.jpeg_factory import make_jpeg
 
+_VAMPIRSZEM_LANC = "ReanimatedEyeColor=1,6.000000,20.000000;"
+
+
+def _allitsd_be_a_vampirszemet(vezerlo):
+    """A rejtett effektet a `filters=` láncot beállító belső úton tölti be."""
+    vezerlo.setChainValue(_VAMPIRSZEM_LANC)
+
 
 @pytest.fixture
 def vezerlo(qt_app):
@@ -165,7 +172,7 @@ class TestACsereEszkozallapota:
 
     def test_a_festett_maszk_urul(self, vezerlo, foto):
         vezerlo.beginEdit("1", str(foto))
-        vezerlo.applyEffect("soften")
+        _allitsd_be_a_vampirszemet(vezerlo)
         lanc = vezerlo.chainValue
         vezerlo.paintStroke(0.5, 0.5)
         assert vezerlo._paint_strokes()
@@ -193,7 +200,7 @@ class TestASwapAaFocus:
         elso, masodik = part
         elso.beginEditInMemory("1", str(foto))
         masodik.beginEditInMemory("1", str(foto))
-        elso.applyEffect("soften")
+        _allitsd_be_a_vampirszemet(elso)
         elso.paintStroke(0.5, 0.5)
         assert elso._paint_strokes()
         assert not masodik._paint_strokes()
@@ -219,7 +226,7 @@ class TestASwapAaFocus:
 
     def test_par_nelkul_no_op(self, vezerlo, foto):
         vezerlo.beginEdit("1", str(foto))
-        vezerlo.applyEffect("soften")
+        _allitsd_be_a_vampirszemet(vezerlo)
         vezerlo.paintStroke(0.5, 0.5)
         vezerlo.swapAaFocus()
         assert vezerlo._paint_strokes()
@@ -232,8 +239,8 @@ class TestASwapAaFocus:
         elso, masodik = part
         elso.beginEditInMemory("1", str(foto))
         masodik.beginEditInMemory("1", str(foto))
-        elso.applyEffect("soften")
-        masodik.applyEffect("soften")
+        _allitsd_be_a_vampirszemet(elso)
+        _allitsd_be_a_vampirszemet(masodik)
         assert elso.chainValue == masodik.chainValue
 
         elso.paintStroke(0.5, 0.5)
@@ -261,13 +268,11 @@ class TestASwapAaFocus:
         elso, masodik = part
         elso.beginEditInMemory("1", str(foto))
         masodik.beginEditInMemory("1", str(foto))
-        elso.applyEffect("soften")
+        _allitsd_be_a_vampirszemet(elso)
         elso.paintStroke(0.5, 0.5)
-        # a láncok szándékosan KÜLÖNBÖZŐEK (mindkettő festhető) — így ez a
-        # teszt önmagában a #2 leletet méri, függetlenül attól, hogy a #3
-        # lelet miatti láncegyenlőség-őr egyáltalán belép-e.
-        masodik.applyEffect("soften")
-        masodik.applyEffect("sepia")
+        # A két, festhető Vámpírszemet tartalmazó lánc eltér; így a teszt a
+        # #2 leletet méri, nem a láncegyenlőség-őrre támaszkodik.
+        masodik.setChainValue(f"{_VAMPIRSZEM_LANC}sepia=1;")
         masodik.paintStroke(0.2, 0.2)
         masodik.paintStroke(0.8, 0.8)
         assert elso.chainValue != masodik.chainValue

@@ -60,9 +60,9 @@ képre: ami a keret **után** jön — mondjuk egy Szépia vagy egy Vignetta
 —, az a keretre is ráfut. Az eredeti Picasa is így dolgozik.
 
 A szerkesztő előnézete ugyanazt mutatja, mint ami mentéskor,
-exportáláskor és a bélyegképen készül. (Egy kivétel van: az ecsettel
-festett terület — a mentésbe már belekerül, az exportba és a bélyegképbe
-még nem. Lásd a *Festés ecsettel* szakaszt.)
+exportáláskor és a bélyegképen készül. A Vámpírszem ecsettel festett
+területe a mentett képbe beég, az exportba és a bélyegképbe viszont még
+nem kerül át. Lásd a *Festés ecsettel* szakaszt.
 
 ## A jobb oldali fiók szerkesztés közben
 
@@ -212,12 +212,14 @@ beállítottad, és a windowsos Picasa is így látja.
 > vastagsága pedig mindig elveszett. Mindkettő megjavult; a régebben
 > mentett feliratokat érdemes egyszer ellenőrizni.
 
-## Festés ecsettel: hol hasson az effekt
+## Festés ecsettel: hol hasson a Vámpírszem
 
-Négy effekt nem az egész képre hat, hanem arra, amit **ráfestesz**:
-**Felpörgetés**, **Képpontnagyítás**, **Lágyítás** és **Árnyalás**. Ha
-egy ilyen effektet nyitsz meg, a paraméterei alatt megjelenik az ecset
-vezérlője:
+Csak a **Vámpírszem** festhető; a **Felpörgetés**, a **Képpontnagyítás**,
+a **Lágyítás** és az **Árnyalás** ecset nélkül, az egész képre hatnak a
+szerkesztőben, a bélyegképen és exportáláskor is. A Vámpírszemnek nincs
+saját effektcsempéje. Az ecset vezérlője csak olyan képnél jelenik meg,
+amelynek beállításai között már szerepel a Vámpírszem — például egy
+Picasában szerkesztett képnél:
 
 - az **Ecsetméret** csúszkával a mutató kör méretét állítod;
 - a képen húzva felfested, hol érvényesüljön a hatás;
@@ -225,16 +227,19 @@ vezérlője:
   befestett részt (a felirat ilyenkor **Radír mérete**).
 
 A festett terület a szerkesztő **munkamenetében** él: másik képre
-váltva eldobódik, és a `.picasa.ini` fájlba sem kerül bele. Az eredeti
-Picasa sem tárolta.
+váltva eldobódik, és a PicasaPy egyelőre nem őrzi meg a vonásokat az effekt
+adatai között. Az eredeti Picasa a Vámpírszem vonásait eltárolja; ennek
+PicasaPy-beli támogatása még nincs kész.
 
 Ha a szerkesztőből **mented** a képet (**Fájl ▸ Mentés**, **Másolat
 mentése**, **Mentés másként…**), a mentett fájlban a hatás pontosan ott
 lesz, ahová festetted — elforgatott és tükrözött képen is.
 
-> **Amit a festés ma még nem visz magával.** Az **exportálás** és a rácson
-> a **bélyegkép** mentés előtt az effektet az **egész képen** mutatja.
-> Ha a festett hatást exportálni szeretnéd, előbb mentsd a képet.
+> **Amit a festés ma még nem visz magával.** A Felpörgetés, a
+> Képpontnagyítás, a Lágyítás és az Árnyalás nem festhetők; a szerkesztőben,
+> a bélyegképen és exportáláskor is a teljes képre hatnak. A Vámpírszem
+> ecsetvonásai még nem maradnak meg az effekt adatai között; mentéskor az
+> aktuális festett hatás beég a képbe.
 
 ## Finomhangolás
 

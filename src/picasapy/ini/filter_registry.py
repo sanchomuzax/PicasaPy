@@ -258,8 +258,9 @@ _DERIVED_PARAM_COUNTS: Mapping[str, int] = {
 #:   `colorcircle` — nem dönthető el, hogy ez egy vagy két mező a láncban;
 #: - `PicnikFocalPixelate`: a `filterdesc-registry.md` 4.1 kimondja, hogy
 #:   „a `PicnikFocalPixelate`-ra nincs valós mintánk";
-#: - `PicnikTint`, `ReanimatedEyeColor`: festhető maszkos effektek — nem
-#:   igazolt, hogy a maszk foglal-e lánc-paramétert.
+#: - `PicnikTint`, `ReanimatedEyeColor`: a filterdesc futásidejű maszkot
+#:   hivatkozik; ez nem numerikus csúszka-paraméter. A Vámpírszem vonásainak
+#:   rekordmezői külön elemzés alatt állnak (#4046).
 UNKNOWN_PARAM_COUNT_FILTERS: frozenset[str] = frozenset(
     {
         "save",

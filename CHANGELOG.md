@@ -6,6 +6,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
+- A Felpörgetés, a Képpontnagyítás, a Lágyítás és az Árnyalás ecset nélkül az egész képre hatnak; a Vámpírszem ecsete csak olyan képnél jelenik meg, amelyen már szerepel ez az effekt (#3541).
 
 ## [0.8.652] – 2026-10-01
 
