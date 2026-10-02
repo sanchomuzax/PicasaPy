@@ -410,16 +410,19 @@ class TestAKepFolott:
             Path(__file__).resolve().parents[2]
             / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
         ).read_text(encoding="utf-8")
-        # középre (m_centerX) és 10 képponttal a kirajzolt kép alja fölé —
-        # #3741: a mérce a `photo` helyett a `photoArea.fokuszKep`-hez
-        # igazodik. A sáv sibling a forgatatlan photoArea-rétegen, ezért a
-        # mért helyi középpontot mapToItem/mapFromItem viszi át, majd a kép
-        # transzformációját külön örökli; az élő geometriai próbák ezt mérik.
-        assert "(photoArea.fokuszKep.width - width) / 2" in f
-        assert "(photoArea.fokuszKep.height" in f
-        assert "+ photoArea.fokuszKep.paintedHeight) / 2" in f
-        assert "- height - 10" in f
-        assert "var cel = kep.mapToItem(" in f
-        assert "parent.mapFromItem(" in f
-        assert "rotation: photoArea.fokuszKep.rotation" in f
-        assert "scale: photoArea.fokuszKep.scale" in f
+        # A sáv a forgatatlan photoArea-rétegen áll. A forgatás UTÁNI
+        # kirajzolt kép négy sarka adja a középpontot és az alsó élt; a
+        # méret és a képszélhez mért rés továbbra is a kép skáláját követi.
+        sav = f.split("id: editorToolBar", 1)[1].split("onApplyClicked:", 1)[0]
+        assert "kep.mapToItem(null, kepBal, kepFelso)" in sav
+        assert "kep.mapToItem(null, kepJobb, kepAlso)" in sav
+        assert "var maxY = Math.max(" in sav
+        assert "maxY - kepSkala * (height / 2 + 10)" in sav
+        assert "parent.mapFromItem(" in sav
+        assert "var fuggoseg = (kep.x + kep.y + kep.width" in sav
+        assert "+ kep.height + kep.paintedWidth" in sav
+        assert "+ kep.paintedHeight + kep.scale + kep.rotation) * 0" in sav
+        assert "rotation: 0" in sav
+        assert "scale: photoArea.fokuszKep.scale" in sav
+        assert "transformOrigin: Item.Center" in sav
+        assert "rotation: photoArea.fokuszKep.rotation" not in sav
