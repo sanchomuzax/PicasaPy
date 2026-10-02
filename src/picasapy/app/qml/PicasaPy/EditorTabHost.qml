@@ -44,6 +44,10 @@ Item {
     property alias finomhangoloLap: finetunePanel
     property alias gyakoriLap: fixesTab
     objectName: "editorTabArea"
+    // #4062: nyitott Kiegyenesítés mellett a fülek tartalma letiltott;
+    // a fülsáv (EditorPanel.tabBar) külön él, ezért továbbra is színes és
+    // használható marad, ahogy az eredeti felvételen.
+    enabled: !panel.tiltActive
     // a csúszkás alpanel a fülek HELYETT jelenik meg (nem föléjük)
     visible: !panel.modeToolActive && !panel.paramPanelActive
     // #741: a fülterület a fülsávval AZONOS 276 képpontos

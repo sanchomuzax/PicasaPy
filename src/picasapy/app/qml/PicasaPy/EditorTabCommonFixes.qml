@@ -90,6 +90,8 @@ ColumnLayout {
             objectName: "editToolCrop"
             toolName: "crop"; label: qsTr("Crop"); iconFile: "vagas"
             active: panel.cropActive
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         ToolTile {
@@ -100,6 +102,8 @@ ColumnLayout {
             toolName: "tilt"; label: qsTr("Straighten")
             iconFile: "kiegyenesites"
             active: panel.tiltActive
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.05
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         ToolTile {
@@ -109,6 +113,8 @@ ColumnLayout {
             objectName: "editToolRedeye"
             toolName: "redeye"; label: qsTr("Redeye"); iconFile: "vorosszem"
             active: panel.redeyeActive
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         // egygombos javítások (#116): nincs "benyomva" állapot — a gomb
@@ -121,6 +127,8 @@ ColumnLayout {
             toolName: "enhance"; label: qsTr("I'm Feeling Lucky")
             iconFile: "jo-napom-van"
             tileEnabled: panel.enhanceEnabled
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         ToolTile {
@@ -131,6 +139,8 @@ ColumnLayout {
             toolName: "autolight"; label: qsTr("Auto Contrast")
             iconFile: "auto-kontraszt"
             tileEnabled: panel.autolightEnabled
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         ToolTile {
@@ -141,6 +151,8 @@ ColumnLayout {
             toolName: "autocolor"; label: qsTr("Auto Color")
             iconFile: "auto-szin"
             tileEnabled: panel.autocolorEnabled
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         ToolTile {
@@ -151,6 +163,8 @@ ColumnLayout {
             toolName: "retouch"; label: qsTr("Retouch")
             iconFile: "retusalas"
             active: panel.retouchActive
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         ToolTile {
@@ -160,6 +174,8 @@ ColumnLayout {
             objectName: "editToolText"
             toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
             active: panel.textActive
+            dimmedByTiltModal: panel.tiltActive
+            disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
     }
@@ -182,6 +198,10 @@ ColumnLayout {
     // 10 képpontos bal margójához képest ez 24 képpont eltolás (13 + 24 =
     // 37), a kép és a csúszka között 20 képpont hézag (81 → 101).
     RowLayout {
+        // #4062: a képernyőképen a Derítőfény ikonja, felirata és csúszkája
+        // is halvány; a disabled állapot önmagában az Image/Label elemeket
+        // nem halványítaná el.
+        opacity: panel.tiltActive ? 0.25 : 1
         Layout.fillWidth: false
         Layout.leftMargin: 24
         spacing: 20
@@ -209,6 +229,10 @@ ColumnLayout {
                 id: fixesFillSlider
                 objectName: "fixesFillSlider"
                 csalad: "scaleslider"
+                // A sor 0,25-ös áttetszősége adja a célértéket az egész
+                // vezérlőre; a csúszka fogantyújának általános 0,55-ös
+                // letiltási értékét csak ebben az állapotban felülírjuk.
+                disabledHandleOpacity: panel.tiltActive ? 1 : 0.55
                 Layout.fillWidth: true
                 Layout.preferredHeight: 27
                 from: 0; to: 1; value: 0
