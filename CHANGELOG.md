@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A szerkesztő az ecset elérhetőségét a lánc minden változásánál követi: az ini-ből betöltött Vámpírszem-láncnál megjelennek az ecset vezérlői, és eltűnnek, ha a Vámpírszem kikerül a láncból (#4067).
+
 ## [0.8.661] – 2026-10-02
 
 ### Javítva

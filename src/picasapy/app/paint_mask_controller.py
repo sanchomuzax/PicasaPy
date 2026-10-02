@@ -41,6 +41,15 @@ class PaintMaskMixin:
         self._paint_mask = MaszkAllapot()
         self._paint_brush = KEZDO_ARANY
         self._paint_eraser = False
+        self._paint_mask_supported_snapshot = bool(self.paintMaskSupported)
+
+    def _notify_paint_mask_support_changed(self) -> None:
+        """A lánc revíziójánál csak a festhetőség bool-váltását jelezze."""
+        supported = bool(self.paintMaskSupported)
+        if supported == self._paint_mask_supported_snapshot:
+            return
+        self._paint_mask_supported_snapshot = supported
+        self.paintMaskChanged.emit()
 
     # -- QML-nek kitett állapot ---------------------------------------------
 
@@ -136,6 +145,10 @@ class PaintMaskMixin:
     def _paint_mask_kepvaltas(self, kulcs: str) -> None:
         """Képváltáskor a festés eldobódik (munkamenet-élettartamú)."""
         if self._paint_mask.valts_kepre(str(kulcs)):
+            # A `beginEdit` ezt a munkamenet beállítása után hívja. A
+            # jelzés a maszkürítésről szól; az új festhetőségi alapértéket
+            # itt rögzítjük, hogy az utána következő revízió ne duplázzon.
+            self._paint_mask_supported_snapshot = bool(self.paintMaskSupported)
             self.paintMaskChanged.emit()
 
 

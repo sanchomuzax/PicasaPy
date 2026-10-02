@@ -1121,9 +1121,6 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         if self._photo_id and self._photo_id != photo_id:
             self._provider.kepet_elenged(self._kulcs)
         path = Path(image_path)
-        # #1908: a festett ecset-maszk munkamenet-élettartamú — MÁS képre
-        # váltva eldobódik (az eredeti sem tárolja)
-        self._paint_mask_kepvaltas(photo_id)
         # #3014: minden sima nyitás ÍRÓ munkamenet — a memóriás mód csak a
         # `beginEditInMemory`-vel jár, és nem ragadhat át a következő fotóra
         self._memory_only = False
@@ -1133,6 +1130,12 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
+        # #1908/#4067: a festett ecset-maszk munkamenet-élettartamú — MÁS
+        # képre váltva eldobódik (az eredeti sem tárolja). A
+        # `paintMaskSupported` az új `_session`-ből számolódik, ezért a
+        # `paintMaskChanged` jelzés csak a lánc betöltése UTÁN mehet ki;
+        # közben még az előnézet regisztrációja előtt ürítjük a régi maszkot.
+        self._paint_mask_kepvaltas(photo_id)
         self._opening_crop, self._opening_crop_ini_readable = (
             self._crop_reader.read(self._ini_path, self._section_name)
         )
@@ -2814,6 +2817,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     def _bump_revision(self) -> None:
         self._revision = next(_REVIZIO)
         self.revisionChanged.emit()
+        # A QML-ecset láthatósága is a filters-láncból számolódik. A közös
+        # revíziós pont lefedi az alkalmazást, a Visszavonást, az Újrát és
+        # az ugyanarra a fotóra újraolvasott ini-t; csak bool-váltás jelez.
+        self._notify_paint_mask_support_changed()
 
     def _bump_gpu_revision(self) -> None:
         """A gpuPrefixSource/gpuLutSource cache-bustere (#22) — KÜLÖN a
