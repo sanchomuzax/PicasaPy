@@ -7,12 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Kiegyenesítés eszközsávja 90°-kal, 180°-kal és 270°-kal elforgatott képeknél is vízszintesen, a kép aljától 10 képpontnyira jelenik meg; nagyításkor ez a távolság a nagyítással arányosan nő (#4022).
+
 ## [0.8.663] – 2026-10-02
 
 ### Javítva
 - A szerkesztő az ecset elérhetőségét a lánc minden változásánál követi: az ini-ből betöltött Vámpírszem-láncnál megjelennek az ecset vezérlői, és eltűnnek, ha a Vámpírszem kikerül a láncból (#4067).
-
-- A Kiegyenesítés eszközsávja 90°-kal, 180°-kal és 270°-kal elforgatott képeknél is vízszintesen, a kép aljától 10 képpontnyira jelenik meg; nagyításkor ez a távolság a nagyítással arányosan nő (#4022).
 
 ## [0.8.662] – 2026-10-02
 
