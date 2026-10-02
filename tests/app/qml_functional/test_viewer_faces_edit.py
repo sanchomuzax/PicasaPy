@@ -89,30 +89,42 @@ class TestAddFaceViaOverlay:
         assert len(faces) == 1
         assert faces[0]["name"] == "Anna"
 
-    def test_new_region_without_name_is_unidentified(
+    def test_new_region_without_name_does_not_change_ini(
         self, qml_app, qt_app, tmp_path
     ):
+        ini = tmp_path / "kepek" / ".picasa.ini"
+        ini.write_bytes(b"[a.jpg]\r\nstar=yes\r\n; megorzendo\r\n")
+        before = ini.read_bytes()
         window, _controller, _ = qml_app
         viewer = _open_viewer(window, qt_app)
         _invoke(viewer, "toggleFacesEdit")
         qt_app.processEvents()
         overlay = _overlay(window)
 
-        _invoke(overlay, "openEditorFor", 0.1, 0.1, 0.4, 0.4, "", True)
+        overlay.setProperty("draftRect", QRectF(40, 30, 80, 70))
+        _invoke(overlay, "openDraftEditor")
         qt_app.processEvents()
+        draft_label = window.findChild(QObject, "faceDraftAddName")
+        assert draft_label.property("visible") is True
+        field = window.findChild(QObject, "faceNameField")
+        field.setProperty("text", "   ")
         _invoke(overlay, "commitEditor")
         qt_app.processEvents()
 
-        faces = overlay.property("faces")
-        assert len(faces) == 1
-        assert faces[0]["name"] == ""
+        assert overlay.property("faces") == []
+        assert ini.read_bytes() == before
+        assert window.findChild(QObject, "faceDraftRect").property("visible") is False
+        assert draft_label.property("visible") is False
+        editor = window.findChild(QObject, "faceNameEditor")
+        assert editor.property("visible") is False
 
 
 class TestRenameFaceViaOverlay:
     def test_existing_region_is_renamed(self, qml_app, qt_app, tmp_path):
         ini = tmp_path / "kepek" / ".picasa.ini"
         ini.write_text(
-            "[a.jpg]\nfaces=rect64(3f845bcb59418507),ffffffffffffffff;\n",
+            "[Contacts2]\n8e62b2035b74b477=Anna;;\n"
+            "[a.jpg]\nfaces=rect64(3f845bcb59418507),8e62b2035b74b477;\n",
             encoding="utf-8",
         )
         window, _controller, _ = qml_app
@@ -126,7 +138,8 @@ class TestRenameFaceViaOverlay:
 
         _invoke(
             overlay, "openEditorFor",
-            face["left"], face["top"], face["right"], face["bottom"], "", False,
+            face["left"], face["top"], face["right"], face["bottom"],
+            face["name"], False,
         )
         qt_app.processEvents()
         field = window.findChild(QObject, "faceNameField")
@@ -137,6 +150,35 @@ class TestRenameFaceViaOverlay:
         assert overlay.property("faces")[0]["name"] == "Béla"
         ini_text = ini.read_text(encoding="utf-8")
         assert "rect64(3f845bcb59418507)" in ini_text   # a régió megmaradt
+
+    def test_clearing_existing_name_removes_ini_entry(
+        self, qml_app, qt_app, tmp_path
+    ):
+        ini = tmp_path / "kepek" / ".picasa.ini"
+        ini.write_text(
+            "[Contacts2]\n8e62b2035b74b477=Anna;;\n"
+            "[a.jpg]\nfaces=rect64(3f845bcb59418507),8e62b2035b74b477;\n",
+            encoding="utf-8",
+        )
+        window, _controller, _ = qml_app
+        viewer = _open_viewer(window, qt_app)
+        _invoke(viewer, "toggleFacesEdit")
+        qt_app.processEvents()
+        overlay = _overlay(window)
+        face = overlay.property("faces")[0]
+
+        _invoke(
+            overlay, "openEditorFor",
+            face["left"], face["top"], face["right"], face["bottom"],
+            face["name"], False,
+        )
+        qt_app.processEvents()
+        window.findChild(QObject, "faceNameField").setProperty("text", "  ")
+        _invoke(overlay, "commitEditor")
+        qt_app.processEvents()
+
+        assert overlay.property("faces") == []
+        assert "faces=" not in ini.read_text(encoding="utf-8")
 
 
 class TestRemoveFaceViaOverlay:

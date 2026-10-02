@@ -1,8 +1,9 @@
 """A `faces=` kulcs: rect64 régió + contact_id párok pontosvesszővel.
 
-Formátum: `rect64(<hex>),<64-bit hex id>;...` — az azonosítatlan arc
-contact_id-ja csupa `f`. A serialize normalizál (a rect64-et 16 jegyre
-tölti fel), a byte-pontos megőrzést a document-réteg adja.
+Formátum: `rect64(<hex>),<64-bit hex id>;...`. A `ffffffffffffffff`
+contact_id a mellőzés jele, nem azonosítatlan arcé; a `0` nem érvényes
+arcbejegyzés. A serialize normalizál (a rect64-et 16 jegyre tölti fel), a
+byte-pontos megőrzést a document-réteg adja.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from dataclasses import dataclass
 from .document import IniDocument
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
+# Történeti API-név: a Picasában ez az azonosító mellőzést jelent.
 UNIDENTIFIED_CONTACT = "ffffffffffffffff"
 # 64 bites hex; a vezető nullák itt is hiányozhatnak, ezért 1..16 jegy.
 _CONTACT_ID = re.compile(r"^[0-9a-fA-F]{1,16}$")
@@ -25,7 +27,14 @@ class Face:
 
     @property
     def is_identified(self) -> bool:
-        return self.contact_id.casefold() != UNIDENTIFIED_CONTACT
+        """Van-e nem nulla, nem mellőzés-jelű kontaktazonosítója."""
+        contact_id = self.contact_id.casefold()
+        return bool(contact_id.strip("0")) and contact_id != UNIDENTIFIED_CONTACT
+
+    @property
+    def is_ignored(self) -> bool:
+        """A Picasa mellőzést jelző contact_id-ját viseli-e."""
+        return self.contact_id.casefold() == UNIDENTIFIED_CONTACT
 
 
 def parse_faces(value: str) -> tuple[Face, ...]:
@@ -122,9 +131,9 @@ def with_reassigned_face(
 ) -> IniDocument:
     """A `rect`-tel egyező (első) arc-bejegyzés contact_id-jának cseréje —
     a régió (a detektor/import eredménye) VÁLTOZATLAN marad, csak a
-    névhozzárendelés cserélődik. `contact_id=UNIDENTIFIED_CONTACT` a
-    névcímke levételét jelenti (a régió megmarad, csak "azonosítatlanná"
-    válik — ez a Picasa-viselkedés a névcímke törlésekor).
+    személy-mező cserélődik. A `UNIDENTIFIED_CONTACT` történeti nevű érték
+    a Picasában mellőzést jelöl; név levételekor a hívónak törölnie kell a
+    bejegyzést.
 
     Nem létező rect esetén a dokumentum változatlan (nincs mit
     módosítani — a hívó felelőssége, hogy létező régiót adjon)."""

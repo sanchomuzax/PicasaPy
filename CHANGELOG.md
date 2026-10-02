@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.658] – 2026-10-01
+
+### Javítva
+- A néző elrejti a mellőzött és érvénytelen arcbejegyzéseket, az üres névvel rajzolt négyszöget nem menti el, a név törlése pedig az arcbejegyzést is eltávolítja (#3793).
+
 ### Javítva
 - A Kiegyenesítés Mégse gombja visszaállítja a megnyitáskori képet, és nem hagy szerkesztést az indexben vagy az előzmények között (#4058).
 
