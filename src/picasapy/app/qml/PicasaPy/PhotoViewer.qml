@@ -3060,38 +3060,49 @@ Rectangle {
                             if (editorPanel.tiltActive)
                                 editController.previewTilt(ertek)
                         }
-                        //: középre, és 10 képponttal a KIRAJZOLT kép alja fölé
-                        readonly property real kepHelyiX:
-                            (photoArea.fokuszKep.width - width) / 2
-                        readonly property real kepHelyiY:
-                            (photoArea.fokuszKep.height
-                             + photoArea.fokuszKep.paintedHeight) / 2
-                            - height - 10
+                        //: A sáv a kép forgatása fölötti, forgatatlan rétegen
+                        //: marad. A képernyőn látható képrész négy sarkát
+                        //: leképezzük a forgatás utáni befoglaló téglalaphoz;
+                        //: a sáv közepe ehhez igazodik, az alsó rés 10×képskála.
                         readonly property point kepernyoKozep:
-                            {
-                                var kep = photoArea.fokuszKep
-                                //: A mapToItem() a transzformált pontot
-                                //: helyesen adja vissza, de a QML-kötés nem
-                                //: iratkozik fel a belső x/y/scale/rotation
-                                //: olvasások változására. A nullával szorzott
-                                //: tagok ezeket függőséggé teszik.
-                                var kepX = kep.x
-                                var kepY = kep.y
-                                var kepScale = kep.scale
-                                var kepRotation = kep.rotation
-                                var cel = kep.mapToItem(
-                                    null, kepHelyiX + width / 2,
-                                    kepHelyiY + height / 2)
-                                return Qt.point(
-                                    cel.x + (kepX + kepScale) * 0,
-                                    cel.y + (kepY + kepRotation) * 0)
-                            }
+                        {
+                            var kep = photoArea.fokuszKep
+                            var kepBal = (kep.width - kep.paintedWidth) / 2
+                            var kepFelso = (kep.height - kep.paintedHeight) / 2
+                            var kepJobb = kepBal + kep.paintedWidth
+                            var kepAlso = kepFelso + kep.paintedHeight
+                            var sarkok = [
+                                kep.mapToItem(null, kepBal, kepFelso),
+                                kep.mapToItem(null, kepJobb, kepFelso),
+                                kep.mapToItem(null, kepBal, kepAlso),
+                                kep.mapToItem(null, kepJobb, kepAlso),
+                            ]
+                            var minX = Math.min(sarkok[0].x, sarkok[1].x,
+                                                sarkok[2].x, sarkok[3].x)
+                            var maxX = Math.max(sarkok[0].x, sarkok[1].x,
+                                                sarkok[2].x, sarkok[3].x)
+                            var maxY = Math.max(sarkok[0].y, sarkok[1].y,
+                                                sarkok[2].y, sarkok[3].y)
+                            var kepSkala = kep.scale
+                            //: A mapToItem() a transzformált sarkokat
+                            //: visszaadja, de a QML-kötés nem iratkozik fel
+                            //: a belső x/y/méret/scale/rotation olvasásokra.
+                            //: A nullával szorzott függőség frissíti a sávot
+                            //: lapozáskor, nagyításkor és átméretezéskor is.
+                            var fuggoseg = (kep.x + kep.y + kep.width
+                                + kep.height + kep.paintedWidth
+                                + kep.paintedHeight + kep.scale + kep.rotation) * 0
+                            return Qt.point(
+                                (minX + maxX) / 2 + fuggoseg,
+                                maxY - kepSkala * (height / 2 + 10)
+                                    + fuggoseg)
+                        }
                         readonly property point szuloKozep:
                             parent.mapFromItem(
                                 null, kepernyoKozep.x, kepernyoKozep.y)
                         x: szuloKozep.x - width / 2
                         y: szuloKozep.y - height / 2
-                        rotation: photoArea.fokuszKep.rotation
+                        rotation: 0
                         scale: photoArea.fokuszKep.scale
                         transformOrigin: Item.Center
                         onApplyClicked: {
