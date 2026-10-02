@@ -2060,14 +2060,25 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     def previewTilt(self, param: float) -> None:
         """Élő forgatás-előnézet a csúszka húzása közben (#72): a képet a
         pillanatnyi paraméterrel újrarenderli, de NEM ír ini-be és NEM tol
-        undo-lépést — a tényleges mentés az elengedéskor hívott setTilt-tel
-        történik."""
+        undo-lépést — a tényleges mentést az Alkalmaz gomb indítja."""
         self._require_active()
         preview_session = self._session.set_tilt(param, 0.0)
-        # #3846: húzás közben a gyors mintavevő (a natív 2560 px-en >10× lassabb); az
-        # elengedéskori `setTilt` már a natív úton renderel
+        # #3846: húzás közben a gyors mintavevő (a natív 2560 px-en >10× lassabb);
+        # az Alkalmazáskor hívott `setTilt` már a natív úton renderel.
         with gyors_elonezet():
             self._register_preview(preview_session)
+        self._bump_revision()
+
+    @Slot()
+    def discardTiltPreview(self) -> None:
+        """#4058: a Kiegyenesítés Mégséje a mentett láncot rajzolja újra.
+
+        A csúszka-előnézet csak a szolgáltatónál él; a munkamenet, a fájl és
+        az undo-verem az Alkalmazásig érintetlen. Az alap munkamenet újbóli
+        regisztrálása ezért pontosan visszaállítja a nyitáskori képet akkor
+        is, ha ott még tilt-réteg sem volt."""
+        self._require_active()
+        self._register_preview()
         self._bump_revision()
 
     @Slot(float, float, float, float)
