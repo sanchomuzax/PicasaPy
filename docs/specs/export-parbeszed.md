@@ -231,10 +231,10 @@ látszik.
 | méret-előbeállítások | 320/480/640/800/1024/1200/1600 | — | átvenni |
 | **képminőség** | 5 fokozat + **váltakozó magyarázó szöveg**, és „Egyéni"-nél **21 fogásos csúszka** | legördülő + **nem állítható 85-ös mező** | **átépítés** |
 | Normál | **85** | 85 | ✅ nincs teendő |
-| Maximális | **193** → skála 0 | 100 → skála 0 | ✅ hatásában azonos |
+| Maximális | **193**; a maxot előíró kontrollokban (2026-09) 4:4:4 + q=93 DQT; a beállítás nincs rögzítve | a megadott kimenetminták 4:2:0-sak, a fokozat nincs rögzítve | a minőségi ág és a kimenet egyezése nyitott |
 | Minimális | **65** | **70** | ❌ **65-re javítani** |
 | Egyéni csúszka | 0–100 **ötösével**, alap 85, felirat „Egyéni (85)" | nincs csúszka | ❌ pótolni |
-| színbontás | fix **4:2:0** | OpenCV alapértelmezés = 4:2:0 | ✅ |
+| színbontás | a 2026-09-04…18-i Picasa-exportok 4:4:4 (189 fájl, a beállítás nincs rögzítve); a 2026-08-15-iak 4:2:0 (234 fájl) | a PicasaPy exportja kódban fixen 4:2:0 (`_PICASA_SUBSAMPLING = 2`, `exporter.py`); a Picasa-minták nem PicasaPy-kimenetek | kontrollált Picasa-export rögzített fokozattal, utána az ág megvalósítása |
 | „Automatikus" jelentése | **a forrás kvantálási tábláinak megőrzése** | fix 92-es közelítés (`exporter.py:83`) | valódi megőrzés |
 | **filmek exportálása** | **2 rádió** | **hiányzik** | **pótolni** |
 | vízjel | **csoportcím + mező + kis betűs magyarázat** | csak jelölő + mező | pótolni |
@@ -282,12 +282,7 @@ ugrótábla `0x00739ef4`-en áll:
 Az Automatikus és a Normál **ugyanarra a 85-re** megy; a kettőt a
 `+0xa40` jelző különbözteti meg.
 
-**A 193 értelme.** A JPEG-kódoló skálázója (`0x00b1cb70`) a szabványos
-IJG-képlet: `q<50 → 5000/q`, `50≤q<100 → 2·(100−q)`, **`q≥100 → 0`**
-(`0x00b1cb99`). Skála 0 → a kvantálótábla minden eleme 1, azaz a lehető
-legjobb JPEG. A 193 tehát **hatásában azonos a 100-zal**.
-*(Bizonyítottsági fok: erős. A skálázó viselkedése megerősített, de a
-193 útját a párbeszédtől a kódolóig nem követtem végig — ld. lent.)*
+**A 193 csak az általános JPEG-skálázó szintjén értelmezhető.** A `0x00b1cb70` függvény szabálya: `q<50 → 5000/q`, `50≤q<100 → 2·(100−q)`, `q≥100 → 0` (`0x00b1cb99`). Ha ez a rutin változtatás nélkül 193-at kap, az 0-s skálát és csupa 1-es kvantálótáblát ad. Ez a számítás önmagában **nem bizonyítja**, hogy a „Maximális” export ezen az úton halad: a #4017 mérésében a megjelölt Picasa-maximális kimenetek q=93 táblát tartalmaznak. A tényleges export-útvonal nyitott; lásd a 7.2 és 11.3 szakaszt.
 
 **Az Egyéni csúszka leképezése, mindkét irányban:**
 
@@ -303,49 +298,121 @@ konstruktor és a `FileExportQuality` alapértéke `0x00739642`-nél).
 formázó `0x0073a0c0`) — a `%d` helyén a tényleges szám, ami a csúszka
 mozgatásakor azonnal frissül.
 
-**A színbontás fixen 4:2:0** — `0x00b1f85a`: `mov byte [ecx+0x20], 0x22`
-(fényesség 2×2), a két színcsatorna `0x11`. Nincs rá beállítás.
+**A mintavételezés nem vezethető le ebből az egy bájtíróból.** A `0x00b1f85a` a
+`0x00b1f820` virtuális metódus (a `0x00cea6a4` vtábla 1. rése) belsejében van: alapértelmezés-beállító,
+Y = `0x22`, Cb = Cr = `0x11` (az `AL` a `0x00b1f83c`-n fixen `0x11`). A 2026-09-04…18-i Picasa-exportok
+SOF-ja 4:4:4 (7.2). Hogy az exportág az alapértelmezés után felülírja-e: NINCS MEG.
 
 ### 7.1 Az „Automatikus" mintával is igazolva
 
 A meglévő Picasa-export (30 fájl) mind ugyanazt a kvantálótáblát
 használja, és az **bájtra azonos a forrásképekével**:
 
-| | méret | bájt | DQT-összeg (fényesség / szín) |
-|---|---|---|---|
-| forrás `ansel__alap.jpg` | 960×640 | 61 548 | 221 / 333 |
-| Picasa-export ugyanaz | 960×640 | **54 200** | **221 / 333** |
+| | méret | bájt | DQT-összeg (fényesség / szín) | SOF mintavételezés |
+|---|---|---|---|---|
+| forrás `ansel__alap.jpg` | 960×640 | 61 548 | 221 / 333 | 4:2:0 |
+| Picasa-export ugyanaz | 960×640 | **54 200** | **221 / 333** | **4:2:0** |
 
 Más a fájlméret → **tényleg újrakódolt**, mégis megtartotta a forrás
 tábláit. A táblák pontosan az IJG q=97 skálázásai — ilyen értéket egyik
 preset sem tud előállítani, tehát a forrásból jöttek.
 ➡️ **Automatikus = a forrás kvantálótábláinak átvétele**, nem fix szám.
-**Bizonyítottsági fok: megerősített.**
+**Bizonyítottsági fok: feltételes** (#4017): a felirat („az eredeti képminőséget megőrzi”) és a bájtra azonos
+DQT egybevág, de a minta beállítása nincs rögzítve, és ez a fájl a `meroszett` 2026-08-15-i exportjának
+ugyanaz a fájlja (a mérőkészlet README-je maximális minőséget ír elő — lásd 7.2). Az „Automatikus” olvasat hipotézis.
 
-### 7.2 Amit KIZÁRTAM
+### 7.2 Helyesbítés: a 186 maxot kérő kontroll 4:4:4-et és IJG q=93 DQT-t adott (#4017, 2026-10-01)
 
-- ❌ **„Picasa 4:4:4-et ír."** A `0x00b1cbb0`-t fixen `eax=4`-gyel hívják,
-  és ebből következtettem rá. Téves: a kódoló `0x00b1f85a`-nál fixen
-  `0x22`-t (4:2:0) állít, és a meglévő export SOF-je is 2×2.
-- ❌ **„Picasa saját, nem IJG kvantálótáblákat használ."** A hiba az volt,
-  hogy a fájlban a tábla **cikcakk sorrendben** áll; természetes sorrendbe
-  visszarendezve pontosan az IJG q=97 skálázása, mindkét táblára.
+A régi kizárás („Picasa 4:4:4-et ír”, illetve „saját, nem IJG DQT-t használ”) téves volt a 684-es
+mérőkészlet kimeneteire, és a `0x00b1f85a` részleges beállításából nem következett. A
+684-es és a 3229-es mérőkészlet `OLVASS-EL.txt`-je eredeti méretű, maximális minőségű Picasa-exportot ÍR ELŐ
+(a 951-es és a 3084-es mappában nincs README). A kimeneti `.picasa.ini` csak kategóriát és dátumot tárol, a
+kiválasztott fokozatot nem, a JPEG sem hordozza: a „max” címke tehát **előírás**, nem rögzített beállítás.
+**Eredet (független ellenőrzés, 2026-10-02):** mind a 186 fájl valódi Picasa-kimenet — APP0 + APP1 (Exif) + APP1 (XMP) +
+APP13, optimalizált Huffman-táblák, az Exif/XMP/IPTC „Picasa” sztringet hordoz, a mappában `[Picasa]` CRLF sidecar:
 
+| mérőkészlet | kimeneti fájl | minta | DQT |
+|---|---:|---|---|
+| `684-merokeszlet` | 179 | mind a 3 komponens 1×1, vagyis 4:4:4 (SOF0) | mind a 179 kimenetben ugyanaz a két tábla; a forrás-DQT-től eltér |
+| `3229-lanc-sorrend` | 4 | mind a 4 kimenet 4:4:4 (SOF0) | ugyanaz a két tábla; a forrás-DQT-től eltér |
+| `951-kiemelesek-arnyekok-fel-allas` | 1 | 4:4:4 (SOF0) | ugyanaz a két tábla; a forrás-DQT-től eltér |
+| `3084-poszterizalas` | 2 | mind a 2 kimenet 4:4:4 (SOF0) | ugyanaz a két tábla; a forrás-DQT-től eltér |
+
+Összesen **186/186** kimenet 4:4:4, és **186/186** kimenet DQT-je eltér a hozzá tartozó forrásét.
+A SOF és DQT nyers markerolvasását a Pillow `Image.layer` és `Image.quantization` mezőivel is
+összevettem: a két út egyezett mind a **462** vizsgált exportfájlon (a 186 fenti fájlon, a két
+`merokit-2` kimeneten és a `meroszett` kimenetein).
+
+A 684-es exportban mért, JPEG DQT-marker szerinti értékek (8 bites tábla, cikcakk sorrend):
+
+```text
+DQT 0: [2,2,2,2,2,1,2,2,2,2,3,2,2,3,3,6,4,3,3,3,3,7,5,5,4,6,8,7,9,8,8,7,8,8,9,10,13,11,9,10,12,10,8,8,11,15,11,12,13,14,14,15,14,9,11,16,17,16,14,17,13,14,14,14]
+DQT 1: [2,3,3,3,3,3,7,4,4,7,14,9,8,9,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14]
+```
+
+A két mért tábla számszerűen azonos a bináris `0x00c75260` és `0x00c75360` címein lévő
+IJG-alaptáblák q=93 szerinti skálázásával. Ez a táblák eredetét ellenőrzi, de **nem bizonyítja**,
+hogy az export végrehajtása a `0x00b1cb70` skálázót használja. A „saját DQT” itt azt jelenti, hogy
+a kimenet nem a forrás tábláit viszi tovább; nem egy Picasa-specifikus, IJG-től eltérő táblát.
+
+**A két viselkedést a futtatás DÁTUMA választja el, nem a készlet** (az átfedés nulla; mindegyik Picasa-kimenet):
+2026-08-15 — `meroszett` 178 + `merokit-2` 49 + `merokit-3` 7 fájl: 4:2:0 és a forrás-DQT bájtra; 2026-09-04…09-18 —
+a négy kontrollkészlet és további 3 fájl (189): 4:4:4 és IJG q=93, a forrástól függetlenül (q97, q95 és q85 forrásból is).
+Ugyanabból a forrásképből (`ansel__alap.jpg`, 61 548 B, q97) az augusztusi export 54 200 B / 4:2:0 / q97, a szeptemberi
+44 574 B / 4:4:4 / q93. A README mindkét időszakban ugyanazt írja, a tényleges beállítás egyikben sincs rögzítve.
+**Hipotézis (NEM bizonyított):** a Picasa exportpárbeszéde a legutóbbi választást őrzi (`FileExportQualityType`, 10.2);
+a szeptemberi viselkedés kizárásos alapon a „Maximális” (a Normál 85, a Minimális 65, az Egyéni 5-tel osztható — a q93
+egyikből sem jön ki; csak a 193−100 = 93 számegyezés szól mellette), az augusztusi az „Automatikus” (a forrás-DQT
+megőrzése).
+
+A mérőkészlet másik csoportjai nem támasztják alá az általános szabályt, ezért külön szerepelnek:
+
+| minta és beállítás nyoma | darab | SOF | DQT | korlát |
+|---|---:|---|---|---|
+| `PicasaPy meroszett` (2026-08-15, Picasa-kimenet), README: maximális minőséget ír elő | 178 | 4:2:0; a forrás SOF-jével azonos | 178/178-ban a DQT a forráséval azonos; a fájlbájtok eltérnek | a kimeneti `.picasa.ini` csak kategóriát és dátumot tartalmaz, a fokozatot nem |
+| `PicasaPy merokit-2/export-202608151438` (2026-08-15, Picasa-kimenet), README maxot előíró mérési menete | 49 | 4:2:0 | 49/49-ben a DQT a forráséval azonos; a fájlbájtok eltérnek | a kimeneti ini `PicasaPy-merokit~export` kategóriát ír, fokozatot nem |
+
+**Nem Picasa-bizonyíték:** a `merokit-2/export-202608202215` (49 fájl) és a `merokit-3/export-202608202207` (6 fájl) a
+**PicasaPy saját exportere** írta (#4019): csak APP0, standard Huffman-táblák, mindkét DQT-tábla minden eleme 1, nincs EXIF/XMP/IPTC és
+nincs sidecar. A csupa 1-es DQT a mi `Maximális = 100` útvonalunknak felel meg; a Picasa-szabályról nem mond semmit.
+
+A `meroszett` README maximális minőséget ír elő, miközben a kimenet 4:2:0, DQT-je a forráséval
+azonos, és a fájlbájtok eltérnek a forrástól. Ez **csak akkor ütközik** a 186 fájlos csoporttal, ha a README-t a
+tényleges beállításnak tekintjük — a két viselkedést a futtatás dátuma választja el tisztán (fent). A `.picasa.ini`-k
+nem rögzítik a minőségi fokozatot. Ezért a 4:4:4 + q=93 eredmény **a négy mérőkészlet 186 fájljában megerősített**
+(mint fájltulajdonság), de nem bizonyítja, hogy melyik fokozat adja, és nem általánosítható minden
+„maximális minőségű” Picasa-exportra. A teljes fokozat→kimenet térkép nyitott.
+
+**Bináris helyesbítés.** A `0x00b1f85a` a `0x00b1f820` virtuális metódus (a `0x00cea6a4` vtábla 1. rése) belsejében van:
+alapértelmezés-beállító, Y = `0x22`, Cb = Cr = `0x11` (`mov al,0x11` a `0x00b1f83c`-n — az `AL` ott rögzített, nem változó).
+Közvetlen hívója ezért nincs (a vtábla-hívást a hívás-pásztázás nem látja), tehát a „nincs közvetlen hívó” semmit nem zár ki.
+A `0x00b1f870` memória-kódoló fix `mode=4` paramétert használ, a minőséget a hívótól kapja (a `0x00a97ec0` két hívója, a
+`0x009d6010` és a `0x009ed220`, átadott argumentumot használ); hogy ez a fájlexport útja-e: **NINCS MEG**. Ezek az eredmények
+nem azonosítják a `CImageOutput` virtuális útján használt export-kódolót. A mért q=93 DQT és 4:4:4 SOF alapján a régi „193
+ugyanazt a kimenetet adja, mint 100” következtetést az exportokra visszavonom (egyetlen mért Picasa-kimenetben sincs csupa 1-es
+DQT; az egyetlen ilyen csoport a PicasaPy-é).
+
+**Bizonyítottsági fok:** megerősített a négy mérőkészlet 186 kimenetének SOF- és DQT-tartalma,
+valamint a q=93 IJG-táblákkal való számszerű egyezés (nyers fejlécmérés + Pillow-ellenőrzés +
+bináris alaptáblák). Feltételes az általános állítás, hogy minden Picasa „maximális minőségű”
+export 4:4:4-et és új DQT-t ad: a 178 fájlos `meroszett` (2026-08-15) 4:2:0 és forrás-DQT-másolat, a szeptemberi
+189 fájl 4:4:4 + q=93 — a beállítás egyik időszakban sincs rögzítve. A fokozat→kimenet leképezés **NINCS MEG**.
 ---
 
-## 8. Ami NYITVA marad — ***MIND LEZÁRVA, ld. a 11. szakaszt***
+## 8. Ami NYITVA marad (#4017; 2026-10-01)
 
-1. **A minőségszám útja a párbeszédtől a kódolóig.** A tárolás helye
-   `[objektum+0xa3c]`, a kódoló belépője `0x00b1f870` (a minőség a
-   `[esp+0x1c]`-ből jön), a hívó `0x00a97f28`. A közbenső láncot kell
-   végigkövetni — ez emelné a 193-as állítást „megerősített" szintre.
-2. **A `<multi>` váltásának pontos működése** (átméretezi-e az ablakot,
-   ha csúszkára vált). A helye megvan: az elemgyár `0x008dfed0`-ben a
-   `multi` ágat `0x008e24f0`-re köti (0x8C bájt, vtábla **`0x00CD00E4`**).
-   Azt kell eldönteni, hogy a mérete a **legnagyobb** gyerekhez igazodik-e
-   (akkor a párbeszéd nem ugrál) vagy az **aktuálishoz**. A vtábla
-   nagyrészt az ős metódusaira mutat, tehát kevés a felülírás.
-3. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke).
+1. **A minőségválasztótól a tényleges JPEG-íróig vezető út.** A „Maximális” ág a
+   `0x00739ca1` címen 193-at tárol; a kontrollkimenet mért DQT-je q=93 és SOF-ja 4:4:4.
+   A `CImageOutput` (`0x0073f320`) virtuális hívásai közül a tényleges JPEG-író és a
+   minőség-/mintavételezés-ág nem azonosítható puszta diszasszemblálással.
+
+   Ghidra-kör kell: 0x0073f320 — a virtuális exportútban azonosítsd a JPEG-írót, és vezesd végig a 193-as fokozatot a 4:4:4 mintavételezésig és a mért q=93 DQT-ig.
+
+2. **A tényleges fokozat-beállítás.** Mindkét időszak kimenete (2026-08-15 és 2026-09-04…18) valódi Picasa-kimenet, de
+   a beállítás egyikben sincs rögzítve; a README csak előírás, és mindkét időszakban azonos. NINCS MEG a Normál, a Minimális és az
+   Egyéni fokozat kimenete is. **Döntő, felvehető irány:** kontrollált Picasa-export ugyanabból az 5 képből, rögzített
+   választással (Normál, Maximális, Minimális, Egyéni 95), a beállítást képernyőképen rögzítve — a `picasa-colab-jobs`
+   végrehajtón (ha a párbeszéd-állapot ott beállítható), vagy a tulajdonos gépén. Ez minden NINCS MEG pontot eldönt, a 193→q93-at is.
 
 ---
 
@@ -493,11 +560,11 @@ ebp = a kiválasztott tétel (0…4)
 | `0x0073b410` | ha a méret-mód `0x3E8` (**1000**), az **egyéni** méret (`+0xa38`) érvényes |
 | `0x0073b120` | konstruktor: `+0xa44 = 0`, `+0xa40 = 0` (nem automatikus), `+0xa34 = 0` |
 | `0x0073b14a` | konstruktor: **minőség = 0x55 = 85** |
-| `0x00b1f85a` | a kódoló színbontása fixen **4:2:0** (`0x22` / `0x11` / `0x11`) |
+| `0x00b1f85a` | a JPEG-struktúrában Y=`0x22`, Cb/Cr=`AL`; az exporthívó és az értékadás útja nyitott |
 
 ---
 
-## 11. A NYITOTT KÉRDÉSEK LEZÁRÁSA (2026-08-20, harmadik kör)
+## 11. Korábbi lezárások és a #4017 helyesbítése (2026-08-20; 2026-10-01)
 
 ### 11.1 A film-rádió alapértéke — **MEGVAN: 0 = „Első képkocka"**
 
@@ -593,43 +660,36 @@ de a binárisban **nem találtam meg a helyét**, és ezt nem takarom el.
 **A megvalósítást ez NEM blokkolja:** a viselkedés egyértelmű — nincs film
 → a rádiók tiltva, a csoport címkéje aktív marad.
 
-### 11.3 A 193-as érték útja a kódolóig — **a kérdés gyakorlati
-következménye NULLA**
+### 11.3 A 193-as érték útja a kódolóig — a #4017 mérése után nyitott
 
-A korábbi megfogalmazás („a lánc végigkövetése emelné megerősített
-szintre") félrevezető volt, mert azt sugallta, hogy a válasz múlhat rajta.
-Nem múlik:
+A minőségválasztó „Maximális” ága a `0x00739ca1` címen **193**-at tárol. Az általános JPEG-skálázó
+`0x00b1cb70` q≥100 esetén 0-s skálát ad, ami csupa 1-es DQT-t jelent. A #4017 azonban a maxot
+kérő, 186 fájlos kontrollkimenetben q=93 táblát mért; a kimenet SOF-ja 4:4:4. Ez bizonyítja, hogy
+a `193 → 0-s skála` számításból önmagában nem lehet a `CImageOutput` tényleges kimenetére
+következtetni.
 
-1. A minőség-egész **egyetlen** fogyasztója a JPEG-skálázó
-   `0x00b1cb70`, és annak **pontosan egy hívója** van: `0x00b1f8ca`.
-2. A skálázó szabálya: `q ≥ 100 → skála 0` (`0x00b1cb99`), a skála 0 pedig
-   csupa 1-es kvantálótáblát ad — ez a JPEG-minőség plafonja.
-3. **Mi 100-at adunk át, ami ugyanide fut ki.** A kimenet tehát azonos.
-4. A 193 csak akkor adna mást, ha valahol egy **100 fölötti értéket
-   átalakítanának** (pl. `q -= 100`). Ilyen ág **nincs** — átfésültem az
-   export-régiót (`0x00730000`+128 KB), a kódoló-régiót
-   (`0x00b1f000`+4 KB), a `0x00a90000`+64 KB-ot és a
-   `0x0066f000`+192 KB-ot `cmp/mov 0x64`-re és `0xc1`-re: a `0xC1`-re
-   **egyetlen** találat van a teljes export-kódban, a
-   `0x00739ca1`-es értékadás maga.
+A teljes `.text`-en a `paszta.py` közvetlen híváskeresése a `0x00b1f870` kódolóhoz a `0x00a97ec0`
+hívót találta; a `0x00b1f85a` címre közvetlen hívás nem került elő. A `CImageOutput`
+(`0x0073f320`) virtuális hívásai miatt az export-fokozat, a q=93 DQT és a mintavételezés
+beállításának összekötése diszasszemblálással nem zárult le.
 
-➡️ **Következmény a fejlesztésre: a „Maximális" nálunk maradhat 100.**
-Nem közelítés, hanem bizonyíthatóan azonos kimenet.
+**A korábbi következtetést visszavonom:** nem bizonyított, hogy a 193 és a 100 ugyanazt a
+Picasa-export kimenetet adja, és a „Maximális” PicasaPy-beállítást sem lehet a `0x00b1f870` útból
+levezetni. A merokit-2 `export-202608202215` mappájának 49 kimenete (4:2:0, csupa 1-es DQT) a PicasaPy saját
+exportere írta (#4019), nem a Picasa; a csupa 1-es DQT a mi `Maximális = 100` útvonalunknak felel meg, és
+nem Picasa-bizonyíték. A forráskód szerinti út kontrollált kimeneti mérése nyitott.
 
-**Ami formálisan nyitva marad:** a virtuális hívásokon átvezető pontos
-hívási lánc a párbeszéd `[objektum+0xa3c]` mezőjétől a kódoló
-`0x00b1f870` belépőjéig. **Ez nem befolyásol semmilyen megvalósítási
-döntést**, ezért nem nyitott kérdésként, hanem lábjegyzetként tartjuk
-számon.
+### 11.4 A #4017 mérőkészletének minőségi fokozata
 
-### 11.4 Amit MÉG kimértem menet közben
+A korábbi állítás, hogy „minden Picasa-exportunk Automatikus” és ezért nincs max/normal/min minta,
+**nem érvényes a #4017 négy kontrollkészletére**: a 684-es és a 3229-es README-je maximális minőséget
+ír elő (a 951-esnél és a 3084-esnél nincs README), a kimenetük 186 fájlon 4:4:4 + q=93 DQT; a beállítás maga nincs rögzítve.
 
-**Minden Picasa-exportunk „Automatikus"-sal készült.** Ellenőriztem
-mindhárom mérőkészlet eredeti exportját: a kvantálótábla a forráséval
-**bájtra azonos** (IJG q=97 mindkét oldalon). Ezért a Normál/Maximális/
-Minimális fokozatokra **nincs** mintánk — de a 11.3 miatt nincs is rá
-szükség.
-
+A korábbi 30 fájlos, Automatikusnak címkézett minta a 7.1-ben külön mérés: ott a kimeneti DQT a
+forráséval egyezik. A `PicasaPy meroszett` 178 fájlos kimenete szintén 4:2:0 és
+forrás-DQT-másolat, miközben a README maximális minőséget kér; a minőségi fokozat a
+`.picasa.ini`-ben nincs eltárolva. A minták ezért nem adnak teljes, általános fokozat→SOF/DQT
+táblázatot. A normal, minimum és egyéni fokozat mért kimeneti táblája: **NINCS MEG**.
 ---
 
 ## 12. MI TÖRTÉNIK AZ „EXPORTÁLÁS" GOMB UTÁN — a művelet teljes törvénye
@@ -1498,8 +1558,10 @@ Ami a 6. szakasz „Kész, ha" listájából ezzel teljesült:
 
 **Két kimondott eltérés az eredetitől:**
 
-1. **A „Maximális" nálunk 100, nem 193.** Nem közelítés: a 11.3 szerint a
-   kimenet bizonyíthatóan azonos (`q ≥ 100 → skála 0`).
+1. **A „Maximális" kimeneti leképezése újravizsgálandó.** A 11.3 visszavonja
+   a korábbi 193/100 kimeneti azonosságot: a maxot kérő kontrollok 4:4:4 + q=93
+   DQT-t mérnek, a 7.2-ben szereplő 178 fájlos csoport pedig 4:2:0-t és a
+   forráséval azonos DQT-t ad.
 2. **A `FileExportSize` kulcs kettéválik nálunk.** A 10.2 szerint a
    `sizeradio` írja (`0x00739a01`), a 10.1 szerint viszont az alapértéke
    **3** (`0x00738c58`) — egy kétállású rádiócsoport nem lehet 3. A kettő
