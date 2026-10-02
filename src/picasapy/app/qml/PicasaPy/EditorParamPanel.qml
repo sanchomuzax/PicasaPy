@@ -303,9 +303,8 @@ Flickable {
         // egymás alatt, közös blokkban. A felirat a radír állásától
         // függ: „Ecsetméret" vagy „Radír mérete" (mért feliratok).
         //
-        // Csak akkor látszik, ha a nyitott effekt FESTHETŐ maszkkal
-        // dolgozik (Boost, Képpontnagyítás, Lágyítás, Árnyalás, Ghoul
-        // Eye) — ezt a vezérlő `paintMaskSupported`-je dönti el.
+        // Csak a Vámpírszem festhető (#3541) — ezt a vezérlő
+        // `paintMaskSupported`-je dönti el.
         ColumnLayout {
             id: ecsetBlokk
             objectName: "effectParamBrushBlock"

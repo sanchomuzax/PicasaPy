@@ -1,24 +1,22 @@
 """Az ecset-maszk vezérlő-szelete (#1908) — az `EditController` mixinje.
 
-A festhető-maszkos effektek (`Boost`, `Pixelate`, `Soften`, `PicnikTint`,
-`ReanimatedEyeColor`) az eredetiben csak a BEFESTETT területre hatnak. A
-render-oldal a #3225 óta tudja fogadni a maszkot, az állapot a
+A Vámpírszem (`ReanimatedEyeColor`) festhető; a `Boost`, `Pixelate`, `Soften`
+és `PicnikTint` az egész képre hat ecset nélkül (#3541). A render-oldal a
+#3225 óta tudja fogadni a maszkot, az állapot a
 `paint_mask.MaszkAllapot`-ban él — ez a szelet a kettő közé áll: a
 felülettől kapja a vonásokat, és a `provider.register()`-be teszi őket.
 
 ## Két mért alapérték, és ami NEM mért
 
-A `filterdesc.xml` `BrushSizeAndEraserButton`-ja a `ReanimatedEyeColor`
-családjára (`eff:PaintOnEffectBase`) `startValueFactor="0.03"` és
-`maximumFactor="0.2"` — ezt vesszük át. ⚠️ A másik család
-(`cnt:PaintEffectCanvas`: a maradék négy effekt) a leírásban **semmit** nem
-deklarál az ecsethez; ott ugyanezt az alapértéket használjuk, és ezt ki is
-mondjuk — SAJÁT döntés, nem mérés.
+Az eredeti `BrushSizeAndEraserButton`-ja a `ReanimatedEyeColor` családjára
+(`eff:PaintOnEffectBase`) `startValueFactor="0.03"` és `maximumFactor="0.2"`
+értéket ad; a négy teljes képre ható effekt nem kap ecsetet (#3541).
 
 ## A maszk munkamenet-élettartamú
 
-Mérve (#1908, három telepítés `db3`-ában nulla találat): az eredeti sem
-tárolja. Képváltásnál eldobjuk.
+A festett vonások a PicasaPy szerkesztő-munkamenetében élnek; a képre mentés
+beégeti az aktuális hatást. A vonások tartós tárolása még nincs meg (#4046).
+Képváltásnál a munkamenet-maszkot eldobjuk.
 """
 
 from __future__ import annotations

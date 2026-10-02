@@ -45,9 +45,8 @@ azonosítójára is elágazik, és felülírja az alapértelmezést — ezért v
 van; új effekt felvételekor ELŐBB azt kell megnézni.
 
 Amit tudatosan KIHAGYUNK (ld. a #516 jegy jelentése):
-- a **festhető maszk / ecset** effektek (`ReanimatedEyeColor`, `Soften`,
-  `PicnikTint`) — a Picasában ecsettel kijelölt területre hatnak, a
-  PicasaPy-nak még nincs ilyen eszköze (#381); önálló munka.
+- a `ReanimatedEyeColor` nem önálló effektpanel-bejegyzés. Ez az egyetlen
+  festhető effekt; a `Soften` és a `PicnikTint` teljes képre hat (#3541).
 - `Boost`, `Cinemascope`, `Comicize`, `Invert`, `Neon`, `PencilSketch` — a
   #516 jegy szerint ezeknél a vezérlőszám MA MÁR egyezik az eredetivel,
   nincs teendő. (A `FocalZoom` ide korábban szintén be volt sorolva — ez

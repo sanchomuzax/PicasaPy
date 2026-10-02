@@ -17,56 +17,46 @@ referencia-képernyőkép kellene.
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, Property, Signal, Slot, QUrl
+from PySide6.QtCore import QObject, Slot, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from picasapy.app.paint_mask_controller import PaintMaskMixin
+from picasapy.edit.session import EditSession
 
 _KEEPALIVE = []
 
 _QML_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy"
 
 
-class EcsetCsonk(QObject):
-    """A vezérlő ecset-felülete, csak annyi, amennyit a panel megszólít."""
-
-    paintMaskChanged = Signal()
+class EcsetCsonk(PaintMaskMixin, QObject):
+    """Valódi festhetőségi szabályt használó, kisméretű panelvezérlő."""
 
     def __init__(self):
-        super().__init__()
-        self._tamogatott = True
-        self._arany = 0.03
-        self._radir = False
+        QObject.__init__(self)
+        self._session = EditSession.from_value(
+            "ReanimatedEyeColor=1,6.000000,20.000000;"
+        )
+        self._init_paint_mask()
         self.hivasok = []
-
-    @Property(bool, notify=paintMaskChanged)
-    def paintMaskSupported(self):  # noqa: N802
-        return self._tamogatott
-
-    @Property(float, notify=paintMaskChanged)
-    def paintBrushRatio(self):  # noqa: N802
-        return self._arany
-
-    @Property(float, notify=paintMaskChanged)
-    def paintBrushMax(self):  # noqa: N802
-        return 0.2
-
-    @Property(bool, notify=paintMaskChanged)
-    def paintEraser(self):  # noqa: N802
-        return self._radir
 
     @Slot(float)
     def setPaintBrushRatio(self, arany):  # noqa: N802
-        self._arany = arany
+        PaintMaskMixin.setPaintBrushRatio(self, arany)
         self.hivasok.append(("meret", arany))
-        self.paintMaskChanged.emit()
 
     @Slot(bool)
     def setPaintEraser(self, be):  # noqa: N802
-        self._radir = bool(be)
-        self.hivasok.append(("radir", self._radir))
-        self.paintMaskChanged.emit()
+        PaintMaskMixin.setPaintEraser(self, be)
+        self.hivasok.append(("radir", bool(be)))
 
     def allitsd_tamogatast(self, be):
-        self._tamogatott = bool(be)
+        lanc = (
+            "ReanimatedEyeColor=1,6.000000,20.000000;"
+            if be else "Invert=1;"
+        )
+        self.allitsd_lanc(lanc)
+
+    def allitsd_lanc(self, lanc):
+        self._session = EditSession.from_value(lanc)
         self.paintMaskChanged.emit()
 
 
@@ -122,12 +112,28 @@ def _gyerek(gyoker, nev):
 
 class TestEcsetVezerlo:
     def test_festheto_effektnel_latszik(self, betoltott):
-        gyoker, _csonk = betoltott
+        gyoker, csonk = betoltott
+        assert csonk.paintMaskSupported is True
         assert _gyerek(gyoker, "effectParamBrushBlock").property("visible") is True
 
     def test_nem_festheto_effektnel_rejtve(self, betoltott):
         gyoker, csonk = betoltott
         csonk.allitsd_tamogatast(False)
+        assert _gyerek(gyoker, "effectParamBrushBlock").property("visible") is False
+
+    @pytest.mark.parametrize(
+        "lanc",
+        [
+            "Boost=1,50.000000;",
+            "Pixelate=1,20.000000;",
+            "Soften=1,50.000000,50.000000;",
+            "PicnikTint=1,0.000000,80cfff;",
+        ],
+    )
+    def test_a_negy_teljes_kepe_hato_effekt_nem_mutat_ecsetet(self, betoltott, lanc):
+        gyoker, csonk = betoltott
+        csonk.allitsd_lanc(lanc)
+        assert csonk.paintMaskSupported is False
         assert _gyerek(gyoker, "effectParamBrushBlock").property("visible") is False
 
     def test_a_felirat_a_radirral_valt(self, betoltott):

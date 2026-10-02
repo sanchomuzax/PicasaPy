@@ -32,6 +32,8 @@ from PySide6.QtCore import (
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
+_VAMPIRSZEM_LANC = "ReanimatedEyeColor=1,6.000000,20.000000;"
+
 _I18N_DIR = (
     Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "i18n"
 )
@@ -369,7 +371,7 @@ class TestAzAaModKapuja:
         nezo = _aa_belep(window, qt_app)
         edit_ctl = nezo.property("editCtl")
         masik_hid = nezo.property("masodikEditCtl")
-        edit_ctl.applyEffect("soften")
+        edit_ctl.setChainValue(_VAMPIRSZEM_LANC)
         qt_app.processEvents()
         edit_ctl.paintStroke(0.5, 0.5)
         qt_app.processEvents()

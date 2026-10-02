@@ -1,16 +1,16 @@
 """A festett ecset-maszk munkamenet-állapota (#1908).
 
-Öt effekt (`Boost`, `Pixelate`, `Soften`, `PicnikTint`,
-`ReanimatedEyeColor`) az eredetiben csak a **befestett** területre hat; a
-render-oldal a #3225 óta tudja fogadni a maszkot
-(`chain.apply_filters(paint_mask=…)`). Ez a modul tartja azt, amit a
-felhasználó festett.
+Csak a `ReanimatedEyeColor` hat a **befestett** területre; a `Boost`,
+`Pixelate`, `Soften` és `PicnikTint` ecset nélkül a teljes képre fut
+(#3541). A render-oldal a #3225 óta tudja fogadni a maszkot
+(`chain.apply_filters(paint_mask=…)`). Ez a modul tartja a munkamenetben
+festett vonásokat.
 
-## Miért NEM a `.picasa.ini`-ben
+## A tartós tárolás még nincs bekötve
 
-Mérve (#1908, három telepítés `db3`-ában nulla találat): az eredeti Picasa a
-festett maszkot **nem tárolja** — a maszk a munkamenet végéig él. Ezért ez az
-állapot a memóriában van, és képváltásnál eldobódik.
+Az eredeti Picasa a Vámpírszem vonásait a `filters=` sorban tárolja. A
+PicasaPy jelenleg a vonásokat csak a szerkesztő-munkamenet memóriájában tartja;
+tartós tárolásuk külön feladat (#4046), ezért képváltásnál eldobódnak.
 
 ## A vonások, nem a bitkép
 
@@ -36,10 +36,7 @@ import numpy as np
 #: legyen érzéketlen kattintás.
 MIN_SUGAR_ARANY = 0.002
 
-#: A mért ecset-alapértékek (`eff:PaintOnEffectBase`). ⚠️ A másik család
-#: (`cnt:PaintEffectCanvas`: Boost, Pixelate, Soften, PicnikTint) a
-#: `filterdesc.xml`-ben SEMMIT nem deklarál ezekhez — ott ezek a mi
-#: döntésünk, és ezt ki is mondjuk (#1908).
+#: A mért ecset-alapértékek a Vámpírszem `eff:PaintOnEffectBase` családjából.
 KEZDO_ARANY = 0.03
 MAX_ARANY = 0.2
 

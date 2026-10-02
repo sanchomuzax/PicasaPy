@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.661] – 2026-10-02
+
+### Javítva
+- **Az ecsettel festett hatás a mentett képen is csak ott látszik, ahová
+  festetted (#3462)** — a Felpörgetés, a Képpontnagyítás, a Lágyítás és az
+  Árnyalás eddig a szerkesztőben helyesen csak a befestett területre hatott,
+  mentés után viszont az egész képre rákerült. Most a Mentés, a Másolat
+  mentése és a Mentés másként… is a festett területet viszi, elforgatott és
+  tükrözött képen is. Az exportálás és a bélyegkép mentés előtt még az egész
+  képet mutatja; ezt külön jegy kezeli (#3541).
+- A Felpörgetés, a Képpontnagyítás, a Lágyítás és az Árnyalás ecset nélkül az egész képre hatnak; a Vámpírszem ecsete csak olyan képnél jelenik meg, amelyen már szerepel ez az effekt (#3541).
+
 - A Kiegyenesítés csúszkájának háttere áttetsző sötét kitöltést és világos
   keretet kapott, mint az Alkalmaz és a Mégse gomb (#4036).
 
@@ -1051,16 +1063,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   külön jegyen vannak (#3544).
 
 ## [0.8.561] – 2026-09-24
-
-### Javítva
-
-- **Az ecsettel festett hatás a mentett képen is csak ott látszik, ahová
-  festetted (#3462)** — a Felpörgetés, a Képpontnagyítás, a Lágyítás és az
-  Árnyalás eddig a szerkesztőben helyesen csak a befestett területre hatott,
-  mentés után viszont az egész képre rákerült. Most a Mentés, a Másolat
-  mentése és a Mentés másként… is a festett területet viszi, elforgatott és
-  tükrözött képen is. Az exportálás és a bélyegkép mentés előtt még az egész
-  képet mutatja; ezt külön jegy kezeli (#3541).
 
 ## [0.8.560] – 2026-09-23
 

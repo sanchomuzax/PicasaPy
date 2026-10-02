@@ -1,6 +1,6 @@
 """#381: `glimmer_focal` — PicnikTint/ReanimatedEyeColor min/alap/max
-határeset-tesztjei. A festhető-maszk hiánya miatt a hatás a TELJES KÉPRE
-fut (ld. modul-docstring) — a `chain.py`-beli figyelmeztetést a
+határeset-tesztjei. A `PicnikTint` ecset nélkül a teljes képre fut, a
+`ReanimatedEyeColor` üres maszkkal tétlen (#3541); a lánc figyelmeztetését a
 `test_chain_glimmer_381.py` fedi.
 """
 

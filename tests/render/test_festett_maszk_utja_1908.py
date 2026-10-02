@@ -1,19 +1,14 @@
-"""#1908: a festett (ecset-)maszk ÚTJA a szűrőláncon.
+"""#1908/#3541: a Vámpírszem festett maszkjának útja a szűrőláncon.
 
 A render-oldal a #1605 óta tudja fogadni a maszkot
 (`apply_reanimated_eye_color(mask=…)`), de a **lánc** nem tudta átadni:
-az `apply_filters` szignatúrájában nem volt maszk, ezért az öt festhető
-effekt (`Boost`, `Pixelate`, `Soften`, `PicnikTint`, `ReanimatedEyeColor`)
-mindig a teljes képre futott — vagy a `ReanimatedEyeColor` esetén sosem
-hatott.
+az `apply_filters` szignatúrájában nem volt maszk, ezért a `ReanimatedEyeColor`
+festett területe nem jutott el a renderelőig. A `Boost`, `Pixelate`, `Soften`
+és `PicnikTint` nem festhető: ecset nélkül a teljes képre hatnak (#3541).
 
-A mért szemantika (`filterdesc.xml` 1269–1295., #1605): a maszk a külső
-`NestedImageOperation`-ön áll (`Mask="{_mctr.mask}"`), tehát az effekt a
-TELJES képen lefut, és az eredménye a maszkon át kerül a képre —
-`base·(1−mask) + effekt·mask`.
-
-⚠️ Amit ez a lap NEM mér: az ecset-FELÜLETET. Az a jegy következő lépése; a
-maszk tárolása pedig mérve nem létezik a Picasában (munkamenet-élettartamú).
+⚠️ Ez a lap nem méri az ecset felületét; azt a
+`tests/app/test_qml_ecset_felulet_1908.py` ellenőrzi. A PicasaPy vonásainak
+tartós tárolása még nincs kész (#4046).
 """
 
 from __future__ import annotations
@@ -48,10 +43,6 @@ class TestAMaszkEljutALancig:
     @pytest.mark.parametrize(
         "lanc",
         [
-            "Boost=1,80.000000;",
-            "Pixelate=1,20.000000;",
-            "Soften=1,80.000000,0.000000;",
-            "PicnikTint=1,0.000000,80cfff;",
             "ReanimatedEyeColor=1,6.000000,20.000000;",
         ],
     )
@@ -75,10 +66,11 @@ class TestAMaszkEljutALancig:
         kep = _kep()
         nelkul = apply_filters(kep, parse_filters("Boost=1,80.000000;"))
         assert nelkul.image is not None
-        # a teljes kép változik (a mai, maszk nélküli viselkedés)
+        # a teljes kép változik ecset nélkül.
         assert not np.array_equal(kep[:, 16:], nelkul.image[:, 16:])
+        assert nelkul.range_warnings == ()
 
-    def test_a_ghoul_eye_URES_maszkkal_azonossag(self):
+    def test_a_vampirszem_URES_maszkkal_azonossag(self):
         """#688: az üres maszkkal induló effekt befestés nélkül nem hat —
         ez a maszk-út bevezetése UTÁN is igaz."""
         kep = _kep()
@@ -90,10 +82,9 @@ class TestAMaszkEljutALancig:
         assert np.array_equal(kep, jelentes.image)
 
     def test_a_figyelmeztetes_CSAK_maszk_nelkul_jon(self):
-        """A „nincs ecset-eszköz" figyelmeztetés a maszk megadásakor elavult —
-        akkor nem szabad kimennie."""
+        """Üres maszknál jelez, ecsetmaszk megadásakor nem."""
         kep = _kep()
-        lanc = parse_filters("PicnikTint=1,0.000000,80cfff;")
+        lanc = parse_filters("ReanimatedEyeColor=1,6.000000,20.000000;")
         nelkul = apply_filters(kep, lanc)
         assert any("ecset" in w for w in nelkul.range_warnings), (
             "maszk nélkül elvárjuk a figyelmeztetést"
@@ -103,13 +94,11 @@ class TestAMaszkEljutALancig:
             "maszkkal megadott hívásnál a figyelmeztetés félrevezető"
         )
 
-    def test_mind_az_OT_op_a_halmazban_van(self):
-        assert PAINTABLE_MASK_OPS == {
-            "boost", "pixelate", "soften", "picniktint", "reanimatedeyecolor",
-        }
+    def test_csak_a_vampirszem_a_halmazban(self):
+        assert PAINTABLE_MASK_OPS == {"reanimatedeyecolor"}
 
     def test_a_nem_festheto_op_a_maszkot_FIGYELMEN_kivul_hagyja(self):
-        """A maszk csak az öt festhető effektre hat — a `sepia` nem közülük."""
+        """A maszk csak a Vámpírszemre hat — a `sepia` nem festhető."""
         kep = _kep()
         lanc = parse_filters("sepia=1;")
         maszkkal = apply_filters(kep, lanc, paint_mask=_fel_maszk())
