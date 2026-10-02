@@ -61,6 +61,21 @@ def _ablak_meretezese(window, qt_app) -> None:
         qt_app.processEvents()
 
 
+def _egyes_nezetre_hangol(window, qt_app) -> None:
+    """A fit-nézet mérete a platform betűmetrikájától függ (a fejléc/sáv magassága).
+
+    Mért: a CI ubuntu-lába 1029 px magas ablakban 805 px-es képet adott (helyben 800), ezért a
+    teszt a tesztábra 1:1 mérése előtt az ablak magasságát a mért eltérés szerint igazítja."""
+    foto = _item(window, "viewerImage")
+    for _ in range(4):
+        elteres = float(foto.property("paintedWidth")) - FOTO_MERET
+        if abs(elteres) <= 1:
+            return
+        window.setProperty("height", round(float(window.property("height")) - elteres))
+        for _ in range(8):
+            qt_app.processEvents()
+
+
 def _kattint(window, elem, qt_app) -> None:
     pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
     QTest.mouseClick(
@@ -248,6 +263,7 @@ def test_a_lila_foto_feletti_savkitoltes_es_keret_a_referenciat_adja(
     _kattint(window, _item(window, "editToolTilt"), qt_app)
     for _ in range(5):
         qt_app.processEvents()
+    _egyes_nezetre_hangol(window, qt_app)
     kep = window.grabWindow()
     assert not kep.isNull(), "a valódi főablak képe nem rajzolódott ki"
 
@@ -348,6 +364,7 @@ def test_a_kiegyenesito_racs_elso_megnyitaskor_atlatszik_a_savon_de_nem_a_gombok
     _kattint(window, _item(window, "editToolTilt"), qt_app)
     for _ in range(8):
         qt_app.processEvents()
+    _egyes_nezetre_hangol(window, qt_app)
 
     window_image = window.grabWindow()
     assert not window_image.isNull(), "a valódi főablak képe nem rajzolódott ki"
