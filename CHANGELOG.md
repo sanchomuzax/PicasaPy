@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- A Kiegyenesítés csúszkájának háttere áttetsző sötét kitöltést és világos
+  keretet kapott, mint az Alkalmaz és a Mégse gomb (#4036).
+
 ## [0.8.661] – 2026-10-02
 
 ### Javítva

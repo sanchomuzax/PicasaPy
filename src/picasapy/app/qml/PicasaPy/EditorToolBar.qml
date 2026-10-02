@@ -189,6 +189,11 @@ Item {
                 //: a `toolslider` TELJES MAGASSÁGÚ hátteret rajzol (a
                 //: `scaleslider` vékony sávjával szemben) — mérve
                 grooveThickness: sav.gombMagassag
+                //: #4036: ugyanaz a már mért, áttetsző szín, mint a gombokon.
+                //: A PicasaSlider más példányai az eredeti témaszínükön maradnak.
+                grooveColor: sav.kitoltesSzin
+                grooveBorderColor: sav.keretSzin
+                grooveBorderWidth: 2
                 handleWidth: sav.csuszkaFogantyuSzelesseg
                 handleHeight: sav.csuszkaFogantyuMagassag
                 from: sav.csuszkaMin
