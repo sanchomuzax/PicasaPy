@@ -1,13 +1,13 @@
-"""#1908: a festett ecset-maszk munkamenet-állapota.
+"""#1908/#3541: a Vámpírszem ecset-maszkjának munkamenet-állapota.
 
 A maszk **vonásokból** áll elő, nem kész bitképből: a felület a KIRAJZOLT
 képhez normált koordinátákat ad, a bitkép a kért felbontáson születik. Így
 ugyanaz a festés az előnézeten és a mentett képen ugyanoda esik — a
 nagyítástól függetlenül.
 
-Mérve (#1908): az eredeti Picasa a maszkot NEM tárolja (három telepítés
-`db3`-ában nulla találat), ezért az állapot munkamenet-élettartamú, és
-képváltásnál eldobódik.
+Az eredeti Picasa a Vámpírszem vonásait a `filters=` sorban tárolja. A
+PicasaPy-ban a vonások egyelőre csak a szerkesztő-munkamenetben élnek;
+tartós tárolásuk külön feladat (#4046).
 """
 
 from __future__ import annotations
@@ -165,7 +165,7 @@ class TestAzElonezetAtveszi:
 
         ut = self._kep(tmp_path)
         szolgaltato = EditPreviewProvider()
-        ops = parse_filters("PicnikTint=1,0.000000,80cfff;")
+        ops = parse_filters("ReanimatedEyeColor=1,6.000000,20.000000;")
 
         szolgaltato.register("1", ut, ops)
         nelkul = szolgaltato._images.get("1")
@@ -181,11 +181,12 @@ class TestAzElonezetAtveszi:
         def kepont(kep, x, y):
             return kep.pixelColor(x, y).getRgb()[:3]
 
-        # a jobb szél a maszk NÉLKÜLI esethez képest MÁS (ott nincs festés),
-        # a bal oldal viszont mindkettőben effektezett
-        assert kepont(nelkul, 58, 20) != kepont(maszkkal, 58, 20), (
-            "a maszk nélküli hívás a TELJES képre futott — ez a régi, elvárt "
-            "viselkedés; ha itt egyezik, a maszk nem hatott"
+        # A bal oldalon látszik a festett hatás, a jobb oldal érintetlen marad.
+        assert kepont(nelkul, 15, 20) != kepont(maszkkal, 15, 20), (
+            "a befestett területen nem látszik a Vámpírszem hatása"
+        )
+        assert kepont(nelkul, 58, 20) == kepont(maszkkal, 58, 20), (
+            "a maszk nélküli jobb oldalon is megjelent a hatás"
         )
 
     def test_vonas_nelkul_a_regi_ut_fut(self, qt_app, tmp_path):

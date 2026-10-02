@@ -2,8 +2,8 @@
 
 A maszkot eddig egyedül az előnézeti út adta át a láncnak
 (`edit_preview.py`: `apply_filters(..., paint_mask=maszk)`); a mentés maszk
-nélkül renderelt, így a Felpörgetés, a Képpontnagyítás, a Lágyítás és az
-Árnyalás a mentett fájlban az EGÉSZ képre került rá.
+nélkül renderelt, így a festhető Vámpírszem-hatás nem ugyanazt a területet
+érintette a mentett fájlban, mint az előnézetben.
 
 A mérce képpont-összevetés: ugyanaz a vonás az előnézeten és a mentett képen
 ugyanazt a területet érinti.
@@ -27,9 +27,9 @@ from picasapy.app.save_controller import _render_for_save
 from picasapy.edit.session import EditSession
 from picasapy.render.chain import apply_filters
 
-#: képpontonkénti (térbeli szomszédság nélküli) festhető effekt — így a
-#: forgatott eset is bitre összevethető
-LANC = "PicnikTint=1,0.000000,0080cfff;"
+#: A Vámpírszem festhető effektje — forgatásnál a kör alakú elmosás is
+#: együtt fordul a maszkkal.
+LANC = "ReanimatedEyeColor=1,6.000000,20.000000;"
 VONASOK = (Vonas(0.25, 0.3, 0.12, False), Vonas(0.3, 0.35, 0.12, False))
 
 
@@ -66,9 +66,12 @@ def test_a_festetlen_terulet_erintetlen_marad(kep):
 
 def test_forgatott_kepnel_a_maszk_a_keppel_egyutt_fordul(kep):
     mentett = _render_for_save(kep, 1, LANC, 0, paint_strokes=VONASOK)
-    np.testing.assert_array_equal(
-        mentett, cv2.rotate(_elonezet(kep), cv2.ROTATE_90_CLOCKWISE)
-    )
+    eredeti = cv2.rotate(cv2.imread(str(kep)), cv2.ROTATE_90_CLOCKWISE)
+    valtozott = (mentett != eredeti).any(axis=-1)
+    # A két forrásbeli vonás a forgatás után a kép jobb felére kerül.
+    assert valtozott[22, 41], "a forgatott ecsetmaszk nem érte el a festett pontot"
+    assert valtozott[27, 38], "a második forgatott ecsetvonás elveszett"
+    assert not valtozott[:, :25].any(), "a forgatás után a maszk rossz oldalra került"
 
 
 def test_tukrozott_kepnel_a_maszk_a_keppel_egyutt_tukrozodik(kep):

@@ -279,111 +279,41 @@ def apply_picnik_tint_op(image, op: FilterOp):
 
 
 def apply_reanimated_eye_color_op(image, op: FilterOp):
-    # #688: maszk nélkül AZONOSSÁG — a lánc nem tud ecset-maszkot adni, és
-    # az eredeti Picasa is érintetlenül hagyja a be nem festett képet.
+    # #688: maszk nélkül AZONOSSÁG — az eredeti Picasa is érintetlenül
+    # hagyja a be nem festett képet.
     return focal.apply_reanimated_eye_color(image, blur=_float_at(op, 0, 6.0), fade=_float_at(op, 1, 20.0))
 
 
 def alkalmazd_maszkkal(kulcs: str, image, op: FilterOp, mask):
-    """Egy festhető-maszkos effekt alkalmazása a MASZKON ÁT (#1908).
+    """A festett Vámpírszem-maszk alkalmazása (#3541).
 
-    A mért szemantika (`filterdesc.xml` 1269–1295., #1605): a maszk a külső
-    `NestedImageOperation`-ön áll (`Mask="{_mctr.mask}"`), tehát az effekt a
-    TELJES képen lefut, és az eredménye a maszkon át kerül a képre:
-    `base·(1−mask) + effekt·mask`.
-
-    ⚠️ KIVÉTEL a `ReanimatedEyeColor`: annak a SAJÁT függvénye veszi a
-    maszkot (`glimmer_focal.apply_reanimated_eye_color(mask=…)`), mert ott a
-    maszk nem csak kompozit-súly — üres maszkkal az effekt azonosság (#688),
-    és a belső elmosás is a befestett területre szorul.
+    A többi Glimmer-effekt ecset nélkül a teljes képre fut.
     """
-    import numpy as np
-
-    from . import glimmer_ops as ops
-
-    if kulcs == "reanimatedeyecolor":
-        return focal.apply_reanimated_eye_color(
-            image,
-            blur=_float_at(op, 0, 6.0),
-            fade=_float_at(op, 1, 20.0),
-            mask=mask,
-        )
-    hatas = _HANDLERS_FESTHETO[kulcs](image, op)
-    sulyok = np.clip(np.asarray(mask, dtype=np.float32), 0.0, 1.0)
-    kevert = ops.masked_blend(
-        image.astype(np.float32), hatas.astype(np.float32), sulyok
+    if kulcs not in PAINTABLE_MASK_OPS:
+        raise ValueError(f"A(z) {kulcs!r} effekt nem festhető maszkkal")
+    return focal.apply_reanimated_eye_color(
+        image,
+        blur=_float_at(op, 0, 6.0),
+        fade=_float_at(op, 1, 20.0),
+        mask=mask,
     )
-    return np.clip(np.rint(kevert), 0, 255).astype(np.uint8)
-
-
-#: A négy „sima" festhető effekt kezelője — az ötödik (`ReanimatedEyeColor`)
-#: a saját maszk-paraméterén megy, ld. `alkalmazd_maszkkal`.
-_HANDLERS_FESTHETO = {
-    "boost": apply_boost_op,
-    "pixelate": apply_pixelate_op,
-    "soften": apply_soften_op,
-    "picniktint": apply_picnik_tint_op,
-}
 
 
 #: Festhető (ecset-)maszkos effektek — a `chain.py` `apply_filters`-e
-#: ezekhez külön magyar figyelmeztetést fűz.
-#:
-#: ⭐ **MÉRVE: ÖT effekt, KÉT család** (#1908 296. köre, #3055). A
-#: `filterdesc.xml`-ben öt szűrő kap `Mask="{_mctr.mask}"`-ot, és a `_mctr`-t
-#: két különböző befoglaló elem adja:
-#:
-#:   `cnt:PaintEffectCanvas`   → `Boost` (715) · `Pixelate` (1199) ·
-#:                               `Soften` (1348) · `PicnikTint` (1360)
-#:   `eff:PaintOnEffectBase`   → `ReanimatedEyeColor` (1283)
-#:
-#: ⛔ Ez a halmaz korábban KETTŐT tartalmazott — egy tagot mindkét családból,
-#: a maradék három (`Boost`, `Pixelate`, `Soften`) kimaradt, és így nem kapott
-#: figyelmeztetést. Aki csak a `PaintEffectCanvas`-ra keres, épp a
-#: `ReanimatedEyeColor`-t hagyja ki; aki a talált kettőt általánosítja, a
-#: többi hármat. A `Boost` a tulajdonos korpuszában (859 `.picasa.ini`)
-#: SZEREPEL, tehát élesben előforduló eset volt.
-#:
-#: Őr: `tests/render/test_festheto_maszk_ot_effekt_3055.py` — a listát a
-#: spec TÁBLÁJÁBÓL olvassa, nem kézzel sorolja, hogy ne csúszhasson el újra.
-#: A spec: `docs/specs/filterdesc-registry.md` „⛳ A festhető maszk: ÖT
-#: effekt, KÉT család".
-PAINTABLE_MASK_OPS = frozenset({
-    "boost",
-    "pixelate",
-    "soften",
-    "picniktint",
-    "reanimatedeyecolor",
-})
-
-#: #688: azok a festhető-maszkos effektek, amelyek ÜRES maszkkal indulnak —
-#: befestés nélkül az eredeti Picasa sem változtat a képen. A #685
-#: mérőszettjének exportja szerint a `ReanimatedEyeColor` ilyen (Picasa
-#: ΔE 0,18 = JPEG-zaj), a `PicnikTint` (ΔE 36,9) és a `Soften` (ΔE 5,5)
-#: viszont NEM: azok befestés nélkül is a teljes képre futnak.
-EMPTY_MASK_DEFAULT_OPS = frozenset({"reanimatedeyecolor"})
-
-PAINTABLE_MASK_WARNING_TEMPLATE = (
-    "{name}: a Picasa ecsettel kijelölt területre hatna, a PicasaPy-nak "
-    "még nincs ecset-eszköze — a hatás egyelőre a TELJES KÉPRE fut (#381)."
-)
+#: Csak a Vámpírszem festhető (`PaintOnEffectBase`). A `Boost`, `Pixelate`,
+#: `Soften` és `PicnikTint` az egész képre hatnak ecset nélkül (#3541).
+PAINTABLE_MASK_OPS = frozenset({"reanimatedeyecolor"})
 
 EMPTY_MASK_WARNING_TEMPLATE = (
-    "{name}: a Picasa csak az ecsettel BEFESTETT területre viszi fel, és "
-    "befestés nélkül semmit nem változtat — a PicasaPy-nak még nincs "
-    "ecset-eszköze, ezért a kép változatlan marad (#688)."
+    "{name}: nem érkezett ecsetmaszk, ezért a kép változatlan marad (#688)."
 )
 
 
 def paintable_mask_warning(name: str) -> str:
-    """A festhető-maszkos effekt figyelmeztetése — attól függ, hogy az
-    effekt ÜRES vagy teljes maszkkal indul-e (#688)."""
-    template = (
-        EMPTY_MASK_WARNING_TEMPLATE
-        if name.casefold() in EMPTY_MASK_DEFAULT_OPS
-        else PAINTABLE_MASK_WARNING_TEMPLATE
-    )
-    return template.format(name=name)
+    """Csak a Vámpírszem üres festhető maszkjára adjon figyelmeztetést."""
+    if name.casefold() not in PAINTABLE_MASK_OPS:
+        return ""
+    return EMPTY_MASK_WARNING_TEMPLATE.format(name=name)
 
 
 __all__ = [
@@ -416,8 +346,6 @@ __all__ = [
     "apply_picnik_tint_op",
     "apply_reanimated_eye_color_op",
     "PAINTABLE_MASK_OPS",
-    "PAINTABLE_MASK_WARNING_TEMPLATE",
-    "EMPTY_MASK_DEFAULT_OPS",
     "EMPTY_MASK_WARNING_TEMPLATE",
     "alkalmazd_maszkkal",
     "paintable_mask_warning",
