@@ -16,6 +16,10 @@ Item {
     required property string iconFile
     property bool active: false
     property bool tileEnabled: true
+    // #4062: modal Kiegyenesítéskor az eredeti a használható csempéket
+    // erősebben halványítja; más letiltási oknál marad a 0,4-es érték.
+    property bool dimmedByTiltModal: false
+    property real disabledOpacity: 0.4
     signal activated(string tool)
 
     // #741: a MÉRT geometria (`docs/specs/szerkeszto-panel-meretek.md` 3.):
@@ -38,7 +42,10 @@ Item {
     // az öröklött enabled is számít (#103): videónál a PhotoViewer az
     // egész panelt tiltja — a csempe ilyenkor vizuálisan is szürkül
     enabled: tile.tileEnabled
-    opacity: tile.enabled ? 1 : 0.4
+    opacity: tile.enabled
+             ? 1
+             : (tile.tileEnabled && tile.dimmedByTiltModal
+                ? tile.disabledOpacity : 0.4)
 
     // #741: a kiemelés a CSEMPEKÉP dobozát fedi, nem az egész cellát — az
     // eredetiben a kattintható réteg maga a 44 × 30-as kép, a felirat külön
@@ -51,14 +58,15 @@ Item {
         // témában (fix világos árnyalatok) — a jelző-kék tokenből
         // (Theme.selectionBlue) származtatott áttetsző rétegre váltva
         // mindkét témán kontrasztos marad, a hover halványabb az aktívnál.
-        color: tile.active
+        // #4062: letiltott csempe nem maradhat kék aktív állapotú.
+        color: tile.active && tile.enabled
                ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
                          Theme.selectionBlue.b, 0.45)
-               : (tileMouse.containsMouse && tile.tileEnabled
+               : (tileMouse.containsMouse && tile.enabled
                   ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
                             Theme.selectionBlue.b, 0.18)
                   : "transparent")
-        border.width: tile.active ? 1 : 0
+        border.width: tile.active && tile.enabled ? 1 : 0
         border.color: Theme.selectionBlue
     }
 

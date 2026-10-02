@@ -33,6 +33,10 @@ import QtQuick.Controls
 Slider {
     id: control
 
+    // A gazda külön képpont-hű halványítást kérhet, de az alapérték minden
+    // más csúszkán megőrzi az eddigi letiltott fogantyútintát.
+    property real disabledHandleOpacity: 0.55
+
     readonly property bool isHorizontal: orientation === Qt.Horizontal
 
     // ------------------------------------------------------------------
@@ -212,7 +216,7 @@ Slider {
                : (1 - control.visualPosition) * (control.availableHeight - height))
         implicitWidth: control.handleWidth
         implicitHeight: control.handleHeight
-        opacity: control.enabled ? 1.0 : 0.55
+        opacity: control.enabled ? 1.0 : control.disabledHandleOpacity
 
         //: #2664: a RÉTEG és a RAJZ nem ugyanaz. A `respack.yt` mindkét
         //: fogantyú-rétege 2 képponttal szélesebb és 3-mal magasabb, mint a

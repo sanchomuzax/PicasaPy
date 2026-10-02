@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from math import sqrt
 from pathlib import Path
+from statistics import median
 
 from PySide6.QtCore import QObject, QPoint, QPointF, QRect, Qt
 from PySide6.QtGui import QColor, QImage, QPainter
@@ -117,6 +119,53 @@ def _kulonbozo_pixelek(egy: QImage, ketto: QImage, rect: QRect) -> int:
             if egy.pixelColor(x, y) != ketto.pixelColor(x, y):
                 db += 1
     return db
+
+
+def _rgb_tav(egy, ketto) -> float:
+    return sqrt(
+        (egy.red() - ketto.red()) ** 2
+        + (egy.green() - ketto.green()) ** 2
+        + (egy.blue() - ketto.blue()) ** 2
+    )
+
+
+def _tartalom_arany(engedelyezett, nyitott, rectek: tuple[QRect, ...]) -> float:
+    """A tartalom panelháttértől mért kontrasztjának medián aránya."""
+    aranyok = []
+    for rect in rectek:
+        hatter = engedelyezett.pixelColor(rect.left() - 2, rect.top() + 2)
+        for y in range(rect.top(), rect.bottom() + 1):
+            for x in range(rect.left(), rect.right() + 1):
+                elotte = engedelyezett.pixelColor(x, y)
+                elotte_tav = _rgb_tav(elotte, hatter)
+                if elotte_tav > 25:
+                    utana_tav = _rgb_tav(nyitott.pixelColor(x, y), hatter)
+                    aranyok.append(utana_tav / elotte_tav)
+    assert aranyok, "a kijelölt régióban nem találtam háttértől eltérő képpontot"
+    return median(aranyok)
+
+
+def _nem_hatter_pixelek(kep, rect: QRect) -> int:
+    hatter = kep.pixelColor(rect.left() - 2, rect.top() + 2)
+    return sum(
+        _rgb_tav(kep.pixelColor(x, y), hatter) > 25
+        for y in range(rect.top(), rect.bottom() + 1)
+        for x in range(rect.left(), rect.right() + 1)
+    )
+
+
+def _ikon_kontrasztja(kep: QImage, ikon) -> int:
+    """Az ikon képpontjainak kontrasztja a közvetlen panelháttérhez képest."""
+    rect = _vezerlo_rect(ikon)
+    hatter = kep.pixelColor(rect.left() - 2, rect.top() + 2)
+    return sum(
+        abs(szin.red() - hatter.red())
+        + abs(szin.green() - hatter.green())
+        + abs(szin.blue() - hatter.blue())
+        for y in range(rect.top(), rect.bottom() + 1)
+        for x in range(rect.left(), rect.right() + 1)
+        for szin in (kep.pixelColor(x, y),)
+    )
 
 
 def _thumb_url_a_forrasbol(controller, photos, forras: Path, qt_app) -> str:
@@ -293,25 +342,48 @@ def _kepterulet_toolbar_folott(image, toolbar) -> QRect:
     return rect.adjusted(3, 3, -3, -3)
 
 
-def test_kiegyenesites_csempe_ujrakattintasa_visszarajzolja_a_mentett_kepet(
+def test_kiegyenesites_nyitva_letiltja_a_csempeket_es_nem_valtoztat_a_kepen(
     qml_app_negyzet_kepek, qt_app, tmp_path
 ):
-    """#4058: a csempe bezárása dobja el az előnézetet, mentés nélkül."""
+    """#4062: a letiltott panel csempéje ne zárja be a Kiegyenesítést."""
     window, controller, _ = qml_app_negyzet_kepek
     _forrasok(controller, negyedes=True)
     _beallit_ablak(window, qt_app)
     viewer = _nezobe_lep(window, qt_app)
-    photos = viewer.property("photosModel")
     edit_controller = viewer.property("editCtl")
+    photos = viewer.property("photosModel")
     ini_path = tmp_path / "kepek" / ".picasa.ini"
     ini_elotte = ini_path.read_bytes() if ini_path.exists() else None
     thumb_elotte = _thumb_url_a_forrasbol(
         controller, photos, Path(str(controller.photos.filePathAt(0))), qt_app
     )
+    panel = _item(window, "viewerEditorPanel")
+    icon_nevek = (
+        "editToolCropIcon",
+        "editToolTiltIcon",
+        "editToolRedeyeIcon",
+        "editToolEnhanceIcon",
+        "editToolAutolightIcon",
+        "editToolAutocolorIcon",
+        "editToolRetouchIcon",
+        "editToolTextIcon",
+        "fixesFillLightIcon",
+    )
+    ikonok = {nev: _item(window, nev) for nev in icon_nevek}
+    engedelyezett = _felvetel(window, tmp_path / "panel-engedelyezett.png")
+    kontraszt_engedelyezett = {
+        nev: _ikon_kontrasztja(engedelyezett, ikon)
+        for nev, ikon in ikonok.items()
+    }
     image = _item(window, "viewerImage")
 
     _kattint(window, _item(window, "editToolTilt"), qt_app)
-    assert _item(window, "viewerEditorPanel").property("tiltActive") is True
+    tilt_nyitva = panel.property("tiltActive") is True
+    letiltott = _felvetel(window, tmp_path / "panel-tilt-nyitva.png")
+    kontraszt_letiltott = {
+        nev: _ikon_kontrasztja(letiltott, ikon)
+        for nev, ikon in ikonok.items()
+    }
     grid = _item(window, "straightenGridOverlay")
     toolbar = _item(window, "editorToolBar")
     grid.setProperty("visible", False)
@@ -334,26 +406,161 @@ def test_kiegyenesites_csempe_ujrakattintasa_visszarajzolja_a_mentett_kepet(
     assert huzas_diff > 0, "a valódi csúszkahúzás nem változtatta meg a kép kimenetét"
     grid.setProperty("visible", True)
 
-    # rontás-kontroll: javítás nélkül ezen az úton 38 943 képpont tért el;
-    # az eredeti fa bezárta az eszközt, de az előnézetet nem rajzolta vissza.
+    # rontás-kontroll: a javítás előtti fa engedte a valódi csempekattintást;
+    # tiltActive hamis lett, és a képen 38 943 képpont megváltozott.
     _kattint(window, _item(window, "editToolTilt"), qt_app)
-    assert _item(window, "viewerEditorPanel").property("tiltActive") is False
+    tilt_nyitva_kattintas_utan = panel.property("tiltActive") is True
     grid.setProperty("visible", False)
     for _ in range(5):
         qt_app.processEvents()
     csempe_utan = _felvetel(window, tmp_path / "csempe-tilt-bezaras-utan.png")
-    csempe_diff = _kulonbozo_pixelek(nyitaskori_1, csempe_utan, kep_rect)
+    csempe_diff = _kulonbozo_pixelek(huzas_utan, csempe_utan, kep_rect)
 
+    hibak = []
+    if not tilt_nyitva:
+        hibak.append("a Kiegyenesítés csempére kattintás után nem nyílt meg")
+    if _item(window, "editTabBar").property("enabled") is not True:
+        hibak.append("a fülek fejléce is letiltódott")
+    if _item(window, "fixesFillSlider").property("enabled") is not False:
+        hibak.append("a Derítőfény csúszkája engedélyezett maradt")
+    for nev in icon_nevek[:-1]:
+        tile = _item(window, nev.removesuffix("Icon"))
+        if tile.property("enabled") is not False:
+            hibak.append(f"{nev} enabled állapota nem tiltott")
+    for nev in icon_nevek:
+        before = kontraszt_engedelyezett[nev]
+        after = kontraszt_letiltott[nev]
+        if before <= 0 or after >= before * 0.7:
+            hibak.append(
+                f"{nev} képpontjai nem szürkültek: kontraszt {before} → {after}"
+            )
+    if not tilt_nyitva_kattintas_utan:
+        hibak.append("a csempe valódi kattintása bezárta a Kiegyenesítést")
+    if csempe_diff != 0:
+        hibak.append(f"a kattintás {csempe_diff} képpontot változtatott a képen")
+    if edit_controller.property("chainValue") != "":
+        hibak.append("a kattintás szerkesztési láncot írt")
+    if edit_controller.property("undoAction") != "":
+        hibak.append("a kattintás Undo-műveletet hagyott")
+    if edit_controller.property("redoAction") != "":
+        hibak.append("a kattintás Redo-műveletet hagyott")
+    if photos.itemAt(0)["hasEdits"] is not False:
+        hibak.append("a kattintás szerkesztettnek jelölte a képet")
+    if photos.thumbUrlAt(0) != thumb_elotte:
+        hibak.append("a kattintás megváltoztatta a bélyegkép URL-jét")
     ini_utana = ini_path.read_bytes() if ini_path.exists() else None
-    assert edit_controller.property("chainValue") == ""
-    assert edit_controller.property("undoAction") == ""
-    assert edit_controller.property("redoAction") == ""
-    assert photos.itemAt(0)["hasEdits"] is False
-    assert photos.thumbUrlAt(0) == thumb_elotte
-    assert ini_utana is None and ini_elotte is None
-    assert csempe_diff == 0, (
-        "a csempe újrakattintása után a kép előnézete nem állt vissza "
-        f"(eltérő képpontok: {csempe_diff})"
+    if ini_utana != ini_elotte:
+        hibak.append("a kattintás megváltoztatta a .picasa.ini-t")
+    assert not hibak, "; ".join(hibak)
+
+
+def test_kiegyenesites_nyitva_a_referencia_szerint_szurkit_es_elrejti_a_visszavonast(
+    qml_app_negyzet_kepek, qt_app, tmp_path
+):
+    """A vizuális célok forrása: picasa-colab-jobs job-70, 2. és 4. kép."""
+    window, controller, _ = qml_app_negyzet_kepek
+    _forrasok(controller, negyedes=True)
+    _beallit_ablak(window, qt_app)
+    _nezobe_lep(window, qt_app)
+    panel = _item(window, "viewerEditorPanel")
+
+    csempe_nevek = (
+        "editToolCropIcon",
+        "editToolTiltIcon",
+        "editToolRedeyeIcon",
+        "editToolEnhanceIcon",
+        "editToolAutolightIcon",
+        "editToolAutocolorIcon",
+        "editToolRetouchIcon",
+        "editToolTextIcon",
+    )
+    csempek = {nev: _vezerlo_rect(_item(window, nev)) for nev in csempe_nevek}
+    fill_ikon = _vezerlo_rect(_item(window, "fixesFillLightIcon"))
+    fill_csuszka = _vezerlo_rect(_item(window, "fixesFillSlider"))
+    fulsav = _vezerlo_rect(_item(window, "editTabBar"))
+    hisztogram = _vezerlo_rect(_item(window, "viewerHistogramBox"))
+    undo_sor = _vezerlo_rect(_item(window, "editorGlobalUndoRow"))
+
+    elotte = _felvetel(window, tmp_path / "4062-tilt-elott.png")
+    crop_tile = _item(window, "editToolCrop")
+    crop_tile.setProperty("tileEnabled", False)
+    masik_okbol = _felvetel(window, tmp_path / "4062-mas-okbol-letiltva.png")
+    masik_ok_arany = _tartalom_arany(
+        elotte, masik_okbol, (csempek["editToolCropIcon"],)
+    )
+    crop_tile.setProperty("tileEnabled", True)
+    _kattint(window, _item(window, "editToolTilt"), qt_app)
+    assert panel.property("tiltActive") is True
+    nyitva = _felvetel(window, tmp_path / "4062-tilt-nyitva.png")
+
+    # A régiók csak ikont, illetve a felirat nélküli csúszkát tartalmazzák;
+    # betűképpontot és betűméretet nem rögzítenek.
+    csempe_aranyok = {
+        nev: _tartalom_arany(elotte, nyitva, (rect,))
+        for nev, rect in csempek.items()
+    }
+    fill_arany = _tartalom_arany(elotte, nyitva, (fill_ikon, fill_csuszka))
+    ful_diff = _kulonbozo_pixelek(elotte, nyitva, fulsav)
+    hisztogram_diff = _kulonbozo_pixelek(elotte, nyitva, hisztogram)
+    undo_lathato = _nem_hatter_pixelek(nyitva, undo_sor)
+
+    # Képpont-próba: tiltott, aktív csempén az aktív jelző nem rajzolódhat ki.
+    tilt_csempe = _item(window, "editToolTilt")
+    tilt_ikon_rect = csempek["editToolTiltIcon"]
+    aktiv = tilt_csempe.property("active")
+    tilt_csempe.setProperty("active", False)
+    aktiv_nelkul = _felvetel(window, tmp_path / "4062-aktiv-jelzo-nelkul.png")
+    tilt_csempe.setProperty("active", aktiv)
+    aktivval = _felvetel(window, tmp_path / "4062-aktiv-jelzo-tiltva.png")
+    aktiv_jelzo_diff = _kulonbozo_pixelek(
+        aktiv_nelkul, aktivval, tilt_ikon_rect
+    )
+    het_csempe_mediana = median(
+        arany
+        for nev, arany in csempe_aranyok.items()
+        if nev != "editToolTiltIcon"
+    )
+    (tmp_path / "4062-meresek.txt").write_text(
+        "Régió\tReferencia\tHelyi mérés\n"
+        f"7 nem aktív csempe\t0.25\t{het_csempe_mediana:.4f}\n"
+        f"Kiegyenesítés-csempe\t0.05\t{csempe_aranyok['editToolTiltIcon']:.4f}\n"
+        f"Derítőfény sor\t0.25\t{fill_arany:.4f}\n"
+        f"Más okból letiltott csempe\t0.40\t{masik_ok_arany:.4f}\n"
+        f"Fülsáv eltérő képpont\t0\t{ful_diff}\n"
+        f"Hisztogram eltérő képpont\t0\t{hisztogram_diff}\n"
+        f"Undo/Redo nem háttérképpont\t0\t{undo_lathato}\n"
+        f"Aktív jelző pixelkülönbség\t0\t{aktiv_jelzo_diff}\n",
+        encoding="utf-8",
+    )
+
+    hibak = []
+    for nev, arany in csempe_aranyok.items():
+        cel = 0.05 if nev == "editToolTiltIcon" else 0.25
+        if abs(arany - cel) > 0.06:
+            hibak.append(f"{nev} szürkesége {arany:.3f}, cél {cel:.2f} ±0.06")
+    if abs(fill_arany - 0.25) > 0.06:
+        hibak.append(f"a Derítőfény sor szürkesége {fill_arany:.3f}, cél 0.25 ±0.06")
+    if abs(masik_ok_arany - 0.4) > 0.06:
+        hibak.append(
+            f"más okból letiltott csempe szürkesége {masik_ok_arany:.3f}, cél 0.40 ±0.06"
+        )
+    if ful_diff != 0:
+        hibak.append(f"a fülsávon {ful_diff} képpont változott")
+    if hisztogram_diff != 0:
+        hibak.append(f"a hisztogramon {hisztogram_diff} képpont változott")
+    if undo_lathato != 0:
+        hibak.append(f"a Visszavonás/Újra sorban {undo_lathato} nem-háttér képpont látszik")
+    if aktiv_jelzo_diff != 0:
+        hibak.append(f"a letiltott csempe aktív jelzője {aktiv_jelzo_diff} képpontot fest")
+
+    # A számolt erősségőr a helyi render és a közölt mérések számait hasonlítja;
+    # a referencia-kép vizuális egyezését önmagában nem méri.
+    assert not hibak, (
+        "; ".join(hibak)
+        + f"; csempék={csempe_aranyok!r}; Derítőfény={fill_arany:.3f}; "
+        + f"más okú tiltás={masik_ok_arany:.3f}; "
+        + f"fülsáv={ful_diff}; hisztogram={hisztogram_diff}; "
+        + f"Visszavonás/Újra={undo_lathato}; aktív jelző={aktiv_jelzo_diff}"
     )
 
 
@@ -555,3 +762,33 @@ def test_kiegyenesites_elonezet_elveszik_lapozaskor_es_bezaraskor(
     assert edit_controller.property("redoAction") == ""
     assert photos.itemAt(0)["hasEdits"] is False
     assert not ini_path.exists()
+
+
+def test_kiegyenesites_nyitva_a_nem_rajzolt_visszavonas_nem_kattinthato(
+    qml_app_negyzet_kepek, qt_app, tmp_path
+):
+    """#4062: az eredetiben a Visszavonás/Újra sor nyitott Kiegyenesítésnél nincs
+    kirajzolva — ami nem látszik, az nem is kattintható (a lépés nem vonódik vissza)."""
+    # rontás-kontroll: az `EditorUndoRow.qml` `enabled: !panel.tiltActive` sora nélkül a
+    # láthatatlan gombra kattintva az `autolight` lépés visszavonódik (a lánc kiürül).
+    window, controller, _ = qml_app_negyzet_kepek
+    _forrasok(controller, negyedes=True)
+    _beallit_ablak(window, qt_app)
+    viewer = _nezobe_lep(window, qt_app)
+    edit_controller = viewer.property("editCtl")
+    panel = _item(window, "viewerEditorPanel")
+
+    _kattint(window, _item(window, "editToolAutolight"), qt_app)
+    lanc_elotte = edit_controller.property("chainValue")
+    assert lanc_elotte.startswith("autolight"), f"az Auto Contrast nem épült a láncba: {lanc_elotte!r}"
+
+    _kattint(window, _item(window, "editToolTilt"), qt_app)
+    assert panel.property("tiltActive") is True
+    undo = _item(window, "editUndoButton")
+    assert undo.property("enabled") is False, "a nem rajzolt Visszavonás gomb nincs letiltva"
+
+    _kattint(window, undo, qt_app)
+    assert panel.property("tiltActive") is True, "a láthatatlan gomb kattintása bezárta az eszközt"
+    assert edit_controller.property("chainValue") == lanc_elotte, (
+        "a láthatatlan Visszavonás gomb kattintása visszavonta a lépést"
+    )

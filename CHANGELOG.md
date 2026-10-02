@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Nyitott Kiegyenesítés mellett a szerkesztőpanel eszközei és a Derítőfény letiltva jelennek meg, így egy csempekattintás nem zárja be a műveletet (#4062).
+
 ## [0.8.659] – 2026-10-02
 
 ### Javítva
