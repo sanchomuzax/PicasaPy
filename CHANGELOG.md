@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.666] – 2026-10-03
+
 - A Kiegyenesítés csúszkájának sávja az eredeti Picasa 267×28 képpontos,
   7 px sugarú lekerekített téglalapját követi, jelölővonalak nélkül, és az
   Alkalmaz gombtól az eredetivel azonos, 11 képpontos rés választja el (#4073).
