@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Kiegyenesítés eszközsorának tesztjei mostantól a sor abszolút képernyő-helyét is őrzik, és a rés mérése a kép aljának geometriájából történik (#4087).
+
 ## [0.8.666] – 2026-10-03
 
 - A Kiegyenesítés csúszkájának sávja az eredeti Picasa 267×28 képpontos,

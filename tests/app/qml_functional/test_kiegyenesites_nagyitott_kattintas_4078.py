@@ -19,6 +19,17 @@ def _pump(qt_app, count: int = 8) -> None:
         qt_app.processEvents()
 
 
+def _varj_forgatasra(window, qt_app, fok: float, hatarido_ms: int = 5000) -> None:
+    """A `rescan` aszinkron: a forgatás nem azonnal ér a nézőkép elemére."""
+    kep = _item(window, "viewerImage")
+    hatralevo = hatarido_ms
+    while kep.property("rotation") != fok and hatralevo > 0:
+        QTest.qWait(20)
+        _pump(qt_app, 2)
+        hatralevo -= 20
+    assert kep.property("rotation") == fok
+
+
 def _point(item, x: float = 0.5, y: float = 0.5) -> QPoint:
     scene = item.mapToScene(QPointF(item.width() * x, item.height() * y))
     return QPoint(round(scene.x()), round(scene.y()))
@@ -238,7 +249,7 @@ def test_nagyitott_toolbar_kattintas_kettos_nezetben_es_forgatva(
         _click(window, _item(window, f"viewerLayout{layout.title()}"), qt_app)
         assert viewer.property("layoutMode") == layout
     if rotated:
-        assert _item(window, "viewerImage").property("rotation") == 90
+        _varj_forgatasra(window, qt_app, 90)
 
     # A kettős nézetben a fókuszált félen lévő TapHandler a képhúzást
     # fókuszváltásként kezeli; itt az eseményút mérése a kis, de küszöb feletti
