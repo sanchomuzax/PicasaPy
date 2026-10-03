@@ -1620,19 +1620,18 @@ nem üres filters-érték számít.
 A CImageOutput a beállításobjektumot külön, this+0x74 alatt tárolja; ha a
 konstruktor paraméterként kap ilyet, a 0x0073ef90–0x0073ef98 feltölti és
 beállítja a this+0xad4 jelzőt. A másolási döntés nullás módosítottsági
-eredménye közvetlenül a CopyFileW-re ugrik; ezen az ágon nincs
-FileExportSize- vagy FileExportQuality-feltétel, és a this+0xad4 jelzőt sem
-olvassa. A méret/minőség-beállítás önmagában nem tiltja le a másolást. A helyi
-mérőadatban nincs szerkesztetlen kép nem alapértelmezett beállítással, ezért
-ez statikus bináris eredmény, nem futásidejű mérés.
-
-PicasaPy-eltérés: az `src/picasapy/export/exporter.py` `_is_noop_copy` csak
-`settings.max_dimension is None` esetén másol (548–555. sor); a
-`jpeg_quality` önmagában nem kapuz. Az eredeti
-ágban a méret/minőség sem kapuz, így méretkorlátozás mellett az eredeti a forrást
-másolja, míg nálunk átméretezés történik. Ha a kompatibilitás a cél, ez külön
-fejlesztői feladat: a tiszta JPEG másolását a max_dimension értékétől függetlenül
-engedje, és rögzítse, hogy ez az eredeti méretbeállítást figyelmen kívül hagyja.
+eredménye közvetlenül a CopyFileW-re ugrik; ezen az ágon (`0x0074012f`–`0x007401b8`)
+nincs FileExportSize- vagy FileExportQuality-feltétel. ⚠️ **Ez NEM jelenti, hogy a
+méretbeállítás a másolást nem tiltja:** a méretdöntés a CopyFileW-ág ELŐTT, másik
+függvényben (a hívó vagy a this+0xad4 beállításobjektum útján) is megtörténhet —
+ezt senki nem vizsgálta. Az eredeti Picasa ismert viselkedése (az Export párbeszéd
+méretválasztása szerkesztetlen képre is hat), és a mi méretválasztó tesztjeink
+(export-felület, e-mail „kisebb” méret) ennek ellentmondanak a „méretkapu nélkül”
+olvasatnak. **Átnézési korrekció (2026-10-04):** a „méret/minőség-beállítás nem
+tiltja a másolást” állítás egyutas, hiányos statikus eredmény volt; a ráépülő
+fejlesztés (PR #4118) a CI-n eltörte a méretválasztást, ezért nem olvadt be. A
+PicasaPy `_is_noop_copy` viselkedése (csak `max_dimension is None` esetén másol)
+MARAD. Nyitott: a CopyFileW-ág hívója a méretbeállítás mellett eljut-e ide.
 
 Két Picasa-mérőpár (#3229, meroadat.tar):
 
