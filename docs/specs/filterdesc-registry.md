@@ -2423,12 +2423,14 @@ már dokumentáltunk, csak LUT-tal, nem szorzással.
 **A `0x00bb87b0` viszont a NÉGY rekeszből CSAK EGYET tölt fel.** A
 két-megállós (fekete/fehér) esetben a `0xbb8931`–`0xbb8958` ciklus mind a
 256 index `i` (0–255) értékre kiszámolja az interpolált ARGB32 színt
-(`0x00bb85b0` hívásával, `pozíció = i`, két megálló: 0,0 és 1,0), és
+(`0x00bb85b0` hívásával, `pozíció = i`; két megállónál a munkavégző által
+generált pozíciók 0 és 255, lásd az RGB-interpolációs levezetést lent), és
 **KIZÁRÓLAG a `+0x800` rekeszbe** írja (`mov dword ptr [edx+ecx*4+0x800], eax`
 a `0xbb8951` címen). A `+0x000` és `+0x400` rekeszt a függvény explicit
 **NULLÁZZA** (`memset(esi, 0, 0x400)` és `memset(esi+0x400, 0, 0x400)`,
 `0xbb895a`–`0xbb897f`); a `+0xc00` (alfa) rekeszt nem érinti (más helyen
-töltődik fel, feltehetően identitás-áttengedéssel).
+töltődik fel: a `0xbcb270` az egész puffert nullázza, majd mind a négy rekeszt
+bájtonként identitásra állítja, a `+0xc00` rekeszben a bájt 3 = `i`).
 
 **Összerakva a `0x008f2640` mátrix-elemzés bájt-leképezésével**
 (`src[2]` = a mátrix R-oszlopa, ha a tároló a szokásos Win32-BGRA): a
@@ -3322,8 +3324,134 @@ egy kétmegállós színátmenetté áll össze, onnantól a `GradientMap` fut. 
 független horgony mondja ugyanezt: a közös munkavégző, a `+0x40` tag
 írása/olvasása, és a `GradientMap` beolvasójának meghívása.
 
-**Ami NINCS kiolvasva:** a két megálló pontos pozíciója (feltehetően 0 és 1,
-de ez nem mérés).
+#### Az RGB-megállók interpolációja — képlet, LUT és perem (#4090, 2026-10-03)
+
+*Forrás: `0x00bb8710`, `0x00bb87b0`, `0x00bb85b0`, `0x00bb84a0`,
+`0x00c29990`; megerősítés az eredeti gépi kód futtatásával `qemu-i386` alatt.*
+
+A `GradientMap` beolvasója (`0x00bb8710`) a `gradientArray`-t (`0x00cf010c`)
+a művelet `+0x40` mezőjébe teszi. A munkavégző (`0x00bb87b0`) a megállók
+színértékeit olvassa be, és a megállópozíciókat a darabszámból állítja elő.
+`n ≥ 2` megállónál a tárolt float32 pozíciók:
+
+```
+p[0] = 0
+p[n−1] = 255
+p[k] = float32(k · 255 / (n−1)),  1 ≤ k < n−1
+```
+
+Az első pozíciót a `fldz`/`fstp dword` állítja elő (`0x00bb88cf`–`0x00bb88d3`),
+a belső pozíciókat a `0x00cf39d0` double **255,0** konstanssal végzett
+szorzás/osztás és float32 tárolás (`0x00bb88e4`–`0x00bb891b`), a záró
+pozíciót a `0x00cf3a00` float **255,0** (`0x00bb8925`–`0x00bb892d`). Ezért
+a `TwoTone` két színe a **0 és 255** indexhez tartozik; a korábbi 0 és 1
+feltevés téves volt.
+
+`0x00bb87b0` minden `i = 0…255` értékre meghívja a megálló-keresőt és
+interpolátort (`0x00bb8931`–`0x00bb8958`), majd az eredmény dword-ot a
+`base + 0x800 + 4·i` helyre írja (`0x00bb8951`; a `base` a munkavégző harmadik
+argumentuma, `[ebp+0x10]`, a hívó `0x00bb7c80` 0x1000 bájtos LUT-puffere). A `cmp ebx, 0x100`
+(`0x00bb894b`) zárja a ciklust: a gradiens-LUT **256 darab, 32 bites**
+bejegyzés. Ez a piros bemeneti bájt LUT-rekesze; a négy rekesz és a
+`src[2]` indexelés részleteit lásd fent, a TwoTone LUT-elemzésében.
+
+A megálló-kereső (`0x00bb85b0`) `x` egész indexhez kiválasztja az utolsó
+`p ≤ x` alsó és az első `p > x` felső megállót. Ha `x` az első megálló
+előtt van, az első színt adja vissza; ha az utolsó megállón vagy utána van,
+az utolsó színt (`0x00bb8603`–`0x00bb8624`). A keresőnek két közvetlen
+megállóága van. Az alsó megállónál (`0x00bb863d`) a kód a `p_lo` és a
+float32-ként tárolt `x` bitmintáját előjeles 32 bites kivonással veti össze,
+abszolút értéket vesz (`cdq`/`xor`/`sub`), és ha az előjel nélkül vett érték
+`< 8` (`jb`), az alsó megálló tárolt színét adja vissza. Ha nem, ugyanezt
+végzi a felső megállóval (`0x00bb865a`, `p_hi`), és `< 8` esetén a felső
+megálló tárolt színét adja. Az alsó kapu van elöl. 7 bitlépésnyi távolság még
+megállószín, 8 már interpolált szín; a `cmp eax, 8` tehát float32 bitminták
+távolságát méri, nem 8 indexnyi távolságot. A kapu a munkavégző által generált
+LUT-ra nem hat (n = 2…256-ra mérve). Az interpolált ág alfája mindig `0xff`;
+a közvetlen megálló- és peremágak a tárolt dword-ot változatlanul adják (a
+munkavégző a tárolt színek alfáját `0xff`-re állítja, `0x00bb886f`).
+
+Az `eax` bemenet egész és előjel nélküli indexként értelmeződik: negatív
+értéknél a kód `2³²`-t ad hozzá a float32 konverzió előtt
+(`0x00bb85c4`–`0x00bb85d6`, a konstans `0x00cf39e4 = 4294967296,0`). Ezért
+a negatív bemenet a legutolsó megálló utáni tartományba esik és az utolsó
+színt adja; a `0x00bb87b0` LUT-ciklusa ezzel szemben kizárólag 0…255-öt ad át.
+
+Ha `p_lo ≤ x < p_hi`, a súly float32-re tárolt x87-hányados
+(`0x00bb865f`–`0x00bb8677`):
+
+```
+w = float32((p_hi − x) / (p_hi − p_lo))   # alsó megálló súlya
+```
+
+Az RGB-csatornákat a `0x00bb84a0` külön-külön keveri, bájtonként, az alsó
+bájttól (bit 0–7) a felsőig (bit 16–23). A `0x00c72150` értéke **0,5**; a `0x00c29990`-nél a CRT SSE2-jelző
+`[0x00da1428] = 1` esetén `cvttsd2si` csonkít egészre. A kód a
+végeredményt csatornánként 0…255 közé vágja; a pontos pixelképlet:
+
+```
+out_c = clamp(trunc(upper_c + w · (lower_c − upper_c) + 0,5), 0, 255)
+```
+
+Vagyis a pozitív RGB-csatornákon félértéknél felfelé kerekít; az eredmény
+alfa-bájtja `0xff` (`0x00bb8586`–`0x00bb85a0`).
+
+**Második, független út — gépi futtatás.** A `.text`, `.rdata` és `.data`
+szakaszok az eredeti VA-kon futottak a mérési ELF-ben (`ImageBase=0x400000`),
+`qemu-i386` alatt, `0x027f` x87 vezérlőszóval és `[0x00da1424]` /
+`[0x00da1428] = 1` jelzőkkel. Négy bemeneten (`[10,200]`, `[0,255]`,
+`[0; 127,5; 255]`, valamint az `x=10`-től két irányban pontosan 8 float32
+bitlépésre levő megállópáron) a `0x00bb85b0` eredménye mind a **259**
+vizsgált indexen (`−2…256`) bájtról bájtra egyezett a skalár modellel.
+Példák (a `[10,200]` elrendezés színei: `0xff0a1433` a `p=10`, `0xffc96500`
+a `p=200` megállón): az első megálló előtti `x=0` az első színt adta; a `p=200`
+utáni `x=201` az utolsót; az `x=105` (w = 0,5) kimenete `0xff6a3d1a`; a pontosan
+8 bitlépéses eset (színek: `0xff000000` és `0xffffffff`) `0xff808080` lett, nem
+a megálló színe. A cáfoló változatok
+közül a `+0,5` nélküli csonkolás **167/259** kimeneten eltért, a `< 8`
+téves `≤ 8` olvasata pedig az utolsó kontrollon eltért.
+
+**Független ellenőrzés (2026-10-03, másik ellenőr).** Saját ELF-harness
+(`qemu-i386`, ugyanazok a beállítások) a `0x00bb85b0`-t 30 243 bemeneten
+(1623 elrendezés: 2, 3, 5, 10 megálló, egyenletes és egyenetlen, duplikált
+pozíció, n = 1, rendezetlen, véletlen; x = −2…256 és szélsőértékek) és a
+`0x00bb84a0`-t 32 802 színpár × súly kombináción (a 0…1 tartományon kívüli
+súlyokkal is) bájtra egyezőnek találta a fenti modellel (0 eltérés). A
+kapu-rács (alsó/felső megálló 0…12 bitlépésre `x`-től, `x0 ∈ {0, 1, 2, 10, 64,
+100, 127, 128, 129, 200, 254, 255}`): 7 bitlépés még kapuz, 8 és 9 már nem; a
+`≤ 8` olvasat 142 helyen más kimenetet adna.
+
+A **teljes munkavégzőt** (`0x00bb87b0`) is lefuttatta: az objektumokat (this,
+gradientArray, vektor, elemek) a kód olvasása alapján kézzel építve, három
+helyettesítővel (`0x00c0769f` az operator new → egyszerű foglaló; `0x00c07681` →
+`ret`; a 7,8 KB-os `0x008ef520` kifejezés-kiértékelő → „a csomópont double
+értékének másolása”), 78 megállótömbre (n = 2…64, 100, 128, 200, 255, 256, 300)
+és 19 968 LUT-elemre bitre egyezett a modellel (a pozíciótömbök is). n = 2
+pozíciói `0x00000000` és `0x437f0000` (0,0 és 255,0), n = 3: {0 ; 127,5 ; 255};
+a `+0x000` és `+0x400` rekesz nulla, a `+0xc00` érintetlen, n < 2 esetén a LUT
+érintetlen. Az elem 32 bites alakja a memóriában (little-endian): ch0, ch1, ch2,
+`0xff`.
+
+*Bizonyítottsági fok: **megerősített** az interpolációs képletre, a megállókon
+túli peremre, a `< 8` ágra, a megállóhelyek generálására (0,
+`float32((k · 255,0) / (n−1))`, 255) és a 256 elemű LUT-ra (`+0x800` rekesz;
+`+0x000` és `+0x400` nullázott) — két úton: az utasításszintű levezetés és az
+eredeti `0x00bb85b0`, `0x00bb84a0`, illetve (három helyettesítővel) a teljes
+`0x00bb87b0` qemu-i386 futtatása egyezik. **Feltételes (nem futott):** a
+megállók színének forrása (`0x008ef520`), a gradientArray tényleges
+színkódolása (az R/B bájtsorrend a megállókban nem igazolt), a `0x00bb7e40`
+valódi objektumon és a `TwoTone` beolvasójának (`0x00bc2760`) saját futtatása.
+Az eredmények az FPU-vezérlőszó `0x027f` (53 bites pontosság) mellett igazak;
+`0x007f` mellett 16/30 243 interpolált kimenet változna. A mérőadatban nincs
+általános `GradientMap` export; a pixelmatematika kimeneti ΔE-hatásáról ebből
+nem állítunk.*
+
+**A `TwoTone` ugyanezt a munkavégzőt használja** (statikusan megerősítve): az
+RTTI-vtáblák (`0x00cf0120`, `0x00cf085c`) 6. rése a közös alkalmazó
+(`0x00bb7c80`), a 8. rése `0x00bb87b0`; a `0x00bb7c80` identitás-LUT-ot épít
+(`0x00bcb270`), a 8. résen át hívja a munkavégzőt a LUT-bázissal, majd a
+`0x00bcb2f0`-t; a `TwoTone` beolvasója (`0x00bc2760`) a `[this+0x40]`-be tesz
+objektumot (`0x00bc2923`) és a `0x00bb8710`-et hívja (`0x00bc2949`).
 
 ### 5. `ResizeImageOperation` — UGYANAZ a mintavételező, mint a forgatásnál
 
@@ -3749,7 +3877,7 @@ iránya.
 
 *Bizonyítottsági fok: **megerősített** mind a hét leletre (kiolvasott
 utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
-tartalma, a `TwoTone` megálló-pozíciói, a `Resize` kicsinyítéskori
+tartalma, a `Resize` kicsinyítéskori
 lépték-nyújtása, az `AutoFix` lekicsinyítő léptékének CRT-függvénye és az
 `AdjustCurves` négy görbéjének SORRENDJE **nincsenek mérve**.*
 
