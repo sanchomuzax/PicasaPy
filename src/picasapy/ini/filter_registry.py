@@ -259,8 +259,8 @@ _DERIVED_PARAM_COUNTS: Mapping[str, int] = {
 #: - `PicnikFocalPixelate`: a `filterdesc-registry.md` 4.1 kimondja, hogy
 #:   „a `PicnikFocalPixelate`-ra nincs valós mintánk";
 #: - `PicnikTint`, `ReanimatedEyeColor`: a filterdesc futásidejű maszkot
-#:   hivatkozik; ez nem numerikus csúszka-paraméter. A Vámpírszem vonásainak
-#:   rekordmezői külön elemzés alatt állnak (#4046).
+#:   hivatkozik; ez nem numerikus csúszka-paraméter. A Vámpírszem vonásait
+#:   külön modell kezeli, és nem alkotnak rögzített csúszkaszámot (#4097).
 UNKNOWN_PARAM_COUNT_FILTERS: frozenset[str] = frozenset(
     {
         "save",
