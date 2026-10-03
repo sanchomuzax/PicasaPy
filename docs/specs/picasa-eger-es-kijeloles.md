@@ -1425,3 +1425,19 @@ Shift+kattintás az 5.-re:
 Ezt a #897 `test_a_shift_kattintas_a_horgonytol_jelol` tesztje méri;
 a Shift+nyíl saját (irányváltásos) viselkedését a
 `tests/app/qml_functional/test_shift_nyil_bovites_892_1222.py`.
+
+## 16. Szerkesztőátfedők nagyított nézetben (#4083)
+
+**Picasa-viselkedési döntés (2026-10-03):** a retusálás, a vörösszem és a
+festő eszközök nagyított képen is használhatók; a nagyítás a pontos munkát
+segíti. Ezt a termékelvárást a #4083 feladatkiírása (a fejlesztési kör
+döntése) adta meg, nem élő mérés. A helyi mérési archívumban ehhez a konkrét egérúthoz nem volt Colab-
+felvétel, ezért ez a kör nem állít önálló, élő Picasa-mérést.
+
+Az eredeti szerkesztő `.tre`-leírása a képi interakciók külön kezelőit is
+azonosítja: a `selectiondrag` a vörösszem-, vágás- és arcjelölő téglalapot,
+a `retoucher` és `dragscale` a retusálást, a `multitextnodeselector` a
+szövegátfedőt kezeli (6. szakasz). A #4083 által előírt PicasaPy-viselkedés:
+az aktív képi átfedő kapja a lenyomást és a húzást nagyításkor is; az
+átfedőn kívüli húzás továbbra is pásztáz; `aa`/`ab` módban a másik félre
+kattintás fókuszt vált. Vágás közben a pásztázó marad tiltva.

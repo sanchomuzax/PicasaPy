@@ -3653,15 +3653,67 @@ Rectangle {
                     cursorShape: enabled ? Qt.OpenHandCursor : Qt.ArrowCursor
                     property real lastX: 0
                     property real lastY: 0
+                    property bool dragged: false
+
+                    // #4083: a nagyított nézet pásztázója fölé került, így
+                    // az aktív képi MouseArea-k lenyomását is elkapta. A
+                    // lenyomást csak akkor engedjük tovább, ha a ténylegesen
+                    // látható/aktív képi átfedő területére esik; a többi
+                    // képpont és a képen kívüli sáv továbbra is pásztázható.
+                    function benneVan(item, x, y) {
+                        if (!item || !item.visible || !item.enabled) return false
+                        var pont = item.mapFromItem(viewerPanArea, x, y)
+                        return pont.x >= 0 && pont.y >= 0
+                               && pont.x < item.width && pont.y < item.height
+                    }
+                    function aktivAtfedoAlatt(x, y) {
+                        return benneVan(paintMaskArea, x, y)
+                            || benneVan(neutralPickArea, x, y)
+                            || benneVan(retouchClickArea, x, y)
+                            || benneVan(redeyeDragArea, x, y)
+                            || benneVan(textClickArea, x, y)
+                            || (facesOverlay.editMode
+                                && benneVan(facesOverlay, x, y))
+                    }
+                    function lathatoKepAlatt(item, frame, x, y) {
+                        if (!benneVan(item, x, y)) return false
+                        var pont = frame.mapFromItem(viewerPanArea, x, y)
+                        return pont.x >= 0 && pont.y >= 0
+                               && pont.x < frame.width
+                               && pont.y < frame.height
+                    }
+                    function fokuszKattintas(x, y) {
+                        if (viewer.layoutMode === "1up") return
+                        // Nagyításkor a kép Image-doboza átlóghat a saját
+                        // felén, miközben a keret levágja a túlnyúló részt.
+                        // A fókuszt csak a ténylegesen látható képrész váltsa.
+                        if (lathatoKepAlatt(
+                                    photoElotte, photoElotteKeret, x, y)) {
+                            viewer.fokuszValt("bal")
+                            return
+                        }
+                        if (lathatoKepAlatt(photo, photoKeret, x, y))
+                            viewer.fokuszValt("jobb")
+                    }
                     onPressed: function(event) {
+                        dragged = false
+                        if (aktivAtfedoAlatt(event.x, event.y)) {
+                            event.accepted = false
+                            return
+                        }
                         lastX = event.x; lastY = event.y
                     }
                     onPositionChanged: function(event) {
                         if (!pressed) return
+                        if (Math.abs(event.x - lastX) + Math.abs(event.y - lastY) > 4)
+                            dragged = true
                         viewer.panX += event.x - lastX
                         viewer.panY += event.y - lastY
                         lastX = event.x; lastY = event.y
                         viewer.clampPan()
+                    }
+                    onClicked: function(event) {
+                        if (!dragged) fokuszKattintas(event.x, event.y)
                     }
                     onDoubleClicked: viewer.zoomFit()
                 }
