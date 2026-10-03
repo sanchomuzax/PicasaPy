@@ -2817,6 +2817,37 @@ A `desat` örökölt kulcs ugyanezt a magot hívja (`0x0050ce70`), tehát rá is
 
 Fejlesztés: #3840.
 
+#### Az `ansel` akkumulátorainak szélessége és a nagy képen átforduló `N` (#3990, 2026-10-03)
+
+*Bizonyítottsági fok: **megerősített** — A: a `0x0090e680` teljes magjának utasításszintű olvasása; B: a natív callback futtatása `qemu-i386` alatt. A két út egyezik.*
+
+Az akkumulátorok nem azonos típusúak:
+
+- **`S₁` és `S₂`: előjeles 64 bites egész.** A `0x0090e732`/`0x0090e736`, illetve `0x0090e73a`/`0x0090e73e` a két összeg alsó és felső dwordját nullázza; a `0x0090e7d0` `cdq`, majd a `0x0090e7d1`/`0x0090e7da` `add`/`adc` párosa a lumaösszeget gyűjti. Ugyanez történik `S₂`-vel a `0x0090e7e3` `cdq` és a `0x0090e7e4`/`0x0090e7f0` `add`/`adc` utasításokkal. Az összeadás 64 bites kétkomplementes, modulo `2⁶⁴`; túlcsorduláskor nem telítődik, a `0x0090e8d8`/`0x0090e8dc` `fild qword` pedig **előjeles** értékként tölti az összegeket a 80 bites x87-regiszterekbe. Nincs `fadd` az akkumulációban: az FPU csak az összegek különbségét és az osztást végzi (`0x0090e8e0` `fsubp`, `0x0090e8e2` `fidiv`). A futtató a `0x027f` FPU vezérlőszót állította be; az osztás eredményét a `0x0090e8e6` dwordként tárolja.
+- **`N`: előjelesen használt 32 bites egész, modulo `2³²` halmozással.** A `0x0090e844` nullázza; a súlyozott hisztogramösszeg 32 bites `imul`/`add` utasításokkal készül (`0x0090e857`–`0x0090e8af`), magas dwordos `adc` és túlcsordulás-ellenőrzés nélkül; eredménye a `[esp+0x14]` dword (`0x0090e8c0`). A `0x0090e8e2` `fidiv dword` ezt **előjeles** osztóként értelmezi. A `0x0090e8ca`–`0x0090e8cc` kapu az előjeles nulla bitmintájánál a második menet előtt kilép.
+- A `k` egészbe alakításánál a futtatott SSE2-ág (`[0x00da1428] = 1`) `0x00c299a5` `cvttsd2si` utasítása nullához csonkol. A segédfüggvény másik ága a `0x00c299d5` `fistp qword` után előjel szerinti korrekciót végez. Ez nem az `S₁`/`S₂` tárolási vagy gyűjtési módja.
+
+A pontos átfordulási küszöb a hisztogrambin súlyától függ. A már kiolvasott képlet szerint `w(j) = ((256 − j)·j) >> 6`, ezért `w(128)=256`, míg `w(127)=255`. Pozitív összegzésnél a 32 bites előjeles határ az első olyan képpontnál lép át, ahol az összeg legalább `2³¹`:
+
+| Bin és súly | Képpontszám | Natív `N` | `S₁` | `S₂` | `k` | Első kimeneti pixel |
+|---|---:|---:|---:|---:|---:|---|
+| `j=128`, `w=256` | 8 388 607 | 2 147 483 392 | 1 610 612 544 | 1 073 741 696 | 64 | `0xffc0c0c0` |
+| `j=128`, `w=256` | **8 388 608** | **−2 147 483 648** | **1 610 612 736** | **1 073 741 824** | **−64** | **`0xff404040`** |
+| `j=128`, `w=256` | 8 388 609 | −2 147 483 392 | 1 610 612 928 | 1 073 741 952 | −64 | `0xff404040` |
+| `j=127`, `w=255` | 8 388 608 | 2 139 095 040 | 1 073 741 824 | 1 065 353 216 | 1 | `0xff808080` |
+| `j=127`, `w=255` | 8 421 504 | 2 147 483 520 | 1 077 952 512 | 1 069 531 008 | 1 | `0xff808080` |
+| `j=127`, `w=255` | **8 421 505** | **−2 147 483 521** | **1 077 952 640** | **1 069 531 135** | **−1** | **`0xff7e7e7e`** |
+
+**A táblázat `mérés`**: a teljes `0x0090e680` callbackot eredeti VA-kon bemappolt `.text`/`.rdata`/`.data` szakaszokkal futtattuk `qemu-i386` alatt. A futtató minimális `this`/képleíró objektumot és külön, ismert bájtú forrás- és célpuffert épített; a `0x0090e8ca` és `0x0090e929` pontokon csak a lokális `N`/`k` kiolvasásához tettünk megfigyelő ugrót, és a felülírt elágazások eredeti viselkedését visszaállítottuk. A natív akkumulátorciklus és a `0x00c29990` konverziós segéd futott; kezelőfüggvényt nem helyettesítettünk. A kért FPU vezérlőszó `0x027f`, a CRT SSE2-jelzői `1` értéket kaptak. A 3 pixeles kontrollban `N=768`, `S₁=576`, `S₂=384`, `k=64`; az instrumentált és a műszerezés nélküli futás első kimeneti pixele egyaránt `0xffc0c0c0` volt.
+
+Az első két sor mintája: `B=0, G=255, R=131`, `W=(85,85,85)`, ezért `Y=32810`, `j=128`; a cáfoló binmintáé `B=127, G=128, R=128`, `Y=32555`, `j=127`. Ez utóbbinál a 8 388 608 képpontos futás **nem** fordult át; a következő, pontos küszöb 8 421 505 volt. Ez kizárja azt az egyszerűsítést, hogy minden tartalomra ugyanaz a képpontszám a határ.
+
+**Következmény a PicasaPy-ra.** A `src/picasapy/render/tinting.py` `_ansel_strength` függvénye a hisztogram-szorzatot és az `S₁`/`S₂` összegeket `int64`-del tartja meg (`histogram @ ...`, `sum(dtype=np.int64)`). A `j=128` tesztképnél emiatt a mi `N`-ünk `+2 147 483 648` marad, a natívé pedig `−2 147 483 648`; a `k` és a kimenet az ellenkező oldalra kerül (`+64` helyett `−64`). Az `S₁`/`S₂` 64 bites típusa viszont megfelel a natívnak. Ha minden pixel a 128-as binbe esik, a teljes `2³²`-es `N`-kör után `N=0` is előáll; a natív kapu ekkor kihagyja a második menetet (`0x0090e8ca`–`0x0090e8d7`). A hozzá tartozó 16 777 216 képpontos szám a `2³² / 256` képletből **bináris operandusokból levezetett**, külön nem futtatott érték.
+
+**Még nincs megmérve:** legalább 12 MP-es Picasa-export Colab-végrehajtóval. A szintetikus QEMU-futtatás az eredeti callbackben bizonyítja a küszöböt és a látható eltérést, így elegendő a fejlesztői javítás pontos indoklására; nem helyettesíti a teljes alkalmazás 12 MP-es export-összevetését.
+
+Javasolt fejlesztői al-jegy: az `N`-t a natív 32 bites modulo `2³²` szabály szerint képezni, majd előjeles 32 bites értékként használni a nulla-kapunál és az osztásnál; az `S₁`/`S₂` maradjon `int64`. A regresszió rögzítse a fenti 128-as bin küszöb előtti/határ/utáni `N`, `k` és mintapixel értékeit, valamint a 127-es bin eltérő határát. Külön teszt ellenőrizze a negatív `k`-val végzett `>> 8` aritmetikai jobbra tolást a nullához csonkolással szemben: az átnézett `test_voros_szuro_k_minusz_16` csak a végső 8 bites pixelt (`112`) hasonlítja, ami mindkét kerekítéssel azonos, ezért nem jelzi az egyes köztes érték közti eltérést. Nem blokkoló optimalizálásként az `_ansel_gray16` és az `_ansel_strength` közös `image.astype(np.int32)` eredményének újrahasználata elkerülheti a második teljes csatornatömb-konverziót; 24 000 000, háromcsatornás pixelnél egy ilyen `int32` eredmény pontos mérete `288 000 000` bájt.
+
 ## `warm`, `grain`, `unsharp`, `blur` — natív visszafejtés (2026-08-15, #317)
 
 Egy kör (`DecompileKalibralatlan.java`, gyökerek a natív callback-regiszterből:
