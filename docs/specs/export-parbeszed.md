@@ -404,7 +404,7 @@ export 4:4:4-et és új DQT-t ad: a 178 fájlos `meroszett` (2026-08-15) 4:2:0 �
 1. **A minőségválasztótól a tényleges JPEG-íróig vezető út.** A „Maximális” ág a
    `0x00739ca1` címen 193-at tárol; a kontrollkimenet mért DQT-je q=93 és SOF-ja 4:4:4.
    A `CImageOutput` (`0x0073f320`) virtuális hívásai közül a tényleges JPEG-író és a
-   minőség-/mintavételezés-ág nem azonosítható puszta diszasszemblálással.
+   minőség-/mintavételezés-ág célfüggvénye továbbra sem azonosítható.
 
    **Bináris részleteredmény (2026-10-03).** A `0x0073eed0` létrehozza a
    `CImageOutput` objektum `this+0x74` alatti `CExportPrefs` részobjektumát, és
@@ -416,30 +416,53 @@ export 4:4:4-et és új DQT-t ad: a 178 fájlos `meroszett` (2026-08-15) 4:2:0 �
    Normál `85/0`, Egyéni 95 `95/0`, hiányzó beállítás `85/0` (minőség/jelző).
    Ez csak a beállítások átadását igazolja, nem a JPEG-író futását.
 
-   A `0x00ad3b30` által használt általános IJG-táblaskálázó a 193-as bemenethez 0,
-   a 93-ashoz 14 skálafaktort ad; a 0-s ág csupa 1-es táblát eredményez, a 14-es
-   ág a `0x00c75260`/`0x00c75360` alaptáblákból a mért q=93 DQT-t. Ezt az
-   utasítások mellett a scaler `qemu-i386` futtatása is megerősíti. Így a közvetlen
-   „193 → ugyanebben a scalerben q=93” magyarázat cáfolt. A `0x00b1f820` külön
-   alapértelmezett 4:2:0 mintavételezést állít be, de egyik megfigyelt hívási út
-   sincs a `CImageOutput` indirekt írójához kötve. A `0x0074079c` indirekt hívásának
-   konkrét célja és a JPEG-beállításai továbbra sincsenek meg.
+   **A virtuális író hívási határa (2026-10-03).** A `0x0053188a` a hívó
+   objektum `+0x30f0` mezőjét adja át a `0x0073eed0` konstruktornak; az a pointert
+   a `CImageOutput this+0x60` mezőjébe menti (`0x0073ef5a`). A `0x0073f320`
+   utasításai a `this+0x60` objektum `+0x54` mezőjét olvassák, ehhez `+0x94`-et
+   adnak, majd `0x0074079c`-nél azon keresztül hívnak. A minőség útja a hívásig
+   közvetlen: `0x007406cf` betölti a `this+0xab0` értékét, `0x00740711` ezt
+   változatlanul a hívási adatszerkezetbe írja; `0x00740717` külön olvassa az
+   automatikus jelzőt. A `+0x54` írásokat kereső, `paszta.memoria_kapu()`-val
+   korlátozott teljes `.text` pásztázás nem kötötte ezt a mezőt az exportkimenet
+   egy konkrét konstruktorához. Az `IImageStore` 40 réses absztrakt vtáblája
+   (`0x00c82844`, 37. rés: `__purecall`) sem bizonyítja, hogy ez lenne a cél.
+
+   A lehetséges `q−100` magyarázat nem igazolódott. A külön `0x00b1cb70` rutin
+   `q<50` esetén `5000/q`, `50≤q<100` esetén `2·(100−q)`, `q≥100` esetén 0
+   skálát ír a `this+0x360` mezőbe (`0x00b1cb70`–`0x00b1cb9b`); megfigyelt
+   hívója a `0x00b1f870`, amelyet a `0x00a97ec0` hív. Ezt a láncot nem sikerült
+   a `0x0074079c` exportíró-híváshoz kötni. A másik, általános IJG-táblaskálázó
+   (`0x00ad3b30`) a 193-as bemenetet 100-ra korlátozza, így 0-s skálát ad; a
+   93-as bemenethez 14-et. Az utasításszintű eredményt külön `qemu-i386`
+   ellenpróba is alátámasztotta: a rutinnak átadott 193 és 93 esetén a
+   `0x00c75260`-as tábla első bejegyzése rendre 1 és 2 lett (kézzel felépített,
+   előre allokált tesztstruktúrával). Ez cáfolja, hogy a 193 közvetlenül ugyanebben a
+   skálázóban q=93-at eredményezne, de nem oldja fel a virtuális hívás célját.
+
+   A `0x00b1f820` külön alapértelmezett 4:2:0 mintavételezést állít be, de egyik
+   megfigyelt hívási út sincs a `CImageOutput` indirekt írójához kötve. A
+   `0x0074079c` indirekt hívásának konkrét célja és a JPEG-beállításai továbbra
+   sincsenek meg.
 
    A mérőadat-tár `684/ansel__alap.jpg` párjának újraolvasása szintén 4:2:0 forrást,
    4:4:4 kimenetet és az említett IJG-alaptáblákból q=93-mal előálló DQT-t mutatott.
    A pár nem rögzíti a választott minőségi fokozatot, ezért ez nem ad fokozat→kimenet
    hozzárendelést.
 
-   Ghidra-kör kell: 0x0074079c — oldd fel a `0x0073f320` exportút `this+0x60` /
-   `+0x54` objektumán és a `+0x94` virtuális sloton át hívott JPEG-író célját, majd
-   vezesd végig a továbbadott 193-as minőséget és automatikus jelzőt a mintavételezés
-   és a DQT beállításáig.
+   Ghidra-kör kell: 0x0074079c — azonosítsd a `0x00531810` → `0x0073eed0`
+   láncban átadott objektum futásidejű típusát, a `this+0x60` objektum `+0x54`
+   mezőjét és a `+0x94` virtuális slot konkrét célját; vezesd végig a nyers 193-as
+   értéket és az automatikus jelzőt a `h/v_samp_factor` és a DQT beállításáig.
 
 2. **A tényleges fokozat-beállítás.** Mindkét időszak kimenete (2026-08-15 és 2026-09-04…18) valódi Picasa-kimenet, de
    a beállítás egyikben sincs rögzítve; a README csak előírás, és mindkét időszakban azonos. NINCS MEG a Normál, a Minimális és az
    Egyéni fokozat kimenete is. **Döntő, felvehető irány:** kontrollált Picasa-export ugyanabból az 5 képből, rögzített
-   választással (Normál, Maximális, Minimális, Egyéni 95), a beállítást képernyőképen rögzítve — a `picasa-colab-jobs`
-   végrehajtón (ha a párbeszéd-állapot ott beállítható), vagy a tulajdonos gépén. Ez minden NINCS MEG pontot eldönt, a 193→q93-at is.
+   választással (Normál, Maximális, Minimális, Egyéni 95), a beállítást
+   képernyőképen rögzítve. Ezen a munkameneten a `picasa-colab-jobs` végrehajtó
+   elérési útja, valamint a helyi `wine`/`picasa` futtató **NINCS MEG**; a mérés a
+   tulajdonos gépén marad. Ez dönti el a fokozat→mintavételezés/DQT leképezést és
+   a 193→q93 kapcsolatot.
 
 ---
 
