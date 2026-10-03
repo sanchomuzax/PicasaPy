@@ -1896,10 +1896,27 @@ szélesség–magasság-csere. A leíró tábla a `0x4d`/`0x4e` belső kulcsot E
 Ez bizonyítja, hogy az Interop-író a JPEG-olvasó forrástérképének mezőit másolja,
 és hogy az olvasó a tárolt SOF-méretet be tudja tenni ezekbe a mezőkbe. **Nem
 bizonyítja még**, hogy az EXIF `0xa002`/`0xa003` beolvasása is ugyanebbe a
-forrástérképbe ír-e, illetve a fájl szegmendsorrendjében az EXIF-bejegyzés után
-mindig lefut-e a SOF-felülírás. A tájolt képnél a megfigyelt SOF-ág nem cseréli
-fel a méreteket; EXIF-ütközésnél a végső érték sorrendjét további követés vagy
-ellentmondó forrás–export mérés dönti el.
+forrástérképbe ír-e. A tájolt képnél a megfigyelt SOF-ág nem cseréli fel a
+méreteket.
+
+**Hívási sorrend vizsgálata (2026-10-03):** a `0x0045cfa0` JPEG-mentő a
+`0x0045d3ec` címen `0x009ecc60`-nal `ytJPGInfo` objektumot épít (`vftable`:
+`0x00cda950`; második virtuális metódus: `0x009ecd60`). A `0x0045d463` hívás
+`0x0045e120`-nak ezt az objektumot adja át. A helper előbb, `0x0045e19b`-nél
+egy másik objektum `+0xc4` virtuális metódusát hívja; később, `0x0045e33d`-nél
+a `ytJPGInfo` `+4` metódusát. Ez utóbbi `0x009ecd60` → `0x009e95c0`;
+az utasításszintű hívási láncban a JPEG-marker diszpécser (`0x009ea6c0`)
+innen hívja a SOF-olvasót (`0x009e9cd0`). Tehát a SOF-olvasó a `0x45e120`
+korábbi, dinamikus `+0xc4` hívása után fut le. A korábbi hívás dinamikus
+célosztálya és az, hogy az EXIF-leírók alapján ugyanabba a `0x4d`/`0x4e`
+forrástérképbe ír-e, nem állapítható meg ebből a hívási láncból. Emiatt ez a
+sorrend önmagában még nem dönti el az EXIF-es forrás végső értékét.
+
+**Futtatásos ellenőrzés:** a helyi QEMU-harness a `0x008fac40` ecsetrekord-
+író/olvasó vizsgálatához készült, és nem építi fel a `0x0045e120` valódi
+metaadat-objektumait. A szükséges futásidejű objektumkapcsolatot ezért nem
+mértem; szintetikus stubokkal kapott eredmény nem igazolná az EXIF-útvonalat.
+Ellentmondó EXIF/SOF forrásból készült Picasa-export sincs mérve.
 
 **Mérési kontroll (#3996, `meroadat.tar`):** a
 `3084-poszterizalas/Warm grasses by dcsearle.t21.jpg` forrás SOF-mérete
@@ -1910,10 +1927,12 @@ másik, azonos méretű képméretforrástól. A tarban átnézett 900 JPEG köz
 volt Orientation 5–8 forrás, sem olyan forrás, amelynél az EXIF
 `0xa002`/`0xa003` eltért volna a SOF-tól.
 
-**Nyitva maradt a #3996-ban:** EXIF `0xa002`/`0xa003` és SOF közti ütközés
-végső precedenciája; továbbá tájolt forrás Picasa-exportjának mérése. A PicasaPy
-a SOF tárolt méretét írja, de a rendelkezésre álló mérés nem igazol eltérést az
-eredeti Picasától, ezért fejlesztői al-jegy ebből még nem következik.
+**Nyitva maradt a #3996-ban:** az EXIF `0xa002`/`0xa003` beolvasójának
+azonosítása és annak igazolása, hogy az írás a SOF által később felülírt
+forrástérképbe jut-e; továbbá tájolt forrás Picasa-exportjának mérése. A
+PicasaPy a SOF tárolt méretét írja, de a rendelkezésre álló mérés nem igazol
+eltérést az eredeti Picasától, ezért fejlesztői al-jegy ebből még nem
+következik.
 
 **Ebből a mért XMP mezőről mezőre levezethető** (a `0x00bad9a0`-lánccal, B):
 
@@ -2133,8 +2152,10 @@ mód) a „Preferences / ResampleFilter2” beállításból veszi a módot (ala
 | 6 | 4,0 (`[0xc7e4a4]`) | `0x00a3feed`: ugyanez 4-gyel ⇒ Lanczos-4 (ezt a bélyegkép NEM használja) |
 
 A többi lépés a szűrők Resize-ával azonos (filterdesc-registry 5/c): egész súlyok `csonk(w·16383/Σw)`, a
-maradék a `csonk(c)` csapé, `(Σ w·p + 255) >> 14`, előbb a vízszintes menet; a sugár kicsinyítéskor a
-léptékkel nyúlik. A mintavevő objektum `[+0x34]` = 1 (2×-es előfelezés, `0x00a43230`) és `[+0x36]` = 0
+maradék a `csonk(c)` csapé, előbb a vízszintes `(Σ w·p + 255) >> 14`, majd a függőleges menet; utóbbin a
+sor utolsó `W mod 4` oszlopa `+255` nélkül számol (#4004). A bélyegkép `W`-je 8 többszöröse, így ez a
+kivétel ott nem érvényesül. A sugár kicsinyítéskor a léptékkel nyúlik. A mintavevő objektum `[+0x34]` = 1
+(2×-es előfelezés, `0x00a43230`) és `[+0x36]` = 0
 (`0x009ecfa9`, `0x009ecfb1`) — az előfelezés nincs vizsgálva → #3995.
 
 *Mérve* (19 export, a fő kép ⟶ Lanczos-3 / Lanczos-4 / Mitchell / doboz ⟶ 85-ös JPEG-oda-vissza, átlagos
@@ -2216,8 +2237,10 @@ utána egyetlen Lanczos-3 menet src′ → dst                ; a lépték float
 **2. A gyorsított sorkezelő** — `[obj+0x37] = [0xd695d2] ∥ [0xd695d3]` (`0x00a3f496`–`0x00a3f4b9`). A `[0xd695d2]` a
 `CPUID(1).EDX` 26. bitje (SSE2; a statikus inicializáló `0x00c33d48`–`0x00c33d56`); a `[0xd695d3]` sehol nem íródik
 (26 olvasás, `.bss`, mindig 0). ⇒ SSE2-es gépen, Wine alatt is a SIMD-ág fut (`0x00a426a0` → `0x00a428e0`).
-**Az aritmetika bitre azonos a skalárral:** a kezdőérték `{255,255,255,255}` (`0xd47560`), `pmaddwd` (int16 súly ×
-0..255 képpont, 16 bites túlcsordulás nincs), `psrad 14`, `packssdw`, `packuswb` ⇒ `sat_u8((Σ + 255) >> 14)`.
+**A négyes főciklus aritmetikája bitre azonos a skalárral:** a kezdőérték `{255,255,255,255}` (`0xd47560`),
+`pmaddwd` (int16 súly × 0..255 képpont, 16 bites túlcsordulás nincs), `psrad 14`, `packssdw`, `packuswb` ⇒
+`sat_u8((Σ + 255) >> 14)`. A függőleges sorvégi `W mod 4` oszlopok skalár farka mindkét úton elhagyja a
+`+255`-öt (`0x00a40e40`, `0x00a413f0`, #4004).
 
 **3. Az ICC-átalakítás** — a `[0xd67920]` a globális színkezelő (a `0x0097e410` hozza létre): `+0` a LittleCMS beépített
 sRGB profilja, `+8` a monitorprofil, `+0x5c` = `HKCU\SOFTWARE\Google\Picasa\Picasa2\Preferences\EnableColorManagement`

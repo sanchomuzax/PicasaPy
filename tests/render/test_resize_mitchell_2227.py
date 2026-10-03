@@ -15,8 +15,8 @@ móddal (spec: `docs/specs/filterdesc-registry.md`, 5/c):
   kicsinyítés léptékével nyújtva. Csap: `j + 0,5`, középpont
   `c = (i + 0,5) · forrás/cél`.
 * **Egész súlyok**: `csonk(w · 16383 / Σw)`, a maradék a `csonk(c)` csapé.
-* **A kimenet**: `(Σ w·p + 255) >> 14`, 0..255-re szorítva; előbb a
-  vízszintes menet, 8 bites köztes képpel, utána a függőleges.
+* **A kimenet**: a vízszintes menetben `(Σ w·p + 255) >> 14`; a függőleges
+  menet utolsó `W mod 4` oszlopán `(Σ w·p) >> 14` (#4004).
 
 A #2227 előtt bilineáris, a #3805 előtt tengelyenként döntő, lebegőpontos
 Mitchell volt — a `Pixelate` ettől elkent blokkszíneket adott (ΔE 4,64).
@@ -74,13 +74,19 @@ def _mitchell(x: float) -> float:
     return 0.0
 
 
-def _ref_tengely(sorok: np.ndarray, ki: int, doboz: bool) -> np.ndarray:
-    """Egy menet az ELSŐ tengely mentén: `sorok` alakja (n, ...)."""
+def _ref_tengely(
+    sorok: np.ndarray, ki: int, doboz: bool, *, fuggoleges: bool = False
+) -> np.ndarray:
+    """Független tengelyreferencia, a #4004 szerinti függőleges maradékkal."""
     n = sorok.shape[0]
     skala = np.float32(n) / np.float32(ki)
     nyujtas = max(1.0, float(skala))
     sugar = (0.5 if doboz else 2.0) * nyujtas
     kimenet = np.zeros((ki,) + sorok.shape[1:], dtype=np.int64)
+    kerekito = 255
+    if fuggoleges:
+        kerekito = np.full(sorok.shape[1:], 255, dtype=np.int64)
+        kerekito[sorok.shape[1] & ~3 :] = 0
     for i in range(ki):
         c = float(np.float32(np.float32(i + 0.5) * skala))
         csapok = [j for j in range(n) if abs(j + 0.5 - c) < sugar]
@@ -97,14 +103,14 @@ def _ref_tengely(sorok: np.ndarray, ki: int, doboz: bool) -> np.ndarray:
             egesz.append(0)
         egesz[csapok.index(maradek_csap)] += 16383 - sum(egesz)
         acc = sum(wi * sorok[j].astype(np.int64) for wi, j in zip(egesz, csapok, strict=True))
-        kimenet[i] = np.clip(acc + 255, 0, 0x3FFFFF) >> 14
+        kimenet[i] = np.clip(acc + kerekito, 0, 0x3FFFFF) >> 14
     return kimenet.astype(np.uint8)
 
 
 def _referencia(kep: np.ndarray, szelesseg: int, magassag: int) -> np.ndarray:
     doboz = szelesseg / kep.shape[1] <= 1.0
     vizszintes = np.swapaxes(_ref_tengely(np.swapaxes(kep, 0, 1), szelesseg, doboz), 0, 1)
-    return _ref_tengely(vizszintes, magassag, doboz)
+    return _ref_tengely(vizszintes, magassag, doboz, fuggoleges=True)
 
 
 class TestAFixpontosKeplet:
@@ -129,7 +135,7 @@ class TestAFixpontosKeplet:
         """Két menet: a vízszintes kimenete egész, a függőleges erre épül.
 
         Vízszintesen `[2, 2, 1]` → 1 és `[3, 3, 2]` → 2 (csonkolva);
-        függőlegesen `(8191·1 + 8192·2 + 255) >> 14 = 1`. Lebegőpontos
+        függőlegesen `(8191·1 + 8192·2) >> 14 = 1`. Lebegőpontos
         köztes képpel (1,67 és 2,67) ugyanez 2 lenne."""
         kep = np.array([[[2] * 3, [2] * 3, [1] * 3], [[3] * 3, [3] * 3, [2] * 3]], dtype=np.uint8)
         assert resize_image(kep, 1, 1)[0, 0].tolist() == [1, 1, 1]
