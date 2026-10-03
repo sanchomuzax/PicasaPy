@@ -2058,6 +2058,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._session = self._session.set_tilt(param, 0.0)
         self._save()
         self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot(float)
     def previewTilt(self, param: float) -> None:
