@@ -7,11 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-<<<<<<< Updated upstream
 - Nagyított nézetben is használható az ecset, a vörösszem, a retusálás, a szöveg és az arcjelölés; az eszköz nélküli húzás pásztáz, kettős nézetben pedig kattintással váltható a fókusz (#4083).
-=======
 - Az átméretezés a sor utolsó néhány oszlopát is a Picasáéval egyezően számolja (#4004).
->>>>>>> Stashed changes
 
 ## [0.8.667] – 2026-10-03
 
