@@ -170,6 +170,7 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 | `ansel` | `1[,#szín]` | művészi f/f színezéssel — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357) |
 | `radsat` | `1,!x,!y,!sugár,!élesség` | radiális telítettség |
 | `dir_tint` | `1,!x,!y,!gradiens,!árnyék[,#szín]` | irányított színátmenet — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357) |
+| `ReanimatedEyeColor` | `1,Blur,Fade[,<stroke-record>…]` | az alap csúszkák után festett vonások következhetnek; a vonásmezők külön formátumát lásd alább és a `filterdesc-registry.md` 6. szakaszában (#4046) |
 | `glow` (v1) | **azonos a `glow2`-vel** | ragyogás v1 — a natív szűrő-tábla szerint (`0x00cd07d8`) **ugyanaz a kezelő** (`0x008f8f70`), mint a `glow2`-é; lásd `picasa-native-filter-registry.md` |
 | `grain` (v1) | **azonos a `grain2`-vel** | filmszemcse v1 — a natív szűrő-tábla szerint (`0x00cd0868`) **ugyanaz a kezelő** (`0x008f88e0`), mint a `grain2`-é; lásd `picasa-native-filter-registry.md` |
 | `radtint` | `1,!x,!y,!feather[,!szín]` | radiális **szorzó**-tint (#565): a fókuszpont körül változatlan, kifelé `forrás × szín / 256`, köbös smoothstep maszkkal; a Feather affin leképezése még kalibrálatlan |
@@ -187,6 +188,24 @@ ténylegesen `filters=` tokenként fordulnak-e elő. Kivétel a `radtint`: annak
 paraméterezése és csővezetéke a #565-ben a natív kód visszafejtéséből
 megvan (ld. `filters-decoded.md`), csak a Feather csúszka affin leképezése
 vár még golden-párra.
+
+### A `ReanimatedEyeColor` festett vonásai — részben levezetve (#4046)
+
+A 14. szűrőslot (`0x008fac40`) a csúszkák után vonásonként egy vesszővel kezdődő rekordot ír. A rekord szöveges váza:
+
+```text
+,<alpha (%f)>:<spacing (%g)>:<rotation (%g)>:<brush-flag (%d)>[:<brush-size (%g)>:<hardness (%g)>]:<x0 (%g)>|<y0 (%g)>[|<x1 (%g)>|<y1 (%g)>…]
+```
+
+- Az **5 részes** forma (a kezdő vessző utáni kettőspontmezők): `alpha:spacing:rotation:flag:points`; a **7 részes** forma a `brush-size:hardness` mezőpárt is tartalmazza.
+- Az író (`0x008faf93`–`0x008fb10e`) a 7 részt akkor használja, ha az aktuális vonás ecsetstílus-mutatója eltér az előző vonásétól; azonos mutatónál a két stílusmezőt kihagyja. Ez nem verziójelölés.
+- A pontok `(x,y)` `float32` párok. Az egérkezelő (`0x008fbf85`–`0x008fbf9d`) külön osztja `x`-et a képszélességgel és `y`-t a képmagassággal; a koordináták tehát tengelyenként normalizáltak, nem a kép rövidebb oldalához.
+- A méret a `_brshbtn.value` értékéből jön; a vezérlő deklarált kezdő faktora `0.03`, maximum faktora `0.2`. Hogy ezek a faktorok milyen képmérethez viszonyulnak, és hogy a mentett érték a kép rövidebb oldalának aránya-e, **NINCS MEG**. A keménység `_sldrHardness.value` (`PaintOnEffectBase` alapértéke `0.15`). A többi mező tartománya és a keménység min/max értéke **NINCS MEG**.
+- A `brush-flag` az író kimenetén mindig `0`/`1` (a bájt `!= 0` alakja), de nem `eraser=1`: az új vonás útján tartalékláncból jön — előbb a `_brshbtn.selected`, ennek hiányában a `_btnEraser.selected` (pozitív polaritással), különben `0` (utasításszint, 2026-10-03). A bit UI-jelentése a binárisból nem eldönthető. Olvasáskor `_atol(token) != 0` (`2`, `-1`, `1.9` → 1).
+- A 42. slot olvasója (`0x008fb120`) vesszőnél rekordokra, kettőspontnál 5 vagy 7 részre (`0x008fb947`–`0x008fb961`), a pontokat `|` mentén (`0x008fbbb1`) bontja vissza. Minden más részszámot (4, 6, 8…) elutasít: rc = −1, az addig beolvasott vonások megmaradnak, a hibás rekordtól kezdve minden elvész. Ezért az író egyes kimenetei (0 pontú vonás; null stílusú első vonás → 5 részes első rekord) nem olvashatók vissza.
+- **Szám-formátum:** az alpha `%f` (6 tizedes), a többi `%g` (6 értékes jegy, MSVC-stílusú 3 jegyű kitevővel: `1e-005`, `1.23457e+006`); a szöveges alak veszteséges, ezért a tartós modell bájt-egyezése sor → modell → sor szinten mérhető, nem `float32` szinten.
+
+Az eredeti író ÉS olvasó futtatása QEMU-i386 alatt (független ellenőrzés: az eredeti MSVC-CRT formázásával, kézzel épített objektumokon, kódátírásos kontrollal) igazolta a mezősorrendet, az 5/7 váltást a stílusmutató-azonosságra, a ponttagolást és a sor → vonás → sor round-tripet — a rekord SZERKEZETE ezért **megerősített**. Ez nem valódi Picasa-export: a 859 fájlos helyi ini-korpuszban nincs `ReanimatedEyeColor` sor, és a mérőadat-tár vonás nélküli fixture-e sem ad ecsetméret-kalibrációt; a mezők UI-jelentése (módbit, méret képhez viszonyított alapja, forgatás egysége, tartományok) nyitott. A teljes mezőtábla és a kontrollált kimenet a `filterdesc-registry.md` 6. szakaszának #4046 alfejezetében van.
 
 ### ✅ ÉLŐ KORPUSZ-IGAZOLÁS (2026-08-30, 859 fájl)
 
