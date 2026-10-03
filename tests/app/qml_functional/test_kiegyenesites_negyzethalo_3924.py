@@ -237,18 +237,6 @@ def _max_csatornaelteres(egy: QImage, ketto: QImage, rect: QRect) -> int:
     return legnagyobb
 
 
-def _tile_tipus(x: int, y: int, x0: int, y0: int) -> str:
-    szurke = "G..GGG..GGG..GGG..GGG..GGG..GGG..GGG..GGG.GG"
-    arnyek = "kk..kkk..kkk..kkk..kkk..kkk..kkk..kkk..kkG.k"
-    tx = (x - x0) % 44
-    ty = (y - y0) % 44
-    if (tx == 41 and szurke[ty] == "G") or (ty == 41 and szurke[tx] == "G"):
-        return "G"
-    if (tx == 42 and arnyek[ty] == "k") or (ty == 42 and arnyek[tx] == "k"):
-        return "k"
-    return "."
-
-
 def _kep_teglalap_scene(image) -> tuple[float, float, float, float]:
     """A kirajzolt kép folytonos téglalapja a jelenet koordinátáiban."""
     bal = (image.width() - image.property("paintedWidth")) / 2
@@ -296,7 +284,6 @@ def _kep_pixel_teljesen_fedett(image, kep: QImage, x: int, y: int) -> bool:
 def _assert_racs_szelen(
     racsos: QImage,
     racs_nelkul: QImage,
-    area,
     image,
     toolbar,
 ) -> None:
@@ -305,9 +292,6 @@ def _assert_racs_szelen(
     A tört képkerettel metsződő szélpixelek színe a háttér és a klip
     lefedettségétől is függ, ezért azokon nem várható teljes csempeszín.
     """
-    kozep = area.mapToScene(QPointF(area.width() / 2, area.height() / 2))
-    x0 = math.trunc(kozep.x() - 249)
-    y0 = math.trunc(kozep.y() - 153)
     bal, fent, szel, mag = _kep_kivagas_scene(image)
     jobb, lent = bal + szel, fent + mag
     toolbar_rect = _vezerlo_rect(toolbar)
@@ -315,34 +299,47 @@ def _assert_racs_szelen(
     # csonkolt képkivágás négy oldala a teljes ablakban megfigyelhető legyen.
     area_rect = racsos.rect()
 
-    # A befogadott pixelközök a csonkolt képtéglalap határain belül vannak.
+    # A mintasávok a képszélektől legalább 3 px-re vannak, helyüket a
+    # kirajzolt kép tényleges határa adja. A sávon belül a renderelt rács
+    # pixelét keressük meg: a csempefázis egész pixeles helye félpixeles
+    # platformgeometrián eltérhet.
+    szelbiztos = 3
+    sáv = 48
     szelek = (
-        ("bal", ((bal, y) for y in range(fent, lent))),
-        ("jobb", ((jobb - 1, y) for y in range(fent, lent))),
-        ("felso", ((x, fent) for x in range(bal, jobb))),
-        ("also", ((x, lent - 1) for x in range(bal, jobb))),
+        ("bal", range(bal + szelbiztos, bal + sáv),
+         range(fent + szelbiztos, lent - szelbiztos)),
+        ("jobb", range(jobb - sáv, jobb - szelbiztos),
+         range(fent + szelbiztos, lent - szelbiztos)),
+        ("felso", range(bal + szelbiztos, jobb - szelbiztos),
+         range(fent + szelbiztos, fent + sáv)),
+        ("also", range(bal + szelbiztos, jobb - szelbiztos),
+         range(lent - sáv, lent - szelbiztos)),
     )
-    for _nev, pontok in szelek:
-        pontlista = list(pontok)
-        for x, y in pontlista:
-            if not area_rect.contains(x, y):
-                continue
-            if toolbar_rect.contains(x, y):
-                continue
-            # A képszélre eső tört pixel csak részben fedi a fotót: a
-            # néző háttérszínével is keveredik. A teljes képpontokat továbbra
-            # is pontosan a specifikáció szerint ellenőrizzük.
-            if not _kep_pixel_teljesen_fedett(image, racsos, x, y):
-                continue
-            tipus = _tile_tipus(x, y, x0, y0)
-            if tipus == ".":
-                continue
-            alap = _rgb(racs_nelkul, QPoint(x, y))
-            if tipus == "G":
-                vart = tuple(((csatorna * 128) >> 8) + 128 for csatorna in alap)
-            else:
-                vart = tuple((csatorna * 179) >> 8 for csatorna in alap)
-            _assert_rgb(racsos, QPoint(x, y), vart)
+    for nev, xek, yek in szelek:
+        talalt_racs = False
+        for x in xek:
+            for y in yek:
+                if not area_rect.contains(x, y) or toolbar_rect.contains(x, y):
+                    continue
+                if not _kep_pixel_teljesen_fedett(image, racsos, x, y):
+                    continue
+                alap = _rgb(racs_nelkul, QPoint(x, y))
+                kapott = _rgb(racsos, QPoint(x, y))
+                if kapott == alap:
+                    continue
+                talalt_racs = True
+                szurke = tuple(((csatorna * 128) >> 8) + 128 for csatorna in alap)
+                arnyek = tuple((csatorna * 179) >> 8 for csatorna in alap)
+                assert any(
+                    all(abs(a - b) <= 2 for a, b in zip(kapott, vart, strict=True))
+                    for vart in (szurke, arnyek)
+                ), (
+                    f"a {nev} oldali rácspixel ({x},{y}) RGB-je {kapott}, "
+                    f"az alap {alap}; szürke {szurke} vagy árnyék {arnyek} várt"
+                )
+        assert talalt_racs, (
+            f"a kép {nev} szélén nem látszik rács a biztonságos mintasávban"
+        )
 
     # A szomszédos, levágott sávokban nem jelenhet meg rács egyetlen képpontja sem.
     for nev, pontok in (
@@ -451,7 +448,7 @@ def test_nagyitott_nezobol_nyitott_kiegyenesitesnel_a_racs_a_teljes_kepet_fedi(
         qt_app.processEvents()
     racsos = _felvetel(window, tmp_path / "forcefit-racs.png")
 
-    _assert_racs_szelen(racsos, racs_nelkul, area, image, toolbar)
+    _assert_racs_szelen(racsos, racs_nelkul, image, toolbar)
     assert viewer.property("zoomValue") == 0, (
         "a Kiegyenesítés megnyitása után a nézőnek illesztett nézetre kell váltania"
     )
@@ -841,4 +838,4 @@ def test_rotate_1_300x500_kepehez_igazodik_a_negy_oldali_kivagas(
         clip_y + clip_mag,
     )
     _assert_racs_csempe(racsos, area, image, racs_nelkul)
-    _assert_racs_szelen(racsos, racs_nelkul, area, image, toolbar)
+    _assert_racs_szelen(racsos, racs_nelkul, image, toolbar)

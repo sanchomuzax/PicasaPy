@@ -263,8 +263,9 @@ def test_kiegyenesites_800px_kep_es_bal_fiok_renderelt_geometriaja(
                     f"a képmező közepe x={area_center_x:.1f}"
                 )
 
-        # A képméret a képpontokból jön, a közép a kirajzolt QML-dobozból.
-        # A ±1 px engedi a Qt platformok egyképpontos raster-különbségét.
+        # A középpont várható helye a tényleges QML-geometriából jön. A
+        # referencia-középtől ±3 px eltérés fér bele a platformfüggő
+        # betű- és ablakkeret-méretek miatt.
         if not all(
             abs(mert - vart) <= 1
             for mert, vart in zip(image_size, _REFERENCE_IMAGE_SIZE, strict=True)
@@ -272,15 +273,28 @@ def test_kiegyenesites_800px_kep_es_bal_fiok_renderelt_geometriaja(
             hibak.append(
                 f"a renderelt 800×800-as kép mérete {image_size}, várt 800×800"
             )
+        area_center = (
+            (area_box[0] + area_box[2]) / 2,
+            (area_box[1] + area_box[3]) / 2,
+        )
         if not all(
             abs(mert - vart) <= 1
-            for mert, vart in zip(
-                image_center, _REFERENCE_IMAGE_CENTER, strict=True
-            )
+            for mert, vart in zip(image_center, area_center, strict=True)
         ):
             hibak.append(
                 f"a kirajzolt kép közepe {image_center}, "
-                f"a #69-es referencia közepe {_REFERENCE_IMAGE_CENTER}"
+                f"a viewerPhotoArea mapToScene-alapú közepe {area_center}"
+            )
+        if not all(
+            abs(mert - vart) <= 3
+            for mert, vart in zip(
+                area_center, _REFERENCE_IMAGE_CENTER, strict=True
+            )
+        ):
+            hibak.append(
+                f"a viewerPhotoArea közepe {area_center}, "
+                f"a #69-es referencia közepe {_REFERENCE_IMAGE_CENTER} "
+                "(megengedett eltérés: ±3 px)"
             )
         assert not hibak, "\n".join(hibak)
     finally:

@@ -101,7 +101,22 @@ def _target_mouse_area(item):
 
 def _press_release(window, item, pan_area, panel, qt_app):
     target_area = _target_mouse_area(item)
-    point = _point(item)
+    photo_area = _item(window, "viewerPhotoArea")
+    viewport = QRectF(0, 0, window.width(), window.height())
+    visible_click_area = (
+        _item_rect(item)
+        .intersected(_item_rect(target_area))
+        .intersected(_item_rect(photo_area))
+        .intersected(viewport)
+    )
+    assert visible_click_area.width() > 0 and visible_click_area.height() > 0, (
+        f"{item.objectName()} gombnak nincs látható, kattintható területe: "
+        f"{visible_click_area}"
+    )
+    point = QPoint(
+        round(visible_click_area.center().x()),
+        round(visible_click_area.center().y()),
+    )
     QTest.mouseMove(window, point, 5)
     QTest.mousePress(
         window,
@@ -423,8 +438,12 @@ def test_a_reszben_lathato_apply_gomb_zoom_kozben_is_kattinthato(
         f"image={_item_rect(_item(window, 'viewerImage'))}"
     )
     for _ in range(24):
-        button_rect = _item_rect(button)
-        visible_button = button_rect.intersected(area_rect)
+    button_rect = _item_rect(button)
+    visible_button = (
+        button_rect
+        .intersected(_item_rect(button_mouse_area))
+        .intersected(area_rect)
+    )
         if 0 < visible_button.height() < button_rect.height() - 1:
             break
         _drag_pan(window, viewer, qt_app, QPoint(0, -30), (0.4, 0.4))
@@ -445,7 +464,10 @@ def test_a_reszben_lathato_apply_gomb_zoom_kozben_is_kattinthato(
         f"gomb={button_rect}, látható={visible_button}"
     )
 
-    point = QPoint(round(visible_button.center().x()), round(visible_button.center().y()))
+    point = QPoint(
+        round(visible_button.center().x()),
+        round(visible_button.center().y()),
+    )
     QTest.mousePress(
         window,
         Qt.MouseButton.LeftButton,
