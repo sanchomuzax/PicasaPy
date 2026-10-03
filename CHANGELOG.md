@@ -7,6 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A szerkesztetlen kép exportja a méretbeállítástól függetlenül az eredeti fájl pontos másolata, mint a Picasában (#4018).
 - Nagyított nézetben is használható az ecset, a vörösszem, a retusálás, a szöveg és az arcjelölés; az eszköz nélküli húzás pásztáz, kettős nézetben pedig kattintással váltható a fókusz (#4083).
 - Az átméretezés a sor utolsó néhány oszlopát is a Picasáéval egyezően számolja (#4004).
 

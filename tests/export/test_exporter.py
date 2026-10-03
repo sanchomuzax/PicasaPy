@@ -178,13 +178,15 @@ class TestNoopCopy:
         )
         assert report.exported[0].read_bytes() != original
 
-    def test_resize_setting_disables_noop_copy(self, tmp_path):
+    def test_resize_es_minoseg_beallitas_nem_tiltja_a_noop_masolast(self, tmp_path):
         source = _make_half_and_half(tmp_path / "kép.jpg", width=400, height=200)
         original = source.read_bytes()
         report = export_photos(
-            [ExportItem(source)], tmp_path / "out", ExportSettings(max_dimension=10)
+            [ExportItem(source)],
+            tmp_path / "out",
+            ExportSettings(max_dimension=10, jpeg_quality=10),
         )
-        assert report.exported[0].read_bytes() != original
+        assert report.exported[0].read_bytes() == original
 
     def test_filters_disable_noop_copy(self, tmp_path):
         source = _make_half_and_half(tmp_path / "kép.jpg")

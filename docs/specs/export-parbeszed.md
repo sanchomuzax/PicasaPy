@@ -1626,13 +1626,15 @@ olvassa. A méret/minőség-beállítás önmagában nem tiltja le a másolást.
 mérőadatban nincs szerkesztetlen kép nem alapértelmezett beállítással, ezért
 ez statikus bináris eredmény, nem futásidejű mérés.
 
-PicasaPy-eltérés: az `src/picasapy/export/exporter.py` `_is_noop_copy` csak
-`settings.max_dimension is None` esetén másol (548–555. sor); a
-`jpeg_quality` önmagában nem kapuz. Az eredeti
-ágban a méret/minőség sem kapuz, így méretkorlátozás mellett az eredeti a forrást
-másolja, míg nálunk átméretezés történik. Ha a kompatibilitás a cél, ez külön
-fejlesztői feladat: a tiszta JPEG másolását a max_dimension értékétől függetlenül
-engedje, és rögzítse, hogy ez az eredeti méretbeállítást figyelmen kívül hagyja.
+PicasaPy-megfelelés (#4018): az `_is_noop_copy` a `max_dimension` és a
+`jpeg_quality` értékétől függetlenül bájthűen másolja az érintetlen JPEG-et;
+ezek a beállítások csak akkor érvényesülnek, ha más feltétel renderelést kér.
+A regressziós teszt méret- és minőségbeállítással is a forrás bájtjait várja
+(`tests/export/test_exporter.py`); az érvényes crop64-előzményes, nem üres
+lánc továbbra is újrakódol (`tests/export/test_export_crop64_export_4008.py`).
+A belső, generált képet méretre alakító hívó — például a Google Earth-bélyegkép,
+a webexport és az Ajándék CD — kifejezetten kérheti a renderelést a
+`copy_untouched_jpegs=False` beállítással.
 
 Két Picasa-mérőpár (#3229, meroadat.tar):
 
@@ -1686,4 +1688,3 @@ Ami a 6. szakasz „Kész, ha" listájából ezzel teljesült:
    kulcs van: a csúszka állása és a rádió állása. A *viselkedés* hű (a
    párbeszéd mindkettőt megjegyzi); a registry-kulcs egy-az-egyben
    megfeleltetése **nyitva marad**.
-

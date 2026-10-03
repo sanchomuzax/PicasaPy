@@ -55,10 +55,12 @@ def prepare_photo_exports(
     thumb_settings = ExportSettings(
         max_dimension=settings.thumbnail_max_dimension,
         jpeg_quality=settings.jpeg_quality,
+        copy_untouched_jpegs=settings.thumbnail_max_dimension is None,
     )
     image_settings = ExportSettings(
         max_dimension=settings.image_max_dimension,
         jpeg_quality=settings.jpeg_quality,
+        copy_untouched_jpegs=settings.image_max_dimension is None,
     )
 
     photos: list[PhotoExportData] = []

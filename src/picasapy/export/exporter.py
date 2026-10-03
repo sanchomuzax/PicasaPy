@@ -61,9 +61,11 @@ _JPEG_EXTENSIONS = frozenset({".jpg", ".jpeg"})
 
 @dataclass(frozen=True)
 class ExportSettings:
-    """Export-beállítások: leghosszabb oldal (None = eredeti), JPEG-minőség,
-    sorszámozás (#369: „Add numbers to file names to preserve order") és
-    opcionális vízjel-szöveg (#369)."""
+    """Export-beállítások a renderelt képekhez és a kimeneti fájlnevekhez.
+
+    A `max_dimension` a renderelt képekre vonatkozik; az érintetlen JPEG-ek
+    bájthű másolása méret- és minőségbeállítás mellett is megmarad (#4018).
+    """
 
     max_dimension: int | None = None
     jpeg_quality: int = 85
@@ -88,6 +90,10 @@ class ExportSettings:
     # `jpeg_quality` már csak VISSZAESÉS: nem JPEG forrásnál vagy
     # olvashatatlan táblánál.
     quality_automatic: bool = False
+    # Az érintetlen JPEG-ek bájthű másolása az alapérték (#4018). Az olyan
+    # belső kimenetek, amelyeknek a max_dimension miatt mindenképp renderelniük
+    # kell (pl. Google Earth-bélyegkép), ezt kifejezetten kikapcsolhatják.
+    copy_untouched_jpegs: bool = True
 
     def __post_init__(self) -> None:
         if self.max_dimension is not None and self.max_dimension < 1:
@@ -539,17 +545,19 @@ def _is_noop_copy(
     *,
     has_unparsed_filter_chain: bool = False,
 ) -> bool:
-    """Nincs mit beégetni: se forgatás, se tükrözés (#3977), se átméretezés,
-    se szerkesztés, se vízjel — és a forrás már JPEG. Ilyenkor a sima másolás a helyes (bájthű,
-    mtime-őrző); a sorszámozás (#369) csak a fájlnevet érinti, a bájthű
-    másolást nem zárja ki. Ha a nem üres filters-láncot az olvasó teljesen
-    elvetette, akkor is újrakódolunk: az eredeti Picasa exportja ilyenkor is
-    új JPEG-et ír, és az export-metaadatoknak is le kell futniuk (#3997)."""
+    """Nincs beégetendő szerkesztés, és a forrás JPEG: bájthűen másolható.
+
+    Az eredeti Picasához igazodva a méret- és minőségbeállítás nem tiltja le
+    ezt az ágat (#4018); belső képkimenet kérhet kifejezett renderelést. A
+    sorszámozás (#369) csak a fájlnevet érinti. Ha a nem üres filters-láncot
+    az olvasó teljesen elvetette, akkor is újrakódolunk: az eredeti Picasa
+    exportja ilyenkor új JPEG-et ír, és az export-metaadatoknak is le kell
+    futniuk (#3997)."""
     return (
         source.suffix.lower() in _JPEG_EXTENSIONS
         and item.rotate_steps % 4 == 0
         and not int(item.flip_flags or 0) & FLIP_MASK
-        and settings.max_dimension is None
+        and settings.copy_untouched_jpegs
         and not settings.watermark_text
         and not ops
         and not has_unparsed_filter_chain

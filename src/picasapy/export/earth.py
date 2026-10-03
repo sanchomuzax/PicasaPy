@@ -139,7 +139,10 @@ def export_google_earth(
     report = export_photos(
         (ExportItem(source=record_path(r)) for r, _ in geotagged),
         thumbs_dir,
-        ExportSettings(max_dimension=thumb_max_dimension),
+        ExportSettings(
+            max_dimension=thumb_max_dimension,
+            copy_untouched_jpegs=thumb_max_dimension is None,
+        ),
     )
     # a kiírt bélyegképek forrás szerint — a sikertelenek kimaradnak
     by_name = {p.name: p for p in report.exported}

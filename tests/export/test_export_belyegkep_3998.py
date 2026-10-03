@@ -243,9 +243,12 @@ def test_valodi_export_bejarata(tmp_path):
 
     source = tmp_path / "nagy.jpg"
     Image.fromarray(cv2.cvtColor(_kep(1000, 700), cv2.COLOR_BGR2RGB)).save(source, "JPEG")
-    # az átméretezés miatt nem bájthű másolás: az export újrakódol (800×560)
+    # A tényleges szerkesztés újrakódolást kér; a max_dimension önmagában nem
+    # tiltja le az érintetlen JPEG bájthű másolását (#4018).
     report = export_photos(
-        [ExportItem(source)], tmp_path / "out", ExportSettings(max_dimension=800)
+        [ExportItem(source, filters="bw=1;")],
+        tmp_path / "out",
+        ExportSettings(max_dimension=800),
     )
     assert report.failed == ()
     ki = report.exported[0].read_bytes()

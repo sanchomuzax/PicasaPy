@@ -85,6 +85,7 @@ def ajandek_cd_lemezkep(
         max_dimension=meret or None,
         jpeg_quality=JPEG_MINOSEG,
         movie_full=True,
+        copy_untouched_jpegs=not bool(meret),
     )
     # az Ajándék-CD ágon nincs `option_inifile`: a felirat és a címkék nem
     # kerülhetnek a lemezre egy `.picasa.ini`-ben

@@ -91,8 +91,10 @@ def _kameras_forras(tmp_path, size=(80, 60)):
 
 
 def _export(source, tmp_path, **settings):
-    """Szerkesztett export (`bw` lánc): a szerkesztetlen, átméretezetlen JPEG
-    bájthű másolat marad (`_is_noop_copy`) — arra a spec nem ad mérést."""
+    """A `bw` lánc kifejezetten újrakódolást kér a metaadat-próbákhoz.
+
+    A #4018 spec szerint szerkesztetlen JPEG-nél a méretbeállítás sem tiltja
+    le a bájthű másolást, ezért ezek a tesztek nem erre támaszkodnak."""
     report = export_photos(
         [ExportItem(source, filters="bw=1;")],
         tmp_path / "out",

@@ -24,6 +24,7 @@ from picasapy.metadata import tiff_helyben as th
 from picasapy.metadata.export_metadata import _szegmensek
 
 _EXIF_ID = b"Exif\x00\x00"
+_RENDERELTETO_LANC = "Tint=1,79.842102,ffff;"  # elvetett lánc is újrakódolást kér
 
 
 def _forras(tmp_path, tajolas, size=(60, 20)):
@@ -85,8 +86,12 @@ def _tajolasok(path):
     return None, None
 
 
-def _export(source, tmp_path, **settings):
-    report = export_photos([ExportItem(source)], tmp_path / "out", ExportSettings(**settings))
+def _export(source, tmp_path, *, filters="", **settings):
+    report = export_photos(
+        [ExportItem(source, filters=filters)],
+        tmp_path / "out",
+        ExportSettings(**settings),
+    )
     assert report.failed == ()
     return report.exported[0]
 
@@ -94,12 +99,22 @@ def _export(source, tmp_path, **settings):
 @pytest.mark.parametrize("tajolas", [6, 8])
 class TestUjrakodoltKimenet:
     def test_a_tag_1_lesz(self, tajolas, tmp_path):
-        kimenet = _export(_forras(tmp_path, tajolas), tmp_path, max_dimension=1000)
+        kimenet = _export(
+            _forras(tmp_path, tajolas),
+            tmp_path,
+            filters="bw=1;",
+            max_dimension=1000,
+        )
         assert _tajolas(kimenet) == 1
 
     def test_kepek_es_tag_egyutt_egyszer_forgat(self, tajolas, tmp_path):
         source = _forras(tmp_path, tajolas)
-        kimenet = _export(source, tmp_path, max_dimension=1000)
+        kimenet = _export(
+            source,
+            tmp_path,
+            filters=_RENDERELTETO_LANC,
+            max_dimension=1000,
+        )
         vart, kapott = _nezoben(source), _nezoben(kimenet)
         # álló (20×60): a néző egyszer fordít, nem kétszer (akkor 60×20 lenne)
         assert kapott.shape == vart.shape == (60, 20, 3)
@@ -159,7 +174,9 @@ def test_az_ifd1_tajolas_tagje_nem_marad_6(tmp_path):
     20×60-as kimenetnek (≤ 300 px) nincs IFD1-e."""
     source = _forras_elonezettel(tmp_path)
     assert _tajolasok(source) == (6, 6)
-    kimenet = _export(source, tmp_path, max_dimension=1000)
+    kimenet = _export(
+        source, tmp_path, filters="bw=1;", max_dimension=1000
+    )
     assert _tajolasok(kimenet) == (1, None)
 
 
@@ -181,7 +198,9 @@ class TestTartalekAgak:
 
         monkeypatch.setattr(em, "_exif_szegmens", hiba)
         source = _forras_elonezettel(tmp_path)
-        kimenet = _export(source, tmp_path, max_dimension=1000)
+        kimenet = _export(
+            source, tmp_path, filters="bw=1;", max_dimension=1000
+        )
         assert _tajolasok(kimenet) == (1, 1)
         with Image.open(kimenet) as kep:
             assert kep.size == (20, 60)  # álló: a képpontok egyszer fordultak
@@ -193,7 +212,12 @@ class TestTartalekAgak:
             raise RuntimeError("kényszerített hiba")
 
         monkeypatch.setattr(em, "_frissitett_szegmensek", hiba)
-        kimenet = _export(_forras_elonezettel(tmp_path), tmp_path, max_dimension=1000)
+        kimenet = _export(
+            _forras_elonezettel(tmp_path),
+            tmp_path,
+            filters=_RENDERELTETO_LANC,
+            max_dimension=1000,
+        )
         assert _tajolasok(kimenet) == (1, 1)
 
     def test_bajtmasolas_haloja_is_1_re_irja(self, tmp_path, monkeypatch):
@@ -203,7 +227,12 @@ class TestTartalekAgak:
             raise RuntimeError("kényszerített hiba")
 
         monkeypatch.setattr(ex, "frissitett_metaadat", hiba)
-        kimenet = _export(_forras_elonezettel(tmp_path), tmp_path, max_dimension=1000)
+        kimenet = _export(
+            _forras_elonezettel(tmp_path),
+            tmp_path,
+            filters=_RENDERELTETO_LANC,
+            max_dimension=1000,
+        )
         assert _tajolasok(kimenet) == (1, 1)
 
     def test_a_tajolas_iras_hibaja_nem_buktatja_a_kepet(self, tmp_path, monkeypatch, caplog):
@@ -215,7 +244,12 @@ class TestTartalekAgak:
         monkeypatch.setattr(em, "_exif_szegmens", hiba)
         monkeypatch.setattr(em, "tajolas_1_helyben", hiba)
         with caplog.at_level("WARNING"):
-            kimenet = _export(_forras_elonezettel(tmp_path), tmp_path, max_dimension=1000)
+            kimenet = _export(
+                _forras_elonezettel(tmp_path),
+                tmp_path,
+                filters="bw=1;",
+                max_dimension=1000,
+            )
         assert kimenet.is_file()
         assert any("tájolás" in r.getMessage() for r in caplog.records)
 

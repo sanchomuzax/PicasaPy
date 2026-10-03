@@ -38,11 +38,17 @@ def _crop_mentese(source: Path, value: str) -> None:
     save_document(document.with_value(source.name, "crop", value), ini_path)
 
 
-def _export(source: Path, filters: str, target: Path):
+def _export(
+    source: Path,
+    filters: str,
+    target: Path,
+    *,
+    max_dimension: int | None = None,
+):
     return export_photos(
         [ExportItem(source, filters=filters)],
         target,
-        ExportSettings(jpeg_quality=100),
+        ExportSettings(jpeg_quality=100, max_dimension=max_dimension),
     )
 
 
@@ -75,6 +81,32 @@ def _assert_export_matches_viewer(source: Path, filters: str, exported: Path) ->
         np.abs(export_rgb.astype(np.int16) - viewer_jpeg_rgb.astype(np.int16)).mean()
     )
     assert mae == 0.0
+
+
+def test_max_meret_mellett_is_bajthu_a_tiszta_jpeg_a_crop64_lanc_pedig_renderel(
+    tmp_path,
+):
+    source, _ = _forras(tmp_path, "pelda.jpg")
+    original = source.read_bytes()
+    tiszta = export_photos(
+        [ExportItem(source)],
+        tmp_path / "tiszta-export",
+        ExportSettings(max_dimension=10, jpeg_quality=10),
+    )
+    assert tiszta.failed == ()
+    assert tiszta.exported[0].read_bytes() == original
+
+    filters = "crop64=1,3c3c8c8c;Vignette=1,35.000000,1.400000,0.000000,00000000;"
+    _crop_mentese(source, _CROP)
+    szerkesztett = _export(
+        source,
+        filters,
+        tmp_path / "szerkesztett-export",
+        max_dimension=1000,
+    )
+    assert szerkesztett.failed == ()
+    assert szerkesztett.exported[0].read_bytes() != original
+    _assert_export_matches_viewer(source, filters, szerkesztett.exported[0])
 
 
 @pytest.mark.parametrize(

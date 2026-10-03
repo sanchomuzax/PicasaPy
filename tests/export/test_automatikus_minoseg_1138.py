@@ -8,8 +8,8 @@ mérőszettjén a forrás és a Picasa exportjának DQT-je **bájtra azonos**,
 miközben a fájlméret más — tehát tényleg újrakódolt.
 
 A mérce ezért itt is a DQT: a kimeneti JPEG kvantálási táblái egyezzenek
-a forráséval, MÉG AKKOR IS, ha a képet át kellett méretezni (vagyis a
-bájthű másolás — `_is_noop_copy` — nem menti meg a helyzetet).
+a forráséval, amikor egy tényleges szerkesztés újrakódolást kér. A
+`max_dimension` önmagában nem kényszeríti ki az újrakódolást (#4018).
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ class TestAutomatikusMinoseg:
         cel = tmp_path / "ki"
 
         jelentes = export_photos(
-            [ExportItem(source=forras)],
+            [ExportItem(source=forras, filters="bw=1;")],
             cel,
             ExportSettings(max_dimension=80, quality_automatic=True),
         )
@@ -69,7 +69,7 @@ class TestAutomatikusMinoseg:
         cel = tmp_path / "ki"
 
         jelentes = export_photos(
-            [ExportItem(source=forras)],
+            [ExportItem(source=forras, filters="bw=1;")],
             cel,
             ExportSettings(max_dimension=80, jpeg_quality=65),
         )
