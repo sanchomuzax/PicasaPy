@@ -295,9 +295,9 @@ class PeopleMixin:
     def peopleOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
         """A megadott sorokon NÉVVEL szereplő emberek: `[{name, count}]`.
 
-        Az eredeti Emberek-paneljének első szakasza („In this photo:" egy
-        képnél, „People in these photos:" többnél). A darabszám itt azt
-        mondja, a kijelölés HÁNY képén szerepel az illető."""
+        A `count` azt mondja, a kijelölés hány képén szerepel az illető; a
+        főnézetben minden rekord egy megjelenő személy-sort ad a panelnek
+        (#4045)."""
         counts: dict[str, int] = {}
         # ⚠️ #1146: MAPPÁNKÉNT olvasunk ini-t, nem képenként. A régi ág
         # soronként hívott `load_document()`-et — 2 002 soros kijelölésnél

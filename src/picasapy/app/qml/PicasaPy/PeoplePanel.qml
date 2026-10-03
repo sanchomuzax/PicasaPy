@@ -13,11 +13,11 @@ import QtQuick.Layouts
 // `picasa-arcfelismeres.md` 9/b–9/d). A fejlécet az eredetiben a
 // `0x00647df0` választja az eredeti szövegforrásából:
 //
-//   EGYKÉPES ág — a szerkesztőben, VAGY (1 kép ÉS nem személy-album):
+//   EGYSOROS ág — a szerkesztőben, VAGY (1 eredménysor ÉS nem személy-album):
 //     van személy → PeoplePanel::InThis „In this photo:"
 //     van kép     → PeoplePanel::Who    „Who is in these photos?"
 //     különben    → Text5 (lent)
-//   TÖBBKÉPES ág — minden más (több kép, 0 kép, személy-album):
+//   TÖBBSOROS ág — minden más (0 vagy több eredménysor, személy-album):
 //     van személy → személy-album ? Known1 „Also in these photos:"
 //                                 : Known2 „People in these photos:"
 //     van kép     → csoportosítva ? UnnamedCluster : Unnamed
@@ -39,7 +39,8 @@ Rectangle {
     objectName: "peoplePanel"
     color: Theme.panelBg
 
-    // a kijelölt képeken névvel szereplő emberek (`controller.peopleOfRows`)
+    // a kijelölt képeken névvel szereplő emberek (`controller.peopleOfRows`);
+    // a lista elemszáma tükrözi a panel eredménysorainak számát
     property var peopleHere: []
     // a nézett SZEMÉLY-album neve — egyébként üres
     property string currentPerson: ""
@@ -57,9 +58,14 @@ Rectangle {
 
     readonly property bool personAlbum:
         panel.currentPerson.length > 0 && !panel.unnamedAlbumMode
+    // A megnevezett személyek tényleges sorai adják az eredménysorszámot. Ha
+    // nincs ilyen sor, a rendelkezésre álló kijelölésszám a névtelen ág
+    // egyes/többes választója: képeké a főnézetben, arcoké az album nézetében.
+    readonly property int resultRowCount:
+        panel.people.length > 0 ? panel.people.length : panel.selectionCount
     readonly property bool singlePhotoBranch:
         panel.editorView
-        || (panel.selectionCount === 1 && !panel.personAlbum)
+        || (panel.resultRowCount === 1 && !panel.personAlbum)
     // a Név nélküliek albumban a kijelölés névtelen arcoké — ott a rács
     // kijelölésének neveit nem mutatjuk
     readonly property var people:
