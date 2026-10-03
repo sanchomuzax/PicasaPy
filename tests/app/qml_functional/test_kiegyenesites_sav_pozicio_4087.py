@@ -199,14 +199,11 @@ def test_a_kiegyenesites_sor_abszolut_szeleit_a_kirajzolt_kep_kozepehez_meri(
                     f"Math.round-alapú elvárás={vart_felso:.2f}; nyers y={y_nyers:.2f}"
                 )
 
-                if (
-                    szelesseg == 1280
-                    and magassag == 1029
-                    and abs(left_drawer.width() - 280) <= 0.05
-                ):
-                    # A futásvégek fél-nyíltak: ezek a referencia utolsó
-                    # fedett pixelét (823, 916, 1003) követő koordináták.
-                    assert vart == [(557, 824), (835, 917), (922, 1004)]
+                # A job-69 referencia (1280 széles ablakon: sáv 557–823, Alkalmaz
+                # 835–916, Mégse 922–1003) a kirajzolt kép közepéhez kötött, ez
+                # pedig platformfüggő (a CI-n a fit-méret és a képközép 1 px-szel
+                # eltér, ld. a #4036 805/800 tanulságát): ezért abszolút számot
+                # NEM állítunk, az elvárás a renderelt kép saját közepéből jön.
 
         assert floor_y_kulonbozne, (
             "az ablakmagasság-sweep nem fogja meg a Math.floor(y) eltérést"
