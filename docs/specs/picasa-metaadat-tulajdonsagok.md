@@ -1896,10 +1896,27 @@ szélesség–magasság-csere. A leíró tábla a `0x4d`/`0x4e` belső kulcsot E
 Ez bizonyítja, hogy az Interop-író a JPEG-olvasó forrástérképének mezőit másolja,
 és hogy az olvasó a tárolt SOF-méretet be tudja tenni ezekbe a mezőkbe. **Nem
 bizonyítja még**, hogy az EXIF `0xa002`/`0xa003` beolvasása is ugyanebbe a
-forrástérképbe ír-e, illetve a fájl szegmendsorrendjében az EXIF-bejegyzés után
-mindig lefut-e a SOF-felülírás. A tájolt képnél a megfigyelt SOF-ág nem cseréli
-fel a méreteket; EXIF-ütközésnél a végső érték sorrendjét további követés vagy
-ellentmondó forrás–export mérés dönti el.
+forrástérképbe ír-e. A tájolt képnél a megfigyelt SOF-ág nem cseréli fel a
+méreteket.
+
+**Hívási sorrend vizsgálata (2026-10-03):** a `0x0045cfa0` JPEG-mentő a
+`0x0045d3ec` címen `0x009ecc60`-nal `ytJPGInfo` objektumot épít (`vftable`:
+`0x00cda950`; második virtuális metódus: `0x009ecd60`). A `0x0045d463` hívás
+`0x0045e120`-nak ezt az objektumot adja át. A helper előbb, `0x0045e19b`-nél
+egy másik objektum `+0xc4` virtuális metódusát hívja; később, `0x0045e33d`-nél
+a `ytJPGInfo` `+4` metódusát. Ez utóbbi `0x009ecd60` → `0x009e95c0`;
+az utasításszintű hívási láncban a JPEG-marker diszpécser (`0x009ea6c0`)
+innen hívja a SOF-olvasót (`0x009e9cd0`). Tehát a SOF-olvasó a `0x45e120`
+korábbi, dinamikus `+0xc4` hívása után fut le. A korábbi hívás dinamikus
+célosztálya és az, hogy az EXIF-leírók alapján ugyanabba a `0x4d`/`0x4e`
+forrástérképbe ír-e, nem állapítható meg ebből a hívási láncból. Emiatt ez a
+sorrend önmagában még nem dönti el az EXIF-es forrás végső értékét.
+
+**Futtatásos ellenőrzés:** a helyi QEMU-harness a `0x008fac40` ecsetrekord-
+író/olvasó vizsgálatához készült, és nem építi fel a `0x0045e120` valódi
+metaadat-objektumait. A szükséges futásidejű objektumkapcsolatot ezért nem
+mértem; szintetikus stubokkal kapott eredmény nem igazolná az EXIF-útvonalat.
+Ellentmondó EXIF/SOF forrásból készült Picasa-export sincs mérve.
 
 **Mérési kontroll (#3996, `meroadat.tar`):** a
 `3084-poszterizalas/Warm grasses by dcsearle.t21.jpg` forrás SOF-mérete
@@ -1910,10 +1927,12 @@ másik, azonos méretű képméretforrástól. A tarban átnézett 900 JPEG köz
 volt Orientation 5–8 forrás, sem olyan forrás, amelynél az EXIF
 `0xa002`/`0xa003` eltért volna a SOF-tól.
 
-**Nyitva maradt a #3996-ban:** EXIF `0xa002`/`0xa003` és SOF közti ütközés
-végső precedenciája; továbbá tájolt forrás Picasa-exportjának mérése. A PicasaPy
-a SOF tárolt méretét írja, de a rendelkezésre álló mérés nem igazol eltérést az
-eredeti Picasától, ezért fejlesztői al-jegy ebből még nem következik.
+**Nyitva maradt a #3996-ban:** az EXIF `0xa002`/`0xa003` beolvasójának
+azonosítása és annak igazolása, hogy az írás a SOF által később felülírt
+forrástérképbe jut-e; továbbá tájolt forrás Picasa-exportjának mérése. A
+PicasaPy a SOF tárolt méretét írja, de a rendelkezésre álló mérés nem igazol
+eltérést az eredeti Picasától, ezért fejlesztői al-jegy ebből még nem
+következik.
 
 **Ebből a mért XMP mezőről mezőre levezethető** (a `0x00bad9a0`-lánccal, B):
 
