@@ -2133,8 +2133,10 @@ mód) a „Preferences / ResampleFilter2” beállításból veszi a módot (ala
 | 6 | 4,0 (`[0xc7e4a4]`) | `0x00a3feed`: ugyanez 4-gyel ⇒ Lanczos-4 (ezt a bélyegkép NEM használja) |
 
 A többi lépés a szűrők Resize-ával azonos (filterdesc-registry 5/c): egész súlyok `csonk(w·16383/Σw)`, a
-maradék a `csonk(c)` csapé, `(Σ w·p + 255) >> 14`, előbb a vízszintes menet; a sugár kicsinyítéskor a
-léptékkel nyúlik. A mintavevő objektum `[+0x34]` = 1 (2×-es előfelezés, `0x00a43230`) és `[+0x36]` = 0
+maradék a `csonk(c)` csapé, előbb a vízszintes `(Σ w·p + 255) >> 14`, majd a függőleges menet; utóbbin a
+sor utolsó `W mod 4` oszlopa `+255` nélkül számol (#4004). A bélyegkép `W`-je 8 többszöröse, így ez a
+kivétel ott nem érvényesül. A sugár kicsinyítéskor a léptékkel nyúlik. A mintavevő objektum `[+0x34]` = 1
+(2×-es előfelezés, `0x00a43230`) és `[+0x36]` = 0
 (`0x009ecfa9`, `0x009ecfb1`) — az előfelezés nincs vizsgálva → #3995.
 
 *Mérve* (19 export, a fő kép ⟶ Lanczos-3 / Lanczos-4 / Mitchell / doboz ⟶ 85-ös JPEG-oda-vissza, átlagos
@@ -2216,8 +2218,10 @@ utána egyetlen Lanczos-3 menet src′ → dst                ; a lépték float
 **2. A gyorsított sorkezelő** — `[obj+0x37] = [0xd695d2] ∥ [0xd695d3]` (`0x00a3f496`–`0x00a3f4b9`). A `[0xd695d2]` a
 `CPUID(1).EDX` 26. bitje (SSE2; a statikus inicializáló `0x00c33d48`–`0x00c33d56`); a `[0xd695d3]` sehol nem íródik
 (26 olvasás, `.bss`, mindig 0). ⇒ SSE2-es gépen, Wine alatt is a SIMD-ág fut (`0x00a426a0` → `0x00a428e0`).
-**Az aritmetika bitre azonos a skalárral:** a kezdőérték `{255,255,255,255}` (`0xd47560`), `pmaddwd` (int16 súly ×
-0..255 képpont, 16 bites túlcsordulás nincs), `psrad 14`, `packssdw`, `packuswb` ⇒ `sat_u8((Σ + 255) >> 14)`.
+**A négyes főciklus aritmetikája bitre azonos a skalárral:** a kezdőérték `{255,255,255,255}` (`0xd47560`),
+`pmaddwd` (int16 súly × 0..255 képpont, 16 bites túlcsordulás nincs), `psrad 14`, `packssdw`, `packuswb` ⇒
+`sat_u8((Σ + 255) >> 14)`. A függőleges sorvégi `W mod 4` oszlopok skalár farka mindkét úton elhagyja a
+`+255`-öt (`0x00a40e40`, `0x00a413f0`, #4004).
 
 **3. Az ICC-átalakítás** — a `[0xd67920]` a globális színkezelő (a `0x0097e410` hozza létre): `+0` a LittleCMS beépített
 sRGB profilja, `+8` a monitorprofil, `+0x5c` = `HKCU\SOFTWARE\Google\Picasa\Picasa2\Preferences\EnableColorManagement`

@@ -2,8 +2,9 @@
 
 Mag: `|x| >= 3` → 0, egyébként `sinc(π|x|) · sinc(π|x|/3)`; a sugár
 kicsinyítéskor a léptékkel nyúlik; a súlyok fixpontosak (`csonk(w·16383/Σw)`,
-a maradék a `csonk(c)` csapé), a kimenet `(Σ w·p + 255) >> 14`, előbb a
-vízszintes menet. A referencia itt tiszta Python, a termékkódtól függetlenül.
+a maradék a `csonk(c)` csapé), a kimenet a vízszintes menetben
+`(Σ w·p + 255) >> 14`; függőlegesen az utolsó `W mod 4` oszlopban nincs
+`+255` (#4004). A referencia itt tiszta Python, a termékkódtól függetlenül.
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ def _mag(x: float) -> float:
     return 0.0 if x >= 3 else _sinc(x) * _sinc(x / 3)
 
 
-def _referencia_tengely(sor: list[int], ki: int) -> list[int]:
+def _referencia_tengely(sor: list[int], ki: int, *, kerekito: int = 255) -> list[int]:
     be = len(sor)
     skala = np.float32(be) / np.float32(ki)
     nyujtas = max(1.0, float(skala))
@@ -43,7 +44,7 @@ def _referencia_tengely(sor: list[int], ki: int) -> list[int]:
         maradek = 16383 - sum(egesz.values())
         cel = min(max(int(c), min(egesz)), max(egesz))
         egesz[cel] += maradek
-        ertek = (sum(w * sor[j] for j, w in egesz.items()) + 255) >> 14
+        ertek = (sum(w * sor[j] for j, w in egesz.items()) + kerekito) >> 14
         kimenet.append(min(max(ertek, 0), 255))
     return kimenet
 
@@ -77,14 +78,26 @@ def test_ketto_tengely_elobb_vizszintes():
         [[_referencia_tengely(kep[y, :, c].tolist(), 6) for c in range(3)] for y in range(13)]
     ).transpose(0, 2, 1)
     var = np.array(
-        [[_referencia_tengely(vizsz[:, x, c].tolist(), 5) for c in range(3)] for x in range(6)]
+        [
+            [
+                _referencia_tengely(
+                    vizsz[:, x, c].tolist(), 5,
+                    kerekito=255 if x < (vizsz.shape[1] & ~3) else 0,
+                )
+                for c in range(3)
+            ]
+            for x in range(6)
+        ]
     ).transpose(2, 0, 1)
     assert ki.tolist() == var.tolist()
 
 
-def test_allando_kep_allando_marad():
+def test_allando_kepnel_a_fuggoleges_maradek_kerekites_nelkul_marad():
     kep = np.full((40, 60, 3), 123, dtype=np.uint8)
-    assert (ops.resize_image(kep, 25, 17, lanczos3=True) == 123).all()
+    eredmeny = ops.resize_image(kep, 25, 17, lanczos3=True)
+    # W=25: az utolsó függőleges maradékoszlopban 16383·123 >> 14 = 122.
+    assert (eredmeny[:, :-1] == 123).all()
+    assert (eredmeny[:, -1, :] == 122).all()
 
 
 def test_azonos_meret_valtozatlan():

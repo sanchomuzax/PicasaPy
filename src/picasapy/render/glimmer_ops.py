@@ -1241,9 +1241,14 @@ def _tengely_sulyok(
 
 
 def _tengely_menten(
-    kep: np.ndarray, ki_meret: int, tengely: int, doboz: bool, lanczos: bool = False
+    kep: np.ndarray,
+    ki_meret: int,
+    tengely: int,
+    doboz: bool,
+    lanczos: bool = False,
+    kerekito_oszlopok: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Egy menet EGY tengely mentén: `(Σ w·p + 255) >> 14`, 8 bites kimenet."""
+    """Fixpontos tengelymenet; a függőleges `W mod 4` farkat a #4004 szerint számolja."""
     be_meret = kep.shape[tengely]
     if (doboz or lanczos) and ki_meret == be_meret:
         # 1:1-es menet: a középső csap súlya 16383 (a Lanczos többi csapja az
@@ -1260,7 +1265,19 @@ def _tengely_menten(
         if not oszlop.any():
             continue
         gyujto += np.take(kep, indexek[:, k], axis=tengely).astype(np.int32) * oszlop.reshape(alak)
-    gyujto += _RESIZE_KEREKITO
+    if tengely == 0:
+        # A ytResampler függőleges főciklusa négy oszloponként indul, és itt
+        # kapja meg a +255-öt. A sor végén maradó W mod 4 oszlop skalár
+        # farkában a Picasa nem ad hozzá kerekítőtagot.
+        if kerekito_oszlopok is None:
+            kerekito_oszlopok = np.arange(gyujto.shape[1]) < (gyujto.shape[1] & ~3)
+        elif kerekito_oszlopok.shape != (gyujto.shape[1],):
+            raise ValueError("A függőleges kerekítőmaszk szélessége eltér a bemenetétől")
+        alak_kerekito = (1, gyujto.shape[1]) + (1,) * (gyujto.ndim - 2)
+        kerekito = np.where(kerekito_oszlopok, _RESIZE_KEREKITO, 0).reshape(alak_kerekito)
+        gyujto += kerekito
+    else:
+        gyujto += _RESIZE_KEREKITO
     np.clip(gyujto, 0, _RESIZE_FELSO, out=gyujto)
     return (gyujto >> _RESIZE_ELTOLAS).astype(np.uint8)
 
@@ -1285,9 +1302,11 @@ def resize_image(
       Mitchell-lel.
     * **Fixpontos súlyok**: `csonk(w · 16383 / Σw)`, a maradék a `csonk(c)`
       csapé (`_tengely_sulyok`).
-    * **Kimenet**: csatornánként `(Σ w·p + 255) >> 14`, 0..255-re szorítva.
-      Előbb a vízszintes menet fut, 8 bites köztes képpel, utána a
-      függőleges.
+    * **Kimenet**: a vízszintes menetben csatornánként `(Σ w·p + 255) >> 14`;
+      a függőleges menet négyes főciklusa ugyanezt használja, a sor utolsó
+      `W mod 4` oszlopa viszont `(Σ w·p) >> 14` szerint készül (#4004). Az
+      értékek 0..255-re szorítódnak. Előbb a vízszintes menet fut, 8 bites köztes
+      képpel, utána a függőleges.
 
     `lanczos3=True` a 5-ös mód (#3998, spec 16. H) 3.): mindkét tengelyen
     Lanczos-3 (`lanczos3`), a többi lépés ugyanaz. Az EXIF-bélyegkép használja.
@@ -1343,7 +1362,8 @@ def resize_column_plane(
     méretű síkot egyetlen indexelés adja (#3827). Ha egy kimeneti oszlop
     minden nem nulla súlyú csapja ugyanarra az oszlopra esik, a kimenet maga
     az az oszlop (a súlyok összege 16383, `(16383·p + 255) >> 14 = p`), ezért
-    ezek egy közös párt kapnak.
+    ezek egy közös párt kapnak. A #4004 függőleges sorvégi maradékát a teljes
+    kimeneti szélességhez igazítja, ezért két kerekítési változatot is tárol.
     """
     magas, be_szeles = oszlopok.shape[0], vissza.size
     width = max(1, int(round(width)))
@@ -1362,8 +1382,29 @@ def resize_column_plane(
             gyujto += oszlopok[:, parok[:, k]].astype(np.int32) * sor_suly
         np.clip(gyujto, 0, _RESIZE_FELSO, out=gyujto)
         kulonbozo = (gyujto >> _RESIZE_ELTOLAS).astype(np.uint8)
-    fuggoleges = _tengely_menten(kulonbozo, height, 0, doboz)
-    return fuggoleges[:, np.asarray(kimeneti).reshape(-1)]
+    kimeneti = np.asarray(kimeneti).reshape(-1)
+    # A sorvégi szabály a teljes kimeneti W-hez igazodik, nem a tömör
+    # oszloppárok darabszámához. Egy pár belső és maradék oszlopban is
+    # megjelenhet, ezért a két kerekítési változatot külön tartjuk.
+    teljes_kerekites = _tengely_menten(
+        kulonbozo,
+        height,
+        0,
+        doboz,
+        kerekito_oszlopok=np.ones(kulonbozo.shape[1], dtype=bool),
+    )
+    kimenet = teljes_kerekites[:, kimeneti].copy()
+    maradek = width % 4
+    if maradek:
+        maradek_kerekites = _tengely_menten(
+            kulonbozo,
+            height,
+            0,
+            doboz,
+            kerekito_oszlopok=np.zeros(kulonbozo.shape[1], dtype=bool),
+        )
+        kimenet[:, -maradek:] = maradek_kerekites[:, kimeneti[-maradek:]]
+    return kimenet
 
 
 def _ytresampler(kep: np.ndarray, width: int, height: int, lanczos: bool = False) -> np.ndarray:
