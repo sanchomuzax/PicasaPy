@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.667] – 2026-10-03
+
+- A Kiegyenesítés Alkalmaz után a Visszavonás gomb azonnal aktívvá válik, és megnevezi a lépést (#4063).
 - Nagy (több megapixeles) képeken az Ansel szűrő tónuserőssége az eredetivel egyezően számolódik: az eredeti 32 bites összegzése körbefordul, nálunk is (#3990).
 - A Vámpírszem festett vonásainak ini-modellje elkészült: a `.picasa.ini` vonás-sorai veszteség nélkül beolvashatók és kiírhatók (a felülethez még nem kapcsolódik; #4097).
 - A Kiegyenesítés eszközsorának tesztjei mostantól a sor abszolút képernyő-helyét is őrzik, és a rés mérése a kép aljának geometriájából történik (#4087).
