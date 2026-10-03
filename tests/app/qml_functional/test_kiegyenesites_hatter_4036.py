@@ -275,9 +275,9 @@ def test_a_lila_foto_feletti_savkitoltes_es_keret_a_referenciat_adja(
     fogantyu = slider.property("handle")
     assert hatter is not None and fogantyu is not None
     assert (hatter.x(), hatter.y(), hatter.width(), hatter.height()) == (
+        -7,
         0,
-        0,
-        253,
+        267,
         28,
     )
     assert (fogantyu.width(), fogantyu.height()) == (16, 24)
@@ -398,17 +398,6 @@ def test_a_kiegyenesito_racs_elso_megnyitaskor_atlatszik_a_savon_de_nem_a_gombok
     grid = Image.open(grid_path).convert("RGBA")
     photo = Image.open(controller.photos.filePathAt(0)).convert("RGB")
     racs_kezdete = grid_image.mapToScene(QPointF(0, 0))
-    kizart_jelolok = []
-    bg_origin = background.mapToScene(QPointF(0, 0))
-    for tick_x in (1, 126, 251):
-        kizart_jelolok.append(
-            (
-                bg_origin.x() + tick_x - 1,
-                bg_origin.y() + 1,
-                bg_origin.x() + tick_x + 2,
-                bg_origin.y() + background.height() - 1,
-            )
-        )
     savon_latszo = _grid_mintak(
         window_image,
         photo,
@@ -416,8 +405,7 @@ def test_a_kiegyenesito_racs_elso_megnyitaskor_atlatszik_a_savon_de_nem_a_gombok
         racs_kezdete,
         photo_origin,
         background,
-        sugar=14,
-        kizart_teglalapok=kizart_jelolok,
+        sugar=7,
         fogantyu=handle,
     )
     assert savon_latszo[1] >= 200, (
