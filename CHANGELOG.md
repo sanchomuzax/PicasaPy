@@ -7,6 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Nagy (több megapixeles) képeken az Ansel szűrő tónuserőssége az eredetivel egyezően számolódik: az eredeti 32 bites összegzése körbefordul, nálunk is (#3990).
 - A Kiegyenesítés eszközsorának tesztjei mostantól a sor abszolút képernyő-helyét is őrzik, és a rés mérése a kép aljának geometriájából történik (#4087).
 - A színátmenetes szűrők köztes színei a Picasa igazolt keverési képletét követik (#4092).
 
