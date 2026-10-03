@@ -154,7 +154,12 @@ def _fedettseg(
     return float(np.dot(kapott, teljes) / teljes_negyzet)
 
 
-def _pixelfutasok(maszk: np.ndarray) -> list[tuple[int, int]]:
+def _pixelfutasok(maszk: np.ndarray, max_hezag: int = 2) -> list[tuple[int, int]]:
+    """Összefüggő futások; legfeljebb `max_hezag` képpontnyi rés nem szakítja meg.
+
+    A gombfeliratok betűi (platformfüggő betűtípus, élsimítás) a gomb közepén
+    1-2 képpontos lyukat hagyhatnak a változásmaszkban; a valódi köz a sáv és
+    a gomb között 11, a két gomb között 5 képpont."""
     xs = np.flatnonzero(maszk)
     if not len(xs):
         return []
@@ -162,12 +167,21 @@ def _pixelfutasok(maszk: np.ndarray) -> list[tuple[int, int]]:
     kezdet = elozo = int(xs[0])
     for x in xs[1:]:
         x = int(x)
-        if x != elozo + 1:
+        if x > elozo + 1 + max_hezag:
             futasok.append((kezdet, elozo + 1))
             kezdet = x
         elozo = x
     futasok.append((kezdet, elozo + 1))
     return futasok
+
+
+def test_a_pixelfutas_a_felirat_okozta_kis_hezagot_atugorja_a_valodi_kozt_nem():
+    maszk = np.zeros(40, dtype=bool)
+    maszk[2:12] = True  # elem
+    maszk[14:20] = True  # 2 képpontos rés után folytatódik: ugyanaz az elem
+    maszk[26:36] = True  # 6 képpontos rés: új elem
+    assert _pixelfutasok(maszk) == [(2, 20), (26, 36)]
+    assert _pixelfutasok(maszk, max_hezag=0) == [(2, 12), (14, 20), (26, 36)]
 
 
 def _eszkozsav_pixeles_meresei(aktiv: QImage, rejtett: QImage) -> dict[str, object]:
