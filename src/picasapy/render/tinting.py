@@ -191,13 +191,18 @@ def _ansel_weights(color: tuple[int, int, int]) -> tuple[int, int, int]:
     return red, green, blue
 
 
-def _ansel_gray16(image: np.ndarray, weights: tuple[int, int, int]) -> np.ndarray:
+def _ansel_gray16(
+    image: np.ndarray,
+    weights: tuple[int, int, int],
+    channels: np.ndarray | None = None,
+) -> np.ndarray:
     """A 16 bites szűrt szürke: `Y = clamp(W·RGB, 0, 0xffff)`.
 
     `int32` elég: `W_c ≤ 256`, így `Y < 2¹⁸`, és a második menet
     `(0xffff − Y)·Y` szorzata is `2³⁰` alatt marad.
     """
-    channels = image.astype(np.int32)
+    if channels is None:
+        channels = image.astype(np.int32)
     gray = (
         weights[0] * channels[..., 0]
         + weights[1] * channels[..., 1]
@@ -206,34 +211,56 @@ def _ansel_gray16(image: np.ndarray, weights: tuple[int, int, int]) -> np.ndarra
     return np.clip(gray, 0, _ANSEL_Y_MAX)
 
 
-def _ansel_strength(
+def _ansel_strength_details(
     image: np.ndarray,
     weights: tuple[int, int, int],
     gray: np.ndarray | None = None,
-) -> int | None:
-    """A natív mag `k` erőssége az első menet összegeiből (#3840).
+    channels: np.ndarray | None = None,
+) -> tuple[int, int, int, int | None]:
+    """Az `ansel` előjeles `N`, 64 bites összegei és `k` erőssége.
 
     `S₁ = Σ (2R + 5G + B + 4) >> 3` (gyors luma), `S₂ = Σ Y >> 8`,
     `N = Σⱼ hist[j]·(((256 − j)·j) >> 6)`; `t = f32((S₁ − S₂) / N)`
-    `[−1, 1]`-re szorítva, `k = csonk(256 · t)`. `N = 0` esetén (minden
-    `Y < 256`) a mag második menet nélkül kilép — ezt `None` jelzi.
+    `[−1, 1]`-re szorítva, `k = csonk(256 · t)`. Az `N` előjelesen
+    olvasott 32 bites akkumulátor, ezért a pontos összeg előbb modulo 2³²
+    körbefordul. `S₁` és `S₂` előjeles 64 bites összegek. `N = 0` esetén a
+    mag második menet nélkül kilép — ekkor `k` értéke `None`.
     """
+    if channels is None:
+        channels = image.astype(np.int32)
     if gray is None:
-        gray = _ansel_gray16(image, weights)
-    channels = image.astype(np.int32)
+        gray = _ansel_gray16(image, weights, channels)
     fast_luma = (
         2 * channels[..., 0] + 5 * channels[..., 1] + channels[..., 2] + 4
     ) >> 3
     bins = gray >> 8
     histogram = np.bincount(bins.ravel(), minlength=256)
     levels = np.arange(256, dtype=np.int64)
-    midtone = int(histogram @ (((256 - levels) * levels) >> 6))
+    exact_n = int(histogram @ (((256 - levels) * levels) >> 6))
+    midtone = ((exact_n + (1 << 31)) % (1 << 32)) - (1 << 31)
+    s1 = int(fast_luma.sum(dtype=np.int64))
+    s2 = int(bins.sum(dtype=np.int64))
     if midtone == 0:
-        return None
-    difference = int(fast_luma.sum(dtype=np.int64)) - int(bins.sum(dtype=np.int64))
-    ratio = np.float32(difference / midtone)
+        return midtone, s1, s2, None
+    ratio = np.float32((s1 - s2) / midtone)
     ratio = min(max(ratio, np.float32(-1.0)), np.float32(1.0))
-    return int(np.trunc(np.float32(_ANSEL_WEIGHT_SCALE) * ratio))
+    strength = int(np.trunc(np.float32(_ANSEL_WEIGHT_SCALE) * ratio))
+    return midtone, s1, s2, strength
+
+
+def _ansel_strength(
+    image: np.ndarray,
+    weights: tuple[int, int, int],
+    gray: np.ndarray | None = None,
+    channels: np.ndarray | None = None,
+) -> int | None:
+    """A natív mag `k` erőssége az első menet összegeiből (#3840, #3990)."""
+    return _ansel_strength_details(image, weights, gray, channels)[3]
+
+
+def _ansel_curve_lift(gray: np.ndarray, strength: int) -> np.ndarray:
+    """Az `ansel` S-görbe előjeles eltolása, aritmetikai `>> 8`-cal."""
+    return (((_ANSEL_Y_MAX - gray) * gray) >> 14) * strength >> 8
 
 
 def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
@@ -245,27 +272,31 @@ def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     `referencia/filteredbw/panel-screenshot-2.png`): a csatornák súlyát
     adja meg a szürkévé alakításnál, NEM színezi a végeredményt.
 
-    A számítás a natív mag (`0x0090e680`) egész aritmetikája (#3840; spec:
+    A számítás a natív mag (`0x0090e680`) egész aritmetikája (#3840, #3990; spec:
     `docs/specs/filters-decoded.md`, „`ansel` — a `k` erősség kiolvasva, a
     mag TELJES"), a korábbi mért töréspontsor helyett:
 
     1. fixpontos súlyok (`_ansel_weights`), `Y = clamp(W·RGB, 0, 0xffff)`;
-    2. a kép egészéből egy `k` erősség (`_ansel_strength`);
+    2. a kép egészéből egy `k` erősség (`_ansel_strength`), ahol `N` modulo
+       2³² halmozódik és előjeles 32 bites értékként oszt;
     3. S-görbe: `v = clamp(Y + ((((0xffff − Y)·Y) >> 14)·k >> 8), 0,
        0xffff)`, a kimenet `R = G = B = v >> 8`.
 
     `N = 0` esetén az eredeti a második menet nélkül kilép, és a nyers
     16 bites `Y` dwordokat hagyja a pufferben. Mi ilyenkor a `k = 0` ágat
-    adjuk (`v = Y`); mivel ekkor minden `Y < 256`, a kimenet fekete.
+    adjuk (`v = Y`), így a súlyozott szürkeérték változatlan marad; nulla
+    előállhat azért is, mert a 32 bites akkumulátor körbefordult.
 
     A `desat` örökölt kulcs ugyanezt a magot hívja (#711), a lánc ezért
     ide vezeti.
     """
     validate_image(image)
     weights = _ansel_weights(color)
-    gray = _ansel_gray16(image, weights)
-    strength = _ansel_strength(image, weights, gray) or 0
-    lifted = (((_ANSEL_Y_MAX - gray) * gray) >> 14) * strength >> 8
+    channels = image.astype(np.int32)
+    gray = _ansel_gray16(image, weights, channels)
+    strength = _ansel_strength(image, weights, gray, channels) or 0
+    del channels
+    lifted = _ansel_curve_lift(gray, strength)
     level = (np.clip(gray + lifted, 0, _ANSEL_Y_MAX) >> 8).astype(np.uint8)
     return np.stack([level, level, level], axis=-1)
 
