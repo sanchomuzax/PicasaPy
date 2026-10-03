@@ -8,6 +8,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - A Kiegyenesítés eszközsorának tesztjei mostantól a sor abszolút képernyő-helyét is őrzik, és a rés mérése a kép aljának geometriájából történik (#4087).
+- A színátmenetes szűrők köztes színei a Picasa igazolt keverési képletét követik (#4092).
 
 ## [0.8.666] – 2026-10-03
 
