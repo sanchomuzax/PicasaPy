@@ -1870,7 +1870,50 @@ feltételes kulcsnál ugyanaz a minta: `[ebp+0x18]` vödrök, `div [ebp+0x10]`,
 | GPS `0x8b`–`0xa9` | GPS | a Picasa geocímkéje eltér a forrásétól | a Picasa geocímkéje | `0x0045c8c1`–`0x0045c961` |
 | `0x131` | arcok | a „PersistFaceToFile” beállítás igaz | az arcok | `0x0045ce9f` → `0x00485bd0` |
 
-**Nyitott kérdés:** hogy a tájolt (Orientation 5–8) forrásnál a forrás `0x4d`/`0x4e`-je a tárolt vagy a felcserélt méret, nincs mérve és nincs bináris olvasata; a PicasaPy a SOF tárolt méretét írja, a kutatás jegye: #3996.
+**#3996 — a SOF-ág bizonyított, az EXIF-fel való ütközés még nyitott (2026-10-03).**
+
+A forrás JPEG-metaadatait a `0x0045e120` külön tulajdonságtérképbe olvassa
+(`0x0045e2d3`–`0x0045e33d`); ez a térkép a `0x0045e3e7` hívással jut a
+`0x0045c870` mentőhöz. A `ytJPGInfo` olvasó SOF-ágában (`0x009e9cd0`) a
+JPEG-keret fejlécének magasságmezőjét a `0x009e9d83`–`0x009e9dd1` kód olvassa,
+a szélességmezőt a `0x009e9ddb`–`0x009e9e29`; majd a szélességet `0x4d`, a
+magasságot `0x4e` kulccsal írja a térképbe (`0x009e9e88`–`0x009e9e9b`,
+`0x008d04b0`). A `0x008d04b0` azonos kulcs
+esetén a régi bejegyzést eltávolítja, majd az újat beszúrja
+(`0x008d0578`–`0x008d0587`, `0x008d0658`–`0x008d06ba`). Ezért, ha korábban
+más útvonal ugyanebbe a térképbe tett volna `0x4d`/`0x4e` értéket, az utána
+feldolgozott SOF a tárolt méretekkel felülírja.
+
+A mentő ezt követően közvetlenül kiolvassa a forrástérkép `0x4d`/`0x4e` értékét
+(`0x0045cdc3`–`0x0045cde0`), és változtatás nélkül az Interop `0xad`/`0xae`
+kulcsába teszi, ha az még hiányzik (`0x0045ce17`–`0x0045ce25`), illetve
+`0x0045ce68`–`0x0045ce76`. Ebben az íróágban nincs Orientation-olvasás vagy
+szélesség–magasság-csere. A leíró tábla a `0x4d`/`0x4e` belső kulcsot EXIF
+`0xa002`/`0xa003`-ként azonosítja (`0x00c78b40`, `0x00c78b5c`), az Interop
+`0xad`/`0xae` kulcsot pedig `0x1001`/`0x1002`-ként (`0x00c795c0`,
+`0x00c795dc`).
+
+Ez bizonyítja, hogy az Interop-író a JPEG-olvasó forrástérképének mezőit másolja,
+és hogy az olvasó a tárolt SOF-méretet be tudja tenni ezekbe a mezőkbe. **Nem
+bizonyítja még**, hogy az EXIF `0xa002`/`0xa003` beolvasása is ugyanebbe a
+forrástérképbe ír-e, illetve a fájl szegmendsorrendjében az EXIF-bejegyzés után
+mindig lefut-e a SOF-felülírás. A tájolt képnél a megfigyelt SOF-ág nem cseréli
+fel a méreteket; EXIF-ütközésnél a végső érték sorrendjét további követés vagy
+ellentmondó forrás–export mérés dönti el.
+
+**Mérési kontroll (#3996, `meroadat.tar`):** a
+`3084-poszterizalas/Warm grasses by dcsearle.t21.jpg` forrás SOF-mérete
+2560×1696; Orientation és EXIF `0xa002`/`0xa003` nincs benne. A hozzá tartozó
+Picasa-export Interop `0x1001`/`0x1002` értéke 2560×1696. Ez igazolja a hiányzó
+EXIF-mérethez használt méret útját, de nem különbözteti meg a SOF-olvasást a
+másik, azonos méretű képméretforrástól. A tarban átnézett 900 JPEG között nem
+volt Orientation 5–8 forrás, sem olyan forrás, amelynél az EXIF
+`0xa002`/`0xa003` eltért volna a SOF-tól.
+
+**Nyitva maradt a #3996-ban:** EXIF `0xa002`/`0xa003` és SOF közti ütközés
+végső precedenciája; továbbá tájolt forrás Picasa-exportjának mérése. A PicasaPy
+a SOF tárolt méretét írja, de a rendelkezésre álló mérés nem igazol eltérést az
+eredeti Picasától, ezért fejlesztői al-jegy ebből még nem következik.
 
 **Ebből a mért XMP mezőről mezőre levezethető** (a `0x00bad9a0`-lánccal, B):
 
