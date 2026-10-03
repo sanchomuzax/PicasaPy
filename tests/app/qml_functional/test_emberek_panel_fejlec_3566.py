@@ -4,7 +4,7 @@ Az eredeti panel egyetlen fejlécet (`status_label`) és egyetlen listát
 mutat; a fejlécet a `0x00647df0` választja (spec
 `picasa-arcfelismeres.md` 9/b–9/d):
 
-    EGYKÉPES ág — a szerkesztőben, VAGY (1 kép ÉS nem személy-album):
+    EGYSOROS ág — a szerkesztőben, VAGY (1 eredménysor ÉS nem személy-album):
       van személy → „In this photo:"            (InThis)
       van kép     → „Who is in these photos?"   (Who)
       különben    → instructions 4 (Text5)
@@ -23,6 +23,8 @@ panel property-jeinek felülírása.
 """
 
 from __future__ import annotations
+
+import pytest
 
 from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
 from PySide6.QtQuick import QQuickItem
@@ -150,13 +152,19 @@ def _person_album(controller, qt_app, name="Anna"):
 
 
 class TestFolderView:
-    def test_one_photo_with_named_people(self, qml_app, qt_app, tmp_path):
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_one_photo_with_named_people(
+        self, qml_app, qt_app, tmp_path, height_delta
+    ):
         window, controller, _engine = qml_app
+        window.setHeight(window.height() + height_delta)
+        qt_app.processEvents()
         lib = _library(window, controller, qt_app, tmp_path)
 
         _select(window, controller, qt_app, lib, "a.jpg")
 
-        assert _header(window) == "In this photo:"
+        # Két megjelenő személy két eredménysor, egy kijelölt képnél is.
+        assert _header(window) == "People in these photos:"
         assert _visible_rows(_child(window, "peoplePanel")) == ["Anna", "Béla"]
         assert _empty_text(window) is None
 
@@ -169,10 +177,13 @@ class TestFolderView:
         assert _header(window) == "People in these photos:"
         assert _visible_rows(_child(window, "peoplePanel")) == ["Anna", "Béla"]
 
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
     def test_one_photo_without_named_people_asks_who(
-        self, qml_app, qt_app, tmp_path
+        self, qml_app, qt_app, tmp_path, height_delta
     ):
         window, controller, _engine = qml_app
+        window.setHeight(window.height() + height_delta)
+        qt_app.processEvents()
         lib = _library(window, controller, qt_app, tmp_path)
 
         _select(window, controller, qt_app, lib, "c.jpg")
@@ -311,8 +322,11 @@ class TestUnnamedAlbum:
         assert _header(window) is None
         assert TEXT3 in _empty_text(window)
 
-    def test_one_face_asks_who(self, qml_app, qt_app, tmp_path):
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_one_face_asks_who(self, qml_app, qt_app, tmp_path, height_delta):
         window, controller, _engine = qml_app
+        window.setHeight(window.height() + height_delta)
+        qt_app.processEvents()
         lib = _library(window, controller, qt_app, tmp_path)
         # a rács kijelölése (Anna képe) NEM számít: az albumban arcokat
         # jelölünk ki, és azok névtelenek

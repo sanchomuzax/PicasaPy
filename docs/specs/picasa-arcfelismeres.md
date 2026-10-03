@@ -728,15 +728,15 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 
 | helyzet | eredeti | nálunk |
 |---|---|---|
-| 1 kijelölt kép, pontosan 1 megnevezett eredménysor | „Ezen a fotón:” | ✅ a `selectionCount === 1` miatt |
-| több kijelölt kép, pontosan 1 megnevezett eredménysor | „Ezen a fotón:” | ⛔ „Személyek ezeken a fotókon:” — a `singlePhotoBranch` a képkijelölést számolja |
-| 1 kijelölt kép, több megnevezett eredménysor | „Személyek ezeken a fotókon:” | ⛔ „Ezen a fotón:” — a `singlePhotoBranch` a képkijelölést számolja |
+| 1 kijelölt kép, pontosan 1 megnevezett eredménysor | „Ezen a fotón:” | ✅ `resultRowCount == 1` |
+| több kijelölt kép, pontosan 1 megnevezett eredménysor | „Ezen a fotón:” | ✅ a megjelenő személy-sorok száma dönt, a képszám nem |
+| 1 kijelölt kép, több megnevezett eredménysor | „Személyek ezeken a fotókon:” | ✅ a megjelenő személy-sorok száma dönt |
 | több kijelölt kép, legalább 2 megnevezett eredménysor | „Személyek ezeken a fotókon:” | ✅ |
 | személy albuma | **egyetlen** lista „Szintén ezeken a fotókon:” fejléccel (1 képnél is) | ✅ egy fejléc, egy lista: a kijelölt képek megnevezett emberei a nézett személy nélkül (#3678) |
 | személy-album, a kijelölt képeken nincs más megnevezett személy | üres fejléc, instructions 3 (Text4) | ✅ üres fejléc és Text4 akkor is, ha a kijelölt képen csak a nézett személy szerepel (#3678) |
-| 1 eredménysor, nincs megnevezett személy | „Ki látható ezeken a fotókon?” | ✅ ha egy kép van kijelölve; több képnél a képszám-alapú ág eltérhet |
-| legalább 2 eredménysor, nincs megnevezett személy | „Név nélküli személycsoportok:” (a Névtelenek csoportosított nézetében „Meg nem nevezett emberek…”) | ✅ ha legalább 2 kép van; 1 képnél a QML `singlePhotoBranch` eltérő feliratot ad |
-| van kijelölt kép, de a gyűjtő eredményvektora üres | instructions 4 (Text5) | ⛔ `hasPhotos` a kijelölést, nem az eredményvektor ürességét vizsgálja; eltérés várható |
+| egy kijelölt kép/arc, nincs megnevezett sor | „Ki látható ezeken a fotókon?” | ✅ a mért egysoros fejléc megmarad (#3566) |
+| több kijelölt kép/arc, nincs megnevezett sor | „Név nélküli személycsoportok:” (a Névtelenek csoportosított nézetében „Meg nem nevezett emberek…”) | ✅ a helyi panel többes ága |
+| van kijelölt kép, de a gyűjtő eredményvektora üres | instructions 4 (Text5) | ⚠️ a helyi panel a kijelölésszámot használja, ha nincs megnevezett sora; az eredeti gyűjtő ürességével való egyezés nyitott |
 | betöltés közben | „Arcok betöltése…” / „További személyek keresése...” | ⛔ nincs: a `peopleOfRows` szinkron, nincs betöltési állapotunk |
 | ellenőrizetlen fájlok | „, %d ellenőrizetlen fájl.” a fejléc mögött | ⛔ nincs: folyamatos háttér-arcellenőrzés híján nincs ilyen számunk |
 | üres, nem személy-album | instructions 4 (Text5) | ✅ (#3566) |
@@ -745,15 +745,17 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 | „Név nélküliek” mód, üres gyűjtemény | üres fejléc, instructions 0/1 (Text1/Text2) | ⛔ nincs: a két szöveg nincs meg nálunk; Text3 áll helyette |
 | a szerkesztőben | mindig az egyképes ág; a nézett személy is szerepel | ✅ a néző panelje (`editorView`), szűrés nélkül (#3566, #3678) |
 
-*A #4045 „Nálunk” összevetése forrásolvasás, nem helyi UI-mérés:* a
-`Main.qml` a `selectionCount` értékét a kijelölt sorok számából adja
-(`Main.qml:2950`); a `singlePhotoBranch` és a `hasPhotos` ebből indul
-(`PeoplePanel.qml:60–74`). A `peopleOfRows` a kimenetet megjelenítendő nevek
-szerint összesíti (`people_controller.py:295–345`). Az eredeti vektor egyedi
-személyazonosító szerint csoportosul; ezért a fejlesztésnek az eredeti
-csoportszámmal egyenértékű, stabil személy-azonosító alapú darabszámot kell
-használnia, nem vakon a kijelölt képek számát vagy a megjelenített nevek
-számát.*
+*A #4045 „Nálunk” összevetése forrásolvasással és helyi QML-teszttel ellenőrzött;
+az eredeti kétképes Colab-mérés továbbra sincs meg. A `Main.qml` normál
+nézetben a kijelölt képek számát, a Névtelenek albumban a kijelölt arcok
+számát adja a `selectionCount` mezőnek (`Main.qml:2950–2953`). A
+`PeoplePanel.qml` a megnevezett sorok számát használja, ha azok vannak; ha
+nincs megnevezett sora, a kijelölésszám őrzi az egyetlen névtelen esetek mért
+„Who is in these photos?” fejlécét, illetve a többes ágat. A tesztmátrix
+`1/1 → InThis`, `1/2 → Known2`, `2/1 → InThis`, `2/2 → Known2` kimenete
+helyben, −5/0/+5 px ablakmagassággal ellenőrzött. A vegyes (megnevezett és
+névtelen) találatok eredeti sorcsoportosításának és a kétképes Colab-esetnek
+az élő ellenőrzése nyitott.*
 
 *Bizonyítottsági fok: **megerősített** a döntési fára, a feliratokra, az öt
 utasítás-módra, a személy-album jelzőre, a darabszámra és az ellenőrizetlen
@@ -762,7 +764,8 @@ utótagra (utasításszinten olvasva); a `+0x364` jelentése a 9/c-ben **megerő
 *A #4045 lelete: **megerősített** a `+0x348 >> 1` normál módú eredménysor-
 jelentésére és a döntési kapura (utasításszintű írói adatfolyam + külön QEMU
 ágmátrix). **Nyitott:** az eredeti Picasa felületén a kétképes/egyszemélyes
-eset Colabos élő megfigyelése.*
+eset Colabos élő megfigyelése, valamint a vegyes névvel/név nélkül csoportok
+számlálása.*
 
 #### 9/c A két nyitott jelző kiolvasva (2026-09-24, 357. kör, #3565)
 
