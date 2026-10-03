@@ -29,6 +29,7 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 from __future__ import annotations
 
 import functools
+import math
 
 from picasapy.lazy_cv2 import cv2
 import numpy as np
@@ -36,7 +37,6 @@ import numpy as np
 from picasapy.render.curves import (
     CurvePoints,
     apply_byte_luts,
-    curve_lut,
     evaluate_curve_extrapolated,
     validate_image,
 )
@@ -789,25 +789,60 @@ def apply_noise(
 _GRADIENS_INDEX_CSATORNA = 0
 
 
-def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) -> np.ndarray:
-    """`GradientMap`: a képpont PIROS csatornáját [0..255] a `colors`
-    (egyenletes közű, `len(colors)` pontos) színátmenetére képezi le
-    (#3421, ld. `_GRADIENS_INDEX_CSATORNA`).
+def _gradient_map_stop_positions(n: int) -> np.ndarray:
+    """A `GradientMap` float32 stophelyei (#4090, #4092)."""
+    positions = np.empty(n, dtype=np.float32)
+    positions[0] = np.float32(0.0)
+    for k in range(1, n - 1):
+        # A natív kód double 255,0-val szoroz/oszt, majd dword floatba tárol.
+        positions[k] = np.float32((k * 255.0) / (n - 1))
+    positions[-1] = np.float32(255.0)
+    return positions
 
-    `colors` elemeinek csatornasorrendje **RGB** — ld. `tint_multiply`
-    docstringjét (#510).
+
+def _gradient_map_weight(p_lo: float, p_hi: float, x: int) -> np.float32:
+    """Az x87-hányados dword float32 tárolt súlya (#4090)."""
+    x_f32 = np.float32(x)
+    return np.float32((float(p_hi) - float(x_f32)) / (float(p_hi) - float(p_lo)))
+
+
+def _gradient_map_interpolate_channel(
+    lower: int, upper: int, p_lo: float, p_hi: float, x: int
+) -> int:
+    """Egy csatorna natív, float32 súlyú és `+0,5`-ös keverése."""
+    weight = _gradient_map_weight(p_lo, p_hi, x)
+    value = int(upper) + float(weight) * (int(lower) - int(upper))
+    return max(0, min(255, math.trunc(value + 0.5)))
+
+
+def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) -> np.ndarray:
+    """`GradientMap`: a piros csatornából natív RGB-megálló-LUT-ot épít.
+
+    A megállóhelyek és a csatornánkénti interpoláció a #4090/#4092 spec
+    képletét követi; `colors` sorrendje **RGB** (#510). Az index továbbra
+    is a képpont PIROS csatornája (#3421). A natív `< 8` bitminta-kapu a
+    generált 0…255 LUT-on nem változtat elemet (n=2…256, 0/65 280), ezért
+    nincs külön átvezetve.
     """
     validate_image(image)
     if len(colors) < 2:
         raise ValueError("Legalább két szín kell a gradienshez")
-    gray_index = image[..., _GRADIENS_INDEX_CSATORNA]
-    xs = np.linspace(0.0, 255.0, len(colors))
-    channel_luts = []
-    for channel in range(3):
-        points = tuple(zip(xs.tolist(), (float(c[channel]) for c in colors), strict=True))
-        channel_luts.append(curve_lut(points))
-    tables = [to_uint8(lut) for lut in channel_luts]
-    return np.stack([tables[channel][gray_index] for channel in range(3)], axis=-1)
+    positions = _gradient_map_stop_positions(len(colors))
+    lut = np.empty((256, 3), dtype=np.uint8)
+    for x in range(256):
+        stop_lo = int(np.searchsorted(positions, np.float32(x), side="right")) - 1
+        if stop_lo < 0:
+            lut[x] = colors[0]
+        elif stop_lo >= len(colors) - 1:
+            lut[x] = colors[-1]
+        else:
+            p_lo = positions[stop_lo]
+            p_hi = positions[stop_lo + 1]
+            for channel in range(3):
+                lut[x, channel] = _gradient_map_interpolate_channel(
+                    colors[stop_lo][channel], colors[stop_lo + 1][channel], p_lo, p_hi, x
+                )
+    return lut[image[..., _GRADIENS_INDEX_CSATORNA]]
 
 
 def _hsv_rgb_lut_f32(hue: np.ndarray, sat: np.ndarray, val: np.ndarray) -> np.ndarray:
