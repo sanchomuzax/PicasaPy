@@ -606,7 +606,7 @@ listában az `adorners/listsuggestionfaceadorner`.
 
 ---
 
-### 9/b ⛳ MIKOR melyik felirat — a `0x00647df0` döntési fája (2026-09-24, 356. kör, #3563)
+### 9/b ⛳ MIKOR melyik felirat — a `0x00647df0` döntési fája (2026-09-24, 356. kör, #3563; #4045 helyesbítve 2026-10-03)
 
 *A 9. szakasz a feliratokat sorolja; ez azt, hogy a panel mikor melyiket
 mutatja. Forrás: a `0x00647df0` (851 b) teljes törzse, a jelzők írói a
@@ -629,7 +629,8 @@ szövegváltozatából választ (`0x005123e0`: index a `+0x2fc` tömbbe):
 | mező | jelentés | bizonyíték |
 |---|---|---|
 | 2. argumentum | **betöltés folyik** | a `Loading…`/`Looking…` ágak kapuja (`0x00647f93`, `0x00648070`) |
-| `+0x348 >> 1` | a kijelölt képek **száma** (a `+0x344` vektor mérete) | `0x00647f79`, `0x00648097` |
+| `+0x348 >> 1` | a `+0x344` vektor **eredménysorainak száma** a szokásos Emberek-panel lekérdezésében (a gyűjtő csoportosított találatai; nem a kijelölt képek száma) | `0x00647f79`–`0x00647f84`; a normál frissítő `0x0064c227`-en hívja a gyűjtőt, majd `0x0064c23d`-nél a kérés `+0x18` kimenetét másolja a panel `+0x344` vektorába |
+| `[panel+0x294]+0xdc >> 1` | a betöltési feliratban kiírt kijelölt fájlok száma | `0x00647fb1`–`0x00647fc7` (`"Loading %d files"` ág) |
 | `+0x2ac` | **személy albuma van kiválasztva**: a jelenlegi album `albumcontactids` mezője nem nulla (`0x00448c90` → `0x00448fb0`), `setg` @ `0x0064d248` | ezt erősíti a 3-as mód szövege is |
 | `+0x364` | a begyűjtés talált **megjeleníthető (megnevezett) személyt** — a gyűjtő `+0x11d` jelzőjéből másolva (`0x0064d7a9`), a gyűjtés indulása nullázza (`0x0063e032`) | **megerősítve a 9/c-ben:** a lekérdező `0x006c63d0` a kijelölt arcok `personalbumid`-jét gyűjti, és nem üres listánál `+0x4d = 1` (`0x006c6881`) |
 | `+0x29c` | az **ellenőrizetlen** fájlok száma | `0x0064d1cb` (nullázás), `0x0064810b` (kiírás) |
@@ -639,18 +640,20 @@ szövegváltozatából választ (`0x005123e0`: index a `+0x2fc` tömbbe):
 **A döntési fa** (a `+0x2ad` mód nélkül):
 
 ```
-EGYKÉPES ág — ha a szerkesztő előnézete látszik, VAGY (1 kép ÉS nem személy-album):
+EGY EREDMÉNYSOROS ág — ha a szerkesztő előnézete látszik, VAGY
+  (pontosan 1 eredménysor ÉS nem személy-album):
   betöltés            → „Arcok betöltése a fájlhoz...”            (Loading1)
   van személy (+364)  → „Ezen a fotón:”                            (InThis)
-  van kép             → „Ki látható ezeken a fotókon?”             (Who)
+  van eredménysor     → „Ki látható ezeken a fotókon?”             (Who)
   különben            → instructions 4 („Itt jelenik meg …”)
 
-TÖBBKÉPES ág — minden más eset (több kép, 0 kép, vagy személy-album):
+NEM EGYSOROS ág — minden más eset (0 vagy legalább 2 eredménysor,
+  illetve személy-album):
   betöltés            → személy-album ? „További személyek keresése...” (Looking)
                                       : „Arcok betöltése %d fájlhoz...” (Loading2)
   van személy (+364)  → személy-album ? „Szintén ezeken a fotókon:”     (Known1)
                                       : „Személyek ezeken a fotókon:”   (Known2)
-  van kép             → +2af ? „Meg nem nevezett emberek ezeken a fotókon:” (UnnamedCluster)
+  van eredménysor     → +2af ? „Meg nem nevezett emberek ezeken a fotókon:” (UnnamedCluster)
                              : „Név nélküli személycsoportok:”              (Unnamed)
   különben            → személy-album ? instructions 3 : instructions 4
 
@@ -658,10 +661,55 @@ UTÁNA mindig: ha +29c ≠ 0 ÉS nem személy-album → a fejléc mögé
   „, %d ellenőrizetlen fájl.” (Unchecked)
 ```
 
-Címek: egyképes ág `0x00648070`–`0x006480cb`; többképes `0x00647f93`–
+Címek: egysoros eredményág `0x00648070`–`0x006480cb`; többsoros/üres
+eredményág `0x00647f93`–
 `0x0064806e`; a kapu `0x00647f79`–`0x00647f8d`; az utótag `0x006480d7`–
 `0x0064811c`. A fejléc a `status_label`-be kerül (`0x0064812d`,
 `vtbl+0x14`).
+
+**#4045 — a számláló eredete és a helyes ág-feltétel (2026-10-03).** A
+`PeoplePanel::vftable` (`0x00ca1654`) RTTI-hez kötött `offset_map`-je és a
+`paszta.py`-val végzett teljes `.text`-pásztázás ugyanazt a vektor-életciklust
+mutatja. A `0x0064c340` normál módja meghívja a `0x0064bb70` frissítőt;
+az `0x0064bb70` a kijelölt fájlokból készített kérést átadja a
+`0x006c63d0` gyűjtőnek, majd a kérés `+0x18` eredményét másolja a panel
+`+0x344` vektorába (`0x0064c227`–`0x0064c23d`). A gyűjtő a kérés `+8` / `+0x0c`
+mezőjéből járja be a bemeneti fájlokat, az arc-rekordokat személyazonosító
+szerint rendezi/csoportosítja (`0x006c6455`–`0x006c68a8`), és a
+`+0x4d` jelzőt nem üres eredménynél állítja be (`0x006c687b`–`0x006c6881`).
+Így a döntési kapu `+0x348 >> 1 == 1` feltétele **egy gyűjtő-eredménysort**
+jelent. A két PeoplePanel-konstruktor (`0x0063e390`, `0x0063f200`) törzsében
+nincs közvetlen `+0x344/+0x348` írás; a `0x0063f820` ürítő felszabadítja a
+vektort, törli a méret felső részét a `+0x348` alacsony állapotbitjének
+megtartásával, majd nullázza a mutatót (`0x0063f86a`–`0x0063f89a`). A
+PeoplePanel virtuális frissítője (`0x0063f970`) a `0x00647270` sorszintű
+kezelőt is meghívja; az a `+0x348 >> 1` értékkel határolja a sorkijelölést
+(`0x0064727d`–`0x00647297`) és a meglévő eredményvektoron dolgozik. A teljes
+`.text`-pásztázás másik találata, a `0x00645350`, ugyanezt az eredménysort
+indexeli: a sorindex-argumentumot a panel `+0x348 >> 1` méretéhez hasonlítja
+(`0x00645367`–`0x00645384`), majd a `+0x344` 8-bájtos sorvektorát építi újra
+(`0x00645a12`–`0x00645ca3`). A hozzá tartozó `0x00649730` sorsegéd szintén a
+`+0x348 >> 1` értékkel végez tartományellenőrzést (`0x00649730`–
+`0x00649754`). A vektorméret írásakor az alacsony állapotbit megmarad, a
+darabszámot pedig a felső bitek hordozzák (`0x00645b05`–`0x00645b0d`,
+`0x00645c91`–`0x00645ca3`).
+
+Hatókör: a `0x0064d660` alternatív, 3-as állapotú gyorsítótár-ág a
+`[panel+0x294]+0xe8` vektort másolja a `+0x344`-be (`0x0064d737`–
+`0x0064d765`); a `0x0064c340` Név nélküliek-album ága pedig másik
+gyűjteményt épít ugyanebbe a mezőbe. Ezért a „gyűjtő eredménysorai” megnevezés
+a normál, név szerinti lekérdezésre vonatkozik. A pásztázás azonos számbeli
+eltolásra más osztályokban is talált hozzáférést; például a `0x00639440` /
+`0x00639510` a `TagPanel::vftable` (`0x00ca0a24`) mezője, nem a PeoplePanelé.
+
+**Független futtatásos ellenőrzés:** a `qemu-i386`-os próba a döntési blokkot
+kézzel felépített panelobjektummal futtatta; a kijelölt fájlok száma /
+eredménysorok száma mátrix kimenete `1/1 → InThis`, `1/2 → Known2`,
+`2/1 → InThis`, `2/2 → Known2` (`SMSM`). Tehát több kijelölt képnél is az
+„Ezen a fotón:” ág fut, ha egy eredménysor van; egy kijelölt képnél pedig a
+többsoros ág fut, ha több eredménysor van. Ez a próba a bináris döntési
+blokkot ellenőrzi, **nem** a teljes program felületét. A Colab-végrehajtón
+kért, két képpel végzett élő UI-mérés **nincs meg**.
 
 ⇒ **A „Szintén ezeken a fotókon:” (Known1) a SZEMÉLY ALBUMÁNAK fejléce**:
 ugyanaz a lista, amit máskor a „Személyek ezeken a fotókon:” vezet be — nem
@@ -676,16 +724,19 @@ meg (egy kijelölt képnél is a többképes ág fut), kivéve a szerkesztőben.
 módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítja a
 `+0x2b0`-t) az al-jegyé: **#3565**.*
 
-#### Nálunk (mérve, `PeoplePanel.qml`, #3566 után)
+#### Nálunk (forrásolvasással ellenőrizve, `PeoplePanel.qml`, #3566/#4045)
 
 | helyzet | eredeti | nálunk |
 |---|---|---|
-| 1 kép, van megnevezett személy | „Ezen a fotón:” | ✅ |
-| több kép, van személy | „Személyek ezeken a fotókon:” | ✅ |
+| 1 kijelölt kép, pontosan 1 megnevezett eredménysor | „Ezen a fotón:” | ✅ a `selectionCount === 1` miatt |
+| több kijelölt kép, pontosan 1 megnevezett eredménysor | „Ezen a fotón:” | ⛔ „Személyek ezeken a fotókon:” — a `singlePhotoBranch` a képkijelölést számolja |
+| 1 kijelölt kép, több megnevezett eredménysor | „Személyek ezeken a fotókon:” | ⛔ „Ezen a fotón:” — a `singlePhotoBranch` a képkijelölést számolja |
+| több kijelölt kép, legalább 2 megnevezett eredménysor | „Személyek ezeken a fotókon:” | ✅ |
 | személy albuma | **egyetlen** lista „Szintén ezeken a fotókon:” fejléccel (1 képnél is) | ✅ egy fejléc, egy lista: a kijelölt képek megnevezett emberei a nézett személy nélkül (#3678) |
 | személy-album, a kijelölt képeken nincs más megnevezett személy | üres fejléc, instructions 3 (Text4) | ✅ üres fejléc és Text4 akkor is, ha a kijelölt képen csak a nézett személy szerepel (#3678) |
-| 1 kép, nincs megnevezett személy | „Ki látható ezeken a fotókon?” | ✅ (#3566) |
-| több kép, nincs megnevezett személy | „Név nélküli személycsoportok:” (a Névtelenek csoportosított nézetében „Meg nem nevezett emberek…”) | ✅ a fejléc (#3566, #3585); a csoportlista a motortól függ (#26) |
+| 1 eredménysor, nincs megnevezett személy | „Ki látható ezeken a fotókon?” | ✅ ha egy kép van kijelölve; több képnél a képszám-alapú ág eltérhet |
+| legalább 2 eredménysor, nincs megnevezett személy | „Név nélküli személycsoportok:” (a Névtelenek csoportosított nézetében „Meg nem nevezett emberek…”) | ✅ ha legalább 2 kép van; 1 képnél a QML `singlePhotoBranch` eltérő feliratot ad |
+| van kijelölt kép, de a gyűjtő eredményvektora üres | instructions 4 (Text5) | ⛔ `hasPhotos` a kijelölést, nem az eredményvektor ürességét vizsgálja; eltérés várható |
 | betöltés közben | „Arcok betöltése…” / „További személyek keresése...” | ⛔ nincs: a `peopleOfRows` szinkron, nincs betöltési állapotunk |
 | ellenőrizetlen fájlok | „, %d ellenőrizetlen fájl.” a fejléc mögött | ⛔ nincs: folyamatos háttér-arcellenőrzés híján nincs ilyen számunk |
 | üres, nem személy-album | instructions 4 (Text5) | ✅ (#3566) |
@@ -694,9 +745,24 @@ módnak a pontos belépési feltétele (mit vizsgál a `0x00448a10`, ki állítj
 | „Név nélküliek” mód, üres gyűjtemény | üres fejléc, instructions 0/1 (Text1/Text2) | ⛔ nincs: a két szöveg nincs meg nálunk; Text3 áll helyette |
 | a szerkesztőben | mindig az egyképes ág; a nézett személy is szerepel | ✅ a néző panelje (`editorView`), szűrés nélkül (#3566, #3678) |
 
+*A #4045 „Nálunk” összevetése forrásolvasás, nem helyi UI-mérés:* a
+`Main.qml` a `selectionCount` értékét a kijelölt sorok számából adja
+(`Main.qml:2950`); a `singlePhotoBranch` és a `hasPhotos` ebből indul
+(`PeoplePanel.qml:60–74`). A `peopleOfRows` a kimenetet megjelenítendő nevek
+szerint összesíti (`people_controller.py:295–345`). Az eredeti vektor egyedi
+személyazonosító szerint csoportosul; ezért a fejlesztésnek az eredeti
+csoportszámmal egyenértékű, stabil személy-azonosító alapú darabszámot kell
+használnia, nem vakon a kijelölt képek számát vagy a megjelenített nevek
+számát.*
+
 *Bizonyítottsági fok: **megerősített** a döntési fára, a feliratokra, az öt
 utasítás-módra, a személy-album jelzőre, a darabszámra és az ellenőrizetlen
 utótagra (utasításszinten olvasva); a `+0x364` jelentése a 9/c-ben **megerősítve** (#3565).*
+
+*A #4045 lelete: **megerősített** a `+0x348 >> 1` normál módú eredménysor-
+jelentésére és a döntési kapura (utasításszintű írói adatfolyam + külön QEMU
+ágmátrix). **Nyitott:** az eredeti Picasa felületén a kétképes/egyszemélyes
+eset Colabos élő megfigyelése.*
 
 #### 9/c A két nyitott jelző kiolvasva (2026-09-24, 357. kör, #3565)
 
@@ -841,7 +907,7 @@ A felvett arcból egyelemű csoport lesz (`0x006c48c5`, `0x006c4974`), és `0x00
 
 **Teendő:** a `PeoplePanel.qml`-ben, ha `personAlbum && !editorView`, a `people` lista **hagyja ki** a `currentPerson` nevű (kis-nagybetű-tűrően összevetett) elemet; ha így a lista üres, az üres-lista ágat kell mutatni (`Text4`, üres fejléc), nem a „Szintén ezeken a fotókon:” fejlécet üres listával. A szerkesztőben (`editorView`) a szűrés NEM fut.
 
-⛔ **Pontosítás a 9/b-hez — két olvasat egyezik, a hatása NINCS kivizsgálva.** A 9/b a `+0x348 >> 1`-et „a kijelölt képek száma”-ként nevezte meg (`0x00647f79`). A két független olvasat szerint a `+0x344` a **gyűjtő eredménye** (`0x0064d765`, `0x0064c23d`: a kérés `+0x18` tömbje, **csoportonként egy** személy-sor), tehát a `+0x348 >> 1` az **eredménysorok** száma, nem a képeké; a kijelölt képek számát a `[ebx+0x294]` objektum `+0xdc`-je adja (`0x00647fb1`–`0x00647fc7`, a „Loading %d files” ág). Ha ez igaz, a 9/b döntési fa „1 kép ÉS nem személy-album” feltétele („egyképes ág”, `0x00647f84`–`0x00647f8d`) valójában „pontosan 1 eredménysor ÉS nem személy-album”. Ez a jegy (#3678) tárgyát nem érinti; külön kutatási jegy követi: **#4045**.
+⭐ **#4045 eredménye — a 9/b kapuja a gyűjtő eredménysorait, nem a kijelölt képeket számolja.** A `+0x344` a normál lekérdezés csoportosított kimenete (`0x0064c227`–`0x0064c23d`), így a `+0x348 >> 1 == 1` feltétel egy eredménysor. A kijelölt fájlok külön száma a `[panel+0x294]+0xdc >> 1` mezőből kerül a Loading-feliratba (`0x00647fb1`–`0x00647fc7`). A kapu `0x00647f84`–`0x00647f8d` tehát **pontosan 1 eredménysor ÉS nem személy-album**; több kép egyetlen megnevezett eredménysorral is az „Ezen a fotón:” ágra jut, míg egy kép több eredménysorral a „Személyek ezeken a fotókon:” ágra. A QEMU-mátrix ezt a döntési blokkban ellenőrizte. Az eredeti felület két képpel végzett Colab-mérése **nincs meg**, ezért a jegy az élő megfigyelésig nyitva marad.
 
 *Bizonyítottsági fok: **megerősített** — a kihagyó összehasonlítás (`0x006c46f3`), a kijelölt arc és a név nélküli arc kihagyása, az ismétlésszűrés, a `+0x44` útja az album sorindexétől a gyűjtőig, és a felirat-választó két ága utasításszinten olvasva, **két független olvasat egyezik** (a második a specek és a korábbi válasz nélkül, friss Opus-ügynök). **Erős:** a két képtípus táblázata (a kódútból olvasva, élő mérés nincs); hogy a `0x3e9` típus arc-rekordot jelent (következtetés: a rekord szülője a `+0x20`). **NINCS MÉRVE:** a sorok végső sorrendje (`0x0064ae90`), és élő felvétel a személy-album panelről (a Colab-végrehajtón egy névadás + személy-album lépéssor kell hozzá).*
 
