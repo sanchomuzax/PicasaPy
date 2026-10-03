@@ -1585,6 +1585,73 @@ együtt tiltott**, ahogy a keretrendszertől várható.
 
 *(A korábbi „a címke fekete marad" megfigyelés téves volt; a mostani
 kör a képet újranézve javította.)*
+
+### 13.11 A szerkesztetlen JPEG másolóága (#4018, 2026-10-03)
+
+A fájlexport képenként előbb a CThumbDB módosítottság-vizsgálatát hívja
+(0x00740113–0x0074012d). A CThumbDB vtable 0x00c81fa4 címen áll; a +0xe0 rekeszben
+0x004296a0 van. Ha ez nullát ad, a 0x0074012f közvetlenül a másolóágra ugrik.
+A cél- és forrásútvonalat a 0x00740190–0x007401b0 állítja elő, majd:
+
+```asm
+0x007401b4  push 1                    ; CopyFileW bFailIfExists
+0x007401b6  push ecx                  ; célútvonal
+0x007401b7  push eax                  ; forrásútvonal
+0x007401b8  call dword ptr [0xd694d0] ; CopyFileW
+```
+
+A [0xd694d0] mutató a 0x009af0c0 wrapperre jut; az a 0x00c404c0
+IAT-rekeszen át hívja a CopyFileW-t. Sikeres másoláskor ezért a fájl
+bájtsorozata változatlan, és ez az ág nem futtatja a JPEG-/EXIF-írót.
+
+A módosítottsági feltételek külön kódútból, a 0x004296a0 hívásaiból
+azonosíthatók (részletesen: picasa-email-kuldes.md, 3/c):
+
+- aktív szöveg + szövegtartalom, nem üres filters, érvényes crop64 vagy
+  flipped(n>0) → nem nulla;
+- rotate(n), ha n mod 4 ≠ 0 → 2;
+- más editmező hiányában az üres filters= nem teszi módosítottá a képet.
+
+Ezért a teljesen szerkesztetlen JPEG a CopyFileW ágra jut; a nem üres
+filters-lánc és az érvényes crop64 akkor is renderelést kér, ha nincs
+külön crop= mező. A pontosvessző önmagában nem külön szabály: a teljes,
+nem üres filters-érték számít.
+
+A CImageOutput a beállításobjektumot külön, this+0x74 alatt tárolja; ha a
+konstruktor paraméterként kap ilyet, a 0x0073ef90–0x0073ef98 feltölti és
+beállítja a this+0xad4 jelzőt. A másolási döntés nullás módosítottsági
+eredménye közvetlenül a CopyFileW-re ugrik; ezen az ágon nincs
+FileExportSize- vagy FileExportQuality-feltétel, és a this+0xad4 jelzőt sem
+olvassa. A méret/minőség-beállítás önmagában nem tiltja le a másolást. A helyi
+mérőadatban nincs szerkesztetlen kép nem alapértelmezett beállítással, ezért
+ez statikus bináris eredmény, nem futásidejű mérés.
+
+PicasaPy-eltérés: az `src/picasapy/export/exporter.py` `_is_noop_copy` csak
+`settings.max_dimension is None` esetén másol (548–555. sor); a
+`jpeg_quality` önmagában nem kapuz. Az eredeti
+ágban a méret/minőség sem kapuz, így méretkorlátozás mellett az eredeti a forrást
+másolja, míg nálunk átméretezés történik. Ha a kompatibilitás a cél, ez külön
+fejlesztői feladat: a tiszta JPEG másolását a max_dimension értékétől függetlenül
+engedje, és rögzítse, hogy ez az eredeti méretbeállítást figyelmen kívül hagyja.
+
+Két Picasa-mérőpár (#3229, meroadat.tar):
+
+| minta | forrás → export | SOF | DQT SHA-256 (0. / 1. tábla) | EXIF/Interop |
+|---|---|---|---|---|
+| 01-keret-utan-szepia.jpg, Border;sepia | 773700 B → 542050 B; SHA-256 8fc5c629b280541270c7b9d6f33b4ecfbacdc910e54e4eb1a092548d8ee2d5b0 → 197dd65ca938bb9d7165d8cc91e3b2bf0c901ed56baf0745e4ea7dbe3f2760c2 | 1600×1200 4:2:0 → 1650×1250 4:4:4 | 870a4652eb15c586524d1f9d7a579391addac31cb8757406d82297760f884285 / 303c94c7848063296e0351679e8ed0de45eeab5da39d2f4535af555534da577f → d9b8345f1c667cf782180f798300831d260956fc1a03b3b2b1b7a7b2d611d3cd / 0b5418bc31c6aa4c346dbda9787969eb9d79a14ee375cb45e333ff5ef248f0f2 | forrásban nincs EXIF; exportban Picasa EXIF, Interop 0x0002=0100, 0x1001=1600, 0x1002=1200 |
+| 04-vagas-utan-vignetta.jpg, crop64;Vignette, crop= nélkül | 773700 B → 735984 B; SHA-256 8fc5c629b280541270c7b9d6f33b4ecfbacdc910e54e4eb1a092548d8ee2d5b0 → abad6f03077708a503b9931ad2942ccec2032451727aec24db46ef7a34b8d477 | 1600×1200 4:2:0 → 1600×1200 4:4:4 | 870a4652eb15c586524d1f9d7a579391addac31cb8757406d82297760f884285 / 303c94c7848063296e0351679e8ed0de45eeab5da39d2f4535af555534da577f → d9b8345f1c667cf782180f798300831d260956fc1a03b3b2b1b7a7b2d611d3cd / 0b5418bc31c6aa4c346dbda9787969eb9d79a14ee375cb45e333ff5ef248f0f2 | forrásban nincs EXIF; exportban Picasa EXIF, Interop 0x0002=0100, 0x1001=1600, 0x1002=1200 |
+
+A 04-es adatpár crop64 mellett Vignette-et is tartalmaz, ezért önmagában nem
+izolálja a crop64 hatását; a crop64 önálló döntését a fenti bináris feltétel
+igazolja. A teljes tar-átvizsgálás 430 képszekcióban nulla explicit üres
+filters= értéket és nulla szerkesztetlen forrás–Picasa-export párt talált.
+
+Bizonyítottsági fok: megerősített a CopyFileW-ágra és a filters/crop64
+módosítottsági feltételre (exportvezérlés + külön CThumbDB-útvonal egyezik);
+a két valós exportpár a szerkesztett út újrakódolását igazolja. A teljesen
+szerkesztetlen kimenet bájthűségét nem hasonlítottuk össze fizikai
+exportpárral; azt a bináris másolási hívás bizonyítja.
+
 ## 14. A FELÜLET átépítése (#1138, 2026-08-24)
 
 > *(Számozási megjegyzés: a 12.x számok a lapon már kétszer ki vannak
