@@ -80,6 +80,24 @@ def _valtozasmaszk(window, toolbar, qt_app, dpr: float) -> np.ndarray:
     ) > 4
 
 
+def _nyers_x(photo, photo_area, toolbar) -> tuple[float, float]:
+    """(a photoArea képernyő-x origója, a sáv nyers bal széle a szülő-koordinátán),
+    a kirajzolt kép befoglalójának közepéből — a QML `szuloKozep − width/2` mása."""
+    kep_bal, _, kep_jobb, _ = _ablak_kep_bounds(photo)
+    origin = photo_area.mapToScene(QPointF(0, 0)).x()
+    return origin, (kep_bal + kep_jobb) / 2 - origin - toolbar.width() / 2
+
+
+def _sor_futasok(window, toolbar, qt_app, dpr: float, x: float) -> list[tuple[float, float]]:
+    """A sáv x-ét beállítja, rendereli, és a vezérlőfutások (bal, jobb) élét adja."""
+    toolbar.setProperty("x", x)
+    _folyamat(qt_app)
+    maszk = _valtozasmaszk(window, toolbar, qt_app, dpr)
+    felso = toolbar.mapToScene(QPointF(0, 0)).y()
+    sor = _js_round((felso + 8) * dpr)
+    return [(bal / dpr, jobb / dpr) for bal, jobb in _pixelfutasok(maszk[sor])]
+
+
 def test_a_kiegyenesites_sor_abszolut_szeleit_a_kirajzolt_kep_kozepehez_meri(
     qt_app, tmp_path
 ):
@@ -212,99 +230,72 @@ def test_a_kiegyenesites_sor_abszolut_szeleit_a_kirajzolt_kep_kozepehez_meri(
             "az ablakmagasság-sweep nem fogja meg a Math.ceil(y) eltérést"
         )
 
-        # Rontás-kontroll: 1280×1029-en a képközép-alapú x 262,5; a
-        # Math.floor-mutáns ezért a teljes renderelt sort egy képponttal balra viszi.
+        # Rontás-kontroll: a Math.floor / Math.ceil kerekítés a sort egy képponttal
+        # eltolná a Math.round-alapú elvárástól — de csak TÖRT nyers x-nél. A tört
+        # rész platformfüggő (a CI-n a képközép 1 px-szel eltérhet), ezért a
+        # kontroll kis pásztázással KERES olyan helyzetet, ahol a floor (törtrész
+        # ≥ 0,5) illetve a ceil (0 < törtrész < 0,5) a round-tól eltér.
         window.setProperty("width", 1280)
         window.setProperty("height", 1029)
         _folyamat(qt_app)
-        area_origin_x = photo_area.mapToScene(QPointF(0, 0)).x()
-        kep_bal, _, kep_jobb, _ = _ablak_kep_bounds(photo)
-        foto_kozepe_szulo = (kep_bal + kep_jobb) / 2 - area_origin_x
-        nyers_x = foto_kozepe_szulo - toolbar.width() / 2
-        round_x = _js_round(nyers_x)
-        floor_x = math.floor(nyers_x)
-        assert round_x == 263 and floor_x == 262
-        toolbar.setProperty("x", floor_x)
-        _folyamat(qt_app)
-        floor_maszk = _valtozasmaszk(window, toolbar, qt_app, dpr)
-        floor_felso = toolbar.mapToScene(QPointF(0, 0)).y()
-        floor_sor = _js_round((floor_felso + 8) * dpr)
-        floor_futasok = [
-            (bal / dpr, jobb / dpr)
-            for bal, jobb in _pixelfutasok(floor_maszk[floor_sor])
-        ]
-        floor_vart = _vart_vezerlok(area_origin_x + round_x)
-        assert abs(floor_futasok[0][0] - (area_origin_x + floor_x)) <= 0.5, (
-            f"floor kontroll: x={toolbar.x():.2f}, globális x="
-            f"{toolbar.mapToScene(QPointF(0, 0)).x():.2f}, y-sor={floor_sor}, "
-            f"mért={floor_futasok}, várt x={floor_x}"
+        talalt: dict[str, float] = {}
+        for dx in (0.0, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75, 1.0, -1.0):
+            viewer.setProperty("panX", dx)
+            _folyamat(qt_app)
+            _, nyers = _nyers_x(photo, photo_area, toolbar)
+            tort = nyers - math.floor(nyers)
+            if "floor" not in talalt and 0.5 <= tort <= 0.95:
+                talalt["floor"] = dx
+            if "ceil" not in talalt and 0.05 <= tort < 0.5:
+                talalt["ceil"] = dx
+        assert set(talalt) == {"floor", "ceil"}, (
+            f"a pásztázás nem hozott létre a floor/ceil mutációhoz tört x-et: {talalt}"
         )
-        assert not _egyezik_futasok(floor_futasok, floor_vart, 0.5)
-
-        # A kerekítés ceil-mutánsa csak félpixelestől eltérő x-nél látható.
-        # A kis pásztázás csak a ceil-rontáskontrollhoz hoz létre tört
-        # koordinátát; az elvárás ezúttal is a kirajzolt kép közepéből indul.
-        viewer.setProperty("panX", -0.25)
+        for nev, dx in talalt.items():
+            viewer.setProperty("panX", dx)
+            _folyamat(qt_app)
+            origin, nyers = _nyers_x(photo, photo_area, toolbar)
+            round_x = _js_round(nyers)
+            mutalt_x = math.floor(nyers) if nev == "floor" else math.ceil(nyers)
+            assert mutalt_x != round_x, f"{nev}: a mutáns nem tér el a Math.round-tól ({nyers:.3f})"
+            vart = _vart_vezerlok(origin + round_x)
+            round_futasok = _sor_futasok(window, toolbar, qt_app, dpr, round_x)
+            assert _egyezik_futasok(round_futasok, vart, 0.5), (
+                f"{nev}-kontroll: a Math.round-alapú sor nem egyezik az elvárással: "
+                f"{round_futasok} vs {vart}"
+            )
+            mutalt_futasok = _sor_futasok(window, toolbar, qt_app, dpr, mutalt_x)
+            assert not _egyezik_futasok(mutalt_futasok, vart, 0.5), (
+                f"{nev}-kontroll: a Math.{nev}-mutáns renderelt sora egyezik az "
+                f"elvárással ({mutalt_futasok}), a pozícióőr nem fogná meg"
+            )
+        viewer.setProperty("panX", 0.0)
         _folyamat(qt_app)
-        kep_bal, _, kep_jobb, _ = _ablak_kep_bounds(photo)
-        foto_kozepe_szulo = (kep_bal + kep_jobb) / 2 - area_origin_x
-        ceil_nyers_x = foto_kozepe_szulo - toolbar.width() / 2
-        ceil_round_x = _js_round(ceil_nyers_x)
-        ceil_x = math.ceil(ceil_nyers_x)
-        assert ceil_x != ceil_round_x, (
-            f"a ceil-mutációhoz nem félpixelestől eltérő koordinátát kaptunk: "
-            f"{ceil_nyers_x:.2f}"
-        )
-        # A tört x kerekítésének elhagyását a QML-geometria fogja meg akkor
-        # is, ha a Qt ugyanarra a pixelre raszterezi a két változatot.
-        toolbar.setProperty("x", ceil_nyers_x)
-        _folyamat(qt_app)
-        assert abs(float(toolbar.x()) - ceil_round_x) > 0.1
-        toolbar.setProperty("x", ceil_round_x)
-        _folyamat(qt_app)
-        ceil_round_maszk = _valtozasmaszk(window, toolbar, qt_app, dpr)
-        ceil_round_felso = toolbar.mapToScene(QPointF(0, 0)).y()
-        ceil_round_sor = _js_round((ceil_round_felso + 8) * dpr)
-        ceil_round_futasok = [
-            (bal / dpr, jobb / dpr)
-            for bal, jobb in _pixelfutasok(ceil_round_maszk[ceil_round_sor])
-        ]
-        assert abs(
-            ceil_round_futasok[0][0] - (area_origin_x + ceil_round_x)
-        ) <= 0.5
-        ceil_vart = _vart_vezerlok(area_origin_x + ceil_round_x)
-        toolbar.setProperty("x", ceil_x)
-        _folyamat(qt_app)
-        ceil_maszk = _valtozasmaszk(window, toolbar, qt_app, dpr)
-        ceil_felso = toolbar.mapToScene(QPointF(0, 0)).y()
-        ceil_sor = _js_round((ceil_felso + 8) * dpr)
-        ceil_futasok = [
-            (bal / dpr, jobb / dpr)
-            for bal, jobb in _pixelfutasok(ceil_maszk[ceil_sor])
-        ]
-        assert abs(ceil_futasok[0][0] - (area_origin_x + ceil_x)) <= 0.5
-        assert not _egyezik_futasok(ceil_futasok, ceil_vart, 0.5)
 
         # Rontás-kontroll a kerekítés nélküli y-ra. A Qt a tört eltolást
         # ugyanarra a rasztersorra igazíthatja, ezért ezt a mutációt a valódi
         # QML-geometria (toolbar.y) őrzi; a képpontmaszk önmagában nem elég.
-        window.setProperty("width", 1279)
-        window.setProperty("height", 1019)
-        _folyamat(qt_app)
-        kep_alja = _ablak_kep_bounds(photo)[3]
-        skala = float(photo.property("scale"))
-        nyers_y_global = kep_alja - skala * (toolbar.height() / 2 + 10)
-        nyers_y_global -= toolbar.height() / 2
-        area_origin_y = photo_area.mapToScene(QPointF(0, 0)).y()
-        nyers_y = nyers_y_global - area_origin_y
-        round_y = _js_round(nyers_y)
+        # Olyan ablakmagasságot keresünk, ahol a nyers y törtrésze észlelhető.
+        y_talalat = None
+        for magassag in range(1015, 1040):
+            window.setProperty("width", 1279)
+            window.setProperty("height", magassag)
+            _folyamat(qt_app)
+            kep_alja = _ablak_kep_bounds(photo)[3]
+            skala = float(photo.property("scale"))
+            nyers_y_global = kep_alja - skala * (toolbar.height() / 2 + 10)
+            nyers_y_global -= toolbar.height() / 2
+            area_origin_y = photo_area.mapToScene(QPointF(0, 0)).y()
+            nyers_y = nyers_y_global - area_origin_y
+            if abs(nyers_y - _js_round(nyers_y)) > 0.1:
+                y_talalat = nyers_y
+                break
+        assert y_talalat is not None, "nincs olyan ablakmagasság, ahol a nyers y tört"
+        round_y = _js_round(y_talalat)
         toolbar.setProperty("y", round_y)
         _folyamat(qt_app)
         assert abs(float(toolbar.y()) - round_y) <= 1e-6
-        assert abs(nyers_y - round_y) > 0.1, (
-            f"a tört y mutációhoz egész koordinátát kaptunk: {nyers_y:.3f}"
-        )
-        toolbar.setProperty("y", nyers_y)
+        toolbar.setProperty("y", y_talalat)
         _folyamat(qt_app)
         assert abs(float(toolbar.y()) - round_y) > 0.1, (
             "a geometriai y-őrnek észre kell vennie a kerekítés elhagyását"
