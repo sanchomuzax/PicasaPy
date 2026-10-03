@@ -199,12 +199,15 @@ def _meres(
     felvetel = window.grabWindow()
     assert not felvetel.isNull(), "a főablak grabWindow() képe üres"
     renderelt = _renderelt_rgb(felvetel)
-    kep_doboz = _szin_doboz(renderelt, _KEPSZINEK[fajlnev], dpr)
-    vart_doboz = _ablak_kep_bounds(foto)
+    kep_pixeles_doboz = _szin_doboz(renderelt, _KEPSZINEK[fajlnev], dpr)
+    kep_doboz = _ablak_kep_bounds(foto)
     if skala == 1.0:
-        assert all(abs(a - b) <= 2 for a, b in zip(kep_doboz, vart_doboz, strict=True)), (
-            f"a {fajlnev} renderelt képdoboza {kep_doboz}, "
-            f"a paintedWidth/Height transzformált doboza {vart_doboz}"
+        assert all(
+            abs(a - b) <= 2
+            for a, b in zip(kep_pixeles_doboz, kep_doboz, strict=True)
+        ), (
+            f"a {fajlnev} renderelt képdoboza {kep_pixeles_doboz}, "
+            f"a paintedWidth/Height transzformált doboza {kep_doboz}"
         )
 
     sav_doboz = _elem_doboz(sav, dpr)
@@ -227,12 +230,13 @@ def _meres(
     return {
         "sav": sav_doboz,
         "kep": kep_doboz,
+        "kep_pixel": kep_pixeles_doboz,
         "feliratok": feliratok,
         "painted": painted,
     }
 
 
-def _assert_vizszintes_es_igazit(meres, *, res: float, turelem: float = 1.5):
+def _assert_vizszintes_es_igazit(meres, *, res: float, turelem: float = 0.5):
     sav = meres["sav"]
     kep = meres["kep"]
     sav_szel, sav_mag = sav[2] - sav[0], sav[3] - sav[1]
@@ -348,33 +352,34 @@ def test_rotate_1_es_13x_nagyitasnal_a_sav_merete_es_helye_skalaalapu(
     generator, window, viewer, panel, controller, dpr = _app(qt_app, tmp_path)
     try:
         for magassag in _ABLAKMAGASSAGOK:
-            window.setProperty("width", 1280)
-            window.setProperty("height", magassag)
-            _folyamat(qt_app)
-            meres = _meres(
-                window,
-                viewer,
-                panel,
-                controller,
-                qt_app,
-                "07-allo-90.png",
-                dpr,
-                skala=1.3,
-                feliratokat_merd=False,
-            )
-            # Az egész koordinátára kerekített, majd 1,3×-szal skálázott
-            # sáv széle a képpontból mért határon legfeljebb 1,5 px-et ingadozhat.
-            _assert_vizszintes_es_igazit(meres, res=13, turelem=1.5)
-            sav = meres["sav"]
-            meret = (sav[2] - sav[0], sav[3] - sav[1])
-            assert abs(meret[0] - 447 * 1.3) <= 1, (
-                f"1,3×-nál a sáv szélessége {meret[0]:.1f} px, "
-                f"várt {447 * 1.3:.1f} px"
-            )
-            assert abs(meret[1] - 28 * 1.3) <= 1, (
-                f"1,3×-nál a sáv magassága {meret[1]:.1f} px, "
-                f"várt {28 * 1.3:.1f} px"
-            )
+            for szelesseg in (1280, 1279):
+                window.setProperty("width", szelesseg)
+                window.setProperty("height", magassag)
+                _folyamat(qt_app)
+                meres = _meres(
+                    window,
+                    viewer,
+                    panel,
+                    controller,
+                    qt_app,
+                    "07-allo-90.png",
+                    dpr,
+                    skala=1.3,
+                    feliratokat_merd=False,
+                )
+                # A rés mindkét határa QML-geometria: forgatás után a kirajzolt
+                # képdoboz és a transzformált sáv alsó éle közti távolságot mérjük.
+                _assert_vizszintes_es_igazit(meres, res=13, turelem=0.5)
+                sav = meres["sav"]
+                meret = (sav[2] - sav[0], sav[3] - sav[1])
+                assert abs(meret[0] - 447 * 1.3) <= 1, (
+                    f"{szelesseg}×{magassag}, 1,3×: a sáv szélessége "
+                    f"{meret[0]:.1f} px, várt {447 * 1.3:.1f} px"
+                )
+                assert abs(meret[1] - 28 * 1.3) <= 1, (
+                    f"{szelesseg}×{magassag}, 1,3×: a sáv magassága "
+                    f"{meret[1]:.1f} px, várt {28 * 1.3:.1f} px"
+                )
     finally:
         _zar(generator)
 
@@ -383,16 +388,12 @@ def test_nem_forgatott_zoom_meret_es_res_megegyezik_a_regi_meressel(
     qt_app, tmp_path
 ):
     generator, window, viewer, panel, controller, dpr = _app(qt_app, tmp_path)
-    vartak = (
-        ("1,0×", 1.0, 447.0, 28.0, 10.0),
-        ("1,29×", 1.293, 578.6, 36.2, 12.9),
-        ("1,99×", 1.985, 887.3, 55.6, 19.9),
-    )
+    vartak = (("1,0×", 1.0), ("1,29×", 1.293), ("1,99×", 1.985))
     try:
         window.setProperty("width", 1280)
         window.setProperty("height", 1600)
         _folyamat(qt_app)
-        for cimke, skala, vart_szel, vart_mag, vart_res in vartak:
+        for cimke, skala in vartak:
             meres = _meres(
                 window,
                 viewer,
@@ -408,20 +409,29 @@ def test_nem_forgatott_zoom_meret_es_res_megegyezik_a_regi_meressel(
             mert_szel = sav[2] - sav[0]
             mert_mag = sav[3] - sav[1]
             mert_res = meres["kep"][3] - sav[3]
-            assert abs(mert_szel - vart_szel) <= 1, (
-                f"{cimke}-nál a sáv szélessége {mert_szel:.1f} px, "
-                f"régi mérés={vart_szel:.1f} px"
+            assert abs(mert_szel - 447 * skala) <= 0.5, (
+                f"{cimke}-nál a QML-sáv szélessége {mert_szel:.2f} px, "
+                f"várt={447 * skala:.2f} px"
             )
-            assert abs(mert_mag - vart_mag) <= 1, (
-                f"{cimke}-nál a sáv magassága {mert_mag:.1f} px, "
-                f"régi mérés={vart_mag:.1f} px"
+            assert abs(mert_mag - 28 * skala) <= 0.5, (
+                f"{cimke}-nál a QML-sáv magassága {mert_mag:.2f} px, "
+                f"várt={28 * skala:.2f} px"
             )
-            # a kép alját képpontból mérjük (csak a teljesen fedett sort
-            # számoljuk), ezért a rés 1 px-nél kevesebbel kisebbnek mérődik
-            assert abs(mert_res - vart_res) <= 1.5, (
-                f"{cimke}-nál a rés {mert_res:.1f} px, "
-                f"régi mérés={vart_res:.1f} px"
+            assert abs(mert_res - 10 * skala) <= 0.5, (
+                f"{cimke}-nál a QML-képdoboz és a sáv közti rés "
+                f"{mert_res:.2f} px, várt={10 * skala:.2f} px"
             )
+
+        # Rontás-kontroll: a rendered QML-doboz őre felismeri, ha a sáv nem
+        # követi a képskálát. Ez a lokális `scale: 1` mutáció 1,985×-nál
+        # 447 px-re zsugorítja a sávot az elvárt 887,3 px helyett.
+        toolbar = _item(window, "editorToolBar")
+        toolbar.setProperty("scale", 1.0)
+        _folyamat(qt_app)
+        mutans_doboz = _elem_doboz(toolbar, dpr)
+        mutans_szel = mutans_doboz[2] - mutans_doboz[0]
+        vart_szel = 447 * 1.985
+        assert abs(mutans_szel - vart_szel) > 0.5
     finally:
         _zar(generator)
 
