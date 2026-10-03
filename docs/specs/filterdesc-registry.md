@@ -3602,17 +3602,17 @@ a vízszintes léptéket veti össze 1,0-val:
    `0x00a4035d` `call 0xc29990` = `cvttsd2si`). A maradékot
    (`16383 − Σ w_int`) a `csonk(c)` indexű csaphoz adja, a csaptartományba
    szorítva (`0x00a40462`–`0x00a4049f`).
-4. **Az alkalmazó:** csatornánként `(Σ w_int · p + 255) >> 14`, telítéssel
-   (`0x00a427b0`–`0x00a4283a`: `imul` az int16 súllyal, `add 0xff`, a
-   `0x3fffff` fölötti és negatív összeg vágva, majd `>> 14`). Ez gyakorlatilag
-   **csonkolás**, nem kerekítés. Előbb a vízszintes menet fut, 8 bites
-   köztes képpel, utána a függőleges ugyanezzel a képlettel. *(A skalár út
-   kiolvasva; a SIMD-út (`0x00a428e0`, `0x00a413f0`) számolását nem néztük
-   meg, a mérés 94%-os bitegyezése nem mutat rá eltérést.)*
+4. **Az alkalmazó főciklusa:** csatornánként `(Σ w_int · p + 255) >> 14`,
+   telítéssel (`0x00a427b0`–`0x00a4283a`: `imul` az int16 súllyal, `add 0xff`,
+   a `0x3fffff` fölötti és negatív összeg vágva, majd `>> 14`). Ez
+   gyakorlatilag **csonkolás**, nem kerekítés. A függőleges menet utolsó
+   `W mod 4` oszlopára ez a képlet nem érvényes: a skalár és a SIMD maradékág
+   elhagyja a `+255`-öt (ld. 5/c.1).
 
-A 3. és a 4. pont **módfüggetlen**: a nagyításkor futó Mitchell-mag súlyai
-is így lesznek egésszé, és ugyanez az alkalmazó futtatja őket (a Mitchell-mag
-határa kizáró: `|x| ≥ 2` → 0, `0x00a3fcde`).
+A 3. pont és a 4. pont főciklusa **módfüggetlen**: a nagyításkor futó
+Mitchell-mag súlyai is így lesznek egésszé, és ugyanez az alkalmazó futtatja
+őket (a Mitchell-mag határa kizáró: `|x| ≥ 2` → 0, `0x00a3fcde`). A
+függőleges maradékág eltérő kerekítése az 5/c.1 pontban áll.
 
 **Példa:** 960 → 48 képpont (lépték 20). A `c = 20i + 10`, a csapok
 `20i … 20i + 19` (20 darab), mindegyik súlya `csonk(16383/20)` = 819, a
@@ -3647,7 +3647,7 @@ nem változik, tehát a lépték 1: a függőleges 0,95-ös zsugorítás is
 | módválasztás | vízszintes cél/forrás ≤ 1 → doboz, egyébként Mitchell | ugyanígy, mindkét tengelyre | — |
 | a doboz | `\|x\| < 0,5`, a léptékkel nyújtva | ugyanígy (`_tengely_sulyok`) | — |
 | súlyok | `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé | ugyanígy, egész súlyok | — |
-| kimenet | `(Σ w·p + 255) >> 14`, menetenként 8 bit (a Mitchell-nagyításnál is) | ugyanígy, vízszintes menet elöl | — |
+| kimenet | négyes főciklus: `(Σ w·p + 255) >> 14`; függőleges maradék: `Σ w·p >> 14` | `+255` minden kimeneti oszlopra (`_tengely_menten`) | #4004: függőleges maradékág |
 | `PicnikFocalPixelate` | ugyanez a `Resize` | `render/focal.py` a közös `resize_image`-en | — |
 
 **Nálunk (MÉRVE, #3805, 684-es készlet, ΔE a Picasa-exporthoz):**
@@ -3675,6 +3675,77 @@ tengelyre szól), ez enyhe elmosást ad; ezt Picasa-export nem igazolja;
 peremismétlés) — a doboz egész léptéknél ettől független.
 
 Fejlesztés: #3805.
+
+### 5/c.1. Helyesbítés (#4004): a függőleges maradékág kihagyja a `+255`-öt
+
+*Bizonyítottsági fok: **megerősített** — az utasításszintű olvasás és az
+eredeti gépi kód QEMU-i386 futtatása egyezik. Külön Opus-modellolvasás ebben
+a Codex-munkamenetben nem állt rendelkezésre.*
+
+*Forrás: skalár `ytResampler` `0x00a40e40` (méret 1443 bájt); SIMD
+`0x00a413f0` (méret 1565 bájt); a dispatch `0x00a426a0`; futtatott
+QEMU-harness: `/home/sancho/picasapy-agent/eszkozok/qemu_harness/`.*
+
+| út | négyes főciklus | függőleges maradékág |
+|---|---|---|
+| skalár (`0x00a40e40`) | `W & ~3` (`0x00a40f9f`); a három csatorna összege előtt `+0xff` (`0x00a4109f`, `0x00a4112f`–`0x00a4113b`) | a `W&~3` utáni őr (`0x00a412b1`–`0x00a412b7`) az `0x00a412c0`-ra lép; a `0x00a412c0`–`0x00a41389` összegzi, vágja és `>>14`-gyel ír, `+0xff` nélkül |
+| SIMD (`0x00a413f0`) | `0xff` bias-regiszter (`0x00a41707`), `W & ~3` (`0x00a4170c`), majd `psrad 14` (`0x00a41863`–`0x00a41872`) | a maradékőr (`0x00a418a9`–`0x00a418b1`) az `0x00a418b7`-re lép; a `0x00a418b7`–`0x00a419b8` összegez, `psrad 14`-gyel ír, RGB-bias nélkül |
+
+A dispatch (`0x00a426a0`) a skalár (`0x00a40e40`) és SIMD
+(`0x00a413f0`) munkavégzőt is kiválaszthatja. A főciklus után mindkét út
+`r = W mod 4` darab maradékoszlopot dolgoz fel; `r=0` esetén nincs
+maradékág.
+
+**Kimeneti képlet** — `S = Σ(w_int · p)`, a telítést a 8 bites tartományra
+értve:
+
+```text
+négyes főciklus: clamp_0_255((S + 255) >> 14)
+függőleges utolsó W mod 4 oszlopa: clamp_0_255(S >> 14)
+```
+
+A kerekítés nélküli eredmény legfeljebb 1 szinttel kisebb. Telítetlen,
+nemnegatív `S` esetén pontosan akkor különbözik 1-gyel, ha
+`S mod 16384 ≥ 16129` (`16384 − 255`); a telítési széleken a két kimenet
+azonos maradhat.
+
+**Független futtatás.** Az eredeti PE-ből kivett két függvény maradékágát
+`qemu-i386` futtatta 32 esetben: skalár és SIMD, `W=4…11` (mind a négy
+maradék kétszer), egy szintetikus, beállított veremkerettel és két sorral.
+A `Σ=16128` próbában bias nélkül és `+255`-tel is 0 lett; a `Σ=4 177 665`,
+`S mod 16384=16129` próbában a gépi maradékág 254-et, a `+255`-ös kontroll
+255-öt adott. Mindkét út egyezett; a `W mod 4=0` esetekben a kimenetőr
+változatlanul hagyta a maradékterületet. A harness a natív kódot a maradékág
+belépési pontján indította, nem a teljes Resize-függvényhívást játszotta le.
+
+**Exportminták.** A PicasaPy-lánc kimenetét egy ideiglenes, csak a függőleges
+maradék `+255`-ét elhagyó változattal hasonlítottam össze: 34 kiválasztott
+684-es Picasa-exportpár és 12 pár a helyi `research/testdata`-ból. A 684-es
+készletben egyik vizsgált export utolsó három oszlopában sem volt változás;
+`Pixelate` és `PicnikFocalPixelate` mindhárom csúszkaállásán a teljes
+kimenet bitre egyezett. A max állások köztes szélessége 6, illetve 9, de
+`Fade=100` miatt az effekt azonosság; az aktív alap/min szélességek 48/480,
+mind 4-gyel oszthatók. A 34-ből 8 másik effektkimenet belső oszlopain
+változott (legfeljebb 3 szinttel), de a végső 1–3 oszlopban nem.
+
+A `research/testdata/PicasaPy-golden-kit/effekt5` Comicize párján a bemenet
+1600 px széles (`dot=24`, `pixelate_centered` kicsinyített szélessége 67).
+A teljes kimeneten 603 képpont változott, maximum 4 szinttel; az utolsó
+három oszlopban 11 képpont, maximum 3 szinttel. A Picasa-exporthoz mért
+utolsó három oszlop MAE-je a régi/új változattal 1,8429/1,8440 volt, tehát
+ez a minta az utolsó három oszlopon nem javította a Picasa-exporthoz mért MAE-t.
+A kiválasztott 684-es és tesztadatbeli mintákból két végső export szélessége
+nem volt 4-gyel osztható (1090 és 1730); ezekre a kimenet bitre változatlan
+maradt. A mérés tehát bizonyítja a hibát és egy belső Resize-láncon látható
+végső hatást, de nem állít általános javulást a Picasa-exporthoz mért ΔE-ben.
+
+**Fejlesztői teendő:** új fejlesztői jegy indokolt a
+`src/picasapy/render/glimmer_ops.py` `_tengely_menten` függvényére. Függőleges
+menetben a négyes prefix maradjon `(S+255)>>14`, az utolsó `W mod 4`
+oszlopok pedig `S>>14` szerint készüljenek; a vízszintes menet maradjon
+változatlan. A fejlesztés külön őrizze meg mind a négy szélesség-maradékot,
+az 16128/16129 küszöb két oldalát, a Pixelate/FocalPixelate aktív és
+Fade=100 eseteit, valamint a Comicize végső háromoszlopos mintáját.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
