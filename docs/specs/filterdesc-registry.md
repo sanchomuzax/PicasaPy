@@ -2180,21 +2180,31 @@ R' = R + b;   G' = G + b;   B' = B + b;
 
 ```c
 c = clamp(c, -100, 100);
-k = 1.0f + kontraszt_gorbe(c);      // 0x008f2990
-if (|k - 1.0f| < eps) return;       // nincs teendő
+k = kontraszt_szorzo(c);            // 0x008f2990 — a KÉSZ szorzót (k) adja, nem a görbét
+if (abs(bits(k) - bits(1.0f)) < 8) return;   // 0x008f1c3b–0x008f1c4d: nincs teendő
 t = (1.0f - k) * 127.0f * 0.5f;     // = (1-k) * 63.5
 R' = k*R + t;  G' = k*G + t;  B' = k*B + t;
 ```
 
-ahol a görbe:
+ahol a szorzó függvénye (a `0x008f2990` a KÉSZ szorzót adja vissza, nem a görbeértéket):
 
 ```c
-float kontraszt_gorbe(float c) {
-    if (c == 0)  return 0.0f;
-    if (c <  0)  return c / 100.0f;             // ZÁRT: -100 -> -1 (k = 0, teljes szürke)
-    // c > 0: 101 elemű TÁBLÁZAT lineáris interpolációval
-    i = (int)floorf(c);  f = c - i;
-    return (f < eps) ? T[i] : (1-f)*T[i] + f*T[i+1];
+// 0x008f2990
+float kontraszt_szorzo(float c) {
+    c = clamp(c, -100, 100);                          // 0x008f299c–0x008f29e1
+    if (c == 0) return 1.0f;                          // 0x008f29f4 (fld1)
+    double curve;
+    if (c < 0) curve = c / 100.0;                     // double, NEM kerekül float32-re (0x008f2a05–0x008f2a09)
+    else {
+        float f = (float)(c - floor(c));              // 0x008f2a23–0x008f2a2b
+        int   i = (int)c;                             // csonkítás, 0x008f2a32 (_ftol2_sse)
+        if (abs(bits(f) - bits(0.0f)) < 8)            // 0x008f2a43–0x008f2a57: gyakorlatilag f == 0
+            curve = T[i];
+        else
+            curve = (float)((1-f)*T[i] + f*T[i+1]);   // float32-re kerekítve, 0x008f2a7e
+    }
+    float szamlalo = (float)(curve*127.0 + 127.0);    // 0x008f2a92 (127,0 = [0x00cf3a28])
+    return (float)(szamlalo / 127.0);                 // 0x008f2a96–0x008f2a9a
 }
 ```
 
@@ -2205,16 +2215,95 @@ A `T[]` tábla a `0x00c7d688` címen (fájloffszet `0x87d688`), **101 darab
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `T` | 0,00 | 0,12 | 0,25 | 0,44 | 0,71 | 1,00 | 1,60 | 2,37 | 4,00 | 7,30 | 10,00 |
 
-A lépésköz 0,01-ről (0–16) 0,015-re (16–23), 0,02-re (23–33), 0,03-ra (33–50),
-0,06-ra (50–67), 0,125-re (67–75), majd egyre nagyobbra nő. **Semmilyen zárt
-képlet nem illeszkedik rá** (a legjobb exponenciális illesztés 0,64-gyel téved),
-tehát a táblát **át kell venni**. Teljes lista:
-`referencia/kontraszt-tabla.csv` (privát repó).
+A lépésköz szakaszonként változik; a natív motor a táblát olvassa, ezért a
+megvalósításnak a táblapontokat kell átvennie, nem közelítő görbét illesztenie.
+Teljes lista: `referencia/kontraszt-tabla.csv` (privát repó); a nyers bináris
+értékek és a lekérdezés pontos szabálya az alábbi kiegészítésben szerepel.
+
+#### ⭐ A kontraszttábla teljes tartalma és pontos lekérdezése (#626, 2026-10-02)
+
+**A bináris adata.** A `0x008f2990` a 101 darab IEEE-754 `float32` elemet a
+`0x00c7d688` címen olvassa (RVA `0x0087d688`, fájloffset `0x87d688`). Az alábbi
+értékek az egyes float32 értékek legrövidebb, pontosan visszaalakítható decimális
+alakjai; az index a `Contrast` egész része:
+
+```text
+  0–  9: 0, 0.01, 0.02, 0.04, 0.05, 0.06, 0.07, 0.08, 0.1, 0.11
+ 10– 19: 0.12, 0.14, 0.15, 0.16, 0.17, 0.18, 0.2, 0.21, 0.22, 0.24
+ 20– 29: 0.25, 0.27, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42
+ 30– 39: 0.44, 0.46, 0.48, 0.5, 0.53, 0.56, 0.59, 0.62, 0.65, 0.68
+ 40– 49: 0.71, 0.74, 0.77, 0.8, 0.83, 0.86, 0.89, 0.92, 0.95, 0.98
+ 50– 59: 1, 1.06, 1.12, 1.18, 1.24, 1.3, 1.36, 1.42, 1.48, 1.54
+ 60– 69: 1.6, 1.66, 1.72, 1.78, 1.84, 1.9, 1.96, 2, 2.12, 2.25
+ 70– 79: 2.37, 2.5, 2.62, 2.75, 2.87, 3, 3.2, 3.4, 3.6, 3.8
+ 80– 89: 4, 4.3, 4.7, 4.9, 5, 5.5, 6, 6.5, 6.8, 7
+ 90– 99: 7.3, 7.5, 7.8, 8, 8.4, 8.7, 9, 9.4, 9.6, 9.8
+100–100: 10
+```
+
+**A natív lekérdezés** (`0x008f2990`): a bemenet vágása `−100…100` (a hívó, a
+`0x008f1bd0` is vág). Nullánál a függvény rögtön `k = 1,0`-t ad (`fld1`); negatív
+`c`-nél `curve = c/100` (double, nem kerekül float32-re); pozitív `c`-nél
+`i = floor(c)` (csonkítással, `_ftol2_sse`) és `f = c − floor(c)` (float32-ként a
+`[esp+0x34]`-en).
+
+A bitminta-összehasonlítás NEM `c`-t és `float32(i)`-t vet össze, hanem a tört részt
+(`f`) a `0,0f`-fel (`fldz` → `fstp dword [esp+0x38]` → `sub eax, [esp+0x38]`,
+`0x008f2a43`–`0x008f2a4b`). Ha `abs(bits(f)) < 8` (`cmp eax, 8` / `jae` a
+`0x008f2a54`–`0x008f2a57`-nél), vagyis gyakorlatilag `f = 0`, akkor `curve = T[i]`,
+különben `curve = (1−f)·T[i] + f·T[i+1]`. A kapu kimenetileg közömbös: `f = 0`-nál
+az interpoláció is `T[i]`-t adna, csak a szorzást spórolja meg. (A valódi, 8 bitmintás
+összehasonlítás idiómája az építőben van: `abs(bits(k) − bits(1.0f)) < 8`,
+`0x008f1c3b`–`0x008f1c4d`.)
+
+A függvény már `k`-t ad vissza. A számláló (`curve·127 + 127`, x87) a `0x008f2a92`-nél
+float32-re kerekül, a `0x008f2a96` osztja 127,0-val (`0x00cf3a28`), a `0x008f2a9a`
+float32-ként tárolja. A pozitív ágon a `curve` is float32-re kerekül (`0x008f2a7e`),
+a negatívon nem. Algebrailag `k = 1 + curve`, de a float32-kerekítések miatt egész
+`c`-n 19/100 pontban 1 ULP-val tér el a `float32(1 + T[i])`-től (pl. `T = 0,05` esetén
+a natív `k` 1,0500000715, a sima 1,0499999523). Nincs további vágás, kerekítés vagy
+előzetes átalakítás a függvényben.
+
+**A lánc a pixelekig.** A `SimpleColorMatrix` objektum vtáblájának (`0x00ceffb4`)
+6. slotja a `0x00bc16b0` (közös a `ColorMatrix` és a `MultiplyColorMatrix` vtábláival),
+amely a virtuális 8. slotot hívja (`0x00bb6400`: az építő; a `Contrast` ágban
+`0x008f1bd0` → `0x008f2990`, a `ContrastAndBrightnessLinked` jelzőnél `0x008f2040` →
+`0x008f2990`). Utána `0x008f2500` → `0x008f21a0` (Q11 int16 mátrix, ×2048) → soronként
+`0x008f2640` (a fixpontos képpont-alkalmazó: `movsx word × byte`, `sar 9`, eltolás,
+`sar 2`, vágás 0…255).
+
+**Független mérési ellenőrzés.** A helyi `684-merokeszlet` Boost-alap és
+Boost-max exportján a natív értelmezéssel (`k = 1 + T`) újraszámolt kimenet
+ΔE-je (CIE76, átlag) **0,145** és **0,095**; az alternatív `k = T` értelmezés
+ugyanezeken **22,657** és **1,328**. A ΔE a TELJES Boost-láncra vonatkozik
+(Brightness −20/−40 és Saturation +20/+40 mellett `Contrast = 40/80`), két egész
+táblapontot igazol (`T[40] = 0,71`, `T[80] = 4,0`); ugyanez az eset a specben már
+korábban 0,143 / 0,095 értékkel szerepelt (a 0,145 ugyanennek az újraszámolása, nem
+új, független bizonyíték). A 101 táblapont forrása a bináris, nem a két mérési pontból
+való illesztés. A tábla meglévő privát CSV-jében a 101 elem mindegyike 6 tizedesre
+kerekítve egyezik a bináris float32 értékével.
+
+**Futtatásos ellenőrzés (az eredeti gépi kód).** A `Picasa3.exe` `.text`, `.rdata` és
+`.data` szakaszait az eredeti VA-kon térképező kis ELF-ből, `qemu-i386` alatt hívva a
+`0x008f2990`-et (FPU vezérlőszó `0x027f`; az SSE2-jelzőket `[0xda1424]`/`[0xda1428]`
+1-re állítva; az x87 tartalék ágat nem futtattuk) a natív kimenet 7168 bemeneten
+(egészek −105…105, 1–9 ULP az egészek fölött és alatt, rács, 3000 véletlen, denormálisok)
+bitre egyezik a fenti pszeudokóddal. A korábbi, `c` és `float32(i)` bitmintáját
+összevető kapu 597/7168 bemeneten más kimenetet adna.
+
+*Bizonyítottsági fok: **megerősített**. A út — a `0x008f2990` utasításszintű olvasása
+(a tábla, a vágás, a negatív ág, a floor, az interpoláció, a `k`-számítás sorrendje és
+konstansai); B út — az eredeti gépi kód futtatása 7168 bemeneten, bitre egyező
+modellel, valamint a tábla nyers bájtjai (101 elem, a spec decimális listájával 0
+eltérés) és két valódi Picasa-export (Boost-alap/-max) a helyes és a cáfoló
+szorzóértelmezéssel. **Nem mért:** tört `Contrast` értékű valódi Picasa-export — a
+natív függvény viselkedése tört értékre is bitre ismert, de ezt Picasa-golden nem
+ellenőrzi.*
 
 #### Együttes fényerő + kontraszt (`0x008f2040`) — a `ContrastAndBrightnessLinked` ág
 
 ```c
-k = 1.0f + kontraszt_gorbe(kontraszt);           // ugyanaz a tábla
+k = kontraszt_szorzo(kontraszt);                 // 0x008f2990 — ugyanaz a függvény és tábla
 t = ((k + 1.0f) * 127.5f * fenyero) / 100.0f  +  (127.5f - k * 127.5f);
 R' = k*R + t;   G' = k*G + t;   B' = k*B + t;
 ```
