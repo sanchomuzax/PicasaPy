@@ -237,7 +237,7 @@ def _assert_vizszintes_es_igazit(meres, *, res: float, turelem: float = 1.5):
     kep = meres["kep"]
     sav_szel, sav_mag = sav[2] - sav[0], sav[3] - sav[1]
     assert sav_szel > sav_mag, f"a sáv függőleges: {sav_szel:.1f}×{sav_mag:.1f}"
-    assert abs((kep[0] + kep[2] - sav[0] - sav[2]) / 2) <= 2, (
+    assert abs((kep[0] + kep[2] - sav[0] - sav[2]) / 2) <= 1, (
         f"a sáv közepe nem a kép közepe: sáv={sav}, kép={kep}"
     )
     mert_res = kep[3] - sav[3]
@@ -362,12 +362,14 @@ def test_rotate_1_es_13x_nagyitasnal_a_sav_merete_es_helye_skalaalapu(
                 skala=1.3,
                 feliratokat_merd=False,
             )
-            _assert_vizszintes_es_igazit(meres, res=13, turelem=1)
+            # Az egész koordinátára kerekített, majd 1,3×-szal skálázott
+            # sáv széle a képpontból mért határon legfeljebb 1,5 px-et ingadozhat.
+            _assert_vizszintes_es_igazit(meres, res=13, turelem=1.5)
             sav = meres["sav"]
             meret = (sav[2] - sav[0], sav[3] - sav[1])
-            assert abs(meret[0] - 441 * 1.3) <= 1, (
+            assert abs(meret[0] - 447 * 1.3) <= 1, (
                 f"1,3×-nál a sáv szélessége {meret[0]:.1f} px, "
-                f"várt {441 * 1.3:.1f} px"
+                f"várt {447 * 1.3:.1f} px"
             )
             assert abs(meret[1] - 28 * 1.3) <= 1, (
                 f"1,3×-nál a sáv magassága {meret[1]:.1f} px, "
@@ -382,9 +384,9 @@ def test_nem_forgatott_zoom_meret_es_res_megegyezik_a_regi_meressel(
 ):
     generator, window, viewer, panel, controller, dpr = _app(qt_app, tmp_path)
     vartak = (
-        ("1,0×", 1.0, 441.0, 28.0, 10.0),
-        ("1,29×", 1.293, 570.5, 36.2, 12.9),
-        ("1,99×", 1.985, 875.5, 55.6, 19.9),
+        ("1,0×", 1.0, 447.0, 28.0, 10.0),
+        ("1,29×", 1.293, 578.6, 36.2, 12.9),
+        ("1,99×", 1.985, 887.3, 55.6, 19.9),
     )
     try:
         window.setProperty("width", 1280)
@@ -441,7 +443,7 @@ def test_csempekattintassal_nyilik_meg_a_forgatott_kiegyenesites(qt_app, tmp_pat
                 dpr,
             )
             _assert_vizszintes_es_igazit(meres, res=10)
-            assert abs((meres["sav"][2] - meres["sav"][0]) - 441) <= 1
+            assert abs((meres["sav"][2] - meres["sav"][0]) - 447) <= 1
             assert abs((meres["sav"][3] - meres["sav"][1]) - 28) <= 1
     finally:
         _zar(generator)

@@ -109,8 +109,8 @@ class TestGeometria:
         assert csuszka.property("handleHeight") == 24
 
     def test_a_sav_szelessege_a_csuszkaval_egyutt_no(self, sav):
-        """267 (csúszka) + 5 (köz) + 82 + 5 + 82 (a két gomb)."""
-        assert sav.property("width") == 267 + 5 + 82 + 5 + 82
+        """267 (sáv) + 11 (Alkalmaz-köz) + 82 + 5 + 82 (a két gomb)."""
+        assert sav.property("width") == 267 + 11 + 82 + 5 + 82
 
     def test_a_sav_magassaga_valtozatlanul_28(self, sav):
         assert sav.property("height") == 28

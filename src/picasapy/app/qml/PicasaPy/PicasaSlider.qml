@@ -142,6 +142,19 @@ Slider {
     // vele a kattintható terület) nem szűkül, csak a rajz.
     property real grooveInset: 0
 
+    //: A sáv a kattintható foglalat határán túl is kinyúlhat. Alapból 0,
+    //: ezért minden régi példány rajza változatlan; a Kiegyenesítés mért
+    //: 267 px-es sávja a 253 px-es foglalat két oldalán 7-7 px-et nyúlik túl.
+    property real grooveExtension: 0
+
+    //: A sarok sugara a sáv vastagságától függetlenül állítható; az
+    //: alapérték megőrzi a korábbi, teljesen kerek végeket a többi csúszkán.
+    property real grooveRadius: grooveThickness / 2
+
+    //: A régi csúszkákon maradnak a három jelölővonal; egy gazda
+    //: kikapcsolhatja őket, ha az eredeti vezérlőben nincsenek.
+    property bool showTicks: true
+
     // #3729: a FOGANTYÚ függőleges eltolása a sávhoz képest (vízszintes
     // csúszkán; lefelé pozitív). Alapból 0 — a fogantyú a sávval közös
     // középvonalon áll —, és csak a `scaleslider` család kap mást (az
@@ -166,16 +179,17 @@ Slider {
 
     background: Rectangle {
         x: control.leftPadding + (control.isHorizontal
-                                   ? control.grooveInset
+                                   ? control.grooveInset - control.grooveExtension
                                    : (control.availableWidth - width) / 2)
         y: control.topPadding + (control.isHorizontal
                                   ? (control.availableHeight - height) / 2 : 0)
         // a behúzás csak a VÍZSZINTES sávra hat
         width: control.isHorizontal
                ? control.availableWidth - 2 * control.grooveInset
+                    + 2 * control.grooveExtension
                : control.grooveThickness
         height: control.isHorizontal ? control.grooveThickness : control.availableHeight
-        radius: control.grooveThickness / 2
+        radius: control.grooveRadius
 
         // #2627: az alapérték a `respack.yt`-ből mért kékesszürke
         // (`#cad5e5`, felső szegély `#9aa2ae`), nem a króm semleges szürkéje.
@@ -196,7 +210,7 @@ Slider {
         // kitöltött és üres rész. A közép-jelölő az, amit az eredeti
         // tényleg mutat.
         Repeater {
-            model: 3
+            model: control.showTicks ? 3 : 0
             Rectangle {
                 readonly property real arany: index / 2
                 color: Theme.sliderGrooveTick

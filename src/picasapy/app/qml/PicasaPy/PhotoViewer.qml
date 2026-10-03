@@ -3100,8 +3100,8 @@ Rectangle {
                         readonly property point szuloKozep:
                             parent.mapFromItem(
                                 null, kepernyoKozep.x, kepernyoKozep.y)
-                        x: szuloKozep.x - width / 2
-                        y: szuloKozep.y - height / 2
+                        x: Math.round(szuloKozep.x - width / 2)
+                        y: Math.round(szuloKozep.y - height / 2)
                         rotation: 0
                         scale: photoArea.fokuszKep.scale
                         transformOrigin: Item.Center

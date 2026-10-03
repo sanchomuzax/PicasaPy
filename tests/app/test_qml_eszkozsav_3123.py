@@ -197,12 +197,13 @@ class TestGeometria:
     def test_tiltnel_az_alkalmaz_balra_a_megse_jobbra_all(
         self, betoltott_tilt
     ):
-        """A #69 felvétel sorrendje és 5 px-es gombköze maradjon."""
+        """A képponton mért 11/5 px-es köz és a gombok sorrendje maradjon."""
         apply = _gomb(betoltott_tilt, "tiltApplyButton")
         cancel = _gomb(betoltott_tilt, "tiltCancelButton")
 
-        assert apply.property("x") == 267 + 5
-        assert cancel.property("x") == 267 + 5 + 82 + 5
+        # A közbetét egész pixeles; a renderelt, látható rést külön pixelteszt méri.
+        assert apply.property("x") == 267 + 11
+        assert cancel.property("x") == 267 + 11 + 82 + 5
 
 
 class TestSzinek:

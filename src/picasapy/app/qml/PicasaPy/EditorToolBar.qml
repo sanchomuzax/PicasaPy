@@ -35,7 +35,8 @@ import QtQuick
 // A `Property escapekey 1` a Mégse gombon áll: az Esc azt süti el.
 //
 // #3234: a sávban egy PARAMÉTER-CSÚSZKA is ül (`tool_slider_container`
-// 267 × 28, `toolslider/rect` 253 × 28 az x = 7-en, `thumb` 16 × 24).
+// 267 × 28, a kattintható `toolslider/rect` 253 × 28 az x = 7-en,
+// `thumb` 16 × 24). A kirajzolt sáv a teljes, 267 px-es konténert kitölti.
 //
 // ⭐ **A csúszka a KIEGYENESÍTÉS (Straighten) átfedéséé.** Az `editpanel.tre`
 // a négy bejegyzést (`toolslider/thumb`, `toolslider/toolslider`,
@@ -68,10 +69,13 @@ Item {
     readonly property int gombMagassag: 28
     //: #4037: a #69 felvételen 5 háttérképpont marad a két gombkeret között.
     readonly property int koz: 5
+    //: A job-69 4. képén a sáv és az Alkalmaz között 11 px mérhető; a két
+    //: gomb közti, külön mért 5 px-es köz változatlan marad.
+    readonly property int csuszkaAlkalmazKoz: 11
 
-    //: #3234: MÉRT csúszka-geometria (`respack.yt`). A konténer 267, a
-    //: sáv 253 az x = 7-en (a két oldalon 7-7 képpont marad), a fogantyú
-    //: 16 × 24 — a `toolslider` saját fogantyú-mérete, nem a többi csúszkáé.
+    //: #3234: MÉRT csúszka-geometria (`respack.yt`). A kattintható foglalat
+    //: 253 px az x = 7-en, a 267 px-es konténerben; a sáv a teljes
+    //: konténert tölti ki. A fogantyú 16 × 24 px.
     readonly property int csuszkaKonteterSzelesseg: 267
     readonly property int csuszkaSavSzelesseg: 253
     readonly property int csuszkaSavBehuzas: 7
@@ -99,7 +103,8 @@ Item {
     signal csuszkaMozgott(real ertek)
     signal csuszkaElengedve(real ertek)
 
-    implicitWidth: (sav.vanCsuszka ? csuszkaKonteterSzelesseg + koz : 0)
+    implicitWidth: (sav.vanCsuszka
+        ? csuszkaKonteterSzelesseg + csuszkaAlkalmazKoz : 0)
         + 2 * gombSzelesseg + koz
     implicitHeight: gombMagassag
     width: implicitWidth
@@ -169,8 +174,6 @@ Item {
         spacing: sav.koz
         layoutDirection: Qt.LeftToRight
 
-        //: #3234: a csúszka BALRA áll, a gombok jobbra (`m_offsetLTR` a
-        //: konténeren, `m_offsetR` a gombokon).
         Item {
             objectName: "toolSliderContainer"
             width: sav.csuszkaKonteterSzelesseg
@@ -194,6 +197,10 @@ Item {
                 grooveColor: sav.kitoltesSzin
                 grooveBorderColor: sav.keretSzin
                 grooveBorderWidth: 2
+                grooveExtension: sav.csuszkaSavBehuzas
+                //: A job-69 4. képének mért sarkai 7,0–7,5 px-es sugarat adnak.
+                grooveRadius: 7
+                showTicks: false
                 handleWidth: sav.csuszkaFogantyuSzelesseg
                 handleHeight: sav.csuszkaFogantyuMagassag
                 from: sav.csuszkaMin
@@ -207,6 +214,16 @@ Item {
             }
         }
 
+        //: A sor alapköze 5 px, a közbetét 1 px; így a látható rés 11 px,
+        //: és a csúszka, az Alkalmaz, valamint a Mégse egész pixelre esik.
+        Item {
+            objectName: "tiltApplyGapSpacer"
+            width: sav.vanCsuszka
+                ? sav.csuszkaAlkalmazKoz - 2 * sav.koz : 0
+            height: sav.gombMagassag
+            visible: sav.vanCsuszka
+        }
+
         //: #4027: balról jobbra Alkalmaz, majd Mégse — ahogy a Picasában.
         SavGomb {
             id: applyGomb
@@ -215,6 +232,7 @@ Item {
             buttonEnabled: sav.applyEnabled
             onButtonClicked: sav.applyClicked()
         }
+
         SavGomb {
             id: cancelGomb
             objectName: sav.tool + "CancelButton"
