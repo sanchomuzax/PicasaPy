@@ -89,11 +89,13 @@ class TestPanelFixedWidth:
         qt_app.processEvents()
         assert panel.property("implicitWidth") == 280
 
-    def test_photo_viewer_source_reserves_280_for_the_panel(self):
-        """A PhotoViewer.qml a bal panel-Rectangle-t 280px-re állítja —
-        forrás-szintű ellenőrzés (a teljes PhotoViewer betöltése a
-        `qml_app` fixtúrát igényelné, ld. test_viewer.py mintája)."""
-        assert "Layout.preferredWidth: 280" in _VIEWER_QML_SOURCE
+    def test_photo_viewer_wrapper_283_a_paneltartalom_280(self):
+        """A 283 px-es külső fiókban az EditorPanel tartalma 280 px marad."""
+        bal_panel_blokk = blokk_horgonyra(
+            _VIEWER_QML_SOURCE, 'objectName: "viewerLeftDrawer"'
+        )
+        assert "Layout.preferredWidth: 283" in bal_panel_blokk
+        assert "anchors.rightMargin: 3" in bal_panel_blokk
 
     def test_no_leftover_scaled_190_width_in_source(self):
         """Regresszió-őr: a #405-ös hibás, ablakarányosan leskálázott
@@ -114,8 +116,8 @@ class TestPanelFixedWidth:
         bal_panel_blokk = blokk_horgonyra(
             _VIEWER_QML_SOURCE, 'objectName: "viewerLeftDrawer"'
         )
-        assert "Layout.preferredWidth: 280" in bal_panel_blokk, (
-            "az őr elcsúszott: a bal panel blokkjában a 280 sincs meg"
+        assert "Layout.preferredWidth: 283" in bal_panel_blokk, (
+            "az őr elcsúszott: a bal fiók 283 px-es külső mérete hiányzik"
         )
         assert "Layout.preferredWidth: 190" not in bal_panel_blokk
 

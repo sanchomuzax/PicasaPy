@@ -277,9 +277,14 @@ def test_a_kiegyenesites_sor_abszolut_szeleit_a_kirajzolt_kep_kozepehez_meri(
         # QML-geometria (toolbar.y) őrzi; a képpontmaszk önmagában nem elég.
         # Olyan ablakmagasságot keresünk, ahol a nyers y törtrésze észlelhető.
         y_talalat = None
-        for magassag in range(1015, 1040):
+        # A #4063 óta a fit nézet egész képponton ül, ezért a tört y-t a
+        # függőleges pásztázás tört eltolása adja (mint az x-kontrollnál).
+        for magassag, pan_y in (
+            (m, p) for m in range(1015, 1040) for p in (0.0, 0.25, 0.5, 0.75)
+        ):
             window.setProperty("width", 1279)
             window.setProperty("height", magassag)
+            viewer.setProperty("panY", pan_y)
             _folyamat(qt_app)
             kep_alja = _ablak_kep_bounds(photo)[3]
             skala = float(photo.property("scale"))
@@ -291,6 +296,7 @@ def test_a_kiegyenesites_sor_abszolut_szeleit_a_kirajzolt_kep_kozepehez_meri(
                 y_talalat = nyers_y
                 break
         assert y_talalat is not None, "nincs olyan ablakmagasság, ahol a nyers y tört"
+        viewer.setProperty("panY", 0.0)
         round_y = _js_round(y_talalat)
         toolbar.setProperty("y", round_y)
         _folyamat(qt_app)

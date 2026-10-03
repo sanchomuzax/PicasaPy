@@ -186,8 +186,12 @@ def nyitott_nezo(qml_app, qt_app, tmp_path):
     edit_controller = engine.rootContext().contextProperty("editController")
     assert edit_controller is not None, "az editController nincs a QML-kontextusban"
 
-    kep = np.full((160, 320, 3), 200, dtype=np.uint8)
-    kep[:40, :] = 255
+    # A kis (320×160-as) kép az új #4063 szabály szerint 1:1-ben jelenne
+    # meg, és nem töltené ki a színmód mintavételi foltját. A teszt itt a
+    # képpontonkénti megjelenítési módot vizsgálja, ezért a forrás legyen
+    # nagyobb a nézőterületnél, 2:1 arányban.
+    kep = np.full((600, 1200, 3), 200, dtype=np.uint8)
+    kep[:150, :] = 255
     assert cv2.imwrite(
         str(tmp_path / "kepek" / "a.jpg"), kep, [int(cv2.IMWRITE_JPEG_QUALITY), 100]
     )
@@ -314,8 +318,8 @@ def _egyenletes_ab_kepek(lib) -> None:
     nézet mindkét fele ugyanazt a HATTER/FEHER mintát mutatja, így a
     projektor-mód hatása mindkét oldalon UGYANAZZAL a várt színnel
     ellenőrizhető (#3837)."""
-    kep = np.full((160, 320, 3), 200, dtype=np.uint8)
-    kep[:40, :] = 255
+    kep = np.full((600, 1200, 3), 200, dtype=np.uint8)
+    kep[:150, :] = 255
     for nev in ("a.jpg", "b.jpg"):
         assert cv2.imwrite(
             str(lib / nev), kep, [int(cv2.IMWRITE_JPEG_QUALITY), 100]

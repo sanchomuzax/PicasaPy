@@ -3032,6 +3032,21 @@ párral képzett hányados (`0x00a60199`, `0x00a601b4`).
 | `0.5` | `r` | **valódi méret, 100 %** *(a `1to1` gomb — #2305)* |
 | `1.0` | `4·r` | **400 %** |
 
+### #4063 — a kis kép illesztése nem nagyít fel
+
+A job-69 4. felvételén a **800 × 800 px-es** fotó a nézőterületen belül
+**1:1 méretű**: a kirajzolt szélei x=382…1181, y=88…887; a kép közepe
+(781,5; 487,5). A terület nagyobb a képnél, ezért az illesztés nem növeli a
+fotót. Nagyobb forráskép továbbra is a teljes területbe kicsinyül.
+
+Ennek megfelelően az illesztett nézet mérete tengelyenként a forrásméret és
+az elérhető illesztett méret közül a kisebb. A `PhotoViewer.qml` ezt az
+`Image` elem méretével tartja be: ha a forrás mindkét irányban elfér, az
+elem a forrás méretű marad; különben a meglévő `PreserveAspectFit` dobozt
+használja. Így a 0-s nagyítási állapot a kis fotót 1:1-ben, a nagyot
+területhez illesztve mutatja. A platformonkénti legfeljebb 1 px raszter-
+eltérést a #4063 kimeneti teszt tűréssel kezeli.
+
 ⇒ **`r` = a valódi méret és az illesztett méret aránya** (azaz
 `kép mérete ÷ nézet mérete`). Ez nem feltevés, hanem a két **mért** rögzített
 pontból következik: a `0.5`-nél a skála definíció szerint a 100 %-ot adja, a
@@ -3556,7 +3571,7 @@ Mérve három képen (picasa-colab-jobs #69, #70, #71; ablak 1280 × 1005):
 | 768 × 512, 1:1 (#70/12) | x 398…1165, y 232…743 | x = 441, 485, … 1145 | y = 243, 287, … 727 |
 | 1024 × 1024, kicsinyítve (#71/9) | x 378…1184, y 84…889 | x = 397, 441, … 1145 | y = 111, 155, … 815 |
 
-A vonalak mindhárom képen **ugyanazokon a képernyőpontokon** futnak, pedig a harmadik kép középpontja fél, illetve egy képponttal máshova esik. A háló tehát nem a kép kerekített helyéhez, hanem a **kép-terület** (a `previewimage`, amelyben a kép középre kerül) középpontjához igazodik. Ez a terület ebben az ablakban x 283…1279 (a bal panel széle `282`-ig, mérve), y 79…895 (az eszköztár alsó éle `78`-ig, a képaláírás-sáv `895`-től, mérve #70/15-ön) — közepe `(781,5; 487,5)`. A 498 × 306-os réteg bal felső sarka, csonkolva:
+A vonalak mindhárom képen **ugyanazokon a képernyőpontokon** futnak, pedig a harmadik kép középpontja fél, illetve egy képponttal máshova esik. A háló tehát nem a kép kerekített helyéhez, hanem a **kép-terület** (a `previewimage`, amelyben a kép középre kerül) középpontjához igazodik. Ez a terület ebben az ablakban x 283…1279 (a bal külső fiók 283 px széles: a 280 px-es `EditorPanel`-tartalom mellett a fiókon belüli jobb margó 3 px; a szürke mező x=283-nál kezdődik), y 79…895 (az eszköztár alsó éle `78`-ig, a képaláírás-sáv `895`-től, mérve #70/15-ön) — közepe `(781,5; 487,5)`. A 498 × 306-os réteg bal felső sarka, csonkolva:
 
 ```
 x₀ = trunc(781,5 − 249) = 532      y₀ = trunc(487,5 − 153) = 334

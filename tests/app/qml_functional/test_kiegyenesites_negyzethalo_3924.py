@@ -758,20 +758,23 @@ def test_a_paratlan_meretu_kep_nem_mozditja_el_a_racsot(
     _assert_rgb(kep, vonal_ures, (0, 0, 0))
 
 
-def test_tort_illesztesu_700x467_kepen_mindket_iranyu_vonal_megjelenik(
+def test_tort_illesztesu_nagy_kepen_mindket_iranyu_vonal_megjelenik(
     qml_app_negyzet_kepek, qt_app, tmp_path
 ):
     window, controller, _ = qml_app_negyzet_kepek
-    _forrasok(controller, masodik_meret=(700, 467), masodik_szin="black")
+    # A 700×467-es kép kisebb a Kiegyenesítés nézőterületénél, ezért a
+    # #4063 szerinti 1:1-es illesztés nem ad tört méretet. Nagyobb forrás kell
+    # a tört PreserveAspectFit és a rács két irányú raszterpróbájához.
+    _forrasok(controller, masodik_meret=(1400, 934), masodik_szin="black")
     _beallit_ablak(window, qt_app)
     _nezobe_lep(window, qt_app, index=1)
     image = _item(window, "viewerImage")
     assert image.property("paintedHeight") % 1 != 0, (
-        "a 700×467-es próbának tört illesztési magasságot kell adnia"
+        "a nézőterületnél nagyobb próbának tört illesztési magasságot kell adnia"
     )
     area = _item(window, "viewerPhotoArea")
     _kattint(window, _item(window, "editToolTilt"), qt_app)
-    racsos = _felvetel(window, tmp_path / "700x467-tort-illesztes.png")
+    racsos = _felvetel(window, tmp_path / "1400x934-tort-illesztes.png")
 
     _assert_racs_csempe(racsos, area, image, (0, 0, 0))
 

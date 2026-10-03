@@ -1508,13 +1508,11 @@ Rectangle {
                 id: viewerNavigatorRow
                 objectName: "viewerNavigatorRow"
                 anchors.verticalCenter: viewerTopBar.verticalCenter
-                //: #3663 (átnézés, 2. kör): 5 px — a referencián mért
-                //: rések (5/10/16 px, `ui-audit-editor.md` 3/b.1)
-                //: átlagához közelebb áll, mint az eredeti `RowLayout`
-                //: 8 px-es alapértelmezése; 1280 px-en, öt fotós mappával
-                //: mérve mind a négy vizsgált szakasz (▶ vége, szegmens,
-                //: fókuszváltó, elrendezés-váltó) ±8 px-en belülre esik.
-                spacing: 5
+                //: #4063: a mért 1280 px-es sáv hézagai különböznek:
+                //: Play/nyilak/szalag 2 px, ▶ és elrendezéscsoport 16 px,
+                //: a csoport gombjai között 10, majd 5 px (`ui-audit-editor.md`
+                //: 3/b.1). A közös rés 2 px, a maradékot az elemek margója adja.
+                spacing: 2
                 //: ⚠️ a `photoArea.x` a SAJÁT szülőjéhez (a „fő
                 //: képterület” `Rectangle`-höz) képest helyi — az a
                 //: `leftDrawer` UTÁN áll ugyanabban a `RowLayout`-ban,
@@ -1527,6 +1525,11 @@ Rectangle {
                 //: kommentjét).
                 readonly property real fototeruletKozepe:
                     leftDrawer.width + photoArea.x + photoArea.width / 2
+                //: A referencián a 215 px-es filmszalag közepe kb. 4 px-cel
+                //: balra van a képmező közepétől; a mellette álló nyíl vége
+                //: így x=917-re, a jobb oldali csoport x=933-ra esik.
+                readonly property real filmszalagKozepe:
+                    fototeruletKozepe - 4
                 //: a `filmstrip.x`/`.width` a `filmstrip` SAJÁT (a sorhoz
                 //: képest helyi) pozíciója/szélessége — ebből adódik, hova
                 //: kell tolni a TELJES sort, hogy a szalag közepe essen a
@@ -1534,7 +1537,7 @@ Rectangle {
                 x: Math.max(
                        viewerTopBarLeftGroup.x + viewerTopBarLeftGroup.width + 12,
                        Math.min(
-                           fototeruletKozepe - filmstrip.x - filmstrip.width / 2,
+                           filmszalagKozepe - filmstrip.x - filmstrip.width / 2,
                            viewerTopBar.width - width - 8))
                 PicasaButton {
                     objectName: "viewerPlayButton"
@@ -1611,7 +1614,8 @@ Rectangle {
                     readonly property int mappaKezdet: mappaSav[0]
                     readonly property int mappaDarab: mappaSav[1]
 
-                    Layout.preferredWidth: Math.min(7, mappaDarab) * 44
+                    // A referencia 5 képes mappaszalagja ~215 px (#3663).
+                    Layout.preferredWidth: Math.min(7, mappaDarab) * 43
                     Layout.preferredHeight: 38
                     orientation: ListView.Horizontal
                     model: mappaDarab
@@ -1701,6 +1705,8 @@ Rectangle {
                 //: hivatalos magyar buboréksúgókkal.
                 Row {
                     objectName: "viewerLayoutGroup"
+                    // 2 px közös rés + 14 px margó = a mért 16 px az előző nyíl után.
+                    Layout.leftMargin: 14
                     //: #3663 (átnézés, 2. kör): a szegmens-hármas MÉRT
                     //: teljes szélessége 114 px (933–1047) — a `spacing:0`
                     //: és a 38 px-es szegmensszélesség adja ki pontosan
@@ -1759,6 +1765,8 @@ Rectangle {
                 //: — a korábbi 26 px alig volt olvasható/kattintható.
                 LayoutSegment {
                     objectName: "viewerSwapFocus"
+                    // 2 px közös rés + 8 px margó = 10 px köz a szegmens után.
+                    Layout.leftMargin: 8
                     //: #885: a `.tre` `swap_2up_focus`-én NINCS `mousedown` —
                     //: felengedésre sül el, a három elrendezés-váltóval
                     //: ellentétben.
@@ -1784,6 +1792,8 @@ Rectangle {
                 //: (1096–1130).
                 LayoutSegment {
                     objectName: "viewerSwapLayout"
+                    // 2 px közös rés + 3 px margó = 5 px köz a fókuszgomb után.
+                    Layout.leftMargin: 3
                     //: #885: a `.tre` `swap_2up_layout`-én NINCS `mousedown` —
                     //: felengedésre sül el, a három elrendezés-váltóval
                     //: ellentétben.
@@ -1826,9 +1836,10 @@ Rectangle {
             Rectangle {
                 id: leftDrawer
                 objectName: "viewerLeftDrawer"
-                // #411: az EditorPanel.qml implicitWidth-ével összhangban —
-                // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
-                Layout.preferredWidth: 280
+                // #4063: a 280 px-es panelsávhoz 3 px-es belső jobb margó
+                // tartozik, ezért a teljes bal fiók 283 px széles; innen
+                // indul a referencia szürke képmezeje.
+                Layout.preferredWidth: 283
                 Layout.fillHeight: true
                 // #641: itt NINCS `Layout.minimumHeight`. A #628 azt tette ide,
                 // de az visszafelé sült el: a doboz nem zsugorodott a cellára,
@@ -1860,6 +1871,7 @@ Rectangle {
                                  ? photoArea.fokuszKep.paintedWidth
                                    / photoArea.fokuszKep.paintedHeight
                                  : 4 / 3
+                    anchors.rightMargin: 3
                     // Visszavonás/Újra — a controller undo-verméből (#59).
                     // #465: a KÉSZ feliratot a controller adja
                     // (`edit_action_names` névtár), hogy a lánc minden
@@ -2176,7 +2188,13 @@ Rectangle {
                     objectName: "viewerPhotoArea"
                     anchors.fill: parent
                     anchors.margins: 14
-                    anchors.bottomMargin: 30
+                    // #4063, job-69: a Kiegyenesítés nézőterülete a
+                    // teljes képmezőhöz igazodik. A korábbi 14/30 px-es
+                    // felső/alsó margó 776 px-re szűkítette a 800-as képet,
+                    // és 5,5 px-szel feljebb vitte a középpontot. A 0/5 px
+                    // margó 815 px magas teret és (781,5; 487,5) közepet ad.
+                    anchors.topMargin: 0
+                    anchors.bottomMargin: 5
                     // #6 utójavítás (felhasználói hibajelzés): a nagyított
                     // kép NE lógjon ki a képterületből a bal panel / a
                     // felső sáv / a felirat-sor fölé — a QML alapból nem
@@ -2237,6 +2255,25 @@ Rectangle {
                                 : 0
                             readonly property var doboz: viewer.illesztesiDoboz(
                                 parent.width, parent.height, kepArany)
+                            // A „fit” az eredetiben sem nagyítja fel a
+                            // megjelenítési területnél kisebb fotót: ilyenkor
+                            // az Image maga a forrás méretét kapja, a közös
+                            // fit-dobozban középre igazítva. Nagyobb képnél a
+                            // PreserveAspectFit változatlanul a teljes
+                            // megjelenítési területhez méretez.
+                            readonly property real fitBoxWidth:
+                                iniSteps % 2 ? doboz.mag : doboz.szel
+                            readonly property real fitBoxHeight:
+                                iniSteps % 2 ? doboz.szel : doboz.mag
+                            readonly property real forrasSzel:
+                                iniSteps % 2 ? implicitHeight : implicitWidth
+                            readonly property real forrasMag:
+                                iniSteps % 2 ? implicitWidth : implicitHeight
+                            readonly property bool fitKepEredetiMeretben:
+                                viewer.zoomValue === 0
+                                && forrasSzel > 0 && forrasMag > 0
+                                && forrasSzel <= fitBoxWidth
+                                && forrasMag <= fitBoxHeight
                             anchors.centerIn: parent
                             anchors.horizontalCenterOffset: doboz.dx
                                 + (viewer.balFokusz ? viewer.panX : 0)
@@ -2244,8 +2281,10 @@ Rectangle {
                                 + (viewer.balFokusz ? viewer.panY : 0)
                             scale: viewer.balFokusz ? viewer.zoomFactor : 1
                             transformOrigin: Item.Center
-                            width: iniSteps % 2 ? doboz.mag : doboz.szel
-                            height: iniSteps % 2 ? doboz.szel : doboz.mag
+                            width: fitKepEredetiMeretben
+                                ? forrasSzel : fitBoxWidth
+                            height: fitKepEredetiMeretben
+                                ? forrasMag : fitBoxHeight
                             rotation: iniSteps * 90
                             //: #3014/#3187: AB módban itt a JELENLEGI kép áll
                             //: (#3773: a bal a `currentIndex`-et mutatja, ld.
@@ -2372,6 +2411,22 @@ Rectangle {
                                 : 0
                             readonly property var doboz: viewer.illesztesiDoboz(
                                 parent.width, parent.height, kepArany)
+                            // #4063: a fit ne nagyítsa fel a területnél
+                            // kisebb fotót; a nagyobb kép továbbra is a teljes
+                            // dobozba illeszkedik.
+                            readonly property real fitBoxWidth:
+                                iniSteps % 2 ? doboz.mag : doboz.szel
+                            readonly property real fitBoxHeight:
+                                iniSteps % 2 ? doboz.szel : doboz.mag
+                            readonly property real forrasSzel:
+                                iniSteps % 2 ? implicitHeight : implicitWidth
+                            readonly property real forrasMag:
+                                iniSteps % 2 ? implicitWidth : implicitHeight
+                            readonly property bool fitKepEredetiMeretben:
+                                viewer.zoomValue === 0
+                                && forrasSzel > 0 && forrasMag > 0
+                                && forrasSzel <= fitBoxWidth
+                                && forrasMag <= fitBoxHeight
                             anchors.centerIn: parent
                             anchors.horizontalCenterOffset: doboz.dx
                                 + (viewer.balFokusz ? 0 : viewer.panX)
@@ -2380,8 +2435,10 @@ Rectangle {
                             scale: viewer.balFokusz ? 1 : viewer.zoomFactor
                             transformOrigin: Item.Center
                             // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
-                            width: iniSteps % 2 ? doboz.mag : doboz.szel
-                            height: iniSteps % 2 ? doboz.szel : doboz.mag
+                            width: fitKepEredetiMeretben
+                                ? forrasSzel : fitBoxWidth
+                            height: fitKepEredetiMeretben
+                                ? forrasMag : fitBoxHeight
                             rotation: iniSteps * 90
                             //: #3877: a forrás és a forrásméret EGYÜTT
                             //: íródik — ld. `viewer._betolt`; a pár és a
@@ -3100,7 +3157,10 @@ Rectangle {
                         readonly property point szuloKozep:
                             parent.mapFromItem(
                                 null, kepernyoKozep.x, kepernyoKozep.y)
-                        x: Math.round(szuloKozep.x - width / 2)
+                        //: #4063: a fél pixeles képmező-középnél a kerekítés
+                        //: jobbra vinné az egész képpontos sávot; lefelé
+                        //: kerekítve a 447 px-es sáv középpontja is 781,5.
+                        x: Math.floor(szuloKozep.x - width / 2)
                         y: Math.round(szuloKozep.y - height / 2)
                         rotation: 0
                         scale: photoArea.fokuszKep.scale
@@ -3811,8 +3871,12 @@ Rectangle {
                     objectName: "captionBar"
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    //: MÉRT magasság: a felvételen a csík y 906…926 (21 px).
+                    //: #4063: a képfelirat sora a nézőterület ALATT kezdődik
+                    //: (job-69: y=895), nem az alsó sáv előtt 21 px-cel.
+                    //: A jobb oldali külső tartó 16 px-rel lejjebb ér, mint
+                    //: a `photoArea`; a korábbi alsó horgony ezért a gombsort
+                    //: is letakarta a nézőterület utolsó 16 képpontján.
+                    y: photoArea.mapToItem(parent, 0, photoArea.height).y
                     height: 21
                     visible: viewer.captionVisible
 

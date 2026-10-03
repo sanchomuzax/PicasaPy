@@ -11,6 +11,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - A Vámpírszem festett vonásainak ini-modellje elkészült: a `.picasa.ini` vonás-sorai veszteség nélkül beolvashatók és kiírhatók (a felülethez még nem kapcsolódik; #4097).
 - A Kiegyenesítés eszközsorának tesztjei mostantól a sor abszolút képernyő-helyét is őrzik, és a rés mérése a kép aljának geometriájából történik (#4087).
 - A színátmenetes szűrők köztes színei a Picasa igazolt keverési képletét követik (#4092).
+- Kiegyenesítés Alkalmaz után a Visszavonás gomb azonnal aktívvá válik, és megnevezi a lépést (#4063).
+- A néző bal panelje és képmezője a Picasa méretére igazodik; a kisebb fotók 1:1 méretben jelennek meg (#4063).
 
 ## [0.8.666] – 2026-10-03
 

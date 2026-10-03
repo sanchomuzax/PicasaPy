@@ -168,9 +168,13 @@ cellaszélesség) egyben változna, ezért külön jegyet érdemel.
 > paneljéről és sávjairól is — azok is fixek.) A #405-ös
 > kör tévesen ablakarányosan skálázta le 190px-re; a felhasználó
 > screenshot-összevetése (~955px széles ablaknál ~275px-es eredeti panel)
-> bizonyította a hibát. `EditorPanel.qml` `implicitWidth: 280` és
-> `PhotoViewer.qml` `Layout.preferredWidth: 280` — mindkettő állandó,
-> semmilyen ablakszélesség-számítás nem érintheti.
+> bizonyította a hibát. #4063 a két határt pontosította a job-69
+> képernyőképe alapján: az `EditorPanel.qml` tartalma továbbra is fix
+> **280 px**, a `PhotoViewer.qml` külső `viewerLeftDrawer` fiókja pedig a
+> fiókon belüli 3 px-es jobb margóval együtt **283 px**; a szürke képmező
+> x=283-nál kezdődik. A QML-ben az `EditorPanel` 3 px-es belső jobb margóval
+> marad 280 px széles. Egyik méretet sem szabad az ablak szélességéből
+> számolni.
 
 ## Komponens-leltár és állapotok
 
