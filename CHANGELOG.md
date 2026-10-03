@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Nagyított nézetben is használható az ecset, a vörösszem, a retusálás, a szöveg és az arcjelölés; az eszköz nélküli húzás pásztáz, kettős nézetben pedig kattintással váltható a fókusz (#4083).
+
 ## [0.8.667] – 2026-10-03
 
 - A Kiegyenesítés Alkalmaz után a Visszavonás gomb azonnal aktívvá válik, és megnevezi a lépést (#4063).
