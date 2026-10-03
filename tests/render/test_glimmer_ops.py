@@ -1,6 +1,7 @@
 """#381: a közös Glimmer-primitívek (`glimmer_ops.py`/`glimmer_frame_ops.py`)
 egységtesztjei — görbe-interpoláció, blend-módok, Fade-szabály, maszkolt
 keverés, belső ragyogás, zaj, gradiens-leképezés, keret-primitívek.
+Az átméretezési próbák a #4004 szerinti függőleges maradékot is lefedik.
 """
 
 from __future__ import annotations
@@ -214,7 +215,7 @@ class TestBelsoRagyogasMaszk:
 
 
 class TestResizeColumnPlane:
-    """#3827: a tömör oszlopalakú átméretezés bitre a `resize_plane`-t adja."""
+    """#3827/#4004: a tömör oszlopalakú átméretezés bitre a `resize_plane`-t adja."""
 
     @pytest.mark.parametrize(
         "magas,szeles,cel_w,cel_h",

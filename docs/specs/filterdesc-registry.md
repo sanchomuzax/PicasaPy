@@ -3602,12 +3602,14 @@ a vízszintes léptéket veti össze 1,0-val:
    `0x00a4035d` `call 0xc29990` = `cvttsd2si`). A maradékot
    (`16383 − Σ w_int`) a `csonk(c)` indexű csaphoz adja, a csaptartományba
    szorítva (`0x00a40462`–`0x00a4049f`).
-4. **Az alkalmazó főciklusa:** csatornánként `(Σ w_int · p + 255) >> 14`,
-   telítéssel (`0x00a427b0`–`0x00a4283a`: `imul` az int16 súllyal, `add 0xff`,
-   a `0x3fffff` fölötti és negatív összeg vágva, majd `>> 14`). Ez
-   gyakorlatilag **csonkolás**, nem kerekítés. A függőleges menet utolsó
-   `W mod 4` oszlopára ez a képlet nem érvényes: a skalár és a SIMD maradékág
-   elhagyja a `+255`-öt (ld. 5/c.1).
+4. **Az alkalmazó:** a vízszintes menetben csatornánként
+   `(Σ w_int · p + 255) >> 14`, telítéssel (`0x00a427b0`–`0x00a4283a`:
+   `imul` az int16 súllyal, `add 0xff`, a `0x3fffff` fölötti és negatív
+   összeg vágva, majd `>> 14`). A függőleges menet négyes főciklusa ugyanígy
+   számol, de a sor utolsó `W mod 4` oszlopán a skalár és a SIMD farokútja
+   nem ad hozzá `255`-öt (`0x00a40e40` és `0x00a413f0`, #4004). Az eredmény
+   0..255-re szorítódik. Előbb a vízszintes menet fut, 8 bites köztes képpel,
+   utána a függőleges. Ez gyakorlatilag **csonkolás**, nem kerekítés.
 
 A 3. pont és a 4. pont főciklusa **módfüggetlen**: a nagyításkor futó
 Mitchell-mag súlyai is így lesznek egésszé, és ugyanez az alkalmazó futtatja
@@ -3647,7 +3649,7 @@ nem változik, tehát a lépték 1: a függőleges 0,95-ös zsugorítás is
 | módválasztás | vízszintes cél/forrás ≤ 1 → doboz, egyébként Mitchell | ugyanígy, mindkét tengelyre | — |
 | a doboz | `\|x\| < 0,5`, a léptékkel nyújtva | ugyanígy (`_tengely_sulyok`) | — |
 | súlyok | `csonk(w·16383/Σw)`, a maradék a `csonk(c)` csapé | ugyanígy, egész súlyok | — |
-| kimenet | négyes főciklus: `(Σ w·p + 255) >> 14`; függőleges maradék: `Σ w·p >> 14` | `+255` minden kimeneti oszlopra (`_tengely_menten`) | #4004: függőleges maradékág |
+| kimenet | vízszintesen és függőlegesen a négyes főciklusban `(Σ w·p + 255) >> 14`; a függőleges sorvégi `W mod 4` oszlopban `(Σ w·p) >> 14` (#4004) | ugyanígy, vízszintes menet elöl | — |
 | `PicnikFocalPixelate` | ugyanez a `Resize` | `render/focal.py` a közös `resize_image`-en | — |
 
 **Nálunk (MÉRVE, #3805, 684-es készlet, ΔE a Picasa-exporthoz):**
