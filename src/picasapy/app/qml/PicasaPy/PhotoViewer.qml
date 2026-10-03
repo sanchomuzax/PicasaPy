@@ -3871,12 +3871,8 @@ Rectangle {
                     objectName: "captionBar"
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    //: #4063: a képfelirat sora a nézőterület ALATT kezdődik
-                    //: (job-69: y=895), nem az alsó sáv előtt 21 px-cel.
-                    //: A jobb oldali külső tartó 16 px-rel lejjebb ér, mint
-                    //: a `photoArea`; a korábbi alsó horgony ezért a gombsort
-                    //: is letakarta a nézőterület utolsó 16 képpontján.
-                    y: photoArea.mapToItem(parent, 0, photoArea.height).y
+                    anchors.bottom: parent.bottom
+                    //: MÉRT magasság: a felvételen a csík y 906…926 (21 px).
                     height: 21
                     visible: viewer.captionVisible
 

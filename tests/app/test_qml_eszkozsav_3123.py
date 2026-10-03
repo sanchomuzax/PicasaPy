@@ -398,13 +398,15 @@ class TestAKepFolott:
         alja = sav.property("y") + sav.property("height")
         rajzolt_magassag = kep.property("paintedHeight")
         assert rajzolt_magassag, "a kép nem rajzolódott ki — a mérés alapja hiányzik"
-        kep_alja = (kep.property("height") + rajzolt_magassag) / 2
+        #: #4063: a kis kép 1:1-ben, középre horgonyozva áll, ezért a kép
+        #: saját `y` eltolása is beleszámít (korábban kitöltötte a területet).
+        kep_alja = kep.property("y") + (kep.property("height") + rajzolt_magassag) / 2
         assert abs(kep_alja - alja - 10) <= 0.5, (
             f"a sáv alja {kep_alja - alja:.1f} px-re van a kép aljától a "
             "mért 10 helyett"
         )
         kozep = sav.property("x") + sav.property("width") / 2
-        assert abs(kozep - kep.property("width") / 2) <= 0.5
+        assert abs(kozep - (kep.property("x") + kep.property("width") / 2)) <= 0.5
 
     def test_a_forras_a_MERT_kenyszereket_koveti(self):
         f = (
