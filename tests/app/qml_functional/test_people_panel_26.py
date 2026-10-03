@@ -10,6 +10,8 @@ A fejléc-választó fát (#3566, spec 9/b) valódi kijelöléssel a
 
 from __future__ import annotations
 
+import pytest
+
 from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
 from PySide6.QtTest import QTest
 
@@ -366,9 +368,14 @@ class TestUnnamedAlbumHeader:
             "Unnamed groups of people:"
         )
 
-    def test_one_selected_face_asks_who(self, qml_app, qt_app, tmp_path):
-        """Egy kijelölt arcnál az eredeti egyképes ága fut (9/b, #3566)."""
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_one_selected_face_asks_who(
+        self, qml_app, qt_app, tmp_path, height_delta
+    ):
+        """A mért egysoros névtelenarc-eset fejlécét őrzi (#3566)."""
         window, _controller, _engine = qml_app
+        window.setHeight(window.height() + height_delta)
+        qt_app.processEvents()
         self._open_unnamed_album(window, qt_app, tmp_path, selected=1)
 
         label = _child(window, "peoplePanelHeader")

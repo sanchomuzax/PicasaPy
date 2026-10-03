@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Az Emberek panel egyetlen megnevezett személynél a kijelölt fotók számától függetlenül „Ezen a fotón:” fejlécet mutat, és megőrzi a névtelen eset mért feliratát (#4045).
+
 ## [0.8.667] – 2026-10-03
 
 - A Kiegyenesítés Alkalmaz után a Visszavonás gomb azonnal aktívvá válik, és megnevezi a lépést (#4063).
