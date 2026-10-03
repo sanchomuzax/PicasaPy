@@ -1803,8 +1803,10 @@ Fejlesztés: **#3961**.
   sorrendjében.
 
 **Nem része:** `ImageUniqueID` (a képzése nyitott, C) 1.), az InteropIFD
-**pótlása** (a meglévő megmarad), az APP13 tartalma; a szerkesztetlen,
-átméretezetlen JPEG továbbra is bájthű másolat (nincs rá mérés). Teszt:
+**pótlása** (a meglévő megmarad), az APP13 tartalma. **#4018:** a teljesen
+szerkesztetlen JPEG másolási ágát a bináris igazolja (export-parbeszed.md 13.11),
+de közvetlen üres filters= forrás–export pár nincs a mérőadatban; forrás-Interop
+nélkül ezen az ágon nem keletkezik új Interop IFD. Teszt:
 `tests/export/test_export_metaadat_3961.py`,
 `tests/export/test_export_metaadat_megorzes_3961.py`.
 
@@ -2067,7 +2069,7 @@ előállítása nincs feltárva → **#3987**.
 | | Eredeti | Nálunk (`export_metadata.py`) |
 |---|---|---|
 | `Software`, `Artist`, `ExifVersion` | csak ha hiányzik | csak ha hiányzik — **egyezik** |
-| Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | mindig, ha a forrásnak van mérete | **megvan** (#3989; a tájolt forrás mérete nincs mérve) |
+| Interop IFD (`0100`, `0x1001`/`0x1002` = a forrás mérete) | renderelt JPEG-exportnál, ha a forrásnak van mérete; a CopyFileW ág megőrzi a forrás állapotát | **megvan** (#3989; a tájolt forrás mérete nincs mérve) |
 | IFD1 bélyegkép + `0x103`/`0x11a`/`0x11b`/`0x128` | mindig | a #3998 óta új, a kimenetből épülő bélyegkép (16. H); a forrás IFD1-e sosem kerül át |
 | GPS `0x0000`/`0x0005` pótlása, csak verziót tartalmazó al-IFD kivétele | igen (erős, nem mért) | nincs |
 
@@ -2294,12 +2296,19 @@ fennáll.
 ⚠️ A mintavételezés sem egységes: a 684-es két kimenet 4:4:4, a `merokit-2` és a
 `meroszett` kimenetei 4:2:0; a mi kimenetünk mindig 4:2:0 (#4017).
 
-**Következmény:** ha a `filters=` lánc nem üres, de az olvasó egyetlen műveletet
-sem adott vissza, az export újrakódol; utána a szokásos metadata-út írja az
-Interop IFD-t. Az üres `filters=` lánc továbbra is bájthű másolat. Nem mérve (#4018):
-a teljesen szerkesztetlen kép, a csak `crop64`-előzményt tartalmazó (`crop=` nélküli)
-lánc és a `;` lánc — ezekre a mostani döntés a mi feltevésünk.
+**Következmény (#4018):** ha a nem üres filters-láncból az olvasó egyetlen
+műveletet sem adott vissza, az export akkor is újrakódol; utána a szokásos
+metadata-út írja az Interop IFD-t. A Picasa binárisában az üres filters= és
+minden más editmező hiánya a CImageOutput CopyFileW ágára jut
+(export-parbeszed.md 13.11), így a forrás bájtjai és meglévő metaadatai
+maradnak változatlanok. A mérőadat nem tartalmaz ehhez üres filters= exportpárt.
+A Border;sepia lánc Picasa-exportja újrakódolt; a crop64;Vignette láncé
+szintén, bár utóbbi nem izolálja a crop64-et. A bináris külön is jelzi, hogy
+az érvényes crop64 crop= nélkül módosított állapot.
 
-*Bizonyítottsági fok: **megerősített** az újrakódolásra (11/11 mért Picasa-kimenet); a
-regressziós teszt a két 684-es fájlon ellenőrzi a méretet, a DQT-t, a SOF-ot, az
-APP-markereket, a dekódolt képpontokat és az Interop IFD-t.*
+*Bizonyítottsági fok: **megerősített** a nem üres filters-lánc újrakódolására
+(11/11 mért Picasa-kimenet), valamint a másolóágra és módosítottsági feltételeire
+(bináris, export-parbeszed.md 13.11); a szerkesztetlen kimenet bájtegyenlőségére
+nincs közvetlen mérőpár. A regressziós teszt a két 684-es fájlon ellenőrzi a
+méretet, a DQT-t, a SOF-ot, az APP-markereket, a dekódolt képpontokat és az
+Interop IFD.*
