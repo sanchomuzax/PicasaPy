@@ -406,7 +406,34 @@ export 4:4:4-et és új DQT-t ad: a 178 fájlos `meroszett` (2026-08-15) 4:2:0 �
    A `CImageOutput` (`0x0073f320`) virtuális hívásai közül a tényleges JPEG-író és a
    minőség-/mintavételezés-ág nem azonosítható puszta diszasszemblálással.
 
-   Ghidra-kör kell: 0x0073f320 — a virtuális exportútban azonosítsd a JPEG-írót, és vezesd végig a 193-as fokozatot a 4:4:4 mintavételezésig és a mért q=93 DQT-ig.
+   **Bináris részleteredmény (2026-10-03).** A `0x0073eed0` létrehozza a
+   `CImageOutput` objektum `this+0x74` alatti `CExportPrefs` részobjektumát, és
+   megadott beállítás esetén a `0x0073b160` másolórutinnal tölti fel;
+   a `0x0073f320` útvonal `0x007406c6` környékén a minőségértéket (`this+0xab0`),
+   az automatikus jelzőt (`this+0xab4`) és a beállítás meglétének jelzőjét
+   (`this+0xad4`) olvassa. Az exportfolytatás felé a minőség és az automatikus jelző
+   átadása `qemu-i386` alatt is megfigyelhető: Maximális `193/0`, Automatikus `85/1`,
+   Normál `85/0`, Egyéni 95 `95/0`, hiányzó beállítás `85/0` (minőség/jelző).
+   Ez csak a beállítások átadását igazolja, nem a JPEG-író futását.
+
+   A `0x00ad3b30` által használt általános IJG-táblaskálázó a 193-as bemenethez 0,
+   a 93-ashoz 14 skálafaktort ad; a 0-s ág csupa 1-es táblát eredményez, a 14-es
+   ág a `0x00c75260`/`0x00c75360` alaptáblákból a mért q=93 DQT-t. Ezt az
+   utasítások mellett a scaler `qemu-i386` futtatása is megerősíti. Így a közvetlen
+   „193 → ugyanebben a scalerben q=93” magyarázat cáfolt. A `0x00b1f820` külön
+   alapértelmezett 4:2:0 mintavételezést állít be, de egyik megfigyelt hívási út
+   sincs a `CImageOutput` indirekt írójához kötve. A `0x0074079c` indirekt hívásának
+   konkrét célja és a JPEG-beállításai továbbra sincsenek meg.
+
+   A mérőadat-tár `684/ansel__alap.jpg` párjának újraolvasása szintén 4:2:0 forrást,
+   4:4:4 kimenetet és az említett IJG-alaptáblákból q=93-mal előálló DQT-t mutatott.
+   A pár nem rögzíti a választott minőségi fokozatot, ezért ez nem ad fokozat→kimenet
+   hozzárendelést.
+
+   Ghidra-kör kell: 0x0074079c — oldd fel a `0x0073f320` exportút `this+0x60` /
+   `+0x54` objektumán és a `+0x94` virtuális sloton át hívott JPEG-író célját, majd
+   vezesd végig a továbbadott 193-as minőséget és automatikus jelzőt a mintavételezés
+   és a DQT beállításáig.
 
 2. **A tényleges fokozat-beállítás.** Mindkét időszak kimenete (2026-08-15 és 2026-09-04…18) valódi Picasa-kimenet, de
    a beállítás egyikben sincs rögzítve; a README csak előírás, és mindkét időszakban azonos. NINCS MEG a Normál, a Minimális és az
