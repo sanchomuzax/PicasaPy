@@ -8560,6 +8560,64 @@ Két különbség van: (a) a súlyok Rec.601 helyett **Haeberli**-súlyok, mind 
 - **a bíráló tényei:** a két gyerek sorrendje (ColorMatrix, s=-100 a 0x00bbd686-on; majd Resaturate, vtábla 0xcf0578); a 8. rés 0x00bbd500 csak a +0x800 táblát tölti a 0x00bce2f0(szín,(float)i)-vel, a másik hármat nullázza; alapszín 0xFFDDC9AE. A 0x00bce2f0 második felét a bíráló nem vizsgálta — azt az emulált futtatás és a #878 golden három pontja igazolja.
 - **költség:** 104054 token
 
+### I) ⭐ A `Border` élsimított görbéjének fedése és alfája — qemu-kontrollal (2026-10-04, #626)
+
+*Forrás: `0x00aa1840` (görbe-raszterező) · `0x00c29990` (lebegőpontos→egész konverter) · `0x00bbe570` (Border-munkavégző) · `0x009a91a0` (kitöltés) · `0x00aa13b0` (vászon-összeállító) · `0x009ab410` (forrás fölé kompozitor).*
+
+#### 1. Az ív per-pixel fedése
+
+A `0x00aa1840` a görbe belső és külső négyzetes távolságát (`rᵢ²`, `rₒ²`), valamint az aktuális pixel négyzetes távolságát (`q`) használja. `Δ = rₒ² − rᵢ²`; a `0x00cf4310` címen levő `double` pontosan `2²⁴`. A skálát a natív egészre-kerekítő út adja:
+
+```text
+q ≥ rₒ²:             nincs írás
+q ≤ rᵢ²:             teljes fedés (a belső ágban 256-os súly)
+rᵢ² < q < rₒ²:
+    K = rounder(2²⁴ / Δ)
+    C = ((rₒ² − q) · K) >> 16       ; C = 0…255
+```
+
+A `rounder` a `0x00c29990` útja: a bináris adatmező `0x00da1428` alapállapotban nulla, ezért a konverter a `0x00c299c6` ágra megy; a mért qemu-futtatásban az x87 vezérlőszó `0x037f` volt (legközelebbi, párosra kerekítés). A pixel súlya nem felülmintavételezés: a fenti 16 bites fixpontos szorzás közvetlenül az `0x00aa1a74`–`0x00aa1a7d` utasításokból jön.
+
+Részleges fedésnél a forrás alfa-bájtja `A = color >> 24`; `Aₑ = (A·C) >> 8`, majd `I = 255 − Aₑ`. A packed x86-keverő csatornánkénti bájtszabálya:
+
+```text
+R, B = (D·I + S·C) >> 8
+G, A = (D·I >> 8) + (S·C >> 8)
+```
+
+`D` a cél-, `S` a forráscsatorna; ez a különbség az `0x00aa1a9c`–`0x00aa1abb` (R/B) és `0x00aa1ab5`–`0x00aa1ae1` (G/A) utasításcsoportokból következik. Kontrollmérés: `A=0x20`, `C=175`, `D=0xff010101`, `S=0x20010101` esetén a natív részfedés `0xfe010001` — a zöld csatornán a két szorzat külön csonkolódik, vörösön/kéken az összeadás előtti shift nincs.
+
+#### 2. Miért lett a görbe szélén az alfa `0xff`
+
+`0x00bbe570` fő bitmapjét (`EBX`) a `0x009a91a0` tölti fel a külső színnel (`0x00bbe63d`); ugyanezt az `EBX`-et adja át célként az `0x00aa13b0`-nak (`0x00bbe6e8`). Ez az összeállító meghívja a görbe-raszterezőt (`0x00aa14f4`), majd az eredményt a `0x009ab410` kompozitorral erre a célra teszi (`0x00aa162e`). A munkavégző külön egy második lokális bitmapet is `0xff000000`-val tölt fel (`0x00bbe7a1` → `0x009a91a0`, hívás `0x00bbe7b1`), mielőtt a saját `0x00aa1840` hívását végrehajtja (`0x00bbe836`). A kompozitor részleges forrásnál az alfa útját így számolja: `outA = (dstA·(256−srcA) >> 8) + srcA`. `dstA=255` esetén ez bármely 8 bites `srcA`-ra **255**; a `0xaa1840` által a szélen csökkentett forrásalfa tehát a kompozit előtt megmarad, de az átlátszatlan cél fölötti végső alfa `0xff`.
+
+#### 3. QEMU-futtatás — eredeti gépi kód, 9 × 9
+
+A helyi qemu-harness az eredeti `0x009a91a0` → `0x00aa1840` → `0x009ab410` függvényeket futtatta 9 × 9-es bitképen, `center=(4.5, 4.5)`, `param=3.0`, forrás `0x20ffffff`, fekete `0xff000000` cél. Az ELF a `.bt` alatt készült; futtatás: `ulimit -v 6291456` és `timeout 30 qemu-i386`. A `0xffffffff` forrásalfás kontroll **mind a 324 bájtban azonos**; átlátszó céllal a perem alfája viszont `0x01`, `0x0f`, `0x09`, `0x15` értékeket is megtartja.
+
+```text
+ff000000 ff000000 ff000000 ff000000 ff0b0b0b ff000000 ff000000 ff000000 ff000000
+ff000000 ff000000 ff787878 ffffffff ffffffff ffffffff ff6b6b6b ff000000 ff000000
+ff000000 ff484848 ffffffff ffffffff ffffffff ffffffff ffffffff ff353535 ff000000
+ff000000 ffaeaeae ffffffff ffffffff ffffffff ffffffff ffffffff ff9b9b9b ff000000
+ff000000 ffaeaeae ffffffff ffffffff ffffffff ffffffff ffffffff ff9b9b9b ff000000
+ff000000 ff484848 ffffffff ffffffff ffffffff ffffffff ffffffff ff353535 ff000000
+ff000000 ff000000 ff787878 ffffffff ffffffff ffffffff ff6b6b6b ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff0b0b0b ff000000 ff000000 ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+```
+
+#### 4. Eredeti / nálunk / fejlesztői teendő
+
+| | Eredeti, mérve | PicasaPy, olvasva | Teendő |
+|---|---|---|---|
+| Élsimítás | `C=((rₒ²−q)·rounder(2²⁴/Δ))>>16`; R/B és G eltérő egész kerekítési sorrendje fent; a 9 × 9 qemu-kimenet bájtszinten rögzítve | `glimmer_frame_ops.py::_sarok_fedes`: 4 × 4 középpontos részminta; a `draw_border()` RGB-t kever float32-vel, `np.rint`-tel | A `_sarok_fedes` 4 × 4 közelítését cserélje az eredeti 16 bites súlyra és packed-csatorna sorrendre. A 9 × 9 táblázat legyen az izolált rasterizer byte-golden; a lekerekített téglalap négy sarkára ugyanazt a `q`, `rᵢ²`, `rₒ²` rutint alkalmazza. |
+| Alfa | A görbe részleges forrásalfája `Aₑ=(A·C)>>8`; az opaque black cél fölötti `0x009ab410` kompozit végeredménye `0xff` | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol | A belső maszkon/alapképen tesztelje külön `0x20` és `0xff` forrásalfával; opaque végkép alfája mindkettőnél `0xff`, a maszkréteg viszont őrizze meg a `C`-vel súlyozott alfát. |
+
+**Bizonyítottsági fok: megerősített** a fedési képletre és az alfa útjára: az utasításszintű olvasás és az eredeti függvények qemu-futtatása egyezik. **NINCS MEG:** a teljes `Border`-export bájtpontos natív–PicasaPy golden. Ez a 9 × 9-es próba a natív görbe-raszterező és kompozitor izolált kontrollja; a korábbi `border__max` export JPEG-alapú geometriamérése marad az összhatás-kontroll.
+
+**Cáfoló próba:** azt ellenőriztem, hogy a `0x00aa1840` maga állítja-e `0xff`-re a perem alfáját. Átlátszó céllal a qemu-kimenet részleges alfái megmaradnak; csak az opaque black cél fölötti `0x009ab410` után lesz minden kimeneti alfa `0xff`. A hipotézis cáfolva.
+
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
 *A 12. szakasz kimérte a binárisból, hogy az eredeti nem rendez át: a
