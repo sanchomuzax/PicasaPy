@@ -206,6 +206,10 @@ class TestALemezkep:
         _kattints(window, _elem(window, "publishPresentCdGo"))
         celvalaszto = _elem(window, "giftCdTargetDialog")
         assert celvalaszto.property("visible") is True
+        # Elfogadáskor a választó bezárul; nyitva hagyva a CI-n elnyeli a
+        # későbbi kattintást.
+        QMetaObject.invokeMethod(celvalaszto, "close")
+        assert _var(qt_app, lambda: celvalaszto.property("visible") is False)
         QMetaObject.invokeMethod(
             host, "indit", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", cel.as_uri()),
