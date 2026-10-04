@@ -2968,8 +2968,10 @@ három kiolvasható:
 `clamp(128 + floor(Σ/4), 0, 255)`. A skalár ág (`0x00bb7140`) nulla felé
 csonkol, a SIMD-ág (`0x00bb75a0`: `psrad` + `paddd [0x80…]`) lefelé kerekít;
 negatív osztandónál mindkettő 0-ra vág, tehát a kettő azonos. A B, G és R
-csatorna külön számol, az alfa 0xFF. A perem ismétlődik: a sarok- és
-élrészek saját eltolástáblát kapnak (`0x00bb6d1e`–`0x00bb6f23`). A két mag:
+csatorna külön számol, az alfa 0xFF. A sarok- és élszakaszok külön
+eltolástáblát kapnak (`0x00bb6d1e`–`0x00bb6f23`); hogy ezek pontosan melyik
+forrásképpontot használják, a 2026-10-04-i QEMU-kontroll után nyitott kérdés.
+A két mag:
 `direction = 0` („horizontal”) `[−2 0 2; −4 0 4; −2 0 2]`, `direction = 1`
 `[2 4 2; 0 0 0; −2 −4 −2]` (`0x00bb6729`–`0x00bb67fa`).
 
@@ -3006,6 +3008,77 @@ ismétlődő képponttal, `[0, 255]`-re vágva), a 10. lépésben az 5-ös
 a lebegőpontos Sobel ezen a képen ΔE-ben nem válik el (mindkettő 0,493),
 de bitre eltér: a `−2`-es összeg `floor`-ral 127, kerekítve 128 lenne. Őr:
 `tests/render/test_neon_878.py` (független referencia + golden).
+
+#### QEMU-pixelkontroll a Sobel gyermekműveleten (2026-10-04, #626)
+
+*Bizonyítottsági fok: a belső Sobel-kernel képlete a belső képpontokra
+**megerősített** (utasításszintű olvasat + közvetlen natív futtatás egyezik);
+a sarokkezelés és a teljes `EdgeDetectionB`-csővezeték **nyitott**.*
+
+A harness az eredeti i386 `0x00bb6620` Sobel-alkalmazót futtatta QEMU alatt,
+kézzel épített művelet-objektummal és a leírt képleíróval: `+0x04` stride
+képpontban, `+0x08` szélesség, `+0x0c` magasság, `+0x10` BGRA-adatmutató.
+A BGRA-bemenet szorosan csomagolt, alfa=`0xff`; tesztkép 8×5 és 9×5,
+mindkét irány (`direction=0/1`). Ez négy natív gyermekművelet-futtatás, nem a
+teljes `EdgeDetectionB` és nem a `filterdesc.xml`-ből összeállított Neon:
+annak leíró szerinti `detail=50` értéke nem része ennek a közvetlen Sobel-
+hívásnak. A `detail=50` → `100−detail=50` kontrasztút (`0x00bbcdd0`) és a
+közös fixpontos `ColorMatrix`-alkalmazó (`0x008f21a0` → `0x008f2640`) korábbi
+utasításszintű és Neon-exportos bizonyítéka a 4.9-es szakaszban van; ezeket
+ebben a közvetlen gyermekművelet-próbában nem futtattuk.
+
+| natív irány | méret | eltérő bájt / BGRA-bájt | jobb felső: natív BGRA | jelenlegi modell BGRA |
+|---:|---:|---:|---|---|
+| 0 | 8×5 | 3 / 160 | `(122,119,123,255)` | `(142,150,154,255)` |
+| 1 | 8×5 | 3 / 160 | `(116,109,89,255)` | `(122,118,94,255)` |
+| 0 | 9×5 | 3 / 180 | `(122,119,123,255)` | `(142,150,154,255)` |
+| 1 | 9×5 | 3 / 180 | `(116,109,89,255)` | `(122,118,94,255)` |
+
+Mind a négy futásban az összes eltérés kizárólag a felső sor jobb szélső
+képpontjának B/G/R csatornája; minden más képpont és minden alfa-bájt egyezik.
+Az utasításszintű olvasat szerint a `0x00bb68d0` és `0x00bb6ce0` útvonalak
+külön peremeltolás-táblákat építenek, majd a `0x00bb7140` skalár alkalmazó
+csatornánként összegez, `idiv`-vel oszt, és 0…255 közé vág. A közvetlen
+futtatás és a gépikódolvasat tehát a belső számításban egyezik; a peremre
+alkalmazott konkrét mintatérkép nincs levezetve.
+
+**Cáfoló kontroll:** jobb felső sarok körüli, 32 és 64 értékű kék egyképpontos
+impulzusokkal ismételve a különbség továbbra is csak a jobb felső kimeneti
+képpontban jelentkezett. Ez kizárja, hogy a fenti eltérést csak a gradiens
+tesztkép értékei okozzák. A két amplitúdó mindkét szélességen ugyanazt az
+egész együtthatót adta vissza a jobb felső kimeneti pixelben (`kimenet =
+128 + együttható·bemenet/4`):
+
+| forrás a jobb felső célpixelhez képest `(dx,dy)` | `direction=0`: edge-pad modell | `direction=0`: natív QEMU | `direction=1`: edge-pad modell | `direction=1`: natív QEMU |
+|---|---:|---:|---:|---:|
+| (−1, 0) | −6 | 0 | 2 | 4 |
+| (0, 0) | 6 | −2 | 6 | 2 |
+| (−1, 1) | −2 | 4 | −2 | 0 |
+| (0, 1) | 2 | −2 | −6 | −6 |
+
+Ez a jobb felső sarok **mért lokális térképe** 8×5 és 9×5 képen; a másik
+három sarok és a négy él általános leképezése ebből nem következik.
+
+**Fade-kontroll, csak az alacsony szintű keverőn:** a `0x009dc4b0` QEMU-futtatása
+`BlendAlpha=0.5`-tel (`0x00bd0700` által átadott nyers súly 128, a keverőben
+127-re csökkentve), 8×5 és 9×5 méreten a jelenlegi
+`glimmer_ops.alpha_blend(..., 0.5)` RGB-kimenetével 0/120, illetve 0/135
+eltérő bájtot adott. A belső keverő alfa-bájtja 254; a 9×5-ös skalár sorvégi
+ág utolsó oszlopán 255. A `0x00bd0ae5` külső út 255-re állítja a kész kimenet
+alfáját. A Fade 0 (`BlendAlpha=1`) teljes QEMU-futtatása nem történt meg; a
+`0x00bd079a`–`0x00bd07b2` utasítások a BlendAlpha=1 közeli esetben a
+`0x009dc4b0` meghívása előtt korai visszatérést eredményeznek.
+
+**Fejlesztői következmény:** a mostani `_sobel_direction()` `np.pad(...,
+mode="edge")` peremmodellje a natív Sobel-gyermekművelettel a felső jobb
+sarokban bájtra eltér. Ennek a saroknak a mért lokális együtthatói a fenti
+táblában vannak; a másik három sarok és a négy él általános korrekciója
+**NINCS MEG**. A `0x00bb68d0`/`0x00bb6ce0` peremépítő ág és a `0x00bb7140`
+eltolásainak teljes képponttérképe, majd annak bájt-goldenje szükséges. A teljes Blur →
+SimpleColorMatrix → két Sobel/AdjustCurves → Multiply → Fade út natív QEMU-
+összevetése szintén **NINCS MEG**; így a négy valódi, leíróból vett
+paraméterezés és a Fade 0/50 páros-páratlan szélességű elfogadási pont még
+nincs teljesítve. A futtatásminták nem a termékkód vagy tesztfájlok.
 
 #### `TintImageOperation` — FÉNYESSÉG-TARTÓ színezés (2026-08-17, #878)
 
