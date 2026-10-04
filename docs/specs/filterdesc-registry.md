@@ -6323,10 +6323,11 @@ alkalmazza az utolsó oszlopra is.
 
 **Cáfoló próba.** A `qemu-i386` skalárpróba az `8,9 → 8` eredménnyel
 cáfolja a kerekítés-paritást; a sugárpróba a fenti küszöb körüli bemenetekkel
-ellenőrizte a disassemblyből olvasott ágakat. A teljes
-`0x00bb5b60` munkavégzőhöz összeállított qemu-wrapper `R6030 - CRT not
-initialized` hibával állt le, mielőtt pixelkimenetet írt volna. Ez nem
-pixel-golden és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
+ellenőrizte a disassemblyből olvasott ágakat. Az első teljesmunkavégző-próba
+`R6030 - CRT not initialized` hibával állt le; a 2026-10-04-i második kör
+heap-shimekkel túljutott ezen, de a képpontátalakítóban a futás
+szegmentálási hibával végződött (az alábbi alfejezet). Egyik futás sem adott
+pixel-goldent, és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
 elfogadást.
 
 **Fejlesztői eltérés:** a `Steps` törtértékének konverzióját a natív
@@ -6341,6 +6342,62 @@ kvantálója **megerősített** (utasításolvasás + független qemu-i386 futta
 a teljes `QuantizePalette`-kimenet és a `Fade` összetett képpontútja
 **feltételes** (a teljes műveletet nem sikerült qemu alatt futtatni, és
 nincs négykombinációs byte-golden).*
+
+### A teljes munkavégző qemu-indítása — CRT-heap shim, kimenet továbbra is nyitott (2026-10-04, #626)
+
+A helyi harness másolata a `.bt/harness-626q/` könyvtárban készült; a privát
+`~/picasapy-agent/eszkozok/qemu_harness/` eredeti fájljaihoz nem nyúltam. A PE
+belépési pont `0x00bef35e` a `___security_init_cookie`
+(`0x00bf0b56`) után a `___tmainCRTStartup` (`0x00bef17e`) útjára tér; ez az
+indítás hívja a `__heap_init` (`0x00bf0904`), `__mtinit` (`0x00bf0725`),
+`__ioinit` (`0x00beffc8`) és `__cinit` (`0x00bef5d3`) rutinokat. A teljes
+alkalmazásindítás helyett a harness másolata a `_malloc` (`0x00bf426f`),
+`_free` (`0x00bf219e`), `__calloc_crt` (`0x00bf226c`), `__realloc_crt`
+(`0x00bf22b4`), `__recalloc_crt` (`0x00bf22ff`) és a Picasa-allokátor
+(`0x0097c5d0`) belépési pontjait egy futásonként új, determinisztikus
+bump-arénára irányítja. A `free` no-op; a blokk mérete a `realloc`/
+`recalloc` számára a blokk előtt tárolódik. Az IAT `InterlockedIncrement`/
+`InterlockedDecrement` hívásai is lokális assembly-shimre mutatnak. A
+`0x00d67838` globális dword négy bájtra nullázását a harness szintén
+elvégzi; e globális változó szerepét külön nem izoláltam.
+
+Az eredeti `R6030` üzenet a shimek telepítése után már nem jelent meg: a futás
+elérte a `0x00bcb2f0` képpontátalakítót. A `q626-final` futás naplójának
+utolsó állapota `EIP=0x00bcb399`, `EDI=0x50230000`; a következő utasítás
+`0x00bcb3a0` a `[EDI+2]` bájtot olvassa. Ez a cím nem a wrapper által megadott
+`0x10060000` bemeneti puffer vagy a shim `0x10100000`-tól induló arénája;
+a mutató forrása nem azonosított.
+Ugyanez a futás `qemu-i386` alatt `SIGSEGV`-vel tért vissza, kimeneti bájt
+nélkül. Az utasítás és regiszterállapot binárisdisassemblyval, illetve a
+QEMU-regiszternaplóval ellenőrizhető; a hibás képadat-objektum pontos
+invariánsa és az, hogy melyik natív létrehozó út állítja elő a `0x50230000`
+mutatót, **NINCS MEG**.
+
+A `wq.py` diagnosztikai hívása közvetlenül a `0x00bb5b60` belső
+kvantálómunkavégzőt hívta `Steps=8`, `Depth=4` értékkel, szintetikus
+`32×24` BGRA képpel. A Glimmer külső `Blur`- és `Fade`-lépését nem futtatta;
+ez a próba a teljes effekt összehasonlítására sem lett volna elegendő még
+érvényes kimenet mellett sem.
+
+A helyi user `systemd` scope nem volt elérhető, ezért a tesztfuttató közvetlen
+`qemu-i386` fallbacket használt `timeout`-tal és
+`RLIMIT_AS=(mem_mb+4096) MiB` értékkel. A 4 GiB ráhagyás a QEMU i386
+vendégcímtér-leképezéséhez kellett; ez nem cgroup- vagy RSS-korlát. A
+README-ben ez és a CRT-shim alkalmazása dokumentálva van a következő
+kutatási szeleteknek.
+
+**Eredmény és határ:** a heap-shim a CRT-inicializálási akadályt megkerüli,
+de nem bizonyítja a natív kimenetet vagy az objektum inicializáltságát. A
+legalább négy `Steps`/`Smoothing` pár, mindegyik `Fade=0` és `Fade=50` mellett,
+nem futott le; ezért nincs bájtpontos összevetés, és nincs mérésből igazolt
+új fejlesztői eltérés sem. A következő próbának előbb a `0x00bb5b60` által
+várt képobjektumot a bináris valódi előállító útjával létrehoznia, majd
+a `0x00bcb2f0` bemenő descriptorának `+4` pixelmutatóját és sorlépését kell
+QEMU-ban ellenőriznie a dereferálás előtt.
+
+*Bizonyítottsági fok: feltételes — a CRT-hookok célcímei és a futás
+megállási címe binárisdisassemblyval és a QEMU-próbával alátámasztott;
+pixelmatematika és renderelővel való egyezés nincs mérve.*
 
 ## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
 
