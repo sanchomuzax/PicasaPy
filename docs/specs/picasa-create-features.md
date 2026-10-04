@@ -2323,26 +2323,70 @@ FILETIME-értékeket. Küszöb: `T=3600` másodperc.
 olvasata; B) a fenti, pontosan megadott időbélyegű natív QEMU-futás.
 Az első mérősor cáfolja az „előző megtartotthoz mér” alternatívát.
 
-**A végül megtartott kép nincs megállapítva.** A `0x0081ae10` csoportokat
-képez, majd a hívó `0x0081b800` további kiválasztó ágon dolgozza fel őket
-(`0x0081bd62` → `0x00877c50` → `0x008781a0`). A diszasszembly e ponton
-annyit mutat, hogy a `0x008781a0` a bázisérték és a rekord `+8` mezőjének
-összegét hasonlítja az adott kimeneti kulcs eddigi értékéhez, és csak
-kisebb értéknél frissít (`0x00878291`–`0x008782be`); egyezésnél a korábban
-bejárt jelölt marad. A diszasszembly nem azonosítja megbízhatóan, hogy ez az
-érték milyen képjellemzőt jelent, illetve mely eredeti képindexet adja vissza
-a teljes út. Ezért az „első”, „utolsó” vagy „jobb minőségű” állítás
-**NINCS MEG**. Ezt nem szabad a csoportazonosítókból kikövetkeztetni.
+**A végül megtartott eredeti kép nincs megállapítva.** A `0x0081ae10`
+csoportokat képez, majd a hívó `0x0081b800` további kiválasztó ágon dolgozza
+fel őket (`0x0081bd62` → `0x00877c50` → `0x008781a0`). A `0x008781a0`
+utasításszintű olvasata szerint a külső jelölt indexével címzett bázis-floatot
+hozzáadja a csoportrekord `+8` floatjához (`0x00878291`–`0x0087829e`), majd
+az így kapott értékkel kimeneti kulcsonként minimumot keres
+(`0x008782a2`–`0x008782be`). A rekord `+4` mezője adja a kimeneti kulcsot;
+csak szigorúan kisebb összeg írja felül az addigi minimumot. Mivel a külső
+jelöltindex növekvően halad, azonos értéknél az elsőként bejárt jelölt marad.
+
+**Független natív QEMU-mérés a reduceren:** a `0x008781a0` eredeti kódját
+kézzel felépített, két jelöltet és egy kimeneti kulcsot tartalmazó bemenettel
+futtattuk. A `+8` itt kizárólag a reducer 12 bájtos segédrekordjának mezője;
+ez a mérés nem köti azt a képlista `0x38` bájtos rekordjának egyik mezőjéhez
+sem.
+
+| Jelölt 0: bázis + `+8` | Jelölt 1: bázis + `+8` | Mért kimeneti jelölt |
+|---|---|---:|
+| `0 + 1` | `0 + 2` | `0` |
+| `0 + 2` | `0 + 1` | `1` |
+| `0 + 1` | `0 + 1` | `0` |
+| `5 + 0` | `0 + 1` | `1` |
+
+A mérés tehát a teljes összeget hasonlítja, nem önmagában a `+8` értéket;
+egyezésnél a korábban bejárt jelölt marad. A teljes `0x0081b800`-as út
+kézzel felépített gyűjteménnyel is futtatva lett, de a hám nem érte el a
+kiválasztót. Az első futás a `0x00874320` vtable-alapú előkészítésben állt
+meg, mert a kézzel felépített fotóobjektum vtable-ja hiányzott. A második
+futás pótolta a szintetikus vtable-t és a callback vektort; a hám ezután
+továbbjutott a `0x00877370` segéden. Egy, kizárólag a hám saját nullás
+vektorállapotát javító shim után az út a `0x008773d0` segédfüggvényig jutott,
+majd `0x008774b9`–`0x008774c0` között szegmentálási hibával megállt: az elvárt
+8 bájtos belső vektor címe a `[ecx+0x0c]` mezőből `1` lett, így a `+4` mező
+olvasása érvénytelen címre ment. Ezek a futások kézzel készített objektum- és
+vektorállapotot használtak; natív konstruktorral nem sikerült a szükséges
+gyűjtemény létrehozása. A `0x00877c50` döntési útig egyik futás sem jutott el,
+és tényleges fotómezőt nem változtattunk meg. A kiválasztás utáni
+`0x0081b800` kód a jelöltindexet `[obj+0x4f0]` leképezőtáblán át használja
+`[obj+0x4e0] + index*0x38` fotórekord kiválasztására
+(`0x0081c7b6`–`0x0081c83f`). Ez megmutatja a rekordhoz vezető leképezési
+mechanizmust, de a kézzel felépített bemenetből nem derül ki, hogy az adott
+csoport melyik fotórekord-indexet rendeli a reducer egyes jelöltjeihez, és
+hogy a segédrekord `+8` mezőjét milyen képjellemzőből állítja elő a teljes út.
+
+**Bizonyítottság:** a `0x008781a0` segédreducerének „bázis + segédrekord
+`+8`”, minimumot választó és döntetlennél korábbi jelöltet megtartó szabálya
+**megerősített**: A) az utasításszintű olvasat; B) a fenti, külön natív
+QEMU-futtatás. A csoport konkrét fotójának azonosítása és a fotójellemző,
+amelyből a reducer értéke jön, **nyitott**. Az
+„első kép”, „utolsó kép” vagy „jobb minőségű kép” állítás **NINCS MEG**;
+ezeket a csoportazonosítókból vagy a szintetikus segédrekordból nem szabad
+kikövetkeztetni.
 
 **Fejlesztési átvezetés a #4182-höz:**
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A küszöb a bemeneti sorrendben szomszédos, egész másodpercre kerekített időket hasonlítja; `delta >= T` új csoport. A csoporton belüli végső képválasztás nyitott. | `src/picasapy/movie/mxf.py` a `burstmodethresh` mezőt olvassa és írja; képszűrési fogyasztó nincs. | A #4182-ben a bizonyított csoportosítást és a végső megtartási szabályt is implementálni kell; az utóbbi előtt célzottan fel kell oldani a Ghidra-kérdést lent. A `Kész, ha` feltételek: (1) a három fenti dátumsor ugyanazokat a csoportokat adja; (2) a csoportonként megtartott kép a natív szabállyal egyezik, és dokumentáltan nem találgatásból származik. |
+| A küszöb a bemeneti sorrendben szomszédos, egész másodpercre kerekített időket hasonlítja; `delta >= T` új csoport. A csoportreducer a bizonyított segédrekordokon minimumot választ (`bázis + +8`), döntetlennél a korábban bejárt jelölt marad; a fotómezőre és a csoportbeli fotóindexre képezés nyitott. | `src/picasapy/movie/mxf.py` a `burstmodethresh` mezőt olvassa és írja; képszűrési fogyasztó nincs. | A #4182-ben a csoportosítás implementálható a fent bizonyított dátumszabállyal. A végső képszűrést csak azután kösd a reducerhez, hogy a `0x00873170` vtable-alapú értékelő és a `0x38` bájtos fotórekord közötti mezőleképezést, valamint a csoporton belüli jelöltindex-leképezést QEMU-mérés bizonyítja. `Kész, ha`: (1) a három fenti dátumsor ugyanazokat a csoportokat adja; (2) a reducer bemeneti értékei a natív útból, fotómezőnkénti QEMU-változtatással visszakereshetők; (3) ugyanazokon a bemeneteken a kiválasztott eredeti fotóindex és az egyenlőségi eset a natív kimenettel egyezik. |
 
-Ghidra-kör kell: 0x0081b800 — a 0x0081ae10 által képzett azonos csoporton
-belül a 0x00877c50/0x008781a0 út mely bemeneti képet teszi a végső listába,
-és milyen képjellemzőből származik az összehasonlító érték? [blokkoló]
+Nyitott futtatási kérdés: a `0x00873170` vtable `+8` getteréből származó
+float melyik fotómezőből vagy képjellemzőből készül, és a csoport melyik
+fotórekord-indexét teszi a `0x008781a0` megfelelő jelöltjévé? Következő lépés:
+a `0x00877c50` futtatása a natív QEMU-hámban a valódi gyűjteményobjektum által
+elvárt vtable/getter shimekkel, majd a jelölt fotómezők egyenkénti változtatása.
 
 #### Bizonyítottsági fok
 

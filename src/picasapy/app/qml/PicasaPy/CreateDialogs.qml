@@ -40,10 +40,13 @@ Item {
     //: ⛔ A FELBONTÁS nincs a projektfájlban (`curresolution` nálunk
     //: kitöltetlen), ezért az marad az alapértelmezésen — a párbeszéd
     //: felirata ezt ki is mondja.
-    function openMovieProject(masodperc) {
+    function openMovieProject(masodperc, burstmodethresh) {
         movieDialog.projektbolNyilt = true
         if (masodperc > 0)
             movieSeconds.value = Math.round(masodperc * 10)
+        if (burstmodethresh !== undefined && burstmodethresh >= 0)
+            movieBurstSlider.value = Math.sqrt(
+                Math.min(86400, burstmodethresh) / 86400)
         movieDialog.open()
     }
 
@@ -212,9 +215,12 @@ Item {
         property int transitionIndex: 1
         property var movieClipIndexes: []
         property var movieClipSources: []
+        property int movieInitialPhotoCount: 0
         property int previewIndex: 0
         property string previewSource: ""
         property var movieSlides: []
+        property var movieSlideSelection: []
+        property int movieSlideEditingIndex: -1
         property string textColor: "#ffffff"
         property string backgroundColor: "#000000"
         //: #2114: projektfájlból nyitottuk-e — ilyenkor a párbeszéd
@@ -244,6 +250,11 @@ Item {
         readonly property int defaultSizeIndex: controller
                 && controller.movieResolutionIndex !== undefined
                 ? controller.movieResolutionIndex : 1
+        readonly property int movieUsedPhotoCount: Math.floor(
+            movieLengthSlider.value * movieLengthSlider.value
+            * movieInitialPhotoCount)
+        readonly property int movieBurstThresholdSeconds: Math.floor(
+            movieBurstSlider.value * movieBurstSlider.value * 86400)
         function openForSelection() {
             // #455: tartott képekkel a tálca a forrás — ilyenkor a
             // rácsban nem is kell kijelölésnek lennie
@@ -251,6 +262,7 @@ Item {
                     && dialogs.appWindow.selectedIndexes.length === 0) return
             movieClipIndexes = dialogs.appWindow.selectedIndexes.slice(0)
             movieClipSources = controller.movieSourceUrls(movieClipIndexes)
+            movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             previewIndex = 0
             previewSource = movieClipSources.length ? movieClipSources[0] : ""
@@ -259,7 +271,12 @@ Item {
         }
         function addTextSlide() {
             var slides = movieSlides.slice(0)
-            slides.push({
+            var selected = movieSlideSelection.length
+                    ? movieSlideSelection : (movieSlideList.currentIndex >= 0
+                        ? [movieSlideList.currentIndex] : [])
+            var insertionIndex = selected.length
+                    ? Math.max.apply(null, selected) + 1 : slides.length
+            slides.splice(insertionIndex, 0, {
                 text: movieSlideText.text || qsTr("Text"),
                 font: movieFontBox.currentText,
                 size: textSizes[movieTextSizeBox.currentIndex],
@@ -271,15 +288,91 @@ Item {
                 backgroundColor: backgroundColor,
             })
             movieSlides = slides
-            movieSlideList.currentIndex = slides.length - 1
+            movieSlideSelection = [insertionIndex]
+            movieSlideEditingIndex = insertionIndex
+            movieSlideList.currentIndex = insertionIndex
         }
         function removeTextSlide() {
-            if (movieSlideList.currentIndex < 0) return
+            var selected = movieSlideSelection.length
+                    ? movieSlideSelection.slice(0)
+                    : (movieSlideList.currentIndex >= 0
+                        ? [movieSlideList.currentIndex] : [])
+            if (!selected.length) return
             var slides = movieSlides.slice(0)
-            slides.splice(movieSlideList.currentIndex, 1)
+            selected.sort(function(a, b) { return b - a })
+            selected.forEach(function(index) { slides.splice(index, 1) })
             movieSlides = slides
-            movieSlideList.currentIndex = Math.min(
-                movieSlideList.currentIndex, slides.length - 1)
+            var nextIndex = Math.min(selected[selected.length - 1], slides.length - 1)
+            movieSlideSelection = nextIndex >= 0 ? [nextIndex] : []
+            movieSlideEditingIndex = -1
+            movieSlideList.currentIndex = nextIndex
+        }
+        function selectTextSlide(index, modifiers) {
+            var selected = movieSlideSelection.slice(0)
+            if (modifiers & Qt.ControlModifier) {
+                var at = selected.indexOf(index)
+                if (at >= 0) selected.splice(at, 1)
+                else selected.push(index)
+            } else if (selected.indexOf(index) < 0) {
+                selected = [index]
+            }
+            movieSlideSelection = selected
+            movieSlideList.currentIndex = index
+        }
+        function moveTextSlides(targetIndex) {
+            var selected = movieSlideSelection.length
+                    ? movieSlideSelection.slice(0) : [movieSlideList.currentIndex]
+            selected = selected.filter(function(index) {
+                return index >= 0 && index < movieSlides.length
+            }).sort(function(a, b) { return a - b })
+            if (!selected.length) return
+            if (selected.indexOf(targetIndex) >= 0) return
+            var slides = movieSlides.slice(0)
+            var moving = selected.map(function(index) { return slides[index] })
+            var removedBeforeTarget = selected.filter(function(index) {
+                return index < targetIndex
+            }).length
+            var movingBeforeTarget = selected[selected.length - 1] < targetIndex
+            for (var i = selected.length - 1; i >= 0; --i)
+                slides.splice(selected[i], 1)
+            var insertionIndex = Math.max(0, Math.min(
+                slides.length,
+                targetIndex - removedBeforeTarget + (movingBeforeTarget ? 1 : 0)))
+            slides.splice.apply(slides, [insertionIndex, 0].concat(moving))
+            movieSlides = slides
+            movieSlideSelection = moving.map(function(_slide, index) {
+                return insertionIndex + index
+            })
+            movieSlideEditingIndex = -1
+            movieSlideList.currentIndex = insertionIndex
+        }
+        function editTextSlide(index) {
+            if (index < 0 || index >= movieSlides.length) return
+            var slide = movieSlides[index]
+            movieSlideSelection = [index]
+            movieSlideEditingIndex = index
+            movieSlideList.currentIndex = index
+            movieSlideText.text = slide.text || qsTr("Text")
+            var fonts = Qt.fontFamilies()
+            var fontIndex = fonts.indexOf(slide.font)
+            if (fontIndex >= 0) movieFontBox.currentIndex = fontIndex
+            var sizeIndex = textSizes.indexOf(slide.size)
+            if (sizeIndex >= 0) movieTextSizeBox.currentIndex = sizeIndex
+            movieTextStyleBox.currentIndex = Math.max(0, Math.min(11, slide.style || 0))
+            movieBoldBox.checked = !!slide.bold
+            movieItalicBox.checked = !!slide.italic
+            movieOutlineBox.checked = !!slide.outline
+            textColor = slide.textColor || "#ffffff"
+            backgroundColor = slide.backgroundColor || "#000000"
+        }
+        function updateSelectedText(text) {
+            var index = movieSlideEditingIndex
+            if (index < 0 || index >= movieSlides.length) return
+            var slides = movieSlides.slice(0)
+            var slide = Object.assign({}, slides[index])
+            slide.text = text
+            slides[index] = slide
+            movieSlides = slides
         }
         function recomputeMovie() {
             if (controller)
@@ -296,6 +389,7 @@ Item {
                 var selected = movieClipList.currentIndex < 0 ? 0 : movieClipList.currentIndex
                 sources = [sources[selected]]
             }
+            sources = sources.slice(0, movieUsedPhotoCount)
             movieProgressDialog.done = 0
             movieProgressDialog.total = sources.length
                     + movieSlides.length
@@ -310,6 +404,7 @@ Item {
                     showdates: movieShowDates.checked,
                     cropfit: movieCropToFit.checked,
                     removelowresfaces: movieRemoveLowResFaces.checked,
+                    burstmodethresh: movieBurstThresholdSeconds,
                 })
             close()
         }
@@ -349,14 +444,40 @@ Item {
                             font.pixelSize: Theme.fontSize - 1
                             color: Theme.textGray
                         }
-                        Text {
-                            objectName: "movieCountLabel"
-                            text: qsTr("%1 pictures selected.").arg(movieDialog.movieClipSources.length)
-                            font.pixelSize: Theme.fontSize
-                            color: Theme.textGray
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
+                            Text {
+                                objectName: "movieCountLabel"
+                                text: qsTr("%1 pictures selected.").arg(movieDialog.movieClipSources.length)
+                                font.pixelSize: Theme.fontSize
+                                color: Theme.textGray
+                            }
+                            Item { Layout.fillWidth: true }
+                            Button {
+                                objectName: "rewind"
+                                text: qsTr("Back to selected slide")
+                                ToolTip.text: qsTr("Back to selected slide")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: Theme.tooltipDelay
+                                onClicked: {
+                                    moviePreviewTimer.stop()
+                                    var selected = movieClipList.currentIndex
+                                    if (selected < 0) selected = 0
+                                    movieDialog.previewIndex = selected
+                                    movieDialog.previewSource =
+                                        movieDialog.movieClipSources.length
+                                        ? movieDialog.movieClipSources[selected] : ""
+                                }
+                            }
                         }
                         RowLayout {
-                            Text { text: qsTr("Sizes"); color: Theme.ink }
+                            Layout.maximumWidth: moviePages.width
+                            Text {
+                                objectName: "moviesize_label"
+                                text: qsTr("Dimensions")
+                                color: Theme.ink
+                            }
                             PicasaComboBox {
                                 id: movieHeightBox
                                 objectName: "movieHeightBox"
@@ -369,6 +490,8 @@ Item {
                             }
                         }
                         RowLayout {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
                             Text { text: qsTr("Transition style:"); color: Theme.ink }
                             PicasaComboBox {
                                 id: movieTransitionBox
@@ -390,6 +513,8 @@ Item {
                             }
                         }
                         RowLayout {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
                             Text { text: qsTr("Overlap"); color: Theme.ink }
                             Slider {
                                 id: movieOverlapSlider
@@ -401,6 +526,7 @@ Item {
                             Text { text: movieOverlapSlider.value.toFixed(1) + " s" }
                         }
                         RowLayout {
+                            Layout.maximumWidth: moviePages.width
                             Text { text: qsTr("Slide Duration:"); color: Theme.ink }
                             SpinBox {
                                 id: movieSeconds
@@ -411,6 +537,8 @@ Item {
                             }
                         }
                         RowLayout {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
                             Text { text: qsTr("Target file:"); color: Theme.ink }
                             Text {
                                 objectName: "movieTargetLabel"
@@ -420,10 +548,16 @@ Item {
                                     ? movieDialog.targetFile : qsTr("(not selected)")
                                 color: Theme.textGray
                             }
-                            Button { text: qsTr("Browse..."); onClicked: movieTargetDialog.open() }
+                            Button { objectName: "movieBrowseButton"; text: qsTr("Browse..."); onClicked: movieTargetDialog.open() }
                         }
                         RowLayout {
-                            Text { text: qsTr("Audio:"); color: Theme.ink }
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
+                            Text {
+                                objectName: "audio_label"
+                                text: qsTr("Audio Track:")
+                                color: Theme.ink
+                            }
                             Text {
                                 objectName: "movieAudioPathLabel"
                                 Layout.fillWidth: true
@@ -436,6 +570,8 @@ Item {
                             Button { objectName: "movieRemoveAudioButton"; text: qsTr("Clear"); onClicked: movieDialog.audioFile = "" }
                         }
                         RowLayout {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
                             Text { text: qsTr("Options"); color: Theme.ink }
                             PicasaComboBox {
                                 id: movieAudioOptionBox
@@ -447,7 +583,10 @@ Item {
                                 onActivated: movieDialog.audioOption = currentIndex
                             }
                         }
-                        RowLayout {
+                        Flow {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
+                            spacing: 8
                             CheckBox {
                                 id: movieShowCaptions
                                 objectName: "movieShowCaptions"
@@ -477,13 +616,23 @@ Item {
                                                controller.setMoviePreference("removeLowResFaces", checked)
                             }
                         }
-                        RowLayout {
+                        Flow {
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
+                            spacing: 8
+                            Text {
+                                objectName: "ordering_header_label"
+                                text: qsTr("Ordering of Slides:")
+                                color: Theme.ink
+                            }
                             RadioButton { id: movieSmartOrder; objectName: "movieSmartOrder"; text: qsTr("Best Transitions") }
                             RadioButton { objectName: "movieAlbumOrder"; text: qsTr("Album Order"); checked: true }
                             RadioButton { id: movieChronologicalOrder; objectName: "movieChronologicalOrder"; text: qsTr("Chronological") }
                         }
                         RowLayout {
                             objectName: "moviePreviewPanel"
+                            Layout.fillWidth: true
+                            Layout.maximumWidth: moviePages.width
                             Image {
                                 id: moviePreviewImage
                                 objectName: "moviePreviewImage"
@@ -516,6 +665,7 @@ Item {
                     }
                 }
                 ScrollView {
+                    objectName: "tabpanel2"
                     clip: true
                     ColumnLayout {
                         width: moviePages.width
@@ -527,6 +677,7 @@ Item {
                             Layout.fillWidth: true
                             text: qsTr("Text")
                             TextFieldContextArea {}
+                            onTextEdited: movieDialog.updateSelectedText(text)
                         }
                         RowLayout {
                             Text { text: qsTr("Font:"); color: Theme.ink }
@@ -554,27 +705,153 @@ Item {
                         RowLayout {
                             CheckBox { id: movieBoldBox; objectName: "movieBoldBox"; text: qsTr("Bold") }
                             CheckBox { id: movieItalicBox; objectName: "movieItalicBox"; text: qsTr("Italic") }
-                            CheckBox { id: movieOutlineBox; objectName: "movieOutlineBox"; text: qsTr("Automatic Outline") }
+                            CheckBox {
+                                id: movieOutlineBox
+                                objectName: "movieOutlineBox"
+                                text: qsTr("Automatic Outline")
+                                ToolTip.text: qsTr("Automatic Outline (like movie subtitles)")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: Theme.tooltipDelay
+                            }
                         }
                         RowLayout {
-                            Button { text: qsTr("Text color"); onClicked: movieTextColorDialog.open() }
-                            Button { text: qsTr("Background color"); onClicked: movieBackgroundColorDialog.open() }
+                            Button {
+                                objectName: "movieTextColorButton"
+                                text: qsTr("Text color")
+                                onClicked: movieTextColorDialog.open()
+                            }
+                            Rectangle {
+                                objectName: "txcolorpicker_bevel"
+                                Layout.preferredWidth: 20
+                                Layout.preferredHeight: 20
+                                color: movieDialog.textColor
+                                border.color: Theme.chromeBorder
+                                border.width: 1
+                                radius: 2
+                            }
+                            Button {
+                                objectName: "movieBackgroundColorButton"
+                                text: qsTr("Background color")
+                                onClicked: movieBackgroundColorDialog.open()
+                            }
                             Button { objectName: "movieInsertSlideButton"; text: qsTr("Insert Text Slide"); onClicked: movieDialog.addTextSlide() }
-                            Button { objectName: "movieRemoveSlideButton"; text: qsTr("Remove Selected Slide"); onClicked: movieDialog.removeTextSlide() }
+                            Button {
+                                objectName: "movieRemoveSlideButton"
+                                text: qsTr("Remove Selected Slide")
+                                ToolTip.text: qsTr("Remove the selected slide")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: Theme.tooltipDelay
+                                onClicked: movieDialog.removeTextSlide()
+                            }
                         }
-                        ListView {
-                            id: movieSlideList
-                            objectName: "movieSlideList"
+                        Item {
+                            objectName: "viewedit"
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 100
-                            model: movieDialog.movieSlides
-                            delegate: ItemDelegate { width: movieSlideList.width; text: modelData.text }
+                            Layout.preferredHeight: 150
+                            property alias count: movieSlideList.count
+                            property alias contentHeight: movieSlideList.contentHeight
+                            property alias currentIndex: movieSlideList.currentIndex
+                            property alias contentY: movieSlideList.contentY
+                            ListView {
+                                id: movieSlideList
+                                objectName: "movieSlideList"
+                                anchors.fill: parent
+                                model: movieDialog.movieSlides
+                                delegate: ItemDelegate {
+                                    id: movieSlideDelegate
+                                    width: movieSlideList.width
+                                    text: modelData.text
+                                    highlighted: movieDialog.movieSlideSelection.indexOf(index) >= 0
+                                    MouseArea {
+                                        id: movieSlidePointer
+                                        anchors.fill: parent
+                                        acceptedButtons: Qt.LeftButton
+                                        property real pressX: 0
+                                        property real pressY: 0
+                                        property bool dragged: false
+                                        onPressed: function(mouse) {
+                                            var selected = movieDialog.movieSlideSelection
+                                            if (mouse.modifiers & Qt.ControlModifier)
+                                                movieDialog.selectTextSlide(index, mouse.modifiers)
+                                            else if (selected.indexOf(index) < 0)
+                                                movieDialog.selectTextSlide(index, mouse.modifiers)
+                                            else
+                                                movieSlideList.currentIndex = index
+                                            pressX = mouse.x
+                                            pressY = mouse.y
+                                            dragged = false
+                                        }
+                                        onPositionChanged: function(mouse) {
+                                            if (!pressed) return
+                                            if (!dragged && Math.abs(mouse.x - pressX)
+                                                    + Math.abs(mouse.y - pressY)
+                                                    < Qt.styleHints.startDragDistance)
+                                                return
+                                            dragged = true
+                                            var point = mapToItem(
+                                                movieSlideList.contentItem, mouse.x, mouse.y)
+                                            if (point.y < movieSlideList.contentY
+                                                    || point.y >= movieSlideList.contentY
+                                                        + movieSlideList.height) {
+                                                movieDialog.removeTextSlide()
+                                                return
+                                            }
+                                            var rowHeight = movieSlideList.count > 0
+                                                    ? movieSlideList.contentHeight
+                                                        / movieSlideList.count : height
+                                            var targetIndex = Math.floor(point.y / rowHeight)
+                                            targetIndex = Math.max(0, Math.min(
+                                                movieSlideList.count - 1, targetIndex))
+                                            if (targetIndex !== movieSlideList.currentIndex)
+                                                movieDialog.moveTextSlides(targetIndex)
+                                        }
+                                        onClicked: function(mouse) {
+                                            mouse.accepted = false
+                                        }
+                                        onDoubleClicked: movieDialog.editTextSlide(index)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
                 ColumnLayout {
                     objectName: "movieTabPanelClips"
                     spacing: 8
+                    RowLayout {
+                        Text {
+                            objectName: "lengthslider_label"
+                            text: qsTr("Total Photos")
+                            color: Theme.ink
+                        }
+                        Slider {
+                            id: movieLengthSlider
+                            objectName: "lengthslider/scaleslider"
+                            Layout.fillWidth: true
+                            from: 0; to: 1; value: 1
+                        }
+                        Text {
+                            objectName: "movieLengthCount"
+                            text: String(movieDialog.movieUsedPhotoCount)
+                            color: Theme.textGray
+                        }
+                    }
+                    RowLayout {
+                        Text {
+                            objectName: "burstslider_label"
+                            text: movieBurstSlider.value === 0
+                                  ? qsTr("Don't filter by time taken")
+                                  : qsTr("Remove Photos Taken Within %1")
+                                      .arg(movieDialog.movieBurstThresholdSeconds)
+                            color: Theme.ink
+                        }
+                        Slider {
+                            id: movieBurstSlider
+                            objectName: "burstslider/scaleslider"
+                            Layout.fillWidth: true
+                            from: 0; to: 1; value: 0
+                        }
+                    }
                     RowLayout {
                         Button {
                             objectName: "movieRecomputeButton"
@@ -584,6 +861,9 @@ Item {
                         Button {
                             objectName: "movieAddClipsButton"
                             text: qsTr("Add selected clips")
+                            ToolTip.text: qsTr("Add the selected clip(s) to the end of the movie")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: Theme.tooltipDelay
                             onClicked: {
                                 var sources = movieDialog.movieClipSources.slice(0)
                                 controller.selectedMovieSourceUrls(
@@ -596,6 +876,9 @@ Item {
                         Button {
                             objectName: "movieDeleteClipButton"
                             text: qsTr("Remove selected clip")
+                            ToolTip.text: qsTr("Remove the selected clip(s) from the tray")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: Theme.tooltipDelay
                             onClicked: {
                                 if (movieClipList.currentIndex < 0) return
                                 var sources = movieDialog.movieClipSources.slice(0)
@@ -669,12 +952,14 @@ Item {
 
     ColorDialog {
         id: movieTextColorDialog
+        objectName: "text_picker_panel"
         title: qsTr("Text color")
         selectedColor: movieDialog.textColor
         onAccepted: movieDialog.textColor = selectedColor
     }
     ColorDialog {
         id: movieBackgroundColorDialog
+        objectName: "bkg_picker_panel"
         title: qsTr("Background color")
         selectedColor: movieDialog.backgroundColor
         onAccepted: movieDialog.backgroundColor = selectedColor
