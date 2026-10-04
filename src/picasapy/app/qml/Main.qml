@@ -394,7 +394,8 @@ ApplicationWindow {
         documentTabStrip.activateTab(documentTabStrip.libraryTabId)
         window.selectedIndex = sorok[0]
         window.selectedIndexes = sorok
-        createDialogs.ensure().openMovieProject(projekt.seconds)
+        createDialogs.ensure().openMovieProject(
+            projekt.seconds, projekt.burstmodethresh)
     }
 
     function openSavedCollage(path) {
@@ -2977,7 +2978,7 @@ ApplicationWindow {
     //: fióknál is ott van: ez a MÁSIK belépési pont a Nézet menü mellett.
     Rectangle {
         id: jobbFiokFogo
-        objectName: "rightDrawerFogo"
+        objectName: "toggle_right_drawer"
         //: a `kattints()` a próbáké is: a vezérlőre kattintunk, nem a
         //: kezelő metódusát hívjuk
         function kattints() { window.billentsdAFiokot() }

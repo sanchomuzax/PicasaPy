@@ -2699,6 +2699,80 @@ láncbeli fogyasztójának azonosítása, és annak eldöntése, hogy false/true
 módosítja-e a ColorMatrix alfa-oszlopát, alfa-sorát vagy a mag előtti/utáni
 alfa-kezelést [blokkoló]`.
 
+#### #626 — `SimpleColorMatrix`: natív bájtszintű kontroll (2026-10-05)
+
+Ez a mérés az előző, 4.9-es szakaszban rögzített mátrixépítőket és Q11-es
+alkalmazót közvetlenül hasonlítja össze a `simple_color_matrix()` kimenetével.
+Az értékforrás a Picasa 3.7 `runtime/filterdesc.xml`; mind a nyolc használatot
+lefedi. A változó csúszkáknál a deklarált alapértéket és mindkét szélső pontot
+is tartalmazó pontos rácsot használtuk.
+
+| `filterdesc.xml`-használat | deklarált paraméterek és tartományok | natív próba |
+|---|---|---|
+| Boost (`:715`) | `Impact` 0…100, alap 50; `B=Impact×(−20/50)`, `S=Impact×(20/50)`, `C=Impact×(40/50)` | Impact = 0, 50, 100 |
+| Cinemascope (`:760`) | `S=−25` | `S=−25`, `C=B=0` |
+| CrossProcess (`:835`) | `C=10`, `B=10` | `C=B=10`, `S=0` |
+| HeatMap (`:955`) | `S=0` | `S=C=B=0` |
+| Holga (`:978`) | `C=25` | `C=25`, `S=B=0` |
+| Lomo (`:1050`) | `S=20`, `C=35`, `B=5` | `S=20`, `C=35`, `B=5` |
+| NightVision (`:1129–1138`) | `B,C` külön-külön −50…50, alap 0 | `B,C ∈ {−50, 0, 50}` teljes 3×3 rácsa |
+| TwoTone (`:1372–1377`) | `ContrastAndBrightnessLinked=true`, `S=0`; `B` −95…95, alap 0; `C` 0…100, alap 20 | linked; `B ∈ {−95, 0, 95}` és `C ∈ {0, 20, 100}` teljes 3×3 rácsa |
+
+A hiányzó, XML-ben nem deklarált paramétert a közvetlen builder-próbában a
+semleges `0` értékkel adtuk meg. Ez nem az XML parser vagy a művelet
+példányosításának mérése; a parser alapérték-beállítását a próba nem hívta.
+
+**A út — utasításszintű levezetés.** A `0x00bb6400` a telítettség, kontraszt,
+fényerő, hue és linked mezőket olvassa; a `0x008f1d00` a telítettséget építi,
+a linked ág `0x008f2040`-et, a különálló ág `0x008f1bd0` kontrasztot, majd
+`0x008f1af0` fényerőt épít, végül `0x008f1e70` a hue-t. A kész mátrix
+Q11-konverziója `0x008f21a0`, a képpont-alkalmazó `0x008f2640`; a részletes
+együttható- és kerekítési képletet a fenti 4.9 tartalmazza. A nyolc XML-helyet
+és a csúszkák deklarációit a fenti sorszámok azonosítják.
+
+**B út — az eredeti x86 kód QEMU-futtatása.** A CRT-shimmel futó harness az
+eredeti mátrixépítőket, a `0x008f21a0` konverziót, a `0x008f25f0` vektoros
+beállítást és a `0x008f2640`-et hívta; a mátrix kezdete 5×5 identitás volt,
+a hue bemenete 0. A Python-oldalon a `simple_color_matrix()` szolgáltatta az
+összevetést. A leíró parser és a `0x00bb6400` magasabb szintű műveleti útja
+nem futott.
+Forrás- és célképleíró külön rekordban volt, mindkettőben `+0x04` stride
+pixelben, `+0x08` szélesség, `+0x0c` magasság, `+0x10` BGRA-adatmutató;
+forrás-stride = `width+2`, cél-stride = `width+3`. A magasság 52, a szélesség
+8 (páros) és 9 (páratlan). A bemeneti RGB minden pixelre
+`R=(13x+17y)&255`, `G=(11x+5y)&255`, `B=(7x+3y)&255`; az alfa
+`A=(x+y×width)&255`. A forrás- és célterület külön memóriában volt.
+
+26 paraméterkészlet × 2 szélesség futott skalár és SSE2 módban. A 68 952 aktív
+RGB-kimeneti bájt mindegyike egyezett a PicasaPy-kimenettel (eltérés 0, maximum
+eltérés 0); a skalár és SSE2 teljes natív kimeneti puffere is bájtra egyezett.
+22 984 natív alfa-bájt változatlan maradt, a 32 448 célkitöltő bájt pedig
+érintetlen maradt. Az alfa-adat natív passthrough-ellenőrzés: a PicasaPy
+`simple_color_matrix()` RGB `uint8` képet fogad (`curves.py:17–23`,
+`glimmer_ops.py:656–675`), ezért nincs vele közvetlen RGBA-függvény-összevetés.
+
+**Cáfoló kísérlet.** A natív eredménnyel szemben ellenőriztük az alternatív,
+egyetlen lebegőpontos mátrixszorzás + egyszeri kerekítés modelljét. Az 52
+beállítás/szélesség-párban 6 080 RGB-bájt tért el, legfeljebb 1 szinttel; az
+első eltérés a Cinemascope, 8 széles esetben 313 bájt volt. Ez az alternatíva
+nem magyarázza a natív kimenetet; a PicasaPy fixpontos útja egyezik vele. A
+független statikus út is kizárja az egykörös modellt: `0x008f21a0` Q11-re
+konvertál, a `0x008f2640` pedig tagonként `>>9`, majd `>>2` műveletet végez.
+
+#### Eredeti / nálunk / teendő
+
+| | Eredeti natív kód | PicasaPy | Teendő |
+|---|---|---|---|
+| `SimpleColorMatrix` RGB-kimenet | a 4.9-es mátrixépítők + `0x008f21a0` + `0x008f2640`; a fenti rácson natív QEMU-kimenet | `src/picasapy/render/glimmer_ops.py::simple_color_matrix` → `_szinmatrix_osszefuzve` → `_fixpontos_szinmatrix` | A mért beállításokon bájtra egyezik; nincs igazolt RGB-javítási teendő. |
+| Alfa | vizsgált `SimpleColorMatrix` mátrixoknál az eredeti kernel átengedi az alfa-bájtot | az RGB API alfa-csatornát nem fogad | Natív passthrough igazolva; a PicasaPy-függvény alfa-viselkedése nem része ennek az összevetésnek. |
+
+**Bizonyítottsági fok:** **megerősített** a statikusan levezetett mátrix- és
+pixelút, valamint a fenti pontos paraméterpontok RGB-pixelmatematikája — A)
+utasításszintű olvasat; B) független natív QEMU-kimenet és PicasaPy-bájtsor
+összehasonlítása, egyező eredménnyel. A csúszkák köztes értékeit, az XML
+betöltő/példányosító útját és a hiányzó attribútumok objektum-alapértékeit ez a
+mérés nem vizsgálta.
+
 
 ### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
 
@@ -4171,6 +4245,78 @@ RTTI-vtáblák (`0x00cf0120`, `0x00cf085c`) 6. rése a közös alkalmazó
 (`0x00bcb270`), a 8. résen át hívja a munkavégzőt a LUT-bázissal, majd a
 `0x00bcb2f0`-t; a `TwoTone` beolvasója (`0x00bc2760`) a `[this+0x40]`-be tesz
 objektumot (`0x00bc2923`) és a `0x00bb8710`-et hívja (`0x00bc2949`).
+
+#### Több megállós `GradientMap` — teljes natív pixelút (2026-10-04, #626)
+
+**Bizonyítottsági fok: megerősített** a 2, 3 és 5 megállós, megadott
+színértékekből épített LUT-ra, a 256 elemű táblára, az interpolációra és a
+bemeneti csatornára. Az utasításszintű levezetés és a teljes natív
+`qemu-i386` próba bájtra egyezik.
+
+* **Pozíció és mértékegység:** az indexelt tartomány 0…255. `n ≥ 2` esetén
+  `p[0] = 0`, `p[n−1] = 255`, a belső stop float32-re kerekített
+  `p[k] = (k · 255,0) / (n−1)`. A 255,0 double konstans címe `0x00cf39d0`,
+  a végpont 255,0 float konstansa `0x00cf3a00`; a belső értéket a kód
+  `fstp dword`-dal tárolja (`0x00bb88e4`–`0x00bb892d`). Következésképp
+  `n=3`: `{0; 127,5; 255}`, `n=5`:
+  `{0; 63,75; 127,5; 191,25; 255}`.
+* **Interpoláció és LUT:** a megállókereső (`0x00bb85b0`) a tárolt pozíciók
+  közötti alsó/felső stopot adja; az x87-hányados float32 súlya
+  `w = float32((p_hi−x)/(p_hi−p_lo))`. A `0x00bb84a0` mindhárom RGB
+  csatornát külön keveri: `clamp(trunc(upper + w·(lower−upper) + 0,5),
+  0, 255)`. Ez lebegőpontos, nem fixpontos interpoláció. A munkavégző
+  `0x00bb87b0` az `i=0…255` indexek eredményét a
+  `base+0x800+4·i` címre írja (`0x00bb8931`–`0x00bb8958`): pontosan 256
+  dword a piros csatorna LUT-rekeszében.
+* **Indexelt bemeneti csatorna:** a natív pixelalkalmazó
+  `0x00bcb2f0` a BGRA-bemenet `+2` bájtját olvassa, és azzal indexeli a
+  `+0x800` rekeszt (`0x00bcb3a0`–`0x00bcb3ab`); a `+1`, `+0`, `+3` bájt a
+  külön `+0x400`, `+0`, `+0xc00` rekeszt indexeli. A `+2` a BGRA vörös
+  csatornája. A gradiens bemenete tehát a nyers piros bájt, nem luma.
+
+**Független natív futtatás.** A helyi `qemu_harness` a `0x00bb7c80` teljes
+alkalmazót futtatta; az eredeti vtable-munkavégző (`0x00bb87b0`) és
+képpontalkalmazó (`0x00bcb2f0`) is futott. A LUT-rögzítéshez ugyanebben a
+futásban előbb külön meghívtuk a `0x00bb87b0`-t, majd ugyanazzal a művelet-
+objektummal lefutott a teljes `0x00bb7c80` alkalmazó. A CRT-shim mellett
+csak három célzott függvény kapott shimet: `operator new` (`0x00c0769f`) és `delete`
+(`0x00c07681`) a determinisztikus foglaláshoz, valamint a 7,8 KB-os
+kifejezéskiértékelő (`0x008ef520`), amely a kézzel felépített csomópont ismert
+double értékét adta vissza. A megállókereső, pozíciószámítás, csatorna-kód,
+LUT-építés és pixelalkalmazás eredeti bináriskód maradt; a `gradientArray`
+XML-szöveg beolvasója (`0x00bb8710`) nem futott.
+Mindhárom futás a harness `FPUCW=0x027f` beállításával ment; minden natív
+kimeneti alfa-bájt `0xff` volt.
+
+Mindhárom futásban külön forrás- és cél-Image rekord szerepelt: `+0x04`
+stride=256 pixel, `+0x08` szélesség=256, `+0x0c` magasság=4, `+0x10`
+BGRA-adatmutató. A négy forrássor piros csatornája egyaránt 0…255-ig futott;
+`(G,B)` rendre `(0,0)`, `(255,255)`, `(255,0)`, `(0,255)` volt, az alfa
+`0xff`. Így ugyanaz a piros érték négy különböző zöld/kék pár mellett is
+szerepelt.
+
+| próba | szintetikus `0xRRGGBB` stopértékek | QEMU LUT vs. `gradient_map` | QEMU-kép vs. `gradient_map` | azonos R, eltérő G/B |
+|---|---|---:|---:|---|
+| 2 stop | `0x132f71`, `0xe64908` | 0 / 768 bájt eltérés | 0 / 3072 RGB-bájt eltérés | 0 / 256 eltérő pixel mindhárom sorpárban |
+| 3 stop | `0x0711e7`, `0xf08023`, `0x36cbb5` | 0 / 768 | 0 / 3072 | 0 / 256 mindhárom sorpárban |
+| 5 stop | `0x0102fd`, `0x57b30d`, `0xf03189`, `0x34d2c7`, `0xe5a611` | 0 / 768 | 0 / 3072 | 0 / 256 mindhárom sorpárban |
+
+A helyi `gradient_map` (`src/picasapy/render/glimmer_ops.py`) tehát a
+megadott megállóértékekre és a teljes 256 indexre bájtra egyezik mind a
+natív LUT-tal, mind a teljes natív alkalmazó kimenetével; nincs fejlesztői
+eltérés ezen a függvényen. A négy G/B-ellenpróba cáfolta a luma-indexelést:
+mindhárom palettán minden R-értéknél azonos RGB-kimenet született, miközben
+az R szerint változó LUT nem konstans (a 2 stopos próbában 228 különböző
+RGB-triplett volt). Ezt az ellenpróbát a független gépikód-út is ellenőrzi:
+`[BGRA+2]` közvetlenül a `+0x800` táblába indexel.
+
+**Határ:** ez a mérés a stopokat kész numerikus double értékként adta a
+munkavégzőnek. A `gradientArray` szöveges attribútumának tényleges
+kiértékelése, a valós XML-export stopjainak színkódolása/sorrendje, illetve
+az `0x008ef520` eredeti kifejezéskiértékelője nincs ezzel mérve; ezek továbbra
+is feltételesek. A helyi `filterdesc.xml` nem tartalmaz több-stopos
+`gradientArray` export-goldent; ezért a mérés a pixelmatematikát, nem a
+szöveges attribútum előállítását zárja le.
 
 ### 5. `ResizeImageOperation` — közös diszpécser, eltérő pixelág a forgatástól
 

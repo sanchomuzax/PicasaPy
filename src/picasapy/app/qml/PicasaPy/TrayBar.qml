@@ -2245,9 +2245,7 @@ Column {
                     font.pixelSize: Theme.fontSize
                     //: a `thumbui/single_action_message` HIVATALOS magyar
                     //: fordítása (`referencia/panel-feliratok-hu.tsv:5187`)
-                    text: qsTr("Select the items you want to add to the "
-                               + "project clip tray, then click \"Back\" to "
-                               + "return to the project")
+                    text: qsTr("Select items to add to your project's clips tray, then press the \"Back\" button to return to your project")
                 }
 
                 PicasaButton {
