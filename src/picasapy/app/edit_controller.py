@@ -506,6 +506,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         # piszkozat (tartalom + kattintott pozíció).
         self._text_overlay: TextOverlay | None = None
         self._text_active = False
+        # A showtextcheckbox csak az előnézet rajzát kapcsolja; nem írja át
+        # a mentett szöveget vagy a textactive mezőt.
+        self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos: tuple[float, float] | None = None
         # szöveg-stílus (#450): PicasaPy-saját, csak a munkamenetben élő
@@ -760,6 +763,11 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         felirathoz és a UI állapot-jelzéséhez."""
         primary = self._text_overlay.primary if self._text_overlay else None
         return primary is not None and self._text_active and bool(primary.content)
+
+    @Property(bool, notify=toolsChanged)
+    def textOverlayVisible(self) -> bool:
+        """A mentett szöveg látszik-e az előnézeten ebben a munkamenetben."""
+        return self._text_overlay_visible
 
     # -- szöveg-stílus (#450): kitöltés+körvonal szín, körvonal-vastagság,
     # kitöltés ki/be, átlátszóság — ld. a `_DEFAULT_TEXT_*` konstansok
@@ -1163,6 +1171,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_active = (
             self._read_text_active() if self._text_overlay is not None else False
         )
+        self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos = None
         # A mentett felirat KÉT színe visszatölthető (#371) — a többi
@@ -1251,6 +1260,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = None
         self._text_active = False
+        self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos = None
         self._text_fill_color = _DEFAULT_TEXT_FILL_COLOR
@@ -1934,6 +1944,20 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_pending_pos = (_clamp01(x), _clamp01(y))
         self._register_preview()
         self._bump_revision()
+
+    @Slot(bool)
+    def setTextOverlayVisible(self, visible: bool) -> None:
+        """A szöveg nézeti láthatóságát váltja a szerkesztési munkamenetben.
+
+        Az eredeti kapcsoló nem módosítja a fotóra mentett feliratot; a
+        következő fotó megnyitásakor a szöveg ismét látszik.
+        """
+        self._require_active()
+        visible = bool(visible)
+        if self._text_overlay_visible == visible:
+            return
+        self._text_overlay_visible = visible
+        self._refresh_text_preview()
 
     @Slot()
     def applyText(self) -> None:
@@ -2777,6 +2801,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         """Az élő előnézetbe rajzolandó szöveg — a PENDING piszkozat élvez
         elsőbbséget (a szöveg-eszköz nyitva van), különben a mentett, aktív
         overlay (ha van tartalma); egyébként None (nincs mit rajzolni)."""
+        if not self._text_overlay_visible:
+            return None
         if self._text_pending_pos is not None:
             content = self._text_draft
             if not content.strip():

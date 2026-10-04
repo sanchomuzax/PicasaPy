@@ -466,6 +466,7 @@ Rectangle {
             }
             Row {
                 id: filterIconsRow
+                objectName: "searchgroup"
                 y: 9
                 spacing: 3
 
