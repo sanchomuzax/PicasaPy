@@ -13,9 +13,12 @@ kattintható, ezért a folyamatot a választó `onAccepted` ágának belépőjé
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 
+import pytest
 from PySide6.QtCore import (
-    Q_ARG, QEventLoop, QMetaObject, QObject, QPoint, Qt, QTimer,
+    Q_ARG, QEventLoop, QMetaObject, QObject, QPoint, QPointF, Qt, QTimer,
 )
 from PySide6.QtTest import QTest
 
@@ -43,11 +46,45 @@ def _elem(window, nev):
 
 
 def _kattints(window, elem):
-    kozep = elem.mapToScene(elem.boundingRect().center())
+    kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
     QTest.mouseClick(
         window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
     )
+
+
+def _var_elrendezett_gombra(window, qt_app, parbeszed, nev):
+    """A látható, már elrendezett párbeszédgombot adja vissza határidővel."""
+    gomb = _elem(window, nev)
+    elozo_geometria = None
+
+    def elrendezve():
+        nonlocal elozo_geometria
+        if parbeszed.property("visible") is not True or not gomb.isVisible():
+            elozo_geometria = None
+            return False
+
+        szelesseg = gomb.width()
+        magassag = gomb.height()
+        if szelesseg <= 0 or magassag <= 0:
+            elozo_geometria = None
+            return False
+
+        kozep = gomb.mapToScene(QPointF(szelesseg / 2, magassag / 2))
+        if not (0 <= kozep.x() < window.width()
+                and 0 <= kozep.y() < window.height()):
+            elozo_geometria = None
+            return False
+
+        geometria = (kozep.x(), kozep.y(), szelesseg, magassag)
+        stabil = elozo_geometria == geometria
+        elozo_geometria = geometria
+        return stabil
+
+    assert _var(qt_app, elrendezve, ms=5000), (
+        f"a {nev} gomb nem lett látható és stabilan elrendezve a főablakban"
+    )
+    return gomb
 
 
 def _talcara(window, qt_app, sorok):
@@ -57,8 +94,27 @@ def _talcara(window, qt_app, sorok):
 
 
 def _nyisd_meg(window, qt_app):
+    # A teljes út: a felső menü, majd a tényleges menütétel kattintása.
+    gyoker = window.contentItem()
+    sor = list(gyoker.childItems())
+    create_menu = None
+    while sor:
+        elem = sor.pop()
+        if (
+            "MenuBarItem" in elem.metaObject().className()
+            and elem.property("text") == "&Create"
+        ):
+            create_menu = elem
+            break
+        sor.extend(elem.childItems())
+    assert create_menu is not None, "a Létrehozás menü nincs a menüsávon"
+    _kattints(window, create_menu)
+    assert _var(
+        qt_app,
+        lambda: _elem(window, "menuCreateGiftCd").property("visible") is True,
+    ), "a Létrehozás menü nem nyílt ki"
     menu = _elem(window, "menuCreateGiftCd")
-    menu.triggered.emit()
+    _kattints(window, menu)
     qt_app.processEvents()
     return _elem(window, "giftCdHost")
 
@@ -111,10 +167,30 @@ class TestAPanel:
 
 
 class TestALemezkep:
+    @pytest.mark.parametrize(
+        "ablak",
+        [
+            pytest.param(("magassag", -5), id="magassag-minusz-5"),
+            pytest.param(("magassag", 0), id="alapmagassag"),
+            pytest.param(("magassag", 5), id="magassag-plusz-5"),
+            pytest.param(("meret", (1024, 700)), id="1024x700"),
+        ],
+    )
     def test_a_kesz_lemezkep_es_a_cd_kesz_parbeszed(
-        self, qml_app, qt_app, tmp_path, monkeypatch
+        self, qml_app, qt_app, tmp_path, monkeypatch, ablak
     ):
         window, controller, _ = qml_app
+        if ablak[0] == "magassag":
+            vart_meret = (window.width(), window.height() + ablak[1])
+        else:
+            vart_meret = ablak[1]
+        window.setWidth(vart_meret[0])
+        window.setHeight(vart_meret[1])
+        assert _var(
+            qt_app,
+            lambda: (window.width(), window.height()) == vart_meret,
+        ), f"a főablak nem vette fel a kért méretet: {vart_meret}"
+        qt_app.processEvents()
         _talcara(window, qt_app, [0, 1])
         host = _nyisd_meg(window, qt_app)
         megnyitott = []
@@ -124,6 +200,16 @@ class TestALemezkep:
         )
         cel = tmp_path / "ki" / "ajandek.iso"
 
+        # A főablak „Lemezre írás” gombját valódi kattintás indítja.
+        # A Qt natív fájlválasztója offscreen nem kattintható, ezért annak
+        # elfogadott útját adjuk át közvetlenül a gazda QML-belépőjének.
+        _kattints(window, _elem(window, "publishPresentCdGo"))
+        celvalaszto = _elem(window, "giftCdTargetDialog")
+        assert celvalaszto.property("visible") is True
+        # Elfogadáskor a választó bezárul; nyitva hagyva a CI-n elnyeli a
+        # későbbi kattintást.
+        QMetaObject.invokeMethod(celvalaszto, "close")
+        assert _var(qt_app, lambda: celvalaszto.property("visible") is False)
         QMetaObject.invokeMethod(
             host, "indit", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", cel.as_uri()),
@@ -136,7 +222,24 @@ class TestALemezkep:
         assert cel.stat().st_size > 0
         assert _elem(window, "giftCdDonePath").property("text") == str(cel)
 
-        _kattints(window, _elem(window, "giftCdShowButton"))
+        hetz = shutil.which("7z") or shutil.which("7za")
+        assert hetz, "nincs 7z — a főablak kimenetének független ellenőrzése nem mérhető"
+        kibontas = tmp_path / "iso-bontas"
+        kibontas.mkdir()
+        bontas = subprocess.run(
+            [hetz, "x", "-y", f"-o{kibontas}", str(cel)],
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=120,
+        )
+        assert bontas.returncode == 0, bontas.stdout + bontas.stderr
+        assert sorted(p.name for p in (kibontas / "Pictures").iterdir()) == [
+            "a.jpg", "b.jpg",
+        ]
+
+        megjelenit_gomb = _var_elrendezett_gombra(
+            window, qt_app, parbeszed, "giftCdShowButton",
+        )
+        _kattints(window, megjelenit_gomb)
 
         assert _var(qt_app, lambda: bool(megnyitott)), (
             "a „CD megjelenítése” nem nyitotta meg a lemezkép helyét"
