@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 
 //: #754: a jobb fiók fejléc-gombja — `size_toggle` és `close`, MINDKETTŐ
 //: 14 × 14 (`rightdrawerpanel.tre:18`/`:21`). Egy komponens, mert a mért
@@ -10,7 +11,7 @@ Rectangle {
     id: gomb
 
     property string jel: ""
-    property alias sugo: sugoSzoveg.text
+    property alias sugo: sugoTooltip.text
 
     signal kattintva()
 
@@ -31,7 +32,11 @@ Rectangle {
     HoverHandler { id: lebegés }
     TapHandler { onTapped: gomb.kattintva() }
 
-    //: a súgó szövege a mért eredeti felirat; külön elem, hogy az `alias`
-    //: fordítható maradjon
-    Text { id: sugoSzoveg; visible: false }
+    ToolTip {
+        id: sugoTooltip
+        objectName: "drawerHeaderTooltip"
+        parent: gomb
+        visible: lebegés.hovered && text.length > 0
+        delay: Theme.tooltipDelay
+    }
 }

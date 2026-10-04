@@ -305,7 +305,9 @@ class TestSendRows:
         with patch(
             "picasapy.app.email_controller._which", return_value="/usr/bin/xdg-email"
         ), patch("picasapy.app.email_controller._popen") as popen:
-            ok = controller.sendRows(["/tmp/a.jpg"], "Tárgy", "Szöveg")
+            ok = controller.sendWithDefaultClient(
+                ["/tmp/a.jpg"], "Tárgy", "Szöveg", False
+            )
         assert ok is True
         popen.assert_called_once()
         argv = popen.call_args[0][0]
@@ -324,7 +326,7 @@ class TestSendRows:
             "picasapy.app.email_controller._popen",
             side_effect=OSError("boom"),
         ):
-            ok = controller.sendRows(["/tmp/a.jpg"], "s", "b")
+            ok = controller.sendWithDefaultClient(["/tmp/a.jpg"], "s", "b", False)
         assert ok is False
         assert events
 
@@ -336,7 +338,9 @@ class TestSendRows:
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=True,
         ) as open_url:
-            ok = controller.sendRows(["/tmp/a.jpg"], "Tárgy", "Szöveg")
+            ok = controller.sendWithDefaultClient(
+                ["/tmp/a.jpg"], "Tárgy", "Szöveg", False
+            )
         assert ok is True
         open_url.assert_called_once()
         url = open_url.call_args[0][0].toString()
@@ -352,7 +356,7 @@ class TestSendRows:
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=True,
         ):
-            controller.sendRows(["/tmp/a.jpg"], "s", "b")
+            controller.sendWithDefaultClient(["/tmp/a.jpg"], "s", "b", False)
         assert events  # figyelmeztetés: a csatolmány elveszik
 
     def test_mailto_fallback_without_attachments_is_silent(self, qt_app, tmp_path):
@@ -365,7 +369,7 @@ class TestSendRows:
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=True,
         ):
-            controller.sendRows([], "s", "b")
+            controller.sendWithDefaultClient([], "s", "b", False)
         assert events == []
 
     def test_no_mail_program_found_emits_failure(self, qt_app, tmp_path):
@@ -378,7 +382,7 @@ class TestSendRows:
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=False,
         ):
-            ok = controller.sendRows([], "s", "b")
+            ok = controller.sendWithDefaultClient([], "s", "b", False)
         assert ok is False
         assert events
 

@@ -74,6 +74,17 @@ ALAPALLAPOT: frozenset[str] = frozenset(
     }
 )
 
+# A webkamerapanel valódi `Overlay`-t, a kamerakomponens pedig
+# QtMultimedia-eszközfelderítést igényel. Ezeket a vezérlő nélküli, főablak
+# nélküli forrásőrben nem példányosítjuk: az útjukat a Main.qml-re épülő
+# #4137-es próba fedi.
+HARDVERFUGGO_KOMPONENSEK: frozenset[str] = frozenset(
+    {
+        "CaptureMovieMedia.qml",
+        "CaptureMoviePanelPopup.qml",
+    }
+)
+
 
 def _hibas_komponensek(qt_app) -> dict[str, list[str]]:
     """Fájlnév → a `ReferenceError`-ok, vezérlő NÉLKÜLI felépítéskor."""
@@ -84,6 +95,8 @@ def _hibas_komponensek(qt_app) -> dict[str, list[str]]:
     talalat: dict[str, list[str]] = {}
     try:
         for fajl in sorted((_QML / "PicasaPy").glob("*.qml")):
+            if fajl.name in HARDVERFUGGO_KOMPONENSEK:
+                continue
             uzenetek.clear()
             motor = QQmlEngine()
             motor.addImportPath(str(_QML))

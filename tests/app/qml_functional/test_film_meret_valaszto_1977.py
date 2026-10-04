@@ -1,8 +1,8 @@
-"""#1977 (7. pont): a Mozgófilm-párbeszéd HÉT méretet kínál, a futó felületen.
+"""#1977 + #4125: a Mozgófilm-párbeszéd HÉT méretet kínál, a futó felületen.
 
 A vezérlő-oldali szélesség-átvitelt a `tests/app/test_film_felbontasok_1977.py`
 méri. Ez az őr azt méri, ami abból nem látszik: hogy a hét méret **ki is
-jut a választóba**, és hogy az alapértelmezés a 720p maradt.
+jut a választóba**, és hogy az alapérték a specifikáció szerinti 640x480.
 """
 
 from __future__ import annotations
@@ -11,10 +11,10 @@ from PySide6.QtCore import QMetaObject, QObject, Qt
 
 VALASZTO = "movieHeightBox"
 
-#: A spec 2.6/c hét mérete, ahogy a feliratban megjelennek.
+#: A spec 2.6/c hét mérete, az eredeti erőforrás-felirat alakjában.
 VART = [
-    "320 × 240", "640 × 480", "800 × 600", "1024 × 768",
-    "1600 × 1200", "1280 × 720 (720p)", "1920 × 1080 (1080p)",
+    "320x240", "640x480", "800x600", "1024x768",
+    "1600x1200", "1280x720 (720p)", "1920x1080 (1080p)",
 ]
 
 
@@ -49,14 +49,13 @@ def test_a_valaszto_mind_a_het_meretet_kinalja(qml_app, qt_app):
     assert model == VART, f"a méretlista eltér: {model}"
 
 
-def test_az_alapertelmezes_a_720p(qml_app, qt_app):
-    """A hét méret bevezetése NEM változtathatja meg, mit kap a
-    felhasználó, ha nem nyúl a legördülőhöz."""
+def test_az_alapertelmezes_a_spec_szerinti_640x480(qml_app, qt_app):
+    """A 2.8/b szerint a makemovieres alapértéke az 1-es, 640x480-as sor."""
     window, _controller, _engine = qml_app
     valaszto = _nyisd_a_film_parbeszedet(window, qt_app)
 
     index = valaszto.property("currentIndex")
     model = list(valaszto.property("model") or [])
-    assert model[index] == "1280 × 720 (720p)", (
-        f"az alapértelmezés {model[index]!r} lett a 720p helyett"
+    assert model[index] == "640x480", (
+        f"az alapértelmezés {model[index]!r} lett a 640x480 helyett"
     )

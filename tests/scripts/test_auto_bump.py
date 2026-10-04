@@ -56,6 +56,42 @@ def test_a_changelog_cime_lezarodik(tmp_path):
     assert "## [0.8.28] – 2026-08-20" in szoveg, "a régi szakasz nem sérülhet"
 
 
+def test_a_darabok_jegyszam_szerint_bekerulnek_es_torlodnek(tmp_path):
+    c = tmp_path / "CHANGELOG.md"
+    c.write_text(
+        "# Változásnapló\n\n## [Nem kiadott]\n\n- Régi, hagyományos sor (#1).\n\n"
+        "## [0.8.28] – 2026-08-20\n",
+        encoding="utf-8",
+    )
+    darabok = tmp_path / "changelog.d"
+    darabok.mkdir()
+    (darabok / "42.md").write_text(
+        "- A negyvenkettes változás elkészült (#42).\n", encoding="utf-8"
+    )
+    (darabok / "7.md").write_text(
+        "- A hetes változás elkészült (#7).\n", encoding="utf-8"
+    )
+
+    assert auto_bump.zard_le_a_changelogot(c, "0.8.29", "2026-08-21") is True
+    szoveg = c.read_text(encoding="utf-8")
+
+    assert "## [0.8.29] – 2026-08-21" in szoveg
+    assert "- Régi, hagyományos sor (#1)." in szoveg
+    assert szoveg.index("- A hetes változás elkészült (#7).") < szoveg.index(
+        "- A negyvenkettes változás elkészült (#42)."
+    )
+    assert "## [0.8.29]" in szoveg
+    assert not (darabok / "7.md").exists()
+    assert not (darabok / "42.md").exists()
+
+    from scripts.ensure_release import changelog_notes
+
+    jegyzet = changelog_notes("0.8.29", c)
+    assert "- A hetes változás elkészült (#7)." in jegyzet
+    assert "- A negyvenkettes változás elkészült (#42)." in jegyzet
+    assert jegyzet.index("(#7)") < jegyzet.index("(#42)")
+
+
 def test_kiadatlan_szakasz_nelkul_sem_hibazik(tmp_path):
     """Tisztán belső változáshoz nem muszáj felhasználói mondatot írni."""
     c = tmp_path / "CHANGELOG.md"

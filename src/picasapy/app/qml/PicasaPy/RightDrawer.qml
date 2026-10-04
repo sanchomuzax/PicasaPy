@@ -75,7 +75,7 @@ Rectangle {
             anchors.left: parent.left
             anchors.leftMargin: 6
             jel: fiok.nagy ? "‹" : "›"
-            sugo: qsTr("Switch between the small and large side panel")
+            sugo: qsTr("Switch between small/large side panel")
             onKattintva: fiok.nagy = !fiok.nagy
         }
 
@@ -102,7 +102,7 @@ Rectangle {
             anchors.right: parent.right
             anchors.rightMargin: 6
             jel: "✕"
-            sugo: qsTr("Close side panel")
+            sugo: qsTr("Close this side panel")
             onKattintva: fiok.closeRequested()
         }
     }

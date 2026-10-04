@@ -71,6 +71,9 @@ Window {
     // MEMORY.md-tanulság)
     property var previewItems: []
     property int previewCount: 0
+    // Az eredeti previous/next gombok az előnézeti képet léptetik. A
+    // bélyegkép-rács megmarad; a kijelölt kép kiemelése és görgetése követi.
+    property int selectedPreviewIndex: 0
     readonly property int duplicateCount: {
         var count = 0
         for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
@@ -122,12 +125,21 @@ Window {
 
     function open() { importSourceWindow.visible = true }
 
+    function stepPreview(delta) {
+        var nextIndex = importSourceWindow.selectedPreviewIndex + delta
+        if (nextIndex < 0 || nextIndex >= importSourceWindow.previewItems.length)
+            return
+        importSourceWindow.selectedPreviewIndex = nextIndex
+        previewGrid.positionViewAtIndex(nextIndex, GridView.Contain)
+    }
+
     // a forrás (rekurzív) beolvasása háttérszálon — a FolderDialog
     // elfogadásakor és tesztből is hívható (a DedupDialog `scan()` mintája)
     function scanCurrentSource() {
         importSourceWindow.lastError = ""
         importSourceWindow.previewItems = []
         importSourceWindow.previewCount = 0
+        importSourceWindow.selectedPreviewIndex = 0
         importSourceWindow.lastCopiedCount = -1
         importSourceWindow.lastFailedCount = -1
         if (importSourceWindow.sourceFolder.length === 0) return
@@ -168,6 +180,7 @@ Window {
         function onSourceScanFinished(items, count) {
             importSourceWindow.previewItems = items
             importSourceWindow.previewCount = count
+            importSourceWindow.selectedPreviewIndex = 0
             importSourceWindow.scanning = false
         }
         function onSourceScanFailed(message) {
@@ -176,6 +189,8 @@ Window {
         }
         function onSelectionChanged(items) {
             importSourceWindow.previewItems = items
+            if (importSourceWindow.selectedPreviewIndex >= items.length)
+                importSourceWindow.selectedPreviewIndex = Math.max(0, items.length - 1)
         }
         function onImportStarted(total) {
             importSourceWindow.importing = true
@@ -217,6 +232,7 @@ Window {
 
         // -- forrás ------------------------------------------------------
         RowLayout {
+            objectName: "importSourceFromMenu"
             Layout.fillWidth: true
             spacing: 8
             Text {
@@ -295,16 +311,61 @@ Window {
         // #441: "Exclude Duplicates" — "Exclude photos that are already
         // imported into Picasa" (autoexclude QSettings-kulcs, a
         // controller property-je).
-        CheckBox {
-            objectName: "importSourceAutoExcludeCheckBox"
-            text: qsTr("Exclude Duplicates")
-            // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
-            // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
-            checked:
-                (typeof importSourceController !== "undefined" && importSourceController
-                    && importSourceController.autoExclude !== undefined)
-                        ? importSourceController.autoExclude : false
-            onToggled: importSourceController.setAutoExclude(checked)
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            CheckBox {
+                objectName: "importSourceAutoExcludeCheckBox"
+                text: qsTr("Exclude Duplicates")
+                // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+                // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+                checked:
+                    (typeof importSourceController !== "undefined" && importSourceController
+                        && importSourceController.autoExclude !== undefined)
+                            ? importSourceController.autoExclude : false
+                onToggled: importSourceController.setAutoExclude(checked)
+            }
+            Item { Layout.fillWidth: true }
+            // A Picasa Web Albums szolgáltatás megszűnt, ezért a jelölő
+            // látható marad, de online műveletet nem indíthat.
+            CheckBox {
+                objectName: "importSourceUploadCheckBox"
+                text: qsTr("Upload")
+                enabled: false
+                property string helpText: qsTr("Upload to Picasa Web Albums...")
+                ToolTip.visible: hovered
+                ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
+            }
+            PicasaButton {
+                objectName: "importSourceOptionsButton"
+                text: qsTr("Options")
+                property string helpText: qsTr("Online options")
+                ToolTip.visible: hovered
+                ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
+                onClicked: onlineOptionsPopup.open()
+            }
+            Popup {
+                id: onlineOptionsPopup
+                objectName: "importSourceOnlineOptionsMenu"
+                width: 250
+                padding: 10
+                contentItem: ColumnLayout {
+                    Text {
+                        Layout.fillWidth: true
+                        text: qsTr("Online options")
+                        color: Theme.ink
+                        font.pixelSize: Theme.fontSize
+                        font.bold: true
+                    }
+                    CheckBox {
+                        objectName: "importSourceSyncStarredOnlyCheckBox"
+                        text: qsTr("Sync starred photos only")
+                        enabled: false
+                    }
+                }
+            }
         }
         Text {
             Layout.fillWidth: true
@@ -374,6 +435,29 @@ Window {
                 onClicked: importSourceController.includeAll()
             }
             Item { Layout.fillWidth: true }
+            PicasaButton {
+                objectName: "importSourcePreviousButton"
+                text: "‹"
+                enabled: importSourceWindow.previewItems.length > 0
+                         && importSourceWindow.selectedPreviewIndex > 0
+                property string helpText: qsTr("View the previous Photo")
+                ToolTip.visible: hovered
+                ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
+                onClicked: importSourceWindow.stepPreview(-1)
+            }
+            PicasaButton {
+                objectName: "importSourceNextButton"
+                text: "›"
+                enabled: importSourceWindow.previewItems.length > 0
+                         && importSourceWindow.selectedPreviewIndex
+                                < importSourceWindow.previewItems.length - 1
+                property string helpText: qsTr("View the next Photo")
+                ToolTip.visible: hovered
+                ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
+                onClicked: importSourceWindow.stepPreview(1)
+            }
         }
 
         // -- előnézeti bélyegkép-rács -------------------------------------
@@ -401,9 +485,14 @@ Window {
                     width: 72
                     height: 72
                     color: Theme.thumbCard
-                    border.color: thumbFrame.modelData.duplicate
-                                  ? Theme.brandRed : Theme.thumbBorder
-                    border.width: thumbFrame.modelData.duplicate ? 2 : 1
+                    border.color: thumbFrame.index
+                                  === importSourceWindow.selectedPreviewIndex
+                                  ? Theme.selectionBlue
+                                  : (thumbFrame.modelData.duplicate
+                                     ? Theme.brandRed : Theme.thumbBorder)
+                    border.width: thumbFrame.index
+                                  === importSourceWindow.selectedPreviewIndex
+                                  || thumbFrame.modelData.duplicate ? 2 : 1
                     opacity: thumbFrame.modelData.excluded ? 0.4 : 1.0
 
                     Image {
@@ -509,6 +598,7 @@ Window {
 
         // -- cél + célmappa-elnevezés (#441) -------------------------------
         RowLayout {
+            objectName: "importSourceFolderMenu"
             Layout.fillWidth: true
             spacing: 8
             Text {
