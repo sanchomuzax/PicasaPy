@@ -3788,6 +3788,135 @@ tényleges tárolási hely kiolvasása.
 *Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre, a közös
 motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
 
+### Az `imageOperations` attribútumainak hiánya: objektum-kezdőállapot (#626, 2026-10-05)
+
+Ez a tábla a natív műveletobjektum **létrehozása utáni, az attribútumolvasó
+előtti mezőállapotot** rögzíti. Nem azonos azzal az értékkel, amit egy
+képpont-végrehajtó hiányzó attribútumnál később használhat: egyes végrehajtók
+külön, helyi alapértéket adnak a getternek (példák lentebb). `NULL` = nincs
+eltárolt attribútum-/tömbcsomópont; `0` = nullázott skalármező; `0/NULL` = a
+mező reprezentációja az adott tagtől függ, a kezdő bitminta nulla.
+
+**A hiányzó attribútum útja.** A gyár (`0x00bb31f0`) a tag neve alapján
+allokál és vagy a művelet konstruktorát hívja, vagy maga nullázza a mezőket.
+Ezután virtuálisan hívja az attribútumolvasó 1. rését
+(`0x00bb3c8c`–`0x00bb3c98`). A típusolvasók a `0x008eb160`-nal keresik a
+nevet; hiányzó csomópontnál átugorják a tárolást, jelenlévőnél a
+`0x008eb520`-szal vagy közvetlen mezőírással módosítanak. Így a hiányzó tag
+kezdőállapota megmarad.
+
+| XML-elem | Műveletsaját attribútummezők | Hiányzó attribútum: mező kezdete | Inicializáló út | Fok |
+|---|---|---|---|---|
+| `AdjustCurves` | `MasterCurve`, `RedCurve`, `GreenCurve`, `BlueCurve`; `ExposureAdjustmentStops` | görbepontok `NULL`; stops `0`; attribútum nélküli `+0x28=7` | `0x00bb9990` | Q |
+| `AutoFix` | — | nincs XML-hez kötött műveletsaját mező; attribútum nélküli `+0x28=7` | `0x00bb31f0`, inline | S |
+| `BW` | `filtercolor` | `NULL` | `0x00bb31f0`, inline | S |
+| `Blur` | `xblur`, `yblur`, `quality` | `NULL` | `0x00bb31f0`, inline | S |
+| `Border` | `outercolor`, `innercolor`, `cornerradius`, `innerthickness`, `outerthickness`, `captionheight` | `NULL` | `0x00bbdf10` | S |
+| `CircularGradientImageMask` | `width`, `height`, `xCenter`, `yCenter`, `innerRadius`, `outerRadius`, `innerAlpha`, `outerAlpha` | `NULL` | `0x00bc29b0` | S |
+| `ColorMatrix` | `Matrix`; `UseAlpha` | `Matrix=NULL`; a `UseAlpha` útját a típusolvasó nem kezeli | `0x00bc1570` | Q; `UseAlpha` nyitott |
+| `Crop` | `x`, `y`, `width`, `height` | `NULL` | `0x00bbd880` | S |
+| `DropShadow` | `distance`, `angle`, `blurX`, `blurY`, `strength`, `quality`, `shadowColor`, `shadowAlpha`, `backgroundColor` | `NULL` | `0x00bbb120` | Q |
+| `EdgeDetectionB` | `detail` | `NULL` | `0x00bb31f0`, inline | S |
+| `GetVar` | `Name` | `NULL` | `0x00bb31f0`, inline | S |
+| `Glow` | `color`, `glowalpha`, `xblur`, `yblur`, `strength`, `quality`, `innerglow`, `knockout` | `NULL` | `0x00bb8a60` | S |
+| `GradientMap` | `gradientArray` | tömbcsomópont `NULL`; attribútum nélküli `+0x28=7` | `0x00bb8690` | Q |
+| `HSVGradientMap` | `gradientObjectArray`, `hueOffset` | tömbcsomópont `NULL`; `hueOffset=0`; attribútum nélküli `+0x28=7` | `0x00bbc0e0` | Q |
+| `IR` | `greenglow`, `greenglowalpha`, `redweight` | `NULL` | `0x00bc3c40` | S |
+| `LocalContrast` | `Radius`, `Strength` | `NULL` | `0x00bc40e0` | S |
+| `MultiplyColorMatrix` | `Multiplier` | `NULL` | `0x00bb7680` | S |
+| `Nested` | közös `Blend`-mezők; `id` | közös mezők 0/NULL; hiányzó `id` esetén nincs névvel ellátott regiszter | `0x00bb31f0`, inline | S |
+| `Noise` | `randomSeed`, `low`, `high`, `channelOptions`, `grayScale` | `NULL` | `0x00bbed20` | S |
+| `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` | S |
+| `QuantizePalette` | `Steps`, `Depth` | nyers tagmezők `0` | `0x00bb31f0`, inline | S |
+| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; a további mezők nyitottak |
+| `Resize` | `width`, `height`, `smoothing`; `ignoreObjects` | a három művelettag 0/NULL; `ignoreObjects` nincs a típus tagtáblájában | `0x00bb31f0`, inline | S |
+| `Rotate` | `radAngle`, `degAngle`, `borderColor`, `flipH`, `flipV`, `padBorder` | `NULL` | `0x00bb50f0` | S |
+| `SetVar` | `Name` | `NULL` | `0x00bb31f0`, inline | S |
+| `SimpleBorder` | `left`, `right`, `top`, `bottom`, `color` | `NULL` | `0x00bbf130` | S |
+| `SimpleColorMatrix` | `Saturation`, `Contrast`, `Brightness`, `ContrastAndBrightnessLinked` | `NULL` | `0x00bb6150` | S |
+| `TiledImageMask` | `tileWidth`, `tileHeight`, `scaleWidth`, `scaleHeight`, `paddingLeft`, `paddingTop`, `paddingRight`, `paddingBottom`, `offsetX`, `offsetY`, `alphaMin`, `alphaMax` | mind a 12 attribútumcsomópont `NULL` | `0x00bb9fd0` | Q |
+| `Tint` | `Color` (lokális bemenet, nincs saját adattag) | a lokális csomópont `NULL`; ebből a belső `Resaturate` színének hiányzó-érték útja nyitott | `0x00bb31f0`, inline | S |
+| `TwoTone` | `whiteColor`, `blackColor` | színcsomópontok `NULL`; attribútum nélküli `+0x28=7` | `0x00bc2720` | Q |
+
+`S` = utasításszintű inicializáló- és attribútumolvasó-olvasat, `feltételes`;
+`Q` = ugyanez egyezett az eredeti gépi kóddal végzett `qemu-i386`-próbában,
+`megerősített` a konstruktor kezdőállapotára. A QEMU-próbák az objektummezőket
+`0xA5` bájttal előtöltve futottak: `AdjustCurves` (`0x00bb9990`),
+`ColorMatrix` (`0x00bc1570`), `DropShadow` (`0x00bbb120`),
+`GradientMap` (`0x00bb8690`), `HSVGradientMap` (`0x00bbc0e0`), `TwoTone`
+(`0x00bc2720`) és `TiledImageMask` (`0x00bb9fd0`). A vtable és a mezőminták
+egyeztek a diszasszemblálással; a `+0x28=7` értéket az
+`AdjustCurves`/`GradientMap`/`HSVGradientMap`/`TwoTone` konstruktorpróba is
+visszaadta. Az `AutoFix` inline ágán ugyanezt az értéket a
+`0x00bb31f0` utasításai állítják be. Ez a `+0x28` mező nem szerepel az XML
+attribútumtáblában. Az inline inicializáló ágak QEMU-futtatása és a parser
+teljes attribútumútja nem történt meg; azokra az `S` fok érvényes.
+
+**Cáfoló próba (15.2).** A kezdeti állítás, hogy *minden objektummező*
+nulláról indul, megdőlt: a `GradientMap` konstruktor `+0x28` mezője `7`.
+Az eltérés nem XML-attribútum: a név szerinti attribútumtáblában nincs ehhez
+a mezőhöz kulcs. Ugyanennek a cáfolatnak a kontrollja a négy QEMU-val mért
+konstruktor: az `AdjustCurves`, `GradientMap`, `HSVGradientMap` és `TwoTone`
+mind `+0x28=7`-et ad, az utasítások is ezt írják. A leszűkített állítás ezért
+csak az XML-attribútumhoz rendelt mezőkre szól: azok 0/NULL kezdőállapotúak,
+amennyiben az attribútumolvasó nem talál hozzájuk csomópontot. A hiányzó
+`gradientArray` futásidejű olvasóját külön QEMU-ban nem hívtam meg; a
+`0x00bb8710` jelenléti ága és a `0x00bb8690` `+0x40=0` kezdete ezt
+utasításszinten támasztja alá, ezért ez az utolsó lépés `feltételes`.
+
+**Közös `Blend`-attribútumok.** A műveletobjektumok közös mezői hiányzó
+`BlendMode`, `BlendAlpha`, `Mask` és `maskWithSourceAlpha` mellett rendre
+`0`, `0`, `NULL`, `false` kezdőállapotúak; a közös olvasó (`0x00bc4900`)
+csak talált attribútumnál írja őket. A `BlendAlpha` mező nyers nullája nem a
+képpontkeverő alapértéke: a végrehajtó hiányzó értéknél `1,0`-t használ
+(`0x00bd0742`–`0x00bd0778`). A `dynamicParamsCachePriority` és
+`dynamicAlphaCachePriority` a dinamikus csomópont metaadata; a közös olvasó
+csak jelenlévő attribútumnál állítja (`0x00bc49dd`–`0x00bc4a2c`,
+`0x00bc4a2f`–`0x00bc4a7e`).
+
+**A nyers kezdőérték és a pixelvégrehajtó visszaesése külön adat.** Már
+kimért példák: a `Blur` hiányzó `xblur`/`yblur` értékéhez a getter `1,0`-t
+ad (`0x00bb4de0`); a `Resize.smoothing` nyers kezdete nulla, a végrehajtó
+viszont `true`-t készít elő (`0x00bc36ac`); a `DropShadow` paraméterépítője
+`shadowAlpha=1`, `angle=45`, fekete szín, `distance=4`, `strength=1`,
+`blurX=blurY=4` alapértékekkel indul (`0x00bbb8d0`); a `QuantizePalette`
+végrehajtó `Steps=255`, `Depth=2` értéket használ (`0x00bb5aed`,
+`0x00bb5b1d`). Ezek nem a konstruktor nyers mezői.
+Ugyanilyen különbség a `TiledImageMask`: az objektumtagok nulláról indulnak,
+míg a paraméterépítő `0x00bba250` a `scaleWidth`/`scaleHeight` értékére
+`0,8`-at, az `alphaMax`-ra `1,0`-t, a többi felsorolt mezőre nullát ad.
+
+**A szín- és gradiensszöveg formátuma: csak a szállított alak bizonyított.**
+A tényleges XML-ben a `GradientMap` listája `[0x000000,0x57cc29]`
+(`filterdesc.xml:1135`), statikus színek `0xRRGGBB` alakban szerepelnek
+(`Color="0xfcff00"`, `:836`; `SimpleBorder color="0xffffff"`, `:1235`),
+és dinamikus ARGB-értékek explicit `0xff000000 + …` kifejezésből épülnek
+(`DropShadow`, `:854`, `:1236`). `color="0"` is előfordul. A vizsgált
+színattribútumok között `#RRGGBB` és nemnulla decimális szín nem szerepel;
+ez a fájlban használt alakokat írja le, nem parser-elutasítási bizonyíték.
+Az attribútumolvasók a `gradientArray` / `gradientObjectArray` csomópontot
+adják tovább (`0x00bb8710`, `0x00bbc190`); a `0x008ef520` tényleges
+kifejezéskiértékelőjét és a listaelemek szöveges színértelmezését ez a kör
+nem futtatta. Ezért a `#RRGGBB`, a nemnulla decimális szín, a közvetlen
+`0xAARRGGBB` literál elfogadása, valamint a `GradientMap` XML-stopok
+RGB-bájtsorrendje **nyitott**. A `ColorMatrix.UseAlpha` (az XML-ben
+`true`, `:797`, `:811`) típusolvasó-útja szintén nyitott.
+
+**PicasaPy-összevetés.** A projektben nincs `filterdesc.xml`-ből
+`imageOperations`-tagokat beolvasó futásidejű parser. A `registry.py` és
+`registry_data.py` a csúszka-/effektregisztert a specből kézzel felvett
+adatból építi; a `chain_glimmer_handlers.py` pozíciós `.picasa.ini`
+`FilterOp`-paramétereket dolgoz fel, saját hiányzóparaméter-alapértékekkel.
+Ezért nincs az XML műveletobjektum mezőire 1:1-ben összevethető betöltői
+érték, és ebből a leletből nem következik termékkód-módosítás.
+
+*Bizonyítottsági fok: **feltételes** az összes XML-elemre kiterjesztett
+kezdőállapot-táblára (utasításszintű olvasat; hét konstruktor QEMU-val
+ellenőrizve), **megerősített** a hét Q-val jelölt konstruktor nyers
+mezőkezdeteire; **feltételes** a közös olvasó jelenléti kapujára; **nyitott** a teljes
+XML-kiértékelésre, a szöveges szín/gradiens grammatikára és a felsorolt
+végrehajtói fallbackoktól eltérő, még nem vizsgált getterekre.*
+
 ---
 
 ## ⭐ HÉT Glimmer-művelet KIMÉRVE (2026-09-03, #2211)
@@ -9329,15 +9458,16 @@ mit átvezetni. Ami maradt, az a küszöb fedettségi profilja: **#3390**. Mér�
 `filters-decoded.md`, „A Comicize pontja: az ÁLLANDÓ maszk és a tónussal növő
 sugár UGYANAZ"; őr: `tests/render/test_comicize_maszk_kuszob_2476.py`.
 
-### A konstruktor: `0x00bba250` (133 b)
+### A Tiled-művelet paraméterépítőjének alapértékei: `0x00bba250` (133 b)
 
-A `glimmer::TiledImageMask` attribútum-készletét ez a függvény állítja
-alapállapotba, mielőtt a beolvasó (`0x00bba2e0`) a `filterdesc.xml`-ből
-felülírná a megadottakat. A struktúra `esi = [esp+0x14]`-től indul, és a
-mezősorrend **azonos** a beolvasóéval (a beolvasó `mov edi, <attribútumnév>` →
-`lea esi, [ebp + eltolás]` párjaiból kiolvasva):
+A `0x00bba250` nem a műveletobjektum konstruktora: a Tiled-végrehajtás
+paraméterrekordjához készít elő helyi alapértékeket. A tényleges objektumot a
+gyár (`0x00bb31f0`) a `0x00bb9fd0` konstruktorral inicializálja; az
+attribútumolvasó (`0x00bba2e0`) a megtalált csomópontokat az objektum
+`+0x18`, `+0x20`, …, `+0x70` mezőibe teszi. A lenti eltolások a
+paraméterrekord mezői, nem az objektumtagok:
 
-| attribútum | tageltolás | **tartalékérték** | hol íródik |
+| attribútum | paramétermező | **végrehajtói tartalékérték** | alapérték-képzés |
 |---|---|---:|---|
 | `tileWidth` | `+0x08` | **0** | `0x00bba281` |
 | `tileHeight` | `+0x0c` | **0** | `0x00bba287` |
@@ -9353,7 +9483,7 @@ mezősorrend **azonos** a beolvasóéval (a beolvasó `mov edi, <attribútumnév
 | **`alphaMax`** | `+0x34` | **1,0** | `0x00bba28b` (`fld1`) |
 
 A `0,8` a `0x00c7dbc4`-en álló `float` (kiolvasva: **0,800000011920929**), és a
-konstruktor **ugyanazt az FPU-értéket** teszi mindkét skála-mezőbe
+paraméterépítő **ugyanazt az FPU-értéket** teszi mindkét skálamezőbe
 (`fst` + `fstp`).
 
 ⭐ **Ez a mérés kontrollja:** a `scaleWidth`/`scaleHeight` = **0,8** az az
@@ -9400,7 +9530,7 @@ módszerével — és irányában is egyezik a mért hibával (a mi profilunk �
 nélkül monoton lejt", a referencia fennsíkos, ld. a 00-index 2026-09-05-i
 bejegyzését).
 
-*Forrás: `0x00bba250` (a konstruktor, 133 b) — a tárolások `0x00bba261`,
+*Forrás: `0x00bba250` (a paraméterépítő, 133 b) — az alapértékek `0x00bba261`,
 `0x00bba266`, `0x00bba270`, `0x00bba275`, `0x00bba27d`, `0x00bba281`,
 `0x00bba285` (`fld1`), `0x00bba287`, `0x00bba28b`, `0x00bba28f`,
 `0x00bba293`, `0x00bba297`, `0x00bba29b`; a `0,8` konstans `0x00c7dbc4`; a
