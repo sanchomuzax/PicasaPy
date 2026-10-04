@@ -1796,7 +1796,7 @@ mutatja, hányszor fordul elő; az attribútumok a fájlból kigyűjtve.
 | `LocalContrastImageOperation` | 2 | `Radius Strength BlendAlpha` |
 | `MultiplyColorMatrixImageOperation` | 2 | `Multiplier` |
 | `RadialBlurImageOperation` | 1 | `amount x y Mask ignoreObjects` |
-| `HSVGradientMapImageOperation` | 1 | `gradientObjectArray hueOffset` |
+| `HSVGradientMapImageOperation` | 1 | `gradientObjectArray` (`color.h/s/v`; `position`: float32 LUT-koordináta 0…255, tört érték megengedett) · `hueOffset` |
 | `IRImageOperation` | 1 | `greenglow greenglowalpha redweight BlendAlpha` |
 | `EdgeDetectionBImageOperation` | 1 | `detail` |
 | `GradientMapImageOperation` | 1 | `gradientArray` |
@@ -2455,6 +2455,118 @@ kommentjét).
 x86-diszasszemblálás és a PE-adatkonstansok kiolvasása feloldotta. A hue-
 mátrix konkrét együtthatói, címei és numerikus kontrolljai a G) szakaszban
 állnak; a korábbi „feltételes / valószínű Haeberli” megfogalmazás elavult.
+
+#### `ColorMatrix` — 4×5 fixpontos pixelképlet; a `UseAlpha` külső határa nyitott (#626, 2026-10-04)
+
+**Forrás:** a `ColorMatrix` 8. rése `0x00bc1860` (245 b), a közös alkalmazó
+`0x00bc16b0` (428 b), a mátrix konverziója `0x008f21a0` (849 b), a pixelenkénti
+kernel `0x008f2640` (644 b; skalár ág `0x008f2674`–`0x008f281e`, MMX/SSE2 ág
+`0x008f281f`–`0x008f28c3`), a vektorregiszter-betöltő `0x008f25f0`, a kerekítő
+segéd `0x00c29990` (28 b). A vtable és az attribútum-beolvasó címe a fenti
+táblában áll.
+
+A worker a `Matrix` tömb 20 double elemét float32-ként tárolja
+(`0x00bc1860`: `fstp dword`), majd a közös alkalmazó 4×5 sorfolytonos
+mátrixként adja át. A mátrix sorai és színoszlopai `R,G,B,A`; a pixelmemória
+és a kimenet bájtsorrendje `B,G,R,A`. A 4. oszlop az alfa-bemenet súlya, az 5.
+elem a sor eltolása.
+
+Legyen `m[j,k]` a float32-re alakított együttható, `o[j]` az eltolás, és
+`x=(R,G,B,A)` a forrás pixel. A `0x008f21a0` a mátrix együtthatóit Q11
+int16-ba, a sor eltolását pedig dword biasba alakítja:
+
+```text
+round-away(v) = trunc(v + (v < 0 ? -0.5 : +0.5))
+q[j,k]        = signed_int16(low16(round-away(2048 * m[j,k])))
+b[j]          = round-away(4 * o[j]) + 2
+
+acc[j] = wrap32(b[j] + Σ(k=R,G,B,A) sar32(q[j,k] * x[k], 9))
+y[j]   = clamp(sar32(acc[j], 2), 0, 255)
+```
+
+`sar32` az x86 előjeles aritmetikai jobbra tolása, tehát negatív értéknél
+lefelé kerekít; **minden szorzat külön** `>>9`-et kap, csak utána adódnak
+össze. Az akkumulátor 32 bites (`wrap32`), a kernel a négy csatornát külön
+sorral számolja, az alfa-sort is, és minden sor használhatja az alfa-oszlopot.
+A végső `>>2` után történik a 0…255 vágás. A `q` tárolásakor az alsó 16 bit
+marad meg, a kernel ezt előjeles int16-ként olvassa (`movsx`); a bias dword.
+
+A `0x008f281f`-nél induló MMX/SSE2 ág ugyanezt a műveletsorrendet tartja:
+`0x008f25f0` betölti a négy oszlop együttható-vektorát és a biasvektort; a
+kernel a forrás minden bájtját `[bájt,0]` int16-párként rendezi, `pmaddwd`
+után külön `psrad 9`-et végez az adott csatorna hozzájárulásán, majd az
+összeget `psrad 2`-vel skálázza és telítetten bájtra csomagolja. A skalár és
+vektor ág közti képletazonosságot az utasítássorrend, hat QEMU-minta pedig a
+konkrét kimeneteken ellenőrzi.
+
+**`UseAlpha`:** a `ColorMatrix` worker, a közös alkalmazó és a pixelkernel
+nem olvassa és nem kapja meg ezt a jelzőt. Ezért a fenti pixelmag képlete
+`UseAlpha=false` és `UseAlpha=true` mellett is azonos, ha azonos mátrixot és
+forráspixelt kap: az alfa-sor és -oszlop a magban mindkét esetben aktív.
+A leíró parser ettől külön olvassa a `UseAlpha` nevet (`0x009ca5e0`, a mező
+írása `0x009cb45d`, `[objektum+0x20a]`). **NINCS MEG**, hogy ezt a külön
+flaget a Glimmer-hívási lánc melyik magasabb rétege fogyasztja, illetve
+`false`/`true` mellett változtat-e a mag bemenetén, utólagos alfa-kezelésén
+vagy kompozitálásán. Emiatt a teljes, leíró-szintű `UseAlpha` szemantika
+feltételes marad.
+
+**QEMU-kontrollok.** Az eredeti ELF-kódrész futott `qemu-i386 -B
+0x400000000000` alatt, `ulimit -v 8388608` és `timeout 60` korláttal. Mind a
+hat kézi mátrix/pixel mindkét `0x00c29990` konverziós ágon és mindkét pixel-
+kernel ágon (skalár, illetve az eredeti `0x008f25f0` által betöltött MMX/SSE2)
+ugyanazt a bájtsort adta a közvetlen `0x008f21a0` + `0x008f2640` útban. A
+`0x00bc1860` eredeti workerével futtatott külön próba szintén egyezett mindkét
+konverziós ágon a skalár kernelhez; ez a worker-próba négy általános
+XML-tömb-/double-olvasó és memória-kezelő segédfüggvényt shimelt, a ColorMatrix
+worker, mátrixkonvertáló és pixelfüggvény az eredeti kód volt. Ez nem teljes
+`filterdesc.xml`-betöltés, ezért a `UseAlpha` külső hatását nem méri. Az alábbi
+`M` jelölés 4×5, soronként `R,G,B,A,eltolás`; a pixel és az eredmény BGRA
+bájtok hexadecimális alakban:
+
+| kontroll | `M` sorai | bemenet BGRA | eredmény BGRA |
+|---|---|---|---|
+| azonosság | `[1,0,0,0,0; 0,1,0,0,0; 0,0,1,0,0; 0,0,0,1,0]` | `0b16212c` | `0b16212c` |
+| alfa-oszlop és alfa-sor | `[1,0,0,.25,3.5; 0,1,0,0,0; 0,0,1,0,0; .5,0,0,.5,1]` | `09111f50` | `09113739` |
+| vágás és tört eltolás | `[2,0,0,0,-5; 0,.5,0,0,.125; 0,0,-.5,0,1; 0,0,0,2,-10]` | `ff011ec8` | `000137ff` |
+| előjeles fél-együttható | `[2.5/2048,2.5/2048,0,0,0; -2.5/2048,-2.5/2048,0,0,25; 0,0,1,0,0; 0,0,0,1,0]` | `00ffffff` | `001801ff` |
+| tört együttható-konverzió | `[.1234,0,0,0,0; 0,-.1234,0,0,41.25; 0,0,1,0,0; 0,0,0,1,0]` | `0080ffff` | `001920ff` |
+| tagonkénti `sar 9` | `[1/2048,1/2048,1/2048,0,.25; 0,1,0,0,0; 0,0,1,0,0; 0,0,0,1,0]` | `ffffffff` | `ffff00ff` |
+
+**Cáfoló kontroll:** az utolsó sorban a három első Q11 szorzat egyenként
+`255 >> 9 = 0`, az eltolásból a bias `3`, ezért a piros kimenet
+`(0+3)>>2 = 0`. Az alternatív, hibás „előbb összead, majd egyszer tol” modell
+`(255+255+255)>>9 = 1` értéket adna, így a piros kimenet `1` lenne
+(`ffff01ff`). A natív kimenet `ffff00ff` mindkét konverziós ágon; az eltérés
+az utasításszintű, külön szorzatonkénti `sar 9`-cel is egyezik.
+
+#### #626 leltár — `ColorMatrix` sor frissítése
+
+| művelet | pixelképlet | `UseAlpha` | összesített állapot |
+|---|---|---|---|
+| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott** a leíró magasabb rétegén | **feltételes** |
+
+Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyasztójának
+és a többi #626 műveletnek a feltárását nem zárja le.
+
+#### Eredeti / nálunk / teendő
+
+| | Eredeti, mért | PicasaPy forrása | Teendő |
+|---|---|---|---|
+| 4×5 RGBA-mátrix | a fenti Q11/int16 + dword-bias képlet, `0x008f21a0` → `0x008f2640` | `src/picasapy/render/glimmer_ops.py:628–646` általános `n×3` RGB-képletet valósít meg; a `simple_color_matrix()` hívja, általános 4×5 `ColorMatrix`-út nem található | külön fejlesztési munka: általános RGBA-mátrix és bájtra ellenőrizhető minták |
+| `UseAlpha` | a parser `[objektum+0x20a]` flaget ír; a pixelmag nem kapja meg | nincs `UseAlpha`-ággal kezelt általános `ColorMatrix` | előbb a magasabb szintű fogyasztót kell feltárni; a flag szemantikája nélkül ne rögzítsünk eltérő alfa-szabályt |
+
+**Bizonyítottsági fok:** megerősített a pixelmag képletére — A) utasításszintű
+olvasás a mátrixcsomagolótól a négy soros pixelenkénti kernelig; B) az eredeti
+worker és pixelfüggvények futtatása qemu-i386 alatt, mindkét kerekítési ágon,
+a fenti bájt-goldenekkel. A `UseAlpha` descriptor-szintű hatása nyitott:
+a parser mezőjét nem sikerült azonosítani a Glimmer magot körülvevő fogyasztóval.
+
+**Nyitott, blokkoló következő lépés:** `Ghidra-kör kell: 0x009ca5e0 — a
+`UseAlpha` parser által `[objektum+0x20a]` helyre írt flag Glimmer-hívási
+láncbeli fogyasztójának azonosítása, és annak eldöntése, hogy false/true
+módosítja-e a ColorMatrix alfa-oszlopát, alfa-sorát vagy a mag előtti/utáni
+alfa-kezelést [blokkoló]`.
+
 
 ### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
 
@@ -4085,7 +4197,7 @@ levélválasztó szabály és a maszkok viselkedése **nincs mérve**.*
 
 ---
 
-## `HSVGradientMapImageOperation` — a megállók HSV-ben vannak (2026-09-04, #2211)
+## `HSVGradientMapImageOperation` — HSV-stopok és LUT pixelmatematikája (2026-09-04, #2211; bővítve 2026-10-04, #626)
 
 A `red.cfg` két attribútumot mutat (`gradientObjectArray`, `hueOffset`). A
 munkavégző (`0x00bbc260`, 1448 b) megmutatja, **mi van a tömbben**: minden
@@ -4173,12 +4285,36 @@ Fejlesztés: #3814.
 A megálló-keresést és a keverést a `0x00bbbcf0` (302 b) és a `0x00bbbbf0`
 (254 b) végzi.
 
-**a) A megálló-keresés.** A `0x00bbbcf0` végigmegy a pozíció-tömbön, és
-megkeresi az utolsó `position ≤ x` (alsó) és az első `position ≥ x` (felső)
-megállót. Ha a kettő egybeesik — vagy a keresett érték bitmintája 8-nál
-közelebb van valamelyik megállóéhoz —, a megálló három mezőjét
-(`h`, `s`, `v`) **változtatás nélkül** másolja ki. A megállók a tömbben
-**hármasával** állnak (`lea ecx, [ecx + ecx*2]`, majd `*4` — három float).
+**a) A megálló-keresés és a `position` koordinátája.** A worker a
+`position` szövegét a `0x008f1460` konverzióval float32-be olvassa, és ezt a
+pozíciótömbbe fűzi (`0x00bbc405`–`0x00bbc439`). A `0x00bbc510`–`0x00bbc568`
+ciklus `x = 0, 1, …, 255` indexeken építi a LUT-ot; ezt az egész indexet a
+`0x00bbbcf0` float32-be alakítja (`0x00bbbd0f`–`0x00bbbd1b`), majd közvetlenül
+a stopok float32 `position` értékeivel hasonlítja össze. Ezért a `position`
+az **0…255 LUT-index tengelyén** van: tört float32 pozíció is érvényes, a
+mezőt a worker nem vágja 0…1-re, 0…255-re vagy fokokra. A tartományon kívüli
+stopot maga a megálló-keresés végpontként kezeli.
+
+Az eredeti worker QEMU-i386 futtatásánál a `[0.5,0°,100,100]` és
+`[1.5,120°,100,100]` stoplista 0, 1, 2 indexeken `0000ffff`, `00ffffff`,
+`00ff00ff` BGRA bájtokat adott: az `1` index a két tört pozíció között
+interpolál. A `[300,0°,100,100]`, `[400,120°,100,100]` stoplista mind a
+256 LUT-bejegyzésre az első stop színét adta. Ezeket az értékeket a QEMU-
+próba kézzel épített stopobjektumai float32-ként adták át az eredeti
+munkavégzőnek; a stopkereső és a LUT-építés natív gépi kód volt.
+
+Független leíróbeli kontroll: a szállított `filterdesc.xml` HeatMap-effektje
+(952. sor) a `position` értékekre `0`, `31.875`, `127.5`, `223.125`, `255`
+értékeket ad meg. A recept tehát kifejezetten tört pozíciókat használ a
+0…255 LUT-tengelyen; ez nem azt jelenti, hogy a bináris a mező minden
+lehetséges értékét ezen a tartományon kívül is elfogadja.
+
+A `0x00bbbcf0` megkeresi az utolsó `position ≤ x` (alsó) és az első
+`position ≥ x` (felső) megállót. Ha a kettő egybeesik — vagy a keresett
+érték bitmintája 8-nál közelebb van valamelyik megállóéhoz —, a megálló három
+mezőjét (`h`, `s`, `v`) **változtatás nélkül** másolja ki. A megállók a
+tömbben **hármasával** állnak (`lea ecx, [ecx + ecx*2]`, majd `*4` — három
+float).
 
 **b) A súly.** `0x00bbbdc0`–`0x00bbbdd7`:
 
@@ -4187,29 +4323,80 @@ t = (position[felső] − x) / (position[felső] − position[alsó])
 ```
 
 ⇒ `t` az **alsó** megálló súlya (1, ha `x` az alsón áll; 0, ha a felsőn).
+Az osztás eredményét a stopkereső float32 dwordként tárolja
+(`0x00bbbddc`–`0x00bbbde4`).
 
 **c) A keverés.** A `0x00bbbbf0`-ben az `s` és a `v` **sima lineáris**
-interpoláció (`a + t · (b − a)`, `0x00bbbc00`–`0x00bbbc22`).
+interpoláció:
+
+```
+S(x) = S_felső + t · (S_alsó − S_felső)
+V(x) = V_felső + t · (V_alsó − V_felső)
+```
+
+Ez a `0x00bbbbf3`–`0x00bbbc22` x87 műveleti sorrendjének végpontokkal
+feloldott alakja: az x87 köztes műveletek után az eredmény float32-be kerül.
+A `hueOffset` hozzáadása külön float32-értékeken történik, a worker újra
+float32-be tárolja az összeget (`0x00bbc52b`–`0x00bbc539`).
 
 ⭐ **A színezet NEM az:**
 
 ```
-0x00bbbc36  fsubp             ; Δ = h_alsó − h_felső
-0x00bbbc47  call 0x0049f5c0   ; fabs
-0x00bbbc4c  fcomp dword ptr [0x00cf409c]   ; 180,0
-0x00bbbc5a  jp   <|Δ| ≤ 180: sima lineáris>
-0x00bbbc81  fld  qword ptr [0x00cf3d50]    ; 360,0 — a KISEBBIK végpontot eltolja
+Δ = h_alsó − h_felső
+ha |Δ| ≤ 180°: h_alsó* = h_alsó; h_felső* = h_felső
+ha |Δ| > 180° és h_alsó < h_felső: h_alsó* = h_alsó + 360°
+ha |Δ| > 180° és h_felső < h_alsó: h_felső* = h_felső + 360°
+H(x) = h_felső* + t · (h_alsó* − h_felső*)
 ```
 
-⇒ **Ha a két színezet távolsága nagyobb 180 foknál, a motor az egyiket
-±360-nal eltolja, és a RÖVIDEBB ÍVEN interpolál** — a színkörön a közelebbi
-irányba megy körbe. (A `0x0049f5c0` bizonyítottan `fabs`: 26 bájt, egyetlen
-`fabs` utasítással.)
+Az `|Δ|`-próba és a 180° konstans a `0x00bbbc36`–`0x00bbbc5a` úton van;
+a rövidebb ívhez a kisebbik végpont `+360°` eltolását a
+`0x00bbbc6e`–`0x00bbbca0` végzi. Pontosan 180° eltérésnél nem lép be az
+eltolásos ágba. A végső HSV→RGB konverter (`0x00bbbe20`) `h`-t `[0,360)`-ra
+forgatja. (A `0x0049f5c0` bizonyítottan `fabs`: 26 bájt, egyetlen `fabs`
+utasítással.)
 
-**Ami NINCS mérve:** a `position` tartománya. A keresett érték egészként
-érkezik, és előjel nélküli javítással (`+ 2³²`) válik lebegőpontossá
-(`0x00bbbd0f`–`0x00bbbd1b`) — a pozíciók tehát egész indexhez hasonlítódnak,
-de a felső határt nem olvastam ki.
+**d) LUT és indexcsatorna.** A közös motor először a `0x00bcb270`-nel 4096
+bájton lenullázza a teljes négytáblás LUT-ot, majd komponensenként identitás-
+táblákat állít elő: `+0x000` B, `+0x400` G, `+0x800` R, `+0xc00` A
+rekeszben (`0x00bcb270`–`0x00bcb2e8`). A `0x00bbc260` ezután minden `x`-hez
+a konvertált BGRA dwordöt a `LUT + 0x800 + 4*x` címre írja; a `+0x000` és
+`+0x400` rekesz 1024-1024 bájtját lenullázza (`0x00bbc561`–`0x00bbc588`), a
+`+0xc00` alfa-identitást meghagyja. A közös skalár pixelmotor a BGRA forrás
+`src[2]` bájtját indexeli a `+0x800` rekeszben (`0x00bcb3a0`–`0x00bcb3a4`),
+vagyis a **piros csatornából** választ stopot; a négy táblázat eredményeit
+csatornánként összeadja és 255-re telíti (`0x00bcb3a0`–`0x00bcb4ba`).
+
+Ezt az eredeti initializer → worker → pixelmotor QEMU-s próbája is
+ellenőrizte. A BGRA `[255,64,127,1]` forrásból az eredmény `0000ffff`, ami
+LUT[127]=`0000ffff`-tel egyezik, nem LUT[64]=`1500ffff`-tel vagy
+LUT[255]=`002affff`-tel. A HSV-LUT alpha bájtja 255; a meghagyott alfa-
+identitással összeadva is 255-re telítődik.
+
+**Bizonyítottsági fok: megerősített** a `position` float32 LUT-tengelyére,
+a komponensenkénti interpolációra, a hue rövidebb ívére, a `+0x800` LUT
+felépítésére és a piros indexcsatornára: A út — célzott utasításszintű
+követés a fenti címeken; B út — az eredeti munkavégző és a közös pixelmotor
+QEMU-i386 futtatása kézi stoplistákkal, bájtra rögzített kimenettel. A
+PicasaPy saját kimenetével végzett összevetés nem Picasa-export golden.
+
+**Cáfoló próba:** megpróbáltam a `position` 0…1 normalizált skáláját és a
+hue nyers lineáris keverését alátámasztó ellenpéldát találni. A `[0.5,1.5]`
+pozíciójú próba az 1-es indexen a két stop köztes színét adta, ami cáfolja a
+0…1-normalizálást; a 350°→10° QEMU-próba rövid úton a 0° környékén haladt,
+nem a 180° környéki nyers interpoláció szerint. A valódi export-stoplista /
+pixel-golden továbbra sincs mérve.
+
+**PicasaPy-eltérés (#3814):** a `glimmer_ops.hsv_gradient_map` a `np.interp`
+segítségével közvetlenül, nyers számtani hue-értékekkel kever; a fenti
+350°→10° kézi stoplistán a 256 LUT-bejegyzésből **254 eltér** az eredeti
+QEMU-LUT-tól (a végpontok egyeznek). A piros indexcsatorna viszont egyezik.
+Fejlesztői teendő: az HSV hue LUT interpolációját a natív rövidebb
+körívű algoritmus szerint számolja, a float32 végpont- és köztes kerekítési
+sorrend megtartásával; az s/v maradjon lineáris. Bájtra ellenőrizhető próba:
+stopok `[0,350,100,100]`, `[255,10,100,100]`; RGB LUT[0]=`ff002a`,
+LUT[127]=`ff0000`, LUT[128]=`ff0000`, LUT[255]=`ff2a00` (natív BGRA:
+`2a00ffff`, `0000ffff`, `0000ffff`, `002affff`).
 
 
 ---
@@ -6093,6 +6280,255 @@ mérésével egybevág, de effektenként még nincs goldenen igazolva.
 
 *Bizonyítottsági fok: **megerősített** — minden állítás mellett cím, és a
 három valódi exporton a JPEG-újratömörítés zajszintjén egyezik.*
+
+### ⛳ #626 — a `Steps`, `Smoothing` és `Fade` részletes ellenőrzése (2026-10-04)
+
+A `filterdesc.xml:1244–1258` a `QuantizePalette` három csúszkáját,
+alapértékét és a teljes műveletsort adja meg: `Steps` 2–30 (8), `Smoothing`
+0–100 (80), `Fade` 0–100 (0), majd `BlurImageOperation` →
+`QuantizePaletteImageOperation(Depth=4)` egy külső
+`NestedImageOperation`-ben. A blur-sugár kifejezése mindkét tengelyen
+`(100 − Smoothing)/10 + 0,1`; a külső `BlendAlpha` `1 − Fade/100`.
+
+| rész | bináris út | qemu-i386 mérés |
+|---|---|---|
+| `Steps` konverzió | `0x00bb5ad0` az attribútumkifejezést értékeli, majd a `0x008eea90` helperrel egészre alakít; a helper x87 csonkoló kerekítést állít (`0x008eeaad`–`0x008eeab8`). A munkavégző `0x00bb5b60` `Steps == 2` esetén 2-t, máskor `Steps − 1`-et ad a redukálónak (`0x00bb5da8`–`0x00bb5dc8`). | `2,9 → 2`, `8,9 → 8`, `30,9 → 30`; a negatív kontrollok is nullához csonkolnak. A helper leletét megerősíti. |
+| `Smoothing` | a leíró kifejezése a `BlurImageOperation` `xblur`/`yblur` értéke; az alkalmazó `0x00bb4de0` tengelyenként a `0x00bb5050` sugár-kvantálót, majd a `quality=3` értékkel a `0x00bc5680` natív elmosóutat hívja. | A leíró 0/80/100 csúszkaértékeiből kapott sugárpróba: `10,1 → 10,100000381469727`; `2,1 → 2,0999999046325684`; `0,1 → 0`; a `2,01`/`2,03 → 2,065000057220459`, `3,01`/`3,02 → 3,0625`, `4,01`/`4,05 → 4,130000114440918`, `5,01`/`5,06 → 5,130000114440918` küszöbpróbák ugyanezt a kvantálót erősítik. A skálár lelet egyezik; a teljes képes elmosás nem futott le. |
+| `Fade` | a külső `NestedImageOperation` a bemenet másolatán futtatja a gyerekeket, majd a `BlendAlpha` szerint visszakeveri (4.5); a keverő `0x00bd0700` → `0x009dc4b0`. `w = trunc(α·256)`, majd `w>0` esetén `w−1`; páros szélességű SIMD-rész: `ki = (B·(255−w) + A·w) >> 8`. | Nincs teljes képpontos mérés. A natív függvény utasításolvasása adja a fenti képletet; páratlan szélesség utolsó pixelének skalárképlete különbözik: `ki = A + ((B−A)·w >> 8)` (`0x009dc646`–`0x009dc6fb`). |
+
+**A Smoothing sugárának pixeles jelentése.** Az XML-beli érték a `BlurFilter`
+`xblur`/`yblur` sugara, nem Gauss-σ (`0x00bb4de0`, `0x00bb5050`). A natív
+út futóablakos, fixpontos dobozszűrő: a sugárhoz tartozó együtthatókat a
+`0x00bc5360` készíti elő, a kimeneti menet egész osztással bájtot ír, a
+határmintákat a kép szélére vágja/ismétli. `quality=3` esetén 3 vízszintes,
+majd 3 függőleges menet fut (`0x00bc7540`, `0x00bc77b0`). A teljes
+`(k,h,w,osztó)` súlyparaméterezés és a menetképlet a későbbi „A `DropShadow`
+`quality=3` natív elmosása” és „Kiolvasva, emulátorral bitre igazolva”
+szakaszban van dokumentálva (`0x00bc5360`, `0x00bc5480`, `0x00bc6590`); a
+quantize-út ugyanezt a `0x00bc5680` diszpécsert hívja.
+
+**A mi kódunkhoz képest.** A `glimmer_tone.apply_quantizepalette` a
+`fade_alpha(fade)` értéket adja át; a segédfüggvény `1−Fade/100`-at ad, tehát
+az alfa iránya egyezik a leíróval. A közös `alpha_blend` a SIMD-képletet
+alkalmazza minden oszlopra, a natív skalár sorvégi ágat nem. A palettaépítő
+(`render/quantize_palette.py`, `kvantal`) `int(round(steps))`-et használ,
+míg a natív attribútumút csonkol: például közvetlen `Steps=8,9` hívásnál a
+natív érték 8, a mostani palettakódé 9. A leíró csúszkájának egészértékű
+lépésköze nincs igazolva, ezért a felületi hatás nyitott.
+
+A szélességkülönbség ellenpéldája a natív képletből: `α=0,5` esetén
+`w=127`; `B=0`, `A=255` mellett a SIMD-képlet 126-ot, az utolsó oszlop
+skalárképlete 128-at ad. A mostani általános `alpha_blend` a 126-os ágat
+alkalmazza az utolsó oszlopra is.
+
+**Cáfoló próba.** A `qemu-i386` skalárpróba az `8,9 → 8` eredménnyel
+cáfolja a kerekítés-paritást; a sugárpróba a fenti küszöb körüli bemenetekkel
+ellenőrizte a disassemblyből olvasott ágakat. Az első teljesmunkavégző-próba
+`R6030 - CRT not initialized` hibával állt le; a 2026-10-04-i második kör
+heap-shimekkel túljutott ezen, de a képpontátalakítóban a futás
+szegmentálási hibával végződött (az alábbi alfejezet). Egyik futás sem adott
+pixel-goldent, és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
+elfogadást.
+
+**Fejlesztői eltérés:** a `Steps` törtértékének konverzióját a natív
+csonkoláshoz kell igazítani, ha a renderer float API-ja része a támogatott
+bemeneteknek. A Fade keverésénél a páratlan szélességű utolsó oszlophoz a
+`0x009dc646`–`0x009dc6fb` skalárképlet kell; ezt páros és páratlan szélességű,
+byte-exakt qemu-próbával kell lezárni. A teljes `Steps × Smoothing` pixelút
+legalább négy párral és bájt-összehasonlítással továbbra is nyitott.
+
+*Bizonyítottsági fok: `Steps` csonkoló segédfüggvénye és a blur-sugár
+kvantálója **megerősített** (utasításolvasás + független qemu-i386 futtatás);
+a teljes `QuantizePalette`-kimenet és a `Fade` összetett képpontútja
+**feltételes** (a teljes műveletet nem sikerült qemu alatt futtatni, és
+nincs négykombinációs byte-golden).*
+
+**Későbbi állapotfrissítés:** a következő első QEMU-próba valóban félbeszakadt;
+az azt követő „A QuantizePalette képadat-leírója és a négy QEMU-pár” szakasz
+rögzíti a javított descriptorral mért kimenetet, és felülírja ezt a nyitott
+státuszt.
+
+### A teljes munkavégző első QEMU-próbája — az akkori képadat-leíró hibás volt (2026-10-04, #626)
+
+A helyi harness másolata a `.bt/harness-626q/` könyvtárban készült; a privát
+`~/picasapy-agent/eszkozok/qemu_harness/` eredeti fájljaihoz nem nyúltam. A PE
+belépési pont `0x00bef35e` a `___security_init_cookie`
+(`0x00bf0b56`) után a `___tmainCRTStartup` (`0x00bef17e`) útjára tér; ez az
+indítás hívja a `__heap_init` (`0x00bf0904`), `__mtinit` (`0x00bf0725`),
+`__ioinit` (`0x00beffc8`) és `__cinit` (`0x00bef5d3`) rutinokat. A teljes
+alkalmazásindítás helyett a harness másolata a `_malloc` (`0x00bf426f`),
+`_free` (`0x00bf219e`), `__calloc_crt` (`0x00bf226c`), `__realloc_crt`
+(`0x00bf22b4`), `__recalloc_crt` (`0x00bf22ff`) és a Picasa-allokátor
+(`0x0097c5d0`) belépési pontjait egy futásonként új, determinisztikus
+bump-arénára irányítja. A `free` no-op; a blokk mérete a `realloc`/
+`recalloc` számára a blokk előtt tárolódik. Az IAT `InterlockedIncrement`/
+`InterlockedDecrement` hívásai is lokális assembly-shimre mutatnak. A
+`0x00d67838` globális dword négy bájtra nullázását a harness szintén
+elvégzi; e globális változó szerepét külön nem izoláltam.
+
+Az eredeti `R6030` üzenet a shimek telepítése után már nem jelent meg: a futás
+elérte a `0x00bcb2f0` képpontátalakítót. A `q626-final` futás naplójának
+utolsó állapota `EIP=0x00bcb399`, `EDI=0x50230000`; a következő utasítás
+`0x00bcb3a0` a `[EDI+2]` bájtot olvassa. Ez a cím nem a wrapper által megadott
+`0x10060000` bemeneti puffer vagy a shim `0x10100000`-tól induló arénája;
+a mutató forrása nem azonosított.
+Ugyanez a futás `qemu-i386` alatt `SIGSEGV`-vel tért vissza, kimeneti bájt
+nélkül. Az utasítás és regiszterállapot binárisdisassemblyval, illetve a
+QEMU-regiszternaplóval ellenőrizhető; a hibás képadat-objektum pontos
+invariánsa és az, hogy melyik natív létrehozó út állítja elő a `0x50230000`
+mutatót, **NINCS MEG**.
+
+A `wq.py` diagnosztikai hívása közvetlenül a `0x00bb5b60` belső
+kvantálómunkavégzőt hívta `Steps=8`, `Depth=4` értékkel, szintetikus
+`32×24` BGRA képpel. A Glimmer külső `Blur`- és `Fade`-lépését nem futtatta;
+ez a próba a teljes effekt összehasonlítására sem lett volna elegendő még
+érvényes kimenet mellett sem.
+
+A helyi user `systemd` scope nem volt elérhető, ezért a tesztfuttató közvetlen
+`qemu-i386` fallbacket használt `timeout`-tal és
+`RLIMIT_AS=(mem_mb+4096) MiB` értékkel. A 4 GiB ráhagyás a QEMU i386
+vendégcímtér-leképezéséhez kellett; ez nem cgroup- vagy RSS-korlát. A
+README-ben ez és a CRT-shim alkalmazása dokumentálva van a következő
+kutatási szeleteknek.
+
+**Eredmény és határ:** a heap-shim a CRT-inicializálási akadályt megkerüli,
+de nem bizonyítja a natív kimenetet vagy az objektum inicializáltságát. A
+legalább négy `Steps`/`Smoothing` pár, mindegyik `Fade=0` és `Fade=50` mellett,
+nem futott le; ezért nincs bájtpontos összevetés, és nincs mérésből igazolt
+új fejlesztői eltérés sem. A következő próbának előbb a `0x00bb5b60` által
+várt képobjektumot a bináris valódi előállító útjával létrehoznia, majd
+a `0x00bcb2f0` bemenő descriptorának `+4` pixelmutatóját és sorlépését kell
+QEMU-ban ellenőriznie a dereferálás előtt.
+
+*Bizonyítottsági fok: feltételes — a CRT-hookok célcímei és a futás
+megállási címe binárisdisassemblyval és a QEMU-próbával alátámasztott;
+pixelmatematika és renderelővel való egyezés nincs mérve.*
+
+**Állapot:** ez az első, hibás bemeneti/kimeneti descriptorral futott kör
+történeti jegyzete; az alábbi, azonos dátumú folytatás felülírja az akkori
+„NINCS MEG” állapotot és a javasolt következő lépést.
+
+### ✅ A QuantizePalette képadat-leírója és a négy QEMU-pár (2026-10-04, #626)
+
+#### A valódi képadat-rekord és a `0x00bcb2f0` lokális nézete
+
+A `0x00bb5b60` belépő képadat-rekordja nem azonos a képponti munkavégzőnek
+átadott lokális descriptorral. Az elsőt a `0x00bb5f1a`–`0x00bb5f65`
+utasítások olvassák; ugyanezt az elrendezést a másik képművelet-út
+`0x009e7420` mintavételezője is használja:
+
+| rekord | mező | jelentés |
+|---|---:|---|
+| Image record (`0x00bb5b60` bemenet) | `+0x04` | sorlépés, pixelben; bájtcímhez `×4` |
+| | `+0x08` | szélesség pixelben |
+| | `+0x0c` | magasság pixelben |
+| | `+0x10` | képadat kezdőcíme |
+| | `+0x18`, `+0x1c` | x/y origó |
+| `0x00bcb2f0` bemenő view | `+0x04` | pixelbázis |
+| | `+0x08` | ebben a futásban nulla; szerepe **NINCS MEG** |
+| | `+0x0c`, `+0x10` | szélesség, magasság |
+| | `+0x14` | sorlépés, pixelben; bájtcímhez `×4` |
+| | `+0x18`, `+0x1c` | x/y origó |
+
+A hívó a valódi image record `+0x10` adatmutatóját és `+0x04`
+sorhosszát (`0x00bb5f30`–`0x00bb5f65`) a lokális view `+0x04` és
+`+0x14` mezőibe másolja. A `0x00bcb2f0` `EBX=[EBP+0x0c]` pointeréből
+veszi az input bázist (`mov edi,[ebx+4]`, `0x00bcb360`) és a stride-ot
+(`imul ..., [ebx+0x14]`, `0x00bcb368`); a kimeneti bázist a harmadik
+pointerargumentum `+0x04` mezőjéből, stride-ját annak `+0x14` mezőjéből
+veszi (`0x00bcb37a`–`0x00bcb385`).
+Így a korábbi hibás futás `EDI=0x50230000` értéke a `0x00bcb2f0`
+`[input-view+0x04]` mezőjéből jött (`0x00bcb360`–`0x00bcb371`); a valódi
+hívó e helyet a belépő image record `+0x10` adatmutatójából állítja elő.
+A régi crashnél ezt a view-t nem naplóztuk, így maga a `0x50230000`-hez
+vezető hibás rekordérték **NINCS MEG**. A javított mérésben ugyanennek a
+mezőnek az értéke a megadott bemeneti puffer `0x10070000` volt.
+
+**Csatornarend:** 4 bájt/pixel, memóriában BGRA. A `0x00bcb3a0`–
+`0x00bcb422` a `[+2]` bájtot a vörös (`+0x800` LUT), `[+1]`-et a zöld
+(`+0x400`), `[+0]`-t a kék (`+0`), `[+3]`-at az alfa (`+0xc00`) rekeszhez
+viszi; a `0x00bcb4ae`–`0x00bcb4ba` ugyanilyen bájthelyekre ír vissza.
+Az image-record pixelformátum-enum vagy az `+0x08` view-mező szemantikája
+**NINCS MEG**; a vizsgált út bájtsorrendje és 32 bites pixele viszont
+utasításszinten megvan.
+
+Az első bcb-hívás helye `0x00bb5fe9`: a 51×49-es QEMU-futásban az input
+view `+0x04=0x10070000`, a kimeneti view `+0x04=0x10107950`, méretük
+51×49, stride-juk 51 volt. A második hívás `0x00bb6110` ugyanezt a belső
+kimeneti view-t adja inputként és outputként, tehát in-place lépés.
+Mindkét eredeti hívást a futás közben naplóztam. A korábbi hibás harness a
+saját külső célpufferét olvasta, amelyet ez a belső kimeneti view nem használ;
+ezért lehetett a worker sikeres visszatérése mellett az ottani puffer nulla.
+
+#### Natív futás és byte-összevetés
+
+A QEMU-harness-másolat a `.bt/harness-626q3/` alatt futtatta az eredeti
+`0x00bb5b60` munkavégzőt, majd az eredeti `0x009dc4b0` alpha-blendert.
+A tesztkép determinisztikus, szintetikus 51×49 BGRA volt; a négy egész
+Steps/Smoothing pár a leíró szerinti elmosás után került a natív workerbe.
+A Fade=50 blend súlya `w=127`: az assembly a `trunc(α×256)` értéket
+pozitív esetben eggyel csökkenti (`0x00bd0a72`–`0x00bd0aaa`,
+`0x009dc561`); a SIMD-képletet és az odd-width scalar ágat is közvetlenül
+QEMU-ban futtattam.
+
+| `Steps` | `Smoothing` | sugár | quant pixel-eltérés (RGB) | Fade 0 RGB-bájt eltérés | Fade 50 RGB-bájt eltérés 51×49-en | max. |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 0 | 10,1 | 0/2 499 pixel | 0/7 497 | 36/7 497 | 1 |
+| 8 | 80 | 2,1 | 0/2 499 pixel | 0/7 497 | 51/7 497 | 1 |
+| 16 | 50 | 5,1 | 0/2 499 pixel | 0/7 497 | 63/7 497 | 2 |
+| 30 | 100 | 0,1 | 0/2 499 pixel | 0/7 497 | 77/7 497 | 1 |
+
+A négy natív quant-kimenet byte-ra egyezik a `kvantal()` kimenetével;
+Fade=0-nál a `BlendAlpha=1` miatt a kvantált kép változatlanul kerül ki.
+Fade=50-nél a natív blend-kimenet mind a négy beállításban byte-ra egyezik
+az utasításokból számolt eredménnyel. A PicasaPy eltérés kizárólag a páratlan
+szélesség utolsó oszlopában van. Cáfoló szélességkontroll: 50×49, 8/80;
+Fade=0 és Fade=50 esetén is 0/7 350 RGB-bájt eltérés.
+Például 16/50, `(x=50,y=22)`, vörös: eredeti `0`, kvantált `147`, natív
+Fade50 `74`, PicasaPy `72`; ez a páratlan sorvégi skalárág két szintes
+eltérését adja.
+
+#### Független utak, cáfoló kontroll és más műveletek
+
+**Két független út:** A) `0x00bb5b60` utasításai követik a forrás image
+record stride- és adatmutatómezőit a lokális view-ig; a `0x009e7420`
+független képművelet-út ugyanezeket a `+0x04/+0x08/+0x0c/+0x10` mezőket
+olvassa. B) az eredeti `0x00bb5fe9`/`0x00bb6110` hívások QEMU-mezőnaplója
+ugyanezt a layoutot mutatja, a kimeneti pointerről kiolvasott pixelek nem
+nullák. A mezőszerepek egyeznek. A pixelmatematikánál az eredeti
+`0x009dc4b0` QEMU-outputja mind a négy Steps/Smoothing esetben egyezik a
+disassembly-képlettel.
+
+**Cáfoló kísérlet:** az a hipotézis, hogy a külső harness-célpuffer `+0x04`
+mezője a bcb végső kimenete, hamisnak bizonyult: a QEMU-hívásnál a valódi
+output view `+0x04=0x10107950`, és annak pufferében nem nulla pixel van.
+Az odd-width magyarázatot a páros 50×49 kontroll cáfolhatta volna; azon nem
+volt eltérés, míg a páratlan 51×49 futásokban az eltérések mind a sorvégi
+scalar ágra estek.
+
+A ColorMatrix közvetlen QEMU-kontrollja a `0x008f2640` pixelkernelt
+kézi BGRA pixel-dwordokkal futtatja; az nem a teljes `0x00bb5b60`
+image record vizsgálata. A Border-próba (`0x00bbe570` → `0x00aa13b0`)
+saját, kézzel összeállított 9×9 ARGB bitmapet használ, de annak record-offsetjei
+nincsenek a jelenlegi mérésekben. Ezért a ColorMatrix kernel inputja nem
+bizonyság az image-record azonosságára, a Border-descriptor byte-offsetű
+egyezése pedig **NINCS MEG**.
+
+#### Eltérés a jelenlegi rendererben
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x00bb5b60` quant-kimenete mind a négy egész Steps/Smoothing párnál | `glimmer_tone.apply_quantizepalette()` / `quantize_palette.kvantal()` | A mért paraméterpárokra nincs eltérés; nem igényel fejlesztést. |
+| `0x009dc4b0`: 8 bájtos MMX-párok képlete `(B·(255−w)+T·w)>>8`; páratlan pixelszélesség maradék pixelje: `T+((B−T)·w>>8)` (`0x009dc646`–`0x009dc6fb`) | `glimmer_ops.py:151–170` a páros pixelképletet minden pixelre használja | Odd width esetén a sor utolsó pixelét a skalárképlettel keverje; őrizze meg az egész bájtos, előjeles `>>8` sorrendet. A 51×49 négy mért pár a golden; az 50×49 kontrollnak változatlanul kell maradnia. |
+
+**Bizonyítottsági fok:** `megerősített` a fenti record-mezőkre, byte-sorrendre,
+négy kvantálóbeállításra és Fade=50 algoritmusra: az utasításszintű olvasat
+és az eredeti QEMU-futtatás egyezik. **Nyitott:** a top-level `+0x14` és a
+view `+0x08` szemantikája, formátum-enum értéke, valamint a Border harness
+recordjának azonossága. Ez a szintetikus QEMU-worker-mérés nem oldja meg a
+korábbi 4. szakasz kérdését, hogy a valódi Picasa-export miért nem az
+oktree-út eredményét mutatja; a teljes `QuantizePalette` effekt összesített
+bizonyítottsági foka ezért továbbra is **feltételes**.
 
 ## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
 

@@ -876,21 +876,47 @@ def hsv_gradient_map(
 ) -> np.ndarray:
     """`HSVGradientMap`: a PIROS csatornához (#3421) rendelt (pozíció,
     hue°, sat%, val%) töréspontok interpolációja HSV-térben, majd RGB-re
-    konvertálva — a `HeatMap` effekt implementációja.
+    konvertálva — a `HeatMap` effekt implementációja. A stoppozíciók
+    float32 LUT-indexek; az S/V lineárisan interpolál, a hue pedig a natív
+    szabály szerint 180° fölött a rövidebb köríven fut.
 
     #3814: az RGB-re alakítás a natív lebegőpontos képlettel, csonkolva
     történik (`_hsv_rgb_lut_f32`); a `hueOffset` float32-ben adódik a
     keverés utáni színezethez, a körbefordítást az átalakító végzi.
     """
     validate_image(image)
-    positions = np.array([stop[0] for stop in stops], dtype=np.float64)
-    hues = np.array([stop[1] for stop in stops], dtype=np.float64)
-    sats = np.array([stop[2] for stop in stops], dtype=np.float64)
-    vals = np.array([stop[3] for stop in stops], dtype=np.float64)
-    idx = np.arange(256, dtype=np.float64)
-    hue_lut = np.interp(idx, positions, hues).astype(np.float32) + np.float32(hue_offset)
-    sat_lut = np.interp(idx, positions, sats)
-    val_lut = np.interp(idx, positions, vals)
+    f32 = np.float32
+    positions = np.asarray([stop[0] for stop in stops], dtype=np.float32)
+    hues = np.asarray([stop[1] for stop in stops], dtype=np.float32)
+    sats = np.asarray([stop[2] for stop in stops], dtype=np.float32)
+    vals = np.asarray([stop[3] for stop in stops], dtype=np.float32)
+    hue_lut = np.empty(256, dtype=np.float32)
+    sat_lut = np.empty(256, dtype=np.float32)
+    val_lut = np.empty(256, dtype=np.float32)
+    for x in range(256):
+        upper = int(np.searchsorted(positions, f32(x), side="left"))
+        if upper == 0:
+            hue_lut[x], sat_lut[x], val_lut[x] = hues[0], sats[0], vals[0]
+        elif upper == len(positions):
+            hue_lut[x], sat_lut[x], val_lut[x] = hues[-1], sats[-1], vals[-1]
+        elif positions[upper] == f32(x):
+            hue_lut[x], sat_lut[x], val_lut[x] = hues[upper], sats[upper], vals[upper]
+        else:
+            lower = upper - 1
+            p_lower = float(positions[lower])
+            p_upper = float(positions[upper])
+            weight = f32((p_upper - float(f32(x))) / (p_upper - p_lower))
+            h_lower = float(hues[lower])
+            h_upper = float(hues[upper])
+            if abs(h_lower - h_upper) > 180.0:
+                if h_lower < h_upper:
+                    h_lower += 360.0
+                elif h_upper < h_lower:
+                    h_upper += 360.0
+            hue_lut[x] = f32(h_upper + float(weight) * (h_lower - h_upper))
+            sat_lut[x] = f32(float(sats[upper]) + float(weight) * (float(sats[lower]) - float(sats[upper])))
+            val_lut[x] = f32(float(vals[upper]) + float(weight) * (float(vals[lower]) - float(vals[upper])))
+    hue_lut += f32(hue_offset)
     rgb_lut = _hsv_rgb_lut_f32(hue_lut, sat_lut, val_lut)
     return rgb_lut[image[..., _GRADIENS_INDEX_CSATORNA]]
 
