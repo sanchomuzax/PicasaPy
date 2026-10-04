@@ -7146,6 +7146,19 @@ Biztosan visszavonja a műveletet?</translation>
     </message>
 </context>
 <context>
+    <name>VideoPlayerControls</name>
+    <message>
+        <location filename="../qml/PicasaPy/VideoPlayerControls.qml"/>
+        <source>Show actual movie size (don't stretch)</source>
+        <translation>Mozgófilm tényleges méretének megjelenítése (nyújtás nélkül)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/VideoPlayerControls.qml"/>
+        <source>Play full screen</source>
+        <translation>Lejátszás teljes képernyőn</translation>
+    </message>
+</context>
+<context>
     <name>startup</name>
     <message>
         <source>Existing data migrated from {source} to {target}.</source>
