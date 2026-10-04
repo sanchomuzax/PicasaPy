@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Glimmer keretek lekerekített sarkai és félig átlátszó szélei pontosabban követik az eredeti Picasa képpontkeverését (#4122).
+
 ## [0.8.668] – 2026-10-04
 
 - Nagyított nézetben is használható az ecset, a vörösszem, a retusálás, a szöveg és az arcjelölés; az eszköz nélküli húzás pásztáz, kettős nézetben pedig kattintással váltható a fókusz (#4083).
