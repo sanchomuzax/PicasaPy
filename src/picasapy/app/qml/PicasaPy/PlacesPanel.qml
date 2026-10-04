@@ -26,6 +26,26 @@ Rectangle {
         panel.appWindow ? panel.appWindow.selectedIndexes : []
 
     readonly property var markers: controller ? controller.geoMarkers : []
+    // Az eredeti címkereső online geokódolását helyi szűrés váltja ki:
+    // képfájlnév, felirat, kulcsszavak és mappanév alapján keresünk a már
+    // indexelt GPS-es képek között; a mező nem küld hálózati kérést.
+    property string searchDraft: ""
+    property string searchTerm: ""
+    readonly property var filteredMarkers: {
+        var query = panel.searchTerm.trim().toLowerCase()
+        if (!query) return panel.markers
+        return panel.markers.filter(function(marker) {
+            var haystack = [marker.name, marker.caption,
+                            marker.keywords, marker.folder]
+                .join(" ").toLowerCase()
+            return haystack.indexOf(query) >= 0
+        })
+    }
+    readonly property var mapTypeNames:
+        mapLoader.item && mapLoader.item.mapTypeNames.length
+            ? mapLoader.item.mapTypeNames : [qsTr("Map")]
+    readonly property int mapTypeIndex:
+        mapLoader.item ? mapLoader.item.activeMapTypeIndex : 0
     readonly property bool mapAvailable: mapLoader.status === Loader.Ready
 
     signal closeRequested()
@@ -52,11 +72,23 @@ Rectangle {
             Layout.fillWidth: true
             Text {
                 objectName: "placesCountLabel"
-                text: qsTr("%1 pictures with a place").arg(panel.markers.length)
+                text: qsTr("%1 pictures with a place")
+                          .arg(panel.filteredMarkers.length)
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
             }
             Item { Layout.fillWidth: true }
+            PicasaComboBox {
+                objectName: "placesMapTypeMenu"
+                Layout.preferredWidth: 104
+                Layout.preferredHeight: 21
+                model: panel.mapTypeNames
+                currentIndex: panel.mapTypeIndex
+                onActivated: function(index) {
+                    if (mapLoader.item)
+                        mapLoader.item.selectMapType(index)
+                }
+            }
         }
 
         Loader {
@@ -67,9 +99,65 @@ Rectangle {
             active: panel.visible
             source: "PlacesMap.qml"
             onLoaded: {
-                item.markers = Qt.binding(function() { return panel.markers })
+                item.markers = Qt.binding(function() {
+                    return panel.filteredMarkers
+                })
                 item.markerActivated.connect(panel.photoActivated)
                 item.placePicked.connect(panel.placeSelection)
+            }
+        }
+
+        Text {
+            objectName: "placesSearchLabel"
+            Layout.fillWidth: true
+            text: qsTr("Search for an address:")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+
+        Rectangle {
+            objectName: "placesSearchGroup"
+            Layout.fillWidth: true
+            Layout.preferredHeight: 28
+            color: Theme.contentPanel
+            border.color: Theme.chromeBorder
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 8
+                anchors.rightMargin: 1
+                spacing: 4
+
+                TextField {
+                    id: placesSearchInput
+                    objectName: "placesSearchInput"
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: panel.searchDraft
+                    onTextChanged: panel.searchDraft = text
+                    onAccepted: panel.applyLocalSearch()
+                    TextFieldContextArea {}
+                }
+
+                PicasaButton {
+                    id: placesSearchButton
+                    objectName: "placesSearchButton"
+                    Layout.preferredWidth: 28
+                    Layout.fillHeight: true
+                    text: qsTr("Search")
+                    Accessible.name: qsTr("Search")
+                    ToolTip.text: qsTr("Search")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    contentItem: Image {
+                        source: "icons/loupe.svg"
+                        fillMode: Image.PreserveAspectFit
+                        sourceSize.width: 16
+                        sourceSize.height: 16
+                    }
+                    onClicked: panel.applyLocalSearch()
+                }
             }
         }
 
@@ -121,5 +209,9 @@ Rectangle {
     function placeSelection(latitude, longitude) {
         if (panel.targetRows.length === 0) return
         panel.setGeotagRequested(panel.targetRows, latitude, longitude)
+    }
+
+    function applyLocalSearch() {
+        panel.searchTerm = panel.searchDraft.trim()
     }
 }
