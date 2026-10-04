@@ -102,12 +102,16 @@ Dialog {
                         RadioButton {
                             id: emailChoiceDefaultRadio
                             objectName: "emailChoiceDefaultButton"
+                            // szöveg nélkül a stílus a jelölőt a sor KÖZEPÉRE tenné, a leírás fölé
+                            text: " "
                             Layout.fillWidth: true
                             checked: true
                             onClicked: root.stage = "compose"
 
                             contentItem: RowLayout {
                                 spacing: 10
+
+                                Item { Layout.preferredWidth: emailChoiceDefaultRadio.indicator.width + emailChoiceDefaultRadio.spacing }
 
                                 Label {
                                     objectName: "emailChoiceMailClientLabel"
@@ -131,11 +135,15 @@ Dialog {
                         RadioButton {
                             id: emailChoiceGoogleRadio
                             objectName: "emailChoiceGsender"
+                            // szöveg nélkül a stílus a jelölőt a sor KÖZEPÉRE tenné, a leírás fölé
+                            text: " "
                             Layout.fillWidth: true
                             enabled: false
 
                             contentItem: RowLayout {
                                 spacing: 10
+
+                                Item { Layout.preferredWidth: emailChoiceGoogleRadio.indicator.width + emailChoiceGoogleRadio.spacing }
 
                                 Text {
                                     objectName: "emailChoiceGoogleIcon"

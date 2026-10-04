@@ -229,6 +229,16 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
         assert dialog.property("title") == "Képek küldése e-mailben"
         valaszto = _elem(dialog, "emailChoicePicker")
         assert valaszto.isVisible()
+        # A szöveg nélküli rádiógomb jelölője a stílusban középre kerülne, a
+        # leírás fölé — a jelölő jobb széle a felirat bal széle előtt álljon.
+        for gomb, felirat in (
+            ("emailChoiceDefaultButton", "emailChoiceMailClientLabel"),
+            ("emailChoiceGsender", "emailChoiceGoogleIcon"),
+        ):
+            jelolo = _elem(dialog, gomb).property("indicator")
+            jobb = jelolo.mapToScene(QPointF(jelolo.width(), 0)).x()
+            bal = _elem(dialog, felirat).mapToScene(QPointF(0, 0)).x()
+            assert jobb <= bal, f"{gomb}: a jelölő ({jobb}) belelóg a feliratba ({bal})"
         for magassag_elteres in (-5, 0, 5):
             window.setHeight(eredeti_magassag + magassag_elteres)
             qt_app.processEvents()
