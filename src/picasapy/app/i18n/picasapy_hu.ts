@@ -3133,6 +3133,83 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <source>The movie could not be created.</source>
         <translation>A mozgófilm nem készült el.</translation>
     </message>
+    <message><source>Text</source><translation>Szöveg</translation></message>
+    <message><source>Slide</source><translation>Dia</translation></message>
+    <message><source>Clips</source><translation>Klipek</translation></message>
+    <message><source>Sizes</source><translation>Méretek</translation></message>
+    <message><source>Transition style:</source><translation>Képváltási stílus</translation></message>
+    <message><source>Cut</source><translation>Kivágás</translation></message>
+    <message><source>Dissolve</source><translation>Szétoszlás</translation></message>
+    <message><source>Dissolve through black</source><translation>Szétoszlás feketén át</translation></message>
+    <message><source>Dissolve through white</source><translation>Szétoszlás fehéren át</translation></message>
+    <message><source>Wipe - left</source><translation>Törlés - balra</translation></message>
+    <message><source>Wipe</source><translation>Törlés</translation></message>
+    <message><source>Wipe - top</source><translation>Törlés - felfelé</translation></message>
+    <message><source>Wipe - bottom</source><translation>Törlés - lefelé</translation></message>
+    <message><source>Wipe - up left</source><translation>Törlés - balra fel</translation></message>
+    <message><source>Wipe - up right</source><translation>Törlés - jobbra fel</translation></message>
+    <message><source>Wipe - down left</source><translation>Törlés - balra le</translation></message>
+    <message><source>Wipe - down right</source><translation>Törlés - jobbra le</translation></message>
+    <message><source>Push - left</source><translation>Tolás - balra</translation></message>
+    <message><source>Push</source><translation>Tolás</translation></message>
+    <message><source>Push - top</source><translation>Tolás - felfelé</translation></message>
+    <message><source>Push - bottom</source><translation>Tolás - lefelé</translation></message>
+    <message><source>Circle - inwards</source><translation>Kör - befelé</translation></message>
+    <message><source>Circle</source><translation>Kör</translation></message>
+    <message><source>Pan and Zoom</source><translation>Pásztázás és nagyítás</translation></message>
+    <message><source>Pan and Zoom - face</source><translation>Pásztázás és nagyítás - arc</translation></message>
+    <message><source>Time Lapse</source><translation>Gyorsítás</translation></message>
+    <message><source>Rectangle</source><translation>Négyszög</translation></message>
+    <message><source>Overlap</source><translation>Átfedés</translation></message>
+    <message><source>Slide Duration:</source><translation>Dia időtartama</translation></message>
+    <message><source>Audio:</source><translation>Hangsáv:</translation></message>
+    <message><source>No audio selected</source><translation>Nincs hangsáv kiválasztva</translation></message>
+    <message><source>Load…</source><translation>Betöltés…</translation></message>
+    <message><source>Clear</source><translation>Törlés</translation></message>
+    <message><source>Options</source><translation>Opciók</translation></message>
+    <message><source>Truncate audio</source><translation>Hangfájl csonkolása</translation></message>
+    <message><source>Fit photos into audio</source><translation>Fotók hozzáillesztése a hanghoz</translation></message>
+    <message><source>Loop photos to match audio</source><translation>Fotók ismétlése a zene végéig</translation></message>
+    <message><source>Show Captions</source><translation>Képfeliratok megjelenítése</translation></message>
+    <message><source>Show Dates</source><translation>Dátumok megjelenítése</translation></message>
+    <message><source>Full frame photo crop</source><translation>Teljes képkockás fotó körbevágása</translation></message>
+    <message><source>Remove Low Resolution Faces</source><translation>Kis felbontású arcok eltávolítása</translation></message>
+    <message><source>Best Transitions</source><translation>A legjobb átmenetek</translation></message>
+    <message><source>Album Order</source><translation>Album szerint</translation></message>
+    <message><source>Chronological</source><translation>Időrend</translation></message>
+    <message><source>Text slide:</source><translation>Szöveges dia:</translation></message>
+    <message><source>Font:</source><translation>Betűtípus:</translation></message>
+    <message><source>Size:</source><translation>Méret:</translation></message>
+    <message><source>Style:</source><translation>Stílus:</translation></message>
+    <message><source>Centered</source><translation>Középre igazított</translation></message>
+    <message><source>I'm Feeling Lucky</source><translation>Jó napom van</translation></message>
+    <message><source>Caption</source><translation>Képfelirat</translation></message>
+    <message><source>Caption - Classic</source><translation>Képfelirat - Klasszikus</translation></message>
+    <message><source>Gradient - Black</source><translation>Színátmenet - fekete</translation></message>
+    <message><source>Gradient - White</source><translation>Színátmenet - Fehér</translation></message>
+    <message><source>Transparent - Black</source><translation>Átlátszó - fekete</translation></message>
+    <message><source>Transparent - White</source><translation>Átlátszó - fehér</translation></message>
+    <message><source>Scrolling Credits</source><translation>Gördülő stáblista</translation></message>
+    <message><source>Music Video - Left</source><translation>Zenei videoklip - bal</translation></message>
+    <message><source>Music Video - Right</source><translation>Zenei videoklip - jobb</translation></message>
+    <message><source>Caption - Typewriter</source><translation>Képfelirat - Írógép</translation></message>
+    <message><source>Bold</source><translation>Félkövér</translation></message>
+    <message><source>Italic</source><translation>Dőlt</translation></message>
+    <message><source>Automatic Outline</source><translation>Automatikus körvonal</translation></message>
+    <message><source>Text color</source><translation>Szöveg színe</translation></message>
+    <message><source>Background color</source><translation>Háttér színe</translation></message>
+    <message><source>Insert Text Slide</source><translation>Új szöveges dia hozzáadása</translation></message>
+    <message><source>Remove Selected Slide</source><translation>A kijelölt dia eltávolítása</translation></message>
+    <message><source>Add selected clips</source><translation>Kijelölt klipek hozzáadása</translation></message>
+    <message><source>Remove selected clip</source><translation>Kijelölt klip eltávolítása</translation></message>
+    <message><source>Play selected clip only</source><translation>Csak a kijelölt klip lejátszása</translation></message>
+    <message><source>Preview</source><translation>Előnézet</translation></message>
+    <message><source>Recompute</source><translation>Újraszámolás</translation></message>
+    <message><source>Close</source><translation>Bezárás</translation></message>
+    <message><source>Create Movie</source><translation>Mozgófilm létrehozása</translation></message>
+    <message><source>Audio files</source><translation>Hangfájlok</translation></message>
+    <message><source>Music files (*.mp3, *.wma)</source><translation>Zenei fájlok (*.mp3, *.wma)</translation></message>
+    <message><source>Music files (*.mp3, *.m4a)</source><translation>Zenei fájlok (*.mp3, *.m4a)</translation></message>
 </context>
 <context>
     <name>ExportDialogs</name>

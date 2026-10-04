@@ -8,6 +8,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - A Glimmer-effektek páratlan szélességű képeken is az eredeti Picasa szerint keverik vissza a hatást, a paletta lépéseit pedig csonkolják (#4157).
+- Elkészült a Filmkészítő háromfüles panelje; a választott méret, átmenet és hangsáv a kész mozgófilmben is érvényesül (#4125).
 
 ## [0.8.672] – 2026-10-04
 
