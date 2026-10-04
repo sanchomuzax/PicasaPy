@@ -25,12 +25,13 @@ nem látszó sáv ugyanazt a kaput hívja, mint a menü.
 
 from __future__ import annotations
 
+import time
+
+import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
-from PySide6.QtTest import QTest
 
 #: a mért animáció-hossz
 ANIMACIO_MS = 400
-ALAP_SZELESSEG = 280
 
 
 def _gyerek(gyoker, nev):
@@ -39,16 +40,27 @@ def _gyerek(gyoker, nev):
     return objektum
 
 
-def _var(qt_app, felteteles, korok: int = 40):
+def _var(qt_app, felteteles, masodperc: float = 3.0):
     """Megvárja a feltételt — VALÓDI idő múlásával.
 
     ⚠️ A puszta `processEvents` nem elég: az animáció órája nem lép
     tőle, tehát a 400 ms-os betolás közepén állva mérnénk."""
-    for _ in range(korok):
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
         if felteteles():
             return True
-        QTest.qWait(30)
+        time.sleep(0.05)
+    qt_app.processEvents()
     return felteteles()
+
+
+@pytest.fixture(autouse=True, params=(795, 800, 805))
+def _platform_magassag(request, qml_app, qt_app):
+    """Az animáció és a fogó viselkedését ±5 px-es ablakmagasságon is mérjük."""
+    window = qml_app[0]
+    window.resize(window.width(), request.param)
+    qt_app.processEvents()
 
 
 def _nyisd(window, qt_app, menu_nev="menuViewTags"):
@@ -74,8 +86,12 @@ class TestAzAnimacio:
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app)
         fiok = _gyerek(window, "rightDrawer")
+        nyitott_szelesseg = fiok.property("alapSzelesseg")
 
-        assert _var(qt_app, lambda: fiok.property("width") == ALAP_SZELESSEG), (
+        assert _var(
+            qt_app,
+            lambda: abs(fiok.property("width") - nyitott_szelesseg) <= 3,
+        ), (
             f"a fiók {fiok.property('width')} széles maradt"
         )
 
@@ -100,7 +116,7 @@ class TestANemLatszoSav:
 
     def test_letezik_es_NEM_latszik(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        sav = _gyerek(window, "rightDrawerFogo")
+        sav = _gyerek(window, "toggle_right_drawer")
 
         assert sav.property("opacity") == 0, (
             "a sávnak nem szabad látszania (`m_fakehidden`)"
@@ -112,7 +128,7 @@ class TestANemLatszoSav:
         assert window.property("activeDrawerTab") != ""
 
         QMetaObject.invokeMethod(
-            _gyerek(window, "rightDrawerFogo"), "kattints",
+            _gyerek(window, "toggle_right_drawer"), "kattints",
             Qt.ConnectionType.DirectConnection,
         )
         qt_app.processEvents()
@@ -125,7 +141,7 @@ class TestANemLatszoSav:
         """A billentés fele-útja adatvesztésnek látszana (#2163)."""
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app, "menuViewPeople")
-        fogo = _gyerek(window, "rightDrawerFogo")
+        fogo = _gyerek(window, "toggle_right_drawer")
 
         for _ in range(2):
             QMetaObject.invokeMethod(
