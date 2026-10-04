@@ -3281,6 +3281,7 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message><source>Slide</source><translation>Dia</translation></message>
     <message><source>Clips</source><translation>Klipek</translation></message>
     <message><source>Sizes</source><translation>Méretek</translation></message>
+    <message><source>Dimensions</source><translation>Méretek</translation></message>
     <message><source>Transition style:</source><translation>Képváltási stílus</translation></message>
     <message><source>Cut</source><translation>Kivágás</translation></message>
     <message><source>Dissolve</source><translation>Szétoszlás</translation></message>
@@ -3307,6 +3308,7 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message><source>Overlap</source><translation>Átfedés</translation></message>
     <message><source>Slide Duration:</source><translation>Dia időtartama</translation></message>
     <message><source>Audio:</source><translation>Hangsáv:</translation></message>
+    <message><source>Audio Track:</source><translation>Hangsáv:</translation></message>
     <message><source>No audio selected</source><translation>Nincs hangsáv kiválasztva</translation></message>
     <message><source>Load…</source><translation>Betöltés…</translation></message>
     <message><source>Clear</source><translation>Törlés</translation></message>
@@ -3321,6 +3323,11 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message><source>Best Transitions</source><translation>A legjobb átmenetek</translation></message>
     <message><source>Album Order</source><translation>Album szerint</translation></message>
     <message><source>Chronological</source><translation>Időrend</translation></message>
+    <message><source>Ordering of Slides:</source><translation>Diák rendezése:</translation></message>
+    <message><source>Total Photos</source><translation>Összes fénykép</translation></message>
+    <message><source>Don't filter by time taken</source><translation>Ne legyen szűrés a készítés ideje alapján</translation></message>
+    <message><source>Remove Photos Taken Within %1</source><translation>Az utolsó időszak képeinek eltávolítása: %1</translation></message>
+    <message><source>Back to selected slide</source><translation>Vissza a kijelölt diához</translation></message>
     <message><source>Text slide:</source><translation>Szöveges dia:</translation></message>
     <message><source>Font:</source><translation>Betűtípus:</translation></message>
     <message><source>Size:</source><translation>Méret:</translation></message>
@@ -3340,12 +3347,16 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message><source>Bold</source><translation>Félkövér</translation></message>
     <message><source>Italic</source><translation>Dőlt</translation></message>
     <message><source>Automatic Outline</source><translation>Automatikus körvonal</translation></message>
+    <message><source>Automatic Outline (like movie subtitles)</source><translation>Automatikus körvonal (mint a filmfeliratok esetében)</translation></message>
     <message><source>Text color</source><translation>Szöveg színe</translation></message>
     <message><source>Background color</source><translation>Háttér színe</translation></message>
     <message><source>Insert Text Slide</source><translation>Új szöveges dia hozzáadása</translation></message>
     <message><source>Remove Selected Slide</source><translation>A kijelölt dia eltávolítása</translation></message>
+    <message><source>Remove the selected slide</source><translation>A kijelölt dia eltávolítása</translation></message>
     <message><source>Add selected clips</source><translation>Kijelölt klipek hozzáadása</translation></message>
     <message><source>Remove selected clip</source><translation>Kijelölt klip eltávolítása</translation></message>
+    <message><source>Add the selected clip(s) to the end of the movie</source><translation>A kijelölt klip(ek) hozzáadása a mozgófilm végéhez</translation></message>
+    <message><source>Remove the selected clip(s) from the tray</source><translation>A kijelölt klip(ek) eltávolítása a tálcáról</translation></message>
     <message><source>Play selected clip only</source><translation>Csak a kijelölt klip lejátszása</translation></message>
     <message><source>Preview</source><translation>Előnézet</translation></message>
     <message><source>Recompute</source><translation>Újraszámolás</translation></message>
