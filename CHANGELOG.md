@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Elkészült a Filmkészítő háromfüles panelje; a választott méret, átmenet és hangsáv a kész mozgófilmben is érvényesül (#4125).
+
 ## [0.8.669] – 2026-10-04
 
 - A Glimmer keretek lekerekített sarkai és félig átlátszó szélei pontosabban követik az eredeti Picasa képpontkeverését (#4122).

@@ -201,128 +201,441 @@ Item {
         id: movieDialog
         objectName: "movieDialog"
         title: qsTr("Movie")
-        modal: true
+        modal: false
         anchors.centerIn: parent
-        standardButtons: Dialog.Ok | Dialog.Cancel
+        width: 700
+        height: 540
+        standardButtons: Dialog.NoButton
         property string targetFile: ""
+        property string audioFile: ""
+        property int audioOption: 0
+        property int transitionIndex: 1
+        property var movieClipIndexes: []
+        property var movieClipSources: []
+        property int previewIndex: 0
+        property string previewSource: ""
+        property var movieSlides: []
+        property string textColor: "#ffffff"
+        property string backgroundColor: "#000000"
         //: #2114: projektfájlból nyitottuk-e — ilyenkor a párbeszéd
         //: kimondja, hogy a felbontás NEM a projektből jön.
         property bool projektbolNyilt: false
-        // a felbontás-lista indexei → videó-magasság
-        //: #1977 (7. pont): az eredeti HÉT mérete
-        //: (`docs/specs/picasa-create-features.md` 2.6/c). Öt közülük
-        //: 4:3-as, ezért a SZÉLESSÉG is kell — a korábbi 16:9-es
-        //: származtatás azokat torzította volna (1024-es magasságból
-        //: 1820 jött volna ki 768 helyett).
+        // A `makemoviepanel` 2.1 listája, a binárisban használt kulcsokkal.
+        readonly property var transitionKeys: [
+            "cut", "dissolve", "dissolveblack", "dissolvewhite",
+            "wipeleft", "wiperight", "wipeup", "wipedown",
+            "diagwipeul", "diagwipeur", "diagwipedl", "diagwipedr",
+            "pushleft", "pushright", "pushtop", "pushdown",
+            "circlein", "circleout", "kenburns", "kenburnsaoi",
+            "timelapse", "rect",
+        ]
         readonly property var sizeOptions: [
             [320, 240], [640, 480], [800, 600], [1024, 768],
             [1600, 1200], [1280, 720], [1920, 1080],
         ]
-        //: az alapértelmezés a 720p — a lista hatodik eleme
-        readonly property int defaultSizeIndex: 5
+        readonly property var textSizes: [
+            8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96,
+        ]
+        readonly property var textStyleIds: [
+            "textstyle0", "textstyle1", "textstyle2", "textstyle3",
+            "textstyle4", "textstyle5", "textstyle6", "textstyle7",
+            "textstyle8", "textstyle9", "textstyle10", "textstyle11",
+        ]
+        readonly property int defaultSizeIndex: controller
+                && controller.movieResolutionIndex !== undefined
+                ? controller.movieResolutionIndex : 1
         function openForSelection() {
             // #455: tartott képekkel a tálca a forrás — ilyenkor a
             // rácsban nem is kell kijelölésnek lennie
             if (!dialogs.trayHasPictures
                     && dialogs.appWindow.selectedIndexes.length === 0) return
+            movieClipIndexes = dialogs.appWindow.selectedIndexes.slice(0)
+            movieClipSources = controller.movieSourceUrls(movieClipIndexes)
+            movieSlides = []
+            previewIndex = 0
+            previewSource = movieClipSources.length ? movieClipSources[0] : ""
+            targetFile = ""
             open()
         }
-        //: #1977: az OK MINDIG engedélyezett — az eredeti sem kér
-        //: célfájlt. Cél nélkül a vezérlő a `Picasa`/honosított Filmek
-        //: mappába ír, a forrásmappa nevével, ütközésnél sorszámozva.
-        //: A fájlválasztó megmarad „Mentés másként"-ként.
-        onOpened: standardButton(Dialog.Ok).enabled = true
-        onClosed: movieDialog.projektbolNyilt = false
-        onAccepted: {
+        function addTextSlide() {
+            var slides = movieSlides.slice(0)
+            slides.push({
+                text: movieSlideText.text || qsTr("Text"),
+                font: movieFontBox.currentText,
+                size: textSizes[movieTextSizeBox.currentIndex],
+                style: movieTextStyleBox.currentIndex,
+                bold: movieBoldBox.checked,
+                italic: movieItalicBox.checked,
+                outline: movieOutlineBox.checked,
+                textColor: textColor,
+                backgroundColor: backgroundColor,
+            })
+            movieSlides = slides
+            movieSlideList.currentIndex = slides.length - 1
+        }
+        function removeTextSlide() {
+            if (movieSlideList.currentIndex < 0) return
+            var slides = movieSlides.slice(0)
+            slides.splice(movieSlideList.currentIndex, 1)
+            movieSlides = slides
+            movieSlideList.currentIndex = Math.min(
+                movieSlideList.currentIndex, slides.length - 1)
+        }
+        function recomputeMovie() {
+            if (controller)
+                movieClipSources = controller.movieSourceUrls(movieClipSources)
+            previewIndex = 0
+            previewSource = movieClipSources.length ? movieClipSources[0] : ""
+            moviePreviewTimer.stop()
+            movieTabs.currentIndex = 0
+        }
+        function exportMovie() {
+            var meret = sizeOptions[movieHeightBox.currentIndex]
+            var sources = movieClipSources.slice(0)
+            if (movieSoloClip.checked && sources.length) {
+                var selected = movieClipList.currentIndex < 0 ? 0 : movieClipList.currentIndex
+                sources = [sources[selected]]
+            }
             movieProgressDialog.done = 0
-            movieProgressDialog.total = dialogs.appWindow.selectedIndexes.length
+            movieProgressDialog.total = sources.length
+                    + movieSlides.length
             movieProgressDialog.open()
-            var meret = movieDialog.sizeOptions[movieHeightBox.currentIndex]
             controller.exportMovie(
-                dialogs.appWindow.selectedIndexes, movieDialog.targetFile,
-                meret[1], movieSeconds.value / 10.0, meret[0])
+                sources, targetFile, meret[1], movieSeconds.value / 10.0,
+                meret[0], transitionKeys[transitionIndex], movieOverlapSlider.value,
+                audioFile, audioOption, movieSlides, {
+                    ordering: movieSmartOrder.checked ? 0
+                        : movieChronologicalOrder.checked ? 2 : 1,
+                    showcaptions: movieShowCaptions.checked,
+                    showdates: movieShowDates.checked,
+                    cropfit: movieCropToFit.checked,
+                    removelowresfaces: movieRemoveLowResFaces.checked,
+                })
+            close()
+        }
+        onClosed: {
+            movieDialog.projektbolNyilt = false
+            moviePreviewTimer.stop()
         }
         ColumnLayout {
-            spacing: 10
-            Text {
-                objectName: "movieProjectNote"
-                visible: movieDialog.projektbolNyilt
-                //: #2114: a projektfájl a diaidőt és a képeket őrzi meg,
-                //: a felbontást nem — ezt kimondjuk, nem találgatunk.
-                text: qsTr("The movie's pictures and timing come from the "
-                           + "project file; the size starts from the default.")
-                wrapMode: Text.WordWrap
-                Layout.maximumWidth: 320
-                font.pixelSize: Theme.fontSize - 1
-                color: Theme.textGray
+            anchors.fill: parent
+            anchors.margins: 14
+            spacing: 8
+            TabBar {
+                id: movieTabs
+                objectName: "movieTabs"
+                Layout.fillWidth: true
+                TabButton { objectName: "movieTabMotion"; text: qsTr("Movie") }
+                TabButton { objectName: "movieTabSlide"; text: qsTr("Slide") }
+                TabButton { objectName: "movieTabClips"; text: qsTr("Clips") }
             }
-            Text {
-                objectName: "movieCountLabel"
-                text: qsTr("%1 pictures selected.").arg(
-                    dialogs.appWindow.selectedIndexes.length)
-                font.pixelSize: Theme.fontSize
-                color: Theme.textGray
-            }
-            RowLayout {
-                spacing: 8
-                Text {
-                    text: qsTr("Video size:")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                }
-                PicasaComboBox {
-                    id: movieHeightBox
-                    objectName: "movieHeightBox"
-                    Layout.preferredWidth: 160
-                    model: [
-                        "320 × 240", "640 × 480", "800 × 600", "1024 × 768",
-                        "1600 × 1200", "1280 × 720 (720p)", "1920 × 1080 (1080p)",
-                    ]
-                    currentIndex: movieDialog.defaultSizeIndex
-                }
-            }
-            RowLayout {
-                spacing: 8
-                Text {
-                    text: qsTr("Seconds per picture:")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                }
-                SpinBox {
-                    id: movieSeconds
-                    objectName: "movieSeconds"
-                    // tizedmásodperc-felbontás: 1,0–10,0 mp
-                    from: 10; to: 100; stepSize: 5; value: 30
-                    textFromValue: function(value) {
-                        return (value / 10.0).toFixed(1)
+            StackLayout {
+                id: moviePages
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                currentIndex: movieTabs.currentIndex
+                ScrollView {
+                    objectName: "movieTabPanelMotion"
+                    clip: true
+                    ColumnLayout {
+                        width: moviePages.width
+                        spacing: 8
+                        Text {
+                            objectName: "movieProjectNote"
+                            visible: movieDialog.projektbolNyilt
+                            text: qsTr("The movie's pictures and timing come from the project file; the size starts from the default.")
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.textGray
+                        }
+                        Text {
+                            objectName: "movieCountLabel"
+                            text: qsTr("%1 pictures selected.").arg(movieDialog.movieClipSources.length)
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.textGray
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Sizes"); color: Theme.ink }
+                            PicasaComboBox {
+                                id: movieHeightBox
+                                objectName: "movieHeightBox"
+                                Layout.preferredWidth: 190
+                                model: ["320x240", "640x480", "800x600",
+                                    "1024x768", "1600x1200", "1280x720 (720p)",
+                                    "1920x1080 (1080p)"]
+                                currentIndex: movieDialog.defaultSizeIndex
+                                onActivated: controller.setMovieResolutionIndex(currentIndex)
+                            }
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Transition style:"); color: Theme.ink }
+                            PicasaComboBox {
+                                id: movieTransitionBox
+                                objectName: "movieTransitionBox"
+                                Layout.fillWidth: true
+                                model: [qsTr("Cut"), qsTr("Dissolve"),
+                                    qsTr("Dissolve through black"), qsTr("Dissolve through white"),
+                                    qsTr("Wipe - left"), qsTr("Wipe"), qsTr("Wipe - top"),
+                                    qsTr("Wipe - bottom"), qsTr("Wipe - up left"),
+                                    qsTr("Wipe - up right"), qsTr("Wipe - down left"),
+                                    qsTr("Wipe - down right"), qsTr("Push - left"), qsTr("Push"),
+                                    qsTr("Push - top"), qsTr("Push - bottom"),
+                                    qsTr("Circle - inwards"), qsTr("Circle"),
+                                    qsTr("Pan and Zoom"), qsTr("Pan and Zoom - face"),
+                                    qsTr("Time Lapse"), qsTr("Rectangle")]
+                                currentIndex: movieDialog.transitionIndex
+                                onCurrentIndexChanged: movieDialog.transitionIndex = currentIndex
+                                onActivated: movieDialog.transitionIndex = currentIndex
+                            }
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Overlap"); color: Theme.ink }
+                            Slider {
+                                id: movieOverlapSlider
+                                objectName: "movieOverlapSlider"
+                                Layout.fillWidth: true
+                                from: 0; to: Math.max(0.1, movieSeconds.value / 10 * 0.9)
+                                value: Math.min(0.5, to); stepSize: 0.1
+                            }
+                            Text { text: movieOverlapSlider.value.toFixed(1) + " s" }
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Slide Duration:"); color: Theme.ink }
+                            SpinBox {
+                                id: movieSeconds
+                                objectName: "movieSeconds"
+                                from: 10; to: 100; stepSize: 5; value: 30
+                                textFromValue: function(value) { return (value / 10).toFixed(1) }
+                                valueFromText: function(text) { return Math.round(parseFloat(text) * 10) }
+                            }
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Target file:"); color: Theme.ink }
+                            Text {
+                                objectName: "movieTargetLabel"
+                                Layout.fillWidth: true
+                                elide: Text.ElideMiddle
+                                text: movieDialog.targetFile.length
+                                    ? movieDialog.targetFile : qsTr("(not selected)")
+                                color: Theme.textGray
+                            }
+                            Button { text: qsTr("Browse..."); onClicked: movieTargetDialog.open() }
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Audio:"); color: Theme.ink }
+                            Text {
+                                objectName: "movieAudioPathLabel"
+                                Layout.fillWidth: true
+                                text: movieDialog.audioFile.length
+                                    ? decodeURIComponent(movieDialog.audioFile.split("/").pop())
+                                    : qsTr("No audio selected")
+                                elide: Text.ElideMiddle
+                            }
+                            Button { objectName: "movieAddAudioButton"; text: qsTr("Load…"); onClicked: movieAudioDialog.open() }
+                            Button { objectName: "movieRemoveAudioButton"; text: qsTr("Clear"); onClicked: movieDialog.audioFile = "" }
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Options"); color: Theme.ink }
+                            PicasaComboBox {
+                                id: movieAudioOptionBox
+                                objectName: "movieAudioOptionBox"
+                                Layout.fillWidth: true
+                                model: [qsTr("Truncate audio"), qsTr("Fit photos into audio"),
+                                    qsTr("Loop photos to match audio")]
+                                currentIndex: movieDialog.audioOption
+                                onActivated: movieDialog.audioOption = currentIndex
+                            }
+                        }
+                        RowLayout {
+                            CheckBox {
+                                id: movieShowCaptions
+                                objectName: "movieShowCaptions"
+                                text: qsTr("Show Captions")
+                                checked: controller && typeof controller.moviePreference === "function"
+                                        ? controller.moviePreference("captions") : false
+                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
+                                               controller.setMoviePreference("captions", checked)
+                            }
+                            CheckBox { id: movieShowDates; objectName: "movieShowDates"; text: qsTr("Show Dates") }
+                            CheckBox {
+                                id: movieCropToFit
+                                objectName: "movieCropToFit"
+                                text: qsTr("Full frame photo crop")
+                                checked: controller && typeof controller.moviePreference === "function"
+                                        ? controller.moviePreference("cropfit") : false
+                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
+                                               controller.setMoviePreference("cropfit", checked)
+                            }
+                            CheckBox {
+                                id: movieRemoveLowResFaces
+                                objectName: "movieRemoveLowResFaces"
+                                text: qsTr("Remove Low Resolution Faces")
+                                checked: controller && typeof controller.moviePreference === "function"
+                                        ? controller.moviePreference("removeLowResFaces") : false
+                                onToggled: if (controller && typeof controller.setMoviePreference === "function")
+                                               controller.setMoviePreference("removeLowResFaces", checked)
+                            }
+                        }
+                        RowLayout {
+                            RadioButton { id: movieSmartOrder; objectName: "movieSmartOrder"; text: qsTr("Best Transitions") }
+                            RadioButton { objectName: "movieAlbumOrder"; text: qsTr("Album Order"); checked: true }
+                            RadioButton { id: movieChronologicalOrder; objectName: "movieChronologicalOrder"; text: qsTr("Chronological") }
+                        }
+                        RowLayout {
+                            objectName: "moviePreviewPanel"
+                            Image {
+                                id: moviePreviewImage
+                                objectName: "moviePreviewImage"
+                                Layout.preferredWidth: 240
+                                Layout.preferredHeight: 140
+                                fillMode: Image.PreserveAspectFit
+                                cache: false
+                                source: movieDialog.previewSource
+                            }
+                            Button {
+                                objectName: "moviePreviewButton"
+                                text: qsTr("Preview")
+                                checkable: true
+                                checked: moviePreviewTimer.running
+                                onClicked: {
+                                    if (!movieDialog.movieClipSources.length) {
+                                        moviePreviewTimer.stop()
+                                        return
+                                    }
+                                    if (moviePreviewTimer.running) {
+                                        moviePreviewTimer.stop()
+                                    } else {
+                                        movieDialog.previewIndex = 0
+                                        movieDialog.previewSource = movieDialog.movieClipSources[0]
+                                        moviePreviewTimer.start()
+                                    }
+                                }
+                            }
+                        }
                     }
-                    valueFromText: function(text) {
-                        return Math.round(parseFloat(text) * 10)
+                }
+                ScrollView {
+                    clip: true
+                    ColumnLayout {
+                        width: moviePages.width
+                        spacing: 8
+                        Text { text: qsTr("Text slide:"); color: Theme.ink }
+                        TextField { id: movieSlideText; objectName: "movieSlideText"; Layout.fillWidth: true; text: qsTr("Text") }
+                        RowLayout {
+                            Text { text: qsTr("Font:"); color: Theme.ink }
+                            PicasaComboBox { id: movieFontBox; objectName: "movieFontBox"; Layout.fillWidth: true; model: Qt.fontFamilies() }
+                        }
+                        RowLayout {
+                            Text { text: qsTr("Size:"); color: Theme.ink }
+                            PicasaComboBox {
+                                id: movieTextSizeBox; objectName: "movieTextSizeBox"
+                                model: movieDialog.textSizes.map(function(size) { return String(size) })
+                                currentIndex: 4
+                            }
+                            Text { text: qsTr("Style:"); color: Theme.ink }
+                            PicasaComboBox {
+                                id: movieTextStyleBox; objectName: "movieTextStyleBox"
+                                Layout.fillWidth: true
+                                model: [qsTr("Centered"), qsTr("I'm Feeling Lucky"), qsTr("Caption"),
+                                    qsTr("Caption - Classic"), qsTr("Gradient - Black"),
+                                    qsTr("Gradient - White"), qsTr("Transparent - Black"),
+                                    qsTr("Transparent - White"), qsTr("Scrolling Credits"),
+                                    qsTr("Music Video - Left"), qsTr("Music Video - Right"),
+                                    qsTr("Caption - Typewriter")]
+                            }
+                        }
+                        RowLayout {
+                            CheckBox { id: movieBoldBox; objectName: "movieBoldBox"; text: qsTr("Bold") }
+                            CheckBox { id: movieItalicBox; objectName: "movieItalicBox"; text: qsTr("Italic") }
+                            CheckBox { id: movieOutlineBox; objectName: "movieOutlineBox"; text: qsTr("Automatic Outline") }
+                        }
+                        RowLayout {
+                            Button { text: qsTr("Text color"); onClicked: movieTextColorDialog.open() }
+                            Button { text: qsTr("Background color"); onClicked: movieBackgroundColorDialog.open() }
+                            Button { objectName: "movieInsertSlideButton"; text: qsTr("Insert Text Slide"); onClicked: movieDialog.addTextSlide() }
+                            Button { objectName: "movieRemoveSlideButton"; text: qsTr("Remove Selected Slide"); onClicked: movieDialog.removeTextSlide() }
+                        }
+                        ListView {
+                            id: movieSlideList
+                            objectName: "movieSlideList"
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 100
+                            model: movieDialog.movieSlides
+                            delegate: ItemDelegate { width: movieSlideList.width; text: modelData.text }
+                        }
+                    }
+                }
+                ColumnLayout {
+                    objectName: "movieTabPanelClips"
+                    spacing: 8
+                    RowLayout {
+                        Button {
+                            objectName: "movieRecomputeButton"
+                            text: qsTr("Recompute")
+                            onClicked: movieDialog.recomputeMovie()
+                        }
+                        Button {
+                            objectName: "movieAddClipsButton"
+                            text: qsTr("Add selected clips")
+                            onClicked: {
+                                var sources = movieDialog.movieClipSources.slice(0)
+                                controller.selectedMovieSourceUrls(
+                                    dialogs.appWindow.selectedIndexes).forEach(function(url) {
+                                    if (sources.indexOf(url) < 0) sources.push(url)
+                                })
+                                movieDialog.movieClipSources = sources
+                            }
+                        }
+                        Button {
+                            objectName: "movieDeleteClipButton"
+                            text: qsTr("Remove selected clip")
+                            onClicked: {
+                                if (movieClipList.currentIndex < 0) return
+                                var sources = movieDialog.movieClipSources.slice(0)
+                                sources.splice(movieClipList.currentIndex, 1)
+                                movieDialog.movieClipSources = sources
+                            }
+                        }
+                        CheckBox { id: movieSoloClip; objectName: "movieSoloClip"; text: qsTr("Play selected clip only") }
+                    }
+                    ListView {
+                        id: movieClipList
+                        objectName: "movieClipList"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        model: controller && typeof controller.movieClipNames === "function"
+                                ? controller.movieClipNames(movieDialog.movieClipSources) : []
+                        delegate: ItemDelegate {
+                            width: movieClipList.width
+                            text: modelData
+                            onClicked: movieClipList.currentIndex = index
+                        }
                     }
                 }
             }
             RowLayout {
-                spacing: 8
-                Text {
-                    text: qsTr("Target file:")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                }
-                Text {
-                    objectName: "movieTargetLabel"
-                    Layout.preferredWidth: 240
-                    elide: Text.ElideMiddle
-                    text: movieDialog.targetFile.length > 0
-                          ? movieDialog.targetFile
-                          : qsTr("(not selected)")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.textGray
-                }
-                PicasaButton {
-                    text: qsTr("Browse...")
-                    onClicked: movieTargetDialog.open()
-                }
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button { objectName: "movieCancelButton"; text: qsTr("Close"); onClicked: movieDialog.close() }
+                Button { objectName: "movieCreateButton"; text: qsTr("Create Movie"); onClicked: movieDialog.exportMovie() }
             }
+        }
+    }
+
+    Timer {
+        id: moviePreviewTimer
+        objectName: "moviePreviewTimer"
+        interval: Math.max(500, movieSeconds.value * 100)
+        repeat: true
+        onTriggered: {
+            if (!movieDialog.movieClipSources.length) {
+                stop()
+                return
+            }
+            movieDialog.previewIndex = (movieDialog.previewIndex + 1)
+                    % movieDialog.movieClipSources.length
+            movieDialog.previewSource = movieDialog.movieClipSources[movieDialog.previewIndex]
         }
     }
 
@@ -333,6 +646,32 @@ Item {
         defaultSuffix: "mp4"
         nameFilters: [qsTr("MP4 videos (*.mp4)")]
         onAccepted: movieDialog.targetFile = selectedFile.toString()
+    }
+
+    FileDialog {
+        id: movieAudioDialog
+        objectName: "movieAudioDialog"
+        title: qsTr("Audio files")
+        fileMode: FileDialog.OpenFile
+        nameFilters: [
+            Qt.platform.os === "windows"
+                ? qsTr("Music files (*.mp3, *.wma)")
+                : qsTr("Music files (*.mp3, *.m4a)"),
+        ]
+        onAccepted: movieDialog.audioFile = selectedFile.toString()
+    }
+
+    ColorDialog {
+        id: movieTextColorDialog
+        title: qsTr("Text color")
+        selectedColor: movieDialog.textColor
+        onAccepted: movieDialog.textColor = selectedColor
+    }
+    ColorDialog {
+        id: movieBackgroundColorDialog
+        title: qsTr("Background color")
+        selectedColor: movieDialog.backgroundColor
+        onAccepted: movieDialog.backgroundColor = selectedColor
     }
 
     // A film írása képenként halad — a Picasa is mutatja a haladást;
