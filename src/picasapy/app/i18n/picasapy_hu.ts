@@ -4498,6 +4498,21 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Selected folder and/or albums will be uploaded</source>
+        <translation>A program feltölti a kijelölt mappákat és/vagy albumokat</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Selected folders and/or albums will be updated online with the options specified in the menus to the right</source>
+        <translation>A program a jobb oldali menükben választott opciókkal frissíti a kijelölt mappákat és/vagy albumokat az interneten</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Selected folders and/or albums will be removed from Picasa Web Albums</source>
+        <translation>A program eltávolítja a kijelölt mappákat és/vagy albumokat a Picasa Webalbumokból</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
         <source>Backup Set</source>
         <translation>Mentési készlet</translation>
     </message>

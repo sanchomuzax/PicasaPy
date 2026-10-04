@@ -544,8 +544,12 @@ Item {
             text: qsTr("Upload")
             contentItem: Item {}
             padding: 0
+            hoverEnabled: true
             ButtonGroup.group: feltoltesModCsoport
             checked: panel.feltoltesMod === 1
+            ToolTip.text: qsTr("Selected folder and/or albums will be uploaded")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: {
                 panel.feltoltesMod = 1
                 checked = Qt.binding(function () { return panel.feltoltesMod === 1 })
@@ -571,8 +575,12 @@ Item {
             text: qsTr("Change options")
             contentItem: Item {}
             padding: 0
+            hoverEnabled: true
             ButtonGroup.group: feltoltesModCsoport
             checked: panel.feltoltesMod === 2
+            ToolTip.text: qsTr("Selected folders and/or albums will be updated online with the options specified in the menus to the right")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: {
                 panel.feltoltesMod = 2
                 checked = Qt.binding(function () { return panel.feltoltesMod === 2 })
@@ -598,8 +606,12 @@ Item {
             text: qsTr("Remove online")
             contentItem: Item {}
             padding: 0
+            hoverEnabled: true
             ButtonGroup.group: feltoltesModCsoport
             checked: panel.feltoltesMod === 3
+            ToolTip.text: qsTr("Selected folders and/or albums will be removed from Picasa Web Albums")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: {
                 panel.feltoltesMod = 3
                 checked = Qt.binding(function () { return panel.feltoltesMod === 3 })
