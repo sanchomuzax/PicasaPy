@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.676] – 2026-10-04
+
+- A Közzététel panel eredeti mentési és Ajándék-CD szövegei a hivatalos magyar feliratokkal jelennek meg, a feltöltési módok pedig eredeti súgót kaptak (#4177).
+
 ## [0.8.675] – 2026-10-04
 
 - A helyi kontraszt és a HDR szorzója a Picasa eredeti fixpontos kerekítését követi (#4172).
