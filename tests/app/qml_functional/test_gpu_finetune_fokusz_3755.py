@@ -512,7 +512,7 @@ class TestValodiGpuAlloKep:
         nezo.setProperty("currentIndex", sor)
         meret, alap = _FO_KEPEK[sor]
         kep = _gyerek(window, "viewerImage")
-        _varj_betoltesre(qt_app, kep, meret)
+        _varj_betoltesre(qt_app, kep, meret, foto_id=sor + 1)
         assert _implicit(kep) == meret
         kepnev = os.environ.get("PICASAPY_GPU_3819_KEP")
         _savos_kep_latszik(window, qt_app, kep, alap,
@@ -567,16 +567,32 @@ def _implicit(kep) -> tuple[int, int]:
     return (int(kep.property("implicitWidth")), int(kep.property("implicitHeight")))
 
 
-def _varj_betoltesre(qt_app, kep, meret, *, hatarido_ms=5000) -> None:
+def _forras_foto_id(kep) -> str:
+    """Az `image://editpreview/<id>?rev=…` forrás fotó-azonosítója."""
+    return kep.property("source").path().strip("/")
+
+
+def _varj_betoltesre(qt_app, kep, meret, *, foto_id=None, hatarido_ms=5000) -> None:
     """Az aszinkron betöltés vége: teljes `progress` és a várt képarány
-    (a mérete maga az állítás tárgya, arra itt nem várunk)."""
+    (a mérete maga az állítás tárgya, arra itt nem várunk).
+
+    #4079: a két próbakép aránya azonos (9:16), ezért a képarány magában
+    az ELŐZŐ fotó még betöltött textúráját is elfogadta, amíg a `source`
+    át nem váltott az újra (mérve: a `currentIndex` átállítása után a
+    forrás egy ideig még az előző fotó azonosítóján áll). A `foto_id`
+    megadva a várakozás a forrás átváltására is vár."""
     arany = meret[0] / meret[1]
     for _ in range(hatarido_ms // 50):
         szel, mag = _implicit(kep)
-        if (kep.property("progress") == 1.0 and mag > 0
+        if ((foto_id is None or _forras_foto_id(kep) == str(foto_id))
+                and kep.property("progress") == 1.0 and mag > 0
                 and abs(szel / mag - arany) < 0.01):
             break
         QTest.qWait(50)
+    else:
+        raise AssertionError(
+            f"{kep.objectName()}: a kép nem töltődött be: "
+            f"{kep.property('source').toString()} {_implicit(kep)}")
     QTest.qWait(300)
 
 
