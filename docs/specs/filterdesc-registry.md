@@ -6281,6 +6281,67 @@ mérésével egybevág, de effektenként még nincs goldenen igazolva.
 *Bizonyítottsági fok: **megerősített** — minden állítás mellett cím, és a
 három valódi exporton a JPEG-újratömörítés zajszintjén egyezik.*
 
+### ⛳ #626 — a `Steps`, `Smoothing` és `Fade` részletes ellenőrzése (2026-10-04)
+
+A `filterdesc.xml:1244–1258` a `QuantizePalette` három csúszkáját,
+alapértékét és a teljes műveletsort adja meg: `Steps` 2–30 (8), `Smoothing`
+0–100 (80), `Fade` 0–100 (0), majd `BlurImageOperation` →
+`QuantizePaletteImageOperation(Depth=4)` egy külső
+`NestedImageOperation`-ben. A blur-sugár kifejezése mindkét tengelyen
+`(100 − Smoothing)/10 + 0,1`; a külső `BlendAlpha` `1 − Fade/100`.
+
+| rész | bináris út | qemu-i386 mérés |
+|---|---|---|
+| `Steps` konverzió | `0x00bb5ad0` az attribútumkifejezést értékeli, majd a `0x008eea90` helperrel egészre alakít; a helper x87 csonkoló kerekítést állít (`0x008eeaad`–`0x008eeab8`). A munkavégző `0x00bb5b60` `Steps == 2` esetén 2-t, máskor `Steps − 1`-et ad a redukálónak (`0x00bb5da8`–`0x00bb5dc8`). | `2,9 → 2`, `8,9 → 8`, `30,9 → 30`; a negatív kontrollok is nullához csonkolnak. A helper leletét megerősíti. |
+| `Smoothing` | a leíró kifejezése a `BlurImageOperation` `xblur`/`yblur` értéke; az alkalmazó `0x00bb4de0` tengelyenként a `0x00bb5050` sugár-kvantálót, majd a `quality=3` értékkel a `0x00bc5680` natív elmosóutat hívja. | A leíró 0/80/100 csúszkaértékeiből kapott sugárpróba: `10,1 → 10,100000381469727`; `2,1 → 2,0999999046325684`; `0,1 → 0`; a `2,01`/`2,03 → 2,065000057220459`, `3,01`/`3,02 → 3,0625`, `4,01`/`4,05 → 4,130000114440918`, `5,01`/`5,06 → 5,130000114440918` küszöbpróbák ugyanezt a kvantálót erősítik. A skálár lelet egyezik; a teljes képes elmosás nem futott le. |
+| `Fade` | a külső `NestedImageOperation` a bemenet másolatán futtatja a gyerekeket, majd a `BlendAlpha` szerint visszakeveri (4.5); a keverő `0x00bd0700` → `0x009dc4b0`. `w = trunc(α·256)`, majd `w>0` esetén `w−1`; páros szélességű SIMD-rész: `ki = (B·(255−w) + A·w) >> 8`. | Nincs teljes képpontos mérés. A natív függvény utasításolvasása adja a fenti képletet; páratlan szélesség utolsó pixelének skalárképlete különbözik: `ki = A + ((B−A)·w >> 8)` (`0x009dc646`–`0x009dc6fb`). |
+
+**A Smoothing sugárának pixeles jelentése.** Az XML-beli érték a `BlurFilter`
+`xblur`/`yblur` sugara, nem Gauss-σ (`0x00bb4de0`, `0x00bb5050`). A natív
+út futóablakos, fixpontos dobozszűrő: a sugárhoz tartozó együtthatókat a
+`0x00bc5360` készíti elő, a kimeneti menet egész osztással bájtot ír, a
+határmintákat a kép szélére vágja/ismétli. `quality=3` esetén 3 vízszintes,
+majd 3 függőleges menet fut (`0x00bc7540`, `0x00bc77b0`). A teljes
+`(k,h,w,osztó)` súlyparaméterezés és a menetképlet a későbbi „A `DropShadow`
+`quality=3` natív elmosása” és „Kiolvasva, emulátorral bitre igazolva”
+szakaszban van dokumentálva (`0x00bc5360`, `0x00bc5480`, `0x00bc6590`); a
+quantize-út ugyanezt a `0x00bc5680` diszpécsert hívja.
+
+**A mi kódunkhoz képest.** A `glimmer_tone.apply_quantizepalette` a
+`fade_alpha(fade)` értéket adja át; a segédfüggvény `1−Fade/100`-at ad, tehát
+az alfa iránya egyezik a leíróval. A közös `alpha_blend` a SIMD-képletet
+alkalmazza minden oszlopra, a natív skalár sorvégi ágat nem. A palettaépítő
+(`render/quantize_palette.py`, `kvantal`) `int(round(steps))`-et használ,
+míg a natív attribútumút csonkol: például közvetlen `Steps=8,9` hívásnál a
+natív érték 8, a mostani palettakódé 9. A leíró csúszkájának egészértékű
+lépésköze nincs igazolva, ezért a felületi hatás nyitott.
+
+A szélességkülönbség ellenpéldája a natív képletből: `α=0,5` esetén
+`w=127`; `B=0`, `A=255` mellett a SIMD-képlet 126-ot, az utolsó oszlop
+skalárképlete 128-at ad. A mostani általános `alpha_blend` a 126-os ágat
+alkalmazza az utolsó oszlopra is.
+
+**Cáfoló próba.** A `qemu-i386` skalárpróba az `8,9 → 8` eredménnyel
+cáfolja a kerekítés-paritást; a sugárpróba a fenti küszöb körüli bemenetekkel
+ellenőrizte a disassemblyből olvasott ágakat. A teljes
+`0x00bb5b60` munkavégzőhöz összeállított qemu-wrapper `R6030 - CRT not
+initialized` hibával állt le, mielőtt pixelkimenetet írt volna. Ez nem
+pixel-golden és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
+elfogadást.
+
+**Fejlesztői eltérés:** a `Steps` törtértékének konverzióját a natív
+csonkoláshoz kell igazítani, ha a renderer float API-ja része a támogatott
+bemeneteknek. A Fade keverésénél a páratlan szélességű utolsó oszlophoz a
+`0x009dc646`–`0x009dc6fb` skalárképlet kell; ezt páros és páratlan szélességű,
+byte-exakt qemu-próbával kell lezárni. A teljes `Steps × Smoothing` pixelút
+legalább négy párral és bájt-összehasonlítással továbbra is nyitott.
+
+*Bizonyítottsági fok: `Steps` csonkoló segédfüggvénye és a blur-sugár
+kvantálója **megerősített** (utasításolvasás + független qemu-i386 futtatás);
+a teljes `QuantizePalette`-kimenet és a `Fade` összetett képpontútja
+**feltételes** (a teljes műveletet nem sikerült qemu alatt futtatni, és
+nincs négykombinációs byte-golden).*
+
 ## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
 
 A tulajdonos 2026-09-08-án megválaszolta a jegy blokkoló kérdését: *„Rajta
