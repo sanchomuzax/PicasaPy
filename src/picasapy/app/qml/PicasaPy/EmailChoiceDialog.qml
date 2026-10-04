@@ -270,6 +270,7 @@ Dialog {
                             text: qsTr("Change User")
                             ToolTip.visible: hovered
                             ToolTip.text: qsTr("Google account sending is not available in this version.")
+                            ToolTip.delay: Theme.tooltipDelay
                             contentItem: Label {
                                 objectName: "emailComposeChangeUser"
                                 text: qsTr("Change User")
@@ -405,6 +406,7 @@ Dialog {
                                 && root.selectedAttachmentIndex < root.attachmentPaths.length
                             ToolTip.visible: hovered
                             ToolTip.text: qsTr("Remove selected image from attachment")
+                            ToolTip.delay: Theme.tooltipDelay
                             onClicked: {
                                 var marad = []
                                 for (var i = 0; i < root.attachmentPaths.length; ++i) {

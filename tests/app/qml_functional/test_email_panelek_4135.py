@@ -208,8 +208,8 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
     # Az exportált melléklet is a teszt ideiglenes könyvtárában marad.
     kimenet = tmp_path / "csatolmanyok"
     monkeypatch.setattr(
-        email_module.tempfile,
-        "mkdtemp",
+        email_module,
+        "_mkdtemp",
         lambda prefix: str(kimenet.mkdir(exist_ok=True) or kimenet),
     )
     inditott_parancsok = []

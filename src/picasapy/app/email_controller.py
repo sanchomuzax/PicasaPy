@@ -82,6 +82,9 @@ _REGI_FOKOZATOK: tuple[int, ...] = (640, 800, 1024, 1600, EREDETI_MERET)
 _TRUE_VALUES = ("true", "1")
 
 
+#: #1375: a teszt EZT cseréli, nem a globális `tempfile.mkdtemp`-et.
+_mkdtemp = tempfile.mkdtemp
+
 def _coerce_bool(value, default: bool) -> bool:
     """A `QSettings` platformonként bool-t vagy szöveget ad vissza ugyanarra
     az írásra (ld. `appearance_controller.coerce_dark_flag` mintája);
@@ -378,7 +381,7 @@ class EmailController(QObject):
             else self._email_size
         )
         max_dimension = resolve_email_max_dimension(meret)
-        target_dir = Path(tempfile.mkdtemp(prefix="picasapy-mail-"))
+        target_dir = Path(_mkdtemp(prefix="picasapy-mail-"))
         settings = ExportSettings(max_dimension=max_dimension, jpeg_quality=85)
         report = export_photos(items, target_dir, settings)
         if report.failed:
