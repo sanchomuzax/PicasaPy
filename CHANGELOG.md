@@ -8,6 +8,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - A nyomtatásnál választható a képfelirat módja és helye, színe, valamint a szegély viselkedése; indexképek nyomtatásakor a nem használható opciók letiltva jelennek meg (#4143).
+
+## [0.8.672] – 2026-10-04
+
 - A Közzététel panel feltöltési választója külön kezeli a feltöltés, a módosítás és az online elemek eltávolításának módját (#4126).
 
 ## [0.8.671] – 2026-10-04
