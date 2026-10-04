@@ -288,10 +288,6 @@ class PrintController(QObject):
             uj = update_print_option(uj, str(nev), ertek)
         save_print_options(self._settings, uj)
 
-    @Slot(result=str)
-    def printOptionsDisabledText(self):  # noqa: N802 — QML-stílus
-        return "Ezek a beállítások indexképek nyomtatásakor nem használhatók."
-
     def _print_options(self) -> PrintOptions:
         """A renderelő mindig a tartós, legfrissebb állapotot olvassa."""
         return load_print_options(self._settings)
