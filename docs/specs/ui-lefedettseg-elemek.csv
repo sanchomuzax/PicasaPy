@@ -1,4 +1,14 @@
 elem,allapot,bizonyitek,megjegyzes
+thumbui/buttonbarsets,megvan,PicasaPy/MainToolbar.qml;tests/app/qml_functional/test_toolbar_single_row.py;tests/app/qml_functional/test_felso_sav_horgonyzas_3603.py,A fő eszköztársáv hátterének és elemeinek gyűjtőrétege; nincs önálló művelete (#4193)
+thumbui/buttongroup1,nem-cel,docs/specs/picasa-fo-ablak-elrendezes.md:254;docs/specs/picasa-fo-ablak-elrendezes.md:1191,A fullview/albumview vezérlők gyűjtőcsoportja; önálló felületi művelete nincs (#4193)
+thumbui/fullview,nem-cel,docs/specs/picasa-fo-ablak-elrendezes.md:254;docs/specs/ui-audit-mainwindow.md:1937-1939,A rejtett szerkesztési művelet megjelenítési eseménye nincs feltárva; a szerkesztés a menüből és Ctrl+3-mal elérhető (#4193)
+thumbui/listdecrect,megvan,PicasaPy/FolderPane.qml;tests/app/qml_functional/test_fo_ablak_elrendezes_587.py,A mappapanel téglalapja már megvalósult és a főablak-teszt lefedi; a jegy 516-os hivatkozása a hlistsizerre mutat (#4193)
+thumbui/next,nem-cel,docs/specs/konyvtar-ablak-meretek.md:156-168;docs/specs/picasa-fo-ablak-elrendezes.md:1232-1272,Offscreen parancsproxy; nincs önállóan látható „View the next Photo” vezérlő (#4193)
+thumbui/prev,nem-cel,docs/specs/konyvtar-ablak-meretek.md:156-168;docs/specs/picasa-fo-ablak-elrendezes.md:1232-1272,Offscreen parancsproxy; nincs önállóan látható „View the previous Photo” vezérlő (#4193)
+thumbui/searchgroup,megvan,PicasaPy/MainToolbar.qml;tests/app/qml_functional/test_thumbui_maradek_4193.py,A meglévő szűrőgombok sora az eredeti objectName-t kapta; valódi kattintásos kimeneti teszt (#4193)
+thumbui/single_action_message,megvan,PicasaPy/TrayBar.qml;tests/app/qml_functional/test_thumbui_maradek_4193.py,"A klipgyűjtő üzenet eredeti angol forrása és hivatalos magyar fordítása, valódi gombkattintással ellenőrizve (#4193)"
+thumbui/toggle_right_drawer,megvan,Main.qml;tests/app/qml_functional/test_thumbui_maradek_4193.py,A rejtett kattintható fiókváltó eredeti objectName-t kapta; valódi nyitás és negatív kontroll (#4193)
+thumbui/webcambutton,nem-cel,docs/specs/picasa-konyvtar-eszkoztar-viselkedes.md:306-335,A Windows-specifikus eredeti webkamerafunkció P4-en tulajdonosi döntéssel kimaradt (#466); a jelenlegi kamera-panel külön funkció (#4193)
 searchcontainer/starsearch,megvan,PicasaPy/MainToolbar.qml,"Csillag-szűrő: nálunk a ★ jel a keresősáv mellett (controller.showStarred), felirat nélkül"
 searchcontainer/geotagsearch,megvan,PicasaPy/MainToolbar.qml,Geo-szűrő: objectName geoFilter + icons/geo-pin.svg (controller.showGeotagged)
 searchcontainer/searchclr,megvan,PicasaPy/MainToolbar.qml,Keresés törlése: objectName searchClear (a ✕ gomb a mezőben)

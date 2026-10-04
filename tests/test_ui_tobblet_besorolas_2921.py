@@ -18,6 +18,7 @@ Ez a fájl mindkettőt a publikus CI-n fogja meg.
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 
 import pytest
@@ -68,7 +69,8 @@ def test_a_felirat_ma_is_a_fajlban_all(sor):
     fajl = QML / sor["qml_fajl"]
     assert fajl.is_file(), f"nincs ilyen QML-fájl: {sor['qml_fajl']}"
     forras = fajl.read_text(encoding="utf-8")
-    assert f'"{sor["felirat"]}"' in forras, (
+    qml_felirat = re.sub(r'(?<!\\)"', r'\\"', sor["felirat"])
+    assert f'"{qml_felirat}"' in forras, (
         f"a(z) „{sor['felirat']}” felirat már nincs a {sor['qml_fajl']} fájlban"
     )
 
