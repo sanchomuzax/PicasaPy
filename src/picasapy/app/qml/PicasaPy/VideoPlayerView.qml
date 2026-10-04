@@ -10,6 +10,9 @@ import QtMultimedia
 Item {
     id: player
     property url source: ""
+    // 1:1 bekapcsolásakor a VideoViewport a dekóder által jelzett
+    // képkockaméretet tartja meg; a nézőterületen túli részt levágja.
+    property bool actualSizeEnabled: false
 
     //: #1838: a Picasából örökölt VÁGÁSPONTOK ezredmásodpercben. A **−1
     //: jelenti, hogy azon az oldalon nincs vágás** — nem 0 és nem a hossz.
@@ -58,7 +61,7 @@ Item {
         id: media
         objectName: "viewerMediaPlayer"
         source: player.source
-        videoOutput: output
+        videoOutput: viewport.videoOutput
         audioOutput: AudioOutput { id: audio }
         // a Picasa a megnyitáskor azonnal lejátszotta a videót. Nyíl-
         // függvény kell: a sourceChanged injektált jel-paramétere ("media")
@@ -92,19 +95,20 @@ Item {
         return minutes + ":" + (seconds < 10 ? "0" + seconds : seconds)
     }
 
-    VideoOutput {
-        id: output
+    VideoViewport {
+        id: viewport
+        objectName: "videoViewport"
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: controls.top
-        fillMode: VideoOutput.PreserveAspectFit
+        actualSizeEnabled: player.actualSizeEnabled
     }
 
     Text {
         objectName: "videoErrorText"
         visible: media.error !== MediaPlayer.NoError
-        anchors.centerIn: output
+        anchors.centerIn: viewport
         text: qsTr("Unable to play this video.")
         color: "#e8e8e8"
         font.pixelSize: Theme.fontSize
@@ -194,6 +198,15 @@ Item {
                 ToolTip.delay: Theme.tooltipDelay
                 ToolTip.visible: hovered
                 onClicked: player.captureFrameRequested(media.position)
+            }
+            VideoPlayerControls {
+                objectName: "videoPlayerModeControls"
+                Layout.preferredWidth: implicitWidth
+                Layout.preferredHeight: implicitHeight
+                actualSizeEnabled: player.actualSizeEnabled
+                onActualSizeToggled: function(enabled) {
+                    player.actualSizeEnabled = enabled
+                }
             }
             Text {
                 objectName: "videoTimeLabel"
