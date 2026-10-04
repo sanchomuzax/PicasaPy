@@ -126,7 +126,8 @@ ApplicationWindow {
     assert window.visibility() == window.Visibility.FullScreen
     kattint(fullscreen_button)
     assert window.visibility() == eredeti_lathatosag
-    print("OK #4127: képméret, középre igazítás, teljes képernyő")
+    # ASCII: a windowsos CI konzolja cp1252, az „ő” ott UnicodeEncodeError
+    print("OK #4127: video size, centering, full screen")
 
 
 if __name__ == "__main__":
