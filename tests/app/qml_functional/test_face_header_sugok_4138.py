@@ -91,20 +91,35 @@ def _buborek_probe(engine, vez):
     return probe
 
 
-def _mutato_feletti_sugo(qt_app, engine, ablak, vez, vart):
+def _mutato_feletti_sugo(qt_app, engine, ablak, vez, vart, ablak_burkolo_eletben):
     kozep = vez.mapToScene(QPointF(vez.width() / 2, vez.height() / 2))
+    # A Menu popupType-ja Qt-verziótól és platformtól függően külön
+    # QQuickWindow is lehet. Ilyenkor a menüpont nem a főablak jelenetéhez
+    # tartozik, ezért a főablaknak küldött HoverEvent nem váltja ki a
+    # menüpont `hovered` állapotát (az Ubuntu offscreen CI-ben ez a hiba).
+    # A célablakot mindig a tényleges QQuickItemből kérjük le.
+    lebego_ablak = ablak
+    if vez.objectName() == "contextMenuSetAsPeopleAlbumThumbnail":
+        menu_ablak = vez.window()
+        assert menu_ablak is not None, f"{vez.objectName()}: nincs QQuickWindow"
+        # A Qt popupablak külön QQuickWindow-ja Qt-verziótól függően önálló
+        # Python-burkolót kap. Tartsuk életben a teszt végéig; így a
+        # burkoló felszabadítása nem érvényteleníti a főablakot.
+        ablak_burkolo_eletben.append(menu_ablak)
+        lebego_ablak = menu_ablak
     probe = _buborek_probe(engine, vez)
     try:
         # Offscreen módban a QTest.mouseMove nem vált hover-t (#706). Az
-        # eseményt a valódi főablak kapja, a koordináták a tényleges
-        # vezérlőből jönnek.
+        # eseményt annak a QQuickWindownak küldjük, amelyikben a vezérlő
+        # ténylegesen kirajzolódik; a koordináták a vezérlő geometriájából
+        # jönnek.
         for tipus, cel in (
             (QEvent.Type.HoverLeave, QPointF(0, 0)),
             (QEvent.Type.HoverEnter, kozep),
             (QEvent.Type.HoverMove, kozep),
         ):
             QCoreApplication.sendEvent(
-                ablak,
+                lebego_ablak,
                 QHoverEvent(tipus, cel, cel, QPointF(-1, -1)),
             )
             qt_app.processEvents()
@@ -141,7 +156,7 @@ def _mutato_feletti_sugo(qt_app, engine, ablak, vez, vart):
             ),
         )
         QCoreApplication.sendEvent(
-            ablak,
+            lebego_ablak,
             QHoverEvent(
                 QEvent.Type.HoverLeave,
                 QPointF(0, 0),
@@ -167,6 +182,7 @@ def test_faceheader_sugok_a_valodi_foablakban_es_valtozo_magassaggal(
 ):
     window, controller, engine = _szemely_album(qml_app, tmp_path, qt_app)
     ford = _magyar_fordito(qt_app, engine)
+    ablak_burkolo_eletben = []
     try:
         eredeti_magassag = window.height()
         arc = _lathato_elem(window, "headerFaceZoomButton")
@@ -191,13 +207,15 @@ def test_faceheader_sugok_a_valodi_foablakban_es_valtozo_magassaggal(
             qt_app.processEvents()
             for nev, vart in _FEJLEC_SUGOK.items():
                 _mutato_feletti_sugo(
-                    qt_app, engine, window, _lathato_elem(window, nev), vart
+                    qt_app, engine, window, _lathato_elem(window, nev), vart,
+                    ablak_burkolo_eletben,
                 )
             film = _lathato_elem(window, "trayMovieButton")
             assert film.isEnabled(), "a kijelölt kép mellett a filmgomb le van tiltva"
             _mutato_feletti_sugo(
                 qt_app, engine, window, film,
                 "Mozgófilmes prezentáció létrehozása",
+                ablak_burkolo_eletben,
             )
             QMetaObject.invokeMethod(
                 window,
@@ -218,6 +236,7 @@ def test_faceheader_sugok_a_valodi_foablakban_es_valtozo_magassaggal(
             _mutato_feletti_sugo(
                 qt_app, engine, window, item,
                 "Beállítás indexképként az Emberek albumban",
+                ablak_burkolo_eletben,
             )
             QMetaObject.invokeMethod(
                 menu, "close", Qt.ConnectionType.DirectConnection
