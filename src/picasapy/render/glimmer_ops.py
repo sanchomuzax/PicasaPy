@@ -153,8 +153,9 @@ def alpha_blend(base: np.ndarray, top: np.ndarray, alpha: float) -> np.ndarray:
 
     `α` `[0, 1]`-re vágva; `α ≈ 1` → `top` változatlanul, `α ≈ 0` → `base`
     (a végrehajtó `0x00bd0700` ekkor a keverőt meg sem hívja). Különben
-    `w = trunc(256α)`, és ha `w > 0`, `w − 1`; `ki = (b·(255−w) + t·w) >> 8`
-    — a súlyok összege 255, az osztó 256, tehát két 255-ös bemenetből 254.
+    `w = trunc(256α)`, és ha `w > 0`, `w − 1`; az SIMD-párok képlete
+    `ki = (b·(255−w) + t·w) >> 8`. Páratlan szélességnél minden sor utolsó
+    pixele a natív skalárképletet kapja: `t + ((b−t)·w >> 8)`.
     A bemenetek float32 `[0,255]` tömbök (bájtra kerekítve), a kimenet
     float32.
     """
@@ -166,7 +167,13 @@ def alpha_blend(base: np.ndarray, top: np.ndarray, alpha: float) -> np.ndarray:
     w = int(np.float32(alpha) * np.float32(256.0))
     if w > 0:
         w -= 1
-    kevert = (_bajt(base) * (255 - w) + _bajt(top) * w) >> 8
+    base_bajt = _bajt(base)
+    top_bajt = _bajt(top)
+    kevert = (base_bajt * (255 - w) + top_bajt * w) >> 8
+    if base.ndim >= 2 and base.shape[1] % 2:
+        kevert[:, -1, ...] = top_bajt[:, -1, ...] + (
+            (base_bajt[:, -1, ...] - top_bajt[:, -1, ...]) * w >> 8
+        )
     return kevert.astype(np.float32)
 
 
