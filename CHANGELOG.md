@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A helyi kontraszt és a HDR szorzója a Picasa eredeti fixpontos kerekítését követi (#4172).
+
 ## [0.8.673] – 2026-10-04
 
 - A jobb oldali fiók bezáró- és méretváltó gombja súgót kapott, a címe az eredeti szerint „Tulajdonságok”; a Nyomtatás panel beállításgombja súgót, a Súgó gombja működést kapott (#4150).

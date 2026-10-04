@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 import pytest
 
+from picasapy.render import glimmer_ops as ops
 from picasapy.render import glimmer_tone as t
 from tests.support.realistic_photo import make_realistic_photo
 
@@ -32,6 +33,54 @@ def _real_photo_rgb(height: int, width: int, seed: int = 7) -> np.ndarray:
 def _assert_valid(result, image):
     assert result.dtype == np.uint8
     assert result.shape[2] == 3
+
+
+def _multiply_color_matrix_q11_reference(value: int, multiplier: float) -> int:
+    """A filterdesc-registry.md-ben mért skalár Q11-képlet független oracle-ja."""
+    m32 = np.float32(multiplier)
+    scaled = np.float32(np.float32(2048.0) * m32)
+    q = int(np.trunc(float(scaled) + (0.5 if scaled >= 0 else -0.5)))
+    sar9 = (q * int(value)) >> 9
+    return min(255, max(0, (sar9 + 2) >> 2))
+
+
+def _multiply_color_matrix_q11_array_reference(values, multiplier: float) -> np.ndarray:
+    array = np.asarray(values)
+    return np.fromiter(
+        (_multiply_color_matrix_q11_reference(v, multiplier) for v in array.flat),
+        dtype=np.int64,
+        count=array.size,
+    ).reshape(array.shape)
+
+
+class TestMultiplyColorMatrixQ11:
+    @pytest.mark.parametrize("width", [2, 3], ids=["paros", "paratlan"])
+    def test_multiply_color_matrix_q11_byte_exact(self, width):
+        """#4172 / 626: a mért 1, 1,5, 2 és 3 szorzó Q11 bájtjai."""
+        y, x = np.mgrid[0:2, 0:width]
+        source = np.stack(
+            (
+                (17 + 31 * x + 7 * y) % 256,
+                (29 + 23 * x + 11 * y) % 256,
+                (43 + 19 * x + 13 * y) % 256,
+            ),
+            axis=-1,
+        ).astype(np.uint8)
+
+        hibak = []
+        for multiplier in (1.0, 1.5, 2.0, 3.0):
+            vart = np.fromiter(
+                (_multiply_color_matrix_q11_reference(v, multiplier) for v in source.flat),
+                dtype=np.uint8,
+                count=source.size,
+            ).reshape(source.shape)
+            kapott = ops._szorzott_resz(source, multiplier)
+            if not np.array_equal(kapott, vart):
+                hibak.append(
+                    f"szorzó={multiplier}: {np.count_nonzero(kapott != vart)} eltérő RGB-bájt"
+                )
+
+        assert not hibak, "; ".join(hibak)
 
 
 class TestVignetteMatte:
@@ -259,8 +308,8 @@ class TestHdrMeasuredModel:
 
         be = photo.astype(np.int64)
         elm = blur_image_operation(photo, radius, radius, 3).astype(np.int64)
-        fel = np.clip(np.rint(np.clip(be - elm, 0, 255) * c), 0, 255).astype(np.int64)
-        le = np.clip(np.rint(np.clip(elm - be, 0, 255) * c), 0, 255).astype(np.int64)
+        fel = _multiply_color_matrix_q11_array_reference(np.clip(be - elm, 0, 255), c)
+        le = _multiply_color_matrix_q11_array_reference(np.clip(elm - be, 0, 255), c)
         if eredetibol:
             return np.clip(np.clip(be + fel, 0, 255) - le, 0, 255).astype(np.uint8)
         return np.clip(np.clip(elm - le, 0, 255) + fel, 0, 255).astype(np.uint8)
@@ -318,7 +367,7 @@ class TestHdrMeasuredModel:
 # | HDR alap (R 20 / C 3)        | 0,489  | 0,265 |
 # | HDR max (R 80 / C 7 / F 100) | 0,121  | 0,121 |
 # | LocalContrast min (R 1,3/C 1)| 0,121  | 0,121 |
-# | LocalContrast alap (R 15/1,5)| 0,225  | 0,207 |
+# | LocalContrast alap (R 15/1,5)| 0,225  | 0,159 |
 # | LocalContrast max (R 40/C 3) | 0,520  | 0,258 |
 # ---------------------------------------------------------------------------
 
@@ -339,7 +388,7 @@ _HDR_GOLDEN = [
     ("hdr__alap", "HDR=1,20.000000,3.000000,0.000000;", 0.265),
     ("hdr__max", "HDR=1,80.000000,7.000000,100.000000;", 0.121),
     ("localcontrast__min", "LocalContrast=1,1.300000,1.000000;", 0.121),
-    ("localcontrast__alap", "LocalContrast=1,15.000000,1.500000;", 0.207),
+    ("localcontrast__alap", "LocalContrast=1,15.000000,1.500000;", 0.159),
     ("localcontrast__max", "LocalContrast=1,40.000000,3.000000;", 0.258),
 ]
 

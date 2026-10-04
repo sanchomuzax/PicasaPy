@@ -3525,7 +3525,7 @@ paraméter-kiolvasójának (`0x008ef520`) helyettesítője adta; a harness szük
 CRT-shimjei mellett a mátrixépítő, a közös alkalmazó és a pixelfüggvény
 eredeti bináriskód volt.
 
-**Bájtmérés.** A `filterdesc.xml` LocalContrast csúszkája `1…3` tartományú,
+**Bájtmérés — az eredeti kontra a #4172 előtti helyi modell.** A `filterdesc.xml` LocalContrast csúszkája `1…3` tartományú,
 `1,5` alapértékkel; a két MultiplyColorMatrix gyerek ugyanazt az értéket kapja
 (`filterdesc.xml:1012–1029`). A tesztelt `1`, `1,5`, `2`, `3` értékből az
 első, második és negyedik tehát a deklarált minimum, alapérték és maximum; a
@@ -3560,7 +3560,7 @@ Python `alpha_blend` jelenleg a páros képletet használja minden pixelre
 ez a Fade 50 mérés a közös külső keverő izolált kontrollja, nem a teljes
 LocalContrast effekt export-goldenje.
 
-**Cáfoló kísérlet.** A kiinduló, cáfolható hipotézis az volt, hogy a jelenlegi
+**Cáfoló kísérlet (a #4172 előtti modell).** A cáfolható hipotézis az volt, hogy a
 float32-szorzás és `np.rint` bájtra reprodukálja a natív Multiply műveletet.
 `multiplier=1,5` és a BGRA `[17,29,43,71]` pixel ezt cáfolja: a natív
 `[26,44,65,71]` bájtokat ad, míg a PicasaPy RGB-kimenete `[64,44,26]` (a
@@ -3570,11 +3570,17 @@ QEMU-mércét használja, mint a többi kontroll; az eltérés a félértéknél
 ties-to-even `np.rint` és a natív Q11 + `+2`/`sar 2` kerekítés különbségét
 mutatja.
 
+**#4172 után:** a vektorizált helyi Q11-képlet a fenti, QEMU-val mért
+pixelképletet használja. A byte-exact teszt a `1`, `1,5`, `2`, `3` szorzókat
+2×2 és 3×2 RGB-képeken ellenőrzi; mind a nyolc esetben eltérés nélkül egyezik
+a skalár referenciával. A 4/12 és 6/18 eltérés a fenti táblázatban a #4172
+előtti `np.rint`-modellt írja le.
+
 #### Eredeti / nálunk / teendő
 
 | | Eredeti, mért | PicasaPy forrása | Teendő |
 |---|---|---|---|
-| MultiplyColorMatrix pixelmag | Q11: `round-away(float32(m)·2048)`, majd `((sar(q·x,9)+2)>>2)` és 8 bites vágás; alfa változatlan (`0x00bb77a0` → `0x00bc16b0` → `0x008f21a0` → `0x008f2640`) | `_szorzott_resz`, `src/picasapy/render/glimmer_ops.py:691–695`: float32-szorzás és `np.rint` | A helyi Multiply-modellt cserélje a fenti Q11-egész képletre; az alkalmazóhoz beérkező 8 bites műveleti bemenetet használja. A mért `1`, `1,5`, `2`, `3` esetek, különösen a `1,5`-ös félérték, legyenek bájt-goldenek. |
+| MultiplyColorMatrix pixelmag | Q11: `round-away(float32(m)·2048)`, majd `((sar(q·x,9)+2)>>2)` és 8 bites vágás; alfa változatlan (`0x00bb77a0` → `0x00bc16b0` → `0x008f21a0` → `0x008f2640`) | `_szorzott_resz`, `src/picasapy/render/glimmer_ops.py`: vektorizált Q11-egész képlet; az aktuális 8 bites műveleti bemenetet szorozza | **#4172 kész:** a mért `1`, `1,5`, `2`, `3` esetek 2×2 és 3×2 méreten bájt-exakt teszttel fedettek. |
 | Fade 50, páratlan szélesség | A sorvégi skalárpixel `T+((B−T)·w>>8)`, `w=127`; a teszt 3×2 méretén a hibák csak a 3. oszlopban vannak (`0x009dc646`–`0x009dc6fb`) | `alpha_blend`, `src/picasapy/render/glimmer_ops.py:151–170`, a páros képletet minden pixelre alkalmazza | A páratlan szélességű sor utolsó pixelét a natív skalárképlettel számolja; a 2×2 kontroll maradjon változatlan, és a fenti Fade 50 minták legyenek byte-goldenek. |
 
 **Bizonyítottsági fok:** `megerősített` a MultiplyColorMatrix pixelmagjára,

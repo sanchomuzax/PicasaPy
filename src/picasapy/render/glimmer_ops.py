@@ -696,10 +696,20 @@ def simple_color_matrix(
 
 
 def _szorzott_resz(kulonbseg: np.ndarray, strength: float) -> np.ndarray:
-    """`Blend … Subtract` + `MultiplyColorMatrix`: a telítő (0-ra vágott)
-    különbség `strength`-szerese, 8 bitre kerekítve és vágva."""
-    resz = np.clip(kulonbseg, 0.0, 255.0) * np.float32(strength)
-    return np.clip(np.rint(resz), 0.0, 255.0)
+    """A telítő `Blend … Subtract` 8 bites kimenetének natív Q11-szorzója.
+
+    A MultiplyColorMatrix az aktuális 8 bites pixelt kapja; a LocalContrast
+    láncában ez már a 0…255-re vágott különbségkép. A natív út a float32
+    szorzót Q11-re kerekíti, majd előjeles egész eltolásokkal számol
+    (`filterdesc-registry.md`, 4.10)."""
+    m32 = np.float32(strength)
+    q_float = np.float32(m32 * np.float32(2048.0))
+    q = int(np.trunc(q_float + np.float32(0.5 if q_float >= 0 else -0.5)))
+
+    pixel = np.clip(kulonbseg, 0.0, 255.0).astype(np.int32)
+    szorzat = pixel * np.int32(q)
+    sar9 = np.right_shift(szorzat, 9)
+    return np.clip(np.right_shift(sar9 + 2, 2), 0, 255)
 
 
 def _elmosott(image: np.ndarray, radius: float) -> np.ndarray:
