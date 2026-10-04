@@ -1354,14 +1354,33 @@ def resize_image(
     `lanczos3=True` a 5-ös mód (#3998, spec 16. H) 3.): mindkét tengelyen
     Lanczos-3 (`lanczos3`), a többi lépés ugyanaz. Az EXIF-bélyegkép használja.
 
-    `smoothing=False` a 9-es, legközelebbi-szomszéd ág (mérve, 5/a):
-    `INTER_NEAREST`.
+    `smoothing=False` a 9-es, legközelebbi-szomszéd ág (spec 5/d): a célpixel
+    középpontját float32 aránnyal vetíti vissza, majd 16.16 fixpontban
+    csonkol. Vízszintesen a fixpontos lépés ismételt egész összeadással halad.
     """
     validate_image(image)
     width = max(1, int(round(width)))
     height = max(1, int(round(height)))
     if not smoothing:
-        return cv2.resize(image, (width, height), interpolation=cv2.INTER_NEAREST)
+        source_height, source_width = image.shape[:2]
+        scale_x = np.float32(source_width / width)
+        scale_y = np.float32(source_height / height)
+        fixed_scale = np.float32(65536.0)
+
+        # A natív ciklus kiszámítja a kezdő koordinátát és a lépést, majd a
+        # vízszintes fixpontos koordinátát minden oszlopnál egészben lépteti.
+        start_x = np.float32(np.float32(0.5) * scale_x)
+        q0 = int(np.trunc(start_x * fixed_scale))
+        dx = int(np.trunc(scale_x * fixed_scale))
+        q_x = q0 + np.arange(width, dtype=np.int64) * dx
+        source_x = q_x >> 16
+
+        # A függőleges koordináta a célpixel középpontjából készül minden sorra.
+        target_centers_y = np.arange(height, dtype=np.float32) + np.float32(0.5)
+        source_centers_y = target_centers_y * scale_y
+        q_y = np.trunc(source_centers_y * fixed_scale).astype(np.int64)
+        source_y = q_y >> 16
+        return image[source_y[:, None], source_x[None, :]]
     return _ytresampler(image, width, height, lanczos3)
 
 

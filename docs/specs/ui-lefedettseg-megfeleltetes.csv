@@ -22,7 +22,7 @@ editslider2,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 editslider3,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 editslider4,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 edittextpanel,parositva,PicasaPy/EditorTextPanel.qml;PicasaPy/TextColorSwatches.qml,Szöveg-eszköz panelje
-faceheaderpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml;PicasaPy/PeopleAlbumContextMenu.qml,Névvel ellátott arc-album fejléce
+faceheaderpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml;PicasaPy/PeopleAlbumContextMenu.qml;PicasaPy/PhotoContextMenu.qml,Névvel ellátott arc-album fejléce; az Emberek-album indexkép-beállító menüpontja és súgója a PhotoContextMenu.qml-ben van
 flightslider1,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 foldermgr,parositva,PicasaPy/FolderManagerDialog.qml;PicasaPy/FolderContextMenu.qml;PicasaPy/FolderHierarchyView.qml;PicasaPy/FolderStatePanel.qml,"A mappakezelő párbeszéd mellett a mappaműveletek és állapotfeliratok a FolderStatePanel, FolderHierarchyView és FolderContextMenu fájlokban élnek."
 gedialog,parositva,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml;PicasaPy/PicasaMenuBar.qml,A Geotag menüparancs a PicasaMenuBar-ben és a Helyek panelben megvan; az önálló Google Earth-párbeszéd elavult online integráció.

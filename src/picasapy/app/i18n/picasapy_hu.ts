@@ -5504,6 +5504,12 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Set as People Album Thumbnail</source>
+        <comment>faceheaderpanel/set_thumbnail tooltip</comment>
+        <translation>Beállítás indexképként az Emberek albumban</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
         <source>Add to People Album</source>
         <translation>Hozzáadás az Emberek albumhoz</translation>
     </message>
@@ -7221,8 +7227,8 @@ Biztosan visszavonja a műveletet?</translation>
         <translation>Ide kattintva és az egérmutatót a fotókra húzva kinagyíthatja a részleteket</translation>
     </message>
     <message>
-        <source>Select the items you want to add to the project clip tray, then click &quot;Back&quot; to return to the project</source>
-        <translation>Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a „Vissza” gombra kattintva térjen vissza a projekthez</translation>
+        <source>Select items to add to your project's clips tray, then press the &quot;Back&quot; button to return to your project</source>
+        <translation>Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a &quot;Vissza&quot; gombra kattintva térjen vissza a projekthez</translation>
     </message>
     <message>
         <source>Go back to what you were editing</source>

@@ -3224,6 +3224,67 @@ szin = 0xff000000 | color;          // az alfa mindig teljesen átlátszatlan
 A kép a `(bal, felso)` pozícióba kerül. Ennyi — nincs lekerekítés, nincs
 árnyék.
 
+##### A `SimpleBorder` pixelrácsa és alfája — natív QEMU-val (2026-10-04, #626)
+
+Az `apply` (`0x00bbf4a0`) a négy attribútumot a `0x00bbf630`-on keresztül
+olvassa, majd a `0x008eea90`-en egészre alakítja. **A megadott, nemnegatív
+értéktartományban ez csonkítás 0 felé, nem kerekítés**: a konverzió a
+vezérlőszó kerekítési módját `0xc00`-ra állítja (`0x008eeaa4`–`0x008eeabb`,
+`0x008eeacf`–`0x008eeae6`). Az alkalmazó közvetlenül hozzáadja a kapott
+egészeket a forrás szélességéhez és magasságához (`0x00bbf515`–`0x00bbf536`):
+
+```text
+L = trunc0(left)   R = trunc0(right)
+T = trunc0(top)    B = trunc0(bottom)
+W' = W + L + R    H' = H + T + B
+```
+
+Itt nincs képméretarányos tényező. A `0x00bbf4e0`–`0x00bbf510` az alfa-bájtot
+`0xff`-re állítja; a teljes célképet ezután a `0x009a91a0` a keretszínnel
+tölti ki, majd a `0x009aabf0` a forrást `(L,T)` helyre másolja. A másolási út
+`0xbf2350`-et hívja. Nincs alfakeverés vagy sarokmaszk: a keret négy sarkában
+is a kitöltőszín marad, a bemásolt képpontok négy BGRA-bájtja — köztük az
+alfája — változatlan.
+
+| Próba | Natív QEMU-kimenet | PicasaPy `add_border_sides()` |
+|---|---|---|
+| 3×2 BGRA, `L/R/T/B = 1/3/2/1`, `color=0x1280e040` | 7×5, stride 7; a keret BGRA `(64,224,128,255)`; a képrész alfái változatlanok | RGB-mátrix bájtra egyezik |
+| 4×3 BGRA, `0.5/1.5/2.5/3.5` | csonkított oldalak `0/1/2/3`, kimenet 5×8 | `round()` után `0/2/2/4`, kimenet 6×9 |
+| 4×3 BGRA, `1.9/2.1/0.9/3.9` | csonkított oldalak `1/2/0/3`, kimenet 7×6 | `round()` után `2/2/1/4`, kimenet 8×8 |
+
+A QEMU-próba az eredeti `0x00bbf4a0` alkalmazót és a rajzoló/másoló útját
+futtatta, `qemu-i386` és a `qemu_harness/hb.py` CRT-helyettesítőivel. A forrás
+és a cél külön képleíró rekordot kapott (`+0x04` stride képpontban, `+0x08`
+szélesség, `+0x0c` magasság, `+0x10` BGRA-mutató). Csak a `0x008ef520`
+attribútum-kiértékelő kapott shimet, hogy a fenti konkrét értékeket adja vissza;
+az `apply`, a konverzió, a célkitöltés és a képmásolás natív kódja változatlanul
+futott.
+
+**Két független út:** A) az `0x00bbf4a0`, `0x00bbf630`, `0x008eea90`,
+`0x009a91a0` és `0x009aabf0` utasításszintű olvasata; B) a közvetlen natív
+QEMU-futtatás. A méretképlet, a csonkítás, a teljesen fedő szögletes keret, a
+forrás alfa-bájtjainak megőrzése és a `(L,T)` másolási pozíció egyezik.
+
+**Cáfoló próba:** a képmérethez viszonyított keret hipotézise nem adná a
+3×2-es bemenet mellett mért pontos `+1/+3/+2/+1` képpontot; a natív kimenet
+ezt adta. A „pozitív törtet kerekít” hipotézist a `0.5/1.5/2.5/3.5` és az
+`1.9/2.1/0.9/3.9` kontroll cáfolta. A félátlátszó és teljesen átlátszó
+forráspixelek alfája a célban azonos maradt, tehát a forrás nem a keretszínnel
+keveredik.
+
+**Eredeti / nálunk / teendő:**
+
+| Tulajdonság | Eredeti | PicasaPy ma | Teendő |
+|---|---|---|---|
+| Egység és méret | A nemnegatív oldalérték képpont; `W' = W+L+R`, `H' = H+T+B` | `add_border_sides()` pixelként kezeli | Egyezik. |
+| Tört oldalérték | `trunc0()` a `0x008eea90` szerint | `int(round(v))` a `glimmer_frame_ops.py:46` sorban | Tört bemenetre eltér. A két ismert leíróhasználat előbb `Math.round()`-dal egész értéket képez (`filterdesc.xml`, `Cinemascope` és `Polaroid`), és mindkét PicasaPy-hívó egész oldalt ad át (`glimmer_creative.py:72`–`73`, `glimmer_frames.py:133`–`139`); ezeknél nincs mért kimeneti eltérés. Ha a segédfüggvény tört SimpleBorder-attribútumot is támogatni fog, a `round()`-ot csonkításra kell cserélni, és a fenti két tört QEMU-esethez rögzített ellenőrzés kell. |
+| Szín, alfa, sarkok | A keret alfa-bájtja `0xff`; a forráspixel négy bájtja másolódik; négyzetes sarkok | `uint8 RGB` kimenet, konstansszínű négyzetes keret | Az RGB-művelet egyezik. Az alfa-paritás nincs a jelenlegi RGB-adattípusban reprezentálva; RGBA-út bevezetésekor a forrás alfáját meg kell őrizni, a keretét `0xff`-re kell állítani. |
+
+**Bizonyítottsági fok: megerősített** a nemnegatív, leíróban használt értékekre:
+az utasításszintű út és az eredeti függvény QEMU-kimenete egyezik. A negatív
+oldalértékek viselkedését ez a mérés nem terjeszti ki; az ismert
+`filterdesc.xml`-használatok egész, nemnegatív értéket állítanak elő.
+
 #### `BorderImageOperation` (`0x00bbe320` → `0x00bbe570`)
 
 ```c
@@ -3322,6 +3383,82 @@ módot és nem változtatja meg a háttérszínt.
 
 Egyszerű kivágás; a Polaroid a `min(szélesség, magasság)` méretű, **középre
 igazított négyzetet** kéri (a képlet a `filterdesc.xml`-ben van).
+
+##### Pixelmatematika (#626, 2026-10-04)
+
+**Mértékegység.** A `filterdesc.xml` a `CropImageOperation` `x`, `y`,
+`width`, `height` attribútumait az eredeti kép pixelméreteiből számítja:
+`Cinemascope` a `origImageWidth`/`origImageHeight` és `cropWidth`/`cropHeight`
+alapján (`filterdesc.xml:751–755`), a `Polaroid` a
+`min(origImageWidth, origImageHeight)` alapján (`:1226–1234`). Ezek abszolút
+képpont-koordináták és méretek, nem 0…1 arányok. Az attribútum-beolvasó a
+négy kifejezést az objektum `+0x24`, `+0x2c`, `+0x34`, `+0x3c` mezőjébe teszi
+(`0x00bbd9a0`). Az RTTI szerinti `glimmer::CropImageOperation::vftable`
+címe `0x00cf05a0` (RVA `0x008f05a0`); a 6. slot az alkalmazó
+`0x00bbdbd0` címre mutat.
+
+**Kerekítés és határok.** A natív alkalmazó (`0x00bbdbd0`) a `x`/`y`
+kifejezését `float32`-re alakítja, majd a `0x00c29990` segéddel egészre
+csonkolja (`cvttsd2si`). A szélesség és magasság a `0x00bbda60` segéden át
+`float32` lesz, majd `0x00529e10` → `0x00c090f0` kerekíti a legközelebbi
+egészre, végül `0x00c29990` egészíti ki. A natív téglalap jobb és alsó
+végpontja külön képződik: `trunc(x + round(width))` és
+`trunc(y + round(height))`; tehát tört `x`/`y` esetén nem az egészre
+csonkolt kezdőponthoz adja hozzá a kerekített méretet.
+
+A `0x009a9080` a bal/felső élt nullára korlátozza, a jobb/alsó élt pedig a
+bemeneti kép szélességére/magasságára vágja; a képpontokat ezután változatlan
+BGRA-bájtokként másolja (`0x009aabf0`). Részben kilógó téglalapnál tehát a
+képbe eső metszet készül el, kitöltés és újramintavételezés nélkül. Ha nincs
+metszet, a natív hívás `0x4` visszatérési értéket ad, és a célrekord a
+bemeneti képre mutató, változatlan méretű rekord marad; ez nem üres kép.
+
+**Két független út.**
+
+| út | eredmény |
+|---|---|
+| A — utasításszintű | `0x00bbd9a0`, `0x00bbda60`, `0x00bbdbd0`, `0x00529e10`, `0x00c090f0`, `0x00c29990` és `0x009a9080` kiolvasása: abszolút pixelparaméterek, kerekített méret, csonkolt kezdő- és végpont, képhatárra vágás. |
+| B — natív QEMU | Az eredeti `0x00bbdbd0` futott a CRT-shimmel és külön forrás-/célrekorddal. A `0x8ef520` paraméterkiértékelő kapott tesztértékeket; a Crop vtable-segéd, képhatár-kezelő és bájtmásoló eredeti kód maradt. A `+0x04` mező stride képpontban, `+0x08/+0x0c` a szélesség/magasság, `+0x10` a BGRA-adatmutató; a belső `+0x14=1` a `0x009a9b30` heap-pufferes ágát választotta. |
+
+A QEMU-kimenetek:
+
+| bemenet | `(x, y; width, height)` | kimenet |
+|---|---|---|
+| `7×5` | `(1, 1; 3, 2)` | `3×2`, státusz `0`; első sor bájtjai: `0b162166 0c182467 0d1a2768` |
+| `7×5` | `(1.75, 1.25; 3.75, 2.5)` | `4×3`, státusz `0` |
+| `7×5` | `(1.5, 0.5; 2.5, 1.5)` | `3×2`, státusz `0`; a pozitív `2.5` és `1.5` félérték felfelé kerekült |
+| `7×5` | `(-1.75, -0.75; 4, 3)` | `2×2`, státusz `0`; a forrás bal felső `2×2` metszete |
+| `7×5` | `(-2, -1; 5, 4)` | `3×3`, státusz `0` |
+| `7×5` | `(5, 3; 4, 4)` | `2×2`, státusz `0` |
+| `7×5` | `(9, 6; 2, 2)` | státusz `0x4`; a célrekord az eredeti `7×5` képet tartja |
+| `8×6` | `(1, 2; 5, 3)` | `5×3`, státusz `0` |
+
+A második utat a nyers rekordméretekből és BGRA-sorokból, az első
+utasításolvasatától külön értelmezve is ellenőriztem: a `1.75` kezdőérték az
+1. oszlopból indul, a `2.5` szélesség 3 pixel, a részben kilógó esetek a
+képen belüli metszetet adják. Ez egyezik az A úttal. Cáfoló kontrollként a
+tört kezdőpontot, a pozitív félértékeket, mindkét oldali kilógást és a teljes
+kép-kívüliséget választottam; egyik kimenet sem cáfolta a fenti képletet.
+
+**PicasaPy-összevetés.** A `glimmer_frames.apply_polaroid`
+(`src/picasapy/render/glimmer_frames.py:115–132`) az effekt konkrét
+négyzetes vágását `min(H, W)` és egész `// 2` középeltolással végzi; ez
+egyezik a `filterdesc.xml` Polaroid-képletével. A másik jelenlegi használat,
+`glimmer_creative.apply_cinemascope`
+(`src/picasapy/render/glimmer_creative.py:50–63`), a leíró `Math.round`
+méretezését Python `round`-dal, a középeltolást egész `// 2`-vel valósítja
+meg; a `cropHeight ≤ origImageHeight` feltétel miatt a `max(0, …)` nem módosítja
+a leíró szerinti eredményt. Általános Glimmer
+`CropImageOperation(x, y, width, height)` primitív viszont nincs. Az
+`ops.apply_crop` (`src/picasapy/render/ops.py:69–90`) más szerződésű:
+normalizált `Rect64`-et vesz át, a négy élt Python `round`-dal képpontra
+képezi, és üres vágásnál kivételt dob. Ez nem helyettesíti a Glimmer Crop
+pixelmatematikáját.
+
+**Bizonyítottság: megerősített** a kért pixelmatematikára: az utasításolvasat
+és az eredeti alkalmazó QEMU-kimenete egyezik. A közös, általános Crop
+primitív nálunk hiányzik; a meglévő Polaroid-specifikus középvágás a saját
+leírójának egész pixelparamétereire egyezik.
 
 ## A színválasztó diszpécsere: `ImageFilters::PickColor` (`0x008fee80`, 2026-08-16)
 
@@ -4035,6 +4172,78 @@ RTTI-vtáblák (`0x00cf0120`, `0x00cf085c`) 6. rése a közös alkalmazó
 `0x00bcb2f0`-t; a `TwoTone` beolvasója (`0x00bc2760`) a `[this+0x40]`-be tesz
 objektumot (`0x00bc2923`) és a `0x00bb8710`-et hívja (`0x00bc2949`).
 
+#### Több megállós `GradientMap` — teljes natív pixelút (2026-10-04, #626)
+
+**Bizonyítottsági fok: megerősített** a 2, 3 és 5 megállós, megadott
+színértékekből épített LUT-ra, a 256 elemű táblára, az interpolációra és a
+bemeneti csatornára. Az utasításszintű levezetés és a teljes natív
+`qemu-i386` próba bájtra egyezik.
+
+* **Pozíció és mértékegység:** az indexelt tartomány 0…255. `n ≥ 2` esetén
+  `p[0] = 0`, `p[n−1] = 255`, a belső stop float32-re kerekített
+  `p[k] = (k · 255,0) / (n−1)`. A 255,0 double konstans címe `0x00cf39d0`,
+  a végpont 255,0 float konstansa `0x00cf3a00`; a belső értéket a kód
+  `fstp dword`-dal tárolja (`0x00bb88e4`–`0x00bb892d`). Következésképp
+  `n=3`: `{0; 127,5; 255}`, `n=5`:
+  `{0; 63,75; 127,5; 191,25; 255}`.
+* **Interpoláció és LUT:** a megállókereső (`0x00bb85b0`) a tárolt pozíciók
+  közötti alsó/felső stopot adja; az x87-hányados float32 súlya
+  `w = float32((p_hi−x)/(p_hi−p_lo))`. A `0x00bb84a0` mindhárom RGB
+  csatornát külön keveri: `clamp(trunc(upper + w·(lower−upper) + 0,5),
+  0, 255)`. Ez lebegőpontos, nem fixpontos interpoláció. A munkavégző
+  `0x00bb87b0` az `i=0…255` indexek eredményét a
+  `base+0x800+4·i` címre írja (`0x00bb8931`–`0x00bb8958`): pontosan 256
+  dword a piros csatorna LUT-rekeszében.
+* **Indexelt bemeneti csatorna:** a natív pixelalkalmazó
+  `0x00bcb2f0` a BGRA-bemenet `+2` bájtját olvassa, és azzal indexeli a
+  `+0x800` rekeszt (`0x00bcb3a0`–`0x00bcb3ab`); a `+1`, `+0`, `+3` bájt a
+  külön `+0x400`, `+0`, `+0xc00` rekeszt indexeli. A `+2` a BGRA vörös
+  csatornája. A gradiens bemenete tehát a nyers piros bájt, nem luma.
+
+**Független natív futtatás.** A helyi `qemu_harness` a `0x00bb7c80` teljes
+alkalmazót futtatta; az eredeti vtable-munkavégző (`0x00bb87b0`) és
+képpontalkalmazó (`0x00bcb2f0`) is futott. A LUT-rögzítéshez ugyanebben a
+futásban előbb külön meghívtuk a `0x00bb87b0`-t, majd ugyanazzal a művelet-
+objektummal lefutott a teljes `0x00bb7c80` alkalmazó. A CRT-shim mellett
+csak három célzott függvény kapott shimet: `operator new` (`0x00c0769f`) és `delete`
+(`0x00c07681`) a determinisztikus foglaláshoz, valamint a 7,8 KB-os
+kifejezéskiértékelő (`0x008ef520`), amely a kézzel felépített csomópont ismert
+double értékét adta vissza. A megállókereső, pozíciószámítás, csatorna-kód,
+LUT-építés és pixelalkalmazás eredeti bináriskód maradt; a `gradientArray`
+XML-szöveg beolvasója (`0x00bb8710`) nem futott.
+Mindhárom futás a harness `FPUCW=0x027f` beállításával ment; minden natív
+kimeneti alfa-bájt `0xff` volt.
+
+Mindhárom futásban külön forrás- és cél-Image rekord szerepelt: `+0x04`
+stride=256 pixel, `+0x08` szélesség=256, `+0x0c` magasság=4, `+0x10`
+BGRA-adatmutató. A négy forrássor piros csatornája egyaránt 0…255-ig futott;
+`(G,B)` rendre `(0,0)`, `(255,255)`, `(255,0)`, `(0,255)` volt, az alfa
+`0xff`. Így ugyanaz a piros érték négy különböző zöld/kék pár mellett is
+szerepelt.
+
+| próba | szintetikus `0xRRGGBB` stopértékek | QEMU LUT vs. `gradient_map` | QEMU-kép vs. `gradient_map` | azonos R, eltérő G/B |
+|---|---|---:|---:|---|
+| 2 stop | `0x132f71`, `0xe64908` | 0 / 768 bájt eltérés | 0 / 3072 RGB-bájt eltérés | 0 / 256 eltérő pixel mindhárom sorpárban |
+| 3 stop | `0x0711e7`, `0xf08023`, `0x36cbb5` | 0 / 768 | 0 / 3072 | 0 / 256 mindhárom sorpárban |
+| 5 stop | `0x0102fd`, `0x57b30d`, `0xf03189`, `0x34d2c7`, `0xe5a611` | 0 / 768 | 0 / 3072 | 0 / 256 mindhárom sorpárban |
+
+A helyi `gradient_map` (`src/picasapy/render/glimmer_ops.py`) tehát a
+megadott megállóértékekre és a teljes 256 indexre bájtra egyezik mind a
+natív LUT-tal, mind a teljes natív alkalmazó kimenetével; nincs fejlesztői
+eltérés ezen a függvényen. A négy G/B-ellenpróba cáfolta a luma-indexelést:
+mindhárom palettán minden R-értéknél azonos RGB-kimenet született, miközben
+az R szerint változó LUT nem konstans (a 2 stopos próbában 228 különböző
+RGB-triplett volt). Ezt az ellenpróbát a független gépikód-út is ellenőrzi:
+`[BGRA+2]` közvetlenül a `+0x800` táblába indexel.
+
+**Határ:** ez a mérés a stopokat kész numerikus double értékként adta a
+munkavégzőnek. A `gradientArray` szöveges attribútumának tényleges
+kiértékelése, a valós XML-export stopjainak színkódolása/sorrendje, illetve
+az `0x008ef520` eredeti kifejezéskiértékelője nincs ezzel mérve; ezek továbbra
+is feltételesek. A helyi `filterdesc.xml` nem tartalmaz több-stopos
+`gradientArray` export-goldent; ezért a mérés a pixelmatematikát, nem a
+szöveges attribútum előállítását zárja le.
+
 ### 5. `ResizeImageOperation` — közös diszpécser, eltérő pixelág a forgatástól
 
 Az alkalmazó (`0x00bc3650`, 407 b) tengelyenként `forrás / cél` léptéket
@@ -4099,11 +4308,11 @@ forrás képpontjait adja vissza, de a választott mechanizmus nem a doboz.
 Ez a `Rotate` hívásánál nem releváns: ott `smoothing=true`, és a forgatási
 mátrix a fenti általános affine-ágat választja.
 
-**Nálunk (MÉRVE):** a `resize_image(..., smoothing=False)`
-`cv2.INTER_NEAREST`-et használ (`src/picasapy/render/glimmer_ops.py`,
-`resize_image`), tehát a mechanizmus egyezik; a próba
-(`tests/render/test_resize_mitchell_2227.py`,
-`test_smoothing_hamis_a_LEGKOZELEBBI_szomszed`) már mérésként hivatkozik rá.
+**Nálunk (ellenőrizve, 2026-10-04):** a `resize_image(...,
+smoothing=False)` a `cv2.INTER_NEAREST`-et hívja (`src/picasapy/render/glimmer_ops.py`,
+`resize_image`), de ez **nem bájtazonos** a Picasa-pixelúttal. A natív
+koordinátalépés és a QEMU-összevetés a 5/d pontban szerepel; a korábbi
+„mechanizmus egyezik” állítás itt visszavonva.
 
 ### 5/b. A mag kicsinyítéskor a léptékkel nyúlik — LEZÁRVA
 
@@ -4339,6 +4548,101 @@ oszlopok pedig `S>>14` szerint készüljenek; a vízszintes menet maradjon
 változatlan. A fejlesztés külön őrizze meg mind a négy szélesség-maradékot,
 az 16128/16129 küszöb két oldalát, a Pixelate/FocalPixelate aktív és
 Fade=100 eseteit, valamint a Comicize végső háromoszlopos mintáját.
+
+### 5/d. ⭐ `smoothing=false`: középponthoz igazított, 16.16-os legközelebbi-szomszéd út (#626, 2026-10-04)
+
+**Bizonyítottsági fok: megerősített.** Az utasításszintű út és az eredeti
+Picasa-kód QEMU-futtatása egyezik. A smoothinges ág négy QEMU-esete a már
+leírt 5/c súlyozott út kimenetét is bájtra egyezőnek találta a jelenlegi
+`resize_image`-szel.
+
+**A — utasítások.** A `ResizeImageOperation` alkalmazó (`0x00bc3650`)
+float32-be menti a forrás/cél szélesség- és magasságarányt
+(`0x00bc3700`–`0x00bc3735`). A `smoothing` hamis ága a wrapperben
+(`0x00bcb5e0`, `0x00bcb602`–`0x00bcb614`) az általános affine-rutint hívja;
+annak `smoothing=false` esete a `0x009e7420` egyképpontos munkavégzőre lép
+(`0x009e6fb6`–`0x009e7001`).
+
+`0x009e7420` a célpixel középpontját használja: a cél x/y koordinátához a
+`0x00c72150` címen kiolvasott **0,5**-öt adja, majd a 6 elemű float32
+transzformációval forráskoordinátát számol. A transzformált kezdő koordinátát
+float32-re menti (`0x009e74c3`, `0x009e74f3`), majd a
+`0x00cf3cb0` címen kiolvasott **65536,0**-val, azaz 16.16-os léptékkel alakítja
+egésszé. A `0x00c0b1e0` tört részt elhagyó segéd és a `0x00c29990`
+`cvttsd2si` konverzió csonkolást végez. Ugyanezzel az eljárással készül a
+vízszintes fixpontos lépés (`0x009e7423`–`0x009e7439`); a belső ciklus ezt az
+egész lépést ismételten hozzáadja (`0x009e7541`–`0x009e7549`). A forrásindex
+a fixpontos érték aritmetikai 16 bites jobbra tolása
+(`0x009e754d`, `0x009e7553`): pozitív koordinátán ez lefelé csonkolás.
+
+Tiszta Resize-nél, ahol a kereszt-együtthatók és eltolások nullák, ugyanez
+így írható fel. `s_x` és `s_y` a `0x00bc3650`-ben float32-re kerekített
+forrás/cél arány; `trunc` a nulla felé csonkolást jelenti:
+
+```text
+q_x(0,y) = trunc(float32((0 + 0.5)·s_x) · 65536)
+dx       = trunc(s_x · 65536)
+q_x(i,y) = q_x(0,y) + i·dx                  # a gépi ciklus integer addja
+q_y(y)   = trunc(float32((y + 0.5)·s_y) · 65536)
+src_x    = q_x >> 16
+src_y    = q_y >> 16
+```
+
+A `smoothing=false` ág nem oszt szét súlyt: érvényes forráskoordinátánál egy
+teljes BGRA-dwordöt másol (`0x009e7562`–`0x009e7574`), tehát a kiválasztott
+képpont súlya 1. Ha bármelyik index a forrás szélességén/magasságán kívülre
+esik, az unsigned határ-összehasonlítás átugorja az írást
+(`0x009e7556`–`0x009e7576`); a munkavégző nem clampel, nem ismétli a szélső
+képpontot és nem ír nullát. A célpuffer előzetes értékét ezért a hívó adja.
+
+**B — natív QEMU-futtatás.** Az eredeti függvények futottak a helyi
+`qemu-i386` harnessben. A simított ág a `0x00bcb5e0`-tól indult; a hamis ág
+közvetlenül a statikusan oda kiválasztott `0x009e7420` munkavégzőt futtatta,
+explicit cél-recttel. A forrás és a cél külön képleíró rekord volt (`+0x04`
+stride, `+0x08` szélesség, `+0x0c` magasság, `+0x10` BGRA-mutató); az RGB
+csatornákat közvetlenül, az alfa-csatornát pedig háromszoros szürke RGB-sík
+átméretezésével vetettük össze. A
+`smoothing=true` a 5/c szerinti 0-s doboz- vagy 3-as Mitchell-úton futott; a
+QEMU és a mi kimenetünk mind a négy méretpárnál bájtra egyezett. A
+`smoothing=false` esetén az RGB-összevetésben jelzett kimeneti pixelek
+eltértek, és az alfa összevetése sem egyezett:
+
+| forrás → cél | próba | `smoothing=false`: eltérő RGB-pixelek | `smoothing=true` |
+|---|---|---:|---|
+| 5×3 → 3×2 | páratlan kicsinyítés | 5 / 6 | bájtra egyezik |
+| 4×2 → 7×5 | párosból páratlan nagyítás | 11 / 35 | bájtra egyezik |
+| 8×6 → 4×3 | páros kicsinyítés | 12 / 12 | bájtra egyezik |
+| 5×3 → 8×6 | páratlanból páros nagyítás | 12 / 48 | bájtra egyezik |
+
+Forráskoordinátára dekódolva az 5×3 → 3×2 legközelebbi-szomszéd próba `x=[0,2,4]`,
+`y=[0,2]` mintákat adott. A 4×2 → 7×5 próba vízszintes sora
+`[0,0,1,1,2,3,3]`, függőleges mintái `[0,0,1,1,1]`. Ez az utóbbi a
+fixpontos lépés ismételt hozzáadását is elkülöníti attól, ha minden kimeneti
+képpontnál újraszámítanánk az arányt: a `4/7` float32 léptékből `q0=18724`, `dx=37449`, ezért a
+negyedik oszlop koordinátája `131071 >> 16 = 1`; a natív kimenet forrás-x=1-et
+adott. A minden oszlopnál újraszámolt `(3+0.5)·4/7` koordináta 2 volna, tehát
+ez a mérés azt az alternatívát is cáfolja. Ezek az egész értékek a fenti
+konverzióval készülnek, nem illesztett paraméterek.
+
+**Cáfoló próba / szélek.** A `0x009e7420`-nak adott affine eltolás `x=-1`,
+3×1 célpuffer előtöltve `0x5a`-val. Az első forráskoordináta a képen kívülre
+esett; a natív kimenet első BGRA-pixele `5a 5a 5a 5a` maradt, a másik kettő
+pedig a forrás 0. és 1. pixele lett. Ez cáfolja a clampelt/peremismétlő
+olvasatot. A specifikus Resize pozitív méretaránya ettől külön eset; a
+szélen kívüli minta viselkedése itt a közös affine munkavégzőé.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`) | teendő |
+|---|---|---|---|
+| `smoothing=false` mintakoordináta | középpont + float32 → 16.16 csonkolás; az egész lépés ismételt hozzáadása; `sar 16` | `cv2.INTER_NEAREST`; a négy mért méretpárból négy eltér | az OpenCV-hívást cserélni a fenti, bájtra specifikált koordinátamenetre; a négy QEMU-eset legyen bitpontos referencia |
+| `smoothing=false` súly | egy érvényes BGRA-pixel, súly 1 | egy legközelebbi pixel, de a koordinátatérkép eltér | azonos pixel kiválasztása a natív koordinátából |
+| képen kívüli affine-minta | írás kihagyása, célpuffer változatlan | a tiszta Resize nem hoz létre ilyen koordinátát; ez a függvény nem vizsgálja az affine ági képszél-kitöltést | a hívói célpuffer-inicializálás vizsgálata, mielőtt általános affine-határviselkedést ugyanide emelünk |
+| `smoothing=true` | 5/c: fixpontos doboz/Mitchell-súlyok | négy QEMU-méretpáron bájtra egyezik | nincs mért teendő |
+
+Nincs mérve valódi Picasa-exportból származó külön Resize-golden; a fenti
+pixelértékek a natív gépi kód QEMU-futtatásából és a PicasaPy-függvény
+azonos bemeneteiből származnak.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 

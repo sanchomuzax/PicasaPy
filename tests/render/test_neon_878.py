@@ -97,18 +97,40 @@ class TestEdgeDetectionB:
 _SOBEL_V = ((-2, 0, 2), (-4, 0, 4), (-2, 0, 2))
 _SOBEL_H = ((2, 4, 2), (0, 0, 0), (-2, -4, -2))
 _EDGE_CURVE = ((0.0, 0.0), (128.0, 255.0), (255.0, 0.0))
+_NATIVE_TOP_RIGHT_POSITIONS = {
+    "TL": (0, -2),
+    "C": (0, -1),
+    "BL": (1, -2),
+    "B": (1, -1),
+}
+_NATIVE_TOP_RIGHT_BGRA = {
+    (0, "TL"): (120, 116, 108, 255),
+    (0, "C"): (104, 84, 60, 255),
+    (0, "BL"): (152, 180, 204, 255),
+    (0, "B"): (104, 84, 60, 255),
+    (1, "TL"): (176, 216, 255, 255),
+    (1, "C"): (160, 184, 216, 255),
+    (1, "BL"): (144, 152, 168, 255),
+    (1, "B"): (96, 56, 24, 255),
+}
 
 
 def _egesz_sobel(kep: np.ndarray, mag) -> np.ndarray:
     """A leírás képlete: `clamp((512 + Σ kᵢ·pᵢ) idiv 4, 0, 255)`, a peremen
-    ismétlődő képponttal. Az `idiv` nulla felé csonkol; negatív osztandónál
-    az eredmény úgyis 0-ra vágódik."""
+    ismétlődő képponttal, kivéve a specifikáció szerinti jobb felső sarkot.
+    Az `idiv` nulla felé csonkol; negatív osztandónál az eredmény úgyis 0-ra
+    vágódik."""
     h, w = kep.shape[:2]
-    pad = np.pad(kep.astype(np.int64), ((1, 1), (1, 1), (0, 0)), mode="edge")
+    pixels = kep.astype(np.int64)
+    pad = np.pad(pixels, ((1, 1), (1, 1), (0, 0)), mode="edge")
     osszeg = np.full(kep.shape, 512, dtype=np.int64)
     for dy in range(3):
         for dx in range(3):
             osszeg += mag[dy][dx] * pad[dy : dy + h, dx : dx + w]
+    if np.array_equal(mag, _SOBEL_V):
+        osszeg[0, -1] = 512 + 4 * pixels[1, -2] - 2 * pixels[1, -1] - 2 * pixels[0, -1]
+    elif np.array_equal(mag, _SOBEL_H):
+        osszeg[0, -1] = 512 + 4 * pixels[0, -2] + 2 * pixels[0, -1] - 6 * pixels[1, -1]
     hanyados = np.trunc(osszeg / 4).astype(np.int64)
     return np.clip(hanyados, 0, 255).astype(np.uint8)
 
@@ -153,6 +175,54 @@ class TestEdgeDetectionBNativ:
         ki_le = _sobel_direction(1 - kep, np.array(_SOBEL_V, dtype=np.int32))
         np.testing.assert_array_equal(ki_le, _egesz_sobel(1 - kep, _SOBEL_V))
         assert (ki_le == 127).any(), ki_le[..., 0]
+
+    @pytest.mark.parametrize(("height", "width"), [(5, 8), (5, 9)])
+    @pytest.mark.parametrize(
+        ("direction", "source"),
+        [(0, source) for source in ("TL", "C", "BL", "B")]
+        + [(1, source) for source in ("TL", "C", "BL", "B")],
+    )
+    def test_natív_jobb_felső_sarok_impulzusértékei(self, height, width, direction, source):
+        """A QEMU-peremtérkép négy szomszédját impulzusokkal ellenőrzi.
+
+        A specifikáció a QEMU-próba 8×5 és 9×5 bemeneti képpontjait nem írja
+        le, ezért a rögzített, irányonkénti natív együtthatókat használó
+        impulzuspróba ellenőrzi a jobb felső BGRA-értéket. Az alfa a natív
+        mérésben változatlanul 255.
+        """
+        kep = np.zeros((height, width, 3), dtype=np.uint8)
+        impulse = np.array((32, 64, 96), dtype=np.uint8)
+        mag = _SOBEL_V if direction == 0 else _SOBEL_H
+        impulses = {source: impulse}
+        # A második impulzus a natív nulla együtthatót is láthatóvá teszi.
+        anchor = "C" if direction == 0 else "TL"
+        anchor_impulse = np.array((16, 24, 40), dtype=np.uint8)
+        if anchor in impulses:
+            impulses[anchor] = impulses[anchor] + anchor_impulse
+        else:
+            impulses[anchor] = anchor_impulse
+        for position, value in impulses.items():
+            y, x = _NATIVE_TOP_RIGHT_POSITIONS[position]
+            kep[y, x] = value
+
+        vart = _egesz_sobel(kep, mag)
+        vart_bgra = _NATIVE_TOP_RIGHT_BGRA[(direction, source)]
+        vart_bgr = np.array(vart_bgra[:3], dtype=np.uint8)
+        vart[0, -1] = vart_bgr
+
+        kapott = _sobel_direction(kep, np.array(mag, dtype=np.int32))
+        np.testing.assert_array_equal(kapott, vart)
+        kapott_bgra = tuple(int(channel) for channel in kapott[0, -1]) + (255,)
+        assert kapott_bgra == vart_bgra
+
+    @pytest.mark.parametrize(("height", "width"), [(2, 4), (4, 2), (2, 2)])
+    @pytest.mark.parametrize("mag", [_SOBEL_V, _SOBEL_H])
+    def test_harom_alatti_meretnel_nincs_sobel_feldolgozas(self, height, width, mag):
+        kep = np.arange(height * width * 3, dtype=np.uint8).reshape(height, width, 3)
+        np.testing.assert_array_equal(
+            _sobel_direction(kep, np.array(mag, dtype=np.int32)),
+            kep,
+        )
 
     def test_a_bemenet_nem_mutalodik(self):
         kep = np.random.default_rng(1).integers(0, 256, size=(9, 11, 3), dtype=np.uint8)
