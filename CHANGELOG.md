@@ -8,6 +8,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - A helyi kontraszt és a HDR szorzója a Picasa eredeti fixpontos kerekítését követi (#4172).
+- A nyomtatásnál választható a képfelirat módja és helye, színe, valamint a szegély viselkedése; indexképek nyomtatásakor a nem használható opciók letiltva jelennek meg (#4143).
 
 ## [0.8.673] – 2026-10-04
 
