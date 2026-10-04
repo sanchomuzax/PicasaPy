@@ -52,6 +52,12 @@ class TestBuildXdgEmailArgv:
         assert all(isinstance(part, str) for part in argv)
         assert 'Idézőjeles "cím"' in argv
 
+    def test_includes_recipient_without_splitting_it(self):
+        argv = build_xdg_email_argv(
+            "Tárgy", "Szöveg", recipient="anna@example.test"
+        )
+        assert argv[argv.index("--to") + 1] == "anna@example.test"
+
 
 class TestBuildMailtoUrl:
     def test_starts_with_mailto_scheme(self):
@@ -66,3 +72,7 @@ class TestBuildMailtoUrl:
 
     def test_empty_subject_and_body_yields_bare_mailto(self):
         assert build_mailto_url("", "") == "mailto:"
+
+    def test_encodes_recipient_in_mailto_path(self):
+        url = build_mailto_url("", "", recipient="anna@example.test")
+        assert url == "mailto:anna@example.test"

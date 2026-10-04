@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Az E-Mail panelen kiválasztható a levelezőprogram, megírható az üzenet, és a fotók mellékletként küldhetők (#4135).
+
 ## [0.8.669] – 2026-10-04
 
 - A Glimmer keretek lekerekített sarkai és félig átlátszó szélei pontosabban követik az eredeti Picasa képpontkeverését (#4122).

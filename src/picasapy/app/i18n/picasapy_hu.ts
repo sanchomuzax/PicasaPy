@@ -10334,16 +10334,84 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 <context>
     <name>EmailChoiceDialog</name>
     <message>
+        <source>Select Email</source>
+        <translation>Válasszon levelezőprogramot</translation>
+    </message>
+    <message>
         <source>Send pictures by email</source>
         <translation>Képek küldése e-mailben</translation>
     </message>
     <message>
+        <source>Select how you want to e-mail your photos.</source>
+        <translation>Válassza ki, hogyan szeretné e-mailben elküldeni fotóit.</translation>
+    </message>
+    <message>
+        <source>MAIL CLIENT</source>
+        <translation>LEVELEZŐPROGRAM</translation>
+    </message>
+    <message>
+        <source>Use my default email program.</source>
+        <translation>Az alapértelmezett levelezőprogram használata</translation>
+    </message>
+    <message>
+        <source>Google Mail</source>
+        <translation>Google Mail</translation>
+    </message>
+    <message>
+        <source>Use my Gmail or Google account.</source>
+        <translation>A Gmail-fiók vagy a Google Fiók használata</translation>
+    </message>
+    <message>
+        <source>Don't have Gmail? Get a free account.</source>
+        <translation>Nincs Gmail-fiókja? Nyisson egy fiókot ingyen.</translation>
+    </message>
+    <message>
         <source>The pictures will be attached to a new message in your default email program.</source>
-        <translation>A képek csatolmányként kerülnek egy új levélbe az alapértelmezett levelezőprogramban.</translation>
+        <translation>A képek az alapértelmezett levelezőprogram új üzenetéhez csatolva nyílnak meg.</translation>
     </message>
     <message>
         <source>Remember this setting, don't display this dialog again.</source>
         <translation>Jegyezze meg ezt a beállítást, ne jelenítse meg a párbeszédpanelt újra.</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>Súgó</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>New message</source>
+        <translation>Új üzenet</translation>
+    </message>
+    <message>
+        <source>Change User</source>
+        <translation>Felhasználóváltás</translation>
+    </message>
+    <message>
+        <source>Google account sending is not available in this version.</source>
+        <translation>A Google-fiókos küldés ebben a változatban nem érhető el.</translation>
+    </message>
+    <message>
+        <source>To:</source>
+        <translation>Címzett:</translation>
+    </message>
+    <message>
+        <source>Subject:</source>
+        <translation>Tárgy:</translation>
+    </message>
+    <message>
+        <source>Remove selected image from attachment</source>
+        <translation>Kijelölt elemek eltávolítása a mellékletből</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Elvetés</translation>
+    </message>
+    <message>
+        <source>Send</source>
+        <translation>Küldés</translation>
     </message>
 </context>
 <context>

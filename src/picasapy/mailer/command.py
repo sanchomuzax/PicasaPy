@@ -48,13 +48,19 @@ def resolve_email_max_dimension(size_px: int) -> int | None:
 
 
 def build_xdg_email_argv(
-    subject: str, body: str, attachments: list[Path] | tuple[Path, ...] = ()
+    subject: str,
+    body: str,
+    attachments: list[Path] | tuple[Path, ...] = (),
+    *,
+    recipient: str = "",
 ) -> list[str]:
     """Az `xdg-email` parancssor összeállítása (argv-lista, `subprocess`-nek
     közvetlenül átadható — nincs shell-idézés, ezért injektálás-biztos).
-    Üres `subject`/`body` kihagyva a parancsból (az `xdg-email` a hiányzó
-    kapcsolót a levelezőprogram saját alapértékére hagyja)."""
+    Üres címzett/tárgy/szöveg kihagyva a parancsból (az `xdg-email` a hiányzó
+    adatot a levelezőprogram saját alapértékére hagyja)."""
     argv = ["xdg-email", "--utf8"]
+    if recipient:
+        argv += ["--to", recipient]
     if subject:
         argv += ["--subject", subject]
     if body:
@@ -64,14 +70,17 @@ def build_xdg_email_argv(
     return argv
 
 
-def build_mailto_url(subject: str, body: str) -> str:
+def build_mailto_url(subject: str, body: str, *, recipient: str = "") -> str:
     """`mailto:` visszaesés, ha nincs `xdg-email` — csatolmány nélkül (a
     `mailto:` séma ezt nem támogatja biztonságosan egyetlen platformon
-    sem), a tárgy/szöveg URL-kódolva."""
+    sem), a címzett, tárgy és szöveg URL-kódolva."""
     params = []
     if subject:
         params.append(f"subject={quote(subject)}")
     if body:
         params.append(f"body={quote(body)}")
     query = "&".join(params)
-    return f"mailto:?{query}" if query else "mailto:"
+    cel = quote(recipient, safe="@,+;")
+    if query:
+        return f"mailto:{cel}?{query}"
+    return f"mailto:{cel}" if cel else "mailto:"
