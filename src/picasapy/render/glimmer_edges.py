@@ -87,17 +87,39 @@ def _sobel_direction(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
     """Egy irány natív Sobel-válasza `uint8` képen, egész aritmetikával.
 
     `clamp((512 + Σ kᵢ·pᵢ) idiv 4, 0, 255)`, a peremen ismétlődő képponttal.
+    A jobb felső sarok a natív, irányspecifikus szomszédtáblát követi.
     Nemnegatív osztandónál az `idiv` csonkolása egyezik a `floor`-ral, a
     negatív osztandó pedig mindkét úton 0-ra vágódik — ezért `//` elég.
     """
     height, width = image.shape[:2]
-    padded = np.pad(image.astype(np.int32), ((1, 1), (1, 1), (0, 0)), mode="edge")
+    if width < 3 or height < 3:
+        # A natív függvények ilyen méretnél még a képpontfeldolgozás előtt visszatérnek.
+        return image.copy()
+
+    pixels = image.astype(np.int32)
+    padded = np.pad(pixels, ((1, 1), (1, 1), (0, 0)), mode="edge")
     total = np.full(image.shape, _SOBEL_BIAS, dtype=np.int32)
     for dy in range(3):
         for dx in range(3):
             weight = int(kernel[dy, dx])
             if weight:
                 total += weight * padded[dy : dy + height, dx : dx + width]
+
+    if np.array_equal(kernel, _SOBEL_VERTICAL):
+        total[0, -1] = (
+            _SOBEL_BIAS
+            + 4 * pixels[1, -2]
+            - 2 * pixels[1, -1]
+            - 2 * pixels[0, -1]
+        )
+    elif np.array_equal(kernel, _SOBEL_HORIZONTAL):
+        total[0, -1] = (
+            _SOBEL_BIAS
+            + 4 * pixels[0, -2]
+            + 2 * pixels[0, -1]
+            - 6 * pixels[1, -1]
+        )
+
     return np.clip(total // _SOBEL_DIVISOR, 0, 255).astype(np.uint8)
 
 
