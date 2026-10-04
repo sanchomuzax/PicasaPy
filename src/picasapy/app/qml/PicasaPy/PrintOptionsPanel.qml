@@ -482,6 +482,8 @@ Rectangle {
                 panel, 0, textColorPickerBevel.height).y))
         padding: 6
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        contentWidth: textColorPalette.width
+        contentHeight: textColorPalette.height
         background: Rectangle {
             color: Theme.canvasBg
             border.width: 1

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pytest
@@ -61,6 +62,55 @@ def _click(item, *, x_fraction=0.5, y_fraction=0.5):
     QCoreApplication.processEvents()
 
 
+def _hataridon_belul(feltetel, *, masodperc=3.0):
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        QCoreApplication.processEvents()
+        if feltetel():
+            return True
+        QTest.qWait(50)
+    QCoreApplication.processEvents()
+    return bool(feltetel())
+
+
+def _szovegszin_kivalasztasa(panel, dialog, popup, szinindex, vart_szin):
+    elozo_szin = _variant(panel.property("options"))["textColor"]
+    _click(_child(panel, "printOptionTextColorBevel"))
+    assert _hataridon_belul(
+        lambda: popup.property("visible") is True
+    ), "a szövegszín-választó nem nyílt meg"
+    szinminta = _child(popup, f"printOptionTextColor{szinindex}")
+    minta_kozepe = szinminta.mapToItem(
+        panel, QPointF(szinminta.width() / 2, szinminta.height() / 2)
+    )
+    popup_x = float(popup.property("x"))
+    popup_y = float(popup.property("y"))
+    popup_width = float(popup.property("width"))
+    popup_height = float(popup.property("height"))
+    assert (
+        popup_x - 3 <= minta_kozepe.x() <= popup_x + popup_width + 3
+        and popup_y - 3 <= minta_kozepe.y() <= popup_y + popup_height + 3
+    ), (
+        "a popup befoglaló téglalapja nem fedi a kattintott színmintát: "
+        f"minta=({minta_kozepe.x():.1f}, {minta_kozepe.y():.1f}), "
+        f"popup=({popup_x:.1f}, {popup_y:.1f}, "
+        f"{popup_width:.1f}, {popup_height:.1f}), "
+        f"ablak=({dialog.width()}, {dialog.height()})"
+    )
+    assert elozo_szin != vart_szin, "a próbaszíneknek váltakozniuk kell"
+    _click(szinminta)
+    assert _hataridon_belul(
+        lambda vart_szin=vart_szin: _variant(
+            panel.property("options")
+        )["textColor"]
+        == vart_szin
+    ), f"a {szinindex}. színminta kattintása nem frissítette a színt"
+    assert _hataridon_belul(
+        lambda: popup.property("visible") is False
+    ), "a szövegszín-választó nem záródott be a kattintás után"
+    assert panel.property("textColorPickerRequested") is False
+
+
 def _megnyit_nyomtatas(window, qt_app):
     window.setProperty("selectedIndexes", [0])
     window.setProperty("selectedIndex", 0)
@@ -107,6 +157,26 @@ class TestNyomtatasOpcioKimenet:
         szinvalaszto = _child(panel, "printOptionTextPickerPanel")
         assert szinvalaszto.property("visible") is False
 
+        _click(_child(panel, "printOptionSource2"))
+
+        # A 420 px-es párbeszédablakban az utolsó sorra görgetünk: ez
+        # reprodukálja a CI-ben levágott, alul megnyíló választót.
+        dialog.setHeight(425)
+        qt_app.processEvents()
+        scroll = _child(panel, "printOptionScrollView")
+        tartalom = scroll.property("contentItem")
+        tartalommagassag = float(tartalom.property("contentHeight"))
+        scrollmagassag = float(scroll.height())
+        tartalom.setProperty("contentY", max(0.0, tartalommagassag - scrollmagassag))
+        qt_app.processEvents()
+        _szovegszin_kivalasztasa(
+            panel, dialog, szinvalaszto, 4, 0xFF00AA00
+        )
+
+        # A CI ablakmagasságát ±5 px-en is bejárjuk. A nagy nézetben minden
+        # opció kezelhető, így a próba a teljes kattintásos utat is lefedi.
+        dialog.setHeight(800)
+        qt_app.processEvents()
         alapmagassag = int(dialog.height())
         for elteres in (-5, 0, 5):
             dialog.setHeight(alapmagassag + elteres)
@@ -118,18 +188,18 @@ class TestNyomtatasOpcioKimenet:
         _click(_child(dialog, "printOptionPlacement0"))
         _click(_child(dialog, "printOptionWrapCheckBox"))
 
-        # A valódi színválasztó a szövegsor alól nyílik ki, és a szín kiválasztása
-        # után visszazáródik.
-        scroll = _child(panel, "printOptionScrollView")
-        tartalom = scroll.property("contentItem")
-        tartalommagassag = float(tartalom.property("contentHeight"))
-        scrollmagassag = float(scroll.height())
-        tartalom.setProperty("contentY", max(0.0, tartalommagassag - scrollmagassag))
-        qt_app.processEvents()
-        _click(_child(panel, "printOptionTextColorBevel"))
-        assert szinvalaszto.property("visible") is True
-        _click(_child(szinvalaszto, "printOptionTextColor3"))
-        assert szinvalaszto.property("visible") is False
+        # Minden magasságnál más színre váltunk; a végső piros kell az
+        # előnézeti kimenet-őrnek is.
+        for elteres, szinindex, vart_szin in (
+            (-5, 3, 0xFFFF0000),
+            (0, 4, 0xFF00AA00),
+            (5, 3, 0xFFFF0000),
+        ):
+            dialog.setHeight(alapmagassag + elteres)
+            qt_app.processEvents()
+            _szovegszin_kivalasztasa(
+                panel, dialog, szinvalaszto, szinindex, vart_szin
+            )
 
         _click(_child(panel, "printOptionBorderCheckBox"))
         _click(_child(panel, "printOptionEvenBorderCheckBox"))
