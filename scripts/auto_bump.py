@@ -21,10 +21,10 @@ CHANGELOG „Nem kiadott" szakaszát nevezzük át az új verzióra.
 elindítja a workflow-t, de akkor az ÚJ verzióhoz még nincs kiadás, tehát
 nem emel többet — pontosan két körben megáll.
 
-⚠️ **A CHANGELOG szövegét EMBER írja**, a jegy PR-jében, a „Nem kiadott"
-szakasz alá. Ez a szkript csak a CÍMET cseréli: a felhasználónak szóló
-mondatokat nem lehet gépiesíteni, és nem is szabad — azokból tudja meg,
-mi változott.
+⚠️ **A CHANGELOG szövegét EMBER írja.** Az új PR-ek a
+`changelog.d/<jegyszám>.md` darabba írnak; verzióemeléskor ezek sorai
+jegyszám szerint a „Nem kiadott” szakaszba kerülnek, a darabok pedig
+törlődnek. A korábbi, közvetlen CHANGELOG-sorok megmaradnak.
 """
 
 from __future__ import annotations
@@ -40,6 +40,7 @@ _GYOKER = Path(__file__).resolve().parents[1]
 KIADATLAN_CIM = "## [Nem kiadott]"
 
 _VERZIO_SOR = re.compile(r'^(version\s*=\s*")([^"]+)(")', re.MULTILINE)
+_DARAB_SOR = re.compile(r"^- .+ \(#\d+\)\.$")
 
 
 def kovetkezo_verzio(verzio: str) -> str:
@@ -69,6 +70,43 @@ def emeld_a_pyprojectet(ut: Path) -> tuple[str, str]:
     return regi, uj
 
 
+def _valtozasnaplo_darabok(changelog: Path) -> tuple[list[Path], list[str]]:
+    """A darabfájlok sorai, a jegyszám szerinti fájlsorrendben."""
+    mappa = changelog.parent / "changelog.d"
+    if not mappa.exists():
+        return [], []
+    fajlok = list(mappa.glob("*.md"))
+    if any(not fajl.stem.isdigit() for fajl in fajlok):
+        raise ValueError(f"A changelog.d fájlneve jegyszám legyen: {mappa}")
+    fajlok.sort(key=lambda fajl: (int(fajl.stem), fajl.name))
+
+    sorok: list[str] = []
+    for fajl in fajlok:
+        darab_sorai = [sor.strip() for sor in fajl.read_text(encoding="utf-8").splitlines() if sor.strip()]
+        if not darab_sorai or any(not _DARAB_SOR.fullmatch(sor) for sor in darab_sorai):
+            raise ValueError(
+                f"A változásnapló-darab minden sora ilyen legyen: "
+                f"- … (#jegyszám). — {fajl}"
+            )
+        sorok.extend(darab_sorai)
+    return fajlok, sorok
+
+
+def _fuzd_a_darabokat(szoveg: str, sorok: list[str]) -> str:
+    """A darabsorokat a még ki nem adott szakasz végére teszi."""
+    cim_vege = szoveg.index(KIADATLAN_CIM) + len(KIADATLAN_CIM)
+    utana = szoveg[cim_vege:]
+    kovetkezo_szakasz = re.search(r"(?m)^## ", utana)
+    if kovetkezo_szakasz:
+        torzs = utana[: kovetkezo_szakasz.start()].strip()
+        maradek = utana[kovetkezo_szakasz.start() :].lstrip("\n")
+    else:
+        torzs = utana.strip()
+        maradek = ""
+    tartalom = "\n\n".join(resz for resz in (torzs, "\n".join(sorok)) if resz)
+    return szoveg[:cim_vege] + "\n\n" + tartalom + "\n\n" + maradek
+
+
 def zard_le_a_changelogot(ut: Path, verzio: str, datum: str) -> bool:
     """A „Nem kiadott" cím átnevezése `## [verzió] – dátum` alakra.
 
@@ -79,6 +117,9 @@ def zard_le_a_changelogot(ut: Path, verzio: str, datum: str) -> bool:
     szoveg = ut.read_text(encoding="utf-8")
     if KIADATLAN_CIM not in szoveg:
         return False
+    darab_fajlok, darab_sorok = _valtozasnaplo_darabok(ut)
+    if darab_sorok:
+        szoveg = _fuzd_a_darabokat(szoveg, darab_sorok)
     # #1770: a lezárás UTÁN azonnal visszatesszük az ÜRES szakaszt.
     #
     # Enélkül a következő kör olyan fájlt kap, amiben nincs hova írni — és
@@ -96,6 +137,8 @@ def zard_le_a_changelogot(ut: Path, verzio: str, datum: str) -> bool:
         ),
         encoding="utf-8",
     )
+    for fajl in darab_fajlok:
+        fajl.unlink()
     return True
 
 

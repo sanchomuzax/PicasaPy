@@ -2949,6 +2949,7 @@ ApplicationWindow {
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
             ? unnamedFacesView.selectedCount : window.selectedRows().length
+        folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
         // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a

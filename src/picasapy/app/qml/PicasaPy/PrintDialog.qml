@@ -28,7 +28,10 @@ Window {
     //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
     //: külön ablakban nyitja.
     property string helpTopic: "features/nyomtatas.md"
-    WindowHelp { tema: printWindow.helpTopic }
+    WindowHelp {
+        id: printWindowHelp
+        tema: printWindow.helpTopic
+    }
     width: 480
     height: 420
     minimumWidth: 420
@@ -436,15 +439,21 @@ Window {
 
         // -- szegély és felirat (#1780) -----------------------------------
         PicasaButton {
+            id: printOptionsButton
             objectName: "printOptionsButton"
             Layout.fillWidth: true
-            text: qsTr("Border and text options...")
+            text: qsTr("Border and Text Options")
             enabled: printWindow.printCtl !== null
-            ToolTip.text: qsTr(
-                "Configure borders and text for Photos to be printed")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
+            hoverEnabled: true
             onClicked: printOptionsPanel.showOptions()
+
+            ToolTip {
+                objectName: "printOptionsTooltip"
+                parent: printOptionsButton
+                text: qsTr("Configure borders and text for Photos to be printed")
+                visible: printOptionsButton.hovered
+                delay: Theme.tooltipDelay
+            }
         }
 
         // -- nyomatméret + minőség-ellenőrzés (#1782) ---------------------
@@ -889,6 +898,11 @@ Window {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
+            PicasaButton {
+                objectName: "printHelpButton"
+                text: qsTr("Help")
+                onClicked: printWindowHelp.nyisdASugot(printWindow.helpTopic)
+            }
             Item { Layout.fillWidth: true }
             PicasaButton {
                 objectName: "printStartButton"

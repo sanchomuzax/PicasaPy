@@ -300,13 +300,18 @@
     <name>PrintDialog</name>
     <message>
         <location filename="../qml/PicasaPy/PrintDialog.qml"/>
-        <source>Border and text options...</source>
-        <translation>Szegély- és szövegopciók…</translation>
+        <source>Border and Text Options</source>
+        <translation>Szegély- és szövegopciók</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PrintDialog.qml"/>
         <source>Configure borders and text for Photos to be printed</source>
-        <translation>A nyomtatott képek szegélyének és feliratának beállítása</translation>
+        <translation>A nyomtatni kívánt fotók szegélyeinek és szövegének beállítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Help</source>
+        <translation>Súgó</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PrintDialog.qml"/>
@@ -656,16 +661,22 @@
 <context>
     <name>RightDrawer</name>
     <message>
-        <source>Switch between the small and large side panel</source>
+        <location filename="../qml/PicasaPy/RightDrawer.qml"/>
+        <source>Switch between small/large side panel</source>
         <translation>Váltás a kis és a nagy oldalpanel közt</translation>
     </message>
     <message>
-        <source>Close side panel</source>
+        <location filename="../qml/PicasaPy/RightDrawer.qml"/>
+        <source>Close this side panel</source>
         <translation>Oldalpanel bezárása</translation>
     </message>
 </context>
 <context>
     <name>FacesOverlay</name>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
     <message>
         <source>Add a name</source>
         <translation>Név hozzáadása</translation>
@@ -3266,6 +3277,83 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <source>The movie could not be created.</source>
         <translation>A mozgófilm nem készült el.</translation>
     </message>
+    <message><source>Text</source><translation>Szöveg</translation></message>
+    <message><source>Slide</source><translation>Dia</translation></message>
+    <message><source>Clips</source><translation>Klipek</translation></message>
+    <message><source>Sizes</source><translation>Méretek</translation></message>
+    <message><source>Transition style:</source><translation>Képváltási stílus</translation></message>
+    <message><source>Cut</source><translation>Kivágás</translation></message>
+    <message><source>Dissolve</source><translation>Szétoszlás</translation></message>
+    <message><source>Dissolve through black</source><translation>Szétoszlás feketén át</translation></message>
+    <message><source>Dissolve through white</source><translation>Szétoszlás fehéren át</translation></message>
+    <message><source>Wipe - left</source><translation>Törlés - balra</translation></message>
+    <message><source>Wipe</source><translation>Törlés</translation></message>
+    <message><source>Wipe - top</source><translation>Törlés - felfelé</translation></message>
+    <message><source>Wipe - bottom</source><translation>Törlés - lefelé</translation></message>
+    <message><source>Wipe - up left</source><translation>Törlés - balra fel</translation></message>
+    <message><source>Wipe - up right</source><translation>Törlés - jobbra fel</translation></message>
+    <message><source>Wipe - down left</source><translation>Törlés - balra le</translation></message>
+    <message><source>Wipe - down right</source><translation>Törlés - jobbra le</translation></message>
+    <message><source>Push - left</source><translation>Tolás - balra</translation></message>
+    <message><source>Push</source><translation>Tolás</translation></message>
+    <message><source>Push - top</source><translation>Tolás - felfelé</translation></message>
+    <message><source>Push - bottom</source><translation>Tolás - lefelé</translation></message>
+    <message><source>Circle - inwards</source><translation>Kör - befelé</translation></message>
+    <message><source>Circle</source><translation>Kör</translation></message>
+    <message><source>Pan and Zoom</source><translation>Pásztázás és nagyítás</translation></message>
+    <message><source>Pan and Zoom - face</source><translation>Pásztázás és nagyítás - arc</translation></message>
+    <message><source>Time Lapse</source><translation>Gyorsítás</translation></message>
+    <message><source>Rectangle</source><translation>Négyszög</translation></message>
+    <message><source>Overlap</source><translation>Átfedés</translation></message>
+    <message><source>Slide Duration:</source><translation>Dia időtartama</translation></message>
+    <message><source>Audio:</source><translation>Hangsáv:</translation></message>
+    <message><source>No audio selected</source><translation>Nincs hangsáv kiválasztva</translation></message>
+    <message><source>Load…</source><translation>Betöltés…</translation></message>
+    <message><source>Clear</source><translation>Törlés</translation></message>
+    <message><source>Options</source><translation>Opciók</translation></message>
+    <message><source>Truncate audio</source><translation>Hangfájl csonkolása</translation></message>
+    <message><source>Fit photos into audio</source><translation>Fotók hozzáillesztése a hanghoz</translation></message>
+    <message><source>Loop photos to match audio</source><translation>Fotók ismétlése a zene végéig</translation></message>
+    <message><source>Show Captions</source><translation>Képfeliratok megjelenítése</translation></message>
+    <message><source>Show Dates</source><translation>Dátumok megjelenítése</translation></message>
+    <message><source>Full frame photo crop</source><translation>Teljes képkockás fotó körbevágása</translation></message>
+    <message><source>Remove Low Resolution Faces</source><translation>Kis felbontású arcok eltávolítása</translation></message>
+    <message><source>Best Transitions</source><translation>A legjobb átmenetek</translation></message>
+    <message><source>Album Order</source><translation>Album szerint</translation></message>
+    <message><source>Chronological</source><translation>Időrend</translation></message>
+    <message><source>Text slide:</source><translation>Szöveges dia:</translation></message>
+    <message><source>Font:</source><translation>Betűtípus:</translation></message>
+    <message><source>Size:</source><translation>Méret:</translation></message>
+    <message><source>Style:</source><translation>Stílus:</translation></message>
+    <message><source>Centered</source><translation>Középre igazított</translation></message>
+    <message><source>I'm Feeling Lucky</source><translation>Jó napom van</translation></message>
+    <message><source>Caption</source><translation>Képfelirat</translation></message>
+    <message><source>Caption - Classic</source><translation>Képfelirat - Klasszikus</translation></message>
+    <message><source>Gradient - Black</source><translation>Színátmenet - fekete</translation></message>
+    <message><source>Gradient - White</source><translation>Színátmenet - Fehér</translation></message>
+    <message><source>Transparent - Black</source><translation>Átlátszó - fekete</translation></message>
+    <message><source>Transparent - White</source><translation>Átlátszó - fehér</translation></message>
+    <message><source>Scrolling Credits</source><translation>Gördülő stáblista</translation></message>
+    <message><source>Music Video - Left</source><translation>Zenei videoklip - bal</translation></message>
+    <message><source>Music Video - Right</source><translation>Zenei videoklip - jobb</translation></message>
+    <message><source>Caption - Typewriter</source><translation>Képfelirat - Írógép</translation></message>
+    <message><source>Bold</source><translation>Félkövér</translation></message>
+    <message><source>Italic</source><translation>Dőlt</translation></message>
+    <message><source>Automatic Outline</source><translation>Automatikus körvonal</translation></message>
+    <message><source>Text color</source><translation>Szöveg színe</translation></message>
+    <message><source>Background color</source><translation>Háttér színe</translation></message>
+    <message><source>Insert Text Slide</source><translation>Új szöveges dia hozzáadása</translation></message>
+    <message><source>Remove Selected Slide</source><translation>A kijelölt dia eltávolítása</translation></message>
+    <message><source>Add selected clips</source><translation>Kijelölt klipek hozzáadása</translation></message>
+    <message><source>Remove selected clip</source><translation>Kijelölt klip eltávolítása</translation></message>
+    <message><source>Play selected clip only</source><translation>Csak a kijelölt klip lejátszása</translation></message>
+    <message><source>Preview</source><translation>Előnézet</translation></message>
+    <message><source>Recompute</source><translation>Újraszámolás</translation></message>
+    <message><source>Close</source><translation>Bezárás</translation></message>
+    <message><source>Create Movie</source><translation>Mozgófilm létrehozása</translation></message>
+    <message><source>Audio files</source><translation>Hangfájlok</translation></message>
+    <message><source>Music files (*.mp3, *.wma)</source><translation>Zenei fájlok (*.mp3, *.wma)</translation></message>
+    <message><source>Music files (*.mp3, *.m4a)</source><translation>Zenei fájlok (*.mp3, *.m4a)</translation></message>
 </context>
 <context>
     <name>ExportDialogs</name>
@@ -4498,6 +4586,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>LightboxHeader</name>
     <message>
+        <source>Play Fullscreen Slideshow</source>
+        <translation>Diavetítés teljes képernyőn</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
         <source>Show only suggestions (when toggled on)</source>
         <translation>Csak a javaslatok megjelenítése (ha be van kapcsolva)</translation>
@@ -5210,6 +5302,139 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <source>Show duplicate files only</source>
         <translation>Csak a másodpéldányok mutatása</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Open camera capture panel</source>
+        <translation>Webkamerás felvétel megnyitása</translation>
+    </message>
+</context>
+<context>
+    <name>CaptureMoviePanelPopup</name>
+    <message>
+        <location filename="../qml/PicasaPy/CaptureMoviePanelPopup.qml" line="0"/>
+        <source>Recording</source>
+        <translation>Rögzítés</translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation>Videoklip</translation>
+    </message>
+    <message>
+        <source>Camera</source>
+        <translation>Fényképezőgép</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Beállítások</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation>Hang</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Méret</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Kész</translation>
+    </message>
+    <message>
+        <source>Record</source>
+        <translation>Felvétel</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Leállítás</translation>
+    </message>
+    <message>
+        <source>Snapshot</source>
+        <translation>Pillanatkép</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Szünet</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Folytatás</translation>
+    </message>
+    <message>
+        <source>Play</source>
+        <translation>Lejátszás</translation>
+    </message>
+    <message>
+        <source>Connecting to camera</source>
+        <translation>Csatlakozás a kamerához</translation>
+    </message>
+    <message>
+        <source>Preview ready</source>
+        <translation>Előnézet megjelenítése</translation>
+    </message>
+    <message>
+        <source>Connection failed</source>
+        <translation>Sikertelen kapcsolódás</translation>
+    </message>
+    <message>
+        <source>Not available</source>
+        <translation>Nem érhető el</translation>
+    </message>
+    <message>
+        <source>Snapshot saved</source>
+        <translation>A pillanatkép mentése sikerült</translation>
+    </message>
+    <message>
+        <source>Capture failed</source>
+        <translation>Nem sikerült a rögzítés</translation>
+    </message>
+    <message>
+        <source>Unable to prepare the capture folder.</source>
+        <translation>Nem készíthető elő a felvétel célmappája.</translation>
+    </message>
+    <message>
+        <source>Capture live video from camera</source>
+        <translation>Élő videokép rögzítése kameráról</translation>
+    </message>
+    <message>
+        <source>Change camera settings</source>
+        <translation>Kamerabeállítások módosítása</translation>
+    </message>
+    <message>
+        <source>Start camera recording</source>
+        <translation>Kameráról való felvétel indítása</translation>
+    </message>
+    <message>
+        <source>Stop camera recording</source>
+        <translation>Kameráról való felvétel leállítása</translation>
+    </message>
+</context>
+<context>
+    <name>CaptureMovieMedia</name>
+    <message>
+        <location filename="../qml/PicasaPy/CaptureMovieMedia.qml" line="59"/>
+        <source>Preview ready</source>
+        <translation>Előnézet megjelenítése</translation>
+    </message>
+    <message>
+        <source>Connecting to camera</source>
+        <translation>Csatlakozás a kamerához</translation>
+    </message>
+    <message>
+        <source>Connection failed</source>
+        <translation>Sikertelen kapcsolódás</translation>
+    </message>
+    <message>
+        <source>Capture failed</source>
+        <translation>Nem sikerült a rögzítés</translation>
+    </message>
 </context>
 <context>
     <name>PerfMonitorPanel</name>
@@ -5745,7 +5970,7 @@ Biztosan visszavonja a műveletet?</translation>
     </message>
     <message>
         <source>Select a folder to display faces</source>
-        <translation>Válasszon mappát az arcok megjelenítéséhez</translation>
+        <translation>Válasszon ki egy mappát az arcok megjelenítéséhez</translation>
     </message>
 </context>
 <context>
@@ -6768,6 +6993,21 @@ Biztosan visszavonja a műveletet?</translation>
         <translation>%1 kép rendelkezik hellyel</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="109"/>
+        <source>Search for an address:</source>
+        <translation>Cím keresése:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="145"/>
+        <source>Search</source>
+        <translation>Keresés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="77"/>
+        <source>Map</source>
+        <translation>Térkép</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PlacesPanel.qml" line="54"/>
         <source>Close</source>
         <translation>Bezárás</translation>
@@ -6918,6 +7158,10 @@ Biztosan visszavonja a műveletet?</translation>
 </context>
 <context>
     <name>TrayBar</name>
+    <message>
+        <source>Create Movie Presentation</source>
+        <translation>Mozgófilmes prezentáció létrehozása</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
         <source>Fit Photo inside viewing area</source>
@@ -7448,6 +7692,34 @@ A MŰVELET NEM VONHATÓ VISSZA.
 </context>
 <context>
     <name>ImportSourceDialog</name>
+    <message>
+        <source>Options</source>
+        <translation>Opciók</translation>
+    </message>
+    <message>
+        <source>Online options</source>
+        <translation>Online opciók</translation>
+    </message>
+    <message>
+        <source>Upload</source>
+        <translation>Feltöltés</translation>
+    </message>
+    <message>
+        <source>Upload to Picasa Web Albums...</source>
+        <translation>Feltöltés a Picasa Webalbumokba…</translation>
+    </message>
+    <message>
+        <source>Sync starred photos only</source>
+        <translation>Csak a csillagozott fotók szinkronizálása</translation>
+    </message>
+    <message>
+        <source>View the previous Photo</source>
+        <translation>Az előző fénykép megtekintése</translation>
+    </message>
+    <message>
+        <source>View the next Photo</source>
+        <translation>A következő fénykép megtekintése</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20"/>
         <source>Import from Source</source>
@@ -10495,16 +10767,84 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 <context>
     <name>EmailChoiceDialog</name>
     <message>
+        <source>Select Email</source>
+        <translation>Válasszon levelezőprogramot</translation>
+    </message>
+    <message>
         <source>Send pictures by email</source>
         <translation>Képek küldése e-mailben</translation>
     </message>
     <message>
+        <source>Select how you want to e-mail your photos.</source>
+        <translation>Válassza ki, hogyan szeretné e-mailben elküldeni fotóit.</translation>
+    </message>
+    <message>
+        <source>MAIL CLIENT</source>
+        <translation>LEVELEZŐPROGRAM</translation>
+    </message>
+    <message>
+        <source>Use my default email program.</source>
+        <translation>Az alapértelmezett levelezőprogram használata</translation>
+    </message>
+    <message>
+        <source>Google Mail</source>
+        <translation>Google Mail</translation>
+    </message>
+    <message>
+        <source>Use my Gmail or Google account.</source>
+        <translation>A Gmail-fiók vagy a Google Fiók használata</translation>
+    </message>
+    <message>
+        <source>Don't have Gmail? Get a free account.</source>
+        <translation>Nincs Gmail-fiókja? Nyisson egy fiókot ingyen.</translation>
+    </message>
+    <message>
         <source>The pictures will be attached to a new message in your default email program.</source>
-        <translation>A képek csatolmányként kerülnek egy új levélbe az alapértelmezett levelezőprogramban.</translation>
+        <translation>A képek az alapértelmezett levelezőprogram új üzenetéhez csatolva nyílnak meg.</translation>
     </message>
     <message>
         <source>Remember this setting, don't display this dialog again.</source>
         <translation>Jegyezze meg ezt a beállítást, ne jelenítse meg a párbeszédpanelt újra.</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>Súgó</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>New message</source>
+        <translation>Új üzenet</translation>
+    </message>
+    <message>
+        <source>Change User</source>
+        <translation>Felhasználóváltás</translation>
+    </message>
+    <message>
+        <source>Google account sending is not available in this version.</source>
+        <translation>A Google-fiókos küldés ebben a változatban nem érhető el.</translation>
+    </message>
+    <message>
+        <source>To:</source>
+        <translation>Címzett:</translation>
+    </message>
+    <message>
+        <source>Subject:</source>
+        <translation>Tárgy:</translation>
+    </message>
+    <message>
+        <source>Remove selected image from attachment</source>
+        <translation>Kijelölt elemek eltávolítása a mellékletből</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Elvetés</translation>
+    </message>
+    <message>
+        <source>Send</source>
+        <translation>Küldés</translation>
     </message>
 </context>
 <context>
@@ -10741,6 +11081,14 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 </context>
 <context>
     <name>ConfigureButtonsDialog</name>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
         <source>Configure Buttons</source>

@@ -39,8 +39,9 @@ from kiadas_szukseges import kiadasra_erdemes  # noqa: E402
 
 Runner = Callable[[list[str]], "subprocess.CompletedProcess[str]"]
 
-#: A még ki nem adott munka szakasza — ide kell írni.
+#: A korábbi PR-ek közvetlenül ide írtak; az új PR-ek darabfájlt adnak hozzá.
 KIADATLAN_CIM = "## [Nem kiadott]"
+_DARAB_UTVONAL = re.compile(r"^changelog\.d/\d+\.md$")
 
 
 def _valodi_git(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -505,6 +506,25 @@ def main(
         print("Van új CHANGELOG-bejegyzés — rendben.")
         return 0
 
+    # #4165: az új PR-ek saját, jegyszám szerinti darabfájlba írnak. A diffet
+    # ellenőrizzük, így egy csak törölt vagy üres darab nem számít bejegyzésnek.
+    for fajl in fajlok:
+        if not _DARAB_UTVONAL.fullmatch(fajl):
+            continue
+        darab_diff = runner([
+            "git", "diff", f"{beallitas.base}...{beallitas.head}", "--", fajl,
+        ])
+        if darab_diff.returncode != 0:
+            print(
+                "::error title=A CHANGELOG-darab diffje nem olvasható::"
+                f"A `{fajl}` fájl ellenőrzése elbukott: "
+                f"{(darab_diff.stderr or '').strip()[:200]}"
+            )
+            return 1
+        if van_uj_bejegyzes(darab_diff.stdout or ""):
+            print("Van új CHANGELOG-darab — rendben.")
+            return 0
+
     if not van_kiadatlan_szakasz(naplo):
         print(
             f"::error title=Hiányzik a CHANGELOG „Nem kiadott” szakasza::"
@@ -516,7 +536,8 @@ def main(
     print(
         "::error title=Hiányzik a CHANGELOG-bejegyzés::"
         "Ez a PR a felhasználóhoz eljutó kódot módosít, de nem ír hozzá "
-        "mondatot a CHANGELOG „Nem kiadott” szakaszába. Enélkül a kiadási "
+        "mondatot sem a CHANGELOG „Nem kiadott” szakaszába, sem a "
+        "changelog.d/<jegyszám>.md fájlba. Enélkül a kiadási "
         "jegyzet tartaléksablonra vált — a v0.8.71 és a v0.8.72 így állította "
         "magáról valótlanul, hogy nem hoz látható változást (#1340)."
     )

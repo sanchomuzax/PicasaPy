@@ -8,6 +8,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - A nyomtatásnál választható a képfelirat módja és helye, színe, valamint a szegély viselkedése; indexképek nyomtatásakor a nem használható opciók letiltva jelennek meg (#4143).
+- A Glimmer-effektek páratlan szélességű képeken is az eredeti Picasa szerint keverik vissza a hatást, a paletta lépéseit pedig csonkolják (#4157).
+- Elkészült a Filmkészítő háromfüles panelje; a választott méret, átmenet és hangsáv a kész mozgófilmben is érvényesül (#4125).
+- Az E-Mail panelen kiválasztható a levelezőprogram, megírható az üzenet, és a fotók mellékletként küldhetők (#4135).
+- Elkészült a webkamerás videó- és pillanatképrögzítő panel külön kamera- és hangforrás-beállítással, valamint a klipek panelen belüli visszajátszásával (#4137).
+- Az Importálás panelen működik az előző/következő kép, az Opciók menü és a forrás-/célmappa-választó; a nem elérhető online feltöltés jelölője súgóval, letiltva jelenik meg (#4145).
+- A Helyek panelen a helyi képadatok között kereshető cím, a térképtípus váltható, és a szöveg- valamint kollázspanel lefedettsége pontosabban követi a működő elemeket (#4147).
+- A gombsáv, az egyképes nézet, a fejlécek, a csúszkák és az Emberek panel lekutatott maradék elemei megjelentek vagy tesztelt párosítást kaptak (#4156).
 
 ## [0.8.672] – 2026-10-04
 
@@ -17,6 +24,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - A videólejátszóban megjelent a tényleges méretű és a teljes képernyős lejátszás (#4127).
 - A felület-lefedettségi kimutatás helyesen párosítja a már meglévő szerkesztő- és könyvtárnézeti elemeket, a megszűnt Picnik- és webes elemeket pedig nem számolja hiányként (#4131).
+- A jobb oldali fiók bezáró- és méretváltó súgója, valamint a Nyomtatás beállítás-súgója és Súgó gombja elkészült; az első indítás és a rácsgörgető meglévő elemeit teszt és lefedettségi párosítás igazolja (#4150).
 
 ## [0.8.670] – 2026-10-04
 

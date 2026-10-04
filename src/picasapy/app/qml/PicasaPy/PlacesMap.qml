@@ -10,6 +10,18 @@ Item {
 
     // jelölők: [{row, name, latitude, longitude}] — a controller.geoMarkers
     property var markers: []
+    readonly property var mapTypeNames: {
+        var names = []
+        for (var i = 0; i < map.supportedMapTypes.length; ++i)
+            names.push(map.supportedMapTypes[i].name)
+        return names
+    }
+    readonly property int activeMapTypeIndex: {
+        for (var i = 0; i < map.supportedMapTypes.length; ++i) {
+            if (map.supportedMapTypes[i] === map.activeMapType) return i
+        }
+        return 0
+    }
     // a térképen kattintott hely (a „kép ide" művelethez)
     signal placePicked(real latitude, real longitude)
     // jelölőre kattintás → a kép sora
@@ -24,6 +36,11 @@ Item {
         }
         map.center = QtPositioning.coordinate(lat / markers.length,
                                               lon / markers.length)
+    }
+
+    function selectMapType(index) {
+        if (index < 0 || index >= map.supportedMapTypes.length) return
+        map.activeMapType = map.supportedMapTypes[index]
     }
 
     Plugin {
