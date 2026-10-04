@@ -80,19 +80,123 @@ def round_corners(
     return np.where(mask[..., np.newaxis] == 1, image, filled)
 
 
-#: A lekerekített sarkok élsimítása: képpontonként `n × n` részminta — a
-#: `border__max` exportját ezzel a modell ΔE 0,1 alatt adja vissza (#3768).
-_SAROK_RESZMINTA = 4
+def _sarok_fedes(
+    q: np.ndarray,
+    belso_negyzetes_tav: float,
+    kulso_negyzetes_tav: float,
+) -> np.ndarray:
+    """A natív 16.16-os `0x00aa1840` fedési súlyai, 0…256 tartományban.
+
+    A távolságokat és a kerekítési sorrendet a `docs/specs/filterdesc-registry.md`
+    Border I. szakasza rögzíti. A belső körön a súly 256, a külsőn kívül 0;
+    csak a köztes gyűrűn fut a natív egészszorzás.
+    """
+    if kulso_negyzetes_tav <= belso_negyzetes_tav:
+        raise ValueError("a külső négyzetes távolságnak nagyobbnak kell lennie")
+
+    q = np.asarray(q, dtype=np.float64)
+    kerekito = round(2**24 / (kulso_negyzetes_tav - belso_negyzetes_tav))
+    fedes = np.zeros(q.shape, dtype=np.uint16)
+    fedes[q <= belso_negyzetes_tav] = 256
+    reszleges = (q > belso_negyzetes_tav) & (q < kulso_negyzetes_tav)
+    fedes[reszleges] = (
+        ((kulso_negyzetes_tav - q[reszleges]) * kerekito).astype(np.int64) >> 16
+    ).astype(np.uint16)
+    return fedes
 
 
-def _sarok_fedes(sugar: int) -> np.ndarray:
-    """`sugar × sugar`-es float32 fedés a BAL FELSŐ sarokhoz: a kör
-    középpontja a négyzet jobb alsó csúcsa, `(sugar, sugar)`."""
-    n = _SAROK_RESZMINTA
-    reszek = (np.arange(n, dtype=np.float64) + 0.5) / n
-    tav = sugar - (np.arange(sugar, dtype=np.float64)[:, None] + reszek[None, :]).reshape(-1)
-    bent = (tav[:, None] ** 2 + tav[None, :] ** 2) <= float(sugar) ** 2
-    return bent.reshape(sugar, n, sugar, n).mean(axis=(1, 3)).astype(np.float32)
+def _sarok_fedes_negyed(sugar: int) -> np.ndarray:
+    """A bal felső sarok pixeleinek fixpontos fedése a kör középpontja felé."""
+    pixelkozepek = np.arange(sugar, dtype=np.float64) + 0.5
+    tav = sugar - pixelkozepek
+    q = tav[:, None] ** 2 + tav[None, :] ** 2
+    belso = max(0.0, sugar - 0.5)
+    kulso = sugar + 0.5
+    return _sarok_fedes(q, belso**2, kulso**2)
+
+
+def _fedett_forras_alfa(forras_alfa: int, fedes: int) -> int:
+    """A forrás alfája a görbe fedésével súlyozva (`(A·C)>>8`)."""
+    return (forras_alfa * fedes) >> 8
+
+
+def _kompozit_alfa(cel_alfa: int, forras_alfa: int) -> int:
+    """A `0x009ab410` alfa-képlete egy opaque cél fölött is megőrzi az ff-et."""
+    return ((cel_alfa * (256 - forras_alfa)) >> 8) + forras_alfa
+
+
+def _kever_reszleges_argb(cel: int, forras: int, fedes: int) -> int:
+    """A natív packed ARGB-keverés egy pixelre, az eredeti shift-sorrenddel."""
+    if fedes <= 0:
+        return cel
+
+    cel_csatornak = [(cel >> shift) & 0xFF for shift in (24, 16, 8, 0)]
+    forras_csatornak = [(forras >> shift) & 0xFF for shift in (24, 16, 8, 0)]
+    alfa = forras_csatornak[0]
+
+    if fedes >= 256:
+        # A teljes fedésű ág a skálázott cél-dwordhoz egyetlen dwordként adja
+        # hozzá a forrást; az átvitel is a natív része ennek az útnak.
+        vissza = 256 - alfa
+        cel_dword = sum(
+            ((csatorna * vissza) >> 8) << shift
+            for csatorna, shift in zip(cel_csatornak, (24, 16, 8, 0), strict=True)
+        )
+        return (cel_dword + forras) & 0xFFFFFFFF
+
+    alfa_resz = _fedett_forras_alfa(alfa, fedes)
+    inverz = 255 - alfa_resz
+    eredmeny = 0
+    for index, shift in enumerate((24, 16, 8, 0)):
+        cel_cs = cel_csatornak[index]
+        forras_cs = forras_csatornak[index]
+        if shift in (16, 0):  # R/B: az összeg a shift előtt készül.
+            csatorna = (cel_cs * inverz + forras_cs * fedes) >> 8
+        else:  # G/alfa: a két tag külön shiftelődik.
+            csatorna = ((cel_cs * inverz) >> 8) + ((forras_cs * fedes) >> 8)
+        eredmeny |= (csatorna & 0xFF) << shift
+    return eredmeny
+
+
+def _raszterez_kor(
+    q: np.ndarray,
+    *,
+    belso_negyzetes_tav: float,
+    kulso_negyzetes_tav: float,
+    forras_argb: int,
+    cel_argb: int,
+) -> np.ndarray:
+    """Fedett kör natív ARGB-raszterezése és opaque cél fölötti kompozitja."""
+    fedesek = _sarok_fedes(q, belso_negyzetes_tav, kulso_negyzetes_tav)
+    eredmeny = np.empty(fedesek.shape, dtype=np.uint32)
+    cel_alfa = (cel_argb >> 24) & 0xFF
+    for index in np.ndindex(fedesek.shape):
+        koztes = _kever_reszleges_argb(cel_argb, forras_argb, int(fedesek[index]))
+        alfa = _kompozit_alfa(cel_alfa, (koztes >> 24) & 0xFF)
+        eredmeny[index] = (koztes & 0x00FFFFFF) | (alfa << 24)
+    return eredmeny
+
+
+def _kever_rgb_fedessel(cel: np.ndarray, forras: np.ndarray, fedes: np.ndarray) -> np.ndarray:
+    """RGB színek keverése a natív fedési súlyok csatornasorrendjével."""
+    cel_u32 = np.asarray(cel, dtype=np.uint32)
+    forras_u32 = np.asarray(forras, dtype=np.uint32)
+    fedes_u32 = np.asarray(fedes, dtype=np.uint32)[..., np.newaxis]
+    alfa_resz = (255 * fedes_u32) >> 8
+    inverz = 255 - alfa_resz
+    reszleges_rb = (cel_u32 * inverz + forras_u32 * fedes_u32) >> 8
+    reszleges_g = ((cel_u32[..., 1:2] * inverz) >> 8) + (
+        (forras_u32[..., 1:2] * fedes_u32) >> 8
+    )
+    reszleges = np.concatenate(
+        (reszleges_rb[..., 0:1], reszleges_g, reszleges_rb[..., 2:3]), axis=-1
+    )
+    reszleges = np.clip(reszleges, 0, 255).astype(np.uint8)
+    return np.where(
+        fedes_u32 == 0,
+        cel_u32.astype(np.uint8),
+        np.where(fedes_u32 == 256, forras_u32.astype(np.uint8), reszleges),
+    )
 
 
 def _sarok_folt(
@@ -104,12 +208,12 @@ def _sarok_folt(
     """A bal felső sarok `(R + belső)²`-es foltja: külső szín → a sáv
     `R + belső` sugarú íve belső színnel → a kép `R` sugarú íve."""
     sugar = kep_sarok.shape[0]
-    sav_fedes = _sarok_fedes(sugar + belso)[..., np.newaxis]
-    kulso = np.asarray(outer_color, dtype=np.float32)
-    bel = np.asarray(inner_color, dtype=np.float32)
-    alap = kulso * (1.0 - sav_fedes) + bel * sav_fedes
-    kep_fedes = _sarok_fedes(sugar)[..., np.newaxis]
-    kep_resz = alap[belso:, belso:] * (1.0 - kep_fedes) + kep_sarok.astype(np.float32) * kep_fedes
+    sav_fedes = _sarok_fedes_negyed(sugar + belso)
+    kulso = np.asarray(outer_color, dtype=np.uint8)
+    bel = np.asarray(inner_color, dtype=np.uint8)
+    alap = _kever_rgb_fedessel(kulso, bel, sav_fedes)
+    kep_fedes = _sarok_fedes_negyed(sugar)
+    kep_resz = _kever_rgb_fedessel(alap[belso:, belso:], kep_sarok, kep_fedes)
     folt = np.concatenate(
         [alap[:belso], np.concatenate([alap[belso:, :belso], kep_resz], axis=1)], axis=0
     )
