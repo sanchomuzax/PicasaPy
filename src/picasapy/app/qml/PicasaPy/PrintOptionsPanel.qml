@@ -28,6 +28,8 @@ Rectangle {
     })
     property var fontFamilies: []
     property var textSizes: []
+    // Csak a színgomb engedélyezett nyitása hagyhatja nyitva a Popupot.
+    property bool textColorPickerRequested: false
     property var sourceLabels: [
         qsTr("No text"), qsTr("Caption"), qsTr("Filename"),
         qsTr("Exif information")
@@ -100,12 +102,24 @@ Rectangle {
     }
 
     function showOptions() {
+        panel.closeTextColorPicker()
         if (!panel.controller) return
         panel.options = panel.copyOptions(panel.readOptions())
         panel.savedOptions = panel.copyOptions(panel.options)
         panel.fontFamilies = panel.readFontFamilies()
         panel.textSizes = panel.readTextSizes()
         panel.visible = true
+        panel.closeTextColorPicker()
+    }
+
+    function openTextColorPicker() {
+        panel.textColorPickerRequested = true
+        textColorPicker.open()
+    }
+
+    function closeTextColorPicker() {
+        panel.textColorPickerRequested = false
+        textColorPicker.close()
     }
 
     function setOption(name, value) {
@@ -146,7 +160,11 @@ Rectangle {
     function chooseColor(index, textColor) {
         var name = textColor ? "textColor" : "borderColor"
         panel.setOption(name, parseInt(panel.colorPalette[index].slice(1), 16))
-        if (textColor) textColorPicker.close()
+        if (textColor) panel.closeTextColorPicker()
+    }
+
+    onVisibleChanged: {
+        if (!panel.visible) panel.closeTextColorPicker()
     }
 
     Component {
@@ -394,7 +412,7 @@ Rectangle {
                             anchors.fill: parent
                             enabled: parent.enabled
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: textColorPicker.open()
+                            onClicked: panel.openTextColorPicker()
                         }
                     }
                 }
@@ -449,6 +467,12 @@ Rectangle {
         id: textColorPicker
         objectName: "printOptionTextPickerPanel"
         parent: panel
+        onVisibleChanged: {
+            // A panel/ablak láthatósági eseménye önmagában nem nyithatja ki.
+            if (visible && !panel.textColorPickerRequested)
+                textColorPicker.close()
+        }
+        onClosed: panel.textColorPickerRequested = false
         x: Math.max(0, Math.min(
             panel.width - width,
             textColorPickerBevel.mapToItem(panel, 0, 0).x))

@@ -47,6 +47,37 @@ def _open_print_dialog(window, qt_app):
 
 
 class TestPrintOptionsPanel:
+    def test_a_szinszabalyzo_nyitasa_minden_panelmegnyitasnal_zarva_marad(
+        self, qml_app_magyar, qt_app
+    ):
+        window, _controller, _engine = qml_app_magyar
+        dialog = _open_print_dialog(window, qt_app)
+        panel = _child(dialog, "printOptionsPanel")
+        szinvalaszto = _child(panel, "printOptionTextPickerPanel")
+        assert szinvalaszto.property("visible") is False
+
+        alapmagassag = int(dialog.height())
+        gomb = _child(dialog, "printOptionsButton")
+        for elteres in (-5, 0, 5):
+            dialog.setHeight(alapmagassag + elteres)
+            qt_app.processEvents()
+
+            # Determinisztikus platformpróba: egy ablak- vagy fókuszeseményből
+            # származó, gombkattintás nélküli nyitást injektálunk.
+            assert QMetaObject.invokeMethod(
+                szinvalaszto, "open", Qt.ConnectionType.DirectConnection
+            )
+            qt_app.processEvents()
+            assert szinvalaszto.property("visible") is False
+
+            QMetaObject.invokeMethod(
+                gomb, "clicked", Qt.ConnectionType.DirectConnection
+            )
+            qt_app.processEvents()
+            assert szinvalaszto.property("visible") is False
+            panel.setProperty("visible", False)
+            qt_app.processEvents()
+
     def test_a_feliratok_a_betoltott_magyar_forditassal_es_rejtett_szinvalasztoval(
         self, qml_app_magyar, qt_app
     ):

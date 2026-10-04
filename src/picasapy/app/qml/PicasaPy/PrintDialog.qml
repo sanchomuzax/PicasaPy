@@ -344,6 +344,7 @@ Window {
         printWindow.printers = printWindow.printCtl ? printWindow.printCtl.listPrinters() : []
         printOptionsPanel.visible = false
         printWindow.visible = true
+        printOptionsPanel.closeTextColorPicker()
     }
 
     function startPrint() {
