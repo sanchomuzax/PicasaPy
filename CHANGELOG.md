@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A gombsáv, az egyképes nézet, a fejlécek, a csúszkák és az Emberek panel lekutatott maradék elemei megjelentek vagy tesztelt párosítást kaptak (#4156).
+
 ## [0.8.671] – 2026-10-04
 
 - A videólejátszóban megjelent a tényleges méretű és a teljes képernyős lejátszás (#4127).

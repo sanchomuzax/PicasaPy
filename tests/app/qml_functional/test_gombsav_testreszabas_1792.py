@@ -12,11 +12,12 @@ amit a felhasználó is lát.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import picasapy.app.application as app_module
 import pytest
-from PySide6.QtCore import QObject, QSettings, QUrl
+from PySide6.QtCore import QMetaObject, QObject, QSettings, QUrl
 from PySide6.QtQml import QQmlComponent
 
 from picasapy.app.gombsav_beallitas import ALAP_SORREND
@@ -223,3 +224,40 @@ class TestAParbeszed:
         qt_app.processEvents()
 
         assert _lista(p, "jelenlegi") == list(ALAP_SORREND)
+
+    def test_a_listacimek_a_foablak_kimeneteben_is_latszanak(
+        self, qml_app, qt_app
+    ):
+        """A specifikáció két felirata a valódi főablakban jelenik meg."""
+        window, _controller, _engine = qml_app
+        height = window.height()
+        menu = window.property("menuBar")
+        assert menu is not None
+        assert QMetaObject.invokeMethod(menu, "configureButtonsRequested")
+        parbeszed = window.findChild(QObject, "configureButtonsDialog")
+        assert parbeszed is not None
+        parbeszed.open()
+
+        elerheto = window.findChild(QObject, "configButtonsAvailableLabel")
+        jelenlegi = window.findChild(QObject, "configButtonsCurrentLabel")
+        ok = parbeszed.findChild(QObject, "configButtonsOkButton")
+        cancel = parbeszed.findChild(QObject, "configButtonsCancelButton")
+        assert elerheto is not None and jelenlegi is not None
+        assert ok is not None and cancel is not None
+        try:
+            for delta in (-5, 0, 5):
+                window.resize(window.width(), height + delta)
+                deadline = time.monotonic() + 3.0
+                while time.monotonic() < deadline:
+                    qt_app.processEvents()
+                    if parbeszed.property("visible"):
+                        break
+                    time.sleep(0.01)
+                assert parbeszed.property("visible")
+                assert elerheto.property("text") == "Available buttons:"
+                assert jelenlegi.property("text") == "Current buttons:"
+                assert ok.property("text") == "OK"
+                assert cancel.property("text") == "Cancel"
+        finally:
+            parbeszed.close()
+            window.resize(window.width(), height)

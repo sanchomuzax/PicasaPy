@@ -3215,6 +3215,7 @@ Rectangle {
                         imagePath: viewer.photosModel && viewer.aktivSor >= 0
                             ? viewer.photosModel.filePathAt(viewer.aktivSor) : ""
                         onEdited: viewer.facesEditRevision += 1
+                        onManualCancelRequested: viewer.facesEditMode = false
                     }
 
                     // #445: a retusálás a Picasa súgószövege szerinti,

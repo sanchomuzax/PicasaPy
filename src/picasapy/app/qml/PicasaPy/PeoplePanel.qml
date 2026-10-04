@@ -45,6 +45,7 @@ Rectangle {
     // a nézett SZEMÉLY-album neve — egyébként üres
     property string currentPerson: ""
     property int selectionCount: 0
+    property bool folderSelected: true
     // a szerkesztő (néző) példánya: az eredetiben az `editpanel/preview`
     // láthatósága, ilyenkor mindig az egyképes ág fut
     property bool editorView: false
@@ -78,6 +79,8 @@ Rectangle {
           : panel.peopleHere
     readonly property bool hasPeople: panel.people.length > 0
     readonly property bool hasPhotos: panel.selectionCount > 0
+    readonly property bool needsFolderSelection:
+        !panel.folderSelected && !panel.personAlbum && !panel.unnamedAlbumMode
 
     // a fejléc (`status_label`); üres, ha az utasítás-szöveg látszik
     readonly property string headerText:
@@ -104,6 +107,15 @@ Rectangle {
         //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
         //: (`RightDrawer`), nem a panelben.
 
+        Text {
+            objectName: "peoplePanelStatusLabel"
+            visible: panel.needsFolderSelection
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr("Select a folder to display faces")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
         Text {
             objectName: "peoplePanelHeader"
             visible: panel.headerText.length > 0
@@ -134,7 +146,7 @@ Rectangle {
         //          selected photos will be listed here." — minden más
         Text {
             objectName: "peoplePanelEmptyText"
-            visible: panel.headerText.length === 0
+            visible: panel.headerText.length === 0 && !panel.needsFolderSelection
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: panel.unnamedAlbumMode
