@@ -341,3 +341,24 @@ printoptions/textonimage_label,megvan,PicasaPy/PrintOptionsPanel.qml:272,printOp
 printoptions/useexif_label,megvan,PicasaPy/PrintOptionsPanel.qml:253,printOptionSource3: Exif information → Exif-adatok (#4143)
 printoptions/usenotext_label,megvan,PicasaPy/PrintOptionsPanel.qml:232,printOptionSource0: No text → Nincs szöveg (#4143)
 printoptions/wrap_checkbox,megvan,PicasaPy/PrintOptionsPanel.qml:321,printOptionWrapCheckBox; a választás a nyomtatási előnézetre kerül (#4143)
+makemoviepanel/addtomovie,megvan,tests/app/qml_functional/test_film_panel_4182.py,A régi movieAddClipsButton a kijelölt klipeket a film végi kliptálcához fűzi; a kattintás és az eredeti buboréksúgó ellenőrzött.
+makemoviepanel/album_order_radio,megvan,tests/app/qml_functional/test_film_panel_4182.py;tests/app/qml_functional/test_film_panel_4125.py,A movieAlbumOrder rádiógomb az Album Order választását adja; kattintása ellenőrzött.
+makemoviepanel/audio_label,megvan,tests/app/qml_functional/test_film_panel_4182.py,Az Audio Track: hivatalos magyar felirata a főablakban megjelenik.
+makemoviepanel/bkg_picker_panel,megvan,tests/app/qml_functional/test_film_panel_4182.py,A háttérszín-választó tényleges kattintásra megnyílik.
+makemoviepanel/burstslider_label,megvan,tests/app/qml_functional/test_film_panel_4182.py,"A felirat és magyar fordítása látható; a küszöb a mért képlettel változik, az MXF menti/visszaolvassa; a ritkítási szabály: #4194."
+makemoviepanel/chronological_order_radio,megvan,tests/app/qml_functional/test_film_panel_4182.py,A régi movieChronologicalOrder rádiógombot valódi kattintás választja ki.
+makemoviepanel/deleteclips,megvan,tests/app/qml_functional/test_film_panel_4182.py,A régi movieDeleteClipButton a kijelölt klipet eltávolítja a tálcáról; kattintása és eredeti buboréksúgója ellenőrzött.
+makemoviepanel/export_youtube,nem-cel,#4182,"A Picasa 3.9 feltöltője elavult harmadik féltől származó kliens; a YouTube a régi feltöltési API leállítása után nem engedi az ilyen kliensekkel a feltöltést (Google: https://support.google.com/youtube/answer/6388033)."
+makemoviepanel/inputtext,megvan,tests/app/qml_functional/test_film_panel_4182.py,A movieSlideText mező a második lapon szerkeszthető; a szöveg-helyi-menü megmaradt.
+makemoviepanel/lengthslider_label,megvan,tests/app/qml_functional/test_film_panel_4182.py;tests/app/qml_functional/test_film_panel_4125.py,"A movieLengthSlider a mért floor(t²×N) képlettel számít, és a kiválasztott képszám a renderelt MP4/MXF kimenetben ellenőrzött."
+makemoviepanel/moviesize_label,megvan,tests/app/qml_functional/test_film_panel_4182.py,A Dimensions felirat hivatalos magyar alakja látható a főablakból nyitott panelen.
+makemoviepanel/ordering_header_label,megvan,tests/app/qml_functional/test_film_panel_4182.py,Az Ordering of Slides: felirat hivatalos magyar alakja látható a panelen.
+makemoviepanel/outline,megvan,tests/app/qml_functional/test_film_panel_4182.py,"A movieOutlineBox jelölő kattintható, és az eredeti buboréksúgója elérhető."
+makemoviepanel/remove_slide,megvan,tests/app/qml_functional/test_film_panel_4182.py,A movieRemoveSlideButton eltávolítja a kijelölt szöveges diát; a kattintás és eredeti buboréksúgó ellenőrzött.
+makemoviepanel/rewind,megvan,tests/app/qml_functional/test_film_panel_4182.py,"A Preview lejátszás leáll, és a kiválasztott klip indexére ugrik vissza."
+makemoviepanel/smart_order_radio,megvan,tests/app/qml_functional/test_film_panel_4182.py;tests/app/qml_functional/test_film_panel_4125.py,A régi movieSmartOrder rádiógombot valódi kattintás választja ki; a sorrend MXF-kimenetét a meglévő teszt őrzi.
+makemoviepanel/tabpanel2,megvan,tests/app/qml_functional/test_film_panel_4182.py,A movieTabSlide fül a második panelt nyitja meg.
+makemoviepanel/templatelist,megvan,tests/app/qml_functional/test_film_panel_4182.py,A movieTextStyleBox a 12 eredeti szövegdia-stílust tartalmazza.
+makemoviepanel/text_picker_panel,megvan,tests/app/qml_functional/test_film_panel_4182.py,A szövegszín-választó tényleges kattintásra megnyílik.
+makemoviepanel/txcolorpicker_bevel,megvan,tests/app/qml_functional/test_film_panel_4182.py,A szövegszín színmintájának kerete a ColorDialog nyitógombjával együtt látható és tesztelt.
+makemoviepanel/viewedit,megvan,tests/app/qml_functional/test_film_panel_4182.py,"A szövegdiák húzással átrendezhetők és kijelölhetők, dupla kattintásra szerkeszthetők, a sorrend az MXF-kimenetben is ellenőrzött. A meglévő dia beszúrásának, kliptálcára húzásának és a helyi menü tartalmának viselkedése nincs egyértelműen leírva, ezért ezeket kihagytam."

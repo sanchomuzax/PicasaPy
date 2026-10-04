@@ -113,6 +113,10 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         _elem(window, "movieSeconds").setProperty("value", 10)
         _elem(window, "movieShowDates").setProperty("checked", True)
         _elem(window, "movieSmartOrder").setProperty("checked", True)
+        _elem(window, "lengthslider/scaleslider").setProperty("value", 0.8)
+        _elem(window, "burstslider/scaleslider").setProperty("value", 0.5)
+        assert film_parbeszed.property("movieInitialPhotoCount") == 2
+        assert film_parbeszed.property("movieUsedPhotoCount") == 1
 
         hang = tmp_path / "hang.wav"
         with wave.open(str(hang), "wb") as wav:
@@ -156,7 +160,9 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         assert projekt.showcaption and projekt.showdates
         assert projekt.cropfit == 1 and projekt.removelowresfaces
         assert projekt.ordering == 0
-        assert len(projekt.atmenetek) == 3
+        assert projekt.burstmodethresh == 21600
+        assert len(projekt.atmenetek) == 2
+        assert projekt.atmenetek[0].forras.filename
         assert projekt.atmenetek[-1].forras.tipus == 2
         assert projekt.atmenetek[-1].forras.text == "4125"
     finally:
