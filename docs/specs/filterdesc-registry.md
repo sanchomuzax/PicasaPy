@@ -4172,6 +4172,78 @@ RTTI-vtáblák (`0x00cf0120`, `0x00cf085c`) 6. rése a közös alkalmazó
 `0x00bcb2f0`-t; a `TwoTone` beolvasója (`0x00bc2760`) a `[this+0x40]`-be tesz
 objektumot (`0x00bc2923`) és a `0x00bb8710`-et hívja (`0x00bc2949`).
 
+#### Több megállós `GradientMap` — teljes natív pixelút (2026-10-04, #626)
+
+**Bizonyítottsági fok: megerősített** a 2, 3 és 5 megállós, megadott
+színértékekből épített LUT-ra, a 256 elemű táblára, az interpolációra és a
+bemeneti csatornára. Az utasításszintű levezetés és a teljes natív
+`qemu-i386` próba bájtra egyezik.
+
+* **Pozíció és mértékegység:** az indexelt tartomány 0…255. `n ≥ 2` esetén
+  `p[0] = 0`, `p[n−1] = 255`, a belső stop float32-re kerekített
+  `p[k] = (k · 255,0) / (n−1)`. A 255,0 double konstans címe `0x00cf39d0`,
+  a végpont 255,0 float konstansa `0x00cf3a00`; a belső értéket a kód
+  `fstp dword`-dal tárolja (`0x00bb88e4`–`0x00bb892d`). Következésképp
+  `n=3`: `{0; 127,5; 255}`, `n=5`:
+  `{0; 63,75; 127,5; 191,25; 255}`.
+* **Interpoláció és LUT:** a megállókereső (`0x00bb85b0`) a tárolt pozíciók
+  közötti alsó/felső stopot adja; az x87-hányados float32 súlya
+  `w = float32((p_hi−x)/(p_hi−p_lo))`. A `0x00bb84a0` mindhárom RGB
+  csatornát külön keveri: `clamp(trunc(upper + w·(lower−upper) + 0,5),
+  0, 255)`. Ez lebegőpontos, nem fixpontos interpoláció. A munkavégző
+  `0x00bb87b0` az `i=0…255` indexek eredményét a
+  `base+0x800+4·i` címre írja (`0x00bb8931`–`0x00bb8958`): pontosan 256
+  dword a piros csatorna LUT-rekeszében.
+* **Indexelt bemeneti csatorna:** a natív pixelalkalmazó
+  `0x00bcb2f0` a BGRA-bemenet `+2` bájtját olvassa, és azzal indexeli a
+  `+0x800` rekeszt (`0x00bcb3a0`–`0x00bcb3ab`); a `+1`, `+0`, `+3` bájt a
+  külön `+0x400`, `+0`, `+0xc00` rekeszt indexeli. A `+2` a BGRA vörös
+  csatornája. A gradiens bemenete tehát a nyers piros bájt, nem luma.
+
+**Független natív futtatás.** A helyi `qemu_harness` a `0x00bb7c80` teljes
+alkalmazót futtatta; az eredeti vtable-munkavégző (`0x00bb87b0`) és
+képpontalkalmazó (`0x00bcb2f0`) is futott. A LUT-rögzítéshez ugyanebben a
+futásban előbb külön meghívtuk a `0x00bb87b0`-t, majd ugyanazzal a művelet-
+objektummal lefutott a teljes `0x00bb7c80` alkalmazó. A CRT-shim mellett
+csak három célzott függvény kapott shimet: `operator new` (`0x00c0769f`) és `delete`
+(`0x00c07681`) a determinisztikus foglaláshoz, valamint a 7,8 KB-os
+kifejezéskiértékelő (`0x008ef520`), amely a kézzel felépített csomópont ismert
+double értékét adta vissza. A megállókereső, pozíciószámítás, csatorna-kód,
+LUT-építés és pixelalkalmazás eredeti bináriskód maradt; a `gradientArray`
+XML-szöveg beolvasója (`0x00bb8710`) nem futott.
+Mindhárom futás a harness `FPUCW=0x027f` beállításával ment; minden natív
+kimeneti alfa-bájt `0xff` volt.
+
+Mindhárom futásban külön forrás- és cél-Image rekord szerepelt: `+0x04`
+stride=256 pixel, `+0x08` szélesség=256, `+0x0c` magasság=4, `+0x10`
+BGRA-adatmutató. A négy forrássor piros csatornája egyaránt 0…255-ig futott;
+`(G,B)` rendre `(0,0)`, `(255,255)`, `(255,0)`, `(0,255)` volt, az alfa
+`0xff`. Így ugyanaz a piros érték négy különböző zöld/kék pár mellett is
+szerepelt.
+
+| próba | szintetikus `0xRRGGBB` stopértékek | QEMU LUT vs. `gradient_map` | QEMU-kép vs. `gradient_map` | azonos R, eltérő G/B |
+|---|---|---:|---:|---|
+| 2 stop | `0x132f71`, `0xe64908` | 0 / 768 bájt eltérés | 0 / 3072 RGB-bájt eltérés | 0 / 256 eltérő pixel mindhárom sorpárban |
+| 3 stop | `0x0711e7`, `0xf08023`, `0x36cbb5` | 0 / 768 | 0 / 3072 | 0 / 256 mindhárom sorpárban |
+| 5 stop | `0x0102fd`, `0x57b30d`, `0xf03189`, `0x34d2c7`, `0xe5a611` | 0 / 768 | 0 / 3072 | 0 / 256 mindhárom sorpárban |
+
+A helyi `gradient_map` (`src/picasapy/render/glimmer_ops.py`) tehát a
+megadott megállóértékekre és a teljes 256 indexre bájtra egyezik mind a
+natív LUT-tal, mind a teljes natív alkalmazó kimenetével; nincs fejlesztői
+eltérés ezen a függvényen. A négy G/B-ellenpróba cáfolta a luma-indexelést:
+mindhárom palettán minden R-értéknél azonos RGB-kimenet született, miközben
+az R szerint változó LUT nem konstans (a 2 stopos próbában 228 különböző
+RGB-triplett volt). Ezt az ellenpróbát a független gépikód-út is ellenőrzi:
+`[BGRA+2]` közvetlenül a `+0x800` táblába indexel.
+
+**Határ:** ez a mérés a stopokat kész numerikus double értékként adta a
+munkavégzőnek. A `gradientArray` szöveges attribútumának tényleges
+kiértékelése, a valós XML-export stopjainak színkódolása/sorrendje, illetve
+az `0x008ef520` eredeti kifejezéskiértékelője nincs ezzel mérve; ezek továbbra
+is feltételesek. A helyi `filterdesc.xml` nem tartalmaz több-stopos
+`gradientArray` export-goldent; ezért a mérés a pixelmatematikát, nem a
+szöveges attribútum előállítását zárja le.
+
 ### 5. `ResizeImageOperation` — közös diszpécser, eltérő pixelág a forgatástól
 
 Az alkalmazó (`0x00bc3650`, 407 b) tengelyenként `forrás / cél` léptéket
