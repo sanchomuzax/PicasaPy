@@ -4339,6 +4339,21 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Upload</source>
+        <translation>Feltöltés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Change options</source>
+        <translation>Opciók módosítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
+        <source>Remove online</source>
+        <translation>Eltávolítás: online elemek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PublishPanel.qml" line="0"/>
         <source>Backup Set</source>
         <translation>Mentési készlet</translation>
     </message>
