@@ -12,8 +12,9 @@ import QtQuick.Layouts
 // Az **Ajándék-CD** üzemmód él (#3503): a „Létrehozás ▸ Ajándék CD
 // készítése…" nyitja, és a „Lemezre írás" a képtálca elemeiből lemezképet
 // készít. A panel csak JELEZ (`lemezreIrasKert`, `megseKert`,
-// `tovabbiakKert`); a munkát a gazda végzi. A biztonsági mentés
-// üzemmódját a `BackupHost` köti be (#3504); a feltöltésé nincs bekötve.
+// `tovabbiakKert`); a munkát a gazda végzi. A biztonsági mentést a
+// `BackupHost` köti be (#3504). A feltöltési csoport 1/2/3 módválasztása
+// működik, maga az online művelet a megszűnt szolgáltatás miatt nincs bekötve.
 //
 // ## A mért vászon
 //
@@ -41,6 +42,10 @@ Item {
 
     //: melyik üzemmód látszik: "cd" · "backup" · "upload"
     property string uzemmod: "cd"
+    //: `CBurnPanel +0xd4` (biztonsagi-mentes.md 15.1): 1 = feltöltés,
+    //: 2 = opciók módosítása, 3 = online elemek eltávolítása.
+    //: Az online művelet a szolgáltatás megszűnése miatt nincs bekötve.
+    property int feltoltesMod: 1
 
     //: a `namelimitext` MÉRT felirata mondja ki: legfeljebb 16 karakter
     readonly property int cdNevHossz: 16
@@ -527,6 +532,91 @@ Item {
         MertKeret {
             objectName: "publishRpOptions"
             x: 36; y: 93; width: 199; height: 99
+        }
+        //: A három valódi `rpoptionbox` módválasztó. A `buoptionbox`
+        //: párjai a spec 15.2 szerint halottak; ezek a rádiógombok viszont
+        //: a `+0xd4` 1/2/3 értékeit adják át.
+        ButtonGroup { id: feltoltesModCsoport }
+        RadioButton {
+            id: feltoltesMod1
+            objectName: "publishUploadMode1"
+            x: 42; y: 101; width: 29; height: 29
+            text: qsTr("Upload")
+            contentItem: Item {}
+            padding: 0
+            ButtonGroup.group: feltoltesModCsoport
+            checked: panel.feltoltesMod === 1
+            onClicked: {
+                panel.feltoltesMod = 1
+                checked = Qt.binding(function () { return panel.feltoltesMod === 1 })
+            }
+        }
+        MertFelirat {
+            objectName: "publishLabelUploadMode1"
+            x: 76; y: 101; width: 159; height: 29
+            text: qsTr("Upload")
+            elide: Text.ElideNone
+            wrapMode: Text.WordWrap
+        }
+        MouseArea {
+            objectName: "publishUploadModeLabelClick1"
+            x: 76; y: 101; width: 159; height: 29
+            cursorShape: Qt.PointingHandCursor
+            onClicked: feltoltesMod1.click()
+        }
+        RadioButton {
+            id: feltoltesMod2
+            objectName: "publishUploadMode2"
+            x: 42; y: 132; width: 29; height: 29
+            text: qsTr("Change options")
+            contentItem: Item {}
+            padding: 0
+            ButtonGroup.group: feltoltesModCsoport
+            checked: panel.feltoltesMod === 2
+            onClicked: {
+                panel.feltoltesMod = 2
+                checked = Qt.binding(function () { return panel.feltoltesMod === 2 })
+            }
+        }
+        MertFelirat {
+            objectName: "publishLabelUploadMode2"
+            x: 76; y: 132; width: 159; height: 29
+            text: qsTr("Change options")
+            elide: Text.ElideNone
+            wrapMode: Text.WordWrap
+        }
+        MouseArea {
+            objectName: "publishUploadModeLabelClick2"
+            x: 76; y: 132; width: 159; height: 29
+            cursorShape: Qt.PointingHandCursor
+            onClicked: feltoltesMod2.click()
+        }
+        RadioButton {
+            id: feltoltesMod3
+            objectName: "publishUploadMode3"
+            x: 42; y: 163; width: 29; height: 29
+            text: qsTr("Remove online")
+            contentItem: Item {}
+            padding: 0
+            ButtonGroup.group: feltoltesModCsoport
+            checked: panel.feltoltesMod === 3
+            onClicked: {
+                panel.feltoltesMod = 3
+                checked = Qt.binding(function () { return panel.feltoltesMod === 3 })
+            }
+        }
+        MertFelirat {
+            objectName: "publishLabelUploadMode3"
+            x: 76; y: 163; width: 159; height: 29
+            text: qsTr("Remove online")
+            elide: Text.ElideNone
+            wrapMode: Text.WordWrap
+        }
+        MouseArea {
+            objectName: "publishUploadModeLabelClick3"
+            x: 76; y: 163; width: 159; height: 29
+            cursorShape: Qt.PointingHandCursor
+            onClicked: feltoltesMod3.click()
         }
         ComboBox {
             objectName: "publishUploadAllSize"
