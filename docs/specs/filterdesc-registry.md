@@ -3384,6 +3384,82 @@ módot és nem változtatja meg a háttérszínt.
 Egyszerű kivágás; a Polaroid a `min(szélesség, magasság)` méretű, **középre
 igazított négyzetet** kéri (a képlet a `filterdesc.xml`-ben van).
 
+##### Pixelmatematika (#626, 2026-10-04)
+
+**Mértékegység.** A `filterdesc.xml` a `CropImageOperation` `x`, `y`,
+`width`, `height` attribútumait az eredeti kép pixelméreteiből számítja:
+`Cinemascope` a `origImageWidth`/`origImageHeight` és `cropWidth`/`cropHeight`
+alapján (`filterdesc.xml:751–755`), a `Polaroid` a
+`min(origImageWidth, origImageHeight)` alapján (`:1226–1234`). Ezek abszolút
+képpont-koordináták és méretek, nem 0…1 arányok. Az attribútum-beolvasó a
+négy kifejezést az objektum `+0x24`, `+0x2c`, `+0x34`, `+0x3c` mezőjébe teszi
+(`0x00bbd9a0`). Az RTTI szerinti `glimmer::CropImageOperation::vftable`
+címe `0x00cf05a0` (RVA `0x008f05a0`); a 6. slot az alkalmazó
+`0x00bbdbd0` címre mutat.
+
+**Kerekítés és határok.** A natív alkalmazó (`0x00bbdbd0`) a `x`/`y`
+kifejezését `float32`-re alakítja, majd a `0x00c29990` segéddel egészre
+csonkolja (`cvttsd2si`). A szélesség és magasság a `0x00bbda60` segéden át
+`float32` lesz, majd `0x00529e10` → `0x00c090f0` kerekíti a legközelebbi
+egészre, végül `0x00c29990` egészíti ki. A natív téglalap jobb és alsó
+végpontja külön képződik: `trunc(x + round(width))` és
+`trunc(y + round(height))`; tehát tört `x`/`y` esetén nem az egészre
+csonkolt kezdőponthoz adja hozzá a kerekített méretet.
+
+A `0x009a9080` a bal/felső élt nullára korlátozza, a jobb/alsó élt pedig a
+bemeneti kép szélességére/magasságára vágja; a képpontokat ezután változatlan
+BGRA-bájtokként másolja (`0x009aabf0`). Részben kilógó téglalapnál tehát a
+képbe eső metszet készül el, kitöltés és újramintavételezés nélkül. Ha nincs
+metszet, a natív hívás `0x4` visszatérési értéket ad, és a célrekord a
+bemeneti képre mutató, változatlan méretű rekord marad; ez nem üres kép.
+
+**Két független út.**
+
+| út | eredmény |
+|---|---|
+| A — utasításszintű | `0x00bbd9a0`, `0x00bbda60`, `0x00bbdbd0`, `0x00529e10`, `0x00c090f0`, `0x00c29990` és `0x009a9080` kiolvasása: abszolút pixelparaméterek, kerekített méret, csonkolt kezdő- és végpont, képhatárra vágás. |
+| B — natív QEMU | Az eredeti `0x00bbdbd0` futott a CRT-shimmel és külön forrás-/célrekorddal. A `0x8ef520` paraméterkiértékelő kapott tesztértékeket; a Crop vtable-segéd, képhatár-kezelő és bájtmásoló eredeti kód maradt. A `+0x04` mező stride képpontban, `+0x08/+0x0c` a szélesség/magasság, `+0x10` a BGRA-adatmutató; a belső `+0x14=1` a `0x009a9b30` heap-pufferes ágát választotta. |
+
+A QEMU-kimenetek:
+
+| bemenet | `(x, y; width, height)` | kimenet |
+|---|---|---|
+| `7×5` | `(1, 1; 3, 2)` | `3×2`, státusz `0`; első sor bájtjai: `0b162166 0c182467 0d1a2768` |
+| `7×5` | `(1.75, 1.25; 3.75, 2.5)` | `4×3`, státusz `0` |
+| `7×5` | `(1.5, 0.5; 2.5, 1.5)` | `3×2`, státusz `0`; a pozitív `2.5` és `1.5` félérték felfelé kerekült |
+| `7×5` | `(-1.75, -0.75; 4, 3)` | `2×2`, státusz `0`; a forrás bal felső `2×2` metszete |
+| `7×5` | `(-2, -1; 5, 4)` | `3×3`, státusz `0` |
+| `7×5` | `(5, 3; 4, 4)` | `2×2`, státusz `0` |
+| `7×5` | `(9, 6; 2, 2)` | státusz `0x4`; a célrekord az eredeti `7×5` képet tartja |
+| `8×6` | `(1, 2; 5, 3)` | `5×3`, státusz `0` |
+
+A második utat a nyers rekordméretekből és BGRA-sorokból, az első
+utasításolvasatától külön értelmezve is ellenőriztem: a `1.75` kezdőérték az
+1. oszlopból indul, a `2.5` szélesség 3 pixel, a részben kilógó esetek a
+képen belüli metszetet adják. Ez egyezik az A úttal. Cáfoló kontrollként a
+tört kezdőpontot, a pozitív félértékeket, mindkét oldali kilógást és a teljes
+kép-kívüliséget választottam; egyik kimenet sem cáfolta a fenti képletet.
+
+**PicasaPy-összevetés.** A `glimmer_frames.apply_polaroid`
+(`src/picasapy/render/glimmer_frames.py:115–132`) az effekt konkrét
+négyzetes vágását `min(H, W)` és egész `// 2` középeltolással végzi; ez
+egyezik a `filterdesc.xml` Polaroid-képletével. A másik jelenlegi használat,
+`glimmer_creative.apply_cinemascope`
+(`src/picasapy/render/glimmer_creative.py:50–63`), a leíró `Math.round`
+méretezését Python `round`-dal, a középeltolást egész `// 2`-vel valósítja
+meg; a `cropHeight ≤ origImageHeight` feltétel miatt a `max(0, …)` nem módosítja
+a leíró szerinti eredményt. Általános Glimmer
+`CropImageOperation(x, y, width, height)` primitív viszont nincs. Az
+`ops.apply_crop` (`src/picasapy/render/ops.py:69–90`) más szerződésű:
+normalizált `Rect64`-et vesz át, a négy élt Python `round`-dal képpontra
+képezi, és üres vágásnál kivételt dob. Ez nem helyettesíti a Glimmer Crop
+pixelmatematikáját.
+
+**Bizonyítottság: megerősített** a kért pixelmatematikára: az utasításolvasat
+és az eredeti alkalmazó QEMU-kimenete egyezik. A közös, általános Crop
+primitív nálunk hiányzik; a meglévő Polaroid-specifikus középvágás a saját
+leírójának egész pixelparamétereire egyezik.
+
 ## A színválasztó diszpécsere: `ImageFilters::PickColor` (`0x008fee80`, 2026-08-16)
 
 Egyetlen 1 737 bájtos függvény dönti el, hogy **melyik szűrőhöz melyik
