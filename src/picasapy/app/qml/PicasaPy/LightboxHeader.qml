@@ -306,9 +306,7 @@ ColumnLayout {
                 text: "▸"; color: Theme.picasaGreen; font.pixelSize: 13
             }
             HoverHandler { id: headerPlayHover }
-            //: A névvel ellátott Emberek-fejléc eredeti súgója.
-            ToolTip.text: qsTranslate(
-                "faceheaderpaneltext", "Play Fullscreen Slideshow")
+            ToolTip.text: qsTr("Play Fullscreen Slideshow")
             ToolTip.visible: headerPlayHover.hovered
             ToolTip.delay: Theme.tooltipDelay
             //: #885: `headerpanel/play` — LENYOMÁSRA indul a diavetítés

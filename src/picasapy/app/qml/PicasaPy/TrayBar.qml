@@ -2060,12 +2060,12 @@ Column {
                                     && tray.appWindow.selectedIndexes.length > 0)
                                  : false
                         onClicked: tray.movieRequested()
-                        //: A névvel ellátott Emberek-fejléc filmparancsának
-                        //: hivatalos súgója.
-                        ToolTip.text: qsTranslate(
-                            "faceheaderpaneltext",
-                            "Create Movie Presentation")
-                        ToolTip.visible: trayMovieBtn.hovered
+                        HoverHandler {
+                            id: trayMovieHover
+                            objectName: "trayMovieHoverHandler"
+                        }
+                        ToolTip.text: qsTr("Create Movie Presentation")
+                        ToolTip.visible: trayMovieHover.hovered
                         ToolTip.delay: Theme.tooltipDelay
                     }
                 }

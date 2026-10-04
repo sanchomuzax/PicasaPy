@@ -20,6 +20,22 @@ korábban négy helyen éltek párhuzamosan, és el is csúsztak egymástól; eg
 őr-teszt (`tests/test_kornyezet_szinkron.py`) most már elkapja, ha valaki
 tételes listát ír vissza valamelyik telepítőbe.
 
+## Változásnapló
+
+Felhasználóknak látható változáshoz adj egy saját darabfájlt a
+`changelog.d/<jegyszám>.md` útvonalon. A fájlban egy vagy több, magyar nyelvű
+felsorolássor legyen, a jegyszámmal a sor végén, például:
+
+```markdown
+- A keresés most a címkékben is megtalálja a képeket (#1234).
+```
+
+A pull request ne módosítsa a `CHANGELOG.md` fájlt. A kiadási automatika a
+darabok sorait jegyszám szerint a `Nem kiadott` szakaszba fűzi, majd
+verziófejléccé nevezi át a szakaszt és eltávolítja a darabfájlokat. A régi
+módon, közvetlenül a `Nem kiadott` szakaszba írt sorok átmenetileg még
+elfogadottak.
+
 Fej nélküli (CI, konténer) környezetben: `export QT_QPA_PLATFORM=offscreen`.
 
 ## Tesztelés

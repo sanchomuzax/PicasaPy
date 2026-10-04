@@ -2042,6 +2042,62 @@ A töréspont-keresés **bináris keresés**.
 > Ez **hússzorosa** a ditherelés ±1-es tűrésének — szemmel látható.
 > A kétpontos görbéknél (Invert, Neon, PencilSketch) a kettő azonos.
 
+##### Mért LUT és pixelalkalmazás (2026-10-04, #626)
+
+*Bizonyítottsági fok: **megerősített** a lent megnevezett négy görbekonfiguráció
+LUT-jára és a Fade előtti pixelkimenetére. Az utasításszintű binárislelet és a
+natív QEMU-futtatás egyezik. Az eredeti XML-parser útja és a teljes
+effektcsővezeték bájtszintű ellenőrzése **NINCS MEG**.*
+
+**Bináris út.** A művelet négy görbeleírója a `this+0x40`, `+0x44`, `+0x48`,
+`+0x4c` helyeken van; a leírók feldolgozását a `0x00bb9d20` → `0x00bb9e00`
+lánc végzi. A természetes köbös spline LUT-építője `0x00bcd1e0`, a mester
+kiértékelője `0x00bcd360`: a mester eredménye float32-ként jut a csatornagörbékhez,
+azok eredményére `0,5` kerül, majd csonkolás és 0…255 közötti korlátozás. Az
+effekt az `0x00bb7c80` alkalmazón át jut a `0x00bcb2f0` BGRA-pixelciklushoz.
+
+**Natív futtatás.** QEMU-wrapperrel, a `filterdesc.xml` pontos pontjaiból
+közvetlenül felépített műveletekkel négy konfigurációt futtattam: CrossProcess,
+Sixties, Orton@50 és Orton@25. A tesztkép 5 sor magas volt; szélessége 8 vagy 9
+képpont, a Fade értéke 0 vagy 50. A szintetikus forrás RGB-je:
+`R=(13x+17y)&255`, `G=(11x+5y)&255`, `B=(7x+3y)&255`; az alfa 255. Így összesen
+4 × 2 × 2 = 16 futás készült.
+
+| konfiguráció | natív ↔ jelenlegi RGB-LUT eltérés | Fade előtti képkimenet | 9×5, Fade 50: eltérő RGB-bájt |
+|---|---:|---:|---:|
+| CrossProcess | 0/768 | 0 bájt | 6/135, legfeljebb 1 szint |
+| Sixties | 0/768 | 0 bájt | 4/135, legfeljebb 1 szint |
+| Orton@50 | 0/768 | 0 bájt | 15/135, legfeljebb 1 szint |
+| Orton@25 | 0/768 | 0 bájt | 1/135, legfeljebb 1 szint |
+
+A Fade 50-es, páratlan szélességű eltérések kizárólag az utolsó oszlopban,
+a sorvégi keverőágban vannak; a görbe LUT-ja és Fade előtti képe ezekben az
+esetekben is bájtra egyezik. A keverőút súlyozási lépései a `0x00bd0700` és
+`0x009dc4b0` címeken követhetők. A sorvégi különbség az ismert, #4157-ben
+javított Fade-ág tárgya, nem új `AdjustCurves`-eltérés.
+
+**Két független út:** (A) az utasításszintű híváslánc és lebegőpontos/kerekítési
+műveletek a görbetagoktól a LUT-on át a pixelalkalmazóig; (B) a natív QEMU
+LUT-építő és pixelalkalmazó, összevetve a jelenlegi kimenettel. A négy
+konfiguráció LUT- és Fade előtti képpont-eredménye egyezik.
+
+**Cáfoló próbák.** A spline-leletet lineáris interpolációval próbáltam
+cáfolni, ugyanazokon az XML-pontokon és a 256 LUT-bemeneten: CrossProcess
+424/768 (max. 18), Sixties 695/768 (max. 16), Orton@25 723/768 (max. 8)
+RGB-értékkel tért el a natív táblától. Orton@50 identitásgörbéje önmagában nem
+különbözteti meg a módszereket. A mester köztes eredményének előzetes
+kerekítése/klippelése Sixties esetén 185/768 (max. 24), Orton@25 esetén 3/768
+(max. 1) eltérést adott. Az ellenpróbák is a natív LUT-tal, azonos pontokkal
+és azonos RGB-összehasonlítással készültek.
+
+**Korlát és nyitott kérdés.** A QEMU-wrapper a művelet görbepont-struktúráit a
+XML pontos értékeiből közvetlenül építette fel; nem futtatta a `filterdesc.xml`
+parserét és a teljes effektláncot. A parser által előállított műveletet és az
+eredeti lánc teljes kimenetét azonos képen QEMU alatt összevetni **NINCS MEG**.
+Ehhez a QEMU-futtatást az eredeti parseres műveletfelépítésen és a teljes
+effektláncon kell végigvezetni. A mért görbematematikához új fejlesztői javítás
+nem indokolt; az eltérő Fade-ágat a #4157 kezeli.
+
 #### ⛔ A `SimpleColorMatrix` KÉPPONTRA ható sorrendje FORDÍTOTT: színárnyalat → fényerő → kontraszt → telítettség (2026-09-27, 374. kör, #626)
 
 *Forrás: a mag `0x00bb6400` · a szorzó `0x008f28d0` · a fényerő-építő `0x008f1af0` · a kontraszt-építő `0x008f1bd0` · az alkalmazó `0x008f2640` · golden: `684-merokeszlet`.*
@@ -2439,15 +2495,91 @@ indexelődik. A `+0x000`/`+0x400` rekeszek (kék/zöld csatorna) nullák ⇒
 **nulla hozzájárulás**; a végeredmény a kimenetben **kizárólag a bemenő
 (kontraszt/fényerő-korrigált) piros csatorna értékétől függ.**
 
-⇒ **A `TwoTone` NEM lumát számol.** A `glimmer_tone.py:apply_twotone`
-Rec.601-luma útja (`luma(to_float(matrixed))`) tehát **bizonyítottan téves
-modell** — az eredeti a `SimpleColorMatrix` utáni pixel **nyers piros
-csatornáját** (a mátrix R-oszlopa szerinti kimeneti bájtot) vetíti a
-fekete→fehér gradiensbe, súlyozás nélkül. Ez pontosan magyarázza a golden-
-mérés „első RGB-csatornát követi" eredményét (MAE 6,3644 a nem-izolált 22,42
-helyett) — nem mintafüggő különlegesség, hanem az algoritmus tényleges
-viselkedése. Termékkód-javítás: külön fejlesztői jegy (lásd a #626 jegy
-kommentjét).
+⇒ **A `TwoTone` NEM lumát számol.** A munkafa jelenlegi
+`glimmer_tone.py:apply_twotone` függvénye is a `SimpleColorMatrix` utáni
+pixel nyers piros csatornáját veszi (`[..., 0:1]` RGB-ben), és a lentebbi
+QEMU-összevetésben ez a natív LUT-kimenettel bájtra egyezik. A régebbi
+Rec.601-lumára és a `MAE 6,3644`-re vonatkozó mondat elavult állapotot írt le;
+nem a jelenlegi forráskódot.
+
+#### TwoTone: paramétertől pixelmagig, natív QEMU-kontrollal (2026-10-04, #626)
+
+**Bizonyítottság: megerősített a pixelmatematikára** — az utasításszintű
+híváslánc és a natív függvények `qemu-i386`-futtatása egyezik. A valódi
+`filterdesc.xml`-parser és a teljes `0x00bb7c80`/`0x00bd0700` külső
+végrehajtó nem futott a mérőharnessben; ezeknek a teljes, parseren átmenő
+end-to-end futása külön nincs igazolva.
+
+**Paraméter- és hívásút.** A `filterdesc.xml:1365–1380` szerint a
+`TwoTone` sorrendje `Brightness`, `Contrast`, `Fade`, fekete, fehér; a
+Brightness tartománya −95…95, a Contrast 0…100, a Fade 0…100, az alapok
+pedig 0, 20 és 0. A két szín alapértéke `#004488` és `#ffff00`. A leíró a
+Fade-et `BlendAlpha = 1 − Fade/100` alakban adja át. A `0x00bc2760`
+attribútum-beolvasó a két színből gradiensobjektumot készít a művelet
+`+0x40` mezőjébe, majd a `0x00bb8710` útjára adja; a `0x00bb7c80` közös
+alkalmazó a művelet 8. slotján keresztül a `0x00bb87b0` TwoTone-LUT-építőt
+hívja, végül a `0x00bcb2f0` képponti LUT-alkalmazót. A `SimpleColorMatrix`
+gyerek linked kontraszt/fényerő-ágát a `0x00bb6400` állítja elő; a
+`0x008f21a0` alakítja fixpontos együtthatókká, a `0x008f2640` alkalmazza
+őket a pixelekre. A linked mátrix képlete és a Q11-egész kerekítési lépései
+a fenti 4.9-es szakaszban vannak rögzítve.
+
+**Pixelmag.** A `0x00bb87b0` a két megadott színből 256 elemű LUT-ot épít a
+`+0x800` rekeszbe. A `0x00bcb2f0` ennél a rekesznél a mátrixolt BGRA-pixel
+`src[2]` bájtját olvassa, vagyis a nyers piros csatornát; ezután a négy
+rekesz dword-ját bájtonként telítetten összeadja. A Fade ága a
+`0x00bd0700` végrehajtóból a `0x009dc4b0` keverőt hívja. `Fade=50` esetén
+`BlendAlpha=0,5`, belső súly `trunc(0,5·256)−1 = 127`. Páratlan sorhossznál
+`0x00c33d60` a `0x009bbde0` eredményét (`AL=1`) a `0xd695d4` jelzőbe írja;
+ez a `0x009dc646–0x009dc6fb` skalár farokágat választja. A kétutas
+csomagolt pixelképlet ezért az utolsó oszlopra nem érvényes: ott a natív
+képlet `ki = t + (((b − t) · w) >> 8)`.
+
+**QEMU-mérés és kód-összevetés.** A harness az eredeti 32 bites natív
+függvényeket futtatta `qemu-i386` alatt, 5 soros, 8 és 9 pixel széles
+szintetikus BGRA-képen. A pixelek: `R=(13x+17y)&255`,
+`G=(11x+5y)&255`, `B=(7x+3y)&255`, `A=255`. A mátrix builderét,
+konverterét, pixelmagját, a TwoTone LUT-buildert és a közös LUT-alkalmazót
+valódi gépi kód futtatta; a beolvasó gráfot kézzel épített objektumok, a
+literál-kifejezéskiértékelőt pedig egy értékmásoló helyettesítette. A Fade
+összevetés közvetlenül a natív `0x009dc4b0` függvényt hívta; az outer
+`0x00bd0700` alfa-utókezelését statikusan ellenőriztük, amely a végső alfa-
+csatornát `0xff`-re állítja.
+
+| Beállítás (`Brightness`, `Contrast`, `Fade`) | 8 px: eltérő RGB-bájt / összes | 9 px: eltérő RGB-bájt / összes |
+|---|---:|---:|
+| `(0, 20, 0)` alap | `0/120` | `0/135` |
+| `(+50, 20, 0)` | `0/120` | `0/135` |
+| `(−50, 20, 0)` | `0/120` | `0/135` |
+| `(0, 80, 0)` | `0/120` | `0/135` |
+| `(0, 20, 50)` | `0/120` | `10/135` — 5 pixel, max. 1 szint, mind az utolsó oszlopban |
+
+A mátrix és a piros LUT-skalár mind a tíz futásban bájtra egyezett; a Fade
+páros szélességnél is egyezett. Páratlan szélesség és `Fade=50` esetén
+kizárólag a sorvégi skalár ág tér el: a jelenlegi
+`glimmer_ops.alpha_blend` minden pixelre a natív kétutas egészkeverési
+képletet alkalmazza.
+Az 5 sor 5 sorvégi pixelén összesen 10 RGB-bájt tér el, legfeljebb egy
+szinttel. A natív kód útja igazolt; a teljes, parseren átmenő képkimenet
+összevetése továbbra is nyitott.
+
+#### Eredeti / nálunk / teendő — TwoTone
+
+| Lépés | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| linked Brightness/Contrast → fixpontos mátrix | `0x00bb6400` → `0x008f21a0` → `0x008f2640` | `simple_color_matrix(..., linked=True)` | A felsorolt natív esetek mind bájtra egyeznek; nincs mért eltérés. |
+| fekete→fehér gradiens | `0x00bb87b0`; a `0x00bcb2f0` a nyers piros bájttal indexel | `apply_twotone` piros csatornás interpolációja | A vizsgált LUT-pixelértékek bájtra egyeznek; a korábbi Rec.601 állítás törlendő. |
+| Fade páros szélességnél | `0x00bd0700` → `0x009dc4b0` | `glimmer_ops.alpha_blend` kétutas egészképlete | A `Fade=50` páros képeken bájtra egyezik. |
+| Fade páratlan szélesség utolsó oszlopa | `0x009dc646–0x009dc6fb`: `t + (((b−t)·w)>>8)` | `glimmer_ops.alpha_blend` ugyanazt a kétutas képletet használja minden pozíción | Fejlesztői teendő: az odd-width sorvégi pixelre külön skalár farok, natív képlettel és előjeles aritmetikai `>>8`-cal; a jelenlegi 5×9 `Fade=50` kontrollban 5 pixel/10 RGB-bájt, max. 1 szint eltérés. |
+
+**Cáfoló kontroll.** A nyers piros indexelés cáfolására a `Rec.601`-luma
+alternatívát próbáltuk. A `qemu-i386` futtatás `(x=2,y=0)` mátrixolt
+BGRA-ja `00 00 01 ff`, a natív kimenete `87 45 01 ff`, pontosan a `LUT[1]`;
+a `LUT[0]` `88 44 00 ff`. A Rec.601-alternatíva ennél a pixelnél
+`0,299/255` gradiensaránnyal és bájtra kerekítve `88 44 00` kimenetet adna.
+A megfigyelt natív bájt ezt az alternatívát cáfolja, a nyers piros csatornát
+erősíti meg; a diszasszemblálás ettől függetlenül ugyanezt mondja a
+`src[2]` → `+0x800` indexeléssel.
 
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
@@ -3000,44 +3132,22 @@ forgatás, majd vissza. A **simítás (élsimított mintavételezés) be van
 kapcsolva**, és a `padBorder` esetén a keletkező üres sarkokat a `borderColor`
 tölti ki (`0x009a91a0`).
 
-> ⛔ **MEGDŐLT (2026-08-17):** az alábbi Skia-olvasat téves. A
-> `0x00bcb5e0` közvetlen hívottai a **`ytResampler` konstruktora**
-> (`0x00a3f490`) és **diszpécsere** (`0x00a42c20`) — Skia-hívás nincs
-> köztük. A mód **explicit**: lépték = 1 → **0-s (doboz)**, egyébként
-> **3-as (Mitchell–Netravali, B = C = 0,4)**. Ld.
-> `filters-decoded.md`, „A `RotateImageOperation` a `ytResampler`-t
-> használja". A 46 befordított Skia-osztály önmagában nem bizonyíték.
->
-> ~~**A mintavételező a Skia** — nem a Picasa saját kódja (2026-08-14). A hívási
-> lánc `RotateImageOperation` slot6 → `0x00bc8060` (transzform) → `0x00bcb5e0`
-> → `0x00a42c20` a rajzoló rétegbe fut, és az RTTI-tábla szerint a binárisba
-> **46 Skia-osztály** van statikusan befordítva, köztük a
-> **`SkBitmapProcShader`** — pontosan az, ami a bitmap-mintavételezést végzi
-> (mellette `SkShaderBlitter`, `SkARGB32_Shader_Blitter`, `SkFilterShader`).
->
-> **Ez jó hír:** a Skia nyílt forráskódú, tehát az algoritmust **nem kell
-> visszafejteni és nem kell megmérni** — a korabeli Skia forrásából szó szerint
-> kiolvasható. Ott a `SkBitmapProcState` a szűrési szinttől függően vagy
-> legközelebbi-szomszéd, vagy **bilineáris 4 bites (16 lépcsős) részpixel-
-> súlyokkal** — ez utóbbi mérhetően eltér a naiv, lebegőpontos bilineáristól.
->
-> ~~**Ami a mi oldalunkon maradt eldöntendő:** melyik szűrési szintet kéri a
-> `Rotate` (a `0x00bc8060`-ban két eltérő festék-beállítás van). Ez egy
-> jelzőbit, nem algoritmus — és golden-összevetéssel is ellenőrizhető.~~
->
-> **EZ A KÉRDÉS IS OKAFOGYOTT** — nincs Skia-szűrési szint, mert nincs
-> Skia-hívás ezen az úton (ld. a fenti MEGDŐLT-jelzés). A ténylegesen
-> lefutó választás a `ytResampler` **0-s (doboz) vs. 3-as (Mitchell–
-> Netravali, B=C=0,4)** módja közt dönt, kizárólag a lépték alapján — ezt
-> a fenti MEGDŐLT-blokk **teljeskörűen megválaszolja**, nincs rajta
-> további nyitott rész.
+A két beállítás tehát két külön szerep: a `borderColor` a kimeneti vászon
+háttérkitöltése (`0x00bc8134` → `0x009a91a0`), a `0x00bc832e`-n átadott `1`
+pedig a wrapper `smoothing=true` jelzője (`0x00bcb602`). Forgatási mátrixnál
+ez utóbbi az affine mintavételező útvonalon marad; nem választ `ytResampler`
+módot és nem változtatja meg a háttérszínt.
 
-**LEZÁRVA (2026-08-17, kereszthivatkozás pótolva 2026-09-21).** A
-`RotateImageOperation` mintavételezése ezzel teljesen ismert: `0x00bc8060`
-a léptéket 1,0-hoz hasonlítja (`0x00bcb63e`–`0xbcb659`), és a `ytResampler`-t
-0-s vagy 3-as móddal példányosítja. Nincs Skia, nincs nyitott jelzőbit.
-Részletek: `filters-decoded.md`, „A `RotateImageOperation` a `ytResampler`-t
-használja, NEM a Skiát".
+> ⛔ **MEGDŐLT (2026-08-17; második helyesbítés 2026-10-04):** a Skia-olvasat
+> téves volt, és a rá következő `ytResampler`-magyarázat is rossz ágra
+> vonatkozott. A `0x00bc8060` forgatási mátrixánál a `0x00bcb5e0` a
+> `0x009e6df0` általános transzformációs útját választja, majd a
+> `0x009e7060` natív mintavevőt hívja `smoothing = 1` értékkel
+> (`0x00bc832e`). A `ytResampler` 0/3-as ága tengelyhez igazított
+> átméretezési út; nem a forgatás pixelmagja. A teljes mátrix- és
+> mintavételezési levezetés, valamint a natív QEMU-próba lejjebb, „A
+> Polaroid geometriája” szakaszban van. A régi Skia/`ytResampler`-értelmezést
+> és az arra épülő lezárást ne használd Rotate-bizonyítékként.
 
 #### `CropImageOperation` (`0x00bbdbd0`)
 
@@ -3565,22 +3675,25 @@ RTTI-vtáblák (`0x00cf0120`, `0x00cf085c`) 6. rése a közös alkalmazó
 `0x00bcb2f0`-t; a `TwoTone` beolvasója (`0x00bc2760`) a `[this+0x40]`-be tesz
 objektumot (`0x00bc2923`) és a `0x00bb8710`-et hívja (`0x00bc2949`).
 
-### 5. `ResizeImageOperation` — UGYANAZ a mintavételező, mint a forgatásnál
+### 5. `ResizeImageOperation` — közös diszpécser, eltérő pixelág a forgatástól
 
 Az alkalmazó (`0x00bc3650`, 407 b) tengelyenként `forrás / cél` léptéket
 számol (`0x00bc3700`–`0x00bc3731`), majd a végén a **`0x00bcb5e0`**
 segédfüggvénynek adja át a transzformációt és a `smoothing` kapcsolót
 (harmadik argumentum, `0x00bc37d6`).
 
-⭐ **Ez ugyanaz a `0x00bcb5e0`, amit a `RotateImageOperation` hív** a
-`0x00bc8060` transzformáción keresztül. Mérve (`xrefs`): a `0x00bcb5e0`-nak
-négy hívója van, köztük mindkettő.
+⭐ **Ez ugyanaz a `0x00bcb5e0` diszpécser, amit a `RotateImageOperation` hív**
+a `0x00bc8060` transzformáción keresztül. Mérve (`xrefs`): a
+`0x00bcb5e0`-nak négy hívója van, köztük mindkettő. A pixelág viszont eltér:
+a Resize tengelyhez igazított mátrixot ad át, a Rotate forgatási mátrixát a
+`0x009e6da0` az általános affine-ágra irányítja (a fenti Rotate-szakaszban
+részletezve).
 
-⇒ A lap `RotateImageOperation` szakaszának 2026-08-17-i helyesbítése **a
-`Resize`-ra is érvényes**: a mintavételező a **`ytResampler`**, a mód
-**explicit** — ~~*lépték = 1 → **0-s (doboz)**, egyébként **3-as
-(Mitchell–Netravali, B = C = 0,4)***~~ → helyesen: **kicsinyítéskor és
-1:1-nél 0-s doboz, csak nagyításkor 3-as Mitchell** (ld. 5/c). **Nem bilineáris.**
+⇒ A Resize-re érvényes lezárás: tengelyhez igazított mátrix és
+`smoothing=true` esetén a mintavételező a **`ytResampler`**, módja
+**kicsinyítéskor és 1:1-nél 0-s doboz, csak nagyításkor 3-as Mitchell**
+(ld. 5/c). **Nem bilineáris.** A Rotate nem bizonyíték a Resize pixelágára,
+és fordítva.
 
 **A `smoothing` attribútum:** tag `+0x34`, **alapértéke `true`**
 (`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
@@ -3605,9 +3718,13 @@ a hiányzó érték alapja `true` (`0x00bc36ac`), a kiolvasott érték pedig a
 
 A wrapper utasításszinten külön ágazik (`0x00bcb602` `test bl,bl`):
 
-- **`smoothing=true`** esetén a skálát hasonlítja 1,0-hoz
-  (`0x00bcb63f`–`0x00bcb655`), és 1:1-nél a 0-s dobozmódot, egyébként a
-  3-as Mitchell–Netravali módot választja;
+- **`smoothing=true`** esetén először a mátrixot vizsgálja
+  (`0x00bcb61c` → `0x009e6da0`). Ha a két kereszt-együttható valamelyike
+  nem nulla a vizsgált tűrésen belül, közvetlenül az általános affine-ágra
+  ugrik (`0x00bcb623` → `0x00bcb6b8` → `0x009e6df0`); ez a `Rotate` útja.
+  Csak tengelyhez igazított mátrixnál számol léptéket, és választ 1:1-nél
+  0-s doboz-, egyébként 3-as Mitchell–Netravali módot (`0x00bcb63f`–
+  `0x00bcb655`); ez a `Resize` útja.
 - **`smoothing=false`** esetén közvetlenül a `0x009e6df0` affine-ágat hívja
   (`0x00bcb6b8`–`0x00bcb6ce`), `param_4=0`, `param_5=0` és `param_6=0x100`
   értékekkel (`0x00bcb6bf`, `0x00bcb6c4`, `0x00bcb6c6`, `0x00bcb6c9`). A
@@ -3619,6 +3736,8 @@ A wrapper utasításszinten külön ágazik (`0x00bcb602` `test bl,bl`):
 ⇒ `smoothing=false` esetén **nem** a 0-s dobozmód fut. 1:1 léptéknél is
 ugyanez a legközelebbi-szomszéd ág fut; a kimenet ilyenkor természetesen a
 forrás képpontjait adja vissza, de a választott mechanizmus nem a doboz.
+Ez a `Rotate` hívásánál nem releváns: ott `smoothing=true`, és a forgatási
+mátrix a fenti általános affine-ágat választja.
 
 **Nálunk (MÉRVE):** a `resize_image(..., smoothing=False)`
 `cv2.INTER_NEAREST`-et használ (`src/picasapy/render/glimmer_ops.py`,
@@ -6309,12 +6428,13 @@ quantize-út ugyanezt a `0x00bc5680` diszpécsert hívja.
 
 **A mi kódunkhoz képest.** A `glimmer_tone.apply_quantizepalette` a
 `fade_alpha(fade)` értéket adja át; a segédfüggvény `1−Fade/100`-at ad, tehát
-az alfa iránya egyezik a leíróval. A közös `alpha_blend` a SIMD-képletet
-alkalmazza minden oszlopra, a natív skalár sorvégi ágat nem. A palettaépítő
-(`render/quantize_palette.py`, `kvantal`) `int(round(steps))`-et használ,
-míg a natív attribútumút csonkol: például közvetlen `Steps=8,9` hívásnál a
-natív érték 8, a mostani palettakódé 9. A leíró csúszkájának egészértékű
-lépésköze nincs igazolva, ezért a felületi hatás nyitott.
+az alfa iránya egyezik a leíróval. A közös `alpha_blend` az SIMD-képletet
+alkalmazza a többi oszlopra; páratlan szélességnél a sor utolsó pixelét a
+natív skalárképlettel keveri (#4157). A palettaépítő
+(`render/quantize_palette.py`, `kvantal`) a natív attribútumúthoz igazodva
+csonkolja a `Steps` értékét: például közvetlen `Steps=8,9` hívásnál az eredmény
+8 (#4157). A leíró csúszkájának egészértékű lépésköze nincs igazolva, ezért a
+felületi hatás nyitott.
 
 A szélességkülönbség ellenpéldája a natív képletből: `α=0,5` esetén
 `w=127`; `B=0`, `A=255` mellett a SIMD-képlet 126-ot, az utolsó oszlop
@@ -6330,12 +6450,11 @@ szegmentálási hibával végződött (az alábbi alfejezet). Egyik futás sem a
 pixel-goldent, és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
 elfogadást.
 
-**Fejlesztői eltérés:** a `Steps` törtértékének konverzióját a natív
-csonkoláshoz kell igazítani, ha a renderer float API-ja része a támogatott
-bemeneteknek. A Fade keverésénél a páratlan szélességű utolsó oszlophoz a
-`0x009dc646`–`0x009dc6fb` skalárképlet kell; ezt páros és páratlan szélességű,
-byte-exakt qemu-próbával kell lezárni. A teljes `Steps × Smoothing` pixelút
-legalább négy párral és bájt-összehasonlítással továbbra is nyitott.
+**Fejlesztői eltérés (megvalósítva #4157):** a `Steps` törtértékét a
+`kvantal()` a natív csonkolással alakítja egészre; a közös Fade-keverő pedig
+páratlan szélességnél a sor utolsó oszlopára a
+`0x009dc646`–`0x009dc6fb` skalárképletet alkalmazza. A páros/páratlan
+keverést és a `Steps=8,9 → 8` esetet bájtpontos regressziós teszt fedi.
 
 *Bizonyítottsági fok: `Steps` csonkoló segédfüggvénye és a blur-sugár
 kvantálója **megerősített** (utasításolvasás + független qemu-i386 futtatás);
@@ -6519,7 +6638,7 @@ egyezése pedig **NINCS MEG**.
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
 | `0x00bb5b60` quant-kimenete mind a négy egész Steps/Smoothing párnál | `glimmer_tone.apply_quantizepalette()` / `quantize_palette.kvantal()` | A mért paraméterpárokra nincs eltérés; nem igényel fejlesztést. |
-| `0x009dc4b0`: 8 bájtos MMX-párok képlete `(B·(255−w)+T·w)>>8`; páratlan pixelszélesség maradék pixelje: `T+((B−T)·w>>8)` (`0x009dc646`–`0x009dc6fb`) | `glimmer_ops.py:151–170` a páros pixelképletet minden pixelre használja | Odd width esetén a sor utolsó pixelét a skalárképlettel keverje; őrizze meg az egész bájtos, előjeles `>>8` sorrendet. A 51×49 négy mért pár a golden; az 50×49 kontrollnak változatlanul kell maradnia. |
+| `0x009dc4b0`: 8 bájtos MMX-párok képlete `(B·(255−w)+T·w)>>8`; páratlan pixelszélesség maradék pixelje: `T+((B−T)·w>>8)` (`0x009dc646`–`0x009dc6fb`) | `glimmer_ops.alpha_blend()` az SIMD-képletet tartja meg a többi oszlopon, az odd-width sorvégi pixelen pedig a skalárképletet (#4157) | Megvalósítva; a bájtpontos páros/páratlan regressziós teszt a 72/74-es példát is ellenőrzi. |
 
 **Bizonyítottsági fok:** `megerősített` a fenti record-mezőkre, byte-sorrendre,
 négy kvantálóbeállításra és Fade=50 algoritmusra: az utasításszintű olvasat
@@ -8120,6 +8239,34 @@ Ez **8 bites súlyú, fixpontos bilineáris** mintavevő:
 A cél mérete padBorderrel `csonk(|W·cos θ| + |H·sin θ|)` × `csonk(|W·sin θ| +
 |H·cos θ|)` (`0x00bc7ca0`); ez egyezik a kódunk `floor`-jával.
 
+### Natív QEMU-próba (#626, 2026-10-04)
+
+A `qemu-i386` alatt a natív `0x009e7060` mintavevőt hívtam meg közvetlenül
+BGRA képleírókkal; a méretpróbában a natív `0x00bc7ca0` segédfüggvény futott.
+Az input csatornái képpontonként `(x,y)`:
+`B=(37x+11y)&255`, `G=(19x+43y)&255`, `R=(73x+7y)&255`,
+`A=(91+13x+17y)&255`; a kitöltés `(17,91,233,255)`. A négy méret
+`(4,3)`, `(5,4)`, `(4,6)`, `(5,5)` és a hat szög `0°`, `5°`, `−10°`,
+`10°`, `−12°`, `30°` keresztszorzata **24 eset**. Mind a 24-ben a natív
+mintavevő BGR-kimenete bájtra egyezett a `rotate_with_pad` kimenetével;
+mind a 24 natív méretválasz egyezett a fenti csonkoló méretképlettel.
+Ez a kimeneti BGR-csatornákat hasonlítja: a PicasaPy függvénye háromcsatornás
+BGR-t fogad és ad, ezért a natív negyedik (alfa-)csatorna nem része az
+egyezési állításnak.
+
+**Cáfoló kontroll:** az aszimmetrikus `5×5`, `+30°` natív mintavételt a helyi
+`−30°` kimenettel is összevettem: **94 BGR-bájt eltért**. Így a próbaminta és
+az összevetés észleli az előjelcserét; a 24 egyezés nem szimmetrikus mintából
+adódó ál-egyezés.
+
+**A próba határa:** a QEMU-wrapper közvetlenül a pixelmagot és külön a
+méretsegédet futtatta. A `0x00bb5640` teljes Glimmer-Apply útját (az XML
+attribútum-beolvasástól a transzformmátrix felépítéséig) ebben a körben nem
+futtattam; a szögkonverziót és mátrix-összeállítást az utasításszintű
+levezetés támasztja alá (`0x00bb5730`, `0x00bc8060`, `0x009e6340`). Ezért a
+natív pixelmag és a méretképlet megerősített, az integrált Apply-út bájtszintű
+QEMU-goldenje **nincs meg**.
+
 ### Mérve
 
 684-es mérőkészlet, ΔE a Picasa-exporthoz. A lépések egymásra épülnek, és
@@ -9364,9 +9511,12 @@ kerekítési hiba nálunk.
 
 ⚠️ **Páratlan szélességnél az utolsó oszlop MÁS képletet kap**
 (`0x009dc646`–`0x009dc6fb`): `ki = t + ((b − t) · w >> 8)`, azaz a súly
-ott az ALSÓ elemre esik. A csomagolt (`0x00FF00FF`) aritmetika átvitele
-negatív különbségnél sincs modellezve. Ez egyetlen képpontoszlopot érint;
-utánépíteni csak akkor érdemes, ha egy golden-mérés kimutatja.
+ott az ALSÓ elemre esik. A közös keverő ezt az előjeles skalárképletet
+alkalmazza a sorvégi pixelre (#4157); a bájtpontos 51×49-es teszt a 72/74-es
+példán és a 50 széles páros kontrollon igazolja. A TwoTone natív QEMU-kontrollja
+lent (`Fade=50`, 9 px szélesség) a #4157 előtti kóddal 5 pixel/10 RGB-bájt,
+legfeljebb 1 szint eltérést mért ugyanezen a sorvégi ágon; az adott konfiguráció
+Picasa-export goldenen még nincs ellenőrizve.
 
 
 #### ⛳ A keverés tétlen műveletnél is lefut — a `Soften` 0-s erősségnél eggyel sötétít (2026-09-28, 396. kör, #3894)

@@ -68,6 +68,7 @@ def _build_qml_app(
     kepeket_keszit=None,
     belyegkep_meret: int = 32,
     valodi_belyegkep: bool = False,
+    email_vezerlo: bool = False,
 ):
     """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
 
@@ -128,6 +129,14 @@ def _build_qml_app(
         ThumbnailCache(tmp_path / "thumbs", size=belyegkep_meret)
     )
     controller = AppController(db, (str(lib),), provider, settings=settings)
+    email_controller = None
+    if email_vezerlo:
+        from picasapy.app.email_controller import EmailController
+
+        email_controller = EmailController(
+            photo_source=lambda: controller.photos.photos,
+            settings=settings,
+        )
     # #367: az általános ConfirmDialog "Ne kérdezze meg újra" tára — ugyanaz az
     # elszigetelt settings, mint a controlleré
     from picasapy.app.confirm_settings_bridge import ConfirmSettingsBridge
@@ -292,6 +301,10 @@ def _build_qml_app(
 
     gombsav = GombsavBridge(settings)
     engine.rootContext().setContextProperty("gombsav", gombsav)
+    if email_controller is not None:
+        engine.rootContext().setContextProperty(
+            "emailController", email_controller
+        )
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]
@@ -341,6 +354,23 @@ def _build_qml_app(
 def qml_app(qt_app, tmp_path):
     """Teljes app tesztenként, funkció-szintű állapot-izolációval."""
     yield from _build_qml_app(qt_app, tmp_path)
+
+
+@pytest.fixture
+def qml_app_email(qt_app, tmp_path):
+    """A valódi főablak e-mail-vezérlővel és betöltött magyar fordítással."""
+    import picasapy.app.application as app_module
+    from PySide6.QtCore import QTranslator
+
+    translator = QTranslator(qt_app)
+    assert translator.load(
+        str(app_module._APP_DIR / "i18n" / "picasapy_hu.qm")
+    ), "a picasapy_hu.qm nem tölthető be"
+    qt_app.installTranslator(translator)
+    try:
+        yield from _build_qml_app(qt_app, tmp_path, email_vezerlo=True)
+    finally:
+        qt_app.removeTranslator(translator)
 
 
 @pytest.fixture

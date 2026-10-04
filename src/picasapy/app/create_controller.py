@@ -58,6 +58,7 @@ from picasapy.movie import MovieSettings, export_movie
 from picasapy.movie.mxf import (
     MxfAtmenet,
     MxfForras,
+    MxfSzovegParam,
     MxfProjekt,
     projekt_utvonal,
     read_mxf,
@@ -78,6 +79,22 @@ _MAX_ITEMS = 200
 # A képek közti áttűnés felső korlátja (mp) — ennél hosszabb áttűnés
 # elmossa a diavetítés ritmusát.
 _MAX_TRANSITION_S = 0.5
+_MOVIE_SIZES = (
+    (320, 240), (640, 480), (800, 600), (1024, 768), (1600, 1200),
+    (1280, 720), (1920, 1080),
+)
+_MOVIE_TRANSITIONS = (
+    "cut", "dissolve", "dissolveblack", "dissolvewhite", "wipeleft",
+    "wiperight", "wipeup", "wipedown", "diagwipeul", "diagwipeur",
+    "diagwipedl", "diagwipedr", "pushleft", "pushright", "pushtop",
+    "pushdown", "circlein", "circleout", "kenburns", "kenburnsaoi",
+    "timelapse", "rect",
+)
+_MOVIE_PREFERENCES = {
+    "captions": ("CMakeMoviePanel::showcaptions", False),
+    "cropfit": ("CMakeMoviePanel::cropfit", False),
+    "removeLowResFaces": ("makemoviepanel/remove_low_res_faces", False),
+}
 # #920: az élő előnézet mérete. Kicsi, mert a Képkupac pakolója
 # időkorlátos keresést futtat — teljes felbontáson a felület beragadna.
 _PREVIEW_SIZE = (640, 480)
@@ -98,6 +115,7 @@ class CreateMixin(BackgroundWorkerMixin):
     collagePreviewReady = Signal(int)
     collagePreviewFailed = Signal(str)
     collageSeedChanged = Signal()
+    moviePreferencesChanged = Signal()
     #: #960: a `collageDraftAvailable` property jelzése — erre köt rá a
     #: visszaállítást felajánló párbeszéd (a párbeszédet a kollázs-panel
     #: sorozata építi, ez itt a vezérlő-oldali horog).
@@ -114,6 +132,68 @@ class CreateMixin(BackgroundWorkerMixin):
         self._collage_preview = CollagePreviewProvider()
         self._collage_preview_revision = 0
         self._collage_seed = 0
+
+    @Property(int, notify=moviePreferencesChanged)
+    def movieResolutionIndex(self) -> int:  # noqa: N802
+        """A normál film méretindexe (`Preferences\\makemovieres`)."""
+        try:
+            return max(0, min(6, int(self._get_settings().value("makemovieres", 1))))
+        except (TypeError, ValueError):
+            return 1
+
+    @Slot(int)
+    def setMovieResolutionIndex(self, index: int) -> None:  # noqa: N802
+        """A hét eredeti méret közül a választott index megőrzése."""
+        index = max(0, min(6, int(index)))
+        self._get_settings().setValue("makemovieres", index)
+        self.moviePreferencesChanged.emit()
+
+    @Slot(str, result=bool)
+    def moviePreference(self, name: str) -> bool:  # noqa: N802
+        """A filmkészítő hivatalos Preferences-kulcsának beolvasása."""
+        if name not in _MOVIE_PREFERENCES:
+            return False
+        key, default = _MOVIE_PREFERENCES[name]
+        return bool(self._get_settings().value(key, default))
+
+    @Slot(str, bool)
+    def setMoviePreference(self, name: str, value: bool) -> None:  # noqa: N802
+        """Csak a specifikációban szereplő filmkészítő-kulcsokat írja."""
+        if name not in _MOVIE_PREFERENCES:
+            return
+        key, _default = _MOVIE_PREFERENCES[name]
+        self._get_settings().setValue(key, bool(value))
+        self.moviePreferencesChanged.emit()
+
+    @Slot(list, result=list)
+    def movieSourceUrls(self, rows) -> list[str]:  # noqa: N802
+        """A film forrásképeinek `file:` URL-je, a dia-előnézethez."""
+        if rows and isinstance(rows[0], str):
+            paths = (Path(to_local_path(str(row))) for row in rows)
+        else:
+            paths = self._sources_for(rows)
+        return [
+            QUrl.fromLocalFile(str(path)).toString()
+            for path in paths
+        ]
+
+    @Slot(list, result=list)
+    def movieClipNames(self, rows) -> list[str]:  # noqa: N802
+        """A film kliptálcáján megjelenő képfájlnevek."""
+        paths = (
+            (Path(to_local_path(str(row))) for row in rows)
+            if rows and isinstance(rows[0], str)
+            else self._sources_for(rows)
+        )
+        return [Path(path).name for path in paths]
+
+    @Slot(list, result=list)
+    def selectedMovieSourceUrls(self, rows) -> list[str]:  # noqa: N802
+        """Új klipek a könyvtár aktuális kijelöléséből, a tálcától függetlenül."""
+        return [
+            QUrl.fromLocalFile(str(path)).toString()
+            for path in self._selected_sources(rows)
+        ]
 
     @property
     def collage_preview_provider(self) -> CollagePreviewProvider:
@@ -301,7 +381,10 @@ class CreateMixin(BackgroundWorkerMixin):
         self._ensure_collage_wired()
         # #1539: a bekötés a GUI-szálon, a háttérszál indítása ELŐTT
         self._ensure_output_resync_wired()
-        sources = self._sources_for(rows)[:_MAX_ITEMS]
+        if rows and isinstance(rows[0], str):
+            sources = tuple(Path(to_local_path(str(row))) for row in rows)[:_MAX_ITEMS]
+        else:
+            sources = self._sources_for(rows)[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
             self.collageFailed.emit(self.tr("No pictures are selected."))
@@ -389,7 +472,15 @@ class CreateMixin(BackgroundWorkerMixin):
     #: szerepelt, `exportMovie` nem.
     @staticmethod
     def _film_beallitas(
-        width: int, height: int, seconds_per_photo: float
+        width: int,
+        height: int,
+        seconds_per_photo: float,
+        transition_seconds: float | None = None,
+        transition_type: str = "dissolve",
+        audio_path: Path | None = None,
+        audio_option: int = 0,
+        text_slides: list[dict] | None = None,
+        options: dict | None = None,
     ) -> MovieSettings:
         """A `MovieSettings` összeállítása — külön metódus, hogy mérhető legyen.
 
@@ -404,6 +495,8 @@ class CreateMixin(BackgroundWorkerMixin):
         """
         if not width:
             width = (height * 16 // 9) // 2 * 2
+        if transition_seconds is None:
+            transition_seconds = min(_MAX_TRANSITION_S, seconds_per_photo / 3)
         return MovieSettings(
             width=max(2, int(width)) // 2 * 2,
             height=height,
@@ -411,34 +504,96 @@ class CreateMixin(BackgroundWorkerMixin):
             # az áttűnés a képenkénti idő harmada, de legfeljebb 0,5 mp:
             # rövid diáknál (1 mp) a fix 0,5 mp-es áttűnés hosszabb
             # lenne, mint amennyi ideig a kép áll — az érvénytelen
-            transition_seconds=min(_MAX_TRANSITION_S, seconds_per_photo / 3),
+            transition_seconds=min(
+                max(0.0, transition_seconds), seconds_per_photo * 0.9
+            ),
+            transition_type=transition_type,
+            audio_path=audio_path,
+            audio_option=audio_option,
+            text_slides=tuple(text_slides or ()),
+            show_captions=bool((options or {}).get("showcaptions", False)),
+            show_dates=bool((options or {}).get("showdates", False)),
+            cropfit=bool((options or {}).get("cropfit", False)),
+            remove_low_res_faces=bool((options or {}).get("removelowresfaces", False)),
+            ordering=max(0, min(2, int((options or {}).get("ordering", 1)))),
         )
 
     @staticmethod
     def _film_projekt(sources, settings) -> MxfProjekt:
         """A film állapota `.mxf`-projektként (#3191).
 
-        Amit MA kitöltünk, az a mi modellünk: a diaidő, az átmenet hossza
-        és a képek sorrendje. A többi mért mező (zene, arc-film,
-        feliratozás, csoportosítás) a mi filmkészítőnkben még nem
-        állítható — azok az alapértéket kapják, és a formátum kimondottan
-        megengedi, hogy a diánkénti `trans` felülírja az album-szintű
-        `defaulttrans`-ot.
+        A felület által állítható méret, hangsáv, opciók, rendezés,
+        szöveges diák és áttűnés kerül a projektbe. A formátum megengedi,
+        hogy a diánkénti `trans` felülírja az album-szintű `defaulttrans`-ot.
         """
+        try:
+            felbontas = _MOVIE_SIZES.index((settings.width, settings.height))
+        except ValueError:
+            felbontas = 1
+        atmenet_tipus = _MOVIE_TRANSITIONS.index(settings.transition_type)
         alap = MxfAtmenet(
+            transition=atmenet_tipus,
             advanceinterval=float(settings.seconds_per_photo),
             transitiontime=float(settings.transition_seconds),
         )
-        return MxfProjekt(
-            defaulttrans=alap,
-            atmenetek=tuple(
+        atmenetek = [
+            MxfAtmenet(
+                transition=atmenet_tipus,
+                advanceinterval=alap.advanceinterval,
+                transitiontime=alap.transitiontime,
+                forras=MxfForras(index=i, filename=str(ut)),
+            )
+            for i, ut in enumerate(sources)
+        ]
+        for index, slide in enumerate(settings.text_slides):
+            text_color = str(slide.get("textColor", "#ffffff")).lstrip("#")[-6:]
+            try:
+                packed_color = int(text_color, 16)
+            except ValueError:
+                packed_color = 0xFFFFFF
+            background_color = str(slide.get("backgroundColor", "#000000")).lstrip("#")[-6:]
+            try:
+                packed_background = int(background_color, 16)
+            except ValueError:
+                packed_background = 0
+            font = str(slide.get("font", ""))
+            size = int(slide.get("size", 16))
+            style = max(0, min(11, int(slide.get("style", 0))))
+            weight = 700 if slide.get("bold") else 400
+            forras = MxfForras(
+                tipus=2,
+                bkcolor=packed_background,
+                index=len(sources) + index,
+                text=str(slide.get("text", "")),
+                szovegparam=MxfSzovegParam(
+                    fontname=font,
+                    size=size,
+                    color=packed_color,
+                    weight=weight,
+                    italic=bool(slide.get("italic")),
+                    outline=bool(slide.get("outline")),
+                    styleid=style,
+                ),
+            )
+            atmenetek.append(
                 MxfAtmenet(
+                    transition=atmenet_tipus,
                     advanceinterval=alap.advanceinterval,
                     transitiontime=alap.transitiontime,
-                    forras=MxfForras(index=i, filename=str(ut)),
+                    forras=forras,
                 )
-                for i, ut in enumerate(sources)
-            ),
+            )
+        return MxfProjekt(
+            curresolution=felbontas,
+            musicfile=str(settings.audio_path or ""),
+            audiooption=settings.audio_option,
+            showcaption=settings.show_captions,
+            showdates=settings.show_dates,
+            cropfit=int(settings.cropfit),
+            removelowresfaces=settings.remove_low_res_faces,
+            ordering=settings.ordering,
+            defaulttrans=alap,
+            atmenetek=tuple(atmenetek),
         )
 
     # -- #2114: a film KIMENETÉTŐL vissza a projekthez ---------------------
@@ -505,6 +660,9 @@ class CreateMixin(BackgroundWorkerMixin):
 
     @Slot(list, str, int, float)
     @Slot(list, str, int, float, int)
+    @Slot(list, str, int, float, int, str, float, str, int)
+    @Slot(list, str, int, float, int, str, float, str, int, list)
+    @Slot(list, str, int, float, int, str, float, str, int, list, dict)
     def exportMovie(
         self,
         rows,
@@ -512,6 +670,12 @@ class CreateMixin(BackgroundWorkerMixin):
         height: int,
         seconds_per_photo: float,
         width: int = 0,
+        transition_type: str = "dissolve",
+        overlap_seconds: float = 0.5,
+        audio_url: str = "",
+        audio_option: int = 0,
+        text_slides: list | None = None,
+        movie_options: dict | None = None,
     ) -> None:
         """Diavetítés-videó a kijelölt képekből (MP4).
 
@@ -550,8 +714,17 @@ class CreateMixin(BackgroundWorkerMixin):
                 )
                 return
         try:
+            audio_path = Path(to_local_path(audio_url)) if audio_url else None
             settings = self._film_beallitas(
-                width, height, seconds_per_photo
+                width,
+                height,
+                seconds_per_photo,
+                overlap_seconds,
+                transition_type,
+                audio_path,
+                audio_option,
+                text_slides,
+                movie_options,
             )
         except ValueError as error:
             self.movieFailed.emit(str(error))

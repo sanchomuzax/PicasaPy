@@ -124,7 +124,7 @@ class TestAzEloElmosasNativ:
 
 
 class TestAZaroKeveresEgesz:
-    """4. lépés — `⌊b·r/255⌋`, majd `(b·(255 − w) + t·w) >> 8`."""
+    """4. lépés — SIMD-párok, odd widthnél a spec sorvégi skalárágával."""
 
     def test_alfa_nulla_az_also_elem(self):
         b = _veletlen(4, 5)
@@ -138,14 +138,15 @@ class TestAZaroKeveresEgesz:
 
     @pytest.mark.parametrize("alfa,w", [(0.5, 127), (0.25, 63), (0.3, 75)])
     def test_a_suly_csonkolt_es_eggyel_kisebb(self, alfa, w):
-        b = np.array([[[255, 200, 0]]], dtype=np.uint8)
-        t = np.array([[[255, 100, 255]]], dtype=np.uint8)
+        # Páros szélesség: mindkét pixelre a SIMD-pár képlete érvényes.
+        b = np.tile(np.array([[[255, 200, 0]]], dtype=np.uint8), (1, 2, 1))
+        t = np.tile(np.array([[[255, 100, 255]]], dtype=np.uint8), (1, 2, 1))
         vart = (b.astype(np.int64) * (255 - w) + t.astype(np.int64) * w) >> 8
         np.testing.assert_array_equal(alpha_blend(b, t, alfa).astype(np.uint8), vart.astype(np.uint8))
 
     def test_ket_255_os_bemenetbol_254(self):
-        """A súlyok összege 255, az osztó 256 — egy szinttel sötétebb."""
-        f = np.full((1, 1, 3), 255, dtype=np.uint8)
+        """A SIMD-pár súlyainak összege 255, osztója 256 — egy szinttel sötétebb."""
+        f = np.full((1, 2, 3), 255, dtype=np.uint8)
         assert alpha_blend(f, f, 0.5)[0, 0, 0] == 254
 
     def test_feher_kepen_a_kimenet_egy_szinttel_sotetebb(self):

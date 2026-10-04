@@ -1,7 +1,7 @@
-"""A comicize záró keverése a közös `glimmer_ops.alpha_blend`-en fut (#3878).
+"""A Comicize záró keverése a közös `glimmer_ops.alpha_blend`-en fut (#3878).
 
-A `0x009dc4b0`-s keverő korábban másodszor is megvolt az `effects_artistic`-ban;
-a csere előtt bitre egyezést kellett igazolni a comicize bemenetein.
+A független képletőr a SIMD-párokat és a #4157 szerinti odd-width sorvégi
+skalárágat is ellenőrzi.
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ import pytest
 from picasapy.render.glimmer_ops import alpha_blend
 
 
-def _régi_keverő(bottom, top, alpha):
-    """A törölt `effects_artistic.blend_alpha_native` befagyasztott mása."""
+def _spec_szerinti_keverő(bottom, top, alpha):
+    """Független újralevezetés a natív SIMD- és sorvégi képletre."""
 
     def bitek(x):
         return int(np.array(x, dtype=np.float32).view(np.int32))
@@ -30,6 +30,10 @@ def _régi_keverő(bottom, top, alpha):
     if w > 0:
         w -= 1
     ki = (bottom.astype(np.int32) * (255 - w) + top.astype(np.int32) * w) >> 8
+    if bottom.ndim >= 2 and bottom.shape[1] % 2:
+        ki[:, -1, ...] = top[:, -1, ...].astype(np.int32) + (
+            (bottom[:, -1, ...].astype(np.int32) - top[:, -1, ...].astype(np.int32)) * w >> 8
+        )
     return ki.astype(np.uint8)
 
 
@@ -40,6 +44,6 @@ def test_a_ket_keverő_bitre_azonos(alfa):
     # a comicize felső eleme: `⌊b·r/255⌋` int32-ben
     raszter = rng.integers(0, 256, (37, 53, 3), dtype=np.uint8)
     felső = (alsó.astype(np.int32) * raszter.astype(np.int32)) // 255
-    régi = _régi_keverő(alsó, felső, alfa)
+    vart = _spec_szerinti_keverő(alsó, felső, alfa)
     új = alpha_blend(alsó, felső, alfa).astype(np.uint8)
-    np.testing.assert_array_equal(régi, új)
+    np.testing.assert_array_equal(vart, új)
