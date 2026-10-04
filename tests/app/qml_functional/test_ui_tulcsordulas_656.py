@@ -260,8 +260,18 @@ def _elem_leletei(elem: QObject) -> list[str]:
     vago = _vago_os(elem)
     if vago is None or not hasattr(elem, "mapRectToItem"):
         return talalat
-    szelesseg = max(_meret(elem, "width"), _meret(elem, "contentWidth"))
-    magassag = max(_meret(elem, "height"), _meret(elem, "contentHeight"))
+    gorgetheto = any(
+        minta in elem.metaObject().className() for minta in _GORGETHETO
+    )
+    # A Flickable contentHeight-je görgethető tartalom, nem a kirajzolt
+    # keret. Mért ellenpélda (#4183 futás): legacyEffectsScroll keret 262×244,
+    # contentHeight=666, viewerLeftDrawer=615 magas; a látható keret y=68..312,
+    # az elgörgethető tartalom vége y=68..734. Csak a keret túllógása lenne hiba.
+    szelesseg = _meret(elem, "width")
+    magassag = _meret(elem, "height")
+    if not gorgetheto:
+        szelesseg = max(szelesseg, _meret(elem, "contentWidth"))
+        magassag = max(magassag, _meret(elem, "contentHeight"))
     if szelesseg <= 0 or magassag <= 0:
         return talalat
     # ⚠️ `mapRectToItem`, nem kézi x/y-összegzés: a jelenetben

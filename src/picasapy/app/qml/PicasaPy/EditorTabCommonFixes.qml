@@ -168,6 +168,7 @@ ColumnLayout {
             onActivated: (tool) => panel.handleToolClick(tool)
         }
         ToolTile {
+            id: textToolTile
             x: toolGrid.cellaX(7); y: toolGrid.cellaY(7)
             width: toolGrid.cellaSzelesseg
             height: toolGrid.cellaMagassag
@@ -177,6 +178,52 @@ ColumnLayout {
             dimmedByTiltModal: panel.tiltActive
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
+        }
+
+        // #4183: a specifikáció nem ad a mi, eltérő kiosztású rácsunkhoz
+        // használható viszonyítást, ezért a jelölő a Text-csempe üres alsó
+        // részéhez horgonyoz. Így a vezérlő nem takar ikont vagy feliratot.
+        CheckBox {
+            id: showTextCheckbox
+            objectName: "showtextcheckbox"
+            anchors.horizontalCenter: textToolTile.horizontalCenter
+            anchors.bottom: textToolTile.bottom
+            width: 132
+            height: 14
+            z: 1
+            visible: panel.hasTextOverlay
+            enabled: panel.enabled
+            text: qsTr("Show Text")
+            checked: panel.textOverlayVisible
+            padding: 0
+            leftPadding: 16
+            spacing: 2
+            ToolTip.text: qsTr("Toggle to show or hide text on a photo")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+
+            indicator: Rectangle {
+                objectName: "showtextcheckboxIndicator"
+                x: 0
+                y: 0
+                width: 14
+                height: 14
+                color: showTextCheckbox.checked
+                       ? Theme.selectionBlue : Theme.chromeBg
+                border.width: 1
+                border.color: showTextCheckbox.hovered
+                             ? Theme.selectionBlue : Theme.chromeBorder
+            }
+            contentItem: Text {
+                objectName: "showtextlabel"
+                text: showTextCheckbox.text
+                font.pixelSize: Theme.fontSize
+                color: Theme.panelHeaderText
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.NoWrap
+            }
+            background: Item {}
+            onToggled: panel.textOverlayVisibleEdited(checked)
         }
     }
 

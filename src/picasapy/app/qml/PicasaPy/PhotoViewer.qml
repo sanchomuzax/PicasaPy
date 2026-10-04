@@ -158,6 +158,19 @@ Rectangle {
     // világosság-vezérelt), ezért a GPU-réteg ilyenkor NEM jelenhet meg —
     // a CPU-előnézet fut helyette, változatlanul.
     property bool gpuFinetunePointSafe: true
+    // #4183: a szerkesztő bal fiókjának 0…−279 képpontos eltérése. A
+    // befoglaló hely vele együtt szűkül, a 280 px-es tartalom pedig balra
+    // csúszik és a fiók levágása rejti el.
+    property real editorDrawerOffset: 0
+    Behavior on editorDrawerOffset {
+        NumberAnimation {
+            duration: 250
+            easing.type: Easing.InOutQuad
+        }
+    }
+    function toggleEditorDrawer() {
+        editorDrawerOffset = editorDrawerOffset === 0 ? -279 : 0
+    }
     readonly property bool gpuCapable: GraphicsInfo.api !== GraphicsInfo.Software
                                         && GraphicsInfo.api !== GraphicsInfo.Unknown
                                         && GraphicsInfo.api !== GraphicsInfo.Null
@@ -1147,6 +1160,7 @@ Rectangle {
         editorPanel.syncFinetuneSliders()
         // #450: "Remove all existing text" gomb tiltási állapota
         editorPanel.hasTextOverlay = editController.hasTextOverlay
+        editorPanel.textOverlayVisible = editController.textOverlayVisible
         // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
         // kitöltés ki/be, átlátszóság
         // #464: a Finomhangolás fül pipettája melletti színminta
@@ -1828,8 +1842,11 @@ Rectangle {
                 objectName: "viewerLeftDrawer"
                 // #411: az EditorPanel.qml implicitWidth-ével összhangban —
                 // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
-                Layout.preferredWidth: 280
+                Layout.preferredWidth: 280 + viewer.editorDrawerOffset
+                Layout.minimumWidth: 1
+                Layout.maximumWidth: 280
                 Layout.fillHeight: true
+                clip: true
                 // #641: itt NINCS `Layout.minimumHeight`. A #628 azt tette ide,
                 // de az visszafelé sült el: a doboz nem zsugorodott a cellára,
                 // hanem TÚLNYÚLT rajta, és a panel aljához igazodó
@@ -1854,7 +1871,8 @@ Rectangle {
                     // hely rendelkezésre áll.
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    anchors.left: parent.left; anchors.right: parent.right
+                    width: 280
+                    x: viewer.editorDrawerOffset
                     //: #3741: a fókuszban lévő fél képéé
                     imageAspect: photoArea.fokuszKep.paintedHeight > 0
                                  ? photoArea.fokuszKep.paintedWidth
@@ -2082,6 +2100,8 @@ Rectangle {
                         editorPanel.textDraftContent = ""
                         editorPanel.textActive = false
                     }
+                    onTextOverlayVisibleEdited: (visible) =>
+                        editController.setTextOverlayVisible(visible)
                     // #464: a pipetta be/ki kapcsolása — a mintavétel a
                     // `neutralPickArea`-ban történik (a kép fölött)
                     onNeutralPickerToggled: editorPanel.neutralPickerActive =
@@ -4065,6 +4085,31 @@ Rectangle {
                     Component.onCompleted: viewer._betolt(elotoltoElozo, betoltes)
                     fillMode: Image.PreserveAspectFit
                     asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
+                }
+
+                // #4183: a bal fiók függőleges peremén marad, és becsukás
+                // után is visszanyitható. A méretet az eredeti mérés adja.
+                ToolButton {
+                    objectName: "toggle_left_drawer"
+                    x: 1
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 15
+                    height: 16
+                    z: 20
+                    flat: true
+                    text: viewer.editorDrawerOffset === 0 ? "‹" : "›"
+                    ToolTip.text: qsTr("Show/Hide Edit Controls")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
+                    contentItem: Text {
+                        text: parent.text
+                        color: Theme.panelHeaderText
+                        font.pixelSize: 17
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Item {}
+                    onClicked: viewer.toggleEditorDrawer()
                 }
             }
 
