@@ -3132,44 +3132,22 @@ forgatás, majd vissza. A **simítás (élsimított mintavételezés) be van
 kapcsolva**, és a `padBorder` esetén a keletkező üres sarkokat a `borderColor`
 tölti ki (`0x009a91a0`).
 
-> ⛔ **MEGDŐLT (2026-08-17):** az alábbi Skia-olvasat téves. A
-> `0x00bcb5e0` közvetlen hívottai a **`ytResampler` konstruktora**
-> (`0x00a3f490`) és **diszpécsere** (`0x00a42c20`) — Skia-hívás nincs
-> köztük. A mód **explicit**: lépték = 1 → **0-s (doboz)**, egyébként
-> **3-as (Mitchell–Netravali, B = C = 0,4)**. Ld.
-> `filters-decoded.md`, „A `RotateImageOperation` a `ytResampler`-t
-> használja". A 46 befordított Skia-osztály önmagában nem bizonyíték.
->
-> ~~**A mintavételező a Skia** — nem a Picasa saját kódja (2026-08-14). A hívási
-> lánc `RotateImageOperation` slot6 → `0x00bc8060` (transzform) → `0x00bcb5e0`
-> → `0x00a42c20` a rajzoló rétegbe fut, és az RTTI-tábla szerint a binárisba
-> **46 Skia-osztály** van statikusan befordítva, köztük a
-> **`SkBitmapProcShader`** — pontosan az, ami a bitmap-mintavételezést végzi
-> (mellette `SkShaderBlitter`, `SkARGB32_Shader_Blitter`, `SkFilterShader`).
->
-> **Ez jó hír:** a Skia nyílt forráskódú, tehát az algoritmust **nem kell
-> visszafejteni és nem kell megmérni** — a korabeli Skia forrásából szó szerint
-> kiolvasható. Ott a `SkBitmapProcState` a szűrési szinttől függően vagy
-> legközelebbi-szomszéd, vagy **bilineáris 4 bites (16 lépcsős) részpixel-
-> súlyokkal** — ez utóbbi mérhetően eltér a naiv, lebegőpontos bilineáristól.
->
-> ~~**Ami a mi oldalunkon maradt eldöntendő:** melyik szűrési szintet kéri a
-> `Rotate` (a `0x00bc8060`-ban két eltérő festék-beállítás van). Ez egy
-> jelzőbit, nem algoritmus — és golden-összevetéssel is ellenőrizhető.~~
->
-> **EZ A KÉRDÉS IS OKAFOGYOTT** — nincs Skia-szűrési szint, mert nincs
-> Skia-hívás ezen az úton (ld. a fenti MEGDŐLT-jelzés). A ténylegesen
-> lefutó választás a `ytResampler` **0-s (doboz) vs. 3-as (Mitchell–
-> Netravali, B=C=0,4)** módja közt dönt, kizárólag a lépték alapján — ezt
-> a fenti MEGDŐLT-blokk **teljeskörűen megválaszolja**, nincs rajta
-> további nyitott rész.
+A két beállítás tehát két külön szerep: a `borderColor` a kimeneti vászon
+háttérkitöltése (`0x00bc8134` → `0x009a91a0`), a `0x00bc832e`-n átadott `1`
+pedig a wrapper `smoothing=true` jelzője (`0x00bcb602`). Forgatási mátrixnál
+ez utóbbi az affine mintavételező útvonalon marad; nem választ `ytResampler`
+módot és nem változtatja meg a háttérszínt.
 
-**LEZÁRVA (2026-08-17, kereszthivatkozás pótolva 2026-09-21).** A
-`RotateImageOperation` mintavételezése ezzel teljesen ismert: `0x00bc8060`
-a léptéket 1,0-hoz hasonlítja (`0x00bcb63e`–`0xbcb659`), és a `ytResampler`-t
-0-s vagy 3-as móddal példányosítja. Nincs Skia, nincs nyitott jelzőbit.
-Részletek: `filters-decoded.md`, „A `RotateImageOperation` a `ytResampler`-t
-használja, NEM a Skiát".
+> ⛔ **MEGDŐLT (2026-08-17; második helyesbítés 2026-10-04):** a Skia-olvasat
+> téves volt, és a rá következő `ytResampler`-magyarázat is rossz ágra
+> vonatkozott. A `0x00bc8060` forgatási mátrixánál a `0x00bcb5e0` a
+> `0x009e6df0` általános transzformációs útját választja, majd a
+> `0x009e7060` natív mintavevőt hívja `smoothing = 1` értékkel
+> (`0x00bc832e`). A `ytResampler` 0/3-as ága tengelyhez igazított
+> átméretezési út; nem a forgatás pixelmagja. A teljes mátrix- és
+> mintavételezési levezetés, valamint a natív QEMU-próba lejjebb, „A
+> Polaroid geometriája” szakaszban van. A régi Skia/`ytResampler`-értelmezést
+> és az arra épülő lezárást ne használd Rotate-bizonyítékként.
 
 #### `CropImageOperation` (`0x00bbdbd0`)
 
@@ -3697,22 +3675,25 @@ RTTI-vtáblák (`0x00cf0120`, `0x00cf085c`) 6. rése a közös alkalmazó
 `0x00bcb2f0`-t; a `TwoTone` beolvasója (`0x00bc2760`) a `[this+0x40]`-be tesz
 objektumot (`0x00bc2923`) és a `0x00bb8710`-et hívja (`0x00bc2949`).
 
-### 5. `ResizeImageOperation` — UGYANAZ a mintavételező, mint a forgatásnál
+### 5. `ResizeImageOperation` — közös diszpécser, eltérő pixelág a forgatástól
 
 Az alkalmazó (`0x00bc3650`, 407 b) tengelyenként `forrás / cél` léptéket
 számol (`0x00bc3700`–`0x00bc3731`), majd a végén a **`0x00bcb5e0`**
 segédfüggvénynek adja át a transzformációt és a `smoothing` kapcsolót
 (harmadik argumentum, `0x00bc37d6`).
 
-⭐ **Ez ugyanaz a `0x00bcb5e0`, amit a `RotateImageOperation` hív** a
-`0x00bc8060` transzformáción keresztül. Mérve (`xrefs`): a `0x00bcb5e0`-nak
-négy hívója van, köztük mindkettő.
+⭐ **Ez ugyanaz a `0x00bcb5e0` diszpécser, amit a `RotateImageOperation` hív**
+a `0x00bc8060` transzformáción keresztül. Mérve (`xrefs`): a
+`0x00bcb5e0`-nak négy hívója van, köztük mindkettő. A pixelág viszont eltér:
+a Resize tengelyhez igazított mátrixot ad át, a Rotate forgatási mátrixát a
+`0x009e6da0` az általános affine-ágra irányítja (a fenti Rotate-szakaszban
+részletezve).
 
-⇒ A lap `RotateImageOperation` szakaszának 2026-08-17-i helyesbítése **a
-`Resize`-ra is érvényes**: a mintavételező a **`ytResampler`**, a mód
-**explicit** — ~~*lépték = 1 → **0-s (doboz)**, egyébként **3-as
-(Mitchell–Netravali, B = C = 0,4)***~~ → helyesen: **kicsinyítéskor és
-1:1-nél 0-s doboz, csak nagyításkor 3-as Mitchell** (ld. 5/c). **Nem bilineáris.**
+⇒ A Resize-re érvényes lezárás: tengelyhez igazított mátrix és
+`smoothing=true` esetén a mintavételező a **`ytResampler`**, módja
+**kicsinyítéskor és 1:1-nél 0-s doboz, csak nagyításkor 3-as Mitchell**
+(ld. 5/c). **Nem bilineáris.** A Rotate nem bizonyíték a Resize pixelágára,
+és fordítva.
 
 **A `smoothing` attribútum:** tag `+0x34`, **alapértéke `true`**
 (`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
@@ -3737,9 +3718,13 @@ a hiányzó érték alapja `true` (`0x00bc36ac`), a kiolvasott érték pedig a
 
 A wrapper utasításszinten külön ágazik (`0x00bcb602` `test bl,bl`):
 
-- **`smoothing=true`** esetén a skálát hasonlítja 1,0-hoz
-  (`0x00bcb63f`–`0x00bcb655`), és 1:1-nél a 0-s dobozmódot, egyébként a
-  3-as Mitchell–Netravali módot választja;
+- **`smoothing=true`** esetén először a mátrixot vizsgálja
+  (`0x00bcb61c` → `0x009e6da0`). Ha a két kereszt-együttható valamelyike
+  nem nulla a vizsgált tűrésen belül, közvetlenül az általános affine-ágra
+  ugrik (`0x00bcb623` → `0x00bcb6b8` → `0x009e6df0`); ez a `Rotate` útja.
+  Csak tengelyhez igazított mátrixnál számol léptéket, és választ 1:1-nél
+  0-s doboz-, egyébként 3-as Mitchell–Netravali módot (`0x00bcb63f`–
+  `0x00bcb655`); ez a `Resize` útja.
 - **`smoothing=false`** esetén közvetlenül a `0x009e6df0` affine-ágat hívja
   (`0x00bcb6b8`–`0x00bcb6ce`), `param_4=0`, `param_5=0` és `param_6=0x100`
   értékekkel (`0x00bcb6bf`, `0x00bcb6c4`, `0x00bcb6c6`, `0x00bcb6c9`). A
@@ -3751,6 +3736,8 @@ A wrapper utasításszinten külön ágazik (`0x00bcb602` `test bl,bl`):
 ⇒ `smoothing=false` esetén **nem** a 0-s dobozmód fut. 1:1 léptéknél is
 ugyanez a legközelebbi-szomszéd ág fut; a kimenet ilyenkor természetesen a
 forrás képpontjait adja vissza, de a választott mechanizmus nem a doboz.
+Ez a `Rotate` hívásánál nem releváns: ott `smoothing=true`, és a forgatási
+mátrix a fenti általános affine-ágat választja.
 
 **Nálunk (MÉRVE):** a `resize_image(..., smoothing=False)`
 `cv2.INTER_NEAREST`-et használ (`src/picasapy/render/glimmer_ops.py`,
@@ -8251,6 +8238,34 @@ Ez **8 bites súlyú, fixpontos bilineáris** mintavevő:
 
 A cél mérete padBorderrel `csonk(|W·cos θ| + |H·sin θ|)` × `csonk(|W·sin θ| +
 |H·cos θ|)` (`0x00bc7ca0`); ez egyezik a kódunk `floor`-jával.
+
+### Natív QEMU-próba (#626, 2026-10-04)
+
+A `qemu-i386` alatt a natív `0x009e7060` mintavevőt hívtam meg közvetlenül
+BGRA képleírókkal; a méretpróbában a natív `0x00bc7ca0` segédfüggvény futott.
+Az input csatornái képpontonként `(x,y)`:
+`B=(37x+11y)&255`, `G=(19x+43y)&255`, `R=(73x+7y)&255`,
+`A=(91+13x+17y)&255`; a kitöltés `(17,91,233,255)`. A négy méret
+`(4,3)`, `(5,4)`, `(4,6)`, `(5,5)` és a hat szög `0°`, `5°`, `−10°`,
+`10°`, `−12°`, `30°` keresztszorzata **24 eset**. Mind a 24-ben a natív
+mintavevő BGR-kimenete bájtra egyezett a `rotate_with_pad` kimenetével;
+mind a 24 natív méretválasz egyezett a fenti csonkoló méretképlettel.
+Ez a kimeneti BGR-csatornákat hasonlítja: a PicasaPy függvénye háromcsatornás
+BGR-t fogad és ad, ezért a natív negyedik (alfa-)csatorna nem része az
+egyezési állításnak.
+
+**Cáfoló kontroll:** az aszimmetrikus `5×5`, `+30°` natív mintavételt a helyi
+`−30°` kimenettel is összevettem: **94 BGR-bájt eltért**. Így a próbaminta és
+az összevetés észleli az előjelcserét; a 24 egyezés nem szimmetrikus mintából
+adódó ál-egyezés.
+
+**A próba határa:** a QEMU-wrapper közvetlenül a pixelmagot és külön a
+méretsegédet futtatta. A `0x00bb5640` teljes Glimmer-Apply útját (az XML
+attribútum-beolvasástól a transzformmátrix felépítéséig) ebben a körben nem
+futtattam; a szögkonverziót és mátrix-összeállítást az utasításszintű
+levezetés támasztja alá (`0x00bb5730`, `0x00bc8060`, `0x009e6340`). Ezért a
+natív pixelmag és a méretképlet megerősített, az integrált Apply-út bájtszintű
+QEMU-goldenje **nincs meg**.
 
 ### Mérve
 
