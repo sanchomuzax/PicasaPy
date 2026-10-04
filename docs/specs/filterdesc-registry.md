@@ -2456,6 +2456,118 @@ x86-diszasszemblálás és a PE-adatkonstansok kiolvasása feloldotta. A hue-
 mátrix konkrét együtthatói, címei és numerikus kontrolljai a G) szakaszban
 állnak; a korábbi „feltételes / valószínű Haeberli” megfogalmazás elavult.
 
+#### `ColorMatrix` — 4×5 fixpontos pixelképlet; a `UseAlpha` külső határa nyitott (#626, 2026-10-04)
+
+**Forrás:** a `ColorMatrix` 8. rése `0x00bc1860` (245 b), a közös alkalmazó
+`0x00bc16b0` (428 b), a mátrix konverziója `0x008f21a0` (849 b), a pixelenkénti
+kernel `0x008f2640` (644 b; skalár ág `0x008f2674`–`0x008f281e`, MMX/SSE2 ág
+`0x008f281f`–`0x008f28c3`), a vektorregiszter-betöltő `0x008f25f0`, a kerekítő
+segéd `0x00c29990` (28 b). A vtable és az attribútum-beolvasó címe a fenti
+táblában áll.
+
+A worker a `Matrix` tömb 20 double elemét float32-ként tárolja
+(`0x00bc1860`: `fstp dword`), majd a közös alkalmazó 4×5 sorfolytonos
+mátrixként adja át. A mátrix sorai és színoszlopai `R,G,B,A`; a pixelmemória
+és a kimenet bájtsorrendje `B,G,R,A`. A 4. oszlop az alfa-bemenet súlya, az 5.
+elem a sor eltolása.
+
+Legyen `m[j,k]` a float32-re alakított együttható, `o[j]` az eltolás, és
+`x=(R,G,B,A)` a forrás pixel. A `0x008f21a0` a mátrix együtthatóit Q11
+int16-ba, a sor eltolását pedig dword biasba alakítja:
+
+```text
+round-away(v) = trunc(v + (v < 0 ? -0.5 : +0.5))
+q[j,k]        = signed_int16(low16(round-away(2048 * m[j,k])))
+b[j]          = round-away(4 * o[j]) + 2
+
+acc[j] = wrap32(b[j] + Σ(k=R,G,B,A) sar32(q[j,k] * x[k], 9))
+y[j]   = clamp(sar32(acc[j], 2), 0, 255)
+```
+
+`sar32` az x86 előjeles aritmetikai jobbra tolása, tehát negatív értéknél
+lefelé kerekít; **minden szorzat külön** `>>9`-et kap, csak utána adódnak
+össze. Az akkumulátor 32 bites (`wrap32`), a kernel a négy csatornát külön
+sorral számolja, az alfa-sort is, és minden sor használhatja az alfa-oszlopot.
+A végső `>>2` után történik a 0…255 vágás. A `q` tárolásakor az alsó 16 bit
+marad meg, a kernel ezt előjeles int16-ként olvassa (`movsx`); a bias dword.
+
+A `0x008f281f`-nél induló MMX/SSE2 ág ugyanezt a műveletsorrendet tartja:
+`0x008f25f0` betölti a négy oszlop együttható-vektorát és a biasvektort; a
+kernel a forrás minden bájtját `[bájt,0]` int16-párként rendezi, `pmaddwd`
+után külön `psrad 9`-et végez az adott csatorna hozzájárulásán, majd az
+összeget `psrad 2`-vel skálázza és telítetten bájtra csomagolja. A skalár és
+vektor ág közti képletazonosságot az utasítássorrend, hat QEMU-minta pedig a
+konkrét kimeneteken ellenőrzi.
+
+**`UseAlpha`:** a `ColorMatrix` worker, a közös alkalmazó és a pixelkernel
+nem olvassa és nem kapja meg ezt a jelzőt. Ezért a fenti pixelmag képlete
+`UseAlpha=false` és `UseAlpha=true` mellett is azonos, ha azonos mátrixot és
+forráspixelt kap: az alfa-sor és -oszlop a magban mindkét esetben aktív.
+A leíró parser ettől külön olvassa a `UseAlpha` nevet (`0x009ca5e0`, a mező
+írása `0x009cb45d`, `[objektum+0x20a]`). **NINCS MEG**, hogy ezt a külön
+flaget a Glimmer-hívási lánc melyik magasabb rétege fogyasztja, illetve
+`false`/`true` mellett változtat-e a mag bemenetén, utólagos alfa-kezelésén
+vagy kompozitálásán. Emiatt a teljes, leíró-szintű `UseAlpha` szemantika
+feltételes marad.
+
+**QEMU-kontrollok.** Az eredeti ELF-kódrész futott `qemu-i386 -B
+0x400000000000` alatt, `ulimit -v 8388608` és `timeout 60` korláttal. Mind a
+hat kézi mátrix/pixel mindkét `0x00c29990` konverziós ágon és mindkét pixel-
+kernel ágon (skalár, illetve az eredeti `0x008f25f0` által betöltött MMX/SSE2)
+ugyanazt a bájtsort adta a közvetlen `0x008f21a0` + `0x008f2640` útban. A
+`0x00bc1860` eredeti workerével futtatott külön próba szintén egyezett mindkét
+konverziós ágon a skalár kernelhez; ez a worker-próba négy általános
+XML-tömb-/double-olvasó és memória-kezelő segédfüggvényt shimelt, a ColorMatrix
+worker, mátrixkonvertáló és pixelfüggvény az eredeti kód volt. Ez nem teljes
+`filterdesc.xml`-betöltés, ezért a `UseAlpha` külső hatását nem méri. Az alábbi
+`M` jelölés 4×5, soronként `R,G,B,A,eltolás`; a pixel és az eredmény BGRA
+bájtok hexadecimális alakban:
+
+| kontroll | `M` sorai | bemenet BGRA | eredmény BGRA |
+|---|---|---|---|
+| azonosság | `[1,0,0,0,0; 0,1,0,0,0; 0,0,1,0,0; 0,0,0,1,0]` | `0b16212c` | `0b16212c` |
+| alfa-oszlop és alfa-sor | `[1,0,0,.25,3.5; 0,1,0,0,0; 0,0,1,0,0; .5,0,0,.5,1]` | `09111f50` | `09113739` |
+| vágás és tört eltolás | `[2,0,0,0,-5; 0,.5,0,0,.125; 0,0,-.5,0,1; 0,0,0,2,-10]` | `ff011ec8` | `000137ff` |
+| előjeles fél-együttható | `[2.5/2048,2.5/2048,0,0,0; -2.5/2048,-2.5/2048,0,0,25; 0,0,1,0,0; 0,0,0,1,0]` | `00ffffff` | `001801ff` |
+| tört együttható-konverzió | `[.1234,0,0,0,0; 0,-.1234,0,0,41.25; 0,0,1,0,0; 0,0,0,1,0]` | `0080ffff` | `001920ff` |
+| tagonkénti `sar 9` | `[1/2048,1/2048,1/2048,0,.25; 0,1,0,0,0; 0,0,1,0,0; 0,0,0,1,0]` | `ffffffff` | `ffff00ff` |
+
+**Cáfoló kontroll:** az utolsó sorban a három első Q11 szorzat egyenként
+`255 >> 9 = 0`, az eltolásból a bias `3`, ezért a piros kimenet
+`(0+3)>>2 = 0`. Az alternatív, hibás „előbb összead, majd egyszer tol” modell
+`(255+255+255)>>9 = 1` értéket adna, így a piros kimenet `1` lenne
+(`ffff01ff`). A natív kimenet `ffff00ff` mindkét konverziós ágon; az eltérés
+az utasításszintű, külön szorzatonkénti `sar 9`-cel is egyezik.
+
+#### #626 leltár — `ColorMatrix` sor frissítése
+
+| művelet | pixelképlet | `UseAlpha` | összesített állapot |
+|---|---|---|---|
+| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott** a leíró magasabb rétegén | **feltételes** |
+
+Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyasztójának
+és a többi #626 műveletnek a feltárását nem zárja le.
+
+#### Eredeti / nálunk / teendő
+
+| | Eredeti, mért | PicasaPy forrása | Teendő |
+|---|---|---|---|
+| 4×5 RGBA-mátrix | a fenti Q11/int16 + dword-bias képlet, `0x008f21a0` → `0x008f2640` | `src/picasapy/render/glimmer_ops.py:628–646` általános `n×3` RGB-képletet valósít meg; a `simple_color_matrix()` hívja, általános 4×5 `ColorMatrix`-út nem található | külön fejlesztési munka: általános RGBA-mátrix és bájtra ellenőrizhető minták |
+| `UseAlpha` | a parser `[objektum+0x20a]` flaget ír; a pixelmag nem kapja meg | nincs `UseAlpha`-ággal kezelt általános `ColorMatrix` | előbb a magasabb szintű fogyasztót kell feltárni; a flag szemantikája nélkül ne rögzítsünk eltérő alfa-szabályt |
+
+**Bizonyítottsági fok:** megerősített a pixelmag képletére — A) utasításszintű
+olvasás a mátrixcsomagolótól a négy soros pixelenkénti kernelig; B) az eredeti
+worker és pixelfüggvények futtatása qemu-i386 alatt, mindkét kerekítési ágon,
+a fenti bájt-goldenekkel. A `UseAlpha` descriptor-szintű hatása nyitott:
+a parser mezőjét nem sikerült azonosítani a Glimmer magot körülvevő fogyasztóval.
+
+**Nyitott, blokkoló következő lépés:** `Ghidra-kör kell: 0x009ca5e0 — a
+`UseAlpha` parser által `[objektum+0x20a]` helyre írt flag Glimmer-hívási
+láncbeli fogyasztójának azonosítása, és annak eldöntése, hogy false/true
+módosítja-e a ColorMatrix alfa-oszlopát, alfa-sorát vagy a mag előtti/utáni
+alfa-kezelést [blokkoló]`.
+
+
 ### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
 
 A 4.9-hez hasonlóan ez is a meglévő `referencia/dekompilalt-626/` kimenetből
