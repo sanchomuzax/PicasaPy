@@ -2846,9 +2846,9 @@ Az átlón a kép 239-nél kezdődik; az `R = 128` sugarú, ugyanilyen középpo
 
 A felirat nélküli alsó sarkok ugyanígy viselkednek: a belső sáv téglalapja a feliratsáv fölött ér véget.
 
-**A mérés:** ezzel a geometriával (4 × 4 almintás élsimítás, `R = 128`, belső = külső = 100, felirat 63) a modell az exportot **ΔE 0,097**-tel adja vissza, a képpontok 0,11 %-a tér el 40 szintnél többel. A mai kód két szögletes gyűrűt rak a kép köré, és a teljes vászon sarkát kerekíti: pontos mérettel (1. pont) is **3,584**.
+**A 2026-09-27-i mérés állapota:** a 4 × 4 almintás modell (`R = 128`, belső = külső = 100, felirat 63) a Picasa-exportot ΔE 0,097-tel adta vissza; a képpontok 0,11 %-a tért el 40 szintnél többel. Az akkori kódról szóló „két szögletes gyűrű” leírás elavult: a jelenlegi `draw_border()` már lekerekített sarokfoltokat épít 4 × 4 mintavételezéssel. A natív `0x00bbe570` rajzoló és a mostani implementáció közti közvetlen, kis képes összevetést az alábbi új szakasz tartalmazza.
 
-*Bizonyítottsági fok: **megerősített**: a méret bitre, a geometria a golden-méréssel; a csonkítás utasításszinten, független újralevezetéssel (ld. a #626-ot).* Fejlesztés: #3768. A sarok rajzoló kódját (`0x00bbe570`) nem olvastam végig; a geometria a mérésből jön, képpontonként ellenőrizve.
+*Bizonyítottsági fok: **megerősített** a kimeneti méretre és a koncentrikus geometria exporton mért alakjára; **feltételes** a tetszőleges méretű sarok pontos fedettségi képletére (ld. az alábbi `0x00aa1840` nyitott pontot).* Fejlesztési hivatkozás: #3768.
 
 #### `DropShadowImageOperation` (`0x00bbb720`)
 
@@ -8392,17 +8392,150 @@ szélességből készül.
 |---|---|---|---|
 | Border vastagság skálája | `imageWidth / fullResImageWidth`, `0x00bbe4a6`–`0x00bbe4b0`; a két `fmul` `0x00bbe4d0` és `0x00bbe51b` | `glimmer_frame_ops.py:102–118`: a `draw_border` a kapott vastagságokat közvetlenül adja át az `add_ring`-nek; nincs teljes felbontású tényező | külön fejlesztői jegy: **#3377** |
 | captionheight / cornerradius | nyers képpont, nincs `fmul` (`0x00bbe553`, illetve `0x00bbe3b8`) | közvetlen képpont-paraméter | #3377-ben kezelendő |
-| natív–PicasaPy pixel-golden | **NINCS MEG** ebben a körben | **NINCS MEG** | külön golden-pár szükséges |
+| natív–PicasaPy exportpár | a 684-es `border__alap` és `border__max` Picasa-exportja | a `PicasaPy_meroszett/export-202608151229` megfelelő exportjai; azonos méret (1010×690, illetve 1360×1103) | mérve; a JPEG-ek nem bájtra azonosak |
 
 **Bizonyítottsági fok: megerősített** a tényező irányára és a rekord
 szerepére (SQLite RTTI/string/xref + célzott x86-diszasszemblálás).
-A Border teljes renderelési pixel-goldenje továbbra is **NINCS MEG**; ezt
-nem állítom elő a mechanizmus-leletből.
+A 684-es mérőkészlet Border-exportpárja megvan; annak keretsáv-összevetését
+és a natív munkavégző közvetlen QEMU-pixelmintáját az alábbi szakasz rögzíti.
 
 **Nyitott kérdések mérlege — e kör saját kérdései:** 0 nyílt · 1 lezárva ·
 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”. A #626 gyűjtőjegy nyitva
 marad: a Rotate, Crop, SimpleBorder és az alkalmazási lánc további részei
 külön kutatási tételek.
+
+### A `Border` rajzolója (`0x00bbe570`) — méret, koncentrikus sarkok, ARGB-keverés (2026-10-04, #626)
+
+Ez a szakasz a 4.12/F-ben már ismert vastagság-skálázás utáni munkavégzőt
+zárja le. Az utasítások forrása `0x00bbe570` (1953 bájt), a képpont- és
+fedettség-rutinoké `0x00aa13b0` (1153 bájt), illetve `0x00aa1840` (813 bájt).
+Az eredeti függvény közvetlen futtatásához kézzel összeállított ARGB-képet
+kapott a `qemu-i386`; a futás stubbelt importokat és bump-allokátort használ,
+nem a valódi `filterdesc`-futtatást.
+
+#### 1. Kimeneti méret és sávok
+
+Legyen `T = innerthickness + outerthickness`, a már egészre alakított
+pixelvastagságok összege. A munkavégző a forrás `W×H` méretéből ezt állítja
+elő:
+
+```text
+W' = W + 2·T
+H' = H + 2·T + captionheight
+```
+
+Az `0x00bbe576`–`0x00bbe5a8` sorozat összeadja az 5. és 6. stack-argumentumot,
+kétszerezi, hozzáadja a forrás `+8/+0c` méretét, majd a 7. argumentumot csak a
+magassághoz adja. A QEMU-aszimmetria-kontrollban a 3×2 forrás, `inner=1`,
+`outer=2`, `caption=0` eredménye **9×8**; a felső és bal külső sáv 2 pixel,
+a belső sáv 1 pixel. A 0 caption mellett a címkézett mérőkészlet
+`Border=1,100,100,40,…,60` Picasa-exportja 960×640-ről 1360×1103-ra nőtt;
+ez a korábbi §4.12/F mérésével egyezik.
+
+#### 2. A kitöltés és a sarkok
+
+- A kimeneti vászon először a megadott külső ARGB-színt kapja. A belső
+  színű sáv erre kerül rá; a forráskép a `T` eltolással kerül a közepére.
+- A belső sáv külső pereme `R + innerthickness` sugarú lekerekített
+  téglalap; a forrásképet külön, `R` sugarú lekerekített maszk vágja.
+  Ezt az `0x00bbe570` `0x00aa1840`-et hívó útja és a 5×5, `R=2`,
+  `inner=outer=1` QEMU-minta együtt mutatja: a két külön ív közti sáv az
+  inner színű marad.
+- A vízszintes és függőleges egyenes sávokon a szín fedése egységes.
+  A kerekített ív képpontjain viszont vannak köztes színek: a natív rajzoló
+  **élsimít**, nem bináris „pixel bent/kint” maszkkal dolgozik.
+
+#### 3. ARGB egészkeverés
+
+Az `0x00aa13b0` teljes fedésű ága (`0x00aa1ae3`–`0x00aa1b1f`) a cél dword
+négy byte-ját külön 8 bites fixpontos szorzással skálázza, majd a forrás
+ARGB-dwordot **egyetlen 32 bites összeadásban** hozzáadja. `A = source >> 24`
+esetén:
+
+```text
+inverse = 256 − A
+scaled_destination[i] = floor(destination[i] × inverse / 256)  # i: mind a 4 byte
+result_dword = scaled_destination_dword + source_argb_dword
+```
+
+A végső dword-összeadás **nem telít byte-onként**: a byte-határt átlépő
+összeg átvitele a következő byte-ba jut. Ez nem szokásos, csatornánként
+clampelt alpha-over képlet. A futtatásos cáfoló kontrollban
+`outer=0x80ff0000`, `inner=0x40ff0000` mellett a belső sáv pixele
+`0xa1be0000`: a vörös byte `0xbf + 0xff` összege `0x1be`, az átvitel az
+alfa byte-ot `0xa0`-ról `0xa1`-re növeli. Az alfa 0 esetén a futtatott minta
+nem módosította a vászon külső színét.
+
+Részleges fedésnél az `0x00aa1a74`–`0x00aa1b1f` út külön 16.16-os szorzatból
+képzi a fedési tényezőt `C`, abból `floor(A×C/256)`-ot számít, majd a cél és
+a forrás byte-jait külön szorozza és a csatornákat packed dwordként adja
+össze. Az `0x00aa1840` állítja elő a görbe menti per-pixel `C`-t. A helyi
+diszasszemblálásból és a mintafutásokból **nem lett lezárva a C(x,y,R) teljes
+általános képlete**, ezért a konkrét köztes pixelek mért értékei nem
+általánosíthatók minden sugárra.
+
+#### 4. Bájtra rögzített natív próba
+
+Kézzel megadott 5×5-ös, egyszínű `0xff204060` forrás; külső szín `0xff000000`,
+belső `0xffffffff`, `R=2`, mindkét vastagság 1, caption 0. A natív kimeneti
+rekord 9×9, stride 9, a visszaírt pixelek (ARGB hex, soronként):
+
+```text
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+ff000000 ffb4b4b4 ffffffff ffffffff ffffffff ffffffff ffffffff ffa6a6a6 ff000000
+ff000000 ffffffff ff6b8095 ff204060 ff204060 ff204060 ff798c9f ffffffff ff000000
+ff000000 ffffffff ff204060 ff204060 ff204060 ff204060 ff2e4c6a ffffffff ff000000
+ff000000 ffffffff ff204060 ff204060 ff204060 ff204060 ff204060 ffffffff ff000000
+ff000000 ffffffff ff6b8095 ff204060 ff204060 ff204060 ff798c9f ffffffff ff000000
+ff000000 ffb4b4b4 ffffffff ffbac4ce ff204060 ffbfc8d1 ffffffff ffa6a6a6 ff000000
+ff000000 ff000000 ff868686 ffd9d9d9 ffffffff ffd6d6d6 ff7e7e7e ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+```
+
+Ugyanennek a forrásnak a `draw_border()`-rel előállított PicasaPy RGB-képe
+9×9; a natív RGB-részhez képest **29/81 pixel** eltér, az RGB-csatorna-MAE
+20,506, a maximum 180. Például natív `(y=1,x=1)=180,180,180`, PicasaPy
+`0,0,0`; natív `(1,2)=255,255,255`, PicasaPy `143,143,143`. A forráskód
+`_sarok_fedes()`-e 4×4 almintát és `numpy.rint`-et használ, a natív út
+`0x00aa1840`/`0x00aa13b0` fixpontos fedettségszámítását és packed ARGB
+keverését nem.
+
+#### 5. Export-összevetés és fok
+
+A kibontott `684-merokeszlet` és `PicasaPy meroszett/export-202608151229`
+JPEG-exportok mérete mindkét beállításnál egyezik. Csak a keretsávokon
+mérve:
+
+| export | keretsáv MAE / csatorna | 95. percentilis | 20-nál nagyobb pixelkülönbség | maximum |
+|---|---:|---:|---:|---:|
+| `border__alap`, 1010×690 | 0,109632 | 1 | 0 | 20 |
+| `border__max`, 1360×1103 | 0,025101 | 0 | 0 | 13 |
+
+Ezek a JPEG-eredmények a valós, nagy sugarú exportban erős egyezést mutatnak,
+de nem fedik fel önmagukban a kis sugarú fedettségi eltérést, és nem
+helyettesítik az alfa-csatornás QEMU-próbát.
+
+**A/B út:** A) az `0x00bbe570`, `0x00aa13b0`, `0x00aa1840` utasításszintű
+olvasása; B) ugyanennek a munkavégzőnek a közvetlen `qemu-i386` futtatása
+szintetikus képekkel. A méret, a két koncentrikus ív, az élsimítás és a
+packed dword-összeadás egyezik. A Picasa-exportpár harmadik, független
+kontroll a ténylegesen használt beállításokra.
+
+**Bizonyítottsági fok: feltételes.** A fenti méret-, geometria-, teljes
+fedésű keverési és kiválasztott pixelállítások megerősítettek (utasítások +
+natív futtatás). A művelet általános per-pixel fedettségfüggvénye, valamint a
+forrás alfaértékének leképezése a görbe peremén még nyitott; ezért a teljes
+`Border`-műveletet a `#626` leltárában nem emelem `megerősített` fokra.
+
+**A #626 leltár Border-sora:** `Border | 4 effekt | feltételes |` kimeneti
+méret, koncentrikus ívek, élsimítás és ARGB packed keverés két úttal igazolt;
+az általános `C(x,y,R)` és a görbeszéli forrásalfa `0x00aa1840`/`0x00bbe570`
+útja még nyitott.
+
+#### Nyitott, célzott dekompilálás
+
+Ghidra-kör kell: `0x00aa1840` — a sugárból és képpont-koordinátából a 16.16-os `C(x,y,R)` fedettség pontos levezetése [blokkoló]
+Ghidra-kör kell: `0x00bbe570` — hogyan kerül a forrás ARGB-alfa a görbével levágott kép-sarok peremképpontjaira [blokkoló]
 
 ### G) ⭐ A `SimpleColorMatrix` hue-forgató mátrixa (2026-09-19, #626)
 
