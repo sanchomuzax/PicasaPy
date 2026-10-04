@@ -108,7 +108,7 @@ Item {
     Text {
         objectName: "videoErrorText"
         visible: media.error !== MediaPlayer.NoError
-        anchors.centerIn: output
+        anchors.centerIn: viewport
         text: qsTr("Unable to play this video.")
         color: "#e8e8e8"
         font.pixelSize: Theme.fontSize
