@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.672] – 2026-10-04
+
 - A Közzététel panel feltöltési választója külön kezeli a feltöltés, a módosítás és az online elemek eltávolításának módját (#4126).
 
 ## [0.8.671] – 2026-10-04
