@@ -166,8 +166,9 @@ publish/label_rpoptionbox2,lekutatva,biztonsagi-mentes.md,Az Opciók módosítá
 publish/label_rpoptionbox3,lekutatva,biztonsagi-mentes.md,Az Online eltávolítás gomb felirata; a mód-érték 3 (0x0067b243)
 publish/presentcd_help,lekutatva,biztonsagi-mentes.md,"Szerkezeti horgony MEGVAN (2026-09-04, biztonsagi-mentes.md 14. szakasz): respack.yt-eltolás, geometria és publish.tre szülősor. A korábbi »nincs 0x-cím vagy fájl+sor« megjegyzés ezzel tárgytalan."
 publish/replicate_button_group,lekutatva,biztonsagi-mentes.md,"Szerkezeti horgony MEGVAN (2026-09-04, biztonsagi-mentes.md 14. szakasz): respack.yt-eltolás, geometria és publish.tre szülősor. A korábbi »nincs 0x-cím vagy fájl+sor« megjegyzés ezzel tárgytalan."
-publish/rpoptionbox1,lekutatva,biztonsagi-mentes.md,Feltöltés-mód gomb: kattintásra a panel +0xd4 mezője 1 lesz (0x0067b1e9); az állapotot a FUN_00670160 frissíti (biztonsagi-mentes.md 15.)
-publish/rpoptionbox2,lekutatva,biztonsagi-mentes.md,Opciók módosítása mód: +0xd4 = 2 (0x0067b17e) — ld. biztonsagi-mentes.md 15.1
+publish/rpoptionbox1,lekutatva,biztonsagi-mentes.md,Feltöltés-mód gomb: kattintásra a CBurnPanel +0xd4 mezője 1 lesz (0x0067b1e9); PicasaPy: PublishPanel.publishUploadMode1
+publish/rpoptionbox2,lekutatva,biztonsagi-mentes.md,Opciók módosítása mód: +0xd4 = 2 (0x0067b17e); PicasaPy: PublishPanel.publishUploadMode2
+publish/rpoptionbox3,lekutatva,biztonsagi-mentes.md,Online elemek eltávolítása: +0xd4 = 3 (0x0067b243); PicasaPy: PublishPanel.publishUploadMode3; az online művelet nincs bekötve
 publish/webpublish_cancel,lekutatva,biztonsagi-mentes.md,"Szerkezeti horgony MEGVAN (2026-09-04, biztonsagi-mentes.md 14. szakasz): respack.yt-eltolás, geometria és publish.tre szülősor. A korábbi »nincs 0x-cím vagy fájl+sor« megjegyzés ezzel tárgytalan."
 searchcontainer/timecontainer_label,megvan,PicasaPy/MainToolbar.qml:402,A `dateRangeHover` a `Filter by date range` súgót a `toolbarFiltersLabel` feliratban mutatja; a magyar fordítás hivatalos
 searchoptions/label_searchresult,megvan,Main.qml:2535,"A `filterStatusText` a találati sáv eredményfelirata; az eredeti külön `label_searchresult` eleme m_hidden, így nem igényel külön statikus szöveget"
