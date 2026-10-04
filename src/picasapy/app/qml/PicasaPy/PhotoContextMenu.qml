@@ -247,10 +247,16 @@ PicasaMenu {
     // bekötése nem UI-, hanem adatmodell-kérdés (#26).
     PicasaMenuItem {
         objectName: "contextMenuSetAsPeopleAlbumThumbnail"
+        hoverEnabled: true
         text: qsTr("Set as People Album Thumbnail")
         visible: menu.personName !== ""
         height: visible ? implicitHeight : 0
         placeholder: true
+        //: A névvel ellátott Emberek-album menüjének hivatalos súgója.
+        ToolTip.text: qsTranslate(
+            "faceheaderpaneltext", "Set as People Album Thumbnail")
+        ToolTip.visible: hovered
+        ToolTip.delay: Theme.tooltipDelay
     }
     MenuSeparator {}
 

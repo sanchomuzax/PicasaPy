@@ -10687,4 +10687,22 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Képek</translation>
     </message>
 </context>
+<context>
+    <name>faceheaderpaneltext</name>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Play Fullscreen Slideshow</source>
+        <translation>Diavetítés teljes képernyőn</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml" line="0"/>
+        <source>Create Movie Presentation</source>
+        <translation>Mozgófilmes prezentáció létrehozása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="0"/>
+        <source>Set as People Album Thumbnail</source>
+        <translation>Beállítás indexképként az Emberek albumban</translation>
+    </message>
+</context>
 </TS>

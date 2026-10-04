@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Az Emberek-album fejlécének nagyítás-, diavetítés- és filmparancsai, valamint az indexkép-tétel magyar buboréksúgót kapott (#4138).
+
 ## [0.8.669] – 2026-10-04
 
 - A Glimmer keretek lekerekített sarkai és félig átlátszó szélei pontosabban követik az eredeti Picasa képpontkeverését (#4122).

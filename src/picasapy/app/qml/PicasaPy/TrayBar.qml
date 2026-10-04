@@ -2047,6 +2047,7 @@ Column {
                     TrayActionButton {
                         id: trayMovieBtn
                         objectName: "trayMovieButton"
+                        hoverEnabled: true
                         //: #885: LENYOMÁSRA sül el — a `headerpanel/create_movie`
                         //: mért `Property mousedown 1`-e.
                         lenyomasra: true
@@ -2059,6 +2060,13 @@ Column {
                                     && tray.appWindow.selectedIndexes.length > 0)
                                  : false
                         onClicked: tray.movieRequested()
+                        //: A névvel ellátott Emberek-fejléc filmparancsának
+                        //: hivatalos súgója.
+                        ToolTip.text: qsTranslate(
+                            "faceheaderpaneltext",
+                            "Create Movie Presentation")
+                        ToolTip.visible: trayMovieBtn.hovered
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }

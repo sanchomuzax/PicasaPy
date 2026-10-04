@@ -48,6 +48,13 @@ editpanel/droppertoggle,megvan,PicasaPy/EditorFinetunePanel.qml,"Semleges színv
 editpanel/faces_button,megvan,PicasaPy/PhotoViewer.qml,"Arcok megjelenítése/elrejtése: facesToggleButton (1490. sor), a facesVisible kapcsolóval (165–166.)"
 editpanel/filter_name,megvan,PicasaPy/EditorParamPanel.qml,Az aktív effekt neve: effectParamTitle (191. sor) a paraméter-panel fejlécében
 unknownfaceheaderpanel/ignore,megvan,PicasaPy/UnnamedFacesView.qml,"Kijelöltek mellőzése: ignoreFacesButton (117. sor), buboréksúgóval; a párja az unignoreFacesButton („Stop ignoring”, 109.)"
+faceheaderpanel/face_zoom,megvan,PicasaPy/LightboxHeader.qml,"A Megjelenítés az arcra közelítve súgó látható a valódi főablakban; ellenőrzés: tests/app/qml_functional/test_face_header_sugok_4138.py (#4138)"
+faceheaderpanel/picture_zoom,megvan,PicasaPy/LightboxHeader.qml,"A Megjelenítés a teljes képre távolítva súgó látható a valódi főablakban; ellenőrzés: tests/app/qml_functional/test_face_header_sugok_4138.py (#4138)"
+faceheaderpanel/play,megvan,PicasaPy/LightboxHeader.qml,"A Diavetítés teljes képernyőn súgó látható a valódi főablakban; ellenőrzés: tests/app/qml_functional/test_face_header_sugok_4138.py (#4138)"
+faceheaderpanel/create_movie,megvan,PicasaPy/TrayBar.qml,"A képtálca mozgófilm-gombján a Mozgófilmes prezentáció létrehozása súgó látható; ellenőrzés: tests/app/qml_functional/test_face_header_sugok_4138.py (#4138)"
+faceheaderpanel/set_thumbnail,megvan,PicasaPy/PhotoContextMenu.qml,"A meglévő helyőrző menüponton a Beállítás indexképként az Emberek albumban súgó látható; a végrehajtás adatmodell híján továbbra is helyőrző (#4138)"
+faceheaderpanel/create_face_movie,nem-cel,picasa-arcfelismeres.md; picasa-create-features.md,"Nincs arcokból mozgófilmet indító vezérlő vagy arcközpontú létrehozási folyamat; a közönséges filmparancs eltérő művelet, ezért a súgóját nem rendeljük hozzá (#4138)"
+faceheaderpanel/pwa_button,nem-cel,picasa-arcfelismeres.md; picasa-menu-parancsok-viselkedes.md,"A Picasa Webalbumok szolgáltatás megszűnt, a parancs hatókörön kívüli; nincs hozzá mai vezérlő (#4138)"
 peoplepanel/manual_add,megvan,PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml,"Személy kézi hozzáadása: addNameButton („Add a name”, 128. sor); a gesztus-utasítás a FacesOverlay.qml:283-ban van hivatkozva"
 tagpanel/add_tag_label,megvan,PicasaPy/TagsPanel.qml,"Címke-beviteli mező helyőrzővel: tagInput (87. sor), „Add a tag…” (91.)"
 tagpanel/addtag,megvan,PicasaPy/TagsPanel.qml,Címke hozzáadása gomb: tagAddButton (97. sor)
