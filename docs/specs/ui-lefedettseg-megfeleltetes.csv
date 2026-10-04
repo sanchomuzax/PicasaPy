@@ -1,13 +1,13 @@
 panel,allapot,qml_fajlok,megjegyzes
 acquirepanel,parositva,PicasaPy/PicasaImportDialog.qml;PicasaPy/ImportSourceDialog.qml;PicasaPy/ImportProgressPanel.qml;PicasaPy/ImportDropArea.qml,"Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel"
-activity,parositva,PicasaPy/ActivityBadge.qml,"Háttérművelet-jelző a főablak jobb-felső sarkában (#2966); a helye és mérete a respack.yt-ból mérve (#3112)"
+activity,parositva,PicasaPy/ActivityBadge.qml,Háttérművelet-jelző a főablak jobb-felső sarkában (#2966); a helye és mérete a respack.yt-ból mérve (#3112)
 bigslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 brushslider,parositva,PicasaPy/PicasaSlider.qml,Ecsetméret-csúszka (retusálás)
 burstslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 buttonmgr,nincs-megfeleltetes,,Gombsáv-testreszabó párbeszéd — nincs nálunk
 buzzupload,nem-cel,,"Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél"
 canoncapturemoviepanelpopup,nem-cel,,Canon SDK-s kamerafelvétel — nem cél
-capturemoviepanelpopup,nincs-megfeleltetes,,Webkamerás videofelvétel — nincs nálunk
+capturemoviepanelpopup,parositva,PicasaPy/CaptureMoviePanelPopup.qml;PicasaPy/CaptureMovieMedia.qml,Webkamerás videó- és pillanatképrögzítés; külön kamera- és hangforrás; kliplejátszás a panelen (#4137)
 choose_mail,parositva,PicasaPy/EmailChoiceDialog.qml,"A választó és a szerkesztő közös felülete (#4135); a megszűnt Gmail-belépési út látható, de letiltott"
 collab,nem-cel,,"Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél"
 collagepanel,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/CollagePanel.qml;PicasaPy/CollagePanelTabBar.qml;PicasaPy/CollagePanelTabButton.qml;PicasaPy/CollageSettingsTab.qml;PicasaPy/CollageClipsTab.qml;PicasaPy/CollageActionRow.qml;PicasaPy/CollageZOrderColumn.qml;PicasaPy/CollageSnapColumn.qml;PicasaPy/CollageRandomRow.qml;PicasaPy/CollageContextMenus.qml;PicasaPy/CollageCanvas.qml;PicasaPy/CollageFormatMenu.qml;PicasaPy/CollageThemePopup.qml;PicasaPy/CollageBorderPicker.qml;PicasaPy/CollageBackgroundBox.qml;PicasaPy/CollageNode.qml;PicasaPy/CollageGroupNode.qml;PicasaPy/CollageSheet.qml;PicasaPy/CollageRing.qml;PicasaPy/CollageProgressOverlay.qml;PicasaPy/CollageDialogs.qml;PicasaPy/CollageDraftDialog.qml;PicasaPy/CollageDoneNotice.qml,"A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte."
@@ -45,10 +45,10 @@ panelroot,parositva,Main.qml;PicasaPy/MainToolbar.qml,Legfelső panelváltó (K�
 peoplepanel,parositva,PicasaPy/PeoplePanel.qml;PicasaPy/PeoplePanelRow.qml,Emberek oldalsó panel
 pickerpanel,parositva,PicasaPy/TextColorSwatches.qml,Színválasztó paletta + legutóbbiak
 printborderslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-printoptions,parositva,PicasaPy/PrintOptionsPanel.qml;PicasaPy/PrintDialog.qml,"Nyomtatási szegély- és feliratopciók (#1780); a Beállítások „Nyomtatás” füle MÁS panel"
+printoptions,parositva,PicasaPy/PrintOptionsPanel.qml;PicasaPy/PrintDialog.qml,Nyomtatási szegély- és feliratopciók (#1780); a Beállítások „Nyomtatás” füle MÁS panel
 printpanel,parositva,PicasaPy/PrintDialog.qml,"Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782)"
 propertiespanel,parositva,PicasaPy/PropertiesPanel.qml,Tulajdonságlista a jobb oldali fiókban
-publish,parositva,PicasaPy/PublishPanel.qml;PicasaPy/GiftCdHost.qml;PicasaPy/BackupHost.qml,"A panel 21 mért vezérlője megvan (#2508). Az Ajándék-CD és a biztonsági mentés a menüből nyílik és a spec szerinti mappa/ISO-kimenetet készíti (#3503/#3504/#2074); a feltöltési módválasztó a CBurnPanel +0xd4 mezőjét 1/2/3-ra állítja (#4126). Az online művelet és a rejtett web_group hét eleme hatókörön kívül marad."
+publish,parositva,PicasaPy/PublishPanel.qml;PicasaPy/GiftCdHost.qml;PicasaPy/BackupHost.qml,A panel 21 mért vezérlője megvan (#2508). Az Ajándék-CD és a biztonsági mentés a menüből nyílik és a spec szerinti mappa/ISO-kimenetet készíti (#3503/#3504/#2074); a feltöltési módválasztó a CBurnPanel +0xd4 mezőjét 1/2/3-ra állítja (#4126). Az online művelet és a rejtett web_group hét eleme hatókörön kívül marad.
 quicktagconfig,parositva,PicasaPy/QuickTagsConfigDialog.qml,Gyorscímke-beállító
 rightdrawerpanel,parositva,PicasaPy/PropertiesPanel.qml,Jobb oldali fiók kerete
 scaleslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens

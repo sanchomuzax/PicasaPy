@@ -5154,6 +5154,139 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <source>Show duplicate files only</source>
         <translation>Csak a másodpéldányok mutatása</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Open camera capture panel</source>
+        <translation>Webkamerás felvétel megnyitása</translation>
+    </message>
+</context>
+<context>
+    <name>CaptureMoviePanelPopup</name>
+    <message>
+        <location filename="../qml/PicasaPy/CaptureMoviePanelPopup.qml" line="0"/>
+        <source>Recording</source>
+        <translation>Rögzítés</translation>
+    </message>
+    <message>
+        <source>Video</source>
+        <translation>Videoklip</translation>
+    </message>
+    <message>
+        <source>Camera</source>
+        <translation>Fényképezőgép</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Beállítások</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation>Hang</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Méret</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Kész</translation>
+    </message>
+    <message>
+        <source>Record</source>
+        <translation>Felvétel</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Leállítás</translation>
+    </message>
+    <message>
+        <source>Snapshot</source>
+        <translation>Pillanatkép</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Szünet</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Folytatás</translation>
+    </message>
+    <message>
+        <source>Play</source>
+        <translation>Lejátszás</translation>
+    </message>
+    <message>
+        <source>Connecting to camera</source>
+        <translation>Csatlakozás a kamerához</translation>
+    </message>
+    <message>
+        <source>Preview ready</source>
+        <translation>Előnézet megjelenítése</translation>
+    </message>
+    <message>
+        <source>Connection failed</source>
+        <translation>Sikertelen kapcsolódás</translation>
+    </message>
+    <message>
+        <source>Not available</source>
+        <translation>Nem érhető el</translation>
+    </message>
+    <message>
+        <source>Snapshot saved</source>
+        <translation>A pillanatkép mentése sikerült</translation>
+    </message>
+    <message>
+        <source>Capture failed</source>
+        <translation>Nem sikerült a rögzítés</translation>
+    </message>
+    <message>
+        <source>Unable to prepare the capture folder.</source>
+        <translation>Nem készíthető elő a felvétel célmappája.</translation>
+    </message>
+    <message>
+        <source>Capture live video from camera</source>
+        <translation>Élő videokép rögzítése kameráról</translation>
+    </message>
+    <message>
+        <source>Change camera settings</source>
+        <translation>Kamerabeállítások módosítása</translation>
+    </message>
+    <message>
+        <source>Start camera recording</source>
+        <translation>Kameráról való felvétel indítása</translation>
+    </message>
+    <message>
+        <source>Stop camera recording</source>
+        <translation>Kameráról való felvétel leállítása</translation>
+    </message>
+</context>
+<context>
+    <name>CaptureMovieMedia</name>
+    <message>
+        <location filename="../qml/PicasaPy/CaptureMovieMedia.qml" line="59"/>
+        <source>Preview ready</source>
+        <translation>Előnézet megjelenítése</translation>
+    </message>
+    <message>
+        <source>Connecting to camera</source>
+        <translation>Csatlakozás a kamerához</translation>
+    </message>
+    <message>
+        <source>Connection failed</source>
+        <translation>Sikertelen kapcsolódás</translation>
+    </message>
+    <message>
+        <source>Capture failed</source>
+        <translation>Nem sikerült a rögzítés</translation>
+    </message>
 </context>
 <context>
     <name>PerfMonitorPanel</name>

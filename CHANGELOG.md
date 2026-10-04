@@ -10,6 +10,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - A Glimmer-effektek páratlan szélességű képeken is az eredeti Picasa szerint keverik vissza a hatást, a paletta lépéseit pedig csonkolják (#4157).
 - Elkészült a Filmkészítő háromfüles panelje; a választott méret, átmenet és hangsáv a kész mozgófilmben is érvényesül (#4125).
 - Az E-Mail panelen kiválasztható a levelezőprogram, megírható az üzenet, és a fotók mellékletként küldhetők (#4135).
+- Elkészült a webkamerás videó- és pillanatképrögzítő panel külön kamera- és hangforrás-beállítással, valamint a klipek panelen belüli visszajátszásával (#4137).
 
 ## [0.8.672] – 2026-10-04
 
