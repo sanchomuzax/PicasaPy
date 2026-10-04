@@ -6343,7 +6343,12 @@ a teljes `QuantizePalette`-kimenet és a `Fade` összetett képpontútja
 **feltételes** (a teljes műveletet nem sikerült qemu alatt futtatni, és
 nincs négykombinációs byte-golden).*
 
-### A teljes munkavégző qemu-indítása — CRT-heap shim, kimenet továbbra is nyitott (2026-10-04, #626)
+**Későbbi állapotfrissítés:** a következő első QEMU-próba valóban félbeszakadt;
+az azt követő „A QuantizePalette képadat-leírója és a négy QEMU-pár” szakasz
+rögzíti a javított descriptorral mért kimenetet, és felülírja ezt a nyitott
+státuszt.
+
+### A teljes munkavégző első QEMU-próbája — az akkori képadat-leíró hibás volt (2026-10-04, #626)
 
 A helyi harness másolata a `.bt/harness-626q/` könyvtárban készült; a privát
 `~/picasapy-agent/eszkozok/qemu_harness/` eredeti fájljaihoz nem nyúltam. A PE
@@ -6398,6 +6403,132 @@ QEMU-ban ellenőriznie a dereferálás előtt.
 *Bizonyítottsági fok: feltételes — a CRT-hookok célcímei és a futás
 megállási címe binárisdisassemblyval és a QEMU-próbával alátámasztott;
 pixelmatematika és renderelővel való egyezés nincs mérve.*
+
+**Állapot:** ez az első, hibás bemeneti/kimeneti descriptorral futott kör
+történeti jegyzete; az alábbi, azonos dátumú folytatás felülírja az akkori
+„NINCS MEG” állapotot és a javasolt következő lépést.
+
+### ✅ A QuantizePalette képadat-leírója és a négy QEMU-pár (2026-10-04, #626)
+
+#### A valódi képadat-rekord és a `0x00bcb2f0` lokális nézete
+
+A `0x00bb5b60` belépő képadat-rekordja nem azonos a képponti munkavégzőnek
+átadott lokális descriptorral. Az elsőt a `0x00bb5f1a`–`0x00bb5f65`
+utasítások olvassák; ugyanezt az elrendezést a másik képművelet-út
+`0x009e7420` mintavételezője is használja:
+
+| rekord | mező | jelentés |
+|---|---:|---|
+| Image record (`0x00bb5b60` bemenet) | `+0x04` | sorlépés, pixelben; bájtcímhez `×4` |
+| | `+0x08` | szélesség pixelben |
+| | `+0x0c` | magasság pixelben |
+| | `+0x10` | képadat kezdőcíme |
+| | `+0x18`, `+0x1c` | x/y origó |
+| `0x00bcb2f0` bemenő view | `+0x04` | pixelbázis |
+| | `+0x08` | ebben a futásban nulla; szerepe **NINCS MEG** |
+| | `+0x0c`, `+0x10` | szélesség, magasság |
+| | `+0x14` | sorlépés, pixelben; bájtcímhez `×4` |
+| | `+0x18`, `+0x1c` | x/y origó |
+
+A hívó a valódi image record `+0x10` adatmutatóját és `+0x04`
+sorhosszát (`0x00bb5f30`–`0x00bb5f65`) a lokális view `+0x04` és
+`+0x14` mezőibe másolja. A `0x00bcb2f0` `EBX=[EBP+0x0c]` pointeréből
+veszi az input bázist (`mov edi,[ebx+4]`, `0x00bcb360`) és a stride-ot
+(`imul ..., [ebx+0x14]`, `0x00bcb368`); a kimeneti bázist a harmadik
+pointerargumentum `+0x04` mezőjéből, stride-ját annak `+0x14` mezőjéből
+veszi (`0x00bcb37a`–`0x00bcb385`).
+Így a korábbi hibás futás `EDI=0x50230000` értéke a `0x00bcb2f0`
+`[input-view+0x04]` mezőjéből jött (`0x00bcb360`–`0x00bcb371`); a valódi
+hívó e helyet a belépő image record `+0x10` adatmutatójából állítja elő.
+A régi crashnél ezt a view-t nem naplóztuk, így maga a `0x50230000`-hez
+vezető hibás rekordérték **NINCS MEG**. A javított mérésben ugyanennek a
+mezőnek az értéke a megadott bemeneti puffer `0x10070000` volt.
+
+**Csatornarend:** 4 bájt/pixel, memóriában BGRA. A `0x00bcb3a0`–
+`0x00bcb422` a `[+2]` bájtot a vörös (`+0x800` LUT), `[+1]`-et a zöld
+(`+0x400`), `[+0]`-t a kék (`+0`), `[+3]`-at az alfa (`+0xc00`) rekeszhez
+viszi; a `0x00bcb4ae`–`0x00bcb4ba` ugyanilyen bájthelyekre ír vissza.
+Az image-record pixelformátum-enum vagy az `+0x08` view-mező szemantikája
+**NINCS MEG**; a vizsgált út bájtsorrendje és 32 bites pixele viszont
+utasításszinten megvan.
+
+Az első bcb-hívás helye `0x00bb5fe9`: a 51×49-es QEMU-futásban az input
+view `+0x04=0x10070000`, a kimeneti view `+0x04=0x10107950`, méretük
+51×49, stride-juk 51 volt. A második hívás `0x00bb6110` ugyanezt a belső
+kimeneti view-t adja inputként és outputként, tehát in-place lépés.
+Mindkét eredeti hívást a futás közben naplóztam. A korábbi hibás harness a
+saját külső célpufferét olvasta, amelyet ez a belső kimeneti view nem használ;
+ezért lehetett a worker sikeres visszatérése mellett az ottani puffer nulla.
+
+#### Natív futás és byte-összevetés
+
+A QEMU-harness-másolat a `.bt/harness-626q3/` alatt futtatta az eredeti
+`0x00bb5b60` munkavégzőt, majd az eredeti `0x009dc4b0` alpha-blendert.
+A tesztkép determinisztikus, szintetikus 51×49 BGRA volt; a négy egész
+Steps/Smoothing pár a leíró szerinti elmosás után került a natív workerbe.
+A Fade=50 blend súlya `w=127`: az assembly a `trunc(α×256)` értéket
+pozitív esetben eggyel csökkenti (`0x00bd0a72`–`0x00bd0aaa`,
+`0x009dc561`); a SIMD-képletet és az odd-width scalar ágat is közvetlenül
+QEMU-ban futtattam.
+
+| `Steps` | `Smoothing` | sugár | quant pixel-eltérés (RGB) | Fade 0 RGB-bájt eltérés | Fade 50 RGB-bájt eltérés 51×49-en | max. |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 0 | 10,1 | 0/2 499 pixel | 0/7 497 | 36/7 497 | 1 |
+| 8 | 80 | 2,1 | 0/2 499 pixel | 0/7 497 | 51/7 497 | 1 |
+| 16 | 50 | 5,1 | 0/2 499 pixel | 0/7 497 | 63/7 497 | 2 |
+| 30 | 100 | 0,1 | 0/2 499 pixel | 0/7 497 | 77/7 497 | 1 |
+
+A négy natív quant-kimenet byte-ra egyezik a `kvantal()` kimenetével;
+Fade=0-nál a `BlendAlpha=1` miatt a kvantált kép változatlanul kerül ki.
+Fade=50-nél a natív blend-kimenet mind a négy beállításban byte-ra egyezik
+az utasításokból számolt eredménnyel. A PicasaPy eltérés kizárólag a páratlan
+szélesség utolsó oszlopában van. Cáfoló szélességkontroll: 50×49, 8/80;
+Fade=0 és Fade=50 esetén is 0/7 350 RGB-bájt eltérés.
+Például 16/50, `(x=50,y=22)`, vörös: eredeti `0`, kvantált `147`, natív
+Fade50 `74`, PicasaPy `72`; ez a páratlan sorvégi skalárág két szintes
+eltérését adja.
+
+#### Független utak, cáfoló kontroll és más műveletek
+
+**Két független út:** A) `0x00bb5b60` utasításai követik a forrás image
+record stride- és adatmutatómezőit a lokális view-ig; a `0x009e7420`
+független képművelet-út ugyanezeket a `+0x04/+0x08/+0x0c/+0x10` mezőket
+olvassa. B) az eredeti `0x00bb5fe9`/`0x00bb6110` hívások QEMU-mezőnaplója
+ugyanezt a layoutot mutatja, a kimeneti pointerről kiolvasott pixelek nem
+nullák. A mezőszerepek egyeznek. A pixelmatematikánál az eredeti
+`0x009dc4b0` QEMU-outputja mind a négy Steps/Smoothing esetben egyezik a
+disassembly-képlettel.
+
+**Cáfoló kísérlet:** az a hipotézis, hogy a külső harness-célpuffer `+0x04`
+mezője a bcb végső kimenete, hamisnak bizonyult: a QEMU-hívásnál a valódi
+output view `+0x04=0x10107950`, és annak pufferében nem nulla pixel van.
+Az odd-width magyarázatot a páros 50×49 kontroll cáfolhatta volna; azon nem
+volt eltérés, míg a páratlan 51×49 futásokban az eltérések mind a sorvégi
+scalar ágra estek.
+
+A ColorMatrix közvetlen QEMU-kontrollja a `0x008f2640` pixelkernelt
+kézi BGRA pixel-dwordokkal futtatja; az nem a teljes `0x00bb5b60`
+image record vizsgálata. A Border-próba (`0x00bbe570` → `0x00aa13b0`)
+saját, kézzel összeállított 9×9 ARGB bitmapet használ, de annak record-offsetjei
+nincsenek a jelenlegi mérésekben. Ezért a ColorMatrix kernel inputja nem
+bizonyság az image-record azonosságára, a Border-descriptor byte-offsetű
+egyezése pedig **NINCS MEG**.
+
+#### Eltérés a jelenlegi rendererben
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x00bb5b60` quant-kimenete mind a négy egész Steps/Smoothing párnál | `glimmer_tone.apply_quantizepalette()` / `quantize_palette.kvantal()` | A mért paraméterpárokra nincs eltérés; nem igényel fejlesztést. |
+| `0x009dc4b0`: 8 bájtos MMX-párok képlete `(B·(255−w)+T·w)>>8`; páratlan pixelszélesség maradék pixelje: `T+((B−T)·w>>8)` (`0x009dc646`–`0x009dc6fb`) | `glimmer_ops.py:151–170` a páros pixelképletet minden pixelre használja | Odd width esetén a sor utolsó pixelét a skalárképlettel keverje; őrizze meg az egész bájtos, előjeles `>>8` sorrendet. A 51×49 négy mért pár a golden; az 50×49 kontrollnak változatlanul kell maradnia. |
+
+**Bizonyítottsági fok:** `megerősített` a fenti record-mezőkre, byte-sorrendre,
+négy kvantálóbeállításra és Fade=50 algoritmusra: az utasításszintű olvasat
+és az eredeti QEMU-futtatás egyezik. **Nyitott:** a top-level `+0x14` és a
+view `+0x08` szemantikája, formátum-enum értéke, valamint a Border harness
+recordjának azonossága. Ez a szintetikus QEMU-worker-mérés nem oldja meg a
+korábbi 4. szakasz kérdését, hogy a valódi Picasa-export miért nem az
+oktree-út eredményét mutatja; a teljes `QuantizePalette` effekt összesített
+bizonyítottsági foka ezért továbbra is **feltételes**.
 
 ## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
 
