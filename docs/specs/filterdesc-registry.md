@@ -1796,7 +1796,7 @@ mutatja, hányszor fordul elő; az attribútumok a fájlból kigyűjtve.
 | `LocalContrastImageOperation` | 2 | `Radius Strength BlendAlpha` |
 | `MultiplyColorMatrixImageOperation` | 2 | `Multiplier` |
 | `RadialBlurImageOperation` | 1 | `amount x y Mask ignoreObjects` |
-| `HSVGradientMapImageOperation` | 1 | `gradientObjectArray hueOffset` |
+| `HSVGradientMapImageOperation` | 1 | `gradientObjectArray` (`color.h/s/v`; `position`: float32 LUT-koordináta 0…255, tört érték megengedett) · `hueOffset` |
 | `IRImageOperation` | 1 | `greenglow greenglowalpha redweight BlendAlpha` |
 | `EdgeDetectionBImageOperation` | 1 | `detail` |
 | `GradientMapImageOperation` | 1 | `gradientArray` |
@@ -4085,7 +4085,7 @@ levélválasztó szabály és a maszkok viselkedése **nincs mérve**.*
 
 ---
 
-## `HSVGradientMapImageOperation` — a megállók HSV-ben vannak (2026-09-04, #2211)
+## `HSVGradientMapImageOperation` — HSV-stopok és LUT pixelmatematikája (2026-09-04, #2211; bővítve 2026-10-04, #626)
 
 A `red.cfg` két attribútumot mutat (`gradientObjectArray`, `hueOffset`). A
 munkavégző (`0x00bbc260`, 1448 b) megmutatja, **mi van a tömbben**: minden
@@ -4173,12 +4173,36 @@ Fejlesztés: #3814.
 A megálló-keresést és a keverést a `0x00bbbcf0` (302 b) és a `0x00bbbbf0`
 (254 b) végzi.
 
-**a) A megálló-keresés.** A `0x00bbbcf0` végigmegy a pozíció-tömbön, és
-megkeresi az utolsó `position ≤ x` (alsó) és az első `position ≥ x` (felső)
-megállót. Ha a kettő egybeesik — vagy a keresett érték bitmintája 8-nál
-közelebb van valamelyik megállóéhoz —, a megálló három mezőjét
-(`h`, `s`, `v`) **változtatás nélkül** másolja ki. A megállók a tömbben
-**hármasával** állnak (`lea ecx, [ecx + ecx*2]`, majd `*4` — három float).
+**a) A megálló-keresés és a `position` koordinátája.** A worker a
+`position` szövegét a `0x008f1460` konverzióval float32-be olvassa, és ezt a
+pozíciótömbbe fűzi (`0x00bbc405`–`0x00bbc439`). A `0x00bbc510`–`0x00bbc568`
+ciklus `x = 0, 1, …, 255` indexeken építi a LUT-ot; ezt az egész indexet a
+`0x00bbbcf0` float32-be alakítja (`0x00bbbd0f`–`0x00bbbd1b`), majd közvetlenül
+a stopok float32 `position` értékeivel hasonlítja össze. Ezért a `position`
+az **0…255 LUT-index tengelyén** van: tört float32 pozíció is érvényes, a
+mezőt a worker nem vágja 0…1-re, 0…255-re vagy fokokra. A tartományon kívüli
+stopot maga a megálló-keresés végpontként kezeli.
+
+Az eredeti worker QEMU-i386 futtatásánál a `[0.5,0°,100,100]` és
+`[1.5,120°,100,100]` stoplista 0, 1, 2 indexeken `0000ffff`, `00ffffff`,
+`00ff00ff` BGRA bájtokat adott: az `1` index a két tört pozíció között
+interpolál. A `[300,0°,100,100]`, `[400,120°,100,100]` stoplista mind a
+256 LUT-bejegyzésre az első stop színét adta. Ezeket az értékeket a QEMU-
+próba kézzel épített stopobjektumai float32-ként adták át az eredeti
+munkavégzőnek; a stopkereső és a LUT-építés natív gépi kód volt.
+
+Független leíróbeli kontroll: a szállított `filterdesc.xml` HeatMap-effektje
+(952. sor) a `position` értékekre `0`, `31.875`, `127.5`, `223.125`, `255`
+értékeket ad meg. A recept tehát kifejezetten tört pozíciókat használ a
+0…255 LUT-tengelyen; ez nem azt jelenti, hogy a bináris a mező minden
+lehetséges értékét ezen a tartományon kívül is elfogadja.
+
+A `0x00bbbcf0` megkeresi az utolsó `position ≤ x` (alsó) és az első
+`position ≥ x` (felső) megállót. Ha a kettő egybeesik — vagy a keresett
+érték bitmintája 8-nál közelebb van valamelyik megállóéhoz —, a megálló három
+mezőjét (`h`, `s`, `v`) **változtatás nélkül** másolja ki. A megállók a
+tömbben **hármasával** állnak (`lea ecx, [ecx + ecx*2]`, majd `*4` — három
+float).
 
 **b) A súly.** `0x00bbbdc0`–`0x00bbbdd7`:
 
@@ -4187,29 +4211,80 @@ t = (position[felső] − x) / (position[felső] − position[alsó])
 ```
 
 ⇒ `t` az **alsó** megálló súlya (1, ha `x` az alsón áll; 0, ha a felsőn).
+Az osztás eredményét a stopkereső float32 dwordként tárolja
+(`0x00bbbddc`–`0x00bbbde4`).
 
 **c) A keverés.** A `0x00bbbbf0`-ben az `s` és a `v` **sima lineáris**
-interpoláció (`a + t · (b − a)`, `0x00bbbc00`–`0x00bbbc22`).
+interpoláció:
+
+```
+S(x) = S_felső + t · (S_alsó − S_felső)
+V(x) = V_felső + t · (V_alsó − V_felső)
+```
+
+Ez a `0x00bbbbf3`–`0x00bbbc22` x87 műveleti sorrendjének végpontokkal
+feloldott alakja: az x87 köztes műveletek után az eredmény float32-be kerül.
+A `hueOffset` hozzáadása külön float32-értékeken történik, a worker újra
+float32-be tárolja az összeget (`0x00bbc52b`–`0x00bbc539`).
 
 ⭐ **A színezet NEM az:**
 
 ```
-0x00bbbc36  fsubp             ; Δ = h_alsó − h_felső
-0x00bbbc47  call 0x0049f5c0   ; fabs
-0x00bbbc4c  fcomp dword ptr [0x00cf409c]   ; 180,0
-0x00bbbc5a  jp   <|Δ| ≤ 180: sima lineáris>
-0x00bbbc81  fld  qword ptr [0x00cf3d50]    ; 360,0 — a KISEBBIK végpontot eltolja
+Δ = h_alsó − h_felső
+ha |Δ| ≤ 180°: h_alsó* = h_alsó; h_felső* = h_felső
+ha |Δ| > 180° és h_alsó < h_felső: h_alsó* = h_alsó + 360°
+ha |Δ| > 180° és h_felső < h_alsó: h_felső* = h_felső + 360°
+H(x) = h_felső* + t · (h_alsó* − h_felső*)
 ```
 
-⇒ **Ha a két színezet távolsága nagyobb 180 foknál, a motor az egyiket
-±360-nal eltolja, és a RÖVIDEBB ÍVEN interpolál** — a színkörön a közelebbi
-irányba megy körbe. (A `0x0049f5c0` bizonyítottan `fabs`: 26 bájt, egyetlen
-`fabs` utasítással.)
+Az `|Δ|`-próba és a 180° konstans a `0x00bbbc36`–`0x00bbbc5a` úton van;
+a rövidebb ívhez a kisebbik végpont `+360°` eltolását a
+`0x00bbbc6e`–`0x00bbbca0` végzi. Pontosan 180° eltérésnél nem lép be az
+eltolásos ágba. A végső HSV→RGB konverter (`0x00bbbe20`) `h`-t `[0,360)`-ra
+forgatja. (A `0x0049f5c0` bizonyítottan `fabs`: 26 bájt, egyetlen `fabs`
+utasítással.)
 
-**Ami NINCS mérve:** a `position` tartománya. A keresett érték egészként
-érkezik, és előjel nélküli javítással (`+ 2³²`) válik lebegőpontossá
-(`0x00bbbd0f`–`0x00bbbd1b`) — a pozíciók tehát egész indexhez hasonlítódnak,
-de a felső határt nem olvastam ki.
+**d) LUT és indexcsatorna.** A közös motor először a `0x00bcb270`-nel 4096
+bájton lenullázza a teljes négytáblás LUT-ot, majd komponensenként identitás-
+táblákat állít elő: `+0x000` B, `+0x400` G, `+0x800` R, `+0xc00` A
+rekeszben (`0x00bcb270`–`0x00bcb2e8`). A `0x00bbc260` ezután minden `x`-hez
+a konvertált BGRA dwordöt a `LUT + 0x800 + 4*x` címre írja; a `+0x000` és
+`+0x400` rekesz 1024-1024 bájtját lenullázza (`0x00bbc561`–`0x00bbc588`), a
+`+0xc00` alfa-identitást meghagyja. A közös skalár pixelmotor a BGRA forrás
+`src[2]` bájtját indexeli a `+0x800` rekeszben (`0x00bcb3a0`–`0x00bcb3a4`),
+vagyis a **piros csatornából** választ stopot; a négy táblázat eredményeit
+csatornánként összeadja és 255-re telíti (`0x00bcb3a0`–`0x00bcb4ba`).
+
+Ezt az eredeti initializer → worker → pixelmotor QEMU-s próbája is
+ellenőrizte. A BGRA `[255,64,127,1]` forrásból az eredmény `0000ffff`, ami
+LUT[127]=`0000ffff`-tel egyezik, nem LUT[64]=`1500ffff`-tel vagy
+LUT[255]=`002affff`-tel. A HSV-LUT alpha bájtja 255; a meghagyott alfa-
+identitással összeadva is 255-re telítődik.
+
+**Bizonyítottsági fok: megerősített** a `position` float32 LUT-tengelyére,
+a komponensenkénti interpolációra, a hue rövidebb ívére, a `+0x800` LUT
+felépítésére és a piros indexcsatornára: A út — célzott utasításszintű
+követés a fenti címeken; B út — az eredeti munkavégző és a közös pixelmotor
+QEMU-i386 futtatása kézi stoplistákkal, bájtra rögzített kimenettel. A
+PicasaPy saját kimenetével végzett összevetés nem Picasa-export golden.
+
+**Cáfoló próba:** megpróbáltam a `position` 0…1 normalizált skáláját és a
+hue nyers lineáris keverését alátámasztó ellenpéldát találni. A `[0.5,1.5]`
+pozíciójú próba az 1-es indexen a két stop köztes színét adta, ami cáfolja a
+0…1-normalizálást; a 350°→10° QEMU-próba rövid úton a 0° környékén haladt,
+nem a 180° környéki nyers interpoláció szerint. A valódi export-stoplista /
+pixel-golden továbbra sincs mérve.
+
+**PicasaPy-eltérés (#3814):** a `glimmer_ops.hsv_gradient_map` a `np.interp`
+segítségével közvetlenül, nyers számtani hue-értékekkel kever; a fenti
+350°→10° kézi stoplistán a 256 LUT-bejegyzésből **254 eltér** az eredeti
+QEMU-LUT-tól (a végpontok egyeznek). A piros indexcsatorna viszont egyezik.
+Fejlesztői teendő: az HSV hue LUT interpolációját a natív rövidebb
+körívű algoritmus szerint számolja, a float32 végpont- és köztes kerekítési
+sorrend megtartásával; az s/v maradjon lineáris. Bájtra ellenőrizhető próba:
+stopok `[0,350,100,100]`, `[255,10,100,100]`; RGB LUT[0]=`ff002a`,
+LUT[127]=`ff0000`, LUT[128]=`ff0000`, LUT[255]=`ff2a00` (natív BGRA:
+`2a00ffff`, `0000ffff`, `0000ffff`, `002affff`).
 
 
 ---
