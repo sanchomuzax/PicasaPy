@@ -19,8 +19,8 @@ rétegfejléceiből valók, a **1024 × 212**-es vászonhoz.
 
 A LÁTVÁNYT (színek, keretstílus) és a MŰKÖDÉST. Az Ajándék-CD üzemmód
 működő vezérlőit (#3503) a `test_ajandek_cd_panel_3503.py`, a bekötését a
-`test_ajandek_cd_bekotes_3503.py` méri; a mentés és a feltöltés üzemmódja
-nincs bekötve.
+`test_ajandek_cd_bekotes_3503.py` méri. A mentés- és feltöltésmód-választást
+a #4126 kimeneti és kattintási próbái mérik; az online művelet hatókörön kívül marad.
 """
 
 from __future__ import annotations
