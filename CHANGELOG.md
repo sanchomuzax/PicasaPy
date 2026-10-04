@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.678] – 2026-10-04
+
+- A kontúrfelismerés jobb felső képpontja is a Picasa eredeti Sobel-képletével számol (#4185).
+- A Glimmer Resize simítás nélküli ága mostantól az eredeti Picasa képpontmintáit követi. (#4188).
+
 ## [0.8.677] – 2026-10-04
 
 - Az Emberek album fotómenüjének indexkép-beállító parancsa megkapta az eredeti súgóját (#4138).
