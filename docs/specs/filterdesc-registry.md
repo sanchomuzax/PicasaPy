@@ -2699,6 +2699,80 @@ láncbeli fogyasztójának azonosítása, és annak eldöntése, hogy false/true
 módosítja-e a ColorMatrix alfa-oszlopát, alfa-sorát vagy a mag előtti/utáni
 alfa-kezelést [blokkoló]`.
 
+#### #626 — `SimpleColorMatrix`: natív bájtszintű kontroll (2026-10-05)
+
+Ez a mérés az előző, 4.9-es szakaszban rögzített mátrixépítőket és Q11-es
+alkalmazót közvetlenül hasonlítja össze a `simple_color_matrix()` kimenetével.
+Az értékforrás a Picasa 3.7 `runtime/filterdesc.xml`; mind a nyolc használatot
+lefedi. A változó csúszkáknál a deklarált alapértéket és mindkét szélső pontot
+is tartalmazó pontos rácsot használtuk.
+
+| `filterdesc.xml`-használat | deklarált paraméterek és tartományok | natív próba |
+|---|---|---|
+| Boost (`:715`) | `Impact` 0…100, alap 50; `B=Impact×(−20/50)`, `S=Impact×(20/50)`, `C=Impact×(40/50)` | Impact = 0, 50, 100 |
+| Cinemascope (`:760`) | `S=−25` | `S=−25`, `C=B=0` |
+| CrossProcess (`:835`) | `C=10`, `B=10` | `C=B=10`, `S=0` |
+| HeatMap (`:955`) | `S=0` | `S=C=B=0` |
+| Holga (`:978`) | `C=25` | `C=25`, `S=B=0` |
+| Lomo (`:1050`) | `S=20`, `C=35`, `B=5` | `S=20`, `C=35`, `B=5` |
+| NightVision (`:1129–1138`) | `B,C` külön-külön −50…50, alap 0 | `B,C ∈ {−50, 0, 50}` teljes 3×3 rácsa |
+| TwoTone (`:1372–1377`) | `ContrastAndBrightnessLinked=true`, `S=0`; `B` −95…95, alap 0; `C` 0…100, alap 20 | linked; `B ∈ {−95, 0, 95}` és `C ∈ {0, 20, 100}` teljes 3×3 rácsa |
+
+A hiányzó, XML-ben nem deklarált paramétert a közvetlen builder-próbában a
+semleges `0` értékkel adtuk meg. Ez nem az XML parser vagy a művelet
+példányosításának mérése; a parser alapérték-beállítását a próba nem hívta.
+
+**A út — utasításszintű levezetés.** A `0x00bb6400` a telítettség, kontraszt,
+fényerő, hue és linked mezőket olvassa; a `0x008f1d00` a telítettséget építi,
+a linked ág `0x008f2040`-et, a különálló ág `0x008f1bd0` kontrasztot, majd
+`0x008f1af0` fényerőt épít, végül `0x008f1e70` a hue-t. A kész mátrix
+Q11-konverziója `0x008f21a0`, a képpont-alkalmazó `0x008f2640`; a részletes
+együttható- és kerekítési képletet a fenti 4.9 tartalmazza. A nyolc XML-helyet
+és a csúszkák deklarációit a fenti sorszámok azonosítják.
+
+**B út — az eredeti x86 kód QEMU-futtatása.** A CRT-shimmel futó harness az
+eredeti mátrixépítőket, a `0x008f21a0` konverziót, a `0x008f25f0` vektoros
+beállítást és a `0x008f2640`-et hívta; a mátrix kezdete 5×5 identitás volt,
+a hue bemenete 0. A Python-oldalon a `simple_color_matrix()` szolgáltatta az
+összevetést. A leíró parser és a `0x00bb6400` magasabb szintű műveleti útja
+nem futott.
+Forrás- és célképleíró külön rekordban volt, mindkettőben `+0x04` stride
+pixelben, `+0x08` szélesség, `+0x0c` magasság, `+0x10` BGRA-adatmutató;
+forrás-stride = `width+2`, cél-stride = `width+3`. A magasság 52, a szélesség
+8 (páros) és 9 (páratlan). A bemeneti RGB minden pixelre
+`R=(13x+17y)&255`, `G=(11x+5y)&255`, `B=(7x+3y)&255`; az alfa
+`A=(x+y×width)&255`. A forrás- és célterület külön memóriában volt.
+
+26 paraméterkészlet × 2 szélesség futott skalár és SSE2 módban. A 68 952 aktív
+RGB-kimeneti bájt mindegyike egyezett a PicasaPy-kimenettel (eltérés 0, maximum
+eltérés 0); a skalár és SSE2 teljes natív kimeneti puffere is bájtra egyezett.
+22 984 natív alfa-bájt változatlan maradt, a 32 448 célkitöltő bájt pedig
+érintetlen maradt. Az alfa-adat natív passthrough-ellenőrzés: a PicasaPy
+`simple_color_matrix()` RGB `uint8` képet fogad (`curves.py:17–23`,
+`glimmer_ops.py:656–675`), ezért nincs vele közvetlen RGBA-függvény-összevetés.
+
+**Cáfoló kísérlet.** A natív eredménnyel szemben ellenőriztük az alternatív,
+egyetlen lebegőpontos mátrixszorzás + egyszeri kerekítés modelljét. Az 52
+beállítás/szélesség-párban 6 080 RGB-bájt tért el, legfeljebb 1 szinttel; az
+első eltérés a Cinemascope, 8 széles esetben 313 bájt volt. Ez az alternatíva
+nem magyarázza a natív kimenetet; a PicasaPy fixpontos útja egyezik vele. A
+független statikus út is kizárja az egykörös modellt: `0x008f21a0` Q11-re
+konvertál, a `0x008f2640` pedig tagonként `>>9`, majd `>>2` műveletet végez.
+
+#### Eredeti / nálunk / teendő
+
+| | Eredeti natív kód | PicasaPy | Teendő |
+|---|---|---|---|
+| `SimpleColorMatrix` RGB-kimenet | a 4.9-es mátrixépítők + `0x008f21a0` + `0x008f2640`; a fenti rácson natív QEMU-kimenet | `src/picasapy/render/glimmer_ops.py::simple_color_matrix` → `_szinmatrix_osszefuzve` → `_fixpontos_szinmatrix` | A mért beállításokon bájtra egyezik; nincs igazolt RGB-javítási teendő. |
+| Alfa | vizsgált `SimpleColorMatrix` mátrixoknál az eredeti kernel átengedi az alfa-bájtot | az RGB API alfa-csatornát nem fogad | Natív passthrough igazolva; a PicasaPy-függvény alfa-viselkedése nem része ennek az összevetésnek. |
+
+**Bizonyítottsági fok:** **megerősített** a statikusan levezetett mátrix- és
+pixelút, valamint a fenti pontos paraméterpontok RGB-pixelmatematikája — A)
+utasításszintű olvasat; B) független natív QEMU-kimenet és PicasaPy-bájtsor
+összehasonlítása, egyező eredménnyel. A csúszkák köztes értékeit, az XML
+betöltő/példányosító útját és a hiányzó attribútumok objektum-alapértékeit ez a
+mérés nem vizsgálta.
+
 
 ### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
 
