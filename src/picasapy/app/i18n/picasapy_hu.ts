@@ -5675,6 +5675,11 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Felirat megjelenítése/elrejtése</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
+        <source>Show/Hide Edit Controls</source>
+        <translation>Szerkesztési vezérlők megjelenítése/elrejtése</translation>
+    </message>
+    <message>
         <source>Delete this caption</source>
         <translation>Felirat törlése</translation>
     </message>
@@ -9319,6 +9324,16 @@ A Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan ki
         <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
         <source>Text</source>
         <translation>Szöveg</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Show Text</source>
+        <translation>Szöveg megjelenítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Toggle to show or hide text on a photo</source>
+        <translation>Fotón lévő szöveg megjelenítése vagy elrejtése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
