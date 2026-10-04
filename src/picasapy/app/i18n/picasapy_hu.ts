@@ -5493,6 +5493,12 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Set as People Album Thumbnail</source>
+        <comment>faceheaderpanel/set_thumbnail tooltip</comment>
+        <translation>Beállítás indexképként az Emberek albumban</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
         <source>Add to People Album</source>
         <translation>Hozzáadás az Emberek albumhoz</translation>
     </message>
