@@ -3012,8 +3012,9 @@ de bitre eltér: a `−2`-es összeg `floor`-ral 127, kerekítve 128 lenne. Őr:
 #### QEMU-pixelkontroll a Sobel gyermekműveleten (2026-10-04, #626)
 
 *Bizonyítottsági fok: a belső Sobel-kernel képlete a belső képpontokra
-**megerősített** (utasításszintű olvasat + közvetlen natív futtatás egyezik);
-a sarokkezelés és a teljes `EdgeDetectionB`-csővezeték **nyitott**.*
+**megerősített** (utasításszintű olvasat + közvetlen natív futtatás egyezik).
+Az alábbi folytatás a peremszabályt is **megerősíti**; a teljes
+`EdgeDetectionB`-csővezeték és a Fade-pár **nyitott**.*
 
 A harness az eredeti i386 `0x00bb6620` Sobel-alkalmazót futtatta QEMU alatt,
 kézzel épített művelet-objektummal és a leírt képleíróval: `+0x04` stride
@@ -3038,9 +3039,9 @@ Mind a négy futásban az összes eltérés kizárólag a felső sor jobb széls
 képpontjának B/G/R csatornája; minden más képpont és minden alfa-bájt egyezik.
 Az utasításszintű olvasat szerint a `0x00bb68d0` és `0x00bb6ce0` útvonalak
 külön peremeltolás-táblákat építenek, majd a `0x00bb7140` skalár alkalmazó
-csatornánként összegez, `idiv`-vel oszt, és 0…255 közé vág. A közvetlen
-futtatás és a gépikódolvasat tehát a belső számításban egyezik; a peremre
-alkalmazott konkrét mintatérkép nincs levezetve.
+csatornánként összegez, `idiv`-vel oszt, és 0…255 közé vág. Ez az első kör
+a belső számítást megerősítette, de nem naplózta a teljes perem-eltolástáblát;
+az akkori nyitott állapotot a következő, 2. körös alfejezet zárja le.
 
 **Cáfoló kontroll:** jobb felső sarok körüli, 32 és 64 értékű kék egyképpontos
 impulzusokkal ismételve a különbség továbbra is csak a jobb felső kimeneti
@@ -3069,16 +3070,111 @@ alfáját. A Fade 0 (`BlendAlpha=1`) teljes QEMU-futtatása nem történt meg; a
 `0x00bd079a`–`0x00bd07b2` utasítások a BlendAlpha=1 közeli esetben a
 `0x009dc4b0` meghívása előtt korai visszatérést eredményeznek.
 
-**Fejlesztői következmény:** a mostani `_sobel_direction()` `np.pad(...,
-mode="edge")` peremmodellje a natív Sobel-gyermekművelettel a felső jobb
-sarokban bájtra eltér. Ennek a saroknak a mért lokális együtthatói a fenti
-táblában vannak; a másik három sarok és a négy él általános korrekciója
-**NINCS MEG**. A `0x00bb68d0`/`0x00bb6ce0` peremépítő ág és a `0x00bb7140`
-eltolásainak teljes képponttérképe, majd annak bájt-goldenje szükséges. A teljes Blur →
-SimpleColorMatrix → két Sobel/AdjustCurves → Multiply → Fade út natív QEMU-
-összevetése szintén **NINCS MEG**; így a négy valódi, leíróból vett
-paraméterezés és a Fade 0/50 páros-páratlan szélességű elfogadási pont még
-nincs teljesítve. A futtatásminták nem a termékkód vagy tesztfájlok.
+**Fejlesztői következmény (az alábbi peremtérképpel pontosítva):** a mostani
+`_sobel_direction()` `np.pad(..., mode="edge")` modellje a natív Sobel-
+gyermekművelettől csak a jobb felső sarokban tér el; a teljes peremtérkép és
+annak impulzus-kontrollja lent megvan. A teljes Blur → SimpleColorMatrix → két
+Sobel/AdjustCurves → Multiply → Fade út natív QEMU-összevetése továbbra is
+**NINCS MEG**; a két Fade-értékes láncmérés nem teljesült. A futtatásminták
+nem a termékkód vagy tesztfájlok.
+
+#### EdgeDetectionB — a teljes Sobel-peremtérkép (2026-10-04, #626, 2. kör)
+
+*Bizonyítottsági fok: **megerősített** a `0x00bb68d0`/`0x00bb6ce0` perem-
+eltolásaira és a Sobel-kimenetre: az utasításszintű táblaolvasat, a 88 natív
+QEMU-impulzusfutás és a kimeneti képletek külön ellenőrzése egyezik. A teljes
+EdgeDetectionB-lánc/Fade továbbra is nyitott.*
+
+A `0x00bb6840` a `0x00d695d2` jelző alapján választ: nulla esetén
+`0x00bb6ce0`, nem nulla esetén `0x00bb68d0` fut (`0x00bb688d`–`0x00bb68a5`).
+Az első ág a Sobel-alkalmazót pixelről pixelre hívja; a második a belső
+szakaszon vektorizál, a perempixeleket szintén a `0x00bb7140` dolgozza fel.
+Mindkét út 9 előjeles, képpontban mért forráseltolást ad át. A
+`0x00bb7140` az eltérést bájtra (`eltolás × 4`) váltja, csatornánként
+összegez, `idiv 4`-gyel oszt, majd 0…255 közé vág (`0x00bb7150`–
+`0x00bb7398`). Az alábbi táblában `S` a mért sorlépés képpontban; a QEMU-
+képek szorosan csomagoltak, ezért `S = W` volt.
+
+| kimeneti hely | 9 forráseltolás, sorfolytonos 3×3-as tábla |
+|---|---|
+| belső pixel | `[-S−1, −S, −S+1; −1, 0, 1; S−1, S, S+1]` |
+| felső él, sarok nélkül | `[-1, 0, 1; −1, 0, 1; S−1, S, S+1]` |
+| alsó él, sarok nélkül | `[-S−1, −S, −S+1; −1, 0, 1; −1, 0, 1]` |
+| bal él, sarok nélkül | `[-S, −S, −S+1; 0, 0, 1; S, S, S+1]` |
+| jobb él, sarok nélkül | `[-S−1, −S, −S; −1, 0, 0; S−1, S, S]` |
+| bal felső sarok | `[0, 0, 1; 0, 0, 1; S, S, S+1]` |
+| **jobb felső sarok** | **`[−1, 0, −1; 0, 0, S−1; S, S, 0]`** |
+| bal alsó sarok | `[-S, −S, −S+1; 0, 0, 1; 0, 0, 1]` |
+| jobb alsó sarok | `[-S−1, −S, −S; −1, 0, 0; −1, 0, 0]` |
+
+A jobb felső tábla a `0x00bb6ce0` ágban a `0x00bb7044` hívás paramétere;
+az értékeket a `0x00bb6d1e`–`0x00bb6f23` blokk állítja elő. A másik ág
+megfelelő peremhívása a `0x00bb6be5`; az ott felépített tábla byte-ra azonos.
+A `0x00bb7140` ugyanezeket a kilenc eltérést ugyanabban a sorrendben olvassa.
+Ez az egyetlen perem, ahol a natív tábla nem `mode="edge"` ismétlés.
+
+**Natív mérés:** a forrás- és célképleíró külön rekord volt. 64 futás
+fedte le a négy sarkot és a négy él egy-egy belső pontját, `direction=0/1`,
+8×6 és 9×7 méret, valamint a harness által külön-külön 0-ra és 1-re állított
+`0xd695d2`-ág mellett; további 24 futás a jobb felső sarok 2×2-es
+szomszédságának három külön impulzusát mérte.
+Minden bemeneti impulzus egy szürke képpont volt (B=G=R=64, A=255). A két
+`0xd695d2`-ág mind a 32 azonos beállítású párja byte-ra egyezett. Az
+`np.pad(mode="edge")` mind a 64 alapesetből 8-ban tért el: kizárólag a jobb
+felső forrássarok impulzusánál, csak a jobb felső kimeneti pixel B/G/R
+csatornáján. A natív offsettáblából levezetett képlet a 64 alapesetet és a
+24 szomszédsági kontrollt is byte-ra visszaadta. Minden kimeneti alfa 255.
+
+**Cáfoló kísérlet:** a `mode="edge"` hipotézis a jobb felső forrássarok
+impulzusánál mindkét irány kimenetére 224-et jósolt; a natív eredmény
+`direction=0`-nál 96, `direction=1`-nél 160 volt. A jobb felső forráspixel
+(az alapesetből) és a 2×2-es szomszédság további három külön impulzusa a
+natív jobb felső kimeneti pixelben az alábbi együtthatókat adta vissza
+(`128 + k·64/4`); mind egyezett a táblázat offsetjeiből levezetett
+képlettel:
+
+| forrás a jobb felső célpixelhez képest | `direction=0` natív `k` | `direction=1` natív `k` |
+|---|---:|---:|
+| `TL = (−1, 0)` | 0 | 4 |
+| `C = (0, 0)` | −2 | 2 |
+| `BL = (−1, 1)` | 4 | 0 |
+| `B = (0, 1)` | −2 | −6 |
+
+A jobb felső sarok 2×2-es szomszédságában legyen `TL = kép[0, W−2]`,
+`C = kép[0, W−1]`, `BL = kép[1, W−2]`, `B = kép[1, W−1]`. A natív súlyozott
+összeg ott:
+
+| irány | jobb felső sarok natív összege `Σ` |
+|---:|---|
+| 0, `[-2 0 2; -4 0 4; -2 0 2]` | `4·BL − 2·B − 2·C` |
+| 1, `[2 4 2; 0 0 0; −2 −4 −2]` | `4·TL + 2·C − 6·B` |
+
+A `clamp((512 + Σ) idiv 4, 0, 255)` köré épülő jelenlegi NumPy-modellben
+ehhez elég a szokásos edge-padded összeg jobb felső elemét felülírni
+(minden tömb `int32`):
+
+```python
+if kernel_is_direction_0:
+    total[0, -1] = 512 + 4 * bottom_left - 2 * bottom - 2 * corner
+else:  # direction 1
+    total[0, -1] = 512 + 4 * top_left + 2 * corner - 6 * bottom
+```
+
+ahol a négy lokális érték rendre `kép[1,−2]`, `kép[1,−1]`,
+`kép[0,−2]` és `kép[0,−1]`, képcsatornánként. Ez a felülírás a natív
+`3×3`-as vagy nagyobb képmérethez tartozik; a két natív függvény
+`szélesség < 3` vagy `magasság < 3` esetén a feldolgozás előtt visszatér
+(`0x00bb68e4`–`0x00bb6903`, `0x00bb6cf1`–`0x00bb6d06`).
+
+**A teljes EdgeDetectionB-lánc mérése nem sikerült.** A `0x00bbca60`
+XML-creator/felépítő QEMU-hívása a CRT locale-kezelő útján SIGSEGV-vel állt
+meg (`0x00bf19e6` → `0x00bf19f5` → `0x00bf0583`); a harness CRT-shimje nem
+inicializál valódi locale-állapotot. Nem született érvényes teljes
+`Blur → SimpleColorMatrix → Sobel → AdjustCurves → Multiply` kimenet, ezért
+a Fade 0/50 XML-paraméterezés bájt-összevetése **NINCS MEG**. A következő
+út az eredeti CRT locale-állapotát is létrehozó kontrollált QEMU-belépő,
+majd a teljes lánc két Fade-értéken; a korábbi önálló `BlendAlpha=0.5`
+keverőpróba ezt nem helyettesíti.
 
 #### `TintImageOperation` — FÉNYESSÉG-TARTÓ színezés (2026-08-17, #878)
 
