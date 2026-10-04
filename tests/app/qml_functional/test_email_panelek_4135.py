@@ -291,7 +291,8 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
             f"lista={lista.property('count')}"
         )
         vart_kep = str(dialog.property("attachmentPaths")[0])
-        assert QUrl(kep_elonezet.property("source")).toLocalFile() == vart_kep
+        # Windowson a toLocalFile perjeles; útvonalként hasonlítunk, nem szövegként
+        assert Path(QUrl(kep_elonezet.property("source")).toLocalFile()) == Path(vart_kep)
 
         for magassag_elteres in (-5, 0, 5):
             window.setHeight(eredeti_magassag + magassag_elteres)
