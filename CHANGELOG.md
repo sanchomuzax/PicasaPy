@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.681] – 2026-10-05
+
+- A Filmkészítőben a diahúzás sorrendje az elmentett projektben is megmarad, a csúszkabeállítás pedig újranyitáskor visszatöltődik (#4182).
+
 ## [0.8.680] – 2026-10-05
 
 - A szerkesztő bal panelje összecsukható, a fotóra írt szöveg pedig ideiglenesen elrejthető, majd visszaállítható (#4183).

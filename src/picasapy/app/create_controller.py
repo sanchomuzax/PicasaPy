@@ -516,6 +516,9 @@ class CreateMixin(BackgroundWorkerMixin):
             cropfit=bool((options or {}).get("cropfit", False)),
             remove_low_res_faces=bool((options or {}).get("removelowresfaces", False)),
             ordering=max(0, min(2, int((options or {}).get("ordering", 1)))),
+            burstmodethresh=max(
+                0, min(86400, int((options or {}).get("burstmodethresh", 0)))
+            ),
         )
 
     @staticmethod
@@ -592,6 +595,7 @@ class CreateMixin(BackgroundWorkerMixin):
             cropfit=int(settings.cropfit),
             removelowresfaces=settings.remove_low_res_faces,
             ordering=settings.ordering,
+            burstmodethresh=settings.burstmodethresh,
             defaulttrans=alap,
             atmenetek=tuple(atmenetek),
         )
@@ -656,6 +660,7 @@ class CreateMixin(BackgroundWorkerMixin):
                 if atmenet.forras.filename
             ],
             "seconds": float(projekt.defaulttrans.advanceinterval),
+            "burstmodethresh": int(projekt.burstmodethresh),
         }
 
     @Slot(list, str, int, float)
@@ -691,7 +696,16 @@ class CreateMixin(BackgroundWorkerMixin):
         """
         # #1539: a bekötés a GUI-szálon, a háttérszál indítása ELŐTT
         self._ensure_output_resync_wired()
-        sources = self._sources_for(rows)[:_MAX_ITEMS]
+        # A filmprojektum saját kliptálcát ad át `file:` URL-ekkel; ne
+        # olvassuk újra helyette a főablak kijelölését vagy képtálcáját.
+        # A régi, sorindexeket váró hívási alak változatlan marad.
+        if rows and isinstance(rows[0], str):
+            sources = tuple(
+                Path(to_local_path(str(row))) for row in rows if str(row)
+            )
+        else:
+            sources = self._sources_for(rows)
+        sources = sources[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
             self.movieFailed.emit(self.tr("No pictures are selected."))

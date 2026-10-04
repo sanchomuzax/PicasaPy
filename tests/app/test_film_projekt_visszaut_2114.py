@@ -56,8 +56,14 @@ def controller(qt_app, tmp_path):
     assert ctl.waitForBackgroundWorkers(30.0)
 
 
-def _projektet_ir(video: Path, kepek: list[Path], masodperc: float) -> Path:
+def _projektet_ir(
+    video: Path,
+    kepek: list[Path],
+    masodperc: float,
+    burstmodethresh: int = 0,
+) -> Path:
     projekt = MxfProjekt(
+        burstmodethresh=burstmodethresh,
         defaulttrans=MxfAtmenet(advanceinterval=masodperc),
         atmenetek=tuple(
             MxfAtmenet(
@@ -109,6 +115,13 @@ class TestAProjektTartalma:
         _projektet_ir(video, [tmp_path / "a.jpg"], 4.5)
 
         assert controller.movieProject(str(video))["seconds"] == pytest.approx(4.5)
+
+    def test_a_sorozatszures_kuszobe_a_projektbol_jon(self, controller, tmp_path):
+        video = tmp_path / "film.mp4"
+        video.write_bytes(b"")
+        _projektet_ir(video, [tmp_path / "a.jpg"], 4.5, burstmodethresh=21600)
+
+        assert controller.movieProject(str(video))["burstmodethresh"] == 21600
 
     def test_projektfajl_nelkul_URES_szotar(self, controller, tmp_path):
         video = tmp_path / "film.mp4"
