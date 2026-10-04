@@ -229,6 +229,16 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
         assert dialog.property("title") == "Képek küldése e-mailben"
         valaszto = _elem(dialog, "emailChoicePicker")
         assert valaszto.isVisible()
+        # A szöveg nélküli rádiógomb jelölője a stílusban középre kerülne, a
+        # leírás fölé — a jelölő jobb széle a felirat bal széle előtt álljon.
+        for gomb, felirat in (
+            ("emailChoiceDefaultButton", "emailChoiceMailClientLabel"),
+            ("emailChoiceGsender", "emailChoiceGoogleIcon"),
+        ):
+            jelolo = _elem(dialog, gomb).property("indicator")
+            jobb = jelolo.mapToScene(QPointF(jelolo.width(), 0)).x()
+            bal = _elem(dialog, felirat).mapToScene(QPointF(0, 0)).x()
+            assert jobb <= bal, f"{gomb}: a jelölő ({jobb}) belelóg a feliratba ({bal})"
         for magassag_elteres in (-5, 0, 5):
             window.setHeight(eredeti_magassag + magassag_elteres)
             qt_app.processEvents()
@@ -291,7 +301,8 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
             f"lista={lista.property('count')}"
         )
         vart_kep = str(dialog.property("attachmentPaths")[0])
-        assert QUrl(kep_elonezet.property("source")).toLocalFile() == vart_kep
+        # Windowson a toLocalFile perjeles; útvonalként hasonlítunk, nem szövegként
+        assert Path(QUrl(kep_elonezet.property("source")).toLocalFile()) == Path(vart_kep)
 
         for magassag_elteres in (-5, 0, 5):
             window.setHeight(eredeti_magassag + magassag_elteres)
