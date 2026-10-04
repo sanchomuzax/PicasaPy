@@ -276,3 +276,95 @@ class TestKisebbPanelek4127:
             if not (sorok[nev].get("bizonyitek") or "").strip()
         ]
         assert not ures, f"nincs QML-bizonyíték: {ures}"
+
+
+class TestJegy4131:
+    """A #4131 húsz, korábban `lekutatva` állapotú elemének mai párosítása."""
+
+    ELVART = {
+        "editpanel/aa_2up_toggle": ("megvan", "PicasaPy/PhotoViewer.qml:1748"),
+        "editpanel/ab_2up_toggle": ("megvan", "PicasaPy/PhotoViewer.qml:1738"),
+        "editpanel/only_1up_toggle": ("megvan", "PicasaPy/PhotoViewer.qml:1720"),
+        "editpanel/swap_2up_focus": ("megvan", "PicasaPy/PhotoViewer.qml:1761"),
+        "editpanel/swap_2up_layout": ("megvan", "PicasaPy/PhotoViewer.qml:1786"),
+        "editpanel/preview2": ("megvan", "PicasaPy/PhotoViewer.qml"),
+        "editpanel/movietab": ("megvan", "PicasaPy/PhotoViewer.qml:2892"),
+        "editpanel/movietabpanel": (
+            "megvan",
+            "PicasaPy/VideoPlayerView.qml:116;PicasaPy/PhotoViewer.qml:2892",
+        ),
+        "editpanel/modaldialogblur": (
+            "megvan",
+            "PicasaPy/PhotoViewer.qml:4390",
+        ),
+        "editpanel/picnik_fx": ("nem-cel", "ui-audit-editor.md"),
+        "editpanel/picnik_fx_label": ("nem-cel", "ui-audit-editor.md"),
+        "editpanel/picnikapply": ("nem-cel", "ui-audit-editor.md"),
+        "thumbui/hviewtoggle": (
+            "megvan",
+            "PicasaPy/MainToolbar.qml:198",
+        ),
+        "thumbui/visitweb": (
+            "nem-cel",
+            "picasa-fo-ablak-elrendezes.md",
+        ),
+        "thumbui/cdmode": (
+            "megvan",
+            "PicasaPy/PicasaMenuBar.qml:1795;PicasaPy/GiftCdHost.qml:67;"
+            "PicasaPy/PublishPanel.qml:181",
+        ),
+        "thumbui/hlistsizer": ("megvan", "Main.qml:2294"),
+        "thumbui/hlisthandle": ("megvan", "Main.qml:2325"),
+        "thumbui/acquirebutton": (
+            "megvan",
+            "PicasaPy/MainToolbar.qml:119",
+        ),
+        "thumbui/editpanel": ("megvan", "Main.qml:2294"),
+        "thumbui/listdetail": (
+            "megvan",
+            "PicasaPy/LightboxFeed.qml:13",
+        ),
+    }
+
+    def test_minden_celzott_elem_dontott_es_a_panelhez_parositott(self, elem_sorok, panel_sorok):
+        elemek = {sor["elem"]: sor for sor in elem_sorok}
+        panelek = {sor["panel"]: sor for sor in panel_sorok}
+
+        assert set(self.ELVART) <= set(elemek)
+        elteresek = {
+            nev: (elemek[nev]["allapot"], elemek[nev]["bizonyitek"])
+            for nev, vart in self.ELVART.items()
+            if (elemek[nev]["allapot"], elemek[nev]["bizonyitek"]) != vart
+        }
+        assert not elteresek, f"a #4131 párosításai még nincsenek frissítve: {elteresek}"
+
+        for nev, (allapot, bizonyitek) in self.ELVART.items():
+            if allapot == "nem-cel":
+                continue
+            panel = nev.split("/", 1)[0]
+            panel_fajlok = {
+                fajl.strip()
+                for fajl in panelek[panel]["qml_fajlok"].split(";")
+            }
+            if nev == "thumbui/cdmode":
+                # A Gift CD a Létrehozás menüből nyílik, ezért máshol van,
+                # mint az eredeti thumbui-panel.
+                assert "PicasaPy/PicasaMenuBar.qml" not in panel_fajlok
+                continue
+            for hivatkozas in bizonyitek.split(";"):
+                fajl = hivatkozas.partition(":")[0]
+                assert fajl in panel_fajlok, (
+                    f"{nev}: a bizonyíték ({fajl}) nincs a {panel} panel "
+                    "QML-megfeleltetésében"
+                )
+
+        for nev in (
+            "editpanel/picnik_fx",
+            "editpanel/picnik_fx_label",
+            "editpanel/picnikapply",
+        ):
+            megjegyzes = elemek[nev]["megjegyzes"].casefold()
+            assert "2013" in megjegyzes and "megszűnt" in megjegyzes
+
+        web_megjegyzes = elemek["thumbui/visitweb"]["megjegyzes"].casefold()
+        assert "megszűnt" in web_megjegyzes
