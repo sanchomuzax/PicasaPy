@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Glimmer-effektek páratlan szélességű képeken is az eredeti Picasa szerint keverik vissza a hatást, a paletta lépéseit pedig csonkolják (#4157).
+
 ## [0.8.672] – 2026-10-04
 
 - A Közzététel panel feltöltési választója külön kezeli a feltöltés, a módosítás és az online elemek eltávolításának módját (#4126).

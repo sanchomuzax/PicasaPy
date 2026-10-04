@@ -155,8 +155,8 @@ class TestAtlatszosagKevereseEgesz:
         )
 
     def test_ket_255_os_bemenetbol_254(self):
-        """A súlyok összege 255, az osztó 256 (spec D)."""
-        b = np.full((1, 1, 1), 255.0, dtype=np.float32)
+        """A SIMD-pár súlyainak összege 255, az osztó 256 (spec D)."""
+        b = np.full((1, 2, 1), 255.0, dtype=np.float32)
         assert g.alpha_blend(b, b, 0.5)[0, 0, 0] == 254.0
 
     def test_alfa_kozel_egy_a_felso_elem_valtozatlan(self):

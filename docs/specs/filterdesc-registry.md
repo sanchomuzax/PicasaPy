@@ -6441,12 +6441,13 @@ quantize-út ugyanezt a `0x00bc5680` diszpécsert hívja.
 
 **A mi kódunkhoz képest.** A `glimmer_tone.apply_quantizepalette` a
 `fade_alpha(fade)` értéket adja át; a segédfüggvény `1−Fade/100`-at ad, tehát
-az alfa iránya egyezik a leíróval. A közös `alpha_blend` a SIMD-képletet
-alkalmazza minden oszlopra, a natív skalár sorvégi ágat nem. A palettaépítő
-(`render/quantize_palette.py`, `kvantal`) `int(round(steps))`-et használ,
-míg a natív attribútumút csonkol: például közvetlen `Steps=8,9` hívásnál a
-natív érték 8, a mostani palettakódé 9. A leíró csúszkájának egészértékű
-lépésköze nincs igazolva, ezért a felületi hatás nyitott.
+az alfa iránya egyezik a leíróval. A közös `alpha_blend` az SIMD-képletet
+alkalmazza a többi oszlopra; páratlan szélességnél a sor utolsó pixelét a
+natív skalárképlettel keveri (#4157). A palettaépítő
+(`render/quantize_palette.py`, `kvantal`) a natív attribútumúthoz igazodva
+csonkolja a `Steps` értékét: például közvetlen `Steps=8,9` hívásnál az eredmény
+8 (#4157). A leíró csúszkájának egészértékű lépésköze nincs igazolva, ezért a
+felületi hatás nyitott.
 
 A szélességkülönbség ellenpéldája a natív képletből: `α=0,5` esetén
 `w=127`; `B=0`, `A=255` mellett a SIMD-képlet 126-ot, az utolsó oszlop
@@ -6462,12 +6463,11 @@ szegmentálási hibával végződött (az alábbi alfejezet). Egyik futás sem a
 pixel-goldent, és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
 elfogadást.
 
-**Fejlesztői eltérés:** a `Steps` törtértékének konverzióját a natív
-csonkoláshoz kell igazítani, ha a renderer float API-ja része a támogatott
-bemeneteknek. A Fade keverésénél a páratlan szélességű utolsó oszlophoz a
-`0x009dc646`–`0x009dc6fb` skalárképlet kell; ezt páros és páratlan szélességű,
-byte-exakt qemu-próbával kell lezárni. A teljes `Steps × Smoothing` pixelút
-legalább négy párral és bájt-összehasonlítással továbbra is nyitott.
+**Fejlesztői eltérés (megvalósítva #4157):** a `Steps` törtértékét a
+`kvantal()` a natív csonkolással alakítja egészre; a közös Fade-keverő pedig
+páratlan szélességnél a sor utolsó oszlopára a
+`0x009dc646`–`0x009dc6fb` skalárképletet alkalmazza. A páros/páratlan
+keverést és a `Steps=8,9 → 8` esetet bájtpontos regressziós teszt fedi.
 
 *Bizonyítottsági fok: `Steps` csonkoló segédfüggvénye és a blur-sugár
 kvantálója **megerősített** (utasításolvasás + független qemu-i386 futtatás);
@@ -6651,7 +6651,7 @@ egyezése pedig **NINCS MEG**.
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
 | `0x00bb5b60` quant-kimenete mind a négy egész Steps/Smoothing párnál | `glimmer_tone.apply_quantizepalette()` / `quantize_palette.kvantal()` | A mért paraméterpárokra nincs eltérés; nem igényel fejlesztést. |
-| `0x009dc4b0`: 8 bájtos MMX-párok képlete `(B·(255−w)+T·w)>>8`; páratlan pixelszélesség maradék pixelje: `T+((B−T)·w>>8)` (`0x009dc646`–`0x009dc6fb`) | `glimmer_ops.py:151–170` a páros pixelképletet minden pixelre használja | Odd width esetén a sor utolsó pixelét a skalárképlettel keverje; őrizze meg az egész bájtos, előjeles `>>8` sorrendet. A 51×49 négy mért pár a golden; az 50×49 kontrollnak változatlanul kell maradnia. |
+| `0x009dc4b0`: 8 bájtos MMX-párok képlete `(B·(255−w)+T·w)>>8`; páratlan pixelszélesség maradék pixelje: `T+((B−T)·w>>8)` (`0x009dc646`–`0x009dc6fb`) | `glimmer_ops.alpha_blend()` az SIMD-képletet tartja meg a többi oszlopon, az odd-width sorvégi pixelen pedig a skalárképletet (#4157) | Megvalósítva; a bájtpontos páros/páratlan regressziós teszt a 72/74-es példát is ellenőrzi. |
 
 **Bizonyítottsági fok:** `megerősített` a fenti record-mezőkre, byte-sorrendre,
 négy kvantálóbeállításra és Fade=50 algoritmusra: az utasításszintű olvasat
@@ -9496,11 +9496,12 @@ kerekítési hiba nálunk.
 
 ⚠️ **Páratlan szélességnél az utolsó oszlop MÁS képletet kap**
 (`0x009dc646`–`0x009dc6fb`): `ki = t + ((b − t) · w >> 8)`, azaz a súly
-ott az ALSÓ elemre esik. A csomagolt (`0x00FF00FF`) aritmetika átvitele
-negatív különbségnél sincs modellezve. Ez soronként egy képpontoszlopot
-érint. A TwoTone natív QEMU-kontrollja lent `Fade=50`, 9 px szélességnél
-5 pixel/10 RGB-bájt, legfeljebb 1 szint eltérést mért a jelenlegi kóddal;
-az adott konfiguráció Picasa-export goldenen még nincs ellenőrizve.
+ott az ALSÓ elemre esik. A közös keverő ezt az előjeles skalárképletet
+alkalmazza a sorvégi pixelre (#4157); a bájtpontos 51×49-es teszt a 72/74-es
+példán és a 50 széles páros kontrollon igazolja. A TwoTone natív QEMU-kontrollja
+lent (`Fade=50`, 9 px szélesség) a #4157 előtti kóddal 5 pixel/10 RGB-bájt,
+legfeljebb 1 szint eltérést mért ugyanezen a sorvégi ágon; az adott konfiguráció
+Picasa-export goldenen még nincs ellenőrizve.
 
 
 #### ⛳ A keverés tétlen műveletnél is lefut — a `Soften` 0-s erősségnél eggyel sötétít (2026-09-28, 396. kör, #3894)

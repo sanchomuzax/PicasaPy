@@ -228,7 +228,7 @@ def paletta_lut(fa: _Csomopont) -> np.ndarray:
 def kvantal(kep: np.ndarray, steps: float) -> np.ndarray:
     """A kép a saját palettájára kvantálva (RGB, uint8, új tömb)."""
     validate_image(kep)
-    lepesszam = max(2, int(round(steps)))
+    lepesszam = max(2, int(steps))
     lut = paletta_lut(oktree_epit(mintakep(kep), lepesszam))
     r = kep[..., 0].astype(np.int32)
     g = kep[..., 1].astype(np.int32)
