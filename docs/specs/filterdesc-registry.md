@@ -2439,15 +2439,91 @@ indexelődik. A `+0x000`/`+0x400` rekeszek (kék/zöld csatorna) nullák ⇒
 **nulla hozzájárulás**; a végeredmény a kimenetben **kizárólag a bemenő
 (kontraszt/fényerő-korrigált) piros csatorna értékétől függ.**
 
-⇒ **A `TwoTone` NEM lumát számol.** A `glimmer_tone.py:apply_twotone`
-Rec.601-luma útja (`luma(to_float(matrixed))`) tehát **bizonyítottan téves
-modell** — az eredeti a `SimpleColorMatrix` utáni pixel **nyers piros
-csatornáját** (a mátrix R-oszlopa szerinti kimeneti bájtot) vetíti a
-fekete→fehér gradiensbe, súlyozás nélkül. Ez pontosan magyarázza a golden-
-mérés „első RGB-csatornát követi" eredményét (MAE 6,3644 a nem-izolált 22,42
-helyett) — nem mintafüggő különlegesség, hanem az algoritmus tényleges
-viselkedése. Termékkód-javítás: külön fejlesztői jegy (lásd a #626 jegy
-kommentjét).
+⇒ **A `TwoTone` NEM lumát számol.** A munkafa jelenlegi
+`glimmer_tone.py:apply_twotone` függvénye is a `SimpleColorMatrix` utáni
+pixel nyers piros csatornáját veszi (`[..., 0:1]` RGB-ben), és a lentebbi
+QEMU-összevetésben ez a natív LUT-kimenettel bájtra egyezik. A régebbi
+Rec.601-lumára és a `MAE 6,3644`-re vonatkozó mondat elavult állapotot írt le;
+nem a jelenlegi forráskódot.
+
+#### TwoTone: paramétertől pixelmagig, natív QEMU-kontrollal (2026-10-04, #626)
+
+**Bizonyítottság: megerősített a pixelmatematikára** — az utasításszintű
+híváslánc és a natív függvények `qemu-i386`-futtatása egyezik. A valódi
+`filterdesc.xml`-parser és a teljes `0x00bb7c80`/`0x00bd0700` külső
+végrehajtó nem futott a mérőharnessben; ezeknek a teljes, parseren átmenő
+end-to-end futása külön nincs igazolva.
+
+**Paraméter- és hívásút.** A `filterdesc.xml:1365–1380` szerint a
+`TwoTone` sorrendje `Brightness`, `Contrast`, `Fade`, fekete, fehér; a
+Brightness tartománya −95…95, a Contrast 0…100, a Fade 0…100, az alapok
+pedig 0, 20 és 0. A két szín alapértéke `#004488` és `#ffff00`. A leíró a
+Fade-et `BlendAlpha = 1 − Fade/100` alakban adja át. A `0x00bc2760`
+attribútum-beolvasó a két színből gradiensobjektumot készít a művelet
+`+0x40` mezőjébe, majd a `0x00bb8710` útjára adja; a `0x00bb7c80` közös
+alkalmazó a művelet 8. slotján keresztül a `0x00bb87b0` TwoTone-LUT-építőt
+hívja, végül a `0x00bcb2f0` képponti LUT-alkalmazót. A `SimpleColorMatrix`
+gyerek linked kontraszt/fényerő-ágát a `0x00bb6400` állítja elő; a
+`0x008f21a0` alakítja fixpontos együtthatókká, a `0x008f2640` alkalmazza
+őket a pixelekre. A linked mátrix képlete és a Q11-egész kerekítési lépései
+a fenti 4.9-es szakaszban vannak rögzítve.
+
+**Pixelmag.** A `0x00bb87b0` a két megadott színből 256 elemű LUT-ot épít a
+`+0x800` rekeszbe. A `0x00bcb2f0` ennél a rekesznél a mátrixolt BGRA-pixel
+`src[2]` bájtját olvassa, vagyis a nyers piros csatornát; ezután a négy
+rekesz dword-ját bájtonként telítetten összeadja. A Fade ága a
+`0x00bd0700` végrehajtóból a `0x009dc4b0` keverőt hívja. `Fade=50` esetén
+`BlendAlpha=0,5`, belső súly `trunc(0,5·256)−1 = 127`. Páratlan sorhossznál
+`0x00c33d60` a `0x009bbde0` eredményét (`AL=1`) a `0xd695d4` jelzőbe írja;
+ez a `0x009dc646–0x009dc6fb` skalár farokágat választja. A kétutas
+csomagolt pixelképlet ezért az utolsó oszlopra nem érvényes: ott a natív
+képlet `ki = t + (((b − t) · w) >> 8)`.
+
+**QEMU-mérés és kód-összevetés.** A harness az eredeti 32 bites natív
+függvényeket futtatta `qemu-i386` alatt, 5 soros, 8 és 9 pixel széles
+szintetikus BGRA-képen. A pixelek: `R=(13x+17y)&255`,
+`G=(11x+5y)&255`, `B=(7x+3y)&255`, `A=255`. A mátrix builderét,
+konverterét, pixelmagját, a TwoTone LUT-buildert és a közös LUT-alkalmazót
+valódi gépi kód futtatta; a beolvasó gráfot kézzel épített objektumok, a
+literál-kifejezéskiértékelőt pedig egy értékmásoló helyettesítette. A Fade
+összevetés közvetlenül a natív `0x009dc4b0` függvényt hívta; az outer
+`0x00bd0700` alfa-utókezelését statikusan ellenőriztük, amely a végső alfa-
+csatornát `0xff`-re állítja.
+
+| Beállítás (`Brightness`, `Contrast`, `Fade`) | 8 px: eltérő RGB-bájt / összes | 9 px: eltérő RGB-bájt / összes |
+|---|---:|---:|
+| `(0, 20, 0)` alap | `0/120` | `0/135` |
+| `(+50, 20, 0)` | `0/120` | `0/135` |
+| `(−50, 20, 0)` | `0/120` | `0/135` |
+| `(0, 80, 0)` | `0/120` | `0/135` |
+| `(0, 20, 50)` | `0/120` | `10/135` — 5 pixel, max. 1 szint, mind az utolsó oszlopban |
+
+A mátrix és a piros LUT-skalár mind a tíz futásban bájtra egyezett; a Fade
+páros szélességnél is egyezett. Páratlan szélesség és `Fade=50` esetén
+kizárólag a sorvégi skalár ág tér el: a jelenlegi
+`glimmer_ops.alpha_blend` minden pixelre a natív kétutas egészkeverési
+képletet alkalmazza.
+Az 5 sor 5 sorvégi pixelén összesen 10 RGB-bájt tér el, legfeljebb egy
+szinttel. A natív kód útja igazolt; a teljes, parseren átmenő képkimenet
+összevetése továbbra is nyitott.
+
+#### Eredeti / nálunk / teendő — TwoTone
+
+| Lépés | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| linked Brightness/Contrast → fixpontos mátrix | `0x00bb6400` → `0x008f21a0` → `0x008f2640` | `simple_color_matrix(..., linked=True)` | A felsorolt natív esetek mind bájtra egyeznek; nincs mért eltérés. |
+| fekete→fehér gradiens | `0x00bb87b0`; a `0x00bcb2f0` a nyers piros bájttal indexel | `apply_twotone` piros csatornás interpolációja | A vizsgált LUT-pixelértékek bájtra egyeznek; a korábbi Rec.601 állítás törlendő. |
+| Fade páros szélességnél | `0x00bd0700` → `0x009dc4b0` | `glimmer_ops.alpha_blend` kétutas egészképlete | A `Fade=50` páros képeken bájtra egyezik. |
+| Fade páratlan szélesség utolsó oszlopa | `0x009dc646–0x009dc6fb`: `t + (((b−t)·w)>>8)` | `glimmer_ops.alpha_blend` ugyanazt a kétutas képletet használja minden pozíción | Fejlesztői teendő: az odd-width sorvégi pixelre külön skalár farok, natív képlettel és előjeles aritmetikai `>>8`-cal; a jelenlegi 5×9 `Fade=50` kontrollban 5 pixel/10 RGB-bájt, max. 1 szint eltérés. |
+
+**Cáfoló kontroll.** A nyers piros indexelés cáfolására a `Rec.601`-luma
+alternatívát próbáltuk. A `qemu-i386` futtatás `(x=2,y=0)` mátrixolt
+BGRA-ja `00 00 01 ff`, a natív kimenete `87 45 01 ff`, pontosan a `LUT[1]`;
+a `LUT[0]` `88 44 00 ff`. A Rec.601-alternatíva ennél a pixelnél
+`0,299/255` gradiensaránnyal és bájtra kerekítve `88 44 00` kimenetet adna.
+A megfigyelt natív bájt ezt az alternatívát cáfolja, a nyers piros csatornát
+erősíti meg; a diszasszemblálás ettől függetlenül ugyanezt mondja a
+`src[2]` → `+0x800` indexeléssel.
 
 #### Színárnyalat-forgatás (`0x008f1e70`)
 
@@ -9365,8 +9441,10 @@ kerekítési hiba nálunk.
 ⚠️ **Páratlan szélességnél az utolsó oszlop MÁS képletet kap**
 (`0x009dc646`–`0x009dc6fb`): `ki = t + ((b − t) · w >> 8)`, azaz a súly
 ott az ALSÓ elemre esik. A csomagolt (`0x00FF00FF`) aritmetika átvitele
-negatív különbségnél sincs modellezve. Ez egyetlen képpontoszlopot érint;
-utánépíteni csak akkor érdemes, ha egy golden-mérés kimutatja.
+negatív különbségnél sincs modellezve. Ez soronként egy képpontoszlopot
+érint. A TwoTone natív QEMU-kontrollja lent `Fade=50`, 9 px szélességnél
+5 pixel/10 RGB-bájt, legfeljebb 1 szint eltérést mért a jelenlegi kóddal;
+az adott konfiguráció Picasa-export goldenen még nincs ellenőrizve.
 
 
 #### ⛳ A keverés tétlen műveletnél is lefut — a `Soften` 0-s erősségnél eggyel sötétít (2026-09-28, 396. kör, #3894)
