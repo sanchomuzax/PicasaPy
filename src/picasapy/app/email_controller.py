@@ -46,6 +46,7 @@ from picasapy.mailer import (
 )
 
 from .collage_draft_guard import CollageDraftGuard
+from .formatting import to_file_url
 
 #: A `shutil.which` és a `subprocess.Popen` MODULSZINTŰ fogantyúja (#1375) —
 #: a teszt EZEKET cserélje.
@@ -80,6 +81,9 @@ _REGI_FOKOZATOK: tuple[int, ...] = (640, 800, 1024, 1600, EREDETI_MERET)
 
 _TRUE_VALUES = ("true", "1")
 
+
+#: #1375: a teszt EZT cseréli, nem a globális `tempfile.mkdtemp`-et.
+_mkdtemp = tempfile.mkdtemp
 
 def _coerce_bool(value, default: bool) -> bool:
     """A `QSettings` platformonként bool-t vagy szöveget ad vissza ugyanarra
@@ -156,6 +160,7 @@ class EmailController(QObject):
         self._settings = settings if settings is not None else QSettings()
         self._email_size = self._betolt_meretet()
         self._single_original = self._betolt_egy_kep_kapcsolot()
+        self._compose_recipient = ""
         #: #2184: friss profilon a program MEGKÉRDEZI, mivel küldjön.
         #: Az eredetiben a `DoNotPromptForEmailPref` alapértéke 0
         #: (`0x00742154`: `ebp = 0`, majd `0x00742168 je` → MUTASD a
@@ -286,6 +291,13 @@ class EmailController(QObject):
         )
         self.useDefaultClientChanged.emit()
 
+    @Slot(str)
+    def setComposeRecipient(self, recipient: str) -> None:  # noqa: N802
+        recipient = str(recipient).strip()
+        if recipient == self._compose_recipient:
+            return
+        self._compose_recipient = recipient
+
     # -- küldés-előkészítés + küldés ---------------------------------------
 
     def _resolve_records(self, rows: Sequence[int]) -> list[PhotoRecord]:
@@ -322,6 +334,11 @@ class EmailController(QObject):
                 )
             )
         return items
+
+    @Slot(str, result=QUrl)
+    def attachmentUrl(self, path: str) -> QUrl:  # noqa: N802 — QML-stílus
+        """A melléklet-előnézet képforrása; kézzel fűzött URL tilos (#1019)."""
+        return to_file_url(path)
 
     @Slot(list, bool, result=list)
     def prepareAttachments(self, rows, multi: bool) -> list[str]:
@@ -364,7 +381,7 @@ class EmailController(QObject):
             else self._email_size
         )
         max_dimension = resolve_email_max_dimension(meret)
-        target_dir = Path(tempfile.mkdtemp(prefix="picasapy-mail-"))
+        target_dir = Path(_mkdtemp(prefix="picasapy-mail-"))
         settings = ExportSettings(max_dimension=max_dimension, jpeg_quality=85)
         report = export_photos(items, target_dir, settings)
         if report.failed:
@@ -375,28 +392,24 @@ class EmailController(QObject):
 
     @Slot(list, str, str, result=bool)
     def sendRows(self, attachment_paths, subject: str, body: str) -> bool:
-        """A már előkészített (`prepareAttachments`) fájlok elküldése.
+        """A mellékletek átadása a levélszerkesztő felületnek.
 
-        #1798: ELŐBB a beállítás. Ha a felhasználó a „minden küldéskor
-        kérdezz" módot választotta, itt NEM küldünk, hanem a
-        `mailChoiceRequested` jelzéssel kérdést kérünk a felülettől — a
-        válasz a `sendWithDefaultClient()`. Enélkül a beállítás néma volt:
-        tárolódott, visszajelzett, és a küldés átlépett rajta.
+        #4135: a levél minden esetben a felületen áll össze. Ha
+        `useDefaultClient` igaz, a felület átugorja a levelezőprogram-
+        választót, de a címzettet/tárgyat/szöveget továbbra is be kell
+        kérnie; a közvetlen indítás ezeket az adatokat elveszítené.
 
-        A visszatérési `False` itt azt jelenti, hogy a küldés MÉG nem
-        történt meg — nem azt, hogy elbukott."""
-        if not self._use_default_client:
-            self.mailChoiceRequested.emit(
-                list(attachment_paths), subject, body
-            )
-            return False
-        return self._kuldes(attachment_paths, subject, body)
+        A visszatérési `False` azt jelenti, hogy a szerkesztő megnyílt, a
+        küldés még nem történt meg."""
+        paths = list(attachment_paths)
+        self.mailChoiceRequested.emit(paths, subject, body)
+        return False
 
     @Slot(list, str, str, bool, result=bool)
     def sendWithDefaultClient(
         self, attachment_paths, subject: str, body: str, remember: bool
     ) -> bool:
-        """A választó-párbeszéd válasza: küldés az alapértelmezett
+        """A levélszerkesztő „Küldés” művelete az alapértelmezett
         levelezővel.
 
         A `remember` a mért `DoNotPromptForEmailPref` megfelelője — ha be
@@ -404,16 +417,24 @@ class EmailController(QObject):
         nem kérdezünk."""
         if remember:
             self.setUseDefaultClient(True)
-        return self._kuldes(attachment_paths, subject, body)
+        recipient = self._compose_recipient
+        try:
+            return self._kuldes(attachment_paths, subject, body, recipient)
+        finally:
+            self.setComposeRecipient("")
 
-    def _kuldes(self, attachment_paths, subject: str, body: str) -> bool:
+    def _kuldes(
+        self, attachment_paths, subject: str, body: str, recipient: str = ""
+    ) -> bool:
         """A tényleges indítás: `xdg-email`, annak hiányában `mailto:`
         visszaesés — csatolmány NÉLKÜL (ld. a modul docstringje), erről az
         `emailFailed` jelez, hogy a UI figyelmeztethesse a felhasználót."""
         attachments = [Path(path) for path in attachment_paths]
         xdg_email = _which("xdg-email")
         if xdg_email is not None:
-            argv = build_xdg_email_argv(subject, body, attachments)
+            argv = build_xdg_email_argv(
+                subject, body, attachments, recipient=recipient
+            )
             try:
                 _popen(argv)  # noqa: S603 — argv-lista, nincs shell
             except OSError as error:
@@ -428,7 +449,7 @@ class EmailController(QObject):
                     "opening a blank email without the pictures attached."
                 )
             )
-        url = build_mailto_url(subject, body)
+        url = build_mailto_url(subject, body, recipient=recipient)
         opened = QDesktopServices.openUrl(QUrl(url))
         if not opened:
             self.emailFailed.emit(self.tr("No email program was found."))

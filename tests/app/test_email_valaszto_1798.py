@@ -96,8 +96,8 @@ class TestAKerdezzModNemKuldMagatol:
         assert szoveg == "Szöveg"
 
 
-class TestAzAlapertelmezettModValtozatlan:
-    def test_kuld_kerdes_nelkul(self, qt_app, tmp_path):
+class TestAzAlapertelmezettModSzerkeszt:
+    def test_a_megjegyzett_mod_is_megnyitja_a_szerkesztot(self, qt_app, tmp_path):
         vezerlo = _vezerlo(tmp_path, kerdezzen=False)
         fogo = _Jelzesfogo([])
         vezerlo.mailChoiceRequested.connect(fogo)
@@ -108,9 +108,9 @@ class TestAzAlapertelmezettModValtozatlan:
         ), patch("picasapy.app.email_controller._popen") as popen:
             eredmeny = vezerlo.sendRows(["/tmp/a.jpg"], "Tárgy", "Szöveg")
 
-        assert eredmeny is True
-        popen.assert_called_once()
-        assert fogo.hivasok == [], "fölöslegesen kérdezett"
+        assert eredmeny is False
+        popen.assert_not_called()
+        assert len(fogo.hivasok) == 1, "a levélszerkesztő nem nyílt meg"
 
 
 class TestAValasztasErvenyesitese:
