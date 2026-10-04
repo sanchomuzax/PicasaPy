@@ -7,7 +7,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-- A helyi kontraszt és a HDR szorzója a Picasa eredeti fixpontos kerekítését követi (#4172).
 
 ## [0.8.674] – 2026-10-04
 
