@@ -2042,6 +2042,62 @@ A töréspont-keresés **bináris keresés**.
 > Ez **hússzorosa** a ditherelés ±1-es tűrésének — szemmel látható.
 > A kétpontos görbéknél (Invert, Neon, PencilSketch) a kettő azonos.
 
+##### Mért LUT és pixelalkalmazás (2026-10-04, #626)
+
+*Bizonyítottsági fok: **megerősített** a lent megnevezett négy görbekonfiguráció
+LUT-jára és a Fade előtti pixelkimenetére. Az utasításszintű binárislelet és a
+natív QEMU-futtatás egyezik. Az eredeti XML-parser útja és a teljes
+effektcsővezeték bájtszintű ellenőrzése **NINCS MEG**.*
+
+**Bináris út.** A művelet négy görbeleírója a `this+0x40`, `+0x44`, `+0x48`,
+`+0x4c` helyeken van; a leírók feldolgozását a `0x00bb9d20` → `0x00bb9e00`
+lánc végzi. A természetes köbös spline LUT-építője `0x00bcd1e0`, a mester
+kiértékelője `0x00bcd360`: a mester eredménye float32-ként jut a csatornagörbékhez,
+azok eredményére `0,5` kerül, majd csonkolás és 0…255 közötti korlátozás. Az
+effekt az `0x00bb7c80` alkalmazón át jut a `0x00bcb2f0` BGRA-pixelciklushoz.
+
+**Natív futtatás.** QEMU-wrapperrel, a `filterdesc.xml` pontos pontjaiból
+közvetlenül felépített műveletekkel négy konfigurációt futtattam: CrossProcess,
+Sixties, Orton@50 és Orton@25. A tesztkép 5 sor magas volt; szélessége 8 vagy 9
+képpont, a Fade értéke 0 vagy 50. A szintetikus forrás RGB-je:
+`R=(13x+17y)&255`, `G=(11x+5y)&255`, `B=(7x+3y)&255`; az alfa 255. Így összesen
+4 × 2 × 2 = 16 futás készült.
+
+| konfiguráció | natív ↔ jelenlegi RGB-LUT eltérés | Fade előtti képkimenet | 9×5, Fade 50: eltérő RGB-bájt |
+|---|---:|---:|---:|
+| CrossProcess | 0/768 | 0 bájt | 6/135, legfeljebb 1 szint |
+| Sixties | 0/768 | 0 bájt | 4/135, legfeljebb 1 szint |
+| Orton@50 | 0/768 | 0 bájt | 15/135, legfeljebb 1 szint |
+| Orton@25 | 0/768 | 0 bájt | 1/135, legfeljebb 1 szint |
+
+A Fade 50-es, páratlan szélességű eltérések kizárólag az utolsó oszlopban,
+a sorvégi keverőágban vannak; a görbe LUT-ja és Fade előtti képe ezekben az
+esetekben is bájtra egyezik. A keverőút súlyozási lépései a `0x00bd0700` és
+`0x009dc4b0` címeken követhetők. A sorvégi különbség az ismert, #4157-ben
+javított Fade-ág tárgya, nem új `AdjustCurves`-eltérés.
+
+**Két független út:** (A) az utasításszintű híváslánc és lebegőpontos/kerekítési
+műveletek a görbetagoktól a LUT-on át a pixelalkalmazóig; (B) a natív QEMU
+LUT-építő és pixelalkalmazó, összevetve a jelenlegi kimenettel. A négy
+konfiguráció LUT- és Fade előtti képpont-eredménye egyezik.
+
+**Cáfoló próbák.** A spline-leletet lineáris interpolációval próbáltam
+cáfolni, ugyanazokon az XML-pontokon és a 256 LUT-bemeneten: CrossProcess
+424/768 (max. 18), Sixties 695/768 (max. 16), Orton@25 723/768 (max. 8)
+RGB-értékkel tért el a natív táblától. Orton@50 identitásgörbéje önmagában nem
+különbözteti meg a módszereket. A mester köztes eredményének előzetes
+kerekítése/klippelése Sixties esetén 185/768 (max. 24), Orton@25 esetén 3/768
+(max. 1) eltérést adott. Az ellenpróbák is a natív LUT-tal, azonos pontokkal
+és azonos RGB-összehasonlítással készültek.
+
+**Korlát és nyitott kérdés.** A QEMU-wrapper a művelet görbepont-struktúráit a
+XML pontos értékeiből közvetlenül építette fel; nem futtatta a `filterdesc.xml`
+parserét és a teljes effektláncot. A parser által előállított műveletet és az
+eredeti lánc teljes kimenetét azonos képen QEMU alatt összevetni **NINCS MEG**.
+Ehhez a QEMU-futtatást az eredeti parseres műveletfelépítésen és a teljes
+effektláncon kell végigvezetni. A mért görbematematikához új fejlesztői javítás
+nem indokolt; az eltérő Fade-ágat a #4157 kezeli.
+
 #### ⛔ A `SimpleColorMatrix` KÉPPONTRA ható sorrendje FORDÍTOTT: színárnyalat → fényerő → kontraszt → telítettség (2026-09-27, 374. kör, #626)
 
 *Forrás: a mag `0x00bb6400` · a szorzó `0x008f28d0` · a fényerő-építő `0x008f1af0` · a kontraszt-építő `0x008f1bd0` · az alkalmazó `0x008f2640` · golden: `684-merokeszlet`.*
