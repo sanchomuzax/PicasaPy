@@ -300,6 +300,21 @@
     <name>PrintDialog</name>
     <message>
         <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Border and Text Options</source>
+        <translation>Szegély- és szövegopciók</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Configure borders and text for Photos to be printed</source>
+        <translation>A nyomtatni kívánt fotók szegélyeinek és szövegének beállítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Help</source>
+        <translation>Súgó</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
         <source>Printer Setup</source>
         <translation>Nyomtató telepítése</translation>
     </message>
@@ -523,11 +538,13 @@
 <context>
     <name>RightDrawer</name>
     <message>
-        <source>Switch between the small and large side panel</source>
+        <location filename="../qml/PicasaPy/RightDrawer.qml"/>
+        <source>Switch between small/large side panel</source>
         <translation>Váltás a kis és a nagy oldalpanel közt</translation>
     </message>
     <message>
-        <source>Close side panel</source>
+        <location filename="../qml/PicasaPy/RightDrawer.qml"/>
+        <source>Close this side panel</source>
         <translation>Oldalpanel bezárása</translation>
     </message>
 </context>
