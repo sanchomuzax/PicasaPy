@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - Elkészült a webkamerás videó- és pillanatképrögzítő panel külön kamera- és hangforrás-beállítással, valamint a klipek panelen belüli visszajátszásával (#4137).
+- A felület-lefedettségi kimutatás helyesen párosítja a már meglévő szerkesztő- és könyvtárnézeti elemeket, a megszűnt Picnik- és webes elemeket pedig nem számolja hiányként (#4131).
+
+## [0.8.670] – 2026-10-04
+
+- A Hőtérkép színátmenete a rövidebb színárnyalat-íven halad, így a 350°-ról 10°-ra tartó átmenet a pirosnál marad (#4129).
 
 ## [0.8.669] – 2026-10-04
 
