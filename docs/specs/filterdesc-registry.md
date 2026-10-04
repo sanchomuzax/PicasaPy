@@ -3490,6 +3490,100 @@ változatlan, eltolás sehol nincs.** A `red.cfg` egyetlen attribútuma
 `0x00bb7825`/`0x00bb7829` a 6. és a 13. elembe (a `fxch st(1)` után),
 a `fld1` a 19. elembe 1,0-t, a maradék mind nulla.*
 
+#### Pixelmag, mátrixút és bájtmérés (#626, 2026-10-04)
+
+**A mátrix eredete és a közös út.** A `0x00bb77a0` műveletépítő a
+`multiplier` értékét float32-ként teszi a sorfolytonos 4×5 mátrix főátlójának
+első három helyére; a negyedik átlóelem 1, a többi elem 0. A vtable 6. rése
+`0x00bc16b0`; ez a közös alkalmazó a mátrix-építőt a vtable `+0x20` helyén
+kéri le, majd a `0x008f2500` útján adja a mátrixot a `0x008f21a0`
+Q11-konverternek és a `0x008f2640` pixelkernelnek. Nincs köztes mátrixszorzás:
+a művelet az aktuális 8 bites képre alkalmazza a saját mátrixát. A ColorMatrix
+azonos közös alkalmazót használja, de a saját builderével (`0x00bc1860`).
+
+A konverzió és az alkalmazás képlete ezért a 4.9-es ColorMatrix pixelmagjának
+szűk esete. `m32 = float32(multiplier)`, `x` pedig az adott RGB-bájt:
+
+```text
+q     = round-away(2048 * m32)                 ; 0x008f21a0, Q11 int16
+ki    = clamp((sar32(q * x, 9) + 2) >> 2, 0, 255)  ; 0x008f2640
+alfa  = x_alfa                                 ; q_alfa = 2048, eltolás = 0
+```
+
+`round-away(v) = trunc(v + (v < 0 ? -0,5 : +0,5))`; a `sar32` előjeles,
+lefelé tolás. Ennél a diagonális, eltolás nélküli mátrixnál a Q11-konverzió
+és a szorzatonkénti `sar 9`, majd a `+2` és a `sar 2` együtt alkotják a
+pixelkerekítést. Az alfa-együttható 2048, így az alfa-bájt változatlan.
+
+**Két független út.** A) Az eredeti bináris utasításainak célzott olvasása a
+`0x00bb77a0` buildertől a `0x00bc16b0` alkalmazón és a `0x008f21a0`
+konverteren át a `0x008f2640` pixelkernelig kiadja a fenti elemeket,
+sorrendet és műveleteket. B) Az eredeti builder, alkalmazó, konverter és
+pixelkernel `qemu-i386` alatt futott; az RGB bájtok kimenete egyezik a fenti
+képlet közvetlen számításával. A tesztértéket az XML dinamikus
+paraméter-kiolvasójának (`0x008ef520`) helyettesítője adta; a harness szükséges
+CRT-shimjei mellett a mátrixépítő, a közös alkalmazó és a pixelfüggvény
+eredeti bináriskód volt.
+
+**Bájtmérés.** A `filterdesc.xml` LocalContrast csúszkája `1…3` tartományú,
+`1,5` alapértékkel; a két MultiplyColorMatrix gyerek ugyanazt az értéket kapja
+(`filterdesc.xml:1012–1029`). A tesztelt `1`, `1,5`, `2`, `3` értékből az
+első, második és negyedik tehát a deklarált minimum, alapérték és maximum; a
+`2` egy pontos, tartományon belüli próbaérték. Szintetikus, determinisztikus
+BGRA-bemenet futott 2×2 és 3×2 méreten; `x=0…width−1`, `y=0…1` mellett
+`B=(17+31x+7y) mod 256`, `G=(29+23x+11y) mod 256`,
+`R=(43+19x+13y) mod 256`, `A=(71+17x+5y) mod 256`. A táblázat a három színcsatorna
+összevetése; `eltérő/max` a nem egyező RGB-bájtok száma és a legnagyobb
+abszolút bájtkülönbség. `Multiply` az eredeti műveletet hasonlítja a
+`_szorzott_resz`-hez; `Fade 50` az eredeti `0x009dc4b0` keverőt a
+`alpha_blend`-hez ugyanazzal a forrás- és Multiply-kimenettel; `együtt` a
+a kétlépéses Python-részmodellt az eredeti két lépéssel.
+
+| multiplier | méret | Multiply | Fade 50 önmagában | együtt, Fade 50 |
+|---:|---:|---:|---:|---:|
+| 1 | 2×2 | 0/12, max 0 | 0/12, max 0 | 0/12, max 0 |
+| 1 | 3×2 | 0/18, max 0 | 6/18, max 1 | 6/18, max 1 |
+| 1,5 | 2×2 | 4/12, max 1 | 0/12, max 0 | 0/12, max 0 |
+| 1,5 | 3×2 | 6/18, max 1 | 5/18, max 1 | 5/18, max 1 |
+| 2 | 2×2 | 0/12, max 0 | 0/12, max 0 | 0/12, max 0 |
+| 2 | 3×2 | 0/18, max 0 | 6/18, max 1 | 6/18, max 1 |
+| 3 | 2×2 | 0/12, max 0 | 0/12, max 0 | 0/12, max 0 |
+| 3 | 3×2 | 0/18, max 0 | 6/18, max 2 | 6/18, max 2 |
+
+Fade 0 a Multiply-oszlopnak felel meg: a külső keverés elhagyható. Fade 50-nél
+a páratlan szélesség eltérései kizárólag minden sor utolsó oszlopára esnek.
+A natív keverő páros pixelpár-képlete mellett az utolsó pixel skalárképlete
+`T + ((B − T) * w >> 8)` (`0x009dc646`–`0x009dc6fb`); Fade 50-nél az alfa
+`0,5`, a belső súly `w=127` (`trunc(0,5*256)=128`, majd a natív `−1`). A
+Python `alpha_blend` jelenleg a páros képletet használja minden pixelre
+(`glimmer_ops.py:151–170`). A LocalContrast XML-ben nincs Fade csúszka, ezért
+ez a Fade 50 mérés a közös külső keverő izolált kontrollja, nem a teljes
+LocalContrast effekt export-goldenje.
+
+**Cáfoló kísérlet.** A kiinduló, cáfolható hipotézis az volt, hogy a jelenlegi
+float32-szorzás és `np.rint` bájtra reprodukálja a natív Multiply műveletet.
+`multiplier=1,5` és a BGRA `[17,29,43,71]` pixel ezt cáfolja: a natív
+`[26,44,65,71]` bájtokat ad, míg a PicasaPy RGB-kimenete `[64,44,26]` (a
+natív RGB `[65,44,26]`). A csatornasorrendet a B és G egyezése, az alfa
+átengedését az alfa-bájt egyezése ellenőrzi. A teszt ugyanazt a bájt- és
+QEMU-mércét használja, mint a többi kontroll; az eltérés a félértéknél
+ties-to-even `np.rint` és a natív Q11 + `+2`/`sar 2` kerekítés különbségét
+mutatja.
+
+#### Eredeti / nálunk / teendő
+
+| | Eredeti, mért | PicasaPy forrása | Teendő |
+|---|---|---|---|
+| MultiplyColorMatrix pixelmag | Q11: `round-away(float32(m)·2048)`, majd `((sar(q·x,9)+2)>>2)` és 8 bites vágás; alfa változatlan (`0x00bb77a0` → `0x00bc16b0` → `0x008f21a0` → `0x008f2640`) | `_szorzott_resz`, `src/picasapy/render/glimmer_ops.py:691–695`: float32-szorzás és `np.rint` | A helyi Multiply-modellt cserélje a fenti Q11-egész képletre; az alkalmazóhoz beérkező 8 bites műveleti bemenetet használja. A mért `1`, `1,5`, `2`, `3` esetek, különösen a `1,5`-ös félérték, legyenek bájt-goldenek. |
+| Fade 50, páratlan szélesség | A sorvégi skalárpixel `T+((B−T)·w>>8)`, `w=127`; a teszt 3×2 méretén a hibák csak a 3. oszlopban vannak (`0x009dc646`–`0x009dc6fb`) | `alpha_blend`, `src/picasapy/render/glimmer_ops.py:151–170`, a páros képletet minden pixelre alkalmazza | A páratlan szélességű sor utolsó pixelét a natív skalárképlettel számolja; a 2×2 kontroll maradjon változatlan, és a fenti Fade 50 minták legyenek byte-goldenek. |
+
+**Bizonyítottsági fok:** `megerősített` a MultiplyColorMatrix pixelmagjára,
+mátrixára és közös alkalmazóútjára — A) utasításszintű olvasás, B) az eredeti
+bináris futtatása qemu-i386 alatt, egyező pixelbájtokkal. A felsorolt
+szintetikus mérések nem fedik le a teljes `filterdesc.xml` LocalContrast
+láncot, annak blur-/blend-határait vagy export-goldenét; ez a nagyobb effekt
+szintjén nyitott marad.
+
 ### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
 
 A `0x00bbcdd0` (124 b) a `detail` attribútumot (tag `+0x2c`, alapérték
