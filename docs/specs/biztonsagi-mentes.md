@@ -1187,6 +1187,11 @@ szövegtár-feldolgozót ír, **mindkét alakot ismerje fel**.
 
 ### 14.4 Amihez nincs saját szövege
 
+- **`publish/backup_help` és `publish/presentcd_help`** — a `publish.tre`
+  (`:296`, `:154`) `Help` címkét és geometriai helyet ad nekik, de mindkét
+  vezérlő alapállapota `m_hidden`; a 15.3-ban felsorolt állapotfrissítő nem
+  oldja fel ezt. A Picasa 3.9 felületén ezért nem jelennek meg, így külön
+  súgógombot nem kell építeni.
 - **`publish/replicate_button_group`** — `rect`, tehát tartó: a
   `replicate_go` (`respack.yt:3038886`) és a `replicate_cancel`
   (`respack.yt:3038869`) szülője (`publish.tre:436` és `:443`). Felirata
