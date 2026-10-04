@@ -62,7 +62,7 @@ textopacityslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 throttle,parositva,PicasaPy/PicasaScrollBar.qml,Gyorsgörgető a rács jobb szélén
 thumbui,parositva,PicasaPy/MainToolbar.qml;PicasaPy/LightboxFeed.qml;PicasaPy/ThumbDelegate.qml;PicasaPy/TrayBar.qml;PicasaPy/TimelineView.qml;PicasaPy/PicasaScrollBar.qml;PicasaPy/FolderPane.qml;PicasaPy/FolderTreeItem.qml;PicasaPy/FolderStateBadge.qml;PicasaPy/SlideshowView.qml;Main.qml,A fő könyvtárnézet egésze
 timeslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-titledialog,nincs-megfeleltetes,,Filmes címdia-szerkesztő párbeszéd — nincs nálunk
+titledialog,parositva,PicasaPy/MovieTitleDialog.qml;PicasaPy/CreateDialogs.qml,"Filmes címdia-szerkesztő: szöveg/betűformázás, képfelirat, élő előnézet és Add/Cancel"
 toolslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 transitionslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok fejléce
