@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.677] – 2026-10-04
+
+- Az Emberek album fotómenüjének indexkép-beállító parancsa megkapta az eredeti súgóját (#4138).
+
 ## [0.8.676] – 2026-10-04
 
 - A Közzététel panel eredeti mentési és Ajándék-CD szövegei a hivatalos magyar feliratokkal jelennek meg, a feltöltési módok pedig eredeti súgót kaptak (#4177).
