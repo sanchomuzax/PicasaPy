@@ -89,12 +89,38 @@ def _panel(window, nev: str) -> QQuickItem:
 
 def _kattints(window, elem, qt_app) -> None:
     qt_app.processEvents()
-    kozep = elem.mapToScene(elem.boundingRect().center())
+    assert elem.width() > 0 and elem.height() > 0, (
+        f"{elem.objectName()}: nincs mérete, nem kattintható"
+    )
+    os_ = elem
+    while os_ is not None:
+        os_.ensurePolished()
+        os_ = os_.parentItem()
+    kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
     QTest.mouseClick(
         window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
     )
     qt_app.processEvents()
+
+
+def _menutetelre_kattints(window, qt_app, fejlec: str, nev: str) -> None:
+    """Felső menü és menütétel valódi egérkattintással."""
+    fejlec_elem = next(
+        (
+            e for e in _walk(window.contentItem())
+            if "MenuBarItem" in e.metaObject().className()
+            and e.property("text") == fejlec
+        ),
+        None,
+    )
+    assert fejlec_elem is not None, f"a {fejlec} menü nincs a menüsávon"
+    _kattints(window, fejlec_elem, qt_app)
+    elem = _elem(window, nev)
+    assert varj_feltetelre(
+        qt_app, lambda: elem.isVisible()
+    ), f"a {nev} menütétel nem látható"
+    _kattints(window, elem, qt_app)
 
 
 def _vard_a_mappakat(host, qt_app) -> None:
@@ -159,10 +185,7 @@ def app_windows(qt_app, tmp_path, monkeypatch):
 def _nyisd_a_mentest(window, qt_app, *, keszlet: int = 0):
     """A VALÓDI menütétel (`Eszközök ▸ Képek biztonsági mentése…`), majd a
     készlet kiválasztása."""
-    QMetaObject.invokeMethod(
-        _elem(window, "menuToolsBackup"), "triggered",
-        Qt.ConnectionType.DirectConnection,
-    )
+    _menutetelre_kattints(window, qt_app, "&Tools", "menuToolsBackup")
     qt_app.processEvents()
     host = window.findChild(QObject, "backupHost")
     assert host.property("nyitva") is True
@@ -403,8 +426,13 @@ class TestAGombokEsAFutas:
         assert all(p.property("checked") is False for p in pipak())
         assert go.property("enabled") is False
 
-    def test_pipa_mentes_es_a_mappa_eltunik(self, app, qt_app):
+    @pytest.mark.parametrize("ablakmagassag_eltolas", (-5, 0, 5))
+    def test_pipa_mentes_es_a_mappa_eltunik(
+        self, app, qt_app, ablakmagassag_eltolas
+    ):
         window, _c, _e, vezerlo, lib, cel = app
+        window.setHeight(window.height() + ablakmagassag_eltolas)
+        qt_app.processEvents()
         host = _nyisd_a_mentest(window, qt_app)
         masik = [
             c for c in _latszo(window, "folderRowLabel")
@@ -419,7 +447,13 @@ class TestAGombokEsAFutas:
             description="a pipált mappa mentése",
         )
         qt_app.processEvents()
-        assert sorted(p.name for p in cel.rglob("*.jpg")) == ["d.jpg", "e.jpg"]
+        kimenetek = list(cel.rglob("*.jpg"))
+        assert sorted(p.name for p in kimenetek) == ["d.jpg", "e.jpg"]
+        for ut in kimenetek:
+            forras = lib / ut.relative_to(cel)
+            assert ut.read_bytes() == forras.read_bytes(), (
+                f"a mentés kimenete eltér: {ut.name}"
+            )
         assert varj_feltetelre(
             qt_app,
             lambda: len(_latszo(window, "folderRowMentesCheck")) == 2,

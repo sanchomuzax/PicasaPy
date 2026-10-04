@@ -9,6 +9,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - Az Importálás panelen működik az előző/következő kép, az Opciók menü és a forrás-/célmappa-választó; a nem elérhető online feltöltés jelölője súgóval, letiltva jelenik meg (#4145).
 
+## [0.8.672] – 2026-10-04
+
+- A Közzététel panel feltöltési választója külön kezeli a feltöltés, a módosítás és az online elemek eltávolításának módját (#4126).
+
 ## [0.8.671] – 2026-10-04
 
 - A videólejátszóban megjelent a tényleges méretű és a teljes képernyős lejátszás (#4127).
