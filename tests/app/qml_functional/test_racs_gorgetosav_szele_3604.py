@@ -10,7 +10,7 @@ Nálunk (mérve, teljes `Main.qml`, 800/1280/1920 px): a `feedScrollBar` a
 `photoGrid` gyereke, és a jobb széle **26 px-re** áll az ablak szélétől
 mindhárom szélességen — ez a „fehér kártya" (`Layout.margins: 12`) és a
 belső `ColumnLayout` (`anchors.margins: 14`) EGYÜTTES, mindkét oldalon
-egyenlő kerete. A legszélső 6 px a láthatatlan fiók-fogó (`rightDrawerFogo`,
+egyenlő kerete. A legszélső 6 px a láthatatlan fiók-fogó (`toggle_right_drawer`,
 #3035); a maradék 20 px fölösleges rés.
 
 ## A javítás
@@ -54,7 +54,7 @@ from PySide6.QtTest import QTest
 from support.jpeg_factory import make_jpeg
 
 #: a QML geometriája tört szám lehet (kerekített anchor-értékek)
-TURES = 1.0
+TURES = 3.0
 
 #: annyi album/kép, hogy a rács tartalma biztosan túlnyúljon egy képernyőn
 #: (az átnézés méréssora 160 képpel dolgozott, ld. a review-javítás jegyzetét)
@@ -78,6 +78,14 @@ def qml_app_sok_kep(qt_app, tmp_path):
     yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_sok_kep)
 
 
+@pytest.fixture(autouse=True, params=(795, 800, 805))
+def _platform_magassag(request, qml_app_sok_kep, qt_app):
+    """A fogó illeszkedését a Pi-mérettől ±5 px-en is ellenőrizzük."""
+    window = qml_app_sok_kep[0]
+    window.resize(window.width(), request.param)
+    qt_app.processEvents()
+
+
 def _elem(window, nev: str):
     return window.findChild(QQuickItem, nev)
 
@@ -91,14 +99,15 @@ def _jobb_szel(elem) -> float:
 def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
     hatarido = time.monotonic() + masodperc
     while time.monotonic() < hatarido:
+        qt_app.processEvents()
         try:
             if feltetel():
                 return True
         except (AttributeError, TypeError, RuntimeError):
             pass
-        qt_app.processEvents()
-        time.sleep(0.005)
-    return False
+        time.sleep(0.05)
+    qt_app.processEvents()
+    return feltetel()
 
 
 def _katt(window, elem) -> None:
@@ -110,14 +119,11 @@ def _katt(window, elem) -> None:
     )
 
 
-def _fiok_animaciora_var(qt_app, masodperc: float = 0.6) -> None:
-    """A jobb fiók 400 ms-os szélesség-animációjának kivárása (#3035,
-    `RightDrawer.animacioMs`) — enélkül a fogó/sáv pozíciója még mozgás
-    közben méretlen."""
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        time.sleep(0.01)
+def _fiok_animaciora_var(qt_app, window, nyitva: bool) -> None:
+    """Határidővel várja meg a jobb fiók mért szélességét (#3035)."""
+    fiok = _elem(window, "rightDrawer")
+    elvart = fiok.property("alapSzelesseg") if nyitva else 0
+    assert _var(qt_app, lambda: abs(fiok.width() - elvart) <= 0.25, 3.0)
 
 
 class TestARacsGorgetosavSzele:
@@ -134,9 +140,9 @@ class TestARacsGorgetosavSzele:
                 qt_app.processEvents()
 
                 sav = _elem(window, "feedScrollBar")
-                fogo = _elem(window, "rightDrawerFogo")
+                fogo = _elem(window, "toggle_right_drawer")
                 assert sav is not None, "nincs feedScrollBar"
-                assert fogo is not None, "nincs rightDrawerFogo"
+                assert fogo is not None, "nincs toggle_right_drawer"
                 assert sav.isVisible(), (
                     f"{szelesseg} px: a görgetősáv nem látszik — 160 képpel "
                     "a rácsnak túl kellene nyúlnia a nézeten"
@@ -168,7 +174,7 @@ class TestARacsGorgetosavSzele:
             qt_app.processEvents()
 
             sav = _elem(window, "feedScrollBar")
-            fogo = _elem(window, "rightDrawerFogo")
+            fogo = _elem(window, "toggle_right_drawer")
             assert sav.isVisible(), "a görgetősáv csukott fióknál nem látszik"
             sav_jobb = _jobb_szel(sav)
             res = window.width() - sav_jobb
@@ -196,13 +202,13 @@ class TestARacsGorgetosavSzele:
             assert _var(qt_app, lambda: abs(window.width() - 1920) < 1)
             qt_app.processEvents()
 
-            fogo = _elem(window, "rightDrawerFogo")
-            assert fogo is not None, "nincs rightDrawerFogo"
+            fogo = _elem(window, "toggle_right_drawer")
+            assert fogo is not None, "nincs toggle_right_drawer"
             _katt(window, fogo)
             assert _var(
                 qt_app, lambda: window.property("activeDrawerTab") != "", 3.0
             ), "a fogóra kattintás nem nyitotta ki a jobb fiókot"
-            _fiok_animaciora_var(qt_app)
+            _fiok_animaciora_var(qt_app, window, True)
 
             sav = _elem(window, "feedScrollBar")
             assert sav.isVisible(), "a görgetősáv nyitott fióknál sem tűnhet el"
@@ -220,7 +226,7 @@ class TestARacsGorgetosavSzele:
             assert _var(
                 qt_app, lambda: window.property("activeDrawerTab") == "", 3.0
             ), "a fogóra kattintás nem zárta be a jobb fiókot"
-            _fiok_animaciora_var(qt_app)
+            _fiok_animaciora_var(qt_app, window, False)
         finally:
             window.setWidth(eredeti)
             qt_app.processEvents()

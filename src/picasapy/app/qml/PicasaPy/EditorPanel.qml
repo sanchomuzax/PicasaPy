@@ -156,6 +156,7 @@ Rectangle {
     // követve.
     property string captionText: ""
     property bool hasTextOverlay: false
+    property bool textOverlayVisible: true
     // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
     // kitöltés ki/be, átlátszóság; a hívó tölti a controller mentett
     // értékeivel, az onXChanged jelek viszik vissza a felhasználói módosítást
@@ -175,6 +176,7 @@ Rectangle {
     signal textCancelRequested()
     signal textCopyCaptionRequested()
     signal textRemoveAllRequested()
+    signal textOverlayVisibleEdited(bool visible)
     signal textFillColorEdited(string hex)
     signal textOutlineColorEdited(string hex)
     signal textOutlineThicknessEdited(real value)

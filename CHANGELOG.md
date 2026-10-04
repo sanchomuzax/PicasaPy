@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.680] – 2026-10-05
+
+- A szerkesztő bal panelje összecsukható, a fotóra írt szöveg pedig ideiglenesen elrejthető, majd visszaállítható (#4183).
+
+## [0.8.679] – 2026-10-04
+
+- A klipgyűjtő súgója, a keresőcsoport és a jobb fiók váltója pontosabban illeszkedik az eredeti Picasa felülethez (#4193).
+
 ## [0.8.678] – 2026-10-04
 
 - A kontúrfelismerés jobb felső képpontja is a Picasa eredeti Sobel-képletével számol (#4185).
