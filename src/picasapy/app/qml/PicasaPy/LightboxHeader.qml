@@ -304,6 +304,9 @@ ColumnLayout {
                 text: "▸"; color: Theme.picasaGreen; font.pixelSize: 13
             }
             HoverHandler { id: headerPlayHover }
+            ToolTip.text: qsTr("Play Fullscreen Slideshow")
+            ToolTip.visible: headerPlayHover.hovered
+            ToolTip.delay: Theme.tooltipDelay
             //: #885: `headerpanel/play` — LENYOMÁSRA indul a diavetítés
             //: (`Property mousedown 1`). A `TapHandler` a felengedést
             //: jelzi, ezért a lenyomás-átmenetre kötjük; a `pressed`

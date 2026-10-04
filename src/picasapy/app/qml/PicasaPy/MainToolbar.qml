@@ -27,6 +27,13 @@ Rectangle {
 
     // a keresőmező tartalma (a Main a mappa-választásnál olvassa)
     readonly property alias searchText: searchField.text
+    // #4137: a kameramappa és a méret tárolása az alkalmazás QSettings-én
+    // át történik. A QML-funkcionális próba nem indít valódi kamerát, ezért
+    // ott a panel tároló nélkül, nem elérhető állapotban is megnyitható.
+    readonly property var captureStorage:
+        typeof cameraCaptureController === "undefined"
+        ? null : cameraCaptureController
+    readonly property bool captureControllerAvailable: captureStorage !== null
     // gépelés a keresőben (már beírt szöveggel)
     signal searchEdited(string text)
     // a törlő × gomb: a mező már üres, a nézet álljon vissza
@@ -289,6 +296,46 @@ Rectangle {
             TapHandler {
                 onPressedChanged: if (pressed) toolbar.folderViewMenuRequested(parent)
             }
+        }
+        // #4137: belépés a kamera előnézetéhez. A vezérlő nélküli tesztkörnyezet
+        // nem kínálja fel; a panel maga jelzi, ha a kamera nem érhető el.
+        Rectangle {
+            objectName: "toolbarWebcamCaptureButton"
+            enabled: toolbar.captureControllerAvailable
+            x: 252; y: 9
+            width: 22; height: 22; radius: 2
+            color: cameraCaptureHover.hovered ? "#ffffff" : "transparent"
+            border.width: cameraCaptureHover.hovered ? 1 : 0
+            border.color: Theme.selectionBlue
+            Text {
+                anchors.centerIn: parent
+                text: "◉"
+                font.pixelSize: 13
+                color: cameraCaptureHover.hovered ? Theme.selectionBlue : "#8f8b83"
+            }
+            ToolTip.text: qsTr("Open camera capture panel")
+            ToolTip.visible: cameraCaptureHover.hovered
+            ToolTip.delay: Theme.tooltipDelay
+            HoverHandler { id: cameraCaptureHover }
+            TapHandler {
+                onTapped: {
+                    if (captureMoviePanelLoader.item)
+                        captureMoviePanelLoader.item.open()
+                    else
+                        captureMoviePanelLoader.active = true
+                }
+            }
+        }
+        Component {
+            id: captureMoviePanelComponent
+            CaptureMoviePanelPopup { storage: toolbar.captureStorage }
+        }
+        Loader {
+            id: captureMoviePanelLoader
+            objectName: "captureMoviePanelLoader"
+            active: false
+            sourceComponent: captureMoviePanelComponent
+            onLoaded: item.open()
         }
         // #1421: az `timelinebutton` — a NÉZET már megvolt (Nézet ▸ Időrend,
         // Ctrl+5, `timeline_controller.py`), csak az eszköztárról hiányzott.

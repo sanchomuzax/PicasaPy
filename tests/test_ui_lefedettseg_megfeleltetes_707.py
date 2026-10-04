@@ -59,7 +59,7 @@ def elem_sorok() -> list[dict]:
 
 
 def _bizonyitek_hibai(hivatkozas: str) -> list[str]:
-    """Üres lista, ha a `fájl` / `fájl:sor` hivatkozás megáll a fán.
+    """Üres lista, ha a QML- vagy tesztfájl / sor hivatkozás megáll a fán.
 
     Külön függvény, hogy a sorszám-leválasztás EGY helyen éljen, és a
     hibaüzenet megmondja, MELYIK fele bukott — a „nincs ilyen fájl" és a
@@ -67,7 +67,10 @@ def _bizonyitek_hibai(hivatkozas: str) -> list[str]:
     másképp kell javítani.
     """
     fajl, _, sor_szoveg = hivatkozas.partition(":")
-    ut = QML_GYOKER / fajl
+    # A #4125 panel-vezérlőinek működését tesztfájlok bizonyítják, ezért
+    # ezek repo-gyökérhez viszonyított útvonalak; a régi hivatkozások
+    # továbbra is a QML-csomag gyökeréhez viszonyítottak.
+    ut = GYOKER / fajl if fajl.startswith("tests/") else QML_GYOKER / fajl
     if not ut.is_file():
         return ["nincs ilyen fájl"]
     if not sor_szoveg:
@@ -148,6 +151,12 @@ class TestPanelMegfeleltetes:
 
 
 class TestElemFelulbiralasok:
+    def test_tesztfajl_bizonyitek_a_repo_gyokeretol_oldodik_fel(self):
+        """A #4125 film-panel sorai a működési bizonyítékot nevezik meg."""
+        assert _bizonyitek_hibai(
+            "tests/app/qml_functional/test_film_panel_4125.py"
+        ) == []
+
     def test_nincs_tobbletoszlop(self, elem_sorok):
         hibas = [sor["elem"] for sor in elem_sorok if None in sor]
         assert not hibas

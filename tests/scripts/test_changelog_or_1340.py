@@ -130,6 +130,66 @@ class TestParancssor:
         )
         assert kod == 0
 
+    def test_valtozasnaplo_darabbal_atmegy(self, tmp_path: Path) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+        darab_diff = (
+            "diff --git a/changelog.d/4165.md b/changelog.d/4165.md\n"
+            "new file mode 100644\n"
+            "--- /dev/null\n"
+            "+++ b/changelog.d/4165.md\n"
+            "@@ -0,0 +1 @@\n"
+            "+- A változásnapló-sorok külön fájlban készülhetnek (#4165).\n"
+        )
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egy = " ".join(args)
+            if "--name-only" in egy:
+                kimenet = "src/picasapy/render/vivid.py\nchangelog.d/4165.md\n"
+            elif "-- changelog.d/4165.md" in egy:
+                kimenet = darab_diff
+            else:
+                kimenet = ""
+            return subprocess.CompletedProcess(args, 0, kimenet, "")
+
+        assert cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=futtat,
+        ) == 0
+
+    def test_darab_es_hagyomanyos_sor_nelkul_tovabbra_is_bukik(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+        ures_darab_diff = (
+            "diff --git a/changelog.d/4165.md b/changelog.d/4165.md\n"
+            "new file mode 100644\n"
+            "--- /dev/null\n"
+            "+++ b/changelog.d/4165.md\n"
+            "@@ -0,0 +1 @@\n"
+            "+# Nincs felhasználói bejegyzés.\n"
+        )
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egy = " ".join(args)
+            if "--name-only" in egy:
+                kimenet = "src/picasapy/render/vivid.py\nchangelog.d/4165.md\n"
+            elif "-- changelog.d/4165.md" in egy:
+                kimenet = ures_darab_diff
+            else:
+                kimenet = ""
+            return subprocess.CompletedProcess(args, 0, kimenet, "")
+
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=futtat,
+        )
+        assert kod == 1
+        kimenet = capsys.readouterr().out
+        assert "::error" in kimenet
+        assert "changelog.d/<jegyszám>.md" in kimenet
+
     def test_belso_valtozas_atmegy_bejegyzes_nelkul(self, tmp_path: Path) -> None:
         naplo = tmp_path / "CHANGELOG.md"
         naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")

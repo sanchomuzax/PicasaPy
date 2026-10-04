@@ -56,6 +56,7 @@ from picasapy.scanner import (
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .confirm_settings_bridge import ConfirmSettingsBridge
+from .camera_capture_controller import CameraCaptureController
 from .gombsav_bridge import GombsavBridge
 from .folder_cover_provider import FolderCoverProvider, borito_fajljai
 from .controller import AppController
@@ -1199,6 +1200,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #367: az általános ConfirmDialog "Ne kérdezze meg újra" tára — a
     # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír
     confirm_settings = ConfirmSettingsBridge()
+    # #4137: a webkamerapanelhez tartozó beállítások és kimeneti útvonalak.
+    camera_capture_controller = CameraCaptureController(
+        QSettings("PicasaPy", "PicasaPy")
+    )
 
     # #1792: az album-fejléc gombsorának összeállítása — ugyanabba a
     # közös QSettings("PicasaPy", "PicasaPy")-ba ír, mint a fenti híd
@@ -1353,6 +1358,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # + import-útvonal); innentől már csak kontextus-bekötés következik.
     timeline.mark("QML-motor létrehozása és import-útvonalak")
     engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty(
+        "cameraCaptureController", camera_capture_controller
+    )
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty("secondPreview", second_preview)
     engine.rootContext().setContextProperty("fileOpsController", fileops_controller)

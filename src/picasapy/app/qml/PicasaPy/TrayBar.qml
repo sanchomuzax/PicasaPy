@@ -2059,6 +2059,13 @@ Column {
                                     && tray.appWindow.selectedIndexes.length > 0)
                                  : false
                         onClicked: tray.movieRequested()
+                        HoverHandler {
+                            id: trayMovieHover
+                            objectName: "trayMovieHoverHandler"
+                        }
+                        ToolTip.text: qsTr("Create Movie Presentation")
+                        ToolTip.visible: trayMovieHover.hovered
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }
