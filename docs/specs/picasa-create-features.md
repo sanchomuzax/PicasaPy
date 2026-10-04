@@ -2284,6 +2284,66 @@ forrás-módját **5**-re, illetve **6**-ra a szokásos 1–4/7 helyett
 bármelyik áll-e (`0x0061823c`). *Bizalmi fok: **erős** — a jelentést a
 rájuk épülő kapu szövege adja, a jelzők nevét nem olvastuk ki.*
 
+#### G) A készítési idő küszöbe: szomszédos csoportosítás, végső képválasztás nyitott (#4194)
+
+A `burstmodethresh` nem közvetlenül választ képet. A `0x0081b800` csak
+nem nulla küszöbnél hívja a `0x0081ae10` csoportosítót (`0x0081b8be`–
+`0x0081b8ca`). A csoportosító a `[obj+0x4e0]` lista `0x38` bájtos
+rekordjain, azok `+0x34` dátumkulcsán halad végig; a dátumot a
+`0x004edf60` olvassa ki. A FILETIME-ot `+5 000 000` (`0x4c4b40`) után
+`10 000 000`-rel (`0x989680`, `0x00c13b70`) osztja, tehát egész másodpercre
+kerekíti.
+
+Az első rekord csoportazonosítója **0** (`0x0081afac`). Minden következő
+rekordnál az aktuális, kerekített időt az **előző listaelem** idejéhez méri:
+
+```
+delta = t[i] - t[i-1]
+delta < burstmodethresh  → ugyanaz a csoportazonosító
+delta >= burstmodethresh → következő csoportazonosító
+```
+
+A `delta`-t a ciklus minden elemnél az aktuális időre frissíti
+(`0x0081b0b1`–`0x0081b0f3`); nem az előző megtartott elemhez viszonyít.
+Ez a `[obj+0x4e0]` **bemeneti sorrendje**, nem bizonyítja, hogy a lista
+időrendben van rendezve.
+
+**Független natív QEMU-mérés:** az eredeti `0x0081ae10` futott; csak a
+`0x004edf60` dátumlekérdezését helyettesítő hám adott meg pontos
+FILETIME-értékeket. Küszöb: `T=3600` másodperc.
+
+| Bemeneti másodpercek | Csoportazonosítók | Mit különböztet meg |
+|---|---|---|
+| `[0, 3240, 6480]` | `[0, 0, 0]` | láncszerű: az utolsó az előzőtől 3240-re van, ezért együtt marad; az első megtartotthoz mérő szabály itt új csoportot adna |
+| `[0, 3600, 7200]` | `[0, 1, 2]` | az egyenlőség már új csoportot kezd (`>=`, nem `>`) |
+| `[0, 3240, 7200]` | `[0, 0, 1]` | az utolsó szomszédos rés 3960, ezért új csoport kezdődik |
+
+**Bizonyítottság:** a küszöb alatti szomszédos csoportosítás és a
+`delta >= T` határ **megerősített**: A) a `0x0081ae10` utasításszintű
+olvasata; B) a fenti, pontosan megadott időbélyegű natív QEMU-futás.
+Az első mérősor cáfolja az „előző megtartotthoz mér” alternatívát.
+
+**A végül megtartott kép nincs megállapítva.** A `0x0081ae10` csoportokat
+képez, majd a hívó `0x0081b800` további kiválasztó ágon dolgozza fel őket
+(`0x0081bd62` → `0x00877c50` → `0x008781a0`). A diszasszembly e ponton
+annyit mutat, hogy a `0x008781a0` a bázisérték és a rekord `+8` mezőjének
+összegét hasonlítja az adott kimeneti kulcs eddigi értékéhez, és csak
+kisebb értéknél frissít (`0x00878291`–`0x008782be`); egyezésnél a korábban
+bejárt jelölt marad. A diszasszembly nem azonosítja megbízhatóan, hogy ez az
+érték milyen képjellemzőt jelent, illetve mely eredeti képindexet adja vissza
+a teljes út. Ezért az „első”, „utolsó” vagy „jobb minőségű” állítás
+**NINCS MEG**. Ezt nem szabad a csoportazonosítókból kikövetkeztetni.
+
+**Fejlesztési átvezetés a #4182-höz:**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A küszöb a bemeneti sorrendben szomszédos, egész másodpercre kerekített időket hasonlítja; `delta >= T` új csoport. A csoporton belüli végső képválasztás nyitott. | `src/picasapy/movie/mxf.py` a `burstmodethresh` mezőt olvassa és írja; képszűrési fogyasztó nincs. | A #4182-ben a bizonyított csoportosítást és a végső megtartási szabályt is implementálni kell; az utóbbi előtt célzottan fel kell oldani a Ghidra-kérdést lent. A `Kész, ha` feltételek: (1) a három fenti dátumsor ugyanazokat a csoportokat adja; (2) a csoportonként megtartott kép a natív szabállyal egyezik, és dokumentáltan nem találgatásból származik. |
+
+Ghidra-kör kell: 0x0081b800 — a 0x0081ae10 által képzett azonos csoporton
+belül a 0x00877c50/0x008781a0 út mely bemeneti képet teszi a végső listába,
+és milyen képjellemzőből származik az összehasonlító érték? [blokkoló]
+
 #### Bizonyítottsági fok
 
 **Megerősített** (utasításszinten olvasva): a négy tálcagomb ága és
@@ -2293,6 +2353,12 @@ a `remove_low_res_faces` bájtja, a két csúszka képlete és konstansai, az
 `s` normalizáltsága (a hangerő `×1000` skálázásából), az `N` azonossága a
 felirattal, az öt bemenet sorrendje, a kapu mind az öt lépése és a három
 visszatérési érték, a két külön preferencia-kulcs.
+
+**Megerősített, a G szakaszra korlátozva:** a készítési idő szerinti
+szomszédos csoportosítás, az egész másodpercre kerekítés és a `delta >= T`
+határ (utasításszintű olvasat + natív QEMU-mérés). **Nyitott:** az egy
+csoportból végül megtartott kép és az összehasonlító érték jelentése; ez
+nem része a megerősített állításnak.
 
 **Erős**: a `[panel+0x4f0]`/`[+0x4f1]` jelzők jelentése.
 
