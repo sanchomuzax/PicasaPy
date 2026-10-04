@@ -3469,6 +3469,97 @@ Alapértékkel: 5 képpontos elmosás, 25%-os keveréssel.
 > tagoffszete. Két független forrás mutat ugyanoda — a tábla itt
 > **használatban igazolta magát**.
 
+#### Pixelmag, közös alkalmazók és natív bájtmérés (#626, 2026-10-04)
+
+A szállított paraméterezés a `Picasa3/runtime/filterdesc.xml:1002` sorban
+explicit: `greenglow=5`, `greenglowalpha=0.25`, `redweight=-0.5`, a külső
+`BlendAlpha = 1 − Fade/100`. A `Fade` csúszka tartománya 0…100, alapja 0
+(`filterdesc-registry.md` 4.2). A `greenglow`, `greenglowalpha` és
+`redweight` XML-értékei megegyeznek az `IRImageOperation` getterei elé tett
+bináris alapértékekkel (`0x00bc3f5c` → `0x00cf3a58`, `0x00bc3f8a` →
+`0x00c7c608`, `0x00bc3fae` → `0x00cf3ea0`).
+
+Az eredeti konstruktor (`0x00bc3d80`) a belső `NestedImageOperation` alá
+teszi a zöldcsatornás `ColorMatrix`-et és a `Blur`-t, a záró `ColorMatrix`
+pedig közvetlen gyerek (`this+0x4c`); ebben az `IR`-csővezetékben nincs külön
+LUT-gyerek. A blur gyártója `0x00bb4c40(5,5,3)`, vagyis `xblur=5`,
+`yblur=5`, `quality=3`. Az alkalmazó (`0x00bc3f50`) a
+`greenglowalpha` értéket a belső `BlendAlpha`-ba, az 5-öt mindkét blur
+tengelyre írja; a záró mátrixot a `0x00bc14e0` mátrixbeállítóval adja át.
+Az első mátrix műveleti kimenete `(0,G,0,A)`; a záró mátrix a fenti
+`r, 2, −1−r` hármast alkalmazza.
+
+A belső keverési módot a konstruktor `0x00bc3e49 push 7` utasítása adja át
+az `0x008eedc0` beállítónak. A módnévtábla `0x00cf0e98` szerint a 7-es
+`Screen`; a diszpécsertábla `0x008f4c48` 7. bejegyzése a Screen-maghoz
+(`0x008f5d20`) vezet. Tehát a tényleges sorrend:
+
+```text
+ColorMatrix: (R,G,B,A) → (0,G,0,A)
+Blur:        xblur = yblur = 5, quality = 3
+Blend:       Screen az eredeti képre, BlendAlpha = 0.25
+ColorMatrix: RGB = clamp(−0.5·R + 2·G − 0.5·B), A változatlan
+Fade:        BlendAlpha = 1 − Fade/100
+```
+
+A Screen minden csatornára (az alfára is) alkalmazott egész képlete:
+`⌊(65025 − (255−b)(255−t)) / 255⌋`; itt `b` az eredeti, `t` az elmosott
+zöldréteg. A `/255` csonkol, a Fade súlyozott keverése pedig a következő,
+ettől különálló lépés (`BlendInstruction`-szakasz C pont).
+
+A két színmátrix a közös `ColorMatrix` utat járja (`0x00bc16b0` →
+`0x008f2500` → `0x008f21a0` → `0x008f2640`). A Q11-egész konverzió,
+csatornasorrend, szorzatonkénti `sar 9`, bias és telítés képlete a 4.9-es
+`ColorMatrix`-szakaszban szerepel. A blur alkalmazója `0x00bb4de0`, a közös
+blur-diszpécser `0x00bc5680`. A belső Screen-keverést és a külső Fade-et a
+közös `BlendInstruction` (`0x00bd0700`) és pixelkeverő (`0x009dc4b0`)
+végzi. A közös súly `w = trunc(256·alpha)`, majd ha `w>0`, `w−1`; a páros
+pixelképlet `(b·(255−w)+t·w)>>8`, páratlan szélesség sorvégi skalárképlete
+`t + ((b−t)·w >> 8)` (lásd `glimmer_ops.alpha_blend`, `0x00bd0700`,
+`0x009dc4b0`). Így a belső `alpha=0.25` súlya 63; `Fade=50` esetén a külső
+`alpha=0.5`, súlya 127; `Fade=0`-nál a végrehajtó az `alpha≈1` ágat másolja.
+
+**Natív bájtmérés.** Az eredeti `Picasa3.exe` fenti konstruktorát,
+alkalmazóit, blur- és blendkódját futtattam `qemu-i386` alatt. A harness a
+kézzel épített IR-objektumhoz a fenti XML-értékekkel egyező natív
+alapértékeket használta; az üres paraméterlistánál az eredeti getterek
+ezeket olvasták ki. A Fade-kifejezés eredményét az eredeti
+`BlendInstruction` kapta. A QEMU-képleíróban `+0x04=stride` pixelben,
+`+0x08=szélesség`, `+0x0c=magasság`, `+0x10=BGRA-adatmutató`; az alfa minden
+bemeneti pixelben 255. A determinisztikus bemenet:
+`B=(17+31x+7y) mod 256`, `G=(29+23x+11y) mod 256`,
+`R=(43+19x+13y) mod 256`, `A=255`, `x=0…W−1`, `y=0…1`.
+
+| Méret | Fade | Eredeti natív kimenet, BGRA hex | Összevetés a `glimmer_creative.apply_ir`-ral |
+|---:|---:|---|---:|
+| 4×2, páros | 0 | `2d2d2dff464646ff5f5f5fff747474ff3d3d3dff545454ff6b6b6bff808080ff` | 0/32 eltérő bájt |
+| 4×2, páros | 50 | `1e242bff3a3c41ff565457ff706a6bff2a323aff45494fff606064ff7a7678ff` | 0/32 eltérő bájt |
+| 5×2, páratlan | 0 | `2f2f2fff464646ff5f5f5fff767676ffc0c0c0ff3d3d3dff545454ff6d6d6dff848484ffcececeff` | 0/40 eltérő bájt |
+| 5×2, páratlan | 50 | `1f252cff3a3c41ff565457ff716b6cffa69c9bff2a323aff45494fff616165ff7b7779ffb1a9a9ff` | 0/40 eltérő bájt |
+
+A közös első mátrix külön QEMU-kontrollja: BGRA `11 1d 2b 47` →
+`00 1d 00 47`, vagyis csak a zöld csatorna és az alfa marad. A négy teljes
+futtatás összesen 144 BGRA-bájtot adott; a jelenlegi aktív renderer
+RGB-kimenetét BGRA-sorrendre alakítva mind a 144 egyezett.
+
+**Cáfoló próba.** A korábbi `LIGHTEN` hipotézist ugyanazzal a 4×2-es
+bemenettel és natív keverővel ellenőriztem: a módot a belső objektumban
+7-ről 4-re állítottam. A táblában 4=`Lighten`, 7=`Screen`. Fade 0-nál a
+Lighten-vezérlés `212121ff323232ff454545ff5a5a5aff2d2d2dff3e3e3eff515151ff666666ff`,
+míg a konstruktor szerinti Screen-kimenet a fenti 4×2-es Fade 0 sor.
+**24/32 bájt tér el, mind a 24 RGB-bájt, legfeljebb 26-tal**; az alfa
+változatlan. A Python Lighten-kontroll a mód 4 natív kimenetével bájtra
+egyezik, a Screen-kimenettel nem. Ez cáfolja a LIGHTEN olvasatot, és az
+ellenpróbát ugyanazzal a natív bájtmércével igazolja.
+
+**Bizonyítottsági fok: megerősített** a deklarált paraméterekkel, a
+műveletsorrenddel és a négy mért konfiguráció kimenetével: A) utasításszintű
+út az `IR` konstruktorától/alkalmazójától a ColorMatrix-, Blur- és
+Blend-közös motorokig; B) az eredeti gépi kód teljes QEMU-futtatása és
+bájt-egyezés az aktív rendererrel. A QEMU input-képek szintetikusak; nem
+állítanak kimerítő, minden lehetséges 8 bites pixelt lefedő enumerálást, és
+a teljes Picasa UI/XML-betöltőt sem futtatják.
+
 ### 2. `MultiplyColorMatrixImageOperation` — TELJES, egy sorban
 
 A `0x00bb77a0` (165 b) egyetlen attribútumot olvas (`multiplier`, tag
@@ -9680,18 +9771,22 @@ Fejlesztés: #3895.
 ragyogás gyerekművelete (`glimmer::NestedImageOperation`, vtábla
 `0x00cf0774`) mód-attribútumát **konstans 7-re** állítja: `0x00bc3e49
 push 7` → `+0x04` → `0x008eedc0`. A 7 a fenti tábla szerint **Screen**.
-A mai kódunk (`glimmer_creative.py`, `apply_ir`) LIGHTEN-t használ, és a
-docstringje ezt azzal indokolja, hogy „a `PicnikGrain` deklarációja szerint
-a 7-es mód LIGHTEN” — **ez az olvasat téves**, a 7 a Screen.
+A #3441 előtti kódállapot (`glimmer_creative.py`, `apply_ir`) LIGHTEN-t
+használt, és a docstring ezt azzal indokolta, hogy „a `PicnikGrain`
+deklarációja szerint a 7-es mód LIGHTEN” — **ez az olvasat téves**, a 7 a
+Screen.
 
-| `ir` eset | ΔE (Picasa vs. eredeti) | ΔE mi (LIGHTEN, ma) | ΔE mi (SCREEN) |
+| `ir` eset | ΔE (Picasa vs. eredeti) | ΔE mi (akkori LIGHTEN) | ΔE mi (akkori SCREEN-modell) |
 |---|---:|---:|---:|
 | `alap` (Fade 0) | 18,131 | **6,039** | **1,280** |
 | `max` (Fade 100) | — | 0,121 | 0,121 |
 
-*Mérés: `684-merokeszlet`, `tools/golden/compare_render.py`
-`delta_e_cie76` átlaga; a SCREEN a mai lebegőpontos `_blend_screen`-nel, az
-`apply_ir` többi része változatlan.* ⇒ a verdikt `ROSSZ` → `JO`.
+*A #3441 előtti összevetés: `684-merokeszlet`,
+`tools/golden/compare_render.py` `delta_e_cie76` átlaga; a SCREEN-oszlop az
+akkori lebegőpontos `_blend_screen`-modellt, az `apply_ir` többi részének
+változatlanságát mutatja.* ⇒ a verdikt `ROSSZ` → `JO`; a későbbi natív
+bájtmérést lásd az IR „Pixelmag, közös alkalmazók és natív bájtmérés”
+szakaszában.
 
 **2. A `Pixelate` `BlendMode` csúszkája (0–9) a natív sorszámot adja.** A mai
 `apply_pixelate` docstringje szerint a csúszka jelentése „a

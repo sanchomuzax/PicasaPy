@@ -660,11 +660,12 @@ pontraszter-csővezeték #381 hatókörén kívül esett — ld. a jegy jelenté
 Az `IR` a **#566** óta MEGFEJTVE — nem a paraméternevekből következtetve,
 hanem a natív kernel visszafejtéséből. A csővezeték: (1) színmátrix, amely
 csak a ZÖLD csatornát (és az alfát) hagyja meg, (2) `x = y = 5` elmosás,
-(3) a zöld glow **LIGHTEN** módban (nem SCREEN!) az EREDETI képre,
+(3) a zöld glow **SCREEN** módban (a natív 7-es mód) az EREDETI képre,
 `alpha = 0,25`, (4) záró monokróm mátrix
 `Y = clamp(−0,5·R + 2,0·G − 0,5·B)` — a KÉK súlya is negatív —, végül
-(5) a közös Fade-keverés. A
-`PicnikTint`/`ReanimatedEyeColor` egzakt csővezetéket kapott, de ecset-
+(5) a közös Fade-keverés. A teljes QEMU-bájtmérés és bájtpontos
+összevetés részletei a `filterdesc-registry.md` IR-szakaszában olvashatók.
+A `PicnikTint`/`ReanimatedEyeColor` egzakt csővezetéket kapott, de ecset-
 eszköz híján a `PicnikTint` a TELJES KÉPRE fut, a `ReanimatedEyeColor`
 pedig — **#688 óta** — változatlanul hagyja a képet (üres maszkkal indul).
 A kalibráció (a maradék KÖZELÍTŐ effektekhez
