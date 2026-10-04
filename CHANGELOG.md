@@ -9,6 +9,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - A Helyek panelen a helyi képadatok között kereshető cím, a térképtípus váltható, és a szöveg- valamint kollázspanel lefedettsége pontosabban követi a működő elemeket (#4147).
 
+## [0.8.672] – 2026-10-04
+
+- A Közzététel panel feltöltési választója külön kezeli a feltöltés, a módosítás és az online elemek eltávolításának módját (#4126).
+
 ## [0.8.671] – 2026-10-04
 
 - A videólejátszóban megjelent a tényleges méretű és a teljes képernyős lejátszás (#4127).
