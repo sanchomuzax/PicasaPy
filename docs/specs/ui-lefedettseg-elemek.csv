@@ -61,12 +61,12 @@ editpanel/swap_2up_focus,megvan,PicasaPy/PhotoViewer.qml:1761,"A két kép szerk
 editpanel/swap_2up_layout,megvan,PicasaPy/PhotoViewer.qml:1786,"A kettős nézet vízszintes/függőleges elrendezését váltó (`viewerSwapLayout`) vezérlő; kirajzolt ellenőrzése a #3663, viselkedését a #3014-es próbák fedik le."
 editpanel/only_1up_toggle,megvan,PicasaPy/PhotoViewer.qml:1720,Egyképes nézet: az `A` szegmens (`viewerLayoutOnly1up`) élő QML-vezérlő; kirajzolt és egérrel működő ellenőrzése: `test_kettos_nezet_gombsor_helye_3663.py`.
 editpanel/fxpreview1,megvan,PicasaPy/ToolTile.qml:76,Az effekt-csempe képe — nálunk STATIKUS SVG (44x30); él-e az eredetiben: #1869 (blokkolt)
-makemoviepanel/recompute,megvan,Újraszámolás gomb: a klipforrások újraolvasása és visszaváltás az előnézethez (#4125).
-makemoviepanel/sizelist,megvan,Hét eredeti méret; Preferences\makemovieres alapján megőrzött választás; alap 640x480 (#4125).
-makemoviepanel/add_audio,megvan,Hangfájl kiválasztása és törlése; a három hivatalos hangsáv-opció bekerül az MP4-be (#4125).
-makemoviepanel/insert_slide,megvan,"Betűtípus, méret, stílus, félkövér/dőlt/körvonal és színek; beszúrt szövegdia a videóban és .mxf-ben (#4125)."
-makemoviepanel/transtype_label,megvan,"Képváltási stílus, 22 hivatalos névvel; választása a renderelt átmenetet és .mxf-et állítja (#4125)."
-makemoviepanel/tab3,megvan,"A Klipek fül tartalmazza a klipek hozzáadását/törlését, rendezést, opciókat és újraszámolást (#4125)."
+makemoviepanel/recompute,megvan,tests/app/qml_functional/test_film_panel_4125.py,"Újraszámolás: a klipforrások újraolvasása és visszaváltás az előnézethez (#4125)."
+makemoviepanel/sizelist,megvan,tests/app/qml_functional/test_film_panel_4125.py,"Hét eredeti méret; a választott méret a kész film kimenetében is megmarad (#4125)."
+makemoviepanel/add_audio,megvan,tests/movie/test_slideshow_transitions_4125.py,"Hangfájl hozzáadása és a három hangsáv-opció a létrehozott MP4-ben (#4125)."
+makemoviepanel/insert_slide,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A beszúrt szöveges dia megjelenik a kész videóban és az .mxf projektben (#4125)."
+makemoviepanel/transtype_label,megvan,tests/movie/test_slideshow_transitions_4125.py,"A választott képváltási stílus a renderelt átmenetet és az .mxf-et állítja (#4125)."
+makemoviepanel/tab3,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A Klipek fül hozzáadása, törlése, újrarendezése és újraszámolása (#4125)."
 printpanel/3x5button,megvan,PicasaPy/PrintDialog.qml,»3.5 x 5 in« a printSizeLabels tömbben (:93) — a felirat mértékegységgel bővül
 printpanel/printlayoutlabel,megvan,PicasaPy/PrintDialog.qml,»Layout:« (:279) — az elrendezés-választó felirata; két rádió (egy kép/lap · indexkép)
 printpanel/copieslabel,megvan,PicasaPy/PrintDialog.qml,»Copies of each picture:« (:351) — képenkénti példányszám; a mért eredeti szemantika
@@ -138,9 +138,9 @@ keywords/addkeywords_label,megvan,PicasaPy/TagsPanel.qml:77,"Az `Add Tag:` mező
 keywords/closebutton,megvan,PicasaPy/RightDrawer.qml:100,A Címkék panel a jobb oldali fiókban van; a közös `rightDrawerClose` gomb zárja be a panelt
 keywords/readonly_label,megvan,PicasaPy/TagsPanel.qml:94,A `tagsReadOnlyNotice` jeleníti meg a hivatalos írásvédett állapotot; a fordítás a picasapy_hu.ts-ben szerepel
 keywords/removebutton,megvan,PicasaPy/TagsPanel.qml:150,A címkesor dinamikus `tagRemove-*` gombja eltávolítást kér; a Main.qml a kijelölés címkéjét törli
-makemoviepanel/font_label,megvan,A szöveges dia Betűtípus: listája (#4125).
-makemoviepanel/size_label,megvan,A szöveges dia Méret: listája (#4125).
-makemoviepanel/style_label,megvan,A 12 eredeti szövegstílus magyar listája (#4125).
+makemoviepanel/font_label,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A szöveges dia betűtípus-választója (#4125)."
+makemoviepanel/size_label,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A szöveges dia méretválasztója (#4125)."
+makemoviepanel/style_label,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A 12 eredeti szövegstílus magyar listája (#4125)."
 outputlayout/orderbutton,megvan,PicasaPy/TrayBar.qml:1959,"A `trayOrderButton` a mért cellában megvan, de letiltott és csak kivezetett szolgáltatásként jelenik meg; az online nyomat-rendelés a spec szerint nem cél"
 outputlayout/sharewith,megvan,PicasaPy/TrayBar.qml:1976,"A `trayShareButton` a mért cellában megvan, letiltott helyőrzőként; a Hello-integráció megszűnt, aktív backend nem cél"
 publish/backup_help,lekutatva,biztonsagi-mentes.md,"Szerkezeti horgony MEGVAN (2026-09-04, biztonsagi-mentes.md 14. szakasz): respack.yt-eltolás, geometria és publish.tre szülősor. A korábbi »nincs 0x-cím vagy fájl+sor« megjegyzés ezzel tárgytalan."
@@ -191,10 +191,10 @@ acquirepanel/add_groups_button,nem-cel,picasa-feltolteskezelo.md,"Megszűnt onli
 acquirepanel/selected_groups_label,nem-cel,picasa-feltolteskezelo.md,"Megszűnt online szolgáltatás (Picasa Web Albums, 2016). A tulajdonosi döntés dokumentálva: src/picasapy/help/features/meg-nem-erheto-el.md »Megszűnt szolgáltatások — ezek nem is fognak elkészülni«, és a PicasaMenuBar.qml:1596 retired: true (#638). A viselkedésük mérve: picasa-feltolteskezelo.md (#2529)."
 acquirepanel/share_with_label,nem-cel,picasa-feltolteskezelo.md,"Megszűnt online szolgáltatás (Picasa Web Albums, 2016). A tulajdonosi döntés dokumentálva: src/picasapy/help/features/meg-nem-erheto-el.md »Megszűnt szolgáltatások — ezek nem is fognak elkészülni«, és a PicasaMenuBar.qml:1596 retired: true (#638). A viselkedésük mérve: picasa-feltolteskezelo.md (#2529)."
 acquirepanel/upload_label,nem-cel,picasa-feltolteskezelo.md,"Megszűnt online szolgáltatás (Picasa Web Albums, 2016). A tulajdonosi döntés dokumentálva: src/picasapy/help/features/meg-nem-erheto-el.md »Megszűnt szolgáltatások — ezek nem is fognak elkészülni«, és a PicasaMenuBar.qml:1596 retired: true (#638). A viselkedésük mérve: picasa-feltolteskezelo.md (#2529)."
-makemoviepanel/previewimage,megvan,A kijelölt első klip képelőnézete; tényleges forrásútvonalról tölt (#4125).
-makemoviepanel/previewpanel,megvan,Klipképet és Előnézet gombot tartalmazó moviePreviewPanel (#4125).
-makemoviepanel/tabs,megvan,A Mozgófilm / Dia / Klipek TabBar (#4125).
-makemoviepanel/tabpanel1,megvan,Az első fül ScrollView-ja movieTabPanelMotion néven (#4125).
-makemoviepanel/tabpanel3,megvan,A Klipek fül panelje movieTabPanelClips néven (#4125).
+makemoviepanel/previewimage,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A kijelölt első klip képelőnézete a tényleges forrásképet tölti (#4125)."
+makemoviepanel/previewpanel,megvan,tests/app/qml_functional/test_film_panel_4125.py,"Klipképet és Előnézet gombot tartalmazó panel (#4125)."
+makemoviepanel/tabs,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A Mozgófilm / Dia / Klipek fülek valódi főablakból nyithatók (#4125)."
+makemoviepanel/tabpanel1,megvan,tests/app/qml_functional/test_film_panel_4125.py,"Az első fül a mozgófilm vezérlőit tartalmazza (#4125)."
+makemoviepanel/tabpanel3,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A Klipek fül panelje (#4125)."
 thumbui/editpanel,megvan,Main.qml:2294,A rejtett eredeti alap-panelnek nincs külön gombja; a PicasaPy könyvtárnézetének panelgyökere a `mainSplit` a `Main.qml`-ben.
 thumbui/listdetail,megvan,PicasaPy/LightboxFeed.qml:13,Az album tartalmi nézete a `LightboxFeed` listában jelenik meg; az eredeti rejtett alternatív állapot nem külön művelet.

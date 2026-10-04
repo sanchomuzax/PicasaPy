@@ -521,7 +521,13 @@ Item {
                         width: moviePages.width
                         spacing: 8
                         Text { text: qsTr("Text slide:"); color: Theme.ink }
-                        TextField { id: movieSlideText; objectName: "movieSlideText"; Layout.fillWidth: true; text: qsTr("Text") }
+                        TextField {
+                            id: movieSlideText
+                            objectName: "movieSlideText"
+                            Layout.fillWidth: true
+                            text: qsTr("Text")
+                            TextFieldContextArea {}
+                        }
                         RowLayout {
                             Text { text: qsTr("Font:"); color: Theme.ink }
                             PicasaComboBox { id: movieFontBox; objectName: "movieFontBox"; Layout.fillWidth: true; model: Qt.fontFamilies() }
