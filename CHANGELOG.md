@@ -11,6 +11,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - Elkészült a Filmkészítő háromfüles panelje; a választott méret, átmenet és hangsáv a kész mozgófilmben is érvényesül (#4125).
 - Az E-Mail panelen kiválasztható a levelezőprogram, megírható az üzenet, és a fotók mellékletként küldhetők (#4135).
 - Elkészült a webkamerás videó- és pillanatképrögzítő panel külön kamera- és hangforrás-beállítással, valamint a klipek panelen belüli visszajátszásával (#4137).
+- Az Importálás panelen működik az előző/következő kép, az Opciók menü és a forrás-/célmappa-választó; a nem elérhető online feltöltés jelölője súgóval, letiltva jelenik meg (#4145).
 
 ## [0.8.672] – 2026-10-04
 
