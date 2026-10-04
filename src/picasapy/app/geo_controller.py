@@ -62,6 +62,9 @@ class GeoMixin:
                 {
                     "row": row,
                     "name": photo.name,
+                    "caption": photo.caption or "",
+                    "keywords": photo.keywords or "",
+                    "folder": photo.folder_path,
                     "latitude": point.latitude,
                     "longitude": point.longitude,
                 }

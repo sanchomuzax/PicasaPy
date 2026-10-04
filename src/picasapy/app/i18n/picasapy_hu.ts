@@ -6845,6 +6845,21 @@ Biztosan visszavonja a műveletet?</translation>
         <translation>%1 kép rendelkezik hellyel</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="109"/>
+        <source>Search for an address:</source>
+        <translation>Cím keresése:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="145"/>
+        <source>Search</source>
+        <translation>Keresés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="77"/>
+        <source>Map</source>
+        <translation>Térkép</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PlacesPanel.qml" line="54"/>
         <source>Close</source>
         <translation>Bezárás</translation>
