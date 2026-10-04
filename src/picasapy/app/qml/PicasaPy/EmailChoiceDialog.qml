@@ -31,13 +31,6 @@ Dialog {
 
     readonly property bool rememberChoice: rememberCheck.checked
 
-    function attachmentUrl(path) {
-        var normalized = String(path).replace(/\\/g, "/")
-        return normalized.startsWith("/")
-            ? "file://" + normalized
-            : "file:///" + normalized
-    }
-
     onOpened: {
         rememberCheck.checked = false
         showHelp = false
@@ -382,7 +375,8 @@ Dialog {
                                         objectName: "emailComposePreviewImage"
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
-                                        source: root.attachmentUrl(modelData)
+                                        source: (typeof emailController !== "undefined" && emailController)
+                                            ? emailController.attachmentUrl(modelData) : ""
                                         fillMode: Image.PreserveAspectFit
                                         asynchronous: true
                                     }

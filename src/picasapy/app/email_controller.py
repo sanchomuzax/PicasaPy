@@ -46,6 +46,7 @@ from picasapy.mailer import (
 )
 
 from .collage_draft_guard import CollageDraftGuard
+from .formatting import to_file_url
 
 #: A `shutil.which` és a `subprocess.Popen` MODULSZINTŰ fogantyúja (#1375) —
 #: a teszt EZEKET cserélje.
@@ -330,6 +331,11 @@ class EmailController(QObject):
                 )
             )
         return items
+
+    @Slot(str, result=QUrl)
+    def attachmentUrl(self, path: str) -> QUrl:  # noqa: N802 — QML-stílus
+        """A melléklet-előnézet képforrása; kézzel fűzött URL tilos (#1019)."""
+        return to_file_url(path)
 
     @Slot(list, bool, result=list)
     def prepareAttachments(self, rows, multi: bool) -> list[str]:
