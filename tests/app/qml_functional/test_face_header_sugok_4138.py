@@ -115,8 +115,12 @@ def _mutato_feletti_sugo(qt_app, engine, ablak, vez, vart):
                 QHoverEvent(tipus, helyi, kozep, QPointF(-1, -1)),
             )
             qt_app.processEvents()
-        QTest.qWait(750)  # a közös ToolTip késleltetése 600 ms
-        qt_app.processEvents()
+        # a közös ToolTip késleltetése 600 ms; a CI lassabb, ezért határidős várás
+        for _ in range(60):
+            if probe.property("buborekLatszik") and probe.property("szovegLatszik"):
+                break
+            QTest.qWait(50)
+            qt_app.processEvents()
         assert probe.property("buborekLatszik"), (
             f"{vez.objectName()}: a buboréksúgó nem rajzolódott ki"
         )
