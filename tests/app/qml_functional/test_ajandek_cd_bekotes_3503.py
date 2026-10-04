@@ -53,6 +53,40 @@ def _kattints(window, elem):
     )
 
 
+def _var_elrendezett_gombra(window, qt_app, parbeszed, nev):
+    """A látható, már elrendezett párbeszédgombot adja vissza határidővel."""
+    gomb = _elem(window, nev)
+    elozo_geometria = None
+
+    def elrendezve():
+        nonlocal elozo_geometria
+        if parbeszed.property("visible") is not True or not gomb.isVisible():
+            elozo_geometria = None
+            return False
+
+        szelesseg = gomb.width()
+        magassag = gomb.height()
+        if szelesseg <= 0 or magassag <= 0:
+            elozo_geometria = None
+            return False
+
+        kozep = gomb.mapToScene(QPointF(szelesseg / 2, magassag / 2))
+        if not (0 <= kozep.x() < window.width()
+                and 0 <= kozep.y() < window.height()):
+            elozo_geometria = None
+            return False
+
+        geometria = (kozep.x(), kozep.y(), szelesseg, magassag)
+        stabil = elozo_geometria == geometria
+        elozo_geometria = geometria
+        return stabil
+
+    assert _var(qt_app, elrendezve, ms=5000), (
+        f"a {nev} gomb nem lett látható és stabilan elrendezve a főablakban"
+    )
+    return gomb
+
+
 def _talcara(window, qt_app, sorok):
     window.setProperty("selectedIndexes", list(sorok))
     window.setProperty("selectedIndex", sorok[0] if sorok else -1)
@@ -133,12 +167,29 @@ class TestAPanel:
 
 
 class TestALemezkep:
-    @pytest.mark.parametrize("ablakmagassag_eltolas", (-5, 0, 5))
+    @pytest.mark.parametrize(
+        "ablak",
+        [
+            pytest.param(("magassag", -5), id="magassag-minusz-5"),
+            pytest.param(("magassag", 0), id="alapmagassag"),
+            pytest.param(("magassag", 5), id="magassag-plusz-5"),
+            pytest.param(("meret", (1024, 700)), id="1024x700"),
+        ],
+    )
     def test_a_kesz_lemezkep_es_a_cd_kesz_parbeszed(
-        self, qml_app, qt_app, tmp_path, monkeypatch, ablakmagassag_eltolas
+        self, qml_app, qt_app, tmp_path, monkeypatch, ablak
     ):
         window, controller, _ = qml_app
-        window.setHeight(window.height() + ablakmagassag_eltolas)
+        if ablak[0] == "magassag":
+            vart_meret = (window.width(), window.height() + ablak[1])
+        else:
+            vart_meret = ablak[1]
+        window.setWidth(vart_meret[0])
+        window.setHeight(vart_meret[1])
+        assert _var(
+            qt_app,
+            lambda: (window.width(), window.height()) == vart_meret,
+        ), f"a főablak nem vette fel a kért méretet: {vart_meret}"
         qt_app.processEvents()
         _talcara(window, qt_app, [0, 1])
         host = _nyisd_meg(window, qt_app)
@@ -181,7 +232,10 @@ class TestALemezkep:
             "a.jpg", "b.jpg",
         ]
 
-        _kattints(window, _elem(window, "giftCdShowButton"))
+        megjelenit_gomb = _var_elrendezett_gombra(
+            window, qt_app, parbeszed, "giftCdShowButton",
+        )
+        _kattints(window, megjelenit_gomb)
 
         assert _var(qt_app, lambda: bool(megnyitott)), (
             "a „CD megjelenítése” nem nyitotta meg a lemezkép helyét"
