@@ -42,8 +42,9 @@ sys.path.insert(0, str(_ROOT / "scripts"))
 
 import run_tests  # noqa: E402
 
-#: A windows-job határideje percben (`teszt-darabok.yml`).
-HATARIDO_PERC = 30
+#: A windows-job határideje percben (`teszt-darabok.yml`, `timeout-minutes`).
+#: 2026-10-04: a folyamatban 40 perc áll; a 30 a korábbi értéket tükrözte.
+HATARIDO_PERC = 40
 
 #: A leghosszabb darab ennél nem lehet nagyobb.
 #:
