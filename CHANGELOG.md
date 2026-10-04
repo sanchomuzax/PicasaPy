@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Elkészült a webkamerás videó- és pillanatképrögzítő panel külön kamera- és hangforrás-beállítással, valamint a klipek panelen belüli visszajátszásával (#4137).
+
 ## [0.8.669] – 2026-10-04
 
 - A Glimmer keretek lekerekített sarkai és félig átlátszó szélei pontosabban követik az eredeti Picasa képpontkeverését (#4122).
