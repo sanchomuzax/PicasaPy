@@ -234,6 +234,50 @@ class TestElemFelulbiralasok:
         assert not hibak, hibak
 
 
+class TestKisebbPanelek4127:
+    """A 2026-10-04-i mérés néveltéréseit kódhoz párosítja."""
+
+    ELVART = {
+        "keywords/addbutton": "megvan",
+        "keywords/addkeywords_label": "megvan",
+        "keywords/closebutton": "megvan",
+        "keywords/readonly_label": "megvan",
+        "keywords/removebutton": "megvan",
+        "searchoptions/label_searchresult": "megvan",
+        "searchoptions/viewallbutton": "megvan",
+        "searchcontainer/timecontainer_label": "megvan",
+        "outputlayout/orderbutton": "megvan",
+        "outputlayout/sharewith": "megvan",
+        "video_control_bar/moviemode1": "megvan",
+        "video_control_bar/setin": "megvan",
+        "video_control_bar/setout": "megvan",
+        "video_control_bar2/1to1": "megvan",
+        "video_control_bar2/fullscreen": "megvan",
+    }
+
+    def test_a_jegy_tetelei_kodhoz_vannak_parositva(self, elem_sorok):
+        sorok = {sor["elem"]: sor for sor in elem_sorok}
+        hianyzo = sorted(set(self.ELVART) - set(sorok))
+        assert not hianyzo, f"hiányzó CSV-sorok: {hianyzo}"
+        hibas = {
+            nev: sorok[nev]["allapot"]
+            for nev, vart in self.ELVART.items()
+            if sorok[nev]["allapot"] != vart
+        }
+        assert not hibas, (
+            "a #4127 elemeket a kód vizsgálata után `megvan` állapotra kell "
+            f"párosítani: {hibas}"
+        )
+
+    def test_a_jegy_tetelei_qml_bizonyitekot_adnak(self, elem_sorok):
+        sorok = {sor["elem"]: sor for sor in elem_sorok}
+        ures = [
+            nev for nev in self.ELVART
+            if not (sorok[nev].get("bizonyitek") or "").strip()
+        ]
+        assert not ures, f"nincs QML-bizonyíték: {ures}"
+
+
 class TestJegy4131:
     """A #4131 húsz, korábban `lekutatva` állapotú elemének mai párosítása."""
 

@@ -6323,10 +6323,11 @@ alkalmazza az utolsó oszlopra is.
 
 **Cáfoló próba.** A `qemu-i386` skalárpróba az `8,9 → 8` eredménnyel
 cáfolja a kerekítés-paritást; a sugárpróba a fenti küszöb körüli bemenetekkel
-ellenőrizte a disassemblyből olvasott ágakat. A teljes
-`0x00bb5b60` munkavégzőhöz összeállított qemu-wrapper `R6030 - CRT not
-initialized` hibával állt le, mielőtt pixelkimenetet írt volna. Ez nem
-pixel-golden és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
+ellenőrizte a disassemblyből olvasott ágakat. Az első teljesmunkavégző-próba
+`R6030 - CRT not initialized` hibával állt le; a 2026-10-04-i második kör
+heap-shimekkel túljutott ezen, de a képpontátalakítóban a futás
+szegmentálási hibával végződött (az alábbi alfejezet). Egyik futás sem adott
+pixel-goldent, és nem teljesíti a négy `Steps`/`Smoothing` kombinációs
 elfogadást.
 
 **Fejlesztői eltérés:** a `Steps` törtértékének konverzióját a natív
@@ -6341,6 +6342,193 @@ kvantálója **megerősített** (utasításolvasás + független qemu-i386 futta
 a teljes `QuantizePalette`-kimenet és a `Fade` összetett képpontútja
 **feltételes** (a teljes műveletet nem sikerült qemu alatt futtatni, és
 nincs négykombinációs byte-golden).*
+
+**Későbbi állapotfrissítés:** a következő első QEMU-próba valóban félbeszakadt;
+az azt követő „A QuantizePalette képadat-leírója és a négy QEMU-pár” szakasz
+rögzíti a javított descriptorral mért kimenetet, és felülírja ezt a nyitott
+státuszt.
+
+### A teljes munkavégző első QEMU-próbája — az akkori képadat-leíró hibás volt (2026-10-04, #626)
+
+A helyi harness másolata a `.bt/harness-626q/` könyvtárban készült; a privát
+`~/picasapy-agent/eszkozok/qemu_harness/` eredeti fájljaihoz nem nyúltam. A PE
+belépési pont `0x00bef35e` a `___security_init_cookie`
+(`0x00bf0b56`) után a `___tmainCRTStartup` (`0x00bef17e`) útjára tér; ez az
+indítás hívja a `__heap_init` (`0x00bf0904`), `__mtinit` (`0x00bf0725`),
+`__ioinit` (`0x00beffc8`) és `__cinit` (`0x00bef5d3`) rutinokat. A teljes
+alkalmazásindítás helyett a harness másolata a `_malloc` (`0x00bf426f`),
+`_free` (`0x00bf219e`), `__calloc_crt` (`0x00bf226c`), `__realloc_crt`
+(`0x00bf22b4`), `__recalloc_crt` (`0x00bf22ff`) és a Picasa-allokátor
+(`0x0097c5d0`) belépési pontjait egy futásonként új, determinisztikus
+bump-arénára irányítja. A `free` no-op; a blokk mérete a `realloc`/
+`recalloc` számára a blokk előtt tárolódik. Az IAT `InterlockedIncrement`/
+`InterlockedDecrement` hívásai is lokális assembly-shimre mutatnak. A
+`0x00d67838` globális dword négy bájtra nullázását a harness szintén
+elvégzi; e globális változó szerepét külön nem izoláltam.
+
+Az eredeti `R6030` üzenet a shimek telepítése után már nem jelent meg: a futás
+elérte a `0x00bcb2f0` képpontátalakítót. A `q626-final` futás naplójának
+utolsó állapota `EIP=0x00bcb399`, `EDI=0x50230000`; a következő utasítás
+`0x00bcb3a0` a `[EDI+2]` bájtot olvassa. Ez a cím nem a wrapper által megadott
+`0x10060000` bemeneti puffer vagy a shim `0x10100000`-tól induló arénája;
+a mutató forrása nem azonosított.
+Ugyanez a futás `qemu-i386` alatt `SIGSEGV`-vel tért vissza, kimeneti bájt
+nélkül. Az utasítás és regiszterállapot binárisdisassemblyval, illetve a
+QEMU-regiszternaplóval ellenőrizhető; a hibás képadat-objektum pontos
+invariánsa és az, hogy melyik natív létrehozó út állítja elő a `0x50230000`
+mutatót, **NINCS MEG**.
+
+A `wq.py` diagnosztikai hívása közvetlenül a `0x00bb5b60` belső
+kvantálómunkavégzőt hívta `Steps=8`, `Depth=4` értékkel, szintetikus
+`32×24` BGRA képpel. A Glimmer külső `Blur`- és `Fade`-lépését nem futtatta;
+ez a próba a teljes effekt összehasonlítására sem lett volna elegendő még
+érvényes kimenet mellett sem.
+
+A helyi user `systemd` scope nem volt elérhető, ezért a tesztfuttató közvetlen
+`qemu-i386` fallbacket használt `timeout`-tal és
+`RLIMIT_AS=(mem_mb+4096) MiB` értékkel. A 4 GiB ráhagyás a QEMU i386
+vendégcímtér-leképezéséhez kellett; ez nem cgroup- vagy RSS-korlát. A
+README-ben ez és a CRT-shim alkalmazása dokumentálva van a következő
+kutatási szeleteknek.
+
+**Eredmény és határ:** a heap-shim a CRT-inicializálási akadályt megkerüli,
+de nem bizonyítja a natív kimenetet vagy az objektum inicializáltságát. A
+legalább négy `Steps`/`Smoothing` pár, mindegyik `Fade=0` és `Fade=50` mellett,
+nem futott le; ezért nincs bájtpontos összevetés, és nincs mérésből igazolt
+új fejlesztői eltérés sem. A következő próbának előbb a `0x00bb5b60` által
+várt képobjektumot a bináris valódi előállító útjával létrehoznia, majd
+a `0x00bcb2f0` bemenő descriptorának `+4` pixelmutatóját és sorlépését kell
+QEMU-ban ellenőriznie a dereferálás előtt.
+
+*Bizonyítottsági fok: feltételes — a CRT-hookok célcímei és a futás
+megállási címe binárisdisassemblyval és a QEMU-próbával alátámasztott;
+pixelmatematika és renderelővel való egyezés nincs mérve.*
+
+**Állapot:** ez az első, hibás bemeneti/kimeneti descriptorral futott kör
+történeti jegyzete; az alábbi, azonos dátumú folytatás felülírja az akkori
+„NINCS MEG” állapotot és a javasolt következő lépést.
+
+### ✅ A QuantizePalette képadat-leírója és a négy QEMU-pár (2026-10-04, #626)
+
+#### A valódi képadat-rekord és a `0x00bcb2f0` lokális nézete
+
+A `0x00bb5b60` belépő képadat-rekordja nem azonos a képponti munkavégzőnek
+átadott lokális descriptorral. Az elsőt a `0x00bb5f1a`–`0x00bb5f65`
+utasítások olvassák; ugyanezt az elrendezést a másik képművelet-út
+`0x009e7420` mintavételezője is használja:
+
+| rekord | mező | jelentés |
+|---|---:|---|
+| Image record (`0x00bb5b60` bemenet) | `+0x04` | sorlépés, pixelben; bájtcímhez `×4` |
+| | `+0x08` | szélesség pixelben |
+| | `+0x0c` | magasság pixelben |
+| | `+0x10` | képadat kezdőcíme |
+| | `+0x18`, `+0x1c` | x/y origó |
+| `0x00bcb2f0` bemenő view | `+0x04` | pixelbázis |
+| | `+0x08` | ebben a futásban nulla; szerepe **NINCS MEG** |
+| | `+0x0c`, `+0x10` | szélesség, magasság |
+| | `+0x14` | sorlépés, pixelben; bájtcímhez `×4` |
+| | `+0x18`, `+0x1c` | x/y origó |
+
+A hívó a valódi image record `+0x10` adatmutatóját és `+0x04`
+sorhosszát (`0x00bb5f30`–`0x00bb5f65`) a lokális view `+0x04` és
+`+0x14` mezőibe másolja. A `0x00bcb2f0` `EBX=[EBP+0x0c]` pointeréből
+veszi az input bázist (`mov edi,[ebx+4]`, `0x00bcb360`) és a stride-ot
+(`imul ..., [ebx+0x14]`, `0x00bcb368`); a kimeneti bázist a harmadik
+pointerargumentum `+0x04` mezőjéből, stride-ját annak `+0x14` mezőjéből
+veszi (`0x00bcb37a`–`0x00bcb385`).
+Így a korábbi hibás futás `EDI=0x50230000` értéke a `0x00bcb2f0`
+`[input-view+0x04]` mezőjéből jött (`0x00bcb360`–`0x00bcb371`); a valódi
+hívó e helyet a belépő image record `+0x10` adatmutatójából állítja elő.
+A régi crashnél ezt a view-t nem naplóztuk, így maga a `0x50230000`-hez
+vezető hibás rekordérték **NINCS MEG**. A javított mérésben ugyanennek a
+mezőnek az értéke a megadott bemeneti puffer `0x10070000` volt.
+
+**Csatornarend:** 4 bájt/pixel, memóriában BGRA. A `0x00bcb3a0`–
+`0x00bcb422` a `[+2]` bájtot a vörös (`+0x800` LUT), `[+1]`-et a zöld
+(`+0x400`), `[+0]`-t a kék (`+0`), `[+3]`-at az alfa (`+0xc00`) rekeszhez
+viszi; a `0x00bcb4ae`–`0x00bcb4ba` ugyanilyen bájthelyekre ír vissza.
+Az image-record pixelformátum-enum vagy az `+0x08` view-mező szemantikája
+**NINCS MEG**; a vizsgált út bájtsorrendje és 32 bites pixele viszont
+utasításszinten megvan.
+
+Az első bcb-hívás helye `0x00bb5fe9`: a 51×49-es QEMU-futásban az input
+view `+0x04=0x10070000`, a kimeneti view `+0x04=0x10107950`, méretük
+51×49, stride-juk 51 volt. A második hívás `0x00bb6110` ugyanezt a belső
+kimeneti view-t adja inputként és outputként, tehát in-place lépés.
+Mindkét eredeti hívást a futás közben naplóztam. A korábbi hibás harness a
+saját külső célpufferét olvasta, amelyet ez a belső kimeneti view nem használ;
+ezért lehetett a worker sikeres visszatérése mellett az ottani puffer nulla.
+
+#### Natív futás és byte-összevetés
+
+A QEMU-harness-másolat a `.bt/harness-626q3/` alatt futtatta az eredeti
+`0x00bb5b60` munkavégzőt, majd az eredeti `0x009dc4b0` alpha-blendert.
+A tesztkép determinisztikus, szintetikus 51×49 BGRA volt; a négy egész
+Steps/Smoothing pár a leíró szerinti elmosás után került a natív workerbe.
+A Fade=50 blend súlya `w=127`: az assembly a `trunc(α×256)` értéket
+pozitív esetben eggyel csökkenti (`0x00bd0a72`–`0x00bd0aaa`,
+`0x009dc561`); a SIMD-képletet és az odd-width scalar ágat is közvetlenül
+QEMU-ban futtattam.
+
+| `Steps` | `Smoothing` | sugár | quant pixel-eltérés (RGB) | Fade 0 RGB-bájt eltérés | Fade 50 RGB-bájt eltérés 51×49-en | max. |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 0 | 10,1 | 0/2 499 pixel | 0/7 497 | 36/7 497 | 1 |
+| 8 | 80 | 2,1 | 0/2 499 pixel | 0/7 497 | 51/7 497 | 1 |
+| 16 | 50 | 5,1 | 0/2 499 pixel | 0/7 497 | 63/7 497 | 2 |
+| 30 | 100 | 0,1 | 0/2 499 pixel | 0/7 497 | 77/7 497 | 1 |
+
+A négy natív quant-kimenet byte-ra egyezik a `kvantal()` kimenetével;
+Fade=0-nál a `BlendAlpha=1` miatt a kvantált kép változatlanul kerül ki.
+Fade=50-nél a natív blend-kimenet mind a négy beállításban byte-ra egyezik
+az utasításokból számolt eredménnyel. A PicasaPy eltérés kizárólag a páratlan
+szélesség utolsó oszlopában van. Cáfoló szélességkontroll: 50×49, 8/80;
+Fade=0 és Fade=50 esetén is 0/7 350 RGB-bájt eltérés.
+Például 16/50, `(x=50,y=22)`, vörös: eredeti `0`, kvantált `147`, natív
+Fade50 `74`, PicasaPy `72`; ez a páratlan sorvégi skalárág két szintes
+eltérését adja.
+
+#### Független utak, cáfoló kontroll és más műveletek
+
+**Két független út:** A) `0x00bb5b60` utasításai követik a forrás image
+record stride- és adatmutatómezőit a lokális view-ig; a `0x009e7420`
+független képművelet-út ugyanezeket a `+0x04/+0x08/+0x0c/+0x10` mezőket
+olvassa. B) az eredeti `0x00bb5fe9`/`0x00bb6110` hívások QEMU-mezőnaplója
+ugyanezt a layoutot mutatja, a kimeneti pointerről kiolvasott pixelek nem
+nullák. A mezőszerepek egyeznek. A pixelmatematikánál az eredeti
+`0x009dc4b0` QEMU-outputja mind a négy Steps/Smoothing esetben egyezik a
+disassembly-képlettel.
+
+**Cáfoló kísérlet:** az a hipotézis, hogy a külső harness-célpuffer `+0x04`
+mezője a bcb végső kimenete, hamisnak bizonyult: a QEMU-hívásnál a valódi
+output view `+0x04=0x10107950`, és annak pufferében nem nulla pixel van.
+Az odd-width magyarázatot a páros 50×49 kontroll cáfolhatta volna; azon nem
+volt eltérés, míg a páratlan 51×49 futásokban az eltérések mind a sorvégi
+scalar ágra estek.
+
+A ColorMatrix közvetlen QEMU-kontrollja a `0x008f2640` pixelkernelt
+kézi BGRA pixel-dwordokkal futtatja; az nem a teljes `0x00bb5b60`
+image record vizsgálata. A Border-próba (`0x00bbe570` → `0x00aa13b0`)
+saját, kézzel összeállított 9×9 ARGB bitmapet használ, de annak record-offsetjei
+nincsenek a jelenlegi mérésekben. Ezért a ColorMatrix kernel inputja nem
+bizonyság az image-record azonosságára, a Border-descriptor byte-offsetű
+egyezése pedig **NINCS MEG**.
+
+#### Eltérés a jelenlegi rendererben
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x00bb5b60` quant-kimenete mind a négy egész Steps/Smoothing párnál | `glimmer_tone.apply_quantizepalette()` / `quantize_palette.kvantal()` | A mért paraméterpárokra nincs eltérés; nem igényel fejlesztést. |
+| `0x009dc4b0`: 8 bájtos MMX-párok képlete `(B·(255−w)+T·w)>>8`; páratlan pixelszélesség maradék pixelje: `T+((B−T)·w>>8)` (`0x009dc646`–`0x009dc6fb`) | `glimmer_ops.py:151–170` a páros pixelképletet minden pixelre használja | Odd width esetén a sor utolsó pixelét a skalárképlettel keverje; őrizze meg az egész bájtos, előjeles `>>8` sorrendet. A 51×49 négy mért pár a golden; az 50×49 kontrollnak változatlanul kell maradnia. |
+
+**Bizonyítottsági fok:** `megerősített` a fenti record-mezőkre, byte-sorrendre,
+négy kvantálóbeállításra és Fade=50 algoritmusra: az utasításszintű olvasat
+és az eredeti QEMU-futtatás egyezik. **Nyitott:** a top-level `+0x14` és a
+view `+0x08` szemantikája, formátum-enum értéke, valamint a Border harness
+recordjának azonossága. Ez a szintetikus QEMU-worker-mérés nem oldja meg a
+korábbi 4. szakasz kérdését, hogy a valódi Picasa-export miért nem az
+oktree-út eredményét mutatja; a teljes `QuantizePalette` effekt összesített
+bizonyítottsági foka ezért továbbra is **feltételes**.
 
 ## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
 
