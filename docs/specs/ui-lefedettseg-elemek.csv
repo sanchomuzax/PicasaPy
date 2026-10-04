@@ -5,6 +5,17 @@ searchcontainer/searchclr,megvan,PicasaPy/MainToolbar.qml,Keresés törlése: ob
 outputlayout/ebutton,megvan,PicasaPy/TrayBar.qml,"Nálunk „E-Mail” a felirata, az eredetiben „Email” — kötőjel miatt nem egyezik szó szerint"
 outputlayout/folderbutton,megvan,PicasaPy/TrayBar.qml;PicasaPy/ExportDialogs.qml,Az „Export” tálcagomb az Exportálás párbeszédet nyitja
 throttle/throttlethumb,megvan,PicasaPy/PicasaScrollBar.qml,A görgetősáv fogantyúja — nálunk névtelen Rectangle a PicasaScrollBar-ban
+initialscan/cancel,megvan,PicasaPy/InitialScanDialog.qml,"Az Escape-es bezárás megszakítja az első indítás választását; a Mégse gomb rejtett marad (test_jegy_4150_ui.py)"
+initialscan/radio_complete,megvan,PicasaPy/InitialScanDialog.qml,"A teljes gép rádiógombja (initialScanWide); valódi egérkattintással lefedve (test_jegy_4150_ui.py)"
+initialscan/radio_limited,megvan,PicasaPy/InitialScanDialog.qml,"A korlátozott mappakeresés rádiógombja (initialScanNarrow); valódi egérkattintással lefedve (test_jegy_4150_ui.py)"
+initialscan/radiogroup,megvan,PicasaPy/InitialScanDialog.qml,"A két választógomb közös, kizáró csoportja; kattintási próbával lefedve (test_jegy_4150_ui.py)"
+throttle/prevalbum,megvan,PicasaPy/PicasaScrollBar.qml:137,"Az előző albumra ugró felső gomb (scrollPrevAlbum); valódi egérkattintással lefedve (test_jegy_4150_ui.py)"
+throttle/nextalbum,megvan,PicasaPy/PicasaScrollBar.qml:146,"A következő albumra ugró alsó gomb (scrollNextAlbum); valódi egérkattintással lefedve (test_jegy_4150_ui.py)"
+throttle/albumscrolltop,nem-cel,docs/decisions/gorgetosav-album-ugro.md,"A fel nyíl nincs megépítve: az elfogadott #857 döntés kifejezetten kihagyja a két fel/le nyilat; a csak párosítandó jegyállítás pontatlan."
+throttle/albumscrollbottom,nem-cel,docs/decisions/gorgetosav-album-ugro.md,"A le nyíl nincs megépítve: az elfogadott #857 döntés kifejezetten kihagyja a két fel/le nyilat; a csak párosítandó jegyállítás pontatlan."
+rightdrawerpanel/size_toggle,megvan,PicasaPy/RightDrawer.qml:71,"Méretsúgóval és valódi kis/nagy váltással lefedve (test_jegy_4150_ui.py)"
+rightdrawerpanel/title_text,megvan,PicasaPy/RightDrawer.qml:84,"A fejléc a kiválasztott lap nevét mutatja: Properties / Tulajdonságok. A specifikáció helyesbítő része ezt írja elő; a Metadata kérés ettől eltér (test_jegy_4150_ui.py)"
+rightdrawerpanel/close,megvan,PicasaPy/RightDrawer.qml:99,"Bezárósúgóval és valódi bezáró kattintással lefedve (test_jegy_4150_ui.py)"
 acquirepanel/rotate1button,megvan,PicasaPy/ImportSourceDialog.qml,Forgatás importáláskor: objectName importRotateRight:<index> a bélyegkép-rácson (399. sor)
 acquirepanel/rotate2button,megvan,PicasaPy/ImportSourceDialog.qml,Forgatás importáláskor (balra): objectName importRotateLeft:<index> (397. sor)
 acquirepanel/startoggle,megvan,PicasaPy/ImportSourceDialog.qml,Csillagozás importáláskor: objectName importStar:<index> (424. sor)
@@ -83,6 +94,9 @@ printpanel/nextbutton,megvan,PicasaPy/PrintDialog.qml,printPreviewNextButton (:4
 printpanel/pcancelbutton,megvan,PicasaPy/PrintDialog.qml,»Close« (:617) — a párbeszéd bezárása
 printpanel/selectprinterbutton,megvan,PicasaPy/PrintDialog.qml,printerBox ComboBox (:493) — az elérhető nyomtatók listája plusz PDF-cél
 printpanel/printsetuplabel,megvan,PicasaPy/PrintDialog.qml,»Printer:« (:485) — a nyomtatóválasztó felirata
+printpanel/captionoptionsbutton,megvan,PicasaPy/PrintDialog.qml:437,"A hivatalos Border and Text Options gomb, eredeti Tooltip szöveggel és beállítás-panelre kattintással (test_jegy_4150_ui.py)"
+printpanel/phelpbutton,megvan,PicasaPy/PrintDialog.qml:891,"A Help gomb a párbeszéd meglévő nyomtatási súgóablakát nyitja (test_jegy_4150_ui.py)"
+printpanel/froogle,nem-cel,picasa-nyomtatas.md,"A Froogle megszűnt szolgáltatás; a felhasználó döntése alapján nem cél"
 editpanel/fxpreview2,megvan,PicasaPy/EditorEffectsTab1.qml,thumbSource: panel.effectThumbSource(...) — az effekt-csempék ÉLŐ előnézeti képe (#338); Tab1/2/3 12-12 csempe
 editpanel/fxpreview3,megvan,PicasaPy/EditorEffectsTab1.qml,ugyanaz a csempe-készlet (:56-:105)
 editpanel/fxpreview4,megvan,PicasaPy/EditorEffectsTab1.qml,ugyanaz a csempe-készlet

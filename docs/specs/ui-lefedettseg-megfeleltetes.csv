@@ -50,7 +50,7 @@ printpanel,parositva,PicasaPy/PrintDialog.qml,"Nyomtatási panel és előnézet 
 propertiespanel,parositva,PicasaPy/PropertiesPanel.qml,Tulajdonságlista a jobb oldali fiókban
 publish,parositva,PicasaPy/PublishPanel.qml;PicasaPy/GiftCdHost.qml;PicasaPy/BackupHost.qml,A panel 21 mért vezérlője megvan (#2508). Az Ajándék-CD és a biztonsági mentés a menüből nyílik és a spec szerinti mappa/ISO-kimenetet készíti (#3503/#3504/#2074); a feltöltési módválasztó a CBurnPanel +0xd4 mezőjét 1/2/3-ra állítja (#4126). Az online művelet és a rejtett web_group hét eleme hatókörön kívül marad.
 quicktagconfig,parositva,PicasaPy/QuickTagsConfigDialog.qml,Gyorscímke-beállító
-rightdrawerpanel,parositva,PicasaPy/PropertiesPanel.qml,Jobb oldali fiók kerete
+rightdrawerpanel,parositva,PicasaPy/RightDrawer.qml;PicasaPy/PropertiesPanel.qml,Jobb oldali fiók kerete és tulajdonságpanelje
 scaleslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 scratch,nincs-megfeleltetes,,Belső rajzfelület (album-előnézet összeállítása) — nem felhasználói felület
 searchcontainer,parositva,PicasaPy/MainToolbar.qml;PicasaPy/SearchSuggestions.qml,Keresősáv és szűrőgombjai
