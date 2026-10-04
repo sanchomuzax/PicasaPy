@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Hőtérkép színátmenete a rövidebb színárnyalat-íven halad, így a 350°-ról 10°-ra tartó átmenet a pirosnál marad (#4129).
+
 ## [0.8.669] – 2026-10-04
 
 - A Glimmer keretek lekerekített sarkai és félig átlátszó szélei pontosabban követik az eredeti Picasa képpontkeverését (#4122).
