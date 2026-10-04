@@ -35,7 +35,9 @@ import QtQuick.Controls
 PicasaMenu {
     id: menu
     objectName: "photoContextMenu"
-
+    // #4138: a helyi menü külön QQuickWindow-ja kapja az egéreseményeket
+    // (és abban jelenik meg a menüpont buboréksúgója).
+    popupType: Popup.Window
     //: #3470: a befoglaló menü a `Repeater`-delegáltaknak. A delegáltban a
     //: `menu` név NEM ezt jelenti: ott a `MenuItem` saját `menu`
     //: tulajdonsága nyer (a beágyazott almenü), mert a delegált külön
@@ -248,6 +250,16 @@ PicasaMenu {
     PicasaMenuItem {
         objectName: "contextMenuSetAsPeopleAlbumThumbnail"
         text: qsTr("Set as People Album Thumbnail")
+        // A Qt offscreen stílusa egyébként kikapcsolja a MenuItem hoverét;
+        // így a menü saját QQuickWindow-jára küldött egérmozgás sem jutna el
+        // ehhez a letiltott (de súgóval ellátott) sorhoz.
+        hoverEnabled: true
+        ToolTip.visible: hovered
+        ToolTip.text: qsTr(
+            "Set as People Album Thumbnail",
+            "faceheaderpanel/set_thumbnail tooltip"
+        )
+        ToolTip.delay: Theme.tooltipDelay
         visible: menu.personName !== ""
         height: visible ? implicitHeight : 0
         placeholder: true
