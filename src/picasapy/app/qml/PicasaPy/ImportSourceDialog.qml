@@ -335,6 +335,7 @@ Window {
                 property string helpText: qsTr("Upload to Picasa Web Albums...")
                 ToolTip.visible: hovered
                 ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
             }
             PicasaButton {
                 objectName: "importSourceOptionsButton"
@@ -342,6 +343,7 @@ Window {
                 property string helpText: qsTr("Online options")
                 ToolTip.visible: hovered
                 ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
                 onClicked: onlineOptionsPopup.open()
             }
             Popup {
@@ -441,6 +443,7 @@ Window {
                 property string helpText: qsTr("View the previous Photo")
                 ToolTip.visible: hovered
                 ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
                 onClicked: importSourceWindow.stepPreview(-1)
             }
             PicasaButton {
@@ -452,6 +455,7 @@ Window {
                 property string helpText: qsTr("View the next Photo")
                 ToolTip.visible: hovered
                 ToolTip.text: helpText
+                ToolTip.delay: Theme.tooltipDelay
                 onClicked: importSourceWindow.stepPreview(1)
             }
         }
