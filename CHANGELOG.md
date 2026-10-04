@@ -7,6 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+
 ## [0.8.674] – 2026-10-04
 
 - A nyomtatásnál választható a képfelirat módja és helye, színe, valamint a szegély viselkedése; indexképek nyomtatásakor a nem használható opciók letiltva jelennek meg (#4143).
