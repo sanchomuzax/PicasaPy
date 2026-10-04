@@ -33,6 +33,7 @@ Item {
     // sikeres írás után a hívó (PhotoViewer) ezt figyelve olvashatja újra
     // a facesFor()-t (a modell maga nem tudja, hogy az ini megváltozott)
     signal edited()
+    signal manualCancelRequested()
 
     function refreshKnownNames() {
         overlay.knownNames = overlay.hasHelper && overlay.imagePath
@@ -40,6 +41,13 @@ Item {
     }
     onImagePathChanged: refreshKnownNames()
     onEditModeChanged: if (editMode) refreshKnownNames()
+
+    function cancelManualAdd() {
+        overlay.closeEditor()
+        overlay.pendingRect = Qt.rect(0, 0, 0, 0)
+        overlay.pendingIsNew = false
+        overlay.manualCancelRequested()
+    }
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
 
@@ -304,6 +312,18 @@ Item {
         color: "#ffffff"
         style: Text.Outline
         styleColor: "#000000"
+    }
+
+    PicasaButton {
+        objectName: "faceManualCancelButton"
+        visible: overlay.editMode
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 8
+        width: 96
+        height: 28
+        text: qsTr("Cancel")
+        onClicked: overlay.cancelManualAdd()
     }
 
     // -- névhozzárendelő popup: közös az új régióhoz és az átnevezéshez --

@@ -35,6 +35,12 @@ Dialog {
         root.jelenlegi = root.gombsavHid ? root.gombsavHid.sorrend.slice() : []
         jelenlegiLista.currentIndex = -1
         elerhetoLista.currentIndex = -1
+        var ok = root.standardButton(Dialog.Ok)
+        ok.objectName = "configButtonsOkButton"
+        ok.text = qsTr("OK")
+        var cancel = root.standardButton(Dialog.Cancel)
+        cancel.objectName = "configButtonsCancelButton"
+        cancel.text = qsTr("Cancel")
     }
     onAccepted: {
         if (root.gombsavHid)
@@ -130,6 +136,7 @@ Dialog {
             ColumnLayout {
                 spacing: 4
                 Text {
+                    objectName: "configButtonsAvailableLabel"
                     text: qsTr("Available buttons:")
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
@@ -167,6 +174,7 @@ Dialog {
             ColumnLayout {
                 spacing: 4
                 Text {
+                    objectName: "configButtonsCurrentLabel"
                     text: qsTr("Current buttons:")
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink

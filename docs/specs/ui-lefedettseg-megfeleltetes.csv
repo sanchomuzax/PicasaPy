@@ -1,10 +1,10 @@
 panel,allapot,qml_fajlok,megjegyzes
 acquirepanel,parositva,PicasaPy/PicasaImportDialog.qml;PicasaPy/ImportSourceDialog.qml;PicasaPy/ImportProgressPanel.qml;PicasaPy/ImportDropArea.qml,"Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel"
-activity,parositva,PicasaPy/ActivityBadge.qml,Háttérművelet-jelző a főablak jobb-felső sarkában (#2966); a helye és mérete a respack.yt-ból mérve (#3112)
+activity,parositva,PicasaPy/ActivityBadge.qml,A helyi háttérművelet-jelző megvan; az eredeti activitybutton viszont a megszűnt Picasa Web Albums Feltöltéskezelőjét nyitotta.
 bigslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 brushslider,parositva,PicasaPy/PicasaSlider.qml,Ecsetméret-csúszka (retusálás)
 burstslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-buttonmgr,nincs-megfeleltetes,,Gombsáv-testreszabó párbeszéd — nincs nálunk
+buttonmgr,parositva,PicasaPy/ConfigureButtonsDialog.qml,"A gombsáv-testreszabó párbeszéd már megvan (#1792): két lista, műveletgombok, OK/Mégse; a főablak nyitja meg."
 buzzupload,nem-cel,,"Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél"
 canoncapturemoviepanelpopup,nem-cel,,Canon SDK-s kamerafelvétel — nem cél
 capturemoviepanelpopup,parositva,PicasaPy/CaptureMoviePanelPopup.qml;PicasaPy/CaptureMovieMedia.qml,Webkamerás videó- és pillanatképrögzítés; külön kamera- és hangforrás; kliplejátszás a panelen (#4137)
@@ -24,25 +24,25 @@ editslider4,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 edittextpanel,parositva,PicasaPy/EditorTextPanel.qml;PicasaPy/TextColorSwatches.qml,Szöveg-eszköz panelje
 faceheaderpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml;PicasaPy/PeopleAlbumContextMenu.qml,Névvel ellátott arc-album fejléce
 flightslider1,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-foldermgr,parositva,PicasaPy/FolderManagerDialog.qml,Mappakezelő
-gedialog,parositva,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml,Google Earth-ös geocímkéző párbeszéd — nálunk a Helyek panel fedi
+foldermgr,parositva,PicasaPy/FolderManagerDialog.qml;PicasaPy/FolderContextMenu.qml;PicasaPy/FolderHierarchyView.qml;PicasaPy/FolderStatePanel.qml,"A mappakezelő párbeszéd mellett a mappaműveletek és állapotfeliratok a FolderStatePanel, FolderHierarchyView és FolderContextMenu fájlokban élnek."
+gedialog,parositva,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml;PicasaPy/PicasaMenuBar.qml,A Geotag menüparancs a PicasaMenuBar-ben és a Helyek panelben megvan; az önálló Google Earth-párbeszéd elavult online integráció.
 geopanel,parositva,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml,Helyek panel
-headerpanel,parositva,PicasaPy/LightboxHeader.qml,Album- és mappafejléc a rács fölött
+headerpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/TrayBar.qml,"A mappafejléc a LightboxHeader.qml-ben, a Create Movie Presentation gomb és súgója az alsó sáv TrayBar.qml-jében van."
 initialscan,parositva,PicasaPy/InitialScanDialog.qml,Első indítás — mit vizsgáljunk át
-instructionpanel,nincs-megfeleltetes,,Betanító buborék („Learn more…”) — nincs nálunk
+instructionpanel,nem-cel,,A Picasa betanító buborék és a picasa.google.com/support hivatkozás nem része a helyi alkalmazásnak; a szolgáltatás elérhetetlen.
 keywords,parositva,PicasaPy/TagsPanel.qml,Címkeszerkesztő
 lengthslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs
 modalprogress,parositva,PicasaPy/ImportProgressPanel.qml;PicasaPy/BatchEditProgressPanel.qml,Modális folyamatjelző
 moviecontrols,parositva,PicasaPy/VideoPlayerView.qml,Lejátszás/szünet a videón
 movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml,Videovágó panel
-nav,nincs-megfeleltetes,,"Nagyítás-navigátor („floater”) a szerkesztőben — nálunk csak a PhotoViewer nagyítás-állapotgépe van, navigátor-ablak nincs"
+nav,nincs-megfeleltetes,,"A nav.tre egy szerkesztői nagyítás-navigátor lebegőablakát írja le; ilyen navigátor nincs a PhotoViewerben, ezért a nav/close nem cél."
 nerdview,parositva,PicasaPy/PerfMonitorPanel.qml;PicasaPy/HistogramBox.qml,Fejlesztői/diagnosztikai réteg
 oneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet a könyvtárban
 outlineweightslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 outputlayout,parositva,PicasaPy/TrayBar.qml,A tálca alatti kimeneti gombsáv
 panelroot,parositva,Main.qml;PicasaPy/MainToolbar.qml,Legfelső panelváltó (Könyvtár / Import / Kollázs / Film / Felvétel)
-peoplepanel,parositva,PicasaPy/PeoplePanel.qml;PicasaPy/PeoplePanelRow.qml,Emberek oldalsó panel
+peoplepanel,parositva,PicasaPy/PeoplePanel.qml;PicasaPy/PeoplePanelRow.qml;PicasaPy/FacesOverlay.qml;PicasaPy/UnnamedFacesView.qml,"A lista és állapotüzenet a PeoplePanel-ben, a kézi arcfelvétel megszakítása a FacesOverlay-ben, a névtelen arcok műveletei az UnnamedFacesView-ben vannak."
 pickerpanel,parositva,PicasaPy/TextColorSwatches.qml,Színválasztó paletta + legutóbbiak
 printborderslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 printoptions,parositva,PicasaPy/PrintOptionsPanel.qml;PicasaPy/PrintDialog.qml,Nyomtatási szegély- és feliratopciók (#1780); a Beállítások „Nyomtatás” füle MÁS panel
@@ -67,7 +67,7 @@ toolslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 transitionslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok fejléce
 upload,nem-cel,,"Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés)"
-uploadallinstructionpanel,nincs-megfeleltetes,,Feltöltési betanító buborék — nincs nálunk
+uploadallinstructionpanel,nem-cel,,A csoportos webes feltöltéshez tartozó betanító buborék megszűnt Picasa Web Albums-funkcióhoz kötődik.
 uploadmgr,nincs-megfeleltetes,,Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk
 video_control_bar,parositva,PicasaPy/VideoPlayerView.qml,Videó vezérlősáv (vágás is)
 video_control_bar2,parositva,PicasaPy/VideoPlayerView.qml,Videó vezérlősáv második változata

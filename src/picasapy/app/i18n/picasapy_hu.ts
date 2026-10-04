@@ -551,6 +551,10 @@
 <context>
     <name>FacesOverlay</name>
     <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
         <source>Add a name</source>
         <translation>Név hozzáadása</translation>
     </message>
@@ -4459,6 +4463,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>LightboxHeader</name>
     <message>
+        <source>Play Fullscreen Slideshow</source>
+        <translation>Diavetítés teljes képernyőn</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
         <source>Show only suggestions (when toggled on)</source>
         <translation>Csak a javaslatok megjelenítése (ha be van kapcsolva)</translation>
@@ -5839,7 +5847,7 @@ Biztosan visszavonja a műveletet?</translation>
     </message>
     <message>
         <source>Select a folder to display faces</source>
-        <translation>Válasszon mappát az arcok megjelenítéséhez</translation>
+        <translation>Válasszon ki egy mappát az arcok megjelenítéséhez</translation>
     </message>
 </context>
 <context>
@@ -7027,6 +7035,10 @@ Biztosan visszavonja a műveletet?</translation>
 </context>
 <context>
     <name>TrayBar</name>
+    <message>
+        <source>Create Movie Presentation</source>
+        <translation>Mozgófilmes prezentáció létrehozása</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
         <source>Fit Photo inside viewing area</source>
@@ -10946,6 +10958,14 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 </context>
 <context>
     <name>ConfigureButtonsDialog</name>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/ConfigureButtonsDialog.qml" line="0"/>
         <source>Configure Buttons</source>

@@ -13,6 +13,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - Elkészült a webkamerás videó- és pillanatképrögzítő panel külön kamera- és hangforrás-beállítással, valamint a klipek panelen belüli visszajátszásával (#4137).
 - Az Importálás panelen működik az előző/következő kép, az Opciók menü és a forrás-/célmappa-választó; a nem elérhető online feltöltés jelölője súgóval, letiltva jelenik meg (#4145).
 - A Helyek panelen a helyi képadatok között kereshető cím, a térképtípus váltható, és a szöveg- valamint kollázspanel lefedettsége pontosabban követi a működő elemeket (#4147).
+- A gombsáv, az egyképes nézet, a fejlécek, a csúszkák és az Emberek panel lekutatott maradék elemei megjelentek vagy tesztelt párosítást kaptak (#4156).
 
 ## [0.8.672] – 2026-10-04
 
