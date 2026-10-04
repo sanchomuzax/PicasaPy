@@ -355,18 +355,18 @@ Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület n�
 - `to_text` „To:” (magyarul: „Címzett:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
 - `topentry` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
 
-### `acquirepanel` — 8 hiány · panel-megfeleltetés: `parositva`
+### `acquirepanel` — 7 megvan, 1 szerkezeti nem-cél · panel-megfeleltetés: `parositva`
 
 Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel
 
-- `buttons` — *bizonytalan*
-- `import_folder_menu` — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x005ba010)
-- `import_from_menu` — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x005ba010)
-- `nextbutton` buboréksúgó: „View the next Photo” — 🔧 **lekutatva**, csak nem megépítve (picasa-importalas.md: 0x0051f070)
-- `previousbutton` buboréksúgó: „View the previous Photo” — 🔧 **lekutatva**, csak nem megépítve (picasa-importalas.md: 0x0051f070)
-- `sync_options_button` „Options” (magyarul: „Opciók”) — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: acquirepanel.tre:210)
-- `togglegroup` — *bizonytalan*
-- `upload_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-feltolteskezelo.md: 0x00518840)
+- `buttons` — **nem cél**: szerkezeti gyűjtő, nem önálló feliratú vagy műveletű vezérlő; az egyedi gombokat a `picasa-importalas.md` külön sorolja.
+- `import_folder_menu` — **megvan**: a `importSourceRecentDestBox` és a `importSourceChooseDestButton` együtt adja a korábbi célokat, az alapértelmezett mappát és a tallózást (`picasa-eger-es-kijeloles.md`, 0x00517f90; `ImportSourceDialog.qml`).
+- `import_from_menu` — **megvan**: az `importSourceRecentBox` és a `importSourceChooseSourceButton` választ forrást (`picasa-eger-es-kijeloles.md`, 0x005154f0; `ImportSourceDialog.qml`).
+- `nextbutton` buboréksúgó: „View the next Photo” — **megvan**: `importSourceNextButton` lépteti és kijelöli a következő előnézeti képet (`picasa-importalas.md`, 0x0051f070; `ImportSourceDialog.qml`).
+- `previousbutton` buboréksúgó: „View the previous Photo” — **megvan**: `importSourcePreviousButton` lépteti és kijelöli az előző előnézeti képet (`picasa-importalas.md`, 0x0051f070; `ImportSourceDialog.qml`).
+- `sync_options_button` „Options” (magyarul: „Opciók”) — **megvan**: az `importSourceOptionsButton` megnyitja az online beállításokat; a „Sync starred photos only” kapcsoló letiltott, mert az online szolgáltatás nem érhető el (`picasa-eger-es-kijeloles.md`, 0x00518b40; `ImportSourceDialog.qml`).
+- `togglegroup` — **megvan**: a célmappa-elnevezési módok (`namingModeGroup`) és a másolás utáni műveletek (`afterCopyingGroup`) kizáró rádiócsoportjai (`picasa-importalas.md`, 41.2 és 41.4; `ImportSourceDialog.qml`).
+- `upload_checkbox` — **megvan**: az „Upload” jelölő látható, de a megszűnt online szolgáltatás miatt letiltott; súgója az eredeti Picasa Web Albums-feltöltésre mutat (`picasa-feltolteskezelo.md`, 0x00518840; `ImportSourceDialog.qml`).
 
 ### `buttonmgr` — 8 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -2142,4 +2142,3 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 - GYANÚS »nem cél«: 'uploadmgr/resume' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'uploadmgr/throttlechk' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - ÁTSOROLVA (#1970): 124 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
-

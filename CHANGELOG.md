@@ -7,6 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Az Importálás panelen működik az előző/következő kép, az Opciók menü és a forrás-/célmappa-választó; a nem elérhető online feltöltés jelölője súgóval, letiltva jelenik meg (#4145).
 - A felület-lefedettségi kimutatás helyesen párosítja a már meglévő szerkesztő- és könyvtárnézeti elemeket, a megszűnt Picnik- és webes elemeket pedig nem számolja hiányként (#4131).
 
 ## [0.8.670] – 2026-10-04

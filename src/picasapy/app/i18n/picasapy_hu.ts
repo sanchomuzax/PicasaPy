@@ -7288,6 +7288,34 @@ A MŰVELET NEM VONHATÓ VISSZA.
 <context>
     <name>ImportSourceDialog</name>
     <message>
+        <source>Options</source>
+        <translation>Opciók</translation>
+    </message>
+    <message>
+        <source>Online options</source>
+        <translation>Online opciók</translation>
+    </message>
+    <message>
+        <source>Upload</source>
+        <translation>Feltöltés</translation>
+    </message>
+    <message>
+        <source>Upload to Picasa Web Albums...</source>
+        <translation>Feltöltés a Picasa Webalbumokba…</translation>
+    </message>
+    <message>
+        <source>Sync starred photos only</source>
+        <translation>Csak a csillagozott fotók szinkronizálása</translation>
+    </message>
+    <message>
+        <source>View the previous Photo</source>
+        <translation>Az előző fénykép megtekintése</translation>
+    </message>
+    <message>
+        <source>View the next Photo</source>
+        <translation>A következő fénykép megtekintése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20"/>
         <source>Import from Source</source>
         <translation>Importálás forrásból</translation>
