@@ -4099,11 +4099,11 @@ forrás képpontjait adja vissza, de a választott mechanizmus nem a doboz.
 Ez a `Rotate` hívásánál nem releváns: ott `smoothing=true`, és a forgatási
 mátrix a fenti általános affine-ágat választja.
 
-**Nálunk (MÉRVE):** a `resize_image(..., smoothing=False)`
-`cv2.INTER_NEAREST`-et használ (`src/picasapy/render/glimmer_ops.py`,
-`resize_image`), tehát a mechanizmus egyezik; a próba
-(`tests/render/test_resize_mitchell_2227.py`,
-`test_smoothing_hamis_a_LEGKOZELEBBI_szomszed`) már mérésként hivatkozik rá.
+**Nálunk (ellenőrizve, 2026-10-04):** a `resize_image(...,
+smoothing=False)` a `cv2.INTER_NEAREST`-et hívja (`src/picasapy/render/glimmer_ops.py`,
+`resize_image`), de ez **nem bájtazonos** a Picasa-pixelúttal. A natív
+koordinátalépés és a QEMU-összevetés a 5/d pontban szerepel; a korábbi
+„mechanizmus egyezik” állítás itt visszavonva.
 
 ### 5/b. A mag kicsinyítéskor a léptékkel nyúlik — LEZÁRVA
 
@@ -4339,6 +4339,101 @@ oszlopok pedig `S>>14` szerint készüljenek; a vízszintes menet maradjon
 változatlan. A fejlesztés külön őrizze meg mind a négy szélesség-maradékot,
 az 16128/16129 küszöb két oldalát, a Pixelate/FocalPixelate aktív és
 Fade=100 eseteit, valamint a Comicize végső háromoszlopos mintáját.
+
+### 5/d. ⭐ `smoothing=false`: középponthoz igazított, 16.16-os legközelebbi-szomszéd út (#626, 2026-10-04)
+
+**Bizonyítottsági fok: megerősített.** Az utasításszintű út és az eredeti
+Picasa-kód QEMU-futtatása egyezik. A smoothinges ág négy QEMU-esete a már
+leírt 5/c súlyozott út kimenetét is bájtra egyezőnek találta a jelenlegi
+`resize_image`-szel.
+
+**A — utasítások.** A `ResizeImageOperation` alkalmazó (`0x00bc3650`)
+float32-be menti a forrás/cél szélesség- és magasságarányt
+(`0x00bc3700`–`0x00bc3735`). A `smoothing` hamis ága a wrapperben
+(`0x00bcb5e0`, `0x00bcb602`–`0x00bcb614`) az általános affine-rutint hívja;
+annak `smoothing=false` esete a `0x009e7420` egyképpontos munkavégzőre lép
+(`0x009e6fb6`–`0x009e7001`).
+
+`0x009e7420` a célpixel középpontját használja: a cél x/y koordinátához a
+`0x00c72150` címen kiolvasott **0,5**-öt adja, majd a 6 elemű float32
+transzformációval forráskoordinátát számol. A transzformált kezdő koordinátát
+float32-re menti (`0x009e74c3`, `0x009e74f3`), majd a
+`0x00cf3cb0` címen kiolvasott **65536,0**-val, azaz 16.16-os léptékkel alakítja
+egésszé. A `0x00c0b1e0` tört részt elhagyó segéd és a `0x00c29990`
+`cvttsd2si` konverzió csonkolást végez. Ugyanezzel az eljárással készül a
+vízszintes fixpontos lépés (`0x009e7423`–`0x009e7439`); a belső ciklus ezt az
+egész lépést ismételten hozzáadja (`0x009e7541`–`0x009e7549`). A forrásindex
+a fixpontos érték aritmetikai 16 bites jobbra tolása
+(`0x009e754d`, `0x009e7553`): pozitív koordinátán ez lefelé csonkolás.
+
+Tiszta Resize-nél, ahol a kereszt-együtthatók és eltolások nullák, ugyanez
+így írható fel. `s_x` és `s_y` a `0x00bc3650`-ben float32-re kerekített
+forrás/cél arány; `trunc` a nulla felé csonkolást jelenti:
+
+```text
+q_x(0,y) = trunc(float32((0 + 0.5)·s_x) · 65536)
+dx       = trunc(s_x · 65536)
+q_x(i,y) = q_x(0,y) + i·dx                  # a gépi ciklus integer addja
+q_y(y)   = trunc(float32((y + 0.5)·s_y) · 65536)
+src_x    = q_x >> 16
+src_y    = q_y >> 16
+```
+
+A `smoothing=false` ág nem oszt szét súlyt: érvényes forráskoordinátánál egy
+teljes BGRA-dwordöt másol (`0x009e7562`–`0x009e7574`), tehát a kiválasztott
+képpont súlya 1. Ha bármelyik index a forrás szélességén/magasságán kívülre
+esik, az unsigned határ-összehasonlítás átugorja az írást
+(`0x009e7556`–`0x009e7576`); a munkavégző nem clampel, nem ismétli a szélső
+képpontot és nem ír nullát. A célpuffer előzetes értékét ezért a hívó adja.
+
+**B — natív QEMU-futtatás.** Az eredeti függvények futottak a helyi
+`qemu-i386` harnessben. A simított ág a `0x00bcb5e0`-tól indult; a hamis ág
+közvetlenül a statikusan oda kiválasztott `0x009e7420` munkavégzőt futtatta,
+explicit cél-recttel. A forrás és a cél külön képleíró rekord volt (`+0x04`
+stride, `+0x08` szélesség, `+0x0c` magasság, `+0x10` BGRA-mutató); az RGB
+csatornákat közvetlenül, az alfa-csatornát pedig háromszoros szürke RGB-sík
+átméretezésével vetettük össze. A
+`smoothing=true` a 5/c szerinti 0-s doboz- vagy 3-as Mitchell-úton futott; a
+QEMU és a mi kimenetünk mind a négy méretpárnál bájtra egyezett. A
+`smoothing=false` esetén az RGB-összevetésben jelzett kimeneti pixelek
+eltértek, és az alfa összevetése sem egyezett:
+
+| forrás → cél | próba | `smoothing=false`: eltérő RGB-pixelek | `smoothing=true` |
+|---|---|---:|---|
+| 5×3 → 3×2 | páratlan kicsinyítés | 5 / 6 | bájtra egyezik |
+| 4×2 → 7×5 | párosból páratlan nagyítás | 11 / 35 | bájtra egyezik |
+| 8×6 → 4×3 | páros kicsinyítés | 12 / 12 | bájtra egyezik |
+| 5×3 → 8×6 | páratlanból páros nagyítás | 12 / 48 | bájtra egyezik |
+
+Forráskoordinátára dekódolva az 5×3 → 3×2 legközelebbi-szomszéd próba `x=[0,2,4]`,
+`y=[0,2]` mintákat adott. A 4×2 → 7×5 próba vízszintes sora
+`[0,0,1,1,2,3,3]`, függőleges mintái `[0,0,1,1,1]`. Ez az utóbbi a
+fixpontos lépés ismételt hozzáadását is elkülöníti attól, ha minden kimeneti
+képpontnál újraszámítanánk az arányt: a `4/7` float32 léptékből `q0=18724`, `dx=37449`, ezért a
+negyedik oszlop koordinátája `131071 >> 16 = 1`; a natív kimenet forrás-x=1-et
+adott. A minden oszlopnál újraszámolt `(3+0.5)·4/7` koordináta 2 volna, tehát
+ez a mérés azt az alternatívát is cáfolja. Ezek az egész értékek a fenti
+konverzióval készülnek, nem illesztett paraméterek.
+
+**Cáfoló próba / szélek.** A `0x009e7420`-nak adott affine eltolás `x=-1`,
+3×1 célpuffer előtöltve `0x5a`-val. Az első forráskoordináta a képen kívülre
+esett; a natív kimenet első BGRA-pixele `5a 5a 5a 5a` maradt, a másik kettő
+pedig a forrás 0. és 1. pixele lett. Ez cáfolja a clampelt/peremismétlő
+olvasatot. A specifikus Resize pozitív méretaránya ettől külön eset; a
+szélen kívüli minta viselkedése itt a közös affine munkavégzőé.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (`render/glimmer_ops.py`, `resize_image`) | teendő |
+|---|---|---|---|
+| `smoothing=false` mintakoordináta | középpont + float32 → 16.16 csonkolás; az egész lépés ismételt hozzáadása; `sar 16` | `cv2.INTER_NEAREST`; a négy mért méretpárból négy eltér | az OpenCV-hívást cserélni a fenti, bájtra specifikált koordinátamenetre; a négy QEMU-eset legyen bitpontos referencia |
+| `smoothing=false` súly | egy érvényes BGRA-pixel, súly 1 | egy legközelebbi pixel, de a koordinátatérkép eltér | azonos pixel kiválasztása a natív koordinátából |
+| képen kívüli affine-minta | írás kihagyása, célpuffer változatlan | a tiszta Resize nem hoz létre ilyen koordinátát; ez a függvény nem vizsgálja az affine ági képszél-kitöltést | a hívói célpuffer-inicializálás vizsgálata, mielőtt általános affine-határviselkedést ugyanide emelünk |
+| `smoothing=true` | 5/c: fixpontos doboz/Mitchell-súlyok | négy QEMU-méretpáron bájtra egyezik | nincs mért teendő |
+
+Nincs mérve valódi Picasa-exportból származó külön Resize-golden; a fenti
+pixelértékek a natív gépi kód QEMU-futtatásából és a PicasaPy-függvény
+azonos bemeneteiből származnak.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
