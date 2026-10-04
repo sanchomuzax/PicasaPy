@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A felület-lefedettségi kimutatás helyesen párosítja a már meglévő szerkesztő- és könyvtárnézeti elemeket, a megszűnt Picnik- és webes elemeket pedig nem számolja hiányként (#4131).
+
 ## [0.8.669] – 2026-10-04
 
 - A Glimmer keretek lekerekített sarkai és félig átlátszó szélei pontosabban követik az eredeti Picasa képpontkeverését (#4122).
