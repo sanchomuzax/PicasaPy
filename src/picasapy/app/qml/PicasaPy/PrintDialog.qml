@@ -437,9 +437,10 @@ Window {
         PicasaButton {
             objectName: "printOptionsButton"
             Layout.fillWidth: true
-            text: "Szegély- és szövegopciók…"
+            text: qsTr("Border and text options...")
             enabled: printWindow.printCtl !== null
-            ToolTip.text: "A nyomtatott képek szegélyének és feliratának beállítása"
+            ToolTip.text: qsTr(
+                "Configure borders and text for Photos to be printed")
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
             onClicked: printOptionsPanel.showOptions()

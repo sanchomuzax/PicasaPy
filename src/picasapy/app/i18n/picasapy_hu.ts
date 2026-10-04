@@ -300,6 +300,16 @@
     <name>PrintDialog</name>
     <message>
         <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Border and text options...</source>
+        <translation>Szegély- és szövegopciók…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Configure borders and text for Photos to be printed</source>
+        <translation>A nyomtatott képek szegélyének és feliratának beállítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
         <source>Printer Setup</source>
         <translation>Nyomtató telepítése</translation>
     </message>
@@ -507,6 +517,129 @@
     <message>
         <source>Add another copy of each Photo to be printed</source>
         <translation>További másolat minden nyomtatandó képhez</translation>
+    </message>
+</context>
+<context>
+    <name>PrintOptionsPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Border and text options</source>
+        <translation>Szegély- és feliratopciók</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Sorry, but these options cannot be used when printing contact sheets.</source>
+        <translation>Ezek a beállítások indexképek nyomtatásakor nem használhatók.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Captions</source>
+        <translation>Képfeliratok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>No text</source>
+        <translation>Nincs szöveg</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Caption</source>
+        <translation>Képfelirat</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Filename</source>
+        <translation>Fájlnév</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Exif information</source>
+        <translation>Exif-adatok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Below image</source>
+        <translation>A kép alatt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>On image</source>
+        <translation>A képen</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>On border</source>
+        <translation>A szegélyen</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Font</source>
+        <translation>Betűtípus</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Size</source>
+        <translation>Méret</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Wrap text</source>
+        <translation>Szöveg tördelése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Border</source>
+        <translation>Szegély</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>None</source>
+        <translation>Egyik sem</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Maximum</source>
+        <translation>Maximális</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Only bottom</source>
+        <translation>Csak alul</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Even width</source>
+        <translation>Egyenletes szélességű szegély</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Text color</source>
+        <translation>Szöveg színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Border color</source>
+        <translation>Szegély színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>OK</source>
+        <translation>OK</translation>
     </message>
 </context>
 <context>

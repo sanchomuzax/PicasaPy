@@ -29,10 +29,11 @@ Rectangle {
     property var fontFamilies: []
     property var textSizes: []
     property var sourceLabels: [
-        "Nincs szöveg", "Képfeliratok", "Fájlnév", "Exif-adatok"
+        qsTr("No text"), qsTr("Caption"), qsTr("Filename"),
+        qsTr("Exif information")
     ]
     property var placementLabels: [
-        "A kép alatt", "A képen", "A szegélyen"
+        qsTr("Below image"), qsTr("On image"), qsTr("On border")
     ]
     property var colorPalette: [
         "#00000000", "#ff000000", "#ffffffff", "#ffff0000",
@@ -98,14 +99,6 @@ Rectangle {
         if (panel.controller) panel.controller.restorePrintOptions(values)
     }
 
-    function disabledText() {
-        if (typeof printController !== "undefined" && printController)
-            return printController.printOptionsDisabledText()
-        return panel.controller
-               ? panel.controller.printOptionsDisabledText()
-               : "Ezek a beállítások indexképek nyomtatásakor nem használhatók."
-    }
-
     function showOptions() {
         if (!panel.controller) return
         panel.options = panel.copyOptions(panel.readOptions())
@@ -150,6 +143,38 @@ Rectangle {
         return "#" + hex
     }
 
+    function chooseColor(index, textColor) {
+        var name = textColor ? "textColor" : "borderColor"
+        panel.setOption(name, parseInt(panel.colorPalette[index].slice(1), 16))
+        if (textColor) textColorPicker.close()
+    }
+
+    Component {
+        id: printOptionColorSwatch
+        Rectangle {
+            required property int paletteIndex
+            property bool textSwatch: false
+            objectName: (textSwatch ? "printOptionTextColor" :
+                         "printOptionBorderColor") + paletteIndex
+            width: 18
+            height: 18
+            x: textSwatch ? (paletteIndex % 5) * 21 : paletteIndex * 20
+            y: textSwatch ? Math.floor(paletteIndex / 5) * 21 : 0
+            enabled: panel.editable
+            color: panel.colorPalette[paletteIndex]
+            border.width: panel.colorArgb(
+                textSwatch ? panel.options.textColor : panel.options.borderColor)
+                === panel.colorPalette[paletteIndex] ? 2 : 1
+            border.color: Theme.chromeBorder
+            MouseArea {
+                anchors.fill: parent
+                enabled: panel.editable
+                cursorShape: Qt.PointingHandCursor
+                onClicked: panel.chooseColor(parent.paletteIndex, parent.textSwatch)
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 10
@@ -159,7 +184,7 @@ Rectangle {
             Layout.fillWidth: true
             Text {
                 objectName: "printOptionsTitle"
-                text: "Szegély- és feliratopciók"
+                text: qsTr("Border and text options")
                 font.pixelSize: Theme.fontSize + 3
                 font.bold: true
                 color: Theme.ink
@@ -167,7 +192,7 @@ Rectangle {
             }
             PicasaButton {
                 objectName: "printOptionsCloseButton"
-                text: "Bezárás"
+                text: qsTr("Close")
                 onClicked: panel.cancelChanges()
             }
         }
@@ -175,9 +200,7 @@ Rectangle {
         Text {
             objectName: "printOptionsDisabledText"
             visible: panel.contactSheet
-            text: panel.controller
-                  ? panel.disabledText()
-                  : "Ezek a beállítások indexképek nyomtatásakor nem használhatók."
+            text: qsTr("Sorry, but these options cannot be used when printing contact sheets.")
             color: Theme.textGray
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
@@ -185,6 +208,7 @@ Rectangle {
 
         ScrollView {
             id: optionScroll
+            objectName: "printOptionScrollView"
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
@@ -196,55 +220,74 @@ Rectangle {
                 spacing: 6
 
                 Text {
-                    text: "Felirat forrása:"
+                    objectName: "printOptionCaptionLabel"
+                    text: qsTr("Captions")
                     color: Theme.ink
                     font.bold: true
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 0
-                    Repeater {
-                        model: panel.sourceLabels
-                        delegate: RadioButton {
-                            id: sourceOption
-                            required property int index
-                            required property string modelData
-                            objectName: "printOptionSource" + index
-                            text: sourceOption.modelData
-                            checked: panel.options.textSource === index
-                            enabled: panel.editable
-                            onClicked: panel.setOption("textSource", index)
-                        }
+                    RadioButton {
+                        objectName: "printOptionSource0"
+                        text: panel.sourceLabels[0]
+                        checked: panel.options.textSource === 0
+                        enabled: panel.editable
+                        onClicked: panel.setOption("textSource", 0)
+                    }
+                    RadioButton {
+                        objectName: "printOptionSource1"
+                        text: panel.sourceLabels[1]
+                        checked: panel.options.textSource === 1
+                        enabled: panel.editable
+                        onClicked: panel.setOption("textSource", 1)
+                    }
+                    RadioButton {
+                        objectName: "printOptionSource2"
+                        text: panel.sourceLabels[2]
+                        checked: panel.options.textSource === 2
+                        enabled: panel.editable
+                        onClicked: panel.setOption("textSource", 2)
+                    }
+                    RadioButton {
+                        objectName: "printOptionSource3"
+                        text: panel.sourceLabels[3]
+                        checked: panel.options.textSource === 3
+                        enabled: panel.editable
+                        onClicked: panel.setOption("textSource", 3)
                     }
                 }
 
-                Text {
-                    text: "Felirat helye:"
-                    color: Theme.ink
-                    font.bold: true
-                }
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
-                    Repeater {
-                        model: panel.placementLabels
-                        delegate: RadioButton {
-                            id: placementOption
-                            required property int index
-                            required property string modelData
-                            objectName: "printOptionPlacement" + index
-                            text: placementOption.modelData
-                            checked: panel.options.textPlacement === index
-                            enabled: panel.editable
-                            onClicked: panel.setOption("textPlacement", index)
-                        }
+                    RadioButton {
+                        objectName: "printOptionPlacement0"
+                        text: panel.placementLabels[0]
+                        checked: panel.options.textPlacement === 0
+                        enabled: panel.editable
+                        onClicked: panel.setOption("textPlacement", 0)
+                    }
+                    RadioButton {
+                        objectName: "printOptionPlacement1"
+                        text: panel.placementLabels[1]
+                        checked: panel.options.textPlacement === 1
+                        enabled: panel.editable
+                        onClicked: panel.setOption("textPlacement", 1)
+                    }
+                    RadioButton {
+                        objectName: "printOptionPlacement2"
+                        text: panel.placementLabels[2]
+                        checked: panel.options.textPlacement === 2
+                        enabled: panel.editable
+                        onClicked: panel.setOption("textPlacement", 2)
                     }
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: "Betűtípus:"
+                        text: qsTr("Font")
                         color: Theme.ink
                     }
                     PicasaComboBox {
@@ -258,7 +301,7 @@ Rectangle {
                         onActivated: panel.setOption("textFont", textAt(currentIndex))
                     }
                     Text {
-                        text: "Méret:"
+                        text: qsTr("Size")
                         color: Theme.ink
                     }
                     PicasaComboBox {
@@ -276,20 +319,15 @@ Rectangle {
 
                 CheckBox {
                     objectName: "printOptionWrapCheckBox"
-                    text: "Szöveg tördelése"
+                    text: qsTr("Wrap text")
                     checked: panel.options.wrap
                     enabled: panel.editable && panel.options.textSource !== 0
                     onClicked: panel.setOption("wrap", checked)
                 }
 
-                Text {
-                    text: "Szegély:"
-                    color: Theme.ink
-                    font.bold: true
-                }
                 CheckBox {
                     objectName: "printOptionBorderCheckBox"
-                    text: "Szegély nyomtatása"
+                    text: qsTr("Border")
                     checked: panel.options.border
                     enabled: panel.editable
                     onClicked: panel.setOption("border", checked)
@@ -297,7 +335,7 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: "Egyik sem"
+                        text: qsTr("None")
                         color: Theme.textGray
                     }
                     Slider {
@@ -311,20 +349,20 @@ Rectangle {
                         onMoved: panel.setOption("borderSize", Math.floor(value * 1024))
                     }
                     Text {
-                        text: "Maximális"
+                        text: qsTr("Maximum")
                         color: Theme.textGray
                     }
                 }
                 CheckBox {
                     objectName: "printOptionBottomOnlyCheckBox"
-                    text: "Csak alul"
+                    text: qsTr("Only bottom")
                     checked: panel.options.borderEdge
                     enabled: panel.editable && panel.options.border
                     onClicked: panel.setOption("borderEdge", checked)
                 }
                 CheckBox {
                     objectName: "printOptionEvenBorderCheckBox"
-                    text: "Egyenletes szélességű szegély"
+                    text: qsTr("Even width")
                     checked: panel.options.evenBorder
                     enabled: panel.editable && panel.options.border
                     onClicked: panel.setOption("evenBorder", checked)
@@ -333,67 +371,49 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: "Szöveg színe:"
+                        text: qsTr("Text color")
                         color: Theme.ink
                     }
-                    Grid {
-                        objectName: "printOptionTextColorPalette"
-                        columns: 10
-                        spacing: 2
-                        Repeater {
-                            model: panel.colorPalette
-                            delegate: Rectangle {
-                                required property string modelData
-                                required property int index
-                                objectName: "printOptionTextColor" + index
-                                width: 18
-                                height: 18
-                                color: modelData
-                                border.width:
-                                    panel.colorArgb(panel.options.textColor)
-                                    === modelData ? 2 : 1
-                                border.color: Theme.chromeBorder
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: panel.editable
-                                    onClicked: panel.setOption(
-                                        "textColor", parseInt(
-                                            modelData.slice(1), 16))
-                                }
-                            }
+                    Rectangle {
+                        id: textColorPickerBevel
+                        objectName: "printOptionTextColorBevel"
+                        width: 34
+                        height: 24
+                        color: Theme.chromeBorder
+                        border.width: 1
+                        border.color: Theme.chromeBorder
+                        enabled: panel.editable && panel.options.textSource !== 0
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 3
+                            color: panel.colorArgb(panel.options.textColor)
+                            border.width: 1
+                            border.color: Theme.canvasBg
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: parent.enabled
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: textColorPicker.open()
                         }
                     }
                 }
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: "Szegély színe:"
+                        text: qsTr("Border color")
                         color: Theme.ink
                     }
-                    Grid {
+                    Item {
+                        id: borderColorPalette
                         objectName: "printOptionBorderColorPalette"
-                        columns: 10
-                        spacing: 2
-                        Repeater {
-                            model: panel.colorPalette
-                            delegate: Rectangle {
-                                required property string modelData
-                                required property int index
-                                objectName: "printOptionBorderColor" + index
-                                width: 18
-                                height: 18
-                                color: modelData
-                                border.width:
-                                    panel.colorArgb(panel.options.borderColor)
-                                    === modelData ? 2 : 1
-                                border.color: Theme.chromeBorder
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: panel.editable
-                                    onClicked: panel.setOption(
-                                        "borderColor", parseInt(
-                                            modelData.slice(1), 16))
-                                }
+                        width: 10 * 18 + 9 * 2
+                        height: 18
+                        Component.onCompleted: {
+                            for (var i = 0; i < panel.colorPalette.length; ++i) {
+                                printOptionColorSwatch.createObject(
+                                    borderColorPalette,
+                                    { paletteIndex: i, textSwatch: false })
                             }
                         }
                     }
@@ -406,21 +426,54 @@ Rectangle {
             Item { Layout.fillWidth: true }
             PicasaButton {
                 objectName: "printOptionsCancelButton"
-                text: "Mégse"
+                text: qsTr("Cancel")
                 onClicked: panel.cancelChanges()
             }
             PicasaButton {
                 objectName: "printOptionsApplyButton"
-                text: "Alkalmaz"
+                text: qsTr("Apply")
                 enabled: panel.editable
                 onClicked: panel.applyChanges()
             }
             PicasaButton {
                 objectName: "printOptionsOkButton"
-                text: "OK"
+                text: qsTr("OK")
                 enabled: panel.editable
                 accent: Theme.picasaGreen
                 onClicked: panel.acceptChanges()
+            }
+        }
+    }
+
+    Popup {
+        id: textColorPicker
+        objectName: "printOptionTextPickerPanel"
+        parent: panel
+        x: Math.max(0, Math.min(
+            panel.width - width,
+            textColorPickerBevel.mapToItem(panel, 0, 0).x))
+        y: Math.max(0, Math.min(
+            panel.height - height,
+            textColorPickerBevel.mapToItem(
+                panel, 0, textColorPickerBevel.height).y))
+        padding: 6
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        background: Rectangle {
+            color: Theme.canvasBg
+            border.width: 1
+            border.color: Theme.chromeBorder
+        }
+        Item {
+            id: textColorPalette
+            objectName: "printOptionTextColorPalette"
+            width: 5 * 18 + 4 * 3
+            height: 2 * 18 + 3
+            Component.onCompleted: {
+                for (var i = 0; i < panel.colorPalette.length; ++i) {
+                    printOptionColorSwatch.createObject(
+                        textColorPalette,
+                        { paletteIndex: i, textSwatch: true })
+                }
             }
         }
     }
