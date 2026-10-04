@@ -3224,6 +3224,67 @@ szin = 0xff000000 | color;          // az alfa mindig teljesen átlátszatlan
 A kép a `(bal, felso)` pozícióba kerül. Ennyi — nincs lekerekítés, nincs
 árnyék.
 
+##### A `SimpleBorder` pixelrácsa és alfája — natív QEMU-val (2026-10-04, #626)
+
+Az `apply` (`0x00bbf4a0`) a négy attribútumot a `0x00bbf630`-on keresztül
+olvassa, majd a `0x008eea90`-en egészre alakítja. **A megadott, nemnegatív
+értéktartományban ez csonkítás 0 felé, nem kerekítés**: a konverzió a
+vezérlőszó kerekítési módját `0xc00`-ra állítja (`0x008eeaa4`–`0x008eeabb`,
+`0x008eeacf`–`0x008eeae6`). Az alkalmazó közvetlenül hozzáadja a kapott
+egészeket a forrás szélességéhez és magasságához (`0x00bbf515`–`0x00bbf536`):
+
+```text
+L = trunc0(left)   R = trunc0(right)
+T = trunc0(top)    B = trunc0(bottom)
+W' = W + L + R    H' = H + T + B
+```
+
+Itt nincs képméretarányos tényező. A `0x00bbf4e0`–`0x00bbf510` az alfa-bájtot
+`0xff`-re állítja; a teljes célképet ezután a `0x009a91a0` a keretszínnel
+tölti ki, majd a `0x009aabf0` a forrást `(L,T)` helyre másolja. A másolási út
+`0xbf2350`-et hívja. Nincs alfakeverés vagy sarokmaszk: a keret négy sarkában
+is a kitöltőszín marad, a bemásolt képpontok négy BGRA-bájtja — köztük az
+alfája — változatlan.
+
+| Próba | Natív QEMU-kimenet | PicasaPy `add_border_sides()` |
+|---|---|---|
+| 3×2 BGRA, `L/R/T/B = 1/3/2/1`, `color=0x1280e040` | 7×5, stride 7; a keret BGRA `(64,224,128,255)`; a képrész alfái változatlanok | RGB-mátrix bájtra egyezik |
+| 4×3 BGRA, `0.5/1.5/2.5/3.5` | csonkított oldalak `0/1/2/3`, kimenet 5×8 | `round()` után `0/2/2/4`, kimenet 6×9 |
+| 4×3 BGRA, `1.9/2.1/0.9/3.9` | csonkított oldalak `1/2/0/3`, kimenet 7×6 | `round()` után `2/2/1/4`, kimenet 8×8 |
+
+A QEMU-próba az eredeti `0x00bbf4a0` alkalmazót és a rajzoló/másoló útját
+futtatta, `qemu-i386` és a `qemu_harness/hb.py` CRT-helyettesítőivel. A forrás
+és a cél külön képleíró rekordot kapott (`+0x04` stride képpontban, `+0x08`
+szélesség, `+0x0c` magasság, `+0x10` BGRA-mutató). Csak a `0x008ef520`
+attribútum-kiértékelő kapott shimet, hogy a fenti konkrét értékeket adja vissza;
+az `apply`, a konverzió, a célkitöltés és a képmásolás natív kódja változatlanul
+futott.
+
+**Két független út:** A) az `0x00bbf4a0`, `0x00bbf630`, `0x008eea90`,
+`0x009a91a0` és `0x009aabf0` utasításszintű olvasata; B) a közvetlen natív
+QEMU-futtatás. A méretképlet, a csonkítás, a teljesen fedő szögletes keret, a
+forrás alfa-bájtjainak megőrzése és a `(L,T)` másolási pozíció egyezik.
+
+**Cáfoló próba:** a képmérethez viszonyított keret hipotézise nem adná a
+3×2-es bemenet mellett mért pontos `+1/+3/+2/+1` képpontot; a natív kimenet
+ezt adta. A „pozitív törtet kerekít” hipotézist a `0.5/1.5/2.5/3.5` és az
+`1.9/2.1/0.9/3.9` kontroll cáfolta. A félátlátszó és teljesen átlátszó
+forráspixelek alfája a célban azonos maradt, tehát a forrás nem a keretszínnel
+keveredik.
+
+**Eredeti / nálunk / teendő:**
+
+| Tulajdonság | Eredeti | PicasaPy ma | Teendő |
+|---|---|---|---|
+| Egység és méret | A nemnegatív oldalérték képpont; `W' = W+L+R`, `H' = H+T+B` | `add_border_sides()` pixelként kezeli | Egyezik. |
+| Tört oldalérték | `trunc0()` a `0x008eea90` szerint | `int(round(v))` a `glimmer_frame_ops.py:46` sorban | Tört bemenetre eltér. A két ismert leíróhasználat előbb `Math.round()`-dal egész értéket képez (`filterdesc.xml`, `Cinemascope` és `Polaroid`), és mindkét PicasaPy-hívó egész oldalt ad át (`glimmer_creative.py:72`–`73`, `glimmer_frames.py:133`–`139`); ezeknél nincs mért kimeneti eltérés. Ha a segédfüggvény tört SimpleBorder-attribútumot is támogatni fog, a `round()`-ot csonkításra kell cserélni, és a fenti két tört QEMU-esethez rögzített ellenőrzés kell. |
+| Szín, alfa, sarkok | A keret alfa-bájtja `0xff`; a forráspixel négy bájtja másolódik; négyzetes sarkok | `uint8 RGB` kimenet, konstansszínű négyzetes keret | Az RGB-művelet egyezik. Az alfa-paritás nincs a jelenlegi RGB-adattípusban reprezentálva; RGBA-út bevezetésekor a forrás alfáját meg kell őrizni, a keretét `0xff`-re kell állítani. |
+
+**Bizonyítottsági fok: megerősített** a nemnegatív, leíróban használt értékekre:
+az utasításszintű út és az eredeti függvény QEMU-kimenete egyezik. A negatív
+oldalértékek viselkedését ez a mérés nem terjeszti ki; az ismert
+`filterdesc.xml`-használatok egész, nemnegatív értéket állítanak elő.
+
 #### `BorderImageOperation` (`0x00bbe320` → `0x00bbe570`)
 
 ```c
