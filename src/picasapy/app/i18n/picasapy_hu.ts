@@ -4852,6 +4852,25 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Do you want to cancel this operation?</source>
         <translation>Megszakítja ezt a műveletet?</translation>
     </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>You have a fairly large number of items selected.
+
+Are you sure you want to apply this tag to all %d items?</source>
+        <translation>Meglehetősen nagy számú elemet jelölt ki.
+
+Biztosan az összes (%d) elemre alkalmazni szeretné ezt a címkét?</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
     <!-- #754: a jobb fiók fejléc-címe — UGYANAZ a négy szöveg, mint a
          Nézet menü tételeié (a gyorsító és a billentyű-tipp nélkül) -->
     <message>
@@ -7366,9 +7385,52 @@ Biztosan visszavonja a műveletet?</translation>
 <context>
     <name>TagsPanel</name>
     <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Tags in %s:</source>
+        <translation>%s címkéi:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Tags in the current selection:</source>
+        <translation>Címkék az aktuális kijelölésben:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Tags in the current selection (whole album):</source>
+        <translation>Címkék az aktuális kijelölésben (teljes album):</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/TagsPanel.qml" line="42"/>
         <source>Tags</source>
         <translation>Címkék</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Type in a tag (word or phrase) in the text box to the left of the button you just pressed.
+
+Then press the button again to add the tag to the selected items.
+
+(TIP: Press &lt;ENTER&gt; after you type in your tag to automatically add the tag without pressing the button)</source>
+        <translation>Írjon be egy címkét (szót vagy kifejezést) a szövegmezőbe attól a gombtól balra, amelyre az imént kattintott.
+
+Ezután ismét kattintson a gombra, így hozzáadja a címkét a kijelölt elemekhez.
+
+(TIPP: Ha automatikusan, a gombra kattintás nélkül szeretné hozzáadni a megadott címkét, nyomja le az &lt;ENTER&gt; billentyűt.)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Click to configure quick tags</source>
+        <translation>Ide kattintva konfigurálhatja a gyorscímkéket</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Some of the text you entered could not be added as a tag.</source>
+        <translation>A beírt szöveg egy része nem adható hozzá címkeként.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>?</source>
+        <translation>?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TagsPanel.qml" line="73"/>

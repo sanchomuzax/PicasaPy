@@ -42,6 +42,12 @@ ListView {
     //: mentve" felirat hamis volna (a `FolderPane` azonos bemenete)
     property bool mentesVanKeszlet: false
 
+    // A görgetés utáni irányt és célterületet a rövid késleltetésű előtöltő
+    // használja. A Timer az utolsó mozdulás után egyszer indít egy teljes
+    // képernyőnyi háttérmunkát, nem minden képpontra külön.
+    property real prefetchLastContentY: 0
+    property int prefetchScrollDirection: 1
+
     clip: true
     model: grid.ctl ? grid.ctl.feedGroups : []
 
@@ -104,6 +110,46 @@ ListView {
     readonly property int feedColumns: columns
     readonly property int cellWidth:
         columns > 0 ? Math.floor(width / columns) : nominalCellWidth
+
+    function prefetchInScrollDirection() {
+        if (!grid.ctl || grid.columns <= 0 || grid.cellHeight <= 0)
+            return
+        var firstVisible = Number.MAX_VALUE
+        var lastVisible = -1
+        var middleIndex = grid.indexAt(grid.width / 2, grid.height / 2)
+        var radius = Math.ceil(grid.height / grid.cellHeight) + 2
+        var firstGroup = Math.max(0, middleIndex - radius)
+        var lastGroup = Math.min(grid.count - 1, middleIndex + radius)
+        for (var i = firstGroup; i <= lastGroup; ++i) {
+            var group = grid.itemAtIndex(i)
+            if (!group || !group.visiblePhotoRange)
+                continue
+            var visible = group.visiblePhotoRange()
+            if (!visible)
+                continue
+            firstVisible = Math.min(firstVisible, visible.first)
+            lastVisible = Math.max(lastVisible, visible.last)
+        }
+        if (lastVisible < 0)
+            return
+
+        var screenCount = Math.ceil(grid.height / grid.cellHeight)
+            * grid.columns
+        if (grid.prefetchScrollDirection > 0) {
+            grid.ctl.prefetchThumbnails(lastVisible + 1, screenCount, false)
+        } else {
+            var start = Math.max(0, firstVisible - screenCount)
+            grid.ctl.prefetchThumbnails(
+                start, firstVisible - start, true)
+        }
+    }
+
+    Timer {
+        id: thumbnailPrefetchTimer
+        interval: 100
+        repeat: false
+        onTriggered: grid.prefetchInScrollDirection()
+    }
 
     // -- kurzor/görgő navigáció (#77) ---------------------
     // A cél-sort a modell számolja (rácssor-ugrás, mappa-
@@ -456,6 +502,11 @@ ListView {
         savedY = contentY
     }
     onContentYChanged: {
+        if (contentY !== prefetchLastContentY) {
+            prefetchScrollDirection = contentY > prefetchLastContentY ? 1 : -1
+            prefetchLastContentY = contentY
+            thumbnailPrefetchTimer.restart()
+        }
         if (!restoring && (contentY > 0 || moving)) {
             // #173: valódi felhasználói húzás/flick megszünteti
             // a néző-zárás utáni „ragadós" reveal-t
@@ -757,6 +808,26 @@ ListView {
         required property var modelData
         width: grid.width
         spacing: 4
+        function visiblePhotoRange() {
+            var viewTop = grid.contentY - groupCol.y - groupFlow.y
+            var visibleTop = Math.max(0, viewTop)
+            var visibleBottom = Math.min(
+                groupFlow.height, viewTop + grid.height)
+            if (visibleBottom <= visibleTop || grid.cellHeight <= 0)
+                return null
+            var firstRow = Math.floor(visibleTop / grid.cellHeight)
+            var lastRow = Math.max(
+                firstRow,
+                Math.ceil(visibleBottom / grid.cellHeight) - 1)
+            return {
+                first: groupCol.modelData.start
+                    + firstRow * grid.columns,
+                last: Math.min(
+                    groupCol.modelData.start + groupCol.modelData.count - 1,
+                    groupCol.modelData.start
+                        + (lastRow + 1) * grid.columns - 1)
+            }
+        }
         // a képfolyam (Flow) függőleges eltolása a csoporton
         // belül — a sor-szintű görgetés (#96) számol vele
         readonly property real flowOffset: groupFlow.y

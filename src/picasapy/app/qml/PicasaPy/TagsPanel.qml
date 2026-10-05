@@ -13,6 +13,10 @@ Rectangle {
     property var tags: []
     // van-e kijelölt kép — enélkül a bevitel tiltott
     property bool hasSelection: false
+    //: #4271: a fejléc egyelemű kijelölésnél a kép nevét mutatja.
+    property string selectedPhotoName: ""
+    //: #4271: a teljes, éppen megjelenített album van kijelölve.
+    property bool wholeAlbumSelected: false
     //: #2998: a kijelölésben van írásvédett elem. Az eredeti
     //: (`keywords/readonly_label`) „one or more items"-et mond, tehát
     //: egyetlen ilyen elem is elég — és a bevitelt is tiltja.
@@ -87,6 +91,22 @@ Rectangle {
                 Layout.preferredWidth: 26
                 onClicked: panel.submit()
             }
+        }
+
+        Text {
+            objectName: "tagsSelectionHeading"
+            visible: panel.hasSelection
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: !panel.hasSelection
+                  ? ""
+                  : panel.wholeAlbumSelected
+                    ? qsTr("Tags in the current selection (whole album):")
+                    : panel.selectedPhotoName.length > 0
+                      ? qsTr("Tags in %s:").replace("%s", panel.selectedPhotoName)
+                      : qsTr("Tags in the current selection:")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
         }
 
         Text {
@@ -257,10 +277,18 @@ Rectangle {
                 //: a mért gombmagasság (`quicktag_*`)
                 Layout.preferredHeight: 21
                 text: quickTagButton.label.length > 0
-                      ? quickTagButton.label : "?"
+                      ? quickTagButton.label : qsTr("?")
                 font.pixelSize: Theme.fontSize - 1
-                enabled: panel.cimkezheto && quickTagButton.label.length > 0
-                onClicked: panel.addRequested(quickTagButton.label)
+                hoverEnabled: true
+                enabled: panel.cimkezheto
+                onClicked: quickTagButton.label.length > 0
+                    ? panel.addRequested(quickTagButton.label)
+                    : tagNoTextDialog.open()
+
+                ToolTip.text: qsTr("Click to configure quick tags")
+                ToolTip.visible: quickTagButton.hovered
+                                 && quickTagButton.label.length === 0
+                ToolTip.delay: Theme.tooltipDelay
             }
 
             //: #754: a MÉRT elrendezés 2 · 3 · 2 · 3, nem 5 · 5. A kettes
@@ -310,5 +338,23 @@ Rectangle {
     QuickTagsConfigDialog {
         id: quickTagsConfigDialog
         objectName: "quickTagsConfigDialog"
+    }
+
+    Dialog {
+        id: tagNoTextDialog
+        objectName: "tagNoTextDialog"
+        modal: true
+        title: ""
+        standardButtons: Dialog.Ok
+        anchors.centerIn: Overlay.overlay
+
+        contentItem: Text {
+            objectName: "tagNoTextMessage"
+            width: 360
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+            text: qsTr("Type in a tag (word or phrase) in the text box to the left of the button you just pressed.\n\nThen press the button again to add the tag to the selected items.\n\n(TIP: Press <ENTER> after you type in your tag to automatically add the tag without pressing the button)")
+        }
     }
 }
