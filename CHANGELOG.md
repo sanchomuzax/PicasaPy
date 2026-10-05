@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.6] – 2026-10-05
+
+- A Nyomtatás ellenőrzése most megmutatja a kis képek DPI-értékét, és lehetővé teszi a képek egyenkénti vagy csoportos eltávolítását, az azonnali nyomtatást és a méret módosítását. (#4275).
+
 ## [0.9.5] – 2026-10-05
 
 - A videók vágósávja Kezdőpont és Végpont feliratot kap, a bélyegképeket pedig időkorlátos alfolyamat készíti. (#4273).
