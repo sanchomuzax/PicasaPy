@@ -41,7 +41,7 @@ nerdview,parositva,PicasaPy/PerfMonitorPanel.qml;PicasaPy/HistogramBox.qml,Fejle
 oneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet a könyvtárban
 outlineweightslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 outputlayout,parositva,PicasaPy/TrayBar.qml;PicasaPy/CreateDialogs.qml;PicasaPy/PicasaMenuBar.qml,"A tálca kimeneti gombsora, a filmkészítő párbeszéd és menüparancs (#4214)"
-panelroot,parositva,Main.qml;PicasaPy/MainToolbar.qml,Legfelső panelváltó (Könyvtár / Import / Kollázs / Film / Felvétel)
+panelroot,parositva,Main.qml;PicasaPy/MainToolbar.qml;PicasaPy/DocumentTabStrip.qml;PicasaPy/CaptureMoviePanelPopup.qml;PicasaPy/TrayBar.qml;PicasaPy/CreateDialogs.qml,"Legfelső panelváltó és a mai könyvtár-, projekt-, rögzítési és filmkészítő belépők"
 peoplepanel,parositva,PicasaPy/PeoplePanel.qml;PicasaPy/PeoplePanelRow.qml;PicasaPy/FacesOverlay.qml;PicasaPy/UnnamedFacesView.qml,"A lista és állapotüzenet a PeoplePanel-ben, a kézi arcfelvétel megszakítása a FacesOverlay-ben, a névtelen arcok műveletei az UnnamedFacesView-ben vannak."
 pickerpanel,parositva,PicasaPy/TextColorSwatches.qml,Színválasztó paletta + legutóbbiak
 printborderslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
@@ -69,7 +69,7 @@ unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok f
 upload,nem-cel,,"Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés)"
 uploadallinstructionpanel,nem-cel,,A csoportos webes feltöltéshez tartozó betanító buborék megszűnt Picasa Web Albums-funkcióhoz kötődik.
 uploadmgr,nincs-megfeleltetes,,Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk
-video_control_bar,parositva,PicasaPy/VideoPlayerView.qml,Videó vezérlősáv (vágás is)
+video_control_bar,parositva,PicasaPy/VideoPlayerView.qml;PicasaPy/VideoTrimSlider.qml,Videó vezérlősáv; a vágócsúszka külön komponensben van
 video_control_bar2,parositva,PicasaPy/VideoPlayerView.qml,Videó vezérlősáv második változata
 wait_dialog,parositva,PicasaPy/BatchEditProgressPanel.qml;PicasaPy/ConfirmDialog.qml,Modális várakozó ablak
 zoomslider,parositva,PicasaPy/TrayBar.qml;PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml,A főablak és a szerkesztő nagyításcsúszkája a közös csúszka-alapra épül (#4214)

@@ -194,7 +194,7 @@ Item {
 
     // A fülek ALULRA igazodnak a sávban (az eredeti 8 képpontos felső hézag).
     Row {
-        objectName: "documentTabRow"
+        objectName: "panelroot/globaltabs"
         anchors.left: parent.left
         anchors.leftMargin: 6
         anchors.bottom: parent.bottom

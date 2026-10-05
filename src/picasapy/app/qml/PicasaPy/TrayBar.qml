@@ -2047,6 +2047,7 @@ Column {
                     TrayActionButton {
                         id: trayMovieBtn
                         objectName: "trayMovieButton"
+                        Accessible.name: qsTr("Movie Maker")
                         //: #885: LENYOMÁSRA sül el — a `headerpanel/create_movie`
                         //: mért `Property mousedown 1`-e.
                         lenyomasra: true

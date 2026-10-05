@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.684] – 2026-10-05
+
+- A főablakból elérhető a kamera és a filmkészítés, a videóvágó sávon pedig egérrel állítható a klip kezdete és vége. (#4210).
+
 ## [0.8.683] – 2026-10-05
 
 - A Vámpírszem ecsetmaszkja most a mentett vonások keménységéhez igazítja a perem fedettségét (#4224).
