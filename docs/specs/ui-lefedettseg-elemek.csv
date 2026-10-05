@@ -133,6 +133,11 @@ editpanel/prev,megvan,PicasaPy/PhotoViewer.qml,viewerPrevButton (:641) — előz
 editpanel/next,megvan,PicasaPy/PhotoViewer.qml,viewerNextButton (:709) — következő kép a fejlécben
 editpanel/zoomsliderrect,megvan,PicasaPy/PhotoViewer.qml,a nagyítás-csúszka sávja az alsó vezérlősorban (#1420)
 editpanel/edittextpanel,megvan,PicasaPy/EditorTextPanel.qml,a teljes szöveg-eszköz panel (:15-:186) — tartalom · betűtípus · méret · félkövér/dőlt/aláhúzott · három igazítás · kitöltő színek
+pickerpanel/mru_0,megvan,PicasaPy/TextColorSwatches.qml;tests/app/qml_functional/test_color_picker_recent_4283.py,#4283: a legutóbb választott szín (0. rekesz) — QSettings: picker/mru_0
+pickerpanel/mru_1,megvan,PicasaPy/TextColorSwatches.qml;tests/app/qml_functional/test_color_picker_recent_4283.py,#4283: a második legutóbbi szín — QSettings: picker/mru_1
+pickerpanel/mru_2,megvan,PicasaPy/TextColorSwatches.qml;tests/app/qml_functional/test_color_picker_recent_4283.py,#4283: a harmadik legutóbbi szín — QSettings: picker/mru_2
+pickerpanel/mru_3,megvan,PicasaPy/TextColorSwatches.qml;tests/app/qml_functional/test_color_picker_recent_4283.py,#4283: a negyedik legutóbbi szín — QSettings: picker/mru_3
+pickerpanel/mru_4,megvan,PicasaPy/TextColorSwatches.qml;tests/app/qml_functional/test_color_picker_recent_4283.py,#4283: az ötödik legutóbbi szín — QSettings: picker/mru_4
 quicktagconfig/edit_0,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField0 (:86) — a #1788 óta EXPLICIT tíz mező (_QUICK_TAG_SLOTS = 10)
 quicktagconfig/edit_1,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField1 (:86)
 quicktagconfig/edit_2,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField2 (:86)

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import itertools
+import re
 
 import logging
 from pathlib import Path
@@ -17,6 +18,7 @@ from PySide6.QtCore import (
     QEvent,
     QLocale,
     QObject,
+    QSettings,
     Signal,
     Slot,
 )
@@ -91,6 +93,9 @@ from .worker_thread import BackgroundWorkerMixin
 #: nélkül (mérve: a megjelenítési mód váltása így nem jutott a képernyőre).
 _REVIZIO = itertools.count(1)
 _GPU_REVIZIO = itertools.count(1)
+# #4283: az eredeti `picker::mru_%d` tükrözése a saját QSettingsben.
+_PICKER_MRU_SETTINGS_KEYS = tuple(f"picker/mru_{index}" for index in range(5))
+_PICKER_COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
 _log = logging.getLogger(__name__)
 
@@ -365,6 +370,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     revisionChanged = Signal()
     toolsChanged = Signal()
+    pickerRecentColorsChanged = Signal()
     # GPU élő-előnézet (#22): KÜLÖN jel a revisionChanged-től — a
     # finomhangolás-húzás GPU-útja (previewFinetuneGpu) csak a LUT-ot
     # frissíti, a `previewSource`/`photo` Image-nek NEM szabad ilyenkor
@@ -409,6 +415,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         parent=None,
         *,
         slot: str = "",
+        settings: QSettings | None = None,
     ) -> None:
         """`slot` (#3187): melyik ELŐNÉZET-REKESZ a vezérlőé.
 
@@ -425,6 +432,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         super().__init__(parent)
         self._provider = provider
         self._slot = str(slot or "")
+        self._picker_settings = (
+            settings if settings is not None else QSettings("PicasaPy", "PicasaPy")
+        )
         # #514: az előnézet-renderelések sorszáma. Minden új kérés növeli;
         # a háttérszálra tett (lassú) renderelés a saját sorszámát
         # összeveti az aktuálissal, és ELAVULTKÉNT kihagyja magát, ha
@@ -529,6 +539,38 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_align: str = _DEFAULT_TEXT_ALIGN
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
+
+    @Property("QVariantList", notify=pickerRecentColorsChanged)
+    def recentPickerColors(self) -> list[str]:
+        """A színválasztó öt MRU-rekesze (`picker/mru_0` a legfrissebb)."""
+        return [
+            str(self._picker_settings.value(key, "") or "")
+            for key in _PICKER_MRU_SETTINGS_KEYS
+        ]
+
+    @Slot(str)
+    def rememberPickerColor(self, color: str) -> None:
+        """A választott `#RRGGBB` színt elölre teszi és tartósan elmenti."""
+        normalized = str(color).strip().lower()
+        if not _PICKER_COLOR_PATTERN.fullmatch(normalized):
+            return
+
+        colors = [normalized]
+        for previous in self.recentPickerColors:
+            previous = str(previous).strip().lower()
+            if (
+                _PICKER_COLOR_PATTERN.fullmatch(previous)
+                and previous not in colors
+                and len(colors) < len(_PICKER_MRU_SETTINGS_KEYS)
+            ):
+                colors.append(previous)
+
+        for index, key in enumerate(_PICKER_MRU_SETTINGS_KEYS):
+            self._picker_settings.setValue(
+                key, colors[index] if index < len(colors) else ""
+            )
+        self._picker_settings.sync()
+        self.pickerRecentColorsChanged.emit()
 
     @property
     def _kulcs(self) -> str:
