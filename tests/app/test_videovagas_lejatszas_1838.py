@@ -122,7 +122,6 @@ class TestALejatszo:
         assert "Math.max(1, media.duration)" in _LEJATSZO
 
     def test_a_hatokort_a_kod_KIMONDJA(self):
-        """A vágás ma csak a lejátszásra hat — a fájlt nem alakítjuk át, és a
-        pontokat a felületen még nem lehet állítani. Ha ez nincs kimondva, a
-        következő olvasó kész funkciónak veszi."""
+        """A vágáspont a felületen állítható, de a fájlt nem alakítjuk át."""
         assert "CSAK a lejátszásra hat" in _LEJATSZO
+        assert "VideoTrimSlider {" in _LEJATSZO
