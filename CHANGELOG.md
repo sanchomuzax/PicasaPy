@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.686] – 2026-10-05
+
+- A hiányosan megadott effekt után a PicasaPy nem alkalmazza a lánc további effektjeit (#4233).
+
 ## [0.8.685] – 2026-10-05
 
 - Az Emberek albumban a filmgombok a kiválasztott személy képeiből nyitják meg a Filmkészítőt, a közzététel méretválasztása pedig a főablakból is működik. (#4212).
