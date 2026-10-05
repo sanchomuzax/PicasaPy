@@ -5379,6 +5379,11 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <source>Open camera capture panel</source>
         <translation>Webkamerás felvétel megnyitása</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Capture</source>
+        <translation>Rögzítés</translation>
+    </message>
 </context>
 <context>
     <name>CaptureMoviePanelPopup</name>
@@ -7241,6 +7246,11 @@ Biztosan visszavonja a műveletet?</translation>
 </context>
 <context>
     <name>TrayBar</name>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml" line="0"/>
+        <source>Movie Maker</source>
+        <translation>Mozgófilmkészítés</translation>
+    </message>
     <message>
         <source>Create Movie Presentation</source>
         <translation>Mozgófilmes prezentáció létrehozása</translation>
