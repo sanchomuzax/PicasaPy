@@ -39,7 +39,8 @@ import logging
 import os
 import threading
 import zlib
-from collections import OrderedDict
+from collections.abc import Iterable
+from collections import OrderedDict, deque
 from pathlib import Path
 
 import shiboken6
@@ -84,6 +85,12 @@ _OPS_CACHE_CAPACITY = 4096
 # dekódolt QImage ~256 KB, a korlát így legfeljebb ~32 MB — egy mappányi
 # szerkesztett kép görgetéséhez bőven elég, memóriában mégis szerény.
 _FILTERED_MEMO_CAPACITY = 128
+
+# A látható Image-kérések kerüljenek a háttér-előtöltések elé a közös
+# pool-sorban. A QThreadPool a nagyobb számú prioritást futtatja előbb.
+_VISIBLE_THUMB_PRIORITY = 1
+_PREFETCH_THUMB_PRIORITY = -1
+_PREFETCH_QUEUE_CAPACITY = 256
 
 _log = logging.getLogger(__name__)
 
@@ -255,6 +262,17 @@ class _ThumbJob(QRunnable):
         self._response._finish(image)
 
 
+class _PrefetchJob(QRunnable):
+    """Egy alacsony prioritású bélyegkép a cache felmelegítéséhez."""
+
+    def __init__(self, provider: "ThumbnailProvider"):
+        super().__init__()
+        self._provider = provider
+
+    def run(self) -> None:
+        self._provider._run_prefetch_job()
+
+
 def _placeholder() -> QImage:
     image = QImage(16, 16, QImage.Format.Format_RGB32)
     image.fill(PLACEHOLDER_COLOR)
@@ -290,6 +308,14 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         self._active = 0
         self._active_lock = threading.Lock()
         self._memo = _FilteredThumbMemo()
+        # Egyetlen előtöltő dolgozik egyszerre. Így a háttérmunka nem tudja
+        # elfoglalni a látható cellák elől a teljes QThreadPool-t. Az újabb
+        # görgetési tartományok a sor elejére kerülnek, a régi sor vége
+        # korlátos és eldobható.
+        self._prefetch_lock = threading.Lock()
+        self._prefetch_queue: deque[str] = deque()
+        self._prefetch_pending: set[str] = set()
+        self._prefetch_scheduled = False
         # #1457: erős hivatkozás MINDEN élő válaszra. A motor nyers C++
         # mutatót tart a válaszra, a PySide viszont a Python-oldali
         # referenciaszámot is figyeli — e nyilvántartás nélkül a válasz
@@ -416,8 +442,83 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         response.destroyed.connect(
             lambda *_, token=token: self._release_response(token)
         )
-        self._pool.start(_ThumbJob(self, photo_id, response))
+        self._pool.start(
+            _ThumbJob(self, photo_id, response), _VISIBLE_THUMB_PRIORITY
+        )
         return response
+
+    def prefetch_images(self, photo_ids: Iterable[str]) -> int:
+        """A megadott bélyegkép-azonosítók alacsony prioritású előtöltése.
+
+        A render-mag a már meglévő `ThumbnailCache`-t és a szűrt képek
+        memóriatárát használja. A sorosított futás egy pool-helyet legfeljebb
+        egy kép idejére foglal; a látható kérések közben a Qt magasabb
+        prioritással előzik meg a sorban álló előtöltéseket.
+        """
+        uj_azonositok: list[str] = []
+        prefix = "image://thumbs/"
+        for value in photo_ids:
+            photo_id = str(value or "").strip()
+            if photo_id.startswith(prefix):
+                photo_id = photo_id[len(prefix):]
+            if photo_id:
+                uj_azonositok.append(photo_id)
+        if not uj_azonositok:
+            return 0
+
+        indit = False
+        hozzaadott = 0
+        with self._prefetch_lock:
+            uj_sor = []
+            for photo_id in uj_azonositok:
+                if photo_id in self._prefetch_pending:
+                    continue
+                self._prefetch_pending.add(photo_id)
+                uj_sor.append(photo_id)
+            # A friss görgetési cél kerüljön a régebbi, még sorban álló
+            # tartomány elé, de annak eredeti sorrendjét őrizze meg.
+            for photo_id in reversed(uj_sor):
+                self._prefetch_queue.appendleft(photo_id)
+            hozzaadott = len(uj_sor)
+            queue_capacity = max(_PREFETCH_QUEUE_CAPACITY, hozzaadott)
+            while len(self._prefetch_queue) > queue_capacity:
+                eldobott = self._prefetch_queue.pop()
+                self._prefetch_pending.discard(eldobott)
+            if self._prefetch_queue and not self._prefetch_scheduled:
+                self._prefetch_scheduled = True
+                indit = True
+        if indit:
+            self._pool.start(
+                _PrefetchJob(self), _PREFETCH_THUMB_PRIORITY
+            )
+        return hozzaadott
+
+    def _run_prefetch_job(self) -> None:
+        """Egy cache-felmelegítő munka; a következő csak a befejezés után indul."""
+        with self._prefetch_lock:
+            if not self._prefetch_queue:
+                self._prefetch_scheduled = False
+                return
+            photo_id = self._prefetch_queue.popleft()
+        try:
+            # Előtöltéskor nincs képernyő-válasz és nem jelezzük a felületnek
+            # látható betöltésként. A render-mag ugyanazokat a gyorsítótárakat
+            # tölti, amelyeket a rendes requestImage is használ.
+            image = self._render(photo_id)
+            if image.isNull():
+                _log.debug("thumbnail előtöltése sikertelen: %s", photo_id)
+        except Exception:  # noqa: BLE001 — háttérfeladat nem szakíthatja meg a görgetést
+            _log.exception("thumbnail-előtöltési hiba: %s", photo_id)
+        finally:
+            with self._prefetch_lock:
+                self._prefetch_pending.discard(photo_id)
+                van_kovetkezo = bool(self._prefetch_queue)
+                if not van_kovetkezo:
+                    self._prefetch_scheduled = False
+            if van_kovetkezo:
+                self._pool.start(
+                    _PrefetchJob(self), _PREFETCH_THUMB_PRIORITY
+                )
 
     def _release_response(self, token: int) -> None:
         """A motor elpusztította a választ — elengedhetjük a hivatkozást."""
