@@ -687,6 +687,17 @@ ApplicationWindow {
     readonly property string personAlbumName:
         controller && controller.currentPersonName
             ? controller.currentPersonName : ""
+    //: #4212: mindkét `faceheaderpanel` filmgomb a nyitott személyalbum
+    //: TELJES, aktuális képlistáját adja a meglévő Filmkészítőnek. A
+    //: filmablak a sorokat azonnal URL-ekké bontja, így a kijelöléshez nem
+    //: kell hozzányúlni, és a normál felbontás-választó marad érvényben.
+    function openPersonAlbumMovie() {
+        if (!controller || window.personAlbumName === "") return
+        var sorok = []
+        var darab = controller.photos.rowCount()
+        for (var i = 0; i < darab; ++i) sorok.push(i)
+        createDialogs.ensure().openMovieForRows(sorok)
+    }
     readonly property int personSuggestionCount: {
         window._javaslatRevizio
         if (!window._faceScanController || window.personAlbumName === "")
