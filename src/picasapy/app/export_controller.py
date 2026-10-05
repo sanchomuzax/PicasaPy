@@ -19,6 +19,7 @@ from picasapy.export import (
     export_photos,
     is_automatic_quality,
     resolve_export_quality,
+    resolve_export_subsampling,
 )
 from picasapy.fileops import has_enough_free_space, required_bytes_for
 from picasapy.lazy_cv2 import elore_betolt
@@ -311,11 +312,17 @@ class ExportMixin(BackgroundWorkerMixin):
         indoklásáért (a pontos Picasa-értékek nem dokumentáltak)."""
         return resolve_export_quality(quality_preset, custom_quality)
 
-    @Slot(list, str, int, int, bool, str, bool, bool)
+    @Slot(str, result=int)
+    def resolveExportSubsampling(self, quality_preset: str) -> int:
+        """A képminőség-preset mért JPEG-mintavételezése (#4017)."""
+        return resolve_export_subsampling(quality_preset)
+
+    @Slot(list, str, int, int, bool, str, bool, bool, int)
     def exportRows(self, rows, target_dir: str, max_dimension: int,
                    jpeg_quality: int, add_numbers: bool = False,
                    watermark_text: str = "", purge_existing: bool = False,
-                   quality_automatic: bool = False) -> None:
+                   quality_automatic: bool = False,
+                   jpeg_subsampling: int = 2) -> None:
         """Kijelölt sorok exportja célmappába (#16, Ctrl+Shift+S).
 
         A forgatás (rotate_steps) ÉS a `filters=` szerkesztés-lánc (#136)
@@ -335,13 +342,14 @@ class ExportMixin(BackgroundWorkerMixin):
         )
         self._export_items(items, target_dir, max_dimension, jpeg_quality,
                            add_numbers, watermark_text, purge_existing,
-                           quality_automatic)
+                           quality_automatic, jpeg_subsampling)
 
-    @Slot(str, int, int, bool, str, bool, bool)
+    @Slot(str, int, int, bool, str, bool, bool, int)
     def exportHeld(self, target_dir: str, max_dimension: int,
                    jpeg_quality: int, add_numbers: bool = False,
                    watermark_text: str = "", purge_existing: bool = False,
-                   quality_automatic: bool = False) -> None:
+                   quality_automatic: bool = False,
+                   jpeg_subsampling: int = 2) -> None:
         """A KÉPTÁLCA tartalmának exportja célmappába (#455, 3. teendő).
 
         Az eredetiben a tálca alatti műveletsor a **tálca tartalmán**
@@ -354,7 +362,7 @@ class ExportMixin(BackgroundWorkerMixin):
         self._export_items(
             self._held_export_items(), target_dir, max_dimension,
             jpeg_quality, add_numbers, watermark_text, purge_existing,
-            quality_automatic,
+            quality_automatic, jpeg_subsampling,
         )
 
     def _held_export_items(self) -> tuple[ExportItem, ...]:
@@ -373,7 +381,8 @@ class ExportMixin(BackgroundWorkerMixin):
     def _export_items(self, items, target_dir: str, max_dimension: int,
                       jpeg_quality: int, add_numbers: bool,
                       watermark_text: str, purge_existing: bool = False,
-                      quality_automatic: bool = False) -> None:
+                      quality_automatic: bool = False,
+                      jpeg_subsampling: int = 2) -> None:
         target = to_local_path(target_dir)
         if not items or not target:
             # #1166: az eredeti sem hallgat — `IDS_NO_IMAGES_TO_SEND`
@@ -407,6 +416,7 @@ class ExportMixin(BackgroundWorkerMixin):
             # kvantálási tábláit veszi át (spec 3.3/7.1), nem a
             # `jpeg_quality`-t. Az utóbbi csak visszaesés marad.
             quality_automatic=bool(quality_automatic),
+            jpeg_subsampling=jpeg_subsampling,
         )
 
         # #457: a célmappa a „Exportált képek" nyilvántartásba kerül —

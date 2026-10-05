@@ -546,7 +546,7 @@ class TestQualityPresets:
 
     def test_normal_maximum_minimum_map_to_documented_values(self):
         assert resolve_export_quality("normal", 50) == 85
-        assert resolve_export_quality("maximum", 50) == 100
+        assert resolve_export_quality("maximum", 50) == 93
         # #1139: az eredetiben 65 (`0x41`, `0x00739ca8`) — nálunk 70 volt.
         assert resolve_export_quality("minimum", 50) == 65
 

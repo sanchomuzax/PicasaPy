@@ -7,6 +7,7 @@ from .exporter import (
     export_photos,
     is_automatic_quality,
     resolve_export_quality,
+    resolve_export_subsampling,
 )
 from .xmp import (
     XmpImageMetadata,
@@ -29,6 +30,7 @@ __all__ = [
     "export_photos",
     "is_automatic_quality",
     "resolve_export_quality",
+    "resolve_export_subsampling",
     "XmpImageMetadata",
     "XmpRegion",
     "build_sidecar_from_picasa",
