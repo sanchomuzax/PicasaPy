@@ -140,18 +140,12 @@ class TestMinosegOsszegzes:
 
 
 class TestAKuszob:
-    def test_kimondottan_sajat_dontes(self):
-        """A jegy előírja: a küszöb egy helyen, névvel, és a komment
-        mondja ki, hogy NEM mért érték."""
+    def test_a_kuszob_a_binarisbol_mert_ertek(self):
+        """A #4280 óta a küszöb mért: a modul a bináris forrását nevezi meg."""
         from picasapy.printing import dpi
 
         assert KICSI_KUSZOB_DPI == 150
         # a sortörések összevonva: a docstring tördelése ne dönthesse el,
         # hogy az őr fog-e
         forras = " ".join((dpi.__doc__ or "").split())
-        assert "nincs mérve" in forras, (
-            "a modul docstringje nem mondja ki, hogy a küszöb NINCS MÉRVE"
-        )
-        assert "SAJÁT DÖNTÉS" in forras, (
-            "a docstring nem mondja ki, hogy a küszöb a mi választásunk"
-        )
+        assert "#4280" in forras, "a modul docstringje nem hivatkozza a mérést"

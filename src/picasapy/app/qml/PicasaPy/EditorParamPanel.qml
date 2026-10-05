@@ -289,6 +289,7 @@ Flickable {
                     id: paramColorSwatches
                     objectName: "effectParamColor" + paramRow.index
                     visible: paramRow.controlKind === "color"
+                    showRecentColors: true
                     // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
                     // "color" mező nélküli payloadot is küldhetnek
                     currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"

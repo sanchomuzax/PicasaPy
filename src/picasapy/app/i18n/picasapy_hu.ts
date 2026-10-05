@@ -384,6 +384,21 @@
         <translation>Győződjön meg arról, hogy a fotók nyomtatásra készek</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Best quality (%1 pixels/inch)</source>
+        <translation>Legjobb minőség (%1 képpont/hüvelyk)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Good quality (%1 pixels/inch)</source>
+        <translation>Jó minőség (%1 képpont/hüvelyk)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Bad quality (%1 pixels/inch)</source>
+        <translation>Gyenge minőség (%1 képpont/hüvelyk)</translation>
+    </message>
+    <message>
         <source>These pictures are below %1 pixels/inch at the selected print size:</source>
         <translation>Ezek a képek a választott nyomatméreten %1 képpont/hüvelyk alatt vannak:</translation>
     </message>

@@ -145,10 +145,10 @@ class TestAGombAQMLben:
         assert "quality.small > 0" in blokk
 
     def test_a_gomb_NEM_nema(self):
-        """A #1798 osztálya: a gomb ne csak létezzen — hívja is a listát."""
+        """#4280: az Ellenőrzés gomb az összes minőségi sort lekéri."""
         forras = self._dialogus()
         blokk = blokk_horgonyra(forras, 'objectName: "printReviewButton"')
-        assert "smallPictures" in blokk
+        assert "reviewPictures" in blokk
 
 
 class TestAKuszobBeallithato2359:

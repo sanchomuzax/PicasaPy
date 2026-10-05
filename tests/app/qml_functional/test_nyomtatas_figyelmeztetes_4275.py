@@ -133,7 +133,7 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         sor = _listaelem(qt_app, lista, 0)
         sor_felirat = sor.findChild(QObject, "printReviewListRowText")
         assert sor_felirat is not None
-        assert "Gyenge minőség:" in sor_felirat.property("text")
+        assert "Gyenge minőség (" in sor_felirat.property("text")
         assert "képpont/hüvelyk" in sor_felirat.property("text")
         dpi = str(_lista(lista.property("model"))[0]["dpi"])
         assert dpi in sor_felirat.property("text")
