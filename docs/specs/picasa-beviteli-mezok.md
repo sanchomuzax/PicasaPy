@@ -213,31 +213,122 @@ Négy erőforrás írja le: `tagpanel_text.tre`, `keywordstext.tre`,
 | `tagpanel/quick_label` | **Quick Tags:** |
 | `tagpanel/quick_config` (súgó) | Configure Quick Tags |
 
-A panel fejlécei **le vannak fordítva** (`TagPanel::*`):
+A panel címke- és súgófeliratai az eredeti angol szöveggel és a magyar
+fordítással (`TagPanel::*`):
 
-| erőforrás | HU |
-|---|---|
-| `TagPanel::tags` | **Címkék** |
-| `TagPanel::tag_info_single` | **%s címkéi:** |
-| `TagPanel::tag_info_multiple` | **Címkék az aktuális kijelölésben:** |
-| `TagPanel::tag_info_whole_album` | **Címkék az aktuális kijelölésben (teljes album):** |
-| `TagPanel::tip_fmt` | **Címke hozzáadása: %s** |
-| `TagPanel::remove_tip` | **A címke eltávolítása a kijelölt elemekről** |
-| `TagPanel::emptytip` | **Ide kattintva konfigurálhatja a gyorscímkéket** |
-| `TagPanel::empty` | **?** *(az üres gyorscímke-gomb felirata)* |
-| `TagPanel::notify_some_errors` | **A beírt szöveg egy része nem adható hozzá címkeként.** |
+| erőforrás | eredeti (EN) | magyar (HU) |
+|---|---|---|
+| `TagPanel::tags` | `Tags` | **Címkék** |
+| `TagPanel::tag_info_single` | `Tags in %s:` | **%s címkéi:** |
+| `TagPanel::tag_info_multiple` | `Tags in the current selection:` | **Címkék az aktuális kijelölésben:** |
+| `TagPanel::tag_info_whole_album` | `Tags in the current selection (whole album):` | **Címkék az aktuális kijelölésben (teljes album):** |
+| `TagPanel::tip_fmt` | `Add tag: %s` | **Címke hozzáadása: %s** |
+| `TagPanel::remove_tip` | `Remove this tag from the selected items` | **A címke eltávolítása a kijelölt elemekről** |
+| `TagPanel::emptytip` | `Click to configure quick tags` | **Ide kattintva konfigurálhatja a gyorscímkéket** |
+| `TagPanel::empty` | `?` | `?` *(az üres gyorscímke-gomb felirata)* |
+| `TagPanel::notify_some_errors` | `Some of the text you entered could not be added as a tag.` | **A beírt szöveg egy része nem adható hozzá címkeként.** |
 
-> **Három szövegváltozat** van a fejlécre: egy kép · több kép · teljes
-> album. Ezt érdemes szó szerint követni.
-### A „nincs beírt szöveg" súgó — a Picasa tanít
+*Forrás: a bináris `.rdata`-sztringjei és `stringres-en-hu.tsv`; a
+fejlécek címei rendre `0x00ca0658`, `0x00ca06d0`, `0x00ca0680`, a
+kulcscímek `0x00ca0664`, `0x00ca06f0`, `0x00ca06b0`.*
 
-`TagPanel::notify_notext`:
+### A „nincs beírt szöveg" tanító súgója
 
-> „Írjon be egy címkét (szót vagy kifejezést) a szövegmezőbe attól a
-> gombtól balra, amelyre az imént kattintott.⏎⏎Ezután ismét kattintson a
-> gombra, így hozzáadja a címkét a kijelölt elemekhez.⏎⏎**(TIPP: Ha
-> automatikusan, a gombra kattintás nélkül szeretné hozzáadni a megadott
-> címkét, nyomja le az `<ENTER>` billentyűt.)**"
+`TagPanel::notify_notext` — eredeti (`0x00ca0718`, kulcs:
+`0x00ca0820`):
+
+> Type in a tag (word or phrase) in the text box to the left of the button
+> you just pressed.
+>
+> Then press the button again to add the tag to the selected items.
+>
+> (TIP: Press `<ENTER>` after you type in your tag to automatically add
+> the tag without pressing the button)
+
+Magyar fordítás:
+
+> Írjon be egy címkét (szót vagy kifejezést) a szövegmezőbe attól a
+> gombtól balra, amelyre az imént kattintott.
+>
+> Ezután ismét kattintson a gombra, így hozzáadja a címkét a kijelölt
+> elemekhez.
+>
+> (TIPP: Ha automatikusan, a gombra kattintás nélkül szeretné hozzáadni a
+> megadott címkét, nyomja le az `<ENTER>` billentyűt.)
+
+### A címkepanel viselkedése a binárisban
+
+**Fejlécváltás** — `0x0063ae00` választ a három fordítási kulcs között. Ha
+a belső kijelölésvektor hossza a jelzőbit levétele után `2`, az egyetlen
+kijelölt elem ága fut (`TagPanel::tag_info_single`). Minden más esetben a
+`0x0065abe0` teljesalbum-predikátum igaz eredménye a
+`TagPanel::tag_info_whole_album`, hamis eredménye a
+`TagPanel::tag_info_multiple` kulcsot választja. A predikátum a
+`[this+0xea4]` és `[this+0xea8]` állapotot, majd a `0x7176a0` kétféle
+szűrésének üres/nem üres eredményét vizsgálja. A két mező és a szűrési
+módok szemantikai nevét a feltárt kód nem adja meg; ezért a
+„teljes album" feltétel nem egyszerűsíthető bizonyíték nélkül „a
+kijelölés elemszáma egyenlő az album elemszámával" állításra.
+
+**Üres mező és gyorscímke-súgó** — az `0x0063bb30` hozzáadási út üres
+szöveg esetén a `TagPanel::notify_notext` üzenetet jeleníti meg. Az
+üres gyorscímke gombhoz tartozó buboréksúgó a `TagPanel::emptytip`
+(`0x00ca08dc`, kulcs: `0x00ca08fc`); a sztringet a
+`0x0063c120` és `0x0063c7d0` gombkezelő is hivatkozza.
+
+**Tömeges címkézés megerősítése** — a `CThumbUI::keyword_warning_fmt`
+eredeti felirata `0x00ca2970`, kulcsa `0x00ca29dc`:
+
+> You have a fairly large number of items selected.
+>
+> Are you sure you want to apply this tag to all %d items?
+
+Magyar fordítás:
+
+> Meglehetősen nagy számú elemet jelölt ki.
+>
+> Biztosan az összes (%d) elemre alkalmazni szeretné ezt a címkét?
+
+A `0x0065b160` a kijelölés elemszámát hasonlítja `0x1e`-hez, és csak
+`30` fölött jeleníti meg a megerősítést (`jbe` esetén átugorja). A
+`0x0063bed0` hozzáadási út hívja ezt a CThumbUI-vtable `+0x04` helyéről.
+Nem válasz esetén a függvény `0xF4242` értékkel tér vissza az elemek
+alkalmazása előtt; a hívó ezt a visszatérést nem számolja részleges
+beviteli hibának.
+
+**Részleges bevitel hibája** — a `0x0063bb30` a nem üres bevitelt
+vesszőnél (`0x2c`) tokenizálja, és minden tokent a `0x0063bed0`
+hozzáadási útnak ad át. A nulla és a Mégse `0xF4242` visszatérésen kívül
+minden nem nulla eredmény növeli a hibaszámlálót; ha a számláló nem nulla,
+megjelenik a `TagPanel::notify_some_errors` (`0x00ca0838`, kulcs:
+`0x00ca0874`) üzenet. Az elutasítás konkrét bemeneti okát a feltárt
+híváslánc nem nevezi meg: a panelút a CThumbUI-vtable `+0x14` metódusáig
+(`0x0065b4b0`) jut, amely a `0x0065b590`/`0x004d9aa0` módosító út
+eredményét adja vissza. **Nincs bizonyíték** arra, hogy minden hibát
+szintaktikailag hibás vagy már létező címke okoz.
+
+Nyitott, célzott folytatás:
+
+- `Ghidra-kör kell: 0x0065abe0 — a [this+0xea4]/[this+0xea8] állapot és a 0x7176a0 két szűrési módja mely kijelölésnél választja a „whole album” fejlécet? [blokkoló]`
+- `Ghidra-kör kell: 0x004d9aa0 — milyen token- vagy elemtulajdonság miatt ad vissza nem nulla eredményt a 0x0063bed0 → 0x0065b4b0 → 0x0065b590 hozzáadási út, és ez váltja-e ki a részleges hibaüzenetet? [blokkoló]`
+
+*Binárishelyek: `0x0063ae00` (fejléc), `0x0065abe0` (teljesalbum-
+predikátum), `0x0063bb30` (üres/hibás bevitel), `0x0063bed0` (token
+hozzáadása és megerősítési hívás), `0x0065b160` (küszöb és megerősítés),
+`0x0065b4b0`/`0x0065b590` (hozzáadási eredmény). A küszöb mérése:
+`mérés (QEMU-i386, izolált 0x0065b160; szintetikus kijelölésszám,
+„Nem” párbeszéd-válasz): count=30 → `NO_WARNING result=0`; count=31 →
+`WARNING cancel=1 apply=0`. Ez függvényszintű mérés, nem Picasa
+GUI-kattintásos teszt.*
+
+**Bizonyítottsági fok:** a feliratok és magyar fordításaik kulcsonként
+egyeznek a bináris sztringjeivel és a helyi fordítási táblával;
+megerősített. A `>30` megerősítési küszöb és a Mégse előtti visszatérés
+utasításszintű olvasással és a fenti QEMU-méréssel egyezik;
+megerősített. A fejléc-, súgó- és részlegeshiba-megjelenítés feltételei
+egyetlen statikus hívásláncból származnak; feltételesek, mert a Picasa
+GUI-ban nem futott kattintásos ellenőrzés. A részleges hiba valamennyi
+konkrét elutasítási oka nyitott.
 
 ### A gyorscímke-beállító — pontosan TÍZ
 

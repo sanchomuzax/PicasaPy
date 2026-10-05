@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.4] – 2026-10-05
+
+- Linuxon teljes képernyős képernyővédő-vetítés indítható a kiválasztott mappákból, albumokból vagy képekből. (#4259).
+
 ## [0.9.3] – 2026-10-05
 
 - Az ellenőrzött arcfelismerő modell betöltési hibája most érthető visszajelzést ad, és nem jelzi tévesen sikeresnek a keresést (#4260).
