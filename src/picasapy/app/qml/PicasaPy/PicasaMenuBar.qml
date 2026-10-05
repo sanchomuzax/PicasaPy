@@ -305,6 +305,8 @@ MenuBar {
     signal saveAsRequested()
     signal saveCopyRequested()
     signal slideshowRequested()
+    signal addToScreensaverRequested()
+    signal configureScreensaverRequested()
     //: #3460: Mappa ▸ Leírás szerkesztése… — ugyanaz az `album.fen`
     //: párbeszéd, mint a mappa helyi menüjéé (#422), a megnyitott mappára
     signal editFolderDescriptionRequested()
@@ -1795,7 +1797,12 @@ MenuBar {
             onTriggered: bar.collageRequested()
         }
         // hiányzott (#324 audit): OS-integrációs funkciók
-        PicasaMenuItem { text: qsTr("Add to &Screensaver..."); placeholder: true }
+        MenuItem {
+            objectName: "menuCreateAddScreensaver"
+            text: qsTr("Add to &Screensaver...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.addToScreensaverRequested()
+        }
         //: #3503: a kiadás-panelt Ajándék-CD üzemmódban nyitja; a tálcáról
         //: dolgozik, ezért ugyanaz a kapu, mint a kollázsé és a filmé
         MenuItem {
@@ -1863,7 +1870,11 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit)
         PicasaMenuItem { text: qsTr("Configure Photo Viewer..."); placeholder: true }
-        PicasaMenuItem { text: qsTr("Configure Screensaver..."); placeholder: true }
+        MenuItem {
+            objectName: "menuToolsScreensaver"
+            text: qsTr("Configure Screensaver...")
+            onTriggered: bar.configureScreensaverRequested()
+        }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         // #440: a mentés-készletek párbeszéde. A helye MÉRT (#1774): a

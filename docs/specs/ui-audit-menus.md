@@ -156,7 +156,7 @@ PicasaPy-bővítés, jó helyen van jelölve.
 | Beállítás háttérképként... | — | **nem** | hiányzik |
 | Poszter készítése... | — | igen | inaktív (`Make a Poster...`) |
 | Képkollázs... | — | igen | megvan, működik |
-| Hozzáadás a képernyővédőhöz... | — | **nem** | teljes funkció hiányzik |
+| Hozzáadás a képernyővédőhöz... | — | igen | a kijelölt képek helyi képernyővédő-forrásba kerülnek; QSettings-mentés és kimeneti próba (#4259) |
 | Ajándék CD készítése... | — | **nem** | teljes funkció hiányzik |
 | Mozgófilm ▸ (almenü) | — | **eltérő** | nálunk `Movie` sima tétel, működik, de az eredetiben almenü — tartalma a képekből nem derül ki |
 | Közzététel a Bloggeren... | — | **nem** | teljes funkció hiányzik |
@@ -169,7 +169,7 @@ PicasaPy-bővítés, jó helyen van jelölve.
 | Feltöltéskezelő... | — | **nem** | hiányzik (eredetiben is inaktív volt ekkor) |
 | Személyek kezelése... | — | igen | inaktív (`People Manager...`) |
 | Fotómegjelenítő beállítása... | — | **nem** | hiányzik |
-| Képernyővédő konfigurálása... | — | **nem** | hiányzik |
+| Képernyővédő konfigurálása... | — | igen | mappa/album, effekt, diaidő és felirat választható; előnézete teljes képernyős vetítés (#4259) |
 | Képek biztonsági mentése... | — | igen | inaktív (`Back Up Pictures...`) |
 | Csoportos feltöltés... | — | **nem** | hiányzik |
 | Dátum és idő beállítása... | — | igen | inaktív (`Adjust Date and Time...`) |

@@ -370,6 +370,36 @@ feltehetően futásidőben rejtve van).
 - `label title="Example:" width="fill" height="2li" name="sample"` — élő előnézet a végleges fájlnévről
 - `buttongroup`: `button "Rename" type="accept" name="rename"`, `button "Cancel" type="cancel"`
 
+Az eredeti élő előnézet mintái a binárisban szó szerint szerepelnek:
+
+| előnézeti adat | eredeti érték és hely |
+|---|---|
+| Date | **` 08-01-2004 2-30-45 PM`** (`0x00c89a18`, `RenameDialog::sampledate`, `0x00c89a30`) |
+| Image resolution | **` 640x480`** (`0x00c89a4c`, `RenameDialog::samplesize`, `0x00c89a58`) |
+| minta felirata | **`Example: `** (`0x00c89a74`) |
+
+A dátum összeállításakor a `:` és `/` karaktereket `-` váltja fel
+(`0x005332e0`–`0x005332ec`), így a dátum-idő fájlnévben használható alakot
+kap. Az előnézeti dialógusban egy névmező és a két fenti jelölőnégyzet van;
+sorszámmező nincs. A sorszám képzett része az eredménynek, nem külön vezérlő.
+
+#### Eredeti / PicasaPy / teendő (#366 pontosítása)
+
+| | eredeti, binárisból | PicasaPy jelenlegi állapota | teendő |
+|---|---|---|---|
+| dátum-utótag | ` 08-01-2004 2-30-45 PM`; `:` és `/` → `-` (`0x00c89a18`, `0x005332e0`–`0x005332ec`) | `taken_at[:10]`, dátum-idő nélküli ISO-dátum (`src/picasapy/fileops/rename.py`, `_build_stem`) | az élő előnézethez és átnevezéshez egyeztesd a dátum-idő alakot és kötőjeles időelválasztást |
+| felbontás-utótag | ` 640x480` (`0x00c89a4c`) | `widthxheight`, a formátum egyezik | nincs formátumeltérés |
+| sorszámozás | nincs sorszámmező a dialógusban; az eredeti név-előnézet az első képet mutatja | automatikus `név`, `név-1`, `név-2`… | maradjon automatikus; ne kerüljön külön mező a dialógusba |
+| ütközés és `.picasa.ini` | **NINCS MEG** | ütközés-előellenőrzés; fájlátnevezéskor az ini-szekciót is átviszi (`rename_photo`) | eredeti szabályhoz célzottan fel kell oldani a gomb utáni útvonalat |
+
+**Nyitott bináriskérdés:** a kezelő (`0x00532c70`) a
+`RenameDialog::vftable` (`0x00c8ba24`) `+0x114` slotját hívja; a slot célja
+`0x008d2640`, amelynek függvényhatárát az index nem tartalmazza. A további
+átnevezési út, az ütközéskezelés és az ini-szekciók követése ezért nincs
+igazolva. Következő célzott lépés: `Ghidra-kör kell: 0x008d2640 — a Rename
+gomb végrehajtási útja, az ütközés szabálya és a .picasa.ini szekciók
+átvezetése [blokkoló]`.
+
 ### 3.6 `move_database.fen` — Adatbázis áthelyezése (V1)
 
 - Ablak: `title="Move Database"`, `width="fit"`, `focus="new_location"`

@@ -42,7 +42,7 @@ A **szöveg**-beillesztés viszont a rendszer-vágólapról jön, **lecseréli**
 feliratot, megerősítést kér (`CTextEditNode::confirm`, gomb: `Replace`), és
 kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
 
-## 3. „Dátum és idő beállítása" — KÉT mód, és NEM fájlidő
+## 3. „Dátum és idő beállítása” — KÉT mód; a mentési cél részben nyitott
 
 `offsettime.fen`: bélyegkép-előnézet · „Current photo date" (dátum+idő) ·
 „New photo date" (dátum+idő) · **rádiócsoport**:
@@ -50,11 +50,39 @@ kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
 - `relative` — *Adjust all photo dates by the amount* (**eltolás**)
 - `absolute` — *Set all photos to the same date and time* (**abszolút**)
 
-Több képre megy (`OffsetPhotoDate:Title` = „Fotó dátumának módosítása -
-%d elem."), **háttérszálon** (`AdjustTimeThread::SettingDates`).
+Több képre megy: az ablakcím szó szerint **`Adjust Photo Date - %d items`**
+(`0x00cb40ac`, xref: `0x0077c7c0`); a futásjelzés **`Setting photo dates`**
+(`0x00cb4120`, xref: `0x0077cfd0`, `AdjustTimeThread::SettingDates`).
 
-⛔ **A kezelői (`0x0077c7c0`, `0x0077cfd0`) NINCSENEK a `SetFileTime` nyolc
-hívója között** ⇒ **a „fotó dátuma" nem a fájlrendszer ideje.**
+### A worker mit állít be — és mit nem bizonyít ez a híváslánc
+
+A két dátumfeldolgozó út (`0x00490580`, `0x00490c10`) egyaránt a `0x37`
+metaadat-tulajdonságot állítja be (`0x004906f7`/`0x004906fe` és
+`0x00490d3c`/`0x00490d43`). A tulajdonság-táblában a `0x37` az EXIF
+`DateTimeOriginal`-nak felel meg (ld. `picasa-metaadat-tulajdonsagok.md`, §3),
+de ez a Picasa metaadat-objektum tulajdonságát azonosítja; **önmagában nem
+bizonyítja, hogy a worker a képfájl EXIF-szegmensébe is kiírja**.
+
+Mindkét worker meghívja a `0x00992780` segédfüggvényt (`0x00490900`,
+`0x00490f40`). A függvény a `SetFileTime` API-t hívja (`0x0092234c` import;
+az index ezt a `0x00992780` hívójához rendeli). A worker `0` jelzője mellett a
+segéd a kiszámított időmutatót a `SetFileTime` második paraméterébe teszi,
+és nullát ad a harmadik/negyedik paraméternek (`0x009927e9`–`0x009927f9`). A
+Win32 paramétersorrend szerint ez **a fájl létrehozási idejét** állítja; ez a
+hívás nem állítja a hozzáférési vagy utolsó módosítási időt.
+
+⛔ **A teljes művelet célja még nyitott.** A bináris itt bizonyítja a `0x37`
+metaadat-objektum beállítását és a létrehozási idő állítására vezető ágat,
+de nem bizonyítja, hogy a `DateTimeOriginal` ténylegesen a képfájlba vagy a
+`.picasa.ini`-be íródik-e, illetve hogy egy későbbi metaadat-mentés módosítja-e
+a fájl utolsó módosítási idejét. Ehhez Windowsos mérés kell: egy teszt-JPEG
+EXIF `DateTimeOriginal`, a mappa `.picasa.ini`-jének bájtjai és fájl-`mtime`
+előtte/utána összevetése egyetlen képen, Picasában az új dátum beállítása után.
+Ebben a környezetben nincs Windows futtató/QEMU-rendszeremulátor, ezért ez a
+mérés **NINCS MEG**. A korábbi állítás — miszerint a kezelők hiánya a
+`SetFileTime` közvetlen hívólistájából kizárja a fájlrendszer-idő módosítását
+— **hibás negatív következtetés** volt: a kezelő a háttér-workerhez jut el,
+amely a segédfüggvényt hívja.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
@@ -1363,6 +1391,17 @@ Az `Add to Screensaver` (`0x00531900`) kétszintű:
 A Google Fotók-képernyővédő **külön telepítésű program** (#453) — a
 `desk.cpl`-hívás Windows-specifikus. Jegy: **#453**, **#32**.
 
+**Linuxos PicasaPy-változat (#4259, tulajdonosi döntés 2026-10-05):** a
+Windowsos telepítés- és registry-út helyett a menüből nyitható saját
+képernyővédő-beállító és előnézet készült. A források a kijelölt mappák,
+albumok és a Létrehozás menüből hozzáadott képek; a beállításokat a QSettings
+őrzi. Az effekt-, diaidő- és feliratbeállítás a helyi teljes képernyős
+diavetítéshez tartozik. A vetítés egérmozgásra vagy billentyűre kilép.
+Asztali környezeti tétlenségjelhez kötött automatikus indítás nincs benne; ez
+külön integrációs feladat. A korábbi specifikáció az eredeti külön Windowsos
+kiegészítő teljes beállítómezőit nem sorolta fel, ezért ez a Linuxos felület a
+jegyen kért helyi forrásokra és a PicasaPy diavetítési beállításaira épül.
+
 ### 35.4 TiVo-export — Windows-only menü, akció-kereten át
 
 Az `Export to TiVo(r) DVR...` a `eMenuCreateWin` névtérből jön — **a
@@ -1430,7 +1469,7 @@ egyértelműen követhető — a motor és az állapothordozók viszont megvanna
 | parancs | nálunk (mérve) | teendő |
 |---|---|---|
 | Poszter készítése | **placeholder** a Létrehozás menüben (`PicasaMenuBar.qml:1210`) | #601 folytatja; új adat: papírméret-lista nyelvi feltétellel + `paper` megőrzés |
-| Hozzáadás a képernyővédőhöz | **placeholder** (`:1218`) | #453/#32; a `saverlist.txt` + telepítés-ellenőrzés mintája rögzítve |
+| Hozzáadás a képernyővédőhöz | **működik** (`PicasaMenuBar.qml`, `Main.qml`) | #4259: kiválasztott képek hozzáadása QSettings-alapú helyi forráshoz |
 | Exportálás TiVo DVR-re | nincs menütétel | **HATÓKÖRÖN KÍVÜL-javaslat** (Windows-only névtér, TiVo-hardver nélkül nincs haszna) — tulajdonosi jóváhagyást kér |
 | Keresési eredmények mentése | a menü **tétel hiányzik** | #1405/#428; a 1000-es küszöb és a „Create Album" gombfelirat most rögzítve |
 | Képek biztonsági mentése | **placeholder** (`:1267`) | #440; az állapothordozók (`backup.xml` + `backuphash`) most rögzítve |
@@ -1446,7 +1485,8 @@ Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kív�
   TiVo-akció kerete (35.4); a 1000-es küszöb és gombfelirat (35.5); a
   mentés két állapothordozója (35.6).
 - **HATÓKÖRÖN KÍVÜL-JAVASLAT** (tulajdonosi döntést kér): a TiVo-export
-  megvalósítása; a `desk.cpl`-alapú képernyővédő-telepítés átvétele.
+  megvalósítása; az operációs rendszer tétlenségi jeléhez kötött automatikus
+  képernyővédő-indítás és az eredeti `desk.cpl` telepítőút átvétele.
 
 ### Amit KIZÁRTAM
 

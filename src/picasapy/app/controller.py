@@ -79,6 +79,7 @@ from .dupe_search_controller import DupeSearchMixin
 from .mentes_racs_szuro import MentesRacsSzuroMixin
 from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
+from .screensaver_controller import ScreensaverMixin
 from .side_pane_controller import SidePaneMixin
 from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
@@ -123,6 +124,7 @@ class AppController(
     #: #2054: a felhasználói súgó fejezetei, szövege és keresése
     HelpMixin,
     CustomAspectRatiosMixin,
+    ScreensaverMixin,
     CustomCollectionsMixin,
     # #644: a saját szerkesztések védelme a párhuzamosan futó Picasa
     # felülírása ellen (észlelés + figyelmeztetés + helyreállítás)
@@ -239,6 +241,7 @@ class AppController(
         self._ensure_broken_photo_wired()
         self._folders = FolderListModel(self)
         self._photos = PhotoGridModel(self)
+        self._init_screensaver()
         self._albums: list = []  # #9: a bal hasáb Albumok gyűjteménye
         self._current_folder = ""
         self._status = ""
