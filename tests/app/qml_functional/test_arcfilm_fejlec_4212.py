@@ -261,6 +261,16 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             ablak.findChild(QObject, "lengthslider/scaleslider").setProperty(
                 "value", 1.0
             )
+            atmenet = ablak.findChild(QObject, "movieTransitionBox")
+            atfedes = ablak.findChild(QObject, "movieOverlapSlider")
+            atmenet.setProperty("currentIndex", 0)
+            atfedes.setProperty("value", 0.0)
+            assert atmenet.property("currentIndex") == 0, (
+                "a rövid próbafilmhez a leggyorsabb, vágásos átmenet kell"
+            )
+            assert atfedes.property("value") == 0.0, (
+                "a rövid próbafilmhez minimális átfedés kell"
+            )
             assert film.property("movieUsedPhotoCount") == 2
 
             kesz = []
@@ -275,7 +285,7 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             vezerlo.movieFailed.connect(
                 lambda message: (hibak.append(message), hurok.quit())
             )
-            idozito.start(180000)
+            idozito.start(90000)
             _kattints(ablak, qt_app, ablak.findChild(QObject, "movieCreateButton"))
             hurok.exec()
             idozito.stop()
