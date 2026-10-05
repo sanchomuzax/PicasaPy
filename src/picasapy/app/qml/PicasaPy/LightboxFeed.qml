@@ -799,6 +799,10 @@ ListView {
                     sorok.push(kezdet + i)
                 grid.appWindow.openCollageFromRows(sorok)
             }
+            onPersonMovieRequested: {
+                if (grid.appWindow && grid.appWindow.openPersonAlbumMovie)
+                    grid.appWindow.openPersonAlbumMovie()
+            }
             onSaveEditsRequested: {
                 if (grid.appWindow && grid.appWindow.saveSelectedEdits)
                     grid.appWindow.saveSelectedEdits()
