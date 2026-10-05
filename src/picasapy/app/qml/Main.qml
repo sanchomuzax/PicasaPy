@@ -2860,7 +2860,7 @@ ApplicationWindow {
         //: a négy felirat UGYANAZ a szöveg, mint a Nézet menü tételei
         //: (#754) — a gyorsítót és a billentyű-tippet levágva
         cim: window.activeDrawerTab === "properties" ? qsTr("Properties")
-             : window.activeDrawerTab === "tags" ? qsTr("Tags")
+             : window.activeDrawerTab === "tags" ? qsTr("Tags:")
              : window.activeDrawerTab === "people" ? qsTr("People")
              : window.activeDrawerTab === "places" ? qsTr("Places") : ""
         onCloseRequested: window.ureseidAFiokot()

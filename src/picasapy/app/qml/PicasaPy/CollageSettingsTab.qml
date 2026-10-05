@@ -142,7 +142,7 @@ Item {
 
         // A csúszka 0…1-et ad a vezérlőnek — NEM képpontot (spec 8.1). A
         // képpontra váltás a mag dolga, mert az a lap méretétől függ.
-        Slider {
+        PicasaSlider {
             id: spacingSlider
             objectName: "collageSpacingSlider"
             // (35, 98) a laphoz mérve
@@ -151,6 +151,17 @@ Item {
             width: 191
             height: 27
             padding: 0
+            // A `bigslider` teljes háttere 171 × 27, a 191 px-es foglalat
+            // közepén; a fogantyú rétege 16 × 26 (#2664).
+            grooveThickness: 27
+            grooveInset: 10
+            grooveColor: Theme.trackBg
+            grooveBorderColor: Theme.chromeBorder
+            grooveRadius: 0
+            handleWidth: 16
+            handleHeight: 26
+            handleRadius: 3
+            showTicks: false
             from: 0.0
             to: 1.0
             value: tab.spacing

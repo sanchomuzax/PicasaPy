@@ -13,14 +13,14 @@ collab,nem-cel,,"Picasa Web Albums közös album — a szolgáltatás megszűnt,
 collagepanel,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/CollagePanel.qml;PicasaPy/CollagePanelTabBar.qml;PicasaPy/CollagePanelTabButton.qml;PicasaPy/CollageSettingsTab.qml;PicasaPy/CollageClipsTab.qml;PicasaPy/CollageActionRow.qml;PicasaPy/CollageZOrderColumn.qml;PicasaPy/CollageSnapColumn.qml;PicasaPy/CollageRandomRow.qml;PicasaPy/CollageContextMenus.qml;PicasaPy/CollageCanvas.qml;PicasaPy/CollageFormatMenu.qml;PicasaPy/CollageThemePopup.qml;PicasaPy/CollageBorderPicker.qml;PicasaPy/CollageBackgroundBox.qml;PicasaPy/CollageNode.qml;PicasaPy/CollageGroupNode.qml;PicasaPy/CollageSheet.qml;PicasaPy/CollageRing.qml;PicasaPy/CollageProgressOverlay.qml;PicasaPy/CollageDialogs.qml;PicasaPy/CollageDraftDialog.qml;PicasaPy/CollageDoneNotice.qml,"A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte."
 compose_mail,parositva,PicasaPy/EmailChoiceDialog.qml,"Címzett, tárgy, törzs és mellékletek szerkesztése, majd átadása az alapértelmezett levelezőnek (#4135)"
 compose_share,nem-cel,,"PWA megosztási meghívó szerkesztő — a szolgáltatás 2016-ban megszűnt; album-láthatóság, együttműködők, címzettek, csoportok"
-durationslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
+durationslider,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/PicasaSlider.qml,Film-dialap időtartam- és átfedéscsúszkája a közös vezérlőre épül (#4214)
 editoneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet szerkesztés közben
 editpanel,parositva,PicasaPy/EditorPanel.qml;PicasaPy/EditorTabBar.qml;PicasaPy/EditorTabCommonFixes.qml;PicasaPy/EditorFinetunePanel.qml;PicasaPy/EditorEffectsTab1.qml;PicasaPy/EditorEffectsTab2.qml;PicasaPy/EditorEffectsTab3.qml;PicasaPy/EditorEffectsTab4.qml;PicasaPy/EditorLegacyTab.qml;PicasaPy/EditorCropPanel.qml;PicasaPy/EditorRedeyePanel.qml;PicasaPy/EditorRetouchPanel.qml;PicasaPy/EditorParamPanel.qml;PicasaPy/EditorDialogs.qml;PicasaPy/EditTabButton.qml;PicasaPy/EditTabIcon.qml;PicasaPy/CropOverlay.qml;PicasaPy/HistogramBox.qml;PicasaPy/AddCustomAspectRatioDialog.qml;PicasaPy/EditOverwriteDialog.qml;PicasaPy/BatchEditProgressPanel.qml;PicasaPy/ToolTile.qml;PicasaPy/PhotoViewer.qml;PicasaPy/VideoPlayerView.qml,"A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet); a videómód lejátszója a VideoPlayerView.qml"
 editpanelactivity,nincs-megfeleltetes,,Belső töltésjelző a szerkesztőben — nincs külön elemünk
 editslider1,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-editslider2,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-editslider3,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-editslider4,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
+editslider2,parositva,PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml;PicasaPy/EditorFinetunePanel.qml;PicasaPy/EditorParamPanel.qml,A szerkesztő 2. csúszkacsaládja az EditorSlideren és a közös PicasaSlideren alapul (#4214)
+editslider3,parositva,PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml;PicasaPy/EditorFinetunePanel.qml;PicasaPy/EditorParamPanel.qml,A szerkesztő 3. csúszkacsaládja az EditorSlideren és a közös PicasaSlideren alapul (#4214)
+editslider4,parositva,PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml;PicasaPy/EditorFinetunePanel.qml;PicasaPy/EditorParamPanel.qml,A szerkesztő 4. csúszkacsaládja az EditorSlideren és a közös PicasaSlideren alapul (#4214)
 edittextpanel,parositva,PicasaPy/EditorTextPanel.qml;PicasaPy/TextColorSwatches.qml,Szöveg-eszköz panelje
 faceheaderpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml;PicasaPy/PeopleAlbumContextMenu.qml;PicasaPy/PhotoContextMenu.qml,Névvel ellátott arc-album fejléce; az Emberek-album indexkép-beállító menüpontja és súgója a PhotoContextMenu.qml-ben van
 flightslider1,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
@@ -30,7 +30,7 @@ geopanel,parositva,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml,Helyek panel
 headerpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/TrayBar.qml,"A mappafejléc a LightboxHeader.qml-ben, a Create Movie Presentation gomb és súgója az alsó sáv TrayBar.qml-jében van."
 initialscan,parositva,PicasaPy/InitialScanDialog.qml,Első indítás — mit vizsgáljunk át
 instructionpanel,nem-cel,,A Picasa betanító buborék és a picasa.google.com/support hivatkozás nem része a helyi alkalmazásnak; a szolgáltatás elérhetetlen.
-keywords,parositva,PicasaPy/TagsPanel.qml,Címkeszerkesztő
+keywords,parositva,PicasaPy/TagsPanel.qml;Main.qml,Címkeszerkesztő és a főablak „Tags:” felirata (#4214)
 lengthslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs
 modalprogress,parositva,PicasaPy/ImportProgressPanel.qml;PicasaPy/BatchEditProgressPanel.qml,Modális folyamatjelző
@@ -40,7 +40,7 @@ nav,nincs-megfeleltetes,,"A nav.tre egy szerkesztői nagyítás-navigátor lebeg
 nerdview,parositva,PicasaPy/PerfMonitorPanel.qml;PicasaPy/HistogramBox.qml,Fejlesztői/diagnosztikai réteg
 oneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet a könyvtárban
 outlineweightslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-outputlayout,parositva,PicasaPy/TrayBar.qml,A tálca alatti kimeneti gombsáv
+outputlayout,parositva,PicasaPy/TrayBar.qml;PicasaPy/CreateDialogs.qml;PicasaPy/PicasaMenuBar.qml,"A tálca kimeneti gombsora, a filmkészítő párbeszéd és menüparancs (#4214)"
 panelroot,parositva,Main.qml;PicasaPy/MainToolbar.qml,Legfelső panelváltó (Könyvtár / Import / Kollázs / Film / Felvétel)
 peoplepanel,parositva,PicasaPy/PeoplePanel.qml;PicasaPy/PeoplePanelRow.qml;PicasaPy/FacesOverlay.qml;PicasaPy/UnnamedFacesView.qml,"A lista és állapotüzenet a PeoplePanel-ben, a kézi arcfelvétel megszakítása a FacesOverlay-ben, a névtelen arcok műveletei az UnnamedFacesView-ben vannak."
 pickerpanel,parositva,PicasaPy/TextColorSwatches.qml,Színválasztó paletta + legutóbbiak
@@ -56,15 +56,15 @@ scratch,nincs-megfeleltetes,,Belső rajzfelület (album-előnézet összeállít
 searchcontainer,parositva,PicasaPy/MainToolbar.qml;PicasaPy/SearchSuggestions.qml,Keresősáv és szűrőgombjai
 searchoptions,parositva,PicasaPy/SearchGroupHeader.qml;PicasaPy/MainToolbar.qml,Keresési eredmény fejléce
 slideshowctrls,parositva,PicasaPy/SlideshowView.qml,Diavetítés vezérlői
-spacing_slider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
+spacing_slider,parositva,PicasaPy/CollageSettingsTab.qml;PicasaPy/PicasaSlider.qml,A kollázs térközcsúszkája a mért bigslider családot használja (#4214)
 tagpanel,parositva,PicasaPy/TagsPanel.qml,Címke oldalsó panel
-textopacityslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
+textopacityslider,parositva,PicasaPy/EditorTextPanel.qml;PicasaPy/PicasaSlider.qml,A szöveg-átlátszóság csúszkája a közös PicasaSliderre épül (#4214)
 throttle,parositva,PicasaPy/PicasaScrollBar.qml,Gyorsgörgető a rács jobb szélén
 thumbui,parositva,PicasaPy/MainToolbar.qml;PicasaPy/LightboxFeed.qml;PicasaPy/ThumbDelegate.qml;PicasaPy/TrayBar.qml;PicasaPy/TimelineView.qml;PicasaPy/PicasaScrollBar.qml;PicasaPy/FolderPane.qml;PicasaPy/FolderTreeItem.qml;PicasaPy/FolderStateBadge.qml;PicasaPy/SlideshowView.qml;Main.qml,A fő könyvtárnézet egésze
-timeslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
+timeslider,parositva,PicasaPy/MainToolbar.qml;PicasaPy/PicasaSlider.qml,A főablak időszűrője a közös csúszkát használja (#4214)
 titledialog,nincs-megfeleltetes,,Filmes címdia-szerkesztő párbeszéd — nincs nálunk
-toolslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-transitionslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
+toolslider,parositva,PicasaPy/EditorToolBar.qml;PicasaPy/PicasaSlider.qml,A szerkesztő eszközcsúszkája a közös PicasaSliderre épül (#4214)
+transitionslider,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/PicasaSlider.qml,A filmkészítő átmenetcsúszkája a közös PicasaSliderre épül (#4214)
 unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok fejléce
 upload,nem-cel,,"Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés)"
 uploadallinstructionpanel,nem-cel,,A csoportos webes feltöltéshez tartozó betanító buborék megszűnt Picasa Web Albums-funkcióhoz kötődik.
@@ -72,4 +72,4 @@ uploadmgr,nincs-megfeleltetes,,Feltöltés-kezelő (szüneteltetés/folytatás) 
 video_control_bar,parositva,PicasaPy/VideoPlayerView.qml,Videó vezérlősáv (vágás is)
 video_control_bar2,parositva,PicasaPy/VideoPlayerView.qml,Videó vezérlősáv második változata
 wait_dialog,parositva,PicasaPy/BatchEditProgressPanel.qml;PicasaPy/ConfirmDialog.qml,Modális várakozó ablak
-zoomslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
+zoomslider,parositva,PicasaPy/TrayBar.qml;PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml,A főablak és a szerkesztő nagyításcsúszkája a közös csúszka-alapra épül (#4214)
