@@ -1,11 +1,11 @@
-"""Az effekt-paraméter alpanel ne ragadjon be fülváltáskor — #583.
+"""A programból közvetlenül váltott aktív fül zárja az alpanelt — #583.
 
 Felhasználói hibajelentés: a nyitott paraméter-panel (a képen a vignette)
 másik fülre lépve is nyitva maradt, és RÁRAJZOLÓDOTT a másik fül tartalmára
 (a „Gyakori javítások" csúszkái közé keveredve). Két oka volt:
 
 1. a panel láthatósága csak a `paramPanelActive`-tól függött, a fültől nem,
-   és fülváltáskor senki nem zárta be;
+   ezért egy közvetlen `activeTab`-állapotváltáskor senki nem zárta be;
 2. a „További effektek" (5.) és a „Régi effektek" (6.) fül — a testvér
    effekt-fülekkel ellentétben — nem rejtőzött el a nyitott alpanel alatt,
    így a saját tartalmával is egymásra rajzolódott.
@@ -96,7 +96,7 @@ def _open_param_panel(panel, qt_app, button="effectVignette"):
     assert panel.property("paramPanelActive") is True
 
 
-class TestSwitchingTabsClosesTheParamPanel:
+class TestDirectActiveTabChangeClosesTheParamPanel:
     def test_the_panel_closes_and_the_preview_is_discarded(
         self, qml_engine, qt_app
     ):

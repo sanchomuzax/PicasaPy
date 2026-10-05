@@ -23,7 +23,8 @@ ColumnLayout {
 
     objectName: "toolsColumn"
     // tiltott panel (videó a nézőben, #103): az egész oszlop halvány
-    opacity: panel.enabled ? 1 : 0.45
+    opacity: panel.paramPanelContentBlurred ? 1
+             : panel.enabled ? 1 : 0.45
     anchors.margins: 10
     spacing: 8
 
@@ -91,6 +92,7 @@ ColumnLayout {
             toolName: "crop"; label: qsTr("Crop"); iconFile: "vagas"
             active: panel.cropActive
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -103,6 +105,7 @@ ColumnLayout {
             iconFile: "kiegyenesites"
             active: panel.tiltActive
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.05
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -114,6 +117,7 @@ ColumnLayout {
             toolName: "redeye"; label: qsTr("Redeye"); iconFile: "vorosszem"
             active: panel.redeyeActive
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -128,6 +132,7 @@ ColumnLayout {
             iconFile: "jo-napom-van"
             tileEnabled: panel.enhanceEnabled
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -140,6 +145,7 @@ ColumnLayout {
             iconFile: "auto-kontraszt"
             tileEnabled: panel.autolightEnabled
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -152,6 +158,7 @@ ColumnLayout {
             iconFile: "auto-szin"
             tileEnabled: panel.autocolorEnabled
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -164,6 +171,7 @@ ColumnLayout {
             iconFile: "retusalas"
             active: panel.retouchActive
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -176,6 +184,7 @@ ColumnLayout {
             toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
             active: panel.textActive
             dimmedByTiltModal: panel.tiltActive
+            fullStrengthWhenDisabled: panel.paramPanelContentBlurred
             disabledOpacity: 0.25
             onActivated: (tool) => panel.handleToolClick(tool)
         }
@@ -245,10 +254,12 @@ ColumnLayout {
     // 10 képpontos bal margójához képest ez 24 képpont eltolás (13 + 24 =
     // 37), a kép és a csúszka között 20 képpont hézag (81 → 101).
     RowLayout {
-        // #4062: a képernyőképen a Derítőfény ikonja, felirata és csúszkája
-        // is halvány; a disabled állapot önmagában az Image/Label elemeket
-        // nem halványítaná el.
-        opacity: panel.tiltActive ? 0.25 : 1
+        // #4062: Kiegyenesítéskor a Derítőfény ikonja, felirata és csúszkája
+        // halvány. #4068 effektpanelnél teljes színű marad, a panelréteg
+        // pedig elmosva jeleníti meg.
+        opacity: panel.tiltActive ? 0.25
+                 : panel.paramPanelContentBlurred ? 1
+                 : panel.paramPanelSuspended ? 0.45 : 1
         Layout.fillWidth: false
         Layout.leftMargin: 24
         spacing: 20
@@ -276,10 +287,10 @@ ColumnLayout {
                 id: fixesFillSlider
                 objectName: "fixesFillSlider"
                 csalad: "scaleslider"
-                // A sor 0,25-ös áttetszősége adja a célértéket az egész
-                // vezérlőre; a csúszka fogantyújának általános 0,55-ös
-                // letiltási értékét csak ebben az állapotban felülírjuk.
-                disabledHandleOpacity: panel.tiltActive ? 1 : 0.55
+                // A Kiegyenesítés a sor áttetszőségével halványít; az effekt
+                // alatti blur állapot teljes erősséget kér a fogantyúhoz is.
+                disabledHandleOpacity:
+                    panel.paramPanelContentBlurred || panel.tiltActive ? 1 : 0.55
                 Layout.fillWidth: true
                 Layout.preferredHeight: 27
                 from: 0; to: 1; value: 0
