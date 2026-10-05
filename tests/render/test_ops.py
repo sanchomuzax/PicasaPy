@@ -502,8 +502,9 @@ class TestApplyRedeye:
         result = apply_redeye(image)
         # a háttér változatlan
         np.testing.assert_array_equal(result[0:8, 0:8], image[0:8, 0:8])
-        # a vörös régió R csatornája csökken
+        # mindhárom kimeneti csatorna a zöld és kék közül a kisebbikre áll
         assert result[10, 10, 0] < image[10, 10, 0]
+        np.testing.assert_array_equal(result[10, 10], (30, 30, 30))
 
     def test_bortonust_nem_bantja(self) -> None:
         image = np.full((10, 10, 3), (180, 140, 120), dtype=np.uint8)
