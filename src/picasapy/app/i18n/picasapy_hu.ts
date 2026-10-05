@@ -3359,12 +3359,43 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message><source>Remove the selected clip(s) from the tray</source><translation>A kijelölt klip(ek) eltávolítása a tálcáról</translation></message>
     <message><source>Play selected clip only</source><translation>Csak a kijelölt klip lejátszása</translation></message>
     <message><source>Preview</source><translation>Előnézet</translation></message>
+    <message><source>Please Confirm...</source><translation>Megerősítés...</translation></message>
+    <message><source>This will generate a new movie removing all the text slides you added. Are you sure?</source><translation>Az új film létrehozásakor minden hozzáadott szöveges dia törlődik. Biztosan folytatja?</translation></message>
     <message><source>Recompute</source><translation>Újraszámolás</translation></message>
     <message><source>Close</source><translation>Bezárás</translation></message>
     <message><source>Create Movie</source><translation>Mozgófilm létrehozása</translation></message>
     <message><source>Audio files</source><translation>Hangfájlok</translation></message>
     <message><source>Music files (*.mp3, *.wma)</source><translation>Zenei fájlok (*.mp3, *.wma)</translation></message>
     <message><source>Music files (*.mp3, *.m4a)</source><translation>Zenei fájlok (*.mp3, *.m4a)</translation></message>
+</context>
+<context>
+    <name>MovieTitleDialog</name>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Text slide:</source><translation>Szöveges dia:</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Text</source><translation>Szöveg</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Font:</source><translation>Betűtípus:</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Size:</source><translation>Méret:</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Style:</source><translation>Stílus:</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Centered</source><translation>Középre igazított</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>I'm Feeling Lucky</source><translation>Jó napom van</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Caption</source><translation>Képfelirat</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Caption - Classic</source><translation>Képfelirat - Klasszikus</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Gradient - Black</source><translation>Színátmenet - fekete</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Gradient - White</source><translation>Színátmenet - Fehér</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Transparent - Black</source><translation>Átlátszó - fekete</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Transparent - White</source><translation>Átlátszó - fehér</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Scrolling Credits</source><translation>Gördülő stáblista</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Music Video - Left</source><translation>Zenei videoklip - bal</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Music Video - Right</source><translation>Zenei videoklip - jobb</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Caption - Typewriter</source><translation>Képfelirat - Írógép</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Normal</source><translation>Normál</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Bold</source><translation>Félkövér</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Italic</source><translation>Dőlt</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Bold Italic</source><translation>Félkövér dőlt</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Automatic Outline</source><translation>Automatikus körvonal</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Text color</source><translation>Szöveg színe</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Background color</source><translation>Háttér színe</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Cancel</source><translation>Mégse</translation></message>
+    <message><location filename="../qml/PicasaPy/MovieTitleDialog.qml"/><source>Add</source><translation>Hozzáadás</translation></message>
 </context>
 <context>
     <name>ExportDialogs</name>
@@ -4622,6 +4653,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>LightboxHeader</name>
     <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml"/>
+        <source>Create Movie Presentation</source>
+        <translation>Mozgófilmes prezentáció létrehozása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml"/>
+        <source>Create Face Movie</source>
+        <translation>Mozgófilm létrehozása arcokból</translation>
+    </message>
+    <message>
         <source>Play Fullscreen Slideshow</source>
         <translation>Diavetítés teljes képernyőn</translation>
     </message>
@@ -5347,6 +5388,11 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
         <source>Open camera capture panel</source>
         <translation>Webkamerás felvétel megnyitása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Capture</source>
+        <translation>Rögzítés</translation>
     </message>
 </context>
 <context>
@@ -7215,6 +7261,11 @@ Biztosan visszavonja a műveletet?</translation>
 </context>
 <context>
     <name>TrayBar</name>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml" line="0"/>
+        <source>Movie Maker</source>
+        <translation>Mozgófilmkészítés</translation>
+    </message>
     <message>
         <source>Create Movie Presentation</source>
         <translation>Mozgófilmes prezentáció létrehozása</translation>

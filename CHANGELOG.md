@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.686] – 2026-10-05
+
+- A hiányosan megadott effekt után a PicasaPy nem alkalmazza a lánc további effektjeit (#4233).
+
+## [0.8.685] – 2026-10-05
+
+- Az Emberek albumban a filmgombok a kiválasztott személy képeiből nyitják meg a Filmkészítőt, a közzététel méretválasztása pedig a főablakból is működik. (#4212).
+
+## [0.8.684] – 2026-10-05
+
+- A főablakból elérhető a kamera és a filmkészítés, a videóvágó sávon pedig egérrel állítható a klip kezdete és vége. (#4210).
+
+## [0.8.683] – 2026-10-05
+
+- A Vámpírszem ecsetmaszkja most a mentett vonások keménységéhez igazítja a perem fedettségét (#4224).
+- A Filmkészítő címdia párbeszéde képfeliratot vesz át, előnézetet mutat és megerősíti a kézi diák törlését újraszámolás előtt (#4198).
+
 ## [0.8.682] – 2026-10-05
 
 - A keresősáv beállításai megnyithatók, az arc- és másodpéldány-szűrés pedig a főablak találati rácsában is használható (#4202).

@@ -129,123 +129,141 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: 34
+        height: 56
         color: "#2b2b2b"
 
-        RowLayout {
+        ColumnLayout {
             anchors.fill: parent
             anchors.leftMargin: 8; anchors.rightMargin: 8
-            spacing: 8
+            anchors.topMargin: 1; anchors.bottomMargin: 1
+            spacing: 0
 
-            PicasaButton {
-                objectName: "videoPlayButton"
-                Layout.preferredWidth: 34
-                text: media.playbackState === MediaPlayer.PlayingState
-                      ? "❚❚" : "▶"
-                onClicked: player.togglePlayback()
-            }
-            PicasaSlider {
-                id: seek
-                objectName: "videoSeekSlider"
+            VideoTrimSlider {
                 Layout.fillWidth: true
-                //: #1838: a csúszka a VÁGOTT szakaszra szorítva — a vágáson
-                //: kívüli részre a felhasználó se tudjon odatekerni (vágás
-                //: nélkül a szakasz a fájl eleje…vége, tehát a viselkedés a
-                //: #1838 előtti)
-                from: player.playFromMs
-                to: Math.max(player.playFromMs + 1, player.playToMs)
-                onMoved: media.position = value
-                // húzás közben a kéz vezet; egyébként a lejátszás-pozíció
-                Binding on value {
-                    when: !seek.pressed
-                    value: media.position
+                Layout.preferredHeight: 18
+                durationMs: media.duration
+                startMs: player.trimStartMs
+                endMs: player.trimEndMs
+                onTrimRequested: function(startMs, endMs) {
+                    player.trimRequested(startMs, endMs)
                 }
             }
-            //: #1838: a három vágás-vezérlő, az eredeti sorrendjében
-            //: (`setin` · `setout` · `reset_trim`). A feliratok a nyomdai
-            //: vágásjelek: a be- és kimeneti pont szögletes zárójele.
-            PicasaButton {
-                objectName: "videoSetInButton"
-                Layout.preferredWidth: 30
-                text: "["
-                ToolTip.text: qsTr("Create a new starting point")
-                ToolTip.delay: Theme.tooltipDelay
-                ToolTip.visible: hovered
-                onClicked: player.trimRequested(media.position, player.trimEndMs)
-            }
-            PicasaButton {
-                objectName: "videoSetOutButton"
-                Layout.preferredWidth: 30
-                text: "]"
-                ToolTip.text: qsTr("Create a new ending point")
-                ToolTip.delay: Theme.tooltipDelay
-                ToolTip.visible: hovered
-                onClicked: player.trimRequested(player.trimStartMs, media.position)
-            }
-            PicasaButton {
-                objectName: "videoResetTrimButton"
-                Layout.preferredWidth: 30
-                text: "⟲"
-                //: vágás nélkül nincs mit visszaállítani — a gomb szürke
-                enabled: player.trimmed
-                //: `Tooltip(movieeditpanel/reset_trim)` — az eredeti szövege
-                ToolTip.text: qsTr("Restore movie to its original length (remove start and end points)")
-                ToolTip.delay: Theme.tooltipDelay
-                ToolTip.visible: hovered
-                onClicked: player.trimResetRequested()
-            }
-            //: #1838: `movieeditpanel/capture_frame` — „Take Snapshot".
-            //: A jel a fényképezőgép; a felirat a buboréksúgóban van, mert a
-            //: sávon csak 30 képpont széles gombok férnek el.
-            PicasaButton {
-                objectName: "videoCaptureFrameButton"
-                Layout.preferredWidth: 30
-                text: "⃞"
-                //: `Tooltip(movieeditpanel/capture_frame)`
-                ToolTip.text: qsTr("Capture current frame")
-                ToolTip.delay: Theme.tooltipDelay
-                ToolTip.visible: hovered
-                onClicked: player.captureFrameRequested(media.position)
-            }
-            // `movieeditpanel/export_movie`: a Linuxon az eredeti
-            // `LinuxNomovie` üzenetet adja; csak vágott klipnél aktív.
-            PicasaButton {
-                objectName: "movieeditpanel/export_movie"
-                text: qsTr("Export Clip")
-                enabled: player.trimmed
-                onClicked: player.exportClipRequested()
-            }
-            VideoPlayerControls {
-                objectName: "videoPlayerModeControls"
-                Layout.preferredWidth: implicitWidth
-                Layout.preferredHeight: implicitHeight
-                actualSizeEnabled: player.actualSizeEnabled
-                onActualSizeToggled: function(enabled) {
-                    player.actualSizeEnabled = enabled
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 34
+                spacing: 8
+
+                PicasaButton {
+                    objectName: "videoPlayButton"
+                    Layout.preferredWidth: 34
+                    text: media.playbackState === MediaPlayer.PlayingState
+                          ? "❚❚" : "▶"
+                    onClicked: player.togglePlayback()
                 }
-            }
-            Text {
-                objectName: "videoTimeLabel"
-                color: "#e8e8e8"
-                font.pixelSize: Theme.fontSize
-                text: player.formatTime(media.position) + " / "
-                      + player.formatTime(media.duration)
-            }
-            Text {
-                text: "🔊"
-                color: "#e8e8e8"
-                font.pixelSize: Theme.fontSize
-            }
-            PicasaSlider {
-                objectName: "videoVolumeSlider"
-                Layout.preferredWidth: 70
-                from: 0; to: 1
-                value: audio.volume
-                onMoved: {
-                    audio.volume = value
-                    if (typeof controller !== "undefined" && controller
-                            && controller.setMovieVolume !== undefined)
-                        controller.setMovieVolume(Math.round(value * 1000))
+                PicasaSlider {
+                    id: seek
+                    objectName: "videoSeekSlider"
+                    Layout.fillWidth: true
+                    //: #1838: a csúszka a VÁGOTT szakaszra szorítva — a vágáson
+                    //: kívüli részre a felhasználó se tudjon odatekerni (vágás
+                    //: nélkül a szakasz a fájl eleje…vége, tehát a viselkedés a
+                    //: #1838 előtti)
+                    from: player.playFromMs
+                    to: Math.max(player.playFromMs + 1, player.playToMs)
+                    onMoved: media.position = value
+                    // húzás közben a kéz vezet; egyébként a lejátszás-pozíció
+                    Binding on value {
+                        when: !seek.pressed
+                        value: media.position
+                    }
+                }
+                //: #1838: a három vágás-vezérlő, az eredeti sorrendjében
+                //: (`setin` · `setout` · `reset_trim`). A feliratok a nyomdai
+                //: vágásjelek: a be- és kimeneti pont szögletes zárójele.
+                PicasaButton {
+                    objectName: "videoSetInButton"
+                    Layout.preferredWidth: 30
+                    text: "["
+                    ToolTip.text: qsTr("Create a new starting point")
+                    ToolTip.delay: Theme.tooltipDelay
+                    ToolTip.visible: hovered
+                    onClicked: player.trimRequested(media.position, player.trimEndMs)
+                }
+                PicasaButton {
+                    objectName: "videoSetOutButton"
+                    Layout.preferredWidth: 30
+                    text: "]"
+                    ToolTip.text: qsTr("Create a new ending point")
+                    ToolTip.delay: Theme.tooltipDelay
+                    ToolTip.visible: hovered
+                    onClicked: player.trimRequested(player.trimStartMs, media.position)
+                }
+                PicasaButton {
+                    objectName: "videoResetTrimButton"
+                    Layout.preferredWidth: 30
+                    text: "⟲"
+                    //: vágás nélkül nincs mit visszaállítani — a gomb szürke
+                    enabled: player.trimmed
+                    //: `Tooltip(movieeditpanel/reset_trim)` — az eredeti szövege
+                    ToolTip.text: qsTr("Restore movie to its original length (remove start and end points)")
+                    ToolTip.delay: Theme.tooltipDelay
+                    ToolTip.visible: hovered
+                    onClicked: player.trimResetRequested()
+                }
+                //: #1838: `movieeditpanel/capture_frame` — „Take Snapshot".
+                //: A jel a fényképezőgép; a felirat a buboréksúgóban van, mert a
+                //: sávon csak 30 képpont széles gombok férnek el.
+                PicasaButton {
+                    objectName: "videoCaptureFrameButton"
+                    Layout.preferredWidth: 30
+                    text: "⃞"
+                    //: `Tooltip(movieeditpanel/capture_frame)`
+                    ToolTip.text: qsTr("Capture current frame")
+                    ToolTip.delay: Theme.tooltipDelay
+                    ToolTip.visible: hovered
+                    onClicked: player.captureFrameRequested(media.position)
+                }
+                // `movieeditpanel/export_movie`: a Linuxon az eredeti
+                // `LinuxNomovie` üzenetet adja; csak vágott klipnél aktív.
+                PicasaButton {
+                    objectName: "movieeditpanel/export_movie"
+                    text: qsTr("Export Clip")
+                    enabled: player.trimmed
+                    onClicked: player.exportClipRequested()
+                }
+                VideoPlayerControls {
+                    objectName: "videoPlayerModeControls"
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    actualSizeEnabled: player.actualSizeEnabled
+                    onActualSizeToggled: function(enabled) {
+                        player.actualSizeEnabled = enabled
+                    }
+                }
+                Text {
+                    objectName: "videoTimeLabel"
+                    color: "#e8e8e8"
+                    font.pixelSize: Theme.fontSize
+                    text: player.formatTime(media.position) + " / "
+                          + player.formatTime(media.duration)
+                }
+                Text {
+                    text: "🔊"
+                    color: "#e8e8e8"
+                    font.pixelSize: Theme.fontSize
+                }
+                PicasaSlider {
+                    objectName: "videoVolumeSlider"
+                    Layout.preferredWidth: 70
+                    from: 0; to: 1
+                    value: audio.volume
+                    onMoved: {
+                        audio.volume = value
+                        if (typeof controller !== "undefined" && controller
+                                && controller.setMovieVolume !== undefined)
+                            controller.setMovieVolume(Math.round(value * 1000))
+                    }
                 }
             }
         }
