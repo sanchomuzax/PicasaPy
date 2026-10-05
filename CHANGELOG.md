@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.688] – 2026-10-05
+
+- A nyomtatási, címkézési és filmkészítési felület néhány hiányzó elemét pótoltuk (#4214).
+
 ## [0.8.687] – 2026-10-05
 
 - A Mellőzött arcok nézete, a videó hangerő-beállítása és a klip exportgombja az eredeti működéséhez igazodott; a régi YouTube-feltöltő nem jelenik meg. (#4229).
