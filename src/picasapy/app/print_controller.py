@@ -370,7 +370,6 @@ class PrintController(QObject):
             "goodThreshold": good_kuszob,
         }
 
-    @Slot(list, str, result=list)
     def smallPictures(self, rows, size_name: str):  # noqa: N802 — QML-stílus
         """A küszöb alatti képek NÉV szerint, a hozzájuk tartozó DPI-vel.
 
