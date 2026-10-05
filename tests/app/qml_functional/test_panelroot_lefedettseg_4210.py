@@ -156,6 +156,16 @@ def test_vagocsuszka_valodi_fomenuablakban_egerrel_mozog_minden_magassagon(
         slider.setProperty("width", window.width())
         qt_app.processEvents()
         assert window.height() == original_height + delta
+        # Az előző húzás a végpontot a 70%-ra vitte: visszaállítjuk a sáv végére,
+        # és megvárjuk, hogy a fogantyú a jobb szélre kerüljön — a CI-n az
+        # elrendezés később áll be, mint a processEvents().
+        slider.setProperty("endMs", 4_000)
+        slider.setProperty("endMs", -1)
+        _until(
+            qt_app,
+            lambda: end_thumb.x() >= slider.width() - end_thumb.width() - 1,
+            "a végpont-fogantyú a sáv jobb szélére áll",
+        )
 
         start = end_thumb.mapToScene(
             QPointF(end_thumb.width() / 2, end_thumb.height() / 2)

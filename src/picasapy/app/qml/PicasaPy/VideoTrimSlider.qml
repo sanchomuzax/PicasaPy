@@ -3,6 +3,7 @@ import QtQuick.Controls
 
 // A videó be- és kimeneti pontjai. A lejátszási pozíció külön csúszkán van.
 RangeSlider {
+    id: control
     objectName: "video_control_bar/trimslider"
     property int durationMs: 0
     property int startMs: -1
@@ -22,6 +23,11 @@ RangeSlider {
             ? -1 : Math.round(second.value))
 
     first.handle: Rectangle {
+        // Egyedi fogantyúnál a stílus nem pozícionál: a helyét mi kötjük
+        // az értékhez, különben mindkét fogantyú a sáv bal szélén áll.
+        x: control.leftPadding + control.first.visualPosition
+            * (control.availableWidth - width)
+        y: control.topPadding + (control.availableHeight - height) / 2
         objectName: "videoTrimStartThumb"
         implicitWidth: 14
         implicitHeight: 12
@@ -31,6 +37,11 @@ RangeSlider {
         border.color: "#202020"
     }
     second.handle: Rectangle {
+        // Egyedi fogantyúnál a stílus nem pozícionál: a helyét mi kötjük
+        // az értékhez, különben mindkét fogantyú a sáv bal szélén áll.
+        x: control.leftPadding + control.second.visualPosition
+            * (control.availableWidth - width)
+        y: control.topPadding + (control.availableHeight - height) / 2
         objectName: "videoTrimEndThumb"
         implicitWidth: 14
         implicitHeight: 12
