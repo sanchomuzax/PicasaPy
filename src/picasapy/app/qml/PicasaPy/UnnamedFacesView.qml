@@ -17,6 +17,8 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     property var faceScanController: null
+    signal showIgnoredRequested()
+    signal showUnnamedRequested()
     // #26: „unnamed" = a Névtelenek album, „ignored" = a Mellőzött emberek
     // album (`CAlbumLabel::Ignored`). Az eredetiben ez két ALBUM volt
     // ugyanabban a listában, ezért ugyanaz a nézet szolgálja ki — csak a
@@ -93,7 +95,11 @@ ColumnLayout {
                 : qsTr("Select someone you know and add a name")
 
     Component.onCompleted: reload()
-    onModeChanged: { root.grouped = true; root.reload() }
+    onModeChanged: {
+        root.clearSelection()
+        root.grouped = true
+        root.reload()
+    }
     onGroupedChanged: { clearSelection(); reload() }
     onVisibleChanged: if (visible) { root.grouped = true; reload() }
 
@@ -121,20 +127,52 @@ ColumnLayout {
         color: Theme.textDark
     }
 
+    // A két eredeti fejléc-váltó ugyanazt a nézetet kapcsolja a két album
+    // között (`unknownfaceheaderpanel.tre:38` és `:43`). A gazda állítja a
+    // módot, így a bal oldali albumjelölés és a látható tartalom együtt vált.
     RowLayout {
+        objectName: "unknownFaceViewHeader"
         Layout.fillWidth: true
-        spacing: 14
+        spacing: 5
 
-        // #3585: a felirat a KÖVETKEZŐ állapotot nevezi meg — csoportosítva
-        // a „Csoportok részletes nézete" (`showall`) látszik, kibontva a
-        // „Csoportosítás arcok szerint" (`cluster`)
+        Item { Layout.fillWidth: true }
         Button {
             id: clusterToggleButton
             objectName: "clusterToggleButton"
             visible: !root.ignoredMode
+            Layout.preferredWidth: 120
+            Layout.preferredHeight: 27
+            // #3585: a felirat a KÖVETKEZŐ állapotot nevezi meg —
+            // csoportosítva a részletes nézet, kibontva a csoportosítás.
             text: root.grouped ? qsTr("Expand groups") : qsTr("Group by face")
             onClicked: root.grouped = !root.grouped
         }
+        Item {
+            objectName: "unknownFaceViewTypeContainer"
+            Layout.preferredWidth: 120
+            Layout.preferredHeight: 27
+
+            PicasaButton {
+                objectName: "unknownfaceheaderpanel/showignored"
+                anchors.fill: parent
+                visible: !root.ignoredMode
+                text: qsTr("Show ignored faces")
+                onClicked: root.showIgnoredRequested()
+            }
+            PicasaButton {
+                objectName: "unknownfaceheaderpanel/showunknown"
+                anchors.fill: parent
+                visible: root.ignoredMode
+                text: qsTr("Back to Unnamed")
+                onClicked: root.showUnnamedRequested()
+            }
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 14
+
         Item { Layout.fillWidth: true }
         Text {
             text: root.selectedCount > 0

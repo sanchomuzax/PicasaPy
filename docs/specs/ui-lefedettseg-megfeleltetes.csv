@@ -22,7 +22,7 @@ editslider2,parositva,PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml;Picasa
 editslider3,parositva,PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml;PicasaPy/EditorFinetunePanel.qml;PicasaPy/EditorParamPanel.qml,A szerkesztő 3. csúszkacsaládja az EditorSlideren és a közös PicasaSlideren alapul (#4214)
 editslider4,parositva,PicasaPy/EditorSlider.qml;PicasaPy/PicasaSlider.qml;PicasaPy/EditorFinetunePanel.qml;PicasaPy/EditorParamPanel.qml,A szerkesztő 4. csúszkacsaládja az EditorSlideren és a közös PicasaSlideren alapul (#4214)
 edittextpanel,parositva,PicasaPy/EditorTextPanel.qml;PicasaPy/TextColorSwatches.qml,Szöveg-eszköz panelje
-faceheaderpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/LightboxFeed.qml;Main.qml;PicasaPy/CreateDialogs.qml;PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml;PicasaPy/PeopleAlbumContextMenu.qml;PicasaPy/PhotoContextMenu.qml,"Névvel ellátott arc-album fejléce; a két filmgomb a teljes személy-album képlistájával nyitja meg a meglévő Filmkészítőt (#4212). Az indexkép-beállító menüpont és súgó a PhotoContextMenu.qml-ben van."
+faceheaderpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/LightboxFeed.qml;Main.qml;PicasaPy/CreateDialogs.qml;PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml;PicasaPy/PeopleAlbumContextMenu.qml;PicasaPy/PhotoContextMenu.qml,Névvel ellátott arc-album fejléce; a két filmgomb a teljes személy-album képlistájával nyitja meg a meglévő Filmkészítőt (#4212). Az indexkép-beállító menüpont és súgó a PhotoContextMenu.qml-ben van.
 flightslider1,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 foldermgr,parositva,PicasaPy/FolderManagerDialog.qml;PicasaPy/FolderContextMenu.qml;PicasaPy/FolderHierarchyView.qml;PicasaPy/FolderStatePanel.qml,"A mappakezelő párbeszéd mellett a mappaműveletek és állapotfeliratok a FolderStatePanel, FolderHierarchyView és FolderContextMenu fájlokban élnek."
 gedialog,parositva,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml;PicasaPy/PicasaMenuBar.qml,A Geotag menüparancs a PicasaMenuBar-ben és a Helyek panelben megvan; az önálló Google Earth-párbeszéd elavult online integráció.
@@ -35,7 +35,7 @@ lengthslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,A Filmkészítő háromlapos panelje a párbeszédben él (#4125/#4182); a maradék leírt elemek és eltéréseik elemenként szerepelnek az ui-lefedettseg-elemek.csv-ben.
 modalprogress,parositva,PicasaPy/ImportProgressPanel.qml;PicasaPy/BatchEditProgressPanel.qml,Modális folyamatjelző
 moviecontrols,parositva,PicasaPy/VideoPlayerView.qml,Lejátszás/szünet a videón
-movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml,Videovágó panel
+movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml;PicasaPy/PhotoViewer.qml,Videovágó panel
 nav,nincs-megfeleltetes,,"A nav.tre egy szerkesztői nagyítás-navigátor lebegőablakát írja le; ilyen navigátor nincs a PhotoViewerben, ezért a nav/close nem cél."
 nerdview,parositva,PicasaPy/PerfMonitorPanel.qml;PicasaPy/HistogramBox.qml,Fejlesztői/diagnosztikai réteg
 oneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet a könyvtárban
@@ -65,7 +65,7 @@ timeslider,parositva,PicasaPy/MainToolbar.qml;PicasaPy/PicasaSlider.qml,A főabl
 titledialog,parositva,PicasaPy/MovieTitleDialog.qml;PicasaPy/CreateDialogs.qml,"Filmes címdia-szerkesztő: szöveg/betűformázás, képfelirat, élő előnézet és Add/Cancel"
 toolslider,parositva,PicasaPy/EditorToolBar.qml;PicasaPy/PicasaSlider.qml,A szerkesztő eszközcsúszkája a közös PicasaSliderre épül (#4214)
 transitionslider,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/PicasaSlider.qml,A filmkészítő átmenetcsúszkája a közös PicasaSliderre épül (#4214)
-unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok fejléce
+unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml;Main.qml,Névtelen arcok fejléce
 upload,nem-cel,,"Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés)"
 uploadallinstructionpanel,nem-cel,,A csoportos webes feltöltéshez tartozó betanító buborék megszűnt Picasa Web Albums-funkcióhoz kötődik.
 uploadmgr,nincs-megfeleltetes,,Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk

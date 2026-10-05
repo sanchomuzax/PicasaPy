@@ -13,6 +13,7 @@ környezeti hiányról szól, nem a kódról. Ezért MINDKETTŐT ellenőrizzük.
 """
 
 import os
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -33,6 +34,29 @@ def _qml_modul_hianyzik(nev: str) -> bool:
     return not (import_ut / nev).is_dir()
 
 
+def _linux_hangkimenet_elerheto() -> bool:
+    """A Linux Qt Multimedia videólejátszója hangkimenetet is nyit."""
+    if not sys.platform.startswith("linux") or os.environ.get("PULSE_SERVER"):
+        return True
+    futasido = Path(
+        os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    )
+    for nev in ("pipewire-0", "pulse/native"):
+        ut = futasido / nev
+        if not ut.exists():
+            continue
+        kliens = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        kliens.settimeout(0.25)
+        try:
+            if kliens.connect_ex(str(ut)) == 0:
+                return True
+        except OSError:
+            continue
+        finally:
+            kliens.close()
+    return False
+
+
 def test_video_viewer_probe(tmp_path):
     # exc_type=ImportError: a felhő-konténerben a modul megvan, de a
     # rendszerkönyvtára (libpulse) hiányzik — az is kihagyás, nem hiba
@@ -43,6 +67,11 @@ def test_video_viewer_probe(tmp_path):
             "megvan, de a QML-oldali modul KÜLÖN csomag), ezért a videós néző "
             "nem tölthető be. Debian/Ubuntu alatt így pótolható: "
             "sudo apt install qml6-module-qtmultimedia"
+        )
+    if not _linux_hangkimenet_elerheto():
+        pytest.skip(
+            "a Qt Multimedia-próba kihagyva: Linuxon sem a PipeWire, sem a "
+            "PulseAudio kimeneti foglalata nem elérhető ebben a környezetben"
         )
     probe = Path(__file__).parent / "qml_video_probe.py"
     repo_root = Path(__file__).resolve().parents[2]

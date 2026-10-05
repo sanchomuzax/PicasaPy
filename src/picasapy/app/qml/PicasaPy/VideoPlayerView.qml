@@ -36,6 +36,7 @@ Item {
     //: is mentettnek mutatná a vágást (#2497 tanulsága).
     signal trimRequested(int startMs, int endMs)
     signal trimResetRequested()
+    signal exportClipRequested()
 
     //: #1838: KÉPKOCKA mentése (`movieeditpanel/capture_frame`). A komponens
     //: itt sem ír fájlt — a gazda hívja a vezérlő `captureMovieFrame`-jét a
@@ -62,7 +63,14 @@ Item {
         objectName: "viewerMediaPlayer"
         source: player.source
         videoOutput: viewport.videoOutput
-        audioOutput: AudioOutput { id: audio }
+        audioOutput: AudioOutput {
+            id: audio
+            // `video_control_bar2/volumeslider`: a Preferences/movievolume
+            // 0..1000-es értéke 0..1-re normálva, az eredeti 500-as alappal.
+            volume: typeof controller !== "undefined" && controller
+                    && controller.movieVolume !== undefined
+                ? controller.movieVolume / 1000 : 0.5
+        }
         // a Picasa a megnyitáskor azonnal lejátszotta a videót. Nyíl-
         // függvény kell: a sourceChanged injektált jel-paramétere ("media")
         // különben árnyékolná a MediaPlayer id-ját.
@@ -216,6 +224,14 @@ Item {
                     ToolTip.visible: hovered
                     onClicked: player.captureFrameRequested(media.position)
                 }
+                // `movieeditpanel/export_movie`: a Linuxon az eredeti
+                // `LinuxNomovie` üzenetet adja; csak vágott klipnél aktív.
+                PicasaButton {
+                    objectName: "movieeditpanel/export_movie"
+                    text: qsTr("Export Clip")
+                    enabled: player.trimmed
+                    onClicked: player.exportClipRequested()
+                }
                 VideoPlayerControls {
                     objectName: "videoPlayerModeControls"
                     Layout.preferredWidth: implicitWidth
@@ -242,7 +258,12 @@ Item {
                     Layout.preferredWidth: 70
                     from: 0; to: 1
                     value: audio.volume
-                    onMoved: audio.volume = value
+                    onMoved: {
+                        audio.volume = value
+                        if (typeof controller !== "undefined" && controller
+                                && controller.setMovieVolume !== undefined)
+                            controller.setMovieVolume(Math.round(value * 1000))
+                    }
                 }
             }
         }
