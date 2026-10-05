@@ -10201,17 +10201,17 @@ Két különbség van: (a) a súlyok Rec.601 helyett **Haeberli**-súlyok, mind 
 
 #### 1. Az ív per-pixel fedése
 
-A `0x00aa1840` a görbe belső és külső négyzetes távolságát (`rᵢ²`, `rₒ²`), valamint az aktuális pixel négyzetes távolságát (`q`) használja. `Δ = rₒ² − rᵢ²`; a `0x00cf4310` címen levő `double` pontosan `2²⁴`. A skálát a natív egészre-kerekítő út adja:
+A `0x00aa1840` a görbe belső és külső négyzetes távolságát (`rᵢ²`, `rₒ²`), valamint az aktuális pixel négyzetes távolságát (`q`) használja. `Δ = rₒ² − rᵢ²`; a `0x00cf4310` címen levő `double` pontosan `2²⁴`. A skálát a natív egészre alakító út adja:
 
 ```text
 q ≥ rₒ²:             nincs írás
 q ≤ rᵢ²:             teljes fedés (a belső ágban 256-os súly)
 rᵢ² < q < rₒ²:
-    K = rounder(2²⁴ / Δ)
+    K = trunc(2²⁴ / Δ)
     C = ((rₒ² − q) · K) >> 16       ; C = 0…255
 ```
 
-A `rounder` a `0x00c29990` útja: a bináris adatmező `0x00da1428` alapállapotban nulla, ezért a konverter a `0x00c299c6` ágra megy; a mért qemu-futtatásban az x87 vezérlőszó `0x037f` volt (legközelebbi, párosra kerekítés). A pixel súlya nem felülmintavételezés: a fenti 16 bites fixpontos szorzás közvetlenül az `0x00aa1a74`–`0x00aa1a7d` utasításokból jön.
+A `0x00c29990` konverter pozitív bemenetnél csonkol. Az `0x00aa1840` a `0x00aa1981` `fdivr` után, a `0x00aa1987` helyen hívja; ha a `0x00da1428` nem nulla, a `0x00c299a5` `cvttsd2si` adja a csonkolt egészet. Ha nulla, az x87 ág a vezérlőszó szerinti `fistp` köztes eredményét a `0x00c299e9`–`0x00c29a23` előjeles korrekciójával nullához közelítő csonkolássá alakítja. Ezért a `0x037f` vezérlőszó nem teszi `K`-t legközelebbi egészűvé. A qemu-harness mindkét globális ággal `trunc(2²⁴/1536)=10922` és `trunc(2²⁴/768)=21845` eredményt adott. A pixel súlya nem felülmintavételezés: a fenti 16 bites fixpontos szorzás közvetlenül az `0x00aa1a74`–`0x00aa1a7d` utasításokból jön.
 
 Részleges fedésnél a forrás alfa-bájtja `A = color >> 24`; `Aₑ = (A·C) >> 8`, majd `I = 255 − Aₑ`. A packed x86-keverő csatornánkénti bájtszabálya:
 
@@ -10344,12 +10344,12 @@ peremképpontjait is visszaadja.
 
 | | Eredeti, mérve | PicasaPy, olvasva | Teendő |
 |---|---|---|---|
-| Élsimítás | `C=((rₒ²−q)·rounder(2²⁴/Δ))>>16`; R/B és G eltérő egész kerekítési sorrendje fent; a két natív q-rács és a teljes 5×5→9×9 golden a 4. pontban | `glimmer_frame_ops.py::_sarok_fedes` követi a mért fedési képletet. A `_sarok_fedes_negyed` félpixeles körközéppontot/sugarat feltételez és egy sarokfoltot tükröz; a natív Border külön 6 × 6 külső és 4 × 4 forrás q-rácsot állít elő. | Cseréld le a `_sarok_fedes_negyed`/`_sarok_folt` maszképítését a fenti bináris q-képletre. Számíts külön külső `(K,K), ρ=K+0,5` és forrás `(R,R), ρ=R` rácsot; a mintán ezek `(3,3), 1600/3136` és `(2,2), 256/1024`. A külső 6 × 6 és forrás 4 × 4 rács négy 3 × 3/2 × 2 sarkát külön, a natív pozíciókra vágd ki. Mindkét ívet a §I-ben rögzített ARGB-keveréssel és az `0x009ab410`-nek megfelelő kompozícióval rendezd a kimenetre. **Kész, ha** az 5 × 5 → 9 × 9 golden RGB-kimenete mind a 81 pixelben csatornánként egyezik. |
+| Élsimítás | `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16`; R/B és G eltérő egész kerekítési sorrendje fent; a két natív q-rács és a teljes 5×5→9×9 golden a 4. pontban | `glimmer_frame_ops.py::_sarok_fedes` jelenleg Python `round(2**24/Δ)`-t használ, ami a bináris pozitív bemenetű csonkolásától eltér. A `_sarok_fedes_negyed` félpixeles körközéppontot/sugarat feltételez és egy sarokfoltot tükröz; a natív Border külön 6 × 6 külső és 4 × 4 forrás q-rácsot állít elő. | Cseréld le a `_sarok_fedes_negyed`/`_sarok_folt` maszképítését a fenti bináris q-képletre, és a `K` számításánál a `round` helyett pozitív egészre csonkolást használj. Számíts külön külső `(K,K), ρ=K+0,5` és forrás `(R,R), ρ=R` rácsot; a mintán ezek `(3,3), 1600/3136` és `(2,2), 256/1024`. A külső 6 × 6 és forrás 4 × 4 rács négy 3 × 3/2 × 2 sarkát külön, a natív pozíciókra vágd ki. A forrássarok `0x00bbe836` útján a valós kimeneti puffer/célpixel összetétele még nyitott; ezt ne helyettesítsd feltételezett fehér célú kompozícióval. **Kész, ha** az 5 × 5 → 9 × 9 golden mind a 243 RGB-csatornája egyezik, és a két vizsgált pontnál az `aa1840` köztes, valamint a forrásoldali pufferérték dokumentált. |
 | Alfa | A részleges forrásalfa `Aₑ=(A·C)>>8`; az `0x009ab410` opaque cél fölötti kimeneti alfája `0xff`; az előkompozit réteg részleges alfáit a qemu-minta mutatja | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol; `_sarok_fedes` RGB-súlyt számol | A pixel-geometria javításakor tartsd külön a fedettségi súlyt és az ARGB-keverést. Az eredeti ARGB út külön réteggel ellenőrizhető; a RGB `draw_border()`-től ne kérj alfa megőrzést. |
 
 #### 6. Miért tér el még a teljes 9 × 9 Border-minta?
 
-A natív `0x00bbe570`-mintán azonos, 5×5-ös `0xff204060` forrásból, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítással az eredeti kimenet 9×9. A jelenlegi `draw_border()` ennek RGB-részét **30/81 pixelben** téríti el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ebből 18 eltérés a külső keretívben, 12 a forrássarok-ívben van. A 4. pont mérése alapján az eltérés oka az, hogy a PicasaPy félpixeles sugár-/középpontmodellt és tükrözött negyedet használ, míg a natív hívó két külön paraméterezésű, nem tükrözhető q-rácsot generál.
+A natív `0x00bbe570`-mintán azonos, 5×5-ös `0xff204060` forrásból, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítással az eredeti kimenet 9×9. A jelenlegi `draw_border()` ennek RGB-részét **30/81 pixelben** téríti el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ebből 18 eltérés a külső keretívben, 12 a forrássarok-ívben van; ezek a számok a jelenlegi kód mért állapotát írják le. A 4. pont mérése alapján a geometriai eltérésekhez a félpixeles sugár-/középpontmodell és a tükrözött negyed járul hozzá, míg a #4300 külső `q=2128` pontján ettől külön a `K` kerekítése is egy szintnyi eltérést okozott. A teljes golden eltérésszáma a javítások után nincs újramérve.
 
 - **Külső keretív, 18 pixel:** `(1,1)`, `(1,2)`, `(1,3)`, `(1,5)`, `(1,6)`, `(1,7)`, `(2,1)`, `(2,7)`, `(3,1)`, `(3,7)`, `(5,1)`, `(5,7)`, `(6,1)`, `(6,7)`, `(7,2)`, `(7,3)`, `(7,5)`, `(7,6)`. Ezeket a belső színű keret külső, lekerekített ívének fedési súlya okozza.
 - **Forrássarok-ív, 12 pixel:** `(2,2)`, `(2,3)`, `(2,5)`, `(2,6)`, `(3,2)`, `(3,6)`, `(5,2)`, `(5,6)`, `(6,2)`, `(6,3)`, `(6,5)`, `(6,6)`. Ezeket a forrásképet vágó belső ív fedési súlya okozza.
@@ -10373,6 +10373,36 @@ tehát egyetlen bal felső maszk tükrözése sem adja a natív négy sarkot.
 **Nyitott:** nincs nyitott bináris paraméter a két ívhez. A `draw_border()`
 átírása, a 81/81 PicasaPy-golden és az általános q-rács más
 képméreteken/sugarakon való igazolása még hiányzik.
+
+#### #4300 — a két egy szintes pont köztes eredménye (2026-10-06)
+
+Az `I.4` q-rácsait és sugárnégyzeteit nem módosítottam. Az új ellenőrzés a
+`K` egészre alakítását és a két megadott pont keverési láncát vizsgálta:
+
+| pont | `K`, `C` | `aa1840` köztes ARGB | következő lépés | eredmény |
+|---|---|---|---|---|
+| külső ív, `q=2128`, `Δ=1536` | `K=10922`, `C=167` | `0xfea6a6a6` (`D=ff000000`, `S=ffffffff`) | fekete opaque cél fölött `9ab410` → `0xffa6a6a6` | egyezik a golden `166` RGB-értékével; a korábbi `K=10923`, `C=168` számítás egy szinttel túlbecsült |
+| forrássarok, `q=512`, `Δ=768` | `K=21845`, `C=170` | `0xfe6a7f95` (`D=ffffffff`, `S=ff204060`) | az izolált `9ab410` fehér opaque cél fölött → `0xff6b8096` | nem egyezik a golden `0xff6b8095` értékével; a kék csatorna eltérése nincs lezárva |
+
+Az első sorban a statikus út (`0x00aa1981`–`0x00aa1987`, majd
+`0x00c29990`) és a qemu-i386 futtatás egyezik: a korábbi „legközelebbi
+egész” leírás volt hibás, nem az `0x00aa1a80`–`0x00aa1ae1` keverő vagy a
+`0x009ab410` kompozitor adja az eltérést. A második sor futtatása izoláltan
+épített egyképpontos leíróval történt; ez igazolja a gépi kód eredményét az
+adott `D/S` párra, de nem bizonyítja, hogy a valódi `0x00bbe570` hívási út
+ugyanezt a kompozitorcélt használja.
+
+**Nyitott a #4300-ból:** a forrássarok teljes `0x00bbe570` útjában a
+`0x00bbe836 → 0x00aa1840` írás utáni tényleges pufferérték és célpixel nincs
+naplózva. A `0x00bbe570` később `0x00bbe8e5 → 0x009ab360` másolást, majd a
+`0x00bbec0d → 0x009aabf0 → 0x00bf2350` memóriamozgatást végez; a statikus
+hívásláncban a forrássarok-`aa1840` után nincs közvetlen `0x009ab410` hívás.
+A következő célzott futásban a valódi worker leíróival kell naplózni az
+`aa1840` be-/kimenő `D`, `S`, `C` értékeit, majd ugyanazt a képpontot a
+`9ab360` és `9aabf0` előtt/után. A teljes 9 × 9 golden 243 csatornájára
+illeszkedő képlet ebből a futásból **nincs meg**; a fehér célú izolált
+kompozitorpróba falszifikálta azt az egyszerű feltevést, hogy önmagában ez a
+kompozíció adja a golden kék `149` értékét.
 
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
