@@ -301,6 +301,8 @@ Rectangle {
         // nem kínálja fel; a panel maga jelzi, ha a kamera nem érhető el.
         Rectangle {
             objectName: "toolbarWebcamCaptureButton"
+            Accessible.role: Accessible.Button
+            Accessible.name: qsTr("Capture")
             enabled: toolbar.captureControllerAvailable
             x: 252; y: 9
             width: 22; height: 22; radius: 2
@@ -308,6 +310,7 @@ Rectangle {
             border.width: cameraCaptureHover.hovered ? 1 : 0
             border.color: Theme.selectionBlue
             Text {
+                objectName: "panelroot/capturemovietab"
                 anchors.centerIn: parent
                 text: "◉"
                 font.pixelSize: 13
