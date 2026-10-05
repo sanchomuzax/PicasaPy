@@ -12,6 +12,10 @@ thumbui/webcambutton,nem-cel,docs/specs/picasa-konyvtar-eszkoztar-viselkedes.md:
 searchcontainer/starsearch,megvan,PicasaPy/MainToolbar.qml,"Csillag-szűrő: nálunk a ★ jel a keresősáv mellett (controller.showStarred), felirat nélkül"
 searchcontainer/geotagsearch,megvan,PicasaPy/MainToolbar.qml,Geo-szűrő: objectName geoFilter + icons/geo-pin.svg (controller.showGeotagged)
 searchcontainer/searchclr,megvan,PicasaPy/MainToolbar.qml,Keresés törlése: objectName searchClear (a ✕ gomb a mezőben)
+searchcontainer/search,megvan,"PicasaPy/MainToolbar.qml;tests/app/qml_functional/test_search_lefedettseg_4202.py",A keresőmező objectName-je searchField; a valódi főablakos keresés és a találati sáv kimeneti próbája
+searchcontainer/searchautocomplete,megvan,"Main.qml;PicasaPy/SearchSuggestions.qml;tests/app/qml_functional/test_search.py;tests/app/qml_functional/test_search_lefedettseg_4202.py",A SearchSuggestions javaslatsora a főablakban kattintással kiválasztható és kiüríti a keresőt
+searchcontainer/searchbutton,megvan,"PicasaPy/MainToolbar.qml;tests/app/qml_functional/test_search_lefedettseg_4202.py","A keresési beállítások gombja fókuszált vagy kitöltött keresőmezőnél jelenik meg; valódi kattintással nyitja az arc- és másodpéldány-módot, Ctrl+F-fel is elérhető"
+searchcontainer/webview,nem-cel,docs/decisions/keresosav-webview-szuro-kimarad.md,A Picasa Web Albums szolgáltatás megszűnt; az elfogadott döntés szerint nincs feltöltési állapot amit szűrni lehetne
 outputlayout/ebutton,megvan,PicasaPy/TrayBar.qml,"Nálunk „E-Mail” a felirata, az eredetiben „Email” — kötőjel miatt nem egyezik szó szerint"
 outputlayout/folderbutton,megvan,PicasaPy/TrayBar.qml;PicasaPy/ExportDialogs.qml,Az „Export” tálcagomb az Exportálás párbeszédet nyitja
 throttle/throttlethumb,megvan,PicasaPy/PicasaScrollBar.qml,A görgetősáv fogantyúja — nálunk névtelen Rectangle a PicasaScrollBar-ban
@@ -167,6 +171,10 @@ publish/rpoptionbox2,megvan,tests/app/qml_functional/test_publish_feltoltes_mod_
 publish/rpoptionbox3,megvan,tests/app/qml_functional/test_publish_feltoltes_mod_4126.py;tests/app/qml_functional/test_publish_sugok_4177.py,"A 3-as mód és az Online eltávolítás rádiógombja megvan; a valódi főablakos próbában a kattintás módot vált, a ráálláskor az eredeti súgó jelenik meg."
 publish/webpublish_cancel,nem-cel,biztonsagi-mentes.md 10.3; 14.4,"A webes közzétételhez tartozó Mégse gomb; a Picasa Webalbumok szolgáltatás megszűnt, ezért az online ág és annak gombja nem cél."
 searchcontainer/timecontainer_label,megvan,PicasaPy/MainToolbar.qml:402,A `dateRangeHover` a `Filter by date range` súgót a `toolbarFiltersLabel` feliratban mutatja; a magyar fordítás hivatalos
+searchoptions/dupesearch,megvan,"PicasaPy/MainToolbar.qml;Main.qml;tests/app/qml_functional/test_dupe_kapcsolo_2174.py;tests/app/qml_functional/test_search_lefedettseg_4202.py",A beállítási panel másodpéldány-művelete a főablak találati rácsára szűr; valódi kattintás visszaállítja az összes képet
+searchoptions/facesearch,megvan,"PicasaPy/MainToolbar.qml;tests/app/qml_functional/test_arc_szuro_gomb_1830.py;tests/app/qml_functional/test_search_lefedettseg_4202.py","A beállítási panel arcosképek-művelete valódi kattintással szűr, majd visszaállítja a főablak fotólistáját"
+searchoptions/searchcenter,megvan,"PicasaPy/MainToolbar.qml;Main.qml;tests/app/qml_functional/test_search_lefedettseg_4202.py",A keresési beállítások középső konténere és a főablak meglévő találati sávja is megvan
+searchoptions/searchresult,megvan,"PicasaPy/MainToolbar.qml;Main.qml;tests/app/qml_functional/test_kereses_nezet_frissul_1515.py;tests/app/qml_functional/test_search_lefedettseg_4202.py",A keresési eredmény és darabszám a beállítási panelen és a főablak fejlécében is megjelenik
 searchoptions/label_searchresult,megvan,Main.qml:2535,"A `filterStatusText` a találati sáv eredményfelirata; az eredeti külön `label_searchresult` eleme m_hidden, így nem igényel külön statikus szöveget"
 searchoptions/viewallbutton,megvan,Main.qml:2519,A `Back to View All` gomb a szűrt nézetből `controller.clearFilter()` hívással visz vissza az összes elemhez
 thumbui/visitweb,nem-cel,picasa-fo-ablak-elrendezes.md,"Nem cél: a `visitweb` képernyőn kívüli parancs-proxy, a hozzá tartozó Picasa webes szolgáltatás megszűnt; nincs élő webes cél, amelyhez felületet kellene építeni."

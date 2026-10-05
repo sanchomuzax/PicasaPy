@@ -5296,6 +5296,11 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Keresés</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="865"/>
+        <source>Search results for &quot;%1&quot; (%2)</source>
+        <translation>Találatok a(z) &quot;%1&quot; kifejezésre (%2)</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="259"/>
         <source>View releases on GitHub</source>
         <translation>Kiadások megtekintése a GitHubon</translation>
