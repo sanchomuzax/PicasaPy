@@ -94,13 +94,15 @@ class TestMovieDialog:
         _settle(qt_app, 2)
         assert dialog.property("visible") is True
 
-    def test_seconds_spinbox_is_tenth_second_based(self, qml_app):
+    def test_seconds_slider_is_tenth_second_based(self, qml_app):
         window, controller, lib, engine = qml_app
-        spin = window.findChild(QObject, "movieSeconds")
-        assert spin is not None
-        assert spin.property("from") == 10
-        assert spin.property("to") == 100
-        assert spin.property("value") == 30  # 3,0 mp alapértelmezés
+        slider = window.findChild(QObject, "movieSeconds")
+        assert slider is not None
+        assert "PicasaSlider" in slider.metaObject().className()
+        assert slider.property("from") == 10
+        assert slider.property("to") == 100
+        assert slider.property("stepSize") == 5
+        assert slider.property("value") == 30  # 3,0 mp alapértelmezés
 
 
 class TestResultDialog:

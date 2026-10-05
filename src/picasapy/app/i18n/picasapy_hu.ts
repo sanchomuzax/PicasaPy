@@ -603,22 +603,27 @@
     </message>
     <message>
         <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
+        <source>Border width</source>
+        <translation>Szegély szélessége</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
         <source>None</source>
         <translation>Egyik sem</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
-        <source>Maximum</source>
+        <source>Max.</source>
         <translation>Maximális</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
-        <source>Only bottom</source>
+        <source>Bottom only</source>
         <translation>Csak alul</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PrintOptionsPanel.qml"/>
-        <source>Even width</source>
+        <source>Even width border</source>
         <translation>Egyenletes szélességű szegély</translation>
     </message>
     <message>
@@ -3306,7 +3311,12 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message><source>Time Lapse</source><translation>Gyorsítás</translation></message>
     <message><source>Rectangle</source><translation>Négyszög</translation></message>
     <message><source>Overlap</source><translation>Átfedés</translation></message>
-    <message><source>Slide Duration:</source><translation>Dia időtartama</translation></message>
+    <message><source>Slide Duration:</source><translation>Dia időtartama:</translation></message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml"/>
+        <source>%1 Sec</source>
+        <translation>%1 mp</translation>
+    </message>
     <message><source>Audio:</source><translation>Hangsáv:</translation></message>
     <message><source>Audio Track:</source><translation>Hangsáv:</translation></message>
     <message><source>No audio selected</source><translation>Nincs hangsáv kiválasztva</translation></message>
@@ -4784,6 +4794,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <source>Tags</source>
         <translation>Címkék</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Tags:</source>
+        <translation>Címkék:</translation>
     </message>
     <message>
         <source>People</source>

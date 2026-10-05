@@ -617,24 +617,47 @@ Item {
                             Layout.fillWidth: true
                             Layout.maximumWidth: moviePages.width
                             Text { text: qsTr("Overlap"); color: Theme.ink }
-                            Slider {
+                            PicasaSlider {
                                 id: movieOverlapSlider
                                 objectName: "movieOverlapSlider"
                                 Layout.fillWidth: true
                                 from: 0; to: Math.max(0.1, movieSeconds.value / 10 * 0.9)
                                 value: Math.min(0.5, to); stepSize: 0.1
+                                grooveThickness: 9
+                                grooveInset: 3
+                                handleWidth: 16
+                                handleHeight: 22
+                                handleRadius: 3
+                                handleOffsetY: 2
+                                showTicks: false
                             }
-                            Text { text: movieOverlapSlider.value.toFixed(1) + " s" }
+                            Text {
+                                objectName: "movieOverlapValueLabel"
+                                text: qsTr("%1 Sec").arg(
+                                    movieOverlapSlider.value.toFixed(1))
+                            }
                         }
                         RowLayout {
                             Layout.maximumWidth: moviePages.width
                             Text { text: qsTr("Slide Duration:"); color: Theme.ink }
-                            SpinBox {
+                            PicasaSlider {
                                 id: movieSeconds
                                 objectName: "movieSeconds"
+                                Layout.fillWidth: true
                                 from: 10; to: 100; stepSize: 5; value: 30
-                                textFromValue: function(value) { return (value / 10).toFixed(1) }
-                                valueFromText: function(text) { return Math.round(parseFloat(text) * 10) }
+                                grooveThickness: 9
+                                grooveInset: 3
+                                handleWidth: 16
+                                handleHeight: 22
+                                handleRadius: 3
+                                handleOffsetY: 2
+                                showTicks: false
+                            }
+                            Text {
+                                objectName: "movieSecondsValueLabel"
+                                text: qsTr("%1 Sec").arg(
+                                    (movieSeconds.value / 10).toFixed(1))
+                                color: Theme.ink
                             }
                         }
                         RowLayout {

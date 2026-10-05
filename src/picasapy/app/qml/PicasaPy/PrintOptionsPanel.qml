@@ -350,9 +350,15 @@ Rectangle {
                     enabled: panel.editable
                     onClicked: panel.setOption("border", checked)
                 }
+                Text {
+                    objectName: "printOptionBorderSizeLabel"
+                    text: qsTr("Border width")
+                    color: Theme.textGray
+                }
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
+                        objectName: "printOptionBorderNoneLabel"
                         text: qsTr("None")
                         color: Theme.textGray
                     }
@@ -367,20 +373,21 @@ Rectangle {
                         onMoved: panel.setOption("borderSize", Math.floor(value * 1024))
                     }
                     Text {
-                        text: qsTr("Maximum")
+                        objectName: "printOptionBorderMaxLabel"
+                        text: qsTr("Max.")
                         color: Theme.textGray
                     }
                 }
                 CheckBox {
                     objectName: "printOptionBottomOnlyCheckBox"
-                    text: qsTr("Only bottom")
+                    text: qsTr("Bottom only")
                     checked: panel.options.borderEdge
                     enabled: panel.editable && panel.options.border
                     onClicked: panel.setOption("borderEdge", checked)
                 }
                 CheckBox {
                     objectName: "printOptionEvenBorderCheckBox"
-                    text: qsTr("Even width")
+                    text: qsTr("Even width border")
                     checked: panel.options.evenBorder
                     enabled: panel.editable && panel.options.border
                     onClicked: panel.setOption("evenBorder", checked)

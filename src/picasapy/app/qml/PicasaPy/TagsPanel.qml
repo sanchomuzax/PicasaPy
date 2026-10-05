@@ -65,6 +65,7 @@ Rectangle {
         //: van, és annak címe a lap neve.
 
         RowLayout {
+            objectName: "input_group"
             Layout.fillWidth: true
             spacing: 4
             TextField {
@@ -110,64 +111,68 @@ Rectangle {
             color: Theme.textGray
         }
 
-        ListView {
-            id: tagList
-            objectName: "tagList"
+        Item {
+            objectName: "taglist_group"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
-            model: panel.tags
-            spacing: 2
-            delegate: Rectangle {
-                id: tagRow
-                required property var modelData
-                width: tagList.width
-                height: 22
-                radius: 3
-                color: rowHover.hovered ? "#ffffff" : "transparent"
-                border.color: rowHover.hovered
-                              ? Theme.chromeBorder : "transparent"
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 6
-                    anchors.rightMargin: 4
-                    spacing: 4
-                    //: #1132: a címke SAJÁT típus (`icons/label`, szürke
-                    //: címke) — eddig a MAPPA aranyát használta, tehát a
-                    //: címke ugyanúgy nézett ki, mint egy mappa.
-                    LabelIcon {
-                        objectName: "tagRowIcon"
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        text: tagRow.modelData
-                        elide: Text.ElideRight
-                        font.pixelSize: Theme.fontSize
-                        color: Theme.ink
-                    }
-                    Rectangle {
-                        objectName: "tagRemove-" + tagRow.modelData
-                        width: 14; height: 14; radius: 7
-                        color: removeHover.hovered ? "#c94b3d" : "transparent"
+            ListView {
+                id: tagList
+                objectName: "tagList"
+                anchors.fill: parent
+                clip: true
+                model: panel.tags
+                spacing: 2
+                delegate: Rectangle {
+                    id: tagRow
+                    required property var modelData
+                    width: tagList.width
+                    height: 22
+                    radius: 3
+                    color: rowHover.hovered ? "#ffffff" : "transparent"
+                    border.color: rowHover.hovered
+                                  ? Theme.chromeBorder : "transparent"
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: 4
+                        spacing: 4
+                        //: #1132: a címke SAJÁT típus (`icons/label`, szürke
+                        //: címke) — eddig a MAPPA aranyát használta, tehát a
+                        //: címke ugyanúgy nézett ki, mint egy mappa.
+                        LabelIcon {
+                            objectName: "tagRowIcon"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
                         Text {
-                            anchors.centerIn: parent
-                            text: "✕"
-                            font.pixelSize: 8
-                            color: removeHover.hovered
-                                   ? "#ffffff" : Theme.textGray
+                            Layout.fillWidth: true
+                            text: tagRow.modelData
+                            elide: Text.ElideRight
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.ink
                         }
-                        HoverHandler { id: removeHover }
-                        TapHandler {
-                            onTapped: panel.removeRequested(tagRow.modelData)
+                        Rectangle {
+                            objectName: "tagRemove-" + tagRow.modelData
+                            width: 14; height: 14; radius: 7
+                            color: removeHover.hovered ? "#c94b3d" : "transparent"
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✕"
+                                font.pixelSize: 8
+                                color: removeHover.hovered
+                                       ? "#ffffff" : Theme.textGray
+                            }
+                            HoverHandler { id: removeHover }
+                            TapHandler {
+                                onTapped: panel.removeRequested(tagRow.modelData)
+                            }
                         }
                     }
-                }
-                HoverHandler { id: rowHover }
-                TapHandler {
-                    acceptedButtons: Qt.RightButton
-                    gesturePolicy: TapHandler.ReleaseWithinBounds
-                    onSingleTapped: panel.openTagContextMenu(tagRow.modelData)
+                    HoverHandler { id: rowHover }
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton
+                        gesturePolicy: TapHandler.ReleaseWithinBounds
+                        onSingleTapped: panel.openTagContextMenu(tagRow.modelData)
+                    }
                 }
             }
         }
