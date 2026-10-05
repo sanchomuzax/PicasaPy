@@ -32,7 +32,7 @@ initialscan,parositva,PicasaPy/InitialScanDialog.qml,Első indítás — mit viz
 instructionpanel,nem-cel,,A Picasa betanító buborék és a picasa.google.com/support hivatkozás nem része a helyi alkalmazásnak; a szolgáltatás elérhetetlen.
 keywords,parositva,PicasaPy/TagsPanel.qml;Main.qml,Címkeszerkesztő és a főablak „Tags:” felirata (#4214)
 lengthslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs
+makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,A Filmkészítő háromlapos panelje a párbeszédben él (#4125/#4182); a maradék leírt elemek és eltéréseik elemenként szerepelnek az ui-lefedettseg-elemek.csv-ben.
 modalprogress,parositva,PicasaPy/ImportProgressPanel.qml;PicasaPy/BatchEditProgressPanel.qml,Modális folyamatjelző
 moviecontrols,parositva,PicasaPy/VideoPlayerView.qml,Lejátszás/szünet a videón
 movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml,Videovágó panel
@@ -53,8 +53,8 @@ quicktagconfig,parositva,PicasaPy/QuickTagsConfigDialog.qml,Gyorscímke-beállí
 rightdrawerpanel,parositva,PicasaPy/RightDrawer.qml;PicasaPy/PropertiesPanel.qml,Jobb oldali fiók kerete és tulajdonságpanelje
 scaleslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 scratch,nincs-megfeleltetes,,Belső rajzfelület (album-előnézet összeállítása) — nem felhasználói felület
-searchcontainer,parositva,PicasaPy/MainToolbar.qml;PicasaPy/SearchSuggestions.qml,Keresősáv és szűrőgombjai
-searchoptions,parositva,PicasaPy/SearchGroupHeader.qml;PicasaPy/MainToolbar.qml,Keresési eredmény fejléce
+searchcontainer,parositva,Main.qml;PicasaPy/MainToolbar.qml;PicasaPy/SearchSuggestions.qml,Keresőmező és szűrőgombjai; a javaslatok bekötése a Main.qml-ben él
+searchoptions,parositva,Main.qml;PicasaPy/SearchGroupHeader.qml;PicasaPy/MainToolbar.qml,Keresési eredmény fejléce és a találati sáv
 slideshowctrls,parositva,PicasaPy/SlideshowView.qml,Diavetítés vezérlői
 spacing_slider,parositva,PicasaPy/CollageSettingsTab.qml;PicasaPy/PicasaSlider.qml,A kollázs térközcsúszkája a mért bigslider családot használja (#4214)
 tagpanel,parositva,PicasaPy/TagsPanel.qml,Címke oldalsó panel
