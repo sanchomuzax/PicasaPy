@@ -9967,10 +9967,11 @@ nem módosította a vászon külső színét.
 Részleges fedésnél az `0x00aa1a74`–`0x00aa1b1f` út külön 16.16-os szorzatból
 képzi a fedési tényezőt `C`, abból `floor(A×C/256)`-ot számít, majd a cél és
 a forrás byte-jait külön szorozza és a csatornákat packed dwordként adja
-össze. Az `0x00aa1840` állítja elő a görbe menti per-pixel `C`-t. A helyi
-diszasszemblálásból és a mintafutásokból **nem lett lezárva a C(x,y,R) teljes
-általános képlete**, ezért a konkrét köztes pixelek mért értékei nem
-általánosíthatók minden sugárra.
+össze. Az `0x00aa1840`-ben használt általános `q`, `rᵢ²`, `rₒ²` → `C`
+képletet és a forrásalfa útját a lentebbi I) szakasz zárja le. **Nyitva marad**
+az, hogy a `0x00aa13b0` hívó hogyan állítja elő ezeket a paramétereket a
+Border két külön ívéhez; ezért a kernel-képlet önmagában nem teszi a kis sugarú
+teljes Border-kimenetet minden sugárra általánosíthatóvá.
 
 #### 4. Bájtra rögzített natív próba
 
@@ -9991,12 +9992,12 @@ ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
 ```
 
 Ugyanennek a forrásnak a `draw_border()`-rel előállított PicasaPy RGB-képe
-9×9; a natív RGB-részhez képest **29/81 pixel** eltér, az RGB-csatorna-MAE
-20,506, a maximum 180. Például natív `(y=1,x=1)=180,180,180`, PicasaPy
-`0,0,0`; natív `(1,2)=255,255,255`, PicasaPy `143,143,143`. A forráskód
-`_sarok_fedes()`-e 4×4 almintát és `numpy.rint`-et használ, a natív út
-`0x00aa1840`/`0x00aa13b0` fixpontos fedettségszámítását és packed ARGB
-keverését nem.
+9×9; a natív RGB-részhez képest **29/81 pixel** eltért (RGB-csatorna-MAE
+20,506, maximum 180). Ez a **#4123 előtti, történeti alapmérés**: natív
+`(y=1,x=1)=180,180,180`, PicasaPy `0,0,0`; natív `(1,2)=255,255,255`,
+PicasaPy `143,143,143`. A #4123 óta a `_sarok_fedes()` már a natív 16.16-os
+képletet és packed-csatornasorrendet követi; a mostani, 2026-10-05-i
+újramérés 30/81 eltérést talált, a részletek az I) szakaszban vannak.
 
 #### 5. Export-összevetés és fok
 
@@ -10013,27 +10014,34 @@ Ezek a JPEG-eredmények a valós, nagy sugarú exportban erős egyezést mutatna
 de nem fedik fel önmagukban a kis sugarú fedettségi eltérést, és nem
 helyettesítik az alfa-csatornás QEMU-próbát.
 
-**A/B út:** A) az `0x00bbe570`, `0x00aa13b0`, `0x00aa1840` utasításszintű
-olvasása; B) ugyanennek a munkavégzőnek a közvetlen `qemu-i386` futtatása
-szintetikus képekkel. A méret, a két koncentrikus ív, az élsimítás és a
-packed dword-összeadás egyezik. A Picasa-exportpár harmadik, független
-kontroll a ténylegesen használt beállításokra.
+**A/B út:** A) az `0x00bbe570`, `0x00aa13b0`, `0x00aa1840` és a
+`0x009ab410` utasításszintű olvasása; B) az eredeti függvények közvetlen
+`qemu-i386` futtatása, külön előkompozit réteggel és opaque cél fölötti
+kompozittal. A méret, a két koncentrikus ív, az élsimítás, a teljes fedésű
+keverés, a részleges fedés képlete és a forrásalfa útja a két úton egyezik.
+A Picasa-exportpár harmadik, független kontroll a ténylegesen használt nagy
+sugarú beállításokra.
 
-**Bizonyítottsági fok: feltételes.** A fenti méret-, geometria-, teljes
-fedésű keverési és kiválasztott pixelállítások megerősítettek (utasítások +
-natív futtatás). A művelet általános per-pixel fedettségfüggvénye, valamint a
-forrás alfaértékének leképezése a görbe peremén még nyitott; ezért a teljes
-`Border`-műveletet a `#626` leltárában nem emelem `megerősített` fokra.
+**Bizonyítottsági fok:** `megerősített` a fedési súly képletére és a forrásalfa
+útjára (utasítások + az eredeti gépi kód futtatása). A teljes `Border`
+képpont-leképezése továbbra is `feltételes`: a két ívhez rendelt `q`, `rᵢ²`,
+`rₒ²` paraméterek előállítása és a teljes natív–PicasaPy golden nincs
+lezárva.
 
 **A #626 leltár Border-sora:** `Border | 4 effekt | feltételes |` kimeneti
-méret, koncentrikus ívek, élsimítás és ARGB packed keverés két úttal igazolt;
-az általános `C(x,y,R)` és a görbeszéli forrásalfa `0x00aa1840`/`0x00bbe570`
-útja még nyitott.
+méret, koncentrikus ívek, élsimítás, általános fedési képlet és forrásalfa
+két úttal igazolt; a `0x00aa13b0` hívó pontos ívparaméterei és a teljes
+képpont-golden még nyitott.
 
-#### Nyitott, célzott dekompilálás
+#### Nyitott, célzott bináris irány
 
-Ghidra-kör kell: `0x00aa1840` — a sugárból és képpont-koordinátából a 16.16-os `C(x,y,R)` fedettség pontos levezetése [blokkoló]
-Ghidra-kör kell: `0x00bbe570` — hogyan kerül a forrás ARGB-alfa a görbével levágott kép-sarok peremképpontjaira [blokkoló]
+NINCS MEG: a `0x00aa13b0` által a `0x00aa1840`-nek átadott `q`, `rᵢ²`,
+`rₒ²` pontos pixelkoordináta-leképezése mindkét Border-ívre. Következő lépés:
+kövesd a stack-argumentumokat a Border sáv útján (`0x00bbe6e8` →
+`0x00aa13b0` → `0x00aa14f4`) és a forrásmaszk útján (`0x00bbe836` →
+`0x00aa1840`), majd ugyanazon 5×5 forrással futtasd vissza a teljes 9×9
+natív Border-kimenetet. Ez külön kérdés a lent lezárt fedési képlettől és
+alfakeveréstől.
 
 ### G) ⭐ A `SimpleColorMatrix` hue-forgató mátrixa (2026-09-19, #626)
 
@@ -10191,7 +10199,7 @@ Két különbség van: (a) a súlyok Rec.601 helyett **Haeberli**-súlyok, mind 
 - **a bíráló tényei:** a két gyerek sorrendje (ColorMatrix, s=-100 a 0x00bbd686-on; majd Resaturate, vtábla 0xcf0578); a 8. rés 0x00bbd500 csak a +0x800 táblát tölti a 0x00bce2f0(szín,(float)i)-vel, a másik hármat nullázza; alapszín 0xFFDDC9AE. A 0x00bce2f0 második felét a bíráló nem vizsgálta — azt az emulált futtatás és a #878 golden három pontja igazolja.
 - **költség:** 104054 token
 
-### I) ⭐ A `Border` élsimított görbéjének fedése és alfája — qemu-kontrollal (2026-10-04, #626)
+### I) ⭐ A `Border` élsimított görbéjének fedése és alfája — qemu-kontrollal (2026-10-04; megerősítő futtatás 2026-10-05, #626)
 
 *Forrás: `0x00aa1840` (görbe-raszterező) · `0x00c29990` (lebegőpontos→egész konverter) · `0x00bbe570` (Border-munkavégző) · `0x009a91a0` (kitöltés) · `0x00aa13b0` (vászon-összeállító) · `0x009ab410` (forrás fölé kompozitor).*
 
@@ -10224,7 +10232,7 @@ G, A = (D·I >> 8) + (S·C >> 8)
 
 #### 3. QEMU-futtatás — eredeti gépi kód, 9 × 9
 
-A helyi qemu-harness az eredeti `0x009a91a0` → `0x00aa1840` → `0x009ab410` függvényeket futtatta 9 × 9-es bitképen, `center=(4.5, 4.5)`, `param=3.0`, forrás `0x20ffffff`, fekete `0xff000000` cél. Az ELF a `.bt` alatt készült; futtatás: `ulimit -v 6291456` és `timeout 30 qemu-i386`. A `0xffffffff` forrásalfás kontroll **mind a 324 bájtban azonos**; átlátszó céllal a perem alfája viszont `0x01`, `0x0f`, `0x09`, `0x15` értékeket is megtartja.
+A helyi qemu-harness az eredeti `0x009a91a0` → `0x00aa1840` → `0x009ab410` függvényeket futtatta 9 × 9-es bitképen, explicit `center=(4.5, 4.5)`, `param=3.0` argumentummal, forrás `0x20ffffff`, fekete `0xff000000` cél mellett. Az ELF a `.bt` alatt készült; futtatás: `ulimit -v 6291456` és `timeout 30 qemu-i386`. A külön előkompozit rétegben a szélső minták alfája megmarad: `(0,4)=0x01`, `(1,2)=0x0f`, `(2,1)=0x09`, `(3,1)=0x15`; a fekete opaque cél utáni kompozitban ugyanezek `0xff` alfát kapnak. A `0xffffffff` forrásalfás kontroll a végső, opaque 9×9 kimenet **mind a 324 bájtjában azonos**. Ez a közvetlen kernelkontroll a képletet és az alfa útját bizonyítja, de nem bizonyítja, hogy a Border-hívó valós 5×5-ös bemenethez pontosan ezeket a `center`/sugárargumentumokat adja.
 
 ```text
 ff000000 ff000000 ff000000 ff000000 ff0b0b0b ff000000 ff000000 ff000000 ff000000
@@ -10242,12 +10250,23 @@ ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
 
 | | Eredeti, mérve | PicasaPy, olvasva | Teendő |
 |---|---|---|---|
-| Élsimítás | `C=((rₒ²−q)·rounder(2²⁴/Δ))>>16`; R/B és G eltérő egész kerekítési sorrendje fent; a 9 × 9 qemu-kimenet bájtszinten rögzítve | `glimmer_frame_ops.py::_sarok_fedes`: 4 × 4 középpontos részminta; a `draw_border()` RGB-t kever float32-vel, `np.rint`-tel | A `_sarok_fedes` 4 × 4 közelítését cserélje az eredeti 16 bites súlyra és packed-csatorna sorrendre. A 9 × 9 táblázat legyen az izolált rasterizer byte-golden; a lekerekített téglalap négy sarkára ugyanazt a `q`, `rᵢ²`, `rₒ²` rutint alkalmazza. |
-| Alfa | A görbe részleges forrásalfája `Aₑ=(A·C)>>8`; az opaque black cél fölötti `0x009ab410` kompozit végeredménye `0xff` | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol | A belső maszkon/alapképen tesztelje külön `0x20` és `0xff` forrásalfával; opaque végkép alfája mindkettőnél `0xff`, a maszkréteg viszont őrizze meg a `C`-vel súlyozott alfát. |
+| Élsimítás | `C=((rₒ²−q)·rounder(2²⁴/Δ))>>16`; R/B és G eltérő egész kerekítési sorrendje fent; az eredeti 9×9 rasterizer/compositor qemu-kimenete bájtszinten rögzítve | `glimmer_frame_ops.py::_sarok_fedes` és `_kever_rgb_fedessel` a mért egész képletet követi. A `_sarok_fedes_negyed` viszont `q`-t félpixeles középpontból, `rᵢ=max(0,sugar−0.5)`, `rₒ=sugar+0.5` feltételezéssel állítja elő; ezt a natív Border-hívó nem igazolja. | A natív argumentumépítésből vezesd le a külső keretív és forrássarokív `q`, `rᵢ²`, `rₒ²` értékeit (`0x00aa13b0` → `0x00aa14f4`, hívók: `0x00bbe6e8` és `0x00bbe836`), és csak a `_sarok_fedes_negyed`/sarokleképezést igazítsd ehhez. Az eredeti 5×5→9×9 teljes Border-minta legyen a golden. |
+| Alfa | A részleges forrásalfa `Aₑ=(A·C)>>8`; az `0x009ab410` opaque cél fölötti kimeneti alfája `0xff`; az előkompozit réteg részleges alfáit a qemu-minta mutatja | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol; `_sarok_fedes` RGB-súlyt számol | A pixel-geometria javításakor tartsd külön a fedettségi súlyt és az ARGB-keverést. Az eredeti ARGB út külön réteggel ellenőrizhető; a RGB `draw_border()`-től ne kérj alfa megőrzést. |
 
-**Bizonyítottsági fok: megerősített** a fedési képletre és az alfa útjára: az utasításszintű olvasás és az eredeti függvények qemu-futtatása egyezik. **NINCS MEG:** a teljes `Border`-export bájtpontos natív–PicasaPy golden. Ez a 9 × 9-es próba a natív görbe-raszterező és kompozitor izolált kontrollja; a korábbi `border__max` export JPEG-alapú geometriamérése marad az összhatás-kontroll.
+#### 5. Miért tér el még a teljes 9 × 9 Border-minta?
 
-**Cáfoló próba:** azt ellenőriztem, hogy a `0x00aa1840` maga állítja-e `0xff`-re a perem alfáját. Átlátszó céllal a qemu-kimenet részleges alfái megmaradnak; csak az opaque black cél fölötti `0x009ab410` után lesz minden kimeneti alfa `0xff`. A hipotézis cáfolva.
+A natív `0x00bbe570`-mintán azonos, 5×5-ös `0xff204060` forrásból, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítással az eredeti kimenet 9×9. A jelenlegi `draw_border()` ennek RGB-részét **30/81 pixelben** téríti el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ebből 18 eltérés a külső keretívben, 12 a forrássarok-ívben van; mind az ív fedési térképére esik, nem az alfa-kompozitor útjára.
+
+- **Külső keretív, 18 pixel:** `(1,1)`, `(1,2)`, `(1,3)`, `(1,5)`, `(1,6)`, `(1,7)`, `(2,1)`, `(2,7)`, `(3,1)`, `(3,7)`, `(5,1)`, `(5,7)`, `(6,1)`, `(6,7)`, `(7,2)`, `(7,3)`, `(7,5)`, `(7,6)`. Ezeket a belső színű keret külső, lekerekített ívének fedési súlya okozza.
+- **Forrássarok-ív, 12 pixel:** `(2,2)`, `(2,3)`, `(2,5)`, `(2,6)`, `(3,2)`, `(3,6)`, `(5,2)`, `(5,6)`, `(6,2)`, `(6,3)`, `(6,5)`, `(6,6)`. Ezeket a forrásképet vágó belső ív fedési súlya okozza.
+
+A #4123 előtti 29/81 eltérés mind megmaradt; az új, 30. eltérés `(3,6)`: natív `[46,76,106]`, PicasaPy `[45,75,105]` (csatornánként −1). A 29 régi eltérést a külső keretív/forrássarok-maszk koordinátacsoportok és a hozzájuk tartozó feltételezett `q`-térkép osztályozza, de az egyes pontok pontos natív súlyát csak a fenti hívóargumentumok levezetése dönti el.
+
+A `tests/render/test_glimmer_frame_ops_4122.py::_native_q_racs()` középpontja `(127/32, 7/2)`, a négyzetes sugarai `7.5/12.5`; a teszt saját kommentje szerint ezeket **a kimeneti mintából vezette vissza**. Ezek az értékek nem bináris forrású bizonyítékok, ezért nem használhatók a külső keretív és a forrássarok-ív eltéréseinek megmagyarázására.
+
+**Bizonyítottsági fok:** `megerősített` a fedési képletre és az alfa útjára: az utasításszintű olvasás és az eredeti függvények qemu-futtatása egyezik. **Feltételes** a teljes `Border` pixelkimenet: nincs meg a hívó pontos ívparamétereiből készített 5×5→9×9 natív–PicasaPy golden; a nagy sugarú `border__max` JPEG-geometriamérés ettől külön, összhatás-kontroll.
+
+**Cáfoló próba:** azt ellenőriztem, hogy a `0x00aa1840` maga állítja-e `0xff`-re a perem alfáját. Átlátszó célrétegben a qemu-kimenet részleges alfái megmaradnak (például `(0,4)=0x01`, `(3,1)=0x15`); csak az opaque black cél fölötti `0x009ab410` után lesz a kimeneti alfa `0xff`. A hipotézis cáfolva.
 
 ## A lánc SORRENDJE — goldennel eldöntve (2026-09-19, #3229)
 
