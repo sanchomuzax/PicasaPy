@@ -26,6 +26,7 @@ from PySide6.QtGui import QColorSpace, QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.cvimage import scale_down
+from picasapy.faces.redeye import detect_eye_circles
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp
 from picasapy.lazy_cv2 import cv2
@@ -494,18 +495,22 @@ class EditPreviewProvider(QQuickImageProvider):
             mtime = None
         return self._resolve_source(str(photo_id), Path(path), mtime, shared_cache=True)
 
-    def redeye_spot_count(self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]) -> int:
-        """Hány vörösszem-foltot TALÁL az automatika (#445).
+    def redeye_auto_result(
+        self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
+    ) -> tuple[int, tuple[tuple[float, float, float], ...] | None]:
+        """Az Auto gomb találatszáma és normalizált YuNet-szemkörei (#4261).
 
-        Az `ops` a jelenlegi lánc a `redeye` réteg NÉLKÜL — így a számolás
-        azon a képen fut, amit a felhasználó a javítás előtt lát (a vágás,
-        forgatás és a színműveletek már rajta vannak), nem a nyers forráson.
-        Csak a „Picasa has found and corrected red eye(s)" visszajelzéshez
-        kell; a javítást változatlanul a render-lánc végzi.
+        Az `ops` a láncban a `redeye` beszúrási pontjáig tart (új rétegnél
+        a teljes lánc) — így a körök ugyanabban a képméretben értendők,
+        amelyen a renderben alkalmazódnak.
+        A detektálás itt, az app-oldalon történik; a visszaadott körök az
+        `eye64` FilterOp-paraméterbe kerülnek, így a render sávnak nem kell
+        modellt vagy `faces` csomagot ismernie. Modell nélkül `None` a
+        körlista, ilyenkor a `redeye` teljes képes útja marad a tartalék.
 
         A GUI-szálról hívandó (a `_sources`/prefix gyorsítótárat használja,
         ld. `_resolve_source` #546-os megjegyzését). Ha a forrás nem
-        dekódolható, 0-t ad.
+        dekódolható, `(0, ())`-t ad.
         """
         key = str(photo_id)
         path = Path(path)
@@ -515,11 +520,36 @@ class EditPreviewProvider(QQuickImageProvider):
             mtime = None
         source_array = self._resolve_source(key, path, mtime, shared_cache=True)
         if source_array is None:
-            return 0
+            return 0, ()
         rendered = self._render_cached(key, source_array, tuple(ops))
         if rendered is None:
-            return 0
-        return count_redeye_spots(rendered)
+            return 0, ()
+        detected = detect_eye_circles(rendered)
+        pixel_circles = (
+            None
+            if detected is None
+            else tuple(
+                (circle.x, circle.y, circle.radius)
+                for circle in detected
+            )
+        )
+        count = count_redeye_spots(rendered, eye_circles=pixel_circles)
+        if detected is None:
+            return count, None
+        height, width = rendered.shape[:2]
+        scale = float(min(width, height))
+        normalized = tuple(
+            (circle.x / width, circle.y / height, circle.radius / scale)
+            for circle in detected
+            if circle.radius > 0
+        )
+        return count, normalized
+
+    def redeye_spot_count(
+        self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
+    ) -> int:
+        """Kompatibilitási burkoló a találatszámot kérő hívóknak."""
+        return self.redeye_auto_result(photo_id, path, ops)[0]
 
     def histogram_for(self, photo_id: str) -> dict:
         """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres

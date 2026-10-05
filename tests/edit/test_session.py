@@ -2,6 +2,7 @@
 
 import pytest
 from picasapy.edit import EditSession
+from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import Rect64, decode_rect64
 from picasapy.ini.retouch import RetouchPatch
 
@@ -1003,6 +1004,20 @@ class TestRedeyeRegions:
         assert len(parts) == 2
         assert parts[0].startswith("redeye=1,")
         assert parts[1] == "autolight=1"
+
+    def test_detection_uses_the_chain_prefix_where_redeye_is_replaced(self):
+        session = EditSession.from_value(
+            "sepia=1;redeye=1;crop64=1,33333333cccccccc;autolight=1;"
+        )
+
+        assert session.redeye_detection_ops() == (
+            FilterOp("sepia", ("1",)),
+        )
+
+    def test_detection_uses_the_whole_chain_when_redeye_is_new(self):
+        session = EditSession.from_value("sepia=1;autolight=1;")
+
+        assert session.redeye_detection_ops() == session.ops
 
     def test_plain_entry_reads_back_as_no_regions(self):
         """A valódi Picasa `redeye=1;` bejegyzése kézi régió NÉLKÜLI."""

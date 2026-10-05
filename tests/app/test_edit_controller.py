@@ -2029,13 +2029,19 @@ class TestRedeyeTool:
         assert controller.hasSavedRedeye is True  # #2393: átnevezve
         assert controller.redeyeRegionCount == 0
 
-    def test_apply_without_regions_writes_plain_picasa_entry(self, controller, photo):
-        """Kézi régió nélkül a bejegyzés bájtra a valódi Picasa alakja."""
+    def test_apply_without_manual_regions_persists_auto_eye_circles(
+        self, controller, photo, monkeypatch
+    ):
         controller.beginEdit("1", str(photo))
+        monkeypatch.setattr(
+            controller._provider,
+            "redeye_auto_result",
+            lambda *_args: (1, ((0.5, 0.5, 0.1),)),
+        )
         controller.enterRedeyeTool()
         controller.applyRedeye()
         text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
-        assert "filters=redeye=1;" in text
+        assert "filters=redeye=1,eye64(80008000199a);" in text
 
     def test_reenter_loads_saved_regions(self, controller, photo):
         controller.beginEdit("1", str(photo))

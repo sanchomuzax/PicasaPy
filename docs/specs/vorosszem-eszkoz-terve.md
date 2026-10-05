@@ -1,6 +1,6 @@
 # A vörösszem-eszköz terve (#720)
 
-**Státusz:** irodalmi feltárás kész, döntés megvan, megvalósítás nincs.
+**Státusz:** irodalmi feltárás és a megvalósítás (#4261) kész.
 A funkció **P3** — a Picasa-kompatibilitáshoz nem kell (ld. lent), csak akkor,
 ha a PicasaPy **saját** vörösszem-eszközt kap.
 
@@ -121,9 +121,27 @@ sehol nem tárol (#371, megerősített). Ezért:
 A saját eszköz kimenetét tehát **külön kell jelölni** az ini-ben (a mi
 kiterjesztésünkkel), nem a csupasz `redeye=1;` alakkal.
 
-## Következő lépés
+### PicasaPy automatikus szemkörei (#4261)
 
-Prototípus a YCbCr-úton, és **mérés a saját anyagunkon**. A próbakészlet
+A YuNet által az app-oldalon megtalált szemkörök `eye64(XXXXXXXXXXXX)`
+paraméterként tárolódnak: a 12 hex jegy három egymás utáni 16 bites értéke az
+`x/képszélesség`, `y/képmagasság` és `sugár/min(képszélesség,képmagasság)`
+arányt kódolja. A kézi `rect64` régiókkal együtt is állhat. A valódi Picasa
+`redeye=1;` továbbra is azonosság; modell hiányakor az app a saját
+`autofull64()` paraméterével jelöli a teljes képes tartalékot.
+
+A YuNet-keresés az Auto műveletkor, az app `faces` függőségében történik.
+A renderelő csak a FilterOp-ban kapott szemköröket olvassa, modellt nem tölt.
+Az alkalmazott pixelek a mért `R / max(G, B)` feltételt és a kemény
+`min(G, B)` csatornacserét követik. Az általános tervben javasolt 3×3
+Gauss-elmosást és alfa-keverést a „Mért Picasa-viselkedés" összevetés nem
+támasztja alá, ezért ez a megvalósítás nem végzi el.
+
+## Következő mérés
+
+Az Auto mód képpontos kimeneti tesztje a szemeken csökkenti a vöröset, és a
+szintetikus vörös ruharészt változatlanul hagyja. A teljes referenciakészlet
+képpontos összevetése továbbra is külön mérés. A próbakészlet
 összetétele a #720 mérése után pontosan ismert:
 
 | | darab | mire jó |
@@ -140,4 +158,6 @@ megváltozott képpontok maszkja (≥ 40 szintű eltérés) megadja, hol vannak 
 szemek. A mérőszkriptek a privát agent-repóban:
 `referencia/eszkozok/720-vorosszem/`.
 
-A megvalósítás `picasapy-dev` feladat; ez a lap a **terv**, nem a kód.
+A képkimeneti mérést a fejlesztői tesztek a saját szintetikus szem- és
+ruhamintán őrzik; a referencia-készlet teljes képpontos összevetése külön
+mérés marad.
