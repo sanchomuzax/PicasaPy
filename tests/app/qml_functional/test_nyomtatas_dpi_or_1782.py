@@ -152,7 +152,10 @@ class TestMinosegiSavok:
         assert varj_feltetelre(qt_app, lambda: len(sav_feliratok()) == 3, 3), (
             "a teljes képlista nem épült fel a három minőségi felirattal"
         )
-        feliratok = [elem.property("text") for elem in sav_feliratok()]
+        feliratok = [
+            elem.findChild(QObject, "printReviewListRowText").property("text")
+            for elem in sav_feliratok()
+        ]
         assert [
             next(nev for nev in ("bad.jpg", "good.jpg", "best.jpg") if nev in szoveg)
             for szoveg in feliratok

@@ -632,6 +632,31 @@ class AppController(
         szint = self._provider.level_for(cella_px)
         model.set_thumb_level(None if szint >= self._provider.top_level else szint)
 
+    @Slot(int, int, bool, result=int)
+    def prefetchThumbnails(  # noqa: N802 — QML-stílus
+        self, start_row: int, count: int, reverse: bool = False
+    ) -> int:
+        """A rács görgetési irányában következő bélyegképek előtöltése (#4289).
+
+        A modell URL-jeit használjuk, hogy a bélyegképszintet, a vágást és
+        a többi URL-címkét ugyanaz a meglévő render-út kapja, mint a látható
+        celláknál. A provider a munkákat alacsony prioritással sorolja be.
+        """
+        photos = self._photos.photos
+        if start_row < 0 or count <= 0 or start_row >= len(photos):
+            return 0
+        stop = min(len(photos), start_row + count)
+        rows = range(stop - 1, start_row - 1, -1) if reverse else range(
+            start_row, stop
+        )
+        prefix = "image://thumbs/"
+        photo_ids = []
+        for row in rows:
+            url = self._photos.thumbUrlAt(row)
+            if url.startswith(prefix):
+                photo_ids.append(url[len(prefix):])
+        return self._provider.prefetch_images(photo_ids)
+
     @Slot(result=bool)
     def backgroundWorkRunning(self) -> bool:  # noqa: N802 — QML-stílus
         """Fut-e BÁRMELYIK vezérlő háttérmunkája (#671).
