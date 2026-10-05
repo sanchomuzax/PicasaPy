@@ -353,6 +353,10 @@ Részletes vtable- és rekordbizonyíték: a
 Az angol feliratok mégsem azonosak: a Review lista `Low Quality` szöveget,
 a `CPrintDlg` olvasója `Bad quality` szöveget választ a `0` kódhoz.
 
+| Eredeti | Nálunk (#4280 előtt) | Teendő a fejlesztéshez |
+|---|---|---|
+| A két állítható küszöb igazságértékeinek összege (`0`/`1`/`2`) kerül a sor kódjába, és minden nyomtatandó kép Best/Good/Bad minősítést kap. | A #4275-ös ellenőrzőlista csak a Best-határ alatti képeket és a DPI-jüket mutatta; a Good/Bad határ nem volt bekötve. | Olvassuk a `DPIWarning` és `DPISevere` beállítást, őrizzük meg a régi kis-kép figyelmeztetést, és a teljes listán jelenítsük meg a minőségi kódot a hivatalos felirattal. |
+
 **Bizonyítottsági fok: megerősített.** Az utasításszintű út: a két küszöböt
 olvasó függvény összehasonlítása, a hívó összegzése, a rekordmásolás, majd a bájt
 olvasója egymásra zár. B adatút: az index string-xrefjei a beállításkulcsokat

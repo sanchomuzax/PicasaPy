@@ -166,8 +166,8 @@ Window {
         "CONTACT": qsTr("Contact Sheet")
     })
     property var printSizeIds: []
-    //: #1953: az „Ellenőrzés" gomb eredménye — a küszöb alatti képek
-    //: {name, dpi} tételei, a legrosszabbal elöl.
+    //: #4280: az „Ellenőrzés" gomb eredménye — minden kép {name, dpi,
+    //: qualityCode} adata, a legrosszabbal elöl.
     property var reviewList: []
     property bool reviewOpen: false
     //: A választó modellje: a vezérlőtől kapott azonosítók feliratai.
@@ -177,7 +177,8 @@ Window {
         function (azonosito) {
             return printWindow.printSizeLabelById[azonosito] || azonosito
         })
-    //: {smallest, small, total, ready, threshold} — a vezérlőtől
+    //: {smallest, small, total, ready, threshold, bestThreshold,
+    //: goodThreshold} — a vezérlőtől
     property var quality: ({})
 
     function frissitsdAMinoseget() {
@@ -186,7 +187,7 @@ Window {
             printWindow.rows, printWindow.printSize)
         printWindow.frissitsdAzElonezetet()
         if (printWindow.reviewOpen) {
-            printWindow.reviewList = printWindow.printCtl.smallPictures(
+            printWindow.reviewList = printWindow.printCtl.reviewPictures(
                 printWindow.rows, printWindow.printSize)
             printReviewList.currentIndex = printWindow.reviewList.length > 0 ? 0 : -1
         }
@@ -221,6 +222,7 @@ Window {
         var rekordAzonositok = []
         for (var i = 0; i < printWindow.reviewList.length; ++i) {
             var kep = printWindow.reviewList[i]
+            if (Number(kep.qualityCode) !== 0) continue
             var sor = Number(kep.row)
             if (sor >= 0) sorok.push(sor)
             else rekordAzonositok.push(Number(kep.recordId))
@@ -763,7 +765,7 @@ Window {
                     visible: printWindow.quality.small > 0
                     onClicked: {
                         if (!printWindow.printCtl) return
-                        printWindow.reviewList = printWindow.printCtl.smallPictures(
+                        printWindow.reviewList = printWindow.printCtl.reviewPictures(
                             printWindow.rows, printWindow.printSize)
                         printWindow.reviewOpen = true
                         printReviewList.currentIndex =
@@ -989,9 +991,8 @@ Window {
         onCloseRequested: printOptionsPanel.visible = false
     }
 
-    // #1953: az „Ellenőrzés" eredménye — MELYIK képek esnek a küszöb alá.
-    // A lista a legrosszabbal kezdődik (a vezérlő rendezi), és a
-    // DPI-t is kiírja, hogy a felhasználó lássa, mennyivel kevés.
+    // #4280: az „Ellenőrzés" listája képenként mutatja a DPI-sávot és az
+    // effektív felbontást; a legrosszabb kerül előre.
     Rectangle {
         objectName: "printReviewPanel"
         anchors.fill: parent
@@ -1047,10 +1048,17 @@ Window {
                         elide: Text.ElideMiddle
                         font.pixelSize: Theme.fontSize
                         color: Theme.ink
-                        //: `ThumbUIPrint::ReviewLow` plus a képenkénti DPI.
-                        text: qsTr("Low Quality: %1").arg(modelData.name)
-                              + "   —   "
-                              + qsTr("%1 pixels/inch").arg(modelData.dpi)
+                        //: A `CPrintDlg::bestqual` / `goodqual` / `badqual`
+                        //: hivatalos angol feliratai a fordításból jönnek.
+                        text: {
+                            var label = modelData.qualityCode === 2
+                                ? qsTr("Best quality (%1 pixels/inch)")
+                                : modelData.qualityCode === 1
+                                    ? qsTr("Good quality (%1 pixels/inch)")
+                                    : qsTr("Bad quality (%1 pixels/inch)")
+                            return modelData.name + "   —   "
+                                   + label.arg(modelData.dpi)
+                        }
                     }
                     MouseArea {
                         anchors.fill: parent
