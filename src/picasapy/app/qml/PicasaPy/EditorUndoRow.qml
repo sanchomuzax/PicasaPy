@@ -67,8 +67,9 @@ RowLayout {
     }
     spacing: 5
     // #4062: Kiegyenesítésnél a sor nem rajzolódik ki. #4068: a
-    // felfüggesztett effektpanel állapotában látható, de szürke és tiltott.
+    // felfüggesztett effektpanel állapotában elmosva látható és letiltott.
     opacity: panel.tiltActive ? 0
+             : panel.paramPanelContentBlurred ? 1
              : panel.paramPanelSuspended ? 0.45
              : (panel.enabled ? 1 : 0.45)
     enabled: !panel.tiltActive && !panel.paramPanelSuspended

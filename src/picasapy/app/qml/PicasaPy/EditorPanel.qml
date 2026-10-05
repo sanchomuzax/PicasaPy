@@ -328,6 +328,11 @@ Rectangle {
     // az első fül letiltott tartalmával helyettesíti, miközben az eszköz
     // füle marad kijelölve. Az állapot az Escape/Mégse ágig él.
     property bool paramPanelSuspended: false
+    // #4068: a nyitott effektpanel mellett a fülek letiltott tartalma
+    // eredetileg elmosott, de teljes színű. Ez külön állapot a #4062
+    // Kiegyenesítésétől, amelynek megjelenését változatlanul hagyjuk.
+    readonly property bool paramPanelContentBlurred:
+        paramPanelSuspended && !tiltActive
     property string paramEffectName: ""
     property var paramEffectParams: []   // editController.effectParams(name)
     property var paramEffectValues: []   // a csúszkák pillanatnyi értékei
@@ -787,5 +792,45 @@ Rectangle {
         // #741: a MÉRT geometria — a két gomb x 7..139 és x 144..276
         anchors.leftMargin: 7
         anchors.rightMargin: 4
+    }
+
+    // #4068: a Picasa a nyitott Alkalmaz/Mégse effektpanel alatt nem
+    // áttetszővé halványítja a bal panel tartalmát, hanem elmosva hagyja
+    // látszani. A ShaderEffectSource a teljes színes képet negyed
+    // felbontásban veszi fel, majd simítva nagyítja vissza. Ez a QtQuick
+    // alapmoduljának eleme; nem függ a nem minden célgépen elérhető
+    // QtQuick.Effects modultól.
+    ShaderEffectSource {
+        id: paramTabBlur
+        objectName: "paramPanelTabBlur"
+        anchors.fill: tabArea
+        sourceItem: tabArea
+        sourceRect: Qt.rect(0, 0, tabArea.width, tabArea.height)
+        textureSize: Qt.size(
+            Math.max(1, Math.round(tabArea.width / 4)),
+            Math.max(1, Math.round(tabArea.height / 4)))
+        live: panel.paramPanelContentBlurred
+        smooth: true
+        hideSource: panel.paramPanelContentBlurred
+        visible: panel.paramPanelContentBlurred
+        enabled: false
+        z: 1
+    }
+
+    ShaderEffectSource {
+        id: paramUndoBlur
+        objectName: "paramPanelUndoBlur"
+        anchors.fill: globalUndoRow
+        sourceItem: globalUndoRow
+        sourceRect: Qt.rect(0, 0, globalUndoRow.width, globalUndoRow.height)
+        textureSize: Qt.size(
+            Math.max(1, Math.round(globalUndoRow.width / 4)),
+            Math.max(1, Math.round(globalUndoRow.height / 4)))
+        live: panel.paramPanelContentBlurred
+        smooth: true
+        hideSource: panel.paramPanelContentBlurred
+        visible: panel.paramPanelContentBlurred
+        enabled: false
+        z: 1
     }
 }

@@ -32,8 +32,12 @@ import PicasaPy
 // garanciát a panel `implicitHeight`-je adja (ld. lent): az a
 // LEGMAGASABB fület is elbírja, a gombsor pedig a tartalmat követi,
 // nem fix magasságon ül.
-Item {
+Rectangle {
     id: tabHost
+    // #4068: az elmosott ShaderEffectSource önálló textúrába veszi fel a
+    // fül tartalmát. Az opak, a gazda-panellel egyező háttér megőrzi a
+    // bal panel felületszínét ott is, ahol a fülnek nincs saját eleme.
+    color: Theme.chromeBg
     //: a gazda adja be (#3220) — a terület a panel állapotából számol
     property Item panel
     //: A gazda LOGIKÁJA (`editorpanel_logika.js`) két fülre hivatkozik

@@ -638,18 +638,22 @@ alpanelre is.
 ### 4.0 Nyitott csúszkás effektpanel: a bal panel állapota (#4068)
 
 *Forrás: `picasa-colab-jobs` #81–#86, eszközönként tiszta indulásból készült
-felvételek.*
+felvételek; a #81 `kepernyo__09.png` képe.*
 
 A nyitott effektpanel először a csúszkákat és az Alkalmaz/Mégse gombokat
 mutatja. A fülsáv egyik fülére kattintva az első fül tartalma jelenik meg,
-teljesen letiltva; a fülsáv kiemelése az effekt eredeti fülén marad. További
-fülkattintás nem vált tartalmat. A szürke tartalom Crop csempéjére kattintva
+letiltva és elmosva, de teljes színnel és kontraszttal; a fülsáv kiemelése az
+effekt eredeti fülén marad. A #81 `kepernyo__09.png` felvételén a szöveg és
+az ikonok homályosak, de nem áttetszőn halványak. További fülkattintás nem
+vált tartalmat. Az elmosott tartalom Crop csempéjére kattintva
 semmi nem történik, és az effektpanel nem zárul be. Az effekt fülére vissza-
 kattintás sem hozza vissza a csúszkákat. Az Escape Mégse-ként zárja a
 piszkozatot, visszaállítja az aktív bal panelt az első fülre; a Visszavonás/
-Újra sor a szürke állapotban letiltott.
+Újra sor szintén elmosva látszik és letiltott. Ez eltér a #4062
+Kiegyenesítés nyitott állapotától: a job-70 4. képe ott szürke/halvány,
+nem elmosott; annak megjelenése változatlan marad.
 
-| Felületi név | Effekt-kulcs | Fül | Szürke/letiltott bal panel | A Crop csempe bezárja az eszközt? |
+| Felületi név | Effekt-kulcs | Fül | A bal panel letiltott/elmosott | A Crop csempe bezárja az eszközt? |
 |---|---|---:|---|---|
 | Soft Focus | `radblur` | 3. | igen | nem |
 | Focal B&W | `radsat` | 3. | igen | nem |

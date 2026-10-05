@@ -3,8 +3,10 @@
 from pathlib import Path
 from time import monotonic
 
+import numpy as np
 import pytest
-from PySide6.QtCore import QObject, QPointF, Qt
+from PySide6.QtCore import QObject, QPointF, QRect, Qt
+from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
 
 
@@ -48,6 +50,56 @@ def _click(window, item, qt_app):
     qt_app.processEvents()
 
 
+def _capture_item(window, item) -> QImage:
+    """Az elem tényleges, kirajzolt területét vágja ki az ablak képéből."""
+    screenshot = window.grabWindow()
+    assert not screenshot.isNull(), "üres szerkesztő-képernyőkép"
+    dpr = screenshot.devicePixelRatio()
+    origin = item.mapToScene(QPointF(0, 0))
+    rect = QRect(
+        round(origin.x() * dpr),
+        round(origin.y() * dpr),
+        round(float(item.property("width")) * dpr),
+        round(float(item.property("height")) * dpr),
+    )
+    return screenshot.copy(rect).convertToFormat(QImage.Format.Format_RGB32)
+
+
+def _pixels(image: QImage) -> np.ndarray:
+    return np.array(
+        [
+            [
+                (color.red(), color.green(), color.blue())
+                for color in (image.pixelColor(x, y) for x in range(image.width()))
+            ]
+            for y in range(image.height())
+        ],
+        dtype=np.float64,
+    )
+
+
+def _normalized_laplacian_variance(image: QImage) -> float:
+    """Kontraszttól független élélesség: halványítás önmagában nem elég."""
+    pixels = _pixels(image)
+    gray = pixels @ np.array((0.299, 0.587, 0.114))
+    contrast = float(gray.std())
+    assert contrast > 1.0, "a mérőterület nem tartalmaz képi részletet"
+    gray = (gray - gray.mean()) / contrast
+    laplace = (
+        gray[:-2, 1:-1]
+        + gray[2:, 1:-1]
+        + gray[1:-1, :-2]
+        + gray[1:-1, 2:]
+        - 4.0 * gray[1:-1, 1:-1]
+    )
+    return float(laplace.var())
+
+
+def _mean_saturation(image: QImage) -> float:
+    pixels = _pixels(image)
+    return float((pixels.max(axis=2) - pixels.min(axis=2)).mean())
+
+
 def _open_viewer(qml_app_negyzet_kepek, qt_app, height: int):
     window, _controller, _engine = qml_app_negyzet_kepek
     window.setProperty("width", 1280)
@@ -61,6 +113,51 @@ def _open_viewer(qml_app_negyzet_kepek, qt_app, height: int):
         "a valódi szerkesztőpanel nem nyílt meg",
     )
     return window, viewer, _item(window, "viewerEditorPanel")
+
+
+@pytest.mark.parametrize("height", (1000, 1005, 1010), ids=("minus-5", "base", "plus-5"))
+def test_felfuggesztett_ful_renderelve_elmosott_es_szines_marad(
+    qml_app_negyzet_kepek, qt_app, height
+):
+    """A tiltott fül képe ténylegesen elmosódik, nem pusztán halványabb lesz."""
+    window, _viewer, panel = _open_viewer(qml_app_negyzet_kepek, qt_app, height)
+    icon = _item(window, "fixesFillLightIcon")
+    active = _capture_item(window, icon)
+    active_sharpness = _normalized_laplacian_variance(active)
+    active_saturation = _mean_saturation(active)
+
+    _click(window, _item(window, "editTabEffects"), qt_app)
+    _click(window, _item(window, "effectRadblur"), qt_app)
+    _wait_until(
+        qt_app,
+        lambda: panel.property("paramPanelActive") is True,
+        "a Soft Focus paraméterpanel nem nyílt meg",
+    )
+    _click(window, _item(window, "editTabFixes"), qt_app)
+    _wait_until(
+        qt_app,
+        lambda: _item(window, "editorTabArea").property("enabled") is False,
+        "a Gyakori javítások fül nem került letiltott állapotba",
+    )
+
+    disabled = _capture_item(window, icon)
+    disabled_sharpness = _normalized_laplacian_variance(disabled)
+    disabled_saturation = _mean_saturation(disabled)
+    assert disabled_sharpness < active_sharpness * 0.7, (
+        "a fül renderelt képe nem mosódott el eléggé: "
+        f"aktív={active_sharpness:.3f}, nyitott effekt alatt={disabled_sharpness:.3f}"
+    )
+    assert disabled_saturation > active_saturation * 0.7, (
+        "a csempe renderelt színtelítettsége halványítást jelez: "
+        f"aktív={active_saturation:.2f}, nyitott effekt alatt={disabled_saturation:.2f}"
+    )
+    if height == 1005:
+        output_dir = Path.cwd() / ".bt" / "4068"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        screenshot = window.grabWindow()
+        assert screenshot.save(str(output_dir / "soft-focus-after.png")), (
+            "a javított állapot képernyőképe nem menthető"
+        )
 
 
 @pytest.mark.parametrize("height", (1000, 1005, 1010), ids=("minus-5", "base", "plus-5"))
@@ -114,11 +211,11 @@ def test_a_hat_effektpanel_fulkattintasra_letilt_es_escape_megse(
             )
 
         assert tab_area.property("enabled") is False, (
-            f"{label}: az első fül tartalma nincs kiszürkítve"
+            f"{label}: az első fül tartalma nincs letiltva"
         )
         fill_light_row = _item(window, "fixesFillLightIcon").property("parent")
-        assert float(fill_light_row.property("opacity")) == pytest.approx(0.45), (
-            f"{label}: a Derítőfény sora nem halványul el a letiltott fülön"
+        assert float(fill_light_row.property("opacity")) == pytest.approx(1.0), (
+            f"{label}: a Derítőfény sora áttetszőn halványul az elmosás helyett"
         )
         assert panel.property("activeTab") == tab, (
             f"{label}: a fülsáv kiemelése elmozdult az eszköz füléről"

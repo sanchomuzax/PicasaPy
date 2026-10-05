@@ -7,7 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-- A csúszkás effektpanelek megnyitásakor a bal panel a mért Picasa-viselkedés szerint letiltva marad (#4068).
+- A csúszkás effektpanelek alatt a letiltott bal panel elmosva és teljes színnel marad (#4068).
 
 ## [0.8.689] – 2026-10-05
 
