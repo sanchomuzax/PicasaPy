@@ -1,9 +1,10 @@
 """A nyomatméret-vezérlő a felület NYELVÉHEZ igazodik (#1961).
 
-Magyar felületen a metrikus hatost kell felkínálnia (5×8 … 20×25 cm +
-Teljes oldal), angolon a hüvelykes hatost (Tárca · 3,5×5 · 4×6 · 5×7 ·
-8×10 · Full Page — #3712-review: korábban tévesen ötös volt, Full Page
-nélkül, a Tárca a lista végén). A készlet-definíció és a „miért a nyelv
+Magyar felületen a metrikus listát kell felkínálnia (5×8 … 20×25 cm +
+Teljes oldal), angolon a hüvelykes listát (Tárca · 3×4 · 3,5×5 · 4×5 ·
+4×6 · 5×7 · 8×10 · Full Page). A régi hat tétel sorrendjét a #3712 mérése
+adja, a #4257 a hiányzó méreteket az eredeti helyükön egészíti ki. A
+készlet-definíció és a „miért a nyelv
 dönt" a `picasapy.printing.dpi`-ben áll.
 
 A tárolt méret (`print/lastSize`, az eredeti `PrintLastSize`-ja) átélheti
@@ -36,7 +37,7 @@ class TestAFelkinaltKeszlet:
         ctl = _vezerlo(tmp_path, "hu")
         assert ctl.printSizes() == [m.name for m in METRIKUS_KESZLET]
 
-    def test_angolul_a_huvelykes_otos(self, tmp_path):
+    def test_angolul_a_huvelykes_meretek(self, tmp_path):
         ctl = _vezerlo(tmp_path, "en")
         assert ctl.printSizes() == [m.name for m in HUVELYK_KESZLET]
 
@@ -124,7 +125,9 @@ class TestAFeliratokAQMLben:
         A `FullPage` szándékosan fordítatlan: az `eFullPage` sor magyarul
         is ezt adja."""
         vart = {
+            "M3X4": "3 x 4",
             "M3_5X5": "3.5 x 5",
+            "M4X5": "4 x 5",
             "M4X6": "4 x 6",
             "M5X7": "5 x 7",
             "M8X10": "8 x 10",
@@ -133,6 +136,7 @@ class TestAFeliratokAQMLben:
             "M9X13CM": "9 x 13 cm",
             "M10X15CM": "10 x 15 cm",
             "M13X18CM": "13 x 18 cm",
+            "M15X20CM": "15 x 20 cm",
             "M20X25CM": "20 x 25 cm",
             "TELJES_OLDAL": "FullPage",
             # `ytPrintSizes::ePassport` — csak az Útlevélkép állítja be (#1401)
@@ -145,3 +149,27 @@ class TestAFeliratokAQMLben:
             "CONTACT": "Contact Sheet",
         }
         assert self._felirat_terkep() == vart
+
+    def test_az_uj_meretek_magyar_forditasa_a_ts_fajlban_megvan(self):
+        import xml.etree.ElementTree as ET
+        from pathlib import Path
+
+        import picasapy.app
+
+        ts_ut = Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
+        kontextus = next(
+            elem
+            for elem in ET.parse(ts_ut).getroot().findall("context")
+            if elem.findtext("name") == "PrintDialog"
+        )
+        forditasok = {
+            uzenet.findtext("source"): uzenet.findtext("translation")
+            for uzenet in kontextus.findall("message")
+        }
+        assert {
+            "3 x 4": "3x4",
+            "4 x 5": "4x5",
+            "15 x 20 cm": "15x20 cm",
+        } == {szoveg: forditasok[szoveg] for szoveg in (
+            "3 x 4", "4 x 5", "15 x 20 cm"
+        )}

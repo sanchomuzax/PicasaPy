@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import time
 
+import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
@@ -138,6 +139,25 @@ class TestAKulonElrendezesValasztoEltunt:
 
 
 class TestAMeretlistaResze:
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+    def test_a_hianyzo_meretek_az_eredeti_sorrendben_latszanak(
+        self, qml_app, qt_app, magassag_elteres
+    ):
+        window, _controller, _engine = qml_app
+        dialog = _nyit_sima(window, qt_app, [0, 1])
+        dialog.setProperty("height", dialog.property("height") + magassag_elteres)
+        qt_app.processEvents()
+        azonositok = _lista(dialog.property("printSizeIds"))
+        feliratok = _lista(dialog.property("printSizeLabels"))
+
+        assert azonositok == [
+            "TARCA", "M3X4", "M3_5X5", "M4X5", "M4X6", "M5X7",
+            "M8X10", "TELJES_OLDAL", "CONTACT",
+        ]
+        assert [feliratok[azonositok.index(nev)] for nev in (
+            "M3X4", "M3_5X5", "M4X5", "M4X6"
+        )] == ["3 x 4", "3.5 x 5", "4 x 5", "4 x 6"]
+
     def test_az_indexkep_a_meretlistaban_van(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         dialog = _nyit_sima(window, qt_app, [0, 1])
@@ -161,17 +181,20 @@ class TestAMeretlistaResze:
 
         assert dialog.property("contactSheet") is True
 
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
     def test_a_meret_visszavaltasa_kikapcsolja_az_indexkepet(
-        self, qml_app, qt_app
+        self, qml_app, qt_app, magassag_elteres
     ):
         window, _controller, _engine = qml_app
         dialog = _nyit_indexkeppel(window, qt_app, [0, 1])
+        dialog.setProperty("height", dialog.property("height") + magassag_elteres)
+        qt_app.processEvents()
         assert dialog.property("contactSheet") is True
 
-        _valassz_a_legorduloben(dialog, qt_app, "M4X6")
+        _valassz_a_legorduloben(dialog, qt_app, "M4X5")
 
         assert dialog.property("contactSheet") is False
-        assert dialog.property("printSize") == "M4X6"
+        assert dialog.property("printSize") == "M4X5"
 
 
 class TestAMenuAKombinaltValasztoval:
