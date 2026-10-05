@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.1] – 2026-10-05
+
+- A 3×4 hüvelykes, a 4×5 hüvelykes és a 15×20 cm-es nyomatméret is bekerült a választóba (#4257).
+
 ## [0.9.0] – 2026-10-05
 
 - A csúszkás effektpanelek alatt a letiltott bal panel elmosva és teljes színnel marad (#4068).
