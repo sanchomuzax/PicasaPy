@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPointF, Qt, QTranslator, QUrl
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
+from support.qt_wait import varj_feltetelre
 
 
 @pytest.fixture
@@ -38,21 +38,16 @@ def _lista(ertek):
     return ertek.toVariant() if hasattr(ertek, "toVariant") else ertek
 
 
-def _varakozzon(qt_app, feltetel, masodperc=3.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(feltetel())
-
-
 def _kattints(item, qt_app):
-    pont = item.mapToScene(QPointF(item.width() / 2, item.height() / 2)).toPoint()
+    qt_app.processEvents()
+    os_ = item
+    while os_ is not None:
+        os_.ensurePolished()
+        os_ = os_.parentItem()
+    ablak = item.window()
+    pont = item.mapToItem(ablak.contentItem(), item.boundingRect().center()).toPoint()
     QTest.mouseClick(
-        item.window(),
+        ablak,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         pont,
@@ -70,7 +65,9 @@ def _listaelem(qt_app, lista, index):
         return ertek is not None
 
     _elkeszult.ertek = None
-    assert _varakozzon(qt_app, _elkeszult), f"a lista {index}. sora nem épült fel"
+    assert varj_feltetelre(qt_app, _elkeszult, masodperc=3), (
+        f"a lista {index}. sora nem épült fel"
+    )
     ertek = _elkeszult.ertek
     return ertek.toQObject() if hasattr(ertek, "toQObject") else ertek
 
@@ -104,7 +101,9 @@ def _nyisd_meg_az_atnezest(dialog, qt_app):
     qt_app.processEvents()
     _kattints(_elem(dialog, "printReviewButton"), qt_app)
     panel = _elem(dialog, "printReviewPanel")
-    assert _varakozzon(qt_app, lambda: panel.property("visible") is True), (
+    assert varj_feltetelre(
+        qt_app, lambda: panel.property("visible") is True, masodperc=3
+    ), (
         "az Ellenőrzés kattintása nem nyitotta meg a felülvizsgálatot"
     )
     return panel
@@ -143,9 +142,10 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         assert remove_selected.property("enabled") is True
         _kattints(sor, qt_app)
         _kattints(remove_selected, qt_app)
-        sikerult_eltavolitani = _varakozzon(
+        sikerult_eltavolitani = varj_feltetelre(
             qt_app,
             lambda: _lista(dialog.property("quality"))["total"] == 1,
+            masodperc=3,
         )
         assert sikerult_eltavolitani, (
             f"az eltávolító kattintás nem változtatott: rows="
@@ -167,9 +167,10 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         # 2. kimenet: minden gyenge minőségű kép eltávolítása.
         panel = _nyisd_meg_az_atnezest(dialog, qt_app)
         _kattints(_elem(dialog, "printReviewRemoveLowButton"), qt_app)
-        assert _varakozzon(
+        assert varj_feltetelre(
             qt_app,
             lambda: _lista(dialog.property("quality"))["total"] == 0,
+            masodperc=3,
         )
         assert _elem(dialog, "printReviewEmptyText").property("text") == (
             "Nincs több nyomtatni való kép."
@@ -179,7 +180,11 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         # 3. kimenet: Mégse visszatér a méretválasztóhoz, a képek megmaradnak.
         panel = _nyisd_meg_az_atnezest(dialog, qt_app)
         _kattints(_elem(dialog, "printReviewCancelButton"), qt_app)
-        assert panel.property("visible") is False
+        assert varj_feltetelre(
+            qt_app,
+            lambda panel=panel: panel.property("visible") is False,
+            masodperc=3,
+        )
         assert _lista(dialog.property("rows")) == [0, 1]
         assert _lista(dialog.property("quality"))["total"] == 2
         assert _elem(dialog, "printSizeBox").property("enabled") is True
@@ -190,6 +195,12 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
         dialog.setProperty("pdfTarget", QUrl.fromLocalFile(str(cel)).toString())
         qt_app.processEvents()
         _kattints(_elem(dialog, "printReviewAcceptButton"), qt_app)
-        assert _varakozzon(qt_app, cel.exists), "az OK gomb nem készített PDF-et"
+        assert varj_feltetelre(
+            qt_app,
+            lambda cel=cel, panel=panel: (
+                cel.exists() and panel.property("visible") is False
+            ),
+            masodperc=3,
+        ), "az OK gomb nem indította el a nyomtatást"
         assert cel.read_bytes().startswith(b"%PDF")
         assert panel.property("visible") is False
