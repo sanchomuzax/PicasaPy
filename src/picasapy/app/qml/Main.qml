@@ -2018,10 +2018,16 @@ ApplicationWindow {
             FaceScanDialog { faceScan: window._faceScanController }
         }
     }
-    ScreensaverDialog {
+    DeferredDialog {
         id: screensaverDialog
-        saverController: controller
-        onPreviewRequested: window.startScreensaverPreview()
+        objectName: "screensaverDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ScreensaverDialog {
+                saverController: controller
+                onPreviewRequested: window.startScreensaverPreview()
+            }
+        }
     }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
     // gombjából (discoveryController.dialogRequested) vagy induláskori
