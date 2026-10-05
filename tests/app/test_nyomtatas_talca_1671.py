@@ -28,6 +28,7 @@ class Rekord:
 
     folder_path: str
     name: str
+    id: int = 1
 
 
 #: a RÁCS (a látott mappa) képei
@@ -39,6 +40,23 @@ TALCA = (Rekord("/kepek/regi", "tartott.jpg"),)
 @pytest.fixture(params=[PrintController, EmailController], ids=["print", "email"])
 def vezerlo_osztaly(request):
     return request.param
+
+
+def test_atnezesbol_a_talcas_kep_kiveheto_a_nyomtatasbol(qt_app):
+    """A tálcás képnek nincs rácssora, mégis kizárható a nyomtatásból."""
+    vezerlo = PrintController(
+        photo_source=lambda: RACS,
+        tray_source=lambda: TALCA,
+    )
+    kep = vezerlo._resolve_records([0])[0]
+    assert kep.name == "tartott.jpg"
+
+    vezerlo.excludeReviewPictures([kep.id])
+    assert vezerlo._resolve_records([0]) == []
+    assert vezerlo.printQuality([0], "TELJES_OLDAL")["total"] == 0
+
+    vezerlo.clearReviewExclusions()
+    assert vezerlo._resolve_records([0]) == [kep]
 
 
 class TestATalcaNyerHaNemUres:

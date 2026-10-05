@@ -195,6 +195,10 @@ class PrintController(QObject):
         #: felülírás (`setPassportSource`); `None`, ha nincs érvényben.
         self._utlevel: PhotoRecord | None = None
         self._meret_felulirva: NyomatMeret | None = None
+        #: #4275: a tálcás és útlevél-forrású képeknek nincs rácssoruk;
+        #: az Ellenőrzés panelből itt jelöljük ki, mely rekordok maradjanak
+        #: ki a nyomtatási munkából. Új párbeszédnyitáskor ürül.
+        self._review_excluded_ids: set[int] = set()
 
     def _keszlet(self) -> tuple[NyomatMeret, ...]:
         """A felület nyelvéhez tartozó nyomatméret-készlet (#1961).
@@ -375,18 +379,41 @@ class PrintController(QObject):
         először. Az ismeretlen méretű kép ugyanúgy kicsinek számít, mint
         az összegzésben — 0 DPI-vel."""
         meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
+        rekordok = self._resolve_records(rows)
+        van_talca = (
+            self._utlevel is None
+            and self._tray_source is not None
+            and bool(self._tray_source())
+        )
         tetelek = [
             {
+                "row": (
+                    int(rows[index])
+                    if not van_talca and self._utlevel is None
+                    and index < len(rows)
+                    else -1
+                ),
+                "recordId": int(getattr(rekord, "id", -1)),
                 "name": rekord.name,
                 "dpi": effektiv_dpi(
                     rekord.width or 0, rekord.height or 0, meret
                 ),
             }
-            for rekord in self._resolve_records(rows)
+            for index, rekord in enumerate(rekordok)
         ]
         kuszob = self._dpi_kuszob()
         kicsik = [t for t in tetelek if t["dpi"] < kuszob]
         return sorted(kicsik, key=lambda t: t["dpi"])
+
+    @Slot(list)
+    def excludeReviewPictures(self, record_ids) -> None:  # noqa: N802 — QML-stílus
+        """#4275: rácssor nélküli (tálca/útlevél) képek kizárása."""
+        self._review_excluded_ids.update(int(record_id) for record_id in record_ids)
+
+    @Slot()
+    def clearReviewExclusions(self) -> None:  # noqa: N802 — QML-stílus
+        """Új nyomtatási párbeszéd előtt az előző felülvizsgálat ürítése."""
+        self._review_excluded_ids.clear()
 
     #: A küszöb beállítás-kulcsa. Az eredetiben `Preferences\DPIWarning`
     #: (`0x0085c076`/`0x0085c07b`), alapértéke **150** (`0x0085c08b`).
@@ -560,17 +587,24 @@ class PrintController(QObject):
         #1401: az Útlevélkép kivágott képe (`setPassportSource`) mindkettőt
         megelőzi — a nyomtatási nézet ilyenkor EZT az egy képet nyomtatja."""
         if self._utlevel is not None:
-            return [self._utlevel]
-        if self._tray_source is not None:
-            talca = list(self._tray_source())
+            rekordok = [self._utlevel]
+        else:
+            talca = list(self._tray_source()) if self._tray_source is not None else []
             if talca:
-                return talca
-        photos = tuple(self._photo_source())
-        return [
-            photos[int(row)]
-            for row in rows
-            if 0 <= int(row) < len(photos)
-        ]
+                rekordok = talca
+            else:
+                photos = tuple(self._photo_source())
+                rekordok = [
+                    photos[int(row)]
+                    for row in rows
+                    if 0 <= int(row) < len(photos)
+                ]
+        if self._review_excluded_ids:
+            rekordok = [
+                rekord for rekord in rekordok
+                if int(getattr(rekord, "id", -1)) not in self._review_excluded_ids
+            ]
+        return rekordok
 
     def _resolve_paths(self, rows: Sequence[int]) -> list[Path]:
         return [
