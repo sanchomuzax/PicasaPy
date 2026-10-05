@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.685] – 2026-10-05
+
+- Az Emberek albumban a filmgombok a kiválasztott személy képeiből nyitják meg a Filmkészítőt, a közzététel méretválasztása pedig a főablakból is működik. (#4212).
+
 ## [0.8.684] – 2026-10-05
 
 - A főablakból elérhető a kamera és a filmkészítés, a videóvágó sávon pedig egérrel állítható a klip kezdete és vége. (#4210).
