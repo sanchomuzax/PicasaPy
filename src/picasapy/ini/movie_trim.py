@@ -48,7 +48,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .filters import FilterOp, parse_filters_prefix, serialize_filters
+from .filters import FilterOp, parse_filters, parse_filters_prefix, serialize_filters
 
 #: A DirectShow `REFERENCE_TIME` egysége másodpercben: 100 ns.
 TICK_PER_SECOND = 10_000_000
@@ -177,8 +177,14 @@ def ops_with_trim(
 
 
 def filters_with_trim(value: str, trim: MovieTrim) -> str:
-    """A `filters=` lánc szövege a megadott vágáspontokkal."""
-    ops = parse_filters_prefix(value) if value else ()
+    """A teljes `filters=` lánc a megadott vágáspontokkal.
+
+    Ez író útvonal: nem használhatja a rendereléshez való, hibás tag után
+    csonkoló `parse_filters_prefix` olvasót, mert az a hiba mögötti tageket
+    kitörölné az ini-ből. A szerkesztő minden tagot megőriz; ha maga a
+    láncszerkezet sérült, a szigorú parser hibával megakadályozza a mentést.
+    """
+    ops = parse_filters(value) if value else ()
     return serialize_filters(ops_with_trim(ops, trim))
 
 
