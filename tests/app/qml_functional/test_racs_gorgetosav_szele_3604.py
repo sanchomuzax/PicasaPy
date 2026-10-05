@@ -126,6 +126,48 @@ def _fiok_animaciora_var(qt_app, window, nyitva: bool) -> None:
     assert _var(qt_app, lambda: abs(fiok.width() - elvart) <= 0.25, 3.0)
 
 
+def _geometria(sav, fogo) -> tuple[float, float, float, float]:
+    """A sáv és a fogó vízszintes geometriája scene-koordinátában."""
+    return (
+        sav.mapToScene(QPointF(0, 0)).x(),
+        sav.width(),
+        fogo.mapToScene(QPointF(0, 0)).x(),
+        fogo.width(),
+    )
+
+
+def _geometria_stabilizalasara_var(
+    qt_app, sav, fogo, masodperc=3.0
+) -> None:
+    """Határidővel várja meg, hogy a rács és a fogó geometriája beálljon.
+
+    Az ablak- és a fiókméret már önmagában stabil lehet, miközben a QML
+    elrendezése még nem dolgozta át a görgetősáv scene-pozícióját. Három
+    egymást követő, 50 ms-os mintával választjuk el a végleges geometriát az
+    animáció vagy az átméretezés közbeni átmeneti értékektől.
+    """
+    hatarido = time.monotonic() + masodperc
+    elozo = None
+    stabil_mintak = 0
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        most = _geometria(sav, fogo)
+        if elozo is not None and max(
+            abs(a - b) for a, b in zip(most, elozo, strict=True)
+        ) <= 0.25:
+            stabil_mintak += 1
+            if stabil_mintak >= 2:
+                return
+        else:
+            stabil_mintak = 0
+        elozo = most
+        time.sleep(0.05)
+    raise AssertionError(
+        "a rács és a fiók-fogó geometriája nem stabilizálódott 3 s alatt: "
+        f"{_geometria(sav, fogo)}"
+    )
+
+
 class TestARacsGorgetosavSzele:
     def test_a_sav_a_fogoig_er_ket_szelessegen(self, qml_app_sok_kep, qt_app):
         window, _controller, _engine = qml_app_sok_kep
@@ -202,8 +244,12 @@ class TestARacsGorgetosavSzele:
             assert _var(qt_app, lambda: abs(window.width() - 1920) < 1)
             qt_app.processEvents()
 
+            sav = _elem(window, "feedScrollBar")
             fogo = _elem(window, "toggle_right_drawer")
+            assert sav is not None, "nincs feedScrollBar"
             assert fogo is not None, "nincs toggle_right_drawer"
+            _geometria_stabilizalasara_var(qt_app, sav, fogo)
+
             _katt(window, fogo)
             assert _var(
                 qt_app, lambda: window.property("activeDrawerTab") != "", 3.0
@@ -212,6 +258,7 @@ class TestARacsGorgetosavSzele:
 
             sav = _elem(window, "feedScrollBar")
             assert sav.isVisible(), "a görgetősáv nyitott fióknál sem tűnhet el"
+            _geometria_stabilizalasara_var(qt_app, sav, fogo)
             sav_jobb = _jobb_szel(sav)
             fogo_bal = fogo.mapToScene(QPointF(0, 0)).x()
 
