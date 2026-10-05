@@ -7,7 +7,7 @@ test_controller.py `_quit_on` mintája szerint).
 import cv2
 import numpy as np
 import pytest
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QObject, QSettings, QThread, Slot
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import hangos_hurok
@@ -243,6 +243,42 @@ class TestBackgroundThreadTeardown:
         assert arrived
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+
+class TestPosterBackgroundFailure:
+    def test_baseexception_from_worker_reaches_poster_failed_on_gui_thread(
+        self, controller, qt_app, tmp_path, monkeypatch
+    ):
+        """A workerhiba ne vesszen el a közös háttérszál védőhálójában."""
+        from picasapy.app import poster_controller
+
+        source = tmp_path / "poster.jpg"
+        make_jpeg(source, size=(80, 80))
+
+        def fail_in_worker(*_args, **_kwargs):
+            raise SystemExit("synthetic poster worker failure")
+
+        monkeypatch.setattr(poster_controller, "make_poster_tiles", fail_in_worker)
+
+        class FailureObserver(QObject):
+            def __init__(self):
+                super().__init__()
+                self.thread = None
+
+            @Slot(str)
+            def capture(self, _message):
+                self.thread = QThread.currentThread()
+
+        observer = FailureObserver()
+        controller.posterFailed.connect(observer.capture)
+        arrived, args = _run(
+            controller.posterFailed,
+            lambda: controller.createPoster(str(source), 200, "4x6", False),
+            timeout_ms=2000,
+        )
+
+        assert arrived and args == ("synthetic poster worker failure",)
+        assert observer.thread == qt_app.thread()
 
 
 class TestCollagePiszkozat:

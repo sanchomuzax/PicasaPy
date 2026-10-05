@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QLocale, Signal, Slot
+from PySide6.QtCore import QLocale, Qt, Signal, Slot
 
 from picasapy.lazy_cv2 import elore_betolt
 from picasapy.printing.poster import make_poster_tiles
@@ -20,6 +20,25 @@ class PosterMixin(BackgroundWorkerMixin):
 
     posterFinished = Signal(list)
     posterFailed = Signal(str)
+    _posterOutcome = Signal(object)
+
+    def _ensure_poster_outcome_bridge(self) -> None:
+        """A háttérmunka eredményét a vezérlő Qt-szálára sorolja."""
+        if getattr(self, "_poster_outcome_bridge_ready", False):
+            return
+        self._posterOutcome.connect(
+            self._on_poster_outcome, Qt.ConnectionType.QueuedConnection
+        )
+        self._poster_outcome_bridge_ready = True
+
+    @Slot(object)
+    def _on_poster_outcome(self, outcome: tuple[str, object]) -> None:
+        """A nyilvános jelzéseket a vezérlő szálán bocsátja ki."""
+        kind, payload = outcome
+        if kind == "failed":
+            self.posterFailed.emit(str(payload))
+        else:
+            self.posterFinished.emit(payload)
 
     @Slot(result=list)
     def posterPaperSizes(self) -> list[str]:  # noqa: N802
@@ -58,6 +77,7 @@ class PosterMixin(BackgroundWorkerMixin):
             self.posterFailed.emit("A kijelölt kép útvonala üres.")
             return
 
+        self._ensure_poster_outcome_bridge()
         # A cv2 első natív betöltését a GUI-szálon végezzük (#2370).
         elore_betolt()
 
@@ -69,10 +89,11 @@ class PosterMixin(BackgroundWorkerMixin):
                     paper_size,
                     overlap,
                 )
-            except Exception as exc:  # noqa: BLE001 — a QML hibaüzenetet kap
-                self.posterFailed.emit(str(exc))
+                result = [str(page) for page in pages]
+            except BaseException as exc:  # noqa: BLE001 — a thread wrapper naplózná és elnyelné
+                self._posterOutcome.emit(("failed", str(exc)))
                 return
-            self.posterFinished.emit([str(page) for page in pages])
+            self._posterOutcome.emit(("finished", result))
 
         self._start_background(work, name="picasapy-poster")
 
