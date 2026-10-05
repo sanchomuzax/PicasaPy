@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 from PIL import Image
 from PySide6.QtCore import QLocale, QObject, QPoint, QPointF, Qt, QMetaObject
-from PySide6.QtTest import QTest
+from PySide6.QtTest import QSignalSpy, QTest
 
 from picasapy.lazy_cv2 import cv2
 from tests.app.qml_functional.conftest import _build_qml_app
@@ -75,21 +75,36 @@ def _nyisd_meg_valodi_menu_kattintassal(window, controller, qt_app):
     create_menu = _elem(window, "menuCreateRoot")
     assert QMetaObject.invokeMethod(create_menu, "open", Qt.ConnectionType.DirectConnection)
     poster = _elem(window, "menuCreatePoster")
-    _var(qt_app, lambda: poster.isVisible(), "a Poszter menüpont nem jelent meg")
+    _var(
+        qt_app,
+        lambda: create_menu.property("opened") is True and poster.isVisible(),
+        "a Poszter menüpont nem jelent meg teljesen",
+    )
     assert poster.property("enabled") is True
     _kattintas(poster)
     _var(
         qt_app,
         lambda: (
             window.findChild(QObject, "posterDialog") is not None
-            and _elem(window, "posterDialog").property("visible")
+            and _elem(window, "posterDialog").property("opened") is True
         ),
-        "a valódi menükattintás nem nyitotta meg a Poszter párbeszédet",
+        "a valódi menükattintás nem nyitotta meg teljesen a Poszter párbeszédet",
     )
     return _elem(window, "posterDialog")
 
 
-def _inditsd_a_kimenetet(window, controller, qt_app, *, overlap: bool):
+def _inditsd_a_kimenetet(
+    window, controller, qt_app, *, overlap: bool, height_delta: int
+):
+    original_height = int(window.height())
+    target_height = original_height + height_delta
+    window.resize(window.width(), target_height)
+    _var(
+        qt_app,
+        lambda: int(window.height()) == target_height,
+        f"a főablak nem vette fel a {height_delta:+d} px-es magasságváltozást",
+    )
+
     dialog = _nyisd_meg_valodi_menu_kattintassal(window, controller, qt_app)
     assert dialog.property("title") == "Poster Settings"
     assert _elem(dialog, "posterSizeLabel").property("text") == "Poster size:"
@@ -103,8 +118,15 @@ def _inditsd_a_kimenetet(window, controller, qt_app, *, overlap: bool):
         _kattintas(check)
     assert check.property("checked") is overlap
 
+    # A befejező jel csak azután érkezik, hogy a háttérszál minden lapot kiírt.
+    finished = QSignalSpy(controller.posterFinished)
+    failed = QSignalSpy(controller.posterFailed)
     _kattintas(_elem(dialog, "posterAcceptButton"))
-    assert dialog.property("visible") is False
+    _var(
+        qt_app,
+        lambda: dialog.property("opened") is not True,
+        "a Poszter párbeszéd elfogadása nem zárta be a párbeszédet",
+    )
 
     source = controller.photos.filePathAt(0)
     source_folder = source.rsplit("/", 1)[0]
@@ -115,12 +137,19 @@ def _inditsd_a_kimenetet(window, controller, qt_app, *, overlap: bool):
     ]
     _var(
         qt_app,
-        lambda: all(
-            Path(source_folder, name).is_file()
-            for name in names
-        ),
-        "a Poszter párbeszéd elfogadása nem írta ki a négy lapot",
+        lambda: finished.count() > 0 or failed.count() > 0,
+        "a Poszter háttérmunkája nem jelzett befejezést vagy hibát",
         seconds=10.0,
+    )
+    assert failed.count() == 0, (
+        "a Poszter háttérmunkája hibát jelzett: "
+        f"{failed.at(0)[0] if failed.count() else ''}"
+    )
+    assert finished.count() == 1, "a Poszter háttérmunkája többször fejeződött be"
+    _var(
+        qt_app,
+        lambda: all(Path(source_folder, name).is_file() for name in names),
+        "a Poszter befejező jelzése után nem jelent meg mind a négy lap",
     )
     source_bytes = np.frombuffer(Path(source).read_bytes(), dtype=np.uint8)
     original_pixels = cv2.imdecode(source_bytes, cv2.IMREAD_COLOR)
@@ -173,18 +202,24 @@ def test_valodi_kattintas_megnyitja_a_hivatalos_parbeszedet(
     assert len(controller.posterPaperSizes()) == 2
 
 
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_kattintasbol_negy_400x400as_lap_kesz_atfedes_nelkul(
-    poster_app, qt_app
+    poster_app, qt_app, height_delta
 ):
     window, controller, _engine = poster_app
-    _inditsd_a_kimenetet(window, controller, qt_app, overlap=False)
+    _inditsd_a_kimenetet(
+        window, controller, qt_app, overlap=False, height_delta=height_delta
+    )
 
 
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_kattintasbol_negy_440x440as_lap_kesz_atfedessel(
-    poster_app, qt_app
+    poster_app, qt_app, height_delta
 ):
     window, controller, _engine = poster_app
-    _inditsd_a_kimenetet(window, controller, qt_app, overlap=True)
+    _inditsd_a_kimenetet(
+        window, controller, qt_app, overlap=True, height_delta=height_delta
+    )
 
 
 def test_papirmeret_a_legutobbi_valasztast_es_a_teruleti_listat_megorzi(
