@@ -46,6 +46,9 @@ ColumnLayout {
     //: pont van; nálunk kettő működött (Létrehozás menü, kimeneti sáv), a
     //: két fejléc-gomb hiányzott.
     signal collageRequested()
+    //: A két `faceheaderpanel` filmgomb ugyanazt a meglévő Filmkészítőt
+    //: nyitja meg az aktuális személy-album képeivel.
+    signal personMovieRequested()
 
     //: #2187: a SZEMÉLY-ALBUM módja. Az eredetiben a személy-album
     //: fejléce saját panel (`faceheaderpanel`), és rajta ül a
@@ -395,6 +398,65 @@ ColumnLayout {
                 }
             }
         }
+        //: #4212: a `faceheaderpanel/create_movie` gombja. A személy-album
+        //: külön fejlécpanelje nálunk a LightboxHeader személy-módja; a
+        //: két filmgomb a meglévő Filmkészítőt nyitja meg az album összes
+        //: képével, közös felbontás-beállítással.
+        PicasaButton {
+            id: szemelyFilmGomb
+            objectName: "faceHeaderMovieButton"
+            x: header.gombSorVege
+            anchors.verticalCenter: parent.verticalCenter
+            visible: header.personName !== ""
+            width: 29; height: 27
+            hoverEnabled: true
+            ToolTip.text: qsTr("Create Movie Presentation")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: header.personMovieRequested()
+            contentItem: Item {
+                Image {
+                    source: "icons/movie.svg"
+                    width: 16; height: 16
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                    anchors.centerIn: parent
+                }
+            }
+        }
+        //: #4212: `faceheaderpanel/create_face_movie` — ugyanaz a
+        //: személyalbum-képforrás és Filmkészítő, mint a szomszédos Movie
+        //: gombnál; külön filmfelbontást nem tárolunk.
+        PicasaButton {
+            id: szemelyArcfilmGomb
+            objectName: "faceHeaderFaceMovieButton"
+            x: szemelyFilmGomb.x + szemelyFilmGomb.width + header.gombKoz
+            anchors.verticalCenter: parent.verticalCenter
+            visible: header.personName !== ""
+            width: 29; height: 27
+            hoverEnabled: true
+            ToolTip.text: qsTr("Create Face Movie")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: header.personMovieRequested()
+            contentItem: Item {
+                Image {
+                    source: "icons/movie.svg"
+                    width: 16; height: 16
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                    anchors.centerIn: parent
+                }
+                Image {
+                    source: "icons/faces-badge.svg"
+                    width: 9; height: 9
+                    sourceSize.width: 9; sourceSize.height: 9
+                    fillMode: Image.PreserveAspectFit
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                }
+            }
+        }
         // #2187: a javaslat-munkafolyamat két vezérlője. MÉRT méret
         // mindkettőn 88 × 27 (`respack.yt`); az eredetiben a
         // `confirmsug` és a `confirmsel` UGYANAZON a téglalapon
@@ -413,7 +475,7 @@ ColumnLayout {
         PicasaButton {
             id: javaslatSzuroGomb
             objectName: "headerSuggestionFilterButton"
-            x: header.gombSorVege
+            x: header.szemelyGombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatSzuroLatszik
             width: 29; height: 27
@@ -449,7 +511,7 @@ ColumnLayout {
             objectName: "headerConfirmSuggestionsButton"
             x: javaslatSzuroGomb.visible
                 ? javaslatSzuroGomb.x + javaslatSzuroGomb.width + header.gombKoz
-                : header.gombSorVege
+                : header.szemelyGombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatokLatszanak
             //: MÉRT feliratok (`faceheaderpaneltext.tre:44`): „Confirm all"
@@ -475,7 +537,7 @@ ColumnLayout {
             objectName: "headerRemoveSuggestionsButton"
             x: jovahagyGomb.visible
                 ? jovahagyGomb.x + jovahagyGomb.width + header.gombKoz
-                : header.gombSorVege
+                : header.szemelyGombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatokLatszanak
             //: MÉRT felirat (`faceheaderpaneltext.tre:50`): „Remove"
@@ -502,7 +564,7 @@ ColumnLayout {
             objectName: "headerMoreSuggestionsButton"
             x: javaslatSzuroGomb.visible
                 ? javaslatSzuroGomb.x + javaslatSzuroGomb.width + header.gombKoz
-                : header.gombSorVege
+                : header.szemelyGombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.tovabbiJavaslatLatszik
             //: MÉRT felirat (`faceheaderpaneltext.tre:53`): „Find more
@@ -528,7 +590,7 @@ ColumnLayout {
                     : (tovabbiJavaslatGomb.visible
                         ? tovabbiJavaslatGomb.x + tovabbiJavaslatGomb.width
                           + header.gombKoz
-                        : header.gombSorVege))
+                        : header.szemelyGombSorVege))
             anchors.verticalCenter: parent.verticalCenter
             height: 22
             text: header.feliratSzammal(qsTr("Upload")) + " ▾"
@@ -633,6 +695,12 @@ ColumnLayout {
             x += header.gombSzelessege(header.gombSorrend[i]) + header.gombKoz
         return x
     }
+
+    //: A személy-album saját filmgombjai után folytatódik a javaslat-sor.
+    //: Mappa nézetben a régi, testreszabott fejlécgombsor vége marad a kezdőpont.
+    readonly property real szemelyGombSorVege: header.personName !== ""
+        ? szemelyArcfilmGomb.x + szemelyArcfilmGomb.width + header.gombKoz
+        : header.gombSorVege
 
     //: A gomb szélessége a sorrend-számításhoz. A `play` és a kollázs
     //: MÉRT, fix méretű; a másik kettő felirat-függő, azt az elemtől

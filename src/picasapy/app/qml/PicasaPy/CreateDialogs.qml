@@ -35,6 +35,13 @@ Item {
 
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
+    //: #4212: a személy-album fejléce minden ottani képet átad a meglévő
+    //: Filmkészítőnek; a felbontást a szokásos `movieHeightBox` kezeli.
+    function openMovieForRows(rows) {
+        // A személyalbum teljes sora a forrás, akkor is, ha a képtálcán
+        // másik kép van. A megszokott megnyitás továbbra is a tálcát részesíti előnyben.
+        movieDialog.openForRows(rows, false, false)
+    }
     //: #2114: a film ÚJRANYITÁSA a projektfájljából — a diaidő onnan
     //: jön, a kijelölés a hívó oldalán már a projekt képeire áll.
     //: ⛔ A FELBONTÁS nincs a projektfájlban (`curresolution` nálunk
@@ -258,10 +265,17 @@ Item {
         function openForSelection() {
             // #455: tartott képekkel a tálca a forrás — ilyenkor a
             // rácsban nem is kell kijelölésnek lennie
-            if (!dialogs.trayHasPictures
-                    && dialogs.appWindow.selectedIndexes.length === 0) return
-            movieClipIndexes = dialogs.appWindow.selectedIndexes.slice(0)
-            movieClipSources = controller.movieSourceUrls(movieClipIndexes)
+            openForRows(
+                dialogs.appWindow.selectedIndexes,
+                dialogs.trayHasPictures,
+                true)
+        }
+        function openForRows(rows, allowTray, preferTray) {
+            if ((!rows || rows.length === 0) && !allowTray) return
+            movieClipIndexes = rows ? rows.slice(0) : []
+            movieClipSources = preferTray
+                ? controller.movieSourceUrls(movieClipIndexes)
+                : controller.selectedMovieSourceUrls(movieClipIndexes)
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             previewIndex = 0

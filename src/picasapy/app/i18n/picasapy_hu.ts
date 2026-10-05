@@ -4612,6 +4612,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>LightboxHeader</name>
     <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml"/>
+        <source>Create Movie Presentation</source>
+        <translation>Mozgófilmes prezentáció létrehozása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml"/>
+        <source>Create Face Movie</source>
+        <translation>Mozgófilm létrehozása arcokból</translation>
+    </message>
+    <message>
         <source>Play Fullscreen Slideshow</source>
         <translation>Diavetítés teljes képernyőn</translation>
     </message>
