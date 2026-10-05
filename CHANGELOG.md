@@ -9,6 +9,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - A csúszkás effektpanelek alatt a letiltott bal panel elmosva és teljes színnel marad (#4068).
 
+## [0.8.690] – 2026-10-05
+
+- A Maximális JPEG-export most q=93 minőséget és 4:4:4 mintavételezést használ, az Automatikus pedig megőrzi a forrás JPEG mintavételezését (#4017).
+
 ## [0.8.689] – 2026-10-05
 
 - A Filmkészítő párbeszéde nagyobb főablakban úgy méreteződik, hogy a beállítások és az előnézet görgetés nélkül láthatók. (#4244).
