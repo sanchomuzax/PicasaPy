@@ -2975,6 +2975,12 @@ Rectangle {
                                 controller.captureMovieFrame(
                                     viewer.currentIndex, positionMs)
                         }
+                        //: `movieeditpanel/export_movie` → `LinuxNomovie`.
+                        function onExportClipRequested() {
+                            if (Qt.platform.os === "linux")
+                                kepkockaJelzes.mutasd(
+                                    qsTr("This feature is not supported for Linux"))
+                        }
                     }
                     //: #1838: a képkocka-mentés VISSZAJELZÉSE. Az eredeti négy
                     //: állapotszöveget adott (`CCaptureFrame::captureframeprog1..4`);

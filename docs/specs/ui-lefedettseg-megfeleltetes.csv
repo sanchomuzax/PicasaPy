@@ -35,7 +35,7 @@ lengthslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,A Filmkészítő háromlapos panelje a párbeszédben él (#4125/#4182); a maradék leírt elemek és eltéréseik elemenként szerepelnek az ui-lefedettseg-elemek.csv-ben.
 modalprogress,parositva,PicasaPy/ImportProgressPanel.qml;PicasaPy/BatchEditProgressPanel.qml,Modális folyamatjelző
 moviecontrols,parositva,PicasaPy/VideoPlayerView.qml,Lejátszás/szünet a videón
-movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml,Videovágó panel
+movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml;PicasaPy/PhotoViewer.qml,Videovágó panel
 nav,nincs-megfeleltetes,,"A nav.tre egy szerkesztői nagyítás-navigátor lebegőablakát írja le; ilyen navigátor nincs a PhotoViewerben, ezért a nav/close nem cél."
 nerdview,parositva,PicasaPy/PerfMonitorPanel.qml;PicasaPy/HistogramBox.qml,Fejlesztői/diagnosztikai réteg
 oneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet a könyvtárban
@@ -65,7 +65,7 @@ timeslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 titledialog,parositva,PicasaPy/MovieTitleDialog.qml;PicasaPy/CreateDialogs.qml,"Filmes címdia-szerkesztő: szöveg/betűformázás, képfelirat, élő előnézet és Add/Cancel"
 toolslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 transitionslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
-unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok fejléce
+unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml;Main.qml,Névtelen arcok fejléce
 upload,nem-cel,,"Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés)"
 uploadallinstructionpanel,nem-cel,,A csoportos webes feltöltéshez tartozó betanító buborék megszűnt Picasa Web Albums-funkcióhoz kötődik.
 uploadmgr,nincs-megfeleltetes,,Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk

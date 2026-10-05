@@ -4289,6 +4289,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>UnnamedFacesView</name>
     <message>
+        <location filename="../qml/PicasaPy/UnnamedFacesView.qml"/>
+        <source>Show ignored faces</source>
+        <translation>Mellőzött arcok megjelenítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/UnnamedFacesView.qml"/>
+        <source>Back to Unnamed</source>
+        <translation>Vissza ide: Név nélküliek</translation>
+    </message>
+    <message>
         <source>Stop ignoring</source>
         <translation>Mellőzés visszavonása</translation>
     </message>
@@ -5694,6 +5704,11 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
 </context>
 <context>
     <name>PhotoViewer</name>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
+        <source>This feature is not supported for Linux</source>
+        <translation>A program ezt a funkciót Linux rendszeren nem támogatja</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
         <source>Saved %1 to Captured Videos</source>
@@ -7469,6 +7484,11 @@ Biztosan visszavonja a műveletet?</translation>
 </context>
 <context>
     <name>VideoPlayerView</name>
+    <message>
+        <location filename="../qml/PicasaPy/VideoPlayerView.qml"/>
+        <source>Export Clip</source>
+        <translation>Klip exportálása</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/VideoPlayerView.qml"/>
         <source>Capture current frame</source>
