@@ -68,6 +68,7 @@ class MovieSettings:
     cropfit: bool = False
     remove_low_res_faces: bool = False
     ordering: int = 1
+    burstmodethresh: int = 0
 
     def __post_init__(self) -> None:
         if self.width < 16 or self.height < 16:
@@ -91,6 +92,8 @@ class MovieSettings:
             raise ValueError("A hangsáv beállítása 0, 1 vagy 2 lehet.")
         if self.ordering not in (0, 1, 2):
             raise ValueError("A diák sorrendje 0, 1 vagy 2 lehet.")
+        if not 0 <= self.burstmodethresh <= 86400:
+            raise ValueError("A sorozatfelvétel-időszűrő 0 és 86400 másodperc közé essen.")
         object.__setattr__(self, "text_slides", tuple(dict(slide) for slide in self.text_slides))
 
     @property

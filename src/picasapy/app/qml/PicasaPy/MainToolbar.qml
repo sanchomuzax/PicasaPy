@@ -9,12 +9,14 @@ import QtQuick.Layouts
 Rectangle {
     id: toolbar
 
-    //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) ide
-    //: viszi a fókuszt. A gazdának NEM kell ismernie az eszköztár belső
-    //: elemeit — ez a függvény a határ.
+    //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) a
+    //: mezőre viszi a fókuszt és megnyitja a keresési beállításokat. A
+    //: gazdának NEM kell ismernie az eszköztár belső elemeit — ez a függvény
+    //: a határ.
     function fokuszAKeresore() {
         searchField.forceActiveFocus()
         searchField.selectAll()
+        searchOptionsPopup.open()
     }
     objectName: "mainToolbar"
     // #587: a felső sáv magassága a `thumbui.tre` `searchtop` konstansa —
@@ -798,6 +800,21 @@ Rectangle {
                         objectName: "searchFieldContextArea"
                     }
                 }
+                PicasaButton {
+                    objectName: "searchbutton"
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 18
+                    visible: searchField.activeFocus
+                             || searchField.text.length > 0
+                             || searchOptionsPopup.opened
+                    text: "⌄"
+                    font.pixelSize: 14
+                    horizontalPadding: 0
+                    Accessible.name: qsTr("Search")
+                    onClicked: searchOptionsPopup.opened
+                               ? searchOptionsPopup.close()
+                               : searchOptionsPopup.open()
+                }
                 Rectangle {   // törlő gomb, csak ha van mit törölni
                     objectName: "searchClear"
                     visible: searchField.text.length > 0
@@ -821,6 +838,61 @@ Rectangle {
                             searchField.clear()
                             toolbar.searchCleared()
                         }
+                    }
+                }
+            }
+        }
+        Popup {
+            id: searchOptionsPopup
+            objectName: "searchOptionsPopup"
+            x: Math.max(8, searchBox.x + searchBox.width - width)
+            y: toolbar.height
+            width: 280
+            padding: 8
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+            background: Rectangle {
+                color: Theme.contentPanel
+                border.color: Theme.chromeBorder
+                radius: 3
+            }
+            ColumnLayout {
+                objectName: "searchcenter"
+                spacing: 5
+                Text {
+                    objectName: "searchresult"
+                    Layout.fillWidth: true
+                    visible: text.length > 0
+                    text: {
+                        if (!controller)
+                            return ""
+                        if (controller.searchActive)
+                            return qsTr("Search results for \"%1\" (%2)")
+                                .arg(controller.searchQuery)
+                                .arg(controller.searchResultCount)
+                        return controller.filterStatusText
+                    }
+                    color: Theme.ink
+                    font.pixelSize: Theme.fontSize
+                    wrapMode: Text.Wrap
+                }
+                PicasaButton {
+                    objectName: "facesearch"
+                    Layout.fillWidth: true
+                    text: qsTr("Show only photos with faces")
+                    onClicked: if (controller) {
+                        controller.viewModeName === "faces"
+                            ? controller.clearFilter()
+                            : controller.showFacesOnly()
+                    }
+                }
+                PicasaButton {
+                    objectName: "dupesearch"
+                    Layout.fillWidth: true
+                    text: qsTr("Show duplicate files only")
+                    onClicked: if (controller) {
+                        controller.viewModeName === "dupes"
+                            ? controller.clearFilter()
+                            : controller.showDuplicateFiles()
                     }
                 }
             }

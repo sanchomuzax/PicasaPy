@@ -394,7 +394,8 @@ ApplicationWindow {
         documentTabStrip.activateTab(documentTabStrip.libraryTabId)
         window.selectedIndex = sorok[0]
         window.selectedIndexes = sorok
-        createDialogs.ensure().openMovieProject(projekt.seconds)
+        createDialogs.ensure().openMovieProject(
+            projekt.seconds, projekt.burstmodethresh)
     }
 
     function openSavedCollage(path) {
