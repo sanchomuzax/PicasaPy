@@ -7,7 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.0] – 2026-10-05
+
 - A csúszkás effektpanelek alatt a letiltott bal panel elmosva és teljes színnel marad (#4068).
+
+- A Szépia, a Fekete-fehér és a Melegítés effektjét eredeti Picasa-mintákkal ellenőriztük (#4256).
 
 ## [0.8.690] – 2026-10-05
 
