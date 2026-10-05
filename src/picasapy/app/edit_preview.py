@@ -564,16 +564,25 @@ class EditPreviewProvider(QQuickImageProvider):
         #: hívásból, amelyik a kereteket tényleg alkalmazta (mind a három
         #: ágon: festett maszk, gyorsítótár, közvetlen).
         elhelyezes = None
-        if paint_strokes and source_array is not None and ops:
+        from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
+
+        if (
+            (paint_strokes or van_mentett_ecsetvonas(ops))
+            and source_array is not None
+            and ops
+        ):
             # #1908: festett ecset-maszk esetén a lánc-prefix gyorsítótár
             # KIMARAD. A maszk nem csak az utolsó opra hat (a festhető effekt
             # bárhol állhat a láncban), a prefix viszont épp azt tartja
             # változatlannak — a gyorsítótár tehát elavult képet adna. A
             # festés nem csúszka-húzás: egy vonás után egy teljes lánc
             # elfut, és ez a helyes, nem a gyors.
-            from .paint_mask import maszk_vonasokbol
-
-            maszk = maszk_vonasokbol(paint_strokes, source_array.shape[0], source_array.shape[1])
+            maszk = maszk_vonasokbol(
+                paint_strokes,
+                source_array.shape[0],
+                source_array.shape[1],
+                filters=ops,
+            )
             jelentes = apply_filters(source_array, tuple(ops), paint_mask=maszk)
             result_array = jelentes.image
             elhelyezes = jelentes.content_placement
