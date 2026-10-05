@@ -44,7 +44,9 @@ class TestFestes:
         allapot.fess(0.25, 0.5, 0.1)
         maszk = allapot.maszk(40, 80)
         assert maszk is not None
-        assert maszk[20, 20] > 0.99
+        # A középponttól fél képpontra eső minta a mért h=0.15 LUT
+        # u≈0.823 pontján 247/255 fedésű, nem teljes.
+        assert abs(float(maszk[20, 20]) - 247 / 255) < 1 / 255
         assert maszk[20, 75] == 0.0
 
     def test_a_KOR_alakja_allo_kepen_is_kor(self):
@@ -94,7 +96,10 @@ class TestRadir:
         assert tele is not None and utana is not None
         assert tele[30, 30] > 0.9
         assert utana[30, 30] < 0.1, "a radír nem törölt a közepén"
-        assert utana[30, 44] > 0.5
+        # A korábbi fix perem ennél a mintánál teljes fedést adott. A mért
+        # h=0.15 profil itt 0 fedést ad a radírnak, ezért az eredeti folt
+        # x=39-nél megmarad, de a középpontot továbbra is kitörli.
+        assert utana[30, 39] > 0.5
 
     def test_a_SORREND_szamit(self):
         """Aki később festett, az ír felül — a radír után újra festhetek."""

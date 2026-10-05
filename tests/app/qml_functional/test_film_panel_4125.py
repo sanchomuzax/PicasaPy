@@ -72,6 +72,12 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
                 "movieAudioOptionBox",
                 "movieHeightBox",
                 "movieSlideText",
+                "movieFontBox",
+                "movieTextSizeBox",
+                "movieTextStyleBox",
+                "movieBoldBox",
+                "movieItalicBox",
+                "movieOutlineBox",
                 "movieClipList",
             ):
                 _elem(window, nev)
@@ -128,6 +134,12 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         _kattintas(window, qt_app, _elem(window, "movieTabSlide"))
         _elem(window, "movieSlideText").setProperty("text", "4125")
         _kattintas(window, qt_app, _elem(window, "movieInsertSlideButton"))
+        title_dialog = _elem(window, "movieTitleDialog")
+        assert title_dialog.property("visible") is True, (
+            "a szöveges dia gombja nem nyitotta meg a címdia-szerkesztőt"
+        )
+        _kattintas(window, qt_app, _elem(window, "titledialog/add"))
+        assert title_dialog.property("visible") is False
         assert _elem(window, "movieSlideList").property("count") == 1
         _kattintas(window, qt_app, _elem(window, "movieTabMotion"))
 

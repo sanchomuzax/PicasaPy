@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.683] – 2026-10-05
+
+- A Vámpírszem ecsetmaszkja most a mentett vonások keménységéhez igazítja a perem fedettségét (#4224).
+- A Filmkészítő címdia párbeszéde képfeliratot vesz át, előnézetet mutat és megerősíti a kézi diák törlését újraszámolás előtt (#4198).
+
 ## [0.8.682] – 2026-10-05
 
 - A keresősáv beállításai megnyithatók, az arc- és másodpéldány-szűrés pedig a főablak találati rácsában is használható (#4202).
