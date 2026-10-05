@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.687] – 2026-10-05
+
+- A Mellőzött arcok nézete, a videó hangerő-beállítása és a klip exportgombja az eredeti működéséhez igazodott; a régi YouTube-feltöltő nem jelenik meg. (#4229).
+
 ## [0.8.686] – 2026-10-05
 
 - A hiányosan megadott effekt után a PicasaPy nem alkalmazza a lánc további effektjeit (#4233).
