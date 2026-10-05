@@ -7543,6 +7543,129 @@ nem bizonyítja a futásidejű olvasási útvonalat.
 
 ---
 
+## #4014 — a `CGenericFilter` a részleges vezérlősort elutasítja, a flag-only sort elfogadja (2026-10-05)
+
+**Következtetés.** A `Vignette=1,35.000000,1.400000,0.000000` nem a teljes
+Vignette-alak: a negyedik vezérlő, a szín hiányzik. Az eredeti közös
+`CGenericFilter`-olvasója a tagot hibásnak jelöli; a lánc bejárója az első
+hibás tag után megáll, és a hátralévő tageket sem dolgozza fel. A
+vezérlőértékek teljes elhagyása külön érvényes alak: az `=1` engedélyező tag
+sikeres, és megtartja a konstruktor alapértékeit. Ez tehát nem
+Vignette-specifikus hibaág: a leíró-regiszterből gyártott effektek közös
+`CGenericFilter`-olvasójának aritásszabálya.
+
+### A statikus út
+
+`FUN_00907740` a pontosvesszőnkénti láncbejáró. A `0x0090785f` hívja a
+`FUN_00908360` tag-feldolgozót; a `0x00907864`–`0x00907866` vizsgálja a
+visszatérési értéket, és a hibás ágat a `0x00907995` takarítására irányítja.
+Csak a sikeres ág éri el a következő tagot (`0x00907933` körüli ciklus).
+
+`FUN_00908360` a gyártóval létrehozza a filtert, majd a filter vtáblájának
+`+0x34` metódusát hívja (`0x00908463`–`0x00908472`). A
+`CGenericFilter::vftable` `0x00cd184c`; ennek a `+0x34` slotja a
+`FUN_008f6d00` wrapper, amely a tényleges objektum-vtábla `+0xa8` slotjára
+ugrik (`0x008f6d00`–`0x008f6d08`). A `CGenericFilter` vtábla `+0xa8` bejegyzése
+`FUN_008fb120` — a nyers PE-táblából is ellenőrizve. Nem nulla olvasói
+visszatérési értéknél a gyártó az objektumot megsemmisíti és a hibát adja
+vissza (`0x00908478`–`0x009084ad`). `FUN_008fb120`:
+
+- a nulla vezérlőtokenes, csak engedélyező flaget tartalmazó út a
+  `0x008fb479` ágon a sikeres visszatéréshez jut (`0x008fb5f6`–`0x008fb5fe`);
+- ha már van vezérlőérték, a leíró által kötelezőnek jelölt mezőket sorban
+  kéri. A mezőszám kimerülése a hibás visszatérésre ugrik
+  (`0x008fb70e`–`0x008fb712` → `0x008fb560`–`0x008fb57b`);
+- a Vignette leírójában három numerikus jelző (`+0x7c`, `+0x7d`, `+0x7e`)
+  és egy színjelző (`+0x80`) van. Ezért a `1,35,1.4,0` alaknál a szín
+  hiányzik, és a színmező ellenőrzése a `0x008fb765`–`0x008fb769` ágon
+  ugyanarra a hibás visszatérésre ugrik;
+- a `crop64`, `rot` és a tartós régióadat külön olvasóágat kap. A QEMU-ban
+  mért fölös paraméter-elutasítás az itt próbált szokásos vezérlősorokra
+  vonatkozik; nem állítja, hogy a binárisban minden speciális utótagra is
+  ugyanaz az aritásszabály érvényes.
+
+A konstruktor útja is ellenőrizve van: `FUN_008fc120` nullázza a
+`CGenericFilter` mezőit, majd a vtábla `+0x24` alapérték-hívását végzi
+(`0x008fc158`–`0x008fc160`); a `FUN_008fc1a0` a leíró alapértékeit az objektum
+csúszkamezőibe másolja (`0x008fc1a0`–`0x008fc1b8`).
+
+A factory útja megmutatja, hogy ez nem egy Vignette-re szakosított parser:
+`CImageFilterFactory::vftable+4` a `FUN_008f9fe0`, amely a regiszterből
+feloldott filtereket `FUN_008f6ad0`-val példányosítja; ez a konstruktor
+`0x008f6af1`-nél `CGenericFilter::vftable`-t (`0x00cd184c`) ír az objektumba.
+A leíróhoz kötött effektfilterek ezért ugyanahhoz a `+0x34` → `+0xa8` olvasóhoz
+juthatnak. A `moviestart` és `movieend` külön, `CTimeFilter`-ágon készül
+(`0x008fa2ba`–`0x008fa300`, `0x008fa376`–`0x008fa3bc`); ezek nem effektvezérlő-sorok.
+
+### A független natív QEMU-út
+
+A CRT-harness a `+0x34` wrapperen (`FUN_008f6d00`) keresztül hívta a natív
+`FUN_008fb120` olvasót. A szintetikus objektum vtáblájában a `+0xa8` bejegyzés
+a bináris `CGenericFilter` vtábla szerinti célcím volt; a leírók jelzői a
+`filterdesc.xml` vezérlőalakját követték. Az objektumot előtte a natív
+`FUN_008fc120` állította alaphelyzetbe, a `+0x24` callback a natív
+`FUN_008fc1a0` volt. A `%f` és `%I64x` CRT-konverzió stubot kapott, így ez a
+próba az alak és a siker/hibaág eredményét méri; nem a numerikus konverzió
+pontosságát.
+
+| Effekt | `=1` | Hiányos alak | Teljes alak | Szokásos fölös mező |
+|---|---:|---:|---:|---:|
+| `Vignette` | `0`, alapértékek megmaradnak | `1,35,1.4,0` → `-1` | `1,35,1.4,0,00000000` → `0` | `...,00000000,7` → `-1` |
+| `unsharp2` | `0`, alapérték `0.6` | — | `1,0.6` → `0` | `1,0.6,7` → `-1` |
+| `glow2` | `0`, alapértékek `0.65,3` | `1,0.65` → `-1` | `1,0.65,3` → `0` | `1,0.65,3,7` → `-1` |
+
+Ez a második, futtatásos út megerősíti a statikus vezérlési folyamatot a
+Vignette-en és két másik, eltérő számú vezérlőjű effekten. Nem igazolja az
+összes speciális, history- vagy timeline-tag univerzális viselkedését.
+
+### A #3229/03–04 képpontmérése és a jelenlegi PicasaPy-út
+
+A `meroadat.tar`-ból a szükséges `.picasa.ini`, forrás JPEG-ek és Picasa-export
+JPEG-ek kerültek ideiglenesen a `.bt` alá. A PicasaPy-exportot is a rendes
+`export_photos` úton, JPEG q100 minőséggel állítottam elő. A mérések OpenCV
+4.10.0-val, dekódolt RGB képeken készültek. A 03-as kimenet 25 képpontos
+keretét levágtam, így a forráshoz és az eredeti exporthoz csak a belső
+képterületet hasonlítottam. A 04 forrás-szekciójában nincs `crop=`.
+
+| Mérési állítás | Eredmény |
+|---|---:|
+| 03 Picasa-export belső képterületének MAE-je a forráshoz | 2.263671527777778 |
+| 03 PicasaPy q100-export belső képterületének MAE-je a Picasa-exporthoz | 23.367140625 |
+| 04 Picasa-export MAE-je a forráshoz | 1.5663128472222223 |
+| 04 PicasaPy q100-export MAE-je a Picasa-exporthoz | 27.69058454861111 |
+| 04 bal felső 20×20 átlagos fényessége: forrás / Picasa / PicasaPy | 164.6691666667 / 164.6433333333 / 1.6233333333 |
+
+A helyi PicasaPy `parse_filters` tetszőleges elemszámú paramétert tárol; a
+Vignette renderelője hiányzó csúszkára `35`, `1.4`, `0`, hiányzó színre fekete
+alapértéket ad (`src/picasapy/ini/filters.py:64–74`,
+`src/picasapy/render/chain_glimmer_handlers.py:27–41,58–65`). Emiatt a
+3229-es hárommezős, flag utáni Vignette-et rendereli, míg a Picasa elutasítja.
+Az eltérés a mért két exportban látható. A PicasaPy jelenlegi viselkedése tehát
+nem egyezik.
+
+### A korpusz ellenőrzése
+
+A helyi `referencia/ini-korpusz/korpusz.txt` 5 658 `filters=` sorában 9 147
+tagot és 28 különböző nevet tartalmaz. A Picasa `filterdesc.xml`-beli vezérlői
+alapján végzett teljes aritásszkennelésben a 27 nem `crop64` név minden
+megfigyelt alakja teljes; a `crop64` egy külön kezelt, egy hexadecimális
+előzménymezőt hordozó history-tag. A 219 Vignette-tag mindegyike öt vesszővel
+elválasztott tokent tartalmaz az engedélyező flaggel együtt
+(`1,blur,strength,fade,color`). A korpuszban tehát nincs a 3229-eshez hasonló
+hiányos Vignette, és a többi leíró szerinti effektben sem találtam részleges
+vezérlősort.
+
+**Hatókör és fennmaradó kérdés.** A bináris factory alapján a
+`filterdesc.xml`-ből gyártott effektfilterek ugyanazt a `CGenericFilter`
+olvasót kapják; a QEMU három eltérő aritású effekten igazolta a szabályt.
+Tehát a jelenség nem Vignette-specifikus. A `crop64`/`rot` history-alakok,
+tartós régióadatok és a külön `CTimeFilter` timeline-tagek saját ágait ez a
+három próba nem fedte le: ezek teljes, tagonkénti dinamikus validálása
+**NINCS MEG**. A teljes korpuszvizsgálat viszont igazolja, hogy a jelenlegi
+korpuszban nincs további hiányos effekt-tag.
+
+---
+
 ## ⛳ A ragyogás-sugár: a hiba a hiányzó **/2**, nem a 255-ös korlát (2026-09-15, #3158)
 
 *Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml` `:788`,

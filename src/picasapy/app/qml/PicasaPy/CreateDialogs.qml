@@ -223,6 +223,9 @@ Item {
         property int movieSlideEditingIndex: -1
         property string textColor: "#ffffff"
         property string backgroundColor: "#000000"
+        property bool loadingTextSlide: false
+        onTextColorChanged: updateSelectedTextSlide()
+        onBackgroundColorChanged: updateSelectedTextSlide()
         //: #2114: projektfájlból nyitottuk-e — ilyenkor a párbeszéd
         //: kimondja, hogy a felbontás NEM a projektből jön.
         property bool projektbolNyilt: false
@@ -264,19 +267,43 @@ Item {
             movieClipSources = controller.movieSourceUrls(movieClipIndexes)
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
+            movieSlideSelection = []
+            movieSlideEditingIndex = -1
+            movieSlideList.currentIndex = -1
+            loadTextSlide()
             previewIndex = 0
             previewSource = movieClipSources.length ? movieClipSources[0] : ""
             targetFile = ""
             open()
         }
-        function addTextSlide() {
+        function selectedPictureCaption() {
+            if (!controller || !controller.photos
+                    || typeof controller.photos.captionAt !== "function")
+                return ""
+            var row = dialogs.appWindow.selectedIndex
+            if (row < 0 && dialogs.appWindow.selectedIndexes.length)
+                row = dialogs.appWindow.selectedIndexes[0]
+            return row >= 0 ? controller.photos.captionAt(row) : ""
+        }
+        function openTitleDialog() {
+            movieTitleDialog.openForCaption(selectedPictureCaption(), {
+                text: movieSlideText.text,
+                font: movieFontBox.currentText,
+                size: textSizes[movieTextSizeBox.currentIndex],
+                style: movieTextStyleBox.currentIndex,
+                bold: movieBoldBox.checked,
+                italic: movieItalicBox.checked,
+                outline: movieOutlineBox.checked,
+            })
+        }
+        function addTextSlide(slide) {
             var slides = movieSlides.slice(0)
             var selected = movieSlideSelection.length
                     ? movieSlideSelection : (movieSlideList.currentIndex >= 0
                         ? [movieSlideList.currentIndex] : [])
             var insertionIndex = selected.length
                     ? Math.max.apply(null, selected) + 1 : slides.length
-            slides.splice(insertionIndex, 0, {
+            slides.splice(insertionIndex, 0, slide || {
                 text: movieSlideText.text || qsTr("Text"),
                 font: movieFontBox.currentText,
                 size: textSizes[movieTextSizeBox.currentIndex],
@@ -291,6 +318,62 @@ Item {
             movieSlideSelection = [insertionIndex]
             movieSlideEditingIndex = insertionIndex
             movieSlideList.currentIndex = insertionIndex
+            loadTextSlide()
+        }
+        function loadTextSlide() {
+            loadingTextSlide = true
+            var index = movieSlideList.currentIndex
+            var slide = index >= 0 && index < movieSlides.length
+                    ? movieSlides[index] : null
+            if (slide) {
+                movieSlideText.text = slide.text || qsTr("Text")
+                var fontIndex = movieFontBox.model.indexOf(slide.font)
+                if (fontIndex >= 0) movieFontBox.currentIndex = fontIndex
+                var sizeIndex = textSizes.indexOf(slide.size)
+                if (sizeIndex >= 0) movieTextSizeBox.currentIndex = sizeIndex
+                movieTextStyleBox.currentIndex = Math.max(
+                    0, Math.min(11, slide.style || 0))
+                movieBoldBox.checked = !!slide.bold
+                movieItalicBox.checked = !!slide.italic
+                movieOutlineBox.checked = !!slide.outline
+                textColor = slide.textColor || "#ffffff"
+                backgroundColor = slide.backgroundColor || "#000000"
+            } else {
+                movieSlideText.text = qsTr("Text")
+                movieFontBox.currentIndex = movieFontBox.model.length > 0 ? 0 : -1
+                movieTextSizeBox.currentIndex = 4
+                movieTextStyleBox.currentIndex = 0
+                movieBoldBox.checked = false
+                movieItalicBox.checked = false
+                movieOutlineBox.checked = false
+                textColor = "#ffffff"
+                backgroundColor = "#000000"
+            }
+            loadingTextSlide = false
+        }
+        function updateSelectedTextSlide() {
+            var index = movieSlideList.currentIndex
+            if (loadingTextSlide || index < 0 || index >= movieSlides.length)
+                return
+            var slides = movieSlides.slice(0)
+            slides[index] = {
+                text: movieSlideText.text || qsTr("Text"),
+                font: movieFontBox.currentText || movieSlides[index].font
+                    || "DejaVuSans",
+                size: movieTextSizeBox.currentIndex >= 0
+                    ? textSizes[movieTextSizeBox.currentIndex]
+                    : movieSlides[index].size || 16,
+                style: movieTextStyleBox.currentIndex >= 0
+                    ? movieTextStyleBox.currentIndex
+                    : movieSlides[index].style || 0,
+                bold: movieBoldBox.checked,
+                italic: movieItalicBox.checked,
+                outline: movieOutlineBox.checked,
+                textColor: textColor.toString(),
+                backgroundColor: backgroundColor.toString(),
+            }
+            movieSlides = slides
+            movieSlideList.currentIndex = index
         }
         function removeTextSlide() {
             var selected = movieSlideSelection.length
@@ -306,6 +389,7 @@ Item {
             movieSlideSelection = nextIndex >= 0 ? [nextIndex] : []
             movieSlideEditingIndex = -1
             movieSlideList.currentIndex = nextIndex
+            loadTextSlide()
         }
         function selectTextSlide(index, modifiers) {
             var selected = movieSlideSelection.slice(0)
@@ -348,22 +432,10 @@ Item {
         }
         function editTextSlide(index) {
             if (index < 0 || index >= movieSlides.length) return
-            var slide = movieSlides[index]
             movieSlideSelection = [index]
             movieSlideEditingIndex = index
             movieSlideList.currentIndex = index
-            movieSlideText.text = slide.text || qsTr("Text")
-            var fonts = Qt.fontFamilies()
-            var fontIndex = fonts.indexOf(slide.font)
-            if (fontIndex >= 0) movieFontBox.currentIndex = fontIndex
-            var sizeIndex = textSizes.indexOf(slide.size)
-            if (sizeIndex >= 0) movieTextSizeBox.currentIndex = sizeIndex
-            movieTextStyleBox.currentIndex = Math.max(0, Math.min(11, slide.style || 0))
-            movieBoldBox.checked = !!slide.bold
-            movieItalicBox.checked = !!slide.italic
-            movieOutlineBox.checked = !!slide.outline
-            textColor = slide.textColor || "#ffffff"
-            backgroundColor = slide.backgroundColor || "#000000"
+            loadTextSlide()
         }
         function updateSelectedText(text) {
             var index = movieSlideEditingIndex
@@ -375,6 +447,21 @@ Item {
             movieSlides = slides
         }
         function recomputeMovie() {
+            if (movieSlides.length > 0) {
+                movieRecomputeConfirm.ask(
+                    "askapplyconfirm",
+                    qsTr("This will generate a new movie removing all the text slides you added. Are you sure?")
+                )
+                return
+            }
+            applyMovieRecompute()
+        }
+        function applyMovieRecompute() {
+            movieSlides = []
+            movieSlideSelection = []
+            movieSlideEditingIndex = -1
+            movieSlideList.currentIndex = -1
+            loadTextSlide()
             if (controller)
                 movieClipSources = controller.movieSourceUrls(movieClipSources)
             previewIndex = 0
@@ -699,23 +786,35 @@ Item {
                             objectName: "movieSlideText"
                             Layout.fillWidth: true
                             text: qsTr("Text")
+                            onTextChanged: movieDialog.updateSelectedTextSlide()
                             TextFieldContextArea {}
                             onTextEdited: movieDialog.updateSelectedText(text)
                         }
                         RowLayout {
                             Text { text: qsTr("Font:"); color: Theme.ink }
-                            PicasaComboBox { id: movieFontBox; objectName: "movieFontBox"; Layout.fillWidth: true; model: Qt.fontFamilies() }
+                            PicasaComboBox {
+                                id: movieFontBox
+                                objectName: "movieFontBox"
+                                Layout.fillWidth: true
+                                model: Qt.fontFamilies()
+                                onCurrentIndexChanged: movieDialog.updateSelectedTextSlide()
+                            }
                         }
                         RowLayout {
                             Text { text: qsTr("Size:"); color: Theme.ink }
                             PicasaComboBox {
-                                id: movieTextSizeBox; objectName: "movieTextSizeBox"
-                                model: movieDialog.textSizes.map(function(size) { return String(size) })
+                                id: movieTextSizeBox
+                                objectName: "movieTextSizeBox"
+                                model: movieDialog.textSizes.map(function(size) {
+                                    return String(size)
+                                })
                                 currentIndex: 4
+                                onCurrentIndexChanged: movieDialog.updateSelectedTextSlide()
                             }
                             Text { text: qsTr("Style:"); color: Theme.ink }
                             PicasaComboBox {
-                                id: movieTextStyleBox; objectName: "movieTextStyleBox"
+                                id: movieTextStyleBox
+                                objectName: "movieTextStyleBox"
                                 Layout.fillWidth: true
                                 model: [qsTr("Centered"), qsTr("I'm Feeling Lucky"), qsTr("Caption"),
                                     qsTr("Caption - Classic"), qsTr("Gradient - Black"),
@@ -723,15 +822,27 @@ Item {
                                     qsTr("Transparent - White"), qsTr("Scrolling Credits"),
                                     qsTr("Music Video - Left"), qsTr("Music Video - Right"),
                                     qsTr("Caption - Typewriter")]
+                                onCurrentIndexChanged: movieDialog.updateSelectedTextSlide()
                             }
                         }
                         RowLayout {
-                            CheckBox { id: movieBoldBox; objectName: "movieBoldBox"; text: qsTr("Bold") }
-                            CheckBox { id: movieItalicBox; objectName: "movieItalicBox"; text: qsTr("Italic") }
+                            CheckBox {
+                                id: movieBoldBox
+                                objectName: "movieBoldBox"
+                                text: qsTr("Bold")
+                                onToggled: movieDialog.updateSelectedTextSlide()
+                            }
+                            CheckBox {
+                                id: movieItalicBox
+                                objectName: "movieItalicBox"
+                                text: qsTr("Italic")
+                                onToggled: movieDialog.updateSelectedTextSlide()
+                            }
                             CheckBox {
                                 id: movieOutlineBox
                                 objectName: "movieOutlineBox"
                                 text: qsTr("Automatic Outline")
+                                onToggled: movieDialog.updateSelectedTextSlide()
                                 ToolTip.text: qsTr("Automatic Outline (like movie subtitles)")
                                 ToolTip.visible: hovered
                                 ToolTip.delay: Theme.tooltipDelay
@@ -757,7 +868,7 @@ Item {
                                 text: qsTr("Background color")
                                 onClicked: movieBackgroundColorDialog.open()
                             }
-                            Button { objectName: "movieInsertSlideButton"; text: qsTr("Insert Text Slide"); onClicked: movieDialog.addTextSlide() }
+                            Button { objectName: "movieInsertSlideButton"; text: qsTr("Insert Text Slide"); onClicked: movieDialog.openTitleDialog() }
                             Button {
                                 objectName: "movieRemoveSlideButton"
                                 text: qsTr("Remove Selected Slide")
@@ -780,6 +891,7 @@ Item {
                                 objectName: "movieSlideList"
                                 anchors.fill: parent
                                 model: movieDialog.movieSlides
+                                onCurrentIndexChanged: movieDialog.loadTextSlide()
                                 delegate: ItemDelegate {
                                     id: movieSlideDelegate
                                     width: movieSlideList.width
@@ -949,6 +1061,26 @@ Item {
                     % movieDialog.movieClipSources.length
             movieDialog.previewSource = movieDialog.movieClipSources[movieDialog.previewIndex]
         }
+    }
+
+    ConfirmDialog {
+        id: movieRecomputeConfirm
+        namePrefix: "movieRecomputeConfirm"
+        title: qsTr("Please Confirm...")
+        onConfirmed: movieDialog.applyMovieRecompute()
+    }
+
+    MovieTitleDialog {
+        id: movieTitleDialog
+        textColor: movieDialog.textColor
+        backgroundColor: movieDialog.backgroundColor
+        previewAspectRatio: {
+            var selectedSize = movieDialog.sizeOptions[movieHeightBox.currentIndex]
+            return selectedSize[0] / selectedSize[1]
+        }
+        onSlideAdded: function(slide) { movieDialog.addTextSlide(slide) }
+        onTextColorRequested: movieTextColorDialog.open()
+        onBackgroundColorRequested: movieBackgroundColorDialog.open()
     }
 
     FileDialog {

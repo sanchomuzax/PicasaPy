@@ -62,7 +62,7 @@ textopacityslider,parositva,PicasaPy/EditorTextPanel.qml;PicasaPy/PicasaSlider.q
 throttle,parositva,PicasaPy/PicasaScrollBar.qml,Gyorsgörgető a rács jobb szélén
 thumbui,parositva,PicasaPy/MainToolbar.qml;PicasaPy/LightboxFeed.qml;PicasaPy/ThumbDelegate.qml;PicasaPy/TrayBar.qml;PicasaPy/TimelineView.qml;PicasaPy/PicasaScrollBar.qml;PicasaPy/FolderPane.qml;PicasaPy/FolderTreeItem.qml;PicasaPy/FolderStateBadge.qml;PicasaPy/SlideshowView.qml;Main.qml,A fő könyvtárnézet egésze
 timeslider,parositva,PicasaPy/MainToolbar.qml;PicasaPy/PicasaSlider.qml,A főablak időszűrője a közös csúszkát használja (#4214)
-titledialog,nincs-megfeleltetes,,Filmes címdia-szerkesztő párbeszéd — nincs nálunk
+titledialog,parositva,PicasaPy/MovieTitleDialog.qml;PicasaPy/CreateDialogs.qml,"Filmes címdia-szerkesztő: szöveg/betűformázás, képfelirat, élő előnézet és Add/Cancel"
 toolslider,parositva,PicasaPy/EditorToolBar.qml;PicasaPy/PicasaSlider.qml,A szerkesztő eszközcsúszkája a közös PicasaSliderre épül (#4214)
 transitionslider,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/PicasaSlider.qml,A filmkészítő átmenetcsúszkája a közös PicasaSliderre épül (#4214)
 unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok fejléce
