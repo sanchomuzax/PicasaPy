@@ -63,6 +63,8 @@ HIVATALOS = {
         "Az összes kijelölt arc mellőzése", "unknownfaceheaderpanel/ignore"),
     "Display Time": ("Megjelenítési idő", "oneup/tpslabel"),
     "seconds": ("másodperc", "OneUpUI::seconds"),
+    "Start Point": ("Kezdőpont", "filter_moviestart_label0"),
+    "End Point": ("Végpont", "filter_movieend_label0"),
     # #3575: párbeszédablakok, importálás, címkék
     "Frame Mosaic": ("Képkockamozaik", "collage::frame_desc"),
     "Description (optional):": ("Leírás (opcionális):", "folderprops"),
@@ -135,6 +137,7 @@ ELOFORDULASOK = {
     "PicasaPy/PeoplePanel.qml": [
         "Unnamed people in these photos:", "Unnamed groups of people:"],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
+    "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
     # #3575
     "PicasaPy/CreateDialogs.qml": ["Frame Mosaic"],
     "PicasaPy/FolderPropertiesDialog.qml": [

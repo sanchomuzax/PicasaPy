@@ -10,6 +10,10 @@ RangeSlider {
     property int endMs: -1
     signal trimRequested(int startMs, int endMs)
 
+    implicitWidth: 200
+    implicitHeight: 34
+    topPadding: 15
+    bottomPadding: 1
     from: 0
     to: Math.max(1, Math.max(durationMs, endMs))
     first.value: Math.max(0, startMs)
@@ -49,5 +53,26 @@ RangeSlider {
         color: "#d5d5d5"
         border.width: 1
         border.color: "#202020"
+    }
+
+    Text {
+        objectName: "videoTrimStartLabel"
+        text: qsTr("Start Point")
+        color: "#e8e8e8"
+        font.pixelSize: 10
+        horizontalAlignment: Text.AlignHCenter
+        y: 0
+        x: Math.max(0, Math.min(control.width - width,
+            control.first.handle.x + control.first.handle.width / 2 - width / 2))
+    }
+    Text {
+        objectName: "videoTrimEndLabel"
+        text: qsTr("End Point")
+        color: "#e8e8e8"
+        font.pixelSize: 10
+        horizontalAlignment: Text.AlignHCenter
+        y: 0
+        x: Math.max(0, Math.min(control.width - width,
+            control.second.handle.x + control.second.handle.width / 2 - width / 2))
     }
 }
