@@ -1391,6 +1391,17 @@ Az `Add to Screensaver` (`0x00531900`) kétszintű:
 A Google Fotók-képernyővédő **külön telepítésű program** (#453) — a
 `desk.cpl`-hívás Windows-specifikus. Jegy: **#453**, **#32**.
 
+**Linuxos PicasaPy-változat (#4259, tulajdonosi döntés 2026-10-05):** a
+Windowsos telepítés- és registry-út helyett a menüből nyitható saját
+képernyővédő-beállító és előnézet készült. A források a kijelölt mappák,
+albumok és a Létrehozás menüből hozzáadott képek; a beállításokat a QSettings
+őrzi. Az effekt-, diaidő- és feliratbeállítás a helyi teljes képernyős
+diavetítéshez tartozik. A vetítés egérmozgásra vagy billentyűre kilép.
+Asztali környezeti tétlenségjelhez kötött automatikus indítás nincs benne; ez
+külön integrációs feladat. A korábbi specifikáció az eredeti külön Windowsos
+kiegészítő teljes beállítómezőit nem sorolta fel, ezért ez a Linuxos felület a
+jegyen kért helyi forrásokra és a PicasaPy diavetítési beállításaira épül.
+
 ### 35.4 TiVo-export — Windows-only menü, akció-kereten át
 
 Az `Export to TiVo(r) DVR...` a `eMenuCreateWin` névtérből jön — **a
@@ -1458,7 +1469,7 @@ egyértelműen követhető — a motor és az állapothordozók viszont megvanna
 | parancs | nálunk (mérve) | teendő |
 |---|---|---|
 | Poszter készítése | **placeholder** a Létrehozás menüben (`PicasaMenuBar.qml:1210`) | #601 folytatja; új adat: papírméret-lista nyelvi feltétellel + `paper` megőrzés |
-| Hozzáadás a képernyővédőhöz | **placeholder** (`:1218`) | #453/#32; a `saverlist.txt` + telepítés-ellenőrzés mintája rögzítve |
+| Hozzáadás a képernyővédőhöz | **működik** (`PicasaMenuBar.qml`, `Main.qml`) | #4259: kiválasztott képek hozzáadása QSettings-alapú helyi forráshoz |
 | Exportálás TiVo DVR-re | nincs menütétel | **HATÓKÖRÖN KÍVÜL-javaslat** (Windows-only névtér, TiVo-hardver nélkül nincs haszna) — tulajdonosi jóváhagyást kér |
 | Keresési eredmények mentése | a menü **tétel hiányzik** | #1405/#428; a 1000-es küszöb és a „Create Album" gombfelirat most rögzítve |
 | Képek biztonsági mentése | **placeholder** (`:1267`) | #440; az állapothordozók (`backup.xml` + `backuphash`) most rögzítve |
@@ -1474,7 +1485,8 @@ Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kív�
   TiVo-akció kerete (35.4); a 1000-es küszöb és gombfelirat (35.5); a
   mentés két állapothordozója (35.6).
 - **HATÓKÖRÖN KÍVÜL-JAVASLAT** (tulajdonosi döntést kér): a TiVo-export
-  megvalósítása; a `desk.cpl`-alapú képernyővédő-telepítés átvétele.
+  megvalósítása; az operációs rendszer tétlenségi jeléhez kötött automatikus
+  képernyővédő-indítás és az eredeti `desk.cpl` telepítőút átvétele.
 
 ### Amit KIZÁRTAM
 
