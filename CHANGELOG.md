@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.689] – 2026-10-05
+
+- A Filmkészítő párbeszéde nagyobb főablakban úgy méreteződik, hogy a beállítások és az előnézet görgetés nélkül láthatók. (#4244).
+
 ## [0.8.688] – 2026-10-05
 
 - A nyomtatási, címkézési és filmkészítési felület néhány hiányzó elemét pótoltuk (#4214).
