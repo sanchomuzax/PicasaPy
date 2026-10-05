@@ -145,7 +145,15 @@ class TestAzUTKOZESEK:
                 bj = behuzas(sorok[j])
                 if sorok[j].strip() == "}" and bj == b:
                     break
-                if bj == b + 4 and re.match(r"\s*PicasaMenuItem\s*\{", sorok[j]):
+                picasa_menu_item = re.match(r"\s*PicasaMenuItem\s*\{", sorok[j])
+                poster_menu_item = (
+                    re.match(r"\s*MenuItem\s*\{", sorok[j])
+                    and any(
+                        'objectName: "menuCreatePoster"' in sorok[k]
+                        for k in range(j + 1, min(j + 4, len(sorok)))
+                    )
+                )
+                if bj == b + 4 and (picasa_menu_item or poster_menu_item):
                     for k in range(j + 1, min(j + 14, len(sorok))):
                         t = re.search(r'text:\s*qsTr\("([^"]+)"\)', sorok[k])
                         if t:

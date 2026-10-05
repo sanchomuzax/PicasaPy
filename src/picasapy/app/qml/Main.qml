@@ -1531,6 +1531,12 @@ ApplicationWindow {
             if (sorok.length > 0)
                 controller.setPhotoAsDesktopBackground(sorok[0])
         }
+        // #4268: a Picasa poszterpárbeszéde a kijelölés első képéből indul.
+        onPosterRequested: {
+            var paths = window.selectedPaths()
+            if (paths.length > 0)
+                createDialogs.ensure().openPoster(String(paths[0]))
+        }
         onSaveSearchRequested: {
             if (controller.searchResultCount > 1000)
                 //: `CThumbUI::SaveSearchBig` — az eredeti szövege (#3573)
@@ -4051,6 +4057,12 @@ ApplicationWindow {
         }
         function onMovieFailed(message) {
             createDialogs.ensure().jelezdAFilmHibajat(message)
+        }
+        function onPosterFinished(paths) {
+            createDialogs.ensure().jelezdAPoszterSikert(paths)
+        }
+        function onPosterFailed(message) {
+            createDialogs.ensure().jelezdAPoszterHibajat(message)
         }
     }
 

@@ -189,6 +189,8 @@ MenuBar {
     signal saveSearchRequested()
     //: #1775: a kijelölt kép asztali háttérképnek — a gazda adja a sort.
     signal wallpaperRequested()
+    // #4268: egyetlen kijelölt kép poszterlapokra bontása.
+    signal posterRequested()
     //: #1406: a címke albumként — a gazda nyitja a bekérő párbeszédet.
     signal showTagAsAlbumRequested()
     //: #1401: az Útlevélkép — a gazda adja a kijelölt sort, és nyitja a
@@ -1762,6 +1764,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        objectName: "menuCreateRoot"
         title: qsTr("&Create")
         //: #1775: `eMenuCreate::ID_WALLPAPER` (`0x9cd2`). Az eredeti MÁSOLATOT
         //: ír (`picasabackground.bmp` a `Picasa/Backgrounds` mappába), nem az
@@ -1777,7 +1780,12 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.wallpaperRequested()
         }
-        PicasaMenuItem { text: qsTr("Make a &Poster..."); placeholder: true }
+        MenuItem {
+            objectName: "menuCreatePoster"
+            text: qsTr("Make a &Poster...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.posterRequested()
+        }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         MenuItem {

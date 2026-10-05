@@ -3138,6 +3138,94 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
 <context>
     <name>CreateDialogs</name>
     <message>
+        <source>Poster Settings</source>
+        <translation>Poszterbeállítások</translation>
+    </message>
+    <message>
+        <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
+        <translation>Tipp: Ha nem szeretné, hogy a képet a program csonkolja, vágja a papírral azonos méretűre.</translation>
+    </message>
+    <message>
+        <source>Poster size:</source>
+        <translation>Poszterméret:</translation>
+    </message>
+    <message>
+        <source>200%</source>
+        <translation>200%</translation>
+    </message>
+    <message>
+        <source>300%</source>
+        <translation>300%</translation>
+    </message>
+    <message>
+        <source>400%</source>
+        <translation>400%</translation>
+    </message>
+    <message>
+        <source>500%</source>
+        <translation>500%</translation>
+    </message>
+    <message>
+        <source>600%</source>
+        <translation>600%</translation>
+    </message>
+    <message>
+        <source>700%</source>
+        <translation>700%</translation>
+    </message>
+    <message>
+        <source>800%</source>
+        <translation>800%</translation>
+    </message>
+    <message>
+        <source>900%</source>
+        <translation>900%</translation>
+    </message>
+    <message>
+        <source>1000%</source>
+        <translation>1000%</translation>
+    </message>
+    <message>
+        <source>Paper size:</source>
+        <translation>Papírméret:</translation>
+    </message>
+    <message>
+        <source>4x6</source>
+        <translation>4x6</translation>
+    </message>
+    <message>
+        <source>8.5x11</source>
+        <translation>8,5x11</translation>
+    </message>
+    <message>
+        <source>10x15</source>
+        <translation>10x15</translation>
+    </message>
+    <message>
+        <source>20x25</source>
+        <translation>20x25</translation>
+    </message>
+    <message>
+        <source>Overlap tiles</source>
+        <translation>Átfedő mozaikok</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Poster tiles saved.</source>
+        <translation>A poszterlapok elkészültek.</translation>
+    </message>
+    <message>
+        <source>The poster tiles could not be created.</source>
+        <translation>A poszterlapokat nem sikerült létrehozni.</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266"/>
         <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
         <translation>%1 kép nem található, ezért nem jelenik meg. (A hiányzó fájlokat bizonyára elmozdították, átnevezték vagy törölték.)</translation>
