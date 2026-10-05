@@ -185,6 +185,56 @@ Window {
         printWindow.quality = printWindow.printCtl.printQuality(
             printWindow.rows, printWindow.printSize)
         printWindow.frissitsdAzElonezetet()
+        if (printWindow.reviewOpen) {
+            printWindow.reviewList = printWindow.printCtl.smallPictures(
+                printWindow.rows, printWindow.printSize)
+            printReviewList.currentIndex = printWindow.reviewList.length > 0 ? 0 : -1
+        }
+    }
+
+    function removeReviewRows(eltavolitandoSorok) {
+        var maradek = []
+        for (var i = 0; i < printWindow.rows.length; ++i) {
+            var sor = Number(printWindow.rows[i])
+            if (eltavolitandoSorok.indexOf(sor) < 0)
+                maradek.push(sor)
+        }
+        printWindow.rows = maradek
+        printWindow.frissitsdAMinoseget()
+    }
+
+    function removeSelectedReviewPicture() {
+        var index = printReviewList.currentIndex
+        if (index < 0 || index >= printWindow.reviewList.length) return
+        var kep = printWindow.reviewList[index]
+        var kepSor = Number(kep.row)
+        if (kepSor >= 0) {
+            printWindow.removeReviewRows([kepSor])
+        } else {
+            printWindow.printCtl.excludeReviewPictures([Number(kep.recordId)])
+            printWindow.frissitsdAMinoseget()
+        }
+    }
+
+    function removeLowQualityReviewPictures() {
+        var sorok = []
+        var rekordAzonositok = []
+        for (var i = 0; i < printWindow.reviewList.length; ++i) {
+            var kep = printWindow.reviewList[i]
+            var sor = Number(kep.row)
+            if (sor >= 0) sorok.push(sor)
+            else rekordAzonositok.push(Number(kep.recordId))
+        }
+        if (rekordAzonositok.length > 0)
+            printWindow.printCtl.excludeReviewPictures(rekordAzonositok)
+        if (sorok.length > 0) printWindow.removeReviewRows(sorok)
+        else printWindow.frissitsdAMinoseget()
+    }
+
+    function acceptReviewAndPrint() {
+        if (Number(printWindow.quality.total || 0) === 0) return
+        printWindow.reviewOpen = false
+        printWindow.startPrint()
     }
 
     //: #1819: az előnézeti lap újrarajzolása. Minden állítás (méret,
@@ -311,7 +361,11 @@ Window {
 
     function nyisd(targetRows, utlevelUrl, contactMode) {
         printWindow.valtsdAzUtlevelet(utlevelUrl)
+        if (printWindow.printCtl)
+            printWindow.printCtl.clearReviewExclusions()
         printWindow.rows = targetRows ? targetRows : []
+        printWindow.reviewOpen = false
+        printWindow.reviewList = []
         // ⚠️ #1590/#3712: az elrendezés NEM élheti túl a bezárást — ezért a
         // MEGNYITÁS módja dönt (paraméter), nem egy külön, utólagos
         // állítás. Enélkül a Ctrl+P legközelebb szó nélkül indexképet
@@ -361,7 +415,8 @@ Window {
         // a gomb ilyenkor szürke, tehát ide kattintással nem lehet eljutni —
         // de a néma elutasítás annyira visszatérő hibánk, hogy a
         // programozott hívás se maradhat szótlan
-        if (printWindow.rows.length === 0) {
+        if (printWindow.rows.length === 0
+                || Number(printWindow.quality.total || 0) === 0) {
             printWindow.lastError = qsTr("No pictures to print.")
             return
         }
@@ -711,6 +766,8 @@ Window {
                         printWindow.reviewList = printWindow.printCtl.smallPictures(
                             printWindow.rows, printWindow.printSize)
                         printWindow.reviewOpen = true
+                        printReviewList.currentIndex =
+                            printWindow.reviewList.length > 0 ? 0 : -1
                     }
                 }
             }
@@ -954,38 +1011,98 @@ Window {
                 color: Theme.ink
             }
             Text {
+                objectName: "printReviewWarningText"
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
-                //: A sztring EGYETLEN literál: a `qsTr()` futásidőben
-                //: összefűzött argumentumát a kinyerő nem látná, és a
-                //: fordítás némán elmaradna.
-                text: qsTr("These pictures are below %1 pixels/inch at the selected print size:")
-                          .arg(printWindow.quality.threshold)
+                //: `CPrintDlg::toosmall`; eredeti figyelmeztetés a
+                //: `picasa-nyomtatas.md` 40.7 szerint.
+                visible: printWindow.reviewList.length > 0
+                text: qsTr("Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.")
             }
             ListView {
                 objectName: "printReviewList"
+                id: printReviewList
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: printWindow.reviewList.length > 0
                 clip: true
                 model: printWindow.reviewList
-                delegate: Text {
+                currentIndex: printWindow.reviewList.length > 0 ? 0 : -1
+                delegate: Item {
                     required property var modelData
+                    required property int index
+                    objectName: "printReviewListRow"
                     width: ListView.view.width
-                    elide: Text.ElideMiddle
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                    //: fájlnév — effektív felbontás
-                    text: modelData.name + "   —   "
-                          + qsTr("%1 pixels/inch").arg(modelData.dpi)
+                    height: reviewListRowText.implicitHeight + 8
+                    Rectangle {
+                        anchors.fill: parent
+                        color: ListView.isCurrentItem ? Theme.surfaceAlt : "transparent"
+                    }
+                    Text {
+                        id: reviewListRowText
+                        objectName: "printReviewListRowText"
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        elide: Text.ElideMiddle
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                        //: `ThumbUIPrint::ReviewLow` plus a képenkénti DPI.
+                        text: qsTr("Low Quality: %1").arg(modelData.name)
+                              + "   —   "
+                              + qsTr("%1 pixels/inch").arg(modelData.dpi)
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: printReviewList.currentIndex = index
+                    }
                 }
             }
-            PicasaButton {
-                objectName: "printReviewCloseButton"
-                Layout.alignment: Qt.AlignRight
-                text: qsTr("Close")
-                onClicked: printWindow.reviewOpen = false
+            Text {
+                objectName: "printReviewEmptyText"
+                Layout.fillWidth: true
+                visible: printWindow.reviewList.length === 0
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                text: printWindow.rows.length > 0
+                      && Number(printWindow.quality.total || 0) > 0
+                      ? qsTr("All of your pictures are ready to print.")
+                      : qsTr("There are no pictures left to print.")
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+                PicasaButton {
+                    objectName: "printReviewRemoveSelectedButton"
+                    Layout.fillWidth: true
+                    enabled: printReviewList.currentIndex >= 0
+                    text: qsTr("Remove Selected Items")
+                    onClicked: printWindow.removeSelectedReviewPicture()
+                }
+                PicasaButton {
+                    objectName: "printReviewRemoveLowButton"
+                    Layout.fillWidth: true
+                    enabled: printWindow.reviewList.length > 0
+                    text: qsTr("Remove Low Quality Pictures")
+                    onClicked: printWindow.removeLowQualityReviewPictures()
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+                Item { Layout.fillWidth: true }
+                PicasaButton {
+                    objectName: "printReviewAcceptButton"
+                    text: qsTr("OK")
+                    enabled: Number(printWindow.quality.total || 0) > 0
+                    onClicked: printWindow.acceptReviewAndPrint()
+                }
+                PicasaButton {
+                    objectName: "printReviewCancelButton"
+                    text: qsTr("Cancel")
+                    onClicked: printWindow.reviewOpen = false
+                }
             }
         }
     }

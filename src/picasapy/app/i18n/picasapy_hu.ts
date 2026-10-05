@@ -340,6 +340,46 @@
         <translation>Ellenőrzés</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
+        <translation>Néhány kép túl kicsi a jó minőségű nyomtatáshoz. Ezeket eltávolíthatja, mégis kinyomtathatja, vagy megszakíthatja a nyomtatást, és módosíthatja a nyomtatási méretet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Low Quality: %1</source>
+        <translation>Gyenge minőség: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Remove Selected Items</source>
+        <translation>Kijelölt elemek eltávolítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Remove Low Quality Pictures</source>
+        <translation>Gyenge minőségű képek eltávolítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>All of your pictures are ready to print.</source>
+        <translation>Az összes kép készen áll a nyomtatásra.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>There are no pictures left to print.</source>
+        <translation>Nincs több nyomtatni való kép.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
         <source>Make sure your photos are ready to print</source>
         <translation>Győződjön meg arról, hogy a fotók nyomtatásra készek</translation>
     </message>
