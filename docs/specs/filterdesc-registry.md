@@ -8588,6 +8588,28 @@ A 20 px-es felület mérete 1764 bájt, pointere `0x10100010`; a 40 px-esé 6724
 
 **Bizonyítottsági fok és készültség:** a `h=1.0` hard ág és az eredeti kimeneti felület `20/40 px` középső sorainak fedettségprofilja **megerősített** (utasításszintű kimenetértelmezés + az eredeti kód QEMU-futtatása, méretenként és módonkénti hash-kontrollal). A profil pontos értéke más méreteken, a megengedett keménységi min/max, a forgatás fogyasztója/egysége és az UI-faktorok nevezője **NINCS MEG**. A helyi maszk fix 0.15-ös pereme a natív `h=1` profilhoz eltér; a tárolt vonásokból teljes preview/export maszkot újraépítő egyetlen fejlesztői jegy csak a forgatás és az UI-faktor nevezőjének lezárása után írható ki. Termékkódot ez a kutatási kör nem módosít.
 
+#### #4096 — negyedik helyi Codex-kör (2026-10-05)
+
+**A `BrushSizeSlider` faktorai — a nevező megerősített.** A `filterdesc.xml:1279` a `BrushSizeAndEraserButton`-hoz `startValueFactor="0.03"` és `maximumFactor="0.2"` értéket ad. A `0x00bb25f0` ezeket külön propertyként olvassa, a `0x00bc39c0` pedig a `+0x28` start és a `+0x30` maximum faktort kiolvassa, majd a hányadosukat adja vissza. Az eredeti metódus QEMU-futtatása a két descriptorértéket adó getter-shimmel `0.149999994412` arányt adott (`variant_type=3`), azaz a kezdőérték-arány `0.03/0.2`.
+
+A `0x00bc3a60` metódus az `origImageWidth` és `origImageHeight` propertyt kéri le, összeszorozza, a `0x00c0b310` négyzetgyököt számol belőle, majd a `maximumFactor`-ral szoroz. Az eredményt a `0x00cf3bd8` konstanssal osztja a `0x00529e10` segédfüggvény hívása előtt, utána ugyanazzal a konstanssal visszaszorozza, és a `0x00cf48e0`/`0x00cf48dc` értékekkel 250-re korlátozza. Így a kerekítősegéd előtti maximum-bemenet pontos képlete: `maximumFactor × sqrt(origImageWidth × origImageHeight) / 50`; a vezérlő a segéd kimenetét 50-es egységgel visszaskálázza, legfeljebb 250-ig. Ez a maximumtartomány belső képlete, nem állítás az élő QML-kötés által kiválasztott aktuális ecsetméretről.
+
+| eredeti kép (px) | QEMU-val naplózott bemenet a `0x00529e10`-nek, `maximumFactor=0.2` | képlet szerinti érték |
+|---:|---:|---:|
+| 120×80 | `0.3919183612` | `0.2 × sqrt(120×80) / 50` |
+| 240×160 | `0.7838367224` | `0.2 × sqrt(240×160) / 50` |
+| 1000×800 | `3.5777087212` | `0.2 × sqrt(1000×800) / 50` |
+
+**A út — utasításszintű olvasás:** `0x00bb25f0`, `0x00bc39c0`, `0x00bc3a60`, `0x00c0b310`; a nevező `0x00cf3bd8` memóriakonstansából 50, a visszaszorzás és a felső korlát ugyanabban a metódusban látható. **B út — eredeti gépi kód futtatása:** `0x00bc39c0` és `0x00bc3a60` eredeti kódja `qemu-i386` alatt futott; az előbbin a start/max faktorok hányadosát, az utóbbin a `0x00529e10` hívás argumentumát naplóztuk. A három szélesség/magasság-pár azonos képletet adott. A QEMU getterjei és propertytömbjei szintetikusak voltak, ezért ez a bináris metódust igazolja, nem egy élő Qt/QML szerkesztőállapotot.
+
+**Cáfoló kísérlet:** ellenőriztük, hogy a nevező alapja nem a rövidebb képméret. A `min(W,H)` hipotézis ugyanilyen `maximumFactor=0.2` mellett rendre `0.32`, `0.64`, `3.2` bemenetet adna; az eredeti kód QEMU-futásában mért értékek ettől eltértek. A különálló utasításolvasat a `W×H` szorzást, négyzetgyököt és `/50` műveletet közvetlenül mutatja, tehát ugyanazzal a mércével alátámasztja a cáfolatot.
+
+**Keménység — a „néhány méret/keménység-pár” profilja megvan, általános képlet nincs.** A második bináris kör a `h=0`, `0.15`, `0.5` 20 px-es ecsethez mérte ki a 15 interpolációs mintapont alfaértékeit, továbbá a `h=0.15` 40 px-en azonos normalizált mintákat; a harmadik kör `h=1.0` esetén a teljes 20 és 40 px-es natív középső alfa-sort kiolvasta. Ezek az adott párokra utasításszintű útolvasással és az eredeti `CircularBrush`-kód QEMU-futtatásával egyeznek. Ez nem ad minden keménységre/méretre zárt alfa-képletet, de a jegyben kért konkrét mintaprofilokat visszakereshetővé teszi.
+
+**Forgatás (`stroke+8`) — továbbra is nyitott.** A teljes `.text`-pásztázás a kötelező `paszta.py`-n és annak `memoria_kapu()` kapuján keresztül futott: 2 884 879 utasítás; a sok általános `+8` találat között nem lett igazolt stroke-fogyasztó. A `0x008f3970` elsőre lehetséges olvasónak tűnt, de a `0x008edcfc` `lea edx,[esp+0x8c]` és a `0x008edd0a` hívás alapján az `EDX` a `0x008ed730` ecsetgenerátor verem-lokális transzformációjára mutat, nem a tárolt stroke rekordjára; ezt a jelöltet ezért elvetettük. A korábbi `0/90` QEMU-próba csak bélyeghívásokat számolt, nem koordinátát vagy teljes felületet, így sem a mező teljes fel nem használtságát, sem a fok/radián egységet nem bizonyítja. A mező alternatív megjelenítési fogyasztója és egysége **NINCS MEG**.
+
+**Készültség:** a keménységprofil-minták és az UI-faktor maximumtartományának nevezője a fenti mért/bináris tartományban **megerősített**; a forgatási mező nyitottsága miatt a #4096 teljes „Kész, ha” feltétele még nem teljes. A tárolt vonásokból preview/export maszkot újraépítő fejlesztői jegyet ezért még nem javasoljuk.
+
 ## ⛳⛳ A `GlowImageOperation` SOSEM fut belső ragyogásként — az `innerglow` attribútum nem létezik a binárisban (2026-09-14, 306. kör, #2982)
 
 *Forrás: `glimmer::GlowImageOperation::vftable` = `0x00cf0174` (RTTI), az

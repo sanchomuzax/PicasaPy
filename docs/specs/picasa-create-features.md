@@ -2432,25 +2432,63 @@ még nincs valódi fotórekorddal natívan megmérve. A mezők tartalma
 **NINCS MEG**; „minőség”, „pontszám” vagy más szemantikus címke nem
 következtethető ki az eltolásból.
 
-**A `0x00874320` hívási adatai — forrásmezők részben azonosítva, címvektor
-nyitott (2026-10-05, #4194 folytatás).** A `0x0081b800` `0x0081bbac` hívása
-a `0x00874e40`-nek a `+0x744`, `+0x504`, `+0x708`, `+0x6f8`, továbbá a
-`+0x6cc` vagy `+0x6d4`, illetve `+0x6dc` vagy `+0x6e4` mezők címeit adja.
-Ugyanebben az útban a `0x00874e40` hívja a `0x00874320`-at
-(`0x00874e70`), majd a `0x00874ac0` segédet. A `+0x6cc` csoportazonosító-
-vektor a `0x0081ae10` kimenete; a `+0x708` dword-vektorba a
-`0x0081e5a0` `0x38` bájtos rekordonként dátumból képzett értéket ír
-(`0x0081f270`–`0x0081f36b`); a `+0x6f8` egy képenkénti bájtvektor, amelyet
-a `0x0081e3a0` rekordindexenként tölt fel. A `+0x6dc/+0x6e4` mezők a
-gráfépítőnek szintén képenként indexelt bájttömbként átadott bemenetek.
+**A rekordmezők íróinak pásztázása — pontos eltolás, a célrekord írója nyitott
+(2026-10-05, #4194 folytatás).** A teljes `.text` `+0x30/+0x34` írásainak
+pásztázása több, egymástól eltérő rekord- és objektumtípust talált; az
+eltolás egyezése önmagában nem azonosít típust. A releváns jelölt
+`0x00823620`: `0x823b3b`-nél a saját, `0x38` bájtos kimeneti rekord
+`+0x30` mezőjébe egy bemeneti dword-vektor elemét, `0x823b4b`-nél a
+`+0x34` mezőjébe egy másik bemeneti vektor elemét írja. Ugyanebben a
+függvényben a rekord `+0x30` értékével egy táblázatot indexel
+(`0x823b92`–`0x823bb0`), a `+0x34` értékét pedig egy virtuális metódusnak
+adja át (`0x823c53`–`0x823c69`); a rekord további mezőit a
+`conf/pan/leye/reye/mouth` szövegannotáció köti arcjellemzőkhöz
+(`0x823c41`).
 
-Ez a hívóhelyi térkép megmutatja, mely gyűjteménymezőket kapja meg az út,
-de **nem** dönti el, ezek közül melyikből készül a `0x00874320` címvektora,
-és mely tömbök kerülnek az abban hivatkozott bejegyzésekbe. A `+0x744`
-mező tartalma és a `+0x6dc/+0x6e4` bájtok jelentése **NINCS MEG**. A
-`0x00874320` korábbi szintetikus QEMU-próbája `[0,2]` adattartalmú
-vektorral hibás nullcím-írásnál SIGSEGV-vel állt meg; ez csak a szintetikus
-bemenet hibáját bizonyítja, valódi rekordindexet vagy kiválasztást nem.
+Ezt az írót a `0x00824090` közvetlen hívása kapcsolja egy
+`[this+0x4e0]` kimenethez (`0x824164`–`0x824181`). A Filmkészítő útján
+`0x006175c0` hívja a `0x0081b800`-at, amely szintén `[this+0x4e0]`-t
+használ. A két, azonos eltolású lista objektumazonossága
+**nincs bizonyítva**. A teljes írópásztázás más ütközést is talált:
+`0x004e41f0` egy beágyazott `0x38` bájtos alobjektum `+0x30/+0x34`
+mezőit nullázza (`0x4e438c`–`0x4e43cd`), miközben ugyanazon külső objektum
+`+0x4e0` listáját külön inicializálja (`0x4e4510`–`0x4e4516`). Ezért a
+Filmkészítő rekordjának tényleges írója és a `+0x30/+0x34` szemantikája
+**NINCS MEG**; az `0x00823620` archoz kötött adatútja nem bizonyítja, hogy
+a Filmkészítő rekordjában a mezők arcszámot, arcméretet vagy pontszámot
+tárolnak.
+
+**A `0x00874320` hívási adatai — a két út mezői azonosítva, az elemek
+jelentése nyitott (2026-10-05, #4194 folytatás).** A `0x0081b800` két
+gráfépítő útja ugyanazt a segédet azonos közvetlen gyűjteménymezőkkel hívja.
+A) a `0x0081bbac` hívja a `0x00874e40`-et (`0x00874e70`), B) a
+`0x0081bb3c` hívja a `0x00875ee0`-t (`0x00875f22`). Mindkét úton a
+`0x00874320` az `EAX`-on a `[obj+0x504]` objektumot, az `ECX`-ben a
+`[obj+0x6cc]` vagy `[obj+0x6d4]` vektort kapja, és a `[obj+0x744]`
+vektorfejlécbe ír (A: `0x874e4c`–`0x874e70`; B: `0x875ee6`–`0x875f22`).
+Mindkét hívás az adott `[obj+0x6dc]` vagy `[obj+0x6e4]` értéket is átadja
+a `0x00877370` hívásának (`0x874331`–`0x874338`, illetve
+`0x875ee6`–`0x875f22`). A második út a `[obj+0x6f8]` vektort a
+`0x00874320` után is használja. A két út egyezése megerősíti a közös
+hívómező-térképet, de önmagában nem nevezi meg a vektorelemeket.
+
+A `0x00874320` az `ECX`-beli vektor méretét és utolsó dwordjét olvassa
+(`0x87433d`–`0x874348`), 8 bájtos elemeket foglal/másol (`0x8743dc`–
+`0x87441b`, `0x874450`–`0x874470`) és az eredményt a kapott kimeneti
+vektorfejlécbe írja (`0x874335`, `0x874351`, `0x8745e8`). Az `EAX`-on
+kapott `[obj+0x504]` objektum virtuális metódusát is meghívja
+(`0x874328`–`0x874338`). Az operandustérkép
+megadja, mely gyűjteménymezők vesznek részt a két hívásban, de nem
+azonosítja a nyolcbájtos kimeneti elemek jelentését, a hivatkozott
+képindexeket vagy a `0x00877c50` bemenetéhez szükséges teljes
+adatszerkezetet. A `[obj+0x708]` további bemenet a `0x00874e40` úton; az
+`0x0081e5a0` dátumvektort, az `0x0081e3a0` a `[obj+0x6f8]` vektort kezeli.
+A többi mező szemantikája és tartalmuk teljes visszakövetése **NINCS MEG**.
+
+A korábbi QEMU-próba a szintetikus `[0,2]` adattartalmú bemeneti vektorral nullcímre írt
+és SIGSEGV-vel megállt, mielőtt elérte volna a `0x00877c50`-et. Ez nem
+valódi gyűjteményrekord-indexekkel végzett futás, ezért nem igazolja a
+vektorelemeket vagy a megtartott fotót.
 
 **Bizonyítottsági határ:** a `0x008781a0` segédreducerének „bázis + segédrekord
 `+8`”, minimumot választó és döntetlennél korábbi jelöltet megtartó szabálya
@@ -2469,21 +2507,23 @@ kikövetkeztetni.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Az eredeti bináris `delta >= T` szabállyal, a bemeneti sorrendben szomszédos időkből csoportokat készít; a `mode == 0` súlyozott jelöltminimumot, a `mode != 0` költségminimumú útvonalat járja. A getterek regisztrált implementációi HOG (`0x00873e40`) és Neven (`0x008742a0`); a nyers rekordmező-hozzáférés `+0x30`/`+0x34`, de a tartalmuk és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` a projektfájlban és a QML/controller átadásban szerepel; az `src/` alatti hivatkozások között nincs képszűrési fogyasztó. | A #4182-ben a dátumcsoportosítás a bizonyított szabállyal implementálható. A végső képszűrést csak a `0x00874320` címvektorának és bájtbemeneteinek mezőtérképe, a fotómezők szemantikája, valamint a valódi indexű natív futás után implementáld. `Kész, ha`: (1) a három fenti dátumsor azonos csoportokat ad; (2) valódi fotórekord-indexekkel visszakövethető a getter, a reducer bemenete és a végső fotóindex; (3) a fotómező változtatására, a döntetlenre és az üres jelöltlistára adott eredmény egyezik a natív kimenettel. |
+| Az eredeti bináris `delta >= T` szabállyal, a bemeneti sorrendben szomszédos időkből csoportokat készít; a `mode == 0` súlyozott jelöltminimumot, a `mode != 0` költségminimumú útvonalat járja. A HOG (`0x00873e40`) és Neven (`0x008742a0`) getterek rekord-`+0x30/+0x34` mezőket olvasnak, de a Filmkészítő rekordtípusának írója, a mezők jelentése és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` a projektfájlban és a QML/controller átadásban szerepel; az `src/` alatti hivatkozások között nincs képszűrési fogyasztó. | A #4182-ben a bizonyított dátumcsoportosítás implementálható. A megtartott fotóra ne kerüljön becsült szabály. A végső képszűrés csak a `[obj+0x4e0]` rekordíró és a `+0x30/+0x34` szemantika azonosítása, a `0x00874320` kimeneti elemeinek visszakötése valódi fotórekord-indexekhez, valamint a `0x00877c50` valódi indexű natív futása után implementálható. `Kész, ha`: (1) a három fenti dátumsor azonos csoportokat ad; (2) a tényleges rekordíró és mindkét mező forrása/értelme bizonyítékhoz kötött; (3) valódi fotórekord-indexekkel visszakövethető a getter, a reducer bemenete és a végső fotóindex; (4) a mezőváltoztatásra, döntetlenre és üres jelöltlistára adott eredmény egyezik a natív kimenettel. |
 
 Nyitott futtatási kérdés: melyik fotórekord-indexet teszi a csoportból a
 `0x008781a0` megfelelő jelöltjévé, és a getterek által olvasott rekordmezők
-mit jelentenek? Következő lépés: a `0x00874320`/`0x00874e40` adatutat a
-`0x0081b800` hívóhelyének valódi gyűjteményobjektumával rekonstruálni, majd
-elérni a `0x00877c50`-et valódi fotórekord-indexekkel, a `+0x30/+0x34`
-mezőket egyenként változtatni, és rögzíteni a gettert, a reducerjelöltet és a
-végső fotóindexet. Célzott Ghidra-kérdések:
-`Ghidra-kör kell: 0x00874320 — mely gyűjteményobjektum-mezők adják a
-0x00874320 címvektorát és az abban hivatkozott képenkénti bájttömböket, hogy
-a 0x00877c50-es út valódi fotórekord-indexekkel futtatható legyen? [blokkoló]`
-`Ghidra-kör kell: 0x00873170 — a bizonyított HOG/Neven `+8` getterek által
-olvasott fotórekord-`+0x30`/`+0x34` mezők milyen tartalmat jelölnek, és melyik
-adja a reducer `+8` értékét? [blokkoló]`
+mit jelentenek? Következő lépés: a `[obj+0x4e0]` rekordtípusának és írójának
+azonosítása, majd a két gráfépítő út valódi gyűjteményobjektummal való
+futtatása a `0x00877c50`-ig. Csak ilyen futásban lehet a gettert, a
+reducerjelöltet és a végső fotóindexet, illetve a `+0x30/+0x34` mezők
+változtatásának hatását rögzíteni. Célzott Ghidra-kérdések:
+`Ghidra-kör kell: 0x0081b800 — az itt használt [obj+0x4e0] lista
+0x38-bájtos rekordjának pontos típusát és íróját visszakövetni; melyik
+útvonal tölti a +0x30/+0x34 mezőket, és mit jelentenek? [blokkoló]`
+`Ghidra-kör kell: 0x00874320 — a nyolcbájtos kimeneti elemek mezői és
+indexszemantikája, illetve a 0x00877c50 által igényelt teljes bemenet
+azonosítható-e a két gráfépítő útból? [blokkoló]`
+`Ghidra-kör kell: 0x00873170 — a HOG/Neven getterek mely fotórekord-mezőből
+képezik a reducer +8 értékét, és milyen bemeneti tartományon? [blokkoló]`
 
 #### Bizonyítottsági fok
 
