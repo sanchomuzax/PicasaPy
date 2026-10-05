@@ -8,15 +8,16 @@ magyar fotólaborban nem tud rendelni.
 
 Az eredeti Picasa **tizenhét** nyomatméretet ismer
 (`ytPrintSizes::` szövegcsalád, `stringres` 3478–3494), és a magyar
-felületen a **metrikus hatost** mutatja. A tulajdonos felvételén
-(`#1953-nyomtatas-kep-kicsi.jpg`) pontosan ez a hat csempe látszik:
+felületen metrikus méreteket mutat. A tulajdonos felvételén
+(`#1953-nyomtatas-kep-kicsi.jpg`) a #4257 előtti hat tétel látszik:
 
     5x8 cm · 9x13 cm · 10x15 cm · 13x18 cm · 20x25 cm · Teljes oldal
 
-⚠️ **NINCS mérve**, hogy MI választja ki a hatot — a nyelv, a területi
+⚠️ **NINCS mérve**, hogy MI választja ki a listát — a nyelv, a területi
 beállítás vagy a nyomtató papírmérete. Nálunk a **felület nyelve** dönt;
-ez a mi döntésünk, nem az eredeti másolása, és a `dpi.py` egyetlen
-helyén cserélhető, ha a mérés megszületik.
+ez a mi döntésünk, nem az eredeti másolása. A #4257 a mért 15×20 cm-es
+méretet az eredeti helyére illeszti; a CD-borító pontos méretét a spec
+nem adja meg, ezért az kimarad.
 
 ## Utólagos javítás (#3712-review)
 
@@ -24,9 +25,9 @@ A hüvelykes ötös **sorrendje és összetétele hibás volt**: a Tárca a list
 VÉGÉN állt, és a `TELJES_OLDAL` (Full Page) egyáltalán hiányzott belőle —
 a `research/testdata/screenshot/Colab EN 29…`/`…30…` felvételek szerint
 az eredeti hat gombja Wallet elöl, Full Page a végén sorrendben áll. A
-metrikus hatos ÖSSZETÉTELE (nincs Tárca-tagja) ettől függetlenül MÉRT
-viselkedés marad — a `printing/dpi.py` `METRIKUS_KESZLET` docsztringje
-magyarázza, miért nem kap Tárcát.
+metrikus összeállításának nincs Tárca-tagja. A #4257 új méretekkel
+bővített listái ettől függetlenek: a hüvelykes készlet két mért elemmel,
+a metrikus egy tétellel bővül.
 """
 
 from __future__ import annotations
@@ -42,18 +43,19 @@ from picasapy.printing.dpi import (
 
 
 class TestAKetKeszlet:
-    def test_a_metrikus_hatos_a_felvetel_szerint(self):
+    def test_a_metrikus_meretek_az_eredeti_sorrendben(self):
         assert [m.name for m in METRIKUS_KESZLET] == [
-            "M5X8CM", "M9X13CM", "M10X15CM", "M13X18CM", "M20X25CM",
-            "TELJES_OLDAL",
+            "M5X8CM", "M9X13CM", "M10X15CM", "M13X18CM", "M15X20CM",
+            "M20X25CM", "TELJES_OLDAL",
         ]
 
-    def test_a_huvelykes_hatos_a_panel_gombsorrendjeben(self):
+    def test_a_huvelykes_meretek_az_eredeti_sorrendben(self):
         """#3712-review: a korábbi ötös (Tárca a végén, Full Page nélkül)
-        NEM egyezett a `printpanel.tre` hat gombjával — ld. a modul
-        docsztringjét."""
+        NEM egyezett a `printpanel.tre` mért sorrendjével. A Tárca továbbra
+        is elöl áll; a 3×4 és 4×5 a specifikáció szerinti helyre került."""
         assert [m.name for m in HUVELYK_KESZLET] == [
-            "TARCA", "M3_5X5", "M4X6", "M5X7", "M8X10", "TELJES_OLDAL",
+            "TARCA", "M3X4", "M3_5X5", "M4X5", "M4X6", "M5X7",
+            "M8X10", "TELJES_OLDAL",
         ]
 
     def test_a_gradualt_meretek_NEM_fedik_at_egymast(self):
@@ -76,6 +78,7 @@ class TestACentimeteresAtvaltas:
         ("M9X13CM", 9, 13),
         ("M10X15CM", 10, 15),
         ("M13X18CM", 13, 18),
+        ("M15X20CM", 15, 20),
         ("M20X25CM", 20, 25),
     )
 
@@ -108,6 +111,23 @@ class TestAzUtlevelMeret:
 
     def test_nincs_a_metrikus_keszletben(self):
         assert NyomatMeret.PASSPORT not in METRIKUS_KESZLET
+
+
+class TestA4257HianyzoMeretei:
+    def test_a_huvelykes_meretek_a_mert_oldalhosszal(self):
+        assert (
+            NyomatMeret.M3X4.szeles_huvelyk,
+            NyomatMeret.M3X4.magas_huvelyk,
+        ) == (3.0, 4.0)
+        assert (
+            NyomatMeret.M4X5.szeles_huvelyk,
+            NyomatMeret.M4X5.magas_huvelyk,
+        ) == (4.0, 5.0)
+
+    def test_a_cd_borito_merete_nincs_becsulve(self):
+        # A specifikáció csak a közös centiméteres ágra sorolja az eCDSize-t;
+        # hozzá tartozó méretadatot nem közöl.
+        assert all("CD" not in nev.upper() for nev in NyomatMeret.__members__)
 
 
 class TestANyelvValasztas:

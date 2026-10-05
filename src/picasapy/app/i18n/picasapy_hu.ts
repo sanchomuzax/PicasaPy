@@ -348,8 +348,16 @@
         <translation>Nyomatméret:</translation>
     </message>
     <message>
+        <source>3 x 4</source>
+        <translation>3x4</translation>
+    </message>
+    <message>
         <source>3.5 x 5</source>
         <translation>3,5x5</translation>
+    </message>
+    <message>
+        <source>4 x 5</source>
+        <translation>4x5</translation>
     </message>
     <message>
         <source>4 x 6</source>
@@ -378,6 +386,10 @@
     <message>
         <source>13 x 18 cm</source>
         <translation>13x18 cm</translation>
+    </message>
+    <message>
+        <source>15 x 20 cm</source>
+        <translation>15x20 cm</translation>
     </message>
     <message>
         <source>20 x 25 cm</source>
