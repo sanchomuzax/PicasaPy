@@ -19,6 +19,9 @@ Item {
     // #4062: modal Kiegyenesítéskor az eredeti a használható csempéket
     // erősebben halványítja; más letiltási oknál marad a 0,4-es érték.
     property bool dimmedByTiltModal: false
+    // #4068: a paraméterpanel alatt a csempe nem halványodik; az elmosott
+    // réteg őrzi meg az eredeti teljes színét.
+    property bool fullStrengthWhenDisabled: false
     property real disabledOpacity: 0.4
     signal activated(string tool)
 
@@ -42,7 +45,7 @@ Item {
     // az öröklött enabled is számít (#103): videónál a PhotoViewer az
     // egész panelt tiltja — a csempe ilyenkor vizuálisan is szürkül
     enabled: tile.tileEnabled
-    opacity: tile.enabled
+    opacity: tile.enabled || tile.fullStrengthWhenDisabled
              ? 1
              : (tile.tileEnabled && tile.dimmedByTiltModal
                 ? tile.disabledOpacity : 0.4)

@@ -188,7 +188,7 @@ class TestASzerkesztoFulek:
         forras = (_QML / "PicasaPy" / "EditTabButton.qml").read_text(
             encoding="utf-8"
         )
-        assert "onPressed: panel.activeTab" in forras, (
+        assert "onPressed: panel.selectTab(tbtn.tabIndex)" in forras, (
             "a fülgomb nem lenyomásra vált (#885)"
         )
         assert "onClicked: panel.activeTab" not in forras

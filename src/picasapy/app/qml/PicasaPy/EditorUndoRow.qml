@@ -66,12 +66,13 @@ RowLayout {
         return Math.max(0, Math.min(lathatoAlja, tartalomAlatt))
     }
     spacing: 5
-    // #4062: a nyitott Kiegyenesítés alatti, mért felvételen a sor nem
-    // rajzolódik ki; az opacity megtartja a helyét az elrendezésben.
-    opacity: panel.tiltActive ? 0 : (panel.enabled ? 1 : 0.45)
-    // #4062: ami nincs kirajzolva, az nem is kattintható — a láthatatlan
-    // Visszavonás gomb nyitott Kiegyenesítés alatt nem vonhat vissza lépést.
-    enabled: !panel.tiltActive
+    // #4062: Kiegyenesítésnél a sor nem rajzolódik ki. #4068: a
+    // felfüggesztett effektpanel állapotában elmosva látható és letiltott.
+    opacity: panel.tiltActive ? 0
+             : panel.paramPanelContentBlurred ? 1
+             : panel.paramPanelSuspended ? 0.45
+             : (panel.enabled ? 1 : 0.45)
+    enabled: !panel.tiltActive && !panel.paramPanelSuspended
 
     //: #2494/#405: a pár EGYFORMA magas, és a magasságot MI számoljuk,
     //: nem a Layout `fillHeight`-je — az Qt-verziófüggően viselkedik
