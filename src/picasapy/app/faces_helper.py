@@ -35,6 +35,7 @@ from picasapy.ini import (
     with_reassigned_face,
     without_face,
     without_face_at_rect,
+    without_faces,
 )
 from picasapy.ini.faces import Face
 from picasapy.ini.rect64 import Rect64
@@ -165,6 +166,14 @@ class FacesHelper(QObject):
             image_path,
             lambda document, photo_name, rect: without_face_at_rect(document, photo_name, rect),
             left, top, right, bottom,
+        )
+
+    # Szándékosan NEM `@Slot`: ezt csak a `FaceScanController` hívja Pythonból.
+    def removeAllFaces(self, image_path: str) -> bool:  # noqa: N802 — QML-slot-stílus
+        """A fotó összes `faces=` téglalapjának törlése, a névjegyzéké nélkül."""
+        return self._mutate(
+            image_path,
+            lambda document, photo_name, _rect: without_faces(document, photo_name),
         )
 
     # Szándékosan NEM `@Slot`: csak a Pythonból hívja a `FaceScanController`

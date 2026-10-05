@@ -69,7 +69,6 @@ from picasapy.index import (
     face_scan_done,
     mark_face_scan,
     replace_faces,
-    reset_all_faces,
     store_embedding,
     sync_tree,
     unnamed_album_photos,
@@ -819,20 +818,21 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 continue
             self._faces_helper.addIgnoredFace(str(face.photo_path), *rect)
 
-    @Slot(result=int)
-    def resetAllFaces(self) -> int:  # noqa: N802 — QML-slot-stílus
-        """„Arcok alaphelyzetbe állítása" (#422) — az INDEX oldala.
+    @Slot(list, result=int)
+    def resetFacesForPhotos(self, image_paths) -> int:  # noqa: N802 — QML-slot-stílus
+        """A kijelölt képek Picasa-féle arc-téglalapjainak törlése (#4258).
 
-        Minden arc visszakerül a „Névtelenek" albumba: az állapot, a
-        névhez kötés, a javaslat és a csoportosítás nullázódik. A
-        `.picasa.ini` ember által adott névcímkéihez NEM nyúlunk — az
-        eredeti is KÜLÖN kérdezte meg (`CThumbUI::ResetAll`), és nálunk a
-        Picasa döntései szentek."""
-        with open_index(self._db_path) as conn:
-            affected = reset_all_faces(conn)
-            conn.commit()
-        self.unnamedCountChanged.emit()
-        return affected
+        A `.picasa.ini` írása kizárólag a `FacesHelper`/`ini` API-n megy.
+        A függvény nem végez könyvtárszintű műveletet; visszatérési értéke
+        a sikeresen kezelt képek száma."""
+        if self._faces_helper is None or not image_paths:
+            return 0
+        paths = tuple(dict.fromkeys(str(path) for path in image_paths if path))
+        completed = 0
+        for image_path in paths:
+            if self._faces_helper.removeAllFaces(image_path):
+                completed += 1
+        return completed
 
     @Slot(result=int)
     def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus

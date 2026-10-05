@@ -522,6 +522,15 @@ ApplicationWindow {
         return paths
     }
 
+    function resetFacesForPaths(paths) {
+        if (!window._faceScanController || !paths || paths.length === 0)
+            return
+        if (window._faceScanController.resetFacesForPhotos(paths) > 0) {
+            if (controller) controller.refreshCollections()
+            photoViewer.facesEditRevision += 1
+        }
+    }
+
     // jobbklikk a rácson (#15): a klikkelt kép kerüljön kijelölésbe (ha még
     // nincs benne), majd a kontextusmenü a kattintás helyén nyílik
     function openPhotoContextMenu(index, item, x, y) {
@@ -2190,7 +2199,9 @@ ApplicationWindow {
                     && batchEffectController)
                 batchEffectController.clearAllEffectsMany([row])
         }
-        onResetFacesRequested: resetFacesConfirm.open()
+        onResetFacesRequested: resetFacesForPaths(
+            controller && photoViewer.aktivSor >= 0
+                ? [controller.photos.filePathAt(photoViewer.aktivSor)] : [])
         // #2566: a jobb fiók a nézőben is nyílik (a panelek a nézőn belül
         // élnek, ld. PhotoViewer.qml). A Helyek-panel két írási művelete
         // UGYANAZON a megerősítésen megy át, mint a könyvtár-nézetben —
@@ -3601,7 +3612,7 @@ ApplicationWindow {
                     && batchEffectController)
                 batchEffectController.clearAllEffectsMany(window.selectedRows())
         }
-        onResetFacesRequested: resetFacesConfirm.open()   // mindig kérdez
+        onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
         onHideToggleRequested: window.toggleHiddenSelection()
         onMoveRequested: fileOpsDialogs.ensure().openMove(window.selectedPaths())
         onDeleteRequested: fileOpsDialogs.ensure().openDelete(window.selectedPaths())
@@ -4091,37 +4102,6 @@ ApplicationWindow {
     }
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
-    // #422: „Arcok alaphelyzetbe állítása" — az eredeti szó szerinti
-    // figyelmeztetésével (`CThumbUI::ResetAllFaces`). A `.picasa.ini`
-    // névcímkéihez NEM nyúlunk: azt az eredeti is KÜLÖN kérdezte meg, és
-    // az ember által adott név nálunk szent.
-    //: #1612: halasztva — az arcadatok nullázásának megerősítése csak a menüpontból nyílik
-    DeferredDialog {
-        id: resetFacesConfirm
-        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
-        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
-        objectName: "resetFacesConfirmLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "resetFacesConfirm"
-                namePrefix: "resetFaces"
-                title: qsTr("Reset Faces")
-                //: `CThumbUI::ResetAllFaces` — az eredeti szövege (a
-                //: viselkedésen ez a jegy nem változtat, csak a
-                //: megjelenő szövegen) (#3573)
-                message: qsTr("WARNING! This will DELETE all people albums, "
-                              + "and move all the faces to the unnamed album. "
-                              + "This can REMOVE name tags on synced web "
-                              + "albums also. Do you want to do this?")
-                onConfirmed: {
-                    if (typeof faceScanController !== "undefined" && faceScanController)
-                        faceScanController.resetAllFaces()
-                }
-            }
-        }
-    }
-
     DeferredDialog {
         id: moveDatabaseDialog
         anchors.fill: parent
