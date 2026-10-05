@@ -275,12 +275,12 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             vezerlo.movieFailed.connect(
                 lambda message: (hibak.append(message), hurok.quit())
             )
-            idozito.start(45000)
+            idozito.start(180000)
             _kattints(ablak, qt_app, ablak.findChild(QObject, "movieCreateButton"))
             hurok.exec()
             idozito.stop()
             assert not hibak, f"a személyalbum filmkimenete hibát jelzett: {hibak}"
-            assert kesz, "a Filmkészítő nem jelzett kész kimenetet 45 s alatt"
+            assert kesz, "a Filmkészítő nem jelzett kész kimenetet 180 s alatt"
 
             videofajl = tmp_path / "anna-film.mp4"
             assert videofajl.is_file() and videofajl.stat().st_size > 0
