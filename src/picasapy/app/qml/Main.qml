@@ -509,6 +509,18 @@ ApplicationWindow {
             window.selectedIndexes, window.selectedIndex)
     }
 
+    // #4271: az eredeti megerősítési küszöb 30 fölött van; a kijelölést
+    // pillanatfelvételként adjuk át, hogy a párbeszéd alatt ne változzon a cél.
+    function addTagToRows(rowList, keyword) {
+        if (!controller || !rowList || rowList.length === 0) return
+        var rows = rowList.slice()
+        if (rows.length <= 30) {
+            controller.addKeywordToRows(rows, keyword)
+            return
+        }
+        bulkTagConfirmLoader.ensure().askFor(rows, keyword)
+    }
+
     // a kijelölt képek abszolút útvonalai (#15/#16) — a fájlműveletek a
     // művelet ELŐTT gyűjtött útvonal-listán futnak, így a közben frissülő
     // rács-indexek nem tévesztenek célt
@@ -1761,6 +1773,68 @@ ApplicationWindow {
         }
     }
 
+    // #4271: a CThumbUI::keyword_warning_fmt csak 30 kijelölt kép fölött
+    // kérdez. Mégse esetén nincs címkézés; OK esetén a megnyitáskori
+    // kijelölés pillanatfelvételére írunk.
+    DeferredDialog {
+        id: bulkTagConfirmLoader
+        objectName: "bulkTagConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            Dialog {
+                id: bulkTagConfirmDialog
+                objectName: "bulkTagConfirmDialog"
+                modal: true
+                focus: true
+                anchors.centerIn: Overlay.overlay
+                property var rows: []
+                property string keyword: ""
+                property string message: ""
+
+                function askFor(rowList, tag) {
+                    rows = rowList.slice()
+                    keyword = tag
+                    message = qsTr(
+                        "You have a fairly large number of items selected.\n\n"
+                        + "Are you sure you want to apply this tag to all %d items?"
+                    ).replace("%d", String(rowList.length))
+                    open()
+                }
+
+                onAccepted: {
+                    if (controller) controller.addKeywordToRows(rows, keyword)
+                }
+
+                contentItem: ColumnLayout {
+                    spacing: 12
+                    Text {
+                        objectName: "bulkTagConfirmMessage"
+                        Layout.preferredWidth: 320
+                        text: bulkTagConfirmDialog.message
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 8
+                        PicasaButton {
+                            objectName: "bulkTagConfirmOkButton"
+                            text: qsTr("OK")
+                            accent: Theme.picasaGreen
+                            onClicked: bulkTagConfirmDialog.accept()
+                        }
+                        PicasaButton {
+                            objectName: "bulkTagConfirmCancelButton"
+                            text: qsTr("Cancel")
+                            onClicked: bulkTagConfirmDialog.reject()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // #2013: a Helyek PANEL saját két megerősítése. Az eredetiben ez KÉT
     // KÜLÖN erőforrás a menüparancsétól (`ClearGeoTag::warn`) — más
     // küszöbbel és más számmal:
@@ -2950,6 +3024,18 @@ ApplicationWindow {
         visible: window.tagsPanelOpen
         anchors.fill: parent
         hasSelection: window.selectedRows().length > 0
+        selectedPhotoName: {
+            var rows = window.selectedRows()
+            if (!controller || rows.length !== 1) return ""
+            var path = controller.photos.filePathAt(Number(rows[0]))
+            var separator = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"))
+            return path.substring(separator + 1)
+        }
+        wholeAlbumSelected: {
+            var rows = window.selectedRows()
+            return controller && rows.length > 1
+                   && rows.length === controller.photos.rowCount()
+        }
         //: #2998: írásvédett elem a kijelölésben — a panel ELŐRE szól.
         //: A `photos.revision` a kötés kiváltója, ahogy a `tags`-nél is;
         //: a `!== undefined` a próbák stub-vezérlőjére véd (#1572).
@@ -2965,7 +3051,7 @@ ApplicationWindow {
                controller.keywordsOfRows(window.selectedRows()))
             : []
         onAddRequested: function(keyword) {
-            controller.addKeywordToRows(window.selectedRows(), keyword)
+            window.addTagToRows(window.selectedRows(), keyword)
         }
         onRemoveRequested: function(keyword) {
             controller.removeKeywordFromRows(window.selectedRows(), keyword)
@@ -2973,8 +3059,7 @@ ApplicationWindow {
         onCloseRequested: window.ureseidAFiokot()
         // #422: a címke jobbklikk-menüje (Picasa `Tags` menüosztály)
         onAddToSelectionRequested: function(keyword) {
-            if (controller)
-                controller.addKeywordToRows(window.selectedRows(), keyword)
+            window.addTagToRows(window.selectedRows(), keyword)
         }
         onFindTaggedRequested: function(keyword) {
             if (controller) controller.search(keyword)
