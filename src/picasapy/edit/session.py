@@ -14,6 +14,7 @@ from picasapy.ini.filters import (
 )
 from picasapy.ini.rect64 import Rect64, decode_rect64, encode_rect64
 from picasapy.ini.redeye import (
+    EyeCircle64,
     REDEYE_FILTER_NAME,
     build_redeye_op,
     parse_redeye_regions,
@@ -539,24 +540,38 @@ class EditSession:
                     return ()
         return ()
 
-    def set_redeye_regions(self, regions: tuple[Rect64, ...]) -> EditSession:
+    def set_redeye_regions(
+        self,
+        regions: tuple[Rect64, ...],
+        *,
+        eye_circles: tuple[EyeCircle64, ...] = (),
+        full_image_fallback: bool = False,
+    ) -> EditSession:
         """A KÉZZEL megjelölt vörösszem-régiók beállítása/cseréje (#445).
 
         A `redeye` bejegyzésből — a crop64/tilt/retouch mintájára — legfeljebb
-        egy réteg lehet a láncban, a helyén cserélve. Üres `regions` esetén a
-        bejegyzés megmarad, de paraméter nélkül (`redeye=1`), azaz bájtra a
-        valódi Picasa alakjában: a vörösszem-eszköz automatikája ilyenkor is
-        aktív. A réteg teljes levételére a `clear_redeye()` (vagy a
+        egy réteg lehet a láncban, a helyén cserélve. Üres adatnál a
+        bejegyzés bájtra a valódi Picasa alakja (`redeye=1`) marad, amit a
+        renderer identitásként kezel. A PicasaPy saját automatikus találatai
+        `eye64(...)`-ként, modell nélküli tartalékuk `autofull64()`-ként
+        tárolódik. A réteg levételére a `clear_redeye()` (vagy a
         `toggle("redeye")`) való.
 
         Args:
             regions: A kézzel megjelölt szemek relatív [0..1] téglalapjai.
+            eye_circles: Az automatikusan megtalált szemek normalizált körei.
+            full_image_fallback: Modell hiányakor használt teljes képes út.
 
         Returns:
             Új EditSession.
         """
         return self._with_single_layer(
-            lambda op: op.matches(REDEYE_FILTER_NAME), build_redeye_op(regions)
+            lambda op: op.matches(REDEYE_FILTER_NAME),
+            build_redeye_op(
+                regions,
+                eye_circles=eye_circles,
+                full_image_fallback=full_image_fallback,
+            ),
         )
 
     def clear_redeye(self) -> EditSession:
@@ -565,12 +580,25 @@ class EditSession:
             ops=tuple(op for op in self.ops if not op.matches(REDEYE_FILTER_NAME))
         )
 
+    def redeye_detection_ops(self) -> tuple[FilterOp, ...]:
+        """A láncrész, amelynek képméretében a YuNet-köröket megmérjük.
+
+        Meglévő `redeye` réteg cseréjekor az automatikus körök annak helyén
+        futnak, ezért csak az előtte álló prefix képe a koordináta-alap.
+        Új réteg a lánc végére kerül, így akkor a teljes láncot kell
+        detektálni.
+        """
+        for index, op in enumerate(self.ops):
+            if op.matches(REDEYE_FILTER_NAME):
+                return self.ops[:index]
+        return self.ops
+
     def redeye_regions(self) -> tuple[Rect64, ...]:
         """A jelenlegi, kézzel megjelölt vörösszem-régiók (#445).
 
         Adat nélküli (`redeye=1;`, valódi Picasa-eredetű) bejegyzésnél üres
-        tuple-t ad — a render-lánc ilyenkor is fut, az egész képen. Hibás
-        kódolásnál is üres tuple (nem dob), a #301-elv szerint.
+        tuple-t ad. Hibás kódolásnál is üres tuple (nem dob), a #301-elv
+        szerint.
         """
         for op in self.ops:
             if op.matches(REDEYE_FILTER_NAME):
