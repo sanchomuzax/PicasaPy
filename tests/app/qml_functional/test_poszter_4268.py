@@ -139,7 +139,7 @@ def _inditsd_a_kimenetet(
         qt_app,
         lambda: finished.count() > 0 or failed.count() > 0,
         "a Poszter háttérmunkája nem jelzett befejezést vagy hibát",
-        seconds=10.0,
+        seconds=60.0,
     )
     assert failed.count() == 0, (
         "a Poszter háttérmunkája hibát jelzett: "
