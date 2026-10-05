@@ -2347,25 +2347,29 @@ sem.
 | `5 + 0` | `0 + 1` | `1` |
 
 A mérés tehát a teljes összeget hasonlítja, nem önmagában a `+8` értéket;
-egyezésnél a korábban bejárt jelölt marad. A teljes `0x0081b800`-as út
-kézzel felépített gyűjteménnyel is futtatva lett, de a hám nem érte el a
-kiválasztót. Az első futás a `0x00874320` vtable-alapú előkészítésben állt
-meg, mert a kézzel felépített fotóobjektum vtable-ja hiányzott. A második
-futás pótolta a szintetikus vtable-t és a callback vektort; a hám ezután
-továbbjutott a `0x00877370` segéden. Egy, kizárólag a hám saját nullás
-vektorállapotát javító shim után az út a `0x008773d0` segédfüggvényig jutott,
-majd `0x008774b9`–`0x008774c0` között szegmentálási hibával megállt: az elvárt
-8 bájtos belső vektor címe a `[ecx+0x0c]` mezőből `1` lett, így a `+4` mező
-olvasása érvénytelen címre ment. Ezek a futások kézzel készített objektum- és
-vektorállapotot használtak; natív konstruktorral nem sikerült a szükséges
-gyűjtemény létrehozása. A `0x00877c50` döntési útig egyik futás sem jutott el,
-és tényleges fotómezőt nem változtattunk meg. A kiválasztás utáni
-`0x0081b800` kód a jelöltindexet `[obj+0x4f0]` leképezőtáblán át használja
-`[obj+0x4e0] + index*0x38` fotórekord kiválasztására
-(`0x0081c7b6`–`0x0081c83f`). Ez megmutatja a rekordhoz vezető leképezési
-mechanizmust, de a kézzel felépített bemenetből nem derül ki, hogy az adott
-csoport melyik fotórekord-indexet rendeli a reducer egyes jelöltjeihez, és
-hogy a segédrekord `+8` mezőjét milyen képjellemzőből állítja elő a teljes út.
+egyezésnél a korábban bejárt jelölt marad. A teljes `0x0081b800`-as utat ismét
+natív QEMU alatt futtattuk, de a jelenlegi hám nem érte el a kiválasztót.
+Pontos futtatási bemenet: `ORDERING=2`, `N=3`, `T=3600` másodperc és
+`[0,1000,2000]` másodperces FILETIME-értékek; a gyűjteményobjektum, a vtable
+és a getter szintetikus volt. A trace szerint a `0x0081bbac` hívja a
+`0x00874e40`-et, amely a `0x00874e70` helyen a `0x00874320`-at hívja. Ez a
+segéd a harmadik stack-argumentumként kapott, `0x408023c0` című lokális
+vektor fejlécéből `data=0x10100050`, kódolt elemszámként `4` (két elem),
+adattartalomként pedig `[0,2]` értéket olvasott. A `0x00874320`
+utasításszintű olvasata ezt az adattömböt címeket tartalmazó listaként járja
+be: az első `0` elem után a `0x00874aa8` utasítás a `0+0` címen próbál bájtot
+írni, és a QEMU SIGSEGV-vel leáll. Ez a mérés a kézzel felépített bemenet
+hibáját rögzíti; nem igazolja, hogy a valódi gyűjtemény ugyanezt a vektort
+tartalmazza, és nem bizonyítja a fotóválasztási szabályt. A `0x0081bd62` →
+`0x00877c50` kiválasztóhívásig, illetve a `0x00877dc7` reducerhívásig a futás
+nem jutott el; fotórekord-mezőt nem változtattunk.
+
+A kiválasztás utáni `0x0081b800` kód a jelöltindexet `[obj+0x4f0]`
+leképezőtáblán át használja `[obj+0x4e0] + index*0x38` fotórekord
+kiválasztására (`0x0081c7b6`–`0x0081c83f`). Ez bizonyítja a rekordhoz vezető
+leképezés módját, de nem azt, hogy a teljes út mely fotórekord-indexet adja
+az egyes reducerjelöltekhez, illetve milyen fotómezőből képzi a segédrekord
+`+8` floatját.
 
 **Bizonyítottság:** a `0x008781a0` segédreducerének „bázis + segédrekord
 `+8`”, minimumot választó és döntetlennél korábbi jelöltet megtartó szabálya
@@ -2385,8 +2389,14 @@ kikövetkeztetni.
 Nyitott futtatási kérdés: a `0x00873170` vtable `+8` getteréből származó
 float melyik fotómezőből vagy képjellemzőből készül, és a csoport melyik
 fotórekord-indexét teszi a `0x008781a0` megfelelő jelöltjévé? Következő lépés:
-a `0x00877c50` futtatása a natív QEMU-hámban a valódi gyűjteményobjektum által
-elvárt vtable/getter shimekkel, majd a jelölt fotómezők egyenkénti változtatása.
+a `0x00874320`/`0x00874e40` adatutat a `0x0081b800` hívóhelyének valódi
+gyűjteményobjektumával rekonstruálni, majd elérni a `0x00877c50`-et, a 0x38
+bájtos fotórekord-jelöltmezőket egyenként változtatni, és rögzíteni a gettert,
+a reducer jelöltjét és a végső fotóindexet. Célzott Ghidra-kérdés:
+`Ghidra-kör kell: 0x00874320 — mely gyűjteményobjektum-mezők adják a
+0x00874320 harmadik stack-argumentumának címvektorát és az abban hivatkozott
+képenkénti bájttömböket, hogy a 0x00877c50-es út natív QEMU-ban a valódi
+fotórekord-indexekkel futtatható legyen? [blokkoló]`
 
 #### Bizonyítottsági fok
 
