@@ -60,9 +60,10 @@ class TestQuickTagsGrid:
         panel = self._panel(window)
         assert list(panel.property("tags")) == ["vitorlás"]
 
-    def test_empty_quick_tag_button_disabled_even_with_selection(
+    def test_empty_quick_tag_button_opens_the_teaching_tip_with_selection(
         self, qml_app, qt_app
     ):
+        """#4271: a korábbi tiltás helyett az üres ? súgót nyit."""
         window, controller, lib, engine = qml_app
         window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [0])
@@ -70,7 +71,12 @@ class TestQuickTagsGrid:
         qt_app.processEvents()
         button = window.findChild(QObject, "quickTagButton7")
         assert button.property("text") == "?"
-        assert button.property("enabled") is False
+        assert button.property("enabled") is True
+        _invoke(button, "clicked")
+        qt_app.processEvents()
+        help_dialog = window.findChild(QObject, "tagNoTextDialog")
+        assert help_dialog is not None
+        assert help_dialog.property("visible") is True
 
     def test_top_two_buttons_reflect_recently_used_tag_live(
         self, qml_app, qt_app
