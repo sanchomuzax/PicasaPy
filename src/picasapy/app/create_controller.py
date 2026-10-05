@@ -148,6 +148,21 @@ class CreateMixin(BackgroundWorkerMixin):
         self._get_settings().setValue("makemovieres", index)
         self.moviePreferencesChanged.emit()
 
+    @Property(int, notify=moviePreferencesChanged)
+    def movieVolume(self) -> int:  # noqa: N802
+        """A videó hangerőcsúszkájának Preferences/movievolume értéke."""
+        try:
+            return max(0, min(1000, int(self._get_settings().value("movievolume", 500))))
+        except (TypeError, ValueError):
+            return 500
+
+    @Slot(int)
+    def setMovieVolume(self, volume: int) -> None:  # noqa: N802
+        """A hangerő elmentése az eredeti 0..1000-es tartományban."""
+        volume = max(0, min(1000, int(volume)))
+        self._get_settings().setValue("movievolume", volume)
+        self.moviePreferencesChanged.emit()
+
     @Slot(str, result=bool)
     def moviePreference(self, name: str) -> bool:  # noqa: N802
         """A filmkészítő hivatalos Preferences-kulcsának beolvasása."""

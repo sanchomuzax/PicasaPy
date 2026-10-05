@@ -2814,6 +2814,10 @@ ApplicationWindow {
                             visible: window.unnamedFacesOpen
                             mode: window.facesAlbumMode
                             faceScanController: window._faceScanController
+                            onShowIgnoredRequested:
+                                window.facesAlbumMode = "ignored"
+                            onShowUnnamedRequested:
+                                window.facesAlbumMode = "unnamed"
                         }
                     }
                 }
