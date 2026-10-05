@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.7] – 2026-10-06
+
+- A Címkék panel az eredeti fejléceket és gyorscímke-súgókat mutatja, és 30-nál több kijelölt kép címkézése előtt megerősítést kér. (#4271).
+- Nyomtatáskor az ellenőrzőlista képenként megmutatja a felbontás minősítését. (#4280).
+- A színválasztó megőrzi az öt legutóbb használt színt a következő indításra is. (#4283).
+- Görgetés közben a képrács előre betölti a következő bélyegképeket, hogy gyors görgetéskor kevesebb üres cella jelenjen meg. (#4289).
+
 ## [0.9.6] – 2026-10-05
 
 - A Nyomtatás ellenőrzése most megmutatja a kis képek DPI-értékét, és lehetővé teszi a képek egyenkénti vagy csoportos eltávolítását, az azonnali nyomtatást és a méret módosítását. (#4275).
