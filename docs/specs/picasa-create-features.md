@@ -2404,14 +2404,63 @@ leképezés módját, de nem azt, hogy a teljes út mely fotórekord-indexet adj
 az egyes reducerjelöltekhez, illetve milyen fotómezőből képzi a segédrekord
 `+8` floatját.
 
+**A `0x00873170` +8 virtuális getterei — implementáció azonosítva, tartalom
+részben nyitott (2026-10-05, #4194 folytatás).** A `0x00873170`
+`0x008733df`–`0x008733f8` között az objektum vtable-jának `+8` slotját hívja,
+és a visszaadott `float`-ot jelöltenkénti eredményként eltárolja. A
+`0x0081c9b0` `0x0081d73d`–`0x0081d74d` szakasza a `[obj+0x504]` objektumlistából
+adja át az elemet ennek a getternek; a `0x0081fab0` regisztráló a pointereket
+ugyanezen lista `+0x504/+0x508` mezőibe, a súlyokat pedig a külön
+`+0x50c/+0x510` listába teszi.
+
+Két, a regisztráló útban létrehozott implementáció van azonosítva:
+
+| RTTI-osztály | objektum vptr-beállítása | vtable `+8` | rekordmezők, amelyekhez a getter útja hozzáfér |
+|---|---|---|---|
+| `HOGSimilarityComputer` | `0x00819680`: `[this]=0x00cbdec4` | `0x00873e40` | a `0x00873e40` a két jelölt `0x38` bájtos rekordját címezi, majd a `0x00873cb0` feature-építő út a rekord `+0x30` és `+0x34` mezőjét olvassa |
+| `NevenSimilarityComputer` | `0x00819850`: `[this]=0x00cbded4` | `0x008742a0` | a `0x008742a0` mindkét jelölt rekordjából a `+0x30` dwordöt olvassa, és ezeket a `0x0048c440` segédnek adja át |
+
+**Független ellenőrzés:** A) az `0x008733f6` virtuális hívás, a két
+konstruktor vptr-írása és a `0x00824090` regisztráló hívásai az
+utasításszintű adatutat adják; B) az eredeti EXE közvetlen vtable-adatai
+`0x00cbdec4`-nél `0x00819720, 0x00873510, 0x00873e40`, illetve
+`0x00cbded4`-nél `0x00819890, 0x00874010, 0x008742a0` értékeket tartalmaznak.
+A két út egyezik, ezért a két `+8` implementáció **megerősített**. A
+`+0x30/+0x34` rekordeltolások elérése **feltételes**: ezeket az utasítások
+bizonyítják, de a mezők szemantikus neve/tartalma és a teljes kiválasztóút
+még nincs valódi fotórekorddal natívan megmérve. A mezők tartalma
+**NINCS MEG**; „minőség”, „pontszám” vagy más szemantikus címke nem
+következtethető ki az eltolásból.
+
+**A `0x00874320` hívási adatai — forrásmezők részben azonosítva, címvektor
+nyitott (2026-10-05, #4194 folytatás).** A `0x0081b800` `0x0081bbac` hívása
+a `0x00874e40`-nek a `+0x744`, `+0x504`, `+0x708`, `+0x6f8`, továbbá a
+`+0x6cc` vagy `+0x6d4`, illetve `+0x6dc` vagy `+0x6e4` mezők címeit adja.
+Ugyanebben az útban a `0x00874e40` hívja a `0x00874320`-at
+(`0x00874e70`), majd a `0x00874ac0` segédet. A `+0x6cc` csoportazonosító-
+vektor a `0x0081ae10` kimenete; a `+0x708` dword-vektorba a
+`0x0081e5a0` `0x38` bájtos rekordonként dátumból képzett értéket ír
+(`0x0081f270`–`0x0081f36b`); a `+0x6f8` egy képenkénti bájtvektor, amelyet
+a `0x0081e3a0` rekordindexenként tölt fel. A `+0x6dc/+0x6e4` mezők a
+gráfépítőnek szintén képenként indexelt bájttömbként átadott bemenetek.
+
+Ez a hívóhelyi térkép megmutatja, mely gyűjteménymezőket kapja meg az út,
+de **nem** dönti el, ezek közül melyikből készül a `0x00874320` címvektora,
+és mely tömbök kerülnek az abban hivatkozott bejegyzésekbe. A `+0x744`
+mező tartalma és a `+0x6dc/+0x6e4` bájtok jelentése **NINCS MEG**. A
+`0x00874320` korábbi szintetikus QEMU-próbája `[0,2]` adattartalmú
+vektorral hibás nullcím-írásnál SIGSEGV-vel állt meg; ez csak a szintetikus
+bemenet hibáját bizonyítja, valódi rekordindexet vagy kiválasztást nem.
+
 **Bizonyítottsági határ:** a `0x008781a0` segédreducerének „bázis + segédrekord
 `+8`”, minimumot választó és döntetlennél korábbi jelöltet megtartó szabálya
 **megerősített**: A) az utasításszintű olvasat; B) a fenti, külön natív
 QEMU-futtatás. `0x0081b800`-tól a végső fotórekord-indexig terjedő
 **kiválasztási szabály nyitott**: az utasításszintű olvasat az ágak és
-segédreducer viselkedését tárja fel, de a teljes adatleképezést a natív
-QEMU-próba nem érte el. A csoport konkrét fotójának azonosítása és a
-fotójellemző, amelyből a reducer értéke jön, **NINCS MEG**. Az
+segédreducer viselkedését tárja fel, a `+8` getter konkrét vtable-céljai
+azonosítottak, de a teljes adatleképezést a natív QEMU-próba nem érte el.
+A csoport konkrét fotójának azonosítása és a fotójellemző, amelyből a
+reducer értéke jön, **NINCS MEG**. Az
 „első kép”, „utolsó kép” vagy „jobb minőségű kép” állítás **NINCS MEG**;
 ezeket a csoportazonosítókból vagy a szintetikus segédrekordból nem szabad
 kikövetkeztetni.
@@ -2420,21 +2469,21 @@ kikövetkeztetni.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Az eredeti bináris `delta >= T` szabállyal, a bemeneti sorrendben szomszédos időkből csoportokat készít; a `mode == 0` súlyozott jelöltminimumot, a `mode != 0` költségminimumú útvonalat járja. A segédreducer minimális bázis + `+8` összeget tart meg, de ezekből még nem következik a végső fotóindex. | `src/picasapy/movie/mxf.py` a `burstmodethresh` mezőt olvassa és írja; képszűrési fogyasztó nincs. | A #4182-ben a dátumcsoportosítás implementálható a bizonyított szabállyal. A végső képszűrést csak a `0x00873170` getter fotómező-leképezése, a jelöltindexek fotórekordhoz kötése és a módonkénti végső kiválasztás natív igazolása után implementáld. `Kész, ha`: (1) a három fenti dátumsor azonos csoportokat ad; (2) mindkét módnál a valódi fotómező változtatásakor a getter, reducer-bemenet és végső fotóindex visszakövethető; (3) döntetlen és üres jelöltlista esetén is egyezik a kiválasztott eredeti fotóindex a natív kimenettel. |
+| Az eredeti bináris `delta >= T` szabállyal, a bemeneti sorrendben szomszédos időkből csoportokat készít; a `mode == 0` súlyozott jelöltminimumot, a `mode != 0` költségminimumú útvonalat járja. A getterek regisztrált implementációi HOG (`0x00873e40`) és Neven (`0x008742a0`); a nyers rekordmező-hozzáférés `+0x30`/`+0x34`, de a tartalmuk és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` a projektfájlban és a QML/controller átadásban szerepel; az `src/` alatti hivatkozások között nincs képszűrési fogyasztó. | A #4182-ben a dátumcsoportosítás a bizonyított szabállyal implementálható. A végső képszűrést csak a `0x00874320` címvektorának és bájtbemeneteinek mezőtérképe, a fotómezők szemantikája, valamint a valódi indexű natív futás után implementáld. `Kész, ha`: (1) a három fenti dátumsor azonos csoportokat ad; (2) valódi fotórekord-indexekkel visszakövethető a getter, a reducer bemenete és a végső fotóindex; (3) a fotómező változtatására, a döntetlenre és az üres jelöltlistára adott eredmény egyezik a natív kimenettel. |
 
-Nyitott futtatási kérdés: a `0x00873170` vtable `+8` getteréből származó
-float melyik fotómezőből vagy képjellemzőből készül, és a csoport melyik
-fotórekord-indexét teszi a `0x008781a0` megfelelő jelöltjévé? Következő lépés:
-a `0x00874320`/`0x00874e40` adatutat a `0x0081b800` hívóhelyének valódi
-gyűjteményobjektumával rekonstruálni, majd elérni a `0x00877c50`-et, a 0x38
-bájtos fotórekord-jelöltmezőket egyenként változtatni, és rögzíteni a gettert,
-a reducer jelöltjét és a végső fotóindexet. Célzott Ghidra-kérdések:
+Nyitott futtatási kérdés: melyik fotórekord-indexet teszi a csoportból a
+`0x008781a0` megfelelő jelöltjévé, és a getterek által olvasott rekordmezők
+mit jelentenek? Következő lépés: a `0x00874320`/`0x00874e40` adatutat a
+`0x0081b800` hívóhelyének valódi gyűjteményobjektumával rekonstruálni, majd
+elérni a `0x00877c50`-et valódi fotórekord-indexekkel, a `+0x30/+0x34`
+mezőket egyenként változtatni, és rögzíteni a gettert, a reducerjelöltet és a
+végső fotóindexet. Célzott Ghidra-kérdések:
 `Ghidra-kör kell: 0x00874320 — mely gyűjteményobjektum-mezők adják a
-0x00874320 harmadik stack-argumentumának címvektorát és az abban hivatkozott
-képenkénti bájttömböket, hogy a 0x00877c50-es út natív QEMU-ban a valódi
-fotórekord-indexekkel futtatható legyen? [blokkoló]`
-`Ghidra-kör kell: 0x00873170 — mely vtable-implementációkat hívja a +8 getter,
-és ezek mely fotómezőkből képezik a metrikaértéket? [blokkoló]`
+0x00874320 címvektorát és az abban hivatkozott képenkénti bájttömböket, hogy
+a 0x00877c50-es út valódi fotórekord-indexekkel futtatható legyen? [blokkoló]`
+`Ghidra-kör kell: 0x00873170 — a bizonyított HOG/Neven `+8` getterek által
+olvasott fotórekord-`+0x30`/`+0x34` mezők milyen tartalmat jelölnek, és melyik
+adja a reducer `+8` értékét? [blokkoló]`
 
 #### Bizonyítottsági fok
 
