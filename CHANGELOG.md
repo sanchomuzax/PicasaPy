@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.682] – 2026-10-05
+
+- A keresősáv beállításai megnyithatók, az arc- és másodpéldány-szűrés pedig a főablak találati rácsában is használható (#4202).
+
 ## [0.8.681] – 2026-10-05
 
 - A Filmkészítőben a diahúzás sorrendje az elmentett projektben is megmarad, a csúszkabeállítás pedig újranyitáskor visszatöltődik (#4182).
