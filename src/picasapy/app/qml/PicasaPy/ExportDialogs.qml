@@ -217,6 +217,7 @@ Item {
             // #1138 (spec 3.3): az „Automatikus" nem szám, hanem külön
             // jelző — a kimenet a FORRÁS kvantálási tábláit veszi át.
             var automatic = controller.exportQualityIsAutomatic(presetKey)
+            var subsampling = controller.resolveExportSubsampling(presetKey)
             var watermark =
                 exportWatermarkCheck.checked ? exportWatermarkField.text : ""
             var maxDimension = exportDialog.resolvedMaxDimension()
@@ -224,13 +225,13 @@ Item {
                 controller.exportHeld(
                     resolvedTargetFolder(), maxDimension, quality,
                     exportAddNumbersCheck.checked, watermark, purgeExisting,
-                    automatic)
+                    automatic, subsampling)
             else
                 controller.exportRows(
                     dialogs.appWindow.selectedIndexes, resolvedTargetFolder(),
                     maxDimension, quality,
                     exportAddNumbersCheck.checked, watermark, purgeExisting,
-                    automatic)
+                    automatic, subsampling)
         }
 
         onAccepted: {

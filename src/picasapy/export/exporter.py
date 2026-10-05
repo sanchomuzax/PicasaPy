@@ -7,7 +7,7 @@ beégetni, bájthű másolás történik
 (mtime-őrző) — nincs felesleges generációs veszteség. A videók bitre pontos
 másolással kerülnek át. Az újrakódolt JPEG-ekbe a forrás EXIF/IPTC-adata
 (dátum, GPS, kameraadat, felirat, kulcsszavak) szegmens-szinten átkerül,
-mert a `cv2.imencode` semmit nem visz át magától. Az UI-bekötés (hibaút,
+mert a JPEG-kódolók nem visznek át maguktól metaadatot. Az UI-bekötés (hibaút,
 QML) az integrátor lépése."""
 
 from __future__ import annotations
@@ -88,28 +88,32 @@ class ExportSettings:
     # `jpeg_quality` már csak VISSZAESÉS: nem JPEG forrásnál vagy
     # olvashatatlan táblánál.
     quality_automatic: bool = False
+    # #4017: a rögzített Picasa-leképezésben csak a Maximális használ
+    # 4:4:4-et; a többi választás 4:2:0. Az Automatikus JPEG-forrásnál ezt
+    # a forrás JPEG mintája felülírja.
+    jpeg_subsampling: int = 2
 
     def __post_init__(self) -> None:
         if self.max_dimension is not None and self.max_dimension < 1:
             raise ValueError(f"Érvénytelen max_dimension: {self.max_dimension}")
         if not 1 <= self.jpeg_quality <= 100:
             raise ValueError(f"Érvénytelen jpeg_quality: {self.jpeg_quality}")
+        if self.jpeg_subsampling not in (0, 1, 2):
+            raise ValueError(f"Érvénytelen jpeg_subsampling: {self.jpeg_subsampling}")
 
 
-# #369 / #1139 (export.fen "Image quality" popup): a fix fokozatok értéke a
-# binárisból ismert — a választás (0…4) a `0x00739c3f`-nél kezdődő ágon dől
-# el, az ugrótábla `0x00739ef4`-en áll (levezetés: docs/specs/
-# export-parbeszed.md 7. szakasz):
+# #4017 (kontrollált Picasa-export, picasa-colab-jobs #87–#91): a tényleges
+# kimeneti JPEG alapján a Maximum IJG q=93 és 4:4:4; a Normal q=85, a
+# Minimum q=65. Az Automatic a forrás DQT-jét és JPEG-mintáját viszi tovább,
+# a Custom a csúszkán kapott minőséget használja. Ez felülírja a korábbi,
+# bináris 193-as választási értékből levezetett „szándékosan 100” közelítést.
+# A presetválasztás nyers értékei továbbra is a binárisból ismertek:
+# a választás (0…4) a `0x00739c3f`-nél kezdődő ágon dől el, az ugrótábla
+# `0x00739ef4`-en áll (levezetés: docs/specs/export-parbeszed.md 7. szakasz):
 #
 #   Normál     = 85  (`0x55`, `0x00739caf`)
-#   Maximális  = 193 (`0xC1`, `0x00739ca1`)
+#   Maximális  = 193 (`0xC1`, `0x00739ca1`; a kontrollált kimenet q=93)
 #   Minimális  = 65  (`0x41`, `0x00739ca8`)
-#
-# A "maximum" nálunk SZÁNDÉKOSAN 100 a 193 helyett: a JPEG-kódoló IJG-
-# skálázója (`0x00b1cb70`) minden 100 fölötti minőséget 0 skálára visz
-# (`0x00b1cb99`), azaz csupa 1-es kvantálótáblára — a 193 és a 100 tehát
-# hatásában azonos kimenetet ad, a 100 viszont belefér az OpenCV 1–100
-# tartományába.
 #
 # #1138: az "automatic" SZÁMA is a binárisból való: az ugrótábla 0. ága
 # ugyanoda fut, mint a "normal" — 85 (`0x00739caf`). A kettőt a `+0xa40`
@@ -121,7 +125,7 @@ _AUTOMATIC_QUALITY = 85
 _QUALITY_PRESETS: dict[str, int] = {
     "automatic": _AUTOMATIC_QUALITY,
     "normal": 85,
-    "maximum": 100,
+    "maximum": 93,
     "minimum": 65,
 }
 
@@ -137,6 +141,16 @@ def is_automatic_quality(preset: str) -> bool:
     külön logikai jelző (`[objektum+0xa40] = 1`, `0x00739c4d`), nem a
     minőségszám hordozza: a szám ugyanaz a 85, mint a „Normál"-nál."""
     return (preset or "").strip().lower() == _AUTOMATIC_KEY
+
+
+def resolve_export_subsampling(preset: str) -> int:
+    """A mért leképezés: Maximum 4:4:4, a többi fokozat 4:2:0 (#4017).
+
+    Az Automatikus JPEG-forrás esetén a kódoló a forrás mintáját olvassa ki;
+    ez az érték csak annak a visszaesési módja, ha nincs átvehető forrás.
+    Pillow-kódolásnál a 0 = 4:4:4, 1 = 4:2:2, 2 = 4:2:0.
+    """
+    return 0 if (preset or "").strip().lower() == "maximum" else 2
 
 
 def resolve_export_quality(preset: str, custom: int) -> int:
@@ -386,20 +400,13 @@ def _export_one(
     # exportot. A felhasználó ettől kapott KEVESEBB képet, mint amennyit
     # kijelölt.
     ops = parse_filters_prefix(item.filters) if item.filters else ()
-    has_unparsed_filter_chain = bool(item.filters) and not ops
     ops = _export_filter_ops(
         ops,
         crop,
         crop_ini_readable=crop_ini_readable,
         warning_key=str(source),
     )
-    if _is_noop_copy(
-        source,
-        item,
-        settings,
-        ops,
-        has_unparsed_filter_chain=has_unparsed_filter_chain,
-    ):
+    if _is_noop_copy(source, item, settings):
         # Az érvényesség-ellenőrzéshez dekódolunk (a sérült/nem-kép forrás
         # így is a `failed` listára kerül), de az eredményt eldobjuk — a
         # célfájlba a forrás EREDETI bájtjai kerülnek, generációs veszteség
@@ -463,37 +470,34 @@ def _write_jpeg(image: np.ndarray, target: Path, settings: ExportSettings) -> No
     write_atomic(target, _encode_jpeg(image, settings, None))
 
 
-# #1138 (spec 7.2, `0x00b1f85a`): a Picasa kódolója FIXEN 4:2:0-t ír
-# (fényesség `0x22`, a két színcsatorna `0x11`) — nincs rá beállítás. A
-# Pillow-ág ugyanezt kéri, hogy az „Automatikus" ne csak a
-# kvantálótáblákban, hanem a színbontásban is egyezzen.
-_PICASA_SUBSAMPLING = 2  # 4:2:0
-
-
 def _encode_jpeg(
     image: np.ndarray, settings: ExportSettings, source: Path | None
 ) -> bytes:
     """A kirenderelt kép JPEG-bájtjai.
 
-    Az „Automatikus" fokozatnál (#1138) a FORRÁS kvantálási tábláival
-    kódolunk — ez az eredeti mért viselkedése (spec 7.1: a forrás és a
-    Picasa exportjának DQT-je bájtra azonos). Minden más esetben — és ha
-    a forrásból nem olvasható ki tábla — marad az OpenCV-kódoló a
-    `jpeg_quality` értékkel."""
+    Az „Automatikus" fokozatnál (#1138, #4017) a FORRÁS JPEG kvantálási
+    tábláival és mintavételezésével kódolunk. Más fokozatoknál a mért
+    minőséghez tartozó táblát és a fokozat saját mintavételezését használjuk."""
     if settings.quality_automatic and source is not None:
         payload = _encode_with_source_qtables(image, source)
         if payload is not None:
             return payload
-    ok, encoded = cv2.imencode(
-        ".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality]
-    )
-    if not ok:
-        raise ValueError(f"JPEG-kódolás sikertelen: {source}")
-    return encoded.tobytes()
+    try:
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        puffer = io.BytesIO()
+        Image.fromarray(rgb).save(
+            puffer,
+            format="JPEG",
+            quality=settings.jpeg_quality,
+            subsampling=settings.jpeg_subsampling,
+        )
+    except (OSError, ValueError, TypeError, cv2.error) as exc:
+        raise ValueError(f"JPEG-kódolás sikertelen: {source}") from exc
+    return puffer.getvalue()
 
 
-def _source_quantization(source: Path) -> dict | None:
-    """A forrás JPEG kvantálási táblái, vagy `None`.
+def _source_jpeg_parameters(source: Path) -> tuple[dict, int] | None:
+    """A forrás JPEG kvantálási táblái és mintája, vagy `None`.
 
     Sosem dob: nem JPEG, sérült vagy olvashatatlan forrásnál `None` —
     a hívó ilyenkor a minőségszámos ágra esik vissza."""
@@ -502,9 +506,12 @@ def _source_quantization(source: Path) -> dict | None:
             if kep.format != "JPEG":
                 return None
             tablak = dict(kep.quantization)
+            subsampling = _subsampling_from_layer(kep.layer)
     except (OSError, ValueError, UnidentifiedImageError):
         return None
-    return tablak or None
+    if not tablak or subsampling is None:
+        return None
+    return tablak, subsampling
 
 
 def _encode_with_source_qtables(image: np.ndarray, source: Path) -> bytes | None:
@@ -514,9 +521,10 @@ def _encode_with_source_qtables(image: np.ndarray, source: Path) -> bytes | None
     A Pillow a beolvasott `quantization` szótárat `qtables=`-ként
     változtatás nélkül visszaveszi, tehát a kimenet DQT-je bájtra a
     forrásé lesz."""
-    tablak = _source_quantization(source)
-    if not tablak:
+    parameters = _source_jpeg_parameters(source)
+    if parameters is None:
         return None
+    tablak, subsampling = parameters
     try:
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         puffer = io.BytesIO()
@@ -524,35 +532,49 @@ def _encode_with_source_qtables(image: np.ndarray, source: Path) -> bytes | None
             puffer,
             format="JPEG",
             qtables=tablak,
-            subsampling=_PICASA_SUBSAMPLING,
+            subsampling=subsampling,
         )
     except (OSError, ValueError, TypeError, cv2.error):
         return None
     return puffer.getvalue()
 
 
+def _subsampling_from_layer(layer) -> int | None:
+    """Pillow `Image.layer` komponensfaktoraiból JPEG-módot olvas ki."""
+    try:
+        components = tuple(layer)
+        if len(components) not in (1, 3, 4):
+            return None
+        _y_id, y_h, y_v, _y_table = components[0]
+        chroma_sampling = tuple(
+            (h, v) for _id, h, v, _table in components[1:]
+        )
+        if any(factor != (1, 1) for factor in chroma_sampling):
+            return None
+    except (TypeError, ValueError):
+        return None
+    return {(1, 1): 0, (2, 1): 1, (2, 2): 2}.get((y_h, y_v))
+
+
 def _is_noop_copy(
     source: Path,
     item: ExportItem,
     settings: ExportSettings,
-    ops: tuple[FilterOp, ...],
-    *,
-    has_unparsed_filter_chain: bool = False,
 ) -> bool:
     """Nincs mit beégetni: se forgatás, se tükrözés (#3977), se átméretezés,
     se szerkesztés, se vízjel — és a forrás már JPEG. Ilyenkor a sima másolás a helyes (bájthű,
     mtime-őrző); a sorszámozás (#369) csak a fájlnevet érinti, a bájthű
-    másolást nem zárja ki. Ha a nem üres filters-láncot az olvasó teljesen
-    elvetette, akkor is újrakódolunk: az eredeti Picasa exportja ilyenkor is
-    új JPEG-et ír, és az export-metaadatoknak is le kell futniuk (#3997)."""
+    másolást nem zárja ki. A nem üres nyers `filters=` láncot akkor is
+    újrakódoljuk, ha a renderelés egyes vagy összes tagot kihagy: az eredeti
+    Picasa ilyenkor is új JPEG-et ír, és a metaadatoknak is le kell futniuk
+    (#3997, #4017)."""
     return (
         source.suffix.lower() in _JPEG_EXTENSIONS
         and item.rotate_steps % 4 == 0
         and not int(item.flip_flags or 0) & FLIP_MASK
         and settings.max_dimension is None
         and not settings.watermark_text
-        and not ops
-        and not has_unparsed_filter_chain
+        and not item.filters
     )
 
 
@@ -713,7 +735,7 @@ def _transfer_metadata(
 ) -> bytes:
     """Az újrakódolt JPEG metaadatai az eredeti Picasa szerint (#136, #3961).
 
-    A `cv2.imencode` a metaadatot elhagyja. A forrás EXIF-je és XMP-je NEM
+    A JPEG-kódoló a metaadatot elhagyja. A forrás EXIF-je és XMP-je NEM
     bájtra kerül át: az export ideje, a kimeneti méret és a hiányzó mezők
     a `metadata/export_metadata.py` leírása szerint frissülnek; az IPTC
     (APP13) változatlanul megy. `size` a kimeneti kép (szélesség, magasság).
