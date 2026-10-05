@@ -360,6 +360,27 @@ a kimenet nem a forrás tábláit viszi tovább; nem egy Picasa-specifikus, IJG-
 a négy kontrollkészlet és további 3 fájl (189): 4:4:4 és IJG q=93, a forrástól függetlenül (q97, q95 és q85 forrásból is).
 Ugyanabból a forrásképből (`ansel__alap.jpg`, 61 548 B, q97) az augusztusi export 54 200 B / 4:2:0 / q97, a szeptemberi
 44 574 B / 4:4:4 / q93. A README mindkét időszakban ugyanazt írja, a tényleges beállítás egyikben sincs rögzítve.
+
+**Független újramérés (2026-10-05, öt azonos nevű pár):** a `meroadat.tar`-ból a `PicasaPy meroszett/export-202608151229`
+és a `684-merokeszlet/export` kimeneteiből öt JPEG-párt vettem ki. A két időszak mind az öt forrásfájlja azonos
+(61 548 B; SHA-256 `170510965b768d685ceef017859c51acc6ce848c2d22be192a53ece49096f55e`); ezek ugyanannak a tesztképnek az
+azonos bájtjai, tehát ez **nem** az öt különböző képen, négy rögzített minőségi választással végzett kontroll.
+
+| fájl | 2026-08-15 export | 684-es export |
+|---|---:|---:|
+| `ansel__alap.jpg` | 54 200 B | 44 574 B |
+| `autobacklight__alap.jpg` | 53 947 B | 48 384 B |
+| `autocolor__alap.jpg` | 55 389 B | 49 304 B |
+| `autocontrast__alap.jpg` | 58 614 B | 51 969 B |
+| `autolight__alap.jpg` | 76 922 B | 53 215 B |
+
+Mind az öt augusztusi kimenet SOF0 mintavételezése 2×2 / 1×1 / 1×1, és mindkét DQT-táblája bájtra egyezik a forráséval
+(ImageMagick `identify`: q=97). Mind az öt 684-es kimenet SOF0 mintavételezése 1×1 / 1×1 / 1×1; mindkét DQT-je eltér
+a forrásétól, és bájtra egyezik a bináris `0x00c75260`/`0x00c75360` alaptábláinak q=93 szerinti skálázásával
+(skála 14; `0x00ad3b30`, táblaművelet `0x00ad3970`). A nyers JPEG-markerolvasás, Pillow (`Image.layer` és
+`Image.quantization`) és ImageMagick (`identify`, mintavételezés és minőség) mind az öt párnál egyezett; a kimenetek
+APP0 + 2×APP1 + APP13 markereiben mindegyiknél szerepel a `Picasa` adat. Ez megerősíti az időszakok közti
+kimenetkülönbséget és a q=93 táblák eredetét, de **nem** köti a kimenetet a minőségválasztó egyik fokozatához.
 **Hipotézis (NEM bizonyított):** a Picasa exportpárbeszéde a legutóbbi választást őrzi (`FileExportQualityType`, 10.2);
 a szeptemberi viselkedés kizárásos alapon a „Maximális” (a Normál 85, a Minimális 65, az Egyéni 5-tel osztható — a q93
 egyikből sem jön ki; csak a 193−100 = 93 számegyezés szól mellette), az augusztusi az „Automatikus” (a forrás-DQT
@@ -460,7 +481,10 @@ export 4:4:4-et és új DQT-t ad: a 178 fájlos `meroszett` (2026-08-15) 4:2:0 �
    Egyéni fokozat kimenete is. **Döntő, felvehető irány:** kontrollált Picasa-export ugyanabból az 5 képből, rögzített
    választással (Normál, Maximális, Minimális, Egyéni 95), a beállítást
    képernyőképen rögzítve. Ezen a munkameneten a `picasa-colab-jobs` végrehajtó
-   elérési útja, valamint a helyi `wine`/`picasa` futtató **NINCS MEG**; a mérés a
+   klónját a helyi könyvtárkeresés nem találta, `wine` és `picasa` futtatóprogram
+   nincs telepítve. A végrehajtó párbeszédében a minőségválasztó állíthatósága
+   **NINCS MEG**; ez nem bizonyítja, hogy ott nem állítható. A távoli
+   végrehajtó-beállításokat ebben a körben nem értem el, ezért a kontrollmérés a
    tulajdonos gépén marad. Ez dönti el a fokozat→mintavételezés/DQT leképezést és
    a 193→q93 kapcsolatot.
 
