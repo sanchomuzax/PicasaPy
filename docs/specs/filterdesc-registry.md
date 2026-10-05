@@ -3788,6 +3788,135 @@ tényleges tárolási hely kiolvasása.
 *Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre, a közös
 motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
 
+### Az `imageOperations` attribútumainak hiánya: objektum-kezdőállapot (#626, 2026-10-05)
+
+Ez a tábla a natív műveletobjektum **létrehozása utáni, az attribútumolvasó
+előtti mezőállapotot** rögzíti. Nem azonos azzal az értékkel, amit egy
+képpont-végrehajtó hiányzó attribútumnál később használhat: egyes végrehajtók
+külön, helyi alapértéket adnak a getternek (példák lentebb). `NULL` = nincs
+eltárolt attribútum-/tömbcsomópont; `0` = nullázott skalármező; `0/NULL` = a
+mező reprezentációja az adott tagtől függ, a kezdő bitminta nulla.
+
+**A hiányzó attribútum útja.** A gyár (`0x00bb31f0`) a tag neve alapján
+allokál és vagy a művelet konstruktorát hívja, vagy maga nullázza a mezőket.
+Ezután virtuálisan hívja az attribútumolvasó 1. rését
+(`0x00bb3c8c`–`0x00bb3c98`). A típusolvasók a `0x008eb160`-nal keresik a
+nevet; hiányzó csomópontnál átugorják a tárolást, jelenlévőnél a
+`0x008eb520`-szal vagy közvetlen mezőírással módosítanak. Így a hiányzó tag
+kezdőállapota megmarad.
+
+| XML-elem | Műveletsaját attribútummezők | Hiányzó attribútum: mező kezdete | Inicializáló út | Fok |
+|---|---|---|---|---|
+| `AdjustCurves` | `MasterCurve`, `RedCurve`, `GreenCurve`, `BlueCurve`; `ExposureAdjustmentStops` | görbepontok `NULL`; stops `0`; attribútum nélküli `+0x28=7` | `0x00bb9990` | Q |
+| `AutoFix` | — | nincs XML-hez kötött műveletsaját mező; attribútum nélküli `+0x28=7` | `0x00bb31f0`, inline | S |
+| `BW` | `filtercolor` | `NULL` | `0x00bb31f0`, inline | S |
+| `Blur` | `xblur`, `yblur`, `quality` | `NULL` | `0x00bb31f0`, inline | S |
+| `Border` | `outercolor`, `innercolor`, `cornerradius`, `innerthickness`, `outerthickness`, `captionheight` | `NULL` | `0x00bbdf10` | S |
+| `CircularGradientImageMask` | `width`, `height`, `xCenter`, `yCenter`, `innerRadius`, `outerRadius`, `innerAlpha`, `outerAlpha` | `NULL` | `0x00bc29b0` | S |
+| `ColorMatrix` | `Matrix`; `UseAlpha` | `Matrix=NULL`; a `UseAlpha` útját a típusolvasó nem kezeli | `0x00bc1570` | Q; `UseAlpha` nyitott |
+| `Crop` | `x`, `y`, `width`, `height` | `NULL` | `0x00bbd880` | S |
+| `DropShadow` | `distance`, `angle`, `blurX`, `blurY`, `strength`, `quality`, `shadowColor`, `shadowAlpha`, `backgroundColor` | `NULL` | `0x00bbb120` | Q |
+| `EdgeDetectionB` | `detail` | `NULL` | `0x00bb31f0`, inline | S |
+| `GetVar` | `Name` | `NULL` | `0x00bb31f0`, inline | S |
+| `Glow` | `color`, `glowalpha`, `xblur`, `yblur`, `strength`, `quality`, `innerglow`, `knockout` | `NULL` | `0x00bb8a60` | S |
+| `GradientMap` | `gradientArray` | tömbcsomópont `NULL`; attribútum nélküli `+0x28=7` | `0x00bb8690` | Q |
+| `HSVGradientMap` | `gradientObjectArray`, `hueOffset` | tömbcsomópont `NULL`; `hueOffset=0`; attribútum nélküli `+0x28=7` | `0x00bbc0e0` | Q |
+| `IR` | `greenglow`, `greenglowalpha`, `redweight` | `NULL` | `0x00bc3c40` | S |
+| `LocalContrast` | `Radius`, `Strength` | `NULL` | `0x00bc40e0` | S |
+| `MultiplyColorMatrix` | `Multiplier` | `NULL` | `0x00bb7680` | S |
+| `Nested` | közös `Blend`-mezők; `id` | közös mezők 0/NULL; hiányzó `id` esetén nincs névvel ellátott regiszter | `0x00bb31f0`, inline | S |
+| `Noise` | `randomSeed`, `low`, `high`, `channelOptions`, `grayScale` | `NULL` | `0x00bbed20` | S |
+| `Pixelate` | `pixelWidth`, `pixelHeight`, `offsetX`, `offsetY` | `NULL` | `0x00bbcf30` | S |
+| `QuantizePalette` | `Steps`, `Depth` | nyers tagmezők `0` | `0x00bb31f0`, inline | S |
+| `RadialBlur` | `amount`; `x`, `y`, `Mask`, `ignoreObjects` | `amount=NULL`; a többi nem szerepel a típus attribútumtag-táblájában | `0x00bb31f0`, inline | S; a további mezők nyitottak |
+| `Resize` | `width`, `height`, `smoothing`; `ignoreObjects` | a három művelettag 0/NULL; `ignoreObjects` nincs a típus tagtáblájában | `0x00bb31f0`, inline | S |
+| `Rotate` | `radAngle`, `degAngle`, `borderColor`, `flipH`, `flipV`, `padBorder` | `NULL` | `0x00bb50f0` | S |
+| `SetVar` | `Name` | `NULL` | `0x00bb31f0`, inline | S |
+| `SimpleBorder` | `left`, `right`, `top`, `bottom`, `color` | `NULL` | `0x00bbf130` | S |
+| `SimpleColorMatrix` | `Saturation`, `Contrast`, `Brightness`, `ContrastAndBrightnessLinked` | `NULL` | `0x00bb6150` | S |
+| `TiledImageMask` | `tileWidth`, `tileHeight`, `scaleWidth`, `scaleHeight`, `paddingLeft`, `paddingTop`, `paddingRight`, `paddingBottom`, `offsetX`, `offsetY`, `alphaMin`, `alphaMax` | mind a 12 attribútumcsomópont `NULL` | `0x00bb9fd0` | Q |
+| `Tint` | `Color` (lokális bemenet, nincs saját adattag) | a lokális csomópont `NULL`; ebből a belső `Resaturate` színének hiányzó-érték útja nyitott | `0x00bb31f0`, inline | S |
+| `TwoTone` | `whiteColor`, `blackColor` | színcsomópontok `NULL`; attribútum nélküli `+0x28=7` | `0x00bc2720` | Q |
+
+`S` = utasításszintű inicializáló- és attribútumolvasó-olvasat, `feltételes`;
+`Q` = ugyanez egyezett az eredeti gépi kóddal végzett `qemu-i386`-próbában,
+`megerősített` a konstruktor kezdőállapotára. A QEMU-próbák az objektummezőket
+`0xA5` bájttal előtöltve futottak: `AdjustCurves` (`0x00bb9990`),
+`ColorMatrix` (`0x00bc1570`), `DropShadow` (`0x00bbb120`),
+`GradientMap` (`0x00bb8690`), `HSVGradientMap` (`0x00bbc0e0`), `TwoTone`
+(`0x00bc2720`) és `TiledImageMask` (`0x00bb9fd0`). A vtable és a mezőminták
+egyeztek a diszasszemblálással; a `+0x28=7` értéket az
+`AdjustCurves`/`GradientMap`/`HSVGradientMap`/`TwoTone` konstruktorpróba is
+visszaadta. Az `AutoFix` inline ágán ugyanezt az értéket a
+`0x00bb31f0` utasításai állítják be. Ez a `+0x28` mező nem szerepel az XML
+attribútumtáblában. Az inline inicializáló ágak QEMU-futtatása és a parser
+teljes attribútumútja nem történt meg; azokra az `S` fok érvényes.
+
+**Cáfoló próba (15.2).** A kezdeti állítás, hogy *minden objektummező*
+nulláról indul, megdőlt: a `GradientMap` konstruktor `+0x28` mezője `7`.
+Az eltérés nem XML-attribútum: a név szerinti attribútumtáblában nincs ehhez
+a mezőhöz kulcs. Ugyanennek a cáfolatnak a kontrollja a négy QEMU-val mért
+konstruktor: az `AdjustCurves`, `GradientMap`, `HSVGradientMap` és `TwoTone`
+mind `+0x28=7`-et ad, az utasítások is ezt írják. A leszűkített állítás ezért
+csak az XML-attribútumhoz rendelt mezőkre szól: azok 0/NULL kezdőállapotúak,
+amennyiben az attribútumolvasó nem talál hozzájuk csomópontot. A hiányzó
+`gradientArray` futásidejű olvasóját külön QEMU-ban nem hívtam meg; a
+`0x00bb8710` jelenléti ága és a `0x00bb8690` `+0x40=0` kezdete ezt
+utasításszinten támasztja alá, ezért ez az utolsó lépés `feltételes`.
+
+**Közös `Blend`-attribútumok.** A műveletobjektumok közös mezői hiányzó
+`BlendMode`, `BlendAlpha`, `Mask` és `maskWithSourceAlpha` mellett rendre
+`0`, `0`, `NULL`, `false` kezdőállapotúak; a közös olvasó (`0x00bc4900`)
+csak talált attribútumnál írja őket. A `BlendAlpha` mező nyers nullája nem a
+képpontkeverő alapértéke: a végrehajtó hiányzó értéknél `1,0`-t használ
+(`0x00bd0742`–`0x00bd0778`). A `dynamicParamsCachePriority` és
+`dynamicAlphaCachePriority` a dinamikus csomópont metaadata; a közös olvasó
+csak jelenlévő attribútumnál állítja (`0x00bc49dd`–`0x00bc4a2c`,
+`0x00bc4a2f`–`0x00bc4a7e`).
+
+**A nyers kezdőérték és a pixelvégrehajtó visszaesése külön adat.** Már
+kimért példák: a `Blur` hiányzó `xblur`/`yblur` értékéhez a getter `1,0`-t
+ad (`0x00bb4de0`); a `Resize.smoothing` nyers kezdete nulla, a végrehajtó
+viszont `true`-t készít elő (`0x00bc36ac`); a `DropShadow` paraméterépítője
+`shadowAlpha=1`, `angle=45`, fekete szín, `distance=4`, `strength=1`,
+`blurX=blurY=4` alapértékekkel indul (`0x00bbb8d0`); a `QuantizePalette`
+végrehajtó `Steps=255`, `Depth=2` értéket használ (`0x00bb5aed`,
+`0x00bb5b1d`). Ezek nem a konstruktor nyers mezői.
+Ugyanilyen különbség a `TiledImageMask`: az objektumtagok nulláról indulnak,
+míg a paraméterépítő `0x00bba250` a `scaleWidth`/`scaleHeight` értékére
+`0,8`-at, az `alphaMax`-ra `1,0`-t, a többi felsorolt mezőre nullát ad.
+
+**A szín- és gradiensszöveg formátuma: csak a szállított alak bizonyított.**
+A tényleges XML-ben a `GradientMap` listája `[0x000000,0x57cc29]`
+(`filterdesc.xml:1135`), statikus színek `0xRRGGBB` alakban szerepelnek
+(`Color="0xfcff00"`, `:836`; `SimpleBorder color="0xffffff"`, `:1235`),
+és dinamikus ARGB-értékek explicit `0xff000000 + …` kifejezésből épülnek
+(`DropShadow`, `:854`, `:1236`). `color="0"` is előfordul. A vizsgált
+színattribútumok között `#RRGGBB` és nemnulla decimális szín nem szerepel;
+ez a fájlban használt alakokat írja le, nem parser-elutasítási bizonyíték.
+Az attribútumolvasók a `gradientArray` / `gradientObjectArray` csomópontot
+adják tovább (`0x00bb8710`, `0x00bbc190`); a `0x008ef520` tényleges
+kifejezéskiértékelőjét és a listaelemek szöveges színértelmezését ez a kör
+nem futtatta. Ezért a `#RRGGBB`, a nemnulla decimális szín, a közvetlen
+`0xAARRGGBB` literál elfogadása, valamint a `GradientMap` XML-stopok
+RGB-bájtsorrendje **nyitott**. A `ColorMatrix.UseAlpha` (az XML-ben
+`true`, `:797`, `:811`) típusolvasó-útja szintén nyitott.
+
+**PicasaPy-összevetés.** A projektben nincs `filterdesc.xml`-ből
+`imageOperations`-tagokat beolvasó futásidejű parser. A `registry.py` és
+`registry_data.py` a csúszka-/effektregisztert a specből kézzel felvett
+adatból építi; a `chain_glimmer_handlers.py` pozíciós `.picasa.ini`
+`FilterOp`-paramétereket dolgoz fel, saját hiányzóparaméter-alapértékekkel.
+Ezért nincs az XML műveletobjektum mezőire 1:1-ben összevethető betöltői
+érték, és ebből a leletből nem következik termékkód-módosítás.
+
+*Bizonyítottsági fok: **feltételes** az összes XML-elemre kiterjesztett
+kezdőállapot-táblára (utasításszintű olvasat; hét konstruktor QEMU-val
+ellenőrizve), **megerősített** a hét Q-val jelölt konstruktor nyers
+mezőkezdeteire; **feltételes** a közös olvasó jelenléti kapujára; **nyitott** a teljes
+XML-kiértékelésre, a szöveges szín/gradiens grammatikára és a felsorolt
+végrehajtói fallbackoktól eltérő, még nem vizsgált getterekre.*
+
 ---
 
 ## ⭐ HÉT Glimmer-művelet KIMÉRVE (2026-09-03, #2211)
@@ -8337,7 +8466,7 @@ Az objektumbeli vonás `0x28` bájtos (a `0x008e3b60` `0x28` bájtot foglal): az
 | harmadik `:%g` | `brushRotation`, vonás `+0x08` | A szög egysége **NINCS MEG**, mert a megnevezett raszterút nem olvassa a mezőt; lásd a #4096 célzott vizsgálatát. | `0x008eca20`, `0x008ec790`; #4096 alább |
 | `:%d` | ecsetmód-bit, vonás `+0x24` | A raszterben 0 = festés, 1 = radírozás; a creator tartalékláncának pontos forrása továbbra is az utasításszintű kiolvasás szerinti. Lásd a #4096 kétutas ellenőrzését. | `0x008e3b60`, `0x008ec290`, `0x008ed280`; QEMU pixelmérés; #4096 alább |
 | opcionális első `:%g` | ecsetméret, stílus `+0x0c` | A raszter bemenetén képpont-átmérő; sugár = size × 0.5. A `0.03`/`0.2` UI-faktorok nevezője **NINCS MEG**. Részletek és kontroll a #4096 alatt. | `0x008ed730`, `0xc72150`; QEMU-mérés; #4096 alább |
-| opcionális második `:%g` | `_sldrHardness.value`, ecsetkeménység, stílus `+0x10` | Alapérték 0.15 a descriptorból; a creator dereferálja. A pontos pixel-alfa görbe és min/max **NINCS MEG**. Részletek a #4096 alatt. | `filterdesc.xml:1273`, `0x008e3e32`–`0x008e3e38`, `0x008ed730` |
+| opcionális második `:%g` | `_sldrHardness.value`, ecsetkeménység, stílus `+0x10` | Alapérték 0.15 a descriptorból; a creator dereferálja. A `h=1` natív alfa-profil 20/40 px-en QEMU-val mérve; a további profilok mintái a #4096 alatt. A megengedett min/max **NINCS MEG**. | `filterdesc.xml:1273`, `0x008e3e32`–`0x008e3e38`, `0x008ed730`; QEMU #4096 |
 | pontlista | egymást követő `(x,y)` pontpárok, vonás `+0x1c` / `+0x20` | `float32` párok. Az egérkezelő `x/képszélesség` és `y/képmagasság` alakban normalizál, tehát a tengelyek külön nevezőt kapnak, nem a rövidebb oldalt. A beolvasó nem vizsgál külön koordinátatartományt; a megengedett határok: **NINCS MEG**. | osztás `0x008fbf85`–`0x008fbf9d`; ponttömb-bővítés `0x008ec2e0`; író `0x008fb064`–`0x008fb0f3`; olvasó `0x008fbbb1`–`0x008fbc14` |
 
 **Az 5 és 7 részes alak nem verziójelölés.** Az író (`0x008fb01c`) az aktuális vonás `+0x18` ecsetstílus-mutatóját az előző vonás stílusmutatójával hasonlítja össze. Ha azonos: a méret/keménység mezőket kihagyja, ezért a rekord `alpha:spacing:rotation:flag:points` = **5 rész**. Ha eltérő — az első vonásnál az előző mutató null — kiírja a `size:hardness` párt, ezért **7 rész**. A `0x008e4270` azonos stílusértékeknél visszaadhatja a már meglévő stílusobjektumot; a szerializálási feltétel maga a mutatóazonosság, nem a felhasználói ecsetváltás vagy egy régi/új formátum. **Pontosítások (futtatva, 2026-10-03):** (a) az előző mutató kezdőértéke 0 (`0x008faf91`/`0x008faf9d`), minden vonás után frissül (`0x008fb05a`) — ha az ELSŐ vonás stílusmutatója is null, a két mutató azonos, és az első rekord 5 részes (az olvasó ezt elutasítja, ld. lent); (b) a feltétel a MUTATÓ azonossága, nem az érték: két külön, azonos értékű stílusobjektum 7 részes rekordokat ad; (c) pont nélküli vonásnál a rekord 4 vagy 6 részes (a pontlista üres), az olvasó ezt elutasítja.
@@ -8383,7 +8512,7 @@ Az alábbi megállapítások felülírják a fenti #4046 táblázat mód-, mére
 | Ecsetméret (`style+0x0c`) | A rasterizer ezt képpontban értelmezett átmérőként adja a `CircularBrush`-generátornak: sugár = méret × 0.5 (`0xc72150 = 0.5`). Nem szorozza kép szélességével, magasságával, rövidebb oldalával vagy vonás-befoglaló téglalappal. A `0.03`/`0.2` UI-faktorok saját nevezője továbbra is nyitott. | `0x008ed730`, `0x008ed765`–`0x008ed780`; `0x008ec3a0`; QEMU 120×80 és 240×160 bemeneteken azonos 12 px mérettel 12, illetve 24 bélyeghívás. |
 | Vonásköz (`stroke+4`) | Bélyegköz = trunc(stílusméret képpontban) × `_nSpacing`; kisebb arány sűrűbb lerakást ad. Megengedett tartomány: **NINCS MEG**. | `0x008eca20`, `0x008ed1b0` → `0x00c29990`; QEMU: size 12, spacing .5 → 12 hely; spacing .25 → 24 hely; size 24, spacing .5 → 6 hely. |
 | Forgatás (`stroke+8`) | Fok/radián nem dönthető el, mert a megnevezett `0x008eca20` elhelyező és `0x008ec790` rajzoló nem olvassa ezt a mezőt és nem továbbítja a style/brush hívásoknak. QEMU 0/90 futás: az elhelyezési hívások száma egyforma; végső pixelkép nem volt mérve. | `0x008eca20`, `0x008ec790`; QEMU bélyeghely-naplózó. Következő út: az eredeti `0x008ed730` ecsetfelület futtatása és az esetleges másik stroke-renderhívó célzott követése. |
-| Keménység (`style+0x10`) | Az alap `0.15`: a `filterdesc.xml:1273` deklarálja, a creator `0x008e3e32`–`0x008e3e38` pedig az effect-példány első float mezőjét dereferálja alapértékként. A keménység belép a kör ecset radiális profiljának építésébe; pontos alpha-görbe és min/max: **NINCS MEG**. | `filterdesc.xml:1273`, `0x008e3e32`–`0x008e3e38`, `0x008e4270`, `0x008ed730`, `0x008f3290`, `0x008f3840`. |
+| Keménység (`style+0x10`) | Az alap `0.15`: a `filterdesc.xml:1273` deklarálja, a creator `0x008e3e32`–`0x008e3e38` pedig az effect-példány első float mezőjét dereferálja alapértékként. A `h=1` alfa-profil 20/40 px-en QEMU-val mérve; más méreteken és keménységeken az általános görbe, valamint a min/max **NINCS MEG**. | `filterdesc.xml:1273`, `0x008e3e32`–`0x008e3e38`, `0x008e4270`, `0x008ed730`, `0x008f3290`, `0x008f3840`; QEMU #4096. |
 
 **A út — utasításszintű olvasás.** A creator `setne`-vel képezi a módot a `_brshbtn.selected` → `_btnEraser.selected` → 0 láncból, majd átadja `0x008e3b60`-nak. A mode a style `+8` és stroke `+0x24` mezőbe is bekerül. A `0x008ed280` style mód alapján választja a festő uniót vagy a radír inverz-szorzást. A `0x008eca20` a pontokat külön kép-szélesség/kép-magasság skálával alakítja képpontra; a bélyegzők lépésközét a képpont-egészre csonkolt size és spacing adja. A `0x008ed730` a style méret feléből képez sugarat. A forgatást a felsorolt hívási út nem használja.
 
@@ -8432,17 +8561,32 @@ A keménység `1.0` esetén a végrehajtás másik ágra lép, a `0x008edc08`-n�
 
 ⛔ **Önhelyesbítés:** az 5. szakasz „mechanizmus"-olvasatát (a `PaintEffectCanvas` kezelője építi a maszkot; `+0x9c` változat-mező; teljes fedésű alapmaszk) ez a kutatói szál írta egy körrel korábban, a kezelő függvény olvasásából, a hívóját és a mód-táblát nem nézve. A hibát az első olvasat ellentmondása (`maszk = 0` vs. az élő „egész kép") és a független olvasat együtt hozta felszínre.
 
-#### #4096 — harmadik bináris kör (2026-10-03)
+#### #4096 — harmadik bináris kör (2026-10-03; h=1 kiegészítés: 2026-10-05)
 
-**Keménység `1.0` — az ág megerősített, a teljes alfa-profil nyitott.** A `0x008ed74f` `fcomp` után a `0x008ed75c` `test ah, 0x41` és `0x008ed75f` `jp 0x008ed863` választ ágat: `h=1.0` esetén a QEMU-ban mért paritásjelző `0`, így a futás a `0x008ed765` ágon megy; `h=0.15` esetén mért `1`, így a `0x008ed863` ágra jut, amely a korábbi 15 mintapontos ciklus felé vezet. **A két út egyezik:** A) az eredeti utasítások összehasonlítása és ágkövetése; B) QEMU-ban az eredeti `0x008ed730` futtatása a feltételes ugrásig, a paritásjelző kiírásával (`h=1.0 → 0`, `h=0.15 → 1`). Ez az ágkülönbséget igazolja, nem a `h=1.0` maszk alfaértékeit. A teljes raszter kimenetének futtatása nem adott használható képadatot: a QEMU-harness a CRT/USER32 betöltési útján `GetCurrentProcess`/`ExitProcess` importcsapdába, az inicializált felületű próbában pedig szegmentálási hibába futott. A sikertelen kísérletek értéke **NINCS MEG**; a 15 pontos interpolációs tap nem méri a `h=1.0` ágat. A teljes profil megszerzéséhez az eredeti rasterizáló kimeneti felületét kell valódi, olvasható képpufferrel inicializálni, majd a `0x008ed730` visszatérése előtt a pixel-alfa sort kiolvasni.
+**Keménység `1.0` — a teljes natív alfa-profil mért 20 és 40 px-en.** A `0x008ed74f` `fcomp` után a `0x008ed75c` `test ah, 0x41` és a `0x008ed75f` `jp 0x008ed863` választ ágat: `h=1.0` esetén a `0x008ed765` kemény ecsetág fut; `h=0.15` a `0x008ed863` ágra jut. A hívás előbb `0x00ffffff` színnel tölti a kimeneti felületet, majd a `0x00aa1840`-et hívja `0xff000000` színnel; a helper pixelírása `0x00aa1b1f`-en történik. A stílusméret fele a sugár (`0x00c72150 = 0.5`).
 
-**Forgatás (`stroke+8`) — a vizsgált raszterláncban nincs olvasás, a teljes fel nem használtság nyitott.** A `paszta.py` teljes `.text` pásztázása a `paszta.memoria_kapu()` hívással indult; 2 884 879 utasításnál 28 778 `disp=8` operandust talált 10 441 függvényben (a Capstone `LEA` címképzései és veremargumentumai is a találatok között vannak, ezért a nyers találatszám önmagában nem típusbizonyíték). A stroke-konstruktor a harmadik float argumentumot a mezőbe írja (`0x008ec2ad`–`0x008ec2b1`). A `0x008eca20` a `0x008ec790`-nek a stroke-rekordot adja át; a rajzolóban ez a mutató az `EDX`, amelynek használt mezői `+0`, `+0x18` és `+0x24`, `+8` olvasás nincs. A két függvény más `+8` hozzáférései veremargumentumra vagy a külön inicializált befoglaló téglalapra esnek (`0x008eca7a`–`0x008eca8a`, `0x008ec962`). Ez lezárja a megnevezett út olvasatát, de a teljes stroke-típushoz kötött alternatív hívó/fogyasztó hiányát nem bizonyítja. A korábbi 0°/90° QEMU-próba azonos bélyegszámot mért, koordinátát és képpuffert nem; a mező raszterbeli hatása és egysége **NINCS MEG**. Következő mérés: az azonos képpufferre rajzoló 0°/90° futásnál rögzíteni a `0x008ec790` bemeneti stroke-rekordot, bélyegkoordinátákat és a végső alfa-képpuffert.
+**A út — utasításszintű olvasás.** `0x008ed730` a `style+0x10` keménységet hasonlítja `1.0`-hoz, és a kemény ágon a `style+0x0c` méret felét állítja be. Érvényes célfelületnél, ha a `0x009a91a0` nullával tér vissza, a felület átlátszó fehér alapot kap, majd a `0x00aa1840` fekete kör-ecsetet rajzol; a helper minden kimeneti DWORD-ját a `0x00aa1b1f` írja vissza. Little-endian ARGB-ban a DWORD felső bájtja a fedettség.
+
+**B út — az eredeti gépi kód futtatása.** A `0x008ed730` eredeti kódja `qemu-i386` alatt futott, a korábbi `GetModuleFileNameA` importcsapda helyére üres `xor eax,eax; ret` stub került, a CRT-foglalást pedig a helyi bump-heap shim szolgálta ki. A kimeneti képfelületet a `this+0x10` pointeren, a visszatérés után olvastuk ki. Mind a négy futás `rc=0`, stdout 16708 bájt, stderr 0 bájt; a méret/mód szerinti teljes felület SHA-256-a a két módban azonos.
+
+| méret, mód | felület | középső sor alfa-bájtjai balról jobbra | teljes felület SHA-256 |
+|---|---:|---|---|
+| 20 px, festés (`mode=0`) | 21×21, stride 21 | `241`, `255` × 18, `225`, `0` | `238e13f70e224c8329b8259117ee152f23fc3190b633ee555398aff9304a7143` |
+| 20 px, radírozás (`mode=1`) | 21×21, stride 21 | bájtról bájtra azonos a festéssel | azonos a festéssel |
+| 40 px, festés (`mode=0`) | 41×41, stride 41 | `248`, `255` × 38, `232`, `0` | `74087f19c3ef28f4f14626353f1a873c47d4af43e4ca491ac787a20825917f95` |
+| 40 px, radírozás (`mode=1`) | 41×41, stride 41 | bájtról bájtra azonos a festéssel | azonos a festéssel |
+
+A 20 px-es felület mérete 1764 bájt, pointere `0x10100010`; a 40 px-esé 6724 bájt, ugyanilyen arénán belüli pointerrel. A középső sorban a fedettség bájtja az egyes 32 bites pixel `+3` bájtja. A hívás után megmaradó régi 15 elemű profilpuffer mind a 15 helyen nulla: `h=1` nem futtatja a 15 pontos LUT/interpolációs ágat. Ezért a jelentett profil az eredeti rasterizáló teljes, natív felbontású középső sora, nem a korábbi 15 LUT-mintapont; nem interpoláltunk vagy becsültünk hozzá értéket. A két módban egyező hash csak a `CircularBrush` generátor ezen kimenetére állítja, hogy a módnak nincs hatása; a későbbi stroke-raster ág módhatását nem zárja ki.
 
 **A `0.03`/`0.2` UI-faktor nevezője — NINCS MEG.** A `0x00bb25f0` descriptor-olvasó a `startValueFactor` és `maximumFactor` attribútumokat külön propertyként parse-olja; a `0x00bbc8b0` konstruktor a három átadott `float`-ot a `+0x10/+0x14/+0x18` mezőkre másolja (`0x00bbc8d1`–`0x00bbc8f9`), osztást nem végez. A `0x008e3bd0` előbb a `_brshbtn.value`, ennek hiányában a `_sldrBrushSize.value` propertyt értékeli ki a `0x008ef520`-szal; a `0x008e3dd0` az így kapott méretet a `0x008e3b60` style-gyárnak adja át. Ezen a bináris útvonalon nincs képméret- vagy nézetméret-osztás. A két megnevezett függvény valós descriptorral/UI-állapottal való futtatása ebben a körben nem történt meg, és a tényleges `BrushSizeAndEraserButton` binding forrása nem volt elérhető; nevezőt nem következtetek ki. A döntéshez az eredeti vezérlő bindingjét kell megszerezni vagy futó vezérlőn, ismert kép- és nézetméretek mellett együtt rögzíteni a két `value` propertyt és a `style+0x0c` méretet.
 
-**Cáfoló kísérlet:** az ellenhipotézis az volt, hogy `h=1.0` is a korábbi 15 pontos interpolációs ágat futtatja. A QEMU ágpróba ugyanazon eredeti utasításokon `h=0.15` esetén `PF=1`, `h=1.0` esetén `PF=0` értéket adott; a `jp` ezért csak az előbbi esetben ugrik `0x008ed863`-ra. Az ellenhipotézis cáfolódott, de a próba nem méri a kemény kör alfa-profilját. A forgatásnál a pásztázás talált `+8` operandusok, de a célzott rajzolóban más objektumhoz tartoznak; ez a „mindenhol fel nem használt” állítás cáfolására nem alkalmas, ezért a mező teljes felhasználtsága nyitva marad.
+**Cáfoló kísérlet:** azt próbáltuk cáfolni, hogy `h=1.0` is a 15 pontos interpolációs ágat futtatja. A QEMU-futásban a 15 elemű puffer mind nulla, miközben a `this+0x10` célfelület 21×21 / 41×41 méretű és teljes alfa-sort tartalmaz; ez a LUT-ág hipotézisét cáfolja. Második ellenpróba: festés és radírozás módban azonos méreten a teljes kimeneti felület hash-e és minden pixel egyezik (`20 px`: `238e…7143`; `40 px`: `7408…17f95`). Ez csak a generátor kimeneti felületére érvényes; nem cáfolja a későbbi módonkénti kompozitálást. A korábbi forgatásos próba továbbra is csak azonos bélyegszámot mért, koordinátát/képpuffert nem, ezért a forgatásra nem döntő cáfolat.
 
-**Bizonyítottsági fok és készültség:** a `h=1.0` ág választása **megerősített** (utasításszintű olvasat + QEMU ágpróba), a teljes keménységi profil, a forgatás egysége/hatása és az UI-faktorok nevezője **nyitott**. A három nyitott pont miatt a tárolt vonásokból preview/export maszkot újraépítő fejlesztői jegy még nem írható ki teljes feladatként; a korábbi mód-, méret- és vonásköz-eredmények ettől nem változnak.
+**Helyi eltérés.** A PicasaPy `src/picasapy/app/paint_mask.py` maszkja nem kap ecsetkeménységet a `Vonas` mezőiben, és állandó `PEREM_ARANY = 0.15` átmenetet számol. A natív `h=1` felület középső sorában a méret 20 esetén 18, 40 esetén 38 belső bájt teljes fedésű, majd a mért élértékek `225/0` és `232/0`; így a mostani fix lágy perem nem tudja ezt a kemény profilt előállítani. A nyitott UI-faktor és stroke-forgatás miatt ez még nem elég a preview/export maszk teljes fejlesztői jegyének lezárásához.
+
+**Forgatás (`stroke+8`) — a megnevezett raszterút és a konstruktor további hívója.** A korábbi következtetés változatlan: a `0x008ec290` konstruktor vtable nélkül, egyszerű rekordként írja a harmadik float argumentumot `+8`-ra (`0x008ec2ad`–`0x008ec2b1`); a közvetlen hívóindex két hívót ad (`0x008e3b60`, `0x008fb120`). Az utóbbi a rekordot előállítja/tárolja, nem hívja a `0x008ec790` rajzolót; annak közvetlen hívói `0x008ec3a0` és `0x008eca20`. RTTI-osztálytag-térkép ezért a rekordhoz nincs, a korábbi `paszta.py` teljes `.text`-es `disp=8` találatlistája pedig önmagában nem köti a sok találatot ehhez a rekordhoz. A `0x008fb120` által előállított rekord alternatív megjelenítési fogyasztója továbbra sincs azonosítva; a mező teljes fel nem használtsága és a fok/radián egység **NINCS MEG**. Következő út: a tároló/olvasó hívási útján a rekordmutatót követni és minden közvetett rajzoló belépésnél ellenőrizni a `+8` olvasását; a teljes `.text`-pásztázást csak a `paszta.py` `memoria_kapu()` útján szabad újraindítani.
+
+**Bizonyítottsági fok és készültség:** a `h=1.0` hard ág és az eredeti kimeneti felület `20/40 px` középső sorainak fedettségprofilja **megerősített** (utasításszintű kimenetértelmezés + az eredeti kód QEMU-futtatása, méretenként és módonkénti hash-kontrollal). A profil pontos értéke más méreteken, a megengedett keménységi min/max, a forgatás fogyasztója/egysége és az UI-faktorok nevezője **NINCS MEG**. A helyi maszk fix 0.15-ös pereme a natív `h=1` profilhoz eltér; a tárolt vonásokból teljes preview/export maszkot újraépítő egyetlen fejlesztői jegy csak a forgatás és az UI-faktor nevezőjének lezárása után írható ki. Termékkódot ez a kutatási kör nem módosít.
 
 ## ⛳⛳ A `GlowImageOperation` SOSEM fut belső ragyogásként — az `innerglow` attribútum nem létezik a binárisban (2026-09-14, 306. kör, #2982)
 
@@ -9329,15 +9473,16 @@ mit átvezetni. Ami maradt, az a küszöb fedettségi profilja: **#3390**. Mér�
 `filters-decoded.md`, „A Comicize pontja: az ÁLLANDÓ maszk és a tónussal növő
 sugár UGYANAZ"; őr: `tests/render/test_comicize_maszk_kuszob_2476.py`.
 
-### A konstruktor: `0x00bba250` (133 b)
+### A Tiled-művelet paraméterépítőjének alapértékei: `0x00bba250` (133 b)
 
-A `glimmer::TiledImageMask` attribútum-készletét ez a függvény állítja
-alapállapotba, mielőtt a beolvasó (`0x00bba2e0`) a `filterdesc.xml`-ből
-felülírná a megadottakat. A struktúra `esi = [esp+0x14]`-től indul, és a
-mezősorrend **azonos** a beolvasóéval (a beolvasó `mov edi, <attribútumnév>` →
-`lea esi, [ebp + eltolás]` párjaiból kiolvasva):
+A `0x00bba250` nem a műveletobjektum konstruktora: a Tiled-végrehajtás
+paraméterrekordjához készít elő helyi alapértékeket. A tényleges objektumot a
+gyár (`0x00bb31f0`) a `0x00bb9fd0` konstruktorral inicializálja; az
+attribútumolvasó (`0x00bba2e0`) a megtalált csomópontokat az objektum
+`+0x18`, `+0x20`, …, `+0x70` mezőibe teszi. A lenti eltolások a
+paraméterrekord mezői, nem az objektumtagok:
 
-| attribútum | tageltolás | **tartalékérték** | hol íródik |
+| attribútum | paramétermező | **végrehajtói tartalékérték** | alapérték-képzés |
 |---|---|---:|---|
 | `tileWidth` | `+0x08` | **0** | `0x00bba281` |
 | `tileHeight` | `+0x0c` | **0** | `0x00bba287` |
@@ -9353,7 +9498,7 @@ mezősorrend **azonos** a beolvasóéval (a beolvasó `mov edi, <attribútumnév
 | **`alphaMax`** | `+0x34` | **1,0** | `0x00bba28b` (`fld1`) |
 
 A `0,8` a `0x00c7dbc4`-en álló `float` (kiolvasva: **0,800000011920929**), és a
-konstruktor **ugyanazt az FPU-értéket** teszi mindkét skála-mezőbe
+paraméterépítő **ugyanazt az FPU-értéket** teszi mindkét skálamezőbe
 (`fst` + `fstp`).
 
 ⭐ **Ez a mérés kontrollja:** a `scaleWidth`/`scaleHeight` = **0,8** az az
@@ -9400,7 +9545,7 @@ módszerével — és irányában is egyezik a mért hibával (a mi profilunk �
 nélkül monoton lejt", a referencia fennsíkos, ld. a 00-index 2026-09-05-i
 bejegyzését).
 
-*Forrás: `0x00bba250` (a konstruktor, 133 b) — a tárolások `0x00bba261`,
+*Forrás: `0x00bba250` (a paraméterépítő, 133 b) — az alapértékek `0x00bba261`,
 `0x00bba266`, `0x00bba270`, `0x00bba275`, `0x00bba27d`, `0x00bba281`,
 `0x00bba285` (`fld1`), `0x00bba287`, `0x00bba28b`, `0x00bba28f`,
 `0x00bba293`, `0x00bba297`, `0x00bba29b`; a `0,8` konstans `0x00c7dbc4`; a
