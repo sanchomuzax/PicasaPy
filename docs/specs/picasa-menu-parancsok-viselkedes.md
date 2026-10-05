@@ -2513,13 +2513,43 @@ A minősítés `0x0085cff0` (781 b) szerint egy **tárolt bájtból** jön
 (`0x0085d1dd`: `cmp eax, 2` → best; `0x0085d1ee`: `cmp eax, 1` → good;
 különben bad.)
 
-⚠️ **A KÜSZÖBÖK továbbra sincsenek mérve.** A besorolás egy **korábban
-kiszámolt** bájt; az azt ÍRÓ kód nincs meg. A `0x0085cff0`, a `0x007451a0`
-(1473 b) és a `0x00746170` (351 b) `cmp`-immediate-jei között DPI-szerű
-érték **nincs** (csak 127/128/255 — sztringhossz-ellenőrzések). A
-`src/picasapy/printing/dpi.py` 150 DPI-s küszöbe **továbbra is saját
-döntés**. **Megszerzés:** a `[rekord+0x10]` bájtot író kód — a 20 bájtos
-rekordtömb a `[ebx+0x48]` alatt.
+#### A `[rekord+0x10]` bájt írása és a küszöbképlet (2026-10-05, #4280)
+
+A két helper a DPI-értéket egész küszöbhöz hasonlítja: `0x0085c1e0`
+`Preferences\DPIWarning` alapértéke `0x96` = **150** (`0x0085c1fa`),
+`0x0085c270` `Preferences\DPISevere` alapértéke `0x64` = **100**
+(`0x0085c28a`). Mindkét helper `fild threshold; fcomp qword ptr [DPI]`
+utasítássorral hasonlít, majd `test ah, 0x41` / `jp` alapján akkor ad igazat,
+ha `DPI >= threshold`; az egyenlőség is igaz.
+
+`0x007451a0` mindkét helper eredményét összeadja (`0x0074523c`–`0x00745248`).
+Az összeg a `[esp+0x4c]` lokális változóba kerül (`0x00745248`). A rekord
+hozzáadásakor három átmeneti push miatt (`0x007454e6`, `0x007454e7`,
+`0x007454fe`) az ESP `0x0c`-vel alacsonyabban áll; ezért a `0x00745513`-nál
+beolvasott `[esp+0x58]` **ugyanaz az összeg** (`0x58 − 0x0c = 0x4c`), és
+`CL`-ként átmegy a `0x0085c640` függvénybe.
+A segéd a CL bájtot az átmeneti rekord `+0x10` mezőjébe teszi
+(`0x0085c665`); a `0x0085d300` a forrás `+0x10` bájtot a cél rekord
+`+0x10` mezőjébe másolja (`0x0085d38b`–`0x0085d38f`).
+
+A tároló és az olvasó azonosságát a vtable is megerősíti: a konstruktor
+`0x0085c300` a másodlagos vtable-t a `this+0xbc` helyre írja
+(`0x0085c33b`); a `0x00cc37b8` RTTI/vtable sora a `0x0085cff0` metódust
+tartalmazza. Az olvasó másodlagos `this+0x48` mezője így a teljes objektum
+`+0x104` vektorára esik, ahová az append út ír. A `0x0085d1dd`/`0x0085d1ee`
+ág a `+0x10` bájtot `2` → Best, `1` → Good, egyébként Bad értékre oldja.
+
+| tárolt bájt | binárisbeli képződés | `CPrintDlg` felirat |
+|---:|---|---|
+| `2` | mindkét küszöb-helper igaz (`DPI >= 150` alapértéken) | Best |
+| `1` | csak a 100-as helper igaz (`100 <= DPI < 150` alapértéken) | Good |
+| `0` | egyik helper sem igaz (`DPI < 100` alapértéken) | Bad |
+
+Ez a `CPrintDlg`-bájt út **ugyanazokat a 0/1/2 kategóriákat** adja, mint a
+`ThumbUIPrint::Review*` sorcímkéi, de a két feliratcsalád külön marad:
+`ReviewLow` és `CPrintDlg::badqual` nem ugyanaz a szöveg. A beállítható
+küszöbök, a Review-címkék és a két bizonyítéki út összefoglalója a
+[`picasa-nyomtatas.md`](picasa-nyomtatas.md) lapon van.
 
 ### 40.8 A nyomatméretek: TIZENHÉT tétel, és a magyar felület METRIKUS
 

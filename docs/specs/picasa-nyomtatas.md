@@ -309,6 +309,60 @@ teljesebb** készlet is van, saját névtérrel — és **ez** tartalmazza az
 > `referencia/i18n-hu/printoptionstext.xml` soraiból, minden cím a
 > binárisból kiolvasva.
 
+### A Review lista DPI-sávjai (2026-10-05, #4280)
+
+A `ThumbUIPrint::ReviewBest` / `ReviewGood` / `ReviewLow` sorcímkékhez a
+panel két külön beállítást olvas; az értékek beállítással felülírhatók:
+
+| beállítás | binárisbeli alapérték | összehasonlítás |
+|---|---:|---|
+| `Preferences\DPIWarning` | `0x96` = **150 DPI** (`0x0085c1fa`) | `DPI >= DPIWarning` → Best |
+| `Preferences\DPISevere` | `0x64` = **100 DPI** (`0x0085c28a`) | ha nem Best, `DPI >= DPISevere` → Good |
+
+`0x0085c1e0` és `0x0085c270` a képenkénti DPI-t a beállításból kapott
+küszöbhöz hasonlítja. A `fcomp` után a `test ah, 0x41` / `jp` ág az
+egyenlőséget is igaznak veszi: a küszöb alatti DPI-re a `jp` a hamis ágra
+ugrik, a küszöbön vagy afölött nem. A hívó (`0x007451a0`) a két eredményt
+Best → Good → Low sorrendben címkézi (`0x00745422`–`0x007454a7`).
+
+| Review-sáv | binárisból következő feltétel | alapértékekkel |
+|---|---|---|
+| Best | `DPI >= DPIWarning` | `DPI >= 150` |
+| Good | `DPI < DPIWarning` és `DPI >= DPISevere` | `100 <= DPI < 150` |
+| Low | `DPI < DPISevere` | `DPI < 100` |
+
+A bináris index adatxref-útja külön is a helyére teszi a neveket: a
+`DPIWarning` (`0x00cc3368`) xrefjei között szerepel a kis-kép figyelmeztető
+`0x0085c060` és a Review-sáv `0x0085c1e0` segéd; a `DPISevere`
+(`0x00cc3374`) xrefje a `0x0085c270`;
+a három `ThumbUIPrint::Review*` címke pedig a `0x007451a0` függvényhez
+vezet. A diszasszemblált hívó a két helper eredményét összeadja, és az
+összeg szerint választ Review-feliratot (`0x0074523c`–`0x00745248`,
+`0x00745422`–`0x007454a7`).
+
+A `CPrintDlg::bestqual` / `goodqual` / `badqual` család ugyanennek a
+képkategóriának a tárolt kódját olvassa: a két helper igaz értékeinek
+összege `0` / `1` / `2`, amelyet a 20 bájtos rekord `+0x10` mezőjébe
+írnak; az olvasó `2` → Best, `1` → Good, egyébként Bad. A bájt útja
+`0x00745513` → `0x0085c640` → `0x0085d300`; a hívó `[esp+0x58]` forrása
+a korábban elmentett összeg (`[esp+0x4c]` a `0x007454e6`, `0x007454e7`
+és `0x007454fe` push előtt).
+Részletes vtable- és rekordbizonyíték: a
+[`picasa-menu-parancsok-viselkedes.md` 40.7. szakasza](picasa-menu-parancsok-viselkedes.md).
+
+Az angol feliratok mégsem azonosak: a Review lista `Low Quality` szöveget,
+a `CPrintDlg` olvasója `Bad quality` szöveget választ a `0` kódhoz.
+
+**Bizonyítottsági fok: megerősített.** Az utasításszintű út: a két küszöböt
+olvasó függvény összehasonlítása, a hívó összegzése, a rekordmásolás, majd a bájt
+olvasója egymásra zár. B adatút: az index string-xrefjei a beállításkulcsokat
+a két helperhez és a Review-címkéket a hívóhoz rendelik; az RTTI/vtable a
+`CPrintDlg` olvasót ugyanahhoz a rekordvektorhoz köti. A két út egyezik.
+**Cáfoló próba:** a szigorú `DPI > küszöb` változatot az egyenlőség cáfolja:
+`0x0085c237`-nél a `fcomp` egyenlő értékeinél `C3=1`; a
+`0x0085c23d` `test ah, 0x41` utasítása ekkor `AH & 0x41 = 0x40` értéket ad
+(páratlan paritás), ezért a `jp` nem fut le, és a helper igazat ad.
+
 ---
 
 ## A „kis kép" KÜSZÖBE: `Preferences\DPIWarning`, alapérték **150** (2026-09-04)
