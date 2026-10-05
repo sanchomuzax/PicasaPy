@@ -324,6 +324,10 @@ Rectangle {
     }
 
     property bool paramPanelActive: false
+    // #4068: egy fülgomb lenyomására az eredeti Picasa az eszköz-panelt
+    // az első fül letiltott tartalmával helyettesíti, miközben az eszköz
+    // füle marad kijelölve. Az állapot az Escape/Mégse ágig él.
+    property bool paramPanelSuspended: false
     property string paramEffectName: ""
     property var paramEffectParams: []   // editController.effectParams(name)
     property var paramEffectValues: []   // a csúszkák pillanatnyi értékei
@@ -342,6 +346,18 @@ Rectangle {
                                       : panel.paramEffectName
 
     function hasEffectController() { return Logika.hasEffectController() }
+
+    // A fülsáv kattintása nyitott effektpanelnél nem vált fület és nem
+    // dobja el az előnézetet: a Picasa az első fül letiltott tartalmát
+    // mutatja. A kijelölt fül az eredeti effekt füle marad.
+    function selectTab(tabIndex) {
+        if (panel.paramPanelSuspended) return
+        if (panel.paramPanelActive) {
+            panel.paramPanelSuspended = true
+            return
+        }
+        panel.activeTab = tabIndex
+    }
 
     // #338: az effekt-gombok bélyegképéhez (image://effectthumb/<id>/<effekt>)
     // szükséges fotó-azonosító. Nincs rá külön EditController-property — az
@@ -491,7 +507,8 @@ Rectangle {
         // vezérlőknek, amelyek nem ismerik az élő állapotot.
         panel.allitsdAShiftFigyelest()
         panel.frissitsdAShiftAllapotot()
-        // #583: fülváltáskor a nyitott effekt-paraméter alpanel BEZÁRUL, és
+        // #583: ha az aktív fül állapota közvetlenül megváltozik, a nyitott
+        // effekt-paraméter alpanel BEZÁRUL, és
         // az élő előnézete elvész (a mentett lánc érintetlen marad — ez a
         // Mégse ága). Enélkül nyitva maradt, és mivel a láthatósága csak a
         // `paramPanelActive`-tól függött, RÁRAJZOLÓDOTT a másik fül
@@ -687,6 +704,7 @@ Rectangle {
         objectName: "editorEffectParamScroll"
         panel: panel
         visible: !panel.modeToolActive && panel.paramPanelActive
+                 && !panel.paramPanelSuspended
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right

@@ -626,12 +626,44 @@ egyelőre a legvédhetőbb olvasattal (a hatóelem előfordulásainak száma a
 ## 4. Az effekt-paraméter alpanel (csúszkás panel)
 
 Ebben a képcsomagban **nincs olyan felvétel, amelyen egy effekt
-paraméter-alpanelje nyitva volna** — mind az 56 kép átnézve. A szakasz ezért
-két, egymást ellenőrző forrásból épül fel: az elrendezés-erőforrásokból
+paraméter-alpanelje nyitva volna** — mind az 56 kép átnézve. A későbbi,
+`picasa-colab-jobs` #81–#86 felvételek a nyitott panelek viselkedését külön
+rögzítik (ld. 4.0). A szakasz a panel elrendezéséhez két, egymást ellenőrző
+forrásból épül fel: az elrendezés-erőforrásokból
 (▶ERŐFORRÁS) és a **2. fül (Finomhangolás) felvételéből** (▶KÉP,
 `2026-07-17 20 56 42.png`) — az alábbi 4.2 pont mutatja meg, hogy a kettő
 **ugyanaz a vezérlőkészlet**, tehát a 2. fül képe érvényes pixelbizonyíték az
 alpanelre is.
+
+### 4.0 Nyitott csúszkás effektpanel: a bal panel állapota (#4068)
+
+*Forrás: `picasa-colab-jobs` #81–#86, eszközönként tiszta indulásból készült
+felvételek.*
+
+A nyitott effektpanel először a csúszkákat és az Alkalmaz/Mégse gombokat
+mutatja. A fülsáv egyik fülére kattintva az első fül tartalma jelenik meg,
+teljesen letiltva; a fülsáv kiemelése az effekt eredeti fülén marad. További
+fülkattintás nem vált tartalmat. A szürke tartalom Crop csempéjére kattintva
+semmi nem történik, és az effektpanel nem zárul be. Az effekt fülére vissza-
+kattintás sem hozza vissza a csúszkákat. Az Escape Mégse-ként zárja a
+piszkozatot, visszaállítja az aktív bal panelt az első fülre; a Visszavonás/
+Újra sor a szürke állapotban letiltott.
+
+| Felületi név | Effekt-kulcs | Fül | Szürke/letiltott bal panel | A Crop csempe bezárja az eszközt? |
+|---|---|---:|---|---|
+| Soft Focus | `radblur` | 3. | igen | nem |
+| Focal B&W | `radsat` | 3. | igen | nem |
+| Graduated Tint | `dir_tint` | 3. | igen | nem |
+| Glow | `glow2` | 3. | igen | nem |
+| Vignette | `vignette` | 5. | igen | nem |
+| Focal Zoom | `focalzoom` | 5. | igen | nem |
+
+A #4068 törzse nyolc belső kulcsot sorolt fel; a fenti hat a felvételeken
+látható, ilyen Alkalmaz/Mégse panellel megnyitható eszköz. A maradék
+`linblur`, `dir_sat`, `dir_brite` és `dir_sharp` kulcshoz nincs külön
+felületi csempe. A `radtint` a PicasaPy-ban a Graduated Tint csempe Shift-
+alternatívája, de nem külön csempe; az eredeti felvételek hat eszköze között
+nem szerepel.
 
 ### 4.1 A panel címe — honnan jön a szöveg (megerősített)
 

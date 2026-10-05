@@ -1356,7 +1356,9 @@ Rectangle {
     // A logika külön függvényben él, hogy tesztelhető legyen; a billentyű-
     // kötés csak továbbhív (a `test_viewer_escape_666.py` mindkettőt őrzi).
     function handleEscape() {
-        if (editorPanel.retouchActive && editorPanel.retouchPatchPending)
+        if (editorPanel.paramPanelActive)
+            editorPanel.cancelParamPanel()
+        else if (editorPanel.retouchActive && editorPanel.retouchPatchPending)
             editController.cancelRetouchPatch()
         else if (editorPanel.cropActive)
             editorPanel.cropCancelRequested()

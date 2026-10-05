@@ -117,6 +117,7 @@ function tryOpenParamPanel(name, displayLabel) {
 // élő előnézettel.
 function openParamPanel(name, displayLabel) {
     if (!panel.hasEffectController()) return
+    panel.paramPanelSuspended = false
     var params = editController.effectParams(name)
     // #516: a "color" vezérlők kezdőértéke a katalógus hex-alapértéke,
     // nem a (náluk értelmezetlen) numerikus `default` mező
@@ -158,11 +159,14 @@ function cancelParamPanel() {
 }
 
 function closeParamPanel() {
+    var wasSuspended = panel.paramPanelSuspended
     panel.paramPanelActive = false
+    panel.paramPanelSuspended = false
     panel.paramEffectName = ""
     panel.paramEffectLabel = ""
     panel.paramEffectParams = []
     panel.paramEffectValues = []
+    if (wasSuspended) panel.activeTab = 0
 }
 
 // #496: a csúszka-felirat-fordító switch (#316) az EditorParamPanel.qml-be

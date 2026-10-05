@@ -44,12 +44,12 @@ Item {
     property alias finomhangoloLap: finetunePanel
     property alias gyakoriLap: fixesTab
     objectName: "editorTabArea"
-    // #4062: nyitott Kiegyenesítés mellett a fülek tartalma letiltott;
-    // a fülsáv (EditorPanel.tabBar) külön él, ezért továbbra is színes és
-    // használható marad, ahogy az eredeti felvételen.
-    enabled: !panel.tiltActive
+    // #4062/#4068: nyitott Kiegyenesítésnél, illetve felfüggesztett
+    // effektpanelnél a fülek tartalma letiltott; a fülsáv külön él.
+    enabled: !panel.tiltActive && !panel.paramPanelSuspended
     // a csúszkás alpanel a fülek HELYETT jelenik meg (nem föléjük)
-    visible: !panel.modeToolActive && !panel.paramPanelActive
+    visible: (!panel.modeToolActive && !panel.paramPanelActive)
+             || panel.paramPanelSuspended
     // #741: a fülterület a fülsávval AZONOS 276 képpontos
     // tartalom-oszlop (x 3..279) — a fülek eddig a teljes 280-ból
     // indultak, és a saját margóikkal együtt 260-ra szűkültek.
@@ -74,8 +74,9 @@ Item {
     EditorTabCommonFixes {
         id: fixesTab
         panel: tabHost.panel
-        visible: !panel.modeToolActive && panel.activeTab === 0
-                 && !panel.paramPanelActive  // #583
+        visible: !panel.modeToolActive
+                 && (panel.activeTab === 0 || panel.paramPanelSuspended)
+                 && (!panel.paramPanelActive || panel.paramPanelSuspended)
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right

@@ -248,7 +248,8 @@ ColumnLayout {
         // #4062: a képernyőképen a Derítőfény ikonja, felirata és csúszkája
         // is halvány; a disabled állapot önmagában az Image/Label elemeket
         // nem halványítaná el.
-        opacity: panel.tiltActive ? 0.25 : 1
+        opacity: panel.tiltActive ? 0.25
+                 : panel.paramPanelSuspended ? 0.45 : 1
         Layout.fillWidth: false
         Layout.leftMargin: 24
         spacing: 20
