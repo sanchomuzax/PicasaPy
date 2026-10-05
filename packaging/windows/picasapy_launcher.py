@@ -21,7 +21,14 @@ rendes modul-hívás.
 
 import sys
 
-from picasapy.app.__main__ import main
-
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--picasapy-video-decode":
+        if len(sys.argv) != 4:
+            sys.exit(2)
+        from picasapy.thumbs.video_decode_worker import main as worker_main
+
+        sys.exit(worker_main(sys.argv[2], sys.argv[3]))
+
+    from picasapy.app.__main__ import main
+
     sys.exit(main())

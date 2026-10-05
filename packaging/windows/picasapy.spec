@@ -50,7 +50,11 @@ a = Analysis(
     pathex=[str(GYOKER / "src")],
     binaries=[],
     datas=adatok,
-    hiddenimports=["picasapy.app"],
+    hiddenimports=[
+        "picasapy.app",
+        "picasapy.thumbs.cache",
+        "picasapy.thumbs.video_decode_worker",
+    ],
     hookspath=[],
     runtime_hooks=[],
     excludes=["tkinter", "pytest"],

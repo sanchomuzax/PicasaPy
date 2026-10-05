@@ -1391,6 +1391,17 @@ Az `Add to Screensaver` (`0x00531900`) kétszintű:
 A Google Fotók-képernyővédő **külön telepítésű program** (#453) — a
 `desk.cpl`-hívás Windows-specifikus. Jegy: **#453**, **#32**.
 
+**Linuxos PicasaPy-változat (#4259, tulajdonosi döntés 2026-10-05):** a
+Windowsos telepítés- és registry-út helyett a menüből nyitható saját
+képernyővédő-beállító és előnézet készült. A források a kijelölt mappák,
+albumok és a Létrehozás menüből hozzáadott képek; a beállításokat a QSettings
+őrzi. Az effekt-, diaidő- és feliratbeállítás a helyi teljes képernyős
+diavetítéshez tartozik. A vetítés egérmozgásra vagy billentyűre kilép.
+Asztali környezeti tétlenségjelhez kötött automatikus indítás nincs benne; ez
+külön integrációs feladat. A korábbi specifikáció az eredeti külön Windowsos
+kiegészítő teljes beállítómezőit nem sorolta fel, ezért ez a Linuxos felület a
+jegyen kért helyi forrásokra és a PicasaPy diavetítési beállításaira épül.
+
 ### 35.4 TiVo-export — Windows-only menü, akció-kereten át
 
 Az `Export to TiVo(r) DVR...` a `eMenuCreateWin` névtérből jön — **a
@@ -1458,7 +1469,7 @@ egyértelműen követhető — a motor és az állapothordozók viszont megvanna
 | parancs | nálunk (mérve) | teendő |
 |---|---|---|
 | Poszter készítése | **placeholder** a Létrehozás menüben (`PicasaMenuBar.qml:1210`) | #601 folytatja; új adat: papírméret-lista nyelvi feltétellel + `paper` megőrzés |
-| Hozzáadás a képernyővédőhöz | **placeholder** (`:1218`) | #453/#32; a `saverlist.txt` + telepítés-ellenőrzés mintája rögzítve |
+| Hozzáadás a képernyővédőhöz | **működik** (`PicasaMenuBar.qml`, `Main.qml`) | #4259: kiválasztott képek hozzáadása QSettings-alapú helyi forráshoz |
 | Exportálás TiVo DVR-re | nincs menütétel | **HATÓKÖRÖN KÍVÜL-javaslat** (Windows-only névtér, TiVo-hardver nélkül nincs haszna) — tulajdonosi jóváhagyást kér |
 | Keresési eredmények mentése | a menü **tétel hiányzik** | #1405/#428; a 1000-es küszöb és a „Create Album" gombfelirat most rögzítve |
 | Képek biztonsági mentése | **placeholder** (`:1267`) | #440; az állapothordozók (`backup.xml` + `backuphash`) most rögzítve |
@@ -1474,7 +1485,8 @@ Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kív�
   TiVo-akció kerete (35.4); a 1000-es küszöb és gombfelirat (35.5); a
   mentés két állapothordozója (35.6).
 - **HATÓKÖRÖN KÍVÜL-JAVASLAT** (tulajdonosi döntést kér): a TiVo-export
-  megvalósítása; a `desk.cpl`-alapú képernyővédő-telepítés átvétele.
+  megvalósítása; az operációs rendszer tétlenségi jeléhez kötött automatikus
+  képernyővédő-indítás és az eredeti `desk.cpl` telepítőút átvétele.
 
 ### Amit KIZÁRTAM
 
@@ -2513,13 +2525,43 @@ A minősítés `0x0085cff0` (781 b) szerint egy **tárolt bájtból** jön
 (`0x0085d1dd`: `cmp eax, 2` → best; `0x0085d1ee`: `cmp eax, 1` → good;
 különben bad.)
 
-⚠️ **A KÜSZÖBÖK továbbra sincsenek mérve.** A besorolás egy **korábban
-kiszámolt** bájt; az azt ÍRÓ kód nincs meg. A `0x0085cff0`, a `0x007451a0`
-(1473 b) és a `0x00746170` (351 b) `cmp`-immediate-jei között DPI-szerű
-érték **nincs** (csak 127/128/255 — sztringhossz-ellenőrzések). A
-`src/picasapy/printing/dpi.py` 150 DPI-s küszöbe **továbbra is saját
-döntés**. **Megszerzés:** a `[rekord+0x10]` bájtot író kód — a 20 bájtos
-rekordtömb a `[ebx+0x48]` alatt.
+#### A `[rekord+0x10]` bájt írása és a küszöbképlet (2026-10-05, #4280)
+
+A két helper a DPI-értéket egész küszöbhöz hasonlítja: `0x0085c1e0`
+`Preferences\DPIWarning` alapértéke `0x96` = **150** (`0x0085c1fa`),
+`0x0085c270` `Preferences\DPISevere` alapértéke `0x64` = **100**
+(`0x0085c28a`). Mindkét helper `fild threshold; fcomp qword ptr [DPI]`
+utasítássorral hasonlít, majd `test ah, 0x41` / `jp` alapján akkor ad igazat,
+ha `DPI >= threshold`; az egyenlőség is igaz.
+
+`0x007451a0` mindkét helper eredményét összeadja (`0x0074523c`–`0x00745248`).
+Az összeg a `[esp+0x4c]` lokális változóba kerül (`0x00745248`). A rekord
+hozzáadásakor három átmeneti push miatt (`0x007454e6`, `0x007454e7`,
+`0x007454fe`) az ESP `0x0c`-vel alacsonyabban áll; ezért a `0x00745513`-nál
+beolvasott `[esp+0x58]` **ugyanaz az összeg** (`0x58 − 0x0c = 0x4c`), és
+`CL`-ként átmegy a `0x0085c640` függvénybe.
+A segéd a CL bájtot az átmeneti rekord `+0x10` mezőjébe teszi
+(`0x0085c665`); a `0x0085d300` a forrás `+0x10` bájtot a cél rekord
+`+0x10` mezőjébe másolja (`0x0085d38b`–`0x0085d38f`).
+
+A tároló és az olvasó azonosságát a vtable is megerősíti: a konstruktor
+`0x0085c300` a másodlagos vtable-t a `this+0xbc` helyre írja
+(`0x0085c33b`); a `0x00cc37b8` RTTI/vtable sora a `0x0085cff0` metódust
+tartalmazza. Az olvasó másodlagos `this+0x48` mezője így a teljes objektum
+`+0x104` vektorára esik, ahová az append út ír. A `0x0085d1dd`/`0x0085d1ee`
+ág a `+0x10` bájtot `2` → Best, `1` → Good, egyébként Bad értékre oldja.
+
+| tárolt bájt | binárisbeli képződés | `CPrintDlg` felirat |
+|---:|---|---|
+| `2` | mindkét küszöb-helper igaz (`DPI >= 150` alapértéken) | Best |
+| `1` | csak a 100-as helper igaz (`100 <= DPI < 150` alapértéken) | Good |
+| `0` | egyik helper sem igaz (`DPI < 100` alapértéken) | Bad |
+
+Ez a `CPrintDlg`-bájt út **ugyanazokat a 0/1/2 kategóriákat** adja, mint a
+`ThumbUIPrint::Review*` sorcímkéi, de a két feliratcsalád külön marad:
+`ReviewLow` és `CPrintDlg::badqual` nem ugyanaz a szöveg. A beállítható
+küszöbök, a Review-címkék és a két bizonyítéki út összefoglalója a
+[`picasa-nyomtatas.md`](picasa-nyomtatas.md) lapon van.
 
 ### 40.8 A nyomatméretek: TIZENHÉT tétel, és a magyar felület METRIKUS
 

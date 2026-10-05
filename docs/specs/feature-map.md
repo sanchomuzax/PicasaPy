@@ -62,8 +62,10 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
 - Diavetítés, export/átméretezés
 - Geocímke: Helyek-panel térképpel, geo-szűrő, `geotag=` írás (kész, #30)
 - Duplikátum-keresés
-- (Később mérlegelendő: nyomtatás, képernyővédő, e-mail küldés — az eredeti
-  Picasa funkciói, alacsony prioritás)
+- Linuxos képernyővédő-vetítés a kiválasztott mappákból, albumokból vagy
+  képekből (#4259); az asztali környezet tétlenségi jelére indítás külön feladat.
+- (Később mérlegelendő: nyomtatás, e-mail küldés — az eredeti Picasa
+  funkciói, alacsony prioritás)
 
 ## Nem cél (legalábbis egyelőre)
 

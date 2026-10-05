@@ -167,7 +167,7 @@ class TestGetOrCreate:
         height, width = cv2.imread(str(thumb)).shape[:2]
         assert (width, height) == (64, 32)  # képarány megőrizve
 
-    def test_video_not_read_fully_into_memory(self, cache, tmp_path, monkeypatch):
+    def test_video_not_read_fully_into_memory(self, tmp_path, monkeypatch):
         # NAS-teljesítmény: a videót TILOS np.fromfile-lal teljesen
         # beolvasni (egy mp4 több száz MB is lehet hálózaton át) — a
         # VideoCapture streamelve csak a szükséges képkockát olvassa.
@@ -180,7 +180,11 @@ class TestGetOrCreate:
 
         monkeypatch.setattr(cache_module.np, "fromfile", forbidden_fromfile)
         video = make_mp4(tmp_path / "VID_20250503.mp4", size=(320, 160))
-        assert cache.get_or_create(video, *_stat_key(video)) is not None
+        # A cache-hívás a #4273 óta gyermekfolyamatban dekódol, így a szülő
+        # monkeypatch-e nem jutna el a workerhez. Közvetlenül a worker által
+        # használt dekódoló függvényt mérjük; a cache-alfolyamat útját az
+        # előző teszt valódi MP4-en külön ellenőrzi.
+        assert cache_module._decode_video_frame(video) is not None
 
     def test_corrupt_video_returns_none(self, cache, tmp_path):
         bad = tmp_path / "rossz.mp4"

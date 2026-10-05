@@ -76,9 +76,12 @@ jobs:
     with:
       os: ubuntu-latest
 
+  # #4285: a windowsos tesztkészlet (a falióra-idő fő tétele, 26–30 perc)
+  # PR-on NEM fut, csak a main-re érkező pushon — a PR-t az ubuntus készlet
+  # kapuzza, a windowsos eltérés a beolvadás után a main körén derül ki.
   darabok-windows:
     needs: valtozas
-    if: ${{ needs.valtozas.outputs.kod == 'true' }}
+    if: ${{ needs.valtozas.outputs.kod == 'true' && github.event_name != 'pull_request' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: windows-latest
@@ -221,7 +224,7 @@ jobs:
     steps:
       - name: A négy windows-darab mind zöld
         # ha a mátrix nem futott, nincs mit ellenőrizni
-        if: ${{ needs.valtozas.outputs.kod == 'true' }}
+        if: ${{ needs.valtozas.outputs.kod == 'true' && github.event_name != 'pull_request' }}
         run: |
           if [ "${{ needs.darabok-windows.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-windows.result }}"
