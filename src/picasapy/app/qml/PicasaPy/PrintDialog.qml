@@ -166,8 +166,8 @@ Window {
         "CONTACT": qsTr("Contact Sheet")
     })
     property var printSizeIds: []
-    //: #1953: az „Ellenőrzés" gomb eredménye — a küszöb alatti képek
-    //: {name, dpi} tételei, a legrosszabbal elöl.
+    //: #4280: az „Ellenőrzés" gomb eredménye — minden kép {name, dpi,
+    //: qualityCode} adata, a legrosszabbal elöl.
     property var reviewList: []
     property bool reviewOpen: false
     //: A választó modellje: a vezérlőtől kapott azonosítók feliratai.
@@ -177,7 +177,8 @@ Window {
         function (azonosito) {
             return printWindow.printSizeLabelById[azonosito] || azonosito
         })
-    //: {smallest, small, total, ready, threshold} — a vezérlőtől
+    //: {smallest, small, total, ready, threshold, bestThreshold,
+    //: goodThreshold} — a vezérlőtől
     property var quality: ({})
 
     function frissitsdAMinoseget() {
@@ -708,7 +709,7 @@ Window {
                     visible: printWindow.quality.small > 0
                     onClicked: {
                         if (!printWindow.printCtl) return
-                        printWindow.reviewList = printWindow.printCtl.smallPictures(
+                        printWindow.reviewList = printWindow.printCtl.reviewPictures(
                             printWindow.rows, printWindow.printSize)
                         printWindow.reviewOpen = true
                     }
@@ -932,9 +933,8 @@ Window {
         onCloseRequested: printOptionsPanel.visible = false
     }
 
-    // #1953: az „Ellenőrzés" eredménye — MELYIK képek esnek a küszöb alá.
-    // A lista a legrosszabbal kezdődik (a vezérlő rendezi), és a
-    // DPI-t is kiírja, hogy a felhasználó lássa, mennyivel kevés.
+    // #4280: az „Ellenőrzés" listája képenként mutatja a DPI-sávot és az
+    // effektív felbontást; a legrosszabb kerül előre.
     Rectangle {
         objectName: "printReviewPanel"
         anchors.fill: parent
@@ -958,11 +958,17 @@ Window {
                 wrapMode: Text.WordWrap
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
-                //: A sztring EGYETLEN literál: a `qsTr()` futásidőben
-                //: összefűzött argumentumát a kinyerő nem látná, és a
-                //: fordítás némán elmaradna.
-                text: qsTr("These pictures are below %1 pixels/inch at the selected print size:")
+                //: Az eredeti figyelmeztető mondat megmarad, ha a teljes
+                //: lista csak a küszöb alatti képekből áll. Vegyes sávoknál
+                //: az eredeti ReviewPrompt számolja meg a kifogásoltakat.
+                text: printWindow.reviewList.length
+                      === printWindow.quality.small
+                    ? qsTr("These pictures are below %1 pixels/inch at the selected print size:")
                           .arg(printWindow.quality.threshold)
+                    : qsTr("Please review before printing.\n%1 small %2 found.")
+                          .arg(printWindow.quality.small)
+                          .arg(printWindow.quality.small === 1
+                              ? qsTr("picture") : qsTr("pictures"))
             }
             ListView {
                 objectName: "printReviewList"
@@ -971,14 +977,23 @@ Window {
                 clip: true
                 model: printWindow.reviewList
                 delegate: Text {
+                    objectName: "printReviewQualityLabel"
                     required property var modelData
                     width: ListView.view.width
                     elide: Text.ElideMiddle
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
-                    //: fájlnév — effektív felbontás
-                    text: modelData.name + "   —   "
-                          + qsTr("%1 pixels/inch").arg(modelData.dpi)
+                    //: A `CPrintDlg::bestqual` / `goodqual` / `badqual`
+                    //: hivatalos angol feliratai a fordításból jönnek.
+                    text: {
+                        var label = modelData.qualityCode === 2
+                            ? qsTr("Best quality (%1 pixels/inch)")
+                            : modelData.qualityCode === 1
+                                ? qsTr("Good quality (%1 pixels/inch)")
+                                : qsTr("Bad quality (%1 pixels/inch)")
+                        return modelData.name + "   —   "
+                               + label.arg(modelData.dpi)
+                    }
                 }
             }
             PicasaButton {

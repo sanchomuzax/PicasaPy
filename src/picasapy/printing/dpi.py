@@ -1,30 +1,23 @@
-"""A nyomat effektív felbontása és a „kicsi kép” figyelmeztetés (#1782).
+"""A nyomat effektív felbontása és a minőségi sávok (#1782, #4280).
 
 ## A lelet
 
 A felhasználó eddig úgy nyomtathatott ki egy 640×480-as képet 8×10
 hüvelykre, hogy a program egy szót sem szólt. Az eredeti Picasa
 nyomtatási panelje ezzel szemben **minőség-ellenőrzést** végez: a
-választott nyomatmérethez kiszámolja minden kép effektív felbontását,
-megszámolja a küszöb alattiakat, és nyomtatás előtt ellenőrzésre szólít
-fel (`0x00745980`, az előnézet állapotsora).
+választott nyomatmérethez kiszámolja minden kép effektív felbontását, a két
+beállítható DPI-határ tesztjét összeadja Best/Good/Bad kóddá, majd a küszöb
+alatti képekre ellenőrzést kér (`0x007451a0`, `0x00745980`).
 
 Az eredeti szövegei (`ThumbUIPrint::Smallest`, `::ReviewPrompt`) a
 `docs/specs/`-ben; a megjelenítés a `PrintDialog.qml` dolga, ez a modul
 csak számol — Qt-független és determinisztikus, mint a `layout.py`.
 
-## ⚠️ A küszöb SAJÁT DÖNTÉS
-
-Hogy hány DPI alatt számít egy kép „kicsinek", a binárisból **nincs
-mérve**: a `0x00745980` a darabszámot paraméterként kapja, a küszöb a
-hívóláncban van, és nem egész-összehasonlítás. A **mechanizmust**
-vesszük át, a **küszöböt** magunk választjuk — ezért nem állítjuk, hogy
-az eredetit másoljuk.
-
-A választás **150 DPI**: a fotónyomtatás szokásos alsó határa. Eldöntené
-a valódi értéket egy célzott dekompilációs kör (`0x007451a0` /
-`0x00746170`), vagy élő megfigyelés — kis kép 8×10-re állítva, és
-leolvasni, hány DPI-nél vált a mondat.
+Az eredeti küszöbök és az egyenlőségi viselkedés a
+[`docs/specs/picasa-nyomtatas.md`](../../../docs/specs/picasa-nyomtatas.md)
+Review-sáv fejezetében van levezetve. Az állapotsori „kis kép” figyelmeztetés
+és a soronkénti minőségi kód ugyanazt a 150 DPI-s `DPIWarning` beállítást
+használja; a Good/Bad elválasztását a külön `DPISevere` beállítás adja.
 """
 
 from __future__ import annotations
@@ -43,6 +36,24 @@ from enum import Enum
 #: Az eredetiben ez **rejtett beállítás**, nem fix szám — nálunk a
 #: `printing/dpiWarning` kulcs írja felül (ld. `PrintController`).
 KICSI_KUSZOB_DPI = 150
+
+#: A Good/Bad határ binárisból mért alapértéke (`DPISevere`, `0x64`).
+JO_MINOSEGI_KUSZOB_DPI = 100
+
+
+def nyomtatasi_minoseg_kod(
+    dpi: float,
+    *,
+    best_kuszob: int = KICSI_KUSZOB_DPI,
+    good_kuszob: int = JO_MINOSEGI_KUSZOB_DPI,
+) -> int:
+    """A bináris minősítő bájtja: a két DPI-küszöbteszt összege.
+
+    `2` = Best, `1` = Good, `0` = Bad. Az egyenlőség mindkét tesztnél
+    igaz (`DPI >= küszöb`), és a beállítások a két alapértéket külön-külön
+    felülírhatják.
+    """
+    return int(dpi >= best_kuszob) + int(dpi >= good_kuszob)
 
 
 #: Egy hüvelyk centiméterben — a metrikus méretek innen származnak, hogy

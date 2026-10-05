@@ -74,10 +74,12 @@ from picasapy.printing.contact_sheet import (
 )
 from picasapy.printing.dpi import (
     KICSI_KUSZOB_DPI,
+    JO_MINOSEGI_KUSZOB_DPI,
     NyomatMeret,
     effektiv_dpi,
     keszlet_nyelvhez,
     minoseg_osszegzes,
+    nyomtatasi_minoseg_kod,
 )
 from picasapy.printing.grid_layout import (
     GridPage,
@@ -350,16 +352,20 @@ class PrintController(QObject):
             (rekord.width or 0, rekord.height or 0)
             for rekord in self._resolve_records(rows)
         ]
-        osszegzes = minoseg_osszegzes(meretek, meret, kuszob=self._dpi_kuszob())
+        best_kuszob = self._dpi_kuszob()
+        good_kuszob = self._dpi_jo_kuszob()
+        osszegzes = minoseg_osszegzes(meretek, meret, kuszob=best_kuszob)
         return {
             "smallest": osszegzes.legkisebb_dpi,
             "small": osszegzes.kicsik,
             "total": osszegzes.osszes,
             "ready": osszegzes.keszen_all,
-            "threshold": self._dpi_kuszob(),
+            # `threshold` marad a #4275 figyelmeztető panel szerződése.
+            "threshold": best_kuszob,
+            "bestThreshold": best_kuszob,
+            "goodThreshold": good_kuszob,
         }
 
-    @Slot(list, str, result=list)
     def smallPictures(self, rows, size_name: str):  # noqa: N802 — QML-stílus
         """A küszöb alatti képek NÉV szerint, a hozzájuk tartozó DPI-vel.
 
@@ -374,23 +380,47 @@ class PrintController(QObject):
         A lista a **legrosszabbal kezdődik**: a felhasználót az érdekli
         először. Az ismeretlen méretű kép ugyanúgy kicsinek számít, mint
         az összegzésben — 0 DPI-vel."""
-        meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
-        tetelek = [
-            {
-                "name": rekord.name,
-                "dpi": effektiv_dpi(
-                    rekord.width or 0, rekord.height or 0, meret
-                ),
-            }
-            for rekord in self._resolve_records(rows)
-        ]
         kuszob = self._dpi_kuszob()
-        kicsik = [t for t in tetelek if t["dpi"] < kuszob]
-        return sorted(kicsik, key=lambda t: t["dpi"])
+        return [
+            item for item in self._quality_picture_rows(rows, size_name)
+            if item["dpi"] < kuszob
+        ]
+
+    @Slot(list, str, result=list)
+    def reviewPictures(self, rows, size_name: str):  # noqa: N802
+        """Minden nyomtatandó kép DPI-je és az eredeti 0/1/2 minőségi kódja.
+
+        A figyelmeztető panel a teljes listát mutatja, hogy a Best és Good
+        képek se tűnjenek el az ellenőrzésből. A sorok a legrosszabb DPI-től
+        indulnak, a kód pedig a bináris két küszöbtesztjének összege.
+        """
+        return self._quality_picture_rows(rows, size_name)
+
+    def _quality_picture_rows(self, rows, size_name: str) -> list[dict]:
+        """A közös soradat a teljes Review listához és a kis-kép szűréshez."""
+        meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
+        best_kuszob = self._dpi_kuszob()
+        good_kuszob = self._dpi_jo_kuszob()
+        tetelek = []
+        for rekord in self._resolve_records(rows):
+            dpi = effektiv_dpi(rekord.width or 0, rekord.height or 0, meret)
+            tetelek.append({
+                "name": rekord.name,
+                "dpi": dpi,
+                "qualityCode": nyomtatasi_minoseg_kod(
+                    dpi,
+                    best_kuszob=best_kuszob,
+                    good_kuszob=good_kuszob,
+                ),
+            })
+        return sorted(tetelek, key=lambda item: item["dpi"])
 
     #: A küszöb beállítás-kulcsa. Az eredetiben `Preferences\DPIWarning`
     #: (`0x0085c076`/`0x0085c07b`), alapértéke **150** (`0x0085c08b`).
     _DPI_KUSZOB_KULCS = "printing/dpiWarning"
+    #: A Best/Good határ kulcsa az eredetiben `Preferences\DPISevere`,
+    #: alapértéke **100** (`0x0085c28a`).
+    _DPI_JO_KUSZOB_KULCS = "printing/dpiSevere"
 
     def _dpi_kuszob(self) -> int:
         """A „kis kép" küszöbe — beállításból, `KICSI_KUSZOB_DPI` alapértékkel.
@@ -409,6 +439,16 @@ class PrintController(QObject):
         except (TypeError, ValueError):
             return KICSI_KUSZOB_DPI
         return ertek if ertek > 0 else KICSI_KUSZOB_DPI
+
+    def _dpi_jo_kuszob(self) -> int:
+        """A Good/Bad küszöb beállításból, 100 DPI alapértékkel."""
+        try:
+            ertek = int(self._settings.value(
+                self._DPI_JO_KUSZOB_KULCS, JO_MINOSEGI_KUSZOB_DPI
+            ))
+        except (TypeError, ValueError):
+            return JO_MINOSEGI_KUSZOB_DPI
+        return ertek if ertek > 0 else JO_MINOSEGI_KUSZOB_DPI
 
     @Slot(result=list)
     def listPrinters(self) -> list[str]:
