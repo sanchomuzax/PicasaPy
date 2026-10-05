@@ -31,7 +31,60 @@ def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
 
 
 def _darab(qml_lista) -> int:
+    if isinstance(qml_lista, list):
+        return len(qml_lista)
     return qml_lista.property("length").toInt()
+
+
+def _gorgess_elemhez(scroll, elem, qt_app) -> None:
+    """A görgethető nézetben az elem aktuális geometriájához igazít."""
+    flickable = scroll.property("contentItem")
+    lathato_teteje = scroll.mapToScene(QPointF(0, 0)).y()
+    lathato_alja = scroll.mapToScene(
+        QPointF(scroll.property("width"), scroll.property("height"))
+    ).y()
+    elem_teteje = elem.mapToScene(QPointF(0, 0)).y()
+    elem_alja = elem.mapToScene(
+        QPointF(0, elem.property("height"))
+    ).y()
+    gorgetes = flickable.property("contentY")
+    if elem_alja > lathato_alja + 3:
+        max_gorgetes = max(
+            0,
+            scroll.property("contentHeight") - flickable.property("height"),
+        )
+        flickable.setProperty(
+            "contentY", min(max_gorgetes, gorgetes + elem_alja - lathato_alja + 3)
+        )
+    elif elem_teteje < lathato_teteje - 3:
+        flickable.setProperty(
+            "contentY", max(0, gorgetes - (lathato_teteje - elem_teteje + 3))
+        )
+    qt_app.processEvents()
+
+
+def _teljesen_latszik(a_nezoterben, elem, *, megnevezes: str) -> None:
+    """A vezérlő teljes geometriája a látható nézőtéren belül van-e."""
+    nezo_teteje = a_nezoterben.mapToScene(QPointF(0, 0))
+    nezo_alja = a_nezoterben.mapToScene(
+        QPointF(a_nezoterben.property("width"), a_nezoterben.property("height"))
+    )
+    elem_teteje = elem.mapToScene(QPointF(0, 0))
+    elem_alja = elem.mapToScene(
+        QPointF(elem.property("width"), elem.property("height"))
+    )
+    assert (
+        elem_teteje.x() >= nezo_teteje.x() - 3
+        and elem_teteje.y() >= nezo_teteje.y() - 3
+        and elem_alja.x() <= nezo_alja.x() + 3
+        and elem_alja.y() <= nezo_alja.y() + 3
+    ), (
+        f"{megnevezes} nincs teljesen a nézőtéren belül: "
+        f"elem=({elem_teteje.x():.1f}, {elem_teteje.y():.1f}, "
+        f"{elem_alja.x():.1f}, {elem_alja.y():.1f}), "
+        f"nézőtér=({nezo_teteje.x():.1f}, {nezo_teteje.y():.1f}, "
+        f"{nezo_alja.x():.1f}, {nezo_alja.y():.1f})"
+    )
 
 
 def _kep_szin(kep, window, pont: QPointF):
@@ -215,39 +268,216 @@ def test_a_film_panel_feliratai_es_muveletei_a_foablakbol_minden_magassagon(
         scroll = _elem(window, "movieTabPanelMotion")
         preview = _elem(window, "moviePreviewButton")
         flickable = scroll.property("contentItem")
-        ablak_vege = scroll.mapToScene(
-            QPointF(scroll.property("width"), scroll.property("height"))
+        assert flickable.property("contentY") == 0, "az előnézet ellenőrzése nem görgethet"
+        hatter = film.property("background")
+        hatter_teteje = hatter.mapToScene(QPointF(0, 0)).y()
+        hatter_alja = hatter.mapToScene(
+            QPointF(hatter.property("width"), hatter.property("height"))
         ).y()
-        gomb_vege = preview.mapToScene(
+        gomb_teteje = preview.mapToScene(QPointF(0, 0)).y()
+        gomb_alja = preview.mapToScene(
             QPointF(0, preview.property("height"))
         ).y()
-        if gomb_vege > ablak_vege:
-            max_gorgetes = max(
-                0,
-                scroll.property("contentHeight") - flickable.property("height"),
-            )
-            flickable.setProperty(
-                "contentY", min(max_gorgetes, gomb_vege - ablak_vege + 3)
-            )
-            qt_app.processEvents()
-        assert preview.mapToScene(
-            QPointF(0, preview.property("height"))
-        ).y() <= ablak_vege + 3
-        _kattints(window, qt_app, _elem(window, "moviePreviewButton"))
+        assert gomb_teteje >= hatter_teteje - 3
+        assert gomb_alja <= hatter_alja + 3, "az előnézetgomb kilóg a párbeszéd látható teréből"
+        _kattints(window, qt_app, preview)
+        assert _elem(window, "moviePreviewTimer").property("running") is True
         assert _varj(qt_app, lambda: film.property("previewIndex") == 1)
-        flickable.setProperty("contentY", 0)
-        qt_app.processEvents()
+        _kattints(window, qt_app, preview)
+        assert _elem(window, "moviePreviewTimer").property("running") is False
         _kattints(window, qt_app, _elem(window, "rewind"))
         assert film.property("previewIndex") == 1
         assert not _elem(window, "moviePreviewTimer").property("running")
 
         for nev in ("movieSmartOrder", "movieAlbumOrder", "movieChronologicalOrder"):
-            _kattints(window, qt_app, _elem(window, nev))
-            assert _elem(window, nev).property("checked") is True
+            radio = _elem(window, nev)
+            motion = _elem(window, "movieTabPanelMotion")
+            flickable = motion.property("contentItem")
+            lathato_teteje = motion.mapToScene(QPointF(0, 0)).y()
+            lathato_alja = motion.mapToScene(
+                QPointF(motion.property("width"), motion.property("height"))
+            ).y()
+            radio_teteje = radio.mapToScene(QPointF(0, 0)).y()
+            radio_alja = radio.mapToScene(
+                QPointF(0, radio.property("height"))
+            ).y()
+            gorgetes = flickable.property("contentY")
+            if radio_alja > lathato_alja + 3:
+                max_gorgetes = max(
+                    0,
+                    motion.property("contentHeight")
+                    - flickable.property("height"),
+                )
+                flickable.setProperty(
+                    "contentY",
+                    min(max_gorgetes, gorgetes + radio_alja - lathato_alja + 3),
+                )
+            elif radio_teteje < lathato_teteje - 3:
+                flickable.setProperty(
+                    "contentY", max(0, gorgetes - (lathato_teteje - radio_teteje + 3))
+                )
+            qt_app.processEvents()
+            _kattints(window, qt_app, radio)
+            assert radio.property("checked") is True
     finally:
         if film is not None:
             film.close()
         window.resize(window.width(), alapmagassag)
+        qt_app.processEvents()
+
+
+@pytest.mark.parametrize(
+    "fixture_nev", ["qml_app", "qml_app_email"], ids=["angol", "magyar"]
+)
+@pytest.mark.parametrize(
+    ("kijeloles", "elvart_darabszam"),
+    [([0], 1), ([0, 1], 2)],
+    ids=["egy-kep", "tobb-kep"],
+)
+def test_a_film_elonezete_gorgetes_nelkul_latszik_es_kattinthato(
+    request, qt_app, fixture_nev, kijeloles, elvart_darabszam
+):
+    window, _controller, _engine = request.getfixturevalue(fixture_nev)
+    window.setProperty("selectedIndexes", kijeloles)
+    window.setProperty("selectedIndex", 0)
+    qt_app.processEvents()
+
+    eredeti_meret = (window.width(), window.height())
+    window.resize(1280, 800)
+    qt_app.processEvents()
+    film_gomb = _elem(window, "trayMovieButton")
+    alapmagassag = window.height()
+    film = None
+    try:
+        for eltolás in (-5, 0, 5):
+            window.resize(window.width(), alapmagassag + eltolás)
+            qt_app.processEvents()
+            _kattints(window, qt_app, film_gomb)
+            film = _elem(window, "movieDialog")
+            assert _varj(qt_app, lambda film=film: film.property("visible"))
+            assert _darab(film.property("movieClipSources")) == elvart_darabszam
+            _kattints(window, qt_app, _elem(window, "movieTabMotion"))
+            _elem(window, "movieSeconds").setProperty("value", 10)
+
+            panel = _elem(window, "moviePreviewPanel")
+            motion = _elem(window, "movieTabPanelMotion")
+            footer = _elem(window, "movieCancelButton")
+            assert panel.property("visible") is True
+            assert _elem(window, "moviePreviewImage").property("visible") is True
+            preview = _elem(window, "moviePreviewButton")
+            assert preview.property("visible") is True
+
+            panel_teteje = panel.mapToScene(QPointF(0, 0)).y()
+            panel_alja = panel.mapToScene(
+                QPointF(panel.property("width"), panel.property("height"))
+            ).y()
+            fultartalom_alja = motion.mapToScene(
+                QPointF(0, motion.property("height"))
+            ).y()
+            footer_teteje = footer.mapToScene(QPointF(0, 0)).y()
+            assert panel_teteje >= fultartalom_alja - 3, "az előnézet a fülek görgetett tartalmában maradt"
+            assert panel_alja <= footer_teteje + 3, "az előnézet a párbeszéd alsó gombsorába lóg"
+
+            hatter = film.property("background")
+            hatter_teteje = hatter.mapToScene(QPointF(0, 0)).y()
+            hatter_alja = hatter.mapToScene(
+                QPointF(hatter.property("width"), hatter.property("height"))
+            ).y()
+            gomb_teteje = preview.mapToScene(QPointF(0, 0)).y()
+            gomb_alja = preview.mapToScene(
+                QPointF(0, preview.property("height"))
+            ).y()
+            assert gomb_teteje >= hatter_teteje - 3
+            assert 0 < film.property("height") <= window.height(), (
+                "a párbeszéd magassága kilép a főablakból"
+            )
+            assert gomb_alja <= hatter_alja + 3, (
+                "a gomb nincs a párbeszéd látható terében: "
+                f"dialógus={film.property('height'):.1f}, "
+                f"főablak={window.height():.1f}, "
+                f"háttér={hatter.property('height'):.1f}"
+            )
+
+            flickable = motion.property("contentItem")
+            assert flickable.property("contentY") == 0, "a próba alatt nem görgettünk"
+
+            for nev in (
+                "movieAudioOptionBox",
+                "movieShowCaptions",
+                "movieShowDates",
+                "movieCropToFit",
+                "movieRemoveLowResFaces",
+                "movieSmartOrder",
+                "movieAlbumOrder",
+                "movieChronologicalOrder",
+            ):
+                _teljesen_latszik(motion, _elem(window, nev), megnevezes=nev)
+
+            bar = _elem(window, "video_control_bar2/controlbar")
+            for nev in (
+                "video_control_bar2/moviescrubslider_container",
+                "video_control_bar2/time",
+                "video_control_bar2/scaleslider",
+                "video_control_bar2/volumeslider",
+                "video_control_bar2/moviecontrolsclip",
+                "video_control_bar2/1to1",
+                "video_control_bar2/fullscreen",
+            ):
+                elem = _elem(window, nev)
+                assert elem.property("visible") is True
+                assert elem.property("width") > 0 and elem.property("height") > 0
+            assert bar.property("visible") is True
+
+            timer = _elem(window, "moviePreviewTimer")
+            _kattints(window, qt_app, preview)
+            assert timer.property("running") is True, "a valódi kattintás nem indította el az előnézetet"
+            if elvart_darabszam > 1:
+                assert _varj(
+                    qt_app,
+                    lambda film=film: film.property("previewIndex") == 1,
+                )
+            _kattints(window, qt_app, preview)
+            assert timer.property("running") is False, "a valódi kattintás nem állította le az előnézetet"
+
+            film.close()
+            film = None
+            qt_app.processEvents()
+    finally:
+        if film is not None:
+            film.close()
+        window.resize(*eredeti_meret)
+        qt_app.processEvents()
+
+
+def test_a_kis_foablakban_a_filmful_gorgetosavval_marad_lathato(
+    qml_app_email, qt_app
+):
+    window, _controller, _engine = qml_app_email
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    eredeti_meret = (window.width(), window.height())
+    film = None
+    try:
+        for eltolás in (-5, 0, 5):
+            window.resize(1280, 560 + eltolás)
+            qt_app.processEvents()
+            _kattints(window, qt_app, _elem(window, "trayMovieButton"))
+            film = _elem(window, "movieDialog")
+            assert _varj(qt_app, lambda film=film: film.property("visible"))
+            assert 0 < film.property("height") <= window.height()
+
+            motion = _elem(window, "movieTabPanelMotion")
+            scrollbar = _elem(window, "movieMotionScrollBar")
+            assert motion.property("contentHeight") > motion.property("height")
+            assert scrollbar.property("visible") is True
+
+            film.close()
+            film = None
+            qt_app.processEvents()
+    finally:
+        if film is not None:
+            film.close()
+        window.resize(*eredeti_meret)
         qt_app.processEvents()
 
 
@@ -364,19 +594,32 @@ def test_a_filmszalag_atrendezese_a_mxf_kimenetbe_kerul(
         _dia_felvetel(window, qt_app, "Harmadik dia")
         assert _varj(qt_app, lambda: filmstrip.property("count") == 3)
         filmstrip.setProperty("contentY", 0)
+        movie_slide_list = _elem(window, "movieSlideList")
+        slide_scroll = _elem(window, "tabpanel2")
+        _gorgess_elemhez(slide_scroll, filmstrip, qt_app)
 
-        # A lista valódi soraiból és geometriájából számoljuk a húzást.
+        # A kirajzolt sordelegáltak aktuális geometriájából kattintunk.
         def sor_pont(index):
-            sor_magassag = filmstrip.property("contentHeight") / 3
-            y = sor_magassag * (index + 0.5) - filmstrip.property("contentY")
-            return filmstrip.mapToScene(
-                QPointF(filmstrip.property("width") / 2, y)
+            nev = f"movieSlideDelegate{index}"
+            sor = next(
+                (
+                    gyerek
+                    for gyerek in movie_slide_list.property("contentItem").childItems()
+                    if gyerek.objectName() == nev
+                ),
+                None,
+            )
+            assert sor is not None, f"{nev} nem rajzolódott ki a filmszalagon"
+            pont = sor.mapToScene(
+                QPointF(sor.property("width") / 2, sor.property("height") / 2)
             ).toPoint()
+            return pont
 
         ablak = filmstrip.window() or window
         QTest.mouseDClick(ablak, Qt.MouseButton.LeftButton, pos=sor_pont(0))
         qt_app.processEvents()
         assert field.property("text") == "Első dia"
+        _gorgess_elemhez(slide_scroll, field, qt_app)
         field_ablak = field.window() or window
         _kattints(window, qt_app, field)
         QTest.keyClick(
@@ -397,6 +640,7 @@ def test_a_filmszalag_atrendezese_a_mxf_kimenetbe_kerul(
             QTest.keyClick(field_ablak, gomb, modosito)
         qt_app.processEvents()
 
+        _gorgess_elemhez(slide_scroll, filmstrip, qt_app)
         start = sor_pont(1)
         cel = sor_pont(0)
         QTest.mousePress(ablak, Qt.MouseButton.LeftButton, pos=start)
