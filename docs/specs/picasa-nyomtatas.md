@@ -610,6 +610,10 @@ Minden ág két `float` konstanst tesz a `[esp+0xc]` (hosszabb oldal) és a
 a nevében álló számpárt adja vissza. Ha a tábla nem ez volna, ez nem jönne ki.
 
 ⇒ **Az egység HÜVELYK** (a `e4x6` = 6,0/4,0, nem 152,4/101,6).
+Ez a #451 méretállítását is pontosítja: a listában az `e3x4` **3 × 4 hüvelyk**,
+az `e4x5` **4 × 5 hüvelyk**; ezek nem centiméteres méretek és nem azonosak az
+`ePassport`-tal. A centiméteres választások külön `cm` kulcsot viselnek
+(`e5x8cm` … `e20x25cm`), míg az `ePassport` saját mérete **2 × 2 hüvelyk**.
 
 ### Az `ePassport` NÉGYZET — és ez egybevág a kivágással
 
@@ -744,6 +748,11 @@ A kérdés nem egy útlevélhez égetett darabszám. Az elrendező annyi cellát
 5. **A rács.** A `0x00778640` a képlistán (`[rekord+0x1c] >> 1` kép) és képenként a példányszámon (`[rekord+0x0c]`) megy végig (`0x0077896e`–`0x0077899a`). Minden cella egy 0x1c bájtos rekord (`0x0077892a`, `rep movsd`, 7 duplaszó: kép, téglalap, sor, oszlop). A cellákat sorfolytonosan rakja a nyomtatható területre: vízszintesen, amíg a következő cella belefér (0,999-es tűréssel, `0xcf4a38`), aztán új sort kezd. Ha a következő sor már nem fér el, a menet kilép (`0x00778809` → `0x007789ba`). A második menetben a maradék helyet egyenletes térközként osztja szét. Ha a rés 0,2 alatti (`0xcf4748`, `0xc7e4b0`), a cellákat 0,975-szörösre kicsinyíti (`0xcf4a30`; `0x00778a46`–`0x00778aa7`). A végén a lap téglalapjára normalizál.
 
 ⇒ **Az Útlevélkép parancs alapból EGY 2 × 2 hüvelykes képet tesz a lapra.** Többet a nyomtatási panel példányszámával (`numberprints`) lehet kérni; ekkor a képek sorfolytonos rácsban, egyenletes térközzel kerülnek a lapra. A lapszámot a panel a munka lap-tömbjéből számolja (`0x00745b52`, ld. fent); a ki nem férő cellák a következő lapra kerülnek — ld. a következő szakaszt (#3646). A laponkénti **befogadóképesség** a nyomtatható terület függvénye (nyomtatófüggő), állandó szám nincs.
+
+⛔ **A nyomtató külső margójának pontos fizikai értéke NINCS MEG.** A
+geometriai út futásidejű lap-/layout-állapotból dolgozik; ez a binárislelet
+nem ad minden nyomtatóra érvényes margószámot. A margót csak egy Windowsos,
+konkrét nyomtatóval végzett előnézet-/nyomatmérés döntheti el.
 
 ⛔ **Élőben nem mérhető (2026-09-26).** A Colab-gépen nincs telepített nyomtató: a Print gombra „A printer must be installed in order to print.” jön (picasa-colab-jobs #51). A tesztkönyvtárban arc sincs, amit az útlevél-felismerő elfogadna (#49, #50: négy képből négy „Can't find any faces”). Gépház-jegy: picasapy-agent #159. A vizuális egyezés tehát NINCS mérve; a fenti lánc a binárisból megerősített.
 
