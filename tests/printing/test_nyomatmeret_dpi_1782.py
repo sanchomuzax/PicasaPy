@@ -43,9 +43,11 @@ class TestNyomatMeretek:
 
         #1961: a felsorolás azóta a metrikus készletet is tartalmazza,
         ezért a HÜVELYKES készletre állítunk. #3712-review: a Full Page
-        (`TELJES_OLDAL`) is a hüvelykes készlet tagja lett — a
-        `printpanel.tre` hat gombja szerint —, tehát ma hatos, nem ötös."""
-        assert len(HUVELYK_KESZLET) == 6
+        (`TELJES_OLDAL`) is a hüvelykes készlet tagja lett; a #4257 két
+        további, mért mérettel nyolcasra bővítette."""
+        # #4257: a készlet a mért hat gyorsméret mellett a 3×4 és 4×5
+        # eredeti tételeit is felkínálja.
+        assert len(HUVELYK_KESZLET) == 8
 
     def test_minden_meretnek_van_hüvelykben_mert_oldala(self):
         for meret in NyomatMeret:

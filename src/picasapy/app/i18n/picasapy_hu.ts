@@ -102,6 +102,10 @@
         <translation>Hiányzik az arcfelismerő modellfájl, ezért ez a lépés nem futtatható. Nyomja meg alább a „Modell letöltése” gombot, és a PicasaPy letölti Önnek. Ha inkább kézzel intézné: másolja a(z) „{0}” fájlt ebbe a mappába — {1} —, vagy állítsa rá a(z) {2} környezeti változót, majd indítsa újra a PicasaPy-t.</translation>
     </message>
     <message>
+        <source>The model file is present, but PicasaPy could not load it. Check the application log.</source>
+        <translation>A modellfájl megvan, de a PicasaPy nem tudta betölteni. A részletekért ellenőrizze az alkalmazás naplóját.</translation>
+    </message>
+    <message>
         <source>PicasaPy downloads the model file from the OpenCV Zoo project ({0} MB in total). Licence: {1} — free to use. The file is saved here: {2}</source>
         <translation>A PicasaPy az OpenCV Zoo projektből tölti le a modellfájlt (összesen {0} MB). Licenc: {1} — szabadon használható. A fájl ide kerül: {2}</translation>
     </message>
@@ -124,6 +128,14 @@
     <message>
         <source>The face recognition model has been downloaded. You can start the search now.</source>
         <translation>Az arcfelismerő modell letöltődött. Most már elindíthatja a keresést.</translation>
+    </message>
+    <message>
+        <source>PicasaPy verified the downloaded YuNet model, but could not load it. Face search is unavailable; check the application log.</source>
+        <translation>A PicasaPy ellenőrizte a letöltött YuNet-modellt, de nem tudta betölteni. Az arckeresés nem indítható; a részletekért ellenőrizze az alkalmazás naplóját.</translation>
+    </message>
+    <message>
+        <source>Face detection is ready, but face grouping is unavailable because PicasaPy could not load the SFace model. Check the application log.</source>
+        <translation>Az arcfelismerés elindítható, de a csoportosítás nem érhető el, mert a PicasaPy nem tudta betölteni az SFace-modellt. A részletekért ellenőrizze az alkalmazás naplóját.</translation>
     </message>
     <message>
         <source>The download was cancelled. Nothing was saved.</source>
@@ -348,8 +360,16 @@
         <translation>Nyomatméret:</translation>
     </message>
     <message>
+        <source>3 x 4</source>
+        <translation>3x4</translation>
+    </message>
+    <message>
         <source>3.5 x 5</source>
         <translation>3,5x5</translation>
+    </message>
+    <message>
+        <source>4 x 5</source>
+        <translation>4x5</translation>
     </message>
     <message>
         <source>4 x 6</source>
@@ -378,6 +398,10 @@
     <message>
         <source>13 x 18 cm</source>
         <translation>13x18 cm</translation>
+    </message>
+    <message>
+        <source>15 x 20 cm</source>
+        <translation>15x20 cm</translation>
     </message>
     <message>
         <source>20 x 25 cm</source>

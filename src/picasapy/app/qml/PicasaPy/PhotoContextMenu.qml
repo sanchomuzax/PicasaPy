@@ -440,9 +440,7 @@ PicasaMenu {
 
     // -- 10. blokk: arcok ---------------------------------------------------------
 
-    // #422: „Arcok alaphelyzetbe állítása" — az eredeti FIGYELMEZTETÉSSEL
-    // kérdezett rá (`CThumbUI::ResetAllFaces`), mert a művelet az egész
-    // könyvtárra hat, nem csak a kijelölésre.
+    // #4258: sima kattintásra a kijelölt képek `faces=` téglalapjai törlődnek.
     MenuItem {
         objectName: "contextMenuResetFaces"
         text: qsTr("Reset Faces")

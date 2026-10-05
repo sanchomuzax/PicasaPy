@@ -345,6 +345,86 @@ class TestLetoltesUtanElo:
             "visible"
         ) is False
 
+    @pytest.mark.parametrize("gyarto_hibat_dob", [False, True])
+    def test_betolthetetlen_modellnel_nem_jelez_sikert(
+        self,
+        qt_app,
+        tmp_path,
+        modell_mappa,
+        apro_specek,
+        monkeypatch,
+        gyarto_hibat_dob,
+    ):
+        """A letöltés épsége önmagában nem jelenti, hogy az OpenCV be is
+        tudta tölteni a modellfájlokat. Ilyenkor ne maradjon „sikeres” a
+        felületi üzenet, és a letöltő szál is záruljon le."""
+        specek, tartalom = apro_specek
+        betoltott_fajlok: dict[str, bytes | None] = {}
+
+        def gyarto(spec, modell_tipus):
+            def letrehoz():
+                ut = modell_mappa / spec.filename
+                betoltott_fajlok[spec.key] = ut.read_bytes() if ut.is_file() else None
+                if gyarto_hibat_dob and spec.key == "detector":
+                    raise RuntimeError("a próba ONNX-olvasója elutasította a fájlt")
+                return modell_tipus(available=False)
+
+            return letrehoz
+
+        vezerlo = _vezerlo(
+            tmp_path,
+            _HamisDetektor(available=False),
+            _HamisLenyomatolo(available=False),
+            detektor_gyar=gyarto(specek[0], _HamisDetektor),
+            lenyomat_gyar=gyarto(specek[1], _HamisLenyomatolo),
+        )
+        parbeszed = _parbeszed(qt_app, vezerlo)
+
+        def hamis_ellenorzott_letoltes(**kwargs):
+            """A letöltő szerződését utánzó, kimenetet készítő adatforrás."""
+            eredmenyek = []
+            for spec in specek:
+                cel = modell_mappa / spec.filename
+                cel.parent.mkdir(parents=True, exist_ok=True)
+                cel.write_bytes(tartalom["/" + spec.relative_url])
+                eredmenyek.append(
+                    model_download.DownloadResult(
+                        status=model_download.STATUS_OK, spec=spec, path=cel
+                    )
+                )
+            haladas = kwargs.get("progress")
+            if haladas is not None:
+                osszmeret = sum(spec.size_bytes for spec in specek)
+                haladas(osszmeret, osszmeret)
+            return tuple(eredmenyek)
+
+        monkeypatch.setattr(
+            model_download, "download_missing", hamis_ellenorzott_letoltes
+        )
+        _kattint(_elem(parbeszed, "faceScanDownloadButton"), qt_app)
+        _var(
+            qt_app,
+            lambda: parbeszed.property("downloading") is False,
+            masodperc=1.0,
+            uzenet="a modellbetöltés hibája után beragadt a párbeszéd",
+        )
+        assert vezerlo.waitForBackgroundWorkers(15.0)
+
+        assert betoltott_fajlok.get("detector") == tartalom[
+            "/" + specek[0].relative_url
+        ], "a YuNet-gyár nem a letöltött ellenőrzött fájlt kapta"
+        if not gyarto_hibat_dob:
+            assert betoltott_fajlok.get("embedder") == tartalom[
+                "/" + specek[1].relative_url
+            ], "az SFace-gyár nem a letöltött ellenőrzött fájlt kapta"
+        uzenet = str(parbeszed.property("statusText")).lower()
+        assert "could not load" in uzenet or "couldn't load" in uzenet, (
+            "a felület sikeresnek mondta a letöltést, pedig a modellek nem "
+            f"tölthetők be: {uzenet}"
+        )
+        assert "could not load" in str(parbeszed.property("detectorReason")).lower()
+        assert _elem(parbeszed, "faceScanStartButton").property("enabled") is False
+
 
 class TestMegszakitas:
     def test_a_futo_letoltes_megszakithato(

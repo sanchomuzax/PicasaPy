@@ -98,6 +98,18 @@ def without_face(document: IniDocument, photo_name: str, face: Face) -> IniDocum
     return document.with_value(photo_name, "faces", serialize_faces(remaining))
 
 
+def without_faces(document: IniDocument, photo_name: str) -> IniDocument:
+    """A fotó összes `faces=` téglalapjának eltávolítása.
+
+    A fotószekció és a mappaszintű `[Contacts2]` névjegyzék érintetlen
+    marad. A hiányzó szekció vagy kulcs változatlan dokumentumot ad vissza.
+    """
+    section = document.section(photo_name)
+    if section is None or section.get("faces") is None:
+        return document
+    return document.with_removed(photo_name, "faces")
+
+
 def without_face_at_rect(
     document: IniDocument, photo_name: str, rect: Rect64
 ) -> IniDocument:

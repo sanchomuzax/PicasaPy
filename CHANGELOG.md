@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.3] – 2026-10-05
+
+- Az ellenőrzött arcfelismerő modell betöltési hibája most érthető visszajelzést ad, és nem jelzi tévesen sikeresnek a keresést (#4260).
+- Az automatikus vörösszem-javítás most a felismert szemekre korlátozódik, és modell nélkül a korábbi módon működik (#4261).
+
+## [0.9.2] – 2026-10-05
+
+- Az „Arcok alaphelyzetbe állítása” csak a kijelölt képek arckeret-adatait törli (#4258).
+
+## [0.9.1] – 2026-10-05
+
+- A 3×4 hüvelykes, a 4×5 hüvelykes és a 15×20 cm-es nyomatméret is bekerült a választóba (#4257).
+
 ## [0.9.0] – 2026-10-05
 
 - A csúszkás effektpanelek alatt a letiltott bal panel elmosva és teljes színnel marad (#4068).

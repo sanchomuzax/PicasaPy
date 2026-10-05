@@ -19,11 +19,13 @@ A párbeszédben beállítható:
   lapbeállító ablakát nyitja meg (papírméret, tájolás, margók). Amit ott
   elfogadsz, azt a következő nyomtatás használni fogja. PDF-be
   nyomtatásnál a gomb szürke: ott nincs nyomtató, amit beállíts.
-- **Nyomatméret** — hét tétel. Magyar felületen a hat méret metrikus:
+- **Nyomatméret** — magyar felületen nyolc, angol felületen kilenc tétel.
+  Magyar felületen hét méret metrikus:
   **5 × 8 cm**, **9 × 13 cm**, **10 × 15 cm**, **13 × 18 cm**,
-  **20 × 25 cm** és a **FullPage** (a teljes oldal); angol felületen a
-  hüvelykes hatos áll a helyükön (**Tárcaméret**, 3,5 × 5, 4 × 6,
-  5 × 7, 8 × 10 és a FullPage). A hetedik tétel az **Indexképek** — ez
+  **15 × 20 cm**, **20 × 25 cm** és a **FullPage** (a teljes oldal);
+  angol felületen nyolc méret jelenik meg (**Tárcaméret**, 3 × 4,
+  3,5 × 5, 4 × 5, 4 × 6, 5 × 7, 8 × 10 és a FullPage). Az **Indexképek**
+  mindkét listában a méretválasztó további tétele — ez
   nem méret, hanem a sok kis kép egy lapra (lásd lentebb). A lista
   **alapból a FullPage**-en áll; a választásod megmarad a következő
   nyomtatásig.

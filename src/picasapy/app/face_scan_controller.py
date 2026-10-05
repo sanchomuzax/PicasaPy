@@ -69,7 +69,6 @@ from picasapy.index import (
     face_scan_done,
     mark_face_scan,
     replace_faces,
-    reset_all_faces,
     store_embedding,
     sync_tree,
     unnamed_album_photos,
@@ -234,6 +233,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         mappa, amit csak Python-oldalról tudunk kiszámolni."""
         if self._detector.available:
             return ""
+        if detector_module.resolve_model_path() is not None:
+            return self._model_load_failed_text()
         return self._model_missing_text(
             detector_module.MODEL_FILENAME,
             detector_module.MODEL_ENV_VAR,
@@ -244,9 +245,19 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         """Ugyanez a lenyomat-modellre (SFace) — üres, ha megvan."""
         if self._embedder.available:
             return ""
+        if embedder_module.resolve_model_path() is not None:
+            return self._model_load_failed_text()
         return self._model_missing_text(
             embedder_module.MODEL_FILENAME,
             embedder_module.MODEL_ENV_VAR,
+        )
+
+    def _model_load_failed_text(self) -> str:
+        """A fájl megvan, de a modell nem indult el — ne mondjuk, hogy
+        hiányzik, mert ez félrevezető és nem segít a hiba megértésében."""
+        return self.tr(
+            "The model file is present, but PicasaPy could not load it. "
+            "Check the application log."
         )
 
     def _model_missing_text(self, filename: str, env_var: str) -> str:
@@ -385,6 +396,40 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 cancel=stop_event,
             )
             siker, uzenet = self._download_uzenet(eredmenyek)
+            if siker:
+                if not self._detector.available:
+                    try:
+                        # A frissen letöltött YuNet-modell azonnal használható
+                        # legyen, újraindítás nélkül (#1496).
+                        self._detector = self._detector_factory()
+                    except Exception:
+                        _log.exception(
+                            "az ellenőrzött YuNet-modell betöltése hibázott"
+                        )
+                    if not self._detector.available:
+                        siker = False
+                        uzenet = self.tr(
+                            "PicasaPy verified the downloaded YuNet model, but "
+                            "could not load it. Face search is unavailable; "
+                            "check the application log."
+                        )
+
+                if not self._embedder.available:
+                    try:
+                        # A YuNet-hiba nem akadályozza meg az SFace külön
+                        # betöltési próbáját.
+                        self._embedder = self._embedder_factory()
+                    except Exception:
+                        _log.exception(
+                            "az ellenőrzött SFace-modell betöltése hibázott"
+                        )
+                    if not self._embedder.available and self._detector.available:
+                        # A YuNet-keresés működik, csak a csoportosítás nem.
+                        uzenet = self.tr(
+                            "Face detection is ready, but face grouping is "
+                            "unavailable because PicasaPy could not load the "
+                            "SFace model. Check the application log."
+                        )
         except Exception as error:  # noqa: BLE001 — a letöltés se fagyassza a UI-t
             _log.exception("arcfelismerő modell letöltése hiba")
             siker = False
@@ -393,11 +438,6 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             if self._model_download_stop_event is stop_event:
                 self._model_download_stop_event = None
             self._set_model_download_percent(-1)
-        if siker:
-            # A frissen letöltött modell AZONNAL használható legyen —
-            # újraindítás nélkül (ez a jegy 5. „kész, ha" pontja).
-            self._detector = self._detector_factory()
-            self._embedder = self._embedder_factory()
         self.modelDownloadFinished.emit(siker, uzenet)
 
     def _report_model_download(
@@ -819,20 +859,21 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 continue
             self._faces_helper.addIgnoredFace(str(face.photo_path), *rect)
 
-    @Slot(result=int)
-    def resetAllFaces(self) -> int:  # noqa: N802 — QML-slot-stílus
-        """„Arcok alaphelyzetbe állítása" (#422) — az INDEX oldala.
+    @Slot(list, result=int)
+    def resetFacesForPhotos(self, image_paths) -> int:  # noqa: N802 — QML-slot-stílus
+        """A kijelölt képek Picasa-féle arc-téglalapjainak törlése (#4258).
 
-        Minden arc visszakerül a „Névtelenek" albumba: az állapot, a
-        névhez kötés, a javaslat és a csoportosítás nullázódik. A
-        `.picasa.ini` ember által adott névcímkéihez NEM nyúlunk — az
-        eredeti is KÜLÖN kérdezte meg (`CThumbUI::ResetAll`), és nálunk a
-        Picasa döntései szentek."""
-        with open_index(self._db_path) as conn:
-            affected = reset_all_faces(conn)
-            conn.commit()
-        self.unnamedCountChanged.emit()
-        return affected
+        A `.picasa.ini` írása kizárólag a `FacesHelper`/`ini` API-n megy.
+        A függvény nem végez könyvtárszintű műveletet; visszatérési értéke
+        a sikeresen kezelt képek száma."""
+        if self._faces_helper is None or not image_paths:
+            return 0
+        paths = tuple(dict.fromkeys(str(path) for path in image_paths if path))
+        completed = 0
+        for image_path in paths:
+            if self._faces_helper.removeAllFaces(image_path):
+                completed += 1
+        return completed
 
     @Slot(result=int)
     def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus

@@ -26,6 +26,7 @@ from .faces import (
     with_reassigned_face,
     without_face,
     without_face_at_rect,
+    without_faces,
 )
 from .filter_registry import (
     CANONICAL_FILTER_NAMES,
@@ -137,5 +138,6 @@ __all__ = [
     "with_reassigned_face",
     "without_face",
     "without_face_at_rect",
+    "without_faces",
     "without_folder_date_override",
 ]

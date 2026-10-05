@@ -86,10 +86,12 @@ kódtól).
   `PICASAPY_TOUCH_PHOTO_MTIME=0` kapcsolja KI — 2026-09-06 óta
   alapértelmezésben FUT (#2491, ADR-007). Indoklás: ADR-006,
   `docs/decisions/photo-mtime-erintes.md`.
-- `src/picasapy/ini/redeye.py` (#445) — a vörösszem-jelölések saját
-  `rect64(...)` paraméterezése a `redeye=` bejegyzésben. A bináris nem
-  árulja el a valódi bájtformátumot (#371 nyitott kérdés); amíg az elő nem
-  kerül, ez a mi kódolásunk — paraméter nélkül bájtra egyezik az eredetivel.
+- `src/picasapy/ini/redeye.py` (#445/#4261) — a vörösszem-jelölések saját
+  `rect64(...)` kézi régiója és `eye64(...)` automatikus szemköre a `redeye=`
+  bejegyzésben. A modell nélküli teljes képes tartalék jelölése
+  `autofull64()`. A bináris nem árulja el a valódi bájtformátumot (#371 nyitott
+  kérdés); ezek a mi kódolásaink — paraméter nélkül bájtra egyezik az
+  eredetivel.
 - `docs/specs/ui-audit-menus.md` (#28, #1364) — a menü-átvizsgálás lapja: a
   „Nálunk van, az eredetiben nincs" tételek (sötét téma, Teljesítmény-monitor)
   itt is a `SAJÁT FUNKCIÓ` jelölőt viselik, hogy a spec és ez a jegyzék EGY

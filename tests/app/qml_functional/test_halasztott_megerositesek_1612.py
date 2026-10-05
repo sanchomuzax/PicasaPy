@@ -47,15 +47,20 @@ HALASZTOTT = (
     ("brokenPhotoDialogLoader", "brokenPhotoDialog"),
     ("removeFromAlbumDialogLoader", "removeFromAlbumDialog"),
     ("removePeopleFacesDialogLoader", "removePeopleFacesDialog"),
-    ("resetFacesConfirmLoader", "resetFacesConfirm"),
 )
 
 #: ALSÓ KORLÁT: ha valaki kiüríti a listát, az őr néma maradna.
-MIN_HALASZTOTT = 8
+MIN_HALASZTOTT = 7
 
 
 def test_a_lista_nem_urulhet_ki():
     assert len(HALASZTOTT) >= MIN_HALASZTOTT
+
+
+def test_reset_faceshez_nincs_megerosito_parbeszed(qml_app):
+    """A sima Reset Faces kattintás az eredetiben azonnal töröl."""
+    window = qml_app[0]
+    assert window.findChild(QObject, "resetFacesConfirmLoader") is None
 
 
 class TestIndulaskorNincsPeldany:

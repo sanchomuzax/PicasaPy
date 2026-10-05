@@ -63,19 +63,24 @@ class NyomatMeret(Enum):
     készletben. A metrikus tagok a `ytPrintSizes::` szövegcsalád
     centiméteres tételei (`stringres` 3478–3494)."""
 
-    #: hüvelykes készlet (#1782, mérve: `0x00743700`, `0x00743980`)
+    #: A 3×4 és 4×5 hüvelykes érték a spec ugrótáblájának 6. és 7. ága
+    #: (`docs/specs/picasa-nyomtatas.md`, 604–605. sor); a többi a #1782.
+    M3X4 = (3.0, 4.0)
     M3_5X5 = (3.5, 5.0)
+    M4X5 = (4.0, 5.0)
     M4X6 = (4.0, 6.0)
     M5X7 = (5.0, 7.0)
     M8X10 = (8.0, 10.0)
     TARCA = (2.5, 3.5)
 
-    #: metrikus készlet (#1961) — a tulajdonos felvételén ez a hat csempe
-    #: látszik a magyar felületen
+    #: Metrikus nyomatméretek (`ytPrintSizes::`, stringres 3478–3494).
+    #: A CD-borító is ide ágazik, de a spec nem közöl hozzá konkrét méretet,
+    #: ezért nincs becsült enumtagja.
     M5X8CM = _cm(5, 8)
     M9X13CM = _cm(9, 13)
     M10X15CM = _cm(10, 15)
     M13X18CM = _cm(13, 18)
+    M15X20CM = _cm(15, 20)
     M20X25CM = _cm(20, 25)
     #: ⚠️ DÖNTÉS: a „Teljes oldal" nálunk **A4** (210 × 297 mm). Az
     #: eredetiben a NYOMTATÓ papírmérete adja; nekünk a minőség-számoláshoz
@@ -102,9 +107,9 @@ class NyomatMeret(Enum):
         return self.value[1]
 
 
-#: A hüvelykes készlet, a `printpanel.tre` HAT gombjának sorrendjében
-#: (`walletbutton` · `3x5button` · `4x6button` · `5x7button` ·
-#: `8x10button` · `fullbutton`, ld. `docs/specs/picasa-nyomtatas.md`).
+#: Az angol nyelvű méretválasztó sorrendje. A Tárca elöl és a Teljes oldal
+#: hátul marad a mért gombsorrend szerint; a #4257 a 3×4-et és 4×5-öt
+#: az eredeti 17-es lista szerinti helyre illeszti.
 #:
 #: ✅ JAVÍTVA (#3712-review): korábban ez a tuple csak ÖTÖS volt — a Tárca
 #: a VÉGÉN állt, és a `TELJES_OLDAL` egyáltalán hiányzott belőle. A
@@ -115,14 +120,16 @@ class NyomatMeret(Enum):
 #: jelenlétét nem.
 HUVELYK_KESZLET: tuple[NyomatMeret, ...] = (
     NyomatMeret.TARCA,
+    NyomatMeret.M3X4,
     NyomatMeret.M3_5X5,
+    NyomatMeret.M4X5,
     NyomatMeret.M4X6,
     NyomatMeret.M5X7,
     NyomatMeret.M8X10,
     NyomatMeret.TELJES_OLDAL,
 )
 
-#: A metrikus készlet, a felvételen látott sorrendben (#1961).
+#: A metrikus méretválasztó, a `ytPrintSizes` eredeti sorrendjében (#1961).
 #:
 #: ⚠️ SZÁNDÉKOSAN NINCS Tárca-tagja. A `printpanel.tre` mind a 17
 #: `ytPrintSizes` mérethez UGYANAZT a hat gombhelyet
@@ -130,15 +137,15 @@ HUVELYK_KESZLET: tuple[NyomatMeret, ...] = (
 #: `fullbutton`) használja — a nyelv/terület csak azt dönti el, MELYIK
 #: méret kerül az egyes gombhelyekre. A tulajdonos felvétele (#1953,
 #: `#1953-nyomtatas-kep-kicsi.jpg`) szerint metrikus környezetben a
-#: `walletbutton` helyére is egy ötödik graduált metrikus méret kerül —
-#: a Tárca (nem metrikus fogalom) ilyenkor kiesik, a Full Page viszont
-#: MINDIG megmarad az utolsó helyen. Ez MÉRT viselkedés — a #3712-review
-#: ezt nem bántja, csak a hüvelykes ötöst egészíti ki hatosra.
+#: `walletbutton` helyére metrikus méret kerül — a Tárca (nem metrikus
+#: fogalom) ilyenkor kiesik, a Full Page pedig MINDIG az utolsó. A #4257
+#: a 15×20 cm-es nyomatot a 13×18 és 20×25 cm közé illeszti.
 METRIKUS_KESZLET: tuple[NyomatMeret, ...] = (
     NyomatMeret.M5X8CM,
     NyomatMeret.M9X13CM,
     NyomatMeret.M10X15CM,
     NyomatMeret.M13X18CM,
+    NyomatMeret.M15X20CM,
     NyomatMeret.M20X25CM,
     NyomatMeret.TELJES_OLDAL,
 )
