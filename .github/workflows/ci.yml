@@ -48,7 +48,6 @@ jobs:
     outputs:
       kod: ${{ steps.d.outputs.kod }}
       docs: ${{ steps.d.outputs.docs }}
-      tesztek: ${{ steps.d.outputs.tesztek }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,26 +71,20 @@ jobs:
   # kötelező ubuntu-ellenőrzést is pirosra vitte (mérve a #1257-en).
   darabok-ubuntu:
     needs: valtozas
-    if: ${{ needs.valtozas.outputs.tesztek != 'nincs' }}
+    if: ${{ needs.valtozas.outputs.kod == 'true' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: ubuntu-latest
-      suite: ${{ needs.valtozas.outputs.tesztek }}
-      shards: ${{ needs.valtozas.outputs.tesztek == 'teljes' && '[1, 2, 3, 4, 5, 6]' || '[1]' }}
-      shard_count: ${{ needs.valtozas.outputs.tesztek == 'teljes' && 6 || 1 }}
 
   # #4285: a windowsos tesztkészlet (a falióra-idő fő tétele, 26–30 perc)
   # PR-on NEM fut, csak a main-re érkező pushon — a PR-t az ubuntus készlet
   # kapuzza, a windowsos eltérés a beolvadás után a main körén derül ki.
   darabok-windows:
     needs: valtozas
-    if: ${{ needs.valtozas.outputs.tesztek != 'nincs' && github.event_name != 'pull_request' }}
+    if: ${{ needs.valtozas.outputs.kod == 'true' && github.event_name != 'pull_request' }}
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: windows-latest
-      suite: ${{ needs.valtozas.outputs.tesztek }}
-      shards: ${{ needs.valtozas.outputs.tesztek == 'teljes' && '[1, 2, 3, 4, 5, 6]' || '[1]' }}
-      shard_count: ${{ needs.valtozas.outputs.tesztek == 'teljes' && 6 || 1 }}
 
   # #1863: a `docs/`-ot OLVASÓ őrök — csak-dokumentációs PR-en ez fut a
   # kihagyott mátrix helyett. A listát a `scripts/docs_olvaso_tesztek.py`
@@ -100,7 +93,7 @@ jobs:
   docs-orok:
     name: Dokumentáció-őrök
     needs: valtozas
-    if: ${{ needs.valtozas.outputs.tesztek == 'nincs' && needs.valtozas.outputs.docs == 'true' }}
+    if: ${{ needs.valtozas.outputs.kod != 'true' && needs.valtozas.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -174,25 +167,26 @@ jobs:
     needs: [valtozas, darabok-ubuntu, docs-orok]
     if: always()
     steps:
-      - name: A tesztmátrixot nem érintő változás — a mátrix kimaradt
-        if: ${{ needs.valtozas.outputs.tesztek == 'nincs' }}
+      - name: A kód futását nem érintő PR — a mátrix kimaradt
+        if: ${{ needs.valtozas.outputs.kod != 'true' }}
         run: |
-          echo "A Változás-elemzés tesztfutást nem kért — a mátrix kimarad."
+          echo "A diff csak dokumentációt/verziósort érint (ld. a"
+          echo "Változás-elemzés jobot) — a mátrix kimarad."
 
       # #1863: itt kap FOGAT a dokumentáció-őr. A `docs-orok` job önmagában
       # nem blokkolna (nem kötelező ellenőrzés) — a bukását EZ a lépés
       # emeli a kötelező státuszba. A #1340 CHANGELOG-őre ugyanezért került
       # ebbe a jobba, és a #1858 pontosan a hiányán csúszott át.
       - name: A dokumentáció-őrök zöldek
-        if: ${{ needs.valtozas.outputs.tesztek == 'nincs' && needs.valtozas.outputs.docs == 'true' }}
+        if: ${{ needs.valtozas.outputs.kod != 'true' && needs.valtozas.outputs.docs == 'true' }}
         run: |
           if [ "${{ needs.docs-orok.result }}" != "success" ]; then
             echo "A docs/-ot olvasó őrök elbuktak: ${{ needs.docs-orok.result }}"
             exit 1
           fi
 
-      - name: Az ubuntu-darabok mind zöldek
-        if: ${{ needs.valtozas.outputs.tesztek != 'nincs' }}
+      - name: A négy ubuntu-darab mind zöld
+        if: ${{ needs.valtozas.outputs.kod == 'true' }}
         run: |
           if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-ubuntu.result }}"
@@ -228,9 +222,9 @@ jobs:
     needs: [valtozas, darabok-windows]
     if: always()
     steps:
-      - name: A windows-darabok mind zöldek
-        # ha a mátrix nem futott (nincs kódváltozás, vagy PR — #4285), nincs mit ellenőrizni
-        if: ${{ needs.valtozas.outputs.tesztek != 'nincs' && github.event_name != 'pull_request' }}
+      - name: A négy windows-darab mind zöld
+        # ha a mátrix nem futott, nincs mit ellenőrizni
+        if: ${{ needs.valtozas.outputs.kod == 'true' && github.event_name != 'pull_request' }}
         run: |
           if [ "${{ needs.darabok-windows.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.darabok-windows.result }}"
