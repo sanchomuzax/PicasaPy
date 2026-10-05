@@ -49,8 +49,11 @@ def test_default_video_timeout_is_finite_and_keeps_the_grid_responsive():
 def test_frozen_worker_uses_the_bundled_windows_entry_point(monkeypatch, tmp_path):
     import picasapy.thumbs.cache as cache_module
 
-    monkeypatch.setattr(cache_module.sys, "frozen", True, raising=False)
-    monkeypatch.setattr(cache_module.sys, "executable", "PicasaPy.exe")
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        cache_module, "_futtato", SimpleNamespace(frozen=True, executable="PicasaPy.exe")
+    )
     source = tmp_path / "clip.mp4"
     output = tmp_path / "frame.png"
 

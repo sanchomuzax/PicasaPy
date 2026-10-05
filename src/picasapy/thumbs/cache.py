@@ -96,21 +96,26 @@ def _ffmpeg_elerheto() -> bool:
 _VIDEO_DECODE_TIMEOUT_S = 5.0
 
 
+#: A futtató folyamat adatai (frozen, executable) — modulszintű fogantyú,
+#: hogy a teszt ezt cserélje, ne a globális `sys`-t.
+_futtato = sys
+
+
 def _video_decode_worker_command(source: Path, output: Path) -> list[str]:
     """A videóképkockát dekódoló alfolyamat parancsa.
 
     A PyInstalleres windowsos program a saját belépőjén át indítja a rejtett
     worker-módot; normál Python-telepítésnél a modult indítjuk.
     """
-    if getattr(sys, "frozen", False):
+    if getattr(_futtato, "frozen", False):
         return [
-            sys.executable,
+            _futtato.executable,
             "--picasapy-video-decode",
             str(source),
             str(output),
         ]
     return [
-        sys.executable,
+        _futtato.executable,
         "-m",
         "picasapy.thumbs.video_decode_worker",
         str(source),
