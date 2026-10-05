@@ -436,11 +436,17 @@ def test_a_filmszalag_atrendezese_a_mxf_kimenetbe_kerul(
         kimenet = tmp_path / "filmszalag.mp4"
         film.setProperty("targetFile", str(kimenet))
         _kattints(window, qt_app, _elem(window, "movieCreateButton"))
-        assert _varj(qt_app, lambda: kimenet.with_suffix(".mxf").exists(), 30)
-
         from picasapy.movie.mxf import read_mxf
 
-        projekt = read_mxf(kimenet.with_suffix(".mxf"))
+        def _projekt_kesz():
+            # A fájl a megírás közben már létezhet, de még üres (#4220).
+            try:
+                return read_mxf(kimenet.with_suffix(".mxf"))
+            except (OSError, ValueError, SyntaxError):
+                return None
+
+        assert _varj(qt_app, lambda: _projekt_kesz() is not None, 30)
+        projekt = _projekt_kesz()
         assert [atmenet.forras.text for atmenet in projekt.atmenetek[-2:]] == [
             "Második dia",
             "szerkesztett elso dia",
