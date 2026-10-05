@@ -52,6 +52,18 @@ def _kattints(window, qt_app, elem: QObject) -> QPoint:
     return pont
 
 
+def _dia_felvetel(window, qt_app, szoveg=None):
+    """Szöveges dia felvétele a címdia-párbeszéden át (#4198, 2.10)."""
+    _kattints(window, qt_app, _elem(window, "movieInsertSlideButton"))
+    dialog = _elem(window, "movieTitleDialog")
+    assert _varj(qt_app, lambda: dialog.property("visible"))
+    if szoveg is not None:
+        _elem(window, "titledialog/captiontext").setProperty("text", szoveg)
+        qt_app.processEvents()
+    _kattints(window, qt_app, _elem(window, "titledialog/add"))
+    assert _varj(qt_app, lambda: not dialog.property("visible"))
+
+
 def _tooltip_probe(engine, target: QObject) -> QObject:
     component = QQmlComponent(engine)
     component.setData(
@@ -172,9 +184,9 @@ def test_a_film_panel_feliratai_es_muveletei_a_foablakbol_minden_magassagon(
         assert _varj(qt_app, lambda: hattervalaszto.property("visible"))
         hattervalaszto.close()
 
-        _kattints(window, qt_app, _elem(window, "movieInsertSlideButton"))
+        _dia_felvetel(window, qt_app)
         dia_lista = _elem(window, "movieSlideList")
-        assert dia_lista.property("count") == 1
+        assert _varj(qt_app, lambda: dia_lista.property("count") == 1)
         assert film.property("movieSlides").property("length").toInt() == 1
         _kattints(window, qt_app, _elem(window, "movieRemoveSlideButton"))
         assert dia_lista.property("count") == 0
@@ -347,13 +359,10 @@ def test_a_filmszalag_atrendezese_a_mxf_kimenetbe_kerul(
         assert filmstrip.property("visible")
         field = _elem(window, "movieSlideText")
         _kattints(window, qt_app, field)
-        field.setProperty("text", "Első dia")
-        _kattints(window, qt_app, _elem(window, "movieInsertSlideButton"))
-        field.setProperty("text", "Második dia")
-        _kattints(window, qt_app, _elem(window, "movieInsertSlideButton"))
-        field.setProperty("text", "Harmadik dia")
-        _kattints(window, qt_app, _elem(window, "movieInsertSlideButton"))
-        assert filmstrip.property("count") == 3
+        _dia_felvetel(window, qt_app, "Első dia")
+        _dia_felvetel(window, qt_app, "Második dia")
+        _dia_felvetel(window, qt_app, "Harmadik dia")
+        assert _varj(qt_app, lambda: filmstrip.property("count") == 3)
         filmstrip.setProperty("contentY", 0)
 
         # A lista valódi soraiból és geometriájából számoljuk a húzást.

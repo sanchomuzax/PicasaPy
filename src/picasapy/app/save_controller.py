@@ -45,7 +45,7 @@ from picasapy.render.chain import apply_filters, can_render_filter, normalize_cr
 from picasapy.render.flip import apply_flip
 from picasapy.scanner import PICASA_INI_NAME
 
-from .paint_mask import maszk_vonasokbol
+from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
 from .save_error_kind import save_error_code, save_error_kind
 from .worker_thread import BackgroundWorkerMixin
 
@@ -111,16 +111,21 @@ def _render_for_save(
     # #3065: ELŐBB a tükrözés, UTÁNA a forgatás — a mért sorrend (ld. az
     # `export/exporter.py` azonos megjegyzését és a `render/flip.py`
     # modul-docstringjét).
+    ops = EditSession.from_value(filters).ops
     maszk = (
-        maszk_vonasokbol(paint_strokes, image.shape[0], image.shape[1])
-        if paint_strokes
+        maszk_vonasokbol(
+            paint_strokes,
+            image.shape[0],
+            image.shape[1],
+            filters=ops,
+        )
+        if paint_strokes or van_mentett_ecsetvonas(ops)
         else None
     )
     image = apply_flip(image, flip_flags)
     steps = int(rotate_steps or 0) % 4
     for _ in range(steps):
         image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
-    ops = EditSession.from_value(filters).ops
     crop, crop_ini_readable = _CROP_READER.read(
         path.parent / PICASA_INI_NAME, path.name
     )
