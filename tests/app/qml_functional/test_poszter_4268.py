@@ -36,9 +36,30 @@ def _amerikai_papirbeallitas():
         QLocale.setDefault(old)
 
 
-@pytest.fixture
-def poster_app(qt_app, tmp_path):
-    yield from _build_qml_app(qt_app, tmp_path, kepeket_keszit=_chart)
+@pytest.fixture(scope="module")
+def poster_app(
+    qt_app,
+    tmp_path_factory,
+    _module_qml_warnings,
+    _module_user_folder_guard,
+):
+    """A teljes QML-ablakot egyszer építi fel a tíz ellenőrzéshez."""
+    old_locale = QLocale()
+    QLocale.setDefault(QLocale("en_US"))
+    app = _build_qml_app(
+        qt_app,
+        tmp_path_factory.mktemp("poster-4268"),
+        kepeket_keszit=_chart,
+    )
+    try:
+        window, controller, engine = next(app)
+        window.setProperty("posterTestBaseHeight", int(window.height()))
+        yield window, controller, engine
+    finally:
+        try:
+            next(app, None)
+        finally:
+            QLocale.setDefault(old_locale)
 
 
 def _var(qt_app, condition, message: str, seconds: float = 5.0):
@@ -96,7 +117,7 @@ def _nyisd_meg_valodi_menu_kattintassal(window, controller, qt_app):
 def _inditsd_a_kimenetet(
     window, controller, qt_app, *, overlap: bool, height_delta: int
 ):
-    original_height = int(window.height())
+    original_height = int(window.property("posterTestBaseHeight"))
     target_height = original_height + height_delta
     window.resize(window.width(), target_height)
     _var(
@@ -187,7 +208,7 @@ def test_valodi_kattintas_megnyitja_a_hivatalos_parbeszedet(
     poster_app, qt_app, height_delta
 ):
     window, controller, _engine = poster_app
-    original_height = int(window.height())
+    original_height = int(window.property("posterTestBaseHeight"))
     window.resize(window.width(), original_height + height_delta)
     _var(
         qt_app,
@@ -200,6 +221,12 @@ def test_valodi_kattintas_megnyitja_a_hivatalos_parbeszedet(
     assert dialog.property("visible") is True
     assert _elem(dialog, "posterTip").property("text").startswith("Tip:")
     assert len(controller.posterPaperSizes()) == 2
+    _kattintas(_elem(dialog, "posterCancelButton"))
+    _var(
+        qt_app,
+        lambda: dialog.property("opened") is not True,
+        "a Poszter párbeszéd nem zárult be a Mégse gombbal",
+    )
 
 
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
@@ -236,6 +263,11 @@ def test_papirmeret_a_legutobbi_valasztast_es_a_teruleti_listat_megorzi(
     dialog = _nyisd_meg_valodi_menu_kattintassal(window, controller, qt_app)
     assert _elem(dialog, "posterPaperBox").property("currentText") == "8.5x11"
     _kattintas(_elem(dialog, "posterCancelButton"))
+    _var(
+        qt_app,
+        lambda: dialog.property("opened") is not True,
+        "a Poszter párbeszéd nem zárult be a Mégse gombbal",
+    )
 
     QLocale.setDefault(QLocale("hu_HU"))
     assert controller.posterPaperSizes() == ["10x15", "20x25"]
