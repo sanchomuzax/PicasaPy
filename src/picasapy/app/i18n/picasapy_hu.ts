@@ -3369,6 +3369,9 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message><source>Remove the selected clip(s) from the tray</source><translation>A kijelölt klip(ek) eltávolítása a tálcáról</translation></message>
     <message><source>Play selected clip only</source><translation>Csak a kijelölt klip lejátszása</translation></message>
     <message><source>Preview</source><translation>Előnézet</translation></message>
+    <message><source>Pause</source><translation>Szünet</translation></message>
+    <message><source>Show actual movie size (don't stretch)</source><translation>Mozgófilm tényleges méretének megjelenítése (nyújtás nélkül)</translation></message>
+    <message><source>Play full screen</source><translation>Lejátszás teljes képernyőn</translation></message>
     <message><source>Please Confirm...</source><translation>Megerősítés...</translation></message>
     <message><source>This will generate a new movie removing all the text slides you added. Are you sure?</source><translation>Az új film létrehozásakor minden hozzáadott szöveges dia törlődik. Biztosan folytatja?</translation></message>
     <message><source>Recompute</source><translation>Újraszámolás</translation></message>

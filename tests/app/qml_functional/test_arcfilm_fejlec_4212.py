@@ -29,6 +29,9 @@ _SZEMELY_AZONOSITO = "1111111111111111"
 _KEEP_ALIVE: list[QObject] = []
 
 
+_FILM_VARAKOZAS_MP = 90
+
+
 def _anna_kepei(lib) -> None:
     for nev in ("anna-a.jpg", "anna-b.jpg"):
         make_jpeg(lib / nev, size=(640, 400))
@@ -66,6 +69,26 @@ def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
         time.sleep(0.01)
     qt_app.processEvents()
     return bool(feltetel())
+
+
+def _nyugalomba_jut(qt_app, elem: QQuickItem, masodperc: float = 5.0) -> bool:
+    """Megvárja, hogy az elem helye a képernyőn ne változzon (a felugró
+    párbeszéd belépő átmenete és elrendezése lezáruljon). Az `opened` jelző
+    az átmenet elején már igaz lehet, ezért a valódi hely a mérce: egy
+    még mozgó gombra adott kattintás mellé megy."""
+    hatarido = time.monotonic() + masodperc
+    elozo = None
+    stabil_mintak = 0
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        hely = elem.mapToScene(QPointF(0, 0))
+        mostani = (round(hely.x(), 2), round(hely.y(), 2))
+        stabil_mintak = stabil_mintak + 1 if mostani == elozo else 0
+        elozo = mostani
+        if stabil_mintak >= 15:
+            return True
+        time.sleep(0.02)
+    return False
 
 
 def _sugo_probe(engine, cel: QObject) -> QObject:
@@ -272,6 +295,13 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
                 "a rövid próbafilmhez minimális átfedés kell"
             )
             assert film.property("movieUsedPhotoCount") == 2
+            letrehozas = ablak.findChild(QObject, "movieCreateButton")
+            assert _varj(qt_app, lambda: film.property("opened")), (
+                "a Filmkészítő nem fejezte be a megnyílását"
+            )
+            assert _nyugalomba_jut(qt_app, letrehozas), (
+                "a Filmkészítő Létrehozás gombja nem állt meg a helyén"
+            )
 
             kesz = []
             hibak = []
@@ -285,12 +315,14 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             vezerlo.movieFailed.connect(
                 lambda message: (hibak.append(message), hurok.quit())
             )
-            idozito.start(90000)
-            _kattints(ablak, qt_app, ablak.findChild(QObject, "movieCreateButton"))
+            idozito.start(_FILM_VARAKOZAS_MP * 1000)
+            _kattints(ablak, qt_app, letrehozas)
             hurok.exec()
             idozito.stop()
             assert not hibak, f"a személyalbum filmkimenete hibát jelzett: {hibak}"
-            assert kesz, "a Filmkészítő nem jelzett kész kimenetet 180 s alatt"
+            assert kesz, (
+                f"a Filmkészítő nem jelzett kész kimenetet {_FILM_VARAKOZAS_MP} s alatt"
+            )
 
             videofajl = tmp_path / "anna-film.mp4"
             assert videofajl.is_file() and videofajl.stat().st_size > 0

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
+import QtQuick.Window
 
 // Létrehozás menü (#29): képkollázs és mozgófilm a kijelölt képekből.
 // Az ExportDialogs.qml mintája szerint: beállítás-dialógus → fájlválasztó
@@ -214,7 +215,10 @@ Item {
         modal: false
         anchors.centerIn: parent
         width: 700
-        height: 540
+        // A magyar feliratokkal is a teljes Mozgófilm fül férjen el az
+        // előnézet és a vezérlősáv fölött; kisebb főablaknál a ScrollView
+        // maradjon látható, saját görgetősávval.
+        height: Math.min(720, Math.max(0, dialogs.appWindow.height - 24))
         standardButtons: Dialog.NoButton
         property string targetFile: ""
         property string audioFile: ""
@@ -225,6 +229,9 @@ Item {
         property int movieInitialPhotoCount: 0
         property int previewIndex: 0
         property string previewSource: ""
+        property bool previewActualSizeEnabled: false
+        property int previewWindowVisibilityBeforeFullscreen: Window.Windowed
+        property bool previewOwnsFullscreen: false
         property var movieSlides: []
         property var movieSlideSelection: []
         property int movieSlideEditingIndex: -1
@@ -265,6 +272,60 @@ Item {
             * movieInitialPhotoCount)
         readonly property int movieBurstThresholdSeconds: Math.floor(
             movieBurstSlider.value * movieBurstSlider.value * 86400)
+        readonly property real previewSlideDurationSeconds:
+            Math.max(0.5, movieSeconds.value / 10)
+        readonly property real previewDurationSeconds:
+            previewSlideDurationSeconds * movieClipSources.length
+        function formatPreviewTime(seconds) {
+            var total = Math.max(0, Math.floor(seconds))
+            var hours = Math.floor(total / 3600)
+            var minutes = Math.floor(total / 60) % 60
+            var remainingSeconds = total % 60
+            function ketjegyu(value) {
+                return value < 10 ? "0" + value : String(value)
+            }
+            return ketjegyu(hours) + ":" + ketjegyu(minutes)
+                    + ":" + ketjegyu(remainingSeconds)
+        }
+        function togglePreviewPlayback() {
+            if (!movieClipSources.length) {
+                moviePreviewTimer.stop()
+            } else if (moviePreviewTimer.running) {
+                moviePreviewTimer.stop()
+            } else {
+                previewIndex = 0
+                previewSource = movieClipSources[0]
+                moviePreviewTimer.start()
+            }
+        }
+        function seekPreview(seconds) {
+            if (!movieClipSources.length) return
+            previewIndex = Math.min(
+                movieClipSources.length - 1,
+                Math.max(0, Math.floor(seconds / previewSlideDurationSeconds)))
+            previewSource = movieClipSources[previewIndex]
+        }
+        function togglePreviewFullscreen() {
+            var hostWindow = moviePreviewPanel.Window.window
+            if (!hostWindow) return
+            if (previewOwnsFullscreen
+                    && hostWindow.visibility === Window.FullScreen) {
+                hostWindow.visibility = previewWindowVisibilityBeforeFullscreen
+                previewOwnsFullscreen = false
+            } else if (hostWindow.visibility !== Window.FullScreen) {
+                previewWindowVisibilityBeforeFullscreen = hostWindow.visibility
+                hostWindow.visibility = Window.FullScreen
+                previewOwnsFullscreen = true
+            }
+        }
+        function restorePreviewFullscreen() {
+            var hostWindow = moviePreviewPanel.Window.window
+            if (previewOwnsFullscreen && hostWindow
+                    && hostWindow.visibility === Window.FullScreen) {
+                hostWindow.visibility = previewWindowVisibilityBeforeFullscreen
+                previewOwnsFullscreen = false
+            }
+        }
         function openForSelection() {
             // #455: tartott képekkel a tálca a forrás — ilyenkor a
             // rácsban nem is kell kijelölésnek lennie
@@ -512,6 +573,7 @@ Item {
         onClosed: {
             movieDialog.projektbolNyilt = false
             moviePreviewTimer.stop()
+            movieDialog.restorePreviewFullscreen()
         }
         ColumnLayout {
             anchors.fill: parent
@@ -533,6 +595,9 @@ Item {
                 ScrollView {
                     objectName: "movieTabPanelMotion"
                     clip: true
+                    ScrollBar.vertical: ScrollBar {
+                        objectName: "movieMotionScrollBar"
+                    }
                     ColumnLayout {
                         width: moviePages.width
                         spacing: 8
@@ -753,39 +818,6 @@ Item {
                             RadioButton { objectName: "movieAlbumOrder"; text: qsTr("Album Order"); checked: true }
                             RadioButton { id: movieChronologicalOrder; objectName: "movieChronologicalOrder"; text: qsTr("Chronological") }
                         }
-                        RowLayout {
-                            objectName: "moviePreviewPanel"
-                            Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            Image {
-                                id: moviePreviewImage
-                                objectName: "moviePreviewImage"
-                                Layout.preferredWidth: 240
-                                Layout.preferredHeight: 140
-                                fillMode: Image.PreserveAspectFit
-                                cache: false
-                                source: movieDialog.previewSource
-                            }
-                            Button {
-                                objectName: "moviePreviewButton"
-                                text: qsTr("Preview")
-                                checkable: true
-                                checked: moviePreviewTimer.running
-                                onClicked: {
-                                    if (!movieDialog.movieClipSources.length) {
-                                        moviePreviewTimer.stop()
-                                        return
-                                    }
-                                    if (moviePreviewTimer.running) {
-                                        moviePreviewTimer.stop()
-                                    } else {
-                                        movieDialog.previewIndex = 0
-                                        movieDialog.previewSource = movieDialog.movieClipSources[0]
-                                        moviePreviewTimer.start()
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
                 ScrollView {
@@ -908,6 +940,7 @@ Item {
                                 onCurrentIndexChanged: movieDialog.loadTextSlide()
                                 delegate: ItemDelegate {
                                     id: movieSlideDelegate
+                                    objectName: "movieSlideDelegate" + index
                                     width: movieSlideList.width
                                     text: modelData.text
                                     highlighted: movieDialog.movieSlideSelection.indexOf(index) >= 0
@@ -1052,7 +1085,131 @@ Item {
                     }
                 }
             }
+            ColumnLayout {
+                id: moviePreviewPanel
+                objectName: "moviePreviewPanel"
+                Layout.fillWidth: true
+                spacing: 4
+                RowLayout {
+                    Layout.fillWidth: true
+                    Item {
+                        objectName: "moviePreviewViewport"
+                        Layout.preferredWidth: 240
+                        Layout.preferredHeight: 140
+                        clip: true
+                        Image {
+                            id: moviePreviewImage
+                            objectName: "moviePreviewImage"
+                            anchors.centerIn: parent
+                            width: movieDialog.previewActualSizeEnabled
+                                    && sourceSize.width > 0
+                                ? sourceSize.width : parent.width
+                            height: movieDialog.previewActualSizeEnabled
+                                    && sourceSize.height > 0
+                                ? sourceSize.height : parent.height
+                            fillMode: Image.PreserveAspectFit
+                            cache: false
+                            source: movieDialog.previewSource
+                        }
+                    }
+                    Button {
+                        objectName: "moviePreviewButton"
+                        text: qsTr("Preview")
+                        checkable: true
+                        checked: moviePreviewTimer.running
+                        onClicked: movieDialog.togglePreviewPlayback()
+                    }
+                }
+                RowLayout {
+                    objectName: "video_control_bar2/controlbar"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 32
+                    spacing: 6
+                    Item {
+                        objectName: "video_control_bar2/moviecontrolsclip"
+                        Layout.preferredWidth: 34
+                        Layout.preferredHeight: 30
+                        PicasaButton {
+                            objectName: "video_control_bar2/moviecontrols"
+                            anchors.fill: parent
+                            text: moviePreviewTimer.running ? "❚❚" : "▶"
+                            ToolTip.text: moviePreviewTimer.running
+                                    ? qsTr("Pause") : qsTr("Preview")
+                            ToolTip.delay: Theme.tooltipDelay
+                            ToolTip.visible: hovered
+                            onClicked: movieDialog.togglePreviewPlayback()
+                        }
+                    }
+                    RowLayout {
+                        objectName: "video_control_bar2/moviescrubslider_container"
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 30
+                        PicasaSlider {
+                            id: moviePreviewScrubSlider
+                            objectName: "video_control_bar2/scaleslider"
+                            Layout.fillWidth: true
+                            from: 0
+                            to: Math.max(1, movieDialog.previewDurationSeconds)
+                            stepSize: movieDialog.previewSlideDurationSeconds
+                            enabled: movieDialog.movieClipSources.length > 1
+                            Binding on value {
+                                when: !moviePreviewScrubSlider.pressed
+                                value: movieDialog.previewIndex
+                                        * movieDialog.previewSlideDurationSeconds
+                            }
+                            onMoved: movieDialog.seekPreview(value)
+                        }
+                    }
+                    Text {
+                        objectName: "video_control_bar2/time"
+                        Layout.preferredWidth: 136
+                        horizontalAlignment: Text.AlignHCenter
+                        color: Theme.ink
+                        text: movieDialog.formatPreviewTime(
+                                  movieDialog.previewIndex
+                                  * movieDialog.previewSlideDurationSeconds)
+                              + " / " + movieDialog.formatPreviewTime(
+                                  movieDialog.previewDurationSeconds)
+                    }
+                    Text {
+                        text: "🔊"
+                        color: Theme.ink
+                    }
+                    PicasaSlider {
+                        objectName: "video_control_bar2/volumeslider"
+                        Layout.preferredWidth: 70
+                        from: 0
+                        to: 1000
+                        stepSize: 10
+                        value: controller && controller.movieVolume !== undefined
+                            ? controller.movieVolume : 500
+                        onMoved: if (controller && controller.setMovieVolume)
+                                     controller.setMovieVolume(Math.round(value))
+                    }
+                    PicasaButton {
+                        objectName: "video_control_bar2/1to1"
+                        Layout.preferredWidth: 38
+                        text: "1:1"
+                        checkable: true
+                        checked: movieDialog.previewActualSizeEnabled
+                        ToolTip.text: qsTr("Show actual movie size (don't stretch)")
+                        ToolTip.delay: Theme.tooltipDelay
+                        ToolTip.visible: hovered
+                        onClicked: movieDialog.previewActualSizeEnabled = checked
+                    }
+                    PicasaButton {
+                        objectName: "video_control_bar2/fullscreen"
+                        Layout.preferredWidth: 32
+                        text: "⛶"
+                        ToolTip.text: qsTr("Play full screen")
+                        ToolTip.delay: Theme.tooltipDelay
+                        ToolTip.visible: hovered
+                        onClicked: movieDialog.togglePreviewFullscreen()
+                    }
+                }
+            }
             RowLayout {
+                objectName: "movieFooter"
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
                 Button { objectName: "movieCancelButton"; text: qsTr("Close"); onClicked: movieDialog.close() }
