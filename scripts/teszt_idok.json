@@ -23,6 +23,7 @@
  "tests/app/qml_functional/test_alsosav_horgonyzas_pontossag_3602.py": 3.0,
  "tests/app/qml_functional/test_arc_nagyitas_ui_2187.py": 6.78,
  "tests/app/qml_functional/test_arc_szuro_gomb_1830.py": 1.41,
+ "tests/app/qml_functional/test_arcfilm_fejlec_4212.py": 11.63,
  "tests/app/qml_functional/test_arckereses_bekotes_1473.py": 8.37,
  "tests/app/qml_functional/test_arcmodell_letoltes_1496.py": 7.19,
  "tests/app/qml_functional/test_athelyezes_uj_mappaba_1614.py": 10.91,

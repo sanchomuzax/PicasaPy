@@ -38,15 +38,20 @@ Ugyanez a hibaosztály a paraméterek száma: mérve `grain2=1;` lefut,
 aszimmetrikus:
 
 - a **fölösleges** paraméter bizonyítottan megöli a bejegyzést;
-- a **hiányzó** paraméter viszont nem: `unsharp=1` mérten azonos az
-  `unsharp2=1,0.600000`-val (`edit_controller.py` `_CATALOGUE` megjegyzése),
-  azaz az elhagyott paraméter az alapértékére esik vissza;
+- a vezérlőértékek **teljes elhagyása** érvényes: `unsharp=1` mérten azonos
+  az `unsharp2=1,0.600000`-val (`edit_controller.py` `_CATALOGUE`
+  megjegyzése), azaz a flag-only alak az alapértékeket használja;
 - a **záró üres mező** (`grain=1,;`) szintén tolerált.
 
 Ezért a `MAX_PARAM_COUNTS` **felső korlát**, nem elvárt darabszám — pontosan
 azt tiltja, amit a mérés néma elejtésként kimutatott. Egy szigorúbb
 (egyenlőséget követelő) szabály olyan láncokat is hibának minősítene,
-amelyekről tudjuk, hogy az eredetiben lefutnak.
+amelyekről tudjuk, hogy az eredetiben lefutnak. A flag-only és a részleges
+vezérlősor közötti különbséget a #4014 natív mérése tisztázta: `=1` esetén
+alapértékekkel fut a szűrő, de ha már érkezik legalább egy vezérlőérték, az
+olvasó az összes kötelező mezőt kéri. Ezért a `parse_filters_prefix` olvasási
+útja a nem üres vezérlősornál pontos aritást vizsgál; ez nem szigorítja az
+itt leírt, íráskori felső korlátot.
 """
 
 from __future__ import annotations

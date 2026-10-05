@@ -7618,7 +7618,7 @@ Ez a második, futtatásos út megerősíti a statikus vezérlési folyamatot a
 Vignette-en és két másik, eltérő számú vezérlőjű effekten. Nem igazolja az
 összes speciális, history- vagy timeline-tag univerzális viselkedését.
 
-### A #3229/03–04 képpontmérése és a jelenlegi PicasaPy-út
+### A #3229/03–04 képpontmérése a #4233 előtt és után
 
 A `meroadat.tar`-ból a szükséges `.picasa.ini`, forrás JPEG-ek és Picasa-export
 JPEG-ek kerültek ideiglenesen a `.bt` alá. A PicasaPy-exportot is a rendes
@@ -7627,21 +7627,12 @@ JPEG-ek kerültek ideiglenesen a `.bt` alá. A PicasaPy-exportot is a rendes
 keretét levágtam, így a forráshoz és az eredeti exporthoz csak a belső
 képterületet hasonlítottam. A 04 forrás-szekciójában nincs `crop=`.
 
-| Mérési állítás | Eredmény |
-|---|---:|
-| 03 Picasa-export belső képterületének MAE-je a forráshoz | 2.263671527777778 |
-| 03 PicasaPy q100-export belső képterületének MAE-je a Picasa-exporthoz | 23.367140625 |
-| 04 Picasa-export MAE-je a forráshoz | 1.5663128472222223 |
-| 04 PicasaPy q100-export MAE-je a Picasa-exporthoz | 27.69058454861111 |
-| 04 bal felső 20×20 átlagos fényessége: forrás / Picasa / PicasaPy | 164.6691666667 / 164.6433333333 / 1.6233333333 |
-
-A helyi PicasaPy `parse_filters` tetszőleges elemszámú paramétert tárol; a
-Vignette renderelője hiányzó csúszkára `35`, `1.4`, `0`, hiányzó színre fekete
-alapértéket ad (`src/picasapy/ini/filters.py:64–74`,
-`src/picasapy/render/chain_glimmer_handlers.py:27–41,58–65`). Emiatt a
-3229-es hárommezős, flag utáni Vignette-et rendereli, míg a Picasa elutasítja.
-Az eltérés a mért két exportban látható. A PicasaPy jelenlegi viselkedése tehát
-nem egyezik.
+| Mérési állítás | #4233 előtt | #4233 után |
+|---|---:|---:|
+| 03 PicasaPy q100-export belső képterületének MAE-je a Picasa-exporthoz | 23.367140625 | **2.2783005208** |
+| 03 PicasaPy q100-export teljes képének MAE-je a Picasa-exporthoz | — | **2.1536122828** |
+| 04 PicasaPy q100-export MAE-je a Picasa-exporthoz | 27.6905845486 | **1.5663128472** |
+| 04 bal felső 20×20 átlagos fényessége: forrás / Picasa / PicasaPy | 164.6691666667 / 164.6433333333 / 1.6233333333 | **164.6691666667 / 164.6433333333 / 164.6691666667** |
 
 ### A korpusz ellenőrzése
 

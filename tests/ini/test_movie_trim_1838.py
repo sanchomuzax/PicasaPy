@@ -117,6 +117,16 @@ class TestALancbolOlvasas:
 
 
 class TestALancbaIras:
+    def test_a_reszleges_effekt_utani_tagot_a_vagas_valtozatlanul_megorzi(self):
+        lanc = "sepia=1;Vignette=1,35.000000,1.400000,0.000000;bw=1;"
+
+        eredmeny = filters_with_trim(lanc, MovieTrim(start=1))
+
+        assert eredmeny == (
+            "sepia=1;Vignette=1,35.000000,1.400000,0.000000;"
+            "bw=1;moviestart=1;"
+        )
+
     def test_a_MEGLEVO_tokent_a_helyen_irja_at(self):
         """A sorrend nem rendeződhet át — a fájlt nem mi írtuk."""
         eredmeny = filters_with_trim(

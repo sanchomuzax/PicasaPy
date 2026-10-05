@@ -23,13 +23,15 @@ Két serialize-út van (#695):
 
 from __future__ import annotations
 
-from .filter_registry import canonical_filter_name, is_exact_filter_name
-
 from dataclasses import dataclass
 
 from picasapy.ini.filter_registry import (
+    MAX_PARAM_COUNTS,
     FilterWriteError,
+    canonical_filter_name,
     canonicalize_filter_name,
+    effective_param_count,
+    is_exact_filter_name,
     max_param_count,
 )
 
@@ -86,6 +88,12 @@ def parse_filters_prefix(value: str) -> tuple[FilterOp, ...]:
       FORRÁST adja vissza, a `bw` nem fut le;
     * az `=` nélküli tagra **nem dobunk kivételt**. Nálunk ettől a kép
       EGYÁLTALÁN NEM exportálódott — nem romlott kép, hanem hiányzó kép.
+    * a leíró-regiszter ismert vezérlőszámú effektjeinél a puszta `=1`
+      engedélyező alak érvényes, de ha a tag már ad meg vezérlőértéket, a
+      mezők számának pontosan egyeznie kell a leíróéval (#4014/#4233).
+      Részleges vagy fölös sor után az olvasó elvágja a láncot. A külön
+      history-/régiótagek, illetve a `CTimeFilter`-rel kezelt
+      `moviestart`/`movieend` idővonaljelölők nem esnek e szabály alá.
 
     A szigorú `parse_filters` megmarad: az ÍRÓ ágnak (szerkesztő, vágólap,
     napló) tudnia kell a hibáról, mert ott a hibás lánc a mi hibánk. Ez a
@@ -106,7 +114,26 @@ def parse_filters_prefix(value: str) -> tuple[FilterOp, ...]:
         # azt a renderelő hagyja ki, a round-trip pedig megőrzi.
         if canonical_filter_name(name) is not None and not is_exact_filter_name(name):
             break
-        ops.append(FilterOp(name, tuple(rest.split(",")) if rest else ()))
+        params = tuple(rest.split(",")) if rest else ()
+        # #4233: a Picasa csak a teljes vezérlősort vagy a flag-only alakot
+        # fogadja el. Ha a tag már tartalmaz értékeket, hiányzó vagy fölös
+        # vezérlőmező az első hibás tagként elvágja a hátralévő láncot.
+        # A `max_param_count` itt a regiszterből ismert teljes aritást adja;
+        # a writer továbbra is külön, megengedőbb szabályt használ.
+        # A filterdesc a movie tagekhez nem csúszkát, hanem 0 paramétert
+        # sorol, de a CTimeFilter ezekben olvassa a 64 bites időértéket.
+        # Ezek nem CGenericFilter-effektek, ezért saját olvasóáguk marad.
+        is_timeline_marker = name in {"moviestart", "movieend"}
+        expected_count = (
+            max_param_count(name)
+            if name in MAX_PARAM_COUNTS and not is_timeline_marker
+            else None
+        )
+        if expected_count is not None:
+            supplied_count = effective_param_count(params)
+            if supplied_count and supplied_count != expected_count:
+                break
+        ops.append(FilterOp(name, params))
     return tuple(ops)
 
 
