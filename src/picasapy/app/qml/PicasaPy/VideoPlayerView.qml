@@ -129,7 +129,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: 56
+        height: 72
         color: "#2b2b2b"
 
         ColumnLayout {
@@ -140,7 +140,7 @@ Item {
 
             VideoTrimSlider {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 18
+                Layout.preferredHeight: 34
                 durationMs: media.duration
                 startMs: player.trimStartMs
                 endMs: player.trimEndMs

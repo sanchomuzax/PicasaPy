@@ -12,6 +12,10 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
+import subprocess
+import sys
+import tempfile
 import threading
 from pathlib import Path
 
@@ -40,7 +44,6 @@ _JPEG_QUALITY = 85
 
 # #673: a videó-megnyitás háttere KÉNYSZERÍTETTEN FFMPEG.
 #
-# A `ThumbnailProvider` négy pool-szálról hívja a `_decode_video_frame`-et.
 # Háttér-megjelölés nélkül az OpenCV a saját prioritási sorát követi
 # (FFMPEG=1900, majd GSTREAMER=1800): ha a fájlt az FFMPEG nem tudja
 # megnyitni — sérült vagy csonka videó —, VISSZAESIK a GStreamerre, az
@@ -52,13 +55,11 @@ _JPEG_QUALITY = 85
 #   * globális zárral sorosítva:                  5 összeomlás / 15
 #   * cv2.CAP_FFMPEG-re kényszerítve:             0 összeomlás / 15
 #
-# A ZÁR TEHÁT NEM JAVÍTÁS: a GStreamer a saját (Python elől láthatatlan)
+# A zár önmagában nem javítás: a GStreamer a saját (Python elől láthatatlan)
 # csővezeték-szálain omlik össze, azok pedig túlélik a `release()`-t, így
-# a Python-szintű sorosítás nem éri el őket — a faulthandler-kimeneten
-# három szál a záron várt, mégis szegmentálási hiba lett. Ráadásul a zár
-# az ÉP videókat is lassítja (24 × 640×480-as klip, 4 szál, medián:
-# 0,196 s → 0,233 s, +19% — a `_decode_video_frame` teljes törzse a záron
-# belül van, tehát a négyszálas párhuzamosság videóknál teljesen elveszne).
+# a Python-szintű sorosítás nem éri el őket. A #4273 ezért a dekódolót külön,
+# időkorlátos folyamatban futtatja; a FFMPEG kényszerítése a GStreamerre
+# visszaesést is kizárja.
 #
 # Amit a kényszerítéssel VESZTÜNK: ha egy videót az FFMPEG nem nyit meg, a
 # GStreamer már nem kap esélyt — az ilyen fájl bélyegkép nélkül marad. Ez a
@@ -67,8 +68,8 @@ _JPEG_QUALITY = 85
 # konténerét (mp4/mov/avi/mkv/wmv/3gp/mts…) az avformat kezeli.
 #
 # Ha a telepített OpenCV FFMPEG NÉLKÜL épült, nincs mire kényszeríteni —
-# ilyenkor marad az automatikus választás, de a zárral (5/15 rosszabb, mint
-# a 0/15, viszont lényegesen jobb, mint a 12/15).
+# ilyenkor marad az automatikus választás, de a zárral. A külön folyamat
+# ilyenkor is megvédi a főfolyamatot az összeomlástól és a beragadástól.
 #
 # #1611: FÜGGVÉNY, nem modulszintű konstans — és nem csak importálja a
 # cv2-t, hanem MEG IS HÍVJA. Modulszinten ez a sor egymaga behozná az
@@ -86,6 +87,133 @@ def _ffmpeg_elerheto() -> bool:
             cv2.CAP_FFMPEG in cv2.videoio_registry.getStreamBackends()
         )
     return _ffmpeg_allapot
+
+
+# #4273: egy hibás vagy beragadó natív videódekóder ne tarthassa fel a
+# bélyegkép-rács egyik munkaszálát korlátlan ideig. A határidő lejártakor a
+# subprocess leállítja a dekódoló alfolyamatot; a szolgáltató a már meglévő
+# hibás-kép útján placeholdert és jelzést ad a felületnek.
+_VIDEO_DECODE_TIMEOUT_S = 5.0
+
+
+def _video_decode_worker_command(source: Path, output: Path) -> list[str]:
+    """A videóképkockát dekódoló alfolyamat parancsa.
+
+    A PyInstalleres windowsos program a saját belépőjén át indítja a rejtett
+    worker-módot; normál Python-telepítésnél a modult indítjuk.
+    """
+    if getattr(sys, "frozen", False):
+        return [
+            sys.executable,
+            "--picasapy-video-decode",
+            str(source),
+            str(output),
+        ]
+    return [
+        sys.executable,
+        "-m",
+        "picasapy.thumbs.video_decode_worker",
+        str(source),
+        str(output),
+    ]
+
+
+def _decode_video_frame_isolated(
+    source: Path, *, timeout_s: float | None = None
+):
+    """Az első képkockát elszigetelt dekóderből kéri le, határidővel.
+
+    A natív OpenCV-hívás gyermekfolyamatban fut. A határidő lejártakor a
+    gyermek leáll, így a beragadt dekóder és a natív összeomlás sem ragadja
+    magával a főfolyamatot vagy a rácsot. `timeout_s` csak célzott tesztnek
+    adható meg; a termékút a rögzített `_VIDEO_DECODE_TIMEOUT_S` értéket
+    használja.
+    """
+    hatarido = _VIDEO_DECODE_TIMEOUT_S if timeout_s is None else timeout_s
+    try:
+        with tempfile.TemporaryDirectory(prefix="picasapy-video-decode-") as tmp:
+            kepfajl = Path(tmp) / "frame.png"
+            worker_env = None
+            if not getattr(sys, "frozen", False):
+                worker_env = os.environ.copy()
+                package_root = str(Path(__file__).resolve().parents[2])
+                pythonpath = worker_env.get("PYTHONPATH")
+                worker_env["PYTHONPATH"] = os.pathsep.join(
+                    [package_root, *([pythonpath] if pythonpath else [])]
+                )
+            eredmeny = subprocess.run(
+                _video_decode_worker_command(source, kepfajl),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                timeout=hatarido,
+                check=False,
+                env=worker_env,
+            )
+            if eredmeny.returncode != 0:
+                reszlet = eredmeny.stderr.decode(
+                    "utf-8", errors="replace"
+                ).strip()
+                _log.warning(
+                    "a videóból nem készült képkocka, bélyegkép nélkül "
+                    "marad: %s%s",
+                    source,
+                    f" ({reszlet[-1000:]})" if reszlet else "",
+                )
+                return None
+            try:
+                payload = kepfajl.read_bytes()
+            except OSError:
+                _log.warning(
+                    "a videódekóder nem adta vissza a képkockát, "
+                    "bélyegkép nélkül marad: %s",
+                    source,
+                    exc_info=True,
+                )
+                return None
+    except subprocess.TimeoutExpired:
+        _log.warning(
+            "a videó képkockájának dekódolása túllépte a %.1f másodperces "
+            "időkorlátot, bélyegkép nélkül marad: %s",
+            hatarido,
+            source,
+        )
+        return None
+    except OSError:
+        _log.warning(
+            "a videó dekódoló alfolyamata nem indítható el, bélyegkép "
+            "nélkül marad: %s",
+            source,
+            exc_info=True,
+        )
+        return None
+
+    if not payload:
+        _log.warning(
+            "a videódekóder üres képkockát adott vissza, bélyegkép nélkül "
+            "marad: %s",
+            source,
+        )
+        return None
+    try:
+        frame = cv2.imdecode(
+            np.frombuffer(payload, dtype=np.uint8), cv2.IMREAD_COLOR
+        )
+    except cv2.error:
+        _log.warning(
+            "a videó alfolyamatának képkockája nem olvasható, bélyegkép "
+            "nélkül marad: %s",
+            source,
+            exc_info=True,
+        )
+        return None
+    if frame is None:
+        _log.warning(
+            "a videó alfolyamata érvénytelen képkockát adott vissza, "
+            "bélyegkép nélkül marad: %s",
+            source,
+        )
+    return frame
+
 
 # Csak az FFMPEG-telen tartaléknál használt sorosító zár (ld. fent).
 _VIDEO_FALLBACK_LOCK = threading.Lock()
@@ -454,7 +582,7 @@ class ThumbnailCache:
         `target`: a redukált beolvasás célmérete (a szerkesztő-bázis
         nagyobb, mint a sima thumbnailé). Alapból a cache saját mérete."""
         if source.suffix.lower() in VIDEO_EXTENSIONS:
-            return _decode_video_frame(source)
+            return _decode_video_frame_isolated(source)
         if nyers_utvonal(source):
             # #528: a nyers (RAW) fájlnak nincs `cv2` dekódere — a LibRaw-ra
             # kell mennie. A célméretet átadjuk: ha a fájlban van beágyazott
