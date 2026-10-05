@@ -254,22 +254,25 @@ Mindhárom crop-variáns és a 3 valódi lánc (chainB/D/E) kimeneti mérete
 pixelre egyezik e szabállyal. Láncban a crop koordináták mindig az EREDETI
 képméretre vonatkoznak (tilt után is).
 
-### `sepia` — mért csatornagörbe
+### `sepia` — korábbi mérési közelítés, a natív képlet felülírta (#617, #619)
 
-Szürke bemenetre (g) nem-lineáris, csatornánként eltérő görbe (a teljes
-LUT mentve; közelítő lineáris szakasz):
+Az alábbi csatornagörbék a korai, #317-es mérési modell közelítő összefoglalói;
+nem a jelenlegi implementáció képletei:
 
-- sepia: R≈0,82g+58 · G≈0,86g+35 · B≈0,90g+15 (sötétben széttart,
-  fehér felé összezár) — implementáció: mért 3-csatornás LUT.
+- R≈0,82g+58 · G≈0,86g+35 · B≈0,90g+15 (sötétben széttart, fehér felé
+  összezár). A #617/#619 későbbi natív visszafejtése az egész aritmetikájú
+  szürkeárnyalat → halványítás → overlay algoritmust adta; ezt használja az
+  `apply_sepia`. A #4256 Colab-golden 16 foltján a legnagyobb csatornaátlag-
+  eltérés 1 szint.
 
 ### `warm` — beégetett tábla, PONTOS (#611)
 
-A `warm` NEM mérés — a natív `0x0090c040` munkafüggvény beégetett,
+A `warm` modellje a natív `0x0090c040` munkafüggvény beégetett,
 256×3 elemű csatornánkénti táblájából (`0x00d33b70`, PE-fájloffszet
 `0x933b70`) a bináris visszafejtésével kinyert, pixelpontos leképezés
-(ld. `docs/specs/picasa-native-filter-workers.md` 2.8. pont). Szürke
-bemenetre (g) a durva közelítése R≈0,89g+19 · G≈0,88g+1 · B≈0,93g−16 volt —
-ezt a #611 óta a pontos tábla váltotta fel.
+(ld. `docs/specs/picasa-native-filter-workers.md` 2.8. pont). A korábbi durva
+szürke-közelítést a #611 óta a pontos tábla váltotta fel. A #4256 Colab-golden
+16 foltján a legnagyobb csatornaátlag-eltérés 1 szint.
 
 ### `grain2` — sztochasztikus, pixelhűen NEM reprodukálható
 
@@ -633,7 +636,8 @@ Picasa-hű lenne.
 
 | minőség | mit jelent | effektek |
 |---|---|---|
-| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat` |
+| **MEGFEJTVE ÉS Picasa-mintán igazolt (#4256)** | a natív algoritmus vagy tábla ismert, és az eredeti Picasa 3.9 q93/4:4:4 exporton mind a 16 folt középső 40×40-es átlagában legfeljebb ±2 szint az eltérés (mért maximum: `bw` 0, `sepia` 1, `warm` 1) | `bw`, `sepia`, `warm` |
+| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sat` |
 | **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9); az `ansel` (5,6) a #3840 óta 0,038 |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL ÉS VÉGIGMÉRVE (#878)** | a `filterdesc.xml` receptje mellé a natív `glimmer::EdgeDetectionBImageOperation` (`0x00bbca60`) TELJES belső lépéssora is megvan, és a `TintImageOperation` pixelmatematikája golden párból MÉRVE (fényesség-tartó színezés); a #685 mérőszettjén ΔE 113,89 → **4,72**, SSIM −0,002 → **0,866** | `Neon` |
@@ -644,7 +648,7 @@ Picasa-hű lenne.
 | **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | — |
 | **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL, EGY RÉSZLET NYITVA (#569, #570)** | a csővezeték (lépések, paraméter-sorrend, képletek, keverési módok) egzakt; egyedül a mintavételezés perem-/interpolációs szabálya vár golden-összevetésre | `Comicize`, `FocalZoom`, `PicnikFocalPixelate` |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#3927, #3928, #3936)** | a callback (`0x008f88e0`) a `grain` és a `grain2` esetén EGYFORMÁN, konstans `a = 0,5`-tel hívja ugyanazt a munkafüggvényt (`0x0090a2e0`) — nem két külön modell, hanem egyetlen, bináris­ból kiolvasott nyolclépéses algoritmus (helyi MT19937-zaj, háromszoros kétirányú simítás, középtónus-súlyozás); a `grain-kit`-en (8 mag átlaga) ΔE 2,674 | `grain` / `grain2` |
-| **PONTOS** | matematikailag egyértelmű, mérés sem kell, vagy a natív kódból kinyert beégetett tábla | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át), `warm` (256×3 beégetett tábla a `0x0090c040`/`0x00d33b70`-ből kinyerve, #611 — ld. `docs/specs/picasa-native-filter-workers.md` 2.8) |
+| **PONTOS** | matematikailag egyértelmű, mérés sem kell, vagy a natív kódból kinyert beégetett tábla | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#565, #317, #3453)** | a natív közös sugaras maszk (`0x0090b050` + `0x0090aeb0`, élesség 0, sugár `min(W,H)/2·(Feather+1)`); a 684-es golden három Feather-állásán ΔE 0,70 / 0,73 / 0,74 | `radtint` (radiális **szorzó**-tint a `render/radial_mask.py` maszkjával) |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#623, #3858, #3859)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve), a súly `csonk(128·(x+y))` float32 akkumulátorokból — nincs benne feltételezett skalár; a 684-es golden `a = b = 0,5`-ön ΔE 0,187 / 0,184 / 0,384 | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`), `dir_sharp` (`0x0090d600`, horgony `K = csonk(128·(\|a\|+\|b\|))`) |
