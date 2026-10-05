@@ -116,8 +116,10 @@ class TestAValasztoAVezerlosavban:
         assert "captionModePicked" in blokk
 
     def test_a_gazda_a_MEGORZOTT_erteket_koti_be(self):
-        assert "transitionKind: controller ? controller.slideshowTransition" in _MAIN
-        assert "captionMode: controller ? controller.slideshowCaptionMode" in _MAIN
+        assert "slideshow.screensaverMode ? controller.screensaverEffect" in _MAIN
+        assert ": controller.slideshowTransition" in _MAIN
+        assert "controller.screensaverShowCaptions ? \"caption\" : \"none\"" in _MAIN
+        assert ": controller.slideshowCaptionMode" in _MAIN
 
 
 class TestAzAtmenetMotorja:

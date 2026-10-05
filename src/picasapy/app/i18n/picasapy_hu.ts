@@ -4878,6 +4878,16 @@ Biztosan az összes (%d) elemre alkalmazni szeretné ezt a címkét?</translatio
         <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
         <translation>A kép elkészült itt: %1 — az asztali háttérképet viszont nem sikerült magától beállítani.</translation>
     </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>The selected screensaver sources contain no available pictures.</source>
+        <translation>A kiválasztott képernyővédő-forrásokban nincs elérhető kép.</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Added %1 pictures to Screensaver.</source>
+        <translation>%1 kép hozzáadva a képernyővédőhöz.</translation>
+    </message>
 
     <message>
         <source>Cancelled writing face tags (%1 file(s) written).</source>
@@ -7203,6 +7213,79 @@ Biztosan visszavonja a műveletet?</translation>
         <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="52"/>
         <source>Select a picture to see its properties.</source>
         <translation>Jelölj ki egy képet a tulajdonságaihoz.</translation>
+    </message>
+</context>
+<context>
+    <name>ScreensaverDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Configure Screensaver...</source>
+        <translation>Képernyővédő konfigurálása…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Display photos from:</source>
+        <translation>Képek megjelenítése innen:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>No folders or albums contain pictures.</source>
+        <translation>Nincs képet tartalmazó mappa vagy album.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Selected Pictures</source>
+        <translation>Kijelölt képek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Visual effect:</source>
+        <translation>Vizuális effektus:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Cut</source>
+        <translation>Kivágás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Dissolve</source>
+        <translation>Szétoszlás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Dissolve through black</source>
+        <translation>Szétoszlás feketén át</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Dissolve through white</source>
+        <translation>Szétoszlás fehéren át</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Pan and Zoom</source>
+        <translation>Pásztázás és nagyítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Change pictures every:</source>
+        <translation>Képek váltása:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>%1 seconds</source>
+        <translation>%1 másodperc</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Show captions</source>
+        <translation>Feliratok megjelenítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ScreensaverDialog.qml"/>
+        <source>Preview</source>
+        <translation>Előnézet</translation>
     </message>
 </context>
 <context>

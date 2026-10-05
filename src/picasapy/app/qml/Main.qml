@@ -1377,10 +1377,26 @@ ApplicationWindow {
         if (!slideshow.visible)   // nincs vetíthető fotó — állítsuk vissza
             window.exitSlideshow()
     }
+    function startScreensaverPreview() {
+        if (!controller || controller.prepareScreensaverPreview() <= 0) {
+            errorBanner.notice = false
+            errorBannerText.text = qsTr(
+                "The selected screensaver sources contain no available pictures.")
+            return
+        }
+        window.visibilityBeforeSlideshow = window.visibility
+        window.visibility = Window.FullScreen
+        slideshow.startScreensaver()
+        if (!slideshow.visible)
+            window.exitSlideshow()
+    }
     function exitSlideshow() {
+        var wasScreensaver = slideshow.screensaverMode
         window.visibility =
             window.visibilityBeforeSlideshow === Window.FullScreen
                 ? Window.Windowed : window.visibilityBeforeSlideshow
+        if (wasScreensaver)
+            return
         if (slideshow.currentIndex >= 0) {
             if (window.viewerOpen) {
                 photoViewer.show(slideshow.currentIndex)
@@ -1509,6 +1525,16 @@ ApplicationWindow {
         }
         onAboutRequested: aboutDialog.open()
         onConfigureButtonsRequested: configureButtonsDialog.open()
+        onConfigureScreensaverRequested: screensaverDialog.open()
+        onAddToScreensaverRequested: {
+            var added = controller
+                ? controller.addScreensaverPhotos(window.selectedPaths()) : 0
+            if (added > 0) {
+                errorBanner.notice = true
+                errorBannerText.text = qsTr(
+                    "Added %1 pictures to Screensaver.").arg(added)
+            }
+        }
         onThumbSizePreset: function(size) { window.thumbSize = size }
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
@@ -2066,6 +2092,17 @@ ApplicationWindow {
             FaceScanDialog { faceScan: window._faceScanController }
         }
     }
+    DeferredDialog {
+        id: screensaverDialog
+        objectName: "screensaverDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ScreensaverDialog {
+                saverController: controller
+                onPreviewRequested: window.startScreensaverPreview()
+            }
+        }
+    }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
     // gombjából (discoveryController.dialogRequested) vagy induláskori
     // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
@@ -2228,18 +2265,27 @@ ApplicationWindow {
         anchors.fill: parent
         z: 100
         // #305: null-őr
-        photosModel: controller ? controller.photos : null
+        photosModel: !controller ? null
+            : slideshow.screensaverMode ? controller.screensaverPhotos
+            : controller.photos
         // #1640: a megjelenítési mód a vetített képre is hat — a kötés innen
         // adja át, hogy a dia URL-je módváltáskor újraértékelődjön
         displayMode: controller ? controller.displayMode : ""
         //: #433: a vetítés-beállítások MEGŐRZÖTTEK — a választó a
         //: vezérlőbe ír, a kötés innen olvassa vissza.
-        transitionKind: controller ? controller.slideshowTransition : "dissolve"
+        transitionKind: !controller ? "dissolve"
+            : slideshow.screensaverMode ? controller.screensaverEffect
+            : controller.slideshowTransition
         transitionMs: controller ? controller.slideshowTransitionMs : 700
-        captionMode: controller ? controller.slideshowCaptionMode : "caption"
+        captionMode: !controller ? "caption"
+            : slideshow.screensaverMode
+                ? (controller.screensaverShowCaptions ? "caption" : "none")
+                : controller.slideshowCaptionMode
         //: #2992: a diaidő (`SlideshowEffectTime`) — a sáv ± gombjai a
         //: vezérlőbe írnak, a kötés innen olvassa vissza.
-        seconds: controller ? controller.slideshowSeconds : 3
+        seconds: !controller ? 3
+            : slideshow.screensaverMode ? controller.screensaverSeconds
+            : controller.slideshowSeconds
         onTransitionPicked: function (kulcs) {
             controller.setSlideshowTransition(kulcs)
         }

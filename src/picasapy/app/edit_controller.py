@@ -42,6 +42,7 @@ from picasapy.ini import (
     update_document,
 )
 from picasapy.ini.rect64 import Rect64, encode_rect64
+from picasapy.ini.redeye import EyeCircle64
 from picasapy.ini.retouch import RetouchPatch
 
 from .paint_mask_controller import PaintMaskMixin
@@ -483,14 +484,14 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._retouch_target: tuple[float, float] | None = None
         self._retouch_patch_undo: list[tuple[RetouchPatch, ...]] = []
         self._retouch_patch_redo: list[tuple[RetouchPatch, ...]] = []
-        # vörösszem (#445): a Retusáláséval azonos szerkezetű, MÉG NEM mentett
-        # puffer — de itt az eszköz megnyitása önmagában is hatásos, mert az
-        # AUTOMATIKA azonnal lefut az egész képen (a súgó szerint: „Picasa
-        # automatically detects and fixes red eye"), a puffer pedig csak a
-        # KÉZZEL pótolt („any red eye that Picasa may have missed") szemeket
-        # tartalmazza.
+        # vörösszem (#445/#4261): a Retusáláséval azonos szerkezetű, MÉG NEM
+        # mentett puffer. Az Auto az app-oldali YuNet-köröket normalizálva
+        # tárolja az előnézeti FilterOp-ban; modell nélkül külön teljes képes
+        # tartalékjelölést ad. A régiópuffer a kézzel pótolt szemeké.
         self._redeye_regions: tuple[Rect64, ...] = ()
         self._redeye_region_undo: list[tuple[Rect64, ...]] = []
+        self._redeye_eye_circles: tuple[tuple[float, float, float], ...] = ()
+        self._redeye_full_image_fallback = False
         # az automatika utolsó futásának találat-száma (-1: még nem futott)
         self._redeye_found = -1
         # #448: a vágás-javaslatokhoz kért képarány (None = a forráskép
@@ -1162,6 +1163,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._retouch_patch_redo = []
         self._redeye_regions = ()
         self._redeye_region_undo = []
+        self._redeye_eye_circles = ()
+        self._redeye_full_image_fallback = False
         self._redeye_found = -1
         # #448: a vágás-javaslatokhoz kért képarány (None = a
         # forráskép arányát tartjuk)
@@ -1255,6 +1258,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._retouch_patch_redo = []
         self._redeye_regions = ()
         self._redeye_region_undo = []
+        self._redeye_eye_circles = ()
+        self._redeye_full_image_fallback = False
         self._redeye_found = -1
         self._crop_aspect = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
@@ -1390,6 +1395,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._retouch_patch_redo = []
         self._redeye_regions = ()
         self._redeye_region_undo = []
+        self._redeye_eye_circles = ()
+        self._redeye_full_image_fallback = False
         self._redeye_found = -1
 
     @Slot(str)
@@ -1713,8 +1720,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         return self._session.set_retouch_patches(self._retouch_patches)
 
     # -- vörösszem (#445): a súgószöveg szerint az eszköz AUTOMATIKUS ÉS
-    # KÉZI — a megnyitáskor az automatika azonnal lefut az egész képen, a
-    # felhasználó pedig utólag téglalapot húz a kihagyott szemek köré
+    # KÉZI — megnyitáskor az automatika a YuNet szemkörein fut (modell nélkül
+    # a teljes képen), a felhasználó pedig utólag téglalapot húz a kihagyott szemek köré
     # („You can also draw a square around any red eye that Picasa may have
     # missed"). A Vágás/Retusálás mintáját követő enter/exit + Alkalmaz/
     # Mégse eszköz; a puffer csak az élő előnézetet érinti az Alkalmazásig.
@@ -1755,14 +1762,16 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     def runRedeyeAuto(self) -> None:
         """„Auto": az automatikus felismerés (újra)futtatása.
 
-        A javítást magát a render-lánc végzi (a `redeye` réteg mindig az
-        egész képen dolgozik) — ez a hívás a VISSZAJELZÉSHEZ számolja meg a
-        talált foltokat, a `redeye` réteg NÉLKÜLI láncon, és frissíti az
-        előnézetet. Újrafuttatható (a jegy szerint az „Auto" gomb az)."""
+        Az app-oldali felismerő visszaadja a szemköröket és az azokon belüli
+        találatszámot. A körök az előnézeti FilterOp-paraméterként jutnak a
+        rendererhez; hiányzó modellnél a régi teljes képes út kerül jelölésre.
+        """
         self._require_active()
-        self._redeye_found = self._provider.redeye_spot_count(
-            self._kulcs, self._image_path, self._session.clear_redeye().ops
+        self._redeye_found, eye_circles = self._provider.redeye_auto_result(
+            self._kulcs, self._image_path, self._session.redeye_detection_ops()
         )
+        self._redeye_eye_circles = eye_circles or ()
+        self._redeye_full_image_fallback = eye_circles is None
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
@@ -1784,6 +1793,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._require_active()
         self._redeye_regions = ()
         self._redeye_region_undo = []
+        self._redeye_eye_circles = ()
+        self._redeye_full_image_fallback = False
         self._redeye_found = -1
         self._register_preview()
         self._bump_revision()
@@ -1884,22 +1895,28 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Slot()
     def applyRedeye(self) -> None:
-        """Alkalmaz: a vörösszem-réteg mentése a láncba (undo + ini-írás).
-
-        Kézi régió nélkül is érvényes művelet — ilyenkor a bejegyzés bájtra a
-        valódi Picasa `redeye=1` alakja, azaz csak az automatika."""
+        """Alkalmaz: az automatikus és kézi vörösszem-területek mentése."""
         self._require_active()
         self._push_undo("redeye")
-        self._session = self._session.set_redeye_regions(self._redeye_regions)
+        self._session = self._session_with_redeye_pending()
         self._redeye_regions = ()
         self._redeye_region_undo = []
+        self._redeye_eye_circles = ()
+        self._redeye_full_image_fallback = False
         self._redeye_found = -1
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
 
     def _session_with_redeye_pending(self) -> EditSession:
-        return self._session.set_redeye_regions(self._redeye_regions)
+        return self._session.set_redeye_regions(
+            self._redeye_regions,
+            eye_circles=tuple(
+                EyeCircle64(x, y, radius)
+                for x, y, radius in self._redeye_eye_circles
+            ),
+            full_image_fallback=self._redeye_full_image_fallback,
+        )
 
     # -- szöveg-overlay (#148): a `text=`/`textactive=` külön ini-kulcs (NEM
     # a filters= lánc része), ezért a piszkozat/pozíció ide, az

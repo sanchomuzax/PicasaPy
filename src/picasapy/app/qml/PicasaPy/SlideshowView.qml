@@ -28,6 +28,8 @@ Rectangle {
     //: igazra állítva az `onCurrentIndexChanged` nem indít átmenetet — a
     //: `_modellKovetes` csendben igazítja az indexet ugyanarra a fájlra
     property bool _resyncing: false
+    property bool screensaverMode: false
+    property bool screensaverInputArmed: false
     //: #2992: a diaidő MÁSODPERCBEN, a sáv ± gombjaival állítható
     //: (`tpslabel`/`minusone`/`tps`/`plusone`). Az alapérték 3 — mérve
     //: (`SlideshowEffectTime`, `0x007facd3`). A hívó a vezérlőhöz köti,
@@ -162,6 +164,9 @@ Rectangle {
     }
 
     function start(index) {
+        screensaverMode = false
+        screensaverInputArmed = false
+        screensaverInputTimer.stop()
         var target = clampToPhoto(index)
         if (target < 0) return   // nincs vetíthető fotó
         currentIndex = target
@@ -174,10 +179,36 @@ Rectangle {
         forceActiveFocus()
     }
 
+    function startScreensaver() {
+        screensaverMode = true
+        screensaverInputArmed = false
+        screensaverInputTimer.stop()
+        var target = clampToPhoto(0)
+        if (target < 0) {
+            currentIndex = -1
+            screensaverMode = false
+            return
+        }
+        currentIndex = target
+        show._kovetettUtFrissit()
+        playing = true
+        visible = true
+        controlsBar.shown = false
+        hideTimer.stop()
+        forceActiveFocus()
+        screensaverInputTimer.start()
+    }
+
     function stop() {
+        if (!visible) return
+        var wasScreensaver = screensaverMode
+        screensaverInputTimer.stop()
+        screensaverInputArmed = false
         playing = false
         visible = false
         show.closed()
+        if (wasScreensaver)
+            screensaverMode = false
     }
 
     function advance() {
@@ -433,12 +464,44 @@ Rectangle {
         onTriggered: show.advance()
     }
 
-    Keys.onEscapePressed: show.stop()
-    Keys.onSpacePressed: show.togglePause()
-    Keys.onRightPressed: show.advance()
-    Keys.onReturnPressed: show.advance()
-    Keys.onLeftPressed: show.goBack()
+    Timer {
+        id: screensaverInputTimer
+        objectName: "screensaverInputArmTimer"
+        interval: 250
+        onTriggered: if (show.visible && show.screensaverMode)
+                         show.screensaverInputArmed = true
+    }
+
+    Keys.onEscapePressed: {
+        if (!show.screensaverMode || show.screensaverInputArmed)
+            show.stop()
+    }
+    Keys.onSpacePressed: {
+        if (show.screensaverMode) {
+            if (show.screensaverInputArmed) show.stop()
+        } else show.togglePause()
+    }
+    Keys.onRightPressed: {
+        if (show.screensaverMode) {
+            if (show.screensaverInputArmed) show.stop()
+        } else show.advance()
+    }
+    Keys.onReturnPressed: {
+        if (show.screensaverMode) {
+            if (show.screensaverInputArmed) show.stop()
+        } else show.advance()
+    }
+    Keys.onLeftPressed: {
+        if (show.screensaverMode) {
+            if (show.screensaverInputArmed) show.stop()
+        } else show.goBack()
+    }
     Keys.onPressed: (event) => {
+        if (show.screensaverMode) {
+            if (show.screensaverInputArmed) show.stop()
+            event.accepted = true
+            return
+        }
         if (event.key === Qt.Key_R
                 && (event.modifiers & Qt.ControlModifier)) {
             show.rotateCurrent(
@@ -551,11 +614,21 @@ Rectangle {
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.NoButton
+        acceptedButtons: show.screensaverMode ? Qt.AllButtons : Qt.NoButton
+        onPressed: if (show.screensaverMode && show.screensaverInputArmed)
+                       show.stop()
         onPositionChanged: {
-            controlsBar.shown = true
-            hideTimer.restart()
+            if (show.screensaverMode) {
+                if (show.screensaverInputArmed) show.stop()
+            } else {
+                controlsBar.shown = true
+                hideTimer.restart()
+            }
         }
+    }
+    WheelHandler {
+        enabled: show.screensaverMode && show.screensaverInputArmed
+        onWheel: show.stop()
     }
     //: #433: a felirat vetítés közben (`captionmode`). A vezérlősáv fölött
     //: ül, hogy a sáv megjelenése ne takarja el.
@@ -609,7 +682,7 @@ Rectangle {
             //: enélkül a sáv a vetítés végéig kint maradna
             onHoveredChanged: if (!hovered) hideTimer.restart()
         }
-        visible: opacity > 0
+        visible: !show.screensaverMode && opacity > 0
         opacity: shown ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: 200 } }
         anchors.horizontalCenter: parent.horizontalCenter

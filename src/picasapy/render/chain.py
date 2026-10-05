@@ -19,7 +19,12 @@ from picasapy.ini.filter_registry import (
 )
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
-from picasapy.ini.redeye import parse_redeye_regions
+from picasapy.ini.redeye import (
+    has_redeye_eye_circles,
+    parse_redeye_eye_circles,
+    parse_redeye_regions,
+    redeye_uses_full_image_fallback,
+)
 from picasapy.ini.retouch import parse_retouch_patches, parse_retouch_regions
 from picasapy.render.color import (
     apply_bw,
@@ -376,6 +381,28 @@ def _apply_crop_op_lekepezve(
             f"Üres kivágás a leképezés után: rect={rect} -> ({bal}, {fent}, {jobb}, {lent})"
         )
     return image[fent:lent, bal:jobb].copy()
+
+
+def _apply_redeye_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """A render csak a tárolt régiókat használja; arcmodellt nem tölt.
+
+    A csupasz, Picasából jövő `redeye=1` azonosság (#720). Az automatikus
+    app-találatokat `eye64` körök kódolják; a modell nélküli régi teljes
+    képes út kifejezett `autofull64()` jelölést kap.
+    """
+    regions = parse_redeye_regions(op)
+    if redeye_uses_full_image_fallback(op):
+        return apply_redeye(image)
+    if has_redeye_eye_circles(op):
+        height, width = image.shape[:2]
+        return apply_redeye(
+            image,
+            regions,
+            eye_circles=parse_redeye_eye_circles(op, width, height),
+        )
+    if regions:
+        return apply_redeye(image, regions)
+    return image.copy()
 
 
 def _apply_fill_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -774,7 +801,7 @@ def _apply_retouch_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 _HANDLERS = {
     "tilt": _apply_tilt_op,
-    "redeye": lambda image, op: apply_redeye(image, parse_redeye_regions(op)),
+    "redeye": _apply_redeye_op,
     "retouch": _apply_retouch_op,
     "enhance": lambda image, op: apply_enhance(image),
     "autolight": lambda image, op: apply_autolight(image),
