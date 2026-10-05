@@ -7705,6 +7705,19 @@ Ezután ismét kattintson a gombra, így hozzáadja a címkét a kijelölt eleme
     </message>
 </context>
 <context>
+    <name>VideoTrimSlider</name>
+    <message>
+        <location filename="../qml/PicasaPy/VideoTrimSlider.qml"/>
+        <source>Start Point</source>
+        <translation>Kezdőpont</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/VideoTrimSlider.qml"/>
+        <source>End Point</source>
+        <translation>Végpont</translation>
+    </message>
+</context>
+<context>
     <name>VideoPlayerControls</name>
     <message>
         <location filename="../qml/PicasaPy/VideoPlayerControls.qml"/>
