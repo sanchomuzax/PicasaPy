@@ -78,6 +78,7 @@ editController.cancelPendingPreview BELSŐ — az application.py:892 hívja leá
 folderHierarchyController.setFolders BELSŐ — az application.py:704 tölti fel a fát
 startupStatus.report BELSŐ — az indítás lépéseit az application.py jelenti be
 startupStatus.finish BELSŐ — az indítás végét az application.py jelenti be
+faceScanController.scanNewFaces BELSŐ — az application.py a controller.syncFinished jelére köti; az új képek vizsgálata szinkron után indul, nem QML-eseményből
 
 # -- MÉRVE: még el nem döntött esetek (a #1476 zárójelentése sorolja fel) --
 # Ezekre a bevezetéskor NEM volt jegy. Külön-külön kell eldönteni: felület

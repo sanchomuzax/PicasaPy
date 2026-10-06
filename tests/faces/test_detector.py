@@ -7,6 +7,7 @@ ellenőrzés `skipif`-fel kihagyva, ha a fájl ténylegesen nincs jelen."""
 from __future__ import annotations
 
 import logging
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -40,6 +41,9 @@ class TestMissingModel:
             "picasapy.faces.detector.default_model_path",
             lambda: tmp_path / "nincs-ilyen.onnx",
         )
+        monkeypatch.setattr(
+            "picasapy.faces.detector.bundled_model_path", lambda: None
+        )
         with caplog.at_level(logging.INFO):
             detector = FaceDetector()
         assert detector.available is False
@@ -53,6 +57,9 @@ class TestModelPathResolution:
             "picasapy.faces.detector.default_model_path",
             lambda: tmp_path / "nincs-ilyen.onnx",
         )
+        monkeypatch.setattr(
+            "picasapy.faces.detector.bundled_model_path", lambda: None
+        )
         assert resolve_model_path() is None
 
     def test_env_var_overrides_default(self, tmp_path, monkeypatch):
@@ -61,13 +68,45 @@ class TestModelPathResolution:
         monkeypatch.setenv("PICASAPY_FACE_MODEL", str(model))
         assert resolve_model_path() == model
 
-    def test_env_var_pointing_to_missing_file_falls_back(self, tmp_path, monkeypatch):
+    def test_env_var_pointing_to_missing_file_falls_back_to_bundled(
+        self, tmp_path, monkeypatch
+    ):
         monkeypatch.setenv("PICASAPY_FACE_MODEL", str(tmp_path / "nincs.onnx"))
         monkeypatch.setattr(
             "picasapy.faces.detector.default_model_path",
             lambda: tmp_path / "meg-egy-hianyzo.onnx",
         )
-        assert resolve_model_path() is None
+        from picasapy.faces.detector import bundled_model_path
+
+        assert resolve_model_path() == bundled_model_path()
+
+    def test_bundled_model_is_last_fallback(self, tmp_path, monkeypatch):
+        from picasapy.faces import detector
+
+        monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
+        monkeypatch.setattr(
+            detector, "default_model_path", lambda: tmp_path / "user" / "missing.onnx"
+        )
+        bundled = tmp_path / "package" / detector.MODEL_FILENAME
+        bundled.parent.mkdir()
+        bundled.write_bytes(b"packaged-model")
+        monkeypatch.setattr(
+            detector, "bundled_model_path", lambda: bundled, raising=False
+        )
+
+        assert resolve_model_path() == bundled
+        user_model = tmp_path / "user.onnx"
+        user_model.write_bytes(b"user-model")
+        monkeypatch.setattr(detector, "default_model_path", lambda: user_model)
+        env_model = tmp_path / "env.onnx"
+        env_model.write_bytes(b"env-model")
+        monkeypatch.setenv("PICASAPY_FACE_MODEL", str(env_model))
+        assert resolve_model_path() == env_model
+
+        monkeypatch.setenv("PICASAPY_FACE_MODEL", str(tmp_path / "env-missing.onnx"))
+        # A felhasználói modell megelőzi a csomagolt modellt hibás környezeti
+        # útvonal esetén.
+        assert resolve_model_path() == user_model
 
 
 class TestDownloadModelNeverBlocksStartup:
@@ -99,3 +138,24 @@ class TestRealModel:
         image = np.zeros((200, 200, 3), dtype=np.uint8)
         result = detector.detect(image)
         assert isinstance(result, tuple)
+
+
+class TestDefaultScoreThreshold:
+    """#4348: az alapküszöb 0,9 — arc nélküli tájképen a YuNet 0,71–0,76-os
+    téves jelölteket ad, a valódi arcok 0,91–0,93-at (mérés a jegyben)."""
+
+    def test_default_detector_is_created_with_090(self, tmp_path, monkeypatch):
+        model = tmp_path / "yunet.onnx"
+        model.write_bytes(b"onnx")
+        captured = {}
+
+        def fake_create(path, config, size, **kwargs):
+            captured.update(kwargs)
+            return object()
+
+        fake_cv2 = SimpleNamespace(
+            FaceDetectorYN=SimpleNamespace(create=fake_create), error=RuntimeError
+        )
+        monkeypatch.setattr("picasapy.faces.detector.cv2", fake_cv2)
+        FaceDetector(model_path=model)
+        assert captured["score_threshold"] == pytest.approx(0.9)

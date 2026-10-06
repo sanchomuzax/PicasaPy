@@ -11,8 +11,8 @@ issue #26 terve: „a lenyomat-számítás külön, alacsonyabb prioritású sor
 mint a detektálás — előbb legyen meg minden arc HELYE, a felismerés
 ráér”).
 
-A modell beszerzése KÜLÖN, explicit lépés (`download_model`) — ez sem
-hívódik automatikusan indításkor vagy tesztben."""
+Az SFace a vezérlő első csoportosítási kérésére automatikusan, háttérben
+töltődik le; a konstruktor továbbra sem kezdeményez hálózati kérést."""
 
 from __future__ import annotations
 

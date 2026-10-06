@@ -79,7 +79,16 @@ class _FakeDetector:
         return (FaceDetection(left=5, top=10, right=40, bottom=50, score=0.9, landmarks=landmarks),)
 
 
-def _make_controller(qt_app, tmp_path, library, detector=None, embedder=None):
+def _make_controller(
+    qt_app,
+    tmp_path,
+    library,
+    detector=None,
+    embedder=None,
+    settings=None,
+    embedder_factory=None,
+    face_detection_enabled=None,
+):
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.index import open_index, sync_tree
 
@@ -89,6 +98,9 @@ def _make_controller(qt_app, tmp_path, library, detector=None, embedder=None):
         tmp_path / "index.db",
         detector=detector if detector is not None else _FakeDetector(),
         embedder=embedder if embedder is not None else _FakeEmbedder(),
+        embedder_factory=embedder_factory,
+        settings=settings,
+        face_detection_enabled=face_detection_enabled,
     )
     return ctl
 
@@ -216,7 +228,9 @@ class TestComputeEmbeddings:
     """#26 (2. lépcső): a lenyomat-számítás + csoportosítás KÜLÖN,
     alacsonyabb prioritású sora — a detektálás UTÁN, önállóan indítható."""
 
-    def test_embedding_model_unavailable_does_not_start_a_worker(self, qt_app, tmp_path):
+    def test_missing_embedding_model_starts_download_automatically(
+        self, qt_app, tmp_path, monkeypatch
+    ):
         root = tmp_path / "kepek"
         root.mkdir()
         make_jpeg(root / "a.jpg")
@@ -224,9 +238,132 @@ class TestComputeEmbeddings:
             qt_app, tmp_path, root, embedder=_FakeEmbedder(available=False)
         )
         assert ctl.isEmbeddingAvailable() is False
-        arrived, _args = _run(ctl.embeddingModelUnavailable, ctl.computeEmbeddings)
-        assert arrived is True
+        letoltesek = []
+        elerhetetlensegek = []
+        monkeypatch.setattr(ctl, "downloadModels", lambda: letoltesek.append(True))
+        ctl.embeddingModelUnavailable.connect(lambda: elerhetetlensegek.append(True))
+
+        ctl.computeEmbeddings()
+
+        assert letoltesek == [True]
+        assert elerhetetlensegek == []
         assert ctl.waitForBackgroundWorkers(5.0)
+
+    def test_mocked_sface_download_resumes_grouping(self, qt_app, tmp_path, monkeypatch):
+        from picasapy.faces.model_download import (
+            EMBEDDER_SPEC,
+            STATUS_OK,
+            DownloadResult,
+        )
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        letoltesek = []
+        ctl = _make_controller(
+            qt_app,
+            tmp_path,
+            root,
+            embedder=_FakeEmbedder(available=False),
+            embedder_factory=lambda: _FakeEmbedder(available=True),
+            settings=_FaceSettings(),
+        )
+        monkeypatch.setattr(
+            "picasapy.app.face_scan_controller.model_download.download_missing",
+            lambda **_kwargs: (
+                letoltesek.append(True)
+                or (DownloadResult(STATUS_OK, EMBEDDER_SPEC, tmp_path / EMBEDDER_SPEC.filename),)
+            ),
+        )
+
+        arrived, args = _run(ctl.embeddingFinished, ctl.computeEmbeddings)
+
+        assert arrived is True
+        assert args == (0, 0)
+        assert letoltesek == [True]
+        assert ctl.isEmbeddingAvailable() is True
+        assert ctl.waitForBackgroundWorkers(5.0)
+
+
+class _FaceSettings:
+    def __init__(self, values=None):
+        self.values = values or {}
+
+    def value(self, key, default=None):
+        return self.values.get(key, default)
+
+    def setValue(self, key, value):
+        self.values[key] = value
+
+
+class TestAutomaticFaceDetection:
+    def test_automatic_detection_is_enabled_by_default(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        ctl = _make_controller(qt_app, tmp_path, root, settings=_FaceSettings())
+
+        assert ctl.automaticDetectionEnabled() is True
+
+    def test_automatic_detection_setting_is_saved(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        settings = _FaceSettings()
+        ctl = _make_controller(qt_app, tmp_path, root, settings=settings)
+
+        ctl.setAutomaticDetectionEnabled(False)
+
+        assert settings.values[ctl.AUTOMATIC_DETECTION_KEY] is False
+        assert ctl.automaticDetectionEnabled() is False
+
+    def test_sync_scan_uses_automatic_detection_by_default(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        detector = _FakeDetector()
+        ctl = _make_controller(
+            qt_app, tmp_path, root, detector=detector, settings=_FaceSettings()
+        )
+
+        arrived, args = _run(ctl.scanFinished, ctl.scanNewFaces)
+
+        assert arrived is True
+        assert args == (1, 1)
+        assert len(detector.calls) == 1
+
+    def test_automatic_detection_respects_folder_exclusion(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        detector = _FakeDetector()
+        ctl = _make_controller(
+            qt_app,
+            tmp_path,
+            root,
+            detector=detector,
+            settings=_FaceSettings(),
+            face_detection_enabled=lambda _path: False,
+        )
+
+        _run(ctl.scanFinished, ctl.scanNewFaces)
+
+        assert detector.calls == []
+
+    def test_disabled_setting_skips_automatic_detection(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        detector = _FakeDetector()
+        ctl = _make_controller(
+            qt_app,
+            tmp_path,
+            root,
+            detector=detector,
+            settings=_FaceSettings({"faces/automaticDetection": False}),
+        )
+
+        ctl.scanNewFaces()
+
+        assert detector.calls == []
 
     def test_computes_embeddings_and_groups_unnamed_faces(self, qt_app, tmp_path):
         root = tmp_path / "kepek"

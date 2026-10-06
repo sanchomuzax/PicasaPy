@@ -528,8 +528,8 @@ def _exclude_folders_path() -> Path:
     """A `FRExcludeFolders.txt` útvonala — kis-nagybetű-független kereséssel
     (#145/#449, a `_watched_folders_path` mintáját követve). NEGYEDIK,
     a figyelt-mappa hármastól (Scan Always/Once/Remove) FÜGGETLEN
-    kapcsoló: az arcfelismerésből kizárt mappák (ma még csak SZÁNDÉK-
-    rögzítés, arcfelismerés-motor nélkül, ld. library_controller.py)."""
+    kapcsoló: az arcfelismerésből kizárt mappák (ld.
+    `library_controller.py`)."""
     config_dir = _config_dir()
     return find_exclude_folders_file(config_dir) or (config_dir / EXCLUDE_FOLDERS_NAME)
 
@@ -1430,8 +1430,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         # #1403: a KÖZÖS beállítás-tároló — innen jön az „arc elnevezésekor
         # írjuk-e ki az XMP-t" kapcsoló (alapérték BE, ahogy az eredetiben).
         settings=QSettings(),
+        face_detection_enabled=controller.faceDetectionEnabledFor,
     )
     engine.rootContext().setContextProperty("faceScanController", face_scan_controller)
+    controller.syncFinished.connect(face_scan_controller.scanNewFaces)
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())

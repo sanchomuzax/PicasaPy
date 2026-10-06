@@ -98,8 +98,9 @@ A Nézet két almenüje visszaigazolja a #1409-et (11 megjelenítési mód) és 
 
 **Az „Indexkép felirata" almenü négy módja:** `ID_CAPNONE` (Nincs) ·
 `ID_CAPFILE` (Fájlnév) · `ID_CAPFULL` (Képfelirat) · `ID_CAPRES` (Felbontás).
-**Indexkép-méret három:** `ID_VIEW_SMALLTHUMBNAILS` · `ID_VIEW_LARGETHUMBNAILS`
-· `ID_VIEW_SMALL`.
+**Indexkép-méret kettő:** `ID_VIEW_SMALLTHUMBNAILS` ·
+`ID_VIEW_LARGETHUMBNAILS`. Az `ID_VIEW_SMALL` külön, láthatósági szűrő;
+nem méret-előbeállítás (lásd alább).
 
 ## 5. A Beállítások párbeszéd — nyolc fül, ~78 vezérlő
 
@@ -308,10 +309,32 @@ igével megy (`ShellExecuteW`, `0x0050a740`). Az **`edit` ige a binárisban
 NEM létezik** — ahogy az `explore`/`runas`/`openas` sem. ⇒ nincs külön
 „szerkesztésre megnyitás", és **nem kell szerkesztő-beállítás**.
 
-**„Kis képek" (`ID_VIEW_SMALL`):** **láthatósági szűrő**, nem méret. A
-menüépítőben a „Keresési opciók" és a „Rejtett képek" között ül; a felirata
-bekapcsolva **`IDS_INCLUDING_SMALL`** = *„A kisebb képeket is"*, a küszöb
-kulcsa **`minsize`**. A Picasa alapból elrejti a küszöb alatti képeket.
+**„Kis képek" (`ID_VIEW_SMALL`, `eMenuView`, parancsazonosító `0x9cd8`):**
+**láthatósági kapcsoló a CThumbUI könyvtári bélyegképnézetének Nézet
+menüjében**, nem indexképméret-választó. A menüépítő `0x005c90f0` a
+„Keresési opciók" és a „Rejtett képek" közé teszi (`0x005c918f`), a
+`Preferences\Show only big images` állapotát pedig fordítva jeleníti meg:
+bekapcsolt tétel = a kisebb képeket is mutassa (`0x005c9157`–`0x005c9195`).
+Az akciókezelő `0x005c94e0` ezt az 1/0 beállítást kapcsolja, majd frissíti a
+menüt és újraépíti a bélyegképnézetet (`0x005c9528`–`0x005c9540`).
+
+A külön szűrőfogyasztó (`0x0065d010`) alapból szintén `Show only big images`
+értéket olvas (`1`, `0x0065f155`–`0x0065f199`); bekapcsolt szűrésnél a
+`Preferences\BigPictureThreshold` alapértéke **`0xEA60` = 60 000**
+(`0x0065f1cb`–`0x0065f1ee`). A kód a kép szélességét és magasságát
+összeszorozza, és ezt a területet hasonlítja a küszöbhöz
+(`0x0065f521`–`0x0065f52f`): **60 000 képpontnyi terület az alapküszöb**, nem
+60 000 képpont szélesség vagy magasság, és a parancs nem választ új
+képméretet. A szűrő további, külön ágai a **3,0** és **0,33333** képarányt
+(`0x00c49618`, `0x00cf4fd8`) és a **200** képpontos méretet
+(`0x0065f553`–`0x0065f561`) is vizsgálják; ezért a küszöb önmagában nem a
+teljes láthatósági predikátum.
+
+⚠️ **Helyesbítés:** a korábbi `minsize` kulcs-hozzárendelés téves volt. A
+`minsize` sztring hivatkozása a `.tre` deklaratív tulajdonság-olvasójába
+vezet (`0x00ccd300` → `0x008d1450`), míg a fényképszűrő a külön
+`BigPictureThreshold` kulcsot olvassa. A `minsize` és az `ID_VIEW_SMALL`
+között nincs bizonyított kapcsolat.
 
 **XMP arcrégió (#1403):** `mwg-rs:Regions/mwg-rs:RegionList[last()]` ⇒
 **hozzáfűz**, nem felülír; a régió `mwg-rs:Area` (`stArea` típus), és a
