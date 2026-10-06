@@ -655,12 +655,96 @@ megerősítés után függőben áll, és csak egy teljes kilépés–indítás 
 | a nevek | saját nyelvükön, 3 × `(BETA)` | `qsTr("Hungarian")` / `qsTr("English")` (`OptionsTabGeneral.qml:95–97`) |
 | „rendszer szerint” tétel | van, a területi kóddal | nincs |
 | tárolás | `ytHLocal::lang` + `langchange`, számmal | `general/language` QSettings, nyelvkóddal |
-| érvénybe lépés | megerősítés, a következő indításkor | **azonnal**, kérdés nélkül (`setLanguage` → `languageChanged`) |
+| érvénybe lépés | megerősítés, a következő indításkor | megerősítés (`OptionsTabGeneral.qml:123–138`); a `setLanguage` a `general/language_pending` értékét írja, amit a következő indítás `resolve_startup_language`-e alkalmaz (`language_controller.py:138–157, 220–234`) |
 
 *Bizonyítottsági fok: **megerősített** a listára, a kódokra (kétirányú
 kontroll), a nevek forrására (betöltési sorrend + felülíró beszúrás), a
 `(BETA)`-ra, a rendszer-tétel feliratára, a szűrésre és a tárolás–érvénybe
 lépés láncára — mind utasításszinten olvasva.*
+
+#### G) Induláskori rendszer-nyelvfelajánlás (`0x004060b0`, #4314)
+
+##### 1. Mikor jelenik meg?
+
+Az induló rutin a `Preferences\ytHLocal::lang` értékét olvassa. Csak a hiányzó
+érték (`-1`, `0x00406103`) indítja el a rendszer nyelvének vizsgálatát; bármely
+már beállított érték a `0x00406419` ágra ugrik, tehát a rutin nem hasonlítja
+össze a beállított és az aktuális rendszer-nyelvet. A nem NT-alapú Windows
+ágán (`[0x00d694b9] = 0`) előbb `1` kerül a `lang`-ba, ezért ott sincs
+felajánlás (`0x004060dd`–`0x004060fa`).
+
+A hiányzó `lang` mellett a rutin a `GetLocaleInfoA(0x800, 0x59, …, 7)`
+hívással kapott nyelvkódot vizsgálja (`0x00406135`–`0x00406145`). Az `en`
+kód felajánlás nélkül `0`-t állít be (`0x00406154`–`0x00406197`); az
+`es`, `fr`, `it`, `de`, `ja`, `zh`, `ko`, `ru`, `pt`, `nl`, `fa` kódok a
+megerősítő ágra mennek (`0x0040619c`–`0x004063df`); más kód `1`-et kap
+felajánlás nélkül (`0x004063fb`). Tehát a feltétel nem „minden indulás” és
+nem is pusztán a rendszer-nyelv eltérése: **hiányzó `lang` + NT-rendszer + a
+fenti, felismert nem angol nyelvek egyike**.
+
+##### 2. Mi a szöveg és mik a gombok?
+
+A prompt beégetett szövege (`0x00c7f2c8`):
+
+```text
+Picasa is now available in your system's native language.
+Would you like to switch Picasa from English to this language?
+```
+
+A 41 nyelvű `i18n`-szótárban ez a prompt nem szerepel; a bináris a fenti
+ASCII-szöveget adja át (`0x004063e1`–`0x004063eb`). A `0x009bac20`-as
+megerősítő rutin `0` módnál az alapértelmezett `Yes` / `No` gombot választja
+(`il_Yes`, `il_No`; `0x009bac5f`–`0x009bacab`), és a `Confirm` címet használja
+(`0x009bae09`–`0x009bae21`). Ennél a hívásnál nincs Cancel ág.
+
+##### 3. Van „ne kérdezze újra” ág?
+
+A generikus ablak (`0x009ba4d0`, `confirm`) a
+`Picasa3/runtime/confirm.fen` sablont használja; abban van `remember`
+jelölőnégyzet („Don't ask again”). A megerősítő kezelő a `remember` vezérlőt
+név szerint megkeresi (`0x009ba96a`–`0x009ba992`); ennél a hívásnál az üzenet
+nem null, így a jelölőnégyzet a párbeszéd része. A startup-hívás azonban csak
+a megerősítő rutin logikai visszatérését vizsgálja (`0x004063f3`), ami az
+Igen/Nem eredmény; nem kérdezi le a jelölőnégyzetet. Külön „ne kérdezze újra”
+Preferences-kulcs vagy ág **nincs meg** ebben az útvonalban.
+
+##### 4. Mi történik elfogadáskor és elutasításkor?
+
+Igen (`AL != 0`) a `lang` értékét `0`-ra, nem (`AL = 0`) `1`-re állítja, majd
+a beállításba írja (`0x004063f3`–`0x00406414`). Itt `0` a rendszer szerinti,
+`1` az angol nyelv (a fenti D) szakasz). Ezután a rutin újraolvassa a `lang`
+értékét, és azt másolja a `Preferences\ytHLocal::langchange` mezőbe
+(`0x00406419`–`0x00406451`); tehát itt a `langchange := lang`, nem a kétbetűs
+rendszerkód.
+
+A hívó a felajánlás után tölti be a `Picasa3i18n.dll`-t (`0x004055a0` hívás,
+majd `0x004055a5` modulnév és `0x004055ad` betöltő). Ezért az igen/nem döntés
+az **aktuális indulás nyelvi inicializálására** hat, nem egy későbbi
+újraindításra vár. A már beállított `lang` a következő indításokkor
+megkerüli ezt a felajánlást.
+
+##### Eredeti / nálunk / teendő
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Csak hiányzó `lang` esetén kérdez; angolnál és a nem felismert locale-oknál nem. Az igen/nem döntés a jelen indulás előtt tárolódik; nincs külön ismétlés-tiltó kulcs. | A `src/picasapy/app/language_controller.py` támogatott kódjai `en`, `hu`; a hiányzó beállítás `en`-re esik, és induláskor nincs rendszer-nyelvfelajánlás. A kézi nyelvválasztás megerősített és a következő induláskor lép életbe (`src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:123–138`, `src/picasapy/app/language_controller.py:138–157, 220–234`). | Külön fejlesztési jegyben az első, még nyelvbeállítás nélküli induláskor kérdezzen, ha a rendszer nyelve támogatott és nem `en` — nálunk ez jelenleg `hu`. Igen: ezt a nyelvet töltse be ebben a futásban és mentse; nem: maradjon `en` és mentse, hogy ne kérdezzen újra. Már mentett nyelv mellett ne jelenjen meg. Ez a `hu`-ra kiterjesztés tudatos termékkülönbség: az eredeti felajánlási ág nem tartalmaz `hu`-t. |
+
+##### Cáfoló próba és bizonyítottság
+
+Az „minden induláskor / eltéréskor kérdez” állítást a `lang != -1` ág cáfolja:
+`0x00406103` közvetlenül a prompt utáni közös tárolási ágra (`0x00406419`)
+ugrik. Azt az olvasatot is ellenőriztem, hogy a `langchange` a felismert
+locale-sztringet kapja: a `0x0040641d` getter a `lang` wrapperre mutat, a
+`0x00406448` íróhívás forrása pedig az előzőleg kiolvasott numerikus érték;
+az alternatív olvasat nem áll meg az utasítás- és paraméterkövetésen.
+
+*Bizonyítottsági fok: **megerősített** a megjelenési feltételre, szövegre,
+alapértelmezett gombokra, a jelölőnégyzet jelenlétére és figyelmen kívül
+hagyására, `lang`/`langchange`-írásra és arra, hogy a döntés a következő
+nyelvi betöltés előtt történik. Két út egyezik: (A) a `0x004060b0`
+utasításszintű vezérlési és adatfolyam-olvasása; (B) a `0x004060b0`-ra mutató
+string-xref, a `0x004051b0` hívási sorrendje, valamint a `0x00401900` setter
+adatmásolási viselkedése.*
 
 ---
 
