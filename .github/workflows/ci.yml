@@ -206,6 +206,8 @@ jobs:
 
       - name: CHANGELOG-őr (#1340)
         if: ${{ github.event_name == 'pull_request' }}
+        # A régi, közvetlen [Nem kiadott] sor most figyelmeztet; a
+        # PICASAPY_CHANGELOG_STRICT=1 környezeti változó buktatóvá teszi.
         # Mit fog meg: felhasználót érintő változást EMBERI MONDAT nélkül.
         # A v0.8.71 (#893), a v0.8.72 (#897) és a v0.8.73 (#900) azzal a
         # mondattal ment ki, hogy „ez a kiadás nem hoz felhasználónak látszó
