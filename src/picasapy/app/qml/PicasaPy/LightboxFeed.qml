@@ -27,6 +27,22 @@ ListView {
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
 
+    // A külső fájlhúzás a kijelölés teljes fájllistáját adja át, nem csak
+    // azt az indexképet, amelyről a mozdulat elindult.
+    function selectedFileUriList() {
+        if (!grid.ctl || !grid.ctl.photos || !grid.appWindow
+            || !grid.appWindow.selectedIndexes
+            || typeof grid.ctl.fileUriList !== "function")
+            return ""
+        var paths = []
+        var indexes = grid.appWindow.selectedIndexes
+        for (var i = 0; i < indexes.length; ++i) {
+            var path = grid.ctl.photos.filePathAt(Number(indexes[i]))
+            if (path) paths.push(path)
+        }
+        return grid.ctl.fileUriList(paths)
+    }
+
     // #3751: a mentés-üzemmód — a `BackupHost` állítja (`Main.qml`-en át),
     // amíg a mentés-panel látszik. A rács TARTALMÁT nem itt szűrjük: a
     // vezérlő szűkíti a `photos`/`feedGroups` párost a még el nem mentett
@@ -1085,6 +1101,9 @@ ListView {
                         keywords: slot.info.keywords || ""
                         resolution: slot.info.resolution || ""
                         captionMode: grid.ctl ? grid.ctl.thumbCaptionMode : "none"
+                        dragMimeData: ({
+                            "text/uri-list": grid.selectedFileUriList()
+                        })
                         // #85/#83: a megjelenő kép a névleges
                         // méretre plafonozott, a kiegyenlítés
                         // többlete a térközbe megy.

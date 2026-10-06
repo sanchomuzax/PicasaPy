@@ -29,6 +29,7 @@ from picasapy.index.faces_detected import (
 from picasapy.index.people import (
     PEOPLE_SORT_MODES,
     people_in_index,
+    person_movie_photos,
     person_photos,
     rendezd_szemelyeket,
 )
@@ -74,6 +75,17 @@ class PeopleMixin:
         return [
             {"name": person.name, "count": person.photo_count}
             for person in rendezd_szemelyeket(self._people, self.peopleSort)
+        ]
+
+    @Slot(result="QVariantList")
+    def personMovieSourceUrls(self):  # noqa: N802 — QML-slot-stílus
+        """A nem üres személyalbumok képei a tárolt lista sorrendjében."""
+        with open_index(self._db_path) as conn:
+            records = person_movie_photos(conn, self._people)
+        return [
+            formatting.to_file_url(str(Path(record.folder_path) / record.name))
+            .toString()
+            for record in records
         ]
 
     @Property(str, notify=peopleChanged)

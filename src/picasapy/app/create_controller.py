@@ -140,6 +140,21 @@ class CreateMixin(PosterMixin):
         except (TypeError, ValueError):
             return 1
 
+    @Property(int, notify=moviePreferencesChanged)
+    def faceMovieResolutionIndex(self) -> int:  # noqa: N802
+        """Az arc-film méretindexe (`facemakemovieres`), alapból 3 (#4391).
+
+        A Picasa ezt a kulcsot olvassa, de a beállított új értéket nem írja
+        vissza; a QML-ben is megmarad ez a nem mentő viselkedés.
+        """
+        try:
+            return max(
+                0,
+                min(6, int(self._get_settings().value("facemakemovieres", 3))),
+            )
+        except (TypeError, ValueError):
+            return 3
+
     @Slot(int)
     def setMovieResolutionIndex(self, index: int) -> None:  # noqa: N802
         """A hét eredeti méret közül a választott index megőrzése."""

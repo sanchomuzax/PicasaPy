@@ -15950,4 +15950,20 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <translation>Képek</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoViewerSettingsDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="10" />
+            <source>Configure Photo Viewer...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fotómegjelenítő beállítása…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
+            <source>Use Color Management</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
+            <translation>Színkezelés használata</translation>
+        </message>
+    </context>
 </TS>

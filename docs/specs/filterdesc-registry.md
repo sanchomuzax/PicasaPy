@@ -2995,7 +2995,7 @@ out_C = (L_C[i]·(256−f) + L_C[min(i+1,255)]·f) >> 8
 Nincs felülmintavételezés. A SIMD-ág `CVTPS2DQ`-t, a skalár `FISTP`-t
 használ; a lent rögzített próbamintán a két ág bájtra azonos.
 
-**Izolált pixel-golden, eredeti gépi kódból.** A privát QEMU-i386
+**Korábbi izolált pixel-golden, eredeti gépi kódból állítólag mérve.** A privát QEMU-i386
 harness (`/home/sancho/picasapy-agent/eszkozok/qemu_harness/hb.py`,
 `install_crt_shims`) az eredeti, változatlan EXE (`SHA-256:
 644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
@@ -3007,6 +3007,12 @@ futtatta a teljes `0x00bba670` multi-cell wrappert; annak teljes rácsára
 vonatkozó mérése lent, a külön „Teljes rács” alfejezetben van. A 7×7 nyers
 BGRA golden alfa-csatornája (soronként):
 
+> ⚠️ **ÉRVÉNYTELEN aranykép a dokumentált, lent rekonstruált hívási
+> rekordhoz.** Ezt a #4323-as mátrixot és hash-t megőrzöm történeti adatként,
+> de az eredeti, változatlan worker a rögzített 5,6×5,6 / 0,7,0,7 bemenettel
+> másik mátrixot ad (`1c40c7…bb4d`, 31/49 egyezés). A régi mátrixot ebből a
+> futásból nem lehet előállítani.
+
 ```text
   0   0   0   0   0   0   0
   0   0   0  20  20   0   0
@@ -3017,8 +3023,8 @@ BGRA golden alfa-csatornája (soronként):
   0   0   0  22  23   0   0
 ```
 
-Futtatás: az ideiglenes `.bt/tiled_probe.py` a harness `hb.py`/`w1.py`
-segédjeit használta; `hb.run(..., timeout=20, mem_mb=1200)` `rc=0`,
+Korábbi feljegyzés szerint az ideiglenes `.bt/tiled_probe.py` a harness
+`hb.py`/`w1.py` segédjeit használta; `hb.run(..., timeout=20, mem_mb=1200)` `rc=0`,
 `worker_status=0`. A harness a binárisban nem írt át kódot; a megfigyelő hook
 csak az eredeti függvény elágazása előtt mentette a köztes adatokat, majd
 visszatért az eredeti utasításokra. A `TILED_SSE=0` és `TILED_SSE=1` futás
@@ -3034,7 +3040,7 @@ LUT-tal 256/256 elemben egyezik. A projekt mai
 29/49 alfabájtban egyezik, 20/49-ben eltér, legfeljebb 3-mal; tehát ez a
 golden még nem igazolja a projekt pixelpontos egyezését.
 
-**#4368 újramérés: a 7×7-es golden forrása nem reprodukálható (2026-10-06).**
+**#4368 első újramérés: a #4323-as 7×7 golden nem reprodukálható (2026-10-06; előzetes állapot).**
 Az eredeti EXE-n a `0x00bbaa90` csempeépítőt futtattam egy kézzel
 felépített 7×7 próbarekorddal; annak skálamezőibe a harness `0.8f`-et írt
 (float32 értéke `0.800000011920929`), a margók `0`, az `alphaMin` `0.0`,
@@ -3109,7 +3115,7 @@ A 18 eltérés `(x,y): QEMU → arany` alakban:
 `(5,4):110→111`, `(6,4):21→23`, `(4,5):110→111`, `(5,5):60→62`,
 `(3,6):21→22`, `(4,6):21→23`.
 
-**Két út és cáfolat.** Az utasításszintű út a `0x008f3840` →
+**Korábbi két út és cáfolat (a LUT-kontroll előtt).** Az utasításszintű út a `0x008f3840` →
 `0x00a4a140` → `0x008f3970` transzformációs és LUT-indexelő lépéseket
 mutatja; a független dinamikus út az eredeti `0x00bbaa90` hívást,
 a worker float32 köztes értékeit és a belső puffer nyers bájtjait naplózta.
@@ -3123,7 +3129,7 @@ adná a 18 pixelnyi eltérést. A mért `q` mátrixra a spec LUT-jával futtatot
 Python Q8.8-referencia 49/49 alfa-bájtban egyezik **ezzel az új QEMU-kimenettel**,
 de csak 31/49-ben a rögzített goldennel.
 
-**Állapot: nyitott.** A két út egyezik az itt reprodukált `0x00bbaa90`
+**Előzetes állapot (a LUT-kontroll előtt): nyitott.** A két út egyezik az itt reprodukált `0x00bbaa90`
 pixelmag-kimenetéről, de egyik sem állít elő a rögzített goldennel egyező
 köztes `q` értékeket. A korábbi golden-feljegyzésben szereplő pontos
 hívási rekord és pufferkinyerés nem áll rendelkezésre olyan formában,
@@ -3135,7 +3141,115 @@ reprodukálható.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Az itt újramért eredeti `0x00bbaa90` út a megadott paraméterekkel a fenti 7×7 mátrixot adja. | A `native_dot_mask(7,7,7)` ugyanezt a mátrixot célozza; az egyezése a visszakeresett goldenhez 31/49. | A golden előállításának pontos QEMU-hívási rekordját és belső pufferkinyerését kell reprodukálhatóan rögzíteni. Ezután lehet a tényleges eltérő koordinátát/műveleti sorrendet mérni és csak bizonyíték alapján fejleszteni; addig a #4326 pixelmag-javítása nincs megalapozva. |
+| Az itt újramért eredeti `0x00bbaa90` út a megadott paraméterekkel a fenti 7×7 mátrixot adja. | A jelen munkafa `native_dot_mask`-ja a régi mátrixszal 29/49-ben, az újramért eredeti QEMU-kimenettel 25/49-ben egyezik. | Előzetesen még hiányzott a pontos LUT-eltérés elkülönítése; a következő alfejezet ezt feloldja, és a végleges #4326 teendőt rögzíti. |
+
+##### #4368/#4383 ellentmondás: a LUT-forrás elkülönítése (2026-10-06)
+
+**Következtetés.** A dokumentált, változatlan eredeti bináris-futás goldenje
+az előző alfejezet `189` csúcsú mátrixa (`1c40c7b1…9176bb4d`; alfa-hash
+`32b27875…6fea658`). A #4323-as `191` csúcsú golden ehhez **érvénytelen**.
+A feladatban jelzett, `native_dot_mask`-kel egyező mai golden sem az eredeti
+LUT kimenete: ugyanazt a QEMU-futást csak akkor kapom meg, ha a worker LUT-ját
+kontrollként a projekt lineáris LUT-jára cserélem. Ez a módosított LUT-kör
+nem az eredeti viselkedés.
+
+**A rekonstruált eredeti hívás.** A törölt `.bt/tiled_probe.py` pontos
+forrása nem áll rendelkezésre (`NINCS MEG`), ezért a megmaradt leírás szerinti
+`0x008f3840` → `0x00a4a140` → `0x008f3970` hívást rekonstruáltam: 7×7 kimenet,
+5,6×5,6 belső csempe, 0,7/0,7 origó, stoppozíciók 0/255, alfa-végpontok
+1→0, első/utolsó BGRA stop `FF 00 00 FF` / `00 00 00 00`. A QEMU-n mért
+transzformált 7×7 `q` ugyanaz maradt a két LUT-változatban.
+
+| Vizsgált bemenet vagy kapcsoló | Eredmény | Forrás |
+|---|---|---|
+| Stoppozíció 0/255, alfa 1→0; BGRA-végpontok fent | Az eredeti út LUT-ja `[255,253,252,251,…,2,1,0,0]`; a lineáris kontroll LUT-ja `[255,254,253,252,…,3,2,1,0]`. | bináris `0x00bbaa90`, `0x008f3970`, `0x008f3700`; mérés (QEMU 256 LUT-byte) |
+| 5,6×5,6 méret, 0,7/0,7 origó | Mindkét LUT-változatban azonos affin mátrix és 49/49 azonos Q8.8 `q`. | mérés (QEMU worker-belépés és pixelnapló) |
+| `TILED_SSE=0` / `1` | A teljes 196 bájtos kimenet azonos; mindkettő `1c40c7…9176bb4d`. | mérés (QEMU scalar/SIMD) |
+| A harness külön próba-pufferének kezdőértéke `0x00` / `0xa5` | A worker kimenetén nem látszik változás; ez a próba-puffer nem a belső `CImage` kimenete. | mérés (QEMU; a `CImage+0x10` cím külön naplózva) |
+| Belső `CImage` kimeneti pufferének kezdőértéke | Külön, előtöltött belső `CImage`-gel nem futott kontroll. | NINCS MEG |
+| Eredeti LUT / felülírt lineáris LUT | Eredeti: csúcs 189, alfa-hash `32b27875…6fea658`. Lineáris LUT-kontroll: csúcs 190, alfa-hash `562cf71d…cbf7eea`; mind a 49 bájt egyezik a munkafa `native_dot_mask(7,7,7,0.5,0.5)` eredményével. | mérés (QEMU; csak a 256 LUT-bejegyzés változott) |
+
+A lineáris LUT-kontroll QEMU-alfa-mátrixa (a megelőző táblázat kontrollfutása):
+
+```text
+  0   0   0   0   0   0   0
+  0   0   0  22  22   0   0
+  0   0  61 111 111  61   0
+  0  22 111 190 190 111  22
+  0  22 111 190 190 111  22
+  0   0  61 111 111  61   0
+  0   0   0  22  22   0   0
+```
+
+A kontroll teljes 196 bájtos BGRA-hash-e `20a845b61957448d42f607ac764cc775b0906b4f909b424bbea8fc3f3d247df9`;
+az alfa 49 bájt hash-e `562cf71dd71c226ce55681870ce34055cda6eec1cc18689f733bcbe68cbf7eea`.
+
+A lineáris LUT-kontrollnál a worker eredeti, lemezes kódja és a mért affin
+transzformáció változatlan maradt; a QEMU observer a worker stack-LUT-jának
+első és alfa-csatornáját írta át `L[i]=255−i` értékre. Így a #4383-hoz
+megadott „a mai kimenet a mi `native_dot_mask`-ünkkel egyezik” jelenség
+**LUT-forrás-eltéréssel önmagában reprodukálható**; ez nem támasztja alá az
+eredeti bináris LUT használatát.
+
+**Q-kerekítés és Python-referencia.** A munkafa `native_dot_mask`-ja a
+float32 sugárskálázást `floor`-ral kvantálja. A QEMU SIMD-útja a
+`0x008f3cf6` `CVTPS2DQ` utasításával kerekít; a helyi float32 `tiled_dot_ramp`
+és `np.rint` 49/49 `q` értékben egyezett a worker naplójával, míg `floor`
+37/49-ben egyezett (a maradék 12 érték pontosan eggyel alacsonyabb volt).
+A scalar `FISTP`-út és a SIMD-út kimenete e mintán ettől függetlenül bájtra
+azonos. A független Python-referencia a float32 `i/255` értékből és nulla
+felé csonkolt alfa-lerpből épített LUT-t 256/256 elemben egyeztette a QEMU
+által kiírt LUT-tal; a `q=min(CVTPS2DQ(float32(r·255·256)),0xff00)` képlet és
+ez a LUT a 7×7 eredeti kimenettel 49/49 alfa-bájtban egyezett.
+
+```python
+import numpy as np
+from picasapy.render.halftone import tiled_dot_ramp
+
+ramp = tiled_dot_ramp(7, 7, 7, 0.5, 0.5).astype(np.float32) / np.float32(0.8)
+ratio = np.arange(256, dtype=np.float32) / np.float32(255)
+lut = np.trunc(255.0 - 255.0 * ratio.astype(np.float64)).astype(np.uint8)
+q = np.minimum(np.rint(np.clip(ramp, 0, 1) * np.float32(255 * 256)), 0xff00).astype(np.int64)
+i, f = q >> 8, q & 255
+mask = (lut[i] * (256 - f) + lut[np.minimum(i + 1, 255)] * f) >> 8
+```
+
+**A mai golden korlátozása.** Ha a #4383-as golden valóban a mai
+`native_dot_mask` teljes 49 bájtos kimenete, akkor az **ÉRVÉNYTELEN eredeti
+bináris-goldenként**: a feladatban rögzített azonos hívási rekord mellett az
+eredeti LUT a QEMU által mért másik mátrixot adja, a lineáris-LUT-kontroll
+pedig megadja a `native_dot_mask` kimenetét. A tényleges #4383-as probe, annak nyers 49 bájtja és
+köztes LUT-naplója nincs ebben a munkafában (`NINCS MEG`). A jelenlegi
+`native_dot_mask(7,7,7,0.5,0.5)` alfa-hash-e
+`562cf71dd71c226ce55681870ce34055cda6eec1cc18689f733bcbe68cbf7eea`;
+ez 25/49 bájtban egyezik az eredeti, változatlan QEMU-val, és 29/49-ben a
+megőrzött #4323-as mátrixszal. A jegyszövegben szereplő 31/49-es
+`native_dot_mask`-összevetés tehát a jelen munkafa kimenetével nem
+reprodukálható. A mai golden pontos mátrixának és az ott ténylegesen használt
+LUT-forrásnak az igazolása nyitott marad; az eredeti binárisra vonatkozó
+golden viszont a fenti, megismételt QEMU-mérés.
+
+**Bizonyítottság és cáfolat.** Az utasításszintű út (`0x008f3700`,
+`0x008f3cf6`–`0x008f3cfd`, `0x008f3970`) az interpolációt, a `CVTPS2DQ`
+kerekítést és a LUT-indexelést rögzíti. Ettől független dinamikus út az
+eredeti EXE-t futtatta QEMU-i386 alatt; observer nélküli ELF-futtatás
+`ulimit -v 5000000; timeout 20s qemu-i386` ugyanazt a teljes 196 bájtos
+hash-t `1c40c7b1…9176bb4d` adta. A LUT-csere cáfoló kontrollja megmutatta,
+hogy a natív maszkhoz egyező kimenet előállítható a bemenet többi részének
+változtatása nélkül. Ez megerősíti a dokumentált hívási rekord eredeti
+goldenjét, de nem azonosítja a hiányzó #4383 probe pontos módosítását.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Float32 sugár → `CVTPS2DQ` (nearest-even), clamp `0xff00`; az eredeti stop-LUT 256 mért bejegyzése; Q8.8 lerp. A 7×7 QEMU-kimenet alfa-hash-e `32b27875…6fea658`. | `native_dot_mask` `floor` kvantálást és `[255,254,…,0]` lineáris LUT-t használ; kimenete a módosított, lineáris LUT-kontrollal 49/49-ben egyezik, az eredeti workerrel csak 25/49-ben. | A #4326-ban a mért `CVTPS2DQ`-s float32 kvantálást és a bináris stop-interpolációjú LUT-t implementálni; a Python-referencia és a QEMU pixel-golden egyezzen 49/49-ben. A régi #4323 golden ne legyen célérték. |
+
+**A #4326 folytatásának kész-feltételei:** (1) a `native_dot_mask` által használt
+float32 `q` 49/49-ben egyezik a mért SIMD `q`-val; (2) a rekonstruált 256
+bejegyzésű LUT 256/256-ban egyezik a workerrel; (3) a 7×7 kimenet 49/49-ben
+egyezik a `32b27875…6fea658` eredeti QEMU golden alfa-hash-sel; (4) a már
+igazolt 23×17 teljes csemperács-golden változatlan marad. A #4383-as probe
+eredeti LUT-forrásának végső besorolása addig nyitott, amíg annak nyers
+kimenete vagy futtatható leírása elő nem kerül.
 
 ##### A teljes csemperács QEMU-goldenje (2026-10-06)
 

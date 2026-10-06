@@ -725,16 +725,13 @@ ApplicationWindow {
     readonly property string personAlbumName:
         controller && controller.currentPersonName
             ? controller.currentPersonName : ""
-    //: #4212: mindkét `faceheaderpanel` filmgomb a nyitott személyalbum
-    //: TELJES, aktuális képlistáját adja a meglévő Filmkészítőnek. A
-    //: filmablak a sorokat azonnal URL-ekké bontja, így a kijelöléshez nem
-    //: kell hozzányúlni, és a normál felbontás-választó marad érvényben.
+    // #4391: a People-filmet a személyalbum-modell nem üres albumai adják,
+    // annak tárolt sorrendjében; nem csak az éppen nyitott album sorai.
     function openPersonAlbumMovie() {
         if (!controller || window.personAlbumName === "") return
-        var sorok = []
-        var darab = controller.photos.rowCount()
-        for (var i = 0; i < darab; ++i) sorok.push(i)
-        createDialogs.ensure().openMovieForRows(sorok)
+        var forrasok = controller.personMovieSourceUrls()
+        if (forrasok.length === 0) return
+        createDialogs.ensure().openMovieForSources(forrasok)
     }
     readonly property int personSuggestionCount: {
         window._javaslatRevizio
@@ -1490,6 +1487,15 @@ ApplicationWindow {
         onViewAndEditRequested: window.nezdEsSzerkeszd()
         onUnhideRequested: window.unhideHiddenSelection()
         onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
+        // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
+        // frissítjük, mert az index nem jelzi a `textactive=` változását.
+        onTextOverlayStatesRefreshRequested: {
+            var rows = window.selectedRows()
+            picasaMenuBar.textOverlayShowEnabled = controller
+                ? controller.hasTextOverlayStateInSelection(rows, false) : false
+            picasaMenuBar.textOverlayHideEnabled = controller
+                ? controller.hasTextOverlayStateInSelection(rows, true) : false
+        }
         photoActionsEnabled: !window.viewerOpen
                              && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
@@ -1550,6 +1556,7 @@ ApplicationWindow {
         onAboutRequested: aboutDialog.open()
         onConfigureButtonsRequested: configureButtonsDialog.open()
         onConfigureScreensaverRequested: screensaverDialog.open()
+        onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
         onAddToScreensaverRequested: {
             var added = controller
                 ? controller.addScreensaverPhotos(window.selectedPaths()) : 0
@@ -1747,6 +1754,12 @@ ApplicationWindow {
             if (name === "rotate_cw") controller.rotateRightMany(window.selectedRows())
             else if (name === "rotate_ccw") controller.rotateLeftMany(window.selectedRows())
             else controller.applyEffectMany(window.selectedRows(), name)
+        }
+        // #4335: mindkét parancs ugyanazt a kötegelt INI-utat használja,
+        // a különbség a kért végállapot.
+        onTextOverlayVisibilityRequested: (visible) => {
+            controller.setTextOverlayVisibleMany(
+                window.selectedRows(), visible)
         }
         // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
@@ -2156,6 +2169,13 @@ ApplicationWindow {
                 saverController: controller
                 onPreviewRequested: window.startScreensaverPreview()
             }
+        }
+    }
+    DeferredDialog {
+        id: photoViewerSettingsDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            PhotoViewerSettingsDialog { viewerController: controller }
         }
     }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő

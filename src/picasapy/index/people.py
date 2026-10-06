@@ -20,6 +20,7 @@ számít bele.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from picasapy.ini import IniDocument, contacts_of, parse_faces
@@ -164,6 +165,53 @@ def person_photos(conn: sqlite3.Connection, name: str) -> tuple[PhotoRecord, ...
         f"{_SELECT} WHERE {clause} ORDER BY f.path, p.name", params
     )
     return _records(rows)
+
+
+def person_movie_photos(
+    conn: sqlite3.Connection,
+    albums: Sequence[PersonRecord | str],
+) -> tuple[PhotoRecord, ...]:
+    """A személyalbum-lista nem üres képeit fűzi össze, sorrendtartóan.
+
+    Az albumok sorrendje a hívó által átadott lista; itt nem rendezünk. Egy
+    üres alsó kép-lista kimarad, a képek sorrendjét ugyanaz az index-lekérdezés
+    adja, amit a `person_photos` is használ.
+    """
+    album_names = tuple(
+        album.name if isinstance(album, PersonRecord) else str(album)
+        for album in albums
+    )
+    if not album_names:
+        return ()
+
+    wanted = set(album_names)
+    pairs_by_person: dict[str, list[tuple[str, str]]] = {
+        name: [] for name in wanted
+    }
+    for folder_path, names, faces_by_file in _iter_face_data(conn):
+        for filename, faces in faces_by_file.items():
+            on_photo: set[str] = set()
+            for face in faces:
+                name = _resolve_name(face, names)
+                if name in wanted:
+                    on_photo.add(name)
+            for name in on_photo:
+                pairs_by_person[name].append((folder_path, filename))
+
+    result: list[PhotoRecord] = []
+    for name in album_names:
+        pairs = pairs_by_person.get(name, [])
+        if not pairs:
+            continue
+        clause = " OR ".join(
+            ["(f.path = ? AND p.name = ? COLLATE NOCASE)"] * len(pairs)
+        )
+        params = [value for pair in pairs for value in pair]
+        rows = conn.execute(
+            f"{_SELECT} WHERE {clause} ORDER BY f.path, p.name", params
+        )
+        result.extend(_records(rows))
+    return tuple(result)
 
 
 def photos_with_faces(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
