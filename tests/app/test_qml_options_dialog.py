@@ -610,7 +610,6 @@ class TestPlaceholderTabsAreDisabled:
             "optionsMailMovieFirstFrameRadio",
             "optionsMailUseHtmlCheck",
             "optionsFileTypeBmpCheck",
-            "optionsPrintHiResPreviewCheck",
             "optionsNetworkAutoDetectCheck",
             "optionsWebStripedUploadCheck",
         ],

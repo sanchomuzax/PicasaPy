@@ -288,11 +288,40 @@ BEALLITASOK = {
         "Nyomtató minősége:", "options/labelgroup120.title"),
     ("OptionsTabPrinting", "Print resampler quality:"): (
         "Nyomtatási mintavételezési minőség:", "options/labelgroup124.title"),
+    ("OptionsTabPrinting", "Compatible (half-res)"): (
+        "Kompatibilis (ötven százalékos felbontás)", "options/radio122.title"),
+    ("OptionsTabPrinting", "High Quality (full-res)"): (
+        "Magas minőség (teljes felbontás)", "options/radio123.title"),
     ("OptionsTabPrinting", "Use high quality previews (slower)"): (
         "Magas minőségű előnézetek használata (lassabb)",
         "options/PrintProxyPreview.title"),
+    ("OptionsTabPrinting", "General (Lanczos-3)"): (
+        "Általános (Lanczos-3)", "options/radio126.title"),
     ("OptionsTabPrinting", "Extra sharp (Lanczos-8)"): (
         "Extra éles (Lanczos-8)", "options/radio127.title"),
+    ("OptionsTabPrinting", "3 x 4"): ("3x4", "ytPrintSizes::e3x4"),
+    ("OptionsTabPrinting", "3.5 x 5"): ("3,5x5", "ytPrintSizes::e3x5"),
+    ("OptionsTabPrinting", "4 x 5"): ("4x5", "ytPrintSizes::e4x5"),
+    ("OptionsTabPrinting", "4 x 6"): ("4x6", "ytPrintSizes::e4x6"),
+    ("OptionsTabPrinting", "5 x 7"): ("5x7", "ytPrintSizes::e5x7"),
+    ("OptionsTabPrinting", "8 x 10"): ("8x10", "ytPrintSizes::e8x10"),
+    ("OptionsTabPrinting", "Wallet"): ("Tárcaméret", "ytPrintSizes::eWallet"),
+    ("OptionsTabPrinting", "5 x 8 cm"): ("5x8 cm", "ytPrintSizes::e5x8cm"),
+    ("OptionsTabPrinting", "9 x 13 cm"): ("9x13 cm", "ytPrintSizes::e9x13cm"),
+    ("OptionsTabPrinting", "10 x 15 cm"): (
+        "10x15 cm", "ytPrintSizes::e10x15cm"),
+    ("OptionsTabPrinting", "13 x 18 cm"): (
+        "13x18 cm", "ytPrintSizes::e13x18cm"),
+    ("OptionsTabPrinting", "15 x 20 cm"): (
+        "15x20 cm", "ytPrintSizes::e15x20cm"),
+    ("OptionsTabPrinting", "20 x 25 cm"): (
+        "20x25 cm", "ytPrintSizes::e20x25cm"),
+    ("OptionsTabPrinting", "FullPage"): ("FullPage", "ytPrintSizes::eFullPage"),
+    ("OptionsTabPrinting", "CD Cover Size"): (
+        "CD-borító mérete", "ytPrintSizes::eCDSize"),
+    ("OptionsTabPrinting", "Passport"): ("Útlevél", "ytPrintSizes::ePassport"),
+    ("OptionsTabPrinting", "Contact Sheet"): (
+        "Indexképek", "ytPrintSizes::eContact"),
     ("OptionsTabSlideshow", "Play music tracks during slideshow"): (
         "Zenelejátszás a diavetítés alatt", "options/PlayMP3Tracks.title"),
     ("OptionsTabSlideshow", "Select a folder of music tracks:"): (

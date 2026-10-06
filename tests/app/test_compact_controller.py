@@ -6,8 +6,7 @@ tárgy, hogy a háttérszálas tömörítés végigfut, jelez, és megszakíthat
 
 import sqlite3
 
-from PySide6.QtCore import Qt
-
+from picasapy.app import compact_controller as compact_controller_module
 from picasapy.app.compact_controller import CompactController
 
 
@@ -30,6 +29,14 @@ def _wait(controller, qt_app, timeout=30.0):
 
 
 class TestCompactController:
+    def test_feluleti_allapothoz_nincs_kulon_start_vagy_haladasjelzes(
+        self, tmp_path
+    ):
+        controller = CompactController(tmp_path / "index.db")
+
+        assert not hasattr(controller, "compactStarted")
+        assert not hasattr(controller, "compactProgress")
+
     def test_it_finishes_and_reports_the_saved_space(self, qt_app, tmp_path):
         controller = CompactController(_wasteful_db(tmp_path / "index.db"))
         saved = []
@@ -41,19 +48,29 @@ class TestCompactController:
         assert saved and saved[0] > 0
         assert controller.running is False
 
-    def test_it_can_be_cancelled_and_the_database_survives(self, qt_app, tmp_path):
+    def test_it_can_be_cancelled_and_the_database_survives(
+        self, qt_app, tmp_path, monkeypatch
+    ):
         db = _wasteful_db(tmp_path / "index.db", rows=20000)
         controller = CompactController(db)
         cancelled = []
         controller.compactCancelled.connect(lambda: cancelled.append(True))
-        # a megszakítás a haladás-jelzés első jelére megy ki — így biztos,
-        # hogy a `VACUUM` közben ér oda, nem előtte vagy utána
-        # DirectConnection: a jelzés a HÁTTÉRSZÁLON születik, sorba állítva
-        # csak a `VACUUM` után futna le — akkor pedig már nincs mit
-        # megszakítani
-        controller.compactProgress.connect(
-            lambda _tick: controller.cancelCompact(),
-            Qt.ConnectionType.DirectConnection,
+        compact = compact_controller_module.compact_database
+
+        def compact_with_cancel_on_real_progress(
+            path, *, progress=None, should_cancel=None
+        ):
+            assert progress is None, "a felület nem kap hasznavehetetlen pulzust"
+            return compact(
+                path,
+                progress=lambda _tick: controller.cancelCompact(),
+                should_cancel=should_cancel,
+            )
+
+        monkeypatch.setattr(
+            compact_controller_module,
+            "compact_database",
+            compact_with_cancel_on_real_progress,
         )
 
         controller.startCompact()

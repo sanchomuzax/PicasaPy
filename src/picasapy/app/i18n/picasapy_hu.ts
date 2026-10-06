@@ -415,6 +415,10 @@
         <translation>Nyomatméret:</translation>
     </message>
     <message>
+        <source>CD Cover Size</source>
+        <translation>CD-borító mérete</translation>
+    </message>
+    <message>
         <source>3 x 4</source>
         <translation>3x4</translation>
     </message>
@@ -1064,12 +1068,12 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Nyomtató minősége:</translation>
     </message>
     <message>
-        <source>Standard</source>
-        <translation>Normál</translation>
+        <source>Compatible (half-res)</source>
+        <translation>Kompatibilis (ötven százalékos felbontás)</translation>
     </message>
     <message>
-        <source>High</source>
-        <translation>Magas</translation>
+        <source>High Quality (full-res)</source>
+        <translation>Magas minőség (teljes felbontás)</translation>
     </message>
     <message>
         <source>Print resampler quality:</source>
@@ -1082,6 +1086,74 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
     <message>
         <source>Extra sharp (Lanczos-8)</source>
         <translation>Extra éles (Lanczos-8)</translation>
+    </message>
+    <message>
+        <source>3 x 4</source>
+        <translation>3x4</translation>
+    </message>
+    <message>
+        <source>3.5 x 5</source>
+        <translation>3,5x5</translation>
+    </message>
+    <message>
+        <source>4 x 5</source>
+        <translation>4x5</translation>
+    </message>
+    <message>
+        <source>4 x 6</source>
+        <translation>4x6</translation>
+    </message>
+    <message>
+        <source>5 x 7</source>
+        <translation>5x7</translation>
+    </message>
+    <message>
+        <source>8 x 10</source>
+        <translation>8x10</translation>
+    </message>
+    <message>
+        <source>Wallet</source>
+        <translation>Tárcaméret</translation>
+    </message>
+    <message>
+        <source>5 x 8 cm</source>
+        <translation>5x8 cm</translation>
+    </message>
+    <message>
+        <source>9 x 13 cm</source>
+        <translation>9x13 cm</translation>
+    </message>
+    <message>
+        <source>10 x 15 cm</source>
+        <translation>10x15 cm</translation>
+    </message>
+    <message>
+        <source>13 x 18 cm</source>
+        <translation>13x18 cm</translation>
+    </message>
+    <message>
+        <source>15 x 20 cm</source>
+        <translation>15x20 cm</translation>
+    </message>
+    <message>
+        <source>20 x 25 cm</source>
+        <translation>20x25 cm</translation>
+    </message>
+    <message>
+        <source>FullPage</source>
+        <translation>FullPage</translation>
+    </message>
+    <message>
+        <source>CD Cover Size</source>
+        <translation>CD-borító mérete</translation>
+    </message>
+    <message>
+        <source>Passport</source>
+        <translation>Útlevél</translation>
+    </message>
+    <message>
+        <source>Contact Sheet</source>
+        <translation>Indexképek</translation>
     </message>
 </context>
 <context>

@@ -4,9 +4,9 @@
 Önálló QObject — a `RelocateController` (#368) mintáját követve, hogy a
 `controller.py` (forró fájl) ne hízzon tovább.
 
-A tömörítés HÁTTÉRSZÁLON fut, „szívverés"-jelzéssel (`compactProgress`) és
-megszakíthatóan (`cancelCompact`) — az eredeti `compacting.fen` egyetlen
-gombja is a **Mégse** volt.
+A tömörítés HÁTTÉRSZÁLON fut, a `running` tulajdonság vezérli a felület
+határozatlan folyamatjelzőjét, és a `cancelCompact` megszakíthatóvá teszi —
+az eredeti `compacting.fen` egyetlen gombja is a **Mégse** volt.
 """
 
 from __future__ import annotations
@@ -33,8 +33,6 @@ _log = logging.getLogger(__name__)
 class CompactController(BackgroundWorkerMixin, QObject):
     """A `CompactDatabaseDialog.qml` háttér-hídja."""
 
-    compactStarted = Signal()
-    compactProgress = Signal(int)  # szívverés-számláló (nem százalék!)
     compactCancelled = Signal()
     compactFailed = Signal(str)
     # (megtakarított bájt) — sikeres tömörítés
@@ -66,7 +64,6 @@ class CompactController(BackgroundWorkerMixin, QObject):
         self._stop_event = stop_event
         self._running = True
         self.runningChanged.emit()
-        self.compactStarted.emit()
         self._start_background(
             self._run_compact, args=(stop_event,), name="picasapy-compact"
         )
@@ -82,7 +79,6 @@ class CompactController(BackgroundWorkerMixin, QObject):
         try:
             result = compact_database(
                 self._index_db,
-                progress=self.compactProgress.emit,
                 should_cancel=stop_event.is_set,
             )
         except CompactionCancelled:
