@@ -5272,8 +5272,10 @@ interpoláció után minden LUT-bejegyzést **közvetlenül** RGB-vé alakít:
    (R, G, B): 0 (V, t, p) · 1 (q, V, p) · 2 (p, V, t) · 3 (p, q, V) ·
    4 (t, p, V) · 5 (V, p, q) (ugrótábla `0x00bbc0c4`).
 4. Csatornánként `csonk(x · 255,0)` (`0x00bbc031` `fld [0xcf39d0]`, `or
-   0xc00` + `fistp`). **Nincs +0,5.** A köztes értékek (h, S, V, h6, f,
-   p, q, t) float32 cellákban vannak.
+   0xc00` + `fistp`). **Nincs +0,5.** A h, S, V, h6 és f float32 cellákból
+   jön; a p/q/t képletek x87-regiszterben futnak, és csak az eredményük
+   tárolódik float32-be (`0x00bbbf67`–`0x00bbbf9d`). A képlet tehát nem
+   jelent operátoronkénti float32-kerekítést.
 
 A `hueOffset` (`+0x44`) float32-ben adódik a keverés utáni színezethez
 (`0x00bbc52f` `fadd`), a körbefordítást az 1. lépés végzi. Példa:
@@ -5281,9 +5283,11 @@ A `hueOffset` (`+0x44`) float32-ben adódik a keverés utáni színezethez
 (`0,6666665 · 255 = 169,99996`), kerekítéssel 170 volna.
 
 **Nálunk** (#3814 óta) a `glimmer_ops.hsv_gradient_map` a fenti képlettel
-építi a LUT-ot (`_hsv_rgb_lut_f32`): float32 köztes értékek, `±360`-as
+építi a LUT-ot (`_hsv_rgb_lut_f32`): NumPy float32 műveletek, `±360`-as
 körbefordítás, hatodolás és `csonk(x · 255)`, OpenCV nélkül. A `hueOffset`
-float32-ben adódik az interpolált színezethez. Korábban az OpenCV 8 bites
+float32-ben adódik az interpolált színezethez. A p/q/t műveleti sorrend
+natív bájtazonosságát a 2026-10-06-i QEMU-kontroll külön vizsgálja lent.
+Korábban az OpenCV 8 bites
 HSV-jén ment át (`h/2`, `·2,55`, egészre kerekítve, `cv2.COLOR_HSV2RGB`) —
 ez a kvantálás volt az 1,0–1,1-es eltérés oka. A javítás után mérve: alap
 **0,548**, min **0,558**, max 0,121 (változatlan: a Fade 100 mellett a keverési
@@ -5419,6 +5423,75 @@ sorrend megtartásával; az s/v maradjon lineáris. Bájtra ellenőrizhető pró
 stopok `[0,350,100,100]`, `[255,10,100,100]`; RGB LUT[0]=`ff002a`,
 LUT[127]=`ff0000`, LUT[128]=`ff0000`, LUT[255]=`ff2a00` (natív BGRA:
 `2a00ffff`, `0000ffff`, `0000ffff`, `002affff`).
+
+### #626 pozícióskála — utasításszintű és QEMU-i386 kontroll (2026-10-06)
+
+**Válasz:** a `position` a 256 elemű HSV-LUT közvetlen, float32
+indexkoordinátája: a worker `x = 0…255` értékeket ad át változtatás nélkül a
+`0x00bbbcf0` stopkeresőnek. Nincs `0…1`, `0…100` vagy más skálára
+normalizálás. A beolvasott stopértéket a worker sem szorozza, sem vágja;
+ha a keresett `x` a stopok tartományán kívül van, a kereső a szélső stopot
+adja vissza. A közös pixelmotor BGRA-forrásának `src[2]` bájtja adja `x`-et
+(`0x00bcb3a0`–`0x00bcb3a4`), tehát a forrás vörös csatornabájtja közvetlenül
+a megfelelő LUT-index.
+
+**A út — utasításszint:** a `0x00bbc260` worker a `position` mezőt
+`0x00bbc40d`-nél nevezi meg, majd a `0x00bbc487` helyen hívja a
+`0x008f1460` kifejezéskonvertert. Az utóbbi a double eredményt
+`0x008f147a`–`0x008f1480` között float32 dwordként tárolja. A worker
+`0x00bbc506`-nál nulláról indítja az indexet, `0x00bbc520`-nál ezt az
+indexet adja át a `0x00bbbcf0`-nek, és `0x00bbc55b`-nél 256-tal áll meg.
+A kereső közvetlenül a float32 indexet hasonlítja a stopok float32
+pozícióihoz (`0x00bbbd23`–`0x00bbbd46`); a konvertált színt a worker a
+`+0x800 + 4*x` LUT-bankba írja (`0x00bbc561`).
+
+**B út — eredeti gépi kód futtatása és független Python-referencia:** a
+qemu-i386 harness az eredeti `0x00bbbcf0` stopkeresőt, a `0x00bbbbf0`
+HSV-keverőt és a `0x00bbbe20` HSV→RGB konvertert futtatta `x = 0…255`
+értékeken. A Python-referencia külön implementáció; a stopértékeket és a
+natív tárolási pontokat float32-re kerekíti, a konverter x87-műveleti
+sorrendjét pedig pontos aritmetikával emulálja. Mindhárom alábbi esetben
+0 eltérés volt a 256 × 3 kimeneti RGB-bájton:
+
+| bemeneti stopok | natív megfigyelés | forrás |
+|---|---|---|
+| `HeatMap`: position `0`, `31.875`, `127.5`, `223.125`, `255` | a Python-referenciával bájtra egyezik; ezek a telepített `filterdesc.xml` stopjai | `mérés (qemu-i386 + Python, 256 × 3 bájt)`; stopértékek: `filterdesc.xml`, 952. sor |
+| position `0.5`, `1.5` | `x=0`: első stop; `x=1`: felezőpont; `x=2`: második stop — tehát nincs normalizálás | `mérés (qemu-i386 + Python, 256 × 3 bájt)` |
+| position `300`, `400` | mind a 256 elem az első stop színe; a tartományon kívüli stopértékeket nem vágja át a worker | `mérés (qemu-i386 + Python, 256 × 3 bájt)` |
+
+A harness kézzel épített float32 stoplistákat adott a natív függvényeknek;
+nem futtatta a külső XML-betöltőt vagy a teljes képpixel-alkalmazót. Az XML
+receptértékei és a worker beolvasási útja ettől függetlenül a binárisból,
+illetve a telepített leíróból vannak igazolva.
+
+**Kapcsolat a `GradientMap` / `TwoTone` útjával:** a stopkeresés szerkezete
+hasonló, de a HSV-változat nem ugyanazt a függvényt hívja. HSV: `0x00bbbcf0`
+→ `0x00bbbbf0` (HSV, rövid hue-körív) → `0x00bbbe20`; RGB: `0x00bb85b0`
+→ `0x00bb84a0` (RGB-bájtos interpoláció). Az RGB-worker maga hozza létre
+az egyenletes stoppozíciókat, míg a HSV-worker a leíró explicit
+`position` értékeit olvassa. Forrás: `bináris (0x00bbbcf0, 0x00bbbbf0,
+0x00bbbe20, 0x00bb85b0, 0x00bb84a0)`.
+
+**Eredeti / nálunk / teendő:**
+
+| | állapot |
+|---|---|
+| Eredeti | A stoppozíció float32 LUT-index; a három QEMU-kontroll kimenete a külön Python-referenciával bájtra egyezett. Forrás: `bináris (0x00bbc260, 0x00bbbcf0)`; `mérés (qemu-i386 + Python)` |
+| Nálunk | A `[0.5,1.5]` és `[300,400]` kontrollban a `hsv_gradient_map` kimenete bájtra egyezett. A HeatMap XML-stoplistán 5/768 RGB-bájt tért el: `x = 207, 210, 216, 219, 222` indexeken a natív/helyi zöld bájtpárok rendre `86/85`, `70/69`, `38/37`, `22/21`, `6/5`. Ez a színkonverter x87-kerekítési sorrendje, nem a stopskála eltérése. Forrás: `mérés (QEMU ↔ PicasaPy, 256 × 3 bájt)`; kód: `src/picasapy/render/glimmer_ops.py:878–886` |
+| Teendő | Külön fejlesztési tételként a `_hsv_rgb_lut_f32` p/q/t műveleti sorrendjét és float32 tárolási pontjait kell a natív x87-szekvenciához igazítani, majd a fenti HeatMap-listán 768/768 bájtos QEMU-egyezést kell elérni. Ez nem része a position-skála módosításának. Forrás: `bináris (0x00bbbf67–0x00bbbf9d)`; `mérés (QEMU ↔ PicasaPy)` |
+
+**Bizonyítottsági fok: megerősített** a pozícióskálára és a stopkeresés
+végpontkezelésére: A — a fenti utasításszintű adatút; B — az eredeti
+függvénylánc QEMU-i386 futtatása, bájtra egyező, külön Python-referenciával.
+Vak, bináris-alapú újralevezetés szintén közvetlen `x` ↔ float32 `position`
+összehasonlítást talált; egyezik. E két út nem a PicasaPy kódjából
+következtetett.
+
+**Cáfoló kísérlet:** ha a pozíciót 0…1-re normalizálnánk, az `[0.5,1.5]`
+kontroll `x=1` mintáján nem a felezőpontot kapnánk; a natív eredmény a
+felezőpont. A `300,400` kontroll azt is cáfolja, hogy a worker a
+stopértékeket a 0…255 tartományra vágná; a kereső ilyenkor végponti színt
+ad minden indexen.
 
 
 ---
