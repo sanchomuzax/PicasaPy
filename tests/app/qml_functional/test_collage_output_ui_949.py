@@ -18,7 +18,7 @@ Három dolog miatt kell ide kirajzolt teszt:
 from __future__ import annotations
 
 from pathlib import Path
-from xml.sax.saxutils import escape
+from xml.etree import ElementTree
 
 import picasapy.app
 import pytest
@@ -389,13 +389,12 @@ class TestKijelolesKotelezo:
         )
 
 
-_TS_FORRAS = (
-    Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
-).read_text(encoding="utf-8")
-
-
-def _xml(szoveg: str) -> str:
-    return escape(szoveg, {'"': "&quot;"})
+_TS_PAROK = {
+    (uzenet.findtext("source"), uzenet.findtext("translation"))
+    for uzenet in ElementTree.parse(
+        Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
+    ).iter("message")
+}
 
 
 class TestHivatalosMagyar:
@@ -460,6 +459,6 @@ class TestHivatalosMagyar:
         ids=lambda s: s[:40],
     )
     def test_a_forras_es_a_forditas_parban_all(self, angol, magyar):
-        # a `.ts` XML: az idézőjel `&quot;`-ként áll benne (#3573)
-        assert f"<source>{_xml(angol)}</source>" in _TS_FORRAS, angol
-        assert f"<translation>{_xml(magyar)}</translation>" in _TS_FORRAS, magyar
+        # a `.ts`-t XML-ként olvassuk: az idézőjel és az eredet-megjegyzés
+        # alakja a generátortól függ (#3573, #4313)
+        assert (angol, magyar) in _TS_PAROK, angol
