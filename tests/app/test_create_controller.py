@@ -313,7 +313,7 @@ class TestPosterWorkerProcessFailure:
                 stderr="",
             )
 
-        monkeypatch.setattr(poster_controller.subprocess, "run", fail_in_process)
+        monkeypatch.setattr(poster_controller, "_run", fail_in_process)
 
         class FailureObserver(QObject):
             def __init__(self):

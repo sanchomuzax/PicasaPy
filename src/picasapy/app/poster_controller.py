@@ -22,6 +22,9 @@ _POSTER_WORKER_TIMEOUT_S = 120
 # A csomagolt alkalmazás a launcher rejtett worker-módját, a forrásfa a modult indítja.
 _futtato = sys
 
+#: A worker indítója — a teszt ezt cseréli, nem a globális `subprocess.run`-t (#1375).
+_run = subprocess.run
+
 
 def _poster_worker_command(
     source_path: str,
@@ -146,7 +149,7 @@ class PosterMixin(BackgroundWorkerMixin):
                         overlap,
                         result_path,
                     )
-                    completed = subprocess.run(
+                    completed = _run(
                         command,
                         capture_output=True,
                         text=True,
