@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Első indításkor felajánljuk a támogatott rendszernyelv használatát, és elmentjük a választást (#4325).
+
 ## [0.9.11] – 2026-10-06
 
 - A fel nem használt belső vezérlők kikerültek a felületi műveletlistából. (#4316).

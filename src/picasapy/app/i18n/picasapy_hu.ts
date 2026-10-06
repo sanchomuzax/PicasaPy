@@ -11662,4 +11662,27 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Képek</translation>
     </message>
 </context>
+<context>
+    <name>FirstRunLanguageDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="13"/>
+        <source>Confirm</source>
+        <translation>Megerősítés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37"/>
+        <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
+        <translation>A PicasaPy már a rendszer nyelvén is elérhető. Szeretnéd a PicasaPy nyelvét angolról erre a nyelvre váltani?</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47"/>
+        <source>Yes</source>
+        <translation>Igen</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="53"/>
+        <source>No</source>
+        <translation>Nem</translation>
+    </message>
+</context>
 </TS>
