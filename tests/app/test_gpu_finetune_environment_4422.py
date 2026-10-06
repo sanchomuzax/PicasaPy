@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import socket
 from types import SimpleNamespace
 
 import pytest
@@ -36,7 +35,7 @@ def _wayland_alap(monkeypatch, tmp_path, socket_factory) -> None:
     socket_path = tmp_path / "wayland-0"
     socket_path.touch()
     monkeypatch.setattr(gpu_test, "_HEADLESS", tmp_path)
-    monkeypatch.setattr(socket, "socket", socket_factory)
+    monkeypatch.setattr(gpu_test, "_socket_letrehoz", socket_factory)
 
 
 def test_a_zarolt_wayland_socketnel_kihagyja_a_gpu_alfolyamatot(
@@ -44,8 +43,8 @@ def test_a_zarolt_wayland_socketnel_kihagyja_a_gpu_alfolyamatot(
 ) -> None:
     _wayland_alap(monkeypatch, tmp_path, lambda *_args: _TiltottSocket())
     monkeypatch.setattr(
-        gpu_test.subprocess,
-        "run",
+        gpu_test,
+        "_alfolyamat_futtat",
         lambda *_args, **_kwargs: pytest.fail("az elérhetetlen socketet kihagyná"),
     )
 
@@ -64,7 +63,7 @@ def test_a_gpu_alfolyamat_nem_orokli_a_szoftveres_qt_quick_backendet(
         futtatas["kornyezet"] = kwargs["env"]
         return SimpleNamespace(returncode=0, stdout="1 passed\n", stderr="")
 
-    monkeypatch.setattr(gpu_test.subprocess, "run", _futtat)
+    monkeypatch.setattr(gpu_test, "_alfolyamat_futtat", _futtat)
     gpu_test.test_valodi_gpun_egerhuzassal(tmp_path)
 
     assert "QT_QUICK_BACKEND" not in futtatas["kornyezet"]
