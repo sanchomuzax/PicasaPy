@@ -41,14 +41,14 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 600 |
-| párosítva | 600 |
+| párosítva | 602 |
 | másutt megvan (nem ezen a felületen) | 7 |
 | hiányzik — **feltáratlan** (kutatói kör kell) | 0 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 1 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 0 |
 | bizonytalan | 0 |
-| nem értékelhető (rajzoló elem) | 1278 |
+| nem értékelhető (rajzoló elem) | 1277 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 134 |
-| **lefedettség az értékelhető elemeken** | **100.0%** |
+| **lefedettség az értékelhető elemeken** | **100.3%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -56,26 +56,25 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | # | panel | hiány + bizonytalan | mit takar |
 |---:|---|---:|---|
-| 1 | `titledialog` | 1 | Filmes címdia-szerkesztő: szöveg/betűformázás, képfelirat, élő előnézet és Add/Cancel |
-| 2 | `editpanel` | 0 | A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet); a videómód lejátszója a VideoPlayerView.qml |
-| 3 | `thumbui` | 0 | A fő könyvtárnézet egésze |
-| 4 | `publish` | 0 | A panel 21 mért vezérlője megvan (#2508), a főablakos kattintásos méretválasztás pedig a lemezkép-kimenethez jut (#4212). Az Ajándék-CD és a biztonsági mentés a menüből nyílik és a spec szerinti mappa/ISO-kimenetet készíti (#3503/#3504/#2074); a feltöltési módválasztó a CBurnPanel +0xd4 mezőjét 1/2/3-ra állítja (#4126). A megszűnt online műveletek, az optikai lemez kiadása és a rejtett web_group hét eleme nem cél. |
-| 5 | `makemoviepanel` | 0 | A Filmkészítő háromlapos panelje a párbeszédben él (#4125/#4182); a maradék leírt elemek és eltéréseik elemenként szerepelnek az ui-lefedettseg-elemek.csv-ben. |
-| 6 | `collagepanel` | 0 | A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte. |
-| 7 | `printpanel` | 0 | Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782) |
-| 8 | `acquirepanel` | 0 | Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel |
-| 9 | `upload` | 0 | Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés) |
-| 10 | `buzzupload` | 0 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
+| 1 | `editpanel` | 0 | A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet); a videómód lejátszója a VideoPlayerView.qml |
+| 2 | `thumbui` | 0 | A fő könyvtárnézet egésze |
+| 3 | `publish` | 0 | A panel 21 mért vezérlője megvan (#2508), a főablakos kattintásos méretválasztás pedig a lemezkép-kimenethez jut (#4212). Az Ajándék-CD és a biztonsági mentés a menüből nyílik és a spec szerinti mappa/ISO-kimenetet készíti (#3503/#3504/#2074); a feltöltési módválasztó a CBurnPanel +0xd4 mezőjét 1/2/3-ra állítja (#4126). A megszűnt online műveletek, az optikai lemez kiadása és a rejtett web_group hét eleme nem cél. |
+| 4 | `makemoviepanel` | 0 | A Filmkészítő háromlapos panelje a párbeszédben él (#4125/#4182); a maradék leírt elemek és eltéréseik elemenként szerepelnek az ui-lefedettseg-elemek.csv-ben. |
+| 5 | `collagepanel` | 0 | A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte. |
+| 6 | `printpanel` | 0 | Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782) |
+| 7 | `acquirepanel` | 0 | Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel |
+| 8 | `upload` | 0 | Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés) |
+| 9 | `buzzupload` | 0 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
+| 10 | `compose_share` | 0 | PWA megosztási meghívó szerkesztő — a szolgáltatás 2016-ban megszűnt; album-láthatóság, együttműködők, címzettek, csoportok |
 
 ## Panelenkénti lefedettség
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | feltáratlan | lekutatva | bizonytalan | rajzoló | nem cél | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `titledialog` | 18 | 7 | 6 | 0 | 0 | 1 | 0 | 11 | 0 | `MovieTitleDialog.qml`, `CreateDialogs.qml` |
 | `editpanel` | 312 | 117 | 117 | 0 | 0 | 0 | 0 | 187 | 8 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml`, `VideoPlayerView.qml` |
 | `thumbui` | 140 | 38 | 34 | 4 | 0 | 0 | 0 | 93 | 9 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `publish` | 125 | 22 | 23 | 0 | 0 | 0 | 0 | 94 | 8 | `PublishPanel.qml`, `GiftCdHost.qml`, `BackupHost.qml` |
-| `makemoviepanel` | 111 | 54 | 52 | 2 | 0 | 0 | 0 | 56 | 1 | `CreateDialogs.qml` |
+| `makemoviepanel` | 111 | 54 | 53 | 2 | 0 | 0 | 0 | 55 | 1 | `CreateDialogs.qml` |
 | `collagepanel` | 108 | 55 | 55 | 0 | 0 | 0 | 0 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
 | `printpanel` | 73 | 32 | 32 | 0 | 0 | 0 | 0 | 40 | 1 | `PrintDialog.qml` |
 | `acquirepanel` | 67 | 19 | 19 | 0 | 0 | 0 | 0 | 43 | 5 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
@@ -102,6 +101,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `collab` | 23 | 0 | 0 | 0 | 0 | 0 | 0 | 13 | 10 | **nem-cel** — Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél |
 | `initialscan` | 18 | 4 | 4 | 0 | 0 | 0 | 0 | 14 | 0 | `InitialScanDialog.qml` |
 | `keywords` | 18 | 7 | 7 | 0 | 0 | 0 | 0 | 11 | 0 | `TagsPanel.qml`, `Main.qml` |
+| `titledialog` | 18 | 7 | 7 | 0 | 0 | 0 | 0 | 11 | 0 | `MovieTitleDialog.qml`, `CreateDialogs.qml` |
 | `unknownfaceheaderpanel` | 18 | 6 | 6 | 0 | 0 | 0 | 0 | 12 | 0 | `UnnamedFacesView.qml`, `Main.qml` |
 | `video_control_bar2` | 18 | 4 | 4 | 0 | 0 | 0 | 0 | 14 | 0 | `VideoPlayerView.qml` |
 | `uploadmgr` | 17 | 1 | 0 | 1 | 0 | 0 | 0 | 10 | 6 | **nincs-megfeleltetes** — Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk |
@@ -150,12 +150,6 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 Csak az értékelhető elemek. `bizonytalan` = nem dönthető el gépi úton, kézi ellenőrzésre vár.
 
-### `titledialog` — 1 hiány · panel-megfeleltetés: `parositva`
-
-Filmes címdia-szerkesztő: szöveg/betűformázás, képfelirat, élő előnézet és Add/Cancel
-
-- `captionchk` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
-
 ## Megvan, de nem ezen a felületen
 
 Ezeknek a feliratoknak van párja a QML-fánkban, csak **nem a panelhez rendelt fájlokban** — tipikusan a menüsorban vagy egy helyi menüben. A funkció tehát él, de az eredeti panelről hiányzik a hozzáférés.
@@ -182,9 +176,9 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, sem a `stringres` szövegtárban. Ez **nem automatikusan hiba**: lehet jogos új funkció (pl. teljesítménymérő) vagy más szóhasználat — de **idegen elemet is jelezhet**, mint a #704-ben a „Kreatív”/„Effektek” fejlécsáv.
 
-Összesen **504 felirat** 89 fájlban.
+Összesen **506 felirat** 89 fájlban.
 
-Besorolás (`docs/specs/ui-tobblet-besorolas.tsv`, #2921): saját funkció: **69** · szükséges segédszöveg: **158** · valódi eltérés: **9** · a mérő vakfoltja — az eredetiben is megvan: **144** · bizonytalan: **6** · besorolatlan: **118**
+Besorolás (`docs/specs/ui-tobblet-besorolas.tsv`, #2921): saját funkció: **69** · szükséges segédszöveg: **158** · valódi eltérés: **9** · a mérő vakfoltja — az eredetiben is megvan: **144** · bizonytalan: **6** · besorolatlan: **120**
 
 ### Hogyan kell ezt a listát olvasni (#2921)
 
@@ -867,6 +861,25 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 - „This only hides the folders inside PicasaPy. The files ”
   - *szükséges segédszöveg* — Sajat magyarazo szoveg a rejtes korlatairol (csak a PicasaPy-n belul rejt); nincs talalhato eredeti megfelelo.
 
+### `PicasaPy/OptionsTabPrinting.qml` — 8
+
+- „Available print sizes:”
+  - ⚠️ *besorolatlan*
+- „Use high quality previews (slower)”
+  - ⚠️ *besorolatlan*
+- „Printer quality:”
+  - ⚠️ *besorolatlan*
+- „Compatible (half-res)”
+  - ⚠️ *besorolatlan*
+- „High Quality (full-res)”
+  - ⚠️ *besorolatlan*
+- „Print resampler quality:”
+  - ⚠️ *besorolatlan*
+- „General (Lanczos-3)”
+  - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal („Általános (Lanczos-3)”).
+- „Extra sharp (Lanczos-8)”
+  - ⚠️ *besorolatlan*
+
 ### `PicasaPy/OptionsTabWebAlbums.qml` — 8
 
 - „Default upload size:”
@@ -982,21 +995,6 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 - „Store name tags in the file”
   - ⚠️ *besorolatlan*
 - „Upload contact thumbnails to Google Contacts”
-  - ⚠️ *besorolatlan*
-
-### `PicasaPy/OptionsTabPrinting.qml` — 6
-
-- „Available print sizes:”
-  - ⚠️ *besorolatlan*
-- „Use high quality previews (slower)”
-  - ⚠️ *besorolatlan*
-- „Printer quality:”
-  - ⚠️ *besorolatlan*
-- „Print resampler quality:”
-  - ⚠️ *besorolatlan*
-- „General (Lanczos-3)”
-  - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal („Általános (Lanczos-3)”).
-- „Extra sharp (Lanczos-8)”
   - ⚠️ *besorolatlan*
 
 ### `PicasaPy/EditorCropPanel.qml` — 5

@@ -3265,6 +3265,21 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
 <context>
     <name>CreateDialogs</name>
     <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml"/>
+        <source>Text Slide</source>
+        <translation>Szöveges dia</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml"/>
+        <source>%1     %2x%3 pixels</source>
+        <translation>%1     %2x%3 képpont</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml"/>
+        <source>(%1 of %2)</source>
+        <translation>(%1 / %2)</translation>
+    </message>
+    <message>
         <source>Poster Settings</source>
         <translation>Poszterbeállítások</translation>
     </message>

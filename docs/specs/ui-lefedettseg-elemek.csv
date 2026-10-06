@@ -80,7 +80,9 @@ editpanel/fxpreview1,megvan,PicasaPy/ToolTile.qml:76,Az effekt-csempe képe — 
 makemoviepanel/recompute,megvan,tests/app/qml_functional/test_film_panel_4125.py,Újraszámolás: a klipforrások újraolvasása és visszaváltás az előnézethez (#4125).
 makemoviepanel/sizelist,megvan,tests/app/qml_functional/test_film_panel_4125.py,Hét eredeti méret; a választott méret a kész film kimenetében is megmarad (#4125).
 makemoviepanel/add_audio,megvan,tests/movie/test_slideshow_transitions_4125.py,Hangfájl hozzáadása és a három hangsáv-opció a létrehozott MP4-ben (#4125).
-makemoviepanel/insert_slide,megvan,tests/app/qml_functional/test_film_panel_4125.py,A beszúrt szöveges dia megjelenik a kész videóban és az .mxf projektben (#4125).
+makemoviepanel/insert_slide,megvan,tests/app/qml_functional/test_film_panel_4125.py;tests/app/qml_functional/test_film_text_slide_infotext_4402.py,"A beszúrt szöveges dia a kész videóban és az .mxf projektben is megjelenik, a filmszalagon és a listában Text Slide néven látszik (#4125/#4402)."
+makemoviepanel/infotext,megvan,tests/app/qml_functional/test_film_text_slide_infotext_4402.py,"Valódi kattintással ellenőrzi a fotó és a Text Slide nevét, képpontméretét és filmsorszámát (#4402)."
+titledialog/captionchk,megvan,tests/app/qml_functional/test_titledialog_4198.py,"A jelölőnégyzet valódi kattintással a képfeliratot tölti be, és a szöveg a kész videó kimenetében is megmarad (#4198)."
 makemoviepanel/transtype_label,megvan,tests/movie/test_slideshow_transitions_4125.py,A választott képváltási stílus a renderelt átmenetet és az .mxf-et állítja (#4125).
 makemoviepanel/tab3,megvan,tests/app/qml_functional/test_film_panel_4125.py,"A Klipek fül hozzáadása, törlése, újrarendezése és újraszámolása (#4125)."
 printpanel/3x5button,megvan,PicasaPy/PrintDialog.qml,»3.5 x 5 in« a printSizeLabels tömbben (:93) — a felirat mértékegységgel bővül
@@ -401,7 +403,7 @@ makemoviepanel/tabpanel2,megvan,tests/app/qml_functional/test_film_panel_4182.py
 makemoviepanel/templatelist,megvan,tests/app/qml_functional/test_film_panel_4182.py,A movieTextStyleBox a 12 eredeti szövegdia-stílust tartalmazza.
 makemoviepanel/text_picker_panel,megvan,tests/app/qml_functional/test_film_panel_4182.py,A szövegszín-választó tényleges kattintásra megnyílik.
 makemoviepanel/txcolorpicker_bevel,megvan,tests/app/qml_functional/test_film_panel_4182.py,A szövegszín színmintájának kerete a ColorDialog nyitógombjával együtt látható és tesztelt.
-makemoviepanel/viewedit,megvan,tests/app/qml_functional/test_film_panel_4182.py,"A szövegdiák húzással átrendezhetők és kijelölhetők, dupla kattintásra szerkeszthetők, a sorrend az MXF-kimenetben is ellenőrzött. A meglévő dia beszúrásának, kliptálcára húzásának és a helyi menü tartalmának viselkedése nincs egyértelműen leírva, ezért ezeket kihagytam."
+makemoviepanel/viewedit,megvan,tests/app/qml_functional/test_film_panel_4182.py;tests/app/qml_functional/test_film_text_slide_infotext_4402.py,"A szövegdiák húzással átrendezhetők és kijelölhetők, dupla kattintásra szerkeszthetők, a sorrend az MXF-kimenetben is ellenőrzött; a lista Text Slide néven jeleníti meg őket (#4182/#4402)."
 panelroot/picasatab,megvan,PicasaPy/DocumentTabStrip.qml;tests/app/qml_functional/test_panelroot_lefedettseg_4210.py,A Library fül a könyvtárra vált a valódi főablakban; a teszt a főablakból kattintva ellenőrzi (#4210).
 panelroot/globaltabs,megvan,PicasaPy/DocumentTabStrip.qml;tests/app/qml_functional/test_panelroot_lefedettseg_4210.py,"A közös, látható projektfülsor tartalmazza a Könyvtár és a projektfüleket; a teszt valódi kattintással vált (#4210)."
 panelroot/capturemovietab,megvan,PicasaPy/MainToolbar.qml;PicasaPy/CaptureMoviePanelPopup.qml;tests/app/qml_functional/test_panelroot_lefedettseg_4210.py,A kamera-rögzítő belépő akadálymentes neve az eredeti „Capture”; a valódi főablaki kattintás megnyitja a rögzítőpanelt (#4210).
