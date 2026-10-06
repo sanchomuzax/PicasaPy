@@ -4180,7 +4180,11 @@ ApplicationWindow {
             createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)
         }
         function onCollagePreviewFailed(message) {
-            createDialogs.ensure().jelezdAKollazsHibajat(message)
+            // Az előnézet a háttérből a főablak lebontása közben is bukhat;
+            // akkor már nincs párbeszéd, amelyben jelezni lehetne.
+            const parbeszedek = createDialogs.ensure()
+            if (parbeszedek)
+                parbeszedek.jelezdAKollazsHibajat(message)
         }
         function onCollageFailed(message) {
             createDialogs.ensure().jelezdAKollazsHibajat(message)

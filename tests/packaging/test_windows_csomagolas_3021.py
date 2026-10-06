@@ -21,6 +21,7 @@ munkafolyamatból, és a hiányos csomag a tulajdonos gépén bukna el.
 from __future__ import annotations
 
 import ast
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -87,6 +88,19 @@ class TestAPyInstallerCsomag:
     def test_a_forditast_es_az_ikont_is_VISZI(self, spec):
         assert "i18n" in spec, "a .qm nélkül a felület angol lenne"
         assert "icon.ico" in spec
+
+    def test_a_yunet_detektort_es_a_licencet_is_viszi(self, spec):
+        gyoker = _GYOKER / "src" / "picasapy" / "faces" / "models"
+        modell = gyoker / "face_detection_yunet_2023mar.onnx"
+        from picasapy.faces.model_download import DETECTOR_SPEC
+
+        assert modell.is_file(), "a YuNet modell hiányzik a csomag forrásfájából"
+        assert modell.stat().st_size == DETECTOR_SPEC.size_bytes
+        assert hashlib.sha256(modell.read_bytes()).hexdigest() == DETECTOR_SPEC.sha256
+        assert (gyoker / "README.md").is_file(), "a modell licenc-értesítése hiányzik"
+        assert "*.onnx" in spec or DETECTOR_SPEC.filename in spec, (
+            "a Windows PyInstaller datas listája nem viszi a YuNet modellt"
+        )
 
     def test_ABLAKOS_program_nem_konzolos(self, spec):
         assert "console=False" in spec.replace(" ", ""), (
