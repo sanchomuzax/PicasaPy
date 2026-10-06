@@ -37,8 +37,9 @@ MODEL_DOWNLOAD_URL = (
     "face_detection_yunet/face_detection_yunet_2023mar.onnx"
 )
 
-# YuNet ajánlott alapértékei (OpenCV Zoo mintakód).
-_DEFAULT_SCORE_THRESHOLD = 0.7
+# YuNet alapértékei; a küszöb az OpenCV Zoo mintakódjáé (#4348: arc nélküli
+# tájképen a téves jelöltek 0,71–0,76-ot, a valódi arcok 0,91–0,93-at kapnak).
+_DEFAULT_SCORE_THRESHOLD = 0.9
 _DEFAULT_NMS_THRESHOLD = 0.3
 _DEFAULT_TOP_K = 5000
 
