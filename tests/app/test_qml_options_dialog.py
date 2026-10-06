@@ -499,7 +499,6 @@ class TestPlaceholderTabsAreDisabled:
             "optionsMailUseHtmlCheck",
             "optionsFileTypeBmpCheck",
             "optionsSlideshowLoopCheck",
-            "optionsPrintHiResPreviewCheck",
             "optionsNetworkAutoDetectCheck",
             "optionsWebStripedUploadCheck",
             "optionsFaceDetectionCheck",

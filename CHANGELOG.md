@@ -7,6 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Elérhetővé vált a Beállítások Nyomtatás füle; a nyomatméret- és minőségi beállítások az előnézetben és a nyomaton is érvényesülnek (#4318).
 - A fel nem használt belső vezérlők kikerültek a felületi műveletlistából. (#4316).
 
 ## [0.9.10] – 2026-10-06
