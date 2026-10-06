@@ -5,9 +5,19 @@ illesztés (Eszközök → Beállítások... menüpont bekötése) az integráto
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Property, QObject, QPointF, Qt, Signal, Slot
+from PySide6.QtCore import (
+    Property,
+    QObject,
+    QPoint,
+    QPointF,
+    QTranslator,
+    Qt,
+    Signal,
+    Slot,
+)
 from PySide6.QtTest import QTest
 
 from picasapy.app.language_controller import OWN_LANGUAGE_NAMES
@@ -145,15 +155,20 @@ class FakeEmailController(QObject):
     emailSizeChanged = Signal()
     singlePictureOriginalChanged = Signal()
     useDefaultClientChanged = Signal()
+    movieFullChanged = Signal()
 
-    def __init__(self, size=480, single_original=False, use_default=True):
+    def __init__(
+        self, size=480, single_original=False, use_default=True, movie_full=False
+    ):
         super().__init__()
         self._size = size
         self._single_original = single_original
         self._use_default = use_default
+        self._movie_full = movie_full
         self.set_size_calls = []
         self.set_single_calls = []
         self.set_use_default_calls = []
+        self.set_movie_calls = []
 
     emailSize = Property(int, lambda self: self._size, notify=emailSizeChanged)
     singlePictureOriginal = Property(
@@ -162,6 +177,9 @@ class FakeEmailController(QObject):
     )
     useDefaultClient = Property(
         bool, lambda self: self._use_default, notify=useDefaultClientChanged
+    )
+    movieFull = Property(
+        bool, lambda self: self._movie_full, notify=movieFullChanged
     )
 
     @Slot(int)
@@ -181,6 +199,12 @@ class FakeEmailController(QObject):
         self.set_use_default_calls.append(use_default)
         self._use_default = use_default
         self.useDefaultClientChanged.emit()
+
+    @Slot(bool)
+    def setMovieFull(self, movie_full) -> None:
+        self.set_movie_calls.append(movie_full)
+        self._movie_full = movie_full
+        self.movieFullChanged.emit()
 
 
 class FakeImportSourceController(QObject):
@@ -604,10 +628,10 @@ class TestPlaceholderTabsAreDisabled:
     @pytest.mark.parametrize(
         "control_name",
         [
-            # #32: az E-Mail fül méret-csúszdái/kliens-választása mostantól
-            # élő (ld. TestEmailTabLiveSettings) — a "Send movies as"/HTML
-            # mező viszont Outlook-specifikus, maradt tiltott placeholder.
+            # #4451: a videómód az EmailControllerhez kötve él; vezérlő
+            # nélkül a két rádiógomb letiltva marad.
             "optionsMailMovieFirstFrameRadio",
+            "optionsMailMovieFullRadio",
             "optionsMailUseHtmlCheck",
             "optionsFileTypeBmpCheck",
             "optionsNetworkAutoDetectCheck",
@@ -853,8 +877,8 @@ class TestFaceDetectionOption:
 
 class TestEmailTabLiveSettings:
     """#32: az OptionsTabEmail méret-csúszdái/kliens-választása az
-    `emailController`-hez kötve (a többi mező — "Send movies as"/HTML —
-    Outlook-specifikus, maradt tiltott)."""
+    `emailController`-hez kötve; #4451: a videómód is mentett, élő
+    beállítás, az Outlook-jelölő továbbra is tiltott."""
 
     def _dialog_with_email(self, qt_app, fake_controller, fake_confirm_settings,
                             fake_email_controller):
@@ -887,9 +911,106 @@ class TestEmailTabLiveSettings:
         assert _child(window, "optionsMailSizeSlider").property("enabled") is True
         assert _child(window, "optionsMailSingleSameRadio").property("enabled") is True
         assert _child(window, "optionsMailDefaultRadio").property("enabled") is True
+        assert _child(window, "optionsMailMovieFirstFrameRadio").property("enabled") is True
+        assert _child(window, "optionsMailMovieFullRadio").property("enabled") is True
+        assert _child(window, "optionsMailMovieFirstFrameRadio").property("checked") is True
+        assert _child(window, "optionsMailMovieFullRadio").property("checked") is False
         window.deleteLater()
         engine.deleteLater()
         qt_app.processEvents()
+
+    def test_videomodus_valasztas_mentes_es_mindharom_ablakmagassagon_latszik(
+        self, qt_app, fake_controller, fake_confirm_settings, tmp_path
+    ):
+        """#4451: a rádiók kattinthatók, kizárják egymást és visszakötnek.
+
+        A referencia 466 px magas Opciók-ablakát ±5 px eltéréssel is
+        végigpróbáljuk; a kattintási pont mindig a vezérlő tényleges
+        scene-geometriájából származik.
+        """
+        email = FakeEmailController()
+        translator = QTranslator(qt_app)
+        qm = (
+            Path(__file__).resolve().parents[2]
+            / "src" / "picasapy" / "app" / "i18n" / "picasapy_hu.qm"
+        )
+        assert translator.load(str(qm))
+        qt_app.installTranslator(translator)
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, email
+        )
+        window.setProperty("width", 769)
+        window.setProperty("height", 466)
+        window.show()
+        tab_bar = _child(window, "optionsTabBar")
+        tab_bar.setProperty("currentIndex", 1)
+        first = _child(window, "optionsMailMovieFirstFrameRadio")
+        full = _child(window, "optionsMailMovieFullRadio")
+
+        hatarido = time.monotonic() + 3.0
+        while time.monotonic() < hatarido:
+            qt_app.processEvents()
+            if first.isVisible() and full.isVisible() and full.height() > 0:
+                break
+            time.sleep(0.05)
+        assert first.isVisible() and full.isVisible() and full.height() > 0
+        assert first.property("enabled") is True
+        assert full.property("enabled") is True
+        stack = _child(window, "optionsTabStack")
+        html = _child(window, "optionsMailUseHtmlCheck")
+        close = _child(window, "optionsCloseButton")
+
+        def _bottom(item):
+            return item.mapToScene(QPointF(0, item.height())).y()
+
+        stack_top = stack.mapToScene(QPointF(0, 0)).y()
+        stack_bottom = _bottom(stack)
+        close_top = close.mapToScene(QPointF(0, 0)).y()
+        assert stack_top <= _bottom(full) <= stack_bottom
+        assert stack_top <= _bottom(html) <= stack_bottom
+        assert close_top >= stack_bottom
+        assert _bottom(close) <= window.height()
+
+        kep = window.grabWindow()
+        assert not kep.isNull(), "az E-mail fül nem adott renderelt képet"
+        assert kep.save(str(tmp_path / "options-email-4451.png"))
+
+        for elteres in (-5, 0, 5):
+            window.setHeight(466 + elteres)
+            qt_app.processEvents()
+            assert window.height() == 466 + elteres
+            pont = full.mapToScene(QPointF(full.width() / 2, full.height() / 2))
+            assert 0 <= pont.x() < window.width()
+            assert 0 <= pont.y() < window.height()
+            QTest.mouseClick(
+                window,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+                QPoint(round(pont.x()), round(pont.y())),
+            )
+            qt_app.processEvents()
+            assert full.property("checked") is True
+            assert first.property("checked") is False
+            assert email.set_movie_calls[-1] is True
+
+            pont = first.mapToScene(
+                QPointF(first.width() / 2, first.height() / 2)
+            )
+            QTest.mouseClick(
+                window,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+                QPoint(round(pont.x()), round(pont.y())),
+            )
+            qt_app.processEvents()
+            assert first.property("checked") is True
+            assert full.property("checked") is False
+            assert email.set_movie_calls[-1] is False
+
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+        qt_app.removeTranslator(translator)
 
     def test_a_HARMADIK_levelezogomb_letezik_es_TILTOTT_2432(
         self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
