@@ -2106,13 +2106,22 @@ dolgozik (`facemakemovieres` vs `makemovieres`).
 
 **#4339 pontosítása:** az `ID_FACESRANDOM` kezelőág (`0x0057cb60`,
 `0x0057cc72`–`0x0057cc7a`) a filmpanel `+0x4f1` módjelzőjét állítja be;
-ennek alapján a beállítás-olvasó `0x00616940` a `facemakemovieres` kulcsot
-választja, alapértéke 3 (`0x00616b42`–`0x00616b64`, 1024×768). Ez az
-arc-film módot és felbontását bizonyítja, de **nem** az Emberek-albumokból
-kiválasztott képek körét, sorrendjét vagy arcra igazítását. A filmmodell
-előállítása a `0x006175c0`-ban kezdődik, majd a `0x0080fea0` kapja meg; a
-bemeneti szabály nyitva marad. A jelenlegi fejlécút és a következő bináris
-lépés a `paritas-ellenorzes.md` #4339 szakaszában van rögzítve.
+ennek alapján a `0x00616940` a `facemakemovieres` kulcsot választja,
+alapértéke 3 (`0x00616b42`–`0x00616b64`, 1024×768). A tényleges bemeneti
+listát a `0x00618050`-ban kell keresni: a `0x00618236` utasításnál a
+`panel+0x4b4` virtuális objektum első metódusát hívja `6` móddal, és az
+eredményt a `panel+0x4b8` mezőbe teszi. A célfüggvény nincs még azonosítva.
+
+A korábban feltételezett `0x006175c0` nem listaépítő, hanem a `+0x4bc`
+filmmodell teljes újraépítője; a már megkapott `+0x4b8` listát a modell
+`+0x2d8` mezőjébe teszi és végigiterál rajta. A `0x0080fea0` a modellmezőket
+inicializálja, nem választ képeket vagy arcot. A `0x00616940` olvassa a
+`cropfit` beállítást; a `0x00619010` a modellt a `0x00555a30`
+timeline/klip-készítőnek adja át (`0x006190ae`). Hogy a klip mely mezőből
+kapja az arcazonosítást és a crop/igazítást, nyitott. A külön arc-film mód
+tehát bizonyított, a forrásképek, sorrend és tényleges arcra igazítás nem.
+A jelenlegi fejlécút és a következő bináris lépések a
+`paritas-ellenorzes.md` #4339 szakaszában vannak rögzítve.
 
 ### 2.5/b A CMakeFaceMoviePanel működése — a „recompute" megerősítője (#1408)
 
