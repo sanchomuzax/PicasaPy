@@ -1007,7 +1007,11 @@ az alsó byte a tört súlya; a két szomszédos rekesz keverése csatornánkén
 A skalár út `0x008f404f` környékén, a SIMD út `0x008f3ce5–0x008f3df9`
 között ugyanazt az elvet használja (`sqrtps` négy pixelen). **Nincs
 felülmintavételezés és nincs alpixel-akkumuláció.** A két alfa-végponttal a
-256 rekeszes kontroll-LUT pontosan `[255, 254, …, 1, 0]`.
+256 rekeszes kontroll-LUT nem az egész `[255,254,…,1,0]` sor: a köztes
+`t = float32(i/255)` értékből számított, majd csonkolt tábla
+`[255,253,252,251,…,2,1,0,0]`. Ezt az eredeti worker QEMU-futtatása mind a
+256 elemben visszaadta; a teljes pixelképlet és a 7×7 golden a
+`filterdesc-registry.md` 4.11-ben szerepel.
 
 ~~**Nálunk / teendő.** A `halftone.py` jelenleg külön
 `_EDGE_SOFTNESS_PX = 1.0` átmenetet használ; ez nem a binárisból származó
@@ -8036,8 +8040,11 @@ korábban csak szerkezeti szinten leírt rámpát bájtszinten is lezárja.
   `0x008f37be`–`0x008f37de` és `0x008f37fb`–`0x008f381d` blokkok az x87
   kerekítési módját `0xc00`-ra állítják, majd `fistp`-vel csonkolnak. A
   két alfa-végponttal (`c0 = 255`, `c1 = 0`) a 256 elemű tábla mért alakja:
-  `[255, 254, 253, …, 2, 1, 0]` — minden egymást követő rekesz különbsége
-  pontosan `1`.
+  `[255, 253, 252, 251, …, 2, 1, 0, 0]`. A köztes paraméter
+  `float32(i/255)`-re kerekül az x87 szorzás előtt, ezért az első belső
+  rekesz már 253; a régi `[255,254,…,0]` állítás hibás volt. A QEMU worker
+  LUT-ja és a független Python-rekonstrukció 256/256 rekeszben egyezik
+  (`filterdesc-registry.md` 4.11).
 
 #### 2. A képponti kiértékelés
 
