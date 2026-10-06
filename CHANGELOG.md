@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Nézet ▸ Kis képek kapcsolóval állítható, hogy a könyvtári rács megjelenítse-e a kis képeket; a választás újraindítás után is megmarad. (#4346).
+
 ## [0.9.13] – 2026-10-06
 
 - A felső menüsor e-mail-, képmegnyitási, megjelenítési és arc-visszaállítási parancsai működnek, a Ctrl+H pedig rögzíti a képtálca kijelölését (#4329).

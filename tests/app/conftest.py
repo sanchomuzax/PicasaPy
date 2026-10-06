@@ -167,6 +167,10 @@ def _build_qml_app(qt_app, tmp_path):
         sync_tree(conn, lib)
 
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    # A legtöbb app-teszt apró szintetikus képekkel a teljes modell viselkedését
+    # vizsgálja; a Picasa-alapértékű kis-kép szűrést a saját #4346-os próba
+    # teszi vissza bekapcsolttá.
+    settings.setValue("view/showOnlyBigImages", False)
     # #960: a kollázs kimeneti mappája — ide kerül az `autosave.cxf`
     # piszkozat is. Enélkül a kollázst indító tesztek a felhasználó VALÓDI
     # képmappájába (`~/Pictures/Kollázsok`) írnának.

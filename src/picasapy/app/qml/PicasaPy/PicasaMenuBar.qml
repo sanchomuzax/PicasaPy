@@ -894,13 +894,25 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit): keresési opciók
         PicasaMenuItem { text: qsTr("Search &Options"); placeholder: true }
-        // hiányzott (#324 audit): a jelentése a screenshotokból nem
-        // egyértelmű — feltehetően mappacím nélküli indexkép-rács
+        // #4346: az eredeti `Show only big images` láthatósági kapcsolója.
         PicasaMenuItem {
             objectName: "menuViewThumbnailsOnly"
             text: qsTr("Small &Pictures")
             checkable: true
-            placeholder: true
+            placeholder: false
+            // #4346: az eredeti `Show only big images` preferenciájának
+            // fordított pipaállása — pipálva a kisebb képek is látszanak.
+            checked: (bar.ctl && bar.ctl.showOnlyBigImages !== undefined)
+                ? !bar.ctl.showOnlyBigImages : false
+            onTriggered: {
+                if (bar.ctl && bar.ctl.showOnlyBigImages !== undefined) {
+                    bar.ctl.setShowOnlyBigImages(!bar.ctl.showOnlyBigImages)
+                }
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.showOnlyBigImages !== undefined)
+                        ? !bar.ctl.showOnlyBigImages : false
+                })
+            }
         }
         MenuItem {
             objectName: "menuViewHidden"
