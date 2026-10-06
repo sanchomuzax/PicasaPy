@@ -83,6 +83,16 @@ def _vard_meg_a_hatterszalakat(app) -> None:
 
 
 @pytest.fixture(autouse=True)
+def _kis_kepek_latszanak(monkeypatch):
+    """#4346: a tesztek apró szintetikus képekkel dolgoznak, ezért az eredeti
+    „csak nagy képek” alapszűrőt itt kikapcsoljuk. Az alapértéket mérő teszt
+    a saját fixture-jében visszakapcsolja."""
+    from picasapy.app import small_picture_filter
+
+    monkeypatch.setattr(small_picture_filter, "DEFAULT_SHOW_ONLY_BIG_IMAGES", False)
+
+
+@pytest.fixture(autouse=True)
 def qml_warnings():
     """#718: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
     teszt VÉGÉN hibát dob, ha QML-SZKRIPTHIBA jelent meg (pl. „Cannot read

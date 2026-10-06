@@ -108,8 +108,12 @@ def _kijeloles(window, qt_app, rows) -> None:
 
 
 @pytest.fixture
-def qml_app_small_pictures(qt_app, tmp_path):
+def qml_app_small_pictures(qt_app, tmp_path, monkeypatch):
+    from picasapy.app import small_picture_filter
     from support.jpeg_factory import make_jpeg
+
+    # Ez a próba az eredeti alapértéket méri: a közös fixture kikapcsolását visszavonjuk.
+    monkeypatch.setattr(small_picture_filter, "DEFAULT_SHOW_ONLY_BIG_IMAGES", True)
     from tests.app.qml_functional.conftest import _build_qml_app
 
     def keszits_kepeket(lib):

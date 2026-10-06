@@ -78,6 +78,7 @@ from .tesztuzem_controller import TesztuzemMixin
 from .photo_ops_controller import _WRITE_ERRORS, PhotoOpsMixin
 from .dupe_search_controller import DupeSearchMixin
 from .mentes_racs_szuro import MentesRacsSzuroMixin
+from . import small_picture_filter
 from .small_picture_filter import (
     SHOW_ONLY_BIG_IMAGES_KEY,
     coerce_show_only_big_images,
@@ -991,7 +992,9 @@ class AppController(
     @Property(bool, notify=statusChanged)
     def showOnlyBigImages(self):  # noqa: N802 — QML-konvenció
         """A könyvtári rács csak a Picasa szerint nagy képeket mutassa-e."""
-        value = self._get_settings().value(SHOW_ONLY_BIG_IMAGES_KEY, True)
+        value = self._get_settings().value(
+            SHOW_ONLY_BIG_IMAGES_KEY, small_picture_filter.DEFAULT_SHOW_ONLY_BIG_IMAGES
+        )
         return coerce_show_only_big_images(value)
 
     @Slot(bool)

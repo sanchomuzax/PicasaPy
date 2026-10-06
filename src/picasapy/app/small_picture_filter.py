@@ -13,6 +13,8 @@ MAX_BIG_PICTURE_ASPECT_RATIO = 3.0
 MIN_BIG_PICTURE_LONG_EDGE = 200
 
 SHOW_ONLY_BIG_IMAGES_KEY = "view/showOnlyBigImages"
+#: Az eredeti alapértéke 1 (bekapcsolva); a tesztkészlet modulszinten kapcsolja ki.
+DEFAULT_SHOW_ONLY_BIG_IMAGES = True
 
 
 def is_big_picture(width: int | None, height: int | None) -> bool:
