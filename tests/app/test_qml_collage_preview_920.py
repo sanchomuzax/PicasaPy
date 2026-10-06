@@ -15,7 +15,7 @@ from __future__ import annotations
 import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
 
-from support.qt_wait import hangos_hurok
+from support.qt_wait import hangos_hurok, varj_feltetelre
 from tests.support.qml_halasztott import epitsd_fel
 
 
@@ -40,13 +40,16 @@ def _var(controller, jelzes, hivas, ms=8000):
 
 
 @pytest.fixture(autouse=True)
-def _felepitett_parbeszedek(qml_app):
+def _felepitett_parbeszedek(qml_app, request):
     """#2096: a Létrehozás-párbeszédek halasztva épülnek fel.
 
     Ez a fájl a VISELKEDÉSÜKET méri, nem a felépülés pillanatát (azt a
-    #1720 őre), ezért minden eset előtt felépítjük őket — így az alábbi
-    `findChild`-ok változatlanul maradhatnak."""
-    epitsd_fel(qml_app[0], "createDialogs")
+    #1720 őre), ezért a szokásos esetek előtt felépítjük őket — így az
+    alábbi `findChild`-ok változatlanul maradhatnak. Az előnézet-hiba teszt
+    kivétel: annak azt is mérnie kell, hogy a hibakezelő építi fel a
+    párbeszédet, ha addig még nem nyitották meg."""
+    if request.node.name != "test_a_valodi_elonezet_hiba_megjelenik_a_felhasznalonak":
+        epitsd_fel(qml_app[0], "createDialogs")
 
 class TestElonezet:
     def test_a_kijelolesre_keszul_elonezet(self, qml_app, qt_app):
@@ -101,6 +104,63 @@ class TestKeveres:
 
 
 class TestFelulet:
+    def test_a_valodi_elonezet_hiba_megjelenik_a_felhasznalonak(
+        self, qml_app, qt_app, monkeypatch
+    ):
+        window, controller, lib, engine = qml_app
+        hiba = "preview render failed"
+
+        def hibas_render(*_args, **_kwargs):
+            raise OSError(hiba)
+
+        monkeypatch.setattr(
+            "picasapy.app.create_controller.make_picasa_collage", hibas_render
+        )
+        halasztott = window.findChild(QObject, "createDialogs")
+        assert halasztott is not None
+        assert halasztott.property("item") is None
+
+        hibak = []
+        controller.collagePreviewFailed.connect(hibak.append)
+        alapmagassag = window.height()
+        for eltolás in (-5, 0, 5):
+            ablakmagassag = alapmagassag + eltolás
+            window.resize(window.width(), ablakmagassag)
+            assert varj_feltetelre(
+                qt_app,
+                lambda vart=ablakmagassag: window.height() == vart,
+                masodperc=3,
+            )
+
+            hibak.clear()
+            controller.requestCollagePreview([0], "picturegrid", "noborder")
+            assert varj_feltetelre(qt_app, lambda: bool(hibak), masodperc=3), (
+                "a renderelő valódi hibaága nem futott le"
+            )
+            assert varj_feltetelre(
+                qt_app,
+                lambda: (
+                    window.findChild(QObject, "createResultDialog") is not None
+                    and window.findChild(QObject, "createResultDialog").property(
+                        "visible"
+                    )
+                ),
+                masodperc=3,
+            ), "a valódi előnézet-hiba nem jutott el a felhasználóig"
+            dialog = window.findChild(QObject, "createResultDialog")
+            szoveg = window.findChild(QObject, "createResultText")
+            assert dialog is not None
+            assert szoveg is not None
+            assert hibak == [hiba]
+            assert "The collage could not be created." in szoveg.property("text")
+            assert hiba in szoveg.property("text")
+            dialog.metaObject().invokeMethod(dialog, "close")
+            assert varj_feltetelre(
+                qt_app,
+                lambda aktualis=dialog: not aktualis.property("visible"),
+                masodperc=3,
+            )
+
     def test_a_parbeszedben_ott_az_elonezet_es_a_keveres(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [0, 1])

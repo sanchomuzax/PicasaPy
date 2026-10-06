@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.16] – 2026-10-06
+
+- Elérhetővé vált a Beállítások Nyomtatás füle; a nyomatméret- és minőségi beállítások az előnézetben és a nyomaton is érvényesülnek (#4318).
+- A Keret effekt kimenete mostantól a Picasáéval egyezik a lekerekített mintaképeken (#4370).
+
 ## [0.9.15] – 2026-10-06
 
 - A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).

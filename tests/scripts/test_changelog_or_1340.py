@@ -85,6 +85,15 @@ class TestMiSzamitBejegyzesnek:
     def test_erintetlen_changelog_nem_bejegyzes(self) -> None:
         assert not cor.van_uj_bejegyzes("")
 
+    def test_a_nem_kiadott_szakaszba_irt_uj_sort_felismeri(self) -> None:
+        assert cor.van_uj_kiadatlan_bejegyzes(_DIFF_BEJEGYZESSEL)
+
+    def test_a_kiadott_szakaszba_irt_uj_sort_nem_veszi_atmeneti_sornak(self) -> None:
+        diff = _DIFF_BEJEGYZESSEL.replace(
+            " ## [Nem kiadott]", " ## [0.9.15] – 2026-10-06"
+        )
+        assert not cor.van_uj_kiadatlan_bejegyzes(diff)
+
 
 class TestKiadatlanSzakasz:
     def test_a_bejegyzesnek_a_Nem_kiadott_szakaszban_a_helye(self) -> None:
@@ -129,6 +138,70 @@ class TestParancssor:
             }),
         )
         assert kod == 0
+
+    def test_kozvetlen_kiadatlan_sort_alapbol_figyelmeztet_de_atenged(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch
+    ) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text(
+            "# Változásnapló\n\n## [Nem kiadott]\n\n- x\n",
+            encoding="utf-8",
+        )
+        monkeypatch.delenv("PICASAPY_CHANGELOG_STRICT", raising=False)
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=self._futtato({
+                "--name-only": "src/picasapy/render/vivid.py\nCHANGELOG.md\n",
+                "-- CHANGELOG.md": _DIFF_BEJEGYZESSEL,
+            }),
+        )
+
+        assert kod == 0
+        kimenet = capsys.readouterr().out
+        assert "::warning" in kimenet
+        assert "changelog.d/<jegyszám>.md" in kimenet
+
+    def test_changelog_modositasnal_kodvaltozas_nelkul_is_figyelmeztet(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch
+    ) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text(
+            "# Változásnapló\n\n## [Nem kiadott]\n\n- x\n",
+            encoding="utf-8",
+        )
+        monkeypatch.delenv("PICASAPY_CHANGELOG_STRICT", raising=False)
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=self._futtato({
+                "--name-only": "CHANGELOG.md\n",
+                "-- CHANGELOG.md": _DIFF_BEJEGYZESSEL,
+            }),
+        )
+
+        assert kod == 0
+        assert "::warning" in capsys.readouterr().out
+
+    def test_kozvetlen_kiadatlan_sort_szigoruan_megbuktat(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch
+    ) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text(
+            "# Változásnapló\n\n## [Nem kiadott]\n\n- x\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("PICASAPY_CHANGELOG_STRICT", "1")
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=self._futtato({
+                "--name-only": "src/picasapy/render/vivid.py\nCHANGELOG.md\n",
+                "-- CHANGELOG.md": _DIFF_BEJEGYZESSEL,
+            }),
+        )
+
+        assert kod == 1
+        kimenet = capsys.readouterr().out
+        assert "::error" in kimenet
+        assert "changelog.d/<jegyszám>.md" in kimenet
 
     def test_valtozasnaplo_darabbal_atmegy(self, tmp_path: Path) -> None:
         naplo = tmp_path / "CHANGELOG.md"

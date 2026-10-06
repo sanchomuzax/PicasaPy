@@ -209,7 +209,6 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     (duplikátum-jelöléssel), egyenkénti válogatás, majd másolás a
     cél-mappa HÁROM elnevezési módja szerint (#441)."""
 
-    sourceScanStarted = Signal()
     # (előnézeti elemek — dict-ek listája: path/thumbUrl/duplicate/excluded
     # —, összes darabszám). MINDIG lista (soha tuple) — a QML `.length`
     # tuple-ön undefined lenne.
@@ -542,7 +541,6 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         már indexelt könyvtárral tartalom-egyező jelöltek `duplicate=True`-t
         kapnak, és — ha `autoExclude` be van kapcsolva — alapból ki is
         maradnak a válogatásból."""
-        self.sourceScanStarted.emit()
         # #441: a tallózó fájltípus-szűrőjének megfelelője — üres értéknél
         # a legutóbbi (vagy az alapértelmezett) fokozat marad érvényben
         if media_filter:

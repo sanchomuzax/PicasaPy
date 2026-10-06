@@ -84,6 +84,16 @@ def test_a_darabok_jegyszam_szerint_bekerulnek_es_torlodnek(tmp_path):
     assert not (darabok / "7.md").exists()
     assert not (darabok / "42.md").exists()
 
+    assert szoveg == (
+        "# Változásnapló\n\n"
+        "## [Nem kiadott]\n\n"
+        "## [0.8.29] – 2026-08-21\n\n"
+        "- Régi, hagyományos sor (#1).\n"
+        "- A hetes változás elkészült (#7).\n"
+        "- A negyvenkettes változás elkészült (#42).\n\n"
+        "## [0.8.28] – 2026-08-20\n"
+    )
+
     from scripts.ensure_release import changelog_notes
 
     jegyzet = changelog_notes("0.8.29", c)
@@ -99,6 +109,25 @@ def test_kiadatlan_szakasz_nelkul_sem_hibazik(tmp_path):
 
     assert auto_bump.zard_le_a_changelogot(c, "0.8.29", "2026-08-21") is False
     assert "0.8.29" not in c.read_text(encoding="utf-8")
+
+
+def test_ures_darabkonyvtar_nem_valtoztat_a_korabbi_kimeneten(tmp_path):
+    c = tmp_path / "CHANGELOG.md"
+    c.write_text(
+        "# Változásnapló\n\n## [Nem kiadott]\n\n"
+        "- Régi sor (#1).\n\n## [0.8.28] – 2026-08-20\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "changelog.d").mkdir()
+
+    assert auto_bump.zard_le_a_changelogot(c, "0.8.29", "2026-08-21") is True
+    assert c.read_bytes() == (
+        "# Változásnapló\n\n"
+        "## [Nem kiadott]\n\n"
+        "## [0.8.29] – 2026-08-21\n\n"
+        "- Régi sor (#1).\n\n"
+        "## [0.8.28] – 2026-08-20\n"
+    ).encode("utf-8")
 
 
 class TestWorkflowBekotes:
