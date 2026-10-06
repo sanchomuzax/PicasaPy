@@ -154,6 +154,52 @@ class TestScanForFaces:
         album = ctl.unnamedAlbum()
         assert {item["name"] for item in album} == {"a.jpg", "b.jpg"}
 
+    def test_large_photo_detection_scales_input_and_keeps_full_photo_rect(
+        self, qt_app, tmp_path
+    ):
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+        from picasapy.index import open_index, unnamed_faces
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "nagy.jpg", size=(2560, 1696))
+        detector = _FakeDetector()
+
+        def detect(image):
+            detector.calls.append(image)
+            # A 960×636 képre adott, ahhoz viszonyított minta-találat.
+            return (
+                FaceDetection(
+                    left=240,
+                    top=127.2,
+                    right=720,
+                    bottom=508.8,
+                    score=0.95,
+                    landmarks=FaceLandmarks(
+                        right_eye=(360, 254.4),
+                        left_eye=(600, 254.4),
+                        nose=(480, 318),
+                        mouth_right=(420, 400),
+                        mouth_left=(540, 400),
+                    ),
+                ),
+            )
+
+        detector.detect = detect
+        ctl = _make_controller(qt_app, tmp_path, root, detector=detector)
+        arrived, _args = _run(ctl.scanFinished, ctl.scanForFaces)
+
+        assert arrived is True
+        assert len(detector.calls) == 1
+        assert max(detector.calls[0].shape[:2]) <= 960
+        with open_index(tmp_path / "index.db") as conn:
+            saved_rect = unnamed_faces(conn)[0].rect
+
+        # A rect64-stílusú keret a teljes fotó szélességéhez/magasságához
+        # képest relatív; a detektált képpontokat ezért mentés előtt vissza
+        # kell skálázni erre a méretre.
+        assert saved_rect == pytest.approx((0.25, 0.2, 0.75, 0.8))
+
     def test_photo_with_named_face_is_skipped(self, qt_app, tmp_path):
         # a Picasa döntése szent: névcímkés fotót a saját detektorunk nem
         # értékel újra (issue #26 terve)
@@ -227,6 +273,58 @@ class TestScanForFaces:
 class TestComputeEmbeddings:
     """#26 (2. lépcső): a lenyomat-számítás + csoportosítás KÜLÖN,
     alacsonyabb prioritású sora — a detektálás UTÁN, önállóan indítható."""
+
+    def test_embedding_coordinates_are_rescaled_to_reduced_decode(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        import numpy as np
+
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+        from picasapy.index import all_photos, open_index, replace_faces
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "nagy.jpg", size=(4000, 2600))
+        embedder = _FakeEmbedder()
+        ctl = _make_controller(qt_app, tmp_path, root, embedder=embedder)
+        detection = FaceDetection(
+            left=1000,
+            top=650,
+            right=3000,
+            bottom=1950,
+            score=0.95,
+            landmarks=FaceLandmarks(
+                right_eye=(1400, 1100),
+                left_eye=(2600, 1100),
+                nose=(2000, 1400),
+                mouth_right=(1700, 1700),
+                mouth_left=(2300, 1700),
+            ),
+        )
+        with open_index(tmp_path / "index.db") as conn:
+            photo = all_photos(conn)[0]
+            assert (photo.width, photo.height) == (4000, 2600)
+            replace_faces(conn, photo.id, (detection,))
+            conn.commit()
+
+        monkeypatch.setattr(
+            ctl,
+            "_decode",
+            lambda _path: np.zeros((1300, 2000, 3), dtype=np.uint8),
+        )
+        arrived, _args = _run(ctl.embeddingFinished, ctl.computeEmbeddings)
+
+        assert arrived is True
+        assert len(embedder.calls) == 1
+        image, scaled = embedder.calls[0]
+        assert image.shape[:2] == (1300, 2000)
+        assert (scaled.left, scaled.top, scaled.right, scaled.bottom) == (
+            500,
+            325,
+            1500,
+            975,
+        )
+        assert scaled.landmarks.right_eye == (700, 550)
 
     def test_missing_embedding_model_starts_download_automatically(
         self, qt_app, tmp_path, monkeypatch

@@ -149,6 +149,12 @@ MenuBar {
     signal configureButtonsRequested()
     //: #671: a Fájl ▸ Kilépés — a gazda dönti el, kérdez-e
     signal exitRequested()
+    // #4329: a felső Fájl/Kép/Nézet belépők ugyanazt az útvonalat kérik,
+    // amelyet a tálca vagy a kép helyi menüje már használ.
+    signal emailRequested()
+    signal viewAndEditRequested()
+    signal unhideRequested()
+    signal resetFacesRequested()
     signal thumbSizePreset(int size)
     signal selectStarredRequested()
     signal selectAllRequested()
@@ -616,11 +622,14 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.printRequested()
         }
-        // #1616: a felirat Ctrl+E-t hirdetett, de a `TrayBar.emailRequested()`
-        // jelzés MÉRVE nincs sehova bekötve (ld. `email_controller.py`
-        // fejléce — a bekötés az integrátor teendője, még nem történt meg),
-        // tehát ez a menütétel is helyfoglaló — a billentyű lekerült.
-        PicasaMenuItem { text: qsTr("&E-Mail..."); placeholder: true }
+        // #4329: ugyanaz a Main.qml-beli küldési út, mint a tálca E-Mail
+        // gombján; Ctrl+E a `emailShortcut`-on át ezt a jelzést küldi.
+        MenuItem {
+            objectName: "menuFileEmail"
+            text: qsTr("&E-Mail...") + "\tCtrl+E"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.emailRequested()
+        }
         // hiányzott (#324 audit): nyomtatott képek online rendelése
         PicasaMenuItem { text: qsTr("Order Prin&ts..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
@@ -772,7 +781,12 @@ MenuBar {
             text: qsTr("&Normal Thumbnails") + "\tCtrl+2"
             onTriggered: bar.thumbSizePreset(144)
         }
-        PicasaMenuItem { text: qsTr("&Edit View") + "\tCtrl+3"; placeholder: true }
+        MenuItem {
+            objectName: "menuViewEditView"
+            text: qsTr("&Edit View") + "\tCtrl+3"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.viewAndEditRequested()
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "menuViewProperties"
@@ -1657,7 +1671,12 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("&Picture")
-        PicasaMenuItem { text: qsTr("&View and Edit") + "\tCtrl+3"; placeholder: true }
+        MenuItem {
+            objectName: "menuPictureViewAndEdit"
+            text: qsTr("&View and Edit") + "\tCtrl+3"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.viewAndEditRequested()
+        }
         // #425 (K.1 szakasz, ui-audit-menus.md): az almenü teljes tartalma
         // az `eMenuPicture` osztályból ismert — a kijelölt N kép
         // MINDEGYIKÉRE egyszerre alkalmazott egykattintásos effekt
@@ -1751,12 +1770,22 @@ MenuBar {
         // „Megjelenítés” tétel áll (a mentésen mindkettő inaktív). Nálunk
         // az Elrejtés ma kapcsoló — a szétválasztás külön jegy, addig ez a
         // tétel helyfoglaló, hogy a csoport szerkezete stimmeljen.
-        PicasaMenuItem { text: qsTr("&Unhide"); placeholder: true }
+        MenuItem {
+            objectName: "menuPictureUnhide"
+            text: qsTr("&Unhide")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.unhideRequested()
+        }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         // hiányzott (#324 audit): arc-négyzetek pozíciójának visszaállítása
         // (3. fázis, arcfelismerés-előkészítés)
-        PicasaMenuItem { text: qsTr("Reset &Faces"); placeholder: true }
+        MenuItem {
+            objectName: "menuPictureResetFaces"
+            text: qsTr("Reset &Faces")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.resetFacesRequested()
+        }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         MenuItem {
