@@ -4439,6 +4439,42 @@ az R szerint változó LUT nem konstans (a 2 stopos próbában 228 különböző
 RGB-triplett volt). Ezt az ellenpróbát a független gépikód-út is ellenőrzi:
 `[BGRA+2]` közvetlenül a `+0x800` táblába indexel.
 
+**Célzott #626-ellenőrzés (2026-10-06).** A közös RGB-interpolátor
+képletét közvetlenül a `0x00bb85b0` függvényen futtattuk végig `qemu-i386`
+alatt mind a 256 `x`-értékre: két megállóval (`[0,255]`) és hárommal
+(`{0; 127,5; 255}`). Mindkét rácson 0/256 bájteltérés volt a bináris, a
+specifikáció képletét önállóan újraszámoló Python és a `glimmer_ops.gradient_map`
+kimenete között. A szürke 0…255 bemeneti rácson a bekötött `TwoTone`-út
+(`chain.py:871` → `chain_glimmer_handlers.py:119–120` →
+`glimmer_tone.py:222–255`, `Brightness=0`, `Contrast=0`, `Fade=0`) is
+0/256 helyen tért el a natív LUT-kimenettől. A jelenlegi `apply_twotone`
+`np.rint`-tel kerekít; a `gradient_map` a natív `float32` súlyt,
+`trunc(…+0,5)`-öt és csatornánkénti vágást használja. A két aktív út tehát a
+vizsgált teljes bájtrácson egyaránt megfelel a binárisnak. Külön skalár
+összevetésben mind a `256 × 256 × 256 = 16 777 216` index–alsócsatorna–
+felsőcsatorna kombináció eltérése 0 volt a `np.rint`-es TwoTone-leképezés
+és a natív képlet között.
+
+**Független újrafuttatás és cáfoló próba.** Külön ellenőri kör saját
+harnessben négy stop-elrendezést futtatott végig mind a 256 indexen, két x87
+vezérlőszóval (`0x027f`, `0x037f`) és két CRT-SSE beállítással: 4096 natív
+hívás, 0 bájteltérés a képlettől. A cáfoló eset `[50,200]` stophely és
+`0xff0011ff`, `0xffffee00` színpár volt: a súly float32-re tárolását követő
+natív képlet 0/256 eltérést adott; a naiv, súly-kerekítés nélküli
+`lower + t·(upper−lower)` változat `+0,5`-ös kerekítéssel is 14/256
+indexen eltért (például `x=55`-nél egy csatornaszinttel). Ez a próbálkozás a
+képlet egyszerűsített változatát cáfolta, nem a jelenlegi implementációt.
+
+**Eredeti / nálunk / teendő:** az eredeti `0x00bb84a0` csatornánként a
+`float32((p_hi−x)/(p_hi−p_lo))` súllyal számol, majd
+`clamp(trunc(upper+w·(lower−upper)+0,5),0,255)`-öt ad — a fenti QEMU-rácsokon
+bájtazonos. Nálunk a `gradient_map` ugyanazt a sorrendet követi, az aktív
+`TwoTone` út pedig a teljes 256 fokozatú szürke kontrollon bájtazonos.
+**Teendő: nincs interpolátor-módosítás.** A mérés `FPUCW=0x027f` és a
+megadott numerikus stopok mellett zárja le a pixelképletet; a valós XML
+stop-előállítás és az alkalmazás tényleges futásidejű FPU-állapota nem része
+ennek a bizonyítéknak.
+
 **Határ:** ez a mérés a stopokat kész numerikus double értékként adta a
 munkavégzőnek. A `gradientArray` szöveges attribútumának tényleges
 kiértékelése, a valós XML-export stopjainak színkódolása/sorrendje, illetve
