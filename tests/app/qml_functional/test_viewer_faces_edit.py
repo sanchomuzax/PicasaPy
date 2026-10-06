@@ -1,6 +1,7 @@
 """QML-funkcionális tesztek: arc-téglalap SZERKESZTŐ mód a nézőben (#26,
 2. kör) — rajzolás/átnevezés/törlés a `FacesOverlay`-en, `facesHelper`-en
-át ütközésbiztosan az ini-be írva. A teljes appot építjük fel (`qml_app`
+át útvonalanként sorosan, az észlelt változásokat újrajátszva az ini-be írva.
+A sikeres ujjlenyomat-ellenőrzés utáni külső írás nincs kizárva. A teljes appot építjük fel (`qml_app`
 fixture) — a delegate-eken belüli tartalom (MEMORY 2026-07-31:
 visible-öröklés csapda / dinamikus Repeater-elemek `findChild`-dal nem
 érhetők el) helyett az overlay saját (nem-delegate) API-ját hívjuk:

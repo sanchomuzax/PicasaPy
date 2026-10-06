@@ -10,8 +10,9 @@ szűrt nézet, a mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz.
 A #26 1. köre csak OLVASOTT; a #422 4. lépcsőjével két KÖTEGELT írás is
 ide került (az Emberek-album kép-szintű parancsai): egy személy arc-
 címkéjének levétele, illetve átvitele másik névre a kijelölt képeken. Az
-írás a `faces_helper.py` mintáját követi (ütközésbiztos `update_document`,
-atomikus, backuppal), csak több képre, mappánként egy ini-írással."""
+írás a `faces_helper.py` mintáját követi (`update_document`, útvonalankénti
+szerializálással és észlelt változáskor újrapróbálással; atomikus, backuppal),
+csak több képre, mappánként egy ini-írással."""
 
 from __future__ import annotations
 
@@ -230,8 +231,8 @@ class PeopleMixin:
         bejegyzések mellett csak az érintett mappák `[Contacts2]` sorait
         frissíti, így az arckapcsolatok id-je megmarad. A törlés a központi
         bejegyzést, valamint az érintett mappák névjegyeit és `faces=`
-        hivatkozásait távolítja el. Mappánként egy ütközésbiztos ini-frissítés
-        történik.
+        hivatkozásait távolítja el. Mappánként egy útvonalanként szerializált,
+        best-effort konkurenciakezelésű ini-frissítés történik.
         """
         if not changes:
             return True

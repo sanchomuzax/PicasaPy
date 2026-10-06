@@ -26,7 +26,7 @@ _DEFAULT_BASELINE = Path(__file__).with_name("silent_qml_controls_baseline.txt")
 _QML_ROOT = Path("src/picasapy/app/qml")
 
 # A plafon az auditkor megállapított baseline mérete. Csak csökkenthető.
-MAX_BASELINE_ENTRIES = 37
+MAX_BASELINE_ENTRIES = 36
 
 _HANDLER = re.compile(r"\b(onClicked|onTriggered)\s*:")
 _SIGNAL = re.compile(r"\bsignal\s+(\w+)\s*\(")
