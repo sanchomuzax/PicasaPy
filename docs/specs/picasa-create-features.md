@@ -2104,6 +2104,16 @@ Az `eMenuCreateMovie` két tétele: **A kijelölésben lévő arcokból…**
 alapértelmezett cím: „People Movie". Az arc-film külön képfelbontással
 dolgozik (`facemakemovieres` vs `makemovieres`).
 
+**#4339 pontosítása:** az `ID_FACESRANDOM` kezelőág (`0x0057cb60`,
+`0x0057cc72`–`0x0057cc7a`) a filmpanel `+0x4f1` módjelzőjét állítja be;
+ennek alapján a beállítás-olvasó `0x00616940` a `facemakemovieres` kulcsot
+választja, alapértéke 3 (`0x00616b42`–`0x00616b64`, 1024×768). Ez az
+arc-film módot és felbontását bizonyítja, de **nem** az Emberek-albumokból
+kiválasztott képek körét, sorrendjét vagy arcra igazítását. A filmmodell
+előállítása a `0x006175c0`-ban kezdődik, majd a `0x0080fea0` kapja meg; a
+bemeneti szabály nyitva marad. A jelenlegi fejlécút és a következő bináris
+lépés a `paritas-ellenorzes.md` #4339 szakaszában van rögzítve.
+
 ### 2.5/b A CMakeFaceMoviePanel működése — a „recompute" megerősítője (#1408)
 
 *A 2.5 csak két mondat volt; az arc-film PANEL-jének működése eddig nem
