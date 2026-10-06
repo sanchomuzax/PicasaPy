@@ -81,6 +81,7 @@ SplashScreen 1.0 SplashScreen.qml
 TimelineView 1.0 TimelineView.qml
 DedupDialog 1.0 DedupDialog.qml
 FaceScanDialog 1.0 FaceScanDialog.qml
+FirstRunLanguageDialog 1.0 FirstRunLanguageDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
 AddFileDialog 1.0 AddFileDialog.qml
 TesztuzemNaploDialog 1.0 TesztuzemNaploDialog.qml
