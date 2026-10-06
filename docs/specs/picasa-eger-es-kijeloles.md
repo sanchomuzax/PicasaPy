@@ -551,6 +551,25 @@ A binárisból kiszedve, a **birtokló függvénnyel** együtt:
 **`DoDragDrop` egyetlen hívóhelye** `0x00aa1fb0` — tehát a Picasából
 kifelé (Explorerbe, más alkalmazásba) **egyetlen** úton lehet húzni.
 
+### 5.1 #4339 — a kimenő fájlhúzás formátuma
+
+A `ytDragNode` 31. virtuális metódusa (`0x00aa1fb0`, 700 bájt) a kapott
+csomópontlistából fájlútvonalakat állít elő, majd a Windows fájlhúzó
+szerződését adja az `OLE32.DoDragDrop`-nak (`0x00aa2187`):
+
+| mező | bizonyított eredeti érték |
+|---|---|
+| adatátviteli formátum | **egy `CF_HDROP` formátum (`cfFormat=0x000f`)**; a hívó `FORMATETC`-jében `0x00aa215a` írja be a 15-öt. Az `EnumFormatEtc` a tárolt formátumrekordot adja vissza (`0x00aa1ed0`), a `QueryGetData` pedig `0x00aa1e90`-nél csak a 15-ös `cfFormat`-ot és a tartalom/HGLOBAL kérést fogadja el. |
+| payload | `DROPFILES` fejléc: `pFiles=0x14` (`0x00aa2074`), `fWide=1` (`0x00aa207a`), tehát a fejléc után **UTF-16 fájlútvonal-lista** következik. A lista a `ytDragNode`-nak átadott csomópontok sorrendjében épül (`0x00aa2099`–`0x00aa2104`). |
+| URI / egyedi formátum | az adatobjektum útja a fájllistát szolgáltatja; `text/uri-list` vagy Picasa-specifikus formátum nincs az objektum formátumrekordjában. |
+| engedett ejtési művelet | `DoDragDrop` `dwOKEffects` értéke **`7`** (`0x00aa2136`): a forrás COPY, MOVE és LINK hatást enged; a végső hatás a fogadó által a kimeneti mezőbe választott érték, nem a forrás által rögzített egyetlen művelet. |
+
+**Két egymástól független út:** (A) a `0x00aa1fb0` a `CF_HDROP` fejlécet és a `dwOKEffects=7` maszkot építi fel; (B) a `ytSimpleDataObject` COM-útja (`0x00ce5c54`, `GetData` `0x00aa1e20`, `QueryGetData` `0x00aa1e90`, `EnumFormatEtc` `0x00aa1ed0`) ugyanezt az egy fájlformátumot kínálja és szolgálja ki. **Cáfoló próba:** a `QueryGetData` más `cfFormat`-ot, nem `DVASPECT_CONTENT` kérést vagy HGLOBAL nélküli formátumot nem fogad el; ez cáfolja a szöveges URI-/egyedi payload lehetőségét ezen az adatobjektumon.
+
+**PicasaPy:** a `ThumbDelegate.qml` húzó proxyja `payload="photos"` belső jelölést és `Drag.active` állapotot ad, de nincs benne `Drag.mimeData`/fájl-URL payload (`ThumbDelegate.qml:279–305`). Az eredeti Windows-fájl-lista szerződése ezért még nincs megvalósítva. QML-forrásból megvan a teendő; az OS-nek átadott natív formátumot és a fogadó által választott COPY/MOVE/LINK hatást asztali próba nélkül nem állíthatjuk egyezőnek.
+
+*Bizonyítottsági fok: **megerősített** a bináris adatátviteli formátumra és az engedett hatásokra (a hívó és az IDataObject-interfész útja egyezik); **nyitott** a PicasaPy natív asztali paritása.*
+
 **`SetCapture` mindössze 2 hívóhely** (`0x00923460`, `0x00a52890`),
 `ReleaseCapture` 6 — a program tehát ritkán ragadja meg az egeret; a
 húzást a saját csomópont-rendszere követi.

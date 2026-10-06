@@ -379,6 +379,38 @@ menüsávban egyikük sem szerepel: `Enter` (megjelenítés és szerkesztés),
 is így írja le): rácsban/nézőben `Ctrl+Delete`, a menüsávban `Delete`.
 A `cmd` azonos (`0x9c9a`), tehát **egy parancs, két belépő**.
 
+### 4.1 #4339 — a 44 rekord nézeti határa
+
+A kilenc gyorsbillentyűs építő **a helyi menü birtokosát** azonosítja. A
+rekordok kontextusát tehát utasításszinten meg lehet nevezni:
+
+| építő | helyi menü / nézeti kontextus | rekordok billentyűi |
+|---|---|---|
+| `0x00730790` | mappanézet képe | `Enter`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+Shift+O`, `Ctrl+S`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
+| `0x00731050` | album-nézet képe | ugyanaz a nyolc; a `Ctrl+Delete` felirata azonos `cmd 0x9c9a`-hoz itt „Eltávolítás az albumból” |
+| `0x007319f0` | mappa helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I`, `Ctrl+Enter` |
+| `0x00732160` | album helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I` |
+| `0x007327a0` | OneUp-néző helyi menüje | `Esc`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+Shift+O`, `Ctrl+S`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
+| `0x00732ee0` | képtálca helyi menüje | `Ctrl+H`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+Enter`, `Alt+Enter` |
+| `0x00733a40` | gyűjtemény-/mappalista helyi menüje | `Ctrl+Enter` |
+| `0x007355c0` | Emberek-album képe | `Enter`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
+| `0x007359e0` | Emberek-album helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I` |
+
+Az összesítő **megerősített a menü-kontekstre**: a `0x00a6aee0` tételépítőt
+mind a kilenc függvény hívja, és az egyes táblákban ott vannak a hozzájuk
+tartozó billentyű-/parancsrekordok. Ez azonban még nem bizonyítja, hogy a
+billentyű leütése kizárólag az adott menü nyitott állapotában aktív. A fő
+billentyű-út `0x00a53b00` bizonyos eseményeket a `0x00a582f0` továbbítón át a
+**fókuszált elemnek** küld; a mostani bizonyítéklánc nem köti ezt a továbbítót
+a fenti 44 rekord mindegyikének parancsazonosítójához.
+
+**Következtetés:** a 44 rekord melyik nézethez/helyi menühöz tartozik,
+megvan; a pontos billentyűleütés-fókuszkapu nyitva marad. Az `Enter`,
+`Ctrl+Enter` és `Ctrl+Delete` több kontextusban is szerepel, ezért a rekord
+önmagában nem ad globális parancs-hozzárendelést. A PicasaPy oldali állapotot
+a 6. szakasz QML-leltára rögzíti; a paritási teendő addig ne állítsa, hogy a
+QML `Shortcut`-ok az eredeti helyi menü-fókuszszabályt is visszaadják.
+
 ---
 
 ## 5. A hat kérdés funkciónként
