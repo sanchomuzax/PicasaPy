@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.11] – 2026-10-06
+
 - A fel nem használt belső vezérlők kikerültek a felületi műveletlistából. (#4316).
 
 ## [0.9.10] – 2026-10-06
