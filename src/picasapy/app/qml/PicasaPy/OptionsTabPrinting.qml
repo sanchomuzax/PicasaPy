@@ -2,14 +2,37 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// #350: "Printing" fül (options.fen) — a PicasaPy-ban ma nincs nyomtatási
-// funkció (`print.fen`/`reviewprint.fen` nem épült meg, alacsony
-// prioritású a docs/specs/picasa-fen-dialogs.md 8. szak. szerint),
-// ezért a teljes fül tiltott.
+// #350/#4318: a Picasa options.fen Nyomtatás füle élő beállításokat ad a
+// PrintControllernek; a print.fen beállításai a nyomtatásnál érvényesülnek.
 ColumnLayout {
     id: root
     spacing: 10
-    enabled: false
+
+    readonly property var printCtl: (typeof printController !== "undefined")
+        ? printController : null
+    readonly property var printSizeLabelById: ({
+        "M3X4": qsTr("3 x 4"),
+        "M3_5X5": qsTr("3.5 x 5"),
+        "M4X5": qsTr("4 x 5"),
+        "M4X6": qsTr("4 x 6"),
+        "M5X7": qsTr("5 x 7"),
+        "M8X10": qsTr("8 x 10"),
+        "TARCA": qsTr("Wallet"),
+        "M5X8CM": qsTr("5 x 8 cm"),
+        "M9X13CM": qsTr("9 x 13 cm"),
+        "M10X15CM": qsTr("10 x 15 cm"),
+        "M13X18CM": qsTr("13 x 18 cm"),
+        "M15X20CM": qsTr("15 x 20 cm"),
+        "M20X25CM": qsTr("20 x 25 cm"),
+        "TELJES_OLDAL": qsTr("FullPage"),
+        "CDSIZE": qsTr("CD Cover Size"),
+        "PASSPORT": qsTr("Passport"),
+        "CONTACT": qsTr("Contact Sheet")
+    })
+    readonly property var printSizeIds: printCtl ? printCtl.printOptionSizes() : []
+    readonly property var printSizeLabels: printSizeIds.map(function (id) {
+        return root.printSizeLabelById[id] || id
+    })
 
     Text {
         text: qsTr("Available print sizes:")
@@ -17,17 +40,31 @@ ColumnLayout {
         color: Theme.ink
     }
     Repeater {
+        objectName: "optionsPrintSizeRepeater"
         model: 5
         RowLayout {
+            id: presetRow
+            readonly property int presetIndex: index
             spacing: 8
             Text {
-                text: qsTr("Print size %1:").arg(index + 1)
+                text: qsTr("Print size %1:").arg(presetRow.presetIndex + 1)
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
             PicasaComboBox {
-                objectName: "optionsPrintSizeCombo" + index
-                model: ["4x6", "5x7", "8x10", "Letter", "A4"]
+                objectName: "optionsPrintSizeCombo" + presetRow.presetIndex
+                Layout.fillWidth: true
+                model: root.printSizeLabels
+                currentIndex: {
+                    if (!root.printCtl) return -1
+                    return root.printSizeIds.indexOf(
+                        root.printCtl.printSizePresets()[presetRow.presetIndex])
+                }
+                onActivated: {
+                    if (root.printCtl && currentIndex >= 0)
+                        root.printCtl.setPrintSizePreset(
+                            presetRow.presetIndex, root.printSizeIds[currentIndex])
+                }
             }
         }
     }
@@ -35,16 +72,38 @@ ColumnLayout {
     CheckBox {
         objectName: "optionsPrintHiResPreviewCheck"
         text: qsTr("Use high quality previews (slower)")
+        checked: root.printCtl ? !root.printCtl.printProxyPreview() : false
+        onToggled: if (root.printCtl)
+            root.printCtl.setPrintProxyPreview(!checked)
     }
 
     Text {
         text: qsTr("Printer quality:")
         font.pixelSize: Theme.fontSize
         color: Theme.ink
+        visible: Qt.platform.os === "windows"
     }
     ButtonGroup { id: qualityGroup }
-    RadioButton { objectName: "optionsPrintQualityStandardRadio"; text: qsTr("Standard"); ButtonGroup.group: qualityGroup; checked: true }
-    RadioButton { objectName: "optionsPrintQualityHighRadio"; text: qsTr("High"); ButtonGroup.group: qualityGroup }
+    RadioButton {
+        objectName: "optionsPrintQualityCompatibleRadio"
+        text: qsTr("Compatible (half-res)")
+        visible: Qt.platform.os === "windows"
+        ButtonGroup.group: qualityGroup
+        checked: root.printCtl
+            ? root.printCtl.printerQuality() === "compatible" : true
+        onToggled: if (root.printCtl && checked)
+            root.printCtl.setPrinterQuality("compatible")
+    }
+    RadioButton {
+        objectName: "optionsPrintQualityHighQualityRadio"
+        text: qsTr("High Quality (full-res)")
+        visible: Qt.platform.os === "windows"
+        ButtonGroup.group: qualityGroup
+        checked: root.printCtl
+            ? root.printCtl.printerQuality() === "highQuality" : false
+        onToggled: if (root.printCtl && checked)
+            root.printCtl.setPrinterQuality("highQuality")
+    }
 
     Text {
         text: qsTr("Print resampler quality:")
@@ -52,8 +111,24 @@ ColumnLayout {
         color: Theme.ink
     }
     ButtonGroup { id: resizeGroup }
-    RadioButton { objectName: "optionsPrintResizeGeneralRadio"; text: qsTr("General (Lanczos-3)"); ButtonGroup.group: resizeGroup; checked: true }
-    RadioButton { objectName: "optionsPrintResizeSharpRadio"; text: qsTr("Extra sharp (Lanczos-8)"); ButtonGroup.group: resizeGroup }
+    RadioButton {
+        objectName: "optionsPrintResizeGeneralRadio"
+        text: qsTr("General (Lanczos-3)")
+        ButtonGroup.group: resizeGroup
+        checked: root.printCtl
+            ? root.printCtl.printResamplerQuality() === 3 : true
+        onToggled: if (root.printCtl && checked)
+            root.printCtl.setPrintResamplerQuality(3)
+    }
+    RadioButton {
+        objectName: "optionsPrintResizeSharpRadio"
+        text: qsTr("Extra sharp (Lanczos-8)")
+        ButtonGroup.group: resizeGroup
+        checked: root.printCtl
+            ? root.printCtl.printResamplerQuality() === 8 : false
+        onToggled: if (root.printCtl && checked)
+            root.printCtl.setPrintResamplerQuality(8)
+    }
 
     Item { Layout.fillHeight: true }
 }
