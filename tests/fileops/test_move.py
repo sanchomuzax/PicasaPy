@@ -147,8 +147,10 @@ def folders(tmp_path):
 
 
 class TestConcurrentIniWriter:
-    """#295: MINDKÉT ini-írás ütközésbiztos (a #137-es minta szerint) — a
-    párhuzamosan futó eredeti Picasa írása egyik mappában sem veszhet el."""
+    """#295: mindkét útvonal előzetes ellenőrzéséig észlelt írás újrajátszódik.
+
+    A teszt nem fedi a sikeres ujjlenyomat-ellenőrzés utáni külső írást.
+    """
 
     def test_foreign_writer_changes_survive_in_both_inis(
         self, folders, monkeypatch

@@ -1217,8 +1217,9 @@ class AppController(
         text = text.strip()
         ini_path = Path(folder_path) / PICASA_INI_NAME
 
-        # #137: ütközésbiztos írás — a párhuzamosan futó eredeti Picasa
-        # módosítása nem veszhet el (a mutate tiszta, újrajátszható)
+        # #137: útvonalanként soros írás — az előzetes ujjlenyomat-
+        # ellenőrzésig észlelt Picasa-módosítás újrajátszódik. A check/save
+        # közti külső írás teljes kizárását a fájlrendszer nem garantálja.
         def mutate(document):
             if text:
                 return document.with_value("Picasa", "description", text)

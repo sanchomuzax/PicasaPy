@@ -2505,8 +2505,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
                 document = document.with_removed(self._section_name, "crop")
             return document
 
-        # #137: ütközésbiztos mentés — ha a párhuzamosan futó eredeti Picasa
-        # időközben más kulcsot írt ugyanabba az iniben, az nem vész el.
+        # #137: útvonalanként soros mentés — az előzetes ujjlenyomat-
+        # ellenőrzésig észlelt másik kulcs újratöltést és újrajátszást kap.
+        # A check/save közti külső írás teljes kizárását a fájlrendszer nem garantálja.
         try:
             update_document(self._ini_path, mutate, backup=True)
         except FilterWriteError as error:

@@ -245,8 +245,9 @@ def rekordokat_atvesz(
 ) -> AtvetelJelentes:
     """A beolvasott db3-rekordok kulcsszavainak és helyadatának kiírása.
 
-    Mappánként EGY `.picasa.ini`-t nyit, az `update_document` ütközésbiztos
-    útján (a NAS-mappát a futó eredeti Picasa is írhatja).
+    Mappánként EGY `.picasa.ini`-t nyit az útvonalanként szerializált,
+    best-effort konkurenciakezelésű `update_document` útján (a NAS-mappát a
+    futó eredeti Picasa is írhatja).
 
     ⚠️ A mappát nem hozzuk létre: ha a helyi útvonal nem létezik (a remap
     másik gépre mutat), a mappa kimarad — az import CSAK OLVAS a db3-ból, a

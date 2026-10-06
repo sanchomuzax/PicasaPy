@@ -158,8 +158,44 @@ class TestSourceFingerprint:
 
 
 class TestUpdateDocument:
-    """#137: ütközésbiztos load→mutate→save — a párhuzamosan futó eredeti
-    Picasa írásának lost update-je kizárva."""
+    """#137/#4471: belső szerializálás és külső írások best-effort észlelése."""
+
+    def test_external_write_between_fingerprint_check_and_save(self, monkeypatch, tmp_path):
+        """A külső író a sikeres ellenőrzés után, a mentés előtt módosít.
+
+        Ez a determinisztikus TOCTOU-próba megmutatja, hogy a fingerprint
+        ellenőrzése nem compare-and-swap: a közbeírt változás elveszhet.
+        """
+        from picasapy.ini import load_document, update_document
+        from picasapy.ini import io as ini_io
+
+        path = tmp_path / ".picasa.ini"
+        path.write_bytes(b"[a.jpg]\r\n")
+        real_save_document = ini_io.save_document
+        external_write_happened = False
+
+        def external_write_then_save(document, target, *, backup=False, in_place=False):
+            nonlocal external_write_happened
+            if target == path and not external_write_happened:
+                # A fogantyúban az update_document fingerprint-ellenőrzése
+                # már sikeres; a valódi save_document még nem kezdett írni.
+                path.write_bytes(b"[a.jpg]\r\nstar=yes\r\n")
+                external_write_happened = True
+            return real_save_document(
+                document, target, backup=backup, in_place=in_place
+            )
+
+        monkeypatch.setattr(ini_io, "save_document", external_write_then_save)
+
+        update_document(path, lambda doc: doc.with_value("a.jpg", "caption", "mine"))
+
+        assert external_write_happened
+        final = load_document(path)
+        assert final.section("a.jpg").get("caption") == "mine"
+        # A külső írás a sikeres check után történt, ezért ez a fájlrendszeri
+        # API-kkal nem védhető rés: a csillag elveszett, ezt a teszt korlátként
+        # rögzíti, nem ígért védelemként.
+        assert final.section("a.jpg").get("star") is None
 
     def test_simple_update_writes_file(self, tmp_path):
         from picasapy.ini import load_document, update_document
@@ -186,9 +222,8 @@ class TestUpdateDocument:
         update_document(path, lambda d: d.with_value("a.jpg", "caption", "hi"))
         assert (tmp_path / ".picasa.ini.bak").exists()
 
-    def test_concurrent_writer_change_is_not_lost(self, tmp_path):
-        """A KULCS teszt: a mutate közben egy másik író (a Picasa) frissít egy
-        MÁSIK kulcsot — a végeredményben MINDKÉT módosítás megvan."""
+    def test_change_before_fingerprint_check_is_replayed(self, tmp_path):
+        """Az előzetes fingerprint-ellenőrzés előtti külső változás újrajátszódik."""
         from picasapy.ini import load_document, update_document
 
         path = tmp_path / ".picasa.ini"
@@ -198,7 +233,7 @@ class TestUpdateDocument:
 
         def mutate(document):
             calls["n"] += 1
-            # Az ELSŐ hívás közben egy párhuzamos író (Picasa) csillagot ad.
+            # A fingerprint-ellenőrzés előtt a külső író csillagot ad.
             if calls["n"] == 1:
                 intruder = load_document(path).with_value("a.jpg", "star", "yes")
                 save_document_direct(intruder, path)
@@ -249,3 +284,189 @@ class TestUpdateDocument:
 
         with pytest.raises(IniConflictError):
             update_document(path, mutate, max_retries=2)
+
+    def test_two_workers_on_same_ini_keep_both_updates(self, monkeypatch, tmp_path):
+        """Az azonos ini-útvonalon futó PicasaPy-írók sorban módosítanak."""
+        from threading import Event, Thread, current_thread
+
+        from picasapy.ini import load_document, update_document
+        from picasapy.ini import io as ini_io
+
+        path = tmp_path / ".picasa.ini"
+        path.write_bytes(b"[a.jpg]\r\n")
+        alias_directory = tmp_path / "path-alias"
+        alias_directory.mkdir()
+        second_path = alias_directory / ".." / ".picasa.ini"
+        real_path_lock = ini_io._ini_path_lock
+        second_lock_requested = Event()
+        first_mutating = Event()
+        release_first = Event()
+        second_mutating = Event()
+        errors = []
+
+        def observed_path_lock(target):
+            if current_thread().name == "second-ini-writer":
+                second_lock_requested.set()
+            return real_path_lock(target)
+
+        monkeypatch.setattr(ini_io, "_ini_path_lock", observed_path_lock)
+
+        def first_mutate(document):
+            first_mutating.set()
+            assert release_first.wait(timeout=3)
+            return document.with_value("a.jpg", "caption", "first")
+
+        def second_mutate(document):
+            second_mutating.set()
+            return document.with_value("a.jpg", "star", "yes")
+
+        def run(mutate):
+            try:
+                target = second_path if current_thread().name == "second-ini-writer" else path
+                update_document(target, mutate)
+            except BaseException as exc:  # a szál hibája a főszálon is bukjon
+                errors.append(exc)
+
+        first = Thread(target=run, args=(first_mutate,), name="first-ini-writer", daemon=True)
+        second = Thread(
+            target=run, args=(second_mutate,), name="second-ini-writer", daemon=True
+        )
+        first.start()
+        try:
+            assert first_mutating.wait(timeout=3)
+            second.start()
+            assert second_lock_requested.wait(timeout=3)
+            # A második dolgozó már a lock fogantyújánál van, az első még
+            # módosít: a második mutate csak az első mentése után futhat.
+            assert not second_mutating.wait(timeout=0.1)
+        finally:
+            release_first.set()
+
+        first.join(timeout=3)
+        second.join(timeout=3)
+        assert not first.is_alive()
+        assert not second.is_alive()
+        assert errors == []
+        final = load_document(path)
+        assert final.section("a.jpg").get("caption") == "first"
+        assert final.section("a.jpg").get("star") == "yes"
+
+    def test_different_ini_files_can_be_written_in_parallel(self, tmp_path):
+        """A path-lock csak az azonos fájlra várakoztat; más útvonal futhat."""
+        from threading import Barrier, Thread
+
+        from picasapy.ini import load_document, update_document
+        from picasapy.ini import io as ini_io
+
+        first_path = tmp_path / "first" / ".picasa.ini"
+        second_path = tmp_path / "second" / ".picasa.ini"
+        first_path.parent.mkdir()
+        second_path.parent.mkdir()
+        first_path.write_bytes(b"[a.jpg]\r\n")
+        second_path.write_bytes(b"[b.jpg]\r\n")
+        both_mutating = Barrier(2)
+        errors = []
+        assert callable(ini_io._ini_path_lock)
+
+        def worker(path, section, key):
+            def mutate(document):
+                both_mutating.wait(timeout=3)
+                return document.with_value(section, key, "yes")
+
+            try:
+                update_document(path, mutate)
+            except BaseException as exc:
+                errors.append(exc)
+
+        first = Thread(target=worker, args=(first_path, "a.jpg", "caption"), daemon=True)
+        second = Thread(target=worker, args=(second_path, "b.jpg", "star"), daemon=True)
+        first.start()
+        second.start()
+        first.join(timeout=4)
+        second.join(timeout=4)
+
+        assert not first.is_alive()
+        assert not second.is_alive()
+        assert errors == []
+        assert load_document(first_path).section("a.jpg").get("caption") == "yes"
+        assert load_document(second_path).section("b.jpg").get("star") == "yes"
+
+    def test_path_lock_releases_after_exception(self, tmp_path):
+        """A mutate kivétele után egy másik szál is írhatja ugyanazt az ini-t."""
+        from threading import Event, Thread
+
+        from picasapy.ini import load_document, update_document
+        from picasapy.ini import io as ini_io
+
+        path = tmp_path / ".picasa.ini"
+        path.write_bytes(b"[a.jpg]\r\n")
+        assert callable(ini_io._ini_path_lock)
+
+        def fail_mutation(_document):
+            raise ValueError("szándékos tesztkivétel")
+
+        with pytest.raises(ValueError, match="szándékos tesztkivétel"):
+            update_document(path, fail_mutation)
+
+        finished = Event()
+        errors = []
+
+        def write_after_exception():
+            try:
+                update_document(
+                    path, lambda doc: doc.with_value("a.jpg", "star", "yes")
+                )
+            except BaseException as exc:
+                errors.append(exc)
+            finally:
+                finished.set()
+
+        writer = Thread(target=write_after_exception, daemon=True)
+        writer.start()
+        assert finished.wait(timeout=3)
+        writer.join(timeout=1)
+        assert not writer.is_alive()
+        assert errors == []
+        assert load_document(path).section("a.jpg").get("star") == "yes"
+
+    def test_reentrant_update_on_same_ini_does_not_deadlock(self, tmp_path):
+        """Az ugyanazon szálból, ugyanarra az ini-re belépő írás befejeződik."""
+        from threading import Event, Thread
+
+        from picasapy.ini import load_document, update_document
+        from picasapy.ini import io as ini_io
+
+        path = tmp_path / ".picasa.ini"
+        path.write_bytes(b"[a.jpg]\r\n")
+        assert callable(ini_io._ini_path_lock)
+        nested_update_done = False
+        finished = Event()
+        errors = []
+
+        def mutate_outer(document):
+            nonlocal nested_update_done
+            if not nested_update_done:
+                nested_update_done = True
+                update_document(
+                    path,
+                    lambda inner: inner.with_value("a.jpg", "star", "nested"),
+                )
+            return document.with_value("a.jpg", "caption", "outer")
+
+        def run_outer():
+            try:
+                update_document(path, mutate_outer)
+            except BaseException as exc:
+                errors.append(exc)
+            finally:
+                finished.set()
+
+        writer = Thread(target=run_outer, daemon=True)
+        writer.start()
+        assert finished.wait(timeout=3)
+        writer.join(timeout=1)
+        assert not writer.is_alive()
+        assert errors == []
+        final = load_document(path)
+        assert final.section("a.jpg").get("caption") == "outer"
+        assert final.section("a.jpg").get("star") == "nested"

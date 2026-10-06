@@ -23,8 +23,10 @@ A #1645 kutatási köre kimérte, hogy az eredeti Picasa a kézi sorrendet
    FUTÓ Picasája is használja (a tulajdonos párhuzamosan teszteli a két
    programot ugyanazon a NAS-mappán). Egy általunk írt `db3` egy hibás bájton
    az ő élő könyvtárát viszi.
-2. **Az `ini`-t már bírjuk.** Ütközésbiztos írás, round-trip, mappánkénti
-   hatókör — a projekt adatréteg-invariánsa szerint a `.picasa.ini`-t
+2. **Az `ini`-t már bírjuk.** Útvonalanként szerializált írás, round-trip,
+   a betöltés és az előzetes ujjlenyomat-ellenőrzés között észlelt változás
+   újrapróbálása, mappánkénti hatókör — a projekt adatréteg-invariánsa
+   szerint a `.picasa.ini`-t
    kizárólag az `ini/` csomag írja, és az már megvan.
 3. **A mappával együtt utazik.** Ha a felhasználó átmásolja a mappát, a kézi
    sorrend vele megy — a `db3`-as tárolás ezt nem tudja.
