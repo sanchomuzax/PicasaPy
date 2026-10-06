@@ -4179,6 +4179,9 @@ ApplicationWindow {
         function onCollageFinished(path, used, skipped, missing) {
             createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)
         }
+        function onCollagePreviewFailed(message) {
+            createDialogs.ensure().jelezdAKollazsHibajat(message)
+        }
         function onCollageFailed(message) {
             createDialogs.ensure().jelezdAKollazsHibajat(message)
         }
