@@ -92,7 +92,11 @@ from .language_controller import (
     DEFAULT_LANGUAGE,
     LANGUAGE_KEY,
     coerce_language,
+    resolve_first_run_language,
     resolve_startup_language,
+)
+from .startup_language_prompt import (
+    ask_startup_language_prompt as _ask_first_run_language,
 )
 from .color_management_controller import wire_color_management
 from .display_mode_controller import wire_display_mode
@@ -834,9 +838,13 @@ def _configured_language(settings: QSettings | None = None) -> str:
     return coerce_language(settings.value(LANGUAGE_KEY, DEFAULT_LANGUAGE))
 
 
-def _startup_language(settings: QSettings | None = None) -> str:
+def _startup_language(
+    settings: QSettings | None = None, *, prompt_timeout_ms: int | None = None
+) -> str:
     """Az induláskor betöltendő nyelv — itt érik be a függő választás
-    (#3555, `resolve_startup_language`), a fordító betöltése előtt.
+    (#3555, `resolve_startup_language`), a fordító betöltése előtt. Hiányzó
+    nyelvbeállításnál előbb az egyszeri rendszer-nyelv-felajánlást intézi
+    (`resolve_first_run_language`, #4325).
 
     Ez a legkorábbi lehetséges hely; az `AppController` saját induláskori
     hívása ugyanerre a `QSettings`-re már csak szinkronban talál mindent
@@ -848,14 +856,22 @@ def _startup_language(settings: QSettings | None = None) -> str:
         return coerce_language(forced)
     if settings is None:
         settings = QSettings("PicasaPy", "PicasaPy")
+    selected = resolve_first_run_language(
+        settings,
+        lambda system_language: _ask_first_run_language(
+            system_language, timeout_ms=prompt_timeout_ms
+        ),
+    )
+    if selected is not None:
+        return selected
     return resolve_startup_language(settings)
 
 
 def _install_translator(app: QGuiApplication, language: str | None = None) -> QTranslator | None:
     """A `language` (vagy a beállított) nyelv fordítójának telepítése.
 
-    Az angolhoz nincs `.qm` — a forrásszövegek maguk angolok —, ezért ott
-    nincs mit betölteni, és ez nem hiba.
+    Az angol katalógus azonos fordításokat tartalmaz, de a forrásszövegek
+    maguk angolok — ezért ott nem telepítünk fordítót.
     """
     code = coerce_language(language) if language else _startup_language()
     if code == DEFAULT_LANGUAGE:

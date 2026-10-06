@@ -117,6 +117,11 @@ MenuBar {
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
+    // #4335: a kijelölt fedvények állapota a controller INI-lekérdezéséből.
+    property bool textOverlayShowEnabled: false
+    property bool textOverlayHideEnabled: false
+    signal textOverlayStatesRefreshRequested()
+    signal textOverlayVisibilityRequested(bool visible)
     //: #1768: a szerkesztő-előnézet aktív-e. Az eredeti a `0x9caa`
     //: parancsot (a Mappakezelő MINDKÉT belépési pontját) a menü
     //: megnyitásakor SZÜRKÍTI, amíg a szerkesztő-előnézet él
@@ -316,6 +321,7 @@ MenuBar {
     signal slideshowRequested()
     signal addToScreensaverRequested()
     signal configureScreensaverRequested()
+    signal configurePhotoViewerRequested()
     //: #3460: Mappa ▸ Leírás szerkesztése… — ugyanaz az `album.fen`
     //: párbeszéd, mint a mappa helyi menüjéé (#422), a megnyitott mappára
     signal editFolderDescriptionRequested()
@@ -917,13 +923,25 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit): keresési opciók
         PicasaMenuItem { text: qsTr("Search &Options"); placeholder: true }
-        // hiányzott (#324 audit): a jelentése a screenshotokból nem
-        // egyértelmű — feltehetően mappacím nélküli indexkép-rács
+        // #4346: az eredeti `Show only big images` láthatósági kapcsolója.
         PicasaMenuItem {
             objectName: "menuViewThumbnailsOnly"
             text: qsTr("Small &Pictures")
             checkable: true
-            placeholder: true
+            placeholder: false
+            // #4346: az eredeti `Show only big images` preferenciájának
+            // fordított pipaállása — pipálva a kisebb képek is látszanak.
+            checked: (bar.ctl && bar.ctl.showOnlyBigImages !== undefined)
+                ? !bar.ctl.showOnlyBigImages : false
+            onTriggered: {
+                if (bar.ctl && bar.ctl.showOnlyBigImages !== undefined) {
+                    bar.ctl.setShowOnlyBigImages(!bar.ctl.showOnlyBigImages)
+                }
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.showOnlyBigImages !== undefined)
+                        ? !bar.ctl.showOnlyBigImages : false
+                })
+            }
         }
         MenuItem {
             objectName: "menuViewHidden"
@@ -1694,6 +1712,7 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("&Picture")
+        onAboutToShow: bar.textOverlayStatesRefreshRequested()
         MenuItem {
             objectName: "menuPictureViewAndEdit"
             text: qsTr("&View and Edit") + "\tCtrl+3"
@@ -1764,13 +1783,20 @@ MenuBar {
                 onTriggered: bar.batchApplyEffectRequested("rotate_ccw")
             }
             MenuSeparator {}
-            // #425 5. pont: a `docs/specs/` a szöveg-overlay index-
-            // lefedettségét nem dokumentálja (van-e a kijelölésben szöveg-
-            // réteges kép) — a feltételes engedélyezéshez szükséges adat
-            // jelenleg nincs meg olcsón, ezért egyelőre placeholder
-            // (ld. `batch_effect_controller` modul-docstring).
-            PicasaMenuItem { text: qsTr("Show Text"); placeholder: true }
-            PicasaMenuItem { text: qsTr("Hide Text"); placeholder: true }
+            // #4335: külön parancsok, a kijelölésben levő szövegfedvények
+            // aktuális `textactive=` állapota szerint engedélyezve.
+            MenuItem {
+                objectName: "menuPictureShowText"
+                text: qsTr("Show Text")
+                enabled: bar.photoActionsEnabled && bar.textOverlayShowEnabled
+                onTriggered: bar.textOverlayVisibilityRequested(true)
+            }
+            MenuItem {
+                objectName: "menuPictureHideText"
+                text: qsTr("Hide Text")
+                enabled: bar.photoActionsEnabled && bar.textOverlayHideEnabled
+                onTriggered: bar.textOverlayVisibilityRequested(false)
+            }
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
@@ -1926,7 +1952,11 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit)
-        PicasaMenuItem { text: qsTr("Configure Photo Viewer..."); placeholder: true }
+        MenuItem {
+            objectName: "menuToolsPhotoViewerSettings"
+            text: qsTr("Configure Photo Viewer...")
+            onTriggered: bar.configurePhotoViewerRequested()
+        }
         MenuItem {
             objectName: "menuToolsScreensaver"
             text: qsTr("Configure Screensaver...")
@@ -2165,6 +2195,7 @@ MenuBar {
         // (a #1464-ben bevezetett minta) — ez a megerősítés ELMARADÁSA
         // (már aktív tétel, vagy "Nem"/"Mégse") esetén is kell.
         PicasaMenu {
+            id: languageMenu
             objectName: "menuToolsLanguage"
             title: qsTr("Language")
             MenuItem {
@@ -2208,6 +2239,38 @@ MenuBar {
                     checked = Qt.binding(function () {
                         return controller ? controller.pendingLanguage === "hu" : false
                     })
+                }
+            }
+            Instantiator {
+                objectName: "menuLanguageAdditionalChoices"
+                model: controller
+                    ? controller.availableLanguages.filter(
+                        function (code) { return code !== "en" && code !== "hu" })
+                    : []
+                delegate: MenuItem {
+                    property string languageCode: modelData
+                    objectName: "menuLanguage" + languageCode
+                    text: controller ? controller.ownLanguageName(languageCode) : languageCode
+                    checkable: true
+                    checked: controller
+                        ? controller.pendingLanguage === languageCode
+                        : false
+                    onTriggered: {
+                        bar.requestLanguageChange(languageCode)
+                        checked = Qt.binding(function () {
+                            return controller
+                                ? controller.pendingLanguage === languageCode
+                                : false
+                        })
+                    }
+                }
+                onObjectAdded: function (index, object) {
+                    languageMenu.insertItem(
+                        controller.availableLanguages.indexOf(object.languageCode) + 1,
+                        object)
+                }
+                onObjectRemoved: function (_index, object) {
+                    languageMenu.removeItem(object)
                 }
             }
         }

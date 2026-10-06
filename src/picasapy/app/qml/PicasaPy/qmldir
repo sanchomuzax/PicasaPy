@@ -38,6 +38,7 @@ VideoPlayerControls 1.0 VideoPlayerControls.qml
 VideoViewport 1.0 VideoViewport.qml
 SlideshowView 1.0 SlideshowView.qml
 ScreensaverDialog 1.0 ScreensaverDialog.qml
+PhotoViewerSettingsDialog 1.0 PhotoViewerSettingsDialog.qml
 LayoutSegment 1.0 LayoutSegment.qml
 AaUtkozesDialog 1.0 AaUtkozesDialog.qml
 EndEditModalityDialog 1.0 EndEditModalityDialog.qml
@@ -81,6 +82,7 @@ SplashScreen 1.0 SplashScreen.qml
 TimelineView 1.0 TimelineView.qml
 DedupDialog 1.0 DedupDialog.qml
 FaceScanDialog 1.0 FaceScanDialog.qml
+FirstRunLanguageDialog 1.0 FirstRunLanguageDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
 AddFileDialog 1.0 AddFileDialog.qml
 TesztuzemNaploDialog 1.0 TesztuzemNaploDialog.qml
