@@ -47,8 +47,9 @@ import time
 import cv2
 import numpy as np
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QSize, Qt, QUrl
 from PySide6.QtGui import QImage
+from PySide6.QtQml import QQmlComponent, qmlEngine
 from PySide6.QtTest import QTest
 
 from tests.app.qml_functional.conftest import _build_qml_app
@@ -61,6 +62,7 @@ from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import (
 TETEL_PROJEKTOR = "menuViewDisplayModeProjector"
 TETEL_TULCSORDULAS = "menuViewDisplayModeOverflow"
 TETEL_24BIT = "menuViewDisplayModeNormal"
+TETEL_16BIT = "menuViewDisplayMode16Bit"
 
 #: A próbakép egyenletes háttere és a felső, tisztán fehér sávja.
 HATTER = (200, 200, 200)
@@ -82,6 +84,70 @@ def _child(root, name):
     obj = root.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj
+
+
+def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if feltetel():
+            return True
+        time.sleep(0.01)
+    qt_app.processEvents()
+    return bool(feltetel())
+
+
+def _lathato_elem(window, feltetel):
+    sor = [window.contentItem().parentItem() or window.contentItem()]
+    while sor:
+        elem = sor.pop()
+        if elem.isVisible() and feltetel(elem):
+            return elem
+        sor.extend(elem.childItems())
+    return None
+
+
+def _valodi_modkattintas(window, qt_app, nev: str) -> None:
+    """A Nézet menün át, QTest egéreseménnyel választja ki a megadott módot."""
+
+    def kattints(elem) -> None:
+        assert elem is not None and elem.width() > 0 and elem.height() > 0
+        pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(pont.x()), round(pont.y())),
+        )
+        qt_app.processEvents()
+
+    nezet_fejlec = _lathato_elem(
+        window,
+        lambda elem: "MenuBarItem" in elem.metaObject().className()
+        and elem.property("text") == "&View",
+    )
+    assert nezet_fejlec is not None, "a Nézet menü fejléce nem látható"
+    kattints(nezet_fejlec)
+
+    display_menu = _lathato_elem(
+        window,
+        lambda elem: elem.property("text") == "&Display Mode",
+    )
+    assert display_menu is not None, "a Megjelenítési mód almenü nem jelent meg"
+    kattints(display_menu)
+
+    mode_item = None
+
+    def mode_lathato() -> bool:
+        nonlocal mode_item
+        mode_item = _lathato_elem(
+            window,
+            lambda elem: elem.property("text") == "&16-bit (dithered)",
+        )
+        return mode_item is not None
+
+    assert _varj(qt_app, mode_lathato), f"a(z) {nev} menüpont nem jelent meg"
+    kattints(mode_item)
 
 
 def _dict_folt(tomb: np.ndarray, teglalap: dict, felul: float, alul: float) -> np.ndarray:
@@ -117,7 +183,7 @@ def _tombbe(image: QImage) -> np.ndarray:
     return raw[:, : width * 3].reshape((height, width, 3)).copy()
 
 
-def _foto_teglalap(window) -> tuple[int, int, int, int]:
+def _foto_teglalap(window) -> tuple[float, float, float, float]:
     """A `viewerImage` ténylegesen KIRAJZOLT téglalapja az ablakban.
 
     A `PreserveAspectFit` miatt a kirajzolt kép kisebb a befoglaló doboznál
@@ -133,15 +199,15 @@ def _foto_teglalap(window) -> tuple[int, int, int, int]:
     bal_felso = item.mapToScene(
         QPointF((doboz_szeles - szeles) / 2, (doboz_magas - magas) / 2)
     )
-    return int(bal_felso.x()), int(bal_felso.y()), int(szeles), int(magas)
+    return bal_felso.x(), bal_felso.y(), szeles, magas
 
 
 def _folt(tomb: np.ndarray, teglalap, felul: float, alul: float) -> np.ndarray:
     """Vízszintesen a középső 60 %, függőlegesen a megadott sáv."""
     x, y, szeles, magas = teglalap
     return tomb[
-        y + int(magas * felul) : y + int(magas * alul),
-        x + int(szeles * 0.2) : x + int(szeles * 0.8),
+        int(y + magas * felul) : int(y + magas * alul),
+        int(x + szeles * 0.2) : int(x + szeles * 0.8),
     ]
 
 
@@ -153,6 +219,159 @@ HATTER_SAV = (0.45, 0.90)
 
 def _szinek(folt: np.ndarray) -> set[tuple[int, int, int]]:
     return {tuple(int(c) for c in p) for p in np.unique(folt.reshape(-1, 3), axis=0)}
+
+
+def _spec_szemcsezes(rgb: np.ndarray) -> np.ndarray:
+    """Független, egyszerű referencia a spec 5.3 + 5.3/b képleteire."""
+    allapot = [0] * 624
+    allapot[0] = 0x80AE2D6C
+    for index in range(1, 624):
+        elozo = allapot[index - 1]
+        allapot[index] = (0x0019660D * (elozo ^ (elozo >> 30)) + index) & 0xFFFFFFFF
+    index = 624
+    eredmeny = rgb.copy()
+
+    for y in range(rgb.shape[0]):
+        for x in range(rgb.shape[1]):
+            if index == 624:
+                for i in range(624):
+                    osszefuzes = (allapot[i] & 0x80000000) | (
+                        allapot[(i + 1) % 624] & 0x7FFFFFFF
+                    )
+                    allapot[i] = (
+                        allapot[(i + 397) % 624]
+                        ^ (osszefuzes >> 1)
+                        ^ (0x9908B0DF if osszefuzes & 1 else 0)
+                    ) & 0xFFFFFFFF
+                index = 0
+
+            tempered = allapot[index]
+            index += 1
+            tempered ^= tempered >> 11
+            tempered = (tempered ^ ((tempered & 0xFF3A58AD) << 7)) & 0xFFFFFFFF
+            tempered = (tempered ^ ((tempered & 0xFFFFDF8C) << 15)) & 0xFFFFFFFF
+            tempered ^= tempered >> 18
+
+            eredmeny[y, x, 0] = min(255, int(rgb[y, x, 0]) + ((tempered >> 16) & 7))
+            eredmeny[y, x, 1] = min(255, int(rgb[y, x, 1]) + ((tempered >> 8) & 3))
+            eredmeny[y, x, 2] = min(255, int(rgb[y, x, 2]) + (tempered & 7))
+    return eredmeny
+
+
+def _varhato_szemcse_kepernyo(
+    window, forras_ut: str
+) -> QImage:
+    """A provider kimenetének független, képpontos specifikációs referenciája.
+
+    A provider a forrást a QML Image tényleges `sourceSize`-ába méretezi,
+    majd a módot a méretezett képre alkalmazza.
+    """
+    fromas = QImage(forras_ut)
+    item = _child(window, "viewerImage")
+    kert_meret = item.property("sourceSize")
+    doboz = fromas.scaled(
+        QSize(kert_meret.width(), kert_meret.height()),
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+    szemcsezett = _spec_szemcsezes(_tombbe(doboz))
+    eredmeny = QImage(
+        szemcsezett.data,
+        szemcsezett.shape[1],
+        szemcsezett.shape[0],
+        szemcsezett.strides[0],
+        QImage.Format.Format_RGB888,
+    ).copy()
+    assert np.any(szemcsezett != _tombbe(doboz)), "a próbakép nem mutatja a szemcsézés hatását"
+    return eredmeny
+
+
+def _referencia_image(window, kep: QImage, tmp_path, qt_app):
+    """Ugyanazon a QML Image-útvonalon rajzolja ki a független referenciát."""
+    ut = tmp_path / "dither16-spec.png"
+    assert kep.save(str(ut), "PNG")
+    eredeti = _child(window, "viewerImage")
+    engine = qmlEngine(eredeti)
+    assert engine is not None
+    component = QQmlComponent(engine)
+    component.setData(
+        b"""import QtQuick
+Item {
+    objectName: "dither16ReferenceRoot"
+    Image {
+        objectName: "dither16ReferenceImage"
+        anchors.fill: parent
+        fillMode: Image.PreserveAspectFit
+        asynchronous: false
+        autoTransform: true
+    }
+}""",
+        QUrl(),
+    )
+    root = component.create(engine.rootContext())
+    assert root is not None, "a referencia-QML Image nem jött létre: " + str(component.errors())
+    root.setParent(window)
+    root.setParentItem(eredeti.parentItem())
+    root.setProperty("x", eredeti.property("x"))
+    root.setProperty("y", eredeti.property("y"))
+    root.setProperty("width", eredeti.property("width"))
+    root.setProperty("height", eredeti.property("height"))
+    root.setProperty("z", eredeti.property("z"))
+    referencia = root.findChild(QObject, "dither16ReferenceImage")
+    assert referencia is not None
+    referencia.setProperty("source", QUrl.fromLocalFile(str(ut)))
+    referencia.setProperty("visible", False)
+
+    hatarido = time.monotonic() + HATARIDO
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if float(referencia.property("implicitWidth")) > 0:
+            break
+        time.sleep(0.02)
+    assert float(referencia.property("implicitWidth")) > 0, "a referencia-kép nem töltődött be"
+    return root, referencia
+
+
+def _kirajzolt_szemcse_hibak(window, referencia) -> tuple[int, int]:
+    """A kattintás utáni képet azonos QML-kirajzolású specifikációs képpel veti össze."""
+    eredeti = _child(window, "viewerImage")
+    gyoker, kep = referencia
+    eredeti.setProperty("visible", True)
+    kep.setProperty("visible", False)
+    elvart_ablak = _tombbe(window.grabWindow())
+    eredeti.setProperty("visible", False)
+    gyoker.setProperty("visible", True)
+    kep.setProperty("visible", True)
+    tenyleges_ablak = _tombbe(window.grabWindow())
+    gyoker.setProperty("visible", False)
+    eredeti.setProperty("visible", True)
+
+    x, y, painted_width, painted_height = _foto_teglalap(window)
+    meret_x = tenyleges_ablak.shape[1] / float(window.width())
+    meret_y = tenyleges_ablak.shape[0] / float(window.height())
+    bal, jobb = int((x + painted_width * 0.1) * meret_x), int(
+        (x + painted_width * 0.9) * meret_x
+    )
+    fent, lent = int((y + painted_height * 0.45) * meret_y), int(
+        (y + painted_height * 0.75) * meret_y
+    )
+    tenyleges = tenyleges_ablak[fent:lent, bal:jobb].astype(np.int16)
+    vart = elvart_ablak[fent:lent, bal:jobb].astype(np.int16)
+    assert tenyleges.shape == vart.shape, "a képernyőreferenciák mérete eltér"
+    elteres = np.abs(tenyleges - vart)
+    hibas_pixelek = np.any(elteres > 3, axis=2)
+    return int(np.count_nonzero(hibas_pixelek)), int(elteres.max(initial=0))
+
+
+def _varja_a_kirajzolt_szemcset(window, qt_app, referencia) -> tuple[int, int]:
+    """Határidővel vár a tényleges képernyőképpontokra, fix várakozás nélkül."""
+    hatarido = time.monotonic() + HATARIDO
+    while True:
+        qt_app.processEvents()
+        hibak = _kirajzolt_szemcse_hibak(window, referencia)
+        if hibak[0] == 0 or time.monotonic() >= hatarido:
+            return hibak
+        time.sleep(0.02)
 
 
 def _varva_szinek(window, qt_app, teglalap, sav, vart) -> set:
@@ -264,6 +483,38 @@ class TestKirajzoltKep:
         assert _varva_szinek(
             window, qt_app, teglalap, HATTER_SAV, {HATTER}
         ) == {HATTER}
+
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+    def test_16_bites_kattintasra_a_nezo_kepet_szemcsezi(
+        self, nyitott_nezo, qt_app, tmp_path, magassag_elteres
+    ):
+        window, controller, _edit, _teglalap = nyitott_nezo
+        window.setHeight(window.height() + magassag_elteres)
+        hatarido = time.monotonic() + HATARIDO
+        while time.monotonic() < hatarido:
+            qt_app.processEvents()
+            if _child(window, "viewerImage").property("paintedWidth"):
+                break
+
+        _valodi_modkattintas(window, qt_app, TETEL_16BIT)
+        qt_app.processEvents()
+        assert controller.property("displayMode") == "dither16"
+
+        vart = _varhato_szemcse_kepernyo(
+            window, str(tmp_path / "kepek" / "a.jpg")
+        )
+        referencia = _referencia_image(window, vart, tmp_path, qt_app)
+
+        hibas_pixelek, legnagyobb_elteres = _varja_a_kirajzolt_szemcset(
+            window, qt_app, referencia
+        )
+        referencia[0].deleteLater()
+        assert hibas_pixelek == 0, (
+            "a valódi menükattintás után a néző kirajzolt képe nem követi a "
+            "spec MT19937 + telítő összeadás képletét; "
+            f"hibás pixelek: {hibas_pixelek}, legnagyobb eltérés: "
+            f"{legnagyobb_elteres} (a várt érték ±3 px)"
+        )
 
     def test_a_modot_elhagyva_visszaall_a_kep(self, nyitott_nezo, qt_app):
         window, _controller, _edit, teglalap = nyitott_nezo

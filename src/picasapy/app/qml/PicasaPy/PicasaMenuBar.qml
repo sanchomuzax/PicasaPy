@@ -1046,9 +1046,9 @@ MenuBar {
         // újra. Ezért minden tétel a jelzés után VISSZAKÖTI a `checked`-et.
         //
         // A VÁZ szintjén mind a tizenegy MŰKÖDIK: pipázódik, és a módot
-        // beállítja a vezérlőn. A képpont-hatásuk külön jegyeké
-        // (#1576/#1577/#1578); a `24 bites` és — 24 bites képernyőn — az
-        // `Automatikus` az eredetiben is no-op.
+        // beállítja a vezérlőn. A képpont-hatást módonként a
+        // #1576/#1577/#1578/#4412 tesztek őrzik; a `24 bites` és — 24 bites
+        // képernyőn — az `Automatikus` az eredetiben is no-op.
         //
         // A `&`-gyorsítóbetűket a spec 1. szakasza tartalmazza; ide
         // SZÁNDÉKOSAN nem kerültek be: ebben a fájlban ma csak a hét
@@ -1082,13 +1082,17 @@ MenuBar {
                     })
                 }
             }
-            PicasaMenuItem {
+            MenuItem {
                 objectName: "menuViewDisplayMode16Bit"
                 text: qsTr("&16-bit (dithered)")
-                // #1658: megvalósítható (a szabály MÉRVE van: MT-zaj +0…7/0…3/0…7,
-                // telítő), de 16 bites képernyő ma nincs — ezért helyfoglaló,
-                // nem nyugdíjazott: ha egyszer értelmet nyer, bekötjük.
-                placeholder: true
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "dither16"
+                onTriggered: {
+                    controller.setDisplayMode("dither16")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "dither16"
+                    })
+                }
             }
             MenuSeparator {}
             PicasaMenuItem {

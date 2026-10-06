@@ -336,11 +336,10 @@ class TestModValaszto:
 
     @pytest.mark.parametrize(
         "mode",
-        ["auto", "normal", "dither16", "rdesk", "", "ismeretlen"],
+        ["auto", "normal", "rdesk", "", "ismeretlen"],
     )
     def test_a_tobbi_mod_meg_atenged(self, mode):
-        """A `dither16`/`rdesk` a #1579 szerint KIHAGYANDÓ (nincs 16 bites
-        képernyő, ill. RDP-specifikus).
+        """A `rdesk` a #1579 szerint KIHAGYANDÓ (RDP-specifikus).
 
         A `sepia` és a `bw` a #1657 óta KIKERÜLT innen; a `mac` a #1730
         óta — a képpont-szabályukat a saját tesztfájljuk őrzi
