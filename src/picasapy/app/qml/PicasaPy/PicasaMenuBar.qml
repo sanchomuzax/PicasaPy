@@ -1813,10 +1813,9 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.hideToggleRequested()
         }
-        // #1774 (mérve): az eredetiben az Elrejtés MELLETT önálló
-        // „Megjelenítés” tétel áll (a mentésen mindkettő inaktív). Nálunk
-        // az Elrejtés ma kapcsoló — a szétválasztás külön jegy, addig ez a
-        // tétel helyfoglaló, hogy a csoport szerkezete stimmeljen.
+        // #1774/#4409: az eredetiben az Elrejtés mellett önálló
+        // Megjelenítés tétel áll. Mindkét parancs működik: a Hide a helyi
+        // menü kapcsolóútját, az Unhide a rejtett kijelölések útját használja.
         MenuItem {
             objectName: "menuPictureUnhide"
             text: qsTr("&Unhide")
