@@ -396,33 +396,43 @@ rekordok kontextusát tehát utasításszinten meg lehet nevezni:
 | `0x007355c0` | Emberek-album képe | `Enter`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
 | `0x007359e0` | Emberek-album helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I` |
 
-**2026-10-06 — fókuszút-pontosítás:** az összesítő **megerősített a
-menü-kontekstre**: a `0x00a6aee0` tételépítőt
-mind a kilenc függvény hívja, és az egyes táblákban ott vannak a hozzájuk
-tartozó billentyű-/parancsrekordok. A billentyű útjából a fókuszátadás is
-látszik: a `0x00a53b00` a `0x00a582f0` továbbítóhoz küldi az eseményt; az a
-fókuszolt gyerek (`param_1[0x57]`) vtable `+0x74` metódusát hívja. Az RTTI
-szerint a `ytPopupListNode` e slotja a `0x00608c00` thunk, amely a
-`0x00a64050` eseménykezelőre ugrik. A `0x00a64050` diszasszemblálása általános
-listaeseményeket, valamint `Esc`, `Enter` és `Space` ágakat mutat; a benne
-látható utasítások még nem rendelik a 44 rekord parancsazonosítóit a Ctrl/Alt
-billentyűkhöz. A hívott segédek rekordkapcsolata további dekompilálást igényel.
+**2026-10-06 — a helyi menümező felirat, a tényleges fogadás nézethez kötött:**
+a kilenc építő és 44 rekord táblája továbbra is a menübirtokost adja meg.
+A `0x00a6aee0` 20 bájtos rekordjának `+0x04` mezőjét szövegként fűzi
+a menütételhez a `0x00a6b250` útján. A `0x00a6ade0` a feliratban
+kiírandó billentyűkódot keresi ki és visszaadja a felirat-összeállítónak;
+egyetlen közvetlen hívója a `0x00a6b250`. Ebben a helyi
+menüépítő/feliratláncban gyorsító-regisztráció nincs. Ez a megállapítás
+erre a láncra korlátozott: az importlista `CreateAcceleratorTableA` és
+`TranslateAcceleratorA` API-kat is tartalmaz, de a 44 rekorddal való
+kapcsolatuk **NINCS MEG**.
 
-A könyvtárnézetnek saját fogadója is van: a RTTI a `CThumbUI` vtable
-billentyűslotjába a `0x005e6710` kezelőt teszi. Ez a `0x005e67f4` címen hívja
-a közös továbbítót, majd saját billentyűágakkal folytatja; a Ctrl-ág
-`0x005e60d0`-ba vezet. Ez a CThumbUI útvonal, önmagában nem bizonyítja a másik
-nyolc menüépítő parancs-hozzárendelését.
+A tényleges könyvtárnézeti fogadó a `CThumbUI` vtable billentyűslotjának
+`0x005e6710` kezelője. A bizonyított feltételek:
 
-**Következtetés:** a menürekordok birtokos nézete megerősített; a közös
-fókusz-út és a popup-lista egyik lehetséges fogadója azonosított. Azt, hogy a
-44 rekord melyik fogadóban, milyen fókuszállapotban és mely parancsot aktiválja,
-még nem kapcsoltuk össze utasításszinten. Az `Enter`, `Ctrl+Enter` és
-`Ctrl+Delete` több kontextusban is szerepel, ezért a rekord önmagában nem ad
-globális parancs-hozzárendelést. A PicasaPy oldali állapotot a 6. szakasz
-QML-leltára rögzíti; a paritási teendő addig ne állítsa, hogy a QML
-`Shortcut`-ok az eredeti fókuszszabályt is visszaadják.
+- Ha a `+0x332f` bájt nem nulla, az út a `0x00760970`-re delegál;
+  ez csak keydown eseményen kezeli az Escet, a nyilakat és a szóközt,
+  valamint a `+0x3330` feltételéhez kötött `0`–`9` ágakat.
+- A szerkesztő `+`/`-`/`=`/`_` csúszkaléptetése és a Shift miatti
+  csempefrissítés a 3–5. szerkesztőfül látható paneljéhez kötött:
+  `0x005f95d0`/`0x005f9690` a `0x009e39b0` láthatósági láncvizsgálatot
+  használja. Ez a fókuszobjektum és szülői között megköveteli, hogy a
+  `+0x20c` bájt sehol se legyen beállítva.
+- A közös `0x00a53b00` továbbító a fókuszolt gyereknek adja az eseményt;
+  a CThumbUI saját F- és Enter-ágai csak a továbbítás után futnak a
+  dokumentált mód-/állapotkapukkal (`0x005e6710`).
+- A `ytPopupListNode` `0x00a64050` kezelője a billentyűeseményt előbb az
+  ősnek/gyereknek továbbítja; saját fallback ága csak Esc/Enter/Space.
+  A 44 rekord táblázatát nem keresi, ezért nem bizonyítja azok egyedi
+  Ctrl/Alt parancs-hozzárendelését.
 
+**Következtetés és fejlesztői irány:** a helyi menüben látható billentyű
+feliratát ne tekintsük a billentyű regisztrációjának. A QML oldalon minden
+kötéshez rögzítsük a gazdanézetet, a fókuszkaput és az eseményfogadót;
+a `CThumbUI` feltételeit ne terjesszük ki a másik nyolc menüépítőre. A
+44 menürekord és az egyedi billentyű/parancs-kapcsolat teljesen megfeleltetett
+listája továbbra sincs bizonyítva; a globális gyorsító-API importok miatt a
+program egészére sem állítható, hogy sehol sem regisztrál gyorsítót.
 ---
 
 ## 5. A hat kérdés funkciónként
@@ -483,14 +493,14 @@ szakaszában van; ez a lap nem ismétli meg.)*
 
 ---
 
-## 6. Összevetés a mai PicasaPy-jal
+## 6. Összevetés a PicasaPy-jal
 
 Forrás: `src/picasapy/app/qml/Main.qml`,
 `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml`,
 `…/DocumentTabStrip.qml`, `…/PhotoViewer.qml`,
 `…/SlideshowView.qml`, `…/LightboxFeed.qml`, `…/CollageCanvas.qml`.
 
-**Nálunk ma 20 `Shortcut` elem van**, 18 különböző kombinációval.
+**Aktuális #4339-es leltár (2026-10-06):** a `src/picasapy/app/qml` 187 QML-fájljában 53 `Shortcut` deklaráció van nyolc fájlban; 52 sor ad szó szerinti `sequence`-et, 47 eltérő literális billentyűsorozattal. A részletes 34 kombinációs táblázat alább a 2026-08-25-i állapotfelvétel; az érintett mai QML-kötések és feltételek a §6.1-ben vannak.
 
 | billentyű | eredeti funkció | nálunk | hol |
 |---|---|---|---|
@@ -541,15 +551,19 @@ fenti táblával:
   (`CollageCanvas.qml:222`) — **az eredetivel egyező**, ld.
   [kollazs-panel-ui-spec.md](kollazs-panel-ui-spec.md) 739. sor.
 
-**Számokban — egyedi billentyűkombinációra vetítve.** A menüsáv 32
-rekordja **28 egyedi** kombinációt takar (az `F2`, a `Ctrl+3`, a `Ctrl+4`
-és a `Ctrl+Enter` két-két menüben is szerepel); ehhez jön a négy csak
-helyi menüben élő (`Enter`, `Esc`, `Ctrl+H`, `Ctrl+Delete`) és a rács
-`Home` / `End` billentyűje — **összesen 34**.
+**Történeti számok — 2026-08-25-i állapotfelvétel, nem a mai QML-leltár.** A menüsáv 32 rekordja **28 egyedi** kombinációt takar (az `F2`, a `Ctrl+3`, a `Ctrl+4` és a `Ctrl+Enter` két-két menüben is szerepel); ehhez jön a négy csak helyi menüben élő (`Enter`, `Esc`, `Ctrl+H`, `Ctrl+Delete`) és a rács `Home` / `End` billentyűje — **összesen 34**.
+A 2026-08-25-i snapshot szerint nálunk: **20 megvan**, **2 eltér** (`Delete`, `Esc`), **12 hiányzik**.
 
-Ebből nálunk: **20 megvan**, **2 eltér** (`Delete`, `Esc`),
-**12 hiányzik**.
 
+### 6.1 #4339 — helyi menüfelirat, billentyűfogadó és mai QML-állapot (2026-10-06)
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A 44 helyi rekord a kilenc menübirtokos helyi menüben jelenik meg (§4.1). A `+0x04` mező feliratot épít (`0x00a6aee0` → `0x00a6b250`); a `0x00a6ade0` csak a felirathoz oldja fel a billentyűt. A könyvtárnézeti tényleges fogadó a `CThumbUI` `0x005e6710` kezelője, saját fókusz-/nézetfeltételekkel. | 53 `Shortcut` deklaráció nyolc QML-fájlban. A főablak `Ctrl+A/D/I/S` kötésein nincs külön `enabled`/szövegmező-kapu; a `Ctrl+C/X/V` kötéseken van (`!_szovegmezoneVanFokusz`, `Main.qml:1119–1127,1271–1273`). | A helyi menü szövegét ne kezeljük gyorsítóregisztrációnak. Minden billentyűműveletnél dokumentáljuk és érvényesítsük a gazdanézetet, a fókuszt és az eseményfogadót; a szövegmezők vágólapművelete maradjon a mezőé. |
+| A könyvtári `CThumbUI` `+0x332f != 0` ág keydownon `Esc`, nyilak, Space és feltételes számjegyek; a szerkesztő `+`/`-`/`=`/`_` és Shift-útja látható 3–5. fülhöz kötött (`0x00760970`, `0x005f95d0`, `0x005f9690`, `0x009e39b0`). | A `Ctrl+Delete` két `Main.qml` kötésre válik szét: rácsban `!viewerOpen && selectedRows().length>0`, nézőben `viewerOpen && currentIndex>=0` (`1441–1463`). A `Ctrl+H` a `TrayBar`-ban csak létező ablak, nézőn kívüli állapot és nem üres kijelölés mellett aktív (`128–134`). A `Ctrl+Return` a menüsávban `photoActionsEnabled` feltételű (`PicasaMenuBar.qml:403–407`). | A QML-kötések hatókörét nézetenként rögzítsük; a billentyű ne fusson le másik nézet vagy üres kijelölés esetén. Az eredeti `+0x332f` bájt szemantikáját (`NINCS MEG`) ne találgassuk. |
+| A `ytPopupListNode` `0x00a64050` billentyűfallbackja csak Esc/Enter/Space; a `CThumbUI` saját fogadója a fókuszált gyerek továbbítása után saját kapukkal folytatja. | Az `Enter` nem `Shortcut`: a `LightboxFeed.qml:368–377` csak `selectedIndex >= 0` esetén nyit, a `DocumentTabStrip` Esc-kötése csak aktív projektlap mellett él (`DocumentTabStrip.qml:140–145`), a `PhotoViewer` külön `Keys.onEscapePressed` ágat használ. A QML-literalok között `Ctrl+Shift+O`-hoz nincs `sequence` kötés. | Tartsuk meg a nézeti `Keys`-fogadókat ott, ahol az eredeti is a fókuszált nézetnek továbbít; ne adjunk ezek helyett ablak-szintű kötést. A nyitott `Ctrl+Shift+O` csak külön funkciódöntéssel vehető fel. |
+
+A `Ctrl+Shift+O`-ról ez a mérés csak azt állítja, hogy a mai QML-ben nincs hozzá literális `Shortcut.sequence`; a menükben maradt „Open File” felirat önmagában nem bizonyít aktív funkciót. A 53/8/52/47 leltárforrás egy célzott, teljes `src/picasapy/app/qml/**/*.qml` fájlbejárás; nem futtatási mérés.
 ---
 
 ## 7. Amit ez a kör NEM vizsgált (kimondva)
@@ -580,6 +594,10 @@ Ebből nálunk: **20 megvan**, **2 eltér** (`Delete`, `Esc`),
 
 ## 8. Jegyjavaslatok (a hiányzókra, egyenként megvalósítható méretben)
 
+Az alábbi lista a 2026-08-25-i állapotfelvétel történeti javaslatait őrzi;
+a #4339 szerinti aktuális QML-állapotot a 6.1. szakasz rögzíti. A Ctrl+H
+javaslat azóta megvalósult (#4329).
+
 A jegycím-szabály szerint mindegyikben nevesítve van a funkció:
 
 1. **Az Enter billentyű megnyitja a nézőt a bélyegképrácsból** — ma csak
@@ -603,8 +621,9 @@ A jegycím-szabály szerint mindegyikben nevesítve van a funkció:
    nyitott — a `TrayBar.emailRequested()` jelzés sehova nincs bekötve; a
    #1616 a feliratból kivette a gyorsbillentyűt.
 7. **A Ctrl+Shift+P kinyomtatja az indexképeket a mappamenüből.**
-8. **A Ctrl+H megtartja a kijelölést a képtálcán** — a tálca helyi menüjének
-   egyetlen saját gyorsbillentyűje.
+8. ✅ **MEGVAN (#4329).** ~~A Ctrl+H megtartja a kijelölést a képtálcán~~ —
+   a `TrayBar` kötése létező ablakot, nézőn kívüli állapotot és nem üres
+   kijelölést követel meg (aktuális állapot: 6.1. szakasz).
 9. **Az F1 megnyitja a súgót** — a Súgó-menüpont ma helyőrző.
 10. **A Ctrl+X / Ctrl+C / Ctrl+V a Szerkesztés menüből is működik** —
     ma egyik sincs bekötve.

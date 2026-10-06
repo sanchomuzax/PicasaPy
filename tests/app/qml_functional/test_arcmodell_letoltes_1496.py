@@ -513,6 +513,13 @@ class TestMegszakitas:
             lassito.set()
             _var(qt_app, lambda: parbeszed.property("downloading") is False)
             assert vezerlo.waitForBackgroundWorkers(15.0)
+            # #4360: a jelző a haladás nullázásakor áll le, az üzenet a
+            # később érkező `modelDownloadFinished`-dal jön
+            _var(
+                qt_app,
+                lambda: str(parbeszed.property("statusText")).strip() != "",
+                uzenet="a megszakítás nem látszik a felületen",
+            )
 
         assert not (modell_mappa / specek[0].filename).exists(), (
             "a megszakított letöltés fájlt hagyott a modell helyén"
