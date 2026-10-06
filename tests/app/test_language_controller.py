@@ -30,23 +30,30 @@ class TestLanguageCatalogue:
     def test_default_is_english(self):
         assert DEFAULT_LANGUAGE == "en"
 
-    def test_hungarian_is_offered(self):
-        assert set(SUPPORTED_LANGUAGES) == {"en", "hu"}
+    def test_all_41_languages_are_offered(self):
+        assert len(SUPPORTED_LANGUAGES) == 41
+        assert {"en", "enUK", "hu", "pt-BR", "zh-CN", "zh-TW"} <= set(
+            SUPPORTED_LANGUAGES
+        )
 
-    def test_spec_order_english_before_hungarian(self):
-        # docs/specs/picasa-fo-ablak-elrendezes.md — a langnames.xml
-        # sorrendjében az angol (enUK/enUS, #5-6) megelőzi a magyart (#13)
-        assert SUPPORTED_LANGUAGES == ("en", "hu")
+    def test_all_languages_follow_the_original_langnames_order(self):
+        # #4313: a nyelvválasztó sorrendje a kinyert langnames.xml-é.
+        assert SUPPORTED_LANGUAGES == (
+            "ar", "fa", "iw", "id", "ca", "da", "de", "enUK", "en", "es", "fr",
+            "hr", "it", "lv", "lt", "hu", "nl", "no", "pl", "pt", "pt-BR", "ro",
+            "sk", "sl", "fi", "sv", "fil", "vi", "tr", "cs", "el", "ru", "sr",
+            "uk", "bg", "hi", "th", "zh-CN", "zh-TW", "ja", "ko",
+        )
 
     def test_key_is_namespaced(self):
         assert LANGUAGE_KEY == "general/language"
         assert PENDING_LANGUAGE_KEY == "general/language_pending"
 
-    @pytest.mark.parametrize("value", ["en", "hu"])
+    @pytest.mark.parametrize("value", ["en", "hu", "de", "enUK", "pt-BR", "zh-CN"])
     def test_supported_values_pass_through(self, value):
         assert coerce_language(value) == value
 
-    @pytest.mark.parametrize("value", ["de", "", None, 42, "hu_HU", "EN"])
+    @pytest.mark.parametrize("value", ["", None, 42, "hu_HU", "EN", "klingon"])
     def test_unknown_values_fall_back(self, value):
         # a kézzel elrontott beállítás sosem tehet elérhetetlenné a felületet;
         # a nyelvi VÁLTOZATOT (hu_HU) viszont ismerjük fel

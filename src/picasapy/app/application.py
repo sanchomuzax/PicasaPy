@@ -854,8 +854,8 @@ def _startup_language(settings: QSettings | None = None) -> str:
 def _install_translator(app: QGuiApplication, language: str | None = None) -> QTranslator | None:
     """A `language` (vagy a beállított) nyelv fordítójának telepítése.
 
-    Az angolhoz nincs `.qm` — a forrásszövegek maguk angolok —, ezért ott
-    nincs mit betölteni, és ez nem hiba.
+    Az angol katalógus azonos fordításokat tartalmaz, de a forrásszövegek
+    maguk angolok — ezért ott nem telepítünk fordítót.
     """
     code = coerce_language(language) if language else _startup_language()
     if code == DEFAULT_LANGUAGE:

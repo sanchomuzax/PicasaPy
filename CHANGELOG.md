@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A nyelvválasztó mind a 41 nyelvhez betölti a Picasa eredeti fordításait és a PicasaPy-szövegeket tartalmazó szótárat (#4313).
+
 ## [0.9.10] – 2026-10-06
 
 - A Hőtérkép színátmenete mind a 768 színcsatorna-bájtban az eredeti Picasa kerekítését követi (#4309).
