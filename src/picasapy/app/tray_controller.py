@@ -58,6 +58,24 @@ class TrayMixin:
     #: #2039: a tálca SAJÁT kijelölése változott (nem a rácsé).
     traySelectionChanged = Signal()
 
+    @Slot("QVariant", result=str)
+    def fileUriList(self, paths) -> str:  # noqa: N802 — QML API
+        """Lokális fájlútvonalak Qt-kompatibilis `text/uri-list` alakja.
+
+        A QML `Drag.mimeData` a `text/uri-list` szöveget CRLF mentén bontja
+        fel, majd a Qt `QMimeData::setUrls` útján adja át. Az URL-eket a
+        közös formázó készíti, hogy az ékezetes, szóközös és `#`-es nevek
+        Windowson is helyes `CF_HDROP` útvonalakká alakuljanak.
+        """
+        if hasattr(paths, "toVariant"):
+            paths = paths.toVariant()
+        urlek = []
+        for path in paths or ():
+            url = formatting.to_file_url(str(path or ""))
+            if url.isValid() and url.isLocalFile():
+                urlek.append(url.toString())
+        return "\r\n".join(urlek)
+
     def _ensure_tray_wired(self) -> None:
         """Lusta, egyszeri állapot-inicializálás (a `PhotoOpsMixin.
         _ensure_photo_ops_wired` mintája) — a controller.py (forró fájl)

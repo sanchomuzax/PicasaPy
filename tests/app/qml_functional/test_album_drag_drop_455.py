@@ -27,7 +27,75 @@ def _emit(obj, signal, *args):
     QMetaObject.invokeMethod(obj, signal, Qt.ConnectionType.DirectConnection, *args)
 
 
+def _visual_items(root):
+    for child in root.childItems():
+        yield child
+        yield from _visual_items(child)
+
+
+def _attached_drag(item):
+    return next(
+        child
+        for child in item.children()
+        if child.metaObject().className() == "QQuickDragAttached"
+    )
+
+
 class TestDropTargets:
+    def test_drag_mime_is_exactly_the_grid_and_tray_selection(
+        self, qml_app, qt_app
+    ):
+        window, controller, _engine = qml_app
+        rows = [0, 1]
+        window.setProperty("selectedIndexes", rows)
+        qt_app.processEvents()
+
+        expected_grid = controller.fileUriList(
+            [controller.photos.filePathAt(row) for row in rows]
+        )
+        proxy = next(
+            item
+            for item in _visual_items(window.contentItem())
+            if item.objectName() == "thumbDragProxy"
+            and int(item.parentItem().property("index")) == rows[0]
+        )
+        assert _attached_drag(proxy).property("mimeData") == {
+            "text/uri-list": expected_grid
+        }
+
+        controller.selectTrayIndex(1, False, False)
+        qt_app.processEvents()
+        tray_thumb = next(
+            item
+            for item in _visual_items(window.contentItem())
+            if item.objectName() == "trayPreviewThumb"
+            and int(item.property("index")) == 1
+        )
+        expected_tray = controller.fileUriList(
+            [controller.trayItems[1]["path"]]
+        )
+        assert _attached_drag(tray_thumb).property("mimeData") == {
+            "text/uri-list": expected_tray
+        }
+
+        eredeti_magassag = window.height()
+        try:
+            for magassag in (
+                eredeti_magassag - 5,
+                eredeti_magassag,
+                eredeti_magassag + 5,
+            ):
+                window.resize(window.width(), magassag)
+                qt_app.processEvents()
+                assert _attached_drag(proxy).property("mimeData") == {
+                    "text/uri-list": expected_grid
+                }
+                assert _attached_drag(tray_thumb).property("mimeData") == {
+                    "text/uri-list": expected_tray
+                }
+        finally:
+            window.resize(window.width(), eredeti_magassag)
+
     def test_the_invitation_is_visible_in_the_album_list(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         pane = _child(window, "folderPane")
