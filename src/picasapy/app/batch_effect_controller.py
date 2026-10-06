@@ -23,12 +23,10 @@ ami MAGÁTÓL bejelentkezik a közös busy-nyilvántartásba (`busy_registry.py`
 — a korábbi, itt élt kézi `_begin_sync_job`/`_on_sync_job_done` hívások
 emiatt megszűntek.
 
-A Szöveg megjelenítése/elrejtése (`ID_PICTURE_SHOW_TEXT`/`…HIDE_TEXT`) NEM
-része ennek a szeletnek: az index nem tárolja, mely fotóknak van szöveg-
-overlay-je (`text=`/`textactive=`, ld. `picasapy.ini.text_overlay`), így a
-menüpont #425 5. pontban leírt feltételes engedélyezése (csak akkor aktív,
-ha a kijelölésben van szövegréteges kép) jelen ismeretekkel nem
-állapítható meg olcsón — a `PicasaMenuBar.qml`-ben egyelőre placeholder.
+`ID_PICTURE_SHOW_TEXT`/`ID_PICTURE_HIDE_TEXT` (#4335) külön parancsok: a
+kijelölés `.picasa.ini`-bejegyzéseiből kérdezik le, van-e értelmezhető
+szövegfedvény a kívánt `textactive=` állapotban, és a kijelölt fedvények
+láthatóságát mappánként írják vissza.
 
 „Undo All Edits" (#465 3. pont, a Kép-menü ugyanezen tétele, a Csoportos
 szerkesztés almenün KÍVÜL): a `clearAllEffectsMany` a fenti infrastruktúrát
@@ -49,13 +47,19 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.session import EditSession
 from picasapy.ini import load_or_empty, update_document
+from picasapy.ini.text_overlay import (
+    parse_text,
+    parse_text_active,
+    serialize_text_active,
+)
 from picasapy.scanner import PICASA_INI_NAME
 
 from .photo_ops_controller import _WRITE_ERRORS
 from .worker_thread import BackgroundWorkerMixin
 
 # A K.1 táblázat 7, `filters=` láncot bővítő tétele — a forgatás a meglévő
-# rotateRightMany/rotateLeftMany úton fut, a Szöveg-tételek placeholderek.
+# rotateRightMany/rotateLeftMany úton fut; a szöveg menüparancsai külön
+# `textactive=` állapotot kezelnek.
 # Az `EditSession` metódusa szerint csoportosítva:
 _APPLY_NAMES = frozenset({"autolight", "autocolor", "enhance"})  # append-only
 _TOGGLE_NAMES = frozenset({"redeye"})  # a meglévő egy-példányos kapcsoló
@@ -65,6 +69,51 @@ _APPEND_NAMES = frozenset({"unsharp", "grain2", "warm", "bw"})  # paraméter né
 # (`0x005fe370(panel, "bw")`). A `render/chain.py` egykattintásos
 # effektként már ismerte, csak a köteg-út nem.
 _KNOWN_EFFECTS = _APPLY_NAMES | _TOGGLE_NAMES | _APPEND_NAMES
+
+
+def _section_has_text_overlay(section) -> bool:
+    """Van-e az EditController szabálya szerint értelmezhető `text=` érték."""
+    raw = section.get("text") if section is not None else None
+    if raw is None:
+        return False
+    try:
+        overlay = parse_text(raw)
+    except ValueError:
+        return False
+    return overlay is not None
+
+
+def _section_text_overlay_visible(section) -> bool:
+    """A hiányzó `textactive=` az edit_controller betöltési szabálya szerint látható."""
+    raw = section.get("textactive") if section is not None else None
+    return parse_text_active(raw) if raw is not None else True
+
+
+def _selected_text_overlay_photos(controller, rows, visible: bool) -> list:
+    """A megadott `textactive=` állapotú kijelölt fotók, mappánkénti olvasással."""
+    documents: dict[str, object | None] = {}
+    photos = []
+    for photo in controller._rows_to_photos(rows or ()):
+        if photo.kind == "video":
+            continue
+        folder = photo.folder_path
+        if folder not in documents:
+            try:
+                documents[folder] = load_or_empty(
+                    Path(folder) / PICASA_INI_NAME
+                )
+            except (OSError, UnicodeError):
+                documents[folder] = None
+        document = documents[folder]
+        if document is None:
+            continue
+        section = document.section(photo.name)
+        if (
+            _section_has_text_overlay(section)
+            and _section_text_overlay_visible(section) == bool(visible)
+        ):
+            photos.append(photo)
+    return photos
 
 
 def _apply_one(session: EditSession, name: str) -> EditSession:
@@ -280,6 +329,34 @@ class BatchEffectMixin(BackgroundWorkerMixin):
             if EditSession.from_value(section.get("filters")).has("redeye"):
                 names.append(photo.name)
         return names
+
+    @Slot(list, bool, result=bool)
+    def hasTextOverlayStateInSelection(self, rows, visible: bool) -> bool:  # noqa: N802
+        """Van-e a kijelölésben a kért láthatósági állapotú szövegfedvény.
+
+        Az index nem tartja a `text=`/`textactive=` értéket, ezért a kijelölt
+        mappák `.picasa.ini`-jét olvassuk. A hibás vagy olvashatatlan bejegyzés
+        nem teszi aktívvá a parancsot.
+        """
+        return bool(_selected_text_overlay_photos(self, rows, visible))
+
+    @Slot(list, bool)
+    def setTextOverlayVisibleMany(self, rows, visible: bool) -> None:  # noqa: N802
+        """A kijelölt, szövegfedvényes képek `textactive=` állapotának beállítása."""
+        photos = _selected_text_overlay_photos(self, rows, not visible)
+
+        def mutate(document, photo):
+            section = document.section(photo.name)
+            if not _section_has_text_overlay(section):
+                return document
+            if _section_text_overlay_visible(section) == bool(visible):
+                return document
+            return document.with_value(
+                photo.name, "textactive", serialize_text_active(visible)
+            )
+
+        if photos:
+            self._apply_batch(photos, mutate)
 
     @Slot(list)
     def clearAllEffectsMany(self, rows) -> None:

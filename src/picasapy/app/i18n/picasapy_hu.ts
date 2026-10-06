@@ -11739,26 +11739,39 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
 </context>
 <context>
+    <name>PhotoViewerSettingsDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="10"/>
+        <source>Configure Photo Viewer...</source>
+        <translation>Fotómegjelenítő beállítása…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26"/>
+        <source>Use Color Management</source>
+        <translation>Színkezelés használata</translation>
+    </message>
+</context>
+<context>
     <name>FirstRunLanguageDialog</name>
     <message>
-        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="13"/>
-        <source>Confirm</source>
-        <translation>Megerősítés</translation>
-    </message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="13" />
+            <source>Confirm</source>
+            <translation>Megerősítés</translation>
+        </message>
     <message>
-        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37"/>
-        <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
-        <translation>A PicasaPy már a rendszer nyelvén is elérhető. Szeretnéd a PicasaPy nyelvét angolról erre a nyelvre váltani?</translation>
-    </message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37" />
+            <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
+            <translation>A PicasaPy már a rendszer nyelvén is elérhető. Szeretnéd a PicasaPy nyelvét angolról erre a nyelvre váltani?</translation>
+        </message>
     <message>
-        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47"/>
-        <source>Yes</source>
-        <translation>Igen</translation>
-    </message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />
+            <source>Yes</source>
+            <translation>Igen</translation>
+        </message>
     <message>
-        <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="53"/>
-        <source>No</source>
-        <translation>Nem</translation>
-    </message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="53" />
+            <source>No</source>
+            <translation>Nem</translation>
+        </message>
 </context>
 </TS>
