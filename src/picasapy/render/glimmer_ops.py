@@ -863,9 +863,9 @@ def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) ->
 
 
 def _hsv_rgb_lut_f32(hue: np.ndarray, sat: np.ndarray, val: np.ndarray) -> np.ndarray:
-    """A natív HSV → RGB (`0x00bbbe20`, #3814): float32 köztes értékek,
-    `h` körbe `[0, 360)`-ba, `s`/`v` százalékban `[0, 100]`-ra szorítva,
-    hatodolás, és a végén csatornánként `csonk(x · 255)` — nincs +0,5.
+    """A natív HSV → RGB (`0x00bbbe20`, #3814/#4309): `h`, `s`, `v`, `h6`
+    és `f` float32; a p/q/t képletek x87-regiszterben futnak, majd eredményük
+    float32-be tárolódik. A végső csatorna `csonk(x · 255)`, nincs +0,5.
     Spec: `docs/specs/filterdesc-registry.md`, „A HSV → RGB átalakítás".
     """
     f32 = np.float32
@@ -875,9 +875,13 @@ def _hsv_rgb_lut_f32(hue: np.ndarray, sat: np.ndarray, val: np.ndarray) -> np.nd
     h6 = (h / f32(360.0)) * f32(6.0)
     i = np.trunc(h6).astype(np.int64)
     f = h6 - i.astype(f32)
-    p = v * (f32(1.0) - s)
-    q = v * (f32(1.0) - f * s)
-    t = v * (f32(1.0) - s * (f32(1.0) - f))
+    # The native x87 expressions retain intermediates in register precision;
+    # each completed p/q/t value is then stored as a float32 dword. Promoting
+    # before evaluating the parenthesized expressions preserves that order.
+    s64, v64, f64 = (values.astype(np.float64) for values in (s, v, f))
+    p = (v64 * (1.0 - s64)).astype(f32)
+    q = (v64 * (1.0 - f64 * s64)).astype(f32)
+    t = (v64 * (1.0 - s64 * (1.0 - f64))).astype(f32)
     szektor = i % 6
     r = np.choose(szektor, (v, q, p, p, t, v))
     gr = np.choose(szektor, (t, v, v, q, p, p))
