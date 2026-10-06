@@ -11,7 +11,9 @@ alatti képekre ellenőrzést kér (`0x007451a0`, `0x00745980`).
 
 Az eredeti szövegei (`ThumbUIPrint::Smallest`, `::ReviewPrompt`) a
 `docs/specs/`-ben; a megjelenítés a `PrintDialog.qml` dolga, ez a modul
-csak számol — Qt-független és determinisztikus, mint a `layout.py`.
+a felbontást és a minőségi sávot számolja. Ezek a számítások Qt-függetlenek
+és determinisztikusak, mint a `layout.py`; a méretkatalógus területi
+kiválasztása külön a `QLocale` rendszerbeállítását olvassa.
 
 Az eredeti küszöbök és az egyenlőségi viselkedés a
 [`docs/specs/picasa-nyomtatas.md`](../../../docs/specs/picasa-nyomtatas.md)
@@ -24,6 +26,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+
+from PySide6.QtCore import QLocale
 
 #: A „kicsi kép" küszöbének ALAPÉRTÉKE képpont/hüvelykben.
 #:
@@ -118,7 +122,7 @@ class NyomatMeret(Enum):
         return self.value[1]
 
 
-#: Az angol nyelvű méretválasztó sorrendje. A Tárca elöl és a Teljes oldal
+#: A hüvelykes méretválasztó sorrendje. A Tárca elöl és a Teljes oldal
 #: hátul marad a mért gombsorrend szerint; a #4257 a 3×4-et és 4×5-öt
 #: az eredeti 17-es lista szerinti helyre illeszti.
 #:
@@ -145,7 +149,7 @@ HUVELYK_KESZLET: tuple[NyomatMeret, ...] = (
 #: ⚠️ SZÁNDÉKOSAN NINCS Tárca-tagja. A `printpanel.tre` mind a 17
 #: `ytPrintSizes` mérethez UGYANAZT a hat gombhelyet
 #: (`walletbutton`/`3x5button`/`4x6button`/`5x7button`/`8x10button`/
-#: `fullbutton`) használja — a nyelv/terület csak azt dönti el, MELYIK
+#: `fullbutton`) használja — a területi mértékegység dönti el, MELYIK
 #: méret kerül az egyes gombhelyekre. A tulajdonos felvétele (#1953,
 #: `#1953-nyomtatas-kep-kicsi.jpg`) szerint metrikus környezetben a
 #: `walletbutton` helyére metrikus méret kerül — a Tárca (nem metrikus
@@ -161,22 +165,52 @@ METRIKUS_KESZLET: tuple[NyomatMeret, ...] = (
     NyomatMeret.TELJES_OLDAL,
 )
 
-#: Mely nyelveken metrikus a készlet. ⚠️ SAJÁT DÖNTÉS: az eredetiben
-#: NINCS MÉRVE, hogy a nyelv, a területi beállítás vagy a nyomtató
-#: papírja választ. A felület nyelve a legkevésbé meglepő szabály, és itt
-#: egyetlen soron cserélhető, ha a mérés megszületik.
-METRIKUS_NYELVEK: frozenset[str] = frozenset({"hu"})
+#: Az eredeti Picasa öt gyorsválasztójának metrikus indulóértékei (#4435).
+#: A PicasaPy katalógusában szereplő 15×20 cm és Teljes oldal ettől külön
+#: marad; ezek nem részei az eredeti ötösnek.
+METRIKUS_ALAPMERETEK: tuple[NyomatMeret, ...] = (
+    NyomatMeret.M5X8CM,
+    NyomatMeret.M9X13CM,
+    NyomatMeret.M10X15CM,
+    NyomatMeret.M13X18CM,
+    NyomatMeret.M20X25CM,
+)
+
+#: Az eredeti Picasa öt gyorsválasztójának angolszász indulóértékei (#4435).
+HUVELYK_ALAPMERETEK: tuple[NyomatMeret, ...] = (
+    NyomatMeret.TARCA,
+    NyomatMeret.M3_5X5,
+    NyomatMeret.M4X6,
+    NyomatMeret.M5X7,
+    NyomatMeret.M8X10,
+)
 
 
-def keszlet_nyelvhez(nyelv: str | None) -> tuple[NyomatMeret, ...]:
-    """A felület nyelvéhez tartozó nyomatméret-készlet.
+def _metrikus_teruleti_meres() -> bool:
+    """A rendszer területi mértékegysége metrikus-e."""
+    return QLocale().measurementSystem() == QLocale.MeasurementSystem.MetricSystem
 
-    Ismeretlen vagy hiányzó nyelvre a hüvelykes készlet jön: az
-    alapértelmezett felületi nyelv az angol, tehát a bizonytalanság ne
-    váltson magától metrikusra."""
-    if nyelv and nyelv.strip().lower() in METRIKUS_NYELVEK:
+
+def keszlet_teruleti_mereshez() -> tuple[NyomatMeret, ...]:
+    """A rendszer területi mértékegységéhez tartozó nyomatméret-katalógus.
+
+    Az eredeti LOCALE_IMEASURE döntésének Qt-megfelelője. A katalógus a
+    meglévő PicasaPy-méreteket és a saját sorrendjüket őrzi.
+    """
+    if _metrikus_teruleti_meres():
         return METRIKUS_KESZLET
     return HUVELYK_KESZLET
+
+
+def alapmeretek_teruleti_mereshez() -> tuple[NyomatMeret, ...]:
+    """Az öt gyorsválasztó induló értéke a területi mértékegység szerint.
+
+    Ezeket a mentett PrintSize0–4 beállítások felülírják; a bővebb
+    ytPrintSizes-katalógussal nem azonos a lista.
+    """
+    if _metrikus_teruleti_meres():
+        return METRIKUS_ALAPMERETEK
+    return HUVELYK_ALAPMERETEK
 
 
 def effektiv_dpi(

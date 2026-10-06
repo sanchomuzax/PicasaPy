@@ -76,8 +76,9 @@ from picasapy.printing.dpi import (
     KICSI_KUSZOB_DPI,
     JO_MINOSEGI_KUSZOB_DPI,
     NyomatMeret,
+    alapmeretek_teruleti_mereshez,
     effektiv_dpi,
-    keszlet_nyelvhez,
+    keszlet_teruleti_mereshez,
     minoseg_osszegzes,
     nyomtatasi_minoseg_kod,
 )
@@ -107,7 +108,6 @@ from picasapy.printing.options import (
 
 from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_local_path
-from .language_controller import LANGUAGE_KEY
 
 _log = logging.getLogger(__name__)
 
@@ -136,7 +136,6 @@ _ELONEZET_DPI = 96.0
 _PRINT_SIZE_PRESET_KEYS = tuple(
     f"printing/sizePreset{index}" for index in range(1, 6)
 )
-_PRINT_PRESETS = ("TARCA", "M3_5X5", "M4X6", "M5X7", "M8X10")
 _PRINT_OPTION_SIZES = (
     "M3X4",
     "M3_5X5",
@@ -230,15 +229,16 @@ class PrintController(QObject):
     def printSizePresets(self) -> list[str]:  # noqa: N802 — QML-stílus
         """A Nyomtatás fül öt, a panel gyorsgombjaihoz tartozó mérete.
 
-        Az öt cserélhető gomb a mért `printpanel` készletből jön; a hatodik,
-        Teljes oldal gomb állandó. A kezdő értékek a
-        `picasa-nyomtatas.md` Wallet, 3,5×5, 4×6, 5×7 és 8×10 méretei. A
-        választás a nyelvváltás után is megmarad, ha az adott méret az új
-        készletben is szerepel.
+        A rendszer területi mértékegysége adja az eredeti Picasa ötösének
+        kezdőértékeit (#4435). A mentett PrintSize0–4 azonosítók felülírják
+        ezeket; a bővebb PicasaPy-katalógus további méretei nem változnak.
         """
         sizes = set(_PRINT_OPTION_SIZES)
         result = []
-        for key, default in zip(_PRINT_SIZE_PRESET_KEYS, _PRINT_PRESETS, strict=True):
+        defaults = tuple(
+            meret.name for meret in alapmeretek_teruleti_mereshez()
+        )
+        for key, default in zip(_PRINT_SIZE_PRESET_KEYS, defaults, strict=True):
             value = str(self._settings.value(key, default))
             result.append(value if value in sizes else default)
         return result
@@ -314,12 +314,8 @@ class PrintController(QObject):
             self._settings.setValue("printing/resamplerQuality", int(value))
 
     def _keszlet(self) -> tuple[NyomatMeret, ...]:
-        """A felület nyelvéhez tartozó nyomatméret-készlet (#1961).
-
-        A nyelvet a beállításokból olvassuk, nem gyorstárazzuk: a
-        felhasználó menet közben is válthat, és a párbeszéd minden
-        megnyitáskor újrakérdezi a listát."""
-        return keszlet_nyelvhez(self._settings.value(LANGUAGE_KEY))
+        """A rendszer területi mértékegységéhez tartozó készlet (#4435)."""
+        return keszlet_teruleti_mereshez()
 
     def _alapmeret(self) -> NyomatMeret:
         """A készlet alapértelmezett mérete: **Teljes oldal** (#3733).
@@ -327,7 +323,7 @@ class PrintController(QObject):
         A `docs/specs/picasa-nyomtatas.md` élő mérése (Colab EN 29/30,
         picasa-colab-jobs #55) szerint az eredeti nyomtatási nézet
         alapállása FullPage — mindkét készletben ez az utolsó tétel
-        (`TELJES_OLDAL`), ugyanaz a méret mindkét nyelven. Korábban itt
+        (`TELJES_OLDAL`), ugyanaz a méret mindkét területi készletben. Korábban itt
         a mért 4×6/10×15 cm állt, ami az eredetiben csak GOMB, nem
         alapállás."""
         return NyomatMeret.TELJES_OLDAL
@@ -336,10 +332,9 @@ class PrintController(QObject):
     #: A felirat a QML dolga, ide csak az azonosító kell.
     @Slot(result=list)
     def printSizes(self) -> list[str]:  # noqa: N802 — QML-stílus
-        """A felület nyelvéhez tartozó nyomatméretek azonosítói (#1961).
+        """A területi mértékegységhez tartozó nyomatméretek azonosítói (#4435).
 
-        Magyarul a metrikus lista, angolul a hüvelykes lista. A
-        `#3712-review` a korábbi Full Page nélküli ötöst javította;
+        A `#3712-review` a korábbi Full Page nélküli ötöst javította;
         a #4257 az eredeti sorrendben egészíti ki a hiányzó méretekkel."""
         return [tag.name for tag in self._keszlet()]
 
@@ -347,7 +342,7 @@ class PrintController(QObject):
     def printSize(self) -> str:  # noqa: N802 — QML-stílus
         """A megjegyzett nyomatméret (`PrintLastSize`), alapból Teljes oldal.
 
-        #1961: a tárolt érték túléli a nyelvváltást, ezért a MÁSIK készlet
+        #4435: a tárolt érték túléli a területi mérés váltását, ezért a MÁSIK készlet
         tételét nem adhatjuk vissza — a párbeszéd olyan méretet mutatna,
         ami nincs is a listájában."""
         alap = self._alapmeret()

@@ -1,29 +1,35 @@
-"""A nyomatméret-vezérlő a felület NYELVÉHEZ igazodik (#1961).
+"""A nyomatméret-családot a rendszer területi mértékegysége választja (#4435).
 
-Magyar felületen a metrikus listát kell felkínálnia (5×8 … 20×25 cm +
-Teljes oldal), angolon a hüvelykes listát (Tárca · 3×4 · 3,5×5 · 4×5 ·
-4×6 · 5×7 · 8×10 · Full Page). A régi hat tétel sorrendjét a #3712 mérése
-adja, a #4257 a hiányzó méreteket az eredeti helyükön egészíti ki. A
-készlet-definíció és a „miért a nyelv
-dönt" a `picasapy.printing.dpi`-ben áll.
+A katalógus meglévő metrikus és hüvelykes elemei, sorrendje és Teljes oldal
+eleme megmarad. A területi beállítás választja ki a családot, az öt
+gyorsválasztó alapértékét pedig a spec szerinti sorrendben adja; a mentett
+gyorsválasztó felülírja az alapértéket.
 
 A tárolt méret (`print/lastSize`, az eredeti `PrintLastSize`-ja) átélheti
-a nyelvváltást — ilyenkor a KÉSZLETEN KÍVÜLI értéket nem szabad
-visszaadni, különben a párbeszéd olyan méretet mutatna, ami nincs is a
-listájában.
+a területi mértékegység váltását — ilyenkor a KÉSZLETEN KÍVÜLI értéket
+nem szabad visszaadni, különben a párbeszéd olyan méretet mutatna, ami
+nincs is a listájában.
 """
 
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QLocale, QSettings
 
+import picasapy.printing.dpi as dpi
 from picasapy.app.language_controller import LANGUAGE_KEY
 from picasapy.app.print_controller import PrintController
 from picasapy.printing.dpi import HUVELYK_KESZLET, METRIKUS_KESZLET
 
 
-def _vezerlo(tmp_path, nyelv: str | None) -> PrintController:
+def _vezerlo(tmp_path, nyelv: str | None, monkeypatch, meresi_rendszer):
+    class HelyettesitettQLocale:
+        MeasurementSystem = QLocale.MeasurementSystem
+
+        def measurementSystem(self):
+            return meresi_rendszer
+
+    monkeypatch.setattr(dpi, "QLocale", HelyettesitettQLocale, raising=False)
     beallitasok = QSettings(
         str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
     )
@@ -32,55 +38,129 @@ def _vezerlo(tmp_path, nyelv: str | None) -> PrintController:
     return PrintController(photo_source=list, settings=beallitasok)
 
 
-class TestAFelkinaltKeszlet:
-    def test_magyarul_a_metrikus_hatos(self, tmp_path):
-        ctl = _vezerlo(tmp_path, "hu")
-        assert ctl.printSizes() == [m.name for m in METRIKUS_KESZLET]
+class TestATeruletiMereshezIgazodoKeszlet:
+    @pytest.mark.parametrize(
+        "nyelv,meresi_rendszer,vart",
+        [
+            (
+                "en",
+                QLocale.MeasurementSystem.MetricSystem,
+                METRIKUS_KESZLET,
+            ),
+            (
+                "hu",
+                QLocale.MeasurementSystem.ImperialUSSystem,
+                HUVELYK_KESZLET,
+            ),
+        ],
+    )
+    def test_a_feluleti_nyelvtol_fuggetlenul_a_meresi_rendszer_dont(
+        self, tmp_path, monkeypatch, nyelv, meresi_rendszer, vart
+    ):
+        ctl = _vezerlo(tmp_path, nyelv, monkeypatch, meresi_rendszer)
+        assert ctl.printSizes() == [m.name for m in vart]
 
-    def test_angolul_a_huvelykes_meretek(self, tmp_path):
-        ctl = _vezerlo(tmp_path, "en")
-        assert ctl.printSizes() == [m.name for m in HUVELYK_KESZLET]
+    @pytest.mark.parametrize(
+        "nyelv,meresi_rendszer,vart",
+        [
+            (
+                "en",
+                QLocale.MeasurementSystem.MetricSystem,
+                ["M5X8CM", "M9X13CM", "M10X15CM", "M13X18CM", "M20X25CM"],
+            ),
+            (
+                "hu",
+                QLocale.MeasurementSystem.ImperialUSSystem,
+                ["TARCA", "M3_5X5", "M4X6", "M5X7", "M8X10"],
+            ),
+        ],
+    )
+    def test_az_ot_gyorsvalaszto_alapmeret_a_spec_szerinti_sorrendben(
+        self, tmp_path, monkeypatch, nyelv, meresi_rendszer, vart
+    ):
+        ctl = _vezerlo(tmp_path, nyelv, monkeypatch, meresi_rendszer)
+        assert ctl.printSizePresets() == vart
 
-    def test_beallitas_nelkul_a_huvelykes(self, tmp_path):
-        """Az alapértelmezett felületi nyelv az angol."""
-        ctl = _vezerlo(tmp_path, None)
-        assert ctl.printSizes() == [m.name for m in HUVELYK_KESZLET]
+    def test_a_mentett_gyorsvalaszto_felulirja_a_teruleti_alaperteket(
+        self, tmp_path, monkeypatch
+    ):
+        ctl = _vezerlo(
+            tmp_path,
+            "en",
+            monkeypatch,
+            QLocale.MeasurementSystem.MetricSystem,
+        )
+        ctl._settings.setValue("printing/sizePreset1", "M8X10")
+        assert ctl.printSizePresets() == [
+            "M8X10",
+            "M9X13CM",
+            "M10X15CM",
+            "M13X18CM",
+            "M20X25CM",
+        ]
 
 
 class TestATaroltMeret:
-    def test_a_magyar_alapertelmezes_a_teljes_oldal(self, tmp_path):
+    @pytest.mark.parametrize(
+        "meresi_rendszer",
+        [
+            QLocale.MeasurementSystem.MetricSystem,
+            QLocale.MeasurementSystem.ImperialUSSystem,
+        ],
+    )
+    def test_az_alapertelmezes_a_teljes_oldal(
+        self, tmp_path, monkeypatch, meresi_rendszer
+    ):
         """#3733: az eredetiben az első megnyitás alapállása FullPage
         (`docs/specs/picasa-nyomtatas.md`, a Colab EN 29/30 élő mérése:
         „az alapállás Full Page") — mindkét nyelven ugyanez."""
-        assert _vezerlo(tmp_path, "hu").printSize() == "TELJES_OLDAL"
-
-    def test_az_angol_alapertelmezes_a_teljes_oldal(self, tmp_path):
-        assert _vezerlo(tmp_path, "en").printSize() == "TELJES_OLDAL"
+        ctl = _vezerlo(tmp_path, "en", monkeypatch, meresi_rendszer)
+        assert ctl.printSize() == "TELJES_OLDAL"
 
     @pytest.mark.parametrize(
-        "nyelv,idegen,vart",
+        "nyelv,meresi_rendszer,idegen,vart",
         [
-            ("hu", "M8X10", "TELJES_OLDAL"),
-            ("en", "M20X25CM", "TELJES_OLDAL"),
+            (
+                "en",
+                QLocale.MeasurementSystem.MetricSystem,
+                "M8X10",
+                "TELJES_OLDAL",
+            ),
+            (
+                "hu",
+                QLocale.MeasurementSystem.ImperialUSSystem,
+                "M20X25CM",
+                "TELJES_OLDAL",
+            ),
         ],
     )
     def test_a_MASIK_keszlet_erteket_nem_adja_vissza(
-        self, tmp_path, nyelv, idegen, vart
+        self, tmp_path, monkeypatch, nyelv, meresi_rendszer, idegen, vart
     ):
-        """A foga: nyelvváltás után a régi méret bent maradna, és a
+        """A foga: területváltás után a régi méret bent maradna, és a
         párbeszéd olyan tételt mutatna, ami nincs a listájában."""
-        ctl = _vezerlo(tmp_path, nyelv)
+        ctl = _vezerlo(tmp_path, nyelv, monkeypatch, meresi_rendszer)
         ctl._settings.setValue("print/lastSize", idegen)
         assert ctl.printSize() == vart
 
-    def test_a_sajat_keszletbeli_ertek_MEGMARAD(self, tmp_path):
+    def test_a_sajat_keszletbeli_ertek_MEGMARAD(self, tmp_path, monkeypatch):
         """Az esés ne mossa el a valódi választást."""
-        ctl = _vezerlo(tmp_path, "hu")
+        ctl = _vezerlo(
+            tmp_path,
+            "hu",
+            monkeypatch,
+            QLocale.MeasurementSystem.MetricSystem,
+        )
         ctl.setPrintSize("M13X18CM")
         assert ctl.printSize() == "M13X18CM"
 
-    def test_a_masik_keszlet_erteket_NEM_tarolja_el(self, tmp_path):
-        ctl = _vezerlo(tmp_path, "hu")
+    def test_a_masik_keszlet_erteket_NEM_tarolja_el(self, tmp_path, monkeypatch):
+        ctl = _vezerlo(
+            tmp_path,
+            "hu",
+            monkeypatch,
+            QLocale.MeasurementSystem.MetricSystem,
+        )
         ctl.setPrintSize("M13X18CM")
         ctl.setPrintSize("M8X10")
         assert ctl.printSize() == "M13X18CM"

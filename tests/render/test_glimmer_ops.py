@@ -246,7 +246,7 @@ class TestInnerGlow:
         assert int(result[0, 30, 0]) < int(result[20, 30, 0])
 
     def test_teljes_felbontasu_ag_kepletre(self):
-        """`p < 33,33`: `((256 − e)·S + e·G) >> 8`, a maszk a teljes képen."""
+        """`p < 33,33`: fekete glow mellett a forrástag `((256 − e)·S) >> 8`."""
         rng = np.random.default_rng(3)
         kep = rng.integers(0, 256, size=(50, 70, 3), dtype=np.uint8)
         e = br.ragyogas_suly(_referencia_maszk(50, 70, 9.6, 9.6), 1.3).astype(np.int64)[..., None]

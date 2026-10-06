@@ -17,7 +17,7 @@ import re
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QSettings, QUrl
+from PySide6.QtCore import QLocale, QSettings, QUrl
 from PySide6.QtGui import QColor, QGuiApplication, QImage
 
 from picasapy.index import PhotoRecord
@@ -128,7 +128,18 @@ class TestAzUtlevelMeret:
         assert szeles == pytest.approx(vart, abs=2)
         assert magas == pytest.approx(vart, abs=2)
 
-    def test_a_meretvalasztas_felulirja_az_utlevelet(self, qt_app, tmp_path):
+    def test_a_meretvalasztas_felulirja_az_utlevelet(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        import picasapy.printing.dpi as dpi
+
+        class ImperialQLocale:
+            MeasurementSystem = QLocale.MeasurementSystem
+
+            def measurementSystem(self):
+                return QLocale.MeasurementSystem.ImperialUSSystem
+
+        monkeypatch.setattr(dpi, "QLocale", ImperialQLocale, raising=False)
         ctl = _controller(tmp_path)
         ctl.setPassportSource(_kep(tmp_path / "utlevel.png"))
         ctl.setPrintSize("M4X6")
