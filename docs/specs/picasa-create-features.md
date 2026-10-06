@@ -2535,6 +2535,17 @@ ciklusnál 30 másodperc után időtúllépéssel leállt; nem adott vissza vég
 fotóindexet. Ez a sikertelen hámpróba nem független mérés a végső
 kiválasztási szabályra.
 
+**Új teljesfüggvény-próba (#4194, 2026-10-06; eredmény nélkül):** a natív
+`0x0081b800` hívás `length=2`, `ordering=0`, `burstmodethresh=3600`,
+`removelowresfaces=0` értékeket kapott; a négy rekord dátumlekérdezése a
+`[0, 1000, 3600, 4600]` másodperces FILETIME-listát adta. A collection,
+a `0x00873170`-hez beállított, `1.0`-t visszaadó scorer, a dátumlekérdező
+és az allokátorhám szintetikus volt. A futás belépett a `0x0081c9b0`
+kiválasztóba, majd 12 másodperces QEMU-időtúllépéssel megállt a
+`0x0081d310` jelöltlista-ciklusban; a `0x00873170` getterig nem jutott el,
+végső fotóindexet nem adott. Ez a futás a kiválasztási eredményre nem
+bizonyíték.
+
 A kiválasztás utáni `0x0081b800` kód a jelöltindexet `[obj+0x4f0]`
 leképezőtáblán át használja `[obj+0x4e0] + index*0x38` fotórekord
 kiválasztására (`0x0081c7b6`–`0x0081c83f`). Ez bizonyítja a rekordhoz vezető
