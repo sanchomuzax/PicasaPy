@@ -8,6 +8,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - Első indításkor felajánljuk a támogatott rendszernyelv használatát, és elmentjük a választást (#4325).
+- A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).
 
 ## [0.9.14] – 2026-10-06
 

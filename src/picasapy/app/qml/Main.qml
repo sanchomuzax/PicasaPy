@@ -2324,6 +2324,14 @@ ApplicationWindow {
         seconds: !controller ? 3
             : slideshow.screensaverMode ? controller.screensaverSeconds
             : controller.slideshowSeconds
+        // #4320: a képernyővédő saját ciklusát megtartja; az ismétlés és a
+        // zene a Beállítások Diavetítés füléről vezérli a normál vetítést.
+        loop: !controller || slideshow.screensaverMode
+            ? true : controller.slideshowLoop
+        musicEnabled: !!controller && !slideshow.screensaverMode
+            && controller.slideshowMusicEnabled
+        musicTrackUrls: !controller || slideshow.screensaverMode
+            ? [] : controller.slideshowMusicTrackUrls
         onTransitionPicked: function (kulcs) {
             controller.setSlideshowTransition(kulcs)
         }
