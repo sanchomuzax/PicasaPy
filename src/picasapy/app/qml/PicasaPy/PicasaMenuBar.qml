@@ -287,6 +287,19 @@ MenuBar {
     //: #3460: a megnyitott mappa — üres, ha nincs (a „Leírás szerkesztése…"
     //: csak mappára vonatkozik)
     property string currentFolder: ""
+    // #4416: a felső Mappa menü Hide/Show tételei ugyanazt a vezérlői
+    // műveletet használják, mint a mappa helyi menüje. A két felső tétel
+    // külön parancs, ezért csak akkor billentünk, ha az állapot eltér a
+    // kért iránytól.
+    function setCurrentFolderHidden(hidden) {
+        var path = bar.currentFolder
+        if (!controller || path.length === 0
+                || controller.isFolderHidden === undefined
+                || controller.toggleFolderHidden === undefined)
+            return
+        if (controller.isFolderHidden(path) !== hidden)
+            controller.toggleFolderHidden(path)
+    }
     // A felirat és a művelet EGYETLEN helyen dől el, hogy a kettő ne
     // csúszhasson el egymástól (a menütétel azt csinálja, amit ígér).
     readonly property string deleteCommandText:
@@ -1650,13 +1663,26 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): mappa szintű elrejtés/megjelenítés — más,
-        // mint a Nézet ▸ Rejtett képek (kép-szintű) kapcsoló
-        PicasaMenuItem { text: qsTr("&Hide"); placeholder: true }
-        //: ⚠️ #2921: EZ a MAPPA-menü tétele, és rá NINCS mért hivatalos
-        //: szöveg — a mért `AlbumPhoto::ID_PICTURE_UNHIDE` a KÉP-menüé.
-        //: Ezért marad „Show”, nem igazítjuk „&Unhide”-ra.
-        PicasaMenuItem { text: qsTr("Show"); placeholder: true }
+        // #4416: a kijelölt mappát ugyanazzal a vezérlőművelettel rejti el,
+        // amelyet a FolderContextMenu hív. Az aktív feltétel is azonos:
+        // van kiválasztott mappa.
+        MenuItem {
+            objectName: "menuFolderHide"
+            text: qsTr("&Hide")
+            enabled: bar.currentFolder.length > 0
+            onTriggered: bar.setCurrentFolderHidden(true)
+        }
+        // #4416: a Rejtett mappák gyűjteményében kijelölt mappát hozza
+        // vissza; állapotellenőrzés miatt egy látható mappa nem rejtődik el.
+        MenuItem {
+            objectName: "menuFolderShow"
+            //: ⚠️ #2921: EZ a MAPPA-menü tétele, és rá NINCS mért hivatalos
+            //: szöveg — a mért `AlbumPhoto::ID_PICTURE_UNHIDE` a KÉP-menüé.
+            //: Ezért marad „Show”, nem igazítjuk „&Unhide”-ra.
+            text: qsTr("Show")
+            enabled: bar.currentFolder.length > 0
+            onTriggered: bar.setCurrentFolderHidden(false)
+        }
         MenuSeparator {}
         // hiányzott (#324 audit)
         // #1590: ÉLŐ tétel. A #1472 még szándékosan hagyta helyfoglalónak,
