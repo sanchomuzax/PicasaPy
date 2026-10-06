@@ -525,13 +525,13 @@ class AppController(
 
     @Property(bool, notify=statusChanged)
     def slideshowLoop(self):  # noqa: N802
-        """A diavetítés ismétlése; alapból megőrzi a korábbi körbefordulást."""
-        value = self._get_settings().value("view/slideshowLoop", True)
+        """A diavetítés ismétlése; az eredeti alapértéke ki."""
+        value = self._get_settings().value("view/slideshowLoop", False)
         if value in (True, "true", "1"):
             return True
         if value in (False, "false", "0"):
             return False
-        return True
+        return False
 
     @Slot(bool)
     def setSlideshowLoop(self, value: bool) -> None:  # noqa: N802
@@ -540,7 +540,7 @@ class AppController(
 
     @Property(bool, notify=statusChanged)
     def slideshowMusicEnabled(self):  # noqa: N802
-        value = self._get_settings().value("view/slideshowMusicEnabled", False)
+        value = self._get_settings().value("view/slideshowMusicEnabled", True)
         return value in (True, "true", "1")
 
     @Slot(bool)

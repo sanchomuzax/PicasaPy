@@ -16,41 +16,58 @@ ColumnLayout {
         objectName: "optionsSlideshowLoopCheck"
         text: qsTr("Loop slideshow")
         checked: root.prefs && root.prefs.slideshowLoop !== undefined
-            ? root.prefs.slideshowLoop : true
+            ? root.prefs.slideshowLoop : false
         onToggled: if (root.prefs
                 && typeof root.prefs.setSlideshowLoop === "function")
             root.prefs.setSlideshowLoop(checked)
     }
 
-    CheckBox {
-        id: playMusicCheck
-        objectName: "optionsSlideshowPlayMusicCheck"
-        text: qsTr("Play music tracks during slideshow")
-        checked: root.prefs && root.prefs.slideshowMusicEnabled !== undefined
-            ? root.prefs.slideshowMusicEnabled : false
-        onToggled: if (root.prefs
-                && typeof root.prefs.setSlideshowMusicEnabled === "function")
-            root.prefs.setSlideshowMusicEnabled(checked)
-    }
-    RowLayout {
-        // FEN: <bind attr="enabled" source="PlayMP3Tracks"> — a mappaválasztó
-        // csak akkor aktív, ha a zenelejátszás be van kapcsolva
-        enabled: playMusicCheck.checked
-        spacing: 8
-        Text { text: qsTr("Select a folder of music tracks:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
-        TextField {
-            objectName: "optionsSlideshowMusicPathField"
-            Layout.fillWidth: true
-            readOnly: true
-            text: root.prefs && root.prefs.slideshowMusicFolder !== undefined
-                ? root.prefs.slideshowMusicFolder : ""
-            // #422: jobbklikk-menü (Picasa `Address`)
-            TextFieldContextArea {}
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 1
+
+        CheckBox {
+            id: playMusicCheck
+            objectName: "optionsSlideshowPlayMusicCheck"
+            text: qsTr("Play music tracks during slideshow")
+            checked: root.prefs && root.prefs.slideshowMusicEnabled !== undefined
+                ? root.prefs.slideshowMusicEnabled : true
+            onToggled: if (root.prefs
+                    && typeof root.prefs.setSlideshowMusicEnabled === "function")
+                root.prefs.setSlideshowMusicEnabled(checked)
         }
-        Button {
-            objectName: "optionsSlideshowMusicBrowseButton"
-            text: qsTr("Browse...")
-            onClicked: musicFolderDialog.open()
+
+        ColumnLayout {
+            // FEN: <bind attr="enabled" source="PlayMP3Tracks"> — a mappaválasztó
+            // csak akkor aktív, ha a zenelejátszás be van kapcsolva
+            enabled: playMusicCheck.checked
+            Layout.fillWidth: true
+            Layout.leftMargin: 22
+            spacing: 0
+            Text {
+                text: qsTr("Select a folder of music tracks:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                TextField {
+                    objectName: "optionsSlideshowMusicPathField"
+                    Layout.fillWidth: true
+                    readOnly: true
+                    text: root.prefs
+                        && root.prefs.slideshowMusicFolder !== undefined
+                            ? root.prefs.slideshowMusicFolder : ""
+                    // #422: jobbklikk-menü (Picasa `Address`)
+                    TextFieldContextArea {}
+                }
+                Button {
+                    objectName: "optionsSlideshowMusicBrowseButton"
+                    text: qsTr("Browse...")
+                    onClicked: musicFolderDialog.open()
+                }
+            }
         }
     }
 

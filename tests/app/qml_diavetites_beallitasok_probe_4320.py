@@ -8,6 +8,7 @@ szabályos lebontása ebben a folyamatban GIL↔Qt deadlockra hajlamos.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
 import time
@@ -38,6 +39,29 @@ def _child(root, name: str):
     item = root.findChild(QObject, name)
     assert item is not None, f"{name} nem található"
     return item
+
+
+def _scene_rect(item):
+    from PySide6.QtCore import QPointF
+
+    point = item.mapToScene(QPointF(0, 0))
+    return (point.x(), point.y(), item.width(), item.height())
+
+
+def _music_folder_label(root):
+    from PySide6.QtCore import QObject
+
+    matches = [
+        item for item in root.findChildren(QObject)
+        if item.property("text") in (
+            "Select a folder of music tracks:",
+            "Zeneszámok mappájának kiválasztása:",
+        ) and item.width() > 0 and item.height() > 0
+    ]
+    assert len(matches) == 1, (
+        "a zenemappa felirata nem egyértelműen található a kirajzolt fülön"
+    )
+    return matches[0]
 
 
 def _click(app, window, item) -> None:
@@ -75,6 +99,13 @@ def _run(work_dir: Path) -> None:
     app_generator = app_conftest._build_qml_app(app, fixture_dir)
     main, controller, _library, engine = next(app_generator)
 
+    settings = controller._get_settings()
+    settings.remove("view/slideshowLoop")
+    settings.remove("view/slideshowMusicEnabled")
+    settings.sync()
+    assert bool(controller.slideshowLoop) is False
+    assert bool(controller.slideshowMusicEnabled) is True
+
     options_path = (
         repo_root / "src/picasapy/app/qml/PicasaPy/OptionsDialog.qml"
     )
@@ -93,10 +124,62 @@ def _run(work_dir: Path) -> None:
     _click(app, options, tab)
     assert _wait(app, lambda: tab.property("checked") is True)
 
+    assert bool(loop.property("checked")) is False, (
+        "új beállításfájlnál a diavetítés ismétlése alapból ki kell legyen "
+        "kapcsolva (LoopSlideshow=0)"
+    )
+    assert bool(music.property("checked")) is True, (
+        "új beállításfájlnál a zenelejátszás alapból legyen bekapcsolva "
+        "(PlayMP3Tracks=1)"
+    )
+    assert bool(controller.slideshowLoop) is False
+    assert bool(controller.slideshowMusicEnabled) is True
+
+    label = _music_folder_label(options)
+    music_indicator = music.property("indicator")
+    assert music_indicator is not None, "a zene jelölőnégyzete nem rajzolódott ki"
+    app.processEvents()
+    rendered = options.grabWindow()
+    assert not rendered.isNull(), "az opciófül renderelése üres képet adott"
+    assert rendered.save(str(work_dir / "diavetites-beallitasok.png")), (
+        "a kirajzolt diavetítés-fül képe nem menthető"
+    )
+
+    geometry_measurements = []
     height = options.height()
     for offset in (-5, 0, 5):
         options.resize(options.width(), height + offset)
         assert _wait(app, lambda: options.isExposed() and loop.width() > 0)
+
+        label_x, label_y, _, label_height = _scene_rect(label)
+        _, indicator_y, _, _ = _scene_rect(music_indicator)
+        field_x, field_y, _, _ = _scene_rect(
+            _child(options, "optionsSlideshowMusicPathField")
+        )
+        _, browse_y, _, _ = _scene_rect(browse)
+        elteresek = {
+            "felirat_mezo_x": round(label_x - field_x, 1),
+            "mezo_indikator_dx": round(field_x - _scene_rect(music_indicator)[0], 1),
+            "mezo_indikator_dy": round(field_y - indicator_y, 1),
+            "tallozas_mezo_dy": round(browse_y - field_y, 1),
+        }
+        assert label_y + label_height <= field_y, (
+            "a zenemappa felirata a mező mellett/alatt van, nem fölötte"
+        )
+        assert abs(elteresek["felirat_mezo_x"]) <= 3, (
+            f"a felirat és a mező bal széle eltér: {elteresek}"
+        )
+        assert abs(elteresek["mezo_indikator_dx"] - 16) <= 3, (
+            f"a mező behúzása eltér a referenciától (16 px): {elteresek}"
+        )
+        assert abs(elteresek["mezo_indikator_dy"] - 42) <= 3, (
+            f"a mező függőleges helye eltér a referenciától (42 px): {elteresek}"
+        )
+        assert abs(elteresek["tallozas_mezo_dy"]) <= 3, (
+            f"a mező és a Tallózás gomb nem egy sorban van: {elteresek}"
+        )
+        geometry_measurements.append({"ablakmagassag": height + offset,
+                                      "elteresek": elteresek})
 
         before_loop = bool(loop.property("checked"))
         _click(app, options, loop)
@@ -128,10 +211,18 @@ def _run(work_dir: Path) -> None:
     assert any(url.toLocalFile() == str(track) for url in track_urls), (
         "a kiválasztott zenemappa számlistája nem jutott el a vetítőig"
     )
-    assert controller.slideshowLoop is False
-    assert controller.slideshowMusicEnabled is True
+    assert bool(controller.slideshowLoop) is True
+    assert bool(controller.slideshowMusicEnabled) is False
+
+    (work_dir / "diavetites-geometria.json").write_text(
+        json.dumps(geometry_measurements, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     folder_dialog = _child(options, "optionsSlideshowMusicFolderDialog")
+    _click(app, options, music)
+    assert bool(music.property("checked")) is True
+    assert bool(browse.property("enabled")) is True
     _click(app, options, browse)
     assert _wait(app, lambda: folder_dialog.property("visible") is True), (
         "a Browse gomb nem nyitotta meg a zenemappa-választót"
