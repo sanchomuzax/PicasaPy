@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from PySide6.QtCore import (
     QEventLoop,
@@ -26,6 +27,7 @@ from tests.support.jpeg_factory import make_jpeg
 
 
 _SZEMELY_AZONOSITO = "1111111111111111"
+_MASIK_SZEMELY = "2222222222222222"
 _KEEP_ALIVE: list[QObject] = []
 
 
@@ -33,15 +35,18 @@ _FILM_VARAKOZAS_MP = 90
 
 
 def _anna_kepei(lib) -> None:
-    for nev in ("anna-a.jpg", "anna-b.jpg"):
+    for nev in ("anna-a.jpg", "zoe-a.jpg", "zoe-b.jpg"):
         make_jpeg(lib / nev, size=(640, 400))
     ini = (
         "[Contacts2]\n"
         f"{_SZEMELY_AZONOSITO}=Anna;;\n"
+        f"{_MASIK_SZEMELY}=Zoe Zed;;\n"
         "[anna-a.jpg]\n"
         f"faces=rect64(1e00280045006e00),{_SZEMELY_AZONOSITO}\n"
-        "[anna-b.jpg]\n"
-        f"faces=rect64(22002a0048007000),{_SZEMELY_AZONOSITO}\n"
+        "[zoe-a.jpg]\n"
+        f"faces=rect64(22002a0048007000),{_MASIK_SZEMELY}\n"
+        "[zoe-b.jpg]\n"
+        f"faces=rect64(22002a0048007000),{_MASIK_SZEMELY}\n"
     )
     update_document(
         lib / ".picasa.ini",
@@ -137,11 +142,17 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
         assert _varj(
             qt_app,
             lambda: vezerlo.currentPersonName == "Anna"
-            and vezerlo.photos.rowCount() == 2,
-        ), "Anna két fényképes albuma nem nyílt meg"
-        assert len(vezerlo.movieSourceUrls([0, 1])) == 2, (
-            f"a két személy-sor nem ad filmforrást: "
-            f"{vezerlo.movieSourceUrls([0, 1])!r}"
+            and vezerlo.photos.rowCount() == 1,
+        ), "Anna egysoros személyalbuma nem nyílt meg"
+        vezerlo.setPeopleSort("count")
+        assert [person["name"] for person in vezerlo.people] == [
+            "Zoe Zed", "Anna",
+        ], "a teszt nem állította be a forrásmodelltől eltérő hasábrendezést"
+        assert [
+            Path(QUrl(str(url)).toLocalFile()).name
+            for url in vezerlo.personMovieSourceUrls()
+        ] == ["anna-a.jpg", "zoe-a.jpg", "zoe-b.jpg"], (
+            "az eredeti albumforrás sorrendje nem a személyalbumok modelljét követi"
         )
         ablak.setProperty("selectedIndexes", [0])
         ablak.setProperty("selectedIndex", 0)
@@ -241,9 +252,6 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
                     indexes = film.property("movieClipIndexes")
                     if hasattr(indexes, "toVariant"):
                         indexes = indexes.toVariant()
-                    assert indexes == [0, 1], (
-                        f"{nev} nem az album összes képét adta át"
-                    )
                     forrasok = film.property("movieClipSources")
                     if hasattr(forrasok, "toVariant"):
                         forrasok = forrasok.toVariant()
@@ -251,22 +259,36 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
                         QUrl(str(url)).toLocalFile()
                         for url in forrasok
                     ]
-                    assert len(utak) == 2, (
-                        f"a Filmkészítő nem kapott két forrásképet: "
+                    assert len(utak) == 3, (
+                        f"a Filmkészítő nem kapta meg a nem üres személyalbumokat: "
                         f"indexes={indexes!r}, sources={forrasok!r}, utak={utak!r}"
                     )
-                    assert {utak[0].split("/")[-1], utak[1].split("/")[-1]} == {
-                        "anna-a.jpg", "anna-b.jpg",
-                    }, f"a Filmkészítő forrásai nem Anna albumának képei: {utak!r}"
+                    assert [Path(ut).name for ut in utak] == [
+                        "anna-a.jpg", "zoe-a.jpg", "zoe-b.jpg",
+                    ], f"a Filmkészítő képsora nem a forrásmodell sorrendje: {utak!r}"
                     meret = ablak.findChild(QObject, "movieHeightBox")
                     assert meret is not None
-                    assert meret.property("currentIndex") == vezerlo.movieResolutionIndex, (
-                        "a személy-album gomb nem a normál filmfelbontást használja"
+                    assert meret.property("currentIndex") == 3, (
+                        "a személyalbum-film alapfelbontása nem a facemakemovieres 3-as indexe"
                     )
                     film.close()
                     assert _varj(
                         qt_app, lambda film=film: not film.property("visible")
                     )
+
+            vezerlo._get_settings().setValue("facemakemovieres", 6)
+            gomb = _keres(ablak.contentItem(), "faceHeaderFaceMovieButton")
+            assert gomb is not None
+            _kattints(ablak, qt_app, gomb)
+            film = ablak.findChild(QObject, "movieDialog")
+            assert film is not None and _varj(
+                qt_app, lambda: film.property("visible")
+            )
+            assert ablak.findChild(QObject, "movieHeightBox").property(
+                "currentIndex"
+            ) == 6, "a személyalbum-film nem a facemakemovieres tárolt indexét használja"
+            film.close()
+            assert _varj(qt_app, lambda: not film.property("visible"))
 
             ablak.setHeight(eredeti_magassag)
             gomb = _keres(ablak.contentItem(), "faceHeaderMovieButton")
@@ -294,7 +316,7 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             assert atfedes.property("value") == 0.0, (
                 "a rövid próbafilmhez minimális átfedés kell"
             )
-            assert film.property("movieUsedPhotoCount") == 2
+            assert film.property("movieUsedPhotoCount") == 3
             letrehozas = ablak.findChild(QObject, "movieCreateButton")
             assert _varj(qt_app, lambda: film.property("opened")), (
                 "a Filmkészítő nem fejezte be a megnyílását"

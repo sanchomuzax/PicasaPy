@@ -37,12 +37,15 @@ Item {
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
     function openPoster(sourcePath) { posterDialog.openForSource(sourcePath) }
-    //: #4212: a személy-album fejléce minden ottani képet átad a meglévő
-    //: Filmkészítőnek; a felbontást a szokásos `movieHeightBox` kezeli.
+    // #4391: az eredeti People-film szűrt, sorrendtartó képsora kerül
+    // közvetlenül a meglévő Filmkészítőbe.
     function openMovieForRows(rows) {
-        // A személyalbum teljes sora a forrás, akkor is, ha a képtálcán
-        // másik kép van. A megszokott megnyitás továbbra is a tálcát részesíti előnyben.
+        // Sorindexet fogadó, korábbi nyitási út; People-filmhez a forrás-URL
+        // listát fogadó openMovieForSources tartozik.
         movieDialog.openForRows(rows, false, false)
+    }
+    function openMovieForSources(sources) {
+        movieDialog.openForSources(sources)
     }
     //: #2114: a film ÚJRANYITÁSA a projektfájljából — a diaidő onnan
     //: jön, a kijelölés a hívó oldalán már a projekt képeire áll.
@@ -50,6 +53,8 @@ Item {
     //: kitöltetlen), ezért az marad az alapértelmezésen — a párbeszéd
     //: felirata ezt ki is mondja.
     function openMovieProject(masodperc, burstmodethresh) {
+        movieDialog.personMovieMode = false
+        movieDialog.applyDefaultSize()
         movieDialog.projektbolNyilt = true
         if (masodperc > 0)
             movieSeconds.value = Math.round(masodperc * 10)
@@ -352,6 +357,7 @@ Item {
         property string audioFile: ""
         property int audioOption: 0
         property int transitionIndex: 1
+        property bool personMovieMode: false
         property var movieClipIndexes: []
         property var movieClipSources: []
         property int movieInitialPhotoCount: 0
@@ -392,9 +398,21 @@ Item {
             "textstyle4", "textstyle5", "textstyle6", "textstyle7",
             "textstyle8", "textstyle9", "textstyle10", "textstyle11",
         ]
-        readonly property int defaultSizeIndex: controller
-                && controller.movieResolutionIndex !== undefined
-                ? controller.movieResolutionIndex : 1
+        readonly property int defaultSizeIndex: personMovieMode
+                ? (controller && controller.faceMovieResolutionIndex !== undefined
+                   ? controller.faceMovieResolutionIndex : 3)
+                : (controller && controller.movieResolutionIndex !== undefined
+                   ? controller.movieResolutionIndex : 1)
+        function applyDefaultSize() {
+            var index = personMovieMode ? 3 : 1
+            if (controller) {
+                var stored = personMovieMode
+                    ? controller.faceMovieResolutionIndex
+                    : controller.movieResolutionIndex
+                if (stored !== undefined) index = stored
+            }
+            movieHeightBox.currentIndex = index
+        }
         readonly property int movieUsedPhotoCount: Math.floor(
             movieLengthSlider.value * movieLengthSlider.value
             * movieInitialPhotoCount)
@@ -464,6 +482,8 @@ Item {
         }
         function openForRows(rows, allowTray, preferTray) {
             if ((!rows || rows.length === 0) && !allowTray) return
+            personMovieMode = false
+            applyDefaultSize()
             movieClipIndexes = rows ? rows.slice(0) : []
             movieClipSources = preferTray
                 ? controller.movieSourceUrls(movieClipIndexes)
@@ -476,6 +496,23 @@ Item {
             loadTextSlide()
             previewIndex = 0
             previewSource = movieClipSources.length ? movieClipSources[0] : ""
+            targetFile = ""
+            open()
+        }
+        function openForSources(sources) {
+            if (!sources || sources.length === 0) return
+            personMovieMode = true
+            applyDefaultSize()
+            movieClipIndexes = []
+            movieClipSources = sources.slice(0)
+            movieInitialPhotoCount = movieClipSources.length
+            movieSlides = []
+            movieSlideSelection = []
+            movieSlideEditingIndex = -1
+            movieSlideList.currentIndex = -1
+            loadTextSlide()
+            previewIndex = 0
+            previewSource = movieClipSources[0]
             targetFile = ""
             open()
         }
@@ -780,7 +817,12 @@ Item {
                                     "1024x768", "1600x1200", "1280x720 (720p)",
                                     "1920x1080 (1080p)"]
                                 currentIndex: movieDialog.defaultSizeIndex
-                                onActivated: controller.setMovieResolutionIndex(currentIndex)
+                                // #4391: a Picasa az arc-film felbontását nem
+                                // menti vissza; csak a normál film írja a saját kulcsát.
+                                onActivated: {
+                                    if (!movieDialog.personMovieMode)
+                                        controller.setMovieResolutionIndex(currentIndex)
+                                }
                             }
                         }
                         RowLayout {
