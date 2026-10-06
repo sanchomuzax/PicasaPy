@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.8] – 2026-10-06
+
 - A Glimmer keret íves sarkai mostantól az eredeti Picasa rajzolási képletét követik. (#4300).
 
 ## [0.9.7] – 2026-10-06
