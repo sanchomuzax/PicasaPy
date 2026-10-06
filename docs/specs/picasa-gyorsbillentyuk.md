@@ -396,20 +396,32 @@ rekordok kontextusát tehát utasításszinten meg lehet nevezni:
 | `0x007355c0` | Emberek-album képe | `Enter`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
 | `0x007359e0` | Emberek-album helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I` |
 
-Az összesítő **megerősített a menü-kontekstre**: a `0x00a6aee0` tételépítőt
+**2026-10-06 — fókuszút-pontosítás:** az összesítő **megerősített a
+menü-kontekstre**: a `0x00a6aee0` tételépítőt
 mind a kilenc függvény hívja, és az egyes táblákban ott vannak a hozzájuk
-tartozó billentyű-/parancsrekordok. Ez azonban még nem bizonyítja, hogy a
-billentyű leütése kizárólag az adott menü nyitott állapotában aktív. A fő
-billentyű-út `0x00a53b00` bizonyos eseményeket a `0x00a582f0` továbbítón át a
-**fókuszált elemnek** küld; a mostani bizonyítéklánc nem köti ezt a továbbítót
-a fenti 44 rekord mindegyikének parancsazonosítójához.
+tartozó billentyű-/parancsrekordok. A billentyű útjából a fókuszátadás is
+látszik: a `0x00a53b00` a `0x00a582f0` továbbítóhoz küldi az eseményt; az a
+fókuszolt gyerek (`param_1[0x57]`) vtable `+0x74` metódusát hívja. Az RTTI
+szerint a `ytPopupListNode` e slotja a `0x00608c00` thunk, amely a
+`0x00a64050` eseménykezelőre ugrik. A `0x00a64050` diszasszemblálása általános
+listaeseményeket, valamint `Esc`, `Enter` és `Space` ágakat mutat; a benne
+látható utasítások még nem rendelik a 44 rekord parancsazonosítóit a Ctrl/Alt
+billentyűkhöz. A hívott segédek rekordkapcsolata további dekompilálást igényel.
 
-**Következtetés:** a 44 rekord melyik nézethez/helyi menühöz tartozik,
-megvan; a pontos billentyűleütés-fókuszkapu nyitva marad. Az `Enter`,
-`Ctrl+Enter` és `Ctrl+Delete` több kontextusban is szerepel, ezért a rekord
-önmagában nem ad globális parancs-hozzárendelést. A PicasaPy oldali állapotot
-a 6. szakasz QML-leltára rögzíti; a paritási teendő addig ne állítsa, hogy a
-QML `Shortcut`-ok az eredeti helyi menü-fókuszszabályt is visszaadják.
+A könyvtárnézetnek saját fogadója is van: a RTTI a `CThumbUI` vtable
+billentyűslotjába a `0x005e6710` kezelőt teszi. Ez a `0x005e67f4` címen hívja
+a közös továbbítót, majd saját billentyűágakkal folytatja; a Ctrl-ág
+`0x005e60d0`-ba vezet. Ez a CThumbUI útvonal, önmagában nem bizonyítja a másik
+nyolc menüépítő parancs-hozzárendelését.
+
+**Következtetés:** a menürekordok birtokos nézete megerősített; a közös
+fókusz-út és a popup-lista egyik lehetséges fogadója azonosított. Azt, hogy a
+44 rekord melyik fogadóban, milyen fókuszállapotban és mely parancsot aktiválja,
+még nem kapcsoltuk össze utasításszinten. Az `Enter`, `Ctrl+Enter` és
+`Ctrl+Delete` több kontextusban is szerepel, ezért a rekord önmagában nem ad
+globális parancs-hozzárendelést. A PicasaPy oldali állapotot a 6. szakasz
+QML-leltára rögzíti; a paritási teendő addig ne állítsa, hogy a QML
+`Shortcut`-ok az eredeti fókuszszabályt is visszaadják.
 
 ---
 
