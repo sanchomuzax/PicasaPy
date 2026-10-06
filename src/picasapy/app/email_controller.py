@@ -70,6 +70,7 @@ _log = logging.getLogger(__name__)
 _EXPORT_SIZE_KEY = "mail/exportSize"
 _SINGLE_ORIGINAL_KEY = "mail/singlePictureOriginal"
 _USE_DEFAULT_CLIENT_KEY = "mail/useDefaultClient"
+_MOVIE_FULL_KEY = "mail/movieFull"
 
 #: A régi, INDEX-alapú kulcsok — csak a migrációhoz olvassuk őket.
 _REGI_MULTI_INDEX_KEY = "mail/multiSizeIndex"
@@ -121,6 +122,7 @@ class EmailController(QObject):
     emailSizeChanged = Signal()
     singlePictureOriginalChanged = Signal()
     useDefaultClientChanged = Signal()
+    movieFullChanged = Signal()
     emailFailed = Signal(str)
     #: #1798b: az előkészítés FOLYAMATJELZŐJE. Az eredeti a
     #: „Preparing attachments…" sorral jelez, amíg a mellékleteket
@@ -160,6 +162,12 @@ class EmailController(QObject):
         self._settings = settings if settings is not None else QSettings()
         self._email_size = self._betolt_meretet()
         self._single_original = self._betolt_egy_kep_kapcsolot()
+        # Az eredeti Preferences\EmailMovie alapértéke 0: az első
+        # képkockát csatolja. A `mail/movieFull` a teljes film választását
+        # menti, hogy indulás után is ugyanaz a küldési mód maradjon.
+        self._movie_full = _coerce_bool(
+            self._settings.value(_MOVIE_FULL_KEY), False
+        )
         self._compose_recipient = ""
         #: #2184: friss profilon a program MEGKÉRDEZI, mivel küldjön.
         #: Az eredetiben a `DoNotPromptForEmailPref` alapértéke 0
@@ -270,6 +278,20 @@ class EmailController(QObject):
         self._single_original = eredeti
         self._settings.setValue(_SINGLE_ORIGINAL_KEY, eredeti)
         self.singlePictureOriginalChanged.emit()
+
+    @Property(bool, notify=movieFullChanged)
+    def movieFull(self) -> bool:  # noqa: N802 — QML-stílus
+        """Igaz: a teljes videó kerül mellékletként, hamis: az első kocka."""
+        return self._movie_full
+
+    @Slot(bool)
+    def setMovieFull(self, movie_full: bool) -> None:  # noqa: N802
+        movie_full = bool(movie_full)
+        if movie_full == self._movie_full:
+            return
+        self._movie_full = movie_full
+        self._settings.setValue(_MOVIE_FULL_KEY, movie_full)
+        self.movieFullChanged.emit()
 
     @Property(bool, notify=useDefaultClientChanged)
     def useDefaultClient(self) -> bool:
@@ -383,7 +405,11 @@ class EmailController(QObject):
         )
         max_dimension = resolve_email_max_dimension(meret)
         target_dir = Path(_mkdtemp(prefix="picasapy-mail-"))
-        settings = ExportSettings(max_dimension=max_dimension, jpeg_quality=85)
+        settings = ExportSettings(
+            max_dimension=max_dimension,
+            jpeg_quality=85,
+            movie_full=self._movie_full,
+        )
         report = export_photos(items, target_dir, settings)
         if report.failed:
             _log.warning(
