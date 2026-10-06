@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A kijelölt képek fájllistaként húzhatók a rácsból és a képtálcáról más alkalmazásokba (#4347).
+
 ## [0.9.12] – 2026-10-06
 
 - Az automatikus arcfelismerés nem jelöl téves arcot fűben és tájképen: a felismerés küszöbe szigorúbb. (#4348)
