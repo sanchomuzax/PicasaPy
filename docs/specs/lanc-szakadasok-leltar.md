@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 35.**
+**Felületről el nem ért vezérlő-tag: 36.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -132,6 +132,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | ELDÖNTVE (#1487) — ugyanaz, mint a `hasRetouch`: a „van finomhangolás” állapotot a felület nem külön jelzőn mutatja (undoLabel #465, nyitott-eszköz kiemelés #116). ⚠️ Az `EditorPanel.qml` deklarált hozzá egy tükör-property-t, amit SENKI nem állított be és senki nem olvasott — az a holt tükör a #1487-ben TÖRÖLVE. A vezérlő property-je marad, a finomhangolás-próbák ezen át olvassák az állapotot. |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
 | `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py` | BELSŐ — az application.py:892 hívja leálláskor |
+| `faceScanController` | `scanNewFaces` | Slot | `app/face_scan_controller.py` | BELSŐ — az application.py a controller.syncFinished jelére köti; az új képek vizsgálata szinkron után indul, nem QML-eseményből |
 | `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
 | `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py` | BELSŐ — az application.py:704 tölti fel a fát |
 | `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |

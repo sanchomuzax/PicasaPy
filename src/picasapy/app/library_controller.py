@@ -860,10 +860,10 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         `stateFor`/`setState` (Scan Always/Once/Remove) hármastól: egy
         mappa lehet egyszerre figyelt ÉS arcfelismerésből kizárt.
 
-        ŐSZINTESÉG: a projektben MÉG NINCS arcfelismerés-motor — ez a
-        property egyelőre csak a felhasználó SZÁNDÉKÁT tükrözi (a
-        Picasa-kompatibilis fájlba írva); életbe akkor lép majd, amikor
-        az arcfelismerés-fázis megérkezik."""
+        A `FaceScanController` ezt minden automatikus háttérdetektálás
+        előtt ellenőrzi. A kizárás a megadott mappára és az őseire is
+        érvényes, a lista a Picasa-kompatibilis `FRExcludeFolders.txt`-ből
+        érkezik."""
         if not path:
             return True
         return not is_excluded(path, tuple(self._face_excluded_roots))

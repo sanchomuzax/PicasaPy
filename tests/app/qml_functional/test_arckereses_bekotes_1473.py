@@ -219,7 +219,15 @@ class TestElerhetoseg:
 
         assert _elem(parbeszed, "faceScanStartButton").property("enabled") is False
 
-    def test_modell_nelkul_a_parbeszed_MEGMONDJA_miert(self, qt_app, tmp_path):
+    def test_modell_nelkul_a_parbeszed_MEGMONDJA_miert(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        # A valódi csomag most már tartalmazza a YuNet modellt. Itt a hiányzó
+        # fájl ágát külön szimuláljuk, hogy a régi, cselekvésre alkalmas üzenet
+        # továbbra is ellenőrzött maradjon.
+        from picasapy.faces import detector
+
+        monkeypatch.setattr(detector, "resolve_model_path", lambda: None)
         vezerlo = _vezerlo(tmp_path, detektor=_HamisDetektor(available=False))
         parbeszed = _parbeszed(qt_app, vezerlo)
 
@@ -234,13 +242,16 @@ class TestElerhetoseg:
             "az üzenet nem nevezi meg a hiányzó modellfájlt: " + szoveg
         )
 
-    def test_lenyomat_modell_nelkul_a_csoportosito_gomb_szurke(
-        self, qt_app, tmp_path
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_hianyzo_sface_mellett_a_csoportositas_indithato_letoltesre(
+        self, qt_app, tmp_path, height_offset
     ):
         vezerlo = _vezerlo(tmp_path, lenyomatolo=_HamisLenyomatolo(available=False))
         parbeszed = _parbeszed(qt_app, vezerlo)
+        parbeszed.setHeight(parbeszed.height() + height_offset)
+        qt_app.processEvents()
 
-        assert _elem(parbeszed, "faceScanGroupButton").property("enabled") is False
+        assert _elem(parbeszed, "faceScanGroupButton").property("enabled") is True
         magyarazat = _elem(parbeszed, "faceScanGroupUnavailableText")
         assert magyarazat.property("visible") is True
         from picasapy.faces.embedder import MODEL_FILENAME

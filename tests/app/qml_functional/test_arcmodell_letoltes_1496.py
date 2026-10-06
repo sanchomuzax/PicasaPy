@@ -196,6 +196,63 @@ def _parbeszed(qt_app, vezerlo):
     return obj
 
 
+class TestAutomatikusSfaceFolyamatjelzes:
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_automatikus_letoltes_lathato_folyamatot_mutat(
+        self, qt_app, tmp_path, monkeypatch, height_offset
+    ):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+        monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
+        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+        vezerlo = _vezerlo(
+            tmp_path,
+            _HamisDetektor(available=True),
+            _HamisLenyomatolo(available=False),
+            lenyomat_gyar=lambda: _HamisLenyomatolo(available=True),
+        )
+        parbeszed = _parbeszed(qt_app, vezerlo)
+        parbeszed.setHeight(parbeszed.height() + height_offset)
+        qt_app.processEvents()
+
+        megkezdodott = threading.Event()
+        folytathato = threading.Event()
+
+        def hamis_letoltes(**kwargs):
+            haladas = kwargs.get("progress")
+            if haladas is not None:
+                haladas(42, 100)
+            megkezdodott.set()
+            folytathato.wait(5.0)
+            return (
+                model_download.DownloadResult(
+                    status=model_download.STATUS_OK,
+                    spec=model_download.EMBEDDER_SPEC,
+                    path=tmp_path / model_download.EMBEDDER_SPEC.filename,
+                ),
+            )
+
+        monkeypatch.setattr(model_download, "download_missing", hamis_letoltes)
+        try:
+            _kattint(_elem(parbeszed, "faceScanGroupButton"), qt_app)
+            assert megkezdodott.wait(2.0), "az automatikus SFace-letöltés nem indult"
+            qt_app.processEvents()
+
+            assert parbeszed.property("downloading") is True
+            assert _elem(parbeszed, "faceScanDownloadProgressPanel").property(
+                "visible"
+            ) is True
+            assert parbeszed.property("downloadPercent") == 42
+        finally:
+            folytathato.set()
+
+        _var(
+            qt_app,
+            lambda: parbeszed.property("grouping") is False,
+            uzenet="a letöltés után a csoportosítás nem fejeződött be",
+        )
+        assert vezerlo.waitForBackgroundWorkers(10.0)
+
+
 class TestAGombOttVanAhonnanHianyzott:
     """A jegy lényege: modell nélkül legyen MIT megnyomni."""
 
@@ -219,7 +276,7 @@ class TestAGombOttVanAhonnanHianyzott:
     def test_a_gomb_mellett_ott_a_forras_a_meret_es_a_licenc(
         self, qt_app, tmp_path, modell_mappa
     ):
-        """A felhasználónak tudnia kell, MIT tölt le a gépére."""
+        """A letöltési ajánlat csak a hiányzó SFace modellt sorolja fel."""
         vezerlo = _vezerlo(
             tmp_path, _HamisDetektor(available=False), _HamisLenyomatolo(available=False)
         )
@@ -229,7 +286,10 @@ class TestAGombOttVanAhonnanHianyzott:
         assert ajanlat.property("visible") is True
         szoveg = str(ajanlat.property("text"))
         assert "OpenCV Zoo" in szoveg, szoveg
-        assert "MIT" in szoveg and "Apache" in szoveg, szoveg
+        # A YuNet a program része, ezért a letöltési ajánlat csak az SFace
+        # Apache-2.0 licencét mutatja; a korábbi kétmodell-elvárás elavult.
+        assert "Apache" in szoveg, szoveg
+        assert "MIT" not in szoveg, szoveg
         assert "MB" in szoveg, "a letöltés mérete nincs kiírva: " + szoveg
         assert str(model_download.DETECTOR_SPEC.default_path().parent) in szoveg, (
             "nincs kiírva, hova kerül a fájl: " + szoveg
@@ -295,7 +355,8 @@ class TestLetoltesUtanElo:
             )
             assert vezerlo.waitForBackgroundWorkers(15.0)
 
-        for spec in specek:
+        # #4315: a detektor a csomaggal érkezik, csak a felismerő töltődik le.
+        for spec in (s for s in specek if s.key != "detector"):
             assert (modell_mappa / spec.filename).is_file(), (
                 f"a {spec.filename} nem került a helyére"
             )
