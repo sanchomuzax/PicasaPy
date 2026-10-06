@@ -83,13 +83,19 @@ def _vard_meg_a_hatterszalakat(app) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _kis_kepek_latszanak(monkeypatch):
+def _kis_kepek_latszanak():
     """#4346: a tesztek apró szintetikus képekkel dolgoznak, ezért az eredeti
     „csak nagy képek” alapszűrőt itt kikapcsoljuk. Az alapértéket mérő teszt
-    a saját fixture-jében visszakapcsolja."""
+    a saját fixture-jében visszakapcsolja.
+
+    Saját `MonkeyPatch`-példány: egy teszt `monkeypatch.undo()`-ja így nem
+    vonja vissza (a közös példányt egy teszt menet közben visszaállíthatja)."""
     from picasapy.app import small_picture_filter
 
-    monkeypatch.setattr(small_picture_filter, "DEFAULT_SHOW_ONLY_BIG_IMAGES", False)
+    folt = pytest.MonkeyPatch()
+    folt.setattr(small_picture_filter, "DEFAULT_SHOW_ONLY_BIG_IMAGES", False)
+    yield
+    folt.undo()
 
 
 @pytest.fixture(autouse=True)
