@@ -11738,4 +11738,72 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Képek</translation>
     </message>
 </context>
+<context>
+    <name>PeopleManagerDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="12"/>
+        <source>People</source>
+        <translation>Emberek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="232"/>
+        <source>Search:</source>
+        <translation>Keresés:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="269"/>
+        <source>Delete Person</source>
+        <translation>Személy törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="275"/>
+        <source>New Person</source>
+        <translation>Új személy</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="296"/>
+        <source>Contact ID:</source>
+        <translation>Ismerős azonosítója:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="307"/>
+        <source>Name:</source>
+        <translation>Név:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="321"/>
+        <source>Email(s):</source>
+        <translation>E-mail:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="337"/>
+        <source>Sync Face Tags with Web Albums</source>
+        <translation>Arccímkék szinkronizálása a Google Webalbumokkal</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="346"/>
+        <source>Revert</source>
+        <translation>Visszaállítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="366"/>
+        <source>Manage Online Contacts</source>
+        <translation>Online címtár kezelése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="371"/>
+        <source>Refresh Contacts</source>
+        <translation>Névjegyek frissítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="377"/>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PeopleManagerDialog.qml" line="383"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
 </TS>

@@ -6,33 +6,39 @@ egyeztetéséhez.
 kapcsolta össze Google-fiókkal a Picasát) — a hiánya éppúgy nem hiba, mint
 a `.picasa.ini` hiánya egy mappában (ld. `docs/research-plan.md`).
 
-Formátum: Atom feed, `gphoto:` névtér — a mezőnevek (`gphoto:personid2`,
-`gphoto:fullname`, `gaia_id`) a `Picasa3.exe` string-táblájából
-igazoltak (`docs/specs/picasa-exe-strings.md`). A parser névtér-független
-(a helyi nevet nézi), mert a névtér-prefix verziónként változhatott.
+Olvasás: a mért `<contacts><contact id=… name=… modified_time=…
+local_contact=…/></contacts>` alak, valamint a bináris szövegtáblájából
+következtetett Atom feed (`gphoto:personid2`, `gphoto:fullname`, `gaia_id`).
+Íráskor a mért, helyi kontakt-alakot használjuk. Az Atom-parser névtér-
+független (a helyi nevet nézi), mert a névtér-prefix verziónként változhatott.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
+import re
 from xml.etree import ElementTree
+
+from picasapy.ioutil import write_atomic
 
 from .contacts import contacts_of
 from .document import IniDocument
 
 _SECTION_NAME = "Contacts2"
+_CONTACT_ID = re.compile(r"^[0-9a-fA-F]{16}$")
 
 
 @dataclass(frozen=True)
 class ContactXmlEntry:
-    """Egy `<entry>` a contacts.xml-ből — a [Contacts2] egyeztetéshez
-    csak a személy-azonosító és a név kell, a `gaia_id`-t (Google-fiók
-    azonosító) csak megőrizzük, egyelőre nem használjuk fel."""
+    """Egy központi névjegy a mért vagy az Atom-alakú contacts.xml-ből."""
 
     person_id: str
     name: str
     gaia_id: str = ""
+    modified_time: str = ""
+    local_contact: str = ""
 
 
 def _local_name(tag: str) -> str:
@@ -42,8 +48,8 @@ def _local_name(tag: str) -> str:
 
 
 def parse_contacts_xml(xml_text: str) -> tuple[ContactXmlEntry, ...]:
-    """A feed `<entry>` elemeinek feldolgozása. Azonosító VAGY név nélküli
-    bejegyzés kimarad (nem hasznos a [Contacts2] egyeztetéshez).
+    """A mért `contacts/contact` vagy következtetett Atom `feed/entry`
+    alak feldolgozása. Azonosító VAGY név nélküli bejegyzés kimarad.
 
     Raises:
         ValueError: érvénytelen XML esetén (nem nyeljük el csendben — a
@@ -53,6 +59,23 @@ def parse_contacts_xml(xml_text: str) -> tuple[ContactXmlEntry, ...]:
     except ElementTree.ParseError as exc:
         raise ValueError(f"Érvénytelen contacts.xml: {exc}") from exc
     entries = []
+    if _local_name(root.tag) == "contacts":
+        for contact_el in root:
+            if _local_name(contact_el.tag) != "contact":
+                continue
+            person_id = contact_el.get("id", "").strip()
+            name = contact_el.get("name", "").strip()
+            if person_id and name:
+                entries.append(
+                    ContactXmlEntry(
+                        person_id=person_id,
+                        name=name,
+                        modified_time=contact_el.get("modified_time", "").strip(),
+                        local_contact=contact_el.get("local_contact", "").strip(),
+                    )
+                )
+        return tuple(entries)
+
     for entry_el in root:
         if _local_name(entry_el.tag) != "entry":
             continue
@@ -69,7 +92,9 @@ def parse_contacts_xml(xml_text: str) -> tuple[ContactXmlEntry, ...]:
             elif local == "gaia_id":
                 gaia_id = text
         if person_id and name:
-            entries.append(ContactXmlEntry(person_id=person_id, name=name, gaia_id=gaia_id))
+            entries.append(
+                ContactXmlEntry(person_id=person_id, name=name, gaia_id=gaia_id)
+            )
     return tuple(entries)
 
 
@@ -81,6 +106,44 @@ def load_contacts_xml(path: str | Path) -> tuple[ContactXmlEntry, ...]:
     if not target.exists():
         return ()
     return parse_contacts_xml(target.read_text(encoding="utf-8"))
+
+
+def serialize_contacts_xml(entries: tuple[ContactXmlEntry, ...]) -> str:
+    """A mért, `<contacts><contact …/></contacts>` alak kiírása.
+
+    A hiányzó időbélyeg vagy nem helyi névjegy adata nem következtethető ki
+    az Atom-import alakjából, ezért a hívónak kell a mért mezőket megadnia.
+    """
+    root = ElementTree.Element("contacts")
+    for entry in entries:
+        if not _CONTACT_ID.fullmatch(entry.person_id):
+            raise ValueError("A contacts.xml azonosítója 16 hex jegy legyen.")
+        try:
+            modified = datetime.fromisoformat(entry.modified_time)
+        except ValueError as exc:
+            raise ValueError("A contacts.xml módosítási ideje legyen ISO-8601.") from exc
+        if modified.tzinfo is None:
+            raise ValueError("A contacts.xml módosítási ideje tartalmazzon időzónát.")
+        if entry.local_contact != "1":
+            raise ValueError("A PicasaPy helyi névjegyénél local_contact=1 kell.")
+        ElementTree.SubElement(
+            root,
+            "contact",
+            {
+                "id": entry.person_id.lower(),
+                "name": entry.name,
+                "modified_time": entry.modified_time,
+                "local_contact": entry.local_contact,
+            },
+        )
+    ElementTree.indent(root, space=" ")
+    return ElementTree.tostring(root, encoding="unicode", xml_declaration=True) + "\n"
+
+
+def save_contacts_xml(path: str | Path, entries: tuple[ContactXmlEntry, ...]) -> None:
+    """A központi tár kiírása a specifikált, mért XML-alakban, atomikusan."""
+    payload = serialize_contacts_xml(entries).encode("utf-8")
+    write_atomic(Path(path), payload, make_parents=True)
 
 
 def apply_contacts_xml(

@@ -1569,6 +1569,12 @@ ApplicationWindow {
         // menüje is hív — nincs másolt logika.
         onInvertSelectionRequested: window.invertSelection()
         onFolderManagerRequested: folderManager.open()
+        onPeopleManagerRequested: {
+            if (peopleManagerLoader.active)
+                peopleManagerLoader.item.open()
+            else
+                peopleManagerLoader.active = true
+        }
         onDedupRequested: dedupDialog.open()
         //: #1398: a MÉRT parancs keresési MÓDOT kapcsol (`dupesearch`), nem
         //: párbeszédet nyit — a kezelő-párbeszédhez a mód sávja vezet.
@@ -2126,6 +2132,18 @@ ApplicationWindow {
         id: folderManager
         anchors.fill: parent
         sourceComponent: Component { FolderManagerDialog { } }
+    }
+    // #4334: a komponens csak az első menükattintásra töltődik be; a
+    // külön fájl miatt a forró Main.qml-ben csak a bekötés marad.
+    Loader {
+        id: peopleManagerLoader
+        objectName: "peopleManagerLoader"
+        active: false
+        source: Qt.resolvedUrl("PicasaPy/PeopleManagerDialog.qml")
+        onLoaded: {
+            item.controller = controller
+            item.open()
+        }
     }
     // Duplikátum-kezelő (#287): a SAJÁT kezelő-párbeszéd. #1398 óta a
     // másodpéldány-mód eredménysávjáról nyílik („Manage Duplicates..."), nem
