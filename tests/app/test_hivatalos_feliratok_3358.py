@@ -258,13 +258,13 @@ BEALLITASOK = {
         "options/SingleClickExit.title"),
     ("OptionsTabGeneral", "User interface:"): (
         "Kezelőfelület:", "options/labelgroup4.title"),
-    ("OptionsTabNameTags", "Clustering threshold:"): (
+    ("OptionsTabNameTags", "Cluster threshold:"): (
         "Csoportküszöb:", "options/labelgroup181.title"),
     ("OptionsTabNameTags", "Enable face detection"): (
         "Arcfelismerés bekapcsolása", "options/enablefacedetection.title"),
     ("OptionsTabNameTags", "Store name tags in the file"): (
         "Névcímkék tárolása a fotón", "options/persistfacetofile.title"),
-    ("OptionsTabNameTags", "Upload contact thumbnails to Google Contacts"): (
+    ("OptionsTabNameTags", "Upload people album thumbnails to Google Contacts"): (
         "Az Emberek album indexképeinek feltöltése a Google Címtárba",
         "options/uploadcontactphotos.title"),
     ("OptionsTabNetwork", "Detailed log information"): (

@@ -1185,7 +1185,7 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Javaslati küszöb:</translation>
     </message>
     <message>
-        <source>Clustering threshold:</source>
+        <source>Cluster threshold:</source>
         <translation>Csoportküszöb:</translation>
     </message>
     <message>
@@ -1193,7 +1193,7 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Névcímkék tárolása a fotón</translation>
     </message>
     <message>
-        <source>Upload contact thumbnails to Google Contacts</source>
+        <source>Upload people album thumbnails to Google Contacts</source>
         <translation>Az Emberek album indexképeinek feltöltése a Google Címtárba</translation>
     </message>
 </context>
