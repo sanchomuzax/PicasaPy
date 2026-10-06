@@ -15966,4 +15966,32 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <translation>Színkezelés használata</translation>
         </message>
     </context>
+    <context>
+        <name>FirstRunLanguageDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="13" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Megerősítés</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37" />
+            <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A PicasaPy már a rendszer nyelvén is elérhető. Szeretnéd a PicasaPy nyelvét angolról erre a nyelvre váltani?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>Igen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="53" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nem</translation>
+        </message>
+    </context>
 </TS>

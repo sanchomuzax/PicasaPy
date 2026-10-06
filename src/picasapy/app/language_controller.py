@@ -30,6 +30,8 @@ ismeretlen érték az alapértelmezésre esik vissza (az appearance_controller
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 #: A QSettings-kulcs — a `general/` névtér az alkalmazás-szintű beállításoké.
@@ -166,6 +168,30 @@ def resolve_system_language() -> str:
     alapértelmezés (a `SYSTEM_LANGUAGE_CODE` választás induláskori feloldása).
     """
     return _normalise_language(QLocale.system().name()) or DEFAULT_LANGUAGE
+
+
+def resolve_first_run_language(settings, ask_user: Callable[[str], bool]) -> str | None:
+    """Az első indulási rendszer-nyelv-felajánlás (#4325).
+
+    Csak a még hiányzó `general/language` kulcsnál kérdez. A PicasaPy jelenlegi
+    katalógusában a nem angol, rendszer szerint választható nyelv a magyar;
+    a többi eredeti Picasa-nyelvhez még nincs fordítás. A választ az aktuális
+    és a következő indulási nyelvbe is beírja, így az induláskori második
+    feloldás már nem kérdez újra.
+
+    `None` jelzi, hogy nem volt felajánlás (már beállított, angol vagy nem
+    támogatott rendszer-nyelv)."""
+    if settings.contains(LANGUAGE_KEY):
+        return None
+
+    system_language = resolve_system_language()
+    if system_language == DEFAULT_LANGUAGE or system_language not in SUPPORTED_LANGUAGES:
+        return None
+
+    selected = system_language if ask_user(system_language) else DEFAULT_LANGUAGE
+    settings.setValue(LANGUAGE_KEY, selected)
+    settings.setValue(PENDING_LANGUAGE_KEY, selected)
+    return selected
 
 
 #: Az országkód tartaléka (spec B: `0x0098d607`–`0x0098d670`).
