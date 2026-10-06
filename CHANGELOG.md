@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.21] – 2026-10-06
+
+- A Nyomtatás fül méretválasztói két oszlopban, középre rendezve jelennek meg, alattuk bal oldali csoportfeliratokkal (#4385).
+
 ## [0.9.20] – 2026-10-06
 
 - A Nézet ▸ Kis képek kapcsolóval állítható, hogy a könyvtári rács megjelenítse-e a kis képeket; a választás újraindítás után is megmarad (#4346).
