@@ -11820,6 +11820,24 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Keresés a lemezen</translation>
         </message>
         <message>
+            <source>Locate</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:FolderPhotoWin::ID_FILE_LOCATEONDISK</extracomment>
+            <translation>Keresés</translation>
+        </message>
+        <message>
+            <source>File on Disk</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::locateondiskmenu</extracomment>
+            <translation>Fájl a lemezen</translation>
+        </message>
+        <message>
+            <source>Locate Original on Disk</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
+            <translation>Eredeti a lemezen</translation>
+        </message>
+        <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Törlés lemezről</translation>

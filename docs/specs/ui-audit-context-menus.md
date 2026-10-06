@@ -898,16 +898,18 @@ magyar felületen **„Ctrl+Törlés”**. A billentyű maga `Ctrl+Delete` — a
 döntése (helyi menüben `Ctrl+Delete`, menüsávban `Delete`) **helyes**; csak a
 kiírt szövegnek kell honosítottnak lennie.
 
-### D.5 Eredeti / nálunk / teendő (`PhotoContextMenu.qml`, mérve)
+### D.5 Eredeti / nálunk / teendő (mai PhotoContextMenu.qml, #4462 mérés)
 
-| tétel | eredeti | nálunk | teendő |
+| tétel | eredeti | nálunk | állapot |
 |---|---|---|---|
-| 2. felirat | **Hozzáadás az albumhoz** | „Hozzáadás albumhoz” (`picasapy_hu.ts`) | fordítás javítása |
-| Keresés | lapos „Keresés a lemezen” `Ctrl+Enter`; EGY visszaállítható kép kijelölésekor „Keresés ▸” {Fájl a lemezen · Eredeti a lemezen} | **mindig** „Keresés ▸” almenü, három tétellel (#1613) | a D.2 feltétele szerint |
-| Keresés a Picasában | album-nézetben **külön, lapos** tétel a „Keresés a lemezen” után | az almenü harmadik tétele | kivenni az almenüből, album-nézetben lapos tételként |
-| Keresés hasonló képekre | **nincs** ebben a menüben (a keresősáv `Ctrl+F7`) | tétel (#1833) | kivenni a helyi menüből; a funkció a keresősávban maradhat |
-| törlés felirata | **Törlés a lemezről** | „Törlés lemezről” | fordítás javítása |
-| törlés billentyű-szövege | **Ctrl+Törlés** | „Ctrl+Delete” (a QML-ben beégetve) | a billentyűnév honosítva |
+| 2. felirat | Hozzáadás az albumhoz | Hozzáadás az albumhoz (picasapy_hu.ts) | megvan és a hivatalos fordítással egyezik |
+| Keresés | Lapos Keresés a lemezen, kivéve egy visszaállítható kép kijelölését; akkor kéttételes Keresés almenü: Fájl a lemezen és Eredeti a lemezen | Lapos Locate on Disk alapállapotban; egyetlen visszaállítható kép esetén pontosan kéttételes Locate almenü; a szülőmenü nem marad látható | megvan; a feltétel és mindkét almenütétel egyezik |
+| Keresés a Picasában | Album-nézetben külön, lapos tétel a Keresés a lemezen után | Külön, lapos Locate in Picasa tétel az album- és Emberek-nézetben | az albumtétel megvan; az Emberek-nézet a jelenlegi kód többlete |
+| Keresés hasonló képekre | Nincs ebben a menüben; a keresősávban Ctrl+F7 | Nincs a PhotoContextMenu.qml-ben | megfelel |
+| Törlés felirata | Törlés a lemezről | Törlés a lemezről (picasapy_hu.ts) | megvan és a hivatalos fordítással egyezik |
+| Törlés billentyűszövege | Ctrl+Törlés | Ctrl+Törlés (honosított Ctrl+Delete fordítás) | megvan |
+
+A korábbi D.5 „nálunk” oszlop a #3468 előtti állapotot rögzítette; a fenti oszlop a #4462 idején olvasott forráskódot tükrözi, az eredeti oszlop marad a mérce.
 
 ⛔ **Helyesbítés** a `picasa-menu-parancsok-viselkedes.md` 31.2-höz (és a
 #1613-hoz): az almenü **nem háromtételes**, és **nem mindig** jelenik meg —
@@ -932,3 +934,91 @@ nézet `+0x2c0` mezőjén át közvetlenül nem követtük végig).
   menüje nem tárgya a jegynek (340. kör döntése).
 
 `0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+## E. #4462 — helyi menük: eredeti tétel → mai kód
+
+A táblázat a fenti specifikáció eredeti feliratait és menüosztályait tekinti mércének. A rejtett/állapotfüggő tételeket külön sorban tartja, akkor is, ha a felületen ugyanazt a sort használják. Az album osztály eredeti 13 parancsazonosítója 12 különböző feliratot ad; a két feltöltési felirat több azonosítón osztozik, ezért a táblázat látható tételeket sorol.
+
+Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21 sort sorol (benne az Elrejtés/Megjelenítés állapotpárral és az online műveletek almenüjével). Az E. táblázat a részletes D.1-et követi, és a feltételes kereső almenü két gyermekét külön számolja.
+
+| kontextus | eredeti tétel / forrás | eredeti művelet | nálunk: QML-azonosító | állapot | bizonyíték / hiány oka |
+|---|---|---|---|---|---|
+| AlbumList | AlbumList::SortAlbumByDate | Rendezés dátum szerint | objectName=folderListMenuSortByDate | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SortAlbumByName | Rendezés név szerint | objectName=folderListMenuSortByName | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SortAlbumBySize | Rendezés méret szerint | objectName=folderListMenuSortBySize | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SortAlbumByChanged | Rendezés legutóbbi változás szerint | objectName=folderListMenuSortByChanged | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SortReverse | Fordított rendezés | objectName=folderListMenuSortReverse | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SortPeopleByName | Emberek rendezése név szerint | objectName=folderListMenuSortPeopleByName | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SortPeopleByAmount | Emberek rendezése mennyiség szerint | objectName=folderListMenuSortPeopleByCount | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SortPeopleByTop10 | Emberek rendezése Top 10 szerint | objectName=folderListMenuSortPeopleByTopList | **megvan és működik** | tests/app/test_stage3_context_menus_422.py |
+| AlbumList | AlbumList::SimplifiedTreeView | Egyszerűsített fanézet | objectName=folderListMenuSimplifiedTree | **megvan és működik** | tests/app/qml_functional/test_mappalista_paritas_4462.py |
+| AlbumList | AlbumList::ShowThumbnailsInLibrary | Indexképek megjelenítése a könyvtárban | objectName=folderListMenuShowThumbnails | **megvan és működik** | tests/app/qml_functional/test_mappalista_paritas_4462.py |
+| AlbumList | AlbumList::Shortcuts | Gyors gyökérváltók almenüje | objectName=folderListMenuShortcuts | **megvan és működik** | tests/app/qml_functional/test_mappalista_paritas_4462.py |
+| AlbumList | AlbumList::Desktop | Asztal gyökér kiválasztása | objectName=folderListMenuDesktop | **megvan és működik** | tests/app/qml_functional/test_mappalista_paritas_4462.py |
+| AlbumList | AlbumListWin::MyComputer | Sajátgép gyökér | Nincs, a Windows-tétel kimarad | **nem cél — Windows-only** | A.2 és A.4 szerint Windows-specifikus |
+| AlbumList | AlbumListWin::Documents | Dokumentumok gyökér | Nincs, a Windows-tétel kimarad | **nem cél — Windows-only** | A.2 és A.4 szerint Windows-specifikus |
+| AlbumList | AlbumListWin::Pictures | Képek gyökér | Nincs, a Windows-tétel kimarad | **nem cél — Windows-only** | A.2 és A.4 szerint Windows-specifikus |
+| Indexkép | AlbumPhoto::ID_PICTURE_VIEW | Megjelenítés és szerkesztés | objectName=contextMenuOpen | **megvan és működik** | tests/app/qml_functional/test_enter_megnyit_1417.py |
+| Indexkép | AlbumPhoto::ID_LABELS | Hozzáadás az albumhoz almenü | objectName=contextMenuAddToAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | OneUp::ID_PICTURE_ROTATECLOCKWISE | Forgatás jobbra | objectName=contextMenuRotateRight | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | AlbumPhoto::ID_PICTURE_ROTATECOUNTERCLOCKWISE | Forgatás balra | objectName=contextMenuRotateLeft | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | FolderPhoto::ID_PICTURE_REVERT | Összes szerkesztés visszavonása | objectName=contextMenuUndoAllEdits | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | AlbumPhoto::ID_PICTURE_HIDE | Elrejtés állapotfüggő sor | objectName=contextMenuHide | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | AlbumPhoto::ID_PICTURE_UNHIDE | Megjelenítés állapotfüggő sor | objectName=contextMenuHide | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | FolderPhoto::ID_ALBUM_NEW | Áthelyezés új mappába | objectName=contextMenuMove | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | FolderPhoto::ID_PICTURE_SPLITALBUMHERE | Mappa felosztása itt | objectName=contextMenuSplitFolder | **hiányzik — javasolt jegycím: A kijelölt képnél lehessen új mappára bontani a mappát** | A parancs jelenleg letiltott helyfoglaló; nincs megfelelő vezérlőművelet |
+| Indexkép | OneUp::ID_FILE_OPENINANEDITOR | Fájl megnyitása | objectName=contextMenuOpenFile | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | AlbumPhoto::ID_FILEOPENWITH | Társítás almenü | objectName=contextMenuOpenWith | **hiányzik — javasolt jegycím: A kép helyi menüje listázza a társított alkalmazásokat** | A rendszer alapértelmezett megnyitása létezik, de az alkalmazáslista nem |
+| Indexkép | AlbumPhoto::ID_FILE_SAVE | Szerkesztés mentése | objectName=contextMenuSave | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | AlbumPhoto::ID_FILE_REVERT | Visszaállítás | objectName=contextMenuRevert | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | FolderPhotoWin::ID_FILE_LOCATEONDISK | Keresés a lemezen; eredeti állapotban lapos sor, egy visszaállítható képnél feltételes almenü | objectName=contextMenuLocate vagy objectName=contextMenuLocateMenuTetel | **megvan és működik** | tests/app/test_kereses_almenu_1613.py |
+| Indexkép | CThumbUI::locateondiskmenu | A feltételes almenü Fájl a lemezen tétele | objectName=contextMenuLocateFile | **megvan és működik** | tests/app/test_kereses_almenu_1613.py |
+| Indexkép | CThumbUI::locateorigondiskmenu_win | A feltételes almenü Eredeti a lemezen tétele | objectName=contextMenuLocateOriginal | **megvan és működik** | tests/app/test_kereses_almenu_1613.py |
+| Indexkép | FolderPhoto::ID_FILE_DELETEFROMDISK | Törlés a lemezről; album-nézetben eltávolítás az albumból | objectName=contextMenuDelete vagy objectName=contextMenuRemoveFromAlbum | **megvan és működik** | tests/app/qml_functional/test_torles_billentyu_felulet_1418.py |
+| Indexkép | AlbumPhoto::ID_COPY_PATH | Teljes elérési út másolása | objectName=contextMenuCopyFullPath | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | Album::ID_UPLOAD_TO_LIGHTHOUSE | Feltöltés a Picasa Webalbumokba | objectName=contextMenuUploadToWebAlbums | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja a Picasa Web Albums szolgáltatást |
+| Indexkép | Album::ID_ONLINE_ACTIONS | Online műveletek almenü | Nincs, a szolgáltatások megszűntek | **nem cél — megszűnt online szolgáltatás** | A részletes D.1 ezt az online műveleti csoportot sorolja |
+| Indexkép | AlbumPhoto::ID_SUPPRESS | Feltöltés tiltása | objectName=contextMenuBlockUpload | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja az online szolgáltatásokat |
+| Indexkép | AlbumPhoto::ID_PICTURE_RESET_FACES | Arcok alaphelyzetbe állítása | objectName=contextMenuResetFaces | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Indexkép | AlbumPhotoWin::ID_PICTURE_PROPERTIES | Tulajdonságok | objectName=contextMenuProperties | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| Album | Album::ID_DELETEALBUM | Album törlése | objectName=albumMenuDelete | **hiányzik — javasolt jegycím: A törlés menüpont távolítsa el a kijelölt Picasa-albumot** | Nincs olyan művelet, amely az album tagságát minden érintett mappából eltávolítja |
+| Album | Album::ID_EDITALBUMDESCRIPTION | Album leírásának szerkesztése | objectName=albumMenuEditDescription | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| Album | Album::ID_ADDNAMETAGS | Névcímkék hozzáadása | objectName=albumMenuAddNameTags | **hiányzik — javasolt jegycím: Az albummenü indítsa el a névcímkék hozzáadását** | A névcímkézés albumból indítható művelete még nem létezik |
+| Album | Album::ID_SELECTALL | Összes kép kijelölése | objectName=albumMenuSelectAll | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| Album | Album::ID_CLEARSELECTION | Kijelölés törlése | objectName=albumMenuClearSelection | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| Album | Album::ID_INVERTSELECTION | Kiválasztás megfordítása | objectName=albumMenuInvertSelection | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| Album | Album::ID_REFRESHTHUMBNAILS | Indexképek frissítése | objectName=albumMenuRefreshThumbnails | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| Album | Album::SortAlbumBy | Album rendezésének alapja almenü | objectName=albumMenuSortAlbumBy | **hiányzik — javasolt jegycím: Az album saját rendezése változtassa meg az album képeinek sorrendjét** | A mappaképek rendezője nem azonos az album rendezőjével |
+| Album | Album::ID_ONLINE_ACTIONS | Online műveletek | objectName=albumMenuOnlineActions | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja az online szolgáltatásokat |
+| Album | Album::ID_UPLOAD_TO_GOOGLE_PLUS_PHOTOS | Feltöltés a Google Fotókba | objectName=albumMenuUploadToGooglePhotos | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja a Google+ és Picasa online szolgáltatásokat |
+| Album | Album::ID_UPLOAD_TO_LIGHTHOUSE | Feltöltés a Picasa Webalbumokba | objectName=albumMenuUploadToWebAlbums | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja a Picasa Web Albums szolgáltatást |
+| Album | Album::ID_EXPORTASHTML | Exportálás HTML-oldalként | objectName=albumMenuExportAsHtml | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| OneUp | OneUp::ID_VIEWALBUM | Visszatérés a könyvtárhoz | objectName=viewerMenuBackToLibrary | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | AlbumPhoto::ID_LABELS | Hozzáadás az albumhoz almenü | objectName=viewerMenuAddToAlbum | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | OneUp::ID_PICTURE_ROTATECLOCKWISE | Forgatás jobbra | objectName=viewerMenuRotateRight | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | AlbumPhoto::ID_PICTURE_ROTATECOUNTERCLOCKWISE | Forgatás balra | objectName=viewerMenuRotateLeft | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | FolderPhoto::ID_PICTURE_REVERT | Összes szerkesztés visszavonása | objectName=viewerMenuUndoAllEdits | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | AlbumPhoto::ID_PICTURE_HIDE / ID_PICTURE_UNHIDE | Elrejtés vagy megjelenítés | objectName=viewerMenuHide | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | OneUp::ID_FILE_OPENINANEDITOR | Fájl megnyitása | objectName=viewerMenuOpenFile | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | AlbumPhoto::ID_FILEOPENWITH | Társítás almenü | objectName=viewerMenuOpenWith | **hiányzik — javasolt jegycím: A kép helyi menüje listázza a társított alkalmazásokat** | A rendszer alapértelmezett megnyitása létezik, de az alkalmazáslista nem |
+| OneUp | AlbumPhoto::ID_FILE_SAVE | Szerkesztés mentése | objectName=viewerMenuSave | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | AlbumPhoto::ID_FILE_REVERT | Visszaállítás | objectName=viewerMenuRevert | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | FolderPhotoWin::ID_FILE_LOCATEONDISK | Keresés a lemezen; eredeti állapotban lapos, visszaállítható képnél almenü | objectName=viewerMenuLocate vagy objectName=viewerMenuLocateMenuItem | **megvan és működik** | tests/app/qml_functional/test_viewer_original_locate_4462.py |
+| OneUp | CThumbUI::locateondiskmenu | A feltételes almenü Fájl a lemezen tétele | objectName=viewerMenuLocateFile | **megvan és működik** | tests/app/qml_functional/test_viewer_original_locate_4462.py |
+| OneUp | CThumbUI::locateorigondiskmenu_win | A feltételes almenü Eredeti a lemezen tétele | objectName=viewerMenuLocateOriginal | **megvan és működik** | tests/app/qml_functional/test_viewer_original_locate_4462.py |
+| OneUp | FolderPhoto::ID_FILE_DELETEFROMDISK | Törlés a lemezről | objectName=viewerMenuDelete | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | AlbumPhoto::ID_COPY_PATH | Teljes elérési út másolása | objectName=viewerMenuCopyFullPath | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | OneUp::QuickUpload | Gyors feltöltés | objectName=viewerMenuQuickUpload | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja az online szolgáltatásokat |
+| OneUp | AlbumPhoto::ID_SUPPRESS | Feltöltés tiltása | objectName=viewerMenuBlockUpload | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja az online szolgáltatásokat |
+| OneUp | AlbumPhoto::ID_PICTURE_RESET_FACES | Arcok alaphelyzetbe állítása | objectName=viewerMenuResetFaces | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| OneUp | AlbumPhotoWin::ID_PICTURE_PROPERTIES | Tulajdonságok | objectName=viewerMenuProperties | **megvan és működik** | tests/app/qml_functional/test_viewer_context_menu.py |
+| PplAlbum | PplAlbum::ID_DELETEALBUM | Emberek-album törlése | objectName=peopleAlbumMenuDelete | **hiányzik — javasolt jegycím: Az Emberek-album helyi menüje törölje a személyt a könyvtárból** | A személyalbum törlési művelete és megerősítési útja hiányzik |
+| PplAlbum | PplAlbum::ID_EDITALBUM | Emberek-album szerkesztése | objectName=peopleAlbumMenuEdit | **hiányzik — javasolt jegycím: Az Emberek-album helyi menüje szerkessze a személy adatait** | A People Manager létezik, de nincs az album helyi menüjéhez kötve; a parancs pontos dialógusa külön feladat |
+| PplAlbum | PplAlbum::ID_SELECTALL | Összes kijelölése | objectName=peopleAlbumMenuSelectAll | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| PplAlbum | PplAlbum::ID_CLEARSELECTION | Kijelölés törlése | objectName=peopleAlbumMenuClearSelection | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
+| PplAlbumPhoto | PplAlbumPhoto::ID_DELETEFROMPEOPLEALBUM | Eltávolítás az Emberek albumból | objectName=contextMenuRemoveFromPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| PplAlbumPhoto | PplAlbumPhoto::ID_PEOPLEALBUMS | Hozzáadás egy meglévő Emberek-albumhoz | objectName=contextMenuAddToPeopleAlbum | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| PplAlbumPhoto | PplAlbumPhoto::ID_MOVETONEWPERSON | Áthelyezés új személyhez | objectName=contextMenuMoveToNewPerson | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
+| PplAlbumPhoto | PplAlbumPhoto::ID_SETASPEOPLEALBUMTHUMBNAIL | Beállítás az Emberek album indexképeként | objectName=contextMenuSetAsPeopleAlbumThumbnail | **hiányzik — javasolt jegycím: Lehessen indexképet választani minden Emberek-albumhoz** | Nincs személyenkénti indexkép-adat a tárolóban |
+
+Az állapotok ismételhető ellenőrzése a tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py fájlban fut. A két új valódi kattintásos QML-próba az AlbumList bélyegkép-kapcsolóját és Asztal almenüjét, valamint a OneUp „Eredeti a lemezen” útját ellenőrzi.
