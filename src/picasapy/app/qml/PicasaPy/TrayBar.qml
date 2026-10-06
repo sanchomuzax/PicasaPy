@@ -147,6 +147,7 @@ Column {
         sequence: "Ctrl+H"
         enabled: !!tray.appWindow
                  && !tray.appWindow.viewerOpen
+                 && !tray.appWindow._szovegmezoneVanFokusz
                  && tray.selectedIndexesOrEmpty.length > 0
         onActivated: trayContextMenu.keepSelectionRequested()
     }

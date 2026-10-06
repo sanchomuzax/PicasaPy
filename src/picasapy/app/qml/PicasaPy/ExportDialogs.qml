@@ -53,6 +53,7 @@ Item {
         Shortcut {
             sequence: "Shift+F1"
             enabled: exportDialog.opened
+                     && !dialogs.appWindow._szovegmezoneVanFokusz
             onActivated: dialogs.appWindow.nyisdASugot(exportDialog.helpTopic)
         }
         // #1138: a `.fen` címe „Export to Folder", magyarul „Exportálás

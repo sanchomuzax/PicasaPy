@@ -11,6 +11,11 @@ import "aranykenyszer.js" as AranyKenyszer
 // Balra: előző, Esc: vissza a könyvtárba.
 Rectangle {
     id: viewer
+
+    readonly property bool textEntryHasFocus:
+        viewer.Window.window !== null
+        && viewer.Window.window.activeFocusItem !== null
+        && viewer.Window.window.activeFocusItem.selectedText !== undefined
     //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
     property string helpTopic: "features/nezegetes.md"
 
@@ -1376,12 +1381,14 @@ Rectangle {
         else
             viewer.kerBezaras()
     }
-    Keys.onEscapePressed: viewer.handleEscape()
-    Keys.onRightPressed: next()
-    Keys.onReturnPressed: next()
-    Keys.onLeftPressed: previous()
+    Keys.onEscapePressed: if (!viewer.textEntryHasFocus) viewer.handleEscape()
+    Keys.onRightPressed: if (!viewer.textEntryHasFocus) next()
+    Keys.onReturnPressed: if (!viewer.textEntryHasFocus) next()
+    Keys.onLeftPressed: if (!viewer.textEntryHasFocus) previous()
     // szóköz: videónál lejátszás/szünet (#14) — Picasa-viselkedés
     Keys.onSpacePressed: {
+        if (viewer.textEntryHasFocus)
+            return
         if (viewer.isCurrentVideo && videoLoader.item)
             videoLoader.item.togglePlayback()
     }
@@ -1398,6 +1405,8 @@ Rectangle {
     // mutat: ott is `Ctrl+Delete` (#1418). A korábbi, puszta `Delete`
     // a #422 azóta felülírt feltételezéséből jött.
     Keys.onPressed: function(event) {
+        if (viewer.textEntryHasFocus)
+            return
         if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
             viewer.toggleFaces()
             event.accepted = true
@@ -3069,6 +3078,7 @@ Rectangle {
                     EditorToolBar {
                         id: editorToolBar
                         objectName: "editorToolBar"
+                        textEntryHasFocus: viewer.textEntryHasFocus
                         parent: photoArea
                         z: 20
                         //: #3320: a sáv KIZÁRÓLAG a kiegyenesítésé. A

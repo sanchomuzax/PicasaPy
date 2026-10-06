@@ -252,6 +252,8 @@ Flickable {
                 EditorSlider {
                     id: paramSlider
                     objectName: "effectParamSlider" + paramRow.index
+                    keyboardStepEnabled: panel.activeTab >= 2
+                                        && panel.activeTab <= 4
                     visible: paramRow.controlKind === "slider"
                     Layout.fillWidth: false
                     Layout.alignment: Qt.AlignHCenter
@@ -332,6 +334,8 @@ Flickable {
             EditorSlider {
                 id: ecsetCsuszka
                 objectName: "effectParamBrushSlider"
+                keyboardStepEnabled: panel.activeTab >= 2
+                                    && panel.activeTab <= 4
                 Layout.fillWidth: true
                 from: 0.002
                 to: (typeof editController !== "undefined" && editController

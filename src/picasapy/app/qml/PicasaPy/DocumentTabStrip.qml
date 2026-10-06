@@ -40,6 +40,8 @@ Item {
     property var projectTabs: []
     //: melyik lap aktív — a gazda ebből köti a tartalom láthatóságát
     property string activeTabId: root.libraryTabId
+    //: A mező billentyűi maradjanak a mezőnél, amikor az kapott fókuszt.
+    property bool textEntryHasFocus: false
 
     //: a mentetlen módosításról szóló kérdés szövege (hivatalos fordítással)
     property string unsavedMessage: qsTr(
@@ -139,7 +141,8 @@ Item {
     // a képernyőn (ott az Esc a Mégse útja).
     Shortcut {
         sequence: "Esc"
-        enabled: root.hasProjectTabs && !root.libraryActive
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !root.libraryActive
                  && !closeConfirm.visible
         onActivated: root.requestCloseActive()
     }
@@ -153,28 +156,33 @@ Item {
     // a megfontolás, mint az `Esc`-nél (a fájl 3. invariánsa).
     Shortcut {
         sequence: "Ctrl+W"
-        enabled: root.hasProjectTabs && !root.libraryActive
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !root.libraryActive
                  && !closeConfirm.visible
         onActivated: root.requestCloseActive()
     }
     Shortcut {
         sequence: "Ctrl+Tab"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(1)
     }
     Shortcut {
         sequence: "Ctrl+Shift+Tab"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(-1)
     }
     Shortcut {
         sequence: "Ctrl+Right"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(1)
     }
     Shortcut {
         sequence: "Ctrl+Left"
-        enabled: root.hasProjectTabs && !closeConfirm.visible
+        enabled: !root.textEntryHasFocus
+                 && root.hasProjectTabs && !closeConfirm.visible
         onActivated: root.lepjAKovetkezoLapra(-1)
     }
 

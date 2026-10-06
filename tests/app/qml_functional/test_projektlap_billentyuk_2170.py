@@ -272,6 +272,7 @@ class TestACsuszkaLeptetesELOBEN:
                 anchors.centerIn: parent
                 width: 200
                 from: -1.0; to: 1.0; value: 0.0
+                keyboardStepEnabled: true
             }
         }
         """
@@ -304,9 +305,12 @@ class TestACsuszkaLeptetesELOBEN:
             "a léptetés kivitte a csúszkát a tartományából"
         )
 
-    def test_a_BILLENTYU_is_leptet(self, csuszka):
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_a_BILLENTYU_is_leptet(self, csuszka, height_delta):
         """A teljes lánc: fókusz → billentyű → érték."""
         elem, view, qt_app = csuszka
+        view.resize(view.width(), view.height() + height_delta)
+        qt_app.processEvents()
         assert _wait_for(qt_app, view.isActive)
         elem.setProperty("focus", True)
         qt_app.processEvents()
@@ -343,7 +347,10 @@ class TestACsuszkaLeptetesELOBEN:
         qt_app.processEvents()
         assert latott == [0.04]
 
-    def test_a_lenyomva_tartott_billentyu_egyszer_veglegesit(self, csuszka):
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_a_lenyomva_tartott_billentyu_egyszer_veglegesit(
+        self, csuszka, height_delta
+    ):
         """Autorepeat: öt ismétlődő lenyomás és elengedés után is csak a
         valódi elengedés véglegesít, egyszer, a végső értékkel.
         # rontás-kontroll: a `Keys.onReleased` autorepeat-szűrője nélkül
@@ -352,6 +359,8 @@ class TestACsuszkaLeptetesELOBEN:
         from PySide6.QtGui import QKeyEvent
 
         elem, view, qt_app = csuszka
+        view.resize(view.width(), view.height() + height_delta)
+        qt_app.processEvents()
         assert _wait_for(qt_app, view.isActive)
         latott = []
         elem.veglegesult.connect(lambda ertek: latott.append(round(ertek, 3)))
@@ -391,9 +400,12 @@ class TestACsuszkaLeptetesELOBEN:
 
         assert latott == [0.25]
 
-    def test_a_valodi_BILLENTYU_is_veglegesit(self, csuszka):
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_a_valodi_BILLENTYU_is_veglegesit(self, csuszka, height_delta):
         """A teljes lánc: fókusz → valódi `QTest.keyClick` → `veglegesult`."""
         elem, view, qt_app = csuszka
+        view.resize(view.width(), view.height() + height_delta)
+        qt_app.processEvents()
         assert _wait_for(qt_app, view.isActive)
         latott = []
         elem.veglegesult.connect(lambda ertek: latott.append(round(ertek, 3)))
