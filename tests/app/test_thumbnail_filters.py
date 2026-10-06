@@ -147,3 +147,33 @@ class TestThumbUrlCacheBuster:
         plain = records[0].__class__(**{**records[0].__dict__, "filters": None})
         model.set_photos((plain,))
         assert model.thumbUrlAt(0) != url_a
+
+
+class TestBigPicturePredicate:
+    def test_matches_area_aspect_and_long_edge_branches(self):
+        from picasapy.app.small_picture_filter import is_big_picture
+
+        esetek = (
+            # A küszöb FELETT a többi vizsgálat nem zár ki.
+            (601, 100, True),
+            # A küszöbön az arány- és 200 px-es ág még számít.
+            (600, 100, False),
+            (300, 100, True),  # 3,0 képarány, hosszabb él > 200
+            (301, 100, False),  # 3,0 fölötti képarány
+            (100, 300, True),  # 0,33333 alsó határ
+            (67, 201, True),
+            (66, 201, False),
+            (201, 199, True),  # egyik él éppen 200 fölött
+            (200, 200, False),  # a mérethatár szigorúan nagyobb mint 200
+        )
+        for width, height, expected in esetek:
+            assert is_big_picture(width, height) is expected, (
+                f"{width}×{height}: várt {expected}"
+            )
+
+    def test_missing_or_zero_dimensions_remain_visible(self):
+        from picasapy.app.small_picture_filter import is_big_picture
+
+        assert is_big_picture(None, 100) is True
+        assert is_big_picture(100, None) is True
+        assert is_big_picture(0, 0) is True
