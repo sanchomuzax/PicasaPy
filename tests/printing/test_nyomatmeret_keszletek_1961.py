@@ -1,23 +1,11 @@
-"""A nyomatméret-készlet nyelvfüggő: magyar felületen METRIKUS (#1961).
+"""A nyomatméret-családot a területi mértékegység választja (#4435).
 
 ## A lelet
 
-Magyar felületen hüvelykes nyomatméreteket kínáltunk (3,5×5 in, 4×6 in,
-…). Egy magyar felhasználó tehát olyan méreteket látott, amilyeneket
-magyar fotólaborban nem tud rendelni.
-
-Az eredeti Picasa **tizenhét** nyomatméretet ismer
-(`ytPrintSizes::` szövegcsalád, `stringres` 3478–3494), és a magyar
-felületen metrikus méreteket mutat. A tulajdonos felvételén
-(`#1953-nyomtatas-kep-kicsi.jpg`) a #4257 előtti hat tétel látszik:
-
-    5x8 cm · 9x13 cm · 10x15 cm · 13x18 cm · 20x25 cm · Teljes oldal
-
-⚠️ **NINCS mérve**, hogy MI választja ki a listát — a nyelv, a területi
-beállítás vagy a nyomtató papírmérete. Nálunk a **felület nyelve** dönt;
-ez a mi döntésünk, nem az eredeti másolása. A #4257 a mért 15×20 cm-es
-méretet az eredeti helyére illeszti; a CD-borító pontos méretét a spec
-nem adja meg, ezért az kimarad.
+Az eredeti Picasa a területi mértékegység alapján választja ki az öt
+gyorsválasztót. A PicasaPy bővebb katalógusa megőrzi a 15×20 cm-es és
+Teljes oldal elemet, valamint a hüvelykes család 3×4 és 4×5 tételeit; ezek
+nem részei az eredeti öt alapértéknek.
 
 ## Utólagos javítás (#3712-review)
 
@@ -33,12 +21,16 @@ a metrikus egy tétellel bővül.
 from __future__ import annotations
 
 import pytest
+from PySide6.QtCore import QLocale
+
+import picasapy.printing.dpi as dpi
 
 from picasapy.printing.dpi import (
     HUVELYK_KESZLET,
     METRIKUS_KESZLET,
     NyomatMeret,
-    keszlet_nyelvhez,
+    alapmeretek_teruleti_mereshez,
+    keszlet_teruleti_mereshez,
 )
 
 
@@ -61,7 +53,7 @@ class TestAKetKeszlet:
     def test_a_gradualt_meretek_NEM_fedik_at_egymast(self):
         """A TARCA/M3_5X5/… és az M5X8CM/… sosem ugyanaz a fizikai méret —
         a `TELJES_OLDAL` viszont SZÁNDÉKOSAN közös tag (#3712-review): a
-        Full Page mindkét nyelven ugyanaz az A4 lap, csak más felirattal."""
+        Full Page mindkét területi készletben ugyanaz az A4 lap."""
         gradualt_huvelykes = set(HUVELYK_KESZLET) - {NyomatMeret.TELJES_OLDAL}
         gradualt_metrikus = set(METRIKUS_KESZLET) - {NyomatMeret.TELJES_OLDAL}
         assert not gradualt_huvelykes & gradualt_metrikus
@@ -130,16 +122,46 @@ class TestA4257HianyzoMeretei:
         assert all("CD" not in nev.upper() for nev in NyomatMeret.__members__)
 
 
-class TestANyelvValasztas:
-    def test_magyarul_metrikus(self):
-        assert keszlet_nyelvhez("hu") == METRIKUS_KESZLET
+class TestATeruletiMeresValasztas:
+    @staticmethod
+    def _meresi_rendszer(monkeypatch, rendszer):
+        class HelyettesitettQLocale:
+            MeasurementSystem = QLocale.MeasurementSystem
 
-    def test_angolul_huvelykes(self):
-        assert keszlet_nyelvhez("en") == HUVELYK_KESZLET
+            def measurementSystem(self):
+                return rendszer
 
-    def test_ismeretlen_nyelven_huvelykes(self):
-        """Az alapértelmezés az angol (`DEFAULT_LANGUAGE`), tehát az
-        ismeretlen kód se metrikusra váltson magától."""
-        assert keszlet_nyelvhez("kl") == HUVELYK_KESZLET
-        assert keszlet_nyelvhez("") == HUVELYK_KESZLET
-        assert keszlet_nyelvhez(None) == HUVELYK_KESZLET
+        monkeypatch.setattr(
+            dpi, "QLocale", HelyettesitettQLocale, raising=False
+        )
+
+    def test_metrikus_katalogus_es_ot_alapmeret(self, monkeypatch):
+        self._meresi_rendszer(
+            monkeypatch, QLocale.MeasurementSystem.MetricSystem
+        )
+        assert keszlet_teruleti_mereshez() == METRIKUS_KESZLET
+        assert [m.name for m in alapmeretek_teruleti_mereshez()] == [
+            "M5X8CM",
+            "M9X13CM",
+            "M10X15CM",
+            "M13X18CM",
+            "M20X25CM",
+        ]
+
+    @pytest.mark.parametrize(
+        "rendszer",
+        [
+            QLocale.MeasurementSystem.ImperialUSSystem,
+            QLocale.MeasurementSystem.ImperialUKSystem,
+        ],
+    )
+    def test_angolszasz_katalogus_es_ot_alapmeret(self, monkeypatch, rendszer):
+        self._meresi_rendszer(monkeypatch, rendszer)
+        assert keszlet_teruleti_mereshez() == HUVELYK_KESZLET
+        assert [m.name for m in alapmeretek_teruleti_mereshez()] == [
+            "TARCA",
+            "M3_5X5",
+            "M4X6",
+            "M5X7",
+            "M8X10",
+        ]
