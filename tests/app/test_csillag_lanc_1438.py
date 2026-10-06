@@ -4,7 +4,7 @@ A #1436 mérése közben úgy tűnt, hogy a `toggleStar()` után a csillagozott
 nézet üresen marad. A kimérés (ez a fájl) megmutatta, hogy a lánc mindhárom
 lépése ép; a tünetet a művelet ASZINKRON volta okozta: a `toggleStar` a
 lemezírást és az index-frissítést háttérszálon végzi (#141/#438), és a
-mérés nem várta meg a `photoOpFinished` jelzést.
+mérés nem várta meg a háttérmunka végét.
 
 Ez a fájl ezért két dolgot rögzít, KÜLÖN állításokkal:
 
@@ -163,9 +163,9 @@ class TestACsillagozasAszinkron:
         A `toggleStar` azonnal visszatér, a lemezírás és az index-UPDATE a
         háttérszálon fut. Aki a hívás UTÁN rögtön a csillagozott nézetet
         kérdezi, üres listát lát — pontosan ezt jelentette a #1438. A
-        `photoOpFinished` bevárása (`wait_for_photo_op`) után viszont ott a
-        kép. A teszt mindkét oldalt kimondja, hogy a különbség ne legyen
-        többé találgatás kérdése.
+        a munkaszál leállásának bevárása (`wait_for_photo_op`) után viszont
+        ott a kép. A teszt mindkét oldalt kimondja, hogy a különbség ne
+        legyen többé találgatás kérdése.
         """
         from picasapy.app import photo_ops_controller as ops
 
@@ -205,30 +205,21 @@ class TestACsillagozasAszinkron:
             "a háttérmunka befejeződése után a csillagnak látszania kell"
         )
 
-    def test_toggle_star_jelez_a_vegen(self, controller, library: Path) -> None:
-        """A `photoOpFinished` tényleg megérkezik — enélkül nincs mit várni."""
+    def test_toggle_star_frissiti_a_modellt_a_hattermunka_utan(
+        self, controller, library: Path
+    ) -> None:
+        """A sikeres írás a modellben is megjelenik."""
         controller.selectFolder(str(library / "nyaralas"))
-        # a segéd maga bukik el, ha a jelzés elmarad (#475)
         wait_for_photo_op(controller, lambda: controller.toggleStar(1))
         assert controller.photos.photos[1].star is True
 
-    def test_ervenytelen_sorindex_nem_ad_jelzest(
+    def test_ervenytelen_sorindex_nem_valtoztatja_meg_a_modellt(
         self, controller, library: Path
     ) -> None:
         """Ismert csapda: érvénytelen sorra a `toggleStar` NÉMÁN nem csinál
-        semmit — jelzés sem jön, tehát a `wait_for_photo_op` időtúllépéssel
-        bukik, ami tartalmi hibának LÁTSZIK. Aki a jövőben ilyen bukást lát,
-        előbb a sorindexet nézze meg."""
-        from PySide6.QtCore import QEventLoop, QTimer
-
+        semmit — a modell és a .picasa.ini változatlan marad."""
         controller.selectFolder(str(library / "nyaralas"))
-        jelzesek: list[bool] = []
-        controller.photoOpFinished.connect(lambda: jelzesek.append(True))
-
         controller.toggleStar(99)
 
-        loop = QEventLoop()
-        QTimer.singleShot(300, loop.quit)
-        loop.exec()
-        assert jelzesek == []
+        assert controller.photos.photos[0].star is False
         assert "star=yes" not in _ini_text(library)

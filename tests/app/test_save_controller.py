@@ -136,6 +136,21 @@ class TestUnrenderableWarning:
 
 
 class TestSaveToDisk:
+    def test_a_sikeres_mentes_utan_a_controller_modellje_is_ujratoltodik(
+        self, controller, qt_app, library
+    ):
+        _set_filters(controller, qt_app, library, "bw=1;")
+
+        _wait(
+            controller.saveFinished,
+            qt_app,
+            lambda: controller.saveRowsToDisk([0]),
+        )
+
+        assert not controller.photos.photos[0].filters, (
+            f"a nézet nem töltődött újra; mód: {controller._view_mode!r}"
+        )
+
     def test_the_edit_is_burned_into_the_file(self, controller, qt_app, library):
         _, folder, _db = library
         _set_filters(controller, qt_app, library, "bw=1;")

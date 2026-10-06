@@ -4264,6 +4264,9 @@ ApplicationWindow {
     // építi fel a párbeszédet — pontosan akkor, amikor tényleg kell.
     Connections {
         target: controller
+        function onDiskOperationSucceededPaths(paths) {
+            photoViewer.frissitsdALemezműveletUtániElőnézetet(paths)
+        }
         function onSaveFailedDetails(details) {
             saveDialogs.ensure().jelezdAbukottMentest(details)
         }

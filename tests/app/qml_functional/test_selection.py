@@ -12,7 +12,7 @@ from support.jpeg_factory import make_jpeg
 
 def _do_photo_op(controller, qt_app, action) -> None:
     """A csillag/felirat/forgatás háttérszálon fut — a közös segéd megvárja
-    a `photoOpFinished` jelzést, és ELBUKIK, ha nem jön meg (#475)."""
+    a munkaszál végét, és ELBUKIK, ha az időkorlátig sem áll le (#475)."""
     wait_for_photo_op(controller, action, qt_app=qt_app)
 
 

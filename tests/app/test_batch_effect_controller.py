@@ -167,9 +167,8 @@ class TestApplyEffectMany:
         assert controller.batchEditActive is False
         assert controller.batchEditDoneCount == controller.batchEditTotalCount == 2
 
-    def test_photoopfinished_kifut_ures_kijolesnel_is(self, controller):
-        # a `_run` helper a photoOpFinished-re vár — üres kijelölésnél is
-        # ki kell futnia (early-return se ragadjon be)
+    def test_ures_kijelolesnel_nincs_hattermunka(self, controller):
+        # üres kijelölésnél az early-return se ragadjon be
         _run(controller, lambda: controller.applyEffectMany([], "autolight"))
 
 
