@@ -158,10 +158,16 @@ Rectangle {
     // világosság-vezérelt), ezért a GPU-réteg ilyenkor NEM jelenhet meg —
     // a CPU-előnézet fut helyette, változatlanul.
     property bool gpuFinetunePointSafe: true
+    // #4336: a Nézet-menü és a bal fiók nyila ugyanazt a mentett állapotot
+    // használja. Önálló PhotoViewer-próbánál controller nélkül nyitva indul.
+    property bool editorControlsVisible:
+        (typeof controller !== "undefined" && controller
+         && controller.editorControlsVisible !== undefined)
+        ? controller.editorControlsVisible : true
     // #4183: a szerkesztő bal fiókjának 0…−279 képpontos eltérése. A
     // befoglaló hely vele együtt szűkül, a 280 px-es tartalom pedig balra
     // csúszik és a fiók levágása rejti el.
-    property real editorDrawerOffset: 0
+    property real editorDrawerOffset: editorControlsVisible ? 0 : -279
     Behavior on editorDrawerOffset {
         NumberAnimation {
             duration: 250
@@ -169,7 +175,12 @@ Rectangle {
         }
     }
     function toggleEditorDrawer() {
-        editorDrawerOffset = editorDrawerOffset === 0 ? -279 : 0
+        if (typeof controller !== "undefined" && controller
+                && controller.setEditorControlsVisible !== undefined) {
+            controller.setEditorControlsVisible(!controller.editorControlsVisible)
+        } else {
+            editorControlsVisible = !editorControlsVisible
+        }
     }
     readonly property bool gpuCapable: GraphicsInfo.api !== GraphicsInfo.Software
                                         && GraphicsInfo.api !== GraphicsInfo.Unknown

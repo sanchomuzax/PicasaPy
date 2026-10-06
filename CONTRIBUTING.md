@@ -33,8 +33,9 @@ felsorolássor legyen, a jegyszámmal a sor végén, például:
 A pull request ne módosítsa a `CHANGELOG.md` fájlt. A kiadási automatika a
 darabok sorait jegyszám szerint a `Nem kiadott` szakaszba fűzi, majd
 verziófejléccé nevezi át a szakaszt és eltávolítja a darabfájlokat. A régi
-módon, közvetlenül a `Nem kiadott` szakaszba írt sorok átmenetileg még
-elfogadottak.
+módon, közvetlenül a `Nem kiadott` szakaszba írt sorokra a CI átmenetileg
+figyelmeztet, de nem buktatja a PR-t. Az átmeneti kapu szigorú módja egyetlen
+`PICASAPY_CHANGELOG_STRICT=1` környezeti változóval kapcsolható be.
 
 Fej nélküli (CI, konténer) környezetben: `export QT_QPA_PLATFORM=offscreen`.
 

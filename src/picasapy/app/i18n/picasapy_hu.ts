@@ -4394,6 +4394,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FileOpsController</name>
     <message>
+        <source>The system default application could not open %1/%2 selected files.</source>
+        <translation>A rendszer alapértelmezett alkalmazása nem tudta megnyitni a kijelölt fájlok %1/%2 részét.</translation>
+    </message>
+    <message>
         <source>This picture has no preserved original on disk.</source>
         <translation>Ehhez a képhez nincs megőrzött eredeti a lemezen.</translation>
     </message>
