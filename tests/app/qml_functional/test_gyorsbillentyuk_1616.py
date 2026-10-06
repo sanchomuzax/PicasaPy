@@ -20,13 +20,9 @@ már éles és tesztelt úton működik a rács helyi menüjéből
 hiányzó BEKÖTÉS, nem hiányzó funkció — ezért itt a `Ctrl+N`-t is
 BEKÖTÖTTÜK, ugyanarra a belépőre.
 
-A másik két maradék tételnél (`Ctrl+Shift+O` — Fájl(ok) megnyitása
-szerkesztőben; `Ctrl+E` — E-mail…) a mérés megerősítette, hogy a
-mögöttes funkció TELJESEN hiányzik (a `TrayBar.emailRequested()` jelzés
-sehova nincs kötve, az „Open File(s) in Editor" funkciónak pedig nyoma
-sincs a kódban) — ezekben a `\\t`-tal jelölt gyorsbillentyű LEKERÜLT a
-feliratról, a jegy saját szabálya szerint („ha a funkció nincs kész, a
-feliratból vedd ki a gyorsbillentyűt — ne hirdessünk olyat, ami nincs").
+A `Ctrl+Shift+O` (Fájl(ok) megnyitása szerkesztőben) továbbra is helyfoglaló,
+mert a külső szerkesztő indításának nincs meg a funkciója. A `Ctrl+E` E-Mail
+útja viszont a #1798 óta él a tálcán; a #4329 ezt a menühöz is bekötötte.
 
 ## Miért ilyenek ezek a tesztek
 
@@ -259,22 +255,23 @@ class TestUjAlbumMenupontEsCtrlN:
 
 
 class TestNemaCimkekLekerultBillentyuvel:
-    """A `Ctrl+Shift+O` és a `Ctrl+E` — a funkció hiányzik, a felirat
-    ezért többé NEM hirdet billentyűt. A tétel helyfoglaló MARAD (a
-    funkció megvalósítása külön jegy — ld. a spec 472–480. sora)."""
+    """A `Ctrl+Shift+O` — a külső szerkesztő funkciója hiányzik, ezért
+    továbbra sem hirdetünk hozzá gyorsbillentyűt."""
 
     @pytest.mark.parametrize(
         ("szoveg_resz", "vart_szoveg"),
         [
             #: ⚠️ #2921: a felirat a MÉRT hivatalos angolra igazodott
             ("Open File(s) in an Editor", "Open File(s) in an Editor"),
-            ("E-Mail...", "E-Mail..."),
         ],
     )
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
     def test_a_felirat_mar_nem_hirdet_billentyut(
-        self, qml_app, szoveg_resz, vart_szoveg
+        self, qml_app, qt_app, height_offset, szoveg_resz, vart_szoveg
     ):
         window, _controller, _engine = qml_app
+        window.setHeight(window.height() + height_offset)
+        qt_app.processEvents()
         talalat = None
         for obj in window.findChildren(QObject):
             try:
@@ -292,13 +289,12 @@ class TestNemaCimkekLekerultBillentyuvel:
         # a tétel a funkció hiánya miatt továbbra is helyfoglaló
         assert talalat.property("placeholder") is True
 
-    def test_sem_a_ctrl_shift_o_sem_a_ctrl_e_nem_elo_billentyu(self):
-        """Forrás-alapú ellenőrzés: az app teljes QML-fáján SEHOL nem él
-        `Shortcut { sequence: "Ctrl+Shift+O" }` vagy `"Ctrl+E"` — a
-        felirat eltávolítása nem hagyott árva `Shortcut`-ot sem."""
+    def test_a_ctrl_shift_o_nem_elo_billentyu_de_a_ctrl_e_az(self):
+        """A külső szerkesztő billentyűje maradjon kikapcsolva; az E-Mail
+        gyorsbillentyűt a #4329 a meglévő tálca-útvonalra kötötte."""
         elo = _osszes_elo_billentyu_szekvencia()
         assert "Ctrl+Shift+O" not in elo
-        assert "Ctrl+E" not in elo
+        assert "Ctrl+E" in elo
 
 
 # ---------------------------------------------------------------------------
@@ -425,10 +421,13 @@ class TestSweepOr:
         # mappába, és a billentyű ugyanúgy FÓKUSZ-ÉRZÉKENY, mint a
         # másoláson (szövegmezőben a mezőé marad, #1571). A szám tehát
         # ismét azért csökken, mert javult valami.
-        assert len(helyfoglalo_hirdetok) >= 2, (
-            "a mérésnek meg kell találnia a maradék hatókörön-kívüli "
-            "helyfoglaló tételeket — ha ez a szám lecsökkent, vagy a regex "
-            "tört el, vagy tényleg javult valami (ellenőrizd!)"
+        # ⚠️ #4329: 2 → 0. A két maradék Ctrl+3-hirdető a Nézet ▸ Edit
+        # View és a Kép ▸ View and Edit helyfoglalója volt; most mindkettő
+        # ugyanazt a működő néző-útvonalat hívja. Nincs más helyfoglaló
+        # menütétel, amely gyorsbillentyűt hirdetne.
+        assert len(helyfoglalo_hirdetok) == 0, (
+            "a #4329 után nem maradhat helyfoglaló, gyorsbillentyűt "
+            f"hirdető felső menütétel: {helyfoglalo_hirdetok}"
         )
         # egyik helyfoglaló sem jelenik meg az ígéretszegések közt
         hibak = _igeretszegesek(menu_forras, forrasok)
