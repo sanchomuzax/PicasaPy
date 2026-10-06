@@ -17,6 +17,7 @@ import logging
 import shutil
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
@@ -192,6 +193,8 @@ class ExportItem:
     # `0x0073f320`) végzi. Üresen hagyva nem születik ini a célban.
     caption: str | None = None
     keywords: str | None = None
+    # #4332: az indexben tárolt dátumfelülírás kerül az export EXIF-jébe.
+    taken_at_override: str | None = None
 
 
 @dataclass(frozen=True)
@@ -429,8 +432,16 @@ def _export_one(
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
     height, width = image.shape[:2]
+    taken_at_override = (
+        datetime.fromisoformat(item.taken_at_override)
+        if item.taken_at_override
+        else None
+    )
     payload = _transfer_metadata(
-        source, _encode_jpeg(image, settings, source), (width, height)
+        source,
+        _encode_jpeg(image, settings, source),
+        (width, height),
+        taken_at_override=taken_at_override,
     )
     target = _unique_target(target_dir, number_prefix + source.stem, ".jpg")
     # Közös helper (#129): fsync + atomikus csere — félkész célfájl sose
@@ -575,6 +586,7 @@ def _is_noop_copy(
         and settings.max_dimension is None
         and not settings.watermark_text
         and not item.filters
+        and not item.taken_at_override
     )
 
 
@@ -731,7 +743,11 @@ def _apply_rotation(image: np.ndarray, rotate_steps: int) -> np.ndarray:
 
 
 def _transfer_metadata(
-    source: Path, encoded: bytes, size: tuple[int, int]
+    source: Path,
+    encoded: bytes,
+    size: tuple[int, int],
+    *,
+    taken_at_override: datetime | None = None,
 ) -> bytes:
     """Az újrakódolt JPEG metaadatai az eredeti Picasa szerint (#136, #3961).
 
@@ -744,7 +760,9 @@ def _transfer_metadata(
     régi, bájtra másoló út (#136) a kimenet; ha az is dob (ugyanazt a
     szegmens-kódot használja), a kép metaadat nélkül megy ki."""
     try:
-        return frissitett_metaadat(source, encoded, size=size)
+        return frissitett_metaadat(
+            source, encoded, size=size, taken_at_override=taken_at_override
+        )
     except Exception:  # noqa: BLE001 — a metaadat soha nem buktathat exportot
         _LOG.warning("export: a metaadat-frissítés hibázott, bájtmásolás", exc_info=True)
     try:

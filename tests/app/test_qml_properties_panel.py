@@ -4,8 +4,9 @@ A panel csak olvas: a kijelölt kép fájl- és EXIF-adatait mutatja; a
 Nézet → Tulajdonságok menüpont és az Alt+Enter kapcsolja.
 """
 
-from PySide6.QtCore import QObject
+from dataclasses import replace
 
+from PySide6.QtCore import QDateTime, QLocale, QObject
 
 def _panel(window):
     panel = window.findChild(QObject, "propertiesPanel")
@@ -56,3 +57,31 @@ class TestPropertiesPanelInMain:
         window.setProperty("activeDrawerTab", "properties")
         qt_app.processEvents()
         assert _entries(_panel(window)) == []
+
+    def test_taken_at_override_megjelenik_a_racs_adataban_es_a_tulajdonsagokban(
+        self, qml_app, qt_app
+    ):
+        window, controller, _lib, _engine = qml_app
+        eredeti = controller.photos.photos[0]
+        felulirt = "2099-02-03T04:05:06"
+        controller.photos.update_photo(
+            eredeti.id,
+            replace(
+                eredeti,
+                taken_at=felulirt,
+                taken_at_override=felulirt,
+            ),
+        )
+        row = controller.photos.row_of_id(eredeti.id)
+        assert controller.photos.itemAt(row)["takenAt"] == felulirt
+
+        window.setProperty("activeDrawerTab", "properties")
+        window.setProperty("selectedIndexes", [row])
+        window.setProperty("selectedIndex", row)
+        qt_app.processEvents()
+        values = [str(entry["value"]) for entry in _entries(_panel(window))]
+        expected = QLocale().toString(
+            QDateTime.fromString(felulirt, "yyyy-MM-ddTHH:mm:ss"),
+            QLocale.FormatType.ShortFormat,
+        )
+        assert expected in values

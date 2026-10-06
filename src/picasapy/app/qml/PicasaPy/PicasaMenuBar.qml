@@ -171,6 +171,8 @@ MenuBar {
     // helyfoglaló tételeket szándékosan kizárja (ott a felirat nem ígéret).
     signal invertSelectionRequested()
     signal folderManagerRequested()
+    // #4332: a kijelölt képek felvételi dátumának módosítása.
+    signal adjustTimestampRequested()
     // #350: Eszközök → Beállítások... (options.fen) — az OptionsDialog
     // megnyitását a Main.qml köti be (forró fájl, az integrátor dolga)
     signal optionsRequested()
@@ -1932,6 +1934,7 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Publish to &Blogger..."); placeholder: false; retired: true }  // #638
     }
     PicasaMenu {
+        objectName: "menuTools"
         title: qsTr("&Tools")
         MenuItem {
             objectName: "menuToolsFolderManager"
@@ -1990,7 +1993,12 @@ MenuBar {
             onTriggered: bar.backupRequested()
         }
         PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638
-        PicasaMenuItem { text: qsTr("Adjust &Date and Time..."); placeholder: true }
+        MenuItem {
+            objectName: "menuToolsAdjustTimestamp"
+            text: qsTr("Adjust &Date and Time...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.adjustTimestampRequested()
+        }
         MenuSeparator {}
         // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
         PicasaMenu { title: qsTr("U&pload"); enabled: false }

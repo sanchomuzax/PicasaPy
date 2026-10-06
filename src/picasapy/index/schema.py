@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 19
+SCHEMA_VERSION = 20
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -399,6 +399,7 @@ CREATE TABLE IF NOT EXISTS photos (
     flip_flags INTEGER NOT NULL DEFAULT 0,
     filters TEXT,
     taken_at TEXT,
+    taken_at_override TEXT,
     orientation INTEGER NOT NULL DEFAULT 1,
     width INTEGER,
     height INTEGER,
@@ -542,5 +543,12 @@ ALTER TABLE folders ADD COLUMN unread INTEGER NOT NULL DEFAULT 0;
     # Minden meglévő sor 0-val (nincs tükrözés) indul; újraindexelés nem kell.
     18: """
 ALTER TABLE photos ADD COLUMN flip_flags INTEGER NOT NULL DEFAULT 0;
+""",
+    # #4332: a felhasználó által beállított felvételi dátum tartós, indexbeli
+    # felülírása. Nem kerül a forrás EXIF-be vagy a .picasa.ini-be: az
+    # eredeti a dátumot a saját adatbázisában tartja (#451); a felülírás a
+    # fájl változása (pl. a program saját Mentése) után is megmarad.
+    19: """
+ALTER TABLE photos ADD COLUMN taken_at_override TEXT;
 """,
 }

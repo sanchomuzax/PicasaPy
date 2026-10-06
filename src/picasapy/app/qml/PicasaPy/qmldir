@@ -64,6 +64,7 @@ SaveDialogs 1.0 SaveDialogs.qml
 InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml
 CreateDialogs 1.0 CreateDialogs.qml
+AdjustTimestampDialog 1.0 AdjustTimestampDialog.qml
 MovieTitleDialog 1.0 MovieTitleDialog.qml
 PlacesPanel 1.0 PlacesPanel.qml
 AboutDialog 1.0 AboutDialog.qml
