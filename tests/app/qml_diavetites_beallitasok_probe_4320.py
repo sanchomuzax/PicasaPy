@@ -219,6 +219,24 @@ def _run(work_dir: Path) -> None:
     assert bool(controller.slideshowLoop) is True
     assert bool(controller.slideshowMusicEnabled) is False
 
+    # #4448: a mappa saját zenéje felülírja az általános zenemappát, ha a
+    # Beállításokban a vetítési zene be van kapcsolva.
+    controller.setSlideshowMusicEnabled(True)
+    folder_music = Path(controller.currentFolder) / "mappa-zene.mp3"
+    folder_music.write_bytes(b"test folder track")
+    controller.setFolderMusic(controller.currentFolder, True, str(folder_music))
+    assert _wait(app, lambda: len(slideshow.property("musicTrackUrls")) == 1)
+    folder_urls = slideshow.property("musicTrackUrls")
+    assert folder_urls[0].toLocalFile() == str(folder_music), (
+        "a mappa saját zene nem írta felül az általános zenemappát"
+    )
+    controller.setFolderMusic(controller.currentFolder, False, str(folder_music))
+    assert _wait(app, lambda: any(
+        url.toLocalFile() == str(track)
+        for url in slideshow.property("musicTrackUrls")
+    )), "kikapcsolt mappazenénél nem állt vissza az általános zenemappa"
+    controller.setSlideshowMusicEnabled(False)
+
     (work_dir / "diavetites-geometria.json").write_text(
         json.dumps(geometry_measurements, ensure_ascii=False, indent=2),
         encoding="utf-8",

@@ -42,6 +42,14 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
     qml_app, qt_app, tmp_path
 ):
     window, controller, _engine = qml_app
+    hang = tmp_path / "hang.wav"
+    with wave.open(str(hang), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(8000)
+        wav.writeframes(b"".join(struct.pack("<h", 5000) for _ in range(8000)))
+    controller.setFolderMusic(controller.currentFolder, True, str(hang))
+
     for name in ("captions", "cropfit", "removeLowResFaces"):
         controller.setMoviePreference(name, True)
         assert controller.moviePreference(name) is True
@@ -61,6 +69,9 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
             film_parbeszed = _elem(window, "movieDialog")
             assert film_parbeszed.property("visible") is True, (
                 "a főablak film gombja nem nyitotta meg a panelt"
+            )
+            assert film_parbeszed.property("audioFile") == str(hang), (
+                "a filmpanel nem vette át a közös mappa beállított zenéjét"
             )
 
             for nev in (
@@ -112,7 +123,6 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         _kattintas(window, qt_app, _elem(window, "movieRecomputeButton"))
         assert _elem(window, "movieTabs").property("currentIndex") == 0
         film_parbeszed.setProperty("targetFile", QUrl.fromLocalFile(str(tmp_path / "film.mp4")).toString())
-        film_parbeszed.setProperty("audioFile", QUrl.fromLocalFile(str(tmp_path / "hang.wav")).toString())
         film_parbeszed.setProperty("audioOption", 2)
         _elem(window, "movieHeightBox").setProperty("currentIndex", 0)
         _elem(window, "movieTransitionBox").setProperty("currentIndex", 4)
@@ -123,13 +133,6 @@ def test_a_filmkeszito_vezerloi_es_kimenete_valodi_kattintassal_minden_magassago
         _elem(window, "burstslider/scaleslider").setProperty("value", 0.5)
         assert film_parbeszed.property("movieInitialPhotoCount") == 2
         assert film_parbeszed.property("movieUsedPhotoCount") == 1
-
-        hang = tmp_path / "hang.wav"
-        with wave.open(str(hang), "wb") as wav:
-            wav.setnchannels(1)
-            wav.setsampwidth(2)
-            wav.setframerate(8000)
-            wav.writeframes(b"".join(struct.pack("<h", 5000) for _ in range(8000)))
 
         _kattintas(window, qt_app, _elem(window, "movieTabSlide"))
         _elem(window, "movieSlideText").setProperty("text", "4125")
