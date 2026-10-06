@@ -191,6 +191,23 @@ ApplicationWindow {
         photoViewer.show(sorok[0])
     }
 
+    // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt
+    // képeket teszi láthatóvá. A toggleHiddenRows csak a rejtett sorokat
+    // kapja meg, ezért a vegyes kijelölés látható képei nem rejtődnek el.
+    function unhideHiddenSelection() {
+        if (!controller) return
+        var rows = window.selectedRows()
+        var hiddenRows = []
+        for (var i = 0; i < rows.length; ++i) {
+            var row = Number(rows[i])
+            var photo = controller.photos.itemAt(row)
+            if (photo && photo.hidden === true) hiddenRows.push(row)
+        }
+        if (hiddenRows.length === 0) return
+        controller.toggleHiddenRows(hiddenRows)
+        window.clearSelection()
+    }
+
     //: #2163: a `Ctrl+F7` az eredetiben a `searchoptions/loadsim`-et
     //: kattintja — a MINTA a jelenlegi kép, és a keresés a hozzá
     //: hasonlókat adja (a mag a #1833-ban kész).
@@ -1466,6 +1483,12 @@ ApplicationWindow {
         id: picasaMenuBar
         //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
         onExitRequested: window.kilepes()
+        // #4329: a felső Fájl ▸ E-Mail ugyanazt a küldési kaput hívja, mint
+        // a tálca emailRequested jelzése.
+        onEmailRequested: window.sendSelectionByEmail()
+        onViewAndEditRequested: window.nezdEsSzerkeszd()
+        onUnhideRequested: window.unhideHiddenSelection()
+        onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
         photoActionsEnabled: !window.viewerOpen
                              && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
@@ -2006,6 +2029,15 @@ ApplicationWindow {
         // A `sendRows` a beállítás szerint vagy küld, vagy a
         // `mailChoiceRequested`-del kérdést kér — a válasz lentebb.
         emailController.sendRows(csatolmanyok, "", "")
+    }
+
+    // #4329: a billentyűnek ugyanaz a kijelölési kapuja és kezelője, mint a
+    // Fájl ▸ E-Mail menüpontnak.
+    Shortcut {
+        objectName: "emailShortcut"
+        sequence: "Ctrl+E"
+        enabled: picasaMenuBar.photoActionsEnabled
+        onActivated: picasaMenuBar.emailRequested()
     }
 
     // #1798: a küldési út két visszajelzése. A `mailChoiceRequested` a

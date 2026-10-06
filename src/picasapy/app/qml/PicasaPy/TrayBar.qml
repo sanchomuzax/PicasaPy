@@ -123,6 +123,17 @@ Column {
             ? tray.appWindow.selectedIndexes
             : []
 
+    // #4329: a Ctrl+H ugyanazt a jelzést küldi, mint a helyi menü
+    // „Hold Selection” tétele; így egyetlen út tartja meg a kijelölést.
+    Shortcut {
+        objectName: "trayKeepSelectionShortcut"
+        sequence: "Ctrl+H"
+        enabled: tray.appWindow
+                 && !tray.appWindow.viewerOpen
+                 && tray.selectedIndexesOrEmpty.length > 0
+        onActivated: trayContextMenu.keepSelectionRequested()
+    }
+
     // =====================================================================
     // #455: A KIJELÖLÉS AUTOMATIKUSAN A TÁLCÁBA KERÜL
     // =====================================================================

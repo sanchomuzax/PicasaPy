@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A felső menüsor e-mail-, képmegnyitási, megjelenítési és arc-visszaállítási parancsai működnek, a Ctrl+H pedig rögzíti a képtálca kijelölését (#4329).
+
 ## [0.9.11] – 2026-10-06
 
 - A fel nem használt belső vezérlők kikerültek a felületi műveletlistából. (#4316).
