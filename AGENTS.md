@@ -128,3 +128,6 @@ lehetőleg különböző sávokból végy jegyeket.
   `packaging/qt-runtime-deps.txt`); a CI és a session-hook egyaránt a
   `scripts/print_dependencies.py`-n át telepít — tételes listát sehova ne írj.
 - Közreműködés: `CONTRIBUTING.md`.
+- Felhasználói változáshoz a Codex-feladatbrief írja elő a
+  `changelog.d/<jegyszám>.md` darabot; PR-ben ne kérjen közvetlen
+  `CHANGELOG.md`-módosítást. A kiadás fűzi össze a darabokat.

@@ -152,6 +152,7 @@ MenuBar {
     // #4329: a felső Fájl/Kép/Nézet belépők ugyanazt az útvonalat kérik,
     // amelyet a tálca vagy a kép helyi menüje már használ.
     signal emailRequested()
+    signal openInEditorRequested()
     signal viewAndEditRequested()
     signal unhideRequested()
     signal resetFacesRequested()
@@ -527,10 +528,14 @@ MenuBar {
         // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
         PicasaMenuItem { text: qsTr("Import From Google Photos..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
-        // hiányzott (#324 audit): fájl(ok) megnyitása a szerkesztőben
-        // #1616: a felirat Ctrl+Shift+O-t hirdetett, de a funkció teljesen
-        // hiányzik (a tétel helyfoglaló) — a billentyű lekerült a feliratról.
-        PicasaMenuItem { text: qsTr("&Open File(s) in an Editor"); placeholder: true }
+        // #4330: a kijelölt fájlokat a rendszer alapértelmezett
+        // alkalmazásában nyitja meg; a billentyű a Main.qml-ben ugyanide fut.
+        MenuItem {
+            objectName: "menuFileOpenInEditor"
+            text: qsTr("&Open File(s) in an Editor") + "\tCtrl+Shift+O"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.openInEditorRequested()
+        }
         MenuSeparator {}
         // #1614: ÉLŐ tétel — MÉRVE (`git log -S'ID_FILE_NEWFOLDER'`) a
         // tétel a #324 audit óta helyfoglaló volt, holott a parancs neve
@@ -761,6 +766,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        objectName: "menuView"
         title: qsTr("&View")
         MenuItem {
             objectName: "menuViewLibraryView"
@@ -863,8 +869,23 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): a szerkesztő panel láthatóság-kapcsolója
-        PicasaMenuItem { text: qsTr("Show Edit Controls"); checkable: true; placeholder: true }
+        // #4336: ugyanaz a tartós állapot vezérli, mint a PhotoViewer bal fiókját.
+        PicasaMenuItem {
+            objectName: "menuViewEditControls"
+            text: qsTr("Show Edit Controls")
+            placeholder: false
+            checkable: true
+            checked: (bar.ctl && bar.ctl.editorControlsVisible !== undefined)
+                ? bar.ctl.editorControlsVisible : true
+            onTriggered: {
+                if (bar.ctl && bar.ctl.setEditorControlsVisible !== undefined)
+                    bar.ctl.setEditorControlsVisible(!bar.ctl.editorControlsVisible)
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.editorControlsVisible !== undefined)
+                        ? bar.ctl.editorControlsVisible : true
+                })
+            }
+        }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         MenuItem {

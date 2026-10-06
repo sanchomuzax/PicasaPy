@@ -27,6 +27,7 @@ előbb-utóbb elcsúszna egymástól.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -355,6 +356,31 @@ def van_uj_bejegyzes(changelog_diff: str) -> bool:
     return False
 
 
+def van_uj_kiadatlan_bejegyzes(changelog_diff: str) -> bool:
+    """Ad-e hozzá ez a PR új felsorolást a Nem kiadott szakaszhoz?
+
+    A unified diff új oldalát követjük: a törölt sorok nem módosítják a
+    szakaszállapotot, az új és a kontextussorok viszont igen. A hívó teljes
+    CHANGELOG-diffet kér, hogy távoli módosításnál is lássuk a szakaszcímet.
+    """
+    nem_kiadottban = False
+    for sor in changelog_diff.splitlines():
+        if not sor or sor.startswith(("+++", "---")):
+            continue
+        jel = sor[0]
+        if jel == "-":
+            continue
+        if jel not in " +":
+            continue
+        tartalom = sor[1:].strip()
+        if tartalom.startswith("## "):
+            nem_kiadottban = tartalom == KIADATLAN_CIM
+            continue
+        if jel == "+" and nem_kiadottban and tartalom.startswith(("- ", "* ")):
+            return True
+    return False
+
+
 #: A verzióemelő diff `+version = "X"` sora — ebből tudjuk, MELYIK kiadás
 #: születik a beolvadáskor.
 _EMELT_VERZIO = re.compile(r'^\+version\s*=\s*"([^"]+)"', re.MULTILINE)
@@ -462,7 +488,7 @@ def main(
             print("Csak a verziósor változott — ez az automatika saját PR-je.")
             return 0
 
-    if not erdemi:
+    if not erdemi and "CHANGELOG.md" not in fajlok:
         print("A változás nem jut el a felhasználóhoz — nem kell CHANGELOG-bejegyzés.")
         return 0
 
@@ -474,8 +500,11 @@ def main(
     except OSError:
         naplo = ""
 
+    # A teljes fájl-kontextus kell, hogy egy új sort a megfelelő szakaszhoz
+    # rendeljünk akkor is, ha messze van a CHANGELOG tetejétől.
     diff = runner([
-        "git", "diff", f"{beallitas.base}...{beallitas.head}", "--", "CHANGELOG.md",
+        "git", "diff", "-U100000",
+        f"{beallitas.base}...{beallitas.head}", "--", "CHANGELOG.md",
     ])
     # #1770 (3. réteg): ha ez a PR verziót emel, a naplóban legyen HOZZÁ
     # tartozó, megnevezett szakasz. A `[Nem kiadott]`-ban hagyott bejegyzést
@@ -502,7 +531,24 @@ def main(
         )
         return 1
 
-    if van_uj_bejegyzes(diff.stdout or ""):
+    changelog_diff = diff.stdout or ""
+    kozvetlen_kiadatlan = van_uj_kiadatlan_bejegyzes(changelog_diff)
+    if kozvetlen_kiadatlan:
+        szigoru = os.environ.get("PICASAPY_CHANGELOG_STRICT") == "1"
+        jel = "::error" if szigoru else "::warning"
+        print(
+            f"{jel} title=Használj CHANGELOG-darabfájlt::"
+            "Új sort írtál a CHANGELOG.md Nem kiadott szakaszába. "
+            "Tedd át a saját changelog.d/<jegyszám>.md fájlodba. "
+            "Szigorú mód: PICASAPY_CHANGELOG_STRICT=1."
+        )
+        if szigoru:
+            return 1
+
+    if not erdemi:
+        return 0
+
+    if van_uj_bejegyzes(changelog_diff):
         print("Van új CHANGELOG-bejegyzés — rendben.")
         return 0
 
