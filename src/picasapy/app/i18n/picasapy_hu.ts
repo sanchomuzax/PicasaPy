@@ -1056,6 +1056,10 @@ A változás a program következő megnyitásakor lép érvénybe.</translation>
         <translation>Rendelkezésre álló nyomtatási méretek:</translation>
     </message>
     <message>
+        <source>Previews:</source>
+        <translation>Előnézetek:</translation>
+    </message>
+    <message>
         <source>Print size %1:</source>
         <translation>Nyomtatási méret %1:</translation>
     </message>
