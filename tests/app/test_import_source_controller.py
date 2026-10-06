@@ -109,20 +109,23 @@ def _scan(controller, folder: str):
 
 
 class TestScanSource:
-    def test_emits_started_before_finished(self, controller, tmp_path):
+    def test_scan_keeps_only_the_result_signal_for_its_start_state(
+        self, controller, tmp_path
+    ):
+        assert not hasattr(controller, "sourceScanStarted")
+
         source = tmp_path / "kartya"
         source.mkdir()
         make_jpeg(source / "a.jpg")
 
         events = []
-        controller.sourceScanStarted.connect(lambda: events.append("started"))
         controller.sourceScanFinished.connect(
             lambda items, count: events.append("finished")
         )
         controller.scanSource(str(source))
         _megvar_hattermunkat(controller)
 
-        assert events == ["started", "finished"]
+        assert events == ["finished"]
 
     def test_finds_pictures_with_thumb_urls(self, controller, tmp_path):
         source = tmp_path / "kartya"

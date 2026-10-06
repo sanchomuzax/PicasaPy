@@ -3034,6 +3034,109 @@ LUT-tal 256/256 elemben egyezik. A projekt mai
 29/49 alfabájtban egyezik, 20/49-ben eltér, legfeljebb 3-mal; tehát ez a
 golden még nem igazolja a projekt pixelpontos egyezését.
 
+**#4368 újramérés: a 7×7-es golden forrása nem reprodukálható (2026-10-06).**
+Az eredeti EXE-n a `0x00bbaa90` csempeépítőt futtattam egy kézzel
+felépített 7×7 próbarekorddal; annak skálamezőibe a harness `0.8f`-et írt
+(float32 értéke `0.800000011920929`), a margók `0`, az `alphaMin` `0.0`,
+az `alphaMax` `1.0` volt.
+Az `0x008f3840` hívás QEMU-n mért öt float argumentuma
+`(5.599999904632568, 5.599999904632568, 0.0, 0.7000000476837158, 0.7000000476837158)`;
+a workernek átadott 3×3-as float32 mátrix
+`[[0.00341796875, 0, 3.5], [0, 0.00341796875, 3.5], [0, 0, 1]]`.
+Ezek **mérések** (QEMU hook a `0x008f3840` belépésén és az
+`0x008f3970` worker belépésén), nem becsült értékek. Az `0x00a4a140`
+inverzáló út után a worker a hat affin együtthatót a `0x00cf48f0`
+konstanssal szorozza float32 tárolás előtt (`0x008f3b1b`–`0x008f3b59`);
+az egész pixelindexből képzett koordináta, a `SQRTPS` és a `CVTPS2DQ` útja
+`0x008f3b61`–`0x008f3ba3`, illetve `0x008f3cf0`–`0x008f3cfd`.
+
+Az x és y float32 koordináta mindkét tengelyen ugyanaz a hét mért érték
+(mérés: az `xmm7` a `0x008f3cf0` előtt; az x87 `ST(0)` a `0x008f3ca4` előtt):
+
+```text
+-81600.0, -58285.71484375, -34971.4296875, -11657.14453125,
+ 11657.140625, 34971.42578125, 58285.7109375
+```
+
+A `SQRTPS` utáni, CVTPS2DQ előtti float32 `d` mérése képpontonként
+(mérés: a `0x008f3cf6` előtt):
+
+```text
+115399.828125 100278.531250  88778.156250  82428.445312  82428.445312  88778.156250 100278.531250
+100278.531250  82428.445312  67972.242188  59439.996094  59439.996094  67972.234375  82428.445312
+ 88778.156250  67972.242188  49457.070312  36863.125000  36863.121094  49457.066406  67972.234375
+ 82428.445312  59439.996094  36863.125000  16485.691406  16485.689453  36863.121094  59439.996094
+ 82428.445312  59439.996094  36863.121094  16485.689453  16485.685547  36863.117188  59439.996094
+ 88778.156250  67972.234375  49457.066406  36863.121094  36863.117188  49457.062500  67972.234375
+100278.531250  82428.445312  67972.234375  59439.996094  59439.996094  67972.234375  82428.445312
+```
+
+A worker SIMD-ágának QEMU-n naplózott, képpontonkénti nyers Q8.8 `q_raw`
+értékei (mérés: `CVTPS2DQ`, `0x008f3cf6`–`0x008f3cfd`; utána
+`q=min(q_raw,0xff00)`, clamp: `0x008f3d02`–`0x008f3d16`):
+
+```text
+115400 100279  88778  82428  82428  88778 100279
+100279  82428  67972  59440  59440  67972  82428
+ 88778  67972  49457  36863  36863  49457  67972
+ 82428  59440  36863  16486  16486  36863  59440
+ 82428  59440  36863  16486  16486  36863  59440
+ 88778  67972  49457  36863  36863  49457  67972
+100279  82428  67972  59440  59440  67972  82428
+```
+
+Az eredményt a worker valódi, belső `CImage`-pufferéből olvastam ki
+(`CImage+0x10 = 0x10100010`, mérés); a külön előre kiosztott próba-buffer
+nem a worker kimenete. A QEMU alfa-mátrix mind a 49 pixelre:
+
+```text
+  0   0   0   0   0   0   0
+  0   0   0  21  21   0   0
+  0   0  60 110 110  60   0
+  0  21 110 189 189 110  21
+  0  21 110 189 189 110  21
+  0   0  60 110 110  60   0
+  0   0   0  21  21   0   0
+```
+
+Ez a tárolt 7×7-es aranyképpel **31/49 pixelben egyezik**, nem 49/49-ben.
+A tesztben tárolt aranykép 49 alfa-bájtjának SHA-256 hash-e
+`8ff3d9ce8643df08ddf6284f8d5d81b31eda35c5a19e81d2e555499da67f5c14`.
+A 18 eltérés `(x,y): QEMU → arany` alakban:
+`(3,1):21→20`, `(4,1):21→20`, `(2,2):60→59`, `(3,2):110→108`,
+`(4,2):110→109`, `(1,3):21→20`, `(2,3):110→108`, `(3,3):189→188`,
+`(6,3):21→22`, `(1,4):21→20`, `(2,4):110→109`, `(4,4):189→191`,
+`(5,4):110→111`, `(6,4):21→23`, `(4,5):110→111`, `(5,5):60→62`,
+`(3,6):21→22`, `(4,6):21→23`.
+
+**Két út és cáfolat.** Az utasításszintű út a `0x008f3840` →
+`0x00a4a140` → `0x008f3970` transzformációs és LUT-indexelő lépéseket
+mutatja; a független dinamikus út az eredeti `0x00bbaa90` hívást,
+a worker float32 köztes értékeit és a belső puffer nyers bájtjait naplózta.
+A QEMU `CVTPS2DQ`-s és `FISTP`-s módjának teljes 196 bájtos kimeneti hash-e
+egyaránt `1c40c7b1c5d0d7b2b409389a6e2f569bc15ff41e342482dde22fc3999176bb4d`;
+az alfa 49 bájtjának hash-e mindkét módban
+`32b278756b32a68b5c9dd5efffa21c8b108a114c8c24dd16b8cdc6d806fea658`;
+mindkét futás 31/49 pixelt egyeztet a tárolt goldennel. Ez cáfolja azt a
+magyarázatot, hogy önmagában a SIMD és skalár kerekítési ág közti választás
+adná a 18 pixelnyi eltérést. A mért `q` mátrixra a spec LUT-jával futtatott
+Python Q8.8-referencia 49/49 alfa-bájtban egyezik **ezzel az új QEMU-kimenettel**,
+de csak 31/49-ben a rögzített goldennel.
+
+**Állapot: nyitott.** A két út egyezik az itt reprodukált `0x00bbaa90`
+pixelmag-kimenetéről, de egyik sem állít elő a rögzített goldennel egyező
+köztes `q` értékeket. A korábbi golden-feljegyzésben szereplő pontos
+hívási rekord és pufferkinyerés nem áll rendelkezésre olyan formában,
+amellyel ez az újramérés megismételhető lenne. Emiatt a goldenhez vezető
+hiányzó affin/kerekítési lépés **NINCS MEG**; a képletet nem javítom
+illesztett paraméterrel. A #4326 pixelmag-fejlesztése addig nem tekinthető
+megalapozottnak, amíg a 7×7 golden pontos QEMU-hívási kontextusa nem
+reprodukálható.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Az itt újramért eredeti `0x00bbaa90` út a megadott paraméterekkel a fenti 7×7 mátrixot adja. | A `native_dot_mask(7,7,7)` ugyanezt a mátrixot célozza; az egyezése a visszakeresett goldenhez 31/49. | A golden előállításának pontos QEMU-hívási rekordját és belső pufferkinyerését kell reprodukálhatóan rögzíteni. Ezután lehet a tényleges eltérő koordinátát/műveleti sorrendet mérni és csak bizonyíték alapján fejleszteni; addig a #4326 pixelmag-javítása nincs megalapozva. |
+
 ##### A teljes csemperács QEMU-goldenje (2026-10-06)
 
 A változatlan eredeti EXE (`SHA-256:
