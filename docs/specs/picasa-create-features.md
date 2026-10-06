@@ -2151,34 +2151,83 @@ rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
 
 | rekordmező | `.mxf` név | író utasítás | amit a bizonyíték megenged |
 |---|---|---|---|
-| `+0x14` (előjeles bájt) | `facemoviesrc` | `0x00816aa6` | a kiírt forrásérték; hogy ez arcazonosító-e, és melyik névtérben, **nem ismert** |
-| `+0x18` | `facerectx0` | `0x00816976` | az XML-be írt x0 érték; mértékegysége és koordináta-rendszere **nem ismert** |
-| `+0x1c` | `facerecty0` | `0x008169c2` | az XML-be írt y0 érték; mértékegysége és koordináta-rendszere **nem ismert** |
-| `+0x20` | `facerectx1` | `0x00816a0e` | az XML-be írt x1 érték; mértékegysége és koordináta-rendszere **nem ismert** |
-| `+0x24` | `facerecty1` | `0x00816a5a` | az XML-be írt y1 érték; mértékegysége és koordináta-rendszere **nem ismert** |
+| `+0x14` (előjeles bájt) | `facemoviesrc` | `0x00816aa6` | a szerializáló kiírja; az író `0x00814fe5` a jogosult kliprekordban `1`-re állítja, ezért ez az útvonalon jelző, nem arcazonosító |
+| `+0x18` | `facerectx0` | `0x00816976`; beíró: `0x0081510a` | a kiválasztott arcrekord első dwordje változtatás nélkül kerül ide; koordináta-rendszere és egysége **nincs meg** |
+| `+0x1c` | `facerecty0` | `0x008169c2`; beíró: `0x00815110` | a második dword változatlan másolata; koordináta-rendszere és egysége **nincs meg** |
+| `+0x20` | `facerectx1` | `0x00816a0e`; beíró: `0x00815116` | a harmadik dword változatlan másolata; koordináta-rendszere és egysége **nincs meg** |
+| `+0x24` | `facerecty1` | `0x00816a5a`; beíró: `0x00815120` | a negyedik dword változatlan másolata; koordináta-rendszere és egysége **nincs meg** |
 
 Ez a kiíró a rekordból olvas és `%d`-ként szerializál; önmagában nem
-bizonyítja, hogy a négy érték képpont, arcdetektor-téglalap, végső crop,
-vagy milyen átalakítás eredménye. Nincs bizonyíték margóra,
-képarányra, szemmagasságra vagy szemekhez igazításra.
+bizonyítja, hogy a négy érték képpont vagy végső crop. Az íróút most
+feltárt: a `0x00814f30` a `+0x48` kliplistát `0xf8` lépésközzel járja;
+az `+0x0 == 3` rekordnál a `+0x8` értéket a `0x0081e2d0` selector
+paramétereként használja, és a rekord `+0x14` bájtját `1`-re állítja
+(`0x00814fe5`). A `0x0081e2d0` a selectorral indexeli a modell
+`+0x4e8` maplistáját, a kapott rectindexet ellenőrzi a `+0x4e4` counttal,
+majd a `+0x4e0` táblából, `0x38` bájtos lépésközzel kiválasztott rekord
+első négy dwordjét másolja a kimenetbe (`0x0081e2d5`–`0x0081e31c`).
+Érvénytelen selector vagy rectindex esetén mind a négy kimeneti dword 0.
+Ezeket a dwordöket a `0x00814f30` közvetlenül a klip `+0x18…+0x24`
+mezőibe teszi; ezen az úton nincs margó-, képarány- vagy szemigazítási
+számítás. A `+0x8` mező tehát maplistabeli selector; személy- vagy
+kontaktazonosítóval való azonossága **nincs meg**.
+
+**Független futáspróba a másolásra:** a
+`picasa-arcfelismeres.md` ismert példájából
+(`faces=rect64(27c00680d8ffdb3f),ffffffffffffffff`) a már dokumentált
+`rect64` bitelrendezés szerinti `[0x27c0, 0x0680, 0xd8ff, 0xdb3f]`
+dwordöket adtuk a `0x0081e2d0`-nak QEMU-harnessben, egy szintetikus
+`0x38`-as táblaelemen keresztül. A kimenet ugyanez a négy dword lett
+(`c027000080060000ffd800003fdb0000`). Ez a helper nyers másolását
+megerősíti, de **nem** futtatja az INI-betöltéstől a timeline-ig vezető
+teljes utat, és nem igazolja a dwordök koordináta-jelentését. A statikus
+utasításolvasás és a QEMU-eredmény egyezése a másolásra
+**megerősített** bizonyíték; a forrásrekord eredeti jelentése és a
+lejátszási crop továbbra is nyitott.
 
 A gyökérmodell `+0x2c7` bájtja a `facemovie`, `+0x2c8` bájtja a
 `removelowresfaces`, `+0x2c5` bájtja a `cropfit` értéke; a
 `0x00816b00` ezeket a gyökérelembe írja. A `0x006175c0` a
 `removelowresfaces` értéket ötödik paraméterként adja át a
-`0x0081b800`-nak (`0x00617810`), de a kis felbontás mérőszáma és a
-küszöbérték **nincs meg**. A kimeneti felbontás értékei és az
-arcfilm-alapérték már a 2.8/b szakaszban szerepelnek; a modell
-`+0x2a8/+0x2ac` mezője adja át a szélességet/magasságot. Ebből nem
-következik arc-specifikus cropfelbontás.
+`0x0081b800`-nak (`0x00617810`): az opció forrása a
+`makemoviepanel/remove_low_res_faces` beállítás (`0x00617704`), panelbeli
+bájtja `+0x359` (`0x0061778b`), és a modell `+0x2c8` mezőjébe is ez kerül
+(`0x0061790a`). Ha az ötödik paraméter nem nulla, a `0x0081b800` meghívja
+a `0x0081b150` szűrőt (`0x0081b8b2`–`0x0081b8b9`). A szűrő a
+`+0x4e0` táblában levő képre több, `0xe0` lépésközű csoportot jár be;
+csoportonként a négy `0x38`-as rekordot a `+0x00`, `+0x38`, `+0x70`,
+`+0xa8` helyeken vizsgálja. Minden rectnél a pontos nyers feltétel:
+
+| vizsgált rectmező | pontos feltétel | kimeneti maszkbájt |
+|---|---|---|
+| `dword[rect+8] - dword[rect]` | az egész szélességet floatként `136.5`-tel hasonlítja; ha `< 136.5` (egész szélességnél legfeljebb `136`) | `1` |
+| `dword[rect+0x10]` | csak ha az előző feltétel nem teljesült; floatként `0.0`-val egyenlő | `1` |
+| a fenti kettő közül egyik sem | szélesség `>= 136.5` és a `+0x10` float nem nulla | `0` |
+
+A küszöb konstansa `0x00cf49f4`, binárisból kiolvasott IEEE-754
+single értéke **136.5**; a `+0x10` mező szemantikai neve **nincs meg**.
+A QEMU-harness a szűrőt közvetlenül hívta szintetikus rectrekordokkal:
+`(136,1.0) → 1`, `(137,1.0) → 0`, `(137,0.0) → 1`,
+`(136,0.0) → 1` (kimeneti hex: `01000101`). A diszasszemblálás és a
+QEMU-mérés egyezik, ezért a küszöb és a maszkfeltétel
+**megerősített**; ez nem azonosítja a `+0x10` mező jelentését.
+
+Az arcfilm kimeneti felbontásának kulcsa és alapértéke a 2.8/b szerint
+`facemakemovieres`, indexe `3`, alapértéke **1024×768**; a modell
+`+0x2a8/+0x2ac` mezője adja át a szélességet/magasságot. Ez a kimeneti
+felbontás, nem a forrás arctéglalap cropképlete.
 
 Nyitott, blokkoló visszafejtési kérdések:
 
-- **Ghidra-kör kell: 0x008127b0 —** kövesd a kliprekordot az arcmezők írójától/olvasójától a renderelt képkivágásig; add meg a crop koordináta-rendszerét, mértékegységét, margóját, képarányát és a szemekhez igazítás képletét, ha van. **[blokkoló]**
-- **Ghidra-kör kell: 0x0081b800 —** kövesd a `removelowresfaces` ágat a vizsgált arcméretig/mérőszámig és az azt összehasonlító pontos konstansig; nevezd meg az összehasonlítás irányát is. **[blokkoló]**
+`0x008127b0` a `0x00810420`-nak a timeline objektumot és annak `+0x1a8` staging-objektumát adja át (`0x008128a2`–`0x008128aa`). A `0x00810420` közvetlenül olvassa a staging-objektum `+0x14` bájtját, de nincs benne közvetlen `+0x18…+0x24` operandus; a cropfogyasztó az indirekt hívások mögött maradt.
 
-A képlet és a hozzá tartozó bemenet híján qemu-harness mérés nem készült;
-ezért nincs független mért igazolás a kivágásról vagy a küszöbről.
+Ghidra-kör kell: 0x008127b0 — kövesd a timeline renderútvonalat a `0x00810420` indirekt hívásain át addig a fogyasztóig, amely az `0x00814f30` által klipbe másolt `facerect*` mezőket képkivágássá alakítja; add meg a `.picasa.ini` `rect64` és a `+0x4e0` recttábla kapcsolatát, a koordináta-rendszert, egységet, margó-, képarány- és szemigazítási képletet, ha van. [blokkoló]
+- **NINCS MEG:** a low-res maszk `rect+0x10` mezőjének szemantikai neve; a pontos bináris feltétel és a 136.5 küszöb már ismert.
+
+**Bizonyítottsági határ:** a klipmezők nyers másolása és a low-res maszk
+képlete a diszasszemblálás és az elkülönített QEMU-futás egyezésével
+megerősített. A tényleges lejátszási cropképlet nincs meg; a QEMU-próbák
+nem hajtották végre az INI-betöltést vagy a teljes timeline-renderelést.
 
 Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
 forrás-URL-jeit adja át (`Main.qml:728–734`,
@@ -2485,6 +2534,17 @@ csoportazonosítókat és metrikaértékeket adott meg. A scorerig eljutott, de 
 ciklusnál 30 másodperc után időtúllépéssel leállt; nem adott vissza végső
 fotóindexet. Ez a sikertelen hámpróba nem független mérés a végső
 kiválasztási szabályra.
+
+**Új teljesfüggvény-próba (#4194, 2026-10-06; eredmény nélkül):** a natív
+`0x0081b800` hívás `length=2`, `ordering=0`, `burstmodethresh=3600`,
+`removelowresfaces=0` értékeket kapott; a négy rekord dátumlekérdezése a
+`[0, 1000, 3600, 4600]` másodperces FILETIME-listát adta. A collection,
+a `0x00873170`-hez beállított, `1.0`-t visszaadó scorer, a dátumlekérdező
+és az allokátorhám szintetikus volt. A futás belépett a `0x0081c9b0`
+kiválasztóba, majd 12 másodperces QEMU-időtúllépéssel megállt a
+`0x0081d310` jelöltlista-ciklusban; a `0x00873170` getterig nem jutott el,
+végső fotóindexet nem adott. Ez a futás a kiválasztási eredményre nem
+bizonyíték.
 
 A kiválasztás utáni `0x0081b800` kód a jelöltindexet `[obj+0x4f0]`
 leképezőtáblán át használja `[obj+0x4e0] + index*0x38` fotórekord

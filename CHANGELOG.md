@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.23] – 2026-10-06
+
+- A Névcímkék fül csúszkái mellett megjelenik az értékük és a beosztásuk, az elrendezés az eredetihez igazodik, a megszűnt Google Contacts feltöltési sor pedig rejtve marad (#4358).
+- A Kép menü Elrejtés és Megjelenítés parancsai a kijelölt képeken is működnek (#4409).
+
+## [0.9.22] – 2026-10-06
+
+- A nyelvválasztó mind a 41 nyelvhez betölti a Picasa eredeti fordításait és a PicasaPy-szövegeket tartalmazó szótárat (#4313).
+
 ## [0.9.21] – 2026-10-06
 
 - A Nyomtatás fül méretválasztói két oszlopban, középre rendezve jelennek meg, alattuk bal oldali csoportfeliratokkal (#4385).
