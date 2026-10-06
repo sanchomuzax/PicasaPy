@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
+from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtTest import QTest
 
 from support.qt_wait import varj_feltetelre
 
 _KEEPALIVE = []
+
+
+def _kozeppont(qt_app, elem):
+    """A kattintás helye csak elrendezés UTÁN számolható: CI-n az első
+    képkockánál a méret még 0, és a kattintás mellémegy."""
+    assert varj_feltetelre(qt_app, lambda: elem.width() > 0 and elem.height() > 0, 3.0)
+    return elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
 
 
 def _parbeszed(qt_app, magassag: int):
@@ -43,6 +50,7 @@ def _parbeszed(qt_app, magassag: int):
     _KEEPALIVE.extend((engine, component, window))
     QMetaObject.invokeMethod(dialog, "open", Qt.ConnectionType.DirectConnection)
     assert varj_feltetelre(qt_app, lambda: dialog.property("opened"), 3.0)
+    assert QTest.qWaitForWindowExposed(window)
     return window, dialog
 
 
@@ -61,14 +69,14 @@ def test_a_jelolo_es_a_fajlvalaszto_a_valodi_vezerloket_kapcsolja(
     assert path.property("enabled") is False
     assert browse.property("enabled") is False
 
-    point = checkbox.mapToScene(checkbox.boundingRect().center()).toPoint()
+    point = _kozeppont(qt_app, checkbox)
     QTest.mouseClick(window, Qt.MouseButton.LeftButton,
                      Qt.KeyboardModifier.NoModifier, point)
     assert varj_feltetelre(qt_app, lambda: checkbox.property("checked"), 3.0)
     assert path.property("enabled") is True
     assert browse.property("enabled") is True
 
-    point = browse.mapToScene(browse.boundingRect().center()).toPoint()
+    point = _kozeppont(qt_app, browse)
     QTest.mouseClick(window, Qt.MouseButton.LeftButton,
                      Qt.KeyboardModifier.NoModifier, point)
     assert varj_feltetelre(
