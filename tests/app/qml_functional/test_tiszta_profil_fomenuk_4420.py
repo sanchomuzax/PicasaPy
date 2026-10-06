@@ -29,6 +29,23 @@ _MENUK = (
     ("Help", "&Help"),
     ("File", "&File"),
 )
+#: A három rendszermappa-gyökér: ha a mappa ezen a gépen nem létezik (CI),
+#: az eredeti szerint csendben a teljes fára esik vissza (spec 4.6), így
+#: nincs látható változás. Létező mappánál a hatást továbbra is megköveteli.
+_RENDSZERGYOKER_TETELEK = {
+    "menuViewRootMyPictures": ("mypics", "mydocs"),
+    "menuViewRootMyDocuments": ("mydocs",),
+    "menuViewRootDesktop": ("desktop",),
+}
+
+
+def _rendszergyoker_hianyzik(nev: str) -> bool:
+    from picasapy.app.folder_hierarchy_controller import _rendszermappa
+
+    tokenek = _RENDSZERGYOKER_TETELEK.get(nev)
+    return bool(tokenek) and not any(_rendszermappa(t) for t in tokenek)
+
+
 _NINCS_LATHATO_HATAS = {
     "menuEditCut": (
         "Nincs látható változás: vágólap-művelet, a bejáró előtte/utána "
@@ -554,6 +571,14 @@ def _allapot(ablak, vezerlo, minta):
             continue
         if ertek is not None:
             ablakertekek[tulajdonsag] = ertek
+    # A mappanézet gyökere a menü saját állapota: Képek mappa nélküli
+    # gépen (CI) a fa nem változik, a választott gyökér viszont igen.
+    mappanezet = ablak.findChild(QObject, "menuViewFolderView")
+    if mappanezet is not None:
+        for tulajdonsag in ("viewRootToken", "albumThumbsMode"):
+            ertek = _ertek(mappanezet.property(tulajdonsag))
+            if ertek is not None:
+                ablakertekek[f"mappanezet.{tulajdonsag}"] = ertek
 
     beallitasok = QSettings(
         str(minta.parent / "settings.ini"), QSettings.Format.IniFormat
@@ -1032,6 +1057,11 @@ def _akcio(ablak, vezerlo, minta, menu_bar, qt_app, cim, leiras, cel, kulsok):
         elif nev in _NINCS_LATHATO_HATAS or (cim, parancs) in _NINCS_LATHATO_HATAS_UTVONAL:
             eredmeny = _NINCS_LATHATO_HATAS.get(
                 nev, _NINCS_LATHATO_HATAS_UTVONAL.get((cim, parancs), "")
+            )
+        elif _rendszergyoker_hianyzik(nev):
+            eredmeny = (
+                "a rendszermappa ezen a gépen nem létezik: visszaesés a teljes "
+                "fára, az eredeti szerint (spec 4.6)"
             )
         elif nev == "menuFileExit":
             eredmeny = "a kilépési parancs a kattintásra elsült"
