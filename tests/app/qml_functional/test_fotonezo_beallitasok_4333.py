@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QObject, QPointF, Qt
+from PySide6.QtCore import QObject, QPointF, QSettings, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.app.color_management_controller import coerce_color_management_flag
@@ -36,6 +36,24 @@ def _kattintas(window, qt_app, elem):
         szulo = szulo.parentItem()
     pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
     QTest.mouseClick(
+        window,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        pont,
+    )
+    qt_app.processEvents()
+
+
+def _dupla_kattintas(window, qt_app, elem):
+    assert varj_feltetelre(
+        qt_app, lambda: elem.width() > 0 and elem.height() > 0, 3.0
+    ), f"{elem.objectName()}: nem kattintható"
+    szulo = elem
+    while szulo is not None:
+        szulo.ensurePolished()
+        szulo = szulo.parentItem()
+    pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
+    QTest.mouseDClick(
         window,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
@@ -121,3 +139,80 @@ def test_photo_viewer_settings_component_loads_without_controller(qt_app):
     dialog.deleteLater()
     engine.deleteLater()
     qt_app.processEvents()
+
+
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
+def test_fullscreen_startup_checkbox_saves_and_leaves_the_library_viewer_windowed(
+    qml_app, qt_app, height_delta
+):
+    window, controller, _engine = qml_app
+    window.resize(window.width(), window.height() + height_delta)
+    qt_app.processEvents()
+
+    assert controller.viewerFullscreenStartup is True
+    _fotonezo_beallitasok_nyitasa(window, qt_app)
+    dialog = _gyerek(window, "photoViewerSettingsDialog")
+    assert varj_feltetelre(qt_app, lambda: dialog.property("opened"), 3.0)
+
+    fullscreen = _gyerek(window, "photoViewerFullscreenStartupCheck")
+    assert fullscreen.property("text") == (
+        "Fullscreen startup (requires restart of Photo Viewer to take effect)"
+    )
+    assert fullscreen.property("checked") is True
+
+    _kattintas(fullscreen.window(), qt_app, fullscreen)
+    assert varj_feltetelre(
+        qt_app, lambda: controller.viewerFullscreenStartup is False, 3.0
+    )
+    controller._get_settings().sync()
+    saved = QSettings(
+        controller._get_settings().fileName(), QSettings.Format.IniFormat
+    )
+    assert int(saved.value("ViewerFullscreenStartup")) == 0
+    QTest.keyClick(window, Qt.Key.Key_Escape)
+    assert varj_feltetelre(qt_app, lambda: not dialog.property("opened"), 3.0)
+
+    mouse_area = _lathato_elem(
+        window, lambda elem: elem.objectName() == "thumbMouseArea"
+    )
+    assert mouse_area is not None, "a rács első képe nem látható"
+    _dupla_kattintas(window, qt_app, mouse_area)
+    assert varj_feltetelre(qt_app, lambda: window.property("viewerOpen"), 3.0)
+    assert varj_feltetelre(
+        qt_app,
+        lambda: window.visibility() == window.Visibility.Windowed,
+        3.0,
+    )
+
+    vissza = _gyerek(window, "viewerBackButton")
+    _kattintas(window, qt_app, vissza)
+    assert varj_feltetelre(qt_app, lambda: not window.property("viewerOpen"), 3.0)
+
+    _fotonezo_beallitasok_nyitasa(window, qt_app)
+    assert varj_feltetelre(qt_app, lambda: dialog.property("opened"), 3.0)
+    fullscreen = _gyerek(window, "photoViewerFullscreenStartupCheck")
+    assert fullscreen.property("checked") is False
+    _kattintas(fullscreen.window(), qt_app, fullscreen)
+    assert varj_feltetelre(
+        qt_app, lambda: controller.viewerFullscreenStartup is True, 3.0
+    )
+    controller._get_settings().sync()
+    saved.sync()
+    assert int(saved.value("ViewerFullscreenStartup")) == 1
+    QTest.keyClick(window, Qt.Key.Key_Escape)
+    assert varj_feltetelre(qt_app, lambda: not dialog.property("opened"), 3.0)
+
+    mouse_area = _lathato_elem(
+        window, lambda elem: elem.objectName() == "thumbMouseArea"
+    )
+    assert mouse_area is not None, "a rács első képe nem látható"
+    _dupla_kattintas(window, qt_app, mouse_area)
+    assert varj_feltetelre(qt_app, lambda: window.property("viewerOpen"), 3.0)
+    assert varj_feltetelre(
+        qt_app,
+        # #4432: a beállítás az eredeti ÖNÁLLÓ Fotónézőé (PicasaPhotoViewer.exe);
+        # a könyvtár beépített nézője bekapcsolt állapotban sem vált teljes
+        # képernyőre — ez működő viselkedés, nem írhatja felül.
+        lambda: window.visibility() == window.Visibility.Windowed,
+        3.0,
+    )

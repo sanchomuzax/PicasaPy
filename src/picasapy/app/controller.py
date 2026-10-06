@@ -46,6 +46,7 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
+from .viewer_startup_controller import ViewerStartupMixin
 from .frame_capture_controller import FrameCaptureMixin
 from .movie_trim_controller import MovieTrimMixin
 from .batch_effect_controller import BatchEffectMixin
@@ -174,6 +175,7 @@ class AppController(
     TesztuzemMixin,
     AppearanceMixin,
     ColorManagementMixin,
+    ViewerStartupMixin,
     MovieTrimMixin,
     # #1838: a `capture_frame` — a vágás-szelet `_vago_sor` kapuját használja
     FrameCaptureMixin,
@@ -316,6 +318,7 @@ class AppController(
         self._init_appearance()
         self._init_editor_controls()
         self._init_color_management()  # #1725
+        self._init_viewer_startup()  # #4432
         self._init_language()
         self._init_display_mode()
         # #26 (3. lépcső): a bal hasáb Emberek gyűjteménye — a PeopleMixin
