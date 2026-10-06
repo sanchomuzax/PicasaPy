@@ -745,10 +745,13 @@ class TestApiFelulet:
         "collageDraftSaved",
     )
 
-    #: A `collageNodes` a modell-PÉLDÁNY, ami sosem cserélődik — Qt-ben az
-    #: ilyen property `constant`, és a `constant` kizárja a `notify`-t. Egy
-    #: sosem tüzelő „Changed" jelzés csak félrevezetné az olvasót.
-    JELZES_NELKUL = ("collageNodes",)
+    #: A `collageNodes` modellpéldánya állandó, ezért nincs `notify`-jele.
+    #: A `collageFrameCenter` Python-only lett a #4316-ban, így a hozzá
+    #: tartozó, címzett nélküli Qt-jelzés a tulajdonsággal együtt kikerült.
+    JELZES_NELKUL = {
+        "collageNodes": "constant property — nincs (és nem is lehet) jelzése",
+        "collageFrameCenter": "#4316: Python-only property, nincs QML notify jelzése",
+    }
 
     @pytest.mark.parametrize("nev", PROPERTYK)
     def test_minden_property_letezik(self, host, nev):
@@ -758,7 +761,7 @@ class TestApiFelulet:
     @pytest.mark.parametrize("nev", PROPERTYK)
     def test_minden_property_jelzest_kap(self, host, nev):
         if nev in TestApiFelulet.JELZES_NELKUL:
-            pytest.skip("constant property — nincs (és nem is lehet) jelzése")
+            pytest.skip(TestApiFelulet.JELZES_NELKUL[nev])
         assert hasattr(host, f"{nev}Changed"), f"hiányzik: {nev}Changed"
 
     @pytest.mark.parametrize("nev", SLOTOK)

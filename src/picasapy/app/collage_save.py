@@ -111,7 +111,6 @@ class CollageSaveMixin(BackgroundWorkerMixin):
     #: kép, hogy kézzel beállíthassa.
     desktopBackgroundFailed = Signal(str)
 
-    collageTitleChanged = Signal()
     collageSavedPathChanged = Signal()
     #: #1168 (spec 16.3): a `collageRendering` váltása — a FŐABLAK várakozó
     #: sora (`CThumbUI::CreateCollageWait`) erre köt.
@@ -122,7 +121,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a kollázs nevét a felhasználó
     # nem gépeli be — a fájlnév a FORRÁSMAPPÁBÓL jön (kollazs-eletciklus.md 8.6),
     # ez a property csak a mentés bemenete.
-    @Property(str, notify=collageTitleChanged)
+    @property
     def collageTitle(self) -> str:
         """A kollázs címe — ebből lesz a kimeneti fájl neve (spec 9.1).
 
@@ -152,7 +151,6 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         if wanted == self._collage_panel_title:
             return
         self._collage_panel_title = wanted
-        self.collageTitleChanged.emit()
 
     def _set_saved_path(self, path: str) -> None:
         self._ensure_collage_panel()
@@ -161,14 +159,13 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self._collage_panel_saved_path = path
         self.collageSavedPathChanged.emit()
 
-    @Slot(str)
     def setCollageSavedPath(self, path: str) -> None:
         """A kollázs meglévő kimeneti fájlja — a `.cxf`-ből nyitás horga.
 
         Spec 9.2: „ha a kollázs egy korábban létrehozottból készült", az
         újramentés a „Lecseréli a meglévőt, vagy újat hoz létre?" kérdéssel
         indul. A Projektek ▸ Kollázsok albumból megnyitó belépési pont (3.2)
-        ezen a sloton adja át, melyik fájlból dolgozunk."""
+        ezen a Python-segédúton adja át, melyik fájlból dolgozunk."""
         self._set_saved_path(str(path or ""))
 
     @Slot()
