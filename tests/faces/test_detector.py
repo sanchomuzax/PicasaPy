@@ -7,6 +7,7 @@ ellenőrzés `skipif`-fel kihagyva, ha a fájl ténylegesen nincs jelen."""
 from __future__ import annotations
 
 import logging
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -137,3 +138,24 @@ class TestRealModel:
         image = np.zeros((200, 200, 3), dtype=np.uint8)
         result = detector.detect(image)
         assert isinstance(result, tuple)
+
+
+class TestDefaultScoreThreshold:
+    """#4348: az alapküszöb 0,9 — arc nélküli tájképen a YuNet 0,71–0,76-os
+    téves jelölteket ad, a valódi arcok 0,91–0,93-at (mérés a jegyben)."""
+
+    def test_default_detector_is_created_with_090(self, tmp_path, monkeypatch):
+        model = tmp_path / "yunet.onnx"
+        model.write_bytes(b"onnx")
+        captured = {}
+
+        def fake_create(path, config, size, **kwargs):
+            captured.update(kwargs)
+            return object()
+
+        fake_cv2 = SimpleNamespace(
+            FaceDetectorYN=SimpleNamespace(create=fake_create), error=RuntimeError
+        )
+        monkeypatch.setattr("picasapy.faces.detector.cv2", fake_cv2)
+        FaceDetector(model_path=model)
+        assert captured["score_threshold"] == pytest.approx(0.9)
