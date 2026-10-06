@@ -8,6 +8,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - Elérhetővé vált a Beállítások Nyomtatás füle; a nyomatméret- és minőségi beállítások az előnézetben és a nyomaton is érvényesülnek (#4318).
+- A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).
 
 ## [0.9.14] – 2026-10-06
 
