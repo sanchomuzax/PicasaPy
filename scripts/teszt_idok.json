@@ -854,5 +854,6 @@
  "tests/app/test_wayland_bovitmeny_3028.py": 0.93,
  "tests/app/test_webexport_controller.py": 1.23,
  "tests/app/test_window_geometry.py": 1.17,
- "tests/app/test_windows_csapdak_1082.py": 22.27
+ "tests/app/test_windows_csapdak_1082.py": 22.27,
+ "tests/render/test_border_nativ_4370.py": 0.41
 }
