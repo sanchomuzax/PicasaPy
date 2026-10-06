@@ -17,11 +17,13 @@ from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import apply_filters
 from picasapy.render.effects_artistic import apply_comicize
 from picasapy.render.halftone import (
-    DOT_SCALE,
+    _native_dot_alpha_lut,
+    _native_dot_radius_q8_8,
     dot_size_for,
     native_dot_mask,
     tiled_dot_mask,
     tiled_dot_ramp,
+    tiled_mask_grid,
 )
 
 
@@ -126,7 +128,7 @@ class TestTiledMaskPrimitive:
 
 
 class TestNativeDotMask:
-    """A natív pontmaszk (#3390): kétmegállós LUT, 8.8-as csonkolt keverés."""
+    """A natív pontmaszk (#3390, #4326): kétmegállós LUT és 8.8-as keverés."""
 
     def test_a_pont_kozepen_255_a_peremen_tul_0(self):
         m = native_dot_mask(16, 16, 8)
@@ -135,15 +137,17 @@ class TestNativeDotMask:
         assert m[0, 0] == 0.0, "a csempe sarka a ponton kívül esik"
 
     def test_a_keveres_a_88_as_csonkolt_keplet(self):
-        """`(next · frac + current · (256 − frac)) >> 8`, `LUT[i] = 255 − i`."""
+        """Az eredeti stop-LUT és a Q8.8 worker-képlet a csemperácson."""
         h = w = 24
         m = native_dot_mask(h, w, 8)
-        rampa = tiled_dot_ramp(h, w, 8) / np.float32(DOT_SCALE)
-        fix = np.minimum(np.floor(np.clip(rampa, 0, 1) * np.float32(255 * 256)).astype(np.int64), 255 * 256)
+        fix = np.minimum(_native_dot_radius_q8_8(8), 255 * 256).astype(np.int64)
         b, f = fix >> 8, fix & 255
-        cur = 255 - b
-        nxt = 255 - np.minimum(b + 1, 255)
-        assert np.array_equal(m, ((nxt * f + cur * (256 - f)) >> 8).astype(np.float32))
+        lut = _native_dot_alpha_lut().astype(np.int64)
+        cur = lut[b]
+        nxt = lut[np.minimum(b + 1, 255)]
+        tile = ((nxt * f + cur * (256 - f)) >> 8).astype(np.uint8)
+        vart = tiled_mask_grid(tile, h, w).astype(np.float32)
+        assert np.array_equal(m, vart)
 
     def test_the_two_offsets_give_different_masks(self):
         assert not np.array_equal(native_dot_mask(32, 32, 8), native_dot_mask(32, 32, 8, 4.0, 4.0))
