@@ -296,6 +296,69 @@ class _FaceSettings:
         self.values[key] = value
 
 
+class TestNameTagOptions:
+    def test_options_preferences_read_defaults_and_persist_changes(
+        self, qt_app, tmp_path
+    ):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        settings = _FaceSettings()
+        ctl = _make_controller(qt_app, tmp_path, root, settings=settings)
+
+        assert ctl.suggestionsEnabled() is True
+        assert ctl.suggestionThreshold() == 85
+        assert ctl.clusterThreshold() == 70
+        assert ctl.persistFaceToFile() is True
+
+        ctl.setSuggestionsEnabled(False)
+        ctl.setSuggestionThreshold(90)
+        ctl.setClusterThreshold(75)
+        ctl.setPersistFaceToFile(False)
+
+        assert settings.values[ctl.SUGGESTIONS_ENABLED_KEY] is False
+        assert settings.values[ctl.SUGGEST_STEP_KEY] == 90
+        assert settings.values[ctl.CLUSTER_STEP_KEY] == 75
+        assert settings.values[ctl.XMP_ON_NAME_KEY] is False
+        assert ctl.suggestionsEnabled() is False
+        assert ctl.suggestionThreshold() == 90
+        assert ctl.clusterThreshold() == 75
+        assert ctl.persistFaceToFile() is False
+
+    def test_embedding_uses_the_saved_suggestion_and_cluster_options(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        import picasapy.app.face_scan_controller as controller_module
+        from picasapy.faces.clustering import step_to_threshold
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        settings = _FaceSettings(
+            {
+                "faces/suggestionsEnabled": False,
+                "faces/suggestStep": 90,
+                "faces/clusterStep": 75,
+            }
+        )
+        ctl = _make_controller(qt_app, tmp_path, root, settings=settings)
+        kapott = {}
+
+        def csoportosits(_conn, **kwargs):
+            kapott.update(kwargs)
+            return 0
+
+        monkeypatch.setattr(controller_module, "group_unnamed_faces", csoportosits)
+
+        megjott, _ = _run(ctl.embeddingFinished, ctl.computeEmbeddings)
+
+        assert megjott is True
+        assert kapott == {
+            "suggest_threshold": step_to_threshold(90),
+            "cluster_threshold": step_to_threshold(75),
+            "named_centroids": {},
+        }
+        assert ctl.waitForBackgroundWorkers(5.0)
+
+
 class TestAutomaticFaceDetection:
     def test_automatic_detection_is_enabled_by_default(self, qt_app, tmp_path):
         root = tmp_path / "kepek"
