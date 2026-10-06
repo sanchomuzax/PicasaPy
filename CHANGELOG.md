@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Hőtérkép színátmenete mind a 768 színcsatorna-bájtban az eredeti Picasa kerekítését követi (#4309).
+
 ## [0.9.9] – 2026-10-06
 
 - A Poszter készítése számozott, átfedő képlapokat ment, párbeszéde pedig Qt 6.11 alatt is az ablak közepén nyílik meg. (#4268).
