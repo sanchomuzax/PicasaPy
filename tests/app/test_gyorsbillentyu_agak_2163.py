@@ -12,7 +12,8 @@ Az őr két irányban fog:
    `Shortcut` a könyvtárnézetben; ami mégis kell, az KIVÉTEL, névvel és
    indoklással (a `KIVETEL` tábla).
 
-⚠️ Hatókör: a könyvtárnézet gazdafájljai (`Main.qml`, `PicasaMenuBar.qml`).
+⚠️ Hatókör: a könyvtárnézet gazdafájljai (`Main.qml`, `PicasaMenuBar.qml`),
+és a #4329 óta a tálcán élő Ctrl+H (`TrayBar.qml`).
 A `DocumentTabStrip.qml` a PROJEKTLAP-sáv, aminek a spec **10.15** szerint
 saját billentyűi vannak (`Ctrl+W`-vel együtt) — az nem ez a kezelő, ezért
 nem is ez az őr méri.
@@ -30,6 +31,7 @@ import picasapy.app
 _QML = Path(picasapy.app.__file__).parent / "qml"
 _MAIN = (_QML / "Main.qml").read_text(encoding="utf-8")
 _MENU = (_QML / "PicasaPy" / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+_TRAY = (_QML / "PicasaPy" / "TrayBar.qml").read_text(encoding="utf-8")
 
 #: A 10.3 tábla mind a 34 ága — a `Ctrl` mindegyiknél kötelező
 #: (`0x005e6178`). A `Ctrl+Enter` a táblában `Ctrl+Enter`, nálunk
@@ -78,6 +80,14 @@ KIVETEL = {
         "Beillesztés — keymap 15., a menü kiírt billentyűje; a "
         "könyvtárnézeti kezelőben a `Ctrl+C`/`Ctrl+X` ága áll (`0x005e63f5`)"
     ),
+    "Ctrl+E": (
+        "E-Mail — külön menüparancs, amely a meglévő kijelölés- és "
+        "csatolmány-előkészítő útvonalra lép (#4329)"
+    ),
+    "Ctrl+H": (
+        "A tálca Kijelölés megtartása művelete — a Tray saját helyi "
+        "menüútjához kötött billentyű (#4329)"
+    ),
 }
 
 _SEQ = re.compile(r'sequence:\s*"([^"]+)"')
@@ -86,7 +96,7 @@ _SEQ = re.compile(r'sequence:\s*"([^"]+)"')
 def _billentyuk() -> set[str]:
     return {
         m.group(1)
-        for szoveg in (_MAIN, _MENU)
+        for szoveg in (_MAIN, _MENU, _TRAY)
         for m in _SEQ.finditer(szoveg)
         if m.group(1).startswith("Ctrl")
     }
