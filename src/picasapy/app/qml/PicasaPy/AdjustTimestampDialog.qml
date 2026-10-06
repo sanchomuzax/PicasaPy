@@ -153,6 +153,7 @@ Dialog {
                                 + Number(match[2]) * 60 + Number(match[3])
                         }
                         ToolTip.visible: hovered
+                        ToolTip.delay: Theme.tooltipDelay
                         ToolTip.text: qsTr("New photo time")
                     }
                 }
@@ -205,6 +206,7 @@ Dialog {
                     text: "‹"
                     onClicked: root.naptarHonapja(-1)
                     ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
                     ToolTip.text: qsTr("Previous month")
                 }
 
@@ -223,6 +225,7 @@ Dialog {
                     text: "›"
                     onClicked: root.naptarHonapja(1)
                     ToolTip.visible: hovered
+                    ToolTip.delay: Theme.tooltipDelay
                     ToolTip.text: qsTr("Next month")
                 }
             }

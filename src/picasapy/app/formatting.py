@@ -487,7 +487,7 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
     # mutatja; a forrásfájl EXIF-jét a dátummódosító nem írja át.
     add(
         "Camera Date",
-        date(photo.taken_at_override or details.datetime_original),
+        date(getattr(photo, "taken_at_override", None) or details.datetime_original),
     )
     add("Digitized Date", date(details.datetime_digitized))
     add("Modified Date", date(details.datetime_modified))
