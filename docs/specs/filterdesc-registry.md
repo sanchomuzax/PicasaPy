@@ -2443,6 +2443,54 @@ szorzóértelmezéssel. **Nem mért:** tört `Contrast` értékű valódi Picasa
 natív függvény viselkedése tört értékre is bitre ismert, de ezt Picasa-golden nem
 ellenőrzi.*
 
+#### Tört `Contrast`: pixelkimenet-ellenőrzés (#626, 2026-10-06)
+
+Az előző bekezdésben nyitva hagyott tört csúszkaérték pixelhatását az eredeti
+gépi kód és a helyi PicasaPy-út összevetésével ellenőriztem. A QEMU-próba a
+natív `0x008f1bd0` kontrasztmátrix-építőt, `0x008f2990` lekérdezőt,
+`0x008f21a0` Q11-konverziót és `0x008f2640` pixelalkalmazót hívta, a lokális
+5×5 identitásmátrixra, FPU-vezérlőszó `0x027f` mellett. A két SSE2-jelző nullázása
+a pixelalkalmazó skaláris natív ágát választotta. Ez célzott függvénypróba, nem
+`filterdesc.xml`-ből felépített teljes effekt vagy Picasa-export.
+
+Minden `c` értéknél 768 BGRA-pixelt futtattam: három 256-os csoportban rendre
+az R, G, illetve B csatorna járta be a 0…255 tartományt; a másik két színcsatorna
+állandó, az alfa 255 volt. A kimenet a jelenlegi
+`simple_color_matrix(..., contrast=c)` eredményével mind az öt értéknél
+**768/768 pixelen egyezett**.
+
+| `c` | natív `k` (float32-bitek) | natív Q11 átló / RGB-bias | natív ↔ PicasaPy eltérés |
+|---:|---|---|---:|
+| 40 | `1.7100000381469727` (`0x3fdae148`) | `3502 / −178` | 0/768 |
+| 40.25 | `1.7174999713897705` (`0x3fdbd70a`) | `3517 / −180` | 0/768 |
+| 40.5 | `1.725000023841858` (`0x3fdccccd`) | `3533 / −182` | 0/768 |
+| 40.75 | `1.7324999570846558` (`0x3fddc28f`) | `3548 / −184` | 0/768 |
+| −40.5 | `0.5950000286102295` (`0x3f1851ec`) | `1219 / 105` | 0/768 |
+
+`c = 40.5` esetén a bináris táblából `T[40] = 0.71` és `T[41] = 0.74`, ezért
+a natív interpolált görbeérték `0.7250000238418579` (`0x3f39999a`); a kész `k`
+float32-bitje `0x3fdccccd`. A natív kontrasztmátrix eltolása
+`−46.03750228881836`, Q11 átlója
+`3533`, RGB-bias-a `−182`. Ugyanezeket a `k`-bitek, Q11-együtthatók és biasok
+érték szerint a PicasaPy saját mátrix- és fixpontos útja adta.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x008f2990` a tört pozitív `c`-hez szomszédos táblapontokat interpolálja; `0x008f1bd0` felépíti a `k` és `(1−k)·63.5` mátrixot; `0x008f21a0` Q11-re alakít, `0x008f2640` alkalmazza a pixelekre. QEMU pixelmérés: a fenti öt értéknél nincs eltérés. | `src/picasapy/render/glimmer_ops.py`: `_kontraszt_gorbe` → `_kontraszt_matrix` → `_fixpont_egyutthato` / `_fixpont_bias` → `_fixpontos_szinmatrix`; mind az öt eset 768/768 pixelen egyezik a natív futással. | A bináris pixelképlet és a jelenlegi implementáció igazolt; kódmódosítás nem indokolt. A mérőadathalmazban nincs valódi, tört `SimpleColorMatrix Contrast`-ot tartalmazó Glimmer-export, ezért egy tényleges Picasa-export goldenje továbbra sincs meg. A teljes effekt/export-lánc ellenőrzéséhez ilyen csúszkaértékű Glimmer-állapotot kell elmenteni Picasában, majd ugyanazt a mintaképet exportálni és a natív képet a mérőadathoz adni. |
+
+**Fok: megerősített** a natív tört-`Contrast` pixelmatematikára és a jelenlegi
+PicasaPy-út egyezésére. A út: az `0x008f2990`, `0x008f1bd0`, `0x008f21a0` és
+`0x008f2640` utasításszintű olvasata, konstansai és adattovábbítása. B út: e
+natív rutinok QEMU-futtatása, majd bitre egyező Q11- és pixelkimenet összevetése
+a PicasaPy implementációjával 5×768 mintán. **Nyitott:** valódi Picasa-export
+golden tört Glimmer-`Contrast` értékkel.
+
+**Cáfoló próba:** a `40.5` értéknél interpoláció helyett a `T[40]` pontot
+használó értelmezés. Független natív futásban a `c=40` és `c=40.5` kimenete
+261/768 mintán eltért; a `c=40` natív kimenet külön egyezett a PicasaPy
+`c=40` eredményével 768/768 mintán. A cáfoló változat tehát reprodukálhatóan
+hibás, az interpolált út pedig fennmaradt.
+
 #### Együttes fényerő + kontraszt (`0x008f2040`) — a `ContrastAndBrightnessLinked` ág
 
 ```c
