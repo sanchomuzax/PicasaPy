@@ -37,6 +37,12 @@ Item {
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
     function openPoster(sourcePath) { posterDialog.openForSource(sourcePath) }
+    function openTimestamp(rows) { timestampDialog.openForRows(rows) }
+
+    AdjustTimestampDialog {
+        id: timestampDialog
+        timestampController: (typeof controller !== "undefined") ? controller : null
+    }
     //: #4212: a személy-album fejléce minden ottani képet átad a meglévő
     //: Filmkészítőnek; a felbontást a szokásos `movieHeightBox` kezeli.
     function openMovieForRows(rows) {

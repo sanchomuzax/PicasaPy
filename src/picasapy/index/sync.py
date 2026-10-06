@@ -951,7 +951,7 @@ def _sync_folder_date(
     conn.execute(
         "UPDATE folders SET date = ("
         " SELECT MIN(COALESCE("
-        "  p.taken_at,"
+        "  COALESCE(p.taken_at_override, p.taken_at),"
         "  strftime('%Y-%m-%dT%H:%M:%S',"
         "           COALESCE(p.first_seen_mtime_ns, p.mtime_ns) / 1000000000,"
         "           'unixepoch', 'localtime')"
@@ -1000,6 +1000,10 @@ def _upsert_photo(
         "filters = excluded.filters, "
         "geotag_ini = excluded.geotag_ini, "
         "taken_at = excluded.taken_at, orientation = excluded.orientation, "
+        # #4332: a kézi dátum a fájl változása után is megmarad — a program
+        # saját Mentése is átírja a fájlt, és az eredeti Picasa a dátumot a
+        # saját adatbázisában tartja.
+        "taken_at_override = photos.taken_at_override, "
         "width = excluded.width, height = excluded.height, "
         "caption_file = excluded.caption_file, "
         "keywords_file = excluded.keywords_file, "
@@ -1236,6 +1240,9 @@ _TARGETED_UPDATE_COLUMNS = {
     # frissíthető. A #2976 óta ini-eredetű is: a mappa-resync a `flipped(N)`
     # kulcsból tölti, tehát az ini az igazságforrás, nem az index.
     "flip_flags",
+    # #4332: az eredeti tárolási célja nincs kimérve, ezért a kézi dátum a
+    # séma 20-as verziójától csak az indexben él.
+    "taken_at_override",
 }
 
 

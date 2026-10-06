@@ -1675,6 +1675,9 @@ ApplicationWindow {
         // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban
         hasSavedBackup: controller
             ? controller.hasSavedBackup(window.selectedIndexes) : false
+        // #4332: a dátummódosítás kizárólag az indexben tárolt felülírást írja.
+        onAdjustTimestampRequested:
+            createDialogs.ensure().openTimestamp(window.selectedIndexes)
         onSaveRequested: saveDialogs.ensure().openSave(window.selectedIndexes)
         onRevertRequested: saveDialogs.ensure().openRevert(window.selectedIndexes)
         // #1527: a mentés-család két új tagja

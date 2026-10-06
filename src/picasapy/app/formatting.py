@@ -483,7 +483,12 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
 
     add("Camera Make", details.make)
     add("Camera Model", details.model)
-    add("Camera Date", date(details.datetime_original))
+    # #4332: a Properties „Camera Date” sora a felhasználói felülírást
+    # mutatja; a forrásfájl EXIF-jét a dátummódosító nem írja át.
+    add(
+        "Camera Date",
+        date(photo.taken_at_override or details.datetime_original),
+    )
     add("Digitized Date", date(details.datetime_digitized))
     add("Modified Date", date(details.datetime_modified))
     if details.orientation in _ORIENTATION_LABELS:

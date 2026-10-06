@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Az Eszközök menü Dátum és idő módosítása parancsa mindkét eredeti módban átállítja a kijelölt képek dátumát, az exportba is átvezetve. (#4332).
+
 ## [0.9.12] – 2026-10-06
 
 - Az automatikus arcfelismerés nem jelöl téves arcot fűben és tájképen: a felismerés küszöbe szigorúbb. (#4348)

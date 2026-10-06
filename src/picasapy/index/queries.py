@@ -18,7 +18,9 @@ _SELECT = """
 SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.star, p.hidden, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
-       p.rotate_steps, p.flip_flags, p.filters, p.taken_at, p.orientation,
+       p.rotate_steps, p.flip_flags, p.filters,
+       COALESCE(p.taken_at_override, p.taken_at) AS taken_at,
+       p.taken_at_override, p.orientation,
        p.width, p.height,
        p.geotag_ini, p.exif_lat, p.exif_lon, p.first_seen_mtime_ns,
        -- #463: a bélyegkép arc-jelvényeihez — hány felismert arc van a
@@ -75,6 +77,9 @@ class PhotoRecord:
     # az ini `flipped(N)` kulcsa megvan, de az `N` bit-jelentése nincs
     # kimérve (ld. `render/flip.py`).
     flip_flags: int = 0
+    # #4332: a dátummódosító indexbeli felülírása. A hatásos taken_at ezt
+    # veszi előre; ez külön mezőként kell az export bájthű másolási útjához.
+    taken_at_override: str | None = None
 
     @property
     def sort_mtime_ns(self) -> int:
@@ -235,8 +240,9 @@ def photos_up_to_age(
     rendezése is erre épül.
     """
     rows = conn.execute(
-        f"{_SELECT} WHERE p.taken_at IS NOT NULL AND p.taken_at >= ?"
-        " ORDER BY p.taken_at DESC, f.path, p.name",
+        f"{_SELECT} WHERE COALESCE(p.taken_at_override, p.taken_at) IS NOT NULL"
+        " AND COALESCE(p.taken_at_override, p.taken_at) >= ?"
+        " ORDER BY COALESCE(p.taken_at_override, p.taken_at) DESC, f.path, p.name",
         (str(cutoff),),
     )
     return _records(rows)
@@ -287,7 +293,8 @@ def geotagged_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     rows = conn.execute(
         f"{_SELECT} WHERE p.geotag_ini IS NOT NULL AND p.geotag_ini <> ''"
         " OR (p.exif_lat IS NOT NULL AND p.exif_lon IS NOT NULL)"
-        " ORDER BY p.taken_at IS NULL, p.taken_at DESC, f.path, p.name"
+        " ORDER BY COALESCE(p.taken_at_override, p.taken_at) IS NULL,"
+        " COALESCE(p.taken_at_override, p.taken_at) DESC, f.path, p.name"
     )
     return tuple(
         record for record in _records(rows) if record.location is not None
@@ -500,6 +507,7 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             keywords=row["keywords"],
             rotate_steps=row["rotate_steps"],
             flip_flags=row["flip_flags"],
+            taken_at_override=row["taken_at_override"],
             filters=row["filters"],
             taken_at=row["taken_at"],
             orientation=row["orientation"],

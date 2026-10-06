@@ -73,6 +73,7 @@ def prepare_photo_exports(
             rotate_steps=record.rotate_steps,
             flip_flags=getattr(record, "flip_flags", 0),  # #2902
             filters=record.filters,
+            taken_at_override=getattr(record, "taken_at_override", None),
         )
         thumb_report = export_photos((item,), thumb_dir, thumb_settings)
         image_report = export_photos((item,), image_dir, image_settings)
