@@ -198,16 +198,28 @@ class TestFormatumEltéres:
                     or controller.collageSavedPath != "")
         assert controller.waitForBackgroundWorkers(30.0)
 
-    def test_a_beallitas_mellozese_nem_ment(self, panel, controller):
+    @pytest.mark.parametrize("height", [795, 800, 805])
+    def test_a_beallitas_mellozese_nem_ment(self, panel, controller, height):
+        view = panel.property("_view")
+        view.resize(view.width(), height)
         controller.collageFormatMismatch.emit()
-        _var(
+        dialog = _parbeszed(panel, "collageFormatMismatchDialog")
+        assert _var(
             lambda: _parbeszed(panel, "collageFormatMismatchDialog").property(
                 "visible"
             )
         )
-        _kattints(panel, _gomb(panel, "collageFormatMismatchDialog",
-                               "collageFormatDontSetButton"))
-        QTest.qWait(100)
+        gomb = _gomb(panel, "collageFormatMismatchDialog",
+                      "collageFormatDontSetButton")
+        assert _var(lambda: gomb.width() > 0 and gomb.height() > 0)
+        center = gomb.mapToScene(gomb.boundingRect().center())
+        QTest.mouseClick(
+            view,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(center.x()), round(center.y())),
+        )
+        assert _var(lambda: not dialog.property("visible"))
         assert controller.collageSavedPath == ""
 
 
