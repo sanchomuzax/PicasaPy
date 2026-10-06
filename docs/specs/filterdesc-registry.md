@@ -1730,12 +1730,99 @@ a pontosan `s = 1,0` eset ad `0`-t, és a következő lépcső `s > 3,0`-nál j�
 ⇒ Ez megmagyarázza, miért illeszkedik a Vignette golden-készletére
 kalibrált modellünk: **abban a tartományban ez a tag nem is változik.**
 
-*NINCS MEG (a következő kör dolga):* a `0x00bcc2e0` további szakasza — a
-`0x00bcc438`-tól induló második, szimmetrikus blokk operandusai, és hogy a
-két kiszámolt, `255`-re vágott egész **mit** vezérel (menetszám? sugár?
-alfa-szorzó?). A veremleképzés ott már nem követhető megbízhatóan kézzel:
-**célzott dekompiláció** kell a `0x00bcc2e0`-ra. Amíg ez nincs meg, a
-Comicize-eltérés oka sem magyarázható.
+**Lezárva utasításszinten (2026-10-06).** A `0x00bc52c0` a leíróból jövő
+`quality`-t `[1,15]` közé korlátozza (`0x00bc5324`–`0x00bc5352`); ez a `q`
+érték kerül a `0x00bcc3d0` lokális mezőjébe. Mindkét szimmetrikus blokk ezt
+használja:
+
+```text
+t = ceil((strength − 1) / 2)
+m_x = min(255, trunc(t·q + 1))
+m_y = min(255, trunc(t·q + 1))
+```
+
+A két `fistp` előtt az FPU vezérlőszó `0x0c00`-val kap csonkoló kerekítést.
+A `0x00bcc4c4` a második, a `0x00bcc4ec` az első egész értéket adja át a
+`0x00bcbbd0`-nak. A hívott maszképítő az elsőt vízszintes, a másodikat
+függőleges kiterjesztésként használja: a kiterjesztett szélesség
+`(x₁−x₀)+2·m_x`, a magasság `(y₁−y₀)+2·m_y`
+(`0x00bcbbeb`–`0x00bcbc0c`). A maszk pufferszélét 255-re tölti, a belső
+képtartományba a forrásalfa inverzét írja (`0x00bcbc20`–`0x00bcbc40`,
+`0x00bcbcb1`–`0x00bcbcc0`). A pixel-súlyozó (`0x00bcbfb0`) ettől külön
+közvetlenül is elfogyasztja a float32 `strength` értéket (részletek lentebb).
+
+##### A `GlowImageOperation` súlya és színes pixelkeverése — utasítás + QEMU (#626, 2026-10-06)
+
+**Bizonyítottsági fok:** `megerősített` a `quality`-ból származó
+maszkkiterjesztés utasításképletére, a `strength` súlyára, valamint a lent
+megadott, teljes felbontású, átlátszatlan QEMU-kontrollokra (utasítás + az
+eredeti kód futtatása). Az exportból vett általános pixelgolden nincs ebben a
+futásban.
+
+**A út — utasításszint.** A `0x00bcbfb0` alapágában a float32
+`strength`-öt a `0x00cf39d8` konstanssal szorozza (érték: `256,0`), az FPU
+vezérlőszó `0x0c00` bitjeivel csonkoló konverziót kér, majd a maszk `M`
+byte-jával szoroz és 8 bittel jobbra tolja. A `0x00408af0` ezt `255`-nél
+korlátozza:
+
+```text
+e = min(255, (M · trunc(float32(strength) · 256)) >> 8)   # strength ≥ 0
+```
+
+A forrás alfa-bájtja is beleszól: `u = A_src·e + 128`,
+`beta = (u + (u >> 8)) >> 8` (`0x00bcc206`–`0x00bcc220`). Az egyes
+színcsatornáknál a `0x00bcbd60` számítása:
+
+```text
+u = C_glow·beta + 128
+C_out = (C_src·(256 − e) >> 8) + ((u + (u >> 8)) >> 8)
+```
+
+Vagyis a forrástag osztója `256`, a színes glow-tag pedig a kerekített
+egész `÷255` alakot használja. A `0x00bb8e10` hívó a szín alfa-bájtját
+`0xff`-re állítja (`0x00bb8e5f`); a QEMU kontroll ezért `color=0xffff0000`
+értéket kapott. Ez a színes tagot is ellenőrzi, nem csak a fekete színre
+korábban mért ágat.
+
+**B út — az eredeti kód QEMU-futtatása.** A helyi `qemu-i386` harness az
+eredeti `0x00bb8f70` munkavégzőt futtatta; a visszatérő célrekord
+`+0x10` pointeréből olvasta ki a 7×7 BGRA-kimenetet. Minden futás bemenete
+azonos, átlátszatlan, `BGRA=(40,80,160,255)` képpontokból állt;
+`xblur=yblur=2`, `glowalpha=1`, `quality=3`, `color=0xffff0000`;
+`FPUCW=0x027f`. Csak `strength` változott. A QEMU kimenet SHA-256-a a teljes
+196 bájtos BGRA-pufferen készült.
+
+| `strength` | QEMU sarok / szomszédos szél / közép (RGB) | QEMU-puffer SHA-256 | `inner_glow` eltérő RGB-bájt / max. Δ |
+|---:|---|---|---:|
+| 0 | 160,80,40 / 160,80,40 / 160,80,40 | `50e70080785638cd72a030ade47f74020c2b86920ea88186f6116ff6efef8cee` | 0/147 / 0 |
+| 1 | 214,35,17 / 199,47,23 / 160,80,40 | `68ee9d48118944f5791e810296d9d360c9ba47330862ddcb10a427a3bdfe6c06` | 16/147 / 1 |
+| 1,1 | 219,30,15 / 203,44,22 / 160,80,40 | `5c0f3aec710643c85e491b50954293b3aec5f3984d86c2adac5b42c406e66715` | 28/147 / 1 |
+| 2 | 255,0,0 / 238,14,7 / 160,80,40 | `4b30fe634d38fcf4f4cbb039bf09a3d759999c324cefff9aa1b0216e762d764f` | 20/147 / 1 |
+| 3 | 255,0,0 / 255,0,0 / 160,80,40 | `a1ac7ad25bb6c5ef3cb31da0bcd6ad7986044a3a419124bc39beef702e49b80` | 28/147 / 1 |
+
+**A/B út egyezése:** az utasításban a `strength`-szorzó 1 fölött sincs 1-re
+korlátozva; a QEMU-ban azonos első lépcsőértékű (`t=1`) `1,1`, `2` és `3`
+beállítások eltérő képpont-kimenetet adnak. A natív és a mostani PicasaPy
+RGB-kimenet közötti legnagyobb eltérés mindháromnál 1 szint.
+
+**Eredeti / nálunk / teendő:**
+
+| | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| `strength` és maszk | `e = min(255,(M·trunc(strength·256))>>8)`; az eredeti QEMU-pufferek a tesztelt értékeken ismételhetőek. Forrás: `bináris (0x00bcbfb0, 0x00cf39d8, 0x00408af0)`; `mérés (qemu-i386, 7×7)` | `belso_ragyogas.ragyogas_suly()` ugyanezt a 8.8-as súlyozást használja. A vizsgált 5 erősségből 0 esetben volt 1-nél nagyobb RGB-eltérés. Forrás: `src/picasapy/render/belso_ragyogas.py`; `mérés (QEMU ↔ inner_glow)` | A geometria és a súly képlete lezárt. A teljes effekt-kimenethez mérj exportból származó, változatos színű és részleges forrásalfa-pixeleket is; ezekre a jelen kör nem szolgáltat goldent. |
+| színes pixelkeverés | A glow-tag kerekített `÷255`, a forrástag csonkolt `÷256`; a piros (`255`) színcsatornán a QEMU 1 szinttel magasabb a jelenlegi modellen ott, ahol a glow súlya nem nulla. Forrás: `bináris (0x00bcbd60)`; `mérés (qemu-i386 ↔ inner_glow)` | `_teljes_felbontasu_tabla()` a glow-tagot is `>>8` alakban számolja; a 7×7 mintán a teljes RGB eltérés legfeljebb 1 szint, de a natív kimenettel 16–28 RGB-bájt tért el az egyes nem nulla súlyú futásokban. Forrás: `src/picasapy/render/belso_ragyogas.py` | Külön fejlesztési tételben a teljes felbontású színes tagot a natív kerekített `÷255` alakra kell átírni, majd a vörös, zöld, kék és részleges forrásalfa kontrollokat bájtra egyeztetni. |
+
+**Cáfoló kísérlet.** A hipotézis az volt, hogy a `strength`-öt a motor `1`-nél
+levágja. Azonos QEMU-bemenetnél az `s=1` és `s=1,1` kimenete 96 BGRA-bájtban
+tért el (max. 5 szinttel); `s=2` esetén 140 bájtban (max. 41), `s=3`
+esetén 144 bájtban (max. 63). Ez cáfolja az `s≤1` levágást. Ugyanazon
+`s=1` kontroll ismételt QEMU-futtatása bájtra azonos SHA-256-ot adott:
+`68ee9d48118944f5791e810296d9d360c9ba47330862ddcb10a427a3bdfe6c06`.
+
+**A #626 elfogadásához ebben a sorban:** ✅ a `quality`-függő
+maszkkiterjesztés, a `strength`-súly és a színes, átlátszatlan kontroll
+képlete bekerült, két független úttal; ⛔ exportból vett általános pixelgolden
+és részleges forrásalfa-mérés nincs ebben a körben.
 
 #### Méretfüggő elmosás-sugarak — a hét érintett szűrő
 
