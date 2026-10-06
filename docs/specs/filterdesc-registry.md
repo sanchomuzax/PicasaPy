@@ -2631,19 +2631,35 @@ után külön `psrad 9`-et végez az adott csatorna hozzájárulásán, majd az
 vektor ág közti képletazonosságot az utasítássorrend, hat QEMU-minta pedig a
 konkrét kimeneteken ellenőrzi.
 
-**`UseAlpha`:** a `ColorMatrix` saját RTTI-vtáblájának mind a kilenc
-metódusát végigkövetve a `+0x20a` mező egyikben sem szerepel; a
-`0x00bc1620` olvasó `Matrix`-ot és közös attribútumokat kezel, a
-`0x00bc16b0` alkalmazó pedig a Matrix-listát adja a pixelmagnak. A teljes
-`.text` pásztázás talált egy általános tulajdonság-olvasót (`0x009ca5e0`),
-amely a kisbetűs `usealpha` nevet ismeri és `[objektum+0x20a]`-ra ír
-(`0x009cb46c`). Ugyanez a függvény `Tooltip`, `Help`, `Label`, `Text`,
-`fontsize`, `setvisible` és más általános tulajdonságneveket is kezel. A
-`+0x20a` eltolás 39 utasításban szerepel a `.text`-ben; az eltolás önmagában
-nem azonosít objektumtípust. A RTTI szerinti `ytEffectNode` egyik metódusa
-(`0x009e8ea0`, vtable `0x00c8b8f4`) szintén használja ezt az eltolást, de
-nincs bizonyíték rá, hogy ez a mező a `ColorMatrixImageOperation` leíróútjához
-tartozik. A teljes `filterdesc.xml`-szintű `UseAlpha`-hatás ezért nyitott.
+**`UseAlpha` — a közvetlen ColorMatrix-út elkülönítve (2026-10-06):** a
+`Comicize` XML két `ColorMatrixImageOperation` elemén szerepel az attribútum
+(`filterdesc.xml:797`, `:811`). Az `EffectParserHandler` RTTI-vtáblája
+`0x00cefc14`; a `.rdata`-ban tárolt kilenc bejegyzés hetedik metódusa
+`0x00bb31f0`, az `imageOperations:ColorMatrixImageOperation` ága pedig
+`0x00bb3451`-nél van. Ez az ág `0x28` bájtot foglal, meghívja a ColorMatrix
+konstruktorát (`0x00bc1570`), majd a közös attribútumfeldolgozás a művelet
+vtable `+4` slotját, a `0x00bc1620` olvasót hívja (`0x00bb3c88`–`0x00bb3c98`).
+Ez az olvasó a `Matrix`-ot keresi, majd a `0x00bc4900` közös olvasót hívja;
+az utóbbi `maskWithSourceAlpha`, `BlendMode`, `BlendAlpha`, `Mask` és
+cache-prioritás attribútumokat kezel. A ColorMatrix vtable kilenc metódusa
+között nincs `+0x20a`-hozzáférés, és ez a közvetlen műveletút nem olvassa a
+`UseAlpha` nevet.
+
+A korábban talált általános tulajdonság-olvasó (`0x009ca5e0`) kisbetűs
+`usealpha` név esetén `[objektum+0x20a]`-ra ír (`0x009cb46c`), de ez nem a
+ColorMatrix-művelet olvasója: a közvetlen hívása a `0x009cc5d0` függvényből
+jön (`0x009ccb59`), amelynek sztringhivatkozásai között `\ytpoo.txt` és
+`.tre` szerepel. A memóriakapus `paszta.py`-pásztázás 39, `+0x20a`-t használó
+utasítást talált; a flaget olvasó `0x009e8ea0` a külön `ytEffectNode`
+vtable (`0x00c8b8f4`) metódusa. A ColorMatrix objektum `0x28` bájtos
+allokációja és saját vtable-je sem köti ezt a mezőt a ColorMatrixhez.
+
+Ez a cáfoló ellenőrzés kizárja az egyszerű, közvetlen
+`UseAlpha` → `ColorMatrix+0x20a` megfeleltetést; nem zárja ki, hogy a
+`filterdesc.xml`-betöltő egy külső node-on vagy kompozitáló lépésen át ad
+jelentést az attribútumnak. A ColorMatrix pixelmagja, a művelet attribútum-
+olvasója és a generikus `.tre`-olvasó útja külön bizonyítva van, de a
+`UseAlpha` teljes descriptor-szintű hatása nyitott.
 
 **QEMU-kontrollok.** Az eredeti ELF-kódrész futott `qemu-i386 -B
 0x400000000000` alatt, `ulimit -v 8388608` és `timeout 60` korláttal. Mind a
@@ -2678,7 +2694,7 @@ az utasításszintű, külön szorzatonkénti `sar 9`-cel is egyezik.
 
 | művelet | pixelképlet | `UseAlpha` | összesített állapot |
 |---|---|---|---|
-| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a generikus parser mezőjének kapcsolata a filterdesc/ColorMatrix útjához nincs igazolva | **feltételes** |
+| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a művelet közvetlen attribútumolvasója nem kezeli a `UseAlpha`-t; esetleges külső node/kompozitáló hatása nincs igazolva | **feltételes** |
 
 Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyasztójának
 és a többi #626 műveletnek a feltárását nem zárja le.
@@ -2688,7 +2704,7 @@ Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyaszt
 | | Eredeti, mért | PicasaPy forrása | Teendő |
 |---|---|---|---|
 | 4×5 RGBA-mátrix | a fenti Q11/int16 + dword-bias képlet, `0x008f21a0` → `0x008f2640` | `src/picasapy/render/glimmer_ops.py:628–646` általános `n×3` RGB-képletet valósít meg; a `simple_color_matrix()` hívja, általános 4×5 `ColorMatrix`-út nem található | külön fejlesztési munka: általános RGBA-mátrix és bájtra ellenőrizhető minták |
-| `UseAlpha` | a generikus tulajdonság-olvasó `[objektum+0x20a]` mezőre ír; a `ColorMatrix` vtable egyik metódusa sem használja ezt az eltolást | nincs általános 4×5 `ColorMatrix`-út vagy `UseAlpha`-ág | előbb a `filterdesc.xml` tényleges loaderét és a flag objektumát kell összekötni a mátrixlánccal; addig ne vezessünk be alfa-szabályt |
+| `UseAlpha` | a Comicize két XML-eleme megadja; a `0x00bb31f0` gyár a `0x00bc1620` ColorMatrix-olvasóhoz jut, amely `Matrix`-ot és közös attribútumokat kezel, nem `UseAlpha`-t. A `0x009ca5e0` általános író külön `ytpoo.txt`/`.tre` útvonalon van; külső hatás nincs megállapítva. | a forrásban a `simple_color_matrix()` RGB `n×3` útja van; általános 4×5 RGBA `ColorMatrix`/`UseAlpha`-út nem található. Ez forrásaudit, a Comicize-kimenet nincs futtatva. | a descriptor-betöltő és az esetleges külső fogyasztó kapcsolatát célzottan visszafejteni; addig ne vezessünk be `UseAlpha`-szabályt |
 
 **Bizonyítottsági fok:** megerősített a pixelmag képletére — A) utasításszintű
 olvasás a mátrixcsomagolótól a négy soros pixelenkénti kernelig; B) az eredeti
@@ -2696,11 +2712,10 @@ worker és pixelfüggvények futtatása qemu-i386 alatt, mindkét kerekítési �
 a fenti bájt-goldenekkel. A `UseAlpha` descriptor-szintű hatása nyitott:
 a parser mezőjét nem sikerült azonosítani a Glimmer magot körülvevő fogyasztóval.
 
-**Nyitott, blokkoló következő lépés:** `Ghidra-kör kell: 0x009cc5d0 — a
-filterdesc.xml tényleges loaderének és a generikus 0x009ca5e0
-UseAlpha-kezelőjének objektumkapcsolata; annak bizonyítása, hogy az ottani
-flag a ColorMatrix bemenetét, alfa-sorát/-oszlopát vagy az utólagos
-kompozitálást módosítja-e [blokkoló]`.
+**Nyitott, blokkoló következő lépés:**
+
+- `Ghidra-kör kell: 0x0053fe30 — a runtime\filterdesc.xml betöltőjének callbacklánca: melyik objektum kapja meg a Comicize ColorMatrix-elemeit, és a UseAlpha az EffectParserHandler/ColorMatrix útjára vagy egy külső node-ra kerül-e [blokkoló]`.
+- `Ghidra-kör kell: 0x004e5740 — az XML-node feldolgozásának dinamikus callbackje: hogyan jut az attribútumlista a 0x00bb31f0 gyárhoz, és marad-e a UseAlpha-nak a ColorMatrix-olvasón kívüli fogyasztója [blokkoló]`.
 
 #### #626 — `SimpleColorMatrix`: natív bájtszintű kontroll (2026-10-05)
 
@@ -4103,10 +4118,18 @@ kimenete összhangban van a diszasszemblált, flag nélküli pixelmag-ABI-val.
 forrás alfa-bájtját, ha nem kap külön kapcsolót. A gépi kód és a QEMU-kimenet
 ezt cáfolja: a mátrix alfa-sorát mindkét sentinel mellett alkalmazta. Ez csak
 a pixelmagra vonatkozó cáfolat; nem állítja, hogy a filterdesc-szintű
-`UseAlpha`-nak nincs külső hatása. A parserkapcsolatot ellenőrizve a
-`0x009ca5e0` általános tulajdonságneveket kezel, a teljes `.text`-ben pedig a
-`+0x20a` 39 hozzáférése jelenik meg. A mező típusa és kapcsolata a
-ColorMatrix lánccal ebből nem állapítható meg.
+`UseAlpha`-nak nincs külső hatása. A descriptorút célzott követése
+(részletesen a 4.9-es szakaszban) a `0x00bb31f0` gyártól a ColorMatrix saját
+`0x00bc1620` attribútumolvasójáig jutott; ez `Matrix`-ot és közös
+attribútumokat olvas, `UseAlpha`-t nem. A `0x009ca5e0` `usealpha`-író
+közvetlen hívása a `0x009cc5d0` általános `.tre`/`ytpoo.txt` útvonalából jön.
+A memóriakapus teljes `.text`-pásztázás 39 `+0x20a` hozzáférést talált; az
+olvasó `0x009e8ea0` a külön `ytEffectNode` RTTI-osztályhoz tartozik, a
+ColorMatrix vtable metódusai nem használják ezt az eltolást. Ez cáfolja a
+közvetlen `UseAlpha` → `ColorMatrix+0x20a` megfeleltetést, de a descriptor
+külső node-on/kompozitálón át érvényesülő hatását nem dönti el. A következő
+blokkoló lépés a `0x0053fe30` betöltő és a `0x004e5740` XML-callback Ghidra
+követése.
 
 Az első QEMU-próbamátrix téves oszlop-hozzárendelése R/B-cserét adott. A
 `0x008f2640` forrásbájt- és együttható-offszeteiből javított belső mátrix

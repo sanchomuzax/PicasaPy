@@ -34,8 +34,8 @@ A projektben eddig **egyetlen** hálózati hívás sem futott éles úton (a
 mellett csak ezt a két, hívatlan `download_model()`-t adta). Ez a modul
 tehát új képességet vezet be, ezért:
 
-* a letöltés SOHA nem indul magától — csak a felhasználó kifejezett
-  gombnyomására (`FaceScanController.downloadModels`),
+* az SFace-letöltés az első csoportosításkor magától elindul, egyébként a
+  felhasználó kifejezett kérésére (`FaceScanController.downloadModels`),
 * a forrás **egyetlen, beállítható helyen** él
   (`PICASAPY_MODEL_BASE_URL` környezeti változó, ld. lent) — így a
   tesztek loopback-kiszolgálóra terelhetők, hálózat nélkül is,
@@ -50,9 +50,8 @@ tehát új képességet vezet be, ezért:
 | SFace (lenyomat) | `face_recognition_sface_2021dec.onnx` | 38 696 353 B | Apache-2.0 |
 
 Mindkettő permisszív, tehát GPL-3.0-kompatibilis (a licencfájlok
-2026-08-26-án az upstream repóból ellenőrizve). A modellek NEM kerülnek a
-forrásfába és NEM részei a csomagnak — futásidőben, a felhasználó
-adatmappájába töltődnek.
+2026-08-26-án az upstream repóból ellenőrizve). A YuNet a csomag része;
+az SFace futásidőben, a felhasználó adatmappájába töltődik le.
 """
 
 from __future__ import annotations

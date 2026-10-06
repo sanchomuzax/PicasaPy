@@ -152,7 +152,8 @@ _DEFAULT_LELTAR = _REPO_ROOT / "docs" / "specs" / "lanc-szakadasok-leltar.md"
 # `legacyEffects` katalógus ugyanabból a két hívásból már megadja. A plafon
 # lemenetele SZÁNDÉKOS: ha nem követné a törlést, a szám csendben visszahízhatna
 # ugyanezekre a tételekre.
-MAX_BASELINE_ENTRIES = 35
+# #4315: az automatikus arcvizsgálat szinkronjelről indul, nem QML-ből.
+MAX_BASELINE_ENTRIES = 36
 
 #: Az osztály-szintű kivételek felső korlátja — ugyanaz a logika.
 MAX_OSZTALY_ENTRIES = 3

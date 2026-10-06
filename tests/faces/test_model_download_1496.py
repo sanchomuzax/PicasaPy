@@ -358,14 +358,14 @@ class TestMegszakitas:
 class TestHianyzoModellek:
     """`missing_specs()` — a felület ebből tudja, van-e mit letölteni."""
 
-    def test_ures_mappaban_mindket_modell_hianyzik(self, tmp_path, monkeypatch):
+    def test_ures_felhasznaloi_mappaban_csak_az_sface_hianyzik(
+        self, tmp_path, monkeypatch
+    ):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
         monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
         monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
-        assert {spec.key for spec in missing_specs()} == {"detector", "embedder"}
-        assert total_missing_bytes() == (
-            DETECTOR_SPEC.size_bytes + EMBEDDER_SPEC.size_bytes
-        )
+        assert {spec.key for spec in missing_specs()} == {"embedder"}
+        assert total_missing_bytes() == EMBEDDER_SPEC.size_bytes
 
     def test_a_meglevo_modell_kimarad(self, tmp_path, monkeypatch):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
@@ -400,7 +400,9 @@ class TestEgyuttesLetoltes:
         monkeypatch.setattr(
             "picasapy.faces.model_download.MODEL_SPECS", tuple(specek)
         )
-        osszes = sum(spec.size_bytes for spec in specek)
+        # #4315: a detektor a csomaggal érkezik, így csak a felismerő hiányzik.
+        letoltendo = [spec for spec in specek if spec.key != "detector"]
+        osszes = sum(spec.size_bytes for spec in letoltendo)
         haladas: list[tuple[int, int]] = []
 
         with _Kiszolgalo(tartalom) as kiszolgalo:
@@ -410,9 +412,9 @@ class TestEgyuttesLetoltes:
                 timeout=5.0,
             )
 
-        assert [e.status for e in eredmenyek] == [STATUS_OK, STATUS_OK]
+        assert [e.status for e in eredmenyek] == [STATUS_OK] * len(letoltendo)
         mappa = tmp_path / "picasapy" / "models"
-        for spec in specek:
+        for spec in letoltendo:
             assert (mappa / spec.filename).is_file()
         assert haladas[-1] == (osszes, osszes)
         assert [k for k, _ in haladas] == sorted(k for k, _ in haladas), (
