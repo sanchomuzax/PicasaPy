@@ -32,8 +32,10 @@ ezért a `move_folder.py` szándékosan nem ezt használja — ld. #2785.
 
 from __future__ import annotations
 
+import errno
 import os
 import shutil
+import sys
 import tempfile
 
 #: MODULSZINTŰ fogantyúk (#1375) — a teszt EZEKET cserélje, ne a globális
@@ -41,6 +43,11 @@ import tempfile
 _rename = os.rename
 _copy = shutil.copy2
 _unlink = os.unlink
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217)."""
+    return sys.platform
 
 
 def _link(source: str, target: str) -> None:
@@ -64,7 +71,15 @@ def safe_move(source: str, target: str) -> None:
     `O_EXCL` megnyitással készül el.
     """
 
-    if os.name == "nt":
+    if os.path.isdir(source) and not os.path.islink(source):
+        # Mappára hardlink nem tehető: a mappák (pl. a lomtárba tett mappa)
+        # átnevezéssel mozognak, ahogy eddig; létező célt nem írunk felül.
+        if os.path.lexists(target):
+            raise FileExistsError(errno.EEXIST, "a cél már létezik", target)
+        _rename(source, target)
+        return
+
+    if _platform() == "win32":
         try:
             _rename(source, target)
             return

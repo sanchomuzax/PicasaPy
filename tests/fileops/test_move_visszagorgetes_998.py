@@ -216,3 +216,28 @@ class TestAJogosMasolasUtElo:
         uj = move_photo(kep, cel)
         assert uj.exists() and not kep.exists()
         assert os.path.samefile(uj, cel / "a.jpg")
+
+
+def test_mappa_atnevezessel_mozog_es_letezo_celt_nem_ir_felul(tmp_path):
+    """#4469: a hardlinkes út mappára nem működik — a mappa átnevezéssel megy."""
+    from picasapy.fileops.safe_move import safe_move
+
+    forras = tmp_path / "mappa"
+    forras.mkdir()
+    (forras / "kep.jpg").write_bytes(b"x")
+    safe_move(str(forras), str(tmp_path / "uj"))
+    assert (tmp_path / "uj" / "kep.jpg").read_bytes() == b"x"
+    assert not forras.exists()
+
+    masik = tmp_path / "masik"
+    masik.mkdir()
+    (tmp_path / "foglalt").mkdir()
+    (tmp_path / "foglalt" / "meglevo.jpg").write_bytes(b"y")
+    try:
+        safe_move(str(masik), str(tmp_path / "foglalt"))
+    except FileExistsError:
+        pass
+    else:
+        raise AssertionError("létező célmappára nem mozoghat")
+    assert (tmp_path / "foglalt" / "meglevo.jpg").read_bytes() == b"y"
+    assert masik.exists()
