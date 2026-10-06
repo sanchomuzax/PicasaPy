@@ -1327,10 +1327,45 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
+            <source>BMP</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>BMP</translation>
+        </message>
+        <message>
+            <source>GIF</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>GIF</translation>
+        </message>
+        <message>
             <source>Display JPEG files and:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Display JPEG files and:</translation>
+        </message>
+        <message>
+            <source>PNG</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PNG</translation>
+        </message>
+        <message>
+            <source>TGA</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>TGA</translation>
+        </message>
+        <message>
+            <source>TIFF</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>TIFF</translation>
+        </message>
+        <message>
+            <source>WEBP</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>WEBP</translation>
+        </message>
+        <message>
+            <source>PSD</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PSD</translation>
         </message>
         <message>
             <source>RAW</source>
@@ -1342,6 +1377,11 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
             <source>Movies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Movies</translation>
+        </message>
+        <message>
+            <source>QuickTime</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>QuickTime</translation>
         </message>
         <message>
             <source>Supported Formats</source>
@@ -15999,6 +16039,12 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
+            <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fullscreen startup (requires restart of Photo Viewer to take effect)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="41" />
             <source>Use Color Management</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>

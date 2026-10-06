@@ -1328,10 +1328,12 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
         <name>OptionsTabFileTypes</name>
         <message>
             <source>BMP</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>BMP</translation>
         </message>
         <message>
             <source>GIF</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>GIF</translation>
         </message>
         <message>
@@ -1342,22 +1344,27 @@ picasapy-origin-key: options:options/label61.title</extracomment>
         </message>
         <message>
             <source>PNG</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>PNG</translation>
         </message>
         <message>
             <source>TGA</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>TGA</translation>
         </message>
         <message>
             <source>TIFF</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>TIFF</translation>
         </message>
         <message>
             <source>WEBP</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>WEBP</translation>
         </message>
         <message>
             <source>PSD</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>PSD</translation>
         </message>
         <message>
@@ -1373,6 +1380,7 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
         </message>
         <message>
             <source>QuickTime</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>QuickTime</translation>
         </message>
         <message>
@@ -16032,8 +16040,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
             <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: setup/ui_option3</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Teljes képernyős indítás (a Fotómegjelenítő újraindítása után lép érvénybe)</translation>
         </message>
         <message>
