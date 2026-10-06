@@ -797,20 +797,37 @@ maradtak; a #4013-tól ezeket a megjelenítési utak vágatlanul mutatják.
 
 `rect64(3f845bcb59418507)` — 16 hex karakter = 4×16 bit: **left, top, right, bottom**.
 
-**FIGYELEM (picasa2digikam-ból validálva):** az érték rövidebb is lehet 16
-karakternél — a Picasa elhagyja a vezető nullákat! Dekódolás előtt kötelező a
-`zfill(16)` (balról nullákkal feltöltés).
+**FIGYELEM:** az érték rövidebb is lehet 16 karakternél — a Picasa elhagyja a
+vezető nullákat! Dekódolás előtt kötelező a `zfill(16)` (balról nullákkal
+feltöltés). A korábbi picasa2digikam-leírás `/65536` képlete nem a Picasa 3.9
+pixelkonverziójának pontos nevezője.
 
-Dekódolás: minden 4-karakteres szegmens → int(hex) / 65536 → relatív [0.0..1.0]
-koordináta. Abszolút pixel: left/right × képszélesség, top/bottom × képmagasság.
-Megjelenítésnél/exportnál az **EXIF-orientációt** (1/3/6/8) is alkalmazni kell a
-koordinátákra (transzformációs képletek: picasa2digikam `rect64.py`).
+**A Picasa 3.9 binárisból kiolvasott pontos skála:** a négy 16 bites komponens
+unsigned u16-kód, sorrendje **left, top, right, bottom**. A `0x009b93f0` a
+`0x00cf3b78` címen levő **65535.0** konstanssal képez pixelre:
+`sx=float32(W/65535.0)`, `sy=float32(H/65535.0)`, majd az egyes u16
+komponenseket a megfelelő tényezővel szorozza, float32-re kerekíti és
+`FISTP`-vel egész pixelre alakítja. A bal/felső szélt `[0, W−1]` /
+`[0, H−1]`, a jobb/alsó szélt `[1, W]` / `[1, H]` tartományra szorítja; a
+degenerált rectet legalább egy pixel szélességű/magasságúra igazítja.
+Forrás: `0x009b9414`–`0x009b9522`; az imagedata `facerect` olvasója ezt a
+tényleges `width`/`height` mezőkkel hívja (`0x00446610`, `0x004467bf`,
+`0x00446859`, `0x004468dd`).
 
-Ellenőrző példa: `3f845bcb59418507` →
-left≈0.248108, top≈0.358566, right≈0.348648, bottom≈0.519638.
+Normalizált megjelenítéshez a kódérték matematikai aránya `u/65535`.
+Például `3f845bcb59418507` komponensei pontosan
+`left=0x3f84/65535`, `top=0x5bcb/65535`, `right=0x5941/65535`,
+`bottom=0x8507/65535`.
+Az író oldali bináris segéd (`0x009b9290`) pixelkoordinátát alakít vissza
+u16-kódra a `65535/W` és `65535/H` tényezővel, `FISTP` kerekítéssel, majd a
+bal/felső értéket `[0,65534]`, a jobb/alsót `[1,65535]` tartományra korlátozza
+(`0x009b92c5`–`0x009b93d7`). A nullák szöveges elhagyása továbbra is
+megengedett; beolvasáskor 16 hex jegyre kell balról nullákkal feltölteni.
 
-Kódolás (írás): round(koord × 65536) → 4 hex jegy, nullákkal feltöltve; a vezető
-nullák megőrzendők (a `crop64=1,10000000f1ddff49` példában is).
+**QEMU-ellenőrzés a nevezőre (#4400, 2026-10-06):** `0x009b93f0`,
+`x87 CW=0x027f`, rect64-kód `[1,1,100,100]`, `32768×32768` kép →
+pixel-rect `[1,1,50,50]`. `/65536` mellett a bal/felső komponens `0` lenne,
+ezért a mérés elválasztja a két képletet.
 
 XMP-konverzió: MWG-RS régió séma + `HierarchicalSubject` `people|Név` címkék
 (digiKam/Lightroom/Bridge kompatibilis).

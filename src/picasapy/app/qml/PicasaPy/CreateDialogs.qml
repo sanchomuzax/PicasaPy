@@ -37,6 +37,12 @@ Item {
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
     function openPoster(sourcePath) { posterDialog.openForSource(sourcePath) }
+    function openTimestamp(rows) { timestampDialog.openForRows(rows) }
+
+    AdjustTimestampDialog {
+        id: timestampDialog
+        timestampController: (typeof controller !== "undefined") ? controller : null
+    }
     // #4391: az eredeti People-film szűrt, sorrendtartó képsora kerül
     // közvetlenül a meglévő Filmkészítőbe.
     function openMovieForRows(rows) {
