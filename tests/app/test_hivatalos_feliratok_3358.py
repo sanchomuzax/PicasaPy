@@ -284,6 +284,8 @@ BEALLITASOK = {
         "Felhasználónév a proxyhoz:", "options/labelgroup130.title"),
     ("OptionsTabPrinting", "Available print sizes:"): (
         "Rendelkezésre álló nyomtatási méretek:", "options/label107.title"),
+    ("OptionsTabPrinting", "Previews:"): (
+        "Előnézetek:", "options/labelgroup118.title"),
     ("OptionsTabPrinting", "Printer quality:"): (
         "Nyomtató minősége:", "options/labelgroup120.title"),
     ("OptionsTabPrinting", "Print resampler quality:"): (

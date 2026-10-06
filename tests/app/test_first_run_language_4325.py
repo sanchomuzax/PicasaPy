@@ -44,7 +44,7 @@ def test_saved_language_suppresses_first_run_question(settings, monkeypatch):
     assert settings.value(language_controller.LANGUAGE_KEY) == "en"
 
 
-@pytest.mark.parametrize("system_language", ["en", "de"])
+@pytest.mark.parametrize("system_language", ["en", "eo"])  # eo: nincs a 41 nyelv között (#4313)
 def test_english_or_unsupported_system_language_suppresses_question(
     settings, monkeypatch, system_language
 ):

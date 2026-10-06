@@ -46,7 +46,7 @@ _QML = (
 
 def _forditasok() -> list[str]:
     return re.findall(
-        rf"<source>{re.escape(FORRAS)}</source>\s*<translation[^>]*>(.*?)</translation>",
+        rf"<source>{re.escape(FORRAS)}</source>\s*(?:<extracomment>[^<]*</extracomment>\s*)?<translation[^>]*>(.*?)</translation>",
         _TS,
         re.DOTALL,
     )

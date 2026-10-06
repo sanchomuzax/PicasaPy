@@ -137,7 +137,8 @@ class TestSlideshowBasics:
         assert _child(window, "slideshowTimer").property("running") is False
 
     def test_advance_wraps_around(self, qml_app, qt_app):
-        window, _controller, _lib, _engine = qml_app
+        window, controller, _lib, _engine = qml_app
+        controller.setSlideshowLoop(True)   # az ismétlés alapból ki (#4377)
         show = _start(window, qt_app, 0)
         _invoke(qt_app, show, "advance")
         assert show.property("currentIndex") == 1
@@ -203,6 +204,7 @@ class TestSlideshowVideoSkip:
         controller._reload()
         qt_app.processEvents()
         assert controller.photos.isVideoAt(2) is True
+        controller.setSlideshowLoop(True)   # az ismétlés alapból ki (#4377)
         show = _start(window, qt_app, 1)
         _invoke(qt_app, show, "advance")   # a 2-es (videó) kimarad
         assert show.property("currentIndex") == 0
@@ -217,6 +219,7 @@ class TestSlideshowVideoSkip:
             sync_tree(conn, lib)
         controller._reload()
         qt_app.processEvents()
+        controller.setSlideshowLoop(True)   # az ismétlés alapból ki (#4377)
         show = _start(window, qt_app, 2)   # videó-soron indítva
         assert show.property("visible") is True
         assert show.property("currentIndex") == 0   # az első fotóra ugrik
