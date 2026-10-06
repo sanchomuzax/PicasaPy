@@ -393,6 +393,13 @@ jobs:
         # lista rövidülhet, de nem hízhat észrevétlenül.
         run: python scripts/check_dead_signals.py
 
+      - name: Néma QML-vezérlők őre (#4438)
+        # A forrásszintű audit az üres/log-only kattintáskezelőket, az
+        # állandóan letiltott QML-elemeket és a fogyasztó nélküli QML-
+        # jelzéseket figyeli. A felülvizsgált történeti esetek indoklással
+        # szerepelnek a baseline-ban; új jelöltnél a lint job pirosra vált.
+        run: python scripts/check_silent_qml_controls.py
+
       - name: A fájlútvonalas cv2-hívások őre (#1991)
         # Mit fog meg: `cv2.imread(...)` / `cv2.imwrite(...)` a forrásban.
         # Ez az alak Windowson az ANSI kódlapon megy át, ezért ÉKEZETES
