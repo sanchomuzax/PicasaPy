@@ -17,6 +17,7 @@ from PySide6.QtCore import QObject, QSettings
 from support.jpeg_factory import make_jpeg
 
 _ROY = "b8e4117cf1d6615b"
+_ZOE = "c9f5228de2a7726c"
 _RECT = "3f840000c3509f84"
 
 
@@ -104,6 +105,41 @@ class TestPeopleProperty:
         with open_index(tmp_path / "index.db") as conn:
             instance._load_people(conn)
         assert events == [True]
+
+    def test_person_movie_sources_skip_empty_albums_and_keep_model_order(
+        self, host, library
+    ):
+        from picasapy.index.people import PersonRecord
+        from picasapy.index import open_index, sync_tree
+        from tests.support.jpeg_factory import make_jpeg
+
+        make_jpeg(library / "c.jpg")
+        make_jpeg(library / "d.jpg")
+        (library / ".picasa.ini").write_text(
+            f"[Contacts2]\n{_ROY}=Roy Avery;;\n{_ZOE}=Zoe Zed;;\n"
+            f"[a.jpg]\nfaces=rect64({_RECT}),{_ROY};\n"
+            f"[b.jpg]\n[c.jpg]\nfaces=rect64({_RECT}),{_ZOE};\n"
+            f"[d.jpg]\nfaces=rect64({_RECT}),{_ZOE};\n",
+            encoding="utf-8",
+        )
+        with open_index(host._db_path) as conn:
+            sync_tree(conn, library)
+
+        # A +0x2bc-listának megfelelő modell sorrendje nem a People-hasáb
+        # aktuális rendezése. Az üres alsó lista kiesik, a többi album képei
+        # az albumon belüli sorrendben követik egymást.
+        host._people = (
+            PersonRecord("Zoe Zed", 2),
+            PersonRecord("Üres album", 0),
+            PersonRecord("Roy Avery", 1),
+        )
+
+        from PySide6.QtCore import QUrl
+
+        forrasok = host.personMovieSourceUrls()
+        assert [Path(QUrl(url).toLocalFile()).name for url in forrasok] == [
+            "c.jpg", "d.jpg", "a.jpg",
+        ]
 
 
 class TestShowPerson:
