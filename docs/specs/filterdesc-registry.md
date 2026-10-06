@@ -2631,19 +2631,35 @@ után külön `psrad 9`-et végez az adott csatorna hozzájárulásán, majd az
 vektor ág közti képletazonosságot az utasítássorrend, hat QEMU-minta pedig a
 konkrét kimeneteken ellenőrzi.
 
-**`UseAlpha`:** a `ColorMatrix` saját RTTI-vtáblájának mind a kilenc
-metódusát végigkövetve a `+0x20a` mező egyikben sem szerepel; a
-`0x00bc1620` olvasó `Matrix`-ot és közös attribútumokat kezel, a
-`0x00bc16b0` alkalmazó pedig a Matrix-listát adja a pixelmagnak. A teljes
-`.text` pásztázás talált egy általános tulajdonság-olvasót (`0x009ca5e0`),
-amely a kisbetűs `usealpha` nevet ismeri és `[objektum+0x20a]`-ra ír
-(`0x009cb46c`). Ugyanez a függvény `Tooltip`, `Help`, `Label`, `Text`,
-`fontsize`, `setvisible` és más általános tulajdonságneveket is kezel. A
-`+0x20a` eltolás 39 utasításban szerepel a `.text`-ben; az eltolás önmagában
-nem azonosít objektumtípust. A RTTI szerinti `ytEffectNode` egyik metódusa
-(`0x009e8ea0`, vtable `0x00c8b8f4`) szintén használja ezt az eltolást, de
-nincs bizonyíték rá, hogy ez a mező a `ColorMatrixImageOperation` leíróútjához
-tartozik. A teljes `filterdesc.xml`-szintű `UseAlpha`-hatás ezért nyitott.
+**`UseAlpha` — a közvetlen ColorMatrix-út elkülönítve (2026-10-06):** a
+`Comicize` XML két `ColorMatrixImageOperation` elemén szerepel az attribútum
+(`filterdesc.xml:797`, `:811`). Az `EffectParserHandler` RTTI-vtáblája
+`0x00cefc14`; a `.rdata`-ban tárolt kilenc bejegyzés hetedik metódusa
+`0x00bb31f0`, az `imageOperations:ColorMatrixImageOperation` ága pedig
+`0x00bb3451`-nél van. Ez az ág `0x28` bájtot foglal, meghívja a ColorMatrix
+konstruktorát (`0x00bc1570`), majd a közös attribútumfeldolgozás a művelet
+vtable `+4` slotját, a `0x00bc1620` olvasót hívja (`0x00bb3c88`–`0x00bb3c98`).
+Ez az olvasó a `Matrix`-ot keresi, majd a `0x00bc4900` közös olvasót hívja;
+az utóbbi `maskWithSourceAlpha`, `BlendMode`, `BlendAlpha`, `Mask` és
+cache-prioritás attribútumokat kezel. A ColorMatrix vtable kilenc metódusa
+között nincs `+0x20a`-hozzáférés, és ez a közvetlen műveletút nem olvassa a
+`UseAlpha` nevet.
+
+A korábban talált általános tulajdonság-olvasó (`0x009ca5e0`) kisbetűs
+`usealpha` név esetén `[objektum+0x20a]`-ra ír (`0x009cb46c`), de ez nem a
+ColorMatrix-művelet olvasója: a közvetlen hívása a `0x009cc5d0` függvényből
+jön (`0x009ccb59`), amelynek sztringhivatkozásai között `\ytpoo.txt` és
+`.tre` szerepel. A memóriakapus `paszta.py`-pásztázás 39, `+0x20a`-t használó
+utasítást talált; a flaget olvasó `0x009e8ea0` a külön `ytEffectNode`
+vtable (`0x00c8b8f4`) metódusa. A ColorMatrix objektum `0x28` bájtos
+allokációja és saját vtable-je sem köti ezt a mezőt a ColorMatrixhez.
+
+Ez a cáfoló ellenőrzés kizárja az egyszerű, közvetlen
+`UseAlpha` → `ColorMatrix+0x20a` megfeleltetést; nem zárja ki, hogy a
+`filterdesc.xml`-betöltő egy külső node-on vagy kompozitáló lépésen át ad
+jelentést az attribútumnak. A ColorMatrix pixelmagja, a művelet attribútum-
+olvasója és a generikus `.tre`-olvasó útja külön bizonyítva van, de a
+`UseAlpha` teljes descriptor-szintű hatása nyitott.
 
 **QEMU-kontrollok.** Az eredeti ELF-kódrész futott `qemu-i386 -B
 0x400000000000` alatt, `ulimit -v 8388608` és `timeout 60` korláttal. Mind a
@@ -2678,7 +2694,7 @@ az utasításszintű, külön szorzatonkénti `sar 9`-cel is egyezik.
 
 | művelet | pixelképlet | `UseAlpha` | összesített állapot |
 |---|---|---|---|
-| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a generikus parser mezőjének kapcsolata a filterdesc/ColorMatrix útjához nincs igazolva | **feltételes** |
+| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a művelet közvetlen attribútumolvasója nem kezeli a `UseAlpha`-t; esetleges külső node/kompozitáló hatása nincs igazolva | **feltételes** |
 
 Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyasztójának
 és a többi #626 műveletnek a feltárását nem zárja le.
@@ -2688,7 +2704,7 @@ Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyaszt
 | | Eredeti, mért | PicasaPy forrása | Teendő |
 |---|---|---|---|
 | 4×5 RGBA-mátrix | a fenti Q11/int16 + dword-bias képlet, `0x008f21a0` → `0x008f2640` | `src/picasapy/render/glimmer_ops.py:628–646` általános `n×3` RGB-képletet valósít meg; a `simple_color_matrix()` hívja, általános 4×5 `ColorMatrix`-út nem található | külön fejlesztési munka: általános RGBA-mátrix és bájtra ellenőrizhető minták |
-| `UseAlpha` | a generikus tulajdonság-olvasó `[objektum+0x20a]` mezőre ír; a `ColorMatrix` vtable egyik metódusa sem használja ezt az eltolást | nincs általános 4×5 `ColorMatrix`-út vagy `UseAlpha`-ág | előbb a `filterdesc.xml` tényleges loaderét és a flag objektumát kell összekötni a mátrixlánccal; addig ne vezessünk be alfa-szabályt |
+| `UseAlpha` | a Comicize két XML-eleme megadja; a `0x00bb31f0` gyár a `0x00bc1620` ColorMatrix-olvasóhoz jut, amely `Matrix`-ot és közös attribútumokat kezel, nem `UseAlpha`-t. A `0x009ca5e0` általános író külön `ytpoo.txt`/`.tre` útvonalon van; külső hatás nincs megállapítva. | a forrásban a `simple_color_matrix()` RGB `n×3` útja van; általános 4×5 RGBA `ColorMatrix`/`UseAlpha`-út nem található. Ez forrásaudit, a Comicize-kimenet nincs futtatva. | a descriptor-betöltő és az esetleges külső fogyasztó kapcsolatát célzottan visszafejteni; addig ne vezessünk be `UseAlpha`-szabályt |
 
 **Bizonyítottsági fok:** megerősített a pixelmag képletére — A) utasításszintű
 olvasás a mátrixcsomagolótól a négy soros pixelenkénti kernelig; B) az eredeti
@@ -2696,11 +2712,10 @@ worker és pixelfüggvények futtatása qemu-i386 alatt, mindkét kerekítési �
 a fenti bájt-goldenekkel. A `UseAlpha` descriptor-szintű hatása nyitott:
 a parser mezőjét nem sikerült azonosítani a Glimmer magot körülvevő fogyasztóval.
 
-**Nyitott, blokkoló következő lépés:** `Ghidra-kör kell: 0x009cc5d0 — a
-filterdesc.xml tényleges loaderének és a generikus 0x009ca5e0
-UseAlpha-kezelőjének objektumkapcsolata; annak bizonyítása, hogy az ottani
-flag a ColorMatrix bemenetét, alfa-sorát/-oszlopát vagy az utólagos
-kompozitálást módosítja-e [blokkoló]`.
+**Nyitott, blokkoló következő lépés:**
+
+- `Ghidra-kör kell: 0x0053fe30 — a runtime\filterdesc.xml betöltőjének callbacklánca: melyik objektum kapja meg a Comicize ColorMatrix-elemeit, és a UseAlpha az EffectParserHandler/ColorMatrix útjára vagy egy külső node-ra kerül-e [blokkoló]`.
+- `Ghidra-kör kell: 0x004e5740 — az XML-node feldolgozásának dinamikus callbackje: hogyan jut az attribútumlista a 0x00bb31f0 gyárhoz, és marad-e a UseAlpha-nak a ColorMatrix-olvasón kívüli fogyasztója [blokkoló]`.
 
 #### #626 — `SimpleColorMatrix`: natív bájtszintű kontroll (2026-10-05)
 
@@ -2917,8 +2932,11 @@ az `offsetX/Y` csonkolását a `0x00bba7a5`–`0x00bba7dc` és
 `0x00bba7f1`–`0x00bba822` `FISTP`-je végzi `CW |= 0xc00` mellett. A ciklus
 mindkét tengelyen a `floor(kepmeret/csempemeret)+1` darab cellán fut
 (`0x00bba826`–`0x00bba844`); a célkép téglalapja vágja le a képen kívülre eső
-részeket (`0x009a8d80` hívás, `0x00bba891`–`0x00bba8a1`). Ez képen belül
-csempézést jelent, nem a kép szélén túli mintaismétlést.
+részeket. A wrapper a célképet a `0x009a8d80`-nal nullázza;
+a `0x009aaae0`–`0x009aab59` és `0x009aab60`–`0x009aabe6` út a csempe
+cél- és forrástéglalapját a célkép határaival metszi, majd a metszet sorait
+a `0x009aac54`–`0x009aac79` másolja. Ez képen belül csempézést jelent, nem
+a kép szélén túli mintaismétlést.
 
 Két részlet, ami nélkül nem stimmel: a ciklus **`<=`**, tehát mindkét irányban
 **eggyel több** csempe készül, mint amennyi elférne (ez fedi le a jobb és alsó
@@ -2984,9 +3002,9 @@ harness (`/home/sancho/picasapy-agent/eszkozok/qemu_harness/hb.py`,
 `0x008f3840` →
 `0x00a4a140` → `0x008f3970` útját futtatta 7×7 kimeneten, egy 5,6×5,6
 rajzolt belső csempe 0,7/0,7 origójával, alpha 1→0 végpontokkal. A kézzel
-összeállított harness-környezet korlátja, hogy a teljes `0x00bba670`
-multi-cell wrapper nem futott ebben a próbaágban; annak rács-, offset- és
-klippelési útját a fenti utasításszintű olvasat támasztja alá. A 7×7 nyers
+összeállított harness-környezet korlátja, hogy ez a pixelmag-próba nem
+futtatta a teljes `0x00bba670` multi-cell wrappert; annak teljes rácsára
+vonatkozó mérése lent, a külön „Teljes rács” alfejezetben van. A 7×7 nyers
 BGRA golden alfa-csatornája (soronként):
 
 ```text
@@ -3016,6 +3034,99 @@ LUT-tal 256/256 elemben egyezik. A projekt mai
 29/49 alfabájtban egyezik, 20/49-ben eltér, legfeljebb 3-mal; tehát ez a
 golden még nem igazolja a projekt pixelpontos egyezését.
 
+##### A teljes csemperács QEMU-goldenje (2026-10-06)
+
+A változatlan eredeti EXE (`SHA-256:
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
+`0x00bba670` wrapperét futtattam 23×17 kimenettel és 5×4-es csempével.
+A kézzel felépített hívási rekord 0,8/0,8 skálát, nulla margót, `alphaMin=0`,
+`alphaMax=1` értéket és 0, illetve ±2,5 eltolást adott át. A csempét az
+eredeti `0x00bbaa90` építette. A cache lookup/insert két útját
+(`0x008e5660`, `0x008e5490`) helyettesítettem cache-miss/siker válasszal;
+a `0x00bbb070` rácsméretezés, a `0x00bba670` wrapper, a kimenet törlése,
+a téglalapmetszet és a másolás eredeti kódja futott. A felületméretet,
+az első blitet és az első clipet megfigyelő hookok az eredeti utasítások
+folytatásával tértek vissza. Ez a hívórekordot közvetlenül adja át, nem a
+teljes `filterdesc.xml`-betöltést és Comicize-csővezetéket.
+
+`W=23`, `H=17`, `tw=5`, `th=4` esetén a rács `25×20`, a középigazítás
+origója `(-1,-1)`. A wrapper `floor(W/tw)+1 = 5` oszlopot és
+`floor(H/th)+1 = 5` sort rajzol, `tw` és `th` lépésközzel; a helyek:
+`x = -1,4,9,14,19`, `y = -1,3,7,11,15`. Az eltolást ezután, külön
+lépésben, nulla felé csonkolja:
+
+| QEMU offset | origó | nyers kimenet | SHA-256 |
+|---:|---:|---:|---|
+| `(0,0)` | `(-1,-1)` | 1564 bájt | `5558642b6da00578339d674c2e4dabe8779d109e505841ba32051ddc65a9ec8d` |
+| `(2.5,2.5)` | `(1,1)` | 1564 bájt | `4e3c345e9bba144ce1f2be1baa91ed624c6e686b9d36730e4be7e80aea1c5367` |
+| `(-2.5,-2.5)` | `(-3,-3)` | 1564 bájt | `e6164b803089ef22079697f8c534042b2e4508573c97f5d9fd0d8c1e41709c2d` |
+
+A null-offsetos futás teljes 23×17-es maszk-goldenje (minden szám egy
+képpont értéke; a kimenet minden pixelének memória-bájtsorrendje
+`[érték,0,0,érték]`, így az alábbi tábla a teljes 1564 bájtot megadja):
+
+```text
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+```
+
+A befogott eredeti csempe 5×4 alfaértékei soronként `0 0 0 0 0`;
+`0 5 82 82 5`; `0 62 190 190 62`; `0 5 82 82 5`. A külön megírt Python-
+modell ezt a mért csempét a fenti geometria szerint helyezte és a célkép
+határán klippelte; mindhárom QEMU-kimenet mind a **1564/1564 bájtban**
+egyezett. A null-offsetes alapkimenet alábbi alternatív modelljei cáfolódtak:
+
+| Cáfoló modell | Eltérő kimeneti bájt |
+|---|---:|
+| A középponti félosztás padlóosztása (`floor`, negatív páratlan számlálónál −2) | 646 |
+| Az utolsó sor és oszlop elhagyása (nincs `+1`) | 110 |
+| A negatív tört offset padlóra kerekítése nulla felé csonkolás helyett | 668 |
+
+Egy második, vak QEMU-ellenőrzés 5×4-es, nem-periodikus `1…20` értékű
+szintetikus csempét használt. 25 blit hívást mért, azonos `(25,20)` rácsméretet,
+`(-1,-1)` origót, 5/4 lépésközt és 0, `+2.5`, `−2.5` offsetnél rendre
+`(-1,-1)`, `(1,1)`, `(-3,-3)` origókat kapott. Ettől független Python-
+klippelés mindhárom, teljes 1564 bájtos QEMU-kimenettel pontosan egyezett;
+hash-ek: `0e9296bfbfdbc42883e2c3556e2bdf79d78f28caf06f82f90c6762a4baa9a5e8`,
+`5986aa5724927a3200852ac688f496c68a019c89d53321360d453dd96bf64178`,
+`181c79fd236c51f8b33d59ee7176ae301c1f12a58d9ec7a978579a6defc24f2e`.
+
+**Comicize két maszkja.** A `filters-decoded.md` Comicize-leírója a két
+maszkot azonos `dotSize` csempemérettel kéri; az első offsetje `(0,0)`, a
+másodiké `(dotSize/2,dotSize/2)`. A wrapper a rácsközépre igazítás után külön
+csonkolja az offsetet, tehát a rácsok tényleges tengelyenkénti eltolása
+`trunc0(dotSize/2)` pixel. A QEMU 5×5-ös csempeméretű próbán a `(0,0)` origó
+`(-1,-1)`, a `(2.5,2.5)` origó `(1,1)` lett: a fáziskülönbség **2×2 px**,
+nem 2,5 vagy 3. A 5×5-ös kimenet mindkét fázisnál (0 és +2,5) külön
+Python-rácsmodellel teljes 1564/1564 bájtban egyezett; hash:
+`f8896375e587b89694f9250821b356c32e4539e8127fea65b3b43ab09d1b1c4f` és
+`eb3f4c261b5e66d44b8a8add4054536eeea1654da921e4d2bc37a1f810e75baa`.
+A Comicize méretképlete 23 px szélességnél
+`dotSize=1`; ekkor a beírt második offset 0,5, amelyet a wrapper 0-ra
+csonkol, így a két rács origója egyezik. (Ez a konkrét kicsi méret a képlet
+következménye; a maszk többi pixelmatematikájára nem általánosít.)
+
+**Bizonyítottság: a rácsorigó, az offset csonkolása, az ismétlés lépésköze,
+a plusz záró sor/oszlop és a képszéli klippelés megerősített.** Egyezik az
+utasításszintű levezetés, a wrapper eredeti kódjának futása, a bájtra pontos
+Python-újraszámítás és a vak, független QEMU-próba. A filterdesc-betöltő és a
+teljes Comicize-csővezeték ezen a 23×17-es wrapper-mérésen kívül maradt.
+
 **Keverés és perem.** A Comicize Tiled maszkjai teljes képnyi dobozt kérnek,
 `alphaMin=0`, `alphaMax` pedig a kötő alapértéke szerint 1 (`0x00bba580`;
 `filterdesc.xml:777–782`). Az első csempe `offset=(0,0)`, a másodiké
@@ -3034,9 +3145,10 @@ alsó veremelem). A recept pontos paraméterei a
 
 **Bizonyítottsági fok:** a csempe pixelmagja **megerősített** (utasításszintű
 olvasat + az eredeti worker QEMU-futtatása és attól független Python-bájt
-újraszámítás egyezik). A teljes multi-cell `0x00bba670` wrapper itt csak
-utasításszinten van ellenőrizve; integrált QEMU-goldenje nincs, ezért a teljes
-rácsra ez a rész **feltételes**.
+újraszámítás egyezik). A teljes multi-cell `0x00bba670` rácsgeometriája is
+**megerősített** a fenti wrapper-golden és a vak, független QEMU-kontroll
+alapján. A projekt `native_dot_mask` pixelmagja ettől továbbra sem tekinthető
+bájtpontosnak: a korábbi 7×7 összevetés 20/49 eltérő bájtot talált.
 
 #### `EdgeDetectionSobel` — a kernel teljesen megvan
 
@@ -4006,10 +4118,18 @@ kimenete összhangban van a diszasszemblált, flag nélküli pixelmag-ABI-val.
 forrás alfa-bájtját, ha nem kap külön kapcsolót. A gépi kód és a QEMU-kimenet
 ezt cáfolja: a mátrix alfa-sorát mindkét sentinel mellett alkalmazta. Ez csak
 a pixelmagra vonatkozó cáfolat; nem állítja, hogy a filterdesc-szintű
-`UseAlpha`-nak nincs külső hatása. A parserkapcsolatot ellenőrizve a
-`0x009ca5e0` általános tulajdonságneveket kezel, a teljes `.text`-ben pedig a
-`+0x20a` 39 hozzáférése jelenik meg. A mező típusa és kapcsolata a
-ColorMatrix lánccal ebből nem állapítható meg.
+`UseAlpha`-nak nincs külső hatása. A descriptorút célzott követése
+(részletesen a 4.9-es szakaszban) a `0x00bb31f0` gyártól a ColorMatrix saját
+`0x00bc1620` attribútumolvasójáig jutott; ez `Matrix`-ot és közös
+attribútumokat olvas, `UseAlpha`-t nem. A `0x009ca5e0` `usealpha`-író
+közvetlen hívása a `0x009cc5d0` általános `.tre`/`ytpoo.txt` útvonalából jön.
+A memóriakapus teljes `.text`-pásztázás 39 `+0x20a` hozzáférést talált; az
+olvasó `0x009e8ea0` a külön `ytEffectNode` RTTI-osztályhoz tartozik, a
+ColorMatrix vtable metódusai nem használják ezt az eltolást. Ez cáfolja a
+közvetlen `UseAlpha` → `ColorMatrix+0x20a` megfeleltetést, de a descriptor
+külső node-on/kompozitálón át érvényesülő hatását nem dönti el. A következő
+blokkoló lépés a `0x0053fe30` betöltő és a `0x004e5740` XML-callback Ghidra
+követése.
 
 Az első QEMU-próbamátrix téves oszlop-hozzárendelése R/B-cserét adott. A
 `0x008f2640` forrásbájt- és együttható-offszeteiből javított belső mátrix
@@ -10302,10 +10422,10 @@ Részleges fedésnél az `0x00aa1a74`–`0x00aa1b1f` út külön 16.16-os szorza
 képzi a fedési tényezőt `C`, abból `floor(A×C/256)`-ot számít, majd a cél és
 a forrás byte-jait külön szorozza és a csatornákat packed dwordként adja
 össze. Az `0x00aa1840`-ben használt általános `q`, `rᵢ²`, `rₒ²` → `C`
-képletet és a forrásalfa útját a lentebbi I) szakasz zárja le. **Nyitva marad**
-az, hogy a `0x00aa13b0` hívó hogyan állítja elő ezeket a paramétereket a
-Border két külön ívéhez; ezért a kernel-képlet önmagában nem teszi a kis sugarú
-teljes Border-kimenetet minden sugárra általánosíthatóvá.
+képletet és a forrásalfa útját a lentebbi I) szakasz zárja le. A
+`0x00aa13b0` hívóparaméterezését az I.4/a kiterjesztett próbái most két új
+`R`/vastagság-esettel is alátámasztják; a teljes, bájtra egyező Border-golden
+általánosítása viszont az ott leírt sikertelen alapkontroll miatt még nyitott.
 
 #### 4. Bájtra rögzített natív próba
 
@@ -10668,6 +10788,61 @@ naplózással. A két út egyezik a két középpontban, sugárban és a nyers
 `rᵢ²`/`rₒ²` értékekben; a dinamikusan rögzített q-rács a 9 × 9 golden
 peremképpontjait is visszaadja.
 
+#### 4/a. Hívóparaméterek változó `R` és vastagság mellett — 2026-10-06
+
+Az `0x00bbe570` eredeti gépi kódját közvetlenül futtattam `qemu-i386` alatt,
+kézi, egyszínű `0xff204060` forrásképpel, fekete külső és fehér belső színnel,
+caption nélkül. Az `0x00aa13b0` és mindkét `0x00aa1840` belépési naplója a
+tényleges paramétereket rögzítette. `B` a belső, `O` a külső vastagság pixelben;
+az alábbi `rᵢ²`/`rₒ²` értékeket a naplózott `ρ`-ból az I.1 kernelképlete adja.
+
+| forrás `W×H` | `R` | `B` | `O` | kimenet | külső ív: középpont, `ρ`, `rᵢ²/rₒ²` | forrásív: középpont, `ρ`, `rᵢ²/rₒ²` |
+|---|---:|---:|---:|---:|---|---|
+| `7×7` | 3 | 1 | 2 | `13×13` | `(4,4)`, `4,5`, `3136/5184` | `(3,3)`, `3`, `1024/2304` |
+| `9×8` | 4 | 2 | 1 | `15×14` | `(6,6)`, `6,5`, `7744/10816` | `(4,4)`, `4`, `2304/4096` |
+
+A `0x00bbe570` → `0x00aa13b0` utasításfolyamából `N=R+B`, majd
+`K=min(trunc(float32(N)+1), trunc((W+2B)/2), trunc((H+2B)/2))` adódik
+`R>0` esetén. Az `0x00aa13b0` által az `0x00aa1840`-nek átadott külső ív
+`center=(K,K)`, `ρ=K+0,5`; a `0x00bbe836` forrássarok-hívása
+`center=(R,R)`, `ρ=R`. A külső vastagság `O` a vászon méretét és a sarokablakok
+helyét változtatja, a sugárargumentumok számításába nem kerül be. A naplózott
+középpontok és `ρ`-k mindkét táblázatsorban egyeznek a statikus adatfolyammal;
+az I.4 q-rácsai és léptetése változatlanok.
+
+**A/B út:** A) az `0x00bbe570`, `0x00aa13b0`, `0x00aa14f4`, `0x00bbe836` és
+`0x00aa1840` utasításainak önálló követése; B) a két eltérő R/vastagságú
+eredeti QEMU-futás belépési naplója. A középpontok és a `ρ` mindkét úton
+egyeznek. A `rᵢ²`/`rₒ²` a dinamikusan rögzített `ρ` és a binárisból ismert
+I.1 képlet kombinációja, nem külön naplómező.
+
+**Cáfoló próba:** az alternatív `B=O` hipotézis a második sorban `K=5`-öt
+adna: `R+O=5`, a két méretkorlát pedig 5. Az eredeti kód futásában a külső
+középpont `(6,6)`, `ρ=6,5`, ezért ez az alternatíva megdőlt.
+
+**A teljes kimenet kontrollja nem ment át.** Ugyanezzel a kézzel épített
+Border-bemeneti leíróval az `R=2`, `B=O=1`, `5×5 → 9×9` kontroll QEMU-kimenete
+16/81 pixelben (48/243 RGB-csatornában) tért el az I.4 korábban rögzített
+native goldenjétől. Az `0x00aa1840` belépési hook nélküli ismétlés bájtra
+azonos kimenetet adott, így a belépési naplózó nem okozta az eltérést. A
+A Border-próba kézi bemeneti leírója `+4=width`, `+8=W`, `+0x0c=H`,
+`+0x10=pixelpointer`, `+0x14=1` mezőket kapott. A
+`qemu_harness/wq.py` másik műveletéhez tartozó eltérő CImage-leíró átvétele a
+Border próbáját összeomlasztotta; egyik mezőkiosztás sem reprodukálta az I.4
+alapgoldent, ezért a két új teljes pixelpuffer nem elfogadott golden. A belépési argumentumok geometriáját a futás és a statikus út egyezése
+alátámasztja, a teljes színkimenet további mérése nyitott.
+
+**Bizonyítottsági fok:** `feltételes` a hívóparaméter-függvényhez több `R`,
+`B`, `O`, `W`, `H` mellett: a statikus adatfolyam és az eredeti kód
+belépési naplója egyezik, de az új képpontgoldeneket a sikertelen alapkontroll
+miatt nem fogadom el. A kernel fedési képletét és az I.4 korábbi, ellenőrzött
+mintáját ez nem módosítja.
+
+**Nyitott:** a Border-művelethez használt kézi CImage-leíró helyes mezőinek
+azonosítása, majd az alapkontroll és legalább két további `R`/vastagság-eset
+bájtra egyező natív kimenetének újrafuttatása. Ez ismert függvényhatárokon
+végezhető utasításszintű követés; Ghidra-dekompilálást nem igényel.
+
 #### 🔁 Független újralevezetés
 - **bíráló:** `border_independent` (friss gpt-6-astra kontextus; a specek és a `src` olvasása nélkül)
 - **címek:** `0x00bbe6e8`, `0x00bbe836`, `0x00aa13b0`, `0x00aa14f4`, `0x00aa1840`
@@ -10678,12 +10853,12 @@ peremképpontjait is visszaadja.
 
 | | Eredeti, mérve | PicasaPy, olvasva | Teendő |
 |---|---|---|---|
-| Élsimítás | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa a 4. pontban; a külső sáv régi `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok képkompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. | `glimmer_frame_ops.py::_sarok_fedes` jelenleg Python `round(2**24/Δ)`-t használ, ami a bináris pozitív bemenetű csonkolásától eltér. A `_sarok_fedes_negyed` félpixeles körközéppontot/sugarat feltételez és egy sarokfoltot tükröz; a natív Border külön 6 × 6 külső és 4 × 4 forrás q-rácsot állít elő. | Cseréld le a `_sarok_fedes_negyed`/`_sarok_folt` maszképítését a fenti bináris q-képletre, és a `K` számításánál a `round` helyett pozitív egészre csonkolást használj. Számíts külön külső `(K,K), ρ=K+0,5` és forrás `(R,R), ρ=R` rácsot; a mintán ezek `(3,3), 1600/3136` és `(2,2), 256/1024`. A külső 6 × 6 rács négy 3 × 3 ablakát a natív helyükre rajzold; a forrás 4 × 4 rácsa a forrás négy 2 × 2 sarkára kerül, a középső sor/oszlop kihagyásával. A forrás részfedett sarkát az `aa1840`-maszk `9ab360`-as alakítása után a fehér belső cél fölött így kompozitáld: `a=(255·C)>>8`; `out=(D·(255−a)+S·a)//255`; alfa=`255`. A nem sarokbeli forráspixelek másolódnak. **Kész, ha** az 5 × 5 → 9 × 9 golden mind a 243 RGB-csatornája egyezik, és az `aa1840`, `9ab360`, valamint a kompozitor köztes pufferei dokumentáltak. |
+| Élsimítás | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa az I.1-ben; a külső sáv régi `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok kompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. | A jelenlegi `glimmer_frame_ops.py::draw_border()` olvasás alapján már külön `_border_q_racs`-ot épít a külső és forrásívhez, a forrás `R`-t és a belső vastagságból számolt `K`-t használja, és külön kompozitálja a sarkokat. Ebben a kutatási körben a függvényt nem futtattam; a korábbi 30/81 mérés ezért nem bizonyítja a mostani forrásállapot eredményét. | Algoritmusváltoztatásra ez a kör nem ad bizonyítékot. A fejlesztő következő lépése a jelenlegi függvény összevetése az I.4 alapgoldennel és — a Border-bemeneti leíró kijavítása után — a 4/a két mintájával. **Kész, ha** az alapminta 243/243 RGB-csatornája és mindkét új natív minta bájtra egyezik; eltérés esetén csak a mért koordináta-/keverési út módosuljon. |
 | Alfa | Az `aa1840` részleges maszkján `Aₑ=(255·C)>>8`; a `9ab360` a forrássarokmaszk kimenetén ezt az értéket teszi a maszk alfa-bájtjává. Az `8f4810` végső dwordjének alfa-bájtja `0xff`. | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol; `_sarok_fedes` RGB-súlyt számol. | Tartsd külön a fedési súlyt, az `aa1840` ARGB-maszkját, a `9ab360` maszkátalakítását és a forráskép `8f4810`-es kompozitálását. A RGB `draw_border()`-től ne kérj alfa megőrzést. |
 
-#### 6. Miért tér el még a teljes 9 × 9 Border-minta?
+#### 6. A teljes 9 × 9 Border-minta: történeti eltérés, jelenlegi ellenőrzés nyitott
 
-A natív `0x00bbe570`-mintán azonos, 5×5-ös `0xff204060` forrásból, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítással az eredeti kimenet 9×9. A jelenlegi `draw_border()` ennek RGB-részét **30/81 pixelben** téríti el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ebből 18 eltérés a külső keretívben, 12 a forrássarok-ívben van; ezek a számok a jelenlegi kód mért állapotát írják le. A 4. pont mérése alapján a geometriai eltérésekhez a félpixeles sugár-/középpontmodell és a tükrözött negyed járul hozzá, míg a #4300 külső `q=2128` pontján ettől külön a `K` kerekítése is egy szintnyi eltérést okozott. A teljes golden eltérésszáma a javítások után nincs újramérve.
+A korábbi összevetésben az 5×5-ös `0xff204060` forrás, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítású natív 9×9 kimenettől a PicasaPy RGB **30/81 pixelben** tért el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ebből 18 eltérés a külső keretívben, 12 a forrássarok-ívben volt; ezek történeti mérési értékek, nem a most olvasott `draw_border()` futásának eredményei. A korábbi elemzés a félpixeles sugár-/középpontmodellt és a tükrözött negyedet azonosította, míg a #4300 külső `q=2128` pontján ettől külön a `K` kerekítése is egy szintnyi eltérést okozott. A jelenlegi forrásállapot teljes golden-egyezése nincs újramérve.
 
 - **Külső keretív, 18 pixel:** `(1,1)`, `(1,2)`, `(1,3)`, `(1,5)`, `(1,6)`, `(1,7)`, `(2,1)`, `(2,7)`, `(3,1)`, `(3,7)`, `(5,1)`, `(5,7)`, `(6,1)`, `(6,7)`, `(7,2)`, `(7,3)`, `(7,5)`, `(7,6)`. Ezeket a belső színű keret külső, lekerekített ívének fedési súlya okozza.
 - **Forrássarok-ív, 12 pixel:** `(2,2)`, `(2,3)`, `(2,5)`, `(2,6)`, `(3,2)`, `(3,6)`, `(5,2)`, `(5,6)`, `(6,2)`, `(6,3)`, `(6,5)`, `(6,6)`. Ezeket a forrásképet vágó belső ív fedési súlya okozza.
@@ -10692,7 +10867,7 @@ A #4123 előtti 29/81 eltérés mind megmaradt; az új, 30. eltérés `(3,6)`: n
 
 A `tests/render/test_glimmer_frame_ops_4122.py::_native_q_racs()` középpontja `(127/32, 7/2)`, a négyzetes sugarai `7.5/12.5`; a teszt saját kommentje szerint ezeket **a kimeneti mintából vezette vissza**. Ezek az értékek nem bináris forrású bizonyítékok, ezért nem használhatók a külső keretív és a forrássarok-ív eltéréseinek megmagyarázására.
 
-**Bizonyítottsági fok:** `megerősített` a két ív ezen 5×5-ös mintán használt paraméterére és q-rácsára, valamint a fedési képletre és alfa-útra: az utasításszintű adatfolyam, a QEMU-hívó/q napló és a rögzített teljes natív golden egyezik. A `draw_border()` átírása és az utána kapott 81/81 PicasaPy-egyezés még nincs elvégezve; az általános, más képméretekre/sugarakra érvényes implementációs ellenőrzés nyitott.
+**Bizonyítottsági fok:** `megerősített` a korábbi, rögzített 5×5-ös natív mintán mért paraméterekre, q-rácsra, fedési képletre és alfa-útra. Az I.4/a új hívóparaméter-próbái `feltételesek`: a két út egyezik, de az új képpontgolden-kontroll megbukott. A most olvasott `draw_border()`-ről nincs friss teljes golden-összevetés.
 
 **Cáfoló próba:** azt ellenőriztem, hogy a `0x00aa1840` maga állítja-e `0xff`-re a perem alfáját. Átlátszó célrétegben a qemu-kimenet részleges alfái megmaradnak (például `(0,4)=0x01`, `(3,1)=0x15`); csak az opaque black cél fölötti `0x009ab410` után lesz a kimeneti alfa `0xff`. A hipotézis cáfolva.
 
@@ -10704,9 +10879,10 @@ ez cáfolja a korábbi visszavezetett paraméterezést. Tükrözési kontrollké
 a natív külső felső q-sor szélei `2048` és `2128`, a forrásé `512` és `560`,
 tehát egyetlen bal felső maszk tükrözése sem adja a natív négy sarkot.
 
-**Nyitott:** nincs nyitott bináris paraméter a két ívhez. A `draw_border()`
-átírása, a 81/81 PicasaPy-golden és az általános q-rács más
-képméreteken/sugarakon való igazolása még hiányzik.
+**Nyitott:** a `draw_border()` jelenlegi forrásállapotának 81/81 golden-
+összevetése és az általános q-rács további méret-/sugár-eseteken való teljes
+pixel-igazolása. A hívóparaméter-függvényre a 4/a ad több futási mintát, de az
+új teljes kimenetek a sikertelen alapkontroll miatt nem elfogadott goldenek.
 
 #### #4300 — a két egy szintes pont teljes natív útja (2026-10-06)
 

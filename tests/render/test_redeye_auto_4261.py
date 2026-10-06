@@ -9,6 +9,7 @@ from picasapy.ini.filters import FilterOp
 from picasapy.ini.redeye import EyeCircle64
 from picasapy.ini.filters import serialize_filters
 from picasapy.render.chain import apply_filters
+from picasapy.render.ops import apply_redeye
 
 
 def _mixed_eye_and_dress_image() -> np.ndarray:
@@ -54,6 +55,60 @@ def test_model_missing_fallback_is_explicit_and_still_corrects_whole_image() -> 
 
     np.testing.assert_array_equal(result[19, 19], (20, 20, 20))
     np.testing.assert_array_equal(result[62, 62], (30, 30, 30))
+
+
+def test_empty_user_model_dir_uses_bundled_yunet_for_red_eye(monkeypatch, tmp_path):
+    from picasapy.faces import redeye
+    from picasapy.faces.detector import FaceDetection, FaceLandmarks
+
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    monkeypatch.delenv("PICASAPY_FACE_MODEL", raising=False)
+    redeye._default_detector.cache_clear()
+
+    class _PackagedDetector:
+        def __init__(self):
+            from picasapy.faces.detector import resolve_model_path
+
+            self.model_path = resolve_model_path()
+            self.available = self.model_path is not None
+
+        def detect(self, _image):
+            return (
+                FaceDetection(
+                    left=10,
+                    top=10,
+                    right=50,
+                    bottom=50,
+                    score=0.99,
+                    landmarks=FaceLandmarks(
+                        right_eye=(20.0, 20.0),
+                        left_eye=(40.0, 20.0),
+                        nose=(30.0, 30.0),
+                        mouth_right=(25.0, 40.0),
+                        mouth_left=(35.0, 40.0),
+                    ),
+                ),
+            )
+
+    monkeypatch.setattr(redeye, "FaceDetector", _PackagedDetector)
+    redeye._default_detector.cache_clear()
+    try:
+        image = _mixed_eye_and_dress_image()
+        circles = redeye.detect_eye_circles(image)
+
+        assert circles is not None
+        result = apply_redeye(
+            image,
+            eye_circles=tuple(
+                (circle.x, circle.y, circle.radius) for circle in circles
+            ),
+        )
+
+        np.testing.assert_array_equal(result[19, 19], (20, 20, 20))
+        np.testing.assert_array_equal(result[19, 39], (25, 25, 25))
+        np.testing.assert_array_equal(result[58:72, 58:76], image[58:72, 58:76])
+    finally:
+        redeye._default_detector.cache_clear()
 
 
 def test_render_chain_never_imports_face_detection() -> None:

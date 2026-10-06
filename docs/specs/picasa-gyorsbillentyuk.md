@@ -379,6 +379,50 @@ menüsávban egyikük sem szerepel: `Enter` (megjelenítés és szerkesztés),
 is így írja le): rácsban/nézőben `Ctrl+Delete`, a menüsávban `Delete`.
 A `cmd` azonos (`0x9c9a`), tehát **egy parancs, két belépő**.
 
+### 4.1 #4339 — a 44 rekord nézeti határa
+
+A kilenc gyorsbillentyűs építő **a helyi menü birtokosát** azonosítja. A
+rekordok kontextusát tehát utasításszinten meg lehet nevezni:
+
+| építő | helyi menü / nézeti kontextus | rekordok billentyűi |
+|---|---|---|
+| `0x00730790` | mappanézet képe | `Enter`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+Shift+O`, `Ctrl+S`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
+| `0x00731050` | album-nézet képe | ugyanaz a nyolc; a `Ctrl+Delete` felirata azonos `cmd 0x9c9a`-hoz itt „Eltávolítás az albumból” |
+| `0x007319f0` | mappa helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I`, `Ctrl+Enter` |
+| `0x00732160` | album helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I` |
+| `0x007327a0` | OneUp-néző helyi menüje | `Esc`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+Shift+O`, `Ctrl+S`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
+| `0x00732ee0` | képtálca helyi menüje | `Ctrl+H`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+Enter`, `Alt+Enter` |
+| `0x00733a40` | gyűjtemény-/mappalista helyi menüje | `Ctrl+Enter` |
+| `0x007355c0` | Emberek-album képe | `Enter`, `Ctrl+Enter`, `Ctrl+Delete`, `Alt+Enter` |
+| `0x007359e0` | Emberek-album helyi menüje | `Ctrl+A`, `Ctrl+D`, `Ctrl+I` |
+
+**2026-10-06 — fókuszút-pontosítás:** az összesítő **megerősített a
+menü-kontekstre**: a `0x00a6aee0` tételépítőt
+mind a kilenc függvény hívja, és az egyes táblákban ott vannak a hozzájuk
+tartozó billentyű-/parancsrekordok. A billentyű útjából a fókuszátadás is
+látszik: a `0x00a53b00` a `0x00a582f0` továbbítóhoz küldi az eseményt; az a
+fókuszolt gyerek (`param_1[0x57]`) vtable `+0x74` metódusát hívja. Az RTTI
+szerint a `ytPopupListNode` e slotja a `0x00608c00` thunk, amely a
+`0x00a64050` eseménykezelőre ugrik. A `0x00a64050` diszasszemblálása általános
+listaeseményeket, valamint `Esc`, `Enter` és `Space` ágakat mutat; a benne
+látható utasítások még nem rendelik a 44 rekord parancsazonosítóit a Ctrl/Alt
+billentyűkhöz. A hívott segédek rekordkapcsolata további dekompilálást igényel.
+
+A könyvtárnézetnek saját fogadója is van: a RTTI a `CThumbUI` vtable
+billentyűslotjába a `0x005e6710` kezelőt teszi. Ez a `0x005e67f4` címen hívja
+a közös továbbítót, majd saját billentyűágakkal folytatja; a Ctrl-ág
+`0x005e60d0`-ba vezet. Ez a CThumbUI útvonal, önmagában nem bizonyítja a másik
+nyolc menüépítő parancs-hozzárendelését.
+
+**Következtetés:** a menürekordok birtokos nézete megerősített; a közös
+fókusz-út és a popup-lista egyik lehetséges fogadója azonosított. Azt, hogy a
+44 rekord melyik fogadóban, milyen fókuszállapotban és mely parancsot aktiválja,
+még nem kapcsoltuk össze utasításszinten. Az `Enter`, `Ctrl+Enter` és
+`Ctrl+Delete` több kontextusban is szerepel, ezért a rekord önmagában nem ad
+globális parancs-hozzárendelést. A PicasaPy oldali állapotot a 6. szakasz
+QML-leltára rögzíti; a paritási teendő addig ne állítsa, hogy a QML
+`Shortcut`-ok az eredeti fókuszszabályt is visszaadják.
+
 ---
 
 ## 5. A hat kérdés funkciónként

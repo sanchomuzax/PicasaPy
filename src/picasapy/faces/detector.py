@@ -1,16 +1,6 @@
 """YuNet arc-detektor (`cv2.FaceDetectorYN`) — hiánytűrő becsomagolás.
 
-KRITIKUS KÖRNYEZETI KORLÁT (issue #26): a CI-ben (Ubuntu ÉS Windows) nincs
-garantált hálózat, és a modellfájl nincs jelen. Ezért a `FaceDetector`
-konstruktora SOHA nem dob kivételt és SOHA nem blokkol hálózatra — ha a
-modell hiányzik, vagy a telepített OpenCV build nem tartalmazza az API-t,
-`available=False`-ra áll és naplózott üzenettel kikapcsol. A hívó
-(`FaceScanController`) ez alapján dönt: modell nélkül a funkció csendben
-nem csinál semmit, az alkalmazás minden más része változatlan marad.
-
-A modell beszerzése KÜLÖN, explicit lépés (`download_model`) — ez sem
-hívódik automatikusan indításkor vagy tesztben, hogy egy hálózat nélküli
-környezet (CI) ne akadjon el rajta."""
+KRITIKUS KÖRNYEZETI KORLÁT (issue #26): a CI-ben nincs garantált hálózat. A YuNet-modell ezért a program részeként érkezik; a `FaceDetector` konstruktora hálózat nélkül is betölti. Ha a modell hiányzik, vagy az OpenCV build nem tartalmazza az API-t, `available=False`-ra áll és naplózott üzenettel kikapcsol."""
 
 from __future__ import annotations
 
@@ -47,8 +37,9 @@ MODEL_DOWNLOAD_URL = (
     "face_detection_yunet/face_detection_yunet_2023mar.onnx"
 )
 
-# YuNet ajánlott alapértékei (OpenCV Zoo mintakód).
-_DEFAULT_SCORE_THRESHOLD = 0.7
+# YuNet alapértékei; a küszöb az OpenCV Zoo mintakódjáé (#4348: arc nélküli
+# tájképen a téves jelöltek 0,71–0,76-ot, a valódi arcok 0,91–0,93-at kapnak).
+_DEFAULT_SCORE_THRESHOLD = 0.9
 _DEFAULT_NMS_THRESHOLD = 0.3
 _DEFAULT_TOP_K = 5000
 
@@ -63,16 +54,24 @@ def default_model_path() -> Path:
     return default_model_dir() / MODEL_FILENAME
 
 
+def bundled_model_path() -> Path | None:
+    """A programmal csomagolt YuNet-modell útvonala, ha jelen van."""
+    candidate = Path(__file__).resolve().parent / "models" / MODEL_FILENAME
+    return candidate if candidate.is_file() else None
+
+
 def resolve_model_path() -> Path | None:
     """A ténylegesen a lemezen létező modellfájl útvonala, vagy `None`.
 
     Sorrend: a `PICASAPY_FACE_MODEL` környezeti változó (ha meg van adva
-    és létezik), majd a felhasználói alapértelmezett hely. Egyik sem
-    létezés-ellenőrzés nélküli — ez a hívó (`FaceDetector`) tiszta
-    kikapcsolásának alapja."""
+    és létezik), a felhasználói modellmappa, majd a programmal csomagolt
+    modell. Minden útvonal létezését ellenőrzi."""
     override = os.environ.get(MODEL_ENV_VAR)
     candidates: list[Path] = [Path(override)] if override else []
     candidates.append(default_model_path())
+    packaged = bundled_model_path()
+    if packaged is not None:
+        candidates.append(packaged)
     for candidate in candidates:
         if candidate.is_file():
             return candidate
@@ -86,9 +85,9 @@ def download_model(
 ) -> bool:
     """A modell letöltése a megadott (vagy alapértelmezett) helyre.
 
-    SOHA nem hívódik automatikusan — sem induláskor, sem tesztben, sem a
-    `FaceDetector`-ből. Hálózat/lemez-hiba esetén csendesen `False`-t ad
-    vissza, nem dob kivételt.
+    A letöltés felhasználói kérésre történik, kivéve hogy a vezérlő az
+    SFace-csoportosítás első indításakor automatikusan is elindítja.
+    Hálózat/lemez-hiba esetén csendesen `False`-t ad vissza, nem dob kivételt.
 
     #1496: a törzse ma az ELLENŐRZŐ letöltőé
     (`model_download.download_spec`) — méret + SHA-256 nélkül egy csonka

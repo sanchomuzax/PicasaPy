@@ -2059,10 +2059,14 @@ class TestRedeyeTool:
         controller.undo()
         assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
-    def test_auto_reports_found_spots(self, controller, tmp_path):
+    def test_auto_reports_found_spots(self, controller, tmp_path, monkeypatch):
         """A sikerüzenet a TÉNYLEGESEN talált foltokból jön."""
         import numpy as np
         from PIL import Image
+        from picasapy.app import edit_preview
+
+        # Ez a próba a hiányzó detektor régi, teljes képes visszaesését fedi.
+        monkeypatch.setattr(edit_preview, "detect_eye_circles", lambda _image: None)
 
         array = np.full((60, 60, 3), 120, dtype=np.uint8)
         array[20:30, 10:20] = (220, 40, 40)
