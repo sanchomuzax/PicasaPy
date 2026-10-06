@@ -114,7 +114,6 @@ class CreateMixin(PosterMixin):
     #: QML törni tudja a Qt kép-gyorsítótárát (`?rev=<n>`).
     collagePreviewReady = Signal(int)
     collagePreviewFailed = Signal(str)
-    collageSeedChanged = Signal()
     moviePreferencesChanged = Signal()
     #: #960: a `collageDraftAvailable` property jelzése — erre köt rá a
     #: visszaállítást felajánló párbeszéd (a párbeszédet a kollázs-panel
@@ -370,11 +369,10 @@ class CreateMixin(PosterMixin):
         """
         self._ensure_collage_wired()
         self._collage_seed += 1
-        self.collageSeedChanged.emit()
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a magot a `shuffleCollage`
     # lépteti, az eredmény a vásznon látszik — a szám maga nem való a felületre.
-    @Property(int, notify=collageSeedChanged)
+    @property
     def collageSeed(self) -> int:
         self._ensure_collage_wired()
         return self._collage_seed

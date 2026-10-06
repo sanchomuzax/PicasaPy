@@ -2917,8 +2917,11 @@ az `offsetX/Y` csonkolását a `0x00bba7a5`–`0x00bba7dc` és
 `0x00bba7f1`–`0x00bba822` `FISTP`-je végzi `CW |= 0xc00` mellett. A ciklus
 mindkét tengelyen a `floor(kepmeret/csempemeret)+1` darab cellán fut
 (`0x00bba826`–`0x00bba844`); a célkép téglalapja vágja le a képen kívülre eső
-részeket (`0x009a8d80` hívás, `0x00bba891`–`0x00bba8a1`). Ez képen belül
-csempézést jelent, nem a kép szélén túli mintaismétlést.
+részeket. A wrapper a célképet a `0x009a8d80`-nal nullázza;
+a `0x009aaae0`–`0x009aab59` és `0x009aab60`–`0x009aabe6` út a csempe
+cél- és forrástéglalapját a célkép határaival metszi, majd a metszet sorait
+a `0x009aac54`–`0x009aac79` másolja. Ez képen belül csempézést jelent, nem
+a kép szélén túli mintaismétlést.
 
 Két részlet, ami nélkül nem stimmel: a ciklus **`<=`**, tehát mindkét irányban
 **eggyel több** csempe készül, mint amennyi elférne (ez fedi le a jobb és alsó
@@ -2984,9 +2987,9 @@ harness (`/home/sancho/picasapy-agent/eszkozok/qemu_harness/hb.py`,
 `0x008f3840` →
 `0x00a4a140` → `0x008f3970` útját futtatta 7×7 kimeneten, egy 5,6×5,6
 rajzolt belső csempe 0,7/0,7 origójával, alpha 1→0 végpontokkal. A kézzel
-összeállított harness-környezet korlátja, hogy a teljes `0x00bba670`
-multi-cell wrapper nem futott ebben a próbaágban; annak rács-, offset- és
-klippelési útját a fenti utasításszintű olvasat támasztja alá. A 7×7 nyers
+összeállított harness-környezet korlátja, hogy ez a pixelmag-próba nem
+futtatta a teljes `0x00bba670` multi-cell wrappert; annak teljes rácsára
+vonatkozó mérése lent, a külön „Teljes rács” alfejezetben van. A 7×7 nyers
 BGRA golden alfa-csatornája (soronként):
 
 ```text
@@ -3016,6 +3019,99 @@ LUT-tal 256/256 elemben egyezik. A projekt mai
 29/49 alfabájtban egyezik, 20/49-ben eltér, legfeljebb 3-mal; tehát ez a
 golden még nem igazolja a projekt pixelpontos egyezését.
 
+##### A teljes csemperács QEMU-goldenje (2026-10-06)
+
+A változatlan eredeti EXE (`SHA-256:
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
+`0x00bba670` wrapperét futtattam 23×17 kimenettel és 5×4-es csempével.
+A kézzel felépített hívási rekord 0,8/0,8 skálát, nulla margót, `alphaMin=0`,
+`alphaMax=1` értéket és 0, illetve ±2,5 eltolást adott át. A csempét az
+eredeti `0x00bbaa90` építette. A cache lookup/insert két útját
+(`0x008e5660`, `0x008e5490`) helyettesítettem cache-miss/siker válasszal;
+a `0x00bbb070` rácsméretezés, a `0x00bba670` wrapper, a kimenet törlése,
+a téglalapmetszet és a másolás eredeti kódja futott. A felületméretet,
+az első blitet és az első clipet megfigyelő hookok az eredeti utasítások
+folytatásával tértek vissza. Ez a hívórekordot közvetlenül adja át, nem a
+teljes `filterdesc.xml`-betöltést és Comicize-csővezetéket.
+
+`W=23`, `H=17`, `tw=5`, `th=4` esetén a rács `25×20`, a középigazítás
+origója `(-1,-1)`. A wrapper `floor(W/tw)+1 = 5` oszlopot és
+`floor(H/th)+1 = 5` sort rajzol, `tw` és `th` lépésközzel; a helyek:
+`x = -1,4,9,14,19`, `y = -1,3,7,11,15`. Az eltolást ezután, külön
+lépésben, nulla felé csonkolja:
+
+| QEMU offset | origó | nyers kimenet | SHA-256 |
+|---:|---:|---:|---|
+| `(0,0)` | `(-1,-1)` | 1564 bájt | `5558642b6da00578339d674c2e4dabe8779d109e505841ba32051ddc65a9ec8d` |
+| `(2.5,2.5)` | `(1,1)` | 1564 bájt | `4e3c345e9bba144ce1f2be1baa91ed624c6e686b9d36730e4be7e80aea1c5367` |
+| `(-2.5,-2.5)` | `(-3,-3)` | 1564 bájt | `e6164b803089ef22079697f8c534042b2e4508573c97f5d9fd0d8c1e41709c2d` |
+
+A null-offsetos futás teljes 23×17-es maszk-goldenje (minden szám egy
+képpont értéke; a kimenet minden pixelének memória-bájtsorrendje
+`[érték,0,0,érték]`, így az alábbi tábla a teljes 1564 bájtot megadja):
+
+```text
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+ 62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190  62   0  62 190 190
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+  5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82   5   0   5  82  82
+```
+
+A befogott eredeti csempe 5×4 alfaértékei soronként `0 0 0 0 0`;
+`0 5 82 82 5`; `0 62 190 190 62`; `0 5 82 82 5`. A külön megírt Python-
+modell ezt a mért csempét a fenti geometria szerint helyezte és a célkép
+határán klippelte; mindhárom QEMU-kimenet mind a **1564/1564 bájtban**
+egyezett. A null-offsetes alapkimenet alábbi alternatív modelljei cáfolódtak:
+
+| Cáfoló modell | Eltérő kimeneti bájt |
+|---|---:|
+| A középponti félosztás padlóosztása (`floor`, negatív páratlan számlálónál −2) | 646 |
+| Az utolsó sor és oszlop elhagyása (nincs `+1`) | 110 |
+| A negatív tört offset padlóra kerekítése nulla felé csonkolás helyett | 668 |
+
+Egy második, vak QEMU-ellenőrzés 5×4-es, nem-periodikus `1…20` értékű
+szintetikus csempét használt. 25 blit hívást mért, azonos `(25,20)` rácsméretet,
+`(-1,-1)` origót, 5/4 lépésközt és 0, `+2.5`, `−2.5` offsetnél rendre
+`(-1,-1)`, `(1,1)`, `(-3,-3)` origókat kapott. Ettől független Python-
+klippelés mindhárom, teljes 1564 bájtos QEMU-kimenettel pontosan egyezett;
+hash-ek: `0e9296bfbfdbc42883e2c3556e2bdf79d78f28caf06f82f90c6762a4baa9a5e8`,
+`5986aa5724927a3200852ac688f496c68a019c89d53321360d453dd96bf64178`,
+`181c79fd236c51f8b33d59ee7176ae301c1f12a58d9ec7a978579a6defc24f2e`.
+
+**Comicize két maszkja.** A `filters-decoded.md` Comicize-leírója a két
+maszkot azonos `dotSize` csempemérettel kéri; az első offsetje `(0,0)`, a
+másodiké `(dotSize/2,dotSize/2)`. A wrapper a rácsközépre igazítás után külön
+csonkolja az offsetet, tehát a rácsok tényleges tengelyenkénti eltolása
+`trunc0(dotSize/2)` pixel. A QEMU 5×5-ös csempeméretű próbán a `(0,0)` origó
+`(-1,-1)`, a `(2.5,2.5)` origó `(1,1)` lett: a fáziskülönbség **2×2 px**,
+nem 2,5 vagy 3. A 5×5-ös kimenet mindkét fázisnál (0 és +2,5) külön
+Python-rácsmodellel teljes 1564/1564 bájtban egyezett; hash:
+`f8896375e587b89694f9250821b356c32e4539e8127fea65b3b43ab09d1b1c4f` és
+`eb3f4c261b5e66d44b8a8add4054536eeea1654da921e4d2bc37a1f810e75baa`.
+A Comicize méretképlete 23 px szélességnél
+`dotSize=1`; ekkor a beírt második offset 0,5, amelyet a wrapper 0-ra
+csonkol, így a két rács origója egyezik. (Ez a konkrét kicsi méret a képlet
+következménye; a maszk többi pixelmatematikájára nem általánosít.)
+
+**Bizonyítottság: a rácsorigó, az offset csonkolása, az ismétlés lépésköze,
+a plusz záró sor/oszlop és a képszéli klippelés megerősített.** Egyezik az
+utasításszintű levezetés, a wrapper eredeti kódjának futása, a bájtra pontos
+Python-újraszámítás és a vak, független QEMU-próba. A filterdesc-betöltő és a
+teljes Comicize-csővezeték ezen a 23×17-es wrapper-mérésen kívül maradt.
+
 **Keverés és perem.** A Comicize Tiled maszkjai teljes képnyi dobozt kérnek,
 `alphaMin=0`, `alphaMax` pedig a kötő alapértéke szerint 1 (`0x00bba580`;
 `filterdesc.xml:777–782`). Az első csempe `offset=(0,0)`, a másodiké
@@ -3034,9 +3130,10 @@ alsó veremelem). A recept pontos paraméterei a
 
 **Bizonyítottsági fok:** a csempe pixelmagja **megerősített** (utasításszintű
 olvasat + az eredeti worker QEMU-futtatása és attól független Python-bájt
-újraszámítás egyezik). A teljes multi-cell `0x00bba670` wrapper itt csak
-utasításszinten van ellenőrizve; integrált QEMU-goldenje nincs, ezért a teljes
-rácsra ez a rész **feltételes**.
+újraszámítás egyezik). A teljes multi-cell `0x00bba670` rácsgeometriája is
+**megerősített** a fenti wrapper-golden és a vak, független QEMU-kontroll
+alapján. A projekt `native_dot_mask` pixelmagja ettől továbbra sem tekinthető
+bájtpontosnak: a korábbi 7×7 összevetés 20/49 eltérő bájtot talált.
 
 #### `EdgeDetectionSobel` — a kernel teljesen megvan
 

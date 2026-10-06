@@ -9,6 +9,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - A kollázs-előnézet hibája most látható visszajelzést ad. (#4321)
 
+## [0.9.11] – 2026-10-06
+
+- A fel nem használt belső vezérlők kikerültek a felületi műveletlistából. (#4316).
+
 ## [0.9.10] – 2026-10-06
 
 - A Hőtérkép színátmenete mind a 768 színcsatorna-bájtban az eredeti Picasa kerekítését követi (#4309).
