@@ -11820,6 +11820,22 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Keresés a lemezen</translation>
         </message>
         <message>
+            <source>Locate</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Keresés</translation>
+        </message>
+        <message>
+            <source>File on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fájl a lemezen</translation>
+        </message>
+        <message>
+            <source>Locate Original on Disk</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
+            <translation>Eredeti a lemezen</translation>
+        </message>
+        <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Törlés lemezről</translation>
@@ -11902,7 +11918,8 @@ picasapy-origin-key: album:album/usemusic.title</extracomment>
         </message>
         <message>
             <source>Browse...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Tallózás…</translation>
         </message>
         <message>
@@ -16027,8 +16044,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
             <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: setup/ui_option3</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Teljes képernyős indítás (a Fotómegjelenítő újraindítása után lép érvénybe)</translation>
         </message>
         <message>

@@ -274,8 +274,8 @@ Rectangle {
         folderContextMenu.popup()
     }
 
-    // #422: a bal panel saját menüjének megnyitása — a pipák a menü
-    // nyitásakor veszik át a vezérlő friss rendezés-állapotát
+    // #422: a bal panel saját menüjének megnyitása — a rendezési pipák
+    // nyitáskor átveszik a vezérlő friss állapotát; a nézetpipák kötöttek.
     function openFolderListContextMenu() {
         if (controller) {
             // #461/3: a BAL HASÁB saját rendezése — az eredetiben ez a
@@ -1304,6 +1304,10 @@ Rectangle {
         // mint a menüsáv `Nézet ▸ Mappanézet` harmadik tétele
         simplifiedTree:
             pane.hierarchyController ? pane.hierarchyController.simplified : false
+        albumThumbs: pane.albumThumbs
+        viewRoot: (pane.hierarchyController
+                && pane.hierarchyController.viewRoot !== undefined)
+            ? pane.hierarchyController.viewRoot : ""
         // #1767: a Személyek lista rendezése — a `!== undefined` a
         // #1572-őr mintája (a próbák stub-vezérlőjén hiányozhat)
         peopleSort: (controller && controller.peopleSort !== undefined)
@@ -1318,6 +1322,13 @@ Rectangle {
         onSortReverseRequested: if (controller) controller.togglePaneSortReverse()
         onSimplifiedTreeRequested:
             if (pane.hierarchyController) pane.hierarchyController.toggleSimplified()
+        onAlbumThumbnailsRequested:
+            if (pane.hierarchyController)
+                pane.hierarchyController.toggleAlbumThumbs()
+        onViewRootRequested: function(token) {
+            if (pane.hierarchyController)
+                pane.hierarchyController.setViewRoot(token)
+        }
     }
 
     // #457: melyik mappát mozgatjuk épp (a dialógus elfogadásakor kell)
