@@ -8,6 +8,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - A nyelvválasztó mind a 41 nyelvhez betölti a Picasa eredeti fordításait és a PicasaPy-szövegeket tartalmazó szótárat (#4313).
+
+## [0.9.12] – 2026-10-06
+
 - Az automatikus arcfelismerés nem jelöl téves arcot fűben és tájképen: a felismerés küszöbe szigorúbb. (#4348)
 - Az arc- és vörösszem-felismerés a csomagolt YuNet detektorral letöltés nélkül működik; az SFace az első csoportosításkor, látható folyamatjelzéssel töltődik le. (#4315).
 
