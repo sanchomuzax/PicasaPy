@@ -23,6 +23,7 @@ magát (ld. ott).
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -232,9 +233,22 @@ _VALTOZAS_KUSZOB = 25
 def test_valodi_gpun_egerhuzassal(tmp_path):
     if not (_HEADLESS / "wayland-0").exists():
         pytest.skip(f"nincs headless Wayland-kompozitor ({_HEADLESS}/wayland-0)")
+    kliens = None
+    try:
+        kliens = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        kliens.settimeout(0.5)
+        kliens.connect(str(_HEADLESS / "wayland-0"))
+    except OSError as exc:
+        pytest.skip(f"a headless Wayland-kompozitor nem érhető el: {exc}")
+    finally:
+        if kliens is not None:
+            kliens.close()
     gyoker = Path(__file__).resolve().parents[3]
     kornyezet = {**os.environ, **_GPU_KORNYEZET}
     kornyezet.pop("DISPLAY", None)
+    # #4422: az offscreen tesztfuttató QT_QUICK_BACKEND=software értéke nem
+    # öröklődhet a valódi OpenGL-es Wayland alfolyamatba.
+    kornyezet.pop("QT_QUICK_BACKEND", None)
     eredmeny = subprocess.run(
         [sys.executable, "-m", "pytest", f"{__file__}::TestValodiGpu",
          f"{__file__}::TestValodiGpuAlloKep",
