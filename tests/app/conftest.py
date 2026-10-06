@@ -82,6 +82,23 @@ def _vard_meg_a_hatterszalakat(app) -> None:
         pass
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _kis_kepek_latszanak():
+    """#4346: a tesztek apró szintetikus képekkel dolgoznak, ezért az eredeti
+    „csak nagy képek” alapszűrőt itt kikapcsoljuk. Az alapértéket mérő teszt
+    a saját fixture-jében visszakapcsolja.
+
+    Saját `MonkeyPatch`-példány: egy teszt `monkeypatch.undo()`-ja így nem
+    vonja vissza (a közös példányt egy teszt menet közben visszaállíthatja).
+    Munkamenet-hatókörű, hogy a modulszintű ablak-fixture-ök is így épüljenek."""
+    from picasapy.app import small_picture_filter
+
+    folt = pytest.MonkeyPatch()
+    folt.setattr(small_picture_filter, "DEFAULT_SHOW_ONLY_BIG_IMAGES", False)
+    yield
+    folt.undo()
+
+
 @pytest.fixture(autouse=True)
 def qml_warnings():
     """#718: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
@@ -167,6 +184,10 @@ def _build_qml_app(qt_app, tmp_path):
         sync_tree(conn, lib)
 
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    # A legtöbb app-teszt apró szintetikus képekkel a teljes modell viselkedését
+    # vizsgálja; a Picasa-alapértékű kis-kép szűrést a saját #4346-os próba
+    # teszi vissza bekapcsolttá.
+    settings.setValue("view/showOnlyBigImages", False)
     # #960: a kollázs kimeneti mappája — ide kerül az `autosave.cxf`
     # piszkozat is. Enélkül a kollázst indító tesztek a felhasználó VALÓDI
     # képmappájába (`~/Pictures/Kollázsok`) írnának.

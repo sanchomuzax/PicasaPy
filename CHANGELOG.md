@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.18] – 2026-10-06
+
+- A Fotónéző menüpontból megnyitható és menthető a színkezelés beállítása. (#4333).
+- A kijelölt képek szövegfedvénye külön paranccsal megjeleníthető és elrejthető. (#4335).
+- A kijelölt képek fájllistaként húzhatók a rácsból és a képtálcáról más alkalmazásokba (#4347).
+
 ## [0.9.17] – 2026-10-06
 
 - A kollázs-előnézet hibája most látható visszajelzést ad (#4321).
