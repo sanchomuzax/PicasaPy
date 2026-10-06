@@ -69,6 +69,7 @@ def _build_qml_app(
     belyegkep_meret: int = 32,
     valodi_belyegkep: bool = False,
     email_vezerlo: bool = False,
+    show_only_big_images: bool | None = False,
 ):
     """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
 
@@ -113,6 +114,10 @@ def _build_qml_app(
     # elszigetelt QSettings — a rendszer valós PicasaPy-beállításait ne
     # szennyezze a teszt (session/lastFolder, view/thumbCaption).
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    # A kis tesztképeket használó régi QML-próbák teljes rácsot várnak; az
+    # eredeti Picasa-alapértéket a #4346-os teszt külön, hiányzó kulccsal méri.
+    if show_only_big_images is not None:
+        settings.setValue("view/showOnlyBigImages", show_only_big_images)
     # #1054: a kollázs KIMENETI mappája is elszigetelt legyen. Enélkül a
     # piszkozat- és mentés-utak a VALÓDI `~/Pictures/Picasa/Kollázsok`-ba
     # írnak: a #985 fülsáv-tesztje például egy `autosave.cxf`-et hagyott ott

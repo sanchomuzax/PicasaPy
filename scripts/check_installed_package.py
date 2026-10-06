@@ -119,7 +119,8 @@ def check_startup() -> list[str]:
         mappa = gyoker / "kepek"
         mappa.mkdir()
         kep = mappa / "a.jpg"
-        cv2.imwrite(str(kep), np.full((48, 64, 3), 128, np.uint8))
+        # #4346: a kép a „csak nagy képek” alapszűrő küszöbe (60 000 px²) fölött legyen
+        cv2.imwrite(str(kep), np.full((480, 640, 3), 128, np.uint8))
         db = gyoker / "index.sqlite"
         with open_index(db) as conn:
             sync_tree(conn, mappa)

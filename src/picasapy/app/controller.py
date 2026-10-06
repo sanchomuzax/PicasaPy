@@ -80,6 +80,12 @@ from .photo_ops_controller import _WRITE_ERRORS, PhotoOpsMixin
 from .timestamp_controller import TimestampAdjustmentMixin
 from .dupe_search_controller import DupeSearchMixin
 from .mentes_racs_szuro import MentesRacsSzuroMixin
+from . import small_picture_filter
+from .small_picture_filter import (
+    SHOW_ONLY_BIG_IMAGES_KEY,
+    coerce_show_only_big_images,
+    is_big_picture,
+)
 from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
 from .screensaver_controller import ScreensaverMixin
@@ -991,6 +997,24 @@ class AppController(
         value = self._get_settings().value("view/showHidden", "false")
         return value in (True, "true", "1")
 
+    @Property(bool, notify=statusChanged)
+    def showOnlyBigImages(self):  # noqa: N802 — QML-konvenció
+        """A könyvtári rács csak a Picasa szerint nagy képeket mutassa-e."""
+        value = self._get_settings().value(
+            SHOW_ONLY_BIG_IMAGES_KEY, small_picture_filter.DEFAULT_SHOW_ONLY_BIG_IMAGES
+        )
+        return coerce_show_only_big_images(value)
+
+    @Slot(bool)
+    def setShowOnlyBigImages(self, show: bool) -> None:  # noqa: N802
+        """A `Show only big images` választás mentése és a rács frissítése."""
+        show = bool(show)
+        if show == self.showOnlyBigImages:
+            return
+        self._get_settings().setValue(SHOW_ONLY_BIG_IMAGES_KEY, show)
+        self._refresh_view()
+        self.statusChanged.emit()
+
     @Slot(bool)
     def setShowHidden(self, show: bool) -> None:
         # #1637/2: a bal hasábot IS újra kell tölteni. A #1637 első köre a
@@ -1603,6 +1627,17 @@ class AppController(
             )
         # #3751: mentés-üzemmódban csak a még el nem mentett fájlok
         records = self._mentes_szurt(records)
+        # #4346: az eredeti `Show only big images` preferenciája a
+        # könyvtári képrács láthatóságát szűri. A videók és a méretadat
+        # nélküli sorok megmaradnak; ez utóbbiaknál az eredeti is az
+        # általános hozzáadási ágra jut.
+        if self.showOnlyBigImages:
+            records = tuple(
+                record
+                for record in records
+                if record.kind not in ("photo", "image")
+                or is_big_picture(record.width, record.height)
+            )
         # #142: a mappaváltás-gyorsút pecsétje — csak a teljes feedet
         # mutató mappa-nézet érvényes hozzá (szűrt/keresett nézet nem)
         self._feed_stamp = (

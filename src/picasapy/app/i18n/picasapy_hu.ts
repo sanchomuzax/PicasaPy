@@ -11752,81 +11752,104 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
 </context>
 <context>
+    <name>FirstRunLanguageDialog</name>
+    <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="13" />
+            <source>Confirm</source>
+            <translation>Megerősítés</translation>
+        </message>
+    <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="37" />
+            <source>PicasaPy is now available in your system's native language. Would you like to switch PicasaPy from English to this language?</source>
+            <translation>A PicasaPy már a rendszer nyelvén is elérhető. Szeretnéd a PicasaPy nyelvét angolról erre a nyelvre váltani?</translation>
+        </message>
+    <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="47" />
+            <source>Yes</source>
+            <translation>Igen</translation>
+        </message>
+    <message>
+            <location filename="../qml/PicasaPy/FirstRunLanguageDialog.qml" line="53" />
+            <source>No</source>
+            <translation>Nem</translation>
+        </message>
+</context>
+<context>
     <name>AdjustTimestampDialog</name>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="241" />
-            <source>Mon</source>
-            <translation>H</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="241" />
+                <source>Mon</source>
+                <translation>H</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="248" />
-            <source>Tue</source>
-            <translation>K</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="248" />
+                <source>Tue</source>
+                <translation>K</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="255" />
-            <source>Wed</source>
-            <translation>Sze</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="255" />
+                <source>Wed</source>
+                <translation>Sze</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="262" />
-            <source>Thu</source>
-            <translation>Cs</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="262" />
+                <source>Thu</source>
+                <translation>Cs</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="269" />
-            <source>Fri</source>
-            <translation>P</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="269" />
+                <source>Fri</source>
+                <translation>P</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="276" />
-            <source>Sat</source>
-            <translation>Szo</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="276" />
+                <source>Sat</source>
+                <translation>Szo</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="283" />
-            <source>Sun</source>
-            <translation>V</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="283" />
+                <source>Sun</source>
+                <translation>V</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
-            <source>Adjust Photo Date - %1 items</source>
-            <translation>Dátum módosítása – %1 fotó</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+                <source>Adjust Photo Date - %1 items</source>
+                <translation>Dátum módosítása – %1 fotó</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
-            <source>Current photo date</source>
-            <translation>Jelenlegi fotódátum</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
+                <source>Current photo date</source>
+                <translation>Jelenlegi fotódátum</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="108" />
-            <source>New photo date</source>
-            <translation>Új fotódátum</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="108" />
+                <source>New photo date</source>
+                <translation>Új fotódátum</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="153" />
-            <source>New photo time</source>
-            <translation>Új fotó időpontja</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="153" />
+                <source>New photo time</source>
+                <translation>Új fotó időpontja</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="205" />
-            <source>Previous month</source>
-            <translation>Előző hónap</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="205" />
+                <source>Previous month</source>
+                <translation>Előző hónap</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="223" />
-            <source>Next month</source>
-            <translation>Következő hónap</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="223" />
+                <source>Next month</source>
+                <translation>Következő hónap</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="164" />
-            <source>Adjust all photo dates by the amount</source>
-            <translation>Minden fotó dátumának eltolása ugyanannyival</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="164" />
+                <source>Adjust all photo dates by the amount</source>
+                <translation>Minden fotó dátumának eltolása ugyanannyival</translation>
+            </message>
     <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="173" />
-            <source>Set all photos to the same date and time</source>
-            <translation>Minden fotó dátumának és idejének beállítása ugyanarra</translation>
-        </message>
+                <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="173" />
+                <source>Set all photos to the same date and time</source>
+                <translation>Minden fotó dátumának és idejének beállítása ugyanarra</translation>
+            </message>
 </context>
 </TS>
