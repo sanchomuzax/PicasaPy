@@ -1924,8 +1924,76 @@ csomópontokat is kezeli — vagyis a **teljes képernyős** útra vált át. A
 eltávolítási blokkot adja. ⇒ Ez **akció-belépési pont**, nem bizonyíték arra,
 hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
-⇒ **Az Idővonal nem nézet-kapcsoló, hanem egy előkészítő lépéssel induló,
-teljes képernyős bemutató-mód** („Preparing timeline…" folyamatjelzővel).
+⇒ **Az Idővonal parancs egy előkészítő szöveget használó, `oneup` bemutató-útvonalat indít; nem a mai PicasaPy év/hónap-rács útvonala.** A teljes képernyős jelleg az útvonalból és a hozzá tartozó `oneup`/overlay erőforrásokból következik, a futó ablak tényleges megjelenése itt nincs megmérve.
+
+#### 38.2.1 Az Időrend bemutató-útja és bizonyított határai (#4443 kutatás)
+
+**A út — utasításszintű olvasat.** A billentyűkezelő `0x005e6279` ága
+ellenőrzi a `0x005696c0` őrt, majd `1` argumentummal hívja a
+`0x005e8a70`-et; a `Ctrl+5` menürekordja a `0x9ccc` parancsra mutat
+(`picasa-gyorsbillentyuk.md` 10.6). A `thumbui/timelinebutton` nevű
+diszpécserág `0x005da767–0x005da7ae` ugyancsak az `0x005e8a70`-et hívja.
+Ez a közös kezelő a `Picture Tray` képeire vonatkozó őrszöveget tartalmazza
+(„You must have images in the Picture Tray to do this.”). Az Időrend ágban
+`0x005e943d–0x005e944d` a `CThumbUI::MakeTimeline` és a „Preparing
+timeline…” szöveget adja át a `0x009ae560` helpernek. A helper diszasszemblálása
+nem azonosít megjelenítő vagy folyamatjelző-vezérlőt: **a szöveg bizonyított,
+a tényleges folyamatjelző NINCS MEG**.
+
+A kezelő `0x005e8c42–0x005e8c51` a `searchcontainer/search` és
+`thumbui/fullview` csomópontokat állítja, majd a bemutató-út egy későbbi
+ágában meghívja a `0x008037e0`-et. Ez `oneup/timeline` és `oneup/transtype`
+kulcsokat kér le, és a `0x007fb210` overlay-felépítőbe vezet. A felépítő
+`overlays/left`, `right`, `mouse`, `rollovermouse`, `exit`, `timeline`,
+`timelinedot`, `sliderthumb`, `startbutton` és `overlay` nevű elemeket kér
+le. Ez bemutató-vezérlőréteget és idővonal-jelölő/csúszka-erőforrásokat
+bizonyít; **nem bizonyít dátumfeliratot, dátum szerinti rendezést vagy
+kártyaelrendezést**.
+
+**B út — független erőforrás-leltár.** A `runtime/respack.yt` csomagból
+kinyert `oneup.tre` az `oneup/exit`, `oneup/timeline`, `oneup/prev`,
+`oneup/next`, `oneup/auto`, `oneup/transtype`, `oneup/plusone`,
+`oneup/minusone` és `oneup/tps` elemeket definiálja. A `oneup/prev` és
+`oneup/next` kattintásra vannak állítva; a `oneuptext.tre` címkéi `Timeline`,
+`Exit` és `Display Time`. Az `overlays/*` elemeket a fenti kódút egymástól
+független, név szerinti erőforrásokként olvassa. A `thumbui_text.tre` viszont
+„Timeline view of all your photos” súgót ad a főablaki gombhoz, miközben a
+közös bemutatókezelő Picture Tray-őrrel indul. Ez az eltérés nem dönti el,
+hogy a végső bemutató a teljes könyvtárat vagy csak a tálca elemeit dolgozza-e
+fel.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x005e8a70` → `0x008037e0` → `0x007fb210`: teljes képernyősnek szánt `oneup` bemutatóút, előkészítő szöveggel és overlay-erőforrásokkal; a tényleges kártyák, dátumsáv, rendezés és animáció nincs meg. | A `TimelineView.qml` a könyvtár év/hónap-rácsa; a Nézet-menü Időrendje és `Ctrl+5` tiltott. A fejlécben a korábbi `timelinebutton` eltávolítva. | A teljes képernyős útvonalat a rács újracímkézésével ne helyettesítsük. A bemutató tartalmát és animációját csak a nyitott kérdések feloldása után implementáljuk; a fejlécgombot csak az eredeti futó felületen igazolt láthatóság esetén tegyük vissza. |
+| A bináris kezeli a `thumbui/timelinebutton` akciónevet; a kiadott `thumbui.tre` ugyanennek a főablaki elemnek `m_hidden`-t ad, és a feliratsora kommentelt, eltávolítási blokkban van. | A QML fejlécgomb nincs aktívként kitéve; a menü és a gyorsbillentyű tiltott. | Az akció belső bekötése nem bizonyít látható eredeti eszköztárgombot. A gomb láthatósága futó Picasán **NINCS MEG**; a bináris erőforrás önmagában rejtett állapotot mutat. |
+| Az `oneup.tre` vezérlői: `Exit`, `Timeline`, előző/következő, automatikus lejátszás, átmenettípus és kijelzési idő. A `0x008032e0` az `exit`, `timeline`, `prev`, `next` kattintási ágakat kezeli. | A mostani rácsban ezek a bemutató-vezérlők nincsenek. | A gombműveletek beköthetők a fenti nevekkel; az animáció, az `Exit` visszatérési célja és a billentyűs vezérlés pontos viselkedése nyitott. |
+
+**Cáfoló kísérlet.** Azt az alternatívát vizsgáltam, hogy a `Ctrl+5` csak a
+PicasaPy meglévő év/hónap-rácsára vált. A `0x005e8a70` utasításútja a
+`thumbui/fullview` állapotot és a `0x008037e0` `oneup`-felépítőt éri el; a
+független `oneup.tre`/overlay-leltár bemutató-vezérlőket sorol fel. Ez a
+„csak rácsnézetet kapcsol” magyarázatot cáfolja, de **nem** zárja ki, hogy a
+teljes képernyős bemutató egyes képkockái több fotót vagy dátumkártyát
+mutassanak. A fejlécgomb láthatóságára vonatkozó ellenpróba a `thumbui.tre`
+`m_hidden` beállítása; a parancs-diszpécser megléte csak az akcióútvonalat
+igazolja, nem cáfolja a rejtett állapotot. Dinamikus felülírás futás közben
+**NINCS MEG**.
+
+**Bizonyítottsági fok: feltételes.** Két független út egyezik abban, hogy a
+parancs `oneup`/overlay bemutatóutat nyit, saját vezérlőkkel. A kért tényleges
+képi tartalmat, az idővonal dátumainak jelentését/sorrendjét, az animációt,
+a billentyűket és a visszatérés célját egyik út sem dönti el. A `CTransTimeline`
+név a filmkészítő/People Albums másik hívási láncában szerepel
+(`picasa-create-features.md` 2038–2138); ebben a vizsgálatban nem használtam
+az Időrend animációjának bizonyítékaként.
+
+**Nyitott — következő pontos lépés:**
+
+- `Ghidra-kör kell: 0x005e8a70 — milyen képadatot és sorrendet ad át az Időrendnek; a Picture Tray, a teljes könyvtár és az albumok közül melyik a tényleges bemenet, és honnan épülnek a dátumkártyák? [blokkoló]`
+- `Ghidra-kör kell: 0x008037e0 — melyik mód-/ablakállapot jeleníti meg ténylegesen a oneup idővonalat, és milyen átmeneti állapotokat aktivál a belépés? [blokkoló]`
+- `Ghidra-kör kell: 0x007fda00 — a oneup/timeline kattintás átmenetének animációja, időzítése és állapotváltása; a mostani utasításolvasat ezeket nem nevezi meg. [blokkoló]`
+- `Ghidra-kör kell: 0x008032e0 — az oneup/exit virtuális visszahívás célja, valamint az előző/következő és timeline kattintások teljes hatása. [blokkoló]`
+- A kilépéshez használt billentyű, a dátum-/mappakártyák és a futó Picasában látható tényleges elrendezés: **NINCS MEG**; következő bizonyíték a fenti célzott Ghidra-kör után eredeti Windows Picasán végzett képernyőfelvétel és billentyűpróba.
 
 ### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
 
@@ -1957,19 +2025,22 @@ nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
 | parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
-| `ID_VIEW_TIMELINE` (`0x9ccc`) | teljes képernyős bemutató-mód, „Preparing timeline…" előkészítéssel; gomb-belépési pont is (`thumbui/timelinebutton`) | menütétel + **valódi bekötés**: `Main.qml:823` → `toggleTimeline()` → `timelineController.reload()` + `timelineOpen` (`Main.qml:611`) | a **gomb**-belépési pont és az előkészítés-jelző hiányzik (kis jegy, ha kell) |
+| `ID_VIEW_TIMELINE` (`0x9ccc`) | `0x005e8a70` a `oneup`/overlay bemutatóutat indítja, „Preparing timeline…” szöveget ad át; a `thumbui/timelinebutton` erőforrás rejtett (`thumbui.tre`, `m_hidden`). A képi tartalom és animáció **NINCS MEG**. | A legacy `TimelineView.qml` év/hónap-rács megmaradt, de a Nézet-menü (`PicasaMenuBar.qml:941`) és `Ctrl+5` (`Main.qml:1406`) `enabled: false`; a fejlécgomb eltávolított. | A rács helyett a bizonyított `oneup` útvonalat kell specifikálni; a dátum-/kártyamodell, animáció és billentyűk Ghidra + eredeti futó felületi bizonyíték után implementálhatók. A főablaki eszköztárgomb láthatóságát ne vegyük át automatikusan: a csomagolt erőforrás rejtettnek jelöli. |
 | `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
 
 ### Nyitott kérdések mérlege (38.)
 
 ```
-Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a három parancsazonosító (38. bevezető); a `ShowHidden`
   tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
-  Idővonal bemutató-mód jellege és belépési pontjai (38.2); a háttérkép
-  teljes írási lánca, a stílusértékekkel együtt (38.3).
+  Időrend `oneup`/overlay belépési útja (38.2.1); a háttérkép teljes írási
+  lánca, a stílusértékekkel együtt (38.3).
+- **NYITVA (`#4443`):** az Időrend tényleges bemeneti modellje, dátumkártyái,
+  animációja, billentyűi és kilépési célja (38.2.1). A pontos, célzott
+  Ghidra-kérések fent.
 - **BLOKKOLT:** hogy a jelszó-ajánlat a BE- vagy a KIkapcsoláskor jön-e.
   A `0x005cb990` két hívóhelye statikusan nem különbözteti meg őket.
   **Mi kell hozzá:** egy megfigyelés élő Picasán — a „Nézet ▸ Rejtett
