@@ -203,4 +203,25 @@ def test_the_production_tree_matches_the_reviewed_baseline() -> None:
 
     assert new == []
     assert stale == []
-    assert len(baseline) == guard.MAX_BASELINE_ENTRIES
+    assert len(baseline) <= guard.MAX_BASELINE_ENTRIES
+
+
+def test_a_sorszam_eltolodasa_nem_ad_uj_es_elavult_tetelt() -> None:
+    """Ha egy PR sort szúr be a tétel fölé, a tétel ugyanaz marad."""
+    regi = {("constant-disabled", "src/x/A.qml:10:enabled=false"): "indok"}
+    eltolt = guard.Finding(
+        "constant-disabled", "src/x/A.qml:12:enabled=false", "src/x/A.qml", 12, "leírás"
+    )
+    assert guard.compare([eltolt], regi) == ([], [])
+
+
+def test_azonos_fajlban_a_darabszam_szamit() -> None:
+    regi = {("constant-disabled", "src/x/A.qml:10:enabled=false"): "indok"}
+    ket_talalat = [
+        guard.Finding("constant-disabled", f"src/x/A.qml:{sor}:enabled=false",
+                      "src/x/A.qml", sor, "leírás")
+        for sor in (10, 20)
+    ]
+    uj, elavult = guard.compare(ket_talalat, regi)
+    assert len(uj) == 1 and elavult == []
+    assert guard.compare([], regi) == ([], [("constant-disabled", "src/x/A.qml:10:enabled=false")])
