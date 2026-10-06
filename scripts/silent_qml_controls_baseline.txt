@@ -8,7 +8,6 @@ constant-disabled	src/picasapy/app/qml/PicasaPy/EditorPanel.qml:816:enabled=fals
 constant-disabled	src/picasapy/app/qml/PicasaPy/EditorPanel.qml:833:enabled=false	A visszavonás-sor díszítő elmosási rétege; az eseményt a mögöttes vezérlő kapja.
 constant-disabled	src/picasapy/app/qml/PicasaPy/EmailChoiceDialog.qml:141:enabled=false	Google-fiókos küldés nincs ebben a változatban; a ToolTip ezt kimondja.
 constant-disabled	src/picasapy/app/qml/PicasaPy/EmailChoiceDialog.qml:277:enabled=false	A Change User a nem elérhető Google-fiókos küldéshez tartozik; a ToolTip ezt kimondja.
-constant-disabled	src/picasapy/app/qml/PicasaPy/FolderPropertiesDialog.qml:159:enabled=false	Külön funkciójegy: a picasa-fen-dialogs.md 3.2 usemusic jelölőt és hozzá kötött zenefájl-választót ír le; ez a mai QML-ben letiltott.
 constant-disabled	src/picasapy/app/qml/PicasaPy/ImportSourceDialog.qml:334:enabled=false	Picasa Web Albums feltöltés: a szolgáltatás megszűnt, ezt a forráskomment jelöli.
 constant-disabled	src/picasapy/app/qml/PicasaPy/ImportSourceDialog.qml:365:enabled=false	Csak online album-szinkron beállítása; a Picasa Web Albums szolgáltatás nincs támogatva.
 constant-disabled	src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:271:enabled=false	A „Sync to Web” helyőrző funkció nélkül (#423; a forráskomment szerint későbbi funkció).
