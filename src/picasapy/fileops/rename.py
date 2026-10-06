@@ -105,6 +105,45 @@ def _validate_name(name: str) -> None:
         raise ValueError(f"Érvénytelen fájlnév: {name!r}")
 
 
+class PartialRenameError(RuntimeError):
+    """A köteg valamely fájlnál végrehajtási hiba miatt megállt.
+
+    A ``completed_paths`` a hiba előtt sikeresen feldolgozott fájlok kimeneti
+    útvonalait tartalmazza; a ``renamed_paths`` ezek közül a ténylegesen
+    átnevezetteket. A hibás fájl útvonala a ``failed_source`` és
+    ``failed_target`` mezőben van. Ennél az utolsó fájlnál az állapot
+    ellenőrzendő, mert például ini-mentési hiba már a képfájl mozgatása után
+    is keletkezhet.
+    """
+
+    def __init__(
+        self,
+        *,
+        completed_paths: Sequence[Path],
+        renamed_paths: Sequence[Path],
+        failed_source: Path,
+        failed_target: Path,
+        cause: Exception,
+    ) -> None:
+        self.completed_paths = tuple(completed_paths)
+        self.renamed_paths = tuple(renamed_paths)
+        self.failed_source = failed_source
+        self.failed_target = failed_target
+        self.cause = cause
+
+        if self.renamed_paths:
+            changed = ", ".join(str(path) for path in self.renamed_paths)
+            changed_text = f"Sikeresen átnevezve: {changed}. "
+        else:
+            changed_text = "A hiba előtt fájl nem lett átnevezve. "
+        super().__init__(
+            "A kötegelt átnevezés hiba miatt megállt. "
+            f"{changed_text}A(z) {failed_source} feldolgozásakor állt le; "
+            f"ellenőrizze ennek és a {failed_target} célfájlnak az "
+            f"állapotát. Hiba: {cause}"
+        )
+
+
 @dataclass(frozen=True)
 class RenameItem:
     """Egy tömegesen átnevezendő fájl bemenete (#366): az útvonal mellett a
@@ -192,15 +231,21 @@ def rename_photos_many(
     """Tömeges átnevezés a `rename.fen` szerint (#366): a kijelölt fájlok
     egyetlen alapnevet kapnak (+ opcionális dátum-/felbontás-utótag),
     Picasa-mintájú sorszámozással (`név`, `név-1`, `név-2`…). A teljes köteg
-    célneveit ELŐRE ellenőrizzük ütközésre — vagy az egész köteg átnevezhető,
-    vagy egyik fájl sem mozdul. Fájlonként az egyfájlos `rename_photo`-t
-    hívja (ini-átvitel ugyanazon az úton).
+    célneveit ELŐRE ellenőrizzük ütközésre; ezek az előellenőrzési hibák még
+    egyetlen fájlt sem mozgatnak. Ezután fájlonként, sorrendben az egyfájlos
+    `rename_photo`-t hívja (ini- és kísérőfájl-átvitel ugyanazon az úton).
+    Futás közbeni hiba esetén a már sikeres átnevezések a helyükön maradnak,
+    nincs köteg-szintű visszagörgetés. A `PartialRenameError` strukturáltan
+    megadja a sikeres és az elakadt fájlokat; az elakadt fájl állapota ini- vagy
+    fájlrendszer-hibánál ellenőrzendő.
 
     Raises:
         ValueError: érvénytelen alapnév.
         FileExistsError: ütköző célnevek (a kötegen belül vagy a mappa
             meglévő tartalmával).
-        FileNotFoundError, IniConflictError: ld. `rename_photo`.
+        PartialRenameError: fájlonkénti végrehajtási hiba; tartalmazza a már
+            sikeresen feldolgozott útvonalakat, a hibás forrást és célnevet,
+            valamint az eredeti kivételt.
     """
     if not items:
         return []
@@ -215,9 +260,22 @@ def rename_photos_many(
     _check_batch_collisions(items, names)
 
     results: list[Path] = []
+    renamed: list[Path] = []
     for item, name in zip(items, names, strict=True):
         if name == item.path.name:
             results.append(item.path)  # no-op: a név ténylegesen nem változik
         else:
-            results.append(rename_photo(item.path, name))
+            target = item.path.with_name(name)
+            try:
+                result = rename_photo(item.path, name)
+            except Exception as error:
+                raise PartialRenameError(
+                    completed_paths=results,
+                    renamed_paths=renamed,
+                    failed_source=item.path,
+                    failed_target=target,
+                    cause=error,
+                ) from error
+            results.append(result)
+            renamed.append(result)
     return results

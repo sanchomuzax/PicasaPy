@@ -53,7 +53,12 @@ from picasapy.edit.effect_clipboard import (
     crop_mirror_value,
     paste_all_effects,
 )
-from picasapy.fileops import RenameItem, preview_name, rename_photos_many
+from picasapy.fileops import (
+    PartialRenameError,
+    RenameItem,
+    preview_name,
+    rename_photos_many,
+)
 from picasapy.index import (
     open_index,
     photos_with_keyword,
@@ -701,6 +706,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     items, base_name,
                     include_date=include_date, include_size=include_size,
                 )
+            except PartialRenameError as error:
+                # Részleges futásnál a fájlok/ini-szekciók egy része már
+                # megváltozott. Frissítsük ugyanazokat a mappákat, majd a
+                # strukturált hibaszöveg mutassa meg, mely nevek készültek el.
+                folders = sorted({str(item.path.parent) for item in items})
+                self._renameBatchDone.emit(folders)
+                self.photoOpFailed.emit(str(error))
+                return
             except (OSError, ValueError, IniSaveError, IniConflictError) as error:
                 self.photoOpFailed.emit(str(error))
                 return
