@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 import shiboken6
-from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QSettings, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QSettings, QTimer, Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtQuick import QQuickItem
@@ -809,7 +809,7 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
                 QTest.keyClick(celablak, Qt.Key.Key_Escape)
             qt_app.processEvents()
             naplo.append(f"{nev}: Escape billentyűvel, Mégse útvonalon bezárva")
-        if not _varj(qt_app, lambda: not _lathato_dialogusok(ablak), 1.0):
+        if not _varj(qt_app, lambda: not _lathato_dialogusok(ablak), 3.0):
             naplo.append("Mégse útvonal után is nyitva maradt párbeszédablak")
 
 
@@ -940,7 +940,10 @@ def _allitsd_vissza_a_mintamappat(
     ), "a bejáró nem állt vissza a kereső és a mintamappa alaphelyzetébe"
 
 
-def _akcio(ablak, vezerlo, minta, menu_bar, qt_app, cim, leiras, cel, kulsok):
+def _akcio(
+    ablak, vezerlo, minta, menu_bar, qt_app, cim, leiras, cel, kulsok,
+    *, passport_vezerlo=None,
+):
     nev = str(leiras.get("nev", ""))
     nyelvi_parancs = nev.startswith("menuLanguage")
     if nyelvi_parancs and not (
@@ -1025,7 +1028,10 @@ def _akcio(ablak, vezerlo, minta, menu_bar, qt_app, cim, leiras, cel, kulsok):
         1.0,
     )
     if nev == "menuToolsPassportPhoto":
-        assert vezerlo.waitForBackgroundWorkers(3.0), (
+        assert passport_vezerlo is not None, (
+            "az útlevélkép háttérmunkájának vezérlője hiányzik"
+        )
+        assert passport_vezerlo.waitForBackgroundWorkers(3.0), (
             "az útlevélkép háttérmunkája nem fejeződött be"
         )
         qt_app.processEvents()
@@ -1252,6 +1258,8 @@ def test_tiszta_profilbol_valodi_kattintassal_bejarja_a_fomenuket(
 
     menu_bar = ablak.property("menuBar")
     assert menu_bar is not None, "a főablak felső menüsora hiányzik"
+    passport_vezerlo = _motor.rootContext().contextProperty("passportController")
+    assert passport_vezerlo is not None, "a passportController nincs bekötve"
     parancsazonositok = set()
     for rovid_nev, cim in _MENUK:
         menu = _megnyit(menu_bar, qt_app, cim)
@@ -1279,6 +1287,7 @@ def test_tiszta_profilbol_valodi_kattintassal_bejarja_a_fomenuket(
                         parancs,
                         tmp_path / "kepernyokepek",
                         kulsok,
+                        passport_vezerlo=passport_vezerlo,
                     )
                 except Exception as exc:  # a hátralévő menütételeket is végigjárjuk
                     keput = _kepernyout(
@@ -1467,6 +1476,35 @@ def test_keresesi_parancs_utan_torolje_a_keresot_es_allitsa_vissza_a_mintamappat
     assert not any(menu.property("opened") is True for menu in _menuk(menu_bar))
 
 
+def test_parbeszed_bezarasara_varakozik_a_lathato_allapot_vegeig(
+    qt_app, monkeypatch
+):
+    """A lassabban bezáródó párbeszédet ne jelentse nyitva maradónak."""
+    from PySide6.QtQuick import QQuickWindow
+
+    ablak = QQuickWindow()
+    ablak.show()
+    qt_app.processEvents()
+    dialogus = QObject()
+    dialogus.setObjectName("kesleltetettDialog")
+    dialogus.setProperty("visible", True)
+    monkeypatch.setitem(
+        globals(),
+        "_lathato_dialogusok",
+        lambda _ablak: [dialogus] if dialogus.property("visible") else [],
+    )
+    # Az Escape után a QML bezárási átmenete csak később tünteti el az ablakot.
+    QTimer.singleShot(1250, lambda: dialogus.setProperty("visible", False))
+    naplo = []
+    try:
+        _zarj_parbeszedeket(ablak, qt_app, naplo)
+    finally:
+        ablak.close()
+
+    assert dialogus.property("visible") is False
+    assert not any("nyitva maradt" in sor for sor in naplo), naplo
+
+
 def test_screensaver_utan_a_backup_parancs_is_elerheto(
     tiszta_menuproba, qt_app
 ):
@@ -1490,6 +1528,10 @@ def test_screensaver_utan_a_backup_parancs_is_elerheto(
         screensaver,
         tmp_path / "kepernyokepek",
         kulsok,
+    )
+    assert not _lathato_dialogusok(ablak), (
+        "a Configure Screensaver párbeszédablaka nem záródott be a parancs után: "
+        f"{screensaver_eredmeny}"
     )
 
     tools_menu = _megnyit(menu_bar, qt_app, "&Tools")
