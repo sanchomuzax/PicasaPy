@@ -34,7 +34,7 @@ tűrés: a folt minden képpontja a várt szín.
 
 Nem a termék konstansaiból olvasva — a spec egész-aritmetikájából
 kiszámolva, hogy a konstans elrontása is bukást okozzon
-(`docs/specs/picasa-megjelenitesi-modok.md` 5.4/5.5/5.6/5.9):
+(`docs/specs/picasa-megjelenitesi-modok.md` 5.3–5.6/5.9):
 
 * Projektor mód: `200·220>>8 = 171`, `255·220>>8 = 219`
 * LCD fehérpont: `200·246>>8 = 192`
@@ -43,12 +43,9 @@ kiszámolva, hogy a konstans elrontása is bukást okozzon
 
 ## Amit ez a fájl SZÁNDÉKOSAN nem követel meg
 
-Az öt meg nem valósított mód (`auto`, `normal`, `dither16`, `rdesk`, `mac`)
-a **#1579** dolga. Az itteni `TestMegNemValositottModok` tételesen
-felsorolja mind az ötöt, és azt állítja, hogy a rács képe NEM változik —
-vagyis ha valamelyik később megvalósul, ez a teszt szól, és az elvárást a
-#1579 írja át. Ez nem ellentmond a #1596-nak: ott a lánc hiányzott, itt a
-képpont-szabály hiányzik.
+Az `auto` és a `normal` mód a rácson is no-op: az előbbi csak 16 bites
+képernyőn szemcséz, az utóbbi nem alakít át. A `dither16` külön, a #4412
+szerint hat a rácsra is; a `rdesk` nyugdíjazott mód.
 
 A `sepia` és a `bw` a **#1657** óta KIKERÜLT ebből a névsorból: azok ma már
 mozdítanak képpontot, és a rácson is hatnak — a mérésüket a
@@ -270,16 +267,12 @@ class TestRacsKeppontok:
         )
 
 
-class TestMegNemValositottModok:
-    """Az öt, ma képpontot NEM mozdító tétel — a #1579 dolga.
+class TestSzandekosUresjaratok:
+    """Az `auto` és a `normal` mód a rácson nem mozdít képpontot.
 
     Itt SZÁNDÉKOSAN azt állítjuk, hogy a rács képe változatlan: a #1596
-    hatóköre a LÁNC, nem a képpont-szabály. Ha a #1579 valamelyiket
-    megvalósítja, ez a teszt szól, és az elvárást ott kell átírni.
-
-    A `sepia`/`bw` a #1657 óta NEM tartozik ide, a `dither16`/`rdesk`/`mac`
-    pedig a #1658 óta: azok jelölt, letiltott tételek, rájuk kattintani sem
-    lehet — a rács változatlanságát ott a letiltás garantálja.
+    hatóköre a LÁNC, nem a képpont-szabály. A `dither16` külön teszteli
+    a #4412, a `rdesk` pedig nyugdíjazott és letiltott.
     """
 
     @pytest.mark.parametrize(
@@ -287,11 +280,8 @@ class TestMegNemValositottModok:
         [
             (TETEL_AUTO, "auto"),
             (TETEL_24BIT, "normal"),
-            # ⚠️ #1658: a `dither16`, az `rdesk` és a `mac` tétele MA jelölt és
-            # LETILTOTT — kattintani sem lehet rájuk, tehát módot sem állítanak.
-            # A rács változatlanságát rájuk a letiltás garantálja (a
-            # `test_megjelenitesi_mod_jelolesek_1658.py` méri); itt csak a két
-            # SZÁNDÉKOS üresjárat marad, amelyik tényleg választható.
+            # A rácson no-op `auto` és `normal` választható; a 16 bites mód
+            # képpont-hatását a #4412 nézőtesztje és a render-egységteszt méri.
         ],
     )
     def test_a_racs_kepe_valtozatlan(self, racs, qt_app, tetel, mod):

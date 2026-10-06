@@ -44,11 +44,12 @@ class TestAzEgyForras:
         set_current_display_mode("sepia")
         assert current_display_mode() == "sepia"
 
-    def test_a_kepponthato_mod_CIMKET_kap(self):
-        set_current_display_mode("sepia")
-        assert current_display_mode_suffix() == "&d=sepia"
+    @pytest.mark.parametrize("mod", ["dither16", "sepia"])
+    def test_a_kepponthato_mod_CIMKET_kap(self, mod):
+        set_current_display_mode(mod)
+        assert current_display_mode_suffix() == f"&d={mod}"
 
-    @pytest.mark.parametrize("mod", ["", "auto", "normal", "dither16", "rdesk"])
+    @pytest.mark.parametrize("mod", ["", "auto", "normal", "rdesk"])
     def test_a_no_op_modok_NEM_kapnak_cimket(self, mod: str):
         """Enélkül a Qt URL-kulcsú gyorstára fölöslegesen duplázódna, és
         minden módváltás újrarenderelné a felületet hatás nélkül."""
