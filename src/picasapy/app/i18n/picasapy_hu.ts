@@ -1705,13 +1705,19 @@ picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
         </message>
         <message>
             <source>Cluster threshold:</source>
+            <extracomment>    picasapy-origin-key: options:options/labelgroup181.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup181.title</extracomment>
             <translation>Csoportküszöb:</translation>
         </message>
-    <message>
+        <message>
             <source>Upload people album thumbnails to Google Contacts</source>
+            <extracomment>    picasapy-origin-key: options:options/uploadcontactphotos.title
+picasapy-origin: picasa
+picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
             <translation>Az Emberek album indexképeinek feltöltése a Google Címtárba</translation>
         </message>
-</context>
+    </context>
     <context>
         <name>WebExportDialog</name>
         <message>
