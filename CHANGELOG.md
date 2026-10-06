@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.9] – 2026-10-06
+
+- A Poszter készítése számozott, átfedő képlapokat ment, párbeszéde pedig Qt 6.11 alatt is az ablak közepén nyílik meg. (#4268).
+
 ## [0.9.8] – 2026-10-06
 
 - A Glimmer keret íves sarkai mostantól az eredeti Picasa rajzolási képletét követik. (#4300).
