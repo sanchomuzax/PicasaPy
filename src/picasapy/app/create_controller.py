@@ -67,7 +67,7 @@ from picasapy.movie.mxf import (
 
 from . import collage_output, collage_prefs
 from .formatting import to_local_path
-from .worker_thread import BackgroundWorkerMixin
+from .poster_controller import PosterMixin
 
 logger = logging.getLogger(__name__)
 
@@ -100,8 +100,8 @@ _MOVIE_PREFERENCES = {
 _PREVIEW_SIZE = (640, 480)
 
 
-class CreateMixin(BackgroundWorkerMixin):
-    """Kollázs- és mozgófilm-készítés a kijelölésből, háttérszálon."""
+class CreateMixin(PosterMixin):
+    """Poszter-, kollázs- és mozgófilm-készítés a kijelölésből."""
 
     # (célfájl, felhasznált, kihagyott, ebből NEM TALÁLHATÓ) — #459/3: a
     # hiányzó fájl más eset, mint az olvashatatlan, külön mondatot kap

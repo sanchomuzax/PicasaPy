@@ -20,6 +20,7 @@ munkafolyamatból, és a hiányos csomag a tulajdonos gépén bukna el.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -61,15 +62,22 @@ class TestAPyInstallerCsomag:
     def test_az_indito_letezik_es_nincs_benne_relativ_import(self):
         indito = _GYOKER / "packaging" / "windows" / "picasapy_launcher.py"
         assert indito.is_file()
-        #: csak a KÓD-sorokat nézzük: a docstring maga idézi a hibás alakot
-        kod = [
-            sor for sor in indito.read_text(encoding="utf-8").splitlines()
-            if sor and not sor.startswith(("#", " ", '"', "'"))
+        fa = ast.parse(indito.read_text(encoding="utf-8"))
+        importok = [
+            csomopont
+            for csomopont in ast.walk(fa)
+            if isinstance(csomopont, (ast.Import, ast.ImportFrom))
         ]
-        assert any("from picasapy.app" in sor for sor in kod)
-        assert not [sor for sor in kod if sor.startswith("from .")], (
-            f"relatív import a csomag belépőjében: {kod}"
+        assert any(
+            isinstance(csomopont, ast.ImportFrom)
+            and csomopont.module == "picasapy.app.__main__"
+            for csomopont in importok
         )
+        assert not [
+            csomopont
+            for csomopont in importok
+            if isinstance(csomopont, ast.ImportFrom) and csomopont.level > 0
+        ], f"relatív import a csomag belépőjében: {importok}"
 
     def test_a_QML_konyvtarat_VISZI(self, spec):
         """Qt/QML-programnál ez a legkényesebb pont: a `.qml` fájlok nem

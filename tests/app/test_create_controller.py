@@ -7,7 +7,8 @@ test_controller.py `_quit_on` mintája szerint).
 import cv2
 import numpy as np
 import pytest
-from PySide6.QtCore import QSettings
+from pathlib import Path
+from PySide6.QtCore import QObject, QSettings, QThread, Slot
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import hangos_hurok
@@ -243,6 +244,183 @@ class TestBackgroundThreadTeardown:
         assert arrived
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+
+class TestPosterWorkerProcessFailure:
+    def test_successful_worker_result_is_read_without_console_streams(
+        self, controller, tmp_path, monkeypatch
+    ):
+        import sys
+
+        from picasapy.app import poster_controller
+
+        source = tmp_path / "poster.jpg"
+        make_jpeg(source, size=(80, 80))
+        script = (
+            "import sys; sys.stdout = None; sys.stderr = None; "
+            "from picasapy.printing.poster_worker import main; "
+            "raise SystemExit(main(sys.argv[1:]))"
+        )
+        monkeypatch.setattr(
+            poster_controller,
+            "_poster_worker_command",
+            lambda image, zoom, paper, overlap, result: [
+                sys.executable,
+                "-c",
+                script,
+                image,
+                str(zoom),
+                paper,
+                "1" if overlap else "0",
+                result,
+            ],
+        )
+
+        arrived, args = _run(
+            controller.posterFinished,
+            lambda: controller.createPoster(str(source), 200, "4x6", False),
+            timeout_ms=5000,
+        )
+
+        assert arrived
+        (pages,) = args
+        assert len(pages) == 4
+        assert all(Path(page).is_file() for page in pages)
+
+    def test_process_failure_reaches_poster_failed_on_gui_thread(
+        self, controller, qt_app, tmp_path, monkeypatch
+    ):
+        """A képfeldolgozó folyamat hibája a vezérlő szálán jelezzen."""
+        import subprocess
+
+        from picasapy.app import poster_controller
+
+        source = tmp_path / "poster.jpg"
+        make_jpeg(source, size=(80, 80))
+
+        def fail_in_process(command, **kwargs):
+            assert kwargs["capture_output"] is True
+            assert kwargs["text"] is True
+            assert kwargs["timeout"] == poster_controller._POSTER_WORKER_TIMEOUT_S
+            assert command[1:3] == ["-m", "picasapy.printing.poster_worker"]
+            Path(command[-1]).write_text(
+                '{"error":"synthetic poster process failure"}', encoding="utf-8"
+            )
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                stdout="",
+                stderr="",
+            )
+
+        monkeypatch.setattr(poster_controller, "_run", fail_in_process)
+
+        class FailureObserver(QObject):
+            def __init__(self):
+                super().__init__()
+                self.thread = None
+
+            @Slot(str)
+            def capture(self, _message):
+                self.thread = QThread.currentThread()
+
+        observer = FailureObserver()
+        controller.posterFailed.connect(observer.capture)
+        arrived, args = _run(
+            controller.posterFailed,
+            lambda: controller.createPoster(str(source), 200, "4x6", False),
+            timeout_ms=2000,
+        )
+
+        assert arrived and args == ("synthetic poster process failure",)
+        assert observer.thread == qt_app.thread()
+
+    def test_frozen_worker_uses_the_packaged_launcher(self, monkeypatch, tmp_path):
+        from types import SimpleNamespace
+
+        from picasapy.app import poster_controller
+
+        monkeypatch.setattr(
+            poster_controller,
+            "_futtato",
+            SimpleNamespace(frozen=True, executable="PicasaPy.exe"),
+        )
+        command = poster_controller._poster_worker_command(
+            str(tmp_path / "poster.jpg"),
+            300,
+            "4x6",
+            True,
+            str(tmp_path / "result.json"),
+        )
+
+        assert command == [
+            "PicasaPy.exe",
+            "--picasapy-poster",
+            str(tmp_path / "poster.jpg"),
+            "300",
+            "4x6",
+            "1",
+            str(tmp_path / "result.json"),
+        ]
+        gyoker = Path(__file__).resolve().parents[2]
+        launcher = (gyoker / "packaging/windows/picasapy_launcher.py").read_text(
+            encoding="utf-8"
+        )
+        spec = (gyoker / "packaging/windows/picasapy.spec").read_text(
+            encoding="utf-8"
+        )
+        assert "--picasapy-poster" in launcher
+        assert '"picasapy.printing.poster_worker"' in spec
+
+    def test_pythonpath_is_extended_only_for_non_frozen_worker(
+        self, monkeypatch, tmp_path
+    ):
+        from types import SimpleNamespace
+
+        from picasapy.app import poster_controller
+
+        monkeypatch.setenv("PYTHONPATH", "existing-path")
+        monkeypatch.setattr(
+            poster_controller,
+            "_futtato",
+            SimpleNamespace(frozen=True, executable="PicasaPy.exe"),
+        )
+        frozen_env = poster_controller._poster_worker_environment()
+        assert frozen_env["PYTHONPATH"] == "existing-path"
+
+        monkeypatch.setattr(
+            poster_controller,
+            "_futtato",
+            SimpleNamespace(frozen=False, executable="python"),
+        )
+        source_env = poster_controller._poster_worker_environment()
+        source_root = str(Path(poster_controller.__file__).resolve().parents[2])
+        assert source_env["PYTHONPATH"].split(poster_controller.os.pathsep)[0] == source_root
+
+    def test_timed_out_worker_reports_a_clear_hung_process_error(
+        self, controller, tmp_path, monkeypatch
+    ):
+        import sys
+
+        from picasapy.app import poster_controller
+
+        source = tmp_path / "poster.jpg"
+        make_jpeg(source, size=(80, 80))
+        monkeypatch.setattr(poster_controller, "_POSTER_WORKER_TIMEOUT_S", 0.15)
+        monkeypatch.setattr(
+            poster_controller,
+            "_poster_worker_command",
+            lambda *_args: [sys.executable, "-c", "import time; time.sleep(3)"],
+        )
+
+        arrived, args = _run(
+            controller.posterFailed,
+            lambda: controller.createPoster(str(source), 200, "4x6", False),
+            timeout_ms=2000,
+        )
+
+        assert arrived
+        assert args == ("A poszterlapok készítése időtúllépés miatt leállt.",)
 
 
 class TestCollagePiszkozat:

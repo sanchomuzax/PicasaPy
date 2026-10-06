@@ -52,6 +52,7 @@ a = Analysis(
     datas=adatok,
     hiddenimports=[
         "picasapy.app",
+        "picasapy.printing.poster_worker",
         "picasapy.thumbs.cache",
         "picasapy.thumbs.video_decode_worker",
     ],

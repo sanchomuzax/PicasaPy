@@ -29,6 +29,11 @@ if __name__ == "__main__":
 
         sys.exit(worker_main(sys.argv[2], sys.argv[3]))
 
+    if len(sys.argv) > 1 and sys.argv[1] == "--picasapy-poster":
+        from picasapy.printing.poster_worker import main as worker_main
+
+        sys.exit(worker_main(sys.argv[2:]))
+
     from picasapy.app.__main__ import main
 
     sys.exit(main())
