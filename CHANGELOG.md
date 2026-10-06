@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.17] – 2026-10-06
+
+- A kollázs-előnézet hibája most látható visszajelzést ad (#4321).
+- A Fájl menü és a Ctrl+Shift+O a kijelölt képeket a rendszer alapértelmezett alkalmazásában nyitja meg (#4330).
+- A Nézet menüben most elrejthető és visszaállítható a szerkesztő kezelősáv, és a választás újraindításkor is megmarad. (#4336).
+- A fejlesztések változásjegyzete külön fájlba kerül, és a kiadáskor automatikusan összeáll a változásnapló (#4373).
+
 ## [0.9.16] – 2026-10-06
 
 - Elérhetővé vált a Beállítások Nyomtatás füle; a nyomatméret- és minőségi beállítások az előnézetben és a nyomaton is érvényesülnek (#4318).
