@@ -88,6 +88,9 @@ def controller(qt_app, tmp_path, library):
     # elszigetelt QSettings — a rendszer valós PicasaPy-beállításait ne
     # szennyezze a teszt (session/lastFolder, view/thumbCaption).
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    # Ezek a régi vezérlőpróbák 8×6 pixeles képekkel dolgoznak; a #4346 külön
+    # tesztje ellenőrzi az eredeti, bekapcsolt alapértéket.
+    settings.setValue("view/showOnlyBigImages", False)
     ctl = AppController(
         tmp_path / "index.db",
         (str(library),),
@@ -111,6 +114,14 @@ def controller(qt_app, tmp_path, library):
 
 
 class TestController:
+    def test_small_picture_filter_applies_to_index_photo_kind(
+        self, controller, library
+    ):
+        controller.setShowOnlyBigImages(True)
+        controller.selectFolder(str(library / "nyaralas"))
+
+        assert controller.photos.rowCount() == 0
+
     def test_folders_loaded(self, controller):
         # az évszám-elválasztó sorral együtt 2 sor, ebből 1 valódi mappa
         assert controller.folders.folderCount == 1
@@ -777,6 +788,7 @@ class TestFolderSwitchNoReload:
         settings = QSettings(
             str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
         )
+        settings.setValue("view/showOnlyBigImages", False)
         ctl = AppController(
             tmp_path / "index.db", (str(root),), provider, settings=settings
         )
@@ -851,7 +863,11 @@ class TestSessionRestore:
     def _settings(self, tmp_path):
         from PySide6.QtCore import QSettings
 
-        return QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        settings = QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        )
+        settings.setValue("view/showOnlyBigImages", False)
+        return settings
 
     def _controller(self, tmp_path, library, settings):
         from picasapy.app.controller import AppController

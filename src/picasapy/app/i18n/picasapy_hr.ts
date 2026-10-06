@@ -1375,6 +1375,12 @@ picasapy-origin-key: options:options/label107.title</extracomment>
             <translation>Dostupne veličine ispisa:</translation>
         </message>
         <message>
+            <source>Previews:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup118.title</extracomment>
+            <translation>Pregledi:</translation>
+        </message>
+        <message>
             <source>Print size %1:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation type="unfinished" />

@@ -1375,6 +1375,12 @@ picasapy-origin-key: options:options/label107.title</extracomment>
             <translation>Kích thước in hiện có:</translation>
         </message>
         <message>
+            <source>Previews:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup118.title</extracomment>
+            <translation>Xem trước:</translation>
+        </message>
+        <message>
             <source>Print size %1:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation type="unfinished" />

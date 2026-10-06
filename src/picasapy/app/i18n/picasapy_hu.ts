@@ -1386,6 +1386,12 @@ picasapy-origin-key: options:options/label107.title</extracomment>
             <translation>Rendelkezésre álló nyomtatási méretek:</translation>
         </message>
         <message>
+            <source>Previews:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup118.title</extracomment>
+            <translation>Előnézetek:</translation>
+        </message>
+        <message>
             <source>Print size %1:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nyomtatási méret %1:</translation>
