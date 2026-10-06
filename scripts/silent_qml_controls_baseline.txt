@@ -12,10 +12,8 @@ constant-disabled	src/picasapy/app/qml/PicasaPy/ImportSourceDialog.qml:334:enabl
 constant-disabled	src/picasapy/app/qml/PicasaPy/ImportSourceDialog.qml:365:enabled=false	Csak online album-szinkron beállítása; a Picasa Web Albums szolgáltatás nincs támogatva.
 constant-disabled	src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:271:enabled=false	A „Sync to Web” helyőrző funkció nélkül (#423; a forráskomment szerint későbbi funkció).
 constant-disabled	src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:597:enabled=false	Online feltöltéshez tartozó gomb; az online szolgáltatás nincs bekötve.
-constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:175:enabled=false	Külön funkciójegy: a picasa-fen-dialogs.md 3.11 E-Mail fülén a „First frame” választás a videó-küldési mód része; ma letiltott.
-constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:181:enabled=false	Külön funkciójegy: a picasa-fen-dialogs.md 3.11 E-Mail fülén a „Full film” választás a videó-küldési mód része; ma letiltott.
-constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:188:enabled=false	Külön funkciójegy Windowsra: a picasa-fen-dialogs.md 3.11 HTML-es levélként írja le az Outlook-only opciót.
-constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:81:enabled=false	Külön funkciójegy-jelölt: a Google-fiókos levélküldő út helyőrző (#2432); külön integráció kell hozzá.
+constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:107:enabled=false	Külön funkciójegy-jelölt: a Google-fiókos levélküldő út helyőrző (#2432); külön integráció kell hozzá.
+constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:280:enabled=false	Külön funkciójegy Windowsra: a picasa-fen-dialogs.md 3.11 HTML-es levélként írja le az Outlook-only opciót.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabFileTypes.qml:15:enabled=false	Külön funkciójegy: a picasa-fen-dialogs.md 3.11 File Types füle formátumválasztó checkboxokat ír le; a mai scanner listája fix.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:264:enabled=false	Eredeti beállítás, de nincs PicasaPy-telemetria; önálló, adatküldést igénylő funkció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:289:enabled=false	Frissítés-ellenőrző nincs; az eredeti beállítás Windows-only volt (picasa-fen-dialogs.md 3.11).
