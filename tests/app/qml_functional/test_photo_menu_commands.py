@@ -225,9 +225,8 @@ def _write_overlay(controller, row, active):
 
 # A menü forgatás-parancsa a KÖTEGELT ágat hívja (`rotateRightMany`), ami a
 # `_apply_batch`-en át SZINKRON fut — nincs háttérszál, és nem is bocsát ki
-# `photoOpFinished`-t. Korábban ez a teszt mégis arra várt: a néma, 2 mp-es
-# vészfék miatt egyszerűen letelt az idő, és az utána következő állítás
-# véletlenül helyes értéket talált. A #475-ös hangos vészfék ezt kibuktatta.
+# külön végjelzésre. Az indexelt modell maga mutatja a művelet eredményét,
+# ezért az ellenőrzés közvetlenül a valós, szinkron kötegelt művelet után fut.
 
 
 class TestPhotoMenuCommands:
