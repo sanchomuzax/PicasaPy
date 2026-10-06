@@ -51,6 +51,11 @@ from picasapy.scanner import (
 )
 
 from .busy_registry import get_app_busy_registry
+from .filetype_preferences import (
+    enabled_filetypes as enabled_filetype_groups,
+    file_type_enabled,
+    set_file_type_enabled,
+)
 from .exported_folders import (
     EXPORTED_FOLDERS_SETTINGS_KEY,
     existing_exported_folders,
@@ -75,6 +80,7 @@ _PROGRESS_EMIT_MIN_S = 0.25
 # #209: a rács fokozatos frissítésének minimum-időköze (mp) — a köztes
 # eredmények látszanak, de nem fut modell-újratöltés minden kötegnél.
 _PROGRESS_RELOAD_MIN_S = 1.5
+_FILETYPE_SNAPSHOT_UNSET = object()
 
 
 #: A LÁTOTT mappa célzott újraolvasásának időköze (#1275).
@@ -592,16 +598,41 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             for item in self._folder_manager_excludes_for_root(root)
         )
 
-    def _sync_folder_manager_tree(self, conn, root: str, progress=None) -> None:
+    @Slot(str, result=bool)
+    def fileTypeEnabled(self, group: str) -> bool:  # noqa: N802 — QML-slot
+        """A Beállítások ▸ Fájltípusok fül kiválasztott állapota."""
+        return file_type_enabled(self._get_settings(), group)
+
+    @Slot(str, bool)
+    def setFileTypeEnabled(self, group: str, enabled: bool) -> None:  # noqa: N802
+        """Ment egy formátumkapcsolót, és frissíti a következő scan pillanatképét."""
+        settings = self._get_settings()
+        set_file_type_enabled(settings, group, enabled)
+        self._filetype_scan_snapshot = enabled_filetype_groups(settings)
+
+    def _sync_folder_manager_tree(
+        self,
+        conn,
+        root: str,
+        progress=None,
+        enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET,
+    ) -> None:
         excludes = self._folder_manager_excludes_for_root(root)
+        if enabled_filetypes is _FILETYPE_SNAPSHOT_UNSET:
+            enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
         if not excludes:
-            self._sync_tree(conn, root, progress=progress)
+            kwargs = {"progress": progress}
+            if enabled_filetypes is not None:
+                kwargs["enabled_filetypes"] = enabled_filetypes
+            self._sync_tree(conn, root, **kwargs)
             return
         from . import controller as controller_module
 
         kwargs = {"exclude": excludes}
         if progress is not None:
             kwargs["progress"] = progress
+        if enabled_filetypes is not None:
+            kwargs["enabled_filetypes"] = enabled_filetypes
         controller_module.sync_tree(conn, root, **kwargs)
 
     def _find_root(self, path: str) -> str | None:
@@ -717,11 +748,17 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         progress = self._make_progress_emitter(
             should_stop=self._make_should_stop(path)
         )
+        enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
 
         def worker():
             try:
                 with open_index(self._db_path) as conn:
-                    self._sync_folder_manager_tree(conn, path, progress=progress)
+                    self._sync_folder_manager_tree(
+                        conn,
+                        path,
+                        progress=progress,
+                        enabled_filetypes=enabled_filetypes,
+                    )
             finally:
                 self.syncFinished.emit()
 
@@ -770,11 +807,17 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         # nincs leállítási-jelző kötés (nem figyelt gyökér): egyszeri,
         # meg nem szakítható munka
         progress = self._make_progress_emitter()
+        enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
 
         def worker():
             try:
                 with open_index(self._db_path) as conn:
-                    self._sync_folder_manager_tree(conn, path, progress=progress)
+                    self._sync_folder_manager_tree(
+                        conn,
+                        path,
+                        progress=progress,
+                        enabled_filetypes=enabled_filetypes,
+                    )
             finally:
                 self.syncFinished.emit()
 
@@ -1009,6 +1052,8 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                 self._pending_busy += 1
             return
 
+        enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
+
         def worker():
             errors = []
             try:
@@ -1021,12 +1066,16 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                             continue
                         try:
                             # #216: eltávolított gyökér mappája már ne íródjon
+                            sync_options = {}
+                            if enabled_filetypes is not None:
+                                sync_options["enabled_filetypes"] = enabled_filetypes
                             sync_folder(
                                 conn,
                                 root,
                                 folder,
                                 exclude=self._folder_manager_excludes_for_root(root),
                                 should_stop=self._make_should_stop(root),
+                                **sync_options,
                             )
                         except (OSError, RuntimeError):
                             pass  # eltűnt mappa — a periodikus rescan rendezi
@@ -1334,6 +1383,9 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         if self._sync_running or self._dirty_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
         self._sync_running = True
+        self._sync_worker_filetype_snapshot = getattr(
+            self, "_filetype_scan_snapshot", None
+        )
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
         # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
         # #1123: a projekt-célmappák gyorstára itt ürül — így a beállítás
@@ -1341,14 +1393,24 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         # perc múlva bekerül a tízmásodperces körbe.
         self._projekt_kimenet_cache = None
         self._start_background(
-            self._sync_worker, name="picasapy-sync-rescan", cancel=self.cancelScan
+            self._sync_worker,
+            name="picasapy-sync-rescan",
+            cancel=self.cancelScan,
         )
 
-    def _sync_worker(self) -> None:
+    def _sync_worker(
+        self, enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET
+    ) -> None:
         """Háttér-szinkron. Egy rossz gyökér (pl. elavult Windows-útvonal a
         WatchedFolders-ből) nem nyelhet el mindent némán: hibánként jelzünk,
         a többi gyökér feldolgozása folytatódik, és a vége mindig
         syncFinished."""
+        if enabled_filetypes is _FILETYPE_SNAPSHOT_UNSET:
+            enabled_filetypes = getattr(
+                self,
+                "_sync_worker_filetype_snapshot",
+                getattr(self, "_filetype_scan_snapshot", None),
+            )
         errors = []
         try:
             with open_index(self._db_path) as conn:
@@ -1362,7 +1424,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                     # visszatérési értéke) csak a saját gyökerére áll be
                     progress = self._make_progress_emitter(should_stop=should_stop)
                     try:
-                        self._sync_folder_manager_tree(conn, root, progress=progress)
+                        self._sync_folder_manager_tree(
+                            conn,
+                            root,
+                            progress=progress,
+                            enabled_filetypes=enabled_filetypes,
+                        )
                     except (OSError, RuntimeError, sqlite3.OperationalError) as error:
                         errors.append(f"{root}: {error}")
                 # #1601: a hasáb ini-alapú gyűjteményei MÉG ITT, a
@@ -1849,7 +1916,13 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             return  # nem nyilvántartott exportcél — a #1539 határa marad
         try:
             with open_index(self._db_path) as conn:
-                sync_folder(conn, mappa, mappa)
+                scan_options = {}
+                enabled_filetypes = getattr(
+                    self, "_filetype_scan_snapshot", None
+                )
+                if enabled_filetypes is not None:
+                    scan_options["enabled_filetypes"] = enabled_filetypes
+                sync_folder(conn, mappa, mappa, **scan_options)
         except Exception:  # noqa: BLE001 - index-gond nem buktathat exportot
             logger.warning(
                 "Az exportcél nem került az indexbe: %s", mappa, exc_info=True

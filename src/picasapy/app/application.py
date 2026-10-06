@@ -88,6 +88,7 @@ from .edit_preview import EditPreviewProvider
 from .effect_thumbnails import EffectThumbnailProvider
 from .face_scan_controller import FaceScanController
 from .faces_helper import FacesHelper
+from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 from .language_controller import (
     DEFAULT_LANGUAGE,
     LANGUAGE_KEY,
@@ -219,7 +220,13 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
         # változatlan, és a #1675 védelme óta a sorai is megmaradnak, tehát
         # a kihagyás feltétele teljesül. Így a mappa fájljait meg sem
         # statoljuk.
-        sync_folder(conn, mappa, mappa, incremental=True)
+        enabled_filetypes = load_enabled_filetypes(settings)
+        scan_options = (
+            {"enabled_filetypes": enabled_filetypes}
+            if enabled_filetypes is not None
+            else {}
+        )
+        sync_folder(conn, mappa, mappa, incremental=True, **scan_options)
     except Exception:  # noqa: BLE001 - az indulás soha nem hiúsulhat meg tőle
         logging.getLogger(__name__).warning(
             "a Kollázsok mappa indulási felvétele hibára futott", exc_info=True
@@ -256,7 +263,15 @@ def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
             # #1674: inkrementális — az exportcélok a #1667 védelme óta
             # bent maradnak az indexben, tehát változatlan célnál nincs
             # fájlonkénti statolás.
-            sync_folder(conn, Path(mappa), Path(mappa), incremental=True)
+            enabled_filetypes = load_enabled_filetypes(settings)
+            scan_options = (
+                {"enabled_filetypes": enabled_filetypes}
+                if enabled_filetypes is not None
+                else {}
+            )
+            sync_folder(
+                conn, Path(mappa), Path(mappa), incremental=True, **scan_options
+            )
         except Exception:  # noqa: BLE001 - egy rossz cél ne vigye el a többit
             logging.getLogger(__name__).warning(
                 "az exportcél indulási felvétele hibára futott: %s",

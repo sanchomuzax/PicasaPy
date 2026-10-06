@@ -1327,10 +1327,38 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
+            <source>BMP</source>
+            <translation>BMP</translation>
+        </message>
+        <message>
+            <source>GIF</source>
+            <translation>GIF</translation>
+        </message>
+        <message>
             <source>Display JPEG files and:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Megjelenítés: JPEG-fájlok és</translation>
+        </message>
+        <message>
+            <source>PNG</source>
+            <translation>PNG</translation>
+        </message>
+        <message>
+            <source>TGA</source>
+            <translation>TGA</translation>
+        </message>
+        <message>
+            <source>TIFF</source>
+            <translation>TIFF</translation>
+        </message>
+        <message>
+            <source>WEBP</source>
+            <translation>WEBP</translation>
+        </message>
+        <message>
+            <source>PSD</source>
+            <translation>PSD</translation>
         </message>
         <message>
             <source>RAW</source>
@@ -1342,6 +1370,10 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
             <source>Movies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Filmek</translation>
+        </message>
+        <message>
+            <source>QuickTime</source>
+            <translation>QuickTime</translation>
         </message>
         <message>
             <source>Supported Formats</source>
