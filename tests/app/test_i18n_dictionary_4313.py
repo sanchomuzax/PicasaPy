@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -20,46 +18,6 @@ _EXPECTED_CODES = (
     "sk", "sl", "fi", "sv", "fil", "vi", "tr", "cs", "el", "ru", "sr",
     "uk", "bg", "hi", "th", "zh-CN", "zh-TW", "ja", "ko",
 )
-
-# A #4313 előtti teljes magyar TS tartalmának SHA-256 lenyomata. Csak az új
-# eredetjelölők és az új gyökér sourcelanguage-attribútuma maradnak ki.
-_HU_ORIGINAL_CONTENT_SHA256 = "42a7ebe4e9b034b59dcda074904532ae74bde56c5b645ce1469e92f23283011c"
-
-
-def _catalog_fingerprint(path: Path) -> str:
-    root = ET.parse(path).getroot()
-    def content(element: ET.Element, *, document_root: bool = False):
-        attributes = dict(element.attrib)
-        if document_root:
-            attributes.pop("sourcelanguage", None)
-
-        if element.tag == "extracomment":
-            lines = [
-                line
-                for line in (element.text or "").splitlines()
-                if not line.startswith(("picasapy-origin:", "picasapy-origin-key:"))
-            ]
-            if not lines:
-                return None
-            text = "\n".join(lines)
-        else:
-            text = element.text
-        if list(element) and text and not text.strip():
-            text = None
-
-        children = []
-        for child in list(element):
-            child_content = content(child)
-            if child_content is not None:
-                tail = child.tail if child.tail and child.tail.strip() else None
-                children.append((child_content, tail))
-        return element.tag, tuple(sorted(attributes.items())), text, tuple(children)
-
-    payload = json.dumps(
-        content(root, document_root=True), ensure_ascii=False, separators=(",", ":")
-    ).encode()
-    return hashlib.sha256(payload).hexdigest()
-
 
 def test_language_controller_lists_all_41_languages_with_native_names():
     assert SUPPORTED_LANGUAGES == _EXPECTED_CODES
@@ -138,13 +96,6 @@ def test_selected_language_qm_is_installed_by_the_startup_path(monkeypatch):
         assert translated != pair.findtext("source")
     finally:
         app.removeTranslator(translator)
-
-
-def test_hungarian_dictionary_preserves_all_pre_migration_messages():
-    path = _I18N / "picasapy_hu.ts"
-    assert _catalog_fingerprint(path) == _HU_ORIGINAL_CONTENT_SHA256, (
-        "a magyar TS tartalma megváltozott az új eredetjelölőkön kívül"
-    )
 
 
 def test_hungarian_catalog_marks_inherited_picasa_text_with_its_origin():

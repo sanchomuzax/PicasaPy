@@ -530,6 +530,12 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <translation type="unfinished" />
         </message>
         <message>
+            <source>CD Cover Size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::eCDSize</extracomment>
+            <translation>Tamanho da capa do CD</translation>
+        </message>
+        <message>
             <source>3 x 4</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ytPrintSizes::e3x4</extracomment>
@@ -1386,16 +1392,16 @@ picasapy-origin-key: options:options/labelgroup120.title</extracomment>
             <translation>Qualidade da impressora:</translation>
         </message>
         <message>
-            <source>Standard</source>
+            <source>Compatible (half-res)</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: export:export/item24.title;stringres:CTitleDialog::fontNormal;stringres:EXIF::Normal;stringres:EXIF::Standard</extracomment>
-            <translation type="unfinished" />
+picasapy-origin-key: options:options/radio122.title</extracomment>
+            <translation>Compatível (resolução média)</translation>
         </message>
         <message>
-            <source>High</source>
+            <source>High Quality (full-res)</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::High</extracomment>
-            <translation>Alta</translation>
+picasapy-origin-key: options:options/radio123.title</extracomment>
+            <translation>Alta qualidade (resolução total)</translation>
         </message>
         <message>
             <source>Print resampler quality:</source>
@@ -1414,6 +1420,108 @@ picasapy-origin-key: options:options/radio126.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/radio127.title</extracomment>
             <translation>Extra nítido (Lanczos-8)</translation>
+        </message>
+        <message>
+            <source>3 x 4</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e3x4</extracomment>
+            <translation>3 x 4</translation>
+        </message>
+        <message>
+            <source>3.5 x 5</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e3x5;tooltips:Label(printpanel/3x5button)</extracomment>
+            <translation>3,5 x 5</translation>
+        </message>
+        <message>
+            <source>4 x 5</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e4x5</extracomment>
+            <translation>4 x 5</translation>
+        </message>
+        <message>
+            <source>4 x 6</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
+            <translation>4 x 6</translation>
+        </message>
+        <message>
+            <source>5 x 7</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:5x7;stringres:ytPrintSizes::e5x7;tooltips:Label(printpanel/5x7button)</extracomment>
+            <translation>5 x 7</translation>
+        </message>
+        <message>
+            <source>8 x 10</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:8x10;stringres:ytPrintSizes::e8x10;tooltips:Label(printpanel/8x10button)</extracomment>
+            <translation>8 x 10</translation>
+        </message>
+        <message>
+            <source>Wallet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::eWallet;tooltips:Label(printpanel/walletbutton)</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <source>5 x 8 cm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e5x8cm</extracomment>
+            <translation>5 x 8 cm</translation>
+        </message>
+        <message>
+            <source>9 x 13 cm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e9x13cm</extracomment>
+            <translation>9 x 13 cm</translation>
+        </message>
+        <message>
+            <source>10 x 15 cm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e10x15cm</extracomment>
+            <translation>10 x 15 cm</translation>
+        </message>
+        <message>
+            <source>13 x 18 cm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e13x18cm</extracomment>
+            <translation>13 x 18 cm</translation>
+        </message>
+        <message>
+            <source>15 x 20 cm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e15x20cm</extracomment>
+            <translation>15 x 20 cm</translation>
+        </message>
+        <message>
+            <source>20 x 25 cm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::e20x25cm</extracomment>
+            <translation>20 x 25 cm</translation>
+        </message>
+        <message>
+            <source>FullPage</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::eFullPage;stringres:ytPrintTip::eFullPage</extracomment>
+            <translation>Página completa</translation>
+        </message>
+        <message>
+            <source>CD Cover Size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::eCDSize</extracomment>
+            <translation>Tamanho da capa do CD</translation>
+        </message>
+        <message>
+            <source>Passport</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytPrintSizes::ePassport</extracomment>
+            <translation>Passaporte</translation>
+        </message>
+        <message>
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation type="unfinished" />
         </message>
     </context>
     <context>

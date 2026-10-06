@@ -93,6 +93,7 @@ from picasapy.printing.layout import (
     PrintOrientation,
     compute_print_layout,
 )
+from picasapy.printing.resample import lanczos_resize
 from picasapy.printing.options import (
     BORDER_SIZE_MAX,
     TEXT_SIZE_VALUES,
@@ -132,6 +133,29 @@ _FRISSITES_MS = 200.0
 # a képernyőn éles legyen a legnagyobb nyomatméreten is (8×10 hüvelyk ×
 # 96 = 768×960 képpont), és a PNG még gyorsan elkészüljön.
 _ELONEZET_DPI = 96.0
+_PRINT_SIZE_PRESET_KEYS = tuple(
+    f"printing/sizePreset{index}" for index in range(1, 6)
+)
+_PRINT_PRESETS = ("TARCA", "M3_5X5", "M4X6", "M5X7", "M8X10")
+_PRINT_OPTION_SIZES = (
+    "M3X4",
+    "M3_5X5",
+    "M4X5",
+    "M4X6",
+    "M5X7",
+    "M8X10",
+    "M5X8CM",
+    "M9X13CM",
+    "M10X15CM",
+    "M13X18CM",
+    "M15X20CM",
+    "M20X25CM",
+    "TARCA",
+    "CDSIZE",
+    "PASSPORT",
+    "CONTACT",
+    "TELJES_OLDAL",
+)
 
 
 class PrintController(QObject):
@@ -201,6 +225,93 @@ class PrintController(QObject):
         #: az Ellenőrzés panelből itt jelöljük ki, mely rekordok maradjanak
         #: ki a nyomtatási munkából. Új párbeszédnyitáskor ürül.
         self._review_excluded_ids: set[int] = set()
+
+    @Slot(result=list)
+    def printSizePresets(self) -> list[str]:  # noqa: N802 — QML-stílus
+        """A Nyomtatás fül öt, a panel gyorsgombjaihoz tartozó mérete.
+
+        Az öt cserélhető gomb a mért `printpanel` készletből jön; a hatodik,
+        Teljes oldal gomb állandó. A kezdő értékek a
+        `picasa-nyomtatas.md` Wallet, 3,5×5, 4×6, 5×7 és 8×10 méretei. A
+        választás a nyelvváltás után is megmarad, ha az adott méret az új
+        készletben is szerepel.
+        """
+        sizes = set(_PRINT_OPTION_SIZES)
+        result = []
+        for key, default in zip(_PRINT_SIZE_PRESET_KEYS, _PRINT_PRESETS, strict=True):
+            value = str(self._settings.value(key, default))
+            result.append(value if value in sizes else default)
+        return result
+
+    @Slot(int, str)
+    def setPrintSizePreset(self, index: int, name: str) -> None:  # noqa: N802
+        """A kiválasztott gyorsgomb méretét azonnal elmenti."""
+        sizes = set(_PRINT_OPTION_SIZES)
+        if 0 <= int(index) < len(_PRINT_SIZE_PRESET_KEYS) and name in sizes:
+            self._settings.setValue(_PRINT_SIZE_PRESET_KEYS[int(index)], name)
+
+    @Slot(result=list)
+    def printOptionSizes(self) -> list[str]:  # noqa: N802
+        """Az `options.fen` 17 elemű `ytPrintSizes` listája (#4318)."""
+        return list(_PRINT_OPTION_SIZES)
+
+    @Slot(str, result=bool)
+    def canUsePrintSizePreset(self, name: str) -> bool:  # noqa: N802
+        """A méretgomb csak ismert méretet vagy Indexképek módot választhat.
+
+        A CD-borító mérete a projekt specében nem kapott fizikai méretet,
+        ezért a konfigurálható listában szerepel, de a gomb nem nyomtatható.
+        """
+        return name in NyomatMeret.__members__ or name == "CONTACT"
+
+    @Slot(str, result=bool)
+    def setPresetPrintSize(self, name: str) -> bool:  # noqa: N802
+        """A Beállításokban kiosztott gyorsgomb méretét használja a nyomathoz."""
+        if name not in NyomatMeret.__members__:
+            return False
+        self._meret_felulirva = NyomatMeret[name]
+        return True
+
+    @Slot(result=bool)
+    def printProxyPreview(self) -> bool:  # noqa: N802
+        """Igaz, ha az előnézet a gyorsabb, proxy felbontást használja."""
+        value = self._settings.value("printing/proxyPreview", True)
+        if isinstance(value, str):
+            return value.strip().casefold() not in {"0", "false", "no", "off"}
+        return bool(value)
+
+    @Slot(bool)
+    def setPrintProxyPreview(self, enabled: bool) -> None:  # noqa: N802
+        self._settings.setValue("printing/proxyPreview", bool(enabled))
+
+    @Slot(result=str)
+    def printerQuality(self) -> str:  # noqa: N802
+        """A Windows-only FEN fél- vagy teljes felbontású nyomtatási módja."""
+        value = str(self._settings.value("printing/printerQuality", "compatible"))
+        return value if value in {"compatible", "highQuality"} else "compatible"
+
+    @Slot(str)
+    def setPrinterQuality(self, value: str) -> None:  # noqa: N802
+        if value in {"compatible", "highQuality"}:
+            self._settings.setValue("printing/printerQuality", value)
+
+    def _printer_output_scale(self) -> float:
+        """Az options.fen minősége: kompatibilis fél, magas teljes felbontás."""
+        return 0.5 if self.printerQuality() == "compatible" else 1.0
+
+    @Slot(result=int)
+    def printResamplerQuality(self) -> int:  # noqa: N802
+        """A nyomtatási átméretező Lanczos-sugara (3 vagy 8)."""
+        try:
+            value = int(self._settings.value("printing/resamplerQuality", 3))
+        except (TypeError, ValueError):
+            return 3
+        return value if value in {3, 8} else 3
+
+    @Slot(int)
+    def setPrintResamplerQuality(self, value: int) -> None:  # noqa: N802
+        if int(value) in {3, 8}:
+            self._settings.setValue("printing/resamplerQuality", int(value))
 
     def _keszlet(self) -> tuple[NyomatMeret, ...]:
         """A felület nyelvéhez tartozó nyomatméret-készlet (#1961).
@@ -884,7 +995,15 @@ class PrintController(QObject):
         printer.setPageOrientation(QPageLayout.Orientation.Portrait)
         fejlec, alcim = self._header_lines(maradok)
         try:
-            self._paint_contact_sheet(printer, images, oszlopok, fejlec, alcim)
+            self._paint_contact_sheet(
+                printer,
+                images,
+                oszlopok,
+                fejlec,
+                alcim,
+                self.printResamplerQuality(),
+                self._printer_output_scale(),
+            )
         except (RuntimeError, ValueError):
             _log.exception("indexkép-nyomtatás: a feladat nem indítható")
             self.printFailed.emit(self.tr("The print job could not be started."))
@@ -898,6 +1017,8 @@ class PrintController(QObject):
         columns: int,
         header: str,
         subtitle: str,
+        resampler_radius: int | None = None,
+        printer_output_scale: float = 1.0,
     ) -> None:
         painter = QPainter()
         if not painter.begin(printer):
@@ -946,14 +1067,17 @@ class PrintController(QObject):
                     hely = compute_print_layout(
                         cella, image.width(), image.height(), PrintFitMode.FIT
                     )
+                    target = QRectF(
+                        rect.x() + cell.x + hely.x,
+                        rect.y() + cell.y + hely.y,
+                        hely.width,
+                        hely.height,
+                    )
                     painter.drawImage(
-                        QRectF(
-                            rect.x() + cell.x + hely.x,
-                            rect.y() + cell.y + hely.y,
-                            hely.width,
-                            hely.height,
+                        target,
+                        PrintController._resampled_for_target(
+                            image, target, resampler_radius, printer_output_scale
                         ),
-                        image,
                     )
         finally:
             painter.end()
@@ -1105,10 +1229,26 @@ class PrintController(QObject):
         try:
             if has_render_effects(options):
                 self._paint_pages_with_options(
-                    printer, grid, images, job_records, mode, options, self._lap_kesz
+                    printer,
+                    grid,
+                    images,
+                    job_records,
+                    mode,
+                    options,
+                    self._lap_kesz,
+                    self.printResamplerQuality(),
+                    self._printer_output_scale(),
                 )
             else:
-                self._paint_pages(printer, grid, images, mode, self._lap_kesz)
+                self._paint_pages(
+                    printer,
+                    grid,
+                    images,
+                    mode,
+                    self._lap_kesz,
+                    self.printResamplerQuality(),
+                    self._printer_output_scale(),
+                )
         except RuntimeError:
             _log.exception("nyomtatás: a feladat nem indítható")
             self.printFailed.emit(self.tr("The print job could not be started."))
@@ -1364,6 +1504,9 @@ class PrintController(QObject):
                     mode,
                     options,
                     _ELONEZET_DPI,
+                    self.printResamplerQuality(),
+                    self._printer_output_scale(),
+                    use_proxy=self.printProxyPreview(),
                 )
                 painter.restore()
         finally:
@@ -1439,6 +1582,52 @@ class PrintController(QObject):
             return 0
 
     @staticmethod
+    def _resampled_for_target(
+        image: QImage,
+        target: QRectF,
+        radius: int | None,
+        printer_output_scale: float = 1.0,
+    ) -> QImage:
+        """Downsample to the final cell with the selected Lanczos kernel.
+
+        Upscaling is left to QPainter, avoiding a temporary image larger than
+        the source. The same target geometry and clipping remain in use for
+        both quality choices.
+        """
+        if radius is None or image.isNull():
+            return image
+        if printer_output_scale not in (0.5, 1.0):
+            printer_output_scale = 1.0
+        width = max(1, round(target.width() * printer_output_scale))
+        height = max(1, round(target.height() * printer_output_scale))
+        scale = min(width / image.width(), height / image.height(), 1.0)
+        if scale >= 1.0:
+            return image
+        return lanczos_resize(
+            image,
+            max(1, round(image.width() * scale)),
+            max(1, round(image.height() * scale)),
+            radius,
+        )
+
+    @staticmethod
+    def _proxy_for_target(image: QImage, target: QRectF) -> QImage:
+        """Gyors, célméretű előnézeti proxy előállítása."""
+        if image.isNull():
+            return image
+        width = max(1, round(target.width()))
+        height = max(1, round(target.height()))
+        scale = min(width / image.width(), height / image.height(), 1.0)
+        if scale >= 1.0:
+            return image
+        return image.scaled(
+            max(1, round(image.width() * scale)),
+            max(1, round(image.height() * scale)),
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.FastTransformation,
+        )
+
+    @staticmethod
     def _draw_options_page(
         painter: QPainter,
         page_rect: QRectF,
@@ -1447,6 +1636,10 @@ class PrintController(QObject):
         mode: PrintFitMode,
         options: PrintOptions,
         dpi: float,
+        resampler_radius: int | None = None,
+        printer_output_scale: float = 1.0,
+        *,
+        use_proxy: bool = False,
     ) -> None:
         """Egy oldal képe, szegélye és felirata közös geometriával.
 
@@ -1485,7 +1678,14 @@ class PrintController(QObject):
             placement.width,
             placement.height,
         )
-        painter.drawImage(target, image)
+        source = (
+            PrintController._proxy_for_target(image, target)
+            if use_proxy
+            else PrintController._resampled_for_target(
+                image, target, resampler_radius, printer_output_scale
+            )
+        )
+        painter.drawImage(target, source)
 
         border_width = PrintController._border_width(options, page)
         if options.border and border_width > 0:
@@ -1540,6 +1740,8 @@ class PrintController(QObject):
         mode: PrintFitMode,
         options: PrintOptions,
         lap_kesz: Callable[[int, int], None] | None = None,
+        resampler_radius: int | None = None,
+        printer_output_scale: float = 1.0,
     ) -> None:
         """A printoptions-ág lapfestése PDF-re és élő QPrinterre.
 
@@ -1570,6 +1772,8 @@ class PrintController(QObject):
                         mode,
                         options,
                         float(printer.resolution()),
+                        resampler_radius,
+                        printer_output_scale,
                     )
                     painter.restore()
                 if lap_kesz is not None:
@@ -1584,6 +1788,8 @@ class PrintController(QObject):
         images: Sequence[QImage],
         mode: PrintFitMode,
         lap_kesz: Callable[[int, int], None] | None = None,
+        resampler_radius: int | None = None,
+        printer_output_scale: float = 1.0,
     ) -> None:
         """A lapok megfestése; `lap_kesz(kész, összes)` LAPONKÉNT (#3016).
 
@@ -1622,7 +1828,15 @@ class PrintController(QObject):
                     painter.setClipRect(
                         QRectF(cell.x, cell.y, cell.width, cell.height)
                     )
-                    painter.drawImage(target_rect, image)
+                    painter.drawImage(
+                        target_rect,
+                        PrintController._resampled_for_target(
+                            image,
+                            target_rect,
+                            resampler_radius,
+                            printer_output_scale,
+                        ),
+                    )
                     painter.restore()
                 if lap_kesz is not None:
                     lap_kesz(index + 1, ossz)
