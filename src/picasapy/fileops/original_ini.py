@@ -19,9 +19,11 @@ Két ára van:
 
 ## Sávhatár
 
-Az írás KIZÁRÓLAG az `ini/` csomag API-ján megy (`update_document`), tehát
-ütközésbiztosan és backuppal: a párhuzamosan író Picasa közbeírása nem
-veszhet el. Közvetlen fájlírás itt sincs.
+Az írás KIZÁRÓLAG az `ini/` csomag API-ján megy (`update_document`), útvonal-
+lockkal és backuppal. Az előzetes ujjlenyomat-ellenőrzésig észlelt külső
+változásra újratölt és újrapróbál; az ellenőrzés és fájlcsere közti külső írás
+teljes kizárását a fájlrendszeri API nem garantálja. Közvetlen fájlírás itt
+sincs.
 
 ## A tartalom bitre pontosan megy át
 

@@ -5,7 +5,8 @@ import "aranykenyszer.js" as AranyKenyszer
 // #147: a mentett faces= régiók megjelenítése a nézőben. #26 (2. kör):
 // SZERKESZTŐ mód — új arc-téglalap húzása egérrel, név hozzárendelése
 // (meglévő személy-listából vagy új névvel), régió törlése/átnevezése.
-// Az írás a `facesHelper`-en (QML-kontextus) át, ütközésbiztos ini-írással
+// Az írás a `facesHelper`-en (QML-kontextus) át, útvonalanként soros,
+// best-effort konkurenciakezelésű ini-írással
 // történik (picasapy.app.faces_helper.FacesHelper) — az overlay maga
 // állapotmentes a mentett adatra nézve, csak a MEGRAJZOLÁS/POPUP saját
 // átmeneti állapotát tartja.

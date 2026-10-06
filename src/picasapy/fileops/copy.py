@@ -106,8 +106,9 @@ def _copy_ini_section(source_section: Section, target: Path, dest_folder: Path) 
     kimarad — adatvesztés helyett inkább a másolt kép marad ini-adat
     nélkül (a fájl maga ekkor is átkerül).
 
-    Az írás az ütközésbiztos `update_document`-en megy (#295): a párhuzamosan
-    futó eredeti Picasa közbeírása nem veszhet el."""
+    Az írás az útvonalanként szerializált, best-effort konkurenciakezelésű
+    `update_document`-en megy (#295): az ellenőrzésig észlelt Picasa-változás
+    újratöltést vált ki, az ellenőrzés és fájlcsere közti külső írás elveszhet."""
     dest_ini = dest_folder / PICASA_INI_NAME
     if load_or_empty(dest_ini).section(target.name) is not None:
         return

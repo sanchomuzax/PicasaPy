@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .document import ALBUM_SECTION_PREFIX, IniDocument
+from .folder_music import read_music_settings, with_music_settings
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,8 @@ class Album:
     date: str | None
     description: str | None
     location: str | None
+    use_music: bool
+    music_file: str
 
 
 def parse_album_refs(value: str) -> tuple[str, ...]:
@@ -32,18 +35,22 @@ def serialize_album_refs(refs: tuple[str, ...]) -> str:
 
 def albums_of(document: IniDocument) -> tuple[Album, ...]:
     """A dokumentum összes virtuális albuma, definíciós sorrendben."""
-    return tuple(
-        Album(
+    albums = []
+    for section in document.sections:
+        if not section.name.startswith(ALBUM_SECTION_PREFIX):
+            continue
+        use_music, music_file = read_music_settings(document, section.name)
+        albums.append(Album(
             # A szekciónévbeli token az azonosító, a token= kulcs redundáns.
             token=section.name[len(ALBUM_SECTION_PREFIX) :],
             name=section.get("name"),
             date=section.get("date"),
             description=section.get("description"),
             location=section.get("location"),
-        )
-        for section in document.sections
-        if section.name.startswith(ALBUM_SECTION_PREFIX)
-    )
+            use_music=use_music,
+            music_file=music_file,
+        ))
+    return tuple(albums)
 
 
 def with_album(document: IniDocument, photo_name: str, token: str) -> IniDocument:
@@ -94,8 +101,6 @@ def without_album(
 #: viszont `description` (ezt olvassa az `albums_of`) — a kettő nem
 #: keverhető össze.
 #:
-#: ⚠️ A `music` mező szándékosan NINCS itt: diavetítés-/mozgófilm-zene a
-#: programban egyáltalán nincs, tehát nem is menthető (#3173).
 _ALBUM_MEZOK = ("name", "date", "location", "description")
 
 #: A NÉV nem törölhető: névtelen album a listában azonosíthatatlan volna.
@@ -110,6 +115,8 @@ def with_album_fields(
     date: str | None = None,
     location: str | None = None,
     description: str | None = None,
+    use_music: bool | None = None,
+    music_file: str | None = None,
 ) -> IniDocument:
     """Egy MEGLÉVŐ album tulajdonságainak írása (#3173).
 
@@ -143,6 +150,12 @@ def with_album_fields(
             eredmeny = eredmeny.with_removed(section_name, kulcs)
             continue
         eredmeny = eredmeny.with_value(section_name, kulcs, tisztitott)
+    eredmeny = with_music_settings(
+        eredmeny,
+        section_name,
+        use_music=use_music,
+        music_file=music_file,
+    )
     return eredmeny
 
 

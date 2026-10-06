@@ -4345,7 +4345,7 @@ Rectangle {
     //: #1612: a menü HALASZTOTT — az `ensure()` az első jobbklikkre építi
     //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
     //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
-    function openContextMenu(x, y) { viewerMenuLoader.ensure().popup(viewer, x, y) }
+    function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer.currentPath, typeof fileOpsController !== "undefined" ? fileOpsController : null) }
 
     DeferredDialog {
         id: viewerMenuLoader
@@ -4411,10 +4411,10 @@ Rectangle {
                 && viewer.currentPath.length > 0)
                 fileOpsController.openPhoto(viewer.currentPath)
         }
-        onLocateRequested: {
-            if (typeof fileOpsController !== "undefined" && fileOpsController
-                && viewer.currentPath.length > 0)
-                fileOpsController.revealPhoto(viewer.currentPath)
+        onLocateRequested: function(original) {
+            if (typeof fileOpsController !== "undefined" && fileOpsController && viewer.currentPath.length > 0)
+                original ? fileOpsController.revealOriginal(viewer.currentPath)
+                    : fileOpsController.revealPhoto(viewer.currentPath)
         }
         onCopyFullPathRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController

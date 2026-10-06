@@ -3,9 +3,10 @@
 Round-trip elv: a szekció tartalma (star/caption/rotate/filters/… és minden
 ismeretlen sor) bitre pontosan megmarad, csak a `[fájlnév]` fejléc változik.
 
-Az ini-írás az ütközésbiztos `update_document`-en megy (#295): a NAS-mappát
-a párhuzamosan futó eredeti Picasa is írhatja, a sima `load → save` pedig
-némán felülírná, amit közben írt (lost update).
+Az ini-írás az útvonalanként szerializált, best-effort konkurenciakezelésű
+`update_document`-en megy (#295): a betöltés és az előzetes ujjlenyomat-
+ellenőrzés között észlelt Picasa-változás újratöltést vált ki. A sikeres
+ellenőrzés és fájlcsere közti külső írás elveszhet.
 
 #366: `rename_photos_many` a `rename.fen` tömeges módja — alapnév +
 opcionális dátum-/felbontás-utótag, Picasa-mintájú sorszámozás (`név`,

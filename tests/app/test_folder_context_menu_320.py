@@ -250,18 +250,18 @@ class TestFolderPropertiesDialog:
             "folderPropertiesAutomaticDate",
             "folderPropertiesUseMusic",
             "folderPropertiesMusicPath",
+            "folderPropertiesMusicBrowseButton",
+            "folderPropertiesMusicFileDialog",
             "folderPropertiesLocation",
             "folderPropertiesDescription",
         ):
             assert dialog.findChild(QObject, name) is not None, f"{name} hiányzik"
 
-    def test_unbacked_fields_are_shown_but_disabled(self, qml_engine):
-        """A név, a zene és a helyszín mögött még nincs réteg — a mezők a
-        helyükön vannak, de inaktívak (az elrendezés a dizájn része)."""
+    def test_a_mappaatnevezes_es_a_helyszin_mappamodban_inaktiv(self, qml_engine):
+        """A mappanév és a helyszín mögött nincs bekötött mappaszintű írás."""
         dialog = self._make_dialog(qml_engine)
         for name in (
             "folderPropertiesNameField",
-            "folderPropertiesUseMusic",
             "folderPropertiesLocation",
         ):
             item = dialog.findChild(QObject, name)
@@ -272,10 +272,14 @@ class TestFolderPropertiesDialog:
         dialog = self._make_dialog(qml_engine)
         check = dialog.findChild(QObject, "folderPropertiesUseMusic")
         path = dialog.findChild(QObject, "folderPropertiesMusicPath")
+        browse = dialog.findChild(QObject, "folderPropertiesMusicBrowseButton")
+        assert check.property("enabled") is True
         assert path.property("enabled") is False
+        assert browse.property("enabled") is False
         check.setProperty("checked", True)
         qt_app.processEvents()
         assert path.property("enabled") is True
+        assert browse.property("enabled") is True
 
     def test_accept_emits_date_and_description(self, qml_engine, qt_app):
         dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
