@@ -163,12 +163,28 @@ class TestANyomtatasVALOBAN:
         kapott: list[int] = []
         eredeti = PrintController._paint_pages
 
-        def figyelo(printer, grid, images, mode, lap_kesz=None):
+        def figyelo(
+            printer,
+            grid,
+            images,
+            mode,
+            lap_kesz=None,
+            resampler_radius=None,
+            printer_output_scale=1.0,
+        ):
             # #3016: a rajzolo egy OPCIONALIS laponkenti visszahivast is kap
             # — a dublornek at kell adnia, kulonben a haladas-jelzes nema
             # marad, es a `_run` kapuja sem mérodne
             kapott.append(len(images))
-            return eredeti(printer, grid, images, mode, lap_kesz)
+            return eredeti(
+                printer,
+                grid,
+                images,
+                mode,
+                lap_kesz,
+                resampler_radius,
+                printer_output_scale,
+            )
 
         monkeypatch.setattr(
             PrintController, "_paint_pages", staticmethod(figyelo)
@@ -186,12 +202,28 @@ class TestANyomtatasVALOBAN:
         kapott: list[int] = []
         eredeti = PrintController._paint_pages
 
-        def figyelo(printer, grid, images, mode, lap_kesz=None):
+        def figyelo(
+            printer,
+            grid,
+            images,
+            mode,
+            lap_kesz=None,
+            resampler_radius=None,
+            printer_output_scale=1.0,
+        ):
             # #3016: a rajzolo egy OPCIONALIS laponkenti visszahivast is kap
             # — a dublornek at kell adnia, kulonben a haladas-jelzes nema
             # marad, es a `_run` kapuja sem mérodne
             kapott.append(len(images))
-            return eredeti(printer, grid, images, mode, lap_kesz)
+            return eredeti(
+                printer,
+                grid,
+                images,
+                mode,
+                lap_kesz,
+                resampler_radius,
+                printer_output_scale,
+            )
 
         monkeypatch.setattr(
             PrintController, "_paint_pages", staticmethod(figyelo)
