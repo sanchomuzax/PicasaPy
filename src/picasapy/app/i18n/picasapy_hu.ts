@@ -5223,19 +5223,23 @@ picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
         <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
             <translation>Szöveges dia</translation>
         </message>
-    <message>
+        <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>%1     %2x%3 pixels</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1     %2x%3 képpont</translation>
         </message>
-    <message>
+        <message>
             <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>(%1 of %2)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(%1 / %2)</translation>
         </message>
-</context>
+    </context>
     <context>
         <name>MovieTitleDialog</name>
         <message>
