@@ -2872,7 +2872,7 @@ A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiért
 Két célzott kör futott ezekre párhuzamosan (nyers kimenet:
 `referencia/dekompilalt-pakolo/script-DecompileTiled.log`, `-Edge.log`).
 
-#### `Tiled` — **maszk**, nem képművelet (TELJES, 2026-08-14)
+#### `Tiled` — **maszk**, nem képművelet (pixelmag: megerősített, 2026-10-06)
 
 Az osztály neve `glimmer::TiledImageMask`, nem `…ImageOperation`.
 
@@ -2897,22 +2897,35 @@ A gyorsítótár-kulcsot ugyanez a nyolc érték adja
 ```c
 oszlopok = kepSzelesseg / csempeSzelesseg;     // EGÉSZ osztás
 sorok    = kepMagassag  / csempeMagassag;
-ox = round(param[10]);   oy = round(param[11]);   // eltolás
+ox = trunc0(offsetX);    oy = trunc0(offsetY);  // FISTP, CW |= 0xc00
+x0 = trunc0((kepSzelesseg - racsSzelesseg) / 2) + ox;
+y0 = trunc0((kepMagassag  - racsMagassag ) / 2) + oy;
 
 for (r = 0; r <= sorok; r++)
   for (c = 0; c <= oszlopok; c++) {
-      x = csempeSzelesseg * c + (kepSzelesseg - rajzoltSzelesseg)/2 + ox;
-      y = csempeMagassag  * r + (kepMagassag  - rajzoltMagassag )/2 + oy;
+      x = csempeSzelesseg * c + x0;
+      y = csempeMagassag  * r + y0;
       rajzol(csempe, x, y);
   }
 ```
+
+Itt `racsSzelesseg = ceil(kepSzelesseg/csempeSzelesseg)·csempeSzelesseg`,
+`racsMagassag` ennek függőleges párja (`0x00bbb070`), a `trunc0` pedig nulla
+felé csonkolást jelent. A `0x00bba7b7`–`0x00bba7ca` és
+`0x00bba7ea`–`0x00bba7ef` egész műveletsora adja a középre igazított origót;
+az `offsetX/Y` csonkolását a `0x00bba7a5`–`0x00bba7dc` és
+`0x00bba7f1`–`0x00bba822` `FISTP`-je végzi `CW |= 0xc00` mellett. A ciklus
+mindkét tengelyen a `floor(kepmeret/csempemeret)+1` darab cellán fut
+(`0x00bba826`–`0x00bba844`); a célkép téglalapja vágja le a képen kívülre eső
+részeket (`0x009a8d80` hívás, `0x00bba891`–`0x00bba8a1`). Ez képen belül
+csempézést jelent, nem a kép szélén túli mintaismétlést.
 
 Két részlet, ami nélkül nem stimmel: a ciklus **`<=`**, tehát mindkét irányban
 **eggyel több** csempe készül, mint amennyi elférne (ez fedi le a jobb és alsó
 peremet), és a csempe a rendelkezésre álló területhez képest **középre
 igazítva** indul, nem a bal felső sarokból.
 
-##### ⭐ A csempe rajzolása: KÉTMEGÁLLÓS színátmenet, közös a kör-maszkkal (2026-09-05, #2476)
+##### ⭐ A csempe pixelképlete: kétmegállós radiális LUT (2026-10-06, #626)
 
 A `0x00bbaa90` a méretezett téglalap kiszámítása után **két** függvényt hív:
 `0x008f3840` (`0x00bbaca9`, öt float — a téglalap) és `0x008f3970`
@@ -2927,14 +2940,103 @@ a szomszédos elemeket (`0x008f39dd` `lea ecx,[esi-1]`, `0x008f39f6`–
 `0x008f3a01`). A harmadik hívó (`0x008ed730`) **15** megállót ad át
 (`0x008edcf9` `push 0xf`).
 
-⇒ A féltónusos pont pereme **nem kemény küszöb**, hanem rámpa két megálló
-között — ugyanaz a primitív, mint a kör-maszké. A csempe alapból a cella
-**0,8-szeresére** méretezve, középre igazítva (ld. fent).
+Az adott csempe stopjai a `0x00bbaa90`-ben pontosak: pozíció `0` alfa
+`trunc(alphaMax·255)`, pozíció `255` alfa `trunc(alphaMin·255)`;
+Comicize-ban ezek rendre `(0,255)` és `(255,0)` (`0x00bbab26`–`0x00bbab92`,
+`0x00bbaba8`, `0x00bbabc0`). A színlerp (`0x008f3700`) a köztes `t`-t
+float32-ként adja át az x87 számításnak, majd a `CW |= 0xc00` + `FISTP`
+csatornánként nulla felé csonkol. Ezért a tényleges 256 elemű alfa-LUT:
 
-⚠️ **NINCS visszaolvasva**, hol áll pontosan a két megálló (a
-`0x008f3840` öt floatja és a `0x00bbac13`–`0x00bbac39` blokk 1/0 értékei
-adnák meg). A mért kompozit profil és a hatás a mi kimenetünkre:
-`filters-decoded.md`, „A Comicize PONTMASZKJA".
+```text
+L[i] = trunc(255 − 255·float32(i/255)), i = 0…255
+[255, 253, 252, 251, …, 2, 1, 0, 0]
+```
+
+Nem az egyszerű egész `[255,254,…,1,0]` tábla. Csatornánként a köztes LUT:
+`L_C[i] = trunc(c0_C + float32(i/255)·(c1_C−c0_C))`; Comicize alfa-végpontjai
+adják a fenti `L[i]` alfatáblát. A csempe méretezett, középre tett
+téglalapját a `0x008f3840` készíti elő; az inverz transzformáció és a radiális
+képpontjárás a `0x008f3970`-ben történik. Az inverz affin mátrix első hat
+együtthatóját a bináris `0x00cf48f0` qword konstanssal (79,6875) szorozza,
+majd float32-ben tárolja. Ha `x,y` az így transzformált, float32 koordináták,
+`d = sqrt(x²+y²)` és az egész 8.8-as sugárindex útfüggően. A koordináta az
+egész, nullától induló képpontindexből készül (`0x008f3b61`–`0x008f3b67`),
+nem `x+0,5`/`y+0,5` képpontközépből:
+
+```text
+q_simd   = min(CVTPS2DQ(d), 0xff00) ; 0x008f3cf6–0x008f3cfd
+q_scalar = min(FISTP(d), 0xff00)     ; CW betöltés: 0x008f4069
+```
+
+`i=q>>8`, `f=q&255`, majd minden BGRA csatorna kimenete:
+
+```text
+out_C = (L_C[i]·(256−f) + L_C[min(i+1,255)]·f) >> 8
+```
+
+Nincs felülmintavételezés. A SIMD-ág `CVTPS2DQ`-t, a skalár `FISTP`-t
+használ; a lent rögzített próbamintán a két ág bájtra azonos.
+
+**Izolált pixel-golden, eredeti gépi kódból.** A privát QEMU-i386
+harness (`/home/sancho/picasapy-agent/eszkozok/qemu_harness/hb.py`,
+`install_crt_shims`) az eredeti, változatlan EXE (`SHA-256:
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`)
+`0x008f3840` →
+`0x00a4a140` → `0x008f3970` útját futtatta 7×7 kimeneten, egy 5,6×5,6
+rajzolt belső csempe 0,7/0,7 origójával, alpha 1→0 végpontokkal. A kézzel
+összeállított harness-környezet korlátja, hogy a teljes `0x00bba670`
+multi-cell wrapper nem futott ebben a próbaágban; annak rács-, offset- és
+klippelési útját a fenti utasításszintű olvasat támasztja alá. A 7×7 nyers
+BGRA golden alfa-csatornája (soronként):
+
+```text
+  0   0   0   0   0   0   0
+  0   0   0  20  20   0   0
+  0   0  59 108 109  60   0
+  0  20 108 188 189 110  22
+  0  20 109 189 191 111  23
+  0   0  60 110 111  62   0
+  0   0   0  22  23   0   0
+```
+
+Futtatás: az ideiglenes `.bt/tiled_probe.py` a harness `hb.py`/`w1.py`
+segédjeit használta; `hb.run(..., timeout=20, mem_mb=1200)` `rc=0`,
+`worker_status=0`. A harness a binárisban nem írt át kódot; a megfigyelő hook
+csak az eredeti függvény elágazása előtt mentette a köztes adatokat, majd
+visszatért az eredeti utasításokra. A `TILED_SSE=0` és `TILED_SSE=1` futás
+nyers 196 bájtja azonos. A `.bt/verify_tiled.py` külön Python-számítása a
+QEMU LUT mind a 256 elemét és a kimenet mind a 196 bájtját egyezőre hozta.
+Az ideiglenes probe- és ellenőrzőfájlokat az előírás szerint a futás után
+töröltem; a golden és a mért futási adatok itt maradnak.
+
+**Független cáfoló kontroll.** A korábbi `[255,254,…,0]` rekonstrukciót a
+bináris LUT-ja cáfolja; a mostani Python-rekonstrukció a QEMU által kiírt
+LUT-tal 256/256 elemben egyezik. A projekt mai
+`halftone.native_dot_mask(7,7,7,0.5,0.5)` eredménye a goldenhez képest
+29/49 alfabájtban egyezik, 20/49-ben eltér, legfeljebb 3-mal; tehát ez a
+golden még nem igazolja a projekt pixelpontos egyezését.
+
+**Keverés és perem.** A Comicize Tiled maszkjai teljes képnyi dobozt kérnek,
+`alphaMin=0`, `alphaMax` pedig a kötő alapértéke szerint 1 (`0x00bba580`;
+`filterdesc.xml:777–782`). Az első csempe `offset=(0,0)`, a másodiké
+`(dotSize/2,dotSize/2)`; a bináris a tört offsetet nulla felé csonkolja.
+Nincs padding, wrap, mirror vagy szélső képpont-nyújtás: a részleges
+peremcsempéket a képkimenet klippeli. A `PartialMask` a maszk alfájával a
+fehér alapszínt keveri:
+
+```text
+out = floor((g·m + 255·(255−m))/255),  m = maszk alfa-bájtja
+```
+
+(`0x00bc4dcb`–`0x00bc4fde`, `0x00bd0f10`; a Tiled maszknál az alap a fehér
+alsó veremelem). A recept pontos paraméterei a
+`filters-decoded.md` Comicize XML-részében vannak.
+
+**Bizonyítottsági fok:** a csempe pixelmagja **megerősített** (utasításszintű
+olvasat + az eredeti worker QEMU-futtatása és attól független Python-bájt
+újraszámítás egyezik). A teljes multi-cell `0x00bba670` wrapper itt csak
+utasításszinten van ellenőrizve; integrált QEMU-goldenje nincs, ezért a teljes
+rácsra ez a rész **feltételes**.
 
 #### `EdgeDetectionSobel` — a kernel teljesen megvan
 
