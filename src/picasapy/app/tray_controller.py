@@ -630,7 +630,8 @@ class TrayMixin:
                 allapot = tray.without_album_token(allapot, token.key)
         return allapot
 
-    @Slot(str, result=bool)
+    # Python-oldali modellművelet. Az eredeti tálca-token állapotból jelenik
+    # meg, és a képkijelölés magától eltávolítja; nincs hozzá külön QML-akció.
     def expandFolderInTray(self, key: str) -> bool:
         """Az összecsukott token eltávolítása a tálcáról, kulcs szerint.
 

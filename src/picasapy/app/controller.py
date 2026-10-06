@@ -1095,7 +1095,6 @@ class AppController(
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület a mappát is átadó
     # `setFolderDescriptionOf(path, …)` alakot hívja; ez a kompatibilitási út.
-    @Slot(str)
     def setFolderDescription(self, text: str) -> None:
         """A KIVÁLASZTOTT mappa leírásának mentése (kompatibilitási út —
         a feed-fejlécek a setFolderDescriptionOf-ot hívják)."""
