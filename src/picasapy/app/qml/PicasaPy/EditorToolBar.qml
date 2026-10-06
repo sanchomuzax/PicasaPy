@@ -186,6 +186,10 @@ Item {
                 //: a NÉV az eszközt követi (`tiltSlider`) — a mai bekötés
                 //: és a rá épülő próbák ezen a néven találják meg
                 objectName: sav.tool + "Slider"
+                //: #3865/#4058: az eszközsáv (kiegyenesítés) csúszkája a
+                //: SAJÁT eszközén léptethető +/−-szal; a #4398 3–5. füles
+                //: kapuja a szerkesztőpanel csúszkáira vonatkozik, nem erre.
+                keyboardStepEnabled: !sav.textEntryHasFocus
                 x: sav.csuszkaSavBehuzas
                 width: sav.csuszkaSavSzelesseg
                 height: sav.gombMagassag
