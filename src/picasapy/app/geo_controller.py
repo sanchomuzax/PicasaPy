@@ -171,7 +171,6 @@ class GeoMixin:
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület ugyanezt az adatot
     # a `geoMarkers` listából kapja meg, egyben az egész rácsra.
-    @Slot(int, result="QVariant")
     def locationOfRow(self, row: int):
         """Egy sor helye a QML-nek: `{latitude, longitude}` vagy `null`."""
         photos = self._photos.photos

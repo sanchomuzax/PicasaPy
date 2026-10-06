@@ -111,7 +111,6 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
     collageFormatKeyChanged = Signal()
     collagePageRatioChanged = Signal()
     collageSelectionChanged = Signal()
-    collageFrameCenterChanged = Signal()
     collageClipCountChanged = Signal()
     collageDirtyChanged = Signal()
     collageCapabilitiesChanged = Signal()
@@ -344,7 +343,9 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         x, y, width, height = bounds
         return {"x": x, "y": y, "width": width, "height": height}
 
-    @Property(int, notify=collageFrameCenterChanged)
+    # Python-oldali állapotolvasás; a QML-beállító a menüből hívott
+    # `setFrameCenterFromSelection`.
+    @property
     def collageFrameCenter(self) -> int:
         """A hangsúlyos középső kép indexe a Képkockamozaikban; −1 = nincs."""
         self._ensure_collage_panel()
@@ -455,7 +456,6 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self.setCollageTitle(self._title_from_sources(sources))
         self._apply_source_album_fields(sources)
         self._relayout(sources, dirty=False)
-        self.collageFrameCenterChanged.emit()
         if not self._collage_panel_open:
             self._collage_panel_open = True
             self.collageOpenChanged.emit()
@@ -554,12 +554,11 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self._set_dirty(dirty)
 
     def _set_frame_center(self, index: int) -> None:
-        """A képkockaközéppont beállítása; a jelzés csak valódi változásnál."""
+        """A Python-oldali képkockaközéppont beállítása."""
         self._ensure_collage_panel()
         if self._collage_panel_frame_center == index:
             return
         self._collage_panel_frame_center = index
-        self.collageFrameCenterChanged.emit()
 
     # -- beállítás-slotok (8.2) --------------------------------------------
 

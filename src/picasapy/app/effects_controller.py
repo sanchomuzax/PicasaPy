@@ -42,7 +42,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Slot
 
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index
@@ -59,8 +59,6 @@ from .photo_ops_controller import _WRITE_ERRORS
 class EffectsClipboardMixin:
     """„Vágólap"-pillanatkép egy kép effektláncáról + beillesztés, undóval."""
 
-    effectsClipboardChanged = Signal()
-
     def _ensure_effects_clipboard(self) -> None:
         """Lusta állapot-inicializálás (#150-minta: nem kell az __init__-et
         (forró fájl) módosítani a szelet bevezetéséhez)."""
@@ -72,19 +70,22 @@ class EffectsClipboardMixin:
                 list[tuple[str, str, str | None, str | None]]
             ] = []
 
-    @Property(bool, notify=effectsClipboardChanged)
+    # Python-only compatibility state. The visible Edit menu uses the
+    # equivalent PhotoOps clipboard API, which deliberately excludes crop64.
+    @property
     def hasEffectsClipboard(self) -> bool:
-        """Van-e másolt effektlánc — a „Paste All Effects" menüpont
-        engedélyezési feltétele."""
+        """Van-e lánc a Python-only, crop64-aware vágólapon."""
         self._ensure_effects_clipboard()
         return self._effects_clipboard is not None
 
-    @Property(bool, notify=effectsClipboardChanged)
+    @property
     def canUndoPasteEffects(self) -> bool:
+        """Van-e visszavonható beillesztés a Python-only veremben."""
         self._ensure_effects_clipboard()
         return bool(self._effects_undo_stack)
 
-    @Slot(list)
+    # A Qt menü a PhotoOps-változatot használja; ez a Python-segéd megőrzi a
+    # crop64-et is kezelő korábbi út viselkedését.
     def copyEffects(self, rows) -> None:
         """A kijelölés ELSŐ képének teljes effektlánca a „vágólapra" (#152,
         Picasa „Copy All Effects"): a crop64 és minden ismeretlen/idegen
@@ -97,7 +98,6 @@ class EffectsClipboardMixin:
         photo = photos[valid_rows[0]]
         source = EditSession.from_value(photo.filters or "")
         self._effects_clipboard = EditSession(ops=source.copy_effects())
-        self.effectsClipboardChanged.emit()
 
     @Slot(list)
     def pasteEffects(self, rows) -> None:
@@ -186,10 +186,9 @@ class EffectsClipboardMixin:
         # „Beillesztés visszavonása" egy meg sem történt írást vonna vissza.
         if undo_batch:
             self._effects_undo_stack.append(undo_batch)
-        self.effectsClipboardChanged.emit()
         self._refresh_view()
 
-    @Slot()
+    # Ugyanennek a Python-only, crop64-aware útnak a visszavonása.
     def undoPasteEffects(self) -> None:
         """Az utolsó „Paste All Effects" visszavonása — minden érintett kép
         filters=/crop= kulcsa visszaáll a beillesztés előtti (nyers) értékre."""
@@ -231,7 +230,6 @@ class EffectsClipboardMixin:
                     # visszaírt mappák újbóli visszaírása azonos eredményt ad.
                     self.photoOpFailed.emit(str(error))
                     self._effects_undo_stack.append(batch)
-                    self.effectsClipboardChanged.emit()
                     return
                 # #750: a visszavonás is a MI írásunk — a napló a beillesztés
                 # ELŐTTI láncot védi tovább (üresnél törlődik a bejegyzés).
@@ -242,7 +240,6 @@ class EffectsClipboardMixin:
                     ]
                 )
                 self._sync_tree(conn, folder)
-        self.effectsClipboardChanged.emit()
         self._refresh_view()
 
 
