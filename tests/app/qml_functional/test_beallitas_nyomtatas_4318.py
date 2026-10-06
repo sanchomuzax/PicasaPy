@@ -299,3 +299,111 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     assert lapok == uj_lapok, (
         f"a PDF {lapok} lapot tartalmaz, a nyomtató elrendező {uj_lapok}-et jelzett"
     )
+
+
+@pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+def test_nyomtatas_ful_ketoszlopos_elrendezese_a_referencia_szerint(
+    qml_app, qt_app, magassag_elteres, tmp_path
+):
+    window, _controller, _engine = qml_app
+    menu = _gyerek(window, "menuToolsOptions")
+    QMetaObject.invokeMethod(menu, "triggered", Qt.ConnectionType.DirectConnection)
+    assert _varj(
+        qt_app,
+        lambda: window.findChild(QObject, "optionsDialog") is not None
+        and window.findChild(QObject, "optionsDialog").property("visible"),
+    ), "a Beállítások ablaka nem nyílt meg"
+    options = _gyerek(window, "optionsDialog")
+    options.setProperty("width", 768)
+    options.setProperty("height", 436 + magassag_elteres)
+    qt_app.processEvents()
+
+    _kattints(options, qt_app, _gyerek(options, "optionsTabPrinting"))
+    assert _varj(
+        qt_app,
+        lambda: _gyerek(options, "optionsTabStack").property("currentIndex") == 4,
+    ), "a Nyomtatás fül nem nyílt meg"
+    tab = _gyerek(options, "optionsTabPrintingPanel")
+    meret_racs = _gyerek(tab, "optionsPrintSizeGrid")
+    beallitas_racs = _gyerek(tab, "optionsPrintSettingsGrid")
+    assert _varj(
+        qt_app,
+        lambda: meret_racs.width() > 0 and beallitas_racs.width() > 0,
+    ), "a nyomtatási beállítások rácsa nem rendeződött el"
+
+    combo_geometriak = []
+    for index in range(5):
+        combo = _ismetlo_elem(
+            options,
+            qt_app,
+            "optionsPrintSizeRepeater",
+            index,
+            f"optionsPrintSizeCombo{index}",
+        )
+        cimke = _ismetlo_elem(
+            options,
+            qt_app,
+            "optionsPrintSizeRepeater",
+            index,
+            f"optionsPrintSizeLabel{index}",
+        )
+        assert cimke.property("visible") is False, (
+            "a méretválasztó fölösleges sorszámcímkéje látható maradt"
+        )
+        combo_geometriak.append(
+            (
+                combo.mapToItem(meret_racs, QPointF(0, 0)),
+                float(combo.width()),
+                float(combo.height()),
+            )
+        )
+
+    pontok = [adat[0] for adat in combo_geometriak]
+    meret_racs_kozepe = meret_racs.mapToScene(
+        QPointF(meret_racs.width() / 2, 0)
+    ).x()
+    assert abs(meret_racs_kozepe - options.width() / 2) <= 3, (
+        "a kétoszlopos méretválasztó nincs középre igazítva: "
+        f"rács={meret_racs_kozepe:.1f}, ablak={options.width() / 2:.1f}"
+    )
+    # A referencia-képen a vezérlők 150×23 px-esek, a két oszlop és a
+    # három sor kezdőpontjának távolsága 157, illetve 30 px. A ±3 px-es
+    # tűrés a renderelő és az ablakméret platformkülönbségét engedi meg.
+    for _pont, szelesseg, magassag in combo_geometriak:
+        assert abs(szelesseg - 150) <= 3, f"eltérő méretválasztó-szélesség: {szelesseg}"
+        assert abs(magassag - 23) <= 3, f"eltérő méretválasztó-magasság: {magassag}"
+    assert abs((pontok[1].x() - pontok[0].x()) - 157) <= 3
+    assert abs((pontok[2].y() - pontok[0].y()) - 30) <= 3
+    assert abs((pontok[3].y() - pontok[1].y()) - 30) <= 3
+    assert abs(pontok[0].x() - pontok[2].x()) <= 2
+    assert abs(pontok[2].x() - pontok[4].x()) <= 2
+    assert abs(pontok[0].y() - pontok[1].y()) <= 2
+    assert abs(pontok[2].y() - pontok[3].y()) <= 2
+
+    cimke_nevek = (
+        "optionsPrintPreviewsLabel",
+        "optionsPrintQualityLabel",
+        "optionsPrintResamplerLabel",
+    )
+    lathato_cimkek = [
+        _gyerek(tab, nev)
+        for nev in cimke_nevek
+        if _gyerek(tab, nev).property("visible")
+    ]
+    assert len(lathato_cimkek) >= 2, "a beállításcsoportok bal oldali címkéi hiányoznak"
+    cimke_jobb_szelek = [
+        cimke.mapToItem(
+            beallitas_racs, QPointF(cimke.width(), cimke.height() / 2)
+        ).x()
+        for cimke in lathato_cimkek
+    ]
+    assert max(cimke_jobb_szelek) - min(cimke_jobb_szelek) <= 2, (
+        f"a csoportcímkék nem egy vonalra zárnak: {cimke_jobb_szelek}"
+    )
+
+    qt_app.processEvents()
+    kep = options.grabWindow()
+    assert not kep.isNull(), "a Nyomtatás fül képe nem renderelődött"
+    assert kep.save(str(tmp_path / f"nyomtatas-{magassag_elteres:+d}.png")), (
+        "a renderelt Nyomtatás fül képét nem sikerült elmenteni"
+    )
