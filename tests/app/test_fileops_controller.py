@@ -287,6 +287,85 @@ class TestOpenPhoto:
         assert failures[0][0] == "open"
 
 
+class TestOpenPhotosInDefaultEditor:
+    """#4330: a menüsori parancs a rendszer alapértelmezett
+    alkalmazásában nyitja meg a kijelölt képfájlokat."""
+
+    def test_elinditja_a_rendszer_alapertelmezett_alkalmazasat_minden_fajlhoz(
+        self, controller, tmp_path, monkeypatch
+    ):
+        from pathlib import Path
+
+        import picasapy.app.fileops_controller as fileops_module
+
+        opened = []
+        monkeypatch.setattr(
+            fileops_module,
+            "_open_url",
+            lambda url: opened.append(url.toLocalFile()) or True,
+            raising=False,
+        )
+        photos = [tmp_path / "egy.jpg", tmp_path / "ketto.jpg"]
+        for photo in photos:
+            photo.write_bytes(b"kep")
+
+        controller.openPhotosInDefaultEditor([str(photo) for photo in photos])
+
+        assert [Path(path) for path in opened] == photos
+
+    def test_a_nem_megnyithato_fajlok_szamat_visszajelzi(
+        self, controller, tmp_path, monkeypatch
+    ):
+        import picasapy.app.fileops_controller as fileops_module
+
+        failures = []
+        opened = []
+        monkeypatch.setattr(
+            fileops_module,
+            "_open_url",
+            lambda url: opened.append(url.toLocalFile()) or False,
+            raising=False,
+        )
+        for path in (tmp_path / "egy.jpg", tmp_path / "ketto.jpg"):
+            path.write_bytes(b"kep")
+        controller.operationFailed.connect(
+            lambda kind, message: failures.append((kind, message))
+        )
+
+        controller.openPhotosInDefaultEditor(
+            [str(tmp_path / "egy.jpg"), str(tmp_path / "ketto.jpg")]
+        )
+
+        assert len(opened) == 2
+        assert len(failures) == 1
+        assert failures[0][0] == "open_editor"
+        assert "2" in failures[0][1]
+
+    def test_hianyzik_a_fajl_es_nem_indit_megnyitot(
+        self, controller, tmp_path, monkeypatch
+    ):
+        import picasapy.app.fileops_controller as fileops_module
+
+        opened = []
+        failures = []
+        monkeypatch.setattr(
+            fileops_module,
+            "_open_url",
+            lambda url: opened.append(url.toLocalFile()) or True,
+            raising=False,
+        )
+        controller.operationFailed.connect(
+            lambda kind, message: failures.append((kind, message))
+        )
+
+        controller.openPhotosInDefaultEditor([str(tmp_path / "nincs.jpg")])
+
+        assert opened == []
+        assert len(failures) == 1
+        assert failures[0][0] == "open_editor"
+        assert "1" in failures[0][1]
+
+
 class TestCopyFullPath:
     """#422: „Teljes elérési út másolása" — a vágólapra kerül a helyi út."""
 
