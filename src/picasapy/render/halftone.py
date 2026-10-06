@@ -57,7 +57,11 @@ def dot_size_for(width: int) -> int:
 
 
 def tiled_mask_origin(
-    width: int, height: int, tile: int, offset_x: float = 0.0, offset_y: float = 0.0
+    width: int,
+    height: int,
+    tile: int | tuple[int, int],
+    offset_x: float = 0.0,
+    offset_y: float = 0.0,
 ) -> tuple[int, int]:
     """A `TiledImageMask` rácsának origója képpontban (#3876, #3878).
 
@@ -72,14 +76,84 @@ def tiled_mask_origin(
     INDEXÉBŐL mér (`0x008f3b61` `fldz`): a `tiled_dot_ramp` ezt
     `offset = origó + 0,5`-tel adja vissza.
     """
-    if tile < 1:
+    if isinstance(tile, tuple):
+        if len(tile) != 2:
+            raise ValueError(f"Érvénytelen csempeméret: {tile}")
+        tile_width, tile_height = tile
+    else:
+        tile_width = tile_height = tile
+    if tile_width < 1 or tile_height < 1:
         raise ValueError(f"Érvénytelen csempeméret: {tile}")
 
-    def _tengely(meret: int, eltolas: float) -> int:
-        racs = int(np.ceil(np.float32(meret) / np.float32(tile))) * tile
+    def _tengely(meret: int, csempe: int, eltolas: float) -> int:
+        racs = int(np.ceil(np.float32(meret) / np.float32(csempe))) * csempe
         return int((meret - racs) / 2) + int(eltolas)
 
-    return _tengely(width, offset_x), _tengely(height, offset_y)
+    return (
+        _tengely(width, tile_width, offset_x),
+        _tengely(height, tile_height, offset_y),
+    )
+
+
+def _repeat_tile_at_origin(
+    tile_mask: np.ndarray,
+    height: int,
+    width: int,
+    origin_x: int,
+    origin_y: int,
+) -> np.ndarray:
+    """Csempét ismétel az origótól induló, képszélre klippelt rácsban."""
+    tile_height, tile_width = tile_mask.shape
+    result = np.zeros((height, width), dtype=tile_mask.dtype)
+
+    for row in range(height // tile_height + 1):
+        y = origin_y + row * tile_height
+        dst_y0 = max(y, 0)
+        dst_y1 = min(y + tile_height, height)
+        if dst_y0 >= dst_y1:
+            continue
+        src_y0 = dst_y0 - y
+        src_y1 = src_y0 + dst_y1 - dst_y0
+
+        for column in range(width // tile_width + 1):
+            x = origin_x + column * tile_width
+            dst_x0 = max(x, 0)
+            dst_x1 = min(x + tile_width, width)
+            if dst_x0 >= dst_x1:
+                continue
+            src_x0 = dst_x0 - x
+            src_x1 = src_x0 + dst_x1 - dst_x0
+            result[dst_y0:dst_y1, dst_x0:dst_x1] = tile_mask[
+                src_y0:src_y1, src_x0:src_x1
+            ]
+
+    return result
+
+
+def tiled_mask_grid(
+    tile_mask: np.ndarray,
+    height: int,
+    width: int,
+    offset_x: float = 0.0,
+    offset_y: float = 0.0,
+) -> np.ndarray:
+    """A `TiledImageMask` csempéjét a natív, középre tett rácson rajzolja ki.
+
+    A csempe mindkét irányban `floor(képméret/csempeméret)+1` alkalommal
+    kerül kirajzolásra. A csonkolt eltolás a középre igazított rácsorigóhoz
+    adódik, a képkereten kívüli részeket pedig a kimenet klippeli (#4338).
+    """
+    tile = np.asarray(tile_mask)
+    if tile.ndim != 2 or tile.shape[0] < 1 or tile.shape[1] < 1:
+        raise ValueError("A Tiled maszkcsempéje nem üres, kétdimenziós tömb legyen")
+    if height < 1 or width < 1:
+        raise ValueError(f"Érvénytelen kimenetméret: {width}×{height}")
+
+    tile_height, tile_width = tile.shape
+    origin_x, origin_y = tiled_mask_origin(
+        width, height, (tile_width, tile_height), offset_x, offset_y
+    )
+    return _repeat_tile_at_origin(tile, height, width, origin_x, origin_y)
 
 
 def tiled_dot_ramp(
@@ -89,13 +163,12 @@ def tiled_dot_ramp(
     offset_x: float = 0.0,
     offset_y: float = 0.0,
 ) -> np.ndarray:
-    """A csempézett pontrács SUGÁR-rámpája: 0 a csempe közepén, 1 a csempe
-    BEÍRT körének peremén — a sarkokban 1 fölé megy (√2-ig).
+    """Folytonos sugárrámpa, a képpontok közepén mintázva.
 
-    Ez a féltónus KÜSZÖB-mátrixa: egy képpont akkor lesz festékes, ha a
-    tónusa sötétebb, mint az itteni küszöb — így a pont a sötét területeken
-    NAGYRA nő, a világosokon elfogy. A `tiled_dot_mask` (a `TiledImageMask`
-    művelet közvetlen megfelelője) ugyanebből a rámpából áll elő.
+    A `native_dot_mask` ettől külön térbeli fázist követ: az eredeti worker
+    egész képpontindexből képezi a float32 sugarat, majd Q8.8-ra kerekít
+    (#4326). Ez a rámpa a középpontból mintázott, folytonos geometriai
+    segédmodell marad.
     """
     if tile < 1:
         raise ValueError(f"Érvénytelen csempeméret: {tile}")
@@ -107,30 +180,75 @@ def tiled_dot_ramp(
     return (np.hypot(local_x, local_y) / center).astype(np.float32)
 
 
+def _native_dot_radius_q8_8(tile: int) -> np.ndarray:
+    """A Tiled worker nyers, nearest-even Q8.8 sugárértékei csempénként (#4326).
+
+    A 7×7-es mérésben ez a mátrix a `CVTPS2DQ` előtti float32 sugár
+    kerekítéséből származik. A `0xff00`-ra vágás külön történik, közvetlenül
+    a LUT-indexelés előtt.
+    """
+    if tile < 1:
+        raise ValueError(f"Érvénytelen csempeméret: {tile}")
+
+    def _transzformacio(csempe: int) -> tuple[np.float32, np.float32]:
+        csempe_f = np.float32(csempe)
+        meretezett = np.float32(csempe_f * np.float32(DOT_SCALE))
+        kezdet = np.float32(-np.float32(meretezett - csempe_f) * np.float32(0.5))
+        kozep = np.float32(kezdet + np.float32(meretezett * np.float32(0.5)))
+        skala = np.float32(meretezett / np.float32(1638.4))
+        inverz = np.float32(np.float32(1.0) / skala)
+        eltolas = np.float32(-kozep / skala)
+        return (
+            np.float32(float(inverz) * 79.6875),
+            np.float32(float(eltolas) * 79.6875),
+        )
+
+    step_x, translation_x = _transzformacio(tile)
+    step_y, translation_y = _transzformacio(tile)
+    x = np.arange(tile, dtype=np.float32)
+    y = np.arange(tile, dtype=np.float32)
+    tx = np.float32(x * step_x + translation_x)
+    ty = np.float32(y * step_y + translation_y)
+    sugar_negyzet = np.float32(tx[np.newaxis, :] ** 2 + ty[:, np.newaxis] ** 2)
+    sugar = np.sqrt(sugar_negyzet, dtype=np.float32)
+    return np.rint(sugar).astype(np.int32)
+
+
+def _native_dot_alpha_lut() -> np.ndarray:
+    """Az eredeti `Tiled` két stopja által kiértékelt 256 alfa-bájt (#4326)."""
+    stop = np.arange(256, dtype=np.float32) / np.float32(255.0)
+    return np.trunc(255.0 - stop.astype(np.float64) * 255.0).astype(np.uint8)
+
+
 def native_dot_mask(
     height: int, width: int, tile: int, offset_x: float = 0.0, offset_y: float = 0.0
 ) -> np.ndarray:
     """A `TiledImageMask` natív pontmaszkja, 0..255 (#3390, #3522).
 
-    A csemperajzoló (`0x00bbaa90`) két megállóval hívja a közös rácsolót
-    (`0x008f3840` → `0x008f3970`): a kétmegállós LUT a két alfa-végpontból
-    `[255, 254, …, 1, 0]` (`0x008f3700`, csonkolt lineáris keverés). A
-    rácsoló a képpont sugarát 8.8-as fixpontra CSONKOLJA: a felső bájt a
-    LUT-rekesz, az alsó a tört súlya, és a kimenet
+    A kétmegállós LUT az eredeti float32 `i/255` értékből és x87-es
+    csonkolásból áll elő: `[255, 253, 252, 251, …, 2, 1, 0, 0]`.
+    A transzformált sugár 8.8-as fixpontos értékét a SIMD ág
+    `CVTPS2DQ`-val (kerekítés a legközelebbi egészre) alakítja, majd
+    `q >> 8` választ LUT-rekeszt, `q & 255` pedig tört súlyt. A kimenet
     `(next · frac + current · (256 − frac)) >> 8`. Felülmintavételezés és
     külön peremlágyítás NINCS.
 
-    A sugár a `DOT_SCALE`-lel (0,8) normált rámpa: 0 a pont közepén, 1 a
-    pont peremén; azon túl a maszk 0.
+    A teljes csemperács és a szélek klippelése a `tiled_mask_grid`-en fut
+    (#4338). Az eltolás a wrapper által csonkolt rácseltolás.
     """
-    rampa = tiled_dot_ramp(height, width, tile, offset_x, offset_y) / np.float32(DOT_SCALE)
-    fix = np.floor(np.clip(rampa, 0.0, 1.0) * np.float32(255.0 * 256.0)).astype(np.int64)
-    fix = np.minimum(fix, 255 * 256)
-    rekesz, tort = fix >> 8, fix & 255
-    lut = 255 - np.arange(256, dtype=np.int64)
+    if tile < 1:
+        raise ValueError(f"Érvénytelen csempeméret: {tile}")
+    if height < 1 or width < 1:
+        raise ValueError(f"Érvénytelen kimenetméret: {width}×{height}")
+
+    q = np.minimum(_native_dot_radius_q8_8(tile), 255 * 256).astype(np.int64)
+    rekesz, tort = q >> 8, q & 255
+
+    lut = _native_dot_alpha_lut().astype(np.int64)
     aktualis = lut[rekesz]
     kovetkezo = lut[np.minimum(rekesz + 1, 255)]
-    return ((kovetkezo * tort + aktualis * (256 - tort)) >> 8).astype(np.float32)
+    tile_mask = ((kovetkezo * tort + aktualis * (256 - tort)) >> 8).astype(np.uint8)
+    return tiled_mask_grid(tile_mask, height, width, offset_x, offset_y).astype(np.float32)
 
 
 def tiled_dot_mask(
@@ -143,7 +261,7 @@ def tiled_dot_mask(
     alpha_max: float = DOT_ALPHA_MAX,
     scale: float = DOT_SCALE,
 ) -> np.ndarray:
-    """Csempézett pontmaszk — a `TiledImageMask` MÉRT alakja (#569, #2476).
+    """Folytonos, pixelközépen mintázott pontmaszk-geometria (#569, #2476).
 
     Minden `tile` × `tile` csempe közepén `alpha_max` áll, és onnan a csempe
     `scale`-szeres beírt körének peremén `alpha_min`-ig fut **lineárisan**; a
@@ -156,11 +274,9 @@ def tiled_dot_mask(
     ezt `tile / 2`-re állítja, ettől lesz a raszter sakktábla-szerűen sűrű,
     ahogy a nyomdai féltónusnál.
 
-    ⭐ **A maszk ÁLLANDÓ** (#2476): a tónus nem a maszkból jön, hanem a
-    láncból (`PartialMask` a fehér fölé, majd küszöbgörbe — ld.
-    `effects_artistic.apply_comicize`). A lánc a 8 bites, natív keverésű
-    változatot használja (`native_dot_mask`); ez a lebegőpontos alak a maszk
-    geometriájának őre.
+    Ez a segédmodell képpontközépből mintáz; az eredeti natív effekt
+    képpontindexből számított, Q8.8-as bájtmaszkját a `native_dot_mask`
+    adja (#4326). A Comicize lánc ezt a natív változatot használja.
 
     A visszaadott maszk float32 [0,1], (H, W).
     """
@@ -183,5 +299,6 @@ __all__ = [
     "native_dot_mask",
     "tiled_dot_mask",
     "tiled_dot_ramp",
+    "tiled_mask_grid",
     "tiled_mask_origin",
 ]

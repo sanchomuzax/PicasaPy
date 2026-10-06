@@ -1,5 +1,6 @@
 {
  "tests --ignore=tests/app": 488.53,
+ "tests/render/test_comicize_golden_4326.py": 0.5,
  "tests/app/qml_functional/test_1_az_1_forgatott_kepnel_3760.py": 18.57,
  "tests/app/qml_functional/test_aa_fokuszvaltas_festessel_3649.py": 3.62,
  "tests/app/qml_functional/test_aa_kilepesi_utak_3014.py": 13.59,
