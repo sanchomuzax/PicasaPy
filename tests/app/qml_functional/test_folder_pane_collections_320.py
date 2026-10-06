@@ -44,6 +44,10 @@ class _StubController(QObject):
         # #422: a mappa-menü feltöltésével bekötött további slotok
         self.descriptions: dict[str, str] = {}
         self.set_description_calls: list[tuple[str, str]] = []
+        self.music_enabled: dict[str, bool] = {}
+        self.music_files: dict[str, str] = {}
+        self.set_music_calls: list[tuple[str, bool, str]] = []
+        self.edit_album_music_calls: list[tuple[str, bool, str]] = []
         self.resync_calls: list[str] = []
         self.removed_folders: list[str] = []
         self.sort_calls: list[str] = []
@@ -87,6 +91,24 @@ class _StubController(QObject):
     def setFolderDescriptionOf(self, folder_path, text):
         self.set_description_calls.append((folder_path, text))
         self.descriptions[folder_path] = text
+
+    @Slot(str, result=bool)
+    def folderMusicEnabled(self, folder_path):
+        return self.music_enabled.get(folder_path, False)
+
+    @Slot(str, result=str)
+    def folderMusicFile(self, folder_path):
+        return self.music_files.get(folder_path, "")
+
+    @Slot(str, bool, str)
+    def setFolderMusic(self, folder_path, use_music, music_file):
+        self.set_music_calls.append((folder_path, use_music, music_file))
+        self.music_enabled[folder_path] = use_music
+        self.music_files[folder_path] = music_file
+
+    @Slot(str, bool, str)
+    def editAlbumMusic(self, token, use_music, music_file):
+        self.edit_album_music_calls.append((token, use_music, music_file))
 
     @Slot(str)
     def resyncFolder(self, folder_path):

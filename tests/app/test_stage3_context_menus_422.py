@@ -95,6 +95,11 @@ class TestFolderListContextMenu:
         "folderListMenuSortPeopleByName",
         "folderListMenuSortPeopleByCount",
         "folderListMenuSortPeopleByTopList",
+        # #4462: a nézetkapcsoló és az Asztal gyorsugrás meglévő
+        # FolderHierarchyController-műveletre van bekötve.
+        "folderListMenuShowThumbnails",
+        "folderListMenuShortcuts",
+        "folderListMenuDesktop",
     }
 
     def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):

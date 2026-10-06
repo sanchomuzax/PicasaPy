@@ -246,6 +246,12 @@ Rectangle {
             controller ? controller.folderDateOverride(path) : ""
         folderPropertiesDialog.currentDescription =
             controller ? controller.folderDescriptionOf(path) : ""
+        folderPropertiesDialog.currentMusicEnabled =
+            controller && controller.folderMusicEnabled
+                ? controller.folderMusicEnabled(path) : false
+        folderPropertiesDialog.currentMusicFile =
+            controller && controller.folderMusicFile
+                ? controller.folderMusicFile(path) : ""
         folderPropertiesDialog.open()
     }
 
@@ -268,8 +274,8 @@ Rectangle {
         folderContextMenu.popup()
     }
 
-    // #422: a bal panel saját menüjének megnyitása — a pipák a menü
-    // nyitásakor veszik át a vezérlő friss rendezés-állapotát
+    // #422: a bal panel saját menüjének megnyitása — a rendezési pipák
+    // nyitáskor átveszik a vezérlő friss állapotát; a nézetpipák kötöttek.
     function openFolderListContextMenu() {
         if (controller) {
             // #461/3: a BAL HASÁB saját rendezése — az eredetiben ez a
@@ -1275,6 +1281,10 @@ Rectangle {
                 adat.location !== undefined ? adat.location : ""
             folderPropertiesDialog.currentDescription =
                 adat.description !== undefined ? adat.description : ""
+            folderPropertiesDialog.currentMusicEnabled =
+                adat.use_music !== undefined ? adat.use_music : false
+            folderPropertiesDialog.currentMusicFile =
+                adat.music_file !== undefined ? adat.music_file : ""
             folderPropertiesDialog.open()
         }
     }
@@ -1294,6 +1304,10 @@ Rectangle {
         // mint a menüsáv `Nézet ▸ Mappanézet` harmadik tétele
         simplifiedTree:
             pane.hierarchyController ? pane.hierarchyController.simplified : false
+        albumThumbs: pane.albumThumbs
+        viewRoot: (pane.hierarchyController
+                && pane.hierarchyController.viewRoot !== undefined)
+            ? pane.hierarchyController.viewRoot : ""
         // #1767: a Személyek lista rendezése — a `!== undefined` a
         // #1572-őr mintája (a próbák stub-vezérlőjén hiányozhat)
         peopleSort: (controller && controller.peopleSort !== undefined)
@@ -1308,6 +1322,13 @@ Rectangle {
         onSortReverseRequested: if (controller) controller.togglePaneSortReverse()
         onSimplifiedTreeRequested:
             if (pane.hierarchyController) pane.hierarchyController.toggleSimplified()
+        onAlbumThumbnailsRequested:
+            if (pane.hierarchyController)
+                pane.hierarchyController.toggleAlbumThumbs()
+        onViewRootRequested: function(token) {
+            if (pane.hierarchyController)
+                pane.hierarchyController.setViewRoot(token)
+        }
     }
 
     // #457: melyik mappát mozgatjuk épp (a dialógus elfogadásakor kell)
@@ -1482,6 +1503,10 @@ Rectangle {
             if (isoDate.length > 0) controller.setFolderDate(path, isoDate)
             else controller.clearFolderDate(path)
         }
+        onFolderMusicAccepted: function(path, useMusic, musicFile) {
+            if (controller && controller.setFolderMusic)
+                controller.setFolderMusic(path, useMusic, musicFile)
+        }
         //: #3173: album módban az ini-írás a `photo_ops_controller`-en megy,
         //: MINDEN olyan mappába, ahol az albumnak van tagja
         onAlbumPropertiesAccepted: function(token, name, isoDate, location, description) {
@@ -1489,6 +1514,10 @@ Rectangle {
             controller.editAlbumProperties(
                 token, name, isoDate, location, description)
             pane.refreshCustomCollections()
+        }
+        onAlbumMusicAccepted: function(token, useMusic, musicFile) {
+            if (controller && controller.editAlbumMusic)
+                controller.editAlbumMusic(token, useMusic, musicFile)
         }
     }
 
