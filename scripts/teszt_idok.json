@@ -10,6 +10,7 @@
  "tests/app/qml_functional/test_ab_sorrend_3773.py": 27.48,
  "tests/app/qml_functional/test_addfile_menupont_1633.py": 17.49,
  "tests/app/qml_functional/test_addfile_szuro_2929.py": 1.05,
+ "tests/app/qml_functional/test_adjust_timestamp_4332.py": 23.80,
  "tests/app/qml_functional/test_ajandek_cd_bekotes_3503.py": 13.55,
  "tests/app/qml_functional/test_ajandek_cd_panel_3503.py": 14.0,
  "tests/app/qml_functional/test_album_context_menu.py": 12.08,

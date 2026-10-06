@@ -77,6 +77,7 @@ from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .tesztuzem_controller import TesztuzemMixin
 from .photo_ops_controller import _WRITE_ERRORS, PhotoOpsMixin
+from .timestamp_controller import TimestampAdjustmentMixin
 from .dupe_search_controller import DupeSearchMixin
 from .mentes_racs_szuro import MentesRacsSzuroMixin
 from . import small_picture_filter
@@ -156,6 +157,8 @@ class AppController(
     # #3751: a mentés-üzemmód képrács-szűrője — lusta állapot, az
     # `__init__`-hez nem kell nyúlni
     MentesRacsSzuroMixin,
+    # #4332: eredeti kép/ini írása nélküli, indexbeli dátumfelülírás.
+    TimestampAdjustmentMixin,
     PhotoOpsMixin,
     BatchEffectMixin,
     ExportMixin,

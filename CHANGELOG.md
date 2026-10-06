@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.24] – 2026-10-06
+
+- Az Eszközök menü Dátum és idő módosítása parancsa mindkét eredeti módban átállítja a kijelölt képek dátumát, az exportba is átvezetve (#4332).
+- A Mappa menü Hide és Show parancsai a kijelölt mappát rejtik el és állítják vissza. (#4416).
+
 ## [0.9.23] – 2026-10-06
 
 - A Névcímkék fül csúszkái mellett megjelenik az értékük és a beosztásuk, az elrendezés az eredetihez igazodik, a megszűnt Google Contacts feltöltési sor pedig rejtve marad (#4358).

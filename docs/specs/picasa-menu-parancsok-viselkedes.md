@@ -84,6 +84,16 @@ mérés **NINCS MEG**. A korábbi állítás — miszerint a kezelők hiánya a
 — **hibás negatív következtetés** volt: a kezelő a háttér-workerhez jut el,
 amely a segédfüggvényt hívja.
 
+### PicasaPy tárolási döntése (#4332)
+
+A dátummódosító a kijelölt fotók dátumát az SQLite-index `photos.taken_at_override`
+mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. A Picasa
+forrásfájl EXIF-szegmensének módosulása továbbra sem bizonyított; a PicasaPy
+ezért a forrás JPEG `DateTimeOriginal` mezőjét érintetlenül hagyja. Exportált
+JPEG-en viszont a `DateTimeOriginal` az indexben felülírt dátumot kapja, a #451
+Colab-mérésével egyezően. A rács, a dátum szerinti rendezés és a Tulajdonságok
+panel a felülírt értéket mutatja.
+
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
 | menü | almenük |
