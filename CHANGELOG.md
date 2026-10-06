@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.10] – 2026-10-06
+
 - A Hőtérkép színátmenete mind a 768 színcsatorna-bájtban az eredeti Picasa kerekítését követi (#4309).
 
 ## [0.9.9] – 2026-10-06
