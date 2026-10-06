@@ -7516,6 +7516,66 @@ korábbi 4. szakasz kérdését, hogy a valódi Picasa-export miért nem az
 oktree-út eredményét mutatja; a teljes `QuantizePalette` effekt összesített
 bizonyítottsági foka ezért továbbra is **feltételes**.
 
+### #626 utóellenőrzés (2026-10-06): az észlelt export-eltérés hibás referenciából jött
+
+A régi kérdés premisszája — hogy a valódi Picasa-export nagy eltéréssel
+ellentmond az oktree-útnak — a helyes exporttal végzett újramérésben nem áll
+fenn. A korábbi `export-202608202231` referencia a mérés fejlécében saját
+**PicasaPy-exportként** van azonosítva (`docs/benchmarks/2026-08-24-1143-teljes-effekt-export.md`,
+`PicasaPy-export: v0.8.27`), nem Picasa-kimenetként. A `meroadat.tar`
+`3084-poszterizalas/.picasa.ini` fájlja az eredeti fotóhoz és a
+`quantizepalette__alap.jpg`-hez is `QuantizePalette=1,8.000000,80.000000,0.000000`
+láncot rögzít; a `684-merokeszlet/.picasa.ini` a mérőképre ugyanezt, a minimumra
+`2/0/0`, a kontroll maximumra `30/100/100` értéket ad.
+
+Az újraellenőrzés a projekt kanonikus
+`tools/golden/compare_render.py pair` mérőjével, az archívumból kivett
+forrás/export párokon futott:
+
+| valódi Picasa-forráspár | beállítás | méret | átlagos ΔE | SSIM |
+|---|---|---:|---:|---:|
+| `3084-poszterizalas`: természetes fotó és export | 8/80/0 | 2560×1696 | 0,91 | 0,9938 |
+| `3084-poszterizalas`: mérőkép és export | 8/80/0 | 960×640 | 0,35 | 0,9990 |
+| `684-merokeszlet`: mérőkép és export | 2/0/0 | 960×640 | 0,36 | 0,9987 |
+| `684-merokeszlet`: Fade=100 kontroll | 30/100/100 | 960×640 | 0,12 | 0,9993 |
+
+Az első három beállításnál a jelenlegi teljes Python-lánc nem mutat nagy
+eltérést a Picasa-exporttól. Ezért a korábbi 2231-es látszólagos
+oktree-ellentmondás oka **a referencia provenienciája**, nem az oktree, a
+mintavétel, a `Smoothing` vagy a `Fade` bináris ágának eltérése. A Fade=100
+kontroll önmagában nem bizonyít pixelmatematikát, mert visszakeveri a
+bemenetet.
+
+**Eredeti kód és Python-újraszámolás:** a helyi QEMU-harness-másolat az
+eredeti `0x00bb5b60` munkavégzőt futtatta egy, a 3084-es természetes fotóból
+`INTER_AREA`-val előállított 51×49 RGB mintán. A teszt izolálta a quantizáló
+lépést: előtte a Python `blur_image_operation` számolta ki a 8/80 beállítás
+`(100−80)/10+0,1 = 2,1` sugarú `quality=3` elmosását; a QEMU az így kapott
+BGRA puffert adta az eredeti workernek `Steps=8`, `Depth=4` értékkel. A
+worker a saját 50×50-es mintavételét, oktree-jét, redukcióját és 3-3-2 LUT-ját
+futtatta; a kimenet mutatóját a visszatérő célrekord `+0x10` mezőjéből
+olvastuk ki. Az eredeti QEMU-kimenet és a Python `quantize_palette.kvantal()`
+RGB-kimenete **2499/2499 képponton, csatornánként bájtra egyezik**; a státusz
+0, a maximális csatornaeltérés 0. A forrásminta SHA-256 értéke
+`775aea4464bc2b00788f9e3f04318b2282e501bec204ad872e281bb30013698a`, a
+QEMU-nak átadott elmosott BGRA pufferé
+`c056b882f8844e1b90a9ea9630bbf71857b4aae5c794f02a51375275b50abba1`.
+
+**A próba határa:** a QEMU-futás a `0x00bb5b60` kvantálót mérte, nem hívta a
+natív `BlurImageOperation`-t, a `Fade`-et vagy a fájlkiírót. Az elmosás és a
+Fade natív útját a fenti külön mérések fedik le (`0x00bc5680`, illetve
+`0x009dc4b0`); ez a próba nem teszi a JPEG-exportot bájtpontos golden-né.
+Az exportokhoz mért 0,91 ΔE maradékának pontos megoszlása a képponti kimenet
+és a JPEG-kiírás között **NINCS MEG**. Ez nem magyarázza vissza a korábbi nagy
+eltérést: az a saját PicasaPy-export hibás Picasa-referenciaként használatából
+származott.
+
+**Bizonyítottsági fok:** a korábbi, nagy export-eltérés oka
+**megerősített** — a hibás referencia azonosítása és a helyes exportpárok
+újramérése egymástól független bizonyíték; az oktree-pixelút ezen a QEMU-
+mintán byte-ra egyezik a Python-újraszámolással. A teljes effekt és a JPEG
+kiírás maradékának összesített bizonyítottsági foka **feltételes**.
+
 ## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
 
 A tulajdonos 2026-09-08-án megválaszolta a jegy blokkoló kérdését: *„Rajta
