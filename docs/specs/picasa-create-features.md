@@ -2132,24 +2132,66 @@ választja ki a People/Face bemeneti ID-kat. A `0x00616940` olvassa a
 `cropfit` beállítást és az arcmód felbontási kulcsát; a `0x0080fea0`
 általános modellmezőket/node-okat inicializál.
 
-A `0x00619010` a `+0x4bc` modell címét adja át a `0x00555a30`-nak
-(`0x006190ae`); ebben a függvényben a közvetlen modellolvasás a
-`+0x2b0` hangfájlnév és a hozzá tartozó időmezők útja. A timeline
-szolgáltatás `CTransTimeline` belső arcazonosító-/crop-/igazítási
-feldolgozása nem ismert. Következő célzott kérés:
-`Ghidra-kör kell: 0x00555a30 — a 0x00619010 által átadott +0x4bc
-film-modell címét a CTransTimeline hogyan dolgozza fel: melyik mező
-hordozza az arcazonosítót, cropot és arcra igazítást, és hogyan jutnak
-ezek a timeline-klipbe? [blokkoló]`.
+#### A modell átadása és a klip arcmezői — #4400
 
-A jelenlegi PicasaPy fejlécút ettől eltér: a két gomb ugyanarra a
-`personMovieRequested` jelre jut (`LightboxHeader.qml:416,441`); a
-`LightboxFeed.qml:873–875` a `Main.qml:732–737` útján minden
-`controller.photos` sorindexet átad a normál filmkészítőnek
-(`CreateDialogs.qml:42–45,465–471`). Ez nem a bizonyított, szűrt
-`+0x2bc` forráslista; a külön arc/crop adatátadás ezen az úton nincs.
-A paritási összesítést és a fejlesztői elfogadási feltételeket lásd a
-`paritas-ellenorzes.md` #4339 szakaszában.
+A `0x00619010` a `+0x4bc` filmmodell címét adja át a `0x00555a30`-nak
+(`0x006190ae`). A `0x00555a30` a `CTransTimeline` szolgáltatásnak
+`.set` hívást küld a modellmutatóval; a `0x0074e710` setter ezt
+dereferálja, majd a `0x0074d8a0` a szolgáltatás `+0x308` mezőjébe
+menti (`0x0074d8b1`). A `0x00555a30` és a `0x0074d8a0` vizsgált
+utasításai nem számítanak arckivágást. A későbbi timeline-út
+(`0x0074dfc0`, `0x008127b0`) a modell kliplistáját dolgozza fel, de a
+teljes arcmező-író/olvasó lánc és a renderelt képkivágás képlete nincs
+azonosítva.
+
+A kliprekordok a modell `+0x48` listájában vannak; a `0x00611320`
+rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
+író a rekord következő mezőit írja ki (a mezőneveket a `.mxf` parser
+`0x008152f0` is használja):
+
+| rekordmező | `.mxf` név | író utasítás | amit a bizonyíték megenged |
+|---|---|---|---|
+| `+0x14` (előjeles bájt) | `facemoviesrc` | `0x00816aa6` | a kiírt forrásérték; hogy ez arcazonosító-e, és melyik névtérben, **nem ismert** |
+| `+0x18` | `facerectx0` | `0x00816976` | az XML-be írt x0 érték; mértékegysége és koordináta-rendszere **nem ismert** |
+| `+0x1c` | `facerecty0` | `0x008169c2` | az XML-be írt y0 érték; mértékegysége és koordináta-rendszere **nem ismert** |
+| `+0x20` | `facerectx1` | `0x00816a0e` | az XML-be írt x1 érték; mértékegysége és koordináta-rendszere **nem ismert** |
+| `+0x24` | `facerecty1` | `0x00816a5a` | az XML-be írt y1 érték; mértékegysége és koordináta-rendszere **nem ismert** |
+
+Ez a kiíró a rekordból olvas és `%d`-ként szerializál; önmagában nem
+bizonyítja, hogy a négy érték képpont, arcdetektor-téglalap, végső crop,
+vagy milyen átalakítás eredménye. Nincs bizonyíték margóra,
+képarányra, szemmagasságra vagy szemekhez igazításra.
+
+A gyökérmodell `+0x2c7` bájtja a `facemovie`, `+0x2c8` bájtja a
+`removelowresfaces`, `+0x2c5` bájtja a `cropfit` értéke; a
+`0x00816b00` ezeket a gyökérelembe írja. A `0x006175c0` a
+`removelowresfaces` értéket ötödik paraméterként adja át a
+`0x0081b800`-nak (`0x00617810`), de a kis felbontás mérőszáma és a
+küszöbérték **nincs meg**. A kimeneti felbontás értékei és az
+arcfilm-alapérték már a 2.8/b szakaszban szerepelnek; a modell
+`+0x2a8/+0x2ac` mezője adja át a szélességet/magasságot. Ebből nem
+következik arc-specifikus cropfelbontás.
+
+Nyitott, blokkoló visszafejtési kérdések:
+
+- **Ghidra-kör kell: 0x008127b0 —** kövesd a kliprekordot az arcmezők írójától/olvasójától a renderelt képkivágásig; add meg a crop koordináta-rendszerét, mértékegységét, margóját, képarányát és a szemekhez igazítás képletét, ha van. **[blokkoló]**
+- **Ghidra-kör kell: 0x0081b800 —** kövesd a `removelowresfaces` ágat a vizsgált arcméretig/mérőszámig és az azt összehasonlító pontos konstansig; nevezd meg az összehasonlítás irányát is. **[blokkoló]**
+
+A képlet és a hozzá tartozó bemenet híján qemu-harness mérés nem készült;
+ezért nincs független mért igazolás a kivágásról vagy a küszöbről.
+
+Az aktuális PicasaPy People-film útja a személyalbumok fotóinak rendezett
+forrás-URL-jeit adja át (`Main.qml:728–734`,
+`people_controller.py:81–89`, `index/people.py:170–198`). A
+`CreateDialogs.qml:502–517,712–735` ezeket a normál
+`exportMovie` útvonalon használja; a `create_controller.py:553–629`
+teljes képfájl-forrásokra épülő `MxfForras` rekordokat készít, és nem
+állít be `facemovie` vagy `facerect*` értékeket (`movie/mxf.py:82–86,120`:
+az arcmezők alapértéke 0, a `facemovie` alapértéke hamis). A klip tehát
+nem arcra vágott forrásból készül; az általános `cropfit` ettől még
+működhet, de arcazonosítót/arckivágást nem ad át. A paritási összesítést
+és a fejlesztői elfogadási feltételeket lásd a `paritas-ellenorzes.md`
+#4339 szakaszában.
 
 ### 2.5/b A CMakeFaceMoviePanel működése — a „recompute" megerősítője (#1408)
 

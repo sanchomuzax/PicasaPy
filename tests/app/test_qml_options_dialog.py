@@ -627,11 +627,13 @@ class TestSlideshowTab:
         music = _child(window, "optionsSlideshowPlayMusicCheck")
         browse = _child(window, "optionsSlideshowMusicBrowseButton")
 
+        # #4377: a vezérlő nélküli QML-alapértékek a binárisból igazolt
+        # LoopSlideshow=0 és PlayMP3Tracks=1 értékeket követik.
         assert loop.property("enabled") is True
-        assert loop.property("checked") is True
+        assert loop.property("checked") is False
         assert music.property("enabled") is True
-        assert music.property("checked") is False
-        assert browse.property("enabled") is False
+        assert music.property("checked") is True
+        assert browse.property("enabled") is True
 
 
 class TestFaceDetectionOption:

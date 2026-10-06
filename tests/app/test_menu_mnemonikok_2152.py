@@ -53,7 +53,7 @@ def _forditasok() -> dict[str, str]:
     return {
         html.unescape(a): html.unescape(b)
         for a, b in re.findall(
-            r"<source>([^<]*)</source>\s*<translation>([^<]*)</translation>",
+            r"<source>([^<]*)</source>\s*(?:<extracomment>[^<]*</extracomment>\s*)?<translation>([^<]*)</translation>",
             m.group(1),
         )
     }

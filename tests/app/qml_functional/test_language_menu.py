@@ -65,8 +65,7 @@ def _vizualis(window, feltetel):
     return None
 
 
-def _menu_tetelre_kattint(window, qt_app, nev) -> None:
-    """Eszközök (menüsáv) ▸ Nyelv ▸ `nev` — mindhárom lépés KATTINTÁS."""
+def _nyelv_menu_megnyit(window, qt_app):
     eszkozok = _vizualis(
         window,
         lambda e: "MenuBarItem" in e.metaObject().className()
@@ -91,6 +90,12 @@ def _menu_tetelre_kattint(window, qt_app, nev) -> None:
 
     menu = _gyerek(window, "menuToolsLanguage")
     assert _var(qt_app, lambda: menu.property("opened") is True), "a Nyelv almenü nem nyílt meg"
+    return menu
+
+
+def _menu_tetelre_kattint(window, qt_app, nev) -> None:
+    """Eszközök (menüsáv) ▸ Nyelv ▸ `nev` — mindhárom lépés KATTINTÁS."""
+    _nyelv_menu_megnyit(window, qt_app)
     _kattints(window, qt_app, _gyerek(window, nev))
 
 
@@ -119,6 +124,32 @@ class TestLanguageMenu:
     def test_menu_exists(self, qml_app):
         window, _controller, _engine = qml_app
         assert window.findChild(QObject, "menuToolsLanguage") is not None
+
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_all_catalogued_languages_are_in_the_menu_and_selectable(
+        self, qml_app, qt_app, monkeypatch, height_delta
+    ):
+        window, controller, _engine = qml_app
+        monkeypatch.delenv("PICASAPY_LANG", raising=False)
+        height = float(window.property("height"))
+        window.setProperty("height", height + height_delta)
+        qt_app.processEvents()
+
+        menu = _nyelv_menu_megnyit(window, qt_app)
+        assert len(controller.availableLanguages) == 41
+        assert int(menu.property("count")) == 42
+
+        german = _vizualis(
+            window,
+            lambda item: item.objectName() == "menuLanguagede"
+            and "MenuItem" in item.metaObject().className(),
+        )
+        assert german is not None, "a német nyelv menüpontja nem épült fel"
+        assert german.property("text") == controller.ownLanguageName("de")
+        _kattints(window, qt_app, german)
+        _valaszol(window, qt_app, igen=True)
+        assert controller.pendingLanguage == "de"
+        assert application._startup_language(controller._get_settings()) == "de"
 
     def test_english_is_checked_by_default(self, menu_items):
         _window, controller, system, english, hungarian = menu_items
