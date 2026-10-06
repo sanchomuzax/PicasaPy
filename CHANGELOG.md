@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.15] – 2026-10-06
+
 - A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).
 
 ## [0.9.14] – 2026-10-06
