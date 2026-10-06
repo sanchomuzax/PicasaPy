@@ -128,7 +128,7 @@ Column {
     Shortcut {
         objectName: "trayKeepSelectionShortcut"
         sequence: "Ctrl+H"
-        enabled: tray.appWindow
+        enabled: !!tray.appWindow
                  && !tray.appWindow.viewerOpen
                  && tray.selectedIndexesOrEmpty.length > 0
         onActivated: trayContextMenu.keepSelectionRequested()
