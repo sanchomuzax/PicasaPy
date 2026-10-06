@@ -7,6 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Keret effekt kimenete mostantól a Picasáéval egyezik a lekerekített mintaképeken (#4370).
 - A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).
 
 ## [0.9.14] – 2026-10-06
