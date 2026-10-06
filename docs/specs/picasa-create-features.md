@@ -2104,24 +2104,52 @@ Az `eMenuCreateMovie` két tétele: **A kijelölésben lévő arcokból…**
 alapértelmezett cím: „People Movie". Az arc-film külön képfelbontással
 dolgozik (`facemakemovieres` vs `makemovieres`).
 
-**#4339 pontosítása:** az `ID_FACESRANDOM` kezelőág (`0x0057cb60`,
-`0x0057cc72`–`0x0057cc7a`) a filmpanel `+0x4f1` módjelzőjét állítja be;
-ennek alapján a `0x00616940` a `facemakemovieres` kulcsot választja,
-alapértéke 3 (`0x00616b42`–`0x00616b64`, 1024×768). A tényleges bemeneti
-listát a `0x00618050`-ban kell keresni: a `0x00618236` utasításnál a
-`panel+0x4b4` virtuális objektum első metódusát hívja `6` móddal, és az
-eredményt a `panel+0x4b8` mezőbe teszi. A célfüggvény nincs még azonosítva.
+**#4339 záró pontosítás — bemeneti lista és nyitott timeline-belső:** az
+`ID_FACESRANDOM` kezelője (`0x0057cb60`, `0x0057cc72`–`0x0057cc7a`)
+a filmpanel `+0x4f1` módjelzőjét állítja; a `0x00618050` ezt 6-os
+módlekérésként használja a `panel+0x4b4` objektum 0. vtable-slotján
+(`0x00618236`), az eredményt pedig a `+0x4b8` mezőbe teszi.
 
-A korábban feltételezett `0x006175c0` nem listaépítő, hanem a `+0x4bc`
-filmmodell teljes újraépítője; a már megkapott `+0x4b8` listát a modell
-`+0x2d8` mezőjébe teszi és végigiterál rajta. A `0x0080fea0` a modellmezőket
-inicializálja, nem választ képeket vagy arcot. A `0x00616940` olvassa a
-`cropfit` beállítást; a `0x00619010` a modellt a `0x00555a30`
-timeline/klip-készítőnek adja át (`0x006190ae`). Hogy a klip mely mezőből
-kapja az arcazonosítást és a crop/igazítást, nyitott. A külön arc-film mód
-tehát bizonyított, a forrásképek, sorrend és tényleges arcra igazítás nem.
-A jelenlegi fejlécút és a következő bináris lépések a
-`paritas-ellenorzes.md` #4339 szakaszában vannak rögzítve.
+A mód 6 konkrét listája most azonosított. A `0x00699cd0` módválasztó
+a 6-os értéknél 1-es ágválasztót ad a `0x00824090`-nek
+(`0x0069a305`–`0x0069a310`, Capstone). A `0x00824090` így a
+`0x008226e0` listafeldolgozót hívja; a nulla jelzős, album-kijelölésen
+alapuló ág külön a `0x008223e0` (`0x008240e9`–`0x00824114`). A People/
+Face mód tehát nem ezt a kiválasztottalbum-ágat használja.
+
+A `0x008226e0` a `+0x2bc` (`+700`) objektum `0x00449a90`-nel lekért
+azonosítólistáját járja végig (`0x00822715`); minden azonosítóhoz a
+`+0x2c0` objektumon kér alsó listát (`0x0082274f`–`0x0082275a`), és
+csak nem üres alsó listánál fűzi az elemet a kimenethez
+(`0x0082275f`–`0x00822775`). A forráslista indexe növekszik
+(`0x008229f0`–`0x008229fb`); a függvényben rendező hívás/ág nem látszik,
+ezért a kimenet a szűrt bemenet sorrendjét őrzi. A `0x008223e0` az
+eltérő, nulla jelzős ág album-azonosítóit építi.
+
+A `0x006175c0` továbbra is a `+0x4bc` filmmodellt építi újra: átveszi a
+`+0x4b8` listát a modell `+0x2d8` mezőjébe és iterál rajta; nem ez
+választja ki a People/Face bemeneti ID-kat. A `0x00616940` olvassa a
+`cropfit` beállítást és az arcmód felbontási kulcsát; a `0x0080fea0`
+általános modellmezőket/node-okat inicializál.
+
+A `0x00619010` a `+0x4bc` modell címét adja át a `0x00555a30`-nak
+(`0x006190ae`); ebben a függvényben a közvetlen modellolvasás a
+`+0x2b0` hangfájlnév és a hozzá tartozó időmezők útja. A timeline
+szolgáltatás `CTransTimeline` belső arcazonosító-/crop-/igazítási
+feldolgozása nem ismert. Következő célzott kérés:
+`Ghidra-kör kell: 0x00555a30 — a 0x00619010 által átadott +0x4bc
+film-modell címét a CTransTimeline hogyan dolgozza fel: melyik mező
+hordozza az arcazonosítót, cropot és arcra igazítást, és hogyan jutnak
+ezek a timeline-klipbe? [blokkoló]`.
+
+A jelenlegi PicasaPy fejlécút ettől eltér: a két gomb ugyanarra a
+`personMovieRequested` jelre jut (`LightboxHeader.qml:416,441`); a
+`LightboxFeed.qml:873–875` a `Main.qml:732–737` útján minden
+`controller.photos` sorindexet átad a normál filmkészítőnek
+(`CreateDialogs.qml:42–45,465–471`). Ez nem a bizonyított, szűrt
+`+0x2bc` forráslista; a külön arc/crop adatátadás ezen az úton nincs.
+A paritási összesítést és a fejlesztői elfogadási feltételeket lásd a
+`paritas-ellenorzes.md` #4339 szakaszában.
 
 ### 2.5/b A CMakeFaceMoviePanel működése — a „recompute" megerősítője (#1408)
 

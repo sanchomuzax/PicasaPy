@@ -119,11 +119,14 @@ class PendingEmbeddingFace:
     amennyi a `FaceEmbedder.compute()`-hoz kell (kép + `FaceDetection`).
     A `faces_missing_embedding` adja vissza, a lenyomat-számítás (issue
     #26, 2. lépcső, a detektálásnál alacsonyabb prioritású sor) ezen megy
-    végig."""
+    végig. A fotó teljes mérete a tárolt koordináták és a dekódolt kép
+    képpont-rácsai közötti váltáshoz kell."""
 
     id: int
     photo_path: Path
     detection: FaceDetection
+    photo_width: int | None = None
+    photo_height: int | None = None
 
 
 def faces_missing_embedding(conn: sqlite3.Connection) -> tuple[PendingEmbeddingFace, ...]:
@@ -135,7 +138,8 @@ def faces_missing_embedding(conn: sqlite3.Connection) -> tuple[PendingEmbeddingF
         "SELECT f.id, f.rect_left, f.rect_top, f.rect_right, f.rect_bottom, "
         "f.det_conf, f.right_eye_x, f.right_eye_y, f.left_eye_x, f.left_eye_y, "
         "f.nose_x, f.nose_y, f.mouth_right_x, f.mouth_right_y, "
-        "f.mouth_left_x, f.mouth_left_y, fo.path AS folder_path, p.name AS name "
+        "f.mouth_left_x, f.mouth_left_y, fo.path AS folder_path, p.name AS name, "
+        "p.width AS photo_width, p.height AS photo_height "
         "FROM face f "
         "JOIN photos p ON p.id = f.photo_id "
         "JOIN folders fo ON fo.id = p.folder_id "
@@ -163,6 +167,8 @@ def faces_missing_embedding(conn: sqlite3.Connection) -> tuple[PendingEmbeddingF
                 id=row["id"],
                 photo_path=Path(row["folder_path"]) / row["name"],
                 detection=detection,
+                photo_width=row["photo_width"],
+                photo_height=row["photo_height"],
             )
         )
     return tuple(result)

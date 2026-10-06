@@ -9,6 +9,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - Az Eszközök menü Dátum és idő módosítása parancsa mindkét eredeti módban átállítja a kijelölt képek dátumát, az exportba is átvezetve. (#4332).
 
+## [0.9.15] – 2026-10-06
+
+- A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).
+
+## [0.9.14] – 2026-10-06
+
+- A Névcímkék fülön mostantól állítható az arcfelismerés, a javaslatképzés, a két küszöb és az arcadatok fájlba mentése (#4319).
+
+## [0.9.13] – 2026-10-06
+
+- A felső menüsor e-mail-, képmegnyitási, megjelenítési és arc-visszaállítási parancsai működnek, a Ctrl+H pedig rögzíti a képtálca kijelölését (#4329).
+- Az arcfelismerés és a vörösszem-keresés legfeljebb 960 px-es képen fut, a találatok pedig az eredeti képmérethez igazodnak (#4350).
+
 ## [0.9.12] – 2026-10-06
 
 - Az automatikus arcfelismerés nem jelöl téves arcot fűben és tájképen: a felismerés küszöbe szigorúbb. (#4348)

@@ -67,6 +67,7 @@
  "tests/app/qml_functional/test_csuszka_veset_2641.py": 2.95,
  "tests/app/qml_functional/test_dark_theme_chrome.py": 16.24,
  "tests/app/qml_functional/test_diaido_sav_2992.py": 1.99,
+ "tests/app/qml_functional/test_diavetites_beallitasok_4320.py": 11.47,
  "tests/app/qml_functional/test_diavetites_mod_a_kepernyon_1640.py": 6.75,
  "tests/app/qml_functional/test_diavetites_teljes_kepernyo_2987.py": 14.96,
  "tests/app/qml_functional/test_disabled_button_alpha_893.py": 1.13,

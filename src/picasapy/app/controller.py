@@ -18,6 +18,7 @@ from PySide6.QtCore import (
     QCoreApplication,
     QLocale,
     QObject,
+    QUrl,
     QSettings,
     Signal,
     Slot,
@@ -524,6 +525,76 @@ class AppController(
             return
         self._get_settings().setValue("view/slideshowSeconds", ertek)
         self.statusChanged.emit()
+
+    @Property(bool, notify=statusChanged)
+    def slideshowLoop(self):  # noqa: N802
+        """A diavetítés ismétlése; alapból megőrzi a korábbi körbefordulást."""
+        value = self._get_settings().value("view/slideshowLoop", True)
+        if value in (True, "true", "1"):
+            return True
+        if value in (False, "false", "0"):
+            return False
+        return True
+
+    @Slot(bool)
+    def setSlideshowLoop(self, value: bool) -> None:  # noqa: N802
+        self._get_settings().setValue("view/slideshowLoop", bool(value))
+        self.statusChanged.emit()
+
+    @Property(bool, notify=statusChanged)
+    def slideshowMusicEnabled(self):  # noqa: N802
+        value = self._get_settings().value("view/slideshowMusicEnabled", False)
+        return value in (True, "true", "1")
+
+    @Slot(bool)
+    def setSlideshowMusicEnabled(self, value: bool) -> None:  # noqa: N802
+        self._get_settings().setValue("view/slideshowMusicEnabled", bool(value))
+        self.statusChanged.emit()
+
+    @Property(str, notify=statusChanged)
+    def slideshowMusicFolder(self):  # noqa: N802
+        return str(self._get_settings().value("view/slideshowMusicFolder", "") or "")
+
+    @Property(QUrl, notify=statusChanged)
+    def slideshowMusicFolderUrl(self):  # noqa: N802
+        """A mappaválasztó URL-je a közös útvonal-konverteren keresztül."""
+        return formatting.to_file_url(self.slideshowMusicFolder)
+
+    @Slot(str)
+    def setSlideshowMusicFolder(self, value: str) -> None:  # noqa: N802
+        """Megőrzi a kiválasztott, létező mappát; az üres érték törli."""
+        local_path = formatting.to_local_path(value)
+        if not local_path:
+            self._get_settings().setValue("view/slideshowMusicFolder", "")
+            self.statusChanged.emit()
+            return
+        folder = Path(local_path).expanduser()
+        try:
+            if not folder.is_dir():
+                return
+            local_path = str(folder.resolve())
+        except OSError:
+            return
+        self._get_settings().setValue("view/slideshowMusicFolder", local_path)
+        self.statusChanged.emit()
+
+    @Property(list, notify=statusChanged)
+    def slideshowMusicTrackUrls(self):  # noqa: N802
+        """A kiválasztott mappában lévő MP3-fájlok URL-jei rendezett listában."""
+        folder = Path(self.slideshowMusicFolder).expanduser()
+        try:
+            if not folder.is_dir():
+                return []
+            tracks = sorted(
+                (
+                    path for path in folder.iterdir()
+                    if path.is_file() and path.suffix.casefold() == ".mp3"
+                ),
+                key=lambda path: path.name.casefold(),
+            )
+        except OSError:
+            return []
+        return [formatting.to_file_url(str(path)) for path in tracks]
 
     @Property(str, notify=statusChanged)
     def slideshowCaptionMode(self):  # noqa: N802

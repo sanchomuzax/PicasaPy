@@ -37,6 +37,58 @@ Rectangle {
     property int seconds: 3
     readonly property int intervalMs: Math.max(1, show.seconds) * 1000
     property bool playing: false
+    // #4320: a beállításfül tartós ismétlés- és zenebeállításai.
+    property bool loop: true
+    property bool musicEnabled: false
+    property var musicTrackUrls: []
+    property int _musicTrackIndex: 0
+
+    function _syncMusic() {
+        if (!show.visible || !show.playing || show.screensaverMode
+                || !show.musicEnabled || !show.musicTrackUrls
+                || show.musicTrackUrls.length === 0) {
+            musicPlayerLoader.active = false
+            return
+        }
+        musicPlayerLoader.active = true
+        var player = musicPlayerLoader.item
+        if (!player) return
+        if (show._musicTrackIndex < 0
+                || show._musicTrackIndex >= show.musicTrackUrls.length)
+            show._musicTrackIndex = 0
+        var target = show.musicTrackUrls[show._musicTrackIndex]
+        if (player.source !== target || !player.playing)
+            player.playTrack(target)
+    }
+
+    function _nextMusicTrack() {
+        if (!show.musicTrackUrls || show.musicTrackUrls.length === 0) {
+            show._syncMusic()
+            return
+        }
+        show._musicTrackIndex = (show._musicTrackIndex + 1)
+            % show.musicTrackUrls.length
+        show._syncMusic()
+    }
+
+    Loader {
+        id: musicPlayerLoader
+        objectName: "slideshowMusicPlayerLoader"
+        active: false
+        source: active ? "SlideshowMusicPlayer.qml" : ""
+        onLoaded: show._syncMusic()
+    }
+    Connections {
+        target: musicPlayerLoader.item
+        function onTrackEnded() { show._nextMusicTrack() }
+    }
+    onMusicEnabledChanged: show._syncMusic()
+    onMusicTrackUrlsChanged: {
+        show._musicTrackIndex = 0
+        show._syncMusic()
+    }
+    onPlayingChanged: show._syncMusic()
+    onScreensaverModeChanged: show._syncMusic()
 
     //: #433: az ÁTMENET a diák között. Az eredeti diavetítése ugyanazt a
     //: 18-as készletet használja, mint a filmkészítő (`transtype`,
@@ -148,7 +200,12 @@ Rectangle {
         if (n === 0) return -1
         var idx = fromIndex
         for (var i = 0; i < n; ++i) {
-            idx = ((idx + step) % n + n) % n
+            var next = idx + step
+            if (next < 0 || next >= n) {
+                if (!show.screensaverMode && !show.loop) return -1
+                next = ((next % n) + n) % n
+            }
+            idx = next
             if (!photosModel.isVideoAt(idx)) return idx
         }
         return -1
@@ -237,7 +294,10 @@ Rectangle {
             show._atmenetIndit(kimeno)
         show._diakBetolt()
     }
-    onVisibleChanged: show._diakBetolt()
+    onVisibleChanged: {
+        show._diakBetolt()
+        show._syncMusic()
+    }
     onPhotosModelChanged: {
         show._kovetettUtFrissit()
         show._diakBetolt()

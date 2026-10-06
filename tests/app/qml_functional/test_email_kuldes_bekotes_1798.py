@@ -1,11 +1,10 @@
 """#1798 — a tálca „E-Mail" gombja ne legyen néma.
 
-**Amit mértünk.** A `TrayBar.emailRequested()` jelzésnek **egyetlen
-kezelője sem volt** a QML-oldalon, pedig a gomb engedélyezve van és
-kattintható. A testvérei (Kollázs, Exportálás, Nyomtatás) mind be voltak
-kötve — ez a jelzés maradt ki. Emiatt a `sendRows()`-nak sem volt hívója,
-és emiatt látszott némának a Beállítások e-mail-módja is: nem a beállítás
-volt néma, hanem az egész küldési út.
+**Amit a #1798 kijavított.** A `TrayBar.emailRequested()` jelzés korábban
+kezelő nélkül maradt, ezért a `sendRows()`-nak sem volt hívója, és emiatt
+látszott némának a Beállítások e-mail-módja. Azóta a tálca gombja a
+`Main.qml` meglévő `sendSelectionByEmail()` útjára jut; a #4329 a menüt és a
+Ctrl+E-t ugyanerre a kezelőre köti.
 
 Ugyanígy: az `emailFailed` jelzésnek sem volt kezelője, tehát a
 „nincs levelezőprogram" hibaüzenet a naplóban maradt volna.

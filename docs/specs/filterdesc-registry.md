@@ -10423,9 +10423,10 @@ képzi a fedési tényezőt `C`, abból `floor(A×C/256)`-ot számít, majd a c�
 a forrás byte-jait külön szorozza és a csatornákat packed dwordként adja
 össze. Az `0x00aa1840`-ben használt általános `q`, `rᵢ²`, `rₒ²` → `C`
 képletet és a forrásalfa útját a lentebbi I) szakasz zárja le. A
-`0x00aa13b0` hívóparaméterezését az I.4/a kiterjesztett próbái most két új
-`R`/vastagság-esettel is alátámasztják; a teljes, bájtra egyező Border-golden
-általánosítása viszont az ott leírt sikertelen alapkontroll miatt még nyitott.
+`0x00aa13b0` hívóparaméterezését az I.4/a kiterjesztett próbái két új
+`R`/vastagság-esettel is alátámasztják. Az I.4/b a helyesnek ellenőrzött
+leíróval bájtra rögzíti az alapgoldent és két további natív kimenetet; a
+goldenek általánosítása ezeken a konkrét bemeneteken túl továbbra is nyitott.
 
 #### 4. Bájtra rögzített natív próba
 
@@ -10820,28 +10821,131 @@ I.1 képlet kombinációja, nem külön naplómező.
 adna: `R+O=5`, a két méretkorlát pedig 5. Az eredeti kód futásában a külső
 középpont `(6,6)`, `ρ=6,5`, ezért ez az alternatíva megdőlt.
 
-**A teljes kimenet kontrollja nem ment át.** Ugyanezzel a kézzel épített
-Border-bemeneti leíróval az `R=2`, `B=O=1`, `5×5 → 9×9` kontroll QEMU-kimenete
-16/81 pixelben (48/243 RGB-csatornában) tért el az I.4 korábban rögzített
-native goldenjétől. Az `0x00aa1840` belépési hook nélküli ismétlés bájtra
-azonos kimenetet adott, így a belépési naplózó nem okozta az eltérést. A
-A Border-próba kézi bemeneti leírója `+4=width`, `+8=W`, `+0x0c=H`,
-`+0x10=pixelpointer`, `+0x14=1` mezőket kapott. A
-`qemu_harness/wq.py` másik műveletéhez tartozó eltérő CImage-leíró átvétele a
-Border próbáját összeomlasztotta; egyik mezőkiosztás sem reprodukálta az I.4
-alapgoldent, ezért a két új teljes pixelpuffer nem elfogadott golden. A belépési argumentumok geometriáját a futás és a statikus út egyezése
-alátámasztja, a teljes színkimenet további mérése nyitott.
+#### 4/b. A kézi CImage-leíró mezői és három natív pixelgolden — 2026-10-06
 
-**Bizonyítottsági fok:** `feltételes` a hívóparaméter-függvényhez több `R`,
-`B`, `O`, `W`, `H` mellett: a statikus adatfolyam és az eredeti kód
-belépési naplója egyezik, de az új képpontgoldeneket a sikertelen alapkontroll
-miatt nem fogadom el. A kernel fedési képletét és az I.4 korábbi, ellenőrzött
-mintáját ez nem módosítja.
+Az `0x00bbe320` → `0x00bbe570` út, a leíró-másoló és a képpontot olvasó
+hívások utasításait követtem, majd az eredeti `0x00bbe570` munkavégzőt
+`qemu-i386` alatt futtattam. A leíró 40 bájtos; a `0x009a8ca0` tíz dwordöt
+másol (`rep movsd`, `ecx=0x0a`). A mezők használata:
 
-**Nyitott:** a Border-művelethez használt kézi CImage-leíró helyes mezőinek
-azonosítása, majd az alapkontroll és legalább két további `R`/vastagság-eset
-bájtra egyező natív kimenetének újrafuttatása. Ez ismert függvényhatárokon
-végezhető utasításszintű követés; Ghidra-dekompilálást nem igényel.
+| eltolás | használat | forrás |
+|---|---|---|
+| `+0x00` | tulajdonosi/referencia-számláló pointer a CImage rekordban | bináris (`0x009a8ca0`, `0x009a8bc0`); független újralevezetés |
+| `+0x04` | sorstride **32 bites pixelekben**: a sorcím `pixelmutató + y·stride·4`, az oszloplépés 4 bájt | bináris (`0x009aabf0`, `0x009ab360`, `0x009ab410`) |
+| `+0x08`, `+0x0c` | szélesség, magasság | bináris (`0x00bbe597`–`0x00bbe59a`; továbbá `0x009aabf0`, `0x009ab360`, `0x009ab410`) |
+| `+0x10` | pixelmutató | bináris (`0x009aabf0`, `0x009ab360`, `0x009ab410`) |
+| `+0x14` | 16 bites tárolási/allokációs választó; az `1` nyers képpufferes ágat választ, nem alfa-jelző | bináris (`0x009a9b30`, `0x009a9bba`–`0x009a9bc0`); mérés (QEMU, `+0x14=1`) |
+| `+0x16` | külön segéd-16 bites mező; a Border-hívásban nulláztam, szerepe ehhez a művelethez nincs szükségesen megnevezve | bináris (`0x00bbe570`); mérés (QEMU, `+0x16=0`) |
+| `+0x18`, `+0x1c` | a képpontcímzésben levont x/y-kezdőeltolás | bináris (`0x009aabf0`, `0x009ab360`, `0x009ab410`); mérés (QEMU, mindkettő `0`) |
+| `+0x20` | dword, amelyet a másoló összehasonlít; a worker saját kimeneti rekordjában `-1`-re inicializálja. A mező szemantikája **NINCS MEG** | bináris (`0x009a8ca0`, `0x00bbe570`); mérés (QEMU, kézi bemeneti értéke `0`) |
+| `+0x24` | API-oldali erőforrásmező; a pontos típusa **NINCS MEG** | független újralevezetés (`0x009a8ca0`, létrehozó/felszabadító út) |
+| pixel alfa | külön leíró-alfa flaget nem azonosítottam. Az általános CImage-kompozitor a 32 bites pixel dword `+3` bájtját olvassa alfaként; ez nem közvetlen hívottja a `0x00bbe570`-nek | bináris (`0x009ab410`, `0x009ab4db`); független újralevezetés |
+| külön pixel-formátum mező | **NINCS MEG**; a megfigyelt út 32 bites dword pixeleket dolgoz fel | NINCS MEG |
+
+Az `0x00bbe570` forrásmásoló útjában a `0x009aabf0` téglalapmetszetet számol,
+majd soronként, `4·(jobb−bal)` bájtot másol; a sorkezdéshez a dword-pixel
+stride-ot és az origót használja. A `0x009ab360` ugyanezen pixel/sor
+koordinázással 4 bájtos pixeleken jár, a forrás pixel `+2` bájtját olvassa,
+és a cél megfelelő pixelének `+3` bájtjába írja a maszkértéket. A vak
+ellenőrzés szerint a `0x009ab410` külön általános alpha-kompozitor, nem a
+`0x00bbe570` közvetlen hívása.
+
+A harness mindkét bemeneti leíróban a következőket állította be: `+0x00=0`,
+`+0x04=stride`, `+0x08=W`, `+0x0c=H`, `+0x10=pixelmutató`, `+0x14=1`,
+`+0x16=0`, `+0x18=0`, `+0x1c=0`, `+0x20=0`, `+0x24=0`. Ez a `+0x20=0` a
+kézi bemeneti érték; a worker belső kimenetileíró-mintája ettől külön `-1`-et
+ír ebbe a mezőbe. A forrás stride-ja `W`; a kimenet kezdeti stride-ja a
+kimeneti szélesség volt. A worker a
+kimeneti leíró `+0x10` pointerét új allokációra írta át, ezért a kimeneti
+pixeleket a visszatért leíróból, nem a kezdetben átadott üres pufferből kell
+kiolvasni. Ez a futás megfigyelt része; a korábbi `16/81` eltérés pontos,
+akkori kiváltó mezője vagy pufferolvasási hibája **NINCS MEG**, mert a régi
+harness teljes leírója és kimenet-visszaolvasása nincs megőrizve.
+
+A futtatás az eredeti workerből épített ELF-et közvetlenül `qemu-i386` alatt
+hajtotta végre a helyi `qemu_harness/hb.py` harness-szel; a CRT-heap shim csak
+a harness allokátorait helyettesítette. A futtatási korlát minden mintánál
+`ulimit -v 6291456`, majd `timeout 30 qemu-i386 <ELF>` volt. A sorfolytonos
+32 bites kimeneti dwordöket a worker után olvastam vissza.
+
+| QEMU-bemenet | kimenet, stride | bájt | teljes ARGB-puffer SHA-256 | golden státusz |
+|---|---:|---:|---|---|
+| `5×5`, `R=2`, `B=1`, `O=1` | `9×9`, 9 | 324 | `6cc49f17dd4f3df6c5129b74a20a98277d646180949584f971564e4f42143d3b` | egyezik az I.4 rögzített alapgoldenjével: 81/81 pixel, 243/243 RGB-csatorna, a teljes puffer bájtra |
+| `7×7`, `R=3`, `B=1`, `O=2` | `13×13`, 13 | 676 | `9aae624f6d8749515ccd1379cf3c613624dc9f2ba6df8c445dee1181a971010d` | új, natív golden |
+| `9×8`, `R=4`, `B=2`, `O=1` | `15×14`, 15 | 840 | `2d354156d605e7fc7fdbf5a5f41d6703b3f21770f50e3d24f80d2b1b2c75c33c` | új, natív golden |
+
+Az alábbi mátrixok sorfolytonos little-endian 32 bites dwordök, a könnyebb
+olvasáshoz `0xffRRGGBB` jelölésben. A két új minta teljes, rögzített goldenje:
+
+`7×7`, `R=3`, `B=1`, `O=2` → `13×13`:
+
+```text
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+ff000000 ff000000 ff474747 ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff fffbfbfb ff393939 ff000000 ff000000
+ff000000 ff000000 ffe7e7e7 ffd3d9df ff234262 ff204060 ff204060 ff204060 ff2b4968 ffe1e5e9 ffd9d9d9 ff000000 ff000000
+ff000000 ff000000 ffffffff ff4d6680 ff204060 ff204060 ff204060 ff204060 ff204060 ff5b728a ffffffff ff000000 ff000000
+ff000000 ff000000 ffffffff ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff2e4c6a ffffffff ff000000 ff000000
+ff000000 ff000000 ffffffff ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ffffffff ff000000 ff000000
+ff000000 ff000000 ffffffff ff4d6680 ff204060 ff204060 ff204060 ff204060 ff204060 ff5b728a ffffffff ff000000 ff000000
+ff000000 ff000000 ffe7e7e7 ffd3d9df ff234262 ff204060 ff204060 ff204060 ff2b4968 ffe1e5e9 ffd9d9d9 ff000000 ff000000
+ff000000 ff000000 ff474747 ffffffff ffffffff ffacb8c4 ff204060 ffafbac6 ffffffff fffbfbfb ff393939 ff000000 ff000000
+ff000000 ff000000 ff000000 ff252525 ffa3a3a3 ffe1e1e1 ffffffff ffdfdfdf ff9d9d9d ff1b1b1b ff000000 ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+```
+
+`9×8`, `R=4`, `B=2`, `O=1` → `15×14`:
+
+```text
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+ff000000 ff000000 ff2d2d2d ffd6d6d6 ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffcdcdcd ff212121 ff000000 ff000000
+ff000000 ff191919 ffededed ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffe1e1e1 ff0a0a0a ff000000
+ff000000 ffaeaeae ffffffff ffffffff ff8294a6 ff204060 ff204060 ff204060 ff204060 ff204060 ff8c9cad ffffffff ffffffff ffa0a0a0 ff000000
+ff000000 ffffffff ffffffff ffa0aebb ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ffaebac5 ffffffff ffffffff ff000000
+ff000000 ffffffff ffffffff ff405b77 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff4e6781 ffffffff ffffffff ff000000
+ff000000 ffffffff ffffffff ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff2e4c6a ffffffff ffffffff ff000000
+ff000000 ffffffff ffffffff ff405b77 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff4e6781 ffffffff ffffffff ff000000
+ff000000 ffffffff ffffffff ffa0aebb ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ff204060 ffaebac5 ffffffff ffffffff ff000000
+ff000000 ffaeaeae ffffffff ffffffff ff8294a6 ff204060 ff204060 ff204060 ff204060 ff204060 ff8c9cad ffffffff ffffffff ffa0a0a0 ff000000
+ff000000 ff191919 ffededed ffffffff ffffffff ffe4e8ec ffa6b3c0 ff204060 ffa8b4c1 ffeaedf0 ffffffff ffffffff ffe1e1e1 ff0a0a0a ff000000
+ff000000 ff000000 ff2d2d2d ffd6d6d6 ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffcdcdcd ff212121 ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff6a6a6a ffbebebe ffe8e8e8 ffffffff ffe6e6e6 ffbababa ff646464 ff000000 ff000000 ff000000 ff000000
+ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000 ff000000
+```
+
+**A/B út:** A) az `0x00bbe320`, `0x00bbe570`, `0x009a8ca0`, `0x009aabf0`,
+`0x009ab360`, `0x009ab410` és `0x009a9b30` utasításszintű mezőhasználata;
+B) az eredeti worker QEMU-futtatása a leírómezőket rögzítő visszaolvasással.
+Az A út szerint a `+0x04` pixelekben mért stride, a `+0x10` pixelbázis és
+`+0x14` tárolási választó; a B útban az ezzel felépített alapminta teljes
+puffere egyezik az I.4 korábbi goldenjével. A két út a használt leíróra
+egyezik.
+
+**Cáfoló próba:** a forrás stride-ját szándékosan `20`-ra állítottam a
+helyes, 5 dword pixeles stride helyett (a bájtos stride hipotézis). A worker
+lefutott, de 13/81 pixelben, 39/243 RGB-csatornában tért el az alapgoldentől;
+a kimeneti SHA-256 `2ea744065b41a5743c07fc8f3aea218e6eeaf567fe195affb2f93ef5ec07b59e`.
+Ez ellenőrzi, hogy a harness a stride-egység hibájára érzékeny. Nem bizonyítja,
+hogy ez okozta a korábbi 16/81 eltérést; annak akkori pontos oka **NINCS MEG**.
+
+**Bizonyítottsági fok:** `megerősített` a fenti Border-worker útban használt
+mezőkiosztásra és az alapgoldenre: az utasításszintű címzés és az eredeti
+QEMU-kimenet egyezik. A két további teljes kimenet pontos natív goldenként
+rögzített mérés; a PicasaPy `draw_border()`-rel való egyezésük még nincs
+megmérve. A leíró egyéb mezőinek és külön formátumjelzőjének szemantikája
+nyitott marad.
+
+**Nyitott:** a `+0x16`, `+0x20`, `+0x24` mezők pontos szemantikája/élettartama,
+az esetleges külön pixel-formátumjelző, a régi `16/81` harness-eltérés pontos
+oka, valamint a három golden `draw_border()`-rel való összevetése. A vizsgált
+mezők követéséhez Ghidra-dekompilálás nem kellett.
+
+#### 🔁 A CImage-leíró vak, független ellenőrzése
+- **bíráló:** külön kódolvasás a binárisból és az indexből, a spec és a PicasaPy-forrás megtekintése nélkül
+- **címek:** `0x00bbe320`, `0x00bbe570`, `0x009a8ca0`, `0x009a8bc0`, `0x009aabf0`, `0x009ab360`, `0x009ab410`, `0x009a9b30`
+- **eredmény:** EGYEZIK a `+0x04` pixelstride, a méretmezők, pixelpointer, `+0x14` tárolási választó és origómezők használatában
+- **kiegészítés:** a `+0x00` referencia-számláló pointerként viselkedik; a `+0x24` API-erőforrásmező, pontos típusa nyitott; a worker belső kimeneti rekordja `-1`-et ír `+0x20`-ba. A `0x009ab410` alfa-kompozitor a `+3` pixelbájtot olvassa, de nem közvetlen hívottja a `0x00bbe570`-nek.
 
 #### 🔁 Független újralevezetés
 - **bíráló:** `border_independent` (friss gpt-6-astra kontextus; a specek és a `src` olvasása nélkül)
@@ -10853,7 +10957,7 @@ végezhető utasításszintű követés; Ghidra-dekompilálást nem igényel.
 
 | | Eredeti, mérve | PicasaPy, olvasva | Teendő |
 |---|---|---|---|
-| Élsimítás | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa az I.1-ben; a külső sáv régi `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok kompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. | A jelenlegi `glimmer_frame_ops.py::draw_border()` olvasás alapján már külön `_border_q_racs`-ot épít a külső és forrásívhez, a forrás `R`-t és a belső vastagságból számolt `K`-t használja, és külön kompozitálja a sarkokat. Ebben a kutatási körben a függvényt nem futtattam; a korábbi 30/81 mérés ezért nem bizonyítja a mostani forrásállapot eredményét. | Algoritmusváltoztatásra ez a kör nem ad bizonyítékot. A fejlesztő következő lépése a jelenlegi függvény összevetése az I.4 alapgoldennel és — a Border-bemeneti leíró kijavítása után — a 4/a két mintájával. **Kész, ha** az alapminta 243/243 RGB-csatornája és mindkét új natív minta bájtra egyezik; eltérés esetén csak a mért koordináta-/keverési út módosuljon. |
+| Pixelkimenet | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa az I.1-ben; a külső sáv `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok kompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. Az eredeti workerből az I.4/b három teljes, SHA-256-tal rögzített golden kimenetet mér. | A jelenlegi `src/picasapy/render/glimmer_frame_ops.py::draw_border()` olvasásakor külön `_border_q_racs` készül a külső és forrásívhez, a függvény a forrás `R`-t és a belső vastagságból számolt `K`-t használja, és külön kompozitálja a sarkokat. E körben ezt a függvényt nem futtattam; a korábbi 30/81 mérés nem bizonyítja a mostani forrásállapot eredményét. | Hasonlítsd össze a függvény RGB-kimenetét az I.4/b három natív goldenjének RGB-csatornáival: `5×5, R=2, B=1, O=1 → 9×9`; `7×7, R=3, B=1, O=2 → 13×13`; `9×8, R=4, B=2, O=1 → 15×14`. **Kész, ha** mindháromnál minden RGB-csatorna egyezik (sorrendben 243/507/630 csatorna); az eltérést koordinátánként rögzítsd, és csak a binárisból igazolt eltérő műveletet módosítsd. |
 | Alfa | Az `aa1840` részleges maszkján `Aₑ=(255·C)>>8`; a `9ab360` a forrássarokmaszk kimenetén ezt az értéket teszi a maszk alfa-bájtjává. Az `8f4810` végső dwordjének alfa-bájtja `0xff`. | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol; `_sarok_fedes` RGB-súlyt számol. | Tartsd külön a fedési súlyt, az `aa1840` ARGB-maszkját, a `9ab360` maszkátalakítását és a forráskép `8f4810`-es kompozitálását. A RGB `draw_border()`-től ne kérj alfa megőrzést. |
 
 #### 6. A teljes 9 × 9 Border-minta: történeti eltérés, jelenlegi ellenőrzés nyitott
@@ -10867,7 +10971,7 @@ A #4123 előtti 29/81 eltérés mind megmaradt; az új, 30. eltérés `(3,6)`: n
 
 A `tests/render/test_glimmer_frame_ops_4122.py::_native_q_racs()` középpontja `(127/32, 7/2)`, a négyzetes sugarai `7.5/12.5`; a teszt saját kommentje szerint ezeket **a kimeneti mintából vezette vissza**. Ezek az értékek nem bináris forrású bizonyítékok, ezért nem használhatók a külső keretív és a forrássarok-ív eltéréseinek megmagyarázására.
 
-**Bizonyítottsági fok:** `megerősített` a korábbi, rögzített 5×5-ös natív mintán mért paraméterekre, q-rácsra, fedési képletre és alfa-útra. Az I.4/a új hívóparaméter-próbái `feltételesek`: a két út egyezik, de az új képpontgolden-kontroll megbukott. A most olvasott `draw_border()`-ről nincs friss teljes golden-összevetés.
+**Bizonyítottsági fok:** `megerősített` a korábbi, rögzített 5×5-ös natív mintán mért paraméterekre, q-rácsra, fedési képletre és alfa-útra. Az I.4/a hívóparaméter-próbáiban az utasításszintű út és a natív belépési napló egyezik; az I.4/b-ben a helyes leíróval a natív alapminta teljes puffere bájtra egyezik, két további minta pedig natív golden. A most olvasott `draw_border()`-ről nincs friss golden-összevetés.
 
 **Cáfoló próba:** azt ellenőriztem, hogy a `0x00aa1840` maga állítja-e `0xff`-re a perem alfáját. Átlátszó célrétegben a qemu-kimenet részleges alfái megmaradnak (például `(0,4)=0x01`, `(3,1)=0x15`); csak az opaque black cél fölötti `0x009ab410` után lesz a kimeneti alfa `0xff`. A hipotézis cáfolva.
 
@@ -10879,10 +10983,10 @@ ez cáfolja a korábbi visszavezetett paraméterezést. Tükrözési kontrollké
 a natív külső felső q-sor szélei `2048` és `2128`, a forrásé `512` és `560`,
 tehát egyetlen bal felső maszk tükrözése sem adja a natív négy sarkot.
 
-**Nyitott:** a `draw_border()` jelenlegi forrásállapotának 81/81 golden-
+**Nyitott:** a `draw_border()` jelenlegi forrásállapotának három golden-
 összevetése és az általános q-rács további méret-/sugár-eseteken való teljes
-pixel-igazolása. A hívóparaméter-függvényre a 4/a ad több futási mintát, de az
-új teljes kimenetek a sikertelen alapkontroll miatt nem elfogadott goldenek.
+pixel-igazolása. Az I.4/b új kimenetei elfogadott natív mérések; a PicasaPy-
+megfeleltetésük nincs megmérve.
 
 #### #4300 — a két egy szintes pont teljes natív útja (2026-10-06)
 
