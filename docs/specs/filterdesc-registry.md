@@ -10805,8 +10805,10 @@ Ugyanennek a forrásnak a `draw_border()`-rel előállított PicasaPy RGB-képe
 20,506, maximum 180). Ez a **#4123 előtti, történeti alapmérés**: natív
 `(y=1,x=1)=180,180,180`, PicasaPy `0,0,0`; natív `(1,2)=255,255,255`,
 PicasaPy `143,143,143`. A #4123 óta a `_sarok_fedes()` már a natív 16.16-os
-képletet és packed-csatornasorrendet követi; a mostani, 2026-10-05-i
-újramérés 30/81 eltérést talált, a részletek az I) szakaszban vannak.
+képletet és packed-csatornasorrendet követi; a 2026-10-05-i 30/81 eredmény
+az akkori forrásállapot történeti mérése. A 2026-10-06-i közvetlen mérés a
+jelenlegi függvénnyel mindhárom QEMU-goldenre teljes egyezést adott (I.4/b,
+valamint az alábbi 5–6. pont).
 
 #### 5. Export-összevetés és fok
 
@@ -10837,16 +10839,21 @@ paramétereire (utasítások + az eredeti gépi kód futtatása; a pontos hívó
 a §I.4-ben).
 
 **A #626 leltár Border-sora:** `Border | 4 effekt | feltételes |` a natív
-képlet, alfaút és a két ív paraméterezése megerősített; a PicasaPy jelenlegi
-9×9 kimenete 30/81 pixelben eltér, a javított 81/81 egyezés és az általános
-implementáció még nincs.
+képlet, alfaút és a két ív paraméterezése megerősített. A jelenlegi
+`draw_border()` mindhárom rögzített QEMU-goldennel teljesen egyezik
+(5×5→9×9, 7×7→13×13, 9×8→15×14); a három konkrét mérésen túli
+méret-/sugártartomány általános egyezése továbbra sincs mérve.
 
 #### Nyitott, célzott fejlesztői irány
 
-A két ív natív `q`, `rᵢ²`, `rₒ²` paramétere lezárva a §I.4-ben. A következő
-lépés a `_sarok_fedes_negyed`/`_sarok_folt` átírása a két külön natív q-rácsra,
-majd a 5×5→9×9 PicasaPy-golden 81/81 pixelre ellenőrzése; az implementáció
-még nem készült el.
+**Helyesbítés (2026-10-06):** az előző fejlesztői javaslatot a jelenlegi
+forrásállapot mérése felülírja. A `draw_border()` a három rögzített natív
+QEMU-goldennel bájtra egyezik, ezért ezekre a mintákra sem átírás, sem
+javítás nem indokolt. A három mintán túli méret-/sugártartomány általános
+igazolása nyitott; ha ezt le akarjuk zárni, a következő mérés a már rögzített
+`0x00bbe570` QEMU-harnesssel egy új, nem négyzetes forrásméret és új
+`R/inner/outer` kombináció teljes pufferét hasonlítsa össze a
+`draw_border()` kimenetével.
 
 ### G) ⭐ A `SimpleColorMatrix` hue-forgató mátrixa (2026-09-19, #626)
 
@@ -11284,16 +11291,13 @@ Ez ellenőrzi, hogy a harness a stride-egység hibájára érzékeny. Nem bizony
 hogy ez okozta a korábbi 16/81 eltérést; annak akkori pontos oka **NINCS MEG**.
 
 **Bizonyítottsági fok:** `megerősített` a fenti Border-worker útban használt
-mezőkiosztásra és az alapgoldenre: az utasításszintű címzés és az eredeti
-QEMU-kimenet egyezik. A két további teljes kimenet pontos natív goldenként
-rögzített mérés; a PicasaPy `draw_border()`-rel való egyezésük még nincs
-megmérve. A leíró egyéb mezőinek és külön formátumjelzőjének szemantikája
-nyitott marad.
+mezőkiosztásra és mindhárom natív goldenre: az utasításszintű címzés, az
+eredeti QEMU-kimenet és a jelenlegi `draw_border()` kimenete egyezik. A
+leíró egyéb mezőinek és külön formátumjelzőjének szemantikája nyitott marad.
 
 **Nyitott:** a `+0x16`, `+0x20`, `+0x24` mezők pontos szemantikája/élettartama,
-az esetleges külön pixel-formátumjelző, a régi `16/81` harness-eltérés pontos
-oka, valamint a három golden `draw_border()`-rel való összevetése. A vizsgált
-mezők követéséhez Ghidra-dekompilálás nem kellett.
+az esetleges külön pixel-formátumjelző és a régi `16/81` harness-eltérés
+pontos oka. A vizsgált mezők követéséhez Ghidra-dekompilálás nem kellett.
 
 #### 🔁 A CImage-leíró vak, független ellenőrzése
 - **bíráló:** külön kódolvasás a binárisból és az indexből, a spec és a PicasaPy-forrás megtekintése nélkül
@@ -11309,23 +11313,26 @@ mezők követéséhez Ghidra-dekompilálás nem kellett.
 
 #### 5. Eredeti / nálunk / fejlesztői teendő
 
-| | Eredeti, mérve | PicasaPy, olvasva | Teendő |
+| | Eredeti | Nálunk | Teendő |
 |---|---|---|---|
-| Pixelkimenet | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa az I.1-ben; a külső sáv `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok kompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. Az eredeti workerből az I.4/b három teljes, SHA-256-tal rögzített golden kimenetet mér. | A jelenlegi `src/picasapy/render/glimmer_frame_ops.py::draw_border()` olvasásakor külön `_border_q_racs` készül a külső és forrásívhez, a függvény a forrás `R`-t és a belső vastagságból számolt `K`-t használja, és külön kompozitálja a sarkokat. E körben ezt a függvényt nem futtattam; a korábbi 30/81 mérés nem bizonyítja a mostani forrásállapot eredményét. | Hasonlítsd össze a függvény RGB-kimenetét az I.4/b három natív goldenjének RGB-csatornáival: `5×5, R=2, B=1, O=1 → 9×9`; `7×7, R=3, B=1, O=2 → 13×13`; `9×8, R=4, B=2, O=1 → 15×14`. **Kész, ha** mindháromnál minden RGB-csatorna egyezik (sorrendben 243/507/630 csatorna); az eltérést koordinátánként rögzítsd, és csak a binárisból igazolt eltérő műveletet módosítsd. |
+| Pixelkimenet | A `K=trunc(2²⁴/Δ)`, `C=((rₒ²−q)·K)>>16` fedés és az `Aₑ=(255·C)>>8` maszk-alfa az I.1-ben; a külső sáv `aa13b0`-keverése ettől külön a 3. pontban. A forrássarok kompozitora: `floor((D·(255−a)+S·a)/255)`, ahol `a=Aₑ`; címek: `0x008f62a0` → `0x008f4810`. Az eredeti `0x00bbe570` workerből I.4/b-ben három, SHA-256-tal rögzített QEMU-kimenet készült. | Közvetlen mérés: a mostani `src/picasapy/render/glimmer_frame_ops.py::draw_border()` kimenete a három eredeti QEMU-pufferrel bájtra egyezik: 5×5, `R=2,B=1,O=1` → 9×9: 243/243 RGB-csatorna; 7×7, `R=3,B=1,O=2` → 13×13: 507/507; 9×8, `R=4,B=2,O=1` → 15×14: 630/630. A rekonstruált opaque ARGB-pufferek SHA-256-a is egyezik az I.4/b hash-eivel. Mérő: közvetlen függvényhívás az I.4/b golden-adatain; nem pytest-futtatás. | E három bemenetre nincs további kódteendő. Az I.4/b elfogadási feltétele teljesült. A három mintán kívüli méret-/sugártartományra ne általánosítsunk mérés nélkül. |
 | Alfa | Az `aa1840` részleges maszkján `Aₑ=(255·C)>>8`; a `9ab360` a forrássarokmaszk kimenetén ezt az értéket teszi a maszk alfa-bájtjává. Az `8f4810` végső dwordjének alfa-bájtja `0xff`. | `draw_border()` RGB-kimenetet ad, ezért alfát nem tárol; `_sarok_fedes` RGB-súlyt számol. | Tartsd külön a fedési súlyt, az `aa1840` ARGB-maszkját, a `9ab360` maszkátalakítását és a forráskép `8f4810`-es kompozitálását. A RGB `draw_border()`-től ne kérj alfa megőrzést. |
 
-#### 6. A teljes 9 × 9 Border-minta: történeti eltérés, jelenlegi ellenőrzés nyitott
+#### 6. A Border-goldenek: a régi eltérés történeti, a három mostani minta egyezik
 
-A korábbi összevetésben az 5×5-ös `0xff204060` forrás, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítású natív 9×9 kimenettől a PicasaPy RGB **30/81 pixelben** tért el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ebből 18 eltérés a külső keretívben, 12 a forrássarok-ívben volt; ezek történeti mérési értékek, nem a most olvasott `draw_border()` futásának eredményei. A korábbi elemzés a félpixeles sugár-/középpontmodellt és a tükrözött negyedet azonosította, míg a #4300 külső `q=2128` pontján ettől külön a `K` kerekítése is egy szintnyi eltérést okozott. A jelenlegi forrásállapot teljes golden-egyezése nincs újramérve.
+Az előző összevetésben az 5×5-ös `0xff204060` forrás, külső `0xff000000`, belső `0xffffffff`, `R=2`, `inner=outer=1`, caption 0 beállítású natív 9×9 kimenettől a PicasaPy RGB **30/81 pixelben** tért el (RGB-csatorna-MAE **19,493827**, maximum **180**). Ez történeti eredmény, nem a mostani forrásállapot mérése. 2026-10-06-án a jelenlegi `draw_border()`-t közvetlenül összehasonlítottam az I.4/b eredeti QEMU-goldenjeivel: az 5×5→9×9 minta 81/81 pixelben, a 7×7→13×13 minta 169/169-ben, a 9×8→15×14 minta 210/210-ben egyezik; rendre 243/243, 507/507 és 630/630 RGB-csatornán. Mindhárom rekonstruált opaque ARGB-puffer SHA-256-a az eredeti QEMU-golden hash-e. A korábbi eltérések tehát a korábbi implementáció-/mérési állapotot írják le.
 
 - **Külső keretív, 18 pixel:** `(1,1)`, `(1,2)`, `(1,3)`, `(1,5)`, `(1,6)`, `(1,7)`, `(2,1)`, `(2,7)`, `(3,1)`, `(3,7)`, `(5,1)`, `(5,7)`, `(6,1)`, `(6,7)`, `(7,2)`, `(7,3)`, `(7,5)`, `(7,6)`. Ezeket a belső színű keret külső, lekerekített ívének fedési súlya okozza.
 - **Forrássarok-ív, 12 pixel:** `(2,2)`, `(2,3)`, `(2,5)`, `(2,6)`, `(3,2)`, `(3,6)`, `(5,2)`, `(5,6)`, `(6,2)`, `(6,3)`, `(6,5)`, `(6,6)`. Ezeket a forrásképet vágó belső ív fedési súlya okozza.
 
-A #4123 előtti 29/81 eltérés mind megmaradt; az új, 30. eltérés `(3,6)`: natív `[46,76,106]`, PicasaPy `[45,75,105]` (csatornánként −1). A 29 régi eltérést a külső keretív/forrássarok-maszk koordinátacsoportok és a hozzájuk tartozó feltételezett `q`-térkép osztályozza, de az egyes pontok pontos natív súlyát csak a fenti hívóargumentumok levezetése dönti el.
+A fenti koordinátalisták kizárólag a korábbi 30/81 eltérésre vonatkoznak;
+a 2026-10-06-i három aktuális összevetésben nincs eltérő képpont.
+
+**Történeti adat a #4123 előtti forrásállapotból:** a korábbi 29/81 eltérésből 29 megmaradt, és a 30. eltérés `(3,6)` volt: natív `[46,76,106]`, PicasaPy `[45,75,105]` (csatornánként −1). A régi eltéréseket a külső keretív/forrássarok-maszk koordinátacsoportok és a hozzájuk tartozó feltételezett `q`-térkép osztályozta; az egyes pontok pontos akkori natív súlya nem lett lezárva. Ez nem a jelenlegi `draw_border()` három QEMU-goldenhez végzett mérésének eredménye.
 
 A `tests/render/test_glimmer_frame_ops_4122.py::_native_q_racs()` középpontja `(127/32, 7/2)`, a négyzetes sugarai `7.5/12.5`; a teszt saját kommentje szerint ezeket **a kimeneti mintából vezette vissza**. Ezek az értékek nem bináris forrású bizonyítékok, ezért nem használhatók a külső keretív és a forrássarok-ív eltéréseinek megmagyarázására.
 
-**Bizonyítottsági fok:** `megerősített` a korábbi, rögzített 5×5-ös natív mintán mért paraméterekre, q-rácsra, fedési képletre és alfa-útra. Az I.4/a hívóparaméter-próbáiban az utasításszintű út és a natív belépési napló egyezik; az I.4/b-ben a helyes leíróval a natív alapminta teljes puffere bájtra egyezik, két további minta pedig natív golden. A most olvasott `draw_border()`-ről nincs friss golden-összevetés.
+**Bizonyítottsági fok:** `megerősített` a pixelképletre, alfa-útra és a három rögzített bemenetre: A) az `0x00bbe320`, `0x00bbe570`, `0x00aa13b0`, `0x00aa1840`, `0x009ab360` és `0x008f4810` utasításolvasata; B) az eredeti gépi kód QEMU-futtatásából származó I.4/b goldenek; C) a jelenlegi `draw_border()` közvetlen mérése, amely mindhárom puffert bájtra visszaadja. A/B a natív pixelmatematikában egyezik; a PicasaPy-kimenet mindhárom megadott méreten hozzájuk egyezik. A három eseten kívüli általános méret-/sugártartomány **nincs mérve**.
 
 **Cáfoló próba:** azt ellenőriztem, hogy a `0x00aa1840` maga állítja-e `0xff`-re a perem alfáját. Átlátszó célrétegben a qemu-kimenet részleges alfái megmaradnak (például `(0,4)=0x01`, `(3,1)=0x15`); csak az opaque black cél fölötti `0x009ab410` után lesz a kimeneti alfa `0xff`. A hipotézis cáfolva.
 
@@ -11337,10 +11344,17 @@ ez cáfolja a korábbi visszavezetett paraméterezést. Tükrözési kontrollké
 a natív külső felső q-sor szélei `2048` és `2128`, a forrásé `512` és `560`,
 tehát egyetlen bal felső maszk tükrözése sem adja a natív négy sarkot.
 
-**Nyitott:** a `draw_border()` jelenlegi forrásállapotának három golden-
-összevetése és az általános q-rács további méret-/sugár-eseteken való teljes
-pixel-igazolása. Az I.4/b új kimenetei elfogadott natív mérések; a PicasaPy-
-megfeleltetésük nincs megmérve.
+**Friss cáfoló kontroll (2026-10-06):** a közvetlen mérésben a q-rács
+x-meredekségét futás közben `240`-ről `0`-ra változtattam. Az 5×5-ös eset
+azonnal 18/81 pixelben eltért az eredeti QEMU-goldentől, a rekonstruált
+ARGB-hash `2e8ce6b9618305e5aa9d97bce2dd2dbfda3a81b94d61580f796cf482477a418a`
+lett. A hibás kontroll tehát nem őrzi meg az egyezést; a kísérlet csak a
+mérő érzékenységét ellenőrzi, nem a natív képlet bizonyítéka.
+
+**Nyitott:** a q-rács teljes egyezése a három mért bemeneten kívüli
+méret-/sugár-eseteken, valamint a korábban felsorolt, pixelkimenethez nem
+szükséges `+0x16`, `+0x20`, `+0x24` mezők teljes szemantikája. A három
+I.4/b QEMU-golden jelenlegi `draw_border()`-megfeleltetése lezárult.
 
 #### #4300 — a két egy szintes pont teljes natív útja (2026-10-06)
 
