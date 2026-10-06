@@ -123,7 +123,9 @@ ColumnLayout {
         id: printSettingsGrid
         objectName: "optionsPrintSettingsGrid"
         spacing: 8
-        Layout.alignment: Qt.AlignHCenter
+        // #3572: a hosszú magyar feliratok ne szélesítsék a fület
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
 
         RowLayout {
             Layout.fillWidth: true
@@ -138,8 +140,21 @@ ColumnLayout {
                 Layout.alignment: Qt.AlignVCenter
             }
             CheckBox {
+                id: hiResPreviewCheck
                 objectName: "optionsPrintHiResPreviewCheck"
                 text: qsTr("Use high quality previews (slower)")
+                // #3572: a magyar felirat a legkisebb ablakszélességnél
+                // tördelődik, nem tolja ki a fület
+                Layout.fillWidth: true
+                Layout.preferredWidth: 0
+                contentItem: Text {
+                    leftPadding: hiResPreviewCheck.indicator.width + hiResPreviewCheck.spacing
+                    text: hiResPreviewCheck.text
+                    font: hiResPreviewCheck.font
+                    color: hiResPreviewCheck.palette.windowText
+                    wrapMode: Text.WordWrap
+                    verticalAlignment: Text.AlignVCenter
+                }
                 checked: root.printCtl ? !root.printCtl.printProxyPreview() : false
                 onToggled: if (root.printCtl)
                     root.printCtl.setPrintProxyPreview(!checked)
