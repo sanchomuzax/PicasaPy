@@ -42,6 +42,56 @@ def test_missing_yunet_model_returns_fallback_signal_without_error(tmp_path) -> 
     assert detect_eye_circles(_image_with_two_eyes_and_red_dress(), detector) is None
 
 
+def test_large_image_detection_is_scaled_and_eye_circles_return_to_full_image():
+    from picasapy.faces.detector import FaceDetection, FaceLandmarks
+
+    image = np.zeros((1696, 2560, 3), dtype=np.uint8)
+
+    class Detector:
+        available = True
+
+        def __init__(self):
+            self.shapes = []
+
+        def detect(self, image_bgr):
+            self.shapes.append(image_bgr.shape[:2])
+            # A 960×636 bemenet koordinátái; a visszaadott köröknek az
+            # eredeti, 2560×1696-os képen kell maradniuk.
+            return (
+                FaceDetection(
+                    left=300,
+                    top=200,
+                    right=660,
+                    bottom=500,
+                    score=0.95,
+                    landmarks=FaceLandmarks(
+                        right_eye=(360, 318),
+                        left_eye=(600, 318),
+                        nose=(480, 360),
+                        mouth_right=(420, 420),
+                        mouth_left=(540, 420),
+                    ),
+                ),
+            )
+
+    detector = Detector()
+    circles = detect_eye_circles(image, detector)
+
+    assert circles is not None
+    assert max(detector.shapes[0]) <= 960
+    np.testing.assert_allclose(
+        [(circle.x, circle.y, circle.radius) for circle in circles],
+        ((960, 848, 128), (1600, 848, 128)),
+    )
+    assert all(
+        circle.x - circle.radius >= 0
+        and circle.y - circle.radius >= 0
+        and circle.x + circle.radius <= image.shape[1]
+        and circle.y + circle.radius <= image.shape[0]
+        for circle in circles
+    )
+
+
 def test_auto_result_keeps_normalized_eye_circles(provider, monkeypatch, tmp_path) -> None:
     from picasapy.app import edit_preview
 

@@ -82,6 +82,11 @@ class FakeFaceScanController(QObject):
         super().__init__()
         self.enabled = enabled
         self.calls = []
+        self.suggestions_enabled = True
+        self.suggestion_threshold = 85
+        self.cluster_threshold = 70
+        self.persist_face_to_file = True
+        self.setting_calls = []
 
     @Slot(result=bool)
     def automaticDetectionEnabled(self):
@@ -91,6 +96,42 @@ class FakeFaceScanController(QObject):
     def setAutomaticDetectionEnabled(self, enabled):
         self.calls.append(enabled)
         self.enabled = enabled
+
+    @Slot(result=bool)
+    def suggestionsEnabled(self):
+        return self.suggestions_enabled
+
+    @Slot(bool)
+    def setSuggestionsEnabled(self, enabled):
+        self.setting_calls.append(("suggestions", enabled))
+        self.suggestions_enabled = enabled
+
+    @Slot(result=int)
+    def suggestionThreshold(self):
+        return self.suggestion_threshold
+
+    @Slot(int)
+    def setSuggestionThreshold(self, value):
+        self.setting_calls.append(("suggestionThreshold", value))
+        self.suggestion_threshold = value
+
+    @Slot(result=int)
+    def clusterThreshold(self):
+        return self.cluster_threshold
+
+    @Slot(int)
+    def setClusterThreshold(self, value):
+        self.setting_calls.append(("clusterThreshold", value))
+        self.cluster_threshold = value
+
+    @Slot(result=bool)
+    def persistFaceToFile(self):
+        return self.persist_face_to_file
+
+    @Slot(bool)
+    def setPersistFaceToFile(self, enabled):
+        self.setting_calls.append(("persistFaceToFile", enabled))
+        self.persist_face_to_file = enabled
 
 
 class FakeEmailController(QObject):
@@ -309,6 +350,24 @@ def _kattints(window, qt_app, elem) -> None:
         os_ = os_.parentItem()
     pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
     QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont)
+    qt_app.processEvents()
+
+
+def _csuszkara_kattint(window, qt_app, slider, value) -> None:
+    """A csúszka tényleges fogantyúútjából számolt pontra kattint."""
+    assert _var(qt_app, lambda: slider.width() > 0 and slider.height() > 0)
+    handle = slider.property("handle")
+    assert handle is not None, f"{slider.objectName()}: nincs fogantyú"
+    fraction = (value - slider.property("from")) / (
+        slider.property("to") - slider.property("from")
+    )
+    x = (
+        slider.property("leftPadding")
+        + handle.width() / 2
+        + fraction * (slider.property("availableWidth") - handle.width())
+    )
+    point = slider.mapToScene(QPointF(x, slider.height() / 2)).toPoint()
+    QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, point)
     qt_app.processEvents()
 
 
@@ -556,6 +615,13 @@ class TestFaceDetectionOption:
 
         window, *_ = dialog
         window.setHeight(window.height() + height_offset)
+        window.setProperty("visible", True)
+        assert _var(qt_app, lambda: window.isExposed()), "a Beállítások ablak nem jelent meg"
+        _child(window, "optionsTabBar").setProperty("currentIndex", 7)
+        assert _var(
+            qt_app,
+            lambda: _child(window, "optionsFaceDetectionCheck").isVisible(),
+        ), "a Névcímkék fül nem jelent meg"
         qt_app.processEvents()
         checkbox = _child(window, "optionsFaceDetectionCheck")
         face_controller = QQmlEngine.contextForObject(window).contextProperty(
@@ -565,12 +631,62 @@ class TestFaceDetectionOption:
         assert checkbox.property("enabled") is True
         assert checkbox.property("checked") is True
 
-        checkbox.setProperty("checked", False)
-        checkbox.toggled.emit()
-        qt_app.processEvents()
+        _kattints(window, qt_app, checkbox)
 
         assert face_controller.calls == [False]
         assert face_controller.enabled is False
+
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_name_tag_settings_respond_to_real_clicks(
+        self, dialog, qt_app, height_offset
+    ):
+        from PySide6.QtQml import QQmlEngine
+
+        window, *_ = dialog
+        window.setHeight(window.height() + height_offset)
+        window.setProperty("visible", True)
+        assert _var(qt_app, lambda: window.isExposed()), "a Beállítások ablak nem jelent meg"
+        _child(window, "optionsTabBar").setProperty("currentIndex", 7)
+        assert _var(
+            qt_app,
+            lambda: _child(window, "optionsFaceSuggestionsCheck").isVisible(),
+        ), "a Névcímkék fül nem jelent meg"
+        controller = QQmlEngine.contextForObject(window).contextProperty(
+            "faceScanController"
+        )
+        suggestions = _child(window, "optionsFaceSuggestionsCheck")
+        suggestion_slider = _child(window, "optionsFaceSuggestionThresholdSlider")
+        cluster_slider = _child(window, "optionsFaceClusterThresholdSlider")
+        persist = _child(window, "optionsFacePersistToFileCheck")
+
+        assert suggestions.property("enabled") is True
+        assert suggestions.property("checked") is True
+        assert suggestion_slider.property("value") == 85
+        assert cluster_slider.property("value") == 70
+        assert persist.property("checked") is True
+
+        _kattints(window, qt_app, suggestions)
+        assert controller.setting_calls[-1] == ("suggestions", False)
+        assert controller.suggestions_enabled is False
+        assert suggestion_slider.property("enabled") is False
+        assert cluster_slider.property("enabled") is False
+
+        _kattints(window, qt_app, suggestions)
+        assert controller.setting_calls[-1] == ("suggestions", True)
+        assert suggestion_slider.property("enabled") is True
+        assert cluster_slider.property("enabled") is True
+
+        _csuszkara_kattint(window, qt_app, suggestion_slider, 90)
+        assert controller.setting_calls[-1] == ("suggestionThreshold", 90)
+        assert controller.suggestion_threshold == 90
+
+        _csuszkara_kattint(window, qt_app, cluster_slider, 75)
+        assert controller.setting_calls[-1] == ("clusterThreshold", 75)
+        assert controller.cluster_threshold == 75
+
+        _kattints(window, qt_app, persist)
+        assert controller.setting_calls[-1] == ("persistFaceToFile", False)
+        assert controller.persist_face_to_file is False
 
     @pytest.mark.parametrize(
         "control_name",

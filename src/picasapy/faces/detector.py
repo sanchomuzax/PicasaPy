@@ -43,6 +43,11 @@ _DEFAULT_SCORE_THRESHOLD = 0.9
 _DEFAULT_NMS_THRESHOLD = 0.3
 _DEFAULT_TOP_K = 5000
 
+# A háttér-arc- és a vörösszem-detektálás ugyanazon a korlátozott méreten
+# fusson; a hívók a visszaadott képpont-koordinátákat a saját képméretükre
+# skálázzák vissza.
+MAX_DETECTION_DIMENSION = 960
+
 
 def default_model_dir() -> Path:
     """A letöltött modellek felhasználói mappája — SOHA nem a repóban."""
@@ -128,6 +133,39 @@ class FaceDetection:
     bottom: float
     score: float
     landmarks: FaceLandmarks
+
+
+def rescale_face_detection(
+    detection: FaceDetection, scale_x: float, scale_y: float
+) -> FaceDetection:
+    """Detektált keret és arcpontok átváltása másik képpont-rácsra."""
+    landmarks = detection.landmarks
+    return FaceDetection(
+        left=detection.left * scale_x,
+        top=detection.top * scale_y,
+        right=detection.right * scale_x,
+        bottom=detection.bottom * scale_y,
+        score=detection.score,
+        landmarks=FaceLandmarks(
+            right_eye=(
+                landmarks.right_eye[0] * scale_x,
+                landmarks.right_eye[1] * scale_y,
+            ),
+            left_eye=(
+                landmarks.left_eye[0] * scale_x,
+                landmarks.left_eye[1] * scale_y,
+            ),
+            nose=(landmarks.nose[0] * scale_x, landmarks.nose[1] * scale_y),
+            mouth_right=(
+                landmarks.mouth_right[0] * scale_x,
+                landmarks.mouth_right[1] * scale_y,
+            ),
+            mouth_left=(
+                landmarks.mouth_left[0] * scale_x,
+                landmarks.mouth_left[1] * scale_y,
+            ),
+        ),
+    )
 
 
 class FaceDetector:

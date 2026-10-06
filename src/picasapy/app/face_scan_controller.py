@@ -38,13 +38,18 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings, Property, QLocale, QObject, Signal, Slot
 
-from picasapy.cvimage import dekodolj_forrast
+from picasapy.cvimage import dekodolj_forrast, scale_down
 from picasapy.faces import detector as detector_module
 from picasapy.faces import embedder as embedder_module
 from picasapy.faces import model_download
-from picasapy.faces.detector import FaceDetector
+from picasapy.faces.detector import FaceDetector, rescale_face_detection
 from picasapy.faces.embedder import FaceEmbedder
-from picasapy.faces.clustering import DEFAULT_SUGGEST_STEP, step_to_threshold
+from picasapy.faces.clustering import (
+    DEFAULT_CLUSTER_STEP,
+    DEFAULT_SUGGEST_STEP,
+    PICASA_STEPS,
+    step_to_threshold,
+)
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
     all_photos,
@@ -92,7 +97,7 @@ _log = logging.getLogger(__name__)
 # méreténél (256) nagyobb, hogy a kisebb arcok is megtalálhatók legyenek,
 # de nem a teljes felbontás (nagy fotóknál ez percekre lassítaná a
 # szkennelést). A YuNet kis felbontáson is jól teljesít (issue #26).
-_DETECT_MAX_DIMENSION = 960
+_DETECT_MAX_DIMENSION = detector_module.MAX_DETECTION_DIMENSION
 
 # Ennyi feldolgozott fotónként commitolunk — a dedup-hash-scan mintáját
 # követve (megszakított futás munkája sem vész el, ld. dedup_controller.py).
@@ -161,6 +166,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     modelDownloadFinished = Signal(bool, str)
     modelDownloadPercentChanged = Signal()
     AUTOMATIC_DETECTION_KEY = "faces/automaticDetection"
+    SUGGESTIONS_ENABLED_KEY = "faces/suggestionsEnabled"
+    CLUSTER_STEP_KEY = "faces/clusterStep"
 
     def __init__(
         self,
@@ -211,6 +218,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._model_download_percent = -1
         self._model_download_stop_event: threading.Event | None = None
         self._embedding_after_download = False
+        self._embedding_options_after_download: tuple[bool, int, int] | None = None
 
     @Slot(result=bool)
     def isAvailable(self) -> bool:
@@ -238,6 +246,64 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             self.scanNewFaces()
         elif self._automatic_scan:
             self.cancelScan()
+
+    @Slot(result=bool)
+    def suggestionsEnabled(self) -> bool:  # noqa: N802 — QML-slot-stílus
+        """A csoportosítás közbeni névjavaslatok kapcsolója (#4319)."""
+        return self._beallitas_bool(self.SUGGESTIONS_ENABLED_KEY, True)
+
+    @Slot(bool)
+    def setSuggestionsEnabled(self, enabled: bool) -> None:  # noqa: N802 — QML-slot-stílus
+        """A névjavaslatok beállításának mentése."""
+        self._settings.setValue(self.SUGGESTIONS_ENABLED_KEY, bool(enabled))
+
+    @Slot(result=int)
+    def suggestionThreshold(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """A javaslatküszöb a specifikáció 50–95-ös létráján."""
+        return self._kuszob_lepcso(self.SUGGEST_STEP_KEY, DEFAULT_SUGGEST_STEP)
+
+    @Slot(int)
+    def setSuggestionThreshold(self, step: int) -> None:  # noqa: N802 — QML-slot-stílus
+        """A javaslatküszöb mentése a tízfokozatú beállítási létrán."""
+        self._settings.setValue(
+            self.SUGGEST_STEP_KEY,
+            self._ervenyes_kuszob_lepcso(step, DEFAULT_SUGGEST_STEP),
+        )
+
+    @Slot(result=int)
+    def clusterThreshold(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """A csoportküszöb SFace-hez kalibrált 50–95-ös lépcsője."""
+        return self._kuszob_lepcso(self.CLUSTER_STEP_KEY, DEFAULT_CLUSTER_STEP)
+
+    @Slot(int)
+    def setClusterThreshold(self, step: int) -> None:  # noqa: N802 — QML-slot-stílus
+        """A csoportküszöb mentése; az érték az SFace-skálára alakul át."""
+        self._settings.setValue(
+            self.CLUSTER_STEP_KEY,
+            self._ervenyes_kuszob_lepcso(step, DEFAULT_CLUSTER_STEP),
+        )
+
+    def _beallitas_bool(self, key: str, default: bool) -> bool:
+        value = self._settings.value(key, default)
+        if isinstance(value, str):
+            return value.strip().lower() not in {"", "0", "false", "no", "off"}
+        return bool(value)
+
+    def _kuszob_lepcso(self, key: str, default: int) -> int:
+        value = self._settings.value(key, default)
+        try:
+            step = int(value)
+        except (TypeError, ValueError):
+            return default
+        return self._ervenyes_kuszob_lepcso(step, default)
+
+    @staticmethod
+    def _ervenyes_kuszob_lepcso(step: int, default: int) -> int:
+        try:
+            requested = int(step)
+        except (TypeError, ValueError):
+            return default
+        return min(PICASA_STEPS, key=lambda candidate: abs(candidate - requested))
 
     @Slot(result=str)
     def unavailableReason(self) -> str:  # noqa: N802 — QML-slot-stílus
@@ -458,8 +524,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if self._embedding_after_download:
             self._embedding_after_download = False
             if siker and self._embedder.available:
-                self._start_embedding_worker()
+                options = self._embedding_options_after_download
+                self._embedding_options_after_download = None
+                if options is None:
+                    options = self._csoportositasi_beallitasok()
+                self._start_embedding_worker(*options)
             else:
+                self._embedding_options_after_download = None
                 self.embeddingModelUnavailable.emit()
         self.modelDownloadFinished.emit(siker, uzenet)
 
@@ -676,19 +747,23 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     #: #1403: a kapcsoló kulcsa. Az eredeti a `Preferences` alatt tartja, és
     #: az **alapértéke 1 (BE)** — a kapu a `0x00485382`-n, a kezelő a
-    #: `0x004852e0`. Nálunk ugyanez az alapértelmezés.
-    #:
-    #: ⚠️ A kapcsolóhoz NEM építünk felületi jelölőnégyzetet: az eredetiben a
-    #: `Preferences`-ág tartja, de hogy MELYIK panel mutatja, nincs kimérve —
-    #: kitalált helyre tett vezérlő rosszabb, mint a hiánya. A viselkedés
-    #: (automatikus írás) enélkül is az eredetié.
+    #: `0x004852e0`. A Name Tags fül (#4319) vezérlője ezt az állapotot
+    #: mutatja és módosítja; a `PersistFaceToFile` az XMP-oldalkocsi írását
+    #: kapuzza névadáskor.
     XMP_ON_NAME_KEY = "faces/writeXmpOnName"
 
+    @Slot(result=bool)
+    def persistFaceToFile(self) -> bool:  # noqa: N802 — QML-slot-stílus
+        """Az arcnév XMP-oldalkocsiba írásának beállítása."""
+        return self._beallitas_bool(self.XMP_ON_NAME_KEY, True)
+
+    @Slot(bool)
+    def setPersistFaceToFile(self, enabled: bool) -> None:  # noqa: N802 — QML-slot-stílus
+        """Az arcnév XMP-oldalkocsiba írásának beállítása."""
+        self._settings.setValue(self.XMP_ON_NAME_KEY, bool(enabled))
+
     def _xmp_iras_bekapcsolva(self) -> bool:
-        ertek = self._settings.value(self.XMP_ON_NAME_KEY, True)
-        if isinstance(ertek, str):
-            return ertek.strip().lower() not in ("false", "0", "no")
-        return bool(ertek)
+        return self.persistFaceToFile()
 
     def _irj_xmp_ha_kell(self, utak) -> None:
         """Az elnevezett arcok fotóihoz XMP-sidecar (#1403).
@@ -826,6 +901,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
         Visszatérési érték: hány arcra került ÚJ javaslat.
         """
+        if not self.suggestionsEnabled():
+            return 0
         lepcso = self._javaslat_lepcso()
         lazitott = lazitott_lepcso(lepcso)
         kuszob = step_to_threshold(lazitott)
@@ -844,11 +921,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     def _javaslat_lepcso(self) -> int:
         """A tárolt javaslat-lépcső (alapértéken a mért `85`)."""
-        ertek = self._settings.value(self.SUGGEST_STEP_KEY, DEFAULT_SUGGEST_STEP)
-        try:
-            return int(ertek)
-        except (TypeError, ValueError):
-            return DEFAULT_SUGGEST_STEP
+        return self.suggestionThreshold()
 
     @Slot(list, result=int)
     def ignoreFaces(self, face_ids) -> int:  # noqa: N802 — QML-slot-stílus
@@ -1002,25 +1075,39 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         névtelen arcok inkrementális csoportosítása — KÜLÖN, a detektálásnál
         alacsonyabb prioritású sor. Ha csak az SFace hiányzik, elindítja a
         háttér-letöltést, majd automatikusan folytatja a csoportosítást."""
+        grouping_options = self._csoportositasi_beallitasok()
         if not self._embedder.available:
             if any(
                 spec.key == "embedder" for spec in model_download.missing_specs()
             ):
                 self._embedding_after_download = True
+                self._embedding_options_after_download = grouping_options
                 self.downloadModels()
             else:
                 self.embeddingModelUnavailable.emit()
             return
-        self._start_embedding_worker()
+        self._start_embedding_worker(*grouping_options)
 
-    def _start_embedding_worker(self) -> None:
-        """A betöltött SFace-szel indítja a háttérben a csoportosítást."""
+    def _csoportositasi_beallitasok(self) -> tuple[bool, int, int]:
+        """A UI-szálról kiolvassa a csoportosító worker beállításait."""
+        return (
+            self.suggestionsEnabled(),
+            self.suggestionThreshold(),
+            self.clusterThreshold(),
+        )
+
+    def _start_embedding_worker(
+        self, suggestions_enabled: bool, suggest_step: int, cluster_step: int
+    ) -> None:
+        """A betöltött SFace-szel, rögzített beállításokkal indítja a munkát."""
         self.cancelEmbedding()
         stop_event = threading.Event()
         self._embedding_stop_event = stop_event
         self.embeddingStarted.emit()
         self._start_background(
-            self._run_embedding, args=(stop_event,), name="picasapy-face-embed"
+            self._run_embedding,
+            args=(stop_event, suggestions_enabled, suggest_step, cluster_step),
+            name="picasapy-face-embed",
         )
 
     @Slot()
@@ -1067,7 +1154,11 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         _mark_previously_ignored(conn, photo.id, ini_faces)
                         self._report_scan(done, total)
                         continue
-                    faces = self._detect(photo_path)
+                    faces = self._detect(
+                        photo_path,
+                        source_width=photo.width,
+                        source_height=photo.height,
+                    )
                     replace_faces(conn, photo.id, faces)
                     _mark_previously_ignored(conn, photo.id, ini_faces)
                     mark_face_scan(
@@ -1099,7 +1190,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._set_scan_percent(round(100 * done / total) if total else 100)
         self.scanProgress.emit(done, total)
 
-    def _run_embedding(self, stop_event: threading.Event) -> None:
+    def _run_embedding(
+        self,
+        stop_event: threading.Event,
+        suggestions_enabled: bool,
+        suggest_step: int,
+        cluster_step: int,
+    ) -> None:
         try:
             with open_index(self._db_path) as conn:
                 pending = faces_missing_embedding(conn)
@@ -1111,8 +1208,16 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         self.embeddingCancelled.emit()
                         return
                     image = self._decode(face.photo_path)
+                    detection = face.detection
+                    if image is not None and face.photo_width and face.photo_height:
+                        image_height, image_width = image.shape[:2]
+                        detection = rescale_face_detection(
+                            detection,
+                            image_width / face.photo_width,
+                            image_height / face.photo_height,
+                        )
                     embedding = (
-                        self._embedder.compute(image, face.detection)
+                        self._embedder.compute(image, detection)
                         if image is not None
                         else None
                     )
@@ -1123,7 +1228,12 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         conn.commit()
                     self.embeddingProgress.emit(done, total)
                 conn.commit()
-                grouped = group_unnamed_faces(conn)
+                grouped = group_unnamed_faces(
+                    conn,
+                    suggest_threshold=step_to_threshold(suggest_step),
+                    cluster_threshold=step_to_threshold(cluster_step),
+                    named_centroids=None if suggestions_enabled else {},
+                )
                 conn.commit()
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
             _log.exception("arc-lenyomat/csoportosítás hiba: %s", self._db_path)
@@ -1134,11 +1244,35 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 self._embedding_stop_event = None
         self.embeddingFinished.emit(embedded, grouped)
 
-    def _detect(self, photo_path: Path):
+    def _detect(
+        self,
+        photo_path: Path,
+        *,
+        source_width: int | None = None,
+        source_height: int | None = None,
+    ):
         image = self._decode(photo_path)
         if image is None:
             return ()
-        return self._detector.detect(image)
+        # A JPEG dekóder minőségi tartaléka a kért 960 px helyett teljes
+        # vagy annál még mindig nagyobb képet adhat. A YuNet bemenetét ezért
+        # itt is kötelező a határra kicsinyíteni.
+        detector_image = scale_down(image, _DETECT_MAX_DIMENSION)
+        detections = self._detector.detect(detector_image)
+        decoded_height, decoded_width = image.shape[:2]
+        if source_width and source_height:
+            target_width, target_height = source_width, source_height
+        else:
+            target_width, target_height = decoded_width, decoded_height
+        detector_height, detector_width = detector_image.shape[:2]
+        scale_x = target_width / detector_width
+        scale_y = target_height / detector_height
+        if scale_x == 1 and scale_y == 1:
+            return detections
+        return tuple(
+            rescale_face_detection(detection, scale_x, scale_y)
+            for detection in detections
+        )
 
     @staticmethod
     def _decode(photo_path: Path):

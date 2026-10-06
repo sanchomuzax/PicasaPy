@@ -9,7 +9,14 @@ from math import hypot
 
 import numpy as np
 
-from picasapy.faces.detector import FaceDetection, FaceDetector, resolve_model_path
+from picasapy.cvimage import scale_down
+from picasapy.faces.detector import (
+    MAX_DETECTION_DIMENSION,
+    FaceDetection,
+    FaceDetector,
+    rescale_face_detection,
+    resolve_model_path,
+)
 
 _EYE_RADIUS_TO_DISTANCE = 0.2
 
@@ -70,5 +77,18 @@ def detect_eye_circles(
     engine = detector if detector is not None else _current_detector()
     if not engine.available:
         return None
-    detections = engine.detect(np.ascontiguousarray(image_rgb[..., ::-1]))
+    image_bgr = np.ascontiguousarray(image_rgb[..., ::-1])
+    detector_image = scale_down(image_bgr, MAX_DETECTION_DIMENSION)
+    detections = engine.detect(detector_image)
+    if detector_image.shape[:2] != image_rgb.shape[:2]:
+        height, width = image_rgb.shape[:2]
+        detector_height, detector_width = detector_image.shape[:2]
+        detections = tuple(
+            rescale_face_detection(
+                detection,
+                width / detector_width,
+                height / detector_height,
+            )
+            for detection in detections
+        )
     return eye_circles_from_faces(detections)
