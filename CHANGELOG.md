@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.28] – 2026-10-06
+
+- A teljes felbontású ragyogás színes tagja az eredeti kerekített egész ÷255 keverést használja. (#4442).
+
 ## [0.9.27] – 2026-10-06
 
 - A Fotónéző beállításaiban megjelent az eredeti „Teljes képernyős indítás” jelölőnégyzet, és a választás megmarad; az eredeti szerint az önálló Fotónézőre vonatkozik, a könyvtár beépített nézője ablakos marad (#4432).
