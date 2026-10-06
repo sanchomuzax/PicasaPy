@@ -117,6 +117,11 @@ MenuBar {
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
+    // #4335: a kijelölt fedvények állapota a controller INI-lekérdezéséből.
+    property bool textOverlayShowEnabled: false
+    property bool textOverlayHideEnabled: false
+    signal textOverlayStatesRefreshRequested()
+    signal textOverlayVisibilityRequested(bool visible)
     //: #1768: a szerkesztő-előnézet aktív-e. Az eredeti a `0x9caa`
     //: parancsot (a Mappakezelő MINDKÉT belépési pontját) a menü
     //: megnyitásakor SZÜRKÍTI, amíg a szerkesztő-előnézet él
@@ -1671,6 +1676,7 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("&Picture")
+        onAboutToShow: bar.textOverlayStatesRefreshRequested()
         MenuItem {
             objectName: "menuPictureViewAndEdit"
             text: qsTr("&View and Edit") + "\tCtrl+3"
@@ -1741,13 +1747,20 @@ MenuBar {
                 onTriggered: bar.batchApplyEffectRequested("rotate_ccw")
             }
             MenuSeparator {}
-            // #425 5. pont: a `docs/specs/` a szöveg-overlay index-
-            // lefedettségét nem dokumentálja (van-e a kijelölésben szöveg-
-            // réteges kép) — a feltételes engedélyezéshez szükséges adat
-            // jelenleg nincs meg olcsón, ezért egyelőre placeholder
-            // (ld. `batch_effect_controller` modul-docstring).
-            PicasaMenuItem { text: qsTr("Show Text"); placeholder: true }
-            PicasaMenuItem { text: qsTr("Hide Text"); placeholder: true }
+            // #4335: külön parancsok, a kijelölésben levő szövegfedvények
+            // aktuális `textactive=` állapota szerint engedélyezve.
+            MenuItem {
+                objectName: "menuPictureShowText"
+                text: qsTr("Show Text")
+                enabled: bar.photoActionsEnabled && bar.textOverlayShowEnabled
+                onTriggered: bar.textOverlayVisibilityRequested(true)
+            }
+            MenuItem {
+                objectName: "menuPictureHideText"
+                text: qsTr("Hide Text")
+                enabled: bar.photoActionsEnabled && bar.textOverlayHideEnabled
+                onTriggered: bar.textOverlayVisibilityRequested(false)
+            }
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}

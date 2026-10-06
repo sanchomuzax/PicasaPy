@@ -8,8 +8,31 @@ A menü SZERKEZETÉT (tételsor, sorrend, szürke tételek, felirat-váltás) a
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+import time
+from pathlib import Path
 
+import pytest
+import shiboken6
+
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt
+from PySide6.QtQml import QQmlExpression, qmlContext
+from PySide6.QtQuick import QQuickItem
+from PySide6.QtTest import QTest
+
+from picasapy.ini import load_document, update_document
+from picasapy.ini.text_overlay import (
+    TextBlock,
+    TextGeometry,
+    TextOverlay,
+    TextStyle,
+    serialize_text,
+)
+from picasapy.scanner import PICASA_INI_NAME
+
+
+# A QML által birtokolt Popup/menüpont-wrappert a PySide6 teszt közben
+# felszabadíthatja, ezért a tesztfolyamat végéig Pythonból is megtartjuk.
+_KEEP_QML_OBJECTS = []
 
 
 def _child(window, name):
@@ -37,6 +60,167 @@ def _close_menu(window, qt_app):
         Qt.ConnectionType.DirectConnection,
     )
     qt_app.processEvents()
+
+
+def _wait_for(qt_app, condition, timeout=3.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        qt_app.processEvents()
+        if condition():
+            return True
+        time.sleep(0.01)
+    qt_app.processEvents()
+    return bool(condition())
+
+
+def _click_item(qt_app, item):
+    assert item is not None
+    assert item["enabled"] is True, f"{item['name']} le van tiltva"
+    assert item["width"] > 0 and item["height"] > 0
+    QTest.mouseClick(
+        item["window"],
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(round(item["x"]), round(item["y"])),
+    )
+    qt_app.processEvents()
+
+
+def _picture_menu_item(qt_app, window, object_name):
+    menu_bar = window.property("menuBar")
+    titles = {"&Picture", "&Kép"}
+    menu = next(
+        item for item in menu_bar.findChildren(QObject)
+        if item.property("title") in titles
+    )
+    header = next(
+        item for item in menu_bar.findChildren(QObject)
+        if "MenuBarItem" in item.metaObject().className()
+        and item.property("text") in titles
+    )
+    _KEEP_QML_OBJECTS.extend((menu_bar, menu, header))
+    center = header.mapToScene(
+        QPointF(header.width() / 2, header.height() / 2)
+    )
+    QTest.mouseClick(
+        header.window(),
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(round(center.x()), round(center.y())),
+    )
+    assert _wait_for(
+        qt_app,
+        lambda: menu.property("opened") is True,
+    ), "a Picture menü nem nyílt meg"
+    picture_menu = next(
+        item for item in menu_bar.findChildren(QObject)
+        if item.property("title") in titles
+    )
+    batch_menu = window.findChild(QObject, "menuPictureBatchEdit")
+    assert batch_menu is not None
+    _KEEP_QML_OBJECTS.append(batch_menu)
+    submenu_item = _menu_item_info(
+        picture_menu, "menuPictureBatchEdit", window, text="&Batch Edit"
+    )
+    _click_item(qt_app, submenu_item)
+    assert _wait_for(
+        qt_app,
+        lambda: batch_menu.property("opened") is True,
+    ), "a Batch Edit almenü nem nyílt meg"
+    return _batch_menu_item_info(window, object_name)
+
+
+def _find_menu_item(window, object_name):
+    return _batch_menu_item_info(window, object_name)
+
+
+def _batch_menu_item_info(window, object_name):
+    batch_menu = window.findChild(QObject, "menuPictureBatchEdit")
+    assert batch_menu is not None
+    _KEEP_QML_OBJECTS.append(batch_menu)
+    result = _menu_item_info(batch_menu, object_name, window)
+    return result
+
+
+def _menu_item_info(menu, object_name, window, *, text=None):
+    expression = QQmlExpression(
+        qmlContext(menu),
+        menu,
+        "(function () {"
+        "  for (var i = 0; i < count; ++i) {"
+        "    var item = itemAt(i);"
+        f"    if (item && (item.objectName === '{object_name}'"
+        f"        || item.text === '{text or ''}')) {{"
+        "      return item;"
+        "    }"
+        "  }"
+        "  return null;"
+        "})()",
+    )
+    result, error = expression.evaluate()
+    assert not error, expression.error()
+    assert result is not None, f"{object_name} nincs a menüben"
+    item = shiboken6.wrapInstance(
+        shiboken6.getCppPointer(result)[0], QQuickItem
+    )
+    center = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+    _KEEP_QML_OBJECTS.append(item)
+    item_window = item.window()
+    _KEEP_QML_OBJECTS.append(item_window)
+    return {
+        "name": object_name,
+        "enabled": item.isEnabled(),
+        "visible": item.isVisible(),
+        "width": item.width(),
+        "height": item.height(),
+        "x": center.x(),
+        "y": center.y(),
+        "window": item_window,
+        "qml_item": item,
+    }
+
+
+def _close_picture_menu(qt_app, window):
+    menu_bar = window.property("menuBar")
+    menu = next(
+        item for item in menu_bar.findChildren(QObject)
+        if item.property("title") in {"&Picture", "&Kép"}
+    )
+    QMetaObject.invokeMethod(menu, "close", Qt.ConnectionType.DirectConnection)
+    qt_app.processEvents()
+
+
+def _text_overlay_value():
+    return serialize_text(
+        TextOverlay(
+            blocks=(
+                TextBlock(
+                    content="Synthetic overlay",
+                    font="Arial",
+                    geometry=TextGeometry(0.5, 0.5),
+                    style=TextStyle(
+                        fill_argb=0xFFFFFFFF, outline_argb=0xFF000000
+                    ),
+                ),
+            )
+        )
+    )
+
+
+def _write_overlay(controller, row, active):
+    photo = controller.photos.photos[row]
+    ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+
+    def mutate(document):
+        document = document.with_value(
+            photo.name, "text", _text_overlay_value()
+        )
+        return document.with_value(
+            photo.name, "textactive", "1" if active else "0"
+        )
+
+    update_document(ini_path, mutate, backup=False)
+    return ini_path, photo.name
 
 
 # A menü forgatás-parancsa a KÖTEGELT ágat hívja (`rotateRightMany`), ami a
@@ -82,6 +266,55 @@ class TestPhotoMenuCommands:
         qt_app.processEvents()
         assert window.property("propertiesPanelOpen") is not before
         _close_menu(window, qt_app)
+
+    @pytest.mark.parametrize("height_offset", (-5, 0, 5))
+    def test_picture_show_hide_text_clicks_follow_selected_overlay_state(
+        self, qml_app, qt_app, height_offset
+    ):
+        window, controller, _engine = qml_app
+        window.setHeight(window.height() + height_offset)
+        window.setProperty("selectedIndexes", [0, 1])
+        window.setProperty("selectedIndex", 0)
+        qt_app.processEvents()
+
+        # Without text layers neither state-specific command is enabled.
+        show_item = _picture_menu_item(qt_app, window, "menuPictureShowText")
+        hide_item = _find_menu_item(window, "menuPictureHideText")
+        assert show_item["enabled"] is False
+        assert hide_item["enabled"] is False
+        _close_picture_menu(qt_app, window)
+
+        # A mixed selection enables each command. Real menu clicks should
+        # apply the requested state to every selected photo with a text layer.
+        first_ini, first_name = _write_overlay(controller, 0, active=False)
+        second_ini, second_name = _write_overlay(controller, 1, active=True)
+
+        hide_item = _picture_menu_item(qt_app, window, "menuPictureHideText")
+        show_item = _find_menu_item(window, "menuPictureShowText")
+        assert show_item["enabled"] is True
+        assert hide_item["enabled"] is True
+        _click_item(qt_app, hide_item)
+
+        first = load_document(first_ini).section(first_name)
+        second = load_document(second_ini).section(second_name)
+        assert first.get("textactive") == "0"
+        assert second.get("textactive") == "0"
+
+        show_item = _picture_menu_item(qt_app, window, "menuPictureShowText")
+        hide_item = _find_menu_item(window, "menuPictureHideText")
+        assert show_item["enabled"] is True
+        assert hide_item["enabled"] is False
+        _click_item(qt_app, show_item)
+
+        first = load_document(first_ini).section(first_name)
+        second = load_document(second_ini).section(second_name)
+        assert first.get("textactive") == "1"
+        assert second.get("textactive") == "1"
+
+        show_item = _picture_menu_item(qt_app, window, "menuPictureShowText")
+        hide_item = _find_menu_item(window, "menuPictureHideText")
+        assert show_item["enabled"] is False
+        assert hide_item["enabled"] is True
 
 
 class TestDeleteShortcutsAreContextDependent:
