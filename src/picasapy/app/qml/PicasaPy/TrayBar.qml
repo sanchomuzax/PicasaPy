@@ -118,6 +118,23 @@ Column {
         return tray.traySelectedIndexes.indexOf(index) >= 0
     }
 
+    // A tálcáról induló húzás kizárólag a tálca saját kijelölését viszi.
+    // A tálca elemei tartalmazhatnak másik mappából rögzített képeket is,
+    // ezért itt nem szabad a fő rács sorindexeit használni.
+    function selectedTrayFileUriList() {
+        if (!tray.ctl || typeof tray.ctl.fileUriList !== "function")
+            return ""
+        var items = tray.ctl.trayItems || []
+        var paths = []
+        var indexes = tray.traySelectedIndexes
+        for (var i = 0; i < indexes.length; ++i) {
+            var index = Number(indexes[i])
+            if (index >= 0 && index < items.length && items[index].path)
+                paths.push(items[index].path)
+        }
+        return tray.ctl.fileUriList(paths)
+    }
+
     readonly property var selectedIndexesOrEmpty:
         (tray.appWindow && tray.appWindow.selectedIndexes)
             ? tray.appWindow.selectedIndexes
@@ -725,6 +742,27 @@ Column {
                         // VEZÉRLŐN megy át, a módosítókkal együtt.
                         readonly property bool trayCellSelected:
                             tray.trayIndexSelected(trayThumb.index)
+
+                        // A rács húzóforrásával azonos MIME-szerződés, de a
+                        // tálca saját kiválasztott elemeiből összeállítva.
+                        readonly property string payload: "photos"
+                        Drag.active: trayDragHandler.active
+                        Drag.dragType: Drag.Automatic
+                        Drag.mimeData: ({
+                            "text/uri-list": tray.selectedTrayFileUriList()
+                        })
+                        Drag.supportedActions:
+                            Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
+                        Drag.hotSpot.x: trayDragHandler.centroid.position.x
+                        Drag.hotSpot.y: trayDragHandler.centroid.position.y
+
+                        DragHandler {
+                            id: trayDragHandler
+                            objectName: "trayThumbDragHandler"
+                            enabled: trayThumb.trayCellSelected
+                            acceptedButtons: Qt.LeftButton
+                            target: null
+                        }
 
                         TapHandler {
                             objectName: "trayThumbTap"

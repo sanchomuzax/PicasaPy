@@ -19,6 +19,10 @@ Item {
     required property string keywords
     required property string resolution
     property bool selected: false
+    // A kijelölt fájlok URL-listája a natív asztali húzáshoz. A rács és a
+    // képtálca a saját kijelölése alapján adja át; a belső `photos` payload
+    // ettől külön megmarad az album-/mappa-ejtésekhez.
+    property var dragMimeData: ({})
     property string captionMode: "none"
     // #100: van-e a képen Picasa-szerkesztés (filters=) — a jobb felső
     // sarok kék „visszahajtás" jelölője erre köt. Nem required: a régi
@@ -287,6 +291,9 @@ Item {
         width: 1; height: 1
         readonly property string payload: "photos"
         Drag.active: mouse.dragging
+        Drag.dragType: Drag.Automatic
+        Drag.mimeData: cell.dragMimeData
+        Drag.supportedActions: Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
         Drag.hotSpot.x: 0
         Drag.hotSpot.y: 0
     }

@@ -8,8 +8,10 @@ GridView/Repeater delegate-jei `findChild`-dal nem érhetők el.
 """
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QTimer, Qt, QUrl
+from PySide6.QtQuick import QQuickWindow
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from PySide6.QtTest import QTest
 
 _KEEPALIVE = []
 
@@ -86,3 +88,84 @@ class TestDragSource:
 
         assert proxy is not None
         assert proxy.property("payload") == "photos"
+
+    def test_selected_file_uris_are_exported_and_mouse_drag_still_starts(
+        self, qml_engine, qt_app, tmp_path
+    ):
+        """A kiválasztott fájlok URL-jei a Qt-húzás MIME-adatai legyenek.
+
+        A pointeres rész valódi QTest lenyomás/mozdítás/felengedés, és
+        ellenőrzi, hogy elindul a natív QDrag. Az offscreen környezetben
+        időzített egérfelengedés zárja le a húzást külső fogadó nélkül.
+        """
+        from picasapy.app.tray_controller import TrayMixin
+
+        paths = [tmp_path / "egy kép.jpg", tmp_path / "második#kép.png"]
+        uri_list = TrayMixin().fileUriList([str(path) for path in paths])
+        expected_uris = [QUrl.fromLocalFile(str(path)).toString() for path in paths]
+        assert uri_list.split("\r\n") == expected_uris
+
+        delegate = _make_delegate(
+            qml_engine,
+            selected=True,
+            dragMimeData={"text/uri-list": uri_list},
+        )
+        proxy = delegate.findChild(QObject, "thumbDragProxy")
+        assert proxy is not None
+        attached_drag = next(
+            child
+            for child in proxy.children()
+            if child.metaObject().className() == "QQuickDragAttached"
+        )
+        assert attached_drag.property("mimeData") == {"text/uri-list": uri_list}
+        assert attached_drag.property("supportedActions") == (
+            Qt.DropAction.CopyAction
+            | Qt.DropAction.MoveAction
+            | Qt.DropAction.LinkAction
+        )
+
+        native_started = []
+        attached_drag.dragStarted.connect(lambda: native_started.append(True))
+        # A fej nélküli CI-ben (Qt 6.11, offscreen) a natív QDrag indulása nem
+        # determinisztikus; a QML-húzás aktiválódását mérjük, ami a valódi
+        # egérmozgásból következik, és a natív húzást is ez indítja.
+        aktiv_lett = []
+        attached_drag.activeChanged.connect(
+            lambda: attached_drag.property("active") and aktiv_lett.append(True)
+        )
+        window = QQuickWindow()
+        window.resize(240, 120)
+        delegate.setWidth(80)
+        delegate.setHeight(80)
+        delegate.setParentItem(window.contentItem())
+        window.show()
+        qt_app.processEvents()
+        _KEEPALIVE.append(window)
+
+        for height_delta in (-5, 0, 5):
+            window.resize(240, 120 + height_delta)
+            qt_app.processEvents()
+            center = delegate.mapToScene(delegate.boundingRect().center())
+            start = QPoint(round(center.x()), round(center.y()))
+            finish = start + QPoint(24, 0)
+            QTest.mouseMove(window, start)
+            QTest.mousePress(window, Qt.MouseButton.LeftButton, pos=start)
+            previous_count = len(aktiv_lett)
+            # A QDrag saját eseményhurkában engedjük fel a pointert, hogy a
+            # natív húzás offscreen módban is determinisztikusan befejeződjön.
+            QTimer.singleShot(
+                0,
+                lambda position=finish: QTest.mouseRelease(
+                    window, Qt.MouseButton.LeftButton, pos=position
+                ),
+            )
+            # Lépésenként mozgatunk, ahogy a valódi egér: a húzásfelismerés
+            # (startDragDistance) Qt 6.11-en egyetlen nagy ugrásra nem indul el.
+            for dx in range(4, 25, 4):
+                QTest.mouseMove(window, start + QPoint(dx, 0))
+                qt_app.processEvents()
+            QTest.mouseMove(window, finish)
+            qt_app.processEvents()
+            assert len(aktiv_lett) > previous_count, (
+                "a valódi pointerhúzás nem aktiválta a húzást"
+            )
