@@ -28,10 +28,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-#: #4422/#1375: modulszintű fogantyúk — a tesztek ezeket cserélik, nem a
-#: globális `socket`/`subprocess` modult.
-_socket_letrehoz = socket.socket
-_alfolyamat_futtat = subprocess.run
 
 import cv2
 import numpy as np
@@ -58,6 +54,11 @@ from tests.app.qml_functional.test_kettos_nezet_gombsor_helye_3663 import (
     _klikk,
     _nezot_nyit,
 )
+
+#: #4422/#1375: modulszintű fogantyúk — a tesztek ezeket cserélik, nem a
+#: globális `socket`/`subprocess` modult.
+_socket_letrehoz = socket.socket
+_alfolyamat_futtat = subprocess.run
 
 
 def _sajat_geometria(kep, keret) -> dict[str, float]:
