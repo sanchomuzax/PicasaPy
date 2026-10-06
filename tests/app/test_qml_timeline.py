@@ -1,13 +1,16 @@
-"""QML-funkcionális tesztek: időrend nézet (#24, Ctrl+5).
+"""Az Időrend jelenlegi felületi kivételei és belső QML-próbái.
 
-A csoportosítás egységtesztje `tests/timeline/test_timeline.py`-ban él;
-itt csak a Qt/QML-bekötést ellenőrizzük — a `qml_app` fixture
-(tests/app/conftest.py) mintájára, a `test_qml_slideshow.py` szerkezetét
-követve: megnyitás/bezárás (Ctrl+5, menüpont), a korszak-adat betöltése,
-és a fotóra kattintás → mappaváltás + néző-megnyitás bekötése.
+A teljes képernyős, animált Időrend külön feladat (#4443). Addig a menüpont
+és a Ctrl+5 szándékosan inaktív (#1903); a közvetlen `toggleTimeline()`-
+hívások alább csak a meglévő placeholder belső állapotát fedik le, nem
+felhasználói belépési utak.
 """
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+import time
+
+import pytest
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt
+from PySide6.QtTest import QTest
 
 
 def _child(window, name):
@@ -24,15 +27,24 @@ def _invoke(qt_app, obj, name, *args):
     qt_app.processEvents()
 
 
+def _wait_for(qt_app, predicate, timeout_ms=3000):
+    deadline = time.monotonic() + timeout_ms / 1000
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        QTest.qWait(10)
+    return predicate()
+
+
 class TestTimelineEntryPoints:
-    def test_ctrl5_opens_timeline(self, qml_app, qt_app):
+    def test_internal_placeholder_toggle_opens_timeline(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         _invoke(qt_app, window, "toggleTimeline")
         assert window.property("timelineOpen") is True
         view = _child(window, "timelineView")
         assert view.property("visible") is True
 
-    def test_ctrl5_again_closes_timeline(self, qml_app, qt_app):
+    def test_internal_placeholder_toggle_closes_timeline(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         _invoke(qt_app, window, "toggleTimeline")
         _invoke(qt_app, window, "toggleTimeline")
@@ -40,14 +52,38 @@ class TestTimelineEntryPoints:
         view = _child(window, "timelineView")
         assert view.property("visible") is False
 
-    def test_grid_hidden_while_timeline_open(self, qml_app, qt_app):
+    def test_internal_placeholder_toggle_hides_grid(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         grid = _child(window, "photoGrid")
         assert grid.property("visible") is True
         _invoke(qt_app, window, "toggleTimeline")
         assert grid.property("visible") is False
 
-    def test_menu_item_is_disabled_and_does_NOT_open(self, qml_app, qt_app):
+    @pytest.mark.parametrize("height", [795, 800, 805])
+    def test_real_ctrl5_keypress_keeps_timeline_inactive(
+        self, qml_app, qt_app, height
+    ):
+        """A gyorsbillentyű nem kerülheti meg az inaktív menüpontot (#1903)."""
+        window, _controller, _lib, _engine = qml_app
+        window.resize(window.width(), height)
+        window.requestActivate()
+        assert _wait_for(qt_app, window.isActive), "a főablak nem lett aktív"
+
+        QTest.keyClick(
+            window,
+            Qt.Key.Key_5,
+            Qt.KeyboardModifier.ControlModifier,
+        )
+        qt_app.processEvents()
+
+        assert window.property("timelineOpen") is False
+        view = _child(window, "timelineView")
+        assert view.property("visible") is False
+
+    @pytest.mark.parametrize("height", [795, 800, 805])
+    def test_menu_item_is_disabled_and_does_NOT_open(
+        self, qml_app, qt_app, height
+    ):
         """#1903: a menütétel INAKTÍV — a nézet nem nyílik meg róla.
 
         ⚠️ Ez az állítás MEGFORDULT. Korábban azt mértük, hogy a tétel
@@ -62,8 +98,21 @@ class TestTimelineEntryPoints:
         window, _controller, _lib, _engine = qml_app
         item = _child(window, "menuViewTimeline")
         assert item.property("enabled") is False
-        QMetaObject.invokeMethod(
-            item, "triggered", Qt.ConnectionType.DirectConnection
+        window.resize(window.width(), height)
+        view_menu = _child(window, "menuView")
+        assert QMetaObject.invokeMethod(
+            view_menu, "open", Qt.ConnectionType.DirectConnection
+        )
+        assert _wait_for(
+            qt_app, lambda: item.isVisible() and item.width() > 0
+        ), "a Nézet menü Időrend eleme nem jelent meg"
+        popup_window = item.window()
+        center = item.mapToScene(item.boundingRect().center())
+        QTest.mouseClick(
+            popup_window,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(center.x()), round(center.y())),
         )
         qt_app.processEvents()
         assert window.property("timelineOpen") is not True
@@ -82,7 +131,7 @@ class TestTimelineEntryPoints:
 class TestTimelinePeriods:
     def test_reload_groups_the_two_fixture_photos(self, qml_app, qt_app):
         # a qml_app fixture két fotót szinkronizál (a.jpg, b.jpg) — a
-        # reload (Ctrl+5 megnyitáskor fut) mindkettőt egyetlen korszakba
+        # reload (a placeholder belső váltófüggvényében fut) mindkettőt egyetlen korszakba
         # csoportosítja (mtime-fallback: egy futáson belül szinte mindig
         # ugyanaz a hónap), és a bélyegkép-URL-ek nem üresek
         window, _controller, _lib, engine = qml_app
