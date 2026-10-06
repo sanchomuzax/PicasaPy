@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.29] – 2026-10-07
+
+- A QML-felület kattintásos ellenőrzése és a néma vezérlőket jelző CI-őr bővült. (#4438).
+- A mentés és visszaállítás után a fotó nézete frissül, hibájuk pedig látható üzenetet ad; a fotóműveletek eredménye a nézetben jelenik meg. (#4440).
+- Az E-mail beállításokban videóknál választható és mentődik az első képkocka vagy a teljes film; küldéskor a választás szerinti melléklet készül (#4451).
+
 ## [0.9.28] – 2026-10-06
 
 - A teljes felbontású ragyogás színes tagja az eredeti kerekített egész ÷255 keverést használja. (#4442).

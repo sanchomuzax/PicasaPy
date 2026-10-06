@@ -15,7 +15,7 @@ import configparser
 import pytest
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import hangos_hurok, varj_feltetelre
+from support.qt_wait import hangos_hurok, varj_feltetelre, wait_for_photo_op
 
 
 @pytest.fixture
@@ -398,6 +398,14 @@ class TestGuardRejectionIsHandled:
 # láncot a régi `photo` rekorddal folytatva az alábbi osztály első három
 # tesztje PIROS (mérve, #3848 javítás); a PR előtti `_apply_rotate`-tel
 # mind az öt piros.
+class TestNincsFeleslegesPhotoOpFinished:
+    def test_a_nezet_es_a_hibajelzes_viszi_a_lathato_eredmenyt(self, controller):
+        # A PhotoGridModel sorfrissítése és a syncFailed hibasávja már a
+        # művelet látható eredményét viszi. A puszta befejezésjelzés csak
+        # teszt-várakozókat szolgált, ezért nem maradhat külön akciójelzés.
+        assert not hasattr(controller, "photoOpFinished")
+
+
 class TestGyorsForgatasLanc3830:
     """#3830: az egyképes forgatás láncolt írása (`_apply_rotate`).
 
@@ -466,9 +474,7 @@ class TestGyorsForgatasLanc3830:
             "sikertelen írás után a modell a LEMEZEN lévő értéket mutassa"
         )
 
-        kesz = hangos_hurok(controller.photoOpFinished)
-        controller.rotateRight(row)
-        kesz.exec()
+        wait_for_photo_op(controller, lambda: controller.rotateRight(row), qt_app=qt_app)
         assert len(allapot["hivasok"]) == 2, (
             "a hiba utáni forgatás nem indított írást — a kép beragadt"
         )
@@ -497,9 +503,7 @@ class TestGyorsForgatasLanc3830:
         )
         assert self._lepes(controller, photo_id) == 0
 
-        kesz = hangos_hurok(controller.photoOpFinished)
-        controller.rotateRight(row)
-        kesz.exec()
+        wait_for_photo_op(controller, lambda: controller.rotateRight(row), qt_app=qt_app)
         assert self._lepes(controller, photo_id) == 1, (
             "a hiba után a lépésszám a lemezen lévő értékből induljon"
         )
@@ -542,7 +546,6 @@ class TestGyorsForgatasLanc3830:
         allapot = self._feltartott_iras(monkeypatch)
         (row,) = _rows_by_name(controller, "a.jpg")
         photo_id = controller.photos.photos[row].id
-        kesz = hangos_hurok(controller.photoOpFinished)
         try:
             controller.rotateRight(row)
             assert allapot["belepett"].wait(10.0)
@@ -553,7 +556,6 @@ class TestGyorsForgatasLanc3830:
             controller.photos.set_photos(maradek)
         finally:
             allapot["kapu"].set()
-        kesz.exec()
         assert varj_feltetelre(qt_app, lambda: not controller._rotate_running, 15.0)
         assert len(allapot["hivasok"]) == 1, (
             "a nézetből eltűnt képre a lánc nem írhat tovább"
@@ -561,30 +563,25 @@ class TestGyorsForgatasLanc3830:
         assert photo_id not in controller._rotate_target
         self._hatter_leall()
 
-    def test_a_befejezes_jelzes_a_lanc_vegen_egyszer_megy_ki(
+    def test_a_nezet_a_lanc_vegi_forgatasi_allapotot_mutatja(
         self, qt_app, controller, library, monkeypatch
     ):
         allapot = self._feltartott_iras(monkeypatch)
         (row,) = _rows_by_name(controller, "a.jpg")
         photo_id = controller.photos.photos[row].id
-        jelzesek: list[int | None] = []
-        controller.photoOpFinished.connect(
-            lambda: jelzesek.append(self._lepes(controller, photo_id))
-        )
+        assert not hasattr(controller, "photoOpFinished")
         try:
             controller.rotateRight(row)
             assert allapot["belepett"].wait(10.0)
             controller.rotateRight(row)
         finally:
             allapot["kapu"].set()
-        assert varj_feltetelre(
-            qt_app,
-            lambda: len(allapot["hivasok"]) == 2 and not controller._rotate_running,
-            15.0,
+        wait_for_photo_op(
+            controller,
+            lambda: None,
+            qt_app=qt_app,
         )
-        qt_app.processEvents()
-        assert jelzesek == [2], (
-            "a `photoOpFinished` a lánc VÉGÉN, egyszer menjen ki — a rá "
-            f"várakozó hívó különben félkész állapotot lát ({jelzesek})"
-        )
+        assert len(allapot["hivasok"]) == 2
+        assert self._lepes(controller, photo_id) == 2
+        assert photo_id not in controller._rotate_running
         self._hatter_leall()

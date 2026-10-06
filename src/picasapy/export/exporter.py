@@ -454,20 +454,18 @@ def _first_frame(source: Path) -> np.ndarray | None:
     """A videó ELSŐ olvasható képkockája BGR tömbként, vagy `None` (#1166).
 
     Az eredeti „Első képkocka" választása ezt teszi a mappába a film
-    helyett. Sosem dob: olvashatatlan felvételnél a hívó a teljes film
-    másolására esik vissza."""
-    capture = None
+    helyett. A ThumbnailCache időkorlátos, elszigetelt dekóderét használja,
+    így az export és a bélyegkép ugyanazt a videóképkocka-kinyerést kapja.
+    Olvashatatlan felvételnél a hívó a teljes film másolására esik vissza."""
+    # Lusta import: a bélyegkép-dekóder csak videó első-kockás exportnál
+    # kell, ne növelje a normál export indulási költségét.
+    from picasapy.thumbs.cache import _decode_video_frame_isolated
+
     try:
-        capture = cv2.VideoCapture(str(source))
-        if not capture.isOpened():
-            return None
-        ok, frame = capture.read()
-        return frame if ok and frame is not None and frame.size else None
-    except cv2.error:
+        frame = _decode_video_frame_isolated(source)
+        return frame if frame is not None and frame.size else None
+    except (OSError, ValueError):
         return None
-    finally:
-        if capture is not None:
-            capture.release()
 
 
 def _write_jpeg(image: np.ndarray, target: Path, settings: ExportSettings) -> None:
