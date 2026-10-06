@@ -38,11 +38,11 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings, Property, QLocale, QObject, Signal, Slot
 
-from picasapy.cvimage import dekodolj_forrast
+from picasapy.cvimage import dekodolj_forrast, scale_down
 from picasapy.faces import detector as detector_module
 from picasapy.faces import embedder as embedder_module
 from picasapy.faces import model_download
-from picasapy.faces.detector import FaceDetector
+from picasapy.faces.detector import FaceDetector, rescale_face_detection
 from picasapy.faces.embedder import FaceEmbedder
 from picasapy.faces.clustering import DEFAULT_SUGGEST_STEP, step_to_threshold
 from picasapy.export import export_sidecar_for_photo
@@ -92,7 +92,7 @@ _log = logging.getLogger(__name__)
 # méreténél (256) nagyobb, hogy a kisebb arcok is megtalálhatók legyenek,
 # de nem a teljes felbontás (nagy fotóknál ez percekre lassítaná a
 # szkennelést). A YuNet kis felbontáson is jól teljesít (issue #26).
-_DETECT_MAX_DIMENSION = 960
+_DETECT_MAX_DIMENSION = detector_module.MAX_DETECTION_DIMENSION
 
 # Ennyi feldolgozott fotónként commitolunk — a dedup-hash-scan mintáját
 # követve (megszakított futás munkája sem vész el, ld. dedup_controller.py).
@@ -1067,7 +1067,11 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         _mark_previously_ignored(conn, photo.id, ini_faces)
                         self._report_scan(done, total)
                         continue
-                    faces = self._detect(photo_path)
+                    faces = self._detect(
+                        photo_path,
+                        source_width=photo.width,
+                        source_height=photo.height,
+                    )
                     replace_faces(conn, photo.id, faces)
                     _mark_previously_ignored(conn, photo.id, ini_faces)
                     mark_face_scan(
@@ -1111,8 +1115,16 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         self.embeddingCancelled.emit()
                         return
                     image = self._decode(face.photo_path)
+                    detection = face.detection
+                    if image is not None and face.photo_width and face.photo_height:
+                        image_height, image_width = image.shape[:2]
+                        detection = rescale_face_detection(
+                            detection,
+                            image_width / face.photo_width,
+                            image_height / face.photo_height,
+                        )
                     embedding = (
-                        self._embedder.compute(image, face.detection)
+                        self._embedder.compute(image, detection)
                         if image is not None
                         else None
                     )
@@ -1134,11 +1146,35 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 self._embedding_stop_event = None
         self.embeddingFinished.emit(embedded, grouped)
 
-    def _detect(self, photo_path: Path):
+    def _detect(
+        self,
+        photo_path: Path,
+        *,
+        source_width: int | None = None,
+        source_height: int | None = None,
+    ):
         image = self._decode(photo_path)
         if image is None:
             return ()
-        return self._detector.detect(image)
+        # A JPEG dekóder minőségi tartaléka a kért 960 px helyett teljes
+        # vagy annál még mindig nagyobb képet adhat. A YuNet bemenetét ezért
+        # itt is kötelező a határra kicsinyíteni.
+        detector_image = scale_down(image, _DETECT_MAX_DIMENSION)
+        detections = self._detector.detect(detector_image)
+        decoded_height, decoded_width = image.shape[:2]
+        if source_width and source_height:
+            target_width, target_height = source_width, source_height
+        else:
+            target_width, target_height = decoded_width, decoded_height
+        detector_height, detector_width = detector_image.shape[:2]
+        scale_x = target_width / detector_width
+        scale_y = target_height / detector_height
+        if scale_x == 1 and scale_y == 1:
+            return detections
+        return tuple(
+            rescale_face_detection(detection, scale_x, scale_y)
+            for detection in detections
+        )
 
     @staticmethod
     def _decode(photo_path: Path):
