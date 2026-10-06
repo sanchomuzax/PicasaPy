@@ -1107,8 +1107,9 @@ picasapy-origin-key: options:options/UITransitions.title</extracomment>
         </message>
         <message>
             <source>Show tooltips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Eszköztippek megjelenítése</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
+            <translation>Segédjelölések megjelenítése</translation>
         </message>
         <message>
             <source>Single click to exit the editing view</source>
@@ -16000,8 +16001,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
             <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: setup/ui_option3</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Teljes képernyős indítás (a Fotómegjelenítő újraindítása után lép érvénybe)</translation>
         </message>
         <message>

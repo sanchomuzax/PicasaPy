@@ -169,12 +169,17 @@ Rectangle {
         (typeof controller !== "undefined" && controller
          && controller.editorControlsVisible !== undefined)
         ? controller.editorControlsVisible : true
+    readonly property bool uiTransitionsEnabled:
+        !viewer.controllerReady || controller.uiTransitionsEnabled === undefined
+            ? true : controller.uiTransitionsEnabled
     // #4183: a szerkesztő bal fiókjának 0…−279 képpontos eltérése. A
     // befoglaló hely vele együtt szűkül, a 280 px-es tartalom pedig balra
     // csúszik és a fiók levágása rejti el.
     property real editorDrawerOffset: editorControlsVisible ? 0 : -279
     Behavior on editorDrawerOffset {
+        enabled: viewer.uiTransitionsEnabled
         NumberAnimation {
+            objectName: "viewerEditorDrawerAnimation"
             duration: 250
             easing.type: Easing.InOutQuad
         }
@@ -3002,6 +3007,12 @@ Rectangle {
                             if (Qt.platform.os === "linux")
                                 kepkockaJelzes.mutasd(
                                     qsTr("This feature is not supported for Linux"))
+                        }
+                        // #4449/#4458: csak a videó-előnézeti terület
+                        // kérhet kattintásra visszalépést; a PhotoViewer
+                        // közös kilépési kapuja védi a félkész szerkesztést.
+                        function onExitRequested() {
+                            viewer.kerBezaras()
                         }
                     }
                     //: #1838: a képkocka-mentés VISSZAJELZÉSE. Az eredeti négy

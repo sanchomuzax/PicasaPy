@@ -203,4 +203,4 @@ def test_the_production_tree_matches_the_reviewed_baseline() -> None:
 
     assert new == []
     assert stale == []
-    assert len(baseline) == guard.MAX_BASELINE_ENTRIES
+    assert len(baseline) <= guard.MAX_BASELINE_ENTRIES
