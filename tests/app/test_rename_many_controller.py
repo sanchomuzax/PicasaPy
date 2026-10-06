@@ -5,7 +5,7 @@
 import pytest
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import hangos_hurok
+from support.qt_wait import wait_for_photo_op
 
 
 @pytest.fixture
@@ -58,10 +58,7 @@ def _rows_by_name(controller, *names) -> list:
 
 
 def _do_rename(controller, action) -> None:
-
-    loop = hangos_hurok(controller.photoOpFinished)
-    action()
-    loop.exec()
+    wait_for_photo_op(controller, action)
 
 
 class TestRenamePreview:

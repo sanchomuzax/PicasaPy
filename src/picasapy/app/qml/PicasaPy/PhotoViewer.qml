@@ -741,6 +741,35 @@ Rectangle {
         viewer.masodikEditCtl.beginEdit(azonosito, photosModel.filePathAt(sor))
     }
 
+    // A lemezművelet a fájlt és az indexet frissíti. Ha a nyitott nézet egy
+    // sikeresen érintett képet mutat, a szerkesztő-előnézetnek is újra kell
+    // olvasnia a mostani fájlt és filters= láncot.
+    function frissitsdALemezműveletUtániElőnézetet(utvonalak) {
+        if (!viewer.visible || !viewer.photosModel || !utvonalak
+                || utvonalak.length === 0)
+            return
+
+        var sor = viewer._kijeloltSort()
+        if (sor >= 0) {
+            var utvonal = viewer.photosModel.filePathAt(sor)
+            if (utvonalak.indexOf(utvonal) >= 0 && viewer.editCtl)
+                viewer.editCtl.beginEdit(
+                    viewer.photosModel.idAt(sor), utvonal)
+        }
+
+        // A két önálló AB-előnézet is a mentett állapotot mutassa. Az AA
+        // második fele memóriás piszkozat, ezért azt a lemezművelet nem írja.
+        if (viewer.layoutMode === "ab" && viewer.masodikEditCtl) {
+            var masodik = viewer._masodikSort()
+            if (masodik >= 0) {
+                var masodikUtvonal = viewer.photosModel.filePathAt(masodik)
+                if (utvonalak.indexOf(masodikUtvonal) >= 0)
+                    viewer.masodikEditCtl.beginEdit(
+                        viewer.photosModel.idAt(masodik), masodikUtvonal)
+            }
+        }
+    }
+
     // -- #3014: az „aa" mód két szerkesztési állapota ---------------------
     //
     // MÉRVE (`docs/specs/ui-audit-editor.md` 4/b, 4/b.1): az eredetiben az
