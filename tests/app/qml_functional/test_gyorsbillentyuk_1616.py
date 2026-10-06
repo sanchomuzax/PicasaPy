@@ -20,9 +20,10 @@ már éles és tesztelt úton működik a rács helyi menüjéből
 hiányzó BEKÖTÉS, nem hiányzó funkció — ezért itt a `Ctrl+N`-t is
 BEKÖTÖTTÜK, ugyanarra a belépőre.
 
-A `Ctrl+Shift+O` (Fájl(ok) megnyitása szerkesztőben) továbbra is helyfoglaló,
-mert a külső szerkesztő indításának nincs meg a funkciója. A `Ctrl+E` E-Mail
-útja viszont a #1798 óta él a tálcán; a #4329 ezt a menühöz is bekötötte.
+A `Ctrl+Shift+O` (Fájl(ok) megnyitása szerkesztőben) a #4330 óta él:
+a kijelölt fájlokat a rendszer alapértelmezett alkalmazásának adja át.
+A `Ctrl+E` E-Mail útja a #1798 óta él a tálcán; a #4329 ezt a menühöz is
+bekötötte.
 
 ## Miért ilyenek ezek a tesztek
 
@@ -254,46 +255,31 @@ class TestUjAlbumMenupontEsCtrlN:
         assert [a["name"] for a in controller.albums] == ["Untitled"]
 
 
-class TestNemaCimkekLekerultBillentyuvel:
-    """A `Ctrl+Shift+O` — a külső szerkesztő funkciója hiányzik, ezért
-    továbbra sem hirdetünk hozzá gyorsbillentyűt."""
+class TestKulsoSzerkesztoGyorsbillentyu:
+    """#4330: a külső megnyitás tétele és gyorsbillentyűje él."""
 
-    @pytest.mark.parametrize(
-        ("szoveg_resz", "vart_szoveg"),
-        [
-            #: ⚠️ #2921: a felirat a MÉRT hivatalos angolra igazodott
-            ("Open File(s) in an Editor", "Open File(s) in an Editor"),
-        ],
-    )
     @pytest.mark.parametrize("height_offset", [-5, 0, 5])
-    def test_a_felirat_mar_nem_hirdet_billentyut(
-        self, qml_app, qt_app, height_offset, szoveg_resz, vart_szoveg
+    def test_a_tetel_kijeloleshez_kotott_es_hirdeti_a_billentyut(
+        self, qml_app, qt_app, height_offset
     ):
         window, _controller, _engine = qml_app
         window.setHeight(window.height() + height_offset)
         qt_app.processEvents()
-        talalat = None
-        for obj in window.findChildren(QObject):
-            try:
-                szoveg = obj.property("text")
-            except Exception:  # pragma: no cover - defenzív
-                continue
-            # ⚠️ #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma
-            if szoveg is not None and str(szoveg).replace("&", "") == vart_szoveg:
-                talalat = obj
-                break
-        assert talalat is not None, f"nincs '{vart_szoveg}' feliratú tétel"
-        assert "\t" not in str(talalat.property("text")), (
-            f"a(z) '{vart_szoveg}' felirat még mindig hirdet gyorsbillentyűt"
+        tetel = _elem(window, "menuFileOpenInEditor")
+        assert tetel.property("enabled") is False
+        _select_row(window, qt_app, 0)
+        assert tetel.property("enabled") is True
+        # ⚠️ #2152: az `&` mnemonikjelölés, ezért a forrásfeliratból kivesszük.
+        felirat = str(tetel.property("text")).replace("&", "")
+        assert felirat == "Open File(s) in an Editor\tCtrl+Shift+O"
+        assert not tetel.property("placeholder"), (
+            "a Fájl ▸ Open File(s) in an Editor továbbra is helyfoglaló"
         )
-        # a tétel a funkció hiánya miatt továbbra is helyfoglaló
-        assert talalat.property("placeholder") is True
 
-    def test_a_ctrl_shift_o_nem_elo_billentyu_de_a_ctrl_e_az(self):
-        """A külső szerkesztő billentyűje maradjon kikapcsolva; az E-Mail
-        gyorsbillentyűt a #4329 a meglévő tálca-útvonalra kötötte."""
+    def test_a_ctrl_shift_o_es_a_ctrl_e_is_elo_billentyu(self):
+        """A külső szerkesztő és az E-Mail billentyűje is élő."""
         elo = _osszes_elo_billentyu_szekvencia()
-        assert "Ctrl+Shift+O" not in elo
+        assert "Ctrl+Shift+O" in elo
         assert "Ctrl+E" in elo
 
 

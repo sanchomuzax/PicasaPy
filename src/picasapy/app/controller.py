@@ -54,6 +54,7 @@ from .collage_controller import CollageMixin
 from .color_index_controller import ColorIndexMixin
 from .language_controller import LanguageMixin
 from .display_mode_controller import DisplayModeMixin
+from .editor_controls_controller import EditorControlsMixin
 from .help_controller import HelpMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
@@ -172,6 +173,9 @@ class AppController(
     # csoport állapota. A szelet nem perzisztens (mérve: az eredeti
     # sem tárolja el), ezért csak egy `_init_display_mode()` kell.
     DisplayModeMixin,
+    # #4336: a szerkesztő kezelősávjának láthatósága az indítások között is
+    # megmarad.
+    EditorControlsMixin,
     CreateMixin,
     # #985: a Kollázs-LAP vezérlője (#920 sorozat). A `CollageMixin` maga
     # örökli a `CollageSaveMixin`-t (`class CollageMixin(CollageSaveMixin)`,
@@ -301,6 +305,7 @@ class AppController(
         self._init_tesztuzem()
         # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
         self._init_appearance()
+        self._init_editor_controls()
         self._init_color_management()  # #1725
         self._init_language()
         self._init_display_mode()

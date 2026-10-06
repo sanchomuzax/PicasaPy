@@ -103,7 +103,10 @@ def _fuzd_a_darabokat(szoveg: str, sorok: list[str]) -> str:
     else:
         torzs = utana.strip()
         maradek = ""
-    tartalom = "\n\n".join(resz for resz in (torzs, "\n".join(sorok)) if resz)
+    # A meglévő sorok átmeneti, közvetlen CHANGELOG-bejegyzések lehetnek.
+    # A töredékeket a lista folytatásaként illesztjük be, különben egy üres
+    # sor két külön Markdown-listává törné a kiadási jegyzetet.
+    tartalom = "\n".join(resz for resz in (torzs, "\n".join(sorok)) if resz)
     return szoveg[:cim_vege] + "\n\n" + tartalom + "\n\n" + maradek
 
 

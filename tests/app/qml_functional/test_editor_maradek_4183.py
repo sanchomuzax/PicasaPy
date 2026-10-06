@@ -13,7 +13,7 @@ from __future__ import annotations
 import time
 
 import pytest
-from PySide6.QtCore import QObject, QPoint, QPointF, QRectF, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QRectF, Qt
 from PySide6.QtTest import QTest
 
 
@@ -65,6 +65,20 @@ def _valodi_kattintas(window, elem) -> None:
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(pont.x()), round(pont.y())),
     )
+
+
+def _valodi_menu_kattintas(elem, qt_app) -> None:
+    """A menütétel közepére kattint az ablakban, amely ténylegesen kirajzolja."""
+    ablak = elem.window()
+    assert ablak is not None, "a menütételnek nincs kirajzoló ablaka"
+    pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
+    QTest.mouseClick(
+        ablak,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(round(pont.x()), round(pont.y())),
+    )
+    qt_app.processEvents()
 
 
 def _jelenet_pont(elem):
@@ -186,6 +200,49 @@ def test_bal_panel_valto_rajzolt_kattintassal_osszecsuk_es_visszanyit(
         "a kattintás nem nyitotta vissza a szerkesztőpanelt",
     )
     assert _jelenet_pont(photo_area).x() == pytest.approx(nyitott_foto_x, abs=3)
+
+
+@pytest.mark.parametrize("magassag", [900, 895, 905])
+def test_nezet_menu_kattintas_elrejti_a_kezelo_savot_es_a_pipa_visszater(
+    qml_app, qt_app, magassag
+):
+    window, controller, _engine = qml_app
+    _nyisd_nezot(window, qt_app, magassag)
+    drawer = _elem(window, "viewerLeftDrawer")
+    nyitott_szelesseg = drawer.width()
+    menu = _elem(window, "menuView")
+
+    QMetaObject.invokeMethod(menu, "open", Qt.ConnectionType.DirectConnection)
+    _var(qt_app, lambda: menu.property("visible"), "a Nézet menü nem nyílt meg")
+    tetel = _elem(window, "menuViewEditControls")
+    assert tetel.property("enabled") is True
+    assert tetel.property("checked") is True
+
+    _valodi_menu_kattintas(tetel, qt_app)
+    _var(
+        qt_app,
+        lambda: controller.editorControlsVisible is False
+        and drawer.width() < nyitott_szelesseg / 2,
+        "a menü valódi kattintása nem rejtette el a szerkesztő kezelősávját",
+    )
+    _var(qt_app, lambda: not menu.property("visible"), "a Nézet menü nem zárult be")
+
+    QMetaObject.invokeMethod(menu, "open", Qt.ConnectionType.DirectConnection)
+    _var(qt_app, lambda: menu.property("visible"), "a Nézet menü nem nyílt újra")
+    assert tetel.property("checked") is False, (
+        "a menüpipa újranyitáskor nem követte az elrejtett kezelősáv állapotát"
+    )
+
+    QMetaObject.invokeMethod(menu, "close", Qt.ConnectionType.DirectConnection)
+    qt_app.processEvents()
+    nyil = _elem(window, "toggle_left_drawer")
+    _valodi_kattintas(window, nyil)
+    _var(
+        qt_app,
+        lambda: controller.editorControlsVisible is True
+        and drawer.width() > nyitott_szelesseg / 2,
+        "a bal oldali nyíl nem nyitotta vissza a kezelősávot",
+    )
 
 
 @pytest.mark.parametrize("magassag", [900, 895, 905])

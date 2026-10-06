@@ -88,6 +88,11 @@ KIVETEL = {
         "A tálca Kijelölés megtartása művelete — a Tray saját helyi "
         "menüútjához kötött billentyű (#4329)"
     ),
+    "Ctrl+Shift+O": (
+        "A Fájl ▸ Open File(s) in an Editor külön menüparancsa "
+        "(`ID_FILE_OPENINANEDITOR`, `docs/specs/picasa-gyorsbillentyuk.md`); "
+        "nem a könyvtárnézeti ugrótábla egyik ága (#4330)"
+    ),
 }
 
 _SEQ = re.compile(r'sequence:\s*"([^"]+)"')
