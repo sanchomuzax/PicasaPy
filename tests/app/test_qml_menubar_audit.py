@@ -50,11 +50,9 @@ def _source() -> str:
 HIANYZOTT_TETELEK = [
     # Fájl
     ("Import From Google Photos...", None),
-    # ⚠️ #1616: a gyorsbillentyű KIKERÜLT a feliratból. A funkciónak nyoma
-    # sincs a kódban, a tétel helyfoglaló — és a #1616 szabálya szerint
-    # nem hirdetünk olyat, ami nincs bekötve. Amint a funkció elkészül,
-    # a felirat és az élő `Shortcut` EGYSZERRE kerül vissza.
-    ("Open File(s) in an Editor", None),
+    # #4330: a külső megnyitás elkészült; a menüfelirat és az élő
+    # `Ctrl+Shift+O` ugyanabban a változtatásban került vissza.
+    ("Open File(s) in an Editor", "Ctrl+Shift+O"),
     ("Move to New Folder...", None),
     ("Save As...", None),
     ("Save a Copy", None),
