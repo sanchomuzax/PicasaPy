@@ -13,9 +13,10 @@ A spec ezt normatívának mondja ki (`kollazs-eletciklus.md` 4.2).
 ## Miért a VEZÉRLŐBEN mérünk, és nem a gombon
 
 A Nyomtatás/E-mail tálcagombok jelzése (`TrayBar.printRequested`,
-`emailRequested`) a mai fában **nincs bekötve** — a `print_controller.py`
-és az `email_controller.py` docstringje maga sorolja fel az integrátor
-teendőit. Ha a tiltást a gombra tennénk, az a bekötés napján elveszne, és
+`emailRequested`) közül az E-Mail már a `Main.qml` küldési útjára van
+bekötve; a piszkozat-tilalom az `email_controller.py` előkészítési kapujában
+él. Ha a tiltást csak a gombra tennénk, egy másik belépési pont
+megkerülhetné, és
 a felhasználó egy PISZKOZAT-feliratos képet nyomtatna ki. A kapu ezért ott
 áll, ahol a művelet TÉNYLEGESEN elindul: a nyomtatás rajzoló ágán és az
 e-mail csatolmány-előkészítésén.
