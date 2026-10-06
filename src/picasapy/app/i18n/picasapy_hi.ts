@@ -6340,6 +6340,11 @@ picasapy-origin-key: stringres:CFolderMgrDialog::confirmfrexclude</extracomment>
     <context>
         <name>FileOpsController</name>
         <message>
+            <source>The system default application could not open %1/%2 selected files.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
             <source>This picture has no preserved original on disk.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation type="unfinished" />

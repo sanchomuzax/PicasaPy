@@ -42,6 +42,10 @@ from picasapy.ini import IniConflictError, IniSaveError
 from .controller import _to_local_path
 from .formatting import to_local_path
 
+#: #4330: a teszt ezt a Qt-fogantyút cseréli, így az asztali alkalmazás
+#: elindítása nélkül ellenőrizhető a fájlmegnyitási kérés.
+_open_url = QDesktopServices.openUrl
+
 # #295: az átnevezés/áthelyezés `.picasa.ini`-írása is elbukhat a
 # párhuzamosan futó eredeti Picasa miatt (`IniConflictError`) vagy kódolási
 # hibán (`IniSaveError`). Ezek nem `OSError`-ok, így a korábbi szűrő mellett
@@ -605,6 +609,44 @@ class FileOpsController(QObject):
             return
         if not QDesktopServices.openUrl(QUrl.fromLocalFile(local)):
             self.operationFailed.emit("open", f"nem sikerült megnyitni: {local}")
+
+    @Slot(list)
+    def openPhotosInDefaultEditor(self, paths: list[str]) -> None:
+        """A kijelölt képeket a rendszer fájltársításán keresztül nyitja meg
+        (#4330).
+
+        A spec nem nevez meg külön szerkesztőprogram-beállítást, ezért a
+        Qt-n keresztül az operációs rendszer alapértelmezett alkalmazását
+        kérjük megnyitásra. Több fájlnál fájlonként küldünk kérést; az
+        elutasított vagy hiányzó fájlokat egyetlen, darabszámos hibajelzés
+        foglalja össze.
+        """
+        kijelolt = list(paths or [])
+        if not kijelolt:
+            return
+
+        sikertelen = 0
+        for path in kijelolt:
+            local = _to_local_path(str(path))
+            if not local or not Path(local).is_file():
+                sikertelen += 1
+                continue
+            try:
+                megnyitotta = _open_url(QUrl.fromLocalFile(local))
+            except OSError:
+                megnyitotta = False
+            if not megnyitotta:
+                sikertelen += 1
+
+        if sikertelen:
+            uzenet = self.tr(
+                "The system default application could not open %1/%2 "
+                "selected files."
+            )
+            uzenet = uzenet.replace("%1", str(sikertelen)).replace(
+                "%2", str(len(kijelolt))
+            )
+            self.operationFailed.emit("open_editor", uzenet)
 
     @Slot(str)
     def copyFullPath(self, path: str) -> None:

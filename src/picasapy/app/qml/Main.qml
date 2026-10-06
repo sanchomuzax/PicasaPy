@@ -1486,6 +1486,7 @@ ApplicationWindow {
         // #4329: a felső Fájl ▸ E-Mail ugyanazt a küldési kaput hívja, mint
         // a tálca emailRequested jelzése.
         onEmailRequested: window.sendSelectionByEmail()
+        onOpenInEditorRequested: window.openSelectionInDefaultEditor()
         onViewAndEditRequested: window.nezdEsSzerkeszd()
         onUnhideRequested: window.unhideHiddenSelection()
         onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
@@ -2029,6 +2030,22 @@ ApplicationWindow {
         // A `sendRows` a beállítás szerint vagy küld, vagy a
         // `mailChoiceRequested`-del kérdést kér — a válasz lentebb.
         emailController.sendRows(csatolmanyok, "", "")
+    }
+
+    // #4330: a Fájl menü és a Ctrl+Shift+O ugyanazt a kijelölés-pillanatképet
+    // adja a rendszer alapértelmezett fájlmegnyitójának.
+    function openSelectionInDefaultEditor() {
+        if (!fileOpsController) return
+        var paths = window.selectedPaths()
+        if (paths.length > 0)
+            fileOpsController.openPhotosInDefaultEditor(paths)
+    }
+
+    Shortcut {
+        objectName: "openInEditorShortcut"
+        sequence: "Ctrl+Shift+O"
+        enabled: picasaMenuBar.photoActionsEnabled
+        onActivated: window.openSelectionInDefaultEditor()
     }
 
     // #4329: a billentyűnek ugyanaz a kijelölési kapuja és kezelője, mint a
@@ -4218,6 +4235,13 @@ ApplicationWindow {
         }
         function onCollageFinished(path, used, skipped, missing) {
             createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)
+        }
+        function onCollagePreviewFailed(message) {
+            // Az előnézet a háttérből a főablak lebontása közben is bukhat;
+            // akkor már nincs párbeszéd, amelyben jelezni lehetne.
+            const parbeszedek = createDialogs.ensure()
+            if (parbeszedek)
+                parbeszedek.jelezdAKollazsHibajat(message)
         }
         function onCollageFailed(message) {
             createDialogs.ensure().jelezdAKollazsHibajat(message)
