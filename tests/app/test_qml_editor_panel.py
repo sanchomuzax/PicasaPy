@@ -6,9 +6,13 @@ keresztül töltjük be, a tests/app/test_qml_functional.py mintája szerint
 (pl. TestThumbCaption.test_thumb_delegate_shows_filename_caption).
 """
 
+import time
+
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, QRectF, Qt, QUrl
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QRectF, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from PySide6.QtQuick import QQuickWindow
+from PySide6.QtTest import QTest
 
 # a QML-ből létrehozott gyökér-objektumok élő Python-referenciák nélkül a
 # JS-motor tulajdonába kerülnek és a GC bármikor eltávolíthatja őket —
@@ -137,6 +141,46 @@ class TestEditorPanelButtons:
         )
         qt_app.processEvents()
         assert requested == [True]
+
+    @pytest.mark.parametrize("height", [795, 800, 805])
+    def test_crop_tile_real_click_activates_crop_mode(
+        self, qml_engine, qt_app, height
+    ):
+        """A valódi pointeres út a crop módot kapcsolja; a QML-jel maga
+        jelenleg külön fogyasztó nélkül maradt."""
+        panel = self._make_panel(qml_engine)
+        window = QQuickWindow()
+        window.resize(1200, height)
+        panel.setParentItem(window.contentItem())
+        panel.setWidth(1200)
+        panel.setHeight(height)
+        activated = []
+        panel.toolActivated.connect(activated.append)
+
+        window.show()
+        try:
+            crop_tile = panel.findChild(QObject, "editToolCrop")
+            assert crop_tile is not None
+            assert _wait_for(
+                qt_app,
+                lambda: crop_tile.isVisible()
+                and crop_tile.width() > 0
+                and crop_tile.height() > 0,
+            ), "a vágás eszközcsempéje nem épült fel"
+
+            point = crop_tile.mapToScene(crop_tile.boundingRect().center())
+            QTest.mouseClick(
+                window,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+                QPoint(round(point.x()), round(point.y())),
+            )
+
+            assert _wait_for(qt_app, lambda: panel.property("cropActive") is True)
+            assert activated == ["crop"]
+        finally:
+            window.close()
+            qt_app.processEvents()
 
     def test_non_crop_click_does_not_emit_crop_requested(self, qml_engine, qt_app):
         panel = self._make_panel(qml_engine)
@@ -460,6 +504,18 @@ def _string_arg(value):
     from PySide6.QtCore import Q_ARG
 
     return (Q_ARG("QVariant", value),)
+
+
+def _wait_for(qt_app, predicate, timeout_ms=3000):
+    """A QML-állapotot határidővel, eseményeket pörgetve várja meg."""
+    deadline = time.monotonic() + timeout_ms / 1000
+    while time.monotonic() < deadline:
+        qt_app.processEvents()
+        if predicate():
+            return True
+        QTest.qWait(10)
+    qt_app.processEvents()
+    return predicate()
 
 
 class TestCropOverlay:
