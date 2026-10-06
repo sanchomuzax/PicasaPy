@@ -20,6 +20,8 @@ from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
 from picasapy.render.glimmer_ops import fade_alpha
 from picasapy.render.nativ_blur import nativ_blur_csatorna
 
+_BORDER_Q_X_SLOPE = 240
+
 
 def add_ring(image: np.ndarray, thickness: float, color: tuple[int, int, int]) -> np.ndarray:
     """Egyetlen egyenletes szegélygyűrű hozzáadása — a vastagság PIXELBEN.
@@ -94,25 +96,25 @@ def _sarok_fedes(
     if kulso_negyzetes_tav <= belso_negyzetes_tav:
         raise ValueError("a külső négyzetes távolságnak nagyobbnak kell lennie")
 
-    q = np.asarray(q, dtype=np.float64)
-    kerekito = round(2**24 / (kulso_negyzetes_tav - belso_negyzetes_tav))
+    q = np.asarray(q, dtype=np.int64)
+    skala = (2**24) // int(kulso_negyzetes_tav - belso_negyzetes_tav)
     fedes = np.zeros(q.shape, dtype=np.uint16)
     fedes[q <= belso_negyzetes_tav] = 256
     reszleges = (q > belso_negyzetes_tav) & (q < kulso_negyzetes_tav)
     fedes[reszleges] = (
-        ((kulso_negyzetes_tav - q[reszleges]) * kerekito).astype(np.int64) >> 16
+        ((kulso_negyzetes_tav - q[reszleges]) * skala) >> 16
     ).astype(np.uint16)
     return fedes
 
 
-def _sarok_fedes_negyed(sugar: int) -> np.ndarray:
-    """A bal felső sarok pixeleinek fixpontos fedése a kör középpontja felé."""
-    pixelkozepek = np.arange(sugar, dtype=np.float64) + 0.5
-    tav = sugar - pixelkozepek
-    q = tav[:, None] ** 2 + tav[None, :] ** 2
-    belso = max(0.0, sugar - 0.5)
-    kulso = sugar + 0.5
-    return _sarok_fedes(q, belso**2, kulso**2)
+def _border_q_racs(sugar: int) -> np.ndarray:
+    """A Border natív `2*sugar` négyzetes q-rácsa (`aa1840`, I.4)."""
+    koordinata = np.arange(2 * sugar, dtype=np.int64)
+    x = koordinata[np.newaxis, :]
+    y = koordinata[:, np.newaxis]
+    dx = x - sugar + 1
+    dy = y - sugar + 1
+    return 256 * (dx * dx + dy * dy) - _BORDER_Q_X_SLOPE * x
 
 
 def _fedett_forras_alfa(forras_alfa: int, fedes: int) -> int:
@@ -199,25 +201,17 @@ def _kever_rgb_fedessel(cel: np.ndarray, forras: np.ndarray, fedes: np.ndarray) 
     )
 
 
-def _sarok_folt(
-    kep_sarok: np.ndarray,
-    belso: int,
-    outer_color: tuple[int, int, int],
-    inner_color: tuple[int, int, int],
+def _kompozital_forrassarok(
+    cel: np.ndarray, forras: np.ndarray, fedes: np.ndarray
 ) -> np.ndarray:
-    """A bal felső sarok `(R + belső)²`-es foltja: külső szín → a sáv
-    `R + belső` sugarú íve belső színnel → a kép `R` sugarú íve."""
-    sugar = kep_sarok.shape[0]
-    sav_fedes = _sarok_fedes_negyed(sugar + belso)
-    kulso = np.asarray(outer_color, dtype=np.uint8)
-    bel = np.asarray(inner_color, dtype=np.uint8)
-    alap = _kever_rgb_fedessel(kulso, bel, sav_fedes)
-    kep_fedes = _sarok_fedes_negyed(sugar)
-    kep_resz = _kever_rgb_fedessel(alap[belso:, belso:], kep_sarok, kep_fedes)
-    folt = np.concatenate(
-        [alap[:belso], np.concatenate([alap[belso:, :belso], kep_resz], axis=1)], axis=0
-    )
-    return np.clip(np.rint(folt), 0, 255).astype(np.uint8)
+    """A Border forrássarkának `9ab360` maszkalfája és `/255` kompozitja."""
+    cel_u32 = np.asarray(cel, dtype=np.uint32)
+    forras_u32 = np.asarray(forras, dtype=np.uint32)
+    alfa = (255 * np.asarray(fedes, dtype=np.uint32)) >> 8
+    alfa = alfa[..., np.newaxis]
+    return (
+        (cel_u32 * (255 - alfa) + forras_u32 * alfa) // 255
+    ).astype(np.uint8)
 
 
 def draw_border(
@@ -229,15 +223,12 @@ def draw_border(
     corner_radius_px: float = 0.0,
     caption_height_px: float = 0.0,
 ) -> np.ndarray:
-    """`BorderImageOperation` (a Border és a RoundedEdges közös motorja).
+    """`BorderImageOperation` a natív külön külső- és forrássarok-ráccsal.
 
-    Koncentrikus geometria (#3768, mérve a `border__max` exportján,
-    `docs/specs/filterdesc-registry.md`): a vászon szögletes, külső színű;
-    a belső sáv `R + belső` sugarú lekerekített téglalap belső színnel; a
-    kép sarka `R` sugarú, a kimaradó rész alól a sáv látszik. `R = 0`
-    mellett a sáv is szögletes (a `border__alap` exportján mérve). A
-    feliratsáv a vászon alján, külső színnel; a magassága CSONKÍTOTT egész
-    (`0x008eea90`).
+    A két élsimított ív a `docs/specs/filterdesc-registry.md` I.4 képleteit
+    követi. A keretsáv q-rácsa külön a kép sarkainál fut; a forrás q-rácsa
+    csak a négy forrássarok-pixelblokkot kompozitálja. A feliratsáv magassága
+    továbbra is csonkított egész (`0x008eea90`).
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -254,18 +245,55 @@ def draw_border(
     vaszon[keret : keret + height, keret : keret + width] = image
     if sugar == 0:
         return vaszon
-    meret = sugar + belso
-    also = kulso + height + 2 * belso
-    jobb = kulso + width + 2 * belso
-    for fuggoleges, vizszintes in ((False, False), (False, True), (True, False), (True, True)):
-        sor = slice(None, None, -1 if fuggoleges else 1)
-        oszlop = slice(None, None, -1 if vizszintes else 1)
-        kep_sor = slice(height - sugar, height) if fuggoleges else slice(0, sugar)
-        kep_oszlop = slice(width - sugar, width) if vizszintes else slice(0, sugar)
-        folt = _sarok_folt(image[kep_sor, kep_oszlop][sor, oszlop], belso, outer_color, inner_color)
-        v_sor = slice(also - meret, also) if fuggoleges else slice(kulso, kulso + meret)
-        v_oszlop = slice(jobb - meret, jobb) if vizszintes else slice(kulso, kulso + meret)
-        vaszon[v_sor, v_oszlop] = folt[sor, oszlop]
+
+    n = sugar + belso
+    kulso_sugar = min(
+        int(np.float32(n) + np.float32(1.0)),
+        (width + 2 * belso) // 2,
+        (height + 2 * belso) // 2,
+    )
+    if kulso_sugar > 0:
+        kulso_q = _border_q_racs(kulso_sugar)
+        kulso_ri2 = 256 * kulso_sugar**2 - 256 * kulso_sugar + 64
+        kulso_ro2 = 256 * kulso_sugar**2 + 256 * kulso_sugar + 64
+        kulso_fedes = _sarok_fedes(kulso_q, kulso_ri2, kulso_ro2)
+        kulso_folt = _kever_rgb_fedessel(
+            np.asarray(outer_color, dtype=np.uint8),
+            np.asarray(inner_color, dtype=np.uint8),
+            kulso_fedes,
+        )
+        for also, y_racs in (
+            (kulso, slice(0, kulso_sugar)),
+            (kulso + height + 2 * belso - kulso_sugar, slice(kulso_sugar, 2 * kulso_sugar)),
+        ):
+            for bal, x_racs in (
+                (kulso, slice(0, kulso_sugar)),
+                (kulso + width + 2 * belso - kulso_sugar, slice(kulso_sugar, 2 * kulso_sugar)),
+            ):
+                vaszon[
+                    also : also + kulso_sugar,
+                    bal : bal + kulso_sugar,
+                ] = kulso_folt[y_racs, x_racs]
+
+    source_q = _border_q_racs(sugar)
+    source_ri2 = 256 * (sugar - 1) ** 2
+    source_ro2 = 256 * sugar**2
+    source_fedes = _sarok_fedes(source_q, source_ri2, source_ro2)
+    bel = np.asarray(inner_color, dtype=np.uint8)
+    for y_canvas, y_source, y_racs in (
+        (keret, slice(0, sugar), slice(0, sugar)),
+        (keret + height - sugar, slice(height - sugar, height), slice(sugar, 2 * sugar)),
+    ):
+        for x_canvas, x_source, x_racs in (
+            (keret, slice(0, sugar), slice(0, sugar)),
+            (keret + width - sugar, slice(width - sugar, width), slice(sugar, 2 * sugar)),
+        ):
+            cel = np.broadcast_to(bel, (sugar, sugar, 3))
+            kep_sarok = image[y_source, x_source]
+            vaszon[
+                y_canvas : y_canvas + sugar,
+                x_canvas : x_canvas + sugar,
+            ] = _kompozital_forrassarok(cel, kep_sarok, source_fedes[y_racs, x_racs])
     return vaszon
 
 
