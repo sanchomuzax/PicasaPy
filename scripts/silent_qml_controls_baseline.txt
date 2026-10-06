@@ -17,7 +17,6 @@ constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:175:enabled=
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:181:enabled=false	Külön funkciójegy: a picasa-fen-dialogs.md 3.11 E-Mail fülén a „Full film” választás a videó-küldési mód része; ma letiltott.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:188:enabled=false	Külön funkciójegy Windowsra: a picasa-fen-dialogs.md 3.11 HTML-es levélként írja le az Outlook-only opciót.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:81:enabled=false	Külön funkciójegy-jelölt: a Google-fiókos levélküldő út helyőrző (#2432); külön integráció kell hozzá.
-constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabFileTypes.qml:15:enabled=false	Külön funkciójegy: a picasa-fen-dialogs.md 3.11 File Types füle formátumválasztó checkboxokat ír le; a mai scanner listája fix.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:264:enabled=false	Eredeti beállítás, de nincs PicasaPy-telemetria; önálló, adatküldést igénylő funkció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:289:enabled=false	Frissítés-ellenőrző nincs; az eredeti beállítás Windows-only volt (picasa-fen-dialogs.md 3.11).
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:322:enabled=false	Külön funkciójegy: a picasa-fen-dialogs.md 3.11 alapértelmezett importcélmappát ír le; ma importonként választ a felhasználó.
