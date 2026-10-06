@@ -172,8 +172,13 @@ def _run(work_dir: Path) -> None:
         assert abs(elteresek["mezo_indikator_dx"] - 16) <= 3, (
             f"a mező behúzása eltér a referenciától (16 px): {elteresek}"
         )
-        assert abs(elteresek["mezo_indikator_dy"] - 42) <= 3, (
-            f"a mező függőleges helye eltér a referenciától (42 px): {elteresek}"
+        # A referencia 42 px-e a felirat magasságát is tartalmazza, ami
+        # betűkészletfüggő (CI: 35 px); a mezőt ezért a saját feliratához mérjük.
+        assert 0 <= field_y - (label_y + label_height) <= 8, (
+            f"a mező nem közvetlenül a felirata alatt áll: {elteresek}"
+        )
+        assert elteresek["mezo_indikator_dy"] > label_height, (
+            f"a mező a jelölőnégyzet fölé csúszott: {elteresek}"
         )
         assert abs(elteresek["tallozas_mezo_dy"]) <= 3, (
             f"a mező és a Tallózás gomb nem egy sorban van: {elteresek}"
