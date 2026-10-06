@@ -725,8 +725,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     @Slot(list, str)
     def addRowsToAlbum(self, rows, token: str) -> None:
         """A kijelölés felvétele egy MEGLÉVŐ albumba: az `albums=` CSV
-        bővítése minden érintett fotónál, mappánként egyetlen ütközésbiztos
-        ini-írással (`_apply_batch`, a `setGeotagRows` mintája)."""
+        bővítése minden érintett fotónál, mappánként egyetlen útvonalanként
+        szerializált, best-effort konkurenciakezelésű ini-írással
+        (`_apply_batch`, a `setGeotagRows` mintája)."""
         token = (token or "").strip()
         if not token:
             return

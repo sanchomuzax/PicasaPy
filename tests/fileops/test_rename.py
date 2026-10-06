@@ -97,8 +97,10 @@ def _patch_update_with_intruder(monkeypatch, intrude):
 
 
 class TestConcurrentIniWriter:
-    """#295: az átnevezés ini-írása ütközésbiztos (a #137-es minta szerint) —
-    a párhuzamosan futó eredeti Picasa írása nem veszhet el."""
+    """#295: az előzetes ellenőrzésig észlelt Picasa-írás újrajátszódik.
+
+    Ez a teszt nem fedi a sikeres ujjlenyomat-ellenőrzés utáni külső írást.
+    """
 
     def test_foreign_writer_change_survives(self, tmp_path, monkeypatch):
         from picasapy.ini import save_document

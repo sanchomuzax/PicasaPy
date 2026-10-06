@@ -3,9 +3,10 @@
 A forrás szekció (star/caption/rotate/filters/… és minden ismeretlen sor)
 bitre pontosan átkerül a cél mappa `.picasa.ini`-jébe.
 
-Mindkét ini-írás az ütközésbiztos `update_document`-en megy (#295): a
-NAS-mappát a párhuzamosan futó eredeti Picasa is írhatja, a sima
-`load → save` pedig némán felülírná, amit közben írt (lost update).
+Mindkét ini-írás az útvonalanként szerializált, best-effort konkurenciakezelésű
+`update_document`-en megy (#295): az előzetes ujjlenyomat-ellenőrzésig észlelt
+Picasa-változás újratöltést vált ki. A sikeres ellenőrzés és fájlcsere közti
+külső írás elveszhet.
 
 A műveletek sorrendje adatvesztés-kerülő (#295): fájlmozgatás → cél-ini
 írása → forrás-ini takarítása. Ha a cél-ini írása bukik, a metaadat még a
