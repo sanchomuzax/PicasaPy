@@ -7,42 +7,40 @@ import numpy as np
 from picasapy.render import glimmer_frame_ops as frame_ops
 
 
-# `docs/specs/filterdesc-registry.md`, I. szakasz: a 0x00aa1840 →
-# 0x009ab410 natív futtatásának 9×9-es, bájtra rögzített kimenete. A mintából
-# levezetett q-középpont (127/32, 7/2), belső négyzetes távolság 15/2, külső
-# négyzetes távolság 25/2; ebből Δ=5 és rounder(2²⁴/Δ)=3 355 443.
-_NATIVE_9X9 = np.array(
-    [
-        [0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF0B0B0B, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000],
-        [0xFF000000, 0xFF000000, 0xFF787878, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF6B6B6B, 0xFF000000, 0xFF000000],
-        [0xFF000000, 0xFF484848, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF353535, 0xFF000000],
-        [0xFF000000, 0xFFAEAEAE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF9B9B9B, 0xFF000000],
-        [0xFF000000, 0xFFAEAEAE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF9B9B9B, 0xFF000000],
-        [0xFF000000, 0xFF484848, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF353535, 0xFF000000],
-        [0xFF000000, 0xFF000000, 0xFF787878, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF6B6B6B, 0xFF000000, 0xFF000000],
-        [0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF0B0B0B, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000],
-        [0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000],
-    ],
-    dtype=np.uint32,
-)
+# rontás-kontroll: glimmer_frame_ops._BORDER_Q_X_SLOPE = 0 → 1 failed.
 
 
-def _native_q_racs() -> np.ndarray:
-    """A mintából visszafejtett q-rács: középpont=(127/32, 7/2)."""
-    y, x = np.indices((9, 9), dtype=np.float64)
-    return (x - 127 / 32) ** 2 + (y - 7 / 2) ** 2
-
-
-def test_a_raszterizo_bajtra_visszaadja_a_nativ_9x9_mintat():
-    eredmeny = frame_ops._raszterez_kor(
-        _native_q_racs(),
-        belso_negyzetes_tav=7.5,
-        kulso_negyzetes_tav=12.5,
-        forras_argb=0x20FFFFFF,
-        cel_argb=0xFF000000,
+def test_a_kulso_es_forrassarok_q_racs_a_spec_szerinti():
+    kulso = np.array(
+        [
+            [2048, 1040, 544, 560, 1088, 2128],
+            [1280, 272, -224, -208, 320, 1360],
+            [1024, 16, -480, -464, 64, 1104],
+            [1280, 272, -224, -208, 320, 1360],
+            [2048, 1040, 544, 560, 1088, 2128],
+            [3328, 2320, 1824, 1840, 2368, 3408],
+        ],
+        dtype=np.int64,
+    )
+    forras = np.array(
+        [
+            [512, 16, 32, 560],
+            [256, -240, -224, 304],
+            [512, 16, 32, 560],
+            [1280, 784, 800, 1328],
+        ],
+        dtype=np.int64,
     )
 
-    assert np.array_equal(eredmeny, _NATIVE_9X9)
+    assert np.array_equal(frame_ops._border_q_racs(3), kulso)
+    assert np.array_equal(frame_ops._border_q_racs(2), forras)
+
+
+def test_a_ketto_harom_fedesi_pont_a_spec_csonkitasat_hasznalja():
+    kulso = frame_ops._sarok_fedes(np.array([2128]), 1600, 3136)
+    forras = frame_ops._sarok_fedes(np.array([512]), 256, 1024)
+
+    assert (int(kulso[0]), int(forras[0])) == (167, 170)
 
 
 def test_a_reszleges_alfa_es_az_opaque_kompozit_kulon_ellenorizheto():

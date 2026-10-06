@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Glimmer keret íves sarkai mostantól az eredeti Picasa rajzolási képletét követik. (#4300).
+
 ## [0.9.7] – 2026-10-06
 
 - A Címkék panel az eredeti fejléceket és gyorscímke-súgókat mutatja, és 30-nál több kijelölt kép címkézése előtt megerősítést kér. (#4271).
