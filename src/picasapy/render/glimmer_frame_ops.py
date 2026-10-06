@@ -279,7 +279,6 @@ def draw_border(
     source_ri2 = 256 * (sugar - 1) ** 2
     source_ro2 = 256 * sugar**2
     source_fedes = _sarok_fedes(source_q, source_ri2, source_ro2)
-    bel = np.asarray(inner_color, dtype=np.uint8)
     for y_canvas, y_source, y_racs in (
         (keret, slice(0, sugar), slice(0, sugar)),
         (keret + height - sugar, slice(height - sugar, height), slice(sugar, 2 * sugar)),
@@ -288,7 +287,13 @@ def draw_border(
             (keret, slice(0, sugar), slice(0, sugar)),
             (keret + width - sugar, slice(width - sugar, width), slice(sugar, 2 * sugar)),
         ):
-            cel = np.broadcast_to(bel, (sugar, sugar, 3))
+            # A natív `9ab410` a forrássarkot a már kirajzolt vászonra
+            # kompozitálja. Az átlátszó forrásfedésnek meg kell őriznie az
+            # alatta levő külső ív részleges színét a sarkok átfedésénél.
+            cel = vaszon[
+                y_canvas : y_canvas + sugar,
+                x_canvas : x_canvas + sugar,
+            ]
             kep_sarok = image[y_source, x_source]
             vaszon[
                 y_canvas : y_canvas + sugar,

@@ -32,6 +32,7 @@
  "tests/app/qml_functional/test_atmenet_kimeno_kep_3018.py": 1.42,
  "tests/app/qml_functional/test_bal_hasab_koveti_1183.py": 6.19,
  "tests/app/qml_functional/test_beallitasok_legkisebb_szelesseg_3572.py": 1.67,
+ "tests/app/qml_functional/test_beallitas_nyomtatas_4318.py": 30.87,
  "tests/app/qml_functional/test_betucsalad_tokenek_3310.py": 2.5,
  "tests/app/qml_functional/test_buboreksugo_krom_901.py": 1.57,
  "tests/app/qml_functional/test_buboreksugok_1857.py": 1.29,
@@ -854,5 +855,6 @@
  "tests/app/test_wayland_bovitmeny_3028.py": 0.93,
  "tests/app/test_webexport_controller.py": 1.23,
  "tests/app/test_window_geometry.py": 1.17,
- "tests/app/test_windows_csapdak_1082.py": 22.27
+ "tests/app/test_windows_csapdak_1082.py": 22.27,
+ "tests/render/test_border_nativ_4370.py": 0.41
 }

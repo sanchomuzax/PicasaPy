@@ -11,9 +11,9 @@ import QtQuick.Layouts
 // mozgatható/átméretezhető Window, a Main.qml-be illesztés (Eszközök →
 // Beállítások... menüpont bekötése) az integrátoré.
 //
-// Az "General", "E-Mail" (#32) és "Slideshow" (#4320) füleken élő
-// vezérlők vannak; a többi fül csak ott tiltott, ahol a mögöttes funkció
-// nincs meg a PicasaPy-ban (ld. az egyes OptionsTab*.qml fejléceit).
+// Az "General", "E-Mail" (#32), "Slideshow" (#4320) és "Printing" (#4318)
+// füleken élő vezérlők vannak; a többi fül csak ott tiltott, ahol a mögöttes
+// funkció nincs meg a PicasaPy-ban (ld. az egyes OptionsTab*.qml fejléceit).
 Window {
     id: optionsWindow
     objectName: "optionsDialog"

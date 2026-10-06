@@ -74,6 +74,8 @@ Window {
     // a rendszer nyomtatóinak neve; a választóban EGGYEL eltolva jelennek
     // meg, mert a 0. tétel a PDF-fájl
     property var printers: []
+    // #4318: az options.fen öt, felhasználó által kiosztható gyorsmérete.
+    property var printSizePresetIds: []
     // ⚠️ EGYETLEN igazságforrás: amit a választó MUTAT, oda megy a feladat.
     // Korábban ez saját, írható property volt, a `ComboBox.currentIndex`-szel
     // egyirányban szinkronizálva — és a Qt a modell rövidülésekor
@@ -338,6 +340,23 @@ Window {
         printWindow.passport = be
     }
 
+    function valasszNyomatmeretet(azonosito) {
+        if (!azonosito || !printWindow.printCtl) return
+        if (azonosito === "CONTACT") {
+            printWindow.contactSheet = true
+            printWindow.printSize = azonosito
+            printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(azonosito)
+            printWindow.frissitsdAMinoseget()
+            return
+        }
+        if (!printWindow.printCtl.setPresetPrintSize(azonosito)) return
+        printWindow.printCtl.setPrintSize(azonosito)
+        printWindow.contactSheet = false
+        printWindow.printSize = azonosito
+        printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(azonosito)
+        printWindow.frissitsdAMinoseget()
+    }
+
     //: #1401: a bezárt nézet nem hagyhatja a vezérlőt útlevél-módban —
     //: a következő nyomtatás különben a kivágott képet nyomtatná.
     onVisibleChanged: {
@@ -379,6 +398,7 @@ Window {
             // a vezérlő `printSizes()`-e csak a valódi `NyomatMeret`-eket
             // adja (#1961), a QML fűzi hozzá ezt az egyet.
             printWindow.printSizeIds = printWindow.printCtl.printSizes().concat(["CONTACT"])
+            printWindow.printSizePresetIds = printWindow.printCtl.printSizePresets()
             printWindow.printSize = printWindow.passport
                 ? "PASSPORT" : printWindow.printCtl.printSize()
         }
@@ -554,13 +574,40 @@ Window {
                         // úgyis elutasítaná, ezért nem is hívjuk.
                         printWindow.contactSheet = true
                     } else {
-                        printWindow.contactSheet = false
-                        printWindow.printSize = azonosito
-                        // a méret TARTÓS (`PrintLastSize`) — azonnal eltesszük
-                        if (printWindow.printCtl)
-                            printWindow.printCtl.setPrintSize(azonosito)
+                        printWindow.valasszNyomatmeretet(azonosito)
                     }
-                    printWindow.frissitsdAMinoseget()
+                    if (azonosito === "CONTACT")
+                        printWindow.frissitsdAMinoseget()
+                }
+            }
+
+            // #4318 / options.fen: a beállítás öt nyomtatható méretgombhoz
+            // rendel méretet; ezek a gombok közvetlenül a vezérlőn választják
+            // ki és mentik az adott nyomatméretet.
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 4
+                Repeater {
+                    objectName: "printSizePresetRepeater"
+                    model: printWindow.printSizePresetIds.length
+                    delegate: PicasaButton {
+                        objectName: "printPresetSize" + index
+                        Layout.fillWidth: true
+                        text: printWindow.printSizeLabelById[
+                            printWindow.printSizePresetIds[index]]
+                        enabled: printWindow.printCtl !== null
+                            && printWindow.printCtl.canUsePrintSizePreset(
+                                printWindow.printSizePresetIds[index])
+                        onClicked: printWindow.valasszNyomatmeretet(
+                            printWindow.printSizePresetIds[index])
+                    }
+                }
+                PicasaButton {
+                    objectName: "printPresetFullPage"
+                    Layout.fillWidth: true
+                    text: printWindow.printSizeLabelById["TELJES_OLDAL"]
+                    enabled: printWindow.printCtl !== null
+                    onClicked: printWindow.valasszNyomatmeretet("TELJES_OLDAL")
                 }
             }
 
