@@ -14,6 +14,8 @@ from PySide6.QtTest import QSignalSpy, QTest
 from picasapy.lazy_cv2 import cv2
 from tests.app.qml_functional.conftest import _build_qml_app
 
+_DIALOG_PARENTS: list[QObject] = []
+
 
 def _chart(lib):
     yy, xx = np.indices((800, 800), dtype=np.uint16)
@@ -88,6 +90,36 @@ def _kattintas(item):
     )
 
 
+def _ellenorizd_dialog_szuloterulethez_igazitas(dialog, window):
+    """A Dialog saját geometriáját az aktuális szülőterülethez méri."""
+    parent = dialog.property("parent")
+    assert parent is not None, "a Poszter párbeszédnek nincs vizuális szülőterülete"
+    # A QML `parent` vizuális szülő nem mindig QObject-szülő; a PySide wrapper
+    # felszabadítása a dialógus felépült vizuális fáját is elengedheti.
+    _DIALOG_PARENTS.append(parent)
+    assert parent.window() == window, "a Poszter párbeszéd másik ablakhoz tartozik"
+    x = float(dialog.property("x"))
+    y = float(dialog.property("y"))
+    width = float(dialog.property("width"))
+    height = float(dialog.property("height"))
+    parent_width = float(parent.width())
+    parent_height = float(parent.height())
+    assert parent_width >= width - 3 and parent_height >= height - 3, (
+        f"a Poszter párbeszéd szülőterülete túl kicsi: "
+        f"{parent_width}×{parent_height}, párbeszéd={width}×{height}"
+    )
+    expected_x = (parent_width - width) / 2
+    expected_y = (parent_height - height) / 2
+    assert abs(x - expected_x) <= 3, (
+        f"a Poszter párbeszéd vízszintesen nincs középre igazítva: "
+        f"x={x}, várt={expected_x}"
+    )
+    assert abs(y - expected_y) <= 3, (
+        f"a Poszter párbeszéd függőlegesen nincs középre igazítva: "
+        f"y={y}, várt={expected_y}"
+    )
+
+
 def _nyisd_meg_valodi_menu_kattintassal(window, controller, qt_app):
     window.setProperty("selectedIndexes", [0])
     window.setProperty("selectedIndex", 0)
@@ -111,7 +143,9 @@ def _nyisd_meg_valodi_menu_kattintassal(window, controller, qt_app):
         ),
         "a valódi menükattintás nem nyitotta meg teljesen a Poszter párbeszédet",
     )
-    return _elem(window, "posterDialog")
+    dialog = _elem(window, "posterDialog")
+    _ellenorizd_dialog_szuloterulethez_igazitas(dialog, window)
+    return dialog
 
 
 def _inditsd_a_kimenetet(

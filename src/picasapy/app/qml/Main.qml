@@ -4153,6 +4153,8 @@ ApplicationWindow {
     DeferredDialog {
         id: createDialogs
         objectName: "createDialogs"
+        // A belső Dialogok ehhez a felülethez igazodnak; méret nélkül a Loader 0×0 marad.
+        anchors.fill: parent
         sourceComponent: Component {
             CreateDialogs { appWindow: window }
         }
