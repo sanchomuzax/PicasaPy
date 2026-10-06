@@ -11734,4 +11734,17 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Képek</translation>
     </message>
 </context>
+<context>
+    <name>PhotoViewerSettingsDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="10"/>
+        <source>Configure Photo Viewer...</source>
+        <translation>Fotómegjelenítő beállítása…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26"/>
+        <source>Use Color Management</source>
+        <translation>Színkezelés használata</translation>
+    </message>
+</context>
 </TS>

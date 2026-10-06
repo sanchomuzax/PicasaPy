@@ -1549,6 +1549,7 @@ ApplicationWindow {
         onAboutRequested: aboutDialog.open()
         onConfigureButtonsRequested: configureButtonsDialog.open()
         onConfigureScreensaverRequested: screensaverDialog.open()
+        onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
         onAddToScreensaverRequested: {
             var added = controller
                 ? controller.addScreensaverPhotos(window.selectedPaths()) : 0
@@ -2139,6 +2140,13 @@ ApplicationWindow {
                 saverController: controller
                 onPreviewRequested: window.startScreensaverPreview()
             }
+        }
+    }
+    DeferredDialog {
+        id: photoViewerSettingsDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            PhotoViewerSettingsDialog { viewerController: controller }
         }
     }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
