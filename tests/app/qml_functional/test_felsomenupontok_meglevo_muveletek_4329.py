@@ -284,6 +284,55 @@ def test_kep_view_and_edit_kattintas_megnyitja_a_kijelolt_kepeket(
 
 
 @pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
+def test_kep_hide_es_unhide_kattintas_a_hidden_ini_allapotot_valtoztatja(
+    qml_app, qt_app, height_offset
+):
+    window, controller, _engine = qml_app
+    _magassag(window, height_offset)
+    controller.setShowHidden(True)
+    qt_app.processEvents()
+    kep = Path(controller.photos.filePathAt(0))
+    ini = kep.parent / ".picasa.ini"
+
+    def hidden_ertek():
+        if not ini.exists():
+            return None
+        szakasz = load_document(ini).section(kep.name)
+        return szakasz.get("hidden") if szakasz is not None else None
+
+    assert hidden_ertek() is None
+
+    _menu_bar, _menu, _fejléc, hide = _nyisd_meg_felso_menut(
+        qt_app, window, "picture", "menuPictureHide"
+    )
+    assert hide.property("enabled") is False
+    _kijeloles(window, qt_app, [0])
+    assert _varj(qt_app, lambda: hide.property("enabled") is True)
+    _kattints(qt_app, hide)
+
+    assert _varj(qt_app, lambda: hidden_ertek() == "yes"), (
+        "a Kép ▸ Hide nem írta be a hidden=yes értéket a .picasa.ini-be"
+    )
+
+    sor = next(
+        index
+        for index in range(controller.photos.rowCount())
+        if controller.photos.itemAt(index)["name"] == kep.name
+    )
+    _menu_bar, _menu, _fejléc, unhide = _nyisd_meg_felso_menut(
+        qt_app, window, "picture", "menuPictureUnhide"
+    )
+    assert unhide.property("enabled") is False
+    _kijeloles(window, qt_app, [sor])
+    assert _varj(qt_app, lambda: unhide.property("enabled") is True)
+    _kattints(qt_app, unhide)
+
+    assert _varj(qt_app, lambda: hidden_ertek() is None), (
+        "a Kép ▸ Unhide nem törölte a hidden kulcsot a .picasa.ini-ből"
+    )
+
+
+@pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
 def test_kep_unhide_kattintas_csak_a_rejtett_kijelolteket_jeleniti_meg(
     qml_app, qt_app, height_offset
 ):
