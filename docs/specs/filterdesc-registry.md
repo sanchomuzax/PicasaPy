@@ -2588,7 +2588,7 @@ x86-diszasszemblálás és a PE-adatkonstansok kiolvasása feloldotta. A hue-
 mátrix konkrét együtthatói, címei és numerikus kontrolljai a G) szakaszban
 állnak; a korábbi „feltételes / valószínű Haeberli” megfogalmazás elavult.
 
-#### `ColorMatrix` — 4×5 fixpontos pixelképlet; a `UseAlpha` külső határa nyitott (#626, 2026-10-04)
+#### `ColorMatrix` — 4×5 fixpontos pixelképlet; a `UseAlpha` külső határa nyitott (#626, 2026-10-04; kiegészítve 2026-10-06)
 
 **Forrás:** a `ColorMatrix` 8. rése `0x00bc1860` (245 b), a közös alkalmazó
 `0x00bc16b0` (428 b), a mátrix konverziója `0x008f21a0` (849 b), a pixelenkénti
@@ -2631,16 +2631,19 @@ után külön `psrad 9`-et végez az adott csatorna hozzájárulásán, majd az
 vektor ág közti képletazonosságot az utasítássorrend, hat QEMU-minta pedig a
 konkrét kimeneteken ellenőrzi.
 
-**`UseAlpha`:** a `ColorMatrix` worker, a közös alkalmazó és a pixelkernel
-nem olvassa és nem kapja meg ezt a jelzőt. Ezért a fenti pixelmag képlete
-`UseAlpha=false` és `UseAlpha=true` mellett is azonos, ha azonos mátrixot és
-forráspixelt kap: az alfa-sor és -oszlop a magban mindkét esetben aktív.
-A leíró parser ettől külön olvassa a `UseAlpha` nevet (`0x009ca5e0`, a mező
-írása `0x009cb45d`, `[objektum+0x20a]`). **NINCS MEG**, hogy ezt a külön
-flaget a Glimmer-hívási lánc melyik magasabb rétege fogyasztja, illetve
-`false`/`true` mellett változtat-e a mag bemenetén, utólagos alfa-kezelésén
-vagy kompozitálásán. Emiatt a teljes, leíró-szintű `UseAlpha` szemantika
-feltételes marad.
+**`UseAlpha`:** a `ColorMatrix` saját RTTI-vtáblájának mind a kilenc
+metódusát végigkövetve a `+0x20a` mező egyikben sem szerepel; a
+`0x00bc1620` olvasó `Matrix`-ot és közös attribútumokat kezel, a
+`0x00bc16b0` alkalmazó pedig a Matrix-listát adja a pixelmagnak. A teljes
+`.text` pásztázás talált egy általános tulajdonság-olvasót (`0x009ca5e0`),
+amely a kisbetűs `usealpha` nevet ismeri és `[objektum+0x20a]`-ra ír
+(`0x009cb46c`). Ugyanez a függvény `Tooltip`, `Help`, `Label`, `Text`,
+`fontsize`, `setvisible` és más általános tulajdonságneveket is kezel. A
+`+0x20a` eltolás 39 utasításban szerepel a `.text`-ben; az eltolás önmagában
+nem azonosít objektumtípust. A RTTI szerinti `ytEffectNode` egyik metódusa
+(`0x009e8ea0`, vtable `0x00c8b8f4`) szintén használja ezt az eltolást, de
+nincs bizonyíték rá, hogy ez a mező a `ColorMatrixImageOperation` leíróútjához
+tartozik. A teljes `filterdesc.xml`-szintű `UseAlpha`-hatás ezért nyitott.
 
 **QEMU-kontrollok.** Az eredeti ELF-kódrész futott `qemu-i386 -B
 0x400000000000` alatt, `ulimit -v 8388608` és `timeout 60` korláttal. Mind a
@@ -2675,7 +2678,7 @@ az utasításszintű, külön szorzatonkénti `sar 9`-cel is egyezik.
 
 | művelet | pixelképlet | `UseAlpha` | összesített állapot |
 |---|---|---|---|
-| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott** a leíró magasabb rétegén | **feltételes** |
+| `ColorMatrix` | **megerősített** a 4×5 pixelmag képletére | **nyitott**: a generikus parser mezőjének kapcsolata a filterdesc/ColorMatrix útjához nincs igazolva | **feltételes** |
 
 Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyasztójának
 és a többi #626 műveletnek a feltárását nem zárja le.
@@ -2685,7 +2688,7 @@ Ez a frissítés a `ColorMatrix` pixelmatematikáját rögzíti; a flag fogyaszt
 | | Eredeti, mért | PicasaPy forrása | Teendő |
 |---|---|---|---|
 | 4×5 RGBA-mátrix | a fenti Q11/int16 + dword-bias képlet, `0x008f21a0` → `0x008f2640` | `src/picasapy/render/glimmer_ops.py:628–646` általános `n×3` RGB-képletet valósít meg; a `simple_color_matrix()` hívja, általános 4×5 `ColorMatrix`-út nem található | külön fejlesztési munka: általános RGBA-mátrix és bájtra ellenőrizhető minták |
-| `UseAlpha` | a parser `[objektum+0x20a]` flaget ír; a pixelmag nem kapja meg | nincs `UseAlpha`-ággal kezelt általános `ColorMatrix` | előbb a magasabb szintű fogyasztót kell feltárni; a flag szemantikája nélkül ne rögzítsünk eltérő alfa-szabályt |
+| `UseAlpha` | a generikus tulajdonság-olvasó `[objektum+0x20a]` mezőre ír; a `ColorMatrix` vtable egyik metódusa sem használja ezt az eltolást | nincs általános 4×5 `ColorMatrix`-út vagy `UseAlpha`-ág | előbb a `filterdesc.xml` tényleges loaderét és a flag objektumát kell összekötni a mátrixlánccal; addig ne vezessünk be alfa-szabályt |
 
 **Bizonyítottsági fok:** megerősített a pixelmag képletére — A) utasításszintű
 olvasás a mátrixcsomagolótól a négy soros pixelenkénti kernelig; B) az eredeti
@@ -2693,11 +2696,11 @@ worker és pixelfüggvények futtatása qemu-i386 alatt, mindkét kerekítési �
 a fenti bájt-goldenekkel. A `UseAlpha` descriptor-szintű hatása nyitott:
 a parser mezőjét nem sikerült azonosítani a Glimmer magot körülvevő fogyasztóval.
 
-**Nyitott, blokkoló következő lépés:** `Ghidra-kör kell: 0x009ca5e0 — a
-`UseAlpha` parser által `[objektum+0x20a]` helyre írt flag Glimmer-hívási
-láncbeli fogyasztójának azonosítása, és annak eldöntése, hogy false/true
-módosítja-e a ColorMatrix alfa-oszlopát, alfa-sorát vagy a mag előtti/utáni
-alfa-kezelést [blokkoló]`.
+**Nyitott, blokkoló következő lépés:** `Ghidra-kör kell: 0x009cc5d0 — a
+filterdesc.xml tényleges loaderének és a generikus 0x009ca5e0
+UseAlpha-kezelőjének objektumkapcsolata; annak bizonyítása, hogy az ottani
+flag a ColorMatrix bemenetét, alfa-sorát/-oszlopát vagy az utólagos
+kompozitálást módosítja-e [blokkoló]`.
 
 #### #626 — `SimpleColorMatrix`: natív bájtszintű kontroll (2026-10-05)
 
@@ -3813,7 +3816,7 @@ kezdőállapota megmarad.
 | `Blur` | `xblur`, `yblur`, `quality` | `NULL` | `0x00bb31f0`, inline | S |
 | `Border` | `outercolor`, `innercolor`, `cornerradius`, `innerthickness`, `outerthickness`, `captionheight` | `NULL` | `0x00bbdf10` | S |
 | `CircularGradientImageMask` | `width`, `height`, `xCenter`, `yCenter`, `innerRadius`, `outerRadius`, `innerAlpha`, `outerAlpha` | `NULL` | `0x00bc29b0` | S |
-| `ColorMatrix` | `Matrix`; `UseAlpha` | `Matrix=NULL`; a `UseAlpha` útját a típusolvasó nem kezeli | `0x00bc1570` | Q; `UseAlpha` nyitott |
+| `ColorMatrix` | `Matrix`; XML-ben `UseAlpha` | `Matrix=NULL`; a saját olvasó `Matrix`-ot és közös attribútumokat kezel; `+0x20` a `maskWithSourceAlpha`, `+0x24` a Matrix | `0x00bc1570` | Q; a pixelmag `UseAlpha`-tól független, a leíróflag kapcsolata nyitott (4.9) |
 | `Crop` | `x`, `y`, `width`, `height` | `NULL` | `0x00bbd880` | S |
 | `DropShadow` | `distance`, `angle`, `blurX`, `blurY`, `strength`, `quality`, `shadowColor`, `shadowAlpha`, `backgroundColor` | `NULL` | `0x00bbb120` | Q |
 | `EdgeDetectionB` | `detail` | `NULL` | `0x00bb31f0`, inline | S |
@@ -3851,6 +3854,65 @@ visszaadta. Az `AutoFix` inline ágán ugyanezt az értéket a
 `0x00bb31f0` utasításai állítják be. Ez a `+0x28` mező nem szerepel az XML
 attribútumtáblában. Az inline inicializáló ágak QEMU-futtatása és a parser
 teljes attribútumútja nem történt meg; azokra az `S` fok érvényes.
+
+#### `ColorMatrix.UseAlpha`: pixelmag-vizsgálat; a leíróút nyitott
+
+A `filterdesc.xml` a `Comicize` effekt két `ColorMatrixImageOperation` elemén
+adja meg a `UseAlpha="true"` attribútumot (`filterdesc.xml:797`, `:811`).
+A művelet RTTI-vtáblája `0x00cf0798`: attribútumolvasó `0x00bc1620`,
+alkalmazó `0x00bc16b0`, Matrix-lista olvasó `0x00bc1860`.
+
+- A konstruktor (`0x00bc1570`) nullázza a `this+0x20` és `this+0x24` mezőt.
+  A `Matrix` attribútum olvasója (`0x00bc1620`) a `this+0x24` mezőbe ír.
+- A `0x00bc1620` a `Matrix` nevet keresi, majd meghívja a közös attribútum-
+  olvasót (`0x00bc4900`). Ez a közös olvasó a `this+0x20` mezőt a
+  `maskWithSourceAlpha` attribútumból állítja; emellett `BlendMode`,
+  `BlendAlpha`, `Mask` és a cache-prioritások nevét keresi. `UseAlpha`-t nem
+  olvas. A `this+0x20` tehát nem a `UseAlpha` tárolója.
+- Az RTTI-vtábla mind a kilenc metódusán futtatott mezőtérkép a `+0x20a`
+  mezőt egyikben sem találja; a `+0x24` Matrix-mezőt igen. A `0x00bc16b0`
+  a `0x00bc1860` metódussal olvassa ki a Matrix-listát, majd a `0x008f2500`
+  előkészítőn át a `0x008f2640` pixelmagot hívja. A pixelmag argumentumai:
+  `EAX` = Q11-mátrix, verem = forrásmutató, pixelszám, célmutató. A
+  pixelmag ABI-jában nincs `UseAlpha` argumentum.
+
+Az előző, 4.9-es szakaszban rögzített `0x008f2640` képlet mind a négy
+kimeneti sort számolja, így a pixelmagban nincs alfa-megőrző vagy
+`UseAlpha`-ág. Ez önmagában nem bizonyítja, hogy a leíróflagnek nincs
+magasabb szintű hatása, például a mag előtti/utáni alfa-kezelésre.
+
+**Eredeti gépi kód futtatása.** A helyi `qemu_harness/hb.py` minimális ELF-je
+`qemu-i386` alatt közvetlenül hívta a `0x008f2640`-et egy 2×2-es BGRA-rácson.
+A Q11-próbamátrix RGB-azonosító sort, `A' = 255 − A` alfa-sort és az ehhez
+tartozó 1022-es alpha-biast használt. A kernel három kötelező argumentuma
+után 0, majd 1 értékű sentinel veremszóval is lefutott. Ezek **nem** a
+`UseAlpha` attribútum értékei; a kísérlet a pixelmagot és annak ABI-ját méri,
+nem a teljes leíróutat.
+
+```text
+bemenet:  0a141e00 28323c01 46505a80 646e78ff
+QEMU, sentinel 0: 0a141eff 28323cfe 46505a7f 646e7800
+QEMU, sentinel 1: 0a141eff 28323cfe 46505a7f 646e7800
+Python:             0a141eff 28323cfe 46505a7f 646e7800
+```
+
+Mindkét natív futás 16/16 bájton egyezett a külön Python-újraszámolással;
+az alfaértékek rendre 0→255, 1→254, 128→127, 255→0. A két sentinel azonos
+kimenete összhangban van a diszasszemblált, flag nélküli pixelmag-ABI-val.
+
+**Cáfoló próba (15.2).** A cáfolt, szűk hipotézis: a pixelmag megőrzi a
+forrás alfa-bájtját, ha nem kap külön kapcsolót. A gépi kód és a QEMU-kimenet
+ezt cáfolja: a mátrix alfa-sorát mindkét sentinel mellett alkalmazta. Ez csak
+a pixelmagra vonatkozó cáfolat; nem állítja, hogy a filterdesc-szintű
+`UseAlpha`-nak nincs külső hatása. A parserkapcsolatot ellenőrizve a
+`0x009ca5e0` általános tulajdonságneveket kezel, a teljes `.text`-ben pedig a
+`+0x20a` 39 hozzáférése jelenik meg. A mező típusa és kapcsolata a
+ColorMatrix lánccal ebből nem állapítható meg.
+
+Az első QEMU-próbamátrix téves oszlop-hozzárendelése R/B-cserét adott. A
+`0x008f2640` forrásbájt- és együttható-offszeteiből javított belső mátrix
+után mind a négy pixel bájtra egyezett a Python-eredménnyel; a téves próba
+nem került az elfogadott képletbe.
 
 **Cáfoló próba (15.2).** A kezdeti állítás, hogy *minden objektummező*
 nulláról indul, megdőlt: a `GradientMap` konstruktor `+0x28` mezője `7`.
@@ -3900,7 +3962,8 @@ kifejezéskiértékelőjét és a listaelemek szöveges színértelmezését ez 
 nem futtatta. Ezért a `#RRGGBB`, a nemnulla decimális szín, a közvetlen
 `0xAARRGGBB` literál elfogadása, valamint a `GradientMap` XML-stopok
 RGB-bájtsorrendje **nyitott**. A `ColorMatrix.UseAlpha` (az XML-ben
-`true`, `:797`, `:811`) típusolvasó-útja szintén nyitott.
+`true`, `:797`, `:811`) tényleges loaderének és a flag ColorMatrix-útbeli
+fogyasztójának kapcsolata szintén nyitott.
 
 **PicasaPy-összevetés.** A projektben nincs `filterdesc.xml`-ből
 `imageOperations`-tagokat beolvasó futásidejű parser. A `registry.py` és
