@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // „Mappaleírás szerkesztése…" — a Picasa `album.fen` dialógusa (#422).
@@ -16,11 +17,6 @@ import QtQuick.Layouts
 // a mappa kontextusmenüjében. A korábbi önálló „Mappa dátumának
 // beállítása…" menütétel ezért megszűnt, a funkció ide költözött — így a
 // menü az eredeti 15 tételes listájával egyezik.
-//
-// A név, a zene és a helyszín mezője EGYELŐRE nincs bekötve (nincs mögötte
-// réteg): a mezők a helyükön vannak, de inaktívak — ugyanaz az elv, mint a
-// menük szürke tételeinél (az elrendezés a dizájn része, ld. #416 és a
-// design-guide „inaktív menüpont szándékos" pontja).
 //
 // Önálló, signal-alapú komponens (FolderDateDialog.qml mintája): az
 // ini-írást a hívó (FolderPane.qml) végzi a jelekre.
@@ -49,6 +45,8 @@ Dialog {
     //: a szerkesztett album azonosítója (album módban)
     property string albumToken: ""
     property string albumLocation: ""
+    property bool currentMusicEnabled: false
+    property string currentMusicFile: ""
 
     // a szerkesztett mappa — a hívó állítja be open() előtt
     property string folderPath: ""
@@ -74,12 +72,16 @@ Dialog {
     //: album definícióját minden érintett mappa ini-jébe.
     signal albumPropertiesAccepted(string token, string name, string isoDate,
                                    string location, string description)
+    signal folderMusicAccepted(string folderPath, bool useMusic, string musicFile)
+    signal albumMusicAccepted(string token, bool useMusic, string musicFile)
 
     onOpened: {
         nameField.text = root.albumMode ? root.albumName : root.folderName
         dateField.text = root.currentDate
         locationField.text = root.albumMode ? root.albumLocation : ""
         descriptionField.text = root.currentDescription
+        musicCheck.checked = root.currentMusicEnabled
+        musicPathField.text = root.currentMusicFile
         if (root.albumMode) nameField.forceActiveFocus()
         else descriptionField.forceActiveFocus()
         standardButton(Dialog.Ok).enabled =
@@ -91,10 +93,14 @@ Dialog {
             root.albumPropertiesAccepted(
                 root.albumToken, nameField.text, dateField.text.trim(),
                 locationField.text, descriptionField.text)
+            root.albumMusicAccepted(
+                root.albumToken, musicCheck.checked, musicPathField.text)
             return
         }
         root.folderPropertiesAccepted(
             root.folderPath, dateField.text.trim(), descriptionField.text)
+        root.folderMusicAccepted(
+            root.folderPath, musicCheck.checked, musicPathField.text)
     }
 
     ColumnLayout {
@@ -151,17 +157,24 @@ Dialog {
         }
 
         // -- Music: --------------------------------------------------------
-        CheckBox {
-            id: musicCheck
-            objectName: "folderPropertiesUseMusic"
-            text: qsTr("Use music for Slideshow and Movie presentation:")
-            // a diavetítés-zene még nincs bekötve
-            enabled: false
+        RowLayout {
+            spacing: 8
+            Text {
+                text: qsTr("Music:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            CheckBox {
+                id: musicCheck
+                objectName: "folderPropertiesUseMusic"
+                text: qsTr("Use music for Slideshow and Movie presentation:")
+            }
         }
         RowLayout {
             spacing: 8
             Item { Layout.preferredWidth: 16 }  // az eredeti `spacer indent`
             TextField {
+                id: musicPathField
                 objectName: "folderPropertiesMusicPath"
                 Layout.fillWidth: true
                 Layout.preferredWidth: 240
@@ -169,6 +182,12 @@ Dialog {
                 enabled: musicCheck.checked
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
+            }
+            PicasaButton {
+                objectName: "folderPropertiesMusicBrowseButton"
+                text: qsTr("Browse...")
+                enabled: musicCheck.checked
+                onClicked: musicFileDialog.open()
             }
         }
 
@@ -206,6 +225,25 @@ Dialog {
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
             }
+        }
+    }
+
+    FileDialog {
+        id: musicFileDialog
+        objectName: "folderPropertiesMusicFileDialog"
+        title: qsTr("Audio files")
+        fileMode: FileDialog.OpenFile
+        nameFilters: [
+            Qt.platform.os === "windows"
+                ? qsTr("Music files (*.mp3, *.wma)")
+                : qsTr("Music files (*.mp3, *.m4a)")
+        ]
+        onAccepted: {
+            var selected = selectedFile.toString()
+            if (typeof controller !== "undefined" && controller
+                    && typeof controller.localPathFromFileUrl === "function")
+                selected = controller.localPathFromFileUrl(selected)
+            musicPathField.text = selected
         }
     }
 }

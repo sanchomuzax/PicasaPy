@@ -21,13 +21,16 @@ from picasapy.ini import (
     is_valid_folder_date,
     load_or_empty,
     read_folder_date_override,
+    read_folder_music,
     update_document,
     with_folder_date_override,
+    with_folder_music,
     without_folder_date_override,
 )
 from picasapy.scanner import PICASA_INI_NAME
 
 from .photo_ops_controller import _WRITE_ERRORS
+from . import formatting
 
 
 class FolderDateMixin:
@@ -41,6 +44,60 @@ class FolderDateMixin:
             return ""
         document = load_or_empty(Path(folder_path) / PICASA_INI_NAME)
         return read_folder_date_override(document) or ""
+
+    @Slot(str, result=bool)
+    def folderMusicEnabled(self, folder_path: str) -> bool:  # noqa: N802
+        if not folder_path:
+            return False
+        return read_folder_music(
+            load_or_empty(Path(folder_path) / PICASA_INI_NAME)
+        )[0]
+
+    @Slot(str, result=str)
+    def folderMusicFile(self, folder_path: str) -> str:  # noqa: N802
+        if not folder_path:
+            return ""
+        return read_folder_music(
+            load_or_empty(Path(folder_path) / PICASA_INI_NAME)
+        )[1]
+
+    @Slot(str, bool, str)
+    def setFolderMusic(  # noqa: N802
+        self, folder_path: str, use_music: bool, music_file: str
+    ) -> None:
+        """A mappa `usemusic`/`music` mezőinek mentése az ini API-val."""
+        if not folder_path:
+            return
+        local_file = formatting.to_local_path(music_file)
+        ini_path = Path(folder_path) / PICASA_INI_NAME
+        if not self._ini_iras(
+            ini_path,
+            lambda document: with_folder_music(document, use_music, local_file),
+        ):
+            return
+        changed = getattr(self, "statusChanged", None)
+        if changed is not None:
+            changed.emit()
+
+    def folderMusicTrackUrls(self, folder_path: str) -> list:  # noqa: N802
+        """A bekapcsolt mappazene URL-je a diavetítőnek."""
+        enabled, music_file = read_folder_music(
+            load_or_empty(Path(folder_path) / PICASA_INI_NAME)
+        ) if folder_path else (False, "")
+        if not enabled or not music_file:
+            return []
+        path = Path(music_file).expanduser()
+        try:
+            if not path.is_file():
+                return []
+            return [formatting.to_file_url(str(path.resolve()))]
+        except OSError:
+            return []
+
+    @Slot(str, result=str)
+    def localPathFromFileUrl(self, file_url: str) -> str:  # noqa: N802
+        """A Qt fájlválasztó URL-jét helyi útvonallá alakítja."""
+        return formatting.to_local_path(file_url)
 
     @Slot(str, str)
     def setFolderDate(self, folder_path: str, iso_date: str) -> None:

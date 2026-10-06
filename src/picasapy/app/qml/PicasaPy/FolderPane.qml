@@ -246,6 +246,12 @@ Rectangle {
             controller ? controller.folderDateOverride(path) : ""
         folderPropertiesDialog.currentDescription =
             controller ? controller.folderDescriptionOf(path) : ""
+        folderPropertiesDialog.currentMusicEnabled =
+            controller && controller.folderMusicEnabled
+                ? controller.folderMusicEnabled(path) : false
+        folderPropertiesDialog.currentMusicFile =
+            controller && controller.folderMusicFile
+                ? controller.folderMusicFile(path) : ""
         folderPropertiesDialog.open()
     }
 
@@ -1275,6 +1281,10 @@ Rectangle {
                 adat.location !== undefined ? adat.location : ""
             folderPropertiesDialog.currentDescription =
                 adat.description !== undefined ? adat.description : ""
+            folderPropertiesDialog.currentMusicEnabled =
+                adat.use_music !== undefined ? adat.use_music : false
+            folderPropertiesDialog.currentMusicFile =
+                adat.music_file !== undefined ? adat.music_file : ""
             folderPropertiesDialog.open()
         }
     }
@@ -1493,6 +1503,10 @@ Rectangle {
             if (isoDate.length > 0) controller.setFolderDate(path, isoDate)
             else controller.clearFolderDate(path)
         }
+        onFolderMusicAccepted: function(path, useMusic, musicFile) {
+            if (controller && controller.setFolderMusic)
+                controller.setFolderMusic(path, useMusic, musicFile)
+        }
         //: #3173: album módban az ini-írás a `photo_ops_controller`-en megy,
         //: MINDEN olyan mappába, ahol az albumnak van tagja
         onAlbumPropertiesAccepted: function(token, name, isoDate, location, description) {
@@ -1500,6 +1514,10 @@ Rectangle {
             controller.editAlbumProperties(
                 token, name, isoDate, location, description)
             pane.refreshCustomCollections()
+        }
+        onAlbumMusicAccepted: function(token, useMusic, musicFile) {
+            if (controller && controller.editAlbumMusic)
+                controller.editAlbumMusic(token, useMusic, musicFile)
         }
     }
 

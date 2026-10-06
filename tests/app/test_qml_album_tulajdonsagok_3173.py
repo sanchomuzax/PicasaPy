@@ -4,8 +4,8 @@ EGY párbeszéd, KÉT használat: a rajz az `album.fen`-é (a #422 óta a mappá
 mostantól album módban is — ott a NÉV és a HELYSZÍN is szerkeszthető, mert az
 album definíciója (`[.album:<token>]`) mind a négy mezőt tudja tartani.
 
-⚠️ A **zene** mező szándékosan inaktív marad: diavetítés-/mozgófilm-zene a
-programban nincs, tehát nem is menthető sehova.
+⚠️ A zene mező a `usemusic` jelölővel és a kiválasztott fájllal mentődik az
+album `.picasa.ini`-jébe.
 """
 
 from __future__ import annotations
@@ -74,14 +74,14 @@ class TestAlbumMod:
         assert _mezo(parbeszed, "folderPropertiesNameField").property("enabled") is False
         assert _mezo(parbeszed, "folderPropertiesLocation").property("enabled") is False
 
-    def test_a_zene_MINDKET_modban_inaktiv(self, parbeszed, qt_app):
+    def test_a_zene_MINDKET_modban_aktiv(self, parbeszed, qt_app):
         for mod in ("folder", "album"):
             parbeszed.setProperty("mode", mod)
             qt_app.processEvents()
             assert (
                 _mezo(parbeszed, "folderPropertiesUseMusic").property("enabled")
-                is False
-            ), f"{mod}: a zene nincs mögötte réteg, nem lehet aktív"
+                is True
+            ), f"{mod}: a spec szerinti usemusic mezőnek aktívnak kell lennie"
 
     def test_a_cim_album_modban_MAS(self, parbeszed, qt_app):
         """`CEditAlbum::albumTitle` = „Album tulajdonságai" (mérve)."""
