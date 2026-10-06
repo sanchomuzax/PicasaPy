@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.25] – 2026-10-06
+
+- A film szöveges diái „Text Slide” néven jelennek meg, az infósor pedig a kiválasztott dia nevét, méretét és filmsorszámát mutatja. (#4402).
+- A 16 bites szemcsézett megjelenítési mód a Nézet menüből bekapcsolható. (#4412).
+
 ## [0.9.24] – 2026-10-06
 
 - Az Eszközök menü Dátum és idő módosítása parancsa mindkét eredeti módban átállítja a kijelölt képek dátumát, az exportba is átvezetve (#4332).
