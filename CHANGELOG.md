@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.31] – 2026-10-07
+
+- A mappa zeneválasztása a diavetítés és a mozgófilm hangsávjaként is használható. (#4448).
+
 ## [0.9.30] – 2026-10-07
 
 - Elkészültek a gyorsbillentyű- és helyi menüparitás táblái, valamint több mappalista- és nézőmenü-bekötés. (#4462).
