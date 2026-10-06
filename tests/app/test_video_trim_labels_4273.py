@@ -25,6 +25,8 @@ def _render_probe(height: int, screenshot: Path) -> str:
     repo_root = Path(__file__).resolve().parents[2]
     env = dict(os.environ)
     env["QT_QPA_PLATFORM"] = "offscreen"
+    # #4355: Windowson a konzol cp1252 — a próba ékezetes sorát UTF-8-ban kérjük
+    env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONPATH"] = os.pathsep.join(
         [str(repo_root / "src"), str(repo_root / "tests")]
     )
