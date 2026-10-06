@@ -157,10 +157,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # frissítését a GUI-szálra tereli (Qt automatikusan sorba állítja a
     # más szálból jövő emitet, ahogy a watcherDirty is teszi).
     # #1443: a harmadik elem az utómunka (hívható vagy None) — a GUI-szálon,
-    # a sor frissítése UTÁN, de a `photoOpFinished` ELŐTT fut le. Külön
-    # jelzés helyett azért ide, mert a tesztek (és a QML busy-jelzése) a
-    # `photoOpFinished`-re várnak: egy másik, később sorra kerülő jelzésen
-    # érkező utómunka a várakozás UTÁN futna le — néma versenyhelyzet.
+    # a sor frissítése UTÁN fut le. A felület a modell változását követi.
     _photoFieldUpdated = Signal(int, object, object)
     #: #3830: a sikertelen írás hiba-utómunkája (hívható) — a GUI-szálon,
     #: a `photoOpFailed` ELŐTT fut le (ugyanabból a szálból küldött, sorba
@@ -173,7 +170,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
     #: eljut a menühöz, nem csak a sajátunk.
     captionClipboardChanged = Signal()
-    photoOpFinished = Signal()
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
@@ -282,16 +278,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             # pótoljuk (olcsó, csak a jelen nézet listáját írja újra, nem
             # lemezműveletet indít)
             self._provider.register_photos(self._photos.photos)
-        # #1443: az utómunka a sor frissítése UTÁN, a befejezés-jelzés ELŐTT
-        # fut — így a `photoOpFinished`-re váró hívó (QML, teszt) már a
-        # végleges nézetet látja. `record is None` esetén is lefut: ha a kép
-        # eltűnt az indexből, a nézetnek pláne frissülnie kell.
-        # #3830: ha az utómunka `True`-t ad, újabb írás indult a láncban
-        # (gyors egymás utáni forgatás) — a befejezés-jelzés majd a lánc
-        # VÉGÉN megy ki, különben a rá váró hívó félkész állapotot látna.
-        folytatodik = after() if after is not None else None
-        if folytatodik is not True:
-            self.photoOpFinished.emit()
+        # #1443: az utómunka a sor frissítése után fut. `record is None`
+        # esetén is lefut: ha a kép eltűnt az indexből, a nézetnek pláne
+        # frissülnie kell. #3830 esetén az utómunka a következő forgatást
+        # indíthatja, a modell így csak a lánc végső értékét kapja meg.
+        if after is not None:
+            after()
 
     @Slot(object)
     def _on_photo_write_aborted(self, on_error) -> None:
@@ -316,7 +308,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # meglévő hibajelzési minta (#86/#150): ugyanaz a csatorna, mint a
         # háttér-szinkron hibáié
         self.syncFailed.emit(message)
-        self.photoOpFinished.emit()
 
     def _run_photo_write(
         self, photo_id: int, perform, after=None, on_error=None
@@ -329,9 +320,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         `after`: opcionális utómunka (#1443), amit a GUI-szálon, a rács-sor
         frissítése után hívunk. Írási hiba esetén NEM fut le — olyankor a
-        nézet tartalma sem változott. Ha `True`-t ad vissza, a
-        `photoOpFinished` elmarad (a hívó újabb írást indított, #3830).
-
+        nézet tartalma sem változott. A forgatás utómunkája a következő
+        célértéket új háttérmunkában írja ki.
         `on_error`: opcionális hiba-utómunka (#3830) a GUI-szálon — a
         várt írási hibánál (`_WRITE_ERRORS`) ÉS nem várt kivételnél is
         lefut, hogy a hívó eldobhassa a függő állapotát."""
@@ -729,7 +719,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             for folder in folders:
                 self._sync_tree(conn, folder)
         self._refresh_view()
-        self.photoOpFinished.emit()
 
     # -- virtuális albumok (#9, 2. lépés) ------------------------------------
 
