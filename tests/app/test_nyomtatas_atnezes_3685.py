@@ -31,11 +31,12 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 from PIL import Image
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QLocale, QSettings
 from PySide6.QtGui import QColor, QGuiApplication, QImage
 
 try:
     from picasapy.app.print_controller import PrintController
+    import picasapy.printing.dpi as dpi
     from picasapy.printing.dpi import NyomatMeret
     from picasapy.printing.grid_layout import GridCell, GridPage
     from picasapy.printing.layout import PrintFitMode
@@ -370,6 +371,16 @@ class TestKirajzoltProba:
     """8. pont: az előnézeti lapot ténylegesen kirajzoltatjuk, és a
     PIXELEKEN mérünk — a #2494-lecke szerint a számolt geometria önmagában
     nem bizonyíték, a kirajzolt kép a mérce."""
+
+    @pytest.fixture(autouse=True)
+    def _teruleti_meres(self, monkeypatch):
+        class ImperialQLocale:
+            MeasurementSystem = QLocale.MeasurementSystem
+
+            def measurementSystem(self):
+                return QLocale.MeasurementSystem.ImperialUSSystem
+
+        monkeypatch.setattr(dpi, "QLocale", ImperialQLocale, raising=False)
 
     def _vezerlo(self, tmp_path, *, szin=(220, 20, 20), meret_px=(60, 60)):
         foto = _szinkep(tmp_path / "kep.jpg", size=meret_px, color=szin)

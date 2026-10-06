@@ -7,11 +7,13 @@ import time
 
 import pytest
 import numpy as np
-from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
+from PySide6.QtCore import QLocale, QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
 from PIL import Image
+
+from picasapy.app.language_controller import LANGUAGE_KEY
 
 
 def _gyerek(gyoker, nev):
@@ -112,6 +114,65 @@ def _valassz_combo(ablak, qt_app, combo, index):
     assert _varj(qt_app, lambda: combo.property("currentIndex") == index), (
         f"a(z) {index}. méretet nem választotta ki a kattintás"
     )
+
+
+@pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+def test_metrikus_terulet_ot_alapmerete_a_nyomtatas_fulon_latszik(
+    qml_app, qt_app, monkeypatch, magassag_elteres
+):
+    import picasapy.printing.dpi as dpi
+
+    class MetrikusQLocale:
+        MeasurementSystem = QLocale.MeasurementSystem
+
+        def measurementSystem(self):
+            return QLocale.MeasurementSystem.MetricSystem
+
+    monkeypatch.setattr(dpi, "QLocale", MetrikusQLocale, raising=False)
+    window, _controller, engine = qml_app
+    menu = _gyerek(window, "menuToolsOptions")
+    QMetaObject.invokeMethod(menu, "triggered", Qt.ConnectionType.DirectConnection)
+    assert _varj(
+        qt_app,
+        lambda: window.findChild(QObject, "optionsDialog") is not None
+        and window.findChild(QObject, "optionsDialog").property("visible"),
+    ), "a Beállítások ablaka nem nyílt meg"
+    options = _gyerek(window, "optionsDialog")
+    options.setProperty("height", options.height() + magassag_elteres)
+    qt_app.processEvents()
+
+    _kattints(options, qt_app, _gyerek(options, "optionsTabPrinting"))
+    assert _varj(
+        qt_app,
+        lambda: _gyerek(options, "optionsTabStack").property("currentIndex") == 4,
+    ), "a Nyomtatás fül nem nyílt meg"
+
+    print_ctl = engine.rootContext().contextProperty("printController")
+    print_ctl._settings.setValue(LANGUAGE_KEY, "en")
+    vart = [
+        ("M5X8CM", "5 x 8 cm"),
+        ("M9X13CM", "9 x 13 cm"),
+        ("M10X15CM", "10 x 15 cm"),
+        ("M13X18CM", "13 x 18 cm"),
+        ("M20X25CM", "20 x 25 cm"),
+    ]
+    meret_azonositok = _lista(print_ctl.printOptionSizes())
+    for index, (nev, felirat) in enumerate(vart):
+        combo = _ismetlo_elem(
+            options,
+            qt_app,
+            "optionsPrintSizeRepeater",
+            index,
+            f"optionsPrintSizeCombo{index}",
+        )
+        assert _varj(
+            qt_app,
+            lambda combo=combo, nev=nev: combo.property("currentIndex")
+            == meret_azonositok.index(nev),
+        ), f"a(z) {index + 1}. gyorsválasztó nem a {nev} méretet jelzi"
+        assert combo.property("currentText") == felirat, (
+            f"a(z) {index + 1}. gyorsválasztó felirata nem a méretet mutatja"
+        )
 
 
 @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
