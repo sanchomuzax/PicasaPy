@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.13] – 2026-10-06
+
 - A felső menüsor e-mail-, képmegnyitási, megjelenítési és arc-visszaállítási parancsai működnek, a Ctrl+H pedig rögzíti a képtálca kijelölését (#4329).
 - Az arcfelismerés és a vörösszem-keresés legfeljebb 960 px-es képen fut, a találatok pedig az eredeti képmérethez igazodnak (#4350).
 
