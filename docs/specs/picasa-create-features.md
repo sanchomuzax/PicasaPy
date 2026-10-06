@@ -2535,6 +2535,42 @@ ciklusnál 30 másodperc után időtúllépéssel leállt; nem adott vissza vég
 fotóindexet. Ez a sikertelen hámpróba nem független mérés a végső
 kiválasztási szabályra.
 
+**#4194 2. kör — a jelöltciklus és a hám hibahatára (2026-10-06).** A
+`0x0081d310`–`0x0081d4e9` ciklust utasításszinten újraolvasva a
+visszaugrásnál nincs scorer- vagy `0x004edf60` dátumlekérdező-hívás. A
+`0x0081c9f5`–`0x0081c9fb` a scorer-objektum `+0x0c` értékét teszi a helyi
+`[esp+0x24]` határba; a ciklus a jelöltpuffer elemszámát növeli, majd a
+`0x0081d4e4`–`0x0081d4e9` ponton `(EBX & ~1)` értékét hasonlítja `0xc8`-hoz.
+Egy tárolt jelölt `EBX`-et kettővel növeli (`0x0081d4be`–`0x0081d4c7`),
+így a visszaugrás akkor marad aktív, ha még nincs összegyűjtve 100 jelölt.
+A scorer `0x00873170` hívása később,
+`0x0081d74d`-nél van; a dátumlekérdezés a csoportosítóban, a kiválasztás
+előtt fut.
+
+**Célzott QEMU-hámpróba:** két rekorddal, `SCORE+0x0c=2` határral,
+felcserélt `(1.0, 2.0)` / `(2.0, 1.0)` scorerértékkel és a ciklus
+belépését naplózó horggal futott. Mindkét futásban a jelöltpuffer mérete
+`2` maradt (egy összegyűjtött jelölt); a hám a hatodik visszaugrás után
+mesterségesen a cikluskilépési ágra irányította a futást, amely így eljutott
+a `0x00873170` scorerhívásig. A pontszámcsere a naplózott ciklusállapotot
+nem változtatta meg. A folytatás a szintetikus gyűjteményobjektum későbbi
+kimeneti útján SIGSEGV-vel állt le; egyik futás sem adott vissza végső
+fotóindexet. Ez nem természetes cikluskilépés és nem bizonyít kiválasztási
+eredményt.
+
+A hámellenőrzés egy címütközést is talált a **mostani lokális próbában**:
+az `H_CODE+0x2000`-tól használt mockkód ugyanott kezdődött, ahol az
+`H_STUB` importcsonkjai (`H_STUB=H_CODE+0x2000`), ezért a mock nem a
+szándékolt kódra mutatott. A próbában a mockokat az importcsonkoktól és az
+adatpufferektől elkülönített címre helyezte át, és a `0x0081d22a` virtuális
+hívás két stack-argumentumához tartozó hám-visszatérést `ret 8`-ra javította.
+Ezek után is megmaradt a jelöltciklus eredmény nélküli útja. A QEMU
+naplózott visszaugrásai és az utasításszintű olvasat ezért egyezik abban,
+hogy a scorer vagy a dátumlekérdező visszatérése **nem a ciklus közvetlen
+kilépési feltétele**. A korábbi timeout pontos oka a teljes, helyesen
+felépített gyűjteményobjektum nélkül **NINCS MEG**; a `mode != 0` ágon
+ebben a körben nem futott kétrekordos natív próba.
+
 **Új teljesfüggvény-próba (#4194, 2026-10-06; eredmény nélkül):** a natív
 `0x0081b800` hívás `length=2`, `ordering=0`, `burstmodethresh=3600`,
 `removelowresfaces=0` értékeket kapott; a négy rekord dátumlekérdezése a
@@ -2656,7 +2692,7 @@ kikövetkeztetni.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Az eredeti bináris `delta >= T` szabállyal, a bemeneti sorrendben szomszédos időkből csoportokat készít; a `mode == 0` súlyozott jelöltminimumot, a `mode != 0` költségminimumú útvonalat járja. A HOG (`0x00873e40`) és Neven (`0x008742a0`) getterek rekord-`+0x30/+0x34` mezőket olvasnak, de a Filmkészítő rekordtípusának írója, a mezők jelentése és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` a projektfájlban és a QML/controller átadásban szerepel; az `src/` alatti hivatkozások között nincs képszűrési fogyasztó. | A #4182-ben a bizonyított dátumcsoportosítás implementálható. A megtartott fotóra ne kerüljön becsült szabály. A végső képszűrés csak a `[obj+0x4e0]` rekordíró és a `+0x30/+0x34` szemantika azonosítása, a `0x00874320` kimeneti elemeinek visszakötése valódi fotórekord-indexekhez, valamint a `0x00877c50` valódi indexű natív futása után implementálható. `Kész, ha`: (1) a három fenti dátumsor azonos csoportokat ad; (2) a tényleges rekordíró és mindkét mező forrása/értelme bizonyítékhoz kötött; (3) valódi fotórekord-indexekkel visszakövethető a getter, a reducer bemenete és a végső fotóindex; (4) a mezőváltoztatásra, döntetlenre és üres jelöltlistára adott eredmény egyezik a natív kimenettel. |
+| Az eredeti bináris `delta >= T` szabállyal, a bemeneti sorrendben szomszédos időkből csoportokat készít; a `mode == 0` súlyozott jelöltminimumot, a `mode != 0` költségminimumú útvonalat járja. A HOG (`0x00873e40`) és Neven (`0x008742a0`) getterek rekord-`+0x30/+0x34` mezőket olvasnak, de a Filmkészítő rekordtípusának írója, a mezők jelentése és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` a projektfájlban és a QML/controller átadásban szerepel; az `src/` alatti hivatkozások között nincs képszűrési fogyasztó. A #4194 2. körének szintetikus, közvetlen `0x0081c9b0` próbája a ciklus belépési állapotát mérte, de nem adott végső fotóindexet; a `mode != 0` ágat nem futtatta. | A #4182-ben a bizonyított dátumcsoportosítás implementálható. A megtartott fotóra ne kerüljön becsült szabály. A végső képszűrés csak a `[obj+0x4e0]` rekordíró és a `+0x30/+0x34` szemantika azonosítása, a `0x00874320` kimeneti elemeinek visszakötése valódi fotórekord-indexekhez, valamint a `0x00877c50` valódi indexű natív futása után implementálható. `Kész, ha`: (1) két fotóval, felcserélt scorerértékekkel a `mode == 0` és `mode != 0` natív futása végső fotóindexet ad; (2) az index pontszámcserével vagy attól független sorrendi szabály szerint változik, és ezt a diszasszemblálás külön is alátámasztja; (3) a scorer- és dátumhám természetes cikluskilépést ad; (4) a teljes eredmény két független úton egyezik. |
 
 Nyitott futtatási kérdés: melyik fotórekord-indexet teszi a csoportból a
 `0x008781a0` megfelelő jelöltjévé, és a getterek által olvasott rekordmezők
