@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.26] – 2026-10-06
+
+- Az Eszközök menüből elérhető Emberkezelőben a személynevek és az Emberek albumok kezelhetők. (#4334).
+- A gyorsbillentyűk csak a hozzájuk tartozó nézetben futnak, a szövegmezők pedig megtartják saját billentyűiket. (#4398).
+- A valódi GPU-s finomhangolás-teszt kihagyja magát, ha a headless Wayland-kompozitor nem érhető el. (#4422).
+
 ## [0.9.25] – 2026-10-06
 
 - A film szöveges diái „Text Slide” néven jelennek meg, az infósor pedig a kiválasztott dia nevét, méretét és filmsorszámát mutatja. (#4402).
