@@ -18,8 +18,8 @@ MuseumMatte"):
 4. **Súly** — `a = min(255, (M · csonk(strength · 256)) >> 8)`.
 5. **Kimenet** — a lekicsinyített ágon a súlyt a Mitchell-átméretező
    (`B = C = 0,4`, `resize_column_plane`) nagyítja vissza, a keverés
-   `⌊(G·a + S·(255 − a)) / 255⌋`; a teljes felbontású ágon
-   `((256 − a)·S + a·G) >> 8`.
+   `⌊(G·a + S·(255 − a)) / 255⌋`; a teljes felbontású ágon a forrástag
+   `((256 − a)·S) >> 8`, a glow-tag pedig natívan kerekített `G·a / 255`.
 
 A `glowalpha` a natív kódban holt paraméter; a MuseumMatte 0,7/0,6-os
 áttetszősége a művelet `BlendAlpha`-ja, ezt a lánc keverője teszi rá:
@@ -162,12 +162,10 @@ _S = np.arange(256, dtype=np.int64)[np.newaxis, :]
 
 
 def _teljes_felbontasu_tabla(szin: int) -> np.ndarray:
-    """A `f = 1` ág: `((256 − e)·S + e·G) >> 8` (`0x00bcbd60`).
-
-    ⚠️ Az `e·G` tag csak feketére MÉRT (ott 0); más színre a képlet
-    folytatása, a Picasa-exporton nem kimérve.
-    """
-    return ((_FIXPONT - _E) * _S + _E * szin) >> 8
+    """A `f = 1` ág (`0x00bcbd60`): forrástag `>> 8`, glow-tag kerekített `/ 255`."""
+    u = _E * szin + 128
+    glow = (u + (u >> 8)) >> 8
+    return ((_FIXPONT - _E) * _S >> 8) + glow
 
 
 def _lekicsinyitett_tabla(szin: int) -> np.ndarray:

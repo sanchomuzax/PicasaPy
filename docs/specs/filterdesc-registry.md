@@ -1798,7 +1798,9 @@ azonos, átlátszatlan, `BGRA=(40,80,160,255)` képpontokból állt;
 | 1 | 214,35,17 / 199,47,23 / 160,80,40 | `68ee9d48118944f5791e810296d9d360c9ba47330862ddcb10a427a3bdfe6c06` | 16/147 / 1 |
 | 1,1 | 219,30,15 / 203,44,22 / 160,80,40 | `5c0f3aec710643c85e491b50954293b3aec5f3984d86c2adac5b42c406e66715` | 28/147 / 1 |
 | 2 | 255,0,0 / 238,14,7 / 160,80,40 | `4b30fe634d38fcf4f4cbb039bf09a3d759999c324cefff9aa1b0216e762d764f` | 20/147 / 1 |
-| 3 | 255,0,0 / 255,0,0 / 160,80,40 | `a1ac7ad25bb6c5ef3cb31da0bcd6ad7986044a3a419124bc39beef702e49b80` | 28/147 / 1 |
+| 3 | 255,0,0 / 255,0,0 / 160,80,40 | `a1ac7ad25bb6c5ef3cb31da0bcd6ad7986044a3a419124bc39beef702e49b80b` | 28/147 / 1 |
+
+A `strength=3` korábbi SHA-256 értéke csonka, 63 karakteres volt; itt a teljes, 64 karakteres hash szerepel.
 
 **A/B út egyezése:** az utasításban a `strength`-szorzó 1 fölött sincs 1-re
 korlátozva; a QEMU-ban azonos első lépcsőértékű (`t=1`) `1,1`, `2` és `3`
