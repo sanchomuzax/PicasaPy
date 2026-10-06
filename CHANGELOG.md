@@ -7,7 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-- A Nézet ▸ Kis képek kapcsolóval állítható, hogy a könyvtári rács megjelenítse-e a kis képeket; a választás újraindítás után is megmarad. (#4346).
+## [0.9.15] – 2026-10-06
+
 - A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).
 
 ## [0.9.14] – 2026-10-06
