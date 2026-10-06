@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.32] – 2026-10-07
+
+- A kötegelt átnevezés hiba esetén megmutatja az elkészült fájlokat, és frissíti a listát (#4470).
+- Az azonos `.picasa.ini` útvonalra induló PicasaPy-frissítések folyamaton belül sorosak, a külső Picasa-írás észlelt esetben újrapróbálódik (#4471).
+
 ## [0.9.31] – 2026-10-07
 
 - A mappa zeneválasztása a diavetítés és a mozgófilm hangsávjaként is használható. (#4448).
