@@ -42,7 +42,7 @@ from picasapy.render.curves import curve_lut, validate_image
 from picasapy.render.belso_ragyogas import inner_glow
 from picasapy.render.glimmer_ops import alpha_blend, resize_image
 from picasapy.render.glimmer_tone import VIGNETTE_XBLUR_FACTOR
-from picasapy.render.halftone import dot_size_for, native_dot_mask, tiled_mask_origin
+from picasapy.render.halftone import dot_size_for, native_dot_mask
 from picasapy.render.nativ_blur import blur_image_operation
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
@@ -282,10 +282,9 @@ def _comicize_dot_branch(pixelated: np.ndarray, tile: int, offset: float) -> np.
     height, width = pixelated.shape[:2]
     pixelated_f = pixelated.astype(np.float32)
     szurke = _luma(pixelated_f)
-    # a rács középre igazított origója; a `tiled_dot_ramp` a képpont
-    # közepéből mér, a natív rácsoló az indexéből — ezért a `+ 0,5` (#3878)
-    ox, oy = tiled_mask_origin(width, height, tile, offset, offset)
-    maszk = native_dot_mask(height, width, tile, ox + 0.5, oy + 0.5) / np.float32(255.0)
+    # A natív mag a képpontindexből méri a Q8.8 sugarat; a saját wrapperén
+    # át adódik hozzá a középre igazított origó és a csonkolt rácseltolás.
+    maszk = native_dot_mask(height, width, tile, offset, offset) / np.float32(255.0)
     fedett = np.float32(255.0) + (szurke - np.float32(255.0)) * maszk
     kuszob = _COMICIZE_KUSZOB[np.clip(np.rint(fedett), 0, 255).astype(np.uint8)]
     return np.minimum(np.float32(255.0), kuszob[..., np.newaxis] + pixelated_f)
@@ -318,8 +317,8 @@ def apply_comicize(
           natív alkalmazó az eltolást eldobja; `⌈W/pw⌉ × ⌈H/ph⌉` blokk,
           doboz-kicsinyítés, középre igazított visszanagyítás
           (`pixelate_centered`, #3878) —, Haeberli-szürke (#3507), a natív
-          8.8-as pontmaszk (`halftone.native_dot_mask`, #3390) középre
-          igazított, képpontindexből mérő rácson (`halftone.tiled_mask_origin`;
+          8.8-as pontmaszk (`halftone.native_dot_mask`, #3390, #4326) a
+          középre igazított, klippelt csemperácson (`halftone.tiled_mask_grid`;
           a második ág maszkja a csonkolt fél csempével eltolva) mint
           `PartialMask` a FEHÉR fölé — `255 + (szürke − 255) · m` —, a
           `[0,0][150,0][160,255][255,255]` küszöbgörbe, majd `add` a
