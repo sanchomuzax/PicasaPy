@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.33] – 2026-10-07
+
+- A foglalt célfájlt áthelyezés és visszagörgetés közben is érintetlenül hagyja (#4469).
+- A modellletöltés tesztje a keresés gombjának tényleges engedélyezésére vár, nem a letöltési jelzőre (#4475).
+
 ## [0.9.32] – 2026-10-07
 
 - A kötegelt átnevezés hiba esetén megmutatja az elkészült fájlokat, és frissíti a listát (#4470).
