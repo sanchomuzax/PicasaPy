@@ -108,6 +108,32 @@ class TestMigrationV11Offline:
             assert rows and all(row["offline"] == 0 for row in rows)
 
 
+class TestMigrationV20TakenAtOverride:
+    def test_v19_upgrade_preserves_indexed_photo_data(self, tmp_path):
+        db = tmp_path / "index.db"
+        _make_v1_db(db)
+        with open_index(db) as conn:
+            conn.execute(
+                "UPDATE photos SET taken_at = ? WHERE name = ?",
+                ("2021-04-05T06:07:08", "a.jpg"),
+            )
+            # Hiteles v19-es alak: minden meglévő mező és adatsor marad,
+            # csak a #4332-es oszlop és migráció utáni verziójelölés hiányzik.
+            conn.execute("ALTER TABLE photos DROP COLUMN taken_at_override")
+            conn.execute("PRAGMA user_version = 19")
+            conn.commit()
+
+        with open_index(db) as conn:
+            photo = photos_in_folder(conn, "/kepek")[0]
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == 20
+            assert photo.name == "a.jpg"
+            assert photo.star is True
+            assert photo.caption == "régi felirat"
+            assert photo.keywords == "régi,kulcs"
+            assert photo.taken_at == "2021-04-05T06:07:08"
+            assert photo.taken_at_override is None
+
+
 class TestMigrationSafety:
     def test_failed_migration_rolls_back_completely(self, tmp_path, monkeypatch):
         # Félbeszakadó migráció nem hagyhat félig átalakított sémát:
@@ -180,6 +206,8 @@ class TestAlbumsMigration:
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;"
             "ALTER TABLE photos DROP COLUMN flip_flags;"
+            # #4332: a kézi dátumfelülírás oszlopa csak a v20-ban érkezik
+            "ALTER TABLE photos DROP COLUMN taken_at_override;"
             "PRAGMA user_version = 7;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -236,6 +264,8 @@ class TestFaceMigration:
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
+            # #4332: a kézi dátumfelülírás oszlopa csak a v20-ban érkezik
+            "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             "PRAGMA user_version = 8;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -297,6 +327,8 @@ class TestFaceEmbeddingMigration:
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
+            # #4332: a kézi dátumfelülírás oszlopa csak a v20-ban érkezik
+            "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             "PRAGMA user_version = 9;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")

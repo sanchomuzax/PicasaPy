@@ -371,6 +371,33 @@ def _csuszkara_kattint(window, qt_app, slider, value) -> None:
     qt_app.processEvents()
 
 
+def _csuszkahuzas(window, qt_app, slider, value) -> None:
+    """Valódi fogantyúhúzás a vezérlő pillanatnyi geometriájából számolva."""
+    assert _var(qt_app, lambda: slider.width() > 0 and slider.height() > 0)
+    handle = slider.property("handle")
+    assert handle is not None, f"{slider.objectName()}: nincs fogantyú"
+    start = slider.mapToScene(
+        QPointF(handle.x() + handle.width() / 2, handle.y() + handle.height() / 2)
+    ).toPoint()
+    fraction = (value - slider.property("from")) / (
+        slider.property("to") - slider.property("from")
+    )
+    target_x = (
+        slider.property("leftPadding")
+        + handle.width() / 2
+        + fraction * (slider.property("availableWidth") - handle.width())
+    )
+    target = slider.mapToScene(QPointF(target_x, slider.height() / 2)).toPoint()
+    QTest.mousePress(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, start
+    )
+    QTest.mouseMove(window, target)
+    QTest.mouseRelease(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, target
+    )
+    qt_app.processEvents()
+
+
 def _lathato_sorok(window):
     """A nyitott legördülő LÁTHATÓ sorai, fentről lefelé. (A sor saját
     `text`-je üres — a feliratot a belső `Text` rajzolja —, ezért a sorrend
@@ -659,12 +686,104 @@ class TestFaceDetectionOption:
         suggestion_slider = _child(window, "optionsFaceSuggestionThresholdSlider")
         cluster_slider = _child(window, "optionsFaceClusterThresholdSlider")
         persist = _child(window, "optionsFacePersistToFileCheck")
+        suggestion_value = _child(window, "optionsFaceSuggestionThresholdValue")
+        cluster_value = _child(window, "optionsFaceClusterThresholdValue")
+        suggestion_ticks = _child(window, "optionsFaceSuggestionThresholdTicks")
+        cluster_ticks = _child(window, "optionsFaceClusterThresholdTicks")
+        suggestion_label = _child(window, "optionsFaceSuggestionThresholdLabel")
+        cluster_label = _child(window, "optionsFaceClusterThresholdLabel")
+        content = _child(window, "optionsNameTagsControls")
+        stack = _child(window, "optionsTabStack")
+        contact_upload = _child(window, "optionsFaceUploadContactPhotosCheck")
+        assert contact_upload.property("visible") is False
 
         assert suggestions.property("enabled") is True
         assert suggestions.property("checked") is True
         assert suggestion_slider.property("value") == 85
         assert cluster_slider.property("value") == 70
+        assert suggestion_value.property("text") == "85"
+        assert cluster_value.property("text") == "70"
+        assert suggestion_ticks.property("tickCount") == 10
+        assert cluster_ticks.property("tickCount") == 10
         assert persist.property("checked") is True
+
+        # A referencia kb. 434 px-es középre tett vezérlőcsoportot mutat;
+        # a saját elemgeometriát mérjük, a képernyőképhez ±3 px-et engedve.
+        assert abs(content.width() - 434) <= 3
+        content_origin = content.mapToItem(stack, QPointF(0, 0))
+        assert abs(
+            content_origin.x() + content.width() / 2 - stack.width() / 2
+        ) <= 3
+        assert abs(content_origin.y() - 8) <= 3
+        assert abs(suggestion_slider.width() - 297) <= 3
+        assert abs(cluster_slider.width() - 297) <= 3
+        suggestion_center = suggestion_slider.mapToItem(
+            stack, QPointF(suggestion_slider.width() / 2, suggestion_slider.height() / 2)
+        )
+        cluster_center = cluster_slider.mapToItem(
+            stack, QPointF(cluster_slider.width() / 2, cluster_slider.height() / 2)
+        )
+        detection_center = _child(window, "optionsFaceDetectionCheck").mapToItem(
+            stack, QPointF(0, _child(window, "optionsFaceDetectionCheck").height() / 2)
+        )
+        suggestions_center = suggestions.mapToItem(
+            stack, QPointF(0, suggestions.height() / 2)
+        )
+        persist_center = persist.mapToItem(
+            stack, QPointF(0, persist.height() / 2)
+        )
+        assert abs(suggestions_center.y() - detection_center.y() - 22) <= 3
+        assert abs(suggestion_center.y() - suggestions_center.y() - 24) <= 3
+        assert abs(
+            cluster_center.y() - suggestion_center.y()
+            - 41
+        ) <= 3
+        assert abs(persist_center.y() - cluster_center.y() - 39) <= 3
+        for label, slider in (
+            (suggestion_label, suggestion_slider),
+            (cluster_label, cluster_slider),
+        ):
+            assert label.property("rightAligned") is True
+            label_right = label.mapToItem(
+                stack, QPointF(label.width(), 0)
+            ).x()
+            slider_left = slider.mapToItem(stack, QPointF(0, 0)).x()
+            assert abs(slider_left - label_right - 8) <= 2
+
+        rendered = window.grabWindow()
+        assert not rendered.isNull(), "a fül nem rajzolódott ki"
+        dpr = rendered.devicePixelRatio()
+        for ticks, _slider, tick_prefix in (
+            (suggestion_ticks, suggestion_slider, "optionsFaceSuggestionTick"),
+            (cluster_ticks, cluster_slider, "optionsFaceClusterTick"),
+        ):
+            marks = [
+                item for item in ticks.childItems()
+                if item.objectName().startswith(tick_prefix)
+            ]
+            assert len(marks) == 10
+            mark_centers = [item.x() + item.width() / 2 for item in marks]
+            assert abs(mark_centers[-1] - mark_centers[0] - 287) <= 3
+            assert all(
+                abs((right - left) - 32) <= 3
+                for left, right in zip(mark_centers, mark_centers[1:], strict=False)
+            )
+            for mark in marks:
+                scene_point = mark.mapToScene(
+                    QPointF(mark.width() / 2, mark.height() / 2)
+                )
+                px, py = round(scene_point.x() * dpr), round(scene_point.y() * dpr)
+                pixels = [
+                    rendered.pixelColor(x, y)
+                    for x in range(max(0, px - 1), min(rendered.width(), px + 2))
+                    for y in range(max(0, py - 1), min(rendered.height(), py + 2))
+                ]
+                assert any(
+                    175 <= color.red() <= 220
+                    and abs(color.red() - color.green()) <= 3
+                    and abs(color.green() - color.blue()) <= 3
+                    for color in pixels
+                ), f"{mark.objectName()}: nem rajzolódott ki a beosztás"
 
         _kattints(window, qt_app, suggestions)
         assert controller.setting_calls[-1] == ("suggestions", False)
@@ -680,6 +799,9 @@ class TestFaceDetectionOption:
         _csuszkara_kattint(window, qt_app, suggestion_slider, 90)
         assert controller.setting_calls[-1] == ("suggestionThreshold", 90)
         assert controller.suggestion_threshold == 90
+        _csuszkahuzas(window, qt_app, suggestion_slider, 95)
+        assert _var(qt_app, lambda: controller.suggestion_threshold == 95)
+        assert suggestion_value.property("text") == "95"
 
         _csuszkara_kattint(window, qt_app, cluster_slider, 75)
         assert controller.setting_calls[-1] == ("clusterThreshold", 75)

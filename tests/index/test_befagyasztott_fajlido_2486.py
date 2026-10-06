@@ -272,6 +272,8 @@ class TestMigracio:
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             #: #2902: a friss séma már tartalmazza — a v16 nem
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
+            #: #4332: a felvételi dátum felülírása a v20-ban érkezik
+            "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             "PRAGMA user_version = 16;"
         )
         raw.execute("INSERT INTO folders(id, path, has_ini) VALUES (1, '/kepek', 0)")

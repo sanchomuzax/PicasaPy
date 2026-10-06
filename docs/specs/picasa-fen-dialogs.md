@@ -508,7 +508,11 @@ A legnagyobb `.fen` fájl (262 sor). Fülönként bontva:
 | **Printing** | 5 db nyomtatási méret `popup`, nagy felbontású előnézet checkbox, nyomtatóminőség (csak Win, radiogroup), átméretező algoritmus minősége (radiogroup: Lanczos-3/Lanczos-8). |
 | **Network** | Proxy felhasználónév/jelszó (csak Win), automatikus hálózati beállítás-felismerés, hálózati naplózási szint (`popup`, 5 fokozat), naplófájl útvonal (`pathbox`). |
 | **Web Albums** | Alapértelmezett feltöltési méret popup, "csíkozott" (progresszív) feltöltés checkbox (`bind` a mérettől függ, `transform="not"`), JPEG-minőség megőrzése checkbox, csak csillagozott fotók szinkronizálása, szinkron-megerősítés kikapcsolása (`name="confirmsync::disable"` — **figyelemre méltó, más dialógust vezérlő kulcs!**), névcímkék feltöltése, vízjel hozzáadása + szöveg. |
-| **Name Tags** | Arcfelismerés engedélyezése, javaslatok engedélyezése, javaslat-küszöb és klaszter-küszöb csúszkák (`bind`/`list` 50–95 tartomány), névcímkék mentése a fájlba, kontakt-fotók feltöltése Google Contacts-ba. |
+| **Name Tags** | Arcfelismerés engedélyezése, javaslatok engedélyezése, javaslat- és klaszterküszöb-csúszka (`ticks=10`, `width=20em`, `bind`/`list` 50–95, mellettük a kötött aktuális érték), névcímkék mentése a fájlba, a `uploadcontactphotos` forrássor (PicasaPy-ban rejtve; lásd a megjegyzést). |
+
+> **#4358 megjegyzés:** az `options.fen` `uploadcontactphotos` sora szerepel a
+> forrásban, de a Google Contacts feltöltési szolgáltatás megszűnt; a
+> PicasaPy Névcímkék fülén ezért a vezérlő rejtve marad.
 
 A `Web Albums` és `Name Tags` fülek egyértelműen V3 (felhő/arcok) hatókörűek,
 a `General`/`Slideshow`/`File Types` V1/V2, a `Printing`/`Network` alacsony

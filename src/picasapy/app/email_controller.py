@@ -331,6 +331,7 @@ class EmailController(QObject):
                     rotate_steps=photo.rotate_steps,
                     flip_flags=getattr(photo, "flip_flags", 0),  # #2902
                     filters=photo.filters,
+                    taken_at_override=getattr(photo, "taken_at_override", None),
                 )
             )
         return items

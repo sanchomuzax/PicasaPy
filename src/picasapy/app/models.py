@@ -769,6 +769,8 @@ class PhotoGridModel(QAbstractListModel):
         return {
             "name": photo.name,
             "thumbUrl": self._sor_url(photo),
+            # #4332: a rács feedje is a kézi indexfelülírást mutassa.
+            "takenAt": photo.taken_at or "",
             "star": photo.star,
             "caption": photo.caption or "",
             "isVideo": photo.kind == "video",

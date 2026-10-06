@@ -63,6 +63,8 @@ class TestMigracio:
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             # #2902: a tükrözés jelzője a v19-ben
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
+            # #4332: a felvételi dátum felülírása a v20-ban érkezik
+            "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
             "DROP TABLE photo_hashes;\n"
             "CREATE TABLE photo_hashes ("
             " path TEXT PRIMARY KEY,"
