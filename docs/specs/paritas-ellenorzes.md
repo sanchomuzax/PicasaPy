@@ -134,7 +134,7 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 | Kérdés | Állapot | Részletes spec |
 |---|---|---|
 | `ID_VIEW_SMALL`: melyik nézetben, milyen képméretet állít? | **Megválaszolva:** a CThumbUI könyvtári bélyegképnézetének szűrőkapcsolója; nem állít bélyegképméretet. A szűrő alap-területküszöbe 60 000 képpont². | `picasa-menu-parancsok-viselkedes.md`, „Kis képek” |
-| `ID_FACESRANDOM`: mi a People Albums film bemenete, sorrendje és arcigazítása; azonos-e a mi fejlécutunkkal? | **Nyitott:** az eredeti módjelző és arc-film-felbontás bizonyított, a képválasztás/sorrend/igazítás nem. A mi két fejlécgombunk egy közös normálfilm-útvonalon van. | #4339 függelék, 2. táblázat; `picasa-create-features.md` §2.5 |
+| `ID_FACESRANDOM`: mi a People Albums film bemenete, sorrendje és arcigazítása; azonos-e a mi fejlécutunkkal? | **Részben megválaszolva:** a `+0x4f1` mód a `0x00618050`-ban egy 6-os módú virtuális listalekérést választ; a visszatérő lista a `+0x4b8`. A lista megvalósítása, elemei/sorrendje és arcigazítása nyitott. A mi két fejlécgombunk egy közös normálfilm-útvonalon van. | #4339 függelék, 2. táblázat; `picasa-create-features.md` §2.5 |
 | Kimenő fájlhúzás: OLE-formátum, fájllista, műveletmaszk; reprodukálható-e? | **Bináris szerződés megválaszolva:** egy `CF_HDROP` UTF-16 útvonal-lista, `COPY|MOVE|LINK` engedett hatásokkal. A natív Qt/asztali fogadópróba nyitott. | #4339 függelék, 3. táblázat; `picasa-eger-es-kijeloles.md` §5.1 |
 | Melyik nézetben/fókuszban él a 44 helyi menü-gyorsbillentyű? | **Részben megválaszolva:** mind a kilenc birtokos helyi menü azonosítva; a tényleges billentyűleütés és a rekord parancsának fókuszkapuja nincs hozzákötve. | #4339 függelék, 4. táblázat; `picasa-gyorsbillentyuk.md` §4.1 |
 
@@ -152,7 +152,7 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| `ID_FACESRANDOM = 0x9d5a`; a filmpanel belépője a `0x0057cb60`-ban a `panel+0x4f1` arc-film módjelzőt állítja. A `0x00616940` emiatt `Preferences\facemakemovieres`-t olvas; a `0x00616b50` alapértéke 3, ami a dokumentált táblában 1024×768. A kiválasztott albumok/képek köre, sorrendje és arcra igazítása **NINCS MEG**. | A két Emberek-fejlécgomb ugyanazt a `personMovieRequested` jelet küldi (`LightboxHeader.qml:401–442`). A `Main.qml:715–720` a jelenlegi személyalbum modelljének minden sorindexét átadja; a `CreateDialogs.qml:42–45,465–480` ezekből URL-listát csinál, normál filmútvonalon. Arcmaszk-/vágási adat ezen az átadási ponton nincs. | **Ne állítsuk egyenértékűnek.** A bináris bemeneti iterátort és az arcigazítást Ghidrával kell feltárni; csak utána dönthető el, hogy a fejlécgombnak külön arc-film modellel kell-e nyílnia. A minimális fejlesztői elfogadás: az eredeti forrásképek, sorrend, crop/arcigazítás és külön arc-film felbontás egyezzen egy rögzített próbán. |
+| `ID_FACESRANDOM = 0x9d5a`; a `0x0057cc7a` a `panel+0x4f1` módjelzőt állítja. A `0x00618050` a `+0x4f0/+0x4f1` értékek alapján választ módot; a `0x00618236` utasításnál a `panel+0x4b4` objektum vtable 0. helyére hív `esi=6` móddal, az eredményt a `+0x4b8` mezőbe teszi. Ez a People-lista lekérdezésének **hívási határa**, a virtuális függvény tényleges megvalósítása nem azonosított. A `0x006175c0` a `+0x4bc` filmmodell újraépítője: a `+0x4b8` listát a modell `+0x2d8` mezőjébe teszi és végigiterál rajta; nem ez építi fel a listát. A `0x00616940` olvassa a `cropfit` beállítást és az arcmód felbontási kulcsát; a `0x0080fea0` a kapott jelzőket/értékeket modellmezőkbe írja és általános node-okat inicializál. A `0x00619010` a `+0x4bc` modellt továbbadja a `0x00555a30` timeline/klip-készítő hívásnak (`0x006190ae`). A forrás-albumok/képek, sorrend és tényleges arc-kivágás/igazítás **NINCS MEG**. | A két Emberek-fejlécgomb ugyanazt a `personMovieRequested` jelet küldi (`LightboxHeader.qml:401–442`). A `Main.qml:715–720` a jelenlegi személyalbum modelljének minden sorindexét átadja; a `CreateDialogs.qml:42–45,465–480` ezekből URL-listát csinál, normál filmútvonalon. Arcmaszk-/vágási adat ezen az átadási ponton nincs. | **Ne állítsuk egyenértékűnek.** Következő Ghidra-cél a `0x00618050` virtuális listalekérése (`+0x4b4` vtable slot 0, mód 6), majd a `0x00555a30` modell/lista → timeline/klip útja a crop/arcadatok értelmezéséig. Csak ezután dönthető el a külön arc-film modellel való fejlesztés. A fejlesztői elfogadás: a forrásképek, sorrend, crop/arcigazítás és külön arc-film felbontás rögzített mérőadaton egyezzen. |
 
 ### 3. Kimenő fájlhúzás
 
@@ -164,7 +164,7 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Kilenc építő hívja a `0x00a6aee0` tételépítőt, 44 rekorddal: `0x00730790` mappanézet képe (8); `0x00731050` albumképek (8); `0x007319f0` mappa (4); `0x00732160` album (3); `0x007327a0` OneUp (8); `0x00732ee0` képtálca (5); `0x00733a40` gyűjtemény-/mappalista (1); `0x007355c0` Emberek-album képe (4); `0x007359e0` Emberek-album (3). A billentyűket lásd `picasa-gyorsbillentyuk.md` §4.1-ben. A tényleges leütés fókuszkapuja **NINCS MEG**. | QML `Shortcut`-ok a `Main.qml` és nézeti fájlok között vannak; menüfeliratok és shortcut-kezelők nem adják vissza automatikusan a fenti kilenc helyi kontextust (`picasa-gyorsbillentyuk.md` §6). | A bináris fókusz-/billentyűterjesztést össze kell kötni mind a 44 rekord parancsával, majd a QML-kötést az eredeti nézeti kontextushoz kell igazítani. Addig ne nyissunk kész fejlesztési jegyet a „44 shortcut fókuszhelyes” állításra. |
+| Kilenc építő hívja a `0x00a6aee0` tételépítőt, összesen 44 rekorddal (a bontást lásd `picasa-gyorsbillentyuk.md` §4.1-ben). A `0x00a53b00` általános billentyűút `0x00a582f0`-en át a fókuszolt gyerek vtable `+0x74` metódusának adja az eseményt. A `ytPopupListNode` RTTI-vtáblájában (`0x00c9afb4`) ez a slot a `0x00608c00` thunkra mutat, amely a `0x00a64050`-re ugr; ez azonosítja a fókuszolt popup-lista eseménykezelőjét, de azt még nem, hogy a kilenc helyi menü ezt a fogadót használja-e. A `CThumbUI` saját vtable-billentyűkezelője `0x005e6710`, amely `0x005e67f4`-nél a közös továbbítót hívja, majd saját billentyűágakkal folytatja. A `0x00a64050` diszasszemblálásában általános listaesemények és Enter/Esc/Space ágak látszanak; a rekord-parancs hozzárendelés és fókuszkapu **NINCS MEG**. | QML `Shortcut`-ok a `Main.qml` és nézeti fájlok között vannak; menüfeliratok és shortcut-kezelők nem adják vissza automatikusan a fenti kilenc helyi kontextust (`picasa-gyorsbillentyuk.md` §6). | A `0x00a64050` fókuszolt listaeseményét és a `0x00a6aee0` rekordregisztrációját kell feltárni, majd a 44 parancsot a nézeti billentyűfogadókkal összekötni. Addig ne nyissunk kész fejlesztési jegyet a „44 shortcut fókuszhelyes” állításra. |
 
 ## Nyitott
 
@@ -187,25 +187,28 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 | `BigPictureThreshold = 0xEA60 = 60 000`; `width × height`; képarány-konstansok 3.0 és 0.33333; méretág 200 | bináris (`0x0065f1e6`, `0x0065f521`, `0x00c49618`, `0x00cf4fd8`, `0x0065f553`) |
 | korábbi `minsize` kötés | **NINCS MEG** mint képszűrő-beállítás; a string xref a `.tre` attribútumparszolóba mutat (`0x008d1450`) |
 | `ID_FACESRANDOM = 0x9d5a`, `panel+0x4f1`, `facemakemovieres` alap 3 / 1024×768 | bináris (`0x0057cc72`, `0x00616b42`–`0x00616b64`) |
-| az eredeti People-album forrásképei, sorrendje, arcigazítása | **NINCS MEG**; Ghidra-kör kell |
+| `ID_FACESRANDOM` listamódja: a `+0x4f1` ágból a `+0x4b4` virtuális objektum 0. helyére `6` módparaméterrel hív, eredmény `+0x4b8` | bináris (`0x0057cc7a`, `0x00618209`–`0x0061824d`); a konkrét virtuális cél **NINCS MEG** |
+| `+0x4bc` modell és `+0x4b8` lista viszonya; modellrekonstrukció és lista-iterálás | bináris (`0x006175c0`, Ghidra-köteg `006175c0.c`, `0x00616940`) |
+| az eredeti People-album forrásképei, sorrendje, arcigazítása; a `cropfit` tényleges renderhatása | **NINCS MEG**; a listalekérés és a klip-fogyasztás Ghidra-köre kell |
 | OLE-formátum `CF_HDROP=15`, `DROPFILES.pFiles=20`, `fWide=1`, effect mask 7 | bináris (`0x00aa215a`, `0x00aa2074`, `0x00aa207a`, `0x00aa2136`) |
 | QML-ből tényleges CF_HDROP/OS-fájl payload | **NINCS MEG**; a forrásban nincs `Drag.mimeData`, asztali próba nélkül nem igazolt |
 | a 44 rekord kilenc menüépítő szerinti csoportja | bináris + spec-leltár (`0x00a6aee0` hívók; részletesen `picasa-gyorsbillentyuk.md` §4.1) |
-| minden shortcut leütéséhez tartozó fókuszkapu | **NINCS MEG**; `0x00a53b00` általános fókusz-továbbítása nem köti a 44 rekordot a parancsokhoz |
+| általános fókusz-esemény útvonala | bináris (`0x00a53b00`, `0x00a582f0`, `ytPopupListNode` RTTI slot `+0x74` → `0x00608c00` → `0x00a64050`) |
+| a 44 shortcut-rekord leütésének konkrét nézeti fókuszkapuja és parancs-hozzárendelése | **NINCS MEG**; a popup-lista eseménykezelő és a rekordregisztráció nincs összekötve |
 
 ## A két független út
 
 - **Small Pictures — egyezik.** A: `0x005c90f0` menüépítő + `0x005c94e0` állapotkapcsoló (`Show only big images`, fordított pipa). B: `0x0065d010` külön képszűrő ugyanazt a beállítást olvassa, majd terület-, képarány- és méretágat alkalmaz. A beállítás kapcsoló, nem méretválasztó.
 - **Fájlhúzás — egyezik.** A: `0x00aa1fb0` `CF_HDROP`/UTF-16 payloadot és 7-es hatásmaszkot készít. B: a `ytSimpleDataObject` `EnumFormatEtc`/`QueryGetData` útja a 15-ös formátumot szolgálja ki, más formatet nem fogad el.
-- **People Albums film — csak a módra egyezik.** A: `0x0057cb60` beállítja a People-mód flaget. B: `0x00616940` e flagből a külön `facemakemovieres` felbontást választja. A két út a külön arc-film módot megerősíti, de a képlistát és cropot nem.
-- **Gyorsbillentyűk — kontextusra egyezik, fókuszra nem.** A: a kilenc menüépítőbe ágyazott 44 rekord. B: a közös `0x00a53b00`/`0x00a582f0` billentyűút fókuszált elemet céloz. A jelen diszasszemblálás nem kapcsolja össze a rekordokat a továbbított eseményekkel.
+- **People Albums film — a külön mód két úton megerősített, a tartalom nyitott.** A: `0x0057cc7a` a `+0x4f1` módjelzőt állítja. B: `0x00618050` ezt a jelzőt olvassa, és a `+0x4b4` virtuális objektumtól 6-os móddal kér listát a `+0x4b8` mezőbe; `0x00616940` az arcmód felbontási kulcsát választja. A `0x006175c0` Ghidra-dekompilátuma ezt külön megerősíti: az a `+0x4bc` modell újraépítője, a listát átveszi és iterálja. A két bináris út a módot és a modell/lista határát megerősíti, a virtuális cél képei/sorrendje és cropja nem következik belőlük.
+- **Gyorsbillentyűk — a fókusz-út részben feltárt, a rekordkapu nyitott.** A: `0x00a53b00` → `0x00a582f0` a fókuszolt gyerek vtable `+0x74` metódusáig vezet. B: az RTTI `ytPopupListNode` `+0x74` slotja `0x00608c00` thunkon át `0x00a64050`; a külön `CThumbUI` slot a `0x005e6710` saját kezelője. A 44 rekordot építő `0x00a6aee0` út nincs utasításszinten összekötve ezekkel a fogadókkal.
 
 ## Cáfoló kísérlet
 
 1. Azt próbáltam cáfolni, hogy `ID_VIEW_SMALL` bélyegképméretet állít: összevetettem a `0x9cd8` és `0x9c9d` külön parancsait, az `ID_VIEW_SMALL` menüépítőjét/íróját, valamint a külön képszűrő fogyasztót. A `0x9cd8` csak a `Show only big images` preferenciát váltja; a méret-presetek külön parancsok.
 2. Azt próbáltam cáfolni, hogy a drag adatobjektum csak CF_HDROP-ot fogad el: `QueryGetData`-nél alternatív formátumot vizsgáltam. A kód csak `cfFormat=15`, `DVASPECT_CONTENT` és HGLOBAL mellett tér vissza sikerrel; alternatív URI-/egyedi formátumot nem igazol.
-3. A `RANDOM` szó alapján feltételezhető véletlen sorrendet a `+0x4f1` ág és a `0x00616940` olvasása alapján ellenőriztem. Ezek a módot és a felbontást bizonyítják, de nem a kiválasztó/keverő algoritmust; a „random” olvasat nyitva marad.
-4. A 44 rekord fókuszkapuját a közös billentyűút felől próbáltam visszakövetni. Az út fókuszált vezérlőnek küldi az eseményt, de nem találtam utasításszintű kötést a kilenc builder 44 parancsrekordjához; nem állítok globális vagy „csak menü nyitva” szabályt.
+3. Azt próbáltam cáfolni, hogy a `0x006175c0` építi a People-képlistát, illetve a `0x0080fea0` végzi az arc-kivágást. A Ghidra-kód szerint a `0x006175c0` a `+0x4bc` modellt újraépíti és a már kapott `+0x4b8` listát iterálja; a `0x0080fea0` modellmezőket ír és node-okat inicializál. A lista-lekérési határ a `0x00618050`-ban van (`0x00618236`), de a virtuális cél és a render-crop út nyitott.
+4. A 44 rekord billentyűútját a közös továbbítótól a fókuszolt gyermekig követtem: a `0x00a582f0` vtable `+0x74` hívása az eseményt a fókuszolt gyerekhez viszi; RTTI alapján a `ytPopupListNode` ezen slotja `0x00a64050`-re jut. A teljes popup-lista kezelőben csak általános listaesemény-/Enter/Esc/Space ágak látszanak; nem állítok rekord-specifikus Ctrl/Alt parancskaput vagy globális/minden helyzetben aktív szabályt.
 
 ## A #4339 „Kész, ha” pontjai
 
@@ -216,14 +219,14 @@ Az alábbi #4339-es függelék pontosítja ezt a listát. A `Small Pictures` jel
 
 ## Javasolt jegytörzs-bővítés
 
-**Kész szöveg:** „A `Small Pictures` (`ID_VIEW_SMALL=0x9cd8`) a könyvtári CThumbUI Nézet menü láthatósági kapcsolója, nem bélyegképméret. Az eredeti a `Show only big images` preferenciát váltja; az alap `BigPictureThreshold` `0xEA60` (60 000 képpont²), a szűrő további képarány- és 200 px ágakat is tartalmaz. A bináris `CF_HDROP` UTF-16 útvonal-listát ad át `COPY|MOVE|LINK` engedélyezéssel. A 44 shortcut-rekord kilenc helyi menüje ismert, de a tényleges billentyűfókusz-kapu nyitott. A `From People Albums…` külön arc-film mód és felbontás (`facemakemovieres`, alap index 3 / 1024×768), viszont a kiválasztott albumok/képek, sorrend és arcigazítás a helyi diszasszemblálásból még nem derül ki.”
+**Kész szöveg:** „A `Small Pictures` (`ID_VIEW_SMALL=0x9cd8`) a könyvtári CThumbUI Nézet menü láthatósági kapcsolója, nem bélyegképméret. Az eredeti a `Show only big images` preferenciát váltja; az alap `BigPictureThreshold` `0xEA60` (60 000 képpont²), a szűrő további képarány- és 200 px ágakat is tartalmaz. A bináris `CF_HDROP` UTF-16 útvonal-listát ad át `COPY|MOVE|LINK` engedélyezéssel. A 44 shortcut-rekord kilenc helyi menüje ismert; a közös út a fókuszolt gyerek vtable `+0x74` eseményfogadójáig követhető, a rekord-parancs hozzárendelése nyitott. A `From People Albums…` külön arc-film mód: `0x00618050` 6-os módparaméterrel kér listát a `+0x4b4` virtuális objektumtól a `+0x4b8` mezőbe, miközben `0x006175c0` a `+0x4bc` filmmodellt építi újra. A tényleges forrásképek, sorrend és arcigazítás még Ghidrára vár.”
 
 | fejlesztési irány | Eredeti / nálunk / teendő | Kész, ha |
 |---|---|---|
 | A Nézet ▸ Small Pictures kapcsolja a kis képek szűrőjét | Eredeti: `0x9cd8`, preferencia-kapcsoló, 60 000 px² alapküszöb és további ellenőrzések. Nálunk: `PicasaMenuBar.qml:885–890` helyfoglaló. Teendő: a tétel a szűrőt kapcsolja, ne bélyegképméretet. | A pipa és a látható képek a specifikált preferenciával és `0x0065f3c6`–`0x0065f5a9` szabályokkal egyeznek; a bélyegképméret nem változik. |
 | A képrács húzza a kijelölt fájlokat az asztali alkalmazásokba | Eredeti: `CF_HDROP`, UTF-16 útvonalak, COPY/MOVE/LINK. Nálunk: belső `payload="photos"`, OS-formátum nincs. Teendő: natív fájllista átadása. | Windows-próbán a fogadó a húzott fájlok útvonalait kapja, és az eredeti 3 engedett műveletből választott hatás visszajelzése helyes. |
-| Az Emberek-fejléc filmgombjai őrizzék az eredeti People/Face módokat | Eredeti: `ID_FACESRANDOM` külön mód, a bemenet még Ghidrára vár. Nálunk: mindkét gomb ugyanazt a normál filmútvonalat hívja. Teendő: csak az input-szabály feltárása után külön módot bekötni. | Eredeti képválasztás, sorrend, crop/arcigazítás és arc-film felbontás rögzített példán egyezik. |
-| A 44 shortcut a megfelelő nézetben/fókuszban működjön | Eredeti: kilenc menükontextus ismert, fókuszkapu nem. Nálunk: 20 QML `Shortcut` több nézet között. Teendő: előbb a bináris billentyűterjesztést a 44 rekordhoz kötni. | Minden rekord helyes nézetben, fókuszban és parancsra sül el; az azonos billentyűjű külön menüparancsok is a megfelelő célra jutnak. |
+| Az Emberek-fejléc filmgombjai őrizzék az eredeti People/Face módokat | Eredeti: külön mód + 6-os virtuális listakérés, de a tartalom- és crop-út még nyitott. Nálunk: mindkét gomb ugyanazt a normál filmútvonalat hívja. Teendő: a `0x00618050` listacél és a `0x00555a30` klipfogyasztás feltárása után külön módot bekötni. | Eredeti képválasztás, sorrend, crop/arcigazítás és arc-film felbontás rögzített mérőadaton egyezik. |
+| A 44 shortcut a megfelelő nézetben/fókuszban működjön | Eredeti: a fókusz-eseményút ismert (`0x00a582f0` → gyerek vtable `+0x74`); a popup-lista cél `0x00a64050`, a CThumbUI saját kezelője `0x005e6710`, a 44 rekordhoz kötés nyitott. Nálunk: 20 QML `Shortcut` több nézet között. Teendő: a popup lista és a rekordépítő út Ghidra-elemzése után kösd a rekordokat a nézet billentyűfogadóihoz. | Minden rekord helyes nézetben, fókuszban és parancsra sül el; az azonos billentyűjű külön menüparancsok is a megfelelő célra jutnak. |
 
 ## Új kutatási jegyjavaslatok
 
@@ -231,12 +234,20 @@ Nincs külön új jegyjavaslat: a két blokkoló kérdés a #4339 hátralévő r
 
 ## Nyitott — pontos következő bináris lépés
 
-- `Ghidra-kör kell: 0x006175c0 — az ID_FACESRANDOM / panel+0x4f1 módnál hogyan épül fel a filmmodell (+0x4bc) bemeneti képlistája: mely Emberek-albumok és rekordok kerülnek bele, milyen rendezéssel? [blokkoló]`
-- `Ghidra-kör kell: 0x0080fea0 — a filmmodell arc-film bemenetén hol választódik ki az arctartalom, és milyen képkivágás/arcigazítás jut a klip-renderelőnek? [blokkoló]`
-- `Ghidra-kör kell: 0x00a53b00 — a billentyűút hogyan rendeli a 44 helyi menürekord parancsait a nézet/fókusz szerinti fogadókhoz; melyik rekord melyik fókuszban aktiválódik? [blokkoló]`
+- `Ghidra-kör kell: 0x00618050 — a +0x4b4 objektum vtable 0. slotjának konkrét célja a 0x00618236 hívásnál; milyen elemeket ad vissza a 6-os módú lista, és milyen album-/képválasztást, sorrendet használ? [blokkoló]`
+- `Ghidra-kör kell: 0x00555a30 — a 0x00619010 által átadott +0x4bc film-modell/lista hogyan lesz timeline-klip; mely mezőből jön az arcazonosítás és a crop/arcigazítás? [blokkoló]`
+- `Ghidra-kör kell: 0x00a64050 — a fókuszolt ytPopupListNode eseménykezelője kezeli-e a helyi menürekordok billentyűit; ha igen, hogyan jut el a 0x00a6aee0 által felépített rekord parancsáig? [blokkoló]`
+- `Ghidra-kör kell: 0x00a6aee0 — a helyi menürekord teljes mezőalakja és regisztrálása: a billentyűmező megjelenítési címke-e vagy gyorsítóként is regisztrálódik, és ki hajtja végre a rekord parancsát? [blokkoló]`
+- `Ghidra-kör kell: 0x005e6710 — a CThumbUI saját kezelőjének fókusz-/nézetfeltételei és kapcsolata a kilenc helyi menüben hirdetett parancsokkal, különösen a közös 0x00a53b00 továbbítás utáni fallback ágban. [blokkoló]`
 - A fájlhúzás natív QML/Windows egyezése: **NINCS MEG** futó Windows-célalkalmazással végzett próbában.
 
 ## Módosított fájlok
+
+**A 2026-10-06-i folytatásban:**
+
+- `docs/specs/paritas-ellenorzes.md` — a két nyitott kérdés bizonyítéka, a helyes függvényhatárok és a célzott Ghidra-lépések.
+- `docs/specs/picasa-create-features.md` — a `0x00618050` listalekérési határa és a modellépítő/inicializáló szerepek helyesbítése.
+- `docs/specs/picasa-gyorsbillentyuk.md` — a fókuszolt popup-lista eseménykezelő és a továbbra is nyitott rekordkapu.
 
 - `docs/specs/paritas-ellenorzes.md` — a #4339 négy kérdése, eredeti/nálunk/teendő táblái, bizonyítékai és nyitott bináris lépései.
 - `docs/specs/picasa-menu-parancsok-viselkedes.md` — `ID_VIEW_SMALL` helyesbítése és a küszöb pontosítása.
