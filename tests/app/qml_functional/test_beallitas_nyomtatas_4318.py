@@ -433,13 +433,17 @@ def test_nyomtatas_ful_ketoszlopos_elrendezese_a_referencia_szerint(
     for _pont, szelesseg, magassag in combo_geometriak:
         assert abs(szelesseg - 150) <= 3, f"eltérő méretválasztó-szélesség: {szelesseg}"
         assert abs(magassag - 23) <= 3, f"eltérő méretválasztó-magasság: {magassag}"
-    assert abs((pontok[1].x() - pontok[0].x()) - 157) <= 3
-    assert abs((pontok[2].y() - pontok[0].y()) - 30) <= 3
-    assert abs((pontok[3].y() - pontok[1].y()) - 30) <= 3
-    assert abs(pontok[0].x() - pontok[2].x()) <= 2
-    assert abs(pontok[2].x() - pontok[4].x()) <= 2
-    assert abs(pontok[0].y() - pontok[1].y()) <= 2
-    assert abs(pontok[2].y() - pontok[3].y()) <= 2
+    # Oszlopfolytonos sorrend, ahogy a referencián: balra 5x8, 9x13,
+    # 10x15 cm, jobbra 13x18 és 20x25 cm.
+    assert abs((pontok[3].x() - pontok[0].x()) - 157) <= 3
+    assert abs((pontok[1].y() - pontok[0].y()) - 30) <= 3
+    assert abs((pontok[2].y() - pontok[1].y()) - 30) <= 3
+    assert abs((pontok[4].y() - pontok[3].y()) - 30) <= 3
+    assert abs(pontok[0].x() - pontok[1].x()) <= 2
+    assert abs(pontok[1].x() - pontok[2].x()) <= 2
+    assert abs(pontok[3].x() - pontok[4].x()) <= 2
+    assert abs(pontok[0].y() - pontok[3].y()) <= 2
+    assert abs(pontok[1].y() - pontok[4].y()) <= 2
 
     cimke_nevek = (
         "optionsPrintPreviewsLabel",

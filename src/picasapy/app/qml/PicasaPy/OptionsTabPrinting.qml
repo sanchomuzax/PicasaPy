@@ -69,7 +69,9 @@ ColumnLayout {
     GridLayout {
         id: printSizeGrid
         objectName: "optionsPrintSizeGrid"
-        columns: 2
+        // Az eredetiben oszloponként: balra az 1–3., jobbra a 4–5. méret.
+        rows: 3
+        flow: GridLayout.TopToBottom
         columnSpacing: 7
         rowSpacing: 7
         Layout.alignment: Qt.AlignHCenter
