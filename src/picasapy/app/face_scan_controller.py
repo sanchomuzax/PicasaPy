@@ -20,12 +20,7 @@ IMPORTNÁL A PICASA DÖNTÉSEI SZENTEK: a saját detektorunk KIHAGYJA azokat a
 fotókat, amelyeken már van EMBER ÁLTAL adott névcímke (`faces=` legalább
 egy azonosított bejegyzéssel) — ezeket SOHA nem értékeljük újra.
 
-#26 (2. lépcső): a `computeEmbeddings()` a lenyomat-számítás (SFace) +
-csoportosítás KÜLÖN, ALACSONYABB PRIORITÁSÚ sora — a terv szerint „előbb
-legyen meg minden arc HELYE, a felismerés ráér”. Ez a metódus SOHA nem fut
-automatikusan a `scanForFaces()` részeként — a hívó (a jövőbeli integráció)
-dönti el, mikor indítja (pl. a detektálás befejezése UTÁN, üresjáratban).
-Modell nélkül ugyanúgy tisztán kikapcsol (`embeddingModelUnavailable`).
+#26 (2. lépcső): a `computeEmbeddings()` külön, alacsonyabb prioritású sor. Az SFace az első csoportosítási kéréskor automatikusan letöltődik, a csoportosítás pedig a betöltés után a háttérben folytatódik.
 
 #26 (3. lépcső, bekötés): `unnamedGroups()` adja a „Névtelenek" album
 CSOPORTOSÍTOTT nézetét (Picasa „Group by face"/„Expand groups"), az
@@ -165,6 +160,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     #: mutatja.
     modelDownloadFinished = Signal(bool, str)
     modelDownloadPercentChanged = Signal()
+    AUTOMATIC_DETECTION_KEY = "faces/automaticDetection"
 
     def __init__(
         self,
@@ -175,6 +171,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         detector_factory: Callable[[], FaceDetector] | None = None,
         embedder_factory: Callable[[], FaceEmbedder] | None = None,
         settings: "QSettings | None" = None,
+        face_detection_enabled: Callable[[str], bool] | None = None,
     ) -> None:
         super().__init__()
         self._db_path = Path(db_path)
@@ -182,6 +179,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         # próbák SAJÁT tárolót adnak — a valódi beállításokat egy teszt nem
         # olvashatja (és nem is írhatja).
         self._settings = settings if settings is not None else QSettings()
+        self._face_detection_enabled = face_detection_enabled or (lambda _path: True)
         # Tesztben/CI-ben injektálható helyettesítő detektor/embedder is
         # lehet — alapból a valódi (modell nélkül önmagát kikapcsoló)
         # YuNet/SFace-becsomagolás.
@@ -205,12 +203,14 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         #: keresés vége frissíti.
         self._ini_ignored_cache: tuple[IniIgnoredFace, ...] | None = None
         self._stop_event: threading.Event | None = None
+        self._automatic_scan = False
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
         self._scan_percent = -1
         #: #1496: a futó modell-letöltés haladása, −1 ha nem fut
         self._model_download_percent = -1
         self._model_download_stop_event: threading.Event | None = None
+        self._embedding_after_download = False
 
     @Slot(result=bool)
     def isAvailable(self) -> bool:
@@ -221,6 +221,23 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def isEmbeddingAvailable(self) -> bool:
         """Igaz, ha a lenyomat-modell (SFace) betöltve."""
         return self._embedder.available
+
+    @Slot(result=bool)
+    def automaticDetectionEnabled(self) -> bool:  # noqa: N802 — QML-slot-stílus
+        """A háttérdetektálás kapcsolója; az eredeti alapértéke BE volt."""
+        value = self._settings.value(self.AUTOMATIC_DETECTION_KEY, True)
+        if isinstance(value, str):
+            return value.strip().lower() not in {"", "0", "false", "no", "off"}
+        return bool(value)
+
+    @Slot(bool)
+    def setAutomaticDetectionEnabled(self, enabled: bool) -> None:  # noqa: N802
+        """A globális háttérdetektálás-kapcsoló mentése."""
+        self._settings.setValue(self.AUTOMATIC_DETECTION_KEY, bool(enabled))
+        if enabled:
+            self.scanNewFaces()
+        elif self._automatic_scan:
+            self.cancelScan()
 
     @Slot(result=str)
     def unavailableReason(self) -> str:  # noqa: N802 — QML-slot-stílus
@@ -340,9 +357,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def downloadModels(self) -> None:  # noqa: N802 — QML-slot-stílus
         """A hiányzó arcfelismerő modellek letöltése — háttérszálon.
 
-        SOHA nem indul magától: csak a felhasználó gombnyomására. Ez az
-        EGYETLEN éles hálózati hívás a programban, ezért a döntés az övé
-        marad (ld. `picasapy.faces.model_download` modul-docstring)."""
+        A felhasználó kérésére vagy az SFace-csoportosítás első indításakor
+        indul. A YuNet csomagolt modell, így normál telepítésen csak az
+        SFace kerül a letöltési sorba."""
         if self._model_download_percent >= 0:
             return  # már fut — a második kattintás ne indítson újat
         if not model_download.missing_specs():
@@ -438,6 +455,12 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             if self._model_download_stop_event is stop_event:
                 self._model_download_stop_event = None
             self._set_model_download_percent(-1)
+        if self._embedding_after_download:
+            self._embedding_after_download = False
+            if siker and self._embedder.available:
+                self._start_embedding_worker()
+            else:
+                self.embeddingModelUnavailable.emit()
         self.modelDownloadFinished.emit(siker, uzenet)
 
     def _report_model_download(
@@ -485,10 +508,16 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         Modell hiányában azonnal `modelUnavailable`-t ad és nem indít
         szálat — a hívó UI ekkor a funkciót eleve rejtve/inaktívan
         tarthatja."""
+        self._start_face_scan(automatic=False)
+
+    def _start_face_scan(self, *, automatic: bool) -> None:
         if not self._detector.available:
             self.modelUnavailable.emit()
             return
+        if automatic and self._stop_event is not None:
+            return
         self.cancelScan()
+        self._automatic_scan = automatic
         stop_event = threading.Event()
         self._stop_event = stop_event
         self._set_scan_percent(0)
@@ -496,6 +525,17 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._start_background(
             self._run_scan, args=(stop_event,), name="picasapy-face-scan"
         )
+
+    @Slot()
+    def scanNewFaces(self) -> None:  # noqa: N802 — QML-slot-stílus
+        """Az újonnan indexelt képek automatikus háttérvizsgálata.
+
+        A könyvtárszinkron `syncFinished` jelzése hívja. Az indexben már
+        vizsgált fájlok mtime/méret alapján kimaradnak; párhuzamos
+        szinkronjelzés nem szakítja félbe a futó detektálást."""
+        if not self.automaticDetectionEnabled() or self._stop_event is not None:
+            return
+        self._start_face_scan(automatic=True)
 
     @Slot()
     def cancelScan(self) -> None:
@@ -960,11 +1000,21 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def computeEmbeddings(self) -> None:
         """Lenyomat-számítás (SFace) a még lenyomat nélküli arcokon, majd a
         névtelen arcok inkrementális csoportosítása — KÜLÖN, a detektálásnál
-        alacsonyabb prioritású sor (ld. osztály-docstring). Modell hiányában
-        azonnal `embeddingModelUnavailable`-t ad és nem indít szálat."""
+        alacsonyabb prioritású sor. Ha csak az SFace hiányzik, elindítja a
+        háttér-letöltést, majd automatikusan folytatja a csoportosítást."""
         if not self._embedder.available:
-            self.embeddingModelUnavailable.emit()
+            if any(
+                spec.key == "embedder" for spec in model_download.missing_specs()
+            ):
+                self._embedding_after_download = True
+                self.downloadModels()
+            else:
+                self.embeddingModelUnavailable.emit()
             return
+        self._start_embedding_worker()
+
+    def _start_embedding_worker(self) -> None:
+        """A betöltött SFace-szel indítja a háttérben a csoportosítást."""
         self.cancelEmbedding()
         stop_event = threading.Event()
         self._embedding_stop_event = stop_event
@@ -995,6 +1045,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         self.scanCancelled.emit()
                         return
                     photo_path = Path(photo.folder_path) / photo.name
+                    if not self._face_detection_enabled(str(photo_path.parent)):
+                        self._report_scan(done, total)
+                        continue
                     ini_faces = ini_faces_of(photo_path)
                     if any(face.is_identified for face in ini_faces):
                         # a Picasa döntése szent — nem értékeljük újra
@@ -1034,6 +1087,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             self._ini_ignored_cache = None
             if self._stop_event is stop_event:
                 self._stop_event = None
+                self._automatic_scan = False
             # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
             # hibára futott (#449)
             self._set_scan_percent(-1)

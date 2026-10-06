@@ -4,30 +4,25 @@ import QtQuick.Layouts
 
 // SAJÁT FUNKCIÓ (#1473): az arckeresés kézi indítóablaka — az eredetiben háttérszál futott, indítógomb nélkül.
 //
-// Arckeresés (#1473) — a `FaceScanController` keresési oldalának belépési
-// pontja.
+// Arckeresés — a `FaceScanController` meglévő könyvtár újraellenőrzésének
+// és a külön arc-csoportosításnak a felülete.
 //
 // ## Miért kell ez az ablak egyáltalán
 //
 // Az EREDETI Picasában az arckeresésnek nem volt „indítsd el" menüpontja: a
 // `BgFaceDetectThread` háttérszál alapból BE volt kapcsolva, és folyamatosan
 // dolgozott; a felhasználó a Beállítások „Névcímkék" fülén tudta kikapcsolni
-// (`docs/specs/picasa-arcfelismeres.md` 1.1). Nálunk ilyen háttérszál MA
-// NINCS, és a keresés a felhasználó gépén percekig tartó, minden képet
-// beolvasó munka — automatikusan elindítani a háta mögött rosszabb lenne,
-// mint megkérdezni. Amíg a háttérmotor nem áll készen, ez az ablak a
-// védhető hely: innen indul, itt szakítható meg, és itt derül ki, ha a
-// modell hiányzik.
+// (`docs/specs/picasa-arcfelismeres.md` 1.1). Nálunk a könyvtárszinkron után
+// indul az új képek háttérvizsgálata; ez az ablak a teljes keresés kézi
+// újraindítására és a csoportosítás indítására szolgál.
 //
 // ## Három szabály, amit ez az ablak betart
 //
 // 1. **NEM MODÁLIS** (#449). A beolvasás alatt semmi nem blokkolhatja a
 //    felhasználót: az ablak bezárható, a munka fut tovább, a haladás pedig a
 //    bal hasáb „Névtelenek" során is látszik (`FolderPane.faceScanPercent`).
-// 2. **A tiltás nem néma** (#1473). Ha a modellfájl hiányzik, a gomb szürke
-//    MARAD, de mellette ott áll, hogy mi hiányzik és hova kell tenni — a
-//    szöveget a vezérlő adja (`unavailableReason()`), mert a modell helye
-//    csak Python-oldalról ismert.
+// 2. **A hiány nem néma** (#1473). Ha egy modell hibás vagy az OpenCV API
+//    hiányzik, a vezérlő megnevezi az okot (`unavailableReason()`).
 // 3. **A magyarázat mellett ott a MEGOLDÁS is** (#1496). A „másold ide ezt
 //    az ONNX-fájlt" típusú teendő a tulajdonosnak — aki nem programozó —
 //    zsákutca volt: a program megmondta, mi hiányzik, de nem adott rá utat.
@@ -222,8 +217,11 @@ Window {
             faceScanWindow.grouping = false
             faceScanWindow.refreshAvailability()
         }
-        // #1496 — „elindult" kezelő SZÁNDÉKOSAN nincs: a `downloading`
-        // jelzőt a `startDownload()` állítja, ami az EGYETLEN indító út.
+        function onModelDownloadPercentChanged() {
+            // Az automatikus SFace-letöltés is ugyanazt a látható
+            // haladásjelzőt használja, mint a kézi letöltés.
+            faceScanWindow.downloading = faceScanWindow.downloadPercent >= 0
+        }
         function onModelDownloadFinished(ok, message) {
             faceScanWindow.downloading = false
             faceScanWindow.statusText = message
@@ -421,8 +419,8 @@ Window {
                 text: faceScanWindow.grouping ? qsTr("Grouping...")
                                               : qsTr("Group Faces")
                 enabled: !!faceScanWindow.faceScan
-                         && faceScanWindow.embedderAvailable
                          && !faceScanWindow.grouping
+                         && !faceScanWindow.downloading
                 onClicked: faceScanWindow.startGrouping()
             }
             PicasaButton {

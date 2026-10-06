@@ -40,7 +40,9 @@ adatok = [
     (str(APP / "assets"), "picasapy/app/assets"),
 ]
 #: a `help/` és a többi csomagon belüli adat a saját hookok nélkül is kell
-adatok += collect_data_files("picasapy", includes=["**/*.md", "**/*.json"])
+adatok += collect_data_files(
+    "picasapy", includes=["**/*.md", "**/*.json", "**/*.onnx"]
+)
 
 #: ⚠️ NEM a `__main__.py`: azt a PyInstaller szkriptként futtatná, és a
 #: relatív importja `ImportError`-ral esne el (mérve a windowsos CI-n). A
