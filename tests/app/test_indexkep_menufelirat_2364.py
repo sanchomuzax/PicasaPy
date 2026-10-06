@@ -53,7 +53,7 @@ def test_a_thumbnails_szo_nem_ter_vissza_ehhez_a_tetelhez() -> None:
 def test_a_magyar_forditas_indexkepekkel_kezdodik() -> None:
     ts = _TS.read_text(encoding="utf-8")
     talalat = re.search(
-        rf"<source>{re.escape(FORRAS)}</source>\s*<translation>(.*?)</translation>",
+        rf"<source>{re.escape(FORRAS)}</source>\s*(?:<extracomment>[^<]*</extracomment>\s*)?<translation>(.*?)</translation>",
         ts,
         re.S,
     )

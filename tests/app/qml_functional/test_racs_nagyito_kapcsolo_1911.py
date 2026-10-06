@@ -212,7 +212,7 @@ class TestAFelfedezhetoseg:
         # A rögzített ablak a KÖVETKEZŐ üzenet fordításából is „bizonyított"
         # volna, és egy hosszabb forrásszöveg ki is lökte volna a sajátját.
         parositas = re.search(
-            r"<source>Click and drag over photos to magnify them</source>\s*"
+            r"<source>Click and drag over photos to magnify them</source>\s*(?:<extracomment>[^<]*</extracomment>\s*)?"
             r"<translation[^>]*>(.*?)</translation>",
             ts,
             re.DOTALL,

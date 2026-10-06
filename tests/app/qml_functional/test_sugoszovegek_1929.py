@@ -107,7 +107,7 @@ class TestAMagyarAHIVATALOS:
         for elem, (en, hu) in _SUGOK.items():
             minta = re.compile(
                 r"<source>" + re.escape(en)
-                + r"</source>\s*<translation>(.*?)</translation>", re.S)
+                + r"</source>\s*(?:<extracomment>[^<]*</extracomment>\s*)?<translation>(.*?)</translation>", re.S)
             m = minta.search(_TS)
             if m is None:
                 rossz.append(f"{elem}: nincs .ts-bejegyzés")
