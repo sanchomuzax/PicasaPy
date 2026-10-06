@@ -77,6 +77,22 @@ class FakeConfirmSettings(QObject):
         self._suppressed[decision_key] = bool(remember)
 
 
+class FakeFaceScanController(QObject):
+    def __init__(self, enabled=True):
+        super().__init__()
+        self.enabled = enabled
+        self.calls = []
+
+    @Slot(result=bool)
+    def automaticDetectionEnabled(self):
+        return self.enabled
+
+    @Slot(bool)
+    def setAutomaticDetectionEnabled(self, enabled):
+        self.calls.append(enabled)
+        self.enabled = enabled
+
+
 class FakeEmailController(QObject):
     """A #32-es EmailController QML-felülete — a valódi
     `email_controller.py` ugyanezt a property/slot-készletet exportálja.
@@ -172,7 +188,14 @@ def fake_confirm_settings():
 
 
 @pytest.fixture
-def dialog(qt_app, fake_controller, fake_confirm_settings):
+def fake_face_scan_controller():
+    return FakeFaceScanController()
+
+
+@pytest.fixture
+def dialog(
+    qt_app, fake_controller, fake_confirm_settings, fake_face_scan_controller
+):
     import picasapy.app.application as app_module
     from PySide6.QtQml import QQmlComponent, QQmlEngine
 
@@ -180,6 +203,9 @@ def dialog(qt_app, fake_controller, fake_confirm_settings):
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", fake_controller)
     engine.rootContext().setContextProperty("confirmSettings", fake_confirm_settings)
+    engine.rootContext().setContextProperty(
+        "faceScanController", fake_face_scan_controller
+    )
     factory = QQmlComponent(
         engine,
         str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
@@ -502,13 +528,36 @@ class TestPlaceholderTabsAreDisabled:
             "optionsPrintHiResPreviewCheck",
             "optionsNetworkAutoDetectCheck",
             "optionsWebStripedUploadCheck",
-            "optionsFaceDetectionCheck",
         ],
     )
     def test_placeholder_control_disabled(self, dialog, control_name):
         window, *_ = dialog
         control = _child(window, control_name)
         assert control.property("enabled") is False
+
+
+class TestFaceDetectionOption:
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_face_detection_setting_is_live(self, dialog, qt_app, height_offset):
+        from PySide6.QtQml import QQmlEngine
+
+        window, *_ = dialog
+        window.setHeight(window.height() + height_offset)
+        qt_app.processEvents()
+        checkbox = _child(window, "optionsFaceDetectionCheck")
+        face_controller = QQmlEngine.contextForObject(window).contextProperty(
+            "faceScanController"
+        )
+
+        assert checkbox.property("enabled") is True
+        assert checkbox.property("checked") is True
+
+        checkbox.setProperty("checked", False)
+        checkbox.toggled.emit()
+        qt_app.processEvents()
+
+        assert face_controller.calls == [False]
+        assert face_controller.enabled is False
 
     @pytest.mark.parametrize(
         "control_name",

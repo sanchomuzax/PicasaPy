@@ -57,6 +57,11 @@ class TestTheSourceInventory:
         assert not [f for f in files if f.endswith(".py")]
         assert not [f for f in files if "__pycache__" in f]
 
+    def test_it_includes_the_bundled_yunet_model(self):
+        assert "picasapy/faces/models/face_detection_yunet_2023mar.onnx" in (
+            source_data_files()
+        )
+
 
 class TestItCatchesAMissingFile:
     def test_a_complete_wheel_passes(self, tmp_path):
@@ -173,20 +178,15 @@ class TestThePackagingDeclaration:
         )
 
     def test_no_itemised_package_data_whitelist_returned(self):
-        """A MÓDSZERT őrzi: a tételes lista volt a #646 gyökéroka.
-
-        Ha valaki visszateszi, ez azonnal piros — akkor is, ha épp
-        történetesen teljes."""
+        """A #646 regressziója: a graft minden csomagadatot felvesz, az
+        egyenkénti package-data lista viszont elhagyhat új alkönyvtárakat."""
         import tomllib
 
         root = Path(__file__).resolve().parents[1]
         with (root / "pyproject.toml").open("rb") as handle:
             config = tomllib.load(handle)
 
-        assert "package-data" not in config["tool"]["setuptools"], (
-            "a tételes package-data whitelist csendben hagy ki új "
-            "alkönyvtárakat — a MANIFEST.in graft-ja váltja ki"
-        )
+        assert "package-data" not in config["tool"]["setuptools"]
 
     def test_the_declared_setuptools_minimum_covers_the_pep639_license_string(self):
         """A #652 őre: a deklarált setuptools-minimum ne hazudjon.

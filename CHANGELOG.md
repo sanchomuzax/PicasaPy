@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- Az arc- és vörösszem-felismerés a csomagolt YuNet detektorral letöltés nélkül működik; az SFace az első csoportosításkor, látható folyamatjelzéssel töltődik le. (#4315).
+
 ## [0.9.11] – 2026-10-06
 
 - A fel nem használt belső vezérlők kikerültek a felületi műveletlistából. (#4316).
