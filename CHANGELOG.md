@@ -7,6 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A Diavetítés beállításaiban szabályozható az ismétlés, és kiválasztható a lejátszandó zenemappa (#4320).
 - Az automatikus arcfelismerés nem jelöl téves arcot fűben és tájképen: a felismerés küszöbe szigorúbb. (#4348)
 - Az arc- és vörösszem-felismerés a csomagolt YuNet detektorral letöltés nélkül működik; az SFace az első csoportosításkor, látható folyamatjelzéssel töltődik le. (#4315).
 

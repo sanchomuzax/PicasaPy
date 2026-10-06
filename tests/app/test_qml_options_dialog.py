@@ -524,7 +524,6 @@ class TestPlaceholderTabsAreDisabled:
             "optionsMailMovieFirstFrameRadio",
             "optionsMailUseHtmlCheck",
             "optionsFileTypeBmpCheck",
-            "optionsSlideshowLoopCheck",
             "optionsPrintHiResPreviewCheck",
             "optionsNetworkAutoDetectCheck",
             "optionsWebStripedUploadCheck",
@@ -534,6 +533,20 @@ class TestPlaceholderTabsAreDisabled:
         window, *_ = dialog
         control = _child(window, control_name)
         assert control.property("enabled") is False
+
+
+class TestSlideshowTab:
+    def test_preferences_are_live_and_music_folder_follows_checkbox(self, dialog):
+        window, *_ = dialog
+        loop = _child(window, "optionsSlideshowLoopCheck")
+        music = _child(window, "optionsSlideshowPlayMusicCheck")
+        browse = _child(window, "optionsSlideshowMusicBrowseButton")
+
+        assert loop.property("enabled") is True
+        assert loop.property("checked") is True
+        assert music.property("enabled") is True
+        assert music.property("checked") is False
+        assert browse.property("enabled") is False
 
 
 class TestFaceDetectionOption:
