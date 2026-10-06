@@ -921,13 +921,25 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit): keresési opciók
         PicasaMenuItem { text: qsTr("Search &Options"); placeholder: true }
-        // hiányzott (#324 audit): a jelentése a screenshotokból nem
-        // egyértelmű — feltehetően mappacím nélküli indexkép-rács
+        // #4346: az eredeti `Show only big images` láthatósági kapcsolója.
         PicasaMenuItem {
             objectName: "menuViewThumbnailsOnly"
             text: qsTr("Small &Pictures")
             checkable: true
-            placeholder: true
+            placeholder: false
+            // #4346: az eredeti `Show only big images` preferenciájának
+            // fordított pipaállása — pipálva a kisebb képek is látszanak.
+            checked: (bar.ctl && bar.ctl.showOnlyBigImages !== undefined)
+                ? !bar.ctl.showOnlyBigImages : false
+            onTriggered: {
+                if (bar.ctl && bar.ctl.showOnlyBigImages !== undefined) {
+                    bar.ctl.setShowOnlyBigImages(!bar.ctl.showOnlyBigImages)
+                }
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.showOnlyBigImages !== undefined)
+                        ? !bar.ctl.showOnlyBigImages : false
+                })
+            }
         }
         MenuItem {
             objectName: "menuViewHidden"
@@ -2176,6 +2188,7 @@ MenuBar {
         // (a #1464-ben bevezetett minta) — ez a megerősítés ELMARADÁSA
         // (már aktív tétel, vagy "Nem"/"Mégse") esetén is kell.
         PicasaMenu {
+            id: languageMenu
             objectName: "menuToolsLanguage"
             title: qsTr("Language")
             MenuItem {
@@ -2219,6 +2232,38 @@ MenuBar {
                     checked = Qt.binding(function () {
                         return controller ? controller.pendingLanguage === "hu" : false
                     })
+                }
+            }
+            Instantiator {
+                objectName: "menuLanguageAdditionalChoices"
+                model: controller
+                    ? controller.availableLanguages.filter(
+                        function (code) { return code !== "en" && code !== "hu" })
+                    : []
+                delegate: MenuItem {
+                    property string languageCode: modelData
+                    objectName: "menuLanguage" + languageCode
+                    text: controller ? controller.ownLanguageName(languageCode) : languageCode
+                    checkable: true
+                    checked: controller
+                        ? controller.pendingLanguage === languageCode
+                        : false
+                    onTriggered: {
+                        bar.requestLanguageChange(languageCode)
+                        checked = Qt.binding(function () {
+                            return controller
+                                ? controller.pendingLanguage === languageCode
+                                : false
+                        })
+                    }
+                }
+                onObjectAdded: function (index, object) {
+                    languageMenu.insertItem(
+                        controller.availableLanguages.indexOf(object.languageCode) + 1,
+                        object)
+                }
+                onObjectRemoved: function (_index, object) {
+                    languageMenu.removeItem(object)
                 }
             }
         }

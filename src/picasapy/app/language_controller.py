@@ -30,6 +30,8 @@ ismeretlen érték az alapértelmezésre esik vissza (az appearance_controller
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 #: A QSettings-kulcs — a `general/` névtér az alkalmazás-szintű beállításoké.
@@ -42,20 +44,61 @@ PENDING_LANGUAGE_KEY = "general/language_pending"
 #: Az alapértelmezett nyelv. A felhasználó kifejezett kérése (#333).
 DEFAULT_LANGUAGE = "en"
 
-#: A választható nyelvek, a spec sorrendjében (`docs/specs/
-#: picasa-fo-ablak-elrendezes.md`, „A nyelvválasztó" szakasz — a teljes,
-#: 41 nyelves `langnames.xml` sorrendből csak azok, amelyekhez ma van
-#: szótárunk). Új nyelv felvételéhez elég ide beírni a kódot (a helyére, a
-#: spec-sorrend szerint) és a `picasapy_<kód>.qm`-et az `i18n/` mappába tenni.
-SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "hu")
+#: A 41 választható nyelv a Picasa langnames.xml sorrendjében. Az en a
+#: Lang::enUS, az enUK pedig a Lang::enUK kódot jelöli.
+SUPPORTED_LANGUAGES: tuple[str, ...] = (
+    "ar", "fa", "iw", "id", "ca", "da", "de", "enUK", "en", "es", "fr",
+    "hr", "it", "lv", "lt", "hu", "nl", "no", "pl", "pt", "pt-BR", "ro",
+    "sk", "sl", "fi", "sv", "fil", "vi", "tr", "cs", "el", "ru", "sr",
+    "uk", "bg", "hi", "th", "zh-CN", "zh-TW", "ja", "ko",
+)
 
 #: A nyelvek SAJÁT nyelvükön írt neve (`langnames.xml` mintájára) — ez a
 #: lista FÜGGETLEN a felület aktuális nyelvétől, ezért NEM qsTr-ezett. A mi
 #: `en` kódunk az eredeti `Lang::enUS` tétele (spec A, 6. sor), a felirata
 #: ezért a hivatalos „English (US)” (őre: `test_hivatalos_feliratok_3358`).
 OWN_LANGUAGE_NAMES: dict[str, str] = {
+    "ar": "العربية",
+    "fa": "فارسی",
+    "iw": "עִבְרִית",
+    "id": "Bahasa Indonesia",
+    "ca": "Català",
+    "da": "Dansk",
+    "de": "Deutsch",
+    "enUK": "English (UK)",
     "en": "English (US)",
+    "es": "Español",
+    "fr": "Français",
+    "hr": "Hrvatski",
+    "it": "Italiano",
+    "lv": "Latviešu",
+    "lt": "Lietuvių",
     "hu": "Magyar",
+    "nl": "Nederlands",
+    "no": "Norsk",
+    "pl": "Polski",
+    "pt": "Português",
+    "pt-BR": "Português do Brasil",
+    "ro": "Română",
+    "sk": "Slovenský",
+    "sl": "Slovenščina",
+    "fi": "Suomi",
+    "sv": "Svenska",
+    "fil": "Filipino",
+    "vi": "Tiếng Việt",
+    "tr": "Türkçe",
+    "cs": "Česky",
+    "el": "Ελληνικά",
+    "ru": "Русский",
+    "sr": "Српски",
+    "uk": "Українська",
+    "bg": "Български",
+    "hi": "हिन्दी",
+    "th": "ภาษาไทย",
+    "zh-CN": "中文(简体)",
+    "zh-TW": "中文 (繁體)",
+    "ja": "日本語",
+    "ko": "한국어",
 }
 
 #: A „rendszer szerinti” tétel álkódja — a legördülő/menü első tétele
@@ -71,10 +114,39 @@ def coerce_language(value) -> str:
     ilyen alakot ad — így a korábbi, rendszer-nyelvből mentett érték is
     értelmes marad.
     """
+    return _normalise_language(value) or DEFAULT_LANGUAGE
+
+
+def _normalise_language(value) -> str | None:
+    """Teljes nyelvkód vagy régiós locale → támogatott Picasa-kód."""
     if not isinstance(value, str):
-        return DEFAULT_LANGUAGE
-    code = value.strip().replace("-", "_").split("_")[0].lower()
-    return code if code in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
+        return None
+    normal = value.strip().replace("-", "_").casefold()
+    if not normal:
+        return None
+
+    direct = {
+        code.replace("-", "_").casefold(): code for code in SUPPORTED_LANGUAGES
+    }
+    if normal in direct:
+        return direct[normal]
+
+    pieces = normal.split("_")
+    language = pieces[0]
+    region = pieces[1] if len(pieces) > 1 else ""
+    if language in {"he", "iw"}:
+        return "iw"
+    if language == "en":
+        return "enUK" if region in {"gb", "uk"} else "en"
+    if language == "pt":
+        return "pt-BR" if region == "br" else "pt"
+    if language == "zh":
+        if region in {"cn", "sg"}:
+            return "zh-CN"
+        if region in {"tw", "hk", "mo"}:
+            return "zh-TW"
+        return None
+    return direct.get(language)
 
 
 def _normalise_pending(value) -> str | None:
@@ -86,18 +158,40 @@ def _normalise_pending(value) -> str | None:
     """
     if not isinstance(value, str):
         return None
-    if value == SYSTEM_LANGUAGE_CODE:
+    if value.strip() == SYSTEM_LANGUAGE_CODE:
         return SYSTEM_LANGUAGE_CODE
-    code = value.strip().replace("-", "_").split("_")[0].lower()
-    return code if code in SUPPORTED_LANGUAGES else None
+    return _normalise_language(value)
 
 
 def resolve_system_language() -> str:
     """A rendszer nyelve a mi nyelvkódjaink közül — ismeretlennél az
     alapértelmezés (a `SYSTEM_LANGUAGE_CODE` választás induláskori feloldása).
     """
-    code = QLocale.system().name().split("_")[0].lower()
-    return code if code in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
+    return _normalise_language(QLocale.system().name()) or DEFAULT_LANGUAGE
+
+
+def resolve_first_run_language(settings, ask_user: Callable[[str], bool]) -> str | None:
+    """Az első indulási rendszer-nyelv-felajánlás (#4325).
+
+    Csak a még hiányzó `general/language` kulcsnál kérdez. A PicasaPy jelenlegi
+    katalógusában a nem angol, rendszer szerint választható nyelv a magyar;
+    a többi eredeti Picasa-nyelvhez még nincs fordítás. A választ az aktuális
+    és a következő indulási nyelvbe is beírja, így az induláskori második
+    feloldás már nem kérdez újra.
+
+    `None` jelzi, hogy nem volt felajánlás (már beállított, angol vagy nem
+    támogatott rendszer-nyelv)."""
+    if settings.contains(LANGUAGE_KEY):
+        return None
+
+    system_language = resolve_system_language()
+    if system_language == DEFAULT_LANGUAGE or system_language not in SUPPORTED_LANGUAGES:
+        return None
+
+    selected = system_language if ask_user(system_language) else DEFAULT_LANGUAGE
+    settings.setValue(LANGUAGE_KEY, selected)
+    settings.setValue(PENDING_LANGUAGE_KEY, selected)
+    return selected
 
 
 #: Az országkód tartaléka (spec B: `0x0098d607`–`0x0098d670`).
@@ -158,7 +252,7 @@ def resolve_startup_language(settings) -> str:
 
 
 class LanguageMixin:
-    """`language`/`pendingLanguage` beállítás — perzisztens, jelzéssel a
+    """language/pendingLanguage beállítás — perzisztens, jelzéssel a
     Beállítások és az Eszközök → Nyelv menü frissítéséhez."""
 
     languageChanged = Signal()
@@ -174,7 +268,7 @@ class LanguageMixin:
 
     @property
     def language(self) -> str:
-        """Az EBBEN a futásban érvényes felület-nyelv: `en` vagy `hu`.
+        """Az EBBEN a futásban érvényes felület-nyelv.
 
         #3555 óta ez a fordító-betöltés után NEM változik a futás alatt —
         a váltás csak a következő indításkor lép életbe. A felület a

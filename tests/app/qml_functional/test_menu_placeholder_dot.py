@@ -21,9 +21,9 @@ class TestPlaceholderMenuItemek:
         # (a képek fájljait teszi a vágólapra, Ctrl+X-szel együtt).
         # Ugyanaz a menet, mint a #1616-nál: példát cserélünk, nem
         # jelölést teszünk vissza egy működő tételre.
+        # #4346: a `menuViewThumbnailsOnly` most valódi, bekapcsolható szűrő.
         for name in (
             "menuViewDisplayMode16Bit",
-            "menuViewThumbnailsOnly",
         ):
             item = window.findChild(QObject, name)
             assert item is not None, name

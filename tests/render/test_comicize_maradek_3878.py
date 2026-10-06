@@ -61,7 +61,7 @@ class TestAMaszkOrigoja:
         """A csempe közepe `origó + t/2`, a távolság az indexből (nincs +0,5)."""
         magas, szeles, t = 640, 960, 15
         ox, oy = tiled_mask_origin(szeles, magas, t)
-        maszk = native_dot_mask(magas, szeles, t, ox + 0.5, oy + 0.5)
+        maszk = native_dot_mask(magas, szeles, t)
         ys, xs = np.mgrid[0:magas, 0:szeles].astype(np.float64)
         lx = np.mod(xs - ox, t) - t / 2.0
         ly = np.mod(ys - oy, t) - t / 2.0

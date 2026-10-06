@@ -7,6 +7,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.21] – 2026-10-06
+
+- A Nyomtatás fül méretválasztói két oszlopban, középre rendezve jelennek meg, alattuk bal oldali csoportfeliratokkal (#4385).
+
+## [0.9.20] – 2026-10-06
+
+- A Nézet ▸ Kis képek kapcsolóval állítható, hogy a könyvtári rács megjelenítse-e a kis képeket; a választás újraindítás után is megmarad (#4346).
+- A Diavetítés beállításai az eredeti Picasa-alapértékeket és mezőelrendezést követik (#4377).
+
+## [0.9.19] – 2026-10-06
+
+- Első indításkor felajánljuk a támogatott rendszernyelv használatát, és elmentjük a választást (#4325).
+- A Képregény effekt pontmaszkja mostantól az eredeti Picasa szerint rajzolja a féltónusos pontokat (#4326).
+- Az Emberek fejlécének filmje a nem üres személyalbumok képeit az eredeti sorrendben használja (#4391).
+
+## [0.9.18] – 2026-10-06
+
+- A Fotónéző menüpontból megnyitható és menthető a színkezelés beállítása. (#4333).
+- A kijelölt képek szövegfedvénye külön paranccsal megjeleníthető és elrejthető. (#4335).
+- A kijelölt képek fájllistaként húzhatók a rácsból és a képtálcáról más alkalmazásokba (#4347).
+
 ## [0.9.17] – 2026-10-06
 
 - A kollázs-előnézet hibája most látható visszajelzést ad (#4321).
