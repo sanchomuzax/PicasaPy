@@ -152,6 +152,11 @@ class TestDragSource:
                     window, Qt.MouseButton.LeftButton, pos=position
                 ),
             )
+            # Lépésenként mozgatunk, ahogy a valódi egér: a húzásfelismerés
+            # (startDragDistance) Qt 6.11-en egyetlen nagy ugrásra nem indul el.
+            for dx in range(4, 25, 4):
+                QTest.mouseMove(window, start + QPoint(dx, 0))
+                qt_app.processEvents()
             QTest.mouseMove(window, finish)
             qt_app.processEvents()
             assert len(native_started) == previous_count + 1, (
