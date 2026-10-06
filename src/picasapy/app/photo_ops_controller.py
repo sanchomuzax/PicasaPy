@@ -53,7 +53,12 @@ from picasapy.edit.effect_clipboard import (
     crop_mirror_value,
     paste_all_effects,
 )
-from picasapy.fileops import RenameItem, preview_name, rename_photos_many
+from picasapy.fileops import (
+    PartialRenameError,
+    RenameItem,
+    preview_name,
+    rename_photos_many,
+)
 from picasapy.index import (
     open_index,
     photos_with_keyword,
@@ -701,6 +706,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     items, base_name,
                     include_date=include_date, include_size=include_size,
                 )
+            except PartialRenameError as error:
+                # Részleges futásnál a fájlok/ini-szekciók egy része már
+                # megváltozott. Frissítsük ugyanazokat a mappákat, majd a
+                # strukturált hibaszöveg mutassa meg, mely nevek készültek el.
+                folders = sorted({str(item.path.parent) for item in items})
+                self._renameBatchDone.emit(folders)
+                self.photoOpFailed.emit(str(error))
+                return
             except (OSError, ValueError, IniSaveError, IniConflictError) as error:
                 self.photoOpFailed.emit(str(error))
                 return
@@ -777,6 +790,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     "date": album.date or "",
                     "location": album.location or "",
                     "description": album.description or "",
+                    "use_music": album.use_music,
+                    "music_file": album.music_file or "",
                 }
         return {}
 
@@ -822,6 +837,41 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                 for ut, dokumentum in self._album_dokumentumok(token):
                     if mutate(dokumentum) is dokumentum:
                         continue  # nincs mit írni ebbe a mappába
+                    update_document(ut, mutate, backup=True)
+                    self._sync_tree(conn, str(ut.parent))
+                    irt = True
+                if irt:
+                    self._load_albums(conn)
+        except _WRITE_ERRORS as hiba:
+            self.albumWriteFailed.emit(str(hiba))
+            return False
+        if irt:
+            self._refresh_view()
+        return irt
+
+    @Slot(str, bool, str, result=bool)
+    def editAlbumMusic(  # noqa: N802
+        self, token: str, use_music: bool, music_file: str
+    ) -> bool:
+        """A zene két mezőjének mentése az albumot ismerő mappák ini-jébe."""
+        token = (token or "").strip()
+        if not token:
+            return False
+
+        def mutate(dokumentum):
+            return with_album_fields(
+                dokumentum,
+                token,
+                use_music=use_music,
+                music_file=music_file,
+            )
+
+        irt = False
+        try:
+            with open_index(self._db_path) as conn:
+                for ut, dokumentum in self._album_dokumentumok(token):
+                    if mutate(dokumentum) is dokumentum:
+                        continue
                     update_document(ut, mutate, backup=True)
                     self._sync_tree(conn, str(ut.parent))
                     irt = True

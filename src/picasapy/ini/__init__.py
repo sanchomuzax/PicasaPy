@@ -73,6 +73,7 @@ from .folder_date import (
     with_folder_date_override,
     without_folder_date_override,
 )
+from .folder_music import read_folder_music, with_folder_music
 from .io import (
     IniConflictError,
     IniSaveError,
@@ -135,6 +136,7 @@ __all__ = [
     "parse_filters",
     "parse_reanimated_eye_color",
     "read_folder_category",
+    "read_folder_music",
     "read_folder_date_override",
     "save_document",
     "serialize_album_refs",
@@ -146,6 +148,7 @@ __all__ = [
     "validate_op_for_write",
     "with_face",
     "with_folder_date_override",
+    "with_folder_music",
     "with_contact",
     "with_reassigned_face",
     "without_face",

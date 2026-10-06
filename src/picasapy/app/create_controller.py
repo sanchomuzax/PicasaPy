@@ -64,6 +64,8 @@ from picasapy.movie.mxf import (
     read_mxf,
     write_mxf,
 )
+from picasapy.ini import load_or_empty, read_folder_music
+from picasapy.scanner import PICASA_INI_NAME
 
 from . import collage_output, collage_prefs
 from .formatting import to_local_path
@@ -100,8 +102,47 @@ _MOVIE_PREFERENCES = {
 _PREVIEW_SIZE = (640, 480)
 
 
+def film_zene_mappabol(forrasok) -> Path | None:
+    """A közös forrásmappa engedélyezett zenéje filmkészítéshez.
+
+    Csak egyetlen fizikai mappából származó képkészlethez rendelünk mappazenét;
+    több mappánál a film panel kézi hangsáv-választása marad érvényes.
+    """
+    mappak = []
+    for forras in forrasok or ():
+        helyi = to_local_path(str(forras))
+        if not helyi:
+            return None
+        mappak.append(Path(helyi).expanduser().parent)
+    if not mappak:
+        return None
+
+    try:
+        kozos_mappa = mappak[0].resolve()
+        if any(mappa.resolve() != kozos_mappa for mappa in mappak[1:]):
+            return None
+        enabled, music_file = read_folder_music(
+            load_or_empty(kozos_mappa / PICASA_INI_NAME)
+        )
+        if not enabled or not music_file:
+            return None
+        zene = Path(music_file).expanduser()
+        if not zene.is_absolute():
+            zene = kozos_mappa / zene
+        zene = zene.resolve()
+        return zene if zene.is_file() else None
+    except OSError:
+        return None
+
+
 class CreateMixin(PosterMixin):
     """Poszter-, kollázs- és mozgófilm-készítés a kijelölésből."""
+
+    @Slot(list, result=str)
+    def filmMusicForSources(self, sources) -> str:  # noqa: N802
+        """A filmpanel alapértelmezett zenéje az egy mappából vett képekhez."""
+        zene = film_zene_mappabol(sources)
+        return str(zene) if zene is not None else ""
 
     # (célfájl, felhasznált, kihagyott, ebből NEM TALÁLHATÓ) — #459/3: a
     # hiányzó fájl más eset, mint az olvashatatlan, külön mondatot kap

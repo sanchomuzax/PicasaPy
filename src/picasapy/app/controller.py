@@ -594,7 +594,9 @@ class AppController(
 
     @Property(list, notify=statusChanged)
     def slideshowMusicTrackUrls(self):  # noqa: N802
-        """A kiválasztott mappában lévő MP3-fájlok URL-jei rendezett listában."""
+        """A mappához rendelt zene, vagy a közös diavetítési zenemappa."""
+        if self._current_folder and self.folderMusicEnabled(self._current_folder):
+            return self.folderMusicTrackUrls(self._current_folder)
         folder = Path(self.slideshowMusicFolder).expanduser()
         try:
             if not folder.is_dir():
