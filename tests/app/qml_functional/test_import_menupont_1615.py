@@ -174,21 +174,9 @@ class TestGyorsbillentyu:
 
 
 class TestSzovegmezoElsobbsege:
-    """⚠️ MÉRT megállapítás, nem feltevés (#1526/#1571 hibaosztálya).
+    """#4398: gépelés közben a keresőmezőé a billentyű, a shortcut hallgat."""
 
-    A `Ctrl+M` ablak-szintű `Shortcut`. A Qt a leütést előbb
-    `ShortcutOverride` eseményként ajánlja fel a fókuszált elemnek: a
-    `QQuickTextInput` CSAK azokat fogadja el, amelyeket maga is kezelne
-    (szerkesztő-billentyűk, sima karakterek). A `Ctrl+M` nem ilyen, ezért
-    a mezőben ÁLLVA IS a gyorsbillentyű nyeri — és ez a helyes: az
-    eredetiben a `Ctrl+M` a menüsáv kiosztásából jön, tehát globális.
-
-    A mező akkor van veszélyben, ha a gyorsbillentyű MÓDOSÍTÓ NÉLKÜLI
-    betű lenne; a második teszt épp ezt méri: a puszta „m" a keresőmezőbe
-    kerül, és NEM nyit párbeszédet.
-    """
-
-    def test_a_ctrl_m_a_keresomezoben_allva_is_hat(self, qml_app, qt_app):
+    def test_a_ctrl_m_keresofokuszban_nem_nyit_importot(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         mezo = _elem(window, "searchField")
         mezo.setProperty("focus", True)
@@ -197,16 +185,21 @@ class TestSzovegmezoElsobbsege:
             "a keresőmező nem kapott fókuszt — a mérés nem érvényes"
         )
 
+        shortcut = _elem(window, "shortcutImportFrom")
+        activated = []
+        shortcut.activated.connect(lambda: activated.append(True))
+        assert shortcut.property("enabled") is False
+
         QTest.keyClick(window, Qt.Key_M, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert _parbeszed(window).property("visible") is True, (
-            "a Ctrl+M a keresőmezőben állva elveszett"
-        )
+        assert mezo.property("activeFocus") is True, "a Ctrl+M elvette a kereső fókuszát"
+        assert activated == [], "a keresőmező-fókuszban a Ctrl+M import-shortcutot indított"
+        parbeszed = window.findChild(QObject, "importSourceDialog")
+        assert parbeszed is None or parbeszed.property("visible") is False
         assert str(mezo.property("text")) == "", (
             "a Ctrl+M karaktert írt a keresőmezőbe"
         )
-        _bezar(window, qt_app)
 
     def test_a_puszta_m_a_mezobe_kerul_es_nem_nyit_semmit(self, qml_app, qt_app):
         window, _controller, _engine = qml_app

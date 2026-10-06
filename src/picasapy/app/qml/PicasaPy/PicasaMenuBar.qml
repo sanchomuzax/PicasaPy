@@ -117,6 +117,8 @@ MenuBar {
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
+    //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
+    property bool textEntryHasFocus: false
     // #4335: a kijelölt fedvények állapota a controller INI-lekérdezéséből.
     property bool textOverlayShowEnabled: false
     property bool textOverlayHideEnabled: false
@@ -400,23 +402,25 @@ MenuBar {
     Shortcut {
         objectName: "shortcutSmallThumbnails"
         sequence: "Ctrl+1"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(96)
     }
     Shortcut {
         objectName: "shortcutNormalThumbnails"
         sequence: "Ctrl+2"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(144)
     }
     Shortcut {
         objectName: "shortcutLocateOnDisk"
         sequence: "Ctrl+Return"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.locateRequested()
     }
     Shortcut {
         objectName: "shortcutDeleteFromDisk"
         sequence: "Delete"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         // #1608: nézetfüggő — albumban NEM töröl lemezről
         onActivated: bar.activateDeleteCommand()
     }
@@ -426,7 +430,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutPrint"
         sequence: "Ctrl+P"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.printRequested()
     }
     // #1590: a Mappa-menü felirata Ctrl+Shift+P-t hirdet
@@ -437,7 +441,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutPrintContactSheet"
         sequence: "Ctrl+Shift+P"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.printContactSheetRequested()
     }
     // #1615: a Fájl-menü felirata Ctrl+M-et hirdet (a #1154 MÉRTE a
@@ -452,6 +456,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutImportFrom"
         sequence: "Ctrl+M"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.importSourceRequested()
     }
     // #1633: a Fájl-menü felirata Ctrl+O-t hirdet — ugyanaz a
@@ -460,6 +465,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutAddFile"
         sequence: "Ctrl+O"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.addFileRequested()
     }
     // #1616: a Fájl-menü felirata Ctrl+N-et hirdet — ugyanaz a hibaosztály,
@@ -471,7 +477,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutNewAlbum"
         sequence: "Ctrl+N"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.newAlbumRequested()
     }
 

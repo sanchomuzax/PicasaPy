@@ -16,6 +16,10 @@ Item {
 
     //: A Shift+F1 fejezete — a párbeszéd `helpTopic`-ja.
     property string tema: ""
+    readonly property bool _szovegmezoneVanFokusz:
+        root._ablak !== null
+        && root._ablak.activeFocusItem !== null
+        && root._ablak.activeFocusItem.selectedText !== undefined
 
     //: A párbeszéd ablaka: ENNEK a gyermeke lesz a súgóablak.
     readonly property var _ablak: root.Window.window
@@ -36,13 +40,13 @@ Item {
     Shortcut {
         sequence: "F1"
         context: Qt.WindowShortcut
-        enabled: root._el
+        enabled: root._el && !root._szovegmezoneVanFokusz
         onActivated: root.nyisdASugot("")
     }
     Shortcut {
         sequence: "Shift+F1"
         context: Qt.WindowShortcut
-        enabled: root._el
+        enabled: root._el && !root._szovegmezoneVanFokusz
         onActivated: root.nyisdASugot(root.tema)
     }
 

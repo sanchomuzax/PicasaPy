@@ -55,6 +55,7 @@ Item {
     //: #3320: a másik négy eszköz párja a SAJÁT paneljében ül.
     property string tool: ""
     property bool applyEnabled: true
+    property bool textEntryHasFocus: false
 
     signal applyClicked()
     signal cancelClicked()
@@ -117,7 +118,7 @@ Item {
     //: kiegyenesítésé, ott pedig nincs másik Esc-kezelő.
     Shortcut {
         sequence: "Escape"
-        enabled: sav.visible
+        enabled: sav.visible && !sav.textEntryHasFocus
         onActivated: sav.cancelClicked()
     }
 

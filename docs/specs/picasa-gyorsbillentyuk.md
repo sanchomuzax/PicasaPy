@@ -500,7 +500,7 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 `…/DocumentTabStrip.qml`, `…/PhotoViewer.qml`,
 `…/SlideshowView.qml`, `…/LightboxFeed.qml`, `…/CollageCanvas.qml`.
 
-**Aktuális #4339-es leltár (2026-10-06):** a `src/picasapy/app/qml` 187 QML-fájljában 53 `Shortcut` deklaráció van nyolc fájlban; 52 sor ad szó szerinti `sequence`-et, 47 eltérő literális billentyűsorozattal. A részletes 34 kombinációs táblázat alább a 2026-08-25-i állapotfelvétel; az érintett mai QML-kötések és feltételek a §6.1-ben vannak.
+**A #4339-es leltár pillanatfelvétele (2026-10-06, a #4398 előtti forrásállapot):** a `src/picasapy/app/qml` 187 QML-fájljában 53 `Shortcut` deklarációt számoltunk nyolc fájlban; 52 sor adott szó szerinti `sequence`-et, 47 eltérő literális billentyűsorozattal. A 2026-08-25-i 34 kombinációs táblázat és a §6.1 alatti QML-megfigyelések történeti állapotot rögzítenek. A #4398 szerinti aktuális, 54 kötéses leltárt és a fókuszkapukat a §6.2 tartalmazza.
 
 | billentyű | eredeti funkció | nálunk | hol |
 |---|---|---|---|
@@ -555,15 +555,80 @@ fenti táblával:
 A 2026-08-25-i snapshot szerint nálunk: **20 megvan**, **2 eltér** (`Delete`, `Esc`), **12 hiányzik**.
 
 
-### 6.1 #4339 — helyi menüfelirat, billentyűfogadó és mai QML-állapot (2026-10-06)
+### 6.1 #4339 — helyi menüfelirat, billentyűfogadó és QML-állapot a #4398 előtt (2026-10-06)
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A 44 helyi rekord a kilenc menübirtokos helyi menüben jelenik meg (§4.1). A `+0x04` mező feliratot épít (`0x00a6aee0` → `0x00a6b250`); a `0x00a6ade0` csak a felirathoz oldja fel a billentyűt. A könyvtárnézeti tényleges fogadó a `CThumbUI` `0x005e6710` kezelője, saját fókusz-/nézetfeltételekkel. | 53 `Shortcut` deklaráció nyolc QML-fájlban. A főablak `Ctrl+A/D/I/S` kötésein nincs külön `enabled`/szövegmező-kapu; a `Ctrl+C/X/V` kötéseken van (`!_szovegmezoneVanFokusz`, `Main.qml:1119–1127,1271–1273`). | A helyi menü szövegét ne kezeljük gyorsítóregisztrációnak. Minden billentyűműveletnél dokumentáljuk és érvényesítsük a gazdanézetet, a fókuszt és az eseményfogadót; a szövegmezők vágólapművelete maradjon a mezőé. |
+| A 44 helyi rekord a kilenc menübirtokos helyi menüben jelenik meg (§4.1). A `+0x04` mező feliratot épít (`0x00a6aee0` → `0x00a6b250`); a `0x00a6ade0` csak a felirathoz oldja fel a billentyűt. A könyvtárnézeti tényleges fogadó a `CThumbUI` `0x005e6710` kezelője, saját fókusz-/nézetfeltételekkel. | A #4398 előtti pillanatfelvétel 53 `Shortcut` deklarációt talált nyolc QML-fájlban. Akkor a főablak `Ctrl+A/D/I/S` kötésein nem volt külön `enabled`/szövegmező-kapu; a `Ctrl+C/X/V` kötéseken volt ilyen. | A helyi menü szövegét ne kezeljük gyorsítóregisztrációnak. Minden billentyűműveletnél dokumentáljuk és érvényesítsük a gazdanézetet, a fókuszt és az eseményfogadót; a szövegmezők vágólapművelete maradjon a mezőé. A #4398 utáni állapotot és a 54 kötés tábláját lásd a §6.2-ben. |
 | A könyvtári `CThumbUI` `+0x332f != 0` ág keydownon `Esc`, nyilak, Space és feltételes számjegyek; a szerkesztő `+`/`-`/`=`/`_` és Shift-útja látható 3–5. fülhöz kötött (`0x00760970`, `0x005f95d0`, `0x005f9690`, `0x009e39b0`). | A `Ctrl+Delete` két `Main.qml` kötésre válik szét: rácsban `!viewerOpen && selectedRows().length>0`, nézőben `viewerOpen && currentIndex>=0` (`1441–1463`). A `Ctrl+H` a `TrayBar`-ban csak létező ablak, nézőn kívüli állapot és nem üres kijelölés mellett aktív (`128–134`). A `Ctrl+Return` a menüsávban `photoActionsEnabled` feltételű (`PicasaMenuBar.qml:403–407`). | A QML-kötések hatókörét nézetenként rögzítsük; a billentyű ne fusson le másik nézet vagy üres kijelölés esetén. Az eredeti `+0x332f` bájt szemantikáját (`NINCS MEG`) ne találgassuk. |
 | A `ytPopupListNode` `0x00a64050` billentyűfallbackja csak Esc/Enter/Space; a `CThumbUI` saját fogadója a fókuszált gyerek továbbítása után saját kapukkal folytatja. | Az `Enter` nem `Shortcut`: a `LightboxFeed.qml:368–377` csak `selectedIndex >= 0` esetén nyit, a `DocumentTabStrip` Esc-kötése csak aktív projektlap mellett él (`DocumentTabStrip.qml:140–145`), a `PhotoViewer` külön `Keys.onEscapePressed` ágat használ. A QML-literalok között `Ctrl+Shift+O`-hoz nincs `sequence` kötés. | Tartsuk meg a nézeti `Keys`-fogadókat ott, ahol az eredeti is a fókuszált nézetnek továbbít; ne adjunk ezek helyett ablak-szintű kötést. A nyitott `Ctrl+Shift+O` csak külön funkciódöntéssel vehető fel. |
 
 A `Ctrl+Shift+O`-ról ez a mérés csak azt állítja, hogy a mai QML-ben nincs hozzá literális `Shortcut.sequence`; a menükben maradt „Open File” felirat önmagában nem bizonyít aktív funkciót. A 53/8/52/47 leltárforrás egy célzott, teljes `src/picasapy/app/qml/**/*.qml` fájlbejárás; nem futtatási mérés.
+
+### 6.2 #4398 — az aktuális 54 QML-kötés gazdanézete és fókuszkapuja (2026-10-06)
+
+A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a jelenlegi forrásban **54 `Shortcut` deklaráció** található ugyanabban a nyolc QML-fájlban. A táblázat minden deklarációt külön sorban rögzít, így az ismétlődő billentyűk sem olvadnak össze. A „gazda” a QML-fogadó; ez nem állítja, hogy a 44 helyi menürekord egyenként össze van kötve ezekkel a fogadókkal.
+
+| # | QML-gazda / kötés | Billentyű | Nézet- és fókuszkapu |
+|---:|---|---|---|
+| 1 | `Main.qml` — `toggleRightDrawerShortcut` | `Ctrl+0` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 2 | `Main.qml` — `searchShortcut` | `Ctrl+F` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 3 | `Main.qml` — `tagsPanelAltShortcut` | `Ctrl+K` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 4 | `Main.qml` — `editViewShortcut` | `Ctrl+3` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 5 | `Main.qml` — `dupeSearchShortcut` | `Ctrl+F6` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 6 | `Main.qml` — `findSimilarShortcut` | `Ctrl+F7` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 7 | `Main.qml` — `clearSimilarShortcut` | `Ctrl+F8` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 8 | `Main.qml` — `batchBwShortcut` | `Ctrl+Shift+B` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 9 | `Main.qml` — `batchEnhanceShortcut` | `Ctrl+Shift+E` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 10 | `Main.qml` — `helpShortcut` | `F1` | Főablak; nincs fókuszban szövegmező és nincs külön ablakos párbeszéd. |
+| 11 | `Main.qml` — `helpContextShortcut` | `Shift+F1` | Főablak; nincs fókuszban szövegmező és nincs külön ablakos párbeszéd. |
+| 12 | `Main.qml` — `selectAll` | `Ctrl+A` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 13 | `Main.qml` — `clearSelection` | `Ctrl+D` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 14 | `Main.qml` — `invertSelection` | `Ctrl+I` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 15 | `Main.qml` — Mentés | `Ctrl+S` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 16 | `Main.qml` — fájlok másolása | `Ctrl+C` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 17 | `Main.qml` — fájlok kivágása | `Ctrl+X` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 18 | `Main.qml` — vágólapról beillesztés | `Ctrl+V` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 19 | `Main.qml` — forgatás jobbra | `Ctrl+R` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 20 | `Main.qml` — forgatás balra | `Ctrl+Shift+R` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 21 | `Main.qml` — `flipHorizontalShortcut` | `Ctrl+Shift+H` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 22 | `Main.qml` — `flipVerticalShortcut` | `Ctrl+Shift+V` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 23 | `Main.qml` — diavetítés | `Ctrl+4` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 24 | `Main.qml` — címkékpanel | `Ctrl+T` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 25 | `Main.qml` — tulajdonságpanel | `Alt+Return` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 26 | `Main.qml` — időrend | `Ctrl+5` | Állandóan tiltott (`enabled: false`). |
+| 27 | `Main.qml` — átnevezés | `F2` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. A kijelölés kezelőfeltétel, nem külön `Shortcut`-kapu. |
+| 28 | `Main.qml` — exportálás mappába | `Ctrl+Shift+S` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 29 | `Main.qml` — `shortcutDeleteFromDiskGrid` | `Ctrl+Delete` | Könyvtárnézet; `viewerOpen == false`, nincs szövegfókusz és van kijelölt sor. |
+| 30 | `Main.qml` — `shortcutDeleteFromDiskViewer` | `Ctrl+Delete` | Néző; `viewerOpen == true`, nincs szövegfókusz és van aktuális kép. |
+| 31 | `Main.qml` — `openInEditorShortcut` | `Ctrl+Shift+O` | Főablakban engedélyezett fotóművelet és nincs szövegfókusz; külön nézetkaput nem deklarál. |
+| 32 | `Main.qml` — `emailShortcut` | `Ctrl+E` | Főablakban engedélyezett fotóművelet és nincs szövegfókusz; külön nézetkaput nem deklarál. |
+| 33 | `Main.qml` — import párbeszéd súgója | `Shift+F1` | Import párbeszéd nyitva és nincs szövegfókusz. |
+| 34 | `DocumentTabStrip.qml` — projektlap visszalépés | `Esc` | Projektlapok vannak, nem könyvtári nézet, nincs szövegfókusz. |
+| 35 | `DocumentTabStrip.qml` — projektlap bezárás | `Ctrl+W` | Projektlapok vannak, nem könyvtári nézet, nincs szövegfókusz. |
+| 36 | `DocumentTabStrip.qml` — következő projektlap | `Ctrl+Tab` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 37 | `DocumentTabStrip.qml` — előző projektlap | `Ctrl+Shift+Tab` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 38 | `DocumentTabStrip.qml` — következő lap | `Ctrl+Right` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 39 | `DocumentTabStrip.qml` — előző lap | `Ctrl+Left` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 40 | `EditorToolBar.qml` — kiegyenesítés visszavonása | `Escape` | A szerkesztő eszközsávja látható és nincs szövegfókusz. |
+| 41 | `ExportDialogs.qml` — párbeszéd súgója | `Shift+F1` | Export párbeszéd nyitva és nincs szövegfókusz. |
+| 42 | `FolderManagerDialog.qml` — `StandardKey.Cancel` | `Escape` | A mappakezelő ablak látható és nincs a saját ablakában szövegfókusz. |
+| 43 | `PicasaMenuBar.qml` — `shortcutSmallThumbnails` | `Ctrl+1` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 44 | `PicasaMenuBar.qml` — `shortcutNormalThumbnails` | `Ctrl+2` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 45 | `PicasaMenuBar.qml` — `shortcutLocateOnDisk` | `Ctrl+Return` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 46 | `PicasaMenuBar.qml` — `shortcutDeleteFromDisk` | `Delete` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 47 | `PicasaMenuBar.qml` — `shortcutPrint` | `Ctrl+P` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 48 | `PicasaMenuBar.qml` — `shortcutPrintContactSheet` | `Ctrl+Shift+P` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 49 | `PicasaMenuBar.qml` — `shortcutImportFrom` | `Ctrl+M` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 50 | `PicasaMenuBar.qml` — `shortcutAddFile` | `Ctrl+O` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 51 | `PicasaMenuBar.qml` — `shortcutNewAlbum` | `Ctrl+N` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 52 | `TrayBar.qml` — `trayKeepSelectionShortcut` | `Ctrl+H` | Létezik főablak, nem néző, van tálca-kijelölés és nincs szövegfókusz. |
+| 53 | `WindowHelp.qml` — általános súgó | `F1` | A súgóablak aktív és nincs benne szövegfókusz. |
+| 54 | `WindowHelp.qml` — témasúgó | `Shift+F1` | A súgóablak aktív és nincs benne szövegfókusz. |
+
+A főablak kötéseinél a táblázat a forrásban kifejezett `enabled`-kaput írja le; ahol nincs nézetkapu, ott nem következtetünk a 44 eredeti helyi rekord parancs-hozzárendelésére. Az eredetihez nem igazolt `+0x332f` módjelző szemantikája továbbra is nyitott. `PhotoViewer.qml` nézeti `Keys`-fogadói (`Esc`, nyilak, `Return`, szóköz, `F`, `Shift+F`, `Ctrl+Delete`) szövegfókuszban visszatérnek a mezőnek, `PicasaSlider.qml` pedig csak a `EditorParamPanel.qml` 3–5. látható füléhez kapja meg a `+`, `=`, `-`, `_` léptetés engedélyét.
+
+Az ellenőrző teszt valódi billentyűleütéssel próbálja mind az 54 deklaráció szekvenciáját keresőmező-fókuszban; külön valódi eseményekkel vizsgálja a könyvtári `Ctrl+1` editorbeli tiltását, az editor 2. fülén a négy sliderbillentyű tiltását és a 3. fülön működését, továbbá a kereső-, felirat- és címkemező saját szerkesztőbillentyűit. Ez nem bizonyítja a 44 rekord egyedi parancs-megfeleltetését.
 ---
 
 ## 7. Amit ez a kör NEM vizsgált (kimondva)

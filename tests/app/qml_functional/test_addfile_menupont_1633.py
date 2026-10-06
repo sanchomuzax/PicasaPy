@@ -149,22 +149,11 @@ class TestGyorsbillentyu:
 
 
 class TestSzovegmezoElsobbsege:
-    """⚠️ MÉRT megállapítás, nem feltevés (#1526/#1571 hibaosztálya, a
-    #1615-nél a `Ctrl+M`-re mérve — itt kontroll-méréssel megismételve a
-    `Ctrl+O`-ra).
+    """#4398: a keresőfókusz letiltja a fájlválasztó shortcutját."""
 
-    A `Ctrl+O` ablak-szintű `Shortcut`. A Qt a leütést előbb
-    `ShortcutOverride` eseményként ajánlja fel a fókuszált elemnek: a
-    `QQuickTextInput` CSAK azokat fogadja el, amelyeket maga is kezelne
-    (szerkesztő-billentyűk, sima karakterek). A `Ctrl+O` nem ilyen, ezért a
-    mezőben ÁLLVA IS a gyorsbillentyű nyeri.
-
-    A mező akkor van veszélyben, ha a gyorsbillentyű MÓDOSÍTÓ NÉLKÜLI betű
-    lenne; a második teszt épp ezt méri: a puszta „o" a keresőmezőbe kerül,
-    és NEM nyit fájlválasztót.
-    """
-
-    def test_a_ctrl_o_a_keresomezoben_allva_is_hat(self, qml_app, qt_app):
+    def test_a_ctrl_o_keresofokuszban_nem_nyit_fajlvalasztot(
+        self, qml_app, qt_app
+    ):
         window, _controller, _engine = qml_app
         mezo = _elem(window, "searchField")
         mezo.setProperty("focus", True)
@@ -173,16 +162,20 @@ class TestSzovegmezoElsobbsege:
             "a keresőmező nem kapott fókuszt — a mérés nem érvényes"
         )
 
+        shortcut = _elem(window, "shortcutAddFile")
+        activated = []
+        shortcut.activated.connect(lambda: activated.append(True))
+        assert shortcut.property("enabled") is False
+
         QTest.keyClick(window, Qt.Key_O, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert _parbeszed(window).property("visible") is True, (
-            "a Ctrl+O a keresőmezőben állva elveszett"
-        )
+        assert mezo.property("activeFocus") is True, "a Ctrl+O elvette a kereső fókuszát"
+        assert activated == [], "a keresőmező-fókuszban a Ctrl+O fájlválasztót indított"
+        assert _parbeszed(window).property("visible") is False
         assert str(mezo.property("text")) == "", (
             "a Ctrl+O karaktert írt a keresőmezőbe"
         )
-        _bezar(window, qt_app)
 
     def test_a_puszta_o_a_mezobe_kerul_es_nem_nyit_semmit(
         self, qml_app, qt_app

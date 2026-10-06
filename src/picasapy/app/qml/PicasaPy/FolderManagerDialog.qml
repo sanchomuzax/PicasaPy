@@ -13,6 +13,9 @@ import QtQuick.Layouts
 Window {
     id: folderManagerWindow
     objectName: "folderManagerDialog"
+    readonly property bool _szovegmezoneVanFokusz:
+        folderManagerWindow.activeFocusItem !== null
+        && folderManagerWindow.activeFocusItem.selectedText !== undefined
     title: qsTr("Folder Manager")
     modality: Qt.ApplicationModal
 
@@ -329,6 +332,7 @@ Window {
         sequences: [StandardKey.Cancel]
         context: Qt.WindowShortcut
         enabled: folderManagerWindow.visible
+                 && !folderManagerWindow._szovegmezoneVanFokusz
         onActivated: folderManagerWindow.cancelChanges()
     }
 
