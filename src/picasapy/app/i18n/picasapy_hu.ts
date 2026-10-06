@@ -16000,82 +16000,97 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <translation>Nem</translation>
         </message>
     </context>
-<context>
-    <name>AdjustTimestampDialog</name>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="241" />
-                    <source>Mon</source>
-                    <translation>H</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="248" />
-                    <source>Tue</source>
-                    <translation>K</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="255" />
-                    <source>Wed</source>
-                    <translation>Sze</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="262" />
-                    <source>Thu</source>
-                    <translation>Cs</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="269" />
-                    <source>Fri</source>
-                    <translation>P</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="276" />
-                    <source>Sat</source>
-                    <translation>Szo</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="283" />
-                    <source>Sun</source>
-                    <translation>V</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
-                    <source>Adjust Photo Date - %1 items</source>
-                    <translation>Dátum módosítása – %1 fotó</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
-                    <source>Current photo date</source>
-                    <translation>Jelenlegi fotódátum</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="108" />
-                    <source>New photo date</source>
-                    <translation>Új fotódátum</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="153" />
-                    <source>New photo time</source>
-                    <translation>Új fotó időpontja</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="205" />
-                    <source>Previous month</source>
-                    <translation>Előző hónap</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="223" />
-                    <source>Next month</source>
-                    <translation>Következő hónap</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="164" />
-                    <source>Adjust all photo dates by the amount</source>
-                    <translation>Minden fotó dátumának eltolása ugyanannyival</translation>
-                </message>
-    <message>
-                    <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="173" />
-                    <source>Set all photos to the same date and time</source>
-                    <translation>Minden fotó dátumának és idejének beállítása ugyanarra</translation>
-                </message>
-</context>
+    <context>
+        <name>AdjustTimestampDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="241" />
+            <source>Mon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>H</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="248" />
+            <source>Tue</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>K</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="255" />
+            <source>Wed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sze</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="262" />
+            <source>Thu</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cs</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="269" />
+            <source>Fri</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>P</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="276" />
+            <source>Sat</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Szo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="283" />
+            <source>Sun</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>V</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <source>Adjust Photo Date - %1 items</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dátum módosítása – %1 fotó</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
+            <source>Current photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Jelenlegi fotódátum</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="108" />
+            <source>New photo date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Új fotódátum</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="153" />
+            <source>New photo time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Új fotó időpontja</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="205" />
+            <source>Previous month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Előző hónap</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="223" />
+            <source>Next month</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Következő hónap</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="164" />
+            <source>Adjust all photo dates by the amount</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Minden fotó dátumának eltolása ugyanannyival</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="173" />
+            <source>Set all photos to the same date and time</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Minden fotó dátumának és idejének beállítása ugyanarra</translation>
+        </message>
+    </context>
 </TS>
