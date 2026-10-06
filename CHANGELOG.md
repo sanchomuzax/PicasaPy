@@ -16,6 +16,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - Az automatikus arcfelismerés nem jelöl téves arcot fűben és tájképen: a felismerés küszöbe szigorúbb. (#4348)
 - Az arc- és vörösszem-felismerés a csomagolt YuNet detektorral letöltés nélkül működik; az SFace az első csoportosításkor, látható folyamatjelzéssel töltődik le. (#4315).
+- A Névcímkék fülön mostantól állítható az arcfelismerés, a javaslatképzés, a két küszöb és az arcadatok fájlba mentése (#4319).
 
 ## [0.9.11] – 2026-10-06
 
