@@ -2152,10 +2152,46 @@ rekordlépése `0x006113cf` szerint **0xf8 bájt**. A `0x00816440` XML
 | rekordmező | `.mxf` név | író utasítás | amit a bizonyíték megenged |
 |---|---|---|---|
 | `+0x14` (előjeles bájt) | `facemoviesrc` | `0x00816aa6` | a szerializáló kiírja; az író `0x00814fe5` a jogosult kliprekordban `1`-re állítja, ezért ez az útvonalon jelző, nem arcazonosító |
-| `+0x18` | `facerectx0` | `0x00816976`; beíró: `0x0081510a` | a kiválasztott arcrekord első dwordje változtatás nélkül kerül ide; koordináta-rendszere és egysége **nincs meg** |
-| `+0x1c` | `facerecty0` | `0x008169c2`; beíró: `0x00815110` | a második dword változatlan másolata; koordináta-rendszere és egysége **nincs meg** |
-| `+0x20` | `facerectx1` | `0x00816a0e`; beíró: `0x00815116` | a harmadik dword változatlan másolata; koordináta-rendszere és egysége **nincs meg** |
-| `+0x24` | `facerecty1` | `0x00816a5a`; beíró: `0x00815120` | a negyedik dword változatlan másolata; koordináta-rendszere és egysége **nincs meg** |
+| `+0x18` | `facerectx0` | `0x00816976`; beíró: `0x0081510a` | a kiválasztott arcrekord első dwordje változtatás nélkül kerül ide; **képpont**, a forráskép bal széle felől |
+| `+0x1c` | `facerecty0` | `0x008169c2`; beíró: `0x00815110` | a második dword változatlan másolata; **képpont**, a forráskép felső széle felől |
+| `+0x20` | `facerectx1` | `0x00816a0e`; beíró: `0x00815116` | a harmadik dword változatlan másolata; **képpont**, a forráskép bal széle felől |
+| `+0x24` | `facerecty1` | `0x00816a5a`; beíró: `0x00815120` | a negyedik dword változatlan másolata; **képpont**, a forráskép felső széle felől |
+
+**A `rect64` → pixel-rect út és a még nem bizonyított `faces=` kapcsolat.**
+Külön megfigyelt `.picasa.ini`-út, hogy a `0x00456610` kódterületén
+sztringhivatkozás van a `faces` (`0x00c81884`) és `rect64`
+(`0x00c81460`) kulcsra; a `0x0045a9d0` `.picasa.ini`-útból hívott
+`0x0049d560` feldolgozó `rect64(%I64x)` alakot olvas, dekódolja a négy
+16 bites komponenst (`0x009b9190`), majd pixelkonvertert hív
+(`0x009b93f0`, `0x0049d6f4`). Ettől külön az imagedata `facerect`-olvasója
+(`0x00446610`) az u64-mezőből kapott komponenseket a kép `width`/`height`
+értékével a `0x009b93f0` függvényen keresztül **képpontra váltja**
+(`0x004467bf`, `0x00446859`, `0x004468dd`). A modellbetöltő `0x0081fc30`
+ezt az olvasót hívja (`0x00820bac`), majd a 14 dwordös rekordot a `+0x4e0`
+táblába másolja (`0x00820f01`–`0x00820f0a`); ezen a bizonyított ágon a tábla
+első négy dwordje pixel-rect. A `0x0081e2d0` selectorja ezeket adja tovább
+a klipnek. **A `faces=` ág és az imagedata `facerect` mezője közötti pontos
+adat-/hívási kapcsolat nincs bizonyítva**, ezért a teljes
+`.picasa.ini faces=` → `+0x4e0` lánc állítása nyitott.
+
+**Pontos `rect64` → pixel képlet a Picasa 3.9 binárisban:** a skálázási
+konstans a `0x00cf3b78` qword **65535.0** (bájtsor: `00000000e0ffef40`).
+Előbb a bal/jobb és felső/alsó végpontot növekvő sorrendbe teszi
+(`0x009b9454`–`0x009b9461`), majd a tényezőket egyszeres pontosságú floatként
+állítja elő: `sx = float32(width / 65535.0)`, `sy = float32(height / 65535.0)`
+(`0x009b9414`–`0x009b9449`). A végpontok:
+
+```
+x0 = clamp(FISTP(float32(u0 * sx)), 0, width  - 1)
+y0 = clamp(FISTP(float32(u1 * sy)), 0, height - 1)
+x1 = clamp(FISTP(float32(u2 * sx)), 1, width)
+y1 = clamp(FISTP(float32(u3 * sy)), 1, height)
+```
+
+`FISTP` az aktuális x87 kerekítési módot használja; a terméket a kód
+előbb float32-re kerekíti (`0x009b9464`–`0x009b950b`). Ha a végpontok a
+kerekítés után összeérnek vagy kereszteződnek, a kód a bal/felső értéket a
+jobb/alsó mínusz 1-re állítja (`0x009b950b`–`0x009b9522`).
 
 Ez a kiíró a rekordból olvas és `%d`-ként szerializál; önmagában nem
 bizonyítja, hogy a négy érték képpont vagy végső crop. Az íróút most
@@ -2182,8 +2218,29 @@ dwordöket adtuk a `0x0081e2d0`-nak QEMU-harnessben, egy szintetikus
 megerősíti, de **nem** futtatja az INI-betöltéstől a timeline-ig vezető
 teljes utat, és nem igazolja a dwordök koordináta-jelentését. A statikus
 utasításolvasás és a QEMU-eredmény egyezése a másolásra
-**megerősített** bizonyíték; a forrásrekord eredeti jelentése és a
-lejátszási crop továbbra is nyitott.
+**megerősített** bizonyíték; a forrásrekord pixel-egységét a fenti
+betöltési lánc igazolja, a lejátszási crop továbbra is nyitott.
+
+**QEMU-futáspróba a skálázási nevezőre:** a harness közvetlenül hívta a
+`0x009b93f0`-et `x87 CW=0x027f` mellett. Bemenet: rect64-kód
+`[1,1,100,100]`, kép `32768×32768`; mért kimenet: pixel-rect
+`[1,1,50,50]` (stdout little-endian: `01000000010000003200000032000000`).
+Ez a minta elválasztja a bináris `65535.0` nevezőt a régi `/65536` leírástól:
+utóbbi ugyanebben a kerekítési módban bal/felső koordinátára `0`-t ad.
+Ez a helper izolált futása, nem a teljes `.picasa.ini` → timeline → render
+út futtatása.
+
+**A 0x38-as forrás arcrekord további mezői:** a `0x0081fc30` a
+`"conf(%f),pan(%f),leye(%f,%f),reye(%f,%f),mouth(%f,%f)"` formátummal
+olvassa az arc-részletadatot (`0x00820c88`). Ehhez a **forrás arcrekordhoz**
+képest a `conf` a `+0x10` float mezőbe kerül, a `pan` `+0x14`-be, a két
+szem és a száj koordinátái pedig `+0x18…+0x2c`-be. A loader a confidence
+nullaságát vizsgálja, és az egyik ágon hívja a landmark-transzformálót
+(`0x00820ca4`–`0x00820cc0`). A `0x00822230` a landmarkokat a kép geometriájához transzformálja
+(`0x008222a9`–`0x008223ca`), és a betöltő további értékeket tesz a rekord
+`+0x30/+0x34` mezőibe. **A klipíró a recttábla első négy dwordjét másolja**,
+nem ezeket a landmark-mezőket; a clip-selector esetleges
+landmark-felhasználása a renderútban nincs bizonyítva.
 
 A gyökérmodell `+0x2c7` bájtja a `facemovie`, `+0x2c8` bájtja a
 `removelowresfaces`, `+0x2c5` bájtja a `cropfit` értéke; a
@@ -2205,12 +2262,15 @@ csoportonként a négy `0x38`-as rekordot a `+0x00`, `+0x38`, `+0x70`,
 | a fenti kettő közül egyik sem | szélesség `>= 136.5` és a `+0x10` float nem nulla | `0` |
 
 A küszöb konstansa `0x00cf49f4`, binárisból kiolvasott IEEE-754
-single értéke **136.5**; a `+0x10` mező szemantikai neve **nincs meg**.
+single értéke **136.5**; a `+0x10` mező a betöltő által beolvasott
+`conf` confidence float.
 A QEMU-harness a szűrőt közvetlenül hívta szintetikus rectrekordokkal:
 `(136,1.0) → 1`, `(137,1.0) → 0`, `(137,0.0) → 1`,
 `(136,0.0) → 1` (kimeneti hex: `01000101`). A diszasszemblálás és a
 QEMU-mérés egyezik, ezért a küszöb és a maszkfeltétel
-**megerősített**; ez nem azonosítja a `+0x10` mező jelentését.
+**megerősített**. A szűrőút önmagában nem nevezi meg a `+0x10` mezőt;
+ettől függetlenül a modellbetöltő formátum-karakterlánca ezt `conf`
+confidence értékként azonosítja.
 
 Az arcfilm kimeneti felbontásának kulcsa és alapértéke a 2.8/b szerint
 `facemakemovieres`, indexe `3`, alapértéke **1024×768**; a modell
@@ -2221,8 +2281,19 @@ Nyitott, blokkoló visszafejtési kérdések:
 
 `0x008127b0` a `0x00810420`-nak a timeline objektumot és annak `+0x1a8` staging-objektumát adja át (`0x008128a2`–`0x008128aa`). A `0x00810420` közvetlenül olvassa a staging-objektum `+0x14` bájtját, de nincs benne közvetlen `+0x18…+0x24` operandus; a cropfogyasztó az indirekt hívások mögött maradt.
 
-Ghidra-kör kell: 0x008127b0 — kövesd a timeline renderútvonalat a `0x00810420` indirekt hívásain át addig a fogyasztóig, amely az `0x00814f30` által klipbe másolt `facerect*` mezőket képkivágássá alakítja; add meg a `.picasa.ini` `rect64` és a `+0x4e0` recttábla kapcsolatát, a koordináta-rendszert, egységet, margó-, képarány- és szemigazítási képletet, ha van. [blokkoló]
-- **NINCS MEG:** a low-res maszk `rect+0x10` mezőjének szemantikai neve; a pontos bináris feltétel és a 136.5 küszöb már ismert.
+**Cáfoló keresés a mezőeltolásos találatokra:** a `paszta.py` streaming
+`.text`-pásztája talált `+0x18…+0x24` olvasót a `0x00819f50` címen, de az
+`0x38`-as arcrekord landmark-floatjait transzformáló HOG-geometriai
+segédfüggvény; hívója `0x00873cb0`, RTTI-je a
+`HOGSimilarityComputer::vftable`-hez tartozik, nem a `0xf8` timeline-klip
+bejárója. A `0x007fd8c0` jelölt `0xf8` lépést és `+0x18/+0x20` hivatkozást
+is tartalmaz, de az időintervallum-rekord double mezőit olvassa. Mindkettő
+hamis pozitív, ezért az offset-egyezés vagy a lépésköz önmagában nem
+azonosítja a cropfogyasztót.
+
+Ghidra-kör kell: 0x008127b0 — oldd fel a `0x00810420` indirekt hívásai mögötti per-klip renderelőt, és kösd a `0xf8` lépésű kliprekord `+0x18…+0x24` pixel-rectjét a kivágást/transzformációt számító fogyasztóhoz; add meg a pontos crop-, margó-, képarány- és szemigazítási képletet, továbbá hogy a `+0x8` selector hozzáfér-e a `+0x4e0` rekord landmark-mezőihez. [blokkoló]
+Ghidra-kör kell: 0x00456610 — kösd össze a `faces=` ág `rect64`-feldolgozását az imagedata `facerect` mezőjével, amelyet a `0x00446610` olvas; döntsd el, hogy a `.picasa.ini` `faces=` sorához a `0x0049d560` út tartozik-e. [blokkoló]
+- **NINCS MEG:** a teljes `.picasa.ini faces=` → imagedata `facerect` → `+0x4e0` adatút; a lejátszási crop képlete, margója, cél-képaránya, szemhez igazítása és a clip-selector landmark-használata.
 
 **Bizonyítottsági határ:** a klipmezők nyers másolása és a low-res maszk
 képlete a diszasszemblálás és az elkülönített QEMU-futás egyezésével
