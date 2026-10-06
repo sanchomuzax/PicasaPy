@@ -6,6 +6,8 @@ mezőnevek az .exe-ből). A fájl OPCIONÁLIS bemenet — a Picasa nem minden
 telepítésen hozza létre (pl. sosem volt Google-fiókkal használva), ezért a
 hiánya NEM hiba, csak üres eredmény."""
 
+# rontás-kontroll: Atom-only contacts.xml parser/író → 1 failed
+
 from pathlib import Path
 
 import pytest
@@ -33,8 +35,31 @@ SAMPLE_XML = """<?xml version='1.0' encoding='UTF-8'?>
 </feed>
 """
 
+MEASURED_CONTACTS_XML = """<?xml version='1.0' encoding='UTF-8'?>
+<contacts>
+ <contact id="99b4c1ce30280815" name="Név &amp; Társ"
+          modified_time="2026-08-15T18:42:17+02:00" local_contact="1"/>
+</contacts>
+"""
+
 
 class TestParseContactsXml:
+    def test_parses_the_measured_picasa_contacts_shape(self):
+        assert parse_contacts_xml(MEASURED_CONTACTS_XML) == (
+            ContactXmlEntry(
+                person_id="99b4c1ce30280815",
+                name="Név & Társ",
+                modified_time="2026-08-15T18:42:17+02:00",
+                local_contact="1",
+            ),
+        )
+
+    def test_round_trips_the_measured_picasa_contacts_shape(self):
+        from picasapy.ini.contacts_xml import serialize_contacts_xml
+
+        entries = parse_contacts_xml(MEASURED_CONTACTS_XML)
+        assert parse_contacts_xml(serialize_contacts_xml(entries)) == entries
+
     def test_parses_entries(self):
         entries = parse_contacts_xml(SAMPLE_XML)
         assert entries == (

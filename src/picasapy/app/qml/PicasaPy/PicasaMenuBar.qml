@@ -173,6 +173,8 @@ MenuBar {
     // helyfoglaló tételeket szándékosan kizárja (ott a felirat nem ígéret).
     signal invertSelectionRequested()
     signal folderManagerRequested()
+    // #4334: a név- és Emberek-albumkezelő saját párbeszédablaka.
+    signal peopleManagerRequested()
     // #4332: a kijelölt képek felvételi dátumának módosítása.
     signal adjustTimestampRequested()
     // #350: Eszközök → Beállítások... (options.fen) — az OptionsDialog
@@ -1957,7 +1959,12 @@ MenuBar {
         // hiányzott (#324 audit) — az auditban jelzett screenshot-időpontban
         // az eredetiben is inaktív volt
         PicasaMenuItem { text: qsTr("&Upload Manager..."); placeholder: false; retired: true }  // #638
-        PicasaMenuItem { text: qsTr("People Manager..."); placeholder: true }
+        PicasaMenuItem {
+            objectName: "menuToolsPeopleManager"
+            text: qsTr("People Manager...")
+            placeholder: false
+            onTriggered: bar.peopleManagerRequested()
+        }
         MenuSeparator {}
         // #2142: a duplikátum-kereső a KÍSÉRLETI almenübe költözött (az
         // eredetiben ott a 2. tétel, `eMenuTools::ID_DUPES`) — ld. lent.

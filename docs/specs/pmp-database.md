@@ -264,8 +264,14 @@ szekciói redundánsak/inkonzisztensek lehetnek). Backup-ban: `backup.xml`.
 kapcsolta össze Google-fiókkal a Picasát) — a hiánya nem hiba
 (`docs/research-plan.md`).
 
-Szerkezet (Atom feed, `gphoto:` névtér — a mezőnevek a `Picasa3.exe`
-string-táblájából igazoltak, ld. `picasa-exe-strings.md`):
+**A valódi telepítésből mért alak** a `picasa-arcfelismeres.md` 3.5-ös
+szakaszában rögzített `<contacts><contact id="…" name="…"
+modified_time="…+tz" local_contact="1"/></contacts>`. Az alábbi Atom-alak
+a bináris szövegtáblájából következtetett formátum, valódi fájlminta nélkül;
+az olvasó mindkét alakot elfogadja, az író a mért alakot használja.
+
+Következtetett Atom-alak (`gphoto:` névtér — a mezőnevek a `Picasa3.exe`
+string-táblájában szerepelnek, ld. `picasa-exe-strings.md`):
 
 ```xml
 <feed xmlns='http://www.w3.org/2005/Atom'

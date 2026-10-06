@@ -316,6 +316,7 @@
  "tests/app/qml_functional/test_param_panel_tab_switch.py": 2.77,
  "tests/app/qml_functional/test_parancs_iranyitas_3187.py": 8.95,
  "tests/app/qml_functional/test_people_album_thumbnail_tooltip_4138.py": 4.08,
+ "tests/app/qml_functional/test_people_manager_kattintas_4334.py": 14.55,
  "tests/app/qml_functional/test_people_panel_26.py": 16.09,
  "tests/app/qml_functional/test_people_panel_eredmenysor_ag_4045.py": 16.11,
  "tests/app/qml_functional/test_peoplepanel_maradek_4156.py": 6.37,
