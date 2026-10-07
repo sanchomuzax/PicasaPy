@@ -13,6 +13,7 @@ Item {
     // 1:1 bekapcsolásakor a VideoViewport a dekóder által jelzett
     // képkockaméretet tartja meg; a nézőterületen túli részt levágja.
     property bool actualSizeEnabled: false
+    signal exitRequested()
 
     //: #1838: a Picasából örökölt VÁGÁSPONTOK ezredmásodpercben. A **−1
     //: jelenti, hogy azon az oldalon nincs vágás** — nem 0 és nem a hossz.
@@ -111,6 +112,16 @@ Item {
         anchors.right: parent.right
         anchors.bottom: controls.top
         actualSizeEnabled: player.actualSizeEnabled
+    }
+
+    VideoExitGestureArea {
+        objectName: "videoExitGestureArea"
+        anchors.fill: viewport
+        singleClickExit:
+            typeof controller !== "undefined" && controller
+            && controller.singleClickExitEnabled !== undefined
+                ? controller.singleClickExitEnabled : false
+        onExitRequested: player.exitRequested()
     }
 
     Text {

@@ -13,6 +13,7 @@ from PySide6.QtCore import (
     QObject,
     QPoint,
     QPointF,
+    QSettings,
     QTranslator,
     Qt,
     Signal,
@@ -21,6 +22,10 @@ from PySide6.QtCore import (
 from PySide6.QtTest import QTest
 
 from picasapy.app.language_controller import OWN_LANGUAGE_NAMES
+from picasapy.app.filetype_preferences import (
+    file_type_enabled,
+    set_file_type_enabled,
+)
 
 
 class FakeController(QObject):
@@ -33,14 +38,23 @@ class FakeController(QObject):
 
     languageChanged = Signal()
     pendingLanguageChanged = Signal()
+    uiTransitionsEnabledChanged = Signal()
+    showTooltipsEnabledChanged = Signal()
+    singleClickExitEnabledChanged = Signal()
 
     _OWN_NAMES = OWN_LANGUAGE_NAMES
 
-    def __init__(self, language="en", pending_language=None):
+    def __init__(self, language="en", pending_language=None, filetype_settings=None):
         super().__init__()
         self._language = language
         self._pending_language = pending_language if pending_language is not None else language
         self.set_language_calls = []
+        self._filetype_settings = (
+            filetype_settings or QSettings("PicasaPy", "PicasaPy")
+        )
+        self._ui_transitions_enabled = True
+        self._show_tooltips_enabled = True
+        self._single_click_exit_enabled = False
 
     def _get_language(self):
         return self._language
@@ -51,6 +65,22 @@ class FakeController(QObject):
         return self._pending_language
 
     pendingLanguage = Property(str, _get_pending_language, notify=pendingLanguageChanged)
+
+    uiTransitionsEnabled = Property(
+        bool,
+        lambda self: self._ui_transitions_enabled,
+        notify=uiTransitionsEnabledChanged,
+    )
+    showTooltipsEnabled = Property(
+        bool,
+        lambda self: self._show_tooltips_enabled,
+        notify=showTooltipsEnabledChanged,
+    )
+    singleClickExitEnabled = Property(
+        bool,
+        lambda self: self._single_click_exit_enabled,
+        notify=singleClickExitEnabledChanged,
+    )
 
     def _get_available_languages(self):
         return ["en", "hu"]
@@ -69,6 +99,28 @@ class FakeController(QObject):
         self.set_language_calls.append(code)
         self._pending_language = code
         self.pendingLanguageChanged.emit()
+
+    @Slot(str, result=bool)
+    def fileTypeEnabled(self, group) -> bool:
+        return file_type_enabled(self._filetype_settings, group)
+
+    @Slot(str, bool)
+    def setFileTypeEnabled(self, group, enabled) -> None:
+        set_file_type_enabled(self._filetype_settings, group, enabled)
+    @Slot(bool)
+    def setUITransitionsEnabled(self, enabled) -> None:
+        self._ui_transitions_enabled = bool(enabled)
+        self.uiTransitionsEnabledChanged.emit()
+
+    @Slot(bool)
+    def setShowTooltipsEnabled(self, enabled) -> None:
+        self._show_tooltips_enabled = bool(enabled)
+        self.showTooltipsEnabledChanged.emit()
+
+    @Slot(bool)
+    def setSingleClickExitEnabled(self, enabled) -> None:
+        self._single_click_exit_enabled = bool(enabled)
+        self.singleClickExitEnabledChanged.emit()
 
 
 class FakeConfirmSettings(QObject):
@@ -238,8 +290,11 @@ def fake_import_source_controller():
 
 
 @pytest.fixture
-def fake_controller():
-    return FakeController()
+def fake_controller(tmp_path):
+    settings = QSettings(
+        str(tmp_path / "options.ini"), QSettings.Format.IniFormat
+    )
+    return FakeController(filetype_settings=settings)
 
 
 @pytest.fixture
@@ -633,7 +688,6 @@ class TestPlaceholderTabsAreDisabled:
             "optionsMailMovieFirstFrameRadio",
             "optionsMailMovieFullRadio",
             "optionsMailUseHtmlCheck",
-            "optionsFileTypeBmpCheck",
             "optionsNetworkAutoDetectCheck",
             "optionsWebStripedUploadCheck",
         ],
@@ -658,6 +712,90 @@ class TestSlideshowTab:
         assert music.property("enabled") is True
         assert music.property("checked") is True
         assert browse.property("enabled") is True
+
+
+class TestFileTypesTab:
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_kattintas_utan_ujraolvasasbol_kikerul_a_kikapcsolt_tipus(
+        self, dialog, qt_app, tmp_path, height_offset
+    ):
+        from picasapy.index import open_index, sync_tree
+        from support.jpeg_factory import make_jpeg
+
+        window, controller, *_ = dialog
+        window.setHeight(window.height() + height_offset)
+        window.setProperty("visible", True)
+        assert _var(qt_app, lambda: window.isExposed())
+
+        root = tmp_path / "kepek"
+        folder = root / "nyaralas"
+        folder.mkdir(parents=True)
+        make_jpeg(folder / "kep.jpg", size=(12, 8))
+        (folder / "kep.cr2").write_bytes(b"raw-data")
+        ini = folder / ".picasa.ini"
+        ini_tartalom = "[kep.jpg]\nstar=yes\n[kep.cr2]\ncaption=megmarad\n"
+        ini.write_text(ini_tartalom, encoding="utf-8")
+        adatbazis = tmp_path / "index.db"
+        with open_index(adatbazis) as conn:
+            sync_tree(conn, root, incremental=False)
+            kezdeti_nevek = {
+                sor["name"]
+                for sor in conn.execute("SELECT name FROM photos").fetchall()
+            }
+        assert kezdeti_nevek == {"kep.jpg", "kep.cr2"}
+
+        _kattints(window, qt_app, _child(window, "optionsTabFileTypes"))
+        assert _var(
+            qt_app, lambda: _child(window, "optionsTabStack").property("currentIndex") == 2
+        )
+        raw = _child(window, "optionsFileTypeRawCheck")
+        assert raw.property("enabled") is True
+        assert raw.property("checked") is True
+        assert controller.fileTypeEnabled("gif") is True
+        assert controller.fileTypeEnabled("png") is True
+        for object_name in (
+            "optionsFileTypeBmpCheck",
+            "optionsFileTypeGifCheck",
+            "optionsFileTypePngCheck",
+            "optionsFileTypeTgaCheck",
+            "optionsFileTypeTiffCheck",
+            "optionsFileTypeWebpCheck",
+            "optionsFileTypePsdCheck",
+            "optionsFileTypeMoviesCheck",
+            "optionsFileTypeQuickTimeCheck",
+        ):
+            assert _child(window, object_name).property("enabled") is True
+        _kattints(window, qt_app, raw)
+
+        assert raw.property("checked") is False
+        assert controller.fileTypeEnabled("raw") is False
+        controller._filetype_settings.sync()
+        reopened_settings = QSettings(
+            controller._filetype_settings.fileName(),
+            controller._filetype_settings.format(),
+        )
+        assert FakeController(filetype_settings=reopened_settings).fileTypeEnabled(
+            "raw"
+        ) is False
+        from picasapy.scanner.filetypes import FILETYPE_GROUPS
+
+        enabled = {
+            group for group in FILETYPE_GROUPS if controller.fileTypeEnabled(group)
+        }
+        with open_index(adatbazis) as conn:
+            sync_tree(conn, root, incremental=False, enabled_filetypes=enabled)
+            uj_nevek = {
+                sor["name"]
+                for sor in conn.execute("SELECT name FROM photos").fetchall()
+            }
+
+        assert uj_nevek == {"kep.jpg"}
+        assert ini.read_text(encoding="utf-8") == ini_tartalom
+        if height_offset == 0:
+            screenshot = window.grabWindow()
+            evidence = Path(__file__).resolve().parents[2] / ".bt" / "4447-filetypes.png"
+            evidence.parent.mkdir(parents=True, exist_ok=True)
+            assert screenshot.save(str(evidence))
 
 
 class TestFaceDetectionOption:
@@ -838,9 +976,6 @@ class TestFaceDetectionOption:
     @pytest.mark.parametrize(
         "control_name",
         [
-            "optionsUiTransitionsCheck",
-            "optionsShowTooltipsCheck",
-            "optionsSingleClickExitCheck",
             # #2893: az `optionsAutoExcludeCheck` KIKERÜLT innen — a
             # másodpéldány-észlelés ÉLŐ lett (ld.
             # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
@@ -873,6 +1008,36 @@ class TestFaceDetectionOption:
             _child(window, "optionsSkipRemoveConfirmCheck").property("enabled")
             is True
         )
+
+    def test_general_tab_ui_preferences_toggle_their_controller_state(
+        self, dialog, qt_app
+    ):
+        window, controller, *_ = dialog
+        atmenetek = _child(window, "optionsUiTransitionsCheck")
+        tippek = _child(window, "optionsShowTooltipsCheck")
+        kilepes = _child(window, "optionsSingleClickExitCheck")
+
+        assert atmenetek.property("enabled") is True
+        assert atmenetek.property("checked") is True
+        assert tippek.property("enabled") is True
+        assert tippek.property("checked") is True
+        assert kilepes.property("enabled") is True
+        assert kilepes.property("checked") is False
+
+        _kattints(window, qt_app, atmenetek)
+        assert controller.uiTransitionsEnabled is False
+        assert atmenetek.property("checked") is False
+
+        _kattints(window, qt_app, tippek)
+        assert controller.showTooltipsEnabled is False
+        assert tippek.property("checked") is False
+
+        _kattints(window, qt_app, kilepes)
+        assert controller.singleClickExitEnabled is True
+        assert kilepes.property("checked") is True
+        _kattints(window, qt_app, kilepes)
+        assert controller.singleClickExitEnabled is False
+        assert kilepes.property("checked") is False
 
 
 class TestEmailTabLiveSettings:

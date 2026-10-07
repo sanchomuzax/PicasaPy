@@ -153,8 +153,17 @@ Button {
         function onClicked() { control._throbMegnyomva = true }
     }
 
+    // A közös speciáliseffektus-kapcsoló az opt-in pulzálást is vezérli.
+    // Önálló, vezérlő nélküli komponenspróbában az alapértelmezett true
+    // megtartja a PicasaButton korábbi viselkedését.
+    readonly property bool uiTransitionsEnabled:
+        typeof controller === "undefined" || !controller
+            || controller.uiTransitionsEnabled === undefined
+            ? true : controller.uiTransitionsEnabled
+
     readonly property bool throbFut:
-        control.throbbing && control.enabled && !control.down
+        control.throbbing && control.uiTransitionsEnabled
+        && control.enabled && !control.down
         && !control._throbMegnyomva
 
     property color _throbSzin: control.nyugalmiKeret

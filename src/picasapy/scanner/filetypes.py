@@ -32,6 +32,7 @@ PNG van. Hogy a kapcsoló a beolvasást vezérli-e, külön kutatás (#2344).
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from pathlib import PurePath
 
 PHOTO_EXTENSIONS = frozenset(
@@ -80,6 +81,33 @@ VIDEO_EXTENSIONS = frozenset(
     }
 )
 
+# A Picasa options.fen kapcsolható csoportjai (#4447). A JPEG mindig része
+# a könyvtárnak (a felirat is „Display JPEG files and:”); a QuickTime külön
+# csoportja a Picasa hivatalos „Quicktime movies (.MOV)” feliratának felel meg.
+QUICKTIME_EXTENSIONS = frozenset({".mov"})
+FILETYPE_GROUP_EXTENSIONS = {
+    "bmp": frozenset({".bmp"}),
+    "gif": frozenset({".gif"}),
+    "png": frozenset({".png"}),
+    "tga": frozenset({".tga"}),
+    "tiff": frozenset({".tif", ".tiff"}),
+    "webp": frozenset({".webp"}),
+    "psd": frozenset({".psd"}),
+    "raw": RAW_EXTENSIONS,
+    "movies": VIDEO_EXTENSIONS - QUICKTIME_EXTENSIONS,
+    "quicktime": QUICKTIME_EXTENSIONS,
+}
+FILETYPE_GROUPS = tuple(FILETYPE_GROUP_EXTENSIONS)
+# Az alapállapot megtartja a PicasaPy eddigi, minden felismert formátumot
+# indexelő viselkedését; csak a felhasználói kikapcsolás szűri a könyvtárat.
+DEFAULT_ENABLED_FILETYPES = frozenset(FILETYPE_GROUPS)
+JPEG_EXTENSIONS = frozenset({".jpg", ".jpeg", ".jpe"})
+_EXTENSION_FILETYPE_GROUP = {
+    extension: group
+    for group, extensions in FILETYPE_GROUP_EXTENSIONS.items()
+    for extension in extensions
+}
+
 
 def media_kind_of(name: str) -> str | None:
     """'photo' / 'raw' / 'video', vagy None, ha nem Picasa-média."""
@@ -91,3 +119,22 @@ def media_kind_of(name: str) -> str | None:
     if extension in VIDEO_EXTENSIONS:
         return "video"
     return None
+
+
+def media_kind_if_enabled(
+    name: str, enabled_filetypes: Collection[str] | None = None
+) -> str | None:
+    """A fájl médiatípusa, ha a hozzá tartozó opció engedélyezett.
+
+    A `None` választás a régi API teljes készletét jelenti. A felhasználói
+    beállításban a JPEG nem kapcsolható ki, a többi fájl egyetlen
+    `options.fen` csoporthoz tartozik.
+    """
+    kind = media_kind_of(name)
+    if kind is None or enabled_filetypes is None:
+        return kind
+    extension = PurePath(name).suffix.lower()
+    if extension in JPEG_EXTENSIONS:
+        return kind
+    group = _EXTENSION_FILETYPE_GROUP.get(extension)
+    return kind if group in enabled_filetypes else None

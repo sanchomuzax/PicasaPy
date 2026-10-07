@@ -24,11 +24,16 @@ import QtQuick.Layouts
 //     kapcsolójának megfelelője, a bélyegkép-tár lemezes ürítése
 //     (controller.clearThumbnailCache).
 //
-// A többi FEN-vezérlőnek MA nincs PicasaPy-beli funkciója (nincs
-// tooltip-kapcsoló, nincs "egy kattintásra kilépés szerkesztőből"-mód, nincs
-// statisztika-küldés/frissítés-
-// ellenőrzés, nincs kamera-esemény) — ezek a struktúra kedvéért megjelennek, de
-// `enabled: false`, a hiányzó funkció megnevezésével kommentben.
+//   - Felületi átmenetek és buboréksúgók — a #4449 óta QSettings-ben
+//     tárolt, futás közben is ható kapcsolók.
+//
+//   - Alapértelmezett importcélmappa — a #4450 óta mentett beállítás, az
+//     importáló párbeszéd ezt ajánlja fel.
+//
+// Az egykattintásos kilépés a #4458-ban azonosított videó-előnézet
+// kattintására hat; az állóképes dupla kattintás változatlan.
+// A többi FEN-vezérlőnek sincs még PicasaPy-beli funkciója (statisztika-
+// küldés/frissítés-ellenőrzés, kamera-esemény); ezek tiltottak maradnak.
 ColumnLayout {
     id: root
     spacing: 2
@@ -57,23 +62,50 @@ ColumnLayout {
             color: Theme.ink
         }
 
-        // nincs élő "speciális effektek" kapcsoló a PicasaPy UI-ban
         CompactCheckBox {
             objectName: "optionsUiTransitionsCheck"
             text: qsTr("Use special effects")
-            enabled: false
+            enabled: typeof controller !== "undefined" && controller !== null
+                     && controller.uiTransitionsEnabled !== undefined
+                     && controller.setUITransitionsEnabled !== undefined
+            checked: typeof controller !== "undefined" && controller !== null
+                     && controller.uiTransitionsEnabled !== undefined
+                     ? controller.uiTransitionsEnabled : true
+            onToggled: {
+                if (typeof controller !== "undefined" && controller
+                        && controller.setUITransitionsEnabled !== undefined)
+                    controller.setUITransitionsEnabled(checked)
+            }
         }
-        // nincs tooltip be/ki kapcsoló — a segédjelölések mindig megjelennek
         CompactCheckBox {
             objectName: "optionsShowTooltipsCheck"
             text: qsTr("Show tooltips")
-            enabled: false
+            enabled: typeof controller !== "undefined" && controller !== null
+                     && controller.showTooltipsEnabled !== undefined
+                     && controller.setShowTooltipsEnabled !== undefined
+            checked: typeof controller !== "undefined" && controller !== null
+                     && controller.showTooltipsEnabled !== undefined
+                     ? controller.showTooltipsEnabled : true
+            onToggled: {
+                if (typeof controller !== "undefined" && controller
+                        && controller.setShowTooltipsEnabled !== undefined)
+                    controller.setShowTooltipsEnabled(checked)
+            }
         }
-        // nincs "egy kattintásra kilépés szerkesztőből" mód
         CompactCheckBox {
             objectName: "optionsSingleClickExitCheck"
             text: qsTr("Single click to exit the editing view")
-            enabled: false
+            enabled: typeof controller !== "undefined" && controller !== null
+                     && controller.singleClickExitEnabled !== undefined
+                     && controller.setSingleClickExitEnabled !== undefined
+            checked: typeof controller !== "undefined" && controller !== null
+                     && controller.singleClickExitEnabled !== undefined
+                     ? controller.singleClickExitEnabled : false
+            onToggled: {
+                if (typeof controller !== "undefined" && controller
+                        && controller.setSingleClickExitEnabled !== undefined)
+                    controller.setSingleClickExitEnabled(checked)
+            }
         }
     }
 
