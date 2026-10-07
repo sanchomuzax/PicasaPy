@@ -143,6 +143,33 @@ kattintásnak nevezni. Ezért a bináris alapján csak feltételesen mondható m
 hogy kikapcsolt `SingleClickExit` mellett melyik fizikai kattintás indítja a
 visszalépést.
 
+**#4500 célzott utánkövetés (2026-10-07) — a natív bemeneti út még nincs
+összekötve a `PreviewHandler`-rel.** A `ytWindow::vftable` (`0x00cd87fc`)
+üzenetkezelője a `0x00984970`; a `0x201`–`0x208` Win32 egérüzeneteket
+`0x00984a10`–`0x009850da` között táblás ágakkal választja szét, és a
+`0x00985324` bájttábla két közös útra tereli őket. A látható balgomb-lenyomási
+út közvetlenül kimásolja a natív `HWND`, `message`, `wParam`, `lParam`
+mezőket (`0x00984d35`–`0x00984d80`), majd a rekord címét a
+`[ytWindow+0x64]` objektum `+0x2c` virtuális metódusának adja
+(`0x009851a1`–`0x009851b1`). A külön `0x00561f50` rutin is rekordot állít
+össze, de egy másik ágban (`0x00984e65`); egyik út sem bizonyítja, hogy az
+`editpanel/preview` `PreviewHandler`-jéhez vezet, és nem tárja fel, melyik
+üzenet állítja `0x0d`-re a handler eseményének `+8` mezőjét.
+Az ATL `CAxHostWindow` `0x00920fa0` eljárása egy másik jelölt: az ismert
+`WM_*` ágak az eredeti Win32 üzenetszámot adják át a `0x00921980` segédnek,
+de ennek a hívásnak sincs bizonyított kapcsolata a `PreviewHandler`-rel.
+
+A teljes `.text` `paszta.py`-s, memóriakapus összehasonlító pásztázása 52,
+`0x201`–`0x209` konstanssal végzett `cmp` utasítást talált 18 függvényben;
+ez nem zárja ki a táblás vagy virtuális leképezést, tehát negatív eredményként
+nem használható. **Cáfoló kör:** a `0x0d = WM_LBUTTONDBLCLK` feltevést a más
+UI-ágak ellenőrzésével próbáltam cáfolni: a videó-előnézeti ág a
+`WM_LBUTTONDBLCLK`-t `3` kódra viszi (`0x0054c7d0`–`0x0054c7e3`), a
+fában pedig külön `treedouble` esemény készül (`0x00ab3ff0`,
+`0x00ab3ffc`). Ez cáfolja az ágak közötti kódazonosítási feltevést, de nem
+dönti el a still preview gesztusát, mert egyik út PreviewHandler-kapcsolata
+sem bizonyított.
+
 #### Eredeti / nálunk / teendő (#4493)
 
 | | Eredeti | Nálunk | Teendő |
@@ -169,7 +196,9 @@ balgomb-lenyomásra visszalép; `=0` mellett a bizonyított alternatív gesztus
 lép vissza; a húzás és az aktív eszközök nem indítanak kilépést; a
 nagyítás-illesztés és a `Back to Library` vezérlő továbbra is elérhető.
 
-**Nyitott:** az `0x0d` fizikai egérüzenethez/kattintásszámhoz kötése, valamint az üres szerkesztőfelület viselkedése. Célzott Ghidra-kör kell a `0x005c24c0` körüli esemény-diszpécselés követésére; az első kérdés az, hogy a `PreviewHandler`-nek átadott `0x0d` melyik natív egérüzenetből vagy gesztusból származik.
+**Nyitott:** az `0x0d` fizikai egérüzenethez/kattintásszámhoz kötése, valamint az üres szerkesztőfelület viselkedése.
+
+- `Ghidra-kör kell: 0x005c24c0 — kövesd vissza a PreviewHandler esemény +8 mezőjének 0x0d-re állítását a natív bemenetig, azonosítsd a hozzá vezető WM_* / gesztust, és igazold, hogy a 0x00984970 ytWindow út része-e ennek. [blokkoló]`
 
 ## 2. szint — lap bezárása (projekt), HÁROM választással
 
