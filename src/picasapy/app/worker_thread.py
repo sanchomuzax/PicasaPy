@@ -32,8 +32,8 @@ bejegyzést, különben a csík örökre pörögne."""
 
 from __future__ import annotations
 
-import asyncio
 import logging
+import sys
 import threading
 import time
 import weakref
@@ -45,7 +45,14 @@ from typing import Any, Protocol, runtime_checkable
 from .busy_registry import get_app_busy_registry
 
 _log = logging.getLogger(__name__)
-_WORKER_CANCELLATION_ERRORS = (asyncio.CancelledError, FutureCancelledError)
+def _megszakitas(exc: BaseException) -> bool:
+    """Megszakítás-e a kivétel. Az `asyncio`-t NEM importáljuk az indulási
+    láncba (#1653: modulszám-plafon); ha nincs betöltve, asyncio-megszakítás
+    sem keletkezhetett."""
+    if isinstance(exc, FutureCancelledError):
+        return True
+    aio = sys.modules.get("asyncio")
+    return aio is not None and isinstance(exc, aio.CancelledError)
 _OWNER_ERRORS_LOCK = threading.Lock()
 
 
@@ -287,10 +294,10 @@ class BackgroundWorkerMixin:
         def _run() -> None:
             try:
                 target(*args, **(kwargs or {}))
-            except _WORKER_CANCELLATION_ERRORS:
-                # A megszakítás normál kimenet, nem workerhiba.
-                pass
             except BaseException as error:  # noqa: BLE001 — ld. a hosszú indoklást
+                if _megszakitas(error):
+                    # A megszakítás normál kimenet, nem workerhiba.
+                    return
                 # ⛔ #1457: A KIEJTETT KIVÉTEL MEGÖLI A FOLYAMATOT.
                 #
                 # Ha a `target` kivétellel áll le, a `threading` alapértelmezett

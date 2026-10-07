@@ -165,11 +165,12 @@ class TestAKivetelNemSzallElA_stderr_re:
         assert vezerlo.takeBackgroundWorkerErrors() == ()
 
     def test_a_callback_hibaja_sem_jut_el_a_threading_excepthookig(
-        self, caplog, monkeypatch
+        self, caplog, capfd
     ) -> None:
+        # A globális `threading.excepthook` cseréje helyett (#1375) azt
+        # nézzük, amit az alapértelmezett excepthook tenne: kijutó kivételnél
+        # „Exception in thread” kerülne a hibakimenetre.
         vezerlo = _Vezerlo()
-        excepthook_hivasok: list[object] = []
-        monkeypatch.setattr(threading, "excepthook", excepthook_hivasok.append)
 
         def hibas_callback(_error: Exception) -> None:
             raise RuntimeError("a callback is hibázott")
@@ -185,7 +186,7 @@ class TestAKivetelNemSzallElA_stderr_re:
             szal.join(5.0)
 
         assert not szal.is_alive()
-        assert excepthook_hivasok == []
+        assert "Exception in thread" not in capfd.readouterr().err
         assert "a callback is hibázott" in caplog.text
 
     def test_handler_nelkul_is_lekerdezheto_a_strukturalt_workerhiba(self) -> None:
