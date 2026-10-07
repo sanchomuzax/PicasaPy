@@ -100,10 +100,6 @@ _log = logging.getLogger(__name__)
 # szkennelést). A YuNet kis felbontáson is jól teljesít (issue #26).
 _DETECT_MAX_DIMENSION = detector_module.MAX_DETECTION_DIMENSION
 
-# Ennyi feldolgozott fotónként commitolunk — a dedup-hash-scan mintáját
-# követve (megszakított futás munkája sem vész el, ld. dedup_controller.py).
-_COMMIT_BATCH_SIZE = 50
-
 # #26 (3. lépcső): egy csoportban ennyi arcot mutatunk „Expand groups"
 # kikapcsolt állapotban — a teljes csoport a bekapcsolt állapotban látszik
 # (ld. `unnamedGroups()`). Csak megjelenítési korlát, a kijelölés/névadás
@@ -1159,6 +1155,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     ):
                         # #3670: a Picasa a mi keresésünk UTÁN is mellőzhette
                         _mark_previously_ignored(conn, photo.id, ini_faces)
+                        conn.commit()
                         self._report_scan(done, total)
                         continue
                     faces = self._detect(
@@ -1173,8 +1170,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     )
                     found += len(faces)
                     scanned += 1
-                    if scanned % _COMMIT_BATCH_SIZE == 0:
-                        conn.commit()
+                    # A következő kép detektálása több másodperc lehet; ne
+                    # tartsa addig az SQLite írási zárát.
+                    conn.commit()
                     self._report_scan(done, total)
                 conn.commit()
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
@@ -1231,8 +1229,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     if embedding is not None:
                         store_embedding(conn, face.id, embedding)
                         embedded += 1
-                    if done % _COMMIT_BATCH_SIZE == 0:
-                        conn.commit()
+                    # Az SFace következő futása szintén a tranzakción kívül
+                    # történjen.
+                    conn.commit()
                     self.embeddingProgress.emit(done, total)
                 conn.commit()
                 grouped = group_unnamed_faces(

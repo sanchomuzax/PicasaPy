@@ -154,6 +154,146 @@ class TestScanForFaces:
         album = ctl.unnamedAlbum()
         assert {item["name"] for item in album} == {"a.jpg", "b.jpg"}
 
+    def test_scan_does_not_hold_write_lock_during_next_photo_detection(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        """Két szál írjon ugyanabba az indexbe: a szinkron közben az
+        arcfelismerő a következő képet dolgozza fel."""
+        from contextlib import contextmanager
+        from threading import Event, Thread
+
+        import picasapy.app.face_scan_controller as module
+        from picasapy.index import open_index, photos_in_folder, sync_folder, sync_tree
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        make_jpeg(root / "b.jpg")
+        index_path = tmp_path / "index.db"
+        with open_index(index_path) as conn:
+            sync_tree(conn, root)
+
+        ctl = module.FaceScanController(
+            index_path,
+            detector=_FakeDetector(),
+            embedder=_FakeEmbedder(),
+        )
+        open_index_original = module.open_index
+
+        @contextmanager
+        def open_index_short_timeout(path):
+            with open_index_original(path) as conn:
+                conn.execute("PRAGMA busy_timeout = 25")
+                yield conn
+
+        monkeypatch.setattr(module, "open_index", open_index_short_timeout)
+        failures = []
+        ctl.scanFailed.connect(failures.append)
+        detections = 0
+        detection_started = Event()
+        continue_detection = Event()
+
+        def detect(_path, **_kwargs):
+            nonlocal detections
+            detections += 1
+            if detections == 2:
+                detection_started.set()
+                assert continue_detection.wait(10), (
+                    "a párhuzamos szinkron nem ért véget"
+                )
+            return ()
+
+        monkeypatch.setattr(ctl, "_detect", detect)
+        scan_thread = Thread(target=ctl._run_scan, args=(Event(),), daemon=True)
+        scan_thread.start()
+        imported_folders = [root / f"import-{index}" for index in range(1, 13)]
+        try:
+            assert detection_started.wait(10), (
+                "az arcfelismerő nem jutott a második képhez"
+            )
+            for folder in imported_folders:
+                folder.mkdir()
+                make_jpeg(folder / "uj.jpg")
+            with open_index_short_timeout(index_path) as sync_conn:
+                for folder in imported_folders:
+                    sync_folder(sync_conn, root, folder)
+        finally:
+            continue_detection.set()
+            scan_thread.join(10)
+
+        assert not scan_thread.is_alive(), "az arcfelismerő szál nem állt le"
+        assert failures == []
+        with open_index_original(index_path) as conn:
+            for folder in imported_folders:
+                assert [photo.name for photo in photos_in_folder(conn, folder)] == [
+                    "uj.jpg"
+                ]
+
+    def test_embedding_does_not_hold_write_lock_during_next_model_run(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        """Az SFace számítás alatt egy másik mappaszinkronnak írnia kell
+        tudnia; a modellfutás nem maradhat a DB-tranzakció része."""
+        from contextlib import contextmanager
+        from threading import Event
+
+        import numpy as np
+        import picasapy.app.face_scan_controller as module
+        from picasapy.index import open_index, sync_folder, sync_tree
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        make_jpeg(root / "b.jpg")
+        index_path = tmp_path / "index.db"
+        with open_index(index_path) as conn:
+            sync_tree(conn, root)
+
+        ctl = module.FaceScanController(
+            index_path,
+            detector=_FakeDetector(),
+            embedder=_FakeEmbedder(),
+        )
+        ctl._run_scan(Event())
+        open_index_original = module.open_index
+
+        @contextmanager
+        def open_index_short_timeout(path):
+            with open_index_original(path) as conn:
+                conn.execute("PRAGMA busy_timeout = 25")
+                yield conn
+
+        monkeypatch.setattr(module, "open_index", open_index_short_timeout)
+        failures = []
+        ctl.embeddingFailed.connect(failures.append)
+        computations = 0
+
+        class SyncingEmbedder:
+            available = True
+
+            def compute(self, _image, _detection):
+                nonlocal computations
+                computations += 1
+                if computations == 2:
+                    make_jpeg(root / "uj.jpg")
+                    with open_index_short_timeout(index_path) as sync_conn:
+                        sync_folder(sync_conn, root, root)
+                return np.array([1.0, 0.0, 0.0], dtype="float32")
+
+        ctl._embedder = SyncingEmbedder()
+        ctl._run_embedding(
+            Event(), suggestions_enabled=False, suggest_step=0, cluster_step=0
+        )
+
+        assert failures == []
+        with open_index_original(index_path) as conn:
+            assert conn.execute(
+                "SELECT COUNT(*) FROM face WHERE embedding IS NOT NULL"
+            ).fetchone()[0] == 2
+            assert conn.execute(
+                "SELECT COUNT(*) FROM photos WHERE name = 'uj.jpg'"
+            ).fetchone()[0] == 1
+
     def test_large_photo_detection_scales_input_and_keeps_full_photo_rect(
         self, qt_app, tmp_path
     ):

@@ -25,6 +25,7 @@ from picasapy.index.compact import (
     wasted_percent,
 )
 
+from .index_writer_queue import IndexWriterQueue
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
@@ -39,9 +40,16 @@ class CompactController(BackgroundWorkerMixin, QObject):
     compactFinished = Signal(int)
     runningChanged = Signal()
 
-    def __init__(self, index_db: str | Path, parent: QObject | None = None) -> None:
+    def __init__(
+        self,
+        index_db: str | Path,
+        parent: QObject | None = None,
+        *,
+        writer_queue: IndexWriterQueue | None = None,
+    ) -> None:
         super().__init__(parent)
         self._index_db = Path(index_db)
+        self._writer_queue = writer_queue
         self._stop_event: threading.Event | None = None
         self._running = False
 
@@ -64,9 +72,14 @@ class CompactController(BackgroundWorkerMixin, QObject):
         self._stop_event = stop_event
         self._running = True
         self.runningChanged.emit()
-        self._start_background(
-            self._run_compact, args=(stop_event,), name="picasapy-compact"
-        )
+        if self._writer_queue is None:
+            self._start_background(
+                self._run_compact, args=(stop_event,), name="picasapy-compact"
+            )
+        else:
+            self._writer_queue.submit(
+                lambda: self._run_compact(stop_event), name="picasapy-compact"
+            )
 
     @Slot()
     def cancelCompact(self) -> None:  # noqa: N802 — QML-slot-stílus
