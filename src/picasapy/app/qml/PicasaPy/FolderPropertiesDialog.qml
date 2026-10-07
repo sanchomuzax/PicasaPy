@@ -107,9 +107,9 @@ Dialog {
         id: footerButtons
         alignment: Qt.AlignRight
         spacing: 7
-        // A Fusion alapértelmezett 6px-es alsó paddingje 7px-es margót ad;
-        // a referencián mért 14px-hez 13px kell.
-        bottomPadding: 13
+        // A Fusion alapértelmezett 6px-es alsó paddingjével együtt adja a
+        // referencián mért 14px-es alsó margót.
+        bottomPadding: 8
         // A DialogButtonBox 10px-es stílus-alapértelmezése a külső margóhoz
         // hozzáadódik; 24px adja a referencián mért 14px-es jobb margót.
         rightPadding: 24
@@ -131,6 +131,26 @@ Dialog {
             height: 24
             DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
         }
+    }
+
+    // A hosszú magyar feliratok a saját oszlopuk teljes szélességét használják.
+    // A betűméret marad a témáé; csak a szükséges minimális betűköz segít, hogy
+    // más platformon se lógjanak át a párbeszéd határán.
+    TextMetrics {
+        id: locationLabelMetrics
+        font.family: locationLabel.font.family
+        font.pixelSize: Theme.fontSize
+        font.weight: locationLabel.font.weight
+        font.letterSpacing: 0
+        text: locationLabel.text
+    }
+    TextMetrics {
+        id: musicLabelMetrics
+        font.family: musicCheck.font.family
+        font.pixelSize: Theme.fontSize
+        font.weight: musicCheck.font.weight
+        font.letterSpacing: 0
+        text: musicCheck.text
     }
 
     ColumnLayout {
@@ -236,7 +256,9 @@ Dialog {
             Layout.fillWidth: true
             Layout.topMargin: 2
             RowLayout {
-                spacing: 7
+                // A jelölő a mezőoszlop bal szélére kerül; a teljes jobb
+                // oszlopszélességet megkapja, a felirat a jelölő után indul.
+                spacing: 0
                 Layout.fillWidth: true
                 Text {
                     objectName: "folderPropertiesMusicLabel"
@@ -254,22 +276,31 @@ Dialog {
                     objectName: "folderPropertiesUseMusic"
                     text: qsTr("Use music for Slideshow and Movie presentation:")
                     font.pixelSize: Theme.fontSize
-                    //: A hu fordítás hosszabb a mezőoszlopnál; a platform
-                    //: betűkészletéhez igazodva csak szükség esetén zsugorodjon,
-                    //: ne vágja le a sor végét.
+                    font.letterSpacing: Math.min(
+                        0,
+                        (
+                            contentItem.width
+                            - contentItem.leftPadding
+                            - contentItem.rightPadding
+                            - musicLabelMetrics.advanceWidth
+                        ) / Math.max(1, text.length - 1)
+                    )
+                    rightPadding: 0
+                    topPadding: 0
+                    bottomPadding: 0
                     Binding {
                         target: musicCheck.contentItem
-                        property: "fontSizeMode"
-                        value: Text.HorizontalFit
+                        property: "wrapMode"
+                        value: Text.NoWrap
                     }
                     Binding {
                         target: musicCheck.contentItem
-                        property: "minimumPixelSize"
-                        value: Theme.fontSize - 2
+                        property: "elide"
+                        value: Text.ElideNone
                     }
                     Layout.preferredHeight: 18
                     Layout.fillWidth: true
-                    Layout.maximumWidth: 347
+                    Layout.maximumWidth: 354
                 }
             }
             RowLayout {
@@ -298,6 +329,13 @@ Dialog {
                         font.pixelSize: Theme.fontSize
                         // az eredeti `<bind attr="enabled" source="usemusic">`
                         enabled: musicCheck.checked
+                        background: Rectangle {
+                            color: musicPathField.enabled
+                                ? Theme.controlBase
+                                : musicPathField.palette.button
+                            border.color: Theme.chromeBorder
+                            border.width: 1
+                        }
                         // #422: jobbklikk-menü (Picasa `Address`)
                         TextFieldContextArea {}
                     }
@@ -318,9 +356,15 @@ Dialog {
             spacing: 7
             Layout.fillWidth: true
             Text {
+                id: locationLabel
                 objectName: "folderPropertiesLocationLabel"
                 text: qsTr("Place taken (optional):")
                 font.pixelSize: Theme.fontSize
+                font.letterSpacing: Math.min(
+                    0,
+                    (width - locationLabelMetrics.advanceWidth)
+                        / Math.max(1, text.length - 1)
+                )
                 color: Theme.ink
                 Layout.preferredWidth: 205
                 Layout.minimumWidth: 205

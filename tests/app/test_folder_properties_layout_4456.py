@@ -17,7 +17,7 @@ app_module.allitsd_be_a_stilust()
 _KEEPALIVE = []
 
 
-def _ablak(qt_app, magassag: int):
+def _ablak(qt_app, magassag: int, datum: str = "2026-01-01"):
     qt_app.styleHints().setColorScheme(Qt.ColorScheme.Light)
     engine = QQmlEngine()
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
@@ -58,7 +58,7 @@ def _ablak(qt_app, magassag: int):
     _KEEPALIVE.extend((engine, component, ablak))
     assert QTest.qWaitForWindowExposed(ablak)
     dialog.setProperty("folderName", "2026-xx-xx screen")
-    dialog.setProperty("currentDate", "2026-01-01")
+    dialog.setProperty("currentDate", datum)
     dialog.open()
     assert varj_feltetelre(
         qt_app,
@@ -89,8 +89,9 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
     """A QML-t kirajzolja, elmenti, és a sorok elhelyezését méri.
 
     A referencia (1920×1080) ablakmagasság-próbája 1075/1080/1085 px.
-    A sorvégek és a vezérlők közötti referenciahézag 5 px; betűképet pixelre
-    nem mérünk, a zene feliratánál a vágás hiányát ellenőrizzük.
+    A sorvégek és a vezérlők közötti referenciahézag 5 px. A betűk
+    pixelméretét nem rögzítjük: a zene feliratánál a QML fontInfo adja a
+    tényleges pixelSize értéket, a felirat teljes szélességét mérjük.
     """
     translator = QTranslator(qt_app)
     assert translator.load(
@@ -116,11 +117,8 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
     )[1].split("}", 1)[0]
     if "font.pixelSize: Theme.fontSize" not in zene_mezo:
         hibak.append("a zene jelölő feliratának Theme.fontSize beállítása hiányzik")
-    if (
-        'property: "fontSizeMode"' not in zene_mezo
-        or "value: Text.HorizontalFit" not in zene_mezo
-    ):
-        hibak.append("a zene jelölő felirata nem igazodik a rendelkezésre álló szélességhez")
+    if "HorizontalFit" in zene_mezo:
+        hibak.append("a zene jelölő felirata zsugorítható betűméretet használ")
     for label_nev, _ in elvart_sorok:
         if label_nev not in forras:
             hibak.append(f"forrás-őr: hiányzik a(z) {label_nev} címke")
@@ -200,22 +198,60 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
             else:
                 nev_mezo = dialog.findChild(QObject, "folderPropertiesNameField")
                 if nev_mezo is not None and abs(
-                    zene_jelolo.property("width") - nev_mezo.property("width")
+                    zene_jelolo.property("width") - nev_mezo.property("width") - 7
                 ) > 3:
                     hibak.append(
-                        f"{magassag}px: a zene sor nem használja ki a mezőoszlopot "
+                        f"{magassag}px: a zene jelölő nem használja ki a teljes jobb oszlopot "
                         f"(jelölő={zene_jelolo.property('width')}px, "
-                        f"mező={nev_mezo.property('width')}px)"
+                        f"mező={nev_mezo.property('width')}px, elvárt különbség=7px)"
                     )
                 zene_felirat = zene_jelolo.property("contentItem")
                 if zene_felirat is None:
                     hibak.append(f"{magassag}px: hiányzik a zene jelölő felirata")
-                elif zene_felirat.property("truncated") is not False:
-                    hibak.append(
-                        f"{magassag}px: a zene jelölő felirata le van vágva "
-                        f"(truncated={zene_felirat.property('truncated')!r}, "
-                        f"szélesség={zene_felirat.property('width')!r})"
+                else:
+                    if zene_felirat.property("truncated") is not False:
+                        hibak.append(
+                            f"{magassag}px: a zene jelölő felirata le van vágva "
+                            f"(truncated={zene_felirat.property('truncated')!r}, "
+                            f"szélesség={zene_felirat.property('width')!r})"
+                        )
+                    music_size = zene_felirat.property(
+                        "fontInfo"
+                    ).property("pixelSize").toVariant()
+                    name_label = dialog.findChild(
+                        QObject, "folderPropertiesNameLabel"
                     )
+                    name_size = (
+                        name_label.property("fontInfo")
+                        .property("pixelSize")
+                        .toVariant()
+                        if name_label is not None
+                        else None
+                    )
+                    if music_size != name_size:
+                        hibak.append(
+                            f"{magassag}px: a zene felirat betűmérete {music_size}px, "
+                            f"a többi feliraté {name_size}px"
+                        )
+                    szoveghely = (
+                        zene_felirat.property("width")
+                        - zene_felirat.property("leftPadding")
+                        - zene_felirat.property("rightPadding")
+                    )
+                    if zene_felirat.property("contentWidth") > szoveghely + 1:
+                        hibak.append(
+                            f"{magassag}px: a teljes zene-felirat nem fér el "
+                            f"(szöveg={zene_felirat.property('contentWidth'):.1f}px, "
+                            f"hely={szoveghely:.1f}px)"
+                        )
+                    if (
+                        zene_felirat.property("implicitHeight")
+                        > zene_felirat.property("height") + 1
+                    ):
+                        hibak.append(
+                            f"{magassag}px: a zene-felirat renderelt magassága "
+                            "nagyobb a rendelkezésre álló helyénél"
+                        )
             for label_nev, vezerlo_nev in elvart_sorok:
                 label = dialog.findChild(QObject, label_nev)
                 vezerlo = dialog.findChild(QObject, vezerlo_nev)
@@ -224,10 +260,32 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
                         f"{magassag}px: hiányzó sor: {label_nev}/{vezerlo_nev}"
                     )
                     continue
-                _, label_felso, label_jobb, label_also = _scenebox(label)
+                label_bal, label_felso, label_jobb, label_also = _scenebox(label)
                 vezerlo_bal, vezerlo_felso, _, vezerlo_also = _scenebox(vezerlo)
                 sor_geometria[vezerlo_nev] = (vezerlo_bal, vezerlo_felso)
-                res = vezerlo_bal - label_jobb
+                tartalom_bal = dialog.property("x") + dialog.property(
+                    "leftPadding"
+                )
+                rajzolt_felirat_bal = (
+                    label_jobb - label.property("implicitWidth")
+                )
+                if rajzolt_felirat_bal < tartalom_bal - 0.5:
+                    hibak.append(
+                        f"{magassag}px: {label_nev} felirata a tartalmi bal szél "
+                        f"elé lóg ({rajzolt_felirat_bal:.1f}px < {tartalom_bal:.1f}px; "
+                        f"a címke geometriája {label_bal:.1f}px-től indul)"
+                    )
+                if label_bal < tartalom_bal - 0.5:
+                    hibak.append(
+                        f"{magassag}px: {label_nev} címkeeleme a tartalmi bal "
+                        f"szél elé lóg ({label_bal:.1f}px < {tartalom_bal:.1f}px)"
+                    )
+                vizualis_vezerlo_bal = vezerlo_bal
+                if vezerlo_nev == "folderPropertiesUseMusic":
+                    jelolo = vezerlo.property("indicator")
+                    if jelolo is not None:
+                        vizualis_vezerlo_bal = _scenebox(jelolo)[0]
+                res = vizualis_vezerlo_bal - label_jobb
                 if abs(res - 5) > 3:
                     hibak.append(
                         f"{magassag}px: {label_nev}→{vezerlo_nev} hézag="
@@ -348,6 +406,23 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
             name = dialog.findChild(QObject, "folderPropertiesNameField")
             if name is not None and name.property("enabled") is not False:
                 hibak.append(f"{magassag}px: a szándékosan letiltott Név mező aktív")
+            music_path = dialog.findChild(QObject, "folderPropertiesMusicPath")
+            if music_path is not None:
+                path_bal, path_felso, path_jobb, path_also = _scenebox(music_path)
+                path_szin = kep.pixelColor(
+                    round((path_bal + path_jobb) / 2),
+                    round((path_felso + path_also) / 2),
+                )
+                if (
+                    max(path_szin.red(), path_szin.green(), path_szin.blue()) >= 250
+                    or max(path_szin.red(), path_szin.green(), path_szin.blue())
+                    - min(path_szin.red(), path_szin.green(), path_szin.blue())
+                    > 5
+                ):
+                    hibak.append(
+                        f"{magassag}px: a letiltott zene-fájlmező nem szürke "
+                        f"({path_szin.name()})"
+                    )
             for mezo_nev, referencia in (
                 ("folderPropertiesNameField", 347),
                 ("folderPropertiesLocation", 347),
@@ -373,6 +448,73 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
                 hibak.append(f"1075px-es ablaknál a középre igazítás eltért: {dobozok}")
             if abs((magas_y - kozep_y) - 2.5) > 1.5:
                 hibak.append(f"1085px-es ablaknál a középre igazítás eltért: {dobozok}")
+
+        ervenytelen_ablak, ervenytelen_dialog = _ablak(
+            qt_app, 1080, datum="nem-dátum"
+        )
+        assert varj_feltetelre(
+            qt_app, lambda: ervenytelen_ablak.isExposed(), 3.0
+        )
+        ervenytelen_kep = ervenytelen_ablak.grabWindow()
+        assert not ervenytelen_kep.isNull(), "a hibás dátum képernyőképe üres"
+        assert ervenytelen_kep.save(
+            str(tmp_path / "mappa-tulajdonsagai-ervenytelen.png")
+        )
+        date_hint = ervenytelen_dialog.findChild(
+            QObject, "folderPropertiesDateHint"
+        )
+        ok_button = ervenytelen_dialog.findChild(
+            QObject, "folderPropertiesOkButton"
+        )
+        cancel_button = ervenytelen_dialog.findChild(
+            QObject, "folderPropertiesCancelButton"
+        )
+        assert date_hint is not None and date_hint.property("visible") is True
+        assert ok_button is not None and cancel_button is not None
+        hint_left, hint_top, hint_right, hint_bottom = _scenebox(date_hint)
+        _ok_left, ok_top, ok_right, _ok_bottom = _scenebox(ok_button)
+        _cancel_left, cancel_top, cancel_right, _cancel_bottom = _scenebox(
+            cancel_button
+        )
+        content_left = (
+            ervenytelen_dialog.property("x")
+            + ervenytelen_dialog.property("leftPadding")
+        )
+        content_right = (
+            ervenytelen_dialog.property("x")
+            + ervenytelen_dialog.property("width")
+            - ervenytelen_dialog.property("rightPadding")
+        )
+        if hint_left < content_left - 0.5 or hint_right > content_right + 0.5:
+            hibak.append(
+                "1080px: az érvénytelen dátum hibaüzenete kilóg a párbeszéd "
+                f"tartalmából ({hint_left:.1f}..{hint_right:.1f}, "
+                f"elvárt {content_left:.1f}..{content_right:.1f})"
+            )
+        if hint_bottom >= min(ok_top, cancel_top):
+            hibak.append(
+                "1080px: az érvénytelen dátum hibaüzenete eléri vagy takarja "
+                "a gombsor tetejét"
+            )
+        if max(ok_right, cancel_right) > content_right + 3:
+            hibak.append("1080px: a gombsor kilóg a párbeszéd jobb szélén")
+        for name in (
+            "folderPropertiesUseMusic",
+            "folderPropertiesMusicPath",
+            "folderPropertiesLocation",
+            "folderPropertiesDescription",
+        ):
+            field = ervenytelen_dialog.findChild(QObject, name)
+            if field is None:
+                continue
+            field_left, field_top, field_right, field_bottom = _scenebox(field)
+            if (
+                max(hint_left, field_left) < min(hint_right, field_right)
+                and max(hint_top, field_top) < min(hint_bottom, field_bottom)
+            ):
+                hibak.append(
+                    f"1080px: a dátumhiba takarja a(z) {name} vezérlőt"
+                )
     finally:
         qt_app.removeTranslator(translator)
 
