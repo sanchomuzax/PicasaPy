@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.38] – 2026-10-07
+
+- A Mappa tulajdonságai párbeszéd Név mezőjével átnevezhetők a mappák; foglalt vagy érvénytelen névnél hibaüzenet jelenik meg. (#4482).
+- Bekapcsolt egykattintásos kilépésnél az állóképes előnézet egy kattintással visszalép a könyvtárba. (#4499).
+- A Mappa tulajdonságai párbeszéd OK és Mégse gombja ismét működik (#4503).
+- A mappatulajdonságok felirata és a Windows alatti útvonal- és QML-próbák platformfüggetlenek lettek (#4506).
+
 ## [0.9.37] – 2026-10-07
 
 - A főmenü-bejáró az új arcfilmes parancsot is ellenőrzi, és minden parancs után visszaállítja a nézetet (#4433).
