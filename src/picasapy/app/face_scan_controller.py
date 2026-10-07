@@ -87,6 +87,7 @@ from .face_ignore_ini import (
     parse_ini_face_key,
     quantize_rect,
 )
+from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 from .faces_helper import FacesHelper
 from .worker_thread import BackgroundWorkerMixin
 from .display_mode_paint import current_display_mode_suffix
@@ -738,8 +739,14 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 # háttér-szinkronnál látszana. A `photo_ops_controller`
                 # mintáját követve azonnal újraszinkronizáljuk az érintett
                 # mappákat, hogy az Emberek-gyűjtemény rögtön frissüljön.
+                enabled_filetypes = load_enabled_filetypes(self._settings)
                 for folder in touched_folders:
-                    sync_tree(conn, folder)
+                    if enabled_filetypes is None:
+                        sync_tree(conn, folder)
+                    else:
+                        sync_tree(
+                            conn, folder, enabled_filetypes=enabled_filetypes
+                        )
                 conn.commit()
             self.unnamedCountChanged.emit()
             self._irj_xmp_ha_kell(written_paths)

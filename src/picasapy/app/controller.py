@@ -94,8 +94,10 @@ from .side_pane_controller import SidePaneMixin
 from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
+from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+_FILETYPE_SNAPSHOT_UNSET = object()
 
 #: A bal oldali mappapanel szélessége (#322) — a felhasználó húzhatja, az
 #: érték a QSettings-ben él. A határok azt védik ki, hogy egy elrontott
@@ -289,6 +291,9 @@ class AppController(
         self._search_result_count = 0  # összes találat (#7, a bal paneli sorhoz)
         self._search_groups: tuple = ()  # a rács mappánkénti csoportosításához
         self._settings = settings
+        # A háttérben futó szkennelések ezt az immutable pillanatképet
+        # használják; a QSettings-et a GUI-szálon olvassuk/írjuk.
+        self._filetype_scan_snapshot = load_enabled_filetypes(self._get_settings())
         self._thumb_caption_mode = self._get_settings().value(
             "view/thumbCaption", "none"
         )
@@ -1473,18 +1478,27 @@ class AppController(
 
     # -- belső --------------------------------------------------------------
 
-    @staticmethod
-    def _sync_tree(conn, folder: str, progress=None) -> None:
+    def _sync_tree(
+        self,
+        conn,
+        folder: str,
+        progress=None,
+        enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET,
+    ) -> None:
         """Indirekció a mappa-resynchez (#150): a mixinek ezen át hívják a
         `sync_tree`-t, így a tesztek patch-pontja (a modul-szintű
         `picasapy.app.controller.sync_tree`) változatlanul él.
 
         #209: az opcionális `progress` callback (worker-szál!) mappánkénti
         haladás-jelzést ad tovább a `sync_tree`-nek."""
-        if progress is None:
-            sync_tree(conn, folder)
-        else:
-            sync_tree(conn, folder, progress=progress)
+        if enabled_filetypes is _FILETYPE_SNAPSHOT_UNSET:
+            enabled_filetypes = self._filetype_scan_snapshot
+        kwargs = {}
+        if progress is not None:
+            kwargs["progress"] = progress
+        if enabled_filetypes is not None:
+            kwargs["enabled_filetypes"] = enabled_filetypes
+        sync_tree(conn, folder, **kwargs)
 
     def _show_filtered(self, records, elapsed: float) -> None:
         """Szűrt nézet megjelenítése a ZÖLD EREDMÉNYSÁV szövegével együtt.
