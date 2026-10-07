@@ -15,12 +15,12 @@ művelet befejezéséhez.
   döntésünk, visszafogott és egyenletes. Ha egyszer valaki lemér egy
   képernyőfelvételt, ezt a két számot kell cserélni.
 
-## Amit szándékosan NEM kötöttem be
+## A speciális effektusok beállítása
 
 A „Speciális effektusok használata" jelölő (`optionsUiTransitionsCheck`)
-ma **tiltott helyőrző** — nincs mögötte élő beállítás. Ahhoz kötni a
-pulzálást azt a látszatot keltené, hogy a kapcsoló működik. A `throbbing`
-tulajdonság a hívóé; amint lesz élő beállítás, egyetlen kötés bekapcsolja.
+élő beállítás. Kikapcsolva a pulzáló főgombok keretanimációja is megáll;
+bekapcsolva a hívó `throbbing` tulajdonsága továbbra is meghatározza, hogy
+az adott gomb egyáltalán pulzáljon-e.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from PySide6.QtCore import QObject, Property, Signal
 from PySide6.QtGui import QColor
 
 
@@ -38,11 +39,31 @@ def app_module():
     return module
 
 
-def _load_button(app_module, properties=None):
+class _TransitionController(QObject):
+    uiTransitionsEnabledChanged = Signal()
+
+    def __init__(self, enabled):
+        super().__init__()
+        self._enabled = enabled
+
+    @Property(bool, notify=uiTransitionsEnabledChanged)
+    def uiTransitionsEnabled(self):
+        return self._enabled
+
+    def setEnabled(self, enabled):
+        if self._enabled == enabled:
+            return
+        self._enabled = enabled
+        self.uiTransitionsEnabledChanged.emit()
+
+
+def _load_button(app_module, properties=None, controller=None):
     from PySide6.QtQml import QQmlComponent, QQmlEngine
 
     engine = QQmlEngine()
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
+    if controller is not None:
+        engine.rootContext().setContextProperty("controller", controller)
     factory = QQmlComponent(
         engine, str(app_module._APP_DIR / "qml" / "PicasaPy" / "PicasaButton.qml")
     )
@@ -70,6 +91,23 @@ class TestAPulzalasFeltetelei:
 
     def test_LENYOMVA_nem_pulzal(self, app_module, qt_app):
         gomb, _f, _e = _load_button(app_module, {"throbbing": True, "down": True})
+        assert gomb.property("throbFut") is False
+
+    def test_a_SPECIÁLIS_EFFEKTUSOK_be_es_kikapcsolja_a_pulzalast(
+        self, app_module, qt_app
+    ):
+        vezerlo = _TransitionController(False)
+        gomb, _f, _e = _load_button(
+            app_module, {"throbbing": True}, controller=vezerlo
+        )
+        assert gomb.property("throbFut") is False
+
+        vezerlo.setEnabled(True)
+        qt_app.processEvents()
+        assert gomb.property("throbFut") is True
+
+        vezerlo.setEnabled(False)
+        qt_app.processEvents()
         assert gomb.property("throbFut") is False
 
 
