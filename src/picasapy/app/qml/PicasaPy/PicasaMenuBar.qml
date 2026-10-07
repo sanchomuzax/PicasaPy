@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 // A Picasa 3.9 teljes menüszerkezete (a magyar 3.9-ből dokumentálva,
 // ld. docs/specs/ui-audit-menus.md, #324/#327). A még nem implementált
@@ -46,6 +47,51 @@ MenuBar {
     // ez csak az elrendezés része, ezért nem interaktív.
     background: Rectangle {
         color: Theme.canvasBg
+        Connections {
+            target: bar.ctl
+            function onCaptionPasteConfirmationRequested() {
+                pasteCaptionReplaceDialog.open()
+            }
+        }
+        Dialog {
+            id: pasteCaptionReplaceDialog
+            objectName: "pasteCaptionReplaceDialog"
+            modal: true
+            focus: true
+            anchors.centerIn: parent ? Overlay.overlay : undefined
+            onAccepted: if (bar.ctl) bar.ctl.confirmCaptionPaste()
+            onRejected: if (bar.ctl) bar.ctl.cancelCaptionPaste()
+
+            ColumnLayout {
+                spacing: 12
+
+                Text {
+                    objectName: "pasteCaptionReplaceMessage"
+                    Layout.preferredWidth: 420
+                    text: qsTr("Are you sure you want to replace the existing caption with the contents of the clipboard?\n(This operation is not undoable)")
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 8
+
+                    PicasaButton {
+                        objectName: "pasteCaptionReplaceButton"
+                        text: qsTr("Replace")
+                        accent: Theme.picasaGreen
+                        onClicked: pasteCaptionReplaceDialog.accept()
+                    }
+                    PicasaButton {
+                        objectName: "pasteCaptionCancelButton"
+                        text: qsTr("Cancel")
+                        onClicked: pasteCaptionReplaceDialog.reject()
+                    }
+                }
+            }
+        }
         Rectangle {
             anchors.bottom: parent.bottom
             width: parent.width; height: 1

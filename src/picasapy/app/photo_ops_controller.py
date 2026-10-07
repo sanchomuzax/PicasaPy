@@ -175,6 +175,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
     #: eljut a menühöz, nem csak a sajátunk.
     captionClipboardChanged = Signal()
+    #: #4628: a kijelölt képek valamelyikének már van felirata, ezért a
+    #: vágólapról beillesztés előtt a QML megerősítést kér.
+    captionPasteConfirmationRequested = Signal()
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
@@ -569,7 +572,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         """A vágólap szövege a KIJELÖLT képek feliratába („Paste Text").
 
         Az eredetiben a parancs a kijelölésre hat, nem egy képre. Visszaadja,
-        hány képre indult írás.
+        hány képre indult írás. Ha a kijelölésben van már feliratozott kép,
+        a QML előbb megerősítést kér; az írás csak a `confirmCaptionPaste`
+        hívásakor indul.
 
         ⚠️ ÜRES vágólapra nem tesz semmit: a meglévő feliratok letörlése néma
         adatvesztés lenne — a törlésre a felirat-szerkesztő van."""
@@ -588,6 +593,25 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not kijeloles:
             return 0
 
+        # #4628: a kérdésre várva rögzítjük a célképeket és a szöveget. Így
+        # egy másik vágólap- vagy rácsváltozás nem módosítja a felhasználó
+        # által épp jóváhagyott műveletet.
+        if getattr(self, "_caption_paste_pending", None) is not None:
+            return 0
+        if any((photo.caption or "").strip() for photo in kijeloles):
+            self._caption_paste_pending = (
+                [photo.id for photo in kijeloles],
+                szoveg,
+            )
+            self.captionPasteConfirmationRequested.emit()
+            return 0
+
+        return self._write_caption_text(kijeloles, szoveg)
+
+    def _write_caption_text(self, kijeloles, szoveg: str) -> int:
+        """A már jóváhagyott vagy üres képekre menő feliratköteg."""
+        if not kijeloles or not szoveg:
+            return 0
         # #2915: EGY soros köteg, nem képenként egy szál — ugyanabba az
         # ini-be és indexbe írás párhuzamosan versenyhelyzet volt.
         azonositok = [photo.id for photo in kijeloles]
@@ -601,6 +625,27 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             after=utomunka,
         )
         return len(kijeloles)
+
+    @Slot(result=int)
+    def confirmCaptionPaste(self) -> int:  # noqa: N802
+        """A felhasználó jóváhagyta a függő felirat-beillesztést."""
+        pending = getattr(self, "_caption_paste_pending", None)
+        self._caption_paste_pending = None
+        if pending is None:
+            return 0
+        photo_ids, szoveg = pending
+        photos_by_id = {photo.id: photo for photo in self._photos.photos}
+        kijeloles = [
+            photos_by_id[photo_id]
+            for photo_id in photo_ids
+            if photo_id in photos_by_id
+        ]
+        return self._write_caption_text(kijeloles, szoveg)
+
+    @Slot()
+    def cancelCaptionPaste(self) -> None:  # noqa: N802
+        """A felhasználó elutasította a függő felirat-beillesztést."""
+        self._caption_paste_pending = None
 
     @Slot(int, str)
     def setCaption(self, row: int, text: str) -> None:
