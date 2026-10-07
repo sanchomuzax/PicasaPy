@@ -244,8 +244,11 @@ class TestElerhetoseg:
 
     @pytest.mark.parametrize("height_offset", [-5, 0, 5])
     def test_hianyzo_sface_mellett_a_csoportositas_indithato_letoltesre(
-        self, qt_app, tmp_path, height_offset
+        self, qt_app, tmp_path, monkeypatch, height_offset
     ):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+        monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
         vezerlo = _vezerlo(tmp_path, lenyomatolo=_HamisLenyomatolo(available=False))
         parbeszed = _parbeszed(qt_app, vezerlo)
         parbeszed.setHeight(parbeszed.height() + height_offset)

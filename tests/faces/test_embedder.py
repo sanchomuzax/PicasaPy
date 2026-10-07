@@ -1,23 +1,27 @@
 """#26 (2. lépcső): az SFace lenyomat-számító hiánytűrő becsomagolása.
 
-KÖTELEZŐ szabály (issue #26): a modell hiányában futó eset MINDIG lefut
-(CI-ben nincs garantált modellfájl) — a modellt igénylő ellenőrzés
-`skipif`-fel kihagyva, ha a fájl ténylegesen nincs jelen."""
+A hiányzómodell-eset mindig lefut. A csomagolt modell elérhetőségét és a
+valódi SFace-számítást hálózat nélküli teszt is ellenőrzi."""
 
 from __future__ import annotations
 
+import hashlib
 import logging
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
+from picasapy.faces import embedder as embedder_module
 from picasapy.faces.embedder import (
     EMBEDDING_DIM,
     FaceEmbedder,
+    MODEL_FILENAME,
     download_model,
     resolve_model_path,
 )
+from picasapy.faces.model_download import EMBEDDER_SPEC
 
 _LANDMARKS = FaceLandmarks(
     right_eye=(60.0, 80.0),
@@ -52,6 +56,7 @@ class TestMissingModel:
             "picasapy.faces.embedder.default_model_path",
             lambda: tmp_path / "nincs-ilyen.onnx",
         )
+        monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
         with caplog.at_level(logging.INFO):
             embedder = FaceEmbedder()
         assert embedder.available is False
@@ -65,7 +70,22 @@ class TestModelPathResolution:
             "picasapy.faces.embedder.default_model_path",
             lambda: tmp_path / "nincs-ilyen.onnx",
         )
+        monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
         assert resolve_model_path() is None
+
+    def test_bundled_model_precedes_a_downloaded_profile_copy(self, tmp_path, monkeypatch):
+        """A csomag modellje legyen az elsődleges, a profilmappa tartalék."""
+        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        profile_model = tmp_path / "picasapy" / "models" / MODEL_FILENAME
+        profile_model.parent.mkdir(parents=True)
+        profile_model.write_bytes(b"korabbi letoltes")
+
+        bundled_model = (
+            Path(embedder_module.__file__).resolve().parent / "models" / MODEL_FILENAME
+        )
+
+        assert resolve_model_path() == bundled_model
 
     def test_env_var_overrides_default(self, tmp_path, monkeypatch):
         model = tmp_path / "sajat.onnx"
@@ -73,13 +93,20 @@ class TestModelPathResolution:
         monkeypatch.setenv("PICASAPY_FACE_EMBED_MODEL", str(model))
         assert resolve_model_path() == model
 
-    def test_env_var_pointing_to_missing_file_falls_back(self, tmp_path, monkeypatch):
+    def test_env_var_pointing_to_missing_file_falls_back_to_bundled_model(
+        self, tmp_path, monkeypatch
+    ):
         monkeypatch.setenv("PICASAPY_FACE_EMBED_MODEL", str(tmp_path / "nincs.onnx"))
         monkeypatch.setattr(
             "picasapy.faces.embedder.default_model_path",
             lambda: tmp_path / "meg-egy-hianyzo.onnx",
         )
-        assert resolve_model_path() is None
+
+        bundled_model = (
+            Path(embedder_module.__file__).resolve().parent / "models" / MODEL_FILENAME
+        )
+
+        assert resolve_model_path() == bundled_model
 
     def test_uses_own_env_var_not_the_detector_one(self, tmp_path, monkeypatch):
         # a detektor és a lenyomat-modell KÜLÖN env-változóval bírálható
@@ -92,6 +119,7 @@ class TestModelPathResolution:
             "picasapy.faces.embedder.default_model_path",
             lambda: tmp_path / "nincs-ilyen.onnx",
         )
+        monkeypatch.setattr("picasapy.faces.embedder.bundled_model_path", lambda: None)
         assert resolve_model_path() is None
 
 
@@ -106,13 +134,73 @@ class TestDownloadModelNeverBlocksStartup:
         assert not (tmp_path / "model.onnx").exists()
 
 
+class TestBundledModelOffline:
+    def test_clean_profile_loads_bundled_model_and_computes_face_embedding(
+        self, tmp_path, monkeypatch
+    ):
+        """Üres profilban, letöltés nélkül is elérhető és használható az SFace."""
+        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "clean-profile"))
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            lambda *_args, **_kwargs: pytest.fail("a teszt nem kérhet hálózatot"),
+        )
+
+        bundled_model = (
+            Path(embedder_module.__file__).resolve().parent / "models" / MODEL_FILENAME
+        )
+        assert bundled_model.is_file()
+        assert EMBEDDER_SPEC.sha256 == "0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79"
+        assert hashlib.sha256(bundled_model.read_bytes()).hexdigest() == EMBEDDER_SPEC.sha256
+        assert resolve_model_path() == bundled_model
+
+        from picasapy.faces.model_download import missing_specs
+
+        assert "embedder" not in {spec.key for spec in missing_specs()}
+
+        # Önálló, arcot ábrázoló tesztminta: a keretet és az öt pontot ugyanúgy
+        # adja át, ahogy a detektor kimenete kerül az SFace-hez.
+        yy, xx = np.ogrid[:240, :240]
+        image = np.full((240, 240, 3), 96, dtype=np.uint8)
+        face = ((xx - 120) / 76) ** 2 + ((yy - 120) / 96) ** 2 <= 1
+        image[face] = (182, 165, 145)
+        for eye_x in (92, 148):
+            eye = (xx - eye_x) ** 2 + (yy - 96) ** 2 <= 8**2
+            image[eye] = (28, 28, 28)
+        nose = (np.abs(xx - 120) <= 5) & (yy >= 105) & (yy <= 145)
+        image[nose] = (125, 108, 92)
+        mouth = ((xx - 120) / 25) ** 2 + ((yy - 164) / 6) ** 2 <= 1
+        image[mouth] = (48, 42, 44)
+        detection = FaceDetection(
+            left=44,
+            top=24,
+            right=196,
+            bottom=216,
+            score=0.99,
+            landmarks=FaceLandmarks(
+                right_eye=(92.0, 96.0),
+                left_eye=(148.0, 96.0),
+                nose=(120.0, 128.0),
+                mouth_right=(101.0, 164.0),
+                mouth_left=(139.0, 164.0),
+            ),
+        )
+
+        embedder = FaceEmbedder()
+        assert embedder.available is True
+        result = embedder.compute(image, detection)
+        assert result is not None
+        assert result.shape == (EMBEDDING_DIM,)
+        assert result.dtype == np.float32
+        assert np.isfinite(result).all()
+
+
 _REAL_MODEL = resolve_model_path()
 
 
 @pytest.mark.skipif(_REAL_MODEL is None, reason="Arc-lenyomat modell nincs a gépen — kihagyva.")
 class TestRealModel:
-    """Csak akkor fut, ha a modellfájl ténylegesen a lemezen van (helyi
-    fejlesztés/manuális letöltés) — a CI-ben SOHA (nincs garantált hálózat)."""
+    """A csomagolt SFace-szel, hálózat nélkül is futó számítási próba."""
 
     def test_compute_shape_on_blank_image(self):
         embedder = FaceEmbedder()
