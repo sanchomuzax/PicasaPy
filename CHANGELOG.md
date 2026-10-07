@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.40] – 2026-10-08
+
+- A kijelölt képek megnevezett és névtelen arcai arcképpel jelennek meg az Emberek panelen. (#4511).
+- Az arcok csoportosítása és névjavaslata a csomagolt SFace-modellel tiszta telepítésen, letöltés nélkül működik (#4513).
+
 ## [0.9.39] – 2026-10-07
 
 - Import közbeni mappaszinkron és arcfelismerés nem tartja hosszan az adatbázis zárát; ütközéskor az érintett mappák késleltetve újrapróbálódnak. (#4509).
