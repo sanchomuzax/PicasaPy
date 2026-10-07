@@ -341,9 +341,10 @@ def _write_ini_metadata(
 ) -> None:
     """A `caption`/`keywords` átvitele a célmappa `.picasa.ini`-jébe (#1166).
 
-    Egyetlen `update_document` hívással, a köteg végén: a párhuzamosan
-    futó eredeti Picasa közbeírása így sem veszhet el (#295), és nem
-    nyitjuk-zárjuk fájlonként. Adat nélküli kötegnél nem keletkezik ini.
+    Egyetlen `update_document` hívással, a köteg végén: az előzetes
+    ujjlenyomat-ellenőrzésig észlelt Picasa-változás újratöltést és újrajátszást
+    kap (#295). A sikeres ellenőrzés és fájlcsere közti külső írás elveszhet;
+    nem nyitjuk-zárjuk fájlonként. Adat nélküli kötegnél nem keletkezik ini.
 
     A szekció fejléce a CÉLFÁJL neve (sorszámozásnál `001-a.jpg`),
     különben az adatnak nem lenne gazdája."""

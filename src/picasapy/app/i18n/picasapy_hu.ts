@@ -11820,6 +11820,22 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPict
             <translation>Keresés a lemezen</translation>
         </message>
         <message>
+            <source>Locate</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Keresés</translation>
+        </message>
+        <message>
+            <source>File on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fájl a lemezen</translation>
+        </message>
+        <message>
+            <source>Locate Original on Disk</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::locateorigondiskmenu_win</extracomment>
+            <translation>Eredeti a lemezen</translation>
+        </message>
+        <message>
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Törlés lemezről</translation>
@@ -11879,6 +11895,11 @@ picasapy-origin-key: stringres:CEditAlbum::albumTitle</extracomment>
             <translation>Dátum:</translation>
         </message>
         <message>
+            <source>Music:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zene:</translation>
+        </message>
+        <message>
             <source>Automatic date</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/autodate.title</extracomment>
@@ -11894,6 +11915,29 @@ picasapy-origin-key: album:album/autodate.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/usemusic.title</extracomment>
             <translation>Zene használata diavetítéshez és mozgófilmes prezentációhoz:</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Tallózás…</translation>
+        </message>
+        <message>
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hangfájlok</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Zenei fájlok (*.mp3, *.wma)</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Zenei fájlok (*.mp3, *.m4a)</translation>
         </message>
         <message>
             <source>Place taken (optional):</source>
@@ -16000,8 +16044,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerSettingsDialog.qml" line="26" />
             <source>Fullscreen startup (requires restart of Photo Viewer to take effect)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: setup/ui_option3</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Teljes képernyős indítás (a Fotómegjelenítő újraindítása után lép érvénybe)</translation>
         </message>
         <message>

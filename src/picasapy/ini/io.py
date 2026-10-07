@@ -20,9 +20,12 @@ dönti el. Az indoklás a `photo_touch` fejlécében és a
 from __future__ import annotations
 
 import hashlib
-from dataclasses import replace
+import os
+import threading
+from contextlib import contextmanager
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, Iterator
 
 from picasapy.ioutil import write_atomic
 
@@ -37,6 +40,45 @@ _BOM = b"\xef\xbb\xbf"
 _open = open
 
 
+@dataclass(slots=True)
+class _PathLockEntry:
+    """Egy normalizált ini-útvonal reentrant lockja és aktív használói."""
+
+    lock: Any
+    users: int = 0
+
+
+_path_lock_registry_guard = threading.Lock()
+_path_lock_registry: dict[str, _PathLockEntry] = {}
+
+
+@contextmanager
+def _ini_path_lock(path: str | Path) -> Iterator[None]:
+    """Ugyanazon normalizált útvonal írásait szerializálja a folyamaton belül.
+
+    A registry lock csak a lockobjektum kiválasztásakor van fogva; a fájl-I/O
+    alatt kizárólag az adott útvonal saját reentrant lockja tart.
+    """
+    key = os.path.normcase(str(Path(path).resolve()))
+    with _path_lock_registry_guard:
+        entry = _path_lock_registry.get(key)
+        if entry is None:
+            entry = _PathLockEntry(threading.RLock())
+            _path_lock_registry[key] = entry
+        entry.users += 1
+
+    try:
+        with entry.lock:
+            yield
+    finally:
+        # A várakozó szálak is users-ként szerepelnek, ezért az utolsó kilépő
+        # után biztonságosan eltávolítható az útvonalhoz tartozó lock.
+        with _path_lock_registry_guard:
+            entry.users -= 1
+            if entry.users == 0 and _path_lock_registry.get(key) is entry:
+                del _path_lock_registry[key]
+
+
 class IniSaveError(RuntimeError):
     """A dokumentum egyik támogatott kódolással sem írható ki bájtra.
 
@@ -45,12 +87,12 @@ class IniSaveError(RuntimeError):
 
 
 class IniConflictError(RuntimeError):
-    """Az `update_document` a `max_retries` újrapróbálkozás alatt sem tudott
-    ütközésmentesen menteni (#137): a fájlt egy párhuzamos író (pl. a futó
-    eredeti Picasa) minden egyes betöltés–mentés ablakban módosította.
+    """Minden próbálkozás során észlelt fájlváltozás miatt a mentés elmaradt.
 
-    A hívó ezt jelzésként kezelheti (pl. újrapróbál később), a lényeg, hogy
-    a beavatkozó írás NEM íródik felül csendben (lost update kizárva)."""
+    Az `update_document` a betöltés és az előzetes ujjlenyomat-ellenőrzés
+    között látott változásra újrapróbál. Ez nem zárja ki a külső írást az
+    utolsó ellenőrzés és az atomikus csere közötti rövid ablakban.
+    """
 
 
 def _fingerprint_from_bytes(target: Path, raw: bytes) -> SourceFingerprint:
@@ -158,12 +200,13 @@ def save_document(
             ) from utf8_exc
     if document.bom:
         payload = _BOM + payload
-    if backup and target.exists():
-        _write_backup(target)
-    if in_place:
-        _write_in_place(target, payload)
-        return
-    write_atomic(target, payload)
+    with _ini_path_lock(target):
+        if backup and target.exists():
+            _write_backup(target)
+        if in_place:
+            _write_in_place(target, payload)
+            return
+        write_atomic(target, payload)
 
 
 def _write_in_place(target: Path, payload: bytes) -> None:
@@ -188,53 +231,59 @@ def update_document(
     backup: bool = True,
     max_retries: int = 3,
 ) -> IniDocument:
-    """Ütközésbiztos betöltés → módosítás → atomikus mentés (#137).
+    """Best-effort konkurenciakezelésű betöltés → módosítás → mentés (#137).
 
-    A `.picasa.ini`-t párhuzamosan a futó eredeti Picasa is írhatja ugyanazon
-    a NAS-mappán. A sima `load → módosít → save_document` némán felülírná, amit
-    a Picasa időközben írt (lost update — pl. egy frissen adott csillag
-    elveszne). Ez a helper ezt zárja ki:
+    Az azonos normalizált útvonalra hívott PicasaPy `update_document` műveletek
+    folyamaton belül, útvonalankénti reentrant lockkal sorosak. Külön ini-
+    útvonalak egymástól függetlenül írhatók.
 
-    1. betölti a dokumentumot (a `load_or_empty` révén az ujjlenyomatával),
-    2. a `mutate` TISZTA függvénnyel előállítja a módosítottat,
-    3. mentés ELŐTT újraolvassa a fájl aktuális ujjlenyomatát; ha az eltér a
-       betöltéskoritól (egy párhuzamos író közben módosított), eldobja a
-       munkát, frissen újratölt, és a `mutate`-et ÚJRAJÁTSSZA az új
-       dokumentumon — így a másik író változása ÉS a miénk is megmarad,
-    4. ha egyeznek, atomikusan (backuppal) ment.
+    A külső Picasa / más folyamat írásait nem tudjuk lockolni. Ha az
+    ujjlenyomat eltér a betöltés és az előzetes ellenőrzés között, a helper
+    frissen újratölt és újrajátssza a `mutate`-et. A sikeres ellenőrzés és az
+    atomikus fájlcsere között viszont egy külső írás elveszhet: hagyományos
+    fájlrendszeri API-val ez a két művelet nem valódi compare-and-swap.
+
+    A működés lépései:
+
+    1. megszerzi az adott normalizált útvonal lockját,
+    2. betölti a dokumentumot (a `load_or_empty` révén az ujjlenyomatával),
+    3. a `mutate` TISZTA függvénnyel előállítja a módosítottat,
+    4. mentés ELŐTT újraolvassa a fájl aktuális ujjlenyomatát; eltéréskor
+       frissen újratölt és a `mutate`-et újrajátssza,
+    5. egyező ujjlenyomatnál atomikusan (backuppal) ment.
 
     A `mutate` KULCS-szintű, immutábilis módosítás legyen (`with_value` /
-    `with_removed` / …) és mellékhatásmentes, mert újrajátszásra kerülhet — a
-    merge így biztonságos: a friss (más író általi) sorok érintetlenek
-    maradnak, csak a mi kulcsaink íródnak felül.
+    `with_removed` / …) és mellékhatásmentes, mert újrajátszásra kerülhet. Az
+    ellenőrzés előtt észlelt külső sorok így a friss dokumentumban megmaradnak.
 
     Returns:
         A ténylegesen kimentett dokumentum (a nyertes betöltésre alkalmazott
         `mutate` eredménye).
 
     Raises:
-        IniConflictError: ha `max_retries` próbálkozás alatt sem sikerült
-            beavatkozás nélküli ablakot fogni.
+        IniConflictError: ha minden próbálkozásnál eltérést észlel a betöltés
+            és az előzetes ujjlenyomat-ellenőrzés között.
     """
     target = Path(path)
-    for _ in range(max_retries + 1):
-        document = load_or_empty(target)
-        mutated = mutate(document)
-        # Mentés előtti újraellenőrzés: változott-e a fájl a betöltés óta?
-        # (A tartalom-hash a döntő; az mtime önmagában nem megbízható.)
-        if _fingerprint_of(target) == document.source_fingerprint:
-            save_document(mutated, target, backup=backup)
-            # #643: a Picasa a fotó rekordjának érvényességét a KÉPFÁJLHOZ
-            # méri (`moddate`/`onlinechecksum`), ezért a puszta ini-írás nem
-            # teszi elavulttá — a változott szakaszok képfájljának mtime-ját
-            # is meg kell érinteni. Sosem dob: az érintés kudarca (írásvédett
-            # kép, hálózati megosztás) nem boríthatja a kész mentést.
-            notify_picasa_after_ini_write(target, document, mutated)
-            return mutated
-        # Ütközés: egy párhuzamos író közbeírt — friss újratöltés + újrajátszás.
+    with _ini_path_lock(target):
+        for _ in range(max_retries + 1):
+            document = load_or_empty(target)
+            mutated = mutate(document)
+            # Mentés előtti újraellenőrzés: változott-e a fájl a betöltés óta?
+            # (A tartalom-hash a döntő; az mtime önmagában nem megbízható.)
+            if _fingerprint_of(target) == document.source_fingerprint:
+                save_document(mutated, target, backup=backup)
+                # #643: a Picasa a fotó rekordjának érvényességét a KÉPFÁJLHOZ
+                # méri (`moddate`/`onlinechecksum`), ezért a puszta ini-írás nem
+                # teszi elavulttá — a változott szakaszok képfájljának mtime-ját
+                # is meg kell érinteni. Sosem dob: az érintés kudarca (írásvédett
+                # kép, hálózati megosztás) nem boríthatja a kész mentést.
+                notify_picasa_after_ini_write(target, document, mutated)
+                return mutated
+            # Az ellenőrzésig észlelt változás: friss újratöltés + újrajátszás.
     raise IniConflictError(
-        f"A(z) {target} tartósan változott egy párhuzamos író miatt; a mentés "
-        f"{max_retries + 1} próbálkozás után sem volt ütközésmentes."
+        f"A(z) {target} a betöltés és az ujjlenyomat-ellenőrzés között "
+        f"{max_retries + 1} próbálkozás mindegyikében megváltozott."
     )
 
 

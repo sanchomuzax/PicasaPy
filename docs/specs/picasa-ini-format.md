@@ -1366,6 +1366,24 @@ is eldobja. (A mai írásunkban ilyen tag nincs.)
    paraméter az eredetiben az alapértékre esik vissza (mérve: `unsharp=1`
    ≡ `unsharp2=1,0.600000`), a záró üres mező (`grain=1,;`) pedig tolerált.
 
+### Konkurencia és a garancia határa (#4471)
+
+Az `update_document()` az azonos, normalizált ini-útvonalra érkező PicasaPy
+írásokat folyamaton belüli, útvonalankénti reentrant lockkal sorosítja; más
+ini-útvonalak egymástól függetlenül írhatók. A módosítási függvény a betöltés
+és az előzetes ujjlenyomat-ellenőrzés közötti változás észlelésekor frissen
+betölt, majd újrapróbál.
+
+Ez a PicasaPy ↔ PicasaPy garancia az `update_document()`-et használó
+read-modify-write műveletekre vonatkozik. A külső Picasa vagy más folyamat nem
+veszi ezt a lockot. Ha az ilyen írás az ujjlenyomat-ellenőrzés és az atomikus
+fájlcsere közé esik, elveszhet: hagyományos fájlrendszeri API-val az ellenőrzés
+és a csere nem alkot compare-and-swap műveletet. A `save_document()` közvetlen,
+teljes dokumentumot kiíró API: az útvonalonkénti lock a tényleges írást
+szerializálja, de nem egyesíti a korábban betöltött elavult dokumentumot.
+Többkulcsos, konkurens módosításnál az `update_document()` adja az
+újratöltési és újrapróbálási viselkedést.
+
 ### Az olvasás megengedő MARAD
 
 A szigorítás kizárólag az **író** oldalra vonatkozik. A beolvasás továbbra

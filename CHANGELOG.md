@@ -7,6 +7,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.33] – 2026-10-07
+
+- A foglalt célfájlt áthelyezés és visszagörgetés közben is érintetlenül hagyja (#4469).
+- A modellletöltés tesztje a keresés gombjának tényleges engedélyezésére vár, nem a letöltési jelzőre (#4475).
+
+## [0.9.32] – 2026-10-07
+
+- A kötegelt átnevezés hiba esetén megmutatja az elkészült fájlokat, és frissíti a listát (#4470).
+- Az azonos `.picasa.ini` útvonalra induló PicasaPy-frissítések folyamaton belül sorosak, a külső Picasa-írás észlelt esetben újrapróbálódik (#4471).
+
+## [0.9.31] – 2026-10-07
+
+- A mappa zeneválasztása a diavetítés és a mozgófilm hangsávjaként is használható. (#4448).
+
+## [0.9.30] – 2026-10-07
+
+- Elkészültek a gyorsbillentyű- és helyi menüparitás táblái, valamint több mappalista- és nézőmenü-bekötés. (#4462).
+
 ## [0.9.29] – 2026-10-07
 
 - A QML-felület kattintásos ellenőrzése és a néma vezérlőket jelző CI-őr bővült. (#4438).

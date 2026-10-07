@@ -361,6 +361,7 @@ Item {
         standardButtons: Dialog.NoButton
         property string targetFile: ""
         property string audioFile: ""
+        property bool audioFileFromFolderMusic: false
         property int audioOption: 0
         property int transitionIndex: 1
         property bool personMovieMode: false
@@ -555,6 +556,17 @@ Item {
                 dialogs.trayHasPictures,
                 true)
         }
+        function useFolderMusicAsDefault() {
+            if (audioFileFromFolderMusic) audioFile = ""
+            audioFileFromFolderMusic = false
+            if (!controller || typeof controller.filmMusicForSources !== "function")
+                return
+            var configured = controller.filmMusicForSources(movieClipSources)
+            if (configured) {
+                audioFile = configured
+                audioFileFromFolderMusic = true
+            }
+        }
         function openForRows(rows, allowTray, preferTray) {
             if ((!rows || rows.length === 0) && !allowTray) return
             personMovieMode = false
@@ -563,6 +575,7 @@ Item {
             movieClipSources = preferTray
                 ? controller.movieSourceUrls(movieClipIndexes)
                 : controller.selectedMovieSourceUrls(movieClipIndexes)
+            useFolderMusicAsDefault()
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             movieSlideSelection = []
@@ -581,6 +594,7 @@ Item {
             applyDefaultSize()
             movieClipIndexes = []
             movieClipSources = sources.slice(0)
+            useFolderMusicAsDefault()
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             movieSlideSelection = []
@@ -1015,7 +1029,14 @@ Item {
                                 elide: Text.ElideMiddle
                             }
                             Button { objectName: "movieAddAudioButton"; text: qsTr("Load…"); onClicked: movieAudioDialog.open() }
-                            Button { objectName: "movieRemoveAudioButton"; text: qsTr("Clear"); onClicked: movieDialog.audioFile = "" }
+                            Button {
+                                objectName: "movieRemoveAudioButton"
+                                text: qsTr("Clear")
+                                onClicked: {
+                                    movieDialog.audioFile = ""
+                                    movieDialog.audioFileFromFolderMusic = false
+                                }
+                            }
                         }
                         RowLayout {
                             Layout.fillWidth: true
@@ -1554,7 +1575,10 @@ Item {
                 ? qsTr("Music files (*.mp3, *.wma)")
                 : qsTr("Music files (*.mp3, *.m4a)"),
         ]
-        onAccepted: movieDialog.audioFile = selectedFile.toString()
+        onAccepted: {
+            movieDialog.audioFile = selectedFile.toString()
+            movieDialog.audioFileFromFolderMusic = false
+        }
     }
 
     ColorDialog {
