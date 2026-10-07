@@ -95,6 +95,10 @@ def _parbeszed_gombok(dialogus):
     latott = set()
 
     def hozzaad(elem):
+        # #4503: a `footer`/`contentItem` tulajdonság a CI-n néha QMetaObject-et
+        # ad vissza — csak valódi QObject lehet gomb.
+        if not isinstance(elem, QObject):
+            return
         try:
             if not shiboken6.isValid(elem):
                 return
