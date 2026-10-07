@@ -11,9 +11,8 @@ import QtQuick.Layouts
 // mixinje (ld. face_scan_controller.py modul-docstring) — a Main.qml csak
 // egy Loader-szerű látszás/rejtés kapcsolót kap.
 //
-// Egyszerűsítés (jelentve az issue-ban): a bélyegkép a TELJES fotó, nem az
-// arc-téglalapra vágott index-kép — a Picasa-hű arc-vágás egy későbbi
-// kör finomítása.
+// A csempék URL-je a saját arc-téglalapjukat adja át a közös
+// bélyegkép-szolgáltatónak, így nem a fotó közepe jelenik meg.
 ColumnLayout {
     id: root
     property var faceScanController: null

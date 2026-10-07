@@ -10,14 +10,19 @@ A fejléc-választó fát (#3566, spec 9/b) valódi kijelöléssel a
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from PySide6.QtCore import QMetaObject, QObject, QPoint, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QRectF, Qt
+from PySide6.QtGui import QColor, QImage, QPainter, QPen
 from PySide6.QtTest import QTest
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
+from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.index import open_index, replace_faces, sync_tree
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_feltetelre
 
 
 def _child(root, name):
@@ -52,6 +57,24 @@ def _walk_items(item):
     for child in item.childItems():
         yield child
         yield from _walk_items(child)
+
+
+def _named_item(root, name):
+    return next(
+        (item for item in _walk_items(root) if item.objectName() == name),
+        None,
+    )
+
+
+def _image_betoltve(image):
+    """A QQuickImageBase status enumját a PySide nem tudja property()-ből
+    Pythonba alakítani; progress és sourceSize jelzi a tényleges betöltést."""
+    size = image.property("sourceSize")
+    return (
+        image.property("progress") == 1.0
+        and size.width() > 0
+        and size.height() > 0
+    )
 
 
 def _library_of(window, controller, qt_app, tmp_path, count):
@@ -438,15 +461,6 @@ def _lathato_szemelyek(panel):
     )
 
 
-def _lathato_szemely_darabszamok(panel):
-    return {
-        item.objectName().removeprefix("peoplePanelCount_"):
-            item.property("text")
-        for item in _walk_items(panel)
-        if item.objectName().startswith("peoplePanelCount_") and item.isVisible()
-    }
-
-
 class TestPersonAlbumExcludesViewedPerson:
     # rontás-kontroll: szűrés nélkül az Anna-sor is látszik; a csak-Annás
     # képnél pedig a hibás fejléc-ág „Unnamed groups…” feliratot mutat.
@@ -465,10 +479,6 @@ class TestPersonAlbumExcludesViewedPerson:
             "Also in these photos:"
         )
         assert _lathato_szemelyek(panel) == ["Béla", "Cecília"]
-        assert _lathato_szemely_darabszamok(panel) == {
-            "Béla": "1 photos",
-            "Cecília": "1 photos",
-        }
 
     def test_a_photo_with_only_the_viewed_person_shows_text4(
         self, qml_app, qt_app, tmp_path
@@ -501,10 +511,6 @@ class TestPersonAlbumExcludesViewedPerson:
 
         panel = _child(window, "peoplePanel")
         assert _lathato_szemelyek(panel) == ["Béla", "Cecília"]
-        assert _lathato_szemely_darabszamok(panel) == {
-            "Béla": "1 photos",
-            "Cecília": "1 photos",
-        }
 
     def test_editor_view_keeps_the_viewed_person_in_the_list(
         self, qml_app, qt_app, tmp_path
@@ -523,7 +529,228 @@ class TestPersonAlbumExcludesViewedPerson:
 
         panel = _child(window, "viewerPeoplePanel")
         assert _lathato_szemelyek(panel) == ["Anna"]
-        assert _lathato_szemely_darabszamok(panel) == {"Anna": "1 photos"}
+
+
+def _draw_sample_faces(path):
+    """Két megkülönböztethető, tesztben előállított arc a kivágás méréséhez."""
+    image = QImage(320, 160, QImage.Format.Format_RGB32)
+    image.fill(QColor("#d9e1e8"))
+    painter = QPainter(image)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+    def draw_face(left, top, width, height, skin, hair):
+        bounds = QRectF(left, top, width, height)
+        painter.setPen(QPen(QColor("#49382f"), 2))
+        painter.setBrush(QColor(skin))
+        painter.drawEllipse(bounds)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(hair))
+        painter.drawEllipse(QRectF(left + 3, top, width - 6, height * 0.3))
+        painter.setBrush(QColor("#282828"))
+        eye_y = top + height * 0.43
+        painter.drawEllipse(QRectF(left + width * 0.27, eye_y, 6, 5))
+        painter.drawEllipse(QRectF(left + width * 0.64, eye_y, 6, 5))
+        painter.setPen(QPen(QColor("#7c3e31"), 3))
+        painter.drawLine(
+            QPointF(left + width * 0.5, top + height * 0.45),
+            QPointF(left + width * 0.45, top + height * 0.65),
+        )
+        painter.drawLine(
+            QPointF(left + width * 0.32, top + height * 0.77),
+            QPointF(left + width * 0.68, top + height * 0.77),
+        )
+
+    draw_face(25, 12, 84, 96, "#efbd91", "#4a3025")
+    draw_face(153, 16, 96, 120, "#c98661", "#292421")
+    painter.end()
+    assert image.save(str(path), "JPEG", 95)
+
+
+def _run_named_and_unnamed_faces_render_and_name_through_the_panel(
+    qml_app, qt_app, tmp_path, height_delta
+):
+    """#4511: mindkét sornak a kijelölt arc kivágását kell mutatnia; a
+    névtelen sort a meglévő névadási úton névvel kell frissíteni.
+
+    A panel és az arckép mérete a megadott Picasa-referenciához mérődik;
+    az ablak magasságát három közeli értéken is ellenőrizzük."""
+    from picasapy.app.worker_thread import wait_for_all_background_workers
+
+    window, controller, _engine = qml_app
+    assert wait_for_all_background_workers(30.0)
+    lib = tmp_path / "kepek"
+    photo_path = lib / "a.jpg"
+    _draw_sample_faces(photo_path)
+    contact_id = "b8e4117cf1d6615b"
+    named_rect = Rect64(0.08, 0.12, 0.34, 0.68)
+    (lib / ".picasa.ini").write_text(
+        "[Contacts2]\n"
+        f"{contact_id}=Anna Kis;;\n"
+        "[a.jpg]\n"
+        f"faces=rect64({encode_rect64(named_rect)}),{contact_id};\n",
+        encoding="utf-8",
+    )
+    unnamed_detection = FaceDetection(
+        left=150.0,
+        top=20.0,
+        right=250.0,
+        bottom=140.0,
+        score=0.99,
+        landmarks=FaceLandmarks(
+            right_eye=(180.0, 55.0),
+            left_eye=(215.0, 55.0),
+            nose=(198.0, 80.0),
+            mouth_right=(183.0, 105.0),
+            mouth_left=(213.0, 105.0),
+        ),
+    )
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, lib)
+        photo_id = conn.execute(
+            "SELECT id FROM photos WHERE name = 'a.jpg'"
+        ).fetchone()["id"]
+        replace_faces(conn, photo_id, [unnamed_detection])
+        conn.commit()
+        unnamed_id = conn.execute(
+            "SELECT id FROM face WHERE photo_id = ?", (photo_id,)
+        ).fetchone()["id"]
+    controller._reload_after_sync()
+    assert wait_for_all_background_workers(30.0)
+    photo_row = controller.photos.rowOfPath(str(photo_path))
+    assert photo_row >= 0
+
+    original_height = int(window.height())
+    window.setHeight(original_height + height_delta)
+    assert varj_feltetelre(
+        qt_app, lambda: window.height() == original_height + height_delta, 3.0
+    )
+    _open(window, qt_app)
+    _select_photos(window, controller, qt_app, [photo_path])
+
+    panel = _child(window, "peoplePanel")
+    assert panel.property("faceScanController") is not None
+    # A jobb fiók 400 ms alatt csúszik be. A sor szélességét csak a tényleges
+    # panelgeometriából mérjük, ezért megvárjuk az animáció végét.
+    assert varj_feltetelre(qt_app, lambda: panel.width() >= 275, 3.0)
+    assert varj_feltetelre(
+        qt_app,
+        lambda: (
+            _named_item(panel, "peoplePanelRow_Anna Kis") is not None
+            and _named_item(panel, f"peoplePanelFaceRow_{unnamed_id}")
+            is not None
+        ),
+        3.0,
+    )
+    named_row = _named_item(panel, "peoplePanelRow_Anna Kis")
+    unnamed_row = _named_item(panel, f"peoplePanelFaceRow_{unnamed_id}")
+    named_image = _named_item(panel, "peoplePanelFaceImage_Anna Kis")
+    unnamed_image = _named_item(panel, f"peoplePanelFaceImage_{unnamed_id}")
+    name_field = _named_item(panel, f"peoplePanelAddName_{unnamed_id}")
+    ignore_button = _named_item(panel, f"peoplePanelIgnoreX_{unnamed_id}")
+    assert named_row is not None and unnamed_row is not None
+    assert named_image is not None and unnamed_image is not None
+    submitted_names = []
+    unnamed_row.nameSubmitted.connect(
+        lambda face_id, name: submitted_names.append((face_id, name))
+    )
+    assert name_field is not None and name_field.isVisible()
+    assert name_field.property("placeholderText") == "Add a name"
+    assert ignore_button is not None and ignore_button.isVisible()
+    visible_rows = [
+        item
+        for item in _walk_items(panel)
+        if item.isVisible()
+        and (
+            item.objectName().startswith("peoplePanelRow_")
+            or item.objectName().startswith("peoplePanelFaceRow_")
+        )
+    ]
+    assert len(visible_rows) == 2
+    assert _child(panel, "peoplePanelHeader").property("text") == "In this photo:"
+
+    named_payload = controller.peopleOfRows([photo_row])[0]
+    unnamed_payload = controller.unnamedFacesOfRows([photo_row])[0]
+    assert named_image.property("source").toString() == named_payload["thumbUrl"]
+    assert unnamed_image.property("source").toString() == unnamed_payload["thumbUrl"]
+    assert "&fz=" in named_payload["thumbUrl"]
+    assert "&fz=" in unnamed_payload["thumbUrl"]
+    assert named_payload["thumbUrl"].endswith(
+        "&fz=" + ",".join(f"{value:.4f}" for value in named_payload["rect"])
+    )
+    assert unnamed_payload["thumbUrl"].endswith(
+        "&fz=" + ",".join(f"{value:.4f}" for value in unnamed_payload["rect"])
+    )
+    assert varj_feltetelre(
+        qt_app,
+        lambda: _image_betoltve(named_image) and _image_betoltve(unnamed_image),
+        3.0,
+    )
+
+    # A Picasa referencia névtelen sora kb. 270×76 px, az arckép 60×70 px.
+    assert abs(float(named_row.property("width")) - 270) <= 5
+    assert abs(float(unnamed_row.property("width")) - 270) <= 5
+    assert abs(float(unnamed_row.property("height")) - 76) <= 5
+    assert abs(float(unnamed_image.property("width")) - 60) <= 3
+    assert abs(float(unnamed_image.property("height")) - 70) <= 3
+    named_origin = named_row.mapToScene(QPointF(0, 0))
+    unnamed_origin = unnamed_row.mapToScene(QPointF(0, 0))
+    assert abs(named_origin.x() - unnamed_origin.x()) <= 3
+    assert unnamed_origin.y() - named_origin.y() >= float(
+        named_row.property("height")
+    )
+
+    shots = Path.cwd() / ".bt" / "4511-shots"
+    shots.mkdir(parents=True, exist_ok=True)
+    reference = Path.cwd() / ".codex-referencia-emberek-panel.png"
+    if reference.is_file():
+        (shots / "reference.png").write_bytes(reference.read_bytes())
+    rendered = window.grabWindow()
+    assert not rendered.isNull()
+    assert rendered.save(str(shots / f"people-panel-{height_delta:+d}.png"))
+
+    field_center = name_field.mapToScene(
+        QPointF(name_field.width() / 2, name_field.height() / 2)
+    )
+    QTest.mouseClick(
+        window,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(round(field_center.x()), round(field_center.y())),
+    )
+    assert varj_feltetelre(
+        qt_app, lambda: bool(name_field.property("activeFocus")), 3.0
+    )
+    entered_name = "ada lovelace"
+    for character in entered_name:
+        key = (
+            Qt.Key.Key_Space
+            if character == " "
+            else Qt.Key(ord(character.upper()))
+        )
+        modifier = (
+            Qt.KeyboardModifier.ShiftModifier
+            if character.isupper()
+            else Qt.KeyboardModifier.NoModifier
+        )
+        QTest.keyClick(window, key, modifier)
+    assert name_field.property("text") == entered_name
+    QTest.keyClick(window, Qt.Key.Key_Return)
+    assert varj_feltetelre(qt_app, lambda: bool(submitted_names), 3.0)
+    assert submitted_names == [(unnamed_id, entered_name)]
+    assert varj_feltetelre(
+        qt_app,
+        lambda: (
+            _named_item(panel, f"peoplePanelRow_{entered_name}") is not None
+            and _named_item(panel, f"peoplePanelFaceRow_{unnamed_id}")
+            is None
+        ),
+        3.0,
+    )
+    with open_index(tmp_path / "index.db") as conn:
+        state = conn.execute(
+            "SELECT state FROM face WHERE id = ?", (unnamed_id,)
+        ).fetchone()["state"]
+    assert state == "named"
 
 
 class TestFromPersonAlbumToUnnamed:

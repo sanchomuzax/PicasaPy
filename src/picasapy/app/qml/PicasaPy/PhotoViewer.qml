@@ -4340,18 +4340,29 @@ Rectangle {
                 objectName: "viewerPeoplePanelLoader"
                 active: viewer.peopleOpen && viewer.visible
                 visible: viewer.peopleOpen
-                Layout.preferredWidth: 200
-                Layout.minimumWidth: 160
+                Layout.preferredWidth: 280
+                Layout.minimumWidth: 200
                 Layout.fillHeight: true
                 //: A nézett kép nevesített emberei.
                 sourceComponent: PeoplePanel {
                     objectName: "viewerPeoplePanel"
                     selectionCount: viewer.drawerRows.length
+                    faceScanController: viewer.appWindow
+                        ? viewer.appWindow._faceScanController : null
                     currentPerson: viewer.controllerReady
                         ? controller.currentPersonName : ""
                     peopleHere: (viewer.photosModel && viewer.controllerReady)
-                        ? (viewer.photosModel.revision,
+                        ? (viewer.appWindow
+                           ? viewer.appWindow.peopleFaceRevision : 0,
+                           viewer.photosModel.revision,
                            controller.peopleOfRows(viewer.drawerRows))
+                        : []
+                    unnamedFacesHere:
+                        (viewer.photosModel && viewer.controllerReady)
+                        ? (viewer.appWindow
+                           ? viewer.appWindow.peopleFaceRevision : 0,
+                           viewer.photosModel.revision,
+                           controller.unnamedFacesOfRows(viewer.drawerRows))
                         : []
                     //: #3566: a szerkesztőben mindig az egyképes ág fut
                     //: (az eredetiben az `editpanel/preview` látszik)

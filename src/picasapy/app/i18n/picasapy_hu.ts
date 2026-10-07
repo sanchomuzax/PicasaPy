@@ -9063,9 +9063,45 @@ picasapy-origin-key: stringres:PeoplePanel::Known1</extracomment>
 picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomment>
             <translation>Válasszon ki egy mappát az arcok megjelenítéséhez</translation>
         </message>
+        <message>
+            <source>Ignore People</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
+            <translation>Személyek mellőzése</translation>
+        </message>
+        <message>
+            <source>Ignore Person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+            <translation>Személy mellőzése</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to move this person to the ignored people album?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
+            <translation>Biztosan áthelyezi ezt a személyt a Mellőzött emberek albumba?</translation>
+        </message>
+        <message>
+            <source>Don't ask again, always ignore</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck</extracomment>
+            <translation>Ne kérdezzen újból, mindig hagyja figyelmen kívül</translation>
+        </message>
     </context>
     <context>
         <name>PeoplePanelRow</name>
+        <message>
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: rightdrawerpanel/peoplepanel/faceclusterpanel_%d_addname</extracomment>
+            <translation>Név hozzáadása</translation>
+        </message>
+        <message>
+            <source>Ignore person</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: rightdrawerpanel/peoplepanel/faceclusterpanel_%d_ignore</extracomment>
+            <translation>Személy mellőzése</translation>
+        </message>
         <message>
             <source>%1 photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

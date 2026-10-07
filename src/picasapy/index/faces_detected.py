@@ -227,6 +227,35 @@ def unnamed_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
     return _faces_where(conn, "WHERE f.state = ?", ("unnamed",))
 
 
+def unnamed_faces_for_photos(
+    conn: sqlite3.Connection, photo_ids: Iterable[int]
+) -> tuple[UnnamedFace, ...]:
+    """A kiválasztott fotók még névtelen arcai egy kötegben.
+
+    A panel kijelölésenként hívja; az `IN`-lista több kisebb részre oszlik,
+    hogy nagy kijelölésnél se lépje át az SQLite paraméterkorlátját.
+    `rect is None` maradhat a hiányos képméretű rekordnál — a felület ezt
+    kihagyja, mert kivágott bélyegképet nem lehet hozzá készíteni.
+    """
+    ids = tuple(dict.fromkeys(int(photo_id) for photo_id in photo_ids))
+    if not ids:
+        return ()
+
+    faces: list[UnnamedFace] = []
+    # Az SQLite régebbi buildjeinek 999 kötött változója is elég legyen.
+    for start in range(0, len(ids), 900):
+        chunk = ids[start : start + 900]
+        placeholders = ",".join("?" for _ in chunk)
+        faces.extend(
+            _faces_where(
+                conn,
+                f"WHERE f.state = ? AND f.photo_id IN ({placeholders})",
+                ("unnamed", *chunk),
+            )
+        )
+    return tuple(faces)
+
+
 def _faces_in_state(conn: sqlite3.Connection, state: str) -> tuple[UnnamedFace, ...]:
     """A közös test: egy adott állapotú arcok kiolvasása. A `state`
     ÉRTÉKKÉNT (paraméterként) megy be, nem szövegbe fűzve."""
