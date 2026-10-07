@@ -211,6 +211,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         #: keresés vége frissíti.
         self._ini_ignored_cache: tuple[IniIgnoredFace, ...] | None = None
         self._stop_event: threading.Event | None = None
+        #: #4517: a modellhiány oka munkamenetenként egyszer kerül a naplóba.
+        self._unavailable_logged = False
         self._automatic_scan = False
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
@@ -584,6 +586,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     def _start_face_scan(self, *, automatic: bool) -> None:
         if not self._detector.available:
+            # #4517: a felület jelzése mellett a hibanaplóba is kerüljön,
+            # különben a „nem talál arcot” okát semmi nem rögzíti.
+            if not self._unavailable_logged:
+                self._unavailable_logged = True
+                _log.warning(
+                    "az arcfelismerés nem indul: %s", self.unavailableReason()
+                )
             self.modelUnavailable.emit()
             return
         if automatic and self._stop_event is not None:
