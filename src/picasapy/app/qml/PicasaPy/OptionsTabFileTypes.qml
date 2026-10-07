@@ -26,6 +26,7 @@ ColumnLayout {
     }
 
     Text {
+        objectName: "optionsFileTypesHeading"
         text: qsTr("Display JPEG files and:")
         font.pixelSize: Theme.fontSize
         color: Theme.ink

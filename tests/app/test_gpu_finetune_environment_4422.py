@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+import sys
 from types import SimpleNamespace
 
 import pytest
 
 from tests.app.qml_functional import test_gpu_finetune_fokusz_3755 as gpu_test
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="A Wayland AF_UNIX socketes környezetpróba Windows alatt nem értelmezhető.",
+)
 
 
 class _TiltottSocket:

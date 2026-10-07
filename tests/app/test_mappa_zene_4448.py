@@ -46,7 +46,7 @@ class TestFolderMusicMixin:
         host = Host()
         urls = host.folderMusicTrackUrls(str(mappa))
         assert len(urls) == 1
-        assert QUrl(urls[0]).toLocalFile() == str(zene)
+        assert Path(QUrl(urls[0]).toLocalFile()) == zene
         host.setFolderMusic(str(mappa), False, str(zene))
         assert host.folderMusicTrackUrls(str(mappa)) == []
 

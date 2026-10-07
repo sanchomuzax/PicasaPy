@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPointF, QTranslator, QUrl, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QFontMetricsF
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtTest import QTest
 
@@ -142,6 +142,45 @@ def test_gombsor_alja_22px_betunel_is_14px_re_marad(qt_app):
         f"22 px-es betűnél a gombsor alsó margója {also_margo:.1f}px, "
         "a referencia 14±3px"
     )
+
+
+def test_leiras_felirata_22px_betunel_is_a_tartalmon_belul_marad(qt_app):
+    """A Windowson szélesebb betű se lógjon ki a Leírás címkéjéből."""
+    translator = QTranslator(qt_app)
+    assert translator.load(
+        str(app_module._APP_DIR / "i18n" / "picasapy_hu.qm")
+    )
+    assert qt_app.installTranslator(translator)
+    try:
+        ablak, dialog = _ablak(qt_app, 1080)
+        assert _betumeret_beallitasa(dialog, 22) > 0
+        label = dialog.findChild(QObject, "folderPropertiesDescriptionLabel")
+        assert label is not None
+
+        for eltolás in (-5, 0, 5):
+            magasság = 1080 + eltolás
+            ablak.setHeight(magasság)
+            assert varj_feltetelre(
+                qt_app, lambda cel=magasság: ablak.height() == cel, 3.0
+            ), f"az ablak nem vette fel a {magasság} px magasságot"
+
+            bal, _felso, jobb, _also = _scenebox(label)
+            tartalom_bal = dialog.property("x") + dialog.property("leftPadding")
+            szoveg = label.property("text")
+            font = label.property("font")
+            betuszelesseg = QFontMetricsF(font).horizontalAdvance(szoveg)
+            szoveg_bal = jobb - betuszelesseg
+            assert betuszelesseg <= label.width() + 1, (
+                f"{magasság}px: a Leírás felirat {betuszelesseg:.1f}px, "
+                f"a címke {label.width():.1f}px széles"
+            )
+            assert szoveg_bal >= tartalom_bal - 0.5, (
+                f"{magasság}px: a Leírás felirata a tartalmi bal szél elé lóg "
+                f"({szoveg_bal:.1f}px < {tartalom_bal:.1f}px; "
+                f"a címke {bal:.1f}..{jobb:.1f}px)"
+            )
+    finally:
+        qt_app.removeTranslator(translator)
 
 
 def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(

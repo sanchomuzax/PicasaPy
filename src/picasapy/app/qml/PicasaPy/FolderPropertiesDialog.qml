@@ -206,6 +206,14 @@ Dialog {
         font.letterSpacing: 0
         text: musicCheck.text
     }
+    TextMetrics {
+        id: descriptionLabelMetrics
+        font.family: descriptionLabel.font.family
+        font.pixelSize: descriptionLabel.font.pixelSize
+        font.weight: descriptionLabel.font.weight
+        font.letterSpacing: 0
+        text: descriptionLabel.text
+    }
 
     ColumnLayout {
         // A Picasa sorai közötti 6px-es hézag. A Dátum és a Zene felső
@@ -450,9 +458,15 @@ Dialog {
             spacing: 7
             Layout.fillWidth: true
             Text {
+                id: descriptionLabel
                 objectName: "folderPropertiesDescriptionLabel"
                 text: qsTr("Description (optional):")
                 font.pixelSize: Theme.fontSize
+                font.letterSpacing: Math.min(
+                    0,
+                    (width - descriptionLabelMetrics.advanceWidth)
+                        / Math.max(1, text.length - 1)
+                )
                 color: Theme.ink
                 Layout.preferredWidth: 205
                 Layout.minimumWidth: 205

@@ -91,11 +91,15 @@ def _run(work_dir: Path) -> None:
     app_conftest = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = app_conftest
     spec.loader.exec_module(app_conftest)
+    import picasapy.app.application as app_module
+
+    app_module.allitsd_be_a_stilust()
 
     work_dir.mkdir(parents=True, exist_ok=True)
     fixture_dir = work_dir / "fixture"
     fixture_dir.mkdir()
     app = QGuiApplication.instance() or QGuiApplication([])
+    app_module._install_ui_font(app)
     app_generator = app_conftest._build_qml_app(app, fixture_dir)
     main, controller, _library, engine = next(app_generator)
 
@@ -153,15 +157,17 @@ def _run(work_dir: Path) -> None:
 
         label_x, label_y, _, label_height = _scene_rect(label)
         _, indicator_y, _, _ = _scene_rect(music_indicator)
-        field_x, field_y, _, _ = _scene_rect(
+        field_x, field_y, _, field_height = _scene_rect(
             _child(options, "optionsSlideshowMusicPathField")
         )
-        _, browse_y, _, _ = _scene_rect(browse)
+        _, browse_y, _, browse_height = _scene_rect(browse)
         elteresek = {
             "felirat_mezo_x": round(label_x - field_x, 1),
             "mezo_indikator_dx": round(field_x - _scene_rect(music_indicator)[0], 1),
             "mezo_indikator_dy": round(field_y - indicator_y, 1),
-            "tallozas_mezo_dy": round(browse_y - field_y, 1),
+            "tallozas_mezo_kozep_dy": round(
+                browse_y + browse_height / 2 - field_y - field_height / 2, 1
+            ),
         }
         assert label_y + label_height <= field_y, (
             "a zenemappa felirata a mező mellett/alatt van, nem fölötte"
@@ -180,8 +186,8 @@ def _run(work_dir: Path) -> None:
         assert elteresek["mezo_indikator_dy"] > label_height, (
             f"a mező a jelölőnégyzet fölé csúszott: {elteresek}"
         )
-        assert abs(elteresek["tallozas_mezo_dy"]) <= 3, (
-            f"a mező és a Tallózás gomb nem egy sorban van: {elteresek}"
+        assert abs(elteresek["tallozas_mezo_kozep_dy"]) <= 3, (
+            f"a mező és a Tallózás gomb középpontja nincs egy sorban: {elteresek}"
         )
         geometry_measurements.append({"ablakmagassag": height + offset,
                                       "elteresek": elteresek})
