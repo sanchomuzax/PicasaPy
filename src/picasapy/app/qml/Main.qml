@@ -1704,6 +1704,7 @@ ApplicationWindow {
         // marad — a leszerelése külön jegy.
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.ensure().openMovie()
+        onFaceMovieRequested: createDialogs.ensure().openFaceMovie()
         //: #3503: a kiadás-panel Ajándék-CD üzemmódja a könyvtár alján
         onGiftCdRequested: giftCdHost.nyisd()
         onExportRequested: exportDialogs.ensure().openForSelection()
