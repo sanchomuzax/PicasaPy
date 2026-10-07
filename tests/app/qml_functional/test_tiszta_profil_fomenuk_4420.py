@@ -206,7 +206,9 @@ def test_screensaver_utan_a_backup_parancs_is_elerheto(
         "a Configure Screensaver parancs hatását nem ismerte fel: "
         f"{screensaver_eredmeny}"
     )
-    assert "screensaverDialog" in screensaver_eredmeny["eredmeny"]
+    # A napló helyben az objectName-et (screensaverDialog), a CI-n az
+    # osztálynevet (ScreensaverDialog) írja — a kis-nagybetű nem számít.
+    assert "screensaverdialog" in screensaver_eredmeny["eredmeny"].casefold()
     assert not backup_eredmeny["hiba"], (
         "a Configure Screensaver után a Back Up Pictures parancs nem nyílt meg: "
         f"{backup_eredmeny}"
