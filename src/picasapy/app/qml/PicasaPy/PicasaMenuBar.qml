@@ -1724,17 +1724,21 @@ MenuBar {
             onTriggered: bar.webExportRequested()
         }
         MenuSeparator {}
-        // #1595: a négy tétel a MEGNYITOTT mappára hat. Eddig mind néma
-        // helyfoglaló volt, pedig a motorjuk régóta megvan — csak a helyi
-        // menüből lehetett elérni őket, a Mappa menüből nem.
+        // #1595/#4620: a négy tétel a megnyitott mappára hat. Album- és
+        // személynézetben a controller megtartja a korábbi mappát, ezért
+        // ilyenkor ne lehessen a Mappa menüből arra műveletet indítani.
         MenuItem {
             objectName: "menuFolderLocate"
             text: qsTr("Locate on Disk") + "\tCtrl+Enter"
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderLocateRequested()
         }
         MenuItem {
             objectName: "menuFolderRemoveFromPicasa"
             text: qsTr("&Remove from Picasa...")
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderRemoveFromPicasaRequested()
         }
         MenuSeparator {}
@@ -1742,11 +1746,15 @@ MenuBar {
         MenuItem {
             objectName: "menuFolderMove"
             text: qsTr("&Move...")
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderMoveRequested()
         }
         MenuItem {
             objectName: "menuFolderDelete"
             text: qsTr("&Delete...")
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderDeleteRequested()
         }
     }
