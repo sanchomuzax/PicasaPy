@@ -82,6 +82,7 @@ HIANYZOTT_TETELEK = [
     # Létrehozás
     ("Set as Desktop...", None),
     ("Add to Screensaver...", None),
+    ("From Faces in Selection...", None),
     ("Create a Gift CD...", None),
     ("Publish to Blogger...", None),
     # Eszközök
@@ -136,10 +137,13 @@ def test_csoportos_szerkesztes_almenu_a_kep_menuben():
 def test_mozgofilm_almenu_es_a_mukodo_muvelet_megmaradt():
     src = _source()
     assert 'title: qsTr("Movie")' in src
-    # a korábban is működő "Movie" tétel az almenü gyermekeként él tovább,
-    # ugyanazzal a jelzéssel
+    # a korábban is működő normál film tétel az almenü gyermekeként él tovább
     assert 'objectName: "menuCreateMovie"' in src
     assert "bar.movieRequested()" in src
+    # #4331: az eredeti ID_FACES a kijelölésből nyitja meg az arc-film módot
+    assert 'objectName: "menuCreateMovieFromFaces"' in src
+    assert 'qsTr("From Faces in Selection...")' in src
+    assert "bar.faceMovieRequested()" in src
 
 
 # -- 3. réteg: élő QML-fa — a meglévő, MŰKÖDŐ tételek nem romlottak el ----

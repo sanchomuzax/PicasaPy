@@ -10178,6 +10178,13 @@ picasapy-origin-key: stringres:eMenuCreate::ID_BURNCD</extracomment>
             <translation>Új mozgófilm…</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1947" />
+            <source>From Faces in Selection...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: eMenuCreateMovie::ID_FACES</extracomment>
+            <translation>A kijelölésben lévő arcokból…</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
             <source>Publish to &amp;Blogger...</source>
             <extracomment>picasapy-origin: picasa
