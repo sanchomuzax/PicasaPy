@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // #350: a Beállítások-dialógus "General" ("Általános") füle — az
@@ -26,12 +27,11 @@ import QtQuick.Layouts
 // A többi FEN-vezérlőnek MA nincs PicasaPy-beli funkciója (nincs
 // tooltip-kapcsoló, nincs "egy kattintásra kilépés szerkesztőből"-mód, nincs
 // statisztika-küldés/frissítés-
-// ellenőrzés, nincs kamera-esemény, nincs perzisztens alapértelmezett
-// importcélmappa) — ezek a struktúra kedvéért megjelennek, de
+// ellenőrzés, nincs kamera-esemény) — ezek a struktúra kedvéért megjelennek, de
 // `enabled: false`, a hiányzó funkció megnevezésével kommentben.
 ColumnLayout {
     id: root
-    spacing: 14
+    spacing: 2
 
     //: #598: a felszabadult hely emberi alakja. Kilobájt alatt bájtban —
     //: egy „0,0 MB" eredmény azt sugallná, hogy nem történt semmi.
@@ -48,7 +48,7 @@ ColumnLayout {
     // ---- Kezelőfelület (labelgroup4) ------------------------------------
     ColumnLayout {
         Layout.fillWidth: true
-        spacing: 6
+        spacing: 2
 
         Text {
             text: qsTr("User interface:")
@@ -58,91 +58,29 @@ ColumnLayout {
         }
 
         // nincs élő "speciális effektek" kapcsoló a PicasaPy UI-ban
-        CheckBox {
+        CompactCheckBox {
             objectName: "optionsUiTransitionsCheck"
             text: qsTr("Use special effects")
             enabled: false
         }
         // nincs tooltip be/ki kapcsoló — a segédjelölések mindig megjelennek
-        CheckBox {
+        CompactCheckBox {
             objectName: "optionsShowTooltipsCheck"
             text: qsTr("Show tooltips")
             enabled: false
         }
         // nincs "egy kattintásra kilépés szerkesztőből" mód
-        CheckBox {
+        CompactCheckBox {
             objectName: "optionsSingleClickExitCheck"
             text: qsTr("Single click to exit the editing view")
             enabled: false
-        }
-
-        // ÉLŐ: nyelvválasztás — ugyanaz a controller.pendingLanguage, amit az
-        // Eszközök → Nyelv menü is vezérel (#333). #3555: a lista első
-        // tétele a rendszer szerinti, a nevek SAJÁT nyelvükön állnak (a
-        // felület nyelvétől függetlenül), és a váltás csak megerősítés
-        // UTÁN íródik — a következő indításig nem lép érvénybe.
-        // ⚠️ SZÁNDÉKOS ELTÉRÉS: az eredeti a kérdést (`CGeneralPrefsPage::
-        // LangChange`, spec E/1) a párbeszéd OK-jára teszi fel. Nálunk a
-        // Beállítások ablaknak nincs OK-ja — minden vezérlő azonnal ír —,
-        // ezért a kérdés a tétel KIVÁLASZTÁSAKOR jön. A szöveg és a két ág
-        // (Igen ⇒ függő választás, Nem ⇒ semmi) az eredetié.
-        RowLayout {
-            spacing: 8
-            Text {
-                text: qsTr("Language:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            PicasaComboBox {
-                id: languageCombo
-                objectName: "optionsLanguageCombo"
-                // a rendszer-tétel a controller konkrét nyelvei ELÉ kerül
-                // (spec A) szakasz); a codes a `pendingLanguage`
-                // ÉRTÉKEIT sorolja, nem a mai `language`-t (spec D szakasz)
-                readonly property var codes: [
-                    controller ? controller.systemLanguageCode : "system"
-                ].concat(controller ? controller.availableLanguages : ["en"])
-                model: languageCombo.codes.map(function (code) {
-                    if (controller && code === controller.systemLanguageCode)
-                        return qsTr("System Default (%1)").arg(
-                            controller.systemLanguageSuffix)
-                    return controller ? controller.ownLanguageName(code) : code
-                })
-                function syncToPending() {
-                    var idx = codes.indexOf(
-                        controller ? controller.pendingLanguage : "en")
-                    currentIndex = idx >= 0 ? idx : 0
-                }
-                Component.onCompleted: syncToPending()
-                Connections {
-                    target: controller
-                    function onPendingLanguageChanged() {
-                        languageCombo.syncToPending()
-                    }
-                }
-                onActivated: function (index) {
-                    if (!controller) return
-                    var code = languageCombo.codes[index]
-                    if (code === controller.pendingLanguage) return
-                    languageConfirm.candidateCode = code
-                    languageConfirm.ask("", qsTr("Change the language Picasa uses?\n\nIt will change the next time Picasa is opened."))
-                }
-            }
-        }
-        ConfirmDialog {
-            id: languageConfirm
-            namePrefix: "optionsLanguageConfirm"
-            property string candidateCode: ""
-            onConfirmed: if (controller) controller.setLanguage(candidateCode)
-            onDenied: languageCombo.syncToPending()
-            onCanceled: languageCombo.syncToPending()
         }
     }
 
     // ---- Fájlok (labelgroup10) ------------------------------------------
     ColumnLayout {
         Layout.fillWidth: true
-        spacing: 6
+        spacing: 2
 
         Text {
             text: qsTr("Files:")
@@ -167,7 +105,7 @@ ColumnLayout {
         // idéz, nálunk „on import" áll. A kettő ugyanazt jelenti, és a fen
         // teljes szövegkiírása nincs a lapon — a feliratot ezért NEM
         // írjuk át egyetlen idézet alapján.
-        CheckBox {
+        CompactCheckBox {
             objectName: "optionsAutoExcludeCheck"
             text: qsTr("Detect duplicates on import")
             //: A jelölő CSAK akkor él, ha van kihez kötni: vezérlő nélkül
@@ -220,7 +158,7 @@ ColumnLayout {
 
         // ÉLŐ: a törlés-megerősítés elnyomása — ugyanaz a confirmSettings
         // "delete" kulcs, amit a FileOpsDialogs ConfirmDialog-ja ír (#367)
-        CheckBox {
+        CompactCheckBox {
             id: skipDeleteConfirmCheck
             objectName: "optionsSkipDeleteConfirmCheck"
             text: qsTr("Delete from disk without confirmation")
@@ -234,7 +172,7 @@ ColumnLayout {
         // #3539: az albumból eltávolítás is megerősítést kér — ugyanaz a
         // confirmSettings "removeFromAlbum" kulcs, amit a Main.qml
         // removeFromAlbumDialog ConfirmDialog-ja ír (#367 mintája)
-        CheckBox {
+        CompactCheckBox {
             objectName: "optionsSkipRemoveConfirmCheck"
             text: qsTr("Remove from album without confirmation")
             checked: typeof confirmSettings !== "undefined" && confirmSettings
@@ -258,7 +196,7 @@ ColumnLayout {
             color: Theme.ink
         }
         // nincs semmilyen használati-statisztika/telemetria a PicasaPy-ban
-        CheckBox {
+        CompactCheckBox {
             objectName: "optionsUsageStatsCheck"
             text: qsTr("Send anonymous usage statistics")
             enabled: false
@@ -282,44 +220,95 @@ ColumnLayout {
 
     // ---- Automatikus frissítés (csak Win az eredetiben) -------------------
     // nincs beépített frissítés-ellenőrző a PicasaPy-ban (csomagkezelőn/
-    // git-en át frissül) — a három rádiógomb csak a FEN-struktúra kedvéért
+    // git-en át frissül) — a lista a FEN-struktúra kedvéért jelenik meg
     ColumnLayout {
         Layout.fillWidth: true
-        spacing: 4
+        spacing: 2
         enabled: false
 
-        Text {
-            text: qsTr("Automatic updates:")
-            font.pixelSize: Theme.fontSize
-            font.bold: true
-            color: Theme.ink
-        }
-        ButtonGroup { id: updateGroup }
-        RadioButton {
-            objectName: "optionsUpdateAutoRadio"
-            text: qsTr("Update automatically")
-            ButtonGroup.group: updateGroup
-        }
-        RadioButton {
-            objectName: "optionsUpdatePromptRadio"
-            text: qsTr("Prompt before downloading updates")
-            ButtonGroup.group: updateGroup
-            checked: true
-        }
-        RadioButton {
-            objectName: "optionsUpdateNeverRadio"
-            text: qsTr("Never check for updates")
-            ButtonGroup.group: updateGroup
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Text {
+                text: qsTr("Automatic updates:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            PicasaComboBox {
+                objectName: "optionsUpdateModeCombo"
+                Layout.fillWidth: true
+                model: [
+                    qsTr("Update automatically"),
+                    qsTr("Prompt before downloading updates"),
+                    qsTr("Never check for updates")
+                ]
+                currentIndex: 0
+            }
         }
     }
 
-    // ---- Importált képek célmappája ---------------------------------------
-    // nincs perzisztens alapértelmezett importcélmappa — a PicasaPy-ban a
-    // felhasználó importálásonként választ célmappát (ImportSourceDialog)
+    // ÉLŐ: nyelvválasztás — a specben az automatikus frissítés után áll, és
+    // ugyanazt a pendingLanguage értéket használja, mint az Eszközök → Nyelv
+    // menü (#333). A választás megerősítése miatt csak az újraindításkor él.
     RowLayout {
+        spacing: 8
+        Text {
+            text: qsTr("Language:")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+        PicasaComboBox {
+            id: languageCombo
+            objectName: "optionsLanguageCombo"
+            readonly property var codes: [
+                controller ? controller.systemLanguageCode : "system"
+            ].concat(controller ? controller.availableLanguages : ["en"])
+            model: languageCombo.codes.map(function (code) {
+                if (controller && code === controller.systemLanguageCode)
+                    return qsTr("System Default (%1)").arg(
+                        controller.systemLanguageSuffix)
+                return controller ? controller.ownLanguageName(code) : code
+            })
+            function syncToPending() {
+                var idx = codes.indexOf(
+                    controller ? controller.pendingLanguage : "en")
+                currentIndex = idx >= 0 ? idx : 0
+            }
+            Component.onCompleted: syncToPending()
+            Connections {
+                target: controller
+                function onPendingLanguageChanged() {
+                    languageCombo.syncToPending()
+                }
+            }
+            onActivated: function (index) {
+                if (!controller) return
+                var code = languageCombo.codes[index]
+                if (code === controller.pendingLanguage) return
+                languageConfirm.candidateCode = code
+                languageConfirm.ask("", qsTr("Change the language Picasa uses?\n\nIt will change the next time Picasa is opened."))
+            }
+        }
+    }
+    ConfirmDialog {
+        id: languageConfirm
+        namePrefix: "optionsLanguageConfirm"
+        property string candidateCode: ""
+        onConfirmed: if (controller) controller.setLanguage(candidateCode)
+        onDenied: languageCombo.syncToPending()
+        onCanceled: languageCombo.syncToPending()
+    }
+
+    // ---- Importált képek célmappája ---------------------------------------
+    // A QSettings-ben tárolt célmappa az import párbeszéd induló célja is.
+    RowLayout {
+        id: importDestRow
         Layout.fillWidth: true
         spacing: 8
-        enabled: false
+        enabled: typeof importSourceController !== "undefined"
+                 && importSourceController !== null
+                 && importSourceController.defaultDestination !== undefined
+                 && typeof importSourceController.setDefaultDestination === "function"
 
         Text {
             text: qsTr("Import destination folder:")
@@ -330,14 +319,36 @@ ColumnLayout {
             objectName: "optionsImportDestField"
             Layout.fillWidth: true
             readOnly: true
+            text: importDestRow.enabled
+                  ? importSourceController.defaultDestination : ""
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}
         }
         Button {
             objectName: "optionsImportDestBrowseButton"
             text: qsTr("Browse...")
+            onClicked: importDestFolderDialog.open()
         }
     }
 
     Item { Layout.fillHeight: true }
+
+    FolderDialog {
+        id: importDestFolderDialog
+        objectName: "optionsImportDestFolderDialog"
+        title: qsTr("Import destination folder:")
+        currentFolder: importDestRow.enabled
+            ? importSourceController.defaultDestinationUrl
+            : Qt.resolvedUrl(".")
+        onAccepted: if (importDestRow.enabled)
+            importSourceController.setDefaultDestination(selectedFolder.toString())
+    }
+
+    component CompactCheckBox: CheckBox {
+        Layout.minimumHeight: 24
+        Layout.preferredHeight: 24
+        topPadding: 0
+        bottomPadding: 0
+    }
+
 }

@@ -248,6 +248,7 @@ PicasaPy/OptionsTabGeneral.qml	Detect duplicates on import	elteres	SZÁNDÉKOS: 
 PicasaPy/OptionsTabGeneral.qml	Empty	segedszoveg	A fenti saját megerősítő kérdés Igen gombjának felirata.		
 PicasaPy/OptionsTabGeneral.qml	Empty the thumbnail cache? The thumbnails are 	segedszoveg	Saját megerősítő kérdés a gyorsítótár-ürítés gombjához; nincs megfelelője a forrásokban.		
 PicasaPy/OptionsTabGeneral.qml	Files:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup10.title hivatalos magyarjával.	options/labelgroup10.title	
+PicasaPy/OptionsTabGeneral.qml	Import destination folder:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup34.title hivatalos magyarjával; a #4450 kattintásos QML-teszt a beállítás mentését és importnál való felajánlását ellenőrzi.	options/labelgroup34.title	Import destination folder:
 PicasaPy/OptionsTabGeneral.qml	Keep	segedszoveg	A fenti saját megerősítő kérdés Nem gombjának felirata.		
 PicasaPy/OptionsTabGeneral.qml	Language:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup25.title hivatalos magyarjával.	options/labelgroup25.title	
 PicasaPy/OptionsTabGeneral.qml	Remove from album without confirmation	mero-vakfolt	A magyar szövegünk betűre egyezik az options/DoNotConfirmRemoveFromAlbum.title hivatalos magyarjával.	options/DoNotConfirmRemoveFromAlbum.title	
