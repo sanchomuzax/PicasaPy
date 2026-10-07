@@ -107,6 +107,13 @@ class FakeController(QObject):
     @Slot(str, bool)
     def setFileTypeEnabled(self, group, enabled) -> None:
         set_file_type_enabled(self._filetype_settings, group, enabled)
+
+    @Slot(result=list)
+    def supportedRawExtensions(self):
+        from picasapy.scanner.filetypes import RAW_EXTENSIONS
+
+        return sorted(RAW_EXTENSIONS)
+
     @Slot(bool)
     def setUITransitionsEnabled(self, enabled) -> None:
         self._ui_transitions_enabled = bool(enabled)
@@ -715,6 +722,190 @@ class TestSlideshowTab:
 
 
 class TestFileTypesTab:
+    def test_feliratok_es_elrendezes_a_picasa_referencia_szerint(
+        self,
+        qt_app,
+        fake_controller,
+        fake_confirm_settings,
+        fake_face_scan_controller,
+        tmp_path,
+    ):
+        """#4488: a Fájltípusok feliratai és sorai a referenciát követik."""
+        import picasapy.app.application as app_module
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        translator = QTranslator(qt_app)
+        qm = Path(app_module.__file__).parent / "i18n" / "picasapy_hu.qm"
+        assert translator.load(str(qm)), f"a magyar fordítás nem tölthető be: {qm}"
+        assert qt_app.installTranslator(translator)
+
+        engine = QQmlEngine()
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        engine.rootContext().setContextProperty("controller", fake_controller)
+        engine.rootContext().setContextProperty("confirmSettings", fake_confirm_settings)
+        engine.rootContext().setContextProperty(
+            "faceScanController", fake_face_scan_controller
+        )
+        factory = QQmlComponent(
+            engine,
+            str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
+        )
+        window = factory.create()
+        assert window is not None, factory.errorString()
+
+        try:
+            qml_source = (
+                app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsTabFileTypes.qml"
+            ).read_text(encoding="utf-8")
+            assert "font.pixelSize: Theme.fontSize" in qml_source
+            assert "font: parent.font" in qml_source
+
+            window.setWidth(769)
+            window.setHeight(466)
+            window.show()
+            stack = _child(window, "optionsTabStack")
+            _child(window, "optionsTabBar").setProperty("currentIndex", 2)
+
+            hatarido = time.monotonic() + 3.0
+            while time.monotonic() < hatarido:
+                qt_app.processEvents()
+                if window.isExposed() and stack.property("currentIndex") == 2:
+                    break
+                time.sleep(0.05)
+            assert window.isExposed(), "a Beállítások ablak nem jelent meg"
+
+            nevek = (
+                "optionsFileTypeBmpCheck",
+                "optionsFileTypeGifCheck",
+                "optionsFileTypePngCheck",
+                "optionsFileTypeTgaCheck",
+                "optionsFileTypeTiffCheck",
+                "optionsFileTypeWebpCheck",
+                "optionsFileTypePsdCheck",
+                "optionsFileTypeRawCheck",
+                "optionsFileTypeMoviesCheck",
+                "optionsFileTypeQuickTimeCheck",
+            )
+            vart_feliratok = (
+                ".bmp",
+                ".gif",
+                ".png",
+                ".tga",
+                ".tif, .tiff",
+                ".webp",
+                ".PSD (Photoshop)",
+                "RAW formátumok",
+                "Mozgófilmek (.mov, .mpg, .m4v, .3gp, .avi, ...)",
+                "Quicktime-filmek (.MOV)",
+            )
+
+            from PySide6.QtCore import QPointF
+            from PySide6.QtTest import QTest
+            from picasapy.app.library_controller import LibraryMixin
+            from picasapy.scanner.filetypes import RAW_EXTENSIONS
+
+            assert LibraryMixin.supportedRawExtensions(None) == sorted(RAW_EXTENSIONS)
+
+            kep = None
+            for elteres in (-5, 0, 5):
+                window.setHeight(466 + elteres)
+                qt_app.processEvents()
+                aktualis_feliratok = tuple(
+                    _child(window, nev).property("text") for nev in nevek
+                )
+                assert aktualis_feliratok == vart_feliratok
+
+                kep = window.grabWindow()
+                assert not kep.isNull(), "nem készült renderelt beállításkép"
+                meret = kep.devicePixelRatio()
+                panel_pozicio = stack.mapToItem(
+                    window.contentItem(), QPointF(0, 0)
+                )
+                marker_sarkok = []
+                for nev in nevek:
+                    check = _child(window, nev)
+                    indicator = check.property("indicator")
+                    assert indicator is not None, f"{nev}: hiányzik a jelölő"
+                    marker_pozicio = indicator.mapToItem(
+                        window.contentItem(), QPointF(0, 0)
+                    )
+                    x0 = round(marker_pozicio.x() * meret)
+                    y0 = round(marker_pozicio.y() * meret)
+                    width = max(1, round(indicator.width() * meret))
+                    height = max(1, round(indicator.height() * meret))
+                    hatter = kep.pixelColor(max(0, x0 - 2), y0 + height // 2)
+                    keret = [
+                        (x, y)
+                        for y in range(y0, min(kep.height(), y0 + height))
+                        for x in range(x0, min(kep.width(), x0 + width))
+                        if kep.pixelColor(x, y) != hatter
+                    ]
+                    assert keret, f"{nev}: a jelölő kerete nem jelent meg a képen"
+                    marker_sarkok.append(
+                        (min(x for x, _ in keret), min(y for _, y in keret))
+                    )
+
+                jelolo_x = marker_sarkok[0][0] / meret - panel_pozicio.x()
+                vart_x = stack.width() * (242.0 / 744.0)
+                assert abs(jelolo_x - vart_x) <= 3, (
+                    f"a jelölő bal margója {jelolo_x:.1f} px, "
+                    f"a referencia-geometria {vart_x:.1f} px"
+                )
+                jelolo_y = marker_sarkok[0][1] / meret - panel_pozicio.y()
+                assert abs(jelolo_y - 33) <= 3, (
+                    f"az első jelölősor {jelolo_y:.1f} px-re indul a paneltől, "
+                    "a referencia 33 px"
+                )
+                sorlepesek = [
+                    (marker_sarkok[i + 1][1] - marker_sarkok[i][1]) / meret
+                    for i in range(len(marker_sarkok) - 1)
+                ]
+                assert all(abs(lepes - 22) <= 3 for lepes in sorlepesek), (
+                    f"a renderelt sorlépések eltérnek a 22 px-es referenciától: "
+                    f"{sorlepesek}"
+                )
+
+                if elteres == 0:
+                    bizonyitek = tmp_path / "4488-fajltipusok.png"
+                    assert kep.save(str(bizonyitek))
+
+            raw = _child(window, "optionsFileTypeRawCheck")
+            link = _child(window, "optionsFileTypeSupportedFormatsLink")
+            # A referencián a link zárójelben áll: a 8 px-es hézag a nyitó
+            # zárójelig tart, a link közvetlenül utána következik.
+            zarojel = _child(window, "optionsFileTypeSupportedFormatsOpenParen")
+            raw_pozicio = raw.mapToItem(stack, QPointF(0, 0))
+            link_pozicio = link.mapToItem(stack, QPointF(0, 0))
+            zarojel_pozicio = zarojel.mapToItem(stack, QPointF(0, 0))
+            link_tavolsag = zarojel_pozicio.x() - raw_pozicio.x() - raw.width()
+            assert abs(link_tavolsag - 8) <= 2, (
+                f"a RAW-link hézaga {link_tavolsag:.1f} px, várt 8 px"
+            )
+            assert abs(
+                link_pozicio.x() - zarojel_pozicio.x() - zarojel.width()
+            ) <= 1, "a link nem közvetlenül a nyitó zárójel után áll"
+            assert abs(
+                link_pozicio.y() + link.height() / 2
+                - raw_pozicio.y() - raw.height() / 2
+            ) <= 2
+
+            link_pont = link.mapToScene(
+                QPointF(link.width() / 2, link.height() / 2)
+            ).toPoint()
+            QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=link_pont)
+            raw_dialog = _child(window, "optionsFileTypeSupportedRawFormatsDialog")
+            assert _var(qt_app, lambda: raw_dialog.property("visible")), (
+                "a Támogatott formátumok link nem nyitotta meg a RAW-listát"
+            )
+            lista = _child(window, "optionsFileTypeSupportedRawFormatsText")
+            assert lista.property("text") == ", ".join(sorted(RAW_EXTENSIONS))
+
+        finally:
+            window.deleteLater()
+            engine.deleteLater()
+            qt_app.removeTranslator(translator)
+            qt_app.processEvents()
+
     @pytest.mark.parametrize("height_offset", [-5, 0, 5])
     def test_kattintas_utan_ujraolvasasbol_kikerul_a_kikapcsolt_tipus(
         self, dialog, qt_app, tmp_path, height_offset
@@ -793,8 +984,7 @@ class TestFileTypesTab:
         assert ini.read_text(encoding="utf-8") == ini_tartalom
         if height_offset == 0:
             screenshot = window.grabWindow()
-            evidence = Path(__file__).resolve().parents[2] / ".bt" / "4447-filetypes.png"
-            evidence.parent.mkdir(parents=True, exist_ok=True)
+            evidence = tmp_path / "4447-filetypes.png"
             assert screenshot.save(str(evidence))
 
 

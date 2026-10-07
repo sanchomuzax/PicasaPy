@@ -239,7 +239,9 @@ PicasaPy/OptionsTabEmail.qml	Multiple photo size	mero-vakfolt	A mi magyarunk a h
 PicasaPy/OptionsTabEmail.qml	Single picture size:	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („Egyedülálló képek mérete:”).	options/labelgroup48.title	
 PicasaPy/OptionsTabEmail.qml	Use my Google Account	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („A Google Fiók használata”).	options/radio42.title	
 PicasaPy/OptionsTabEmail.qml	Use this computer's default email program	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal.	options/defaultmail.title	
-PicasaPy/OptionsTabFileTypes.qml	Supported Formats	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („Támogatott formátumok”).	options/link75.title	
+PicasaPy/OptionsTabFileTypes.qml	Display JPEG files and:	mero-vakfolt	A hivatalos options/label61.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/label61.title	Display JPEG files and:
+PicasaPy/OptionsTabFileTypes.qml	RAW formats	mero-vakfolt	A hivatalos options/SupportRAW.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/SupportRAW.title	RAW formats
+PicasaPy/OptionsTabFileTypes.qml	Supported Formats	mero-vakfolt	A hivatalos options/link93.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/link93.title	Supported Formats
 PicasaPy/OptionsTabGeneral.qml	Automatic updates:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup20.title hivatalos magyarjával.	options/labelgroup20.title	
 PicasaPy/OptionsTabGeneral.qml	Browse...	mero-vakfolt	A magyar szövegünk egyezik az options/importdest.title hivatalos magyarjával (csak …/... különbség).	options/importdest.title	
 PicasaPy/OptionsTabGeneral.qml	Clear Cache...	segedszoveg	Az eredeti disposepreviews egy jelölőnégyzet; a kód kommentje szerint ez a gomb annak „megfelelője”, de más vezérlő, más szöveggel.		

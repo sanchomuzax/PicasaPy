@@ -1333,14 +1333,16 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
-            <source>BMP</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>BMP</translation>
+            <source>.bmp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportBMP.title</extracomment>
+            <translation>.bmp</translation>
         </message>
         <message>
-            <source>GIF</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>GIF</translation>
+            <source>.gif</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportGIF.title</extracomment>
+            <translation>.gif</translation>
         </message>
         <message>
             <source>Display JPEG files and:</source>
@@ -1349,32 +1351,37 @@ picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Megjelenítés: JPEG-fájlok és</translation>
         </message>
         <message>
-            <source>PNG</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PNG</translation>
+            <source>.png</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPNG.title</extracomment>
+            <translation>.png</translation>
         </message>
         <message>
-            <source>TGA</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>TGA</translation>
+            <source>.tga</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTGA.title</extracomment>
+            <translation>.tga</translation>
         </message>
         <message>
-            <source>TIFF</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>TIFF</translation>
+            <source>.tif, .tiff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportTIF.title</extracomment>
+            <translation>.tif, .tiff</translation>
         </message>
         <message>
-            <source>WEBP</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>WEBP</translation>
+            <source>.webp</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
+            <translation>.webp</translation>
         </message>
         <message>
-            <source>PSD</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PSD</translation>
+            <source>.psd (Photoshop)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportPSD.title</extracomment>
+            <translation>.PSD (Photoshop)</translation>
         </message>
         <message>
-            <source>RAW</source>
+            <source>RAW formats</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::RAW</extracomment>
             <translation>RAW formátumok</translation>
@@ -1382,12 +1389,25 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
         <message>
             <source>Movies</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Filmek</translation>
+            <translation type="obsolete">Filmek</translation>
         </message>
         <message>
-            <source>QuickTime</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>QuickTime</translation>
+            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportMovies.title</extracomment>
+            <translation>Mozgófilmek (.mov, .mpg, .m4v, .3gp, .avi, ...)</translation>
+        </message>
+        <message>
+            <source>Quicktime Movies (.MOV)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/SupportQuicktime.title</extracomment>
+            <translation>Quicktime-filmek (.MOV)</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
         </message>
         <message>
             <source>Supported Formats</source>
