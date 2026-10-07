@@ -257,15 +257,15 @@ class TestFolderPropertiesDialog:
         ):
             assert dialog.findChild(QObject, name) is not None, f"{name} hiányzik"
 
-    def test_a_mappaatnevezes_es_a_helyszin_mappamodban_inaktiv(self, qml_engine):
-        """A mappanév és a helyszín mögött nincs bekötött mappaszintű írás."""
+    def test_a_mappanev_szerkesztheto_a_helyszin_mappamodban_inaktiv(self, qml_engine):
+        """A név átnevező úton menthető; a helyszínnek nincs mappaszintű írása."""
         dialog = self._make_dialog(qml_engine)
-        for name in (
-            "folderPropertiesNameField",
-            "folderPropertiesLocation",
-        ):
-            item = dialog.findChild(QObject, name)
-            assert item.property("enabled") is False, f"{name} nem inaktív"
+        assert dialog.findChild(
+            QObject, "folderPropertiesNameField"
+        ).property("enabled") is True
+        assert dialog.findChild(
+            QObject, "folderPropertiesLocation"
+        ).property("enabled") is False
 
     def test_music_path_follows_the_music_checkbox(self, qml_engine, qt_app):
         """Az eredeti `<bind attr="enabled" source="usemusic">`."""
@@ -281,9 +281,10 @@ class TestFolderPropertiesDialog:
         assert path.property("enabled") is True
         assert browse.property("enabled") is True
 
-    def test_accept_emits_date_and_description(self, qml_engine, qt_app):
+    def test_accept_emits_date_and_description(self, qml_engine, qt_app, tmp_path):
         dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
-        dialog.setProperty("folderPath", "/mnt/fotok/balaton")
+        folder_path = str(tmp_path / "balaton")
+        dialog.setProperty("folderPath", folder_path)
         _open(dialog)
         qt_app.processEvents()
         events = []
@@ -296,13 +297,14 @@ class TestFolderPropertiesDialog:
             "text", "Balatoni nyaralás")
         _invoke(dialog, "accept")
         qt_app.processEvents()
-        assert events == [("/mnt/fotok/balaton", "2019-07-04", "Balatoni nyaralás")]
+        assert events == [(folder_path, "2019-07-04", "Balatoni nyaralás")]
 
-    def test_automatic_date_button_clears_the_date(self, qml_engine, qt_app):
+    def test_automatic_date_button_clears_the_date(self, qml_engine, qt_app, tmp_path):
         """Az eredeti „Automatic date" gombja: a mappa a legrégebbi képe
         dátumára áll vissza — a mentés üres dátumot ad tovább."""
         dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
-        dialog.setProperty("folderPath", "/mnt/fotok/balaton")
+        folder_path = str(tmp_path / "balaton")
+        dialog.setProperty("folderPath", folder_path)
         dialog.setProperty("currentDate", "2019-07-04")
         _open(dialog)
         qt_app.processEvents()
@@ -315,7 +317,7 @@ class TestFolderPropertiesDialog:
         qt_app.processEvents()
         _invoke(dialog, "accept")
         qt_app.processEvents()
-        assert events == [("/mnt/fotok/balaton", "")]
+        assert events == [(folder_path, "")]
 
     def test_accept_with_invalid_date_emits_nothing(self, qml_engine, qt_app):
         dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")

@@ -1181,6 +1181,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # következő lépése).
     edit_controller_masodik = EditController(edit_preview, slot="masodik")
     second_preview = SecondPreview(edit_controller_masodik)
+    controller.set_edit_controllers(edit_controller, edit_controller_masodik)
     # #3649: a két „aa"-fél összekötése — a fókuszváltás (`swapAaFocus`)
     # ezen át cseréli a festett maszkot a két fél között, ahelyett hogy
     # kiürítené (docs/specs/ui-audit-editor.md 4/b.1).
