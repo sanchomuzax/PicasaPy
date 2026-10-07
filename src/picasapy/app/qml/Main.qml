@@ -2105,7 +2105,7 @@ ApplicationWindow {
     Shortcut {
         objectName: "openInEditorShortcut"
         sequence: "Ctrl+Shift+O"
-        enabled: picasaMenuBar.photoActionsEnabled
+        enabled: !!picasaMenuBar && picasaMenuBar.photoActionsEnabled
                  && !window._szovegmezoneVanFokusz
         onActivated: window.openSelectionInDefaultEditor()
     }
@@ -2115,7 +2115,7 @@ ApplicationWindow {
     Shortcut {
         objectName: "emailShortcut"
         sequence: "Ctrl+E"
-        enabled: picasaMenuBar.photoActionsEnabled
+        enabled: !!picasaMenuBar && picasaMenuBar.photoActionsEnabled
                  && !window._szovegmezoneVanFokusz
         onActivated: picasaMenuBar.emailRequested()
     }
