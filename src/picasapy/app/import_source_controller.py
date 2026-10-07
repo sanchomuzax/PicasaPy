@@ -44,6 +44,7 @@ from PySide6.QtCore import (
     QObject,
     QSettings,
     QStandardPaths,
+    QUrl,
     Signal,
     Slot,
 )
@@ -77,7 +78,7 @@ from picasapy.index import (
 from picasapy.ini import load_document, save_document, update_document
 from picasapy.scanner import PICASA_INI_NAME, media_kind_of
 
-from .formatting import to_local_path
+from .formatting import to_file_url, to_local_path
 from .wipe_card_warning import WipeCardFacts, wipe_card_warning
 from .worker_thread import BackgroundWorkerMixin
 from .display_mode_paint import current_display_mode_suffix
@@ -118,6 +119,7 @@ MAX_RECENT_SOURCES = 8
 # tartunk, ugyanannyit, mint a forrásokból — a legördülő így nem hízik el.
 RECENT_DESTINATIONS_SETTINGS_KEY = "import/recentdestinations"
 MAX_RECENT_DESTINATIONS = 8
+DEFAULT_DESTINATION_SETTINGS_KEY = "import/defaultdestination"
 
 # #1555: az importálás átméretezési beállítása. ⚠️ KÉPPONT-értéket
 # tárolunk, nem sorszámot — ahogy az eredeti is (egyetlen egész mező,
@@ -223,6 +225,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     mediaFilterChanged = Signal()
     recentSourcesChanged = Signal()
     recentDestinationsChanged = Signal()
+    defaultDestinationChanged = Signal()
     resizeLimitChanged = Signal()
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
@@ -342,20 +345,46 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             if Path(item).is_dir()
         ]
 
-    @Property(str, notify=recentDestinationsChanged)
+    @Property(str, notify=defaultDestinationChanged)
     def defaultDestination(self) -> str:  # noqa: N802
-        """Az alapértelmezett cél — az eredeti menü KÜLÖN szakasza
-        (`-seperator-before-default_location-`).
+        """A felhasználó alapértelmezett importcélja.
 
-        A képek rendszermappája alatti `Picasa` gyűjtő; ha a rendszer nem
-        ad képek-mappát, a felhasználó saját mappája. Az `export_controller`
-        alapértelmezésének mintája."""
+        Első használatkor közvetlenül a képek rendszermappája (a
+        `QStandardPaths.PicturesLocation`), vagy ennek hiányában a saját
+        mappa. A választás a `QSettings`-be kerül, az import párbeszéd ezt
+        ajánlja fel induló célként."""
+        tarolt = self._get_settings().value(DEFAULT_DESTINATION_SETTINGS_KEY, "")
+        if tarolt:
+            return str(tarolt)
         kepek = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.PicturesLocation
         )
         if not kepek:
             kepek = str(Path.home())
-        return str(Path(kepek) / "Picasa")
+        return str(Path(kepek))
+
+    @Property(QUrl, notify=defaultDestinationChanged)
+    def defaultDestinationUrl(self) -> QUrl:  # noqa: N802
+        """A beállított mappa `FolderDialog`-hoz alakított URL-je."""
+        return to_file_url(self.defaultDestination)
+
+    @Slot(str)
+    def setDefaultDestination(self, path: str) -> None:  # noqa: N802
+        """Elmenti a létező, felhasználó által kiválasztott importcélt."""
+        local_path = to_local_path(path)
+        if not local_path:
+            return
+        folder = Path(local_path).expanduser()
+        try:
+            if not folder.is_dir():
+                return
+            normalized = str(folder.resolve())
+        except OSError:
+            return
+        if normalized == self.defaultDestination:
+            return
+        self._get_settings().setValue(DEFAULT_DESTINATION_SETTINGS_KEY, normalized)
+        self.defaultDestinationChanged.emit()
 
     def _read_recent_destinations(self) -> list[str]:
         stored = self._get_settings().value(

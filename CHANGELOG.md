@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.37] – 2026-10-07
+
+- A főmenü-bejáró az új arcfilmes parancsot is ellenőrzi, és minden parancs után visszaállítja a nézetet (#4433).
+- A Beállításokban beállítható az import célmappája; az Automatikus frissítések rádiógombjai a referencia szerint lenyíló listává váltak. (#4450).
+- A Mappa tulajdonságai párbeszéd az eredeti elrendezést használja, és a zene teljes felirata olvasható (#4456).
+
 ## [0.9.36] – 2026-10-07
 
 - A Film almenü új parancsa a kijelölt képekkel indítja el a filmkészítőt (#4331).
