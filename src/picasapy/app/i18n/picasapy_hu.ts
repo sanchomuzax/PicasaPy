@@ -1107,8 +1107,9 @@ picasapy-origin-key: options:options/UITransitions.title</extracomment>
         </message>
         <message>
             <source>Show tooltips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Eszköztippek megjelenítése</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/ShowTooltips.title</extracomment>
+            <translation>Segédjelölések megjelenítése</translation>
         </message>
         <message>
             <source>Single click to exit the editing view</source>
