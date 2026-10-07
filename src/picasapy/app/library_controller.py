@@ -49,6 +49,7 @@ from picasapy.scanner import (
     write_scan_list,
     write_watched_folders,
 )
+from picasapy.scanner.filetypes import RAW_EXTENSIONS
 
 from .busy_registry import get_app_busy_registry
 from .filetype_preferences import (
@@ -609,6 +610,11 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         settings = self._get_settings()
         set_file_type_enabled(settings, group, enabled)
         self._filetype_scan_snapshot = enabled_filetype_groups(settings)
+
+    @Slot(result=list)
+    def supportedRawExtensions(self) -> list[str]:  # noqa: N802 — QML-slot
+        """A Fájltípusok fül által is használt RAW-kiterjesztések."""
+        return sorted(RAW_EXTENSIONS)
 
     def _sync_folder_manager_tree(
         self,
