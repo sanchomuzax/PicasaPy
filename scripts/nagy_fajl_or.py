@@ -45,6 +45,11 @@ KIVETELEK: dict[str, str] = {
     "docs/assets/notebooklm-infografika.png": (
         "a projekt kutatási infografikája, a README-ből hivatkozva (5,2 MB)"
     ),
+    "src/picasapy/faces/models/face_recognition_sface_2021dec.onnx": (
+        "az arcfelismerő (SFace, OpenCV Zoo, Apache-2.0) a csomag része, hogy "
+        "tiszta telepítésen letöltés nélkül működjön (#4513; 38,7 MB, "
+        "SHA-256 a faces/model_download.py-ban)"
+    ),
 }
 
 

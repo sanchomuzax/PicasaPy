@@ -604,6 +604,11 @@ class TestComputeEmbeddings:
     def test_missing_embedding_model_starts_download_automatically(
         self, qt_app, tmp_path, monkeypatch
     ):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+        monkeypatch.setattr(
+            "picasapy.faces.embedder.bundled_model_path", lambda: None
+        )
         root = tmp_path / "kepek"
         root.mkdir()
         make_jpeg(root / "a.jpg")
@@ -629,6 +634,11 @@ class TestComputeEmbeddings:
             DownloadResult,
         )
 
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+        monkeypatch.delenv("PICASAPY_FACE_EMBED_MODEL", raising=False)
+        monkeypatch.setattr(
+            "picasapy.faces.embedder.bundled_model_path", lambda: None
+        )
         root = tmp_path / "kepek"
         root.mkdir()
         make_jpeg(root / "a.jpg")

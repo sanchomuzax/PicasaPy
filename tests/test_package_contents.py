@@ -62,6 +62,25 @@ class TestTheSourceInventory:
             source_data_files()
         )
 
+    def test_it_includes_the_bundled_sface_model(self):
+        assert "picasapy/faces/models/face_recognition_sface_2021dec.onnx" in (
+            source_data_files()
+        )
+
+    def test_the_models_readme_documents_sface_source_and_license(self):
+        readme = (
+            Path(__file__).resolve().parents[1]
+            / "src"
+            / "picasapy"
+            / "faces"
+            / "models"
+            / "README.md"
+        ).read_text(encoding="utf-8")
+
+        assert "face_recognition_sface_2021dec.onnx" in readme
+        assert "OpenCV Zoo" in readme
+        assert "Apache-2.0" in readme
+
 
 class TestItCatchesAMissingFile:
     def test_a_complete_wheel_passes(self, tmp_path):

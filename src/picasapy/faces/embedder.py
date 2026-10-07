@@ -1,18 +1,13 @@
-"""SFace arc-lenyomat (`cv2.FaceRecognizerSF`) — hiánytűrő becsomagolás
-(issue #26, 2. lépcső).
+"""SFace arc-lenyomat (`cv2.FaceRecognizerSF`) — hiánytűrő becsomagolás.
 
-Ugyanaz a KRITIKUS környezeti korlát érvényes, mint a `detector.py`
-YuNet-becsomagolására: a CI-ben (Ubuntu ÉS Windows) nincs garantált
-hálózat, és a modellfájl nincs jelen. A `FaceEmbedder` konstruktora ezért
-SOHA nem dob kivételt és SOHA nem blokkol hálózatra — modell hiányában
-`available=False`-ra áll, a `compute()` csendben `None`-t ad. A detektálás
-és minden más a lenyomat-számítás nélkül is teljes értékűen működik (ld.
-issue #26 terve: „a lenyomat-számítás külön, alacsonyabb prioritású sor,
-mint a detektálás — előbb legyen meg minden arc HELYE, a felismerés
-ráér”).
+A modellt a program csomagolja, így a tiszta telepítés hálózat nélkül is
+képes csoportosítani. A kifejezett `PICASAPY_FACE_EMBED_MODEL` felülbírálás
+után a csomagolt modell következik, majd a korábban letöltött felhasználói
+modell. A letöltés csak tartalék útvonal marad.
 
-Az SFace a vezérlő első csoportosítási kérésére automatikusan, háttérben
-töltődik le; a konstruktor továbbra sem kezdeményez hálózati kérést."""
+A `FaceEmbedder` konstruktora modell/API-hiba esetén `available=False`-ra
+áll, a `compute()` pedig `None`-t ad; a konstruktor soha nem kezdeményez
+hálózati kérést."""
 
 from __future__ import annotations
 
@@ -63,14 +58,23 @@ def default_model_path() -> Path:
     return default_model_dir() / MODEL_FILENAME
 
 
+def bundled_model_path() -> Path | None:
+    """A programmal csomagolt SFace-modell útvonala, ha jelen van."""
+    candidate = Path(__file__).resolve().parent / "models" / MODEL_FILENAME
+    return candidate if candidate.is_file() else None
+
+
 def resolve_model_path() -> Path | None:
     """A ténylegesen a lemezen létező lenyomat-modell útvonala, vagy `None`.
 
     Sorrend: a `PICASAPY_FACE_EMBED_MODEL` környezeti változó (ha meg van
-    adva és létezik), majd a felhasználói alapértelmezett hely — a
-    `detector.resolve_model_path` mintáját követi."""
+    adva és létezik), a programmal csomagolt modell, majd a felhasználói
+    alapértelmezett hely, amely a tartalék letöltés célja."""
     override = os.environ.get(MODEL_ENV_VAR)
     candidates: list[Path] = [Path(override)] if override else []
+    bundled = bundled_model_path()
+    if bundled is not None:
+        candidates.append(bundled)
     candidates.append(default_model_path())
     for candidate in candidates:
         if candidate.is_file():
@@ -85,9 +89,10 @@ def download_model(
 ) -> bool:
     """A lenyomat-modell letöltése a megadott (vagy alapértelmezett) helyre.
 
-    SOHA nem hívódik automatikusan — sem induláskor, sem tesztben, sem a
-    `FaceEmbedder`-ből. Hálózat/lemez-hiba esetén csendesen `False`-t ad
-    vissza, nem dob kivételt (`detector.download_model` mintája).
+    A csomagolt modell szokásos használatához nincs szükség rá; hiányzó
+    modell esetén a vezérlő ellenőrzött tartalék útként hívhatja. Hálózat/
+    lemez-hiba esetén csendesen `False`-t ad vissza, nem dob kivételt
+    (`detector.download_model` mintája).
 
     #1496: a törzse ma az ELLENŐRZŐ letöltőé (méret + SHA-256) — az
     indoklás a `detector.download_model` docstringjében."""

@@ -91,7 +91,8 @@ def download_model(
     """A modell letöltése a megadott (vagy alapértelmezett) helyre.
 
     A letöltés felhasználói kérésre történik, kivéve hogy a vezérlő az
-    SFace-csoportosítás első indításakor automatikusan is elindítja.
+    SFace-csoportosítás első indításakor automatikusan is elindítja, ha sem
+    a csomagban, sem a felhasználói modellmappában nem található modell.
     Hálózat/lemez-hiba esetén csendesen `False`-t ad vissza, nem dob kivételt.
 
     #1496: a törzse ma az ELLENŐRZŐ letöltőé

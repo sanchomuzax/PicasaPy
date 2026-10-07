@@ -11,16 +11,20 @@ bekötés (öröklés-lista/context-property, Main.qml gomb, a bal hasáb
 `PeopleMixin` is önállóan, host-osztályos teszttel készült (#397), és a
 `controller.py`-beli bekötésére vár.
 
-MODELL NÉLKÜL a szkennelés TISZTÁN kikapcsol: a `modelUnavailable` jelzés
-megy ki, a meglévő index/alkalmazás-működés érintetlen (ld.
-`picasapy.faces.detector` modul-docstringje — a CI-ben nincs garantált
-hálózat és a modellfájl nincs jelen).
+Ha valamelyik modell nincs sem a csomagban, sem a felhasználói
+modellmappában, a szkennelés TISZTÁN kikapcsol: a `modelUnavailable`
+jelzés megy ki, a meglévő index/alkalmazás-működés érintetlen. A szokásos
+telepítés mindkét modellt tartalmazza, így ehhez nem kell hálózat.
 
 IMPORTNÁL A PICASA DÖNTÉSEI SZENTEK: a saját detektorunk KIHAGYJA azokat a
 fotókat, amelyeken már van EMBER ÁLTAL adott névcímke (`faces=` legalább
 egy azonosított bejegyzéssel) — ezeket SOHA nem értékeljük újra.
 
-#26 (2. lépcső): a `computeEmbeddings()` külön, alacsonyabb prioritású sor. Az SFace az első csoportosítási kéréskor automatikusan letöltődik, a csoportosítás pedig a betöltés után a háttérben folytatódik.
+#26 (2. lépcső): a `computeEmbeddings()` külön, alacsonyabb prioritású sor.
+Az SFace a csomagból töltődik be; ha onnan és a felhasználói
+modellmappából is hiányzik, az első csoportosítási kérés elindítja a
+tartalék letöltést, majd a csoportosítás a betöltés után a háttérben
+folytatódik.
 
 #26 (3. lépcső, bekötés): `unnamedGroups()` adja a „Névtelenek" album
 CSOPORTOSÍTOTT nézetét (Picasa „Group by face"/„Expand groups"), az
@@ -428,9 +432,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def downloadModels(self) -> None:  # noqa: N802 — QML-slot-stílus
         """A hiányzó arcfelismerő modellek letöltése — háttérszálon.
 
-        A felhasználó kérésére vagy az SFace-csoportosítás első indításakor
-        indul. A YuNet csomagolt modell, így normál telepítésen csak az
-        SFace kerül a letöltési sorba."""
+        A felhasználó kérésére indul, illetve tartalék útként akkor, ha a
+        csoportosításhoz hiányzik az SFace. Normál telepítésen mindkét
+        modell csomagolt, ezért nincs letöltési feladat."""
         if self._model_download_percent >= 0:
             return  # már fut — a második kattintás ne indítson újat
         if not model_download.missing_specs():
@@ -1147,7 +1151,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def computeEmbeddings(self) -> None:
         """Lenyomat-számítás (SFace) a még lenyomat nélküli arcokon, majd a
         névtelen arcok inkrementális csoportosítása — KÜLÖN, a detektálásnál
-        alacsonyabb prioritású sor. Ha csak az SFace hiányzik, elindítja a
+        alacsonyabb prioritású sor. Ha az SFace a csomagból és a
+        felhasználói modellmappából is hiányzik, elindítja a
         háttér-letöltést, majd automatikusan folytatja a csoportosítást."""
         grouping_options = self._csoportositasi_beallitasok()
         if not self._embedder.available:
