@@ -33,13 +33,13 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from pathlib import Path
 
 from picasapy.paths import normalize_path
 
-from .filetypes import media_kind_of
+from .filetypes import media_kind_if_enabled, media_kind_of
 from .name_filters import NameFilters, default_name_filters
 
 logger = logging.getLogger(__name__)
@@ -129,6 +129,7 @@ def scan_tree(
     name_filters: NameFilters | None = None,
     excluded_names: list[Path] | None = None,
     hibas_bejegyzesek: list[HibasBejegyzes] | None = None,
+    enabled_filetypes: Collection[str] | None = None,
 ) -> tuple[FolderScan, ...]:
     """A gyökér alatti összes médiatartalmú mappa, útvonal szerint rendezve.
 
@@ -177,6 +178,7 @@ def scan_tree(
     _walk(
         root_path, exclude_paths, skip, filters, folders, set(),
         excluded_names, hibas_bejegyzesek, kanonikus=True,
+        enabled_filetypes=enabled_filetypes,
     )
     return tuple(sorted(folders, key=lambda f: f.path))
 
@@ -187,6 +189,7 @@ def scan_folder(
     skip: SkipPredicate | None = None,
     hibas_bejegyzesek: list[HibasBejegyzes] | None = None,
     mar_feloldva: bool = False,
+    enabled_filetypes: Collection[str] | None = None,
 ) -> FolderScan | None:
     """Egyetlen mappa nem-rekurzív scanje (watcher-ág, #143).
 
@@ -218,7 +221,7 @@ def scan_folder(
     # nem használta.
     return _scan_folder(
         path, file_entries, skip=skip, with_state=True,
-        hibas=hibas_bejegyzesek,
+        hibas=hibas_bejegyzesek, enabled_filetypes=enabled_filetypes,
     )
 
 
@@ -232,6 +235,7 @@ def _walk(
     excluded_names: list[Path] | None = None,
     hibas: list[HibasBejegyzes] | None = None,
     kanonikus: bool = False,
+    enabled_filetypes: Collection[str] | None = None,
 ) -> None:
     """Rekurzív scandir-bejárás; olvashatatlan mappát csendben kihagy
     (élő NAS-on a mappa el is tűnhet menet közben).
@@ -274,7 +278,8 @@ def _walk(
         else:
             file_entries.append(entry)
     scan = _scan_folder(
-        current, file_entries, skip, with_state=skip is not None, hibas=hibas
+        current, file_entries, skip, with_state=skip is not None, hibas=hibas,
+        enabled_filetypes=enabled_filetypes,
     )
     if scan is not None:
         out.append(scan)
@@ -309,6 +314,7 @@ def _walk(
             hibas,
             # a kanonikusság csak NEM-symlink bejegyzésen öröklődik
             kanonikus=kanonikus and not _entry_is_symlink(entry),
+            enabled_filetypes=enabled_filetypes,
         )
 
 
@@ -343,14 +349,21 @@ def _scan_folder(
     skip: SkipPredicate | None,
     with_state: bool,
     hibas: list[HibasBejegyzes] | None = None,
+    enabled_filetypes: Collection[str] | None = None,
 ) -> FolderScan | None:
     by_name = {entry.name: entry for entry in entries}
-    media = [
+    recognised_media = [
         (name, kind)
         for name in sorted(by_name)
         if (kind := media_kind_of(name)) is not None
     ]
-    if not media:
+    media = [
+        (name, enabled_kind)
+        for name, _kind in recognised_media
+        if (enabled_kind := media_kind_if_enabled(name, enabled_filetypes))
+        is not None
+    ]
+    if not media and not (enabled_filetypes is not None and recognised_media):
         return None
     has_ini = PICASA_INI_NAME in by_name or PICASA_INI_LEGACY_NAME in by_name
     mtime_ns = 0
@@ -386,7 +399,7 @@ def _scan_folder(
         files.append(
             MediaFile(name=name, kind=kind, size=info.st_size, mtime_ns=info.st_mtime_ns)
         )
-    if not files:
+    if not files and media:
         return None
     return FolderScan(
         path=path,
