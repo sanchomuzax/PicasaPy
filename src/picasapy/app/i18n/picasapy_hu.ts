@@ -1207,7 +1207,7 @@ picasapy-origin-key: options:options/DoNotConfirmRemoveFromAlbum.title</extracom
         </message>
         <message>
             <source>Privacy...</source>
-            <extracomment>picasapy-origin: picasa; picasa-fen-dialogs.md 3.11 referencia-képe</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Adatvédelem...</translation>
         </message>
         <message>
@@ -8940,6 +8940,12 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
             <source>Looking for a previous Picasa installation…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Korábbi Picasa-telepítés keresése…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="74" />
+            <source>The search failed: %1: %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A keresés nem sikerült: %1: %2</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaImportDialog.qml" line="71" />
