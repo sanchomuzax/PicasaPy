@@ -9981,13 +9981,67 @@ egyezési állításnak.
 az összevetés észleli az előjelcserét; a 24 egyezés nem szimmetrikus mintából
 adódó ál-egyezés.
 
-**A próba határa:** a QEMU-wrapper közvetlenül a pixelmagot és külön a
-méretsegédet futtatta. A `0x00bb5640` teljes Glimmer-Apply útját (az XML
-attribútum-beolvasástól a transzformmátrix felépítéséig) ebben a körben nem
-futtattam; a szögkonverziót és mátrix-összeállítást az utasításszintű
-levezetés támasztja alá (`0x00bb5730`, `0x00bc8060`, `0x009e6340`). Ezért a
-natív pixelmag és a méretképlet megerősített, az integrált Apply-út bájtszintű
-QEMU-goldenje **nincs meg**.
+**A próba határa:** ez a 2026-10-04-i QEMU-futás közvetlenül a pixelmagot és
+külön a méretsegédet hívta. Az integrált Apply-út kontrollált attribútumokkal
+2026-10-07-én szintén lefutott; a következő alpont tartalmazza az eredményét.
+
+### Integrált Glimmer-Apply QEMU-golden (2026-10-07, #626)
+
+**Bizonyítottsági fok: megerősített a Polaroid-leíró által használt Rotate-útra.**
+A független A út az utasításolvasat: az RTTI szerinti vtable
+`0x00cefefc + 0x18` címen levő, 0-indexű 6. slotja `0x00bb5640`;
+`0x00bb5730` a `radAngle` hiányában a
+`degAngle`-t olvassa és fokból radiánt készít; `0x00bb5640` a kitöltőszínt,
+`flipH`, `flipV` és `padBorder` értékeit adja a `0x00bc8060` mátrixépítőnek.
+Az a `0x00bcb5e0` wrapperen át a forgatásos mátrixnál a `0x009e6df0`/
+`0x009e7060` általános affine-mintavételt hívja, `smoothing=1`-gyel.
+
+A független B út `qemu-i386` alatt az eredeti `0x00bb5640` Apply-tól a
+`0x00bc8060` mátrixépítőn keresztül a natív mintavevőig futott. A harness
+csak a `0x008ef520` attribútum-kiértékelőt helyettesítette determinisztikus
+próbastubbal; a Rotate Apply, a mátrixépítő és a mintavevő eredeti kód maradt.
+Az input 5×4 BGRA kép volt, csatornái `(x,y)` szerint
+`B=(31x+13y+21)&255`, `G=(11x+37y+41)&255`, `R=(53x+7y+91)&255`, `A=255`.
+Az attribútumok `radAngle` hiányzó, `degAngle=+10°`/`−10°`,
+`borderColor=0x00E2593D`, `padBorder=true`, `flipH=flipV=false` értéket
+adtak. Mindkét QEMU-kimenet 5×4 lett, és mindkettő BGR-csatornái **0 bájtban**
+tértek el a `rotate_with_pad` kimenetétől; a két előjelű QEMU-kimenet egymástól
+**60 BGR-bájtban** tért el.
+
+A kitöltés és méretezés külön cáfoló kontrollja ugyanazzal a bemenettel:
+`+30°` és `−30°` esetén mindkét natív cél 6×5; a BGR-kimenet mindkettőnél
+0 bájtban tért el a helyi `rotate_with_pad`-tól, és a két natív kimenet
+78 BGR-bájtban különbözött, tehát a téves előjelű kimenet nem illeszkedik.
+A `+30°` szélső pixeljeiben a natív kitöltőszín
+`(0x3d,0x59,0xe2)` jelenik meg, tehát a `borderColor` csatornasorrendje is
+egyezik a helyi BGR-kitöltéssel. A korábbi 24 natív pixelmag-próbával együtt
+ez a QEMU-út a rácsméretet, az előjelet, a kitöltést és a Polaroid által
+használt mátrixutat is ellenőrzi.
+
+A natív QEMU-kimenetek visszakereshető azonosítói (a 40 bájtos CImage-leíró
+nélküli BGRA-pixelpuffer SHA-256-a):
+
+| `degAngle` | natív kimenet | SHA-256 |
+|---:|---:|---|
+| `+10°` | 5×4 BGRA | `32fdbab991b421daacddb72b014256cac0716ab095c881f9611d65d2e290abf0` |
+| `−10°` | 5×4 BGRA | `13a5521f416364e2cd6af529d03a1e8783285e7c40b899a4963c21d66b7f3ea0` |
+| `+30°` | 6×5 BGRA | `df623a19ac790d5bc5fb144288687aaf247b3e1811e4e9317016d458e1b9ea9c` |
+| `−30°` | 6×5 BGRA | `43a0af5a3a73befa16acdc5e5655ca5bdf39f11988fa70b19798f62befb12bc1` |
+
+| **Eredeti** | **Nálunk** | **Teendő** |
+|---|---|---|
+| `degAngle` → radián; `padBorder` mellett csonkolt forgatott befoglaló méret; képpontközepes mátrix; 8 bites fixpontos bilineáris mintavétel; üres sarkokban `borderColor` (`0x00bb5730`, `0x00bc7ca0`, `0x00bc8060`, `0x009e7060`) | `rotate_with_pad` + `fixpontos_bilinearis`; a teljes Apply QEMU-golden a `+10°`, `−10°`, `+30°`, `−30°` kontrollokon 0 BGR-eltérés | **Nincs javítási teendő** a Polaroid út pixelmatematikáján; ezek a paraméterek a jelenlegi kódot igazolják. |
+| Az általános művelet opcionális `flipH`/`flipV` tagokat is olvas (`0x00bb5270`, `0x00bb5640`) | A Polaroid út nem ad meg ilyen attribútumot; a QEMU-próbában mindkettő hamis. Külön kontrollban a `flipV` tükörképe 0 bájtban, a `flipH`/mindkettő tükörképe 1 BGR-bájtban tért el (`+10°`, 5×4; egy eltérő vörös bájt: 54 helyett 55). | A kiadott Polaroid-recepthez nem szükséges. Ha egy jövőbeli recept flipet használ, a `0x00bc8060` mátrixszorzási sorrendjét külön golden-méréssel kell lezárni. |
+
+**A kontroll korlátja:** a QEMU a natív attribútum-kiértékelő helyett próbastubbal
+adta a fenti pontos attribútumértékeket; ezért az XML-kifejezések futásidejű
+kiértékelése **NINCS MEG** ebben a futásban, és nem része ennek a
+pixelmatematikai állításnak. A `flipH`-t is használó, nem kiadott általános
+receptnél a leírt 1 bájtos eltérés oka és teljes pixelpontos modellje szintén
+**NINCS MEG**. Következő konkrét lépés ilyen recept megjelenésekor: a
+`0x00bc8060` mátrixépítő flipágát több méret/szög QEMU-rácsán összevetni a
+`0x009e6340` mátrixszorzás pontos sorrendjével; a mostani eltérés a `+10°`,
+5×4 kontrollban egy vörös bájt (54/55). A Polaroid leíróban nincs flip attribútum.
 
 ### Mérve
 
