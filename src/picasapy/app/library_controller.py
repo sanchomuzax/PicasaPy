@@ -28,6 +28,8 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Qt, Signal, Slot
 
+from picasapy.fileops import FolderRenameError, rename_folder
+from picasapy.fileops.rename_folder import restore_folder_rename
 from picasapy.index import (
     delete_faces_in_folder,
     mark_folder_excluded,
@@ -1534,6 +1536,115 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         # bezárása) — futó író mellett a kérés várólistára kerül, és a
         # visszajelzés nélkül úgy néz ki, mintha semmi nem történt volna.
         self._on_folders_dirty([folder_path], felhasznaloi=True)
+
+    def set_edit_controllers(self, *edit_controllers) -> None:
+        """Az aktív képek útvonalát adó szerkesztőrekeszek bekötése (#4482)."""
+        self._edit_controllers = tuple(edit_controllers)
+
+    @Slot(str, str, result="QVariantMap")
+    def renameFolder(self, folder_path: str, new_name: str) -> dict:
+        """Mappanév módosítása úgy, hogy az index metaadatai is kövessék (#4482).
+
+        A mappa a lemezen egyetlen átnevezéssel változik, majd az index
+        meglévő `move_folder_tree` API-ja az összes útvonalat átírja. Ha az
+        index frissítése hibázik, a lemezes átnevezés visszagördül; a watcher
+        jelzése csak a QML-szál visszatérése után dolgozódik fel.
+        """
+        local_path = to_local_path(folder_path)
+        if not local_path:
+            return {"ok": False, "error": "A mappa útvonala hiányzik."}
+        source = Path(normalize_path(local_path))
+        for editor in getattr(self, "_edit_controllers", ()):
+            active_path = getattr(editor, "_image_path", None)
+            if active_path is None:
+                continue
+            try:
+                inside_renamed_tree = Path(
+                    normalize_path(active_path)
+                ).is_relative_to(source)
+            except (OSError, RuntimeError, ValueError):
+                inside_renamed_tree = False
+            if inside_renamed_tree:
+                return {
+                    "ok": False,
+                    "error": (
+                        "A mappa nem nevezhető át, amíg egy benne lévő kép "
+                        "szerkesztés alatt áll. Zárja be a szerkesztőt, majd "
+                        "próbálja újra."
+                    ),
+                }
+        try:
+            target = rename_folder(source, new_name)
+        except (FolderRenameError, ValueError, OSError) as error:
+            return {"ok": False, "error": str(error)}
+        # A Path equality check is case-insensitive on Windows, but a
+        # case-only rename still needs to update the index and UI paths.
+        if str(target) == str(source):
+            return {"ok": True, "path": str(source), "name": source.name}
+
+        try:
+            with open_index(self._db_path) as conn:
+                move_folder_tree(conn, source, target)
+        except (ValueError, sqlite3.Error, OSError) as error:
+            try:
+                restore_folder_rename(target, source)
+            except (FolderRenameError, OSError) as rollback_error:
+                logger.exception(
+                    "#4482: az indexhiba után a mappát nem sikerült "
+                    "visszaállítani (%s → %s)",
+                    target,
+                    source,
+                )
+                # Ha a lemez is elutasítja a visszaállítást, a meglévő
+                # részfa-szinkron próbálja az indexet a tényleges állapothoz
+                # igazítani; az eredeti hibaüzenet mellett ezt is jelezzük.
+                self.resyncMovedFolder(str(source), str(target))
+                return {
+                    "ok": False,
+                    "error": (
+                        "Az index frissítése nem sikerült, és a mappa "
+                        f"visszaállítása is hibázott: {rollback_error}. "
+                        f"Az index újraolvasása elindult. Részlet: {error}"
+                    ),
+                }
+            return {
+                "ok": False,
+                "error": (
+                    "Az index frissítése nem sikerült; a mappa eredeti "
+                    f"neve visszaállt. Részlet: {error}"
+                ),
+            }
+
+        # Ha maga a figyelt gyökér változott meg, a perzisztens gyökérlista
+        # és az OS-figyelő is az új útvonalra áll át.
+        watched_root = self._find_root(str(source))
+        if watched_root is not None and path_key(watched_root) == path_key(source):
+            self._roots = [
+                str(target) if path_key(root) == path_key(watched_root) else root
+                for root in self._roots
+            ]
+            self._persist_roots()
+            self._restart_watcher()
+
+        # A kijelölt mappa és az alatta kiválasztott képútvonal is az új
+        # előtagot kapja; a QML a friss modellekből olvassa újra a listát.
+        current = Path(self._current_folder) if self._current_folder else None
+        if current is not None:
+            try:
+                relative = current.relative_to(source)
+            except ValueError:
+                pass
+            else:
+                updated = str(target / relative)
+                self._current_folder = updated
+                if self._view_mode[0] == "folder":
+                    self._view_mode = ("folder", updated)
+                self._get_settings().setValue("session/lastFolder", updated)
+
+        self._descriptions.clear()
+        self._reload(preserve_scroll=True)
+        self.statusChanged.emit()
+        return {"ok": True, "path": str(target), "name": target.name}
 
     # SZÁNDÉKOSAN nincs `@Slot`: a hívó a `wire_fileops` PYTHON-oldali
     # kötése (`folderMoved` → itt), a QML soha nem hívja. Slotként a

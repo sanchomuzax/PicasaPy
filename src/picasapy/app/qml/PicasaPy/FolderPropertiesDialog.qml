@@ -50,6 +50,8 @@ Dialog {
     property string albumLocation: ""
     property bool currentMusicEnabled: false
     property string currentMusicFile: ""
+    property var renameFolderHandler: null
+    property string renameError: ""
 
     // a szerkesztett mappa — a hívó állítja be open() előtt
     property string folderPath: ""
@@ -85,8 +87,9 @@ Dialog {
         descriptionField.text = root.currentDescription
         musicCheck.checked = root.currentMusicEnabled
         musicPathField.text = root.currentMusicFile
-        if (root.albumMode) nameField.forceActiveFocus()
-        else descriptionField.forceActiveFocus()
+        root.renameError = ""
+        nameField.forceActiveFocus()
+        nameField.selectAll()
     }
     onAccepted: {
         if (!root._dateValid) return
@@ -102,6 +105,39 @@ Dialog {
             root.folderPath, dateField.text.trim(), descriptionField.text)
         root.folderMusicAccepted(
             root.folderPath, musicCheck.checked, musicPathField.text)
+    }
+
+    function _saveProperties() {
+        if (!root._dateValid)
+            return
+        // Változatlan névnél nincs átnevezés — a dátum/leírás/zene mentése
+        // átnevező nélkül is működjön (#4503 OK-tesztje).
+        if (!root.albumMode && nameField.text !== root.folderName) {
+            if (typeof root.renameFolderHandler !== "function") {
+                root.renameError = qsTr("Folder renaming is unavailable.")
+                renameErrorDialog.open()
+                return
+            }
+            var result = root.renameFolderHandler(root.folderPath, nameField.text)
+            if (!result || result.ok !== true) {
+                root.renameError = result && result.error
+                    ? result.error : qsTr("Folder renaming is unavailable.")
+                renameErrorDialog.open()
+                return
+            }
+            root.folderPath = result.path
+            root.folderName = result.name
+            nameField.text = result.name
+        }
+        root.accept()
+    }
+
+    MessageDialog {
+        id: renameErrorDialog
+        objectName: "folderPropertiesRenameErrorDialog"
+        title: qsTr("Cannot Rename Folder")
+        text: root.renameError
+        buttons: MessageDialog.Ok
     }
 
     footer: Item {
@@ -125,8 +161,9 @@ Dialog {
             // hozzáadódik; 24px adja a referencián mért 14px-es jobb margót.
             rightPadding: 24
             // A gombsort egy rögzített sáv tartja, nem közvetlenül a Dialog
-            // footer-e, ezért a Dialog nem köti be magától: OK és Mégse kézzel.
-            onAccepted: root.accept()
+            // footer-e, ezért a Dialog nem köti be magától (#4503). Az OK a saját
+            // onClicked-jén át ment és zár (#4482: előbb átnevez), így itt csak a
+            // Mégse kötése kell — egy onAccepted kettős mentést adna.
             onRejected: root.reject()
 
             Button {
@@ -136,7 +173,8 @@ Dialog {
                 width: 85
                 height: 24
                 enabled: root._dateValid
-                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                DialogButtonBox.buttonRole: DialogButtonBox.NoButton
+                onClicked: root._saveProperties()
             }
             Button {
                 id: cancelButton
@@ -200,10 +238,8 @@ Dialog {
                 Layout.preferredHeight: 26
                 Layout.maximumHeight: 26
                 font.pixelSize: Theme.fontSize
-                //: #3173: ALBUM módban a név szerkeszthető (az album neve az
-                //: ini-ben áll). Mappánál viszont fájlrendszer-művelet volna, és
-                //: az még nincs bekötve — ott marad inaktív.
-                enabled: root.albumMode
+                enabled: true
+                onAccepted: root._saveProperties()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
             }
@@ -240,6 +276,7 @@ Dialog {
                         Layout.maximumHeight: 26
                         font.pixelSize: Theme.fontSize
                         placeholderText: "2020-01-15"
+                        onAccepted: root._saveProperties()
                         // #422: jobbklikk-menü (Picasa `Address`)
                         TextFieldContextArea {}
                     }
@@ -343,6 +380,7 @@ Dialog {
                         Layout.preferredHeight: 26
                         Layout.maximumHeight: 26
                         font.pixelSize: Theme.fontSize
+                        onAccepted: root._saveProperties()
                         // az eredeti `<bind attr="enabled" source="usemusic">`
                         enabled: musicCheck.checked
                         background: Rectangle {
@@ -398,6 +436,7 @@ Dialog {
                 Layout.preferredHeight: 26
                 Layout.maximumHeight: 26
                 font.pixelSize: Theme.fontSize
+                onAccepted: root._saveProperties()
                 //: #3173: ALBUM módban menthető (`location=` az album
                 //: definíciójában); mappánál nincs mögötte réteg.
                 enabled: root.albumMode

@@ -1496,6 +1496,12 @@ Rectangle {
 
     FolderPropertiesDialog {
         id: folderPropertiesDialog
+        renameFolderHandler: function(path, name) {
+            if (typeof controller === "undefined" || !controller
+                    || typeof controller.renameFolder !== "function")
+                return null
+            return controller.renameFolder(path, name)
+        }
         onFolderPropertiesAccepted: function(path, isoDate, description) {
             if (!controller) return
             controller.setFolderDescriptionOf(path, description)

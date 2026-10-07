@@ -209,6 +209,10 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
             kep = ablak.grabWindow()
             assert not kep.isNull(), "a párbeszéd képernyőképe üres"
             assert kep.save(str(tmp_path / f"mappa-tulajdonsagai-{magassag}.png"))
+            if magassag == 1080:
+                shots = Path.cwd() / ".bt" / "4482-shots"
+                shots.mkdir(parents=True, exist_ok=True)
+                assert kep.save(str(shots / "folder-properties.png"))
             dobozok.append(
                 (
                     dialog.property("x"),
@@ -243,6 +247,16 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
                 hibak.append(
                     f"{magassag}px: cím={dialog.property('title')!r}, "
                     "elvárt='Mappa tulajdonságai'"
+                )
+            nev_mezo = dialog.findChild(QObject, "folderPropertiesNameField")
+            if nev_mezo is None:
+                hibak.append(f"{magassag}px: hiányzik a Név mező")
+            elif nev_mezo.property("enabled") is not True:
+                hibak.append(f"{magassag}px: a mappa Név mezője nem szerkeszthető")
+            elif nev_mezo.property("selectedText") != "2026-xx-xx screen":
+                hibak.append(
+                    f"{magassag}px: megnyitáskor a név nincs kijelölve "
+                    f"({nev_mezo.property('selectedText')!r})"
                 )
             megsse = dialog.findChild(QObject, "folderPropertiesCancelButton")
             if megsse is None:
@@ -465,8 +479,8 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
                     )
 
             name = dialog.findChild(QObject, "folderPropertiesNameField")
-            if name is not None and name.property("enabled") is not False:
-                hibak.append(f"{magassag}px: a szándékosan letiltott Név mező aktív")
+            if name is not None and name.property("enabled") is not True:
+                hibak.append(f"{magassag}px: a mappa Név mezője nem szerkeszthető")
             music_path = dialog.findChild(QObject, "folderPropertiesMusicPath")
             if music_path is not None:
                 path_bal, path_felso, path_jobb, path_also = _scenebox(music_path)

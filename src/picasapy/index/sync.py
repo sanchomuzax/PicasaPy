@@ -678,19 +678,22 @@ def folder_paths_under(conn: sqlite3.Connection, root: str | Path) -> tuple[str,
 _PATH_TABLES = ("folders", "folder_scan_state", "removed_folders", "photo_hashes")
 
 
-def _reszfa_feltetel(root: Path) -> tuple[str, tuple[str, str]]:
-    """WHERE-feltétel + paraméterek egy `path` oszlop `root` alatti soraira.
+def _reszfa_feltetel(root: Path) -> tuple[str, tuple[str, int, str]]:
+    """Pontos kis-/nagybetűs WHERE-feltétel a ``root`` alatti sorokra.
 
     Az `_under_root_query` mintája, de tábla NÉLKÜL: az `UPDATE`-be a
     `FROM` záradék nem fér bele (SQLite 3.33 óta az `UPDATE … FROM` JOIN-t
-    jelent, és a `path` oszlop kétértelművé válna). A LIKE-minta itt is
-    escape-elt és elválasztóval zárt: a „…/kep" gyökér NEM foghatja meg a
-    „…/kepek" sorait."""
-    prefix = str(root).rstrip(os.sep) + os.sep
-    escaped = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    jelent, és a `path` oszlop kétértelművé válna). A `LIKE` helyett a
+    `substr` + BINARY összehasonlítás pontos útvonal-egyezést és elválasztóval
+    zárt részfa-prefixet ad. Így a `Foo` részfa nem fogja meg a különálló
+    `foo` testvért, és a célütközés-ellenőrzés sem látja saját régi sorait.
+    """
+    root_text = str(root)
+    prefix = root_text.rstrip(os.sep) + os.sep
     return (
-        "WHERE path = ? OR path LIKE ? ESCAPE '\\'",
-        (str(root), escaped + "%"),
+        "WHERE (path = ? COLLATE BINARY OR "
+        "substr(path, 1, ?) = ? COLLATE BINARY)",
+        (root_text, len(prefix), prefix),
     )
 
 
@@ -717,10 +720,14 @@ def move_folder_tree(
 
     Visszatérési érték: az átírt MAPPA-sorok száma (a naplóhoz és a
     tesztek fogához)."""
-    old_path = Path(normalize_path(old_root))
-    new_path = Path(normalize_path(new_root))
-    if old_path == new_path:
+    old_text = normalize_path(old_root)
+    new_text = normalize_path(new_root)
+    # Path equality is case-insensitive on Windows; preserve spelling here so
+    # a case-only rename updates every indexed path.
+    if old_text == new_text:
         return 0
+    old_path = Path(old_text)
+    new_path = Path(new_text)
     _ensure_scan_state(conn)
     _ensure_photo_hashes(conn)
     utkozes, params = _reszfa_feltetel(new_path)
