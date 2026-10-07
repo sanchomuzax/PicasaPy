@@ -176,15 +176,26 @@ def main(work_dir: Path) -> None:
     viewer.setProperty("zoomValue", 1.0)
     pan_area = child("viewerPanArea")
     assert varj(lambda: pan_area.property("enabled")), (
-        "a nagyított állóképes dupla kattintás célterülete nem aktív"
+        "a nagyított állóképes előnézet kattintási területe nem aktív"
     )
     kattintas(pan_area)
-    assert window.property("viewerOpen") is True, (
-        "a SingleClickExit az állóképes egyszeres kattintásra is kilépett"
+    assert varj(lambda: window.property("viewerOpen") is False), (
+        "a SingleClickExit bekapcsolva az állóképes egyszeres kattintásra "
+        "nem tért vissza a könyvtárba"
     )
+
+    window.setProperty("viewerOpen", True)
+    viewer.setProperty("currentIndex", 0)
+    assert varj(lambda: child("viewerImage").property("visible")), (
+        "az állóképes előnézet nem jelent meg újra a dupla kattintás próbájához"
+    )
+    viewer.setProperty("zoomValue", 1.0)
+    pan_area = child("viewerPanArea")
+    assert varj(lambda: pan_area.property("enabled"))
     kattintas(pan_area, dupla=True)
-    assert varj(lambda: abs(viewer.property("zoomFactor") - 1.0) < 0.01), (
-        "az állóképes dupla kattintás már nem illesztette a képet"
+    assert varj(lambda: window.property("viewerOpen") is False), (
+        "SingleClickExit mellett a dupla kattintás után újranyílt vagy "
+        "nyitva maradt az állóképes néző"
     )
 
     # 4) vissza fotóra: a lejátszó elenged, ÉS a kép AZONNAL szerkeszthető
