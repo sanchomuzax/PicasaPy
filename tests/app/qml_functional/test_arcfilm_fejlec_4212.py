@@ -132,6 +132,175 @@ def _kattints(ablak, qt_app, elem: QQuickItem) -> None:
     qt_app.processEvents()
 
 
+def _popup_kattintas(elem: QQuickItem, qt_app) -> None:
+    """Valódi kattintás a felugró menü saját ablakában, friss geometriával."""
+    assert elem.isVisible() and elem.isEnabled(), (
+        f"{elem.objectName()} nem látható vagy le van tiltva"
+    )
+    ablak = elem.window()
+    kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
+    QTest.mouseMove(ablak, kozep, 10)
+    qt_app.processEvents()
+    QTest.mouseClick(
+        ablak,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        kozep,
+    )
+    qt_app.processEvents()
+
+
+def _kijelolt_arcfilm_kepei(lib) -> None:
+    for nev in ("00-kijelolt-a.jpg", "01-kimarado.jpg", "02-kijelolt-b.jpg"):
+        make_jpeg(lib / nev, size=(640, 400))
+    ini = (
+        "[Contacts2]\n"
+        f"{_SZEMELY_AZONOSITO}=Anna;;\n"
+        f"{_MASIK_SZEMELY}=Zoe Zed;;\n"
+        "[00-kijelolt-a.jpg]\n"
+        f"faces=rect64(1e00280045006e00),{_SZEMELY_AZONOSITO}\n"
+        "[01-kimarado.jpg]\n"
+        f"faces=rect64(22002a0048007000),{_MASIK_SZEMELY}\n"
+        "[02-kijelolt-b.jpg]\n"
+        f"faces=rect64(22002a0048007000),{_MASIK_SZEMELY}\n"
+    )
+    update_document(
+        lib / ".picasa.ini",
+        lambda _regi: parse_document(ini),
+        backup=False,
+    )
+
+
+def test_a_film_menu_kijelolt_kepei_arcfilmkent_filmet_hoznak_letre(
+    qt_app, tmp_path
+):
+    """A §30 szerinti kijelölt képeket adja át; az arc-kivágást (#4400) nem méri."""
+    gen = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_kijelolt_arcfilm_kepei)
+    ablak, vezerlo, _motor = next(gen)
+    film = None
+    try:
+        assert _varj(qt_app, lambda: vezerlo.photos.rowCount() == 3), (
+            "a próbaképek nem kerültek a fő rácsba"
+        )
+        ablak.setProperty("selectedIndexes", [0, 2])
+        ablak.setProperty("selectedIndex", 0)
+        eredeti_magassag = ablak.height()
+
+        for eltolás in (-5, 0, 5):
+            ablak.setHeight(eredeti_magassag + eltolás)
+            assert _varj(
+                qt_app,
+                lambda eltolás=eltolás: ablak.height()
+                == eredeti_magassag + eltolás,
+            ), f"a főablak magassága nem állt be ({eltolás:+} px)"
+
+            create_menu = ablak.findChild(QObject, "menuCreateRoot")
+            assert create_menu is not None, "a Létrehozás menü nem található"
+            create_menu.open()
+            assert _varj(
+                qt_app, lambda create_menu=create_menu: create_menu.property("visible")
+            ), "a Létrehozás menü nem nyílt meg"
+
+            submenu = ablak.findChild(QObject, "menuCreateMovieMenu")
+            assert submenu is not None, "a Film almenü nem található"
+            submenu.open()
+            from_faces = ablak.findChild(QObject, "menuCreateMovieFromFaces")
+            assert from_faces is not None, (
+                "hiányzik a Film ▸ From Faces in Selection... menüpont"
+            )
+            assert _varj(
+                qt_app, lambda from_faces=from_faces: from_faces.property("visible")
+            ), "a kijelölt arcok film-menüpontja nem nyílt meg"
+            assert from_faces.property("text") == "From Faces in Selection..."
+            _popup_kattintas(from_faces, qt_app)
+
+            if film is None:
+                assert _varj(
+                    qt_app,
+                    lambda: ablak.findChild(QObject, "movieDialog") is not None,
+                ), "a menüpont kattintása nem építette fel a Filmkészítőt"
+                film = ablak.findChild(QObject, "movieDialog")
+            assert film is not None
+            assert _varj(
+                qt_app, lambda film=film: film.property("visible")
+            ), (
+                "a kijelölt arcok menüpontja nem nyitotta meg a Filmkészítőt"
+            )
+
+            indexes = film.property("movieClipIndexes")
+            if hasattr(indexes, "toVariant"):
+                indexes = indexes.toVariant()
+            assert indexes == [0, 2], (
+                f"nem a kijelölt képsorok jutottak a filmkészítőhöz: {indexes!r}"
+            )
+            forrasok = film.property("movieClipSources")
+            if hasattr(forrasok, "toVariant"):
+                forrasok = forrasok.toVariant()
+            utak = [QUrl(str(url)).toLocalFile() for url in forrasok]
+            assert [Path(ut).name for ut in utak] == [
+                "00-kijelolt-a.jpg", "02-kijelolt-b.jpg",
+            ], f"nem a kijelölt képek lettek a film bemenetei: {utak!r}"
+            assert film.property("personMovieMode") is True, (
+                "a Filmkészítő nem az arcfilm beállítási módjában nyílt meg"
+            )
+            meret = ablak.findChild(QObject, "movieHeightBox")
+            assert meret is not None
+            assert meret.property("currentIndex") == vezerlo.faceMovieResolutionIndex, (
+                "az arcfilm nem a controller.faceMovieResolutionIndex értékét használta"
+            )
+
+            if eltolás < 5:
+                film.close()
+                assert _varj(
+                    qt_app, lambda film=film: not film.property("visible")
+                )
+
+        film.setProperty(
+            "targetFile",
+            QUrl.fromLocalFile(str(tmp_path / "kijelolt-arcok-film.mp4")).toString(),
+        )
+        ablak.findChild(QObject, "movieHeightBox").setProperty("currentIndex", 0)
+        ablak.findChild(QObject, "movieSeconds").setProperty("value", 10)
+        ablak.findChild(QObject, "lengthslider/scaleslider").setProperty("value", 1.0)
+        ablak.findChild(QObject, "movieTransitionBox").setProperty("currentIndex", 0)
+        ablak.findChild(QObject, "movieOverlapSlider").setProperty("value", 0.0)
+        letrehozas = ablak.findChild(QObject, "movieCreateButton")
+        assert letrehozas is not None
+        assert _nyugalomba_jut(qt_app, letrehozas), (
+            "a Filmkészítő Létrehozás gombja nem állt meg a helyén"
+        )
+
+        kesz = []
+        hibak = []
+        hurok = QEventLoop()
+        idozito = QTimer(hurok)
+        idozito.setSingleShot(True)
+        idozito.timeout.connect(hurok.quit)
+        vezerlo.movieFinished.connect(lambda *args: (kesz.append(args), hurok.quit()))
+        vezerlo.movieFailed.connect(lambda message: (hibak.append(message), hurok.quit()))
+        idozito.start(_FILM_VARAKOZAS_MP * 1000)
+        _kattints(ablak, qt_app, letrehozas)
+        hurok.exec()
+        idozito.stop()
+
+        assert not hibak, f"a filmkimenet hibát jelzett: {hibak}"
+        assert kesz, f"nem készült el a film {_FILM_VARAKOZAS_MP} s alatt"
+        kimenet = tmp_path / "kijelolt-arcok-film.mp4"
+        assert kimenet.is_file() and kimenet.stat().st_size > 0
+    finally:
+        if film is not None:
+            film.close()
+            qt_app.processEvents()
+        for nev in ("movieProgressDialog", "createResultDialog"):
+            parbeszed = ablak.findChild(QObject, nev)
+            if parbeszed is not None:
+                parbeszed.close()
+        try:
+            gen.close()
+        except RuntimeError:
+            pass
+
+
 def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
     qt_app, tmp_path
 ):

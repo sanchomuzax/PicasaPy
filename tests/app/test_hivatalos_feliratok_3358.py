@@ -61,6 +61,8 @@ HIVATALOS = {
     "Right justify text": ("Szöveg jobbra igazítása", "edittextpanel/rightalign"),
     "Ignore all of the selected faces": (
         "Az összes kijelölt arc mellőzése", "unknownfaceheaderpanel/ignore"),
+    "From Faces in Selection...": (
+        "A kijelölésben lévő arcokból…", "eMenuCreateMovie::ID_FACES"),
     "Display Time": ("Megjelenítési idő", "oneup/tpslabel"),
     "seconds": ("másodperc", "OneUpUI::seconds"),
     "Start Point": ("Kezdőpont", "filter_moviestart_label0"),
@@ -136,6 +138,7 @@ ELOFORDULASOK = {
         "Select someone you know and add a name"],
     "PicasaPy/PeoplePanel.qml": [
         "Unnamed people in these photos:", "Unnamed groups of people:"],
+    "PicasaPy/PicasaMenuBar.qml": ["From Faces in Selection..."],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
     # #3575

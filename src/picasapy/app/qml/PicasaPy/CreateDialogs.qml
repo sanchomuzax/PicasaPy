@@ -36,6 +36,15 @@ Item {
 
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
+    //: #4331 / `ID_FACES`: a 30. szakasz szerinti kijelölt képeket adja át
+    //: a meglévő filmkészítőnek. Az arc-kivágás adatútja a #4400-ra vár.
+    function openFaceMovie() {
+        var rows = dialogs.appWindow.selectedIndexes
+        if (!rows || rows.length === 0) return
+        movieDialog.openForRows(rows, false, false)
+        movieDialog.personMovieMode = true
+        movieDialog.applyDefaultSize()
+    }
     function openPoster(sourcePath) { posterDialog.openForSource(sourcePath) }
     function openTimestamp(rows) { timestampDialog.openForRows(rows) }
 
