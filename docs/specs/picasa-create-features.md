@@ -2493,7 +2493,65 @@ forrás-módját **5**-re, illetve **6**-ra a szokásos 1–4/7 helyett
 bármelyik áll-e (`0x0061823c`). *Bizalmi fok: **erős** — a jelentést a
 rájuk épülő kapu szövege adja, a jelzők nevét nem olvastuk ki.*
 
-#### G) A készítési idő küszöbe: szomszédos csoportosítás, módfüggő út; a végső fotó nyitott (#4194)
+#### G) A készítési idő küszöbe: szomszédos csoportosítás, ordering-függő kiválasztás (#4194)
+
+**2026-10-07, 4. kör — a kiválasztási ág azonosítva; a paraméternevek
+helyesbítve.** A `0x006175c0` hívó utasításai és az öt argumentumot takarító
+`ret 0x14` alapján a `0x0081b800` argumentumai: `param_1` = gyűjtemény,
+`param_2` = hossz, `param_3` = `.mxf` `ordering`, `param_4` =
+`burstmodethresh`, `param_5` = `removelowresfaces`. Tehát a lentebbi korábbi
+„mode” azonosítás **helyesbítendő**: az ágakat az `ordering` választja,
+`param_5` nem kiválasztási mód.
+
+- `ordering=0` a `0x0081c9b0` jelöltpontozóhoz vezet. A jelöltek pontszáma a
+  regisztrált getterek eredményeinek súlyozott összege; a kód a legkisebb
+  összeget választja, szigorú összehasonlítással, ezért holtversenyben az
+  előbb bejárt jelölt marad. Nincs érvényes pontozott jelöltnél az első
+  jelölt a tartalék. A regisztrációban a HOG getter (`0x00873e40`) súlya
+  `1.0`; a `Preferences\SmartMultiPersonTrans` engedélyezésekor a Neven
+  getter (`0x008742a0`) súlya a bináris `0x00c7c838` értéke, `0.4f`.
+  Ezen az ágon a regisztrált pontszám tehát `1.0f × HOG +
+  (preferencia bekapcsolva ? 0.4f × Neven : 0)`.
+  A minimumdöntés két úton igazolt; a HOG/Neven nevesítése és súlyainak
+  regisztrációja csak az utasításszintű útból következik, ezért **feltételes**.
+  „Legjobb minőségű kép” ebből **nem** következik: a kiválasztó a getterek
+  számait minimalizálja, a mérőszámok képi jelentése nyitott.
+- `ordering=1` és `ordering=2` a gráfépítő és útvonalválasztó ágra vezet
+  (`0x00875ee0` / `0x00874e40`, majd `0x00877c50`). A kiválasztás a
+  `0x008781a0` reducer szerint kimeneti kulcsonként a legkisebb összesített
+  élköltségű út; egyenlő költségnél a korábban bejárt előd marad. A HOG és
+  az engedélyezett Neven getter itt is részt vesz az értékelési útban, de az
+  élköltség teljes képzésének és a gráfindexek fotórekordokra vetítésének
+  pontos szabálya **NINCS MEG**.
+
+**A rekordeltolások igazolt használata, szemantikus nevük nyitott.** A
+`+0x34` dword a csoportosító dátumlekérdezésének kulcsa (`0x004edf60`-nak
+adja át); a HOG getter útja a `+0x30` és `+0x34` mezőket is olvassa. A
+Neven getter mindkét rekord `+0x30` értékét olvassa. Kiválasztás után a
+`+0x30` dword a kimenetbe másolódik, a `+0x34` pedig virtuális metódusnak
+megy át (`0x0081c7b6`–`0x0081c83f`). Ezek az eltolások **nem** bizonyítják,
+hogy a mező képszámot, arcot vagy minőséget jelent. A tényleges rekordíró,
+a két mező adattípusa/szemantikája és a konkrét bemeneti fotóhoz tartozó
+kiválasztott index **NINCS MEG**.
+
+**Két független út:** A) a friss Ghidra-dekompilátum
+(`.codex-ghidra-0081b800.c`, `.codex-ghidra-00874320.c`) megmutatja a nulla
+`ordering` közvetlen scorerágát, a nem nulla gráfágat és a rekordmezők
+használatait; B) az eredeti EXE utasításszintű olvasata, beleértve a hívó
+argumentum-feltöltését, a `0x0081c9b0` minimum-összehasonlítását, a
+getter-regisztrációt és a `0x008781a0` reducerét, ugyanezt adja. A
+paramétertérkép és az ágak egyeznek; a HOG/Neven nevesítését és súlyait csak
+a B út támasztja alá, ezért ezek feltételesek. A mezők szemantikájára és a
+konkrét fotóindexre egyik út sem ad választ. A dekompilátum unreachable-blokk
+figyelmeztetései miatt az utasítás az irányadó, eltérés nincs.
+
+**Cáfoló kör:** az „mindig az első képet tartja meg” hipotézis ellenőrzésekor
+a `0x0081c9b0` utasításai azt mutatják, hogy a pontozott ág szigorú minimum
+esetén későbbi jelöltre is frissít; az első csak holtversenyben vagy
+tartalékként marad. A pontszámot felcserélő korábbi szintetikus QEMU-hám nem
+jutott el a végső fotóindexig, ezért dinamikus cáfoló mérés **NINCS MEG**.
+Az állítás itt az utasításolvasat szintjén feltételes; a két független út az
+ág- és minimummechanikát megerősíti, nem az ismeretlen rekordindexet.
 
 A `burstmodethresh` nem közvetlenül választ képet. A `0x0081b800` csak
 nem nulla küszöbnél hívja a `0x0081ae10` csoportosítót (`0x0081b8be`–
@@ -2532,13 +2590,13 @@ FILETIME-értékeket. Küszöb: `T=3600` másodperc.
 olvasata; B) a fenti, pontosan megadott időbélyegű natív QEMU-futás.
 Az első mérősor cáfolja az „előző megtartotthoz mér” alternatívát.
 
-**Az eddigi bizonyíték nem támaszt alá minden módra érvényes
-„első/utolsó/jobb minőségű kép” szabályt.** `0x0081b800` módparaméterétől
-függő kiválasztási utakat követ; az időküszöb
+**Az eddigi bizonyíték nem támaszt alá minden orderingre érvényes
+„első/utolsó/jobb minőségű kép” szabályt.** A `0x0081b800` az `ordering`
+értékétől függően két kiválasztási utat követ; az időküszöb
 által készített csoportazonosítók jelölteket korlátoznak, de önmagukban nem
 mondják meg, hogy a bemeneti képek közül melyik kerül a kimenetbe.
 
-**`mode == 0`: súlyozott jelöltminimum.** A `0x0081b925`→`0x0081c925` ág a
+**`ordering == 0`: súlyozott jelöltminimum.** A `0x0081b925`→`0x0081c925` ág a
 `0x0081c9b0`-be vezet. A már kizárt jelöltek után az aktuális jelölt
 csoportazonosítójával egyező képet is kihagyja (`0x0081d41d`–`0x0081d428`).
 A `[obj+0x504]` metrikaobjektumok `0x00873170`-en át jelöltenként értéket
@@ -2551,7 +2609,7 @@ szabály nem állítja, hogy minden küszöbcsoportból pontosan egy kép marad:
 kód az aktuális kép csoportját zárja ki, nem az összes korábban kiválasztott
 kép csoportját.
 
-**`mode != 0`: költségminimumú útvonal.** A `0x0081b800` a
+**`ordering != 0`: költségminimumú útvonal.** A `0x0081b800` a
 `0x00875ee0` vagy `0x00874e40` gráfépítő útját hívja; ezek a normál
 élképzésben kihagyják az azonos csoportú jelöltet
 (`0x00875051`–`0x00875060`, illetve `0x00876223`–`0x00876236`). A
@@ -2563,10 +2621,11 @@ előd marad. A `0x008773d0` elérhetetlenség esetén nulla költségű pótló 
 is létrehoz (`0x00877562`–`0x0087757d`), ezért a normál élszűrésből nem
 következik abszolút, kivétel nélküli „egy csoportból legfeljebb egy” szabály.
 
-**Az ágak bizonyítottsága: feltételes.** A `mode == 0` súlyozott
-jelöltminimumát és a `mode != 0` költségminimumú útját az utasításszintű
-olvasat támasztja alá; a teljes `0x0081b800`-as képlistás futás egyik ágon
-sem adott végső fotóindexet.
+**Az ágak bizonyítottsága: megerősített, a fotóindexé nyitott.** A nulla
+`ordering` súlyozott jelöltminimumát és a nem nulla `ordering`
+költségminimumú útját a dekompilátum és az utasításszintű olvasat egymástól
+függetlenül mutatja. A teljes `0x0081b800`-as képlistás futás egyik ágon sem
+adott végső fotóindexet.
 
 **Független natív QEMU-mérés a reduceren:** a `0x008781a0` eredeti kódját
 kézzel felépített, két jelöltet és egy kimeneti kulcsot tartalmazó bemenettel
@@ -2639,7 +2698,7 @@ Ezek után is megmaradt a jelöltciklus eredmény nélküli útja. A QEMU
 naplózott visszaugrásai és az utasításszintű olvasat ezért egyezik abban,
 hogy a scorer vagy a dátumlekérdező visszatérése **nem a ciklus közvetlen
 kilépési feltétele**. A korábbi timeout pontos oka a teljes, helyesen
-felépített gyűjteményobjektum nélkül **NINCS MEG**; a `mode != 0` ágon
+felépített gyűjteményobjektum nélkül **NINCS MEG**; a `ordering != 0` ágon
 ebben a körben nem futott kétrekordos natív próba.
 
 **Új teljesfüggvény-próba (#4194, 2026-10-06; eredmény nélkül):** a natív
@@ -2746,40 +2805,30 @@ A korábbi QEMU-próba a szintetikus `[0,2]` adattartalmú bemeneti vektorral nu
 valódi gyűjteményrekord-indexekkel végzett futás, ezért nem igazolja a
 vektorelemeket vagy a megtartott fotót.
 
-**Bizonyítottsági határ:** a `0x008781a0` segédreducerének „bázis + segédrekord
-`+8`”, minimumot választó és döntetlennél korábbi jelöltet megtartó szabálya
-**megerősített**: A) az utasításszintű olvasat; B) a fenti, külön natív
-QEMU-futtatás. `0x0081b800`-tól a végső fotórekord-indexig terjedő
-**kiválasztási szabály nyitott**: az utasításszintű olvasat az ágak és
-segédreducer viselkedését tárja fel, a `+8` getter konkrét vtable-céljai
-azonosítottak, de a teljes adatleképezést a natív QEMU-próba nem érte el.
-A csoport konkrét fotójának azonosítása és a fotójellemző, amelyből a
-reducer értéke jön, **NINCS MEG**. Az
-„első kép”, „utolsó kép” vagy „jobb minőségű kép” állítás **NINCS MEG**;
-ezeket a csoportazonosítókból vagy a szintetikus segédrekordból nem szabad
-kikövetkeztetni.
+**Bizonyítottsági határ:** a `0x008781a0` reducer minimum- és döntetlenszabálya
+**megerősített**: A) utasításszintű olvasat; B) külön natív QEMU-futtatás.
+A kiválasztási algoritmus ága és döntési szabálya szintén **megerősített**:
+`ordering=0` alatt súlyozott getterminimum, `ordering=1/2` alatt minimális
+összköltségű gráfút. A HOG/Neven nevesítése és súlyainak hozzárendelése
+**feltételes** (utasításszintű bizonyíték). A csoport konkrét fotójának
+indexe, a gettermezők szemantikája és a gráf-élek pontos költségképzése **NINCS MEG**. Ezért az
+„első”, „utolsó” vagy „jobb minőségű” fotó minden csoportra érvényes állítása
+nem tehető; csak a nulla `ordering` pontozott útján bizonyított, hogy nem
+mindig az első nyer.
 
 **Fejlesztési átvezetés a #4182-höz:**
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Az eredeti bináris `delta >= T` szabállyal, a bemeneti sorrendben szomszédos időkből csoportokat készít; a `mode == 0` súlyozott jelöltminimumot, a `mode != 0` költségminimumú útvonalat járja. A HOG (`0x00873e40`) és Neven (`0x008742a0`) getterek rekord-`+0x30/+0x34` mezőket olvasnak, de a Filmkészítő rekordtípusának írója, a mezők jelentése és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` a projektfájlban és a QML/controller átadásban szerepel; az `src/` alatti hivatkozások között nincs képszűrési fogyasztó. A #4194 2. körének szintetikus, közvetlen `0x0081c9b0` próbája a ciklus belépési állapotát mérte, de nem adott végső fotóindexet; a `mode != 0` ágat nem futtatta. | A #4182-ben a bizonyított dátumcsoportosítás implementálható. A megtartott fotóra ne kerüljön becsült szabály. A végső képszűrés csak a `[obj+0x4e0]` rekordíró és a `+0x30/+0x34` szemantika azonosítása, a `0x00874320` kimeneti elemeinek visszakötése valódi fotórekord-indexekhez, valamint a `0x00877c50` valódi indexű natív futása után implementálható. `Kész, ha`: (1) két fotóval, felcserélt scorerértékekkel a `mode == 0` és `mode != 0` natív futása végső fotóindexet ad; (2) az index pontszámcserével vagy attól független sorrendi szabály szerint változik, és ezt a diszasszemblálás külön is alátámasztja; (3) a scorer- és dátumhám természetes cikluskilépést ad; (4) a teljes eredmény két független úton egyezik. |
+| Az eredeti bináris a szomszédos idők között `delta >= T` esetén új csoportot kezd. `ordering=0` súlyozott getterminimumot választ; a feltételes scorerazonosítás szerint ez HOG `1.0` súlyú és beállítástól függő Neven `0.4f` súlyú értékeit összegzi. `ordering=1/2` minimumköltségű gráfútvonalat választ. A `+0x30/+0x34` rekordmezők használata ismert, a rekordírójuk és szemantikájuk, a gráfélek pontos költsége és a végső fotóindex **NINCS MEG**. | A `burstmodethresh` tárolódik és átadódik a QML/controller rétegen; az `src/` alatti hivatkozásokban nincs képszűrési fogyasztó. Az `ordering` 0/1/2 és a `removelowresfaces` mező átadása megvan. | A #4182-ben a `delta >= T` szomszédos csoportosítás implementálható. A megtartási algoritmusban `ordering=0`-nál reprodukáld a getterek súlyozott minimumát, `ordering=1/2`-nél a költségminimumú útvonalat; ne nevezd a minimális pontszámot képi minőségnek. A fotórekord mezőinek előállítását és a gráf-élek költségét csak az alább nyitott rekordíró/index-visszakötés tisztázása után implementáld. `Kész, ha`: (1) #4182 implementációja ugyanazt az időcsoportot adja a QEMU-s `[0,3240,6480]` és `[0,3600,7200]` esetekre; (2) `ordering=0` két valós rekordos etalonban a súlyozott getterminimumot és döntetlennél az első bejárt jelöltet adja; (3) `ordering=1/2` valódi rekord-indexű etalonjai a minimális összköltségű útvonalat és döntetlen esetén a korábbi elődöt adják; (4) az etalonok kimeneti fotóindexe diszasszemblálással vagy natív futással függetlenül egyezik. |
 
-Nyitott futtatási kérdés: melyik fotórekord-indexet teszi a csoportból a
-`0x008781a0` megfelelő jelöltjévé, és a getterek által olvasott rekordmezők
-mit jelentenek? Következő lépés: a `[obj+0x4e0]` rekordtípusának és írójának
-azonosítása, majd a két gráfépítő út valódi gyűjteményobjektummal való
-futtatása a `0x00877c50`-ig. Csak ilyen futásban lehet a gettert, a
-reducerjelöltet és a végső fotóindexet, illetve a `+0x30/+0x34` mezők
-változtatásának hatását rögzíteni. Célzott Ghidra-kérdések:
-`Ghidra-kör kell: 0x0081b800 — az itt használt [obj+0x4e0] lista
-0x38-bájtos rekordjának pontos típusát és íróját visszakövetni; melyik
-útvonal tölti a +0x30/+0x34 mezőket, és mit jelentenek? [blokkoló]`
-`Ghidra-kör kell: 0x00874320 — a nyolcbájtos kimeneti elemek mezői és
-indexszemantikája, illetve a 0x00877c50 által igényelt teljes bemenet
-azonosítható-e a két gráfépítő útból? [blokkoló]`
-`Ghidra-kör kell: 0x00873170 — a HOG/Neven getterek mely fotórekord-mezőből
-képezik a reducer +8 értékét, és milyen bemeneti tartományon? [blokkoló]`
+Nyitott: melyik konkrét fotórekord-index felel meg egy kiválasztott
+jelöltnek; ki írja a Filmkészítő `[obj+0x4e0]` rekordlistáját; mit jelentenek
+a `+0x30/+0x34` mezők; hogyan áll elő a `ordering=1/2` gráf minden élének
+költsége. Célzott következő kör:
+`Ghidra-kör kell: 0x00823620 — a Filmkészítő [obj+0x4e0] lista 0x38 bájtos rekordjának írója, a +0x30/+0x34 mezők forrása és jelentése [blokkoló]`
+`Ghidra-kör kell: 0x00874320 — a nyolcbájtos kimeneti elemek mezői/indexei hogyan kötődnek a fotórekordokhoz, és mi a 0x00877c50 teljes bemeneti szerződése? [blokkoló]`
+`Ghidra-kör kell: 0x00877c50 — az ordering=1/2 út minden élköltsége mely rekordadatokból áll elő, és hogyan lesz a végső útból fotóindex? [blokkoló]`
 
 #### Bizonyítottsági fok
 
@@ -2793,9 +2842,11 @@ visszatérési érték, a két külön preferencia-kulcs.
 
 **Megerősített, a G szakaszra korlátozva:** a készítési idő szerinti
 szomszédos csoportosítás, az egész másodpercre kerekítés és a `delta >= T`
-határ (utasításszintű olvasat + natív QEMU-mérés). **Nyitott:** az egy
-csoportból végül megtartott kép és az összehasonlító érték jelentése; ez
-nem része a megerősített állításnak.
+határ (utasításszintű olvasat + natív QEMU-mérés); továbbá az `ordering=0`
+súlyozott minimum- és az `ordering=1/2` gráfút-választási mechanizmusa
+(Ghidra-dekompilátum + utasításszintű olvasat). **Nyitott:** a kiválasztott
+gráfjelölt pontos fotóindexe, a `+0x30/+0x34` mezők szemantikája és a
+gráfélek teljes költségképzése.
 
 **Erős**: a `[panel+0x4f0]`/`[+0x4f1]` jelzők jelentése.
 
