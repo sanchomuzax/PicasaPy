@@ -5,9 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QTimer
+from PySide6.QtCore import QMetaObject, QObject, QTimer
 
 from tests.app.qml_functional import _fomenu_4420_akciok as _akciok
+from tests.app.qml_functional import _fomenu_4420_menu as _menu_segedek
 from tests.app.qml_functional._fomenu_bejaro_4420 import (
     _ABLAK_ALAPMAGASSAG,
     _ABLAKMAGASSAG_ELTOLASOK,
@@ -23,6 +24,22 @@ from tests.app.qml_functional._fomenu_bejaro_4420 import (
 )
 
 pytest_plugins = ("tests.app.qml_functional._fomenu_4420_akciok",)
+
+
+def test_parancsok_kihagyja_a_nem_qobject_menuelemet(monkeypatch):
+    class Kifejezes:
+        def evaluate(self):
+            return QMetaObject(), None
+
+    monkeypatch.setattr(
+        _menu_segedek,
+        "QQmlExpression",
+        lambda *_args: Kifejezes(),
+    )
+    menu = QObject()
+    menu.setProperty("count", 1)
+
+    assert _menu_segedek._parancsok(menu, QObject()) == []
 
 
 @pytest.mark.parametrize("eltolas", _ABLAKMAGASSAG_ELTOLASOK)

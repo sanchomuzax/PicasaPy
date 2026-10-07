@@ -32,11 +32,11 @@ _MENU_UTVONAL_DARAB = {
     "Picture": 17,
     "Edit": 13,
     "Tools": 69,
-    "Create": 6,
+    "Create": 7,
     "Help": 5,
     "File": 17,
 }
-assert sum(_MENU_UTVONAL_DARAB.values()) == 185
+assert sum(_MENU_UTVONAL_DARAB.values()) == 186
 _VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 30, "mappanezet": 13}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
@@ -166,7 +166,7 @@ def _normalizal(felirat: str) -> str:
 
 
 def _menu_e(elem) -> bool:
-    if elem is None:
+    if not isinstance(elem, QObject):
         return False
     try:
         if not shiboken6.isValid(elem):
@@ -183,15 +183,20 @@ def _menu_e(elem) -> bool:
     )
 
 
-def _menupont(menu, index: int) -> QQuickItem:
+def _menupont(menu, index: int) -> QQuickItem | None:
     kifejezes = QQmlExpression(
         qmlContext(menu), menu, f"itemAt({index})"
     )
     eredmeny, hiba = kifejezes.evaluate()
     assert not hiba, kifejezes.error()
     assert eredmeny is not None, f"a menü {index}. eleme hiányzik"
-    pont = shiboken6.getCppPointer(eredmeny)[0]
-    elem = shiboken6.wrapInstance(pont, QQuickItem)
+    if not isinstance(eredmeny, QObject) or not shiboken6.isValid(eredmeny):
+        return None
+    if not isinstance(eredmeny, QQuickItem):
+        raise TypeError(
+            f"a menü {index}. eleme nem QQuickItem: {type(eredmeny).__name__}"
+        )
+    elem = eredmeny
     _QML_ELEMEK.append(elem)
     return elem
 
@@ -246,6 +251,8 @@ def _parancsok(menu, menu_bar, utvonal=(), feliratok=(), kihagyas=None):
     kihagyas = kihagyas if kihagyas is not None else {"placeholder": 0, "nyugdijazott": 0}
     for index in range(int(menu.property("count") or 0)):
         sor = _menupont(menu, index)
+        if not isinstance(sor, QObject) or not shiboken6.isValid(sor):
+            continue
         osztaly = sor.metaObject().className()
         if "Separator" in osztaly:
             continue
@@ -331,7 +338,9 @@ def _menu_fejlec(menu_bar, cim: str):
         _MENU_FEJLECEK[azon] = [
             elem
             for elem in menu_bar.findChildren(QObject)
-            if "MenuBarItem" in elem.metaObject().className()
+            if isinstance(elem, QObject)
+            and shiboken6.isValid(elem)
+            and "MenuBarItem" in elem.metaObject().className()
         ]
     jeloltek = [
         elem

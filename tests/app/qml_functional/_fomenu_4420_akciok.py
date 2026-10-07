@@ -642,7 +642,7 @@ def scratch_jelentes(tmp_path_factory):
             f"{sum(len(futas['eredmenyek']) for futas in alap_futasok) - len(egyedi_utvonalak)}; "
             f"eltérésként jelölve: {len(elteresek)}.",
             "A jegyben említett 195 a korábbi futás ismétlésekkel számolt megfigyelésszáma; "
-            "a menüsorban 185 különböző útvonal van.",
+            "a #4331 új Film parancsával a menüsorban 186 különböző útvonal van.",
             "",
             "## Működési eltérések",
             "",
