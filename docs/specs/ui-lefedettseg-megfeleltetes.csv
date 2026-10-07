@@ -39,6 +39,7 @@ movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml;PicasaPy/PhotoViewer.qml,V
 nav,nincs-megfeleltetes,,"A nav.tre egy szerkesztői nagyítás-navigátor lebegőablakát írja le; ilyen navigátor nincs a PhotoViewerben, ezért a nav/close nem cél."
 nerdview,parositva,PicasaPy/PerfMonitorPanel.qml;PicasaPy/HistogramBox.qml,Fejlesztői/diagnosztikai réteg
 oneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet a könyvtárban
+options,parositva,PicasaPy/OptionsDialog.qml;PicasaPy/OptionsTabFileTypes.qml,Beállítások ablak és a Fájltípusok fül (#350/#4447/#4488)
 outlineweightslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 outputlayout,parositva,PicasaPy/TrayBar.qml;PicasaPy/CreateDialogs.qml;PicasaPy/PicasaMenuBar.qml,"A tálca kimeneti gombsora, a filmkészítő párbeszéd és menüparancs (#4214)"
 panelroot,parositva,Main.qml;PicasaPy/MainToolbar.qml;PicasaPy/DocumentTabStrip.qml;PicasaPy/CaptureMoviePanelPopup.qml;PicasaPy/TrayBar.qml;PicasaPy/CreateDialogs.qml,"Legfelső panelváltó és a mai könyvtár-, projekt-, rögzítési és filmkészítő belépők"
