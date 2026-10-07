@@ -1206,6 +1206,11 @@ picasapy-origin-key: options:options/DoNotConfirmRemoveFromAlbum.title</extracom
             <translation>Help improve PicasaPy:</translation>
         </message>
         <message>
+            <source>Privacy...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Privacy...</translation>
+        </message>
+        <message>
             <source>Send anonymous usage statistics</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_advoptions:gpuploader_advoptions/send_to_google.title;options:options/usagestats.title;stringres:INSTALLRES_statscheckbox</extracomment>
