@@ -42,6 +42,10 @@ def _kattint(ablak, elem, qt_app):
         qt_app.processEvents()
 
 
+def _kozep_y(elem):
+    return elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).y()
+
+
 def _import_vezerlo(engine, tmp_path):
     vezerlo = engine.rootContext().contextProperty("importSourceController")
     assert vezerlo is not None, "importSourceController context property hiányzik"
@@ -78,6 +82,58 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
     tallozo = _elem(options, "optionsImportDestBrowseButton")
     bezaro = _elem(options, "optionsCloseButton")
 
+    ui_utolso_sor = _elem(options, "optionsSingleClickExitCheck")
+    fajlok_elso_sor = _elem(options, "optionsAutoExcludeCheck")
+    ui_fajlok_koz: float = _kozep_y(fajlok_elso_sor) - _kozep_y(ui_utolso_sor)
+    assert abs(ui_fajlok_koz - 25) <= 3, (
+        "a Kezelőfelület és a Fájlok első sora közti térköz eltér a "
+        f"referencia 25 px-es értékétől: {ui_fajlok_koz:.1f} px"
+    )
+    files_divider = _elem(options, "optionsGeneralFilesDivider")
+    files_utolso_sor = _elem(options, "optionsSkipRemoveConfirmCheck")
+    files_divider_y = files_divider.mapToScene(QPointF(0, 0)).y()
+    files_to_divider = files_divider_y - _kozep_y(files_utolso_sor)
+    assert abs(files_to_divider - 13) <= 3, (
+        "a Fájlok csoport elválasztója nem a referencia szerinti helyen van: "
+        f"{files_to_divider:.1f} px az utolsó sor közepétől"
+    )
+    participation_first = _elem(options, "optionsUsageStatsCheck")
+    participation_from_divider = _kozep_y(participation_first) - files_divider_y
+    assert abs(participation_from_divider - 20) <= 3, (
+        "a Részvétel csoport térköze eltér a referencia 20 px-es értékétől: "
+        f"{participation_from_divider:.1f} px"
+    )
+    participation_divider = _elem(options, "optionsGeneralParticipationDivider")
+    participation_divider_y = participation_divider.mapToScene(QPointF(0, 0)).y()
+    privacy_link = _elem(options, "optionsPrivacyLink")
+    privacy_gap = _kozep_y(privacy_link) - _kozep_y(participation_first)
+    assert abs(privacy_gap - 27) <= 3, (
+        "az Adatvédelem link és a Részvétel sora közti térköz eltér a "
+        f"referencia 27 px-es értékétől: {privacy_gap:.1f} px"
+    )
+    privacy_to_divider = participation_divider_y - _kozep_y(privacy_link)
+    assert abs(privacy_to_divider - 13) <= 3, (
+        "a második elválasztó nem a referencia szerinti helyen van: "
+        f"{privacy_to_divider:.1f} px az Adatvédelem link közepétől"
+    )
+    update_mode = _elem(options, "optionsUpdateModeCombo")
+    update_from_divider = _kozep_y(update_mode) - participation_divider_y
+    assert abs(update_from_divider - 23) <= 3, (
+        "az Automatikus frissítések sora eltér a referencia 23 px-es "
+        f"elválasztóközétől: {update_from_divider:.1f} px"
+    )
+    language = _elem(options, "optionsLanguageCombo")
+    language_gap = _kozep_y(language) - _kozep_y(update_mode)
+    assert abs(language_gap - 32) <= 3, (
+        f"a Frissítések és Nyelv sor közti térköz {language_gap:.1f} px, "
+        "a referencia 32 px"
+    )
+    destination_gap = _kozep_y(mezo) - _kozep_y(language)
+    assert abs(destination_gap - 32) <= 3, (
+        f"a Nyelv és Importcél sor közti térköz {destination_gap:.1f} px, "
+        "a referencia 32 px"
+    )
+
     for magassag_elteres in magassag_elteresek:
         foablak.resize(1280, 800 + magassag_elteres)
         options.setProperty("height", eredeti_options_magassag + magassag_elteres)
@@ -102,7 +158,7 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
         if magassag_elteres == 0:
             kep = options.grabWindow()
             assert not kep.isNull(), "az Általános fül képernyőképe üres"
-            assert kep.save(str(Path(".bt") / "4450-options-after.png")), (
+            assert kep.save(str(tmp_path / "4450-options-after.png")), (
                 "az Általános fül képernyőképe nem menthető"
             )
 
