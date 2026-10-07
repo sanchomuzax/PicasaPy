@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.36] – 2026-10-07
+
+- A Film almenü új parancsa a kijelölt képekkel indítja el a filmkészítőt (#4331).
+- A háttérszálak hibái eljutnak a vezérlőhöz, és a felderítési ablak látható hibát mutat (#4472).
+- A Fájltípusok fül feliratai és elrendezése követi a Picasa mintáját, a RAW-formátumok linkje pedig megnyitja a támogatott kiterjesztések listáját (#4488).
+
 ## [0.9.35] – 2026-10-07
 
 - A Beállítások Fájltípusok lapján formátumcsoportok kapcsolhatók ki, és a következő könyvtárolvasáskor a kikapcsolt fájlok kikerülnek. (#4447).
