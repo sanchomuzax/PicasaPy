@@ -585,3 +585,70 @@ class TestGyorsForgatasLanc3830:
         assert self._lepes(controller, photo_id) == 2
         assert photo_id not in controller._rotate_running
         self._hatter_leall()
+
+    def test_tukrozes_kozben_futo_forgatas_mindket_modositast_megtartja(
+        self, qt_app, controller, library, monkeypatch
+    ):
+        """A párhuzamos forgatás és tükrözés ugyanazt az ini-t módosítja."""
+        import threading
+
+        import picasapy.app.photo_ops_controller as ops
+        import picasapy.ini.io as ini_io
+
+        eredeti_update = ops.update_document
+        eredeti_mentes = ini_io.save_document
+        forgas_mentesnel = threading.Event()
+        forgas_mentheto = threading.Event()
+        tukrozes_indult = threading.Event()
+        tukrozes_kiment = threading.Event()
+        hivasszam = 0
+        hivasszam_vedelem = threading.Lock()
+
+        def megfigyelt_update(path, mutate, *args, **kwargs):
+            if threading.current_thread() is threading.main_thread():
+                tukrozes_indult.set()
+            return eredeti_update(path, mutate, *args, **kwargs)
+
+        def osszehangolt_mentes(document, path, *, backup=False, in_place=False):
+            nonlocal hivasszam
+            with hivasszam_vedelem:
+                hivasszam += 1
+                aktualis = hivasszam
+            if aktualis == 1:
+                forgas_mentesnel.set()
+                assert forgas_mentheto.wait(10.0)
+            eredmeny = eredeti_mentes(
+                document, path, backup=backup, in_place=in_place
+            )
+            if aktualis == 2:
+                tukrozes_kiment.set()
+            return eredmeny
+
+        def engedd_forgatni():
+            assert tukrozes_indult.wait(10.0)
+            # Zár nélkül a tükrözés régi dokumentuma a mentésig jut. Ha az
+            # útvonalzár sorba állítja, ez a határidő engedi tovább előbb a
+            # forgatást, majd utána a friss tükrözési módosítást.
+            tukrozes_kiment.wait(3.0)
+            forgas_mentheto.set()
+
+        feloldo = threading.Thread(target=engedd_forgatni, daemon=True)
+        feloldo.start()
+        monkeypatch.setattr(ops, "update_document", megfigyelt_update)
+        monkeypatch.setattr(ini_io, "save_document", osszehangolt_mentes)
+        (row,) = _rows_by_name(controller, "a.jpg")
+        controller.rotateRight(row)
+        try:
+            assert forgas_mentesnel.wait(10.0), "a háttér-forgatás nem jutott mentésig"
+            controller.flipHorizontalMany([row])
+        finally:
+            forgas_mentheto.set()
+            feloldo.join(10.0)
+
+        assert varj_feltetelre(qt_app, lambda: not controller._rotate_running, 15.0)
+        self._hatter_leall()
+        szakasz = _ini_section(library, "a.jpg")
+        assert szakasz.get("rotate") == "rotate(1)"
+        assert szakasz.get("flipped") == "flipped(1)", (
+            "a később mentő forgatás felülírta a közben elmentett tükrözést"
+        )

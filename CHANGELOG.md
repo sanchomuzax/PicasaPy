@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.34] – 2026-10-07
+
+- Az Általános fül három felületi beállítása menthető, a videó-előnézet kilépési módja is választható. (#4449).
+- A gyors forgatás és tükrözés egyszerre is megőrzi mindkét módosítást; a szerkesztő állapotgépét bizonyított ok híján nem emeltük ki (#4473).
+
+## [0.9.33] – 2026-10-07
+
+- A foglalt célfájlt áthelyezés és visszagörgetés közben is érintetlenül hagyja (#4469).
+- A modellletöltés tesztje a keresés gombjának tényleges engedélyezésére vár, nem a letöltési jelzőre (#4475).
+
 ## [0.9.32] – 2026-10-07
 
 - A kötegelt átnevezés hiba esetén megmutatja az elkészült fájlokat, és frissíti a listát (#4470).

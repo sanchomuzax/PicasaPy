@@ -36,6 +36,7 @@ ViewerContextMenu 1.0 ViewerContextMenu.qml
 VideoPlayerView 1.0 VideoPlayerView.qml
 VideoPlayerControls 1.0 VideoPlayerControls.qml
 VideoViewport 1.0 VideoViewport.qml
+VideoExitGestureArea 1.0 VideoExitGestureArea.qml
 SlideshowView 1.0 SlideshowView.qml
 ScreensaverDialog 1.0 ScreensaverDialog.qml
 PhotoViewerSettingsDialog 1.0 PhotoViewerSettingsDialog.qml

@@ -33,6 +33,9 @@ class FakeController(QObject):
 
     languageChanged = Signal()
     pendingLanguageChanged = Signal()
+    uiTransitionsEnabledChanged = Signal()
+    showTooltipsEnabledChanged = Signal()
+    singleClickExitEnabledChanged = Signal()
 
     _OWN_NAMES = OWN_LANGUAGE_NAMES
 
@@ -41,6 +44,9 @@ class FakeController(QObject):
         self._language = language
         self._pending_language = pending_language if pending_language is not None else language
         self.set_language_calls = []
+        self._ui_transitions_enabled = True
+        self._show_tooltips_enabled = True
+        self._single_click_exit_enabled = False
 
     def _get_language(self):
         return self._language
@@ -51,6 +57,22 @@ class FakeController(QObject):
         return self._pending_language
 
     pendingLanguage = Property(str, _get_pending_language, notify=pendingLanguageChanged)
+
+    uiTransitionsEnabled = Property(
+        bool,
+        lambda self: self._ui_transitions_enabled,
+        notify=uiTransitionsEnabledChanged,
+    )
+    showTooltipsEnabled = Property(
+        bool,
+        lambda self: self._show_tooltips_enabled,
+        notify=showTooltipsEnabledChanged,
+    )
+    singleClickExitEnabled = Property(
+        bool,
+        lambda self: self._single_click_exit_enabled,
+        notify=singleClickExitEnabledChanged,
+    )
 
     def _get_available_languages(self):
         return ["en", "hu"]
@@ -69,6 +91,21 @@ class FakeController(QObject):
         self.set_language_calls.append(code)
         self._pending_language = code
         self.pendingLanguageChanged.emit()
+
+    @Slot(bool)
+    def setUITransitionsEnabled(self, enabled) -> None:
+        self._ui_transitions_enabled = bool(enabled)
+        self.uiTransitionsEnabledChanged.emit()
+
+    @Slot(bool)
+    def setShowTooltipsEnabled(self, enabled) -> None:
+        self._show_tooltips_enabled = bool(enabled)
+        self.showTooltipsEnabledChanged.emit()
+
+    @Slot(bool)
+    def setSingleClickExitEnabled(self, enabled) -> None:
+        self._single_click_exit_enabled = bool(enabled)
+        self.singleClickExitEnabledChanged.emit()
 
 
 class FakeConfirmSettings(QObject):
@@ -838,9 +875,6 @@ class TestFaceDetectionOption:
     @pytest.mark.parametrize(
         "control_name",
         [
-            "optionsUiTransitionsCheck",
-            "optionsShowTooltipsCheck",
-            "optionsSingleClickExitCheck",
             # #2893: az `optionsAutoExcludeCheck` KIKERÜLT innen — a
             # másodpéldány-észlelés ÉLŐ lett (ld.
             # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
@@ -873,6 +907,36 @@ class TestFaceDetectionOption:
             _child(window, "optionsSkipRemoveConfirmCheck").property("enabled")
             is True
         )
+
+    def test_general_tab_ui_preferences_toggle_their_controller_state(
+        self, dialog, qt_app
+    ):
+        window, controller, *_ = dialog
+        atmenetek = _child(window, "optionsUiTransitionsCheck")
+        tippek = _child(window, "optionsShowTooltipsCheck")
+        kilepes = _child(window, "optionsSingleClickExitCheck")
+
+        assert atmenetek.property("enabled") is True
+        assert atmenetek.property("checked") is True
+        assert tippek.property("enabled") is True
+        assert tippek.property("checked") is True
+        assert kilepes.property("enabled") is True
+        assert kilepes.property("checked") is False
+
+        _kattints(window, qt_app, atmenetek)
+        assert controller.uiTransitionsEnabled is False
+        assert atmenetek.property("checked") is False
+
+        _kattints(window, qt_app, tippek)
+        assert controller.showTooltipsEnabled is False
+        assert tippek.property("checked") is False
+
+        _kattints(window, qt_app, kilepes)
+        assert controller.singleClickExitEnabled is True
+        assert kilepes.property("checked") is True
+        _kattints(window, qt_app, kilepes)
+        assert controller.singleClickExitEnabled is False
+        assert kilepes.property("checked") is False
 
 
 class TestEmailTabLiveSettings:

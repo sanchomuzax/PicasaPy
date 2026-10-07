@@ -24,9 +24,10 @@ def main(work_dir: Path) -> None:
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
     from picasapy.version import version_string
-    from PySide6.QtCore import QObject, QSettings
+    from PySide6.QtCore import QObject, QPointF, QSettings, Qt
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQml import QQmlApplicationEngine
+    from PySide6.QtTest import QTest
 
     from support.jpeg_factory import make_jpeg
 
@@ -118,6 +119,72 @@ def main(work_dir: Path) -> None:
     time_label = item.findChild(QObject, "videoTimeLabel")
     assert time_label.property("text") == "0:00 / 0:00", (
         f"váratlan idő-címke: {time_label.property('text')!r}"
+    )
+
+    def kattintas(item, dupla=False):
+        pont = item.mapToScene(
+            QPointF(item.property("width") / 2, item.property("height") / 2)
+        ).toPoint()
+        if dupla:
+            QTest.mouseDClick(window, Qt.MouseButton.LeftButton, pos=pont)
+        else:
+            QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=pont)
+        app.processEvents()
+
+    def varj(feltetel, timeout_s=3.0):
+        import time
+
+        hatarido = time.monotonic() + timeout_s
+        while time.monotonic() < hatarido:
+            app.processEvents()
+            if feltetel():
+                return True
+            time.sleep(0.05)
+        app.processEvents()
+        return bool(feltetel())
+
+    assert controller.singleClickExitEnabled is False
+    video_viewport = item.findChild(QObject, "videoViewport")
+    assert video_viewport is not None
+    kattintas(video_viewport)
+    assert window.property("viewerOpen") is True, (
+        "alapállapotban az egyszeres videókattintás bezárta a szerkesztőt"
+    )
+    kattintas(video_viewport, dupla=True)
+    assert varj(lambda: window.property("viewerOpen") is False), (
+        "alapállapotban a videóablak dupla kattintása nem tért vissza a könyvtárba"
+    )
+
+    window.setProperty("viewerOpen", True)
+    controller.setSingleClickExitEnabled(True)
+    assert varj(
+        lambda: child("videoLoader").property("item") is not None
+    ), "a videólejátszó nem épült újra a néző megnyitása után"
+    video_item = child("videoLoader").property("item")
+    video_viewport = video_item.findChild(QObject, "videoViewport")
+    assert video_viewport is not None
+    kattintas(video_viewport)
+    assert varj(lambda: window.property("viewerOpen") is False), (
+        "a SingleClickExit bekapcsolva nem vitte vissza a könyvtárba"
+    )
+
+    window.setProperty("viewerOpen", True)
+    viewer.setProperty("currentIndex", 0)
+    assert varj(lambda: child("viewerImage").property("visible")), (
+        "az állóképes előnézet nem jelent meg"
+    )
+    viewer.setProperty("zoomValue", 1.0)
+    pan_area = child("viewerPanArea")
+    assert varj(lambda: pan_area.property("enabled")), (
+        "a nagyított állóképes dupla kattintás célterülete nem aktív"
+    )
+    kattintas(pan_area)
+    assert window.property("viewerOpen") is True, (
+        "a SingleClickExit az állóképes egyszeres kattintásra is kilépett"
+    )
+    kattintas(pan_area, dupla=True)
+    assert varj(lambda: abs(viewer.property("zoomFactor") - 1.0) < 0.01), (
+        "az állóképes dupla kattintás már nem illesztette a képet"
     )
 
     # 4) vissza fotóra: a lejátszó elenged, ÉS a kép AZONNAL szerkeszthető
