@@ -272,6 +272,8 @@ MenuBar {
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
     signal collageRequested()
     signal movieRequested()
+    //: `eMenuCreateMovie::ID_FACES` — a kijelölt képeket adja át az arcfilm módnak.
+    signal faceMovieRequested()
     //: #3503: Létrehozás ▸ Ajándék CD készítése… — a kiadás-panel
     signal giftCdRequested()
     signal locateRequested()
@@ -1926,9 +1928,10 @@ MenuBar {
             enabled: bar.createActionsEnabled
             onTriggered: bar.giftCdRequested()
         }
-        // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
-        // filmkészítés a submenu egyetlen tételeként maradt életben
+        // Az általános filmkészítő belépő mellé a #4331 visszahozza az
+        // eredeti eMenuCreateMovie::ID_FACES kijelöléses parancsát.
         PicasaMenu {
+            objectName: "menuCreateMovieMenu"
             title: qsTr("&Movie")
             // #922: az ALMENÜ is kapuz — a benne lévő tétel hiába él, ha a
             // szülő szürke. A film ugyanúgy a tálcáról is dolgozik (#455).
@@ -1938,6 +1941,12 @@ MenuBar {
                 text: qsTr("New Movie...")
                 enabled: bar.createActionsEnabled
                 onTriggered: bar.movieRequested()
+            }
+            MenuItem {
+                objectName: "menuCreateMovieFromFaces"
+                text: qsTr("From Faces in Selection...")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.faceMovieRequested()
             }
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
