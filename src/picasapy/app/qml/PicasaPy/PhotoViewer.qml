@@ -46,6 +46,11 @@ Rectangle {
             ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
     readonly property bool controllerReady:
         typeof controller !== "undefined" && controller ? true : false
+    // #4499: a beállítás az állóképes előnézet bal kattintását is
+    // vezérli. Önálló néző-próbáknál és részleges vezérlőknél maradjon ki.
+    readonly property bool singleClickExitEnabled:
+        viewer.controllerReady && controller.singleClickExitEnabled !== undefined
+            ? controller.singleClickExitEnabled : false
     readonly property bool currentIsCollageDraft: {
         if (!viewer.controllerReady || viewer.currentFilePath.length === 0)
             return false
@@ -3725,7 +3730,9 @@ Rectangle {
                 }
 
                 // #6: nagyított képen húzással pásztázás; dupla katt = fit.
-                // Illesztett nézetben inaktív — az események átmennek rajta.
+                // #4499: a bekapcsolt egykattintásos kilépés csak egyképes,
+                // nem Kiegyenesítéses illesztett nézetben kapja meg a szabad
+                // előnézeti területet; a nagyított pásztázás minden nézetben él.
                 MouseArea {
                     id: viewerPanArea
                     objectName: "viewerPanArea"
@@ -3737,13 +3744,31 @@ Rectangle {
                     parent: photoArea
                     anchors.fill: parent
                     z: 10
-                    enabled: viewer.zoomFactor > 1.01
+                    enabled: (viewer.zoomFactor > 1.01
+                              || (viewer.singleClickExitEnabled
+                                  && viewer.layoutMode === "1up"
+                                  && !editorPanel.tiltActive))
                              && !editorPanel.cropActive
                              && !viewer.isCurrentVideo
-                    cursorShape: enabled ? Qt.OpenHandCursor : Qt.ArrowCursor
+                    cursorShape: viewer.zoomFactor > 1.01
+                                 ? Qt.OpenHandCursor : Qt.ArrowCursor
                     property real lastX: 0
                     property real lastY: 0
                     property bool dragged: false
+
+                    // #4499: a beállított egykattintásos kilépés a Qt
+                    // dupla-kattintási időablakának lejártakor zár. Így a
+                    // dupla kattintás második eseménye még a nézőé marad.
+                    Timer {
+                        id: singleClickExitTimer
+                        interval: Qt.styleHints.mouseDoubleClickInterval
+                        onTriggered: {
+                            if (viewer.singleClickExitEnabled
+                                    && viewer.layoutMode === "1up"
+                                    && !editorPanel.tiltActive)
+                                viewer.kerBezaras()
+                        }
+                    }
 
                     // #4083: a nagyított nézet pásztázója fölé került, így
                     // az aktív képi MouseArea-k lenyomását is elkapta. A
@@ -3797,15 +3822,33 @@ Rectangle {
                         if (!pressed) return
                         if (Math.abs(event.x - lastX) + Math.abs(event.y - lastY) > 4)
                             dragged = true
-                        viewer.panX += event.x - lastX
-                        viewer.panY += event.y - lastY
+                        if (viewer.zoomFactor > 1.01) {
+                            viewer.panX += event.x - lastX
+                            viewer.panY += event.y - lastY
+                            viewer.clampPan()
+                        }
                         lastX = event.x; lastY = event.y
-                        viewer.clampPan()
                     }
                     onClicked: function(event) {
-                        if (!dragged) fokuszKattintas(event.x, event.y)
+                        if (dragged) return
+                        if (viewer.singleClickExitEnabled
+                                && viewer.layoutMode === "1up"
+                                && !editorPanel.tiltActive) {
+                            singleClickExitTimer.restart()
+                            return
+                        }
+                        fokuszKattintas(event.x, event.y)
                     }
-                    onDoubleClicked: viewer.zoomFit()
+                    onDoubleClicked: {
+                        if (viewer.singleClickExitEnabled
+                                && viewer.layoutMode === "1up"
+                                && !editorPanel.tiltActive) {
+                            singleClickExitTimer.stop()
+                            viewer.kerBezaras()
+                        } else {
+                            viewer.zoomFit()
+                        }
+                    }
                 }
 
                 BusyIndicator {
