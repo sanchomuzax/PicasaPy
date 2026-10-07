@@ -81,3 +81,14 @@ def ensure_contact(document: IniDocument, person_id: str, name: str) -> IniDocum
         if any(existing_id.casefold() == folded for existing_id, _ in section.items()):
             return document
     return document.with_value(_SECTION_NAME, person_id, f"{name};;")
+
+
+def with_contact(document: IniDocument, contact: Contact) -> IniDocument:
+    """A teljes, hárommezős `[Contacts2]` bejegyzés felvétele/frissítése."""
+    value = f"{contact.name};{contact.email};{contact.gaia_id}"
+    return document.with_value(_SECTION_NAME, contact.person_id, value)
+
+
+def without_contact(document: IniDocument, person_id: str) -> IniDocument:
+    """Egy `[Contacts2]` bejegyzés eltávolítása, round-trip módon."""
+    return document.with_removed(_SECTION_NAME, person_id)

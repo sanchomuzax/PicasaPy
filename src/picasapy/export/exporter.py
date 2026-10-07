@@ -341,9 +341,10 @@ def _write_ini_metadata(
 ) -> None:
     """A `caption`/`keywords` átvitele a célmappa `.picasa.ini`-jébe (#1166).
 
-    Egyetlen `update_document` hívással, a köteg végén: a párhuzamosan
-    futó eredeti Picasa közbeírása így sem veszhet el (#295), és nem
-    nyitjuk-zárjuk fájlonként. Adat nélküli kötegnél nem keletkezik ini.
+    Egyetlen `update_document` hívással, a köteg végén: az előzetes
+    ujjlenyomat-ellenőrzésig észlelt Picasa-változás újratöltést és újrajátszást
+    kap (#295). A sikeres ellenőrzés és fájlcsere közti külső írás elveszhet;
+    nem nyitjuk-zárjuk fájlonként. Adat nélküli kötegnél nem keletkezik ini.
 
     A szekció fejléce a CÉLFÁJL neve (sorszámozásnál `001-a.jpg`),
     különben az adatnak nem lenne gazdája."""
@@ -454,20 +455,18 @@ def _first_frame(source: Path) -> np.ndarray | None:
     """A videó ELSŐ olvasható képkockája BGR tömbként, vagy `None` (#1166).
 
     Az eredeti „Első képkocka" választása ezt teszi a mappába a film
-    helyett. Sosem dob: olvashatatlan felvételnél a hívó a teljes film
-    másolására esik vissza."""
-    capture = None
+    helyett. A ThumbnailCache időkorlátos, elszigetelt dekóderét használja,
+    így az export és a bélyegkép ugyanazt a videóképkocka-kinyerést kapja.
+    Olvashatatlan felvételnél a hívó a teljes film másolására esik vissza."""
+    # Lusta import: a bélyegkép-dekóder csak videó első-kockás exportnál
+    # kell, ne növelje a normál export indulási költségét.
+    from picasapy.thumbs.cache import _decode_video_frame_isolated
+
     try:
-        capture = cv2.VideoCapture(str(source))
-        if not capture.isOpened():
-            return None
-        ok, frame = capture.read()
-        return frame if ok and frame is not None and frame.size else None
-    except cv2.error:
+        frame = _decode_video_frame_isolated(source)
+        return frame if frame is not None and frame.size else None
+    except (OSError, ValueError):
         return None
-    finally:
-        if capture is not None:
-            capture.release()
 
 
 def _write_jpeg(image: np.ndarray, target: Path, settings: ExportSettings) -> None:

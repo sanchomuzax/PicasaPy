@@ -36,7 +36,14 @@ from .originals import (
     plan_original_moves,
     undo_original_moves,
 )
-from .rename import RenameItem, preview_name, rename_photo, rename_photos_many
+from .rename import (
+    PartialRenameError,
+    RenameItem,
+    preview_name,
+    rename_photo,
+    rename_photos_many,
+)
+from .rename_folder import FolderRenameError, rename_folder
 from .reveal import open_folder_in_file_manager, reveal_in_file_manager
 from .trash import (
     TrashUnavailableError,
@@ -53,6 +60,7 @@ __all__ = [
     "BatchResult",
     "InvalidFolderNameError",
     "OriginalMove",
+    "PartialRenameError",
     "RenameItem",
     "TrashUnavailableError",
     "conflicting_names",
@@ -68,7 +76,9 @@ __all__ = [
     "has_enough_free_space",
     "is_folder_writable",
     "FolderMoveError",
+    "FolderRenameError",
     "move_folder",
+    "rename_folder",
     "move_photo",
     "move_photos",
     "move_preserved_originals",

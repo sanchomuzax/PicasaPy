@@ -36,6 +36,15 @@ Item {
 
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
+    //: #4331 / `ID_FACES`: a 30. szakasz szerinti kijelölt képeket adja át
+    //: a meglévő filmkészítőnek. Az arc-kivágás adatútja a #4400-ra vár.
+    function openFaceMovie() {
+        var rows = dialogs.appWindow.selectedIndexes
+        if (!rows || rows.length === 0) return
+        movieDialog.openForRows(rows, false, false)
+        movieDialog.personMovieMode = true
+        movieDialog.applyDefaultSize()
+    }
     function openPoster(sourcePath) { posterDialog.openForSource(sourcePath) }
     function openTimestamp(rows) { timestampDialog.openForRows(rows) }
 
@@ -361,6 +370,7 @@ Item {
         standardButtons: Dialog.NoButton
         property string targetFile: ""
         property string audioFile: ""
+        property bool audioFileFromFolderMusic: false
         property int audioOption: 0
         property int transitionIndex: 1
         property bool personMovieMode: false
@@ -373,6 +383,28 @@ Item {
         property int previewWindowVisibilityBeforeFullscreen: Window.Windowed
         property bool previewOwnsFullscreen: false
         property var movieSlides: []
+        readonly property var movieFilmstripItems: {
+            var items = []
+            movieClipSources.forEach(function(source, index) {
+                var names = controller
+                        && typeof controller.movieClipNames === "function"
+                    ? controller.movieClipNames([source]) : []
+                items.push({
+                    kind: "photo",
+                    source: source,
+                    name: names.length ? names[0] : "",
+                    index: index,
+                })
+            })
+            movieSlides.forEach(function(_slide, index) {
+                items.push({
+                    kind: "text",
+                    name: qsTr("Text Slide"),
+                    index: index,
+                })
+            })
+            return items
+        }
         property var movieSlideSelection: []
         property int movieSlideEditingIndex: -1
         property string textColor: "#ffffff"
@@ -457,6 +489,53 @@ Item {
                 Math.max(0, Math.floor(seconds / previewSlideDurationSeconds)))
             previewSource = movieClipSources[previewIndex]
         }
+        function movieInfoText() {
+            var photoCount = movieClipSources.length
+            var total = photoCount + movieSlides.length
+            if (!total) return ""
+
+            var selected = movieClipList.currentIndex
+            if (selected < photoCount) selected = previewIndex
+            var name, width, height, position
+            if (selected >= photoCount) {
+                var slideIndex = selected - photoCount
+                if (slideIndex < 0 || slideIndex >= movieSlides.length) return ""
+                name = qsTr("Text Slide")
+                var movieSize = sizeOptions[movieHeightBox.currentIndex]
+                width = movieSize[0]
+                height = movieSize[1]
+                position = photoCount + slideIndex + 1
+            } else {
+                var names = controller
+                        && typeof controller.movieClipNames === "function"
+                    ? controller.movieClipNames([movieClipSources[selected]]) : []
+                name = names.length ? names[0] : ""
+                width = moviePreviewImage.sourceSize.width
+                height = moviePreviewImage.sourceSize.height
+                position = selected + 1
+            }
+            return qsTr("%1     %2x%3 pixels")
+                    .arg(name).arg(width).arg(height)
+                    + " " + qsTr("(%1 of %2)").arg(position).arg(total)
+        }
+        function selectMovieFilmstripItem(index) {
+            movieClipList.currentIndex = index
+            if (index < movieClipSources.length) {
+                moviePreviewTimer.stop()
+                previewIndex = index
+                previewSource = movieClipSources[index]
+                movieSlideSelection = []
+                movieSlideEditingIndex = -1
+                if (movieSlideList.currentIndex >= 0)
+                    movieSlideList.currentIndex = -1
+            } else {
+                var slideIndex = index - movieClipSources.length
+                if (slideIndex < 0 || slideIndex >= movieSlides.length) return
+                movieSlideSelection = [slideIndex]
+                movieSlideEditingIndex = -1
+                movieSlideList.currentIndex = slideIndex
+            }
+        }
         function togglePreviewFullscreen() {
             var hostWindow = moviePreviewPanel.Window.window
             if (!hostWindow) return
@@ -486,6 +565,17 @@ Item {
                 dialogs.trayHasPictures,
                 true)
         }
+        function useFolderMusicAsDefault() {
+            if (audioFileFromFolderMusic) audioFile = ""
+            audioFileFromFolderMusic = false
+            if (!controller || typeof controller.filmMusicForSources !== "function")
+                return
+            var configured = controller.filmMusicForSources(movieClipSources)
+            if (configured) {
+                audioFile = configured
+                audioFileFromFolderMusic = true
+            }
+        }
         function openForRows(rows, allowTray, preferTray) {
             if ((!rows || rows.length === 0) && !allowTray) return
             personMovieMode = false
@@ -494,10 +584,12 @@ Item {
             movieClipSources = preferTray
                 ? controller.movieSourceUrls(movieClipIndexes)
                 : controller.selectedMovieSourceUrls(movieClipIndexes)
+            useFolderMusicAsDefault()
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             movieSlideSelection = []
             movieSlideEditingIndex = -1
+            movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
             previewIndex = 0
@@ -511,10 +603,12 @@ Item {
             applyDefaultSize()
             movieClipIndexes = []
             movieClipSources = sources.slice(0)
+            useFolderMusicAsDefault()
             movieInitialPhotoCount = movieClipSources.length
             movieSlides = []
             movieSlideSelection = []
             movieSlideEditingIndex = -1
+            movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
             previewIndex = 0
@@ -564,6 +658,7 @@ Item {
             movieSlideSelection = [insertionIndex]
             movieSlideEditingIndex = insertionIndex
             movieSlideList.currentIndex = insertionIndex
+            movieClipList.currentIndex = movieClipSources.length + insertionIndex
             loadTextSlide()
         }
         function loadTextSlide() {
@@ -620,6 +715,7 @@ Item {
             }
             movieSlides = slides
             movieSlideList.currentIndex = index
+            movieClipList.currentIndex = movieClipSources.length + index
         }
         function removeTextSlide() {
             var selected = movieSlideSelection.length
@@ -635,6 +731,9 @@ Item {
             movieSlideSelection = nextIndex >= 0 ? [nextIndex] : []
             movieSlideEditingIndex = -1
             movieSlideList.currentIndex = nextIndex
+            movieClipList.currentIndex = nextIndex >= 0
+                    ? movieClipSources.length + nextIndex
+                    : Math.min(movieClipList.currentIndex, movieClipSources.length - 1)
             loadTextSlide()
         }
         function selectTextSlide(index, modifiers) {
@@ -675,6 +774,7 @@ Item {
             })
             movieSlideEditingIndex = -1
             movieSlideList.currentIndex = insertionIndex
+            movieClipList.currentIndex = movieClipSources.length + insertionIndex
         }
         function editTextSlide(index) {
             if (index < 0 || index >= movieSlides.length) return
@@ -691,6 +791,7 @@ Item {
             slide.text = text
             slides[index] = slide
             movieSlides = slides
+            movieClipList.currentIndex = movieClipSources.length + index
         }
         function recomputeMovie() {
             if (movieSlides.length > 0) {
@@ -706,6 +807,7 @@ Item {
             movieSlides = []
             movieSlideSelection = []
             movieSlideEditingIndex = -1
+            movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
             if (controller)
@@ -719,7 +821,9 @@ Item {
             var meret = sizeOptions[movieHeightBox.currentIndex]
             var sources = movieClipSources.slice(0)
             if (movieSoloClip.checked && sources.length) {
-                var selected = movieClipList.currentIndex < 0 ? 0 : movieClipList.currentIndex
+                var selected = movieClipList.currentIndex < 0
+                        || movieClipList.currentIndex >= sources.length
+                    ? 0 : movieClipList.currentIndex
                 sources = [sources[selected]]
             }
             sources = sources.slice(0, movieUsedPhotoCount)
@@ -800,7 +904,9 @@ Item {
                                 onClicked: {
                                     moviePreviewTimer.stop()
                                     var selected = movieClipList.currentIndex
-                                    if (selected < 0) selected = 0
+                                    if (selected < 0
+                                            || selected >= movieDialog.movieClipSources.length)
+                                        selected = 0
                                     movieDialog.previewIndex = selected
                                     movieDialog.previewSource =
                                         movieDialog.movieClipSources.length
@@ -932,7 +1038,14 @@ Item {
                                 elide: Text.ElideMiddle
                             }
                             Button { objectName: "movieAddAudioButton"; text: qsTr("Load…"); onClicked: movieAudioDialog.open() }
-                            Button { objectName: "movieRemoveAudioButton"; text: qsTr("Clear"); onClicked: movieDialog.audioFile = "" }
+                            Button {
+                                objectName: "movieRemoveAudioButton"
+                                text: qsTr("Clear")
+                                onClicked: {
+                                    movieDialog.audioFile = ""
+                                    movieDialog.audioFileFromFolderMusic = false
+                                }
+                            }
                         }
                         RowLayout {
                             Layout.fillWidth: true
@@ -1108,17 +1221,23 @@ Item {
                             property alias contentHeight: movieSlideList.contentHeight
                             property alias currentIndex: movieSlideList.currentIndex
                             property alias contentY: movieSlideList.contentY
-                            ListView {
-                                id: movieSlideList
-                                objectName: "movieSlideList"
-                                anchors.fill: parent
-                                model: movieDialog.movieSlides
-                                onCurrentIndexChanged: movieDialog.loadTextSlide()
-                                delegate: ItemDelegate {
-                                    id: movieSlideDelegate
-                                    objectName: "movieSlideDelegate" + index
-                                    width: movieSlideList.width
-                                    text: modelData.text
+                    ListView {
+                        id: movieSlideList
+                        objectName: "movieSlideList"
+                        anchors.fill: parent
+                        model: movieDialog.movieSlides
+                        onCurrentIndexChanged: {
+                            movieDialog.loadTextSlide()
+                            if (currentIndex >= 0) {
+                                movieClipList.currentIndex =
+                                    movieDialog.movieClipSources.length + currentIndex
+                            }
+                        }
+                        delegate: ItemDelegate {
+                            id: movieSlideDelegate
+                            objectName: "movieSlideDelegate" + index
+                            width: movieSlideList.width
+                            text: qsTr("Text Slide")
                                     highlighted: movieDialog.movieSlideSelection.indexOf(index) >= 0
                                     MouseArea {
                                         id: movieSlidePointer
@@ -1238,10 +1357,18 @@ Item {
                             ToolTip.visible: hovered
                             ToolTip.delay: Theme.tooltipDelay
                             onClicked: {
-                                if (movieClipList.currentIndex < 0) return
+                                var selected = movieClipList.currentIndex
+                                if (selected < 0) return
+                                if (selected >= movieDialog.movieClipSources.length) {
+                                    movieDialog.removeTextSlide()
+                                    return
+                                }
                                 var sources = movieDialog.movieClipSources.slice(0)
-                                sources.splice(movieClipList.currentIndex, 1)
+                                sources.splice(selected, 1)
                                 movieDialog.movieClipSources = sources
+                                movieClipList.currentIndex = Math.min(
+                                    selected,
+                                    sources.length + movieDialog.movieSlides.length - 1)
                             }
                         }
                         CheckBox { id: movieSoloClip; objectName: "movieSoloClip"; text: qsTr("Play selected clip only") }
@@ -1251,12 +1378,12 @@ Item {
                         objectName: "movieClipList"
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        model: controller && typeof controller.movieClipNames === "function"
-                                ? controller.movieClipNames(movieDialog.movieClipSources) : []
+                        model: movieDialog.movieFilmstripItems
                         delegate: ItemDelegate {
+                            objectName: "movieClipDelegate" + index
                             width: movieClipList.width
-                            text: modelData
-                            onClicked: movieClipList.currentIndex = index
+                            text: modelData.name
+                            onClicked: movieDialog.selectMovieFilmstripItem(index)
                         }
                     }
                 }
@@ -1271,7 +1398,8 @@ Item {
                     Item {
                         objectName: "moviePreviewViewport"
                         Layout.preferredWidth: 240
-                        Layout.preferredHeight: 140
+                        // Az infósor külön sora ne szorítsa le a filmvezérlőket.
+                        Layout.preferredHeight: 118
                         clip: true
                         Image {
                             id: moviePreviewImage
@@ -1383,6 +1511,13 @@ Item {
                         onClicked: movieDialog.togglePreviewFullscreen()
                     }
                 }
+                Text {
+                    objectName: "makemoviepanel/infotext"
+                    Layout.fillWidth: true
+                    elide: Text.ElideMiddle
+                    color: Theme.textGray
+                    text: movieDialog.movieInfoText()
+                }
             }
             RowLayout {
                 objectName: "movieFooter"
@@ -1449,7 +1584,10 @@ Item {
                 ? qsTr("Music files (*.mp3, *.wma)")
                 : qsTr("Music files (*.mp3, *.m4a)"),
         ]
-        onAccepted: movieDialog.audioFile = selectedFile.toString()
+        onAccepted: {
+            movieDialog.audioFile = selectedFile.toString()
+            movieDialog.audioFileFromFolderMusic = false
+        }
     }
 
     ColorDialog {

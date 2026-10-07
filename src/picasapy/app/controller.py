@@ -46,6 +46,7 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
+from .viewer_startup_controller import ViewerStartupMixin
 from .frame_capture_controller import FrameCaptureMixin
 from .movie_trim_controller import MovieTrimMixin
 from .batch_effect_controller import BatchEffectMixin
@@ -93,8 +94,10 @@ from .side_pane_controller import SidePaneMixin
 from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
+from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+_FILETYPE_SNAPSHOT_UNSET = object()
 
 #: A bal oldali mappapanel szélessége (#322) — a felhasználó húzhatja, az
 #: érték a QSettings-ben él. A határok azt védik ki, hogy egy elrontott
@@ -174,6 +177,7 @@ class AppController(
     TesztuzemMixin,
     AppearanceMixin,
     ColorManagementMixin,
+    ViewerStartupMixin,
     MovieTrimMixin,
     # #1838: a `capture_frame` — a vágás-szelet `_vago_sor` kapuját használja
     FrameCaptureMixin,
@@ -287,6 +291,9 @@ class AppController(
         self._search_result_count = 0  # összes találat (#7, a bal paneli sorhoz)
         self._search_groups: tuple = ()  # a rács mappánkénti csoportosításához
         self._settings = settings
+        # A háttérben futó szkennelések ezt az immutable pillanatképet
+        # használják; a QSettings-et a GUI-szálon olvassuk/írjuk.
+        self._filetype_scan_snapshot = load_enabled_filetypes(self._get_settings())
         self._thumb_caption_mode = self._get_settings().value(
             "view/thumbCaption", "none"
         )
@@ -316,6 +323,7 @@ class AppController(
         self._init_appearance()
         self._init_editor_controls()
         self._init_color_management()  # #1725
+        self._init_viewer_startup()  # #4432
         self._init_language()
         self._init_display_mode()
         # #26 (3. lépcső): a bal hasáb Emberek gyűjteménye — a PeopleMixin
@@ -591,7 +599,9 @@ class AppController(
 
     @Property(list, notify=statusChanged)
     def slideshowMusicTrackUrls(self):  # noqa: N802
-        """A kiválasztott mappában lévő MP3-fájlok URL-jei rendezett listában."""
+        """A mappához rendelt zene, vagy a közös diavetítési zenemappa."""
+        if self._current_folder and self.folderMusicEnabled(self._current_folder):
+            return self.folderMusicTrackUrls(self._current_folder)
         folder = Path(self.slideshowMusicFolder).expanduser()
         try:
             if not folder.is_dir():
@@ -1214,8 +1224,9 @@ class AppController(
         text = text.strip()
         ini_path = Path(folder_path) / PICASA_INI_NAME
 
-        # #137: ütközésbiztos írás — a párhuzamosan futó eredeti Picasa
-        # módosítása nem veszhet el (a mutate tiszta, újrajátszható)
+        # #137: útvonalanként soros írás — az előzetes ujjlenyomat-
+        # ellenőrzésig észlelt Picasa-módosítás újrajátszódik. A check/save
+        # közti külső írás teljes kizárását a fájlrendszer nem garantálja.
         def mutate(document):
             if text:
                 return document.with_value("Picasa", "description", text)
@@ -1467,18 +1478,27 @@ class AppController(
 
     # -- belső --------------------------------------------------------------
 
-    @staticmethod
-    def _sync_tree(conn, folder: str, progress=None) -> None:
+    def _sync_tree(
+        self,
+        conn,
+        folder: str,
+        progress=None,
+        enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET,
+    ) -> None:
         """Indirekció a mappa-resynchez (#150): a mixinek ezen át hívják a
         `sync_tree`-t, így a tesztek patch-pontja (a modul-szintű
         `picasapy.app.controller.sync_tree`) változatlanul él.
 
         #209: az opcionális `progress` callback (worker-szál!) mappánkénti
         haladás-jelzést ad tovább a `sync_tree`-nek."""
-        if progress is None:
-            sync_tree(conn, folder)
-        else:
-            sync_tree(conn, folder, progress=progress)
+        if enabled_filetypes is _FILETYPE_SNAPSHOT_UNSET:
+            enabled_filetypes = self._filetype_scan_snapshot
+        kwargs = {}
+        if progress is not None:
+            kwargs["progress"] = progress
+        if enabled_filetypes is not None:
+            kwargs["enabled_filetypes"] = enabled_filetypes
+        sync_tree(conn, folder, **kwargs)
 
     def _show_filtered(self, records, elapsed: float) -> None:
         """Szűrt nézet megjelenítése a ZÖLD EREDMÉNYSÁV szövegével együtt.

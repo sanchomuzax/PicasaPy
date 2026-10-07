@@ -125,7 +125,7 @@ class EffectsClipboardMixin:
         with open_index(self._db_path) as conn:
             for folder, folder_photos in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                # #137: ütközésbiztos mentés. A beillesztés ELŐTTI (nyers)
+                # #137: útvonalanként soros, best-effort mentés. A beillesztés ELŐTTI (nyers)
                 # értékeket a mutate-en belül olvassuk ki, hogy ütközéskori
                 # újrajátszásnál a FRISS (más író általi) alapállapotot
                 # tükrözzék; az `entries` listát minden hívás felülírja

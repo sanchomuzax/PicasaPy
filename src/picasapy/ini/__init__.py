@@ -1,12 +1,21 @@
 """.picasa.ini olvasás/írás — kétirányú Picasa 3.x kompatibilitás."""
 
 from .albums import Album, albums_of, parse_album_refs, serialize_album_refs
-from .contacts import Contact, contacts_of, ensure_contact, find_contact_id
+from .contacts import (
+    Contact,
+    contacts_of,
+    ensure_contact,
+    find_contact_id,
+    with_contact,
+    without_contact,
+)
 from .contacts_xml import (
     ContactXmlEntry,
     apply_contacts_xml,
     load_contacts_xml,
     parse_contacts_xml,
+    save_contacts_xml,
+    serialize_contacts_xml,
 )
 from .document import (
     NO_SOURCE_FILE,
@@ -64,6 +73,7 @@ from .folder_date import (
     with_folder_date_override,
     without_folder_date_override,
 )
+from .folder_music import read_folder_music, with_folder_music
 from .io import (
     IniConflictError,
     IniSaveError,
@@ -119,11 +129,14 @@ __all__ = [
     "max_param_count",
     "parse_album_refs",
     "parse_contacts_xml",
+    "save_contacts_xml",
+    "serialize_contacts_xml",
     "parse_document",
     "parse_faces",
     "parse_filters",
     "parse_reanimated_eye_color",
     "read_folder_category",
+    "read_folder_music",
     "read_folder_date_override",
     "save_document",
     "serialize_album_refs",
@@ -135,9 +148,12 @@ __all__ = [
     "validate_op_for_write",
     "with_face",
     "with_folder_date_override",
+    "with_folder_music",
+    "with_contact",
     "with_reassigned_face",
     "without_face",
     "without_face_at_rect",
     "without_faces",
     "without_folder_date_override",
+    "without_contact",
 ]

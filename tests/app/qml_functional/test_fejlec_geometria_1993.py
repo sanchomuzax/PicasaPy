@@ -28,8 +28,10 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QObject
+import pytest
+from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
+from PySide6.QtTest import QTest
 from tests.support.qml_blokk import blokk_horgonyra
 
 #: `globalbuttons/lfs_n` / `rfs_n`
@@ -105,6 +107,33 @@ class TestAVisszaGomb:
         hibája volt."""
         window, _c, _e = qml_app
         assert _elem(window, "viewerBackButton") is not None
+
+    @pytest.mark.parametrize("magassageltolas", (-5, 0, 5))
+    def test_kattintasa_visszater_a_konyvtarba(
+        self, qml_app, qt_app, magassageltolas
+    ):
+        window, controller, _e = qml_app
+        cel_magassag = window.height() + magassageltolas
+        window.setHeight(cel_magassag)
+        assert _var(qt_app, lambda: window.height() == cel_magassag)
+        controller.setSingleClickExitEnabled(True)
+        window.setProperty("viewerOpen", True)
+        assert _var(qt_app, lambda: window.property("viewerOpen") is True)
+
+        gomb = _elem(window, "viewerBackButton")
+        assert gomb is not None
+        assert _var(qt_app, lambda: gomb.width() > 0 and gomb.height() > 0)
+        pont = gomb.mapToScene(
+            QPointF(gomb.width() / 2, gomb.height() / 2)
+        ).toPoint()
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            pont,
+        )
+
+        assert _var(qt_app, lambda: window.property("viewerOpen") is False)
 
     def test_van_IKONJA_a_mert_merettel(self, qml_app, qt_app):
         window, _c, _e = qml_app

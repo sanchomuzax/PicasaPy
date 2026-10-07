@@ -116,7 +116,7 @@ class TestFacesFor:
 
 
 # -- írás (#26, 2. kör): arc-téglalap rajzolása/átnevezése/törlése a --------
-# nézőben — a csillag/album minta (update_document, ütközésbiztos írás).
+# nézőben — a csillag/album minta (update_document, útvonalankénti szerializálás).
 
 _RECT = decode_rect64("3f845bcb59418507")
 _RECT2 = decode_rect64("10000000f1ddff49")

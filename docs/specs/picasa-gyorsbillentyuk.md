@@ -500,7 +500,7 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 `…/DocumentTabStrip.qml`, `…/PhotoViewer.qml`,
 `…/SlideshowView.qml`, `…/LightboxFeed.qml`, `…/CollageCanvas.qml`.
 
-**Aktuális #4339-es leltár (2026-10-06):** a `src/picasapy/app/qml` 187 QML-fájljában 53 `Shortcut` deklaráció van nyolc fájlban; 52 sor ad szó szerinti `sequence`-et, 47 eltérő literális billentyűsorozattal. A részletes 34 kombinációs táblázat alább a 2026-08-25-i állapotfelvétel; az érintett mai QML-kötések és feltételek a §6.1-ben vannak.
+**A #4339-es leltár pillanatfelvétele (2026-10-06, a #4398 előtti forrásállapot):** a `src/picasapy/app/qml` 187 QML-fájljában 53 `Shortcut` deklarációt számoltunk nyolc fájlban; 52 sor adott szó szerinti `sequence`-et, 47 eltérő literális billentyűsorozattal. A 2026-08-25-i 34 kombinációs táblázat és a §6.1 alatti QML-megfigyelések történeti állapotot rögzítenek. A #4398 szerinti aktuális, 54 kötéses leltárt és a fókuszkapukat a §6.2 tartalmazza.
 
 | billentyű | eredeti funkció | nálunk | hol |
 |---|---|---|---|
@@ -555,15 +555,80 @@ fenti táblával:
 A 2026-08-25-i snapshot szerint nálunk: **20 megvan**, **2 eltér** (`Delete`, `Esc`), **12 hiányzik**.
 
 
-### 6.1 #4339 — helyi menüfelirat, billentyűfogadó és mai QML-állapot (2026-10-06)
+### 6.1 #4339 — helyi menüfelirat, billentyűfogadó és QML-állapot a #4398 előtt (2026-10-06)
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A 44 helyi rekord a kilenc menübirtokos helyi menüben jelenik meg (§4.1). A `+0x04` mező feliratot épít (`0x00a6aee0` → `0x00a6b250`); a `0x00a6ade0` csak a felirathoz oldja fel a billentyűt. A könyvtárnézeti tényleges fogadó a `CThumbUI` `0x005e6710` kezelője, saját fókusz-/nézetfeltételekkel. | 53 `Shortcut` deklaráció nyolc QML-fájlban. A főablak `Ctrl+A/D/I/S` kötésein nincs külön `enabled`/szövegmező-kapu; a `Ctrl+C/X/V` kötéseken van (`!_szovegmezoneVanFokusz`, `Main.qml:1119–1127,1271–1273`). | A helyi menü szövegét ne kezeljük gyorsítóregisztrációnak. Minden billentyűműveletnél dokumentáljuk és érvényesítsük a gazdanézetet, a fókuszt és az eseményfogadót; a szövegmezők vágólapművelete maradjon a mezőé. |
+| A 44 helyi rekord a kilenc menübirtokos helyi menüben jelenik meg (§4.1). A `+0x04` mező feliratot épít (`0x00a6aee0` → `0x00a6b250`); a `0x00a6ade0` csak a felirathoz oldja fel a billentyűt. A könyvtárnézeti tényleges fogadó a `CThumbUI` `0x005e6710` kezelője, saját fókusz-/nézetfeltételekkel. | A #4398 előtti pillanatfelvétel 53 `Shortcut` deklarációt talált nyolc QML-fájlban. Akkor a főablak `Ctrl+A/D/I/S` kötésein nem volt külön `enabled`/szövegmező-kapu; a `Ctrl+C/X/V` kötéseken volt ilyen. | A helyi menü szövegét ne kezeljük gyorsítóregisztrációnak. Minden billentyűműveletnél dokumentáljuk és érvényesítsük a gazdanézetet, a fókuszt és az eseményfogadót; a szövegmezők vágólapművelete maradjon a mezőé. A #4398 utáni állapotot és a 54 kötés tábláját lásd a §6.2-ben. |
 | A könyvtári `CThumbUI` `+0x332f != 0` ág keydownon `Esc`, nyilak, Space és feltételes számjegyek; a szerkesztő `+`/`-`/`=`/`_` és Shift-útja látható 3–5. fülhöz kötött (`0x00760970`, `0x005f95d0`, `0x005f9690`, `0x009e39b0`). | A `Ctrl+Delete` két `Main.qml` kötésre válik szét: rácsban `!viewerOpen && selectedRows().length>0`, nézőben `viewerOpen && currentIndex>=0` (`1441–1463`). A `Ctrl+H` a `TrayBar`-ban csak létező ablak, nézőn kívüli állapot és nem üres kijelölés mellett aktív (`128–134`). A `Ctrl+Return` a menüsávban `photoActionsEnabled` feltételű (`PicasaMenuBar.qml:403–407`). | A QML-kötések hatókörét nézetenként rögzítsük; a billentyű ne fusson le másik nézet vagy üres kijelölés esetén. Az eredeti `+0x332f` bájt szemantikáját (`NINCS MEG`) ne találgassuk. |
 | A `ytPopupListNode` `0x00a64050` billentyűfallbackja csak Esc/Enter/Space; a `CThumbUI` saját fogadója a fókuszált gyerek továbbítása után saját kapukkal folytatja. | Az `Enter` nem `Shortcut`: a `LightboxFeed.qml:368–377` csak `selectedIndex >= 0` esetén nyit, a `DocumentTabStrip` Esc-kötése csak aktív projektlap mellett él (`DocumentTabStrip.qml:140–145`), a `PhotoViewer` külön `Keys.onEscapePressed` ágat használ. A QML-literalok között `Ctrl+Shift+O`-hoz nincs `sequence` kötés. | Tartsuk meg a nézeti `Keys`-fogadókat ott, ahol az eredeti is a fókuszált nézetnek továbbít; ne adjunk ezek helyett ablak-szintű kötést. A nyitott `Ctrl+Shift+O` csak külön funkciódöntéssel vehető fel. |
 
 A `Ctrl+Shift+O`-ról ez a mérés csak azt állítja, hogy a mai QML-ben nincs hozzá literális `Shortcut.sequence`; a menükben maradt „Open File” felirat önmagában nem bizonyít aktív funkciót. A 53/8/52/47 leltárforrás egy célzott, teljes `src/picasapy/app/qml/**/*.qml` fájlbejárás; nem futtatási mérés.
+
+### 6.2 #4398 — az aktuális 54 QML-kötés gazdanézete és fókuszkapuja (2026-10-06)
+
+A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a jelenlegi forrásban **54 `Shortcut` deklaráció** található ugyanabban a nyolc QML-fájlban. A táblázat minden deklarációt külön sorban rögzít, így az ismétlődő billentyűk sem olvadnak össze. A „gazda” a QML-fogadó; ez nem állítja, hogy a 44 helyi menürekord egyenként össze van kötve ezekkel a fogadókkal.
+
+| # | QML-gazda / kötés | Billentyű | Nézet- és fókuszkapu |
+|---:|---|---|---|
+| 1 | `Main.qml` — `toggleRightDrawerShortcut` | `Ctrl+0` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 2 | `Main.qml` — `searchShortcut` | `Ctrl+F` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 3 | `Main.qml` — `tagsPanelAltShortcut` | `Ctrl+K` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 4 | `Main.qml` — `editViewShortcut` | `Ctrl+3` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 5 | `Main.qml` — `dupeSearchShortcut` | `Ctrl+F6` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 6 | `Main.qml` — `findSimilarShortcut` | `Ctrl+F7` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 7 | `Main.qml` — `clearSimilarShortcut` | `Ctrl+F8` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 8 | `Main.qml` — `batchBwShortcut` | `Ctrl+Shift+B` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 9 | `Main.qml` — `batchEnhanceShortcut` | `Ctrl+Shift+E` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 10 | `Main.qml` — `helpShortcut` | `F1` | Főablak; nincs fókuszban szövegmező és nincs külön ablakos párbeszéd. |
+| 11 | `Main.qml` — `helpContextShortcut` | `Shift+F1` | Főablak; nincs fókuszban szövegmező és nincs külön ablakos párbeszéd. |
+| 12 | `Main.qml` — `selectAll` | `Ctrl+A` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 13 | `Main.qml` — `clearSelection` | `Ctrl+D` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 14 | `Main.qml` — `invertSelection` | `Ctrl+I` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 15 | `Main.qml` — Mentés | `Ctrl+S` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 16 | `Main.qml` — fájlok másolása | `Ctrl+C` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 17 | `Main.qml` — fájlok kivágása | `Ctrl+X` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 18 | `Main.qml` — vágólapról beillesztés | `Ctrl+V` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 19 | `Main.qml` — forgatás jobbra | `Ctrl+R` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 20 | `Main.qml` — forgatás balra | `Ctrl+Shift+R` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 21 | `Main.qml` — `flipHorizontalShortcut` | `Ctrl+Shift+H` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 22 | `Main.qml` — `flipVerticalShortcut` | `Ctrl+Shift+V` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 23 | `Main.qml` — diavetítés | `Ctrl+4` | Főablak; nincs fókuszban szövegmező. A `Shortcut` deklaráció nem állít be külön nézetkaput. |
+| 24 | `Main.qml` — címkékpanel | `Ctrl+T` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 25 | `Main.qml` — tulajdonságpanel | `Alt+Return` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 26 | `Main.qml` — időrend | `Ctrl+5` | Állandóan tiltott (`enabled: false`). |
+| 27 | `Main.qml` — átnevezés | `F2` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. A kijelölés kezelőfeltétel, nem külön `Shortcut`-kapu. |
+| 28 | `Main.qml` — exportálás mappába | `Ctrl+Shift+S` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 29 | `Main.qml` — `shortcutDeleteFromDiskGrid` | `Ctrl+Delete` | Könyvtárnézet; `viewerOpen == false`, nincs szövegfókusz és van kijelölt sor. |
+| 30 | `Main.qml` — `shortcutDeleteFromDiskViewer` | `Ctrl+Delete` | Néző; `viewerOpen == true`, nincs szövegfókusz és van aktuális kép. |
+| 31 | `Main.qml` — `openInEditorShortcut` | `Ctrl+Shift+O` | Főablakban engedélyezett fotóművelet és nincs szövegfókusz; külön nézetkaput nem deklarál. |
+| 32 | `Main.qml` — `emailShortcut` | `Ctrl+E` | Főablakban engedélyezett fotóművelet és nincs szövegfókusz; külön nézetkaput nem deklarál. |
+| 33 | `Main.qml` — import párbeszéd súgója | `Shift+F1` | Import párbeszéd nyitva és nincs szövegfókusz. |
+| 34 | `DocumentTabStrip.qml` — projektlap visszalépés | `Esc` | Projektlapok vannak, nem könyvtári nézet, nincs szövegfókusz. |
+| 35 | `DocumentTabStrip.qml` — projektlap bezárás | `Ctrl+W` | Projektlapok vannak, nem könyvtári nézet, nincs szövegfókusz. |
+| 36 | `DocumentTabStrip.qml` — következő projektlap | `Ctrl+Tab` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 37 | `DocumentTabStrip.qml` — előző projektlap | `Ctrl+Shift+Tab` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 38 | `DocumentTabStrip.qml` — következő lap | `Ctrl+Right` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 39 | `DocumentTabStrip.qml` — előző lap | `Ctrl+Left` | Projektlapok vannak, nincs folyamatban bezárás-megerősítés és nincs szövegfókusz. |
+| 40 | `EditorToolBar.qml` — kiegyenesítés visszavonása | `Escape` | A szerkesztő eszközsávja látható és nincs szövegfókusz. |
+| 41 | `ExportDialogs.qml` — párbeszéd súgója | `Shift+F1` | Export párbeszéd nyitva és nincs szövegfókusz. |
+| 42 | `FolderManagerDialog.qml` — `StandardKey.Cancel` | `Escape` | A mappakezelő ablak látható és nincs a saját ablakában szövegfókusz. |
+| 43 | `PicasaMenuBar.qml` — `shortcutSmallThumbnails` | `Ctrl+1` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 44 | `PicasaMenuBar.qml` — `shortcutNormalThumbnails` | `Ctrl+2` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 45 | `PicasaMenuBar.qml` — `shortcutLocateOnDisk` | `Ctrl+Return` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 46 | `PicasaMenuBar.qml` — `shortcutDeleteFromDisk` | `Delete` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 47 | `PicasaMenuBar.qml` — `shortcutPrint` | `Ctrl+P` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 48 | `PicasaMenuBar.qml` — `shortcutPrintContactSheet` | `Ctrl+Shift+P` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 49 | `PicasaMenuBar.qml` — `shortcutImportFrom` | `Ctrl+M` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 50 | `PicasaMenuBar.qml` — `shortcutAddFile` | `Ctrl+O` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
+| 51 | `PicasaMenuBar.qml` — `shortcutNewAlbum` | `Ctrl+N` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 52 | `TrayBar.qml` — `trayKeepSelectionShortcut` | `Ctrl+H` | Létezik főablak, nem néző, van tálca-kijelölés és nincs szövegfókusz. |
+| 53 | `WindowHelp.qml` — általános súgó | `F1` | A súgóablak aktív és nincs benne szövegfókusz. |
+| 54 | `WindowHelp.qml` — témasúgó | `Shift+F1` | A súgóablak aktív és nincs benne szövegfókusz. |
+
+A főablak kötéseinél a táblázat a forrásban kifejezett `enabled`-kaput írja le; ahol nincs nézetkapu, ott nem következtetünk a 44 eredeti helyi rekord parancs-hozzárendelésére. Az eredetihez nem igazolt `+0x332f` módjelző szemantikája továbbra is nyitott. `PhotoViewer.qml` nézeti `Keys`-fogadói (`Esc`, nyilak, `Return`, szóköz, `F`, `Shift+F`, `Ctrl+Delete`) szövegfókuszban visszatérnek a mezőnek, `PicasaSlider.qml` pedig csak a `EditorParamPanel.qml` 3–5. látható füléhez kapja meg a `+`, `=`, `-`, `_` léptetés engedélyét.
+
+Az ellenőrző teszt valódi billentyűleütéssel próbálja mind az 54 deklaráció szekvenciáját keresőmező-fókuszban; külön valódi eseményekkel vizsgálja a könyvtári `Ctrl+1` editorbeli tiltását, az editor 2. fülén a négy sliderbillentyű tiltását és a 3. fülön működését, továbbá a kereső-, felirat- és címkemező saját szerkesztőbillentyűit. Ez nem bizonyítja a 44 rekord egyedi parancs-megfeleltetését.
 ---
 
 ## 7. Amit ez a kör NEM vizsgált (kimondva)
@@ -1230,3 +1295,67 @@ ezért nem nyitunk rá kérdést.
 **Bizalmi fok: megerősített** (a két tábla teljes kiolvasása, a
 továbbító azonosítása, és a `biBitCount`-helyesbítés közvetlen
 kiolvasásból).
+
+## 11. #4462 — eredeti billentyűk paritása és CI-őre
+
+A mérce a lap korábbi, forráskritikával ellátott táblája: a keymap-komment önmagában nem parancsszerződés. A 3.9 tényleges menürekordja, a 10. szakasz billentyű-dispatch mérése és a 6.2 szakasz mai QML-kötése együtt dönti el, hogy az eredeti billentyű milyen műveletet jelent. A fókuszkapu a #4398 szerinti: a szövegmező saját szerkesztőbillentyűi elsőbbséget kapnak; a könyvtári billentyűk nem szólnak bele a néző vagy a külön párbeszéd billentyűzésébe.
+
+Az állapot mező értékei:
+
+- **megvan és működik** — az eredeti parancsot a jelenlegi QML-útvonal végzi, a felsorolt nézet- és fókuszkapuval;
+- **hiányzik** — az eredeti parancsot vagy a billentyűt még nem végzi el a megfelelő mai művelet;
+- **nem cél** — a forrás bizonyítja, hogy a keymap-komment nem aktív kötés, az eredeti rekesz üres, vagy a #4443 kivétel él;
+- **tisztázandó** — a forrásban nincs elég adat a mai parancs-hozzárendelés megállapításához; itt nem találgatunk.
+
+| # | eredeti billentyű | eredeti parancs a mért 3.9-ben | PicasaPy-kötés / parancs | állapot | nézet- és fókuszkapu | CI-ellenőrzés |
+|---:|---|---|---|---|---|---|
+| 1 | Ctrl+N | Új album | objectName=shortcutNewAlbum → új album | **megvan és működik** | Főablak; fotóműveleti kapu; szövegfókusz nélkül | tests/app/qml_functional/test_gyorsbillentyuk_1616.py |
+| 2 | Ctrl+O | Fájl felvétele | objectName=shortcutAddFile → fájlfelvétel | **megvan és működik** | Könyvtárnézet; nézőn kívül; szövegfókusz nélkül | tests/app/qml_functional/test_gyorsbillentyuk_1616.py |
+| 3 | Ctrl+M | Importálás forrása | objectName=shortcutImportFrom → import párbeszéd | **megvan és működik** | Könyvtárnézet; nézőn kívül; szövegfókusz nélkül | tests/app/qml_functional/test_gyorsbillentyuk_1616.py |
+| 4 | Ctrl+Shift+O | Kijelölt fájlok megnyitása a rendszer szerkesztőjében | objectName=openInEditorShortcut → alapértelmezett fájlmegnyitó | **megvan és működik** | Főablak; érvényes fotóművelet; szövegfókusz nélkül | tests/app/qml_functional/test_gyorsbillentyuk_1616.py |
+| 5 | F2 | Átnevezés | sequence=F2 → átnevezés | **megvan és működik** | Könyvtárnézet; van kijelölés; szövegfókusz nélkül | tests/app/test_qml_fileops_export.py |
+| 6 | Ctrl+Shift+S | Kép exportálása mappába | sequence=Ctrl+Shift+S → export párbeszéd | **megvan és működik** | Könyvtárnézet; van kijelölés; szövegfókusz nélkül | tests/app/test_qml_fileops_export.py |
+| 7 | Ctrl+S | Mentés | sequence=Ctrl+S → szerkesztés mentése | **megvan és működik** | Főablak; szövegfókusz nélkül; menthető szerkesztés esetén aktív | tests/app/qml_functional/test_photo_menu_commands.py |
+| 8 | Ctrl+Enter | Keresés a lemezen | objectName=shortcutLocateOnDisk → fájlkezelő | **megvan és működik** | Érvényes fotóművelet; szövegfókusz nélkül | tests/app/test_kereses_almenu_1613.py |
+| 9 | Delete | Törlés lemezről vagy eltávolítás az albumból | objectName=shortcutDeleteFromDisk → nézetfüggő törlési út | **megvan és működik** | Aktív könyvtárnézet; szövegfókusz nélkül; albumtagság szerint vált | tests/app/qml_functional/test_torles_billentyu_felulet_1418.py |
+| 10 | Ctrl+P | Nyomtatás | objectName=shortcutPrint → nyomtatási párbeszéd | **megvan és működik** | Főablak; érvényes fotóművelet; szövegfókusz nélkül | tests/app/test_qml_tray_print_email.py |
+| 11 | Ctrl+E | E-mail | objectName=emailShortcut → kijelölés e-mailben | **megvan és működik** | Főablak; van kijelölés; szövegfókusz nélkül | tests/app/test_email_controller.py |
+| 12 | Ctrl+T | Címkék panel | sequence=Ctrl+T → Címkék fiók | **megvan és működik** | Könyvtárnézet; nézőn kívül; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 13 | Ctrl+X | Kivágás | sequence=Ctrl+X → fájlok kivágása | **megvan és működik** | Könyvtárnézet; van kijelölés; szövegfókusz nélkül | tests/app/test_vagolap_beillesztes_1526.py |
+| 14 | Ctrl+C | Másolás | sequence=Ctrl+C → fájlok másolása | **megvan és működik** | Könyvtárnézet; van kijelölés; szövegfókusz nélkül | tests/app/test_vagolap_beillesztes_1526.py |
+| 15 | Ctrl+V | Beillesztés | sequence=Ctrl+V → vágólap tartalmának beillesztése | **megvan és működik** | Könyvtárnézet; szövegfókusz esetén a mezőé a billentyű | tests/app/test_vagolap_beillesztes_1526.py |
+| 16 | Ctrl+A | Összes kijelölése | sequence=Ctrl+A → könyvtári kijelölés | **megvan és működik** | Könyvtárnézet; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 17 | Ctrl+I | Kiválasztás megfordítása | sequence=Ctrl+I → könyvtári kijelölés megfordítása | **megvan és működik** | Könyvtárnézet; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 18 | Ctrl+D | Kijelölés törlése | sequence=Ctrl+D → könyvtári kijelölés ürítése | **megvan és működik** | Könyvtárnézet; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 19 | Ctrl+1 | Kis indexképek | objectName=shortcutSmallThumbnails → kis méret | **megvan és működik** | Könyvtárnézet; szerkesztő nélkül; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 20 | Ctrl+2 | Normál indexképek | objectName=shortcutNormalThumbnails → normál méret | **megvan és működik** | Könyvtárnézet; szerkesztő nélkül; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 21 | Ctrl+3 | Szerkesztési nézet | sequence=Ctrl+3 → megjelenítés és szerkesztés | **megvan és működik** | Könyvtárnézet; néző nélkül; szövegfókusz nélkül | tests/app/qml_functional/test_enter_megnyit_1417.py |
+| 22 | Ctrl+K | A keymap-komment szerint Kulcsszavak; a mért menürekord nem ad hozzá Ctrl+K-t | objectName=tagsPanelAltShortcut → PicasaPy-alias a Címkék panelhez | **nem cél — a 2.4 és 3.3 szerint a komment elavult, a tényleges Picasa-kötés Ctrl+T** | A PicasaPy-alias csak könyvtárnézetben és szövegfókusz nélkül él | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 23 | Ctrl+4 | Diavetítés | sequence=Ctrl+4 → diavetítés indítása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/test_qml_slideshow.py |
+| 24 | Ctrl+5 | Időrend | sequence=Ctrl+5 → állandóan tiltott | **nem cél — a Ctrl+5 szándékosan inaktív a #4443-ig** | Mindig tiltott | tests/app/test_qml_timeline.py |
+| 25 | Ctrl+Shift+P | Indexképek nyomtatása | objectName=shortcutPrintContactSheet → indexkép-nyomtatás | **megvan és működik** | Főablak; érvényes fotóművelet; szövegfókusz nélkül | tests/app/test_qml_tray_print_email.py |
+| 26 | Ctrl+W | A keymap-komment szerint weboldal export; a mért menüsávban nincs ilyen billentyű | sequence=Ctrl+W → csak projektlap bezárása | **nem cél — a 10.7 szerint az eredeti dispatchben sincs Ctrl+W ág; a projektlap parancsa PicasaPy-funkció** | Csak nyitott projektlapnál; szövegfókusz nélkül | tests/app/qml_functional/test_projektlap_billentyuk_2170.py |
+| 27 | Ctrl+R | Forgatás jobbra | sequence=Ctrl+R → aktuális kijelölés vagy nézőkép forgatása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/qml_functional/test_photo_menu_commands.py |
+| 28 | Ctrl+Shift+R | Forgatás balra | sequence=Ctrl+Shift+R → aktuális kijelölés vagy nézőkép forgatása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/qml_functional/test_photo_menu_commands.py |
+| 29 | Alt+Enter | Tulajdonságok | sequence=Alt+Return → Tulajdonságok panel | **megvan és működik** | Könyvtárnézet; érvényes fotóművelet; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 30 | F1 | Súgó | sequence=F1 → súgó | **megvan és működik** | Főablak vagy súgóablak; helyi ablak aktív; szövegfókusz nélkül | tests/app/qml_functional/test_sugo_bekotes_2054.py |
+| 31 | Ctrl+Shift+B | Fekete-fehér kötegelt művelet | objectName=batchBwShortcut → meglévő renderlánc-művelet | **megvan és működik** | Könyvtárnézet; szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py |
+| 32 | Ctrl+Shift+E | Jó napom van kötegelt művelet | objectName=batchEnhanceShortcut → meglévő renderlánc-művelet | **megvan és működik** | Könyvtárnézet; szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py |
+| 33 | Ctrl+F | Keresés | objectName=searchShortcut → keresőmező | **megvan és működik** | Könyvtárnézet; keresőmező fókuszában a billentyű a mezőé | tests/app/qml_functional/test_shortcut_focus_4398.py |
+| 34 | Ctrl+H | Kijelölés megtartása a képtálcán | objectName=trayKeepSelectionShortcut → tálca megtartása | **megvan és működik** | Főablak; nem néző; nem üres tálca-kijelölés; szövegfókusz nélkül | tests/app/qml_functional/test_talca_menu_1917.py |
+| 35 | Ctrl+Shift+H | Vízszintes tükrözés | objectName=flipHorizontalShortcut → vízszintes tükrözés | **megvan és működik** | Kijelölés vagy a néző aktuális képe; szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py |
+| 36 | Ctrl+Shift+V | Függőleges tükrözés | objectName=flipVerticalShortcut → függőleges tükrözés | **megvan és működik** | Kijelölés vagy a néző aktuális képe; szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py |
+| 37 | ➖ (ctrl=1, üres billentyű) | Mozgatás az album végére | Nincs eredeti billentyű; nincs mai kötés | **nem cél — a szállított keymap-rekeszben üres az srckey** | Nincs billentyű | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 38 | Ctrl+N | Új album; az 1. rekesz parancsával azonos | objectName=shortcutNewAlbum → ugyanaz az újalbum-útvonal | **megvan és működik** | Az 1. sor kapuja szerint | tests/app/qml_functional/test_gyorsbillentyuk_1616.py |
+| 39 | F11 | Teljes képernyős mód | Nincs általános F11-kötés vagy azonos főablak-művelet | **hiányzik — javasolt jegycím: F11 kapcsolja a képnéző teljes képernyős módját** | A videó külön teljes képernyős gombja nem azonos a főablak F11-parancsával | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 40 | Home | Az első kép kijelölése az albumban | Keys=Qt.Key_Home → fókuszált rács első csoportja | **megvan és működik** | A rács kapja az eseményt; szövegfókuszban a mezőé | tests/app/qml_functional/test_home_end_lapozas_1147.py |
+| 41 | End | Az utolsó kép kijelölése az albumban | Keys=Qt.Key_End → fókuszált rács utolsó csoportja | **megvan és működik** | A rács kapja az eseményt; szövegfókuszban a mezőé | tests/app/qml_functional/test_home_end_lapozas_1147.py |
+| 42 | / | Videó lejátszás/szünet | Nincs igazolt mai kötés | **tisztázandó — a 7. és 10.19. szakasz szerint a videó billentyűzete nincs mérve** | Videólejátszó fókusza szükséges; az eredeti célt nem kötjük ki találgatásból | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 43 | , | Videó visszatekerése | Nincs igazolt mai kötés | **tisztázandó — a 7. és 10.19. szakasz szerint a videó billentyűzete nincs mérve** | Videólejátszó fókusza szükséges; az eredeti célt nem kötjük ki találgatásból | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 44 | . | Videó előretekerése | Nincs igazolt mai kötés | **tisztázandó — a 7. és 10.19. szakasz szerint a videó billentyűzete nincs mérve** | Videólejátszó fókusza szükséges; az eredeti célt nem kötjük ki találgatásból | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 45 | ➖ (nincs billentyű) | Következő kép; az eredeti külön nyílkezelője működik | Keys=Keys.onRightPressed → rács vagy PhotoViewer következő képe | **megvan és működik** | Fókuszált képnézet; nézőben a szövegmező átveszi | tests/app/qml_functional/test_nezo_forrasmeret_3877.py |
+| 46 | ➖ (nincs billentyű) | Előző kép; az eredeti külön nyílkezelője működik | Keys=Keys.onLeftPressed → rács vagy PhotoViewer előző képe | **megvan és működik** | Fókuszált képnézet; nézőben a szövegmező átveszi | tests/app/qml_functional/test_nezo_forrasmeret_3877.py |
+| 47 | ➖ (nincs billentyű) | Automatikus/kézi mód váltása | Nincs azonosított eredeti parancs vagy mai kötés | **tisztázandó — a forrás nem azonosítja a rekesz műveletét** | Nincs megállapítható kapu; nem találgatunk | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 48 | ➖ (nincs billentyű) | Visszatérés a könyvtárnézetbe; a C forrás Esc-kötése | Keys=Keys.onEscapePressed → viewerMenuBackToLibrary út | **megvan és működik** | Néző; aktív szerkesztőművelet előbb megszakad; szövegfókuszban nem zár | tests/app/qml_functional/test_viewer_escape_key_4462.py, tests/app/qml_functional/test_viewer_escape_666.py |
+
+A 22., 26. és 37. sor a keymap-komment/rekesz eltérését rögzíti, nem hibás mai működést. A 39. sor önálló hiány; a 42–44. és 47. sor tisztázandó marad. A #4398 valós QTest.keyClick próbája mind az 54 QML Shortcutot keresőmező-fókusszal ellenőrzi, a paritásőr pedig a 48 eredeti keymap-rekeszt és a QML-horgonyokat tartja számon. A konkrét műveletpróbákat a sorokban hivatkozott meglévő tesztek végzik.

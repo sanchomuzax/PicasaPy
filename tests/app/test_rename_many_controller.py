@@ -5,7 +5,7 @@
 import pytest
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import hangos_hurok
+from support.qt_wait import wait_for_photo_op
 
 
 @pytest.fixture
@@ -18,8 +18,12 @@ def library(tmp_path):
     make_jpeg(
         root / "b.jpg", size=(1024, 768), taken_at="2025:06:02 08:00:00",
     )
+    make_jpeg(
+        root / "c.jpg", size=(640, 480), taken_at="2025:07:03 09:00:00",
+    )
     (root / ".picasa.ini").write_text(
-        "[a.jpg]\nstar=yes\n[b.jpg]\ncaption=nyar\n", encoding="utf-8"
+        "[a.jpg]\nstar=yes\n[b.jpg]\ncaption=nyar\n[c.jpg]\nstar=no\n",
+        encoding="utf-8",
     )
     return root
 
@@ -58,10 +62,7 @@ def _rows_by_name(controller, *names) -> list:
 
 
 def _do_rename(controller, action) -> None:
-
-    loop = hangos_hurok(controller.photoOpFinished)
-    action()
-    loop.exec()
+    wait_for_photo_op(controller, action)
 
 
 class TestRenamePreview:
@@ -95,7 +96,7 @@ class TestRenamePhotosMany:
         assert not (library / "a.jpg").exists()
         assert not (library / "b.jpg").exists()
         names = {p.name for p in controller.photos.photos}
-        assert names == {"nyaralas.jpg", "nyaralas-1.jpg"}
+        assert names == {"nyaralas.jpg", "nyaralas-1.jpg", "c.jpg"}
 
     def test_ini_sections_follow_the_rename(self, controller, library):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
@@ -131,6 +132,43 @@ class TestRenamePhotosMany:
         assert failures  # emberi hibaüzenet érkezett
         assert (library / "a.jpg").exists()
         assert (library / "b.jpg").exists()
+
+    def test_runtime_failure_reports_and_refreshes_partial_renames(
+        self, controller, library, monkeypatch
+    ):
+        import picasapy.fileops.rename as rename_module
+
+        rows = _rows_by_name(controller, "a.jpg", "b.jpg", "c.jpg")
+        real_rename = rename_module._rename
+        calls = 0
+
+        def fail_on_third(source, target):
+            nonlocal calls
+            calls += 1
+            if calls == 3:
+                raise PermissionError("injected third-file failure")
+            real_rename(source, target)
+
+        monkeypatch.setattr(rename_module, "_rename", fail_on_third)
+        failures = []
+        controller.syncFailed.connect(failures.append)
+        _do_rename(
+            controller,
+            lambda: controller.renamePhotosMany(rows, "trip", False, False),
+        )
+
+        assert failures
+        assert "trip.jpg" in failures[-1]
+        assert "trip-1.jpg" in failures[-1]
+        assert "c.jpg" in failures[-1]
+        assert (library / "trip.jpg").exists()
+        assert (library / "trip-1.jpg").exists()
+        assert not (library / "a.jpg").exists()
+        assert not (library / "b.jpg").exists()
+        assert (library / "c.jpg").exists()
+        assert {photo.name for photo in controller.photos.photos} == {
+            "trip.jpg", "trip-1.jpg", "c.jpg",
+        }
 
     def test_empty_base_name_is_a_no_op(self, controller, library):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")

@@ -174,6 +174,12 @@ def test_keresesi_elemlista_es_valodi_felhasznaloi_ut(
         and controller.photos.rowCount() == 2,
     ), "az arc-szűrő kikapcsolása nem állította vissza a fotókat"
 
+    # A könyvtári gyorsbillentyű nem aktív, amíg a keresőmezőé a fókusz.
+    face_filter.forceActiveFocus()
+    qt_app.processEvents()
+    assert field.property("activeFocus") is False
+    assert window.property("_szovegmezoneVanFokusz") is False
+
     # dupesearch: a valódi Ctrl+F6 út megjeleníti a kapcsolót, annak valódi
     # kattintása pedig visszavisz az összes képhez.
     _send_shortcut(

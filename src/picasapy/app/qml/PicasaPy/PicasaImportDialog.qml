@@ -27,6 +27,9 @@ Dialog {
     property bool searching: false
     // igaz, ha a discoverPicasa() már lefutott legalább egyszer
     property bool searched: false
+    // SAJÁT FUNKCIÓ (#4472): a keresés workerhibáját is megmutatjuk.
+    // A controller a kivétel típusát és szövegét is átadja.
+    property string discoveryError: ""
 
     // első induláskor (integrátori bekötés, Main.qml) és a Mappakezelő
     // gombjából is ez indítja a felderítést és nyitja meg a dialógust
@@ -34,6 +37,7 @@ Dialog {
         folderModel.clear()
         searching = true
         searched = false
+        discoveryError = ""
         open()
         discoveryController.discoverPicasa()
     }
@@ -48,6 +52,15 @@ Dialog {
                 folderModel.append({ path: folders[i], picked: true })
             importDialog.searching = false
             importDialog.searched = true
+            importDialog.discoveryError = ""
+        }
+        function onDiscoveryFailed(operation, exceptionType, message) {
+            if (operation !== "interactive")
+                return
+            importDialog.searching = false
+            importDialog.searched = true
+            importDialog.discoveryError = qsTr("The search failed: %1: %2")
+                .arg(exceptionType).arg(message)
         }
         function onDialogRequested() {
             importDialog.openAndDiscover()
@@ -76,11 +89,14 @@ Dialog {
 
         Text {
             id: statusLabel
+            objectName: "picasaImportStatus"
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             font.pixelSize: Theme.fontSize
             color: Theme.ink
             text: {
+                if (importDialog.discoveryError.length > 0)
+                    return importDialog.discoveryError
                 if (importDialog.searching)
                     return qsTr("Looking for a previous Picasa installation…")
                 if (!importDialog.searched)

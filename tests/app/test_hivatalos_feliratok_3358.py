@@ -61,6 +61,8 @@ HIVATALOS = {
     "Right justify text": ("Szöveg jobbra igazítása", "edittextpanel/rightalign"),
     "Ignore all of the selected faces": (
         "Az összes kijelölt arc mellőzése", "unknownfaceheaderpanel/ignore"),
+    "From Faces in Selection...": (
+        "A kijelölésben lévő arcokból…", "eMenuCreateMovie::ID_FACES"),
     "Display Time": ("Megjelenítési idő", "oneup/tpslabel"),
     "seconds": ("másodperc", "OneUpUI::seconds"),
     "Start Point": ("Kezdőpont", "filter_moviestart_label0"),
@@ -136,6 +138,7 @@ ELOFORDULASOK = {
         "Select someone you know and add a name"],
     "PicasaPy/PeoplePanel.qml": [
         "Unnamed people in these photos:", "Unnamed groups of people:"],
+    "PicasaPy/PicasaMenuBar.qml": ["From Faces in Selection..."],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
     # #3575
@@ -240,7 +243,29 @@ BEALLITASOK = {
         "Mozgófilmek küldése másként:", "options/labelgroup53.title"),
     ("OptionsTabFileTypes", "Display JPEG files and:"): (
         "Megjelenítés: JPEG-fájlok és", "options/label61.title"),
-    ("OptionsTabFileTypes", "RAW"): ("RAW formátumok", "options/SupportRAW.title"),
+    ("OptionsTabFileTypes", ".bmp"): (
+        ".bmp", "options/SupportBMP.title"),
+    ("OptionsTabFileTypes", ".gif"): (
+        ".gif", "options/SupportGIF.title"),
+    ("OptionsTabFileTypes", ".png"): (
+        ".png", "options/SupportPNG.title"),
+    ("OptionsTabFileTypes", ".tga"): (
+        ".tga", "options/SupportTGA.title"),
+    ("OptionsTabFileTypes", ".tif, .tiff"): (
+        ".tif, .tiff", "options/SupportTIF.title"),
+    ("OptionsTabFileTypes", ".webp"): (
+        ".webp", "options/SupportWEBP.title"),
+    ("OptionsTabFileTypes", ".psd (Photoshop)"): (
+        ".PSD (Photoshop)", "options/SupportPSD.title"),
+    ("OptionsTabFileTypes", "RAW formats"): (
+        "RAW formátumok", "options/SupportRAW.title"),
+    ("OptionsTabFileTypes", "Supported Formats"): (
+        "Támogatott formátumok", "options/link93.title"),
+    ("OptionsTabFileTypes", "Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)"):
+        ("Mozgófilmek (.mov, .mpg, .m4v, .3gp, .avi, ...)",
+         "options/SupportMovies.title"),
+    ("OptionsTabFileTypes", "Quicktime Movies (.MOV)"): (
+        "Quicktime-filmek (.MOV)", "options/SupportQuicktime.title"),
     ("OptionsTabGeneral", "Help improve PicasaPy:"): (
         "Részvétel a Picasa fejlesztésében:", "options/labelgroup16.title"),
     ("OptionsTabGeneral", "Import destination folder:"): (

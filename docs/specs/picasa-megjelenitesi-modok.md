@@ -1292,6 +1292,51 @@ közül a beállítás-blokkban ezek látszanak: `ViewerFullscreenStartup`,
 `EnableColorManagement`, valamint a társítás-varázsló `setup/ui_option1`
 … `ui_option5` elemei.
 
+#### 12.6.1 A Fotónéző beállítóablaka — `ViewerFullscreenStartup` (#4390)
+
+**Bizalmi fok: megerősített** — a konfigurációs út és a Photo Viewer
+indulási út külön-külön olvassa a beállítást; a második, független
+újralevezetés ugyanazt a kulcsot, vezérlőt és alapértéket találta.
+
+| tulajdonság | eredeti Picasa | bináris bizonyíték |
+|---|---|---|
+| beállítóablak | A `Picasa3.exe` `ID_TOOLS_CONFIG_SLINGSHOT` (`0x9df0`) ága a `0x005ccbff` útvonalon a `0x0040e310` indítót hívja; az `/config` és `/reconfig` kapcsolóval a `PicasaPhotoViewer.exe`-t nyitja. | `Picasa3.exe`: `0x005cb990`, `0x005cc495–0x005cc4ad`, `0x005ccbff`, `0x0040e310–0x0040e351` |
+| vezérlő | `setup/ui_option3`, `superbutton(cb,option3)`: jelölőnégyzet (`Fen::Checkbox`). | Photo Viewer `respack.yt`; RTTI-vtábla `Fen::Checkbox::vftable` `0x0074f15c` |
+| angol felirat | “Fullscreen startup (requires restart of Photo Viewer to take effect)” | Photo Viewer nyers PE, `XMLF/SETUPTEXT.XML`, a szöveg első bájtja: VA `0x0086ccb6` |
+| magyar felirat | „Teljes képernyős indítás (a Fotómegjelenítő újraindítása után lép érvénybe)” | Photo Viewer nyers PE, `XMLF/SETUPTEXT_HU.XML`, a szöveg első bájtja: VA `0x0089af7e` |
+| kulcs, tárolás | `HKCU\SOFTWARE\Google\Picasa\Picasa2\Preferences\ViewerFullscreenStartup`, 4 bájtos érték. | kulcscím VA `0x00727880`; Preferences/HKCU: `0x004151fd`; alkalmazás- és csoportútvonal: `0x00436626–0x00436646`; 4 bájt: `0x004154ac`, írás: `0x00418939` |
+| alapérték | bekapcsolva (`1`), ha a kulcs még nincs beállítva. | a konfigurációs mező alapértéke: `0x004347c4`, `0x0043486c`; az indulási olvasás tartalékértéke külön is `1`: `0x00436b66` |
+| hatás | A Photo Viewer teljes képernyőn indul; a változás csak újraindítás után érvényesül. | a felirat ezt nevezi meg; az indulási olvasás: `0x00436b56–0x00436b93`; az igaz érték `2`, a hamis `0` módparaméterként jut a keret inicializálásához (`0x00435fe2–0x00435ff8` → `0x00566730`); a `0x00435f70` a `SetWindowLongA` import egyik hívója |
+| párbeszéd betöltése / mentése | A beállítás a `setup/ui_option3` vezérlőhöz kapcsolódik és onnan íródik vissza. | mező-hozzárendelés: `0x00434dc5–0x00434dd6`; mentés: `0x004358b5–0x004358d0` → 4 bájtos író `0x004188d0` |
+
+**Két független bizonyítási út**
+
+1. **Konfigurációs út:** az erőforrásréteg a `cb` típusú `setup/ui_option3`
+   vezérlőt és mindkét nyelvi feliratot adja. A `0x004347c0` a
+   `ViewerFullscreenStartup` kulcsot az alapérték `1`-gyel a `+0x2c0`
+   mezőbe olvassa; a `0x004349b0` ezt a mezőt köti a `setup/ui_option3`
+   elemhez, a `0x00435850` pedig ugyanezt a vezérlőértéket írja vissza.
+2. **Indulási út:** a `0x004365b0` a Photo Viewer indulásakor ismét
+   `ViewerFullscreenStartup`-ot olvas, külön `1` tartalékértékkel. A
+   `0x00435f70` az igaz értéket `2`-vé, a hamisat `0`-vá alakítja, és ezt a
+   módparamétert adja át az ablakkeret inicializálásának. A felirat nevezi
+   meg ezt az indulási módot teljes képernyősként. Ez a párbeszéd
+   mező-hozzárendelésétől független olvasási és hatáslánc.
+
+**Fejlesztői teendő a #4333 ablakához**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A Fotónéző beállítása párbeszédben `ViewerFullscreenStartup` jelölőnégyzet; alapértéke `1`, és újraindításkor befolyásolja a Photo Viewer ablakmódját. | A `PhotoViewerSettingsDialog.qml` a színkezelési jelölőnégyzetet tartalmazza; `ViewerFullscreenStartup` vezérlő nincs benne. | A #4333 párbeszédbe kerüljön magyar és angol feliratú jelölőnégyzet. Betöltéskor/mentéskor a `ViewerFullscreenStartup` 4 bájtos logikai értékét kezelje, hiányzó kulcsnál `1`-et használjon; a Photo Viewer indulása igaz értéknél teljes képernyős legyen. |
+
+**Cáfoló kör:** az első magyar erőforrás-keresés csak `SLINGSHOT` nevű
+adatjelöltekre szűrt, ezért hamisan „nincs magyar felirat” eredményt adott.
+Az ellenpróba a teljes nyers Photo Viewer PE-ben és az XMLF
+`SETUPTEXT_HU` erőforrásban kereste a `setup/ui_option3` címkét: a pontos
+magyar szöveg VA `0x0089af7e` címen megvan, és a környező XML ugyanahhoz a
+vezérlőhöz rendeli. Az angol XML nyers bájtjai ugyanezzel a módszerrel
+VA `0x0086ccb6` címen adták a párt. A negatív első találatot elvetettem.
+
 ### 12.7 Amit a #1730 ebből kap — a LUT képlete ROSSZ a jegyben
 
 A #1730 „Kész, ha" listája ma azt írja: *„a `mac` LUT `pow(x, 1/1,6)`"*.

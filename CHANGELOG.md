@@ -7,6 +7,71 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.37] – 2026-10-07
+
+- A főmenü-bejáró az új arcfilmes parancsot is ellenőrzi, és minden parancs után visszaállítja a nézetet (#4433).
+- A Beállításokban beállítható az import célmappája; az Automatikus frissítések rádiógombjai a referencia szerint lenyíló listává váltak. (#4450).
+- A Mappa tulajdonságai párbeszéd az eredeti elrendezést használja, és a zene teljes felirata olvasható (#4456).
+
+## [0.9.36] – 2026-10-07
+
+- A Film almenü új parancsa a kijelölt képekkel indítja el a filmkészítőt (#4331).
+- A háttérszálak hibái eljutnak a vezérlőhöz, és a felderítési ablak látható hibát mutat (#4472).
+- A Fájltípusok fül feliratai és elrendezése követi a Picasa mintáját, a RAW-formátumok linkje pedig megnyitja a támogatott kiterjesztések listáját (#4488).
+
+## [0.9.35] – 2026-10-07
+
+- A Beállítások Fájltípusok lapján formátumcsoportok kapcsolhatók ki, és a következő könyvtárolvasáskor a kikapcsolt fájlok kikerülnek. (#4447).
+
+## [0.9.34] – 2026-10-07
+
+- Az Általános fül három felületi beállítása menthető, a videó-előnézet kilépési módja is választható. (#4449).
+- A gyors forgatás és tükrözés egyszerre is megőrzi mindkét módosítást; a szerkesztő állapotgépét bizonyított ok híján nem emeltük ki (#4473).
+
+## [0.9.33] – 2026-10-07
+
+- A foglalt célfájlt áthelyezés és visszagörgetés közben is érintetlenül hagyja (#4469).
+- A modellletöltés tesztje a keresés gombjának tényleges engedélyezésére vár, nem a letöltési jelzőre (#4475).
+
+## [0.9.32] – 2026-10-07
+
+- A kötegelt átnevezés hiba esetén megmutatja az elkészült fájlokat, és frissíti a listát (#4470).
+- Az azonos `.picasa.ini` útvonalra induló PicasaPy-frissítések folyamaton belül sorosak, a külső Picasa-írás észlelt esetben újrapróbálódik (#4471).
+
+## [0.9.31] – 2026-10-07
+
+- A mappa zeneválasztása a diavetítés és a mozgófilm hangsávjaként is használható. (#4448).
+
+## [0.9.30] – 2026-10-07
+
+- Elkészültek a gyorsbillentyű- és helyi menüparitás táblái, valamint több mappalista- és nézőmenü-bekötés. (#4462).
+
+## [0.9.29] – 2026-10-07
+
+- A QML-felület kattintásos ellenőrzése és a néma vezérlőket jelző CI-őr bővült. (#4438).
+- A mentés és visszaállítás után a fotó nézete frissül, hibájuk pedig látható üzenetet ad; a fotóműveletek eredménye a nézetben jelenik meg. (#4440).
+- Az E-mail beállításokban videóknál választható és mentődik az első képkocka vagy a teljes film; küldéskor a választás szerinti melléklet készül (#4451).
+
+## [0.9.28] – 2026-10-06
+
+- A teljes felbontású ragyogás színes tagja az eredeti kerekített egész ÷255 keverést használja. (#4442).
+
+## [0.9.27] – 2026-10-06
+
+- A Fotónéző beállításaiban megjelent az eredeti „Teljes képernyős indítás” jelölőnégyzet, és a választás megmarad; az eredeti szerint az önálló Fotónézőre vonatkozik, a könyvtár beépített nézője ablakos marad (#4432).
+- A Nyomtatás fül öt alapmérete most a rendszer mértékegységéhez igazodik, és a méretválasztók oszloponként követik egymást, ahogy az eredetiben (#4435).
+
+## [0.9.26] – 2026-10-06
+
+- Az Eszközök menüből elérhető Emberkezelőben a személynevek és az Emberek albumok kezelhetők. (#4334).
+- A gyorsbillentyűk csak a hozzájuk tartozó nézetben futnak, a szövegmezők pedig megtartják saját billentyűiket. (#4398).
+- A valódi GPU-s finomhangolás-teszt kihagyja magát, ha a headless Wayland-kompozitor nem érhető el. (#4422).
+
+## [0.9.25] – 2026-10-06
+
+- A film szöveges diái „Text Slide” néven jelennek meg, az infósor pedig a kiválasztott dia nevét, méretét és filmsorszámát mutatja. (#4402).
+- A 16 bites szemcsézett megjelenítési mód a Nézet menüből bekapcsolható. (#4412).
+
 ## [0.9.24] – 2026-10-06
 
 - Az Eszközök menü Dátum és idő módosítása parancsa mindkét eredeti módban átállítja a kijelölt képek dátumát, az exportba is átvezetve (#4332).

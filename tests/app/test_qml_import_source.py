@@ -9,10 +9,12 @@ Az import fájlokat másol és a törlési ágakon forrásfájlokat távolít el
 ezért ez a fájl szándékosan funkció-szintű `qml_app` fixture-t használ."""
 
 from datetime import date
+from pathlib import Path
 
 from PySide6.QtCore import (
     QMetaObject,
     QObject,
+    QStandardPaths,
     Qt,
 )
 from PySide6.QtQuick import QQuickWindow
@@ -165,8 +167,15 @@ class TestSourcePreview:
             assert item["excluded"] is False
 
         start_button = _child(window, "importSourceStartButton")
-        # a cél-mappa még nincs kiválasztva — a gomb nem engedélyezett
-        assert start_button.property("enabled") is False
+        # #4450: az import párbeszéd a beállított alapcélt már megnyitáskor
+        # kiválasztja, ezért a cél megadása után az import indítható.
+        expected = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        ) or str(Path.home())
+        assert Path(str(dialog.property("destFolder"))) == Path(expected)
+        destination_text = _child(window, "importSourceDestPathText")
+        assert Path(str(destination_text.property("text"))) == Path(expected)
+        assert start_button.property("enabled") is True
 
     def test_empty_source_shows_empty_text(self, qml_app, qt_app, tmp_path):
         window, _controller, _lib, engine = qml_app

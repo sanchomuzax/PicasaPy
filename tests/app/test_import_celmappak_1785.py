@@ -25,7 +25,7 @@ from pathlib import Path
 
 import picasapy.app
 import pytest
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, QStandardPaths
 
 from picasapy.app.import_source_controller import (
     MAX_RECENT_DESTINATIONS,
@@ -141,8 +141,35 @@ class TestAzAlapertelmezettHely:
     def test_van_alapertelmezett(self, ctl):
         assert ctl.defaultDestination
 
-    def test_a_kepek_mappaja_alatti_Picasa_gyujto(self, ctl):
-        assert Path(ctl.defaultDestination).name == "Picasa"
+    def test_alapbol_a_kepek_mappaja(self, ctl):
+        kepek = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        ) or str(Path.home())
+        assert Path(ctl.defaultDestination) == Path(kepek)
+
+    def test_a_beallitott_cel_uj_vezerloben_is_megmarad(self, qt_app, tmp_path):
+        settings_path = tmp_path / "settings.ini"
+        cel = tmp_path / "import-cel"
+        cel.mkdir()
+        elso = ImportSourceController(
+            provider=None,
+            add_folder=lambda _path: None,
+            index_path=tmp_path / "index.db",
+            settings=QSettings(str(settings_path), QSettings.Format.IniFormat),
+        )
+
+        elso.setDefaultDestination(str(cel))
+        tarolt = QSettings(str(settings_path), QSettings.Format.IniFormat)
+        tarolt.sync()
+        masodik = ImportSourceController(
+            provider=None,
+            add_folder=lambda _path: None,
+            index_path=tmp_path / "index.db",
+            settings=QSettings(str(settings_path), QSettings.Format.IniFormat),
+        )
+
+        assert Path(masodik.defaultDestination) == cel.resolve()
+        assert Path(tarolt.value("import/defaultdestination")) == cel.resolve()
 
 
 class TestAFelulet:

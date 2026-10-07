@@ -40,6 +40,15 @@ from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
 
 
+@pytest.fixture(autouse=True)
+def _huvelykes_terulet(monkeypatch):
+    """A tesztek az eredeti hüvelykes méretlistára épülnek; a CI-gép
+    területi beállítása ne döntse el, melyik készletet kapják (#4435)."""
+    from picasapy.printing import dpi
+
+    monkeypatch.setattr(dpi, "_metrikus_teruleti_meres", lambda: False)
+
+
 def _elem(root, nev):
     obj = root.findChild(QObject, nev)
     assert obj is not None, f"{nev} nem található"

@@ -117,6 +117,8 @@ MenuBar {
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
+    //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
+    property bool textEntryHasFocus: false
     // #4335: a kijelölt fedvények állapota a controller INI-lekérdezéséből.
     property bool textOverlayShowEnabled: false
     property bool textOverlayHideEnabled: false
@@ -171,6 +173,8 @@ MenuBar {
     // helyfoglaló tételeket szándékosan kizárja (ott a felirat nem ígéret).
     signal invertSelectionRequested()
     signal folderManagerRequested()
+    // #4334: a név- és Emberek-albumkezelő saját párbeszédablaka.
+    signal peopleManagerRequested()
     // #4332: a kijelölt képek felvételi dátumának módosítása.
     signal adjustTimestampRequested()
     // #350: Eszközök → Beállítások... (options.fen) — az OptionsDialog
@@ -268,6 +272,8 @@ MenuBar {
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
     signal collageRequested()
     signal movieRequested()
+    //: `eMenuCreateMovie::ID_FACES` — a kijelölt képeket adja át az arcfilm módnak.
+    signal faceMovieRequested()
     //: #3503: Létrehozás ▸ Ajándék CD készítése… — a kiadás-panel
     signal giftCdRequested()
     signal locateRequested()
@@ -415,23 +421,25 @@ MenuBar {
     Shortcut {
         objectName: "shortcutSmallThumbnails"
         sequence: "Ctrl+1"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(96)
     }
     Shortcut {
         objectName: "shortcutNormalThumbnails"
         sequence: "Ctrl+2"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(144)
     }
     Shortcut {
         objectName: "shortcutLocateOnDisk"
         sequence: "Ctrl+Return"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.locateRequested()
     }
     Shortcut {
         objectName: "shortcutDeleteFromDisk"
         sequence: "Delete"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         // #1608: nézetfüggő — albumban NEM töröl lemezről
         onActivated: bar.activateDeleteCommand()
     }
@@ -441,7 +449,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutPrint"
         sequence: "Ctrl+P"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.printRequested()
     }
     // #1590: a Mappa-menü felirata Ctrl+Shift+P-t hirdet
@@ -452,7 +460,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutPrintContactSheet"
         sequence: "Ctrl+Shift+P"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.printContactSheetRequested()
     }
     // #1615: a Fájl-menü felirata Ctrl+M-et hirdet (a #1154 MÉRTE a
@@ -467,6 +475,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutImportFrom"
         sequence: "Ctrl+M"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.importSourceRequested()
     }
     // #1633: a Fájl-menü felirata Ctrl+O-t hirdet — ugyanaz a
@@ -475,6 +484,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutAddFile"
         sequence: "Ctrl+O"
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.addFileRequested()
     }
     // #1616: a Fájl-menü felirata Ctrl+N-et hirdet — ugyanaz a hibaosztály,
@@ -486,7 +496,7 @@ MenuBar {
     Shortcut {
         objectName: "shortcutNewAlbum"
         sequence: "Ctrl+N"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
         onActivated: bar.newAlbumRequested()
     }
 
@@ -1044,9 +1054,9 @@ MenuBar {
         // újra. Ezért minden tétel a jelzés után VISSZAKÖTI a `checked`-et.
         //
         // A VÁZ szintjén mind a tizenegy MŰKÖDIK: pipázódik, és a módot
-        // beállítja a vezérlőn. A képpont-hatásuk külön jegyeké
-        // (#1576/#1577/#1578); a `24 bites` és — 24 bites képernyőn — az
-        // `Automatikus` az eredetiben is no-op.
+        // beállítja a vezérlőn. A képpont-hatást módonként a
+        // #1576/#1577/#1578/#4412 tesztek őrzik; a `24 bites` és — 24 bites
+        // képernyőn — az `Automatikus` az eredetiben is no-op.
         //
         // A `&`-gyorsítóbetűket a spec 1. szakasza tartalmazza; ide
         // SZÁNDÉKOSAN nem kerültek be: ebben a fájlban ma csak a hét
@@ -1080,13 +1090,17 @@ MenuBar {
                     })
                 }
             }
-            PicasaMenuItem {
+            MenuItem {
                 objectName: "menuViewDisplayMode16Bit"
                 text: qsTr("&16-bit (dithered)")
-                // #1658: megvalósítható (a szabály MÉRVE van: MT-zaj +0…7/0…3/0…7,
-                // telítő), de 16 bites képernyő ma nincs — ezért helyfoglaló,
-                // nem nyugdíjazott: ha egyszer értelmet nyer, bekötjük.
-                placeholder: true
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "dither16"
+                onTriggered: {
+                    controller.setDisplayMode("dither16")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "dither16"
+                    })
+                }
             }
             MenuSeparator {}
             PicasaMenuItem {
@@ -1914,9 +1928,10 @@ MenuBar {
             enabled: bar.createActionsEnabled
             onTriggered: bar.giftCdRequested()
         }
-        // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
-        // filmkészítés a submenu egyetlen tételeként maradt életben
+        // Az általános filmkészítő belépő mellé a #4331 visszahozza az
+        // eredeti eMenuCreateMovie::ID_FACES kijelöléses parancsát.
         PicasaMenu {
+            objectName: "menuCreateMovieMenu"
             title: qsTr("&Movie")
             // #922: az ALMENÜ is kapuz — a benne lévő tétel hiába él, ha a
             // szülő szürke. A film ugyanúgy a tálcáról is dolgozik (#455).
@@ -1926,6 +1941,12 @@ MenuBar {
                 text: qsTr("New Movie...")
                 enabled: bar.createActionsEnabled
                 onTriggered: bar.movieRequested()
+            }
+            MenuItem {
+                objectName: "menuCreateMovieFromFaces"
+                text: qsTr("From Faces in Selection...")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.faceMovieRequested()
             }
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
@@ -1947,7 +1968,12 @@ MenuBar {
         // hiányzott (#324 audit) — az auditban jelzett screenshot-időpontban
         // az eredetiben is inaktív volt
         PicasaMenuItem { text: qsTr("&Upload Manager..."); placeholder: false; retired: true }  // #638
-        PicasaMenuItem { text: qsTr("People Manager..."); placeholder: true }
+        PicasaMenuItem {
+            objectName: "menuToolsPeopleManager"
+            text: qsTr("People Manager...")
+            placeholder: false
+            onTriggered: bar.peopleManagerRequested()
+        }
         MenuSeparator {}
         // #2142: a duplikátum-kereső a KÍSÉRLETI almenübe költözött (az
         // eredetiben ott a 2. tétel, `eMenuTools::ID_DUPES`) — ld. lent.

@@ -112,13 +112,10 @@ class TestBatchEffectBusy:
         assert rows, "a fixture-nek legalább egy fotót be kell töltenie"
 
         kemlelo = _RegistryKemlelo(monkeypatch)
-        finished = []
-        controller.photoOpFinished.connect(lambda: finished.append(True))
-
         controller.applyEffectMany(rows, "autolight")
-        assert _wait_until(qt_app, lambda: bool(finished)), (
-            "a kötegelt effekt nem jelzett befejezést (photoOpFinished)"
-        )
+        assert _wait_until(
+            qt_app, lambda: not controller.backgroundWorkersRunning()
+        ), "a kötegelt effekt háttérmunkája nem állt le"
         kemlelo.ellenoriz("kötegelt effekt")
         assert _wait_until(qt_app, lambda: controller.isWorking is False), (
             "isWorking a kötegelt effekt után is igaz maradt"

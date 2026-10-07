@@ -11,6 +11,11 @@ import "aranykenyszer.js" as AranyKenyszer
 // Balra: előző, Esc: vissza a könyvtárba.
 Rectangle {
     id: viewer
+
+    readonly property bool textEntryHasFocus:
+        viewer.Window.window !== null
+        && viewer.Window.window.activeFocusItem !== null
+        && viewer.Window.window.activeFocusItem.selectedText !== undefined
     //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
     property string helpTopic: "features/nezegetes.md"
 
@@ -41,6 +46,11 @@ Rectangle {
             ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
     readonly property bool controllerReady:
         typeof controller !== "undefined" && controller ? true : false
+    // #4499: a beállítás az állóképes előnézet bal kattintását is
+    // vezérli. Önálló néző-próbáknál és részleges vezérlőknél maradjon ki.
+    readonly property bool singleClickExitEnabled:
+        viewer.controllerReady && controller.singleClickExitEnabled !== undefined
+            ? controller.singleClickExitEnabled : false
     readonly property bool currentIsCollageDraft: {
         if (!viewer.controllerReady || viewer.currentFilePath.length === 0)
             return false
@@ -164,12 +174,17 @@ Rectangle {
         (typeof controller !== "undefined" && controller
          && controller.editorControlsVisible !== undefined)
         ? controller.editorControlsVisible : true
+    readonly property bool uiTransitionsEnabled:
+        !viewer.controllerReady || controller.uiTransitionsEnabled === undefined
+            ? true : controller.uiTransitionsEnabled
     // #4183: a szerkesztő bal fiókjának 0…−279 képpontos eltérése. A
     // befoglaló hely vele együtt szűkül, a 280 px-es tartalom pedig balra
     // csúszik és a fiók levágása rejti el.
     property real editorDrawerOffset: editorControlsVisible ? 0 : -279
     Behavior on editorDrawerOffset {
+        enabled: viewer.uiTransitionsEnabled
         NumberAnimation {
+            objectName: "viewerEditorDrawerAnimation"
             duration: 250
             easing.type: Easing.InOutQuad
         }
@@ -729,6 +744,35 @@ Rectangle {
         }
         viewer._aaLezaras()
         viewer.masodikEditCtl.beginEdit(azonosito, photosModel.filePathAt(sor))
+    }
+
+    // A lemezművelet a fájlt és az indexet frissíti. Ha a nyitott nézet egy
+    // sikeresen érintett képet mutat, a szerkesztő-előnézetnek is újra kell
+    // olvasnia a mostani fájlt és filters= láncot.
+    function frissitsdALemezműveletUtániElőnézetet(utvonalak) {
+        if (!viewer.visible || !viewer.photosModel || !utvonalak
+                || utvonalak.length === 0)
+            return
+
+        var sor = viewer._kijeloltSort()
+        if (sor >= 0) {
+            var utvonal = viewer.photosModel.filePathAt(sor)
+            if (utvonalak.indexOf(utvonal) >= 0 && viewer.editCtl)
+                viewer.editCtl.beginEdit(
+                    viewer.photosModel.idAt(sor), utvonal)
+        }
+
+        // A két önálló AB-előnézet is a mentett állapotot mutassa. Az AA
+        // második fele memóriás piszkozat, ezért azt a lemezművelet nem írja.
+        if (viewer.layoutMode === "ab" && viewer.masodikEditCtl) {
+            var masodik = viewer._masodikSort()
+            if (masodik >= 0) {
+                var masodikUtvonal = viewer.photosModel.filePathAt(masodik)
+                if (utvonalak.indexOf(masodikUtvonal) >= 0)
+                    viewer.masodikEditCtl.beginEdit(
+                        viewer.photosModel.idAt(masodik), masodikUtvonal)
+            }
+        }
     }
 
     // -- #3014: az „aa" mód két szerkesztési állapota ---------------------
@@ -1376,12 +1420,14 @@ Rectangle {
         else
             viewer.kerBezaras()
     }
-    Keys.onEscapePressed: viewer.handleEscape()
-    Keys.onRightPressed: next()
-    Keys.onReturnPressed: next()
-    Keys.onLeftPressed: previous()
+    Keys.onEscapePressed: if (!viewer.textEntryHasFocus) viewer.handleEscape()
+    Keys.onRightPressed: if (!viewer.textEntryHasFocus) next()
+    Keys.onReturnPressed: if (!viewer.textEntryHasFocus) next()
+    Keys.onLeftPressed: if (!viewer.textEntryHasFocus) previous()
     // szóköz: videónál lejátszás/szünet (#14) — Picasa-viselkedés
     Keys.onSpacePressed: {
+        if (viewer.textEntryHasFocus)
+            return
         if (viewer.isCurrentVideo && videoLoader.item)
             videoLoader.item.togglePlayback()
     }
@@ -1398,6 +1444,8 @@ Rectangle {
     // mutat: ott is `Ctrl+Delete` (#1418). A korábbi, puszta `Delete`
     // a #422 azóta felülírt feltételezéséből jött.
     Keys.onPressed: function(event) {
+        if (viewer.textEntryHasFocus)
+            return
         if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
             viewer.toggleFaces()
             event.accepted = true
@@ -2994,6 +3042,12 @@ Rectangle {
                                 kepkockaJelzes.mutasd(
                                     qsTr("This feature is not supported for Linux"))
                         }
+                        // #4449/#4458: csak a videó-előnézeti terület
+                        // kérhet kattintásra visszalépést; a PhotoViewer
+                        // közös kilépési kapuja védi a félkész szerkesztést.
+                        function onExitRequested() {
+                            viewer.kerBezaras()
+                        }
                     }
                     //: #1838: a képkocka-mentés VISSZAJELZÉSE. Az eredeti négy
                     //: állapotszöveget adott (`CCaptureFrame::captureframeprog1..4`);
@@ -3069,6 +3123,7 @@ Rectangle {
                     EditorToolBar {
                         id: editorToolBar
                         objectName: "editorToolBar"
+                        textEntryHasFocus: viewer.textEntryHasFocus
                         parent: photoArea
                         z: 20
                         //: #3320: a sáv KIZÁRÓLAG a kiegyenesítésé. A
@@ -3675,7 +3730,9 @@ Rectangle {
                 }
 
                 // #6: nagyított képen húzással pásztázás; dupla katt = fit.
-                // Illesztett nézetben inaktív — az események átmennek rajta.
+                // #4499: a bekapcsolt egykattintásos kilépés csak egyképes,
+                // nem Kiegyenesítéses illesztett nézetben kapja meg a szabad
+                // előnézeti területet; a nagyított pásztázás minden nézetben él.
                 MouseArea {
                     id: viewerPanArea
                     objectName: "viewerPanArea"
@@ -3687,13 +3744,31 @@ Rectangle {
                     parent: photoArea
                     anchors.fill: parent
                     z: 10
-                    enabled: viewer.zoomFactor > 1.01
+                    enabled: (viewer.zoomFactor > 1.01
+                              || (viewer.singleClickExitEnabled
+                                  && viewer.layoutMode === "1up"
+                                  && !editorPanel.tiltActive))
                              && !editorPanel.cropActive
                              && !viewer.isCurrentVideo
-                    cursorShape: enabled ? Qt.OpenHandCursor : Qt.ArrowCursor
+                    cursorShape: viewer.zoomFactor > 1.01
+                                 ? Qt.OpenHandCursor : Qt.ArrowCursor
                     property real lastX: 0
                     property real lastY: 0
                     property bool dragged: false
+
+                    // #4499: a beállított egykattintásos kilépés a Qt
+                    // dupla-kattintási időablakának lejártakor zár. Így a
+                    // dupla kattintás második eseménye még a nézőé marad.
+                    Timer {
+                        id: singleClickExitTimer
+                        interval: Qt.styleHints.mouseDoubleClickInterval
+                        onTriggered: {
+                            if (viewer.singleClickExitEnabled
+                                    && viewer.layoutMode === "1up"
+                                    && !editorPanel.tiltActive)
+                                viewer.kerBezaras()
+                        }
+                    }
 
                     // #4083: a nagyított nézet pásztázója fölé került, így
                     // az aktív képi MouseArea-k lenyomását is elkapta. A
@@ -3747,15 +3822,33 @@ Rectangle {
                         if (!pressed) return
                         if (Math.abs(event.x - lastX) + Math.abs(event.y - lastY) > 4)
                             dragged = true
-                        viewer.panX += event.x - lastX
-                        viewer.panY += event.y - lastY
+                        if (viewer.zoomFactor > 1.01) {
+                            viewer.panX += event.x - lastX
+                            viewer.panY += event.y - lastY
+                            viewer.clampPan()
+                        }
                         lastX = event.x; lastY = event.y
-                        viewer.clampPan()
                     }
                     onClicked: function(event) {
-                        if (!dragged) fokuszKattintas(event.x, event.y)
+                        if (dragged) return
+                        if (viewer.singleClickExitEnabled
+                                && viewer.layoutMode === "1up"
+                                && !editorPanel.tiltActive) {
+                            singleClickExitTimer.restart()
+                            return
+                        }
+                        fokuszKattintas(event.x, event.y)
                     }
-                    onDoubleClicked: viewer.zoomFit()
+                    onDoubleClicked: {
+                        if (viewer.singleClickExitEnabled
+                                && viewer.layoutMode === "1up"
+                                && !editorPanel.tiltActive) {
+                            singleClickExitTimer.stop()
+                            viewer.kerBezaras()
+                        } else {
+                            viewer.zoomFit()
+                        }
+                    }
                 }
 
                 BusyIndicator {
@@ -4295,7 +4388,7 @@ Rectangle {
     //: #1612: a menü HALASZTOTT — az `ensure()` az első jobbklikkre építi
     //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
     //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
-    function openContextMenu(x, y) { viewerMenuLoader.ensure().popup(viewer, x, y) }
+    function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer.currentPath, typeof fileOpsController !== "undefined" ? fileOpsController : null) }
 
     DeferredDialog {
         id: viewerMenuLoader
@@ -4361,10 +4454,10 @@ Rectangle {
                 && viewer.currentPath.length > 0)
                 fileOpsController.openPhoto(viewer.currentPath)
         }
-        onLocateRequested: {
-            if (typeof fileOpsController !== "undefined" && fileOpsController
-                && viewer.currentPath.length > 0)
-                fileOpsController.revealPhoto(viewer.currentPath)
+        onLocateRequested: function(original) {
+            if (typeof fileOpsController !== "undefined" && fileOpsController && viewer.currentPath.length > 0)
+                original ? fileOpsController.revealOriginal(viewer.currentPath)
+                    : fileOpsController.revealPhoto(viewer.currentPath)
         }
         onCopyFullPathRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController
