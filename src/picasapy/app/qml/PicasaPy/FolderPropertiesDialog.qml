@@ -110,7 +110,9 @@ Dialog {
     function _saveProperties() {
         if (!root._dateValid)
             return
-        if (!root.albumMode) {
+        // Változatlan névnél nincs átnevezés — a dátum/leírás/zene mentése
+        // átnevező nélkül is működjön (#4503 OK-tesztje).
+        if (!root.albumMode && nameField.text !== root.folderName) {
             if (typeof root.renameFolderHandler !== "function") {
                 root.renameError = qsTr("Folder renaming is unavailable.")
                 renameErrorDialog.open()
@@ -159,8 +161,9 @@ Dialog {
             // hozzáadódik; 24px adja a referencián mért 14px-es jobb margót.
             rightPadding: 24
             // A gombsort egy rögzített sáv tartja, nem közvetlenül a Dialog
-            // footer-e, ezért a Dialog nem köti be magától: OK és Mégse kézzel.
-            onAccepted: root.accept()
+            // footer-e, ezért a Dialog nem köti be magától (#4503). Az OK a saját
+            // onClicked-jén át ment és zár (#4482: előbb átnevez), így itt csak a
+            // Mégse kötése kell — egy onAccepted kettős mentést adna.
             onRejected: root.reject()
 
             Button {
