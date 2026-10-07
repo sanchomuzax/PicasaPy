@@ -21,11 +21,22 @@ from PySide6.QtCore import (
 )
 from PySide6.QtTest import QTest
 
+import picasapy.app.application as app_module
 from picasapy.app.language_controller import OWN_LANGUAGE_NAMES
 from picasapy.app.filetype_preferences import (
     file_type_enabled,
     set_file_type_enabled,
 )
+
+# #4506: a teszt ugyanazt a stílust és betűt használja, mint az alkalmazás —
+# enélkül Windowson a rendszer alapbetűje tolta el a referencia szerinti
+# 33 px-es kezdést és 22 px-es sorközt.
+app_module.allitsd_be_a_stilust()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _picasa_ui_font(qt_app):
+    app_module._install_ui_font(qt_app)
 
 
 class FakeController(QObject):

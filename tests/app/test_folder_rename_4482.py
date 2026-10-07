@@ -148,7 +148,11 @@ def test_csak_kis_nagybetu_elteresnel_a_mappat_es_az_indexet_is_atirja(
 
     target = root / "foo"
     assert result == {"ok": True, "path": str(target), "name": "foo"}
-    assert target.is_dir() and not source.exists()
+    # Windows kis-/nagybetű-független: a régi Path alakja ugyanazt a
+    # bejegyzést éri el, ezért a tényleges könyvtárnevet kell ellenőrizni.
+    tenyleges_nevek = {ut.name for ut in root.iterdir()}
+    assert "foo" in tenyleges_nevek and "Foo" not in tenyleges_nevek
+    assert target.is_dir()
     assert (target / "photo.jpg").is_file()
     assert (target / "child" / "nested.jpg").is_file()
     with open_index(db_path) as conn:

@@ -116,4 +116,4 @@ def test_nezo_jobbklikk_es_eredeti_menu_kattintas_a_fajlkezelobe_vezet(
         "az Eredeti a lemezen kattintás nem a FileOpsController műveletét hívta"
     )
     assert megmutatott == [eredeti]
-    assert controller.photos.filePathAt(0) == str(kep)
+    assert Path(controller.photos.filePathAt(0)) == kep
