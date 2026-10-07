@@ -109,13 +109,67 @@ találta:
 | `0x005cfafc` | beállítási érték beolvasása az opciólap összeállításakor |
 | `0x005962bb` | a kattintási esemény végrehajtási kapuja |
 
-#### Eredeti / nálunk / teendő (#4449)
+### Állóképes előnézet: a `PreviewHandler` útja (#4493, 2026-10-07)
+
+**A beállítás az állóképes előnézet kezelőjéig is eljut.** A `CThumbUI`
+inicializálása a `Preferences\SingleClickExit` értékét a `+0x31ac` mezőbe
+olvassa (`0x00564b7b`–`0x00564bac`). A `PreviewHandler` vtáblája
+`0x00c90a60`; negyedik metódusa `0x005c24c0`. Ez a metódus az `1` eseménykód
+ágában csak akkor folytatja a kilépő útvonalat, ha a mező nem nulla
+(`0x005c2898`–`0x005c28bf`), az `0x0d` kód ágában pedig csak akkor, ha nulla
+(`0x005c2b03`–`0x005c2b0f`). A közös út a `0x00566270` rutinra vezet; az
+ellenőrzi, hogy az `editpanel/preview` létezik és látható-e, majd feloldja és
+elküldi a `thumbui/albumview` parancsot (`0x005662a2`–`0x005662fc`). Az
+előnézet láthatósági kapuja és a kezelő egyes belső ágai tehát itt is
+feltételek; egyes ágak a `0x00571a80` segédre terelnek, amelynek pontos
+szemantikája ebből a vizsgálatból nem állapítható meg.
+
+**Az objektumkapcsolat külön ellenőrzése:** a `0x00563190` a
+`PreviewHandler` vtábláját írja az objektumra (`0x0056319a`), a szülőt pedig
+`+0x28` mezőbe teszi (`0x005631b9`). A `0x005733f0` UI-építő a
+`editpanel/preview` és `editpanel/preview2` elemekhez ilyen kezelőt hoz létre
+és regisztrál (`0x005738fd`–`0x00573957`); az `editpanel.tre` szerint az
+`editpanel/previewimage` és `editpanel/previewimage2` ezek gyermekei (1005.,
+1011. sor). A memóriakapus teljes `.text` pásztázás a `0x00c90a60` vtable
+közvetlen író hivatkozását a `0x00563190` rutinban találta meg. Ez megerősíti,
+hogy a vizsgált handler az állóképes előnézeti ághoz tartozik.
+
+Az `1` kódhoz tartozó általános jelentés balgomb-lenyomás. Az `0x0d` fizikai
+egérüzenethez vagy kattintásszámhoz rendelése **NINCS MEG**: az
+`picasa-eger-es-kijeloles.md` 4.2/b szakasza az esemény jelentését és a
+`WM_*` → belső kód leképezést nyitott kérdésként tartja nyilván, a 4.3 pedig
+figyelmeztet, hogy a 13-as kódot nem lehet bizonyíték nélkül dupla
+kattintásnak nevezni. Ezért a bináris alapján csak feltételesen mondható meg,
+hogy kikapcsolt `SingleClickExit` mellett melyik fizikai kattintás indítja a
+visszalépést.
+
+#### Eredeti / nálunk / teendő (#4493)
 
 | | Eredeti | Nálunk | Teendő |
 |---|---|---|---|
-| előnézeti felület | Ha `[CThumbUI+0x30a6] == 0`, a `SingleClickExit=0` dupla kattintásra, `=1` balgomb-lenyomásra indítja a `thumbui/albumview` visszalépést a `ytDSMovie` ablakban. | A `viewerPanArea` kitölti a `photoArea`-t, és nagyított, nem videós, nem vágás állapotban engedélyezett; a dupla kattintás `viewer.zoomFit()` (`PhotoViewer.qml:3690–3703`, `3768`). A külön `viewerBackButton` kattintása `viewer.kerBezaras()` (`1463–1471`). | A #4449-ben a beállítást ne kösd automatikusan az állóképes dupla kattintásra: a bináris ezt a kilépő láncot csak az `editpanel/movieparent` alatti `ytDSMovie` ablakra bizonyítja, a mi dupla-kattintás útja pedig a `photoArea` nagyítás-illesztéséhez tartozik. Az állóképes kilépési területet külön kell tisztázni, mielőtt a beállítás arra is kiterjed. |
+| videó-előnézet (`ytDSMovie`) | `[CThumbUI+0x30a6] == 0` mellett `SingleClickExit=0`: balgombos dupla kattintás (`WM_LBUTTONDBLCLK`, `0x203`, belső kód `3`); `=1`: balgomb-lenyomás (`WM_LBUTTONDOWN`, `0x201`, belső kód `1`). Mindkettő a `thumbui/albumview` parancshoz vezet (`0x0054c540`, `0x00595fe0`). | A `VideoExitGestureArea` köti a `controller.singleClickExitEnabled` értéket a videó kilépési gesztusához (`VideoPlayerView.qml:120–124`). | A #4449 videós útja megfelel az eredeti beállításnak. |
+| állóképes előnézet (`editpanel/preview`) | A `PreviewHandler` beolvassa a `SingleClickExit` értéket. `=1` esetén a balgomb-lenyomásként azonosított `1` kód, `=0` esetén az `0x0d` eseménykód ága vezethet a `thumbui/albumview` parancshoz, a kezelő ágkapui és az előnézet láthatósági feltétele mellett (`0x00564bac`, `0x005c24c0`, `0x00566270`). Az `0x0d` fizikai gesztusa nyitott. | A `PhotoViewer.qml` nem olvassa a `singleClickExitEnabled` értéket; a `viewerPanArea` nagyított, nem vágás, nem videó állapotban aktív, és dupla kattintásra `viewer.zoomFit()`-et hív (`3730–3808`). A külön `viewerBackButton` a `viewer.kerBezaras()`-t hívja (`1495–1505`). | A #4493 csak a binárisból bizonyított gesztussal bővítse a beállítást: `=1` mellett az állóképes előnézet balgomb-lenyomása lépjen vissza, az átfedő szerkesztőeszközök és a húzás védelmével. `=0` mellett előbb az `0x0d` fizikai jelentését kell megállapítani, és azt kell megőrizni; dupla kattintást nem szabad feltételezni. Ha az `0x0d` dupla kattintásnak bizonyul, a jelenlegi `zoomFit()` gesztus ütközését fel kell oldani, a nagyítás-illesztést más, látható vezérlőn megtartva. A `Back to Library` gomb maradjon működő. |
 
-**Nyitott:** az állóképes előnézet (`editpanel/previewimage`) és a videóablakon kívüli üres felület kattintás-útja. Következő konkrét lépés: a `CThumbUI` beállításértékét és az állóképes előnézet eseménykezelőjét összekötő hívási lánc célzott vizsgálata; ha az index és a helyi utasításolvasat nem azonosítja, célzott Ghidra-kör a `0x00595fe0` körüli interfész-hívókkal.
+**Fejlesztői teendő a nyitott leképezés után:**
+
+1. Kösd a `singleClickExitEnabled` beállítást az állóképes előnézet megfelelő
+   balgombos eseményéhez. Bekapcsolt értéknél a bizonyított balgomb-lenyomás
+   hívja a meglévő `viewer.kerBezaras()` visszalépést.
+2. A kikapcsolt értékhez csak az `0x0d` bináris leképezésének igazolása után
+   rendeld hozzá a fizikai gesztust. Ha ez dupla kattintás, oldd fel az
+   ütközést a `viewer.zoomFit()`-tel, és tartsd elérhetően a nagyítás
+   illesztését külön vezérlőn.
+3. Az eseménykezelés ne vegye el az aktív szerkesztőeszköz, a képi átfedés,
+   illetve a pásztázó húzás eseményeit; a meglévő `viewerBackButton` maradjon
+   használható.
+
+**Kész, ha:** a bináris vagy célzott futóprogram-mérés az `0x0d` fizikai
+gesztusát azonosította; `SingleClickExit=1` mellett az állóképes előnézetből
+balgomb-lenyomásra visszalép; `=0` mellett a bizonyított alternatív gesztus
+lép vissza; a húzás és az aktív eszközök nem indítanak kilépést; a
+nagyítás-illesztés és a `Back to Library` vezérlő továbbra is elérhető.
+
+**Nyitott:** az `0x0d` fizikai egérüzenethez/kattintásszámhoz kötése, valamint az üres szerkesztőfelület viselkedése. Célzott Ghidra-kör kell a `0x005c24c0` körüli esemény-diszpécselés követésére; az első kérdés az, hogy a `PreviewHandler`-nek átadott `0x0d` melyik natív egérüzenetből vagy gesztusból származik.
 
 ## 2. szint — lap bezárása (projekt), HÁROM választással
 
