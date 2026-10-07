@@ -137,6 +137,19 @@ class TestModelUnavailable:
         # nem indult szál → nincs eredmény az albumban
         assert ctl.unnamedAlbum() == []
 
+    def test_modellhiany_oka_egyszer_a_hibanaploba_kerul(self, qt_app, tmp_path, caplog):
+        """#4517: a tulajdonos naplójában nem volt nyoma, miért nem keres arcot."""
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl = _make_controller(qt_app, tmp_path, root, detector=_FakeDetector(available=False))
+        with caplog.at_level("WARNING", logger="picasapy.app.face_scan_controller"):
+            _run(ctl.modelUnavailable, ctl.scanForFaces)
+            _run(ctl.modelUnavailable, ctl.scanForFaces)
+        sorok = [r for r in caplog.records if "arcfelismerés nem indul" in r.getMessage()]
+        assert len(sorok) == 1
+        assert sorok[0].levelname == "WARNING"
+
 
 class TestResetFacesForPhotos:
     def test_reset_clears_index_and_rescans_through_the_background_path(
