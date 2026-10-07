@@ -14,11 +14,8 @@ feliratok a `referencia/i18n-hu/album.xml`-ben:
 | hely | `<edit name="location"/>` | **Felvétel készítésének helye (opcionális):** |
 | leírás | `<edit height="3li" name="caption"/>` | **Leírás (opcionális):** |
 
-⚠️ A **zene** ehhez a körhöz nem tartozik: diavetítés-/mozgófilm-zene nálunk
-egyáltalán nincs, tehát a mező nem is menthető sehova. Az `album.fen` négy
-másik mezője viszont pontosan az, amit az `ini/albums.py` `Album` rekordja már
-modellez (`name`, `date`, `location`, `description`) — ez a lap ezt a négyet
-méri.
+Az `album.fen` mezőit az `ini/albums.py` `Album` rekordja modellezi. A zene
+mezői (`usemusic`, `music`) a négy szöveges mezőtől függetlenül round-tripelnek.
 
 ⛔ A `caption` az `album.fen`-ben a mező NEVE; a `.picasa.ini`-ben a kulcs
 `description` (az `albums_of` ezt olvassa) — a kettő nem keverhető össze.
@@ -35,6 +32,21 @@ def _dok(szoveg: str = ""):
 
 
 class TestAzIras:
+    def test_a_zene_jelolo_es_fajl_round_tripel(self) -> None:
+        dok = ensure_album(_dok(), "abc123", "Nyaralás")
+        dok = with_album_fields(
+            dok,
+            "abc123",
+            use_music=True,
+            music_file="/zenek/tavasz.mp3",
+        )
+
+        album = albums_of(dok)[0]
+        assert album.use_music is True
+        assert album.music_file == "/zenek/tavasz.mp3"
+        assert "usemusic=1" in dok.serialize()
+        assert "music=/zenek/tavasz.mp3" in dok.serialize()
+
     def test_a_negy_mezo_kiirasa(self) -> None:
         dok = ensure_album(_dok(), "abc123", "Régi név")
         dok = with_album_fields(

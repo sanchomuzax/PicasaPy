@@ -8,8 +8,9 @@ index-bővítés (`people.py` a mintája: mindig friss ini-olvasás, nem
 cache-elt tábla).
 
 Az ÍRÁS a csillag/album-mintát követi (`photo_ops_controller.py`,
-`ini.io.update_document`): ütközésbiztos (párhuzamos Picasa-írás esetén
-újrajátszott), atomikus, backuppal. Index-UPDATE NEM kell (a `people.py`
+`ini.io.update_document`): azonos útvonalon soros, az előzetes ellenőrzésig
+észlelt Picasa-írás esetén újrajátszott, atomikus, backuppal. A check/save
+közti külső írás teljes kizárását nem garantálja. Index-UPDATE NEM kell (a `people.py`
 minden híváskor újraolvassa az ini-t), ezért — a csillag/forgatással
 ellentétben — nincs szükség háttérszálra/`_run_photo_write`-ra: az
 ini-írás önmagában is gyors (kis fájl), a szinkron hívás itt egyszerűbb."""
@@ -218,7 +219,7 @@ class FacesHelper(QObject):
         return ensure_contact(document, new_id, clean_name), new_id
 
     def _mutate(self, image_path: str, mutate, left=None, top=None, right=None, bottom=None) -> bool:
-        """Közös írási keret: ütközésbiztos `update_document` egyetlen
+        """Közös írási keret: szerializált, best-effort `update_document` egyetlen
         atomi mutate-tal (a rekonstrukciós azonosító-lookup ÉS az arc-írás
         együtt, hogy ütközés-újrajátszásnál konzisztens maradjon)."""
         if not image_path:

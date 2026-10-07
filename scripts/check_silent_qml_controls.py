@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,7 +26,7 @@ _DEFAULT_BASELINE = Path(__file__).with_name("silent_qml_controls_baseline.txt")
 _QML_ROOT = Path("src/picasapy/app/qml")
 
 # A plafon az auditkor megállapított baseline mérete. Csak csökkenthető.
-MAX_BASELINE_ENTRIES = 40
+MAX_BASELINE_ENTRIES = 39
 
 _HANDLER = re.compile(r"\b(onClicked|onTriggered)\s*:")
 _SIGNAL = re.compile(r"\bsignal\s+(\w+)\s*\(")
@@ -429,12 +430,34 @@ def load_baseline(path: Path) -> dict[tuple[str, str], str]:
     return entries
 
 
+_SORSZAM = re.compile(r":\d+:")
+
+
+def _sor_nelkul(identity: tuple[str, str]) -> tuple[str, str]:
+    """A kulcs sorszám nélkül: egy fölötte beszúrt sor ne tegye a tételt
+    „újjá" és „elavulttá" egyszerre. Ugyanabban a fájlban több azonos
+    fajtájú tétel is lehet, ezért az összevetés darabszámra megy."""
+    category, key = identity
+    return category, _SORSZAM.sub(":", key, count=1)
+
+
 def compare(
     findings: list[Finding], baseline: dict[tuple[str, str], str]
 ) -> tuple[list[Finding], list[tuple[str, str]]]:
-    actual = {(finding.category, finding.key): finding for finding in findings}
-    new = [actual[key] for key in sorted(actual.keys() - baseline.keys())]
-    stale = sorted(baseline.keys() - actual.keys())
+    maradek = Counter(_sor_nelkul(key) for key in baseline)
+    new: list[Finding] = []
+    for finding in sorted(findings):
+        kulcs = _sor_nelkul((finding.category, finding.key))
+        if maradek[kulcs] > 0:
+            maradek[kulcs] -= 1
+        else:
+            new.append(finding)
+    stale: list[tuple[str, str]] = []
+    for key in sorted(baseline):
+        kulcs = _sor_nelkul(key)
+        if maradek[kulcs] > 0:
+            maradek[kulcs] -= 1
+            stale.append(key)
     return new, stale
 
 

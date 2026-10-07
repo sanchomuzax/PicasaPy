@@ -186,7 +186,7 @@ class TestRovidzarKesobbiSzlot:
 _ISMERT_SAJAT_HANGOS_VESZFEKEK = {
     # a jelzés SZÁNDÉKOSAN nem jön meg — a némaságot a teszt maga állítja
     ("tests/app/test_kollazs_gc_verseny_988.py", "test_a_mentes_tulel_agressziv_szemetgyujtest"),
-    # kétjelzéses várakozás (photoOpFinished + photoOpFailed), #519
+    # a művelet végét és a hibaágat külön ellenőrző bevárás, #519
     ("tests/app/test_qml_slideshow.py", "_invoke_photo_op"),
     ("tests/app/test_regi_originals_a_feluleten_1425.py", "_wait"),  # #2408
     ("tests/app/test_save_controller.py", "_wait"),  # #2408

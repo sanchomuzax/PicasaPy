@@ -169,12 +169,17 @@ Rectangle {
         (typeof controller !== "undefined" && controller
          && controller.editorControlsVisible !== undefined)
         ? controller.editorControlsVisible : true
+    readonly property bool uiTransitionsEnabled:
+        !viewer.controllerReady || controller.uiTransitionsEnabled === undefined
+            ? true : controller.uiTransitionsEnabled
     // #4183: a szerkesztő bal fiókjának 0…−279 képpontos eltérése. A
     // befoglaló hely vele együtt szűkül, a 280 px-es tartalom pedig balra
     // csúszik és a fiók levágása rejti el.
     property real editorDrawerOffset: editorControlsVisible ? 0 : -279
     Behavior on editorDrawerOffset {
+        enabled: viewer.uiTransitionsEnabled
         NumberAnimation {
+            objectName: "viewerEditorDrawerAnimation"
             duration: 250
             easing.type: Easing.InOutQuad
         }
@@ -734,6 +739,35 @@ Rectangle {
         }
         viewer._aaLezaras()
         viewer.masodikEditCtl.beginEdit(azonosito, photosModel.filePathAt(sor))
+    }
+
+    // A lemezművelet a fájlt és az indexet frissíti. Ha a nyitott nézet egy
+    // sikeresen érintett képet mutat, a szerkesztő-előnézetnek is újra kell
+    // olvasnia a mostani fájlt és filters= láncot.
+    function frissitsdALemezműveletUtániElőnézetet(utvonalak) {
+        if (!viewer.visible || !viewer.photosModel || !utvonalak
+                || utvonalak.length === 0)
+            return
+
+        var sor = viewer._kijeloltSort()
+        if (sor >= 0) {
+            var utvonal = viewer.photosModel.filePathAt(sor)
+            if (utvonalak.indexOf(utvonal) >= 0 && viewer.editCtl)
+                viewer.editCtl.beginEdit(
+                    viewer.photosModel.idAt(sor), utvonal)
+        }
+
+        // A két önálló AB-előnézet is a mentett állapotot mutassa. Az AA
+        // második fele memóriás piszkozat, ezért azt a lemezművelet nem írja.
+        if (viewer.layoutMode === "ab" && viewer.masodikEditCtl) {
+            var masodik = viewer._masodikSort()
+            if (masodik >= 0) {
+                var masodikUtvonal = viewer.photosModel.filePathAt(masodik)
+                if (utvonalak.indexOf(masodikUtvonal) >= 0)
+                    viewer.masodikEditCtl.beginEdit(
+                        viewer.photosModel.idAt(masodik), masodikUtvonal)
+            }
+        }
     }
 
     // -- #3014: az „aa" mód két szerkesztési állapota ---------------------
@@ -3003,6 +3037,12 @@ Rectangle {
                                 kepkockaJelzes.mutasd(
                                     qsTr("This feature is not supported for Linux"))
                         }
+                        // #4449/#4458: csak a videó-előnézeti terület
+                        // kérhet kattintásra visszalépést; a PhotoViewer
+                        // közös kilépési kapuja védi a félkész szerkesztést.
+                        function onExitRequested() {
+                            viewer.kerBezaras()
+                        }
                     }
                     //: #1838: a képkocka-mentés VISSZAJELZÉSE. Az eredeti négy
                     //: állapotszöveget adott (`CCaptureFrame::captureframeprog1..4`);
@@ -4305,7 +4345,7 @@ Rectangle {
     //: #1612: a menü HALASZTOTT — az `ensure()` az első jobbklikkre építi
     //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
     //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
-    function openContextMenu(x, y) { viewerMenuLoader.ensure().popup(viewer, x, y) }
+    function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer.currentPath, typeof fileOpsController !== "undefined" ? fileOpsController : null) }
 
     DeferredDialog {
         id: viewerMenuLoader
@@ -4371,10 +4411,10 @@ Rectangle {
                 && viewer.currentPath.length > 0)
                 fileOpsController.openPhoto(viewer.currentPath)
         }
-        onLocateRequested: {
-            if (typeof fileOpsController !== "undefined" && fileOpsController
-                && viewer.currentPath.length > 0)
-                fileOpsController.revealPhoto(viewer.currentPath)
+        onLocateRequested: function(original) {
+            if (typeof fileOpsController !== "undefined" && fileOpsController && viewer.currentPath.length > 0)
+                original ? fileOpsController.revealOriginal(viewer.currentPath)
+                    : fileOpsController.revealPhoto(viewer.currentPath)
         }
         onCopyFullPathRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController

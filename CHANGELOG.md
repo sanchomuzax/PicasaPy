@@ -7,6 +7,35 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.34] – 2026-10-07
+
+- Az Általános fül három felületi beállítása menthető, a videó-előnézet kilépési módja is választható. (#4449).
+- A gyors forgatás és tükrözés egyszerre is megőrzi mindkét módosítást; a szerkesztő állapotgépét bizonyított ok híján nem emeltük ki (#4473).
+
+## [0.9.33] – 2026-10-07
+
+- A foglalt célfájlt áthelyezés és visszagörgetés közben is érintetlenül hagyja (#4469).
+- A modellletöltés tesztje a keresés gombjának tényleges engedélyezésére vár, nem a letöltési jelzőre (#4475).
+
+## [0.9.32] – 2026-10-07
+
+- A kötegelt átnevezés hiba esetén megmutatja az elkészült fájlokat, és frissíti a listát (#4470).
+- Az azonos `.picasa.ini` útvonalra induló PicasaPy-frissítések folyamaton belül sorosak, a külső Picasa-írás észlelt esetben újrapróbálódik (#4471).
+
+## [0.9.31] – 2026-10-07
+
+- A mappa zeneválasztása a diavetítés és a mozgófilm hangsávjaként is használható. (#4448).
+
+## [0.9.30] – 2026-10-07
+
+- Elkészültek a gyorsbillentyű- és helyi menüparitás táblái, valamint több mappalista- és nézőmenü-bekötés. (#4462).
+
+## [0.9.29] – 2026-10-07
+
+- A QML-felület kattintásos ellenőrzése és a néma vezérlőket jelző CI-őr bővült. (#4438).
+- A mentés és visszaállítás után a fotó nézete frissül, hibájuk pedig látható üzenetet ad; a fotóműveletek eredménye a nézetben jelenik meg. (#4440).
+- Az E-mail beállításokban videóknál választható és mentődik az első képkocka vagy a teljes film; küldéskor a választás szerinti melléklet készül (#4451).
+
 ## [0.9.28] – 2026-10-06
 
 - A teljes felbontású ragyogás színes tagja az eredeti kerekített egész ÷255 keverést használja. (#4442).

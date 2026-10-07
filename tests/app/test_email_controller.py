@@ -154,6 +154,75 @@ class TestSizeSettingsPersistence:
         assert controller.useDefaultClient is False
 
 
+class TestMovieSettings:
+    def test_video_kuldes_alapertelmezettje_elsokocka_es_mentodik(
+        self, qt_app, tmp_path
+    ):
+        settings = _settings(tmp_path)
+        first = EmailController(photo_source=lambda: [], settings=settings)
+
+        assert first.movieFull is False
+
+        first.setMovieFull(True)
+        settings.sync()
+        second = EmailController(
+            photo_source=lambda: [], settings=_settings(tmp_path)
+        )
+
+        assert second.movieFull is True
+
+    def test_elso_kocka_modban_a_belyegkep_dekodolasa_keszit_jpeget(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        import numpy as np
+        from picasapy.thumbs import cache as thumbnail_cache
+
+        source = tmp_path / "felvetel.mp4"
+        source.write_bytes(b"tesztvideo")
+        frame = np.zeros((48, 80, 3), dtype=np.uint8)
+        frame[:, :] = (0, 0, 255)  # BGR: piros képkocka
+        dekodolt = []
+
+        def _dekodol(utvonal):
+            dekodolt.append(Path(utvonal))
+            return frame.copy()
+
+        monkeypatch.setattr(
+            thumbnail_cache, "_decode_video_frame_isolated", _dekodol
+        )
+        photo = _FakePhoto(folder_path=str(tmp_path), name=source.name)
+        controller = _controller([photo], tmp_path)
+
+        attachments = controller.prepareAttachments([0], True)
+
+        assert dekodolt == [source]
+        assert len(attachments) == 1
+        attachment = Path(attachments[0])
+        assert attachment.suffix == ".jpg"
+        with Image.open(attachment) as image:
+            assert image.format == "JPEG"
+            assert image.size == (80, 48)
+            red, green, blue = image.convert("RGB").getpixel((40, 24))
+        assert red > 220 and green < 35 and blue < 35
+
+    def test_teljes_film_modban_a_video_teljes_masolatban_csatalodik(
+        self, qt_app, tmp_path
+    ):
+        source = tmp_path / "felvetel.mp4"
+        tartalom = b"a teljes film bytejai"
+        source.write_bytes(tartalom)
+        photo = _FakePhoto(folder_path=str(tmp_path), name=source.name)
+        controller = _controller([photo], tmp_path)
+        controller.setMovieFull(True)
+
+        attachments = controller.prepareAttachments([0], True)
+
+        assert len(attachments) == 1
+        attachment = Path(attachments[0])
+        assert attachment.suffix == ".mp4"
+        assert attachment.read_bytes() == tartalom
+
+
 class TestRegiBeallitasAtvetele:
     """#2020: a #350 INDEX-alapú kulcsát képponttá kell alakítani.
 

@@ -53,7 +53,12 @@ from picasapy.edit.effect_clipboard import (
     crop_mirror_value,
     paste_all_effects,
 )
-from picasapy.fileops import RenameItem, preview_name, rename_photos_many
+from picasapy.fileops import (
+    PartialRenameError,
+    RenameItem,
+    preview_name,
+    rename_photos_many,
+)
 from picasapy.index import (
     open_index,
     photos_with_keyword,
@@ -157,10 +162,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # frissítését a GUI-szálra tereli (Qt automatikusan sorba állítja a
     # más szálból jövő emitet, ahogy a watcherDirty is teszi).
     # #1443: a harmadik elem az utómunka (hívható vagy None) — a GUI-szálon,
-    # a sor frissítése UTÁN, de a `photoOpFinished` ELŐTT fut le. Külön
-    # jelzés helyett azért ide, mert a tesztek (és a QML busy-jelzése) a
-    # `photoOpFinished`-re várnak: egy másik, később sorra kerülő jelzésen
-    # érkező utómunka a várakozás UTÁN futna le — néma versenyhelyzet.
+    # a sor frissítése UTÁN fut le. A felület a modell változását követi.
     _photoFieldUpdated = Signal(int, object, object)
     #: #3830: a sikertelen írás hiba-utómunkája (hívható) — a GUI-szálon,
     #: a `photoOpFailed` ELŐTT fut le (ugyanabból a szálból küldött, sorba
@@ -173,7 +175,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
     #: eljut a menühöz, nem csak a sajátunk.
     captionClipboardChanged = Signal()
-    photoOpFinished = Signal()
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
@@ -282,16 +283,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             # pótoljuk (olcsó, csak a jelen nézet listáját írja újra, nem
             # lemezműveletet indít)
             self._provider.register_photos(self._photos.photos)
-        # #1443: az utómunka a sor frissítése UTÁN, a befejezés-jelzés ELŐTT
-        # fut — így a `photoOpFinished`-re váró hívó (QML, teszt) már a
-        # végleges nézetet látja. `record is None` esetén is lefut: ha a kép
-        # eltűnt az indexből, a nézetnek pláne frissülnie kell.
-        # #3830: ha az utómunka `True`-t ad, újabb írás indult a láncban
-        # (gyors egymás utáni forgatás) — a befejezés-jelzés majd a lánc
-        # VÉGÉN megy ki, különben a rá váró hívó félkész állapotot látna.
-        folytatodik = after() if after is not None else None
-        if folytatodik is not True:
-            self.photoOpFinished.emit()
+        # #1443: az utómunka a sor frissítése után fut. `record is None`
+        # esetén is lefut: ha a kép eltűnt az indexből, a nézetnek pláne
+        # frissülnie kell. #3830 esetén az utómunka a következő forgatást
+        # indíthatja, a modell így csak a lánc végső értékét kapja meg.
+        if after is not None:
+            after()
 
     @Slot(object)
     def _on_photo_write_aborted(self, on_error) -> None:
@@ -316,7 +313,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # meglévő hibajelzési minta (#86/#150): ugyanaz a csatorna, mint a
         # háttér-szinkron hibáié
         self.syncFailed.emit(message)
-        self.photoOpFinished.emit()
 
     def _run_photo_write(
         self, photo_id: int, perform, after=None, on_error=None
@@ -329,9 +325,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         `after`: opcionális utómunka (#1443), amit a GUI-szálon, a rács-sor
         frissítése után hívunk. Írási hiba esetén NEM fut le — olyankor a
-        nézet tartalma sem változott. Ha `True`-t ad vissza, a
-        `photoOpFinished` elmarad (a hívó újabb írást indított, #3830).
-
+        nézet tartalma sem változott. A forgatás utómunkája a következő
+        célértéket új háttérmunkában írja ki.
         `on_error`: opcionális hiba-utómunka (#3830) a GUI-szálon — a
         várt írási hibánál (`_WRITE_ERRORS`) ÉS nem várt kivételnél is
         lefut, hogy a hívó eldobhassa a függő állapotát."""
@@ -711,6 +706,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     items, base_name,
                     include_date=include_date, include_size=include_size,
                 )
+            except PartialRenameError as error:
+                # Részleges futásnál a fájlok/ini-szekciók egy része már
+                # megváltozott. Frissítsük ugyanazokat a mappákat, majd a
+                # strukturált hibaszöveg mutassa meg, mely nevek készültek el.
+                folders = sorted({str(item.path.parent) for item in items})
+                self._renameBatchDone.emit(folders)
+                self.photoOpFailed.emit(str(error))
+                return
             except (OSError, ValueError, IniSaveError, IniConflictError) as error:
                 self.photoOpFailed.emit(str(error))
                 return
@@ -729,15 +732,15 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             for folder in folders:
                 self._sync_tree(conn, folder)
         self._refresh_view()
-        self.photoOpFinished.emit()
 
     # -- virtuális albumok (#9, 2. lépés) ------------------------------------
 
     @Slot(list, str)
     def addRowsToAlbum(self, rows, token: str) -> None:
         """A kijelölés felvétele egy MEGLÉVŐ albumba: az `albums=` CSV
-        bővítése minden érintett fotónál, mappánként egyetlen ütközésbiztos
-        ini-írással (`_apply_batch`, a `setGeotagRows` mintája)."""
+        bővítése minden érintett fotónál, mappánként egyetlen útvonalanként
+        szerializált, best-effort konkurenciakezelésű ini-írással
+        (`_apply_batch`, a `setGeotagRows` mintája)."""
         token = (token or "").strip()
         if not token:
             return
@@ -787,6 +790,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     "date": album.date or "",
                     "location": album.location or "",
                     "description": album.description or "",
+                    "use_music": album.use_music,
+                    "music_file": album.music_file or "",
                 }
         return {}
 
@@ -832,6 +837,41 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                 for ut, dokumentum in self._album_dokumentumok(token):
                     if mutate(dokumentum) is dokumentum:
                         continue  # nincs mit írni ebbe a mappába
+                    update_document(ut, mutate, backup=True)
+                    self._sync_tree(conn, str(ut.parent))
+                    irt = True
+                if irt:
+                    self._load_albums(conn)
+        except _WRITE_ERRORS as hiba:
+            self.albumWriteFailed.emit(str(hiba))
+            return False
+        if irt:
+            self._refresh_view()
+        return irt
+
+    @Slot(str, bool, str, result=bool)
+    def editAlbumMusic(  # noqa: N802
+        self, token: str, use_music: bool, music_file: str
+    ) -> bool:
+        """A zene két mezőjének mentése az albumot ismerő mappák ini-jébe."""
+        token = (token or "").strip()
+        if not token:
+            return False
+
+        def mutate(dokumentum):
+            return with_album_fields(
+                dokumentum,
+                token,
+                use_music=use_music,
+                music_file=music_file,
+            )
+
+        irt = False
+        try:
+            with open_index(self._db_path) as conn:
+                for ut, dokumentum in self._album_dokumentumok(token):
+                    if mutate(dokumentum) is dokumentum:
+                        continue
                     update_document(ut, mutate, backup=True)
                     self._sync_tree(conn, str(ut.parent))
                     irt = True
