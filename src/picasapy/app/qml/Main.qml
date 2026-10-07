@@ -1350,7 +1350,7 @@ ApplicationWindow {
     //: A cél a KIJELÖLÉS (az eredeti ága is a panelre hat); nézőben a
     //: megnyitott kép, a forgatás `rotateTargetRow` mintája szerint.
     function tukrozesiSorok() {
-        if (window.viewerOpen) return [photoViewer.currentIndex]
+        if (window.viewerOpen) return [photoViewer._kijeloltSort()]
         return window.selectedRows()
     }
     Shortcut {
@@ -1497,9 +1497,10 @@ ApplicationWindow {
         // volt.
         sequence: "Ctrl+Delete"
         enabled: window.viewerOpen && !window._szovegmezoneVanFokusz
-                 && photoViewer.currentIndex >= 0
+                 && photoViewer._kijeloltSort() >= 0
         onActivated: {
-            var p = controller.photos.filePathAt(photoViewer.currentIndex)
+            var sor = photoViewer._kijeloltSort()
+            var p = controller.photos.filePathAt(sor)
             if (p.length > 0) fileOpsDialogs.ensure().openDelete([p])
         }
     }
