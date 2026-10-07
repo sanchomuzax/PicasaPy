@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.39] – 2026-10-07
+
+- Import közbeni mappaszinkron és arcfelismerés nem tartja hosszan az adatbázis zárát; ütközéskor az érintett mappák késleltetve újrapróbálódnak. (#4509).
+- Az Arcok alaphelyzetbe állítása után a kijelölt képek arcait a program automatikusan újrakeresi, és a hiányzó modellről útmutatót mutat. (#4510).
+- Ha az arcfelismerés nem tud elindulni, az oka a hibanaplóba kerül (#4517).
+
 ## [0.9.38] – 2026-10-07
 
 - A Mappa tulajdonságai párbeszéd Név mezőjével átnevezhetők a mappák; foglalt vagy érvénytelen névnél hibaüzenet jelenik meg. (#4482).
