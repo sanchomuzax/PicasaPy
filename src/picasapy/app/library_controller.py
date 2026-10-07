@@ -77,6 +77,18 @@ from .worker_thread import BackgroundWorkerMixin
 
 logger = logging.getLogger(__name__)
 
+
+def _sqlite_write_lock_error(error: sqlite3.OperationalError) -> bool:
+    """Igaz, ha az `OperationalError` oka a SQLite írási zárütközése."""
+    code = getattr(error, "sqlite_errorcode", None)
+    if code is not None:
+        base_code = int(code) & 0xFF
+        if base_code in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+            return True
+    message = str(error).casefold()
+    return "locked" in message or "busy" in message
+
+
 # #209: a worker-oldali jelzés-ritkítás minimuma (mp) — sok gyorsan kihagyott
 # mappánál a queued jelzések ne árasszák el a GUI-szál eseménysorát.
 _PROGRESS_EMIT_MIN_S = 0.25
@@ -84,6 +96,8 @@ _PROGRESS_EMIT_MIN_S = 0.25
 # eredmények látszanak, de nem fut modell-újratöltés minden kötegnél.
 _PROGRESS_RELOAD_MIN_S = 1.5
 _FILETYPE_SNAPSHOT_UNSET = object()
+# Tartós SQLite-zárnál várjunk egy kört, mielőtt a mappákat újrapróbáljuk.
+_LOCKED_SYNC_RETRY_MS = 5_000
 
 
 #: A LÁTOTT mappa célzott újraolvasásának időköze (#1275).
@@ -488,6 +502,9 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         if getattr(self, "_folder_poll_timer", None) is not None:
             self._folder_poll_timer.stop()
             self._folder_poll_timer = None
+        if getattr(self, "_locked_dirty_retry_timer", None) is not None:
+            self._locked_dirty_retry_timer.stop()
+            self._locked_dirty_retry_timer = None
         if self._watcher is not None:
             self._watcher.stop()
             # #1457: a figyelő MAGA dönti el, elengedhető-e. Ha a
@@ -1064,6 +1081,8 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
         def worker():
             errors = []
+            locked_folders = []
+            synced_folders = []
             try:
                 with open_index(self._db_path) as conn:
                     for folder in paths:
@@ -1085,13 +1104,25 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                                 should_stop=self._make_should_stop(root),
                                 **sync_options,
                             )
+                            synced_folders.append(folder)
                         except (OSError, RuntimeError):
                             pass  # eltűnt mappa — a periodikus rescan rendezi
                         except sqlite3.OperationalError as error:
-                            # busy_timeout lejárt (párhuzamos író) — ez NEM
-                            # nyelhető el némán: a felhasználó jelzést kap,
-                            # a maradék mappák feldolgozása folytatódik.
-                            errors.append(f"{folder}: {error}")
+                            if _sqlite_write_lock_error(error):
+                                # A másik író busy_timeout-on túl is fogta a
+                                # DB-t. Ezt naplózzuk, de a felhasználónak
+                                # kötegenként egy összesített jelzés megy; a
+                                # mappák a syncFinished utáni körre kerülnek.
+                                logger.warning(
+                                    "mappaszinkron zárütközés, később újrapróbáljuk: %s: %s",
+                                    folder,
+                                    error,
+                                )
+                                locked_folders.append(folder)
+                                if conn.in_transaction:
+                                    conn.rollback()
+                            else:
+                                errors.append(f"{folder}: {error}")
             finally:
                 # #1440: a jelzőt az EMITEK ELŐTT engedjük el.
                 #
@@ -1108,8 +1139,24 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                 # `open_index` blokk lezárult, ez a szál nem ír többé.
                 self._dirty_running = False
                 try:
+                    reported = getattr(self, "_reported_locked_sync_folders", set())
+                    reported.difference_update(synced_folders)
+                    uj_zarasok = set(locked_folders).difference(reported)
+                    if locked_folders:
+                        self._pending_dirty.update(locked_folders)
+                        self._locked_dirty_retry_pending = True
+                        reported.update(locked_folders)
+                        self._reported_locked_sync_folders = reported
+                    messages = []
+                    if uj_zarasok:
+                        darab = len(uj_zarasok)
+                        messages.append(
+                            f"{darab} mappa szinkronizálása később folytatódik."
+                        )
                     if errors:
-                        self.syncFailed.emit("; ".join(errors))
+                        messages.append("; ".join(errors))
+                    if messages:
+                        self.syncFailed.emit("\n".join(messages))
                     self.syncFinished.emit()
                 except RuntimeError:
                     # ugyanaz a védelem, mint a sweep-workerében (#1435):
@@ -1470,6 +1517,21 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         esetén visszatesszük őket — a következő `syncFinished` behozza."""
         if not self._pending_dirty:
             return
+        if getattr(self, "_locked_dirty_retry_pending", False):
+            # A syncFinished a worker befejezésekor azonnal érkezik. A zárba
+            # futott mappákat ne indítsuk újra ugyanabban a hibás állapotban:
+            # egyetlen, rövid késleltetett kör után próbáljuk meg ismét.
+            from PySide6.QtCore import QTimer
+
+            timer = getattr(self, "_locked_dirty_retry_timer", None)
+            if timer is None:
+                timer = QTimer(self)
+                timer.setSingleShot(True)
+                timer.timeout.connect(self._retry_locked_dirty_folders)
+                self._locked_dirty_retry_timer = timer
+            if not timer.isActive():
+                timer.start(_LOCKED_SYNC_RETRY_MS)
+            return
         folders = sorted(self._pending_dirty)
         self._pending_dirty = set()
         # #1458: a várakozás közben nyitott foglaltság-bejegyzések záródnak.
@@ -1484,6 +1546,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         except BaseException:
             self._pending_dirty.update(folders)
             raise
+
+    @Slot()
+    def _retry_locked_dirty_folders(self) -> None:
+        """A rövid várakozás után újra sorra veszi a zár miatt félretett mappákat."""
+        self._locked_dirty_retry_pending = False
+        self._flush_pending_dirty()
 
     @Slot(int)
     def resyncFolderOfRow(self, row: int) -> None:

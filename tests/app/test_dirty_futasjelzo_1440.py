@@ -187,6 +187,84 @@ class TestAtfedoIrok:
         assert csucs == 1, f"{csucs} index-író futott egyszerre"
 
 
+class TestZarutkozes:
+    def test_zarhiba_utan_nem_indul_azonnali_ujraprobalkozasi_ciklus(
+        self, controller, library, monkeypatch
+    ):
+        import sqlite3
+
+        import picasapy.app.library_controller as lc
+
+        probalkozasok = 0
+        sync_folder_eredeti = lc.sync_folder
+
+        def zarba_utkozik_egyszer(conn, root, folder, **kwargs):
+            nonlocal probalkozasok
+            probalkozasok += 1
+            if probalkozasok == 1:
+                raise sqlite3.OperationalError("database is locked")
+            return sync_folder_eredeti(conn, root, folder, **kwargs)
+
+        monkeypatch.setattr(lc, "sync_folder", zarba_utkozik_egyszer)
+        inditott_munkak = []
+        monkeypatch.setattr(
+            controller,
+            "_start_background",
+            lambda worker, **_kwargs: inditott_munkak.append(worker),
+        )
+
+        controller._on_folders_dirty([str(library / "nyaralas")])
+        assert len(inditott_munkak) == 1
+        inditott_munkak[0]()
+
+        assert len(inditott_munkak) == 1, "a syncFinished nem indíthat azonnali új kört"
+        assert controller._pending_dirty == {str(library / "nyaralas")}
+        assert controller._locked_dirty_retry_timer.isActive()
+        controller._locked_dirty_retry_timer.stop()
+
+        controller._retry_locked_dirty_folders()
+        assert len(inditott_munkak) == 2
+        inditott_munkak[1]()
+
+        assert probalkozasok == 2
+        assert controller._pending_dirty == set()
+
+    def test_tobb_zarhiba_egy_jelzest_ad_es_a_mappakat_ujrasorolja(
+        self, controller, library, monkeypatch, caplog
+    ):
+        import sqlite3
+
+        import picasapy.app.library_controller as lc
+
+        mappak = [
+            str(library / "nyaralas"),
+            str(library / "kollazsok"),
+            str(library / "regi"),
+        ]
+        def zarba_utkozik(*_args, **_kwargs):
+            raise sqlite3.OperationalError("database is locked")
+
+        monkeypatch.setattr(lc, "sync_folder", zarba_utkozik)
+        inditott_munkak = []
+        monkeypatch.setattr(
+            controller,
+            "_start_background",
+            lambda worker, **_kwargs: inditott_munkak.append(worker),
+        )
+        controller.syncFinished.disconnect(controller._flush_pending_dirty)
+        uzenetek = []
+        controller.syncFailed.connect(uzenetek.append)
+
+        controller._on_folders_dirty(mappak)
+        assert len(inditott_munkak) == 1
+        inditott_munkak[0]()
+        inditott_munkak[0]()
+
+        assert uzenetek == ["3 mappa szinkronizálása később folytatódik."]
+        assert controller._pending_dirty == set(mappak)
+        assert sum("database is locked" in rec.message for rec in caplog.records) == 6
+
+
 class TestJelzoNemRagadBe:
     """A beragadt jelző NÉMA halál: onnantól sosem indul több frissítés."""
 

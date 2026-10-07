@@ -1423,7 +1423,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     )
     engine.rootContext().setContextProperty("relocateController", relocate_controller)
     # #449: adatbázis-tömörítés — a CompactDatabaseDialog.qml hídja
-    compact_controller = CompactController(data_dir / "index.db")
+    compact_controller = CompactController(
+        data_dir / "index.db", writer_queue=controller._index_iro_sor
+    )
     engine.rootContext().setContextProperty("compactController", compact_controller)
     # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.

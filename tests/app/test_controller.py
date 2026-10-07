@@ -1183,10 +1183,10 @@ class TestLiveWatch:
         assert started == [1]
 
     def test_dirty_folder_operational_error_reported_not_swallowed(
-        self, controller, library, monkeypatch
+        self, controller, library, monkeypatch, caplog
     ):
-        # #143: a busy_timeout lejárta (sqlite3.OperationalError) nem
-        # nyelhető el némán — syncFailed jelzés, syncFinished is jön.
+        # #143/#4509: a zárütközésről syncFailed jelzés és részletes napló
+        # készül, a felület pedig összesített, későbbi újrapróbálást jelez.
         import sqlite3
 
         import picasapy.app.library_controller as lc
@@ -1203,7 +1203,8 @@ class TestLiveWatch:
         controller._on_folders_dirty([str(library / "nyaralas")])
         loop.exec()
         assert finished
-        assert errors and "database is locked" in errors[0]
+        assert errors == ["1 mappa szinkronizálása később folytatódik."]
+        assert any("database is locked" in rec.message for rec in caplog.records)
 
 
 class TestBatchOperations:
