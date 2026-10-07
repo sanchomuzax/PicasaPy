@@ -6,9 +6,17 @@ from pathlib import Path
 
 import pytest
 import shiboken6
-from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt
+from PySide6.QtCore import (
+    QCoreApplication,
+    QEvent,
+    QMetaObject,
+    QObject,
+    QSettings,
+    Qt,
+)
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtTest import QTest
+from PySide6.QtQuick import QQuickItem
 
 from picasapy.app import collage_output, movie_output
 from support.jpeg_factory import make_jpeg
@@ -80,6 +88,61 @@ def _lathato_dialogusok(ablak):
     return talalatok
 
 
+def _parbeszed_gombok(dialogus):
+    """A párbeszéd gombjait a QObject- és QML-vizuális fából is összegyűjti."""
+    objektumok = []
+    latott = set()
+
+    def hozzaad(elem):
+        try:
+            if not shiboken6.isValid(elem):
+                return
+            azon = shiboken6.getCppPointer(elem)[0]
+        except (RuntimeError, TypeError):
+            return
+        if azon not in latott:
+            latott.add(azon)
+            objektumok.append(elem)
+
+    try:
+        for elem in dialogus.findChildren(QObject):
+            hozzaad(elem)
+    except (AttributeError, RuntimeError):
+        pass
+
+    gyokerek = [dialogus]
+    for nev in ("footer", "contentItem"):
+        try:
+            elem = dialogus.property(nev)
+        except (AttributeError, RuntimeError):
+            elem = None
+        if elem is not None:
+            gyokerek.append(elem)
+
+    varakozo = list(gyokerek)
+    while varakozo:
+        elem = varakozo.pop()
+        hozzaad(elem)
+        try:
+            if isinstance(elem, QQuickItem):
+                varakozo.extend(elem.childItems())
+        except (AttributeError, RuntimeError):
+            continue
+
+    eredmeny = []
+    for elem in objektumok:
+        try:
+            if (
+                "Button" in elem.metaObject().className()
+                and bool(elem.property("visible"))
+                and bool(elem.property("enabled"))
+            ):
+                eredmeny.append(elem)
+        except RuntimeError:
+            continue
+    return eredmeny
+
+
 def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
     for _ in range(4):
         dialogusok = _lathato_dialogusok(ablak)
@@ -95,14 +158,7 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
             kezelt_nevek.add(nev)
             keres_fut = dialogus.property("scanning") is True
             gombok = []
-            for elem in dialogus.findChildren(QObject):
-                if (
-                    not shiboken6.isValid(elem)
-                    or "Button" not in elem.metaObject().className()
-                    or elem.property("visible") is not True
-                    or elem.property("enabled") is not True
-                ):
-                    continue
+            for elem in _parbeszed_gombok(dialogus):
                 gombnev = elem.objectName().casefold()
                 felirat = _normalizal(_szoveg(elem, "text"))
                 dedup_ablak = "dedup" in nev.casefold()
@@ -118,7 +174,11 @@ def _zarj_parbeszedeket(ablak, qt_app, naplo: list[str]) -> None:
                 gombok.sort(key=lambda adat: adat[0])
                 gomb = gombok[0][1]
                 gombnev = gomb.objectName().casefold()
-                _kattints_qobject(qt_app, gomb)
+                if isinstance(gomb, QQuickItem):
+                    _QML_ELEMEK.append(gomb)
+                    _kattints(qt_app, gomb)
+                else:
+                    _kattints_qobject(qt_app, gomb)
                 if keres_fut and "close" not in gombnev:
                     naplo.append(f"{nev}: Cancel gombbal a keresés megszakítva")
                     _varj(
@@ -531,7 +591,16 @@ def tiszta_menuproba(qt_app, tmp_path, monkeypatch):
     try:
         yield ablak, vezerlo, motor, tmp_path, kulso
     finally:
-        next(epito, None)
+        # A közös építő bevárja a háttérmunkát és deleteLater-rel bontja le a
+        # QQmlApplicationEngine-t. A motorhoz célzott deferred delete eseményt
+        # még a Python-GC előtt kiürítjük, így a gyökérablak a motor tulajdonosi
+        # sorrendjében semmisül meg.
+        try:
+            next(epito, None)
+        finally:
+            if shiboken6.isValid(motor):
+                QCoreApplication.sendPostedEvents(motor, QEvent.Type.DeferredDelete)
+            qt_app.processEvents()
         _QML_ELEMEK.clear()
         _UI_ELEMEK.clear()
         _DIALOG_ELEMEK.clear()
