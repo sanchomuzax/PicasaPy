@@ -557,6 +557,10 @@ ApplicationWindow {
         if (window._faceScanController.resetFacesForPhotos(paths) > 0) {
             if (controller) controller.refreshCollections()
             photoViewer.facesEditRevision += 1
+            // A hiányzó modellről a meglévő Arckeresés ablak ad érthető
+            // okot és letöltési lehetőséget; reset után ne maradjon néma.
+            if (!window._faceScanController.isAvailable())
+                faceScanDialog.open()
         }
     }
 

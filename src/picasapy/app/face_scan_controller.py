@@ -53,6 +53,7 @@ from picasapy.faces.clustering import (
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
     all_photos,
+    clear_faces,
     faces_for_photo,
     faces_missing_embedding,
     ignored_faces,
@@ -67,6 +68,7 @@ from picasapy.index import (
     mark_faces_named,
     open_index,
     face_scan_done,
+    forget_face_scan,
     mark_face_scan,
     replace_faces,
     store_embedding,
@@ -130,6 +132,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # A modell hiányzik/nem tölthető be — a szkennelés el sem indul, ez
     # NEM hiba (a funkció tervezett, hiánytűrő kikapcsolása).
     modelUnavailable = Signal()
+    _scanWorkerStopped = Signal()
 
     # #26 (2. lépcső): lenyomat-számítás + csoportosítás — a detektálásnál
     # ALACSONYABB PRIORITÁSÚ, KÜLÖN indítható sor (ld. osztály-docstring).
@@ -212,6 +215,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._ini_ignored_cache: tuple[IniIgnoredFace, ...] | None = None
         self._stop_event: threading.Event | None = None
         self._automatic_scan = False
+        self._pending_face_reset_paths: list[str] = []
+        self._resume_scan_after_reset = False
+        self._scanWorkerStopped.connect(self._finish_reset_after_scan)
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
         self._scan_percent = -1
@@ -981,19 +987,75 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     @Slot(list, result=int)
     def resetFacesForPhotos(self, image_paths) -> int:  # noqa: N802 — QML-slot-stílus
-        """A kijelölt képek Picasa-féle arc-téglalapjainak törlése (#4258).
+        """A kijelölt képek arcadatainak törlése és újrakeresése (#4510).
 
         A `.picasa.ini` írása kizárólag a `FacesHelper`/`ini` API-n megy.
-        A függvény nem végez könyvtárszintű műveletet; visszatérési értéke
-        a sikeresen kezelt képek száma."""
-        if self._faces_helper is None or not image_paths:
+        Az index saját találatai és átnézettségi jelölése az `index/`
+        API-ján keresztül törlődik. A következő keresés a már meglévő
+        automatikus háttérúton fut; futó keresés esetén annak biztonságos
+        leállása után indul újra.
+
+        Visszatérési értéke a kijelölt, érvényes útvonalak száma."""
+        if not image_paths:
             return 0
         paths = tuple(dict.fromkeys(str(path) for path in image_paths if path))
-        completed = 0
+        if not paths:
+            return 0
         for image_path in paths:
-            if self._faces_helper.removeAllFaces(image_path):
-                completed += 1
-        return completed
+            if self._faces_helper is not None:
+                self._faces_helper.removeAllFaces(image_path)
+
+        if self._stop_event is not None or self._pending_face_reset_paths:
+            self._pending_face_reset_paths.extend(
+                path
+                for path in paths
+                if path not in self._pending_face_reset_paths
+            )
+            self._resume_scan_after_reset = True
+            self.cancelScan()
+            return len(paths)
+
+        self._reset_index_faces(paths)
+        if not self._detector.available:
+            self.modelUnavailable.emit()
+        else:
+            self.scanNewFaces()
+        return len(paths)
+
+    def _reset_index_faces(self, image_paths: tuple[str, ...] | list[str]) -> int:
+        """A kijelölt fotók származtatott arcadatait üríti az `index/` API-val."""
+        with open_index(self._db_path) as conn:
+            photos_by_path = {
+                str(Path(photo.folder_path) / photo.name): photo.id
+                for photo in all_photos(conn)
+            }
+            photo_ids = {
+                photos_by_path[path]
+                for path in image_paths
+                if path in photos_by_path
+            }
+            for photo_id in photo_ids:
+                clear_faces(conn, photo_id)
+                forget_face_scan(conn, photo_id=photo_id)
+            conn.commit()
+        if photo_ids:
+            self._ini_ignored_cache = None
+            self.unnamedCountChanged.emit()
+        return len(photo_ids)
+
+    @Slot()
+    def _finish_reset_after_scan(self) -> None:
+        """A futó szkennelés után érvényesíti a függő reseteket és újraindít."""
+        if not self._resume_scan_after_reset:
+            return
+        paths = tuple(self._pending_face_reset_paths)
+        self._pending_face_reset_paths.clear()
+        self._resume_scan_after_reset = False
+        self._reset_index_faces(paths)
+        if not self._detector.available:
+            self.modelUnavailable.emit()
+        else:
+            self.scanNewFaces()
 
     @Slot(result=int)
     def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus
@@ -1189,6 +1251,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
             # hibára futott (#449)
             self._set_scan_percent(-1)
+            self._scanWorkerStopped.emit()
         self.unnamedCountChanged.emit()
         self.scanFinished.emit(found, scanned)
 

@@ -7,9 +7,11 @@ from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.app.faces_helper import FacesHelper
-from picasapy.index import open_index, sync_tree
+from picasapy.index import all_photos, open_index, sync_tree
 from picasapy.ini import load_document
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_feltetelre
+from tests.app.test_face_scan_controller import _FakeDetector, _run
 
 
 def _two_folder_library(root):
@@ -83,6 +85,30 @@ def test_reset_faces_menu_click_only_removes_selected_photo_ini_entry(
     first_photo = library / "album-a" / "selected.jpg"
     second_photo = library / "album-b" / "untouched.jpg"
 
+    face_scan = _engine.rootContext().contextProperty("faceScanController")
+    detector = _FakeDetector()
+    face_scan._detector = detector
+    faces_helper = FacesHelper()
+    assert faces_helper.removeAllFaces(str(first_photo))
+    assert faces_helper.removeAllFaces(str(second_photo))
+    _run(face_scan.scanFinished, face_scan.scanForFaces)
+    assert face_scan.waitForBackgroundWorkers(5.0)
+    assert len(detector.calls) == 2
+    assert faces_helper.addFace(str(first_photo), 0.1, 0.2, 0.4, 0.6, "Ada")
+    assert faces_helper.addFace(str(second_photo), 0.2, 0.3, 0.5, 0.7, "Bela")
+
+    with open_index(tmp_path / "index.db") as conn:
+        selected_id = next(
+            photo.id for photo in all_photos(conn) if photo.name == "selected.jpg"
+        )
+        selected_count = conn.execute(
+            "SELECT COUNT(*) FROM face WHERE photo_id = ?", (selected_id,)
+        ).fetchone()[0]
+        assert selected_count == 1
+        assert conn.execute(
+            "SELECT COUNT(*) FROM face_scan WHERE photo_id = ?", (selected_id,)
+        ).fetchone()[0] == 1
+
     first_ini = first_photo.parent / ".picasa.ini"
     second_ini = second_photo.parent / ".picasa.ini"
     before_first = load_document(first_ini).section(first_photo.name).get("faces")
@@ -99,7 +125,14 @@ def test_reset_faces_menu_click_only_removes_selected_photo_ini_entry(
     menu = _open_context_menu(window, qt_app, selected_row)
     item = menu.findChild(QObject, "contextMenuResetFaces")
     assert item is not None
+    assert len(detector.calls) == 2, "a kezdeti keresés nem a várt két fotót vizsgálta"
     _click_menu_item(item, qt_app)
+    assert varj_feltetelre(
+        qt_app,
+        lambda: len(detector.calls) >= 3,
+        3.0,
+    ), "a helyi menüből resetelt kép nem került vissza a detektorhoz"
+    assert face_scan.waitForBackgroundWorkers(5.0)
 
     after_first_document = load_document(first_ini)
     after_second_document = load_document(second_ini)
@@ -112,3 +145,59 @@ def test_reset_faces_menu_click_only_removes_selected_photo_ini_entry(
     assert after_first_document.section("Contacts2") is not None
     assert after_second == before_second, "a másik mappa arcadata megváltozott"
     assert after_second_section.get("caption") == "keep-untouched"
+
+    with open_index(tmp_path / "index.db") as conn:
+        assert conn.execute(
+            "SELECT COUNT(*) FROM face WHERE photo_id = ?", (selected_id,)
+        ).fetchone()[0] == 1
+        face_state = conn.execute(
+            "SELECT state FROM face WHERE photo_id = ?", (selected_id,)
+        ).fetchone()[0]
+        assert face_state == "unnamed"
+    assert first_photo.name in {item["name"] for item in face_scan.unnamedAlbum()}
+
+
+@pytest.mark.parametrize("height_offset", [-5, 0, 5])
+def test_reset_faces_menu_shows_model_help_when_detector_is_unavailable(
+    qml_app, qt_app, tmp_path, height_offset
+):
+    window, controller, engine = qml_app
+    window.setHeight(window.height() + height_offset)
+    qt_app.processEvents()
+    library = tmp_path / "kepek"
+    (library / "a.jpg").unlink()
+    (library / "b.jpg").unlink()
+    _two_folder_library(library)
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, library)
+    controller._reload()
+    qt_app.processEvents()
+
+    selected_photo = library / "album-a" / "selected.jpg"
+    selected_row = controller.photos.rowOfPath(str(selected_photo))
+    assert selected_row >= 0
+    window.setProperty("selectedIndexes", [selected_row])
+    window.setProperty("selectedIndex", selected_row)
+    engine.rootContext().contextProperty("faceScanController")._detector = (
+        _FakeDetector(available=False)
+    )
+
+    menu = _open_context_menu(window, qt_app, selected_row)
+    item = menu.findChild(QObject, "contextMenuResetFaces")
+    assert item is not None
+    _click_menu_item(item, qt_app)
+
+    assert varj_feltetelre(
+        qt_app,
+        lambda: (
+            window.findChild(QObject, "faceScanDialog") is not None
+            and window.findChild(QObject, "faceScanDialog").property("visible")
+        ),
+        3.0,
+    ), "modellhiánynál nem nyílt meg az érthető útmutatót mutató ablak"
+    dialog = window.findChild(QObject, "faceScanDialog")
+    reason = dialog.findChild(QObject, "faceScanUnavailableText")
+    download = dialog.findChild(QObject, "faceScanDownloadButton")
+    assert reason is not None and reason.property("visible") is True
+    assert reason.property("text")
+    assert download is not None and download.property("visible") is True
