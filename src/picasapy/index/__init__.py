@@ -48,6 +48,7 @@ from .faces_detected import (
     suggested_faces_for,
     unignore_faces,
     unnamed_faces,
+    unnamed_faces_for_photos,
 )
 from .fast_key_source import IndexFastKeySource
 from .hashes import load_dhashes, load_fast_keys, save_dhashes, save_fast_keys
@@ -190,6 +191,7 @@ __all__ = [
     "suggested_faces_for",
     "unignore_faces",
     "unnamed_faces",
+    "unnamed_faces_for_photos",
     "update_photo_fields",
     "folder_looks_offline",
     "watched_root_missing",

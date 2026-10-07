@@ -256,6 +256,9 @@ ApplicationWindow {
     // #26: melyik arc-album van nyitva — „unnamed" vagy „ignored"
     // (`CAlbumLabel::Ignored` = „Mellőzött emberek")
     property string facesAlbumMode: "unnamed"
+    // A névadás után a fotókijelölés nem változik, ezért külön frissítőjel
+    // kell az Emberek-panel sorlistáinak újraolvasásához.
+    property int peopleFaceRevision: 0
     // #1236: külön ablak-szintű név kell. Az UnnamedFacesView azonos nevű
     // property-jének jobb oldalán a `faceScanController` önmagára oldódna.
     readonly property var _faceScanController:
@@ -3258,6 +3261,7 @@ ApplicationWindow {
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
             ? unnamedFacesView.selectedCount : window.selectedRows().length
+        faceScanController: window._faceScanController
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
@@ -3268,8 +3272,12 @@ ApplicationWindow {
             ? controller.currentPersonName : ""
         // a photos.revision-nel együtt kötve: arc-írás után frissül
         peopleHere: controller
-            ? (controller.photos.revision,
+            ? (window.peopleFaceRevision, controller.photos.revision,
                controller.peopleOfRows(window.selectedRows()))
+            : []
+        unnamedFacesHere: controller && !window.unnamedFacesOpen
+            ? (window.peopleFaceRevision, controller.photos.revision,
+               controller.unnamedFacesOfRows(window.selectedRows()))
             : []
         onPersonChosen: function(name) {
             if (!controller) return
@@ -3687,6 +3695,7 @@ ApplicationWindow {
     //: volt, csak az XMP nem, ezért nem nyeljük el.
     Connections {
         target: window._faceScanController
+        function onUnnamedCountChanged() { window.peopleFaceRevision++ }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false
             errorBannerText.text = qsTr("Face data could not be written to XMP: %1").arg(reason)

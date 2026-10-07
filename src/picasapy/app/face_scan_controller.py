@@ -89,6 +89,7 @@ from .face_ignore_ini import (
     parse_ini_face_key,
     quantize_rect,
 )
+from .arc_nagyitas_url import arc_cimke
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 from .faces_helper import FacesHelper
 from .worker_thread import BackgroundWorkerMixin
@@ -1369,21 +1370,26 @@ def _group_payload(faces, label: str) -> dict:
     buster NÉLKÜL (a Névtelenek albumban ez nem kritikus)."""
     return {
         "label": label,
-        "faces": [
-            {
-                "faceId": face.id,
-                # #1656: a megjelenítési mód cimkéje
-                "thumbUrl": (
-                    f"image://thumbs/{face.photo_id}"
-                    f"{current_display_mode_suffix()}"
-                ),
-                # #26 (4. lépcső): a MÉG EL NEM DÖNTÖTT név-javaslat. Az
-                # eredeti kérdésként vetette fel (`PeoplePanel::
-                # SuggestionFmt` = „%s?"), pipa/x gombbal.
-                "suggestedName": face.suggested_name or "",
-            }
-            for face in faces
-        ],
+        "faces": [_face_tile_payload(face) for face in faces],
+    }
+
+
+def _face_tile_payload(face) -> dict:
+    """Egy névtelen csempe URL-je arc-kivágással, a közös thumb-provideren."""
+    thumb_url = f"image://thumbs/{face.photo_id}"
+    if face.rect is not None:
+        # A `?&fz=` mellett a provider a PhotoRecordból veszi az elforgatást;
+        # nem írunk rá mesterséges `r=0` értéket. A megjelenítési mód marad
+        # a szokásos URL-rész, ahogy a teljes képes csempén is volt.
+        thumb_url += f"?{arc_cimke(face.rect)}"
+    thumb_url += current_display_mode_suffix()
+    return {
+        "faceId": face.id,
+        "thumbUrl": thumb_url,
+        # #26 (4. lépcső): a MÉG EL NEM DÖNTÖTT név-javaslat. Az eredeti
+        # kérdésként vetette fel (`PeoplePanel::SuggestionFmt` = „%s?"),
+        # pipa/x gombbal.
+        "suggestedName": face.suggested_name or "",
     }
 
 

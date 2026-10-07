@@ -856,6 +856,7 @@ class TestUnnamedGroups:
         groups = ctl.unnamedGroups(False, False)
         assert len(groups) == 1
         assert len(groups[0]["faces"]) == 2
+        assert "&fz=" in groups[0]["faces"][0]["thumbUrl"]
         assert ctl.unnamedCount == 2
 
     def test_grouped_mode_after_clustering(self, qt_app, tmp_path):

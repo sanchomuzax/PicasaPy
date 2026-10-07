@@ -227,3 +227,51 @@ class TestPeopleOfRows:
     def test_an_empty_selection_is_not_an_error(self, host_rows):
         host, _photos = host_rows
         assert host.peopleOfRows([]) == []
+
+    def test_named_people_include_their_photo_id_rect_and_cropped_url(
+        self, host_rows
+    ):
+        from picasapy.ini.rect64 import decode_rect64
+
+        host, photos = host_rows
+        row = next(i for i, photo in enumerate(photos) if photo.name == "a.jpg")
+
+        anna = next(
+            person for person in host.peopleOfRows([row])
+            if person["name"] == "Anna Kis"
+        )
+
+        rect = decode_rect64(_RECT)
+        assert anna["photo_id"] == photos[row].id
+        assert anna["rect"] == [rect.left, rect.top, rect.right, rect.bottom]
+        assert anna["thumbUrl"].startswith(f"image://thumbs/{photos[row].id}?")
+        assert "&fz=" in anna["thumbUrl"]
+
+    def test_unnamed_faces_are_returned_only_for_selected_photos(self, host_rows):
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+        from picasapy.index import open_index, replace_faces
+
+        host, photos = host_rows
+        a_row = next(i for i, photo in enumerate(photos) if photo.name == "a.jpg")
+        b_row = next(i for i, photo in enumerate(photos) if photo.name == "b.jpg")
+        detection = FaceDetection(
+            left=1, top=1, right=4, bottom=5, score=0.99,
+            landmarks=FaceLandmarks(
+                right_eye=(2, 2), left_eye=(3, 2), nose=(2.5, 3),
+                mouth_right=(2, 4), mouth_left=(3, 4),
+            ),
+        )
+        with open_index(host._db_path) as conn:
+            replace_faces(conn, photos[a_row].id, [detection])
+            replace_faces(conn, photos[b_row].id, [detection])
+            conn.commit()
+
+        found = host.unnamedFacesOfRows([a_row])
+
+        assert len(found) == 1
+        assert found[0]["photo_id"] == photos[a_row].id
+        assert found[0]["rect"] == [0.125, 1 / 6, 0.5, 5 / 6]
+        assert found[0]["thumbUrl"].startswith(
+            f"image://thumbs/{photos[a_row].id}?"
+        )
+        assert "&fz=" in found[0]["thumbUrl"]

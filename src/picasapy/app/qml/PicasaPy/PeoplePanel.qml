@@ -42,6 +42,9 @@ Rectangle {
     // a kijelölt képeken névvel szereplő emberek (`controller.peopleOfRows`);
     // a lista elemszáma tükrözi a panel eredménysorainak számát
     property var peopleHere: []
+    // a kijelölt képek saját, még névtelen arcai
+    property var unnamedFacesHere: []
+    property var faceScanController: null
     // a nézett SZEMÉLY-album neve — egyébként üres
     property string currentPerson: ""
     property int selectionCount: 0
@@ -53,6 +56,7 @@ Rectangle {
     // fejléc váltógombja csoportosított állapotban áll
     property bool unnamedAlbumMode: false
     property bool unnamedGrouped: true
+    property int pendingIgnoreFaceId: -1
 
     signal personChosen(string name)
     signal closeRequested()
@@ -82,6 +86,42 @@ Rectangle {
     readonly property bool needsFolderSelection:
         !panel.folderSelected && !panel.personAlbum && !panel.unnamedAlbumMode
 
+    readonly property string ignoreConfirmKey: "ignoreFaces"
+
+    function assignNameToFace(faceId, name) {
+        if (!panel.faceScanController || !name || !String(name).trim())
+            return false
+        var assigned = panel.faceScanController.assignNameToFaces(
+            [faceId], String(name).trim())
+        if (assigned && typeof controller !== "undefined" && controller)
+            controller.refreshCollections()
+        return assigned
+    }
+
+    function requestIgnoreFace(faceId) {
+        if (!panel.faceScanController || faceId < 0)
+            return
+        panel.pendingIgnoreFaceId = faceId
+        if (typeof confirmSettings !== "undefined" && confirmSettings
+                && confirmSettings.isSuppressed(panel.ignoreConfirmKey)) {
+            panel.ignorePendingFace()
+            return
+        }
+        dontAskCheck.checked = false
+        ignoreConfirm.open()
+    }
+
+    function ignorePendingFace() {
+        var faceId = panel.pendingIgnoreFaceId
+        panel.pendingIgnoreFaceId = -1
+        if (faceId < 0 || !panel.faceScanController)
+            return 0
+        var count = panel.faceScanController.ignoreFaces([faceId])
+        if (typeof controller !== "undefined" && controller)
+            controller.refreshCollections()
+        return count
+    }
+
     // a fejléc (`status_label`); üres, ha az utasítás-szöveg látszik
     readonly property string headerText:
         panel.personAlbum && !panel.editorView && !panel.hasPeople
@@ -101,7 +141,7 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 8
+        anchors.margins: 5
         spacing: 6
 
         //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
@@ -130,9 +170,27 @@ Rectangle {
             delegate: PeoplePanelRow {
                 required property var modelData
                 Layout.fillWidth: true
+                availableWidth: panel.width - 10
                 personName: modelData.name
-                photoCount: modelData.count
+                photoUrl: modelData.thumbUrl
                 onChosen: panel.personChosen(modelData.name)
+            }
+        }
+        Repeater {
+            model: panel.unnamedFacesHere
+            delegate: PeoplePanelRow {
+                required property var modelData
+                Layout.fillWidth: true
+                availableWidth: panel.width - 10
+                unnamedFace: true
+                faceId: modelData.faceId
+                photoUrl: modelData.thumbUrl
+                onNameSubmitted: function(id, name) {
+                    panel.assignNameToFace(id, name)
+                }
+                onIgnoreRequested: function(id) {
+                    panel.requestIgnoreFace(id)
+                }
             }
         }
 
@@ -146,7 +204,9 @@ Rectangle {
         //          selected photos will be listed here." — minden más
         Text {
             objectName: "peoplePanelEmptyText"
-            visible: panel.headerText.length === 0 && !panel.needsFolderSelection
+            visible: panel.headerText.length === 0
+                     && !panel.needsFolderSelection
+                     && panel.unnamedFacesHere.length === 0
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: panel.unnamedAlbumMode
@@ -164,5 +224,40 @@ Rectangle {
         }
 
         Item { Layout.fillHeight: true }
+    }
+
+    Dialog {
+        id: ignoreConfirm
+        objectName: "peoplePanelIgnoreDialog"
+        title: qsTr("Ignore People")
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.Yes | Dialog.Cancel
+        onOpened: standardButton(Dialog.Yes).text = qsTr("Ignore Person")
+        onAccepted: {
+            if (dontAskCheck.checked && typeof confirmSettings !== "undefined"
+                    && confirmSettings)
+                confirmSettings.setSuppressed(panel.ignoreConfirmKey, true)
+            panel.ignorePendingFace()
+        }
+        onRejected: panel.pendingIgnoreFaceId = -1
+
+        ColumnLayout {
+            spacing: 12
+            Label {
+                objectName: "peoplePanelIgnoreMessage"
+                Layout.preferredWidth: 380
+                wrapMode: Text.WordWrap
+                text: qsTr("Are you sure you want to move this person to the "
+                           + "ignored people album?")
+                font.pixelSize: Theme.fontSize
+            }
+            CheckBox {
+                id: dontAskCheck
+                objectName: "peoplePanelIgnoreDontAskCheck"
+                text: qsTr("Don't ask again, always ignore")
+                font.pixelSize: Theme.fontSize
+            }
+        }
     }
 }
