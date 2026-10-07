@@ -19,6 +19,7 @@ from PySide6.QtTest import QTest
 from PySide6.QtQuick import QQuickItem
 
 from picasapy.app import collage_output, movie_output
+from picasapy.app.worker_thread import wait_for_all_background_workers
 from support.jpeg_factory import make_jpeg
 from tests.app.qml_functional._fomenu_4420_menu import (
     _ABLAK_ALAPMAGASSAG,
@@ -444,6 +445,12 @@ def _akcio(
         or _feluleti_allapot(ablak) != elotte["felulet"],
         1.0,
     )
+    # #4503: a háttérmunkás parancsok (kötegelt szerkesztés, XMP-írás) hatása a
+    # munka VÉGÉN látszik; a CI lassabb gépén az 1 mp kevés volt, és a bejáró
+    # véletlenszerűen „nem látszott változás”-t mondott. Ha nincs futó munka,
+    # azonnal visszatér.
+    wait_for_all_background_workers(15.0)
+    qt_app.processEvents()
     if nev == "menuToolsPassportPhoto":
         assert passport_vezerlo is not None, (
             "az útlevélkép háttérmunkájának vezérlője hiányzik"
