@@ -36,6 +36,7 @@ Dialog {
     height: 315
     leftPadding: 13
     rightPadding: 13
+    bottomPadding: 0
 
     //: #3173: EGY párbeszéd, KÉT használat — a rajz ugyanaz (`album.fen`),
     //: csak a szerkesztett dolog más. „folder" = mappa (a #422 óta), „album"
@@ -103,33 +104,44 @@ Dialog {
             root.folderPath, musicCheck.checked, musicPathField.text)
     }
 
-    footer: DialogButtonBox {
-        id: footerButtons
-        alignment: Qt.AlignRight
-        spacing: 7
-        // A Fusion alapértelmezett 6px-es alsó paddingjével együtt adja a
-        // referencián mért 14px-es alsó margót.
-        bottomPadding: 8
-        // A DialogButtonBox 10px-es stílus-alapértelmezése a külső margóhoz
-        // hozzáadódik; 24px adja a referencián mért 14px-es jobb margót.
-        rightPadding: 24
+    footer: Item {
+        id: footerArea
+        // A lábléc saját, rögzített alsó sávja a tartalomtól függetlenül a
+        // párbeszéd alján marad; a fölötte lévő tartalom kapja a maradék helyet.
+        implicitHeight: 38
 
-        Button {
-            id: okButton
-            objectName: "folderPropertiesOkButton"
-            text: qsTr("OK")
-            width: 85
+        DialogButtonBox {
+            id: footerButtons
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
+            alignment: Qt.AlignRight
+            spacing: 7
             height: 24
-            enabled: root._dateValid
-            DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-        }
-        Button {
-            id: cancelButton
-            objectName: "folderPropertiesCancelButton"
-            text: qsTr("Cancel")
-            width: 85
-            height: 24
-            DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+            topPadding: 0
+            bottomPadding: 0
+            // A DialogButtonBox 10px-es stílus-alapértelmezése a külső margóhoz
+            // hozzáadódik; 24px adja a referencián mért 14px-es jobb margót.
+            rightPadding: 24
+
+            Button {
+                id: okButton
+                objectName: "folderPropertiesOkButton"
+                text: qsTr("OK")
+                width: 85
+                height: 24
+                enabled: root._dateValid
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+            }
+            Button {
+                id: cancelButton
+                objectName: "folderPropertiesCancelButton"
+                text: qsTr("Cancel")
+                width: 85
+                height: 24
+                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+            }
         }
     }
 

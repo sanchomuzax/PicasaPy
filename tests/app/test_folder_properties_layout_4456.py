@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPointF, QTranslator, QUrl, Qt
+from PySide6.QtGui import QFont
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtTest import QTest
 
@@ -81,6 +82,66 @@ def _scenebox(elem):
     bal_felso = elem.mapToScene(QPointF(0, 0))
     jobb_also = elem.mapToScene(QPointF(elem.width(), elem.height()))
     return bal_felso.x(), bal_felso.y(), jobb_also.x(), jobb_also.y()
+
+
+def _betumeret_beallitasa(dialog, pixel_meret: int) -> int:
+    """A dialog összes betűt hordozó QML-elemén szimulál platform-metrikát."""
+    darab = 0
+    for elem in (dialog, *dialog.findChildren(QObject)):
+        if elem.metaObject().indexOfProperty("font") < 0:
+            continue
+        betu = elem.property("font")
+        if not isinstance(betu, QFont):
+            continue
+        betu.setPixelSize(pixel_meret)
+        if elem.setProperty("font", betu):
+            darab += 1
+    return darab
+
+
+def test_gombsor_alja_22px_betunel_is_14px_re_marad(qt_app):
+    """A lábléc alját a dialógus rögzítse, ne a tartalom természetes mérete."""
+    forras = (
+        Path(__file__).resolve().parents[2]
+        / "src/picasapy/app/qml/PicasaPy/FolderPropertiesDialog.qml"
+    ).read_text(encoding="utf-8")
+    dialog_tulajdonsagok = forras.split("Dialog {", 1)[1].split(
+        "    //: #3173", 1
+    )[0]
+    assert "bottomPadding: 0" in dialog_tulajdonsagok, (
+        "a Dialog stílusfüggő alsó kitöltését explicit nullázni kell"
+    )
+    footer = forras.split("    footer:", 1)[1].split(
+        "    // A hosszú magyar feliratok", 1
+    )[0]
+    assert "DialogButtonBox {" in footer
+    assert "anchors.bottom: parent.bottom" in footer, (
+        "a gombsor alja nincs a rögzített lábléc aljához horgonyozva"
+    )
+    assert "anchors.bottomMargin: 14" in footer, (
+        "a gombsor alsó margóját konstrukcióból 14 px-re kell rögzíteni"
+    )
+
+    ablak, dialog = _ablak(qt_app, 1075)
+    assert _betumeret_beallitasa(dialog, 22) > 0, (
+        "a 22 px-es betűmetrika-próba egyetlen QML-elemet sem módosított"
+    )
+    assert varj_feltetelre(
+        qt_app,
+        lambda: dialog.findChild(
+            QObject, "folderPropertiesNameLabel"
+        ).property("font").pixelSize() == 22,
+        3.0,
+    ), "a 22 px-es betűmetrika-próba nem lépett életbe"
+
+    ok = dialog.findChild(QObject, "folderPropertiesOkButton")
+    assert ok is not None
+    _x, _y, _right, ok_bottom = _scenebox(ok)
+    also_margo = dialog.property("y") + dialog.property("height") - ok_bottom
+    assert abs(also_margo - 14) <= 3, (
+        f"22 px-es betűnél a gombsor alsó margója {also_margo:.1f}px, "
+        "a referencia 14±3px"
+    )
 
 
 def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
