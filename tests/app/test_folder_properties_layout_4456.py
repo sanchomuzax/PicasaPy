@@ -580,3 +580,34 @@ def test_dialog_egyezik_a_referenciaval_harom_ablakmagassagon(
         qt_app.removeTranslator(translator)
 
     assert not hibak, "\n".join(hibak)
+
+
+def _gomb_kattintas(qt_app, ablak, dialog, nev: str) -> None:
+    gomb = dialog.findChild(QObject, nev)
+    assert gomb is not None, nev
+    kozep = gomb.mapToScene(QPointF(gomb.width() / 2, gomb.height() / 2)).toPoint()
+    QTest.mouseClick(ablak, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kozep)
+
+
+def test_a_megse_gomb_bezarja_a_parbeszedet(qt_app):
+    """A rögzített láblécbe tett gombsort a Dialog nem köti be magától (v0.9.37
+    hibája): a Mégse kattintásra semmi nem történt. Valódi kattintással mérjük."""
+    ablak, dialog = _ablak(qt_app, 1080)
+    elfogadva = []
+    dialog.folderPropertiesAccepted.connect(lambda *a: elfogadva.append(a))
+    _gomb_kattintas(qt_app, ablak, dialog, "folderPropertiesCancelButton")
+    assert varj_feltetelre(qt_app, lambda: not dialog.property("visible"), 3.0), (
+        "a Mégse gomb nem zárta be a párbeszédet"
+    )
+    assert elfogadva == []
+
+
+def test_az_ok_gomb_ment_es_bezar(qt_app):
+    ablak, dialog = _ablak(qt_app, 1080)
+    elfogadva = []
+    dialog.folderPropertiesAccepted.connect(lambda *a: elfogadva.append(a))
+    _gomb_kattintas(qt_app, ablak, dialog, "folderPropertiesOkButton")
+    assert varj_feltetelre(qt_app, lambda: not dialog.property("visible"), 3.0), (
+        "az OK gomb nem zárta be a párbeszédet"
+    )
+    assert len(elfogadva) == 1 and elfogadva[0][1] == "2026-01-01"
