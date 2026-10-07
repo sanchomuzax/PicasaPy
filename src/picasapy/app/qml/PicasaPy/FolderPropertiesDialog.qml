@@ -158,6 +158,10 @@ Dialog {
             // A DialogButtonBox 10px-es stílus-alapértelmezése a külső margóhoz
             // hozzáadódik; 24px adja a referencián mért 14px-es jobb margót.
             rightPadding: 24
+            // A gombsort egy rögzített sáv tartja, nem közvetlenül a Dialog
+            // footer-e, ezért a Dialog nem köti be magától: OK és Mégse kézzel.
+            onAccepted: root.accept()
+            onRejected: root.reject()
 
             Button {
                 id: okButton
