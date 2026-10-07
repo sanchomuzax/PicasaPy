@@ -24,6 +24,10 @@ Dialog {
     property int selectedPhotoCount: 0
     property bool settingFields: false
     property int nextDraftNumber: 0
+    property int pendingFaceId: -1
+    property string pendingFaceName: ""
+    property string pendingFaceDraftKey: ""
+    property var faceScanController: null
     readonly property int personRowHeight: Math.max(16, Theme.fontSize + 3)
     readonly property var filteredEntries: {
         var needle = searchField.text.trim().toLocaleLowerCase()
@@ -45,6 +49,8 @@ Dialog {
     }
 
     function beginSession() {
+        var initialSearch = manager.pendingFaceId >= 0
+            ? manager.pendingFaceName : ""
         var loaded = controller ? controller.peopleManagerContacts() : []
         var copied = []
         for (var i = 0; i < loaded.length; ++i) {
@@ -63,12 +69,20 @@ Dialog {
         manager.originalEntries = copied.map(manager._copy)
         manager.selectedKey = ""
         manager.selectedLocalContactIds = []
+        searchField.text = initialSearch
         nameField.text = ""
         emailField.text = ""
         manager.settingFields = false
         contactList.currentIndex = -1
-        if (copied.length > 0)
+        if (!initialSearch && copied.length > 0)
             manager.selectContact(copied[0])
+    }
+
+    function openForFace(name, faceId) {
+        manager.pendingFaceName = String(name || "").trim()
+        manager.pendingFaceId = Number(faceId)
+        manager.pendingFaceDraftKey = ""
+        manager.open()
     }
 
     function selectContact(entry) {
@@ -106,11 +120,12 @@ Dialog {
     }
 
     function addPerson() {
+        var draftName = searchField.text.trim()
         manager.nextDraftNumber += 1
         searchField.text = ""
         var entry = {
             key: "draft:" + manager.nextDraftNumber,
-            name: "",
+            name: draftName,
             email: "",
             contactIds: [],
             localContactIds: [],
@@ -119,9 +134,11 @@ Dialog {
         }
         manager.entries = manager.entries.concat([entry])
         manager.selectedKey = entry.key
+        if (manager.pendingFaceId >= 0)
+            manager.pendingFaceDraftKey = entry.key
         manager.selectedLocalContactIds = []
         manager.settingFields = true
-        nameField.text = ""
+        nameField.text = draftName
         emailField.text = ""
         manager.settingFields = false
         contactList.currentIndex = manager.filteredEntries.length - 1
@@ -185,6 +202,15 @@ Dialog {
     }
 
     function commitChanges() {
+        var personToAssign = null
+        if (manager.pendingFaceId >= 0) {
+            personToAssign = manager.entries.find(function(entry) {
+                return entry.key === manager.pendingFaceDraftKey
+            })
+            if (!personToAssign || !personToAssign.isNew
+                    || !personToAssign.name.trim())
+                return
+        }
         var changes = []
         for (var i = 0; i < manager.originalEntries.length; ++i) {
             var original = manager.originalEntries[i]
@@ -215,10 +241,25 @@ Dialog {
         }
         if (!controller || !controller.savePeopleManagerChanges(changes))
             return
+        if (manager.pendingFaceId >= 0) {
+            var personName = personToAssign.name.trim()
+            if (!manager.faceScanController
+                    || !manager.faceScanController.assignNameToFaces(
+                        [manager.pendingFaceId], personName))
+                return
+            manager.pendingFaceId = -1
+            manager.pendingFaceName = ""
+            manager.pendingFaceDraftKey = ""
+        }
         manager.close()
     }
 
     onOpened: beginSession()
+    onClosed: {
+        manager.pendingFaceId = -1
+        manager.pendingFaceName = ""
+        manager.pendingFaceDraftKey = ""
+    }
 
     contentItem: ColumnLayout {
         spacing: 8

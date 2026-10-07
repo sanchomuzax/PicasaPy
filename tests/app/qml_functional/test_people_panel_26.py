@@ -720,7 +720,12 @@ def _run_named_and_unnamed_faces_render_and_name_through_the_panel(
     assert varj_feltetelre(
         qt_app, lambda: bool(name_field.property("activeFocus")), 3.0
     )
-    entered_name = "ada lovelace"
+    # A már létező személy közvetlen hozzárendelése a névjegypárbeszéd
+    # megkerülését is ellenőrzi; új személyt a #4522 kattintásos tesztje visz.
+    # A `QTest` által küldött nagybetűs billentyű + Shift a TextFieldben
+    # kisbetűként jelenik meg; a kisbetűs próba egyben ellenőrzi a név
+    # kis- és nagybetűtől független felismerését.
+    entered_name = "anna kis"
     for character in entered_name:
         key = (
             Qt.Key.Key_Space
