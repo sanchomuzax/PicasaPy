@@ -101,11 +101,10 @@ Rectangle {
     }
 
     function _hasPersonNamed(name) {
-        var peopleController = typeof controller !== "undefined"
-            ? controller : null
-        if (!peopleController)
+        var ctl = typeof controller !== "undefined" ? controller : null
+        if (!ctl)
             return false
-        var entries = peopleController.peopleManagerContacts()
+        var entries = ctl.peopleManagerContacts()
         var wanted = String(name).trim().toLocaleLowerCase()
         for (var i = 0; i < entries.length; ++i) {
             if (String(entries[i].name).trim().toLocaleLowerCase() === wanted)

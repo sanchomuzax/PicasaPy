@@ -126,15 +126,17 @@ def test_named_row_matches_reference_and_9b_header_at_nearby_heights(
     window.setHeight(1024)
     assert varj_feltetelre(qt_app, lambda: int(window.height()) == 1024, 3.0)
     original_height = int(window.height())
-    shot_dir = Path.cwd() / ".bt" / "4522-shots"
+    shot_dir = tmp_path / "4522-shots"
     shot_dir.mkdir(parents=True, exist_ok=True)
-    reference_path = Path.cwd() / ".codex-ref-megnevezett.png"
-    assert reference_path.is_file()
-    reference = QImage(str(reference_path))
-    assert not reference.isNull()
-    reference.copy(QRect(1006, 137, 270, 75)).save(
-        str(shot_dir / "reference-named-row.png")
+    # A Colab-referencia (#113) megnevezett sorának kivágata, 270×75 px.
+    reference_path = (
+        Path(__file__).resolve().parents[2]
+        / "fixtures/people_panel_named_row_4522.png"
     )
+    assert reference_path.is_file()
+    reference_crop = QImage(str(reference_path))
+    assert not reference_crop.isNull()
+    reference_crop.save(str(shot_dir / "reference-named-row.png"))
 
     for delta in (-5, 0, 5):
         window.setHeight(original_height + delta)
@@ -187,7 +189,6 @@ def test_named_row_matches_reference_and_9b_header_at_nearby_heights(
                     round(row.height()),
                 )
             )
-            reference_crop = reference.copy(QRect(1006, 137, 270, 75))
             side_by_side = QImage(
                 reference_crop.width() + actual_crop.width(),
                 max(reference_crop.height(), actual_crop.height()),
