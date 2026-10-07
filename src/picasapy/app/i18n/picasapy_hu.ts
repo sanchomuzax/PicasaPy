@@ -1206,6 +1206,11 @@ picasapy-origin-key: options:options/DoNotConfirmRemoveFromAlbum.title</extracom
             <translation>Részvétel a Picasa fejlesztésében:</translation>
         </message>
         <message>
+            <source>Privacy...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Adatvédelem...</translation>
+        </message>
+        <message>
             <source>Send anonymous usage statistics</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_advoptions:gpuploader_advoptions/send_to_google.title;options:options/usagestats.title;stringres:INSTALLRES_statscheckbox</extracomment>
@@ -1378,7 +1383,7 @@ picasapy-origin-key: options:options/SupportPSD.title</extracomment>
         <message>
             <source>RAW formats</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/SupportRAW.title</extracomment>
+picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::RAW</extracomment>
             <translation>RAW formátumok</translation>
         </message>
         <message>
@@ -1400,7 +1405,8 @@ picasapy-origin-key: options:options/SupportQuicktime.title</extracomment>
         </message>
         <message>
             <source>OK</source>
-            <extracomment>picasapy-origin: picasa</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
             <translation>OK</translation>
         </message>
         <message>

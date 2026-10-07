@@ -123,7 +123,13 @@ Window {
             ? fileOpsController.toLocalPath(importSourceWindow.destFolder)
             : importSourceWindow.destFolder.replace(/^file:\/\//, "")
 
-    function open() { importSourceWindow.visible = true }
+    function open() {
+        if (typeof importSourceController !== "undefined"
+            && importSourceController
+            && importSourceController.defaultDestination !== undefined)
+            importSourceWindow.destFolder = importSourceController.defaultDestination
+        importSourceWindow.visible = true
+    }
 
     function stepPreview(delta) {
         var nextIndex = importSourceWindow.selectedPreviewIndex + delta
@@ -852,6 +858,11 @@ Window {
     FolderDialog {
         id: destFolderDialog
         title: qsTr("Choose destination folder...")
+        currentFolder: typeof importSourceController !== "undefined"
+            && importSourceController
+            && importSourceController.defaultDestinationUrl !== undefined
+                ? importSourceController.defaultDestinationUrl
+                : Qt.resolvedUrl(".")
         onAccepted: importSourceWindow.destFolder = selectedFolder.toString()
     }
 
