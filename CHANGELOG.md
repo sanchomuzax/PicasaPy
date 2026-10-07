@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.35] – 2026-10-07
+
+- A Beállítások Fájltípusok lapján formátumcsoportok kapcsolhatók ki, és a következő könyvtárolvasáskor a kikapcsolt fájlok kikerülnek. (#4447).
+
 ## [0.9.34] – 2026-10-07
 
 - Az Általános fül három felületi beállítása menthető, a videó-előnézet kilépési módja is választható. (#4449).
