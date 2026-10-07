@@ -122,6 +122,51 @@ class TestPicasaImportDialog:
         adopt_button = _child(window, "picasaImportAdoptButton")
         assert adopt_button.property("enabled") is False
 
+    def test_workerhiba_leallitja_a_keresest_es_megjeleniti_a_diagnosztikat(
+        self, qml_app, qt_app, monkeypatch
+    ):
+        window, _controller, _lib, engine = qml_app
+        dialog = _child(window, "picasaImportDialog")
+        status = _child(window, "picasaImportStatus")
+        discovery = _discovery_controller(engine)
+        assert discovery.waitForBackgroundWorkers(5.0)
+
+        def fail_discovery():
+            raise RuntimeError("teszt workerhiba")
+
+        monkeypatch.setattr(
+            "picasapy.app.discovery_controller.discover_installations",
+            fail_discovery,
+        )
+        failures = []
+        discovery.discoveryFailed.connect(lambda *args: failures.append(args))
+        loop = _quit_on(discovery.discoveryFailed)
+        QMetaObject.invokeMethod(
+            dialog, "openAndDiscover", Qt.ConnectionType.DirectConnection
+        )
+        loop.exec()
+        qt_app.processEvents()
+
+        assert failures == [
+            ("interactive", "RuntimeError", "teszt workerhiba")
+        ]
+        assert dialog.property("searching") is False
+        assert dialog.property("searched") is True
+        assert "RuntimeError" in status.property("text")
+        assert "teszt workerhiba" in status.property("text")
+
+        # A státusz a tényleges ablakmagasság változásakor is stabil marad;
+        # a teszt nem rögzít platformfüggő, abszolút képpontértéket.
+        eredeti_magassag = window.height()
+        try:
+            for eltolás in (-5, 0, 5):
+                window.setHeight(eredeti_magassag + eltolás)
+                qt_app.processEvents()
+                assert "RuntimeError" in status.property("text")
+                assert "teszt workerhiba" in status.property("text")
+        finally:
+            window.setHeight(eredeti_magassag)
+
     def test_az_atvetel_a_vezerlobol_nyithato(self, qml_app, qt_app, monkeypatch):
         """A Picasa-mappák átvétele (#146) a VEZÉRLŐN át nyílik.
 
