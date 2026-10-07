@@ -66,6 +66,7 @@ ColumnLayout {
             Layout.maximumWidth: 176
             horizontalAlignment: Text.AlignRight
             verticalAlignment: Text.AlignVCenter
+            wrapMode: Text.WordWrap
         }
 
         CompactCheckBox {
@@ -322,8 +323,11 @@ ColumnLayout {
         Layout.leftMargin: 176
         Layout.topMargin: 3
         Layout.preferredWidth: 414
-        Layout.minimumWidth: 414
+        // #3572: a normál szélességen megmarad a 414 px-es igazítás, de
+        // keskeny ablakban a 176 px-es bal margó mellett összehúzódhat.
+        Layout.minimumWidth: 0
         Layout.maximumWidth: 414
+        Layout.fillWidth: true
         Layout.preferredHeight: 24
         Layout.minimumHeight: 24
         Accessible.role: Accessible.Link
@@ -368,6 +372,7 @@ ColumnLayout {
         PicasaComboBox {
             objectName: "optionsUpdateModeCombo"
             Layout.fillWidth: true
+            Layout.minimumWidth: 96
             Layout.preferredHeight: 32
             model: [
                 qsTr("Update automatically"),
@@ -399,6 +404,7 @@ ColumnLayout {
             id: languageCombo
             objectName: "optionsLanguageCombo"
             Layout.fillWidth: true
+            Layout.minimumWidth: 96
             Layout.preferredHeight: 32
             readonly property var codes: [
                 controller ? controller.systemLanguageCode : "system"
@@ -465,6 +471,7 @@ ColumnLayout {
         TextField {
             objectName: "optionsImportDestField"
             Layout.fillWidth: true
+            Layout.minimumWidth: 80
             Layout.preferredHeight: 32
             Layout.rightMargin: 8
             readOnly: true
