@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.42] – 2026-10-08
+
+- A Nézet ▸ Könyvtárnézet menüpont visszavisz a könyvtárba a nézőből, és ott inaktív marad (#4622).
+- A Kép ▸ Csoportos szerkesztés almenüben mostantól a Szépia és a Fekete-fehér is alkalmazható a kijelölt képekre (#4624).
+- A Kép ▸ Elrejtés már rejtett kijelölést sem jelenít meg (#4626).
+- Windows alatt a kisbetűs mappaátnevezés és a kijelölt képek arcadatainak törlése is helyesen működik (#4653).
+- A mentés után a nyitott néző a lemezre írt állapotot mutatja, az egykattintásos néző pedig dupla kattintásra is bezárva marad. (#4655).
+- Az állóképes néző dupla kattintás után bezárul, a Windows-útvonalpróba pedig kevert elválasztókkal fut (#4660).
+
 ## [0.9.41] – 2026-10-08
 
 - Az Emberek panel névvel ellátott arcainál is megjelenik az X, az új személy pedig csak a People párbeszéd jóváhagyása után jön létre. (#4522).
