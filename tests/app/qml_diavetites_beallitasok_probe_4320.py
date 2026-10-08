@@ -48,6 +48,19 @@ def _scene_rect(item):
     return (point.x(), point.y(), item.width(), item.height())
 
 
+def _url_matches_path(url, path: Path) -> bool:
+    """A helyi fájl URL-jét fájlrendszerbeli azonosság szerint hasonlítja.
+
+    A `QUrl.toLocalFile()` Windowson perjeles, a `Path` szövege pedig
+    fordított perjeles alakot adhat; a két érvényes írásmód szövegesen
+    eltér, noha ugyanarra a fájlra mutat.
+    """
+    try:
+        return Path(url.toLocalFile()).samefile(path)
+    except (OSError, RuntimeError, ValueError):
+        return False
+
+
 def _music_folder_label(root):
     from PySide6.QtCore import QObject
 
@@ -219,7 +232,7 @@ def _run(work_dir: Path) -> None:
                  .property("text") == str(music_dir))
     assert controller.slideshowMusicFolder == str(music_dir)
     track_urls = slideshow.property("musicTrackUrls")
-    assert any(url.toLocalFile() == str(track) for url in track_urls), (
+    assert any(_url_matches_path(url, track) for url in track_urls), (
         "a kiválasztott zenemappa számlistája nem jutott el a vetítőig"
     )
     assert bool(controller.slideshowLoop) is True
@@ -233,12 +246,12 @@ def _run(work_dir: Path) -> None:
     controller.setFolderMusic(controller.currentFolder, True, str(folder_music))
     assert _wait(app, lambda: len(slideshow.property("musicTrackUrls")) == 1)
     folder_urls = slideshow.property("musicTrackUrls")
-    assert folder_urls[0].toLocalFile() == str(folder_music), (
+    assert _url_matches_path(folder_urls[0], folder_music), (
         "a mappa saját zene nem írta felül az általános zenemappát"
     )
     controller.setFolderMusic(controller.currentFolder, False, str(folder_music))
     assert _wait(app, lambda: any(
-        url.toLocalFile() == str(track)
+        _url_matches_path(url, track)
         for url in slideshow.property("musicTrackUrls")
     )), "kikapcsolt mappazenénél nem állt vissza az általános zenemappa"
     controller.setSlideshowMusicEnabled(False)

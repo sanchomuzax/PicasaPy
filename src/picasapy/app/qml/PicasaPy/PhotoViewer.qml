@@ -3785,6 +3785,7 @@ Rectangle {
                     property real lastX: 0
                     property real lastY: 0
                     property bool dragged: false
+                    property bool exitAfterDoubleClick: false
 
                     // #4499: a beállított egykattintásos kilépés a Qt
                     // dupla-kattintási időablakának lejártakor zár. Így a
@@ -3860,6 +3861,7 @@ Rectangle {
                         lastX = event.x; lastY = event.y
                     }
                     onClicked: function(event) {
+                        if (exitAfterDoubleClick) return
                         if (dragged) return
                         if (viewer.singleClickExitEnabled
                                 && viewer.layoutMode === "1up"
@@ -3874,10 +3876,21 @@ Rectangle {
                                 && viewer.layoutMode === "1up"
                                 && !editorPanel.tiltActive) {
                             singleClickExitTimer.stop()
-                            viewer.kerBezaras()
+                            // A néző bezárása itt, a dupla kattintás második
+                            // lenyomásakor történő szinkron hívással a
+                            // kiengedés előtt eltávolítja az esemény célpontját.
+                            // Windowson a kiengedés így az alatta lévő rácsra
+                            // juthat, és ugyanaz a dupla kattintás újranyitja a
+                            // nézőt. A MouseArea előbb vegye át a kiengedést.
+                            exitAfterDoubleClick = true
                         } else {
                             viewer.zoomFit()
                         }
+                    }
+                    onReleased: {
+                        if (!exitAfterDoubleClick) return
+                        exitAfterDoubleClick = false
+                        Qt.callLater(function() { viewer.kerBezaras() })
                     }
                 }
 

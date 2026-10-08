@@ -26,6 +26,7 @@ renderelőnk, és egy régi `.picasa.ini` bármikor hozhat ilyet.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
@@ -211,9 +212,44 @@ class SaveMixin(BackgroundWorkerMixin):
         if getattr(self, "_disk_operation_feedback_wired", False):
             return
         self._disk_operation_feedback_wired = True
+        self.diskOperationSucceededPaths.connect(
+            self._refresh_editors_for_disk_operation
+        )
         self.saveFinished.connect(self._on_disk_operation_finished)
         self.revertFinished.connect(self._on_disk_operation_finished)
         self.undoSaveFinished.connect(self._on_disk_operation_finished)
+
+    @Slot(list)
+    def _refresh_editors_for_disk_operation(self, paths: list[str]) -> None:
+        """A sikeresen módosított, éppen nyitott képek munkamenetét újratölti.
+
+        A mentés/visszaállítás az ini-láncot is megváltoztatja, miközben a
+        néző szerkesztője külön, memóriában tartott munkamenetet használ. A
+        könyvtármodell frissítése önmagában nem érvényteleníti ezt az
+        előnézetet, így a felhasználó továbbra is a lemezművelet előtti
+        állapotot látná. Csak a ténylegesen módosított útvonalhoz tartozó,
+        lemezről dolgozó szerkesztőket indítjuk újra; az „aa" mód memóriás
+        második felét érintetlenül hagyjuk.
+        """
+        def normalizal(utvonal: str | Path) -> str:
+            return os.path.normcase(
+                os.path.normpath(str(Path(utvonal).resolve(strict=False)))
+            )
+
+        modosultak = {normalizal(path) for path in paths}
+        if not modosultak:
+            return
+        for editor in getattr(self, "_edit_controllers", ()):
+            utvonal = getattr(editor, "_image_path", None)
+            foto_id = getattr(editor, "_photo_id", "")
+            if (
+                utvonal is None
+                or not foto_id
+                or getattr(editor, "_memory_only", False)
+                or normalizal(utvonal) not in modosultak
+            ):
+                continue
+            editor.beginEdit(foto_id, str(utvonal))
 
     @Slot(int, int)
     def _on_disk_operation_finished(self, done: int, failed: int) -> None:
