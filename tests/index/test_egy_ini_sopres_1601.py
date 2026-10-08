@@ -1,11 +1,11 @@
-"""#1601: a bal hasáb két ini-alapú gyűjteménye EGYETLEN lemez-söpréssel.
+"""#1601/#4589: a bal hasáb ini-alapú gyűjteményei EGYETLEN söpréssel.
 
 MÉRVE (RPi5, tmpfs, szintetikus index): 5000 mappánál a `people_in_index`
 3765 ms, a `project_folders` 1527 ms — együtt az induláskori szinkron munka
 **94%-a**. Mindkettő UGYANAZT a `.picasa.ini`-halmazt olvasta végig,
 egymástól függetlenül, tehát minden fájlt KÉTSZER.
 
-Ez a teszt a söprések SZÁMÁT rögzíti: az ini-nkénti olvasás determinista,
+Ez a teszt a söprések SZÁMÁT rögzíti: az ini-nkénti olvasás determinisztikus,
 nem időfüggő — így a szabály nem flaky, mégis megfogja a visszaesést.
 """
 
@@ -34,12 +34,13 @@ def library(tmp_path):
         (root / name).mkdir(parents=True)
         make_jpeg(root / name / "a.jpg")
     (root / "nyaralas" / ".picasa.ini").write_text(
+        f"[Picasa]\nP2category=Folders on Disk\n"
         f"[Contacts2]\n{_ROY}=Roy Avery;;\n[a.jpg]\nfaces=rect64({_RECT}),{_ROY};\n",
         encoding="utf-8",
     )
     (root / "Kollázsok" / ".picasa.ini").write_text(_PROJECTS, encoding="utf-8")
     (root / "varos" / ".picasa.ini").write_text(
-        "[Picasa]\nP2category=Folders on Disk\n", encoding="utf-8"
+        "[Picasa]\nP2category=tech\n", encoding="utf-8"
     )
     return root
 
@@ -114,6 +115,9 @@ class TestLoadSidePaneCollections:
         egyben = load_side_pane_collections(conn)
         assert egyben.people == people_in_index(conn)
         assert egyben.project_folders == project_folders(conn)
+        assert egyben.custom_collection_folders == (
+            ("tech", (str(library / "varos"),)),
+        )
 
     def test_mappankent_egy_lemez_olvasas(self, conn, olvasas_szamlalo):
         """A #1601 lényege: három ini-s mappa → három olvasás, nem hat."""
