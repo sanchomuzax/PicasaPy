@@ -524,12 +524,12 @@ MenuBar {
     // #1590: a Mappa-menü felirata Ctrl+Shift+P-t hirdet
     // (`docs/specs/picasa-gyorsbillentyuk.md` 25. sora is ezt mondja) —
     // ne maradjon puszta felirat, ahogy a Ctrl+P is az volt a #1472-ig.
-    // ⚠️ A menütételtől ELTÉRŐEN itt VAN feltétel: a gyorsbillentyűnek
-    // nincs hova visszajeleznie, ha nincs mit nyomtatni.
+    // A Mappa-parancs az aktuális mappára hat, ezért kijelölés nélkül is
+    // ugyanúgy él, mint a menütétel.
     Shortcut {
         objectName: "shortcutPrintContactSheet"
         sequence: "Ctrl+Shift+P"
-        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
+        enabled: !bar.textEntryHasFocus
         onActivated: bar.printContactSheetRequested()
     }
     // #1615: a Fájl-menü felirata Ctrl+M-et hirdet (a #1154 MÉRTE a

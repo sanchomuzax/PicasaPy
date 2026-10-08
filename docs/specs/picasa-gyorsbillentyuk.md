@@ -618,7 +618,7 @@ A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a
 | 45 | `PicasaMenuBar.qml` — `shortcutLocateOnDisk` | `Ctrl+Return` | Engedélyezett fotóművelet és nincs szövegfókusz. |
 | 46 | `PicasaMenuBar.qml` — `shortcutDeleteFromDisk` | `Delete` | Engedélyezett fotóművelet és nincs szövegfókusz. |
 | 47 | `PicasaMenuBar.qml` — `shortcutPrint` | `Ctrl+P` | Engedélyezett fotóművelet és nincs szövegfókusz. |
-| 48 | `PicasaMenuBar.qml` — `shortcutPrintContactSheet` | `Ctrl+Shift+P` | Engedélyezett fotóművelet és nincs szövegfókusz. |
+| 48 | `PicasaMenuBar.qml` — `shortcutPrintContactSheet` | `Ctrl+Shift+P` | A Mappa-menütétellel azonosan mindig engedélyezett; nincs kijelölési vagy szövegfókusz-kapu. |
 | 49 | `PicasaMenuBar.qml` — `shortcutImportFrom` | `Ctrl+M` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
 | 50 | `PicasaMenuBar.qml` — `shortcutAddFile` | `Ctrl+O` | Könyvtárnézet; nincs szerkesztő és nincs szövegfókusz. |
 | 51 | `PicasaMenuBar.qml` — `shortcutNewAlbum` | `Ctrl+N` | Engedélyezett fotóművelet és nincs szövegfókusz. |
@@ -1333,7 +1333,7 @@ Az állapot mező értékei:
 | 22 | Ctrl+K | A keymap-komment szerint Kulcsszavak; a mért menürekord nem ad hozzá Ctrl+K-t | objectName=tagsPanelAltShortcut → PicasaPy-alias a Címkék panelhez | **nem cél — a 2.4 és 3.3 szerint a komment elavult, a tényleges Picasa-kötés Ctrl+T** | A PicasaPy-alias csak könyvtárnézetben és szövegfókusz nélkül él | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
 | 23 | Ctrl+4 | Diavetítés | sequence=Ctrl+4 → diavetítés indítása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/test_qml_slideshow.py |
 | 24 | Ctrl+5 | Időrend | sequence=Ctrl+5 → állandóan tiltott | **nem cél — a Ctrl+5 szándékosan inaktív a #4443-ig** | Mindig tiltott | tests/app/test_qml_timeline.py |
-| 25 | Ctrl+Shift+P | Indexképek nyomtatása | objectName=shortcutPrintContactSheet → indexkép-nyomtatás | **megvan és működik** | Főablak; érvényes fotóművelet; szövegfókusz nélkül | tests/app/test_qml_tray_print_email.py |
+| 25 | Ctrl+Shift+P | Indexképek nyomtatása | objectName=shortcutPrintContactSheet → indexkép-nyomtatás | **megvan és működik** | A Mappa-menütétellel azonosan mindig aktív; kijelöléstől és szövegfókusztól független | tests/app/qml_functional/test_indexkep_nyomtatas_1590.py |
 | 26 | Ctrl+W | A keymap-komment szerint weboldal export; a mért menüsávban nincs ilyen billentyű | sequence=Ctrl+W → csak projektlap bezárása | **nem cél — a 10.7 szerint az eredeti dispatchben sincs Ctrl+W ág; a projektlap parancsa PicasaPy-funkció** | Csak nyitott projektlapnál; szövegfókusz nélkül | tests/app/qml_functional/test_projektlap_billentyuk_2170.py |
 | 27 | Ctrl+R | Forgatás jobbra | sequence=Ctrl+R → aktuális kijelölés vagy nézőkép forgatása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/qml_functional/test_photo_menu_commands.py |
 | 28 | Ctrl+Shift+R | Forgatás balra | sequence=Ctrl+Shift+R → aktuális kijelölés vagy nézőkép forgatása | **megvan és működik** | Főablak; szövegfókusz nélkül | tests/app/qml_functional/test_photo_menu_commands.py |
