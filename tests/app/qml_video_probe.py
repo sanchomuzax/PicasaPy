@@ -167,7 +167,7 @@ def main(work_dir: Path) -> None:
         f"váratlan idő-címke: {time_label.property('text')!r}"
     )
 
-    aktiv_lepes = {"nev": "előkészítés", "elem": None}
+    aktiv_lepes = {"nev": "előkészítés", "elem": None, "press_events": []}
 
     def elem_tulajdonsag(elem, nev):
         if elem is None:
@@ -185,6 +185,30 @@ def main(work_dir: Path) -> None:
         except RuntimeError:
             return "<destroyed>"
 
+    def elem_az_esemeny_pontjaban(event):
+        """A QQuickWindow tartalmán belüli legfelső elem a kurzorpont alatt."""
+        try:
+            pont = event.position()
+            item = window.contentItem()
+            while item is not None:
+                helyi_pont = item.mapFromScene(pont)
+                gyermek = item.childAt(helyi_pont.x(), helyi_pont.y())
+                if gyermek is None:
+                    return item
+                item = gyermek
+            return None
+        except (AttributeError, RuntimeError, TypeError):
+            return None
+
+    def timer_fut(elem):
+        if elem is None:
+            return None
+        try:
+            timer = elem.findChild(QObject, "singleClickExitTimer")
+            return timer.property("running") if timer is not None else None
+        except RuntimeError:
+            return "<destroyed>"
+
     def nezo_allapot(elem=None):
         return (
             f"viewerOpen={window.property('viewerOpen')!r}, "
@@ -193,6 +217,11 @@ def main(work_dir: Path) -> None:
             f"singleClickExit={controller.singleClickExitEnabled!r}, "
             "exitAfterDoubleClick="
             f"{elem_tulajdonsag(elem, 'exitAfterDoubleClick')!r}, "
+            f"singleClickExitTimerRunning={timer_fut(elem)!r}, "
+            f"pressEventCount={elem_tulajdonsag(elem, 'pressEventCount')!r}, "
+            f"lastPressBranch={elem_tulajdonsag(elem, 'lastPressBranch')!r}, "
+            "timerRunningOnLastPress="
+            f"{elem_tulajdonsag(elem, 'timerRunningOnLastPress')!r}, "
             f"clickTarget={elem_nev(elem)!r}, "
             f"targetEnabled={elem_tulajdonsag(elem, 'enabled')!r}, "
             f"targetVisible={elem_tulajdonsag(elem, 'visible')!r}"
@@ -208,11 +237,20 @@ def main(work_dir: Path) -> None:
             }.get(event.type())
             if nev is not None:
                 elem = aktiv_lepes["elem"]
+                talalat = elem_az_esemeny_pontjaban(event)
+                talalat_nev = elem_nev(talalat)
+                timer_running = timer_fut(elem)
+                if nev == "press":
+                    aktiv_lepes["press_events"].append(
+                        {"target": talalat_nev, "timer_running": timer_running}
+                    )
                 print(
                     "PROBE-MOUSE "
                     f"step={aktiv_lepes['nev']} event={nev} "
                     f"timestamp={event.timestamp()} "
                     f"monotonic={time.monotonic():.6f} "
+                    f"eventTarget={talalat_nev!r} "
+                    f"singleClickExitTimerRunning={timer_running!r} "
                     f"{nezo_allapot(elem)}",
                     flush=True,
                 )
@@ -224,7 +262,7 @@ def main(work_dir: Path) -> None:
 
     def naplozott_kattintas(nev, elem, *, dupla=False):
         nonlocal elozo_gesztus_volt
-        aktiv_lepes.update(nev=nev, elem=elem)
+        aktiv_lepes.update(nev=nev, elem=elem, press_events=[])
         print(f"PROBE-STEP START {nev} {nezo_allapot(elem)}", flush=True)
         try:
             pont = elem.mapToScene(
@@ -315,6 +353,7 @@ def main(work_dir: Path) -> None:
     pan_area = child("viewerPanArea")
     assert varj(lambda: pan_area.property("enabled"))
     dupla_allapot = {"belepesek": 0}
+    elotte_lenyomasok = pan_area.property("pressEventCount")
 
     def dupla_kattintas_kezelo(*_args):
         dupla_allapot["belepesek"] += 1
@@ -324,7 +363,13 @@ def main(work_dir: Path) -> None:
             "step=photo-double-click-exit-click handler=entered "
             f"entries={dupla_allapot['belepesek']} "
             f"singleClickExitEnabled={single_exit!r} "
-            f"layoutMode={layout_mode!r} tiltActive={tilt_active!r}",
+            f"layoutMode={layout_mode!r} tiltActive={tilt_active!r} "
+            f"pressEvents={aktiv_lepes['press_events']!r} "
+            f"pressEventCountBefore={elotte_lenyomasok!r} "
+            f"pressEventCountAfter={pan_area.property('pressEventCount')!r} "
+            f"lastPressBranch={pan_area.property('lastPressBranch')!r} "
+            "timerRunningOnLastPress="
+            f"{pan_area.property('timerRunningOnLastPress')!r}",
             flush=True,
         )
 
@@ -339,7 +384,13 @@ def main(work_dir: Path) -> None:
             "step=photo-double-click-exit-click handler=not-entered "
             "entries=0 "
             f"singleClickExitEnabled={single_exit!r} "
-            f"layoutMode={layout_mode!r} tiltActive={tilt_active!r}",
+            f"layoutMode={layout_mode!r} tiltActive={tilt_active!r} "
+            f"pressEvents={aktiv_lepes['press_events']!r} "
+            f"pressEventCountBefore={elotte_lenyomasok!r} "
+            f"pressEventCountAfter={pan_area.property('pressEventCount')!r} "
+            f"lastPressBranch={pan_area.property('lastPressBranch')!r} "
+            "timerRunningOnLastPress="
+            f"{pan_area.property('timerRunningOnLastPress')!r}",
             flush=True,
         )
     assert varj(lambda: window.property("viewerOpen") is False), (
