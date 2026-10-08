@@ -170,6 +170,20 @@ pipái függetlenek.
 | 5 | Keresés a lemezen `Ctrl+Enter` · Eltávolítás a Picasából… |
 | 6 | Áthelyezés… · Törlés… |
 
+**#4644 — az F2 „Átnevezés…” rekord nem a Mappa menü része.** A Mappa
+főtömbje `0x00d6e1c0`-nál kezdődik, és `0x0055b28f` pontosan 17 rekorddal
+adja át a `0x005590c0` menüépítőnek. A `0x00d6e318` című F2 rekord a tömbön
+kívül van: a Kép menü „Csoportos szerkesztés” elemének `0x00d6e4b8`
+gyermekmutatója erre a címre mutat, a gyerekszám pedig `0x13` (19). Tehát
+az F2 a **Kép ▸ Csoportos szerkesztés** almenü első rekordja; a Mappa
+főmenü 12 tétele + 5 elválasztója ezzel összhangban van.
+
+A rekordot építő ágban a `0x0055b29c`–`0x0055b2a8` közötti
+`[0x00da03a8] & 0x200` ellenőrzés egyszeri menüinicializálási kapu, nem
+kijelölés- vagy nézetfeltétel. A rekord megjelenése az almenü
+megnyitásához kötött; az aktivált/szürke állapot kijelölésfüggését ez a
+vizsgálat nem állapítja meg.
+
 ### Kép — 7 tétel, 5 csoport
 
 | # | tételek |
@@ -236,9 +250,11 @@ felső szintű blokk előtt:
 ⇒ **A #1794 feltevése beigazolódott: a `ID_DUPES` a Kísérleti almenüben van**,
 a második helyen.
 
-#### A „Keresés…" ALMENÜ — hat szín
+#### A „Keresés…" ALMENÜ — hét tétel
 
-A 3. tétel maga is almenü: a `0x0055c078`…`0x0055c1c8` blokk hat színt épít,
+A 3. tétel maga is almenü. A `Searchfor` rekord gyerekmutatója
+`0x00d6e708` (`0x0055c36f`), a gyerekszám mezője pedig **7**
+(`0x0055c379`). A `0x0055c078`-nál induló blokk az alábbi hét elemet építi,
 ebben a sorrendben:
 
 | kulcs | angol | magyar |
@@ -249,6 +265,12 @@ ebben a sorrendben:
 | `ID_S_GREEN` | &Green | &Zöld |
 | `ID_S_BLUE` | &Blue | &Kék |
 | `ID_S_PURPLE` | &Purple | &Lila |
+| `ID_VIEW_BW` | &Black and White | &Fekete-fehér |
+
+Az utolsó elem rekordja `0x00d6e780`, parancsazonosítója `0x9da9`;
+közvetlenül a hat `ID_S_*` szín után áll. A feliratkulcs a Nézet
+névteréből származik, de ebben a menüben a `color:black` keresést indítja
+(részletek: [picasa-menu-parancsok-viselkedese.md](picasa-menu-parancsok-viselkedese.md) 20.).
 
 #### A másik két almenü
 

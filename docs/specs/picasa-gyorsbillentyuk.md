@@ -312,7 +312,7 @@ sorozatból.
 | `0xd6e1d4` | Mappa/Album | Diavetítés megtekintése | `Ctrl+4` | `0x9c6d` |
 | `0xd6e274` | Mappa/Album | Indexképek nyomtatása… | `Ctrl+Shift+P` | `0x9c94` |
 | `0xd6e2b0` | Mappa/Album | Keresés a lemezen | `Ctrl+Enter` | `0x9cba` |
-| `0xd6e318` | Mappa/Album | Átnevezés… | `F2` | `0x9d4f` |
+| `0xd6e318` | Kép ▸ Csoportos szerkesztés | Átnevezés… | `F2` | `0x9d4f` |
 | `0xd6e340` | Kép | Forgatás jobbra | `Ctrl+R` | `0x9ca2` |
 | `0xd6e354` | Kép | Forgatás balra | `Ctrl+Shift+R` | `0x9ca3` |
 | `0xd6e498` | Kép | Megjelenítés és szerkesztés | `Ctrl+3` | `0x9ca0` |
@@ -457,7 +457,7 @@ származik. Ahol semmink sincs, ott **„nincs mérve"** áll.
 | `Ctrl+O` | Fájl felvétele a Picasába… | fájl(ok) felvétele az indexbe | soha | könyvtár | Fájl ▸ | fájlválasztó |
 | `Ctrl+M` | Importálás forrása… | importálás eszközről/mappából | soha | könyvtár | Fájl ▸ | Importálás képernyő |
 | `Ctrl+Shift+O` | Fájl(ok) megnyitása szerkesztőben | külső szerkesztő indítása | **kép-kijelölés nélkül** (a képernyőképen mappa-kijelölésnél szürke) | a kijelölt fájlok | Fájl ▸ · a kép helyi menüje („Fájl megnyitása") | külső alkalmazás nyílik |
-| `F2` | Átnevezés… | fájl/mappa/album átnevezése | nincs kijelölés | kijelölés | Fájl ▸ · Mappa ▸ | Átnevezés párbeszéd |
+| `F2` | Átnevezés… | kijelölt fájlok tömeges átnevezése (`rename.fen`) | **NINCS MEG: a tiltási feltétel** | fájlok (`rename.fen`: „file(s) selected for rename”) | Fájl ▸ · Kép ▸ Csoportos szerkesztés ▸ | fájlátnevező párbeszéd (`0x005e6710` → `0x00532ec0`) |
 | `Ctrl+S` | Mentés | a függő szerkesztések kiírása | **ha nincs mentetlen szerkesztés** (a képernyőképen szürke) | a kijelölt kép(ek) | Fájl ▸ · a kép helyi menüje | mentés-folyamatjelző |
 | `Ctrl+Shift+S` | Kép exportálása mappába… | méretezett másolat kiírása | nincs kép kijelölve | kijelölés | Fájl ▸ | Exportálás párbeszéd |
 | `Ctrl+Enter` | Keresés a lemezen | a fájl/mappa megmutatása az Intézőben | nincs kijelölés | kijelölés | Fájl ▸ · négy helyi menü | Intéző-ablak nyílik |
@@ -929,7 +929,7 @@ argumentumokkal.
 | `Ctrl+D` | `0x005e6492` | `0x00579330` őr → `0x005e5310` |
 | **`Ctrl+Shift+E`** | `0x005e638b` | `0x005fe370(panel, "enhance")` |
 | **`Ctrl+F`** | `0x005e63bb` | **kattint: `searchcontainer/searchbutton`** |
-| `Ctrl+G` (+Alt/+Shift) | `0x005e6518` | `[esp+0x12]`/`[esp+0x11]` szerint → `0x0057b050` |
+| `Ctrl+G` (+Alt/+Shift) | `0x005e6518` | módosító nélkül vagy Alt-tal: nincs művelet; Shift: `0x00600580`; Alt+Shift: `0x0057b050` (10.22) |
 | **`Ctrl+Shift+H`** | `0x005e63d6` | `0x005eef30(panel, 2)` |
 | `Ctrl+I` | `0x005e64f6` | `0x00579330` őr → `0x005e5370(panel)` |
 | **`Ctrl+K`** **és** `Ctrl+T` | `0x005e650e` | **ugyanaz az ág**: `0x0065ab00` |
@@ -1008,13 +1008,14 @@ kimaradt.** Bekötve: `Ctrl+0` (jobb fiók), `Ctrl+F` (keresés), `Ctrl+K`
 és törlése, #1833), `Ctrl+Shift+B` / `Ctrl+Shift+E` (a `bw` és az `enhance`
 szűrő a kijelölésre, a köteg-szerkesztés útján).
 
-Kimaradt, mert a FUNKCIÓ nincs meg vagy az ág célja nincs kimérve:
-`Ctrl+6`, `Ctrl+8`, `Ctrl+G`, `Ctrl+Shift+L`, `Ctrl+Shift+U`,
-`Ctrl+Shift+Y`, `Ctrl+F9` (az ág célfüggvényének szemantikája nincs
-kiolvasva — találgatásból bekötni tilos), `Ctrl+9` (a szerkesztő bal fiókja
-nálunk nem létezik), `Ctrl+Shift+H` / `Ctrl+Shift+V` (tükrözés — a
-művelet a kódbázisban NINCS meg; külön jegy). A soronkénti elszámolás a
-#2163 kommentjében áll, a gépi őr a
+Kimaradt a PicasaPyból: `Ctrl+6`, `Ctrl+8`, `Ctrl+9`, `Ctrl+G`,
+`Ctrl+Shift+L`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`, `Ctrl+F9`. Az eredeti ágak
+hatása a #4643 mérésével részben feltárt; a mai bekötési irányt és a nyitott
+részeket a **10.22** rögzíti. **Helyesbítés:** a bal szerkesztőfiók nálunk
+létezik (`PhotoViewer.qml`: `editorControlsVisible`, `toggle_left_drawer`;
+`PicasaMenuBar.qml`: „Show Edit Controls”), csak a Ctrl+9 kötés hiányzik.
+`Ctrl+Shift+H` / `Ctrl+Shift+V` (tükrözés — a művelet a kódbázisban NINCS
+meg; külön jegy). A soronkénti elszámolás a #2163 kommentjében áll, a gépi őr a
 `tests/app/test_gyorsbillentyu_agak_2163.py`: az bukik, ha olyan billentyűt
 kötünk be, amire az eredetiben nincs ág (10.5), és a kivételeket
 indoklással kényszeríti ki.
@@ -1026,9 +1027,10 @@ indoklással kényszeríti ki.
 mi oldalunk (mind közvetlen kiolvasás, illetve grep).
 **Erős:** a `Ctrl`/`Shift`/`Alt` bit-azonosítás (két független egyezés a
 lap 3.3 táblájával).
-**Nincs mérve:** a nem-kattintó ágak által hívott függvények *jelentése* —
-csak a címük és az argumentumaik szerepelnek; továbbá az F12-jelző
-felhasználási helye.
+**A #4643 előtt nem volt mérve:** a nem-kattintó ágak célfüggvényeinek
+jelentése. A 10.22 most rögzíti a kiolvasható hatásokat; a Ctrl+F9 jelző
+teljes felhasználói szemantikája, a Ctrl+Alt ág belső hatása és az F12-jelző
+felhasználási helye továbbra is nyitott.
 
 ### 10.9 ⛔ HELYESBÍTÉS: a `0x005e60d0` a Ctrl-ÁG, nem a teljes kezelő (#2164, 2026-09-03)
 
@@ -1062,12 +1064,13 @@ A `0x005e6814` `jg`-je alatt, `WM_KEYDOWN`-ra (`cmp [ebx+4], 0x100`,
 | **F2** | `0x005e68fd` | öt őr után (`0x0056c420`, `0x0056c110`, `0x00562d00`, `0x005f2650`, `0x0057c430(4)`) az átnevezés útja: `[edi+0xeac]` → `0x007166c0`, `0x0057d430`, `0x00532ec0` |
 | **F3** | `0x005e69a4` | **kattint: `searchcontainer/searchbutton`** (`0x00c8f448`) — ugyanaz az elem, mint a `Ctrl+F` |
 | **F4** | `0x005e696c` | `0x009cd110(`**`thumbui/startoggle`**`)` feloldás; ha `[eax+0x20e] == 0`, **kattint** rá (vtable `+0x78`) |
-| **F5** | `0x005e6869` | `[edi+0x2c0]` → `0x004a46e0`, `0x00579480(0,1)`, `[ecx+0x166] = 1`, `0x0065b840` |
+| **F5** | `0x005e6869` | időbélyeg- és állapotfrissítés, `[adatobjektum+0x166] = 1` frissítési kérés, majd kereső-/nézeti frissítés (`0x0065b840`; 10.22) |
 | **F11** | `0x005e68a0` | vtable `+0x24` kétszer, `[eax+0x3e]` billentése, majd `0x00983fc0` |
 | **F12** | `0x005e69c2` | `call 0x005e60d0` — de az F12 a Ctrl-tábla tartományán **kívül** esik (10.6), tehát ott nem történik semmi |
 
-**Bizalmi fok: megerősített** (közvetlen kiolvasás). A hívott függvények
-*jelentése* nincs mérve — csak a címük, az őreik és az elemnevek.
+**Bizalmi fok: megerősített** (közvetlen kiolvasás). A részletes F5
+frissítési út a 10.22-ben szerepel; a többi hívott függvény felhasználói
+jelentése nincs mérve — csak a címük, az őreik és az elemnevek.
 
 ### 10.11 ⛔ NEGATÍV EREDMÉNY: nincs MÁSIK ilyen kezelő (#2164)
 
@@ -1295,6 +1298,97 @@ ezért nem nyitunk rá kérdést.
 **Bizalmi fok: megerősített** (a két tábla teljes kiolvasása, a
 továbbító azonosítása, és a `biBitCount`-helyesbítés közvetlen
 kiolvasásból).
+
+### 10.22 #4643 — a Ctrl-ágak, az F5 és a nyitott billentyűk hatása (2026-10-08)
+
+**Módszer:** a megadott függvényhatárokat a helyi SQLite-indexből vettem,
+majd az `annot_disasm.py` utasításszinten olvasta ki. A teljes `.text`
+operandum-keresése a `paszta.py`-n futott, első műveletként
+`paszta.memoria_kapu()` hívással. Az eredeti program futtatására ebben a
+munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok.
+
+| billentyű / ág | cél és kiolvasott hatás | független megerősítés | fok |
+|---|---|---|---|
+| `Ctrl+6` | `0x005e6294` → `0x00530ad0`: az `AdvancedFeatures` beállítást olvassa, majd a `timeslicer` vezérlő/panel útjára lép. | Az `AdvancedFeatures` és `timeslicer` bináris karakterlánc-hivatkozásai ugyanahhoz a célhoz vezetnek; a teljes létrehozási/felületi hatás futtatás nélkül nincs kimérve. | feltételes |
+| `Ctrl+8` | `0x005e6584` → `0x005e81e0(panel, 2)`: a kijelölt képek `]star` állapotát váltja; a `stars/yes` és `stars/no` ágak közül választ, majd frissíti a nézeti állapotot. | A célfüggvény további hívói és külön string-xref rekordjai ugyanazt a csillagvezérlőt és a két állapotot azonosítják. | megerősített |
+| `Ctrl+9` | `0x005e629f`: a `0x00579330` szerkesztő-előnézeti őr után kattint az `editpanel/toggle_left_drawer` elemre. | A mai `PhotoViewer.qml` ugyanezt az objektumnevet és az `editorControlsVisible` állapotot tartalmazza; a `PicasaMenuBar.qml` „Show Edit Controls” tétele ugyanezt az állapotot olvassa/állítja. | megerősített |
+| `Ctrl+G` | Külön módosító nélkül az ág nem indít műveletet. | A kezelő módosító-ágainak közvetlen kiolvasása; külön második út ehhez a no-ophoz nincs. | feltételes |
+| `Ctrl+Shift+G` | `0x005e6547` → `0x00600580`: a Geotag With Google Earth út, telepítés-ellenőrzéssel; hiányzó Google Earthnél telepítési párbeszédet ad, megléténél a kijelölést továbbítja. | A menü-diszpécser független `ID_PICTURE_GEOTAG` útja ugyanarra a `0x00600580` kezelőre jut (`picasa-menu-parancsok-viselkedes.md` 33.1, 33.5). | megerősített |
+| `Ctrl+Alt+G` | Az ág nem indít műveletet. | A handler Alt-ágának közvetlen kiolvasása: Shift nélkül kihagyó ágra jut; külön második út ehhez a no-ophoz nincs. | feltételes |
+| `Ctrl+Alt+Shift+G` | `0x005e652c` → `0x0057b050`: elkészíti a `ginormous.jpg` kontaktképet és megnyitja. | A külön nyomtatási spec rögzíti a `ginormous.jpg`, „Making The Ginormous Contact Sheet!” és `ShellExecute` nyomokat (`picasa-nyomtatas.md`, „A `ginormous.jpg` út”). | megerősített |
+| `Ctrl+Shift+L` | `0x005e658e` a szerverobjektumot a `0x004cce10`-nek adja; a LAN-jelszó és a fix `picasaserver` felhasználó mellett a `0x004cd010` `http://localhost:%d/%s/` URL-t épít, amelyet a handler böngészővel nyit meg. | A webserver-spec külön méri a `LANPassword`, a `picasaserver` felhasználónevet és az URL-alakot (`picasa-beepitett-webszerver.md` 1.). | megerősített |
+| `Ctrl+Shift+U` | `0x005e6557` → `0x0047ca60` → `0x006b8710`: üríti/újrainicializálja a két átadott bélyegképtár memóriabeli állapotát. | A hívó tageltolásai a `pmp-database.md` szerint `m_bigThumbs` (`bigthumbs.db`) és `m_previewThumbs` (`previews.db`); a cél belső mutatókat szabadít fel és nulláz. A fájlok törlését nem állítjuk. | megerősített |
+| `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: feloldja az `overlays/egg` elemet, inicializálja a hozzá tartozó objektumot és aktiváló jelzőt állít. | A `overlays/egg` string-xref és a Ctrl-ág egyetlen célfüggvénye egyezik; a pontos látható animáció futtatás nélkül nincs kimérve. | feltételes |
+| `Ctrl+F9` | A `0x005e60d0` billentyűkezelő Ctrl+`0x78` (F9) táblabejegyzése a `0x005e6329` ágra jut. A konstruktor `0x00564b2e` alaphelyzetben 0-ra állítja a `[panel+0xdc4]` bájtot; a `0x005e6329`–`0x005e6333` ág ezt 0/1 között billenti. Ha a `0x00571e50` útján létezik az `editpanel/preview`, annak `[+0x20c]` mezője 0, a kapcsoló 1, és a kijelölési út érvényes értéket ad, akkor ezt összeveti a `[this+0xe64]` aktuális képként használt értékével. Eltéréskor a `CThumbUI` `+0x2c` virtuális metódusát 0 argumentummal hívja; ez a `0x005f89a0`-en át az `editpanel/preview`-hoz tartozó aktuális kép felirat-/törlésállapotának és vezérlőállapotának frissítését kéri. A bináris nem bizonyítja, hogy ez a kijelölt képre váltja-e az előnézeti képet, vagy csak a meglévő előnézet UI-állapotát rajzolja újra. A kapcsoló 0 állásában ez az eltérésre induló frissítő ág kimarad. | A teljes `.text` pásztázás pontosan négy `[reg+0xdc4]` találatot adott (két írás, két olvasás). A `CThumbUI` RTTI/vtábla-útján a slot `0x00578dc0`-hoz vezet; ennek 0 argumentumos ága a `0x005f89a0`-et hívja, amely az `[this+0xe64]` mezőt olvassa. A külön `0x0056a260` szerkesztőút is aktuális képként kezeli ezt a mezőt (`ui-audit-editor.md`, 3. pont). | feltételes |
+| `F5` | `0x005e6869`: időbélyeg-frissítés (`0x004a46e0`), állapotfrissítő hívás (`0x00579480(0,1)`), `[adatobjektum+0x166]=1`, majd `0x0065b840` keresővezérlő-frissítés. Az idle út `0x004afcb0` ezt a jelzőt a `0x004aae90` lista-/nézeti állapotfrissítéshez viszi, majd törli. Ez nem bizonyít teljes fájlrendszer-rescant. | A külön `+0x166` olvasó/ürítő út és a `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5 leírása is frissítési kérelemként azonosítja a jelzőt. | megerősített |
+| `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. Az `EnableHover` beállítás egyező; a célfeladat látható hatása nyitott. | A konstruktor beállításolvasása és a `picasa-linux-mod.md` „EnableHover — egér-alatti kiemelés” sora külön egyezik a kapuval. | nyitott |
+| Videó: `/`, `,`, `.` | A `CThumbUI` közvetlen VK-ágában nincs ilyen összevetés; az általános eseménylánc a fókuszált gyereknek továbbít. A központi kezelőből nem állítható, hogy ezek lejátszanak vagy keresnek. | A 10.19 szerinti teljes `.text` pontos `cmp ax,0xbc/0xbe/0xbf` keresése nulla találatot adott; a lánc/fókusz továbbítását a 10.18–10.19 külön méri. | feltételes — a videóvezérlő saját hatása nyitott |
+
+**A Ctrl+F9 két független útja.** **A — állapotút:** a teljes `.text`
+pásztázás a konstruktor alapérték-írását (`0x00564b2e`), a billentyű-ág
+olvasását/írását (`0x005e6329`, `0x005e6333`) és a `CThumbUI` frissítési
+útjának olvasását (`0x00572078`) találta. A `0x00571e50` közvetlen
+utasításszintű olvasata szerint az aktív jelző, érvényes és az előnézettől
+eltérő kijelölés esetén a `[this+0x2a4]` vtable `+0x2c` metódusát 0-val hívja.
+**B — a flagtől független célút:** a konstruktorban a `[this+0x2a4]`
+mezőbe írt `0x00c90754` vtable `+0x2c` bejegyzése `0x00578dc0`; ennek 0
+argumentumos ága a `0x005f89a0`-et hívja. Ez az `[this+0xe64]` aktuális
+képként használt értékből frissíti az előnézethez tartozó felirat-/törlés-
+és vezérlőállapotot. Ettől külön a `0x0056a260` szerkesztőút is aktuális
+képként kezeli az `[this+0xe64]` mezőt (`ui-audit-editor.md`, 3. pont). A két
+út egyezik abban, hogy eltéréskor előnézet-UI frissítés indul; az nem dőlt el,
+hogy a kijelölt képet tölti-e be, vagy csak a meglévő előnézet állapotát
+frissíti.
+
+A többi sor független megerősítése: Google Earth menüparancs-út,
+`ginormous.jpg` nyomtatási lelet, webserver konfiguráció/URL-spec, PMP
+tageltolások, mai QML fiókállapota, valamint a korábban mért fókusz- és
+frissítési út. Ezek a Ctrl+8/9, Ctrl+Shift+G/L/U, Alt-ág kapuja, F5 és a
+videókezelő hiányára egyeznek; a Ctrl+6 és Ctrl+Shift+Y teljes felületi
+hatása, továbbá `0x00571a80` belső jelentése nyitva marad.
+
+**Cáfoló kísérlet (15.2):** a videóírásjelekre vonatkozó „nincs közvetlen
+VK-ág” állítást szándékosan tágabb mintával próbáltam cáfolni. A teljes
+szakaszban talált két `0xbf` bájt-összevetés egyike sem a billentyű-VK
+regisztert vizsgálja; mindkettő adatmező-összevetés. Ugyanazzal a pontos
+`cmp ax, 0xbc/0xbe/0xbf` mércével ellenőrizve továbbra is nulla a találat.
+A Ctrl+9 régi „bal fiók nincs” mondatát a mai QML `toggle_left_drawer` és
+`editorControlsVisible` előfordulásai cáfolják; ez független a bináris
+ágnevektől. A Ctrl+F9-nél azt a cáfoló feltevést ellenőriztem, hogy a
+0-val hívott `0x00578dc0` a következő képre léptet: a függvényben a nem nulla
+argumentum külön útja hívja a `0x005d1300`-at, míg a 0 argumentum a
+`0x005f89a0` aktuális-előnézet UI-frissítőhöz jut. A hívó ténylegesen 0-t ad
+(`0x005720be`), ezért a „következő kép” feltevés nem áll meg. Azt is
+ellenőriztem, hogy ez a hívási út közvetlenül átírja-e az `[this+0xe64]`
+mezőt: nem találtam ilyen írást a célfüggvényekben, a teljes operandus-
+pásztázás `0x005704eb`-nél megtalálta a mező címét adó `lea`-t; az utasítás-
+követés mutatja az ezen a címen keresztüli írást (`0x005704fe`). A másik
+közvetlen mezőírás `0x005e8c2d` (`e64=e68`, feltételes). Így a képváltás
+irányát ebből az útból nem állítom.
+
+**Nyitott:**
+
+- `Ghidra-kör kell: 0x00571a80 — a Ctrl+Alt/VK 0x12 ágban az EnableHover és az érvényes elemazonosító mellett végrehajtott felhasználói művelet. [blokkoló]`
+- `Ghidra-kör kell: 0x005f89a0 — a Ctrl+F9 eltérési ágának 0 argumentumos célja ténylegesen kijelölt képre váltja-e az előnézeti képet, vagy csak a jelenlegi [this+0xe64] kép UI-állapotát frissíti. [blokkoló]`
+- A `Ctrl+6` timeslicer felületének futás közbeni állapota és a Ctrl+Shift+Y `overlays/egg` látható animációja: **NINCS MEG**; célzott eredeti-program próba kell.
+- A `/`, `,`, `.` esetleges videóvezérlő-hatása: **NINCS MEG**; a fókuszált gyermek eseményfogadójának útját kell követni, a globális kezelőben nincs saját ág.
+
+**Fejlesztési következmény:** a Ctrl+9-hez külön bekötési jegy javasolható:
+a meglévő `PhotoViewer.toggleEditorDrawer` kapjon `Ctrl+9` billentyűutat,
+kizárólag a szerkesztőnézetben, a `0x00579330` őrnek megfelelő állapotban.
+Az F5-höz külön jegy javasolható: a könyvtár aktuális nézeti/lista-frissítési
+útját és keresővezérlőit indítsa, a bizonyított `+0x166` frissítési
+kérelemhez igazítva; teljes könyvtári rescan nem következik a binárisból.
+A Ctrl+F9-höz a kódban nincs billentyűkötés (`Ctrl+F9`-keresés a
+`src/picasapy/app/` QML/Python fájljaiban); a `PhotoViewer.qml` a
+`currentIndex` alapján indít szerkesztést (`beginEditCurrent`). A binárisból
+igazolt preview-UI frissítőág és a lehetséges képváltás iránya között nincs
+elég bizonyíték a hű megvalósítási jegyhez; a Ghidra-kör lezárása után dönthető
+el, kell-e külön fejlesztői jegy.
+
+**Bizalmi fok:** a fenti táblában soronkénti. Összesítve **feltételes**, mert
+a Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
+gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem történt.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
 

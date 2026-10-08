@@ -323,9 +323,8 @@ MenuBar {
     // menüpont volt, hanem alapból bekapcsolt háttérszál
     // (`BgFaceDetectThread`, ld. docs/specs/picasa-arcfelismeres.md 1.1);
     // nálunk háttérmotor híján ez a belépési pont (FaceScanDialog.qml).
-    //: #1399: a hat szín-keresés menüpontja — a token (`red`, `orange`,
-    //: `yellow`, `green`, `blue`, `purple`) megy át, a `color:` előtagot a
-    //: gazda teszi rá (a keresőmező szövege lesz belőle).
+    //: #1399/#4689: a hét szín-keresés menüpontja — a szín-token megy át,
+    //: a `color:` előtagot a gazda teszi rá (a keresőmező szövege lesz belőle).
     signal colorSearchRequested(string szin)
     //: #1405: a keresés mentése albumként — a gazda dönt a megerősítésről.
     property bool canSaveSearch: false
@@ -2280,7 +2279,7 @@ MenuBar {
                 text: qsTr("Manage Duplicates...")
                 onTriggered: bar.dedupRequested()
             }
-            //: #1399: a hat szín-keresés almenüje — az eredetiben a KÍSÉRLETI
+            //: #1399/#4689: a hét szín-keresés almenüje — az eredetiben a KÍSÉRLETI
             //: almenü HARMADIK tétele (`eMenuTools::Searchfor ▸`), közvetlenül
             //: a „Show Duplicate Files" után. A helyet a bináris menüépítőből
             //: mérte a #1794/#2142 (`picasa-menusor-csoportok.md`, az
@@ -2288,16 +2287,15 @@ MenuBar {
             //: nekifutásom a FELSŐ szintre tette, és a menü-csoport őre
             //: joggal buktatta meg.
             //:
-            //: MÉRVE (`0x005ccc41`–`0x005ccca2` + `0x0065b7b0`): mind a hat
-            //: parancs UGYANAZT teszi, csak más tokennel — beírja a
+            //: MÉRVE (`0x005ccc41`–`0x005ccca2` + `0x0065b7b0`): a hat
+            //: színtétel ugyanazt teszi más tokennel — beírja a
             //: `color:<szín>`-t a keresőmezőbe, a kurzort a szöveg végére
             //: viszi, és lefuttatja a keresést. Nincs mögötte külön
             //: szűrő-mechanizmus.
             //:
-            //: ⚠️ A diszpécserben van egy HETEDIK kezelő is (`color:black`,
-            //: `0x005ccca7`), de a szövegtárban nincs hozzá felirat — az
-            //: eredetiben menüből nem érhető el. Nálunk sem épül hozzá
-            //: menüpont: hat tétel kell, nem hét.
+            //: #4689: a hetedik tétel az `ID_VIEW_BW` (`&Black and White`,
+            //: parancs `0x9da9`). A `0x005ccca7` kezelő ugyanazt a keresési
+            //: folyamatot futtatja `color:black` értékkel.
             PicasaMenu {
                 title: qsTr("Search for...")
                 MenuItem {
@@ -2329,6 +2327,11 @@ MenuBar {
                     objectName: "menuToolsSearchPurple"
                     text: qsTr("&Purple")
                     onTriggered: bar.colorSearchRequested("purple")
+                }
+                MenuItem {
+                    objectName: "menuToolsSearchBlack"
+                    text: qsTr("&Black and White")
+                    onTriggered: bar.colorSearchRequested("black")
                 }
             }
             //: #1405: `eMenuTools::ID_SAVESEARCH` — a Kísérleti almenü
