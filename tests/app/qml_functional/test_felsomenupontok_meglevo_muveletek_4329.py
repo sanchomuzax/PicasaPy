@@ -441,6 +441,7 @@ def qml_app_hu(qml_app, qt_app):
             "FIGYELMEZTETÉS! Ez a művelet TÖRLI az összes személyi albumot, és a Név nélküliek albumba helyezi át az arcokat. A művelet a szinkronizált webalbumokból is ELTÁVOLÍTHATJA a névcímkéket. Ezt szeretné tenni?",
         ),
     ],
+    ids=["ctrl", "shift"],
 )
 def test_reset_faces_modifier_branch_asks_before_global_change_and_cancel_is_safe(
     qml_app_hu,
