@@ -298,6 +298,11 @@ Rectangle {
     // az ini-módosítást a photosModel/index NEM látja, ez a kényszerített
     // újraértékelés-kapcsoló a facesFor() friss lekérdezéséhez
     property int facesEditRevision: 0
+    Connections {
+        target: viewer.appWindow
+            ? viewer.appWindow._faceScanController : null
+        function onUnnamedCountChanged() { viewer.facesEditRevision += 1 }
+    }
     //: #3741: a KIJELÖLT fél fotójáé (`aktivSor`) — kettős nézetben bal
     //: fókusznál ez a bal kép, nem a `currentIndex`-é.
     readonly property var currentFaces: (!viewer.facesVisible || !photosModel

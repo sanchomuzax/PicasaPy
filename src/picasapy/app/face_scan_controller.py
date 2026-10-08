@@ -41,7 +41,8 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Property, QLocale, QObject, Signal, Slot
+from PySide6.QtCore import QSettings, Property, QLocale, QObject, Qt, Signal, Slot
+from PySide6.QtGui import QGuiApplication
 
 from picasapy.cvimage import dekodolj_forrast, scale_down
 from picasapy.faces import detector as detector_module
@@ -76,6 +77,7 @@ from picasapy.index import (
     forget_face_scan,
     mark_face_scan,
     replace_faces,
+    reset_all_faces as reset_all_faces_in_index,
     store_embedding,
     sync_tree,
     unnamed_album_photos,
@@ -155,6 +157,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # sorának darabszáma ezt figyeli.
     unnamedCountChanged = Signal()
 
+    # #4627: a menüsor és a helyi menük Ctrl/Shift ágának megerősítése.
+    faceResetConfirmationRequested = Signal(str)
+
     # #449: a háttér-beolvasás haladása az ALBUMLISTÁBAN jelenik meg
     # („Scanning for faces… %d%% complete"), nem modális ablakban — semmi
     # nem blokkolja a felhasználót. A `scanProgress` jelzés erre kevés: a
@@ -226,6 +231,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._automatic_scan = False
         self._pending_face_reset_paths: list[str] = []
         self._resume_scan_after_reset = False
+        self._resume_face_reset_force_scan = False
         self._scanWorkerStopped.connect(self._finish_reset_after_scan)
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
@@ -1017,10 +1023,61 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         paths = tuple(dict.fromkeys(str(path) for path in image_paths if path))
         if not paths:
             return 0
+
+        modifiers = QGuiApplication.keyboardModifiers()
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            self.faceResetConfirmationRequested.emit("removeAllFaceData")
+            return 0
+        if modifiers & Qt.KeyboardModifier.ShiftModifier:
+            self.faceResetConfirmationRequested.emit("resetAllFaces")
+            return 0
+
         for image_path in paths:
             if self._faces_helper is not None:
                 self._faces_helper.removeAllFaces(image_path)
 
+        return self._schedule_face_reset(paths)
+
+    @Slot(result=int)
+    def removeAllFaceData(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """A Ctrl-ág: teljes ini-/index-törlés, majd teljes újra-arcfelismerés."""
+        paths = self._all_photo_paths()
+        if not paths:
+            return 0
+        if self._faces_helper is not None and not self._faces_helper.removeAllFaceData(
+            paths
+        ):
+            return 0
+        self._ini_ignored_cache = None
+        self._schedule_face_reset(paths, force_scan=True)
+        return len(paths)
+
+    @Slot(result=int)
+    def resetAllFaces(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """A Shift-ág: a névhozzárendeléseket törli, az arcokat megtartja."""
+        paths = self._all_photo_paths()
+        if self._faces_helper is not None and not self._faces_helper.resetAllFaces(
+            paths
+        ):
+            return 0
+        with open_index(self._db_path) as conn:
+            affected = reset_all_faces_in_index(conn)
+            conn.commit()
+        self._ini_ignored_cache = None
+        self.unnamedCountChanged.emit()
+        return affected
+
+    def _all_photo_paths(self) -> tuple[str, ...]:
+        """A jelenleg indexelt könyvtár összes fotójának abszolút útvonala."""
+        with open_index(self._db_path) as conn:
+            return tuple(
+                str(Path(photo.folder_path) / photo.name) for photo in all_photos(conn)
+            )
+
+    def _schedule_face_reset(
+        self, paths: tuple[str, ...], *, force_scan: bool = False
+    ) -> int:
+        """Az index törlése és az érintett fotók újra-arcfelismerése."""
         if self._stop_event is not None or self._pending_face_reset_paths:
             self._pending_face_reset_paths.extend(
                 path
@@ -1028,12 +1085,15 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 if path not in self._pending_face_reset_paths
             )
             self._resume_scan_after_reset = True
+            self._resume_face_reset_force_scan |= force_scan
             self.cancelScan()
             return len(paths)
 
         self._reset_index_faces(paths)
         if not self._detector.available:
             self.modelUnavailable.emit()
+        elif force_scan:
+            self._start_face_scan(automatic=False)
         else:
             self.scanNewFaces()
         return len(paths)
@@ -1050,6 +1110,11 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 for path in image_paths
                 if _path_key(path) in photos_by_path
             }
+            if photo_ids and photo_ids == set(photos_by_path.values()):
+                # A teljes könyvtár resetjénél a korábbi klaszter-centroidok
+                # is elavulnak. Az index API előbb leválasztja és törli őket;
+                # a részleges, kijelöléses ág érintetlen marad.
+                reset_all_faces_in_index(conn)
             for photo_id in photo_ids:
                 clear_faces(conn, photo_id)
                 forget_face_scan(conn, photo_id=photo_id)
@@ -1067,9 +1132,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         paths = tuple(self._pending_face_reset_paths)
         self._pending_face_reset_paths.clear()
         self._resume_scan_after_reset = False
+        force_scan = self._resume_face_reset_force_scan
+        self._resume_face_reset_force_scan = False
         self._reset_index_faces(paths)
         if not self._detector.available:
             self.modelUnavailable.emit()
+        elif force_scan:
+            self._start_face_scan(automatic=False)
         else:
             self.scanNewFaces()
 

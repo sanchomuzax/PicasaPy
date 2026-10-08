@@ -110,6 +110,59 @@ def without_faces(document: IniDocument, photo_name: str) -> IniDocument:
     return document.with_removed(photo_name, "faces")
 
 
+def remove_all_face_data(document: IniDocument) -> IniDocument:
+    """Az összes arc-jelölés és személynév eltávolítása a dokumentumból.
+
+    A `RemoveAllFaceData` után a képek teljes újrakeresése építi vissza a
+    saját arcindexet. A Picasa által írt `faces` és `facedata` kulcsokat,
+    valamint a hozzájuk tartozó `[Contacts2]` személyneveket is töröljük;
+    a fotószekciók minden más kulcsa és a round-trip is megmarad.
+    """
+    updated = document
+    for section in document.file_sections():
+        for key in ("faces", "facedata"):
+            while True:
+                current = updated.section(section.name)
+                if current is None or current.get(key) is None:
+                    break
+                updated = updated.with_removed(section.name, key)
+    return _without_all_contacts(updated)
+
+
+def reset_all_faces(document: IniDocument) -> IniDocument:
+    """A személyneveket törli, a régiókat névtelen arcokként megtartja.
+
+    A `ResetAllFaces` a `faces=` minden kontaktazonosítóját `0`-ra állítja
+    (ez az arc-régiót megtartó, nem mellőzött névtelen alak), majd törli a
+    személyalbumokat adó `[Contacts2]` bejegyzéseket. A `facedata` és az
+    egyéb fotóadatok változatlanok.
+    """
+    updated = document
+    for section in document.file_sections():
+        current = updated.section(section.name)
+        raw_faces = current.get("faces") if current is not None else None
+        if raw_faces is None:
+            continue
+        faces = parse_faces(raw_faces)
+        if faces:
+            unnamed = tuple(Face(rect=face.rect, contact_id="0") for face in faces)
+            updated = updated.with_value(
+                section.name, "faces", serialize_faces(unnamed)
+            )
+    return _without_all_contacts(updated)
+
+
+def _without_all_contacts(document: IniDocument) -> IniDocument:
+    """A dokumentum minden `[Contacts2]` személy-bejegyzését törli."""
+    updated = document
+    section = updated.section("Contacts2")
+    if section is None:
+        return updated
+    for person_id, _value in section.items():
+        updated = updated.with_removed("Contacts2", person_id)
+    return updated
+
+
 def without_face_at_rect(
     document: IniDocument, photo_name: str, rect: Rect64
 ) -> IniDocument:
