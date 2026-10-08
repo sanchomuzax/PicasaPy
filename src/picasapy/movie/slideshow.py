@@ -30,6 +30,8 @@ import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 from picasapy.cvimage import dekodolj_forrast
+from picasapy.ini import IniDocument, load_or_empty
+from picasapy.scanner import PICASA_INI_NAME
 
 # A kodek-négyes: MP4 konténer, széles körben elérhető OpenCV-ben.
 _FOURCC = "mp4v"
@@ -386,16 +388,38 @@ def _szovegdia(slide: dict[str, object], settings: MovieSettings) -> np.ndarray:
     return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
 
 
-def _fotofelirat(frame: np.ndarray, path: Path, settings: MovieSettings) -> np.ndarray:
+def _picasa_caption(
+    path: Path, documents: dict[Path, IniDocument | None]
+) -> str:
+    """A kép `.picasa.ini`-beli felirata, az adott filmhez cache-elve."""
+    ini_path = path.parent / PICASA_INI_NAME
+    if ini_path not in documents:
+        try:
+            documents[ini_path] = load_or_empty(ini_path)
+        except OSError:
+            # A felirat metaadat; olvasási hiba esetén az EXIF-tartalék marad.
+            documents[ini_path] = None
+    document = documents[ini_path]
+    section = document.section(path.name) if document is not None else None
+    return (section.get("caption") or "").strip() if section is not None else ""
+
+
+def _fotofelirat(
+    frame: np.ndarray,
+    path: Path,
+    settings: MovieSettings,
+    picasa_caption: str = "",
+) -> np.ndarray:
     """Az elérhető EXIF-feliratot/dátumot diszkrét alsó sávban mutatja."""
     if not settings.show_captions and not settings.show_dates:
         return frame
-    caption = ""
+    caption = picasa_caption
     date = ""
     try:
         with Image.open(path) as photo:
             exif = photo.getexif()
-            caption = str(exif.get(270, "") or "").strip()
+            if not caption:
+                caption = str(exif.get(270, "") or "").strip()
             exif_values = exif
             try:
                 exif_values = exif.get_ifd(34665) or exif
@@ -454,6 +478,7 @@ def export_movie(
     target.parent.mkdir(parents=True, exist_ok=True)
 
     decoded: list[tuple[Path | None, np.ndarray]] = []
+    ini_documents: dict[Path, IniDocument | None] = {}
     for path in paths:
         if not path.exists():
             # #459/3: hiányzó fájl — a film a maradékkal elkészül
@@ -472,7 +497,12 @@ def export_movie(
             if settings.cropfit
             else letterbox(image, settings.width, settings.height, settings.background)
         )
-        decoded.append((path, _fotofelirat(frame, path, settings)))
+        picasa_caption = (
+            _picasa_caption(path, ini_documents) if settings.show_captions else ""
+        )
+        decoded.append(
+            (path, _fotofelirat(frame, path, settings, picasa_caption))
+        )
 
     text_frames = [(None, _szovegdia(slide, settings)) for slide in settings.text_slides]
     if settings.ordering == 2:
