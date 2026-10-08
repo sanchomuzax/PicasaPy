@@ -152,6 +152,51 @@ class TestModelUnavailable:
 
 
 class TestResetFacesForPhotos:
+    def test_reset_matches_windows_separator_variants(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        import ntpath
+        from types import SimpleNamespace
+
+        import picasapy.app.face_scan_controller as controller_module
+        from picasapy.index import (
+            all_photos,
+            detected_face_count,
+            face_scan_done,
+            mark_face_scan,
+            open_index,
+            replace_faces,
+        )
+
+        root = tmp_path / "kepek"
+        root.mkdir()
+        photo_path = root / "a.jpg"
+        make_jpeg(photo_path)
+        ctl = _make_controller(
+            qt_app, tmp_path, root, detector=_FakeDetector(available=False)
+        )
+        with open_index(tmp_path / "index.db") as conn:
+            photo = all_photos(conn)[0]
+            replace_faces(conn, photo.id, _FakeDetector().detect(None))
+            mark_face_scan(conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size)
+            conn.commit()
+
+        # Emulálja a Windows Path-alakok közti eltérést Linuxon: a QML
+        # előreperjeles útja ugyanazt a képet jelöli, mint a modell.
+        windows_path = ntpath.normpath(str(photo_path).replace("/", "\\"))
+        assert windows_path != str(photo_path)
+        monkeypatch.setattr(
+            controller_module, "os", SimpleNamespace(path=ntpath), raising=False
+        )
+
+        assert ctl._reset_index_faces((windows_path,)) == 1
+
+        with open_index(tmp_path / "index.db") as conn:
+            assert detected_face_count(conn, photo.id) == 0
+            assert not face_scan_done(
+                conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+            )
+
     def test_reset_clears_index_and_rescans_through_the_background_path(
         self, qt_app, tmp_path, monkeypatch
     ):

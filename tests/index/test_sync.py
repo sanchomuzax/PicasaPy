@@ -688,3 +688,42 @@ class TestIniSectionCaseInsensitive:
         assert photo.star
         assert photo.caption == "naplemente"
         assert photo.rotate_steps == 1
+
+
+def test_move_folder_tree_case_only_rename_survives_windows_resolve(
+    tmp_path, monkeypatch
+):
+    from pathlib import Path
+
+    import picasapy.index.sync as sync_module
+    from picasapy.index import move_folder_tree
+    from support.jpeg_factory import make_jpeg
+
+    root = tmp_path / "kepek"
+    source = root / "Foo"
+    (source / "child").mkdir(parents=True)
+    make_jpeg(source / "photo.jpg")
+    make_jpeg(source / "child" / "nested.jpg")
+    target = root / "foo"
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, root)
+        source.rename(target)
+
+        original_normalize_path = sync_module.normalize_path
+
+        def windows_resolve(path):
+            candidate = Path(path)
+            if candidate.name.casefold() == "foo":
+                return str(candidate.parent.resolve() / "foo")
+            return original_normalize_path(path)
+
+        # Case-insensitive resolve emuláció: az eltűnt régi alak és a cél
+        # ugyanarra a tényleges, kisbetűs könyvtárra oldódik fel Windowson.
+        monkeypatch.setattr(sync_module, "normalize_path", windows_resolve)
+
+        assert move_folder_tree(conn, source, target) == 2
+
+        paths = {row[0] for row in conn.execute("SELECT path FROM folders")}
+    assert str(target) in paths
+    assert str(target / "child") in paths
+    assert str(source) not in paths

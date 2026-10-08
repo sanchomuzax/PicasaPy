@@ -36,6 +36,7 @@ jövőbeli csoportosítás ne értékelje újra."""
 from __future__ import annotations
 
 import logging
+import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -115,6 +116,11 @@ _DETECT_MAX_DIMENSION = detector_module.MAX_DETECTION_DIMENSION
 # szándékosan: „Expand groups" nélkül a felhasználó a reprezentatív
 # részhalmazt nevezi el, ami a Picasa csoport-előnézetének felel meg).
 _COLLAPSED_GROUP_PREVIEW = 12
+
+
+def _path_key(path: str | Path) -> str:
+    """A fájlútvonal platformhelyes összehasonlító alakja."""
+    return os.path.normcase(os.path.normpath(str(path)))
 
 
 class FaceScanController(BackgroundWorkerMixin, QObject):
@@ -1036,13 +1042,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         """A kijelölt fotók származtatott arcadatait üríti az `index/` API-val."""
         with open_index(self._db_path) as conn:
             photos_by_path = {
-                str(Path(photo.folder_path) / photo.name): photo.id
+                _path_key(Path(photo.folder_path) / photo.name): photo.id
                 for photo in all_photos(conn)
             }
             photo_ids = {
-                photos_by_path[path]
+                photos_by_path[_path_key(path)]
                 for path in image_paths
-                if path in photos_by_path
+                if _path_key(path) in photos_by_path
             }
             for photo_id in photo_ids:
                 clear_faces(conn, photo_id)

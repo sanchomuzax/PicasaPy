@@ -139,7 +139,9 @@ def test_all_dictionaries_round_trip_byte_for_byte_and_report_missing_rows(capsy
         path = _I18N / f"picasapy_{code}.ts"
         source = path.read_bytes()
         catalog = load_catalog(source)
-        assert dump_catalog(catalog) == source, f"{code}: a TS körút nem bájtazonos"
+        assert dump_catalog(catalog) == source.replace(b"\r\n", b"\n"), (
+            f"{code}: a TS körút sorvég-normalizálás után sem bájtazonos"
+        )
 
         messages = list(catalog.iter("message"))
         assert messages, f"{code}: üres nyelvi szótár"

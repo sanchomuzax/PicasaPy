@@ -720,8 +720,16 @@ def move_folder_tree(
 
     Visszatérési érték: az átírt MAPPA-sorok száma (a naplóhoz és a
     tesztek fogához)."""
-    old_text = normalize_path(old_root)
-    new_text = normalize_path(new_root)
+    # A rename may already have moved the directory before this index update.
+    # Resolve the parent, but preserve each supplied leaf spelling: on a
+    # case-insensitive filesystem the stale old path can resolve to the new
+    # entry and erase the very case-only change this function must record.
+    def moved_path(path: str | Path) -> str:
+        entry = Path(path)
+        return str(Path(normalize_path(entry.parent)) / entry.name)
+
+    old_text = moved_path(old_root)
+    new_text = moved_path(new_root)
     # Path equality is case-insensitive on Windows; preserve spelling here so
     # a case-only rename updates every indexed path.
     if old_text == new_text:

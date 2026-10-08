@@ -430,4 +430,6 @@ def test_ctrl_h_billentyu_a_talka_megtartasi_muveletet_hivja(
     assert _varj(qt_app, lambda: controller.heldCount == 1), (
         "a Ctrl+H nem rögzítette a kijelölt képet a képtálcán"
     )
-    assert list(controller.heldPaths) == [controller.photos.filePathAt(0)]
+    assert [Path(path) for path in controller.heldPaths] == [
+        Path(controller.photos.filePathAt(0))
+    ]
