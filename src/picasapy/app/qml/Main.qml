@@ -1590,7 +1590,7 @@ ApplicationWindow {
         onReturnToLibraryRequested: photoViewer.kerBezaras()
         onUnhideRequested: window.unhideHiddenSelection()
         onWriteXmpFacesDialogRequested:
-            xmpFacesWriteDialog.openFor(window.photoActionRows())
+            xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
         onResetFacesRequested: resetFacesForPaths(window.photoActionPaths())
         // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
         // frissítjük, mert az index nem jelzi a `textactive=` változását.
@@ -3526,10 +3526,17 @@ ApplicationWindow {
         }
     }
 
-    XmpFacesWriteDialog {
+    //: #4634: halasztott (#1720) — csak az Eszközök menüpontra épül fel.
+    DeferredDialog {
         id: xmpFacesWriteDialog
-        onWriteRequested: function (scope, rows) {
-            if (controller) controller.writeFacesToXmp(scope, rows)
+        objectName: "xmpFacesWriteDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            XmpFacesWriteDialog {
+                onWriteRequested: function (scope, rows) {
+                    if (controller) controller.writeFacesToXmp(scope, rows)
+                }
+            }
         }
     }
 
