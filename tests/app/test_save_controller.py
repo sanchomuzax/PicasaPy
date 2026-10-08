@@ -136,6 +136,32 @@ class TestUnrenderableWarning:
 
 
 class TestSaveToDisk:
+    def test_a_mentes_a_nyitott_szerkesztesi_munkamenetet_is_frissiti(
+        self, controller, qt_app, library
+    ):
+        _set_filters(controller, qt_app, library, "bw=1;")
+        from picasapy.app.edit_controller import EditController
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        editor = EditController(EditPreviewProvider())
+        path = controller.photos.filePathAt(0)
+        editor.beginEdit(controller.photos.idAt(0), path)
+        controller.set_edit_controllers(editor)
+        regi_forras = editor.previewSource
+
+        eredmeny = _wait(
+            controller.saveFinished,
+            qt_app,
+            lambda: controller.saveRowsToDisk([0]),
+        )
+
+        assert eredmeny["done"] == 1
+        assert editor.chainValue == "", (
+            "a mentés után a nyitott szerkesztő a régi, már beégetett láncot "
+            "mutatja"
+        )
+        assert editor.previewSource != regi_forras
+
     def test_a_sikeres_mentes_utan_a_controller_modellje_is_ujratoltodik(
         self, controller, qt_app, library
     ):
