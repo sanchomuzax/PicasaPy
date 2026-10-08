@@ -6545,6 +6545,18 @@ picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
             <translation>Mappa törlése</translation>
         </message>
         <message>
+            <source>Are you sure you want to delete the album "%1"?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::DeleteAlbum</extracomment>
+            <translation>Biztosan törli a(z) "%1" albumot?</translation>
+        </message>
+        <message>
+            <source>Delete Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::DeleteAlbumTitle;stringres:DeleteMessage::DeleteAlbumYesButton</extracomment>
+            <translation>Album törlése</translation>
+        </message>
+        <message>
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>

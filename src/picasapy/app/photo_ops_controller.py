@@ -80,6 +80,7 @@ from picasapy.ini.albums import (
     with_album,
     with_album_fields,
     without_album,
+    without_album_everywhere,
 )
 from picasapy.metadata import write_iptc_caption
 from picasapy.render.flip import (
@@ -813,6 +814,38 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             return without_album(document, photo.name, token)
 
         self._write_album_batch(valid, mutate)
+
+    @Slot(str, result=bool)
+    def deleteAlbum(self, token: str) -> bool:  # noqa: N802
+        """Egy album teljes törlése minden érintett mappa ini-jéből (#4598).
+
+        A törlés a `[.album:<token>]` definíciót és a képek `albums=`
+        hivatkozásait is kiveszi. A képfájlok és a többi album érintetlenek
+        maradnak. Visszatérés: legalább egy albumot ismerő mappába írtunk-e.
+        """
+        token = (token or "").strip()
+        if not token:
+            return False
+        erintett = list(self._album_dokumentumok(token))
+        if not erintett:
+            return False
+
+        try:
+            with open_index(self._db_path) as conn:
+                for ini_ut, _document in erintett:
+                    update_document(
+                        ini_ut,
+                        lambda document: without_album_everywhere(document, token),
+                        backup=True,
+                    )
+                    self._sync_tree(conn, str(ini_ut.parent))
+                self._load_albums(conn)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(str(error))
+            return False
+
+        self._refresh_view()
+        return True
 
     # -- Album-tulajdonságok (#3173) -------------------------------------------
 
