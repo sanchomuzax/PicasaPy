@@ -123,3 +123,10 @@ def test_video_viewer_probe(tmp_path):
             r"event=press timestamp=\d+ monotonic=\d+\.\d+",
             result.stdout,
         ), f"{lepes}: nem került egéresemény-időbélyeg a próbanaplóba"
+    assert re.search(
+        r"PROBE-DOUBLECLICK step=photo-double-click-exit-click "
+        r"handler=(?:entered|not-entered) entries=\d+ "
+        r"singleClickExitEnabled=(?:True|False) layoutMode='[^']+' "
+        r"tiltActive=(?:True|False)",
+        result.stdout,
+    ), "a próba nem naplózta a dupla kattintás kezelőjét és a három feltételt"
