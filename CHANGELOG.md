@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.44] – 2026-10-08
+
+- Albumnézetben a Mappa menü Album menüvé válik, az Albumleírás szerkesztése pedig a megnyitott album adatait nyitja meg (#4630).
+- A windowsos tesztdarabok 60 perces időkorlátot kapnak a megszakítások elkerülésére (#4667).
+- A videónéző-próba elkülöníti a QTest-kattintásokat, és minden gesztus állapotát naplózza (#4674).
+
 ## [0.9.43] – 2026-10-08
 
 - A Kép ▸ Arcok alaphelyzetbe állítása Ctrl-kattintásra minden arcadatot töröl és újrakeresést indít, Shift-kattintásra pedig törli a személyalbumokat és névtelenné teszi az arcokat (#4627).
