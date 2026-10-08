@@ -999,17 +999,34 @@ Továbbá a `ShowHidden` beállítás (`0x00440af0`, `0x005643e0`, `0x005c9300`,
 
 **Vagyis az elrejtés adatvédelmi funkció**, nem csak nézeti szűrő.
 
-**Nálunk (mérve):** a fotó-szintű `hidden` oszlop megvan
-(`index/schema.py:225`), a `showHidden` beállítás is
-(`app/controller.py:500`), sőt a lemezes elrejtés kérdése is
-(`photo_ops_controller.py:105`, #459 — „Fájlok elrejtése"). **Mappa-szintű
-elrejtés viszont sehol nincs** (`grep hide_folder|folder_hidden` a `src/`-ben:
-üres), és a menütétel néma.
+**Nálunk (#4597 kódvizsgálat):** a fotó-szintű `photos.hidden` mellett a
+mappa-szintű `folders.hidden` is létezik (`index/schema.py:377`, `:501–515`).
+A `toggleFolderHidden` ezt az SQLite-mezőt olvassa és írja
+(`app/controller.py:897–914`); a láthatóságot a `showHidden` kapcsoló vezérli.
+A mező alapértéke új indexben `0`, ezért a jelenlegi rejtés nem rendelkezik
+az indexen kívüli forrással.
 
-*Bizonyítottsági fok: **megerősített** a 18 tétel, a feliratok és a három
-elrejtés-réteg. **Nincs mérve**, hogy a mappa elrejtése a `.picasa.ini`-be, az
-adatbázisba vagy mindkettőbe ír-e — ehhez a `0x0040cd10` környékének
-diszasszemblálása kell.*
+*Bizonyítottsági fok: **megerősített** a menüleltár, a feliratok és a három
+elrejtés-réteg. **Nincs mérve**, hogy az eredeti mappaszintű Hide/Unhide
+állapot milyen tartós mezőbe kerül.*
+
+### 32.3.1. #4597 — a mappaszintű jelölés tárolása nyitott
+
+**Bináris lelet:** `0x007319f0` építi a `&Hide Folder` / `&Unhide Folder`
+menüt, és tartalmazza a `Folder::ID_HIDEENTIREALBUM` /
+`Folder::ID_UNHIDEENTIREALBUM` parancsneveket. Ez a menü meglétét bizonyítja,
+az írási útvonalat nem. A `0x005d3290` eseménykezelőn át vezető parancs és a
+tartós írási cél még nincs végigkövetve.
+
+A `.picasa.ini`-ben talált `hidden=yes` nem használható mappajelölésként:
+`0x00710080` a képfájlok rekordjainak `star` / `hidden` jelzőit szerializálja,
+míg `0x00456610` a képszintű `hidden` állapotot a belső `]hidden` tokenhez
+kapcsolja. A `0x0040cd10` cím szintén nem Hide Folder rutin: a sérült képek
+`Hide Files` párbeszédét kezeli (`CThumbUI::GetBadImages`).
+
+**Eredmény:** az eredeti mappaszintű állapot pontos tárolási helye **NINCS
+MEG**; a fenti képszintű `.picasa.ini` út nem bizonyítja azt. A teljes
+Hide/Unhide írási útvonal Ghidra-köre szükséges.
 
 ### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
 
