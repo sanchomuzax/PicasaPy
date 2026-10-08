@@ -19,7 +19,8 @@ license = "GPL-3.0-or-later"
 # telepítsen (`scripts/print_dependencies.py`). Korábban fordítva volt — a
 # komment a CI-hez küldte az olvasót —, és a másolatok el is csúsztak.
 dependencies = [
-    "PySide6",
+    # #4669: a 6.12.0-val a QML-tesztek szegmentálási hibával állnak le.
+    "PySide6<6.12",
     "opencv-python-headless",
     "imageio-ffmpeg",
     "pillow",
