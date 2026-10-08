@@ -3,13 +3,10 @@
 létrehozhat, és mappákat sorolhat át bele — az eredeti Picasa mappakezelő-
 viselkedése.
 
-Tárolás: ugyanabban a QSettings-ben, ahol a gyűjtemények csukott állapota
-él (`collections.py.collection_setting_key`) — egyetlen kulcs alatt, JSON-
-szerializálva (a QSettings backendjei nem kezelnek egyformán listás/
-struktúrált értéket, a JSON-string a legegyszerűbb, hordozható forma). Ez a
-modul csak TISZTA függvényeket ad — a QSettings I/O-t a hívó (controller-
-mixin) végzi, a `schema.py`-hoz (forró fájl, csak az integrátor módosítja)
-nincs köze."""
+A gyűjteménynevek és a csukott állapot a QSettings-ben maradnak; a mappa-
+hovatartozás elsődleges forrása a `.picasa.ini` `[Picasa] P2category` mezője.
+A régi QSettings-besorolásokat a controller egyszer átírja az ini-fájlokba.
+Ez a modul tiszta függvényeket ad, I/O nélkül."""
 
 from __future__ import annotations
 
@@ -220,4 +217,53 @@ def closed_collection_folders(
     gyűjtemények képeit, minden nézetmódban egyszerre."""
     return frozenset(
         folder for c in collections if c.closed for folder in c.folders
+    )
+
+
+def merge_custom_collections(
+    definitions: tuple[CustomCollection, ...],
+    category_folders: tuple[tuple[str, tuple[str, ...]], ...],
+) -> tuple[CustomCollection, ...]:
+    """A QSettings neveit és az INI-ből olvasott tagságot egyesíti.
+
+    A régi beállításban maradt tagság a migráció hibás fájljainál tartalék,
+    ezért ütközés esetén az nyer az aktuális INI-pillanatkép fölött.
+    """
+    result: dict[str, CustomCollection] = {}
+    order: list[str] = []
+
+    for collection in definitions:
+        key = collection.name.casefold()
+        if key in result:
+            continue
+        result[key] = CustomCollection(
+            name=collection.name, closed=collection.closed
+        )
+        order.append(key)
+
+    folder_collection: dict[str, str] = {}
+    for name, folders in category_folders:
+        key = name.casefold()
+        if key not in result:
+            result[key] = CustomCollection(name=name)
+            order.append(key)
+        for folder in folders:
+            folder_collection[folder] = key
+
+    for collection in definitions:
+        key = collection.name.casefold()
+        for folder in collection.folders:
+            folder_collection[folder] = key
+
+    folders_by_collection: dict[str, list[str]] = {key: [] for key in order}
+    for folder, key in folder_collection.items():
+        folders_by_collection.setdefault(key, []).append(folder)
+
+    return tuple(
+        CustomCollection(
+            name=result[key].name,
+            folders=tuple(sorted(folders_by_collection[key], key=str.casefold)),
+            closed=result[key].closed,
+        )
+        for key in order
     )

@@ -130,3 +130,19 @@ def test_video_viewer_probe(tmp_path):
         r"tiltActive=(?:True|False)",
         result.stdout,
     ), "a próba nem naplózta a dupla kattintás kezelőjét és a három feltételt"
+    assert re.search(
+        r"PROBE-MOUSE step=photo-double-click-exit-click event=press "
+        r"timestamp=\d+ monotonic=\d+\.\d+ "
+        r"eventTarget=(?:None|'[^']*') "
+        r"singleClickExitTimerRunning=(?:True|False|None) ",
+        result.stdout,
+    ), "a dupla próbánál nem naplózott eseménypontot és időzítő-állapotot"
+    assert re.search(
+        r"PROBE-DOUBLECLICK step=photo-double-click-exit-click "
+        r"handler=(?:entered|not-entered) entries=\d+ "
+        r"singleClickExitEnabled=(?:True|False) layoutMode='[^']+' "
+        r"tiltActive=(?:True|False) pressEvents=\[.*\] "
+        r"pressEventCountBefore=\d+ pressEventCountAfter=\d+ "
+        r"lastPressBranch='[^']+' timerRunningOnLastPress=(?:True|False)",
+        result.stdout,
+    ), "a próba nem naplózta a QML-lenyomás ágát és időzítőjét"

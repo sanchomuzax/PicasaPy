@@ -42,7 +42,7 @@ A **szöveg**-beillesztés viszont a rendszer-vágólapról jön, **lecseréli**
 feliratot, megerősítést kér (`CTextEditNode::confirm`, gomb: `Replace`), és
 kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
 
-## 3. „Dátum és idő beállítása” — KÉT mód; EXIF és fájlidők (#4646)
+## 3. „Dátum és idő beállítása” — KÉT mód; feltételes EXIF-írás
 
 `offsettime.fen`: bélyegkép-előnézet · „Current photo date" (dátum+idő) ·
 „New photo date" (dátum+idő) · **rádiócsoport**:
@@ -54,25 +54,67 @@ Több képre megy: az ablakcím szó szerint **`Adjust Photo Date - %d items`**
 (`0x00cb40ac`, xref: `0x0077c7c0`); a futásjelzés **`Setting photo dates`**
 (`0x00cb4120`, xref: `0x0077cfd0`, `AdjustTimeThread::SettingDates`).
 
-### A worker mért íróágai
+### A worker és a forrásfájl írása (2026-10-08, #4646)
 
 A két dátumfeldolgozó út (`0x00490580`, `0x00490c10`) egyaránt a `0x37`
 metaadat-tulajdonságot állítja be (`0x004906f7`/`0x004906fe` és
-`0x00490d3c`/`0x00490d43`). A tulajdonság-táblában a `0x37` az EXIF
-`DateTimeOriginal`-nak felel meg (ld. `picasa-metaadat-tulajdonsagok.md`, §3),
-és a worker ezt a képfájl EXIF-szegmensébe írja. A fájlt a képpel azonos
-mappában létrehozott `.tmp` fájlon át írja, majd a kész fájllal lecseréli az
-eredetit.
+`0x00490d3c`/`0x00490d43`). A tulajdonságtábla szerint a `0x37` az EXIF
+`DateTimeOriginal` (`0x9003`), ld. `picasa-metaadat-tulajdonsagok.md`, §3.
+Ezután mindkét worker a `[esp+0xac] == 2` feltételt vizsgálja
+(`0x0049070a`, `0x00490d4f`). Ha teljesül, meghívja a `0x009ed330` íróutat;
+annak nullától eltérő visszatérése a fallback nélküli worker-ágra visz
+(`0x00490725`–`0x00490736`, `0x00490d69`–`0x00490d7b`), de a visszatérési
+kódok jelentését a disassembly nem nevezi meg. A `2` érték C++-oldali
+jelentése szintén nincs meg; ezért itt a nyers feltétel rögzíthető.
 
-Mindkét worker meghívja a `0x00992780` segédfüggvényt (`0x00490900`,
-`0x00490f40`). Az EXIF-írás sikeres ágában a meglévő EXIF `DateTime` (`0x0132`)
-alapján állítja a fájl hozzáférési és módosítási idejét; a létrehozási időt
-meghagyja. Ha a mező hiányzik vagy érvénytelen, az írás előtti mindhárom
-fájlidőt visszaállítja. Ha az EXIF-írás nem fut le, a tartalékág csak a
-létrehozási időt állítja. A létrehozási idő Win32 `SetFileTime`-mal írható;
-POSIX rendszeren ilyen fájlidő-beállító API nincs.
+Az `0x009ed330` hívja a `0x009eb290`-et, amelynek tempfájlos íróágán a
+kiválasztott
+képfájl útvonalát olvassa, `.tmp` fájlt ír (`"r+b"`/`"wb"`,
+`0x009eb3e0`, `0x009eb5c8`), majd a `0x00994400` útján lecseréli a forrásfájlt
+(`0x009eb70b`). A worker által előzőleg beállított `0x37` így a forrásfájl
+EXIF `DateTimeOriginal` mezőjébe kerül.
 
-A művelet `.picasa.ini`-kulcsot nem ír. A PicasaPy a forrásképen módosítja az
+A sikeres csere a fájlrendszer-időket is kezeli. A `0x009eb290` előbb
+elmenti mindhárom időt (`0x00ab3320` → `0x00ab3350` → `GetFileTime`). Ha a
+metaadat-objektumban olvasható és dátummá alakítható a `0x1c` tulajdonság
+(EXIF `DateTime`, `0x0132`; `0x009eb34b`–`0x009eb37d`), a `0x00ab35e0` az
+eredeti `FILETIME`-szerkezetben a hozzáférési és utolsó módosítási idő mezőket
+erre az értékre állítja (`or [edi+0x18], 6`, `+8`, `+0x10`); a
+létrehozási idő mezője érintetlen marad. A `0x00994400` fájlcsere-segéd
+sikeres visszatérése után a worker a `0x009eb4af` ágra jut, amely a
+`0x009eb4c1` címen hívja a `0x00ab34d0`-t; a cserehibás ág is megpróbálja ezt
+a visszaírást (`0x009eb738`). Ha a `DateTime` hiányzik vagy nem alakítható
+dátummá, a szerkezetben mindhárom eredeti idő marad, így a kód az eredeti
+hármast próbálja visszaírni. A `0x00ab35e0`-ban a két időkonverziós API
+visszatérését, a `0x00ab34d0`-ban pedig a `SetFileTime` eredményét nem kezeli
+helyreállítással; a tényleges fájlrendszer-állapot ezért a fájlcsere és az
+API-hívások sikerétől is függ.
+
+Ha a `[esp+0xac] == 2` feltétel nem teljesül, vagy a `0x009ed330` nullát ad
+vissza, a worker a közvetlen `0x00992780` ágra jut
+(`0x00490900`, `0x00490f40`). Ez a segéd a `SetFileTime` importot hívja
+(`0x0092234c`); a `0` jelző mellett csak a létrehozásiidő-mutató nem null
+(`0x009927e9`–`0x009927f9`). Ebben az ágban tehát a fájl létrehozási idejét
+a beállított új dátumra állítja; a hozzáférési és utolsó módosítási időt ez a
+hívás nem adja át, így azokat nem módosítja.
+
+A teljes `.text` indexfüggetlen pásztázása (`paszta.py`,
+`memoria_kapu()`-val indítva; 2 884 879 utasítás) a `.picasa.ini`-re mutató
+adat-hivatkozásokat a program más részein találta, nem a fenti worker/EXIF-író
+hívásláncban. E művelet nem ír `.picasa.ini`-kulcsot. Ez nem állítás a Picasa
+program egészének `.picasa.ini`-írásairól.
+
+### PicasaPy tárolási döntése (#4332)
+
+A dátummódosító a kijelölt fotók dátumát az SQLite-index `photos.taken_at_override`
+mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. A PicasaPy
+forrásfájl EXIF-szegmensét nem írja át: a forrás JPEG `DateTimeOriginal` mezője
+érintetlen marad; exportált JPEG-en viszont a `DateTimeOriginal` az indexben
+felülírt dátumot kapja, a #451 Colab-mérésével egyezően. Ez a #4646 által
+feltárt eredeti viselkedéstől eltér. A rács, a dátum szerinti rendezés és a
+Tulajdonságok panel a felülírt értéket mutatja.
+
+**A PicasaPy megvalósítása (#4693):** A művelet `.picasa.ini`-kulcsot nem ír. A PicasaPy a forrásképen módosítja az
 EXIF `DateTimeOriginal` értékét, és a sikeres írás után a mappát újraolvassa,
 hogy az index, a rácssorrend és a Tulajdonságok-panel az új EXIF-értéket
 mutassa. A korábbi, #4332-es indexfelülírásos út ettől eltért; a jelenlegi
@@ -963,17 +1005,34 @@ Továbbá a `ShowHidden` beállítás (`0x00440af0`, `0x005643e0`, `0x005c9300`,
 
 **Vagyis az elrejtés adatvédelmi funkció**, nem csak nézeti szűrő.
 
-**Nálunk (mérve):** a fotó-szintű `hidden` oszlop megvan
-(`index/schema.py:225`), a `showHidden` beállítás is
-(`app/controller.py:500`), sőt a lemezes elrejtés kérdése is
-(`photo_ops_controller.py:105`, #459 — „Fájlok elrejtése"). **Mappa-szintű
-elrejtés viszont sehol nincs** (`grep hide_folder|folder_hidden` a `src/`-ben:
-üres), és a menütétel néma.
+**Nálunk (#4597 kódvizsgálat):** a fotó-szintű `photos.hidden` mellett a
+mappa-szintű `folders.hidden` is létezik (`index/schema.py:377`, `:501–515`).
+A `toggleFolderHidden` ezt az SQLite-mezőt olvassa és írja
+(`app/controller.py:897–914`); a láthatóságot a `showHidden` kapcsoló vezérli.
+A mező alapértéke új indexben `0`, ezért a jelenlegi rejtés nem rendelkezik
+az indexen kívüli forrással.
 
-*Bizonyítottsági fok: **megerősített** a 18 tétel, a feliratok és a három
-elrejtés-réteg. **Nincs mérve**, hogy a mappa elrejtése a `.picasa.ini`-be, az
-adatbázisba vagy mindkettőbe ír-e — ehhez a `0x0040cd10` környékének
-diszasszemblálása kell.*
+*Bizonyítottsági fok: **megerősített** a menüleltár, a feliratok és a három
+elrejtés-réteg. **Nincs mérve**, hogy az eredeti mappaszintű Hide/Unhide
+állapot milyen tartós mezőbe kerül.*
+
+### 32.3.1. #4597 — a mappaszintű jelölés tárolása nyitott
+
+**Bináris lelet:** `0x007319f0` építi a `&Hide Folder` / `&Unhide Folder`
+menüt, és tartalmazza a `Folder::ID_HIDEENTIREALBUM` /
+`Folder::ID_UNHIDEENTIREALBUM` parancsneveket. Ez a menü meglétét bizonyítja,
+az írási útvonalat nem. A `0x005d3290` eseménykezelőn át vezető parancs és a
+tartós írási cél még nincs végigkövetve.
+
+A `.picasa.ini`-ben talált `hidden=yes` nem használható mappajelölésként:
+`0x00710080` a képfájlok rekordjainak `star` / `hidden` jelzőit szerializálja,
+míg `0x00456610` a képszintű `hidden` állapotot a belső `]hidden` tokenhez
+kapcsolja. A `0x0040cd10` cím szintén nem Hide Folder rutin: a sérült képek
+`Hide Files` párbeszédét kezeli (`CThumbUI::GetBadImages`).
+
+**Eredmény:** az eredeti mappaszintű állapot pontos tárolási helye **NINCS
+MEG**; a fenti képszintű `.picasa.ini` út nem bizonyítja azt. A teljes
+Hide/Unhide írási útvonal Ghidra-köre szükséges.
 
 ### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
 
@@ -5772,6 +5831,15 @@ honnan veszi a korábbi címeket) tehát NINCS MEG** — a megszerzés útja: a
 
 ⇒ **A tiltási feltételek mind a hat tiltható tételnél egyeznek** — ezt eddig senki nem
 mérte, most igazolt. Egyedül az **Automatikus kitöltés** üres nálunk.
+
+### 23.7 Megvalósítás (#4636, 2026-10-08)
+
+A 23.6 táblázat a 2026-09-06-i állapotot rögzíti. A #4636 ezt követően
+bekötötte a pipás menütételt az e-mail címzett mezőbe: a beállítás a
+`mail/EmailAutocomplete` QSettings-kulcsban marad meg, alapértéke `true`.
+Az eredeti mérés szerint ez a beállítás a pipát és az értéket tárolja, a
+javaslómotort nem vezérli; a keresőmező külön `SearchSuggestions` útja ezért
+független marad.
 
 ## 24. adag (2026-09-06) — az automatikus kiegészítés FORRÁSA, és a kapcsoló, amit SENKI NEM OLVAS
 
