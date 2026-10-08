@@ -1319,16 +1319,30 @@ munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok
 | `Ctrl+Shift+L` | `0x005e658e` a szerverobjektumot a `0x004cce10`-nek adja; a LAN-jelszó és a fix `picasaserver` felhasználó mellett a `0x004cd010` `http://localhost:%d/%s/` URL-t épít, amelyet a handler böngészővel nyit meg. | A webserver-spec külön méri a `LANPassword`, a `picasaserver` felhasználónevet és az URL-alakot (`picasa-beepitett-webszerver.md` 1.). | megerősített |
 | `Ctrl+Shift+U` | `0x005e6557` → `0x0047ca60` → `0x006b8710`: üríti/újrainicializálja a két átadott bélyegképtár memóriabeli állapotát. | A hívó tageltolásai a `pmp-database.md` szerint `m_bigThumbs` (`bigthumbs.db`) és `m_previewThumbs` (`previews.db`); a cél belső mutatókat szabadít fel és nulláz. A fájlok törlését nem állítjuk. | megerősített |
 | `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: feloldja az `overlays/egg` elemet, inicializálja a hozzá tartozó objektumot és aktiváló jelzőt állít. | A `overlays/egg` string-xref és a Ctrl-ág egyetlen célfüggvénye egyezik; a pontos látható animáció futtatás nélkül nincs kimérve. | feltételes |
-| `Ctrl+F9` | `0x005e6329`–`0x005e6333`: billenti a `[panel+0xdc4]` bájtot. A `0x00571e50` olvasó az `editpanel/preview` meglétekor a kijelölt kép azonosítóját a jelenlegi előnézethez hasonlítja; a flag felhasználói jelentése nem nevezhető meg találgatással. | A teljes, kapuval futtatott `.text` pásztázás a Ctrl+F9 író mellett a `0x00571e50` olvasót is megtalálta; RTTI alapján ez `CThumbUI` metódus. | nyitott |
+| `Ctrl+F9` | A `0x005e60d0` billentyűkezelő Ctrl+`0x78` (F9) táblabejegyzése a `0x005e6329` ágra jut. A konstruktor `0x00564b2e` alaphelyzetben 0-ra állítja a `[panel+0xdc4]` bájtot; a `0x005e6329`–`0x005e6333` ág ezt 0/1 között billenti. Ha a `0x00571e50` útján létezik az `editpanel/preview`, annak `[+0x20c]` mezője 0, a kapcsoló 1, és a kijelölési út érvényes értéket ad, akkor ezt összeveti a `[this+0xe64]` aktuális képként használt értékével. Eltéréskor a `CThumbUI` `+0x2c` virtuális metódusát 0 argumentummal hívja; ez a `0x005f89a0`-en át az `editpanel/preview`-hoz tartozó aktuális kép felirat-/törlésállapotának és vezérlőállapotának frissítését kéri. A bináris nem bizonyítja, hogy ez a kijelölt képre váltja-e az előnézeti képet, vagy csak a meglévő előnézet UI-állapotát rajzolja újra. A kapcsoló 0 állásában ez az eltérésre induló frissítő ág kimarad. | A teljes `.text` pásztázás pontosan négy `[reg+0xdc4]` találatot adott (két írás, két olvasás). A `CThumbUI` RTTI/vtábla-útján a slot `0x00578dc0`-hoz vezet; ennek 0 argumentumos ága a `0x005f89a0`-et hívja, amely az `[this+0xe64]` mezőt olvassa. A külön `0x0056a260` szerkesztőút is aktuális képként kezeli ezt a mezőt (`ui-audit-editor.md`, 3. pont). | feltételes |
 | `F5` | `0x005e6869`: időbélyeg-frissítés (`0x004a46e0`), állapotfrissítő hívás (`0x00579480(0,1)`), `[adatobjektum+0x166]=1`, majd `0x0065b840` keresővezérlő-frissítés. Az idle út `0x004afcb0` ezt a jelzőt a `0x004aae90` lista-/nézeti állapotfrissítéshez viszi, majd törli. Ez nem bizonyít teljes fájlrendszer-rescant. | A külön `+0x166` olvasó/ürítő út és a `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5 leírása is frissítési kérelemként azonosítja a jelzőt. | megerősített |
 | `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. A teljes `.text` pásztázás az `+0xe78` egyetlen olvasójaként ezt a kaput találta. A cél létrehozza/újrahasználja a `[panel+0x31a8]` gyerekobjektumot, beállítja a bélyegkép-azonosítót, majd a `0x00774d60` frissíti annak geometriáját; ez a függvény a VK `0x12` állapotát olvassa és ablakfrissítést kér. A megjelenített tartalom pontos hatása nyitott. | A `PreviewHandler` külön eseményútja (`0x005c24c0`) szintén a `0x00571a80`-at hívja; a `0x00774cf0` testvér callback listabeli azonosítóváltás után ugyanazt a `0x00774d60` frissítőt hívja. Ez az objektumfrissítést támasztja alá, de a látható tartalmat nem nevezi meg. | nyitott |
 | Videó: `/`, `,`, `.` | A `CThumbUI` közvetlen VK-ágában nincs ilyen összevetés; az általános eseménylánc a fókuszált gyereknek továbbít. A központi kezelőből nem állítható, hogy ezek lejátszanak vagy keresnek. | A 10.19 szerinti teljes `.text` pontos `cmp ax,0xbc/0xbe/0xbf` keresése nulla találatot adott; a lánc/fókusz továbbítását a 10.18–10.19 külön méri. | feltételes — a videóvezérlő saját hatása nyitott |
 
-**A két független út.** **A:** a billentyűkezelő és célfüggvények közvetlen
-utasításszintű olvasata, a teljes `.text` operandum-kereséssel a mezőolvasók
-és az F5-jelző útjánál. **B:** ettől külön a Google Earth menüparancs-út,
-`ginormous.jpg` nyomtatási lelet, a webserver konfiguráció/URL-spec, a PMP
-tageltolásai, a mai QML fiókállapota, valamint a korábban mért fókusz- és
+**A Ctrl+F9 két független útja.** **A — állapotút:** a teljes `.text`
+pásztázás a konstruktor alapérték-írását (`0x00564b2e`), a billentyű-ág
+olvasását/írását (`0x005e6329`, `0x005e6333`) és a `CThumbUI` frissítési
+útjának olvasását (`0x00572078`) találta. A `0x00571e50` közvetlen
+utasításszintű olvasata szerint az aktív jelző, érvényes és az előnézettől
+eltérő kijelölés esetén a `[this+0x2a4]` vtable `+0x2c` metódusát 0-val hívja.
+**B — a flagtől független célút:** a konstruktorban a `[this+0x2a4]`
+mezőbe írt `0x00c90754` vtable `+0x2c` bejegyzése `0x00578dc0`; ennek 0
+argumentumos ága a `0x005f89a0`-et hívja. Ez az `[this+0xe64]` aktuális
+képként használt értékből frissíti az előnézethez tartozó felirat-/törlés-
+és vezérlőállapotot. Ettől külön a `0x0056a260` szerkesztőút is aktuális
+képként kezeli az `[this+0xe64]` mezőt (`ui-audit-editor.md`, 3. pont). A két
+út egyezik abban, hogy eltéréskor előnézet-UI frissítés indul; az nem dőlt el,
+hogy a kijelölt képet tölti-e be, vagy csak a meglévő előnézet állapotát
+frissíti.
+
+A többi sor független megerősítése: Google Earth menüparancs-út,
+`ginormous.jpg` nyomtatási lelet, webserver konfiguráció/URL-spec, PMP
+tageltolások, mai QML fiókállapota, valamint a korábban mért fókusz- és
 frissítési út. Ezek a Ctrl+8/9, Ctrl+Shift+G/L/U, Alt-ág kapuja, F5 és a
 videókezelő hiányára egyeznek; a Ctrl+6 és Ctrl+Shift+Y teljes felületi
 hatása, továbbá a Ctrl+F9 és a Ctrl+Alt-hoz tartozó gyerekobjektum pontos
@@ -1349,7 +1363,17 @@ regisztert vizsgálja; mindkettő adatmező-összevetés. Ugyanazzal a pontos
 `cmp ax, 0xbc/0xbe/0xbf` mércével ellenőrizve továbbra is nulla a találat.
 A Ctrl+9 régi „bal fiók nincs” mondatát a mai QML `toggle_left_drawer` és
 `editorControlsVisible` előfordulásai cáfolják; ez független a bináris
-ágnevektől.
+ágnevektől. A Ctrl+F9-nél azt a cáfoló feltevést ellenőriztem, hogy a
+0-val hívott `0x00578dc0` a következő képre léptet: a függvényben a nem nulla
+argumentum külön útja hívja a `0x005d1300`-at, míg a 0 argumentum a
+`0x005f89a0` aktuális-előnézet UI-frissítőhöz jut. A hívó ténylegesen 0-t ad
+(`0x005720be`), ezért a „következő kép” feltevés nem áll meg. Azt is
+ellenőriztem, hogy ez a hívási út közvetlenül átírja-e az `[this+0xe64]`
+mezőt: nem találtam ilyen írást a célfüggvényekben, a teljes operandus-
+pásztázás `0x005704eb`-nél megtalálta a mező címét adó `lea`-t; az utasítás-
+követés mutatja az ezen a címen keresztüli írást (`0x005704fe`). A másik
+közvetlen mezőírás `0x005e8c2d` (`e64=e68`, feltételes). Így a képváltás
+irányát ebből az útból nem állítom.
 
 **Cáfoló kísérlet (#4699):** azt a kézenfekvő értelmezést, hogy a Ctrl+Alt
 egyszerűen a rács-bélyegkép látható keretkiemelését kapcsolja, a
@@ -1363,6 +1387,8 @@ keretkiemelés elnevezését nem támasztja alá. A `picasa-linux-mod.md`
 
 - `Ghidra-kör kell: 0x00571e50 — a [panel+0xdc4] kapcsoló pontos, felhasználó által látható hatása az előnézet kijelölt képpel való szinkronizálására. [blokkoló]`
 - `Ghidra-kör kell: 0x00774d60 — a [CThumbUI+0x31a8] gyerekobjektum pontos kirajzolt tartalma és az Alt-állapot [objektum+0xb4] látható következménye. [blokkoló]`
+- `Ghidra-kör kell: 0x00571a80 — a Ctrl+Alt/VK 0x12 ágban az EnableHover és az érvényes elemazonosító mellett végrehajtott felhasználói művelet. [blokkoló]`
+- `Ghidra-kör kell: 0x005f89a0 — a Ctrl+F9 eltérési ágának 0 argumentumos célja ténylegesen kijelölt képre váltja-e az előnézeti képet, vagy csak a jelenlegi [this+0xe64] kép UI-állapotát frissíti. [blokkoló]`
 - A `Ctrl+6` timeslicer felületének futás közbeni állapota és a Ctrl+Shift+Y `overlays/egg` látható animációja: **NINCS MEG**; célzott eredeti-program próba kell.
 - A `/`, `,`, `.` esetleges videóvezérlő-hatása: **NINCS MEG**; a fókuszált gyermek eseményfogadójának útját kell követni, a globális kezelőben nincs saját ág.
 
@@ -1372,11 +1398,15 @@ kizárólag a szerkesztőnézetben, a `0x00579330` őrnek megfelelő állapotban
 Az F5-höz külön jegy javasolható: a könyvtár aktuális nézeti/lista-frissítési
 útját és keresővezérlőit indítsa, a bizonyított `+0x166` frissítési
 kérelemhez igazítva; teljes könyvtári rescan nem következik a binárisból.
-A Ctrl+F9-hez a flag jelentésének feloldása előtt ne készüljön megvalósítási
-jegy.
+A Ctrl+F9-höz a kódban nincs billentyűkötés (`Ctrl+F9`-keresés a
+`src/picasapy/app/` QML/Python fájljaiban); a `PhotoViewer.qml` a
+`currentIndex` alapján indít szerkesztést (`beginEditCurrent`). A binárisból
+igazolt preview-UI frissítőág és a lehetséges képváltás iránya között nincs
+elég bizonyíték a hű megvalósítási jegyhez; a Ghidra-kör lezárása után dönthető
+el, kell-e külön fejlesztői jegy.
 
 **Bizalmi fok:** a fenti táblában soronkénti. Összesítve **feltételes**, mert
-a Ctrl+F9 és Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
+a Ctrl+Alt/VK `0x12` üzleti szemantikája, valamint a videó
 gyermekvezérlőjének írásjel-kezelése nincs eldöntve. Futáspróba nem történt.
 
 ## 11. #4462 — eredeti billentyűk paritása és CI-őre
