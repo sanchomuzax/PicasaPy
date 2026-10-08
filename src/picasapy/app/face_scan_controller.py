@@ -241,6 +241,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._model_download_stop_event: threading.Event | None = None
         self._embedding_after_download = False
         self._embedding_options_after_download: tuple[bool, int, int] | None = None
+        # #4619: a sikeres detektálás után a második lépés automatikusan
+        # indul, ha a névjavaslatok be vannak kapcsolva. A scan-jelzés a
+        # workerből érkezik; a kifejezetten sorba tett kapcsolat a GUI-szálra
+        # viszi vissza a beállítások olvasását és a következő worker indítását.
+        self.scanFinished.connect(
+            self._auto_group_after_scan, Qt.ConnectionType.QueuedConnection
+        )
 
     @Slot(result=bool)
     def isAvailable(self) -> bool:
@@ -636,6 +643,18 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if not self.automaticDetectionEnabled() or self._stop_event is not None:
             return
         self._start_face_scan(automatic=True)
+
+    @Slot(int, int)
+    def _auto_group_after_scan(self, _found: int, _scanned: int) -> None:
+        """Sikeres keresés után automatikusan indítja a 2. lépést (#4619).
+
+        Az eredeti `FRAddSuggesetions` kapcsolója az egész csoportosítási/
+        javaslati lépést kapuzza. A kézi csoportosítás változatlanul elérhető
+        kikapcsolt beállítás mellett; az automatikus út a küszöböket a már
+        meglévő `computeEmbeddings()` híváson keresztül veszi át.
+        """
+        if self.suggestionsEnabled():
+            self.computeEmbeddings()
 
     @Slot()
     def cancelScan(self) -> None:
