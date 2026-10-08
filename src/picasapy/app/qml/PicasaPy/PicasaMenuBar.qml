@@ -209,6 +209,9 @@ MenuBar {
     signal emailRequested()
     signal openInEditorRequested()
     signal viewAndEditRequested()
+    // #4622: a Nézet menü visszajelez a gazdának, hogy a nézőből a
+    // PhotoViewer szokásos kilépési útján térjen vissza a könyvtárba.
+    signal returnToLibraryRequested()
     signal unhideRequested()
     signal resetFacesRequested()
     signal thumbSizePreset(int size)
@@ -853,12 +856,15 @@ MenuBar {
             objectName: "menuViewLibraryView"
             text: qsTr("&Library View")
             checkable: true
-            // A pipa ÁLLANDÓ (a könyvtárnézet mindig aktív, amíg az „Edit
-            // View" helykitöltő). Kötés híján itt nincs mit újraértékelni,
-            // ezért a kattintás imperatív `checked`-írását kézzel kell
-            // visszavenni — különben egyetlen kattintás VÉGLEG leszedi.
+            // A pipa állandó. A tétel a könyvtárban inaktív, nézőben pedig
+            // visszakéri a gazdától a szokásos kilépési utat. Kattintáskor a
+            // Qt előbb leveszi a pipát, ezért a kezelő visszaállítja.
+            enabled: bar.editorActive
             checked: true
-            onTriggered: checked = true
+            onTriggered: {
+                checked = true
+                bar.returnToLibraryRequested()
+            }
         }
         MenuSeparator {}
         MenuItem {
