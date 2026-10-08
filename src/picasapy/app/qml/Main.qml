@@ -1589,6 +1589,8 @@ ApplicationWindow {
         // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
         onReturnToLibraryRequested: photoViewer.kerBezaras()
         onUnhideRequested: window.unhideHiddenSelection()
+        onWriteXmpFacesDialogRequested:
+            xmpFacesWriteDialog.openFor(window.photoActionRows())
         onResetFacesRequested: resetFacesForPaths(window.photoActionPaths())
         // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
         // frissítjük, mert az index nem jelzi a `textactive=` változását.
@@ -3521,6 +3523,13 @@ ApplicationWindow {
                 title: qsTr("Want to Cancel?")
                 onConfirmed: controller.cancelActivity()
             }
+        }
+    }
+
+    XmpFacesWriteDialog {
+        id: xmpFacesWriteDialog
+        onWriteRequested: function (scope, rows) {
+            if (controller) controller.writeFacesToXmp(scope, rows)
         }
     }
 

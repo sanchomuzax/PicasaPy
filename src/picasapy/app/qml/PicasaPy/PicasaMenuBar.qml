@@ -32,6 +32,7 @@ MenuBar {
     // sem `setLanguage`-hívást nem indít (a #1468-as rebind ettől függetlenül
     // mindig lefut, ld. fent).
     signal languageConfirmRequested(string code)
+    signal writeXmpFacesDialogRequested()
     function requestLanguageChange(code) {
         if (!controller || code === controller.pendingLanguage) return
         bar.languageConfirmRequested(code)
@@ -2385,7 +2386,7 @@ MenuBar {
             MenuItem {
                 objectName: "menuToolsWriteXmpFaces"
                 text: qsTr("Write faces to XMP...")
-                onTriggered: controller.writeFacesToXmp()
+                onTriggered: bar.writeXmpFacesDialogRequested()
             }
             // #449: adatbázis-tömörítés (`compacting.fen`) — az eredetiben
             // is a Kísérleti almenüben lakott, az áthelyezés mellett

@@ -61,8 +61,9 @@ from picasapy.fileops import (
 )
 from picasapy.index import (
     open_index,
-    photos_with_keyword,
     photo_by_id,
+    photos_with_faces,
+    photos_with_keyword,
     search_photos,
     update_photo_fields,
 )
@@ -1056,9 +1057,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if esemeny is not None:
             esemeny.set()
 
-    @Slot()
-    def writeFacesToXmp(self) -> None:
-        """A LÁTOTT mappa képeinek XMP-sidecarja, arcrégiókkal (#1403).
+    @Slot(str, "QVariantList")
+    def writeFacesToXmp(self, scope: str, rows) -> None:
+        """A kiválasztott hatókör XMP-sidecarjai arcrégiókkal (#1403, #4634).
 
         Az eredeti parancsa (`eMenuTools::ID_WRITE_XMP_FACES`, `.fen`
         `write_all_facetags`) kötegelt munkaként fut, és a HÁROM állapotát
@@ -1077,10 +1078,33 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         nem az index — így a frissen elnevezett arc is bekerül, mielőtt a
         szinkron végigfut.
         """
-        utak = [
-            Path(photo.folder_path) / photo.name
-            for photo in self._photos.photos
-        ]
+        photos = self._photos.photos
+        if scope == "selected":
+            kijelolt_sorok: set[int] = set()
+            for nyers in rows or ():
+                try:
+                    sor = int(nyers)
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= sor < len(photos):
+                    kijelolt_sorok.add(sor)
+            photos = [photo for i, photo in enumerate(photos) if i in kijelolt_sorok]
+        elif scope == "faces":
+            with open_index(self._db_path) as conn:
+                arcot_tartalmazo_azonositok = {
+                    photo.id for photo in photos_with_faces(conn)
+                }
+            photos = [
+                photo
+                for photo in photos
+                if photo.id in arcot_tartalmazo_azonositok
+            ]
+        elif scope != "all":
+            # Ismeretlen hatókörrel ne lehessen véletlenül a teljes nézetet írni.
+            self.xmpFacesFinished.emit(0, 0, "")
+            return
+
+        utak = [Path(photo.folder_path) / photo.name for photo in photos]
         if not utak:
             self.xmpFacesFinished.emit(0, 0, "")
             return
