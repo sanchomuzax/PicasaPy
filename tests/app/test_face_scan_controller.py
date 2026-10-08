@@ -810,7 +810,9 @@ class TestAutomaticFaceDetection:
         assert settings.values[ctl.AUTOMATIC_DETECTION_KEY] is False
         assert ctl.automaticDetectionEnabled() is False
 
-    def test_sync_scan_uses_automatic_detection_by_default(self, qt_app, tmp_path):
+    def test_sync_scan_groups_faces_when_suggestions_are_enabled(
+        self, qt_app, tmp_path
+    ):
         root = tmp_path / "kepek"
         root.mkdir()
         make_jpeg(root / "a.jpg")
@@ -819,11 +821,12 @@ class TestAutomaticFaceDetection:
             qt_app, tmp_path, root, detector=detector, settings=_FaceSettings()
         )
 
-        arrived, args = _run(ctl.scanFinished, ctl.scanNewFaces)
+        arrived, args = _run(ctl.embeddingFinished, ctl.scanNewFaces)
 
         assert arrived is True
-        assert args == (1, 1)
+        assert args == (1, 1)  # a detektált arc lenyomatot kapott és csoportba került
         assert len(detector.calls) == 1
+        assert len(ctl._embedder.calls) == 1
 
     def test_automatic_detection_respects_folder_exclusion(self, qt_app, tmp_path):
         root = tmp_path / "kepek"
@@ -867,12 +870,11 @@ class TestAutomaticFaceDetection:
         make_jpeg(root / "b.jpg")
         ctl = _make_controller(qt_app, tmp_path, root)
         assert ctl.isEmbeddingAvailable() is True
-        # előbb detektálás (a face-sorok forrása), utána — alacsonyabb
-        # prioritású, KÜLÖN — a lenyomat-számítás
-        _run(ctl.scanFinished, ctl.scanForFaces)
-        assert ctl.waitForBackgroundWorkers(5.0)
-        arrived, args = _run(ctl.embeddingFinished, ctl.computeEmbeddings)
+        # #4619: a második lépés a sikeres detektálás után automatikusan
+        # indul; nincs szükség a kézi computeEmbeddings() hívásra.
+        arrived, args = _run(ctl.embeddingFinished, ctl.scanForFaces)
         assert arrived is True
+        assert ctl.waitForBackgroundWorkers(5.0)
         embedded, grouped = args
         assert embedded == 2  # mindkét fotó egy-egy arca lenyomatot kapott
         assert grouped == 2  # a fake embedder mindkettőnek ugyanazt adja → egy csoport
@@ -1856,7 +1858,12 @@ class TestGlobalFaceReset4627:
                 assert row is not None and row["state"] == "unnamed"
                 assert row["person_name"] is None
             assert conn.execute("SELECT COUNT(*) FROM face_scan").fetchone()[0] == 2
-            assert conn.execute("SELECT COUNT(*) FROM face_group").fetchone()[0] == 0
+            # #4619: az újrakeresés után a bekapcsolt javaslatbeállítás
+            # automatikusan visszaépíti a névtelen arcok csoportját.
+            assert conn.execute("SELECT COUNT(*) FROM face_group").fetchone()[0] == 1
+            assert conn.execute(
+                "SELECT COUNT(*) FROM face WHERE group_id IS NOT NULL"
+            ).fetchone()[0] == 2
 
     def test_shift_branch_keeps_face_rectangles_but_removes_people(
         self, qt_app, tmp_path

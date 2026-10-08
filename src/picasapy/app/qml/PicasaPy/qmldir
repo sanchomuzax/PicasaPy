@@ -76,6 +76,7 @@ WindowHelp 1.0 WindowHelp.qml
 ImportProgressPanel 1.0 ImportProgressPanel.qml
 BatchEditProgressPanel 1.0 BatchEditProgressPanel.qml
 XmpFacesProgressPanel 1.0 XmpFacesProgressPanel.qml
+XmpFacesWriteDialog 1.0 XmpFacesWriteDialog.qml
 SaveProgressPanel 1.0 SaveProgressPanel.qml
 PerfMonitorPanel 1.0 PerfMonitorPanel.qml
 PicasaImportDialog 1.0 PicasaImportDialog.qml

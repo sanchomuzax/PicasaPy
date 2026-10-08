@@ -2860,8 +2860,17 @@ felhasználónak, valódi adatvédelmet ígér ott, ahol nincs.
 
 ### Ami NINCS mérve
 
-- **Hol perzisztálódik** a `state` / `info` érték: a tulajdonos valódi
-  adatbázisában (302 `.pmp`) **nincs** jelszó-oszlop, tehát ez külön keresés.
+- **Hol perzisztálódik** a `state` / `info` érték: a `0x005eb910` jelszóút
+  eléri a gyűjtemény `state` / `info` adatát, de ez csak az állapotobjektum
+  módosítását mutatja; a szerializáló és a lemezbeli cél nincs végigkövetve.
+  A tulajdonos valódi adatbázisában (302 `.pmp`) nincs jelszó-oszlop, de ez
+  önmagában nem zárja ki a külön profilfájlt vagy más tárolót. A megadott
+  `meroadat.tar` nem tartalmazott releváns `.pmp`, adatbázis- vagy
+  registry-mintát.
+- **A teljes mappa Hide/Unhide állapotának tárolása:** `0x007319f0` csak a
+  menüt építi fel; az írási útvonal nincs azonosítva. A `0x00710080`
+  `.picasa.ini`-út képszintű `hidden=yes` jelzője nem bizonyít mappaszintű
+  tárolást. A 32.3.1 szakasz rögzíti a részleteket.
 - **Milyen kódolással** megy a nem ASCII jelszó az MD5-be: a hossz NUL-ig
   számolódik (`0x00a4cdd0`), tehát bájtsorozatról van szó, de a kódolás nem
   igazolt. ASCII jelszónál ez közömbös; ékezetesnél a kompatibilitás nem
@@ -2871,3 +2880,7 @@ felhasználónak, valódi adatvédelmet ígér ott, ahol nincs.
 *Bizonyítottsági fok: **megerősített** — a négy MD5 init-konstans és a
 hex-ábécé közvetlenül olvasva, a hívási lánc diszasszemblálva. A tárolás
 HELYE és a nem ASCII kódolás: **nem vizsgálva**, ld. fent.*
+
+**#4597 kutatási állapot:** az eredeti mappaszintű Hide/Unhide-állapot és a
+jelszó lemezbeli helye továbbra is nyitott. A `state` / `info` mező puszta
+beállítása nem bizonyít perzisztenciát.
