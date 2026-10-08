@@ -96,15 +96,18 @@ class TestMenuItems:
         for name in ("textMenuCut", "textMenuCopy", "textMenuDelete"):
             assert menu.findChild(QObject, name).property("enabled") is True, name
 
-    def test_auto_complete_is_a_marked_placeholder(self, qml_engine, qt_app):
-        """Nincs mögötte réteg — helyőrzőként jelenik meg (#416), nem néma
-        no-opként."""
+    def test_auto_complete_is_disabled_without_a_supported_field(
+        self, qml_engine, qt_app
+    ):
+        """Az e-mail címzett mezőhöz kötött; más szövegmezőn nem jelenik meg."""
         root = _load(qml_engine, self._MENU)
         qt_app.processEvents()
-        item = root.findChild(QObject, "menu").findChild(
+        menu = root.findChild(QObject, "menu")
+        item = menu.findChild(
             QObject, "textMenuAutoComplete"
         )
-        assert item.property("placeholder") is True
+        assert menu.property("autoCompleteSupported") is False
+        assert item.property("checkable") is True
         assert item.property("enabled") is False
 
 
@@ -120,7 +123,9 @@ class TestEveryTextFieldHasTheMenu:
             source = path.read_text(encoding="utf-8")
             fields = len(re.findall(r"\b(?:TextField|TextArea)\s*\{", source))
             skipped = sum(source.count(m) for m in _INTENTIONALLY_WITHOUT_MENU)
-            areas = source.count("TextFieldContextArea {}")
+            areas = len(re.findall(
+                r"(?m)^\s*TextFieldContextArea\s*\{", source
+            ))
             if fields - skipped > areas:
                 missing.append(
                     f"{path.name}: {fields} mező, {skipped} kivétel, {areas} menü"

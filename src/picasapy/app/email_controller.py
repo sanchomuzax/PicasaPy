@@ -71,6 +71,7 @@ _EXPORT_SIZE_KEY = "mail/exportSize"
 _SINGLE_ORIGINAL_KEY = "mail/singlePictureOriginal"
 _USE_DEFAULT_CLIENT_KEY = "mail/useDefaultClient"
 _MOVIE_FULL_KEY = "mail/movieFull"
+_EMAIL_AUTOCOMPLETE_KEY = "mail/EmailAutocomplete"
 
 #: A régi, INDEX-alapú kulcsok — csak a migrációhoz olvassuk őket.
 _REGI_MULTI_INDEX_KEY = "mail/multiSizeIndex"
@@ -123,6 +124,7 @@ class EmailController(QObject):
     singlePictureOriginalChanged = Signal()
     useDefaultClientChanged = Signal()
     movieFullChanged = Signal()
+    emailAutocompleteChanged = Signal()
     emailFailed = Signal(str)
     #: #1798b: az előkészítés FOLYAMATJELZŐJE. Az eredeti a
     #: „Preparing attachments…" sorral jelez, amíg a mellékleteket
@@ -178,6 +180,12 @@ class EmailController(QObject):
         #: sosem nyitja meg az Opciókat.
         self._use_default_client = _coerce_bool(
             self._settings.value(_USE_DEFAULT_CLIENT_KEY), False
+        )
+        # Az eredeti Preferences\EmailAutocomplete alapértéke 1 (BE).
+        # A Picasa ezt a beállítást csak a menü pipájához használja; a
+        # javaslómotort nem kapuzzuk vele.
+        self._email_autocomplete_enabled = _coerce_bool(
+            self._settings.value(_EMAIL_AUTOCOMPLETE_KEY), True
         )
 
     # -- méret-beállítások (OptionsTabEmail.qml csúszdái) ------------------
@@ -312,6 +320,22 @@ class EmailController(QObject):
             _USE_DEFAULT_CLIENT_KEY, "true" if use_default else "false"
         )
         self.useDefaultClientChanged.emit()
+
+    @Property(bool, notify=emailAutocompleteChanged)
+    def emailAutocompleteEnabled(self) -> bool:  # noqa: N802 — QML-stílus
+        """Az e-mail címzett mező automatikus kitöltésének pipája (#4636)."""
+        return self._email_autocomplete_enabled
+
+    @Slot(bool)
+    def setEmailAutocompleteEnabled(self, enabled: bool) -> None:  # noqa: N802
+        enabled = bool(enabled)
+        if enabled == self._email_autocomplete_enabled:
+            return
+        self._email_autocomplete_enabled = enabled
+        self._settings.setValue(_EMAIL_AUTOCOMPLETE_KEY, enabled)
+        # A menü azonnali mentésű, nincs külön OK gomb vagy kilépéskori lépés.
+        self._settings.sync()
+        self.emailAutocompleteChanged.emit()
 
     @Slot(str)
     def setComposeRecipient(self, recipient: str) -> None:  # noqa: N802
