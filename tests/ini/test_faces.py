@@ -9,6 +9,8 @@ from picasapy.ini import (
     parse_document,
     parse_faces,
     serialize_faces,
+    remove_all_face_data,
+    reset_all_faces,
     with_face,
     with_reassigned_face,
     without_face,
@@ -251,3 +253,47 @@ class TestWithoutFaceAtRect:
         updated = without_face_at_rect(document, "a.jpg", _FACE.rect)
         faces = parse_faces(updated.section("a.jpg").get("faces"))
         assert faces == (duplicate,)
+
+
+class TestGlobalFaceReset4627:
+    def test_remove_all_face_data_clears_tags_contacts_and_facedata(self):
+        document = parse_document(
+            "[Contacts2]\n"
+            "8e62b2035b74b477=Ada;;\n"
+            "[a.jpg]\ncaption=keep\n"
+            f"faces={TWO_FACES_MEASURED}\n"
+            "facedata=123\n"
+            "[b.jpg]\n"
+            f"faces={serialize_faces((_FACE,))}\n"
+            "facedata=456\n"
+        )
+
+        updated = remove_all_face_data(document)
+
+        for name in ("a.jpg", "b.jpg"):
+            section = updated.section(name)
+            assert section is None or section.get("faces") is None
+            assert section is None or section.get("facedata") is None
+        assert updated.section("a.jpg").get("caption") == "keep"
+        assert updated.section("Contacts2") is None
+
+    def test_reset_all_faces_keeps_rectangles_and_other_face_data(self):
+        document = parse_document(
+            "[Contacts2]\n8e62b2035b74b477=Ada;;\n"
+            "[a.jpg]\ncaption=keep\n"
+            f"faces={TWO_FACES_MEASURED}\n"
+            "facedata=123\n"
+        )
+
+        updated = reset_all_faces(document)
+
+        section = updated.section("a.jpg")
+        assert section is not None
+        faces = parse_faces(section.get("faces"))
+        assert [face.rect for face in faces] == [
+            face.rect for face in parse_faces(TWO_FACES_MEASURED)
+        ]
+        assert [face.contact_id for face in faces] == ["0", "0"]
+        assert section.get("facedata") == "123"
+        assert section.get("caption") == "keep"
+        assert updated.section("Contacts2") is None

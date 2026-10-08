@@ -1763,3 +1763,135 @@ class TestScanPercent:
         _run(ctl.modelUnavailable, ctl.scanForFaces)
 
         assert ctl.scanPercent == -1
+
+
+class TestGlobalFaceReset4627:
+    """#4627: a két módosítós ág a teljes könyvtár .ini- és indexadatait kezeli."""
+
+    @staticmethod
+    def _scanned_library(qt_app, tmp_path):
+        from picasapy.index import all_photos, mark_faces_named, open_index
+
+        root = tmp_path / "kepek"
+        first = root / "album-a"
+        second = root / "album-b"
+        first.mkdir(parents=True)
+        second.mkdir()
+        paths = [first / "a.jpg", second / "b.jpg"]
+        for path in paths:
+            make_jpeg(path)
+        detector = _FakeDetector()
+        ctl, helper = _make_controller_with_faces_helper(
+            qt_app, tmp_path, root, detector=detector
+        )
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        assert len(detector.calls) == 2
+
+        for index, path in enumerate(paths):
+            (path.parent / ".picasa.ini").write_text(
+                f"[{path.name}]\ncaption=keep-{index}\nfacedata=123\n",
+                encoding="utf-8",
+            )
+            assert helper.addFace(
+                str(path), 0.1, 0.2, 0.4, 0.6, f"Person {index}"
+            )
+
+        with open_index(tmp_path / "index.db") as conn:
+            for photo in all_photos(conn):
+                face_id = conn.execute(
+                    "SELECT id FROM face WHERE photo_id = ?", (photo.id,)
+                ).fetchone()[0]
+                mark_faces_named(conn, [face_id], f"Indexed {photo.name}")
+            stale_group_id = conn.execute(
+                "INSERT INTO face_group (centroid, face_count) VALUES (?, 1)",
+                (b"stale centroid",),
+            ).lastrowid
+            conn.execute(
+                "UPDATE face SET group_id = ? WHERE id = "
+                "(SELECT id FROM face ORDER BY id LIMIT 1)",
+                (stale_group_id,),
+            )
+            conn.commit()
+        return ctl, helper, detector, paths
+
+    def test_ctrl_branch_removes_all_ini_and_index_face_data_then_rescans(
+        self, qt_app, tmp_path
+    ):
+        """# rontás-kontroll: removeAllFaceData törlését kiiktatva → 1 failed"""
+        from picasapy.index import all_photos, open_index
+        from picasapy.ini import load_document
+
+        ctl, _helper, detector, paths = self._scanned_library(
+            qt_app, tmp_path
+        )
+
+        megvaltozott = []
+        arrived, _args = _run(
+            ctl.scanFinished,
+            lambda: megvaltozott.append(ctl.removeAllFaceData()),
+        )
+
+        assert arrived is True
+        assert megvaltozott == [2]
+        assert ctl.waitForBackgroundWorkers(5.0)
+        assert len(detector.calls) == 4, "minden fotót újra kell keresni"
+        for index, path in enumerate(paths):
+            document = load_document(path.parent / ".picasa.ini")
+            section = document.section(path.name)
+            assert section is None or section.get("faces") is None
+            assert section is None or section.get("facedata") is None
+            assert section is None or section.get("caption") == f"keep-{index}"
+            contacts = document.section("Contacts2")
+            assert contacts is None or contacts.items() == ()
+
+        with open_index(tmp_path / "index.db") as conn:
+            photos = all_photos(conn)
+            assert len(photos) == 2
+            for photo in photos:
+                row = conn.execute(
+                    "SELECT state, person_name FROM face WHERE photo_id = ?",
+                    (photo.id,),
+                ).fetchone()
+                assert row is not None and row["state"] == "unnamed"
+                assert row["person_name"] is None
+            assert conn.execute("SELECT COUNT(*) FROM face_scan").fetchone()[0] == 2
+            assert conn.execute("SELECT COUNT(*) FROM face_group").fetchone()[0] == 0
+
+    def test_shift_branch_keeps_face_rectangles_but_removes_people(
+        self, qt_app, tmp_path
+    ):
+        """# rontás-kontroll: resetAllFaces név-ürítését kiiktatva → 1 failed"""
+        from picasapy.index import all_photos, open_index
+        from picasapy.ini import load_document, parse_faces
+
+        ctl, _helper, detector, paths = self._scanned_library(
+            qt_app, tmp_path
+        )
+
+        affected = ctl.resetAllFaces()
+
+        assert affected == 2
+        assert len(detector.calls) == 2, "a Shift-ág nem kér újra-arcfelismerést"
+        for path in paths:
+            document = load_document(path.parent / ".picasa.ini")
+            section = document.section(path.name)
+            assert section is not None
+            faces = parse_faces(section.get("faces") or "")
+            assert len(faces) == 1
+            assert faces[0].contact_id == "0"
+            assert section.get("facedata") == "123"
+            contacts = document.section("Contacts2")
+            assert contacts is None or contacts.items() == ()
+
+        with open_index(tmp_path / "index.db") as conn:
+            photos = all_photos(conn)
+            assert len(photos) == 2
+            for photo in photos:
+                row = conn.execute(
+                    "SELECT state, person_name, suggested_name, group_id "
+                    "FROM face WHERE photo_id = ?",
+                    (photo.id,),
+                ).fetchone()
+                assert row is not None
+                assert tuple(row) == ("unnamed", None, None, None)

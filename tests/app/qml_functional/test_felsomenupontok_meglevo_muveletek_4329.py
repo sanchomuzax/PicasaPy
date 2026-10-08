@@ -27,7 +27,9 @@ def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
     return bool(feltetel())
 
 
-def _kattints(qt_app, item) -> None:
+def _kattints(
+    qt_app, item, modifiers=Qt.KeyboardModifier.NoModifier
+) -> None:
     assert item is not None, "a kattintandó felületi elem hiányzik"
     assert item.isEnabled(), f"{item.objectName()}: a művelet le van tiltva"
     assert item.width() > 0 and item.height() > 0, (
@@ -37,7 +39,7 @@ def _kattints(qt_app, item) -> None:
     QTest.mouseClick(
         item.window(),
         Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier,
+        modifiers,
         QPoint(round(center.x()), round(center.y())),
     )
     qt_app.processEvents()

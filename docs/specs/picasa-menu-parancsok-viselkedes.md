@@ -1316,6 +1316,8 @@ A két könyvtárszintű ág a `peoplepanel/resetfaces` névparancsot ereszti
 > Shift-ágat másolta le — dokumentált SAJÁT döntés maradhat, de az
 > eredeti három ágát a jegy rögzíti.
 
+A felület 2026-10-08 óta a táblázat szerinti három ágat követi (#4627).
+
 ### 34.5 Az elrejtés/megjelenítés — a `hidden` kulcs
 
 A `0x005e7d90(param)` ágai: `param=1` (Hide) a `]hidden` belső tokenet
@@ -1340,7 +1342,7 @@ webalbum nélkül nálunk nincs miről átvenni.
 | Forgatás jobbra/balra | fix 90/270°, háttérszálon; nincs kijelölés → őr-szöveg; típus-hiba → üzenet | `_rotate_many`: `rotate(0..3)`, videó hallgatólagosan kihagyva | vegyes kijelölésnél az `IDS_ROT_TYPEFAILED` üzenet (kis jegy) |
 | Undo All Edits | megerősítés (egy/több/film külön szöveg), régió-tokenek + `filters=` törlés | `openRevert` → `revertConfirmDialog`, `filters=` törlés | az egy/több szövegkülönböztetés a párbeszédben |
 | Unhide/Hide | `hidden` kulcs írása/törlése + frissítés | **egyezik** (`hidePhotosByIds`, `with_removed`) | — |
-| Reset Faces | sima = kijelölés (nincs kérdés); Ctrl/Shift = könyvtárszintű FIGYELEM-párbeszéd | mindig kérdez, ResetAllFaces-szöveg (#422 SAJÁT döntés) | a három ág megvalósítása vagy tudatos eltérés rögzítése |
+| Reset Faces | sima = kijelölés (nincs kérdés); Ctrl = `RemoveAllFaceData`; Shift = `ResetAllFaces` | a három ág az eredeti szerint, mindkét könyvtárszintű művelet megerősítéssel és ini-/index-frissítéssel | — |
 
 ### Nyitott kérdések mérlege (34.)
 
