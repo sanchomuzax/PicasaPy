@@ -243,16 +243,25 @@ class TestKozosElrendezes:
 
 
 class TestNemaElutasitasNincs:
-    def test_ures_mappaban_a_gyorsbillentyu_szurke(self, qml_app, qt_app):
-        """A gyorsbillentyűnek nincs hova visszajeleznie, ezért az —
-        a menütétellel ellentétben — feltételhez kötött."""
+    @pytest.mark.parametrize("height_delta", (-5, 0, 5))
+    def test_kijeloles_nelkul_a_gyorsbillentyu_elinditja_a_nyomtatast(
+        self, qml_app, qt_app, height_delta
+    ):
+        """A Mappa-parancs kijelölés nélkül az aktuális mappára vonatkozik."""
         window, _controller, _engine = qml_app
+        window.resize(window.width(), window.height() + height_delta)
         _kijelol(window, qt_app, [])
 
-        assert (
-            _elem(window, "shortcutPrintContactSheet").property("enabled")
-            is False
+        QTest.keyClick(
+            window, Qt.Key_P, Qt.ControlModifier | Qt.ShiftModifier
         )
+
+        parbeszed = _elem(window, "printDialog")
+        assert parbeszed.property("visible") is True
+        assert parbeszed.property("contactSheet") is True
+        ertek = parbeszed.property("rows")
+        nyers = ertek.toVariant() if hasattr(ertek, "toVariant") else ertek
+        assert sorted(int(r) for r in (nyers or [])) == [0, 1]
 
     def test_olvashatatlan_kepet_MEGNEVEZI(self, qml_app, qt_app, tmp_path):
         window, controller, _engine = qml_app

@@ -413,6 +413,12 @@ MenuBar {
     //: #3460: a megnyitott mappa — üres, ha nincs (a „Leírás szerkesztése…"
     //: csak mappára vonatkozik)
     property string currentFolder: ""
+    // #4631: a mappaparancs csak mappanézetben aktív. A controller
+    // album- és személynézetben is megőrzi az előző mappát, ezért ezek
+    // kizárása a Mappa menütétel és a Ctrl+Enter közös kapuja.
+    readonly property bool folderLocateEnabled:
+        currentFolder !== "" && currentAlbumToken === ""
+        && currentPersonName === ""
     // #4416: a felső Mappa menü Hide/Show tételei ugyanazt a vezérlői
     // műveletet használják, mint a mappa helyi menüje. A két felső tétel
     // külön parancs, ezért csak akkor billentünk, ha az állapot eltér a
@@ -551,8 +557,17 @@ MenuBar {
     Shortcut {
         objectName: "shortcutLocateOnDisk"
         sequence: "Ctrl+Return"
-        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
-        onActivated: bar.locateRequested()
+        // #4631: a kijelölt kép elsőbbséget élvez; üres kijelölésnél a
+        // megnyitott mappát mutatja. Mindkét ág a megfelelő menütétel
+        // engedélyezési feltételét használja.
+        enabled: (bar.photoActionsEnabled || bar.folderLocateEnabled)
+                 && !bar.textEntryHasFocus
+        onActivated: {
+            if (bar.photoActionsEnabled)
+                bar.locateRequested()
+            else if (bar.folderLocateEnabled)
+                bar.folderLocateRequested()
+        }
     }
     Shortcut {
         objectName: "shortcutDeleteFromDisk"
@@ -576,12 +591,12 @@ MenuBar {
     // #1590: a Mappa-menü felirata Ctrl+Shift+P-t hirdet
     // (`docs/specs/picasa-gyorsbillentyuk.md` 25. sora is ezt mondja) —
     // ne maradjon puszta felirat, ahogy a Ctrl+P is az volt a #1472-ig.
-    // ⚠️ A menütételtől ELTÉRŐEN itt VAN feltétel: a gyorsbillentyűnek
-    // nincs hova visszajeleznie, ha nincs mit nyomtatni.
+    // A Mappa-parancs az aktuális mappára hat, ezért kijelölés nélkül is
+    // ugyanúgy él, mint a menütétel.
     Shortcut {
         objectName: "shortcutPrintContactSheet"
         sequence: "Ctrl+Shift+P"
-        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
+        enabled: !bar.textEntryHasFocus
         onActivated: bar.printContactSheetRequested()
     }
     // #1615: a Fájl-menü felirata Ctrl+M-et hirdet (a #1154 MÉRTE a
@@ -1854,8 +1869,7 @@ MenuBar {
         MenuItem {
             objectName: "menuFolderLocate"
             text: qsTr("Locate on Disk") + "\tCtrl+Enter"
-            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
-                     && bar.currentPersonName === ""
+            enabled: bar.folderLocateEnabled
             onTriggered: bar.folderLocateRequested()
         }
         MenuItem {

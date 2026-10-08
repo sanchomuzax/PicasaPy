@@ -243,15 +243,18 @@ class TestGyorsbillentyuk:
             assert shortcut is not None, name
             assert str(shortcut.property("sequence")) == sequence
 
-    def test_kijelolestol_fuggo_shortcutok_alapbol_tiltottak(self, qml_app):
-        """Kijelölés nélkül a Ctrl+Enter / Delete gyorsbillentyűk nem
-        élesek — ugyanaz a feltétel, mint a menüpontoké (photoActionsEnabled)."""
+    def test_ures_kijelolesnel_a_mappakereses_shortcut_aktiv(self, qml_app):
+        """A Ctrl+Enter kijelölés nélkül az aktuális mappára vonatkozik."""
         window, controller, lib, engine = qml_app
         locate = window.findChild(QObject, "shortcutLocateOnDisk")
+        file_locate = window.findChild(QObject, "menuFileLocate")
+        folder_locate = window.findChild(QObject, "menuFolderLocate")
         delete = window.findChild(QObject, "shortcutDeleteFromDisk")
         # #1472: a nyomtatás ugyanezen a feltételen áll
         printing = window.findChild(QObject, "shortcutPrint")
-        assert locate.property("enabled") is False
+        assert file_locate.property("enabled") is False
+        assert folder_locate.property("enabled") is True
+        assert locate.property("enabled") is True
         assert delete.property("enabled") is False
         assert printing.property("enabled") is False
 
