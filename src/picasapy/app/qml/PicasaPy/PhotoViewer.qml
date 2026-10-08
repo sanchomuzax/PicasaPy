@@ -3871,18 +3871,20 @@ Rectangle {
                         }
                         fokuszKattintas(event.x, event.y)
                     }
-                    onDoubleClicked: {
+                    onDoubleClicked: function(event) {
                         if (viewer.singleClickExitEnabled
                                 && viewer.layoutMode === "1up"
                                 && !editorPanel.tiltActive) {
                             singleClickExitTimer.stop()
-                            // A néző bezárása itt, a dupla kattintás második
-                            // lenyomásakor történő szinkron hívással a
-                            // kiengedés előtt eltávolítja az esemény célpontját.
-                            // Windowson a kiengedés így az alatta lévő rácsra
-                            // juthat, és ugyanaz a dupla kattintás újranyitja a
-                            // nézőt. A MouseArea előbb vegye át a kiengedést.
+                            // A MouseArea a második lenyomáskor jelzi a dupla
+                            // kattintást. Elfogadott jelzésnél elnyomja a második
+                            // kattintás released/clicked jelzéseit is, ezért a
+                            // kiengedésre időzített bezárás nem futna le.
                             exitAfterDoubleClick = true
+                            // Engedjük kiadni a második kattintás jelzéseit:
+                            // az onClicked a fenti jelzővel őrzi a nézőt, az
+                            // onReleased pedig a kiengedés UTÁN zárja be.
+                            event.accepted = false
                         } else {
                             viewer.zoomFit()
                         }
