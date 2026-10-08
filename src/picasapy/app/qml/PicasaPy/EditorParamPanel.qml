@@ -88,6 +88,7 @@ Flickable {
         case "Detail": return qsTr("Detail")
         case "First Color": return qsTr("First Color")
         case "Second Color": return qsTr("Second Color")
+        case "Tint Color": return qsTr("Tint Color")
         case "Rounded Corners": return qsTr("Rounded Corners")
         case "Edge Hardness": return qsTr("Edge Hardness")
         // #717: az `ansel`/`tint`/`dir_tint`/`radtint` (és a `finetune*`/
@@ -286,6 +287,14 @@ Flickable {
                     text: panel.paramLabel(paramRow.modelData.label)
                     checked: paramRow.modelData.default !== 0
                     onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
+                }
+                EditorSliderCaption {
+                    objectName: "effectParamColorLabel" + paramRow.index
+                    Layout.fillWidth: false
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: effectParamColumn.width
+                    visible: paramRow.controlKind === "color"
+                    text: panel.paramLabel(paramRow.modelData.label)
                 }
                 TextColorSwatches {
                     id: paramColorSwatches
