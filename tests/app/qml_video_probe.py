@@ -247,6 +247,14 @@ def main(work_dir: Path) -> None:
         finally:
             print(f"PROBE-STEP END {nev} {nezo_allapot(elem)}", flush=True)
 
+    def dupla_feltetelek():
+        panel = child("viewerEditorPanel")
+        return (
+            controller.singleClickExitEnabled,
+            viewer.property("layoutMode"),
+            panel.property("tiltActive"),
+        )
+
     def varj(feltetel, timeout_s=3.0):
         hatarido = time.monotonic() + timeout_s
         while time.monotonic() < hatarido:
@@ -306,9 +314,34 @@ def main(work_dir: Path) -> None:
     viewer.setProperty("zoomValue", 1.0)
     pan_area = child("viewerPanArea")
     assert varj(lambda: pan_area.property("enabled"))
+    dupla_allapot = {"belepesek": 0}
+
+    def dupla_kattintas_kezelo(*_args):
+        dupla_allapot["belepesek"] += 1
+        single_exit, layout_mode, tilt_active = dupla_feltetelek()
+        print(
+            "PROBE-DOUBLECLICK "
+            "step=photo-double-click-exit-click handler=entered "
+            f"entries={dupla_allapot['belepesek']} "
+            f"singleClickExitEnabled={single_exit!r} "
+            f"layoutMode={layout_mode!r} tiltActive={tilt_active!r}",
+            flush=True,
+        )
+
+    pan_area.doubleClicked.connect(dupla_kattintas_kezelo)
     naplozott_kattintas(
         "photo-double-click-exit-click", pan_area, dupla=True
     )
+    if dupla_allapot["belepesek"] == 0:
+        single_exit, layout_mode, tilt_active = dupla_feltetelek()
+        print(
+            "PROBE-DOUBLECLICK "
+            "step=photo-double-click-exit-click handler=not-entered "
+            "entries=0 "
+            f"singleClickExitEnabled={single_exit!r} "
+            f"layoutMode={layout_mode!r} tiltActive={tilt_active!r}",
+            flush=True,
+        )
     assert varj(lambda: window.property("viewerOpen") is False), (
         "SingleClickExit mellett a dupla kattintás után újranyílt vagy "
         "nyitva maradt az állóképes néző"

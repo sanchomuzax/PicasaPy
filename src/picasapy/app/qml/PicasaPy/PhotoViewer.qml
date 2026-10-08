@@ -3789,6 +3789,8 @@ Rectangle {
                                  ? Qt.OpenHandCursor : Qt.ArrowCursor
                     property real lastX: 0
                     property real lastY: 0
+                    property real pendingSingleClickX: 0
+                    property real pendingSingleClickY: 0
                     property bool dragged: false
                     property bool exitAfterDoubleClick: false
 
@@ -3797,6 +3799,7 @@ Rectangle {
                     // dupla kattintás második eseménye még a nézőé marad.
                     Timer {
                         id: singleClickExitTimer
+                        objectName: "singleClickExitTimer"
                         interval: Qt.styleHints.mouseDoubleClickInterval
                         onTriggered: {
                             if (viewer.singleClickExitEnabled
@@ -3852,6 +3855,22 @@ Rectangle {
                             event.accepted = false
                             return
                         }
+                        // Windows-on a MouseButtonDblClick eljuthat az
+                        // ablakig úgy is, hogy a MouseArea doubleClicked
+                        // jelzése kimarad. Az első kattintás időzítője még
+                        // fut a második lenyomáskor; ezt a másik eseményutat
+                        // is dupla kattintásként zárjuk le.
+                        if (singleClickExitTimer.running
+                                && Math.abs(event.x - pendingSingleClickX)
+                                   <= Qt.styleHints.mouseDoubleClickDistance
+                                && Math.abs(event.y - pendingSingleClickY)
+                                   <= Qt.styleHints.mouseDoubleClickDistance
+                                && viewer.singleClickExitEnabled
+                                && viewer.layoutMode === "1up"
+                                && !editorPanel.tiltActive) {
+                            singleClickExitTimer.stop()
+                            exitAfterDoubleClick = true
+                        }
                         lastX = event.x; lastY = event.y
                     }
                     onPositionChanged: function(event) {
@@ -3871,6 +3890,8 @@ Rectangle {
                         if (viewer.singleClickExitEnabled
                                 && viewer.layoutMode === "1up"
                                 && !editorPanel.tiltActive) {
+                            pendingSingleClickX = event.x
+                            pendingSingleClickY = event.y
                             singleClickExitTimer.restart()
                             return
                         }
