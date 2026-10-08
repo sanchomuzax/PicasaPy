@@ -1,7 +1,9 @@
-"""Időzítési regressziótesztek a külön processzben futó videópróbához."""
+"""A QTest egér-időbélyegeit használó videópróba-gesztusok (#4674)."""
 
 import importlib.util
 from pathlib import Path
+
+from PySide6.QtCore import QPoint, Qt
 
 
 _PROBE_UT = Path(__file__).with_name("qml_video_probe.py")
@@ -11,31 +13,47 @@ _PROBE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_PROBE)
 
 
-def test_varj_kattintasablak_vege_a_duplakattintas_intervallum_es_tartalek_utan():
-    ido = 10.0
-    alvasok = []
+def test_az_elozo_kattintas_utan_a_qtest_idobelye_valasztja_el_a_kovetkezot():
+    class QTestRecorder:
+        def __init__(self):
+            self.esemenyek = []
 
-    class Alkalmazas:
-        feldolgozasok = 0
+        def mouseClick(self, window, button, *, pos, delay):
+            self.esemenyek.append(("click", window, button, pos, delay))
 
-        def processEvents(self):
-            self.feldolgozasok += 1
+        def mouseDClick(self, window, button, *, pos, delay):
+            self.esemenyek.append(("double-click", window, button, pos, delay))
 
-    def alvas(masodperc):
-        nonlocal ido
-        alvasok.append(masodperc)
-        ido += masodperc
+        def mouseMove(self, window, pos, *, delay):
+            self.esemenyek.append(("move", window, pos, delay))
 
-    app = Alkalmazas()
-    _PROBE.varj_kattintasablak_vegere(
-        app,
-        utolso_kattintas=10.0,
-        intervallum_ms=500,
-        ora=lambda: ido,
-        alvas=alvas,
-        tartalek_ms=100,
+    qtest = QTestRecorder()
+    window = object()
+    point = QPoint(40, 50)
+    button = Qt.MouseButton.LeftButton
+    interval_ms = 400
+
+    _PROBE.qtest_egerlepes(
+        qtest,
+        window,
+        point,
+        button,
+        interval_ms,
+        dupla=False,
+        elozo_gesztus_volt=False,
+    )
+    _PROBE.qtest_egerlepes(
+        qtest,
+        window,
+        point,
+        button,
+        interval_ms,
+        dupla=True,
+        elozo_gesztus_volt=True,
     )
 
-    assert ido >= 10.6
-    assert app.feldolgozasok > 0
-    assert alvasok and max(alvasok) <= 0.05
+    assert qtest.esemenyek == [
+        ("click", window, button, point, 10),
+        ("move", window, point + QPoint(1, 0), interval_ms + 1),
+        ("double-click", window, button, point, 10),
+    ]

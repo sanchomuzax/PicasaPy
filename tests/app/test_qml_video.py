@@ -13,6 +13,7 @@ környezeti hiányról szól, nem a kódról. Ezért MINDKETTŐT ellenőrizzük.
 """
 
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -70,25 +71,55 @@ def test_video_viewer_probe(tmp_path):
         )
     if not _linux_hangkimenet_elerheto():
         pytest.skip(
-            "a Qt Multimedia-próba kihagyva: Linuxon sem a PipeWire, sem a "
-            "PulseAudio kimeneti foglalata nem elérhető ebben a környezetben"
+            "a Qt Multimedia videópróba kihagyva: a MediaPlayer a "
+            "videónéző betöltésekor Linuxon hangkimenetet nyit; hang nélküli "
+            "gépen a videó-gesztust a VideoExitGestureArea külön próbája méri"
         )
     probe = Path(__file__).parent / "qml_video_probe.py"
     repo_root = Path(__file__).resolve().parents[2]
     env = dict(os.environ)
     env["QT_QPA_PLATFORM"] = "offscreen"
+    env["QT_QUICK_BACKEND"] = "software"
     env["PYTHONPATH"] = os.pathsep.join(
         [str(repo_root / "src"), str(repo_root / "tests")]
     )
-    result = subprocess.run(
-        [sys.executable, str(probe), str(tmp_path)],
-        capture_output=True,
-        text=True, encoding="utf-8", errors="replace",
-        timeout=120,
-        env=env,
-    )
+    try:
+        result = subprocess.run(
+            [sys.executable, str(probe), str(tmp_path)],
+            capture_output=True,
+            text=True, encoding="utf-8", errors="replace",
+            timeout=120,
+            env=env,
+        )
+    except subprocess.TimeoutExpired as exc:
+        def szoveg(kimenet):
+            if isinstance(kimenet, bytes):
+                return kimenet.decode("utf-8", errors="replace")
+            return kimenet or ""
+
+        pytest.fail(
+            "a videónéző-próba 120 másodperc alatt nem fejeződött be\n"
+            f"stdout:\n{szoveg(exc.stdout)}\n"
+            f"stderr:\n{szoveg(exc.stderr)}",
+            pytrace=False,
+        )
     assert result.returncode == 0, (
         f"probe exit={result.returncode}\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "OK" in result.stdout
+    lepesek = (
+        "video-single-click",
+        "video-double-click",
+        "video-single-click-exit-click",
+        "photo-single-click-exit-click",
+        "photo-double-click-exit-click",
+    )
+    for lepes in lepesek:
+        assert f"PROBE-STEP START {lepes} " in result.stdout
+        assert f"PROBE-STEP END {lepes} " in result.stdout
+        assert re.search(
+            rf"PROBE-MOUSE step={re.escape(lepes)} "
+            r"event=press timestamp=\d+ monotonic=\d+\.\d+",
+            result.stdout,
+        ), f"{lepes}: nem került egéresemény-időbélyeg a próbanaplóba"

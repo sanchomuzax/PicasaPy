@@ -15,25 +15,39 @@ from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 
-def varj_kattintasablak_vegere(
-    app,
-    utolso_kattintas: float,
-    intervallum_ms: int,
+QTEST_EGER_DELAY_MS = 10
+
+
+def qtest_egerlepes(
+    qtest,
+    window,
+    point,
+    button,
+    double_click_interval_ms: int,
     *,
-    ora=None,
-    alvas=None,
-    tartalek_ms: int = 100,
+    dupla: bool,
+    elozo_gesztus_volt: bool,
 ) -> None:
-    """Várja meg a Qt duplakattintási ablakának végét, eseményeket kezelve."""
-    ora = ora or time.monotonic
-    alvas = alvas or time.sleep
-    hatarido = utolso_kattintas + (intervallum_ms + tartalek_ms) / 1000
-    while True:
-        app.processEvents()
-        hatralevo = hatarido - ora()
-        if hatralevo <= 0:
-            return
-        alvas(min(0.05, hatralevo))
+    """Valós Qt-időbélyeggel választja el az egérgesztusokat.
+
+    A QTest saját eseményórát léptet; a falióra szerinti várakozás nem hat rá.
+    Egy előző gesztus után ezért egy, a duplakattintási ablaknál hosszabb
+    időbélyegű egérmozgás zárja le a korábbi kattintást. A dupla kattintás
+    négy eseményén belül rövid, explicit késleltetés marad.
+    """
+    if elozo_gesztus_volt:
+        from PySide6.QtCore import QPoint
+
+        qtest.mouseMove(
+            window, point + QPoint(1, 0), delay=double_click_interval_ms + 1
+        )
+    fuggveny = qtest.mouseDClick if dupla else qtest.mouseClick
+    fuggveny(
+        window,
+        button,
+        pos=point,
+        delay=QTEST_EGER_DELAY_MS,
+    )
 
 
 def main(work_dir: Path) -> None:
@@ -41,6 +55,7 @@ def main(work_dir: Path) -> None:
     from picasapy.app.controller import AppController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
+    from picasapy.app.effect_thumbnails import EffectThumbnailProvider
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.index import open_index, sync_tree
@@ -54,7 +69,6 @@ def main(work_dir: Path) -> None:
     from support.jpeg_factory import make_jpeg
 
     app = QGuiApplication([])
-    utolso_kattintas_ideje = None
 
     lib = work_dir / "kepek"
     lib.mkdir()
@@ -68,6 +82,9 @@ def main(work_dir: Path) -> None:
         str(work_dir / "settings.ini"), QSettings.Format.IniFormat
     )
     provider = ThumbnailProvider(ThumbnailCache(work_dir / "thumbs", size=32))
+    effect_thumb_provider = EffectThumbnailProvider(
+        provider.photo_record, max_threads=1
+    )
     controller = AppController(db, (str(lib),), provider, settings=settings)
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
@@ -76,19 +93,25 @@ def main(work_dir: Path) -> None:
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
+    engine.addImageProvider("effectthumb", effect_thumb_provider)
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty("discoveryController", None)
+    engine.rootContext().setContextProperty("timelineController", None)
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
+    print("PROBE-INIT before Main.qml load", flush=True)
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
+    print("PROBE-INIT after Main.qml load", flush=True)
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]
     controller._reload()
     controller.selectFolder(str(lib))
     app.processEvents()
+    print("PROBE-INIT after initial processEvents", flush=True)
 
     def child(name):
         obj = window.findChild(QObject, name)
@@ -144,87 +167,87 @@ def main(work_dir: Path) -> None:
         f"váratlan idő-címke: {time_label.property('text')!r}"
     )
 
-    def kattintas(item, dupla=False):
-        nonlocal utolso_kattintas_ideje
-        if utolso_kattintas_ideje is not None:
-            varj_kattintasablak_vegere(
-                app,
-                utolso_kattintas_ideje,
-                QGuiApplication.styleHints().mouseDoubleClickInterval(),
-            )
-        pont = item.mapToScene(
-            QPointF(item.property("width") / 2, item.property("height") / 2)
-        ).toPoint()
-        if dupla:
-            QTest.mouseDClick(window, Qt.MouseButton.LeftButton, pos=pont)
-        else:
-            QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=pont)
-        app.processEvents()
-        utolso_kattintas_ideje = time.monotonic()
+    aktiv_lepes = {"nev": "előkészítés", "elem": None}
 
-    def naplozott_dupla_kattintas(item):
-        nonlocal utolso_kattintas_ideje
-        if utolso_kattintas_ideje is not None:
-            varj_kattintasablak_vegere(
-                app,
-                utolso_kattintas_ideje,
-                QGuiApplication.styleHints().mouseDoubleClickInterval(),
-            )
-        pont = item.mapToScene(
-            QPointF(item.property("width") / 2, item.property("height") / 2)
-        ).toPoint()
+    def elem_tulajdonsag(elem, nev):
+        if elem is None:
+            return None
+        try:
+            return elem.property(nev)
+        except RuntimeError:
+            return "<destroyed>"
 
-        def naploz(nev):
-            def allapot(*_args):
-                print(
-                    "SingleClickExit állóképes dupla kattintás "
-                    f"MouseArea.{nev} után: "
-                    f"viewerOpen={window.property('viewerOpen')!r}, "
-                    "exitAfterDoubleClick="
-                    f"{item.property('exitAfterDoubleClick')!r}",
-                    flush=True,
-                )
+    def elem_nev(elem):
+        if elem is None:
+            return None
+        try:
+            return elem.objectName()
+        except RuntimeError:
+            return "<destroyed>"
 
-            return allapot
-
-        class QtEsemenyNaplozo(QObject):
-            def eventFilter(self, _cel, event):
-                nev = {
-                    QEvent.Type.MouseButtonPress: "press",
-                    QEvent.Type.MouseButtonRelease: "release",
-                    QEvent.Type.MouseButtonDblClick: "double-click",
-                }.get(event.type())
-                if nev is not None:
-                    print(
-                        "SingleClickExit Qt egéresemény érkezett "
-                        f"({nev}); viewerOpen="
-                        f"{window.property('viewerOpen')!r}, "
-                        "exitAfterDoubleClick="
-                        f"{item.property('exitAfterDoubleClick')!r}",
-                        flush=True,
-                    )
-                return False
-
-        item.pressed.connect(naploz("pressed"))
-        item.released.connect(naploz("released"))
-        item.doubleClicked.connect(naploz("doubleClicked"))
-        esemenynaplozo = QtEsemenyNaplozo(window)
-        window.installEventFilter(esemenynaplozo)
-        QTest.mouseDClick(window, Qt.MouseButton.LeftButton, pos=pont)
-        app.processEvents()
-        utolso_kattintas_ideje = time.monotonic()
-        window.removeEventFilter(esemenynaplozo)
-        print(
-            "SingleClickExit állóképes dupla kattintás után: "
+    def nezo_allapot(elem=None):
+        return (
             f"viewerOpen={window.property('viewerOpen')!r}, "
+            f"currentIndex={viewer.property('currentIndex')!r}, "
+            f"isCurrentVideo={viewer.property('isCurrentVideo')!r}, "
+            f"singleClickExit={controller.singleClickExitEnabled!r}, "
             "exitAfterDoubleClick="
-            f"{item.property('exitAfterDoubleClick')!r}",
-            flush=True,
+            f"{elem_tulajdonsag(elem, 'exitAfterDoubleClick')!r}, "
+            f"clickTarget={elem_nev(elem)!r}, "
+            f"targetEnabled={elem_tulajdonsag(elem, 'enabled')!r}, "
+            f"targetVisible={elem_tulajdonsag(elem, 'visible')!r}"
         )
 
-    def varj(feltetel, timeout_s=3.0):
-        import time
+    class QtEsemenyNaplozo(QObject):
+        def eventFilter(self, _cel, event):
+            nev = {
+                QEvent.Type.MouseButtonPress: "press",
+                QEvent.Type.MouseButtonRelease: "release",
+                QEvent.Type.MouseButtonDblClick: "double-click",
+                QEvent.Type.MouseMove: "move",
+            }.get(event.type())
+            if nev is not None:
+                elem = aktiv_lepes["elem"]
+                print(
+                    "PROBE-MOUSE "
+                    f"step={aktiv_lepes['nev']} event={nev} "
+                    f"timestamp={event.timestamp()} "
+                    f"monotonic={time.monotonic():.6f} "
+                    f"{nezo_allapot(elem)}",
+                    flush=True,
+                )
+            return False
 
+    esemenynaplozo = QtEsemenyNaplozo(window)
+    window.installEventFilter(esemenynaplozo)
+    elozo_gesztus_volt = False
+
+    def naplozott_kattintas(nev, elem, *, dupla=False):
+        nonlocal elozo_gesztus_volt
+        aktiv_lepes.update(nev=nev, elem=elem)
+        print(f"PROBE-STEP START {nev} {nezo_allapot(elem)}", flush=True)
+        try:
+            pont = elem.mapToScene(
+                QPointF(
+                    elem.property("width") / 2,
+                    elem.property("height") / 2,
+                )
+            ).toPoint()
+            qtest_egerlepes(
+                QTest,
+                window,
+                pont,
+                Qt.MouseButton.LeftButton,
+                QGuiApplication.styleHints().mouseDoubleClickInterval(),
+                dupla=dupla,
+                elozo_gesztus_volt=elozo_gesztus_volt,
+            )
+            app.processEvents()
+            elozo_gesztus_volt = True
+        finally:
+            print(f"PROBE-STEP END {nev} {nezo_allapot(elem)}", flush=True)
+
+    def varj(feltetel, timeout_s=3.0):
         hatarido = time.monotonic() + timeout_s
         while time.monotonic() < hatarido:
             app.processEvents()
@@ -237,11 +260,11 @@ def main(work_dir: Path) -> None:
     assert controller.singleClickExitEnabled is False
     video_viewport = item.findChild(QObject, "videoViewport")
     assert video_viewport is not None
-    kattintas(video_viewport)
+    naplozott_kattintas("video-single-click", video_viewport)
     assert window.property("viewerOpen") is True, (
         "alapállapotban az egyszeres videókattintás bezárta a szerkesztőt"
     )
-    kattintas(video_viewport, dupla=True)
+    naplozott_kattintas("video-double-click", video_viewport, dupla=True)
     assert varj(lambda: window.property("viewerOpen") is False), (
         "alapállapotban a videóablak dupla kattintása nem tért vissza a könyvtárba"
     )
@@ -254,7 +277,7 @@ def main(work_dir: Path) -> None:
     video_item = child("videoLoader").property("item")
     video_viewport = video_item.findChild(QObject, "videoViewport")
     assert video_viewport is not None
-    kattintas(video_viewport)
+    naplozott_kattintas("video-single-click-exit-click", video_viewport)
     assert varj(lambda: window.property("viewerOpen") is False), (
         "a SingleClickExit bekapcsolva nem vitte vissza a könyvtárba"
     )
@@ -269,7 +292,7 @@ def main(work_dir: Path) -> None:
     assert varj(lambda: pan_area.property("enabled")), (
         "a nagyított állóképes előnézet kattintási területe nem aktív"
     )
-    kattintas(pan_area)
+    naplozott_kattintas("photo-single-click-exit-click", pan_area)
     assert varj(lambda: window.property("viewerOpen") is False), (
         "a SingleClickExit bekapcsolva az állóképes egyszeres kattintásra "
         "nem tért vissza a könyvtárba"
@@ -283,7 +306,9 @@ def main(work_dir: Path) -> None:
     viewer.setProperty("zoomValue", 1.0)
     pan_area = child("viewerPanArea")
     assert varj(lambda: pan_area.property("enabled"))
-    naplozott_dupla_kattintas(pan_area)
+    naplozott_kattintas(
+        "photo-double-click-exit-click", pan_area, dupla=True
+    )
     assert varj(lambda: window.property("viewerOpen") is False), (
         "SingleClickExit mellett a dupla kattintás után újranyílt vagy "
         "nyitva maradt az állóképes néző"
