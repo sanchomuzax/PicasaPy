@@ -1490,9 +1490,10 @@ def _mert_idok() -> dict[str, float]:
     """A commitolt futásidő-térkép; hiányában üres (minden egység medián).
 
     ⚠️ **#3117: a tábla a SOROS futás WINDOWS-idejeit tartalmazza**, és ez
-    szándékos — ott van a 40 perces job-korláthoz legközelebb a leghosszabb
-    darab. A #2848 sorosra állítása után a régi, PÁRHUZAMOS időkkel töltött
-    tábla elcsúszott, és a **lefedettsége** is hiányos volt: 271 bejegyzés
+    szándékos — ott van a 60 perces windowsos job-korláthoz legközelebb a
+    leghosszabb darab. A #2848 sorosra állítása után a régi, PÁRHUZAMOS
+    időkkel töltött tábla elcsúszott, és a **lefedettsége** is hiányos volt:
+    271 bejegyzés
     659 egységre (41%), a többi mediánt kapott.
 
     Mérve (main `4e2c6dd6`, 2026-09-15), a tényleges windows-terhelés:
