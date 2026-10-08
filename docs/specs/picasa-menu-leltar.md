@@ -453,10 +453,9 @@ billentyűnevek: `Delete` és háromszor `Enter`.
 | `0x00d6e560` | `0x9ca8` | `Propert&ies` | `Enter` | 6 |
 | `0x00d6e9b8` | `0x9cac` | `&Help Contents and Index` | `F1` | — |
 
-*(A `&Rename...` és a `&Locate on Disk` **kétszer** szerepel — a fő menüben
-és egy helyi menüben —, és a két példány mezői eltérnek: a `&Rename...`
-csak az egyik helyen kap ikont. A `Propert&ies` az egyetlen, amely
-gyorsbillentyűt ÉS ikont is visel.)*
+*(A `&Rename...` két rekordja a **Fájl** menüben és a **Kép ▸ Csoportos
+szerkesztés** almenüben van; mindkettő billentyűje `F2`, parancsa `0x9d4f`.
+A `&Locate on Disk` két rekordja a **Fájl** és a **Mappa** főmenüben.)*
 
 > ⛔ **2026-09-09, MÁSODIK MENET (#2821): A MEZŐ NEM IKON.** A `+0x08` a
 > **gyorsítóbillentyű-módosítók bitmaszkja** (`Ctrl+` / `Shift+` / `Alt+`).

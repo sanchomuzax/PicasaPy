@@ -170,6 +170,20 @@ pipái függetlenek.
 | 5 | Keresés a lemezen `Ctrl+Enter` · Eltávolítás a Picasából… |
 | 6 | Áthelyezés… · Törlés… |
 
+**#4644 — az F2 „Átnevezés…” rekord nem a Mappa menü része.** A Mappa
+főtömbje `0x00d6e1c0`-nál kezdődik, és `0x0055b28f` pontosan 17 rekorddal
+adja át a `0x005590c0` menüépítőnek. A `0x00d6e318` című F2 rekord a tömbön
+kívül van: a Kép menü „Csoportos szerkesztés” elemének `0x00d6e4b8`
+gyermekmutatója erre a címre mutat, a gyerekszám pedig `0x13` (19). Tehát
+az F2 a **Kép ▸ Csoportos szerkesztés** almenü első rekordja; a Mappa
+főmenü 12 tétele + 5 elválasztója ezzel összhangban van.
+
+A rekordot építő ágban a `0x0055b29c`–`0x0055b2a8` közötti
+`[0x00da03a8] & 0x200` ellenőrzés egyszeri menüinicializálási kapu, nem
+kijelölés- vagy nézetfeltétel. A rekord megjelenése az almenü
+megnyitásához kötött; az aktivált/szürke állapot kijelölésfüggését ez a
+vizsgálat nem állapítja meg.
+
 ### Kép — 7 tétel, 5 csoport
 
 | # | tételek |
