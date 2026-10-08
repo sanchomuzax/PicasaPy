@@ -119,7 +119,10 @@ def test_sikertelen_exif_irasnal_a_tartalek_csak_a_letrehozasi_idot_allitja(
     timestamp_controller._adjust_photo_file_date(path, CEL_DATUM)
 
     after = _fajlido(path)
-    assert after[:2] == before[:2]
+    # A tartalékág a hozzáférési és a módosítási időt nem írja; a hozzáférési
+    # időt viszont a fájl olvasása a rendszer beállításától függően frissítheti
+    # (Linuxon relatime), ezért itt csak a módosítási időt vetjük össze.
+    assert after[1] == before[1]
     if os.name == "nt":
         assert after[2] == _timestamp_ns(CEL_DATUM)
     else:
