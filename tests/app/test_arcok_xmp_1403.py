@@ -61,7 +61,7 @@ def vezerlo(qt_app, tmp_path, konyvtar):
     ctl.shutdown()
 
 
-def _osszegzes(vezerlo, konyvtar):
+def _osszegzes(vezerlo, konyvtar, scope="all", rows=()):
     """A mappa kiválasztása, az írás elindítása, az összegzés bevárása."""
     eredmeny = {}
     vezerlo.xmpFacesFinished.connect(
@@ -69,7 +69,7 @@ def _osszegzes(vezerlo, konyvtar):
     )
     vezerlo.selectFolder(str(konyvtar))
     QCoreApplication.processEvents()
-    vezerlo.writeFacesToXmp()
+    vezerlo.writeFacesToXmp(scope, rows)
     assert vezerlo.waitForBackgroundWorkers(15.0), "a köteg nem állt le 15 s alatt"
     QCoreApplication.processEvents()
     assert eredmeny, "nem jött összegzés a köteg végén"
@@ -95,7 +95,7 @@ class TestAzIras:
         vezerlo.xmpFacesFinished.connect(
             lambda k, h, o: eredmeny.update(kiirt=k, kihagyott=h, ok=o)
         )
-        vezerlo.writeFacesToXmp()
+        vezerlo.writeFacesToXmp("all", [])
         QCoreApplication.processEvents()
 
         assert eredmeny == {"kiirt": 0, "kihagyott": 0, "ok": ""}
@@ -115,7 +115,7 @@ class TestAzIrasvedettHely:
         )
         konyvtar.chmod(stat.S_IRUSR | stat.S_IXUSR)
         try:
-            vezerlo.writeFacesToXmp()
+            vezerlo.writeFacesToXmp("all", [])
             assert vezerlo.waitForBackgroundWorkers(15.0)
             QCoreApplication.processEvents()
         finally:
@@ -127,3 +127,32 @@ class TestAzIrasvedettHely:
             "hibaüzenetet ad rá"
         )
         assert "a.jpg" in eredmeny["ok"], eredmeny
+
+
+@pytest.mark.parametrize(
+    ("scope", "rows", "written", "skipped", "total", "sidecars"),
+    [
+        ("selected", [1], 0, 1, 1, ()),
+        ("faces", [], 1, 0, 1, ("a.jpg.xmp",)),
+        ("all", [], 1, 1, 2, ("a.jpg.xmp",)),
+    ],
+    ids=("kijelolt", "arcos-kepek", "osszes"),
+)
+def test_a_harom_hatarok_kulon_kepkeszletet_ir(
+    vezerlo, konyvtar, scope, rows, written, skipped, total, sidecars
+):
+    """A hatókör a kiválasztott képhalmazra szűkítse az eddigi köteget."""
+    vezerlo.selectFolder(str(konyvtar))
+    QCoreApplication.processEvents()
+    eredmeny = {}
+    vezerlo.xmpFacesFinished.connect(
+        lambda k, h, o: eredmeny.update(kiirt=k, kihagyott=h, ok=o)
+    )
+
+    vezerlo.writeFacesToXmp(scope, rows)
+    assert vezerlo.waitForBackgroundWorkers(15.0)
+    QCoreApplication.processEvents()
+
+    assert eredmeny == {"kiirt": written, "kihagyott": skipped, "ok": ""}
+    assert vezerlo.xmpFacesTotal == total
+    assert tuple(sorted(path.name for path in konyvtar.glob("*.xmp"))) == sidecars
