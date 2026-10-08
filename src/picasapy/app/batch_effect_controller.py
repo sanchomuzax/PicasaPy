@@ -12,7 +12,7 @@ kijelöléseknél (sok mappa, esetleg NAS) ez percekig tarthat (#425 4-5. pont).
 
 A forgatás (jobbra/balra) NEM ide tartozik: az már kész és szinkron
 (`PhotoOpsMixin.rotateRightMany`/`rotateLeftMany`) — a menü egyenesen azt
-hívja, ez a modul a `filters=` láncot bővítő 7 effektet szolgálja ki.
+hívja, ez a modul a `filters=` láncot bővítő 8 effektet szolgálja ki.
 
 Mixin-osztály: az `AppController` örökli, a `photo_ops_controller`
 lusta-bekötés mintáját (#150) követve — nem kell az __init__-et (forró fájl)
@@ -57,13 +57,15 @@ from picasapy.scanner import PICASA_INI_NAME
 from .photo_ops_controller import _WRITE_ERRORS
 from .worker_thread import BackgroundWorkerMixin
 
-# A K.1 táblázat 7, `filters=` láncot bővítő tétele — a forgatás a meglévő
+# A K.1 táblázat 8, `filters=` láncot bővítő tétele — a forgatás a meglévő
 # rotateRightMany/rotateLeftMany úton fut; a szöveg menüparancsai külön
 # `textactive=` állapotot kezelnek.
 # Az `EditSession` metódusa szerint csoportosítva:
 _APPLY_NAMES = frozenset({"autolight", "autocolor", "enhance"})  # append-only
 _TOGGLE_NAMES = frozenset({"redeye"})  # a meglévő egy-példányos kapcsoló
-_APPEND_NAMES = frozenset({"unsharp", "grain2", "warm", "bw"})  # paraméter nélküli
+_APPEND_NAMES = frozenset({"unsharp", "grain2", "warm", "bw", "sepia"})
+# #4624: a Sepia és a B&W a Picasa külön batch-parancsai; mindkettő
+# paraméter nélküli effektet fűz a kijelölt képek `filters=` láncához.
 # #2163: a `bw` azért került ide, mert az eredeti `Ctrl+Shift+B`-je
 # ugyanezt teszi: a fekete-fehér szűrőt adja a KIJELÖLÉSRE
 # (`0x005fe370(panel, "bw")`). A `render/chain.py` egykattintásos

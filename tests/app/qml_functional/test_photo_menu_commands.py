@@ -142,6 +142,26 @@ def _batch_menu_item_info(window, object_name):
     return result
 
 
+def _batch_menu_item_names(window):
+    batch_menu = window.findChild(QObject, "menuPictureBatchEdit")
+    assert batch_menu is not None
+    expression = QQmlExpression(
+        qmlContext(batch_menu),
+        batch_menu,
+        "(function () {"
+        "  var names = [];"
+        "  for (var i = 0; i < count; ++i) {"
+        "    var item = itemAt(i);"
+        "    if (item) names.push(item.objectName);"
+        "  }"
+        "  return names.join('|');"
+        "})()",
+    )
+    result, error = expression.evaluate()
+    assert not error, expression.error()
+    return str(result).split("|")
+
+
 def _menu_item_info(menu, object_name, window, *, text=None):
     expression = QQmlExpression(
         qmlContext(menu),
@@ -223,6 +243,16 @@ def _write_overlay(controller, row, active):
     return ini_path, photo.name
 
 
+def _photo_filters(controller, row):
+    photo = controller.photos.photos[row]
+    ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+    if not ini_path.exists():
+        return None
+    document = load_document(ini_path)
+    section = document.section(photo.name)
+    return section.get("filters") if section is not None else None
+
+
 # A menü forgatás-parancsa a KÖTEGELT ágat hívja (`rotateRightMany`), ami a
 # `_apply_batch`-en át SZINKRON fut — nincs háttérszál, és nem is bocsát ki
 # külön végjelzésre. Az indexelt modell maga mutatja a művelet eredményét,
@@ -265,6 +295,55 @@ class TestPhotoMenuCommands:
         qt_app.processEvents()
         assert window.property("propertiesPanelOpen") is not before
         _close_menu(window, qt_app)
+
+    @pytest.mark.parametrize("height_offset", (-5, 0, 5))
+    def test_batch_sepia_es_bw_a_kijelolt_kepekre_kerul_es_undozhato(
+        self, qml_app, qt_app, height_offset
+    ):
+        window, controller, _engine = qml_app
+        window.setHeight(window.height() + height_offset)
+        window.setProperty("selectedIndexes", [0, 1])
+        window.setProperty("selectedIndex", 0)
+        qt_app.processEvents()
+
+        sepia_item = _picture_menu_item(qt_app, window, "menuBatchSepia")
+        names = _batch_menu_item_names(window)
+        assert names.index("menuBatchSepia") == names.index("menuBatchSharpen") - 1
+        assert names.index("menuBatchBlackWhite") == names.index("menuBatchSharpen") + 1
+        assert sepia_item["qml_item"].property("text") == "&Sepia"
+        _close_picture_menu(qt_app, window)
+
+        kezdeti_lancok = {
+            row: _photo_filters(controller, row) for row in (0, 1)
+        }
+        for object_name, effect_name, expected_label in (
+            ("menuBatchSepia", "sepia", "&Sepia"),
+            ("menuBatchBlackWhite", "bw", "&Black and White"),
+        ):
+            item = _picture_menu_item(qt_app, window, object_name)
+            assert item["qml_item"].property("text") == expected_label
+            _click_item(qt_app, item)
+
+            assert _wait_for(
+                qt_app,
+                lambda effect_name=effect_name: not controller.batchEditActive
+                and all(
+                    f"{effect_name}=1;" in (_photo_filters(controller, row) or "")
+                    for row in (0, 1)
+                ),
+            ), f"a {effect_name} nem került mindkét kijelölt képre"
+            assert controller.canUndoBatchEdit is True
+
+            controller.undoBatchEdit()
+            assert _wait_for(
+                qt_app,
+                lambda: all(
+                    _photo_filters(controller, row) == kezdeti_lancok[row]
+                    for row in (0, 1)
+                ),
+            ), f"a {effect_name} nem vonódott vissza egy lépésben"
+            assert controller.canUndoBatchEdit is False
+            _close_picture_menu(qt_app, window)
 
     @pytest.mark.parametrize("height_offset", (-5, 0, 5))
     def test_picture_show_hide_text_clicks_follow_selected_overlay_state(

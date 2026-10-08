@@ -434,9 +434,9 @@ MenuBar {
     // #425: Kép ▸ Csoportos szerkesztés — a kijelölt N kép mindegyikére
     // egyszerre alkalmazott egykattintásos effekt (`controller.
     // applyEffectMany`); a `name` a `batch_effect_controller._KNOWN_EFFECTS`
-    // egyike ("autolight"/"autocolor"/"redeye"/"enhance"/"unsharp"/
-    // "grain2"/"warm"). A forgatás NEM ide tartozik — az a meglévő
-    // `rotateRightMany`/`rotateLeftMany` úton fut, közvetlenül a Main.qml-ből.
+    // egyike ("autolight"/"autocolor"/"redeye"/"enhance"/"sepia"/
+    // "unsharp"/"bw"/"grain2"/"warm"). A forgatást a meglévő
+    // `rotateRightMany`/`rotateLeftMany` út kezeli, közvetlenül a Main.qml-ből.
     signal batchApplyEffectRequested(string name)
     // #465 3. pont: „Undo All Edits" — a kijelölt kép(ek) TELJES
     // szerkesztési láncát törli (a Csoportos szerkesztés almenün KÍVÜL, a
@@ -1851,10 +1851,22 @@ MenuBar {
                 onTriggered: bar.batchApplyEffectRequested("enhance")
             }
             MenuItem {
+                objectName: "menuBatchSepia"
+                text: qsTr("&Sepia")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("sepia")
+            }
+            MenuItem {
                 objectName: "menuBatchSharpen"
                 text: qsTr("S&harpen")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("unsharp")
+            }
+            MenuItem {
+                objectName: "menuBatchBlackWhite"
+                text: qsTr("&Black and White")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("bw")
             }
             MenuItem {
                 objectName: "menuBatchFilmGrain"
