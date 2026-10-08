@@ -42,7 +42,7 @@ A **szöveg**-beillesztés viszont a rendszer-vágólapról jön, **lecseréli**
 feliratot, megerősítést kér (`CTextEditNode::confirm`, gomb: `Replace`), és
 kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
 
-## 3. „Dátum és idő beállítása” — KÉT mód; a mentési cél részben nyitott
+## 3. „Dátum és idő beállítása” — KÉT mód; feltételes EXIF-írás
 
 `offsettime.fen`: bélyegkép-előnézet · „Current photo date" (dátum+idő) ·
 „New photo date" (dátum+idő) · **rádiócsoport**:
@@ -54,45 +54,65 @@ Több képre megy: az ablakcím szó szerint **`Adjust Photo Date - %d items`**
 (`0x00cb40ac`, xref: `0x0077c7c0`); a futásjelzés **`Setting photo dates`**
 (`0x00cb4120`, xref: `0x0077cfd0`, `AdjustTimeThread::SettingDates`).
 
-### A worker mit állít be — és mit nem bizonyít ez a híváslánc
+### A worker és a forrásfájl írása (2026-10-08, #4646)
 
 A két dátumfeldolgozó út (`0x00490580`, `0x00490c10`) egyaránt a `0x37`
 metaadat-tulajdonságot állítja be (`0x004906f7`/`0x004906fe` és
-`0x00490d3c`/`0x00490d43`). A tulajdonság-táblában a `0x37` az EXIF
-`DateTimeOriginal`-nak felel meg (ld. `picasa-metaadat-tulajdonsagok.md`, §3),
-de ez a Picasa metaadat-objektum tulajdonságát azonosítja; **önmagában nem
-bizonyítja, hogy a worker a képfájl EXIF-szegmensébe is kiírja**.
+`0x00490d3c`/`0x00490d43`). A tulajdonságtábla szerint a `0x37` az EXIF
+`DateTimeOriginal` (`0x9003`), ld. `picasa-metaadat-tulajdonsagok.md`, §3.
+Ezután mindkét worker a `[esp+0xac] == 2` feltételt vizsgálja
+(`0x0049070a`, `0x00490d4f`). Ha teljesül, meghívja a `0x009ed330` íróutat;
+annak nullától eltérő visszatérése a fallback nélküli worker-ágra visz
+(`0x00490725`–`0x00490736`, `0x00490d69`–`0x00490d7b`), de a visszatérési
+kódok jelentését a disassembly nem nevezi meg. A `2` érték C++-oldali
+jelentése szintén nincs meg; ezért itt a nyers feltétel rögzíthető.
 
-Mindkét worker meghívja a `0x00992780` segédfüggvényt (`0x00490900`,
-`0x00490f40`). A függvény a `SetFileTime` API-t hívja (`0x0092234c` import;
-az index ezt a `0x00992780` hívójához rendeli). A worker `0` jelzője mellett a
-segéd a kiszámított időmutatót a `SetFileTime` második paraméterébe teszi,
-és nullát ad a harmadik/negyedik paraméternek (`0x009927e9`–`0x009927f9`). A
-Win32 paramétersorrend szerint ez **a fájl létrehozási idejét** állítja; ez a
-hívás nem állítja a hozzáférési vagy utolsó módosítási időt.
+Az `0x009ed330` hívja a `0x009eb290`-et, amelynek tempfájlos íróágán a
+kiválasztott
+képfájl útvonalát olvassa, `.tmp` fájlt ír (`"r+b"`/`"wb"`,
+`0x009eb3e0`, `0x009eb5c8`), majd a `0x00994400` útján lecseréli a forrásfájlt
+(`0x009eb70b`). A worker által előzőleg beállított `0x37` így a forrásfájl
+EXIF `DateTimeOriginal` mezőjébe kerül.
 
-⛔ **A teljes művelet célja még nyitott.** A bináris itt bizonyítja a `0x37`
-metaadat-objektum beállítását és a létrehozási idő állítására vezető ágat,
-de nem bizonyítja, hogy a `DateTimeOriginal` ténylegesen a képfájlba vagy a
-`.picasa.ini`-be íródik-e, illetve hogy egy későbbi metaadat-mentés módosítja-e
-a fájl utolsó módosítási idejét. Ehhez Windowsos mérés kell: egy teszt-JPEG
-EXIF `DateTimeOriginal`, a mappa `.picasa.ini`-jének bájtjai és fájl-`mtime`
-előtte/utána összevetése egyetlen képen, Picasában az új dátum beállítása után.
-Ebben a környezetben nincs Windows futtató/QEMU-rendszeremulátor, ezért ez a
-mérés **NINCS MEG**. A korábbi állítás — miszerint a kezelők hiánya a
-`SetFileTime` közvetlen hívólistájából kizárja a fájlrendszer-idő módosítását
-— **hibás negatív következtetés** volt: a kezelő a háttér-workerhez jut el,
-amely a segédfüggvényt hívja.
+A sikeres csere a fájlrendszer-időket is kezeli. A `0x009eb290` előbb
+elmenti mindhárom időt (`0x00ab3320` → `0x00ab3350` → `GetFileTime`). Ha a
+metaadat-objektumban olvasható és dátummá alakítható a `0x1c` tulajdonság
+(EXIF `DateTime`, `0x0132`; `0x009eb34b`–`0x009eb37d`), a `0x00ab35e0` az
+eredeti `FILETIME`-szerkezetben a hozzáférési és utolsó módosítási idő mezőket
+erre az értékre állítja (`or [edi+0x18], 6`, `+8`, `+0x10`); a
+létrehozási idő mezője érintetlen marad. A `0x00994400` fájlcsere-segéd
+sikeres visszatérése után a worker a `0x009eb4af` ágra jut, amely a
+`0x009eb4c1` címen hívja a `0x00ab34d0`-t; a cserehibás ág is megpróbálja ezt
+a visszaírást (`0x009eb738`). Ha a `DateTime` hiányzik vagy nem alakítható
+dátummá, a szerkezetben mindhárom eredeti idő marad, így a kód az eredeti
+hármast próbálja visszaírni. A `0x00ab35e0`-ban a két időkonverziós API
+visszatérését, a `0x00ab34d0`-ban pedig a `SetFileTime` eredményét nem kezeli
+helyreállítással; a tényleges fájlrendszer-állapot ezért a fájlcsere és az
+API-hívások sikerétől is függ.
+
+Ha a `[esp+0xac] == 2` feltétel nem teljesül, vagy a `0x009ed330` nullát ad
+vissza, a worker a közvetlen `0x00992780` ágra jut
+(`0x00490900`, `0x00490f40`). Ez a segéd a `SetFileTime` importot hívja
+(`0x0092234c`); a `0` jelző mellett csak a létrehozásiidő-mutató nem null
+(`0x009927e9`–`0x009927f9`). Ebben az ágban tehát a fájl létrehozási idejét
+a beállított új dátumra állítja; a hozzáférési és utolsó módosítási időt ez a
+hívás nem adja át, így azokat nem módosítja.
+
+A teljes `.text` indexfüggetlen pásztázása (`paszta.py`,
+`memoria_kapu()`-val indítva; 2 884 879 utasítás) a `.picasa.ini`-re mutató
+adat-hivatkozásokat a program más részein találta, nem a fenti worker/EXIF-író
+hívásláncban. E művelet nem ír `.picasa.ini`-kulcsot. Ez nem állítás a Picasa
+program egészének `.picasa.ini`-írásairól.
 
 ### PicasaPy tárolási döntése (#4332)
 
 A dátummódosító a kijelölt fotók dátumát az SQLite-index `photos.taken_at_override`
-mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. A Picasa
-forrásfájl EXIF-szegmensének módosulása továbbra sem bizonyított; a PicasaPy
-ezért a forrás JPEG `DateTimeOriginal` mezőjét érintetlenül hagyja. Exportált
-JPEG-en viszont a `DateTimeOriginal` az indexben felülírt dátumot kapja, a #451
-Colab-mérésével egyezően. A rács, a dátum szerinti rendezés és a Tulajdonságok
-panel a felülírt értéket mutatja.
+mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. A PicasaPy
+forrásfájl EXIF-szegmensét nem írja át: a forrás JPEG `DateTimeOriginal` mezője
+érintetlen marad; exportált JPEG-en viszont a `DateTimeOriginal` az indexben
+felülírt dátumot kapja, a #451 Colab-mérésével egyezően. Ez a #4646 által
+feltárt eredeti viselkedéstől eltér. A rács, a dátum szerinti rendezés és a
+Tulajdonságok panel a felülírt értéket mutatja.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
