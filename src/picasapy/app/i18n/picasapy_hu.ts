@@ -10066,10 +10066,12 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
-            <source>Are you sure you want to replace the existing caption with the contents of the clipboard?&#10;(This operation is not undoable)</source>
+            <source>Are you sure you want to replace the existing caption with the contents of the clipboard?
+(This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_REPLACE_CAPTION</extracomment>
-            <translation>Biztosan lecseréli a jelenlegi képfeliratot a vágólap tartalmára?&#10;(Ez a művelet nem vonható vissza)</translation>
+            <translation>Biztosan lecseréli a jelenlegi képfeliratot a vágólap tartalmára?
+(Ez a művelet nem vonható vissza)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="85" />
