@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.45] – 2026-10-08
+
+- A Létrehozás ▸ Film menüből már az összes nem üres Emberek-album képeiből is indítható film (#4633).
+- A fotónéző a gyors dupla kattintásra akkor is kilép, ha a Windows eseménye nem jut el a QML-kezelőhöz (#4679).
+
 ## [0.9.44] – 2026-10-08
 
 - Albumnézetben a Mappa menü Album menüvé válik, az Albumleírás szerkesztése pedig a megnyitott album adatait nyitja meg (#4630).
