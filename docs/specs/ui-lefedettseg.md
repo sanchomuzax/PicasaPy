@@ -416,7 +416,7 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 - „Show”
   - *a mérő vakfoltja — az eredetiben is megvan* — A mért Mappa menü 3. csoportja „Elrejtés · Megjelenítés” (docs/specs/picasa-menusor-csoportok.md); a mi magyarunk („Megjelenítés”) ezzel betűre egyezik.
 - „New Movie...”
-  - *szükséges segédszöveg* — A Létrehozás ▸ Mozgófilm ALMENÜ egyetlen tétele. A fájl megjegyzése szerint (#324 audit) az eredetiben ez almenü volt TÖBB tétellel (pl. eMenuCreateMovie::ID_FACES "From Faces in Selection...", ID_FACESRANDOM "From People Albums..."), nálunk csak az egyetlen működő filmkészítés maradt az almenü tartalmaként — ez az összevont, saját felirat, a konkrét eredeti tételek egyikével sem azonos.
+  - *szükséges segédszöveg* — Az általános filmkészítés belépője. Az eredeti két külön arc-film parancsa aktív almenütételként is megvan: „From Faces in Selection...” (#4331) és „From People Albums...” (#4633).
 - „Find Faces...”
   - *szükséges segédszöveg* — Az arckeresés funkció megvan, de menüparancs nincs: a kódkomment szerint a „Find Faces” felirat a teljes szövegtárban nem szerepel, az Eszközök menü kimért szerkezetében nincs ilyen tétel (a „Scanning for faces...” állapotüzenet más helyzet).
 - „Manage Duplicates...”
@@ -1559,4 +1559,3 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 - ELAVULT BESOROLÁS: a(z) `PicasaPy/RightDrawer.qml` „Close this side panel” sora a `ui-tobblet-besorolas.tsv`-ben már nem többlet-felirat — töröld a táblából.
 - ELAVULT BESOROLÁS: a(z) `PicasaPy/RightDrawer.qml` „Switch between small/large side panel” sora a `ui-tobblet-besorolas.tsv`-ben már nem többlet-felirat — töröld a táblából.
 - ELAVULT BESOROLÁS: a(z) `PicasaPy/TrayBar.qml` „Select items to add to your project's clips tray, then press the "Back" button to return to your project” sora a `ui-tobblet-besorolas.tsv`-ben már nem többlet-felirat — töröld a táblából.
-

@@ -783,6 +783,12 @@ ApplicationWindow {
     // annak tárolt sorrendjében; nem csak az éppen nyitott album sorai.
     function openPersonAlbumMovie() {
         if (!controller || window.personAlbumName === "") return
+        window.openPeopleAlbumsMovie()
+    }
+    // #4633: ID_FACESRANDOM ugyanazt a már meglévő, #4391-es forráslistát
+    // használja, de a Létrehozás menüből személyalbum nézet nélkül is indul.
+    function openPeopleAlbumsMovie() {
+        if (!controller) return
         var forrasok = controller.personMovieSourceUrls()
         if (forrasok.length === 0) return
         createDialogs.ensure().openMovieForSources(forrasok)
@@ -1765,6 +1771,7 @@ ApplicationWindow {
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.ensure().openMovie()
         onFaceMovieRequested: createDialogs.ensure().openFaceMovie()
+        onPeopleAlbumsMovieRequested: window.openPeopleAlbumsMovie()
         //: #3503: a kiadás-panel Ajándék-CD üzemmódja a könyvtár alján
         onGiftCdRequested: giftCdHost.nyisd()
         onExportRequested: exportDialogs.ensure().openForSelection(

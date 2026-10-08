@@ -32,11 +32,11 @@ _MENU_UTVONAL_DARAB = {
     "Picture": 19,
     "Edit": 13,
     "Tools": 69,
-    "Create": 7,
+    "Create": 8,
     "Help": 5,
     "File": 17,
 }
-assert sum(_MENU_UTVONAL_DARAB.values()) == 188
+assert sum(_MENU_UTVONAL_DARAB.values()) == 189
 _VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 30, "mappanezet": 13}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
@@ -107,6 +107,10 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
     "menuViewAlbumThumbnails": (
         "A könyvtári bélyegkép-kapcsoló fanézetben letiltott; a teszt ezt az "
         "állapotot is meghagyja a menüsorban."
+    ),
+    "menuCreateMovieFromPeopleAlbums": (
+        "A tiszta profilban nincs névvel ellátott arc, ezért nincs nem üres "
+        "Emberek-albuma."
     ),
     "menuPictureShowText": (
         "A kijelölt mintaképeken nincs feliratszöveg, ezért a Show Text "
