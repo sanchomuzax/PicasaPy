@@ -115,8 +115,10 @@ MenuBar {
             }
         }
     }
-    // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
+    // van-e fotó-művelet célpontja: a rács kijelölése vagy a néző aktív képe
     property bool photoActionsEnabled: false
+    // A könyvtárhoz kötött műveletek ne váljanak aktívvá a szerkesztőnézetben.
+    property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
     property bool textEntryHasFocus: false
     // #4335: a kijelölt fedvények állapota a controller INI-lekérdezéséből.
@@ -439,7 +441,10 @@ MenuBar {
     Shortcut {
         objectName: "shortcutDeleteFromDisk"
         sequence: "Delete"
-        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
+        // A menüpont a nézőben is aktív, de a néző saját gyorsbillentyűje
+        // Ctrl+Delete (#1418). A sima Delete csak a könyvtári belépő.
+        enabled: bar.photoActionsEnabled && !bar.editorActive
+                 && !bar.textEntryHasFocus
         // #1608: nézetfüggő — albumban NEM töröl lemezről
         onActivated: bar.activateDeleteCommand()
     }
@@ -821,7 +826,7 @@ MenuBar {
         MenuItem {
             objectName: "menuViewEditView"
             text: qsTr("&Edit View") + "\tCtrl+3"
-            enabled: bar.photoActionsEnabled
+            enabled: bar.libraryPhotoActionsEnabled
             onTriggered: bar.viewAndEditRequested()
         }
         MenuSeparator {}
@@ -1904,13 +1909,13 @@ MenuBar {
         MenuItem {
             objectName: "menuCreateWallpaper"
             text: qsTr("Set as &Desktop...")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.libraryPhotoActionsEnabled
             onTriggered: bar.wallpaperRequested()
         }
         MenuItem {
             objectName: "menuCreatePoster"
             text: qsTr("Make a &Poster...")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.libraryPhotoActionsEnabled
             onTriggered: bar.posterRequested()
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
@@ -1925,7 +1930,7 @@ MenuBar {
         MenuItem {
             objectName: "menuCreateAddScreensaver"
             text: qsTr("Add to &Screensaver...")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.libraryPhotoActionsEnabled
             onTriggered: bar.addToScreensaverRequested()
         }
         //: #3503: a kiadás-panelt Ajándék-CD üzemmódban nyitja; a tálcáról
@@ -1953,7 +1958,7 @@ MenuBar {
             MenuItem {
                 objectName: "menuCreateMovieFromFaces"
                 text: qsTr("From Faces in Selection...")
-                enabled: bar.photoActionsEnabled
+                enabled: bar.libraryPhotoActionsEnabled
                 onTriggered: bar.faceMovieRequested()
             }
         }
@@ -2030,7 +2035,7 @@ MenuBar {
         MenuItem {
             objectName: "menuToolsAdjustTimestamp"
             text: qsTr("Adjust &Date and Time...")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.libraryPhotoActionsEnabled
             onTriggered: bar.adjustTimestampRequested()
         }
         MenuSeparator {}
@@ -2209,7 +2214,7 @@ MenuBar {
                 objectName: "menuToolsPassportPhoto"
                 text: qsTr("&Passport photo...")
                 //: a kijelölt képre szól
-                enabled: bar.photoActionsEnabled
+                enabled: bar.photoActionsEnabled && !bar.editorActive
                 onTriggered: bar.passportPhotoRequested()
             }
             //: #1403: `eMenuTools::ID_WRITE_XMP_FACES` — a Kísérleti almenü

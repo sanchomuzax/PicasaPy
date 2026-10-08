@@ -13,7 +13,9 @@ Item {
     // a főablak (a kijelölt sorok forrása)
     required property var appWindow
 
-    function openForSelection() {
+    function openForSelection(rows) {
+        exportDialog.requestedRows =
+            rows === undefined || rows === null ? null : rows.slice()
         exportDialog.openForSelection()
     }
 
@@ -104,12 +106,25 @@ Item {
         // kijelölés film-tartalma — megnyitáskor frissítjük.
         property bool movieFull: false
         property bool hasVideo: false
+        // A néző menüje pillanatképként adja át az aktív képet; normál
+        // könyvtárnézetben a meglévő kijelölés/tálca út marad.
+        property var requestedRows: null
+
+        function exportRows() {
+            return exportDialog.requestedRows !== null
+                ? exportDialog.requestedRows
+                : dialogs.appWindow.selectedIndexes
+        }
 
         function openForSelection() {
             // #455: tartott képekkel a tálca a forrás — ilyenkor a rácsban
             // nem is kell kijelölésnek lennie
-            if (!exportDialog.useTray
-                    && dialogs.appWindow.selectedIndexes.length === 0) return
+            if (exportDialog.requestedRows !== null) {
+                if (exportDialog.requestedRows.length === 0) return
+            } else if (!exportDialog.useTray
+                       && dialogs.appWindow.selectedIndexes.length === 0) {
+                return
+            }
             open()
         }
 
@@ -195,10 +210,12 @@ Item {
             // művelettel telt meg, ez ritka pontatlanság volt; mióta a
             // tálca a kijelölés tükre, minden exportnál engedélyezte
             // volna a film-rádiókat, film nélkül is.
-            exportDialog.hasVideo = exportDialog.useTray
-                ? controller.trayHasVideo()
-                : controller.selectionHasVideo(
-                      dialogs.appWindow.selectedIndexes)
+            exportDialog.hasVideo = exportDialog.requestedRows !== null
+                ? controller.selectionHasVideo(exportDialog.requestedRows)
+                : (exportDialog.useTray
+                   ? controller.trayHasVideo()
+                   : controller.selectionHasVideo(
+                         dialogs.appWindow.selectedIndexes))
             standardButton(Dialog.Ok).enabled = Qt.binding(
                 function() { return exportDialog.targetFolder.length > 0 })
             // #350 (export.fen paritás): a FEN accept gombjának felirata
@@ -222,14 +239,20 @@ Item {
             var watermark =
                 exportWatermarkCheck.checked ? exportWatermarkField.text : ""
             var maxDimension = exportDialog.resolvedMaxDimension()
-            if (exportDialog.useTray)
+            if (exportDialog.requestedRows !== null)
+                controller.exportRows(
+                    exportDialog.requestedRows, resolvedTargetFolder(),
+                    maxDimension, quality,
+                    exportAddNumbersCheck.checked, watermark, purgeExisting,
+                    automatic, subsampling)
+            else if (exportDialog.useTray)
                 controller.exportHeld(
                     resolvedTargetFolder(), maxDimension, quality,
                     exportAddNumbersCheck.checked, watermark, purgeExisting,
                     automatic, subsampling)
             else
                 controller.exportRows(
-                    dialogs.appWindow.selectedIndexes, resolvedTargetFolder(),
+                    exportDialog.exportRows(), resolvedTargetFolder(),
                     maxDimension, quality,
                     exportAddNumbersCheck.checked, watermark, purgeExisting,
                     automatic, subsampling)
