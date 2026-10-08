@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -118,9 +119,14 @@ def _write_exif_datetime_original(path: str | Path, target: datetime) -> None:
         temp.unlink(missing_ok=True)
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217)."""
+    return sys.platform
+
+
 def _set_creation_time_ns(path: str | Path, timestamp_ns: int) -> None:
     """Windows alatt beállítja a létrehozási időt; POSIX-on nincs ilyen API."""
-    if os.name != "nt":
+    if _platform() != "win32":
         return
 
     class _FileTime(ctypes.Structure):
