@@ -231,6 +231,7 @@ jobs:
         shell: bash
         env:
           QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
         run: |
           # A csomag hiányossága csak INDÍTÁSKOR derül ki. A kapcsoló a
           # felület felépülése után kilép, eseményciklus nélkül.
@@ -250,6 +251,86 @@ jobs:
           grep -q "onellenorzes" fustproba.txt || {
             echo "::error::a felület nem épült fel a csomagból"; exit 1; }
 
+      - name: Füstpróba — a főablak a splash után is megjelenik
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          from PIL import Image
+
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          executable = Path("dist/PicasaPy/PicasaPy.exe").resolve()
+          launchers = (
+              ("source", [sys.executable, str(Path("picasapy").resolve())]),
+              ("packaged", [str(executable)]),
+          )
+          cases = ("clean", "existing_faces")
+          for mode, launcher in launchers:
+              for case in cases:
+                  root = runner_temp / f"picasapy-{mode}-startup-{case}"
+                  library = root / "library"
+                  profile = root / "profile"
+                  library.mkdir(parents=True, exist_ok=True)
+                  profile.mkdir(parents=True, exist_ok=True)
+                  if case == "existing_faces":
+                      Image.new("RGB", (640, 480), "red").save(library / "a.jpg", "JPEG")
+                      (library / ".picasa.ini").write_text(
+                          "[Contacts2]\n8e62b2035b74b477=Ada Lovelace;;\n\n"
+                          "[a.jpg]\nfaces=rect64(3f845bcb59418507),8e62b2035b74b477\n",
+                          encoding="utf-8",
+                      )
+
+                  env = os.environ.copy()
+                  env.update(
+                      {
+                          "USERPROFILE": str(profile),
+                          "APPDATA": str(profile / "AppData" / "Roaming"),
+                          "LOCALAPPDATA": str(profile / "AppData" / "Local"),
+                          "TEMP": str(profile / "Temp"),
+                          "TMP": str(profile / "Temp"),
+                          "PICASAPY_LANG": "en",
+                      }
+                  )
+                  try:
+                      result = subprocess.run(
+                          [*launcher, "--indulasellenorzes", str(library)],
+                          env=env,
+                          capture_output=True,
+                          text=True,
+                          encoding="utf-8",
+                          errors="replace",
+                          timeout=90,
+                          check=False,
+                      )
+                  except subprocess.TimeoutExpired:
+                      raise SystemExit(
+                          f"{mode}/{case}: az indulási füstpróba időtúllépésbe futott"
+                      )
+                  output = result.stdout + result.stderr
+                  print(output)
+                  logs = list(profile.rglob("errorlog.txt"))
+                  if len(logs) != 1:
+                      raise SystemExit(
+                          f"{mode}/{case}: nem jött létre egyértelmű hibanapló"
+                      )
+                  log = logs[0].read_text(encoding="utf-8")
+                  if (
+                      result.returncode != 0
+                      or "A főablak a splash után megjelent" not in log
+                  ):
+                      raise SystemExit(
+                          f"{mode}/{case}: a főablak nem jelent meg a splash után"
+                      )
+                  print(f"{mode}/{case}: a főablak megjelent a splash után")
+          PY
+
       # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
       # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC
       # „You may not specify more than one script filename" hibával állt le
@@ -267,6 +348,85 @@ jobs:
             Write-Error "az Inno Setup nem tudta legyártani a telepítőt"
             exit 1
           }
+
+      - name: Telepítő telepítése és valós indulási füstpróba
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+        run: |
+          $installDir = Join-Path $env:RUNNER_TEMP "PicasaPy-installed"
+          $installer = Join-Path $PWD "packaging\dist\PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
+          $arguments = @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/DIR=$installDir"
+          )
+          $install = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            Write-Error "a telepítő nem futott le: $($install.ExitCode)"
+            exit 1
+          }
+          $env:PICASAPY_INSTALLED_EXE = Join-Path $installDir "PicasaPy.exe"
+          @'
+          import os
+          import subprocess
+          from pathlib import Path
+
+          from PIL import Image
+
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          executable = Path(os.environ["PICASAPY_INSTALLED_EXE"])
+          cases = ("clean", "existing_faces")
+          for case in cases:
+              root = runner_temp / f"picasapy-installed-startup-{case}"
+              library = root / "library"
+              profile = root / "profile"
+              library.mkdir(parents=True, exist_ok=True)
+              profile.mkdir(parents=True, exist_ok=True)
+              if case == "existing_faces":
+                  Image.new("RGB", (640, 480), "red").save(library / "a.jpg", "JPEG")
+                  (library / ".picasa.ini").write_text(
+                      "[Contacts2]\n8e62b2035b74b477=Ada Lovelace;;\n\n"
+                      "[a.jpg]\nfaces=rect64(3f845bcb59418507),8e62b2035b74b477\n",
+                      encoding="utf-8",
+                  )
+              env = os.environ.copy()
+              env.update(
+                  {
+                      "USERPROFILE": str(profile),
+                      "APPDATA": str(profile / "AppData" / "Roaming"),
+                      "LOCALAPPDATA": str(profile / "AppData" / "Local"),
+                      "TEMP": str(profile / "Temp"),
+                      "TMP": str(profile / "Temp"),
+                      "PICASAPY_LANG": "en",
+                  }
+              )
+              try:
+                  result = subprocess.run(
+                      [str(executable), "--indulasellenorzes", str(library)],
+                  env=env,
+                  capture_output=True,
+                  text=True,
+                  encoding="utf-8",
+                  errors="replace",
+                  timeout=90,
+                      check=False,
+                  )
+              except subprocess.TimeoutExpired:
+                  raise SystemExit(f"{case}: a telepített program indulása időtúllépésbe futott")
+              output = result.stdout + result.stderr
+              print(output)
+              logs = list(profile.rglob("errorlog.txt"))
+              if len(logs) != 1:
+                  raise SystemExit(f"{case}: nem jött létre egyértelmű telepített hibanapló")
+              log = logs[0].read_text(encoding="utf-8")
+              if result.returncode != 0 or "A főablak a splash után megjelent" not in log:
+                  raise SystemExit(f"{case}: a telepített főablak nem jelent meg a splash után")
+              print(f"{case}: a telepített főablak megjelent a splash után")
+          '@ | python -
 
       - name: A telepítő feltöltése a kiadásra
         if: github.event_name != 'pull_request'

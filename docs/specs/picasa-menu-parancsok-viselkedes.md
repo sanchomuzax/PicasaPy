@@ -369,12 +369,20 @@ azonosítók a `[+0x08]`…`[+0x16]` mezőkben.
 ⇒ **fájlokat** tesz a vágólapra (nem képadatot), és a Kivágás/Másolás
 különbségét a `Preferred DropEffect` hordozza. Jegy: **#1526**.
 
-### 20. A hat színcímke — `ID_S_RED` · `ID_S_ORANGE` · `ID_S_YELLOW` · `ID_S_GREEN` · `ID_S_BLUE` · `ID_S_PURPLE`
+### 20. A Keresés… almenü hét színkeresője — hat `ID_S_*` és `ID_VIEW_BW`
 
 Névtér: **`eMenuTools`** (az **Eszközök** menü, nem a Nézet).
 
-Mind a hat ugyanazt hívja (`0x005ccc41`–`0x005ccca2`), más tokennel:
+A `Searchfor` rekord hét gyerekre mutat: a mutató `0x00d6e708`
+(`0x0055c36f`), a darabszám **7** (`0x0055c379`). Az első hat elem a
+`ID_S_RED` · `ID_S_ORANGE` · `ID_S_YELLOW` · `ID_S_GREEN` · `ID_S_BLUE` ·
+`ID_S_PURPLE`; mind ugyanazt a kezelőt hívja (`0x005ccc41`–`0x005ccca2`),
+más tokennel:
 `mov edx, "color:<szín>"; call 0x0065b7b0`.
+
+| gyerek | feliratkulcs / alapfelirat | parancs | hatás |
+|---|---|---:|---|
+| 7. | `eMenuView::ID_VIEW_BW` / `&Black and White` (`&Fekete-fehér`) | `0x9da9` | `color:black` |
 
 A `0x0065b7b0` (131 b) **hat lépése**:
 
@@ -384,9 +392,15 @@ A `0x0065b7b0` (131 b) **hat lépése**:
 5. `SendMessage(mező, 0xB1 = EM_SETSEL, 0xFFFF, 0xFFFF)` — kurzor a végére (`0x0065b81d`)
 6. `0x0065b840(this,0,0,1)` — a lista újraépítése
 
-⇒ **A menüpont beírja a tokent a keresőmezőbe és elsüti a keresést** —
-nincs külön szűrő-modell. Van **hetedik** kezelő (`color:black`,
-`0x005ccca7`), de **nincs hozzá menüfelirat**. Jegy: **#1399**.
+⇒ A hét menüpont beírja a saját `color:<szín>` tokenjét a keresőmezőbe és
+elsüti a keresést; nincs külön szűrő-modell. A hetedik rekord a
+`0x00d6e780` címen áll, parancsa `0x9da9`. A diszpécser táblája
+(`0x005cde04`, `0x005cdc30`) ezt a parancsot a `0x005ccca7` kezelőre
+irányítja; az `0xc950fc` címen tárolt `color:black` tokent adja át a közös
+`0x0065b7b0` keresőmező-kezelőnek. **Helyesbítés (#4642):** a korábbi
+„nincs hozzá menüfelirat” állítás téves volt; a bináris `ID_VIEW_BW`
+feliratkulcsa és `&Black and White` alapfelirata ezen a rekordon is jelen
+van. Jegy: **#1399**, kutatási helyesbítés: **#4642**.
 
 ### 21. A mentés-család — `ID_FILE_SAVEAS` · `ID_FILE_SAVEACOPY` · `ID_FILE_EXIT`
 
