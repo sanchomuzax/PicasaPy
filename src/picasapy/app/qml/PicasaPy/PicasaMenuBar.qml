@@ -465,8 +465,8 @@ MenuBar {
     signal addToScreensaverRequested()
     signal configureScreensaverRequested()
     signal configurePhotoViewerRequested()
-    //: #3460: Mappa ▸ Leírás szerkesztése… — ugyanaz az `album.fen`
-    //: párbeszéd, mint a mappa helyi menüjéé (#422), a megnyitott mappára
+    //: #3460/#4630: Mappa ▸ Leírás szerkesztése… és Album ▸ Albumleírás…
+    //: ugyanazt az `album.fen` párbeszédet nyitja a megfelelő nézettel
     signal editFolderDescriptionRequested()
     // #24: Időrend nézet (Ctrl+5)
     signal timelineRequested()
@@ -1700,13 +1700,14 @@ MenuBar {
         }
     }
     PicasaMenu {
-        title: qsTr("F&older")
+        title: bar.currentAlbumToken !== "" ? qsTr("&Album") : qsTr("F&older")
         MenuItem {
             objectName: "menuFolderEditDescription"
-            text: qsTr("&Edit Description...")
-            // album vagy személy nézetében nincs „a" mappa, amire vonatkozna
-            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
-                     && bar.currentPersonName === ""
+            text: bar.currentAlbumToken !== ""
+                ? qsTr("&Edit Album Description...")
+                : qsTr("&Edit Description...")
+            enabled: bar.currentAlbumToken !== ""
+                || (bar.currentFolder !== "" && bar.currentPersonName === "")
             onTriggered: bar.editFolderDescriptionRequested()
         }
         MenuItem {
