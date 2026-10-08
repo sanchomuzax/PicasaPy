@@ -97,6 +97,11 @@ PicasaMenu {
         onTriggered: {
             if (menu.autoCompleteController)
                 menu.autoCompleteController.setEmailAutocompleteEnabled(checked)
+            // #2377: a kattintás felülírja a kötést — vissza kell állítani.
+            checked = Qt.binding(function () {
+                return menu.autoCompleteController
+                       && menu.autoCompleteController.emailAutocompleteEnabled === true
+            })
         }
     }
 }
