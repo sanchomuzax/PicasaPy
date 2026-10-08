@@ -5809,6 +5809,15 @@ honnan veszi a korábbi címeket) tehát NINCS MEG** — a megszerzés útja: a
 ⇒ **A tiltási feltételek mind a hat tiltható tételnél egyeznek** — ezt eddig senki nem
 mérte, most igazolt. Egyedül az **Automatikus kitöltés** üres nálunk.
 
+### 23.7 Megvalósítás (#4636, 2026-10-08)
+
+A 23.6 táblázat a 2026-09-06-i állapotot rögzíti. A #4636 ezt követően
+bekötötte a pipás menütételt az e-mail címzett mezőbe: a beállítás a
+`mail/EmailAutocomplete` QSettings-kulcsban marad meg, alapértéke `true`.
+Az eredeti mérés szerint ez a beállítás a pipát és az értéket tárolja, a
+javaslómotort nem vezérli; a keresőmező külön `SearchSuggestions` útja ezért
+független marad.
+
 ## 24. adag (2026-09-06) — az automatikus kiegészítés FORRÁSA, és a kapcsoló, amit SENKI NEM OLVAS
 
 *A 23. adag kimérte, mit **kapcsol** az `ID_AUTOCOMPLETE` és hova menti; nyitva
