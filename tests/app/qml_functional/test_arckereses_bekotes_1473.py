@@ -386,6 +386,9 @@ class TestCsoportositas:
     def test_a_csoportosito_gomb_lenyomatot_szamol(self, qt_app, tmp_path):
         lenyomatolo = _HamisLenyomatolo()
         vezerlo = _vezerlo(tmp_path, kepszam=2, lenyomatolo=lenyomatolo)
+        # A teszt a kézi gombot vizsgálja; a #4619 szerinti automatikus
+        # csoportosítást az Enable suggestions kikapcsolásával kapcsoljuk ki.
+        vezerlo.setSuggestionsEnabled(False)
         parbeszed = _parbeszed(qt_app, vezerlo)
 
         _kattint(_elem(parbeszed, "faceScanStartButton"), qt_app)
@@ -408,8 +411,83 @@ class TestCsoportositas:
             "a gomb nem indította el a lenyomat-számítást"
         )
 
+    @pytest.mark.parametrize("magassag_eltolas", [-5, 0, 5])
+    def test_a_kereses_utan_kattintas_nelkul_csoportosit(
+        self, qt_app, tmp_path, monkeypatch, magassag_eltolas
+    ):
+        """#4619: a valódi Keresés gomb után automatikusan lefut a 2. lépés.
+
+        A küszöbök és az Enable suggestions állapot ugyanúgy a vezérlő
+        beállításaiból érkezik, mint a kézi csoportosító gombnál.
+        """
+        import picasapy.app.face_scan_controller as controller_module
+        from picasapy.faces.clustering import step_to_threshold
+        from picasapy.index import face_groups, open_index
+
+        lenyomatolo = _HamisLenyomatolo()
+        vezerlo = _vezerlo(tmp_path, kepszam=2, lenyomatolo=lenyomatolo)
+        vezerlo.setSuggestionsEnabled(True)
+        vezerlo.setSuggestionThreshold(90)
+        vezerlo.setClusterThreshold(75)
+        eredeti_csoportositas = controller_module.group_unnamed_faces
+        kapott_beallitasok = []
+
+        def mer_csoportositas(conn, **kwargs):
+            kapott_beallitasok.append(kwargs.copy())
+            return eredeti_csoportositas(conn, **kwargs)
+
+        monkeypatch.setattr(controller_module, "group_unnamed_faces", mer_csoportositas)
+        befejezett = []
+        vezerlo.embeddingFinished.connect(lambda *args: befejezett.append(args))
+        parbeszed = _parbeszed(qt_app, vezerlo)
+        parbeszed.setProperty(
+            "height", int(parbeszed.property("height")) + magassag_eltolas
+        )
+        qt_app.processEvents()
+
+        _kattint(_elem(parbeszed, "faceScanStartButton"), qt_app)
+        _var(
+            qt_app,
+            lambda: bool(befejezett),
+            masodperc=5.0,
+            uzenet="a keresés után, külön kattintás nélkül nem indult csoportosítás",
+        )
+        assert vezerlo.waitForBackgroundWorkers(10.0)
+
+        assert lenyomatolo.hivasok == 2
+        assert kapott_beallitasok == [
+            {
+                "suggest_threshold": step_to_threshold(90),
+                "cluster_threshold": step_to_threshold(75),
+                "named_centroids": None,
+            }
+        ]
+        with open_index(tmp_path / "index.db") as conn:
+            groups = face_groups(conn)
+        assert len(groups) == 1
+        assert groups[0].face_count == 2
+
+    def test_kikapcsolt_javaslatnal_nem_indul_automatikus_csoportositas(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        vezerlo = _vezerlo(tmp_path, kepszam=1)
+        vezerlo.setSuggestionsEnabled(False)
+        csoportositasok = []
+        monkeypatch.setattr(
+            vezerlo, "computeEmbeddings", lambda: csoportositasok.append(True)
+        )
+
+        vezerlo._auto_group_after_scan(1, 1)
+
+        assert csoportositasok == [], (
+            "kikapcsolt Enable suggestions mellett automatikus csoportosítás indult"
+        )
+
     def test_a_csoportositas_megszakithato(self, qt_app, tmp_path):
         vezerlo = _vezerlo(tmp_path, kepszam=2)
+        # A teszt a kézi gombot vizsgálja, ezért nem indítunk előtte
+        # automatikus csoportosítást.
+        vezerlo.setSuggestionsEnabled(False)
         parbeszed = _parbeszed(qt_app, vezerlo)
 
         _kattint(_elem(parbeszed, "faceScanStartButton"), qt_app)

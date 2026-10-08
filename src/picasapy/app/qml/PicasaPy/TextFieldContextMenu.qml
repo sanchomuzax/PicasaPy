@@ -7,16 +7,17 @@ import QtQuick.Controls
 // Forrás: `docs/specs/ui-audit-menus.md` K.9 — Visszavonás · Kivágás ·
 // Másolás · Beillesztés · Törlés · Az összes kijelölése · Automatikus
 // kitöltés. Az eredetiben MINDEN szövegmező alatt ott van; nálunk eddig
-// egyetlen mezőben sem volt jobbklikk-menü.
+// egyetlen mezőben sem volt jobbklikk-menü. A kitöltéskapcsoló csak ott
+// látszik, ahol a címzett-kiegészítéshez tartozik (#4636).
 //
 // A #422 viselkedési szabályai közül kettő itt is érvényes:
 //  * az inaktív tétel LÁTSZIK, szürkén — nem tűnik el (a menü magassága
 //    állandó marad, az izommemória működik);
 //  * a csoportosítást elválasztók adják (visszavonás · vágólap · kijelölés).
 //
-// Az „Automatikus kitöltés" a Picasa címsor-kiegészítése; nálunk nincs
-// mögötte réteg, ezért `PicasaMenuItem` helyfoglalóként jelenik meg — így
-// ránézésre is látszik, hogy a helye megvan, de még nem működik (#416).
+// Az „Automatikus kitöltés" csak a címzett mezőn jelenik meg: az eredeti
+// `Address::ID_AUTOCOMPLETE` a `Preferences\\EmailAutocomplete` beállítást
+// tárolja, de a javaslómotort nem kapcsolja ki (#4636).
 //
 // Használat: a mezőre tett MouseArea (jobb gomb) hívja a `popupFor(mező)`-t.
 PicasaMenu {
@@ -25,6 +26,8 @@ PicasaMenu {
 
     //: a mező, amire a menü vonatkozik — a `popupFor()` állítja be
     property var target: null
+    property bool autoCompleteSupported: false
+    property var autoCompleteController: null
 
     readonly property bool hasSelection: menu.target
         && menu.target.selectedText !== undefined
@@ -82,8 +85,23 @@ PicasaMenu {
         enabled: menu.target && menu.target.length > 0
         onTriggered: menu.target.selectAll()
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "textMenuAutoComplete"
         text: qsTr("Auto-Complete")
+        visible: menu.autoCompleteSupported
+                 && menu.autoCompleteController !== null
+        enabled: visible
+        checkable: true
+        checked: menu.autoCompleteController
+                 && menu.autoCompleteController.emailAutocompleteEnabled === true
+        onTriggered: {
+            if (menu.autoCompleteController)
+                menu.autoCompleteController.setEmailAutocompleteEnabled(checked)
+            // #2377: a kattintás felülírja a kötést — vissza kell állítani.
+            checked = Qt.binding(function () {
+                return menu.autoCompleteController
+                       && menu.autoCompleteController.emailAutocompleteEnabled === true
+            })
+        }
     }
 }

@@ -1004,6 +1004,19 @@ ApplicationWindow {
         onActivated: window.fokuszAKeresore()
     }
     Shortcut {
+        objectName: "refreshCurrentFolderShortcut"
+        sequence: "F5"
+        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+                 && documentTabStrip.libraryActive
+                 && controller && controller.currentFolder.length > 0
+        //: #4697: a mért eredeti F5-ág a mappa frissítési jelzőjét állítja
+        //: (`picasa-gyorsbillentyuk.md`, 10.10); az idle út utána frissíti
+        //: a listát. A mappapontos szinkron a lemez változásait is felveszi,
+        //: majd a syncFinished meglévő útja újratölti a nézetet és a
+        //: keresési állapotot. Ez nem teljes újraolvasás (`controller.rescan()`).
+        onActivated: controller.resyncFolder(controller.currentFolder)
+    }
+    Shortcut {
         objectName: "tagsPanelAltShortcut"
         sequence: "Ctrl+K"
         enabled: window._konyvtariGyorsbillentyuEngedelyezve
@@ -1589,6 +1602,8 @@ ApplicationWindow {
         // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
         onReturnToLibraryRequested: photoViewer.kerBezaras()
         onUnhideRequested: window.unhideHiddenSelection()
+        onWriteXmpFacesDialogRequested:
+            xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
         onResetFacesRequested: resetFacesForPaths(window.photoActionPaths())
         // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
         // frissítjük, mert az index nem jelzi a `textactive=` változását.
@@ -3520,6 +3535,20 @@ ApplicationWindow {
                 //: `IBackgroundNotify::canceltitle` — az eredeti szövege (#3573)
                 title: qsTr("Want to Cancel?")
                 onConfirmed: controller.cancelActivity()
+            }
+        }
+    }
+
+    //: #4634: halasztott (#1720) — csak az Eszközök menüpontra épül fel.
+    DeferredDialog {
+        id: xmpFacesWriteDialog
+        objectName: "xmpFacesWriteDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            XmpFacesWriteDialog {
+                onWriteRequested: function (scope, rows) {
+                    if (controller) controller.writeFacesToXmp(scope, rows)
+                }
             }
         }
     }

@@ -28,21 +28,35 @@ MouseArea {
     //: a mező, amire a menü vonatkozik (alapból a szülő)
     property var field: parent
 
+    //: csak azok a mezők adják tovább a kapcsolót, amelyeknél az eredeti
+    //: Picasa `Address::ID_AUTOCOMPLETE` parancsa elérhető
+    property bool autoCompleteSupported: false
+    property var autoCompleteController: null
+
     //: az első jobbklikkre létrejövő menü (addig `null`) — az őr-teszt
     //: ezen méri, hogy induláskor tényleg nincs példány
     property var contextMenu: null
 
     anchors.fill: parent
     acceptedButtons: Qt.RightButton
-    // a kurzor-alak a mezőé marad (a MouseArea alapból nem állítja)
-    onClicked: {
+
+    function createContextMenu() {
         if (area.contextMenu === null)
             area.contextMenu = menuComponent.createObject(area)
+        return area.contextMenu
+    }
+
+    // a kurzor-alak a mezőé marad (a MouseArea alapból nem állítja)
+    onClicked: {
+        area.createContextMenu()
         area.contextMenu.popupFor(area.field)
     }
 
     Component {
         id: menuComponent
-        TextFieldContextMenu { }
+        TextFieldContextMenu {
+            autoCompleteSupported: area.autoCompleteSupported
+            autoCompleteController: area.autoCompleteController
+        }
     }
 }
