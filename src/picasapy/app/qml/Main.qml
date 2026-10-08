@@ -1823,10 +1823,16 @@ ApplicationWindow {
         onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.photoActionIndex())
         onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.photoActionRows())
         onSlideshowRequested: window.startSlideshow(-1)
-        // #3460: Mappa ▸ Leírás szerkesztése… — a helyi menüével azonos párbeszéd
+        // #3460/#4630: a Mappa/Album menü a megnyitott hely leírását szerkeszti
         currentFolder: controller ? controller.currentFolder : ""
-        onEditFolderDescriptionRequested:
-            if (controller) folderPane.openFolderDescription(controller.currentFolder)
+        onEditFolderDescriptionRequested: {
+            if (controller) {
+                if (controller.currentAlbumToken !== "")
+                    folderPane.openAlbumDescription(controller.currentAlbumToken)
+                else
+                    folderPane.openFolderDescription(controller.currentFolder)
+            }
+        }
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.valtsFiokLapot("tags")
         peoplePanelOpen: window.peoplePanelOpen
