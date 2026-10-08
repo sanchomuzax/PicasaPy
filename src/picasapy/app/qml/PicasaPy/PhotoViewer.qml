@@ -668,6 +668,21 @@ Rectangle {
 
     function show(index) { currentIndex = index; forceActiveFocus() }
 
+    // A Kép menü egyes egylépéses javításai szerkesztőben a megfelelő
+    // panelfület nyitják meg; a könyvtárnézetben a kijelölésre futnak.
+    function selectMenuEffect(name) {
+        if (name === "autolight" || name === "autocolor"
+                || name === "enhance") {
+            editorPanel.selectTab(0)
+            return true
+        }
+        if (name === "unsharp" || name === "warm" || name === "grain2") {
+            editorPanel.selectTab(2)
+            return true
+        }
+        return false
+    }
+
     // Vágás alkalmazása a kijelölésből. advance=true: Enter-flow —
     // következő kép, vágó-mód megtartva; false: Alkalmaz gomb — a panel
     // visszaáll az eszközrácsra (Picasa-viselkedés).
