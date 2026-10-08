@@ -62,10 +62,11 @@ Rectangle {
         anchors.leftMargin: 16
         anchors.right: parent.right
         anchors.rightMargin: 8
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.top: parent.top
+        anchors.topMargin: 7
         text: row.personName
         elide: Text.ElideRight
-        font.pixelSize: Theme.fontSize
+        font.pixelSize: 16
         color: Theme.panelSelectionText
     }
 
@@ -90,7 +91,7 @@ Rectangle {
         id: ignoreButton
         objectName: "peoplePanelIgnoreX_"
                     + (row.unnamedFace ? row.faceId : row.personName)
-        visible: row.unnamedFace
+        visible: true
         anchors.top: faceImage.top
         anchors.right: faceImage.right
         width: 13
@@ -111,6 +112,7 @@ Rectangle {
             id: ignoreMouse
             anchors.fill: parent
             anchors.margins: -3
+            enabled: row.unnamedFace
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: row.ignoreRequested(row.faceId)

@@ -57,6 +57,8 @@ Rectangle {
     property bool unnamedAlbumMode: false
     property bool unnamedGrouped: true
     property int pendingIgnoreFaceId: -1
+    property int pendingNewFaceId: -1
+    property string pendingNewFaceName: ""
 
     signal personChosen(string name)
     signal closeRequested()
@@ -96,6 +98,45 @@ Rectangle {
         if (assigned && typeof controller !== "undefined" && controller)
             controller.refreshCollections()
         return assigned
+    }
+
+    function _hasPersonNamed(name) {
+        var ctl = typeof controller !== "undefined" ? controller : null
+        if (!ctl)
+            return false
+        var entries = ctl.peopleManagerContacts()
+        var wanted = String(name).trim().toLocaleLowerCase()
+        for (var i = 0; i < entries.length; ++i) {
+            if (String(entries[i].name).trim().toLocaleLowerCase() === wanted)
+                return true
+        }
+        return false
+    }
+
+    function _openPendingPersonDialog() {
+        if (!peopleManagerLoader.item || panel.pendingNewFaceId < 0)
+            return
+        peopleManagerLoader.item.controller = typeof controller !== "undefined"
+            ? controller : null
+        peopleManagerLoader.item.faceScanController = panel.faceScanController
+        peopleManagerLoader.item.openForFace(
+            panel.pendingNewFaceName, panel.pendingNewFaceId)
+    }
+
+    function nameFaceFromPanel(faceId, name) {
+        var cleanName = String(name || "").trim()
+        if (faceId < 0 || !cleanName)
+            return
+        if (panel._hasPersonNamed(cleanName)) {
+            panel.assignNameToFace(faceId, cleanName)
+            return
+        }
+        panel.pendingNewFaceId = faceId
+        panel.pendingNewFaceName = cleanName
+        if (peopleManagerLoader.status === Loader.Ready)
+            panel._openPendingPersonDialog()
+        else
+            peopleManagerLoader.active = true
     }
 
     function requestIgnoreFace(faceId) {
@@ -186,7 +227,7 @@ Rectangle {
                 faceId: modelData.faceId
                 photoUrl: modelData.thumbUrl
                 onNameSubmitted: function(id, name) {
-                    panel.assignNameToFace(id, name)
+                    panel.nameFaceFromPanel(id, name)
                 }
                 onIgnoreRequested: function(id) {
                     panel.requestIgnoreFace(id)
@@ -257,6 +298,25 @@ Rectangle {
                 objectName: "peoplePanelIgnoreDontAskCheck"
                 text: qsTr("Don't ask again, always ignore")
                 font.pixelSize: Theme.fontSize
+            }
+        }
+    }
+
+    Loader {
+        id: peopleManagerLoader
+        objectName: "peoplePanelPeopleManagerLoader"
+        active: false
+        source: Qt.resolvedUrl("PeopleManagerDialog.qml")
+        onLoaded: panel._openPendingPersonDialog()
+        onItemChanged: {
+            if (item) {
+                item.controller = typeof controller !== "undefined"
+                    ? controller : null
+                item.faceScanController = panel.faceScanController
+                item.closed.connect(function() {
+                    panel.pendingNewFaceId = -1
+                    panel.pendingNewFaceName = ""
+                })
             }
         }
     }

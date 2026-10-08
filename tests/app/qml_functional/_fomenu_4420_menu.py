@@ -434,8 +434,10 @@ def _betoltott_feluleti_objektumok(ablak):
     """Adja vissza a nézet objektumait a már aktív DeferredDialogokkal együtt."""
     objektumok = [ablak, *ablak.findChildren(QObject)]
     for masik in QGuiApplication.allWindows():
-        if masik is not ablak:
-            objektumok.extend((masik, *masik.findChildren(QObject)))
+        # A CI-n épp bezáruló ablak helyén néha QMetaObject jön vissza.
+        if masik is ablak or not isinstance(masik, QObject):
+            continue
+        objektumok.extend((masik, *masik.findChildren(QObject)))
 
     eredmeny = []
     sor = list(objektumok)
