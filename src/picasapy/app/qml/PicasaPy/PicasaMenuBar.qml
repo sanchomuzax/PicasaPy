@@ -249,6 +249,12 @@ MenuBar {
     // NEM a `photoActionsEnabled`-ből élnek — az a rácsbeli kijelöléshez
     // kötött 27 fotó-műveletet vezérli, és azoknak tényleg kijelölés kell.
     property bool createActionsEnabled: false
+    // #4633: az Emberek-album filmhez nem kell kijelölt kép; a People-modell
+    // csak olyan személyalbumokat tartalmaz, amelyeknek van alsó képlistája.
+    readonly property bool hasPeopleAlbumMovieSources: {
+        var people = bar.ctl ? bar.ctl.people : []
+        return people !== null && people !== undefined && people.length > 0
+    }
     // #444: van-e a kijelölésben MÁR mentett kép — enélkül a
     // „Visszaállítás" és az „Utolsó mentés visszavonása" értelmetlen
     property bool hasSavedBackup: false
@@ -392,6 +398,8 @@ MenuBar {
     signal movieRequested()
     //: `eMenuCreateMovie::ID_FACES` — a kijelölt képeket adja át az arcfilm módnak.
     signal faceMovieRequested()
+    //: `eMenuCreateMovie::ID_FACESRANDOM` — a nem üres Emberek-albumokat adja át.
+    signal peopleAlbumsMovieRequested()
     //: #3503: Létrehozás ▸ Ajándék CD készítése… — a kiadás-panel
     signal giftCdRequested()
     signal locateRequested()
@@ -2093,8 +2101,9 @@ MenuBar {
             objectName: "menuCreateMovieMenu"
             title: qsTr("&Movie")
             // #922: az ALMENÜ is kapuz — a benne lévő tétel hiába él, ha a
-            // szülő szürke. A film ugyanúgy a tálcáról is dolgozik (#455).
-            enabled: bar.createActionsEnabled
+            // szülő szürke. A People-filmnek nincs kijelölési előfeltétele
+            // (#4633), a többi filmút továbbra is a tálcáról dolgozik (#455).
+            enabled: bar.createActionsEnabled || bar.hasPeopleAlbumMovieSources
             MenuItem {
                 objectName: "menuCreateMovie"
                 text: qsTr("New Movie...")
@@ -2106,6 +2115,12 @@ MenuBar {
                 text: qsTr("From Faces in Selection...")
                 enabled: bar.libraryPhotoActionsEnabled
                 onTriggered: bar.faceMovieRequested()
+            }
+            MenuItem {
+                objectName: "menuCreateMovieFromPeopleAlbums"
+                text: qsTr("From People Albums...")
+                enabled: bar.hasPeopleAlbumMovieSources
+                onTriggered: bar.peopleAlbumsMovieRequested()
             }
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
