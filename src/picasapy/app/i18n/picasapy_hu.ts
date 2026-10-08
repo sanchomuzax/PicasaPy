@@ -10065,6 +10065,27 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
             <translation>Szöveg beillesztése</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
+            <source>Are you sure you want to replace the existing caption with the contents of the clipboard?
+(This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_REPLACE_CAPTION</extracomment>
+            <translation>Biztosan lecseréli a jelenlegi képfeliratot a vágólap tartalmára?
+(Ez a művelet nem vonható vissza)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="85" />
+            <source>Replace</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Csere</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="91" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mégse</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
             <source>Show Edit Controls</source>
             <extracomment>picasapy-origin: picasa

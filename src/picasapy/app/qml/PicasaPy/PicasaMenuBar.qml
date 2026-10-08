@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 // A Picasa 3.9 teljes menüszerkezete (a magyar 3.9-ből dokumentálva,
 // ld. docs/specs/ui-audit-menus.md, #324/#327). A még nem implementált
@@ -46,6 +47,51 @@ MenuBar {
     // ez csak az elrendezés része, ezért nem interaktív.
     background: Rectangle {
         color: Theme.canvasBg
+        Connections {
+            target: bar.ctl
+            function onCaptionPasteConfirmationRequested() {
+                pasteCaptionReplaceDialog.open()
+            }
+        }
+        Dialog {
+            id: pasteCaptionReplaceDialog
+            objectName: "pasteCaptionReplaceDialog"
+            modal: true
+            focus: true
+            anchors.centerIn: parent ? Overlay.overlay : undefined
+            onAccepted: if (bar.ctl) bar.ctl.confirmCaptionPaste()
+            onRejected: if (bar.ctl) bar.ctl.cancelCaptionPaste()
+
+            ColumnLayout {
+                spacing: 12
+
+                Text {
+                    objectName: "pasteCaptionReplaceMessage"
+                    Layout.preferredWidth: 420
+                    text: qsTr("Are you sure you want to replace the existing caption with the contents of the clipboard?\n(This operation is not undoable)")
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 8
+
+                    PicasaButton {
+                        objectName: "pasteCaptionReplaceButton"
+                        text: qsTr("Replace")
+                        accent: Theme.picasaGreen
+                        onClicked: pasteCaptionReplaceDialog.accept()
+                    }
+                    PicasaButton {
+                        objectName: "pasteCaptionCancelButton"
+                        text: qsTr("Cancel")
+                        onClicked: pasteCaptionReplaceDialog.reject()
+                    }
+                }
+            }
+        }
         Rectangle {
             anchors.bottom: parent.bottom
             width: parent.width; height: 1
@@ -1724,17 +1770,21 @@ MenuBar {
             onTriggered: bar.webExportRequested()
         }
         MenuSeparator {}
-        // #1595: a négy tétel a MEGNYITOTT mappára hat. Eddig mind néma
-        // helyfoglaló volt, pedig a motorjuk régóta megvan — csak a helyi
-        // menüből lehetett elérni őket, a Mappa menüből nem.
+        // #1595/#4620: a négy tétel a megnyitott mappára hat. Album- és
+        // személynézetben a controller megtartja a korábbi mappát, ezért
+        // ilyenkor ne lehessen a Mappa menüből arra műveletet indítani.
         MenuItem {
             objectName: "menuFolderLocate"
             text: qsTr("Locate on Disk") + "\tCtrl+Enter"
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderLocateRequested()
         }
         MenuItem {
             objectName: "menuFolderRemoveFromPicasa"
             text: qsTr("&Remove from Picasa...")
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderRemoveFromPicasaRequested()
         }
         MenuSeparator {}
@@ -1742,11 +1792,15 @@ MenuBar {
         MenuItem {
             objectName: "menuFolderMove"
             text: qsTr("&Move...")
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderMoveRequested()
         }
         MenuItem {
             objectName: "menuFolderDelete"
             text: qsTr("&Delete...")
+            enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
+                     && bar.currentPersonName === ""
             onTriggered: bar.folderDeleteRequested()
         }
     }

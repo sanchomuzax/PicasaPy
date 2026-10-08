@@ -529,8 +529,9 @@ Rectangle {
     function _abMasikSort() {
         if (viewer.layoutMode !== "ab") return viewer.currentIndex
         if (viewer.masodikIndex >= 0) return viewer.masodikIndex
-        return viewer.hasNext() ? viewer.currentIndex + 1
-                                : Math.max(0, viewer.currentIndex - 1)
+        return viewer._vanSzomszed(viewer.currentIndex, 1)
+            ? viewer.currentIndex + 1
+            : Math.max(0, viewer.currentIndex - 1)
     }
 
     readonly property real zoomFactor: viewer.skalaErtekbol(viewer.zoomValue)
@@ -1359,26 +1360,39 @@ Rectangle {
     // A lapozás a #84 óta a modell mappán-belüli lépését használja: a
     // rács (feed) nézet mappaátlépő listáin (csillag-szűrő, keresés) sem
     // ugorhatunk át a szomszéd mappába — a folderNeighbor a saját mappa
-    // határán a jelenlegi indexet adja vissza, tehát nem lép tovább.
+    // határán a jelenlegi indexet adja vissza, tehát nem lép tovább. #4525:
+    // kettős nézetben a „Kijelölve” oldalt léptetjük, a másik sort hagyjuk.
     function next() {
         if (!photosModel) return
-        currentIndex = photosModel.folderNeighbor(currentIndex, 1)
+        var sor = viewer._kijeloltSort()
+        if (sor < 0) return
+        var cel = photosModel.folderNeighbor(sor, 1)
+        if (viewer.layoutMode === "ab" && viewer.aktivOldal === "jobb")
+            viewer.masodikIndex = cel
+        else
+            viewer.currentIndex = cel
     }
     function previous() {
         if (!photosModel) return
-        currentIndex = photosModel.folderNeighbor(currentIndex, -1)
+        var sor = viewer._kijeloltSort()
+        if (sor < 0) return
+        var cel = photosModel.folderNeighbor(sor, -1)
+        if (viewer.layoutMode === "ab" && viewer.aktivOldal === "jobb")
+            viewer.masodikIndex = cel
+        else
+            viewer.currentIndex = cel
     }
     // a ◀/▶ gombok (és Keys.onLeft/Right) enabled-je is a mappahatárt
     // tükrözi: nincs hova lépni, ha a folderNeighbor helyben marad
+    function _vanSzomszed(sor, irany) {
+        if (!photosModel || sor < 0) return false
+        return photosModel.folderNeighbor(sor, irany) !== sor
+    }
     function hasNext() {
-        return photosModel
-            ? photosModel.folderNeighbor(currentIndex, 1) !== currentIndex
-            : false
+        return viewer._vanSzomszed(viewer._kijeloltSort(), 1)
     }
     function hasPrevious() {
-        return photosModel
-            ? photosModel.folderNeighbor(currentIndex, -1) !== currentIndex
-            : false
+        return viewer._vanSzomszed(viewer._kijeloltSort(), -1)
     }
     // Egérgörgős lapozás (#77): a nagy nézőben a görgő a képek között
     // lép (Picasa-viselkedés). A touchpad kis deltáit egy teljes
@@ -2125,10 +2139,11 @@ Rectangle {
                         ? viewer.editCtl.textHasPlacement : false
                     // #450: "Copy Caption" gomb — a kép model.revision-re
                     // is frissülő mentett feliratát tükrözi (a captionField
-                    // mintáját követve fent)
+                    // mintáját követve fent). #4525: kettős nézetben a
+                    // kijelölt oldal feliratát mutatja.
                     captionText: viewer.photosModel
                         ? (viewer.photosModel.revision,
-                           viewer.photosModel.captionAt(viewer.currentIndex))
+                           viewer.photosModel.captionAt(viewer._kijeloltSort()))
                         : ""
                     onTextDraftEdited: (content) => editController.setTextDraft(content)
                     onTextApplyRequested: {
@@ -4030,20 +4045,20 @@ Rectangle {
                         selectByMouse: true
                         text: viewer.photosModel
                             ? (viewer.photosModel.revision,
-                               viewer.photosModel.captionAt(viewer.currentIndex))
+                               viewer.photosModel.captionAt(viewer._kijeloltSort()))
                             : ""
 
                         function rebind() {
                             text = Qt.binding(function () {
                                 return viewer.photosModel
                                     ? (viewer.photosModel.revision,
-                                       viewer.photosModel.captionAt(viewer.currentIndex))
+                                       viewer.photosModel.captionAt(viewer._kijeloltSort()))
                                     : ""
                             })
                         }
 
                         onAccepted: {
-                            controller.setCaption(viewer.currentIndex, text)
+                            controller.setCaption(viewer._kijeloltSort(), text)
                             rebind()
                             viewer.forceActiveFocus()
                         }
@@ -4101,7 +4116,7 @@ Rectangle {
                         // műveletekre tartja fenn. (Az eredetiről ez NINCS
                         // mérve — saját döntés.)
                         onClicked: {
-                            controller.setCaption(viewer.currentIndex, "")
+                            controller.setCaption(viewer._kijeloltSort(), "")
                             captionField.rebind()
                         }
                     }
