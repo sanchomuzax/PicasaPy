@@ -312,7 +312,7 @@ sorozatból.
 | `0xd6e1d4` | Mappa/Album | Diavetítés megtekintése | `Ctrl+4` | `0x9c6d` |
 | `0xd6e274` | Mappa/Album | Indexképek nyomtatása… | `Ctrl+Shift+P` | `0x9c94` |
 | `0xd6e2b0` | Mappa/Album | Keresés a lemezen | `Ctrl+Enter` | `0x9cba` |
-| `0xd6e318` | Mappa/Album | Átnevezés… | `F2` | `0x9d4f` |
+| `0xd6e318` | Kép ▸ Csoportos szerkesztés | Átnevezés… | `F2` | `0x9d4f` |
 | `0xd6e340` | Kép | Forgatás jobbra | `Ctrl+R` | `0x9ca2` |
 | `0xd6e354` | Kép | Forgatás balra | `Ctrl+Shift+R` | `0x9ca3` |
 | `0xd6e498` | Kép | Megjelenítés és szerkesztés | `Ctrl+3` | `0x9ca0` |
@@ -457,7 +457,7 @@ származik. Ahol semmink sincs, ott **„nincs mérve"** áll.
 | `Ctrl+O` | Fájl felvétele a Picasába… | fájl(ok) felvétele az indexbe | soha | könyvtár | Fájl ▸ | fájlválasztó |
 | `Ctrl+M` | Importálás forrása… | importálás eszközről/mappából | soha | könyvtár | Fájl ▸ | Importálás képernyő |
 | `Ctrl+Shift+O` | Fájl(ok) megnyitása szerkesztőben | külső szerkesztő indítása | **kép-kijelölés nélkül** (a képernyőképen mappa-kijelölésnél szürke) | a kijelölt fájlok | Fájl ▸ · a kép helyi menüje („Fájl megnyitása") | külső alkalmazás nyílik |
-| `F2` | Átnevezés… | fájl/mappa/album átnevezése | nincs kijelölés | kijelölés | Fájl ▸ · Mappa ▸ | Átnevezés párbeszéd |
+| `F2` | Átnevezés… | kijelölt fájlok tömeges átnevezése (`rename.fen`) | **NINCS MEG: a tiltási feltétel** | fájlok (`rename.fen`: „file(s) selected for rename”) | Fájl ▸ · Kép ▸ Csoportos szerkesztés ▸ | fájlátnevező párbeszéd (`0x005e6710` → `0x00532ec0`) |
 | `Ctrl+S` | Mentés | a függő szerkesztések kiírása | **ha nincs mentetlen szerkesztés** (a képernyőképen szürke) | a kijelölt kép(ek) | Fájl ▸ · a kép helyi menüje | mentés-folyamatjelző |
 | `Ctrl+Shift+S` | Kép exportálása mappába… | méretezett másolat kiírása | nincs kép kijelölve | kijelölés | Fájl ▸ | Exportálás párbeszéd |
 | `Ctrl+Enter` | Keresés a lemezen | a fájl/mappa megmutatása az Intézőben | nincs kijelölés | kijelölés | Fájl ▸ · négy helyi menü | Intéző-ablak nyílik |
