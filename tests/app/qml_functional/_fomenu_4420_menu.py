@@ -29,14 +29,14 @@ _MENUK = (
 _MENU_UTVONAL_DARAB = {
     "View": 43,
     "Folder": 15,
-    "Picture": 19,
+    "Picture": 20,
     "Edit": 13,
     "Tools": 69,
     "Create": 8,
     "Help": 5,
     "File": 17,
 }
-assert sum(_MENU_UTVONAL_DARAB.values()) == 189
+assert sum(_MENU_UTVONAL_DARAB.values()) == 190
 _VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 30, "mappanezet": 13}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
