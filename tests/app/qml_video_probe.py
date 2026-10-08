@@ -9,9 +9,31 @@ AssertionError + exit != 0.
 
 import os
 import sys
+import time
 from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+
+def varj_kattintasablak_vegere(
+    app,
+    utolso_kattintas: float,
+    intervallum_ms: int,
+    *,
+    ora=None,
+    alvas=None,
+    tartalek_ms: int = 100,
+) -> None:
+    """Várja meg a Qt duplakattintási ablakának végét, eseményeket kezelve."""
+    ora = ora or time.monotonic
+    alvas = alvas or time.sleep
+    hatarido = utolso_kattintas + (intervallum_ms + tartalek_ms) / 1000
+    while True:
+        app.processEvents()
+        hatralevo = hatarido - ora()
+        if hatralevo <= 0:
+            return
+        alvas(min(0.05, hatralevo))
 
 
 def main(work_dir: Path) -> None:
@@ -32,6 +54,7 @@ def main(work_dir: Path) -> None:
     from support.jpeg_factory import make_jpeg
 
     app = QGuiApplication([])
+    utolso_kattintas_ideje = None
 
     lib = work_dir / "kepek"
     lib.mkdir()
@@ -122,6 +145,13 @@ def main(work_dir: Path) -> None:
     )
 
     def kattintas(item, dupla=False):
+        nonlocal utolso_kattintas_ideje
+        if utolso_kattintas_ideje is not None:
+            varj_kattintasablak_vegere(
+                app,
+                utolso_kattintas_ideje,
+                QGuiApplication.styleHints().mouseDoubleClickInterval(),
+            )
         pont = item.mapToScene(
             QPointF(item.property("width") / 2, item.property("height") / 2)
         ).toPoint()
@@ -130,8 +160,16 @@ def main(work_dir: Path) -> None:
         else:
             QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=pont)
         app.processEvents()
+        utolso_kattintas_ideje = time.monotonic()
 
     def naplozott_dupla_kattintas(item):
+        nonlocal utolso_kattintas_ideje
+        if utolso_kattintas_ideje is not None:
+            varj_kattintasablak_vegere(
+                app,
+                utolso_kattintas_ideje,
+                QGuiApplication.styleHints().mouseDoubleClickInterval(),
+            )
         pont = item.mapToScene(
             QPointF(item.property("width") / 2, item.property("height") / 2)
         ).toPoint()
@@ -174,6 +212,7 @@ def main(work_dir: Path) -> None:
         window.installEventFilter(esemenynaplozo)
         QTest.mouseDClick(window, Qt.MouseButton.LeftButton, pos=pont)
         app.processEvents()
+        utolso_kattintas_ideje = time.monotonic()
         window.removeEventFilter(esemenynaplozo)
         print(
             "SingleClickExit állóképes dupla kattintás után: "
