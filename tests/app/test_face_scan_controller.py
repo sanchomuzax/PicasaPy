@@ -181,9 +181,13 @@ class TestResetFacesForPhotos:
             mark_face_scan(conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size)
             conn.commit()
 
-        # Emulálja a Windows Path-alakok közti eltérést Linuxon: a QML
-        # előreperjeles útja ugyanazt a képet jelöli, mint a modell.
-        windows_path = ntpath.normpath(str(photo_path).replace("/", "\\"))
+        # Nyers, szándékosan kevert elválasztójú bemenet: a Path Windows alatt
+        # a str() során egységesítené, mielőtt a teszt ellenőrizhetné az eltérést.
+        windows_path = (
+            str(photo_path.parent).replace("\\", "/")
+            + "\\"
+            + photo_path.name
+        )
         assert windows_path != str(photo_path)
         monkeypatch.setattr(
             controller_module, "os", SimpleNamespace(path=ntpath), raising=False

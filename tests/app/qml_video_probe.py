@@ -24,7 +24,7 @@ def main(work_dir: Path) -> None:
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
     from picasapy.version import version_string
-    from PySide6.QtCore import QObject, QPointF, QSettings, Qt
+    from PySide6.QtCore import QEvent, QObject, QPointF, QSettings, Qt
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQml import QQmlApplicationEngine
     from PySide6.QtTest import QTest
@@ -131,6 +131,58 @@ def main(work_dir: Path) -> None:
             QTest.mouseClick(window, Qt.MouseButton.LeftButton, pos=pont)
         app.processEvents()
 
+    def naplozott_dupla_kattintas(item):
+        pont = item.mapToScene(
+            QPointF(item.property("width") / 2, item.property("height") / 2)
+        ).toPoint()
+
+        def naploz(nev):
+            def allapot(*_args):
+                print(
+                    "SingleClickExit állóképes dupla kattintás "
+                    f"MouseArea.{nev} után: "
+                    f"viewerOpen={window.property('viewerOpen')!r}, "
+                    "exitAfterDoubleClick="
+                    f"{item.property('exitAfterDoubleClick')!r}",
+                    flush=True,
+                )
+
+            return allapot
+
+        class QtEsemenyNaplozo(QObject):
+            def eventFilter(self, _cel, event):
+                nev = {
+                    QEvent.Type.MouseButtonPress: "press",
+                    QEvent.Type.MouseButtonRelease: "release",
+                    QEvent.Type.MouseButtonDblClick: "double-click",
+                }.get(event.type())
+                if nev is not None:
+                    print(
+                        "SingleClickExit Qt egéresemény érkezett "
+                        f"({nev}); viewerOpen="
+                        f"{window.property('viewerOpen')!r}, "
+                        "exitAfterDoubleClick="
+                        f"{item.property('exitAfterDoubleClick')!r}",
+                        flush=True,
+                    )
+                return False
+
+        item.pressed.connect(naploz("pressed"))
+        item.released.connect(naploz("released"))
+        item.doubleClicked.connect(naploz("doubleClicked"))
+        esemenynaplozo = QtEsemenyNaplozo(window)
+        window.installEventFilter(esemenynaplozo)
+        QTest.mouseDClick(window, Qt.MouseButton.LeftButton, pos=pont)
+        app.processEvents()
+        window.removeEventFilter(esemenynaplozo)
+        print(
+            "SingleClickExit állóképes dupla kattintás után: "
+            f"viewerOpen={window.property('viewerOpen')!r}, "
+            "exitAfterDoubleClick="
+            f"{item.property('exitAfterDoubleClick')!r}",
+            flush=True,
+        )
+
     def varj(feltetel, timeout_s=3.0):
         import time
 
@@ -192,7 +244,7 @@ def main(work_dir: Path) -> None:
     viewer.setProperty("zoomValue", 1.0)
     pan_area = child("viewerPanArea")
     assert varj(lambda: pan_area.property("enabled"))
-    kattintas(pan_area, dupla=True)
+    naplozott_dupla_kattintas(pan_area)
     assert varj(lambda: window.property("viewerOpen") is False), (
         "SingleClickExit mellett a dupla kattintás után újranyílt vagy "
         "nyitva maradt az állóképes néző"
