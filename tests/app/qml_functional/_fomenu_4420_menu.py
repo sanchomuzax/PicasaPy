@@ -36,7 +36,7 @@ _MENU_UTVONAL_DARAB = {
     "Help": 5,
     "File": 17,
 }
-assert sum(_MENU_UTVONAL_DARAB.values()) == 190
+assert sum(_MENU_UTVONAL_DARAB.values()) == 191
 _VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 30, "mappanezet": 13}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
