@@ -97,6 +97,10 @@ _NINCS_LATHATO_HATAS_UTVONAL = {
     ),
 }
 _LETILTOTT_A_TISZTA_MINTABAN = {
+    "menuViewLibraryView": (
+        "A Könyvtárnézet csak megnyitott néző mellett aktív; a tiszta minta "
+        "könyvtárnézetben indul."
+    ),
     "menuViewTimeline": (
         "A Timeline funkció ebben a tiszta mintában szándékosan letiltott."
     ),

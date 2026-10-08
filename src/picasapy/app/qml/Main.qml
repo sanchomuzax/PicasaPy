@@ -1562,6 +1562,9 @@ ApplicationWindow {
         onEmailRequested: window.sendSelectionByEmail()
         onOpenInEditorRequested: window.openSelectionInDefaultEditor()
         onViewAndEditRequested: window.nezdEsSzerkeszd()
+        // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
+        // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
+        onReturnToLibraryRequested: photoViewer.kerBezaras()
         onUnhideRequested: window.unhideHiddenSelection()
         onResetFacesRequested: resetFacesForPaths(window.photoActionPaths())
         // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
