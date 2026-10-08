@@ -333,6 +333,29 @@ def test_kep_hide_es_unhide_kattintas_a_hidden_ini_allapotot_valtoztatja(
 
 
 @pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
+def test_kep_hide_kattintas_mar_rejtett_kijelolest_rejtve_hagyja(
+    qml_app, qt_app, height_offset
+):
+    window, controller, _engine = qml_app
+    _magassag(window, height_offset)
+    controller.setShowHidden(True)
+    controller.toggleHiddenRows([0])
+    assert _varj(qt_app, lambda: controller.photos.itemAt(0)["hidden"] is True)
+
+    _menu_bar, _menu, _fejléc, hide = _nyisd_meg_felso_menut(
+        qt_app, window, "picture", "menuPictureHide"
+    )
+    assert hide.property("enabled") is False
+    _kijeloles(window, qt_app, [0])
+    assert _varj(qt_app, lambda: hide.property("enabled") is True)
+    _kattints(qt_app, hide)
+
+    assert _varj(qt_app, lambda: controller.photos.itemAt(0)["hidden"] is True), (
+        "a Kép ▸ Hide megjelenítette a már rejtett kijelölt képet"
+    )
+
+
+@pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
 def test_kep_unhide_kattintas_csak_a_rejtett_kijelolteket_jeleniti_meg(
     qml_app, qt_app, height_offset
 ):

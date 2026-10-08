@@ -195,6 +195,23 @@ ApplicationWindow {
     // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt
     // képeket teszi láthatóvá. A toggleHiddenRows csak a rejtett sorokat
     // kapja meg, ezért a vegyes kijelölés látható képei nem rejtődnek el.
+    // #4626: a Kép ▸ Hide mindig rejtve hagyja a kijelölést. A már rejtett
+    // sorokat kihagyjuk, így a váltó művelet csak látható képeket rejt el.
+    // A helyi menük külön megőrzik a Hide/Unhide váltó viselkedést.
+    function hideSelection() {
+        if (!controller) return
+        var rows = window.photoActionRows()
+        if (rows.length === 0) return
+        var visibleRows = []
+        for (var i = 0; i < rows.length; ++i) {
+            var row = Number(rows[i])
+            var photo = controller.photos.itemAt(row)
+            if (photo && photo.hidden !== true) visibleRows.push(row)
+        }
+        if (visibleRows.length > 0) controller.toggleHiddenRows(visibleRows)
+        if (!window.viewerOpen) window.clearSelection()
+    }
+
     function unhideHiddenSelection() {
         if (!controller) return
         var rows = window.photoActionRows()
@@ -1813,7 +1830,7 @@ ApplicationWindow {
         onPeoplePanelRequested: window.valtsFiokLapot("people")
         placesPanelOpen: window.placesPanelOpen
         onPlacesPanelRequested: window.valtsFiokLapot("places")
-        onHideToggleRequested: window.toggleHiddenSelection()
+        onHideToggleRequested: window.hideSelection()
         propertiesPanelOpen: window.propertiesPanelOpen
         onPropertiesPanelRequested: window.valtsFiokLapot("properties")
         // #426: „Az összes effektus másolása/beillesztése" — a menü
