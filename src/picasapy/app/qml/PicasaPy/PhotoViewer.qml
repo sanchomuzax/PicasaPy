@@ -197,6 +197,16 @@ Rectangle {
             editorControlsVisible = !editorControlsVisible
         }
     }
+
+    // #4696: az eredeti Ctrl+9 ága csak a szerkesztő-előnézetben fut
+    // (`picasa-gyorsbillentyuk.md` 10.22). A néző láthatósága ennek a
+    // nézetnek a kapuja; a könyvtárban a Shortcut le van tiltva.
+    Shortcut {
+        sequence: "Ctrl+9"
+        enabled: viewer.visible
+        onActivated: viewer.toggleEditorDrawer()
+    }
+
     readonly property bool gpuCapable: GraphicsInfo.api !== GraphicsInfo.Software
                                         && GraphicsInfo.api !== GraphicsInfo.Unknown
                                         && GraphicsInfo.api !== GraphicsInfo.Null
