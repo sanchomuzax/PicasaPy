@@ -15,6 +15,8 @@ MenuBar {
     // a context property átmenetileg null lehet, miközben a QML-kötések
     // utoljára kiértékelődnek.
     readonly property var ctl: controller
+    readonly property var faceScanCtl:
+        (typeof faceScanController !== "undefined") ? faceScanController : null
     // #1454: a bal hasáb NÉZETMÓDJA (Egyszerű / Fa / Egyszerűsített fa) a
     // `FolderHierarchyController`-ben él, ami ÖNÁLLÓ context property — nem
     // az `AppController` része. A `typeof`-őr azért kell, mert a menüsávot
@@ -88,6 +90,71 @@ MenuBar {
                         objectName: "pasteCaptionCancelButton"
                         text: qsTr("Cancel")
                         onClicked: pasteCaptionReplaceDialog.reject()
+                    }
+                }
+            }
+        }
+        Connections {
+            target: bar.faceScanCtl
+            function onFaceResetConfirmationRequested(mode) {
+                resetFacesConfirmDialog.openFor(mode)
+            }
+        }
+        Dialog {
+            id: resetFacesConfirmDialog
+            objectName: "resetFacesConfirmDialog"
+            property string resetMode: ""
+            property string message: ""
+            title: qsTr("Reset Faces")
+            modal: true
+            focus: true
+            anchors.centerIn: parent ? Overlay.overlay : undefined
+
+            function openFor(mode) {
+                resetMode = mode
+                message = mode === "removeAllFaceData"
+                    ? qsTr("WARNING! This will DELETE all face data, people albums, and rescan all photos for faces again. This can REMOVE name tags on synced web albums. Do you want to do this?")
+                    : qsTr("WARNING! This will DELETE all people albums, and move all the faces to the unnamed album. This can REMOVE name tags on synced web albums also. Do you want to do this?")
+                open()
+            }
+
+            onAccepted: {
+                if (!bar.faceScanCtl) return
+                if (resetMode === "removeAllFaceData")
+                    bar.faceScanCtl.removeAllFaceData()
+                else if (resetMode === "resetAllFaces")
+                    bar.faceScanCtl.resetAllFaces()
+                if (bar.ctl) bar.ctl.refreshCollections()
+                resetMode = ""
+            }
+            onRejected: resetMode = ""
+
+            ColumnLayout {
+                spacing: 12
+
+                Text {
+                    objectName: "resetFacesConfirmMessage"
+                    Layout.preferredWidth: 420
+                    text: resetFacesConfirmDialog.message
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 8
+
+                    PicasaButton {
+                        objectName: "resetFacesConfirmButton"
+                        text: qsTr("Yes")
+                        accent: Theme.picasaGreen
+                        onClicked: resetFacesConfirmDialog.accept()
+                    }
+                    PicasaButton {
+                        objectName: "resetFacesCancelButton"
+                        text: qsTr("Cancel")
+                        onClicked: resetFacesConfirmDialog.reject()
                     }
                 }
             }

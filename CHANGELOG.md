@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.43] – 2026-10-08
+
+- A Kép ▸ Arcok alaphelyzetbe állítása Ctrl-kattintásra minden arcadatot töröl és újrakeresést indít, Shift-kattintásra pedig törli a személyalbumokat és névtelenné teszi az arcokat (#4627).
+- Kijelölés nélkül a Ctrl+Enter most az aktuális mappát nyitja meg a fájlkezelőben. (#4631).
+- A Ctrl+Shift+P kijelölés nélkül is elindítja az aktuális mappa indexképlapjának nyomtatását (#4632).
+- A videónéző-próba kattintásai között kivárja a rendszer duplakattintási idejét (#4666).
+- A PySide6 a 6.11-es soron marad, mert a 6.12.0-val a program felülete összeomolhat (#4669).
+
 ## [0.9.42] – 2026-10-08
 
 - A Nézet ▸ Könyvtárnézet menüpont visszavisz a könyvtárba a nézőből, és ott inaktív marad (#4622).

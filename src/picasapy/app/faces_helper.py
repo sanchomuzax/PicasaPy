@@ -31,6 +31,8 @@ from picasapy.ini import (
     find_contact_id,
     load_document,
     parse_faces,
+    remove_all_face_data,
+    reset_all_faces,
     update_document,
     with_face,
     with_reassigned_face,
@@ -177,6 +179,14 @@ class FacesHelper(QObject):
             lambda document, photo_name, _rect: without_faces(document, photo_name),
         )
 
+    def removeAllFaceData(self, image_paths) -> bool:  # noqa: N802 — belső API
+        """A könyvtár fotóinak arcadatait törli a mappánkénti ini-fájlokból."""
+        return self._mutate_face_folders(image_paths, remove_all_face_data)
+
+    def resetAllFaces(self, image_paths) -> bool:  # noqa: N802 — belső API
+        """A névazonosítókat nullázza, a régiókat és a facedata-t megtartja."""
+        return self._mutate_face_folders(image_paths, reset_all_faces)
+
     # Szándékosan NEM `@Slot`: csak a Pythonból hívja a `FaceScanController`
     # (a `kepesseg_or.py` a QML-ből elérhetetlen slotot szakadásnak veszi).
     def removeIgnoredFace(
@@ -237,6 +247,25 @@ class FacesHelper(QObject):
             self.faceWriteFailed.emit(str(error))
             return False
         return True
+
+    def _mutate_face_folders(self, image_paths, mutate) -> bool:
+        """Egy teljes mappa `.picasa.ini`-jét egyszer, az ini API-n át írja."""
+        folders = dict.fromkeys(
+            str(Path(image_path).parent)
+            for image_path in image_paths or ()
+            if image_path
+        )
+        success = True
+        for folder in folders:
+            ini_path = Path(folder) / PICASA_INI_NAME
+            if not ini_path.exists():
+                continue
+            try:
+                update_document(ini_path, mutate, backup=True)
+            except _WRITE_ERRORS as error:
+                self.faceWriteFailed.emit(str(error))
+                success = False
+        return success
 
 
 def _face_to_dict(face: Face, names: dict[str, str]) -> dict:
