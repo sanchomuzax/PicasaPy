@@ -1,8 +1,8 @@
-"""#4332: a kézzel beállított felvételi dátum a fájl változása után is megmarad.
+"""#4332: a régi indexfelülírás szinkronizálás után is megmarad.
 
-A program saját Mentése (és a forgatás lemezre írása) is átírja a fájlt; ha a
-felülírás ilyenkor elveszne, a felhasználó dátumállítása egy mentéssel csendben
-visszaállna. Az eredeti Picasa a dátumot a saját adatbázisában tartja.
+Kompatibilitási teszt a már létező `taken_at_override` értékhez. A jelenlegi
+Dátum és idő menüút már közvetlenül az EXIF `DateTimeOriginal` mezőt írja
+(#4693), és új felülírást nem hoz létre.
 """
 
 from __future__ import annotations

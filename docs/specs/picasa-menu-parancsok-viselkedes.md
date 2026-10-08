@@ -42,7 +42,7 @@ A **szöveg**-beillesztés viszont a rendszer-vágólapról jön, **lecseréli**
 feliratot, megerősítést kér (`CTextEditNode::confirm`, gomb: `Replace`), és
 kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
 
-## 3. „Dátum és idő beállítása” — KÉT mód; a mentési cél részben nyitott
+## 3. „Dátum és idő beállítása” — KÉT mód; EXIF és fájlidők (#4646)
 
 `offsettime.fen`: bélyegkép-előnézet · „Current photo date" (dátum+idő) ·
 „New photo date" (dátum+idő) · **rádiócsoport**:
@@ -54,45 +54,29 @@ Több képre megy: az ablakcím szó szerint **`Adjust Photo Date - %d items`**
 (`0x00cb40ac`, xref: `0x0077c7c0`); a futásjelzés **`Setting photo dates`**
 (`0x00cb4120`, xref: `0x0077cfd0`, `AdjustTimeThread::SettingDates`).
 
-### A worker mit állít be — és mit nem bizonyít ez a híváslánc
+### A worker mért íróágai
 
 A két dátumfeldolgozó út (`0x00490580`, `0x00490c10`) egyaránt a `0x37`
 metaadat-tulajdonságot állítja be (`0x004906f7`/`0x004906fe` és
 `0x00490d3c`/`0x00490d43`). A tulajdonság-táblában a `0x37` az EXIF
 `DateTimeOriginal`-nak felel meg (ld. `picasa-metaadat-tulajdonsagok.md`, §3),
-de ez a Picasa metaadat-objektum tulajdonságát azonosítja; **önmagában nem
-bizonyítja, hogy a worker a képfájl EXIF-szegmensébe is kiírja**.
+és a worker ezt a képfájl EXIF-szegmensébe írja. A fájlt a képpel azonos
+mappában létrehozott `.tmp` fájlon át írja, majd a kész fájllal lecseréli az
+eredetit.
 
 Mindkét worker meghívja a `0x00992780` segédfüggvényt (`0x00490900`,
-`0x00490f40`). A függvény a `SetFileTime` API-t hívja (`0x0092234c` import;
-az index ezt a `0x00992780` hívójához rendeli). A worker `0` jelzője mellett a
-segéd a kiszámított időmutatót a `SetFileTime` második paraméterébe teszi,
-és nullát ad a harmadik/negyedik paraméternek (`0x009927e9`–`0x009927f9`). A
-Win32 paramétersorrend szerint ez **a fájl létrehozási idejét** állítja; ez a
-hívás nem állítja a hozzáférési vagy utolsó módosítási időt.
+`0x00490f40`). Az EXIF-írás sikeres ágában a meglévő EXIF `DateTime` (`0x0132`)
+alapján állítja a fájl hozzáférési és módosítási idejét; a létrehozási időt
+meghagyja. Ha a mező hiányzik vagy érvénytelen, az írás előtti mindhárom
+fájlidőt visszaállítja. Ha az EXIF-írás nem fut le, a tartalékág csak a
+létrehozási időt állítja. A létrehozási idő Win32 `SetFileTime`-mal írható;
+POSIX rendszeren ilyen fájlidő-beállító API nincs.
 
-⛔ **A teljes művelet célja még nyitott.** A bináris itt bizonyítja a `0x37`
-metaadat-objektum beállítását és a létrehozási idő állítására vezető ágat,
-de nem bizonyítja, hogy a `DateTimeOriginal` ténylegesen a képfájlba vagy a
-`.picasa.ini`-be íródik-e, illetve hogy egy későbbi metaadat-mentés módosítja-e
-a fájl utolsó módosítási idejét. Ehhez Windowsos mérés kell: egy teszt-JPEG
-EXIF `DateTimeOriginal`, a mappa `.picasa.ini`-jének bájtjai és fájl-`mtime`
-előtte/utána összevetése egyetlen képen, Picasában az új dátum beállítása után.
-Ebben a környezetben nincs Windows futtató/QEMU-rendszeremulátor, ezért ez a
-mérés **NINCS MEG**. A korábbi állítás — miszerint a kezelők hiánya a
-`SetFileTime` közvetlen hívólistájából kizárja a fájlrendszer-idő módosítását
-— **hibás negatív következtetés** volt: a kezelő a háttér-workerhez jut el,
-amely a segédfüggvényt hívja.
-
-### PicasaPy tárolási döntése (#4332)
-
-A dátummódosító a kijelölt fotók dátumát az SQLite-index `photos.taken_at_override`
-mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. A Picasa
-forrásfájl EXIF-szegmensének módosulása továbbra sem bizonyított; a PicasaPy
-ezért a forrás JPEG `DateTimeOriginal` mezőjét érintetlenül hagyja. Exportált
-JPEG-en viszont a `DateTimeOriginal` az indexben felülírt dátumot kapja, a #451
-Colab-mérésével egyezően. A rács, a dátum szerinti rendezés és a Tulajdonságok
-panel a felülírt értéket mutatja.
+A művelet `.picasa.ini`-kulcsot nem ír. A PicasaPy a forrásképen módosítja az
+EXIF `DateTimeOriginal` értékét, és a sikeres írás után a mappát újraolvassa,
+hogy az index, a rácssorrend és a Tulajdonságok-panel az új EXIF-értéket
+mutassa. A korábbi, #4332-es indexfelülírásos út ettől eltért; a jelenlegi
+menüparancs már nem hoz létre `taken_at_override` értéket.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 
