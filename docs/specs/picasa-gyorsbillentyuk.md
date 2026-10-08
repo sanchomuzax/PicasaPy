@@ -1029,8 +1029,8 @@ mi oldalunk (mind közvetlen kiolvasás, illetve grep).
 lap 3.3 táblájával).
 **A #4643 előtt nem volt mérve:** a nem-kattintó ágak célfüggvényeinek
 jelentése. A 10.22 most rögzíti a kiolvasható hatásokat; a Ctrl+F9 jelző
-teljes felhasználói szemantikája, a Ctrl+Alt ág belső hatása és az F12-jelző
-felhasználási helye továbbra is nyitott.
+teljes felhasználói szemantikája, a Ctrl+Alt ágon frissített gyerekobjektum
+pontos kirajzolt tartalma és az F12-jelző felhasználási helye továbbra is nyitott.
 
 ### 10.9 ⛔ HELYESBÍTÉS: a `0x005e60d0` a Ctrl-ÁG, nem a teljes kezelő (#2164, 2026-09-03)
 
@@ -1321,7 +1321,7 @@ munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok
 | `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: feloldja az `overlays/egg` elemet, inicializálja a hozzá tartozó objektumot és aktiváló jelzőt állít. | A `overlays/egg` string-xref és a Ctrl-ág egyetlen célfüggvénye egyezik; a pontos látható animáció futtatás nélkül nincs kimérve. | feltételes |
 | `Ctrl+F9` | `0x005e6329`–`0x005e6333`: billenti a `[panel+0xdc4]` bájtot. A `0x00571e50` olvasó az `editpanel/preview` meglétekor a kijelölt kép azonosítóját a jelenlegi előnézethez hasonlítja; a flag felhasználói jelentése nem nevezhető meg találgatással. | A teljes, kapuval futtatott `.text` pásztázás a Ctrl+F9 író mellett a `0x00571e50` olvasót is megtalálta; RTTI alapján ez `CThumbUI` metódus. | nyitott |
 | `F5` | `0x005e6869`: időbélyeg-frissítés (`0x004a46e0`), állapotfrissítő hívás (`0x00579480(0,1)`), `[adatobjektum+0x166]=1`, majd `0x0065b840` keresővezérlő-frissítés. Az idle út `0x004afcb0` ezt a jelzőt a `0x004aae90` lista-/nézeti állapotfrissítéshez viszi, majd törli. Ez nem bizonyít teljes fájlrendszer-rescant. | A külön `+0x166` olvasó/ürítő út és a `picasa-konyvtar-eszkoztar-viselkedes.md` 6.5 leírása is frissítési kérelemként azonosítja a jelzőt. | megerősített |
-| `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. Az `EnableHover` beállítás egyező; a célfeladat látható hatása nyitott. | A konstruktor beállításolvasása és a `picasa-linux-mod.md` „EnableHover — egér-alatti kiemelés” sora külön egyezik a kapuval. | nyitott |
+| `Ctrl+Alt` (VK `0x12`) | `0x005e65dc`: csak `[panel+0xe78]` engedélyező jelző és érvényes `[panel+0xe70]` azonosító mellett hívja a `0x00571a80`-at. A teljes `.text` pásztázás az `+0xe78` egyetlen olvasójaként ezt a kaput találta. A cél létrehozza/újrahasználja a `[panel+0x31a8]` gyerekobjektumot, beállítja a bélyegkép-azonosítót, majd a `0x00774d60` frissíti annak geometriáját; ez a függvény a VK `0x12` állapotát olvassa és ablakfrissítést kér. A megjelenített tartalom pontos hatása nyitott. | A `PreviewHandler` külön eseményútja (`0x005c24c0`) szintén a `0x00571a80`-at hívja; a `0x00774cf0` testvér callback listabeli azonosítóváltás után ugyanazt a `0x00774d60` frissítőt hívja. Ez az objektumfrissítést támasztja alá, de a látható tartalmat nem nevezi meg. | nyitott |
 | Videó: `/`, `,`, `.` | A `CThumbUI` közvetlen VK-ágában nincs ilyen összevetés; az általános eseménylánc a fókuszált gyereknek továbbít. A központi kezelőből nem állítható, hogy ezek lejátszanak vagy keresnek. | A 10.19 szerinti teljes `.text` pontos `cmp ax,0xbc/0xbe/0xbf` keresése nulla találatot adott; a lánc/fókusz továbbítását a 10.18–10.19 külön méri. | feltételes — a videóvezérlő saját hatása nyitott |
 
 **A két független út.** **A:** a billentyűkezelő és célfüggvények közvetlen
@@ -1331,7 +1331,16 @@ utasításszintű olvasata, a teljes `.text` operandum-kereséssel a mezőolvas�
 tageltolásai, a mai QML fiókállapota, valamint a korábban mért fókusz- és
 frissítési út. Ezek a Ctrl+8/9, Ctrl+Shift+G/L/U, Alt-ág kapuja, F5 és a
 videókezelő hiányára egyeznek; a Ctrl+6 és Ctrl+Shift+Y teljes felületi
-hatása, továbbá a Ctrl+F9 és `0x00571a80` belső jelentése nyitva marad.
+hatása, továbbá a Ctrl+F9 és a Ctrl+Alt-hoz tartozó gyerekobjektum pontos
+kirajzolt tartalma nyitva marad.
+
+**A #4699 két útja:** **A:** a `0x005e65dc` → `0x00571a80` → `0x00774d60`
+utasításszintű lánc megmutatja az `EnableHover`/azonosító kaput, a gyerekobjektum
+azonosítójának beállítását, a VK `0x12` lekérdezését és az ablak újrarajzolását.
+**B:** a `PreviewHandler` `0x005c24c0` hívója és a `0x00774cf0` listaváltó
+callback ugyanazt a gyerekobjektum-frissítő utat használja külön eseményekből.
+Ezek egyeznek abban, hogy a hívás a gyerekobjektumot frissíti, de egyik út sem
+azonosítja a pontos kirajzolt tartalmat; ezért a látható hatás nem megerősített.
 
 **Cáfoló kísérlet (15.2):** a videóírásjelekre vonatkozó „nincs közvetlen
 VK-ág” állítást szándékosan tágabb mintával próbáltam cáfolni. A teljes
@@ -1342,10 +1351,18 @@ A Ctrl+9 régi „bal fiók nincs” mondatát a mai QML `toggle_left_drawer` é
 `editorControlsVisible` előfordulásai cáfolják; ez független a bináris
 ágnevektől.
 
+**Cáfoló kísérlet (#4699):** azt a kézenfekvő értelmezést, hogy a Ctrl+Alt
+egyszerűen a rács-bélyegkép látható keretkiemelését kapcsolja, a
+`design-guide.md` 187–188. sorának eredeti-Picasa megfigyelésével vetettem
+össze: ott a bélyegképek hover-állapotára „nincs látványos effekt” szerepel.
+Ez nem zár ki más gyerekobjektumot vagy rövid idejű felületi változást, de a
+keretkiemelés elnevezését nem támasztja alá. A `picasa-linux-mod.md`
+„egér-alatti kiemelés” sora ezért csak nyom, nem független bizonyíték.
+
 **Nyitott:**
 
 - `Ghidra-kör kell: 0x00571e50 — a [panel+0xdc4] kapcsoló pontos, felhasználó által látható hatása az előnézet kijelölt képpel való szinkronizálására. [blokkoló]`
-- `Ghidra-kör kell: 0x00571a80 — a Ctrl+Alt/VK 0x12 ágban az EnableHover és az érvényes elemazonosító mellett végrehajtott felhasználói művelet. [blokkoló]`
+- `Ghidra-kör kell: 0x00774d60 — a [CThumbUI+0x31a8] gyerekobjektum pontos kirajzolt tartalma és az Alt-állapot [objektum+0xb4] látható következménye. [blokkoló]`
 - A `Ctrl+6` timeslicer felületének futás közbeni állapota és a Ctrl+Shift+Y `overlays/egg` látható animációja: **NINCS MEG**; célzott eredeti-program próba kell.
 - A `/`, `,`, `.` esetleges videóvezérlő-hatása: **NINCS MEG**; a fókuszált gyermek eseményfogadójának útját kell követni, a globális kezelőben nincs saját ág.
 
