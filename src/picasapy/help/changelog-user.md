@@ -4,6 +4,136 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-08
+
+**Új funkciók**
+
+- **Létrehozás ▸ Poszter készítése…** — a képet lapokra vágja, hogy
+  nagyban kinyomtathasd. Lásd [Poszter](features/poszter.md).
+- **Létrehozás ▸ Hozzáadás a képernyővédőhöz…** és **Eszközök ▸
+  Képernyővédő konfigurálása…** — Linuxon is. Lásd
+  [Képernyővédő](features/kepernyovedo.md).
+- **Fájl ▸ E-mail…** (Ctrl+E) levélszerkesztővel: címzett, tárgy,
+  mellékletek. Az eredeti méretű melléklet is a szerkesztett képet viszi,
+  videónál választhatod az első képkockát vagy a teljes filmet. Lásd
+  [Küldés e-mailben](features/email.md).
+- **Fájl ▸ Fájl(ok) megnyitása szerkesztőben** (Ctrl+Shift+O) — a rendszer
+  alapértelmezett programjában nyitja a képeket. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- **Eszközök ▸ Dátum és idő beállítása…** — átállítja a kijelölt képek
+  dátumát; az új dátum az exportba is átkerül. Lásd [A
+  könyvtár](features/konyvtar.md).
+- Webkamerás felvétel az eszköztár **◉** gombjáról. Lásd
+  [Importálás](features/importalas.md).
+- A **Mozgófilm** készítője három füllel, átmenetekkel, méretekkel,
+  hangsávval, szöveges diával és filmszalag-szerkesztővel; a kézi diák
+  elvesztése előtt rákérdez. Lásd [Mozgófilm](features/mozgofilm.md).
+
+**Beállítások**
+
+- A **Beállítások** nyolc füléből hat működik: **Általános**,
+  **Fájltípusok**, **E-mail**, **Diavetítés**, **Névcímkék** és
+  **Nyomtatás**. Lásd [Beállítások](features/beallitasok.md).
+- A nyelvválasztó mind a 41 nyelvet kínálja, és első induláskor a program
+  felajánlja a rendszer nyelvét.
+- Új: **Eszközök ▸ Fotómegjelenítő beállítása…** a **Színkezelés
+  használata** kapcsolóval.
+- Az importálás a beállításokban megadott célmappát ajánlja fel. Lásd
+  [Importálás](features/importalas.md).
+
+**Emberek és arcok**
+
+- A jobb oldali **Emberek** panel arcképekkel mutatja a kijelölt kép
+  arcait, a névtelen arcot onnan is megnevezheted. Lásd
+  [Emberek](features/emberek.md).
+- Az **Eszközök ▸ Személyek kezelése…** megnyílik.
+- A **Kép ▸ Arcok alaphelyzetbe állítása** működik: a kijelölt képek arcait
+  törli, majd újra megkeresi őket.
+- Az arcfelismerő a programmal együtt települ, letöltés nélkül működik, és
+  a háttérben alapból fut. Tájképen nem jelöl téves arcot.
+- A személyalbum filmgombja és a **Létrehozás ▸ Mozgófilm** almenü arcos
+  tétele a Filmkészítőt nyitja.
+- Megszűnt a „database is locked” hiba: ha az adatbázis épp foglalt, a
+  program szól, és később magától újrapróbálja. Lásd [Gyakori
+  kérdések](faq.md).
+
+**Könyvtár**
+
+- A **Mappa tulajdonságai** ablakban a **Név** mezővel át is nevezheted a
+  mappát, és zenét választhatsz a mappa diavetítéséhez és filmjéhez. Lásd
+  [A könyvtár](features/konyvtar.md).
+- **Nézet ▸ Kis képek**: alapból csak a nagy képek látszanak, ahogy az
+  eredeti Picasában.
+- **Mappa ▸ Elrejtés** és **Megjelenítés**, valamint **Kép ▸
+  Megjelenítés** működik.
+- A bal hasáb helyi menüjében működik az **Indexképek megjelenítése a
+  könyvtárban** és a **Gyorsbillentyűk ▸ Asztal**.
+- A rácsból vagy a tálcáról kihúzott képek fájlként kerülnek más
+  programba.
+- Albumnézetben a **Mappa** menü törlése, áthelyezése és eltávolítása
+  szürke, így nem hathat véletlenül a korábban nézett mappára.
+- **Nézet ▸ Szerkesztési nézet** és **Kép ▸ Megjelenítés és szerkesztés**
+  (Ctrl+3) megnyitja a kijelölt képet a nézőben.
+
+**Nézegetés**
+
+- Kettős nézetben a lapozás, a felirat, a törlés és a tükrözés a
+  kijelölt oldal képére hat. Lásd [Nézegetés](features/nezegetes.md).
+- Bekapcsolt egykattintásos kilépésnél állóképről is egy kattintással
+  visszajutsz a könyvtárba.
+- A diavetítés követi a törölt vagy átrendezett képet.
+- Videónál **tényleges méret** és **teljes képernyő** gomb van, a vágósáv
+  **Kezdőpont** / **Végpont** feliratot kap.
+- **Nézet ▸ Megjelenítési mód ▸ 16 bites (szemcsézett)** működik.
+
+**Szerkesztő**
+
+- A **Kiegyenesítés** négyzethálót mutat, **ALKALMAZ** és **MÉGSE**
+  gombja van, és csak az Alkalmazra ment. Lásd [A
+  szerkesztő](features/szerkeszto.md).
+- **Nézet ▸ Szerkesztési vezérlők megjelenítése**: elrejti vagy mutatja a
+  bal panelt, a választás megmarad.
+- A színválasztó megjegyzi az öt legutóbbi színt.
+- Az automatikus vörösszem-javítás csak a felismert arcok szemén javít.
+- **Kép ▸ Csoportos szerkesztés ▸ Szöveg megjelenítése / elrejtése**
+  működik. Lásd [Csoportos szerkesztés](features/csoportos-szerkesztes.md).
+- Az effektek az eredeti Picasához még hűbben néznek ki.
+
+**Feliratok, címkék, fájlok**
+
+- A **Szöveg beillesztése** rákérdez, mielőtt lecserélné egy kép meglévő
+  feliratát. Lásd [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+- 30 képnél többre a program a címkézés előtt rákérdez.
+- A fájlmozgatás soha nem ír felül létező célfájlt; a kötegelt átnevezés
+  részleges hibája megnevezi az elkészült fájlokat. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- A mentés, a visszaállítás és a mentés visszavonása frissíti a nézetet,
+  hiba esetén hibaablakot ad. Lásd [Mentés](features/mentes.md).
+
+**Nyomtatás és export**
+
+- Minőségellenőrzés: **Legjobb / Jó / Gyenge** minőség soronként, és a túl
+  kicsi képeknél eltávolítás, nyomtatás vagy méretváltás. Lásd
+  [Nyomtatás](features/nyomtatas.md).
+- A méretlista a rendszer területi beállítása szerint metrikus vagy
+  hüvelykes; új a 3 × 4, a 4 × 5 hüvelykes és a 15 × 20 cm-es méret.
+- Exportnál a **Maximum** minőség teljes színfelbontással ment, és az exportált
+  kép frissített adatokat és bélyegképet kap. Lásd
+  [Exportálás](features/exportalas.md).
+
+**Keresés és helyek**
+
+- A keresőmező melletti panelen **Csak az arcokat ábrázoló fotók** és
+  **Csak a másodpéldányok mutatása** gomb van. Lásd [Keresés és
+  szűrés](features/kereses.md).
+- A Helyek panelen **Cím keresése** mező és térképtípus-választó van. Lásd
+  [Helyek és geocímkék](features/helyek.md).
+
+**Billentyűk**
+
+- Gépelés közben egyik gyorsbillentyű sem sül el; új a Ctrl+E és a
+  Ctrl+H. Lásd [Billentyűparancsok](features/billentyuk.md).
+
 ## 2026-09-28
 
 **Új: Útlevélkép**

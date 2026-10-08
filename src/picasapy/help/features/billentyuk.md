@@ -3,6 +3,16 @@
 Csak azok szerepelnek itt, amelyek **tényleg működnek**. A menükben
 látható, de szürke tételek billentyűi nem élnek.
 
+**Két általános szabály** az eredeti Picasa szerint:
+
+- **Gépelés közben egyik billentyűparancs sem sül el.** Ha egy
+  szövegmezőben állsz (keresés, átnevezés, felirat), a billentyű a mezőé
+  marad: a Ctrl+A ott a szöveget jelöli ki, a nyilak a szövegben
+  lépnek, az Enter és az Esc a mezőre vonatkozik.
+- **A könyvtári parancsok a könyvtárban élnek.** A Ctrl+A, Ctrl+D,
+  Ctrl+I és Ctrl+H nem sül el, amíg a nagy
+  nézőben állsz; ott a néző saját billentyűi érvényesek.
+
 ## Fájl
 
 | billentyű | mit csinál |
@@ -13,6 +23,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+S | Mentés |
 | Ctrl+Shift+S | Kép exportálása mappába |
 | Ctrl+P | Nyomtatás |
+| Ctrl+E | E-mail — lásd [Küldés e-mailben](email.md) |
 | Ctrl+Shift+P | Indexképek nyomtatása |
 | Ctrl+Enter | Keresés a lemezen |
 | F2 | Átnevezés |
@@ -35,6 +46,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+Shift+V | Tükrözés függőlegesen (fentről le) |
 | Ctrl+Shift+B | A kijelölt képek fekete-fehérré alakítása |
 | Ctrl+Shift+E | „Jó napom van" a kijelölt képekre |
+| Ctrl+H | A tálca tartalmának megtartása (**Kijelölés megtartása**) — lásd [Könyvtár](konyvtar.md); nézőben nem működik |
 
 A **tükrözésnek nincs menüpontja** — az eredeti Picasában sem volt, csak
 billentyűvel érhető el. A kijelölt képekre hat, a nézőben pedig arra,
@@ -66,9 +78,9 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+F8 | A hasonlóság-minta törlése |
 | Alt+Enter | Tulajdonságok panel |
 
-> A **Ctrl+3** billentyű működik, a hozzá tartozó két menüpont
-> (**Nézet ▸ Szerkesztési nézet** és **Kép ▸ Megjelenítés és
-> szerkesztés**) viszont még szürke.
+> A **Ctrl+3** ugyanazt csinálja, mint a **Nézet ▸ Szerkesztési nézet**
+> és a **Kép ▸ Megjelenítés és szerkesztés** menüpont: megnyitja a
+> kijelölt képet a nézőben. A két menüpont csak kijelölt képnél élénk.
 
 A **Ctrl+0** azt a panelt zárja be, amelyik éppen nyitva van a jobb
 oldalon (Címkék, Helyek, Tulajdonságok vagy Emberek), és újranyitáskor
@@ -96,7 +108,10 @@ bezárás előtt rákérdez a program.
 
 Ha egy csúszkára ráálltál (rákattintottál, vagy a Tab odavitte), a
 **+** és az **=** növeli, a **−** és a **_** csökkenti az értékét. Egy
-lépés a csúszka teljes tartományának 2%-a.
+lépés a csúszka teljes tartományának 2%-a. A szerkesztőpanelen ez a
+szerkesztő **harmadik, negyedik és ötödik fülének** (**Effektek**,
+**Kreatív**, **Művészi**) csúszkáin él, valamint a **Kiegyenesítés**
+csúszkáján; más nézetek csúszkáin nem.
 
 ## Kijelölő keret húzása közben
 
@@ -145,6 +160,20 @@ felszabadítja az arányt.
 |---|---|
 | F1 | A súgó megnyitása |
 | Shift+F1 | Az egér alatti felületrész súgófejezete — lásd [A beépített súgó](sugo.md) |
+
+## Helyi menük (jobbklikk)
+
+A helyi menük tételei az eredeti Picasáéval egyeznek. Néhány, ami
+újabban működik:
+
+- **Bal hasáb, mappalista:** az **Indexképek megjelenítése a
+  könyvtárban** tétel pipás kapcsoló; a **Gyorsbillentyűk ▸ Asztal**
+  az Asztalra váltja a mappafa gyökerét.
+- **Néző:** ha a képnek megőrzött eredetije van a lemezen, a
+  **Keresés** almenü két tételt ad: **Fájl a lemezen**
+  és **Eredeti a lemezen**; egyébként egyetlen **Keresés** tétel áll
+  ott.
+- **Tálca:** a **Kijelölés megtartása** ugyanaz, mint a Ctrl+H.
 
 ## A menük betűjelei
 

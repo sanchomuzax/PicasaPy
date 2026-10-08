@@ -1,51 +1,82 @@
 # Küldés e-mailben
 
-A képtálca **E-mail** gombjával a kijelölt képeket a számítógép saját
-levelezőprogramjával küldheted el: a PicasaPy előkészíti a
-mellékleteket, majd megnyit egy új levelet, amiben már ott vannak a
-képek.
+A kijelölt képeket a számítógép saját levelezőprogramjával küldheted
+el: a PicasaPy előkészíti a mellékleteket, te a saját ablakában megírod
+a levelet, a **Küldés** után pedig megnyílik a levelezőprogramod egy új
+levéllel, amiben már ott vannak a képek.
 
-> A **Fájl ▸ E-mail…** menüpont még **nem működik** — a küldés jelenleg
-> csak a képtálca gombjával indítható.
+Háromféleképpen indíthatod: a képtálca **E-mail** gombjával, a
+**Fájl ▸ E-mail…** paranccsal, vagy a **Ctrl+E** billentyűvel. Az
+utóbbi nem sül el, amíg egy szövegmezőbe gépelsz.
 
 ## Ahogy történik
 
 1. Jelöld ki a képeket.
-2. Kattints a képtálca **E-mail** gombjára.
+2. Indítsd az e-mailezést (gomb, menü vagy Ctrl+E).
 3. A program előkészíti a mellékleteket („Mellékletek előkészítése…"),
-   szükség esetén átméretezi a képeket.
-4. Megnyílik a levelezőprogramod egy új levéllel; a szöveget és a
-   címzettet te írod be.
+   és szükség esetén átméretezi a képeket.
+4. Megnyílik a **Képek küldése e-mailben** ablak (lásd lent).
+5. A **Küldés** gombra a levelezőprogramod új levéllel nyílik meg, a
+   képek csatolva.
 
-## Az első küldés: „Képek küldése e-mailben"
+A mellékletek mindig a **szerkesztett** képet viszik: a forgatás, a
+tükrözés és minden szerkesztés bele van égetve, ahogy exportáláskor
+([Exportálás](exportalas.md)). **Eredeti méret** esetén sincs
+átméretezés, de a szerkesztések itt is benne vannak. Az eredeti fájlt
+a küldés nem érinti.
 
-Amíg nem döntöttél másképp, az **első küldésnél** a program megkérdezi,
-mivel küldjön. A **Képek küldése e-mailben** párbeszédben hagyod jóvá,
-hogy a képek a számítógép alapértelmezett levelezőprogramjában nyíljanak
-meg új levélként.
+## A levélszerkesztő ablak
+
+Itt állítod össze a levelet:
+
+- **Címzett:** és **Tárgy:** mező, alattuk a levél szövege;
+- a mellékletek **kis képei** egy sávban — rákattintva kijelölsz egyet,
+  a **×** gomb a kijelöltet **kiveszi a mellékletből** (a kép a
+  lemezen marad);
+- **Elvetés** — bezárja az ablakot, nem küld semmit;
+- **Küldés** — átadja a levelet a levelezőprogramnak.
+
+A címzettet nem kötelező kitölteni: a levelezőprogramban is megadhatod.
+
+## Levelezőprogram-választó
+
+Amíg nem döntöttél másképp, az **első küldésnél** a program előbb a
+**Válasszon levelezőprogramot** lapot mutatja. Itt a **LEVELEZŐPROGRAM**
+tételt hagyod jóvá: a képek a számítógép alapértelmezett
+levelezőprogramjában nyílnak meg új levélként. A **Google Mail**
+tétel szürke, nem választható: a PicasaPy-nak nincs Google-fiók-kapcsolata.
 
 Ha bejelölöd a **Jegyezze meg ezt a beállítást, ne jelenítse meg a
-párbeszédpanelt újra** pipát, legközelebb kérdés nélkül indul a küldés. (Ez ugyanaz a
-kapcsoló, mint a Beállítások E-mail fülén — bármikor visszaállíthatod.)
+párbeszédpanelt újra** pipát, legközelebb a program egyből a
+levélszerkesztőt nyitja. (Ez ugyanaz a kapcsoló, mint a Beállítások
+E-mail fülén — bármikor visszaállíthatod.)
 
 ## Beállítások ▸ E-mail
 
 Az **Eszközök ▸ Beállítások… ▸ E-mail** fülön:
 
-- **Levelezőprogram** — vagy a számítógép alapértelmezett levelezőjével
-  küld a program, vagy minden küldéskor megkérdezi. Ez a két lehetőség ma
-  **működik**. A harmadik, **A Google Fiók használata** szürke: a
-  PicasaPy-nak nincs Google-fiók-kapcsolata.
+- **Levelezőprogram** — **A számítógép alapértelmezett
+  levelezőprogramjának használata**, vagy **Minden képküldésnél
+  kiválasztom** (ilyenkor mindig megjelenik a választó lap). A **Google
+  Fiók használata** szürke.
 - **Több kép mérete** — csúszka: ekkora hosszabbik oldalra kicsinyíti a
   képeket küldés előtt. A csúszka mellett a pillanatnyi érték látszik
   képpontban.
 - **Egyedülálló képek mérete** — vagy **Több elemmel azonos**, vagy
   **Eredeti méret**.
+- **Mozgófilmek küldése másként** — videónál vagy az **Első
+  képkocka** megy mellékletként (egy állókép), vagy a **Teljes
+  mozgófilm**. A választás megmarad.
 
-Ugyanezen a fülön a **videók küldési módja** és az **Outlookos beágyazott
-képek** kapcsolója **szürke** — ezek még nem működnek.
+Az Outlookos beágyazott képek kapcsolója (**Szövegközi fotók és
+képfeliratok küldése (csak Outlookban)**) szürke — ez még nem működik.
 
 ## Ha nem indul el a küldés
 
-Ha a rendszereden nincs olyan program beállítva, ami a leveleket kezeli,
-a küldés nem indul el, és a program szól róla.
+Ha a rendszereden nincs levelezőprogram beállítva, a program szól:
+**Nem található levelezőprogram.** Ha van ugyan, de nem tud mellékletet
+fogadni, üres levél nyílik a képek nélkül, és ezt a program külön
+jelzi. A mellékletek előkészítésének hibája is megjelenik a felület
+tetején, nem vész el némán.
+
+Befejezetlen kollázst nem lehet elküldeni: előbb fejezd be.

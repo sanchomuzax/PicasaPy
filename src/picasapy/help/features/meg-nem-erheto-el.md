@@ -1,7 +1,7 @@
 # Ami még nem érhető el
 
 A PicasaPy menüi az eredeti Picasa 3.9 teljes szerkezetét követik, hogy
-ismerős legyen. Emiatt sok olyan tétel is látszik, ami **még nincs
+ismerős legyen. Emiatt néhány olyan tétel is látszik, ami **még nincs
 bekötve** — ezek **szürkék**, és nem történik semmi, ha rájuk kattintasz.
 
 Ez a lap felsorolja, mi az, ami ma nem működik, hogy ne keresgélj
@@ -15,105 +15,56 @@ fölöslegesen.
 
 ## Még nem készült el
 
-**Fájl**
-
-- Fájl(ok) megnyitása szerkesztőben
-- E-mail… — a küldés a képtálca **E-mail** gombjával viszont **működik**,
-  lásd [Küldés e-mailben](email.md)
-
-**Szerkesztés**
-
-- Szövegmezők helyi menüjében: Automatikus kitöltés
-
 **Nézet**
 
-- Szerkesztési nézet — a **Ctrl+3** billentyű viszont **működik**: a
-  kijelölt képet megnyitja a nézőben
-- Szerkesztési vezérlők megjelenítése
-- Keresési opciók
-- Kis képek
 - Időrend (Ctrl+5) — a nézet még nem készült el, ezért a menüpont és a
   billentyű is inaktív
-- Megjelenítési mód ▸ 16 bites (szemcsézett)
-
-(A **Színkezelés használata** kapcsoló viszont már **működik** — lásd
-[Beállítások](beallitasok.md).)
+- Keresési opciók
 
 **Mappa**
 
-- A mappalista helyi menüjében: Elrejtés, Megjelenítés, Indexképek
-  megjelenítése a könyvtárban, Gyorsbillentyűk, Asztal — a **Nézet ▸
-  Mappanézet** almenü **Indexképek megjelenítése a könyvtárban** tétele
-  viszont **működik**
-
-**Kép**
-
-- Megjelenítés és szerkesztés — a **Ctrl+3** billentyű viszont
-  **működik**
-- Szöveg megjelenítése, Szöveg elrejtése
-- Megjelenítés
-- Arcok alaphelyzetbe állítása
-
-**Létrehozás**
-
-- Poszter készítése…
-- Hozzáadás a képernyővédőhöz…
-
-(Az **Ajándék CD készítése…** már **működik** — lásd [Ajándék
-CD](ajandek-cd.md). Lemezt nem ír: lemezkép-fájlt készít.)
-
-**Eszközök**
-
-- Személyek kezelése…
-- Fotómegjelenítő beállítása…
-- Képernyővédő konfigurálása…
-- Dátum és idő beállítása…
-
-(A **Képek biztonsági mentése…**, a **Gombok konfigurálása…** és az
-**Import a Picasából…** tétel viszont már **működik** — lásd [Képek
-biztonsági mentése](biztonsagi-mentes.md), [Beállítások](beallitasok.md)
-és [Importálás](importalas.md).)
-
-**Súgó**
-
-- Billentyűkódok — lásd [Billentyűparancsok](billentyuk.md)
-- Frissítések keresése
-
-(A **Súgó - tartalom és tárgymutató** tétel és az **F1** billentyű ma
-már **működik**: ezt a súgót nyitja meg — lásd
-[A beépített súgó](sugo.md).)
-
-**Helyi menükben**
-
-- Beállítás az Emberek album indexképeként
-- Mappa felosztása itt…
-- Társítás
-- Névcímkék hozzáadása
-- Album törlése, Album rendezésének alapja — az **Albumleírás
-  szerkesztése…** viszont már **működik**, lásd [A
-  könyvtár](konyvtar.md)
-- Jelszó megadása/módosítása… a saját gyűjteményeken — a **Rejtett
-  mappák** fejlécén viszont már **működik**, lásd [A
-  könyvtár](konyvtar.md)
-- Az Emberek album törlése, Az Emberek album szerkesztése…
-- Feltöltés tiltása — a Picasa Webalbumok megszűnt szolgáltatás
 - A **Mappa ▸ Mappa rendezése** almenüben a **Legutóbbi változtatások**
   szerinti rendezés (a bal hasáb helyi menüjéből viszont **működik**)
 
+**Eszközök**
+
+- Feltöltés (almenü)
+
+**Súgó**
+
+- Billentyűkódok — a billentyűparancsok listáját itt találod:
+  [Billentyűparancsok](billentyuk.md)
+- Frissítések keresése
+
+(A **Súgó - tartalom és tárgymutató** tétel és az **F1** billentyű
+**működik**: ezt a súgót nyitja meg — lásd [A beépített súgó](sugo.md).)
+
+**Helyi menükben**
+
+- Társítás (a kép helyi menüjében és a nézőben)
+- Névcímkék hozzáadása (a mappa és az album helyi menüjében)
+- Mappa felosztása itt…
+- Album törlése, Album rendezésének alapja — az **Albumleírás
+  szerkesztése…** viszont **működik**, lásd [A könyvtár](konyvtar.md)
+- Jelszó megadása/módosítása… a saját gyűjteményeken — a **Rejtett
+  mappák** fejlécén viszont **működik**, lásd [A könyvtár](konyvtar.md)
+- Az Emberek album törlése, Az Emberek album szerkesztése…, Beállítás
+  az Emberek album indexképeként
+- Szövegmezők helyi menüjében: Automatikus kitöltés
+
 **Beállítások**
 
-A **Beállítások** párbeszéd nyolc füléből ma kettőn van élő vezérlő:
+A **Beállítások** párbeszéd nyolc füléből hat működik: az **Általános**,
+a **Fájltípusok**, az **E-mail**, a **Diavetítés**, a **Névcímkék** és a
+**Nyomtatás** (lásd [Beállítások](beallitasok.md)). Szürke marad:
 
-- **Általános** — a nyelv, a törlés-megerősítés és a duplikátum-észlelés
-  kapcsolója, valamint a **Gyorsítótár ürítése…** gomb,
-- **E-mail** — a levelezőprogram megválasztása és a küldött képek mérete
-  (lásd [Küldés e-mailben](email.md)). Ugyanezen a fülön a videók
-  küldési módja és az Outlook-kapcsoló még szürke.
-
-A többi hat fül vezérlői szürkék. A **Diavetítés** fül is köztük van,
-pedig a vetítésnek vannak beállításai — azokat magán a vetítés
-vezérlősávján állítod, és a program meg is jegyzi őket. Lásd
-[Nézegetés](nezegetes.md).
+- a **Hálózat** fül egésze,
+- a **Webalbumok** fül — a Picasa Webalbumok megszűnt szolgáltatás,
+- az **Általános** fülön az **Automatikus frissítések** sor és a
+  **Névtelen használati statisztikák küldése a Google részére**
+  jelölőnégyzet,
+- az **E-mail** fülön a **Szövegközi fotók és képfeliratok küldése
+  (csak Outlookban)** jelölőnégyzet.
 
 ## Megszűnt szolgáltatások — ezek nem is fognak elkészülni
 

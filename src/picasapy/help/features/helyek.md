@@ -34,6 +34,22 @@ Kevesebb képnél a művelet kérdés nélkül lefut.
 > el. A geocímkék így is szerkeszthetők." A meglévő geocímkék ilyenkor is
 > olvashatók és törölhetők.
 
+### Cím keresése és térképtípus
+
+A panelen a **Cím keresése:** mező és egy **Keresés** nagyító-gomb áll.
+**Ez nem címkereső**: nem kérdez le térképszolgáltatást, és hálózati kérést
+sem küld. Amit beírsz, azt a program a **helyhez kötött képeid** között
+keresi: a fájlnévben, a feliratban, a címkékben és a mappa nevében. A
+térképen csak a találatok jelölői maradnak, és a „*N* kép rendelkezik
+hellyel" szám is ehhez igazodik. Entert nyomva vagy a gombra kattintva
+indul a szűrés; ha a mezőt kiürítve újra keresel, minden jelölő
+visszajön. Hely megadására (a térképen jobb gombbal) ez nem alkalmas.
+
+A képek számát mutató sor mellett egy **térképtípus-választó** áll: a térképszolgáltató által
+kínált típusok közül választhatsz. Hogy milyen típusok vannak, a
+rendszeren elérhető térkép-komponenstől függ; ha nincs választható típus,
+a választó csak a **Térkép** feliratot mutatja.
+
 ## Szűrés helyre
 
 Az eszköztár földgömb-szűrője csak a helyhez kötött képeket mutatja. A

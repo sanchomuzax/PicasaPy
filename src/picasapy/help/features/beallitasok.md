@@ -6,13 +6,12 @@
 **E-mail**, **Fájltípusok**, **Diavetítés**, **Nyomtatás**, **Hálózat**,
 **Webalbumok**, **Névcímkék**.
 
-> **Fontos:** ma két fülön van élő vezérlő. Az **Általános** fülön a
-> **nyelv**, a **Törlés a lemezről megerősítés nélkül**, az
-> **Eltávolítás az albumból megerősítés nélkül** és a **Duplikátumok
-> észlelése importáláskor** kapcsoló, valamint a **Gyorsítótár ürítése…**
-> gomb; az **E-mail** fülön a levelezőprogram megválasztása és a küldött
-> képek mérete (lásd [Küldés e-mailben](email.md)). A többi vezérlő
-> szürke — a helye megvan, de a funkció mögötte még nem készült el. A
+> **Fontos:** hat fül működik: az **Általános**, az **E-mail**, a
+> **Fájltípusok**, a **Diavetítés**, a **Nyomtatás** és a **Névcímkék**.
+> A **Hálózat** és a **Webalbumok** fül **még nem működik**: a vezérlői
+> szürkék, a helyük csak az eredeti Picasa elrendezését követi.
+> Az Általános fülön szürke a **Névtelen használati statisztikák
+> küldése a Google részére** és az **Automatikus frissítések** is. A
 > **Bezárás** gomb zárja az ablakot; nincs külön OK, mert az élő
 > beállítások azonnal hatnak (a nyelv a kivétel, lásd alább).
 
@@ -25,6 +24,37 @@ Az ablak feliratai — a szürke vezérlők feliratai is — az **eredeti Picasa
 saját szövegei**, ezért néhol másképp fogalmaznak, mint amit a funkció
 alapján várnál.
 
+### Általános fül
+
+**Kezelőfelület:**
+
+- **Speciális effektusok használata** — a felület animációit (például a
+  szerkesztő bal fiókjának becsúszását és a pulzáló gombokat) kapcsolja.
+  Kikapcsolva a változások egyből, mozgás nélkül történnek. Alapból be
+  van kapcsolva.
+- **Segédjelölések megjelenítése** — a gombok és vezérlők fölé vitt
+  egérnél felbukkanó kis súgócímkék. Kikapcsolva nem jelennek meg.
+  Alapból be van kapcsolva.
+- **Szerkesztési nézetből való kilépés egy kattintással** — bekapcsolva
+  a nagy nézetből egyetlen kattintással visszaléphetsz a
+  könyvtárba (képen és videón egyaránt); alapból ehhez dupla
+  kattintás kell. Alapból ki van kapcsolva. A kép nagyított
+  állapotában a húzás ettől függetlenül a képet mozgatja.
+
+**Fájlok:** a **Duplikátumok észlelése importáláskor** kapcsoló, a
+**Törlés a lemezről megerősítés nélkül**, az **Eltávolítás az albumból
+megerősítés nélkül** és a **Gyorsítótár ürítése…** gomb — lásd lentebb.
+
+**Nyelv:** lásd a következő szakaszt.
+
+**Importált képek mentési helye:** az importálás alapértelmezett
+célmappája. Alapból a **Képek** mappád. A **Tallózás…** gombbal másik
+mappát választasz; ezzel nyílik meg ezután az **Importálás** ablak
+([Importálás](importalas.md)).
+
+Az **Adatvédelem…** hivatkozás a Google adatvédelmi oldalát nyitja meg a
+böngészőben.
+
 ### Nyelv
 
 Az **Általános** fülön a **Nyelv:** választóval döntöd el, milyen nyelvű
@@ -32,11 +62,21 @@ legyen a felület. Ugyanez elérhető az **Eszközök ▸ Nyelv** menüből is.
 
 A lista **első tétele** az **Alapértelmezett rendszerbeállítás** — utána
 zárójelben a gépeden beállított nyelv. Ezt választva a program minden
-indításnál a rendszer nyelvéből dönt. Alatta a választható nyelvek
-állnak, mindegyik **a saját nyelvén** írva: **English (US)** és
-**Magyar**.
+indításnál a rendszer nyelvéből dönt. Alatta a **41 választható nyelv**
+áll, mindegyik **a saját nyelvén** írva (például **English (US)**,
+**Magyar**, **Deutsch**). A magyar és az angol felület teljes; a többi
+nyelvben az eredeti Picasa fordításai szerepelnek, és ami még nincs
+lefordítva, az angolul marad.
 
-**A nyelv nem vált át azonnal.** Amikor rákattintasz egy tételre, a
+**Első induláskor** a program felajánlja a rendszered nyelvét: ha a
+gép nyelve nem angol, és a PicasaPy tud ilyen nyelvet, egy kérdés
+jelenik meg — például a magyarnál: „Szeretnéd a PicasaPy nyelvét angolról
+erre a nyelvre váltani?" **Igen** esetén a felület az adott nyelven
+indul, **Nem** esetén angol marad. A kérdés csak egyszer jön; a nyelvet
+később bármikor átállíthatod.
+
+**Később a nyelv nem vált át azonnal.** Amikor a Beállításokban vagy az
+Eszközök menüben rákattintasz egy tételre, a
 program megkérdezi: „Módosítja a Picasa kezelőfelületének nyelvét? A
 változás a program következő megnyitásakor lép érvénybe." **Igen** esetén
 a választás elmentődik, és **a következő indításnál** lép életbe; **Nem**
@@ -71,6 +111,81 @@ Egyetlen kép sem vész el: a bélyegképek szükség szerint újra elkészülne
 Közvetlenül utána a mappák lassabban nyílnak meg, amíg a bélyegképek
 újra fel nem épülnek.
 
+### Fájltípusok fül
+
+A **Megjelenítés: JPEG-fájlok és** sor alatt jelölőnégyzetekkel
+választod ki, mely formátumokat vegye fel a könyvtár a JPEG mellé:
+**.bmp**, **.gif**, **.png**, **.tga**, **.tif, .tiff**, **.webp**,
+**.psd (Photoshop)**, **RAW formátumok**, **Mozgófilmek**
+(.mov, .mpg, .m4v, .3gp, .avi, …) és **Quicktime-filmek (.MOV)**. A
+**RAW formátumok** mellett a **Támogatott formátumok** hivatkozás
+felsorolja, milyen RAW-kiterjesztéseket ismer a program. A JPEG mindig
+része a könyvtárnak.
+
+Alapból minden formátum be van jelölve. Amit kikapcsolsz, azt a program a
+mappák **következő beolvasásától** nem veszi fel; a fájlok a lemezen
+maradnak.
+
+### Diavetítés fül
+
+- **Diavetítés ismétlése** — a vetítés a végén elölről kezdi.
+  Alapból ki van kapcsolva.
+- **Zenelejátszás a diavetítés alatt** — alapból be van kapcsolva.
+  Alatta a **Zeneszámok mappájának kiválasztása:** sorban a
+  **Tallózás…** gombbal adod meg a zenemappát (a mező csak akkor aktív,
+  ha a zenelejátszás be van kapcsolva). Ha a megnyitott mappához a
+  mappa leírásában saját zenét adtál meg (lásd
+  [Mappakezelő](mappakezelo.md)), a vetítés azt játssza.
+
+### Nyomtatás fül
+
+- **Rendelkezésre álló nyomtatási méretek** — öt választólista. Ezek
+  adják a **Nyomtatás** ablakban a méretlista alatti öt gyorsgombot (a
+  hatodik, **FullPage** gomb állandó). Az alapértékük a számítógéped
+  **területi beállításától** függ: metrikus mértékegységnél 5 × 8,
+  9 × 13, 10 × 15, 13 × 18 és 20 × 25 cm, hüvelykesnél Tárcaméret,
+  3,5 × 5, 4 × 6, 5 × 7 és 8 × 10. A választásod megmarad.
+- **Előnézetek:** **Magas minőségű előnézetek használata (lassabb)** —
+  a nyomtatási előnézet pontosabb, de lassabban készül el.
+- **Nyomtató minősége:** **Kompatibilis (ötven százalékos felbontás)**
+  (alapérték) vagy **Magas minőség (teljes felbontás)**.
+- **Nyomtatási mintavételezési minőség:** **Általános (Lanczos-3)**
+  (alapérték) vagy **Extra éles (Lanczos-8)** — a képet ezzel az
+  átméretező szűrővel kicsinyíti a nyomtatás.
+
+A méretek részletei: [Nyomtatás](nyomtatas.md).
+
+### Névcímkék fül
+
+- **Arcfelismerés bekapcsolása** — a háttérben automatikusan keresi az
+  arcokat az új képeken. Alapból be van kapcsolva. Kikapcsolva a futó
+  automatikus keresés megáll. Lásd [Emberek](emberek.md).
+- **Javaslatok engedélyezése** — a program névjavaslatot tesz a még
+  névtelen arcokra. Alapból be van kapcsolva. Alatta két csúszka áll,
+  amelyek csak bekapcsolt javaslatoknál használhatók:
+  - **Javaslati küszöb:** — minél nagyobb az érték, annál biztosabbnak
+    kell lennie a hasonlóságnak, hogy a program nevet javasoljon;
+  - **Csoportküszöb:** — minél nagyobb az érték, annál szigorúbban
+    gyűjti egy csoportba az arcokat.
+  Mindkettő 50 és 95 között, ötösével állítható.
+- **Névcímkék tárolása a fotón** — ha be van kapcsolva (alapból be van),
+  egy arc elnevezésekor a program az arc adatait a kép mellé egy XMP
+  kísérőfájlba is kiírja.
+
+Az **Emberek album indexképeinek feltöltése a Google Címtárba** jelölő
+nem része a felületnek: az a szolgáltatás megszűnt.
+
+## A Fotómegjelenítő beállítása
+
+Az **Eszközök ▸ Fotómegjelenítő beállítása…** egy kis ablakot nyit két
+jelölőnégyzettel:
+
+- **Teljes képernyős indítás (a Fotómegjelenítő újraindítása után lép
+  érvénybe)** — alapból be van jelölve; a választás megmarad;
+- **Színkezelés használata** — ugyanaz az egyetlen beállítás, mint a
+  **Nézet ▸ Színkezelés használata** (lásd lentebb): ha az egyiken
+  átállítod, a másikon is látszik.
+
 ## Sötét téma
 
 **Nézet ▸ Sötét téma** ki- és bekapcsolható. A választás megmarad a
@@ -81,7 +196,10 @@ következő indításig.
 A **Nézet ▸ Megjelenítési mód** almenüben a képernyőhöz igazítható a
 megjelenítés:
 
-- **Automatikus** vagy **24 bites** színmélység,
+- **Automatikus**, **24 bites** vagy **16 bites (szemcsézett)**
+  színmélység — az utóbbi úgy mutatja a képet, ahogy egy 16 bites
+  képernyő: a színátmenetek finom szemcsézéssel jelennek meg,
+  mindig ugyanúgy (részletek: [Nézegetés](nezegetes.md)),
 - **LCD fehérpont**,
 - **Projektor mód**,
 - **Túlcsordult képpontok megjelenítése** — megmutatja, hol égett ki a

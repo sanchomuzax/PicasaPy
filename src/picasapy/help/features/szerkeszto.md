@@ -28,6 +28,23 @@ jelöli — lásd [Effektek](effektek.md).
 
 Az effektek részletes listája: [Effektek](effektek.md).
 
+## A bal panel elrejtése
+
+A néző bal oldali szerkesztőpanelje elrejthető, hogy a kép nagyobb helyet
+kapjon. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló mutatja
+és rejti, és a panel szélén középen lévő kis **‹** / **›** nyíl ugyanezt
+teszi (buboréksúgója: *Szerkesztési vezérlők megjelenítése/elrejtése*). A
+kettő ugyanazt az állapotot kapcsolja, és a választás **megmarad** a
+következő indításig.
+
+## Szöveg megjelenítése és elrejtése a képen
+
+Ha a képen van szöveg, a **Szöveg** csempe alján megjelenik a **Szöveg
+megjelenítése** jelölő (buboréksúgója: *Fotón lévő szöveg megjelenítése
+vagy elrejtése*). Kikapcsolva a szöveg nem látszik a képen, de nem vész
+el. Több képre egyszerre a **Kép ▸ Csoportos szerkesztés** almenüje adja
+ugyanezt — lásd [Csoportos szerkesztés](csoportos-szerkesztes.md).
+
 ## A lassú effektek és az előnézet
 
 Tucatnyi effekt sokat számol: ilyen az **Élesítés**, a **Filmszemcse**,
@@ -50,6 +67,15 @@ valódi méretéhez igazodik. Ezeket a program a kép eredeti méretén
 számolja ki, és csak utána kicsinyíti le a képernyőre, hogy az előnézet
 azt mutassa, ami a kimentett fájlba is kerül. Nagy képnél ez érezhetően
 lassabb.
+
+## Nyitott effektpanel mellett a bal panel letiltva
+
+Ha egy **csúszkás effekt** panelje nyitva van (a csempe megnyomása után,
+az **Alkalmaz** és a **Mégse** gombbal), a bal panel többi része nem
+használható. Ha ilyenkor egy fülre kattintasz, a program **nem vált
+fület**: a panel tartalma elmosva, letiltva látszik, és az effekt
+előnézete megmarad. Ez az eredeti Picasa viselkedése. Az effektet az
+**Esc** elveti.
 
 ## Az effektek sorrendje számít
 
@@ -96,8 +122,25 @@ A vágás, a retusálás, a szöveg és a vörösszem **Alkalmaz** és **Mégse*
 gombja a saját paneljében van, a bal oldalon.
 
 Egy kivétel a **Kiegyenesítés**: ott a csúszka és a két gomb a **kép
-fölött lebegő sávban** áll. A **Mégse** a kiegyenesítés nyitáskori
-értékét állítja vissza, az **Esc** billentyű ugyanezt teszi.
+fölött lebegő sávban** áll.
+
+### Kiegyenesítés
+
+A **Kiegyenesítés** megnyitásakor a kép fölé **négyzethálót** rajzol a
+program, hogy a horizontot a vonalakhoz igazíthasd. A sáv a kép alján áll,
+és **forgatott képnél is vízszintes** marad. A sáv gombjai **ALKALMAZ**
+(balra) és **MÉGSE** (jobbra). A kép a megnyitáskor az illesztett nézetre
+áll, és bezárás után is ott marad.
+
+- A csúszka húzása közben csak az előnézet változik. **A Kiegyenesítést
+  csak az ALKALMAZ menti el** (és csak akkor kerül be a szerkesztések és
+  a Visszavonás közé, ha az érték meg is változott).
+- A **MÉGSE**, és minden más kilépés — lapozás, az Esc, a néző bezárása —
+  a **megnyitáskori képet** adja vissza: a félkész állítás nem mentődik.
+- Amíg a Kiegyenesítés nyitva van, a **bal panel szürke**, és nem
+  kattintható; a panel alján a Visszavonás/Újra sor nem látszik.
+- Az **ALKALMAZ** után a **Visszavonás** gomb azonnal aktív, és megnevezi a
+  lépést.
 
 ## Vágás
 
@@ -151,6 +194,11 @@ keretének húzásakor is.
 Az **Automatikus** gomb magától megkeresi a vörös szemeket. Ha nem talál
 semmit, kiírja: „Az automatika nem talált vörös szemet." Ha talált,
 azt is jelzi.
+
+Az automatikus javítás a **felismert arcok szemére** korlátozódik: az arcon
+kívüli vörös részeket — például egy piros lámpát vagy ruhát — nem bántja.
+Ha az arcfelismerő nem érhető el, a program a korábbi módon, a teljes
+képen keres.
 
 Kézzel is jelölhetsz: húzz keretet a szem köré. Húzás közben a
 **Shift**, a **Ctrl** és az **Alt** itt is megköti a keret arányát — ahogy
@@ -211,6 +259,14 @@ beállítottad, és a windowsos Picasa is így látja.
 > Korábban a program minden feliratot félkövérként mentett, a körvonal
 > vastagsága pedig mindig elveszett. Mindkettő megjavult; a régebben
 > mentett feliratokat érdemes egyszer ellenőrizni.
+
+## Színválasztó és a legutóbbi színek
+
+Az effektek színválasztóján — például a **Neon** színénél — a színek
+rácsa alatt **öt „legutóbbi szín"** rekesz áll: a legutóbb választott öt
+színt őrzi, a legfrissebb elöl. A rekeszek **megmaradnak** a következő
+indításig is, és a színekre rákattintva újra használhatod őket. A
+**Szöveg** eszköz saját, kisebb palettáján nincs ilyen sor.
 
 ## Festés ecsettel: hol hasson a Vámpírszem
 

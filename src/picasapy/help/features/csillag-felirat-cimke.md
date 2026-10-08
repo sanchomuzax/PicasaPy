@@ -45,6 +45,13 @@ vinni egy egész sorozaton.
 Üres vágólappal a **Szöveg beillesztése** szürke, tehát nem tudja
 véletlenül letörölni a meglévő feliratokat.
 
+Ha a kijelölt képek közül **bármelyiken már van felirat**, a program
+előbb rákérdez: „Biztosan lecseréli a jelenlegi képfeliratot a vágólap
+tartalmára? (Ez a művelet nem vonható vissza)". A **Csere** gomb
+beírja a vágólap szövegét minden kijelölt kép feliratába, a **Mégse**
+semmit nem változtat. Ha egyik kijelölt képnek sincs még felirata, a
+beillesztés kérdés nélkül lefut.
+
 A feliratot a PicasaPy a JPEG-fájl IPTC-mezőjébe is beírja, így más
 programok is látják.
 
@@ -57,9 +64,24 @@ nyitja és zárja is a panelt.
 - Jelölj ki egy vagy több képet, majd a beíró mezőbe („Írjon be egy
   hozzáadandó címkét:") írd be a címkét, és nyomj Entert. A címke a
   kijelölés minden képére felkerül.
-- A panelen látszik, mely címkék vannak a kijelölésen. Egy címkére
+- A panelen látszik, mely címkék vannak a kijelölésen. A lista fölötti
+  fejléc megmondja, mire vonatkozik: egyetlen kijelölt képnél a kép
+  nevét írja (*kép.jpg címkéi:*), több képnél *Címkék az aktuális
+  kijelölésben:*, ha pedig a megjelenített album **összes** képe ki van
+  jelölve, *Címkék az aktuális kijelölésben (teljes album):*. Egy címkére
   jobbgombbal kattintva: **Címke hozzáadása a teljes kijelöléshez**,
   **Így címkézett elemek keresése**, **Címke eltávolítása**.
+
+### Sok képre egyszerre
+
+Ha **30-nál több** képet jelöltél ki, a program címke hozzáadása előtt
+rákérdez: „Meglehetősen nagy számú elemet jelölt ki. Biztosan az összes
+(*N*) elemre alkalmazni szeretné ezt a címkét?" Az **OK** felrakja a
+címkét a kijelölés minden képére, a **Mégse** nem címkéz semmit. A kérdés
+a beíró mezőre, a gyorscímke-gombokra és a címke helyi menüjének
+**Címke hozzáadása a teljes kijelöléshez** tételére egyaránt érvényes. A kijelölést a
+program a kérdés megjelenésekor rögzíti, tehát a döntésedig nem változhat
+a cél.
 
 ### Ha a kijelölésben írásvédett kép van
 
@@ -88,6 +110,11 @@ Ez nem élő szűrő: a kész album onnantól önálló, és a bal hasábon mara
 
 A panel alján tíz **Gyorscímke**-gomb van a leggyakoribb címkéidnek.
 Egy gombra kattintva a címke azonnal felkerül a kijelölésre.
+
+A még üres gomb **?** jelet mutat. Ha rámutatsz, a buboréksúgója: „Ide
+kattintva konfigurálhatja a gyorscímkéket"; ha rákattintasz, egy
+tájékoztató ablak elmondja, hogyan kerül címke a gombra, és semmi nem
+íródik a képekre.
 
 A gombok tartalmát a **Gyorscímkék konfigurálása** párbeszédben állítod
 be. Itt bekapcsolhatod, hogy a felső két gombot a program tartsa fenn a

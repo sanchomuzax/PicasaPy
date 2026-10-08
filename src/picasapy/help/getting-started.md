@@ -75,6 +75,13 @@ lehetőség közül választhatsz:
 - **Az egész számítógép átnézése** — ha több lemezen, szétszórt
   mappákban tartod a képeket.
 
+Ha a számítógéped nyelve nem angol, és a PicasaPy tud ilyen nyelvet,
+az **első indításkor** a program megkérdezi, váltson-e a rendszer
+nyelvére (**Igen** / **Nem**). A kérdés csak egyszer jön; a nyelvet
+később a **Beállítások ▸ Általános** fülön vagy az **Eszközök ▸ Nyelv**
+menüben bármikor átállíthatod — lásd
+[Beállítások, nyelv, megjelenés](features/beallitasok.md).
+
 A keresés **soha nem mozgat és nem másol fájlokat**. Csak megnézi, mi hol
 van.
 
