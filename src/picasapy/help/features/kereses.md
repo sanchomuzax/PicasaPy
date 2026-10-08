@@ -17,6 +17,24 @@ A mezőre jobbgombbal kattintva a szokásos szövegszerkesztő parancsok
 jönnek elő: **Visszavonás**, **Kivágás**, **Másolás**, **Beillesztés**,
 **Törlés** és **Az összes kijelölése**.
 
+### A kereső lenyíló paneljei
+
+Amikor a mezőbe kattintasz, vagy már van benne szöveg, a mező mellett
+megjelenik egy kis **⌄** gomb. Ez egy lenyíló panelt nyit (a **Ctrl+F**
+is ezt nyitja, miközben a mezőre ugrik), és újra rákattintva csukja.
+A panelen:
+
+- egy sor, ami a találatokat összegzi — keresésnél *Találatok a(z) „…"
+  kifejezésre (N)*, szűrésnél a szűrő állapota;
+- a **Csak az arcokat ábrázoló fotók** gomb: csak az arcot tartalmazó
+  képeket mutatja, újra megnyomva kilép a szűrésből;
+- a **Csak a másodpéldányok mutatása** gomb: ugyanaz, mint az **Eszközök ▸
+  Kísérleti ▸ Fájlok másodpéldányainak megjelenítése** — lásd
+  [Duplikátumok keresése](duplikatumok.md).
+
+> A **Nézet ▸ Keresési opciók** menüpont ettől függetlenül **még nem
+> működik**: ma csak helyfoglaló, a fenti panel nem kapcsolódik hozzá.
+
 ## Keresés szín szerint
 
 A keresőmezőbe színt is írhatsz, a szó elé tett `szín:` (vagy `color:`)

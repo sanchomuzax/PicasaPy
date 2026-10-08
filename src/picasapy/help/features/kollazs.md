@@ -138,6 +138,10 @@ A panel **Asztali háttérkép** gombja egy lépésben elkészíti a kollázst,
 és rögtön be is állítja az asztalod háttérképének. Részletek:
 [Asztali háttérkép](hatterkep.md).
 
+Ha a kollázs előnézetét nem sikerül elkészíteni, a program a
+**Létrehozás** ablakban kiírja: „A kollázs nem készült el.", alatta a
+hiba okával — nem marad csendben.
+
 ## Piszkozat
 
 A kollázs félkész állapota megmarad: ha kilépsz és visszatérsz, a program

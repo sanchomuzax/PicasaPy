@@ -127,6 +127,13 @@ A választott néven már létezik fájl. Adj másik nevet.
 
 A cél fájl épp foglalt, vagy nincs rá írási jogod.
 
+### Mentés, visszaállítás vagy a mentés visszavonása után
+
+A **Mentés**, a **Visszaállítás** és a **Mentés visszavonása** végén a
+nyitott kép azonnal a lemezen lévő állapotot mutatja. Ha a művelet nem
+sikerült, a program **hibaablakot** ad, és megnevezi az érintett fájlt —
+nincs olyan eset, hogy némán nem történik semmi.
+
 ### Mentés közben lemezhiba
 
 Ha a lemez megtelt vagy csak olvasható, a program megnevezi az érintett
@@ -214,9 +221,28 @@ a szem köré a Vörösszem panelben.
 
 ### „A keresés nem sikerült" / „A csoportosítás nem sikerült" (arcok)
 
-Az arcfelismerés modellje hiányzik vagy sérült. Nyisd meg újra az
-**Eszközök ▸ Arcok keresése…** párbeszédet, és töltsd le a modellt a
-**Modell letöltése** gombbal.
+Az **Eszközök ▸ Arcok keresése…** ablak írja ki, ha a keresés vagy a
+csoportosítás megállt, és megmondja az okát. Az arcfelismerő a
+programmal együtt települ, ezért ritkán hiányzik. Ha mégis, az ablakban
+megjelenik a **Modell letöltése** gomb; ha a fájl megvan, de a program
+nem tudja betölteni, ezt látod: „A modellfájl megvan, de a PicasaPy nem
+tudta betölteni." Ilyenkor a részletek a hibanaplóban vannak
+(lásd a lap alján). Ha a háttérben futó automatikus arckeresés nem tud
+elindulni, az okát szintén a hibanaplóba írja a program.
+
+### „… mappa szinkronizálása később folytatódik."
+
+Ez nem hiba. Ha a program egyszerre sok mindent csinál az adatbázissal —
+például importálás közben arcot keres —, egy mappa frissítése rövid időre
+várólistára kerül, és a program magától újra megpróbálja. Nincs teendőd.
+A korábbi **database is locked** hibaüzenet ma már nem jelenik meg.
+
+### „A keresés nem sikerült: …" (Átvétel a Picasából)
+
+Az **Átvétel a Picasából** ablakban, a korábbi Picasa-telepítés
+keresésekor jelenik meg, ha a keresés közben hiba történt; az üzenet
+a hiba fajtáját és szövegét is kiírja. A **Kézi tallózás…** gombbal ilyenkor
+is megmutathatod a mappákat.
 
 ### A mappa írásvédett, vagy tele a lemez
 

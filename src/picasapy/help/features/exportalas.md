@@ -16,14 +16,25 @@ Beállítható:
   oldal képpontban mért méretét. A csúszka mellett a program megírja,
   mire számíts (kisebb fájl és némi minőségromlás, vagy nagy fájl és
   minden részlet).
-- **Képminőség**: Minimum, Normál, Maximum, vagy az eredeti minőség
-  megőrzése.
+- **Képminőség**: **Automatikus** (megőrzi az eredeti képminőséget),
+  **Normál** (a minőség és a méret megfelelő egyensúlya), **Maximum**
+  (nagyon nagy fájl, az apró részleteket is megőrzi), **Minimum**
+  (legkisebb fájl, némi minőségvesztéssel), vagy **Egyéni (N)** — ilyenkor
+  csúszkával magad állítod be a minőséget. A **Maximum** teljes
+  színfelbontású (4:4:4) JPEG-et ír; az **Automatikus** a forrás
+  JPEG-jének színfelbontását megtartja.
 - **Filmek exportálása**: **Első képkocka** képként, vagy **Teljes film
   (nincs átméretezés)**.
 - **Vízjel hozzáadása** — a képekre rábélyegezhető a neved, egy webcím
   vagy egy szerzői jogi közlemény.
 - **Számok hozzáadása a fájlnevekhez** — így a sorrend megmarad, ha a
   célmappát máshol névsorban nyitják meg.
+
+Az exportált képbe a program frissíti a metaadatokat: a módosítás
+ideje az export ideje lesz, a kép mérete a kimenet tényleges mérete, a
+hiányzó szerző- és készítésidő-mezők pótlódnak, a fényképezőgép saját
+adatai pedig megmaradnak. A 300 képpontnál nagyobb JPEG-be a program kis
+beágyazott előnézetet is tesz, ahogy az eredeti Picasa.
 
 Ha a célmappa már létezik, a program megkérdezi, felülírja-e.
 

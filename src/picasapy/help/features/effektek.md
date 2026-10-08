@@ -6,6 +6,12 @@ bármikor visszavonható, és az eredeti fájlt nem érinti.
 Ha egy effektnek csúszkái vannak, azok a gomb megnyomása után jelennek
 meg a panelben; az **Alkalmaz** véglegesíti, a **Mégse** elveti.
 
+Az effektek hatása az eredeti Picasa számolását követi, ezért a mostani
+változatban több effekt — például a **Neon**, a **Lomo-szerű**, a **Helyi
+kontraszt** és a **HDR-szerű** — az eredetihez hűbben néz ki. Ha egy
+korábbi PicasaPy-verzióban szerkesztett képen ezeknél apró árnyalatbeli
+eltérést látsz, ez az oka; a beállításaid nem változtak.
+
 A csempe sarkában látható **kék jelvény** azt jelenti, hogy az az effekt
 **egy kattintással** hat: nincs mit állítani rajta, azonnal rákerül a
 képre.

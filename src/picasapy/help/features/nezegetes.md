@@ -2,10 +2,19 @@
 
 ## Az egyképes néző
 
-A rácsban egy képre duplán kattintva megnyílik a néző. Kilépni a
-**Vissza a könyvtárhoz** gombbal vagy az Esc billentyűvel tudsz. A gomb
-fölé állva a súgója is elmondja, hova visz: *Vissza a rendezett
-indexképekhez*.
+A rácsban egy képre duplán kattintva megnyílik a néző. A kijelölt
+képet a **Nézet ▸ Szerkesztési nézet** (Ctrl+3) vagy a **Kép ▸
+Megjelenítés és szerkesztés** is megnyitja. Kilépni a **Vissza a
+könyvtárhoz** gombbal vagy az Esc billentyűvel tudsz. A gomb fölé állva
+a súgója is elmondja, hova visz: *Vissza a rendezett indexképekhez*.
+
+Ha a **Beállítások ▸ Általános** lapon bekapcsolod a **Szerkesztési
+nézetből való kilépés egy kattintással** jelölőt, az állóképen egyetlen
+kattintás is visszavisz a könyvtárba. A program megvárja a dupla kattintás
+idejét, és a dupla kattintás ilyenkor szintén kilép. Nem lép ki, ha két kép
+látszik egymás mellett, vagy ha a Kiegyenesítés nyitva van. Nagyított képen
+a húzás ilyenkor is pásztáz. Videónál ilyenkor a kép területén a lenyomás
+azonnal kilép, a jelölő nélkül pedig a dupla kattintás.
 
 A néző alján és szélein a következőket találod:
 
@@ -58,6 +67,12 @@ módosítja, és az albumba is az kerül. Ugyanígy a **nagyítás**, az
 **arckeretek** és a szerkesztő eszközei (vágás, retusálás, szöveg,
 vörösszem) is a kijelölt oldal képén dolgoznak, és az alsó **kék
 információs sáv** is arról ír.
+
+Ez a **lapozásra** (**Előző kép** / **Következő kép**, a nyilak), a **felirat**
+beírására és törlésére, a **tükrözésre** és a **Ctrl+Delete** törlésre is
+igaz: ilyenkor a kijelölt oldal képe lép tovább, kap feliratot, tükröződik
+vagy törlődik, a másik oldal pedig nem mozdul. A feliratsáv is a kijelölt
+oldal feliratát mutatja.
 
 A képek közt a filmszalagon válogatsz: mindkét megjelenített kép kiemelve
 látszik ott, és egy bélyegképre kattintva **az aktív oldal** képét
@@ -147,8 +162,23 @@ tényleges méretnél, hogy pontosan el lehessen találni. Ennél kisebbre és
 nagyobbra nem lehet állítani.
 
 A nagyított képet egérrel húzva mozgatod. A képre duplán kattintva
-visszaugrik az illesztett nézetbe. Videónál és vágás közben a nagyítás
-nem használható.
+visszaugrik az illesztett nézetbe. (Ha az egykattintásos kilépés be van
+kapcsolva, a dupla kattintás helyette kilép a nézőből — lásd fent.)
+Videónál és vágás közben a nagyítás nem használható.
+
+Nagyított nézetben is használhatók a szerkesztő eszközei: a **Vámpírszem**
+ecsete, a **vörösszem**, a **retusálás**, a **szöveg** és az **arcjelölés**
+egérrel dolgozik a nagyított képen, és ha egyik eszköz sincs nyitva, a
+húzás pásztáz. Kettős nézetben a másik képre kattintva váltasz fókuszt.
+A **Kiegyenesítés** sávjának **ALKALMAZ** és **MÉGSE** gombja és csúszkája
+is egérrel használható nagyítva. Kiegyenesítéskor és a többi, a teljes
+képre ható eszköznél a kép megnyitáskor az illesztett nézetre áll, és
+bezárás után is ott marad.
+
+A néző a képet a **tényleges méretéből** tölti be, és kis képet nem
+nagyít fel előre. Így a kis képek és a magas álló képek (például a telefonos
+9:16-osok) kevesebb memóriát visznek, és a gyengébb grafikus kártyákon sem
+lépik át a textúra-korlátot.
 
 ## A kék információs sáv
 
@@ -188,6 +218,12 @@ kilépéskor visszajön. Vezérlés közben:
 Kilépéskor a rács és a néző arra a képre ugrik, ahol a vetítés
 abbamaradt.
 
+A vetítés **követi a képeket**, ha vetítés közben változik a lista: ha az
+éppen látott kép közben kikerül a listából (például törlődik), a vetítés a
+következő képre lép (a lista végén
+körbe az elsőre); ha a képek sorrendje változik, a vetítés a látott képnél
+marad, és onnan megy tovább. Ha a lista kiürül, a vetítés megáll.
+
 ### A vezérlősáv
 
 Az egeret megmozdítva a kép alján előjön a vezérlősáv, és pár másodperc
@@ -225,11 +261,19 @@ A választóban öt átmenet van:
 A **Pásztázás és nagyítás** nem a képek közé esik, hanem magán a képen
 fut, ezért a **diaidőhöz** igazodik, nem az átmenet hosszához.
 
-### Megjelenítési mód a vetítésben
+## Megjelenítési mód
 
-A **Nézet ▸ Megjelenítési mód** beállítása a vetített képen is látszik —
-így a **Projektor mód** ott hat, ahol a legtöbb értelme van. Lásd
-[Beállítások](beallitasok.md).
+A **Nézet ▸ Megjelenítési mód** választása mindenütt látszik, ahol képet
+nézel: az indexképeken, a nézőben — kettős nézetben mindkét képen — és a
+vetített képen is. A **Projektor mód** így épp ott hat, ahol a legtöbb
+értelme van. A módok felsorolása: [Beállítások](beallitasok.md).
+
+A **16 bites (szemcsézett)** mód úgy mutatja a képet, ahogy egy 16 bites
+színmélységű képernyő: a lágy színátmenetekben finom szemcsézés jelenik
+meg. A szemcsézés ugyanazon a képen mindig ugyanúgy néz ki. Csak a
+megjelenített **képet** érinti; a program felületének színei és a
+fájljaid nem változnak. Az **Automatikus** és a **24 bites** módban nincs
+ilyen szemcsézés.
 
 ## Videók
 
@@ -240,16 +284,41 @@ hiányzik, a program fut tovább, csak a lejátszó helyén ezt írja ki:
 
 Az eszköztár szűrőjével csak a videókat is megjelenítheted.
 
+### A videósáv
+
+A videó alatt két sor van. A felső sor a **vágósáv**: két fogantyúja a
+**Kezdőpont** és a **Végpont** felirat alatt húzható, és a vágást mutatja.
+Az alsó sorban a lejátszás, a lejátszási csúszka, a vágógombok, a
+képkocka-rögzítés és a két módgomb áll, jobb szélén az idő és a
+hangerő-csúszka. A **hangerő megmarad** a következő indításig is.
+
+Két módgomb van a sáv jobb oldalán:
+
+- **1:1** — **Mozgófilm tényleges méretének megjelenítése (nyújtás nélkül)**:
+  a videó a saját képpontjain látszik, középre igazítva; ami nem fér az
+  ablakba, azt levágja. Újra megnyomva visszaáll az illesztett nézet;
+- **⛶** — **Lejátszás teljes képernyőn**: a program ablaka teljes
+  képernyőre vált. Újra megnyomva visszaáll az előző ablakméret.
+
 ### A videó megvágása
 
 A videó vezérlősávján három gomb tartozik a vágáshoz:
 
-- **Új kezdőpont beállítása** — az éppen látott képkocka lesz a kezdet;
-- **Új végpont beállítása** — az éppen látott képkocka lesz a vég;
-- **A mozgófilm eredeti hosszának visszaállítása** — a két pont törlése.
+- **Új kezdőpont beállítása** (**[**) — az éppen látott képkocka lesz a
+  kezdet;
+- **Új végpont beállítása** (**]**) — az éppen látott képkocka lesz a vég;
+- **A mozgófilm eredeti hosszának visszaállítása** (**⟲**) — a két pont
+  törlése. Vágás nélkül szürke.
+
+A két pontot a vágósáv fogantyúival is húzhatod.
 
 A lejátszás ezután a kijelölt szakaszra szorítkozik: a kezdőpontra
 ugrik, a végpontnál megáll, a csúszka pedig csak a szakaszon mozog.
+
+A **Klip exportálása** gomb csak vágott videónál él, de a kivágott klip
+fájlba mentése ma még nem működik: Linuxon a gomb azt írja ki, hogy „A
+program ezt a funkciót Linux rendszeren nem támogatja". A kivágás ettől
+még megmarad, és a lejátszás a szakaszra szorítkozik.
 
 **A videófájlhoz nem nyúlunk.** A vágáspontok a mappa `.picasa.ini`
 fájljába kerülnek, pontosan abban az alakban, amit az eredeti Picasa is

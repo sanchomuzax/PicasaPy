@@ -25,7 +25,12 @@ mit talált: hány kép és videó van benne.
 ### Hova kerüljön
 
 A **Cél** mappát a **Tallózás…** gombbal választod, vagy a korábbi
-célmappák közül. Alatta három lehetőség közül választasz, hogy a
+célmappák közül. Az ablak mindig az **alapértelmezett célmappával**
+nyílik. Ez alapból a **Képek** mappád; átállítani az **Eszközök ▸
+Beállítások… ▸ Általános** fülön lehet, az **Importált képek mentési
+helye:** sor **Tallózás…** gombjával
+(lásd [Beállítások](beallitasok.md)). Alatta három lehetőség közül
+választasz, hogy a
 képek **milyen nevű almappába** kerüljenek:
 
 - **Mappa nevének megadása** — te írod be, az alatta lévő mezőbe;
@@ -66,6 +71,33 @@ Ilyenkor érdemes megvárni a pásztázás végét, mielőtt igent mondasz.
 
 Haladásjelző sáv mutatja, hol tart (`hány / hányból`), és a sebességet is
 kiírja. A végén összesít: hány kép jött be, és hány nem sikerült.
+
+## Webkamerás felvétel
+
+Az eszköztár bal oldalán, a nézetváltó gombok mellett egy kis **◉** gomb
+áll (súgója: **Webkamerás felvétel megnyitása**). Megnyomására
+a **Rögzítés** ablak nyílik, amiben a számítógéped kamerájáról
+készíthetsz állóképet vagy videót:
+
+- a kamera élő képe az ablak közepén látszik; amíg a kamerához nem
+  tud csatlakozni, a **Csatlakozás a kamerához**, ha nincs kamera, a
+  **Nem érhető el** felirat áll ott;
+- **Pillanatkép** — állóképet ment a kamera képéből;
+- **Felvétel** — elindítja a videofelvételt, a gomb ekkor
+  **Leállítás** feliratú. Felvétel közben a **Szünet** és a
+  **Folytatás** gomb szünetelteti, illetve folytatja;
+- **Beállítások** — a **Fényképezőgép** és a **Hang** forrásának
+  választása, és a **Méret** (320 × 240, 640 × 480, 800 × 600 vagy
+  1280 × 720). Az **Alkalmaz** elfogadja, a **Mégse** elveti;
+  a választás megmarad. A felső sor **Fényképezőgép** gombja a
+  Beállításokból visszavisz az élő képhez;
+- a már felvett klipek között a **‹** és **›** gombbal lépkedhetsz,
+  a ▶ lejátssza őket;
+- **Kész** — bezárja az ablakot (folyó felvételt előbb leállít).
+
+A pillanatképek és a klipek a **Képek/Picasa/Rögzített videoklipek**
+mappába kerülnek. Ha nem sikerül előkészíteni a mappát, vagy a rögzítés
+hibára fut, az ablak megmondja.
 
 ## Fájl vagy mappa felvétele
 
