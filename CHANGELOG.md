@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.41] – 2026-10-08
+
+- Az Emberek panel névvel ellátott arcainál is megjelenik az X, az új személy pedig csak a People párbeszéd jóváhagyása után jön létre. (#4522).
+- Kettős nézetben a lapozás, a felirat, a törlés és a tükrözés a kijelölt képre hat (#4525).
+- Albumnézetben a Mappa menü mappaműveletei letiltódnak, így nem érintik az előzőleg megnyitott mappát. (#4620).
+- A felirat beillesztése rákérdez a meglévő képfelirat cseréjére (#4628).
+- A nyitott képen a Fájl, Szerkesztés és Kép menü műveletei most a megnyitott fotóra hatnak. (#4629).
+
 ## [0.9.40] – 2026-10-08
 
 - A kijelölt képek megnevezett és névtelen arcai arcképpel jelennek meg az Emberek panelen. (#4511).
