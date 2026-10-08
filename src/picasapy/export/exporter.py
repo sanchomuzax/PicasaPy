@@ -422,14 +422,12 @@ def _export_one(
         shutil.copy2(source, target)  # bájthű másolás, nincs generációs veszteség
         return target
 
-    image = _decode_image(source)
-    image = _apply_filter_chain(image, ops)
-    # #3065: ELŐBB a tükrözés, UTÁNA a forgatás — a mért sorrend (három
-    # független összeállító, `docs/specs/picasa-ini-format.md` „⛳ MEGVAN A
-    # SORREND”). A kettő nem kommutál: fölcserélve 90°/270° mellett a MÁSIK
-    # tengelyre tükröz.
-    image = apply_flip(image, item.flip_flags)
-    image = _apply_rotation(image, item.rotate_steps)
+    image = render_photo_pixels(
+        source,
+        ops,
+        rotate_steps=item.rotate_steps,
+        flip_flags=item.flip_flags,
+    )
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
     height, width = image.shape[:2]
@@ -739,6 +737,27 @@ def _apply_rotation(image: np.ndarray, rotate_steps: int) -> np.ndarray:
     if steps == 0:
         return image
     return cv2.rotate(image, _rotations()[steps])
+
+
+def render_photo_pixels(
+    source: Path,
+    ops: tuple[FilterOp, ...],
+    *,
+    rotate_steps: int = 0,
+    flip_flags: int = 0,
+) -> np.ndarray:
+    """Teljes felbontású, szerkesztett kép BGR-ben (#4602).
+
+    A közös belépő az export és a nyomtatás számára: `_decode_image` EXIF-
+    tájolással és RAW-dekóderrel olvas, utána a filters-lánc, a tükrözés és
+    az órairányú negyedfordulat kerül a képpontokba. A `ops`-nak a hívó már
+    érvényesítette a külön tárolt `crop=` kulcsot.
+    """
+    image = _decode_image(source)
+    image = _apply_filter_chain(image, ops)
+    # #3065: előbb a tükrözés, utána a forgatás — a mért sorrend.
+    image = apply_flip(image, flip_flags)
+    return _apply_rotation(image, rotate_steps)
 
 
 def _transfer_metadata(

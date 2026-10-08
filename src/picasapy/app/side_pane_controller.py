@@ -1,10 +1,12 @@
-"""#1601: a bal hasáb ini-alapú gyűjteményeinek betöltése — a felület
-szálát kímélve.
+"""#1601/#4589: a bal hasáb ini-alapú gyűjteményeinek betöltése.
+
+Az Emberek, Projektek és az egyéni gyűjtemények egy közös söprésből
+készülnek; az induláskori lemezmunka a háttér-szinkron szálára kerül.
 
 ## Mit mértünk
 
 Az induláskor SZINKRONBAN futó munka (RPi5, tmpfs, szintetikus index,
-2026-08-27) — a két ini-olvasó gyűjtemény az összes szakasz **94%-a**, és
+2026-08-27) — a két korábbi ini-olvasó gyűjtemény az összes szakasz **94%-a**, és
 egyedül ők skálázódnak érdemben a könyvtár méretével:
 
 | szakasz | 100 mappa | 1 000 mappa | 5 000 mappa |
@@ -102,6 +104,7 @@ class SidePaneMixin:
         collections = self._take_side_pane_stash()
         if collections is None:
             collections = load_side_pane_collections(conn)
+        self._init_custom_collections()
         self._apply_side_pane(collections)
 
     def _apply_side_pane(self, collections: SidePaneCollections) -> None:
@@ -111,6 +114,9 @@ class SidePaneMixin:
         jelzéseken megy: a QML-oldali kötések változatlanok maradnak."""
         self._people = collections.people
         self._project_folders = collections.project_folders
+        self._apply_custom_collection_folders(
+            collections.custom_collection_folders
+        )
         self.peopleChanged.emit()
         self.projectFoldersChanged.emit()
         # #2031: a Mappák listából a projekt-mappák KIMARADNAK, és ezt

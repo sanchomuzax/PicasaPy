@@ -1602,6 +1602,8 @@ ApplicationWindow {
         // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
         onReturnToLibraryRequested: photoViewer.kerBezaras()
         onUnhideRequested: window.unhideHiddenSelection()
+        onWriteXmpFacesDialogRequested:
+            xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
         onResetFacesRequested: resetFacesForPaths(window.photoActionPaths())
         // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
         // frissítjük, mert az index nem jelzi a `textactive=` változását.
@@ -3533,6 +3535,20 @@ ApplicationWindow {
                 //: `IBackgroundNotify::canceltitle` — az eredeti szövege (#3573)
                 title: qsTr("Want to Cancel?")
                 onConfirmed: controller.cancelActivity()
+            }
+        }
+    }
+
+    //: #4634: halasztott (#1720) — csak az Eszközök menüpontra épül fel.
+    DeferredDialog {
+        id: xmpFacesWriteDialog
+        objectName: "xmpFacesWriteDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            XmpFacesWriteDialog {
+                onWriteRequested: function (scope, rows) {
+                    if (controller) controller.writeFacesToXmp(scope, rows)
+                }
             }
         }
     }

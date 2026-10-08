@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import pytest
 from PySide6.QtCore import QObject, QSettings
+from picasapy.scanner import PICASA_INI_NAME
 
 from picasapy.app.custom_collections import (
     CustomCollection,
@@ -160,9 +161,10 @@ def host(tmp_path):
     from picasapy.app.custom_collections_controller import CustomCollectionsMixin
 
     class _Host(CustomCollectionsMixin, QObject):
-        def __init__(self, settings):
+        def __init__(self, settings, folder_root):
             super().__init__()
             self._settings = settings
+            self._folder_root = folder_root
             self._photos = _Modell()
             self.refresh_count = 0
 
@@ -172,19 +174,30 @@ def host(tmp_path):
         def _refresh_view(self) -> None:
             self.refresh_count += 1
 
+        def make_folder(self, name):
+            folder = self._folder_root / name.strip("/").replace("/", "_")
+            folder.mkdir(parents=True, exist_ok=True)
+            ini_path = folder / PICASA_INI_NAME
+            if not ini_path.exists():
+                ini_path.write_text(
+                    "[Picasa]\nP2category=Folders on Disk\n", encoding="utf-8"
+                )
+            return str(folder)
+
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
-    return _Host(settings)
+    return _Host(settings, tmp_path / "mappak")
 
 
 class TestSetCollectionClosedSlot:
     def test_bezaras_megjelenik_a_listaban(self, host) -> None:
         host.createCollection("Archívum")
-        host.moveFolderToCollection("/data/2019", "Archívum")
+        folder = host.make_folder("data/2019")
+        host.moveFolderToCollection(folder, "Archívum")
 
         host.setCollectionClosed("Archívum", True)
 
         assert host.customCollections == [
-            {"name": "Archívum", "folders": ["/data/2019"], "closed": True}
+            {"name": "Archívum", "folders": [folder], "closed": True}
         ]
 
     def test_frissiti_a_nezetet(self, host) -> None:
@@ -199,13 +212,15 @@ class TestSetCollectionClosedSlot:
 
     def test_a_bezart_mappai_a_szurolistaban_vannak(self, host) -> None:
         host.createCollection("Zárt")
-        host.moveFolderToCollection("/zart", "Zárt")
+        zart = host.make_folder("zart")
+        host.moveFolderToCollection(zart, "Zárt")
         host.createCollection("Nyitott")
-        host.moveFolderToCollection("/nyitott", "Nyitott")
+        nyitott = host.make_folder("nyitott")
+        host.moveFolderToCollection(nyitott, "Nyitott")
 
         host.setCollectionClosed("Zárt", True)
 
-        assert host._closed_collection_folders() == frozenset({"/zart"})
+        assert host._closed_collection_folders() == frozenset({zart})
 
 
 class TestClosingHidesEverything:
@@ -215,8 +230,10 @@ class TestClosingHidesEverything:
     def _keszit(self, host, mappak_a_gyujtemenyben, latszo_mappak):
         host.createCollection("A")
         for mappa in mappak_a_gyujtemenyben:
-            host.moveFolderToCollection(mappa, "A")
-        host._photos = _Modell([_Rekord(m) for m in latszo_mappak])
+            host.moveFolderToCollection(host.make_folder(mappa), "A")
+        host._photos = _Modell(
+            [_Rekord(host.make_folder(m)) for m in latszo_mappak]
+        )
 
     def test_igaz_ha_minden_eltunne(self, host) -> None:
         self._keszit(host, ["/a"], ["/a", "/a"])
