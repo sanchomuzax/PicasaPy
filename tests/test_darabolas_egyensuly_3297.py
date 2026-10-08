@@ -43,8 +43,9 @@ sys.path.insert(0, str(_ROOT / "scripts"))
 import run_tests  # noqa: E402
 
 #: A windows-job határideje percben (`teszt-darabok.yml`, `timeout-minutes`).
-#: 2026-10-04: a folyamatban 40 perc áll; a 30 a korábbi értéket tükrözte.
-HATARIDO_PERC = 40
+#: #4667: a 40 perces job a telepítéssel együtt megszakadt; az új Windows-
+#: határidő 60 perc, az Ubuntu változatlanul 40 perc.
+HATARIDO_PERC = 60
 
 #: A leghosszabb darab ennél nem lehet nagyobb.
 #:
