@@ -14177,6 +14177,13 @@ picasapy-origin-key: stringres:ImageFilters::BlackColor</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Tint Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::TintColor</extracomment>
+            <translation>Tinta színe</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Second Color</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::WhiteColor</extracomment>

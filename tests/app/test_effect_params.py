@@ -46,7 +46,7 @@ class TestCatalogueShape:
             "polaroid", "border", "dropshadow", "museummatte", "holga",
             "matte", "nightvision", "hdr", "orton", "quantizepalette",
             "pixelate", "lomo", "localcontrast", "heatmap", "roundededges",
-            "sixties", "crossprocess", "ir", "picnikgrain",
+            "sixties", "crossprocess", "ir", "picnikgrain", "picniktint",
         ],
     )
     def test_known_parameterised_effects_have_controls(self, name):
@@ -179,6 +179,10 @@ class TestFilterdescRegistry42Table:
         "picnikgrain": (
             ("slider", 0.0, 50.0, 10.0),
             ("checkbox", None, None, 0.0),
+        ),
+        "picniktint": (
+            ("slider", 0.0, 100.0, 0.0),
+            ("color", None, None, "#80cfff"),
         ),
     }
 
@@ -415,6 +419,14 @@ class TestReanimatedEyeColorAndFocalPixelate:
         a mi viselkedésünk itt megegyezik az eredetivel. Az 1. effekt-fül 6.
         csempéje az eredeti csempe-táblája szerint a `PicnikTint`."""
         assert "picniktint" in _EFFECT_NAMES
+
+    def test_picnik_tint_szine_a_fade_utan_kerul_a_lancba(self):
+        """#4554: a Tint Color a Fade után, a handler által olvasott rekeszben áll."""
+        params = effect_params("picniktint")
+        assert [param.key for param in params] == ["fade", "color"]
+        assert [param.label for param in params] == ["Fade", "Tint Color"]
+        assert params[1].kind == "color"
+        assert params[1].color.lower() == "#80cfff"
 
     def test_picnik_focal_pixelate_a_shift_par_miatt_szerepel(self):
         """#3315: a `pixelate` csempe Shift-párja — enélkül a Shiftes

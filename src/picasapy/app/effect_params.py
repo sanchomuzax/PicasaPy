@@ -413,10 +413,14 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # unsharp2=1,mennyiség — a felső vég 3,0 (az `unsharp` v1-é 1,0),
     # az alapérték mindkettőnél 0,6
     "unsharp2": (_p("amount", "Amount", 0.0, 3.0, 0.6, 0.05),),
-    # PicnikTint=1,elhalványítás — a regiszter EGY csúszkát ad („Fade",
-    # 0–100, alap 0). Színválasztója NINCS: az örökölt `tint` az, aminek
-    # `preserve` + `#szín` párja van.
-    "picniktint": (_p("fade", "Fade", 0.0, 100.0, 0.0),),
+    # PicnikTint=1,elhalványítás,#szín — a `filterdesc.xml` szerint a
+    # szín a Fade után kerül a láncba, alapja #80cfff. A felirat a
+    # Picasa saját ImageFilters::TintColor szótárából jön. Az effekt az
+    # egész képre hat, nem festhető (#3541 helyesbítés).
+    "picniktint": (
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
+        _color("color", "Tint Color", "#80cfff"),
+    ),
 }
 
 
