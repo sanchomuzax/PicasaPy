@@ -3793,6 +3793,12 @@ Rectangle {
                     property real pendingSingleClickY: 0
                     property bool dragged: false
                     property bool exitAfterDoubleClick: false
+                    // Tesztből olvasható diagnosztika: a platformfüggő
+                    // egéresemény-út vizsgálatához a próba a kezelő ágát és
+                    // a lenyomás előtti időzítő-állapotot olvassa ki.
+                    property int pressEventCount: 0
+                    property bool timerRunningOnLastPress: false
+                    property string lastPressBranch: "not-pressed"
 
                     // #4499: a beállított egykattintásos kilépés a Qt
                     // dupla-kattintási időablakának lejártakor zár. Így a
@@ -3850,8 +3856,11 @@ Rectangle {
                             viewer.fokuszValt("jobb")
                     }
                     onPressed: function(event) {
+                        pressEventCount += 1
+                        timerRunningOnLastPress = singleClickExitTimer.running
                         dragged = false
                         if (aktivAtfedoAlatt(event.x, event.y)) {
+                            lastPressBranch = "active-overlay"
                             event.accepted = false
                             return
                         }
@@ -3868,8 +3877,11 @@ Rectangle {
                                 && viewer.singleClickExitEnabled
                                 && viewer.layoutMode === "1up"
                                 && !editorPanel.tiltActive) {
+                            lastPressBranch = "second-press-exit"
                             singleClickExitTimer.stop()
                             exitAfterDoubleClick = true
+                        } else {
+                            lastPressBranch = "accepted"
                         }
                         lastX = event.x; lastY = event.y
                     }
