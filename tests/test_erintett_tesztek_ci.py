@@ -45,11 +45,9 @@ def test_forditas_valtozasnal_az_i18n_tesztek_futnak():
     assert "tests/app/test_t2.py" in _valaszt(["src/picasapy/app/i18n/picasapy_hu.ts"])
 
 
-def test_kozos_seged_vagy_nem_app_forras_a_teljes_keszletet_adja():
+def test_kozos_tesztbeallitas_vagy_fuggoseg_a_teljes_keszletet_adja():
     for ut in (
-        "tests/app/qml_functional/_fomenu_4420_menu.py",
         "tests/app/conftest.py",
-        "src/picasapy/render/chain.py",
         "pyproject.toml",
     ):
         assert _valaszt([ut]) == _TESZTEK, ut
@@ -69,3 +67,25 @@ def test_tul_szeles_kivalasztasnal_a_teljes_keszlet():
 
 def test_a_futtato_es_a_workflow_valtozasa_nem_teljes_keszlet():
     assert _valaszt(["scripts/run_tests.py", ".github/workflows/ci.yml"]) == []
+
+
+def test_a_darab_fetch_depth_kifejezese_nem_esik_vissza_1_re():
+    """2026-10-09: a `&& 0 || 1` mindig 1-et adott (a 0 hamis), így a PR-darab
+    alap nélkül maradt, és a teljes készletet futtatta egy darabban."""
+    wf = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "teszt-darabok.yml"
+    sor = next(s for s in wf.read_text(encoding="utf-8").splitlines()
+               if s.strip().startswith("fetch-depth:"))
+    assert "&& 0 ||" not in sor and "'0'" in sor, sor
+
+
+def test_nem_app_modul_csak_a_ra_hivatkozo_app_teszteket_valasztja():
+    assert _valaszt(["src/picasapy/app/edit_controller.py",
+                     "src/picasapy/render/chain.py"]) == ["tests/app/test_t1.py"]
+
+
+def test_seged_modul_az_importaloit_valasztja():
+    t = {"tests/app/test_t3.py": "from _fomenu_4420_menu import x"}
+    assert rt.erintett_app_tesztek(
+        _TESZTEK, ["tests/app/qml_functional/_fomenu_4420_menu.py"],
+        lambda u: t.get(u, ""),
+    ) == ["tests/app/test_t3.py"]
