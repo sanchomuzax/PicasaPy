@@ -19,12 +19,16 @@ import picasapy.app
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _LEJATSZO = (_QML / "VideoPlayerView.qml").read_text(encoding="utf-8")
 _NEZO = (_QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+# #4566: a visszaállítás, a képkocka és az export a videó-panelen él, nem a
+# lejátszó sávján.
+_PANEL = (_QML / "VideoEditPanel.qml").read_text(encoding="utf-8")
 
 
 class TestAHaromVezerlo:
     def test_mindharom_gomb_megvan(self):
-        for nev in ("videoSetInButton", "videoSetOutButton", "videoResetTrimButton"):
+        for nev in ("videoSetInButton", "videoSetOutButton"):
             assert f'objectName: "{nev}"' in _LEJATSZO, nev
+        assert 'objectName: "movieeditpanel/reset_trim"' in _PANEL
 
     def test_a_setin_a_JELENLEGI_poziciot_adja_kezdetnek(self):
         kezd = _LEJATSZO.index('objectName: "videoSetInButton"')
@@ -37,10 +41,10 @@ class TestAHaromVezerlo:
         assert "player.trimRequested(player.trimStartMs, media.position)" in blokk
 
     def test_a_visszaallitas_vagas_nelkul_SZURKE(self):
-        kezd = _LEJATSZO.index('objectName: "videoResetTrimButton"')
-        blokk = _LEJATSZO[kezd : kezd + 600]
-        assert "enabled: player.trimmed" in blokk
-        assert "player.trimResetRequested()" in blokk
+        kezd = _PANEL.index('objectName: "movieeditpanel/reset_trim"')
+        blokk = _PANEL[kezd : kezd + 600]
+        assert "enabled: panel.trimmed" in blokk
+        assert "panel.resetTrimRequested()" in blokk
 
     def test_a_ket_felirat_az_EREDETI_buboreksugoja(self):
         """A buboréksúgók az eredeti Picasa szövegei (`0x005952d0` környéke)."""
@@ -50,7 +54,6 @@ class TestAHaromVezerlo:
     def test_a_lejatszo_NEM_ir_inifajlt(self):
         """A komponens jelez; az írás a vezérlőé (rétegzés)."""
         assert "signal trimRequested(" in _LEJATSZO
-        assert "signal trimResetRequested(" in _LEJATSZO
         # ⚠️ A puszta névre keresés VAK szabály volna: a komponens
         # docstringje nevesíti a két slotot, hogy olvasható legyen. A HÍVÁS
         # az, ami tilos — az minősített alakban állna.
@@ -91,17 +94,17 @@ class TestKepkockaGomb:
     """
 
     def test_a_gomb_megvan(self):
-        assert 'objectName: "videoCaptureFrameButton"' in _LEJATSZO
+        assert 'objectName: "movieeditpanel/capture_frame"' in _PANEL
 
     def test_az_EPP_LATOTT_poziciot_adja_at(self):
-        kezd = _LEJATSZO.index('objectName: "videoCaptureFrameButton"')
-        blokk = _LEJATSZO[kezd : kezd + 600]
+        kezd = _LEJATSZO.index("function captureFrame()")
+        blokk = _LEJATSZO[kezd : kezd + 200]
         assert "player.captureFrameRequested(media.position)" in blokk
 
     def test_a_buboreksugo_az_EREDETIE(self):
         """`Tooltip(movieeditpanel/capture_frame)` — „Capture current frame"."""
-        kezd = _LEJATSZO.index('objectName: "videoCaptureFrameButton"')
-        blokk = _LEJATSZO[kezd : kezd + 600]
+        kezd = _PANEL.index('objectName: "movieeditpanel/capture_frame"')
+        blokk = _PANEL[kezd : kezd + 600]
         assert 'qsTr("Capture current frame")' in blokk
 
     def test_a_visszaallitas_buboreksugoja_is_az_EREDETIE(self):
@@ -109,14 +112,12 @@ class TestKepkockaGomb:
         trim"); az eredeti szövege a `.tre`-ből olvasva más."""
         assert (
             'qsTr("Restore movie to its original length '
-            '(remove start and end points)")' in _LEJATSZO
+            '(remove start and end points)")' in _PANEL
         )
 
     def test_a_lejatszo_NEM_ir_fajlt(self):
         """A komponens jelez; a dekódolás és az írás a vezérlőé."""
-        kezd = _LEJATSZO.index('objectName: "videoCaptureFrameButton"')
-        blokk = _LEJATSZO[kezd : kezd + 600]
-        assert "captureMovieFrame" not in blokk
+        assert "controller.captureMovieFrame" not in _LEJATSZO
 
     def test_a_nezo_a_SOR_indexevel_hivja_a_vezerlot(self):
         assert "function onCaptureFrameRequested(positionMs)" in _NEZO

@@ -102,7 +102,13 @@ Rectangle {
                 item.markers = Qt.binding(function() {
                     return panel.filteredMarkers
                 })
-                item.markerActivated.connect(panel.photoActivated)
+                item.markerActivated.connect(function(row) {
+                    // Előbb jelöljük ki a képét, utána szűrjünk: a főablak a
+                    // modellváltáskor az azonosítója alapján visszaállítja a
+                    // kijelölést a geocímkézett rácsban.
+                    panel.photoActivated(row)
+                    if (controller) controller.showGeotagged()
+                })
                 item.placePicked.connect(panel.placeSelection)
             }
         }
@@ -110,7 +116,7 @@ Rectangle {
         Text {
             objectName: "placesSearchLabel"
             Layout.fillWidth: true
-            text: qsTr("Search for an address:")
+            text: qsTr("Search")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }

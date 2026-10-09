@@ -50,7 +50,6 @@ fölöslegesen.
   mappák** fejlécén viszont **működik**, lásd [A könyvtár](konyvtar.md)
 - Az Emberek album törlése, Az Emberek album szerkesztése…, Beállítás
   az Emberek album indexképeként
-- Szövegmezők helyi menüjében: Automatikus kitöltés
 
 **Beállítások**
 

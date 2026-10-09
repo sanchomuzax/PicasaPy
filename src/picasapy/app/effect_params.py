@@ -258,9 +258,9 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _checkbox("reverse", "Reverse"),
     ),
     "pencilsketch": (
-        _p("blur_radius", "Blur Radius", 0.5, 20.0, 2.0, 0.5),
-        _p("brightness", "Brightness", 0.0, 200.0, 100.0),
-        _p("color_mix", "Color Mix", 0.0, 100.0, 0.0),
+        _p("radius", "Radius", 1.3, 5.0, 2.0, 0.5),
+        _p("strength", "Strength", 0.0, 200.0, 100.0),
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # Neon=1,Fade,Color (#723): az eredeti panelján egyetlen SZÍNMINTA
     # (`_clrsw`, alap `0xff0000`, „Neon Color") és egy fokozat-csúszka van.

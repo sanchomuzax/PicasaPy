@@ -10,8 +10,9 @@ Jelöld ki a képeket, majd:
 - **Létrehozás ▸ Mozgófilm ▸ Új mozgófilm…**, vagy
 - a képtálca **Mozgófilm** gombja.
 
-A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…** és a
-személyalbum fejlécének filmgombjai szintén ezt a panelt nyitják — lásd
+A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…**, az
+**Az Emberek albumból…** (ehhez nem kell kijelölés) és a személyalbum
+fejlécének filmgombjai szintén ezt a panelt nyitják — lásd
 [Emberek](emberek.md).
 
 A **Mozgófilm** ablak három füllel nyílik: **Mozgófilm**, **Dia** és
@@ -50,7 +51,9 @@ A fül tetején az áll, hány kép van kijelölve („N kép kijelölve."). Ala
   egyezik: **Hangfájl csonkolása**, **Fotók hozzáillesztése a hanghoz**
   vagy **Fotók ismétlése a zene végéig**.
 - Jelölők: **Képfeliratok megjelenítése** és **Dátumok megjelenítése**
-  (a kép alján látszik a felirat, illetve a felvétel dátuma),
+  (a kép alján látszik a felirat, illetve a felvétel dátuma — feliratnak a
+  képhez a PicasaPy-ban írt képfelirat kerül, és csak ha az üres, akkor a
+  fájlba más program által írt leírás),
   **Teljes képkockás fotó körbevágása** (a kép kitölti a kockát, a széle
   levágódik, ahelyett hogy fekete sáv maradna) és **Kis felbontású arcok
   eltávolítása**. Ez utóbbi jelölő ma még **nem hat** a filmre: csak a
@@ -140,6 +143,12 @@ jelzi.
 
 Az elkészült film a bal hasáb **Projektek** csoportjának filmek-mappájába
 kerül.
+
+Ha ugyanabban az ablakban már készítettél egy filmet, és újra a
+**Mozgófilm létrehozása** gombra kattintasz, a program megkérdezi:
+**Lecseréli a meglévőt, vagy újat hoz létre?** A **Meglévő cseréje** az
+előző film helyére írja az újat, az **Új létrehozása** külön fájlba menti,
+a **Mégse** (vagy az Esc) pedig nem készít semmit.
 
 ## A film újranyitása később
 
