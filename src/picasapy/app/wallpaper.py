@@ -16,8 +16,8 @@ két lépést végez:
 
 ⇒ A **viselkedés**, amit át kell vennünk: BMP a mért helyen, és **középre
 illesztett**, nem nyújtott háttérkép. A registry-írásnak Linuxon nincs
-értelme; a jegy ezért kimondottan az asztali környezet saját beállítását
-kéri (`gsettings`, `pcmanfm`, `swaybg`).
+értelme; a beállítást az asztali környezet saját eszköze végzi (`gsettings`,
+`pcmanfm`, `plasma-apply-wallpaperimage`, `swaybg`).
 
 ## A lánc — miért több eszköz, és miért ebben a sorrendben
 
@@ -31,10 +31,14 @@ lépés a KÖZÉPRE illesztést kéri, ahogy az eredeti:
 | `pcmanfm` | LXDE, Raspberry Pi OS | `--wallpaper-mode=center` |
 | `xfconf-query` | XFCE | `image-style=1` (centered) |
 | `feh` | csupasz X11 (i3, openbox) | `--bg-center` |
+| `plasma-apply-wallpaperimage` | KDE Plasma | a Plasma-munkamenet állítja be |
+| `swaybg` | labwc, Sway és wlroots asztalok | `-m center` |
 
-Amelyik eszköz létezik ÉS sikerrel lefut, az nyer; a többit meg sem
-próbáljuk. Ha egyik sem, azt a hívó megtudja (`None`), és a felhasználónak
-meg kell mondani, HOVA került a kép — a néma sikertelenség a legrosszabb
+KDE és wlroots alatt a felismert asztalhoz tartozó eszköz fut; a `swaybg`
+esetén a futva maradó Wayland-kliens jelzi, hogy létre tudta hozni a háttér
+réteget. A többi környezetben a meglévő eszközlánc marad érvényben. Ha a
+beállító eszköz nem érhető el vagy hibát jelez, a hívó `None`-t kap, és a
+felhasználó megtudja, HOVA került a kép — a néma sikertelenség a legrosszabb
 kimenet (#936).
 
 ⚠️ Ez a modul **nem** dönt arról, mikor van háttérkép-igény: azt a kollázs
@@ -44,6 +48,8 @@ kimenet (#936).
 from __future__ import annotations
 
 import logging
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +57,11 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 _log = logging.getLogger(__name__)
+
+# A `swaybg` a háttér megjelenítése közben futó Wayland-kliens. A hivatkozást
+# megtartjuk, hogy a következő háttérkép-váltáskor a saját előző példányunkat
+# leállíthassuk, ne gyűljenek a rétegfelszínek.
+_swaybg_folyamat: subprocess.Popen | None = None
 
 #: #2985/#1775: a mért Windows-értékek. A `0`/`0` pár a KÖZÉPRE illesztés
 #: (nyújtás és mozaik nélkül) — ugyanaz, amit a Linux-lánc minden eleme kér.
@@ -63,6 +74,12 @@ _WINDOWS_STILUS: tuple[tuple[str, str], ...] = (
 _SPI_SETDESKWALLPAPER = 0x0014
 _SPIF_UPDATEINIFILE = 0x01
 _SPIF_SENDCHANGE = 0x02
+
+# Az XDG asztalazonosítói. Külön konstansok, hogy az ág-választást a teszt
+# szándékos rontással is ellenőrizhesse.
+_KDE_ASZTALOK = ("kde", "plasma")
+_WLROOTS_ASZTALOK = ("wlroots", "labwc", "sway", "hyprland", "wayfire", "river")
+_PCMANFM_ASZTALOK = ("lxde", "raspberrypi", "rpd")
 
 #: A mért fájlnév — az eredeti ezt írja a Hátterek mappába.
 BACKGROUND_FILE = "picasabackground.bmp"
@@ -195,12 +212,106 @@ def _allitsd_be_windowson(
     return "windows"
 
 
+def _asztali_kornyezet(override: str | None) -> str:
+    """Az XDG által jelzett asztali környezet, vagy a próbához adott érték."""
+    if override is not None:
+        return override.casefold()
+    reszek = [
+        os.environ.get("XDG_CURRENT_DESKTOP", ""),
+        os.environ.get("XDG_SESSION_DESKTOP", ""),
+    ]
+    if os.environ.get("KDE_SESSION_VERSION"):
+        reszek.append("kde")
+    return ":".join(reszek).casefold()
+
+
+def _asztali_azonosito_van(kornyezet: str, azonosito: str) -> bool:
+    """Illeszkedik az XDG kettősponttal elválasztott asztal-listájára is."""
+    elemek = re.split(r"[:;,\s]+", kornyezet.casefold())
+    return any(
+        elem == azonosito or elem.startswith(f"{azonosito}-")
+        for elem in elemek
+        if elem
+    )
+
+
+def _futtasd_linux_parancsot(
+    nev: str,
+    parancs: Sequence[str],
+    futtato: Callable[..., subprocess.CompletedProcess],
+) -> str | None:
+    """Szinkron beállítóparancs; a hibát a hívó felé `None` jelzi."""
+    try:
+        eredmeny = futtato(
+            list(parancs),
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        _log.exception("a %s háttérkép-parancs nem indult el", nev)
+        return None
+    if eredmeny.returncode != 0:
+        _log.warning(
+            "a %s háttérkép-parancs hibával tért vissza: %s — %s",
+            nev,
+            eredmeny.returncode,
+            (eredmeny.stderr or "").strip()[:200],
+        )
+        return None
+    return nev
+
+
+def _allitsd_be_wlroots_hatteret(
+    ut: str,
+    launcher: Callable[..., subprocess.Popen],
+) -> str | None:
+    """Elindítja a swaybg-ot, és csak futva maradó kliensnél jelez sikert."""
+    global _swaybg_folyamat
+
+    try:
+        folyamat = launcher(
+            ["swaybg", "-i", ut, "-m", "center"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        # A swaybg normálisan a Wayland-munkamenetben marad. A gyors kilépés
+        # azt jelenti, hogy nem tudott háttér-réteget létrehozni.
+        try:
+            folyamat.wait(timeout=0.25)
+        except subprocess.TimeoutExpired:
+            pass
+        if folyamat.poll() is not None:
+            _log.warning("a swaybg nem maradt futva a háttér beállítása után")
+            return None
+    except (OSError, subprocess.SubprocessError):
+        _log.exception("a swaybg nem tudta beállítani a háttérképet")
+        return None
+
+    elozo = _swaybg_folyamat
+    if elozo is not None and elozo.poll() is None:
+        try:
+            elozo.terminate()
+            elozo.wait(timeout=1)
+        except (OSError, subprocess.SubprocessError):
+            _log.warning("a korábbi PicasaPy-s swaybg folyamat nem állt le")
+    _swaybg_folyamat = folyamat
+    return "swaybg"
+
+
 def set_desktop_background(
     bmp_path: Path,
     *,
     runner: Callable[..., subprocess.CompletedProcess] | None = None,
     which: Callable[[str], str | None] | None = None,
     platform: str | None = None,
+    desktop: str | None = None,
+    launcher: Callable[..., subprocess.Popen] | None = None,
     registry_setter: Callable[[str, str], None] | None = None,
     windows_api: Callable[[str], bool] | None = None,
 ) -> str | None:
@@ -210,9 +321,9 @@ def set_desktop_background(
     eszköz-kereséssel — Windowson a négy Linux-eszköz keresése fölösleges
     alfutás volna, és mindig üres kézzel tért vissza (ez volt a hiba).
 
-    Minden fogantyú befecskendezhető (`runner`, `which`, `platform`,
-    `registry_setter`, `windows_api`) — a próbák így nem nyúlnak a valódi
-    asztalhoz és a valódi registryhez.
+    Minden fogantyú befecskendezhető — a próbák így nem nyúlnak a valódi
+    asztalhoz és a valódi registryhez. A KDE/labwc ág az XDG asztalazonosítója
+    alapján választ, a `desktop` és `launcher` csak próbahorog.
     """
     ut = str(Path(bmp_path))
     if (platform or sys.platform) == "win32":
@@ -223,28 +334,46 @@ def set_desktop_background(
         )
     fut = runner or subprocess.run
     keres = which or shutil.which
+    kornyezet = _asztali_kornyezet(desktop)
+    if any(
+        _asztali_azonosito_van(kornyezet, azonosito)
+        for azonosito in _KDE_ASZTALOK
+    ):
+        if keres("plasma-apply-wallpaperimage") is None:
+            return None
+        return _futtasd_linux_parancsot(
+            "plasma-apply-wallpaperimage",
+            ("plasma-apply-wallpaperimage", ut),
+            fut,
+        )
+
+    if any(
+        _asztali_azonosito_van(kornyezet, azonosito)
+        for azonosito in _WLROOTS_ASZTALOK
+    ):
+        if keres("swaybg") is None:
+            return None
+        return _allitsd_be_wlroots_hatteret(ut, launcher or subprocess.Popen)
+
     for nev, parancsok in _LANC:
+        if nev == "pcmanfm" and not any(
+            _asztali_azonosito_van(kornyezet, azonosito)
+            for azonosito in _PCMANFM_ASZTALOK
+        ):
+            continue
         if keres(nev) is None:
             continue
-        try:
-            for parancs in parancsok:
-                eredmeny = fut(
-                    [darab.format(ut=ut) for darab in parancs],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=15,
-                )
-                if eredmeny.returncode != 0:
-                    raise OSError(
-                        f"{nev}: {eredmeny.returncode} — "
-                        f"{(eredmeny.stderr or '').strip()[:200]}"
-                    )
-        except (OSError, subprocess.SubprocessError):
-            continue  # a következő eszköz jön; a néma bukást a hívó jelzi
-        return nev
+        eredmeny = None
+        for parancs in parancsok:
+            eredmeny = _futtasd_linux_parancsot(
+                nev,
+                tuple(darab.format(ut=ut) for darab in parancs),
+                fut,
+            )
+            if eredmeny is None:
+                break
+        if eredmeny is not None:
+            return nev
     return None
 
 
