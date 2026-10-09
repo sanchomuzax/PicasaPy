@@ -817,6 +817,15 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         """A retusálás-ecset mérete [1..100] egészben ("Brush Size", #445)."""
         return self._brush_size
 
+    @Property(float, notify=toolsChanged)
+    def retouchBrushRadiusRatio(self) -> float:  # noqa: N802 — QML-property
+        """A retusáló ecset sugara a kép rövidebb oldalához mérve.
+
+        Ugyanazt a saját, dokumentált méretleképezést adja a felületnek,
+        amelyet a `_build_patch()` a képi javításnál használ.
+        """
+        return self._brush_size / _BRUSH_SIZE_TO_RELATIVE_DIVISOR
+
     # -- szöveg-overlay (#148) -----------------------------------------------
 
     @Property(str, notify=toolsChanged)
