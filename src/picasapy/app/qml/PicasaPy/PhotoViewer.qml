@@ -290,10 +290,9 @@ Rectangle {
     readonly property var drawerRows:
         viewer.currentIndex >= 0 ? [viewer.currentIndex] : []
 
-    // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
-    // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
-    // eredménye; a photosModel.revision a forgatás-kötés mintájára triggerel
-    // újraértékelést; facesHelper hiányában (régi teszt-fixture) üres lista.
+    // #147/#4572: a mentett keretek csak a facesVisible kapcsolóra látszanak;
+    // indexbeli névtelen arcok rejtve maradnak, de kattinthatók. A
+    // photosModel.revision és facesEditRevision újraértékeli a lekérdezést.
     property bool facesVisible: false
     function toggleFaces() { viewer.facesVisible = !viewer.facesVisible }
     // #26 (2. kör): arc-téglalap SZERKESZTŐ mód — rajzolás/átnevezés/
@@ -315,13 +314,18 @@ Rectangle {
     }
     //: #3741: a KIJELÖLT fél fotójáé (`aktivSor`) — kettős nézetben bal
     //: fókusznál ez a bal kép, nem a `currentIndex`-é.
-    readonly property var currentFaces: (!viewer.facesVisible || !photosModel
-                                          || viewer.aktivSor < 0
+    readonly property var currentFaces: (!photosModel || viewer.aktivSor < 0
                                           || typeof facesHelper === "undefined"
                                           || !facesHelper)
         ? []
         : (photosModel.revision, viewer.facesEditRevision,
            facesHelper.facesFor(photosModel.filePathAt(viewer.aktivSor)))
+    readonly property bool hasDetectedFaceHitTargets: {
+        var items = viewer.currentFaces
+        for (var i = 0; i < items.length; ++i)
+            if (items[i].detected === true) return true
+        return false
+    }
 
     // -- zoom-állapotgép (#6, #2492): fit / 1:1 / tetszőleges ------------
     //
@@ -3350,13 +3354,16 @@ Rectangle {
                         //: #3166: a keret-leképezés szerinti területben — a
                         //: mentett arc-régiók a FÉNYKÉPRE vonatkoznak
                         parent: frameContentArea
-                        visible: viewer.facesVisible && !editorPanel.cropActive
+                        visible: (viewer.facesVisible
+                                  || viewer.hasDetectedFaceHitTargets)
+                                 && !editorPanel.cropActive
                                  && !viewer.isCurrentVideo
                         x: 0
                         y: 0
                         width: frameContentArea.width
                         height: frameContentArea.height
                         faces: viewer.currentFaces
+                        showSavedFaces: viewer.facesVisible
                         editMode: viewer.facesEditMode
                         //: #3741: a kijelölt fél fotója — az arcszerkesztés
                         //: ennek a sorába ír (`currentFaces` ugyanígy)

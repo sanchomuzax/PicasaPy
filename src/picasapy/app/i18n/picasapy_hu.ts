@@ -1032,6 +1032,11 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Név</translation>
         </message>
+        <message>
+            <source>Type a name</source>
+            <extracomment>picasapy-origin: picasa</extracomment>
+            <translation>Írjon be egy nevet</translation>
+        </message>
     </context>
     <context>
         <name>OptionsDialog</name>
