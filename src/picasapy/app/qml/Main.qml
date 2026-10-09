@@ -576,6 +576,22 @@ ApplicationWindow {
         return paths
     }
 
+    function addPhotosToScreensaver(paths) {
+        var added = controller ? controller.addScreensaverPhotos(paths) : 0
+        errorBanner.notice = true
+        errorBannerText.text = qsTr("Added %1 pictures to Screensaver.")
+                .arg(added)
+    }
+
+    function requestAddToScreensaver() {
+        var paths = window.photoActionPaths()
+        if (controller && controller.currentAlbumToken !== "") {
+            screensaverAlbumConfirmLoader.ensure().openFor(paths)
+            return
+        }
+        window.addPhotosToScreensaver(paths)
+    }
+
     // #4271: az eredeti megerősítési küszöb 30 fölött van; a kijelölést
     // pillanatfelvételként adjuk át, hogy a párbeszéd alatt ne változzon a cél.
     function addTagToRows(rowList, keyword) {
@@ -1698,15 +1714,7 @@ ApplicationWindow {
         onConfigureButtonsRequested: configureButtonsDialog.open()
         onConfigureScreensaverRequested: screensaverDialog.open()
         onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
-        onAddToScreensaverRequested: {
-            var added = controller
-                ? controller.addScreensaverPhotos(window.photoActionPaths()) : 0
-            if (added > 0) {
-                errorBanner.notice = true
-                errorBannerText.text = qsTr(
-                    "Added %1 pictures to Screensaver.").arg(added)
-            }
-        }
+        onAddToScreensaverRequested: window.requestAddToScreensaver()
         onThumbSizePreset: function(size) { window.thumbSize = size }
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
@@ -2356,6 +2364,27 @@ ApplicationWindow {
             ScreensaverDialog {
                 saverController: controller
                 onPreviewRequested: window.startScreensaverPreview()
+            }
+        }
+    }
+    //: #4618: album-nézetben az eredeti rákérdez (`addtosaver::warning`);
+    //: halasztva (#1612), a közös megerősítő párbeszéddel
+    DeferredDialog {
+        id: screensaverAlbumConfirmLoader
+        objectName: "screensaverAlbumConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                namePrefix: "screensaverAlbumConfirm"
+                title: qsTr("Confirm")
+                property var pendingPaths: []
+                function openFor(paths) {
+                    pendingPaths = paths ? paths.slice() : []
+                    if (pendingPaths.length > 0)
+                        ask("", qsTr("Are you sure you want to add all of the"
+                                     + " selected album's images?"))
+                }
+                onConfirmed: window.addPhotosToScreensaver(pendingPaths)
             }
         }
     }
