@@ -99,3 +99,4 @@ controller.collapseFolderIntoTray MÉRVE — #1919: a token RÉTEGE kész (model
 [OSZTALY]
 FolderListModel BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt
 PhotoGridModel BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt
+controller.setAutoPlayMovies ELDÖNTVE (#4570) — az eredetiben rejtett Preferences/AutoPlayMovies kulcs, kezelőelem nélkül; a beállítást a QSettings tartja
