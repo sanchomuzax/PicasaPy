@@ -1276,6 +1276,10 @@ Rectangle {
 
     AlbumContextMenu {
         id: albumContextMenu
+        onAddNameTagsRequested: function(token) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanAlbum(token)
+        }
         onSelectAllRequested:
             if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
         onClearSelectionRequested:
@@ -1357,7 +1361,11 @@ Rectangle {
 
     FolderContextMenu {
         id: folderContextMenu
-        // #457: „Mappa áthelyezése…" — a célmappát a rendszer
+        onAddNameTagsRequested: function(path) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanFolder(path)
+        }
+        // #457: „Mappa áthelyezése…” — a célmappát a rendszer
         // mappaválasztójával kérjük be, a mozgatás a kísérőfájlokkal
         // együtt megy (a `.picasa.ini` nálunk az igazságforrás)
         onMoveFolderRequested: {
