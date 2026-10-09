@@ -13958,7 +13958,8 @@ picasapy-origin-key: stringres:ImageFilters::Radius;stringres:filter_glow2_label
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::Blur;stringres:filter_radsat_label1</extracomment>
             <translation>Méret</translation>
         </message>
         <message>
