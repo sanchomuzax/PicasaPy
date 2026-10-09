@@ -121,6 +121,13 @@ kódtól).
   hasznos rendezés (#1759), ezért a #1595 nem törölte a hűség kedvéért,
   hanem `sajat: true` jelöléssel hagyta bent: kék felirat + kötelező
   buboréksúgó. Ld. `docs/decisions/sajat-funkciok-jelolese.md`.
+- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#28, #4638) — a **Nézet ▸
+  Sötét téma** menütétel. A téma maga a fenti `Theme.qml` tétel; a menütétel
+  a kék jelölést (`sajat: true`) kapja, mert az eredetiben nincs ilyen parancs.
+- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#1473, #4638) — az
+  **Eszközök ▸ Arcok keresése…** menütétel. Az eredetiben az arckeresés háttérszál
+  volt, menüparancs nélkül (`docs/specs/ui-audit-menus.md`, 7. szakasz); a
+  menütétel a kék jelölést (`sajat: true`) kapja.
 - `src/picasapy/app/qml/PicasaPy/TrayBar.qml` (#70) — az alsó kék
   állapotsáv (`infoBar`) `busySweep` fény-hullám animációja háttérmunka
   (indexelés, bélyegkép-gyártás) közben. Az eredetiben nincs ilyen vizuális
