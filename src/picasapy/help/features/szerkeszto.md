@@ -35,7 +35,8 @@ kapjon. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló muta
 és rejti, és a panel szélén középen lévő kis **‹** / **›** nyíl ugyanezt
 teszi (buboréksúgója: *Szerkesztési vezérlők megjelenítése/elrejtése*). A
 kettő ugyanazt az állapotot kapcsolja, és a választás **megmarad** a
-következő indításig.
+következő indításig. Billentyűvel a **Ctrl+9** teszi ugyanezt, amíg a
+néző nyitva van.
 
 ## Szöveg megjelenítése és elrejtése a képen
 

@@ -350,9 +350,9 @@ class TestAKijelolesMindketIranybanAtjar:
 class TestAJobbklikkASorSajatMenujetAdja:
     """#732 ugyanaz a hibaosztálya: a hasáb gyökerén ülő `TapHandler` a
     rendezés-menüt nyitja meg mindenre, ami maga nem fogadja el a jobb
-    gombot. A fa sorainak SAJÁT menüjük van (`HierFolder`, öt tétel)."""
+    gombot. A köztes fasor saját menüje a `HierFolder` (öt tétel)."""
 
-    def test_a_fasor_a_hierfolder_menut_nyitja(self, render_pane, qt_app):
+    def test_a_koztes_fasor_a_hierfolder_menut_nyitja(self, render_pane, qt_app):
         view, pane, hierarchy = render_pane(tree=True)
         hierarchy.expandAll()
         _settle(qt_app, pane)
@@ -362,7 +362,7 @@ class TestAJobbklikkASorSajatMenujetAdja:
             for item in _walk(pane)
             if item.objectName().startswith("hierRow:")
         }
-        sor = sorok["/mnt/photo/Videok"]
+        sor = sorok["/mnt/photo/Kepek"]
         kozep = sor.mapToScene(QPointF(sor.width() / 2, sor.height() / 2))
         assert 0 <= kozep.y() <= view.height()
 
@@ -391,7 +391,7 @@ class TestAJobbklikkASorSajatMenujetAdja:
         assert lista_menu.property("visible") is False, (
             "a hasáb rendezés-menüje nyílt meg a sor saját menüje helyett"
         )
-        assert hier_menu.property("folderPath") == "/mnt/photo/Videok"
+        assert hier_menu.property("folderPath") == "/mnt/photo/Kepek"
 
 
 class TestAHasabEgyetlenGorgetojeMarad:
