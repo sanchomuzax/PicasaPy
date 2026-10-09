@@ -9,12 +9,17 @@ választott műveletet a program **minden kijelölt képre** ráteszi:
 - **Automatikus szín**
 - **Automatikus vörösszem-eltávolítás**
 - **Jó napom van**
+- **Szépia**
 - **Élesítés**
+- **Fekete-fehér**
 - **Filmszemcse**
 - **Melegítés**
 - **Forgatás jobbra** és **Forgatás balra**
 
 Munka közben haladásjelző sáv látszik, ami meg is szakítható.
+
+A nézőben a menü a **megnyitott képre** hat: ott a kiválasztott művelet
+csak arra az egy képre kerül rá, a rácsban hagyott kijelöléshez nem nyúl.
 
 ### Szöveg megjelenítése és elrejtése
 

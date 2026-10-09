@@ -291,10 +291,9 @@ Rectangle {
     readonly property var drawerRows:
         viewer.currentIndex >= 0 ? [viewer.currentIndex] : []
 
-    // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
-    // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
-    // eredménye; a photosModel.revision a forgatás-kötés mintájára triggerel
-    // újraértékelést; facesHelper hiányában (régi teszt-fixture) üres lista.
+    // #147/#4572: a mentett keretek csak a facesVisible kapcsolóra látszanak;
+    // indexbeli névtelen arcok rejtve maradnak, de kattinthatók. A
+    // photosModel.revision és facesEditRevision újraértékeli a lekérdezést.
     property bool facesVisible: false
     function toggleFaces() { viewer.facesVisible = !viewer.facesVisible }
     // #26 (2. kör): arc-téglalap SZERKESZTŐ mód — rajzolás/átnevezés/
@@ -316,13 +315,18 @@ Rectangle {
     }
     //: #3741: a KIJELÖLT fél fotójáé (`aktivSor`) — kettős nézetben bal
     //: fókusznál ez a bal kép, nem a `currentIndex`-é.
-    readonly property var currentFaces: (!viewer.facesVisible || !photosModel
-                                          || viewer.aktivSor < 0
+    readonly property var currentFaces: (!photosModel || viewer.aktivSor < 0
                                           || typeof facesHelper === "undefined"
                                           || !facesHelper)
         ? []
         : (photosModel.revision, viewer.facesEditRevision,
            facesHelper.facesFor(photosModel.filePathAt(viewer.aktivSor)))
+    readonly property bool hasDetectedFaceHitTargets: {
+        var items = viewer.currentFaces
+        for (var i = 0; i < items.length; ++i)
+            if (items[i].detected === true) return true
+        return false
+    }
 
     // -- zoom-állapotgép (#6, #2492): fit / 1:1 / tetszőleges ------------
     //
@@ -1731,29 +1735,64 @@ Rectangle {
                     readonly property int mappaKezdet: mappaSav[0]
                     readonly property int mappaDarab: mappaSav[1]
 
-                    Layout.preferredWidth: Math.min(7, mappaDarab) * 44
-                    Layout.preferredHeight: 38
+                    // #4562: a hét férőhely mérete fix, akkor is, ha a
+                    // mappában kevesebb kép van. A mérés: 7×28 + 6×3 = 214.
+                    Layout.minimumWidth: 214
+                    Layout.preferredWidth: 214
+                    Layout.maximumWidth: 214
+                    Layout.preferredHeight: 28
+                    width: 214
+                    height: 28
                     orientation: ListView.Horizontal
-                    model: mappaDarab
-                    currentIndex: viewer.currentIndex - mappaKezdet
+                    // Három üres cella mindkét oldalon adja meg a helyet,
+                    // hogy a mappaszélre eső kép is a középső férőhelyen
+                    // maradjon. A valós sorok a 3…mappaDarab+2 indexek.
+                    model: mappaDarab > 0 ? mappaDarab + 6 : 0
+                    currentIndex: viewer.currentIndex >= mappaKezdet
+                                 && viewer.currentIndex < mappaKezdet + mappaDarab
+                               ? viewer.currentIndex - mappaKezdet + 3 : -1
+                    preferredHighlightBegin: (width - 28) / 2
+                    preferredHighlightEnd: preferredHighlightBegin + 31
+                    highlightRangeMode: ListView.StrictlyEnforceRange
                     highlightMoveDuration: 100
+                    // A középső férőhelyet a viewport geometriájából
+                    // számoljuk, a mappaszéleken lévő üres cellákkal együtt.
+                    // A szalag saját húzása nem mozdíthatja el a kijelölést.
+                    interactive: false
+                    function kozepreIgazit() {
+                        contentX = currentIndex >= 0 && currentIndex < count
+                            ? Math.max(0, currentIndex * 31
+                                       - preferredHighlightBegin) : 0
+                    }
+                    onCurrentIndexChanged: kozepreIgazit()
+                    onCountChanged: kozepreIgazit()
+                    Component.onCompleted: kozepreIgazit()
                     clip: true
                     delegate: Rectangle {
                         required property int index
-                        //: a rács-modell VALÓDI sora (a mappa-eltolással)
-                        readonly property int racsSor: filmstrip.mappaKezdet + index
-                        width: 42; height: 38
-                        //: #3014: AB módban MINDKÉT megjelenített kép
-                        //: kiemelést kap a filmszalagon — különben a
-                        //: felhasználó nem látja, honnan jön a másik fél.
-                        color: racsSor === viewer.currentIndex
-                               || (viewer.layoutMode === "ab"
-                                   && racsSor === viewer.abMasikSor)
+                        //: a három kitöltőcella előtt a rácsmodell valós sora
+                        readonly property int racsSor:
+                            filmstrip.mappaKezdet + index - 3
+                        readonly property bool mappaKepen:
+                            racsSor >= filmstrip.mappaKezdet
+                            && racsSor < filmstrip.mappaKezdet + filmstrip.mappaDarab
+                        width: 31
+                        height: 28
+                        // #3014: a másik AB-kép tömör jelölése megmarad;
+                        // az aktuális képet a mért kétszínű keret jelöli.
+                        color: mappaKepen
+                               && racsSor !== viewer.currentIndex
+                               && viewer.layoutMode === "ab"
+                               && racsSor === viewer.abMasikSor
                                ? Theme.thumbSelection : "transparent"
                         Image {
-                            anchors.fill: parent
-                            anchors.margins: 2
-                            source: viewer.photosModel
+                            objectName: "viewerFilmstripThumbnail"
+                            width: 28
+                            height: 28
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: parent.mappaKepen
+                            source: visible && viewer.photosModel
                                 ? viewer.photosModel.thumbUrlAt(parent.racsSor)
                                 : ""
                             // #1600: a bélyegkép-textúra a Qt gyorsítótárában KÖZÖS a
@@ -1766,7 +1805,31 @@ Rectangle {
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                         }
+                        Item {
+                            objectName: visible
+                                ? "viewerFilmstripCurrentFrame" : ""
+                            width: 28
+                            height: 28
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: parent.mappaKepen
+                                     && parent.racsSor === viewer.currentIndex
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "transparent"
+                                border.width: 1
+                                border.color: "#009EFF"
+                            }
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.margins: 1
+                                color: "transparent"
+                                border.width: 1
+                                border.color: "#D4D4D4"
+                            }
+                        }
                         TapHandler {
+                            enabled: parent.mappaKepen
                             //: #3014: AB módban az AKTÍV oldal képét
                             //: cseréljük — ez a válogató munkafolyamat
                             //: lelke (a `swap_2up_focus` választja ki,
@@ -1821,6 +1884,9 @@ Rectangle {
                 //: hivatalos magyar buboréksúgókkal.
                 Row {
                     objectName: "viewerLayoutGroup"
+                    // #4562: megtartja a mért kezdőpontot a fix 214 px-es
+                    // filmszalag után (▶ vége x=917, a csoport x=933).
+                    Layout.leftMargin: 6
                     //: #3663 (átnézés, 2. kör): a szegmens-hármas MÉRT
                     //: teljes szélessége 114 px (933–1047) — a `spacing:0`
                     //: és a 38 px-es szegmensszélesség adja ki pontosan
@@ -1879,6 +1945,8 @@ Rectangle {
                 //: — a korábbi 26 px alig volt olvasható/kattintható.
                 LayoutSegment {
                     objectName: "viewerSwapFocus"
+                    // A mért 10 px-es rés a csoport után: spacing 5 + margó 5.
+                    Layout.leftMargin: 5
                     //: #885: a `.tre` `swap_2up_focus`-én NINCS `mousedown` —
                     //: felengedésre sül el, a három elrendezés-váltóval
                     //: ellentétben.
@@ -1963,11 +2031,49 @@ Rectangle {
                 // a gombsor.
                 color: Theme.chromeBg
 
+                // #4566: videónál a fülsáv helyén a videó-panel áll (a spec
+                // `movietab` szakasza). A fülsáv ilyenkor el van rejtve, nem
+                // csak szürkítve.
+                VideoEditPanel {
+                    id: videoEditPanel
+                    objectName: "videoEditPanel"
+                    visible: viewer.isCurrentVideo
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 280
+                    x: viewer.editorDrawerOffset
+                    // a vágás állapota a modellből jön; a `revision` SZÁNDÉKOS
+                    // függőség, ld. a lejátszó trimStartMs kötését
+                    trimmed: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.movieTrimAt(viewer.currentIndex).start >= 0
+                           || viewer.photosModel.movieTrimAt(viewer.currentIndex).end >= 0)
+                        : false
+                    // a képkockát a LEJÁTSZÓ pozíciójából mentjük, ezért élő
+                    // lejátszó kell hozzá
+                    captureAvailable: videoLoader.status === Loader.Ready
+                    //: az eredeti (`CThumbUI::UndomovieEdits`) előbb rákérdez
+                    onResetTrimRequested: movieResetConfirmLoader.ensure().askFor(
+                        viewer.currentIndex)
+                    onCaptureFrameRequested: {
+                        if (videoLoader.item)
+                            videoLoader.item.captureFrame()
+                    }
+                    //: `movieeditpanel/export_movie` → `LinuxNomovie`.
+                    onExportClipRequested: {
+                        if (Qt.platform.os === "linux")
+                            kepkockaJelzes.mutasd(
+                                qsTr("This feature is not supported for Linux"))
+                    }
+                }
+
                 EditorPanel {
                     id: editorPanel
                     objectName: "viewerEditorPanel"
-                    // videónál a szerkesztő-eszközök nem értelmezettek (#14)
+                    // videónál a szerkesztő-eszközök nem értelmezettek (#14),
+                    // a fülsáv helyén a videó-panel (#4566) áll
                     enabled: !viewer.isCurrentVideo
+                    visible: !viewer.isCurrentVideo
                     // #628: a panel a RENDELKEZÉSRE ÁLLÓ magasságot kapja.
                     // Korábban itt fix 420 képpont állt, akármekkora az
                     // ablak — a 3. fül 12 bélyegképes csempéje (3×4, ≈450
@@ -3081,21 +3187,11 @@ Rectangle {
                                 controller.setMovieTrim(
                                     viewer.currentIndex, startMs, endMs)
                         }
-                        function onTrimResetRequested() {
-                            if (controller && controller.resetMovieTrim !== undefined)
-                                controller.resetMovieTrim(viewer.currentIndex)
-                        }
                         //: #1838: a képkocka mentése — a vezérlő dekódol és ír
                         function onCaptureFrameRequested(positionMs) {
                             if (controller && controller.captureMovieFrame !== undefined)
                                 controller.captureMovieFrame(
                                     viewer.currentIndex, positionMs)
-                        }
-                        //: `movieeditpanel/export_movie` → `LinuxNomovie`.
-                        function onExportClipRequested() {
-                            if (Qt.platform.os === "linux")
-                                kepkockaJelzes.mutasd(
-                                    qsTr("This feature is not supported for Linux"))
                         }
                         // #4449/#4458: csak a videó-előnézeti terület
                         // kérhet kattintásra visszalépést; a PhotoViewer
@@ -3351,13 +3447,16 @@ Rectangle {
                         //: #3166: a keret-leképezés szerinti területben — a
                         //: mentett arc-régiók a FÉNYKÉPRE vonatkoznak
                         parent: frameContentArea
-                        visible: viewer.facesVisible && !editorPanel.cropActive
+                        visible: (viewer.facesVisible
+                                  || viewer.hasDetectedFaceHitTargets)
+                                 && !editorPanel.cropActive
                                  && !viewer.isCurrentVideo
                         x: 0
                         y: 0
                         width: frameContentArea.width
                         height: frameContentArea.height
                         faces: viewer.currentFaces
+                        showSavedFaces: viewer.facesVisible
                         editMode: viewer.facesEditMode
                         //: #3741: a kijelölt fél fotója — az arcszerkesztés
                         //: ennek a sorába ír (`currentFaces` ugyanígy)
@@ -4506,6 +4605,31 @@ Rectangle {
     //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
     //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
     function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer.currentPath, typeof fileOpsController !== "undefined" ? fileOpsController : null) }
+
+    //: #4566: a `movieeditpanel/reset_trim` megerősítése — az eredeti
+    //: `CThumbUI::UndomovieEdits` kérdése és `IDS_CONFIRMREVERT_YES_BUTTON`
+    //: igen-gombja (`docs/specs/ui-audit-editor.md`, a `reset_trim` szakasza)
+    DeferredDialog {
+        id: movieResetConfirmLoader
+        objectName: "movieResetConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "movieResetConfirmDialog"
+                namePrefix: "movieResetConfirm"
+                property int row: -1
+                yesText: qsTr("Remove Edits")
+                function askFor(sor) {
+                    row = sor
+                    ask("", qsTr("Remove all movie edits?"))
+                }
+                onConfirmed: {
+                    if (controller && controller.resetMovieTrim !== undefined)
+                        controller.resetMovieTrim(row)
+                }
+            }
+        }
+    }
 
     DeferredDialog {
         id: viewerMenuLoader

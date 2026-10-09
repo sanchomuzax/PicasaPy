@@ -484,8 +484,8 @@ Rectangle {
                     // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
                     // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
                     readonly property bool ctlFilterActive:
-                        (controller && controller.filterActive !== undefined)
-                            ? controller.filterActive : false
+                        (controller && controller.viewModeName !== undefined)
+                            ? controller.viewModeName === "starred" : false
                     objectName: "starFilterButton"
                     width: 22; height: 20; radius: 2
                     //: #839: a MÉRT állapotok — aktívan ZÖLD gomb fehér
@@ -512,7 +512,7 @@ Rectangle {
                     TapHandler {
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed) {
-                            controller.filterActive
+                            parent.ctlFilterActive
                                 ? controller.clearFilter()
                                 : controller.showStarred()
                         }
@@ -667,6 +667,22 @@ Rectangle {
                     width: 22; height: 20
                     readonly property bool ctlHasGeo:
                         controller ? controller.geoMarkerCount > 0 : false
+                    readonly property bool ctlCanShowGeo:
+                        ctlHasGeo || (controller && controller.filterActive !== undefined
+                                      ? controller.filterActive : false)
+                    readonly property bool aktiv:
+                        (controller && controller.viewModeName !== undefined)
+                            ? controller.viewModeName === "geo" : false
+                    Rectangle {
+                        objectName: "geoFilterBackground"
+                        anchors.fill: parent
+                        radius: 2
+                        color: parent.aktiv
+                               ? Theme.szuroHatterAktiv
+                               : (geoFilterHover.hovered
+                                  ? Theme.szuroHatterRamutat : "transparent")
+                        border.width: 0
+                    }
                     // #361: saját helyjelölő-tű SVG a korábbi "⚲"
                     // unicode-glif helyett (a hover/inaktív állapotot most
                     // opacity vezérli — a piros tű már önmagában "geo"-
@@ -677,18 +693,20 @@ Rectangle {
                         anchors.margins: 3
                         source: "icons/geo-pin.svg"
                         fillMode: Image.PreserveAspectFit
-                        opacity: parent.ctlHasGeo
-                                 ? (geoFilterHover.hovered ? 1.0 : 0.85)
-                                 : 0.35
+                        opacity: parent.aktiv
+                                 ? 1.0
+                                 : (parent.ctlHasGeo
+                                    ? (geoFilterHover.hovered ? 1.0 : 0.85)
+                                    : 0.35)
                     }
                     // #839: itt NINCS lebegő ToolTip — a súgó a „Szűrők"
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: geoFilterHover }
                     TapHandler {
-                        enabled: parent.ctlHasGeo
+                        enabled: parent.ctlCanShowGeo
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed) {
-                            controller.filterActive
+                            parent.aktiv
                                 ? controller.clearFilter()
                                 : controller.showGeotagged()
                         }
@@ -714,6 +732,7 @@ Rectangle {
                 //: A nulla NEM „nagyon régi", hanem „nincs szűrés" — a
                 //: vezérlő nulla értéknél kikapcsolja a szűrőt.
                 PicasaSlider {
+                    id: ageFilterSlider
                     objectName: "dateRangeFilterSlider"
                     width: 90; height: 20
                     from: 0.0
@@ -728,6 +747,13 @@ Rectangle {
                     //: `moved` az elengedésre/lépésre szól, a `valueChanged`
                     //: minden képpontnyi vonszolásra lekérdezné az indexet
                     onMoved: if (controller) controller.setAgeFilter(value)
+                }
+                Connections {
+                    target: controller
+                    function onStatusChanged() {
+                        if (controller && controller.viewModeName !== "age")
+                            ageFilterSlider.value = 0.0
+                    }
                 }
             }
         }

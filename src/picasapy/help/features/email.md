@@ -38,6 +38,10 @@ Itt állítod össze a levelet:
 
 A címzettet nem kötelező kitölteni: a levelezőprogramban is megadhatod.
 
+A **Címzett:** mezőre jobbgombbal kattintva a helyi menüben ott az
+**Automatikus kitöltés** pipás kapcsoló, ahogy az eredeti Picasában. Alapból
+be van kapcsolva, és a program megjegyzi, hogyan hagytad.
+
 ## Levelezőprogram-választó
 
 Amíg nem döntöttél másképp, az **első küldésnél** a program előbb a

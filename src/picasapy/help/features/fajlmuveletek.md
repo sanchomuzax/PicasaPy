@@ -111,7 +111,9 @@ A megerősítést a **Beállítások ▸ Általános** lapon ki lehet kapcsolni
 ## Keresés a lemezen
 
 **Fájl ▸ Keresés a lemezen** (Ctrl+Enter) megnyitja a fájlkezelőben azt
-a mappát, ahol a kép van.
+a mappát, ahol a kép van. Ha **nincs kijelölt kép**, a Ctrl+Enter a
+megnyitott mappát mutatja meg a fájlkezelőben (albumban és személyalbumban
+ilyenkor nem csinál semmit).
 
 A kép helyi menüjében ugyanez a **Keresés a lemezen** (Ctrl+Enter). Ha
 **egyetlen** képet jelöltél ki, és annak a program megőrizte a szerkesztés
