@@ -6,8 +6,6 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
-
 
 @dataclass(frozen=True)
 class VideoMetadata:
@@ -28,6 +26,8 @@ def read_video_metadata(path: str | Path) -> VideoMetadata:
     és a dekóder által megadott képkockasebesség hányadosa; használható
     időalap hiányában csak az ismert formátum kerül az indexbe.
     """
+    import cv2  # lusta import: az indulás ne töltse be az OpenCV-t (#1611)
+
     movie_format = Path(path).suffix.removeprefix(".").upper() or None
     try:
         capture = cv2.VideoCapture(str(path))
