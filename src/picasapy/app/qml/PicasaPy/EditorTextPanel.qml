@@ -78,10 +78,9 @@ ColumnLayout {
         onButtonClicked: panel.textCopyCaptionRequested()
     }
 
-    // #450 (2. lépcső): tipográfia — betűcsalád, méret, félkövér/dőlt/
-    // aláhúzott és igazítás. A rajzoló ehhez már TrueType-ot használ
-    // (`render.text_fonts`); ha a gépen nincs ilyen betű, a vezérlők
-    // hatástalanok maradnak, de a szöveg akkor is megjelenik.
+    // #450/#4546: a Qt rendszer-betűtípus-adatbázisából jön a családlista;
+    // a képi előnézet is a kiválasztott rendszerbetűvel rajzol. A többi
+    // vezérlő a méretet, a félkövér/dőlt/aláhúzott állapotot és az igazítást adja.
     // #779 (Windows CI): a `Layout.fillWidth` NÉLKÜLI felirat a saját — a
     // betűkészlettől függő — szélességét KÖTELEZŐ minimumként adja az
     // oszlopnak, és ezzel az EGÉSZ panelt szélesebbre feszítheti a
@@ -243,10 +242,16 @@ ColumnLayout {
             //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
             //: nem művelet: azonnal hat.
             lenyomasra: true
-            label: "\u2261"
             tooltip: qsTr("Left justify text")
             active: panel.textAlign === "left"
             onButtonClicked: panel.textAlignEdited("left")
+            //: #4547: saját ikon — a három gomb eddig azonos jelet mutatott.
+            //: Az eredeti `leftalign_icon`-jának megfelelője.
+            AlignIcon {
+                objectName: "textAlign_leftIcon"
+                align: "left"
+                anchors.centerIn: parent
+            }
         }
         PanelButton {
             objectName: "textAlign_center"
@@ -255,10 +260,15 @@ ColumnLayout {
             //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
             //: nem művelet: azonnal hat.
             lenyomasra: true
-            label: "\u2261"
             tooltip: qsTr("Center justify text")
             active: panel.textAlign === "center"
             onButtonClicked: panel.textAlignEdited("center")
+            //: #4547: saját ikon (ld. a balra igazítónál)
+            AlignIcon {
+                objectName: "textAlign_centerIcon"
+                align: "center"
+                anchors.centerIn: parent
+            }
         }
         PanelButton {
             objectName: "textAlign_right"
@@ -267,10 +277,15 @@ ColumnLayout {
             //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
             //: nem művelet: azonnal hat.
             lenyomasra: true
-            label: "\u2261"
             tooltip: qsTr("Right justify text")
             active: panel.textAlign === "right"
             onButtonClicked: panel.textAlignEdited("right")
+            //: #4547: saját ikon (ld. a balra igazítónál)
+            AlignIcon {
+                objectName: "textAlign_rightIcon"
+                align: "right"
+                anchors.centerIn: parent
+            }
         }
     }
 

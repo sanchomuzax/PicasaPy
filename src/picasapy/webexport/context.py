@@ -122,6 +122,12 @@ def image_loop_variables(photos: tuple[PhotoExportData, ...], index: int) -> dic
         "isLastImage": _bool_var(is_last),
         "isNextImage": _bool_var(not is_last),
         "isPrevImage": _bool_var(not is_first),
+        # #4611 (spec 6. fejezet): a videó-ágak. A webexport csak állóképet
+        # exportál (`images.py` kihagyja a videót), így minden kép `isImage`,
+        # az `<embed>`/ActiveX ágak pedig soha nem igazak.
+        "isImage": _bool_var(True),
+        "isSimpleEmbed": _bool_var(False),
+        "isExtendedEmbed": _bool_var(False),
         "nextImage": next_photo.large_rel_path if next_photo else "",
         "prevImage": prev_photo.large_rel_path if prev_photo else "",
         "nextThumbnail": next_photo.thumbnail_rel_path if next_photo else "",

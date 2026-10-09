@@ -27,6 +27,7 @@ Dialog {
     property int pendingFaceId: -1
     property string pendingFaceName: ""
     property string pendingFaceDraftKey: ""
+    property string pendingPersonName: ""
     property var faceScanController: null
     readonly property int personRowHeight: Math.max(16, Theme.fontSize + 3)
     readonly property var filteredEntries: {
@@ -50,7 +51,7 @@ Dialog {
 
     function beginSession() {
         var initialSearch = manager.pendingFaceId >= 0
-            ? manager.pendingFaceName : ""
+            ? manager.pendingFaceName : manager.pendingPersonName
         var loaded = controller ? controller.peopleManagerContacts() : []
         var copied = []
         for (var i = 0; i < loaded.length; ++i) {
@@ -74,8 +75,22 @@ Dialog {
         emailField.text = ""
         manager.settingFields = false
         contactList.currentIndex = -1
-        if (!initialSearch && copied.length > 0)
+        if (initialSearch) {
+            var target = copied.find(function(entry) {
+                return entry.name.toLocaleLowerCase()
+                    === initialSearch.toLocaleLowerCase()
+            })
+            if (target)
+                manager.selectContact(target)
+        } else if (copied.length > 0) {
             manager.selectContact(copied[0])
+        }
+        manager.pendingPersonName = ""
+    }
+
+    function openForPerson(name) {
+        manager.pendingPersonName = String(name || "").trim()
+        manager.open()
     }
 
     function openForFace(name, faceId) {
@@ -259,6 +274,7 @@ Dialog {
         manager.pendingFaceId = -1
         manager.pendingFaceName = ""
         manager.pendingFaceDraftKey = ""
+        manager.pendingPersonName = ""
     }
 
     contentItem: ColumnLayout {

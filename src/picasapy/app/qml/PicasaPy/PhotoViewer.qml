@@ -12,6 +12,13 @@ import "aranykenyszer.js" as AranyKenyszer
 Rectangle {
     id: viewer
 
+    // #4639: a főablak súgója közvetlenül ezekből a bekötött
+    // Shortcut.sequence értékekből olvassa a néző és a kiegyenesítő sáv
+    // billentyűit.
+    readonly property var keyboardShortcutSequences: [
+        toggleEditorDrawerShortcut.sequence
+    ].concat(editorToolBar.keyboardShortcutSequences)
+
     readonly property bool textEntryHasFocus:
         viewer.Window.window !== null
         && viewer.Window.window.activeFocusItem !== null
@@ -202,6 +209,7 @@ Rectangle {
     // (`picasa-gyorsbillentyuk.md` 10.22). A néző láthatósága ennek a
     // nézetnek a kapuja; a könyvtárban a Shortcut le van tiltva.
     Shortcut {
+        id: toggleEditorDrawerShortcut
         sequence: "Ctrl+9"
         enabled: viewer.visible
         onActivated: viewer.toggleEditorDrawer()
@@ -290,10 +298,9 @@ Rectangle {
     readonly property var drawerRows:
         viewer.currentIndex >= 0 ? [viewer.currentIndex] : []
 
-    // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
-    // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
-    // eredménye; a photosModel.revision a forgatás-kötés mintájára triggerel
-    // újraértékelést; facesHelper hiányában (régi teszt-fixture) üres lista.
+    // #147/#4572: a mentett keretek csak a facesVisible kapcsolóra látszanak;
+    // indexbeli névtelen arcok rejtve maradnak, de kattinthatók. A
+    // photosModel.revision és facesEditRevision újraértékeli a lekérdezést.
     property bool facesVisible: false
     function toggleFaces() { viewer.facesVisible = !viewer.facesVisible }
     // #26 (2. kör): arc-téglalap SZERKESZTŐ mód — rajzolás/átnevezés/
@@ -315,13 +322,18 @@ Rectangle {
     }
     //: #3741: a KIJELÖLT fél fotójáé (`aktivSor`) — kettős nézetben bal
     //: fókusznál ez a bal kép, nem a `currentIndex`-é.
-    readonly property var currentFaces: (!viewer.facesVisible || !photosModel
-                                          || viewer.aktivSor < 0
+    readonly property var currentFaces: (!photosModel || viewer.aktivSor < 0
                                           || typeof facesHelper === "undefined"
                                           || !facesHelper)
         ? []
         : (photosModel.revision, viewer.facesEditRevision,
            facesHelper.facesFor(photosModel.filePathAt(viewer.aktivSor)))
+    readonly property bool hasDetectedFaceHitTargets: {
+        var items = viewer.currentFaces
+        for (var i = 0; i < items.length; ++i)
+            if (items[i].detected === true) return true
+        return false
+    }
 
     // -- zoom-állapotgép (#6, #2492): fit / 1:1 / tetszőleges ------------
     //
@@ -1247,6 +1259,8 @@ Rectangle {
         // #450: "Remove all existing text" gomb tiltási állapota
         editorPanel.hasTextOverlay = editController.hasTextOverlay
         editorPanel.textOverlayVisible = editController.textOverlayVisible
+        if (editorPanel.textActive)
+            editorPanel.textDraftContent = editController.textDraft
         // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
         // kitöltés ki/be, átlátszóság
         // #464: a Finomhangolás fül pipettája melletti színminta
@@ -1683,6 +1697,8 @@ Rectangle {
                     //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
                     //: (`oneup/prev`, `oneup/next` — `Property mousedown 1`).
                     lenyomasra: true
+                    //: #4563: `m_autorepeat` — nyomva tartva folyamatosan lép
+                    autoRepeat: true
                     onClicked: viewer.previous()
                     enabled: viewer.hasPrevious()
                     Layout.preferredWidth: 30
@@ -1847,6 +1863,8 @@ Rectangle {
                     //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
                     //: (`oneup/prev`, `oneup/next` — `Property mousedown 1`).
                     lenyomasra: true
+                    //: #4563: `m_autorepeat` — nyomva tartva folyamatosan lép
+                    autoRepeat: true
                     onClicked: viewer.next()
                     enabled: viewer.hasNext()
                     Layout.preferredWidth: 30
@@ -2026,11 +2044,49 @@ Rectangle {
                 // a gombsor.
                 color: Theme.chromeBg
 
+                // #4566: videónál a fülsáv helyén a videó-panel áll (a spec
+                // `movietab` szakasza). A fülsáv ilyenkor el van rejtve, nem
+                // csak szürkítve.
+                VideoEditPanel {
+                    id: videoEditPanel
+                    objectName: "videoEditPanel"
+                    visible: viewer.isCurrentVideo
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 280
+                    x: viewer.editorDrawerOffset
+                    // a vágás állapota a modellből jön; a `revision` SZÁNDÉKOS
+                    // függőség, ld. a lejátszó trimStartMs kötését
+                    trimmed: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.movieTrimAt(viewer.currentIndex).start >= 0
+                           || viewer.photosModel.movieTrimAt(viewer.currentIndex).end >= 0)
+                        : false
+                    // a képkockát a LEJÁTSZÓ pozíciójából mentjük, ezért élő
+                    // lejátszó kell hozzá
+                    captureAvailable: videoLoader.status === Loader.Ready
+                    //: az eredeti (`CThumbUI::UndomovieEdits`) előbb rákérdez
+                    onResetTrimRequested: movieResetConfirmLoader.ensure().askFor(
+                        viewer.currentIndex)
+                    onCaptureFrameRequested: {
+                        if (videoLoader.item)
+                            videoLoader.item.captureFrame()
+                    }
+                    //: `movieeditpanel/export_movie` → `LinuxNomovie`.
+                    onExportClipRequested: {
+                        if (Qt.platform.os === "linux")
+                            kepkockaJelzes.mutasd(
+                                qsTr("This feature is not supported for Linux"))
+                    }
+                }
+
                 EditorPanel {
                     id: editorPanel
                     objectName: "viewerEditorPanel"
-                    // videónál a szerkesztő-eszközök nem értelmezettek (#14)
+                    // videónál a szerkesztő-eszközök nem értelmezettek (#14),
+                    // a fülsáv helyén a videó-panel (#4566) áll
                     enabled: !viewer.isCurrentVideo
+                    visible: !viewer.isCurrentVideo
                     // #628: a panel a RENDELKEZÉSRE ÁLLÓ magasságot kapja.
                     // Korábban itt fix 420 képpont állt, akármekkora az
                     // ablak — a 3. fül 12 bélyegképes csempéje (3×4, ≈450
@@ -2047,6 +2103,16 @@ Rectangle {
                                  ? photoArea.fokuszKep.paintedWidth
                                    / photoArea.fokuszKep.paintedHeight
                                  : 4 / 3
+                    // #4549: a vágó felirata a valódi, EXIF szerint
+                    // megjelenített képméretből és az overlay kijelöléséből
+                    // áll össze; a `sourceSize` csak betöltési plafon lenne.
+                    imagePixelWidth: viewer.valodiSzelesseg
+                    imagePixelHeight: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.pixelHeightAt(viewer.aktivSor))
+                        : 0
+                    cropRect: cropOverlay.cropRect
+                    cropHasSelection: cropOverlay.hasSelection
                     // Visszavonás/Újra — a controller undo-verméből (#59).
                     // #465: a KÉSZ feliratot a controller adja
                     // (`edit_action_names` névtár), hogy a lánc minden
@@ -3144,21 +3210,11 @@ Rectangle {
                                 controller.setMovieTrim(
                                     viewer.currentIndex, startMs, endMs)
                         }
-                        function onTrimResetRequested() {
-                            if (controller && controller.resetMovieTrim !== undefined)
-                                controller.resetMovieTrim(viewer.currentIndex)
-                        }
                         //: #1838: a képkocka mentése — a vezérlő dekódol és ír
                         function onCaptureFrameRequested(positionMs) {
                             if (controller && controller.captureMovieFrame !== undefined)
                                 controller.captureMovieFrame(
                                     viewer.currentIndex, positionMs)
-                        }
-                        //: `movieeditpanel/export_movie` → `LinuxNomovie`.
-                        function onExportClipRequested() {
-                            if (Qt.platform.os === "linux")
-                                kepkockaJelzes.mutasd(
-                                    qsTr("This feature is not supported for Linux"))
                         }
                         // #4449/#4458: csak a videó-előnézeti terület
                         // kérhet kattintásra visszalépést; a PhotoViewer
@@ -3414,13 +3470,16 @@ Rectangle {
                         //: #3166: a keret-leképezés szerinti területben — a
                         //: mentett arc-régiók a FÉNYKÉPRE vonatkoznak
                         parent: frameContentArea
-                        visible: viewer.facesVisible && !editorPanel.cropActive
+                        visible: (viewer.facesVisible
+                                  || viewer.hasDetectedFaceHitTargets)
+                                 && !editorPanel.cropActive
                                  && !viewer.isCurrentVideo
                         x: 0
                         y: 0
                         width: frameContentArea.width
                         height: frameContentArea.height
                         faces: viewer.currentFaces
+                        showSavedFaces: viewer.facesVisible
                         editMode: viewer.facesEditMode
                         //: #3741: a kijelölt fél fotója — az arcszerkesztés
                         //: ennek a sorába ír (`currentFaces` ugyanígy)
@@ -3545,10 +3604,51 @@ Rectangle {
                             - photoArea.fokuszKep.paintedHeight) / 2
                         width: photoArea.fokuszKep.paintedWidth
                         height: photoArea.fokuszKep.paintedHeight
-                        cursorShape: Qt.CrossCursor
+                        // A Picasa a `thumbui/circlecursor` elemmel helyettesíti
+                        // a rendszermutatót. A kör mérete egyezzen a retusáló
+                        // patch tényleges, modellből kapott sugarával.
+                        cursorShape: ctrlPanning ? Qt.CrossCursor : Qt.BlankCursor
                         property bool ctrlPanning: false
                         property real panLastX: 0
                         property real panLastY: 0
+                        property real retouchTargetX: 0
+                        property real retouchTargetY: 0
+                        property real retouchSourceX: 0
+                        property real retouchSourceY: 0
+                        property bool hasRetouchTarget: false
+                        property bool hasRetouchSource: false
+                        property bool committingRetouchPatch: false
+                        readonly property real brushRadius:
+                            (editController
+                             && editController.retouchBrushRadiusRatio !== undefined
+                                ? editController.retouchBrushRadiusRatio : 0)
+                            * Math.min(width, height)
+
+                        function torolRetouchJeloleseket() {
+                            hasRetouchTarget = false
+                            hasRetouchSource = false
+                        }
+
+                        onVisibleChanged: {
+                            if (!visible) {
+                                torolRetouchJeloleseket()
+                                ctrlPanning = false
+                            }
+                        }
+
+                        Connections {
+                            target: editorPanel
+                            function onRetouchPatchPendingChanged() {
+                                if (!editorPanel.retouchPatchPending
+                                        && !retouchClickArea.committingRetouchPatch)
+                                    retouchClickArea.torolRetouchJeloleseket()
+                            }
+                            function onRetouchRegionCountChanged() {
+                                if (editorPanel.retouchRegionCount === 0
+                                        && !editorPanel.retouchPatchPending)
+                                    retouchClickArea.torolRetouchJeloleseket()
+                            }
+                        }
                         onPressed: function(mouse) {
                             if (mouse.modifiers & Qt.ControlModifier) {
                                 ctrlPanning = true
@@ -3574,12 +3674,84 @@ Rectangle {
                             // Ctrl+húzás UTÁNi felengedés is "clicked"-et vált
                             // ki QML-ben — ez NEM patch-kattintás
                             if (mouse.modifiers & Qt.ControlModifier) return
-                            if (editController.retouchPatchPending)
+                            if (editController.retouchPatchPending) {
+                                retouchSourceX = mouse.x / width
+                                retouchSourceY = mouse.y / height
+                                hasRetouchSource = true
+                                committingRetouchPatch = true
                                 editController.commitRetouchPatch(
                                     mouse.x / width, mouse.y / height)
-                            else
+                                committingRetouchPatch = false
+                            } else {
+                                retouchTargetX = mouse.x / width
+                                retouchTargetY = mouse.y / height
+                                hasRetouchTarget = true
+                                hasRetouchSource = false
                                 editController.beginRetouchPatch(
                                     mouse.x / width, mouse.y / height)
+                            }
+                        }
+
+                        Component {
+                            id: retouchCircleComponent
+                            Item {
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: "transparent"
+                                    radius: width / 2
+                                    border.width: 2
+                                    border.color: "#000000"
+                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 2
+                                    color: "transparent"
+                                    radius: width / 2
+                                    border.width: 1
+                                    border.color: "#ffffff"
+                                }
+                            }
+                        }
+
+                        Loader {
+                            id: retouchTargetCircle
+                            objectName: "retouchTargetCircle"
+                            sourceComponent: retouchCircleComponent
+                            visible: retouchClickArea.hasRetouchTarget
+                            width: 2 * retouchClickArea.brushRadius
+                            height: width
+                            x: retouchClickArea.retouchTargetX
+                                * retouchClickArea.width - width / 2
+                            y: retouchClickArea.retouchTargetY
+                                * retouchClickArea.height - height / 2
+                            z: 1
+                        }
+
+                        Loader {
+                            id: retouchSourceCircle
+                            objectName: "retouchSourceCircle"
+                            sourceComponent: retouchCircleComponent
+                            visible: retouchClickArea.hasRetouchSource
+                            width: 2 * retouchClickArea.brushRadius
+                            height: width
+                            x: retouchClickArea.retouchSourceX
+                                * retouchClickArea.width - width / 2
+                            y: retouchClickArea.retouchSourceY
+                                * retouchClickArea.height - height / 2
+                            z: 2
+                        }
+
+                        Loader {
+                            id: retouchBrushCursor
+                            objectName: "retouchBrushCursor"
+                            sourceComponent: retouchCircleComponent
+                            visible: retouchClickArea.containsMouse
+                                     && !retouchClickArea.ctrlPanning
+                            width: 2 * retouchClickArea.brushRadius
+                            height: width
+                            x: retouchClickArea.mouseX - width / 2
+                            y: retouchClickArea.mouseY - height / 2
+                            z: 3
                         }
                     }
                     // #445: Vörösszem — kézi kijelölés téglalap-húzással
@@ -3748,8 +3920,61 @@ Rectangle {
                         cursorShape: Qt.CrossCursor
                         onClicked: function(mouse) {
                             if (width <= 0 || height <= 0) return
-                            editController.previewTextPlacement(
+                            editController.previewNewTextPlacement(
                                 mouse.x / width, mouse.y / height)
+                        }
+                    }
+                    // #4545: a mentett szövegdobozok áttetsző, kattintható
+                    // találati területei a raszter-előnézet fölött vannak.
+                    // A betűt a szolgáltató rajzolja; itt csak a doboz
+                    // hozzávetőleges QML-méretét használjuk kijelöléshez.
+                    Repeater {
+                        id: textOverlaySelector
+                        parent: photoArea.fokuszKep
+                        model: editorPanel.textActive && viewer.editCtl
+                               ? viewer.editCtl.textOverlayItems : []
+                        delegate: Item {
+                            required property var modelData
+                            objectName: "textOverlaySelector_" + modelData.index
+                            z: 1
+                            width: Math.max(16, hitText.implicitWidth + 12)
+                            height: Math.max(16, hitText.implicitHeight + 12)
+                            x: (photoArea.fokuszKep.width
+                                - photoArea.fokuszKep.paintedWidth) / 2
+                               + photoArea.fokuszKep.paintedWidth * modelData.x - 6
+                            y: (photoArea.fokuszKep.height
+                                - photoArea.fokuszKep.paintedHeight) / 2
+                               + photoArea.fokuszKep.paintedHeight * modelData.y
+                               - hitText.implicitHeight - 6
+                            rotation: modelData.rotation * 180 / Math.PI
+                            transformOrigin: Item.BottomLeft
+
+                            Text {
+                                id: hitText
+                                anchors.centerIn: parent
+                                text: modelData.content
+                                font.family: modelData.font
+                                font.pixelSize: Math.max(1, Math.round(
+                                    modelData.size * photoArea.fokuszKep.paintedHeight
+                                    / 360))
+                                color: "transparent"
+                            }
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "transparent"
+                                border.color: "#4a90e2"
+                                border.width: 1
+                                visible: viewer.editCtl
+                                         && modelData.index
+                                            === viewer.editCtl.textSelectedIndex
+                            }
+                            MouseArea {
+                                objectName: "textOverlayHitTarget_" + modelData.index
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: containsMouse ? Qt.IBeamCursor : Qt.ArrowCursor
+                                onClicked: editController.selectTextOverlay(modelData.index)
+                            }
                         }
                     }
                 }
@@ -4566,6 +4791,31 @@ Rectangle {
     //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
     //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
     function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer.currentPath, typeof fileOpsController !== "undefined" ? fileOpsController : null) }
+
+    //: #4566: a `movieeditpanel/reset_trim` megerősítése — az eredeti
+    //: `CThumbUI::UndomovieEdits` kérdése és `IDS_CONFIRMREVERT_YES_BUTTON`
+    //: igen-gombja (`docs/specs/ui-audit-editor.md`, a `reset_trim` szakasza)
+    DeferredDialog {
+        id: movieResetConfirmLoader
+        objectName: "movieResetConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "movieResetConfirmDialog"
+                namePrefix: "movieResetConfirm"
+                property int row: -1
+                yesText: qsTr("Remove Edits")
+                function askFor(sor) {
+                    row = sor
+                    ask("", qsTr("Remove all movie edits?"))
+                }
+                onConfirmed: {
+                    if (controller && controller.resetMovieTrim !== undefined)
+                        controller.resetMovieTrim(row)
+                }
+            }
+        }
+    }
 
     DeferredDialog {
         id: viewerMenuLoader

@@ -25,7 +25,11 @@ Window {
     property string helpTopic: "features/exportalas.md"
     WindowHelp { tema: webExportWindow.helpTopic }
     width: 520
-    height: exporting || lastOutputFolder.length > 0 || lastError.length > 0 ? 420 : 360
+    //: #4611: a tartalomhoz igazodik. A rögzített 360/420 px-es magasságnál a
+    //: „Létrehozás" gomb a 435. képpontnál kezdődött, azaz az ablakon kívül
+    //: esett, és sablontól függetlenül nem volt kattintható.
+    readonly property real fitHeight: mainColumn.implicitHeight + 2 * mainColumn.anchors.margins
+    height: Math.max(webExportWindow.minimumHeight, webExportWindow.fitHeight)
     minimumWidth: 460
     minimumHeight: 320
     color: Theme.canvasBg
@@ -112,6 +116,7 @@ Window {
     }
 
     ColumnLayout {
+        id: mainColumn
         anchors.fill: parent
         anchors.margins: 12
         spacing: 10

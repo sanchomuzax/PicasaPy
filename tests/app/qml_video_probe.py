@@ -32,8 +32,9 @@ def qtest_egerlepes(
 
     A QTest saját eseményórát léptet; a falióra szerinti várakozás nem hat rá.
     Egy előző gesztus után ezért egy, a duplakattintási ablaknál hosszabb
-    időbélyegű egérmozgás zárja le a korábbi kattintást. A dupla kattintás
-    négy eseményén belül rövid, explicit késleltetés marad.
+    időbélyegű egérmozgás zárja le a korábbi kattintást. A dupla kattintást
+    két teljes kattintás alkotja: Windowson a magányos MouseButtonDblClick
+    esemény nem mindig jut el a QML MouseArea-hoz.
     """
     if elozo_gesztus_volt:
         from PySide6.QtCore import QPoint
@@ -41,13 +42,14 @@ def qtest_egerlepes(
         qtest.mouseMove(
             window, point + QPoint(1, 0), delay=double_click_interval_ms + 1
         )
-    fuggveny = qtest.mouseDClick if dupla else qtest.mouseClick
-    fuggveny(
-        window,
-        button,
-        pos=point,
-        delay=QTEST_EGER_DELAY_MS,
-    )
+    kattintasok = 2 if dupla else 1
+    for _ in range(kattintasok):
+        qtest.mouseClick(
+            window,
+            button,
+            pos=point,
+            delay=QTEST_EGER_DELAY_MS,
+        )
 
 
 def main(work_dir: Path) -> None:
@@ -112,6 +114,7 @@ def main(work_dir: Path) -> None:
     controller.selectFolder(str(lib))
     app.processEvents()
     print("PROBE-INIT after initial processEvents", flush=True)
+    original_height = int(window.height())
 
     def child(name):
         obj = window.findChild(QObject, name)
@@ -260,8 +263,60 @@ def main(work_dir: Path) -> None:
     window.installEventFilter(esemenynaplozo)
     elozo_gesztus_volt = False
 
-    def naplozott_kattintas(nev, elem, *, dupla=False):
+    def naplozott_kattintas(nev, elem, *, dupla=False, height_offset=0):
         nonlocal elozo_gesztus_volt
+        target_height = original_height + height_offset
+        window.setHeight(target_height)
+        elem.ensurePolished()
+        szulo = elem.parentItem()
+        if szulo is not None:
+            szulo.ensurePolished()
+        window.contentItem().ensurePolished()
+        window.update()
+        assert varj(
+            lambda: int(window.height()) == target_height
+            and elem.property("visible") is True
+            and float(elem.property("width")) > 0
+            and float(elem.property("height")) > 0
+        ), f"{nev}: a kattintási célpont nem kapott kirajzolható méretet"
+
+        # A látható, nem nulla méretű elem még őrizheti az előző ablakmagasság
+        # jelenetkoordinátáit. A kattintást csak stabil mapToScene-geometriából
+        # számoljuk, különben az esemény az ablakig jut, nem a MouseArea-ig.
+        elozo_geometria = None
+        stabil_mintak = 0
+
+        def geometria_stabil():
+            nonlocal elozo_geometria, stabil_mintak
+            bal_felso = elem.mapToScene(QPointF(0, 0))
+            kozep = elem.mapToScene(
+                QPointF(
+                    float(elem.property("width")) / 2,
+                    float(elem.property("height")) / 2,
+                )
+            )
+            most = tuple(
+                round(float(ertek), 3)
+                for ertek in (
+                    bal_felso.x(),
+                    bal_felso.y(),
+                    kozep.x(),
+                    kozep.y(),
+                    elem.property("width"),
+                    elem.property("height"),
+                )
+            )
+            if most == elozo_geometria:
+                stabil_mintak += 1
+            else:
+                elozo_geometria = most
+                stabil_mintak = 0
+            return stabil_mintak >= 2
+
+        assert varj(geometria_stabil), (
+            f"{nev}: az ablak átméretezése után nem stabilizálódott a "
+            "kattintási célpont geometriája"
+        )
         aktiv_lepes.update(nev=nev, elem=elem, press_events=[])
         print(f"PROBE-STEP START {nev} {nezo_allapot(elem)}", flush=True)
         try:
@@ -306,7 +361,7 @@ def main(work_dir: Path) -> None:
     assert controller.singleClickExitEnabled is False
     video_viewport = item.findChild(QObject, "videoViewport")
     assert video_viewport is not None
-    naplozott_kattintas("video-single-click", video_viewport)
+    naplozott_kattintas("video-single-click", video_viewport, height_offset=-5)
     assert window.property("viewerOpen") is True, (
         "alapállapotban az egyszeres videókattintás bezárta a szerkesztőt"
     )
@@ -323,7 +378,9 @@ def main(work_dir: Path) -> None:
     video_item = child("videoLoader").property("item")
     video_viewport = video_item.findChild(QObject, "videoViewport")
     assert video_viewport is not None
-    naplozott_kattintas("video-single-click-exit-click", video_viewport)
+    naplozott_kattintas(
+        "video-single-click-exit-click", video_viewport, height_offset=5
+    )
     assert varj(lambda: window.property("viewerOpen") is False), (
         "a SingleClickExit bekapcsolva nem vitte vissza a könyvtárba"
     )
@@ -338,7 +395,9 @@ def main(work_dir: Path) -> None:
     assert varj(lambda: pan_area.property("enabled")), (
         "a nagyított állóképes előnézet kattintási területe nem aktív"
     )
-    naplozott_kattintas("photo-single-click-exit-click", pan_area)
+    naplozott_kattintas(
+        "photo-single-click-exit-click", pan_area, height_offset=-5
+    )
     assert varj(lambda: window.property("viewerOpen") is False), (
         "a SingleClickExit bekapcsolva az állóképes egyszeres kattintásra "
         "nem tért vissza a könyvtárba"
@@ -375,7 +434,7 @@ def main(work_dir: Path) -> None:
 
     pan_area.doubleClicked.connect(dupla_kattintas_kezelo)
     naplozott_kattintas(
-        "photo-double-click-exit-click", pan_area, dupla=True
+        "photo-double-click-exit-click", pan_area, dupla=True, height_offset=5
     )
     if dupla_allapot["belepesek"] == 0:
         single_exit, layout_mode, tilt_active = dupla_feltetelek()

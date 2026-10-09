@@ -18,7 +18,8 @@ import QtQuick.Controls
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
 // szürkén LÁTSZANAK (#416, illetve a spec 5.1. szabálya: az inaktív tétel
-// is tétel, hogy a menü magassága és a tételek helye állandó maradjon).
+// is tétel, hogy a menü magassága és a tételek helye állandó maradjon). A
+// Névcímkék hozzáadása (#4535) a kiválasztott mappa képeire indít keresést.
 //
 // Önálló, signal-alapú komponens: a controller-kötést a FolderPane.qml
 // végzi (nem forró fájl).
@@ -72,6 +73,7 @@ PicasaMenu {
     //: #1638: a mappa a LOMTÁRBA, a tartalmával együtt — nem véglegesen
     signal deleteFolderRequested()
     signal exportAsHtmlRequested()
+    signal addNameTagsRequested(string folderPath)
 
     // -- 1. blokk: mappaleírás ---------------------------------------------
 
@@ -307,6 +309,7 @@ PicasaMenu {
     PicasaMenuItem {
         objectName: "folderMenuAddNameTags"
         text: qsTr("&Add name tags")
-        placeholder: true
+        placeholder: false
+        onTriggered: menu.addNameTagsRequested(menu.folderPath)
     }
 }

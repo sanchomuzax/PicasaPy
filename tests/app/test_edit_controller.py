@@ -1565,8 +1565,10 @@ class TestAzIgazitasEljutARAJZOLOIG2108:
         controller.endEdit()
 
         controller.beginEdit("1", str(photo))
-        spec = controller._current_text_spec()
-        assert spec is not None, "a mentett felirat nem kerül az előnézetbe"
+        specs = controller._current_text_spec()
+        assert specs is not None, "a mentett felirat nem kerül az előnézetbe"
+        assert len(specs) == 1
+        spec = specs[0]
         assert spec.align == "right", (
             "a fájlból betöltött igazítás nem jut el a rajzolóig: "
             f"{spec.align!r}"
@@ -2049,6 +2051,50 @@ class TestRedeyeTool:
         assert text.startswith("[IMG_0001.jpg]\nfilters=redeye=1,")
         assert controller.hasSavedRedeye is True  # #2393: átnevezve
         assert controller.redeyeRegionCount == 0
+
+    def test_invalid_auto_eye_coordinate_does_not_break_save(
+        self, controller, tmp_path, monkeypatch
+    ):
+        """A hibás YuNet-pontot az észlelés forrásánál kell eldobni, ne a mentés bukjon."""
+        from picasapy.app import edit_preview
+        from picasapy.faces.detector import FaceDetection, FaceLandmarks
+        from picasapy.faces.redeye import detect_eye_circles
+
+        bad_coordinate = 2.0534839661647758e30
+        bad_face = FaceDetection(
+            left=0.0,
+            top=0.0,
+            right=1.0,
+            bottom=1.0,
+            score=0.99,
+            landmarks=FaceLandmarks(
+                right_eye=(bad_coordinate, 0.5),
+                left_eye=(0.5, 0.5),
+                nose=(0.5, 0.5),
+                mouth_right=(0.5, 0.5),
+                mouth_left=(0.5, 0.5),
+            ),
+        )
+
+        class DetectorWithInvalidEyePoint:
+            available = True
+
+            def detect(self, _image):
+                return (bad_face,)
+
+        detector = DetectorWithInvalidEyePoint()
+        monkeypatch.setattr(
+            edit_preview,
+            "detect_eye_circles",
+            lambda image: detect_eye_circles(image, detector),
+        )
+        path = make_jpeg(tmp_path / "IMG_0001.jpg", size=(1, 1))
+        controller.beginEdit("1", str(path))
+        controller.enterRedeyeTool()
+        controller.applyRedeye()
+
+        text = (path.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=redeye=1;" in text
 
     def test_apply_without_manual_regions_persists_auto_eye_circles(
         self, controller, photo, monkeypatch
