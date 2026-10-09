@@ -1771,6 +1771,9 @@ def _futtat(
             app_utak, _valtozott_fajlok(alap),
             lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
         )
+        if len(app_utak) == teljes and _valtozott_fajlok(alap) is None:
+            print(f"⚠️ PR-szűkítés: a változás NEM állapítható meg az alaphoz ({alap[:8]}) "
+                  "képest (hiányzó git-történet?) — teljes készlet fut.", flush=True)
         print(f"PR-szűkítés: {len(app_utak)} érintett app-tesztfájl a {teljes}-ből "
               f"(alap: {alap[:8]}); a teljes készlet a main-en fut.", flush=True)
     egysegek = [_NEM_APP] + app_utak
