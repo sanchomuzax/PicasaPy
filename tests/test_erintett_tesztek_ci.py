@@ -89,3 +89,15 @@ def test_seged_modul_az_importaloit_valasztja():
         _TESZTEK, ["tests/app/qml_functional/_fomenu_4420_menu.py"],
         lambda u: t.get(u, ""),
     ) == ["tests/app/test_t3.py"]
+
+
+def test_a_kulcsszo_egesz_szora_illeszkedik_nem_szoreszletre():
+    """#4809: az `index/sync.py` változása ne válassza ki az `async`-os teszteket."""
+    t = {
+        "tests/app/test_t4.py": "from picasapy.index import sync",
+        "tests/app/test_t5.py": "async def betolt(): ...",
+        "tests/app/test_t6.py": "sync.run(lib)",
+    }
+    assert rt.erintett_app_tesztek(
+        _TESZTEK, ["src/picasapy/index/sync.py"], lambda u: t.get(u, ""),
+    ) == ["tests/app/test_t4.py", "tests/app/test_t6.py"]

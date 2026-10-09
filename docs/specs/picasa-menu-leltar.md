@@ -1071,6 +1071,39 @@ kezdőcíme:
 ⇒ A `picasa-menu-parancsok.csv` kulcsrendű listája helyett **ez** a sorrend a
 mérvadó a menüsor felépítéséhez.
 
+### 10.1/a A Kép ▸ Csoportos szerkesztés almenüje
+
+A Kép menü `Batch Edit` rekordja (`0x00d6e4ac`) a `0x00d6e318` című
+gyerektáblára mutat; a gyerekszám **19** (`0x00d6e4bc`), az elválasztókat is
+beleértve. A 20 bájtos rekordok sorrendje és az üres rekordok adják az
+almenü sorrendjét és öt csoporthatárát:
+
+| # | rekord | angol felirat | parancsazonosító |
+|---:|---|---|---|
+| 1 | `0x00d6e318` | `&Rename...` (`F2`) | `0x9d4f` |
+| 2 | `0x00d6e32c` | — *(elválasztó)* | — |
+| 3 | `0x00d6e340` | `R&otate Clockwise` | `0x9ca2` |
+| 4 | `0x00d6e354` | `Rotate &Counterclockwise` | `0x9ca3` |
+| 5 | `0x00d6e368` | — *(elválasztó)* | — |
+| 6 | `0x00d6e37c` | `A&uto Contrast` | `0x9d49` |
+| 7 | `0x00d6e390` | `&Auto Color` | `0x9d48` |
+| 8 | `0x00d6e3a4` | `I'm Feeling &Lucky` | `0x9d5e` |
+| 9 | `0x00d6e3b8` | — *(elválasztó)* | — |
+| 10 | `0x00d6e3cc` | `&Sepia` | `0x9d4a` |
+| 11 | `0x00d6e3e0` | `S&harpen` | `0x9d4b` |
+| 12 | `0x00d6e3f4` | `&Warmify` | `0x9d4d` |
+| 13 | `0x00d6e408` | `&Film Grain` | `0x9d4e` |
+| 14 | `0x00d6e41c` | `&Black and White` | `0x9d4c` |
+| 15 | `0x00d6e430` | — *(elválasztó)* | — |
+| 16 | `0x00d6e444` | `Auto Red Eye Correction` | `0x9df1` |
+| 17 | `0x00d6e458` | — *(elválasztó)* | — |
+| 18 | `0x00d6e46c` | `Show Text` | `0x9deb` |
+| 19 | `0x00d6e480` | `Hide Text` | `0x9dec` |
+
+**14 művelet + 5 elválasztó.** A feliratkulcsok között van a fájlmenüből
+újrahasznált `eMenuFile::ID_FILE_RENAME`; a parancsazonosítója és az F2
+gyorsbillentyűje ettől a helytől is a meglévő átnevező párbeszédre vezet.
+
 ### 10.2 Feltételes tétel: `ID_TOOLS_DOWNLOAD_FACES`
 
 A „Download Name Tags from Picasa Web Albums” rekordja a Tools-tömbben ott
