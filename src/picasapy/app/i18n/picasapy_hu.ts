@@ -16561,4 +16561,13 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <translation>Mégse</translation>
         </message>
     </context>
+    <context>
+        <name>TextColorSwatches</name>
+        <message>
+            <location filename="../qml/PicasaPy/TextColorSwatches.qml" line="114" />
+            <source>Pick Color</source>
+            <extracomment>picasapy-origin: picasa</extracomment>
+            <translation>Színválasztás</translation>
+        </message>
+    </context>
 </TS>

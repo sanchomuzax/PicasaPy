@@ -642,11 +642,11 @@ Rectangle {
     // Cancel/vágás-gombak sose adnak meg ilyet), a gomb a korábbi, sima
     // kinézetét mutatja, VÁLTOZATLANUL — ez a legtöbb PanelButton-hívó.
 
-    // #450: kitöltés/körvonal szín-választó — rögzített, PicasaPy-saját
-    // színpaletta (nincs a projektben natív ColorDialog-használat, ld.
-    // #450 jelentés), a kijelölt szín kék kerettel jelölt. A `currentColor`
-    // a controller mentett/piszkozat értékét tükrözi, `colorPicked` viszi
-    // vissza a kattintást a hívóhoz.
+    // #450/#4548: kitöltés/körvonal szín-választó — PicasaPy-saját
+    // palettával, spektrumválasztóval és előzmény-sorral (natív
+    // ColorDialog nélkül). A kijelölt szín kék kerettel jelölt; a
+    // `currentColor` a controller mentett/piszkozat értékét tükrözi,
+    // `colorPicked` viszi vissza a kattintást a hívóhoz.
 
     // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
     // 4. effekt-fül / 5. effekt-fül (#20, #328) — csak "tools" módban,

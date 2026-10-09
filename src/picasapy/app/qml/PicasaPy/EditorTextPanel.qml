@@ -274,11 +274,15 @@ ColumnLayout {
         }
     }
 
-    // #450: kitöltés-szín ÉS körvonal-szín, egymástól függetlenül
-    RowLayout {
+    // #450/#4548: kitöltés-szín ÉS körvonal-szín, egymástól függetlenül;
+    // mindkettő megjeleníti az öt legutóbbi színt és megnyitja a közös
+    // spektrumválasztót. Egymás alatt állnak, hogy a 225 px-es MRU-sor
+    // elférjen a szerkesztő keskeny oldalsávjában.
+    ColumnLayout {
         Layout.fillWidth: true
-        spacing: 10
+        spacing: 6
         ColumnLayout {
+            Layout.fillWidth: true
             spacing: 4
             Text {
                 Layout.fillWidth: true
@@ -289,11 +293,13 @@ ColumnLayout {
             }
             TextColorSwatches {
                 objectName: "textFillColorSwatches"
+                showRecentColors: true
                 currentColor: panel.textFillColor
                 onColorPicked: (hex) => panel.textFillColorEdited(hex)
             }
         }
         ColumnLayout {
+            Layout.fillWidth: true
             spacing: 4
             Text {
                 Layout.fillWidth: true
@@ -304,6 +310,7 @@ ColumnLayout {
             }
             TextColorSwatches {
                 objectName: "textOutlineColorSwatches"
+                showRecentColors: true
                 currentColor: panel.textOutlineColor
                 onColorPicked: (hex) => panel.textOutlineColorEdited(hex)
             }
