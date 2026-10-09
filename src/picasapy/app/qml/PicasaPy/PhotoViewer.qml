@@ -1259,6 +1259,8 @@ Rectangle {
         // #450: "Remove all existing text" gomb tiltási állapota
         editorPanel.hasTextOverlay = editController.hasTextOverlay
         editorPanel.textOverlayVisible = editController.textOverlayVisible
+        if (editorPanel.textActive)
+            editorPanel.textDraftContent = editController.textDraft
         // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
         // kitöltés ki/be, átlátszóság
         // #464: a Finomhangolás fül pipettája melletti színminta
@@ -1695,6 +1697,8 @@ Rectangle {
                     //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
                     //: (`oneup/prev`, `oneup/next` — `Property mousedown 1`).
                     lenyomasra: true
+                    //: #4563: `m_autorepeat` — nyomva tartva folyamatosan lép
+                    autoRepeat: true
                     onClicked: viewer.previous()
                     enabled: viewer.hasPrevious()
                     Layout.preferredWidth: 30
@@ -1859,6 +1863,8 @@ Rectangle {
                     //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
                     //: (`oneup/prev`, `oneup/next` — `Property mousedown 1`).
                     lenyomasra: true
+                    //: #4563: `m_autorepeat` — nyomva tartva folyamatosan lép
+                    autoRepeat: true
                     onClicked: viewer.next()
                     enabled: viewer.hasNext()
                     Layout.preferredWidth: 30
@@ -3914,8 +3920,61 @@ Rectangle {
                         cursorShape: Qt.CrossCursor
                         onClicked: function(mouse) {
                             if (width <= 0 || height <= 0) return
-                            editController.previewTextPlacement(
+                            editController.previewNewTextPlacement(
                                 mouse.x / width, mouse.y / height)
+                        }
+                    }
+                    // #4545: a mentett szövegdobozok áttetsző, kattintható
+                    // találati területei a raszter-előnézet fölött vannak.
+                    // A betűt a szolgáltató rajzolja; itt csak a doboz
+                    // hozzávetőleges QML-méretét használjuk kijelöléshez.
+                    Repeater {
+                        id: textOverlaySelector
+                        parent: photoArea.fokuszKep
+                        model: editorPanel.textActive && viewer.editCtl
+                               ? viewer.editCtl.textOverlayItems : []
+                        delegate: Item {
+                            required property var modelData
+                            objectName: "textOverlaySelector_" + modelData.index
+                            z: 1
+                            width: Math.max(16, hitText.implicitWidth + 12)
+                            height: Math.max(16, hitText.implicitHeight + 12)
+                            x: (photoArea.fokuszKep.width
+                                - photoArea.fokuszKep.paintedWidth) / 2
+                               + photoArea.fokuszKep.paintedWidth * modelData.x - 6
+                            y: (photoArea.fokuszKep.height
+                                - photoArea.fokuszKep.paintedHeight) / 2
+                               + photoArea.fokuszKep.paintedHeight * modelData.y
+                               - hitText.implicitHeight - 6
+                            rotation: modelData.rotation * 180 / Math.PI
+                            transformOrigin: Item.BottomLeft
+
+                            Text {
+                                id: hitText
+                                anchors.centerIn: parent
+                                text: modelData.content
+                                font.family: modelData.font
+                                font.pixelSize: Math.max(1, Math.round(
+                                    modelData.size * photoArea.fokuszKep.paintedHeight
+                                    / 360))
+                                color: "transparent"
+                            }
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "transparent"
+                                border.color: "#4a90e2"
+                                border.width: 1
+                                visible: viewer.editCtl
+                                         && modelData.index
+                                            === viewer.editCtl.textSelectedIndex
+                            }
+                            MouseArea {
+                                objectName: "textOverlayHitTarget_" + modelData.index
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: containsMouse ? Qt.IBeamCursor : Qt.ArrowCursor
+                                onClicked: editController.selectTextOverlay(modelData.index)
+                            }
                         }
                     }
                 }

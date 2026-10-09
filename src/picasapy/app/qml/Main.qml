@@ -98,6 +98,7 @@ ApplicationWindow {
     // önmagára kötne (kötési hurok) — ez az álnév oldja fel, egy helyen.
     readonly property var appController: controller
 
+    property string pendingPeopleManagerPersonName: ""
     property int thumbSize: 144
     //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
     //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
@@ -116,6 +117,17 @@ ApplicationWindow {
         selectedSet = s
     }
     property bool viewerOpen: false
+    // #4656: a néző saját megjelenítési módot kap, bezáráskor visszaáll az
+    // előző ablakállapot. A valódi megnyitás külön belépőn fut át, így a
+    // közvetlen állapotbeállítások (például a QML-próbapadban) nem váltanak módot.
+    property int visibilityBeforeViewer: Window.Windowed
+    property bool viewerVisibilityManaged: false
+    onViewerOpenChanged: {
+        if (!window.viewerOpen && window.viewerVisibilityManaged) {
+            window.visibility = window.visibilityBeforeViewer
+            window.viewerVisibilityManaged = false
+        }
+    }
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
@@ -184,12 +196,28 @@ ApplicationWindow {
     //: szerkesztés" parancs: a kijelölt képet a nézőben nyitja meg, ahol a
     //: szerkesztő panel is ül. Egy belépő, több hívó — a tálca helyi
     //: menüje (#1917) is ezt hívja.
+    // #4656: minden tényleges nézőnyitás ezt használja. A teljes képernyő
+    // vagy ablakos mód a mentett jelölőt követi; bezáráskor a korábbi
+    // ablakállapot áll vissza.
+    function openPhotoViewer(row) {
+        if (!window.viewerOpen) {
+            window.visibilityBeforeViewer = window.visibility
+            var fullscreenStartup = controller
+                && controller.viewerFullscreenStartup !== undefined
+                ? controller.viewerFullscreenStartup : true
+            window.visibility = fullscreenStartup
+                ? Window.FullScreen : Window.Windowed
+            window.viewerVisibilityManaged = true
+            window.viewerOpen = true
+        }
+        photoViewer.show(row)
+    }
+
     function nezdEsSzerkeszd() {
         if (window.viewerOpen) return
         var sorok = window.selectedRows()
         if (sorok.length === 0) return
-        window.viewerOpen = true
-        photoViewer.show(sorok[0])
+        window.openPhotoViewer(sorok[0])
     }
 
     // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt
@@ -543,8 +571,7 @@ ApplicationWindow {
         documentTabStrip.activateTab(documentTabStrip.libraryTabId)
         window.selectedIndex = sor
         window.selectedIndexes = [sor]
-        window.viewerOpen = true
-        photoViewer.show(sor)
+        window.openPhotoViewer(sor)
     }
 
     // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
@@ -1831,6 +1858,8 @@ ApplicationWindow {
         onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
         onAddToScreensaverRequested: window.requestAddToScreensaver()
         onThumbSizePreset: function(size) { window.thumbSize = size }
+        // #4623: a Nézet menü rádiócsoportja ebből számolja a pipát
+        thumbSize: window.thumbSize
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
         onSelectStarredRequested: window.selectStarred()
@@ -2461,6 +2490,17 @@ ApplicationWindow {
         anchors.fill: parent
         sourceComponent: Component { FolderManagerDialog { } }
     }
+
+    function openPeopleManagerForPerson(name) {
+        var targetName = String(name || "").trim()
+        if (peopleManagerLoader.status === Loader.Ready) {
+            peopleManagerLoader.item.openForPerson(targetName)
+        } else {
+            window.pendingPeopleManagerPersonName = targetName
+            peopleManagerLoader.active = true
+        }
+    }
+
     // #4334: a komponens csak az első menükattintásra töltődik be; a
     // külön fájl miatt a forró Main.qml-ben csak a bekötés marad.
     Loader {
@@ -2470,7 +2510,12 @@ ApplicationWindow {
         source: Qt.resolvedUrl("PicasaPy/PeopleManagerDialog.qml")
         onLoaded: {
             item.controller = controller
-            item.open()
+            var targetName = window.pendingPeopleManagerPersonName
+            window.pendingPeopleManagerPersonName = ""
+            if (targetName.length > 0)
+                item.openForPerson(targetName)
+            else
+                item.open()
         }
     }
     // Duplikátum-kezelő (#287): a SAJÁT kezelő-párbeszéd. #1398 óta a
@@ -2848,8 +2893,7 @@ ApplicationWindow {
             controller.selectFolder(folderPath)
             var row = controller.photos.rowOfId(photoId)
             if (row >= 0) {
-                window.viewerOpen = true
-                photoViewer.show(row)
+                window.openPhotoViewer(row)
             }
         }
     }
@@ -3098,6 +3142,9 @@ ApplicationWindow {
                         anchors.leftMargin: 8
                         spacing: 10
                         Rectangle {
+                            // #4531: a keresés után is látszik (az eredetiben
+                            // a keresősáv `viewallbutton`-ja)
+                            objectName: "searchBackToViewAll"
                             Layout.preferredHeight: 18
                             Layout.preferredWidth: viewAllText.width + 20
                             radius: 9
@@ -3114,7 +3161,21 @@ ApplicationWindow {
                                 font.bold: true
                                 color: "#3b8f00"
                             }
-                            TapHandler { onTapped: controller.clearFilter() }
+                            TapHandler {
+                                // #4531: keresésből a mező is ürüljön, és a bal
+                                // hasáb is álljon vissza a teljes mappalistára —
+                                // ugyanaz az út, mint a keresőmező ✕ gombja
+                                onTapped: {
+                                    if (toolbar.searchText.trim().length > 0) {
+                                        toolbar.clearSearch()
+                                        window.clearSelection()
+                                        controller.search("")
+                                        searchSuggestionsBox.suggestions = []
+                                    } else {
+                                        controller.clearFilter()
+                                    }
+                                }
+                            }
                         }
                         Text {
                             // #305: null-őr
@@ -3283,8 +3344,7 @@ ApplicationWindow {
                             mentesToltodnek: backupHost.mappakToltodnek
                             mentesVanKeszlet: backupHost.kivalasztott >= 0
                             onOpenRequested: function(row) {
-                                window.viewerOpen = true
-                                photoViewer.show(row)
+                                window.openPhotoViewer(row)
                             }
                             onSlideshowRequested: function(startRow) {
                                 window.startSlideshow(startRow)
@@ -3382,8 +3442,7 @@ ApplicationWindow {
                                             window.handleThumbClick(i, mods)
                                         }
                                         onOpened: function(i) {
-                                            window.viewerOpen = true
-                                            photoViewer.show(i)
+                                            window.openPhotoViewer(i)
                                         }
                                         onContextMenuRequested: function(i, cx, cy) {
                                             window.openPhotoContextMenu(
@@ -4244,8 +4303,7 @@ ApplicationWindow {
         }
         // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
         onOpenRequested: {
-            window.viewerOpen = true
-            photoViewer.show(window.fileOpTargetRow)
+            window.openPhotoViewer(window.fileOpTargetRow)
         }
         onRotateRightRequested: controller.rotateRightMany(window.selectedRows())
         onRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
