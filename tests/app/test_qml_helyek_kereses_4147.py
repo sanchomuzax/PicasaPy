@@ -64,7 +64,7 @@ def test_a_helykereses_a_helyi_gps_kepeket_szuri_a_fomenu_kattintasa_utan(
     field = _elem(window, "placesSearchInput")
     button = _elem(window, "placesSearchButton")
     map_menu = _elem(window, "placesMapTypeMenu")
-    assert label.property("text") == "Search for an address:"
+    assert label.property("text") == "Search"
     assert field.property("placeholderText") == ""
     assert map_menu.property("visible") is True
 

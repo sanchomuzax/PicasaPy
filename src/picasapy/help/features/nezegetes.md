@@ -11,7 +11,8 @@ a súgója is elmondja, hova visz: *Vissza a rendezett indexképekhez*.
 Ha a **Beállítások ▸ Általános** lapon bekapcsolod a **Szerkesztési
 nézetből való kilépés egy kattintással** jelölőt, az állóképen egyetlen
 kattintás is visszavisz a könyvtárba. A program megvárja a dupla kattintás
-idejét, és a dupla kattintás ilyenkor szintén kilép. Nem lép ki, ha két kép
+idejét, és a dupla kattintás ilyenkor szintén kilép — Windowson is, és
+a néző utána nem nyílik meg újra. Nem lép ki, ha két kép
 látszik egymás mellett, vagy ha a Kiegyenesítés nyitva van. Nagyított képen
 a húzás ilyenkor is pásztáz. Videónál ilyenkor a kép területén a lenyomás
 azonnal kilép, a jelölő nélkül pedig a dupla kattintás.
@@ -29,6 +30,21 @@ A néző alján és szélein a következőket találod:
   vissza.
 
 A **Ctrl+Delete** a lemezről törli az éppen látott képet (rákérdezéssel).
+
+A **Nézet ▸ Könyvtárnézet** is visszavisz a könyvtárba; a könyvtárban ez
+a tétel szürke.
+
+### A menük a nézőben a megnyitott képre hatnak
+
+Amíg a néző nyitva van, a **Fájl**, a **Szerkesztés** és a **Kép** menü
+parancsai — mentés, exportálás, átnevezés, törlés, elrejtés, forgatás, a
+csoportos szerkesztés effektjei, az effektek másolása és beillesztése,
+az arcok alaphelyzetbe állítása — **arra az egy
+képre** vonatkoznak, amit épp látsz. Ezért nem szürkék, és a rácsban
+hagyott kijelölésedhez nem nyúlnak; a kép elrejtése után a kijelölés is
+megmarad.
+
+Mentés vagy visszaállítás után a néző a lemezre írt, friss képet mutatja.
 
 A képre jobbgombbal kattintva ugyanazok a parancsok érhetők el, mint a
 rácsban: forgatás, mentés, visszaállítás, elrejtés, keresés a lemezen,
