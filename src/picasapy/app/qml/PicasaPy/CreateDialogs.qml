@@ -67,10 +67,12 @@ Item {
     //: ⛔ A FELBONTÁS nincs a projektfájlban (`curresolution` nálunk
     //: kitöltetlen), ezért az marad az alapértelmezésen — a párbeszéd
     //: felirata ezt ki is mondja.
-    function openMovieProject(masodperc, burstmodethresh) {
+    function openMovieProject(masodperc, burstmodethresh, moviePath) {
         movieDialog.personMovieMode = false
         movieDialog.applyDefaultSize()
         movieDialog.projektbolNyilt = true
+        if (moviePath)
+            movieDialog.previousMoviePath = String(moviePath)
         if (masodperc > 0)
             movieSeconds.value = Math.round(masodperc * 10)
         if (burstmodethresh !== undefined && burstmodethresh >= 0)
@@ -369,6 +371,9 @@ Item {
         height: Math.min(720, Math.max(0, dialogs.appWindow.height - 24))
         standardButtons: Dialog.NoButton
         property string targetFile: ""
+        // A korábbi sikeres kimenet útvonala: az eredeti panel is megjegyzi,
+        // és újabb export előtt felajánlja a cserét vagy az új fájlt.
+        property string previousMoviePath: ""
         property string audioFile: ""
         property bool audioFileFromFolderMusic: false
         property int audioOption: 0
@@ -818,6 +823,21 @@ Item {
             movieTabs.currentIndex = 0
         }
         function exportMovie() {
+            if (previousMoviePath.length > 0) {
+                movieReplaceDialog.open()
+                return
+            }
+            startMovieExport()
+        }
+        function replacePreviousMovie() {
+            targetFile = previousMoviePath
+            startMovieExport()
+        }
+        function createNewMovie() {
+            targetFile = ""
+            startMovieExport()
+        }
+        function startMovieExport() {
             var meret = sizeOptions[movieHeightBox.currentIndex]
             var sources = movieClipSources.slice(0)
             if (movieSoloClip.checked && sources.length) {
@@ -1529,6 +1549,42 @@ Item {
         }
     }
 
+    Dialog {
+        id: movieReplaceDialog
+        objectName: "movieReplaceDialog"
+        modal: true
+        title: qsTr("Replace Existing or Create New?")
+        closePolicy: Popup.CloseOnEscape
+        anchors.centerIn: parent ? Overlay.overlay : undefined
+
+        RowLayout {
+            spacing: 8
+
+            PicasaButton {
+                objectName: "movieReplaceExistingButton"
+                text: qsTr("Replace Existing")
+                accent: Theme.picasaGreen
+                onClicked: {
+                    movieReplaceDialog.close()
+                    movieDialog.replacePreviousMovie()
+                }
+            }
+            PicasaButton {
+                objectName: "movieCreateNewButton"
+                text: qsTr("Create New")
+                onClicked: {
+                    movieReplaceDialog.close()
+                    movieDialog.createNewMovie()
+                }
+            }
+            PicasaButton {
+                objectName: "movieReplaceCancelButton"
+                text: qsTr("Cancel")
+                onClicked: movieReplaceDialog.close()
+            }
+        }
+    }
+
     Timer {
         id: moviePreviewTimer
         objectName: "moviePreviewTimer"
@@ -1729,6 +1785,7 @@ Item {
     //: A film elkészült.
     function jelezdAFilmSikert(path, used, skipped, missing) {
         movieProgressDialog.close()
+        movieDialog.previousMoviePath = path
         createResultDialog.message =
             qsTr("Movie saved: %1").arg(path)
             + "\n" + qsTr("%1 pictures used.").arg(used)

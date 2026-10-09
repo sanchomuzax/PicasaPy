@@ -48,9 +48,10 @@ Elfogadott színek: piros (vörös), narancs (narancssárga), sárga, zöld,
 kék, lila (bíbor), rózsaszín, fekete, fehér, szürke. Az angol nevek is
 működnek (`color:blue`), és az ékezet nélküli `szin:` alak is.
 
-Hat szín menüből is elérhető: **Eszközök ▸ Kísérleti ▸ Keresés…**
-almenüben a **Piros**, **Narancssárga**, **Sárga**, **Zöld**, **Kék** és
-**Lila**. Bármelyikre kattintva a keresés beíródik a keresőmezőbe, és a
+Hét tétel menüből is elérhető: **Eszközök ▸ Kísérleti ▸ Keresés…**
+almenüben a **Piros**, **Narancssárga**, **Sárga**, **Zöld**, **Kék**,
+**Lila** és a **Fekete-fehér** — ez utóbbi a sötét, színtelen képeket
+keresi (`color:black`). Bármelyikre kattintva a keresés beíródik a keresőmezőbe, és a
 rács azonnal a hasonló színű képeket mutatja. Ugyanaz történik, mintha
 te gépelted volna be, tehát utólag bővítheted a keresést szöveggel.
 

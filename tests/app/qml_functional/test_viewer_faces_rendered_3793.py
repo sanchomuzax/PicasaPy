@@ -1,6 +1,6 @@
-"""A néző arcrétege a Picasa szerint mellőzött és érvénytelen arcot elrejti.
+"""A néző arcrétege a mellőzött/érvénytelen arcot elrejti, a mentettet kirajzolja.
 
-A próba a teljes nézőablak kirajzolt képéből számolja meg a sárga kereteket;
+A próba a teljes nézőablak renderéből számolja meg a halványszürke kereteket;
 nem csak a `facesFor()` visszatérési értékét olvassa.
 """
 
@@ -59,15 +59,15 @@ def test_viewer_renders_only_named_face(qml_app, qt_app, tmp_path):
     overlay_height = float(overlay.property("height"))
     x1, y1 = x0 + round(overlay_width), y0 + round(overlay_height)
     layer = _rgb_tomb(image)[y0:y1, x0:x1]
-    # A keret színe (#ffd34e). A fénykép tesztképe piros, így a küszöb a
-    # kirajzolt arc-keret egyenes szakaszait választja ki.
-    yellow = (
-        (layer[:, :, 0] >= 230)
-        & (layer[:, :, 1] >= 170)
-        & (layer[:, :, 2] <= 130)
+    # A #4572 referenciájának keretszíne #d0d1d0. A fénykép tesztképe piros,
+    # így a halványszürke tartomány csak a megjelenített kerethez tartozik.
+    pale_gray = (
+        (np.abs(layer[:, :, 0].astype(np.int16) - 208) <= 24)
+        & (np.abs(layer[:, :, 1].astype(np.int16) - 209) <= 24)
+        & (np.abs(layer[:, :, 2].astype(np.int16) - 208) <= 24)
     ).astype(np.uint8)
     _component_count, _labels, stats, _centers = cv2.connectedComponentsWithStats(
-        yellow, connectivity=8
+        pale_gray, connectivity=8
     )
     frames = [row for row in stats[1:] if row[cv2.CC_STAT_AREA] > 20]
 
