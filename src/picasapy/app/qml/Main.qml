@@ -2932,6 +2932,9 @@ ApplicationWindow {
                         anchors.leftMargin: 8
                         spacing: 10
                         Rectangle {
+                            // #4531: a keresés után is látszik (az eredetiben
+                            // a keresősáv `viewallbutton`-ja)
+                            objectName: "searchBackToViewAll"
                             Layout.preferredHeight: 18
                             Layout.preferredWidth: viewAllText.width + 20
                             radius: 9
@@ -2948,7 +2951,21 @@ ApplicationWindow {
                                 font.bold: true
                                 color: "#3b8f00"
                             }
-                            TapHandler { onTapped: controller.clearFilter() }
+                            TapHandler {
+                                // #4531: keresésből a mező is ürüljön, és a bal
+                                // hasáb is álljon vissza a teljes mappalistára —
+                                // ugyanaz az út, mint a keresőmező ✕ gombja
+                                onTapped: {
+                                    if (toolbar.searchText.trim().length > 0) {
+                                        toolbar.clearSearch()
+                                        window.clearSelection()
+                                        controller.search("")
+                                        searchSuggestionsBox.suggestions = []
+                                    } else {
+                                        controller.clearFilter()
+                                    }
+                                }
+                            }
                         }
                         Text {
                             // #305: null-őr
