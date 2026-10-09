@@ -51,7 +51,6 @@ def test_kozos_seged_vagy_nem_app_forras_a_teljes_keszletet_adja():
         "tests/app/conftest.py",
         "src/picasapy/render/chain.py",
         "pyproject.toml",
-        "scripts/run_tests.py",
     ):
         assert _valaszt([ut]) == _TESZTEK, ut
 
@@ -66,3 +65,7 @@ def test_tul_szeles_kivalasztasnal_a_teljes_keszlet():
     assert rt.erintett_app_tesztek(
         _TESZTEK, ["src/picasapy/app/qml/Main.qml"], lambda u: mind[u]
     ) == _TESZTEK
+
+
+def test_a_futtato_es_a_workflow_valtozasa_nem_teljes_keszlet():
+    assert _valaszt(["scripts/run_tests.py", ".github/workflows/ci.yml"]) == []

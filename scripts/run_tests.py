@@ -1666,10 +1666,12 @@ _ERINTETT_ALAP_VALTOZO = "PICASAPY_ERINTETT_ALAP"
 
 #: Ha ezek közül bármi változik, nem szűkítünk (a hatásuk nem követhető
 #: fájlnév szerint): közös tesztsegédek, a forrás nem-app része, a függőségek.
+#: (A futtató és a workflow változása NEM ilyen: az app-tesztek nem függnek
+#: tőlük, a futtató saját tesztjei a mindig teljesen futó nem-app készletben
+#: vannak.)
 _TELJES_KESZLET_ELOTAGOK = (
     "tests/app/conftest.py", "tests/app/qml_functional/conftest.py",
-    "tests/conftest.py", "tests/support/", "pyproject.toml", "scripts/run_tests.py",
-    "packaging/", ".github/",
+    "tests/conftest.py", "tests/support/", "pyproject.toml", "packaging/",
 )
 
 #: Az érintett-kiválasztás e fölött a hányad fölött a teljes készletet adja.
