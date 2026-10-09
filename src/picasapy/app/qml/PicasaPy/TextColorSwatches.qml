@@ -136,7 +136,7 @@ Item {
         border.color: Theme.chromeBorder
         ToolTip.text: qsTr("Pick Color")
         ToolTip.visible: spectrumButtonMouse.containsMouse
-        ToolTip.delay: 600
+        ToolTip.delay: Theme.tooltipDelay
 
         Rectangle {
             anchors.fill: parent
