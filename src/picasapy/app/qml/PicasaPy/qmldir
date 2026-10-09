@@ -16,6 +16,7 @@ AlbumIcon 1.0 AlbumIcon.qml
 SpecialAlbumIcon 1.0 SpecialAlbumIcon.qml
 ProjectIcon 1.0 ProjectIcon.qml
 LabelIcon 1.0 LabelIcon.qml
+AlignIcon 1.0 AlignIcon.qml
 FolderManagerDialog 1.0 FolderManagerDialog.qml
 FolderTreeItem 1.0 FolderTreeItem.qml
 FolderHierarchyView 1.0 FolderHierarchyView.qml
