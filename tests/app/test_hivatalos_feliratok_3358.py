@@ -43,6 +43,9 @@ HIVATALOS = {
     "This image's orientation has been modified by the Straighten tool and might not crop accurately.\nIf you encounter difficulty cropping this image, try undoing the Straighten fix, then recrop, and Straighten again if necessary.": (
         'A kép irányát megváltoztatta a „Kiegyenesítés” eszközzel, ami pontatlanságokat okozhat a vágás alkalmazásakor.\nHa nem sikerül a kép vágása, vonja vissza a „Kiegyenesítés” eszközzel végzett javítást, majd ismételje meg a vágást és - ha szükséges - a kiegyenesítést.',
         "IDS_WARN_CROP_ACCURACY"),
+    "This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.\nIf your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.": (
+        'A kép irányát megváltoztatta a „Kiegyenesítés” eszközzel, ami pontatlanságokat okozhat a vörösszemjavító négyszögek kiválasztásakor.\nHa a vörösszemjavítások igazítása helytelennek (vagy nem létezőnek) tűnik, vonja vissza a „Kiegyenesítés” eszközzel végzett javítást, majd ismételje meg a vörösszemjavításokat és - ha szükséges - a kiegyenesítést.',
+        "IDS_WARN_REDEYE_ACCURACY"),
     'Picasa has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that Picasa may have missed.': (
         'A Picasa vörösszem-effektusokat talált a képen, és kijavította őket.\n\nMegjegyzés: a keretbe kattintva visszavonhatja a változást.\n\nA Picasa által esetleg figyelmen kívül hagyott vörösszemeket manuálisan kijelölheti és kijavíthatja.',
         "RedEye::AutoFixedMessage"),
