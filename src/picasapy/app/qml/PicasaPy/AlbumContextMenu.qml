@@ -22,9 +22,10 @@ import QtQuick.Controls
 // `&`-mnemonikkal együtt) az eredetiek.
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
-// szürkén LÁTSZANAK (#416, spec 5.1.). Az album törlése (#4598) és a
-// leírás szerkesztése (#3173) már valódi művelet. A webes műveletek nálunk
-// nem értelmezhetők.
+// szürkén LÁTSZANAK (#416, spec 5.1.). Az album törlése (#4598), a
+// leírás szerkesztése (#3173) és a Névcímkék hozzáadása (#4535 — az adott
+// album tagképein indít keresést) már valódi művelet. A webes műveletek
+// nálunk nem értelmezhetők.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
 PicasaMenu {
@@ -44,6 +45,7 @@ PicasaMenu {
     signal invertSelectionRequested()
     signal refreshThumbnailsRequested()
     signal exportAsHtmlRequested()
+    signal addNameTagsRequested(string albumToken)
 
     // -- 1. blokk: album-műveletek ----------------------------------------
 
@@ -61,7 +63,8 @@ PicasaMenu {
     PicasaMenuItem {
         objectName: "albumMenuAddNameTags"
         text: qsTr("&Add name tags")
-        placeholder: true
+        placeholder: false
+        onTriggered: menu.addNameTagsRequested(menu.albumToken)
     }
     MenuSeparator {}
 

@@ -84,7 +84,6 @@ class TestAlbumContextMenu:
         """
         menu = _load(qml_engine, "AlbumContextMenu")
         for name in (
-            "albumMenuAddNameTags",
             "albumMenuOnlineActions",
             "albumMenuUploadToGooglePhotos",
         ):
@@ -92,6 +91,9 @@ class TestAlbumContextMenu:
         assert menu.findChild(
             QObject, "albumMenuDelete"
         ).property("enabled") is True
+
+        # #4535: a Névcímkék hozzáadása az album tagképeit vizsgálja.
+        assert menu.findChild(QObject, "albumMenuAddNameTags").property("enabled")
 
     def test_az_albumleiras_MAR_valodi_tetel(self, qml_engine):
         """#3173: engedélyezett, és a saját jelzését süti el."""

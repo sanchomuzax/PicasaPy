@@ -66,10 +66,10 @@ test_all_fifteen_original_commands_are_present_in_order` őrzi.
 | 13 | Feltöltés a Google Fotókba… | — | tétel megvan, **`retired`** (a szolgáltatás megszűnt, véglegesen szürke) |
 | — | *elválasztó* | | |
 | 14 | Exportálás HTML-oldalként… | — | **igen** |
-| 15 | Névcímkék hozzáadása | — | tétel megvan, **`placeholder`** (szürke, hátralévő munka) |
+| 15 | Névcímkék hozzáadása | — | **megvan és működik** (#4535; a mappa képein indít arckeresést) |
 
-Vagyis mind a 15 tétel megvan, a mért sorrendben; kettő szándékosan
-szürke (egy megszűnt szolgáltatás, egy hátralévő munka). A „Mappa
+Vagyis mind a 15 tétel megvan, a mért sorrendben; a megszűnt szolgáltatás
+szándékosan szürke. A „Mappa
 dátumának beállítása…" — amely az eredetiben **nincs** ebben a menüben —
 azóta kikerült; a helye a Mappaleírás-dialógus, és ezt a
 `test_folder_date_item_is_gone` őrzi.
@@ -983,7 +983,7 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | Indexkép | AlbumPhotoWin::ID_PICTURE_PROPERTIES | Tulajdonságok | objectName=contextMenuProperties | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | Album | Album::ID_DELETEALBUM | Album törlése | objectName=albumMenuDelete | **megvan és működik** | megerősítés utáni törlés minden érintett mappa ini-jéből; `tests/app/qml_functional/test_album_torles_menu_4598.py` |
 | Album | Album::ID_EDITALBUMDESCRIPTION | Album leírásának szerkesztése | objectName=albumMenuEditDescription | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
-| Album | Album::ID_ADDNAMETAGS | Névcímkék hozzáadása | objectName=albumMenuAddNameTags | **hiányzik — javasolt jegycím: Az albummenü indítsa el a névcímkék hozzáadását** | A névcímkézés albumból indítható művelete még nem létezik |
+| Album | Album::ID_ALBUM_FILTERFACES | Névcímkék hozzáadása | objectName=albumMenuAddNameTags | **megvan és működik** (#4535) | tests/app/qml_functional/test_nevcimke_kereses_4535.py |
 | Album | Album::ID_SELECTALL | Összes kép kijelölése | objectName=albumMenuSelectAll | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
 | Album | Album::ID_CLEARSELECTION | Kijelölés törlése | objectName=albumMenuClearSelection | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
 | Album | Album::ID_INVERTSELECTION | Kiválasztás megfordítása | objectName=albumMenuInvertSelection | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |

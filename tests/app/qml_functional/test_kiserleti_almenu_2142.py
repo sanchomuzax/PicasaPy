@@ -62,13 +62,19 @@ class TestADuplikatumKereso:
             "nem a mért felirat (`eMenuTools::ID_DUPES`)"
         )
 
-    def test_a_MASODIK_helyen_all(self):
+    def test_a_KERESES_ELOTT_all_a_legelso_szallitott_tetel(self):
+        """#4635: az eredetiben a 2. hely a Publish via FTP (tiltva) után van.
+        Nálunk az FTP nincs, ezért a duplikátum-kereső a legelső tétel — és a
+        mért sorrendben a Keresés… előtt áll."""
         blokk = _kiserleti_blokk()
         nevek = re.findall(r'objectName: "(menuTools\w+)"', blokk)
-        assert len(nevek) >= 2 and nevek[1] == "menuToolsDedup", (
-            f"a Kísérleti almenü sorrendje {nevek} — a duplikátum-kereső a "
-            f"2. helyen áll az eredetiben"
+        assert nevek and nevek[0] == "menuToolsDedup", (
+            f"a Kísérleti almenü sorrendje {nevek} — a duplikátum-kereső "
+            f"az első szállított tétel kellene legyen"
         )
+        assert blokk.index('objectName: "menuToolsDedup"') < blokk.index(
+            'title: qsTr("Search for...")'
+        ), "a duplikátum-kereső a Keresés… előtt áll az eredetiben"
 
     def test_a_MAGYAR_alak_az_eredetie(self):
         assert "<source>Show Duplicate Files</source>" in _TS
