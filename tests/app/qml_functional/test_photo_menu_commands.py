@@ -309,7 +309,9 @@ class TestPhotoMenuCommands:
         sepia_item = _picture_menu_item(qt_app, window, "menuBatchSepia")
         names = _batch_menu_item_names(window)
         assert names.index("menuBatchSepia") == names.index("menuBatchSharpen") - 1
-        assert names.index("menuBatchBlackWhite") == names.index("menuBatchSharpen") + 1
+        assert names.index("menuBatchSharpen") < names.index("menuBatchWarmify")
+        assert names.index("menuBatchWarmify") < names.index("menuBatchFilmGrain")
+        assert names.index("menuBatchFilmGrain") < names.index("menuBatchBlackWhite")
         assert sepia_item["qml_item"].property("text") == "&Sepia"
         _close_picture_menu(qt_app, window)
 

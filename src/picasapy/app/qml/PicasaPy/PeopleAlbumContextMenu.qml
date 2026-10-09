@@ -8,10 +8,6 @@ import QtQuick.Controls
 // tétel név szerint szerepel: az Emberek album törlése · szerkesztése… ·
 // Az összes kijelölése · Kijelölés törlése.
 //
-// Az első kettő mögött még nincs réteg — a személy-albumok szerkesztése és
-// törlése az arcfelismerés-jegy (#26) hatóköre —, ezért szürkén látszanak
-// (#416, spec 5.1.). A két kijelölés-parancs élő.
-//
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
 PicasaMenu {
     id: menu
@@ -20,18 +16,22 @@ PicasaMenu {
     // a jobbklikkelt személy neve — a hívó állítja be popup() előtt
     property string personName: ""
 
+    signal deleteRequested(string personName)
+    signal editRequested(string personName)
     signal selectAllRequested()
     signal clearSelectionRequested()
 
     PicasaMenuItem {
         objectName: "peopleAlbumMenuDelete"
         text: qsTr("&Delete People Album")
-        placeholder: true
+        placeholder: false
+        onTriggered: menu.deleteRequested(menu.personName)
     }
     PicasaMenuItem {
         objectName: "peopleAlbumMenuEdit"
         text: qsTr("&Edit People Album...")
-        placeholder: true
+        placeholder: false
+        onTriggered: menu.editRequested(menu.personName)
     }
     MenuSeparator {}
     MenuItem {
