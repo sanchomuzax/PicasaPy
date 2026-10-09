@@ -1857,6 +1857,8 @@ ApplicationWindow {
         onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
         onAddToScreensaverRequested: window.requestAddToScreensaver()
         onThumbSizePreset: function(size) { window.thumbSize = size }
+        // #4623: a Nézet menü rádiócsoportja ebből számolja a pipát
+        thumbSize: window.thumbSize
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
         onSelectStarredRequested: window.selectStarred()
