@@ -141,6 +141,15 @@ class TestEmptyUnnamedCollection:
         _library(window, controller, qt_app, tmp_path)
 
         _open_unnamed_album_by_click(window, qt_app)
+        # a vizsgált állapot: NINCS kijelölés — a CI-n a betöltés egy kijelölést
+        # hagyhat hátra, akkor a panel jogosan a Text5-öt mutatja
+        window.setProperty("selectedIndexes", [])
+        window.setProperty("selectedIndex", -1)
+        for _ in range(60):
+            qt_app.processEvents()
+            if (_empty_text(window) or "").startswith(TEXT1_ELEJE):
+                break
+            QTest.qWait(50)
 
         assert _header(window) is None
         text = _empty_text(window)
