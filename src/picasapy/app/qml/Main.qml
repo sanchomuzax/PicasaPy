@@ -3362,6 +3362,11 @@ ApplicationWindow {
             window.selectedIndexes = [row]
             window.selectedIndex = row
         }
+        onMarkerSearchRequested: function(rows) {
+            if (!rows || rows.length === 0) return
+            window.selectedIndexes = rows.slice(0)
+            window.selectedIndex = rows[0]
+        }
     }
 
     // Tulajdonságok-panel (#13): jobb oldali hasáb, Alt+Enter /

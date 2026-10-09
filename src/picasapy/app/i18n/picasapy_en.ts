@@ -16367,4 +16367,44 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <translation>Cancel</translation>
         </message>
     </context>
+    <context>
+        <name>PlacesMarker</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="44" />
+            <source>1 photo here:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::photo_here</extracomment>
+            <translation>1 photo here:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="45" />
+            <source>%d photos here:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::photos_here</extracomment>
+            <translation>%d photos here:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="55" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="56" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
+            <source>Search for these photos in Picasa</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::search_tip</extracomment>
+            <translation>Search for these photos in Picasa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
+            <source>Erase location info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::erase_button</extracomment>
+            <translation>Erase location info</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="73" />
+            <source>Erase map coordinates(i.e., GPS information) from these photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:geo::erase_tip</extracomment>
+            <translation>Erase map coordinates(i.e., GPS information) from these photos</translation>
+        </message>
+    </context>
 </TS>

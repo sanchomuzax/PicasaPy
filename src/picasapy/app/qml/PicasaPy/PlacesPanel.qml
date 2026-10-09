@@ -56,6 +56,8 @@ Rectangle {
     //: #2013: a hely BEÁLLÍTÁSA is a gazdán megy át — 20 kijelölt elem
     //: fölött az eredeti megerősítést kér (`0x00652585`, `cmp ebx, 0x14`).
     signal setGeotagRequested(var rows, real latitude, real longitude)
+    //: #4582: a jelölő buborékából a képcsoportot mutatjuk a rácsban.
+    signal markerSearchRequested(var rows)
 
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
@@ -103,6 +105,8 @@ Rectangle {
                     return panel.filteredMarkers
                 })
                 item.markerActivated.connect(panel.photoActivated)
+                item.markerSearchRequested.connect(panel.markerSearchRequested)
+                item.markerEraseRequested.connect(panel.clearGeotagRequested)
                 item.placePicked.connect(panel.placeSelection)
             }
         }
