@@ -141,6 +141,13 @@ class TestEmptyUnnamedCollection:
         _library(window, controller, qt_app, tmp_path)
 
         _open_unnamed_album_by_click(window, qt_app)
+        # a gyűjtemény ürességét a vezérlő a megnyitás után jelzi; a lassabb
+        # CI-gépen ez a kattintás után még nem érkezett meg
+        for _ in range(100):
+            qt_app.processEvents()
+            if (_empty_text(window) or "").startswith(TEXT1_ELEJE):
+                break
+            QTest.qWait(50)
 
         assert _header(window) is None
         text = _empty_text(window)
