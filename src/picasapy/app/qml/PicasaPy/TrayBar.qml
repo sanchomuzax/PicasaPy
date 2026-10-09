@@ -37,6 +37,11 @@ import "infosav.js" as InfoSav
 Column {
     id: tray
 
+    // #4639: a súgó a tálca valódi Shortcut.sequence értékét olvassa.
+    readonly property var keyboardShortcutSequences: [
+        trayKeepSelectionShortcut.sequence
+    ]
+
     // #1367: a sáv MÉRT szélesség-igénye — a `Main.qml` erre köti az ablak
     // `minimumWidth`-ét. A gyökéren át érhető el, mert a főablak a
     // komponenst látja, nem a belső `trayMainBar`-t.
@@ -149,6 +154,7 @@ Column {
     // #4329: a Ctrl+H ugyanazt a jelzést küldi, mint a helyi menü
     // „Hold Selection” tétele; így egyetlen út tartja meg a kijelölést.
     Shortcut {
+        id: trayKeepSelectionShortcut
         objectName: "trayKeepSelectionShortcut"
         sequence: "Ctrl+H"
         enabled: !!tray.appWindow
