@@ -7,6 +7,35 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.47] – 2026-10-09
+
+- A szűrősáv mindig az aktív szűrőt jelöli, a kor-szűrő pedig nézetváltáskor alaphelyzetbe áll (#4526).
+- A tálca csillagának súgója a csillag fölött jelenik meg, nem a „További lehetőségek…” gomb fölött (#4527).
+- A mappa és az album helyi menüjéből célzott arckeresés indítható (#4535).
+- A „További lehetőségek…” gomb a ki nem férő kimeneti gombokat függőleges oszlopban, ikonnal és felirattal kínálja, az eredeti Picasához hasonlóan (#4537).
+- A mappa fejlécében a kollázs-gomb mellett megjelent a film-gomb, amely a mappa képeivel nyitja meg a Filmkészítőt (#4539).
+- A retusáló ecset köre követi az egeret, és a cél- és forráspont köre is látható marad a képen (#4543).
+- A szöveg-igazító gombok három, egymástól eltérő ikont mutatnak (balra, középre, jobbra igazítást), nem azonos jelet (#4547).
+- A vágó méretarány-választója megjeleníti a kijelölt vágat és az eredeti kép pixelméretét. (#4549).
+- Shift-tel kattintva a Ragyogás effekt csúszkás panelt nyit Intenzitás és Sugár csúszkával, ahogy az eredetiben (#4557).
+- A Sixties, a Polaroid és a Lekerekített szél színmintájának felirata most „Háttérszín”, ahogy az eredeti Picasában (#4560).
+- A szerkesztő filmszalagja hét rögzített férőhelyen, középre igazított képpel és kétszínű kerettel jelenik meg (#4562).
+- Videó megnyitásakor a bal oldalon a fülsáv helyén a videópanel áll: a kezdés és befejezés visszaállítása (megerősítéssel, ahogy az eredetiben), a pillanatfelvétel és a klip exportálása (#4566).
+- A képnézőben az F11 teljes képernyőre vált, újabb F11 pedig visszaáll ablakos módba (#4569).
+- A nézőben kattintással megnevezhető a felismert, névtelen arc; a keret megjelenik, a név pedig elmentődik. (#4572).
+- A Helyek térképjelölőjére kattintva a geocímkézett képek szűrt rácsnézete nyílik meg, a „Back to View All” pedig visszaállítja a teljes nézetet (#4575).
+- A Helyek panel keresője a helyjelölőkhöz tartozó képeket szűri, ezért a felirat címkeresés helyett „Keresés”-t jelez. (#4576).
+- Az album diavetítése és filmje az albumhoz beállított zenét használja. (#4601).
+- A háttérként beállított kép helyesen áll, és a mentett szerkesztések is látszanak rajta (#4604).
+- A filmkészítő előnézetében az átmenetek és a szöveges diák is megjelennek, a hangsáv szól, és a hangerő-csúszka szabályozza (#4617).
+- Album-nézetben a képernyővédőhöz adás megerősítést kér, és a hozzáadott képek számát akkor is jelzi, ha ez nulla (#4618).
+- Az Eszközök ▸ Kísérleti almenü tételei az eredeti Picasa sorrendjében állnak; az „Adatbázis helyének kiválasztása” a nyolcadik helyre került (#4635).
+- A Súgó ▸ Frissítések keresése tétel szürke, mert a megszűnt Google-szolgáltatásra épült; nem ígér működést (#4640).
+- Album- és személynézetben a Mappa menü Elrejtés és Megjelenítés parancsa szürke, nem rejti el a korábban nézett mappát (#4741).
+- Az automatikus vörösszem-javítás nem bukik el többé, ha az arcfelismerő ritkán értelmetlen szemhelyet ad vissza (#4759).
+- Windowson is működik a személyalbum javaslatainak kijelölése; a windowsos ellenőrzés négy bukó tesztje rendbe téve (#4763).
+- A felső menü ellenőrzései témánként külön fájlokban futnak, csökkentve a CI memóriaigényét (#4764).
+
 ## [0.9.46] – 2026-10-09
 
 - A fanézet képes mappasorain mostantól a teljes, a köztes sorokon a rövid helyi menü nyílik meg (#4529).
