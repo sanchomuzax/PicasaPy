@@ -800,6 +800,28 @@ ApplicationWindow {
         return window._faceScanController.personSuggestionCount(
             window.personAlbumName)
     }
+    //: #4588: a `selectsug` a jelenlegi személy függő javaslatait
+    //: tartalmazó fotósorokat jelöli ki. A meglévő jóváhagyás és eltávolítás
+    //: ezután a kijelölt fotókon levő, e személyhez tartozó arcokra szűkít.
+    function selectPersonSuggestions() {
+        if (!window._faceScanController || window.personAlbumName === ""
+                || !controller || !controller.photos)
+            return
+        var utak = window._faceScanController.personSuggestionPaths(
+            window.personAlbumName)
+        var javaslatUtak = ({})
+        for (var j = 0; j < utak.length; ++j)
+            javaslatUtak[String(utak[j])] = true
+        var sorok = []
+        var darab = Number(controller.photos.rowCount())
+        for (var i = 0; i < darab; ++i) {
+            var ut = String(controller.photos.filePathAt(i))
+            if (javaslatUtak[ut])
+                sorok.push(i)
+        }
+        window.selectedIndexes = sorok
+        window.selectedIndex = sorok.length > 0 ? sorok[0] : -1
+    }
     //: #2187: a kijelölt hatókör (`confirmsel`, `removesel`) — a
     //: KIJELÖLT fotókon ülő, e személyre szóló függő javaslatok arcai. A
     //: rács sora a fotó, a művelet arcokra hat; a leképezést a vezérlő
