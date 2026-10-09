@@ -1,11 +1,10 @@
-"""FacesHelper: a `faces=` régiók (#147) QML-hídja — olvasás ÉS írás (#26,
+"""FacesHelper: az arc-régiók (#147) QML-hídja — olvasás ÉS írás (#26,
 2. kör: az arc-téglalap szerkesztő overlay ezen keresztül ér el).
 
-A néző overlay-je ezen keresztül kéri le egy adott fotóhoz a mentett
-arc-régiókat: a `faces=` kulcsot és a nevet adó `[Contacts2]` szekciót
-közvetlenül a fotó mappájának `.picasa.ini`-jéből olvassuk — nincs
-index-bővítés (`people.py` a mintája: mindig friss ini-olvasás, nem
-cache-elt tábla).
+A néző overlay-je a mentett régiókat a fotó mappájának `.picasa.ini`
+`faces=` és `[Contacts2]` adataiból, a még névtelen detektálásokat pedig a
+`face` indextáblából kéri le. A név és az arcmentés továbbra is az ini API-n
+keresztül történik.
 
 Az ÍRÁS a csillag/album-mintát követi (`photo_ops_controller.py`,
 `ini.io.update_document`): azonos útvonalon soros, az előzetes ellenőrzésig
@@ -18,6 +17,7 @@ ini-írás önmagában is gyors (kis fájl), a szinkron hívás itt egyszerűbb.
 from __future__ import annotations
 
 import secrets
+import sqlite3
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -42,6 +42,7 @@ from picasapy.ini import (
 )
 from picasapy.ini.faces import Face
 from picasapy.ini.rect64 import Rect64
+from picasapy.index import open_index
 from picasapy.scanner import PICASA_INI_NAME
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós
@@ -52,38 +53,82 @@ _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 class FacesHelper(QObject):
     """QML-nek kitett lekérdező/író: fotó-útvonal → arc-régiók."""
 
+    def __init__(self, index_path: str | Path | None = None, parent=None) -> None:
+        super().__init__(parent)
+        self._index_path = Path(index_path) if index_path is not None else None
+
     # a szerkesztő overlay ezt figyeli hibaüzenethez (a albumWriteFailed
     # mintája, photo_ops_controller.py)
     faceWriteFailed = Signal(str)
 
     @Slot(str, result="QVariantList")
     def facesFor(self, image_path: str) -> list[dict]:
-        """A `faces=` bejegyzések a megadott fotóhoz, névvel feloldva.
+        """A fotó nevesített ini-arcai és névtelen index-találatai.
 
         Minden elem: {left, top, right, bottom} relatív [0..1] koordináták
-        (rect64) és `name` (a [Contacts2]-ből, vagy üres, ha nincs
-        névbejegyzés). A mellőzést (`ffffffffffffffff`) és a nulla
-        contact_id-jú bejegyzést kihagyja. Hiányzó ini/szekció/kulcs, vagy
-        hibás `faces=` érték esetén üres lista."""
+        (rect64) és `name`. Az indexből érkező elem `detected: True` és
+        `faceId` mezőt is kap, hogy a néző a DB-n keresztül tudja elmenteni
+        a ráírt nevet. A mellőzést (`ffffffffffffffff`) és a nulla
+        contact_id-jú ini-bejegyzést kihagyja. Hiányzó ini/szekció/kulcs,
+        hibás `faces=` érték vagy nem indexelt fotó esetén az adott
+        adatforrásból üres lista jön."""
         if not image_path:
             return []
         document, path = self._load(image_path)
-        if document is None:
-            return []
-        section = document.section(path.name)
-        raw_faces = section.get("faces") if section is not None else None
-        if not raw_faces:
+        ini_faces = []
+        if document is not None:
+            section = document.section(path.name)
+            raw_faces = section.get("faces") if section is not None else None
+            if raw_faces:
+                try:
+                    faces = parse_faces(raw_faces)
+                except ValueError:
+                    faces = ()
+                names = {
+                    contact.person_id.casefold(): contact.name
+                    for contact in contacts_of(document)
+                }
+                ini_faces = [
+                    _face_to_dict(face, names)
+                    for face in faces
+                    if face.is_identified
+                ]
+        return ini_faces + self._unnamed_detected_faces(path)
+
+    def _unnamed_detected_faces(self, image_path: Path) -> list[dict]:
+        """A még névtelen, YuNet által felismert arcok a fotó indexsoraiból."""
+        if self._index_path is None or not self._index_path.is_file():
             return []
         try:
-            faces = parse_faces(raw_faces)
-        except ValueError:
+            with open_index(self._index_path) as conn:
+                photo = conn.execute(
+                    "SELECT p.id, p.width, p.height FROM photos p "
+                    "JOIN folders f ON f.id = p.folder_id "
+                    "WHERE f.path = ? AND p.name = ?",
+                    (str(image_path.parent), image_path.name),
+                ).fetchone()
+                if photo is None or not photo["width"] or not photo["height"]:
+                    return []
+                rows = conn.execute(
+                    "SELECT id, rect_left, rect_top, rect_right, rect_bottom "
+                    "FROM face WHERE photo_id = ? AND state = 'unnamed' "
+                    "ORDER BY id",
+                    (photo["id"],),
+                )
+                return [
+                    {
+                        "left": row["rect_left"] / photo["width"],
+                        "top": row["rect_top"] / photo["height"],
+                        "right": row["rect_right"] / photo["width"],
+                        "bottom": row["rect_bottom"] / photo["height"],
+                        "name": "",
+                        "detected": True,
+                        "faceId": int(row["id"]),
+                    }
+                    for row in rows
+                ]
+        except (OSError, sqlite3.Error, RuntimeError):
             return []
-        names = {contact.person_id.casefold(): contact.name for contact in contacts_of(document)}
-        return [
-            _face_to_dict(face, names)
-            for face in faces
-            if face.is_identified
-        ]
 
     @Slot(str, result="QVariantList")
     def knownNames(self, image_path: str) -> list[str]:

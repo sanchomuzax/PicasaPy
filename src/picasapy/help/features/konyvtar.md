@@ -232,14 +232,19 @@ Ugyanez az ablak nyílik meg a mappáknál is (**Mappaleírás
 szerkesztése…**) — az eredeti Picasa is egy ablakot használ a kettőre.
 Mappánál a mezők kicsit mások (lásd fent, **A mappa tulajdonságai**).
 
-### A Mappa menü albumnézetben
+### Az Album menü albumnézetben
 
 A **Mappa** menü parancsai a **megnyitott mappára** hatnak. Ha egy
-albumot vagy egy Emberek-albumot nézel, a program a korábban nézett mappát
-megjegyzi, de a menü **Keresés a lemezen**, **Eltávolítás a Picasából…**,
-**Áthelyezés…** és **Törlés…** tétele ilyenkor **szürke** — így véletlenül
-sem a korábbi mappára hatnak. Ha ilyenkor mappát akarsz kezelni, előbb
-kattints a mappára a bal hasábon.
+albumot nyitsz meg, a menüsorban a **Mappa** helyén **Album** áll, ahogy
+az eredeti Picasában. Az első tétele, az **Albumleírás szerkesztése…** a
+nyitott album **Album tulajdonságai** ablakát nyitja meg (lásd fent).
+Mappanézetben ugyanezen a helyen a mappa leírását szerkeszted.
+
+Album vagy Emberek-album nézése közben a program a korábban nézett
+mappát megjegyzi, de a menü **Keresés a lemezen**, **Eltávolítás a
+Picasából…**, **Áthelyezés…** és **Törlés…** tétele ilyenkor **szürke** —
+így véletlenül sem a korábbi mappára hatnak. Ha ilyenkor mappát akarsz
+kezelni, előbb kattints a mappára a bal hasábon.
 
 ## Gyűjtemények
 
@@ -250,6 +255,12 @@ alá. A hasábon a gyűjtemény fejlécére kattintva nyitod és csukod.
   gyűjteménybe** almenün át.
 - A gyűjtemény fejlécére jobbgombbal kattintva **átnevezheted** vagy
   **eltávolíthatod**. A gyűjtemény eltávolítása a mappáidat nem bántja.
+
+Azt, hogy egy mappa melyik gyűjteménybe tartozik, a program a mappa
+saját `.picasa.ini` fájljába írja, ahogy az eredeti Picasa is. A
+besorolás ezért a mappával együtt költözik, és a program újratelepítése
+után is megmarad. Ha egy gyűjteményt eltávolítasz, a mappái visszakerülnek
+a **Mappák a lemezen** csoportba.
 
 Ha az utolsó nyitott gyűjteményt is bezárnád, a program figyelmeztet:
 utána a rács üres lesz, amíg nem nyitsz ki valamit.
@@ -386,11 +397,14 @@ időpontja**t. Két mód közül választasz:
 - **Minden fotó dátumának és idejének beállítása ugyanarra** — mindegyik
   kép ugyanazt a dátumot és időt kapja.
 
-Az **OK** menti a változtatást. Az új dátum a PicasaPy **adatbázisában**
-él: a rács, a dátum szerinti rendezés és a **Tulajdonságok** panel már ezt
-mutatja, és az **exportált** JPEG-be is ez kerül. A képfájl maga és a
-`.picasa.ini` változatlan marad, tehát más program a régi felvételi
-dátumot látja.
+Az **OK** menti a változtatást, ahogy az eredeti Picasa is: az új
+felvételi dátumot **beleírja a képfájl EXIF-adataiba**, és a fájl
+módosítási idejét is ugyanannyival eltolja. A `.picasa.ini` fájlhoz nem
+nyúl. Ezután a program újraolvassa a mappát, így a rács, a dátum szerinti
+rendezés és a **Tulajdonságok** panel már az új dátumot mutatja — és
+mivel a fájlban van, más program is ezt látja.
+
+Az EXIF-dátum írása **JPEG** képeken működik.
 
 ## A Tulajdonságok panel
 
@@ -445,6 +459,8 @@ marad üresen, ha a fényképezőgép valami szokatlant írt bele.
 
 Egy képet a **Kép ▸ Elrejtés** paranccsal vagy a **kép helyi menüjének
 Elrejtés** tételével tüntethetsz el a nézetből — a fájl a lemezen marad.
+A **Kép ▸ Elrejtés** csak a kijelölés látható képeit rejti el; ha a
+kijelölésben már rejtett kép is van, azt nem hozza elő.
 A rejtett képek előhozásához kapcsold be a **Nézet ▸ Rejtett képek**
 pontot. Visszahozni a **Kép ▸ Megjelenítés** paranccsal tudod: a
 kijelölt képek közül csak a rejtetteket teszi újra láthatóvá, a már
