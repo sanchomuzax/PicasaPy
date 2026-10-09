@@ -278,6 +278,17 @@ class TestMeasuredDefaults:
         assert params[0].default == pytest.approx(35.0)  # Blur
         assert params[1].default == pytest.approx(1.4)   # Strength
 
+    def test_pencil_sketch_controls_match_the_spec(self):
+        """A PencilSketch panel a specifikáció szerinti vezérlőket mutassa."""
+        params = effect_params("pencilsketch")
+
+        assert [param.label for param in params] == ["Radius", "Strength", "Fade"]
+        assert [(param.minimum, param.maximum, param.default) for param in params] == [
+            (1.3, 5.0, 2.0),
+            (0.0, 200.0, 100.0),
+            (0.0, 100.0, 0.0),
+        ]
+
 
 class TestFormatting:
     """A láncba a Picasa `filters=` alakja kerül (round-trip elv)."""
