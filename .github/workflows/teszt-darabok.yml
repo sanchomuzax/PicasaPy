@@ -75,7 +75,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           # az érintett-kiválasztás a PR alapjához hasonlít (git diff alap...HEAD)
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          # ⚠️ a `0` a kifejezésnyelvben HAMIS (`&& 0 || 1` mindig 1-et adna, és a
+          # PR alapja nélkül a szűkítés a teljes készletre esne vissza — 2026-10-09
+          # így futott le egy darabban 40 percig): ezért szöveg.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
