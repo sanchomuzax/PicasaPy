@@ -35,7 +35,7 @@ effekt a nyers fotóra.
 | Fekete-fehér | a színek elvétele |
 | Melegítés | a bőrtónusok melegebbé tétele |
 | Filmszemcse | filmes szemcsézettség, csúszkával állítható |
-| Árnyalás | egyszínű árnyalat a képre |
+| Árnyalás | egyszínű árnyalat a képre — a **Tinta színe** választóval (alapból világoskék) és a **Fokozat** csúszkával |
 | Telítettség | a színek erőssége |
 | Lágy fókusz | lágy, elmosott kép középen éles ponttal |
 | Ragyogás | fénylő, álmodozó hatás |
@@ -82,7 +82,7 @@ mielőtt a színeket kiválasztja, ahogy az eredeti Picasa is tette.
 | Fókusznagyítás | egy pont felnagyítása, sugaras elmosással — a **Suhanás** és a **Fókuszméret** csúszkával |
 | Múzeumi matt | képkeret-szerű paszpartu |
 | Neon | világító kontúrok, választható színben |
-| Ceruzarajz | ceruzavázlat hatás |
+| Ceruzarajz | ceruzavázlat hatás — a **Sugár**, az **Erősség** és a **Fokozat** csúszkával |
 | Képpontnagyítás | durva képpontokra bontás — a **Képpontméret**, a **Keverési mód** és az **Elhalványítás** csúszkával |
 | Polaroid | fehér polaroid keret, megdöntve |
 | Lágyítás | lágy, elmosott kép — a **Lágyítás** és az **Elhalványítás** csúszkával |
@@ -151,6 +151,20 @@ hagyja, a másikat elmossa, és a kettő közt átmenetet ad. Az elmosás
 erőssége attól függ, **hol áll a korong vízszintesen** — ha csak
 fel-le mozgatod, a középvonalon hagyva, az effekt nem mos. Az eredeti
 Picasa is így viselkedik.
+
+## A fókuszpont húzása a képen
+
+A pontra összpontosító effekteknél — **Lágy fókusz**, **Fókuszos FF**,
+**Színátmenet**, **Sugaras árnyalás**, **Fókusznagyítás** és
+**Képpontnövelés** — a hatás középpontját **a képen is megfoghatod**.
+Amíg az effekt csúszkás panelje nyitva van, a képen egy fehér karikás
+jelölő mutatja a fókuszpontot, és az egérmutató célkereszt. Kattints
+vagy húzz a bal egérgombbal oda, ahová a középpontot szeretnéd: a
+jelölő odaugrik, és a panel **Középpont X** és **Középpont Y** csúszkája
+követi.
+
+A **Színátmenet**nél a jelölőn egy rövid vonal is látszik: ez az átmenet
+irányát mutatja, és a pont vízszintes helyével együtt kissé el is fordul.
 
 ## Csúszkák, amiknek a felső vége a képmérethez igazodik
 

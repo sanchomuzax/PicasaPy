@@ -1637,6 +1637,11 @@ class AppController(
             self.restoreSession()
 
     def _show(self, records) -> None:
+        # #4526: a kor-szűrő felirata és csúszkája csak a kor-nézethez
+        # tartozik. Bármely más nézet betöltése törölje, így a szűrőgombok,
+        # keresések és mappaváltások után sem maradhat régi kor-felirat.
+        if self._view_mode[0] != "age" and self._age_filter_days is not None:
+            self._age_filter_days = None
         # #17: a rejtett képek alapból sehol nem látszanak (rács, keresés,
         # csillag-szűrő) — a Nézet → Rejtett képek kapcsolóval igen
         if not self.showHidden:

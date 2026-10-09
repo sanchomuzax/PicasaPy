@@ -48,6 +48,9 @@ from picasapy.mailer import (
 from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_file_url
 
+#: Ennyi ideig várunk az xdg-email kilépési kódjára (#4606).
+_XDG_EMAIL_VARAKOZAS_S = 5.0
+
 #: A `shutil.which` és a `subprocess.Popen` MODULSZINTŰ fogantyúja (#1375) —
 #: a teszt EZEKET cserélje.
 #:
@@ -487,9 +490,23 @@ class EmailController(QObject):
                 subject, body, attachments, recipient=recipient
             )
             try:
-                _popen(argv)  # noqa: S603 — argv-lista, nincs shell
+                process = _popen(argv)  # noqa: S603 — argv-lista, nincs shell
             except OSError as error:
                 self.emailFailed.emit(str(error))
+                return False
+            # Az xdg-email a levelezőprogram indítása után kilép; ha egy
+            # kliens életben tartja, a felület nem várhat rá — ekkor a
+            # küldés elindultnak számít.
+            try:
+                return_code = process.wait(timeout=_XDG_EMAIL_VARAKOZAS_S)
+            except subprocess.TimeoutExpired:
+                return True
+            if return_code != 0:
+                _log.warning(
+                    "xdg-email sikertelen kilépési kóddal állt le: %s",
+                    return_code,
+                )
+                self.emailFailed.emit(self.tr("No email program was found."))
                 return False
             return True
 
