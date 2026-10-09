@@ -1125,6 +1125,9 @@ Rectangle {
                     pane.mentesPipaldKert(mappa, be)
                 }
                 onFolderChosen: function(path) { pane.folderChosen(path) }
+                onFolderContextMenuRequested: function(path) {
+                    pane.openFolderContextMenu(path)
+                }
 
                 // A `HierFolder` menü három tétele, aminek a rétege a
                 // gazdában van — ugyanazokra a hívásokra kötve, mint a

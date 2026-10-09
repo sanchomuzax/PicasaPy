@@ -434,7 +434,7 @@ ApplicationWindow {
         window.selectedIndex = sorok[0]
         window.selectedIndexes = sorok
         createDialogs.ensure().openMovieProject(
-            projekt.seconds, projekt.burstmodethresh)
+            projekt.seconds, projekt.burstmodethresh, cel)
     }
 
     function openSavedCollage(path) {
@@ -800,6 +800,28 @@ ApplicationWindow {
             return 0
         return window._faceScanController.personSuggestionCount(
             window.personAlbumName)
+    }
+    //: #4588: a `selectsug` a jelenlegi személy függő javaslatait
+    //: tartalmazó fotósorokat jelöli ki. A meglévő jóváhagyás és eltávolítás
+    //: ezután a kijelölt fotókon levő, e személyhez tartozó arcokra szűkít.
+    function selectPersonSuggestions() {
+        if (!window._faceScanController || window.personAlbumName === ""
+                || !controller || !controller.photos)
+            return
+        var utak = window._faceScanController.personSuggestionPaths(
+            window.personAlbumName)
+        var javaslatUtak = ({})
+        for (var j = 0; j < utak.length; ++j)
+            javaslatUtak[String(utak[j])] = true
+        var sorok = []
+        var darab = Number(controller.photos.rowCount())
+        for (var i = 0; i < darab; ++i) {
+            var ut = String(controller.photos.filePathAt(i))
+            if (javaslatUtak[ut])
+                sorok.push(i)
+        }
+        window.selectedIndexes = sorok
+        window.selectedIndex = sorok.length > 0 ? sorok[0] : -1
     }
     //: #2187: a kijelölt hatókör (`confirmsel`, `removesel`) — a
     //: KIJELÖLT fotókon ülő, e személyre szóló függő javaslatok arcai. A
@@ -2429,6 +2451,17 @@ ApplicationWindow {
         // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) — a
         // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
         visible: !window.viewerOpen && window.libraryFrameVisible
+        searchSuggestionsVisible: searchSuggestionsBox.visible
+        onSearchSuggestionKeyPressed: function(key) {
+            if (key === Qt.Key_Down)
+                searchSuggestionsBox.moveSelection(1)
+            else if (key === Qt.Key_Up)
+                searchSuggestionsBox.moveSelection(-1)
+            else if (key === Qt.Key_Return || key === Qt.Key_Enter)
+                searchSuggestionsBox.chooseSelected()
+            else if (key === Qt.Key_Escape)
+                searchSuggestionsBox.dismiss()
+        }
         onSearchEdited: function(text) {
             window.clearSelection()
             controller.search(text)

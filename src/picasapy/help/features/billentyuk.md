@@ -24,8 +24,8 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+Shift+S | Kép exportálása mappába |
 | Ctrl+P | Nyomtatás |
 | Ctrl+E | E-mail — lásd [Küldés e-mailben](email.md) |
-| Ctrl+Shift+P | Indexképek nyomtatása |
-| Ctrl+Enter | Keresés a lemezen |
+| Ctrl+Shift+P | Indexképek nyomtatása — kijelölés nélkül is, a megnyitott mappára |
+| Ctrl+Enter | Keresés a lemezen — kijelölés nélkül a megnyitott mappát mutatja a fájlkezelőben |
 | F2 | Átnevezés |
 | Delete | Törlés lemezről a rácsban — albumban és Emberek albumban ehelyett kiveszi a képet az összeállításból |
 | Ctrl+Delete | Törlés lemezről (a nézőben) |
@@ -76,6 +76,7 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+F6 | Váltás a másodpéldányok nézetére |
 | Ctrl+F7 | Keresés hasonló képekre |
 | Ctrl+F8 | A hasonlóság-minta törlése |
+| F5 | A megnyitott mappa frissítése: beolvassa a lemezen történt változásokat, és frissíti a nézetet és a keresés eredményét |
 | Alt+Enter | Tulajdonságok panel |
 
 > A **Ctrl+3** ugyanazt csinálja, mint a **Nézet ▸ Szerkesztési nézet**
@@ -133,6 +134,7 @@ felszabadítja az arányt.
 |---|---|
 | F | Arcok megjelenítése |
 | Shift+F | Arcok szerkesztése |
+| Ctrl+9 | A bal oldali szerkesztőpanel elrejtése és előhozása |
 | Esc | Vissza a könyvtárhoz |
 
 ## Diavetítés közben

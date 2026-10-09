@@ -859,6 +859,21 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         with open_index(self._db_path) as conn:
             return len(suggested_faces_for(conn, name))
 
+    @Slot(str, result="QVariantList")
+    def personSuggestionPaths(self, name: str) -> list[str]:  # noqa: N802
+        """A személy függő javaslatait tartalmazó fotók útvonala (#4588).
+
+        A fejléc egy fotósor-kijelölésen keresztül éri el a javaslatokat;
+        ugyanazon a fotón több egyező arc is lehet, ezért az útvonalak
+        egyediek. Az üres név nem tartozik személy-albumhoz.
+        """
+        if not name:
+            return []
+        with open_index(self._db_path) as conn:
+            return list(dict.fromkeys(
+                str(arc.photo_path) for arc in suggested_faces_for(conn, name)
+            ))
+
     def _szemely_javaslatai(
         self, name: str, face_ids: list | None
     ) -> list[int]:
