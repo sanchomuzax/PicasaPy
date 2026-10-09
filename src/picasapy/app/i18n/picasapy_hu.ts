@@ -7347,6 +7347,36 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>Move photo here?</source>
+            <extracomment>picasapy-origin: picasa; geopaneltext: geo::move_photo_here</extracomment>
+            <translation>Áthelyezi ide a képet?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Move %d photos here?</source>
+            <extracomment>picasapy-origin: picasa; geopaneltext: geo::move_photos_here</extracomment>
+            <translation>Áthelyezi ide mind a %d képet?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put photo here?</source>
+            <extracomment>picasapy-origin: picasa; geopaneltext: geo::put_photo_here</extracomment>
+            <translation>Ide teszi a képet?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Put %d photos here?</source>
+            <extracomment>picasapy-origin: picasa; geopaneltext: geo::put_photos_here</extracomment>
+            <translation>Ide teszi mind a %d képet?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>(OK)</source>
+            <extracomment>picasapy-origin: picasa; stringres:il_OKButton</extracomment>
+            <translation>(OK)</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>You have a fairly large number of items selected.
 
 Are you sure you want to apply this tag to all %d items?</source>
@@ -10514,6 +10544,15 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
             <source>Import from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Import a Picasából…</translation>
+        </message>
+    </context>
+    <context>
+        <name>PlacesMap</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMap.qml" />
+            <source>Place %d photos here</source>
+            <extracomment>picasapy-origin: picasa; geopaneltext: GeoPanel::infowindowhtml</extracomment>
+            <translation>Helyezze ide mind a %d képet</translation>
         </message>
     </context>
     <context>

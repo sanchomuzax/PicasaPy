@@ -56,6 +56,8 @@ Rectangle {
     //: #2013: a hely BEÁLLÍTÁSA is a gazdán megy át — 20 kijelölt elem
     //: fölött az eredeti megerősítést kér (`0x00652585`, `cmp ebx, 0x14`).
     signal setGeotagRequested(var rows, real latitude, real longitude)
+    // A rács húzása saját megerősítést kap, a kijelölt sorokkal együtt.
+    signal photosDroppedRequested(var rows, real latitude, real longitude)
 
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
@@ -104,6 +106,7 @@ Rectangle {
                 })
                 item.markerActivated.connect(panel.photoActivated)
                 item.placePicked.connect(panel.placeSelection)
+                item.photosDropped.connect(panel.photoDrop)
             }
         }
 
@@ -209,6 +212,11 @@ Rectangle {
     function placeSelection(latitude, longitude) {
         if (panel.targetRows.length === 0) return
         panel.setGeotagRequested(panel.targetRows, latitude, longitude)
+    }
+
+    function photoDrop(rows, latitude, longitude) {
+        if (!rows || rows.length === 0) return
+        panel.photosDroppedRequested(rows, latitude, longitude)
     }
 
     function applyLocalSearch() {
