@@ -100,6 +100,21 @@ Rectangle {
         return assigned
     }
 
+    function acceptFaceSuggestion(faceId) {
+        if (!panel.faceScanController || faceId < 0)
+            return false
+        var accepted = panel.faceScanController.acceptSuggestion(faceId)
+        if (accepted && typeof controller !== "undefined" && controller)
+            controller.refreshCollections()
+        return accepted
+    }
+
+    function rejectFaceSuggestion(faceId) {
+        if (!panel.faceScanController || faceId < 0)
+            return false
+        return panel.faceScanController.rejectSuggestion(faceId)
+    }
+
     function _hasPersonNamed(name) {
         var ctl = typeof controller !== "undefined" ? controller : null
         if (!ctl)
@@ -228,6 +243,13 @@ Rectangle {
                 photoUrl: modelData.thumbUrl
                 onNameSubmitted: function(id, name) {
                     panel.nameFaceFromPanel(id, name)
+                }
+                suggestedName: modelData.suggestedName || ""
+                onSuggestionAccepted: function(id) {
+                    panel.acceptFaceSuggestion(id)
+                }
+                onSuggestionRejected: function(id) {
+                    panel.rejectFaceSuggestion(id)
                 }
                 onIgnoreRequested: function(id) {
                     panel.requestIgnoreFace(id)

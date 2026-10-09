@@ -156,6 +156,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # csoportosítás, vagy sikeres tömeges névadás után) — a bal hasáb
     # sorának darabszáma ezt figyeli.
     unnamedCountChanged = Signal()
+    # A függő név-javaslat változott; a főnézet erre frissíti a panelt és a
+    # személy-album fejlécének javaslatszámát.
+    faceSuggestionsChanged = Signal()
 
     # #4627: a menüsor és a helyi menük Ctrl/Shift ágának megerősítése.
     faceResetConfirmationRequested = Signal(str)
@@ -778,7 +781,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 all_ok = False
         if written_ids:
             with open_index(self._db_path) as conn:
-                mark_faces_named(conn, written_ids)
+                mark_faces_named(conn, written_ids, clean_name)
                 # a `people_in_index` a `folders.has_ini` alapján dönt,
                 # melyik mappa `.picasa.ini`-jét olvassa (ld.
                 # `index/people.py`) — az ÚJONNAN írt ini (első névadás egy
@@ -845,7 +848,26 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             name = row["suggested_name"] if row is not None else None
         if not name:
             return False
-        return self.assignNameToFaces([int(face_id)], name)
+        accepted = self.assignNameToFaces([int(face_id)], name)
+        if accepted:
+            self.faceSuggestionsChanged.emit()
+        return accepted
+
+    @Slot(int, result=bool)
+    def rejectSuggestion(self, face_id: int) -> bool:  # noqa: N802
+        """Egyetlen arc név-javaslatának elvetése, az arc mellőzése nélkül."""
+        azonosito = int(face_id)
+        with open_index(self._db_path) as conn:
+            row = conn.execute(
+                "SELECT suggested_name FROM face WHERE id = ?", (azonosito,)
+            ).fetchone()
+            if row is None or not row["suggested_name"]:
+                return False
+            set_suggested_name(conn, azonosito, None)
+            conn.commit()
+        self.unnamedCountChanged.emit()
+        self.faceSuggestionsChanged.emit()
+        return True
 
     @Slot(str, result=int)
     def personSuggestionCount(self, name: str) -> int:  # noqa: N802

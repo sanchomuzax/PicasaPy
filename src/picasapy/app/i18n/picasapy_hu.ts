@@ -9124,6 +9124,12 @@ picasapy-origin-key: rightdrawerpanel/peoplepanel/faceclusterpanel_%d_ignore</ex
             <translation>Személy mellőzése</translation>
         </message>
         <message>
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: PeoplePanel::SuggestionFmt</extracomment>
+            <translation>%1?</translation>
+        </message>
+        <message>
             <source>%1 photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 fotó</translation>
