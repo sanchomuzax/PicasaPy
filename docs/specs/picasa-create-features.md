@@ -3478,6 +3478,45 @@ alobjektum osztályának RTTI-je, és azon belül a `+0x2a4` olvasói.
 | Exportálás TiVo DVR-re… | `ID_TIVO` | a `plugins/ytITivo.yti` plugin (TiVo Desktop-integráció) |
 | Indexképek nyomtatása… | `ID_FILE_PRINTCONTACTSHEET` | a Contact Sheet kollázs-típus nyomtatási párja |
 
+### 2.8/c A mappa-fejléc FILM-gombja — alapból látszik (2026-10-09, #4539)
+
+*A #4539 első kérdése: van-e film-gomb a MAPPA fejlécében, és alapból látszik-e.
+A válasz igen.*
+
+**Bizonyíték (a képernyőkép, nagyítva):** a referencia-képernyőkép
+`research/testdata/screenshot/2026-07-17 20 54 38.png` (Picasa 3.9.141,
+Windows 11) mappa-fejlécének gombsora, balról jobbra:
+`▸` (diavetítés) · `[+kép]` (kollázs) · **`[+filmszalag]` (film)** · `☆`
+(csillagozottak, halvány) · mentés (halvány) · `Feltöltés ▾`.
+Ugyanez a sor látszik a másik két fejléces képernyőképen is
+(`2026-07-17 20 57 35.png`, `2026-07-17 20 54 38.png`).
+
+**Szövegtár és elem:** `headerpanel/create_movie` — tooltip „Create Movie
+Presentation" / „Mozgófilmes prezentáció létrehozása"
+(`referencia/i18n-hu/headerpaneltext.xml`); a `referencia/ui-leltar.csv`
+szerint a `headerpanel` gyermeke, `mousedown` tulajdonsággal, **rejtés
+(`m_hidden`) nélkül**, a `movie_icon` gyermekével. A 2.8-as belépési pontok
+(`Létrehozás ▸ Film`) mellé tehát egy HARMADIK, mappa-fejléc-belépés is van.
+
+**Elhelyezés:** a kollázs után, a csillag előtt; a `faceheaderpanel`-ben a
+kollázs és a film egymás mellett van (`create_collage` 115 → `create_movie`
+147), a mappa-fejlécben ugyanez a sorrend. A teljes sorrend (play · kollázs ·
+film · csillag · mentés · feltöltés) a képernyőképről olvasható.
+
+**Mit csinál:** a fejléc SAJÁT csoportjának képeit adja a Filmkészítőnek
+(ugyanaz a halmaz, mint a kollázs-gombnál — #1006). A film-gomb nem
+testreszabható elem (mint a Feltöltés); a gombsor testreszabásában nincs
+benne, így a régi, mentett sorok sem rejtik el.
+
+⛔ **Nyitva marad:** a `headerpanel/create_movie` GUID-jének és az alapkészlet
+`+0xdb5` jelzőjének megfeleltetése (2.8 / 44.4 a `picasa-menu-parancsok-viselkedes.md`-ben).
+A képernyőkép a kérdésre (alapból látszik-e) már önmagában válaszol, a GUID
+csak a testreszabhatóságot érintené — az nálunk nincs kimondva.
+
+⛔ **Nem mért:** a gomb pixel-geometriája. Az eredeti képernyőképen a gomb
+nagyjából a kollázs méretű (a 29 × 27 a faceheaderpanel mért értéke);
+nálunk ugyanez a méret van.
+
 ## 2/b. A diavetítés vezérlősávja — teljes leltár a binárisból (#433, 2026-08-15)
 
 Forrás: `oneup.tre`, `oneuptext.tre`, `slideshowctrls.tre`, és a `respack.yt`

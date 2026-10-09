@@ -38,6 +38,7 @@ Sikeres mentés után a piszkozat betöltötte a szerepét, ezért eldobjuk.
 from __future__ import annotations
 
 import logging
+import sqlite3
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -54,6 +55,8 @@ from picasapy.collage.draft import project_from_nodes
 from picasapy.collage.picasa_render import PicasaCollageSettings, make_picasa_collage
 from picasapy.app.collage_preview import CollagePreviewProvider
 from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, NOBORDER
+from picasapy.index import album_photos, open_index
+from picasapy.ini import load_or_empty, read_folder_music
 from picasapy.movie import MovieSettings, export_movie
 from picasapy.movie.mxf import (
     MxfAtmenet,
@@ -64,7 +67,6 @@ from picasapy.movie.mxf import (
     read_mxf,
     write_mxf,
 )
-from picasapy.ini import load_or_empty, read_folder_music
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import collage_output, collage_prefs
@@ -140,9 +142,39 @@ class CreateMixin(PosterMixin):
 
     @Slot(list, result=str)
     def filmMusicForSources(self, sources) -> str:  # noqa: N802
-        """A filmpanel alapértelmezett zenéje az egy mappából vett képekhez."""
+        """Az album vagy az egy mappából vett képek alapértelmezett zenéje."""
+        mode, token = getattr(self, "_view_mode", ("", ""))
+        if mode == "album" and token and self._sources_belong_to_album(
+            sources, token
+        ):
+            album_music = self.albumMusicFile(token)
+            if album_music:
+                return album_music
         zene = film_zene_mappabol(sources)
         return str(zene) if zene is not None else ""
+
+    def _sources_belong_to_album(self, sources, token: str) -> bool:
+        """Csak a megnyitott album képeire adjon albumzene-alapértéket."""
+        helyi_forrasok = []
+        for source in sources or ():
+            local_path = to_local_path(str(source))
+            if not local_path:
+                return False
+            try:
+                helyi_forrasok.append(Path(local_path).expanduser().resolve())
+            except (OSError, RuntimeError, ValueError):
+                return False
+        if not helyi_forrasok:
+            return False
+        try:
+            with open_index(self._db_path) as connection:
+                album_utak = {
+                    (Path(photo.folder_path) / photo.name).resolve()
+                    for photo in album_photos(connection, token)
+                }
+        except (OSError, sqlite3.Error, RuntimeError, ValueError):
+            return False
+        return bool(album_utak) and all(path in album_utak for path in helyi_forrasok)
 
     # (célfájl, felhasznált, kihagyott, ebből NEM TALÁLHATÓ) — #459/3: a
     # hiányzó fájl más eset, mint az olvashatatlan, külön mondatot kap
