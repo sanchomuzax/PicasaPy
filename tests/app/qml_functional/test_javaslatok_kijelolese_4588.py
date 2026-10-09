@@ -48,7 +48,12 @@ def _visual_item(root, name):
 
 def _lathato_gomb(root, name):
     item = _visual_item(root, name)
-    return item is not None and item.isVisible()
+    return (
+        item is not None
+        and item.isVisible()
+        and item.width() > 0
+        and item.height() > 0
+    )
 
 
 def _lista_property(root, name):
@@ -157,6 +162,7 @@ def test_a_szemely_album_gombja_kijeloli_es_a_muveletek_ezt_hasznaljak(
         )
         kijelolo = _visual_item(window, "headerSelectSuggestionsButton")
         assert kijelolo is not None and kijelolo.isVisible()
+        assert kijelolo.width() > 0 and kijelolo.height() > 0
         _click(window, kijelolo)
 
         vart_sorok = _photo_rows(

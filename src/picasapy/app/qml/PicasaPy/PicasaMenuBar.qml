@@ -1827,13 +1827,13 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        // #4416: a kijelölt mappát ugyanazzal a vezérlőművelettel rejti el,
-        // amelyet a FolderContextMenu hív. Az aktív feltétel is azonos:
-        // van kiválasztott mappa.
+        // #4416/#4741: a kijelölt mappát ugyanazzal a vezérlőművelettel rejti
+        // el, amelyet a FolderContextMenu hív. Album- és személynézetben a
+        // vezérlő megőrzi az előző mappát, de ott nincs kijelölt mappa.
         MenuItem {
             objectName: "menuFolderHide"
             text: qsTr("&Hide")
-            enabled: bar.currentFolder.length > 0
+            enabled: bar.folderLocateEnabled
             onTriggered: bar.setCurrentFolderHidden(true)
         }
         // #4416: a Rejtett mappák gyűjteményében kijelölt mappát hozza
@@ -1844,7 +1844,7 @@ MenuBar {
             //: szöveg — a mért `AlbumPhoto::ID_PICTURE_UNHIDE` a KÉP-menüé.
             //: Ezért marad „Show”, nem igazítjuk „&Unhide”-ra.
             text: qsTr("Show")
-            enabled: bar.currentFolder.length > 0
+            enabled: bar.folderLocateEnabled
             onTriggered: bar.setCurrentFolderHidden(false)
         }
         MenuSeparator {}
@@ -2255,14 +2255,6 @@ MenuBar {
         }
         PicasaMenu {
             title: qsTr("Experimental")
-            // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta
-            MenuItem {
-                objectName: "menuToolsMoveDatabase"
-                //: #2142: a MÉRT felirat (`eMenuTools::ID_MOVE_DATABASE`) —
-                //: nem „Move Database...". Az eredetiben ez a 8. tétel.
-                text: qsTr("Choose database location...")
-                onTriggered: bar.moveDatabaseRequested()
-            }
             // #2142: a duplikátum-kereső az eredetiben a KÍSÉRLETI almenü
             // MÁSODIK tétele (`eMenuTools::ID_DUPES`, „Show Duplicate
             // Files"), nem a felső szinté. A #1794 mérte ki az Eszközök
@@ -2390,6 +2382,16 @@ MenuBar {
                 //: a kijelölt képre szól
                 enabled: bar.photoActionsEnabled && !bar.editorActive
                 onTriggered: bar.passportPhotoRequested()
+            }
+            // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta.
+            // #4635: a mért sorrendben a Passport photo után, a Write faces
+            // to XMP előtt áll (a kilencből a nyolcadik).
+            MenuItem {
+                objectName: "menuToolsMoveDatabase"
+                //: #2142: a MÉRT felirat (`eMenuTools::ID_MOVE_DATABASE`) —
+                //: nem „Move Database...". Az eredetiben ez a 8. tétel.
+                text: qsTr("Choose database location...")
+                onTriggered: bar.moveDatabaseRequested()
             }
             //: #1403: `eMenuTools::ID_WRITE_XMP_FACES` — a Kísérleti almenü
             //: UTOLSÓ tétele (`0xd6e838`, mérve). A MEGLÉVŐ XMP-építőt köti be
@@ -2556,7 +2558,11 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: false; retired: true }  // #638
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("&Check for Updates"); placeholder: true }
+        // #4640: a PicasaPy saját frissítéskeresése nem paritás-feladat. Az
+        // eredeti az egykori Google-szolgáltatásra épült, amelyet a Picasa
+        // Wine alatt maga letiltott, ezért nyugdíjazott (szürke, pont nélkül),
+        // nem helyfoglaló.
+        PicasaMenuItem { text: qsTr("&Check for Updates"); placeholder: false; retired: true }
         MenuSeparator {}
         // SAJÁT FUNKCIÓ (#1364): a Teljesítmény-monitor az eredeti Picasa
         // 3.9 Súgó menüjében NEM létezik (`docs/specs/ui-audit-menus.md`) —
