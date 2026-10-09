@@ -320,8 +320,8 @@ edittextpanel/rightalign,megvan,PicasaPy/EditorTextPanel.qml,A Right justify tex
 edittextpanel/sizelist,megvan,PicasaPy/EditorTextPanel.qml,A textFontSizeBox betűméret-választó a szöveg eszközben.
 geopanel/map_menu,megvan,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml,A PicasaComboBox a támogatott térképtípusok között vált; a valódi főablakos keresőteszt ellenőrzi a látható térképpanelt.
 geopanel/search,megvan,PicasaPy/PlacesPanel.qml,A Search gomb a helyi keresést alkalmazza; kimeneti ellenőrzés: tests/app/test_qml_helyek_kereses_4147.py.
-geopanel/search_group,megvan,PicasaPy/PlacesPanel.qml,A címkereső feliratot mezőt és gombot közös keresőcsoport rendezi.
-geopanel/search_label,megvan,PicasaPy/PlacesPanel.qml,A Search for an address: felirat hivatalos magyar fordítása „Cím keresése:” a src/picasapy/app/i18n/picasapy_hu.ts-ben; kimeneti ellenőrzés: tests/app/test_qml_helyek_kereses_4147.py.
+geopanel/search_group,megvan,PicasaPy/PlacesPanel.qml,A Search feliratot mezőt és gombot közös keresőcsoport rendezi.
+geopanel/search_label,megvan,PicasaPy/PlacesPanel.qml,A helyi képkeresés felirata Search; hivatalos magyar fordítása „Keresés”; kimeneti ellenőrzés: tests/app/test_qml_helyek_kereses_4147.py.
 geopanel/searchinput,megvan,PicasaPy/PlacesPanel.qml,A helyi keresőmező a fotónevekben feliratokban kulcsszavakban és mappaútvonalakban szűr; tests/app/test_qml_helyek_kereses_4147.py.
 collagepanel/picker_panel,megvan,PicasaPy/CollageSettingsTab.qml;PicasaPy/CollageBackgroundBox.qml,A collagePickerPanel színválasztó-panel kattintásra megjelenik és bezárul; tests/app/qml_functional/test_collage_settings_tab_946.py.
 collagepanel/previewinset,megvan,PicasaPy/CollageCanvas.qml,A lap illesztett előnézeti geometriája a previewinset szerepét tölti be; teszt: tests/app/qml_functional/test_collage_panel_layout_945.py. A külön rétegszerkezet R2 eltérésként dokumentált.

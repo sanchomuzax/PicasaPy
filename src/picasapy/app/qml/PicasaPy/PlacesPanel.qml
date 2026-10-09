@@ -110,7 +110,7 @@ Rectangle {
         Text {
             objectName: "placesSearchLabel"
             Layout.fillWidth: true
-            text: qsTr("Search for an address:")
+            text: qsTr("Search")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
