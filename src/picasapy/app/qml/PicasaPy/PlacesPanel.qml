@@ -112,7 +112,8 @@ Rectangle {
                     if (controller) controller.showGeotagged()
                 })
                 item.placePicked.connect(panel.placeSelection)
-                item.photosDropped.connect(panel.photoDrop)
+                // a térképmodul nélküli tartalék-nézetben ez a jel nincs meg
+                if (item.photosDropped) item.photosDropped.connect(panel.photoDrop)
             }
         }
 
