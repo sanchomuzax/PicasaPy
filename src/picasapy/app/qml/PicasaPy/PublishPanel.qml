@@ -110,6 +110,8 @@ Item {
     signal mentesMegszakitasKert()
     //: `publish/backup_cancel`
     signal mentesMegseKert()
+    // #4614: mentéskészlet visszaállítása
+    signal mentesVisszaallitastKert()
 
     component MertFelirat: Text {
         color: Theme.ink
@@ -511,6 +513,13 @@ Item {
             x: 777; y: 111; width: 98; height: 28
             text: qsTr("Cancel")
             onClicked: panel.mentesMegseKert()
+        }
+        PicasaButton {
+            objectName: "publishBackupRestore"
+            x: 777; y: 145; width: 98; height: 28
+            text: qsTr("Restore...")
+            visible: !panel.mentesFut
+            onClicked: panel.mentesVisszaallitastKert()
         }
         //: #3009: a `backup_help` réshelye — a futó másolás megszakítása
         //: (a súgó, mint a CD-üzemmódban, nincs bekötve)
