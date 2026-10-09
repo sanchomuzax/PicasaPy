@@ -91,6 +91,11 @@ from .io import (
     update_document,
 )
 from .photo_crop import PhotoCropReader
+from .person_album_thumbnail import (
+    clear_person_album_thumbnail,
+    person_album_thumbnails,
+    set_person_album_thumbnail,
+)
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
 __all__ = [
@@ -148,12 +153,14 @@ __all__ = [
     "parse_faces",
     "parse_filters",
     "parse_reanimated_eye_color",
+    "person_album_thumbnails",
     "read_folder_category",
     "read_folder_music",
     "read_folder_date_override",
     "remove_all_face_data",
     "reset_all_faces",
     "save_document",
+    "set_person_album_thumbnail",
     "serialize_album_refs",
     "serialize_faces",
     "serialize_filters",
@@ -172,4 +179,5 @@ __all__ = [
     "without_faces",
     "without_folder_date_override",
     "without_contact",
+    "clear_person_album_thumbnail",
 ]

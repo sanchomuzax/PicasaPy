@@ -48,7 +48,9 @@ def load_side_pane_collections(conn: sqlite3.Connection) -> SidePaneCollections:
     custom_collections = CustomCollectionFolderCollector()
     sweep_folder_inis(conn, (faces, projects, custom_collections))
     return SidePaneCollections(
-        people=people_in_index(conn, tuple(faces.rows)),
+        people=people_in_index(
+            conn, tuple(faces.rows), thumbnail_paths=faces.thumbnail_paths
+        ),
         project_folders=project_folders_from_paths(conn, projects.paths),
         custom_collection_folders=custom_collections.result(),
     )

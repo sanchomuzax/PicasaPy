@@ -35,6 +35,7 @@ from picasapy.index.people import (
     person_movie_photos,
     person_photos,
     rendezd_szemelyeket,
+    set_person_album_thumbnail,
 )
 from picasapy.ini import (
     UNIDENTIFIED_CONTACT,
@@ -85,9 +86,44 @@ class PeopleMixin:
         # gyűjtemény is használja (`index/side_pane.py`), és annak a
         # sorrendje nem a hasáb beállításától függ.
         return [
-            {"name": person.name, "count": person.photo_count}
+            {
+                "name": person.name,
+                "count": person.photo_count,
+                "thumbnailUrl": (
+                    formatting.to_file_url(person.thumbnail_path).toString()
+                    if person.thumbnail_path
+                    else ""
+                ),
+            }
             for person in rendezd_szemelyeket(self._people, self.peopleSort)
         ]
+
+    @Slot(str, str, result=bool)
+    def setPersonAlbumThumbnail(self, person_name: str, photo_path: str) -> bool:
+        """A személy-album kijelölt fotóját tartós borítóként menti."""
+        if (
+            not person_name
+            or person_name.casefold() != self.currentPersonName.casefold()
+        ):
+            return False
+        previous_photo_path = next(
+            (
+                person.thumbnail_path
+                for person in self._people
+                if person.name.casefold() == person_name.casefold()
+            ),
+            None,
+        )
+        try:
+            with open_index(self._db_path) as conn:
+                set_person_album_thumbnail(
+                    conn, person_name, photo_path, previous_photo_path
+                )
+                self._load_people(conn)
+        except (*_WRITE_ERRORS, ValueError) as error:
+            self.syncFailed.emit(str(error))
+            return False
+        return True
 
     @Slot(result="QVariantList")
     def personMovieSourceUrls(self):  # noqa: N802 — QML-slot-stílus

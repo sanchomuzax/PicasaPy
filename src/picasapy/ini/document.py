@@ -12,7 +12,9 @@ from dataclasses import dataclass, field, replace
 
 from picasapy.ini.filter_guard import guard_chain_write
 
-_SPECIAL_NAMES = frozenset({"Picasa", "Contacts", "Contacts2", "encoding", "photoid"})
+_SPECIAL_NAMES = frozenset(
+    {"Picasa", "PicasaPy", "Contacts", "Contacts2", "encoding", "photoid"}
+)
 
 #: ÚJ (még nem létező) `.picasa.ini` sorvégjele — #2491. Az eredeti Picasa
 #: kizárólag CRLF-fel ír; meglévő fájl sorvégjelét ez SOHA nem írja felül

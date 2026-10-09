@@ -12,7 +12,8 @@ mint az eredeti Picasa 3.x.
 - Rejtett fájl minden figyelt képmappa gyökerében: `.picasa.ini`
   (korai verziókban `Picasa.ini`).
 - Szabványos INI szintaxis; a szekciófejlécek a mappában lévő fizikai fájlnevek,
-  illetve speciális szekciók (`[Picasa]`, `[Contacts]`, `[Contacts2]`, `[.album:token]`).
+  illetve speciális szekciók (`[Picasa]`, `[PicasaPy]`, `[Contacts]`,
+  `[Contacts2]`, `[.album:token]`).
 - Redundáns tároló: a központi adatbázis ebből + a képek EXIF/XMP adataiból
   teljesen újraépíthető.
 - **Round-trip elv (PicasaPy):** minden nem értelmezett kulcsot változatlanul meg kell
@@ -90,6 +91,22 @@ felhasználásuk (e-mail-cím automatikus kiegészítés) a
 ⛔ **Nálunk (MÉRVE):** az `ini/contacts.py` írója helyes (`Név;;`), az
 olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
 `extra`-ként tartja. Jegy: **#2526**.
+
+### `[PicasaPy]` — PicasaPy-kiterjesztések
+
+A Picasa 3.7 binárisában és a hozzá tartozó nyilvános formátumleírásokban
+nem találtunk dokumentált, személyenkénti album-borítómezőt. A PicasaPy ezért
+a személyalbum kézzel választott borítóját saját kiterjesztésként tárolja:
+
+```ini
+[PicasaPy]
+person_album_thumbnail_<a kisbetűsített név UTF-8 bájtjainak hex alakja>=<fájlnév>
+```
+
+Az érték csak az adott képmappán belüli fájlnév lehet; így a kiválasztás az
+azt tartalmazó `.picasa.ini`-vel együtt hordozható. A PicasaPy íráskor a többi
+ini-adatot a szokásos round-trip szabály szerint megőrzi. Kód:
+`picasapy.ini.person_album_thumbnail` (#4536).
 
 ### `[<fájlnév.ext>]` — képbejegyzések
 | Kulcs | Példa | Jelentés |

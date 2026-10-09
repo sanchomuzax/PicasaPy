@@ -9,10 +9,15 @@ személy nincs a listán; személyek nélkül az almenü tiltott.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
-from PySide6.QtQml import QQmlExpression, qmlContext
+import time
 
-from picasapy.index import open_index, sync_tree
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, QUrl, Qt
+from PySide6.QtGui import QImage
+from PySide6.QtQuick import QQuickItem, QQuickWindow
+from PySide6.QtQml import QQmlExpression, qmlContext
+from PySide6.QtTest import QTest
+
+from picasapy.index import open_index, people_in_index, sync_tree
 from picasapy.ini import contacts_of, load_document, parse_faces
 
 _ANNA = "1111111111111111"
@@ -65,6 +70,12 @@ def _almenu_kattint(window, nev):
 
 def _szemely_nezet(window, controller, qt_app, tmp_path, szemely="Anna"):
     lib = tmp_path / "kepek"
+    # A korábbi teszt-index adatbázisa már létrehozhatja a mappát.
+    lib.mkdir(exist_ok=True)
+    for nev in ("a.jpg", "b.jpg"):
+        kep = QImage(8, 8, QImage.Format.Format_RGB32)
+        kep.fill(0xFF336699)
+        assert kep.save(str(lib / nev)), f"a tesztkép nem menthető: {nev}"
     (lib / ".picasa.ini").write_text(_INI, encoding="utf-8")
     with open_index(tmp_path / "index.db") as conn:
         sync_tree(conn, lib)
@@ -97,6 +108,34 @@ def _arcok(lib, foto):
     nevek = {c.person_id.casefold(): c.name for c in contacts_of(doc)}
     raw = doc.section(foto).get("faces") or ""
     return sorted(nevek.get(f.contact_id.casefold(), "") for f in parse_faces(raw))
+
+
+def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if feltetel():
+            return True
+        time.sleep(0.01)
+    qt_app.processEvents()
+    return bool(feltetel())
+
+
+def _menu_tetel_kattintas(tetel: QQuickItem, qt_app) -> None:
+    """Valódi egérkattintás a menüsor felépült, tényleges közepére."""
+    popup = tetel.window()
+    assert isinstance(popup, QQuickWindow), "a menüpont popup ablaka hiányzik"
+    popup.requestActivate()
+    assert _varj(qt_app, popup.isActive), "a fotómenü popup ablaka nem aktív"
+    pont = tetel.mapToScene(
+        QPointF(tetel.width() / 2, tetel.height() / 2)
+    ).toPoint()
+    QTest.mouseClick(
+        popup,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(pont.x(), pont.y()),
+    )
 
 
 def test_az_almenu_a_tobbi_szemelyt_sorolja(qml_app, qt_app, tmp_path):
@@ -140,15 +179,43 @@ def test_szemelyek_nelkul_az_almenu_tiltott(qml_app, qt_app, tmp_path):
         _bezar(window, qt_app)
 
 
-def test_az_indexkep_tetel_helyorzo(qml_app, qt_app, tmp_path):
-    """A személyenkénti indexképnek nincs tárolója (#26): a tétel helyőrző
-    (szürke, nem kattintható), nem néma kattintható pont."""
+def test_a_menu_kattintasa_beallitja_es_ujraolvashatoan_tarolja_a_boritot(
+    qml_app, qt_app, tmp_path
+):
+    """A valódi menükattintás után a kiválasztás a .picasa.ini-ből visszaolvasható."""
     window, controller, _engine = qml_app
     _szemely_nezet(window, controller, qt_app, tmp_path)
-    _megnyit(window, qt_app)
+    eredeti_magassag = window.height()
     try:
-        tetel = _child(window, "contextMenuSetAsPeopleAlbumThumbnail")
-        assert tetel.property("placeholder") is True
-        assert tetel.property("enabled") is False
+        for eltolás in (-5, 0, 5):
+            window.setHeight(eredeti_magassag + eltolás)
+            assert _varj(
+                qt_app,
+                lambda eltolás=eltolás: window.height()
+                == eredeti_magassag + eltolás,
+            ), f"a főablak magassága nem állt be ({eltolás:+} px)"
+            _megnyit(window, qt_app)
+            try:
+                tetel = _child(window, "contextMenuSetAsPeopleAlbumThumbnail")
+                assert tetel.property("enabled") is True, "az indexképtétel letiltva maradt"
+                assert tetel.property("placeholder") is False, "az indexképtétel helyőrző maradt"
+                _menu_tetel_kattintas(tetel, qt_app)
+                assert _varj(
+                    qt_app,
+                    lambda: _child(window, "photoContextMenu").property("visible")
+                    is False,
+                ), "a kattintás nem zárta be a fotó helyi menüjét"
+            finally:
+                _bezar(window, qt_app)
     finally:
-        _bezar(window, qt_app)
+        window.setHeight(eredeti_magassag)
+
+    with open_index(tmp_path / "index.db") as conn:
+        anna = next(person for person in people_in_index(conn) if person.name == "Anna")
+    assert anna.thumbnail_path == str(tmp_path / "kepek" / "a.jpg"), (
+        "a kiválasztott személy-album borítója nem olvasható vissza a .picasa.ini-ből"
+    )
+    anna_model = next(person for person in controller.people if person["name"] == "Anna")
+    assert QUrl(anna_model["thumbnailUrl"]).toLocalFile() == str(
+        tmp_path / "kepek" / "a.jpg"
+    ), "a mentett borító nem jut el a személylista képmodelljéig"

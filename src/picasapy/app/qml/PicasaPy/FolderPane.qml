@@ -586,11 +586,26 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left; anchors.leftMargin: 16
                         spacing: 5
-                        Rectangle {
-                            width: 10; height: 10
-                            radius: 5
+                        Item {
+                            width: 16; height: 16
                             anchors.verticalCenter: parent.verticalCenter
-                            color: Theme.picasaGreen
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: width / 2
+                                color: Theme.picasaGreen
+                                visible: !personThumbnail.visible
+                            }
+                            Image {
+                                id: personThumbnail
+                                anchors.fill: parent
+                                source: modelData.thumbnailUrl || ""
+                                sourceSize.width: 32
+                                sourceSize.height: 32
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                clip: true
+                                visible: status === Image.Ready
+                            }
                         }
                         Text {
                             text: modelData.name + " (" + modelData.count + ")"

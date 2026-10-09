@@ -76,6 +76,7 @@ from .people import (
     photos_with_faces,
     people_with,
     person_photos,
+    set_person_album_thumbnail,
 )
 from .project_folders import ProjectFolder, project_folders
 from .relocate import (
@@ -149,6 +150,7 @@ __all__ = [
     "open_index",
     "paths_with_color",
     "people_in_index",
+    "set_person_album_thumbnail",
     "photos_with_faces",
     "people_with",
     "person_photos",

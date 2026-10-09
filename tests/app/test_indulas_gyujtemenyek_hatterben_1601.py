@@ -128,7 +128,9 @@ class TestIndulasNemBlokkol:
             if controller.people and controller.projectFolders:
                 break
 
-        assert controller.people == [{"name": "Roy Avery", "count": 1}]
+        assert controller.people == [
+            {"name": "Roy Avery", "count": 1, "thumbnailUrl": ""}
+        ]
         assert [row["name"] for row in controller.projectFolders] == ["Kollázsok"]
 
     def test_a_hatterbeli_sopres_is_mappankent_egyszer_olvas(
@@ -180,7 +182,9 @@ class TestSzinkronUtVáltozatlanulMukodik:
         self, controller, qt_app
     ):
         controller._reload_after_sync()
-        assert controller.people == [{"name": "Roy Avery", "count": 1}]
+        assert controller.people == [
+            {"name": "Roy Avery", "count": 1, "thumbnailUrl": ""}
+        ]
         assert [row["name"] for row in controller.projectFolders] == ["Kollázsok"]
 
     def test_a_szinkron_ut_is_egy_sopressel_dolgozik(

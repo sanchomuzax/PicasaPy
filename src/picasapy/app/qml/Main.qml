@@ -4187,6 +4187,15 @@ ApplicationWindow {
             if (controller) moveToNewPersonDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
         }
+        // #4536: a jobbklikkelt fotó tartósan beállítja az aktív
+        // személyalbum borítóját.
+        onSetPeopleAlbumThumbnailRequested: {
+            if (!controller) return
+            var photo = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (photo.length > 0)
+                controller.setPersonAlbumThumbnail(
+                    controller.currentPersonName, photo)
+        }
     }
 
     // #3539: „Eltávolítás az albumból" — a kijelölt képek albumtagságát
