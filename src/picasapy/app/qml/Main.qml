@@ -2345,6 +2345,18 @@ ApplicationWindow {
         }
     }
 
+    // #4533: Társítás… — a fájltípushoz társított alkalmazások választója (Linux)
+    DeferredDialog {
+        id: openWithDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            OpenWithDialog {
+                objectName: "openWithDialog"
+                onAccepted: fileOpsController.openWithApp(photoPath, selectedAppId)
+            }
+        }
+    }
+
     // #1720: halasztott példányosítás — a párbeszéd csak az első
     // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
     DeferredDialog {
@@ -4143,6 +4155,15 @@ ApplicationWindow {
         onOpenFileRequested: {
             var target = controller.photos.filePathAt(window.fileOpTargetRow)
             if (target.length > 0) fileOpsController.openPhoto(target)
+        }
+        // #4533: Társítás… — Windowson a héj saját párbeszéde, Linuxon a mi választónk
+        onOpenWithRequested: {
+            var target = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (target.length === 0) return
+            if (fileOpsController.hasNativeOpenWith())
+                fileOpsController.openWithNative(target)
+            else
+                openWithDialog.ensure().openFor(target)
         }
         onCopyFullPathRequested: {
             var full = controller.photos.filePathAt(window.fileOpTargetRow)
