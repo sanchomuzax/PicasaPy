@@ -75,8 +75,7 @@ from picasapy.render.registry import one_click_keys
 from picasapy.render.elonezeti_arany import gyors_elonezet
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
-from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_TEXT_FAMILY
-from picasapy.render.text_fonts import family_labels
+from picasapy.render.text_fonts import default_family, family_labels
 from picasapy.render.tone import estimate_neutral_color, parse_neutral_argb
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -265,21 +264,9 @@ _BRUSH_SIZE_MAX = 100
 _DEFAULT_BRUSH_SIZE = 20
 _BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0
 
-#: A szöveg-eszköz (#148) rögzített betűtípusa. A `text=` betűtípus-mezője
-#: a valódi Picasánál a betűtípus TELJES neve (`Arial`,
-#: `Bickham Script Pro Regular`) — mi ezt beolvasva megőrizzük, de a
-#: rajzoláshoz a render-réteg (`picasapy.render.text_overlay`) egységes
-#: Hershey-fontot használ, ezért betűtípus-választó nincs a UI-ban, és
-#: mentéskor az `Arial`-t írjuk.
-_DEFAULT_TEXT_FONT = "Arial"
-
 #: #450 (2. lépcső): tipográfia — a rajzoló (`render.text_fonts`) családja,
-#: méret-szorzója és stílusai. PicasaPy-saját, MUNKAMENET-szintű állapot: a
-#: `.picasa.ini`-be nem kerül: a `text=` kulcsnak van ugyan betűtípus- és
-#: stílus-mezője (#371 megfejtette), de azok a Picasa saját rajzolójára
-#: vonatkoznak — a mi Hershey-alapú rajzolónk család/méret/dőlt/aláhúzott
-#: beállításai nem képezhetők le rájuk veszteség nélkül.
-_DEFAULT_TEXT_FAMILY = DEFAULT_TEXT_FAMILY
+#: méret-szorzója és stílusai. A családnevet a rendszer betűtípus-adatbázisa
+#: adja; a választott család a `text=` ini-mezőbe kerül.
 #: #2287: a betűméret az eredeti 16 elemű listájából (`BETUMERETEK`),
 #: alapértéke **12** (a panel `+0x2cc` mezőjének kezdő értéke).
 _DEFAULT_TEXT_SIZE_PT = 12
@@ -522,16 +509,15 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos: tuple[float, float] | None = None
-        # szöveg-stílus (#450): PicasaPy-saját, csak a munkamenetben élő
-        # állapot (ld. a `_DEFAULT_TEXT_*` konstansok megjegyzését) — a
-        # `.picasa.ini`-be NEM kerül, minden szerkesztés-nyitáskor alapértékre
-        # áll (ld. `beginEdit`/`endEdit`).
+        # szöveg-megjelenítési stílus (#450): a színek, méret és igazítás
+        # munkamenet-szintű állapot; a betűcsalád kivétel, azt a `text=`
+        # mezőből visszaolvassuk, és mentéskor oda írjuk.
         self._text_fill_color: tuple[int, int, int] = _DEFAULT_TEXT_FILL_COLOR
         self._text_outline_color: tuple[int, int, int] = _DEFAULT_TEXT_OUTLINE_COLOR
         self._text_outline_thickness: int = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled: bool = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity: float = _DEFAULT_TEXT_OPACITY
-        self._text_family: str = _DEFAULT_TEXT_FAMILY
+        self._text_family: str = default_family()
         self._text_size_pt: int = _DEFAULT_TEXT_SIZE_PT
         self._text_bold: bool = _DEFAULT_TEXT_BOLD
         self._text_italic: bool = _DEFAULT_TEXT_ITALIC
@@ -862,8 +848,8 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     def textFontFamilies(self):
         """A betűtípus-lenyíló adata: `key` + megjelenő `label`.
 
-        A katalógus a `render.text_fonts`-ból jön (Arial · Times New Roman ·
-        Courier New), nem kézzel a QML-be írva."""
+        A katalógust a Qt rendszer-betűtípus-adatbázisa adja, nem kézzel a
+        QML-be írt rögzített lista."""
         return family_labels()
 
     @Property(str, notify=toolsChanged)
@@ -902,10 +888,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Slot(str)
     def setTextFontFamily(self, value: str) -> None:
-        """A betűcsalád beállítása; élő előnézettel. Ismeretlen kulcsnál a
-        rajzoló az alapértelmezett családra esik vissza."""
+        """A teljes rendszer-betűcsaládnév beállítása; élő előnézettel."""
         self._require_active()
-        self._text_family = value or _DEFAULT_TEXT_FAMILY
+        self._text_family = value.strip() or default_family()
         self._refresh_text_preview()
 
     @Slot(int)
@@ -1238,7 +1223,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             else _DEFAULT_TEXT_FILL_ENABLED
         )
         self._text_opacity = _DEFAULT_TEXT_OPACITY
-        self._text_family = _DEFAULT_TEXT_FAMILY
+        self._text_family = (
+            loaded.font if loaded is not None and loaded.font else default_family()
+        )
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
@@ -1315,7 +1302,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
-        self._text_family = _DEFAULT_TEXT_FAMILY
+        self._text_family = default_family()
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC

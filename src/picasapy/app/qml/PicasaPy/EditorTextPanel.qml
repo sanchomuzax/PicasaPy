@@ -78,10 +78,9 @@ ColumnLayout {
         onButtonClicked: panel.textCopyCaptionRequested()
     }
 
-    // #450 (2. lépcső): tipográfia — betűcsalád, méret, félkövér/dőlt/
-    // aláhúzott és igazítás. A rajzoló ehhez már TrueType-ot használ
-    // (`render.text_fonts`); ha a gépen nincs ilyen betű, a vezérlők
-    // hatástalanok maradnak, de a szöveg akkor is megjelenik.
+    // #450/#4546: a Qt rendszer-betűtípus-adatbázisából jön a családlista;
+    // a képi előnézet is a kiválasztott rendszerbetűvel rajzol. A többi
+    // vezérlő a méretet, a félkövér/dőlt/aláhúzott állapotot és az igazítást adja.
     // #779 (Windows CI): a `Layout.fillWidth` NÉLKÜLI felirat a saját — a
     // betűkészlettől függő — szélességét KÖTELEZŐ minimumként adja az
     // oszlopnak, és ezzel az EGÉSZ panelt szélesebbre feszítheti a
