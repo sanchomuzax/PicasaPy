@@ -825,14 +825,20 @@ ApplicationWindow {
             return
         var utak = window._faceScanController.personSuggestionPaths(
             window.personAlbumName)
-        var javaslatUtak = ({})
-        for (var j = 0; j < utak.length; ++j)
-            javaslatUtak[String(utak[j])] = true
+        var javaslatSorok = ({})
+        for (var j = 0; j < utak.length; ++j) {
+            // A vezérlő Path-sztringje Windowson natív `\\` elválasztót
+            // tartalmazhat, míg a PhotoGridModel.filePathAt `/`-t ad.
+            // Az útvonal-azonosítást a modell platformfüggő rowOfPath API-ja
+            // végzi, ne QML-ben hasonlítsuk össze a nyers szövegeket.
+            var sor = Number(controller.photos.rowOfPath(String(utak[j])))
+            if (sor >= 0)
+                javaslatSorok[sor] = true
+        }
         var sorok = []
         var darab = Number(controller.photos.rowCount())
         for (var i = 0; i < darab; ++i) {
-            var ut = String(controller.photos.filePathAt(i))
-            if (javaslatUtak[ut])
+            if (javaslatSorok[i])
                 sorok.push(i)
         }
         window.selectedIndexes = sorok
