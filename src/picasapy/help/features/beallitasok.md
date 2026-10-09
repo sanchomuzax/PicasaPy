@@ -161,7 +161,8 @@ A méretek részletei: [Nyomtatás](nyomtatas.md).
   arcokat az új képeken. Alapból be van kapcsolva. Kikapcsolva a futó
   automatikus keresés megáll. Lásd [Emberek](emberek.md).
 - **Javaslatok engedélyezése** — a program névjavaslatot tesz a még
-  névtelen arcokra. Alapból be van kapcsolva. Alatta két csúszka áll,
+  névtelen arcokra, és az arckeresés után magától csoportosítja az
+  arcokat. Alapból be van kapcsolva. Alatta két csúszka áll,
   amelyek csak bekapcsolt javaslatoknál használhatók:
   - **Javaslati küszöb:** — minél nagyobb az érték, annál biztosabbnak
     kell lennie a hasonlóságnak, hogy a program nevet javasoljon;

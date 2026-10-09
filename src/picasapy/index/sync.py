@@ -1292,8 +1292,9 @@ _TARGETED_UPDATE_COLUMNS = {
     # frissíthető. A #2976 óta ini-eredetű is: a mappa-resync a `flipped(N)`
     # kulcsból tölti, tehát az ini az igazságforrás, nem az index.
     "flip_flags",
-    # #4332: az eredeti tárolási célja nincs kimérve, ezért a kézi dátum a
-    # séma 20-as verziójától csak az indexben él.
+    # #4332/#4693: a korábbi menüút indexfelülírást hozott létre; az aktuális
+    # út a forrás EXIF-ét írja. A mező a korábbi indexek kompatibilitásáért
+    # marad írható.
     "taken_at_override",
 }
 

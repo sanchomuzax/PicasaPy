@@ -32,7 +32,10 @@ Picasa is tette.
 
 Windowson a program magával a rendszerrel állíttatja be a hátteret, ezért
 ott rendszerint sikerül. Linuxon a legelterjedtebb asztali környezetekkel
-próbálkozik; ezek valamelyike hiányozhat. Ha egyikkel sem jár sikerrel,
+próbálkozik — köztük a GNOME-mal, a **KDE Plasmával**, a Raspberry Pi
+asztalával és a **labwc**, Sway és hasonló (wlroots-alapú) asztalokkal.
+KDE Plasmán a rendszer saját háttérkép-eszköze, a wlroots-alapú asztalokon
+a `swaybg` program kell hozzá; ha ez hiányzik, a beállítás nem sikerül. Ha egyikkel sem jár sikerrel,
 nem hallgat el: **megmondja, hova tette a képet**, hogy a rendszer saját
 beállításaiban kézzel kiválaszthasd.
 

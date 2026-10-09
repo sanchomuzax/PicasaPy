@@ -72,6 +72,17 @@ class TestBeginEdit:
         controller.beginEdit("1", str(photo))
         assert controller.effectChainCounts.get("enhance") == 1
 
+    def test_effect_chain_property_tracks_applied_effects(self, controller, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text("[IMG_0001.jpg]\nfilters=enhance=1;\n", encoding="utf-8")
+        controller.beginEdit("1", str(photo))
+
+        assert controller.effectChain == "enhance=1;"
+
+        controller.applyEffect("bw")
+
+        assert controller.effectChain == "enhance=1;bw=1;"
+
     def test_registers_with_preview_provider(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
         image = provider.requestImage("1", None, None)
@@ -148,6 +159,7 @@ class TestToggleTool:
         assert "filters=" not in ini_text
         assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
+
     def test_preserves_unrelated_keys(self, controller, photo):
         ini = photo.parent / ".picasa.ini"
         ini.write_text(
@@ -174,6 +186,15 @@ class TestToggleTool:
     def test_without_active_edit_raises(self, controller):
         with pytest.raises(ValueError):
             controller.toggleTool("enhance")
+
+
+class TestPicnikTintColorPersistence:
+    def test_selected_color_is_written_to_filters_ini(self, controller, photo):
+        """#4554: a kiválasztott Tint Color a PicnikTint második paramétere."""
+        controller.beginEdit("1", str(photo))
+        controller.applyEffectWithParams("picniktint", [0.0, "#ff0000"])
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=PicnikTint=1,0.000000,00ff0000;" in ini_text
 
 
 @_SKIP_READONLY
