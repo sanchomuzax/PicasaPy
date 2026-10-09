@@ -3458,16 +3458,17 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current aspect</source>
+            <source>Current ratio</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
             <translation>Huidige verhouding</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="356" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
         </message>
         <message>
             <source>Current display</source>
@@ -7390,6 +7391,19 @@ picasapy-origin-key: stringres:CUploadManagerThread::cancel</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
             <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Are you sure you want to add all of the selected album's images?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:addtosaver::warning</extracomment>
+            <translation>Weet u zeker dat u alle afbeeldingen van het geselecteerde album wilt toevoegen?</translation>
         </message>
         <message>
             <source>The desktop background is set (%1).</source>
