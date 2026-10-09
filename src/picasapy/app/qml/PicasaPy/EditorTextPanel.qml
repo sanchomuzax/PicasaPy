@@ -242,10 +242,16 @@ ColumnLayout {
             //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
             //: nem művelet: azonnal hat.
             lenyomasra: true
-            label: "\u2261"
             tooltip: qsTr("Left justify text")
             active: panel.textAlign === "left"
             onButtonClicked: panel.textAlignEdited("left")
+            //: #4547: saját ikon — a három gomb eddig azonos jelet mutatott.
+            //: Az eredeti `leftalign_icon`-jának megfelelője.
+            AlignIcon {
+                objectName: "textAlign_leftIcon"
+                align: "left"
+                anchors.centerIn: parent
+            }
         }
         PanelButton {
             objectName: "textAlign_center"
@@ -254,10 +260,15 @@ ColumnLayout {
             //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
             //: nem művelet: azonnal hat.
             lenyomasra: true
-            label: "\u2261"
             tooltip: qsTr("Center justify text")
             active: panel.textAlign === "center"
             onButtonClicked: panel.textAlignEdited("center")
+            //: #4547: saját ikon (ld. a balra igazítónál)
+            AlignIcon {
+                objectName: "textAlign_centerIcon"
+                align: "center"
+                anchors.centerIn: parent
+            }
         }
         PanelButton {
             objectName: "textAlign_right"
@@ -266,10 +277,15 @@ ColumnLayout {
             //: `leftalign`/`centeralign`/`rightalign`). Állapotkapcsoló,
             //: nem művelet: azonnal hat.
             lenyomasra: true
-            label: "\u2261"
             tooltip: qsTr("Right justify text")
             active: panel.textAlign === "right"
             onButtonClicked: panel.textAlignEdited("right")
+            //: #4547: saját ikon (ld. a balra igazítónál)
+            AlignIcon {
+                objectName: "textAlign_rightIcon"
+                align: "right"
+                anchors.centerIn: parent
+            }
         }
     }
 
