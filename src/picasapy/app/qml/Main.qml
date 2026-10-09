@@ -376,6 +376,13 @@ ApplicationWindow {
         documentTabStrip.activateTab(window.collageTabId)
     }
 
+    //: #4539: a mappa-fejléc film-gombja — a csoport sorait a meglévő
+    //: Filmkészítőbe adja (a kijelölés nem számít, mint a kollázsnál).
+    function openMovieFromRows(rows) {
+        if (!controller || rows.length === 0) return
+        createDialogs.ensure().openMovieForRows(rows)
+    }
+
     function openCollageTab() {
         if (!controller) return
         if (!window.aaKapu(window.openCollageTab)) return
