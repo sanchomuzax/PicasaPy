@@ -91,6 +91,12 @@ Column {
     // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
+    // A `photoInfo`/`viewerInfo` invokálható függvény eredménye nem QML-
+    // kötésfüggőség önmagában. A címkeírás utáni model-változásnak ezért
+    // külön újra kell értékeltetnie az alsó infósávot.
+    readonly property int photoRevision:
+        tray.ctl && typeof tray.ctl.photos !== "undefined" && tray.ctl.photos
+        ? tray.ctl.photos.revision : 0
 
     // #718: a kijelölés VÉDETT olvasata. A leépítésnek van egy köztes
     // állapota, amikor az `appWindow` már létezik, a `selectedIndexes`
@@ -220,10 +226,13 @@ Column {
     //: műveletsor a tálca tartalmán dolgozik, tehát a darabszámnak, a
     //: dátumtartománynak és az összméretnek is azt kell összesítenie —
     //: a más mappából tartott képekkel együtt, amiket a rács nem is mutat.
+    // A rekord mezőinek módosulása nem változtatja a `trayCount`-ot; a
+    // modellverzió a tálca adatait is újra lekéri (pl. új címkék után).
     readonly property string trayInfoText:
-        (tray.trayCount > 0 && tray.ctl
-         && typeof tray.ctl.trayInfo === "function")
-            ? tray.ctl.trayInfo() : ""
+        (tray.photoRevision,
+         (tray.trayCount > 0 && tray.ctl
+          && typeof tray.ctl.trayInfo === "function")
+             ? tray.ctl.trayInfo() : "")
 
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
     //
@@ -361,17 +370,22 @@ Column {
             /** A sáv szövege LEÉPÜLÉS NÉLKÜL — ebből dolgozik az InfoSav. */
             readonly property string nyersSzoveg:
                   (!tray.ctl || !tray.appWindow) ? ""
-                  : (tray.ctl.collageRendering === true ? tray.collageWaitText
-                  : (tray.appWindow.viewerOpen
-                  ? (typeof tray.ctl.viewerInfo === "function"
-                     ? tray.ctl.viewerInfo(tray.viewerIndex) : "")
-                  : (tray.trayInfoText !== "" ? tray.trayInfoText
-                  : (tray.appWindow.selectedIndexes.length === 1
-                     ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
-                     : (tray.appWindow.selectedIndexes.length > 1
-                        && typeof tray.ctl.selectionInfo === "function"
-                        ? tray.ctl.selectionInfo(tray.appWindow.selectedIndexes)
-                        : tray.ctl.statusText)))))
+                  : (tray.photoRevision,
+                     (tray.ctl.collageRendering === true
+                      ? tray.collageWaitText
+                      : (tray.appWindow.viewerOpen
+                         ? (typeof tray.ctl.viewerInfo === "function"
+                            ? tray.ctl.viewerInfo(tray.viewerIndex) : "")
+                         : (tray.trayInfoText !== "" ? tray.trayInfoText
+                            : (tray.appWindow.selectedIndexes.length === 1
+                               ? tray.ctl.photoInfo(
+                                     tray.appWindow.selectedIndex)
+                               : (tray.appWindow.selectedIndexes.length > 1
+                                  && typeof tray.ctl.selectionInfo
+                                      === "function"
+                                  ? tray.ctl.selectionInfo(
+                                        tray.appWindow.selectedIndexes)
+                                  : tray.ctl.statusText))))))
             color: Theme.infoBarText
             font.pixelSize: Theme.fontSize
             font.bold: true

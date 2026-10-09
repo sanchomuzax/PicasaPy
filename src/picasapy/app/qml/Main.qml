@@ -3371,6 +3371,9 @@ ApplicationWindow {
         visible: window.propertiesPanelOpen
         anchors.fill: parent
         hasSelection: window.selectedIndex >= 0
+        appController: controller
+        selectedRows: window.selectedRows()
+        focusRow: window.selectedIndex
         // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
         // #305: null-őr
         entries: controller

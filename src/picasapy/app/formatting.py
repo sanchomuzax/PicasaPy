@@ -538,7 +538,12 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
     if details.has_embedded_thumbnail:
         add("Embedded Thumbnail", tr("Yes"))
     if photo.keywords:
-        add("Keywords", ", ".join(photo.keywords))
+        keywords = (
+            keyword.strip()
+            for keyword in (photo.keywords or "").split(",")
+            if keyword.strip()
+        )
+        add("Keywords", ", ".join(keywords))
     # a koordináta a Picasában is mindig pontos (`.picasa.ini`
     # `geotag=33.770556,-84.293055`, KML `<longitude>%f`): vesszős
     # tizedesjellel egy koordinátapár olvashatatlan volna

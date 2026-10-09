@@ -11,6 +11,21 @@ Rectangle {
     // {label, value} sorok (controller.propertiesOf)
     property var entries: []
     property bool hasSelection: false
+    // A keywords-dialógus célja: a fókuszkép fejléce és a kijelölés címkézése.
+    property var appController: null
+    property var selectedRows: []
+    property int focusRow: -1
+
+    readonly property var focusedPhoto:
+        panel.appController && panel.focusRow >= 0
+        ? (panel.appController.photos.revision,
+           panel.appController.photos.itemAt(panel.focusRow))
+        : ({})
+    readonly property var selectedKeywords:
+        panel.appController && panel.selectedRows.length > 0
+        ? (panel.appController.photos.revision,
+           panel.appController.keywordsOfRows(panel.selectedRows))
+        : []
 
     signal closeRequested()
 
@@ -65,5 +80,35 @@ Rectangle {
             }
             ScrollBar.vertical: PicasaScrollBar {}
         }
+
+        RowLayout {
+            objectName: "keywordsPropertyRow"
+            visible: panel.hasSelection
+            Layout.fillWidth: true
+            spacing: 8
+
+            PicasaButton {
+                objectName: "editKeywordsButton"
+                text: qsTr("Keywords")
+                enabled: panel.appController !== null && panel.focusRow >= 0
+                onClicked: keywordsDialog.openFor(
+                    panel.selectedRows, panel.focusRow, panel.focusedPhoto)
+            }
+            Text {
+                objectName: "keywordsPropertyValue"
+                Layout.fillWidth: true
+                text: panel.selectedKeywords.join(", ")
+                elide: Text.ElideRight
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+        }
+    }
+
+    KeywordsDialog {
+        id: keywordsDialog
+        objectName: panel.objectName === "viewerPropertiesPanel"
+                    ? "viewerKeywordsDialog" : "keywordsDialog"
+        controller: panel.appController
     }
 }
