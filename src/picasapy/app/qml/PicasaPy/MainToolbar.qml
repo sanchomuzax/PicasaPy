@@ -476,7 +476,7 @@ Rectangle {
                 y: 9
                 spacing: 3
 
-                // szűrő-kapcsolók (kézikönyv 09): ★ ☺ ⚲ ▤ + csúszka;
+                // szűrő-kapcsolók (kézikönyv 09): ★ ☺ ⚲ + csúszka;
                 // a bekapcsolt szűrő tónusa jelölő kék
                 Rectangle {
                     // #305: null-őr — a controller a QML-engine
@@ -712,13 +712,9 @@ Rectangle {
                         }
                     }
                 }
-                Text {   // mozgókép / méret
-                    width: 22; height: 20
-                    text: "▤"; font.pixelSize: 12; color: Theme.placeholderText
-                    opacity: 0.45
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
+                // #4532: a korábbi kezelő nélküli „▤" jel innen kikerült —
+                // az eredeti szűrőkeresőben nincs ilyen elem, a mozgófilm
+                // a saját gombján van (`movieFilter`).
                 Item { width: 6; height: 1 }
                 //: #1830: az idő-csúszka — az eredeti `timeslider`.
                 //:

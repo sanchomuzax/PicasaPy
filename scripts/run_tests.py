@@ -44,6 +44,7 @@ import concurrent.futures
 import json
 import atexit
 import os
+import re
 import shutil
 import subprocess
 import importlib
@@ -1744,9 +1745,12 @@ def erintett_app_tesztek(
             # futnak, amelyek a modult NÉV szerint említik (a modul saját
             # tesztjei a mindig teljesen futó nem-app készletben vannak)
             kulcsok.add(Path(ut).stem)
+    # #4809: egész szóra illeszt, különben a `sync` minden `async`-ra is talál
+    minta = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(kulcsok))) + r")\b") \
+        if kulcsok else None
     valasztott = [
         t for t in app_tesztek
-        if t in sajat or any(k in olvas(t) for k in kulcsok)
+        if t in sajat or (minta is not None and minta.search(olvas(t)))
     ]
     if len(valasztott) > _SZUKITES_MAX_HANYAD * len(app_tesztek):
         return list(app_tesztek)

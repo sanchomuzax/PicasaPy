@@ -12807,6 +12807,13 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <translation>Faceţi clic, menţineţi şi trageţi mouse-ul separat în jurul fiecărui ochi pentru a-l selecta. Deasupra zonei apare o casetă de selectare. Eliberaţi mouse-ul pentru a finaliza selecţia. Fotografia este afişată cu efectul de ochi roşii eliminat.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
             <source>Note: click inside the box to undo the change.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation type="unfinished" />

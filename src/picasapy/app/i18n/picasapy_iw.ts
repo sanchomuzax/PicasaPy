@@ -12807,6 +12807,13 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <translation>לחץ לחיצה רצופה על לחצן העכבר וגרור אותו סביב כל עין בנפרד כדי לבחור אותה. מעל האזור תופיע תיבת בחירה. שחרר את העכבר כדי לסיים את הבחירה. התמונה מוצגת כעת ללא 'עין אדומה'.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
             <source>Note: click inside the box to undo the change.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation type="unfinished" />

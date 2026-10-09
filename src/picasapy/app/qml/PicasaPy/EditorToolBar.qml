@@ -51,6 +51,9 @@ import QtQuick
 Item {
     id: sav
 
+    // #4639: a súgó a ténylegesen bekötött Mégse-billentyűt olvassa.
+    readonly property var keyboardShortcutSequences: [cancelStraightenShortcut.sequence]
+
     //: melyik eszköz sávja: "tilt" (kiegyenesítés) · "" (rejtett).
     //: #3320: a másik négy eszköz párja a SAJÁT paneljében ül.
     property string tool: ""
@@ -117,6 +120,7 @@ Item {
     //: visszakerült a saját paneljébe — ez a sáv már csak a
     //: kiegyenesítésé, ott pedig nincs másik Esc-kezelő.
     Shortcut {
+        id: cancelStraightenShortcut
         sequence: "Escape"
         enabled: sav.visible && !sav.textEntryHasFocus
         onActivated: sav.cancelClicked()
