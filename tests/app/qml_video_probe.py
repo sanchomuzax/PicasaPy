@@ -267,12 +267,56 @@ def main(work_dir: Path) -> None:
         nonlocal elozo_gesztus_volt
         target_height = original_height + height_offset
         window.setHeight(target_height)
+        elem.ensurePolished()
+        szulo = elem.parentItem()
+        if szulo is not None:
+            szulo.ensurePolished()
+        window.contentItem().ensurePolished()
+        window.update()
         assert varj(
             lambda: int(window.height()) == target_height
             and elem.property("visible") is True
             and float(elem.property("width")) > 0
             and float(elem.property("height")) > 0
         ), f"{nev}: a kattintási célpont nem kapott kirajzolható méretet"
+
+        # A látható, nem nulla méretű elem még őrizheti az előző ablakmagasság
+        # jelenetkoordinátáit. A kattintást csak stabil mapToScene-geometriából
+        # számoljuk, különben az esemény az ablakig jut, nem a MouseArea-ig.
+        elozo_geometria = None
+        stabil_mintak = 0
+
+        def geometria_stabil():
+            nonlocal elozo_geometria, stabil_mintak
+            bal_felso = elem.mapToScene(QPointF(0, 0))
+            kozep = elem.mapToScene(
+                QPointF(
+                    float(elem.property("width")) / 2,
+                    float(elem.property("height")) / 2,
+                )
+            )
+            most = tuple(
+                round(float(ertek), 3)
+                for ertek in (
+                    bal_felso.x(),
+                    bal_felso.y(),
+                    kozep.x(),
+                    kozep.y(),
+                    elem.property("width"),
+                    elem.property("height"),
+                )
+            )
+            if most == elozo_geometria:
+                stabil_mintak += 1
+            else:
+                elozo_geometria = most
+                stabil_mintak = 0
+            return stabil_mintak >= 2
+
+        assert varj(geometria_stabil), (
+            f"{nev}: az ablak átméretezése után nem stabilizálódott a "
+            "kattintási célpont geometriája"
+        )
         aktiv_lepes.update(nev=nev, elem=elem, press_events=[])
         print(f"PROBE-STEP START {nev} {nezo_allapot(elem)}", flush=True)
         try:
