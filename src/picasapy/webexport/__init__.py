@@ -18,7 +18,7 @@ Nyilvános felület:
 
 from __future__ import annotations
 
-from .catalog import TemplateInfo, list_bundled_templates
+from .catalog import TemplateInfo, list_bundled_templates, list_templates
 from .context import AlbumExportData, PhotoExportData, WebExportSettings
 from .engine import WebExportReport, run_web_export
 
@@ -29,5 +29,6 @@ __all__ = [
     "WebExportSettings",
     "WebExportReport",
     "list_bundled_templates",
+    "list_templates",
     "run_web_export",
 ]
