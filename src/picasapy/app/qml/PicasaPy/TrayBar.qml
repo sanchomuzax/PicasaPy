@@ -1174,7 +1174,7 @@ Column {
                         //: szó szerint (`referencia/ui-leltar.csv`). Eddig
                         //: nem volt súgója.
                         ToolTip.text: qsTr("Add/Remove Star")
-                        ToolTip.visible: trayMoreBtn.hovered
+                        ToolTip.visible: trayStar.hovered
                         ToolTip.delay: Theme.tooltipDelay
                         // #718: null-őr — ld. a fenti `ctl` docstringje;
                         // appWindow hiányában a célsor -1 (nincs cél).
