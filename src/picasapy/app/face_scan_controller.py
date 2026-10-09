@@ -58,6 +58,8 @@ from picasapy.faces.clustering import (
 )
 from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
+    PhotoRecord,
+    album_photos,
     all_photos,
     clear_faces,
     faces_for_photo,
@@ -73,6 +75,7 @@ from picasapy.index import (
     unignore_faces,
     mark_faces_named,
     open_index,
+    photos_in_folder,
     face_scan_done,
     forget_face_scan,
     mark_face_scan,
@@ -613,7 +616,26 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         tarthatja."""
         self._start_face_scan(automatic=False)
 
-    def _start_face_scan(self, *, automatic: bool) -> None:
+    @Slot(str)
+    def scanFolder(self, folder_path: str) -> None:  # noqa: N802 — QML-slot-stílus
+        """A helyi mappamenüből csak a megadott mappa képeit vizsgálja."""
+        with open_index(self._db_path) as conn:
+            photos = photos_in_folder(conn, folder_path)
+        self._start_face_scan(automatic=False, photos=photos)
+
+    @Slot(str)
+    def scanAlbum(self, token: str) -> None:  # noqa: N802 — QML-slot-stílus
+        """A helyi albummenüből csak az adott album tagképeit vizsgálja."""
+        with open_index(self._db_path) as conn:
+            photos = album_photos(conn, token)
+        self._start_face_scan(automatic=False, photos=photos)
+
+    def _start_face_scan(
+        self,
+        *,
+        automatic: bool,
+        photos: tuple[PhotoRecord, ...] | None = None,
+    ) -> None:
         if not self._detector.available:
             # #4517: a felület jelzése mellett a hibanaplóba is kerüljön,
             # különben a „nem talál arcot” okát semmi nem rögzíti.
@@ -633,7 +655,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._set_scan_percent(0)
         self.scanStarted.emit()
         self._start_background(
-            self._run_scan, args=(stop_event,), name="picasapy-face-scan"
+            self._run_scan, args=(stop_event, photos), name="picasapy-face-scan"
         )
 
     @Slot()
@@ -1330,10 +1352,14 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
     # -- worker-szál törzse -------------------------------------------------
 
-    def _run_scan(self, stop_event: threading.Event) -> None:
+    def _run_scan(
+        self,
+        stop_event: threading.Event,
+        scoped_photos: tuple[PhotoRecord, ...] | None = None,
+    ) -> None:
         try:
             with open_index(self._db_path) as conn:
-                photos = all_photos(conn)
+                photos = all_photos(conn) if scoped_photos is None else scoped_photos
                 total = len(photos)
                 found = 0
                 scanned = 0
