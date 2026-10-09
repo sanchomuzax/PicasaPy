@@ -30,7 +30,7 @@ _MENUK = (
 _MENU_UTVONAL_DARAB = {
     "View": 43,
     "Folder": 15,
-    "Picture": 19,
+    "Picture": 20,
     "Edit": 13,
     "Tools": 70,
     "Create": 8,
