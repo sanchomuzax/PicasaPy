@@ -35,6 +35,10 @@ számolva. Egy `nyaralas.jpg`-ból 200%-nál például `0-0-nyaralas.jpg`,
 lapok ugyanabban a formátumban készülnek, mint az eredeti kép; az
 eredetit a program nem változtatja meg.
 
+A poszter a kép **szerkesztett** változatából készül (vágás, forgatás,
+effektek), és a fényképezőgép által megjelölt tájolás szerint helyesen
+áll — álló képből tehát álló poszter lesz.
+
 A végén az ablak kiírja: „A poszterlapok elkészültek.", alatta a
 fájlok listájával. Ha nem sikerült — például nem olvasható a kép, vagy
 nem írható a mappa —, ezt látod: „A poszterlapokat nem sikerült

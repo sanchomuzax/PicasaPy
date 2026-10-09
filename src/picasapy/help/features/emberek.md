@@ -15,6 +15,11 @@ benne:
 2. **Arcok csoportosítása** — az egy emberhez tartozónak látszó arcokat
    egy csoportba teszi.
 
+Ha a **Beállítások ▸ Névcímkék** fülön a **Javaslatok engedélyezése** be
+van kapcsolva (alapból be van), a csoportosítás a sikeres keresés után
+**magától lefut**, nem kell külön elindítanod. Kikapcsolt javaslatoknál
+kézzel indíthatod.
+
 Az arcfelismerő a programmal együtt települ, **nem kell hozzá semmit
 letöltened** — tiszta telepítés után is azonnal működik. (A párbeszéd
 csak akkor mutat **Modell letöltése** gombot, ha a felismerő fájlja
@@ -69,10 +74,14 @@ A lista soraiban **arcképek** állnak: a névvel ellátott embereknél az
 arc kis, kivágott képe és mellette a név — a névre kattintva a személy
 albumára lépsz. A kijelölt képeken lévő **még névtelen arcok** is
 megjelennek a lista végén, egy-egy arcképpel és egy **Név hozzáadása**
-mezővel. Írd be a nevet, és nyomj **Entert**: az arc el van nevezve.
-Az arckép sarkában lévő **×** (**Személy mellőzése**) a mellőzést
+mezővel. Írd be a nevet, és nyomj **Entert**. Ha már van ilyen nevű
+személy, az arc azonnal hozzá kerül. Ha még nincs, megnyílik a személyek
+kezelése ablak a beírt névvel: az **új személy csak akkor jön létre**, ha
+ott jóváhagyod; ha bezárod az ablakot, semmi nem változik.
+A névtelen arckép sarkában lévő **×** (**Személy mellőzése**) a mellőzést
 kéri: a program rákérdez, hogy valóban a Mellőzött emberek albumba
-kerüljön-e az arc.
+kerüljön-e az arc. Az **×** a megnevezett sorokon is látszik, ahogy az
+eredetiben, de ott nem csinál semmit.
 
 A bal hasáb **Emberek** csoportjában minden névhez tartozik egy album. A
 névre jobbgombbal kattintva kijelölheted az összes képét, vagy törölheted
@@ -176,6 +185,20 @@ arcokat ugyanezeken a képeken. Más képekhez nem nyúl. A személyek
 névjegyzéke megmarad. Nincs külön megerősítés, ezért csak a valóban
 kijelölt képeken használd.
 
+Egy billentyűt lenyomva tartva a parancs az **egész könyvtárra** hat,
+ahogy az eredeti Picasában:
+
+- **Ctrl**+kattintás a menüponton — **minden** arcadatot töröl, a
+  személyalbumokat is, majd az összes képen újra keresi az arcokat.
+- **Shift**+kattintás — a személyalbumokat törli, az arcokat pedig a
+  névtelenek közé teszi; az arckeretek megmaradnak.
+
+Mindkét esetben előbb figyelmeztetés jön (**FIGYELEM!**, illetve
+**FIGYELMEZTETÉS!** kezdetű szöveggel), és csak az **Igen** után történik
+meg; a **Mégse** semmit nem változtat. Ha mindkét billentyűt nyomod, a
+Ctrl számít. Ezek a műveletek nem vonhatók vissza, ezért csak akkor
+használd őket, ha tényleg elölről akarod kezdeni az arcokat.
+
 ## A nevek átadása más programoknak
 
 Ha nevet adsz egy arcnak, a program a kép mellé — **a képfájl
@@ -190,7 +213,15 @@ program megnevezve jelzi, **a névadás viszont érvényben marad**.
 ### Egy egész mappára, egyben
 
 Az **Eszközök ▸ Kísérleti ▸ Arcinformációk írása XMP-adatokba…**
-paranccsal az **épp látott mappa** összes képére kiíratod ugyanezt.
+paranccsal egyszerre több képre kiíratod ugyanezt. A parancs előbb egy
+**Arccímkék írása** ablakot nyit, figyelmeztetéssel, hogy a művelet
+sokáig tarthat. Itt választod ki, mire hasson:
+
+- **Kijelöltek írása** — csak a kijelölt képekre (kijelölés nélkül szürke);
+- **Arcinformációk írása** — azokra a képekre, amelyeken van arc;
+- **Az összes írása** — minden képre.
+
+A **Mégse** bezárja az ablakot, és nem ír semmit.
 Hasznos, ha a neveket még a régi Picasában adtad meg, vagy ha
 írásvédettség miatt korábban kimaradt néhány kép.
 
@@ -217,6 +248,11 @@ Ha van még el nem döntött javaslat, a fejlécben két gomb jelenik meg:
   javaslatok száma áll.
 - **Eltávolítás** — csak a javaslatokat veti el. Az arc névtelen marad,
   és egy későbbi keresés újra megvizsgálhatja.
+
+Ha van eldöntetlen javaslat, a fejlécben egy kis **pipás ikongomb** is
+megjelenik: egy kattintással **kijelöli a rácsban az összes képet**,
+amelyen erre a névre javaslat vár. Utána a két gomb csak ezekre hat —
+lásd lent, **Egyenként is dönthetsz**.
 
 Ha nincs mit eldönteni, ugyanezen a helyen a **További javaslatok
 keresése** gomb áll — ugyanaz, mint a Névtelenek nézetben.
@@ -291,7 +327,11 @@ Az **Eltávolítás az Emberek albumból** (Ctrl+Delete) kiveszi onnan.
 > nem működik** — az emberalbumok saját borítóképét ma nem lehet
 > megválasztani.
 
-## Film a kijelölt arcokból
+## Film az arcokból
+
+A **Létrehozás ▸ Mozgófilm ▸ Az Emberek albumból…** kijelölés nélkül is
+működik: az összes nem üres személyalbum képeiből indítja a
+[Filmkészítőt](mozgofilm.md). Akkor élénk, ha van legalább egy személy.
 
 A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…** a kijelölt
 képekkel nyitja meg a [Filmkészítőt](mozgofilm.md), 1024 × 768-as

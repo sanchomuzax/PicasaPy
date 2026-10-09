@@ -10,6 +10,10 @@ egyik tétele**, ahogy az eredeti Picasában is.
 Jelöld ki a képeket, majd **Fájl ▸ Nyomtatás…** (Ctrl+P), vagy a képtálca
 **Nyomtatás** gombja.
 
+A nyomatra a kép **szerkesztett** változata kerül — vágással,
+forgatással, effektekkel —, és a fényképezőgép által megjelölt tájolás
+szerint helyesen állva. Ugyanazt kapod, mint exportáláskor.
+
 A párbeszédben beállítható:
 
 - **Nyomtató** — a rendszeren elérhető nyomtatók listájából. A
@@ -154,7 +158,8 @@ gomb nem indít újabb feladatot.
 ## Indexképek nyomtatása
 
 **Mappa ▸ Indexképek nyomtatása…** (Ctrl+Shift+P) egy lapra sok kis képet
-tesz. Az **Oszlopok** mezővel állítod, hány kép legyen egy sorban.
+tesz. A Ctrl+Shift+P kijelölés nélkül is működik: ilyenkor a megnyitott
+mappa képeiből készít indexképes nyomtatást. Az **Oszlopok** mezővel állítod, hány kép legyen egy sorban.
 
 Ugyanide jutsz a szokásos nyomtatási párbeszédből is: válaszd a
 **Nyomatméret** lista utolsó tételét, az **Indexképek**-et. Ilyenkor
