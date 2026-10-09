@@ -289,6 +289,8 @@ MenuBar {
     signal unhideRequested()
     signal resetFacesRequested()
     signal thumbSizePreset(int size)
+    // #4623: az aktuális indexképméret a gazdától jön (Main.qml `thumbSize`)
+    property int thumbSize: 144
     signal selectStarredRequested()
     signal selectAllRequested()
     signal clearSelectionRequested()
@@ -307,6 +309,8 @@ MenuBar {
     signal optionsRequested()
     //: #2054: a súgó megnyitása; a paraméter a fejezet ( = főoldal)
     signal helpRequested(string topic)
+    // #4639: a kódban bekötött gyorsbillentyűk helyi listájának megnyitása.
+    signal keyboardShortcutsRequested()
     // SAJÁT FUNKCIÓ (#287, jegyzékbe véve: #1364): a Duplikátum-kereső az
     // eredeti Picasa 3.9 Eszközök menüjében NEM létezik
     // (`docs/specs/ui-audit-menus.md`). A másodpéldány-kereséshez az eredeti
@@ -546,23 +550,47 @@ MenuBar {
     signal folderRemoveFromPicasaRequested()
     signal folderLocateRequested()
 
+    // #4639: a súgó csoportcímei a menücímek fordításából jönnek, a
+    // billentyűk pedig a tényleges Shortcut.sequence értékekből.
+    readonly property string keyboardShortcutsTitle:
+        qsTr("&Keyboard Shortcuts").replace("&", "")
+    readonly property var keyboardShortcutGroupTitles: ({
+        file: menuFile.title.replace("&", ""),
+        edit: menuEdit.title.replace("&", ""),
+        view: menuView.title.replace("&", ""),
+        folder: menuFolder.title.replace("&", ""),
+        picture: menuPicture.title.replace("&", ""),
+        help: menuHelp.title.replace("&", "")
+    })
+    readonly property var keyboardShortcutSequences: ({
+        file: [shortcutNewAlbum.sequence, shortcutAddFile.sequence,
+               shortcutImportFrom.sequence, shortcutDeleteFromDisk.sequence,
+               shortcutLocateOnDisk.sequence, shortcutPrint.sequence],
+        view: [shortcutSmallThumbnails.sequence,
+               shortcutNormalThumbnails.sequence],
+        folder: [shortcutPrintContactSheet.sequence]
+    })
+
     // #327: gyorsbillentyűk azoknak az AKTÍV menüpontoknak, amelyeknek
     // még nincs élő bekötésük máshol (a többi már a Main.qml globális
     // Shortcut-jain vagy a menüpont onTriggered-jén keresztül működik —
     // azokhoz itt csak a MENÜBEN LÁTSZÓ felirat tartozik, ld. lent).
     Shortcut {
+        id: shortcutSmallThumbnails
         objectName: "shortcutSmallThumbnails"
         sequence: "Ctrl+1"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(96)
     }
     Shortcut {
+        id: shortcutNormalThumbnails
         objectName: "shortcutNormalThumbnails"
         sequence: "Ctrl+2"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(144)
     }
     Shortcut {
+        id: shortcutLocateOnDisk
         objectName: "shortcutLocateOnDisk"
         sequence: "Ctrl+Return"
         // #4631: a kijelölt kép elsőbbséget élvez; üres kijelölésnél a
@@ -578,6 +606,7 @@ MenuBar {
         }
     }
     Shortcut {
+        id: shortcutDeleteFromDisk
         objectName: "shortcutDeleteFromDisk"
         sequence: "Delete"
         // A menüpont a nézőben is aktív, de a néző saját gyorsbillentyűje
@@ -591,6 +620,7 @@ MenuBar {
     // de billentyű nem tartozott hozzá. A feliratot itt szó szerint
     // követjük (nem `StandardKey.Print`), hogy a kettő ne csúszhasson el.
     Shortcut {
+        id: shortcutPrint
         objectName: "shortcutPrint"
         sequence: "Ctrl+P"
         enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
@@ -602,6 +632,7 @@ MenuBar {
     // A Mappa-parancs az aktuális mappára hat, ezért kijelölés nélkül is
     // ugyanúgy él, mint a menütétel.
     Shortcut {
+        id: shortcutPrintContactSheet
         objectName: "shortcutPrintContactSheet"
         sequence: "Ctrl+Shift+P"
         enabled: !bar.textEntryHasFocus
@@ -617,6 +648,7 @@ MenuBar {
     // `Ctrl+M` nem ilyen, tehát a keresőmezőben állva is ez nyer — MÉRVE:
     // `tests/app/qml_functional/test_import_menupont_1615.py`.
     Shortcut {
+        id: shortcutImportFrom
         objectName: "shortcutImportFrom"
         sequence: "Ctrl+M"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
@@ -626,6 +658,7 @@ MenuBar {
     // hibaosztály, mint a Ctrl+M volt a #1615 előtt. Feltétel nélkül él,
     // mint maga a menüpont (a fájlválasztó nem függ kijelöléstől).
     Shortcut {
+        id: shortcutAddFile
         objectName: "shortcutAddFile"
         sequence: "Ctrl+O"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
@@ -638,6 +671,7 @@ MenuBar {
     // billentyűnek sincs mit csinálnia — ugyanaz a feltétel, mint a
     // menütételen.
     Shortcut {
+        id: shortcutNewAlbum
         objectName: "shortcutNewAlbum"
         sequence: "Ctrl+N"
         enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
@@ -645,6 +679,7 @@ MenuBar {
     }
 
     PicasaMenu {
+        id: menuFile
         title: qsTr("&File")
         // #1616: a tétel `PicasaMenuItem { placeholder: true }` volt —
         // MÉRVE (`git log -S'menuFileNewAlbum'`): MINDIG az volt, az #416
@@ -826,6 +861,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuEdit
         title: qsTr("&Edit")
         // #2151: TUDATOS TÖBBLET — az eredeti Szerkesztés menüjében NINCS
         // visszavonás. A menü ott statikus: 11 tétel + 3 elválasztó, a
@@ -940,6 +976,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuView
         objectName: "menuView"
         title: qsTr("&View")
         MenuItem {
@@ -957,19 +994,46 @@ MenuBar {
             }
         }
         MenuSeparator {}
+        // #4623: a 2. csoport rádiócsoport (spec: egy pipa a háromból). A
+        // pipa a gazda `thumbSize`-ából számolódik, így a csúszkától
+        // állított méret is pontosan látszik. A már aktív tételre kattintva
+        // a `toggle()` elveszi a pipát (#1468), ezért a kötés visszaáll.
         MenuItem {
+            objectName: "menuViewSmallThumbnails"
             text: qsTr("S&mall Thumbnails") + "\tCtrl+1"
-            onTriggered: bar.thumbSizePreset(96)
+            checkable: true
+            checked: !bar.editorActive && bar.thumbSize === 96
+            onTriggered: {
+                bar.thumbSizePreset(96)
+                checked = Qt.binding(function () {
+                    return !bar.editorActive && bar.thumbSize === 96
+                })
+            }
         }
         MenuItem {
+            objectName: "menuViewNormalThumbnails"
             text: qsTr("&Normal Thumbnails") + "\tCtrl+2"
-            onTriggered: bar.thumbSizePreset(144)
+            checkable: true
+            checked: !bar.editorActive && bar.thumbSize === 144
+            onTriggered: {
+                bar.thumbSizePreset(144)
+                checked = Qt.binding(function () {
+                    return !bar.editorActive && bar.thumbSize === 144
+                })
+            }
         }
         MenuItem {
             objectName: "menuViewEditView"
             text: qsTr("&Edit View") + "\tCtrl+3"
+            checkable: true
+            checked: bar.editorActive
             enabled: bar.libraryPhotoActionsEnabled
-            onTriggered: bar.viewAndEditRequested()
+            onTriggered: {
+                bar.viewAndEditRequested()
+                checked = Qt.binding(function () {
+                    return bar.editorActive
+                })
+            }
         }
         MenuSeparator {}
         MenuItem {
@@ -1712,6 +1776,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuFolder
         title: bar.currentAlbumToken !== "" ? qsTr("&Album") : qsTr("F&older")
         MenuItem {
             objectName: "menuFolderEditDescription"
@@ -1910,6 +1975,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuPicture
         title: qsTr("&Picture")
         onAboutToShow: bar.textOverlayStatesRefreshRequested()
         MenuItem {
@@ -1918,8 +1984,8 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.viewAndEditRequested()
         }
-        // #425 (K.1 szakasz, ui-audit-menus.md): az almenü teljes tartalma
-        // az `eMenuPicture` osztályból ismert — a kijelölt N kép
+        // #4701: az almenü sorrendje és 19 rekordja a menüleltárban szereplő
+        // eredeti táblát követi. Az effektparancsok a kijelölt N kép
         // MINDEGYIKÉRE egyszerre alkalmazott egykattintásos effekt
         // (`controller.applyEffectMany`, `batch_effect_controller`).
         PicasaMenu {
@@ -1927,58 +1993,10 @@ MenuBar {
             title: qsTr("&Batch Edit")
             enabled: bar.photoActionsEnabled
             MenuItem {
-                objectName: "menuBatchAutoContrast"
-                text: qsTr("A&uto Contrast")
+                objectName: "menuBatchRename"
+                text: qsTr("&Rename...") + "\tF2"
                 enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("autolight")
-            }
-            MenuItem {
-                objectName: "menuBatchAutoColor"
-                text: qsTr("&Auto Color")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("autocolor")
-            }
-            MenuItem {
-                objectName: "menuBatchAutoRedeye"
-                text: qsTr("Auto Red Eye Correction")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("redeye")
-            }
-            MenuItem {
-                objectName: "menuBatchEnhance"
-                text: qsTr("I'm Feeling Lucky")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("enhance")
-            }
-            MenuItem {
-                objectName: "menuBatchSepia"
-                text: qsTr("&Sepia")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("sepia")
-            }
-            MenuItem {
-                objectName: "menuBatchSharpen"
-                text: qsTr("S&harpen")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("unsharp")
-            }
-            MenuItem {
-                objectName: "menuBatchBlackWhite"
-                text: qsTr("&Black and White")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("bw")
-            }
-            MenuItem {
-                objectName: "menuBatchFilmGrain"
-                text: qsTr("&Film Grain")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("grain2")
-            }
-            MenuItem {
-                objectName: "menuBatchWarmify"
-                text: qsTr("&Warmify")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("warm")
+                onTriggered: bar.renameRequested()
             }
             MenuSeparator {}
             MenuItem {
@@ -1992,6 +2010,63 @@ MenuBar {
                 text: qsTr("Rotate &Counterclockwise")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("rotate_ccw")
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuBatchAutoContrast"
+                text: qsTr("A&uto Contrast")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("autolight")
+            }
+            MenuItem {
+                objectName: "menuBatchAutoColor"
+                text: qsTr("&Auto Color")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("autocolor")
+            }
+            MenuItem {
+                objectName: "menuBatchEnhance"
+                text: qsTr("I'm Feeling Lucky")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("enhance")
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuBatchSepia"
+                text: qsTr("&Sepia")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("sepia")
+            }
+            MenuItem {
+                objectName: "menuBatchSharpen"
+                text: qsTr("S&harpen")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("unsharp")
+            }
+            MenuItem {
+                objectName: "menuBatchWarmify"
+                text: qsTr("&Warmify")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("warm")
+            }
+            MenuItem {
+                objectName: "menuBatchFilmGrain"
+                text: qsTr("&Film Grain")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("grain2")
+            }
+            MenuItem {
+                objectName: "menuBatchBlackWhite"
+                text: qsTr("&Black and White")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("bw")
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuBatchAutoRedeye"
+                text: qsTr("Auto Red Eye Correction")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("redeye")
             }
             MenuSeparator {}
             // #4335: külön parancsok, a kijelölésben levő szövegfedvények
@@ -2540,6 +2615,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuHelp
         title: qsTr("&Help")
         //: #2054: BEKÖTVE — a súgó a csomagban van, net nélkül is megnyílik.
         MenuItem {
@@ -2547,7 +2623,11 @@ MenuBar {
             text: qsTr("&Help Contents and Index") + "\tF1"
             onTriggered: bar.helpRequested("")
         }
-        PicasaMenuItem { text: qsTr("&Keyboard Shortcuts"); placeholder: true }
+        MenuItem {
+            objectName: "menuHelpKeyboardShortcuts"
+            text: qsTr("&Keyboard Shortcuts")
+            onTriggered: bar.keyboardShortcutsRequested()
+        }
         MenuSeparator {}
         // hiányzott (#324 audit): web-linkek
         PicasaMenuItem { text: qsTr("Picasa &Forums"); placeholder: false; retired: true }  // #638

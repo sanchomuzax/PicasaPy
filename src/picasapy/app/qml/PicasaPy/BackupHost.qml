@@ -46,6 +46,11 @@ Rectangle {
     property bool fut: false
     property int keszFajl: 0
     property int osszesFajl: 0
+    property bool visszaallitasNyitva: false
+    property bool visszaallitasFut: false
+    property string visszaallitasForras: ""
+    property string visszaallitasCel: ""
+    property string visszaallitasHiba: ""
 
     //: #3594: a kiválasztott készlet még el nem mentett fájljai, mappánként
     property var mentetlenek: []
@@ -245,6 +250,21 @@ Rectangle {
         }
     }
 
+    function inditsdVisszaallitast() {
+        if (typeof backupController === "undefined" || !backupController)
+            return
+        if (host.visszaallitasForras.trim() === ""
+                || host.visszaallitasCel.trim() === "") {
+            host.visszaallitasHiba = qsTr(
+                "Select both a backup source and a restore folder.")
+            return
+        }
+        host.visszaallitasHiba = ""
+        host.visszaallitasFut = true
+        backupController.visszaallitastFuttat(
+            host.visszaallitasForras, host.visszaallitasCel)
+    }
+
     PublishPanel {
         id: panel
         y: 0
@@ -266,6 +286,12 @@ Rectangle {
             torlesMegerosites.ask(
                 "", qsTr("Are you sure you want to delete the backup set \"%1\"?")
                         .arg(k ? k.nev : ""))
+        }
+        onMentesVisszaallitastKert: {
+            host.visszaallitasForras = ""
+            host.visszaallitasCel = ""
+            host.visszaallitasHiba = ""
+            host.visszaallitasNyitva = true
         }
         onMentesKeszletValasztva: function (index) { host.kivalasztott = index }
         onMentesMindetPipaldKert: host.mindetPipald()
@@ -366,6 +392,10 @@ Rectangle {
             //: párbeszéd mögötti állapotsort a felhasználó nem nézi
             if (host.szerkesztes)
                 host.urlapHiba = szoveg
+            else if (host.visszaallitasNyitva) {
+                host.visszaallitasFut = false
+                host.visszaallitasHiba = szoveg
+            }
             else
                 host.uzenet = szoveg
         }
@@ -390,6 +420,13 @@ Rectangle {
                 : qsTr("Done: %1 file(s) in %2 disc image(s).")
                     .arg(fajlok).arg(lemezek)
         }
+        function onVisszaallitasKesz(visszaallitott, kihagyott) {
+            host.visszaallitasFut = false
+            host.visszaallitasNyitva = false
+            host.uzenet = qsTr(
+                "Restored %1 file(s); skipped %2 existing file(s).")
+                .arg(visszaallitott).arg(kihagyott)
+        }
         //: #3009: a másolás háttérszálon megy, és végig beszél
         function onFutasIndult(osszes) {
             host.fut = osszes > 0
@@ -413,6 +450,28 @@ Rectangle {
                 ? fileOpsController.toLocalPath(celValaszto.selectedFolder.toString())
                 : celValaszto.selectedFolder.toString().replace(/^file:\/\//, "")
         }
+    }
+
+    FolderDialog {
+        id: visszaallitasMappaValaszto
+        title: qsTr("Choose backup folder")
+        onAccepted: host.visszaallitasForras =
+            visszaallitasMappaValaszto.selectedFolder.toLocalFile()
+    }
+
+    FolderDialog {
+        id: visszaallitasCelValaszto
+        title: qsTr("Choose restore folder")
+        onAccepted: host.visszaallitasCel =
+            visszaallitasCelValaszto.selectedFolder.toLocalFile()
+    }
+
+    FileDialog {
+        id: visszaallitasIsoValaszto
+        title: qsTr("Choose the first disc image")
+        nameFilters: [qsTr("ISO disc images (*.iso)"), qsTr("All files (*)")]
+        onAccepted: host.visszaallitasForras =
+            visszaallitasIsoValaszto.selectedFile.toLocalFile()
     }
 
     //: `newbackupset.fen` — az Új/Módosítás párbeszéd. Az eredetiben is
@@ -561,6 +620,98 @@ Rectangle {
             }
         }
         onRejected: host.szerkesztes = false
+    }
+
+    Dialog {
+        id: visszaallitasDialog
+        objectName: "backupRestoreDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        visible: host.visszaallitasNyitva
+        title: qsTr("Restore Backup")
+        implicitWidth: 700 + leftPadding + rightPadding
+        onClosed: host.visszaallitasNyitva = false
+
+        contentItem: ColumnLayout {
+            spacing: 6
+
+            Text {
+                text: qsTr("Choose a backup folder or the first disc image:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                TextField {
+                    objectName: "backupRestoreSource"
+                    Layout.fillWidth: true
+                    text: host.visszaallitasForras
+                    font.pixelSize: Theme.fontSize
+                    onTextEdited: host.visszaallitasForras = text
+                    TextFieldContextArea {}
+                }
+                PicasaButton {
+                    objectName: "backupRestoreChooseFolder"
+                    text: qsTr("Folder...")
+                    onClicked: visszaallitasMappaValaszto.open()
+                }
+                PicasaButton {
+                    objectName: "backupRestoreChooseIso"
+                    text: qsTr("Disc image...")
+                    onClicked: visszaallitasIsoValaszto.open()
+                }
+            }
+            Text {
+                text: qsTr("Restore to:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                TextField {
+                    objectName: "backupRestoreTarget"
+                    Layout.fillWidth: true
+                    text: host.visszaallitasCel
+                    font.pixelSize: Theme.fontSize
+                    onTextEdited: host.visszaallitasCel = text
+                    TextFieldContextArea {}
+                }
+                PicasaButton {
+                    objectName: "backupRestoreChooseTarget"
+                    text: qsTr("Choose...")
+                    onClicked: visszaallitasCelValaszto.open()
+                }
+            }
+            Text {
+                objectName: "backupRestoreError"
+                Layout.fillWidth: true
+                visible: host.visszaallitasHiba !== ""
+                text: host.visszaallitasHiba
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.brandRed
+            }
+        }
+        footer: DialogButtonBox {
+            Button {
+                objectName: "backupRestoreGo"
+                text: qsTr("Restore")
+                enabled: !host.visszaallitasFut
+                DialogButtonBox.buttonRole: DialogButtonBox.ActionRole
+                onClicked: host.inditsdVisszaallitast()
+            }
+            Button {
+                objectName: "backupRestoreCancel"
+                text: qsTr("Cancel")
+                enabled: !host.visszaallitasFut
+                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+            }
+        }
+        onRejected: {
+            if (!host.visszaallitasFut)
+                host.visszaallitasNyitva = false
+        }
     }
 
     ConfirmDialog {
