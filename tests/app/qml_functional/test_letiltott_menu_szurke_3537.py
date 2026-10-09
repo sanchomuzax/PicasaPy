@@ -43,7 +43,7 @@ def test_a_letiltott_tetel_szurke(qml_app, qt_app):
     qt_app.processEvents()
 
     mentes = _tetel(window, "menuFileSave")
-    helyfoglalo = _felirat_szerint(window, "&Check for Updates")
+    helyfoglalo = _felirat_szerint(window, "&Keyboard Shortcuts")
 
     assert mentes.property("enabled") is False
     assert _cimkeszin(mentes) == _cimkeszin(helyfoglalo)
@@ -53,7 +53,7 @@ def test_az_engedelyezett_tetel_nem_szurke(qml_app, qt_app):
     window, _controller, _ = qml_app
 
     mentes_ki = _tetel(window, "menuToolsBackup")
-    helyfoglalo = _felirat_szerint(window, "&Check for Updates")
+    helyfoglalo = _felirat_szerint(window, "&Keyboard Shortcuts")
 
     assert mentes_ki.property("enabled") is True
     assert _cimkeszin(mentes_ki) != _cimkeszin(helyfoglalo)

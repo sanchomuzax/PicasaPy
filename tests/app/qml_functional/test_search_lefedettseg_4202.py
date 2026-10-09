@@ -51,7 +51,14 @@ def _walk(item):
 
 
 def _click_item(window, item, qt_app) -> None:
-    assert item is not None and item.isVisible(), "a kattintandó elem nem látható"
+    assert item is not None, "a kattintandó elem nem található"
+    assert _wait_until(
+        qt_app,
+        lambda: item.isVisible() and item.width() > 0 and item.height() > 0,
+    ), (
+        "a kattintandó elem nem kapott kirajzolható méretet: "
+        f"visible={item.isVisible()}, width={item.width()}, height={item.height()}"
+    )
     point = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
         window,
@@ -196,7 +203,12 @@ def test_keresesi_elemlista_es_valodi_felhasznaloi_ut(
         qt_app,
         lambda: controller.viewModeName == "folder"
         and controller.photos.rowCount() == 2,
-    ), "a másodpéldány-kapcsoló nem állította vissza a teljes nézetet"
+    ), (
+        "a másodpéldány-kapcsoló nem állította vissza a teljes nézetet: "
+        f"mode={controller.viewModeName!r}, "
+        f"rows={controller.photos.rowCount()}, "
+        f"scanning={controller.dupeSearchScanning}"
+    )
 
 
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
