@@ -1471,6 +1471,10 @@ MenuBar {
             readonly property bool rendezesForditott:
                 (controller && controller.paneSortReverse !== undefined)
                     ? controller.paneSortReverse : false
+            // #4528: az Emberek lista három rendezésének közös állapota.
+            readonly property string peopleSort:
+                (controller && controller.peopleSort !== undefined)
+                    ? controller.peopleSort : "name"
 
             // MÉRT buktató (#1454): a valódi kattintás IMPERATÍVAN
             // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
@@ -1659,6 +1663,107 @@ MenuBar {
                     checked = Qt.binding(function () {
                         return folderViewMenu.rendezesForditott
                     })
+                }
+            }
+            MenuSeparator {}
+            // #4528: az eredeti folderviewpopup a név-, darabszám- és Top 10
+            // szerinti Emberek-rendezést közvetlenül a lista rendezése után
+            // kínálja. A pipa és a tényleges sorrend is az AppController
+            // PeopleMixinjéből jön.
+            MenuItem {
+                objectName: "menuViewSortPeopleByName"
+                text: qsTr("Sort &People by Name")
+                checkable: true
+                checked: folderViewMenu.peopleSort === "name"
+                onTriggered: {
+                    if (controller) controller.setPeopleSort("name")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.peopleSort === "name"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortPeopleByAmount"
+                text: qsTr("Sort People by &Amount")
+                checkable: true
+                checked: folderViewMenu.peopleSort === "count"
+                onTriggered: {
+                    if (controller) controller.setPeopleSort("count")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.peopleSort === "count"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortPeopleByTop10"
+                text: qsTr("Sort People by Top &10")
+                checkable: true
+                checked: folderViewMenu.peopleSort === "top"
+                onTriggered: {
+                    if (controller) controller.setPeopleSort("top")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.peopleSort === "top"
+                    })
+                }
+            }
+            MenuSeparator {}
+            // #4528: az AlbumList::Shortcuts almenü. A gyökérválasztók
+            // ugyanazokat a vezérlőműveleteket használják, mint a közvetlen
+            // tételek, ezért a két belépési pont pipája együtt mozog.
+            PicasaMenu {
+                objectName: "menuViewFolderViewShortcuts"
+                title: qsTr("&Shortcuts")
+                MenuItem {
+                    objectName: "menuViewShortcutMyComputer"
+                    text: qsTr("My &Computer")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "all"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("all")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "all"
+                        })
+                    }
+                }
+                MenuItem {
+                    objectName: "menuViewShortcutMyPictures"
+                    text: qsTr("My &Pictures")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "mypics"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("mypics")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "mypics"
+                        })
+                    }
+                }
+                MenuItem {
+                    objectName: "menuViewShortcutMyDocuments"
+                    text: qsTr("My Do&cuments")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "mydocs"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("mydocs")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "mydocs"
+                        })
+                    }
+                }
+                MenuItem {
+                    objectName: "menuViewShortcutDesktop"
+                    text: qsTr("&Desktop")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "desktop"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("desktop")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "desktop"
+                        })
+                    }
                 }
             }
             MenuSeparator {}

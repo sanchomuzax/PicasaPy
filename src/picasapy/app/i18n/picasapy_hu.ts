@@ -9230,23 +9230,51 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <name>PicasaMenuBar</name>
         <message>
             <source>My &amp;Computer</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sajátgé&amp;p</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumListWin::ID_VIEW_ALL</extracomment>
+            <translation>&amp;Sajátgép</translation>
         </message>
         <message>
             <source>My &amp;Pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ké&amp;pek</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumListWin::ID_VIEW_MYPICTURES</extracomment>
+            <translation>&amp;Képek</translation>
         </message>
         <message>
             <source>My Do&amp;cuments</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumListWin::ID_VIEW_MYDOCS</extracomment>
             <translation>Do&amp;kumentumok</translation>
         </message>
         <message>
             <source>&amp;Desktop</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEW_DESKTOP</extracomment>
             <translation>&amp;Asztal</translation>
+        </message>
+        <message>
+            <source>&amp;Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::Shortcuts</extracomment>
+            <translation>&amp;Gyorsbillentyűk</translation>
+        </message>
+        <message>
+            <source>Sort &amp;People by Name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
+            <translation>Személyek rendezése &amp;név alapján</translation>
+        </message>
+        <message>
+            <source>Sort People by &amp;Amount</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
+            <translation>Személyek rendezése &amp;mennyiség alapján</translation>
+        </message>
+        <message>
+            <source>Sort People by Top &amp;10</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
+            <translation>Személyek rendezése a topl&amp;ista alapján</translation>
         </message>
         <message>
             <source>Write faces to XMP...</source>
