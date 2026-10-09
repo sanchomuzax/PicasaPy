@@ -1538,11 +1538,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     picasa_import_controller = PicasaImportController()
     engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
     engine.rootContext().setContextProperty("importSourceController", import_source_controller)
-    # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
-    # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.
+    # #147/#4572: a néző arc-keret overlay-jének hídja — a
+    # faces=/Contacts2 az ini-ből, a névtelen felismerések az indexből jönnek.
     # A helyi változóban tartás megakadályozza, hogy a Python GC a
     # context property mögül idő előtt eltüntesse a QObject-et.
-    faces_helper = FacesHelper()
+    faces_helper = FacesHelper(data_dir / "index.db")
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     # #26 (3. lépcső): a SAJÁT arcfelismerés bekötése — a `FaceScanController`
     # (1–2. lépcső) eddig sehol nem volt elérve a QML-ből. A `faces_helper`

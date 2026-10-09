@@ -1032,6 +1032,12 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Név</translation>
         </message>
+        <message>
+            <source>Type a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:peoplepanel::prompt4name</extracomment>
+            <translation>Írjon be egy nevet</translation>
+        </message>
     </context>
     <context>
         <name>OptionsDialog</name>
@@ -8967,6 +8973,20 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
 picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
             <translation>Vissza a rendezett indexképekhez</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Szerkesztések eltávolítása</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Remove all movie edits?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
+            <translation>Eltávolítja a mozgófilm összes módosítását?</translation>
+        </message>
     </context>
     <context>
         <name>PicasaImportDialog</name>
@@ -9087,25 +9107,25 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomm
         <message>
             <source>Ignore People</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::IgnorePeopleTitle;stringres:DeleteMessage::RemoveMultipleYesButtonUnknown;stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
             <translation>Személyek mellőzése</translation>
         </message>
         <message>
             <source>Ignore Person</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
             <translation>Személy mellőzése</translation>
         </message>
         <message>
             <source>Are you sure you want to move this person to the ignored people album?</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleUnknown;stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
             <translation>Biztosan áthelyezi ezt a személyt a Mellőzött emberek albumba?</translation>
         </message>
         <message>
             <source>Don't ask again, always ignore</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck</extracomment>
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck;stringres:ThumbUI::ConfirmUnknownCheckbox</extracomment>
             <translation>Ne kérdezzen újból, mindig hagyja figyelmen kívül</translation>
         </message>
     </context>
@@ -9114,13 +9134,13 @@ picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck</extracomment>
         <message>
             <source>Add a name</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: rightdrawerpanel/peoplepanel/faceclusterpanel_%d_addname</extracomment>
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
             <translation>Név hozzáadása</translation>
         </message>
         <message>
             <source>Ignore person</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: rightdrawerpanel/peoplepanel/faceclusterpanel_%d_ignore</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
             <translation>Személy mellőzése</translation>
         </message>
         <message>
@@ -9761,7 +9781,7 @@ picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
             <source>&amp;Album</source>
-            <extracomment>picasapy-origin: picasa</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Album</translation>
         </message>
         <message>
@@ -10102,15 +10122,15 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
             <source>Are you sure you want to replace the existing caption with the contents of the clipboard?
 (This operation is not undoable)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REPLACE_CAPTION</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Biztosan lecseréli a jelenlegi képfeliratot a vágólap tartalmára?
 (Ez a művelet nem vonható vissza)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="85" />
             <source>Replace</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDGo::ReplaceButton;stringres:CTextEditNode::confirmyesbutton;stringres:RestoreProc::replace</extracomment>
             <translation>Csere</translation>
         </message>
         <message>
@@ -10219,8 +10239,7 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
             <source>&amp;Sepia</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_PICTURE_SEPIA</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Szépia</translation>
         </message>
         <message>
@@ -10284,7 +10303,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
             <source>Reset Faces</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
             <translation>Arcok alaphelyzetbe állítása</translation>
         </message>
         <message>
@@ -10304,7 +10323,8 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
             <source>Yes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
             <translation>Igen</translation>
         </message>
         <message>
@@ -11193,27 +11213,6 @@ picasapy-origin-key: stringres:CThumbUI::UpdateAlbumCoverNoSel;stringres:il_GetS
     <context>
         <name>VideoPlayerView</name>
         <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
-            <source>Export Clip</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(movieeditpanel/export_movie)</extracomment>
-            <translation>Klip exportálása</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
-            <source>Capture current frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(movieeditpanel/capture_frame)</extracomment>
-            <translation>Aktuális képkocka rögzítése</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/VideoPlayerView.qml" />
-            <source>Restore movie to its original length (remove start and end points)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
-            <translation>A mozgófilm eredeti hosszának visszaállítása (a kezdési és a befejezési pont eltávolításával)</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58" />
             <source>Unable to play this video.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -11229,10 +11228,50 @@ picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Új végpont beállítása</translation>
         </message>
+    </context>
+    <context>
+        <name>VideoEditPanel</name>
         <message>
-            <source>Reset trim</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vágás visszaállítása</translation>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Reset Start and End</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/reset_trim)</extracomment>
+            <translation>Kezdés és befejezés alaphelyzetbe állítása</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Take Snapshot</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/capture_frame)</extracomment>
+            <translation>Pillanatfelvétel készítése</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Export Clip</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(movieeditpanel/export_movie)</extracomment>
+            <translation>Klip exportálása</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Capture current frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/capture_frame)</extracomment>
+            <translation>Aktuális képkocka rögzítése</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Restore movie to its original length (remove start and end points)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/reset_trim)</extracomment>
+            <translation>A mozgófilm eredeti hosszának visszaállítása (a kezdési és a befejezési pont eltávolításával)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/VideoEditPanel.qml" />
+            <source>Save a clip of the movie between the start and end points</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(movieeditpanel/export_movie)</extracomment>
+            <translation>Egy részletet menthet a mozgófilmből a kezdési és a befejezési pont között</translation>
         </message>
     </context>
     <context>
@@ -16427,7 +16466,7 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="13" />
             <source>Write Face Tags</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: write_all_facetags:write_all_facetags/window1.title</extracomment>
+picasapy-origin-key: stringres:FaceTagJob::progress;write_all_facetags:write_all_facetags/window1.title</extracomment>
             <translation>Arccímkék írása</translation>
         </message>
         <message>
@@ -16461,8 +16500,7 @@ picasapy-origin-key: write_all_facetags:write_all_facetags/allfiles.title</extra
         <message>
             <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="65" />
             <source>Cancel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: write_all_facetags:write_all_facetags/button8.title</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Mégse</translation>
         </message>
     </context>
@@ -16566,7 +16604,8 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <location filename="../qml/PicasaPy/TextColorSwatches.qml" line="114" />
             <source>Pick Color</source>
-            <extracomment>picasapy-origin: picasa</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDesaturateFilter::pickcolor;stringres:ImageFilters::PickColor;tooltips:Label(editpanel/colorwheel_label0);tooltips:Label(editpanel/colorwheel_label1)</extracomment>
             <translation>Színválasztás</translation>
         </message>
     </context>

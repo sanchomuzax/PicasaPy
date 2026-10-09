@@ -290,10 +290,9 @@ Rectangle {
     readonly property var drawerRows:
         viewer.currentIndex >= 0 ? [viewer.currentIndex] : []
 
-    // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
-    // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
-    // eredménye; a photosModel.revision a forgatás-kötés mintájára triggerel
-    // újraértékelést; facesHelper hiányában (régi teszt-fixture) üres lista.
+    // #147/#4572: a mentett keretek csak a facesVisible kapcsolóra látszanak;
+    // indexbeli névtelen arcok rejtve maradnak, de kattinthatók. A
+    // photosModel.revision és facesEditRevision újraértékeli a lekérdezést.
     property bool facesVisible: false
     function toggleFaces() { viewer.facesVisible = !viewer.facesVisible }
     // #26 (2. kör): arc-téglalap SZERKESZTŐ mód — rajzolás/átnevezés/
@@ -315,13 +314,18 @@ Rectangle {
     }
     //: #3741: a KIJELÖLT fél fotójáé (`aktivSor`) — kettős nézetben bal
     //: fókusznál ez a bal kép, nem a `currentIndex`-é.
-    readonly property var currentFaces: (!viewer.facesVisible || !photosModel
-                                          || viewer.aktivSor < 0
+    readonly property var currentFaces: (!photosModel || viewer.aktivSor < 0
                                           || typeof facesHelper === "undefined"
                                           || !facesHelper)
         ? []
         : (photosModel.revision, viewer.facesEditRevision,
            facesHelper.facesFor(photosModel.filePathAt(viewer.aktivSor)))
+    readonly property bool hasDetectedFaceHitTargets: {
+        var items = viewer.currentFaces
+        for (var i = 0; i < items.length; ++i)
+            if (items[i].detected === true) return true
+        return false
+    }
 
     // -- zoom-állapotgép (#6, #2492): fit / 1:1 / tetszőleges ------------
     //
@@ -2026,11 +2030,49 @@ Rectangle {
                 // a gombsor.
                 color: Theme.chromeBg
 
+                // #4566: videónál a fülsáv helyén a videó-panel áll (a spec
+                // `movietab` szakasza). A fülsáv ilyenkor el van rejtve, nem
+                // csak szürkítve.
+                VideoEditPanel {
+                    id: videoEditPanel
+                    objectName: "videoEditPanel"
+                    visible: viewer.isCurrentVideo
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 280
+                    x: viewer.editorDrawerOffset
+                    // a vágás állapota a modellből jön; a `revision` SZÁNDÉKOS
+                    // függőség, ld. a lejátszó trimStartMs kötését
+                    trimmed: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.movieTrimAt(viewer.currentIndex).start >= 0
+                           || viewer.photosModel.movieTrimAt(viewer.currentIndex).end >= 0)
+                        : false
+                    // a képkockát a LEJÁTSZÓ pozíciójából mentjük, ezért élő
+                    // lejátszó kell hozzá
+                    captureAvailable: videoLoader.status === Loader.Ready
+                    //: az eredeti (`CThumbUI::UndomovieEdits`) előbb rákérdez
+                    onResetTrimRequested: movieResetConfirmLoader.ensure().askFor(
+                        viewer.currentIndex)
+                    onCaptureFrameRequested: {
+                        if (videoLoader.item)
+                            videoLoader.item.captureFrame()
+                    }
+                    //: `movieeditpanel/export_movie` → `LinuxNomovie`.
+                    onExportClipRequested: {
+                        if (Qt.platform.os === "linux")
+                            kepkockaJelzes.mutasd(
+                                qsTr("This feature is not supported for Linux"))
+                    }
+                }
+
                 EditorPanel {
                     id: editorPanel
                     objectName: "viewerEditorPanel"
-                    // videónál a szerkesztő-eszközök nem értelmezettek (#14)
+                    // videónál a szerkesztő-eszközök nem értelmezettek (#14),
+                    // a fülsáv helyén a videó-panel (#4566) áll
                     enabled: !viewer.isCurrentVideo
+                    visible: !viewer.isCurrentVideo
                     // #628: a panel a RENDELKEZÉSRE ÁLLÓ magasságot kapja.
                     // Korábban itt fix 420 képpont állt, akármekkora az
                     // ablak — a 3. fül 12 bélyegképes csempéje (3×4, ≈450
@@ -3144,21 +3186,11 @@ Rectangle {
                                 controller.setMovieTrim(
                                     viewer.currentIndex, startMs, endMs)
                         }
-                        function onTrimResetRequested() {
-                            if (controller && controller.resetMovieTrim !== undefined)
-                                controller.resetMovieTrim(viewer.currentIndex)
-                        }
                         //: #1838: a képkocka mentése — a vezérlő dekódol és ír
                         function onCaptureFrameRequested(positionMs) {
                             if (controller && controller.captureMovieFrame !== undefined)
                                 controller.captureMovieFrame(
                                     viewer.currentIndex, positionMs)
-                        }
-                        //: `movieeditpanel/export_movie` → `LinuxNomovie`.
-                        function onExportClipRequested() {
-                            if (Qt.platform.os === "linux")
-                                kepkockaJelzes.mutasd(
-                                    qsTr("This feature is not supported for Linux"))
                         }
                         // #4449/#4458: csak a videó-előnézeti terület
                         // kérhet kattintásra visszalépést; a PhotoViewer
@@ -3414,13 +3446,16 @@ Rectangle {
                         //: #3166: a keret-leképezés szerinti területben — a
                         //: mentett arc-régiók a FÉNYKÉPRE vonatkoznak
                         parent: frameContentArea
-                        visible: viewer.facesVisible && !editorPanel.cropActive
+                        visible: (viewer.facesVisible
+                                  || viewer.hasDetectedFaceHitTargets)
+                                 && !editorPanel.cropActive
                                  && !viewer.isCurrentVideo
                         x: 0
                         y: 0
                         width: frameContentArea.width
                         height: frameContentArea.height
                         faces: viewer.currentFaces
+                        showSavedFaces: viewer.facesVisible
                         editMode: viewer.facesEditMode
                         //: #3741: a kijelölt fél fotója — az arcszerkesztés
                         //: ennek a sorába ír (`currentFaces` ugyanígy)
@@ -4566,6 +4601,31 @@ Rectangle {
     //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
     //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
     function openContextMenu(x, y) { viewerMenuLoader.ensure().popupForPhoto(viewer, x, y, viewer.currentPath, typeof fileOpsController !== "undefined" ? fileOpsController : null) }
+
+    //: #4566: a `movieeditpanel/reset_trim` megerősítése — az eredeti
+    //: `CThumbUI::UndomovieEdits` kérdése és `IDS_CONFIRMREVERT_YES_BUTTON`
+    //: igen-gombja (`docs/specs/ui-audit-editor.md`, a `reset_trim` szakasza)
+    DeferredDialog {
+        id: movieResetConfirmLoader
+        objectName: "movieResetConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "movieResetConfirmDialog"
+                namePrefix: "movieResetConfirm"
+                property int row: -1
+                yesText: qsTr("Remove Edits")
+                function askFor(sor) {
+                    row = sor
+                    ask("", qsTr("Remove all movie edits?"))
+                }
+                onConfirmed: {
+                    if (controller && controller.resetMovieTrim !== undefined)
+                        controller.resetMovieTrim(row)
+                }
+            }
+        }
+    }
 
     DeferredDialog {
         id: viewerMenuLoader
