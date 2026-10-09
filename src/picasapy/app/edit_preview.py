@@ -165,7 +165,7 @@ def _post_ops_geometry(
 
 @dataclass(frozen=True)
 class TextOverlaySpec:
-    """A szöveg-eszköz (#148/#450) élő előnézetéhez kért egyetlen szöveg-réteg.
+    """A szöveg-eszköz (#148/#450) egy szövegrétegének renderelési adatai.
 
     A `text=` ini-kulcs NEM a `filters=` láncba tartozik (ld.
     `picasapy.ini.text_overlay` docsztring), ezért a `FilterOp`-lánccal ellentétben
@@ -343,7 +343,7 @@ class EditPreviewProvider(QQuickImageProvider):
         photo_id: str,
         path: Path,
         ops: tuple[FilterOp, ...],
-        text: TextOverlaySpec | None = None,
+        text: TextOverlaySpec | tuple[TextOverlaySpec, ...] | None = None,
         gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
         gpu_lut: np.ndarray | None = None,
         shared_cache: bool = True,
@@ -391,7 +391,7 @@ class EditPreviewProvider(QQuickImageProvider):
         photo_id: str,
         path: Path,
         ops: tuple[FilterOp, ...],
-        text: TextOverlaySpec | None = None,
+        text: TextOverlaySpec | tuple[TextOverlaySpec, ...] | None = None,
         gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
         gpu_lut: np.ndarray | None = None,
         shared_cache: bool = True,
@@ -444,28 +444,31 @@ class EditPreviewProvider(QQuickImageProvider):
             result_array, elhelyezes = self._futtasd_a_lancot(
                 key, source_array, ops, shared_cache, paint_strokes
             )
-        if text is not None and result_array is not None and text.content:
-            # a szöveg a filters-lánc UTÁN kerül a képre — a hisztogram (lent)
-            # így is a TÉNYLEGESEN megjelenített (szöveggel együtt renderelt)
-            # képet tükrözi, a modul-docsztring elve szerint
-            result_array = apply_text_overlay(
-                result_array,
-                text.content,
-                text.x,
-                text.y,
-                color=text.fill_color,
-                outline_color=text.outline_color,
-                outline_thickness=_outline_px(text.outline_thickness),
-                fill_enabled=text.fill_enabled,
-                opacity=text.opacity,
-                font_family=text.font_family,
-                font_scale=text.font_scale,
-                font_size_pt=text.font_size_pt,
-                bold=text.bold,
-                italic=text.italic,
-                underline=text.underline,
-                align=text.align,
-            )
+        text_specs = (text,) if isinstance(text, TextOverlaySpec) else (text or ())
+        if result_array is not None:
+            # a szövegek a filters-lánc UTÁN, fájlbeli sorrendben kerülnek
+            # a képre — a hisztogram így a tényleges előnézetet tükrözi.
+            for text_spec in text_specs:
+                if not text_spec.content:
+                    continue
+                result_array = apply_text_overlay(
+                    result_array,
+                    text_spec.content,
+                    text_spec.x,
+                    text_spec.y,
+                    color=text_spec.fill_color,
+                    outline_color=text_spec.outline_color,
+                    outline_thickness=_outline_px(text_spec.outline_thickness),
+                    fill_enabled=text_spec.fill_enabled,
+                    opacity=text_spec.opacity,
+                    font_family=text_spec.font_family,
+                    font_scale=text_spec.font_scale,
+                    font_size_pt=text_spec.font_size_pt,
+                    bold=text_spec.bold,
+                    italic=text_spec.italic,
+                    underline=text_spec.underline,
+                    align=text_spec.align,
+                )
         image = (
             _rgb_array_to_qimage(_megjelenitendo(result_array, teljes_felbontas))
             if result_array is not None
