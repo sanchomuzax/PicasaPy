@@ -2089,6 +2089,16 @@ Rectangle {
                                  ? photoArea.fokuszKep.paintedWidth
                                    / photoArea.fokuszKep.paintedHeight
                                  : 4 / 3
+                    // #4549: a vágó felirata a valódi, EXIF szerint
+                    // megjelenített képméretből és az overlay kijelöléséből
+                    // áll össze; a `sourceSize` csak betöltési plafon lenne.
+                    imagePixelWidth: viewer.valodiSzelesseg
+                    imagePixelHeight: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.pixelHeightAt(viewer.aktivSor))
+                        : 0
+                    cropRect: cropOverlay.cropRect
+                    cropHasSelection: cropOverlay.hasSelection
                     // Visszavonás/Újra — a controller undo-verméből (#59).
                     // #465: a KÉSZ feliratot a controller adja
                     // (`edit_action_names` névtár), hogy a lánc minden
