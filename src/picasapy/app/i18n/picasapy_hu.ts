@@ -1034,7 +1034,8 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
         </message>
         <message>
             <source>Type a name</source>
-            <extracomment>picasapy-origin: picasa</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:peoplepanel::prompt4name</extracomment>
             <translation>Írjon be egy nevet</translation>
         </message>
     </context>
@@ -3468,16 +3469,17 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current aspect</source>
+            <source>Current ratio</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
             <translation>Jelenlegi méretarány</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="356" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Jelenlegi arány</translation>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$dx%2$d</translation>
         </message>
         <message>
             <source>Current display</source>
@@ -7422,6 +7424,19 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <translation>Folytatás</translation>
         </message>
         <message>
+            <location filename="../qml/Main.qml" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Jóváhagyás</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Are you sure you want to add all of the selected album's images?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:addtosaver::warning</extracomment>
+            <translation>Biztosan hozzá szeretné adni a kijelölt album összes képét?</translation>
+        </message>
+        <message>
             <source>The desktop background is set (%1).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Az asztali háttérkép beállítva (%1).</translation>
@@ -8976,7 +8991,7 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thum
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Remove Edits</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
             <translation>Szerkesztések eltávolítása</translation>
         </message>
         <message>
@@ -9106,25 +9121,25 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/status_label)</extracomm
         <message>
             <source>Ignore People</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::IgnorePeopleTitle;stringres:DeleteMessage::RemoveMultipleYesButtonUnknown;stringres:PeoplePanel::ConfirmRemoveTitle</extracomment>
             <translation>Személyek mellőzése</translation>
         </message>
         <message>
             <source>Ignore Person</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
             <translation>Személy mellőzése</translation>
         </message>
         <message>
             <source>Are you sure you want to move this person to the ignored people album?</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleUnknown;stringres:PeoplePanel::ConfirmRemoveMsg</extracomment>
             <translation>Biztosan áthelyezi ezt a személyt a Mellőzött emberek albumba?</translation>
         </message>
         <message>
             <source>Don't ask again, always ignore</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck</extracomment>
+picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck;stringres:ThumbUI::ConfirmUnknownCheckbox</extracomment>
             <translation>Ne kérdezzen újból, mindig hagyja figyelmen kívül</translation>
         </message>
     </context>
@@ -9133,13 +9148,13 @@ picasapy-origin-key: stringres:PeoplePanel::ConfirmRemoveCheck</extracomment>
         <message>
             <source>Add a name</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: rightdrawerpanel/peoplepanel/faceclusterpanel_%d_addname</extracomment>
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
             <translation>Név hozzáadása</translation>
         </message>
         <message>
             <source>Ignore person</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: rightdrawerpanel/peoplepanel/faceclusterpanel_%d_ignore</extracomment>
+picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;stringres:ID_IGNOREPEOPLE;stringres:PeoplePanel::ConfirmRemoveYesButton</extracomment>
             <translation>Személy mellőzése</translation>
         </message>
         <message>
@@ -9780,7 +9795,7 @@ picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
             <source>&amp;Album</source>
-            <extracomment>picasapy-origin: picasa</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Album</translation>
         </message>
         <message>
@@ -10121,15 +10136,15 @@ picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
             <source>Are you sure you want to replace the existing caption with the contents of the clipboard?
 (This operation is not undoable)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REPLACE_CAPTION</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Biztosan lecseréli a jelenlegi képfeliratot a vágólap tartalmára?
 (Ez a művelet nem vonható vissza)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="85" />
             <source>Replace</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDGo::ReplaceButton;stringres:CTextEditNode::confirmyesbutton;stringres:RestoreProc::replace</extracomment>
             <translation>Csere</translation>
         </message>
         <message>
@@ -10238,8 +10253,7 @@ picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
             <source>&amp;Sepia</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_PICTURE_SEPIA</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Szépia</translation>
         </message>
         <message>
@@ -10303,7 +10317,7 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
             <source>Reset Faces</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
             <translation>Arcok alaphelyzetbe állítása</translation>
         </message>
         <message>
@@ -10323,7 +10337,8 @@ picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
             <source>Yes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
             <translation>Igen</translation>
         </message>
         <message>
@@ -16465,7 +16480,7 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="13" />
             <source>Write Face Tags</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: write_all_facetags:write_all_facetags/window1.title</extracomment>
+picasapy-origin-key: stringres:FaceTagJob::progress;write_all_facetags:write_all_facetags/window1.title</extracomment>
             <translation>Arccímkék írása</translation>
         </message>
         <message>
@@ -16499,8 +16514,7 @@ picasapy-origin-key: write_all_facetags:write_all_facetags/allfiles.title</extra
         <message>
             <location filename="../qml/PicasaPy/XmpFacesWriteDialog.qml" line="65" />
             <source>Cancel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: write_all_facetags:write_all_facetags/button8.title</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Mégse</translation>
         </message>
     </context>
@@ -16604,15 +16618,13 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="44" />
             <source>1 photo here:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::photo_here</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>1 fotó itt:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="45" />
             <source>%d photos here:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::photos_here</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%d fotó itt:</translation>
         </message>
         <message>
@@ -16620,22 +16632,19 @@ picasapy-origin-key: stringres:geo::photos_here</extracomment>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="56" />
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
             <source>Search for these photos in Picasa</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::search_tip</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ezen fotók keresése a Picasában</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
             <source>Erase location info</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::erase_button</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Helyadatok törlése</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesMarker.qml" line="73" />
             <source>Erase map coordinates(i.e., GPS information) from these photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::erase_tip</extracomment>
+            <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>A fényképek térképi koordinátáinak (GPS-adatainak) törlése</translation>
         </message>
     </context>

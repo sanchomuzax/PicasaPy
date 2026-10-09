@@ -125,8 +125,10 @@ class _HamisLenyomatolo:
 
 def _vezerlo(tmp_path, kepszam=3, detektor=None, lenyomatolo=None):
     """Valódi `FaceScanController` HAMIS modellekkel, feltöltött indexszel."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.index import open_index, sync_tree
+    from PySide6.QtCore import QSettings
 
     konyvtar = tmp_path / "kepek"
     konyvtar.mkdir(exist_ok=True)
@@ -138,7 +140,22 @@ def _vezerlo(tmp_path, kepszam=3, detektor=None, lenyomatolo=None):
         tmp_path / "index.db",
         detector=detektor if detektor is not None else _HamisDetektor(),
         embedder=lenyomatolo if lenyomatolo is not None else _HamisLenyomatolo(),
+        settings=QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        ),
     )
+
+
+def test_a_tesztvezerlok_beallitasai_elszigeteltek(qt_app, tmp_path):
+    """A tesztduplák ne olvassák a Windows NativeFormat/registry állapotát."""
+    elso = _vezerlo(tmp_path / "elso", kepszam=1)
+    elso.setSuggestionsEnabled(False)
+    elso.setSuggestionThreshold(90)
+
+    masodik = _vezerlo(tmp_path / "masodik", kepszam=1)
+
+    assert masodik.suggestionsEnabled() is True
+    assert masodik.suggestionThreshold() == 85
 
 
 def _parbeszed(qt_app, vezerlo):
