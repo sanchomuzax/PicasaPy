@@ -3442,6 +3442,7 @@ ApplicationWindow {
                controller.propertiesOf(window.selectedIndex))
             : []
         onCloseRequested: window.ureseidAFiokot()
+        onEditTagsRequested: window.valtsFiokLapot("tags")
     }
 
     // Emberek-panel (#26): a jobb fiók negyedik panelje. EGY fejléc és

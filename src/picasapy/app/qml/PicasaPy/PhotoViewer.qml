@@ -4558,6 +4558,11 @@ Rectangle {
                        controller.propertiesOf(viewer.currentIndex))
                     : []
                 onCloseRequested: viewer.zarjaAFiokot()
+                onEditTagsRequested: {
+                    if (viewer.appWindow
+                            && viewer.appWindow.valtsFiokLapot !== undefined)
+                        viewer.appWindow.valtsFiokLapot("tags")
+                }
             }
 
             //: #2566: a másik három lap CSAK AKKOR létezik, ha a NÉZŐ
