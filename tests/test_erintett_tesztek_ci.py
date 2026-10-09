@@ -69,3 +69,12 @@ def test_tul_szeles_kivalasztasnal_a_teljes_keszlet():
 
 def test_a_futtato_es_a_workflow_valtozasa_nem_teljes_keszlet():
     assert _valaszt(["scripts/run_tests.py", ".github/workflows/ci.yml"]) == []
+
+
+def test_a_darab_fetch_depth_kifejezese_nem_esik_vissza_1_re():
+    """2026-10-09: a `&& 0 || 1` mindig 1-et adott (a 0 hamis), így a PR-darab
+    alap nélkül maradt, és a teljes készletet futtatta egy darabban."""
+    wf = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "teszt-darabok.yml"
+    sor = next(s for s in wf.read_text(encoding="utf-8").splitlines()
+               if s.strip().startswith("fetch-depth:"))
+    assert "&& 0 ||" not in sor and "'0'" in sor, sor
