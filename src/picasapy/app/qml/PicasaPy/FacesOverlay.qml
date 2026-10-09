@@ -17,9 +17,12 @@ Item {
     // {left, top, right, bottom, name} elemek relatív [0..1] koordinátákkal
     // — a FacesHelper.facesFor() visszatérési formátuma.
     property var faces: []
-    // szerkesztő mód: a rajzolás/törlés/átnevezés csak ekkor aktív — a
-    // sima megtekintésnél (facesVisible, F billentyű) az overlay csak
-    // mutat, nem fogad egérműveletet
+    // A facesVisible kapcsoló a mentett ini-kereteket mutatja. Az indexből
+    // jövő, még névtelen keret kattintásig rejtett, de a helyén fogad kattintást.
+    property bool showSavedFaces: false
+    property int selectedDetectedFaceId: -1
+    // szerkesztő mód: a mentett ini-arcok rajzolása/törlése/átnevezése csak
+    // ekkor aktív; a DB-beli névtelen felismerés kattintása nézetmódban is él.
     property bool editMode: false
     // a facesHelper hívásaihoz szükséges fájlrendszer-útvonal (a
     // PhotoViewer tölti ki: photosModel.filePathAt(currentIndex))
@@ -63,6 +66,9 @@ Item {
             readonly property real relRight: modelData.right
             readonly property real relBottom: modelData.bottom
             readonly property string personName: modelData.name || ""
+            readonly property bool detectedFace: modelData.detected === true
+            readonly property int detectedFaceId: detectedFace
+                ? Number(modelData.faceId) : -1
 
             x: relLeft * overlay.width
             y: relTop * overlay.height
@@ -70,14 +76,20 @@ Item {
             height: Math.max(0, (relBottom - relTop) * overlay.height)
 
             Rectangle {
+                visible: faceItem.detectedFace
+                    ? overlay.showSavedFaces
+                        || overlay.selectedDetectedFaceId === faceItem.detectedFaceId
+                    : overlay.showSavedFaces
                 anchors.fill: parent
                 color: "transparent"
-                border.color: "#ffd34e"
-                border.width: 2
-                radius: 2
+                // A fotó fölötti Picasa-keret nem témaszínű: a #4572
+                // referenciáján #d0d1d0 színű, egypixeles, éles sarkú vonal.
+                border.color: "#d0d1d0"
+                border.width: 1
+                radius: 0
             }
             Rectangle {
-                visible: nameLabel.text.length > 0
+                visible: overlay.showSavedFaces && nameLabel.text.length > 0
                 anchors.top: parent.bottom
                 anchors.topMargin: 2
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -100,17 +112,27 @@ Item {
             MouseArea {
                 objectName: "faceRegionArea_" + faceItem.index
                 anchors.fill: parent
-                visible: overlay.editMode
-                enabled: overlay.editMode
+                visible: overlay.editMode || faceItem.detectedFace
+                enabled: overlay.editMode || faceItem.detectedFace
                 cursorShape: Qt.PointingHandCursor
-                onClicked: overlay.openEditorFor(
-                    faceItem.relLeft, faceItem.relTop,
-                    faceItem.relRight, faceItem.relBottom,
-                    faceItem.personName, false)
+                onClicked: {
+                    if (faceItem.detectedFace) {
+                        overlay.selectedDetectedFaceId = faceItem.detectedFaceId
+                        overlay.openEditorForDetected(
+                            faceItem.relLeft, faceItem.relTop,
+                            faceItem.relRight, faceItem.relBottom,
+                            faceItem.detectedFaceId)
+                    } else {
+                        overlay.openEditorFor(
+                            faceItem.relLeft, faceItem.relTop,
+                            faceItem.relRight, faceItem.relBottom,
+                            faceItem.personName, false)
+                    }
+                }
             }
             Rectangle {
                 objectName: "faceDeleteButton_" + faceItem.index
-                visible: overlay.editMode
+                visible: overlay.editMode && !faceItem.detectedFace
                 width: 16; height: 16
                 anchors.top: parent.top; anchors.right: parent.right
                 anchors.margins: -6
@@ -300,18 +322,28 @@ Item {
     // -- névhozzárendelő popup: közös az új régióhoz és az átnevezéshez --
     property rect pendingRect: Qt.rect(0, 0, 0, 0)   // relatív [0..1]
     property bool pendingIsNew: false
+    property int pendingDetectedFaceId: -1
 
     function openEditorFor(relLeft, relTop, relRight, relBottom, currentName, isNew) {
         overlay.pendingRect = Qt.rect(relLeft, relTop, relRight - relLeft, relBottom - relTop)
         overlay.pendingIsNew = isNew
+        overlay.pendingDetectedFaceId = -1
         overlay.refreshKnownNames()
         nameField.text = currentName || ""
         editorPopup.visible = true
         nameField.forceActiveFocus()
         nameField.selectAll()
     }
+    function openEditorForDetected(relLeft, relTop, relRight, relBottom, detectedFaceId) {
+        var candidateDetectedFaceId = Number(detectedFaceId)
+        if (!(candidateDetectedFaceId > 0)) return
+        overlay.openEditorFor(relLeft, relTop, relRight, relBottom, "", false)
+        overlay.pendingDetectedFaceId = candidateDetectedFaceId
+    }
     function closeEditor() {
         editorPopup.visible = false
+        overlay.pendingDetectedFaceId = -1
+        overlay.selectedDetectedFaceId = -1
         overlay.draftRect = Qt.rect(0, 0, 0, 0)
     }
     function commitEditor() {
@@ -323,7 +355,15 @@ Item {
             overlay.closeEditor()
             return
         }
-        if (overlay.pendingIsNew)
+        if (overlay.pendingDetectedFaceId >= 0) {
+            if (!name || typeof faceScanController === "undefined"
+                    || !faceScanController) {
+                overlay.closeEditor()
+                return
+            }
+            ok = faceScanController.assignNameToFaces(
+                [overlay.pendingDetectedFaceId], name)
+        } else if (overlay.pendingIsNew)
             ok = facesHelper.addFace(overlay.imagePath, r.x, r.y, r.x + r.width, r.y + r.height, name)
         else
             ok = facesHelper.renameFace(overlay.imagePath, r.x, r.y, r.x + r.width, r.y + r.height, name)
@@ -340,45 +380,51 @@ Item {
         id: editorPopup
         objectName: "faceNameEditor"
         visible: false
-        width: 190
-        height: suggestionsColumn.visible ? 96 : 40
-        radius: 4
-        color: "#2b2b2bee"
-        border.color: "#555555"
-        x: overlay.clamp(overlay.pendingRect.x * overlay.width,
+        readonly property real nameBarHeight: overlay.width * 20 / 538
+        width: overlay.width * 204 / 538
+        height: nameBarHeight
+                + (suggestionsColumn.visible
+                   ? suggestionsColumn.implicitHeight + 4 : 0)
+        radius: 0
+        color: "#101010e8"
+        border.width: 0
+        x: overlay.clamp(
+                          (overlay.pendingRect.x
+                           + overlay.pendingRect.width / 2) * overlay.width
+                          - width / 2,
                           0, Math.max(0, overlay.width - width))
-        y: overlay.clamp(overlay.pendingRect.y * overlay.height + overlay.pendingRect.height * overlay.height + 4,
-                          0, Math.max(0, overlay.height - height))
+        // A névsáv a keret alsó élénél indul, hézag nélkül.
+        y: (overlay.pendingRect.y + overlay.pendingRect.height) * overlay.height
         z: 10
 
         Row {
             id: nameRow
             anchors.top: parent.top
             anchors.left: parent.left; anchors.right: parent.right
-            anchors.margins: 6
-            spacing: 4
+            height: editorPopup.nameBarHeight
             TextField {
                 id: nameField
                 objectName: "faceNameField"
-                width: parent.width - 56
-                placeholderText: qsTr("Name")
+                anchors.fill: parent
+                leftPadding: 4
+                rightPadding: 4
+                topPadding: 0
+                bottomPadding: 0
+                placeholderText: qsTr("Type a name")
                 font.pixelSize: Theme.fontSize - 1
+                color: "#ffffff"
+                placeholderTextColor: "#d0d0d0"
+                selectionColor: "#3096f3"
+                selectedTextColor: "#ffffff"
+                background: Rectangle {
+                    color: "transparent"
+                    border.width: 0
+                }
                 Keys.onReturnPressed: overlay.commitEditor()
+                Keys.onEnterPressed: overlay.commitEditor()
                 Keys.onEscapePressed: overlay.closeEditor()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
-            }
-            Button {
-                objectName: "faceNameOk"
-                text: "✓"
-                width: 24
-                onClicked: overlay.commitEditor()
-            }
-            Button {
-                objectName: "faceNameCancel"
-                text: "×"
-                width: 24
-                onClicked: overlay.closeEditor()
             }
         }
         // ismert nevek gyors-választása (legfeljebb 5, a beírt szöveget
