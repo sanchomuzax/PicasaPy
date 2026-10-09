@@ -46,6 +46,9 @@ ColumnLayout {
     //: pont van; nálunk kettő működött (Létrehozás menü, kimeneti sáv), a
     //: két fejléc-gomb hiányzott.
     signal collageRequested()
+    //: #4539: a mappa-fejléc film-gombja — ugyanaz a csoport-kép halmaz,
+    //: mint a kollázsnál (a fejléc SAJÁT csoportjának képei).
+    signal movieRequested()
     //: A két `faceheaderpanel` filmgomb ugyanazt a meglévő Filmkészítőt
     //: nyitja meg az aktuális személy-album képeivel.
     signal personMovieRequested()
@@ -401,6 +404,40 @@ ColumnLayout {
                 }
             }
         }
+        //: #4539: a mappa-fejléc film-gombja. Az eredeti referencia-
+        //: képernyőképén (`2026-07-17 20 54 38.png`) a kollázs UTÁN, alapból
+        //: látszik: ▸ · [+kép] · [+film] · ☆ · mentés · Feltöltés ▾. A
+        //: `headerpanel/create_movie` mért tulajdonsága `mousedown 1` —
+        //: ugyanúgy LENYOMÁSRA sül el, mint a kollázs.
+        //:
+        //: Nem testreszabható elem (mint a Feltöltés): a sor UTÁN áll, és a
+        //: `gombSorVege`-hez igazodik. Így egy régi, mentett gombsor nem
+        //: rejti el, és a sorrend (kollázs → film) megmarad, ha a kollázs
+        //: látszik. Mappa-nézetben él; a személy-album a saját film-gombjait
+        //: használja (#4212).
+        PicasaButton {
+            id: mappaFilmGomb
+            objectName: "headerMovieButton"
+            visible: header.personName === ""
+            x: header.gombSorVege
+            anchors.verticalCenter: parent.verticalCenter
+            lenyomasra: true
+            width: 29; height: 27
+            ToolTip.text: qsTr("Create Movie Presentation")
+            ToolTip.visible: hovered
+            ToolTip.delay: Theme.tooltipDelay
+            onClicked: header.movieRequested()
+            contentItem: Item {
+                Image {
+                    objectName: "headerMovieIcon"
+                    source: "icons/movie.svg"
+                    width: 16; height: 16
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                    anchors.centerIn: parent
+                }
+            }
+        }
         //: #4212: a `faceheaderpanel/create_movie` gombja. A személy-album
         //: külön fejlécpanelje nálunk a LightboxHeader személy-módja; a
         //: két filmgomb a meglévő Filmkészítőt nyitja meg az album összes
@@ -723,10 +760,11 @@ ColumnLayout {
     }
 
     //: A személy-album saját filmgombjai után folytatódik a javaslat-sor.
-    //: Mappa nézetben a régi, testreszabott fejlécgombsor vége marad a kezdőpont.
+    //: Mappa nézetben a testreszabott sor és a mappa film-gombja (#4539)
+    //: után folytatódik a Feltöltés.
     readonly property real szemelyGombSorVege: header.personName !== ""
         ? szemelyArcfilmGomb.x + szemelyArcfilmGomb.width + header.gombKoz
-        : header.gombSorVege
+        : mappaFilmGomb.x + mappaFilmGomb.width + header.gombKoz
 
     //: A gomb szélessége a sorrend-számításhoz. A `play` és a kollázs
     //: MÉRT, fix méretű; a másik kettő felirat-függő, azt az elemtől
