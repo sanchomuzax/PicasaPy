@@ -55,5 +55,6 @@ def test_az_elozo_kattintas_utan_a_qtest_idobelye_valasztja_el_a_kovetkezot():
     assert qtest.esemenyek == [
         ("click", window, button, point, 10),
         ("move", window, point + QPoint(1, 0), interval_ms + 1),
-        ("double-click", window, button, point, 10),
+        ("click", window, button, point, 10),
+        ("click", window, button, point, 10),
     ]
