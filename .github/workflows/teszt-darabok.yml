@@ -56,10 +56,16 @@ jobs:
         shard: [1, 2, 3, 4]
     env:
       QT_QPA_PLATFORM: offscreen
+      # PR-en csak az érintett app-tesztek futnak (`run_tests.py`,
+      # `erintett_app_tesztek`); push esetén üres → teljes készlet.
+      PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # az érintett-kiválasztás a PR alapjához hasonlít (git diff alap...HEAD)
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
