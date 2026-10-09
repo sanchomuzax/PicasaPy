@@ -2434,6 +2434,17 @@ ApplicationWindow {
         // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) — a
         // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
         visible: !window.viewerOpen && window.libraryFrameVisible
+        searchSuggestionsVisible: searchSuggestionsBox.visible
+        onSearchSuggestionKeyPressed: function(key) {
+            if (key === Qt.Key_Down)
+                searchSuggestionsBox.moveSelection(1)
+            else if (key === Qt.Key_Up)
+                searchSuggestionsBox.moveSelection(-1)
+            else if (key === Qt.Key_Return || key === Qt.Key_Enter)
+                searchSuggestionsBox.chooseSelected()
+            else if (key === Qt.Key_Escape)
+                searchSuggestionsBox.dismiss()
+        }
         onSearchEdited: function(text) {
             window.clearSelection()
             controller.search(text)

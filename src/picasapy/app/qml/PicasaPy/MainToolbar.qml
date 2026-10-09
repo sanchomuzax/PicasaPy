@@ -40,6 +40,9 @@ Rectangle {
     signal searchEdited(string text)
     // a törlő × gomb: a mező már üres, a nézet álljon vissza
     signal searchCleared()
+    // A nyitott javaslatlista billentyűit a Main.qml fordítja műveletre.
+    property bool searchSuggestionsVisible: false
+    signal searchSuggestionKeyPressed(int key)
     // #23: az "Import" gomb — a megnyitást a Main.qml végzi (ImportSourceDialog)
     signal importRequested()
     //: #1421: az eredeti `newalbum` gombja — ugyanaz a párbeszéd,
@@ -783,6 +786,19 @@ Rectangle {
                     verticalAlignment: TextInput.AlignVCenter
                     selectByMouse: true
                     onTextEdited: toolbar.searchEdited(text)
+                    Keys.priority: Keys.BeforeItem
+                    Keys.onPressed: function (event) {
+                        if (!toolbar.searchSuggestionsVisible)
+                            return
+                        if (event.key === Qt.Key_Down
+                                || event.key === Qt.Key_Up
+                                || event.key === Qt.Key_Return
+                                || event.key === Qt.Key_Enter
+                                || event.key === Qt.Key_Escape) {
+                            toolbar.searchSuggestionKeyPressed(event.key)
+                            event.accepted = true
+                        }
+                    }
                     Text {
                         visible: searchField.text.length === 0
                                  && !searchField.activeFocus
