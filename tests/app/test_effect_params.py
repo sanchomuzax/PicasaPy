@@ -42,7 +42,7 @@ class TestCatalogueShape:
     @pytest.mark.parametrize(
         "name",
         [
-            "unsharp", "sat", "vignette", "glow2", "radblur", "boost",
+            "unsharp", "sat", "vignette", "glow", "glow2", "radblur", "boost",
             "polaroid", "border", "dropshadow", "museummatte", "holga",
             "matte", "nightvision", "hdr", "orton", "quantizepalette",
             "pixelate", "lomo", "localcontrast", "heatmap", "roundededges",
@@ -65,6 +65,10 @@ class TestCatalogueShape:
     def test_unknown_effect_has_no_params(self):
         assert effect_params("nincs-ilyen") == ()
         assert has_params("nincs-ilyen") is False
+
+    def test_legacy_glow_reuses_the_glow2_slider_contract(self):
+        """A Shift+Glow ugyanazt az Intensity/Radius panelt használja."""
+        assert effect_params("glow") == effect_params("glow2")
 
 
 class TestFilterdescRegistry42Table:

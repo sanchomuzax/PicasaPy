@@ -971,7 +971,7 @@ Forrás: `0x007319f0` **szűretlen** sztringlistája + `stringres-en-hu.tsv`.
 | 15 | `ID_ALBUM_DELETE` | &Delete Folder… | &Mappa törlése… | ❌ **`placeholder: true`** (`:222`) |
 | 16 | `ID_ONLINE_ACTIONS` | Online Actions (almenü) | — | ⚠️ nálunk laposan, csoport nélkül |
 | 17 | `ID_ALBUM_MAKE_WEB` | E&xport as HTML Page… | — | ✅ `:241` (#534 szerint a funkció hiányzik) |
-| 18 | `ID_ALBUM_FILTERFACES` | &Add name tags | — | ❌ `placeholder: true` (`:247`) — #26 |
+| 18 | `ID_ALBUM_FILTERFACES` | &Add name tags | — | ✅ a kiválasztott mappa képein indít név-címkézést (#4535) |
 
 Az `Online Actions` almenü alatt: `ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS`,
 `ID_UPLOAD_ALBUM_TO_LIGHTHOUSE`, `ID_ALBUM_MAKE_WEB`. Nálunk az `AlbumContextMenu.qml:107`

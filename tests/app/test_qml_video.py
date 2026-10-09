@@ -12,6 +12,7 @@ kötés van meg, az `importorskip` átengedi a tesztet, a próba pedig
 környezeti hiányról szól, nem a kódról. Ezért MINDKETTŐT ellenőrizzük.
 """
 
+import importlib.util
 import os
 import re
 import socket
@@ -20,6 +21,38 @@ import sys
 from pathlib import Path
 
 import pytest
+
+
+def test_dupla_kattintas_ket_teljes_kattintasbol_all():
+    """A szintetikus dupla kattintás első lenyomása is érje el a QML-t."""
+    probe_path = Path(__file__).with_name("qml_video_probe.py")
+    spec = importlib.util.spec_from_file_location("qml_video_probe", probe_path)
+    assert spec is not None and spec.loader is not None
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+
+    class FakeQTest:
+        calls = []
+
+        @classmethod
+        def mouseClick(cls, *_args, **_kwargs):
+            cls.calls.append("click")
+
+        @classmethod
+        def mouseDClick(cls, *_args, **_kwargs):
+            cls.calls.append("double-click")
+
+    probe.qtest_egerlepes(
+        FakeQTest,
+        window=object(),
+        point=object(),
+        button=None,
+        double_click_interval_ms=400,
+        dupla=True,
+        elozo_gesztus_volt=False,
+    )
+
+    assert FakeQTest.calls == ["click", "click"]
 
 
 def _qml_modul_hianyzik(nev: str) -> bool:
