@@ -145,21 +145,30 @@ def background_bmp_path(backgrounds_dir: Path) -> Path:
 
 
 def write_background_bmp(source_image: Path, backgrounds_dir: Path) -> Path:
-    """A képet BMP-ként a Hátterek mappába írja, és visszaadja az útvonalát.
+    """A szerkesztett, EXIF-helyes képet BMP-ként a Hátterek mappába írja.
 
     BMP, mert az eredeti is azt ír — és mert a legtöbb asztali környezet
-    beolvassa. A mappát létrehozzuk, ha nincs.
+    beolvassa. A `.picasa.ini` forgatását, tükrözését, vágását és
+    szűrőláncát ugyanazzal a pixelrenderelővel égetjük bele, mint a poszter
+    és az export kimenetébe. A mappát létrehozzuk, ha nincs.
     """
-    from PySide6.QtGui import QImage
+    from picasapy.lazy_cv2 import cv2
+    from picasapy.printing.poster import render_edited_image
 
-    kep = QImage(str(source_image))
-    if kep.isNull():
-        raise OSError(f"a kép nem olvasható: {source_image}")
+    try:
+        kep = render_edited_image(Path(source_image))
+    except (OSError, ValueError, cv2.error) as hiba:
+        raise OSError(f"a kép nem olvasható: {source_image}") from hiba
     cel_mappa = Path(backgrounds_dir)
     cel_mappa.mkdir(parents=True, exist_ok=True)
     cel = background_bmp_path(cel_mappa)
-    if not kep.save(str(cel), "BMP"):
+    try:
+        sikeres, kodolt = cv2.imencode(".bmp", kep)
+    except cv2.error as hiba:
+        raise OSError(f"a BMP kódolása nem sikerült: {cel}") from hiba
+    if not sikeres:
         raise OSError(f"a BMP kiírása nem sikerült: {cel}")
+    cel.write_bytes(kodolt.tobytes())
     return cel
 
 
