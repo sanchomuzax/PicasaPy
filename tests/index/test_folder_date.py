@@ -82,6 +82,11 @@ class TestMigrationV3:
         raw.execute("ALTER TABLE photos DROP COLUMN flip_flags")
         # #4332: a dátumfelülírás a v20-ban érkezik
         raw.execute("ALTER TABLE photos DROP COLUMN taken_at_override")
+        # #4580: a videómezők csak a v21-ben érkeznek
+        raw.execute("DROP INDEX idx_photos_video_metadata_missing")
+        raw.execute("ALTER TABLE photos DROP COLUMN movie_format")
+        raw.execute("ALTER TABLE photos DROP COLUMN frame_rate")
+        raw.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
         # #26: a face/face_group táblákat is eldobjuk, hogy a 8→9→10
         # migrációs lánc (nem idempotens ALTER-t is tartalmaz) a valódi
         # útvonalon fusson, ne a friss DDL-ből örökölt, már bővített táblán
