@@ -143,6 +143,11 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # mag előjel szerint két külön magra ágazik (#693). Az alapérték a
     # filterdesc-ből: 0,1618 (nem kerek szám — mérés, nem tipp).
     "sat": (_p("saturation", "Saturation", -1.0, 1.0, 0.1618, 0.01),),
+    # #4557: a régi Glow Shift+Ragyogásként ugyanazt a két csúszkát adja.
+    "glow": (
+        _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
+        _p("radius", "Radius", 0.0, 100.0, 20.0),
+    ),
     # glow2=1,intenzitás,sugár
     "glow2": (
         # #2236: az alapérték 0,5 -> 0,65 a regiszterből.
