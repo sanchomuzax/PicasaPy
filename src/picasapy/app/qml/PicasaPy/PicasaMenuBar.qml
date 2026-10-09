@@ -2246,14 +2246,6 @@ MenuBar {
         }
         PicasaMenu {
             title: qsTr("Experimental")
-            // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta
-            MenuItem {
-                objectName: "menuToolsMoveDatabase"
-                //: #2142: a MÉRT felirat (`eMenuTools::ID_MOVE_DATABASE`) —
-                //: nem „Move Database...". Az eredetiben ez a 8. tétel.
-                text: qsTr("Choose database location...")
-                onTriggered: bar.moveDatabaseRequested()
-            }
             // #2142: a duplikátum-kereső az eredetiben a KÍSÉRLETI almenü
             // MÁSODIK tétele (`eMenuTools::ID_DUPES`, „Show Duplicate
             // Files"), nem a felső szinté. A #1794 mérte ki az Eszközök
@@ -2381,6 +2373,16 @@ MenuBar {
                 //: a kijelölt képre szól
                 enabled: bar.photoActionsEnabled && !bar.editorActive
                 onTriggered: bar.passportPhotoRequested()
+            }
+            // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta.
+            // #4635: a mért sorrendben a Passport photo után, a Write faces
+            // to XMP előtt áll (a kilencből a nyolcadik).
+            MenuItem {
+                objectName: "menuToolsMoveDatabase"
+                //: #2142: a MÉRT felirat (`eMenuTools::ID_MOVE_DATABASE`) —
+                //: nem „Move Database...". Az eredetiben ez a 8. tétel.
+                text: qsTr("Choose database location...")
+                onTriggered: bar.moveDatabaseRequested()
             }
             //: #1403: `eMenuTools::ID_WRITE_XMP_FACES` — a Kísérleti almenü
             //: UTOLSÓ tétele (`0xd6e838`, mérve). A MEGLÉVŐ XMP-építőt köti be
