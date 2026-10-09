@@ -104,12 +104,16 @@ Item {
 def _buborek_hoverre(qt_app, window, probe, target) -> bool:
     """Az egeret a célra viszi, és kivárja, hogy a buborék megjelenjen."""
     pont = target.mapToScene(target.boundingRect().center()).toPoint()
+    # előbb el a céltól: ugyanarra a pontra mozgatás nem ad belépést (hover)
+    QTest.mouseMove(window, QPoint(1, 1))
+    qt_app.processEvents()
 
     def ra_mutat() -> bool:
         QTest.mouseMove(window, pont)
         return bool(probe.property("isVisible"))
 
-    return _wait_for(qt_app, ra_mutat)
+    # a 600 ms-os késleltetés a terhelt CI-gépen lassabban jár le
+    return _wait_for(qt_app, ra_mutat, timeout_ms=8000)
 
 
 def _buborek_eltunik(qt_app, window, probe) -> bool:
