@@ -120,6 +120,7 @@ class TestAValasztasErvenyesitese:
             "picasapy.app.email_controller._which",
             return_value="/usr/bin/xdg-email",
         ), patch("picasapy.app.email_controller._popen") as popen:
+            popen.return_value.wait.return_value = 0
             eredmeny = vezerlo.sendWithDefaultClient(
                 ["/tmp/a.jpg"], "Tárgy", "Szöveg", False
             )
@@ -137,7 +138,8 @@ class TestAValasztasErvenyesitese:
         with patch(
             "picasapy.app.email_controller._which",
             return_value="/usr/bin/xdg-email",
-        ), patch("picasapy.app.email_controller._popen"):
+        ), patch("picasapy.app.email_controller._popen") as popen:
+            popen.return_value.wait.return_value = 0
             vezerlo.sendWithDefaultClient(
                 ["/tmp/a.jpg"], "Tárgy", "Szöveg", True
             )
@@ -152,7 +154,8 @@ class TestAValasztasErvenyesitese:
         with patch(
             "picasapy.app.email_controller._which",
             return_value="/usr/bin/xdg-email",
-        ), patch("picasapy.app.email_controller._popen"):
+        ), patch("picasapy.app.email_controller._popen") as popen:
+            popen.return_value.wait.return_value = 0
             vezerlo.sendWithDefaultClient(
                 ["/tmp/a.jpg"], "Tárgy", "Szöveg", False
             )

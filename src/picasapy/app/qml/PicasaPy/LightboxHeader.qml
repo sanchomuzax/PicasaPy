@@ -68,6 +68,9 @@ ColumnLayout {
     //: `confirmsug` / `confirmsel` — a javaslatok jóváhagyása; a hatókört
     //: a gazda a kijelölésből dönti el
     signal confirmSuggestionsRequested()
+    //: `selectsug` — a jelenlegi személy függő javaslatait tartalmazó képek
+    //: kijelölése a rácsban
+    signal selectSuggestionsRequested()
     //: `removesel` — a javaslatok elvetése (a kijelöltek, vagy ha nincs
     //: kijelölt javaslat, mind)
     signal removeSuggestionsRequested()
@@ -473,9 +476,32 @@ ColumnLayout {
         //: nálunk a ház szokása (`gombKoz`), nem az eredeti 3 képpontja:
         //: a fejléc minden gombja így áll egymás mellett (#1792).
         PicasaButton {
+            id: javaslatKijeloloGomb
+            objectName: "headerSelectSuggestionsButton"
+            x: header.szemelyGombSorVege
+            anchors.verticalCenter: parent.verticalCenter
+            visible: header.javaslatokLatszanak
+            width: 29; height: 27
+            hoverEnabled: true
+            onClicked: header.selectSuggestionsRequested()
+            contentItem: Item {
+                Image {
+                    objectName: "headerSelectSuggestionsIcon"
+                    source: "icons/collage-check.svg"
+                    width: 16; height: 16
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                    anchors.centerIn: parent
+                }
+            }
+        }
+        PicasaButton {
             id: javaslatSzuroGomb
             objectName: "headerSuggestionFilterButton"
-            x: header.szemelyGombSorVege
+            x: javaslatKijeloloGomb.visible
+                ? javaslatKijeloloGomb.x + javaslatKijeloloGomb.width
+                  + header.gombKoz
+                : header.szemelyGombSorVege
             anchors.verticalCenter: parent.verticalCenter
             visible: header.javaslatSzuroLatszik
             width: 29; height: 27

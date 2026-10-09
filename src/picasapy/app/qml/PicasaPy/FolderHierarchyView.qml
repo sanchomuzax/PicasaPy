@@ -68,6 +68,10 @@ Item {
     readonly property alias rowCount: list.count
 
     signal folderChosen(string path)
+    // A képes mappák a FolderPane teljes mappa-menüjét használják; az
+    // indexen kívüli, saját képet nem tartalmazó köztes sorok maradnak a
+    // HierFolder rövid menüjénél.
+    signal folderContextMenuRequested(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
     // gazdában van (`FUN_00733a40`): a komponens csak jelez, nem cselekszik.
     signal locateOnDiskRequested(string path)
@@ -320,7 +324,13 @@ Item {
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onClicked: function (mouse) {
                     if (mouse.button === Qt.RightButton) {
-                        if (!row.isRoot) root.openContextMenu(row.modelData.path)
+                        if (!row.isRoot) {
+                            if (row.modelData.own > 0)
+                                root.folderContextMenuRequested(
+                                    row.modelData.path)
+                            else
+                                root.openContextMenu(row.modelData.path)
+                        }
                         return
                     }
                     // #3681: mentés-szűrő módban a mentetlen sor egy pipa —

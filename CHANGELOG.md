@@ -7,6 +7,32 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.46] – 2026-10-09
+
+- A fanézet képes mappasorain mostantól a teljes, a köztes sorokon a rövid helyi menü nyílik meg (#4529).
+- A keresősáv javaslatai már billentyűzettel is kiválaszthatók. (#4530).
+- A fókuszos effektek fókuszpontja a képen húzható, a Színátmenet iránya együtt fordul (#4553).
+- Az Árnyalás színét mostantól kiválaszthatod, és a beállítás megmarad a képen és a szerkesztési adatokban (#4554).
+- A Ceruzarajz csúszkái a specifikáció szerinti Sugár, Erősség és Fokozat neveket, tartományokat és alapértékeket használják (#4555).
+- Az effektcsempék előnézete minden alkalmazott effekt után a frissített szerkesztési láncot mutatja (#4561).
+- A személyalbum fejlécén most egy kattintással kijelölhetők a javasolt képek (#4588).
+- A mappák saját gyűjteményhez sorolása a .picasa.ini-ben tárolódik és onnan töltődik vissza (#4589).
+- A nyomtatás a szerkesztett, helyesen tájolt képet és a RAW-fotókat is kezeli (#4602).
+- A Poszter az EXIF-tájolást és a mentett szerkesztéseket követő képből készíti a lapokat (#4603).
+- KDE Plasma és labwc/wlroots asztalon is a helyi háttérkép-kezelő állítja be az asztal hátterét (#4605).
+- Küldési hibaüzenet jelenik meg, ha nincs beállított levelezőprogram (#4606).
+- Film újraexportálásakor választható a korábbi film cseréje vagy egy új fájl létrehozása. (#4612).
+- A film a Picasa-feliratot jeleníti meg, ennek hiányában az EXIF-leírást használja (#4616).
+- Bekapcsolt javaslatoknál a sikeres arcfelismerés után a program automatikusan csoportosít és névjavaslatokat készít (#4619).
+- Az XMP-arcinformációk kiírása előtt választható a kijelölt, arcos vagy összes kép (#4634).
+- Az e-mail címzett mező Automatikus kitöltés menüpontja most pipás, és a beállítás újraindítás után is megmarad (#4636).
+- A fotónéző dupla kattintásos kilépési próbája már naplózza az esemény célpontját és a lenyomáskezelés állapotát (#4683).
+- Windows induláskor naplózza a megállás szakaszát, és jelzi a nem támogatott PySide6-verziót (#4687).
+- Az Eszközök keresési almenüje már a fekete-fehér képekre is keres. (#4689).
+- A Dátum és idő beállítása a képfájl EXIF-dátumát és a mért fájlidőket módosítja, a `.picasa.ini` érintése nélkül (#4693).
+- A szerkesztőnézetben a Ctrl+9 kapcsolja a bal fiókot. (#4696).
+- Az F5 újraolvassa az aktuális mappát, és frissíti a keresési találatokat (#4697).
+
 ## [0.9.45] – 2026-10-08
 
 - A Létrehozás ▸ Film menüből már az összes nem üres Emberek-album képeiből is indítható film (#4633).
