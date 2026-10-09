@@ -313,9 +313,11 @@ class TestUnnamedAlbum:
         raise AssertionError(f"{target} nem található/nem látszik a rácson")
 
     def test_nothing_selected_is_text3(self, qml_app, qt_app, tmp_path):
-        """A Text3 a „Név nélküliek" mód üres esete — csak ott."""
+        """A Text3 a „Név nélküliek" mód 0 kijelölés esete, NEM üres gyűjteménynél
+        (#4585: üres gyűjteménynél a Text1 áll). Van névtelen arc, nincs kijelölés."""
         window, controller, _engine = qml_app
         _library(window, controller, qt_app, tmp_path)
+        self._seed_unnamed_face(tmp_path, "c.jpg")
 
         self._open(window, qt_app)
 

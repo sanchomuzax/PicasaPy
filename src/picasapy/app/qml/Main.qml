@@ -3424,6 +3424,9 @@ ApplicationWindow {
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
+        // #4585: a Névtelenek GYŰJTEMÉNYE üres (az Ignored album nem ide tartozik)
+        unnamedCollectionEmpty: window.facesAlbumMode === "unnamed"
+                                && unnamedFacesView.groupsModel.length === 0
         // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a
         // `currentPersonName` az előző személyé marad — az albumban nincs
         // „nézett személy", tehát a „Szintén" lista sem

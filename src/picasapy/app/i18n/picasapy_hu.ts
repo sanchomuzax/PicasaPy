@@ -9066,6 +9066,32 @@ picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
             <translation>Itt jelennek meg azok az emberek, akik a kijelölt fotókon szerepelnek.</translation>
         </message>
         <message>
+            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter. A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Text1(peoplepanel/instructions);peoplepanel_text:Text2(peoplepanel/instructions)</extracomment>
+            <translation>A Picasa a fotókeresés közben az egyszerű elnevezés érdekében automatikusan csoportosítja az arcokat.
+
+Fontos tudnivalók:
+
+A személyek nevének megadásához kattintson a Név hozzáadása elemre, írja be a személy nevét, majd nyomja le az Enter billentyűt. Minden alkalommal, amikor először nevez el valakit, a rendszer egy, az adott személyhez tartozó albumot hoz létre.
+
+(TIPP: Ha az elnevezés közben az összes névjegyét el szeretné érni, jelentkezzen be Google-fiókjával.)
+
+Ha figyelmen kívül szeretne hagyni valakit, kattintson az arc indexképén látható X gombra.
+
+Javaslatok: Az elnevezést követően előfordulhat, hogy a Picasa további képjavaslatokat tesz. Ha meg szeretné tekinteni, illetve el szeretné fogadni (vagy elutasítaná) a javaslatokat, nyissa meg az adott személyhez tartozó albumot.</translation>
+        </message>
+        <message>
             <source>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Még nem találtunk embereket. Ahogy az arcok előkerülnek és csoportba rendeződnek, megjelennek a Névtelenek albumban.</translation>
