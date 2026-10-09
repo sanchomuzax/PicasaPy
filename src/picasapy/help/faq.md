@@ -263,6 +263,14 @@ szerkesztett vagy letöltött képnél előfordul.
 
 ## Ha valami mégis elromlik
 
+Ha a program el sem indul, nézd meg a **hibanaplót**: az `errorlog.txt`
+fájlba a program az indulás minden lépését beírja, így látszik, meddig
+jutott. Linuxon a `~/.local/share/picasapy/` mappában, Windowson a
+`%LOCALAPPDATA%\PicasaPy\` mappában van (ha az adatbázist áthelyezted,
+akkor ott). A napló azt is kiírja, melyik PySide6- és Qt-változattal fut
+a program; a PySide6 6.12-es és újabb változatát a program még nem
+támogatja, erre külön figyelmeztet.
+
 A **Súgó ▸ Teljesítmény-monitor** panelen a **Diagnosztika mentése…**
 gombbal fájlba mentheted, mi történik a programban. Lassú indulásnál
 kapcsold be a **Súgó ▸ Tesztüzem (a következő indulást naplózza)**

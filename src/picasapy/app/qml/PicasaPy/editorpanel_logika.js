@@ -71,16 +71,17 @@ function hasEffectController() {
     return typeof editController !== "undefined" && editController !== null
 }
 
-// az adott effekt bélyegkép-URL-je, vagy "" ha nincs aktív szerkesztés
+// Az adott effekt bélyegkép-URL-je, vagy "" ha nincs aktív szerkesztés
 // (a hívó PanelButton ilyenkor a régi sima kinézetére esik vissza). A
-// fotó ALAP állapotán mutatja az effektet (nem a jelenlegi szerkesztési
-// láncon) — ld. effect_thumbnails.py modul-docstringjének indoklását.
-// NINCS "?rev="-féle cache-buster: a bélyegkép csak a FOTÓTÓL függ, a
-// szerkesztési lánc (undo/redo/csúszka-húzás) nem érvényteleníti — ez
-// adja a kért "effektenként csak egyszer" gyorsítótárazást.
+// #2273 szerinti aktuális szerkesztési lánc kerül a szolgáltatóhoz, hogy
+// minden alkalmazott effekt után a csempék is az új állapotból induljanak.
 function effectThumbSource(effectName) {
     if (panel.effectThumbPhotoId === "") return ""
-    return "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
+    var source = "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
+    // A régi, szűk QML-tesztcsonkokon nincs effectChain property. A valódi
+    // EditController mindig kiteszi, és a revisionChanged frissíti ezt a kötést.
+    if (typeof editController.effectChain === "undefined") return source
+    return source + "?filters=" + encodeURIComponent(editController.effectChain)
 }
 
 function hasBadge(effectName) {

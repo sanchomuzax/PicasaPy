@@ -229,7 +229,7 @@ def _build_qml_app(qt_app, tmp_path):
         index_path=db,
         settings=settings,
     )
-    faces_helper = FacesHelper()
+    faces_helper = FacesHelper(db)
     # #26 (3. lépcső) — az application.py bekötésének tükre
     face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
     # Időrend nézet (#24) — az application.py bekötésének tükre: a
