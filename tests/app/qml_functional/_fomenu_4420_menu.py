@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 import time
 from pathlib import Path
+from weakref import WeakKeyDictionary
 
 import shiboken6
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QSettings, Qt
@@ -149,8 +150,8 @@ _QML_ELEMEK: list[object] = []
 _UI_ELEMEK: dict[int, list[tuple[QObject, str, str]]] = {}
 _DIALOG_ELEMEK: dict[int, list[QObject]] = {}
 _LOADER_ELEMEK: dict[int, list[QObject]] = {}
-_MENU_ELEMEK: dict[int, list[QObject]] = {}
-_MENU_FEJLECEK: dict[int, list[QObject]] = {}
+_MENU_ELEMEK: WeakKeyDictionary[QObject, list[QObject]] = WeakKeyDictionary()
+_MENU_FEJLECEK: WeakKeyDictionary[QObject, list[QObject]] = WeakKeyDictionary()
 
 
 def _varj(qt_app, feltetel, masodperc: float = 3.0) -> bool:
@@ -210,14 +211,18 @@ def _menupont(menu, index: int) -> QQuickItem | None:
 
 
 def _menuk(menu_bar) -> list[QObject]:
-    azon = id(menu_bar)
-    if azon not in _MENU_ELEMEK:
-        _MENU_ELEMEK[azon] = [
+    # Az app minden QML-próbánál új MenuBar-t épít. A Python `id()` a régi
+    # ablak lebontása után újra kiosztható, ezért a gyorsítótár kulcsa az élő
+    # QObject legyen, gyenge hivatkozással.
+    if menu_bar not in _MENU_ELEMEK:
+        _MENU_ELEMEK[menu_bar] = [
             elem
             for elem in menu_bar.findChildren(QObject)
             if shiboken6.isValid(elem) and _menu_e(elem)
         ]
-    return [elem for elem in _MENU_ELEMEK[azon] if shiboken6.isValid(elem)]
+    return [
+        elem for elem in _MENU_ELEMEK[menu_bar] if shiboken6.isValid(elem)
+    ]
 
 
 def _almenu(menu_bar, szulo, sor):
@@ -331,19 +336,27 @@ def _kattints_qobject(qt_app, elem) -> None:
 
 
 def _gyoker_menu(menu_bar, cim: str):
-    jeloltek = [
-        menu
-        for menu in _menuk(menu_bar)
-        if _normalizal(_szoveg(menu, "title")) == _normalizal(cim)
-    ]
+    """A MenuBar közvetlen menüi közül válassza ki a felső menüpontot."""
+    jeloltek = []
+    for index in range(int(menu_bar.property("count") or 0)):
+        kifejezes = QQmlExpression(
+            qmlContext(menu_bar), menu_bar, f"menuAt({index})"
+        )
+        menu, hiba = kifejezes.evaluate()
+        assert not hiba, kifejezes.error()
+        if (
+            menu is not None
+            and shiboken6.isValid(menu)
+            and _normalizal(_szoveg(menu, "title")) == _normalizal(cim)
+        ):
+            jeloltek.append(menu)
     assert len(jeloltek) == 1, f"a felső {cim} menü nem egyértelmű"
     return jeloltek[0]
 
 
 def _menu_fejlec(menu_bar, cim: str):
-    azon = id(menu_bar)
-    if azon not in _MENU_FEJLECEK:
-        _MENU_FEJLECEK[azon] = [
+    if menu_bar not in _MENU_FEJLECEK:
+        _MENU_FEJLECEK[menu_bar] = [
             elem
             for elem in menu_bar.findChildren(QObject)
             if isinstance(elem, QObject)
@@ -352,7 +365,7 @@ def _menu_fejlec(menu_bar, cim: str):
         ]
     jeloltek = [
         elem
-        for elem in _MENU_FEJLECEK[azon]
+        for elem in _MENU_FEJLECEK[menu_bar]
         if shiboken6.isValid(elem)
         and _normalizal(_szoveg(elem, "text")) == _normalizal(cim)
     ]
