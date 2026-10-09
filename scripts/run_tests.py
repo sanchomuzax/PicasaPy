@@ -1585,8 +1585,30 @@ def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
         print(f"  {sor}", flush=True)
 
 
+#: PR-en e fölött az érintett app-tesztfájl-szám fölött négy darab fut.
+_EGY_DARAB_MAX = 60
+
+
+def _darabszam_kimenet() -> int:
+    """`--darabszam`: a PR CI-jának darabszáma GITHUB_OUTPUT-formában."""
+    app_dir = _ROOT / "tests" / "app"
+    app = [str(p.relative_to(_ROOT)) for p in sorted(app_dir.glob("test_*.py"))
+           + sorted((app_dir / "qml_functional").glob("test_*.py"))]
+    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
+    valasztott = erintett_app_tesztek(
+        app, _valtozott_fajlok(alap) if alap else None,
+        lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+    )
+    egy = len(valasztott) <= _EGY_DARAB_MAX
+    print(f"darabok={'[1]' if egy else '[1,2,3,4]'}")
+    print(f"darabszam={'1' if egy else '4'}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--darabszam" in argv:
+        return _darabszam_kimenet()
     cov = "--cov" in argv
 
     if cov:
