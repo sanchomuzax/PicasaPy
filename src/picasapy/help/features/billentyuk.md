@@ -184,5 +184,6 @@ eredeti magyar Picasában. Az **Alt** és az aláhúzott betű együtt nyitja a
 menüt (**Alt+F** a Fájl, **Alt+N** a Nézet, **Alt+Z** a Szerkesztés), a
 nyitott menüben pedig már a puszta betű választ tételt.
 
-> A **Súgó ▸ Billentyűkódok** menüpont még nem működik — a billentyűk
-> listája ez a lap.
+> A **Súgó ▸ Billentyűkódok** menüpont megnyitja a ténylegesen bekötött
+> gyorsbillentyűk listáját. A billentyűket a program a működő QML
+> `Shortcut`-okból olvassa, ezért a súgó a kötésekkel együtt frissül.
