@@ -2089,6 +2089,16 @@ Rectangle {
                                  ? photoArea.fokuszKep.paintedWidth
                                    / photoArea.fokuszKep.paintedHeight
                                  : 4 / 3
+                    // #4549: a vágó felirata a valódi, EXIF szerint
+                    // megjelenített képméretből és az overlay kijelöléséből
+                    // áll össze; a `sourceSize` csak betöltési plafon lenne.
+                    imagePixelWidth: viewer.valodiSzelesseg
+                    imagePixelHeight: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.pixelHeightAt(viewer.aktivSor))
+                        : 0
+                    cropRect: cropOverlay.cropRect
+                    cropHasSelection: cropOverlay.hasSelection
                     // Visszavonás/Újra — a controller undo-verméből (#59).
                     // #465: a KÉSZ feliratot a controller adja
                     // (`edit_action_names` névtár), hogy a lánc minden
@@ -3580,10 +3590,51 @@ Rectangle {
                             - photoArea.fokuszKep.paintedHeight) / 2
                         width: photoArea.fokuszKep.paintedWidth
                         height: photoArea.fokuszKep.paintedHeight
-                        cursorShape: Qt.CrossCursor
+                        // A Picasa a `thumbui/circlecursor` elemmel helyettesíti
+                        // a rendszermutatót. A kör mérete egyezzen a retusáló
+                        // patch tényleges, modellből kapott sugarával.
+                        cursorShape: ctrlPanning ? Qt.CrossCursor : Qt.BlankCursor
                         property bool ctrlPanning: false
                         property real panLastX: 0
                         property real panLastY: 0
+                        property real retouchTargetX: 0
+                        property real retouchTargetY: 0
+                        property real retouchSourceX: 0
+                        property real retouchSourceY: 0
+                        property bool hasRetouchTarget: false
+                        property bool hasRetouchSource: false
+                        property bool committingRetouchPatch: false
+                        readonly property real brushRadius:
+                            (editController
+                             && editController.retouchBrushRadiusRatio !== undefined
+                                ? editController.retouchBrushRadiusRatio : 0)
+                            * Math.min(width, height)
+
+                        function torolRetouchJeloleseket() {
+                            hasRetouchTarget = false
+                            hasRetouchSource = false
+                        }
+
+                        onVisibleChanged: {
+                            if (!visible) {
+                                torolRetouchJeloleseket()
+                                ctrlPanning = false
+                            }
+                        }
+
+                        Connections {
+                            target: editorPanel
+                            function onRetouchPatchPendingChanged() {
+                                if (!editorPanel.retouchPatchPending
+                                        && !retouchClickArea.committingRetouchPatch)
+                                    retouchClickArea.torolRetouchJeloleseket()
+                            }
+                            function onRetouchRegionCountChanged() {
+                                if (editorPanel.retouchRegionCount === 0
+                                        && !editorPanel.retouchPatchPending)
+                                    retouchClickArea.torolRetouchJeloleseket()
+                            }
+                        }
                         onPressed: function(mouse) {
                             if (mouse.modifiers & Qt.ControlModifier) {
                                 ctrlPanning = true
@@ -3609,12 +3660,84 @@ Rectangle {
                             // Ctrl+húzás UTÁNi felengedés is "clicked"-et vált
                             // ki QML-ben — ez NEM patch-kattintás
                             if (mouse.modifiers & Qt.ControlModifier) return
-                            if (editController.retouchPatchPending)
+                            if (editController.retouchPatchPending) {
+                                retouchSourceX = mouse.x / width
+                                retouchSourceY = mouse.y / height
+                                hasRetouchSource = true
+                                committingRetouchPatch = true
                                 editController.commitRetouchPatch(
                                     mouse.x / width, mouse.y / height)
-                            else
+                                committingRetouchPatch = false
+                            } else {
+                                retouchTargetX = mouse.x / width
+                                retouchTargetY = mouse.y / height
+                                hasRetouchTarget = true
+                                hasRetouchSource = false
                                 editController.beginRetouchPatch(
                                     mouse.x / width, mouse.y / height)
+                            }
+                        }
+
+                        Component {
+                            id: retouchCircleComponent
+                            Item {
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: "transparent"
+                                    radius: width / 2
+                                    border.width: 2
+                                    border.color: "#000000"
+                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 2
+                                    color: "transparent"
+                                    radius: width / 2
+                                    border.width: 1
+                                    border.color: "#ffffff"
+                                }
+                            }
+                        }
+
+                        Loader {
+                            id: retouchTargetCircle
+                            objectName: "retouchTargetCircle"
+                            sourceComponent: retouchCircleComponent
+                            visible: retouchClickArea.hasRetouchTarget
+                            width: 2 * retouchClickArea.brushRadius
+                            height: width
+                            x: retouchClickArea.retouchTargetX
+                                * retouchClickArea.width - width / 2
+                            y: retouchClickArea.retouchTargetY
+                                * retouchClickArea.height - height / 2
+                            z: 1
+                        }
+
+                        Loader {
+                            id: retouchSourceCircle
+                            objectName: "retouchSourceCircle"
+                            sourceComponent: retouchCircleComponent
+                            visible: retouchClickArea.hasRetouchSource
+                            width: 2 * retouchClickArea.brushRadius
+                            height: width
+                            x: retouchClickArea.retouchSourceX
+                                * retouchClickArea.width - width / 2
+                            y: retouchClickArea.retouchSourceY
+                                * retouchClickArea.height - height / 2
+                            z: 2
+                        }
+
+                        Loader {
+                            id: retouchBrushCursor
+                            objectName: "retouchBrushCursor"
+                            sourceComponent: retouchCircleComponent
+                            visible: retouchClickArea.containsMouse
+                                     && !retouchClickArea.ctrlPanning
+                            width: 2 * retouchClickArea.brushRadius
+                            height: width
+                            x: retouchClickArea.mouseX - width / 2
+                            y: retouchClickArea.mouseY - height / 2
+                            z: 3
                         }
                     }
                     // #445: Vörösszem — kézi kijelölés téglalap-húzással
