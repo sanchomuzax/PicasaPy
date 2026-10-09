@@ -45,6 +45,19 @@ class TestSyncTree:
         assert photos[1].caption is None
         assert photos[1].rotate_steps == 0
 
+    def test_imports_metadata_from_legacy_picasa_ini(self, conn, library):
+        folder = library / "nyaralas"
+        current_ini = folder / ".picasa.ini"
+        legacy_ini = folder / "Picasa.ini"
+        current_ini.rename(legacy_ini)
+
+        assert not current_ini.exists()
+        sync_tree(conn, library)
+
+        photo = photos_in_folder(conn, folder)[0]
+        assert photo.star is True
+        assert photo.caption == "naplemente"
+
     def test_hidden_flag_from_ini(self, conn, library):
         # #17: a Picasa hidden=yes kulcsa — mtime-változás nélkül is átjön
         # (az ini-mezők a változatlan fájlokon is frissülnek)

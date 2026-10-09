@@ -29,6 +29,7 @@ from picasapy.metadata import (
 from picasapy.paths import normalize_path
 from picasapy.render.flip import FLIP_MASK
 from picasapy.scanner import (
+    PICASA_INI_LEGACY_NAME,
     PICASA_INI_NAME,
     FolderScan,
     HibasBejegyzes,
@@ -1118,7 +1119,10 @@ def _load_ini(scan: FolderScan) -> IniDocument | None:
     if not scan.has_ini:
         return None
     try:
-        return load_document(scan.path / PICASA_INI_NAME)
+        ini_path = scan.path / PICASA_INI_NAME
+        if not ini_path.exists():
+            ini_path = scan.path / PICASA_INI_LEGACY_NAME
+        return load_document(ini_path)
     except (OSError, ValueError):
         # Zárolt/olvashatatlan/sérült ini (pl. a futó Picasa fogja): a mappa
         # metaadat nélkül indexelődik, a következő sync majd pótolja.
