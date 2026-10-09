@@ -1682,6 +1682,7 @@ def _valtozott_fajlok(alap: str) -> list[str] | None:
         kimenet = subprocess.run(
             ["git", "diff", "--name-only", f"{alap}...HEAD"],
             cwd=_ROOT, check=True, capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
         ).stdout
     except (OSError, subprocess.CalledProcessError):
         return None
