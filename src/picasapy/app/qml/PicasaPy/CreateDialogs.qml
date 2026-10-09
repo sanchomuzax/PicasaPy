@@ -384,6 +384,26 @@ Item {
         property int movieInitialPhotoCount: 0
         property int previewIndex: 0
         property string previewSource: ""
+        property int previewFromIndex: -1
+        property real previewTransitionProgress: 1
+        property int previewImageWidth: 0
+        property int previewImageHeight: 0
+        readonly property real previewAudioVolume:
+            controller && controller.movieVolume !== undefined
+                ? controller.movieVolume / 1000 : 0.5
+        readonly property string previewTransitionKind:
+            transitionKeys[transitionIndex] || "dissolve"
+        readonly property bool previewThroughColorTransition:
+            previewTransitionKind === "dissolveblack"
+            || previewTransitionKind === "dissolvewhite"
+        readonly property real previewAspectRatio: {
+            var size = sizeOptions[movieHeightBox.currentIndex]
+            return size[0] / size[1]
+        }
+        readonly property int previewOutputHeight:
+            sizeOptions[movieHeightBox.currentIndex][1]
+        readonly property int previewItemCount:
+            movieClipSources.length + movieSlides.length
         property bool previewActualSizeEnabled: false
         property int previewWindowVisibilityBeforeFullscreen: Window.Windowed
         property bool previewOwnsFullscreen: false
@@ -462,9 +482,12 @@ Item {
         readonly property int movieBurstThresholdSeconds: Math.floor(
             movieBurstSlider.value * movieBurstSlider.value * 86400)
         readonly property real previewSlideDurationSeconds:
-            Math.max(0.5, movieSeconds.value / 10)
+            Math.max(
+                0.5,
+                (movieSeconds && movieSeconds.value !== undefined
+                    ? movieSeconds.value : 30) / 10)
         readonly property real previewDurationSeconds:
-            previewSlideDurationSeconds * movieClipSources.length
+            previewSlideDurationSeconds * previewItemCount
         function formatPreviewTime(seconds) {
             var total = Math.max(0, Math.floor(seconds))
             var hours = Math.floor(total / 3600)
@@ -477,22 +500,47 @@ Item {
                     + ":" + ketjegyu(remainingSeconds)
         }
         function togglePreviewPlayback() {
-            if (!movieClipSources.length) {
+            if (!previewItemCount) {
                 moviePreviewTimer.stop()
             } else if (moviePreviewTimer.running) {
                 moviePreviewTimer.stop()
             } else {
-                previewIndex = 0
-                previewSource = movieClipSources[0]
+                setPreviewIndex(0)
                 moviePreviewTimer.start()
             }
         }
+        function setPreviewIndex(index) {
+            previewIndex = Math.max(0, Math.min(previewItemCount - 1, index))
+            previewSource = previewIndex < movieClipSources.length
+                ? movieClipSources[previewIndex] : ""
+            moviePreviewTransition.stop()
+            previewFromIndex = -1
+            previewTransitionProgress = 1
+        }
+        function advancePreview() {
+            if (!previewItemCount) {
+                moviePreviewTimer.stop()
+                return
+            }
+            previewFromIndex = previewIndex
+            previewIndex = (previewIndex + 1) % previewItemCount
+            previewSource = previewIndex < movieClipSources.length
+                ? movieClipSources[previewIndex] : ""
+            if (previewTransitionKind === "cut") {
+                previewFromIndex = -1
+                previewTransitionProgress = 1
+                moviePreviewTransition.stop()
+                return
+            }
+            previewTransitionProgress = 0
+            moviePreviewTransition.restart()
+        }
         function seekPreview(seconds) {
-            if (!movieClipSources.length) return
-            previewIndex = Math.min(
-                movieClipSources.length - 1,
+            if (!previewItemCount) return
+            setPreviewIndex(Math.min(
+                previewItemCount - 1,
                 Math.max(0, Math.floor(seconds / previewSlideDurationSeconds)))
-            previewSource = movieClipSources[previewIndex]
+            )
         }
         function movieInfoText() {
             var photoCount = movieClipSources.length
@@ -515,8 +563,8 @@ Item {
                         && typeof controller.movieClipNames === "function"
                     ? controller.movieClipNames([movieClipSources[selected]]) : []
                 name = names.length ? names[0] : ""
-                width = moviePreviewImage.sourceSize.width
-                height = moviePreviewImage.sourceSize.height
+                width = movieDialog.previewImageWidth
+                height = movieDialog.previewImageHeight
                 position = selected + 1
             }
             return qsTr("%1     %2x%3 pixels")
@@ -527,18 +575,19 @@ Item {
             movieClipList.currentIndex = index
             if (index < movieClipSources.length) {
                 moviePreviewTimer.stop()
-                previewIndex = index
-                previewSource = movieClipSources[index]
+                setPreviewIndex(index)
                 movieSlideSelection = []
                 movieSlideEditingIndex = -1
                 if (movieSlideList.currentIndex >= 0)
                     movieSlideList.currentIndex = -1
             } else {
+                moviePreviewTimer.stop()
                 var slideIndex = index - movieClipSources.length
                 if (slideIndex < 0 || slideIndex >= movieSlides.length) return
                 movieSlideSelection = [slideIndex]
                 movieSlideEditingIndex = -1
                 movieSlideList.currentIndex = slideIndex
+                setPreviewIndex(index)
             }
         }
         function togglePreviewFullscreen() {
@@ -597,8 +646,7 @@ Item {
             movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
-            previewIndex = 0
-            previewSource = movieClipSources.length ? movieClipSources[0] : ""
+            setPreviewIndex(0)
             targetFile = ""
             open()
         }
@@ -616,8 +664,7 @@ Item {
             movieClipList.currentIndex = -1
             movieSlideList.currentIndex = -1
             loadTextSlide()
-            previewIndex = 0
-            previewSource = movieClipSources[0]
+            setPreviewIndex(0)
             targetFile = ""
             open()
         }
@@ -817,8 +864,7 @@ Item {
             loadTextSlide()
             if (controller)
                 movieClipSources = controller.movieSourceUrls(movieClipSources)
-            previewIndex = 0
-            previewSource = movieClipSources.length ? movieClipSources[0] : ""
+            setPreviewIndex(0)
             moviePreviewTimer.stop()
             movieTabs.currentIndex = 0
         }
@@ -868,6 +914,9 @@ Item {
         onClosed: {
             movieDialog.projektbolNyilt = false
             moviePreviewTimer.stop()
+            moviePreviewTransition.stop()
+            if (moviePreviewMusicLoader.item)
+                moviePreviewMusicLoader.item.stop()
             movieDialog.restorePreviewFullscreen()
         }
         ColumnLayout {
@@ -927,10 +976,7 @@ Item {
                                     if (selected < 0
                                             || selected >= movieDialog.movieClipSources.length)
                                         selected = 0
-                                    movieDialog.previewIndex = selected
-                                    movieDialog.previewSource =
-                                        movieDialog.movieClipSources.length
-                                        ? movieDialog.movieClipSources[selected] : ""
+                                    movieDialog.setPreviewIndex(selected)
                                 }
                             }
                         }
@@ -988,7 +1034,10 @@ Item {
                                 id: movieOverlapSlider
                                 objectName: "movieOverlapSlider"
                                 Layout.fillWidth: true
-                                from: 0; to: Math.max(0.1, movieSeconds.value / 10 * 0.9)
+                                from: 0; to: Math.max(
+                                    0.1,
+                                    (movieSeconds && movieSeconds.value !== undefined
+                                        ? movieSeconds.value : 30) / 10 * 0.9)
                                 value: Math.min(0.5, to); stepSize: 0.1
                                 grooveThickness: 9
                                 grooveInset: 3
@@ -1001,7 +1050,9 @@ Item {
                             Text {
                                 objectName: "movieOverlapValueLabel"
                                 text: qsTr("%1 Sec").arg(
-                                    movieOverlapSlider.value.toFixed(1))
+                                    (movieOverlapSlider
+                                        && movieOverlapSlider.value !== undefined
+                                        ? movieOverlapSlider.value : 0.5).toFixed(1))
                             }
                         }
                         RowLayout {
@@ -1023,7 +1074,8 @@ Item {
                             Text {
                                 objectName: "movieSecondsValueLabel"
                                 text: qsTr("%1 Sec").arg(
-                                    (movieSeconds.value / 10).toFixed(1))
+                                    ((movieSeconds && movieSeconds.value !== undefined
+                                        ? movieSeconds.value : 30) / 10).toFixed(1))
                                 color: Theme.ink
                             }
                         }
@@ -1421,19 +1473,63 @@ Item {
                         // Az infósor külön sora ne szorítsa le a filmvezérlőket.
                         Layout.preferredHeight: 118
                         clip: true
-                        Image {
-                            id: moviePreviewImage
-                            objectName: "moviePreviewImage"
-                            anchors.centerIn: parent
-                            width: movieDialog.previewActualSizeEnabled
-                                    && sourceSize.width > 0
-                                ? sourceSize.width : parent.width
-                            height: movieDialog.previewActualSizeEnabled
-                                    && sourceSize.height > 0
-                                ? sourceSize.height : parent.height
-                            fillMode: Image.PreserveAspectFit
-                            cache: false
-                            source: movieDialog.previewSource
+                        MoviePreviewFrame {
+                            objectName: "moviePreviewOutgoingFrame"
+                            anchors.fill: parent
+                            z: 0
+                            visible: moviePreviewTransition.running
+                                && movieDialog.previewFromIndex >= 0
+                            opacity: movieDialog.previewThroughColorTransition
+                                ? Math.max(0, 1 - 2 * movieDialog.previewTransitionProgress)
+                                : 1 - movieDialog.previewTransitionProgress
+                            photoSources: movieDialog.movieClipSources
+                            slides: movieDialog.movieSlides
+                            itemIndex: movieDialog.previewFromIndex
+                            aspectRatio: movieDialog.previewAspectRatio
+                            outputHeight: movieDialog.previewOutputHeight
+                            actualSizeEnabled: movieDialog.previewActualSizeEnabled
+                            imageObjectName: "moviePreviewOutgoingImage"
+                            onImageSizeChanged: function(width, height) {
+                                if (itemIndex === movieDialog.previewIndex) {
+                                    movieDialog.previewImageWidth = width
+                                    movieDialog.previewImageHeight = height
+                                }
+                            }
+                        }
+                        MoviePreviewFrame {
+                            objectName: "moviePreviewIncomingFrame"
+                            anchors.fill: parent
+                            z: 1
+                            visible: movieDialog.previewItemCount > 0
+                            opacity: !moviePreviewTransition.running
+                                ? 1
+                                : movieDialog.previewThroughColorTransition
+                                    ? Math.max(0, 2 * movieDialog.previewTransitionProgress - 1)
+                                    : movieDialog.previewTransitionProgress
+                            photoSources: movieDialog.movieClipSources
+                            slides: movieDialog.movieSlides
+                            itemIndex: movieDialog.previewIndex
+                            aspectRatio: movieDialog.previewAspectRatio
+                            outputHeight: movieDialog.previewOutputHeight
+                            actualSizeEnabled: movieDialog.previewActualSizeEnabled
+                            imageObjectName: "moviePreviewImage"
+                            onImageSizeChanged: function(width, height) {
+                                if (itemIndex === movieDialog.previewIndex) {
+                                    movieDialog.previewImageWidth = width
+                                    movieDialog.previewImageHeight = height
+                                }
+                            }
+                        }
+                        Rectangle {
+                            objectName: "moviePreviewTransitionOverlay"
+                            anchors.fill: parent
+                            z: 2
+                            visible: moviePreviewTransition.running
+                                && movieDialog.previewThroughColorTransition
+                            color: movieDialog.previewTransitionKind === "dissolvewhite"
+                                ? "#ffffff" : "#000000"
+                            opacity: 1 - Math.abs(
+                                2 * movieDialog.previewTransitionProgress - 1)
                         }
                     }
                     Button {
@@ -1475,7 +1571,7 @@ Item {
                             from: 0
                             to: Math.max(1, movieDialog.previewDurationSeconds)
                             stepSize: movieDialog.previewSlideDurationSeconds
-                            enabled: movieDialog.movieClipSources.length > 1
+                            enabled: movieDialog.previewItemCount > 1
                             Binding on value {
                                 when: !moviePreviewScrubSlider.pressed
                                 value: movieDialog.previewIndex
@@ -1507,8 +1603,12 @@ Item {
                         stepSize: 10
                         value: controller && controller.movieVolume !== undefined
                             ? controller.movieVolume : 500
-                        onMoved: if (controller && controller.setMovieVolume)
-                                     controller.setMovieVolume(Math.round(value))
+                        onMoved: {
+                            if (controller && controller.setMovieVolume)
+                                controller.setMovieVolume(Math.round(value))
+                            if (moviePreviewMusicLoader.item)
+                                moviePreviewMusicLoader.item.volume = value / 1000
+                        }
                     }
                     PicasaButton {
                         objectName: "video_control_bar2/1to1"
@@ -1588,17 +1688,55 @@ Item {
     Timer {
         id: moviePreviewTimer
         objectName: "moviePreviewTimer"
-        interval: Math.max(500, movieSeconds.value * 100)
+        interval: Math.max(
+            500,
+            (movieSeconds && movieSeconds.value !== undefined
+                ? movieSeconds.value : 30) * 100)
         repeat: true
-        onTriggered: {
-            if (!movieDialog.movieClipSources.length) {
-                stop()
-                return
-            }
-            movieDialog.previewIndex = (movieDialog.previewIndex + 1)
-                    % movieDialog.movieClipSources.length
-            movieDialog.previewSource = movieDialog.movieClipSources[movieDialog.previewIndex]
+        onRunningChanged: {
+            if (!moviePreviewMusicLoader.item) return
+            if (running) moviePreviewMusicLoader.item.play()
+            else moviePreviewMusicLoader.item.pause()
         }
+        onTriggered: movieDialog.advancePreview()
+    }
+
+    Loader {
+        id: moviePreviewMusicLoader
+        objectName: "moviePreviewMusicLoader"
+        active: movieDialog.visible && moviePreviewTimer.running
+            && movieDialog.audioFile.length > 0
+        source: active ? "MoviePreviewMusicPlayer.qml" : ""
+        property string audioSource: movieDialog.audioFile
+        property real outputVolume: movieDialog.previewAudioVolume
+        property bool loopMusic: movieDialog.audioOption === 2
+        onLoaded: {
+            item.source = audioSource
+            item.volume = outputVolume
+            item.loop = loopMusic
+            if (moviePreviewTimer.running) item.play()
+        }
+        onAudioSourceChanged: {
+            if (!item) return
+            item.source = audioSource
+            if (audioSource && moviePreviewTimer.running) item.play()
+            else if (!audioSource) item.stop()
+        }
+        onOutputVolumeChanged: if (item) item.volume = outputVolume
+        onLoopMusicChanged: if (item) item.loop = loopMusic
+    }
+
+    NumberAnimation {
+        id: moviePreviewTransition
+        objectName: "moviePreviewTransition"
+        target: movieDialog
+        property: "previewTransitionProgress"
+        from: 0
+        to: 1
+        duration: Math.max(
+            1,
+            (movieOverlapSlider && movieOverlapSlider.value !== undefined
+                ? movieOverlapSlider.value : 0.5) * 1000)
     }
 
     ConfirmDialog {
