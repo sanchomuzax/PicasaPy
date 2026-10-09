@@ -274,7 +274,12 @@ Flickable {
                     from: paramRow.modelData.minimum
                     to: paramRow.modelData.maximum
                     stepSize: paramRow.modelData.step
-                    value: paramRow.modelData.default
+                    // A képen húzott fókuszpuck is ugyanazt a paraméterlistát
+                    // írja, ezért a csúszka a pillanatnyi értéket kövesse.
+                    value: panel.paramEffectValues
+                           && panel.paramEffectValues.length > paramRow.index
+                        ? panel.paramEffectValues[paramRow.index]
+                        : paramRow.modelData.default
                     // húzás/kattintás közben élő előnézet (#316) — a
                     // programozott kezdőérték-beállítás NEM vált ki `moved`
                     // jelet, csak a valódi felhasználói interakció

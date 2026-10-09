@@ -2578,6 +2578,15 @@ Rectangle {
                     readonly property var fokuszKeret:
                         viewer.balFokusz ? photoElotteKeret : photoKeret
 
+                    // #4553: a fókuszos effekt nyitott paraméterpaneljén a
+                    // puck a ténylegesen szerkesztett, kirajzolt képre kerül.
+                    // Saját rétegként követi a kétképes nézet fókuszváltását,
+                    // a zoomot, az elforgatást és a képernyőhöz illesztést.
+                    EffectFocalPuck {
+                        targetImage: photoArea.fokuszKep
+                        panel: editorPanel
+                    }
+
                     //: #3924, „⛳ A Kiegyenesítés négyzethálója”:
                     //: a csempézett rács a kép fölött áll, a kép forgása alatt.
                     //: A becsomagolt 44×44-es mintát az Image.Tile
