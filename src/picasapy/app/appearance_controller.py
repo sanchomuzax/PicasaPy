@@ -132,7 +132,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
         """Megnyitáskor magától induljon-e a videó (#4570, `AutoPlayMovies`)."""
         return self._auto_play_movies
 
-    @Slot(bool)
+    # Nem `@Slot`: az eredetiben rejtett kulcs, a felületről nem állítható (#4570)
     def setAutoPlayMovies(self, enabled: bool) -> None:  # noqa: N802
         enabled = bool(enabled)
         if enabled == self._auto_play_movies:
