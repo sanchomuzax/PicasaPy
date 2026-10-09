@@ -107,12 +107,18 @@ program egészének `.picasa.ini`-írásairól.
 ### PicasaPy tárolási döntése (#4332)
 
 A dátummódosító a kijelölt fotók dátumát az SQLite-index `photos.taken_at_override`
-mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. A PicasaPy
-forrásfájl EXIF-szegmensét nem írja át: a forrás JPEG `DateTimeOriginal` mezője
-érintetlen marad; exportált JPEG-en viszont a `DateTimeOriginal` az indexben
+mezőjébe írja. A `.picasa.ini`-t nem hozza létre és nem módosítja. *(A #4693 ELŐTTI állapot:)* A PicasaPy
+forrásfájl EXIF-szegmensét nem írta át: a forrás JPEG `DateTimeOriginal` mezője
+érintetlen maradt; exportált JPEG-en viszont a `DateTimeOriginal` az indexben
 felülírt dátumot kapja, a #451 Colab-mérésével egyezően. Ez a #4646 által
 feltárt eredeti viselkedéstől eltér. A rács, a dátum szerinti rendezés és a
-Tulajdonságok panel a felülírt értéket mutatja.
+Tulajdonságok panel a felülírt értéket mutatta.
+
+**A PicasaPy megvalósítása (#4693):** A művelet `.picasa.ini`-kulcsot nem ír. A PicasaPy a forrásképen módosítja az
+EXIF `DateTimeOriginal` értékét, és a sikeres írás után a mappát újraolvassa,
+hogy az index, a rácssorrend és a Tulajdonságok-panel az új EXIF-értéket
+mutassa. A korábbi, #4332-es indexfelülírásos út ettől eltért; a jelenlegi
+menüparancs már nem hoz létre `taken_at_override` értéket.
 
 ## 4. A menüsor ALMENŰ-szerkezete — kilenc almenü
 

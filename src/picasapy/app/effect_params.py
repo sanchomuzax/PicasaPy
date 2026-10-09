@@ -258,9 +258,9 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _checkbox("reverse", "Reverse"),
     ),
     "pencilsketch": (
-        _p("blur_radius", "Blur Radius", 0.5, 20.0, 2.0, 0.5),
-        _p("brightness", "Brightness", 0.0, 200.0, 100.0),
-        _p("color_mix", "Color Mix", 0.0, 100.0, 0.0),
+        _p("radius", "Radius", 1.3, 5.0, 2.0, 0.5),
+        _p("strength", "Strength", 0.0, 200.0, 100.0),
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # Neon=1,Fade,Color (#723): az eredeti panelján egyetlen SZÍNMINTA
     # (`_clrsw`, alap `0xff0000`, „Neon Color") és egy fokozat-csúszka van.
@@ -413,10 +413,14 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # unsharp2=1,mennyiség — a felső vég 3,0 (az `unsharp` v1-é 1,0),
     # az alapérték mindkettőnél 0,6
     "unsharp2": (_p("amount", "Amount", 0.0, 3.0, 0.6, 0.05),),
-    # PicnikTint=1,elhalványítás — a regiszter EGY csúszkát ad („Fade",
-    # 0–100, alap 0). Színválasztója NINCS: az örökölt `tint` az, aminek
-    # `preserve` + `#szín` párja van.
-    "picniktint": (_p("fade", "Fade", 0.0, 100.0, 0.0),),
+    # PicnikTint=1,elhalványítás,#szín — a `filterdesc.xml` szerint a
+    # szín a Fade után kerül a láncba, alapja #80cfff. A felirat a
+    # Picasa saját ImageFilters::TintColor szótárából jön. Az effekt az
+    # egész képre hat, nem festhető (#3541 helyesbítés).
+    "picniktint": (
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
+        _color("color", "Tint Color", "#80cfff"),
+    ),
 }
 
 

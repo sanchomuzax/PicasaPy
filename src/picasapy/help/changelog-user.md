@@ -4,6 +4,92 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-09
+
+**Szerkesztés és effektek**
+
+- A pontra összpontosító effekteknél (Lágy fókusz, Fókuszos FF,
+  Színátmenet, Sugaras árnyalás, Fókusznagyítás, Képpontnövelés) a
+  fókuszpontot **a képen húzhatod**, a Középpont csúszkák követik. Lásd
+  [Effektek](features/effektek.md).
+- Az **Árnyalás** színe választható (**Tinta színe**), alapból
+  világoskék, ahogy az eredetiben.
+- A **Ceruzarajz** panelje a **Sugár**, **Erősség** és **Fokozat**
+  csúszkát mutatja.
+- **Kép ▸ Csoportos szerkesztés**: új tétel a **Szépia** és a
+  **Fekete-fehér**. Lásd [Csoportos
+  szerkesztés](features/csoportos-szerkesztes.md).
+- Szerkesztőnézetben a **Ctrl+9** elrejti és előhozza a bal oldali
+  panelt.
+
+**Néző és menük**
+
+- Nyitott nézőben a **Fájl**, **Szerkesztés** és **Kép** menü a
+  megnyitott képre hat, és nem szürke. Lásd
+  [Nézegetés](features/nezegetes.md).
+- A **Nézet ▸ Könyvtárnézet** a nézőből visszavisz a könyvtárba.
+- Windowson a dupla kattintás az egykattintásos kilépés mellett is
+  bezárja a nézőt, és az nem nyílik meg újra; mentés után a néző a
+  mentett képet mutatja.
+- Albumnézetben a **Mappa** menü helyén **Album** menü áll, az
+  **Albumleírás szerkesztése…** tétellel. Lásd [A
+  könyvtár](features/konyvtar.md).
+- A **Kép ▸ Elrejtés** a kijelölésben már rejtett képeket nem hozza elő.
+- **F5**: frissíti a megnyitott mappát és a keresés eredményét.
+- A **Ctrl+Enter** kijelölés nélkül a megnyitott mappát mutatja a
+  fájlkezelőben, a **Ctrl+Shift+P** kijelölés nélkül a mappa indexképes
+  nyomtatását nyitja. Lásd [Billentyűparancsok](features/billentyuk.md).
+- **Eszközök ▸ Kísérleti ▸ Keresés…**: hetedik tételként megjelent a
+  **Fekete-fehér** színkeresés. Lásd [Keresés](features/kereses.md).
+
+**Emberek és arcok**
+
+- Az Emberek panelen a névadás új név esetén a személyek kezelése
+  ablakot nyitja; az új személy csak jóváhagyás után jön létre.
+- **Kép ▸ Arcok alaphelyzetbe állítása** Ctrl- vagy Shift-kattintással
+  az egész könyvtárra hat, előtte figyelmeztet. Windowson a kijelölt
+  képekre is helyesen működik. Lásd [Emberek](features/emberek.md).
+- Az arckeresés után a program bekapcsolt javaslatok mellett magától
+  csoportosítja az arcokat.
+- Az **Arcinformációk írása XMP-adatokba…** előbb megkérdezi, mire hasson:
+  a kijelölt képekre, az arcos képekre vagy az összesre.
+- A személyalbum fejlécének új gombja egyszerre kijelöli a javaslatos
+  képeket.
+
+**Mozgófilm**
+
+- **Létrehozás ▸ Mozgófilm ▸ Az Emberek albumból…** — film az összes
+  személyalbum képeiből. Lásd [Mozgófilm](features/mozgofilm.md).
+- Ha ugyanabban az ablakban újra filmet készítesz, a program megkérdezi:
+  cserélje a meglévőt, vagy készítsen újat.
+- A **Képfeliratok megjelenítése** a PicasaPy-ban írt képfeliratot
+  mutatja; a fájlba írt leírás csak akkor kerül a filmre, ha nincs
+  képfelirat.
+
+**Nyomtatás, poszter, háttérkép, e-mail**
+
+- A nyomtatás és a poszter a **szerkesztett**, helyesen álló képből
+  készül. Lásd [Nyomtatás](features/nyomtatas.md) és
+  [Poszter](features/poszter.md).
+- Az asztali háttérkép KDE Plasmán és labwc/Sway asztalon is beáll. Lásd
+  [Asztali háttérkép](features/hatterkep.md).
+- Az e-mail küldés szól, ha nincs beállított levelezőprogram. A
+  **Címzett** mező helyi menüjének **Automatikus kitöltés** tétele pipás
+  kapcsoló lett, és a program megjegyzi. Lásd [Küldés
+  e-mailben](features/email.md).
+
+**Könyvtár**
+
+- **Eszközök ▸ Dátum és idő beállítása…** most az eredeti szerint a
+  képfájl EXIF-dátumát és a fájl idejét írja át (JPEG képeken), így más
+  program is az új dátumot látja. Lásd [A könyvtár](features/konyvtar.md).
+- A mappák gyűjteménybe sorolása a mappa `.picasa.ini` fájljába kerül,
+  tehát a mappával együtt költözik.
+- Windowson a csak kis- és nagybetűben eltérő mappaátnevezést is észreveszi
+  a program.
+- Indulási gond esetén a hibanapló megmutatja, meddig jutott a program.
+  Lásd [Gyakori kérdések](faq.md).
+
 ## 2026-10-08
 
 **Új funkciók**
