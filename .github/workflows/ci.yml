@@ -48,6 +48,8 @@ jobs:
     outputs:
       kod: ${{ steps.d.outputs.kod }}
       docs: ${{ steps.d.outputs.docs }}
+      darabok: ${{ steps.n.outputs.darabok || '[1,2,3,4]' }}
+      darabszam: ${{ steps.n.outputs.darabszam || '4' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +67,14 @@ jobs:
         # kap-e egyáltalán tesztfutást. A hiba iránya néma: nem piros CI,
         # hanem KIMARADT mérés, zöld pipával.
         run: python3 scripts/ci_valtozas.py
+      # 2026-10-09: PR-en, ha kevés app-tesztet érint a változás, EGY darab fut
+      # négy helyett — a Free csomag 20 egyidejű jobjából így kétszer annyi PR
+      # fér el. Push a main-re: mindig négy darab, teljes készlet.
+      - id: n
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
+        run: python3 scripts/run_tests.py --darabszam >> "$GITHUB_OUTPUT"
 
   # A két platform KÜLÖN hívás — ld. a `teszt-darabok.yml` fejlécét: egyetlen
   # közös mátrix eredménye egyben látszik, és egy bukó windows-darab a
@@ -75,6 +85,8 @@ jobs:
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: ubuntu-latest
+      darabok: ${{ needs.valtozas.outputs.darabok }}
+      darabszam: ${{ needs.valtozas.outputs.darabszam }}
 
   # #4285: a windowsos tesztkészlet (a falióra-idő fő tétele, 26–30 perc)
   # PR-on NEM fut, csak a main-re érkező pushon — a PR-t az ubuntus készlet
