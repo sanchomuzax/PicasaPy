@@ -1658,6 +1658,72 @@ def main(argv: list[str] | None = None) -> int:
 #: A nem-app készlet egyetlen egységként szerepel a kiosztásban.
 _NEM_APP = "tests --ignore=tests/app"
 
+#: PR-en a változás által ÉRINTETT app-tesztek futnak (a nem-app készlet
+#: mindig teljesen). A teljes készlet a main-re érkező push után fut.
+#: 2026-10-09: 41 nyitott PR állt, mert minden PR négy darabban a TELJES
+#: készletet futtatta (darabonként 15–22 perc, PR-enként ~70 futtatóperc).
+_ERINTETT_ALAP_VALTOZO = "PICASAPY_ERINTETT_ALAP"
+
+#: Ha ezek közül bármi változik, nem szűkítünk (a hatásuk nem követhető
+#: fájlnév szerint): közös tesztsegédek, a forrás nem-app része, a függőségek.
+_TELJES_KESZLET_ELOTAGOK = (
+    "tests/app/conftest.py", "tests/app/qml_functional/conftest.py",
+    "tests/conftest.py", "tests/support/", "pyproject.toml", "scripts/run_tests.py",
+    "packaging/", ".github/",
+)
+
+#: Az érintett-kiválasztás e fölött a hányad fölött a teljes készletet adja.
+_SZUKITES_MAX_HANYAD = 0.6
+
+
+def _valtozott_fajlok(alap: str) -> list[str] | None:
+    """A PR változott fájljai az alaphoz képest; `None`, ha nem állapítható meg."""
+    try:
+        kimenet = subprocess.run(
+            ["git", "diff", "--name-only", f"{alap}...HEAD"],
+            cwd=_ROOT, check=True, capture_output=True, text=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return [sor.strip() for sor in kimenet.splitlines() if sor.strip()]
+
+
+def erintett_app_tesztek(
+    app_tesztek: list[str], valtozott: list[str] | None, olvas: Callable[[str], str]
+) -> list[str]:
+    """A változás által érintett app-tesztfájlok (relatív utak).
+
+    Érintett: a változott tesztfájl maga, és minden app-teszt, amely szövegében
+    megnevezi egy változott app-forrásfájl törzsnevét (pl. `PhotoViewer`,
+    `edit_controller`) vagy — fordítás-változásnál — a fordítási katalógust.
+    Ha a változás közös segédet, nem-app forrást vagy függőséget érint, vagy a
+    kiválasztás a készlet nagy része lenne, a teljes listát adja vissza."""
+    if not valtozott:
+        return list(app_tesztek)
+    kulcsok: set[str] = set()
+    sajat: set[str] = set()
+    for ut in valtozott:
+        if ut.startswith(_TELJES_KESZLET_ELOTAGOK):
+            return list(app_tesztek)
+        if ut.startswith("tests/app/"):
+            nev = ut.rsplit("/", 1)[-1]
+            if not nev.startswith("test_"):
+                return list(app_tesztek)  # közös segédmodul (pl. _fomenu_4420_menu)
+            sajat.add(ut)
+        elif ut.startswith("src/picasapy/app/i18n/"):
+            kulcsok.update({"picasapy_hu", "qsTr", "i18n"})
+        elif ut.startswith("src/picasapy/app/"):
+            kulcsok.add(Path(ut).stem)
+        elif ut.startswith("src/"):
+            return list(app_tesztek)
+    valasztott = [
+        t for t in app_tesztek
+        if t in sajat or any(k in olvas(t) for k in kulcsok)
+    ]
+    if len(valasztott) > _SZUKITES_MAX_HANYAD * len(app_tesztek):
+        return list(app_tesztek)
+    return valasztott
+
 
 def _futtat(
     cov: bool, basetemp: Path, *, sorszam: int = 1, darab: int = 1
@@ -1672,7 +1738,17 @@ def _futtat(
     app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
         (app_dir / "qml_functional").glob("test_*.py")
     )
-    egysegek = [_NEM_APP] + [str(p.relative_to(_ROOT)) for p in app_test_files]
+    app_utak = [str(p.relative_to(_ROOT)) for p in app_test_files]
+    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
+    if alap:
+        teljes = len(app_utak)
+        app_utak = erintett_app_tesztek(
+            app_utak, _valtozott_fajlok(alap),
+            lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+        )
+        print(f"PR-szűkítés: {len(app_utak)} érintett app-tesztfájl a {teljes}-ből "
+              f"(alap: {alap[:8]}); a teljes készlet a main-en fut.", flush=True)
+    egysegek = [_NEM_APP] + app_utak
     enyem = _kiegyensulyozott_darab(egysegek, sorszam, darab)
     if darab > 1:
         print(
