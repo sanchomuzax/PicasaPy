@@ -2654,7 +2654,11 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: false; retired: true }  // #638
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("&Check for Updates"); placeholder: true }
+        // #4640: a PicasaPy saját frissítéskeresése nem paritás-feladat. Az
+        // eredeti az egykori Google-szolgáltatásra épült, amelyet a Picasa
+        // Wine alatt maga letiltott, ezért nyugdíjazott (szürke, pont nélkül),
+        // nem helyfoglaló.
+        PicasaMenuItem { text: qsTr("&Check for Updates"); placeholder: false; retired: true }
         MenuSeparator {}
         // SAJÁT FUNKCIÓ (#1364): a Teljesítmény-monitor az eredeti Picasa
         // 3.9 Súgó menüjében NEM létezik (`docs/specs/ui-audit-menus.md`) —
