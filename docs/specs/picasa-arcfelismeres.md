@@ -94,6 +94,21 @@ elválasztó vonal.
 | `PplAlbumPhoto::ID_PEOPLEALBUMS` | **0xa0cd** | ugyanott, idx 2 | *&Move to People Album* / **Hozzáadás az Emberek albumhoz** |
 | `PplAlbumPhoto::ID_SETPEOPLEALBUMCOVER` | **0x9e39** | ugyanott, idx 4 | *&Set as People Album Thumbnail* / **Beállítás az Emberek album indexképeként** |
 
+**A két `Album::ID_ALBUM_FILTERFACES` helyi menübeli működése (#4535).** A
+„Névcímkék hozzáadása” a jobbklikkelt **mappa közvetlen képein**, illetve az
+album **adott tokenhez tartozó tagképein** indítja el a saját, háttérben futó
+arckeresést. A már azonosított, korábban vizsgált vagy mappaszinten kizárt
+képekre a szokásos keresési szabályok vonatkoznak; az új, névtelen találatok a
+„Névtelenek” albumba kerülnek.
+
+**Bináris bizonyíték és határa:** a mappa- és albummenü-építő (`0x007319f0`,
+`0x00732160`) is a `0x9e1c` parancsot teszi a menü végére; a közös popup-út
+(`0x005d3290`) a kiválasztott parancsazonosítót `WM_COMMAND`-ként továbbítja
+(`0x005d43c5`). A statikus xref-vizsgálat a további műveletkezelőt nem
+azonosította. A fenti hatókört ezért a #4535 jegyben megadott eredeti
+viselkedés rögzíti; a bináris a két parancs belépési pontját erősíti meg, nem
+a szűrés részleteit.
+
 **Gyorsbillentyű: egyiknek sincs** — mind a tíz rekord `+0x04` mezője 0.
 *(Menüszinten bizonyított. A program futásidőben `CreateAcceleratorTableA`-val
 is épít gyorsítótáblát (`0x0092321a`); annak a tartalma nincs feltárva,

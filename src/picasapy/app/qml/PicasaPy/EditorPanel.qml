@@ -232,6 +232,12 @@ Rectangle {
 
     // a kép aktuális szélesség/magasság aránya ("Jelenlegi méretarány"-hoz)
     property real imageAspect: 4 / 3
+    // A vágó méretarány-sorai az eredeti, megjelenített kép pixeleiből
+    // számolnak; a `cropRect` relatív értékeit ezekre vetítjük (#4549).
+    property int imagePixelWidth: 0
+    property int imagePixelHeight: 0
+    property rect cropRect: Qt.rect(0, 0, 0, 0)
+    property bool cropHasSelection: false
 
     // #448: a Kiegyenesítés-figyelmeztetés bekapcsolója — a hívó (PhotoViewer)
     // tölti az `editController.tiltParam !== 0` állapotból (a panel maga NEM
@@ -586,6 +592,32 @@ Rectangle {
 
     readonly property var aspectFullList: {
         var list = panel.aspectPresets.slice()
+        if (panel.imagePixelWidth > 0 && panel.imagePixelHeight > 0) {
+            var manual = list[0]
+            var manualLabel = manual.label
+            if (panel.cropHasSelection) {
+                manualLabel = qsTr("Manual") + ": "
+                    + panel.formatCropPixelSize(
+                        Math.round(panel.cropRect.width * panel.imagePixelWidth),
+                        Math.round(panel.cropRect.height * panel.imagePixelHeight))
+            }
+            list[0] = {
+                key: manual.key,
+                label: manualLabel,
+                note: manual.note,
+                ratio: manual.ratio
+            }
+
+            var current = list[1]
+            list[1] = {
+                key: current.key,
+                label: qsTr("Current ratio") + ": "
+                    + panel.formatCropPixelSize(
+                        panel.imagePixelWidth, panel.imagePixelHeight),
+                note: current.note,
+                ratio: current.ratio
+            }
+        }
         for (var i = 0; i < panel.customAspectRatios.length; i++) {
             var c = panel.customAspectRatios[i]
             list.push({
@@ -599,6 +631,13 @@ Rectangle {
             })
         }
         return list
+    }
+
+    //: Az eredeti `AspectRatioList:Format` és `AspectRatioList::CurrentAspect`
+    //: erőforrások szövege; a fordítás a Picasa hivatalos méretformátuma.
+    function formatCropPixelSize(width, height) {
+        return qsTr("%1$d x %2$d")
+            .replace("%1$d", width).replace("%2$d", height)
     }
 
     // az aktuálisan kiválasztott tétel — védve az esetleges (törlés utáni)
