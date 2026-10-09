@@ -1585,8 +1585,30 @@ def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
         print(f"  {sor}", flush=True)
 
 
+#: PR-en e fölött az érintett app-tesztfájl-szám fölött négy darab fut.
+_EGY_DARAB_MAX = 60
+
+
+def _darabszam_kimenet() -> int:
+    """`--darabszam`: a PR CI-jának darabszáma GITHUB_OUTPUT-formában."""
+    app_dir = _ROOT / "tests" / "app"
+    app = [str(p.relative_to(_ROOT)) for p in sorted(app_dir.glob("test_*.py"))
+           + sorted((app_dir / "qml_functional").glob("test_*.py"))]
+    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
+    valasztott = erintett_app_tesztek(
+        app, _valtozott_fajlok(alap) if alap else None,
+        lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+    )
+    egy = len(valasztott) <= _EGY_DARAB_MAX
+    print(f"darabok={'[1]' if egy else '[1,2,3,4]'}")
+    print(f"darabszam={'1' if egy else '4'}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--darabszam" in argv:
+        return _darabszam_kimenet()
     cov = "--cov" in argv
 
     if cov:
@@ -1658,6 +1680,78 @@ def main(argv: list[str] | None = None) -> int:
 #: A nem-app készlet egyetlen egységként szerepel a kiosztásban.
 _NEM_APP = "tests --ignore=tests/app"
 
+#: PR-en a változás által ÉRINTETT app-tesztek futnak (a nem-app készlet
+#: mindig teljesen). A teljes készlet a main-re érkező push után fut.
+#: 2026-10-09: 41 nyitott PR állt, mert minden PR négy darabban a TELJES
+#: készletet futtatta (darabonként 15–22 perc, PR-enként ~70 futtatóperc).
+_ERINTETT_ALAP_VALTOZO = "PICASAPY_ERINTETT_ALAP"
+
+#: Ha ezek közül bármi változik, nem szűkítünk (a hatásuk nem követhető
+#: fájlnév szerint): közös tesztsegédek, a forrás nem-app része, a függőségek.
+#: (A futtató és a workflow változása NEM ilyen: az app-tesztek nem függnek
+#: tőlük, a futtató saját tesztjei a mindig teljesen futó nem-app készletben
+#: vannak.)
+_TELJES_KESZLET_ELOTAGOK = (
+    "tests/app/conftest.py", "tests/app/qml_functional/conftest.py",
+    "tests/conftest.py", "tests/support/", "pyproject.toml",
+)
+
+#: Az érintett-kiválasztás e fölött a hányad fölött a teljes készletet adja.
+_SZUKITES_MAX_HANYAD = 0.6
+
+
+def _valtozott_fajlok(alap: str) -> list[str] | None:
+    """A PR változott fájljai az alaphoz képest; `None`, ha nem állapítható meg."""
+    try:
+        kimenet = subprocess.run(
+            ["git", "diff", "--name-only", f"{alap}...HEAD"],
+            cwd=_ROOT, check=True, capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return [sor.strip() for sor in kimenet.splitlines() if sor.strip()]
+
+
+def erintett_app_tesztek(
+    app_tesztek: list[str], valtozott: list[str] | None, olvas: Callable[[str], str]
+) -> list[str]:
+    """A változás által érintett app-tesztfájlok (relatív utak).
+
+    Érintett: a változott tesztfájl maga, és minden app-teszt, amely szövegében
+    megnevezi egy változott app-forrásfájl törzsnevét (pl. `PhotoViewer`,
+    `edit_controller`) vagy — fordítás-változásnál — a fordítási katalógust.
+    Ha a változás közös segédet, nem-app forrást vagy függőséget érint, vagy a
+    kiválasztás a készlet nagy része lenne, a teljes listát adja vissza."""
+    if not valtozott:
+        return list(app_tesztek)
+    kulcsok: set[str] = set()
+    sajat: set[str] = set()
+    for ut in valtozott:
+        if ut.startswith(_TELJES_KESZLET_ELOTAGOK):
+            return list(app_tesztek)
+        if ut.startswith("tests/app/"):
+            nev = ut.rsplit("/", 1)[-1]
+            if nev.startswith("test_"):
+                sajat.add(ut)
+            elif nev.endswith(".py"):
+                # közös segédmodul (pl. _fomenu_4420_menu): az importálói futnak
+                kulcsok.add(Path(ut).stem)
+        elif ut.startswith("src/picasapy/app/i18n/"):
+            kulcsok.update({"picasapy_hu", "qsTr", "i18n"})
+        elif ut.startswith("src/") and ut.endswith((".py", ".qml")):
+            # app-forrás vagy a felületen kívüli modul: az app-tesztek közül azok
+            # futnak, amelyek a modult NÉV szerint említik (a modul saját
+            # tesztjei a mindig teljesen futó nem-app készletben vannak)
+            kulcsok.add(Path(ut).stem)
+    valasztott = [
+        t for t in app_tesztek
+        if t in sajat or any(k in olvas(t) for k in kulcsok)
+    ]
+    if len(valasztott) > _SZUKITES_MAX_HANYAD * len(app_tesztek):
+        return list(app_tesztek)
+    return valasztott
+
 
 def _futtat(
     cov: bool, basetemp: Path, *, sorszam: int = 1, darab: int = 1
@@ -1672,7 +1766,20 @@ def _futtat(
     app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
         (app_dir / "qml_functional").glob("test_*.py")
     )
-    egysegek = [_NEM_APP] + [str(p.relative_to(_ROOT)) for p in app_test_files]
+    app_utak = [str(p.relative_to(_ROOT)) for p in app_test_files]
+    alap = os.environ.get(_ERINTETT_ALAP_VALTOZO, "").strip()
+    if alap:
+        teljes = len(app_utak)
+        app_utak = erintett_app_tesztek(
+            app_utak, _valtozott_fajlok(alap),
+            lambda ut: (_ROOT / ut).read_text(encoding="utf-8", errors="replace"),
+        )
+        if len(app_utak) == teljes and _valtozott_fajlok(alap) is None:
+            print(f"⚠️ PR-szűkítés: a változás NEM állapítható meg az alaphoz ({alap[:8]}) "
+                  "képest (hiányzó git-történet?) — teljes készlet fut.", flush=True)
+        print(f"PR-szűkítés: {len(app_utak)} érintett app-tesztfájl a {teljes}-ből "
+              f"(alap: {alap[:8]}); a teljes készlet a main-en fut.", flush=True)
+    egysegek = [_NEM_APP] + app_utak
     enyem = _kiegyensulyozott_darab(egysegek, sorszam, darab)
     if darab > 1:
         print(
