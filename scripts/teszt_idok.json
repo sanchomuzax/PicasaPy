@@ -66,6 +66,7 @@
  "tests/app/qml_functional/test_compact_dialog_449.py": 65.01,
  "tests/app/qml_functional/test_context_menu_parity_422.py": 6.69,
  "tests/app/qml_functional/test_create_result_dialog_binding_loop_918.py": 1.55,
+ "tests/app/qml_functional/test_crop_meret_4549.py": 2.75,
  "tests/app/qml_functional/test_csempe_atkotes_2141.py": 2.56,
  "tests/app/qml_functional/test_csillag_belepesi_pontok_1438.py": 34.74,
  "tests/app/qml_functional/test_csillag_nezet_frissul_1443.py": 11.16,
