@@ -168,7 +168,10 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
         # #3826: a tartomány fele elérhetetlen volt (min 0 -> −1), az
         # alapérték pedig a regiszter/spec szerinti 0 helyett 0,3 volt.
-        _p("radius", "Radius", -1.0, 1.0, 0.0, 0.01),
+        # #4559: a felirat az eredetiben „Size" (stringres
+        # `filter_radsat_label1` → „Méret"), nem „Radius" — a spec
+        # `docs/specs/filterdesc-registry.md:156` szerint.
+        _p("radius", "Size", -1.0, 1.0, 0.0, 0.01),
         _p("sharpness", "Sharpness", 0.0, 1.0, 0.5, 0.01),
     ),
     # tint=1,!!megőrzés,#szín (#717: a szín korábban hiányzott a láncból)
@@ -184,7 +187,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "dir_tint": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
-        _p("gradient", "Gradient", 0.0, 1.0, 0.5, 0.01),
+        # #4559: a Feather alapértéke 0,5 volt, a spec szerint (`d=0.25`) 0,25.
+        _p("gradient", "Gradient", 0.0, 1.0, 0.25, 0.01),
         # #2236: az alapérték 0,5 -> 0,25 a regiszterből.
         _p("shade", "Shade", 0.0, 1.0, 0.25, 0.01),
         _color("color", "Pick Color", "#ffffff"),
