@@ -622,7 +622,12 @@ class AppController(
 
     @Property(list, notify=statusChanged)
     def slideshowMusicTrackUrls(self):  # noqa: N802
-        """A mappához rendelt zene, vagy a közös diavetítési zenemappa."""
+        """Az album-, mappa- vagy közös diavetítési zeneforrás."""
+        mode, token = self._view_mode
+        if mode == "album":
+            tracks = self.albumMusicTrackUrls(token)
+            if tracks:
+                return tracks
         if self._current_folder and self.folderMusicEnabled(self._current_folder):
             return self.folderMusicTrackUrls(self._current_folder)
         folder = Path(self.slideshowMusicFolder).expanduser()
