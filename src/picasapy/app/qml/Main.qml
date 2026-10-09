@@ -98,6 +98,7 @@ ApplicationWindow {
     // önmagára kötne (kötési hurok) — ez az álnév oldja fel, egy helyen.
     readonly property var appController: controller
 
+    property string pendingPeopleManagerPersonName: ""
     property int thumbSize: 144
     //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
     //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
@@ -2294,6 +2295,17 @@ ApplicationWindow {
         anchors.fill: parent
         sourceComponent: Component { FolderManagerDialog { } }
     }
+
+    function openPeopleManagerForPerson(name) {
+        var targetName = String(name || "").trim()
+        if (peopleManagerLoader.status === Loader.Ready) {
+            peopleManagerLoader.item.openForPerson(targetName)
+        } else {
+            window.pendingPeopleManagerPersonName = targetName
+            peopleManagerLoader.active = true
+        }
+    }
+
     // #4334: a komponens csak az első menükattintásra töltődik be; a
     // külön fájl miatt a forró Main.qml-ben csak a bekötés marad.
     Loader {
@@ -2303,7 +2315,12 @@ ApplicationWindow {
         source: Qt.resolvedUrl("PicasaPy/PeopleManagerDialog.qml")
         onLoaded: {
             item.controller = controller
-            item.open()
+            var targetName = window.pendingPeopleManagerPersonName
+            window.pendingPeopleManagerPersonName = ""
+            if (targetName.length > 0)
+                item.openForPerson(targetName)
+            else
+                item.open()
         }
     }
     // Duplikátum-kezelő (#287): a SAJÁT kezelő-párbeszéd. #1398 óta a

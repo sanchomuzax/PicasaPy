@@ -1295,11 +1295,59 @@ Rectangle {
 
     PeopleAlbumContextMenu {
         id: peopleAlbumContextMenu
+        onDeleteRequested: function(name) {
+            peopleAlbumDeleteConfirmation.personName = name
+            peopleAlbumDeleteConfirmation.open()
+        }
+        onEditRequested: function(name) {
+            if (pane.appWindow && pane.appWindow.openPeopleManagerForPerson)
+                pane.appWindow.openPeopleManagerForPerson(name)
+        }
         onSelectAllRequested:
             if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
         onClearSelectionRequested:
             if (pane.appWindow && pane.appWindow.clearSelection)
                 pane.appWindow.clearSelection()
+    }
+
+    Dialog {
+        id: peopleAlbumDeleteConfirmation
+        objectName: "peopleAlbumDeleteConfirmation"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        title: qsTr("Delete Person")
+        property string personName: ""
+
+        contentItem: Label {
+            text: qsTr("Are you sure you want to delete the people album \"%1\"?")
+                .arg(peopleAlbumDeleteConfirmation.personName)
+            wrapMode: Text.WordWrap
+        }
+
+        footer: RowLayout {
+            spacing: 8
+
+            Item { Layout.fillWidth: true }
+
+            Button {
+                objectName: "peopleAlbumDeleteConfirmButton"
+                text: qsTr("Yes")
+                onClicked: peopleAlbumDeleteConfirmation.accept()
+            }
+            Button {
+                objectName: "peopleAlbumDeleteCancelButton"
+                text: qsTr("No")
+                onClicked: peopleAlbumDeleteConfirmation.reject()
+            }
+        }
+
+        onAccepted: {
+            if (controller)
+                controller.savePeopleManagerChanges([
+                    {action: "delete", oldName: peopleAlbumDeleteConfirmation.personName}
+                ])
+        }
     }
 
     FolderListContextMenu {

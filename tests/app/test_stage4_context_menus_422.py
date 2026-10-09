@@ -141,15 +141,25 @@ class TestPeopleAlbumContextMenu:
         ]
         assert found == self.EXPECTED
 
-    def test_people_album_editing_is_disabled_until_the_faces_work(
-        self, qml_engine
-    ):
-        """A személy-album törlése/szerkesztése a #26 hatóköre."""
+    def test_people_album_delete_and_edit_are_live_signals(self, qml_engine):
+        """A #4587 beköti a személy szerkesztését és megerősített törlését."""
         menu = _load(qml_engine, "PeopleAlbumContextMenu")
-        assert menu.findChild(
-            QObject, "peopleAlbumMenuDelete").property("enabled") is False
-        assert menu.findChild(
-            QObject, "peopleAlbumMenuEdit").property("enabled") is False
+        menu.setProperty("personName", "Anna")
+        events = []
+        menu.deleteRequested.connect(
+            lambda name: events.append(("delete", name))
+        )
+        menu.editRequested.connect(lambda name: events.append(("edit", name)))
+
+        for name, action in (
+            ("peopleAlbumMenuDelete", "delete"),
+            ("peopleAlbumMenuEdit", "edit"),
+        ):
+            item = menu.findChild(QObject, name)
+            assert item is not None
+            assert item.property("enabled") is True
+            _trigger(menu, name)
+            assert events[-1] == (action, "Anna")
 
     @pytest.mark.parametrize(
         "item_name,signal_name",
