@@ -1827,13 +1827,13 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        // #4416: a kijelölt mappát ugyanazzal a vezérlőművelettel rejti el,
-        // amelyet a FolderContextMenu hív. Az aktív feltétel is azonos:
-        // van kiválasztott mappa.
+        // #4416/#4741: a kijelölt mappát ugyanazzal a vezérlőművelettel rejti
+        // el, amelyet a FolderContextMenu hív. Album- és személynézetben a
+        // vezérlő megőrzi az előző mappát, de ott nincs kijelölt mappa.
         MenuItem {
             objectName: "menuFolderHide"
             text: qsTr("&Hide")
-            enabled: bar.currentFolder.length > 0
+            enabled: bar.folderLocateEnabled
             onTriggered: bar.setCurrentFolderHidden(true)
         }
         // #4416: a Rejtett mappák gyűjteményében kijelölt mappát hozza
@@ -1844,7 +1844,7 @@ MenuBar {
             //: szöveg — a mért `AlbumPhoto::ID_PICTURE_UNHIDE` a KÉP-menüé.
             //: Ezért marad „Show”, nem igazítjuk „&Unhide”-ra.
             text: qsTr("Show")
-            enabled: bar.currentFolder.length > 0
+            enabled: bar.folderLocateEnabled
             onTriggered: bar.setCurrentFolderHidden(false)
         }
         MenuSeparator {}
