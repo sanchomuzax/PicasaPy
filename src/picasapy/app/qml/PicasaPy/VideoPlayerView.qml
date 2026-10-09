@@ -36,13 +36,16 @@ Item {
     //: frissül. Ha itt optimistán átírnánk, a felület egy írásvédett mappán
     //: is mentettnek mutatná a vágást (#2497 tanulsága).
     signal trimRequested(int startMs, int endMs)
-    signal trimResetRequested()
-    signal exportClipRequested()
 
     //: #1838: KÉPKOCKA mentése (`movieeditpanel/capture_frame`). A komponens
     //: itt sem ír fájlt — a gazda hívja a vezérlő `captureMovieFrame`-jét a
-    //: sor indexével és az ÉPP LÁTOTT pozícióval.
+    //: sor indexével és az ÉPP LÁTOTT pozícióval. A gombot a videó-panel
+    //: (`VideoEditPanel.qml`) adja, ezért a jelzést a `captureFrame()` váltja ki.
     signal captureFrameRequested(int positionMs)
+
+    function captureFrame() {
+        player.captureFrameRequested(media.position)
+    }
 
     readonly property bool trimmed: trimStartMs >= 0 || trimEndMs >= 0
     //: a lejátszható szakasz — a vágás nélküli oldalon a fájl határa
@@ -189,9 +192,10 @@ Item {
                         value: media.position
                     }
                 }
-                //: #1838: a három vágás-vezérlő, az eredeti sorrendjében
-                //: (`setin` · `setout` · `reset_trim`). A feliratok a nyomdai
-                //: vágásjelek: a be- és kimeneti pont szögletes zárójele.
+                //: #1838: a vágás-kezdő és -befejező vezérlő a sávon. A
+                //: visszaállítás, a képkocka és az export a videó-panelen van.
+                //: A feliratok a nyomdai vágásjelek: a be- és kimeneti pont
+                //: szögletes zárójele.
                 PicasaButton {
                     objectName: "videoSetInButton"
                     Layout.preferredWidth: 30
@@ -209,39 +213,6 @@ Item {
                     ToolTip.delay: Theme.tooltipDelay
                     ToolTip.visible: hovered
                     onClicked: player.trimRequested(player.trimStartMs, media.position)
-                }
-                PicasaButton {
-                    objectName: "videoResetTrimButton"
-                    Layout.preferredWidth: 30
-                    text: "⟲"
-                    //: vágás nélkül nincs mit visszaállítani — a gomb szürke
-                    enabled: player.trimmed
-                    //: `Tooltip(movieeditpanel/reset_trim)` — az eredeti szövege
-                    ToolTip.text: qsTr("Restore movie to its original length (remove start and end points)")
-                    ToolTip.delay: Theme.tooltipDelay
-                    ToolTip.visible: hovered
-                    onClicked: player.trimResetRequested()
-                }
-                //: #1838: `movieeditpanel/capture_frame` — „Take Snapshot".
-                //: A jel a fényképezőgép; a felirat a buboréksúgóban van, mert a
-                //: sávon csak 30 képpont széles gombok férnek el.
-                PicasaButton {
-                    objectName: "videoCaptureFrameButton"
-                    Layout.preferredWidth: 30
-                    text: "⃞"
-                    //: `Tooltip(movieeditpanel/capture_frame)`
-                    ToolTip.text: qsTr("Capture current frame")
-                    ToolTip.delay: Theme.tooltipDelay
-                    ToolTip.visible: hovered
-                    onClicked: player.captureFrameRequested(media.position)
-                }
-                // `movieeditpanel/export_movie`: a Linuxon az eredeti
-                // `LinuxNomovie` üzenetet adja; csak vágott klipnél aktív.
-                PicasaButton {
-                    objectName: "movieeditpanel/export_movie"
-                    text: qsTr("Export Clip")
-                    enabled: player.trimmed
-                    onClicked: player.exportClipRequested()
                 }
                 VideoPlayerControls {
                     objectName: "videoPlayerModeControls"
