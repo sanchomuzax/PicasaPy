@@ -5,10 +5,9 @@ hátralévő munka) és alkalmazta a jobbklikk-menűkre; ez a készlet a felső
 menüsáv ugyanolyan tételeit rögzíti.
 
 **A tulajdonos döntése (2026-08-14):** a megszűnt Picasa-szolgáltatások ÉS a
-külső Google-integrációk kapják meg a végleges szürkét. Ami nálunk
-megvalósítható maradna (Súgó ▸ Keyboard Shortcuts), az **helyfoglaló marad**
-— erre külön ellenpróba van, mert egy megvalósítható funkció „véglegesen
-halottnak" jelölése ugyanolyan hiba, mint fordítva.
+külső Google-integrációk kapják meg a végleges szürkét. A korábbi ellenpróba
+a Súgó ▸ Billentyűkódok helyfoglaló állapotát őrizte; a #4639 ezt a tételt
+bekötötte, ezért az ellenpróba most a működő állapotot méri.
 
 ⚠️ #4640: a „Check for Updates” (Frissítések keresése) KIKERÜLT a helyfoglalók
 közül: a PicasaPy saját frissítéskeresése nem paritás-feladat, az eredeti
@@ -47,7 +46,7 @@ NYUGDIJAZOTT = (
     "Check for Updates",
 )
 
-#: Nálunk MEGVALÓSÍTHATÓ — marad helyfoglaló.
+#: Nálunk MEGVALÓSÍTHATÓ — a helyfoglalók közül kikerült.
 #:
 #: ⚠️ #2054: a „Help Contents and Index" KIKERÜLT innen, mert **elkészült**.
 #: A súgó szövege a csomagban van (`picasapy/help/`), a menütétel valódi
@@ -67,11 +66,6 @@ NYUGDIJAZOTT = (
 #: kiadás-panel Ajándék-CD üzemmódját nyitja, és a tálcából lemezképet ír.
 #: Ha valaha visszaesne helyfoglalóvá, a `test_ajandek_cd_bekotes_3503.py`
 #: fogja meg.
-HELYFOGLALO_MARAD = (
-    "Keyboard Shortcuts",
-)
-
-
 @pytest.fixture(scope="module")
 def forras() -> str:
     # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma — ez a
@@ -100,15 +94,18 @@ class TestANyugdijazottak:
         )
 
 
-class TestAmiMegvalosithato:
-    """Ellenpróba: ami nálunk megépíthető, azt nem temetjük el."""
-
-    @pytest.mark.parametrize("felirat", HELYFOGLALO_MARAD)
-    def test_helyfoglalo_marad(self, forras: str, felirat: str) -> None:
-        sor = _tetel_sora(forras, felirat)
-
-        assert "placeholder: true" in sor
-        assert "retired: true" not in sor
+def test_billentyu_sugo_tetel_elo_es_bekotott(forras: str) -> None:
+    """#4639: a korábbi helyfoglaló megnyitja a helyi gyorsbillentyűlistát."""
+    blokk = re.search(
+        r'MenuItem\s*\{\s*objectName:\s*"menuHelpKeyboardShortcuts"'
+        r"(?P<body>.*?)\n\s*\}",
+        forras,
+        re.S,
+    )
+    assert blokk is not None, "a Billentyűkódok tétel nem élő MenuItem"
+    assert "placeholder: true" not in blokk.group("body")
+    assert "retired: true" not in blokk.group("body")
+    assert "keyboardShortcutsRequested()" in blokk.group("body")
 
 
 class TestAKetFeluletUgyanaztMondja:
