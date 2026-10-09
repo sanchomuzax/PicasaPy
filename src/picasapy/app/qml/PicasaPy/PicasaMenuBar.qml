@@ -1163,9 +1163,13 @@ MenuBar {
                 })
             }
         }
-        MenuItem {
+        // SAJÁT FUNKCIÓ (#28, #4638): a sötét téma az eredeti Picasa 3.9-ben
+        // nincs meg (`docs/specs/ui-audit-menus.md`), ezért kék jelölést kap.
+        PicasaMenuItem {
             // #28: opcionális sötét téma — az alapértelmezés a világos
             objectName: "menuViewDarkTheme"
+            placeholder: false
+            sajat: true
             text: qsTr("Dark Theme")
             checkable: true
             checked: (bar.ctl && bar.ctl.darkTheme !== undefined) ? bar.ctl.darkTheme : false
@@ -2166,8 +2170,12 @@ MenuBar {
         // megszakítható keresés saját ablakkal. A tétel MINDIG él — ha a
         // modell hiányzik, azt a megnyíló ablak MONDJA MEG; egy szürke
         // menüpont nem tudja megmagyarázni magát (néma tiltás, #1473).
-        MenuItem {
+        // SAJÁT FUNKCIÓ (#1473, #4638): az eredetiben nincs arckereső
+        // menüparancs (a keresés háttérszál volt) — ld. fent, #2142.
+        PicasaMenuItem {
             objectName: "menuToolsFaceScan"
+            placeholder: false
+            sajat: true
             text: qsTr("Find Faces...")
             onTriggered: bar.faceScanRequested()
         }
@@ -2556,8 +2564,10 @@ MenuBar {
         // a mi fejlesztői eszközünk, tehát a bináris-egyezés ide nem
         // vonatkozik. (Az eredetinek volt `/uidebug` lapja a beépített
         // kiszolgálón, de azt szándékosan nem építjük meg: ADR-011.)
-        MenuItem {
+        PicasaMenuItem {
             objectName: "menuHelpPerfMonitor"
+            placeholder: false
+            sajat: true
             text: qsTr("Performance Monitor")
             checkable: true
             checked: (bar.ctl && bar.ctl.perfMonitorEnabled !== undefined)
