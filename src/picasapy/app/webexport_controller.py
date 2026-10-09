@@ -41,7 +41,7 @@ from picasapy.index import PhotoRecord
 from picasapy.webexport import (
     AlbumExportData,
     WebExportSettings,
-    list_bundled_templates,
+    list_templates,
     run_web_export,
 )
 from picasapy.webexport.images import prepare_photo_exports
@@ -109,7 +109,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
                     else ""
                 ),
             }
-            for info in list_bundled_templates()
+            for info in list_templates()
         ]
 
     #: #534: az eredeti alapértelmezett kimeneti mappája
@@ -159,7 +159,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             self.webExportFailed.emit(self.tr("Choose a target folder first."))
             return
         template = next(
-            (info for info in list_bundled_templates() if info.id == template_id), None
+            (info for info in list_templates() if info.id == template_id), None
         )
         if template is None:
             self.webExportFailed.emit(
