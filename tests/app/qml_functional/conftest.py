@@ -259,7 +259,7 @@ def _build_qml_app(
         engine, controller, db
     )
     # arc-keretek (#147) — az application.py bekötésének tükre
-    faces_helper = FacesHelper()
+    faces_helper = FacesHelper(db)
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     # #26 (3. lépcső) — az application.py bekötésének tükre
     face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
