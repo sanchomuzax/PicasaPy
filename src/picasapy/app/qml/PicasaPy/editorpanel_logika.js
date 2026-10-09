@@ -136,7 +136,11 @@ function openParamPanel(name, displayLabel) {
 // a folderPaneWidthSaver mintája (Main.qml): ne hívjunk feleslegesen
 // minden pixelnyi elmozdulásnál, de az utolsó érték mindig átmegy.
 function updateParamValue(index, value) {
-    panel.paramEffectValues[index] = value
+    // Új listát írunk vissza: a var property változásjelzése így a másik
+    // felületet is értesíti (például a puck miatt mozduló csúszkát).
+    var values = panel.paramEffectValues.slice(0)
+    values[index] = value
+    panel.paramEffectValues = values
     paramPreviewTimer.restart()
 }
 
