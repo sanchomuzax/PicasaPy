@@ -90,6 +90,7 @@ ColumnLayout {
             height: toolGrid.cellaMagassag
             objectName: "editToolCrop"
             toolName: "crop"; label: qsTr("Crop"); iconFile: "vagas"
+            tooltip: qsTr("Crop this Photo to a different format")
             active: panel.cropActive
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -103,6 +104,7 @@ ColumnLayout {
             objectName: "editToolTilt"
             toolName: "tilt"; label: qsTr("Straighten")
             iconFile: "kiegyenesites"
+            tooltip: qsTr("Fix a crooked Photo")
             active: panel.tiltActive
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -115,6 +117,7 @@ ColumnLayout {
             height: toolGrid.cellaMagassag
             objectName: "editToolRedeye"
             toolName: "redeye"; label: qsTr("Redeye"); iconFile: "vorosszem"
+            tooltip: qsTr("Repair Red-Eye flaws in this Photo")
             active: panel.redeyeActive
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -130,6 +133,7 @@ ColumnLayout {
             objectName: "editToolEnhance"
             toolName: "enhance"; label: qsTr("I'm Feeling Lucky")
             iconFile: "jo-napom-van"
+            tooltip: qsTr("One-click fix for lighting and color")
             tileEnabled: panel.enhanceEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -143,6 +147,7 @@ ColumnLayout {
             objectName: "editToolAutolight"
             toolName: "autolight"; label: qsTr("Auto Contrast")
             iconFile: "auto-kontraszt"
+            tooltip: qsTr("Fix exposure without affecting color")
             tileEnabled: panel.autolightEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -156,6 +161,7 @@ ColumnLayout {
             objectName: "editToolAutocolor"
             toolName: "autocolor"; label: qsTr("Auto Color")
             iconFile: "auto-szin"
+            tooltip: qsTr("Remove color casts automatically")
             tileEnabled: panel.autocolorEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -169,6 +175,7 @@ ColumnLayout {
             objectName: "editToolRetouch"
             toolName: "retouch"; label: qsTr("Retouch")
             iconFile: "retusalas"
+            tooltip: qsTr("Repair blemishes, dust and scratches")
             active: panel.retouchActive
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -182,6 +189,7 @@ ColumnLayout {
             height: toolGrid.cellaMagassag
             objectName: "editToolText"
             toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
+            tooltip: qsTr("Add/Edit Text on a photo")
             active: panel.textActive
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -270,6 +278,14 @@ ColumnLayout {
             sourceSize: Qt.size(88, 60)
             Layout.preferredWidth: 44
             Layout.preferredHeight: 30
+            ToolTip.text: qsTr("Fill Light: Adjust the ambient light in the Photo")
+            ToolTip.visible: fillLightIconHover.containsMouse
+            ToolTip.delay: Theme.tooltipDelay
+            MouseArea {
+                id: fillLightIconHover
+                anchors.fill: parent
+                hoverEnabled: true
+            }
         }
         ColumnLayout {
             Layout.fillWidth: false
