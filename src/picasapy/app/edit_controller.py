@@ -711,6 +711,16 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             counts[key] = counts.get(key, 0) + 1
         return counts
 
+    @Property(str, notify=revisionChanged)
+    def effectChain(self) -> str:
+        """A szerkesztési lánc sorosított értéke az effekt-csempe előnézetéhez.
+
+        A képszolgáltató könyvtárrekordja a szerkesztés megnyitásakor készült,
+        ezért az aktuális láncot a csempe URL-jén kell átadni. A revíziójel
+        minden sikeres láncmódosításkor újraköti ezt az értéket.
+        """
+        return self._session.to_value()
+
     @Property(bool, notify=toolsChanged)
     def hasSavedRedeye(self) -> bool:
         """Van-e a képen **MENTETT** vörösszem-javítás.

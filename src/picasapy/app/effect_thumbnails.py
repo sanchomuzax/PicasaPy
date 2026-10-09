@@ -13,18 +13,13 @@ jelzéssel érkezik meg, amikor kész. Két gyorsítótár-szint:
   - forrás-cache (`_source_for`): a fotó KIS FELBONTÁSÚ (``_SOURCE_EDGE``
     px-es) dekódolt tömbje, fotónként (útvonal+mtime) EGYSZER — a 40 effekt
     mind erről a közös forrásról indul, a lemez-dekód nem ismétlődik;
-  - bélyegkép-cache (`_ThumbCache`): a KÉSZ (effekttel renderelt,
-    ``_THUMB_EDGE`` px-re kicsinyített) QImage, (fotó, effekt) kulccsal —
-    effektenként CSAK EGYSZER számol, amíg a fotó nem változik.
+  - bélyegkép-cache (`_ThumbCache`): a KÉSZ (lánccal és effekttel renderelt,
+    ``_THUMB_EDGE`` px-re kicsinyített) QImage, (fotó, lánc, effekt) kulccsal.
 
-Tudatos egyszerűsítés: a bélyegkép a fotó ALAP (a jelenleg szerkesztett
-lánc NÉLKÜLI) állapotán mutatja az effektet, nem az éppen alkalmazott
-vágás/finomhangolás/korábbi effektek TETEJÉN. A pontos "mit látnál, ha most
-erre kattintanál" előnézet a teljes láncot figyelembe véve minden apró
-szerkesztői lépésnél (pl. csúszka-húzásnál) mind a 36 bélyegképet
-újraszámolná — a válaszidő ennél fontosabb, mint ez a kis pontossági
-engedmény (a nagy élő előnézet, `edit_preview.py`, változatlanul a teljes
-láncot mutatja).
+Az effekt-csempék a jelenlegi szerkesztési lánc tetejéről renderelődnek
+(#2273). A lánc az URL `filters` paraméterében érkezik, így a könyvtár
+kezdeti PhotoRecord értékénél frissebb állapotot is követnek; a lánc része a
+bélyegkép-cache kulcsának.
 
 Hibatűrés (#66 mintája): a renderből kivétel SOHA nem szökhet ki — hiba
 esetén placeholder megy vissza, a részletek a logba.
@@ -39,6 +34,7 @@ import threading
 from collections import OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
+from urllib.parse import parse_qs
 
 import numpy as np
 import itertools
@@ -441,10 +437,9 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         return image
 
     def _render(self, id_str: str) -> QImage:
-        # az id "<fotó-id>/<effekt>" alakú, opcionális "?..." cache-buster
-        # résszel (a mai URL-eink nem adnak ilyet, de a többi provider
-        # mintáját követve tűrjük, ha jönne)
-        raw = id_str.split("?")[0]
+        # Az id "<fotó-id>/<effekt>?filters=<lánc>" alakú. Régi hívóknál,
+        # amelyek nem adnak láncot, a PhotoRecord szűrőértéke marad az alap.
+        raw, _separator, query = id_str.partition("?")
         photo_id, _sep, effect = raw.partition("/")
         effect_key = effect.strip().casefold()
         if not photo_id or effect_key not in _KNOWN_EFFECTS:
@@ -453,7 +448,12 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         if photo is None:
             return QImage()
         path = Path(photo.folder_path) / photo.name
-        lanc = getattr(photo, "filters", "") or ""
+        query_items = parse_qs(query, keep_blank_values=True)
+        lanc = (
+            query_items["filters"][0]
+            if "filters" in query_items
+            else getattr(photo, "filters", "") or ""
+        )
         crop, crop_ini_readable = self._crop_reader.read(
             path.parent / PICASA_INI_NAME, path.name
         )
