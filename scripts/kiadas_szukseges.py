@@ -65,6 +65,9 @@ _NEM_KIADHATO_FAJLOK = (
     ".editorconfig",
     #: #2060: az ast-grep gyökér-konfigurációja, a szabálykészletéhez tartozik.
     "sgconfig.yml",
+    #: picasapy-agent#186: a Mergify beolvasztási sorának beállítása — a
+    #: fejlesztési folyamaté, a felhasználó semmit nem lát belőle.
+    ".mergify.yml",
     #: A napi automata súgófrissítés két ÁLLAPOTFÁJLJA (picasapy-agent#35):
     #: meddig jutott a dokumentálás, és a futás naplósora. A `src/` alatt
     #: állnak, de nem viselkedés: a wheel sem csomagolja őket (a
