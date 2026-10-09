@@ -6,7 +6,7 @@ forró fájl végzi)."""
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
+from PySide6.QtCore import QLocale, QMetaObject, QObject, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
 # élő Python-referencia nélkül a JS-motor GC-je bármikor eltávolítaná a
@@ -346,15 +346,21 @@ class TestFolderPropertiesDialog:
         assert hint.property("visible") is False
 
     def test_existing_values_prefill_the_fields(self, qml_engine, qt_app):
-        dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
-        dialog.setProperty("currentDate", "2019-07-04")
-        dialog.setProperty("currentDescription", "Régi leírás")
-        dialog.setProperty("folderName", "balaton")
-        _open(dialog)
-        qt_app.processEvents()
-        assert dialog.findChild(
-            QObject, "folderPropertiesDateField").property("text") == "2019-07-04"
-        assert dialog.findChild(
-            QObject, "folderPropertiesDescription").property("text") == "Régi leírás"
-        assert dialog.findChild(
-            QObject, "folderPropertiesNameField").property("text") == "balaton"
+        # #4494: a dátummező a nyelvi beállítás szerinti alakot mutatja
+        eredeti = QLocale()
+        QLocale.setDefault(QLocale(QLocale.Language.Hungarian, QLocale.Country.Hungary))
+        try:
+            dialog = _load_dialog_in_window(qml_engine, "FolderPropertiesDialog")
+            dialog.setProperty("currentDate", "2019-07-04")
+            dialog.setProperty("currentDescription", "Régi leírás")
+            dialog.setProperty("folderName", "balaton")
+            _open(dialog)
+            qt_app.processEvents()
+            assert dialog.findChild(
+                QObject, "folderPropertiesDateField").property("text") == "2019. 07. 04."
+            assert dialog.findChild(
+                QObject, "folderPropertiesDescription").property("text") == "Régi leírás"
+            assert dialog.findChild(
+                QObject, "folderPropertiesNameField").property("text") == "balaton"
+        finally:
+            QLocale.setDefault(eredeti)
