@@ -376,6 +376,13 @@ ApplicationWindow {
         documentTabStrip.activateTab(window.collageTabId)
     }
 
+    //: #4539: a mappa-fejléc film-gombja — a csoport sorait a meglévő
+    //: Filmkészítőbe adja (a kijelölés nem számít, mint a kollázsnál).
+    function openMovieFromRows(rows) {
+        if (!controller || rows.length === 0) return
+        createDialogs.ensure().openMovieForRows(rows)
+    }
+
     function openCollageTab() {
         if (!controller) return
         if (!window.aaKapu(window.openCollageTab)) return
@@ -574,6 +581,22 @@ ApplicationWindow {
             if (path.length > 0) paths.push(path)
         }
         return paths
+    }
+
+    function addPhotosToScreensaver(paths) {
+        var added = controller ? controller.addScreensaverPhotos(paths) : 0
+        errorBanner.notice = true
+        errorBannerText.text = qsTr("Added %1 pictures to Screensaver.")
+                .arg(added)
+    }
+
+    function requestAddToScreensaver() {
+        var paths = window.photoActionPaths()
+        if (controller && controller.currentAlbumToken !== "") {
+            screensaverAlbumConfirmLoader.ensure().openFor(paths)
+            return
+        }
+        window.addPhotosToScreensaver(paths)
     }
 
     // #4271: az eredeti megerősítési küszöb 30 fölött van; a kijelölést
@@ -809,14 +832,20 @@ ApplicationWindow {
             return
         var utak = window._faceScanController.personSuggestionPaths(
             window.personAlbumName)
-        var javaslatUtak = ({})
-        for (var j = 0; j < utak.length; ++j)
-            javaslatUtak[String(utak[j])] = true
+        var javaslatSorok = ({})
+        for (var j = 0; j < utak.length; ++j) {
+            // A vezérlő Path-sztringje Windowson natív `\\` elválasztót
+            // tartalmazhat, míg a PhotoGridModel.filePathAt `/`-t ad.
+            // Az útvonal-azonosítást a modell platformfüggő rowOfPath API-ja
+            // végzi, ne QML-ben hasonlítsuk össze a nyers szövegeket.
+            var sor = Number(controller.photos.rowOfPath(String(utak[j])))
+            if (sor >= 0)
+                javaslatSorok[sor] = true
+        }
         var sorok = []
         var darab = Number(controller.photos.rowCount())
         for (var i = 0; i < darab; ++i) {
-            var ut = String(controller.photos.filePathAt(i))
-            if (javaslatUtak[ut])
+            if (javaslatSorok[i])
                 sorok.push(i)
         }
         window.selectedIndexes = sorok
@@ -1493,6 +1522,28 @@ ApplicationWindow {
         timelineController.reload()
         window.timelineOpen = true
     }
+
+    // #4569: az eredeti F11 a képnéző teljes képernyős módját kapcsolja.
+    // A diavetítés saját teljes képernyős állapotát ez a parancs nem írhatja felül.
+    property int visibilityBeforeViewerFullscreen: Window.Windowed
+    function toggleViewerFullscreen() {
+        if (!window.viewerOpen || slideshow.visible) return
+        if (window.visibility === Window.FullScreen) {
+            window.visibility =
+                window.visibilityBeforeViewerFullscreen === Window.FullScreen
+                    ? Window.Windowed : window.visibilityBeforeViewerFullscreen
+        } else {
+            window.visibilityBeforeViewerFullscreen = window.visibility
+            window.visibility = Window.FullScreen
+        }
+    }
+    Shortcut {
+        objectName: "viewerFullscreenShortcut"
+        sequence: "F11"
+        enabled: window.viewerOpen && !slideshow.visible
+        onActivated: window.toggleViewerFullscreen()
+    }
+
     // #1903: a `Ctrl+5` NEM sül el, amíg a valódi Időrend nincs kész — a
     // menütétel is inaktív. A billentyű így nem kerülhet meg egy szürke
     // menüpontot (a #1686 fordított esete: ott a billentyű MŰKÖDÖTT,
@@ -1698,15 +1749,7 @@ ApplicationWindow {
         onConfigureButtonsRequested: configureButtonsDialog.open()
         onConfigureScreensaverRequested: screensaverDialog.open()
         onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
-        onAddToScreensaverRequested: {
-            var added = controller
-                ? controller.addScreensaverPhotos(window.photoActionPaths()) : 0
-            if (added > 0) {
-                errorBanner.notice = true
-                errorBannerText.text = qsTr(
-                    "Added %1 pictures to Screensaver.").arg(added)
-            }
-        }
+        onAddToScreensaverRequested: window.requestAddToScreensaver()
         onThumbSizePreset: function(size) { window.thumbSize = size }
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
         // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
@@ -2424,6 +2467,27 @@ ApplicationWindow {
             ScreensaverDialog {
                 saverController: controller
                 onPreviewRequested: window.startScreensaverPreview()
+            }
+        }
+    }
+    //: #4618: album-nézetben az eredeti rákérdez (`addtosaver::warning`);
+    //: halasztva (#1612), a közös megerősítő párbeszéddel
+    DeferredDialog {
+        id: screensaverAlbumConfirmLoader
+        objectName: "screensaverAlbumConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                namePrefix: "screensaverAlbumConfirm"
+                title: qsTr("Confirm")
+                property var pendingPaths: []
+                function openFor(paths) {
+                    pendingPaths = paths ? paths.slice() : []
+                    if (pendingPaths.length > 0)
+                        ask("", qsTr("Are you sure you want to add all of the"
+                                     + " selected album's images?"))
+                }
+                onConfirmed: window.addPhotosToScreensaver(pendingPaths)
             }
         }
     }
