@@ -78,6 +78,24 @@ ColumnLayout {
         color: Theme.textGray
     }
 
+    // #4542: ugyanaz a Picasa-figyelmeztetés, mint a vörösszem-eszköz
+    // `IDS_WARN_REDEYE_ACCURACY` erőforrása; csak mentett kiegyenesítésnél.
+    Text {
+        objectName: "redeyeStraightenWarning"
+        visible: panel.straightenActive
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY
+        text: qsTr("This image's orientation has been modified by the Straighten tool, "
+                   + "which can cause inaccuracies when selecting red eye  rectangles.\n"
+                   + "If your redeye fixes appear to be misaligned (or non-existent), try "
+                   + "undoing the Straighten fix, then reapply red eye fixes, and "
+                   + "Straighten again if necessary.")
+        font.pixelSize: Theme.fontSize - 1
+        color: Theme.textGray
+    }
+
     //: #604: a keretenkénti visszavonás mondata. MÉRVE, de MÁS forrásból,
     //: mint a fölötte lévő útmutató: az a panel statikus címkéje
     //: (`editpanel/redeyetext`), ez pedig az eszköz HÁROM állapotüzenetének
