@@ -91,6 +91,7 @@ from picasapy.render.flip import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 
+from . import formatting
 from .worker_thread import BackgroundWorkerMixin
 
 # #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
@@ -840,6 +841,34 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     "music_file": album.music_file or "",
                 }
         return {}
+
+    def albumMusicFile(self, token: str) -> str:  # noqa: N802
+        """Az engedélyezett albumzene meglévő, helyi fájlútvonala."""
+        token = (token or "").strip()
+        if not token:
+            return ""
+        for ini_path, document in self._album_dokumentumok(token):
+            for album in albums_of(document):
+                if album.token != token:
+                    continue
+                if not album.use_music or not album.music_file:
+                    return ""
+                local_path = formatting.to_local_path(album.music_file)
+                if not local_path:
+                    return ""
+                music_path = Path(local_path).expanduser()
+                if not music_path.is_absolute():
+                    music_path = ini_path.parent / music_path
+                try:
+                    return str(music_path.resolve()) if music_path.is_file() else ""
+                except OSError:
+                    return ""
+        return ""
+
+    def albumMusicTrackUrls(self, token: str) -> list:  # noqa: N802
+        """Az album egyetlen kiválasztott zeneszáma file-URL-ként."""
+        music_path = self.albumMusicFile(token)
+        return [formatting.to_file_url(music_path)] if music_path else []
 
     @Slot(str, str, str, str, str, result=bool)
     def editAlbumProperties(  # noqa: N802
