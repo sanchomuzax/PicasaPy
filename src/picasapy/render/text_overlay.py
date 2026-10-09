@@ -32,7 +32,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from picasapy.render.curves import validate_image
-from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
+from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font, qt_font_for
 
 # #1611: a két Hershey-konstans a HASZNÁLAT helyén olvasódik ki, nem
 # modulszinten — modulszinten a `cv2.X` a BETÖLTÉSKOR behozná az OpenCV-t,
@@ -125,6 +125,54 @@ def _draw_truetype(
         _draw_underline(draw, origin, content, font, anchor,
                         color if fill_enabled else outline_color)
     return np.array(pil)
+
+
+def _draw_qt_font(
+    base, content, origin, font, color, outline_color, outline_thickness,
+    fill_enabled, has_outline, align,
+):
+    """A Qt által kiválasztott rendszer-betűcsaládot rajzolja a képre."""
+    from PySide6.QtCore import QPointF
+    from PySide6.QtGui import (
+        QColor,
+        QFontMetricsF,
+        QImage,
+        QPainter,
+        QPainterPath,
+        QPen,
+    )
+
+    height, width = base.shape[:2]
+    contiguous = np.ascontiguousarray(base)
+    qimage = QImage(
+        contiguous.data,
+        width,
+        height,
+        int(contiguous.strides[0]),
+        QImage.Format.Format_RGB888,
+    ).copy()
+    painter = QPainter(qimage)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    text_width = QFontMetricsF(font).horizontalAdvance(content)
+    x = float(origin[0])
+    if align == "center":
+        x -= text_width / 2
+    elif align == "right":
+        x -= text_width
+    path = QPainterPath()
+    path.addText(QPointF(x, float(origin[1])), font, content)
+    if has_outline:
+        pen = QPen(QColor(*map(int, outline_color)))
+        pen.setWidthF(max(1.0, float(outline_thickness)))
+        painter.strokePath(path, pen)
+    if fill_enabled:
+        painter.fillPath(path, QColor(*map(int, color)))
+    painter.end()
+
+    raw = np.frombuffer(
+        qimage.bits(), dtype=np.uint8, count=qimage.sizeInBytes()
+    ).reshape(height, qimage.bytesPerLine())
+    return raw[:, : width * 3].reshape(height, width, 3).copy()
 
 
 def _draw_underline(draw, origin, content, font, anchor, colour) -> None:
@@ -220,17 +268,39 @@ def apply_text_overlay(
         if font_size_pt is not None
         else _size_px_for(font_scale)
     )
-    font = load_font(font_family, meret_px, bold=bold, italic=italic)
-    if font is None:
-        layer = _draw_hershey(
-            result, content, origin, meret_px / _SCALE_TO_PIXELS, color, thickness,
-            outline_color, outline_thickness, fill_enabled, has_outline,
+    qt_font = qt_font_for(
+        font_family,
+        meret_px,
+        bold=bold,
+        italic=italic,
+        underline=underline,
+    )
+    if qt_font is not None:
+        layer = _draw_qt_font(
+            result,
+            content,
+            origin,
+            qt_font,
+            color,
+            outline_color,
+            outline_thickness,
+            fill_enabled,
+            has_outline,
+            align,
         )
     else:
-        layer = _draw_truetype(
-            result, content, origin, font, color, outline_color,
-            outline_thickness, fill_enabled, has_outline, underline, align,
-        )
+        font = load_font(font_family, meret_px, bold=bold, italic=italic)
+        if font is None:
+            layer = _draw_hershey(
+                result, content, origin, meret_px / _SCALE_TO_PIXELS, color,
+                thickness, outline_color, outline_thickness, fill_enabled,
+                has_outline,
+            )
+        else:
+            layer = _draw_truetype(
+                result, content, origin, font, color, outline_color,
+                outline_thickness, fill_enabled, has_outline, underline, align,
+            )
     changed = np.any(layer != result, axis=-1)
     if not changed.any():
         return result
