@@ -102,7 +102,13 @@ Rectangle {
                 item.markers = Qt.binding(function() {
                     return panel.filteredMarkers
                 })
-                item.markerActivated.connect(panel.photoActivated)
+                item.markerActivated.connect(function(row) {
+                    // Előbb jelöljük ki a képét, utána szűrjünk: a főablak a
+                    // modellváltáskor az azonosítója alapján visszaállítja a
+                    // kijelölést a geocímkézett rácsban.
+                    panel.photoActivated(row)
+                    if (controller) controller.showGeotagged()
+                })
                 item.placePicked.connect(panel.placeSelection)
             }
         }
