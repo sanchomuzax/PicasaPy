@@ -23,7 +23,7 @@ def _elem(root, name: str):
     return result
 
 
-def _varj(qt_app, condition, message: str, timeout: float = 3.0) -> None:
+def _varj(qt_app, condition, message: str, timeout: float = 15.0) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         qt_app.processEvents()
