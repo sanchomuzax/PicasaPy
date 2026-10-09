@@ -1693,7 +1693,7 @@ _ERINTETT_ALAP_VALTOZO = "PICASAPY_ERINTETT_ALAP"
 #: vannak.)
 _TELJES_KESZLET_ELOTAGOK = (
     "tests/app/conftest.py", "tests/app/qml_functional/conftest.py",
-    "tests/conftest.py", "tests/support/", "pyproject.toml", "packaging/",
+    "tests/conftest.py", "tests/support/", "pyproject.toml",
 )
 
 #: Az érintett-kiválasztás e fölött a hányad fölött a teljes készletet adja.
@@ -1732,15 +1732,18 @@ def erintett_app_tesztek(
             return list(app_tesztek)
         if ut.startswith("tests/app/"):
             nev = ut.rsplit("/", 1)[-1]
-            if not nev.startswith("test_"):
-                return list(app_tesztek)  # közös segédmodul (pl. _fomenu_4420_menu)
-            sajat.add(ut)
+            if nev.startswith("test_"):
+                sajat.add(ut)
+            elif nev.endswith(".py"):
+                # közös segédmodul (pl. _fomenu_4420_menu): az importálói futnak
+                kulcsok.add(Path(ut).stem)
         elif ut.startswith("src/picasapy/app/i18n/"):
             kulcsok.update({"picasapy_hu", "qsTr", "i18n"})
-        elif ut.startswith("src/picasapy/app/"):
+        elif ut.startswith("src/") and ut.endswith((".py", ".qml")):
+            # app-forrás vagy a felületen kívüli modul: az app-tesztek közül azok
+            # futnak, amelyek a modult NÉV szerint említik (a modul saját
+            # tesztjei a mindig teljesen futó nem-app készletben vannak)
             kulcsok.add(Path(ut).stem)
-        elif ut.startswith("src/"):
-            return list(app_tesztek)
     valasztott = [
         t for t in app_tesztek
         if t in sajat or any(k in olvas(t) for k in kulcsok)
