@@ -15,6 +15,16 @@ on:
         description: A futtató platformja (ubuntu-latest / windows-latest)
         required: true
         type: string
+      darabok:
+        description: A futó darabok JSON-listája (PR-en kevés érintett tesztnél [1])
+        required: false
+        default: "[1,2,3,4]"
+        type: string
+      darabszam:
+        description: A darabok száma (a --shard N/darabszam nevezője)
+        required: false
+        default: "4"
+        type: string
       cov:
         # #1156: a lefedettség-mérés ALAPÉRTELMEZÉSBEN KI van kapcsolva.
         # A `--cov` minden részfutást `coverage run -p` alá tesz, ami a
@@ -27,7 +37,7 @@ on:
 
 jobs:
   darab:
-    name: Test (${{ inputs.os }} ${{ matrix.shard }}/4)
+    name: Test (${{ inputs.os }} ${{ matrix.shard }}/${{ inputs.darabszam }})
     runs-on: ${{ inputs.os }}
     # Korlát nélkül egy beragadt (#53 GIL-deadlock) pytest 6 órán át
     # foglalná a runnert, és eldugítaná a teljes Actions-sort (2026-07-19-en
@@ -53,13 +63,22 @@ jobs:
         # — vissza kellett venni (#1037/#1038). Itt minden darab SAJÁT
         # futtatón fut, magában: a fájlonkénti izoláció (#53) és a
         # `/tmp`-korlát (#677) garanciái érintetlenek.
-        shard: [1, 2, 3, 4]
+        shard: ${{ fromJSON(inputs.darabok) }}
     env:
       QT_QPA_PLATFORM: offscreen
+      # PR-en csak az érintett app-tesztek futnak (`run_tests.py`,
+      # `erintett_app_tesztek`); push esetén üres → teljes készlet.
+      PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # az érintett-kiválasztás a PR alapjához hasonlít (git diff alap...HEAD)
+          # ⚠️ a `0` a kifejezésnyelvben HAMIS (`&& 0 || 1` mindig 1-et adna, és a
+          # PR alapja nélkül a szűkítés a teljes készletre esne vissza — 2026-10-09
+          # így futott le egy darabban 40 percig): ezért szöveg.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -136,7 +155,7 @@ jobs:
         # hozzáadása is megoldotta volna, de az a tesztek futtatókörnyezetét
         # cserélné le egy kapcsoló kedvéért; a kifejezés a parancssort
         # állítja össze, a shellhez nem nyúl.
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4 ${{ inputs.cov && '--cov' || '' }}
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} ${{ inputs.cov && '--cov' || '' }}
 
       - name: Lefedettségi adatfájl feltöltése
         # #1156: a darab `.coverage`-e melléktermékként megy tovább. A
