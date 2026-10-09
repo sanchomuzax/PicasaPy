@@ -131,8 +131,8 @@ def test_jelolo_buborek_keres_es_torol(
         {"rows": sorok, "thumbUrl": marker["thumbUrl"]},
     )
     jelolo.setParentItem(window.contentItem())
-    jelolo.setX((window.contentItem().width() - jelolo.width()) / 2)
-    jelolo.setY((window.contentItem().height() - jelolo.height()) / 2)
+    jelolo.setX((window.width() - jelolo.width()) / 2)
+    jelolo.setY((window.height() - jelolo.height()) / 2)
     jelolo.markerActivated.connect(panel.photoActivated)
     jelolo.markerSearchRequested.connect(panel.markerSearchRequested)
     jelolo.markerEraseRequested.connect(panel.clearGeotagRequested)
