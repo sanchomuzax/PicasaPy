@@ -1108,14 +1108,23 @@ class TestTextToolTypography(_ModulAblakMixin):
         ):
             assert window.findChild(QObject, name) is not None, name
 
-    def test_the_family_list_comes_from_the_catalogue(self, qml_app, qt_app):
-        from picasapy.render.text_fonts import FONT_FAMILIES
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_the_family_list_comes_from_the_catalogue(
+        self, qml_app, qt_app, height_delta
+    ):
+        from PySide6.QtGui import QFontDatabase
 
         window, _controller, _engine = qml_app
+        window.setHeight(window.height() + height_delta)
+        qt_app.processEvents()
         panel = self._open_text_tool(window, qt_app)
         keys = panel.property("fontFamilyKeys")
         keys = keys.toVariant() if hasattr(keys, "toVariant") else list(keys)
-        assert keys == [family.key for family in FONT_FAMILIES]
+        expected = sorted(
+            set(QFontDatabase.families()),
+            key=lambda family: (family.casefold(), family),
+        )
+        assert keys == expected
 
     def test_the_style_buttons_reach_the_controller(self, qml_app, qt_app):
         from PySide6.QtCore import QMetaObject, Qt
