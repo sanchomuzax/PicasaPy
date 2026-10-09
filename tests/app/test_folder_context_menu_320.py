@@ -124,11 +124,13 @@ class TestFolderContextMenu:
         for name in (
             "folderMenuHideFolder",
             "folderMenuUploadToGooglePhotos",
-            "folderMenuAddNameTags",
         ):
             item = menu.findChild(QObject, name)
             assert item is not None, f"{name} hiányzik"
             assert item.property("enabled") is False, f"{name} nem szürke"
+
+        # #4535: a Névcímkék hozzáadása tényleges mappa-keresést indít.
+        assert menu.findChild(QObject, "folderMenuAddNameTags").property("enabled")
 
     def test_sort_submenu_checks_the_current_mode(self, qml_engine, qt_app):
         """A „Mappa rendezésének alapja ▸" almenü az `Sort` menüosztály
