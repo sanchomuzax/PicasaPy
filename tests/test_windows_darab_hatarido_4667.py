@@ -13,7 +13,9 @@ def test_a_windows_hatarido_60_perc_az_ubuntu_40_marad() -> None:
     """A Windows kapjon 20 perc többletet, a közös négydarabos mátrix maradjon."""
     forras = _WORKFLOW.read_text(encoding="utf-8")
     talalat = re.search(r"(?m)^\s*timeout-minutes:\s*(.+?)\s*$", forras)
-    matrix = re.search(r"(?m)^\s*shard:\s*\[([^]]+)\]\s*$", forras)
+    # 2026-10-09 (#4805): a mátrix a `darabok` bemenetből jön; az alapértéke
+    # (push, és minden windowsos futás) a négydarabos lista.
+    matrix = re.search(r'(?ms)^\s*darabok:.*?default:\s*"\[([^]]+)\]"', forras)
 
     assert talalat is not None, "hiányzik a teszt-job időkorlátja"
     assert talalat.group(1) == "${{ inputs.os == 'windows-latest' && 60 || 40 }}"
