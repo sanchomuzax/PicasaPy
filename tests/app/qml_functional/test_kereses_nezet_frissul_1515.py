@@ -254,18 +254,23 @@ class TestZoldEredmenysav:
     kapcsolta ki (`_filter_active`), ezért a Csillagozottakból keresőmezőbe
     gépelve a sáv OTTMARADT a szűrő elavult darabszámával."""
 
-    def test_keresesnel_eltunik_a_szuro_sava(self, qml_app, qt_app) -> None:
+    def test_keresesnel_a_sav_a_kereses_talalatait_mutatja(
+        self, qml_app, qt_app
+    ) -> None:
+        """#4531: a sáv a keresés SAJÁT szövegét viszi (a visszalépő
+        gombbal együtt), nem a csillagozott szűrő régi darabszámát."""
         window, controller, _engine = qml_app
         controller.showStarred()
         qt_app.processEvents()
         assert controller.filterActive is True
+        csillagozott_szoveg = controller.filterStatusText
 
         _keress(window, qt_app, "a")
 
         assert _nevek(controller) == ["a.jpg"], "a keresés nem futott le"
-        assert controller.filterActive is False, (
-            "a csillagozott szűrő zöld sávja a keresés alatt is látszik, "
-            f"elavult szöveggel: {controller.filterStatusText!r}"
+        assert controller.filterActive is True
+        assert controller.filterStatusText != csillagozott_szoveg, (
+            "a zöld sáv a csillagozott szűrő szövegét mutatja keresés alatt"
         )
 
     def test_ures_keresesnel_is_eltunik(self, qml_app, qt_app) -> None:
