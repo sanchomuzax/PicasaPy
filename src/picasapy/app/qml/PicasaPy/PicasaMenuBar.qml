@@ -307,6 +307,8 @@ MenuBar {
     signal optionsRequested()
     //: #2054: a súgó megnyitása; a paraméter a fejezet ( = főoldal)
     signal helpRequested(string topic)
+    // #4639: a kódban bekötött gyorsbillentyűk helyi listájának megnyitása.
+    signal keyboardShortcutsRequested()
     // SAJÁT FUNKCIÓ (#287, jegyzékbe véve: #1364): a Duplikátum-kereső az
     // eredeti Picasa 3.9 Eszközök menüjében NEM létezik
     // (`docs/specs/ui-audit-menus.md`). A másodpéldány-kereséshez az eredeti
@@ -546,23 +548,47 @@ MenuBar {
     signal folderRemoveFromPicasaRequested()
     signal folderLocateRequested()
 
+    // #4639: a súgó csoportcímei a menücímek fordításából jönnek, a
+    // billentyűk pedig a tényleges Shortcut.sequence értékekből.
+    readonly property string keyboardShortcutsTitle:
+        qsTr("&Keyboard Shortcuts").replace("&", "")
+    readonly property var keyboardShortcutGroupTitles: ({
+        file: menuFile.title.replace("&", ""),
+        edit: menuEdit.title.replace("&", ""),
+        view: menuView.title.replace("&", ""),
+        folder: menuFolder.title.replace("&", ""),
+        picture: menuPicture.title.replace("&", ""),
+        help: menuHelp.title.replace("&", "")
+    })
+    readonly property var keyboardShortcutSequences: ({
+        file: [shortcutNewAlbum.sequence, shortcutAddFile.sequence,
+               shortcutImportFrom.sequence, shortcutDeleteFromDisk.sequence,
+               shortcutLocateOnDisk.sequence, shortcutPrint.sequence],
+        view: [shortcutSmallThumbnails.sequence,
+               shortcutNormalThumbnails.sequence],
+        folder: [shortcutPrintContactSheet.sequence]
+    })
+
     // #327: gyorsbillentyűk azoknak az AKTÍV menüpontoknak, amelyeknek
     // még nincs élő bekötésük máshol (a többi már a Main.qml globális
     // Shortcut-jain vagy a menüpont onTriggered-jén keresztül működik —
     // azokhoz itt csak a MENÜBEN LÁTSZÓ felirat tartozik, ld. lent).
     Shortcut {
+        id: shortcutSmallThumbnails
         objectName: "shortcutSmallThumbnails"
         sequence: "Ctrl+1"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(96)
     }
     Shortcut {
+        id: shortcutNormalThumbnails
         objectName: "shortcutNormalThumbnails"
         sequence: "Ctrl+2"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
         onActivated: bar.thumbSizePreset(144)
     }
     Shortcut {
+        id: shortcutLocateOnDisk
         objectName: "shortcutLocateOnDisk"
         sequence: "Ctrl+Return"
         // #4631: a kijelölt kép elsőbbséget élvez; üres kijelölésnél a
@@ -578,6 +604,7 @@ MenuBar {
         }
     }
     Shortcut {
+        id: shortcutDeleteFromDisk
         objectName: "shortcutDeleteFromDisk"
         sequence: "Delete"
         // A menüpont a nézőben is aktív, de a néző saját gyorsbillentyűje
@@ -591,6 +618,7 @@ MenuBar {
     // de billentyű nem tartozott hozzá. A feliratot itt szó szerint
     // követjük (nem `StandardKey.Print`), hogy a kettő ne csúszhasson el.
     Shortcut {
+        id: shortcutPrint
         objectName: "shortcutPrint"
         sequence: "Ctrl+P"
         enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
@@ -602,6 +630,7 @@ MenuBar {
     // A Mappa-parancs az aktuális mappára hat, ezért kijelölés nélkül is
     // ugyanúgy él, mint a menütétel.
     Shortcut {
+        id: shortcutPrintContactSheet
         objectName: "shortcutPrintContactSheet"
         sequence: "Ctrl+Shift+P"
         enabled: !bar.textEntryHasFocus
@@ -617,6 +646,7 @@ MenuBar {
     // `Ctrl+M` nem ilyen, tehát a keresőmezőben állva is ez nyer — MÉRVE:
     // `tests/app/qml_functional/test_import_menupont_1615.py`.
     Shortcut {
+        id: shortcutImportFrom
         objectName: "shortcutImportFrom"
         sequence: "Ctrl+M"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
@@ -626,6 +656,7 @@ MenuBar {
     // hibaosztály, mint a Ctrl+M volt a #1615 előtt. Feltétel nélkül él,
     // mint maga a menüpont (a fájlválasztó nem függ kijelöléstől).
     Shortcut {
+        id: shortcutAddFile
         objectName: "shortcutAddFile"
         sequence: "Ctrl+O"
         enabled: !bar.editorActive && !bar.textEntryHasFocus
@@ -638,6 +669,7 @@ MenuBar {
     // billentyűnek sincs mit csinálnia — ugyanaz a feltétel, mint a
     // menütételen.
     Shortcut {
+        id: shortcutNewAlbum
         objectName: "shortcutNewAlbum"
         sequence: "Ctrl+N"
         enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
@@ -645,6 +677,7 @@ MenuBar {
     }
 
     PicasaMenu {
+        id: menuFile
         title: qsTr("&File")
         // #1616: a tétel `PicasaMenuItem { placeholder: true }` volt —
         // MÉRVE (`git log -S'menuFileNewAlbum'`): MINDIG az volt, az #416
@@ -826,6 +859,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuEdit
         title: qsTr("&Edit")
         // #2151: TUDATOS TÖBBLET — az eredeti Szerkesztés menüjében NINCS
         // visszavonás. A menü ott statikus: 11 tétel + 3 elválasztó, a
@@ -940,6 +974,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuView
         objectName: "menuView"
         title: qsTr("&View")
         MenuItem {
@@ -1708,6 +1743,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuFolder
         title: bar.currentAlbumToken !== "" ? qsTr("&Album") : qsTr("F&older")
         MenuItem {
             objectName: "menuFolderEditDescription"
@@ -1906,6 +1942,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuPicture
         title: qsTr("&Picture")
         onAboutToShow: bar.textOverlayStatesRefreshRequested()
         MenuItem {
@@ -2532,6 +2569,7 @@ MenuBar {
         }
     }
     PicasaMenu {
+        id: menuHelp
         title: qsTr("&Help")
         //: #2054: BEKÖTVE — a súgó a csomagban van, net nélkül is megnyílik.
         MenuItem {
@@ -2539,7 +2577,11 @@ MenuBar {
             text: qsTr("&Help Contents and Index") + "\tF1"
             onTriggered: bar.helpRequested("")
         }
-        PicasaMenuItem { text: qsTr("&Keyboard Shortcuts"); placeholder: true }
+        MenuItem {
+            objectName: "menuHelpKeyboardShortcuts"
+            text: qsTr("&Keyboard Shortcuts")
+            onTriggered: bar.keyboardShortcutsRequested()
+        }
         MenuSeparator {}
         // hiányzott (#324 audit): web-linkek
         PicasaMenuItem { text: qsTr("Picasa &Forums"); placeholder: false; retired: true }  // #638

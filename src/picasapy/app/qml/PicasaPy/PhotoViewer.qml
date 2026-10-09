@@ -12,6 +12,13 @@ import "aranykenyszer.js" as AranyKenyszer
 Rectangle {
     id: viewer
 
+    // #4639: a főablak súgója közvetlenül ezekből a bekötött
+    // Shortcut.sequence értékekből olvassa a néző és a kiegyenesítő sáv
+    // billentyűit.
+    readonly property var keyboardShortcutSequences: [
+        toggleEditorDrawerShortcut.sequence
+    ].concat(editorToolBar.keyboardShortcutSequences)
+
     readonly property bool textEntryHasFocus:
         viewer.Window.window !== null
         && viewer.Window.window.activeFocusItem !== null
@@ -202,6 +209,7 @@ Rectangle {
     // (`picasa-gyorsbillentyuk.md` 10.22). A néző láthatósága ennek a
     // nézetnek a kapuja; a könyvtárban a Shortcut le van tiltva.
     Shortcut {
+        id: toggleEditorDrawerShortcut
         sequence: "Ctrl+9"
         enabled: viewer.visible
         onActivated: viewer.toggleEditorDrawer()
