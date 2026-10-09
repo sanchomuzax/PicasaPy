@@ -364,12 +364,12 @@ Rectangle {
         panel.activeTab = tabIndex
     }
 
-    // #338: az effekt-gombok bélyegképéhez (image://effectthumb/<id>/<effekt>)
+    // #338: az effekt-gombok bélyegképéhez
+    // (image://effectthumb/<id>/<effekt>?filters=<lánc>)
     // szükséges fotó-azonosító. Nincs rá külön EditController-property — az
     // editController.previewSource ("image://editpreview/<id>?rev=<n>") már
-    // tartalmazza, innen olvassuk ki, hogy ne kelljen az EditController
-    // felületét bővíteni (a feladat scope-ja csak ezt a fájlt + a Python
-    // bélyegkép-providert engedi). Üres, ha nincs aktív szerkesztés — ekkor
+    // tartalmazza, innen olvassuk ki a fotóazonosítót. Az effektláncot külön
+    // effectChain property adja át. Üres, ha nincs aktív szerkesztés — ekkor
     // az effekt-gombok a korábbi, sima kinézetüket mutatják (thumbSource "").
     readonly property string effectThumbPhotoId: {
         if (!panel.hasEffectController()) return ""
