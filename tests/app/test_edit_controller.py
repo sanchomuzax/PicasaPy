@@ -1565,8 +1565,10 @@ class TestAzIgazitasEljutARAJZOLOIG2108:
         controller.endEdit()
 
         controller.beginEdit("1", str(photo))
-        spec = controller._current_text_spec()
-        assert spec is not None, "a mentett felirat nem kerül az előnézetbe"
+        specs = controller._current_text_spec()
+        assert specs is not None, "a mentett felirat nem kerül az előnézetbe"
+        assert len(specs) == 1
+        spec = specs[0]
         assert spec.align == "right", (
             "a fájlból betöltött igazítás nem jut el a rajzolóig: "
             f"{spec.align!r}"

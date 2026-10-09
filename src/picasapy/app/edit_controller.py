@@ -50,6 +50,7 @@ from picasapy.ini.retouch import RetouchPatch
 from .paint_mask_controller import PaintMaskMixin
 from picasapy.ini.text_overlay import (
     BETUMERETEK,
+    meret_taroltbol,
     tarolt_meret,
     TextBlock,
     TextGeometry,
@@ -516,6 +517,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         # a #301-elv szerint), plusz a szerkesztés alatti, MÉG NEM mentett
         # piszkozat (tartalom + kattintott pozíció).
         self._text_overlay: TextOverlay | None = None
+        self._text_selected_index: int | None = None
         self._text_active = False
         # A showtextcheckbox csak az előnézet rajzát kapcsolja; nem írja át
         # a mentett szöveget vagy a textactive mezőt.
@@ -533,6 +535,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_opacity: float = _DEFAULT_TEXT_OPACITY
         self._text_family: str = _DEFAULT_TEXT_FAMILY
         self._text_size_pt: int = _DEFAULT_TEXT_SIZE_PT
+        self._text_size_edited = False
         self._text_bold: bool = _DEFAULT_TEXT_BOLD
         self._text_italic: bool = _DEFAULT_TEXT_ITALIC
         self._text_underline: bool = _DEFAULT_TEXT_UNDERLINE
@@ -806,16 +809,63 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Property(bool, notify=revisionChanged)
     def textHasPlacement(self) -> bool:
-        """Kattintott-e már pozíciót a felhasználó a jelenlegi piszkozathoz —
-        az Alkalmaz gomb csak ekkor engedélyezett."""
-        return self._text_pending_pos is not None
+        """Van-e kijelölt vagy új pozícióra váró szövegdoboz."""
+        return self._text_pending_pos is not None or self._text_selected_index is not None
+
+    @Property(int, notify=toolsChanged)
+    def textSelectedIndex(self) -> int:
+        """A kiválasztott mentett doboz sorszáma, vagy -1, ha nincs."""
+        return self._text_selected_index if self._text_selected_index is not None else -1
+
+    @Property("QVariantList", notify=toolsChanged)
+    def textOverlayItems(self) -> list[dict]:
+        """A QML kattintásos kijelölőinek képre normalizált adatai."""
+        if not self._text_overlay_visible or not self._text_active or not self._text_overlay:
+            return []
+        items = []
+        for index, block in enumerate(self._text_overlay.blocks):
+            if not block.content:
+                continue
+            items.append(
+                {
+                    "index": index,
+                    "content": (
+                        self._text_draft
+                        if index == self._text_selected_index
+                        else block.content
+                    ),
+                    "x": (
+                        self._text_pending_pos[0]
+                        if index == self._text_selected_index
+                        and self._text_pending_pos is not None
+                        else block.geometry.x
+                    ),
+                    "y": (
+                        self._text_pending_pos[1]
+                        if index == self._text_selected_index
+                        and self._text_pending_pos is not None
+                        else block.geometry.y
+                    ),
+                    "size": (
+                        self._text_size_pt
+                        if index == self._text_selected_index
+                        else block.geometry.size * 360.0
+                    ),
+                    "font": block.font,
+                    "rotation": block.geometry.rotation,
+                }
+            )
+        return items
 
     @Property(bool, notify=toolsChanged)
     def hasTextOverlay(self) -> bool:
         """Van-e MENTETT, aktív szöveg-overlay — a „Visszavonás: Szöveg"
         felirathoz és a UI állapot-jelzéséhez."""
-        primary = self._text_overlay.primary if self._text_overlay else None
-        return primary is not None and self._text_active and bool(primary.content)
+        return (
+            self._text_active
+            and self._text_overlay is not None
+            and any(block.content for block in self._text_overlay.blocks)
+        )
 
     @Property(bool, notify=toolsChanged)
     def textOverlayVisible(self) -> bool:
@@ -930,6 +980,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         if value <= 0:
             raise ValueError(f"A textFontSize pozitív kell legyen: {value}")
         self._text_size_pt = min(BETUMERETEK, key=lambda e: abs(e - int(value)))
+        self._text_size_edited = True
         self._refresh_text_preview()
 
     @Slot(bool)
@@ -1223,6 +1274,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._crop_aspect: float | None = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = self._read_text_overlay()
+        self._text_selected_index = None
         self._text_active = (
             self._read_text_active() if self._text_overlay is not None else False
         )
@@ -1250,6 +1302,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = _DEFAULT_TEXT_FAMILY
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
+        self._text_size_edited = False
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1316,6 +1369,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._crop_aspect = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = None
+        self._text_selected_index = None
         self._text_active = False
         self._text_overlay_visible = True
         self._text_draft = ""
@@ -1327,6 +1381,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = _DEFAULT_TEXT_FAMILY
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
+        self._text_size_edited = False
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1977,13 +2032,31 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Slot()
     def enterTextTool(self) -> None:
-        """A Szöveg eszköz megnyitása: a mező a MENTETT tartalommal indul
-        (ha van), pozíció nélkül — a felhasználónak a képre kattintva kell
-        elhelyeznie."""
+        """A szöveg-eszköz megnyitása: az első mentett doboz kijelölődik."""
         self._require_active()
         primary = self._text_overlay.primary if self._text_overlay else None
+        self._text_selected_index = 0 if primary and primary.content else None
         self._text_draft = primary.content if primary else ""
         self._text_pending_pos = None
+        if primary:
+            self._load_text_settings_from_block(primary)
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(int)
+    def selectTextOverlay(self, index: int) -> None:
+        """A képen kiválasztott szövegdoboz szerkesztésre megnyitása."""
+        self._require_active()
+        if self._text_overlay is None or not 0 <= index < len(self._text_overlay.blocks):
+            return
+        block = self._text_overlay.blocks[index]
+        self._text_selected_index = index
+        self._text_pending_pos = None
+        self._text_draft = block.content
+        self._load_text_settings_from_block(block)
+        self._register_preview()
+        self._bump_revision()
         self.toolsChanged.emit()
 
     @Slot()
@@ -1991,10 +2064,12 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         """A Szöveg eszköz bezárása (Mégse): a piszkozat eldobása, visszaáll
         a ténylegesen mentett előnézetre."""
         self._require_active()
+        self._text_selected_index = None
         self._text_pending_pos = None
         self._text_draft = ""
         self._register_preview()
         self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot(str)
     def setTextDraft(self, content: str) -> None:
@@ -2004,15 +2079,40 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_draft = content
         self._register_preview()
         self._bump_revision()
+        self.toolsChanged.emit()
 
-    @Slot(float, float)
     def previewTextPlacement(self, x: float, y: float) -> None:
-        """Kattintás a képen: a piszkozat pozíciójának beállítása, élő
-        előnézettel — NEM ír inibe, NEM tol undo-lépést (Alkalmazásig)."""
+        """Python API a piszkozat helyének előnézetéhez; QML külön slotot használ."""
         self._require_active()
         self._text_pending_pos = (_clamp01(x), _clamp01(y))
         self._register_preview()
         self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(float, float)
+    def previewNewTextPlacement(self, x: float, y: float) -> None:
+        """Üres képpontra kattintva új szövegdoboz helyének előnézete."""
+        self._require_active()
+        self._text_selected_index = None
+        self._text_pending_pos = (_clamp01(x), _clamp01(y))
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    def _load_text_settings_from_block(self, block: TextBlock) -> None:
+        """A kiválasztott blokk ismert stílusát a szerkesztőmezőkre tölti."""
+        style = block.style
+        self._text_fill_color = _argb_to_rgb(style.fill_argb)
+        self._text_outline_color = _argb_to_rgb(style.outline_argb)
+        self._text_outline_thickness = float(style.unknown_a)
+        self._text_fill_enabled = style.fill_mode != _MOD_NINCS_KITOLTES
+        self._text_family = block.font or _DEFAULT_TEXT_FAMILY
+        self._text_size_pt = meret_taroltbol(block.geometry.size)
+        self._text_size_edited = False
+        self._text_bold = style.weight >= 700
+        self._text_italic = style.italic
+        self._text_underline = style.underline
+        self._text_align = alignment_name(style.alignment)
 
     @Slot(bool)
     def setTextOverlayVisible(self, visible: bool) -> None:
@@ -2030,95 +2130,86 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Slot()
     def applyText(self) -> None:
-        """Alkalmaz: a piszkozat mentése `text=`/`textactive=` kulcsokba.
-
-        Pozíció vagy tartalom nélkül no-op (a gomb ilyenkor a UI-ban
-        tiltott). **NEM kerül a Visszavonás-verembe** — ld. `clearText`
-        docsztringje az indoklásért; az újbóli Alkalmazás egyszerűen felülírja
-        az előző mentett szöveget."""
+        """A kijelölt blokk módosítása vagy új blokk hozzáfűzése az ini-hez."""
         self._require_active()
-        if self._text_pending_pos is None or not self._text_draft.strip():
+        if not self._text_draft.strip():
             return
-        # A meglévő overlay TÖBBI blokkja megmarad: ha a képen valódi
-        # Picasa-felirat van több blokkal, a szerkesztés csak az elsőt
-        # írja át, a többit nem dobjuk el.
+
         previous = self._text_overlay or TextOverlay()
-        block = TextBlock(
-            content=self._text_draft,
-            # #1994: a VÁLASZTOTT betűtípus, nem a beégetett alapérték.
-            font=self._text_family,
-            geometry=TextGeometry(
+        target_index = self._text_selected_index
+        if target_index is not None:
+            if not 0 <= target_index < len(previous.blocks):
+                return
+            existing = previous.blocks[target_index]
+            geometry = existing.geometry
+            if self._text_pending_pos is not None:
+                geometry = replace(
+                    geometry,
+                    x=self._text_pending_pos[0],
+                    y=self._text_pending_pos[1],
+                )
+            if self._text_size_edited:
+                geometry = replace(geometry, size=tarolt_meret(self._text_size_pt))
+            style_template = existing.style
+        else:
+            if self._text_pending_pos is None:
+                return
+            geometry = TextGeometry(
                 x=self._text_pending_pos[0],
                 y=self._text_pending_pos[1],
-                # #2287: a választott listaérték 360-ad része
                 size=tarolt_meret(self._text_size_pt),
-            ),
-            style=TextStyle(
-                fill_argb=_rgb_to_argb(self._text_fill_color),
-                outline_argb=_rgb_to_argb(self._text_outline_color),
-                # #1994: a betűsúly a félkövér gomb állásából. A stílusblokk
-                # 8. mezője (`0x0062d483`): alap **400**, félkövéren **700**
-                # (a gomb `cmp …, 0x2bc` a `0x0062e31a`-n). Eddig a
-                # `TextStyle` alapértéke fixen 700 volt, tehát MINDEN
-                # feliratunk félkövérként ment ki, a gomb állásától
-                # függetlenül.
-                #
-                weight=700 if self._text_bold else 400,
-                # #2271: a KÖRVONALVASTAGSÁG az 5. mezőbe, átszámítás
-                # nélkül. A kutatói kör kimérte, hogy a csúszka `[0, 1]`
-                # folytonos (ugyanaz a `ytSliderHandler`, mint az
-                # átlátszatlanságé), tehát a mi értékünk ugyanabban a
-                # mértékegységben van, mint az ini mezője. Eddig fixen
-                # 0,0 ment ki — a valódi Picasában az »nincs körvonal«,
-                # ezért TŰNT EL minden körvonalunk mentés után.
-                #
-                # ⚠️ A betűméret továbbra sem megy ki: a mérés szerint a
-                # geometria 3. mezőjébe tartozna (em-képpont ÷ a kép
-                # MAGASSÁGA), de a felületi méretválasztónk ma nem em-ben
-                # jár. Külön lépés, külön mérés — ld. a jegyet.
-                unknown_a=float(self._text_outline_thickness),
-                # #2448: a DŐLT és az ALÁHÚZOTT a 9. mező 0. és 3. bitje.
-                # Eddig mindkettőt megrajzoltuk, de a mező fixen `0xC000`
-                # ment ki — a felirat újranyitáskor elvesztette a dőltségét
-                # és az aláhúzását.
-                #
-                # ⚠️ A mezőt a `with_style_flags` állítja, NEM a
-                # konstruktor: a többi bitet (köztük a fel nem tárt
-                # `0x4000`/`0x8000`-et) meg kell őrizni. Ezért indul a
-                # KORÁBBI stílusból, ha van.
-            ),
-        )
-        korabbi = previous.primary.style if previous.primary else None
-        stilus = block.style
-        if korabbi is not None:
-            # a korábbi mezők bitjeit visszük tovább (köztük a fel nem
-            # tártakat); az ismerteket alább állítjuk
-            stilus = replace(
-                stilus,
-                trailer=korabbi.trailer,
-                layout_field=korabbi.layout_field,
             )
-        block = replace(
-            block,
-            style=stilus.with_style_flags(
-                italic=self._text_italic, underline=self._text_underline
-            # #2108: a 8. mező két alsó bájtja. A mód nem szabad érték: a
-            # panel minden alkalommal ÚJRASZÁMOLJA a `no_fill` négyzetből
-            # és a körvonal-csúszkából, ebben a sorrendben.
-            ).with_text_layout(
-                alignment=alignment_code(self._text_align),
-                fill_mode=fill_mode_from(
-                    no_fill=not self._text_fill_enabled,
-                    outline_width=float(self._text_outline_thickness),
-                ),
-            ),
+            style_template = previous.primary.style if previous.primary else None
+
+        style = self._text_style_for_apply(style_template)
+        block = TextBlock(
+            content=self._text_draft,
+            font=self._text_family,
+            geometry=geometry,
+            style=style,
         )
-        self._text_overlay = previous.with_primary(block)
+        blocks = list(previous.blocks)
+        if target_index is None:
+            blocks.append(block)
+            target_index = len(blocks) - 1
+        else:
+            blocks[target_index] = block
+
+        self._text_overlay = TextOverlay(blocks=tuple(blocks))
+        self._text_selected_index = target_index
         self._text_active = True
         self._text_pending_pos = None
+        self._text_size_edited = False
         self._save_text()
         self._bump_revision()
         self.toolsChanged.emit()
+
+    def _text_style_for_apply(self, template: TextStyle | None) -> TextStyle:
+        """Ismert stílust állít, a fájl többi mezőjét és bitjét megőrzi."""
+        if template is None:
+            style = TextStyle(
+                fill_argb=_rgb_to_argb(self._text_fill_color),
+                outline_argb=_rgb_to_argb(self._text_outline_color),
+                weight=700 if self._text_bold else 400,
+                unknown_a=float(self._text_outline_thickness),
+            )
+        else:
+            style = replace(
+                template,
+                fill_argb=_rgb_to_argb(self._text_fill_color),
+                outline_argb=_rgb_to_argb(self._text_outline_color),
+                weight=700 if self._text_bold else 400,
+                unknown_a=float(self._text_outline_thickness),
+            )
+        return style.with_style_flags(
+            italic=self._text_italic, underline=self._text_underline
+        ).with_text_layout(
+            alignment=alignment_code(self._text_align),
+            fill_mode=fill_mode_from(
+                no_fill=not self._text_fill_enabled,
+                outline_width=float(self._text_outline_thickness),
+            ),
+        )
 
     @Slot()
     def clearText(self) -> None:
@@ -2134,6 +2225,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         mint egyáltalán nem kínálni. A törlés ezért azonnali és végleges."""
         self._require_active()
         self._text_overlay = None
+        self._text_selected_index = None
         self._text_active = False
         self._text_pending_pos = None
         self._save_text()
@@ -2552,8 +2644,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             return
 
         def mutate(document):
-            primary = self._text_overlay.primary if self._text_overlay else None
-            if primary is None or not primary.content:
+            has_content = self._text_overlay and any(
+                block.content for block in self._text_overlay.blocks
+            )
+            if not has_content:
                 document = document.with_removed(self._section_name, "text")
                 document = document.with_removed(self._section_name, "textactive")
             else:
@@ -2867,32 +2961,46 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             temperature=values.temperature,
         )
 
-    def _current_text_spec(self) -> TextOverlaySpec | None:
-        """Az élő előnézetbe rajzolandó szöveg — a PENDING piszkozat élvez
-        elsőbbséget (a szöveg-eszköz nyitva van), különben a mentett, aktív
-        overlay (ha van tartalma); egyébként None (nincs mit rajzolni)."""
+    def _current_text_spec(self) -> tuple[TextOverlaySpec, ...] | None:
+        """Az előnézet aktív feliratai, a kijelölt piszkozatot is beleértve."""
         if not self._text_overlay_visible:
             return None
-        if self._text_pending_pos is not None:
+        specs: list[TextOverlaySpec] = []
+        if self._text_active and self._text_overlay:
+            for index, block in enumerate(self._text_overlay.blocks):
+                content = (
+                    self._text_draft
+                    if index == self._text_selected_index
+                    else block.content
+                )
+                if not content:
+                    continue
+                x = _clamp01(
+                    self._text_pending_pos[0]
+                    if index == self._text_selected_index
+                    and self._text_pending_pos is not None
+                    else block.geometry.x
+                )
+                y = _clamp01(
+                    self._text_pending_pos[1]
+                    if index == self._text_selected_index
+                    and self._text_pending_pos is not None
+                    else block.geometry.y
+                )
+                style = (
+                    self._text_style_kwargs()
+                    if index == self._text_selected_index
+                    else self._text_style_kwargs_for_block(block)
+                )
+                specs.append(TextOverlaySpec(content=content, x=x, y=y, **style))
+        if self._text_pending_pos is not None and self._text_selected_index is None:
             content = self._text_draft
-            if not content.strip():
-                return None
-            x, y = self._text_pending_pos
-            return TextOverlaySpec(
-                content=content, x=x, y=y, **self._text_style_kwargs()
-            )
-        primary = self._text_overlay.primary if self._text_overlay else None
-        if primary is not None and self._text_active and primary.content:
-            # A valódi Picasa a képen KÍVÜLRE lógó feliratot is elmenthet;
-            # a rajzoló viszont [0..1]-en kívül hibát dob, ezért itt vágunk.
-            # Ez csak az ELŐNÉZETET érinti — a mentett érték nem változik.
-            return TextOverlaySpec(
-                content=primary.content,
-                x=_clamp01(primary.geometry.x),
-                y=_clamp01(primary.geometry.y),
-                **self._text_style_kwargs(),
-            )
-        return None
+            if content.strip():
+                x, y = self._text_pending_pos
+                specs.append(
+                    TextOverlaySpec(content=content, x=x, y=y, **self._text_style_kwargs())
+                )
+        return tuple(specs) or None
 
     def _text_style_kwargs(self) -> dict:
         """A `TextOverlaySpec` stílus-mezői a jelenlegi (#450, munkamenet-
@@ -2909,6 +3017,24 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             "italic": self._text_italic,
             "underline": self._text_underline,
             "align": self._text_align,
+        }
+
+    @staticmethod
+    def _text_style_kwargs_for_block(block: TextBlock) -> dict:
+        """A mentett blokk saját ismert stílusa a többblokkos előnézethez."""
+        style = block.style
+        return {
+            "fill_color": _argb_to_rgb(style.fill_argb),
+            "outline_color": _argb_to_rgb(style.outline_argb),
+            "outline_thickness": style.unknown_a,
+            "fill_enabled": style.fill_mode != _MOD_NINCS_KITOLTES,
+            "opacity": _DEFAULT_TEXT_OPACITY,
+            "font_family": block.font or _DEFAULT_TEXT_FAMILY,
+            "font_size_pt": block.geometry.size * 360.0,
+            "bold": style.weight >= 700,
+            "italic": style.italic,
+            "underline": style.underline,
+            "align": alignment_name(style.alignment),
         }
 
     def _bump_revision(self) -> None:
