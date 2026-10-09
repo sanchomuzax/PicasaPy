@@ -13,7 +13,7 @@ from PySide6.QtCore import Qt
 from picasapy.app.faces_helper import FacesHelper
 from picasapy.ini import load_document
 
-from tests.app.qml_functional.test_felsomenupontok_meglevo_muveletek_4329 import (
+from tests.app.qml_functional._felsomenupontok_helpers_4329 import (
     _ABLAKMAGASSAG_ELTOLASOK,
     _kattints,
     _kijeloles,

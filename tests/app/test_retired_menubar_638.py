@@ -6,9 +6,14 @@ menüsáv ugyanolyan tételeit rögzíti.
 
 **A tulajdonos döntése (2026-08-14):** a megszűnt Picasa-szolgáltatások ÉS a
 külső Google-integrációk kapják meg a végleges szürkét. Ami nálunk
-megvalósítható maradna (Frissítések keresése, Súgó), az **helyfoglaló marad**
+megvalósítható maradna (Súgó ▸ Keyboard Shortcuts), az **helyfoglaló marad**
 — erre külön ellenpróba van, mert egy megvalósítható funkció „véglegesen
 halottnak" jelölése ugyanolyan hiba, mint fordítva.
+
+⚠️ #4640: a „Check for Updates” (Frissítések keresése) KIKERÜLT a helyfoglalók
+közül: a PicasaPy saját frissítéskeresése nem paritás-feladat, az eredeti
+Google-szolgáltatásra épült, és Wine alatt a Picasa maga tiltotta le. Ezért
+`retired: true`; a próbát a `test_frissitesek_keresese_4640.py` fogja meg.
 """
 
 from __future__ import annotations
@@ -38,6 +43,8 @@ NYUGDIJAZOTT = (
     "Publish to Blogger...",
     "Order Prints...",
     "Import From Google Photos...",
+    # #4640: Google-szolgáltatásra épült, Wine alatt a Picasa maga tiltotta le
+    "Check for Updates",
 )
 
 #: Nálunk MEGVALÓSÍTHATÓ — marad helyfoglaló.
@@ -61,7 +68,7 @@ NYUGDIJAZOTT = (
 #: Ha valaha visszaesne helyfoglalóvá, a `test_ajandek_cd_bekotes_3503.py`
 #: fogja meg.
 HELYFOGLALO_MARAD = (
-    "Check for Updates",
+    "Keyboard Shortcuts",
 )
 
 
