@@ -72,6 +72,17 @@ class TestBeginEdit:
         controller.beginEdit("1", str(photo))
         assert controller.effectChainCounts.get("enhance") == 1
 
+    def test_effect_chain_property_tracks_applied_effects(self, controller, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text("[IMG_0001.jpg]\nfilters=enhance=1;\n", encoding="utf-8")
+        controller.beginEdit("1", str(photo))
+
+        assert controller.effectChain == "enhance=1;"
+
+        controller.applyEffect("bw")
+
+        assert controller.effectChain == "enhance=1;bw=1;"
+
     def test_registers_with_preview_provider(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
         image = provider.requestImage("1", None, None)
