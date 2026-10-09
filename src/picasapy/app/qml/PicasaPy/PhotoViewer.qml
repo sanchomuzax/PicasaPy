@@ -2199,7 +2199,6 @@ Rectangle {
                         if (viewer.editCtl)
                             viewer.editCtl.setCropAspect(editorPanel.currentAspect)
                     }
-                    onQuickCropRequested: (kind) => cropOverlay.selectPreset(kind)
                     onCropPreviewHold: (held) => cropOverlay.previewHold = held
                     // #1528: az „Alaphelyzet” az ALKALMAZOTT vágást veti
                     // el, nem csak a húzott kijelölést. A szemantika NEM
