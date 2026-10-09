@@ -94,6 +94,8 @@ class TestBasetempAtadasa:
         # (a kifejezett kérés a CI-ben is nyer), különben ez a teszt a
         # felhő-körben nem azt méri, amit a neve mond.
         monkeypatch.setenv("PICASAPY_TESZT_PARHUZAM", "4")
+        # A PR-CI az érintett-szűkítés alapját beállítja; itt a teljes app-készlet kell.
+        monkeypatch.delenv("PICASAPY_ERINTETT_ALAP", raising=False)
         monkeypatch.setattr(run_tests, "_PARHUZAM", 4)
         monkeypatch.setattr(run_tests, "_run_pytest", _rogzit_pytest)
         monkeypatch.setattr(run_tests, "_takarits_regi_maradekot", lambda: None)
