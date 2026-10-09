@@ -5,6 +5,7 @@ Priority: optional
 Architecture: all
 Maintainer: PicasaPy project <noreply@example.invalid>
 Depends: python3 (>= 3.12), python3-venv, python3-pip
+Recommends: xdg-utils, cups-client
 Homepage: https://github.com/sanchomuzax/PicasaPy
 Description: Modern, open, cross-platform successor to Google Picasa
  A PicasaPy a Google 2016-ban kivezetett Picasa fotókezelőjének nyílt,
