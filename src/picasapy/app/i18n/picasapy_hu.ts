@@ -12810,6 +12810,21 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Megjegyzés: a keretbe kattintva visszavonhatja a változást.</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.
+
+Note: You can click on a box to delete a change.
+
+You can also click 'auto' to reapply the auto-corrections.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RedEye::AutoFixRedoMessage</extracomment>
+            <translation>Az egérgomb nyomva tartásával külön-külön jelölje ki a szemeket. A terület körül kijelölési keret jelenik meg. Az egérmutató felengedésével véglegesítse a kijelölést. A program eltávolítja a fotóról a vörösszem-effektust.
+
+Megjegyzés: a keretbe kattintva visszavonhatja a változást.
+
+Az &quot;Automatikus&quot; gombra kattintva ismételten alkalmazhatja az automatikus javítást.</translation>
+        </message>
     </context>
     <context>
         <name>EditorRetouchPanel</name>
