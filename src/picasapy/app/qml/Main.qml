@@ -116,6 +116,17 @@ ApplicationWindow {
         selectedSet = s
     }
     property bool viewerOpen: false
+    // #4656: a néző saját megjelenítési módot kap, bezáráskor visszaáll az
+    // előző ablakállapot. A valódi megnyitás külön belépőn fut át, így a
+    // közvetlen állapotbeállítások (például a QML-próbapadban) nem váltanak módot.
+    property int visibilityBeforeViewer: Window.Windowed
+    property bool viewerVisibilityManaged: false
+    onViewerOpenChanged: {
+        if (!window.viewerOpen && window.viewerVisibilityManaged) {
+            window.visibility = window.visibilityBeforeViewer
+            window.viewerVisibilityManaged = false
+        }
+    }
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
@@ -184,12 +195,28 @@ ApplicationWindow {
     //: szerkesztés" parancs: a kijelölt képet a nézőben nyitja meg, ahol a
     //: szerkesztő panel is ül. Egy belépő, több hívó — a tálca helyi
     //: menüje (#1917) is ezt hívja.
+    // #4656: minden tényleges nézőnyitás ezt használja. A teljes képernyő
+    // vagy ablakos mód a mentett jelölőt követi; bezáráskor a korábbi
+    // ablakállapot áll vissza.
+    function openPhotoViewer(row) {
+        if (!window.viewerOpen) {
+            window.visibilityBeforeViewer = window.visibility
+            var fullscreenStartup = controller
+                && controller.viewerFullscreenStartup !== undefined
+                ? controller.viewerFullscreenStartup : true
+            window.visibility = fullscreenStartup
+                ? Window.FullScreen : Window.Windowed
+            window.viewerVisibilityManaged = true
+            window.viewerOpen = true
+        }
+        photoViewer.show(row)
+    }
+
     function nezdEsSzerkeszd() {
         if (window.viewerOpen) return
         var sorok = window.selectedRows()
         if (sorok.length === 0) return
-        window.viewerOpen = true
-        photoViewer.show(sorok[0])
+        window.openPhotoViewer(sorok[0])
     }
 
     // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt
@@ -543,8 +570,7 @@ ApplicationWindow {
         documentTabStrip.activateTab(documentTabStrip.libraryTabId)
         window.selectedIndex = sor
         window.selectedIndexes = [sor]
-        window.viewerOpen = true
-        photoViewer.show(sor)
+        window.openPhotoViewer(sor)
     }
 
     // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
@@ -2836,8 +2862,7 @@ ApplicationWindow {
             controller.selectFolder(folderPath)
             var row = controller.photos.rowOfId(photoId)
             if (row >= 0) {
-                window.viewerOpen = true
-                photoViewer.show(row)
+                window.openPhotoViewer(row)
             }
         }
     }
@@ -3271,8 +3296,7 @@ ApplicationWindow {
                             mentesToltodnek: backupHost.mappakToltodnek
                             mentesVanKeszlet: backupHost.kivalasztott >= 0
                             onOpenRequested: function(row) {
-                                window.viewerOpen = true
-                                photoViewer.show(row)
+                                window.openPhotoViewer(row)
                             }
                             onSlideshowRequested: function(startRow) {
                                 window.startSlideshow(startRow)
@@ -3370,8 +3394,7 @@ ApplicationWindow {
                                             window.handleThumbClick(i, mods)
                                         }
                                         onOpened: function(i) {
-                                            window.viewerOpen = true
-                                            photoViewer.show(i)
+                                            window.openPhotoViewer(i)
                                         }
                                         onContextMenuRequested: function(i, cx, cy) {
                                             window.openPhotoContextMenu(
@@ -4232,8 +4255,7 @@ ApplicationWindow {
         }
         // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
         onOpenRequested: {
-            window.viewerOpen = true
-            photoViewer.show(window.fileOpTargetRow)
+            window.openPhotoViewer(window.fileOpTargetRow)
         }
         onRotateRightRequested: controller.rotateRightMany(window.selectedRows())
         onRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
