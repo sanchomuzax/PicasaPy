@@ -34,7 +34,6 @@ fölöslegesen.
 
 - Billentyűkódok — a billentyűparancsok listáját itt találod:
   [Billentyűparancsok](billentyuk.md)
-- Frissítések keresése
 
 (A **Súgó - tartalom és tárgymutató** tétel és az **F1** billentyű
 **működik**: ezt a súgót nyitja meg — lásd [A beépített súgó](sugo.md).)
@@ -79,6 +78,8 @@ lesz** működő szolgáltatás:
   Gyors feltöltés, Feltöltés tiltása, Online műveletek
 - Picasa-fórumok, Online információ, Termékkiadási tájékoztató,
   Adatvédelmi irányelvek, Általános Szerződési Feltételek
+- Frissítések keresése — a frissítések ellenőrzése is egy Google-szolgáltatásra
+  épült
 - Megjelenítési mód ▸ Távoli asztal — kifejezetten a windowsos távoli
   asztalhoz készült, nálunk nincs értelme
 

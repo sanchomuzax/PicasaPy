@@ -143,6 +143,11 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # mag előjel szerint két külön magra ágazik (#693). Az alapérték a
     # filterdesc-ből: 0,1618 (nem kerek szám — mérés, nem tipp).
     "sat": (_p("saturation", "Saturation", -1.0, 1.0, 0.1618, 0.01),),
+    # #4557: a régi Glow Shift+Ragyogásként ugyanazt a két csúszkát adja.
+    "glow": (
+        _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
+        _p("radius", "Radius", 0.0, 100.0, 20.0),
+    ),
     # glow2=1,intenzitás,sugár
     "glow2": (
         # #2236: az alapérték 0,5 -> 0,65 a regiszterből.
@@ -309,7 +314,7 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # Polaroid: Rotate, OuterColor (az ini-ben Rotate jön előbb)
     "polaroid": (
         _p("rotate", "Rotate", -10.0, 10.0, 5.0, 0.5),
-        _color("outer_color", "Outer Color", "#e2e2e2"),
+        _color("outer_color", "Background Color", "#e2e2e2"),
     ),
     # Pixelate: Impact, BlendMode (renderer ma NEM használja — ld. jelentés),
     # Fade — a BlendMode vezérlőt a Fade pozíciója miatt kell tartani
@@ -393,12 +398,12 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "roundededges": (
         _p("corner_radius", "Corner Radius", 0.0, 0.0, 0.0,
            max_formula="half_min_wh", default_formula="tenth_min_wh"),
-        _color("outer_color", "Outer Color", "#ffffff"),
+        _color("outer_color", "Background Color", "#ffffff"),
     ),
     # Sixties: Fade, OuterColor, Rounded (checkbox)
     "sixties": (
         _p("fade", "Fade", 0.0, 100.0, 20.0),
-        _color("outer_color", "Outer Color", "#ffffff"),
+        _color("outer_color", "Background Color", "#ffffff"),
         _checkbox("rounded", "Rounded Corners", default=True),
     ),
     # PicnikGrain: Grain, Lighten (checkbox)
