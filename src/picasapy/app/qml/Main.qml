@@ -433,7 +433,7 @@ ApplicationWindow {
         window.selectedIndex = sorok[0]
         window.selectedIndexes = sorok
         createDialogs.ensure().openMovieProject(
-            projekt.seconds, projekt.burstmodethresh)
+            projekt.seconds, projekt.burstmodethresh, cel)
     }
 
     function openSavedCollage(path) {
