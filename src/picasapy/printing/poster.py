@@ -48,8 +48,10 @@ def _tile_bounds(length: int, count: int, index: int, overlap: bool) -> tuple[in
     return start, end
 
 
-def _render_edited_image(path: Path) -> np.ndarray:
-    """A fájl EXIF-tájolású, `.picasa.ini`-ből szerkesztett képpontjai."""
+def render_edited_image(path: Path) -> np.ndarray:
+    """A fájl EXIF-tájolású, `.picasa.ini`-ből szerkesztett képpontjai.
+
+    A poszter és az asztali háttérkép (#4604) közös forrása."""
     document = load_or_empty(path.parent / PICASA_INI_NAME)
     section = document.section(path.name)
     filters = section.get("filters") if section else None
@@ -89,7 +91,7 @@ def make_poster_tiles(
     if not path.is_file():
         raise FileNotFoundError(path)
 
-    image = _render_edited_image(path)
+    image = render_edited_image(path)
     if image.size == 0:
         raise ValueError(f"A kép nem olvasható: {path.name}")
 
