@@ -1515,6 +1515,28 @@ ApplicationWindow {
         timelineController.reload()
         window.timelineOpen = true
     }
+
+    // #4569: az eredeti F11 a képnéző teljes képernyős módját kapcsolja.
+    // A diavetítés saját teljes képernyős állapotát ez a parancs nem írhatja felül.
+    property int visibilityBeforeViewerFullscreen: Window.Windowed
+    function toggleViewerFullscreen() {
+        if (!window.viewerOpen || slideshow.visible) return
+        if (window.visibility === Window.FullScreen) {
+            window.visibility =
+                window.visibilityBeforeViewerFullscreen === Window.FullScreen
+                    ? Window.Windowed : window.visibilityBeforeViewerFullscreen
+        } else {
+            window.visibilityBeforeViewerFullscreen = window.visibility
+            window.visibility = Window.FullScreen
+        }
+    }
+    Shortcut {
+        objectName: "viewerFullscreenShortcut"
+        sequence: "F11"
+        enabled: window.viewerOpen && !slideshow.visible
+        onActivated: window.toggleViewerFullscreen()
+    }
+
     // #1903: a `Ctrl+5` NEM sül el, amíg a valódi Időrend nincs kész — a
     // menütétel is inaktív. A billentyű így nem kerülhet meg egy szürke
     // menüpontot (a #1686 fordított esete: ott a billentyű MŰKÖDÖTT,
