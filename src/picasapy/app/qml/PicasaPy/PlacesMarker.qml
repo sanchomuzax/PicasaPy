@@ -109,6 +109,8 @@ Item {
             source: root.markerData.thumbUrl
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
+            mipmap: true
+            smooth: true
             sourceSize.width: 64
             sourceSize.height: 64
         }

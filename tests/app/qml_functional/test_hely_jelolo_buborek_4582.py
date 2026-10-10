@@ -97,13 +97,14 @@ def qml_app_hat_keppel(qt_app, tmp_path):
     )
 
 
-@pytest.mark.parametrize("magassag_delta", [-5, 0, 5])
+@pytest.mark.parametrize("magassag_delta", [-5, 0, 5, -250, 300])
 def test_jelolo_buborek_keres_es_torol(
     qml_app_hat_keppel, qt_app, tmp_path, magassag_delta
 ):
     window, controller, engine = qml_app_hat_keppel
     konyvtar = tmp_path / "kepek"
-    window.resize(window.width(), window.height() + magassag_delta)
+    # a CI fit-nézet mérete más, mint a helyi: több ablakméreten is találjon
+    window.resize(window.width() + magassag_delta, window.height() + magassag_delta)
     qt_app.processEvents()
 
     _kattint(window, _elem(window, "trayPanelToggle_places"), qt_app)
