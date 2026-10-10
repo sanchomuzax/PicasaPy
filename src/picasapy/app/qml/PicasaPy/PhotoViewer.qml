@@ -4837,6 +4837,11 @@ Rectangle {
                     //: a térkép-jelölőre kattintva a néző lép oda — a
                     //: könyvtárban ugyanez a jel a rács kijelölését mozgatja
                     onPhotoActivated: function(row) { viewer.show(row) }
+                    onMarkerSearchRequested: function(rows) {
+                        if (!rows || rows.length === 0) return
+                        viewer.appWindow.selectedIndexes = rows.slice(0)
+                        viewer.show(rows[0])
+                    }
                     onClearGeotagRequested: function(rows) {
                         viewer.clearGeotagRequested(rows)
                     }

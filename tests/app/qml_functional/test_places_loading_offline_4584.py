@@ -75,6 +75,8 @@ Item {
     property bool mapLoading: true
     property bool offline: false
     signal markerActivated(int row)
+    signal markerSearchRequested(var rows)
+    signal markerEraseRequested(var rows)
     signal placePicked(real latitude, real longitude)
     function selectMapType(index) {}
 }

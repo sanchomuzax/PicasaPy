@@ -35,7 +35,7 @@ import logging
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 
 from picasapy.pmpimport.db3_atvetel import AtvetelJelentes, rekordokat_atvesz
 from picasapy.pmpimport.importer import iter_photo_records
@@ -51,6 +51,8 @@ _log = logging.getLogger(__name__)
 #: másolt) telepítésnél ez nem illeszkedik — akkor a rekordok kimaradnak, és
 #: a jelentés nullát mond, nem hazudik sikert.
 _ALAP_REMAP = PathRemapper.from_dict({"Z:\\": "/"})
+_MANUAL_SOURCE_REQUIRED = "picasapy-manual-source-required"
+_MANUAL_MAPPING_REQUIRED = "picasapy-manual-mapping-required"
 
 
 class PicasaImportController(BackgroundWorkerMixin, QObject):
@@ -93,6 +95,11 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         """Fut-e épp az átvétel — a párbeszéd ebből tudja, mit mutasson."""
         return self._running
 
+    @Slot(QUrl, result=str)
+    def localPathFromUrl(self, url: QUrl) -> str:
+        """A mappaválasztó URL-jéből helyi útvonalat ad a QML-mezőnek."""
+        return url.toLocalFile()
+
     def _db3_konyvtarak(self) -> tuple[Path, ...]:
         """A felismert telepítések db3-könyvtárai, sorrendhelyesen.
 
@@ -114,17 +121,45 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         bent van, azt nem írja felül. Aki később új mappákat vesz fel,
         nyugodtan lefuttathatja újra.
         """
+        self._start_import(db3_konyvtar=None, remapper=self._remapper)
+
+    @Slot(str, str, str)
+    def startManualImport(
+        self, db3_konyvtar: str, meghajto_elotag: str, helyi_elotag: str
+    ) -> None:
+        """Kézzel választott Picasa2 mappa importja egyedi leképezéssel."""
+        konyvtar = db3_konyvtar.strip()
+        forras = meghajto_elotag.strip()
+        cel = helyi_elotag.strip()
+        if not konyvtar:
+            self.importFailed.emit(_MANUAL_SOURCE_REQUIRED)
+            return
+        if not forras or not cel:
+            self.importFailed.emit(_MANUAL_MAPPING_REQUIRED)
+            return
+        self._start_import(
+            db3_konyvtar=Path(konyvtar),
+            remapper=PathRemapper.from_dict({forras: cel}),
+        )
+
+    def _start_import(
+        self, *, db3_konyvtar: Path | None, remapper: PathRemapper
+    ) -> None:
         self._set_running(True)
 
         def worker() -> None:
             try:
-                konyvtarak = self._db3_konyvtarak()
+                konyvtarak = (
+                    (db3_konyvtar,)
+                    if db3_konyvtar is not None
+                    else self._db3_konyvtarak()
+                )
                 if not konyvtarak:
                     self.noInstallationFound.emit()
                     return
                 osszes = AtvetelJelentes()
                 for db3 in konyvtarak:
-                    rekordok = tuple(self._olvaso(db3, self._remapper))
+                    rekordok = tuple(self._olvaso(db3, remapper))
                     osszes = osszes + self._atvevo(rekordok)
                 self.importFinished.emit(
                     osszes.mappak,

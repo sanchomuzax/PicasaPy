@@ -76,6 +76,7 @@ AdjustTimestampDialog 1.0 AdjustTimestampDialog.qml
 MovieTitleDialog 1.0 MovieTitleDialog.qml
 MoviePreviewFrame 1.0 MoviePreviewFrame.qml
 PlacesPanel 1.0 PlacesPanel.qml
+PlacesMarker 1.0 PlacesMarker.qml
 AboutDialog 1.0 AboutDialog.qml
 HelpDialog 1.0 HelpDialog.qml
 HelpWindow 1.0 HelpWindow.qml
