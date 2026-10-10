@@ -176,6 +176,8 @@ def test_a_nyomtatas_sugogombja_es_beallitas_sugoja_a_foablakbol_elerheto(
     assert _var(qt_app, lambda: nyomtatas.property("visible")), (
         "a főablak nem nyitotta meg a nyomtatási párbeszédet"
     )
+    # #4795: a kezdőmagasságot az ablak az első elrendezés után állítja be
+    assert _var(qt_app, lambda: not nyomtatas.property("meretezesFuggoben"))
     celmagassag = nyomtatas.height() + magassag_elteres
     nyomtatas.setHeight(celmagassag)
     assert _var(qt_app, lambda: nyomtatas.height() == celmagassag), (
