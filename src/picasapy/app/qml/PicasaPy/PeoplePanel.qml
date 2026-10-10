@@ -56,6 +56,9 @@ Rectangle {
     // fejléc váltógombja csoportosított állapotban áll
     property bool unnamedAlbumMode: false
     property bool unnamedGrouped: true
+    // #4585 (spec 9/b, `+0x2ae`): a Névtelenek GYŰJTEMÉNYE üres — ilyenkor
+    // az eredeti Text1/Text2 útmutató áll, nem a Text3
+    property bool unnamedCollectionEmpty: false
     property int pendingIgnoreFaceId: -1
     property int pendingNewFaceId: -1
     property string pendingNewFaceName: ""
@@ -267,6 +270,8 @@ Rectangle {
         // -- utasítás-szöveg (`instructions`, `peoplepanel_text.tre`), ha
         // nincs fejléc:
         //
+        //   Text1/Text2 „As Picasa scans your photos…" — a Név nélküliek
+        //                                               album, ÜRES gyűjtemény
         //   Text3 „No people have been found yet…"  — a Név nélküliek
         //                                               album, 0 kijelölés
         //   Text4 „Named people who appear WITH…"   — személy-album
@@ -280,7 +285,23 @@ Rectangle {
                      && !panel.manualAddActive
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: panel.unnamedAlbumMode
+            text: panel.unnamedAlbumMode && panel.unnamedCollectionEmpty
+                  ? qsTr("As Picasa scans your photos, the faces it finds "
+                         + "are automatically grouped for easy naming.\n\n"
+                         + "Things to know:\n\n"
+                         + "To identify a person, click 'Add a name', then "
+                         + "type in the person's name and press Enter. A new "
+                         + "People album will be created each time you name "
+                         + "someone for the first time.\n\n"
+                         + "(TIP: Sign in with your Google Account to gain "
+                         + "access to all of your contacts while naming.)\n\n"
+                         + "To ignore a person, click the 'X' button on the "
+                         + "face thumbnail.\n\n"
+                         + "Suggestions: After you name someone, Picasa may "
+                         + "suggest more matching faces for that person. "
+                         + "Click on a person's album to view and confirm "
+                         + "(or reject) any suggestions.")
+                  : panel.unnamedAlbumMode
                   ? qsTr("No people have been found yet. As faces are "
                          + "found and grouped, they will appear in the "
                          + "Unnamed album.")
