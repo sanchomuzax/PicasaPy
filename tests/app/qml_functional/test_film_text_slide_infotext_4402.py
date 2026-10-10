@@ -139,7 +139,7 @@ def test_az_infotext_fenykepeken_es_szoveges_diakon_is_nevet_meretet_es_sorszamo
         _kattintas(window, qt_app, _lista_sor(filmcsik, 0))
         infotext = window.findChild(QObject, "makemoviepanel/infotext")
         assert infotext is not None, "hiányzik a makemoviepanel/infotext sor"
-        kep = _elem(window, "moviePreviewImage")
+        kep = _elem(window, "moviePreviewTransitionImage")
         assert _varj(
             qt_app,
             lambda kep=kep: int(kep.property("sourceSize").width()) > 0

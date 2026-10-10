@@ -569,6 +569,9 @@ def test_az_1_1_es_a_kattintott_diaszerkesztes_a_nezoket_frissiti(
                 and int(dialog.property("previewDisplayedGeneration"))
                     >= int(dialog.property("previewLatestRequestGeneration"))
                 and str(field.property("text")) == "frissitett 4820 dia",
+            # Mért: egy 1080p szöveges dia renderelése lassú gépen 1,5-2 s, és a
+            # begépelés közben futó kocka után a végső kockára is sorra kell várni.
+            timeout=20.0,
             ), (
                 "a kattintással szerkesztett dia nem frissült: "
                 f"mező={field.property('text')!r}, "
