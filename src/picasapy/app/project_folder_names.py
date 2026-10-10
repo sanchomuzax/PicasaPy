@@ -17,12 +17,13 @@ következik:** ha van MEGLÉVŐ (bármely nyelvű) mappa, azt használjuk —
 csak akkor hozunk létre újat, ha egyik alak sem létezik. Enélkül mi
 nyitnánk néma harmadikat a felhasználó gépén.
 
-## A hat gyári mappa és az erőforrás-kulcsa
+## A gyári mappák és az erőforrás-kulcsuk
 
 | mappa | kulcs | mikor kerül bele anyag |
 |---|---|---|
 | Collages / **Kollázsok** | `CCollageManager::CollagesFolder` (`0x00ca778c`) | kollázs mentésekor |
 | Movies / **Mozgófilmek**, **Filmek** | `CMakeMoviePanel::SlideshowFolder` (`0x00c9ce3c`) | filmkészítéskor |
+| Exported Videos / **Exportált videoklipek** | `CThumbUI::MovieClipFolder` | klip exportálásakor |
 | Screen Captures / **Képernyőfelvételek** | `Scrapture::capturepath` | képernyőfelvételkor |
 | Captured Videos / **Rögzített videoklipek** | `CCaptureFrame::CaptureFolder` | videórögzítéskor |
 | Exported Pictures / **Exportált képek** | `IDS_EXPORTED_CATEGORY` | exportáláskor |
@@ -47,6 +48,7 @@ class ProjectFolderKind(Enum):
     MOVIES = "movies"
     SCREEN_CAPTURES = "screen_captures"
     CAPTURED_VIDEOS = "captured_videos"
+    EXPORTED_VIDEOS = "exported_videos"
     EXPORTED_PICTURES = "exported_pictures"
     OTHER_STUFF = "other_stuff"
     #: #1005: a háttérkép-BMP mappája (`CThumbUI::BackgroundsFolder`).
@@ -68,6 +70,10 @@ _NEVEK: dict[ProjectFolderKind, dict[str, str]] = {
     ProjectFolderKind.CAPTURED_VIDEOS: {
         "en": "Captured Videos",
         "hu": "Rögzített videoklipek",
+    },
+    ProjectFolderKind.EXPORTED_VIDEOS: {
+        "en": "Exported Videos",
+        "hu": "Exportált videoklipek",
     },
     ProjectFolderKind.EXPORTED_PICTURES: {
         "en": "Exported Pictures",

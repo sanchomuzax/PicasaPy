@@ -2071,6 +2071,8 @@ Rectangle {
                         if (Qt.platform.os === "linux")
                             kepkockaJelzes.mutasd(
                                 qsTr("This feature is not supported for Linux"))
+                        else if (controller && controller.exportMovieClip !== undefined)
+                            controller.exportMovieClip(viewer.currentIndex)
                     }
                 }
 
@@ -3258,6 +3260,12 @@ Rectangle {
                         //: `CCaptureFrame::captureframeprog4`
                         function onMovieFrameCaptureFailed() {
                             kepkockaJelzes.mutasd(qsTr("Failed to capture frame"))
+                        }
+                        function onMovieClipExported(path) {
+                            kepkockaJelzes.mutasd(path)
+                        }
+                        function onMovieClipExportFailed() {
+                            kepkockaJelzes.mutasd(qsTr("Failed to export clip"))
                         }
                     }
 

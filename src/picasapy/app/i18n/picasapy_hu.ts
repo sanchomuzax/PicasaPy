@@ -8632,6 +8632,12 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <translation>Nem sikerült a képkocka rögzítése</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A klip exportálása nem sikerült</translation>
+        </message>
+        <message>
             <source>Show only one picture</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>

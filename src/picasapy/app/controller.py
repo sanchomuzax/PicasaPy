@@ -48,6 +48,7 @@ from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
 from .viewer_startup_controller import ViewerStartupMixin
 from .frame_capture_controller import FrameCaptureMixin
+from .movie_clip_export_controller import MovieClipExportMixin
 from .movie_trim_controller import MovieTrimMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
@@ -179,6 +180,8 @@ class AppController(
     ColorManagementMixin,
     ViewerStartupMixin,
     MovieTrimMixin,
+    # #4564: a `movieeditpanel/export_movie` klipet készít a vágáspontokból.
+    MovieClipExportMixin,
     # #1838: a `capture_frame` — a vágás-szelet `_vago_sor` kapuját használja
     FrameCaptureMixin,
     LanguageMixin,
