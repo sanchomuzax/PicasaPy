@@ -14,6 +14,12 @@ Három út vezet ide:
 Az ablak bal oldalán a fejezetek listája és a kereső, jobb oldalán a
 kiválasztott fejezet szövege áll. A **Bezárás** gomb zárja.
 
+A **Súgó ▸ Billentyűkódok** ugyanebben az ablakban a működő
+gyorsbillentyűk listáját nyitja meg, menük szerint csoportosítva. Ennek
+magyarázata a [Billentyűparancsok](billentyuk.md) lapon van. A **Súgó ▸
+Frissítések keresése** tétel szürke: a megszűnt Google-szolgáltatásra
+épült, ezért nem működik.
+
 ## Mozgás a fejezetek közt
 
 - A bal oldali listában egy fejezetre kattintva megnyitod.
