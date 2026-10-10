@@ -1026,6 +1026,23 @@ ApplicationWindow {
             ? path : (controller ? controller.currentFolder : "")
         if (target.length > 0) folderPane.openFolderContextMenu(target)
     }
+    // #4637: az alsó kimeneti gombsor helyi menüje.
+    function openConfigureButtonsContextMenu(anchorItem, x, y) {
+        if (!anchorItem) return
+        configureButtonsContextMenu.popup(anchorItem, x, y)
+    }
+
+    // A helyi gombsor-menü az ApplicationWindow része, nem a PicasaMenuBaré:
+    // így a főmenü szerkezete és bejárási útvonalai változatlanok maradnak.
+    Menu {
+        id: configureButtonsContextMenu
+        objectName: "configureButtonsContextMenu"
+        MenuItem {
+            objectName: "configureButtonsContextMenuItem"
+            text: qsTr("Configure Buttons...")
+            onTriggered: picasaMenuBar.configureButtonsRequested()
+        }
+    }
 
     // #135: a háttér-frissítés (5 perces rescan, watcher-jelzés) a
     // rács-modellt teljesen resetelheti — beszúrt/eltűnt fájloknál a
@@ -4172,6 +4189,10 @@ ApplicationWindow {
         // vászon kapja meg.
         visible: window.libraryFrameVisible
         appWindow: window
+        // #4637: a testreszabható alsó kimeneti gombsor közös helyi menüje.
+        onConfigureButtonsContextMenuRequested: function(anchorItem, x, y) {
+            window.openConfigureButtonsContextMenu(anchorItem, x, y)
+        }
         //: #3756: a `currentIndex` MINDIG a jobb/alsó félé (ld.
         //: `PhotoViewer.qml` `photo` `source`-a) — kettős nézetben bal
         //: fókusznál a sávnak a KIJELÖLT (`aktivSor`) képet kell mutatnia.
