@@ -30,7 +30,7 @@ geopanel,parositva,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml,Helyek panel
 headerpanel,parositva,PicasaPy/LightboxHeader.qml;PicasaPy/TrayBar.qml,"A mappafejléc a LightboxHeader.qml-ben, a Create Movie Presentation gomb és súgója az alsó sáv TrayBar.qml-jében van."
 initialscan,parositva,PicasaPy/InitialScanDialog.qml,Első indítás — mit vizsgáljunk át
 instructionpanel,nem-cel,,A Picasa betanító buborék és a picasa.google.com/support hivatkozás nem része a helyi alkalmazásnak; a szolgáltatás elérhetetlen.
-keywords,parositva,PicasaPy/TagsPanel.qml;Main.qml,Címkeszerkesztő és a főablak „Tags:” felirata (#4214)
+keywords,parositva,PicasaPy/TagsPanel.qml;PicasaPy/KeywordsDialog.qml;PicasaPy/PropertiesPanel.qml;PicasaPy/PhotoViewer.qml;Main.qml,"Címkepanel (#4214) és a Tulajdonságok panel bélyegképes címkeszerkesztője (#4578); kattintásos próba: tests/app/qml_functional/test_keywords_dialog_4578.py"
 lengthslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,A Filmkészítő háromlapos panelje a párbeszédben él (#4125/#4182); a maradék leírt elemek és eltéréseik elemenként szerepelnek az ui-lefedettseg-elemek.csv-ben.
 modalprogress,parositva,PicasaPy/ImportProgressPanel.qml;PicasaPy/BatchEditProgressPanel.qml,Modális folyamatjelző

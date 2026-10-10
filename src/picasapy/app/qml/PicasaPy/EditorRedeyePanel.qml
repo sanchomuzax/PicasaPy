@@ -65,6 +65,7 @@ ColumnLayout {
     //: (`panel-feliratok-hu.tsv:4989`).
     Text {
         objectName: "redeyeGuideText"
+        visible: !panel.redeyeAutoReset
         Layout.fillWidth: true
         Layout.preferredWidth: 242
         Layout.preferredHeight: 129
@@ -110,7 +111,7 @@ ColumnLayout {
         //: #3574: a hivatalos sikerüzenet (`RedEye::AutoFixedMessage`) maga
         //: is tartalmazza ezt a mondatot — amíg az látszik, ez a sor nem
         //: ismétli meg
-        visible: !(panel.redeyeFoundCount > 0)
+        visible: !panel.redeyeAutoReset && !(panel.redeyeFoundCount > 0)
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
         text: qsTr("Note: click inside the box to undo the change.")
@@ -123,11 +124,26 @@ ColumnLayout {
         objectName: "redeyeAutoResultLabel"
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        visible: panel.redeyeFoundCount >= 0
+        visible: !panel.redeyeAutoReset && panel.redeyeFoundCount >= 0
         text: panel.redeyeFoundCount > 0
               //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
               ? qsTr("Picasa has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that Picasa may have missed.")
               : qsTr("No red eye was found automatically.")
+        font.pixelSize: Theme.fontSize - 1
+        color: Theme.textGray
+    }
+
+    Text {
+        objectName: "redeyeAutoRedoLabel"
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+        visible: panel.redeyeAutoReset
+        text: qsTr("Click, hold, and drag the mouse around each eye separately "
+                   + "to select it. A selection box appears over the area. "
+                   + "Release the mouse to complete your selection. The Photo is "
+                   + "displayed with the red-eye removed.\n\n"
+                   + "Note: You can click on a box to delete a change.\n\n"
+                   + "You can also click 'auto' to reapply the auto-corrections.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }
@@ -165,6 +181,7 @@ ColumnLayout {
         ActionButton {
             objectName: "redeyeAutoButton"
             label: qsTr("Auto")
+            buttonEnabled: panel.canReapplyRedeyeAuto
             onButtonClicked: panel.redeyeAutoRequested()
         }
         ActionButton {
@@ -180,7 +197,7 @@ ColumnLayout {
         objectName: "redeyeResetButton"
         label: qsTr("Reset")
         Layout.alignment: Qt.AlignHCenter
-        buttonEnabled: panel.redeyeRegionCount > 0
+        buttonEnabled: panel.redeyeResetAvailable
         onButtonClicked: panel.redeyeResetRequested()
     }
 

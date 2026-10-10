@@ -59,9 +59,14 @@ Rectangle {
     property int pendingIgnoreFaceId: -1
     property int pendingNewFaceId: -1
     property string pendingNewFaceName: ""
+    // A Picasa kézi hozzáadás állapota: ilyenkor a lista és az indítógomb
+    // helyén a `manual_frame` útmutatója látszik.
+    property bool manualAddActive: false
 
     signal personChosen(string name)
     signal closeRequested()
+    signal manualAddRequested()
+    signal manualCancelRequested()
 
     readonly property bool personAlbum:
         panel.currentPerson.length > 0 && !panel.unnamedAlbumMode
@@ -98,6 +103,21 @@ Rectangle {
         if (assigned && typeof controller !== "undefined" && controller)
             controller.refreshCollections()
         return assigned
+    }
+
+    function acceptFaceSuggestion(faceId) {
+        if (!panel.faceScanController || faceId < 0)
+            return false
+        var accepted = panel.faceScanController.acceptSuggestion(faceId)
+        if (accepted && typeof controller !== "undefined" && controller)
+            controller.refreshCollections()
+        return accepted
+    }
+
+    function rejectFaceSuggestion(faceId) {
+        if (!panel.faceScanController || faceId < 0)
+            return false
+        return panel.faceScanController.rejectSuggestion(faceId)
     }
 
     function _hasPersonNamed(name) {
@@ -190,7 +210,7 @@ Rectangle {
 
         Text {
             objectName: "peoplePanelStatusLabel"
-            visible: panel.needsFolderSelection
+            visible: panel.needsFolderSelection && !panel.manualAddActive
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: qsTr("Select a folder to display faces")
@@ -199,7 +219,7 @@ Rectangle {
         }
         Text {
             objectName: "peoplePanelHeader"
-            visible: panel.headerText.length > 0
+            visible: panel.headerText.length > 0 && !panel.manualAddActive
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: panel.headerText
@@ -208,6 +228,7 @@ Rectangle {
         }
         Repeater {
             model: panel.people
+            visible: !panel.manualAddActive
             delegate: PeoplePanelRow {
                 required property var modelData
                 Layout.fillWidth: true
@@ -219,6 +240,7 @@ Rectangle {
         }
         Repeater {
             model: panel.unnamedFacesHere
+            visible: !panel.manualAddActive
             delegate: PeoplePanelRow {
                 required property var modelData
                 Layout.fillWidth: true
@@ -228,6 +250,13 @@ Rectangle {
                 photoUrl: modelData.thumbUrl
                 onNameSubmitted: function(id, name) {
                     panel.nameFaceFromPanel(id, name)
+                }
+                suggestedName: modelData.suggestedName || ""
+                onSuggestionAccepted: function(id) {
+                    panel.acceptFaceSuggestion(id)
+                }
+                onSuggestionRejected: function(id) {
+                    panel.rejectFaceSuggestion(id)
                 }
                 onIgnoreRequested: function(id) {
                     panel.requestIgnoreFace(id)
@@ -248,6 +277,7 @@ Rectangle {
             visible: panel.headerText.length === 0
                      && !panel.needsFolderSelection
                      && panel.unnamedFacesHere.length === 0
+                     && !panel.manualAddActive
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: panel.unnamedAlbumMode
@@ -265,6 +295,59 @@ Rectangle {
         }
 
         Item { Layout.fillHeight: true }
+
+        PicasaButton {
+            objectName: "peoplePanelManualAddButton"
+            visible: !panel.manualAddActive
+            enabled: panel.selectionCount > 0
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: 259
+            Layout.preferredHeight: 21
+            text: qsTr("Add a person manually")
+            onClicked: panel.manualAddRequested()
+        }
+    }
+
+    Rectangle {
+        objectName: "peoplePanelManualFrame"
+        visible: panel.manualAddActive
+        x: 18
+        y: 105
+        width: 239
+        height: 145
+        color: panel.color
+        border.color: Theme.buttonBorder
+        border.width: 1
+
+        Text {
+            objectName: "peoplePanelManualInstructions"
+            x: 9
+            y: 6
+            width: 221
+            height: 86
+            wrapMode: Text.WordWrap
+            text: qsTr("Instructions:\n\n"
+                + "1) Manipulate the rectangle to fit the face of the person "
+                + "you want to add.\n\n"
+                + "You can drag the rectangle to position it, and move its "
+                + "sides to refine the shape.\n\n"
+                + "2) Click on \"Add a name\" under the rectangle and type "
+                + "in the person's name.\n\n"
+                + "(Be sure to either press Enter or click on an "
+                + "autocompleted name to indicate that you are done)")
+            font.pixelSize: Math.max(8, Theme.fontSize - 5)
+            color: Theme.textGray
+        }
+
+        PicasaButton {
+            objectName: "peoplePanelManualCancelButton"
+            x: 71
+            y: 105
+            width: 98
+            height: 28
+            text: qsTr("Cancel")
+            onClicked: panel.manualCancelRequested()
+        }
     }
 
     Dialog {

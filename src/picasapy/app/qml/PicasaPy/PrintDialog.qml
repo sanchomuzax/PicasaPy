@@ -517,6 +517,22 @@ Window {
             color: Theme.ink
         }
 
+        // #4608: nyomtató nélküli gépen kimondja, mit kell tenni. Az
+        // eredeti őre (`IDS_MUST_INSTALL_PRINTER`) ugyanezt mondja. A
+        // PDF-cél a választóban marad, ezért ez tájékoztat, nem tilt.
+        // A tetején van: a 420 px-es ablakban a nyomtatóválasztó már kívül
+        // esik, a figyelmeztetésnek viszont látszania kell.
+        Text {
+            objectName: "printNoPrinterText"
+            Layout.fillWidth: true
+            visible: !!printWindow.printCtl && printWindow.printers.length === 0
+            //: IDS_MUST_INSTALL_PRINTER — a nyomtató-őr üzenete
+            text: qsTr("A printer must be installed in order to print.")
+            font.pixelSize: Theme.fontSize
+            color: Theme.textGray
+            wrapMode: Text.WordWrap
+        }
+
         // -- szegély és felirat (#1780) -----------------------------------
         PicasaButton {
             id: printOptionsButton

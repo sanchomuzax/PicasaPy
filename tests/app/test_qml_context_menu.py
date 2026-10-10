@@ -84,9 +84,9 @@ class TestPhotoContextMenu:
     # Mentés / Visszaállítás / Összes szerkesztés visszavonása alapból
     # szintén szürke, de NEM helyfoglaló: állapotfüggő (#422), ezért a
     # saját tesztjük fedi őket (test_photo_menu_commands.py).
+    # #4533: a „Társítás" (contextMenuOpenWith) már működik, nincs a listában.
     EXPECTED_DISABLED = [
         "contextMenuSplitFolder",
-        "contextMenuOpenWith",
         "contextMenuUploadToWebAlbums",
         "contextMenuBlockUpload",
     ]

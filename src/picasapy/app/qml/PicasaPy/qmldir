@@ -51,6 +51,7 @@ EndEditModalityDialog 1.0 EndEditModalityDialog.qml
 RightDrawer 1.0 RightDrawer.qml
 DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
+KeywordsDialog 1.0 KeywordsDialog.qml
 QuickTagsConfigDialog 1.0 QuickTagsConfigDialog.qml
 PropertiesPanel 1.0 PropertiesPanel.qml
 PeoplePanel 1.0 PeoplePanel.qml
@@ -66,6 +67,7 @@ TrayActionSeparator 1.0 TrayActionSeparator.qml
 TrayAlbumToken 1.0 TrayAlbumToken.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
 EmailChoiceDialog 1.0 EmailChoiceDialog.qml
+OpenWithDialog 1.0 OpenWithDialog.qml
 SaveDialogs 1.0 SaveDialogs.qml
 InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml
@@ -115,6 +117,7 @@ ProjectsSection 1.0 ProjectsSection.qml
 TagContextMenu 1.0 TagContextMenu.qml
 TrayContextMenu 1.0 TrayContextMenu.qml
 FolderPropertiesDialog 1.0 FolderPropertiesDialog.qml
+DateCalendarPopup 1.0 DateCalendarPopup.qml
 NewCollectionDialog 1.0 NewCollectionDialog.qml
 AddCustomAspectRatioDialog 1.0 AddCustomAspectRatioDialog.qml
 OptionsDialog 1.0 OptionsDialog.qml
