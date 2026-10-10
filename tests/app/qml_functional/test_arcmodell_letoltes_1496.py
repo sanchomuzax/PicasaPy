@@ -523,6 +523,15 @@ class TestLetoltesUtanElo:
             uzenet="a modellbetöltés hibája után beragadt a párbeszéd",
         )
         assert vezerlo.waitForBackgroundWorkers(15.0)
+        # A vezérlő a `finally`-ben előbb a százalékot állítja −1-re (ettől
+        # hamis a `downloading`), és csak UTÁNA küldi a befejező jelet; a
+        # szál bevárása után a sorba állított jelet még kézbesíteni kell (#4825).
+        _var(
+            qt_app,
+            lambda: bool(parbeszed.property("statusText")),
+            masodperc=5.0,
+            uzenet="a letöltés befejező üzenete nem érkezett meg",
+        )
 
         assert betoltott_fajlok.get("detector") == tartalom[
             "/" + specek[0].relative_url
