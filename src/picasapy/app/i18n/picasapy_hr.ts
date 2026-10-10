@@ -17442,6 +17442,16 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
         </message>
     </context>
     <context>
+        <name>TextColorSwatches</name>
+        <message>
+            <location filename="../qml/PicasaPy/TextColorSwatches.qml" line="114" />
+            <source>Pick Color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CDesaturateFilter::pickcolor;stringres:ImageFilters::PickColor;tooltips:Label(editpanel/colorwheel_label0);tooltips:Label(editpanel/colorwheel_label1)</extracomment>
+            <translation>Odaberite boje</translation>
+        </message>
+    </context>
+    <context>
         <name>EditorUndoRow</name>
         <message>
             <location filename="../qml/PicasaPy/EditorUndoRow.qml" />
