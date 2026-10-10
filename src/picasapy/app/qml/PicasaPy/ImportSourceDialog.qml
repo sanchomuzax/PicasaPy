@@ -196,6 +196,9 @@ Window {
     function requestImport() {
         if (importSourceWindow.destFolder.length === 0) return
         if (importSourceWindow.includedCount === 0) return
+        // #4595: kézi módban cím nélkül nincs import (és nincs megerősítés sem)
+        if (importSourceWindow.namingMode === "manual"
+                && importSourceWindow.manualFolderName.trim().length === 0) return
         if (importSourceWindow.afterCopying === "leave") {
             importSourceWindow.runImportNow()
             return
@@ -756,6 +759,7 @@ Window {
                 Layout.leftMargin: 24
                 enabled: importSourceWindow.namingMode === "manual"
                 text: importSourceWindow.manualFolderName
+                onTextEdited: importSourceWindow.manualFolderName = text
                 onEditingFinished: importSourceWindow.manualFolderName = text
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}

@@ -178,9 +178,7 @@ ELAVULT = (
     "Align right",
     "Preserve Color",
     " s",
-    # #3575 (a tipp-szöveg a RÁDIÓFELIRATBAN volt rossz; #4595-ben tipként
-    # visszakerült, ezért NEM tiltjuk a szöveget — a rádiófelirat őrzi
-    # a `Enter Folder Title`-t, ld. ELOFORDULASOK)
+    # #3575: a szöveg rádiófeliratként volt hibás; tippként (#4595) helyes.
     "Import into separate folders for each date taken",
     "Import into folder with today's date",
     "Collection name:",

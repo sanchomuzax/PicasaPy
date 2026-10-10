@@ -137,7 +137,7 @@ class TestDestinationSubpathForMode:
     def test_manual_mode_blank_name_is_refused_not_copied_to_root(self):
         # #4595: cím nélkül az importálás nem indul — a célgyökérbe
         # másolás (a régi `Path(".")`) a Picasa-tipp szerint nem lehet.
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="manual naming requires a folder name"):
             destination_subpath_for_mode(
                 date(2024, 3, 5), NAMING_MANUAL, manual_name="   "
             )

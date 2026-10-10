@@ -307,7 +307,7 @@ def destination_subpath_for_mode(
     if mode == NAMING_MANUAL:
         name = manual_name.strip()
         if not name:
-            raise ValueError("Kézi elnevezésnél a mappanév kötelező (#4595).")
+            raise ValueError("manual naming requires a folder name (#4595)")
         return Path(name)
     if mode == NAMING_TODAY:
         chosen = today if today is not None else date.today()

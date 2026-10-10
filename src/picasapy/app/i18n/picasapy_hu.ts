@@ -12251,7 +12251,7 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Mappasablon:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="733" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
             <source>Enter new folder title or choose existing folder to continue</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
