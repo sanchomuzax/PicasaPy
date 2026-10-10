@@ -1101,6 +1101,24 @@ ApplicationWindow {
         onActivated: window.fokuszAKeresore()
     }
     Shortcut {
+        id: shortcutSearchF3
+        objectName: "searchF3Shortcut"
+        sequence: "F3"
+        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+        //: #4600: `0x005e69a4` — módosító nélküli ág, ugyanaz a
+        //: `searchcontainer/searchbutton`, mint a `Ctrl+F`-é.
+        onActivated: window.fokuszAKeresore()
+    }
+    Shortcut {
+        id: shortcutStarToggle
+        objectName: "starToggleShortcut"
+        sequence: "F4"
+        enabled: window._konyvtariGyorsbillentyuEngedelyezve
+        //: #4600: `0x005e696c` — a `thumbui/startoggle`-t kattintja, ha az
+        //: nem tiltott; a tálca gombja ugyanezt a kijelölést/nézőt követi.
+        onActivated: trayBar.kapcsoldACsillagot()
+    }
+    Shortcut {
         id: shortcutRefreshCurrentFolder
         objectName: "refreshCurrentFolderShortcut"
         sequence: "F5"
@@ -1754,6 +1772,7 @@ ApplicationWindow {
             title: picasaMenuBar.keyboardShortcutGroupTitles.view,
             sequences: picasaMenuBar.keyboardShortcutSequences.view.concat([
                 shortcutToggleRightDrawer.sequence, shortcutSearch.sequence,
+                shortcutSearchF3.sequence, shortcutStarToggle.sequence,
                 shortcutTagsPanelAlt.sequence, shortcutEditView.sequence,
                 shortcutDuplicateSearch.sequence, shortcutFindSimilar.sequence,
                 shortcutClearSimilar.sequence, shortcutSlideshow.sequence,
