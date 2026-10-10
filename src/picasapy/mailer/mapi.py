@@ -14,6 +14,7 @@ hívásakor töltődik be, és az csak Windowson fut."""
 from __future__ import annotations
 
 import ctypes
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,6 +29,12 @@ MAPI_TO = 1
 
 #: A `MAPISendMailW` zászlója: a levélszerkesztő megnyitása küldés előtt.
 MAPI_DIALOG = 0x00000008
+
+#: A `MAPISendMailW` zászlója: szükség esetén bejelentkezési felület.
+MAPI_LOGON_UI = 0x00000001
+
+#: A melléklet `nPosition`-je: „nincs pozíció" (a szöveg végén marad).
+MAPI_NO_POSITION = 0xFFFFFFFF
 
 #: Sikeres megnyitás (`SUCCESS_SUCCESS`).
 MAPI_OK = 0
@@ -114,16 +121,22 @@ def build_mapi_message(
     if body:
         message.lpszNoteText = _wide(body, keep)
 
-    if recipient:
-        recips = (MapiRecipDesc * 1)()
-        recips[0].ulRecipClass = MAPI_TO
-        recips[0].lpszName = _wide(recipient, keep)
+    addresses = [
+        part.strip() for part in re.split(r"[;,]", recipient) if part.strip()
+    ]
+    if addresses:
+        recips = (MapiRecipDesc * len(addresses))()
+        for index, address in enumerate(addresses):
+            recips[index].ulRecipClass = MAPI_TO
+            recips[index].lpszName = _wide(address, keep)
+            recips[index].lpszAddress = _wide("SMTP:" + address, keep)
         keep.append(recips)
-        message.nRecipCount = 1
+        message.nRecipCount = len(addresses)
         message.lpRecips = ctypes.cast(recips, ctypes.POINTER(MapiRecipDesc))
 
     files = (MapiFileDesc * len(attachments))()
     for index, path in enumerate(attachments):
+        files[index].nPosition = MAPI_NO_POSITION
         files[index].lpszPathName = _wide(str(path), keep)
         files[index].lpszFileName = _wide(path.name, keep)
     keep.append(files)
@@ -141,6 +154,13 @@ def send_mapi(payload: MapiPayload, *, dialog: bool = True) -> int:
     `MAPI_USER_ABORT` a bezárt szerkesztő; minden más hiba."""
     mapi32 = ctypes.WinDLL("mapi32")  # type: ignore[attr-defined]
     send = mapi32.MAPISendMailW
+    send.argtypes = [
+        ctypes.c_size_t,
+        ctypes.c_size_t,
+        ctypes.POINTER(MapiMessage),
+        ULONG,
+        ULONG,
+    ]
     send.restype = ULONG
-    flags = MAPI_DIALOG if dialog else 0
+    flags = MAPI_LOGON_UI | (MAPI_DIALOG if dialog else 0)
     return int(send(0, 0, ctypes.byref(payload.message), flags, 0))

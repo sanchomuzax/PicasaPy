@@ -31,4 +31,5 @@ def test_file_desc_size_matches_pointer_width():
 
 
 def test_message_struct_has_pointer_sized_list_fields():
-    assert ctypes.sizeof(MapiMessage) > 0
+    expected = 96 if ctypes.sizeof(ctypes.c_void_p) == 8 else 48
+    assert ctypes.sizeof(MapiMessage) == expected

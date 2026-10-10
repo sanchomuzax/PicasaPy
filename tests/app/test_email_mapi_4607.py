@@ -1,11 +1,13 @@
 """`EmailController` Windows-ága (#4607): a melléklet MAPI-n át csatolódik.
 
-A `_is_windows` és a `_mapi_send` modulszintű fogantyú: a teszt Linuxon
+A `_platform` és a `_mapi_send` modulszintű fogantyú: a teszt Linuxon
 fut, a MAPI-hívást mockolja, így valódi levelezőt nem nyit meg."""
 
 from __future__ import annotations
 
+import ctypes
 import os
+from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -86,3 +88,66 @@ class TestWindowsMapiSend:
             ok = controller.sendWithDefaultClient(["C:/a.jpg"], "T", "Sz", False)
         assert ok is False
         assert events == [controller.tr("No email program was found.")]
+
+
+class TestWindowsMapiRobustness:
+    def test_mapi_exception_emits_failure(self, qt_app, tmp_path):
+        controller = _controller(tmp_path)
+        events = []
+        controller.emailFailed.connect(events.append)
+        for error in (OSError("x"), AttributeError("x"), ctypes.ArgumentError("x")):
+            with patch.object(
+                email_controller_module, "_platform", return_value="win32"
+            ), patch.object(
+                email_controller_module, "_mapi_send", side_effect=error
+            ):
+                ok = controller.sendWithDefaultClient(
+                    ["C:/a.jpg"], "T", "Sz", False
+                )
+            assert ok is False
+        assert events == [controller.tr("No email program was found.")] * 3
+
+    def test_reentrant_call_is_refused_and_flag_resets(self, qt_app, tmp_path):
+        controller = _controller(tmp_path)
+        inner = []
+
+        def fake_send(payload):
+            inner.append(
+                controller._kuldes_mapi("T", "Sz", [Path("C:/b.jpg")], "")
+            )
+            return 0
+
+        with patch.object(
+            email_controller_module, "_platform", return_value="win32"
+        ), patch.object(email_controller_module, "_mapi_send", fake_send):
+            ok = controller.sendWithDefaultClient(["C:/a.jpg"], "T", "Sz", False)
+        assert ok is True
+        assert inner == [False]
+        # a jelző visszaállt: újabb küldés lefut
+        is_win, mapi = _windows(0)
+        with is_win, mapi as send:
+            assert controller.sendWithDefaultClient(["C:/a.jpg"], "T", "Sz", False)
+        assert send.call_count == 1
+
+    def test_flag_resets_after_exception(self, qt_app, tmp_path):
+        controller = _controller(tmp_path)
+        with patch.object(
+            email_controller_module, "_platform", return_value="win32"
+        ), patch.object(
+            email_controller_module, "_mapi_send", side_effect=OSError("x")
+        ):
+            controller.sendWithDefaultClient(["C:/a.jpg"], "T", "Sz", False)
+        is_win, mapi = _windows(0)
+        with is_win, mapi:
+            assert controller.sendWithDefaultClient(["C:/a.jpg"], "T", "Sz", False)
+
+
+def test_old_email_tests_never_reach_real_mapi_on_win32(
+    qt_app, tmp_path, monkeypatch
+):
+    """A conftest-őr: platform nélküli tesztben a _mapi_send tiltott."""
+    controller = _controller(tmp_path)
+    with pytest.raises(AssertionError):
+        email_controller_module._mapi_send(None)
+    assert email_controller_module._platform() == "linux"
+    del controller

@@ -100,6 +100,21 @@ def _kis_kepek_latszanak():
 
 
 @pytest.fixture(autouse=True)
+def _email_nincs_valodi_mapi(monkeypatch):
+    """#4607: az e-mail tesztek Windowson se érjék el a valódi MAPI-t.
+
+    A platform "linux"-ra rögzül, a `_mapi_send` pedig kivételt dob; a MAPI
+    saját tesztjei ezt a `patch.object`-tel felülírják."""
+    from picasapy.app import email_controller
+
+    def _tiltott(*_args, **_kwargs):
+        raise AssertionError("valódi MAPI-hívás tesztből")
+
+    monkeypatch.setattr(email_controller, "_platform", lambda: "linux")
+    monkeypatch.setattr(email_controller, "_mapi_send", _tiltott)
+
+
+@pytest.fixture(autouse=True)
 def qml_warnings():
     """#718: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
     teszt VÉGÉN hibát dob, ha QML-SZKRIPTHIBA jelent meg (pl. „Cannot read

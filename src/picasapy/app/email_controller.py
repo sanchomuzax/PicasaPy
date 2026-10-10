@@ -25,6 +25,7 @@ determinisztikus, oldalhatás-mentes módja) — a parancs-összeállítás
 
 from __future__ import annotations
 
+import ctypes
 import logging
 import shutil
 import subprocess
@@ -212,6 +213,9 @@ class EmailController(QObject):
         # így itt a régi másolatok takarítása az indulás része
         _torold_regi_mail_masolatok()
         self._photo_source = photo_source
+        #: #4607: újrabelépés-őr — a MAPI-hívás a felhasználó válaszáig áll,
+        #: közben a Qt eseményhurok újabb küldést indíthatna.
+        self._mapi_folyamatban = False
         #: #1671: a KÉPTÁLCA rekordjai. Ha nem üres, ŐK a forrás — a rács
         #: pillanatnyi kijelölése és a látott mappa nem számít. Az eredeti
         #: súgója is így fogalmaz: „Print photos in the Photo Tray". A
@@ -594,10 +598,20 @@ class EmailController(QObject):
         szerkesztő bezárása `MAPI_USER_ABORT`, ez nem hiba és nem jelzendő.
         Minden más kódnál a csatolmány NEM ment ki, ezért hibát jelzünk, és
         nem esünk vissza csatolmány nélküli `mailto:`-ra."""
-        payload = build_mapi_message(
-            subject, body, attachments, recipient=recipient
-        )
-        code = _mapi_send(payload)
+        if self._mapi_folyamatban:
+            return False
+        self._mapi_folyamatban = True
+        try:
+            payload = build_mapi_message(
+                subject, body, attachments, recipient=recipient
+            )
+            code = _mapi_send(payload)
+        except (OSError, AttributeError, ctypes.ArgumentError):
+            _log.warning("MAPI-küldés kivétellel megszakadt", exc_info=True)
+            self.emailFailed.emit(self.tr("No email program was found."))
+            return False
+        finally:
+            self._mapi_folyamatban = False
         if code == MAPI_OK:
             return True
         if code == MAPI_USER_ABORT:

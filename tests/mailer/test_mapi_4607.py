@@ -7,8 +7,15 @@ from __future__ import annotations
 
 import ctypes
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from picasapy.mailer.mapi import MAPI_TO, build_mapi_message
+from picasapy.mailer.mapi import (
+    MAPI_DIALOG,
+    MAPI_LOGON_UI,
+    MAPI_TO,
+    build_mapi_message,
+    send_mapi,
+)
 
 
 def _file_names(payload):
@@ -62,3 +69,49 @@ class TestBuildMapiMessage:
 
         pointer = ctypes.sizeof(ctypes.c_void_p)
         assert ctypes.sizeof(MapiFileDesc) == 3 * 4 + (4 if pointer == 8 else 0) + 3 * pointer
+
+
+class TestPositionAndRecipients:
+    def test_attachment_position_is_none(self):
+        payload = build_mapi_message("T", "S", [Path("/tmp/a.jpg")])
+        assert payload.message.lpFiles[0].nPosition == 0xFFFFFFFF
+
+    def test_recipients_split_on_semicolon_and_comma(self):
+        payload = build_mapi_message(
+            "T", "S", [], recipient="a@x.hu; b@x.hu, ,c@x.hu;  "
+        )
+        message = payload.message
+        assert message.nRecipCount == 3
+        addrs = [message.lpRecips[i].lpszAddress for i in range(3)]
+        names = [message.lpRecips[i].lpszName for i in range(3)]
+        assert names == ["a@x.hu", "b@x.hu", "c@x.hu"]
+        assert addrs == ["SMTP:a@x.hu", "SMTP:b@x.hu", "SMTP:c@x.hu"]
+        assert all(message.lpRecips[i].ulRecipClass == MAPI_TO for i in range(3))
+
+    def test_blank_recipient_means_no_recipients(self):
+        assert build_mapi_message("T", "S", [], recipient=" ; ,").message.nRecipCount == 0
+
+
+class TestSendFlags:
+    def _run(self, dialog):
+        fake = MagicMock(return_value=0)
+        dll = MagicMock()
+        dll.MAPISendMailW = fake
+        payload = build_mapi_message("T", "S", [])
+        with patch.object(ctypes, "WinDLL", create=True, return_value=dll):
+            send_mapi(payload, dialog=dialog)
+        return fake
+
+    def test_logon_ui_always_set(self):
+        for dialog in (True, False):
+            flags = self._run(dialog).call_args[0][3]
+            assert flags & MAPI_LOGON_UI
+
+    def test_dialog_flag_with_dialog(self):
+        assert self._run(True).call_args[0][3] == MAPI_LOGON_UI | MAPI_DIALOG
+        assert self._run(False).call_args[0][3] == MAPI_LOGON_UI
+
+    def test_argtypes_set(self):
+        fake = self._run(True)
+        assert fake.restype is not None
+        assert len(fake.argtypes) == 5
