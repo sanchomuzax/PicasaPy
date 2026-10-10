@@ -379,3 +379,29 @@ def qml_app_module(
     """
     root = tmp_path_factory.mktemp("qml-app-module")
     yield from _build_qml_app(qt_app, root)
+
+
+@pytest.fixture
+def legalabb_ket_betucsalad(qt_app, tmp_path_factory):
+    """Gondoskodik róla, hogy a rendszer-adatbázisban legalább két család legyen.
+
+    Közös a QML-es (#4546) és a vezérlős betűtípus-próbáknak. ⚠️ A `qml_app` /
+    `controller` ELŐTT kell létrejönnie (a teszt paraméterlistájában előtte
+    áll): a katalógust a felület építéskor olvassa ki.
+    """
+    from PySide6.QtGui import QFontDatabase
+
+    from support.betucsalad import atnevezett_betu
+
+    azonosito = None
+    if len(set(QFontDatabase.families())) < 2:
+        masolat = atnevezett_betu(
+            tmp_path_factory.mktemp("betu") / "OpenSanz.ttf"
+        )
+        azonosito = QFontDatabase.addApplicationFont(str(masolat))
+        assert azonosito >= 0, "a második próbabetű nem tölthető be"
+    try:
+        yield
+    finally:
+        if azonosito is not None:
+            QFontDatabase.removeApplicationFont(azonosito)

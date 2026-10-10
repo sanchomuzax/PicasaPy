@@ -2382,7 +2382,9 @@ class TestASzovegStilusaAFAJLBA_KERUL:
         self._felirat(controller, photo, bold=False)
         assert _text_ertek(photo) != felkover
 
-    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(self, controller, photo):
+    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(
+        self, legalabb_ket_betucsalad, controller, photo
+    ):
         # a lista `{key, label}` szótárakból áll (a lenyíló adata)
         kulcsok = [cs["key"] for cs in controller.textFontFamilies]
         mas = next((cs for cs in kulcsok if cs != "Arial"), None)
