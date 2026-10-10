@@ -36,7 +36,7 @@ makemoviepanel,parositva,PicasaPy/CreateDialogs.qml,A Filmkészítő háromlapos
 modalprogress,parositva,PicasaPy/ImportProgressPanel.qml;PicasaPy/BatchEditProgressPanel.qml,Modális folyamatjelző
 moviecontrols,parositva,PicasaPy/VideoPlayerView.qml,Lejátszás/szünet a videón
 movieeditpanel,parositva,PicasaPy/VideoPlayerView.qml;PicasaPy/PhotoViewer.qml,Videovágó panel
-nav,nincs-megfeleltetes,,"A nav.tre egy szerkesztői nagyítás-navigátor lebegőablakát írja le; ilyen navigátor nincs a PhotoViewerben, ezért a nav/close nem cél."
+nav,parositva,PicasaPy/ZoomNavigator.qml;PicasaPy/PhotoViewer.qml,"Szerkesztői nagyítás-navigátor: áttekintő bélyegkép, mozgatható láthatórész-keret és nagyításfelirat (#4568)."
 nerdview,parositva,PicasaPy/PerfMonitorPanel.qml;PicasaPy/HistogramBox.qml,Fejlesztői/diagnosztikai réteg
 oneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet a könyvtárban
 options,parositva,PicasaPy/OptionsDialog.qml;PicasaPy/OptionsTabFileTypes.qml,Beállítások ablak és a Fájltípusok fül (#350/#4447/#4488)

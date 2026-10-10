@@ -288,7 +288,7 @@ foldermgr/status_label,megvan,PicasaPy/FolderStatePanel.qml,A For the current fo
 foldermgr/watch_label,megvan,PicasaPy/FolderStatePanel.qml,A Scan Always felirat és művelet a mappakezelő panelen megvan. Tesztek: tests/app/test_qml_folder_manager.py.
 foldermgr/watched_label,megvan,PicasaPy/FolderStatePanel.qml,A Watched Folders címke és listája a mappakezelőben megvan. Tesztek: tests/app/test_qml_folder_manager.py.
 activity/activitybutton,nem-cel,docs/specs/picasa-feltolteskezelo.md;docs/specs/ui-audit-mainwindow.md,A mért gomb a megszűnt Picasa Web Albums Feltöltéskezelőjét nyitotta; a helyi ActivityBadge ettől független háttérművelet-jelző.
-nav/close,nem-cel,docs/specs/ui-audit-mainwindow.md;nav.tre,"A nav.tre a nagyítás-navigátor lebegőablakához tartozik; a PhotoViewerben ilyen ablak nincs, ezért nem a bal mappasáv bezárógombja."
+nav/close,megvan,PicasaPy/ZoomNavigator.qml;PicasaPy/PhotoViewer.qml,"A szerkesztői nagyítás-navigátor ablaka bezárható; a vezérlő a ZoomNavigator.qml-ben van (#4568)."
 instructionpanel/close,nem-cel,docs/specs/binaris-regeszet-modszertan.md,"A bezárás a nem létező Picasa-betanító buborék vezérlője; nincs helyi panel, amelyet bezárhatna."
 instructionpanel/learn_more,nem-cel,docs/specs/picasa-menu-parancsok-viselkedes.md,A Learn more hivatkozás a Picasa támogatási weboldalára vezetett; a helyi alkalmazásban nincs ilyen betanító panel.
 uploadallinstructionpanel/close,nem-cel,docs/specs/binaris-regeszet-modszertan.md;docs/specs/picasa-feltolteskezelo.md,A Close a megszűnt csoportos online feltöltés betanító paneljéhez tartozik.
