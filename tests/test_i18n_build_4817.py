@@ -55,5 +55,6 @@ def test_a_qm_nincs_a_repoban():
     kovetett = subprocess.run(
         ["git", "ls-files", "src/picasapy/app/i18n/*.qm"],
         cwd=GYOKER, capture_output=True, text=True, check=True,
+        encoding="utf-8", errors="replace",
     ).stdout.split()
     assert kovetett == []

@@ -312,7 +312,10 @@ jobs:
         run: python scripts/check_declared_setuptools_minimum.py
 
       - name: A .qm fordítások elkészítése a .ts-ből (#4817)
-        run: python scripts/build_qm.py
+        # a fordító (pyside6-lrelease) a PySide6 része — a futásidejű csomagok kellenek
+        run: |
+          pip install $(python scripts/print_dependencies.py)
+          python scripts/build_qm.py
 
       - name: Wheel build
         run: python -m build --wheel --outdir dist .
