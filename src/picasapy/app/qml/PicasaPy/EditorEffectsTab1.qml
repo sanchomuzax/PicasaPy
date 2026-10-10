@@ -56,6 +56,7 @@ ColumnLayout {
             // „Sharpen (Old)” (#2141)
             label: panel.shiftMasodlagos
                    ? qsTr("Sharpen (Old)") : qsTr("Sharpen")
+            tooltip: qsTr("Sharpens edges in your photo")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (unsharp) —
             //: az eredeti csempe-táblája (unsharp2 -> unsharp)
             readonly property string szuro: panel.shiftMasodlagos
@@ -74,6 +75,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectSepia"
             label: qsTr("Sepia")
+            tooltip: qsTr("Converts photo to sepia tone")
             onButtonClicked: if (!panel.tryOpenParamPanel("sepia", label)) panel.effectRequested("sepia")
             thumbSource: panel.effectThumbSource("sepia")
             badge: panel.hasBadge("sepia")
@@ -81,6 +83,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectBw"
             label: qsTr("B&W")
+            tooltip: qsTr("Makes your photo black and white")
             onButtonClicked: if (!panel.tryOpenParamPanel("bw", label)) panel.effectRequested("bw")
             thumbSource: panel.effectThumbSource("bw")
             badge: panel.hasBadge("bw")
@@ -88,6 +91,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectWarm"
             label: qsTr("Warmify")
+            tooltip: qsTr("Improves skintones by boosting warm tones")
             onButtonClicked: if (!panel.tryOpenParamPanel("warm", label)) panel.effectRequested("warm")
             thumbSource: panel.effectThumbSource("warm")
             badge: panel.hasBadge("warm")
@@ -99,6 +103,8 @@ ColumnLayout {
             // eredetin nincs — a `PicnikGrain` módja `effect` (#2141)
             label: panel.shiftMasodlagos
                    ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Adds film grain") : qsTr("Simulate film grain")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
             //: az eredeti csempe-táblája (picnikgrain -> grain)
             readonly property string szuro: panel.shiftMasodlagos
@@ -120,6 +126,9 @@ ColumnLayout {
             // másodlagos, saját felirata „Tint (Old)” (#2141)
             label: panel.shiftMasodlagos
                    ? qsTr("Tint (Old)") : qsTr("Tint")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Makes a tinted look")
+                     : qsTr("Change the color of your photo")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (tint) —
             //: az eredeti csempe-táblája (picniktint -> tint)
             readonly property string szuro: panel.shiftMasodlagos
@@ -138,6 +147,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectSat"
             label: qsTr("Saturation")
+            tooltip: qsTr("Increases or decreases saturation")
             onButtonClicked: if (!panel.tryOpenParamPanel("sat", label)) panel.effectRequested("sat")
             thumbSource: panel.effectThumbSource("sat")
             badge: panel.hasBadge("sat")
@@ -145,6 +155,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRadblur"
             label: qsTr("Soft Focus")
+            tooltip: qsTr("Softens focus around a center point")
             onButtonClicked: if (!panel.tryOpenParamPanel("radblur", label)) panel.effectRequested("radblur")
             thumbSource: panel.effectThumbSource("radblur")
             badge: panel.hasBadge("radblur")
@@ -153,6 +164,7 @@ ColumnLayout {
             objectName: "effectGlow2"
             label: panel.shiftMasodlagos
                    ? qsTr("Glow (Old)") : qsTr("Glow")
+            tooltip: qsTr("Gives your photo a gauzy glow")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (glow) —
             //: az eredeti csempe-táblája (glow2 -> glow)
             readonly property string szuro: panel.shiftMasodlagos
@@ -171,6 +183,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectAnsel"
             label: qsTr("Filtered B&W")
+            tooltip: qsTr("Makes a photo that looks like it was taken with B&W film and a color filter")
             onButtonClicked: if (!panel.tryOpenParamPanel("ansel", label)) panel.effectRequested("ansel")
             thumbSource: panel.effectThumbSource("ansel")
             badge: panel.hasBadge("ansel")
@@ -178,6 +191,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRadsat"
             label: qsTr("Focal B&W")
+            tooltip: qsTr("Desaturates around a center point")
             onButtonClicked: if (!panel.tryOpenParamPanel("radsat", label)) panel.effectRequested("radsat")
             thumbSource: panel.effectThumbSource("radsat")
             badge: panel.hasBadge("radsat")
@@ -186,6 +200,9 @@ ColumnLayout {
             objectName: "effectDirTint"
             label: panel.shiftMasodlagos
                    ? qsTr("Radial Tint") : qsTr("Graduated Tint")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Tints around a central point")
+                     : qsTr("A graduated filter, useful for skies")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (radtint) —
             //: az eredeti csempe-táblája (dir_tint -> radtint)
             readonly property string szuro: panel.shiftMasodlagos
