@@ -23,6 +23,8 @@ Item {
     signal markerActivated(int row)
     signal placePicked(real latitude, real longitude)
     signal photosDropped(var rows, real latitude, real longitude)
+    signal markerSearchRequested(var rows)
+    signal markerEraseRequested(var rows)
     function selectMapType(index) {}
     property int deliveredDrops: 0
     DropArea {
