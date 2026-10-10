@@ -164,12 +164,13 @@ def _mappabol(gyoker: Path) -> list[_ForrasFajl]:
             kivalasztott.setdefault(
                 kulcs, _ForrasFajl(relativ=relativ, forras=forras)
             )
-    _ini_tarsak_mappabol(kivalasztott)
+    _ini_tarsak_mappabol(kivalasztott, fajlok)
     return list(kivalasztott.values())
 
 
 def _ini_tarsak_mappabol(
     tetelek: dict[str, _ForrasFajl],
+    fajlok: dict[str, Path],
 ) -> None:
     kepek = tuple(t for t in tetelek.values() if _kep_e(t.relativ))
     for kep in kepek:
@@ -177,10 +178,21 @@ def _ini_tarsak_mappabol(
             continue
         ini = ini_source_path(kep.forras.parent / INI_NAME)
         if ini is None:
+            ini = _ini_kisbetuvel(fajlok, kep.forras.parent)
+        if ini is None:
             continue
         relativ = kep.relativ.parent / ini.name
         kulcs = relativ.as_posix().casefold()
         tetelek.setdefault(kulcs, _ForrasFajl(relativ=relativ, forras=ini))
+
+
+def _ini_kisbetuvel(fajlok: dict[str, Path], mappa: Path) -> Path | None:
+    """Tartalék: más betűzésű ini (pl. `.PICASA.INI`) a mentés térképében."""
+    for nev in (INI_NAME, LEGACY_INI_NAME):
+        for ut in fajlok.values():
+            if ut.parent == mappa and ut.name.casefold() == nev.casefold():
+                return ut
+    return None
 
 
 def _ini_fajl_az_isoban(
@@ -322,7 +334,10 @@ def visszaallit(forras: Path, cel: Path) -> VisszaallitasiEredmeny:
     visszaallitott = kihagyott = 0
     for tetel in tetelek:
         cel_fajl = _cel_ut(cel, tetel.relativ)
-        if cel_fajl.exists():
+        if cel_fajl.exists() or (
+            tetel.relativ.name == LEGACY_INI_NAME
+            and cel_fajl.with_name(INI_NAME).exists()
+        ):
             kihagyott += 1
             continue
         cel_fajl.parent.mkdir(parents=True, exist_ok=True)

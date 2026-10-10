@@ -63,3 +63,33 @@ def test_legacy_ini_iso_backup_and_restore_preserve_original_bytes(tmp_path):
 
     assert (restored / "album" / LEGACY_INI_NAME).read_bytes() == legacy_bytes
     assert not (restored / "album" / ".picasa.ini").exists()
+
+
+def test_other_case_ini_in_backup_is_found(tmp_path):
+    backup = tmp_path / "mentes" / "album"
+    backup.mkdir(parents=True)
+    (backup / "kep.jpg").write_bytes(b"\xff\xd8\xffkep")
+    (backup / ".PICASA.INI").write_bytes(b"[kep.jpg]\r\nstar=yes\r\n")
+
+    restored = tmp_path / "vissza"
+    visszaallit(tmp_path / "mentes", restored)
+
+    assert [p.name.casefold() for p in (restored / "album").iterdir()
+            if p.name.casefold() == ".picasa.ini"] == [".picasa.ini"]
+
+
+def test_legacy_ini_not_added_next_to_existing_modern_ini(tmp_path):
+    backup = tmp_path / "mentes" / "album"
+    backup.mkdir(parents=True)
+    (backup / "kep.jpg").write_bytes(b"\xff\xd8\xffkep")
+    (backup / LEGACY_INI_NAME).write_bytes(b"[kep.jpg]\r\nstar=yes\r\n")
+    restored = tmp_path / "vissza"
+    (restored / "album").mkdir(parents=True)
+    modern = restored / "album" / ".picasa.ini"
+    modern.write_bytes(b"[kep.jpg]\r\ncaption=uj\r\n")
+
+    result = visszaallit(tmp_path / "mentes", restored)
+
+    assert not (restored / "album" / LEGACY_INI_NAME).exists()
+    assert modern.read_bytes() == b"[kep.jpg]\r\ncaption=uj\r\n"
+    assert result.kihagyott == 1
