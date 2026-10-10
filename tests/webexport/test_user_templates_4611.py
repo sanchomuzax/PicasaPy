@@ -47,7 +47,12 @@ class TestUserTemplatesDir:
 
     def test_falls_back_to_local_share(self, monkeypatch, tmp_path):
         monkeypatch.delenv("XDG_DATA_HOME", raising=False)
+        # `Path.home()` POSIX-on a HOME-ból, Windowson a USERPROFILE-ból
+        # számol (#4835) — mindkettőt rögzítjük, a várt érték a rögzített
+        # otthonmappából jön.
         monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("USERPROFILE", str(tmp_path))
+        assert Path.home() == tmp_path
         assert user_templates_dir() == (
             tmp_path / ".local" / "share" / "picasapy" / "webexport" / "templates"
         )
