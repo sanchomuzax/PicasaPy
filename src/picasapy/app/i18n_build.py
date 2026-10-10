@@ -24,6 +24,9 @@ from pathlib import Path
 
 LRELEASE = "pyside6-lrelease"
 
+#: a teszt EZT cseréli, nem a globális `subprocess.run`-t (#1375)
+_run = subprocess.run
+
 
 def lrelease_parancs() -> str | None:
     """A `pyside6-lrelease` útja: PATH-ból, vagy a futó Python mellől."""
@@ -59,7 +62,7 @@ def forditsd(ts: Path, parancs: str | None = None) -> bool:
     fd, ideiglenes = tempfile.mkstemp(suffix=".qm", dir=ts.parent)
     os.close(fd)
     try:
-        eredmeny = subprocess.run(
+        eredmeny = _run(
             [parancs, str(ts), "-qm", ideiglenes, "-silent"],
             capture_output=True, text=True, encoding="utf-8",
             errors="replace", check=False, timeout=120,

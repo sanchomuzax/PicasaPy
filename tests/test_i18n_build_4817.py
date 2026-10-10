@@ -29,7 +29,7 @@ def test_hianyzo_qm_elkeszul(ts):
 def test_friss_qm_nem_fordul_ujra(ts, monkeypatch):
     assert i18n_build.forditsd(ts)
     hivas = []
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: hivas.append(a))
+    monkeypatch.setattr(i18n_build, "_run", lambda *a, **k: hivas.append(a))
     assert i18n_build.forditsd(ts)
     assert hivas == []
 
