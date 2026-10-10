@@ -8751,6 +8751,15 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         </message>
     </context>
     <context>
+        <name>ZoomNavigator</name>
+        <message>
+            <location filename="../qml/PicasaPy/ZoomNavigator.qml" />
+            <source>Zoomed to %1%</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nagyítás: %1%</translation>
+        </message>
+    </context>
+    <context>
         <name>PhotoViewer</name>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
