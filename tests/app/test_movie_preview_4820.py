@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import threading
 import time
+import os
+from pathlib import Path
 
 import numpy as np
 import pytest
 from PIL import Image, ImageDraw
+from PySide6.QtTest import QSignalSpy
 
 import picasapy.movie.slideshow as slideshow
 import picasapy.app.movie_preview as movie_preview
@@ -165,7 +168,149 @@ def test_a_maszkkoordinatak_meretenkent_cachelodnak_es_pushnal_nem_keszulnek(
 
 
 def test_a_nagy_filmfelbontasnal_is_a_nezoke_merete_keszul():
-    assert movie_preview._preview_size(1920, 1080, True, 240, 118) == (210, 118)
+    assert movie_preview._preview_size(1920, 1080, True, 240, 118) == (1920, 1080)
+
+
+def test_a_szovegdia_betukeresese_a_provider_pooljaban_melegszik(monkeypatch):
+    render_threads = []
+    gui_thread = threading.get_ident()
+
+    def fake_render(_slide, _settings):
+        render_threads.append(threading.get_ident())
+        return np.zeros((16, 16, 3), dtype=np.uint8)
+
+    monkeypatch.setattr(movie_preview, "render_text_slide", fake_render)
+    provider = MovieTransitionPreviewProvider()
+    try:
+        assert provider.wait_for_done(2_000), "a betű-előmelegítő beragadt"
+        assert render_threads, "a provider létrehozása nem melegítette be a betűkeresést"
+        assert all(thread != gui_thread for thread in render_threads)
+    finally:
+        provider.wait_for_done(2_000)
+
+
+def test_a_kovetkezo_dia_alapkockaja_hatterszalban_elore_cachelodik(
+    monkeypatch, tmp_path
+):
+    prefetch = getattr(MovieTransitionPreviewProvider, "prefetch_frame", None)
+    assert callable(prefetch), "a provider nem tud következő diát előre cache-elni"
+    provider = MovieTransitionPreviewProvider()
+    photo_path = tmp_path / "kovetkezo.jpg"
+    photo_path.touch()
+    prepared = []
+
+    def fake_prepare(path, settings, documents, decoder=None):
+        prepared.append(Path(path))
+        return np.full((settings.height, settings.width, 3), 80, dtype=np.uint8)
+
+    monkeypatch.setattr(movie_preview, "prepare_photo_frame", fake_prepare)
+    try:
+        provider.prefetch_frame(
+            str(photo_path), "", 80, 40, False, False, False,
+            False, 80, 40, 1.0,
+        )
+        assert provider.wait_for_done(2_000), "a következő dia előtöltése beragadt"
+        assert prepared == [photo_path]
+    finally:
+        provider.wait_for_done(2_000)
+
+
+def test_a_keszulo_regi_kocka_is_jelzi_a_generaciojat_es_megjelenitheto(
+    qt_app, monkeypatch
+):
+    provider = MovieTransitionPreviewProvider()
+    ready = QSignalSpy(provider.frameReady)
+    monkeypatch.setattr(provider, "_store_frame", lambda _frame: "image://moviepreview/frame?rev=old")
+    provider._generation = 2
+    provider._running = True
+
+    provider._finish_request(1, np.zeros((2, 2, 3), dtype=np.uint8))
+
+    assert ready.count() == 1, "a közben elkészült régi kocka el lett dobva"
+    assert ready.at(0) == ["image://moviepreview/frame?rev=old", 1]
+
+
+def test_a_picasa_ini_mtime_valtozasa_ervenyteleniti_a_fotokockat(
+    monkeypatch, tmp_path
+):
+    provider = MovieTransitionPreviewProvider()
+    photo_path = tmp_path / "feliratos.jpg"
+    photo_path.touch()
+    ini_path = tmp_path / ".picasa.ini"
+    ini_path.write_text("[feliratos.jpg]\ncaption=első\n", encoding="utf-8")
+    calls = []
+
+    def fake_prepare(path, settings, documents, decoder=None):
+        calls.append(Path(path))
+        return np.full((settings.height, settings.width, 3), 100, dtype=np.uint8)
+
+    monkeypatch.setattr(movie_preview, "prepare_photo_frame", fake_prepare)
+    args = _request_args(photo_path, 40, 20)
+    provider.render_transition(*args)
+    first_mtime = ini_path.stat().st_mtime_ns
+    ini_path.write_text("[feliratos.jpg]\ncaption=második\n", encoding="utf-8")
+    os.utime(ini_path, ns=(first_mtime + 1_000_000, first_mtime + 1_000_000))
+    provider.render_transition(*args)
+
+    assert calls == [photo_path, photo_path], (
+        "a feliratfájl módosítása után a fotó az elavult gyorsítótárból jött"
+    )
+
+
+_MASZKOS_ATMENETEK = (
+    "wipeleft", "wiperight", "wipeup", "wipedown",
+    "diagwipeul", "diagwipeur", "diagwipedl", "diagwipedr",
+    "circlein", "circleout", "rect",
+)
+
+
+def _regi_mgrid_atmeneti_kocka(kilepo, erkezo, tipus, arany):
+    """A review előtti np.mgrid képlet, a float64 kerekítési őréhez."""
+    p = min(1.0, max(0.0, arany))
+    magassag, szelesseg = kilepo.shape[:2]
+    y, x = np.mgrid[0:magassag, 0:szelesseg]
+    xn = (x + 0.5) / max(1, szelesseg)
+    yn = (y + 0.5) / max(1, magassag)
+    if tipus == "wipeleft":
+        mask = xn < p
+    elif tipus == "wiperight":
+        mask = xn >= 1.0 - p
+    elif tipus == "wipeup":
+        mask = yn >= 1.0 - p
+    elif tipus == "wipedown":
+        mask = yn < p
+    elif tipus == "diagwipeul":
+        mask = xn + yn < 2.0 * p
+    elif tipus == "diagwipeur":
+        mask = (1.0 - xn) + yn < 2.0 * p
+    elif tipus == "diagwipedl":
+        mask = xn + (1.0 - yn) < 2.0 * p
+    elif tipus == "diagwipedr":
+        mask = (1.0 - xn) + (1.0 - yn) < 2.0 * p
+    elif tipus in {"circlein", "circleout"}:
+        mask = np.sqrt(((xn - 0.5) * 2) ** 2 + ((yn - 0.5) * 2) ** 2) <= p * np.sqrt(2)
+        if tipus == "circleout":
+            mask = ~mask
+    else:
+        mask = (np.abs(xn - 0.5) <= p * 0.5) & (np.abs(yn - 0.5) <= p * 0.5)
+    return np.where(mask[..., None], erkezo, kilepo)
+
+
+@pytest.mark.parametrize("tipus", _MASZKOS_ATMENETEK)
+@pytest.mark.parametrize("shape", ((600, 800), (1080, 1920)))
+def test_a_maszkos_atmenet_bitre_egyezik_a_regi_mgrid_keplettel(tipus, shape):
+    height, width = shape
+    y, x = np.mgrid[0:height, 0:width]
+    outgoing = np.stack((x % 251, y % 253, (x + y) % 255), axis=-1).astype(np.uint8)
+    incoming = np.stack(((x * 3) % 255, (y * 5) % 255, (x * 2 + y) % 255), axis=-1).astype(np.uint8)
+
+    progresses = [step / 30 for step in (6, 12, 24, 29)] + [2 / 3]
+    for progress in progresses:
+        actual = slideshow._atmeneti_kocka(outgoing, incoming, tipus, progress)
+        expected = _regi_mgrid_atmeneti_kocka(outgoing, incoming, tipus, progress)
+        np.testing.assert_array_equal(
+            actual, expected, err_msg=f"{tipus}, előrehaladás={progress:.6f}"
+        )
 
 
 def test_a_nezoke_dekodolasa_a_kert_meretre_kicsinyitva_tortenik(tmp_path):

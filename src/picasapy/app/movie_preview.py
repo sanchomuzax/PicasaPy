@@ -25,6 +25,7 @@ from picasapy.movie import (
     render_text_slide,
     transition_frame,
 )
+from picasapy.scanner import PICASA_INI_NAME
 
 _log = logging.getLogger(__name__)
 _PROVIDER_URL = "image://moviepreview/frame?rev={}"
@@ -50,6 +51,14 @@ class _TransitionRequest:
     viewport_width: int | None = None
     viewport_height: int | None = None
     device_pixel_ratio: float = 1.0
+
+
+@dataclass(frozen=True)
+class _PrefetchRequest:
+    source: str
+    slide_json: str
+    settings: MovieSettings
+    preview_size: tuple[int, int]
 
 
 class _TransitionJob(QRunnable):
@@ -82,10 +91,45 @@ class _TransitionJob(QRunnable):
         self._provider._finish_request(self._request.generation, frame)
 
 
+class _FontWarmupJob(QRunnable):
+    """A leggyakoribb betűfájl-keresés előkészítése a GUI-szálon kívül."""
+
+    def run(self) -> None:
+        try:
+            render_text_slide(
+                {"text": "PicasaPy", "font": "DejaVuSans", "size": 16},
+                MovieSettings(width=320, height=240),
+            )
+        except Exception:  # noqa: BLE001 — a bemelegítés nem akadályozhatja a felületet
+            _log.debug("A filmelőnézeti betű-bemelegítés nem sikerült", exc_info=True)
+
+
+class _PrefetchJob(QRunnable):
+    """A következő dia alapkockáját előre beolvassa ugyanabba a cache-be."""
+
+    def __init__(
+        self, provider: MovieTransitionPreviewProvider, request: _PrefetchRequest
+    ) -> None:
+        super().__init__()
+        self._provider = provider
+        self._request = request
+
+    def run(self) -> None:
+        try:
+            self._provider._input_frame(
+                self._request.source,
+                self._request.slide_json,
+                self._request.settings,
+                self._request.preview_size,
+            )
+        except Exception as exc:  # noqa: BLE001 — előtöltés nem állíthatja meg az animációt
+            self._provider._log_source_error(f"előtöltés:{self._request.source}", exc)
+
+
 class MovieTransitionPreviewProvider(QQuickImageProvider):
     """A slideshow átmenetfüggvényével készülő, friss képkocka-szolgáltató."""
 
-    frameReady = Signal(str)
+    frameReady = Signal(str, int)
 
     def __init__(self) -> None:
         super().__init__(QQuickImageProvider.ImageType.Image)
@@ -100,10 +144,10 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
         self._pool.setMaxThreadCount(1)
         self._pool.setExpiryTimeout(30_000)
         self._generation = 0
-        self._latest_generation = 0
         self._running = False
         self._pending: _TransitionRequest | None = None
         register_pool_owner(self)
+        self._pool.start(_FontWarmupJob())
 
     def request_transition(
         self,
@@ -127,7 +171,6 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
         with self._lock:
             self._generation += 1
             generation = self._generation
-            self._latest_generation = generation
             request = _TransitionRequest(
                 generation,
                 outgoing_source,
@@ -193,6 +236,41 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
             device_pixel_ratio,
         )
         return self._store_frame(self._render_request(request))
+
+    def prefetch_frame(
+        self,
+        source: str,
+        slide_json: str,
+        width: int,
+        height: int,
+        cropfit: bool,
+        show_captions: bool,
+        show_dates: bool,
+        actual_size: bool,
+        viewport_width: int,
+        viewport_height: int,
+        device_pixel_ratio: float,
+    ) -> None:
+        """A megadott dia alapképét betölti a következő átmenet előtt."""
+        if not source and not slide_json:
+            return
+        settings = MovieSettings(
+            width=width,
+            height=height,
+            cropfit=cropfit,
+            show_captions=show_captions,
+            show_dates=show_dates,
+        )
+        preview_size = _preview_size(
+            width,
+            height,
+            actual_size,
+            viewport_width,
+            viewport_height,
+            device_pixel_ratio,
+        )
+        request = _PrefetchRequest(source, slide_json, settings, preview_size)
+        self._pool.start(_PrefetchJob(self, request))
 
     def _render_request(self, request: _TransitionRequest) -> np.ndarray:
         render_width, render_height = _preview_size(
@@ -266,10 +344,16 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
             modified = path.stat().st_mtime_ns
         except OSError:
             modified = None
+        ini_path = path.parent / PICASA_INI_NAME
+        try:
+            ini_modified = ini_path.stat().st_mtime_ns
+        except OSError:
+            ini_modified = None
         key = (
             "photo",
             str(path),
             modified,
+            ini_modified,
             settings.width,
             settings.height,
             preview_size,
@@ -331,15 +415,16 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
         next_request = None
         url = None
         with self._lock:
-            if generation == self._latest_generation:
-                url = self._store_frame(frame)
+            # A régebbi kész kocka is hasznos köztes állapot. A QML monoton
+            # generációszám alapján szűr, ezért a lassú render nem éhezteti ki.
+            url = self._store_frame(frame)
             if self._pending is not None:
                 next_request = self._pending
                 self._pending = None
             else:
                 self._running = False
         if url is not None:
-            self.frameReady.emit(url)
+            self.frameReady.emit(url, generation)
         if next_request is not None:
             self._pool.start(_TransitionJob(self, next_request))
 
@@ -420,6 +505,8 @@ def _preview_size(
 ) -> tuple[int, int]:
     width = max(2, int(width))
     height = max(2, int(height))
+    if actual_size:
+        return width // 2 * 2, height // 2 * 2
     if viewport_width is not None and viewport_height is not None:
         dpr = max(0.5, float(device_pixel_ratio))
         max_width = max(2, round(viewport_width * dpr))
@@ -435,7 +522,7 @@ def _preview_size(
     width = width // 2 * 2
     height = height // 2 * 2
     longest_edge = max(width, height)
-    if actual_size or longest_edge <= _PREVIEW_LONG_EDGE:
+    if longest_edge <= _PREVIEW_LONG_EDGE:
         return width, height
     scale = _PREVIEW_LONG_EDGE / longest_edge
     scaled_width = max(2, round(width * scale)) // 2 * 2

@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QPointF, Qt, QUrl
+from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt, QUrl
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 
@@ -103,6 +103,22 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                     <= 0.65,
                     masodperc=6.0,
                 ), "a kattintott előnézet nem rajzolt átmeneti képkockát"
+                diaidozito = _elem(window, "moviePreviewTimer")
+                kockaidozito = _elem(window, "moviePreviewFrameTimer")
+                diaidozito.setProperty("running", False)
+                assert QMetaObject.invokeMethod(transition, "pause"), (
+                    "az átmenetet nem lehetett a képkockamérés idejére megállítani"
+                )
+                kockaidozito.setProperty("running", False)
+                film = _elem(window, "movieDialog")
+                assert _varj(
+                    qt_app,
+                    lambda film=film: int(
+                        film.property("previewDisplayedGeneration")
+                    )
+                        >= int(film.property("previewLatestRequestGeneration"))
+                    and bool(film.property("previewTransitionFrameSource")),
+                ), "az átmenet legfrissebb képkockája nem érkezett meg"
 
                 viewport = _elem(window, "moviePreviewViewport")
                 kep = window.grabWindow()
@@ -124,6 +140,11 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                     "az előnézet átmeneti képpontja nem keverte a piros és kék képet: "
                     f"RGB=({pixel.red()}, {pixel.green()}, {pixel.blue()})"
                 )
+                kockaidozito.setProperty("running", True)
+                diaidozito.setProperty("running", True)
+                assert QMetaObject.invokeMethod(transition, "resume"), (
+                    "az átmenetet nem lehetett folytatni a képkockamérés után"
+                )
                 assert transition.property("running") is True
                 assert _varj(
                     qt_app,
@@ -141,7 +162,6 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                     transition_image=transition_image,
                     before_playback_source=before_playback_source:
                         not transition.property("running")
-                        and film.property("previewAwaitingFinalFrame") is False
                         and str(transition_image.property("source"))
                             != before_playback_source,
                     masodperc=2.0,

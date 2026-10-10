@@ -302,8 +302,10 @@ def transition_frame(
 @lru_cache(maxsize=8)
 def _atmenet_koordinatak(magassag: int, szelesseg: int) -> tuple[np.ndarray, np.ndarray]:
     """A maszkok normalizált sor- és oszlopkoordinátái méret szerint cache-elve."""
-    xn = (np.arange(szelesseg, dtype=np.float32) + 0.5) / max(1, szelesseg)
-    yn = (np.arange(magassag, dtype=np.float32) + 0.5) / max(1, magassag)
+    # A korábbi np.mgrid-képlet float64 koordinátákat adott; a körmaszk
+    # határán a float32 2–4 pixellel eltérő exportot eredményezett.
+    xn = (np.arange(szelesseg, dtype=np.float64) + 0.5) / max(1, szelesseg)
+    yn = (np.arange(magassag, dtype=np.float64) + 0.5) / max(1, magassag)
     xn.setflags(write=False)
     yn.setflags(write=False)
     return xn, yn
