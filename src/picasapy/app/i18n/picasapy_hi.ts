@@ -422,6 +422,13 @@ picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>A printer must be installed in order to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>प्रिंट करने के लिए प्रिंटर स्थापित होना चाहिए.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Open printer setup controls for the selected printer</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
