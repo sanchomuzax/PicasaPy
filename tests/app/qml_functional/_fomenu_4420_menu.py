@@ -59,6 +59,10 @@ _RENDSZERGYOKER_TETELEK = {
     "menuViewRootMyPictures": ("mypics", "mydocs"),
     "menuViewRootMyDocuments": ("mydocs",),
     "menuViewRootDesktop": ("desktop",),
+    # #4528: a Mappanézet ▸ Shortcuts almenü ugyanezt a három gyökeret választja
+    "menuViewShortcutMyPictures": ("mypics", "mydocs"),
+    "menuViewShortcutMyDocuments": ("mydocs",),
+    "menuViewShortcutDesktop": ("desktop",),
 }
 
 
