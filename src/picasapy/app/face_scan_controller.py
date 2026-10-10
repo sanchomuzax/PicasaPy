@@ -172,6 +172,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # bal hasáb sorának DEKLARATÍV kötés kell, ezért a százalék NOTIFY-
     # property is (−1 = épp nem fut).
     scanPercentChanged = Signal()
+    #: #4586: az Emberek panel állapot-sora (spec 9/b) ezekből él — a futó
+    #: keresés hátralévő fájljainak száma és a lenyomat-számítás haladása.
+    uncheckedFilesChanged = Signal()
+    sortingPercentChanged = Signal()
+    #: #4586: a keresés új arcot mentett — a panel listája frissülhet a
+    #: keresés KÖZBEN, nem csak a végén.
+    facesStored = Signal()
 
     # #1496: a modellfájl LETÖLTÉSE a felületről. A #1473 óta a párbeszéd
     # megmondja, mi hiányzik — de a felhasználó (aki nem programozó) ettől
@@ -242,6 +249,10 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
         self._scan_percent = -1
+        #: #4586: a futó keresés hátralévő (még nem ellenőrzött) fájljai
+        self._unchecked_files = 0
+        #: #4586: a lenyomat-számítás haladása százalékban, −1 ha nem fut
+        self._sorting_percent = -1
         #: #1496: a futó modell-letöltés haladása, −1 ha nem fut
         self._model_download_percent = -1
         self._model_download_stop_event: threading.Event | None = None
@@ -409,6 +420,34 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if percent != self._scan_percent:
             self._scan_percent = percent
             self.scanPercentChanged.emit()
+
+    @Property(bool, notify=scanPercentChanged)
+    def scanRunning(self) -> bool:  # noqa: N802 — QML-property-stílus
+        """#4586: fut-e a háttér-arckeresés (az Emberek panel „betöltés
+        folyik" jelzője)."""
+        return self._scan_percent >= 0
+
+    @Property(int, notify=uncheckedFilesChanged)
+    def uncheckedFiles(self) -> int:  # noqa: N802 — QML-property-stílus
+        """#4586: a futó keresés még nem ellenőrzött fájljainak száma
+        (`PeoplePanel::Unchecked`); 0, ha nem fut."""
+        return self._unchecked_files
+
+    def _set_unchecked_files(self, count: int) -> None:
+        if count != self._unchecked_files:
+            self._unchecked_files = count
+            self.uncheckedFilesChanged.emit()
+
+    @Property(int, notify=sortingPercentChanged)
+    def sortingPercent(self) -> int:  # noqa: N802 — QML-property-stílus
+        """#4586: az arc-lenyomatok számításának haladása (0–100), −1 ha nem
+        fut (`PeoplePanel::SortingData`)."""
+        return self._sorting_percent
+
+    def _set_sorting_percent(self, percent: int) -> None:
+        if percent != self._sorting_percent:
+            self._sorting_percent = percent
+            self.sortingPercentChanged.emit()
 
     # -- #1496: a modellfájl beszerzése a felületről ------------------------
 
@@ -1361,6 +1400,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             with open_index(self._db_path) as conn:
                 photos = all_photos(conn) if scoped_photos is None else scoped_photos
                 total = len(photos)
+                self._set_unchecked_files(total)
                 found = 0
                 scanned = 0
                 for done, photo in enumerate(photos, start=1):
@@ -1404,6 +1444,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     )
                     found += len(faces)
                     scanned += 1
+                    if faces:
+                        self.facesStored.emit()
                     # A következő kép detektálása több másodperc lehet; ne
                     # tartsa addig az SQLite írási zárát.
                     conn.commit()
@@ -1421,6 +1463,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
             # hibára futott (#449)
             self._set_scan_percent(-1)
+            self._set_unchecked_files(0)
             self._scanWorkerStopped.emit()
         self.unnamedCountChanged.emit()
         self.scanFinished.emit(found, scanned)
@@ -1428,6 +1471,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def _report_scan(self, done: int, total: int) -> None:
         """Haladás-jelzés + a bal hasáb sorának százaléka (#449)."""
         self._set_scan_percent(round(100 * done / total) if total else 100)
+        self._set_unchecked_files(total - done)
         self.scanProgress.emit(done, total)
 
     def _run_embedding(
@@ -1442,6 +1486,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 pending = faces_missing_embedding(conn)
                 total = len(pending)
                 embedded = 0
+                self._set_sorting_percent(0)
                 for done, face in enumerate(pending, start=1):
                     if stop_event.is_set():
                         conn.commit()
@@ -1467,6 +1512,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     # Az SFace következő futása szintén a tranzakción kívül
                     # történjen.
                     conn.commit()
+                    self._set_sorting_percent(round(100 * done / total))
                     self.embeddingProgress.emit(done, total)
                 conn.commit()
                 grouped = group_unnamed_faces(
@@ -1483,6 +1529,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         finally:
             if self._embedding_stop_event is stop_event:
                 self._embedding_stop_event = None
+            self._set_sorting_percent(-1)
         self.embeddingFinished.emit(embedded, grouped)
 
     def _detect(

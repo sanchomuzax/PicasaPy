@@ -4881,6 +4881,13 @@ Rectangle {
                         ? viewer.appWindow._faceScanController : null
                     currentPerson: viewer.controllerReady
                         ? controller.currentPersonName : ""
+                    //: #4586: a háttér-arckeresés állapota (spec 9/b)
+                    loading: faceScanController
+                        ? faceScanController.scanRunning : false
+                    uncheckedCount: faceScanController
+                        ? faceScanController.uncheckedFiles : 0
+                    sortingPercent: faceScanController
+                        ? faceScanController.sortingPercent : -1
                     peopleHere: (viewer.photosModel && viewer.controllerReady)
                         ? (viewer.appWindow
                            ? viewer.appWindow.peopleFaceRevision : 0,

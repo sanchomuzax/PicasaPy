@@ -3718,6 +3718,14 @@ ApplicationWindow {
         selectionCount: window.unnamedFacesOpen
             ? unnamedFacesView.selectedCount : window.selectedRows().length
         faceScanController: window._faceScanController
+        // #4586: a háttér-arckeresés állapota (spec 9/b: betöltés, ellenőrizetlen
+        // fájlok, adatok rendezése)
+        loading: window._faceScanController
+            ? window._faceScanController.scanRunning : false
+        uncheckedCount: window._faceScanController
+            ? window._faceScanController.uncheckedFiles : 0
+        sortingPercent: window._faceScanController
+            ? window._faceScanController.sortingPercent : -1
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
@@ -4174,6 +4182,8 @@ ApplicationWindow {
     Connections {
         target: window._faceScanController
         function onUnnamedCountChanged() { window.peopleFaceRevision++ }
+        // #4586: a keresés közben is frissül az Emberek panel listája
+        function onFacesStored() { window.peopleFaceRevision++ }
         function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false

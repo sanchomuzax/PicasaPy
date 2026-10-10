@@ -27,10 +27,20 @@ import QtQuick.Layouts
 // személy albumának fejléce ugyanarra a listára. A „van személy" a 9/c
 // szerint: a kijelölt képek arcai közül legalább egynek van neve.
 //
-// Nem jelenítjük meg: a betöltés-feliratokat (Loading1/2, Looking) — a
-// `peopleOfRows` szinkron, nálunk nincs betöltési állapot —, és az
-// „, %d ellenőrizetlen fájl." utótagot — folyamatos háttér-arcellenőrzés
-// híján nincs ilyen számunk.
+// Állapot-feliratok (#4586, spec 9/b): a háttér-arckeresés közben
+//   betöltés (`loading`)  → egysoros ág: Loading1 „Loading faces for file..."
+//                           többsoros ág: személy-album ? Looking „Looking for
+//                           other people..." : Loading2 „Loading faces for %d
+//                           files..." (a %d a kijelölt fájlok száma)
+//   `uncheckedCount` ≠ 0 és nem személy-album → a fejléc mögé Unchecked
+//                           „, %d files unchecked."
+//   `sortingPercent` ≥ 0 a Név nélküliek albumban → SortingData „Sorting
+//                           face data, %.0f%%" (az arc-lenyomatok számítása)
+// Az állapotot KÍVÜLRŐL kapja a panel (a `FaceScanController` jelzéseiből).
+//
+// Amit szándékosan NEM mutatunk: a SortingFaces „Sorting faces..." feliratot
+// — a spec nem mondja meg, mikor jelenik meg, nálunk pedig nincs olyan
+// valódi esemény, amelyhez kötni lehetne; hamis állapotot nem gyártunk.
 //
 // A panel buta komponens: a listát kívülről kapja, a navigációt jellel
 // kéri — a TagsPanel/PropertiesPanel mintája.
@@ -59,6 +69,13 @@ Rectangle {
     // #4585 (spec 9/b, `+0x2ae`): a Névtelenek GYŰJTEMÉNYE üres — ilyenkor
     // az eredeti Text1/Text2 útmutató áll, nem a Text3
     property bool unnamedCollectionEmpty: false
+    // #4586: a háttér-arckeresés fut (spec: „betöltés folyik", a `0x00647df0`
+    // 2. argumentuma)
+    property bool loading: false
+    // #4586: a futó keresés hátralévő (még nem ellenőrzött) fájljainak száma
+    property int uncheckedCount: 0
+    // #4586: az arc-lenyomatok számításának haladása 0–100, −1 ha nem fut
+    property int sortingPercent: -1
     property int pendingIgnoreFaceId: -1
     property int pendingNewFaceId: -1
     property string pendingNewFaceName: ""
@@ -186,14 +203,24 @@ Rectangle {
         return count
     }
 
-    // a fejléc (`status_label`); üres, ha az utasítás-szöveg látszik
-    readonly property string headerText:
-        panel.personAlbum && !panel.editorView && !panel.hasPeople
-            ? ""
+    readonly property bool loadingShown: panel.loading && panel.hasPhotos
+    readonly property bool sortingShown:
+        panel.unnamedAlbumMode && panel.sortingPercent >= 0
+
+    // a fejléc fa szerinti szövege, az „ellenőrizetlen" utótag nélkül
+    readonly property string baseHeaderText:
+        panel.sortingShown
+            ? qsTr("Sorting face data, %1%").arg(panel.sortingPercent)
             : panel.singlePhotoBranch
-            ? (panel.hasPeople ? qsTr("In this photo:")
+            ? (panel.loadingShown ? qsTr("Loading faces for file...")
+               : panel.hasPeople ? qsTr("In this photo:")
                : panel.hasPhotos ? qsTr("Who is in these photos?")
                : "")
+            : panel.loadingShown
+            ? (panel.personAlbum ? qsTr("Looking for other people...")
+               : qsTr("Loading faces for %1 files...").arg(panel.selectionCount))
+            : panel.personAlbum && !panel.editorView && !panel.hasPeople
+            ? ""
             : (panel.hasPeople
                ? (panel.personAlbum ? qsTr("Also in these photos:")
                                     : qsTr("People in these photos:"))
@@ -202,6 +229,15 @@ Rectangle {
                     ? qsTr("Unnamed people in these photos:")
                     : qsTr("Unnamed groups of people:"))
                : "")
+
+    // a fejléc (`status_label`); üres, ha az utasítás-szöveg látszik. Az
+    // utótag a fejléc MÖGÉ kerül, üres fejlécnél nem áll magában.
+    readonly property string headerText:
+        panel.baseHeaderText.length > 0 && panel.uncheckedCount > 0
+        && !panel.personAlbum
+            ? panel.baseHeaderText
+              + qsTr(", %1 files unchecked.").arg(panel.uncheckedCount)
+            : panel.baseHeaderText
 
     ColumnLayout {
         anchors.fill: parent
