@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.50] – 2026-10-10
+
+- A vágott videóklip Windows és macOS rendszeren exportálható; Linuxon megmarad az eredeti tiltóüzenet (#4564).
+
 ## [0.9.49] – 2026-10-10
 
 - Az importálás kézi mappanév-módban mappanév nélkül nem indul el; a felület jelzi, mit kell megadni (#4595).
