@@ -1565,8 +1565,10 @@ class TestAzIgazitasEljutARAJZOLOIG2108:
         controller.endEdit()
 
         controller.beginEdit("1", str(photo))
-        spec = controller._current_text_spec()
-        assert spec is not None, "a mentett felirat nem kerül az előnézetbe"
+        specs = controller._current_text_spec()
+        assert specs is not None, "a mentett felirat nem kerül az előnézetbe"
+        assert len(specs) == 1
+        spec = specs[0]
         assert spec.align == "right", (
             "a fájlból betöltött igazítás nem jut el a rajzolóig: "
             f"{spec.align!r}"
@@ -2100,8 +2102,14 @@ class TestRedeyeTool:
         controller.beginEdit("1", str(photo))
         monkeypatch.setattr(
             controller._provider,
-            "redeye_auto_result",
-            lambda *_args: (1, ((0.5, 0.5, 0.1),)),
+            "redeye_auto_result_with_size",
+            lambda *_args: (
+                1,
+                ((0.5, 0.5, 0.1),),
+                (800, 600),
+                (800, 600),
+                ((1, 0, 0), (0, 1, 0)),
+            ),
         )
         controller.enterRedeyeTool()
         controller.applyRedeye()
@@ -2374,7 +2382,9 @@ class TestASzovegStilusaAFAJLBA_KERUL:
         self._felirat(controller, photo, bold=False)
         assert _text_ertek(photo) != felkover
 
-    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(self, controller, photo):
+    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(
+        self, legalabb_ket_betucsalad, controller, photo
+    ):
         # a lista `{key, label}` szótárakból áll (a lenyíló adata)
         kulcsok = [cs["key"] for cs in controller.textFontFamilies]
         mas = next((cs for cs in kulcsok if cs != "Arial"), None)

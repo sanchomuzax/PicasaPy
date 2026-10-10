@@ -30,6 +30,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -108,6 +109,39 @@ _TRUE_VALUES = ("true", "1")
 #: #1375: a teszt EZT cseréli, nem a globális `tempfile.mkdtemp`-et.
 _mkdtemp = tempfile.mkdtemp
 
+#: #4609: az ideiglenes gyökér — a teszt EZT cseréli (ugyanez a minta).
+_gettempdir = tempfile.gettempdir
+
+#: #4609: az e-mail-másolat mappáinak neve-előtagja (`_keszitsd_elo`).
+_MAIL_MAPPA_ELOTAG = "picasapy-mail-"
+
+#: #4609: ennél frissebb mappához nem nyúlunk — egy párhuzamosan futó példány
+#: épp küldés közben lehet (a csatolmány nem tűnhet el alóla).
+_MAIL_MASOLAT_MIN_KOR_S = 3600
+
+
+def _torold_regi_mail_masolatok() -> None:
+    """Az előző indulások e-mail-másolatait törli (#4609).
+
+    A `_keszitsd_elo` minden küldésnél új `picasapy-mail-*` mappát hoz
+    létre a lemezen, és sosem takarít ki utánuk — indulásonként a
+    másolatok halmozódnának. Csak mappát törlünk, és a symlinket sosem
+    követjük: a célja a gyökéren kívül eshet. Hiba (zárolt, jogosulatlan
+    mappa) nem akasztja meg az indulást. Az egy óránál frissebb mappa marad."""
+    gyoker = Path(_gettempdir())
+    hatar = time.time() - _MAIL_MASOLAT_MIN_KOR_S
+    for mappa in gyoker.glob(f"{_MAIL_MAPPA_ELOTAG}*"):
+        if mappa.is_dir() and not mappa.is_symlink() and _mtime(mappa) < hatar:
+            shutil.rmtree(mappa, ignore_errors=True)
+
+
+def _mtime(ut: Path) -> float:
+    try:
+        return ut.stat().st_mtime
+    except OSError:
+        return time.time()
+
+
 def _coerce_bool(value, default: bool) -> bool:
     """A `QSettings` platformonként bool-t vagy szöveget ad vissza ugyanarra
     az írásra (ld. `appearance_controller.coerce_dark_flag` mintája);
@@ -174,6 +208,9 @@ class EmailController(QObject):
         ideiglenes fájlra) — élesben az alapértelmezett globális beállítás
         (az `application.py`-ban már beállított szervezet/app-név alatt)."""
         super().__init__(parent)
+        # #4609: a vezérlő indulásonként EGYSZER jön létre (application.py),
+        # így itt a régi másolatok takarítása az indulás része
+        _torold_regi_mail_masolatok()
         self._photo_source = photo_source
         #: #1671: a KÉPTÁLCA rekordjai. Ha nem üres, ŐK a forrás — a rács
         #: pillanatnyi kijelölése és a látott mappa nem számít. Az eredeti
@@ -449,7 +486,7 @@ class EmailController(QObject):
             else self._email_size
         )
         max_dimension = resolve_email_max_dimension(meret)
-        target_dir = Path(_mkdtemp(prefix="picasapy-mail-"))
+        target_dir = Path(_mkdtemp(prefix=_MAIL_MAPPA_ELOTAG))
         settings = ExportSettings(
             max_dimension=max_dimension,
             jpeg_quality=85,

@@ -1119,6 +1119,10 @@ ListView {
                         dragMimeData: ({
                             "text/uri-list": grid.selectedFileUriList()
                         })
+                        dragRows: grid.appWindow
+                            && grid.appWindow.selectedIndexes
+                            ? grid.appWindow.selectedIndexes.slice()
+                            : [slot.row]
                         // #85/#83: a megjelenő kép a névleges
                         // méretre plafonozott, a kiegyenlítés
                         // többlete a térközbe megy.

@@ -1,17 +1,13 @@
 """#433: a diavetítés átmenetei, az átmenet-hossz és a feliratmód.
 
 Az eredeti diavetítése **nem egyszerű képváltogatás**: a vezérlősávjában
-átmenet-választó ül (`slideshowctrls/transtype`), és ugyanazt a 18-as
-átmenet-készletet használja, mint a filmkészítő
-(`docs/specs/picasa-create-features.md` 2.1). Az `SlideshowEffectTime` az
-átmenet hossza, a `captionmode` a felirat módja.
+átmenet-választó ül (`slideshowctrls/transtype`), amely a
+`docs/specs/picasa-create-features.md` teljes, 22 tételes vetítési
+átmenet-készletét használja. Az `SlideshowEffectTime` az átmenet hossza,
+a `captionmode` a felirat módja.
 
-Ebből az **öt** átmenet van meg, amelyik a Picasa jellegzetes érzetét adja
-(`cut`, `dissolve`, `dissolveblack`, `dissolvewhite`, `kenburns`); a választó
-**csak ezt** sorolja fel — a maradék 13 a filmkészítővel együtt jön (#432).
-
-⚠️ Ez az őr a KÖTÉSEKET és a beállítás-tárolást méri, nem a látványt: azt,
-hogy egy áttűnés „szépen" fut, gépi teszt nem tudja kimondani.
+⚠️ Ez az őr a KÖTÉSEKET és a beállítás-tárolást méri; a kirajzolt, kattintásos
+lejátszást a `test_diavetites_atmenetek_4567.py` ellenőrzi.
 """
 
 from __future__ import annotations
@@ -26,7 +22,30 @@ _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 _VIEW = (_QML_DIR / "PicasaPy" / "SlideshowView.qml").read_text(encoding="utf-8")
 _MAIN = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
 
-ATMENETEK = ("cut", "dissolve", "dissolveblack", "dissolvewhite", "kenburns")
+ATMENETEK = (
+    "cut",
+    "dissolve",
+    "dissolveblack",
+    "dissolvewhite",
+    "wipeleft",
+    "wiperight",
+    "wipeup",
+    "wipedown",
+    "diagwipeul",
+    "diagwipeur",
+    "diagwipedl",
+    "diagwipedr",
+    "pushleft",
+    "pushright",
+    "pushtop",
+    "pushdown",
+    "circlein",
+    "circleout",
+    "rect",
+    "kenburns",
+    "kenburnsaoi",
+    "timelapse",
+)
 
 
 @pytest.fixture
@@ -57,14 +76,14 @@ class TestAMegorzottBeallitasok:
         assert controller.slideshowTransition == "dissolve"
 
     @pytest.mark.parametrize("kulcs", ATMENETEK)
-    def test_mind_az_ot_atmenet_tarolhato(self, controller, kulcs):
+    def test_mind_a_22_atmenet_tarolhato(self, controller, kulcs):
         controller.setSlideshowTransition(kulcs)
         assert controller.slideshowTransition == kulcs
 
     def test_az_ISMERETLEN_kulcsot_nem_tarolja(self, controller):
         """Egy elgépelt érték némán átmenet nélküli vetítést adna."""
         controller.setSlideshowTransition("dissolve")
-        controller.setSlideshowTransition("wipeleft")  # még nincs megvalósítva
+        controller.setSlideshowTransition("ismeretlen")
         assert controller.slideshowTransition == "dissolve"
 
     def test_az_atmenet_hossza_a_dia_ido_alatt_marad(self, controller):
@@ -95,14 +114,14 @@ class TestAValasztoAVezerlosavban:
     def test_a_valaszto_ott_van(self):
         assert 'objectName: "slideshowTransitionBox"' in _VIEW
 
-    def test_CSAK_a_megvalositott_otot_sorolja(self):
-        """A választó nem hirdethet olyan átmenetet, ami nem fut le."""
+    def test_a_spec_szerinti_22_atmenetet_sorolja(self):
+        """A választó a teljes, 22 tételes vetítési készletet sorolja."""
         kezd = _VIEW.index("readonly property var atmenetek:")
-        blokk = _VIEW[kezd : kezd + 700]
+        veg = _VIEW.index("property string transitionKind:", kezd)
+        blokk = _VIEW[kezd:veg]
         for kulcs in ATMENETEK:
             assert f'kulcs: "{kulcs}"' in blokk
-        for nem_kesz in ("wipeleft", "circlein", "pushright", "timelapse"):
-            assert nem_kesz not in blokk
+        assert blokk.count("kulcs:") == 22
 
     def test_a_valaszto_NEM_ir_kozvetlenul_beallitast(self):
         """A gazda dönti el, hova kerül — a `starToggled` mintája."""
@@ -134,7 +153,8 @@ class TestAzAtmenetMotorja:
 
     def test_a_cut_NEM_animal(self):
         kezd = _VIEW.index("function _atmenetIndit(")
-        blokk = _VIEW[kezd : kezd + 700]
+        veg = _VIEW.index("SequentialAnimation {", kezd)
+        blokk = _VIEW[kezd:veg]
         assert 'show.transitionKind === "cut"' in blokk
         assert "return" in blokk
 

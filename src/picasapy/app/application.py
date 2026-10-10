@@ -93,6 +93,7 @@ from .effect_thumbnails import EffectThumbnailProvider
 from .face_scan_controller import FaceScanController
 from .faces_helper import FacesHelper
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+from .i18n_build import forditsd
 from .language_controller import (
     DEFAULT_LANGUAGE,
     LANGUAGE_KEY,
@@ -948,6 +949,8 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
     code = coerce_language(language) if language else _startup_language()
     if code == DEFAULT_LANGUAGE:
         return None
+    # #4817: forrásból indítva a `.qm` itt készül el a `.ts`-ből
+    forditsd(_I18N_DIR / f"picasapy_{code}.ts")
     translator = QTranslator(app)
     if translator.load(f"picasapy_{code}", str(_I18N_DIR)):
         app.installTranslator(translator)

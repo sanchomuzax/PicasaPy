@@ -289,6 +289,8 @@ MenuBar {
     signal unhideRequested()
     signal resetFacesRequested()
     signal thumbSizePreset(int size)
+    // #4623: az aktuális indexképméret a gazdától jön (Main.qml `thumbSize`)
+    property int thumbSize: 144
     signal selectStarredRequested()
     signal selectAllRequested()
     signal clearSelectionRequested()
@@ -992,19 +994,46 @@ MenuBar {
             }
         }
         MenuSeparator {}
+        // #4623: a 2. csoport rádiócsoport (spec: egy pipa a háromból). A
+        // pipa a gazda `thumbSize`-ából számolódik, így a csúszkától
+        // állított méret is pontosan látszik. A már aktív tételre kattintva
+        // a `toggle()` elveszi a pipát (#1468), ezért a kötés visszaáll.
         MenuItem {
+            objectName: "menuViewSmallThumbnails"
             text: qsTr("S&mall Thumbnails") + "\tCtrl+1"
-            onTriggered: bar.thumbSizePreset(96)
+            checkable: true
+            checked: !bar.editorActive && bar.thumbSize === 96
+            onTriggered: {
+                bar.thumbSizePreset(96)
+                checked = Qt.binding(function () {
+                    return !bar.editorActive && bar.thumbSize === 96
+                })
+            }
         }
         MenuItem {
+            objectName: "menuViewNormalThumbnails"
             text: qsTr("&Normal Thumbnails") + "\tCtrl+2"
-            onTriggered: bar.thumbSizePreset(144)
+            checkable: true
+            checked: !bar.editorActive && bar.thumbSize === 144
+            onTriggered: {
+                bar.thumbSizePreset(144)
+                checked = Qt.binding(function () {
+                    return !bar.editorActive && bar.thumbSize === 144
+                })
+            }
         }
         MenuItem {
             objectName: "menuViewEditView"
             text: qsTr("&Edit View") + "\tCtrl+3"
+            checkable: true
+            checked: bar.editorActive
             enabled: bar.libraryPhotoActionsEnabled
-            onTriggered: bar.viewAndEditRequested()
+            onTriggered: {
+                bar.viewAndEditRequested()
+                checked = Qt.binding(function () {
+                    return bar.editorActive
+                })
+            }
         }
         MenuSeparator {}
         MenuItem {
@@ -1510,6 +1539,10 @@ MenuBar {
             readonly property bool rendezesForditott:
                 (controller && controller.paneSortReverse !== undefined)
                     ? controller.paneSortReverse : false
+            // #4528: az Emberek lista három rendezésének közös állapota.
+            readonly property string peopleSort:
+                (controller && controller.peopleSort !== undefined)
+                    ? controller.peopleSort : "name"
 
             // MÉRT buktató (#1454): a valódi kattintás IMPERATÍVAN
             // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
@@ -1698,6 +1731,107 @@ MenuBar {
                     checked = Qt.binding(function () {
                         return folderViewMenu.rendezesForditott
                     })
+                }
+            }
+            MenuSeparator {}
+            // #4528: az eredeti folderviewpopup a név-, darabszám- és Top 10
+            // szerinti Emberek-rendezést közvetlenül a lista rendezése után
+            // kínálja. A pipa és a tényleges sorrend is az AppController
+            // PeopleMixinjéből jön.
+            MenuItem {
+                objectName: "menuViewSortPeopleByName"
+                text: qsTr("Sort &People by Name")
+                checkable: true
+                checked: folderViewMenu.peopleSort === "name"
+                onTriggered: {
+                    if (controller) controller.setPeopleSort("name")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.peopleSort === "name"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortPeopleByAmount"
+                text: qsTr("Sort People by &Amount")
+                checkable: true
+                checked: folderViewMenu.peopleSort === "count"
+                onTriggered: {
+                    if (controller) controller.setPeopleSort("count")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.peopleSort === "count"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortPeopleByTop10"
+                text: qsTr("Sort People by Top &10")
+                checkable: true
+                checked: folderViewMenu.peopleSort === "top"
+                onTriggered: {
+                    if (controller) controller.setPeopleSort("top")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.peopleSort === "top"
+                    })
+                }
+            }
+            MenuSeparator {}
+            // #4528: az AlbumList::Shortcuts almenü. A gyökérválasztók
+            // ugyanazokat a vezérlőműveleteket használják, mint a közvetlen
+            // tételek, ezért a két belépési pont pipája együtt mozog.
+            PicasaMenu {
+                objectName: "menuViewFolderViewShortcuts"
+                title: qsTr("&Shortcuts")
+                MenuItem {
+                    objectName: "menuViewShortcutMyComputer"
+                    text: qsTr("My &Computer")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "all"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("all")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "all"
+                        })
+                    }
+                }
+                MenuItem {
+                    objectName: "menuViewShortcutMyPictures"
+                    text: qsTr("My &Pictures")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "mypics"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("mypics")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "mypics"
+                        })
+                    }
+                }
+                MenuItem {
+                    objectName: "menuViewShortcutMyDocuments"
+                    text: qsTr("My Do&cuments")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "mydocs"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("mydocs")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "mydocs"
+                        })
+                    }
+                }
+                MenuItem {
+                    objectName: "menuViewShortcutDesktop"
+                    text: qsTr("&Desktop")
+                    checkable: true
+                    checked: folderViewMenu.viewRootToken === "desktop"
+                    onTriggered: {
+                        if (bar.folderViewCtl)
+                            bar.folderViewCtl.setViewRoot("desktop")
+                        checked = Qt.binding(function () {
+                            return folderViewMenu.viewRootToken === "desktop"
+                        })
+                    }
                 }
             }
             MenuSeparator {}
@@ -1955,8 +2089,8 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.viewAndEditRequested()
         }
-        // #425 (K.1 szakasz, ui-audit-menus.md): az almenü teljes tartalma
-        // az `eMenuPicture` osztályból ismert — a kijelölt N kép
+        // #4701: az almenü sorrendje és 19 rekordja a menüleltárban szereplő
+        // eredeti táblát követi. Az effektparancsok a kijelölt N kép
         // MINDEGYIKÉRE egyszerre alkalmazott egykattintásos effekt
         // (`controller.applyEffectMany`, `batch_effect_controller`).
         PicasaMenu {
@@ -1964,58 +2098,10 @@ MenuBar {
             title: qsTr("&Batch Edit")
             enabled: bar.photoActionsEnabled
             MenuItem {
-                objectName: "menuBatchAutoContrast"
-                text: qsTr("A&uto Contrast")
+                objectName: "menuBatchRename"
+                text: qsTr("&Rename...") + "\tF2"
                 enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("autolight")
-            }
-            MenuItem {
-                objectName: "menuBatchAutoColor"
-                text: qsTr("&Auto Color")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("autocolor")
-            }
-            MenuItem {
-                objectName: "menuBatchAutoRedeye"
-                text: qsTr("Auto Red Eye Correction")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("redeye")
-            }
-            MenuItem {
-                objectName: "menuBatchEnhance"
-                text: qsTr("I'm Feeling Lucky")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("enhance")
-            }
-            MenuItem {
-                objectName: "menuBatchSepia"
-                text: qsTr("&Sepia")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("sepia")
-            }
-            MenuItem {
-                objectName: "menuBatchSharpen"
-                text: qsTr("S&harpen")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("unsharp")
-            }
-            MenuItem {
-                objectName: "menuBatchBlackWhite"
-                text: qsTr("&Black and White")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("bw")
-            }
-            MenuItem {
-                objectName: "menuBatchFilmGrain"
-                text: qsTr("&Film Grain")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("grain2")
-            }
-            MenuItem {
-                objectName: "menuBatchWarmify"
-                text: qsTr("&Warmify")
-                enabled: bar.photoActionsEnabled
-                onTriggered: bar.batchApplyEffectRequested("warm")
+                onTriggered: bar.renameRequested()
             }
             MenuSeparator {}
             MenuItem {
@@ -2029,6 +2115,63 @@ MenuBar {
                 text: qsTr("Rotate &Counterclockwise")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("rotate_ccw")
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuBatchAutoContrast"
+                text: qsTr("A&uto Contrast")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("autolight")
+            }
+            MenuItem {
+                objectName: "menuBatchAutoColor"
+                text: qsTr("&Auto Color")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("autocolor")
+            }
+            MenuItem {
+                objectName: "menuBatchEnhance"
+                text: qsTr("I'm Feeling Lucky")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("enhance")
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuBatchSepia"
+                text: qsTr("&Sepia")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("sepia")
+            }
+            MenuItem {
+                objectName: "menuBatchSharpen"
+                text: qsTr("S&harpen")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("unsharp")
+            }
+            MenuItem {
+                objectName: "menuBatchWarmify"
+                text: qsTr("&Warmify")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("warm")
+            }
+            MenuItem {
+                objectName: "menuBatchFilmGrain"
+                text: qsTr("&Film Grain")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("grain2")
+            }
+            MenuItem {
+                objectName: "menuBatchBlackWhite"
+                text: qsTr("&Black and White")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("bw")
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuBatchAutoRedeye"
+                text: qsTr("Auto Red Eye Correction")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("redeye")
             }
             MenuSeparator {}
             // #4335: külön parancsok, a kijelölésben levő szövegfedvények
