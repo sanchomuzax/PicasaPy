@@ -7,6 +7,10 @@ import QtQuick.Layouts
 //
 // #496: kiemelve az EditorPanel.qml-ből — a gazda-panelre a `panel`
 // tulajdonságon át hivatkozik (ld. `EditorCropPanel.qml`).
+// #4558: a kétmódú csempék BÉLYEGKÉPE is a Shift szerinti szűrőé
+// (`thumbSource: panel.effectThumbSource(szuro)`) — az eredeti a csempe
+// erőforrás-nevét a `_mod%s` utótaggal képzi, tehát a másodlagos
+// előnézetét mutatja.
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -121,9 +125,6 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "nightvision" : "heatmap"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: #4558: a BÉLYEGKÉP is a Shift szerinti szűrőé — az eredeti a
-            //: csempe erőforrás-nevét a `_mod%s` utótaggal képzi, tehát a
-            //: másodlagos előnézetét mutatja (a kulcs a `szuro`).
             thumbSource: panel.effectThumbSource(szuro)
             badge: panel.hasBadge(szuro)
         }
