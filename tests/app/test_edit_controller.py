@@ -283,6 +283,18 @@ class TestOneShotLayering:
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "filters=" not in ini_text
 
+    def test_legacy_picasa_ini_chain_survives_first_save(self, controller, photo):
+        """#4819: csak régi `Picasa.ini` van — a régi effekt a mentés után is
+        a lánc elején áll, a régi fájl érintetlen."""
+        legacy = photo.parent / "Picasa.ini"
+        legacy_bytes = b"[IMG_0001.jpg]\r\nfilters=autolight=1;\r\n"
+        legacy.write_bytes(legacy_bytes)
+        controller.beginEdit("1", str(photo))
+        controller.toggleTool("enhance")
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=autolight=1;enhance=1;" in ini_text
+        assert legacy.read_bytes() == legacy_bytes
+
     def test_picasa_written_duplicate_chain_not_damaged(self, controller, photo):
         """Round-trip: a valódi Picasa által írt, ismétlődő szűrős láncból
         egy kattintás nem törölhet előfordulásokat (1. rögzített döntés)."""

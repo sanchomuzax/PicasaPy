@@ -174,7 +174,7 @@ from picasapy.ini import (
     FilterWriteError,
     IniConflictError,
     IniSaveError,
-    load_document,
+    load_existing,
     update_document,
 )
 from picasapy.scanner import PICASA_INI_NAME
@@ -421,7 +421,7 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
     del number
 
     section = _section_name(image_path)
-    document = load_document(image_path.parent / PICASA_INI_NAME)
+    document = load_existing(image_path.parent / PICASA_INI_NAME)
     stored = document.section(section)
     restored_filters = (stored.get(_REDO_KEY) or "") if stored else ""
 

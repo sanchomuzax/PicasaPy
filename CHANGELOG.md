@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.53] – 2026-10-10
+
+- A Nyomtatás ablak a tartalomhoz igazodó magassággal nyílik, a Nyomtatás és Bezárás gomb mindig látszik, kis képernyőn a tartalom görgethető (#4795).
+
+## [0.9.52] – 2026-10-10
+
+- Az importálás kézi mappaneve csak egyetlen mappanév lehet: a `../`, az abszolút útvonal és a tiltott karakterek nem engedik elindítani az importot (#4837).
+
+## [0.9.51] – 2026-10-10
+
+- A régi Picasa.ini bejegyzései megmaradnak az első módosítás mentésekor (#4819).
+
 ## [0.9.50] – 2026-10-10
 
 - A vágott videóklip Windows és macOS rendszeren exportálható; Linuxon megmarad az eredeti tiltóüzenet (#4564).

@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from picasapy.fileops.originals import originals_follow
-from picasapy.ini import load_or_empty, update_document
+from picasapy.ini import has_ini_source, load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
 def _rename(path: Path, target: Path) -> None:
@@ -66,7 +66,7 @@ def rename_photo(path: Path, new_name: str) -> Path:
         raise FileExistsError(f"A célnév már foglalt: {target}")
 
     ini_path = path.parent / PICASA_INI_NAME
-    has_ini = ini_path.exists()
+    has_ini = has_ini_source(ini_path)  # #4819: a régi Picasa.ini is forrás
     if has_ini and load_or_empty(ini_path).section(new_name) is not None:
         raise FileExistsError(f"A célnév ini-szekciója már foglalt: {new_name}")
 

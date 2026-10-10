@@ -86,6 +86,11 @@ def _nyomtatasi_parbeszed(window, qt_app):
 def nyomtatasi_parbeszed(qml_app_magyar, qt_app):
     window, _controller, _engine = qml_app_magyar
     dialog = _nyomtatasi_parbeszed(window, qt_app)
+    # #4795: a kezdőmagasság az első elrendezés után, késleltetve áll be —
+    # addig az Ellenőrzés gomb a görgethető rész takart alján lehet.
+    assert varj_feltetelre(
+        qt_app, lambda: not dialog.property("meretezesFuggoben"), masodperc=3
+    )
     yield dialog
     dialog.setProperty("visible", False)
     qt_app.processEvents()
