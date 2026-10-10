@@ -2283,6 +2283,12 @@ Rectangle {
                         ? viewer.editCtl.redeyeRegionCount : 0
                     canUndoRedeyeRegion: viewer.editCtl
                         ? viewer.editCtl.canUndoRedeyeRegion : false
+                    redeyeResetAvailable: viewer.editCtl
+                        ? viewer.editCtl.redeyeResetAvailable : false
+                    canReapplyRedeyeAuto: viewer.editCtl
+                        ? viewer.editCtl.canReapplyRedeyeAuto : false
+                    redeyeAutoReset: viewer.editCtl
+                        ? viewer.editCtl.redeyeAutoReset : false
                     redeyeFoundCount: viewer.editCtl
                         ? viewer.editCtl.redeyeFoundCount : -1
                     onRedeyeAutoRequested: editController.runRedeyeAuto()
@@ -3785,6 +3791,7 @@ Rectangle {
                                       ? viewer.editCtl.redeyeRegions : [])
                             delegate: Rectangle {
                                 required property var modelData
+                                objectName: "redeyeRegionFrame"
                                 x: modelData.x * redeyeOverlay.width
                                 y: modelData.y * redeyeOverlay.height
                                 width: modelData.w * redeyeOverlay.width

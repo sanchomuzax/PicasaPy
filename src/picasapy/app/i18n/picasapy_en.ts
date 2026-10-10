@@ -13019,6 +13019,20 @@ If your redeye fixes appear to be misaligned (or non-existent), try undoing the 
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Note: click inside the box to undo the change.</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
+            <source>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.
+
+Note: You can click on a box to delete a change.
+
+You can also click 'auto' to reapply the auto-corrections.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.
+
+Note: You can click on a box to delete a change.
+
+You can also click 'auto' to reapply the auto-corrections.</translation>
+        </message>
     </context>
     <context>
         <name>EditorRetouchPanel</name>
