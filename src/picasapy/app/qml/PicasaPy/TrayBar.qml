@@ -71,6 +71,8 @@ Column {
     // print_controller.py/email_controller.py docstringje).
     signal printRequested()
     signal emailRequested()
+    // #4637: a kimeneti gombsor jobbklikkje a gazda közös gombmenüjét kéri.
+    signal configureButtonsContextMenuRequested(var anchorItem, real x, real y)
 
     // #2564: a SZERKESZTŐ nagyítás-hármasa ebben a sávban él, a könyvtár
     // bélyegkép-csúszkájának a helyén — mérve (`editpanel.tre:1288–1324` +
@@ -1846,6 +1848,19 @@ Column {
             Row {
                 id: trayActionRow
                 objectName: "trayActionRow"
+                // #4637: a testreszabható alsó gombsor jobb klikkjére a
+                // gazda ugyanazt a menüt nyitja, mint az Eszközök menü.
+                TapHandler {
+                    objectName: "trayConfigureButtonsContextMenuHandler"
+                    acceptedButtons: Qt.RightButton
+                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                    onSingleTapped: function (point) {
+                        tray.configureButtonsContextMenuRequested(
+                            trayActionRow,
+                            point.position.x,
+                            point.position.y)
+                    }
+                }
                 // a 40 képpontos cellák a zöld gomb 44-es helyére
                 // függőlegesen középre: 36 + (44 − 40) / 2 = 38
                 x: trayMainBar.outputsOffset

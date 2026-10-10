@@ -104,6 +104,13 @@ Ami soha nem lesz elérhető, arról az [Ami még nem érhető
 el](features/meg-nem-erheto-el.md) fejezet ír. Bármikor **F1**-et nyomva
 előjön ez a súgó (lásd [A beépített súgó](features/sugo.md)).
 
+A menüben néhány tétel **kék** felirattal látszik. Ezek a PicasaPy saját
+parancsai, az eredeti Picasában nem voltak meg: ilyen a **Nézet ▸ Sötét
+téma**, az **Eszközök ▸ Arcok keresése…** és a **Súgó ▸
+Teljesítmény-monitor**. Ha az egeret fölé viszed, a súgócímke is
+elmondja: „Ez a PicasaPy kiegészítése — az eredeti Picasában nem volt
+ilyen."
+
 **Eszköztár** — bal oldalt az **Importálás** gomb, az új album gombja, a
 két kis nézetváltó gomb és mellettük egy **▾** gomb, ami a mappanézet
 beállításait nyitja le; középen a szűrők (csillagozott képek, arcot

@@ -28,6 +28,7 @@ Rectangle {
         : []
 
     signal closeRequested()
+    signal editTagsRequested()
 
     color: Theme.panelBg
     border.color: Theme.chromeBorder
@@ -110,5 +111,27 @@ Rectangle {
         objectName: panel.objectName === "viewerPropertiesPanel"
                     ? "viewerKeywordsDialog" : "keywordsDialog"
         controller: panel.appController
+    }
+
+    PicasaMenu {
+        id: propertiesContextMenu
+        objectName: "propertiesPanelContextMenu"
+        parent: panel
+
+        MenuItem {
+            objectName: "propertiesMenuEditTags"
+            text: qsTr("Edit Tags")
+            onTriggered: panel.editTagsRequested()
+        }
+    }
+
+    MouseArea {
+        objectName: "propertiesPanelContextArea"
+        parent: panel
+        anchors.fill: panel
+        z: 10
+        visible: panel.visible
+        acceptedButtons: Qt.RightButton
+        onClicked: propertiesContextMenu.popup()
     }
 }

@@ -6599,6 +6599,16 @@ picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
             <translation>Mappa törlése</translation>
         </message>
         <message>
+            <source>Are you sure you want to delete the album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Biztosan törli a(z) "%1" albumot?</translation>
+        </message>
+        <message>
+            <source>Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Album törlése</translation>
+        </message>
+        <message>
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>
@@ -7370,6 +7380,12 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_collage)
     </context>
     <context>
         <name>Main</name>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Configure Buttons...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Gombok konfigurálása…</translation>
+        </message>
         <message>
             <location filename="../qml/Main.qml" />
             <source>Want to Cancel?</source>
@@ -10661,11 +10677,11 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <translation>Jelölj ki egy képet a tulajdonságaihoz.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
-            <source>Keywords</source>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
+            <source>Edit Tags</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
-            <translation>Kulcsszavak</translation>
+picasapy-origin-key: stringres:PropertiesPanel::edit_keywords</extracomment>
+            <translation>Szerkesztési címkék</translation>
         </message>
     </context>
     <context>
@@ -10831,54 +10847,6 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
             <translation>OK</translation>
-        </message>
-    </context>
-    <context>
-        <name>KeywordsDialog</name>
-        <message>
-            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
-            <source>Tags</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Címkék</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
-            <source>Tags:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Címkék:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
-            <source>Add Tag:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: keywordstext:Label(keywords/addkeywords_label)</extracomment>
-            <translation>Címke hozzáadása:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
-            <source>Add</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hozzáadás</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
-            <source>Remove</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Eltávolítás</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
-            <source>Done</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup_text:Label(capturemoviepanelpopup/done);gedialog:Label(gedialog/done);gpuploader_manage_devices:gpuploader_manage_devices/ok.title;keywordstext:Label(keywords/closebutton);stringres:RestoreApp::complete;stringres:RestoreApp::donebutton;stringres:RestoreApp::statuscomplete;stringres:il_CReplicateStatusDone;stringres:slingshot::setup_finish;stringres:uploadmgr::completed</extracomment>
-            <translation>Kész</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/KeywordsDialog.qml" />
-            <source>Tags cannot be modified because one or more items are read-only.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
-            <translation>A címkéket nem lehet módosítani, mert egy vagy több elem írásvédett.</translation>
         </message>
     </context>
     <context>
