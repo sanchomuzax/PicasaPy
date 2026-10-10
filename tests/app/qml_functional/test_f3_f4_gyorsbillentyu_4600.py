@@ -109,3 +109,53 @@ class TestF4Csillag:
 
         assert _index_star(controller, "a.jpg") == 0
         assert _index_star(controller, "b.jpg") == 0
+
+    def test_ket_kijelolt_kepet_mindkettot_csillagozza(
+        self, qml_app, qt_app
+    ) -> None:
+        window, controller, _engine = qml_app
+        window.show()
+        window.requestActivate()
+        _select(window, qt_app, 0)
+        QMetaObject.invokeMethod(
+            window,
+            "handleThumbClick",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 1),
+            Q_ARG("QVariant", int(Qt.KeyboardModifier.ControlModifier.value)),
+        )
+        qt_app.processEvents()
+        _focus_library_view(window, qt_app)
+
+        QTest.keyClick(window, Qt.Key.Key_F4)
+        qt_app.processEvents()
+
+        assert _index_star(controller, "a.jpg") == 1
+        assert _index_star(controller, "b.jpg") == 1
+
+    def test_nyitott_nezoben_a_nezo_sorat_csillagozza(
+        self, qml_app, qt_app
+    ) -> None:
+        window, controller, _engine = qml_app
+        window.show()
+        window.requestActivate()
+        _select(window, qt_app, 0)
+        QMetaObject.invokeMethod(
+            window,
+            "openPhotoViewer",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 1),
+        )
+        qt_app.processEvents()
+        assert window.property("viewerOpen") is True
+        tray = _child(window, "trayBar")
+        assert tray.property("viewerIndex") == 1
+
+        wait_for_photo_op(
+            controller,
+            lambda: QTest.keyClick(window, Qt.Key.Key_F4),
+            qt_app=qt_app,
+        )
+
+        assert _index_star(controller, "b.jpg") == 1
+        assert _index_star(controller, "a.jpg") == 0
