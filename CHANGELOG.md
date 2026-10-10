@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.51] – 2026-10-10
+
+- A régi Picasa.ini bejegyzései megmaradnak az első módosítás mentésekor (#4819).
+
+## [0.9.50] – 2026-10-10
+
+- A vágott videóklip Windows és macOS rendszeren exportálható; Linuxon megmarad az eredeti tiltóüzenet (#4564).
+
+## [0.9.49] – 2026-10-10
+
+- Az importálás kézi mappanév-módban mappanév nélkül nem indul el; a felület jelzi, mit kell megadni (#4595).
+- Windowson az e-mail küldés a kijelölt képeket mellékletként csatolja: a levelezőprogram MAPI-n át nyílik meg a csatolmányokkal, és a küldés előtt a szerkesztőben látszik a levél (#4607).
+
 ## [0.9.48] – 2026-10-10
 
 - A Mappa tulajdonságai Dátum mezője mellett naptár nyílik: a kiválasztott nap a mezőbe kerül, a dátum a nyelvi beállítás szerinti alakban látszik (#4494).

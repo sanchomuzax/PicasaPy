@@ -41,13 +41,14 @@ from picasapy.index import (
     video_photos,
     sync_tree,
 )
-from picasapy.ini import load_document, update_document
+from picasapy.ini import load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
 from .viewer_startup_controller import ViewerStartupMixin
 from .frame_capture_controller import FrameCaptureMixin
+from .movie_clip_export_controller import MovieClipExportMixin
 from .movie_trim_controller import MovieTrimMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
@@ -203,6 +204,8 @@ class AppController(
     ColorManagementMixin,
     ViewerStartupMixin,
     MovieTrimMixin,
+    # #4564: a `movieeditpanel/export_movie` klipet készít a vágáspontokból.
+    MovieClipExportMixin,
     # #1838: a `capture_frame` — a vágás-szelet `_vago_sor` kapuját használja
     FrameCaptureMixin,
     LanguageMixin,
@@ -1229,9 +1232,7 @@ class AppController(
     def _read_folder_description(folder_path: str) -> str:
         """A mappa `[Picasa]/description` kulcsának beolvasása az ini-ből."""
         ini_path = Path(folder_path) / PICASA_INI_NAME
-        if not ini_path.exists():
-            return ""
-        section = load_document(ini_path).section("Picasa")
+        section = load_or_empty(ini_path).section("Picasa")
         return (section.get("description") if section else None) or ""
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület a mappát is átadó
