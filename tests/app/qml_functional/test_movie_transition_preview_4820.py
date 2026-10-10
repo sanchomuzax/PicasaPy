@@ -527,19 +527,19 @@ def test_az_1_1_es_a_kattintott_diaszerkesztes_a_nezoket_frissiti(
         assert _wait(
             qt_app,
             lambda: image.property("visible")
-        and int(dialog.property("previewDisplayedGeneration"))
-            >= int(dialog.property("previewLatestRequestGeneration"))
-        and float(image.property("paintedWidth")) > 0,
-    ), (
-        "a kezdő szöveges dia nem jelent meg: "
-        f"items={dialog.property('previewItemCount')}, "
-        f"slides={dialog.property('movieSlides')!r}, "
-        f"source={image.property('source')!r}, "
-        f"frame={dialog.property('previewTransitionFrameSource')!r}, "
-        f"generations={dialog.property('previewDisplayedGeneration')}/"
-        f"{dialog.property('previewLatestRequestGeneration')} "
-        f"(floor={dialog.property('previewGenerationFloor')})"
-    )
+            and int(dialog.property("previewDisplayedGeneration"))
+                >= int(dialog.property("previewLatestRequestGeneration"))
+            and float(image.property("paintedWidth")) > 0,
+        ), (
+            "a kezdő szöveges dia nem jelent meg: "
+            f"items={dialog.property('previewItemCount')}, "
+            f"slides={dialog.property('movieSlides')!r}, "
+            f"source={image.property('source')!r}, "
+            f"frame={dialog.property('previewTransitionFrameSource')!r}, "
+            f"generations={dialog.property('previewDisplayedGeneration')}/"
+            f"{dialog.property('previewLatestRequestGeneration')} "
+            f"(floor={dialog.property('previewGenerationFloor')})"
+        )
 
         field = _elem(window, "movieSlideText")
         assert field.property("visible")
@@ -582,18 +582,18 @@ def test_az_1_1_es_a_kattintott_diaszerkesztes_a_nezoket_frissiti(
         _click(window, qt_app, _elem(window, "movieRemoveSlideButton"))
         assert _wait(
             qt_app,
-        lambda: dialog.property("previewItemCount") == 0
-        and dialog.property("previewTransitionFrameSource") == ""
-        and image.property("visible") is False,
-    ), (
-        "az utolsó dia törlése után a régi előnézeti kép kint maradt: "
-        f"items={dialog.property('previewItemCount')}, "
-        f"source={dialog.property('previewTransitionFrameSource')!r}, "
-        f"visible={image.property('visible')!r}, "
-        f"generations={dialog.property('previewDisplayedGeneration')}/"
-        f"{dialog.property('previewLatestRequestGeneration')} "
-        f"(floor={dialog.property('previewGenerationFloor')})"
-    )
+            lambda: dialog.property("previewItemCount") == 0
+            and dialog.property("previewTransitionFrameSource") == ""
+            and image.property("visible") is False,
+        ), (
+            "az utolsó dia törlése után a régi előnézeti kép kint maradt: "
+            f"items={dialog.property('previewItemCount')}, "
+            f"source={dialog.property('previewTransitionFrameSource')!r}, "
+            f"visible={image.property('visible')!r}, "
+            f"generations={dialog.property('previewDisplayedGeneration')}/"
+            f"{dialog.property('previewLatestRequestGeneration')} "
+            f"(floor={dialog.property('previewGenerationFloor')})"
+        )
     finally:
         dialog.close()
         qt_app.processEvents()
@@ -610,3 +610,55 @@ def test_a_film_es_a_renderelo_atmenetkulcskeszlete_megegyezik():
     assert match is not None, "a QML filmátmenet-lista nem található"
     qml_keys = set(re.findall(r'"([a-z]+)"', match.group(1)))
     assert qml_keys == _TRANSITION_TYPES
+
+
+def test_a_futo_elonezet_megallitas_nelkul_tobb_keveredo_kockat_mutat(
+    qml_app, qt_app, tmp_path
+):
+    window, controller, _engine = qml_app
+    sources = []
+    for name, color in (("piros.png", Qt.GlobalColor.red), ("kek.png", Qt.GlobalColor.blue)):
+        image = QImage(320, 240, QImage.Format.Format_RGB32)
+        image.fill(color)
+        assert image.save(str(tmp_path / name))
+        sources.append(QUrl.fromLocalFile(str(tmp_path / name)).toString())
+    dialog = _open_movie_dialog(window, qt_app, 800)
+    provider = controller.movie_transition_preview_provider
+    shown: list[bool] = []
+
+    def collect(_source, _generation):
+        with provider._image_lock:
+            frame = provider._image.copy()
+        mixed = any(
+            35 < frame.pixelColor(x, y).red() < 220
+            and 35 < frame.pixelColor(x, y).blue() < 220
+            for x in range(0, frame.width(), max(1, frame.width() // 8))
+            for y in range(0, frame.height(), max(1, frame.height() // 8))
+        )
+        shown.append(mixed)
+
+    try:
+        dialog.setProperty("movieClipSources", sources)
+        dialog.setProperty("previewSource", sources[0])
+        _elem(window, "movieSeconds").setProperty("value", 20)
+        _elem(window, "movieOverlapSlider").setProperty("value", 0.4)
+        _select_transition(window, qt_app, "dissolve")
+        qt_app.processEvents()
+        controller.movieTransitionPreviewReady.connect(collect)
+        _click(window, qt_app, _elem(window, "moviePreviewButton"))
+        transition = _elem(window, "moviePreviewTransition")
+        assert _wait(qt_app, lambda: transition.property("running"), timeout=3.0), (
+            "az átmenet nem indult el"
+        )
+        assert _wait(qt_app, lambda: not transition.property("running"), timeout=5.0), (
+            "az átmenet nem fejeződött be"
+        )
+        assert len(shown) >= 3, f"futás közben csak {len(shown)} kocka jelent meg"
+        assert any(shown), "egyik futás közbeni kockán sem volt keveredő képpont"
+    finally:
+        try:
+            controller.movieTransitionPreviewReady.disconnect(collect)
+        except (RuntimeError, TypeError):
+            pass
+        dialog.close()
+        qt_app.processEvents()

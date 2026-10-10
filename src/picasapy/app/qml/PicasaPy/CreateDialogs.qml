@@ -531,6 +531,7 @@ Item {
             previewFromIndex = -1
             previewTransitionProgress = 1
             previewAwaitingTransitionFrame = false
+            previewGenerationFloor = previewLatestRequestGeneration
             moviePreviewTransitionFallbackTimer.stop()
             requestPreviewFrame()
             prefetchNextPreviewFrame()
@@ -1896,6 +1897,7 @@ Item {
         interval: Math.max(1, Math.round(1000 / movieDialog.previewFramesPerSecond))
         repeat: true
         running: moviePreviewTransition.running
+            && !moviePreviewTransition.paused
             && !movieDialog.previewAwaitingTransitionFrame
         onTriggered: movieDialog.requestPreviewFrame()
     }
