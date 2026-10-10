@@ -4632,6 +4632,11 @@ Rectangle {
                 Layout.minimumWidth: 160
                 Layout.fillHeight: true
                 hasSelection: viewer.currentIndex >= 0
+                appController: (typeof controller !== "undefined")
+                               ? controller : null
+                selectedRows: viewer.currentIndex >= 0
+                              ? [viewer.currentIndex] : []
+                focusRow: viewer.currentIndex
                 // a photos.revision-nel együtt kötve: modell-frissüléskor
                 // (pl. forgatás, felirat-mentés) újraolvas; a controller
                 // önálló példányosításnál (tesztek) hiányozhat
