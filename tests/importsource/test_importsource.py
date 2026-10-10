@@ -321,3 +321,23 @@ class TestMediaFilter:
         names = {c.path.name for c in scan_source(str(source), "nincs-ilyen")}
 
         assert names == {"kep.jpg", "film.avi", "nyers.cr2"}
+
+
+def test_scan_files_only_returns_existing_selected_media_files(tmp_path):
+    """#4596: a fájllista-forrás csak a kijelölt, létező médiafájlokat adja."""
+    from picasapy.importsource import scan_files
+
+    (tmp_path / "a.jpg").write_bytes(b"x")
+    (tmp_path / "b.mp4").write_bytes(b"x")
+    (tmp_path / "c.jpg").write_bytes(b"x")
+    (tmp_path / "n.txt").write_text("nem média")
+
+    scan = scan_files(
+        [tmp_path / "b.mp4", tmp_path / "a.jpg", tmp_path / "a.jpg",
+         tmp_path / "n.txt", tmp_path / "nincs.jpg"]
+    )
+
+    assert [c.path.name for c in scan.candidates] == ["a.jpg", "b.mp4"]
+    assert scan.unrecognized == 0
+    pictures = scan_files([tmp_path / "a.jpg", tmp_path / "b.mp4"], "pictures")
+    assert [c.path.name for c in pictures.candidates] == ["a.jpg"]
