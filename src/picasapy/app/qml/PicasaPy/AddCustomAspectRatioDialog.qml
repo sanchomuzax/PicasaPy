@@ -41,7 +41,9 @@ Dialog {
         RowLayout {
             spacing: 8
             Text {
-                text: qsTr("Width:")
+                objectName: "customAspectDimensionsLabel"
+                //: `customaspectratio.fen` „Dimensions:" csoportcím (#4550)
+                text: qsTr("Dimensions:")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -58,7 +60,7 @@ Dialog {
                 TextFieldContextArea {}
             }
             Text {
-                text: "x"
+                text: "  x  "
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -78,6 +80,7 @@ Dialog {
         RowLayout {
             spacing: 8
             Text {
+                objectName: "customAspectNameLabel"
                 text: qsTr("Name:")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
@@ -89,6 +92,25 @@ Dialog {
                 onAccepted: if (root.canAccept()) root.accept()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
+            }
+        }
+        // #4550: a `customaspectratio.fen` „Example:" sora STATIKUS
+        // `<label>` (nincs `bind`, nincs `name`) — az eredeti mintaszöveg,
+        // nem a begépelt értékekből képzett előnézet.
+        RowLayout {
+            spacing: 8
+            Text {
+                objectName: "customAspectExampleLabel"
+                text: qsTr("Example:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            Text {
+                objectName: "customAspectExampleText"
+                //: a hivatalos `customaspectratio/label11.title` minta (#4550)
+                text: qsTr("   4 x 6   Small print")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
             }
         }
     }
