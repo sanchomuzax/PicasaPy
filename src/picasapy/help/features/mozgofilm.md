@@ -8,7 +8,12 @@ megadott ideig látszanak.
 Jelöld ki a képeket, majd:
 
 - **Létrehozás ▸ Mozgófilm ▸ Új mozgófilm…**, vagy
-- a képtálca **Mozgófilm** gombja.
+- a képtálca **Mozgófilm** gombja, vagy
+- a képrács mappafejlécében a kollázs-gomb mellett álló filmgomb
+  (*Mozgófilmes prezentáció létrehozása*). Ez nem a kijelölt képekkel
+  dolgozik, hanem **az adott fejléc mappájának összes képével** nyitja meg
+  a Mozgófilm ablakot. A személyalbum fejlécében nincs ilyen gomb, ott a
+  saját filmgombok állnak.
 
 A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…**, az
 **Az Emberek albumból…** (ehhez nem kell kijelölés) és a személyalbum
@@ -46,7 +51,10 @@ A fül tetején az áll, hány kép van kijelölve („N kép kijelölve."). Ala
 - **Hangsáv:** — a film zenéje. A **Betöltés…** gombbal választasz
   hangfájlt, a **Törlés** leveszi. Ha a képek egy mappából jönnek, és a
   mappához zenét adtál meg (lásd [Mappakezelő](mappakezelo.md)), az lesz
-  alapból a hangsáv; a **Törlés** ezt is leveszi. A **Beállítások**
+  alapból a hangsáv. Ugyanígy, ha egy albumból készítesz filmet, és az
+  albumhoz be van állítva zene (az **Album tulajdonságai** ablak **Zene:** mezőjében), az album
+  zenéje lesz az alap, feltéve hogy a fájl megvan. A **Törlés** ezt is
+  leveszi. A **Beállítások**
   listából dönthetsz, mi legyen, ha a zene és a képek hossza nem
   egyezik: **Hangfájl csonkolása**, **Fotók hozzáillesztése a hanghoz**
   vagy **Fotók ismétlése a zene végéig**.
@@ -116,7 +124,22 @@ méretét és helyét a filmben: például „Szöveges dia  1024x768 képpont
 ## Az előnézet
 
 Az előnézet a beállítások alatt áll. Az **Előnézet** gomb lejátssza a
-filmet (közben **Szünet** lesz belőle). A **Mozgófilm** fül tetején a
+filmet (közben **Szünet** lesz belőle). Lejátszáskor az előnézet a
+filmhez hasonlóan viselkedik:
+
+- a képek a **Dia időtartama** szerint követik egymást, a **szöveges
+  diák** pedig a képek után, a saját szövegükkel, betűtípusukkal és
+  színükkel jelennek meg;
+- két kép között látszik az átmenet: a képek a beállított **Átfedés**
+  ideje alatt úsznak át egymásba. A **Szétoszlás feketén át** és a
+  **Szétoszlás fehéren át** a fekete, illetve a fehér képen keresztül
+  vált, a **Kivágás** pedig éles váltás. A többi stílusnál az előnézet
+  szintén csak áttűnést mutat, a tényleges mozgást (tolás, kör és így
+  tovább) a kész film adja;
+- ha van **hangsáv**, az az előnézettel együtt szól: a **Szünet** megállítja,
+  az ablak bezárása leállítja. A lejátszósáv melletti hangerő-csúszkával
+  állítod az előnézet hangerejét; a program megjegyzi a beállítást.
+ A **Mozgófilm** fül tetején a
 **Vissza a kijelölt diához** gomb a kijelölt képhez ugrik. A két kis
 gomb a **Mozgófilm tényleges méretének
 megjelenítése (nyújtás nélkül)** és a **Lejátszás teljes képernyőn**.
