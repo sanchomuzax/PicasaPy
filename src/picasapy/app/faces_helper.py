@@ -29,7 +29,8 @@ from picasapy.ini import (
     contacts_of,
     ensure_contact,
     find_contact_id,
-    load_document,
+    has_ini_source,
+    load_or_empty,
     parse_faces,
     remove_all_face_data,
     reset_all_faces,
@@ -257,9 +258,9 @@ class FacesHelper(QObject):
     def _load(self, image_path: str):
         path = Path(image_path)
         ini_path = path.parent / PICASA_INI_NAME
-        if not ini_path.exists():
+        if not has_ini_source(ini_path):
             return None, path
-        return load_document(ini_path), path
+        return load_or_empty(ini_path), path
 
     def _resolve_contact_id(self, document, name: str) -> tuple[object, str]:
         """A `name` személy contact_id-ja EBBEN a dokumentumban — meglévőt
@@ -303,7 +304,7 @@ class FacesHelper(QObject):
         success = True
         for folder in folders:
             ini_path = Path(folder) / PICASA_INI_NAME
-            if not ini_path.exists():
+            if not has_ini_source(ini_path):
                 continue
             try:
                 update_document(ini_path, mutate, backup=True)

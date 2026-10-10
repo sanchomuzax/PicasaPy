@@ -8776,10 +8776,22 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A(z) %1 mentve az Exportált videoklipek mappába</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Failed to capture frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <translation>Nem sikerült a képkocka rögzítése</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A klip exportálása nem sikerült</translation>
         </message>
         <message>
             <source>Show only one picture</source>
@@ -12249,6 +12261,13 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <source>Folder template:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Mappasablon:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>A folytatáshoz írjon be egy új mappanevet, vagy válasszon egy létező mappát</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />

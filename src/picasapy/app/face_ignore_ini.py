@@ -36,7 +36,7 @@ from picasapy.ini import (
     Rect64,
     decode_rect64,
     encode_rect64,
-    load_document,
+    load_existing,
     parse_faces,
 )
 from picasapy.ini.faces import Face
@@ -127,10 +127,8 @@ def ini_faces_of(photo_path: Path) -> tuple[Face, ...]:
     """A fotó `faces=` bejegyzései a mappa `.picasa.ini`-jéből. Hiányzó
     vagy olvashatatlan ini, hiányzó szakasz, hibás érték: üres."""
     ini_path = photo_path.parent / PICASA_INI_NAME
-    if not ini_path.exists():
-        return ()
     try:
-        document = load_document(ini_path)
+        document = load_existing(ini_path)
     except (OSError, ValueError):
         return ()
     section = document.section(photo_path.name)

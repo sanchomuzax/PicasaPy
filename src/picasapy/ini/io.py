@@ -30,6 +30,7 @@ from typing import Any, Callable, Iterator
 from picasapy.ioutil import write_atomic
 
 from .document import NO_SOURCE_FILE, IniDocument, SourceFingerprint, parse_document
+from .names import INI_NAME, LEGACY_INI_NAME
 from .photo_touch import notify_picasa_after_ini_write
 
 _BOM = b"\xef\xbb\xbf"
@@ -138,19 +139,64 @@ def load_document(path: str | Path) -> IniDocument:
     )
 
 
+def ini_source_path(path: str | Path) -> Path | None:
+    """A mentés/olvasás kiinduló ini-fájlja, vagy `None`, ha egyik sincs.
+
+    A kért `.picasa.ini` az elsődleges forrás; ha az nem létezik, a korai
+    Picasa `Picasa.ini` fájlja (ha van) a forrás. A régi fájl SOHA nem
+    írási cél. Kis- és nagybetűt nem megkülönböztető fájlrendszeren egy
+    `picasa.ini` nevű fájl is forrás lehet (a `Picasa.ini` keresés
+    megtalálja)."""
+    target = Path(path)
+    if target.is_file():
+        return target
+    if target.name == INI_NAME:
+        legacy = target.with_name(LEGACY_INI_NAME)
+        if legacy.is_file():
+            return legacy
+    return None
+
+
+def has_ini_source(path: str | Path) -> bool:
+    """Van-e a kért ini-hez olvasható forrás (`.picasa.ini` vagy `Picasa.ini`)."""
+    return ini_source_path(path) is not None
+
+
+def _load_with_source(target: Path) -> tuple[Path | None, IniDocument]:
+    """A választott forrás és a belőle betöltött dokumentum (egyszeri választás)."""
+    source = ini_source_path(target)
+    if source is None:
+        return None, replace(parse_document(""), source_fingerprint=NO_SOURCE_FILE)
+    return source, load_document(source)
+
+
 def load_or_empty(path: str | Path) -> IniDocument:
-    """A dokumentum betöltése, vagy üres dokumentum, ha a fájl nem létezik.
+    """A dokumentum betöltése, vagy üres dokumentum, ha nincs ini-fájl.
 
     #151/7: a `load_document(p) if p.exists() else parse_document("")`
     minta közös helpere — a controllerek eddig 6 helyen ismételték.
 
-    #137: a hiányzó fájlhoz a `NO_SOURCE_FILE` ujjlenyomat társul, hogy az
-    `update_document` a „még nem létezett" esetet is ütközésként ismerje fel,
-    ha időközben egy párhuzamos író létrehozza a fájlt."""
-    target = Path(path)
-    if not target.exists():
-        return replace(parse_document(""), source_fingerprint=NO_SOURCE_FILE)
-    return load_document(target)
+    Ha a kért `.picasa.ini` hiányzik, a korai Picasa `Picasa.ini` fájl a
+    kiinduló dokumentum; a mentés célja ettől továbbra is a kért út.
+    Olvashatatlan régi fájlnál a betöltés hibával áll meg (az írás is:
+    adatvédelem, nem indulunk üresről).
+
+    #137: ha egyik ini-fájl sincs meg, a `NO_SOURCE_FILE` ujjlenyomat segít,
+    hogy az `update_document` észrevegye, ha egy párhuzamos író közben
+    létrehozza a célfájlt. Legacy fallbacknél a betöltött dokumentum az
+    olvasási forrás ujjlenyomatát tartja meg."""
+    return _load_with_source(Path(path))[1]
+
+
+def load_existing(path: str | Path) -> IniDocument:
+    """Csak olvasáshoz: a meglévő ini betöltése, a régi `Picasa.ini`-vel is.
+
+    A `load_document` hiányzó fájlra `FileNotFoundError`-t dob; ez ugyanezt
+    teszi, de a `.picasa.ini` hiányában a `Picasa.ini`-t tölti be (#4819)."""
+    source = ini_source_path(path)
+    if source is None:
+        raise FileNotFoundError(f"Nincs ini-fájl: {path}")
+    return load_document(source)
 
 
 def save_document(
@@ -267,11 +313,20 @@ def update_document(
     target = Path(path)
     with _ini_path_lock(target):
         for _ in range(max_retries + 1):
-            document = load_or_empty(target)
+            source, document = _load_with_source(target)
             mutated = mutate(document)
             # Mentés előtti újraellenőrzés: változott-e a fájl a betöltés óta?
             # (A tartalom-hash a döntő; az mtime önmagában nem megbízható.)
-            if _fingerprint_of(target) == document.source_fingerprint:
+            # A forrásválasztás is változhat (pl. közben létrejött a
+            # `.picasa.ini`), ezért azt is összevetjük.
+            current = ini_source_path(target)
+            current_fingerprint = (
+                NO_SOURCE_FILE if current is None else _fingerprint_of(current)
+            )
+            if (
+                current == source
+                and current_fingerprint == document.source_fingerprint
+            ):
                 save_document(mutated, target, backup=backup)
                 # #643: a Picasa a fotó rekordjának érvényességét a KÉPFÁJLHOZ
                 # méri (`moddate`/`onlinechecksum`), ezért a puszta ini-írás nem

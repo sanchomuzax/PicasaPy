@@ -85,11 +85,15 @@ from .folder_music import read_folder_music, with_folder_music
 from .io import (
     IniConflictError,
     IniSaveError,
+    has_ini_source,
+    ini_source_path,
     load_document,
+    load_existing,
     load_or_empty,
     save_document,
     update_document,
 )
+from .names import INI_NAME, LEGACY_INI_NAME
 from .photo_crop import PhotoCropReader
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
@@ -138,7 +142,12 @@ __all__ = [
     "is_valid_folder_date",
     "load_contacts_xml",
     "load_document",
+    "load_existing",
     "load_or_empty",
+    "has_ini_source",
+    "ini_source_path",
+    "INI_NAME",
+    "LEGACY_INI_NAME",
     "max_param_count",
     "parse_album_refs",
     "parse_contacts_xml",

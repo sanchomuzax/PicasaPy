@@ -79,6 +79,12 @@ Window {
     // Picasa import-munkafolyamatának lelke, ezért ez az alapértelmezés.
     property string namingMode: "date"
     property string manualFolderName: ""
+    // #4837: a kézi név egyetlen, biztonságos útvonal-elem-e (Python dönt)
+    readonly property bool manualNameValid:
+        manualFolderName.trim().length > 0
+        && (!importSourceController
+            || importSourceController.isValidFolderName === undefined
+            || importSourceController.isValidFolderName(manualFolderName))
 
     // #441: "After Copying:" — a `picasapy.app.import_source_controller.
     // AFTER_COPY_*` konstansaival egyező string.
@@ -196,6 +202,9 @@ Window {
     function requestImport() {
         if (importSourceWindow.destFolder.length === 0) return
         if (importSourceWindow.includedCount === 0) return
+        // #4595: kézi módban cím nélkül nincs import (és nincs megerősítés sem)
+        if (importSourceWindow.namingMode === "manual"
+                && !importSourceWindow.manualNameValid) return
         if (importSourceWindow.afterCopying === "leave") {
             importSourceWindow.runImportNow()
             return
@@ -756,9 +765,23 @@ Window {
                 Layout.leftMargin: 24
                 enabled: importSourceWindow.namingMode === "manual"
                 text: importSourceWindow.manualFolderName
+                onTextEdited: importSourceWindow.manualFolderName = text
                 onEditingFinished: importSourceWindow.manualFolderName = text
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
+            }
+            // #4595: cím nélkül nincs import — a tipp ezt mondja ki
+            Text {
+                objectName: "importSourceManualTipText"
+                Layout.fillWidth: true
+                Layout.leftMargin: 24
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                visible: importSourceWindow.namingMode === "manual"
+                         && importSourceWindow.manualFolderName.trim().length === 0
+                //: #4595: `acquirepanel/importtiptext` (Text1)
+                text: qsTr("Enter new folder title or choose existing folder to continue")
             }
             RadioButton {
                 objectName: "importSourceNamingByDateRadio"
@@ -877,6 +900,8 @@ Window {
                 enabled: importSourceWindow.includedCount > 0
                          && importSourceWindow.destFolder.length > 0
                          && !importSourceWindow.importing
+                         && (importSourceWindow.namingMode !== "manual"
+                             || importSourceWindow.manualNameValid)
                 onClicked: importSourceWindow.requestImport()
             }
             PicasaButton {
