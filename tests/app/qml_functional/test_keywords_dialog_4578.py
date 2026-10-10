@@ -101,7 +101,8 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
     row = next(
         index
         for index in range(controller.photos.rowCount())
-        if controller.photos.filePathAt(index) == str(png)
+        # útvonalként hasonlítunk: Windowson a modell `/`-es alakot ad (#4831)
+        if Path(controller.photos.filePathAt(index)) == png
     )
     png_bytes_before = png.read_bytes()
     window.setHeight(int(window.height()) + magassag_eltolas)
