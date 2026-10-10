@@ -317,6 +317,14 @@ Rectangle {
         albumContextMenu.albumName = name
         albumContextMenu.popup()
     }
+    function _askDeleteAlbum(token, name) {
+        if (!token) return
+        deleteAlbumConfirm.pendingToken = token
+        deleteAlbumConfirm.ask(
+            "",
+            qsTr("Are you sure you want to delete the album \"%1\"?")
+                .replace("%1", name))
+    }
     function openPeopleAlbumContextMenu(name) {
         peopleAlbumContextMenu.personName = name
         peopleAlbumContextMenu.popup()
@@ -1298,6 +1306,23 @@ Rectangle {
         //: #3173: a helyi menü ugyanarra az albumtulajdonság-útvonalra megy.
         onEditDescriptionRequested: pane.openAlbumDescription(
             albumContextMenu.albumToken, albumContextMenu.albumName)
+        onDeleteAlbumRequested: pane._askDeleteAlbum(
+            albumContextMenu.albumToken, albumContextMenu.albumName)
+    }
+
+    ConfirmDialog {
+        id: deleteAlbumConfirm
+        namePrefix: "deleteAlbum"
+        title: qsTr("Delete Album")
+        yesText: qsTr("Delete Album")
+        property string pendingToken: ""
+        onConfirmed: {
+            if (controller && pendingToken)
+                controller.deleteAlbum(pendingToken)
+            pendingToken = ""
+        }
+        onDenied: pendingToken = ""
+        onCanceled: pendingToken = ""
     }
 
     PeopleAlbumContextMenu {

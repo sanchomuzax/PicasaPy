@@ -90,6 +90,22 @@ def without_album(
     )
 
 
+def without_album_everywhere(document: IniDocument, token: str) -> IniDocument:
+    """Egy album definíciójának és minden képtagságának eltávolítása.
+
+    Egy mappa ini-jében az album definíciója a `[.album:<token>]` szekció,
+    a tagságok pedig a képszekciók `albums=` CSV-kulcsai. A többi albumot,
+    képadatot és ismeretlen sort változatlanul hagyja.
+    """
+    token = (token or "").strip()
+    if not token:
+        return document
+    updated = document
+    for section in document.file_sections():
+        updated = without_album(updated, section.name, token)
+    return updated.without_section(f"{ALBUM_SECTION_PREFIX}{token}")
+
+
 #: A tulajdonság-párbeszéd MÉRT mezői → a `.picasa.ini` kulcsai.
 #:
 #: A párbeszéd elrendezése a szállított `album.fen`-ből van (a Picasa

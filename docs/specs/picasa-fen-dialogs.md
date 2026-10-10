@@ -337,7 +337,7 @@ törlése”) megjelenik. A magyar szövegek a `referencia/stringres-en-hu.tsv`
 | végleges törlés (nincs lomtár) | `NoUndoSingle`/`NoUndoMultiple`, gomb „Fájl törlése”/„Fájlok törlése” | saját üzenet („This file cannot be moved to the Trash…”) | ugyanott |
 | mappa törlése | `DeleteFolderWarnPC` | az eredeti szöveg | `FolderPane.qml:1177` |
 | albumból eltávolítás | `RemoveSingle`/`RemoveMultiple` megerősítés | **nincs megerősítés** | `Main.qml:1477–1481` |
-| album törlése | `DeleteAlbum` | a menütétel helykitöltő | `AlbumContextMenu.qml:51–54` |
+| album törlése | `DeleteAlbum` | a megerősítő dialógus az album definícióját és minden képtagságát törli az érintett mappa-inikből | `FolderPane.qml`, `photo_ops_controller.py` |
 | emberek-album eltávolítás | `RemoveSinglePeople`/`RemoveMultiplePeople` | saját üzenet („The face tag "%1" will be removed…”) | `Main.qml:3405–3417` |
 | mellőzés | `RemoveSingleUnknown`/`RemoveMultipleUnknown` | az eredeti szöveg | `UnnamedFacesView.qml:329` |
 

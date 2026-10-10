@@ -21,6 +21,11 @@ A program **másolatot** készít a képről a **Hátterek** mappába, és azt
 állítja be háttérképnek. Így a háttérkép akkor is megmarad, ha az
 eredeti képet később átnevezed, áthelyezed vagy törlöd.
 
+A másolat a kép **szerkesztett, helyesen álló** változata: ami a
+PicasaPy-ban a képen látszik (forgatás, tükrözés, vágás, effektek), az a háttéren
+is ott van, és az oldalt fényképezett kép sem kerül oldalára. Az eredeti
+fájl változatlan marad.
+
 A Hátterek mappa a kollázsok célmappája mellett van — alapállapotban a
 képmappádon belül, a Picasa projektmappái közt. Ha a kollázsok
 célmappáját áthelyezted, a háttérkép is oda kerül.
