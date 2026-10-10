@@ -4,6 +4,10 @@ Mindhárom a `.picasa.ini` fájlba kerül a képek mellé, tehát a képfájlt
 nem írja át — kivéve a feliratot, amit a JPEG-be is beleírunk (lásd
 lentebb).
 
+A program a régi, nagy kezdőbetűs **Picasa.ini** nevű fájlból is beolvassa a
+csillagokat és a feliratokat, ha a mappában nincs `.picasa.ini`. Így a
+nagyon régi Picasával készített mappák adatai sem vesznek el.
+
 ## Csillag
 
 A csillag a gyors megjelölésre való. Csillagot adni és elvenni így tudsz:
