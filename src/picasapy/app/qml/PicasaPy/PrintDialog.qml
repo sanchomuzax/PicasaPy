@@ -69,10 +69,14 @@ Window {
         // ⚠️ csak az ELSŐ elrendezés UTÁN hívandó (ld. `meretezesIdozito`):
         // rejtett ablakban a Layout nem rendeződik újra, az implicitHeight
         // elavult (az előző nyitás/mód tartalmát tükrözi).
-        var kell = printContent.implicitHeight + printStatusBox.implicitHeight
+        var statusMagassag = printStatusFlick.visible
+                             ? printStatusFlick.Layout.preferredHeight : 0
+        var kell = printContent.implicitHeight + statusMagassag
                    + printButtonRow.implicitHeight
                    + 2 * keretMargo + printFrame.spacing
-                   + (printStatusBox.visible ? printFrame.spacing : 0)
+                   + (printStatusFlick.visible ? printFrame.spacing : 0)
+        // ⚠️ többmonitoros gépen a `Screen` az ablak képernyőjét adja, ami
+        // nyitáskor még nem biztos, hogy a végleges — a plafon közelítés.
         var plafon = Math.max(minimumHeight,
                               Screen.desktopAvailableHeight - kepernyoRahagyas)
         return Math.round(Math.min(Math.max(alapMagassag, kell), plafon))
@@ -407,6 +411,10 @@ Window {
             printWindow.meretezesFuggoben = true  // #4795
             meretezesIdozito.restart()
         }
+        if (!printWindow.visible) {
+            meretezesIdozito.stop()
+            printWindow.meretezesFuggoben = false
+        }
         if (!printWindow.visible && printWindow.printCtl)
             printWindow.printCtl.clearPassportSource()
     }
@@ -555,6 +563,7 @@ Window {
             objectName: "printContentFlick"
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.minimumHeight: 60
             clip: true
             contentWidth: width
             contentHeight: printContent.implicitHeight
@@ -1047,13 +1056,30 @@ Window {
 
         // #4795: a hiba/haladás/eredmény a RÖGZÍTETT részben van (a görgetett
         // tartalmon kívül), hogy a Nyomtatás után mindig látsszon.
-        ColumnLayout {
-            id: printStatusBox
+        // Felső korlát (az ablak harmada): hosszú kihagyott-lista se tolja
+        // ki a gombsort — a szövegek ekkor a saját területükön görgethetők.
+        Flickable {
+            id: printStatusFlick
+            objectName: "printStatusFlick"
             Layout.fillWidth: true
+            Layout.preferredHeight: printStatusBox.implicitHeight
+            Layout.maximumHeight: Math.max(60, printWindow.height / 3)
             visible: printWindow.lastSkipped.length > 0
                      || printWindow.lastError.length > 0
                      || printWindow.printTotalPages > 0
                      || printWindow.lastResult.length > 0
+            clip: true
+            contentWidth: width
+            contentHeight: printStatusBox.implicitHeight
+            boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
+            ScrollBar.vertical: ScrollBar {
+                policy: size < 1.0 ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            }
+
+        ColumnLayout {
+            id: printStatusBox
+            width: printStatusFlick.width
             spacing: 10
 
             Text {
@@ -1101,6 +1127,7 @@ Window {
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
+        }
         }
 
         RowLayout {

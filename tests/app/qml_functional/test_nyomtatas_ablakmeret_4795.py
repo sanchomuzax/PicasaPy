@@ -53,7 +53,7 @@ def _nyit(qml_app, qt_app):
     _kijelol(window, qt_app, [0])
     parbeszed = _menubol_nyit(window, qt_app)
     # az első elrendezés után méretezi magát az ablak (nyitás-időzítő)
-    _var(qt_app, lambda: False, 0.6)
+    assert _var(qt_app, lambda: not parbeszed.property("meretezesFuggoben"))
     return window, parbeszed
 
 
@@ -126,7 +126,9 @@ class TestKezdomeret:
         parbeszed = _elem(window, "printDialog")
         assert parbeszed.property("contactSheet") is True
         assert _var(qt_app, lambda: parbeszed.isVisible())
-        _var(qt_app, lambda: False, 0.6)
+        assert _var(
+            qt_app, lambda: not parbeszed.property("meretezesFuggoben")
+        )
         _bent_van(parbeszed, GOMBOK + ["printPrinterBox"])
 
 
@@ -187,3 +189,16 @@ class TestKisAblak:
         kepernyo = parbeszed.screen()
         assert kepernyo is not None, "az ablaknak nincs képernyője"
         assert parbeszed.height() <= kepernyo.availableGeometry().height()
+
+
+class TestHosszuStatusz:
+    def test_hosszu_kihagyott_lista_nem_tolja_ki_a_gombsort(self, qml_app, qt_app):
+        _w, parbeszed = _nyit(qml_app, qt_app)
+        parbeszed.resize(parbeszed.width(), 420)
+        assert _var(qt_app, lambda: parbeszed.height() == 420)
+        parbeszed.setProperty(
+            "lastSkipped", [f"hosszu_fajlnev_{i:03d}.jpg" for i in range(60)]
+        )
+        _var(qt_app, lambda: False, 0.3)
+        _bent_van(parbeszed, GOMBOK)
+        assert _elem(parbeszed, "printContentFlick").height() >= 60
