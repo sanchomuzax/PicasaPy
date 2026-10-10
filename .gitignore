@@ -129,3 +129,6 @@ uv.lock
 # #3549: a teszt-összeomlások core dumpja (a #3178 fájlos core-mintája) a
 # folyamat memóriáját hordozza — soha nem kerülhet a repóba
 core.[0-9]*
+
+# #4817: a futásidejű fordítás a .ts-ből készül (scripts/build_qm.py), bináris, nem összefésülhető
+src/picasapy/app/i18n/*.qm
