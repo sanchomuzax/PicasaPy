@@ -305,6 +305,26 @@ ApplicationWindow {
     // A névadás után a fotókijelölés nem változik, ezért külön frissítőjel
     // kell az Emberek-panel sorlistáinak újraolvasásához.
     property int peopleFaceRevision: 0
+    // #4586: csak az `unnamedFacesHere` frissítéséhez (keresés közben)
+    property int unnamedFaceRevision: 0
+    Timer {
+        id: unnamedFaceRefreshTimer
+        interval: 500
+        onTriggered: window.unnamedFaceRevision++
+    }
+
+    // #4586: a kijelölt képek közül hányat nem vizsgált még át a futó
+    // háttér-arckeresés (`PeoplePanel` betöltés / ellenőrizetlen fájlok)
+    function selectionPendingCount() {
+        var scan = window._faceScanController
+        if (!scan || !controller)
+            return 0
+        // a függés az `uncheckedFiles`-en: a keresés haladására újraszámol
+        var remaining = scan.uncheckedFiles
+        if (remaining <= 0)
+            return 0
+        return scan.pendingAmong(window.selectedPaths())
+    }
     // #1236: külön ablak-szintű név kell. Az UnnamedFacesView azonos nevű
     // property-jének jobb oldalán a `faceScanController` önmagára oldódna.
     readonly property var _faceScanController:
@@ -3720,10 +3740,11 @@ ApplicationWindow {
         faceScanController: window._faceScanController
         // #4586: a háttér-arckeresés állapota (spec 9/b: betöltés, ellenőrizetlen
         // fájlok, adatok rendezése)
-        loading: window._faceScanController
-            ? window._faceScanController.scanRunning : false
-        uncheckedCount: window._faceScanController
-            ? window._faceScanController.uncheckedFiles : 0
+        // A kapu a KIJELÖLÉSRE vonatkozik: csak a még nem átvizsgált
+        // kijelölt képek számítanak (egy már átvizsgált képnél nincs betöltés).
+        loading: !window.unnamedFacesOpen && window.selectionPendingCount() > 0
+        uncheckedCount: window.unnamedFacesOpen
+            ? 0 : window.selectionPendingCount()
         sortingPercent: window._faceScanController
             ? window._faceScanController.sortingPercent : -1
         folderSelected: controller ? controller.currentFolder.length > 0 : false
@@ -3743,7 +3764,8 @@ ApplicationWindow {
                controller.peopleOfRows(window.selectedRows()))
             : []
         unnamedFacesHere: controller && !window.unnamedFacesOpen
-            ? (window.peopleFaceRevision, controller.photos.revision,
+            ? (window.peopleFaceRevision, window.unnamedFaceRevision,
+               controller.photos.revision,
                controller.unnamedFacesOfRows(window.selectedRows()))
             : []
         onPersonChosen: function(name) {
@@ -4182,8 +4204,12 @@ ApplicationWindow {
     Connections {
         target: window._faceScanController
         function onUnnamedCountChanged() { window.peopleFaceRevision++ }
-        // #4586: a keresés közben is frissül az Emberek panel listája
-        function onFacesStored() { window.peopleFaceRevision++ }
+        // #4586: a keresés közben is frissül a panel névtelen-arc listája —
+        // összevonva, és csak nyitott panel mellett
+        function onFacesStored() {
+            if (window.peoplePanelOpen || photoViewer.peopleOpen)
+                unnamedFaceRefreshTimer.restart()
+        }
         function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false

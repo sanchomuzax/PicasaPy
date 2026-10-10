@@ -158,7 +158,8 @@ ELOFORDULASOK = {
         "Unnamed people in these photos:", "Unnamed groups of people:",
         # #4586
         "Loading faces for file...", "Looking for other people...",
-        "Sorting face data, %1%"],
+        "Sorting face data, %1%", "Loading faces for %1 files...",
+        ", %1 files unchecked."],
     "PicasaPy/PicasaMenuBar.qml": ["From Faces in Selection..."],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],

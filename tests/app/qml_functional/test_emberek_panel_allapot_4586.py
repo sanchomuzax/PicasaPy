@@ -21,6 +21,8 @@ jelenik meg, és nincs hozzá valódi esemény.
 
 from __future__ import annotations
 
+from PySide6.QtTest import QTest
+
 import test_emberek_panel_fejlec_3566 as fejlec_teszt
 from test_emberek_panel_fejlec_3566 import (
     _child,
@@ -39,10 +41,15 @@ def _scan_controller(engine):
     return ctl
 
 
-def _scan_state(ctl, qt_app, *, running: bool, unchecked: int = 0):
-    """Az arckeresés állapota — a háttérszál setterein át, a fő szálból."""
-    ctl._set_scan_percent(50 if running else -1)
-    ctl._set_unchecked_files(unchecked)
+def _scan_state(ctl, qt_app, lib, *pending: str):
+    """Futó keresés állapota: a MÉG nem átvizsgált fotók (a worker halmaza).
+    Üres felsorolás = nem fut keresés. A fő szálból, a worker setterein át."""
+    from picasapy.app.face_scan_controller import _path_key
+
+    with ctl._pending_lock:
+        ctl._pending_paths = {_path_key(lib / name) for name in pending}
+    ctl._set_scan_percent(50 if pending else -1)
+    ctl._set_unchecked_files(len(pending))
     _settle(qt_app)
 
 
@@ -58,12 +65,30 @@ class TestLoading:
         assert _header(window) == "Who is in these photos?"
 
         # a keresés a kijelölés UTÁN indul — a panel menet közben vált
-        _scan_state(ctl, qt_app, running=True, unchecked=7)
+        _scan_state(ctl, qt_app, lib, "c.jpg", "d.jpg")
         assert _header(window) == (
-            "Loading faces for file..., 7 files unchecked.")
+            "Loading faces for file..., 1 files unchecked.")
 
-        _scan_state(ctl, qt_app, running=False)
+        # a c.jpg elkészül, a d.jpg még nem: a kijelölésre már nincs betöltés
+        _scan_state(ctl, qt_app, lib, "d.jpg")
         assert _header(window) == "Who is in these photos?"
+
+        _scan_state(ctl, qt_app, lib)
+        assert _header(window) == "Who is in these photos?"
+
+    def test_scan_running_elsewhere_keeps_the_in_this_photo_header(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """Regressziőr: az automatikus keresés végigjárja a könyvtárat, de a
+        már átvizsgált kijelölt képnél a fejléc nem változik."""
+        window, controller, engine = qml_app
+        lib = _library(window, controller, qt_app, tmp_path)
+        ctl = _scan_controller(engine)
+        _scan_state(ctl, qt_app, lib, "c.jpg", "d.jpg")
+
+        _select(window, controller, qt_app, lib, "b.jpg")
+
+        assert _header(window) == "In this photo:"
 
     def test_several_clicked_photos_show_loading2_with_the_count(
         self, qml_app, qt_app, tmp_path
@@ -71,17 +96,18 @@ class TestLoading:
         window, controller, engine = qml_app
         lib = _library(window, controller, qt_app, tmp_path)
         ctl = _scan_controller(engine)
-        _scan_state(ctl, qt_app, running=True, unchecked=3)
+        _scan_state(ctl, qt_app, lib, "c.jpg", "d.jpg")
 
-        _select(window, controller, qt_app, lib, "c.jpg", "d.jpg")
+        _select(window, controller, qt_app, lib, "c.jpg", "a.jpg")
 
+        # a kijelölt fájlok száma 2, ebből egy ellenőrizetlen
         assert _header(window) == (
-            "Loading faces for 2 files..., 3 files unchecked.")
+            "Loading faces for 2 files..., 1 files unchecked.")
 
     def test_no_selection_shows_no_loading_text(self, qml_app, qt_app, tmp_path):
         window, controller, engine = qml_app
-        _library(window, controller, qt_app, tmp_path)
-        _scan_state(_scan_controller(engine), qt_app, running=True, unchecked=3)
+        lib = _library(window, controller, qt_app, tmp_path)
+        _scan_state(_scan_controller(engine), qt_app, lib, "c.jpg")
 
         _unselect(window, qt_app)
 
@@ -94,45 +120,53 @@ class TestLoading:
         window, controller, engine = qml_app
         lib = _library(window, controller, qt_app, tmp_path)
         _person_album(controller, qt_app)
-        _scan_state(_scan_controller(engine), qt_app, running=True, unchecked=9)
+        _scan_state(_scan_controller(engine), qt_app, lib, "a.jpg")
 
         _select(window, controller, qt_app, lib, "a.jpg")
 
         assert _header(window) == "Looking for other people..."
 
-    def test_unchecked_suffix_follows_a_named_header(
-        self, qml_app, qt_app, tmp_path
-    ):
-        """Nem futó keresésnél is lehet hátralévő szám? Nem: 0 → nincs utótag."""
+    def test_no_suffix_when_nothing_unchecked(self, qml_app, qt_app, tmp_path):
         window, controller, engine = qml_app
         lib = _library(window, controller, qt_app, tmp_path)
-        ctl = _scan_controller(engine)
         _select(window, controller, qt_app, lib, "a.jpg")
 
-        _scan_state(ctl, qt_app, running=False, unchecked=0)
+        _scan_state(_scan_controller(engine), qt_app, lib)
 
         assert _header(window) == "People in these photos:"
 
-    def test_a_photo_with_a_new_face_refreshes_the_list_during_the_scan(
+    def test_unnamed_album_never_shows_loading2(self, qml_app, qt_app, tmp_path):
+        """A Név nélküliek albumban a kijelölés arcoké — nincs fájl-betöltés."""
+        window, controller, engine = qml_app
+        album = fejlec_teszt.TestUnnamedAlbum()
+        lib = _library(window, controller, qt_app, tmp_path)
+        face_id = album._seed_unnamed_face(tmp_path, "c.jpg")
+        _scan_state(_scan_controller(engine), qt_app, lib, "c.jpg")
+        album._open(window, qt_app)
+        album._click_face_tile(window, qt_app, face_id)
+
+        assert _header(window) == "Who is in these photos?"
+
+    def test_a_new_unnamed_face_refreshes_the_list_during_the_scan(
         self, qml_app, qt_app, tmp_path
     ):
-        """A `facesStored` jelre a lista a keresés közben frissül."""
+        """Futó keresés + SQLite-ba írt névtelen arc → a `facesStored` jelre
+        (összevonva, ~500 ms) frissül a panel arc-listája."""
         window, controller, engine = qml_app
+        album = fejlec_teszt.TestUnnamedAlbum()
         lib = _library(window, controller, qt_app, tmp_path)
         ctl = _scan_controller(engine)
         _select(window, controller, qt_app, lib, "c.jpg")
-        assert _child(window, "peoplePanelHeader").property("text") == (
-            "Who is in these photos?")
+        _scan_state(ctl, qt_app, lib, "c.jpg", "d.jpg")
+        panel = _child(window, "peoplePanel")
+        assert len(panel.property("unnamedFacesHere")) == 0
 
-        (lib / ".picasa.ini").write_text(
-            (lib / ".picasa.ini").read_text(encoding="utf-8")
-            + "[c.jpg]\nfaces=rect64(1e00280045006e00),1111111111111111\n",
-            encoding="utf-8",
-        )
+        album._seed_unnamed_face(tmp_path, "c.jpg")
         ctl.facesStored.emit()
+        QTest.qWait(900)
         _settle(qt_app)
 
-        assert _header(window) == "In this photo:"
+        assert len(panel.property("unnamedFacesHere")) == 1
 
 
 class TestSortingData:

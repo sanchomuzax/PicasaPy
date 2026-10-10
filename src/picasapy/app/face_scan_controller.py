@@ -251,6 +251,10 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._scan_percent = -1
         #: #4586: a futó keresés hátralévő (még nem ellenőrzött) fájljai
         self._unchecked_files = 0
+        #: #4586: a futó keresés által ténylegesen detektálandó, még nem
+        #: kész fotók (`_path_key`); a szálak között `_pending_lock` védi
+        self._pending_paths: set[str] = set()
+        self._pending_lock = threading.Lock()
         #: #4586: a lenyomat-számítás haladása százalékban, −1 ha nem fut
         self._sorting_percent = -1
         #: #1496: a futó modell-letöltés haladása, −1 ha nem fut
@@ -437,6 +441,43 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if count != self._unchecked_files:
             self._unchecked_files = count
             self.uncheckedFilesChanged.emit()
+
+    @Slot("QVariantList", result=int)
+    def pendingAmong(self, paths) -> int:  # noqa: N802 — QML-slot-stílus
+        """#4586: a megadott fotóútvonalak közül hányat fog még detektálni a
+        futó keresés (`PeoplePanel` betöltés / ellenőrizetlen fájlok). Az
+        Emberek panel kapuja a KIJELÖLÉSRE vonatkozik, nem a könyvtárra:
+        egy már átvizsgált képnél nincs „betöltés". Nem futó keresésnél 0."""
+        with self._pending_lock:
+            if not self._pending_paths:
+                return 0
+            return sum(1 for path in paths if _path_key(str(path)) in self._pending_paths)
+
+    def _build_pending(self, conn, photos) -> set[str]:
+        """A worker átlépési feltételei szerint a ciklus ELŐTT felépített
+        halmaz: engedélyezett mappa, nem videó, nincs lefutott keresés, és
+        nincs azonosított arc az ini-ben."""
+        pending: set[str] = set()
+        for photo in photos:
+            photo_path = Path(photo.folder_path) / photo.name
+            if not self._face_detection_enabled(str(photo_path.parent)):
+                continue
+            if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
+                continue
+            if face_scan_done(
+                conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+            ):
+                continue
+            if any(face.is_identified for face in ini_faces_of(photo_path)):
+                continue
+            pending.add(_path_key(photo_path))
+        return pending
+
+    def _mark_checked(self, photo_path: Path) -> None:
+        with self._pending_lock:
+            self._pending_paths.discard(_path_key(photo_path))
+            remaining = len(self._pending_paths)
+        self._set_unchecked_files(remaining)
 
     @Property(int, notify=sortingPercentChanged)
     def sortingPercent(self) -> int:  # noqa: N802 — QML-property-stílus
@@ -1400,7 +1441,10 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             with open_index(self._db_path) as conn:
                 photos = all_photos(conn) if scoped_photos is None else scoped_photos
                 total = len(photos)
-                self._set_unchecked_files(total)
+                pending = self._build_pending(conn, photos)
+                with self._pending_lock:
+                    self._pending_paths = pending
+                self._set_unchecked_files(len(pending))
                 found = 0
                 scanned = 0
                 for done, photo in enumerate(photos, start=1):
@@ -1444,11 +1488,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     )
                     found += len(faces)
                     scanned += 1
-                    if faces:
-                        self.facesStored.emit()
                     # A következő kép detektálása több másodperc lehet; ne
                     # tartsa addig az SQLite írási zárát.
                     conn.commit()
+                    self._mark_checked(photo_path)
+                    if faces:
+                        # a commit UTÁN: a panel már a mentett arcot látja
+                        self.facesStored.emit()
                     self._report_scan(done, total)
                 conn.commit()
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
@@ -1463,6 +1509,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
             # hibára futott (#449)
             self._set_scan_percent(-1)
+            with self._pending_lock:
+                self._pending_paths = set()
             self._set_unchecked_files(0)
             self._scanWorkerStopped.emit()
         self.unnamedCountChanged.emit()
@@ -1471,7 +1519,6 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def _report_scan(self, done: int, total: int) -> None:
         """Haladás-jelzés + a bal hasáb sorának százaléka (#449)."""
         self._set_scan_percent(round(100 * done / total) if total else 100)
-        self._set_unchecked_files(total - done)
         self.scanProgress.emit(done, total)
 
     def _run_embedding(

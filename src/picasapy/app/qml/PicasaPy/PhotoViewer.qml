@@ -4882,10 +4882,8 @@ Rectangle {
                     currentPerson: viewer.controllerReady
                         ? controller.currentPersonName : ""
                     //: #4586: a háttér-arckeresés állapota (spec 9/b)
-                    loading: faceScanController
-                        ? faceScanController.scanRunning : false
-                    uncheckedCount: faceScanController
-                        ? faceScanController.uncheckedFiles : 0
+                    loading: uncheckedCount > 0
+                    uncheckedCount: pendingCount()
                     sortingPercent: faceScanController
                         ? faceScanController.sortingPercent : -1
                     peopleHere: (viewer.photosModel && viewer.controllerReady)
@@ -4898,9 +4896,25 @@ Rectangle {
                         (viewer.photosModel && viewer.controllerReady)
                         ? (viewer.appWindow
                            ? viewer.appWindow.peopleFaceRevision : 0,
+                           viewer.appWindow
+                           ? viewer.appWindow.unnamedFaceRevision : 0,
                            viewer.photosModel.revision,
                            controller.unnamedFacesOfRows(viewer.drawerRows))
                         : []
+                    function pendingCount() {
+                        if (!faceScanController || !viewer.photosModel)
+                            return 0
+                        // a függés az `uncheckedFiles`-en: haladásra újraszámol
+                        if (faceScanController.uncheckedFiles <= 0)
+                            return 0
+                        var paths = []
+                        for (var i = 0; i < viewer.drawerRows.length; ++i) {
+                            var path = viewer.photosModel.filePathAt(
+                                Number(viewer.drawerRows[i]))
+                            if (path.length > 0) paths.push(path)
+                        }
+                        return faceScanController.pendingAmong(paths)
+                    }
                     //: #3566: a szerkesztőben mindig az egyképes ág fut
                     //: (az eredetiben az `editpanel/preview` látszik)
                     editorView: true
