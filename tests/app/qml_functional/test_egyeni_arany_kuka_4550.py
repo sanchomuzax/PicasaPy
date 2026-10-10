@@ -158,8 +158,9 @@ class TestKuka:
         _klikk(window, qt_app, kuka)
         confirm = panel.findChild(QObject, "deleteCustomAspectConfirmDialog")
         assert confirm.property("visible") is True
-        confirm.accept()
-        qt_app.processEvents()
+        igen = window.findChild(QObject, "deleteCustomAspectConfirmYesButton")
+        assert igen is not None and igen.isVisible()
+        _klikk(window, qt_app, igen)
         assert controller.customAspectRatios == []
 
 

@@ -2100,7 +2100,8 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION_PROMPT</extracomment>
         <name>AddCustomAspectRatioDialog</name>
         <message>
             <source>Add Custom Aspect Ratio</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/window1.title</extracomment>
             <translation>Egyéni méretarány hozzáadása</translation>
         </message>
         <message>
@@ -2123,7 +2124,8 @@ picasapy-origin-key: customaspectratio/label11.title</extracomment>
         </message>
         <message>
             <source>Name:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: customaspectratio/labelgroup8.title</extracomment>
             <translation>Név:</translation>
         </message>
     </context>

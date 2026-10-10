@@ -125,7 +125,7 @@ ColumnLayout {
             Layout.preferredHeight: 14
             sourceSize.width: 14
             sourceSize.height: 14
-            source: "icons/collage-trash.svg"
+            source: "icons/crop-delete-custom.svg"
             // beépített aránynál tiltott/szürke (csak egyéni törölhető)
             readonly property bool torolheto:
                 panel.selectedPreset.isCustom === true
@@ -157,6 +157,24 @@ ColumnLayout {
             if (panel.aspectFullList[i].isCustom === true) return i
         return -1
     }
+    // #4550: „Egyéni méretarányok" szakaszcím — nem választható sor
+    component AspectHeading: Rectangle {
+        property bool shown: false
+        visible: shown
+        width: aspectColumn.width
+        height: visible ? 20 : 0
+        color: "transparent"
+        Text {
+            objectName: "cropAspectCustomHeading"
+            anchors.left: parent.left; anchors.leftMargin: 6
+            anchors.verticalCenter: parent.verticalCenter
+            //: `AspectRatioList:CustomAspectRatios` (#4550)
+            text: qsTr("Custom Aspect Ratios")
+            font.pixelSize: Theme.fontSize
+            font.bold: true
+            color: Theme.ink
+        }
+    }
     Rectangle {
         id: aspectList
         objectName: "cropAspectList"
@@ -173,94 +191,66 @@ ColumnLayout {
             Repeater {
                 model: panel.aspectFullList
                 Column {
-                  id: aspectCell
-                  required property var modelData
-                  required property int index
-                  width: aspectColumn.width
-                  // #4550: „Egyéni méretarányok" szakaszcím az első egyéni
-                  // sor fölött (`AspectRatioList:CustomAspectRatios`)
-                  Rectangle {
-                      visible: aspectCell.modelData.isCustom === true
-                            && aspectCell.index === cropRoot.firstCustomIndex
-                      width: aspectColumn.width
-                      height: visible ? 20 : 0
-                      color: "transparent"
-                      Text {
-                          objectName: "cropAspectCustomHeading"
-                          anchors.left: parent.left; anchors.leftMargin: 6
-                          anchors.verticalCenter: parent.verticalCenter
-                          //: `AspectRatioList:CustomAspectRatios` — szakaszcím, nem
-                          //: választható sor (#4550)
-                          text: qsTr("Custom Aspect Ratios")
-                          font.pixelSize: Theme.fontSize
-                          font.bold: true
-                          color: Theme.ink
-                      }
-                  }
-                Rectangle {
-                    id: aspectRow
-                    property var modelData: aspectCell.modelData
-                    property int index: aspectCell.index
-                    width: aspectColumn.width; height: 20
-                    color: aspectRowHover.hovered ? Theme.panelSelection
-                           : "transparent"
-                    Text {
-                        id: aspectRowLabel
-                        anchors.left: parent.left; anchors.leftMargin: 6
-                        anchors.verticalCenter: parent.verticalCenter
-                        elide: Text.ElideRight
-                        text: aspectRow.modelData.label
-                        font.pixelSize: Theme.fontSize
-                        // a kijelölő-kék (Theme.panelSelection) hátteren
-                        // szándékosan téma-független fehér a token
-                        // (Theme.panelSelectionText) — nem új hardkód
-                        color: aspectRowHover.hovered ? Theme.panelSelectionText : Theme.ink
+                    id: aspectCell
+                    required property var modelData
+                    required property int index
+                    width: aspectColumn.width
+                    // #4550: „Egyéni méretarányok" szakaszcím az első egyéni
+                    // sor fölött (`AspectRatioList:CustomAspectRatios`)
+                    AspectHeading {
+                        shown: aspectCell.modelData.isCustom === true
+                               && aspectCell.index === cropRoot.firstCustomIndex
                     }
-                    // #448: MAGYARÁZÓ ALCÍM — a Picasa legördülőjében nem
-                    // csak a szám állt („Kisméretű nyomat", „CD-borító"),
-                    // és ez segíti a felismerést. Halványan, a sor jobb
-                    // oldalán; ha nincs leírás, nem foglal helyet.
-                    Text {
-                        objectName: "cropAspectNote" + aspectRow.index
-                        visible: text.length > 0
-                        anchors.left: aspectRowLabel.right
-                        anchors.leftMargin: 8
-                        anchors.right: parent.right
-                        anchors.rightMargin: 6
-                        anchors.verticalCenter: parent.verticalCenter
-                        horizontalAlignment: Text.AlignRight
-                        elide: Text.ElideRight
-                        text: aspectRow.modelData.note || ""
-                        font.pixelSize: Theme.fontSize - 1
-                        color: aspectRowHover.hovered
-                               ? Theme.panelSelectionText : Theme.textGray
-                    }
-                    HoverHandler { id: aspectRowHover }
-                    TapHandler {
-                        onTapped: {
-                            panel.selectAspect(aspectRow.index)
-                            aspectList.visible = false
+                    Rectangle {
+                        id: aspectRow
+                        property var modelData: aspectCell.modelData
+                        property int index: aspectCell.index
+                        width: aspectColumn.width; height: 20
+                        color: aspectRowHover.hovered ? Theme.panelSelection
+                               : "transparent"
+                        Text {
+                            id: aspectRowLabel
+                            anchors.left: parent.left; anchors.leftMargin: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            elide: Text.ElideRight
+                            text: aspectRow.modelData.label
+                            font.pixelSize: Theme.fontSize
+                            // a kijelölő-kék (Theme.panelSelection) hátteren
+                            // szándékosan téma-független fehér a token
+                            // (Theme.panelSelectionText) — nem új hardkód
+                            color: aspectRowHover.hovered ? Theme.panelSelectionText : Theme.ink
+                        }
+                        // #448: MAGYARÁZÓ ALCÍM — a Picasa legördülőjében nem
+                        // csak a szám állt („Kisméretű nyomat", „CD-borító"),
+                        // és ez segíti a felismerést. Halványan, a sor jobb
+                        // oldalán; ha nincs leírás, nem foglal helyet.
+                        Text {
+                            objectName: "cropAspectNote" + aspectRow.index
+                            visible: text.length > 0
+                            anchors.left: aspectRowLabel.right
+                            anchors.leftMargin: 8
+                            anchors.right: parent.right
+                            anchors.rightMargin: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignRight
+                            elide: Text.ElideRight
+                            text: aspectRow.modelData.note || ""
+                            font.pixelSize: Theme.fontSize - 1
+                            color: aspectRowHover.hovered
+                                   ? Theme.panelSelectionText : Theme.textGray
+                        }
+                        HoverHandler { id: aspectRowHover }
+                        TapHandler {
+                            onTapped: {
+                                panel.selectAspect(aspectRow.index)
+                                aspectList.visible = false
+                            }
                         }
                     }
                 }
-                }
             }
-            Rectangle {
-                visible: cropRoot.firstCustomIndex < 0
-                width: aspectColumn.width
-                height: visible ? 20 : 0
-                color: "transparent"
-                Text {
-                    objectName: "cropAspectCustomHeading"
-                    anchors.left: parent.left; anchors.leftMargin: 6
-                    anchors.verticalCenter: parent.verticalCenter
-                    //: `AspectRatioList:CustomAspectRatios` — szakaszcím, nem
-                    //: választható sor (#4550)
-                    text: qsTr("Custom Aspect Ratios")
-                    font.pixelSize: Theme.fontSize
-                    font.bold: true
-                    color: Theme.ink
-                }
+            AspectHeading {
+                shown: cropRoot.firstCustomIndex < 0
             }
             // #448: "AddCustomAspectRatio" — a beépítettek alatt, saját
             // sorban (a jegy szerint a dialógus szélesség × magasság +
