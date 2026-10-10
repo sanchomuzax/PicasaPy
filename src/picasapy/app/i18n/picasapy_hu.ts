@@ -316,6 +316,41 @@ picasapy-origin-key: stringres:UploadText::Downloading;stringres:il_DownloadButt
         </message>
     </context>
     <context>
+        <name>PlacesMarker</name>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="44" />
+            <source>1 photo here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>1 fotó itt:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="45" />
+            <source>%d photos here:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%d fotó itt:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="55" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="56" />
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="57" />
+            <source>Search for these photos in Picasa</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ezen fotók keresése a Picasában</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="70" />
+            <source>Erase location info</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Helyadatok törlése</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PlacesMarker.qml" line="73" />
+            <source>Erase map coordinates(i.e., GPS information) from these photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A fényképek térképi koordinátáinak (GPS-adatainak) törlése</translation>
+        </message>
+    </context>
+    <context>
         <name>PrintController</name>
         <message>
             <source>No printer selected.</source>
@@ -9185,6 +9220,31 @@ Húzással a megfelelő helyre helyezheti a négyszöget, oldalainak mozgatásá
             <translation>Itt jelennek meg azok az emberek, akik a kijelölt fotókon szerepelnek.</translation>
         </message>
         <message>
+            <source>As Picasa scans your photos, the faces it finds are automatically grouped for easy naming.
+
+Things to know:
+
+To identify a person, click 'Add a name', then type in the person's name and press Enter. A new People album will be created each time you name someone for the first time.
+
+(TIP: Sign in with your Google Account to gain access to all of your contacts while naming.)
+
+To ignore a person, click the 'X' button on the face thumbnail.
+
+Suggestions: After you name someone, Picasa may suggest more matching faces for that person. Click on a person's album to view and confirm (or reject) any suggestions.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A Picasa a fotókeresés közben az egyszerű elnevezés érdekében automatikusan csoportosítja az arcokat.
+
+Fontos tudnivalók:
+
+A személyek nevének megadásához kattintson a Név hozzáadása elemre, írja be a személy nevét, majd nyomja le az Enter billentyűt. Minden alkalommal, amikor először nevez el valakit, a rendszer egy, az adott személyhez tartozó albumot hoz létre.
+
+(TIPP: Ha az elnevezés közben az összes névjegyét el szeretné érni, jelentkezzen be Google-fiókjával.)
+
+Ha figyelmen kívül szeretne hagyni valakit, kattintson az arc indexképén látható X gombra.
+
+Javaslatok: Az elnevezést követően előfordulhat, hogy a Picasa további képjavaslatokat tesz. Ha meg szeretné tekinteni, illetve el szeretné fogadni (vagy elutasítaná) a javaslatokat, nyissa meg az adott személyhez tartozó albumot.</translation>
+        </message>
+        <message>
             <source>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Még nem találtunk embereket. Ahogy az arcok előkerülnek és csoportba rendeződnek, megjelennek a Névtelenek albumban.</translation>
@@ -9297,6 +9357,68 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveSingleYesButtonUnknown;strin
             <source>Copying names, keywords and places from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nevek, kulcsszavak és helyek átvétele a Picasából…</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 folder to import manually, or leave it empty to use detected installations.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Válasszon ki kézzel egy Picasa2-mappát, vagy hagyja üresen a mezőt az automatikusan felismert telepítések használatához.</translation>
+        </message>
+        <message>
+            <source>Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Picasa2-adatmappa</translation>
+        </message>
+        <message>
+            <source>Choose or enter a Picasa2 folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Válasszon ki vagy írjon be egy Picasa2-mappát</translation>
+        </message>
+        <message>
+            <source>Choose a Picasa2 data folder first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Először válassza ki a Picasa2-adatmappát.</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Tallózás…</translation>
+        </message>
+        <message>
+            <source>Windows path prefix</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Windows-útvonal előtagja</translation>
+        </message>
+        <message>
+            <source>For example, C:/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Például: C:/Pictures</translation>
+        </message>
+        <message>
+            <source>Matching local folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A megfelelő helyi mappa</translation>
+        </message>
+        <message>
+            <source>For example, /home/user/Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Például: /home/felhasználó/Képek</translation>
+        </message>
+        <message>
+            <source>Enter both paths for the drive mapping.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Adja meg a meghajtó-leképezés mindkét útvonalát.</translation>
+        </message>
+        <message>
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Importálás</translation>
+        </message>
+        <message>
+            <source>Choose the Picasa2 data folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Válassza ki a Picasa2-adatmappát</translation>
         </message>
         <message>
             <source>Done.</source>
@@ -11156,10 +11278,24 @@ picasapy-origin-key: tagpanel_text:Label(tagpanel/add_tag_label)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TagsPanel.qml" />
-            <source>Quick tags</source>
+            <source>Quick Tags:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tagpanel_text:Label(tagpanel/quick_label)</extracomment>
-            <translation>Gyorscímkék</translation>
+            <translation>Gyorscímkék:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Add tag to the currently selected items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tagpanel_text:Tooltip(tagpanel/addtag)</extracomment>
+            <translation>Címke hozzáadása az aktuálisan kijelölt elemekhez</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TagsPanel.qml" />
+            <source>Configure Quick Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickTagConfigDlg::title;tagpanel_text:Tooltip(tagpanel/quick_config)</extracomment>
+            <translation>Gyorscímkék konfigurálása</translation>
         </message>
     </context>
     <context>
