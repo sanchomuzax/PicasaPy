@@ -44,6 +44,12 @@ def _varj(qt_app, condition, message: str, seconds: float = 5.0) -> None:
 def _kattint(window, item, qt_app) -> None:
     assert item.isEnabled() and item.width() > 0 and item.height() > 0
     center = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+    # A kattintás csak az ablakon BELÜL ér célba — kisebb CI-képernyőn ez
+    # nem magától értetődő, ezért kimondjuk.
+    assert 0 <= center.x() < window.width() and 0 <= center.y() < window.height(), (
+        f"a kattintás helye ({center.x():.0f},{center.y():.0f}) kívül esik "
+        f"az ablakon ({window.width()}x{window.height()})"
+    )
     QTest.mouseClick(
         window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         QPoint(round(center.x()), round(center.y())),
@@ -97,6 +103,10 @@ def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
           "az Import gomb nem hozta létre a párbeszédet")
     dialog = _elem(main_window, "importSourceDialog")
     _varj(qt_app, lambda: bool(dialog.property("visible")), "az importablak nem nyílt meg")
+    # rögzített, a teljes tartalomnak elég ablakméret — a CI képernyője kisebb
+    dialog.setProperty("width", 640)
+    dialog.setProperty("height", 860)
+    qt_app.processEvents()
 
     valaszto = _elem(dialog, "importSourceFilesDialog")
     _kattint(dialog, _elem(dialog, "importSourceChooseSourceButton"), qt_app)
@@ -133,9 +143,12 @@ def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
 
     dialog.setProperty("destFolder", str(cel))
     kesz = []
+    indult = []
     controller.importFinished.connect(lambda ok, hiba: kesz.append((ok, hiba)))
+    controller.importStarted.connect(lambda *a: indult.append(a))
     _kattint(dialog, _elem(dialog, "importSourceStartButton"), qt_app)
-    _varj(qt_app, lambda: bool(kesz), "a fájlok importja nem fejeződött be")
+    _varj(qt_app, lambda: bool(indult), "az Importálás gomb kattintása nem indította el az importot")
+    _varj(qt_app, lambda: bool(kesz), "a fájlok importja nem fejeződött be", seconds=30.0)
 
     assert kesz[-1] == (2, 0)
     assert (cel / "2024-03-05" / "a.jpg").is_file()
