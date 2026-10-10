@@ -72,22 +72,25 @@ class TestAlbumContextMenu:
         ]
         assert found == self.DOCUMENTED
 
-    def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
-        """Az album törlése és a webes műveletek mögött nincs réteg — szürkén
-        LÁTSZANAK (spec 5.1.).
+    def test_unbacked_commands_are_shown_but_album_torles_aktiv(self, qml_engine):
+        """Az album törlése (#4598) és a webes műveletek rétege eltérő.
 
-        ⭐ #3173: az „Albumleírás szerkesztése…" KIKERÜLT ebből a listából —
+        A törlés aktív, a megszűnt webes műveletek továbbra is szürkék.
+
+        ⭐ #3173: az „Albumleírás szerkesztése…” KIKERÜLT ebből a listából —
         valódi tétel lett (az album tulajdonságai az `album.fen`
         párbeszédén szerkeszthetők). A viselkedését a
         `test_album_tulajdonsagok_*_3173.py` méri.
         """
         menu = _load(qml_engine, "AlbumContextMenu")
         for name in (
-            "albumMenuDelete",
             "albumMenuOnlineActions",
             "albumMenuUploadToGooglePhotos",
         ):
             assert menu.findChild(QObject, name).property("enabled") is False
+        assert menu.findChild(
+            QObject, "albumMenuDelete"
+        ).property("enabled") is True
 
         # #4535: a Névcímkék hozzáadása az album tagképeit vizsgálja.
         assert menu.findChild(QObject, "albumMenuAddNameTags").property("enabled")
