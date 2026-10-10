@@ -13,11 +13,13 @@ from pathlib import Path
 
 from PySide6.QtCore import (
     QMetaObject,
+    QPointF,
     QObject,
     QStandardPaths,
     Qt,
 )
 from PySide6.QtQuick import QQuickWindow
+from PySide6.QtTest import QTest
 from support.halasztott_parbeszed import nyisd_meg
 
 from support.jpeg_factory import make_jpeg
@@ -31,6 +33,17 @@ def _child(window, name):
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj
+
+
+def _click_center(dialog, item, qt_app):
+    """Valódi egérkattintás az elem megjelenített közepén (letiltott
+    elemen a kattintás hatástalan, mint a felhasználónál)."""
+    centre = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+    QTest.mouseClick(
+        dialog, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        centre.toPoint(),
+    )
+    qt_app.processEvents()
 
 
 def _dialog_window(window):
@@ -341,6 +354,75 @@ class TestRunImport:
         qt_app.processEvents()
 
         assert (dest / "Nyaralás" / "a.jpg").exists()
+
+    def test_manual_mode_blank_name_disables_import_and_shows_the_tip(
+        self, qml_app, qt_app, tmp_path
+    ):
+        # #4595: cím nélkül az Import gomb letiltva, a tipp látszik, és a
+        # VALÓDI egérkattintás a gomb közepén nem indít importot.
+        window, _controller, _lib, engine = qml_app
+        dialog = _dialog_window(window)
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "cel-konyvtar"
+        dest.mkdir()
+
+        _scan(dialog, source, engine, qt_app)
+        dialog.setProperty("destFolder", str(dest))
+        qt_app.processEvents()
+        _click_center(dialog, _child(window, "importSourceNamingManualRadio"), qt_app)
+
+        start_button = _child(window, "importSourceStartButton")
+        tip = _child(window, "importSourceManualTipText")
+        assert dialog.property("namingMode") == "manual"
+        assert start_button.property("enabled") is False
+        assert tip.property("visible") is True
+        assert tip.property("text") == (
+            "Enter new folder title or choose existing folder to continue"
+        )
+
+        started = []
+        _import_source_controller(engine).importStarted.connect(started.append)
+        _click_center(dialog, start_button, qt_app)
+
+        assert started == []
+        assert list(dest.iterdir()) == []
+
+    def test_typing_a_folder_name_with_the_keyboard_then_clicking_import(
+        self, qml_app, qt_app, tmp_path
+    ):
+        # #4595: valódi kattintás a módválasztón és a mezőn, valódi
+        # billentyűleütések, Enter/Tab NÉLKÜL — majd kattintás az Importra.
+        window, _controller, _lib, engine = qml_app
+        dialog = _dialog_window(window)
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "cel-konyvtar"
+        dest.mkdir()
+
+        _scan(dialog, source, engine, qt_app)
+        dialog.setProperty("destFolder", str(dest))
+        qt_app.processEvents()
+        _click_center(dialog, _child(window, "importSourceNamingManualRadio"), qt_app)
+        field = _child(window, "importSourceManualNameField")
+        _click_center(dialog, field, qt_app)
+        for char in "Nyaralas":
+            QTest.keyClick(dialog, char)
+        qt_app.processEvents()
+
+        assert field.property("text") == "Nyaralas"
+        start_button = _child(window, "importSourceStartButton")
+        assert start_button.property("enabled") is True
+        assert _child(window, "importSourceManualTipText").property("visible") is False
+
+        loop = _quit_on(_import_source_controller(engine).importFinished)
+        _click_center(dialog, start_button, qt_app)
+        loop.exec()
+        qt_app.processEvents()
+
+        assert (dest / "Nyaralas" / "a.jpg").exists()
 
     def test_today_mode_uses_todays_date_folder(self, qml_app, qt_app, tmp_path):
         window, _controller, _lib, engine = qml_app

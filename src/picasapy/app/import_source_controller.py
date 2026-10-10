@@ -814,6 +814,10 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         after_copying = (
             after_copying if after_copying in _VALID_AFTER_COPYING else AFTER_COPY_LEAVE
         )
+        # #4595: kézi elnevezésnél cím nélkül nincs import — se másolás a
+        # célgyökérbe, se háttérszál (a QML-tipp kéri a címet).
+        if naming_mode == NAMING_MANUAL and not manual_name.strip():
+            return
         all_candidates = self._candidates
         included = tuple(
             candidate
