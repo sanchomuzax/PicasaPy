@@ -48,6 +48,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectBoost"
             label: qsTr("Boost")
+            tooltip: qsTr("Bring out colors and increase contrast")
             onButtonClicked: if (!panel.tryOpenParamPanel("boost", label)) panel.effectRequested("boost")
             thumbSource: panel.effectThumbSource("boost")
             badge: panel.hasBadge("boost")
@@ -55,6 +56,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectSoften"
             label: qsTr("Soften")
+            tooltip: qsTr("Makes your photo soft and glowy")
             onButtonClicked: if (!panel.tryOpenParamPanel("soften", label)) panel.effectRequested("soften")
             thumbSource: panel.effectThumbSource("soften")
             badge: panel.hasBadge("soften")
@@ -72,6 +74,9 @@ ColumnLayout {
             objectName: "effectVignette"
             label: panel.shiftMasodlagos
                    ? qsTr("Matte") : qsTr("Vignette")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Add a light glow to the edges of your photo")
+                     : qsTr("Darken the edges of your photo")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (matte) —
             //: az eredeti csempe-táblája (vignette -> matte)
             readonly property string szuro: panel.shiftMasodlagos
@@ -97,6 +102,9 @@ ColumnLayout {
             //: Megfordítás).
             label: panel.shiftMasodlagos
                    ? qsTr("Focal Pixelate") : qsTr("Pixelate")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Pixelate everything inside or outside a central area")
+                     : qsTr("Make your photo look blocky and low-res")
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "picnikfocalpixelate" : "pixelate"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
@@ -113,6 +121,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectFocalZoom"
             label: qsTr("Focal Zoom")
+            tooltip: qsTr("Zoom everything outside a central area")
             onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom", label)) panel.effectRequested("focalzoom")
             thumbSource: panel.effectThumbSource("focalzoom")
             badge: panel.hasBadge("focalzoom")
@@ -120,6 +129,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectPencilSketch"
             label: qsTr("Pencil Sketch")
+            tooltip: qsTr("Make your photo look like it was drawn with a pencil")
             onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch", label)) panel.effectRequested("pencilsketch")
             thumbSource: panel.effectThumbSource("pencilsketch")
             badge: panel.hasBadge("pencilsketch")
@@ -127,6 +137,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectNeon"
             label: qsTr("Neon")
+            tooltip: qsTr("Make your photo look like neon")
             onButtonClicked: if (!panel.tryOpenParamPanel("neon", label)) panel.effectRequested("neon")
             thumbSource: panel.effectThumbSource("neon")
             badge: panel.hasBadge("neon")
@@ -134,6 +145,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectComicize"
             label: qsTr("Comic Book")
+            tooltip: qsTr("Comic book style half-toning")
             onButtonClicked: if (!panel.tryOpenParamPanel("comicize", label)) panel.effectRequested("comicize")
             thumbSource: panel.effectThumbSource("comicize")
             badge: panel.hasBadge("comicize")
@@ -142,6 +154,9 @@ ColumnLayout {
             objectName: "effectBorder"
             label: panel.shiftMasodlagos
                    ? qsTr("Rounded Edges") : qsTr("Border")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Give your photo rounded corners")
+                     : qsTr("Add a frame to your photo")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (roundededges) —
             //: az eredeti csempe-táblája (border -> roundededges)
             readonly property string szuro: panel.shiftMasodlagos
@@ -160,6 +175,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectDropShadow"
             label: qsTr("Drop Shadow")
+            tooltip: qsTr("Make your photo appear to be floating slightly above the background")
             onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow", label)) panel.effectRequested("dropshadow")
             thumbSource: panel.effectThumbSource("dropshadow")
             badge: panel.hasBadge("dropshadow")
@@ -167,6 +183,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectMuseumMatte"
             label: qsTr("Museum Matte")
+            tooltip: qsTr("Add a shadowed matte frame to your photo")
             onButtonClicked: if (!panel.tryOpenParamPanel("museummatte", label)) panel.effectRequested("museummatte")
             thumbSource: panel.effectThumbSource("museummatte")
             badge: panel.hasBadge("museummatte")
@@ -174,6 +191,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectPolaroid"
             label: qsTr("Polaroid")
+            tooltip: qsTr("Give your photo that instant-film look")
             onButtonClicked: if (!panel.tryOpenParamPanel("polaroid", label)) panel.effectRequested("polaroid")
             thumbSource: panel.effectThumbSource("polaroid")
             badge: panel.hasBadge("polaroid")
