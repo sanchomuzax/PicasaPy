@@ -97,12 +97,7 @@ def test_megszakitas_leallitja_az_ffmpeg_et_es_torol_minden_felkesz_fajlt(
             raise subprocess.TimeoutExpired("fake-ffmpeg", timeout)
 
     monkeypatch.setattr(slideshow, "_ffmpeg_exe", lambda: "fake-ffmpeg")
-    monkeypatch.setattr(clip_export.subprocess, "Popen", BeragadtFolyamat)
-    monkeypatch.setattr(
-        clip_export.subprocess,
-        "run",
-        lambda *_args, **_kwargs: pytest.fail("export_clip még subprocess.run-t hív"),
-    )
+    monkeypatch.setattr(clip_export, "_popen", BeragadtFolyamat)
 
     with pytest.raises(CancelledError):
         clip_export.export_clip(

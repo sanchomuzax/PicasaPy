@@ -10,6 +10,9 @@ import tempfile
 import threading
 from concurrent.futures import CancelledError
 
+# Modulszintű fogantyú: a tesztek ezt cserélik, nem a globális subprocess-t (#1375).
+_popen = subprocess.Popen
+
 _INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
@@ -125,7 +128,7 @@ def export_clip(
             ]
         )
 
-        process = subprocess.Popen(
+        process = _popen(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
