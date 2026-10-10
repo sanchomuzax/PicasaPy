@@ -2148,7 +2148,7 @@ Rectangle {
                     }
                     //: `movieeditpanel/export_movie` → `LinuxNomovie`.
                     onExportClipRequested: {
-                        if (Qt.platform.os === "linux")
+                        if (controller && !controller.movieClipExportSupported)
                             kepkockaJelzes.mutasd(
                                 qsTr("This feature is not supported for Linux"))
                         else if (controller && controller.exportMovieClip !== undefined)
@@ -3347,7 +3347,9 @@ Rectangle {
                             kepkockaJelzes.mutasd(qsTr("Failed to capture frame"))
                         }
                         function onMovieClipExported(path) {
-                            kepkockaJelzes.mutasd(path)
+                            var fajlnev = String(path).replace(/^.*[\\/]/, "")
+                            kepkockaJelzes.mutasd(
+                                qsTr("Saved %1 to Exported Videos").arg(fajlnev))
                         }
                         function onMovieClipExportFailed() {
                             kepkockaJelzes.mutasd(qsTr("Failed to export clip"))

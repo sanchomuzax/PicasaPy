@@ -23,7 +23,7 @@ nyitnánk néma harmadikat a felhasználó gépén.
 |---|---|---|
 | Collages / **Kollázsok** | `CCollageManager::CollagesFolder` (`0x00ca778c`) | kollázs mentésekor |
 | Movies / **Mozgófilmek**, **Filmek** | `CMakeMoviePanel::SlideshowFolder` (`0x00c9ce3c`) | filmkészítéskor |
-| Exported Videos / **Exportált videoklipek** | `CThumbUI::MovieClipFolder` | klip exportálásakor |
+| Exported Videos / **Exportált videoklipek** | `CThumbUI::MovieClipFolder` (`0x00c8a38c`) | klip exportálásakor |
 | Screen Captures / **Képernyőfelvételek** | `Scrapture::capturepath` | képernyőfelvételkor |
 | Captured Videos / **Rögzített videoklipek** | `CCaptureFrame::CaptureFolder` | videórögzítéskor |
 | Exported Pictures / **Exportált képek** | `IDS_EXPORTED_CATEGORY` | exportáláskor |

@@ -5,21 +5,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import tempfile
+import threading
+from concurrent.futures import CancelledError
 
 _INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-
-
-def _ffmpeg_executable() -> str | None:
-    """A csomagolt FFmpeg-et részesíti előnyben, a PATH a tartalék."""
-    try:
-        import imageio_ffmpeg
-
-        return imageio_ffmpeg.get_ffmpeg_exe()
-    except (ImportError, RuntimeError):
-        return shutil.which("ffmpeg")
 
 
 def _safe_stem(source: Path) -> str:
@@ -30,6 +21,7 @@ def _safe_stem(source: Path) -> str:
 def _reserve_output(folder: Path, stem: str) -> Path:
     """Ütközésmentesen lefoglal egy fájlnevet, felülírás nélkül."""
     for number in range(10_000):
+        # Saját döntés: az eredeti Picasa sorszámozását erre az esetre nem mértük.
         suffix = "" if number == 0 else str(number)
         target = folder / f"{stem}{suffix}.mp4"
         try:
@@ -41,12 +33,32 @@ def _reserve_output(folder: Path, stem: str) -> Path:
     raise ValueError(f"Nem található szabad klipnév ebben a mappában: {folder}")
 
 
+def _stop_process(process: subprocess.Popen) -> None:
+    """Leállítja az FFmpeg-et, és a kimeneti pipe-okat is kiüríti."""
+    if process.poll() is not None:
+        process.communicate()
+        return
+    try:
+        process.terminate()
+    except ProcessLookupError:
+        pass
+    try:
+        process.communicate(timeout=0.5)
+    except subprocess.TimeoutExpired:
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
+        process.communicate()
+
+
 def export_clip(
     source: str | Path,
     destination_dir: str | Path,
     *,
     start_ms: int = -1,
     end_ms: int = -1,
+    cancel_event: threading.Event | None = None,
 ) -> Path:
     """A megadott vágáspontok közötti szakaszt MP4-be kódolja.
 
@@ -67,7 +79,12 @@ def export_clip(
     if end_at is not None and end_at <= start_at:
         raise ValueError("A klip befejezőpontja legyen a kezdőpont után.")
 
-    ffmpeg = _ffmpeg_executable()
+    if cancel_event is not None and cancel_event.is_set():
+        raise CancelledError()
+
+    from .slideshow import _ffmpeg_exe
+
+    ffmpeg = _ffmpeg_exe()
     if ffmpeg is None:
         raise RuntimeError("A klip exportjához nem található FFmpeg.")
 
@@ -108,15 +125,30 @@ def export_clip(
             ]
         )
 
-        result = subprocess.run(
-            command, capture_output=True, text=True, errors="replace", check=False
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            errors="replace",
         )
+        while True:
+            if cancel_event is not None and cancel_event.is_set():
+                _stop_process(process)
+                raise CancelledError()
+            try:
+                _stdout, stderr = process.communicate(timeout=0.1)
+                break
+            except subprocess.TimeoutExpired:
+                continue
+        if cancel_event is not None and cancel_event.is_set():
+            raise CancelledError()
         if (
-            result.returncode != 0
+            process.returncode != 0
             or not temporary.is_file()
             or temporary.stat().st_size == 0
         ):
-            details = result.stderr.strip() or "Az FFmpeg nem készített kimeneti fájlt."
+            details = stderr.strip() or "Az FFmpeg nem készített kimeneti fájlt."
             raise RuntimeError(f"A klip exportja nem sikerült: {details}")
         temporary.replace(target)
         return target
