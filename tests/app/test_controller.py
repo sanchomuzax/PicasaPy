@@ -192,6 +192,42 @@ class TestController:
 
 
 class TestToggleStar:
+    def test_starring_with_legacy_ini_keeps_other_photo_metadata_visible(
+        self, controller, library
+    ):
+        from picasapy.index import open_index, sync_tree
+
+        folder = library / "nyaralas"
+        legacy_ini = folder / "Picasa.ini"
+        legacy_bytes = (
+            b"[IMG_0001.jpg]\r\nstar=yes\r\ncaption=elso regi felirat\r\n\r\n"
+            b"[IMG_0002.jpg]\r\ncaption=masodik regi felirat\r\n"
+        )
+        # A fixture első JPEG-je saját IPTC-feliratot tartalmaz, ami
+        # elsőbbséget élvez az ini értékével szemben; itt kizárólag az ini
+        # megőrzését mérjük.
+        make_jpeg(folder / "IMG_0001.jpg")
+        legacy_ini.write_bytes(legacy_bytes)
+        (folder / ".picasa.ini").unlink()
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller._reload()
+        controller.selectFolder(str(folder))
+
+        _do_photo_op(controller, lambda: controller.toggleStar(1))
+
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller._reload()
+        controller.selectFolder(str(folder))
+        photos = {photo.name: photo for photo in controller.photos.photos}
+
+        assert photos["IMG_0001.jpg"].star is True
+        assert photos["IMG_0001.jpg"].caption == "elso regi felirat"
+        assert photos["IMG_0002.jpg"].star is True
+        assert photos["IMG_0002.jpg"].caption == "masodik regi felirat"
+        assert legacy_ini.read_bytes() == legacy_bytes
+
     def test_star_written_to_ini_and_model(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         _do_photo_op(controller, lambda: controller.toggleStar(1))  # IMG_0002: nincs csillag
@@ -1490,6 +1526,13 @@ class TestFolderDescriptionPerPath:
             controller.folderDescriptionOf(str(library / "nyaralas"))
             == "nyári képek"
         )
+
+    def test_description_of_reads_legacy_picasa_ini(self, controller, library):
+        """#4819: csak régi `Picasa.ini` — a leírás abból is olvasható."""
+        folder = library / "nyaralas"
+        (folder / ".picasa.ini").unlink(missing_ok=True)
+        (folder / "Picasa.ini").write_bytes(b"[Picasa]\r\ndescription=regi leiras\r\n")
+        assert controller.folderDescriptionOf(str(folder)) == "regi leiras"
 
     def test_set_description_of_writes_and_caches(self, controller, library):
         path = str(library / "nyaralas")
