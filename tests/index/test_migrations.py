@@ -118,20 +118,27 @@ class TestMigrationV20TakenAtOverride:
                 ("2021-04-05T06:07:08", "a.jpg"),
             )
             # Hiteles v19-es alak: minden meglévő mező és adatsor marad,
-            # csak a #4332-es oszlop és migráció utáni verziójelölés hiányzik.
+            # csak a v20/v21-es mezők és a migráció utáni verziójelölés hiányzik.
+            conn.execute("DROP INDEX idx_photos_video_metadata_missing")
             conn.execute("ALTER TABLE photos DROP COLUMN taken_at_override")
+            conn.execute("ALTER TABLE photos DROP COLUMN movie_format")
+            conn.execute("ALTER TABLE photos DROP COLUMN frame_rate")
+            conn.execute("ALTER TABLE photos DROP COLUMN duration_seconds")
             conn.execute("PRAGMA user_version = 19")
             conn.commit()
 
         with open_index(db) as conn:
             photo = photos_in_folder(conn, "/kepek")[0]
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 20
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
             assert photo.name == "a.jpg"
             assert photo.star is True
             assert photo.caption == "régi felirat"
             assert photo.keywords == "régi,kulcs"
             assert photo.taken_at == "2021-04-05T06:07:08"
             assert photo.taken_at_override is None
+            assert photo.movie_format is None
+            assert photo.frame_rate is None
+            assert photo.duration_seconds is None
 
 
 class TestMigrationSafety:
@@ -207,7 +214,12 @@ class TestAlbumsMigration:
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;"
             "ALTER TABLE photos DROP COLUMN flip_flags;"
             # #4332: a kézi dátumfelülírás oszlopa csak a v20-ban érkezik
+            "DROP INDEX IF EXISTS idx_photos_video_metadata_missing;"
             "ALTER TABLE photos DROP COLUMN taken_at_override;"
+            # #4580: a videómezők csak a v21-ben érkeznek
+            "ALTER TABLE photos DROP COLUMN movie_format;"
+            "ALTER TABLE photos DROP COLUMN frame_rate;"
+            "ALTER TABLE photos DROP COLUMN duration_seconds;"
             "PRAGMA user_version = 7;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -265,7 +277,12 @@ class TestFaceMigration:
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             # #4332: a kézi dátumfelülírás oszlopa csak a v20-ban érkezik
+            "DROP INDEX IF EXISTS idx_photos_video_metadata_missing;\n"
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
+            # #4580: a videómezők csak a v21-ben érkeznek
+            "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photos DROP COLUMN frame_rate;\n"
+            "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "PRAGMA user_version = 8;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -328,7 +345,12 @@ class TestFaceEmbeddingMigration:
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             # #4332: a kézi dátumfelülírás oszlopa csak a v20-ban érkezik
+            "DROP INDEX IF EXISTS idx_photos_video_metadata_missing;\n"
             "ALTER TABLE photos DROP COLUMN taken_at_override;\n"
+            # #4580: a videómezők csak a v21-ben érkeznek
+            "ALTER TABLE photos DROP COLUMN movie_format;\n"
+            "ALTER TABLE photos DROP COLUMN frame_rate;\n"
+            "ALTER TABLE photos DROP COLUMN duration_seconds;\n"
             "PRAGMA user_version = 9;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")

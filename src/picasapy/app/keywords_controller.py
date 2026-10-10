@@ -16,6 +16,7 @@ from picasapy.metadata import write_iptc_keywords
 from picasapy.scanner import PICASA_INI_NAME
 
 from .photo_ops_controller import _WRITE_ERRORS
+from .photo_sort import photo_date
 
 # Gyorscímkék (#193) — a Címkék-panel alján gombrács, a Picasa 3 mintájára.
 #
@@ -83,6 +84,17 @@ class KeywordsMixin:
     (AppController) meglévő mintáját követve."""
 
     quickTagsChanged = Signal()
+
+    @Slot(int, result=str)
+    def photoDateAt(self, row: int) -> str:
+        """A címkepárbeszéd dátuma: EXIF, ennek híján az indexelt fájlidő."""
+        photos = self._photos.photos
+        if not 0 <= row < len(photos):
+            return ""
+        try:
+            return photo_date(photos[row])
+        except (OSError, ValueError, OverflowError):
+            return ""
 
     @Slot(list, result=list)
     def keywordsOfRows(self, rows) -> list:

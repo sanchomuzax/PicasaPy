@@ -2102,8 +2102,14 @@ class TestRedeyeTool:
         controller.beginEdit("1", str(photo))
         monkeypatch.setattr(
             controller._provider,
-            "redeye_auto_result",
-            lambda *_args: (1, ((0.5, 0.5, 0.1),)),
+            "redeye_auto_result_with_size",
+            lambda *_args: (
+                1,
+                ((0.5, 0.5, 0.1),),
+                (800, 600),
+                (800, 600),
+                ((1, 0, 0), (0, 1, 0)),
+            ),
         )
         controller.enterRedeyeTool()
         controller.applyRedeye()

@@ -255,6 +255,7 @@ Rectangle {
     signal clearGeotagRequested(var rows)
     signal setGeotagRequested(var rows, real latitude, real longitude)
     signal dropGeotagRequested(var rows, real latitude, real longitude)
+    signal manualFaceAddCancelRequested()
     //: #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár tartalmát
     //: cseréli le (keresés, illetve személy-album), amit a néző eltakarna —
     //: ezért nem a néző hajtja végre, hanem a gazda: az zárja a nézőt, és
@@ -308,9 +309,21 @@ Rectangle {
     // törlés a nézőben. A szerkesztés bekapcsolása egyben láthatóvá is
     // teszi a kereteket (nincs értelme vakon szerkeszteni).
     property bool facesEditMode: false
+    function beginManualFaceAdd() {
+        viewer.facesEditMode = true
+        viewer.facesVisible = true
+        if (viewer.appWindow
+                && typeof viewer.appWindow.valtsFiokLapot === "function")
+            viewer.appWindow.valtsFiokLapot("people")
+    }
+    function cancelManualFaceAdd() {
+        viewer.manualFaceAddCancelRequested()
+    }
     function toggleFacesEdit() {
-        viewer.facesEditMode = !viewer.facesEditMode
-        if (viewer.facesEditMode) viewer.facesVisible = true
+        if (viewer.facesEditMode)
+            viewer.cancelManualFaceAdd()
+        else
+            viewer.beginManualFaceAdd()
     }
     // az overlay minden sikeres írás (facesOverlay.edited) után növeli —
     // az ini-módosítást a photosModel/index NEM látja, ez a kényszerített
@@ -1476,6 +1489,8 @@ Rectangle {
             editController.cancelRetouchPatch()
         else if (editorPanel.cropActive)
             editorPanel.cropCancelRequested()
+        else if (viewer.facesEditMode)
+            viewer.cancelManualFaceAdd()
         else
             viewer.kerBezaras()
     }
@@ -2224,7 +2239,6 @@ Rectangle {
                         if (viewer.editCtl)
                             viewer.editCtl.setCropAspect(editorPanel.currentAspect)
                     }
-                    onQuickCropRequested: (kind) => cropOverlay.selectPreset(kind)
                     onCropPreviewHold: (held) => cropOverlay.previewHold = held
                     // #1528: az „Alaphelyzet” az ALKALMAZOTT vágást veti
                     // el, nem csak a húzott kijelölést. A szemantika NEM
@@ -2284,6 +2298,12 @@ Rectangle {
                         ? viewer.editCtl.redeyeRegionCount : 0
                     canUndoRedeyeRegion: viewer.editCtl
                         ? viewer.editCtl.canUndoRedeyeRegion : false
+                    redeyeResetAvailable: viewer.editCtl
+                        ? viewer.editCtl.redeyeResetAvailable : false
+                    canReapplyRedeyeAuto: viewer.editCtl
+                        ? viewer.editCtl.canReapplyRedeyeAuto : false
+                    redeyeAutoReset: viewer.editCtl
+                        ? viewer.editCtl.redeyeAutoReset : false
                     redeyeFoundCount: viewer.editCtl
                         ? viewer.editCtl.redeyeFoundCount : -1
                     onRedeyeAutoRequested: editController.runRedeyeAuto()
@@ -3489,6 +3509,12 @@ Rectangle {
                         onEdited: viewer.facesEditRevision += 1
                         onManualCancelRequested: viewer.facesEditMode = false
                     }
+                    Connections {
+                        target: viewer
+                        function onManualFaceAddCancelRequested() {
+                            facesOverlay.cancelManualAdd()
+                        }
+                    }
 
                     // #445: a retusálás a Picasa súgószövege szerinti,
                     // KÉTKATTINTÁSOS, irányított klónozás — 1. kattintás a
@@ -3786,6 +3812,7 @@ Rectangle {
                                       ? viewer.editCtl.redeyeRegions : [])
                             delegate: Rectangle {
                                 required property var modelData
+                                objectName: "redeyeRegionFrame"
                                 x: modelData.x * redeyeOverlay.width
                                 y: modelData.y * redeyeOverlay.height
                                 width: modelData.w * redeyeOverlay.width
@@ -4627,6 +4654,11 @@ Rectangle {
                 Layout.minimumWidth: 160
                 Layout.fillHeight: true
                 hasSelection: viewer.currentIndex >= 0
+                appController: (typeof controller !== "undefined")
+                               ? controller : null
+                selectedRows: viewer.currentIndex >= 0
+                              ? [viewer.currentIndex] : []
+                focusRow: viewer.currentIndex
                 // a photos.revision-nel együtt kötve: modell-frissüléskor
                 // (pl. forgatás, felirat-mentés) újraolvas; a controller
                 // önálló példányosításnál (tesztek) hiányozhat
@@ -4767,9 +4799,12 @@ Rectangle {
                     //: #3566: a szerkesztőben mindig az egyképes ág fut
                     //: (az eredetiben az `editpanel/preview` látszik)
                     editorView: true
+                    manualAddActive: viewer.facesEditMode
                     //: a személy albuma a KÖNYVTÁR rácsán nyílik — a gazda
                     //: zárja a nézőt, és ő vált (ld. `findTaggedRequested`)
                     onPersonChosen: function(name) { viewer.personChosen(name) }
+                    onManualAddRequested: viewer.beginManualFaceAdd()
+                    onManualCancelRequested: viewer.cancelManualFaceAdd()
                     onCloseRequested: viewer.zarjaAFiokot()
                 }
             }

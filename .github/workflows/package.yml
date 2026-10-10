@@ -258,6 +258,9 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
           QT_QUICK_BACKEND: software
+          # a próba kiírja a program kimenetét; a windowsos konzol cp1252-je
+          # a cserekaraktert (U+FFFD) nem tudja kódolni, és a próba maga hal el
+          PYTHONIOENCODING: utf-8
         run: |
           python - <<'PY'
           import os

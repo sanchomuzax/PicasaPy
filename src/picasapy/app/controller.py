@@ -97,6 +97,30 @@ from .thumbnail_provider import ThumbnailProvider
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+_SLIDESHOW_TRANSITIONS = (
+    "cut",
+    "dissolve",
+    "dissolveblack",
+    "dissolvewhite",
+    "wipeleft",
+    "wiperight",
+    "wipeup",
+    "wipedown",
+    "diagwipeul",
+    "diagwipeur",
+    "diagwipedl",
+    "diagwipedr",
+    "pushleft",
+    "pushright",
+    "pushtop",
+    "pushdown",
+    "circlein",
+    "circleout",
+    "rect",
+    "kenburns",
+    "kenburnsaoi",
+    "timelapse",
+)
 _FILETYPE_SNAPSHOT_UNSET = object()
 
 #: A bal oldali mappapanel szélessége (#322) — a felhasználó húzhatja, az
@@ -492,10 +516,9 @@ class AppController(
     def setSlideshowTransition(self, value: str) -> None:  # noqa: N802
         """A vetítés-átmenet megőrzése (#433).
 
-        Ismeretlen kulcsot NEM tárolunk: a választó csak a megvalósított
-        ötöt sorolja fel, és egy elgépelt érték némán átmenet nélküli
-        vetítést adna."""
-        if value not in ("cut", "dissolve", "dissolveblack", "dissolvewhite", "kenburns"):
+        Ismeretlen kulcsot NEM tárolunk; az eredeti 22 kulcsos készlet a
+        `picasa-create-features.md` vetítési specifikációját követi (#4567)."""
+        if value not in _SLIDESHOW_TRANSITIONS:
             return
         self._get_settings().setValue("view/slideshowTransition", value)
         self.statusChanged.emit()
