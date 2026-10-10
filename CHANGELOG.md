@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.54] – 2026-10-10
+
+- Ha az effektek fülén lenyomod a Shiftet, a kilenc kétmódú effekt csempéjén nemcsak a felirat, hanem a bélyegkép is a másodlagos effektet mutatja, és a Shift felengedésekor visszaáll (#4558).
+
 ## [0.9.53] – 2026-10-10
 
 - A Nyomtatás ablak a tartalomhoz igazodó magassággal nyílik, a Nyomtatás és Bezárás gomb mindig látszik, kis képernyőn a tartalom görgethető (#4795).
