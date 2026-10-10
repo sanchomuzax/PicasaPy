@@ -6572,6 +6572,16 @@ picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
             <translation type="unfinished" />
         </message>
         <message>
+            <source>Are you sure you want to delete the album "%1"?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <source>Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>
