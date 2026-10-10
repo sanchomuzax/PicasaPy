@@ -79,6 +79,24 @@ A hetedik, az **XML (gépi)**, nem weboldal: egyetlen `album.xml` fájlt ír
 az album és a képek adataival. Akkor jó, ha az adatokat egy másik program
 dolgozza fel; böngészőben nem lesz belőle galéria.
 
+### Saját sablonok
+
+A gyári sablonok mellett a saját `.tpl`-sablonjaidat is használhatod. Tedd
+őket a saját (felhasználói) mappádon belül a
+`.local/share/picasapy/webexport/templates` mappába — Windowson is ezen a
+néven, a felhasználói mappád alatt —, sablononként egy külön almappába. Az almappában legyen egy `index.tpl`
+fájl; ha mellette van egy `preview.svg`, az lesz a sablon kis
+előnézeti rajza.
+
+A következő megnyitáskor a saját sablonok a gyáriak **után**, a sablonlistában
+jelennek meg, és ugyanúgy kiválaszthatók. A listában a neve a sablon
+fejlécében megadott név; ha nincs ilyen, az almappa neve. Ha egy saját
+sablon almappája ugyanazt a nevet viseli, mint egy gyári sablon, a gyári
+marad meg, a saját nem jelenik meg.
+
+Az ablak a tartalmához igazodik, ezért a **Létrehozás** gomb alapméretben is
+látszik.
+
 ## Arcinformációk kísérőfájlba
 
 Az **Eszközök ▸ Kísérleti ▸ Arcinformációk írása XMP-adatokba…** a látott
