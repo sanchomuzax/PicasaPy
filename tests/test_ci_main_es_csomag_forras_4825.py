@@ -81,3 +81,15 @@ def test_regi_tagnel_a_qm_epites_a_tag_allapotahoz_igazodik():
                 f"{nev}: a régi kiadási tagben nincs build_qm.py — a hívás "
                 f"feltétel nélkül elbukik: {sor.strip()}"
             )
+
+
+def test_a_windows_python_lepesek_utf8_kimenettel_futnak():
+    """A cp1252-es windowsos konzol a cserekaraktert (U+FFFD) nem tudja
+    kiírni, és a füstpróba MAGA hal el a program helyett (#4824, majd a
+    telepítős lépésben újra: Package 38047066952)."""
+    hianyzo = [
+        lp.splitlines()[0]
+        for lp in _lepesek(_job("windows-telepito"))
+        if re.search(r"python -(?![\w-])", lp) and "PYTHONIOENCODING: utf-8" not in lp
+    ]
+    assert not hianyzo, f"UTF-8 kimenet nélkül: {hianyzo}"

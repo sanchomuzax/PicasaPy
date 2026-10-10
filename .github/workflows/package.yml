@@ -393,6 +393,9 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
           QT_QUICK_BACKEND: software
+          # #4825: ugyanaz, mint a csomagolt program füstpróbájánál (#4824) —
+          # a cp1252-es konzol a cserekaraktert nem tudja kiírni
+          PYTHONIOENCODING: utf-8
         run: |
           $installDir = Join-Path $env:RUNNER_TEMP "PicasaPy-installed"
           $installer = Join-Path $PWD "packaging\dist\PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
