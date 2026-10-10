@@ -23,6 +23,7 @@ SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.taken_at_override, p.orientation,
        p.width, p.height,
        p.geotag_ini, p.exif_lat, p.exif_lon, p.first_seen_mtime_ns,
+       p.movie_format, p.frame_rate, p.duration_seconds,
        -- #463: a bélyegkép arc-jelvényeihez — hány felismert arc van a
        -- képen, és hány vár még névadásra. A `face` tábla származtatott
        -- adat (index/faces_detected.py); LEFT JOIN, hogy az arc-szkennelés
@@ -80,6 +81,10 @@ class PhotoRecord:
     # #4332: a dátummódosító indexbeli felülírása. A hatásos taken_at ezt
     # veszi előre; ez külön mezőként kell az export bájthű másolási útjához.
     taken_at_override: str | None = None
+    # #4580: a videók Tulajdonságok-paneljén látható értékek.
+    movie_format: str | None = None
+    frame_rate: float | None = None
+    duration_seconds: float | None = None
 
     @property
     def sort_mtime_ns(self) -> int:
@@ -524,6 +529,9 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             # azt a hibát, amit ez a mező megszüntet; jobb, ha egy szűkebb
             # oszloplistával érkező jövőbeli hívó hangosan elhasal.
             first_seen_mtime_ns=row["first_seen_mtime_ns"],
+            movie_format=row["movie_format"],
+            frame_rate=row["frame_rate"],
+            duration_seconds=row["duration_seconds"],
         )
         for row in rows
     )
