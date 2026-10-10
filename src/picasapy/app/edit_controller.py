@@ -2361,7 +2361,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._text_outline_color = _argb_to_rgb(style.outline_argb)
         self._text_outline_thickness = float(style.unknown_a)
         self._text_fill_enabled = style.fill_mode != _MOD_NINCS_KITOLTES
-        self._text_family = block.font or _DEFAULT_TEXT_FAMILY
+        self._text_family = block.font or default_family()
         self._text_size_pt = meret_taroltbol(block.geometry.size)
         self._text_size_edited = False
         self._text_bold = style.weight >= 700
@@ -3284,7 +3284,7 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             "outline_thickness": style.unknown_a,
             "fill_enabled": style.fill_mode != _MOD_NINCS_KITOLTES,
             "opacity": _DEFAULT_TEXT_OPACITY,
-            "font_family": block.font or _DEFAULT_TEXT_FAMILY,
+            "font_family": block.font or default_family(),
             "font_size_pt": block.geometry.size * 360.0,
             "bold": style.weight >= 700,
             "italic": style.italic,
