@@ -8,11 +8,12 @@ import re
 import shutil
 import xml.etree.ElementTree as ET
 
+from picasapy.ini import ini_source_path
+from picasapy.ini.names import INI_NAME, LEGACY_INI_NAME
 from picasapy.scanner.filetypes import media_kind_of
 
 from .iso_olvaso import ISOFajl, ISOOlvaso
 
-_PICASAINI = ".picasa.ini"
 _LELTAR_MAX = 16 * 1024 * 1024
 _MEGENGEDETT_KEPFAJTAK = {"photo", "raw"}
 
@@ -163,20 +164,40 @@ def _mappabol(gyoker: Path) -> list[_ForrasFajl]:
             kivalasztott.setdefault(
                 kulcs, _ForrasFajl(relativ=relativ, forras=forras)
             )
-    _ini_tarsak_mappabol(kivalasztott, fajlok)
+    _ini_tarsak_mappabol(kivalasztott)
     return list(kivalasztott.values())
 
 
 def _ini_tarsak_mappabol(
-    tetelek: dict[str, _ForrasFajl], fajlok: dict[str, Path]
+    tetelek: dict[str, _ForrasFajl],
 ) -> None:
     kepek = tuple(t for t in tetelek.values() if _kep_e(t.relativ))
     for kep in kepek:
-        relativ = kep.relativ.parent / _PICASAINI
+        if kep.forras is None:
+            continue
+        ini = ini_source_path(kep.forras.parent / INI_NAME)
+        if ini is None:
+            continue
+        relativ = kep.relativ.parent / ini.name
         kulcs = relativ.as_posix().casefold()
-        forras = fajlok.get(kulcs)
-        if forras is not None:
-            tetelek.setdefault(kulcs, _ForrasFajl(relativ=relativ, forras=forras))
+        tetelek.setdefault(kulcs, _ForrasFajl(relativ=relativ, forras=ini))
+
+
+def _ini_fajl_az_isoban(
+    bejaras: ISOOlvaso, mappa: PurePosixPath
+) -> tuple[PurePosixPath, ISOFajl] | None:
+    """A modern, majd a legacy ini az ISO-ban; a találat neve megmarad.
+
+    Az ISO olvasó virtuális útvonalakat ad, ezért itt a fájlrendszeri
+    `ini_source_path` helyett ugyanazt a név- és elsőbbségi sorrendet
+    alkalmazzuk közvetlenül a lemezkép bejegyzéseire.
+    """
+    for nev in (INI_NAME, LEGACY_INI_NAME):
+        relativ = mappa / nev
+        fajl = _iso_utvonal(bejaras, relativ)
+        if fajl is not None:
+            return relativ, fajl
+    return None
 
 
 def _iso_szett(kep: Path) -> tuple[Path, ...]:
@@ -232,9 +253,9 @@ def _isobol(kep: Path) -> list[_ForrasFajl]:
                 )
         kepek = tuple(t for t in lemez_tetelek.values() if _kep_e(t.relativ))
         for photo in kepek:
-            relativ = photo.relativ.parent / _PICASAINI
-            sidecar = _iso_utvonal(bejaras, relativ)
-            if sidecar is not None:
+            talalat = _ini_fajl_az_isoban(bejaras, photo.relativ.parent)
+            if talalat is not None:
+                relativ, sidecar = talalat
                 lemez_tetelek.setdefault(
                     relativ.as_posix().casefold(),
                     _ForrasFajl(relativ=relativ, iso=bejaras, iso_fajl=sidecar),
