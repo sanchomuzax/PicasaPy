@@ -71,7 +71,7 @@ from picasapy.ini import (
     FilterWriteError,
     IniConflictError,
     IniSaveError,
-    load_document,
+    load_existing,
     update_document,
 )
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
@@ -1010,7 +1010,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         for mappa in mappak:
             ut = Path(mappa) / PICASA_INI_NAME
             try:
-                dokumentum = load_document(ut)
+                dokumentum = load_existing(ut)
             except (OSError, ValueError):
                 continue
             if dokumentum.section(szakasz) is not None:

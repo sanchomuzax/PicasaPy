@@ -1527,6 +1527,13 @@ class TestFolderDescriptionPerPath:
             == "nyári képek"
         )
 
+    def test_description_of_reads_legacy_picasa_ini(self, controller, library):
+        """#4819: csak régi `Picasa.ini` — a leírás abból is olvasható."""
+        folder = library / "nyaralas"
+        (folder / ".picasa.ini").unlink(missing_ok=True)
+        (folder / "Picasa.ini").write_bytes(b"[Picasa]\r\ndescription=regi leiras\r\n")
+        assert controller.folderDescriptionOf(str(folder)) == "regi leiras"
+
     def test_set_description_of_writes_and_caches(self, controller, library):
         path = str(library / "nyaralas")
         controller.setFolderDescriptionOf(path, "új leírás")

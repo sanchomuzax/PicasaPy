@@ -184,6 +184,78 @@ class TestUpdateDocument:
         assert saved.section("IMG_0002.jpg").get("star") == "yes"
         assert legacy_path.read_bytes() == legacy_bytes
 
+    def test_existing_modern_ini_wins_over_legacy(self, tmp_path):
+        from picasapy.ini import load_document, update_document
+
+        (tmp_path / "Picasa.ini").write_bytes(b"[regi.jpg]\r\nstar=yes\r\n")
+        target = tmp_path / ".picasa.ini"
+        target.write_bytes(b"[uj.jpg]\r\nstar=yes\r\n")
+
+        update_document(
+            target, lambda d: d.with_value("uj.jpg", "caption", "x"), backup=False
+        )
+
+        saved = load_document(target)
+        assert saved.section("regi.jpg") is None
+        assert saved.section("uj.jpg").get("caption") == "x"
+
+    def test_legacy_rewritten_during_mutate_is_replayed(self, tmp_path):
+        from picasapy.ini import load_document, update_document
+
+        legacy = tmp_path / "Picasa.ini"
+        legacy.write_bytes(b"[a.jpg]\r\nstar=yes\r\n")
+        target = tmp_path / ".picasa.ini"
+        calls = []
+
+        def mutate(document):
+            calls.append(1)
+            if len(calls) == 1:
+                legacy.write_bytes(b"[a.jpg]\r\nstar=yes\r\n[b.jpg]\r\ncaption=friss\r\n")
+            return document.with_value("a.jpg", "caption", "x")
+
+        update_document(target, mutate, backup=False)
+
+        assert len(calls) == 2
+        saved = load_document(target)
+        assert saved.section("b.jpg").get("caption") == "friss"
+
+    def test_modern_ini_created_during_mutate_becomes_the_base(self, tmp_path):
+        from picasapy.ini import load_document, update_document
+
+        (tmp_path / "Picasa.ini").write_bytes(b"[regi.jpg]\r\nstar=yes\r\n")
+        target = tmp_path / ".picasa.ini"
+        calls = []
+
+        def mutate(document):
+            calls.append(1)
+            if len(calls) == 1:
+                target.write_bytes(b"[uj.jpg]\r\nstar=yes\r\n")
+            return document.with_value("uj.jpg", "caption", "x")
+
+        update_document(target, mutate, backup=False)
+
+        assert len(calls) == 2
+        saved = load_document(target)
+        assert saved.section("regi.jpg") is None
+        assert saved.section("uj.jpg").get("star") == "yes"
+
+    def test_latin1_legacy_file_stays_byte_identical(self, tmp_path):
+        from picasapy.ini import load_document, update_document
+
+        legacy = tmp_path / "Picasa.ini"
+        legacy_bytes = b"[a.jpg]\r\nstar=yes\r\ncaption=\xf5\r\n"
+        legacy.write_bytes(legacy_bytes)
+        target = tmp_path / ".picasa.ini"
+
+        update_document(
+            target, lambda d: d.with_value("a.jpg", "rotate", "rotate(1)"), backup=False
+        )
+
+        assert legacy.read_bytes() == legacy_bytes
+        saved = load_document(target)
+        assert saved.encoding == "latin-1"
+        assert saved.section("a.jpg").get("caption") == "\xf5"
+
     def test_external_write_between_fingerprint_check_and_save(self, monkeypatch, tmp_path):
         """A külső író a sikeres ellenőrzés után, a mentés előtt módosít.
 
