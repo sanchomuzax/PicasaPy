@@ -34,6 +34,17 @@ Window {
     }
     width: 480
     height: 420
+    // #4795: a kezdőmagasság a tartalomhoz igazodik, de legfeljebb a
+    // képernyő elérhető magassága (kis ráhagyással). Nyitáskor számoljuk,
+    // hogy a felhasználó utólagos átméretezését ne írja felül kötés.
+    readonly property int kepernyoRahagyas: 48
+    function kezdoMagassag() {
+        var kell = printContent.implicitHeight + printButtonRow.implicitHeight
+                   + 2 * 12 + printFrame.spacing
+        var plafon = Math.max(minimumHeight,
+                              Screen.desktopAvailableHeight - kepernyoRahagyas)
+        return Math.round(Math.min(Math.max(420, kell), plafon))
+    }
     minimumWidth: 420
     minimumHeight: 380
     color: Theme.canvasBg
@@ -360,6 +371,8 @@ Window {
     //: #1401: a bezárt nézet nem hagyhatja a vezérlőt útlevél-módban —
     //: a következő nyomtatás különben a kivágott képet nyomtatná.
     onVisibleChanged: {
+        if (printWindow.visible)
+            printWindow.height = printWindow.kezdoMagassag()  // #4795
         if (!printWindow.visible && printWindow.printCtl)
             printWindow.printCtl.clearPassportSource()
     }
@@ -495,9 +508,29 @@ Window {
         }
     }
 
+    // #4795: a gombsor (Súgó/Nyomtatás/Bezárás) az ablak alján RÖGZÍTETT, a
+    // fölötte lévő tartalom görgethető — kis képernyőn sem lóg ki a gomb.
     ColumnLayout {
+        id: printFrame
         anchors.fill: parent
         anchors.margins: 12
+        spacing: 10
+
+        Flickable {
+            id: printContentFlick
+            objectName: "printContentFlick"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            contentWidth: width
+            contentHeight: printContent.implicitHeight
+            boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
+            ScrollBar.vertical: ScrollBar {}
+
+        ColumnLayout {
+        id: printContent
+        width: printContentFlick.width
         spacing: 10
 
         Text {
@@ -1018,9 +1051,11 @@ Window {
             Layout.fillWidth: true
         }
 
-        Item { Layout.fillHeight: true }
+        }
+        }
 
         RowLayout {
+            id: printButtonRow
             Layout.fillWidth: true
             spacing: 8
             PicasaButton {
