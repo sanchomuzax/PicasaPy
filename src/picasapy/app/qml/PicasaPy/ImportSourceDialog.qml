@@ -79,6 +79,12 @@ Window {
     // Picasa import-munkafolyamatának lelke, ezért ez az alapértelmezés.
     property string namingMode: "date"
     property string manualFolderName: ""
+    // #4837: a kézi név egyetlen, biztonságos útvonal-elem-e (Python dönt)
+    readonly property bool manualNameValid:
+        manualFolderName.trim().length > 0
+        && (!importSourceController
+            || importSourceController.isValidFolderName === undefined
+            || importSourceController.isValidFolderName(manualFolderName))
 
     // #441: "After Copying:" — a `picasapy.app.import_source_controller.
     // AFTER_COPY_*` konstansaival egyező string.
@@ -198,7 +204,7 @@ Window {
         if (importSourceWindow.includedCount === 0) return
         // #4595: kézi módban cím nélkül nincs import (és nincs megerősítés sem)
         if (importSourceWindow.namingMode === "manual"
-                && importSourceWindow.manualFolderName.trim().length === 0) return
+                && !importSourceWindow.manualNameValid) return
         if (importSourceWindow.afterCopying === "leave") {
             importSourceWindow.runImportNow()
             return
@@ -895,7 +901,7 @@ Window {
                          && importSourceWindow.destFolder.length > 0
                          && !importSourceWindow.importing
                          && (importSourceWindow.namingMode !== "manual"
-                             || importSourceWindow.manualFolderName.trim().length > 0)
+                             || importSourceWindow.manualNameValid)
                 onClicked: importSourceWindow.requestImport()
             }
             PicasaButton {
