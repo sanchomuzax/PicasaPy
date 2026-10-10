@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.51] – 2026-10-10
+
+- A régi Picasa.ini bejegyzései megmaradnak az első módosítás mentésekor (#4819).
+
 ## [0.9.50] – 2026-10-10
 
 - A vágott videóklip Windows és macOS rendszeren exportálható; Linuxon megmarad az eredeti tiltóüzenet (#4564).
