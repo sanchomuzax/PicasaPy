@@ -453,7 +453,6 @@ Rectangle {
     signal undoRequested()
     signal redoRequested()
     // vágás-mód jelei a hívónak
-    signal quickCropRequested(string kind)   // "topleft"|"landscape"|"portrait"
     signal cropRotateRequested()
     signal cropPreviewHold(bool held)
     signal cropResetRequested()
