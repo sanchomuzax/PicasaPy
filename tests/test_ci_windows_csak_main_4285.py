@@ -22,7 +22,8 @@ def test_a_windowsos_osszesito_pr_on_nem_buktat():
     assert "github.event_name != 'pull_request'" in _blokk("test-windows")
 
 
-def test_a_windowsos_darabok_main_pushon_sem_futnak_csak_utemezve():
+def test_a_windowsos_darabok_a_main_pushon_futnak():
+    """Az ütemezett futást a GitHub nem indította el (2026-10-10), így a
+    futásidő-tábla windowsos mérés nélkül maradt — a main-pushon futnia kell."""
     blokk = _blokk("darabok-windows")
-    assert "github.event_name != 'push'" in blokk
-    assert "cron:" in CI.read_text(encoding="utf-8")
+    assert "github.event_name != 'push'" not in blokk
