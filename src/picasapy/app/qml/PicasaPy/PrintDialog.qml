@@ -33,17 +33,49 @@ Window {
         tema: printWindow.helpTopic
     }
     width: 480
-    height: 420
+    height: alapMagassag
     // #4795: a kezdőmagasság a tartalomhoz igazodik, de legfeljebb a
     // képernyő elérhető magassága (kis ráhagyással). Nyitáskor számoljuk,
     // hogy a felhasználó utólagos átméretezését ne írja felül kötés.
     readonly property int kepernyoRahagyas: 48
+    readonly property int keretMargo: 12
+    readonly property int alapMagassag: 420
+    // A nyitás utáni elrendezés lecsengéséig (az utolsó magasság-változás
+    // után `meretezesIdozito.interval` ms) a méretezés függőben van.
+    property bool meretezesFuggoben: false
+    Timer {
+        id: meretezesIdozito
+        interval: 100
+        onTriggered: {
+            printWindow.meretezesFuggoben = false
+            printWindow.height = printWindow.kezdoMagassag()
+        }
+    }
+    Connections {
+        target: printContent
+        function onImplicitHeightChanged() {
+            if (printWindow.meretezesFuggoben)
+                meretezesIdozito.restart()
+        }
+    }
+    Connections {
+        target: printStatusBox
+        function onImplicitHeightChanged() {
+            if (printWindow.meretezesFuggoben)
+                meretezesIdozito.restart()
+        }
+    }
     function kezdoMagassag() {
-        var kell = printContent.implicitHeight + printButtonRow.implicitHeight
-                   + 2 * 12 + printFrame.spacing
+        // ⚠️ csak az ELSŐ elrendezés UTÁN hívandó (ld. `meretezesIdozito`):
+        // rejtett ablakban a Layout nem rendeződik újra, az implicitHeight
+        // elavult (az előző nyitás/mód tartalmát tükrözi).
+        var kell = printContent.implicitHeight + printStatusBox.implicitHeight
+                   + printButtonRow.implicitHeight
+                   + 2 * keretMargo + printFrame.spacing
+                   + (printStatusBox.visible ? printFrame.spacing : 0)
         var plafon = Math.max(minimumHeight,
                               Screen.desktopAvailableHeight - kepernyoRahagyas)
-        return Math.round(Math.min(Math.max(420, kell), plafon))
+        return Math.round(Math.min(Math.max(alapMagassag, kell), plafon))
     }
     minimumWidth: 420
     minimumHeight: 380
@@ -371,8 +403,10 @@ Window {
     //: #1401: a bezárt nézet nem hagyhatja a vezérlőt útlevél-módban —
     //: a következő nyomtatás különben a kivágott képet nyomtatná.
     onVisibleChanged: {
-        if (printWindow.visible)
-            printWindow.height = printWindow.kezdoMagassag()  // #4795
+        if (printWindow.visible) {
+            printWindow.meretezesFuggoben = true  // #4795
+            meretezesIdozito.restart()
+        }
         if (!printWindow.visible && printWindow.printCtl)
             printWindow.printCtl.clearPassportSource()
     }
@@ -513,7 +547,7 @@ Window {
     ColumnLayout {
         id: printFrame
         anchors.fill: parent
-        anchors.margins: 12
+        anchors.margins: printWindow.keretMargo
         spacing: 10
 
         Flickable {
@@ -526,11 +560,14 @@ Window {
             contentHeight: printContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
             flickableDirection: Flickable.VerticalFlick
-            ScrollBar.vertical: ScrollBar {}
+            ScrollBar.vertical: ScrollBar {
+                id: printScrollBar
+                policy: size < 1.0 ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            }
 
         ColumnLayout {
         id: printContent
-        width: printContentFlick.width
+        width: printContentFlick.width - (printScrollBar.visible ? printScrollBar.width : 0)
         spacing: 10
 
         Text {
@@ -553,8 +590,8 @@ Window {
         // #4608: nyomtató nélküli gépen kimondja, mit kell tenni. Az
         // eredeti őre (`IDS_MUST_INSTALL_PRINTER`) ugyanezt mondja. A
         // PDF-cél a választóban marad, ezért ez tájékoztat, nem tilt.
-        // A tetején van: a 420 px-es ablakban a nyomtatóválasztó már kívül
-        // esik, a figyelmeztetésnek viszont látszania kell.
+        // A tartalom tetején van: kis ablakban a nyomtatóválasztóhoz
+        // görgetni kell, a figyelmeztetésnek viszont azonnal látszania kell.
         Text {
             objectName: "printNoPrinterText"
             Layout.fillWidth: true
@@ -1005,53 +1042,65 @@ Window {
             }
         }
 
-        Text {
-            objectName: "printSkippedText"
+        }
+        }
+
+        // #4795: a hiba/haladás/eredmény a RÖGZÍTETT részben van (a görgetett
+        // tartalmon kívül), hogy a Nyomtatás után mindig látsszon.
+        ColumnLayout {
+            id: printStatusBox
+            Layout.fillWidth: true
             visible: printWindow.lastSkipped.length > 0
-            text: qsTr("These pictures could not be printed: %1")
-                  .arg(printWindow.lastSkipped.join(", "))
-            color: Theme.brandRed
-            font.pixelSize: Theme.fontSize
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-        }
+                     || printWindow.lastError.length > 0
+                     || printWindow.printTotalPages > 0
+                     || printWindow.lastResult.length > 0
+            spacing: 10
 
-        Text {
-            objectName: "printErrorText"
-            visible: printWindow.lastError.length > 0
-            text: printWindow.lastError
-            color: Theme.brandRed
-            font.pixelSize: Theme.fontSize
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-        }
+            Text {
+                objectName: "printSkippedText"
+                visible: printWindow.lastSkipped.length > 0
+                text: qsTr("These pictures could not be printed: %1")
+                      .arg(printWindow.lastSkipped.join(", "))
+                color: Theme.brandRed
+                font.pixelSize: Theme.fontSize
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
 
-        // #3016: LAPONKÉNTI haladás. A festés a GUI-szálon fut (a mérés
-        // szerint nem tolható háttérszálra: az a munka kétharmada, és a Qt
-        // festő-API-ja a GUI-szálhoz kötött), ezért a vezérlő laponként
-        // enged vissza a felületnek — enélkül a párbeszéd a feladat teljes
-        // idejére befagyna, és a felhasználó nem tudná, dolgozik-e még.
-        Text {
-            objectName: "printProgressText"
-            visible: printWindow.printTotalPages > 0
-            text: qsTr("Printing: %1 / %2")
-                .arg(printWindow.printDonePages).arg(printWindow.printTotalPages)
-            color: Theme.textDark
-            font.pixelSize: Theme.fontSize
-            Layout.fillWidth: true
-        }
+            Text {
+                objectName: "printErrorText"
+                visible: printWindow.lastError.length > 0
+                text: printWindow.lastError
+                color: Theme.brandRed
+                font.pixelSize: Theme.fontSize
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
 
-        Text {
-            objectName: "printResultText"
-            visible: printWindow.lastResult.length > 0
-            text: qsTr("Finished: %1").arg(printWindow.lastResult)
-            color: Theme.picasaGreen
-            font.pixelSize: Theme.fontSize
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-        }
+            // #3016: LAPONKÉNTI haladás. A festés a GUI-szálon fut (a mérés
+            // szerint nem tolható háttérszálra: az a munka kétharmada, és a Qt
+            // festő-API-ja a GUI-szálhoz kötött), ezért a vezérlő laponként
+            // enged vissza a felületnek — enélkül a párbeszéd a feladat teljes
+            // idejére befagyna, és a felhasználó nem tudná, dolgozik-e még.
+            Text {
+                objectName: "printProgressText"
+                visible: printWindow.printTotalPages > 0
+                text: qsTr("Printing: %1 / %2")
+                    .arg(printWindow.printDonePages).arg(printWindow.printTotalPages)
+                color: Theme.textDark
+                font.pixelSize: Theme.fontSize
+                Layout.fillWidth: true
+            }
 
-        }
+            Text {
+                objectName: "printResultText"
+                visible: printWindow.lastResult.length > 0
+                text: qsTr("Finished: %1").arg(printWindow.lastResult)
+                color: Theme.picasaGreen
+                font.pixelSize: Theme.fontSize
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
         }
 
         RowLayout {
