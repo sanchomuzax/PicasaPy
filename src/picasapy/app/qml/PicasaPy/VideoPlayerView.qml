@@ -15,6 +15,14 @@ Item {
     property bool actualSizeEnabled: false
     signal exitRequested()
 
+    //: #4570: az `AutoPlayMovies` beállítás — kikapcsolva a videó megnyitáskor
+    //: áll, és a lejátszó gombjával indul. Kontroller nélkül (próbákban) a
+    //: Picasa alapja érvényes: magától indul.
+    readonly property bool autoPlay:
+        typeof controller !== "undefined" && controller
+        && controller.autoPlayMovies !== undefined
+            ? controller.autoPlayMovies : true
+
     //: #1838: a Picasából örökölt VÁGÁSPONTOK ezredmásodpercben. A **−1
     //: jelenti, hogy azon az oldalon nincs vágás** — nem 0 és nem a hossz.
     //: Az eredeti a `video_control_bar/setin`/`setout` gombokkal állítja
@@ -78,9 +86,7 @@ Item {
         // a Picasa a megnyitáskor azonnal lejátszotta a videót. Nyíl-
         // függvény kell: a sourceChanged injektált jel-paramétere ("media")
         // különben árnyékolná a MediaPlayer id-ját.
-        onSourceChanged: () => {
-            if (String(media.source).length > 0) media.play()
-        }
+        onSourceChanged: () => player.startIfAutoPlay()
         //: #1838: a hossz csak a betöltés után ismert — a kezdőpontra ekkor
         //: tudunk ugrani (előbb a `position` írása elveszik)
         onDurationChanged: () => player.seekToTrimStart()
@@ -90,9 +96,15 @@ Item {
             if (player.trimEndMs >= 0 && media.position > player.trimEndMs)
                 media.pause()
         }
-        Component.onCompleted: () => {
-            if (String(media.source).length > 0) media.play()
-        }
+        Component.onCompleted: () => player.startIfAutoPlay()
+    }
+
+    //: #4570: a megnyitás utáni indítás — az `AutoPlayMovies` szabályozza.
+    //: Kikapcsolva a lejátszó áll marad, és a lejátszás gombra indul.
+    function startIfAutoPlay() {
+        if (String(media.source).length === 0) return
+        if (player.autoPlay) media.play()
+        else media.stop()
     }
 
     function togglePlayback() {
