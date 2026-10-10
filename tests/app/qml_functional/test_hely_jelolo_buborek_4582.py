@@ -46,6 +46,19 @@ def _keres_elem(window, object_name: str):
     return item if item is not None else window.findChild(QObject, object_name)
 
 
+def _jelolo_elem(jelolo, object_name: str):
+    """A SAJÁT jelölő eleme. A CI pip-es PySide6-ja QtLocationnel jön, ott a
+    valódi térkép jelölői ugyanezekkel a nevekkel az ablakban vannak — az
+    ablakszintű keresés azokat találta meg (x=1369 egy 1280-as ablakban)."""
+    item = next(
+        (it for it in _bejár(jelolo) if it.objectName() == object_name), None
+    )
+    item = item if item is not None else jelolo.findChild(QObject, object_name)
+    if item is None:
+        raise AssertionError(f"A jelölőből hiányzik: {object_name}")
+    return item
+
+
 def _elem(window, object_name: str) -> QQuickItem:
     item = _keres_elem(window, object_name)
     if item is None:
@@ -139,7 +152,7 @@ def test_jelolo_buborek_keres_es_torol(
     jelolo.markerEraseRequested.connect(panel.clearGeotagRequested)
 
     assert _var(qt_app, lambda: jelolo.property("thumbnailReady") is True)
-    kep = _elem(window, "placesMarkerImage")
+    kep = _jelolo_elem(jelolo, "placesMarkerImage")
     # a kép (nem a jelölő bal felső sarka) kerüljön az ablak közepére: a
     # jelölő szélessége platformonként eltér, és a CI-n a kép kilógott
     kozep = kep.mapToScene(kep.boundingRect().center())
@@ -158,10 +171,10 @@ def test_jelolo_buborek_keres_es_torol(
         f"window={jelolo.window()}"
     )
 
-    buborek = _elem(window, "placesMarkerBubble")
-    szamlalo = _elem(window, "placesMarkerPhotosHere")
-    keres = _elem(window, "placesMarkerSearchButton")
-    torles = _elem(window, "placesMarkerEraseButton")
+    buborek = _jelolo_elem(jelolo, "placesMarkerBubble")
+    szamlalo = _jelolo_elem(jelolo, "placesMarkerPhotosHere")
+    keres = _jelolo_elem(jelolo, "placesMarkerSearchButton")
+    torles = _jelolo_elem(jelolo, "placesMarkerEraseButton")
     assert _var(qt_app, buborek.isVisible)
     assert szamlalo.property("text") == "6 photos here:"
     assert keres.property("text") == "Search for these photos in Picasa"
@@ -199,7 +212,7 @@ def test_jelolo_buborek_keres_es_torol(
         "markerData",
         {"rows": [0], "thumbUrl": controller.geoMarkers[0]["thumbUrl"]},
     )
-    egy_kep = _elem(window, "placesMarkerImage")
+    egy_kep = _jelolo_elem(jelolo, "placesMarkerImage")
     _kattint(window, egy_kep, qt_app)
-    egy_foto_felirat = _elem(window, "placesMarkerPhotosHere")
+    egy_foto_felirat = _jelolo_elem(jelolo, "placesMarkerPhotosHere")
     assert _var(qt_app, lambda: egy_foto_felirat.property("text") == "1 photo here:")
