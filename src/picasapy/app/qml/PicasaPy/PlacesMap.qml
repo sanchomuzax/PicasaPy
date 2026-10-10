@@ -53,6 +53,8 @@ Item {
     signal placePicked(real latitude, real longitude)
     // jelölőre kattintás → az első kép sora
     signal markerActivated(int row)
+    // a rácsból érkezett kijelölés és az ejtési pont koordinátája
+    signal photosDropped(var rows, real latitude, real longitude)
     // buborékműveletek: az azonos helyen álló összes képsor
     signal markerSearchRequested(var rows)
     signal markerEraseRequested(var rows)
@@ -117,6 +119,54 @@ Item {
                 var coord = map.toCoordinate(point.position)
                 root.placePicked(coord.latitude, coord.longitude)
             }
+        }
+    }
+
+    DropArea {
+        id: mapDropArea
+        objectName: "placesMapDropArea"
+        anchors.fill: parent
+        z: 1
+
+        onDropped: function(drop) {
+            var source = drop.source
+            if (!source || source.payload !== "photos") return
+            var rows = source.photoRows
+            if (!rows || rows.length === 0) return
+            var mapPoint = map.mapFromItem(mapDropArea, drop.x, drop.y)
+            var coordinate = map.toCoordinate(mapPoint)
+            drop.acceptProposedAction()
+            root.photosDropped(rows, coordinate.latitude,
+                               coordinate.longitude)
+        }
+    }
+
+    Rectangle {
+        objectName: "placesDropHint"
+        anchors.centerIn: parent
+        z: 2
+        visible: mapDropArea.containsDrag
+                 && mapDropArea.drag.source
+                 && mapDropArea.drag.source.payload === "photos"
+        readonly property int padding: 8
+        implicitWidth: dropHintLabel.implicitWidth + padding * 2
+        implicitHeight: dropHintLabel.implicitHeight + padding * 2
+        color: Theme.contentPanel
+        border.color: Theme.chromeBorder
+        radius: 3
+        Text {
+            id: dropHintLabel
+            objectName: "placesDropHintLabel"
+            anchors.centerIn: parent
+            text: {
+                var source = mapDropArea.drag.source
+                if (!source) return ""
+                var rows = source.photoRows
+                return qsTr("Place %d photos here")
+                    .replace("%d", String(rows ? rows.length : 1))
+            }
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
         }
     }
 

@@ -254,6 +254,7 @@ Rectangle {
     //: könyvtár-nézetben (`panelClearGeotagDialog`, `setGeotagDialog`).
     signal clearGeotagRequested(var rows)
     signal setGeotagRequested(var rows, real latitude, real longitude)
+    signal dropGeotagRequested(var rows, real latitude, real longitude)
     signal manualFaceAddCancelRequested()
     //: #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár tartalmát
     //: cseréli le (keresés, illetve személy-album), amit a néző eltakarna —
@@ -4847,6 +4848,9 @@ Rectangle {
                     }
                     onSetGeotagRequested: function(rows, la, lo) {
                         viewer.setGeotagRequested(rows, la, lo)
+                    }
+                    onPhotosDroppedRequested: function(rows, la, lo) {
+                        viewer.dropGeotagRequested(rows, la, lo)
                     }
                     onCloseRequested: viewer.zarjaAFiokot()
                 }
