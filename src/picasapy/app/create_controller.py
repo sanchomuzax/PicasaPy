@@ -54,6 +54,7 @@ from picasapy.collage.autosave import (
 from picasapy.collage.draft import project_from_nodes
 from picasapy.collage.picasa_render import PicasaCollageSettings, make_picasa_collage
 from picasapy.app.collage_preview import CollagePreviewProvider
+from picasapy.app.movie_preview import MovieTransitionPreviewProvider
 from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, NOBORDER
 from picasapy.index import album_photos, open_index
 from picasapy.ini import load_or_empty, read_folder_music
@@ -296,6 +297,59 @@ class CreateMixin(PosterMixin):
             QUrl.fromLocalFile(str(path)).toString()
             for path in self._selected_sources(rows)
         ]
+
+    @property
+    def movie_transition_preview_provider(self) -> MovieTransitionPreviewProvider:
+        """A slideshow azonos átmenetfüggvényét használó QML-képszolgáltató."""
+        if not hasattr(self, "_movie_transition_preview_provider"):
+            self._movie_transition_preview_provider = MovieTransitionPreviewProvider()
+        return self._movie_transition_preview_provider
+
+    @Slot(
+        str,
+        str,
+        str,
+        float,
+        int,
+        int,
+        bool,
+        bool,
+        bool,
+        str,
+        str,
+        bool,
+        result=str,
+    )
+    def renderMovieTransitionPreview(  # noqa: N802
+        self,
+        outgoing_source: str,
+        incoming_source: str,
+        transition: str,
+        progress: float,
+        width: int,
+        height: int,
+        cropfit: bool,
+        show_captions: bool,
+        show_dates: bool,
+        outgoing_slide_json: str,
+        incoming_slide_json: str,
+        actual_size: bool,
+    ) -> str:
+        """A választott átmenet aktuális, slideshow-val közös képkockája."""
+        return self.movie_transition_preview_provider.render_transition(
+            outgoing_source,
+            incoming_source,
+            transition,
+            progress,
+            width,
+            height,
+            cropfit,
+            show_captions,
+            show_dates,
+            outgoing_slide_json,
+            incoming_slide_json,
+            actual_size,
+        )
 
     @property
     def collage_preview_provider(self) -> CollagePreviewProvider:

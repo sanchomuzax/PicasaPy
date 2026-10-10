@@ -1482,6 +1482,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #920: élő kollázs-előnézet. A szolgáltatót a vezérlő birtokolja
     # (lusta init), mert a kollázs állapota is ott él.
     engine.addImageProvider("collagepreview", controller.collage_preview_provider)
+    # #4820: az élő filmátmenet ugyanazt a képkocka-geometriát kéri, mint az export.
+    engine.addImageProvider(
+        "moviepreview", controller.movie_transition_preview_provider
+    )
 
     # #2049: a bal hasáb fasorainak fotó-kupac borítója. A lekérdező az
     # INDEXBŐL veszi a mappa fotóit, névsorban — a kupacba a lista első

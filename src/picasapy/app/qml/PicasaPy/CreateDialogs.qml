@@ -396,10 +396,40 @@ Item {
         readonly property bool previewThroughColorTransition:
             previewTransitionKind === "dissolveblack"
             || previewTransitionKind === "dissolvewhite"
+        readonly property bool previewRasterTransition:
+            moviePreviewTransition.running && previewFromIndex >= 0
+            && previewTransitionKind !== "cut"
+        readonly property string previewTransitionFrameSource: {
+            if (!previewRasterTransition || !controller
+                    || typeof controller.renderMovieTransitionPreview !== "function")
+                return ""
+            var outgoingSlide = previewFromIndex >= movieClipSources.length
+                ? movieSlides[previewFromIndex - movieClipSources.length] : null
+            var incomingSlide = previewIndex >= movieClipSources.length
+                ? movieSlides[previewIndex - movieClipSources.length] : null
+            return controller.renderMovieTransitionPreview(
+                previewFromIndex < movieClipSources.length
+                    ? String(movieClipSources[previewFromIndex]) : "",
+                previewIndex < movieClipSources.length
+                    ? String(movieClipSources[previewIndex]) : "",
+                previewTransitionKind,
+                previewTransitionProgress,
+                previewOutputWidth,
+                previewOutputHeight,
+                movieCropToFit.checked,
+                movieShowCaptions.checked,
+                movieShowDates.checked,
+                outgoingSlide ? JSON.stringify(outgoingSlide) : "",
+                incomingSlide ? JSON.stringify(incomingSlide) : "",
+                previewActualSizeEnabled
+            )
+        }
         readonly property real previewAspectRatio: {
             var size = sizeOptions[movieHeightBox.currentIndex]
             return size[0] / size[1]
         }
+        readonly property int previewOutputWidth:
+            sizeOptions[movieHeightBox.currentIndex][0]
         readonly property int previewOutputHeight:
             sizeOptions[movieHeightBox.currentIndex][1]
         readonly property int previewItemCount:
@@ -1477,7 +1507,8 @@ Item {
                             objectName: "moviePreviewOutgoingFrame"
                             anchors.fill: parent
                             z: 0
-                            visible: moviePreviewTransition.running
+                            visible: !movieDialog.previewRasterTransition
+                                && moviePreviewTransition.running
                                 && movieDialog.previewFromIndex >= 0
                             opacity: movieDialog.previewThroughColorTransition
                                 ? Math.max(0, 1 - 2 * movieDialog.previewTransitionProgress)
@@ -1500,7 +1531,8 @@ Item {
                             objectName: "moviePreviewIncomingFrame"
                             anchors.fill: parent
                             z: 1
-                            visible: movieDialog.previewItemCount > 0
+                            visible: !movieDialog.previewRasterTransition
+                                && movieDialog.previewItemCount > 0
                             opacity: !moviePreviewTransition.running
                                 ? 1
                                 : movieDialog.previewThroughColorTransition
@@ -1520,16 +1552,22 @@ Item {
                                 }
                             }
                         }
-                        Rectangle {
-                            objectName: "moviePreviewTransitionOverlay"
-                            anchors.fill: parent
+                        Image {
+                            id: moviePreviewTransitionImage
+                            objectName: "moviePreviewTransitionImage"
+                            anchors.centerIn: parent
                             z: 2
-                            visible: moviePreviewTransition.running
-                                && movieDialog.previewThroughColorTransition
-                            color: movieDialog.previewTransitionKind === "dissolvewhite"
-                                ? "#ffffff" : "#000000"
-                            opacity: 1 - Math.abs(
-                                2 * movieDialog.previewTransitionProgress - 1)
+                            width: movieDialog.previewActualSizeEnabled
+                                    && sourceSize.width > 0
+                                ? sourceSize.width : parent.width
+                            height: movieDialog.previewActualSizeEnabled
+                                    && sourceSize.height > 0
+                                ? sourceSize.height : parent.height
+                            visible: movieDialog.previewRasterTransition
+                                && source !== ""
+                            source: movieDialog.previewTransitionFrameSource
+                            fillMode: Image.PreserveAspectFit
+                            cache: false
                         }
                     }
                     Button {
