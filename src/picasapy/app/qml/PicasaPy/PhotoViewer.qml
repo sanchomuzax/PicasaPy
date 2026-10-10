@@ -254,6 +254,7 @@ Rectangle {
     //: könyvtár-nézetben (`panelClearGeotagDialog`, `setGeotagDialog`).
     signal clearGeotagRequested(var rows)
     signal setGeotagRequested(var rows, real latitude, real longitude)
+    signal dropGeotagRequested(var rows, real latitude, real longitude)
     signal manualFaceAddCancelRequested()
     //: #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár tartalmát
     //: cseréli le (keresés, illetve személy-album), amit a néző eltakarna —
@@ -575,6 +576,7 @@ Rectangle {
     }
 
     readonly property real zoomFactor: viewer.skalaErtekbol(viewer.zoomValue)
+    property bool zoomNavigatorDismissed: false
     readonly property string zoomMode:
         viewer.zoomValue === 0 ? "fit"
         : viewer.zoomValue === 0.5 ? "actual" : "custom"
@@ -595,6 +597,42 @@ Rectangle {
     //: léptetés eredményét a 0,5-höz méri, és az azt átlépő lépés
     //: pontosan ott áll meg.
     readonly property real zoomDetent: 0.5
+
+    // A négy sarok átvitele a fókuszkép helyi koordinátáira a forgatást,
+    // a nagyítást, a pásztázást és a kétképes nézet kivágását is leképezi.
+    // A geometriai mezők olvasása a kötést minden QML-átrendezéskor frissíti.
+    readonly property rect zoomNavigatorViewRect: {
+        var image = photoArea.fokuszKep
+        var frame = photoArea.fokuszKeret
+        if (!image || !frame || image.paintedWidth <= 0
+                || image.paintedHeight <= 0 || viewer.zoomFactor <= 0
+                || !isFinite(viewer.panX) || !isFinite(viewer.panY))
+            return Qt.rect(0, 0, 1, 1)
+        var geometryStamp = image.x + image.y + image.width + image.height
+                           + image.scale + image.rotation
+                           + frame.x + frame.y + frame.width + frame.height
+        if (!isFinite(geometryStamp)) return Qt.rect(0, 0, 1, 1)
+
+        var p0 = image.mapFromItem(frame, 0, 0)
+        var p1 = image.mapFromItem(frame, frame.width, 0)
+        var p2 = image.mapFromItem(frame, 0, frame.height)
+        var p3 = image.mapFromItem(frame, frame.width, frame.height)
+        var left = Math.min(p0.x, p1.x, p2.x, p3.x)
+        var right = Math.max(p0.x, p1.x, p2.x, p3.x)
+        var top = Math.min(p0.y, p1.y, p2.y, p3.y)
+        var bottom = Math.max(p0.y, p1.y, p2.y, p3.y)
+        var contentX = (image.width - image.paintedWidth) / 2
+        var contentY = (image.height - image.paintedHeight) / 2
+        var x0 = Math.max(0, Math.min(1,
+            (left - contentX) / image.paintedWidth))
+        var x1 = Math.max(0, Math.min(1,
+            (right - contentX) / image.paintedWidth))
+        var y0 = Math.max(0, Math.min(1,
+            (top - contentY) / image.paintedHeight))
+        var y1 = Math.max(0, Math.min(1,
+            (bottom - contentY) / image.paintedHeight))
+        return Qt.rect(x0, y0, Math.max(0, x1 - x0), Math.max(0, y1 - y0))
+    }
 
     // Ezek a teljes képre ható eszközök megnyitáskor kitöltő nézetet kérnek.
     // Bezáráskor a kitöltő nézet marad: az eredeti nagyítást nem mentjük el.
@@ -668,11 +706,19 @@ Rectangle {
         // ⚠️ MÉRT vágás [0, 1]-re (`0x005d13a9` fldz / `0x005d13c6` fld1):
         // az illesztettnél kisebbre és a 400 %-nál nagyobbra nem lehet
         // állítani.
-        viewer.zoomValue = Math.max(0, Math.min(1, v))
+        var uj = Math.max(0, Math.min(1, v))
+        if (uj === 0 || viewer.zoomValue === 0)
+            zoomNavigatorDismissed = false
+        viewer.zoomValue = uj
         if (viewer.zoomValue === 0) { panX = 0; panY = 0 }
         clampPan()
     }
-    function zoomFit() { setZoomValue(0); panX = 0; panY = 0 }
+    function zoomFit() {
+        zoomNavigatorDismissed = false
+        setZoomValue(0)
+        panX = 0
+        panY = 0
+    }
     function zoomActual() { setZoomValue(viewer.zoomDetent) }
 
     //: #2492: a léptető út a 0,5-ös beakadással. Ha az érték MÁR pontosan
@@ -704,6 +750,19 @@ Rectangle {
         var maxY = Math.max(0, (h - keret.height) / 2)
         panX = Math.max(-maxX, Math.min(maxX, panX))
         panY = Math.max(-maxY, Math.min(maxY, panY))
+    }
+
+    function panFromZoomNavigator(deltaX, deltaY) {
+        var image = photoArea.fokuszKep
+        if (!image || viewer.zoomFactor <= 1.01) return
+        var origin = image.mapToItem(photoArea, 0, 0)
+        var moved = image.mapToItem(
+            photoArea,
+            deltaX * image.paintedWidth,
+            deltaY * image.paintedHeight)
+        panX -= moved.x - origin.x
+        panY -= moved.y - origin.y
+        clampPan()
     }
 
     function show(index) { currentIndex = index; forceActiveFocus() }
@@ -4274,6 +4333,31 @@ Rectangle {
                     running: photo.status === Image.Loading
                 }
 
+                ZoomNavigator {
+                    objectName: "zoomNavigator"
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.rightMargin: 8
+                    anchors.bottomMargin: captionBar.visible
+                        ? captionBar.height + 8 : 8
+                    visible: viewer.zoomFactor > 1.01
+                             && !viewer.isCurrentVideo
+                             && !viewer.zoomNavigatorDismissed
+                    imageSource: photoArea.fokuszKep.source
+                    imageAspect: photoArea.fokuszKep.paintedHeight > 0
+                        ? photoArea.fokuszKep.paintedWidth
+                          / photoArea.fokuszKep.paintedHeight : 1
+                    imageRotation: photoArea.fokuszKep.rotation
+                    zoomFactor: viewer.zoomFactor
+                    zoomPercent: viewer.zoomFactor
+                        / Math.max(0.01, viewer.actualZoomFactor()) * 100
+                    viewRect: viewer.zoomNavigatorViewRect
+                    onPanRequested: function(deltaX, deltaY) {
+                        viewer.panFromZoomNavigator(deltaX, deltaY)
+                    }
+                    onCloseRequested: viewer.zoomNavigatorDismissed = true
+                }
+
                 // #1072 — `editpanel/render_now` („Létrehozás"): a PISZKOZAT
                 // külön befejező lépése. A `projectutils::draft_collage`
                 // szövege erre a gombra hivatkozik: a megosztás és a
@@ -4764,6 +4848,9 @@ Rectangle {
                     }
                     onSetGeotagRequested: function(rows, la, lo) {
                         viewer.setGeotagRequested(rows, la, lo)
+                    }
+                    onPhotosDroppedRequested: function(rows, la, lo) {
+                        viewer.dropGeotagRequested(rows, la, lo)
                     }
                     onCloseRequested: viewer.zarjaAFiokot()
                 }

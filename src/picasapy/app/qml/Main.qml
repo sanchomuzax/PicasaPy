@@ -2264,6 +2264,74 @@ ApplicationWindow {
         }
     }
 
+    // A térképre ejtés az eredeti Picasa szerint mindig külön megerősítést
+    // kér; az elfogadás ugyanazt az INI-író utat hívja, mint a panel helye.
+    DeferredDialog {
+        id: dropGeotagDialog
+        objectName: "dropGeotagDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            Dialog {
+                id: dialog
+                objectName: "dropGeotagConfirm"
+                modal: true
+                focus: true
+                anchors.centerIn: parent ? Overlay.overlay : undefined
+                property var rows: []
+                property real latitude: 0
+                property real longitude: 0
+                property string message: ""
+
+                function futtasd(rowList, lat, lon) {
+                    if (!rowList || rowList.length === 0) return
+                    rows = rowList.slice()
+                    latitude = lat
+                    longitude = lon
+                    var moving = controller.geotaggedCount(rows) > 0
+                    if (rows.length === 1) {
+                        message = moving ? qsTr("Move photo here?")
+                                         : qsTr("Put photo here?")
+                    } else {
+                        var template = moving
+                            ? qsTr("Move %d photos here?")
+                            : qsTr("Put %d photos here?")
+                        message = template.replace("%d", String(rows.length))
+                    }
+                    open()
+                }
+
+                onAccepted: controller.setGeotagRows(rows, latitude, longitude)
+
+                ColumnLayout {
+                    spacing: 12
+                    Text {
+                        objectName: "dropGeotagMessage"
+                        Layout.preferredWidth: 320
+                        text: dialog.message
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 8
+                        PicasaButton {
+                            objectName: "dropGeotagYesButton"
+                            text: qsTr("(OK)")
+                            accent: Theme.picasaGreen
+                            onClicked: dialog.accept()
+                        }
+                        PicasaButton {
+                            objectName: "dropGeotagCancelButton"
+                            text: qsTr("Cancel")
+                            onClicked: dialog.reject()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     //: #1612: halasztva — a Helyek panel törlés-megerősítése csak onnan nyílik
     DeferredDialog {
         id: panelClearGeotagDialog
@@ -2839,6 +2907,7 @@ ApplicationWindow {
         // egy parancs, egy út.
         onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
         onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onDropGeotagRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
         // #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár rácsát
         // cseréli le, amit a néző eltakarna — ezért előbb ZÁRUL a néző.
         // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
@@ -3448,6 +3517,10 @@ ApplicationWindow {
                                               : false
                                         isHidden: modelData.hidden === true
                                         index: modelData.row
+                                        dragRows: window.selectedIndexes
+                                            && window.selectedIndexes.length
+                                            ? window.selectedIndexes.slice()
+                                            : [modelData.row]
                                         keywords: modelData.keywords
                                         resolution: modelData.resolution
                                         // #305: null-őr
@@ -3596,6 +3669,7 @@ ApplicationWindow {
         //: kérdez. A menüpont változatlanul azon megy át.
         onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
         onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onPhotosDroppedRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
         visible: window.placesPanelOpen
         anchors.fill: parent
         appWindow: window
@@ -3647,6 +3721,9 @@ ApplicationWindow {
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
+        // #4585: a Névtelenek GYŰJTEMÉNYE üres (az Ignored album nem ide tartozik)
+        unnamedCollectionEmpty: window.facesAlbumMode === "unnamed"
+                                && unnamedFacesView.groupsModel.length === 0
         // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a
         // `currentPersonName` az előző személyé marad — az albumban nincs
         // „nézett személy", tehát a „Szintén" lista sem
