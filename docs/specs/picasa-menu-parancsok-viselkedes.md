@@ -247,6 +247,12 @@ címkéje „Mozgófilmek exportálása:" (`labelgroup9`).
   bájthű másolat;
 - hogy a `moviesradio` tiltott-e film nélküli kijelölésnél (a `webexport`
   init-jében nem kerestük; az `export.fen`-é igen, ld. `export-parbeszed.md`).
+- a gyári sablonok al-sablonjainak `define`-jai (pl. `blackbg/imagetarget.tpl`
+  29–30. sor `define imageWidth 600`, `greyfrm/framebase.tpl` 31–32. sor
+  `define thumbnailWidth 120`) **nálunk hatástalanok** a képgenerálásra: a
+  képek a futtatás előtt készülnek, és csak az `index.tpl` saját `define`-jait
+  olvassuk ki előre (`webexport/sizes.py`). Hogy az eredetiben ezek hatnak-e
+  a képméretre, a fájlokból nem dönthető el.
 
 ## 7. Színkezelés — és a beállítások TÁROLÁSI HELYE
 

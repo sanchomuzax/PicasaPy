@@ -107,7 +107,7 @@ def _export_record(
         return "a videó első képkockája nem olvasható"
     thumb_width, thumb_height = _image_size(thumb_path)
     if movie_embed:
-        large_width, large_height = record.width or 0, record.height or 0
+        large_width, large_height = _movie_size(record, item.source)
     else:
         large_width, large_height = _image_size(image_path)
     return PhotoExportData(
@@ -124,6 +124,22 @@ def _export_record(
         large_height=large_height,
         movie_embed=movie_embed,
     )
+
+
+def _movie_size(record: PhotoRecord, source: Path) -> tuple[int, int]:
+    """A film mérete a lejátszóhoz. Az index videóra nem tölt méretet
+    (`index/sync.py` EMPTY_METADATA), ezért hiányában az első kockából
+    olvassuk — az elszigetelt dekóderen át, mint a bélyegképnél. (0, 0),
+    ha az sem olvasható; a sablon ilyenkor nem ír méret-attribútumot."""
+    if record.width and record.height:
+        return record.width, record.height
+    from picasapy.export.exporter import _first_frame
+
+    frame = _first_frame(source)
+    if frame is None:
+        return (0, 0)
+    height, width = frame.shape[:2]
+    return (width, height)
 
 
 def _is_still(thumb_path: Path, image_path: Path, movie_embed: bool) -> bool:

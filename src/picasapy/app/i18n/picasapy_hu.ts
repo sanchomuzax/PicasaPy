@@ -1879,7 +1879,8 @@ picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
         </message>
         <message>
             <source>Original Size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item4.title</extracomment>
             <translation>Eredeti méret</translation>
         </message>
         <message>

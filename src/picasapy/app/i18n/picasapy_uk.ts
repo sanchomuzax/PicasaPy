@@ -1868,8 +1868,9 @@ picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
         </message>
         <message>
             <source>Original Size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item4.title</extracomment>
+            <translation>Оригінальний розмір</translation>
         </message>
         <message>
             <source>1024 pixels (for large monitors)</source>
@@ -1905,7 +1906,7 @@ picasapy-origin-key: webexport:webexport/labelgroup9.title</extracomment>
             <source>First frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Перший фрейм</translation>
         </message>
         <message>
             <source>Full movie</source>

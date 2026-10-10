@@ -236,6 +236,11 @@ class TestMeretvalasztoEsMozgokepMod4610:
         controller = make_controller(lambda: [], settings=tarolo)
         assert controller.webExportPrefs() == {"sizeIndex": 3, "movieFull": False}
 
+    def test_tablan_kivuli_tarolt_index_az_alapra_esik(self, make_controller):
+        tarolo = _MemSettings({"webexport/size": 9})
+        controller = make_controller(lambda: [], settings=tarolo)
+        assert controller.webExportPrefs()["sizeIndex"] == 3
+
     def test_az_index_kepmeretet_ad_a_belyegkep_a_sablone(
         self, make_controller, library, tmp_path
     ):

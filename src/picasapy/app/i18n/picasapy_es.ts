@@ -1868,8 +1868,9 @@ picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
         </message>
         <message>
             <source>Original Size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item4.title</extracomment>
+            <translation>Tamaño original</translation>
         </message>
         <message>
             <source>1024 pixels (for large monitors)</source>
@@ -1911,7 +1912,7 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
-            <translation type="unfinished" />
+            <translation>Película completa</translation>
         </message>
         <message>
             <source>Shadow pictures</source>

@@ -227,8 +227,11 @@ Window {
         // #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): az eredeti
         // `webexport.fen` EGY méretválasztót ad (`sizeradio`, a nagy kép
         // mérete) — a bélyegkép méretét a sablon szabja meg (hiányában 144
-        // képpont). Mellette a mozgókép-mód (`moviesradio`). A sorrend és a
-        // szöveg a FEN-é; a képpont-táblát a vezérlő tartja (`SIZE_CHOICES`).
+        // képpont). Mellette a mozgókép-mód (`moviesradio`). Az elemek
+        // sorrendje és angol forrásszövege a FEN-é, a magyar felirat a
+        // hivatalos katalógusé (`webexport/itemN`); a címke+legördülő
+        // rács elrendezése a miénk. A képpont-táblát a vezérlő tartja
+        // (`SIZE_CHOICES`), a QML csak az indexet adja át.
         GridLayout {
             Layout.fillWidth: true
             columns: 2

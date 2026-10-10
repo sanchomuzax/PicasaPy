@@ -1868,8 +1868,9 @@ picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
         </message>
         <message>
             <source>Original Size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/item4.title</extracomment>
+            <translation>Originalus dydis</translation>
         </message>
         <message>
             <source>1024 pixels (for large monitors)</source>

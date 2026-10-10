@@ -277,14 +277,15 @@ class WebExportController(BackgroundWorkerMixin, QObject):
 
 
 def _size_index(value) -> int:
-    """Tárolt/kapott méretindex ellenőrizve. Hiányzó vagy nem szám érték az
-    alapra (3 → 640) esik; a táblán kívüli szám a 0. elemre — az eredeti is
-    így bánik az ismeretlen tárolt értékkel (`0x7f5bf0`)."""
+    """Tárolt/kapott méretindex ellenőrizve: hiányzó, nem szám vagy a
+    táblán kívüli érték az alapra (3 → 640) esik. (A tárolt index a mi
+    kulcsunk, nem az eredeti `WebExportSize` enumja, ezért a táblán kívüli
+    értéket hibásnak tekintjük, és nem az eredeti 0-ra ejtését követjük.)"""
     try:
         index = int(value)
     except (TypeError, ValueError):
         return DEFAULT_SIZE_INDEX
-    return index if 0 <= index < len(SIZE_CHOICES) else 0
+    return index if 0 <= index < len(SIZE_CHOICES) else DEFAULT_SIZE_INDEX
 
 
 def _truthy(value) -> bool:

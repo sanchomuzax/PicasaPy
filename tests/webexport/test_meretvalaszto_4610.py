@@ -183,7 +183,7 @@ class TestAMozgokepMod:
 
     def test_teljes_mozgofilm_a_filmet_masolja(self, tmp_path):
         video = _video(tmp_path / "kepek" / "v.mp4")
-        record = _record(video.parent, "v.mp4", kind="video", width=320, height=240)
+        record = _record(video.parent, "v.mp4", kind="video", width=None, height=None)
         settings = WebExportSettings(
             thumbnail_max_dimension=144, image_max_dimension=160, movie_full=True
         )
@@ -197,7 +197,8 @@ class TestAMozgokepMod:
         # a bélyegkép az első kocka, a sablon méretében
         assert photo.thumbnail_rel_path.endswith(".jpg")
         assert max(photo.thumbnail_width, photo.thumbnail_height) == 144
-        # a film saját mérete (nem a választott 160)
+        # a film saját mérete (nem a választott 160) — az index videóra nem
+        # tölt méretet (`index/sync.py` EMPTY_METADATA), tehát a filmből jön
         assert (photo.large_width, photo.large_height) == (320, 240)
         variables = image_loop_variables(report.photos, 0)
         assert variables["isImage"] == ""
@@ -266,3 +267,38 @@ def test_a_csomagolt_sablon_a_teljes_filmet_lejatszhatoan_agyazza_be(tmp_path, s
     assert '<video src="image/v.mp4"' in oldalak
     assert '<img src="image/v.mp4"' not in oldalak
     assert '<img src="image/a.jpg"' in oldalak
+
+
+@pytest.mark.parametrize("sablon_id", _HTML_SABLONOK)
+def test_meret_nelkuli_filmnel_nincs_nulla_meret_attributum(tmp_path, sablon_id):
+    """Ha a film mérete sem az indexből, sem a filmből nem jön, a `<video>`
+    ne kapjon `width="0"`-t (0×0-s, láthatatlan lejátszó lenne)."""
+    import dataclasses
+
+    from picasapy.webexport import list_bundled_templates, run_web_export
+
+    album = _film_album()
+    film = dataclasses.replace(album.photos[0], large_width=0, large_height=0)
+    album = dataclasses.replace(album, photos=(film,) + album.photos[1:])
+    sablon = next(t for t in list_bundled_templates() if t.id == sablon_id)
+    target = tmp_path / "ki"
+    run_web_export(sablon.path, target, album)
+    oldalak = "".join(
+        p.read_text(encoding="utf-8") for p in sorted(target.glob("index*.html"))
+    )
+    assert '<video src="image/v.mp4"' in oldalak
+    assert 'width="0"' not in oldalak
+    assert 'height="0"' not in oldalak
+
+
+def test_az_xml_sablon_az_eredeti_es_a_nagy_kep_meretet_kulon_irja(tmp_path):
+    """Az `itemWidth` az EXPORTÁLT kép mérete (hivatalos doksi), ezért az a
+    `<large>` elemre való, nem az `<original>`-ra."""
+    from picasapy.webexport import list_bundled_templates, run_web_export
+
+    sablon = next(t for t in list_bundled_templates() if t.id == "xml")
+    target = tmp_path / "ki"
+    run_web_export(sablon.path, target, _film_album())
+    xml = (target / "album.xml").read_text(encoding="utf-8")
+    assert '<original width=' not in xml
+    assert '<large src="image/a.jpg" width="640" height="480"/>' in xml

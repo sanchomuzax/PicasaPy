@@ -1,7 +1,7 @@
 <p class="back-link"><a href="<%referrer%>">&larr; Vissza a galériához</a></p>
 <figure class="item-figure<%if shadowedImages%> shadow<%endif%>" style="--shadow-color: <%bgColor%>;">
 <%if isImage%><img src="<%itemLargeImage%>" width="<%itemWidth%>" height="<%itemHeight%>" alt="<%itemCaption%>"><%endif%>
-<%if isSimpleEmbed%><video src="<%itemLargeImage%>" width="<%itemWidth%>" height="<%itemHeight%>" controls autoplay></video><%endif%>
+<%if isSimpleEmbed%><video src="<%itemLargeImage%>"<%if itemWidth%> width="<%itemWidth%>"<%endif%><%if itemHeight%> height="<%itemHeight%>"<%endif%> controls autoplay><a href="<%itemLargeImage%>"><%itemName%></a></video><%endif%>
 <%if itemCaption%><figcaption><%itemCaption%></figcaption><%endif%>
 </figure>
 <nav class="item-nav">
