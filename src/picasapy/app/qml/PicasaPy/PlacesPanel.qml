@@ -58,6 +58,8 @@ Rectangle {
     signal setGeotagRequested(var rows, real latitude, real longitude)
     // A rács húzása saját megerősítést kap, a kijelölt sorokkal együtt.
     signal photosDroppedRequested(var rows, real latitude, real longitude)
+    //: #4582: a jelölő buborékából a képcsoportot mutatjuk a rácsban.
+    signal markerSearchRequested(var rows)
 
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
@@ -116,6 +118,8 @@ Rectangle {
                         panel.photoActivated(row)
                         if (controller) controller.showGeotagged()
                     })
+                    item.markerSearchRequested.connect(panel.markerSearchRequested)
+                    item.markerEraseRequested.connect(panel.clearGeotagRequested)
                     item.placePicked.connect(panel.placeSelection)
                     // a térképmodul nélküli tartalék-nézetben ez a jel nincs meg
                     if (item.photosDropped) item.photosDropped.connect(panel.photoDrop)

@@ -321,6 +321,8 @@ edittextpanel/leftalign,megvan,PicasaPy/EditorTextPanel.qml,A Left justify text 
 edittextpanel/rightalign,megvan,PicasaPy/EditorTextPanel.qml,A Right justify text súgójú gomb a szöveg igazítását változtatja; kimeneti igazítás-ellenőrzés: tests/render/test_text_fonts.py.
 edittextpanel/sizelist,megvan,PicasaPy/EditorTextPanel.qml,A textFontSizeBox betűméret-választó a szöveg eszközben.
 geopanel/map_menu,megvan,PicasaPy/PlacesPanel.qml;PicasaPy/PlacesMap.qml,A PicasaComboBox a támogatott térképtípusok között vált; a valódi főablakos keresőteszt ellenőrzi a látható térképpanelt.
+geopanel/marker,megvan,PicasaPy/PlacesMarker.qml,A geocímkézett fotó bélyegképe valódi térképjelölőként jelenik meg; a kattintást a tests/app/qml_functional/test_hely_jelolo_buborek_4582.py ellenőrzi.
+geopanel/marker_bubble,megvan,PicasaPy/PlacesMarker.qml,"A jelölő buboréka a fotódarabszámot, a Search for these photos in Picasa műveletet és az Erase location info műveletet mutatja; mindhárom a valódi főablakban tesztelt (#4582)."
 geopanel/search,megvan,PicasaPy/PlacesPanel.qml,A Search gomb a helyi keresést alkalmazza; kimeneti ellenőrzés: tests/app/test_qml_helyek_kereses_4147.py.
 geopanel/search_group,megvan,PicasaPy/PlacesPanel.qml,A Search feliratot mezőt és gombot közös keresőcsoport rendezi.
 geopanel/search_label,megvan,PicasaPy/PlacesPanel.qml,A helyi képkeresés felirata Search; hivatalos magyar fordítása „Keresés”; kimeneti ellenőrzés: tests/app/test_qml_helyek_kereses_4147.py.
