@@ -41,6 +41,11 @@ sorrend és az indexképek kapcsolója tehát egy helyről vezérelhető, és a
 két belépési pont nem tud szétcsúszni. Keskeny ablakban a ▾ gomb
 elrejtőzik; a menüsorból ilyenkor is elérhető minden.
 
+Fanézetben a mappa sorára jobbgombbal kattintva a menü attól függ, milyen
+sor az: ha a mappában vannak saját képek (vagyis a könyvtár valódi
+mappája), a **teljes mappa-menü** nyílik, ugyanaz, mint a többi nézetben.
+A csak továbbvezető, saját kép nélküli köztes sorokon rövidebb menü jön elő.
+
 A hasáb üres részére jobbgombbal kattintva a hasáb saját menüje nyílik
 meg. Ebben a következők vannak:
 
@@ -280,7 +285,12 @@ kikerülnek a listából.
 
 - **Nézet ▸ Kis indexképek** (Ctrl+1) és **Normál indexképek** (Ctrl+2)
   váltja a méretet. Finomabban a képtálca jobb szélén lévő
-  nagyítás-csúszkával állíthatod.
+  nagyítás-csúszkával állíthatod. A **Kis indexképek**, a **Normál
+  indexképek** és a **Szerkesztési nézet** tétel közül mindig pontosan
+  az áll pipával, amelyik az éppen látható nézetet adja: szerkesztési
+  nézetben az utolsó, különben az aktuális indexképméret tétele. A
+  csúszkával beállított köztes méretnél egyik indexkép-tételen sincs
+  pipa.
 - **Nézet ▸ Indexkép felirata** almenüben választhatod, mi legyen a kép
   alatt: **Egyik sem**, **Fájlnév**, **Képfelirat**, **Címkék** vagy
   **Felbontás**.
@@ -380,7 +390,9 @@ húzva nagyítva látod a részleteket.
 A tálca kimeneti gombsora (**Nyomtatás**, **E-mail**, **Exportálás**,
 **Kollázs**, **Film**) keskeny ablakban nem fér ki egészen. Ilyenkor
 a sor végén megjelenik a **További lehetőségek…** gomb, és a ki nem
-férő gombok alatta, listában érhetők el.
+férő gombok alatta, a gombra kattintva felnyíló függőleges oszlopban
+érhetők el. Az oszlopban ugyanúgy ikon és felirat áll, mint a sávban, és
+a tétel szürke, ha a hozzá tartozó gomb is az volna.
 
 ## A képek dátumának módosítása
 
@@ -418,6 +430,9 @@ ideje, a tájolás, a **Vaku** állása, az **Objektív** neve, a
 **Fehéregyensúly**, a **Fénymérés módja**, az **Exponálási program**, a
 **Tömörítés** és a **Színtér**, végül a **Kulcsszavak** és a
 GPS-koordináták.
+
+A panelen jobbgombbal kattintva egyetlen tétel nyílik: a **Szerkesztési
+címkék**, ami a Címkék panelt hozza elő.
 
 A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
 annak **a sora sem jelenik meg** — a panel tehát képenként rövidebb vagy
@@ -468,7 +483,9 @@ látható képeket nem rejti el. A kép helyi menüjében is ott van, ugyanennek
 a tételnek a helyén **Megjelenítés**-re vált.
 
 Egész mappát is elrejthetsz: jelöld ki, majd **Mappa ▸ Elrejtés**, vagy a
-mappa helyi menüjében **Mappa elrejtése**. A mappa eltűnik a bal hasábról;
+mappa helyi menüjében **Mappa elrejtése**. Album- és személynézetben nincs
+kijelölt mappa, ezért ott a **Mappa ▸ Elrejtés** és a **Mappa ▸
+Megjelenítés** szürke. A mappa eltűnik a bal hasábról;
 a **Nézet ▸ Rejtett képek** bekapcsolásával a **Rejtett mappák** között
 látod viszont. Visszahozni a **Mappa ▸ Megjelenítés** paranccsal tudod, vagy
 a mappa helyi menüjének **Mappa megjelenítése** tételével: ehhez

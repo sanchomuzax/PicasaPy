@@ -12,6 +12,15 @@ program a képeket a képernyővédő saját **Kijelölt képek** listájához
 fűzi, és a felület tetején kiírja: „*N* kép hozzáadva a
 képernyővédőhöz." Ugyanaz a kép nem kerül kétszer a listába.
 
+Ha ezt egy **album** megnyitott nézetében teszed, a program előbb
+rákérdez: „Biztosan hozzá szeretné adni a kijelölt album összes képét?"
+Az **Igen** után kerülnek a képek a listába; a **Nem** és a **Mégse**
+nem ad hozzá semmit.
+
+Az üzenet akkor is megjelenik, ha egyetlen új kép sem került a listába —
+például mert mind szerepelt már benne; ilyenkor „0 kép hozzáadva a
+képernyővédőhöz." áll rajta.
+
 ## Beállítás
 
 **Eszközök ▸ Képernyővédő konfigurálása…** nyitja meg az ablakot:
