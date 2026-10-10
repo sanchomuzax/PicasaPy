@@ -9,9 +9,9 @@ import QtQuick.Layouts
 // #496: kiemelve az EditorPanel.qml-ből — a gazda-panelre a `panel`
 // tulajdonságon át hivatkozik (ld. `EditorCropPanel.qml`).
 // #4558: a kétmódú csempék BÉLYEGKÉPE is a Shift szerinti szűrőé
-// (`thumbSource: panel.effectThumbSource(szuro)`) — az eredeti a csempe
-// erőforrás-nevét a `_mod%s` utótaggal képzi, tehát a másodlagos
-// előnézetét mutatja.
+// — az eredeti a csempe erőforrás-nevét a `_mod%s` utótaggal képzi,
+// tehát a másodlagos előnézetét mutatja. A bélyegkép a HALASZTOTT
+// `panel.shiftBelyegkep`-et követi, nem a `szuro`-t (ld. EditorPanel.qml).
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -66,7 +66,8 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "unsharp" : "unsharp2"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            thumbSource: panel.effectThumbSource(szuro)
+            thumbSource: panel.effectThumbSource(panel.shiftBelyegkep
+                                               ? "unsharp" : "unsharp2")
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
@@ -107,7 +108,8 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "grain" : "picnikgrain"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            thumbSource: panel.effectThumbSource(szuro)
+            thumbSource: panel.effectThumbSource(panel.shiftBelyegkep
+                                               ? "grain" : "picnikgrain")
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
@@ -124,7 +126,8 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "tint" : "picniktint"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            thumbSource: panel.effectThumbSource(szuro)
+            thumbSource: panel.effectThumbSource(panel.shiftBelyegkep
+                                               ? "tint" : "picniktint")
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
@@ -153,7 +156,8 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "glow" : "glow2"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            thumbSource: panel.effectThumbSource(szuro)
+            thumbSource: panel.effectThumbSource(panel.shiftBelyegkep
+                                               ? "glow" : "glow2")
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
@@ -184,7 +188,8 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "radtint" : "dir_tint"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            thumbSource: panel.effectThumbSource(szuro)
+            thumbSource: panel.effectThumbSource(panel.shiftBelyegkep
+                                               ? "radtint" : "dir_tint")
             badge: panel.hasBadge(szuro)
         }
     }
