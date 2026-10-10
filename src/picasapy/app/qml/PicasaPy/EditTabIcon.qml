@@ -30,6 +30,15 @@ Canvas {
         ctx.lineCap = "round"
         ctx.lineJoin = "round"
         var w = width, h = height
+        // #4552: a rajz mindig kitölti a teljes dobozt — az ikon mérete
+        // fülenként más (15×16 … 25×19), és a mért befoglaló doboznak kell
+        // egyeznie, nem a rajz körüli üres szegélynek. A tartalom saját
+        // befoglalóját [x0, y0, x1, y1] képpontban vesszük, és arányosan
+        // (a dobozhoz igazítva) skálázzuk a vászonra.
+        var b = icon.contentBounds(w, h)
+        ctx.save()
+        ctx.scale(w / (b[2] - b[0]), h / (b[3] - b[1]))
+        ctx.translate(-b[0], -b[1])
         if (icon.kind === "wrench") {
             // nyél: bal-alsó → jobb-felső átló
             ctx.strokeStyle = icon.strokeColor
@@ -86,5 +95,15 @@ Canvas {
                 ctx.fill()
             }
         }
+        ctx.restore()
+    }
+    // A három rajz befoglaló dobozának közelítése (képpontban, a vonalvastagság
+    // és a végzáródás beleszámítva); a #4552 renderelt próbája mér rá.
+    function contentBounds(w, h) {
+        if (icon.kind === "wrench")
+            return [w * 0.12, h * 0.04, w * 0.90, h * 0.94]
+        if (icon.kind === "sun")
+            return [0, h * 0.5 - w * 0.5, w, h * 0.5 + w * 0.5]
+        return [w * 0.22, h * 0.10, w * 0.88, h * 0.92]
     }
 }
