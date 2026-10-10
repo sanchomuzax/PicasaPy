@@ -16,13 +16,18 @@ A csempe sarkában látható **kék jelvény** azt jelenti, hogy az az effekt
 **egy kattintással** hat: nincs mit állítani rajta, azonnal rákerül a
 képre.
 
+A **Polaroid**, a **60-as évek** és a **Kerekített élek** színválasztója
+**Háttérszín** néven szerepel: ez a kép köré kerülő háttér színe.
+
 Néhány effektnek **színválasztója** is van a csúszkák mellett — például a
 **Neon**é, ahol te adod meg, milyen színnel világítsanak a kontúrok
 (alapból piros).
 
 A csempék kis előnézete a képed **mostani állapotát** mutatja: ha már
 tettél rá effektet — mondjuk fekete-fehérré alakítottad —, akkor minden
-csempe alapja is az, és a csempe csak a saját hatását teszi rá. Így
+csempe alapja is az, és a csempe csak a saját hatását teszi rá. Az
+előnézetek minden effekt **Alkalmaz**-a után azonnal a frissített
+állapotot mutatják. Így
 látod előre, mi lesz az eredmény, nem pedig azt, hogy hogyan hatna az
 effekt a nyers fotóra.
 
@@ -40,8 +45,8 @@ effekt a nyers fotóra.
 | Lágy fókusz | lágy, elmosott kép középen éles ponttal |
 | Ragyogás | fénylő, álmodozó hatás |
 | Szűrt FF | fekete-fehér, színszűrővel |
-| Fókuszos FF | egy pontot színesen hagy, a többit fekete-fehérré teszi |
-| Színátmenet | színes átmenet a kép egyik széle felől |
+| Fókuszos FF | egy pontot színesen hagy, a többit fekete-fehérré teszi — a **Méret** és az **Élesség** csúszkával |
+| Színátmenet | színes átmenet a kép egyik széle felől — a **Lágy perem** csúszka alapértéke 0,25 |
 
 ## Kreatív (4. fül)
 
@@ -95,7 +100,7 @@ köré — oldalt keskenyet, alul szélesebbet —, árnyékot vet alá, és meg
 A **Forgatás** csúszka pozitív értékénél a kép az **óramutató járása
 szerint** dől.
 
-A **Külső szín** nem a keretet festi: azt a hátteret adja, ami a megdöntött
+A **Háttérszín** nem a keretet festi: azt a hátteret adja, ami a megdöntött
 kép köré kerül, és amelyen az árnyék látszik. A keret fehér marad, bármit
 állítasz be — az eredeti Picasa is így csinálta.
 
@@ -214,6 +219,9 @@ kapsz. Ezt az eredeti Picasa is így csinálta.
 | Művészi | Szegély | Kerekített élek |
 | Művészi | Képpontnagyítás | Képpontnövelés |
 | További effektek | Filmszemcse | Régi filmszemcse |
+
+A **Ragyogás (régi)** csúszkás panelt nyit, mint a többi effekt: az
+**Intenzitás** és a **Sugár** csúszkával állíthatod.
 
 A **Képpontnövelés** nem az egész képet bontja durva képpontokra, hanem
 **csak a kör körül** — a kép egy pontja körüli folt éles marad, kifelé

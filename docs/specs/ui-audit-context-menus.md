@@ -981,7 +981,7 @@ Az Indexkép §2 összesítője 19 tételt mond, a részletes D.1 rekordlista 21
 | Indexkép | AlbumPhoto::ID_SUPPRESS | Feltöltés tiltása | objectName=contextMenuBlockUpload | **nem cél — megszűnt online szolgáltatás** | A jegy kifejezetten kizárja az online szolgáltatásokat |
 | Indexkép | AlbumPhoto::ID_PICTURE_RESET_FACES | Arcok alaphelyzetbe állítása | objectName=contextMenuResetFaces | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
 | Indexkép | AlbumPhotoWin::ID_PICTURE_PROPERTIES | Tulajdonságok | objectName=contextMenuProperties | **megvan és működik** | tests/app/qml_functional/test_photo_menu_commands.py |
-| Album | Album::ID_DELETEALBUM | Album törlése | objectName=albumMenuDelete | **hiányzik — javasolt jegycím: A törlés menüpont távolítsa el a kijelölt Picasa-albumot** | Nincs olyan művelet, amely az album tagságát minden érintett mappából eltávolítja |
+| Album | Album::ID_DELETEALBUM | Album törlése | objectName=albumMenuDelete | **megvan és működik** | megerősítés utáni törlés minden érintett mappa ini-jéből; `tests/app/qml_functional/test_album_torles_menu_4598.py` |
 | Album | Album::ID_EDITALBUMDESCRIPTION | Album leírásának szerkesztése | objectName=albumMenuEditDescription | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |
 | Album | Album::ID_ALBUM_FILTERFACES | Névcímkék hozzáadása | objectName=albumMenuAddNameTags | **megvan és működik** (#4535) | tests/app/qml_functional/test_nevcimke_kereses_4535.py |
 | Album | Album::ID_SELECTALL | Összes kép kijelölése | objectName=albumMenuSelectAll | **megvan és működik** | tests/app/test_stage4_context_menus_422.py |

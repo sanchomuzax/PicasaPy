@@ -19,7 +19,10 @@ azonnal kilép, a jelölő nélkül pedig a dupla kattintás.
 
 A néző alján és szélein a következőket találod:
 
-- **Előző kép** / **Következő kép** léptetés.
+- **Előző kép** / **Következő kép** léptetés. Ha a gombot **nyomva
+  tartod**, a néző folyamatosan lép tovább, felengedéskor megáll; a mappa
+  szélén a léptetés magától leáll.
+- **Filmszalag** a léptetőgombok között (lásd lentebb).
 - **Diavetítés indítása**.
 - **Arcok megjelenítése** (`F` billentyű) és **Arcok szerkesztése**
   (Shift+`F`) — a képen felismert arcok keretei.
@@ -28,6 +31,27 @@ A néző alján és szélein a következőket találod:
   ki a **feliratsávot** (lásd [Képfelirat](csillag-felirat-cimke.md)). A
   négyzet akkor is ott marad, ha a sáv ki van kapcsolva — ez az út
   vissza.
+
+### Teljes képernyő: F11
+
+Az **F11** a nézőt teljes képernyőre váltja, és újra megnyomva visszaállítja
+az ablakot az előző méretére. A billentyű csak a nyitott nézőben hat; a
+diavetítés a saját teljes képernyős állapotát kezeli, ott az F11 nem nyúl
+hozzá.
+
+Hogy a néző megnyitáskor magától teljes képernyőre váltson-e, azt az
+**Eszközök ▸ Fotómegjelenítő beállítása…** ablak **Teljes képernyős
+indítás** jelölője dönti el (lásd [Beállítások](beallitasok.md)).
+
+### A filmszalag
+
+A néző alsó sávjában, a két léptetőgomb között a mappa képeinek apró
+filmszalagja áll. Mindig **hét képnyi** hely van rajta, akkor is, ha a
+mappában kevesebb kép van, és az éppen látott kép **mindig a középső
+helyen** marad: léptetéskor a szalag mozdul, nem a kiemelés. A mappa elején
+és végén üres helyek töltik ki a széleket. Az aktuális képet **kétszínű
+keret** (kék, benne világosszürke) jelöli. A szalagot nem húzhatod; egy
+bélyegképre kattintva az a kép nyílik meg.
 
 A **Ctrl+Delete** a lemezről törli az éppen látott képet (rákérdezéssel).
 
@@ -304,8 +328,8 @@ Az eszköztár szűrőjével csak a videókat is megjelenítheted.
 
 A videó alatt két sor van. A felső sor a **vágósáv**: két fogantyúja a
 **Kezdőpont** és a **Végpont** felirat alatt húzható, és a vágást mutatja.
-Az alsó sorban a lejátszás, a lejátszási csúszka, a vágógombok, a
-képkocka-rögzítés és a két módgomb áll, jobb szélén az idő és a
+Az alsó sorban a lejátszás, a lejátszási csúszka, a két vágógomb és a
+két módgomb áll, jobb szélén az idő és a
 hangerő-csúszka. A **hangerő megmarad** a következő indításig is.
 
 Két módgomb van a sáv jobb oldalán:
@@ -316,22 +340,36 @@ Két módgomb van a sáv jobb oldalán:
 - **⛶** — **Lejátszás teljes képernyőn**: a program ablaka teljes
   képernyőre vált. Újra megnyomva visszaáll az előző ablakméret.
 
+### A videópanel
+
+Videó megnyitásakor a bal oldali szerkesztőpanelen **nem a fülsáv** áll
+(a képszerkesztő eszközei videón nem használhatók), hanem a **videópanel**
+három gombbal:
+
+- **Kezdés és befejezés alaphelyzetbe állítása** — törli a vágást, és
+  visszaadja a videó eredeti hosszát. Vágás nélkül szürke. Előbb rákérdez:
+  „Eltávolítja a mozgófilm összes módosítását?", és csak a **Szerkesztések
+  eltávolítása** gombra törli a vágáspontokat;
+- **Pillanatfelvétel készítése** — az éppen látott képkockát menti
+  (lásd lentebb, **Képkocka mentése a videóból**);
+- **Klip exportálása** — csak vágott videónál él (lásd lentebb).
+
 ### A videó megvágása
 
-A videó vezérlősávján három gomb tartozik a vágáshoz:
+A videó vezérlősávján két gomb tartozik a vágáshoz:
 
 - **Új kezdőpont beállítása** (**[**) — az éppen látott képkocka lesz a
   kezdet;
-- **Új végpont beállítása** (**]**) — az éppen látott képkocka lesz a vég;
-- **A mozgófilm eredeti hosszának visszaállítása** (**⟲**) — a két pont
-  törlése. Vágás nélkül szürke.
+- **Új végpont beállítása** (**]**) — az éppen látott képkocka lesz a vég.
 
-A két pontot a vágósáv fogantyúival is húzhatod.
+A két pontot a vágósáv fogantyúival is húzhatod. A vágás törlése a
+videópanel **Kezdés és befejezés alaphelyzetbe állítása** gombjával
+történik.
 
 A lejátszás ezután a kijelölt szakaszra szorítkozik: a kezdőpontra
 ugrik, a végpontnál megáll, a csúszka pedig csak a szakaszon mozog.
 
-A **Klip exportálása** gomb csak vágott videónál él, de a kivágott klip
+A videópanel **Klip exportálása** gombja csak vágott videónál él, de a kivágott klip
 fájlba mentése ma még nem működik: Linuxon a gomb azt írja ki, hogy „A
 program ezt a funkciót Linux rendszeren nem támogatja". A kivágás ettől
 még megmarad, és a lejátszás a szakaszra szorítkozik.
@@ -343,8 +381,8 @@ Picasában készült, azt érintetlenül megőrizzük.
 
 ### Képkocka mentése a videóból
 
-Ugyanezen a sávon az **Aktuális képkocka rögzítése** gombbal az éppen
-látott képkockát JPEG-ként mentheted. A kép a **Rögzített videoklipek**
+A videópanel **Pillanatfelvétel készítése** gombjával (súgója: *Aktuális
+képkocka rögzítése*) az éppen látott képkockát JPEG-ként mentheted. A kép a **Rögzített videoklipek**
 mappába kerül (a Képek mappád Picasa almappájában), a videó nevével;
 ha már van ilyen nevű, `-001`, `-002` sorszámot kap.
 
