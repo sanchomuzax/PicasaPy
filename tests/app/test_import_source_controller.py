@@ -421,6 +421,23 @@ class TestRunImportNamingModes:
         assert (dest / "Nyaralás" / "a.jpg").exists()
         assert (dest / "Nyaralás" / "b.jpg").exists()
 
+    def test_manual_mode_blank_name_starts_no_import(self, controller, tmp_path):
+        # #4595: cím nélkül a vezérlő NEM indítja el az importot — se
+        # háttérszál, se másolás a célgyökérbe.
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        started = []
+        controller.importStarted.connect(started.append)
+
+        _scan(controller, str(source))
+        controller.runImport(str(dest), "manual", "   ", "leave")
+
+        assert started == []
+        assert list(dest.iterdir()) == []
+
     def test_today_mode_uses_a_single_folder_for_every_candidate(
         self, controller, tmp_path
     ):
