@@ -71,8 +71,8 @@ from picasapy.importsource import (
     ImportCandidate,
     atmeretez_masolatot,
     destination_subpath_for_mode,
-    is_valid_folder_name,
     duplicate_paths,
+    is_valid_folder_name,
 )
 from picasapy.index import (
     IndexFastKeySource,
@@ -841,18 +841,6 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             self.importFinished.emit(0, total)
             return
         dest_root = Path(dest_text)
-        # #4837: védekezés mélységben — a feloldott végső cél a `dest_root`
-        # alatt kell maradjon (szimbolikus link sem vezethet ki).
-        if naming_mode == NAMING_MANUAL:
-            resolved_root = dest_root.resolve()
-            resolved_target = (
-                dest_root
-                / destination_subpath_for_mode(
-                    None, NAMING_MANUAL, manual_name=manual_name
-                )
-            ).resolve()
-            if not resolved_target.is_relative_to(resolved_root):
-                return
         self.importStarted.emit(total)
         if total == 0:
             self.importFinished.emit(0, 0)

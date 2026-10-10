@@ -23,6 +23,7 @@ teljes SHA-256) — ugyanaz a mérce, mint a Duplikátum-kezelőé (#287)."""
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -284,6 +285,13 @@ def destination_subpath(
 _FORBIDDEN_FOLDER_NAME_CHARS = frozenset('<>:"|?*/\\')
 
 
+_WINDOWS_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL"}
+    | {f"COM{n}" for n in range(1, 10)}
+    | {f"LPT{n}" for n in range(1, 10)}
+)
+
+
 def is_valid_folder_name(name: str) -> bool:
     """A kézi importmappanév (#4837) EGYETLEN, biztonságos útvonal-elem-e.
 
@@ -294,8 +302,13 @@ def is_valid_folder_name(name: str) -> bool:
     stripped = name.strip()
     if not stripped or stripped in {".", ".."}:
         return False
+    # Windowson a záró pont/szóköz lekopik ("..." a célgyökér, "foo." = "foo")
+    if stripped.endswith((".", " ")) or set(stripped) <= {".", " "}:
+        return False
+    if stripped.split(".")[0].rstrip(" ").upper() in _WINDOWS_RESERVED_NAMES:
+        return False
     return not any(
-        char in _FORBIDDEN_FOLDER_NAME_CHARS or ord(char) < 32 or ord(char) == 127
+        char in _FORBIDDEN_FOLDER_NAME_CHARS or unicodedata.category(char) == "Cc"
         for char in stripped
     )
 

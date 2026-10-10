@@ -424,6 +424,29 @@ class TestRunImport:
 
         assert (dest / "Nyaralas" / "a.jpg").exists()
 
+    def test_controller_refuses_a_path_escaping_name_itself(
+        self, qml_app, qt_app, tmp_path
+    ):
+        # #4837: a vezérlő második védvonala a QML-gombtól függetlenül
+        window, _controller, _lib, engine = qml_app
+        dialog = _dialog_window(window)
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "cel-konyvtar"
+        dest.mkdir()
+        _scan(dialog, source, engine, qt_app)
+        controller = _import_source_controller(engine)
+        started = []
+        controller.importStarted.connect(started.append)
+
+        controller.runImport(str(dest), "manual", "../x", "leave")
+        qt_app.processEvents()
+
+        assert started == []
+        assert not (tmp_path / "x").exists()
+        assert list(dest.iterdir()) == []
+
     def test_typing_a_path_escaping_folder_name_disables_import(
         self, qml_app, qt_app, tmp_path
     ):
