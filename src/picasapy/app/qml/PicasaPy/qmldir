@@ -65,6 +65,7 @@ TrayActionSeparator 1.0 TrayActionSeparator.qml
 TrayAlbumToken 1.0 TrayAlbumToken.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
 EmailChoiceDialog 1.0 EmailChoiceDialog.qml
+OpenWithDialog 1.0 OpenWithDialog.qml
 SaveDialogs 1.0 SaveDialogs.qml
 InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml

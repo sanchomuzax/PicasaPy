@@ -97,6 +97,8 @@ PicasaMenu {
     signal hideToggleRequested()
     signal moveRequested()
     signal openFileRequested()
+    //: #4533: a „Társítás…" választót kéri a kijelölt képre
+    signal openWithRequested()
     signal locateRequested()
     //: #1613: a `.picasaoriginals`-beli megőrzött eredeti megmutatása
     signal locateOriginalRequested()
@@ -326,11 +328,11 @@ PicasaMenu {
         text: qsTr("Open File") + "\tCtrl+Shift+O"
         onTriggered: menu.openFileRequested()
     }
-    PicasaMenuItem {
-        // „Társítás ▸" — a társított alkalmazások listája még nincs meg
+    MenuItem {
+        // #4533: a kattintás a társított alkalmazások választóját nyitja
         objectName: "contextMenuOpenWith"
         text: qsTr("Open With")
-        placeholder: true
+        onTriggered: menu.openWithRequested()
     }
     MenuSeparator {}
 
