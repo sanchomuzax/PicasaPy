@@ -67,6 +67,8 @@ Item {
     property int activeMapTypeIndex: 0
     property int clickCount: 0
     signal markerActivated(int row)
+    signal markerSearchRequested(var rows)
+    signal markerEraseRequested(var rows)
     signal placePicked(real latitude, real longitude)
     function selectMapType(index) {}
     Rectangle {

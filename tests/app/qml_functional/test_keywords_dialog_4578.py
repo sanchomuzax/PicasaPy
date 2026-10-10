@@ -167,15 +167,24 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
     )
 
     property_list = _item(panel, "propertyList")
-    rendered_property_values = [
-        item.property("text")
-        for item in _walk(property_list)
-        if item.property("text") is not None
-    ]
+
+    def rendered_property_values():
+        return [
+            item.property("text")
+            for item in _walk(property_list)
+            if item.property("text") is not None
+        ]
+
+    # A lista JS-tömb modellből épül: a címke változásakor MINDEN delegált
+    # újra létrejön, a következő elrendezési körben. Azonnali olvasásnál a
+    # CI-n csak az első két delegált volt kész (main CI 38048260650, #4827).
+    tulajdonsag_felfrissult = _wait_for(
+        qt_app, lambda: "új címke" in rendered_property_values()
+    )
     tray_bar = _item(window, "trayBar")
     hianyok = []
-    if "új címke" not in rendered_property_values:
-        hianyok.append(f"Tulajdonságok mezők: {rendered_property_values!r}")
+    if not tulajdonsag_felfrissult:
+        hianyok.append(f"Tulajdonságok mezők: {rendered_property_values()!r}")
     status_felfrissult = _wait_for(
         qt_app,
         lambda: "új címke" in str(info_bar.property("text")),
