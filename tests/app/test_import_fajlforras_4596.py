@@ -106,3 +106,18 @@ def test_empty_selection_fails_with_a_message(controller):
     controller.scanFiles([])
     _var(controller)
     assert len(hibak) == 1
+
+
+def test_delete_all_after_copying_only_removes_the_selected_files(controller, tmp_path):
+    egy, ketto, harmadik = _forras(tmp_path)
+    jegyzet = egy.parent / "jegyzet.txt"
+    cel = tmp_path / "cel"
+    cel.mkdir()
+    controller.scanFiles([str(egy), str(ketto)])
+    _var(controller)
+    controller.runImport(str(cel), "date", "", "delete_all")
+    _var(controller)
+
+    assert not egy.exists() and not ketto.exists()
+    assert harmadik.is_file() and jegyzet.is_file()
+    assert (cel / "2024-03-05" / "a.jpg").is_file()

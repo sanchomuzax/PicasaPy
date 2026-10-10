@@ -36,7 +36,7 @@ HIVATALOS = {
         "Tags::ID_APPLYTHISTAGTOSELECTION"),
     # #2921, második kör: a mappa-fejléc szinkron-felirata és az
     # adatbázis-áthelyező mappaválasztó címe
-    # #4596: a forrás-tallózó címe és a fájlválasztó gombja
+    # #4596: a fájlválasztó ABLAKCÍME (a forrás-tallózó menüje: segédszöveg)
     "Import Files/Folder": (
         "Fájlok/mappa importálása", "CAcquireUI::importfilestitle"),
     "Sync to Web": ("Szinkronizálás az internettel", "SyncLabel::Off"),

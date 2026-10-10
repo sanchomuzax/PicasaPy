@@ -17,7 +17,7 @@ from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt, QUr
 from PySide6.QtTest import QTest
 
 import picasapy.app
-from picasapy.scanner.filetypes import PHOTO_EXTENSIONS, VIDEO_EXTENSIONS
+from picasapy.scanner.filetypes import PHOTO_EXTENSIONS, RAW_EXTENSIONS, VIDEO_EXTENSIONS
 
 from support.jpeg_factory import make_jpeg
 
@@ -51,13 +51,29 @@ def _kattint(window, item, qt_app) -> None:
     qt_app.processEvents()
 
 
-def test_a_fajlvalaszto_szuroje_a_felismert_halmazt_adja():
-    """A „Picture and Movie Files" szűrő a `scanner/filetypes.py` halmaza."""
+def _globok(szoveg: str, nev: str) -> set[str]:
+    """A `nev` nevű QML-tulajdonság értékének kiterjesztései."""
+    kezdet = szoveg.index(f"readonly property string {nev}:")
+    veg = min(
+        i for i in (
+            szoveg.find("readonly property", kezdet + 10),
+            szoveg.find("nameFilters", kezdet),
+        ) if i > 0
+    )
+    return {m.lower() for m in re.findall(r"\*(\.[a-z0-9]+)", szoveg[kezdet:veg])}
+
+
+def test_a_fajlvalaszto_szurobe_a_felismert_halmaz_kerul():
+    """„Képek és filmek” = fotó + RAW + videó, „Képek” = fotó + RAW (mint a
+    beolvasás `_FILTER_KINDS`-e); a hivatalos szűrőcímekkel."""
     szoveg = _QML.read_text(encoding="utf-8")
-    blokk = szoveg[szoveg.index("id: sourceFilesDialog"):]
-    blokk = blokk[: blokk.index("onAccepted")]
-    kiterjesztesek = {m.lower() for m in re.findall(r"\*(\.[a-z0-9]+)", blokk)}
-    assert kiterjesztesek == PHOTO_EXTENSIONS | VIDEO_EXTENSIONS
+    kepek = _globok(szoveg, "pictureGlobs")
+    filmek = _globok(szoveg, "movieGlobs")
+    assert kepek == PHOTO_EXTENSIONS | RAW_EXTENSIONS
+    assert filmek == VIDEO_EXTENSIONS
+    for felirat in ('qsTr("Picture and Movie Files")', 'qsTr("Picture Files")',
+                    'qsTr("All Files")'):
+        assert felirat in szoveg
 
 
 def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
@@ -83,15 +99,31 @@ def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
     _varj(qt_app, lambda: bool(dialog.property("visible")), "az importablak nem nyílt meg")
 
     valaszto = _elem(dialog, "importSourceFilesDialog")
-    _kattint(dialog, _elem(dialog, "importSourceChooseFilesButton"), qt_app)
+    _kattint(dialog, _elem(dialog, "importSourceChooseSourceButton"), qt_app)
+    menu = _elem(dialog, "importSourceChooseMenu")
+    _varj(qt_app, lambda: menu.property("visible") is True,
+          "a Tallózás gomb nem nyitotta meg a menüt")
+    _varj(qt_app, lambda: _elem(dialog, "importSourceChooseFilesItem").width() > 0,
+          "a menü tételei nem épültek fel")
+    _kattint(dialog, _elem(dialog, "importSourceChooseFilesItem"), qt_app)
     _varj(qt_app, lambda: valaszto.property("visible") is True,
-          "a fájlok gomb nem nyitotta meg a fájlválasztót")
+          "a Fájlok… menüpont nem nyitotta meg a fájlválasztót")
 
-    # a natív választó kijelölését a QML-függvénynek adjuk át (az `accepted`
-    # ágon ez hívódik a `selectedFiles`-szal)
-    urls = [QUrl.fromLocalFile(str(f)) for f in kijelolt]
+    # a natív választó offscreen nem kattintható: a kijelölést `selectedFile`
+    # adja, és az `accepted` jel az `onAccepted` kötést futtatja (az `accept()`
+    # offscreen kiüríti a kijelölést, ezért azt nem használjuk)
     scan_done = []
     controller.sourceScanFinished.connect(lambda *_a: scan_done.append(True))
+    valaszto.setProperty("selectedFile", QUrl.fromLocalFile(str(kijelolt[0])))
+    assert QMetaObject.invokeMethod(valaszto, "accepted", Qt.ConnectionType.DirectConnection)
+    _varj(qt_app, lambda: bool(scan_done), "az onAccepted nem indította a beolvasást")
+    assert int(dialog.property("previewCount")) == 1
+    assert dialog.property("sourceFiles").toVariant() == [QUrl.fromLocalFile(str(kijelolt[0])).toString()]
+    scan_done.clear()
+
+    # a többfájlos kijelölés a `useSelectedFiles` függvényen át (a
+    # `selectedFiles` csak olvasható)
+    urls = [QUrl.fromLocalFile(str(f)) for f in kijelolt]
     assert QMetaObject.invokeMethod(
         dialog, "useSelectedFiles", Qt.ConnectionType.DirectConnection,
         Q_ARG("QVariant", urls),
@@ -110,3 +142,21 @@ def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
     assert (cel / "2024-03-05" / "b.jpg").is_file()
     assert not (cel / "2024-03-05" / "c.jpg").exists()
     assert kimaradt.is_file()
+
+    # fájlforrás után mappaválasztás: a fájllista törlődik, a mappa teljes
+    # tartalma (3 kép) beolvasódik
+    mappa_valaszto = _elem(dialog, "importSourceFolderDialog")
+    scan_done.clear()
+    _kattint(dialog, _elem(dialog, "importSourceChooseSourceButton"), qt_app)
+    _varj(qt_app, lambda: _elem(dialog, "importSourceChooseFolderItem").width() > 0,
+          "a menü nem nyílt meg újra")
+    _kattint(dialog, _elem(dialog, "importSourceChooseFolderItem"), qt_app)
+    _varj(qt_app, lambda: mappa_valaszto.property("visible") is True,
+          "a Mappa… menüpont nem nyitotta meg a mappaválasztót")
+    mappa_valaszto.setProperty("selectedFolder", QUrl.fromLocalFile(str(forras)))
+    assert QMetaObject.invokeMethod(
+        mappa_valaszto, "accepted", Qt.ConnectionType.DirectConnection
+    )
+    _varj(qt_app, lambda: bool(scan_done), "a mappa beolvasása nem indult")
+    assert dialog.property("sourceFiles").toVariant() == []
+    assert int(dialog.property("previewCount")) == 3
