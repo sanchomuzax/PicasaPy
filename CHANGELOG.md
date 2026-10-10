@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.54] – 2026-10-11
+
+- A filmelőnézet már a kiválasztott átmenetet játssza le a kész film geometriájával (#4820).
+
 ## [0.9.53] – 2026-10-10
 
 - A Nyomtatás ablak a tartalomhoz igazodó magassággal nyílik, a Nyomtatás és Bezárás gomb mindig látszik, kis képernyőn a tartalom görgethető (#4795).
