@@ -3,7 +3,7 @@ közti híd. A bekötést (QML-regisztráció, jelzések) az integrátor végzi.
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import itertools
 import re
 
@@ -70,6 +70,8 @@ from picasapy.render.chain import (
     can_offer_filter_control,
     normalize_crop_ops,
 )
+from picasapy.render.chain_geometry import AZONOSSAG, Matrix
+from picasapy.render.op_geometry import invertal
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.registry import chain_flags
 from picasapy.render.registry import one_click_keys
@@ -98,6 +100,21 @@ _PICKER_MRU_SETTINGS_KEYS = tuple(f"picker/mru_{index}" for index in range(5))
 _PICKER_COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
 _log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class _RedeyeBufferState:
+    """A vörösszem-panel egy régiónként visszaállítható állapota."""
+
+    regions: tuple[Rect64, ...]
+    eye_circles: tuple[tuple[float, float, float], ...]
+    eye_image_size: tuple[int, int] | None
+    eye_overlay_size: tuple[int, int] | None
+    eye_to_overlay: Matrix
+    full_image_fallback: bool
+    found: int
+    can_reapply_auto: bool
+    reset_message: bool
 
 # #459: a csillag/album-írás mintája (photo_ops_controller.py) — a tartós
 # ütközés/lemezhiba is kezelt hiba, nem néma adatvesztés/kivétel.
@@ -482,16 +499,21 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._retouch_target: tuple[float, float] | None = None
         self._retouch_patch_undo: list[tuple[RetouchPatch, ...]] = []
         self._retouch_patch_redo: list[tuple[RetouchPatch, ...]] = []
-        # vörösszem (#445/#4261): a Retusáláséval azonos szerkezetű, MÉG NEM
-        # mentett puffer. Az Auto az app-oldali YuNet-köröket normalizálva
-        # tárolja az előnézeti FilterOp-ban; modell nélkül külön teljes képes
-        # tartalékjelölést ad. A régiópuffer a kézzel pótolt szemeké.
+        # vörösszem (#445/#4261/#4541): a Retusáláséval azonos szerkezetű,
+        # MÉG NEM mentett puffer. Az automatikus körökből a panel négyzeteket
+        # rajzol, kattintásra pedig ugyanebből a körlistából törlünk, amely a
+        # renderelőhöz jut. A régiópuffer a kézi kiegészítéseket tárolja.
         self._redeye_regions: tuple[Rect64, ...] = ()
-        self._redeye_region_undo: list[tuple[Rect64, ...]] = []
+        self._redeye_region_undo: list[_RedeyeBufferState] = []
         self._redeye_eye_circles: tuple[tuple[float, float, float], ...] = ()
+        self._redeye_eye_image_size: tuple[int, int] | None = None
+        self._redeye_eye_overlay_size: tuple[int, int] | None = None
+        self._redeye_eye_to_overlay: Matrix = AZONOSSAG
         self._redeye_full_image_fallback = False
         # az automatika utolsó futásának találat-száma (-1: még nem futott)
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         # #448: a vágás-javaslatokhoz kért képarány (None = a forráskép
         # arányát tartjuk); a vágó-panel arány-választója állítja
         self._crop_aspect: float | None = None
@@ -1261,8 +1283,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         # #448: a vágás-javaslatokhoz kért képarány (None = a
         # forráskép arányát tartjuk)
         self._crop_aspect: float | None = None
@@ -1360,8 +1387,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._crop_aspect = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = None
@@ -1499,8 +1531,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
 
     @Slot(str)
     def toggleTool(self, name: str) -> None:
@@ -1831,8 +1868,17 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Property(int, notify=revisionChanged)
     def redeyeRegionCount(self) -> int:
-        """A kézzel megjelölt, MÉG NEM alkalmazott vörösszem-régiók száma."""
-        return len(self._redeye_regions)
+        """Az automatikus és kézi, MÉG NEM alkalmazott keretek száma."""
+        return len(self._redeye_regions) + len(self._redeye_auto_rectangles())
+
+    @Property(bool, notify=revisionChanged)
+    def redeyeResetAvailable(self) -> bool:
+        """Van-e automatikus vagy kézi javítás, amelyet a Reset visszavehet."""
+        return bool(
+            self._redeye_regions
+            or self._redeye_eye_circles
+            or self._redeye_full_image_fallback
+        )
 
     @Property(bool, notify=revisionChanged)
     def canUndoRedeyeRegion(self) -> bool:
@@ -1843,7 +1889,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
     @Property("QVariant", notify=revisionChanged)
     def redeyeRegions(self):
         """A puffer régiói relatív [0..1] `{x, y, w, h}` szótárakként — a QML
-        overlay ebből rajzolja a kijelölő-négyzeteket."""
+        overlay ebből rajzolja a kézi és automatikus kijelölő-négyzeteket.
+        Az automatikus körökből négyzet lesz, a renderelő azonban továbbra is
+        az eredeti körkoordinátát használja a tényleges javításhoz."""
         return [
             {
                 "x": rect.left,
@@ -1851,7 +1899,10 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
                 "w": rect.right - rect.left,
                 "h": rect.bottom - rect.top,
             }
-            for rect in self._redeye_regions
+            for rect in (
+                *self._redeye_auto_rectangles(),
+                *self._redeye_manual_overlay_rectangles(),
+            )
         ]
 
     @Property(int, notify=revisionChanged)
@@ -1860,6 +1911,136 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         futott. A panel ebből írja ki a Picasa sikerüzenetét („Picasa has
         found and corrected red eye(s)"), illetve a talált-nulla esetet."""
         return self._redeye_found
+
+    @Property(bool, notify=revisionChanged)
+    def canReapplyRedeyeAuto(self) -> bool:
+        """Az Auto gomb csak akkor él, ha a felhasználó visszavont javítást."""
+        return self._redeye_can_reapply_auto
+
+    @Property(bool, notify=revisionChanged)
+    def redeyeAutoReset(self) -> bool:
+        """A Reset utáni állapotüzenet (`AutoFixRedoMessage`) látható-e."""
+        return self._redeye_reset_message
+
+    @staticmethod
+    def _map_redeye_rectangle(
+        rect: Rect64,
+        matrix: Matrix,
+        source_size: tuple[int, int],
+        output_size: tuple[int, int],
+    ) -> Rect64:
+        """Normalizált téglalap leképezése és az eredmény képhatáron tartása."""
+        source_width, source_height = source_size
+        output_width, output_height = output_size
+        if min(source_width, source_height, output_width, output_height) <= 0:
+            return Rect64(0.0, 0.0, 0.0, 0.0)
+        (a, b, c), (d, e, f) = matrix
+        corners = (
+            (rect.left * source_width, rect.top * source_height),
+            (rect.right * source_width, rect.top * source_height),
+            (rect.right * source_width, rect.bottom * source_height),
+            (rect.left * source_width, rect.bottom * source_height),
+        )
+        mapped = tuple(
+            (a * x + b * y + c, d * x + e * y + f) for x, y in corners
+        )
+        left = max(0.0, min(point[0] for point in mapped))
+        top = max(0.0, min(point[1] for point in mapped))
+        right = min(float(output_width), max(point[0] for point in mapped))
+        bottom = min(float(output_height), max(point[1] for point in mapped))
+        if right <= left or bottom <= top:
+            return Rect64(0.0, 0.0, 0.0, 0.0)
+        return Rect64(
+            left=left / output_width,
+            top=top / output_height,
+            right=right / output_width,
+            bottom=bottom / output_height,
+        )
+
+    def _redeye_manual_overlay_rectangles(self) -> tuple[Rect64, ...]:
+        eye_size = self._redeye_eye_image_size or self._image_size or (0, 0)
+        overlay_size = self._redeye_eye_overlay_size or self._image_size or (0, 0)
+        return tuple(
+            self._map_redeye_rectangle(
+                rect, self._redeye_eye_to_overlay, eye_size, overlay_size
+            )
+            for rect in self._redeye_regions
+        )
+
+    def _redeye_region_in_eye_coordinates(self, rect: Rect64) -> Rect64:
+        eye_size = self._redeye_eye_image_size or self._image_size or (0, 0)
+        overlay_size = self._redeye_eye_overlay_size or self._image_size or (0, 0)
+        try:
+            inverse = invertal(self._redeye_eye_to_overlay)
+        except ValueError:
+            return Rect64(0.0, 0.0, 0.0, 0.0)
+        return self._map_redeye_rectangle(rect, inverse, overlay_size, eye_size)
+
+    def _redeye_auto_rectangles(self) -> tuple[Rect64, ...]:
+        """Az automatikus szemkörök négyzetes, normált keretei (#4541)."""
+        eye_width, eye_height = self._redeye_eye_image_size or self._image_size or (0, 0)
+        view_width, view_height = (
+            self._redeye_eye_overlay_size or self._image_size or (0, 0)
+        )
+        if min(eye_width, eye_height, view_width, view_height) <= 0:
+            return ()
+        (a, b, c), (d, e, f) = self._redeye_eye_to_overlay
+        rectangles = []
+        for x, y, radius in self._redeye_eye_circles:
+            center_x = x * eye_width
+            center_y = y * eye_height
+            radius_px = radius * min(eye_width, eye_height)
+            corners = (
+                (center_x - radius_px, center_y - radius_px),
+                (center_x + radius_px, center_y - radius_px),
+                (center_x + radius_px, center_y + radius_px),
+                (center_x - radius_px, center_y + radius_px),
+            )
+            def vetit(point: tuple[float, float]) -> tuple[float, float]:
+                px, py = point
+                return a * px + b * py + c, d * px + e * py + f
+
+            mapped = tuple(vetit(point) for point in corners)
+            mapped_center = vetit((center_x, center_y))
+            mapped_width = max(point[0] for point in mapped) - min(
+                point[0] for point in mapped
+            )
+            mapped_height = max(point[1] for point in mapped) - min(
+                point[1] for point in mapped
+            )
+            side = max(mapped_width, mapped_height)
+            left = max(0.0, mapped_center[0] - side / 2.0)
+            top = max(0.0, mapped_center[1] - side / 2.0)
+            right = min(float(view_width), mapped_center[0] + side / 2.0)
+            bottom = min(float(view_height), mapped_center[1] + side / 2.0)
+            if right <= left or bottom <= top:
+                rectangles.append(Rect64(0.0, 0.0, 0.0, 0.0))
+            else:
+                rectangles.append(
+                    Rect64(
+                        left=left / view_width,
+                        top=top / view_height,
+                        right=right / view_width,
+                        bottom=bottom / view_height,
+                    )
+                )
+        return tuple(rectangles)
+
+    def _push_redeye_region_undo(self) -> None:
+        """A kézi és automatikus puffer egy közös Undo-lépést kap."""
+        self._redeye_region_undo.append(
+            _RedeyeBufferState(
+                regions=self._redeye_regions,
+                eye_circles=self._redeye_eye_circles,
+                eye_image_size=self._redeye_eye_image_size,
+                eye_overlay_size=self._redeye_eye_overlay_size,
+                eye_to_overlay=self._redeye_eye_to_overlay,
+                full_image_fallback=self._redeye_full_image_fallback,
+                found=self._redeye_found,
+                can_reapply_auto=self._redeye_can_reapply_auto,
+                reset_message=self._redeye_reset_message,
+            )
+        )
 
     @Slot()
     def runRedeyeAuto(self) -> None:
@@ -1870,11 +2051,29 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         rendererhez; hiányzó modellnél a régi teljes képes út kerül jelölésre.
         """
         self._require_active()
-        self._redeye_found, eye_circles = self._provider.redeye_auto_result(
-            self._kulcs, self._image_path, self._session.redeye_detection_ops()
+        crop, crop_ini_readable = self._crop_value_for_session(self._session)
+        (
+            self._redeye_found,
+            eye_circles,
+            self._redeye_eye_image_size,
+            self._redeye_eye_overlay_size,
+            self._redeye_eye_to_overlay,
+        ) = self._provider.redeye_auto_result_with_size(
+            self._kulcs,
+            self._image_path,
+            self._session.redeye_detection_ops(),
+            self._session.redeye_post_detection_ops(),
+            crop,
+            crop_ini_readable,
         )
+        if self._redeye_eye_image_size is None:
+            self._redeye_eye_image_size = self._image_size
+        if self._redeye_eye_overlay_size is None:
+            self._redeye_eye_overlay_size = self._image_size
         self._redeye_eye_circles = eye_circles or ()
         self._redeye_full_image_fallback = eye_circles is None
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
@@ -1897,8 +2096,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._register_preview()
         self._bump_revision()
 
@@ -1916,10 +2120,15 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         bottom = _clamp01(max(y, y + h))
         if right <= left or bottom <= top:
             return
-        self._redeye_region_undo.append(self._redeye_regions)
+        region = self._redeye_region_in_eye_coordinates(
+            Rect64(left=left, top=top, right=right, bottom=bottom)
+        )
+        if region.right <= region.left or region.bottom <= region.top:
+            return
+        self._push_redeye_region_undo()
         self._redeye_regions = (
             *self._redeye_regions,
-            Rect64(left=left, top=top, right=right, bottom=bottom),
+            region,
         )
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
@@ -1947,14 +2156,34 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         volt — a hívó ebből tudja, hogy a kattintás nem törlés volt.
         """
         self._require_active()
-        for index in range(len(self._redeye_regions) - 1, -1, -1):
-            rect = self._redeye_regions[index]
+        manual_overlay_rectangles = self._redeye_manual_overlay_rectangles()
+        # A Repeater a detektált kereteket a kézi régiók elé rajzolja, így
+        # az átfedésben a kézi, utoljára felvett keret marad legfelül.
+        for index in range(len(manual_overlay_rectangles) - 1, -1, -1):
+            rect = manual_overlay_rectangles[index]
+            if rect.right <= rect.left or rect.bottom <= rect.top:
+                continue
             if rect.left <= x <= rect.right and rect.top <= y <= rect.bottom:
-                self._redeye_region_undo.append(self._redeye_regions)
+                self._push_redeye_region_undo()
                 self._redeye_regions = (
                     *self._redeye_regions[:index],
                     *self._redeye_regions[index + 1 :],
                 )
+                self._register_preview(self._session_with_redeye_pending())
+                self._bump_revision()
+                return True
+        auto_rectangles = self._redeye_auto_rectangles()
+        for index in range(len(auto_rectangles) - 1, -1, -1):
+            rect = auto_rectangles[index]
+            if rect.right <= rect.left or rect.bottom <= rect.top:
+                continue
+            if rect.left <= x <= rect.right and rect.top <= y <= rect.bottom:
+                self._push_redeye_region_undo()
+                self._redeye_eye_circles = (
+                    *self._redeye_eye_circles[:index],
+                    *self._redeye_eye_circles[index + 1 :],
+                )
+                self._redeye_can_reapply_auto = True
                 self._register_preview(self._session_with_redeye_pending())
                 self._bump_revision()
                 return True
@@ -1969,8 +2198,14 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         mozgásra lefut, egy mellékhatásos vizsgálat itt drága és hibás is
         lenne."""
         return any(
-            rect.left <= x <= rect.right and rect.top <= y <= rect.bottom
-            for rect in self._redeye_regions
+            rect.right > rect.left
+            and rect.bottom > rect.top
+            and rect.left <= x <= rect.right
+            and rect.top <= y <= rect.bottom
+            for rect in (
+                *self._redeye_auto_rectangles(),
+                *self._redeye_manual_overlay_rectangles(),
+            )
         )
 
     @Slot()
@@ -1979,20 +2214,39 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         if not self._redeye_region_undo:
             return
         self._require_active()
-        self._redeye_regions = self._redeye_region_undo.pop()
+        state = self._redeye_region_undo.pop()
+        self._redeye_regions = state.regions
+        self._redeye_eye_circles = state.eye_circles
+        self._redeye_eye_image_size = state.eye_image_size
+        self._redeye_eye_overlay_size = state.eye_overlay_size
+        self._redeye_eye_to_overlay = state.eye_to_overlay
+        self._redeye_full_image_fallback = state.full_image_fallback
+        self._redeye_found = state.found
+        self._redeye_can_reapply_auto = state.can_reapply_auto
+        self._redeye_reset_message = state.reset_message
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
     @Slot()
     def resetRedeyeRegions(self) -> None:
-        """A puffer minden kézi régiójának törlése — régiónkénti undo-lépéssel
-        (`undoRedeyeRegion` visszaállíthatja). Az automatika ettől még fut az
-        előnézeten. Üres pufferen néma no-op."""
-        if not self._redeye_regions:
+        """Minden automatikus és kézi vörösszem-javítás visszavonása (#4541).
+
+        A változás egy régiónkénti Undo-lépés, és az Auto gomb újra
+        alkalmazhatja az automatikus javítást. Üres pufferen néma no-op.
+        """
+        if not self.redeyeResetAvailable:
             return
         self._require_active()
-        self._redeye_region_undo.append(self._redeye_regions)
+        self._push_redeye_region_undo()
         self._redeye_regions = ()
+        self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
+        self._redeye_full_image_fallback = False
+        self._redeye_found = -1
+        self._redeye_can_reapply_auto = True
+        self._redeye_reset_message = True
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
@@ -2005,8 +2259,13 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()
+        self._redeye_eye_image_size = None
+        self._redeye_eye_overlay_size = None
+        self._redeye_eye_to_overlay = AZONOSSAG
         self._redeye_full_image_fallback = False
         self._redeye_found = -1
+        self._redeye_can_reapply_auto = False
+        self._redeye_reset_message = False
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()

@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 20
+SCHEMA_VERSION = 21
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -408,11 +408,17 @@ CREATE TABLE IF NOT EXISTS photos (
     geotag_ini TEXT,
     exif_lat REAL,
     exif_lon REAL,
+    movie_format TEXT,
+    frame_rate REAL,
+    duration_seconds REAL,
     first_seen_mtime_ns INTEGER,
     UNIQUE (folder_id, name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 1;
+CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
+    ON photos(folder_id)
+    WHERE kind = 'video' AND movie_format IS NULL;
 
 {_PHOTO_HASHES_DDL}
 
@@ -550,5 +556,15 @@ ALTER TABLE photos ADD COLUMN flip_flags INTEGER NOT NULL DEFAULT 0;
     # fájl változása (pl. a program saját Mentése) után is megmarad.
     19: """
 ALTER TABLE photos ADD COLUMN taken_at_override TEXT;
+""",
+    # #4580: a videó panelmezői. NULL-lal indulnak, hogy a következő sync
+    # az inkrementális kihagyást feloldva visszatölthesse a meglévő videókat.
+    20: """
+ALTER TABLE photos ADD COLUMN movie_format TEXT;
+ALTER TABLE photos ADD COLUMN frame_rate REAL;
+ALTER TABLE photos ADD COLUMN duration_seconds REAL;
+CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
+    ON photos(folder_id)
+    WHERE kind = 'video' AND movie_format IS NULL;
 """,
 }

@@ -275,8 +275,20 @@ def _zarj_ertesitosavot(ablak, vezerlo, qt_app) -> None:
     if szoveg is None or not _szoveg(szoveg, "text"):
         return
 
-    leallitas = ablak.findChild(QObject, "errorBannerStopButton")
-    if leallitas is not None and leallitas.property("visible") is True:
+    def _lathato(nev):
+        elem = ablak.findChild(QObject, nev)
+        return elem if elem is not None and elem.property("visible") is True else None
+
+    # a háttérmunka végén a Leállítás eltűnik, a Bezárás egy eseménykörrel
+    # később jelenik meg — a CI lassabb gépén ezt a köztes állapotot is
+    # elkaptuk; addig várunk, amíg valamelyik vezérlő látszik, vagy a sáv eltűnik
+    _varj(qt_app, lambda: _lathato("errorBannerStopButton") is not None
+          or _lathato("errorBannerCloseButton") is not None
+          or _szoveg(szoveg, "text") == "")
+    if _szoveg(szoveg, "text") == "":
+        return
+    leallitas = _lathato("errorBannerStopButton")
+    if leallitas is not None:
         _kattints_qobject(qt_app, leallitas)
         assert vezerlo.waitForBackgroundWorkers(3.0), (
             "a színkeresés háttérmunkája nem állt le a tiszta visszaállításra"

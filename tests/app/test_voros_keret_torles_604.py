@@ -165,10 +165,14 @@ class TestAFelulet:
         assert 'objectName: "redeyeUndoRegionButton"' in _PANEL
         assert 'objectName: "redeyeResetButton"' in _PANEL
 
-    def test_az_AUTO_gomb_kezi_regiok_mellett_is_aktiv(self):
-        """A jegy pontosítása: az eredeti szerint az „Automatikus" bármikor
-        újrafuttatható. Nálunk ez úgy igaz, hogy a gombnak NINCS tiltó
-        feltétele — a szomszédainak van (`buttonEnabled:`)."""
+    def test_az_AUTO_gomb_csak_ujraalkalmazhato_javitasnal_aktiv(self):
+        """#4541: az első Auto-futás után nincs mit újraalkalmazni."""
         kezd = _PANEL.index('objectName: "redeyeAutoButton"')
         blokk = _PANEL[kezd : kezd + 200]
-        assert "buttonEnabled:" not in blokk
+        assert "buttonEnabled: panel.canReapplyRedeyeAuto" in blokk
+
+    def test_a_RESET_minden_auto_es_kezi_javitast_elerhetove_tesz(self):
+        kezd = _PANEL.index('objectName: "redeyeResetButton"')
+        blokk = _PANEL[kezd : kezd + 200]
+        assert "buttonEnabled: panel.redeyeResetAvailable" in blokk
+        assert 'objectName: "redeyeAutoRedoLabel"' in _PANEL
