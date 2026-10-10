@@ -33,8 +33,9 @@ Canvas {
         // #4552: a rajz mindig kitölti a teljes dobozt — az ikon mérete
         // fülenként más (15×16 … 25×19), és a mért befoglaló doboznak kell
         // egyeznie, nem a rajz körüli üres szegélynek. A tartalom saját
-        // befoglalóját [x0, y0, x1, y1] képpontban vesszük, és arányosan
-        // (a dobozhoz igazítva) skálázzuk a vászonra.
+        // befoglalóját [x0, y0, x1, y1] képpontban vesszük (a lekerekített
+        // vonalvégekkel együtt), és a két tengelyen külön, a dobozhoz
+        // nyújtva skálázzuk a vászonra.
         var b = icon.contentBounds(w, h)
         ctx.save()
         ctx.scale(w / (b[2] - b[0]), h / (b[3] - b[1]))
@@ -97,13 +98,26 @@ Canvas {
         }
         ctx.restore()
     }
-    // A három rajz befoglaló dobozának közelítése (képpontban, a vonalvastagság
-    // és a végzáródás beleszámítva); a #4552 renderelt próbája mér rá.
+    // A három rajz PONTOS befoglaló doboza képpontban: az útvonal-pontok
+    // szélei, kibővítve a fél vonalvastagsággal (kerek vonalvég). A
+    // vonalvastagságok ugyanazok, mint az onPaint-ban.
     function contentBounds(w, h) {
-        if (icon.kind === "wrench")
-            return [w * 0.12, h * 0.04, w * 0.90, h * 0.94]
-        if (icon.kind === "sun")
-            return [0, h * 0.5 - w * 0.5, w, h * 0.5 + w * 0.5]
-        return [w * 0.22, h * 0.10, w * 0.88, h * 0.92]
+        var lw, lw2
+        if (icon.kind === "wrench") {
+            lw = Math.max(2, w * 0.14)
+            lw2 = Math.max(2, w * 0.12)
+            return [Math.min(w * 0.20 - lw / 2, w * 0.48 - lw2 / 2),
+                    Math.min(h * 0.45 - lw / 2, h * 0.32 - w * 0.20 - lw2 / 2),
+                    w * 0.858 + lw2 / 2,
+                    Math.max(h * 0.85 + lw / 2, h * 0.32 + w * 0.20 + lw2 / 2)]
+        }
+        if (icon.kind === "sun") {
+            lw = Math.max(1.5, w * 0.08)
+            var r = w * 0.46 + lw / 2
+            return [w * 0.5 - r, h * 0.5 - r, w * 0.5 + r, h * 0.5 + r]
+        }
+        lw = Math.max(2, w * 0.12)
+        return [Math.min(w * 0.28 - lw / 2, w * 0.50), h * 0.14 - lw / 2,
+                w * 0.86, h * 0.90]
     }
 }

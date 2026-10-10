@@ -5,11 +5,11 @@ tab1 15×16 · tab2 17×18 · tab3 20×19 · tab4 25×19 · tab5 25×19; minden 
 fül tetejétől 4 képpontra, a fülön belül vízszintesen középen.
 
 A próba a RENDERELT ablakképen (`grabWindow`) méri az ikon nem háttérszínű
-képpontjainak dobozát — nem property-t olvas. A 6.–7. fülnek (a mi
-többletünk) nincs mért párja; ott csak azt őrizzük, hogy az ikon befér.
+képpontjainak dobozát — nem property-t olvas. A 6.–7. fül (a mi
+többletünk) nem mért: a 3–5. fül 25×19-es ikonméretét kapja, és ugyanazzal
+a mérővel ellenőrizzük.
 """
 
-import os
 from pathlib import Path
 
 import pytest
@@ -27,7 +27,14 @@ MERT = (
     ("editTabEffects", 20, 19),
     ("editTabEffects2", 25, 19),
     ("editTabEffects3", 25, 19),
+    # a 6. és 7. fül a mi többletünk: a 3–5. fül ikonméretét kapja
+    ("editTabEffects4", 25, 19),
+    ("editTabLegacy", 25, 19),
 )
+
+#: a doboz szélső sorában/oszlopában legfeljebb ennyi festett (mért: a kerek vonalvég szélén 1–5; a levágott, lapos él 6) képpont lehet —
+#: több azt jelenti, hogy a rajz a vászon szélén levágódik
+SZELEN_LEGFELJEBB = 5
 
 TURES = 2
 KUSZOB = 40  # a három csatorna összegében
@@ -98,6 +105,23 @@ def _doboz(kep, x0, y0, x1, y1):
     return min(xs), min(ys), max(xs) + 1, max(ys) + 1
 
 
+def _szelek(kep, x0, y0, x1, y1):
+    """A doboz négy szélső sorában/oszlopában a festett képpontok száma."""
+    hatter = kep.pixelColor(x0 - 1, y0 - 1)
+
+    def festett(x, y):
+        c = kep.pixelColor(x, y)
+        return (abs(c.red() - hatter.red()) + abs(c.green() - hatter.green())
+                + abs(c.blue() - hatter.blue())) > KUSZOB
+
+    return {
+        "bal": sum(festett(x0, y) for y in range(y0, y1)),
+        "jobb": sum(festett(x1 - 1, y) for y in range(y0, y1)),
+        "felso": sum(festett(x, y0) for x in range(x0, x1)),
+        "also": sum(festett(x, y1 - 1) for x in range(x0, x1)),
+    }
+
+
 @pytest.mark.parametrize("nev,szel,mag", MERT)
 def test_az_ikon_merete_es_helye_a_renderelt_kepen(sav, qt_app, nev, szel, mag):
     kep = _kep(sav, qt_app)
@@ -114,22 +138,6 @@ def test_az_ikon_merete_es_helye_a_renderelt_kepen(sav, qt_app, nev, szel, mag):
     assert abs(kozep) <= TURES, (nev, kozep)
     # a fül tetejétől 4 képpontra
     assert abs((y0 - fy) - 4) <= TURES, (nev, y0 - fy)
-
-
-def test_a_het_ikon_befer_a_fulbe(sav, qt_app):
-    kep = _kep(sav, qt_app)
-    for nev in ("editTabEffects4", "editTabLegacy"):
-        ful = _elem(sav, nev)
-        fx, fy = round(ful.x()), round(_elem(sav, "bar").y())
-        x0, y0, x1, y1 = _doboz(kep, fx + 2, fy + 2,
-                                fx + round(ful.width()) - 2, fy + 25 - 2)
-        assert x1 - x0 <= ful.width() - 2
-        assert y1 <= fy + 25
-
-
-def test_a_kep_a_scratchpadbe(sav, qt_app):
-    cel = os.environ.get("FULSAV_4552_KEP")
-    if not cel:
-        pytest.skip("nincs FULSAV_4552_KEP")
-    kep = _kep(sav, qt_app).scaled(276 * 4, 40 * 4)
-    assert kep.save(cel)
+    # a rajz nem vágódik le a vászon szélén
+    szelek = _szelek(kep, x0, y0, x1, y1)
+    assert max(szelek.values()) <= SZELEN_LEGFELJEBB, (nev, szelek)
