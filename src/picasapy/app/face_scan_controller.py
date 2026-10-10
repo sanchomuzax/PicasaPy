@@ -425,12 +425,6 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             self._scan_percent = percent
             self.scanPercentChanged.emit()
 
-    @Property(bool, notify=scanPercentChanged)
-    def scanRunning(self) -> bool:  # noqa: N802 — QML-property-stílus
-        """#4586: fut-e a háttér-arckeresés (az Emberek panel „betöltés
-        folyik" jelzője)."""
-        return self._scan_percent >= 0
-
     @Property(int, notify=uncheckedFilesChanged)
     def uncheckedFiles(self) -> int:  # noqa: N802 — QML-property-stílus
         """#4586: a futó keresés még nem ellenőrzött fájljainak száma
@@ -448,16 +442,18 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         futó keresés (`PeoplePanel` betöltés / ellenőrizetlen fájlok). Az
         Emberek panel kapuja a KIJELÖLÉSRE vonatkozik, nem a könyvtárra:
         egy már átvizsgált képnél nincs „betöltés". Nem futó keresésnél 0."""
+        keys = [_path_key(str(path)) for path in paths]
         with self._pending_lock:
             if not self._pending_paths:
                 return 0
-            return sum(1 for path in paths if _path_key(str(path)) in self._pending_paths)
+            return sum(1 for key in keys if key in self._pending_paths)
 
     def _build_pending(self, conn, photos) -> set[str]:
         """A worker átlépési feltételei szerint a ciklus ELŐTT felépített
         halmaz: engedélyezett mappa, nem videó, nincs lefutott keresés, és
         nincs azonosított arc az ini-ben."""
         pending: set[str] = set()
+        ini_cache: dict = {}
         for photo in photos:
             photo_path = Path(photo.folder_path) / photo.name
             if not self._face_detection_enabled(str(photo_path.parent)):
@@ -468,14 +464,29 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
             ):
                 continue
-            if any(face.is_identified for face in ini_faces_of(photo_path)):
+            if any(
+                face.is_identified
+                for face in ini_faces_of(photo_path, ini_cache)
+            ):
                 continue
             pending.add(_path_key(photo_path))
         return pending
 
-    def _mark_checked(self, photo_path: Path) -> None:
+    def _owns_scan(self, stop_event: threading.Event) -> bool:
+        """Ez a szál a JELENLEGI keresés (vagy nincs másik futó)? A
+        `_pending_lock` alatt hívandó. Egy újabb keresés a régi szál
+        megszakítása után indul, ezért a régi szál `finally`-je és haladása
+        nem írhat az újabb állapotába (#4586)."""
+        return self._stop_event is None or self._stop_event is stop_event
+
+    def _mark_checked(self, photo_path: Path, stop_event: threading.Event) -> None:
+        """A kép kikerül a függők közül — de CSAK a saját keresésének
+        halmazából: egy újabb keresés halmazát a régi szál nem bántja."""
+        key = _path_key(photo_path)
         with self._pending_lock:
-            self._pending_paths.discard(_path_key(photo_path))
+            if not self._owns_scan(stop_event):
+                return
+            self._pending_paths.discard(key)
             remaining = len(self._pending_paths)
         self._set_unchecked_files(remaining)
 
@@ -1443,6 +1454,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 total = len(photos)
                 pending = self._build_pending(conn, photos)
                 with self._pending_lock:
+                    if not self._owns_scan(stop_event):
+                        # közben újabb keresés indult: az övé a halmaz
+                        pending = set()
                     self._pending_paths = pending
                 self._set_unchecked_files(len(pending))
                 found = 0
@@ -1452,50 +1466,54 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                         conn.commit()
                         self.scanCancelled.emit()
                         return
-                    photo_path = Path(photo.folder_path) / photo.name
-                    if not self._face_detection_enabled(str(photo_path.parent)):
-                        self._report_scan(done, total)
-                        continue
-                    ini_faces = ini_faces_of(photo_path)
-                    if any(face.is_identified for face in ini_faces):
-                        # a Picasa döntése szent — nem értékeljük újra
-                        self._report_scan(done, total)
-                        continue
-                    if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
-                        self._report_scan(done, total)
-                        continue
-                    # #2519: már lefutott ezen a fájlállapoton — a `face`
-                    # tábla ürességéből ez nem látszana (arc nélküli fotó =
-                    # nulla sor), ezért kell a külön nyom. A `kizarva`
-                    # jelölést a fájl változása sem oldja fel.
-                    if face_scan_done(
-                        conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
-                    ):
-                        # #3670: a Picasa a mi keresésünk UTÁN is mellőzhette
+                    try:
+                        photo_path = Path(photo.folder_path) / photo.name
+                        if not self._face_detection_enabled(str(photo_path.parent)):
+                            self._report_scan(done, total)
+                            continue
+                        ini_faces = ini_faces_of(photo_path)
+                        if any(face.is_identified for face in ini_faces):
+                            # a Picasa döntése szent — nem értékeljük újra
+                            self._report_scan(done, total)
+                            continue
+                        if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
+                            self._report_scan(done, total)
+                            continue
+                        # #2519: már lefutott ezen a fájlállapoton — a `face`
+                        # tábla ürességéből ez nem látszana (arc nélküli fotó =
+                        # nulla sor), ezért kell a külön nyom. A `kizarva`
+                        # jelölést a fájl változása sem oldja fel.
+                        if face_scan_done(
+                            conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+                        ):
+                            # #3670: a Picasa a mi keresésünk UTÁN is mellőzhette
+                            _mark_previously_ignored(conn, photo.id, ini_faces)
+                            conn.commit()
+                            self._report_scan(done, total)
+                            continue
+                        faces = self._detect(
+                            photo_path,
+                            source_width=photo.width,
+                            source_height=photo.height,
+                        )
+                        replace_faces(conn, photo.id, faces)
                         _mark_previously_ignored(conn, photo.id, ini_faces)
+                        mark_face_scan(
+                            conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+                        )
+                        found += len(faces)
+                        scanned += 1
+                        # A következő kép detektálása több másodperc lehet; ne
+                        # tartsa addig az SQLite írási zárát.
                         conn.commit()
+                        self._mark_checked(photo_path, stop_event)
+                        if faces:
+                            # a commit UTÁN: a panel már a mentett arcot látja
+                            self.facesStored.emit()
                         self._report_scan(done, total)
-                        continue
-                    faces = self._detect(
-                        photo_path,
-                        source_width=photo.width,
-                        source_height=photo.height,
-                    )
-                    replace_faces(conn, photo.id, faces)
-                    _mark_previously_ignored(conn, photo.id, ini_faces)
-                    mark_face_scan(
-                        conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
-                    )
-                    found += len(faces)
-                    scanned += 1
-                    # A következő kép detektálása több másodperc lehet; ne
-                    # tartsa addig az SQLite írási zárát.
-                    conn.commit()
-                    self._mark_checked(photo_path)
-                    if faces:
-                        # a commit UTÁN: a panel már a mentett arcot látja
-                        self.facesStored.emit()
-                    self._report_scan(done, total)
+                    finally:
+                        # a `continue` ágak is kivéve a függők közül (#4586)
+                        self._mark_checked(photo_path, stop_event)
                 conn.commit()
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
             _log.exception("arc-detektálás hiba: %s", self._db_path)
@@ -1503,15 +1521,18 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             return
         finally:
             self._ini_ignored_cache = None
-            if self._stop_event is stop_event:
-                self._stop_event = None
-                self._automatic_scan = False
-            # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
-            # hibára futott (#449)
-            self._set_scan_percent(-1)
             with self._pending_lock:
-                self._pending_paths = set()
-            self._set_unchecked_files(0)
+                owner = self._owns_scan(stop_event)
+                if owner:
+                    self._stop_event = None
+                    self._automatic_scan = False
+                    self._pending_paths = set()
+            if owner:
+                # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
+                # hibára futott (#449). Egy közben indult ÚJABB keresés
+                # állapotát (százalék, függők) a régi szál nem bántja.
+                self._set_scan_percent(-1)
+                self._set_unchecked_files(0)
             self._scanWorkerStopped.emit()
         self.unnamedCountChanged.emit()
         self.scanFinished.emit(found, scanned)

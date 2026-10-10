@@ -312,6 +312,20 @@ ApplicationWindow {
         interval: 500
         onTriggered: window.unnamedFaceRevision++
     }
+    // nyitáskor az arc-lista friss: a nyitott-panel kapu miatt a zárt panel
+    // alatt érkezett `facesStored` jelek kimaradtak
+    onPeoplePanelOpenChanged: if (window.peoplePanelOpen) unnamedFaceRevision++
+    Connections {
+        target: photoViewer
+        function onPeopleOpenChanged() {
+            if (photoViewer.peopleOpen) window.unnamedFaceRevision++
+        }
+    }
+    // a kijelölt képek közül a futó keresés által még nem ellenőrzöttek
+    // száma — csak nyitott panelnél és nem a Név nélküliek albumban számolunk
+    readonly property int _selectionPending:
+        (window.peoplePanelOpen && !window.unnamedFacesOpen)
+            ? window.selectionPendingCount() : 0
 
     // #4586: a kijelölt képek közül hányat nem vizsgált még át a futó
     // háttér-arckeresés (`PeoplePanel` betöltés / ellenőrizetlen fájlok)
@@ -3742,9 +3756,8 @@ ApplicationWindow {
         // fájlok, adatok rendezése)
         // A kapu a KIJELÖLÉSRE vonatkozik: csak a még nem átvizsgált
         // kijelölt képek számítanak (egy már átvizsgált képnél nincs betöltés).
-        loading: !window.unnamedFacesOpen && window.selectionPendingCount() > 0
-        uncheckedCount: window.unnamedFacesOpen
-            ? 0 : window.selectionPendingCount()
+        loading: window._selectionPending > 0
+        uncheckedCount: window._selectionPending
         sortingPercent: window._faceScanController
             ? window._faceScanController.sortingPercent : -1
         folderSelected: controller ? controller.currentFolder.length > 0 : false
@@ -4208,7 +4221,7 @@ ApplicationWindow {
         // összevonva, és csak nyitott panel mellett
         function onFacesStored() {
             if (window.peoplePanelOpen || photoViewer.peopleOpen)
-                unnamedFaceRefreshTimer.restart()
+                { if (!unnamedFaceRefreshTimer.running) unnamedFaceRefreshTimer.start() }
         }
         function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {

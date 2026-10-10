@@ -37,6 +37,10 @@ import QtQuick.Layouts
 //   `sortingPercent` ≥ 0 a Név nélküliek albumban → SortingData „Sorting
 //                           face data, %.0f%%" (az arc-lenyomatok számítása)
 // Az állapotot KÍVÜLRŐL kapja a panel (a `FaceScanController` jelzéseiből).
+// Nálunk a `loading` és az `uncheckedCount` ÖSSZEKÖTÖTT: a kijelölt képek
+// közül a futó keresés által még nem ellenőrzöttek száma adja mindkettőt
+// (`loading` = ez a szám > 0), tehát a betöltés-felirat mindig együtt jár az
+// ellenőrizetlen-utótaggal.
 //
 // Amit szándékosan NEM mutatunk: a SortingFaces „Sorting faces..." feliratot
 // — a spec nem mondja meg, mikor jelenik meg, nálunk pedig nincs olyan

@@ -4902,7 +4902,8 @@ Rectangle {
                            controller.unnamedFacesOfRows(viewer.drawerRows))
                         : []
                     function pendingCount() {
-                        if (!faceScanController || !viewer.photosModel)
+                        if (!viewer.peopleOpen || !faceScanController
+                                || !viewer.photosModel)
                             return 0
                         // a függés az `uncheckedFiles`-en: haladásra újraszámol
                         if (faceScanController.uncheckedFiles <= 0)
