@@ -100,6 +100,29 @@ def _seed_unnamed_face(tmp_path, photo_name: str) -> None:
         conn.commit()
 
 
+def _stable_center(row, qt_app):
+    """A sor közepe, MIUTÁN az elrendezés megállapodott.
+
+    A sor láthatóvá tétele után az elrendezés még mozog: a megállapodás előtt
+    a sor a (0, 69) pontra számolt, a kattintás így mellément (#4585, a
+    futás időzítésétől függő, szakaszos bukás)."""
+    last = None
+    stable = 0
+    for _ in range(200):
+        qt_app.processEvents()
+        point = row.mapToScene(row.boundingRect().center())
+        current = (round(point.x()), round(point.y()))
+        if row.width() > 0 and current == last:
+            stable += 1
+            if stable >= 5:
+                return point
+        else:
+            stable = 0
+        last = current
+        QTest.qWait(20)
+    raise AssertionError(f"a Névtelenek-sor elrendezése nem állt meg: {last}")
+
+
 def _open_unnamed_album_by_click(window, qt_app):
     """A „Névtelenek" sor VALÓDI kattintása a bal hasábon.
 
@@ -111,12 +134,16 @@ def _open_unnamed_album_by_click(window, qt_app):
     _settle(qt_app)
     row = _child(window, "unnamedFacesItem")
     assert row.property("visible") is True
-    center = row.mapToScene(row.boundingRect().center())
+    center = _stable_center(row, qt_app)
     QTest.mouseClick(
         window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         QPoint(round(center.x()), round(center.y())),
     )
     _settle(qt_app)
+    assert window.property("unnamedFacesOpen") is True, (
+        "a Névtelenek-sor kattintása nem nyitotta meg az albumot "
+        f"(kattintás helye: {center})"
+    )
 
 
 def _header(window) -> str | None:
