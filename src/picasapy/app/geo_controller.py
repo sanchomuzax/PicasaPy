@@ -65,6 +65,9 @@ class GeoMixin:
                     "caption": photo.caption or "",
                     "keywords": photo.keywords or "",
                     "folder": photo.folder_path,
+                    # A térképjelölő ugyanazt a forgatás-/szerkesztés-
+                    # érzékeny bélyegképet kéri, mint a rács.
+                    "thumbUrl": self._photos.thumbUrlAt(row),
                     "latitude": point.latitude,
                     "longitude": point.longitude,
                 }
