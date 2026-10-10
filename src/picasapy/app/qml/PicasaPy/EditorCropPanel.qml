@@ -279,27 +279,6 @@ ColumnLayout {
         SuggestionButton { objectName: "cropSuggestion2"; slot: 2 }
     }
 
-    // gyorsvágások: bal-felső / fekvő / álló (Picasa három bélyegképe)
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: 6
-        PanelButton {
-            objectName: "quickCropTopleft"
-            label: qsTr("Top left")
-            onButtonClicked: panel.quickCropRequested("topleft")
-        }
-        PanelButton {
-            objectName: "quickCropLandscape"
-            label: qsTr("Landscape")
-            onButtonClicked: panel.quickCropRequested("landscape")
-        }
-        PanelButton {
-            objectName: "quickCropPortrait"
-            label: qsTr("Portrait")
-            onButtonClicked: panel.quickCropRequested("portrait")
-        }
-    }
-
     RowLayout {
         Layout.fillWidth: true
         Layout.maximumWidth: 98 + 6 + 98

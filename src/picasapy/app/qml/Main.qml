@@ -2488,6 +2488,18 @@ ApplicationWindow {
         }
     }
 
+    // #4533: Társítás… — a fájltípushoz társított alkalmazások választója (Linux)
+    DeferredDialog {
+        id: openWithDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            OpenWithDialog {
+                objectName: "openWithDialog"
+                onAccepted: fileOpsController.openWithApp(photoPath, selectedAppId)
+            }
+        }
+    }
+
     // #1720: halasztott példányosítás — a párbeszéd csak az első
     // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
     DeferredDialog {
@@ -3601,6 +3613,9 @@ ApplicationWindow {
         visible: window.propertiesPanelOpen
         anchors.fill: parent
         hasSelection: window.selectedIndex >= 0
+        appController: controller
+        selectedRows: window.selectedRows()
+        focusRow: window.selectedIndex
         // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
         // #305: null-őr
         entries: controller
@@ -3618,6 +3633,7 @@ ApplicationWindow {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
+        manualAddActive: window.viewerOpen && photoViewer.facesEditMode
         // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
@@ -3649,6 +3665,11 @@ ApplicationWindow {
             window.unnamedFacesOpen = false
             controller.showPerson(name)
         }
+        onManualAddRequested: {
+            if (!window.viewerOpen) window.nezdEsSzerkeszd()
+            if (window.viewerOpen) photoViewer.beginManualFaceAdd()
+        }
+        onManualCancelRequested: photoViewer.cancelManualFaceAdd()
         onCloseRequested: window.ureseidAFiokot()
     }
     }
@@ -4074,6 +4095,7 @@ ApplicationWindow {
     Connections {
         target: window._faceScanController
         function onUnnamedCountChanged() { window.peopleFaceRevision++ }
+        function onFaceSuggestionsChanged() { window._javaslatFrissult() }
         function onXmpAutoWriteFailed(reason) {
             errorBanner.notice = false
             errorBannerText.text = qsTr("Face data could not be written to XMP: %1").arg(reason)
@@ -4323,6 +4345,15 @@ ApplicationWindow {
         onOpenFileRequested: {
             var target = controller.photos.filePathAt(window.fileOpTargetRow)
             if (target.length > 0) fileOpsController.openPhoto(target)
+        }
+        // #4533: Társítás… — Windowson a héj saját párbeszéde, Linuxon a mi választónk
+        onOpenWithRequested: {
+            var target = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (target.length === 0) return
+            if (fileOpsController.hasNativeOpenWith())
+                fileOpsController.openWithNative(target)
+            else
+                openWithDialog.ensure().openFor(target)
         }
         onCopyFullPathRequested: {
             var full = controller.photos.filePathAt(window.fileOpTargetRow)

@@ -8,6 +8,9 @@ visible-öröklés csapda / dinamikus Repeater-elemek `findChild`-dal nem
 `openEditorFor`/`commitEditor`/`removeFace` — ugyanúgy, ahogy a
 `test_editor.py` a `CropOverlay`/`EditorPanel` függvényeit."""
 
+import time
+
+import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRectF, Qt
 
 
@@ -230,13 +233,28 @@ class TestManualAddWorkflow:
     ellenőrizzük, ami amúgy is a lényeg.
     """
 
-    def test_the_instructions_exist_with_text(self, qml_app, qt_app):
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_the_instructions_exist_in_the_people_panel(
+        self, qml_app, qt_app, height_delta
+    ):
         window, _controller, _engine = qml_app
-        overlay = _overlay(window)
+        window.resize(window.width(), window.height() + height_delta)
+        viewer = _open_viewer(window, qt_app)
+        _invoke(viewer, "beginManualFaceAdd")
 
-        hint = overlay.findChild(QObject, "faceEditInstructions")
+        hint = None
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            qt_app.processEvents()
+            panel = window.findChild(QObject, "viewerPeoplePanel")
+            if panel is not None:
+                hint = panel.findChild(QObject, "peoplePanelManualInstructions")
+                if hint is not None and hint.property("visible"):
+                    break
+            time.sleep(0.01)
 
         assert hint is not None
+        assert hint.property("visible")
         assert "Add a name" in hint.property("text")
 
     def test_the_draft_survives_the_drag_and_gets_handles(self, qml_app, qt_app):
