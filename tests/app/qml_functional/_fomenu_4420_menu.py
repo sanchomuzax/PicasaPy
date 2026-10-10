@@ -341,9 +341,10 @@ def _kattints_qobject(qt_app, elem) -> None:
     _kattints(qt_app, elem_item)
 
 
-def _gyoker_menu(menu_bar, cim: str):
-    """A MenuBar közvetlen menüi közül válassza ki a felső menüpontot."""
+def _gyoker_jeloltek(menu_bar, cim: str) -> tuple[list, list[str]]:
+    """A MenuBar közvetlen menüi közül a `cim`-mel egyezők + diagnosztika."""
     jeloltek = []
+    latott = []
     for index in range(int(menu_bar.property("count") or 0)):
         kifejezes = QQmlExpression(
             qmlContext(menu_bar), menu_bar, f"menuAt({index})"
@@ -352,13 +353,34 @@ def _gyoker_menu(menu_bar, cim: str):
         assert not hiba, kifejezes.error()
         # a QQmlExpression a menü újraépülése közben QMetaObject-et is adhat
         # QObject helyett (CI-n előjött) — az ilyen találat nem menü
-        if (
-            isinstance(menu, QObject)
-            and shiboken6.isValid(menu)
-            and _normalizal(_szoveg(menu, "title")) == _normalizal(cim)
-        ):
+        if not (isinstance(menu, QObject) and shiboken6.isValid(menu)):
+            latott.append(f"{index}: nem menü ({type(menu).__name__})")
+            continue
+        felirat = _szoveg(menu, "title")
+        latott.append(f"{index}: {felirat!r}")
+        if _normalizal(felirat) == _normalizal(cim):
             jeloltek.append(menu)
-    assert len(jeloltek) == 1, f"a felső {cim} menü nem egyértelmű"
+    return jeloltek, latott
+
+
+def _gyoker_menu(menu_bar, cim: str):
+    """A MenuBar közvetlen menüi közül válassza ki a felső menüpontot.
+
+    A menüsor újraépülése (pl. ablakmagasság-váltás után) alatt a lista
+    átmenetileg hiányos lehet; ezért az egyértelműséget VÁRJUK ki (legfeljebb
+    5 s), és a bukás kiírja, mit látott — a windowsos CI-n a `&Tools` ebben
+    az állapotban bukott (hipotézis: átmeneti újraépülés)."""
+    app = QGuiApplication.instance()
+    hatarido = time.monotonic() + 5.0
+    jeloltek, latott = _gyoker_jeloltek(menu_bar, cim)
+    while len(jeloltek) != 1 and time.monotonic() < hatarido:
+        app.processEvents()
+        time.sleep(0.05)
+        jeloltek, latott = _gyoker_jeloltek(menu_bar, cim)
+    assert len(jeloltek) == 1, (
+        f"a felső {cim} menü nem egyértelmű: {len(jeloltek)} találat; "
+        f"a menüsor: {latott}"
+    )
     return jeloltek[0]
 
 
