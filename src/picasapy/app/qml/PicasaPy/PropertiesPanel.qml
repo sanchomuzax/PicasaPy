@@ -13,6 +13,7 @@ Rectangle {
     property bool hasSelection: false
 
     signal closeRequested()
+    signal editTagsRequested()
 
     color: Theme.panelBg
     border.color: Theme.chromeBorder
@@ -65,5 +66,27 @@ Rectangle {
             }
             ScrollBar.vertical: PicasaScrollBar {}
         }
+    }
+
+    PicasaMenu {
+        id: propertiesContextMenu
+        objectName: "propertiesPanelContextMenu"
+        parent: panel
+
+        MenuItem {
+            objectName: "propertiesMenuEditTags"
+            text: qsTr("Edit Tags")
+            onTriggered: panel.editTagsRequested()
+        }
+    }
+
+    MouseArea {
+        objectName: "propertiesPanelContextArea"
+        parent: panel
+        anchors.fill: panel
+        z: 10
+        visible: panel.visible
+        acceptedButtons: Qt.RightButton
+        onClicked: propertiesContextMenu.popup()
     }
 }
