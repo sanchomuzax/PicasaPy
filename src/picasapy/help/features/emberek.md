@@ -44,6 +44,10 @@ vonatkozik: eddig azokat minden keresés újra átnézte, mert nem maradt
 utánuk nyom. Ha a kép később megváltozik — átszerkeszted vagy kicseréled
 —, a keresés újra megnézi.
 
+A bal hasábon egy mappára vagy albumra jobbgombbal kattintva a
+**Névcímkék hozzáadása** tétel **csak annak a mappának, illetve albumnak a
+képein** indít arckeresést, nem az egész könyvtáron.
+
 Az arckeresést mappánként is szabályozhatod, lásd
 [Mappakezelő](mappakezelo.md). Ha ott kikapcsolod egy mappára, a program
 a mappa képeit is megjelöli, hogy a keresés ne induljon rájuk újra — a
@@ -84,8 +88,15 @@ kerüljön-e az arc. Az **×** a megnevezett sorokon is látszik, ahogy az
 eredetiben, de ott nem csinál semmit.
 
 A bal hasáb **Emberek** csoportjában minden névhez tartozik egy album. A
-névre jobbgombbal kattintva kijelölheted az összes képét, vagy törölheted
-a kijelölést.
+névre jobbgombbal kattintva:
+
+- **Az Emberek album törlése** — megerősítés után (*Biztosan törli a
+  személyi albumot?*, **Igen** / **Nem**) kiveszi a személyt a
+  névjegyzékből, ugyanúgy, mint a személyek kezelésének **Személy
+  törlése** gombja;
+- **Az Emberek album szerkesztése…** — megnyitja a személyek
+  kezelése ablakot (lásd lentebb), az adott személy kijelölésével;
+- kijelölheted az összes képét, vagy törölheted a kijelölést.
 
 ## Névtelen arcok
 
@@ -168,6 +179,16 @@ képernyőn megjelenő útmutató is ezt írja.
 
 A mellőzött vagy érvénytelen arcra a néző **nem rajzol keretet**, és az
 üres névvel húzott kézi négyszöget a program nem menti el.
+
+### Felismert, még névtelen arc megnevezése
+
+A program által felismert, de még el nem nevezett arcok keretét a néző
+alapból nem rajzolja ki, de a helyükön kattintható. Kattints a képen egy
+ilyen arcra: megjelenik a vékony, világosszürke keret, és az alatta
+nyíló sávban az **Írjon be egy nevet** mező vár. Írd be a nevet, és
+nyomj **Entert**: a név elmentődik, és az arc a személy albumába kerül.
+Az **Esc** bezárja a mezőt, és nem ment semmit. Mindez az **Arcok
+szerkesztése** mód bekapcsolása nélkül is működik.
 
 A név beírását **Enterrel** kell lezárni, vagy rá kell kattintani az
 egyik felajánlott névre. Enélkül a program nem tudja, hogy befejezted.

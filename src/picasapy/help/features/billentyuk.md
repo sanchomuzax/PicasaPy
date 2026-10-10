@@ -135,6 +135,7 @@ felszabadítja az arányt.
 | F | Arcok megjelenítése |
 | Shift+F | Arcok szerkesztése |
 | Ctrl+9 | A bal oldali szerkesztőpanel elrejtése és előhozása |
+| F11 | Teljes képernyő be- és kikapcsolása (a diavetítés közben nem hat) |
 | Esc | Vissza a könyvtárhoz |
 
 ## Diavetítés közben
@@ -184,6 +185,8 @@ eredeti magyar Picasában. Az **Alt** és az aláhúzott betű együtt nyitja a
 menüt (**Alt+F** a Fájl, **Alt+N** a Nézet, **Alt+Z** a Szerkesztés), a
 nyitott menüben pedig már a puszta betű választ tételt.
 
-> A **Súgó ▸ Billentyűkódok** menüpont megnyitja a ténylegesen bekötött
-> gyorsbillentyűk listáját. A billentyűket a program a működő QML
-> `Shortcut`-okból olvassa, ezért a súgó a kötésekkel együtt frissül.
+> A **Súgó ▸ Billentyűkódok** menüpont a súgóban megnyitja a ténylegesen
+> működő gyorsbillentyűk listáját, menük szerint csoportosítva (Fájl,
+> Szerkesztés, Nézet, Mappa, Kép, Súgó). A lista a program aktuális
+> billentyűkiosztását mutatja, ezért a kiosztás változásával együtt
+> frissül; a magyarázatokat ez a lap adja hozzá.
