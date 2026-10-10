@@ -3633,6 +3633,7 @@ ApplicationWindow {
         objectName: "peoplePanel"
         visible: window.peoplePanelOpen
         anchors.fill: parent
+        manualAddActive: window.viewerOpen && photoViewer.facesEditMode
         // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
         // fejléc a csoportosítás-váltógombot követi
         selectionCount: window.unnamedFacesOpen
@@ -3661,6 +3662,11 @@ ApplicationWindow {
             window.unnamedFacesOpen = false
             controller.showPerson(name)
         }
+        onManualAddRequested: {
+            if (!window.viewerOpen) window.nezdEsSzerkeszd()
+            if (window.viewerOpen) photoViewer.beginManualFaceAdd()
+        }
+        onManualCancelRequested: photoViewer.cancelManualFaceAdd()
         onCloseRequested: window.ureseidAFiokot()
     }
     }

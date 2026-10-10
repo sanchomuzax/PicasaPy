@@ -254,6 +254,7 @@ Rectangle {
     //: könyvtár-nézetben (`panelClearGeotagDialog`, `setGeotagDialog`).
     signal clearGeotagRequested(var rows)
     signal setGeotagRequested(var rows, real latitude, real longitude)
+    signal manualFaceAddCancelRequested()
     //: #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár tartalmát
     //: cseréli le (keresés, illetve személy-album), amit a néző eltakarna —
     //: ezért nem a néző hajtja végre, hanem a gazda: az zárja a nézőt, és
@@ -307,9 +308,21 @@ Rectangle {
     // törlés a nézőben. A szerkesztés bekapcsolása egyben láthatóvá is
     // teszi a kereteket (nincs értelme vakon szerkeszteni).
     property bool facesEditMode: false
+    function beginManualFaceAdd() {
+        viewer.facesEditMode = true
+        viewer.facesVisible = true
+        if (viewer.appWindow
+                && typeof viewer.appWindow.valtsFiokLapot === "function")
+            viewer.appWindow.valtsFiokLapot("people")
+    }
+    function cancelManualFaceAdd() {
+        viewer.manualFaceAddCancelRequested()
+    }
     function toggleFacesEdit() {
-        viewer.facesEditMode = !viewer.facesEditMode
-        if (viewer.facesEditMode) viewer.facesVisible = true
+        if (viewer.facesEditMode)
+            viewer.cancelManualFaceAdd()
+        else
+            viewer.beginManualFaceAdd()
     }
     // az overlay minden sikeres írás (facesOverlay.edited) után növeli —
     // az ini-módosítást a photosModel/index NEM látja, ez a kényszerített
@@ -1475,6 +1488,8 @@ Rectangle {
             editController.cancelRetouchPatch()
         else if (editorPanel.cropActive)
             editorPanel.cropCancelRequested()
+        else if (viewer.facesEditMode)
+            viewer.cancelManualFaceAdd()
         else
             viewer.kerBezaras()
     }
@@ -3493,6 +3508,12 @@ Rectangle {
                         onEdited: viewer.facesEditRevision += 1
                         onManualCancelRequested: viewer.facesEditMode = false
                     }
+                    Connections {
+                        target: viewer
+                        function onManualFaceAddCancelRequested() {
+                            facesOverlay.cancelManualAdd()
+                        }
+                    }
 
                     // #445: a retusálás a Picasa súgószövege szerinti,
                     // KÉTKATTINTÁSOS, irányított klónozás — 1. kattintás a
@@ -4774,9 +4795,12 @@ Rectangle {
                     //: #3566: a szerkesztőben mindig az egyképes ág fut
                     //: (az eredetiben az `editpanel/preview` látszik)
                     editorView: true
+                    manualAddActive: viewer.facesEditMode
                     //: a személy albuma a KÖNYVTÁR rácsán nyílik — a gazda
                     //: zárja a nézőt, és ő vált (ld. `findTaggedRequested`)
                     onPersonChosen: function(name) { viewer.personChosen(name) }
+                    onManualAddRequested: viewer.beginManualFaceAdd()
+                    onManualCancelRequested: viewer.cancelManualFaceAdd()
                     onCloseRequested: viewer.zarjaAFiokot()
                 }
             }
