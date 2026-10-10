@@ -130,8 +130,17 @@ def test_kattintassal_importal_kezzel_valasztott_mappabol_es_terkepezessel(
             "a Tallózás nem nyitotta meg a mappaválasztót",
         )
         folder_dialog.setProperty("selectedFolder", QUrl.fromLocalFile(str(db3)))
+        # A felhasználó „Kiválaszt” gombjával egyenértékű: az accept() kibocsátja
+        # az accepted jelet ÉS bezárja a párbeszédet. A csupasz `accepted` jel
+        # hívása nyitva hagyná — a Qt 6.11 Qt Quick-es tartalék mappaválasztója
+        # ablak-modális, és elnyelné az utána jövő kattintásokat (CI-bukás).
         assert QMetaObject.invokeMethod(
-            folder_dialog, "accepted", Qt.ConnectionType.DirectConnection
+            folder_dialog, "accept", Qt.ConnectionType.DirectConnection
+        )
+        _varj(
+            qt_app,
+            lambda: folder_dialog.property("visible") is False,
+            "az elfogadott mappaválasztó nem záródott be",
         )
         _varj(
             qt_app,
