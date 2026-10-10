@@ -28,6 +28,7 @@ from __future__ import annotations
 import logging
 import shutil
 import subprocess
+import sys
 import tempfile
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -44,6 +45,12 @@ from picasapy.mailer import (
     build_xdg_email_argv,
     resolve_email_max_dimension,
 )
+from picasapy.mailer.mapi import (
+    MAPI_OK,
+    MAPI_USER_ABORT,
+    build_mapi_message,
+    send_mapi,
+)
 
 from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_file_url
@@ -59,6 +66,17 @@ _XDG_EMAIL_VARAKOZAS_S = 5.0
 #: tehát a csere minden más modulra is hat, amíg a teszt fut.
 _which = shutil.which
 _popen = subprocess.Popen
+
+#: A MAPI-küldés (#4607) MODULSZINTŰ fogantyúja — a Windows-ág tesztje ezt
+#: cseréli, hogy valódi levelezőt ne nyisson meg.
+_mapi_send = send_mapi
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse
+    (#1217: a platformfüggő ág a saját platformját mondja ki, #4607)."""
+    return sys.platform
+
 
 _log = logging.getLogger(__name__)
 
@@ -480,10 +498,13 @@ class EmailController(QObject):
     def _kuldes(
         self, attachment_paths, subject: str, body: str, recipient: str = ""
     ) -> bool:
-        """A tényleges indítás: `xdg-email`, annak hiányában `mailto:`
-        visszaesés — csatolmány NÉLKÜL (ld. a modul docstringje), erről az
-        `emailFailed` jelez, hogy a UI figyelmeztethesse a felhasználót."""
+        """A tényleges indítás: Windowson MAPI (a mellékletekkel, #4607),
+        Linuxon `xdg-email`, annak hiányában `mailto:` visszaesés —
+        csatolmány NÉLKÜL (ld. a modul docstringje), erről az `emailFailed`
+        jelez, hogy a UI figyelmeztethesse a felhasználót."""
         attachments = [Path(path) for path in attachment_paths]
+        if _platform().startswith("win"):
+            return self._kuldes_mapi(subject, body, attachments, recipient)
         xdg_email = _which("xdg-email")
         if xdg_email is not None:
             argv = build_xdg_email_argv(
@@ -522,3 +543,28 @@ class EmailController(QObject):
         if not opened:
             self.emailFailed.emit(self.tr("No email program was found."))
         return bool(opened)
+
+    def _kuldes_mapi(
+        self,
+        subject: str,
+        body: str,
+        attachments: list[Path],
+        recipient: str,
+    ) -> bool:
+        """Windows: a levélszerkesztő a MAPI-n át, a mellékletekkel (#4607).
+
+        A `MAPI_DIALOG` miatt a hívás a felhasználó válaszáig áll — a
+        szerkesztő bezárása `MAPI_USER_ABORT`, ez nem hiba és nem jelzendő.
+        Minden más kódnál a csatolmány NEM ment ki, ezért hibát jelzünk, és
+        nem esünk vissza csatolmány nélküli `mailto:`-ra."""
+        payload = build_mapi_message(
+            subject, body, attachments, recipient=recipient
+        )
+        code = _mapi_send(payload)
+        if code == MAPI_OK:
+            return True
+        if code == MAPI_USER_ABORT:
+            return False
+        _log.warning("MAPI-küldés sikertelen, kód: %s", code)
+        self.emailFailed.emit(self.tr("No email program was found."))
+        return False
