@@ -7,6 +7,57 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.48] – 2026-10-10
+
+- A Mappa tulajdonságai Dátum mezője mellett naptár nyílik: a kiválasztott nap a mezőbe kerül, a dátum a nyelvi beállítás szerinti alakban látszik (#4494).
+- A mappanézet menüjében már elérhető a személyek rendezése és a Gyorsbillentyűk almenü (#4528).
+- Szöveges keresés után a zöld sávon megjelenik a „Vissza az összes megtekintéséhez” gomb, amely visszaállítja a teljes nézetet (#4531).
+- A szűrősáv végéről eltűnt a működés nélküli „▤” jel, amely gombnak látszott, de nem csinált semmit (#4532).
+- A fotó helyi menüjének „Társítás” tétele a képhez társított programok listáját kínálja, és a kiválasztottal nyitja meg a képet (#4533).
+- A szerkesztő eszközeihez és effektcsempéihez megjelentek az eredeti, magyar súgóbuborékok. (#4540).
+- A vörösszem-eszköz négyzettel jelöli az automatikusan javított szemeket is; ezek egyenként visszavonhatók, a Reset pedig az automatikus javítást is visszaveszi (#4541).
+- A Vörösszem panel figyelmeztet, ha a fotó kiegyenesítve van. (#4542).
+- Több szövegdoboz adható hozzá, kattintással kiválasztható és szerkeszthető (#4545).
+- A szövegeszköz most a telepített rendszerbetűket kínálja, a kiválasztott betűcsalád pedig a képen és a beállításokban is megmarad (#4546).
+- A szöveg, a körvonal és az effekt színei színskáláról választhatók, az előzményekkel együtt (#4548).
+- A vágó panelről eltűntek az eredetiben nem létező „Bal felső”, „Fekvő” és „Álló” gyorsvágás-gombok; a három bélyegképes javaslat maradt (#4551).
+- A Képregény panel csúszkái az eredeti feliratokat viselik: Színes ecset, Pontsűrűség, Ponthalványítás (#4556).
+- A Színátmenet effekt Lágy perem csúszkájának alapértéke az eredetihez igazodva 0,25, a Fókuszos FF csúszkája pedig Méret néven szerepel (#4559).
+- A néző ◀ és ▶ gombja nyomva tartva folyamatosan léptet, felengedéskor megáll (#4563).
+- A diavetítés átmenetválasztója mind a 22 specifikáció szerinti átmenetet kínálja és lejátssza. (#4567).
+- A nagyított fotó navigátorablakában követhető és húzással pásztázható a látható rész (#4568).
+- Az eredeti rejtett AutoPlayMovies beállítása szerint a videó megnyitáskor magától elindul; kikapcsolva áll, és a lejátszás gombra indul (#4570).
+- A kijelölt fotó névtelen arcainak névjavaslata az Emberek panelben jóváhagyható és elvethető. (#4573).
+- Az Emberek panelben megjelent a kézi személyfelvétel gombja és a hozzá tartozó útmutató. (#4574).
+- A címkepanel „+” és fogaskerék gombja súgót mutat, a gyorscímke-sor felirata pedig „Gyorscímkék:” (#4577).
+- A Tulajdonságok panel címkepárbeszéde bélyegképet, nevet és dátumot mutat, címkéket szerkeszt, és megőrzi az EXIF nélküli képek dátumát (#4578).
+- A Tulajdonságok panel videóknál már a formátumot, a képkockasebességet és a hosszt is megjeleníti (#4580).
+- A Tulajdonságok panel jobbklikk-menüjéből megnyitható a Címkék panel (#4581).
+- A Helyek térképjelölői bélyegképet és műveleti buborékot jelenítenek meg (#4582).
+- A képeket a Helyek térképére húzva megerősítés után geocímkézheted (#4583).
+- A Helyek térképe betöltés közben „Térkép betöltése...” jelzést, internetkapcsolat nélkül pedig érthető hibaüzenetet mutat (#4584).
+- Üres Név nélküliek album az eredeti útmutató szövegét mutatja, nem a „még nem találtunk embereket” üzenetet (#4585).
+- A személy helyi menüjéből megerősítéssel törölhető és szerkeszthető az Emberek-album (#4587).
+- A csatolt memóriakártyák és USB-meghajtók Linuxon és Windowson is forrásként választhatók az importálásnál. (#4590).
+- A Picasa-adatok kézzel megadott Picasa2-mappából, egyedi meghajtó-leképezéssel is átvehetők (#4592).
+- A program a korai Picasa.ini fájlból is beolvassa a fotók csillagait és feliratait (#4594).
+- Az albummenüből megerősítés után minden érintett mappából törölhető az album, miközben a képek és a többi album megmarad. (#4598).
+- A telepítő javasolja a nyomtatáshoz és az e-mail-melléklethez szükséges csomagokat, a nyomtatás-párbeszéd pedig nyomtató nélkül kimondja, mit kell tenni (#4608).
+- Indításkor törlődnek az e-mailhez korábban készült átméretezett képmásolatok, így nem halmozódnak a lemezen (#4609).
+- A weboldal-exportban a saját .tpl-sablonok is megjelennek és exportálhatók; a Létrehozás gomb alapméretben is látszik (#4611).
+- Mentési mappából vagy lemezképből visszaállíthatók a képek. (#4614).
+- A Nézet menü Kis indexképek, Normál indexképek és Szerkesztési nézet tétele pipával jelzi a beállított nézetet (#4623).
+- Az alsó kimeneti gombsor jobb kattintásos menüjéből elérhető a Gombok konfigurálása párbeszéd. (#4637).
+- A Nézet menü Sötét téma, az Eszközök menü Arcok keresése… és a Súgó menü Teljesítmény-monitor tétele kék jelölést kap, mert a PicasaPy saját parancsai (#4638).
+- A Súgó ▸ Billentyűkódok a helyi súgóban, a működő gyorsbillentyűk csoportos listáját nyitja meg. (#4639).
+- A Fotónéző „Teljes képernyős indítás” beállítása most már hat: bekapcsolva a néző teljes képernyőn nyílik, és bezáráskor visszaáll az ablak korábbi állapota (#4656).
+- A Kép ▸ Csoportos szerkesztés almenü az eredeti sorrendet és csoportokat követi, az Átnevezés is elérhető a kijelölt képekhez (#4701).
+- Megbízhatóbbá váltak a Windowsos felületi ellenőrzések átméretezés és menünyitás után (#4784).
+- A szövegeszközzel felvett, mentett szövegdoboz újranyitáskor betűtípus nélkül is a rendszer alapértelmezett betűcsaládjával töltődik be, nem hibával (#4545).
+- Forrásból indítva a program a nyelvi fordításokat induláskor maga készíti el, ha hiányoznak vagy elavultak; a telepített csomag ezeket már készen tartalmazza (#4817).
+- A kiadás csomagjai mindig a kiadott kódverzióból készülnek: egy beolvadás már nem építi újra a legutóbbi kiadást, és a main minden commitja saját tesztfutást kap (#4825).
+- Egy új tesztfájl hiányzó futásidő-mérése többé nem állítja meg a többi változás ellenőrzését: a mérésig óvatos becslést kap (#4825).
+
 ## [0.9.47] – 2026-10-09
 
 - A szűrősáv mindig az aktív szűrőt jelöli, a kor-szűrő pedig nézetváltáskor alaphelyzetbe áll (#4526).
