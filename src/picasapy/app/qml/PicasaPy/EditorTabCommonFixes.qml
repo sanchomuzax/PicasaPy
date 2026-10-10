@@ -189,7 +189,10 @@ ColumnLayout {
             height: toolGrid.cellaMagassag
             objectName: "editToolText"
             toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
-            tooltip: qsTr("Add/Edit Text on a photo")
+            // A csempe alsó sávjában ülő „Show Text" jelölő saját súgót ad;
+            // a csempe súgója ilyenkor nem csúszhat rá a fotóra (#4183).
+            tooltip: showTextHover.hovered
+                     ? "" : qsTr("Add/Edit Text on a photo")
             active: panel.textActive
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -215,6 +218,9 @@ ColumnLayout {
             padding: 0
             leftPadding: 16
             spacing: 2
+            // A csempe súgójának elfojtásához; a `hovered` szintetikus
+            // egérnél nem megbízható, a HoverHandler igen.
+            HoverHandler { id: showTextHover }
             ToolTip.text: qsTr("Toggle to show or hide text on a photo")
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
