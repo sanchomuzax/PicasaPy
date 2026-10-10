@@ -93,3 +93,12 @@ def test_a_windows_python_lepesek_utf8_kimenettel_futnak():
         if re.search(r"python -(?![\w-])", lp) and "PYTHONIOENCODING: utf-8" not in lp
     ]
     assert not hianyzo, f"UTF-8 kimenet nélkül: {hianyzo}"
+
+
+def test_a_linuxos_csomagolas_a_qm_forditashoz_pyside6_ot_is_telepit():
+    """v0.9.48: a build-and-upload csak a `--dev` listát telepítette, a
+    `build_qm.py` „nincs pyside6-lrelease” hibával állt le (#4831)."""
+    job = _job("build-and-upload")
+    assert "python scripts/print_dependencies.py)" in job, (
+        "a futtatási függőségek (PySide6) nélkül a .qm nem fordítható"
+    )
