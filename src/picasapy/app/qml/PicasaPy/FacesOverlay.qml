@@ -319,36 +319,6 @@ Item {
             "", true)
     }
 
-    // Az eredeti utasítása (`manual_add::instructions`) — a gesztus
-    // önmagában nem felfedezhető, ezért ki kell írni.
-    Text {
-        objectName: "faceEditInstructions"
-        visible: overlay.editMode && !overlay.hasDraft
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.margins: 8
-        wrapMode: Text.WordWrap
-        //: #3574: a hivatalos szöveg (`manual_add::instructions`)
-        text: qsTr("Instructions:\n\n1) Manipulate the rectangle to fit the face of the person you want to add.\n\nYou can drag the rectangle to position it, and move its sides to refine the shape.\n\n2) Click on \"Add a name\" under the rectangle and type in the person's name.\n\n(Be sure to either press Enter or click on an autocompleted name to indicate that you are done)")
-        font.pixelSize: Theme.fontSize
-        color: "#ffffff"
-        style: Text.Outline
-        styleColor: "#000000"
-    }
-
-    PicasaButton {
-        objectName: "faceManualCancelButton"
-        visible: overlay.editMode
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 8
-        width: 96
-        height: 28
-        text: qsTr("Cancel")
-        onClicked: overlay.cancelManualAdd()
-    }
-
     // -- névhozzárendelő popup: közös az új régióhoz és az átnevezéshez --
     property rect pendingRect: Qt.rect(0, 0, 0, 0)   // relatív [0..1]
     property bool pendingIsNew: false

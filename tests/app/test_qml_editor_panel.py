@@ -823,9 +823,31 @@ class TestRedeyeTool:
         qt_app.processEvents()
         reset_button = panel.findChild(QObject, "redeyeResetButton")
         assert reset_button.property("enabled") is False
-        panel.setProperty("redeyeRegionCount", 2)
+        panel.setProperty("redeyeResetAvailable", True)
         qt_app.processEvents()
         assert reset_button.property("enabled") is True
+
+    def test_auto_button_is_enabled_only_when_reapplication_is_available(
+        self, qml_engine, qt_app
+    ):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("redeyeActive", True)
+        qt_app.processEvents()
+        button = panel.findChild(QObject, "redeyeAutoButton")
+        assert button.property("enabled") is False
+        panel.setProperty("canReapplyRedeyeAuto", True)
+        qt_app.processEvents()
+        assert button.property("enabled") is True
+
+    def test_reset_message_shown_instead_of_the_default_guide(
+        self, qml_engine, qt_app
+    ):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("redeyeActive", True)
+        panel.setProperty("redeyeAutoReset", True)
+        qt_app.processEvents()
+        assert panel.findChild(QObject, "redeyeAutoRedoLabel").property("visible")
+        assert not panel.findChild(QObject, "redeyeGuideText").property("visible")
 
     def test_auto_result_label_hidden_before_first_run(self, qml_engine, qt_app):
         panel = self._make_panel(qml_engine)
@@ -843,6 +865,7 @@ class TestRedeyeTool:
         qt_app.processEvents()
         panel.setProperty("redeyeActive", True)
         panel.setProperty("redeyeRegionCount", 1)
+        panel.setProperty("redeyeResetAvailable", True)
         panel.setProperty("canUndoRedeyeRegion", True)
         qt_app.processEvents()
         seen = []

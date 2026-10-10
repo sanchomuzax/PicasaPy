@@ -124,13 +124,16 @@ Rectangle {
     signal retouchUndoPatchRequested()
     signal retouchRedoPatchRequested()
     signal retouchResetRequested()
-    // #445: Vörösszem — a hívó (PhotoViewer) tölti a controllerből a kézi
-    // régiók számát, a régiónkénti Visszavonás elérhetőségét és az
-    // automatika találat-számát (-1: még nem futott). A
-    // `redeyeHideOutlines` tisztán NÉZET-állapot: csak a kijelölő-
+    // #445/#4541: a hívó (PhotoViewer) tölti a controllerből az automatikus
+    // és kézi keretek számát, a régiónkénti Visszavonást, a Reset
+    // elérhetőségét, az Auto újraalkalmazhatóságát és az állapotüzenetet.
+    // A `redeyeHideOutlines` tisztán NÉZET-állapot: csak a kijelölő-
     // négyzetek rajzát kapcsolja ki, a javításon nem változtat.
     property int redeyeRegionCount: 0
     property bool canUndoRedeyeRegion: false
+    property bool redeyeResetAvailable: false
+    property bool canReapplyRedeyeAuto: false
+    property bool redeyeAutoReset: false
     property int redeyeFoundCount: -1
     property bool redeyeHideOutlines: false
     signal redeyeAutoRequested()
@@ -450,7 +453,6 @@ Rectangle {
     signal undoRequested()
     signal redoRequested()
     // vágás-mód jelei a hívónak
-    signal quickCropRequested(string kind)   // "topleft"|"landscape"|"portrait"
     signal cropRotateRequested()
     signal cropPreviewHold(bool held)
     signal cropResetRequested()
