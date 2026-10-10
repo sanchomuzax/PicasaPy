@@ -46,6 +46,7 @@ from picasapy.ini import (
     ensure_contact,
     find_contact_id,
     load_contacts_xml,
+    ini_source_path,
     load_document,
     parse_faces,
     save_contacts_xml,
@@ -64,6 +65,14 @@ from .models import _thumb_url
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
 # és a lemezhiba is KEZELT hiba, nem néma adatvesztés
 _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
+
+
+
+def _load_ini(ini_path: Path):
+    """Olvasáshoz: a `.picasa.ini`, hiányában a régi `Picasa.ini` (#4819).
+
+    A `load_document` modulszintű név marad (a tesztek ezt számolják)."""
+    return load_document(ini_source_path(ini_path) or ini_path)
 
 
 class PeopleMixin:
@@ -166,7 +175,7 @@ class PeopleMixin:
 
         for folder_path, folder_photos in by_folder.items():
             try:
-                document = load_document(Path(folder_path) / PICASA_INI_NAME)
+                document = _load_ini(Path(folder_path) / PICASA_INI_NAME)
             except (OSError, ValueError):
                 continue
             contacts = tuple(
@@ -360,7 +369,7 @@ class PeopleMixin:
             for folder_path, _folder_photos in sorted(by_folder.items()):
                 ini_path = Path(folder_path) / PICASA_INI_NAME
                 try:
-                    current = load_document(ini_path)
+                    current = _load_ini(ini_path)
                 except (OSError, ValueError):
                     continue
                 if not any(
@@ -597,7 +606,7 @@ class PeopleMixin:
             kulcs = str(photo.folder_path)
             if kulcs not in dokumentumok:
                 try:
-                    dokumentumok[kulcs] = load_document(
+                    dokumentumok[kulcs] = _load_ini(
                         Path(photo.folder_path) / PICASA_INI_NAME
                     )
                 except (OSError, ValueError):
@@ -634,7 +643,7 @@ class PeopleMixin:
             kulcs = str(folder)
             if kulcs not in dokumentumok:
                 try:
-                    dokumentumok[kulcs] = load_document(folder / PICASA_INI_NAME)
+                    dokumentumok[kulcs] = _load_ini(folder / PICASA_INI_NAME)
                 except OSError:
                     dokumentumok[kulcs] = None
             document = dokumentumok[kulcs]

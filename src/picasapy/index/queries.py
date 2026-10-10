@@ -455,7 +455,7 @@ def _album_suggestions(
     conn: sqlite3.Connection, folded_query: str
 ) -> tuple[SearchSuggestion, ...]:
     """Album-javaslatok a has_ini-s mappák `.picasa.ini`-jeiből összesítve."""
-    from picasapy.ini import albums_of, load_document, parse_album_refs
+    from picasapy.ini import albums_of, ini_source_path, load_document, parse_album_refs
 
     names: dict[str, str] = {}  # token -> név (az első definíció nyer)
     counts: dict[str, int] = {}  # token -> tagok száma az összes ini-ben
@@ -463,7 +463,7 @@ def _album_suggestions(
     for row in ini_rows:
         ini_path = Path(row["path"]) / ".picasa.ini"
         try:
-            document = load_document(ini_path)
+            document = load_document(ini_source_path(ini_path) or ini_path)
         except (OSError, ValueError):
             continue  # időközben törölt/olvashatatlan ini — kihagyjuk
         for album in albums_of(document):

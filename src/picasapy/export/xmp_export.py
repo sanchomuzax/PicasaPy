@@ -18,7 +18,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from picasapy.ini import contacts_of, load_document, parse_faces
+from picasapy.ini import contacts_of, has_ini_source, load_existing, parse_faces
 from picasapy.scanner import PICASA_INI_NAME
 
 from .xmp import build_sidecar_from_picasa, write_sidecar
@@ -77,9 +77,9 @@ def build_sidecar_for_photo(image_path: Path) -> str | None:
     """
     image_path = Path(image_path)
     ini_path = image_path.parent / PICASA_INI_NAME
-    if not ini_path.exists():
+    if not has_ini_source(ini_path):
         return None
-    document = load_document(ini_path)
+    document = load_existing(ini_path)
     section = document.section(image_path.name)
     if section is None:
         return None

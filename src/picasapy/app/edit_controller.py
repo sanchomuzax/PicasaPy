@@ -38,7 +38,6 @@ from picasapy.ini import (
     IniConflictError,
     IniSaveError,
     PhotoCropReader,
-    load_document,
     load_or_empty,
     parse_faces,
     update_document,
@@ -2805,18 +2804,18 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             raise ValueError("Nincs aktív szerkesztés (beginEdit hívása szükséges)")
 
     def _read_filters_value(self) -> str:
-        if self._ini_path is None or not self._ini_path.exists():
+        if self._ini_path is None:
             return ""
-        section = load_document(self._ini_path).section(self._section_name)
+        section = load_or_empty(self._ini_path).section(self._section_name)
         return (section.get("filters") if section else None) or ""
 
     def _read_text_overlay(self) -> TextOverlay | None:
         """A mentett `text=` érték típusos alakja, vagy None ha nincs (vagy
         nem értelmezhető, #301-elv — a generikus round-trip réteg ilyenkor
         érintetlenül megőrzi, amíg ez a modul nem szerkeszti)."""
-        if self._ini_path is None or not self._ini_path.exists():
+        if self._ini_path is None:
             return None
-        section = load_document(self._ini_path).section(self._section_name)
+        section = load_or_empty(self._ini_path).section(self._section_name)
         raw = section.get("text") if section else None
         if not raw:
             return None
@@ -2829,9 +2828,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
         """A mentett `textactive=` érték — hiányzó kulcsnál a MEGLÉVŐ
         `text=` bejegyzést alapból aktívnak vesszük (a Picasa-doksi szerint
         ez a gyakoribb eset)."""
-        if self._ini_path is None or not self._ini_path.exists():
+        if self._ini_path is None:
             return True
-        section = load_document(self._ini_path).section(self._section_name)
+        section = load_or_empty(self._ini_path).section(self._section_name)
         raw = section.get("textactive") if section else None
         return parse_text_active(raw) if raw is not None else True
 

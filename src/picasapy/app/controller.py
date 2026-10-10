@@ -41,7 +41,7 @@ from picasapy.index import (
     video_photos,
     sync_tree,
 )
-from picasapy.ini import load_document, update_document
+from picasapy.ini import load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
@@ -1232,9 +1232,7 @@ class AppController(
     def _read_folder_description(folder_path: str) -> str:
         """A mappa `[Picasa]/description` kulcsának beolvasása az ini-ből."""
         ini_path = Path(folder_path) / PICASA_INI_NAME
-        if not ini_path.exists():
-            return ""
-        section = load_document(ini_path).section("Picasa")
+        section = load_or_empty(ini_path).section("Picasa")
         return (section.get("description") if section else None) or ""
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület a mappát is átadó

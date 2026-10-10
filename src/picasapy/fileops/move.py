@@ -24,6 +24,7 @@ from picasapy.fileops.safe_move import safe_move
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,
+    has_ini_source,
     load_or_empty,
     update_document,
 )
@@ -77,7 +78,7 @@ def move_photo(path: Path, dest_folder: Path) -> Path:
     source_ini = path.parent / PICASA_INI_NAME
     dest_ini = dest_folder / PICASA_INI_NAME
     has_section = (
-        source_ini.exists() and load_or_empty(source_ini).section(name) is not None
+        has_ini_source(source_ini) and load_or_empty(source_ini).section(name) is not None
     )
     if has_section and load_or_empty(dest_ini).section(name) is not None:
         raise FileExistsError(
