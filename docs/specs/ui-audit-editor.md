@@ -3340,7 +3340,7 @@ csúszkát, és **a két gomb engedélyezettségét** is ő állítja.
 | `moviestart` / `movieend` token | a `filters=` láncban, a `setin`/`setout` írja | **megőrizzük**, de beállítani nem tudjuk (`ini/filter_registry.py:148–149`, `render/registry_data.py:512–513`) | a vágás-felület a #1838-on |
 | `movieeditpanel/reset_trim` | „összes film-szerkesztés törlése", megerősítéssel | **nincs** | #1838 |
 | `movieeditpanel/capture_frame` | képkocka a „Rögzített videoklipek" mappába | **nincs** | #1838 |
-| `movieeditpanel/export_movie` | klip-export az „Exportált videoklipek" mappába, háttérszálon | **nincs** | #1838 |
+| `movieeditpanel/export_movie` | klip-export az „Exportált videoklipek" mappába, háttérszálon | **Windows/macOS: van (#4564); Linuxon az eredeti tiltóüzenet marad** | #4564 |
 
 
 ### A másik négy *bizonytalan* elem — mind lezárva a `.tre`-ből
