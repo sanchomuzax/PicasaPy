@@ -52,7 +52,8 @@ def _sor(lista, index, qt_app):
 
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_a_legordulobol_kattintott_rendszerbetu_elonezetre_es_inibe_kerul(
-    qml_app, qt_app, tmp_path, monkeypatch, height_delta
+    legalabb_ket_betucsalad, qml_app, qt_app, tmp_path, monkeypatch,
+    height_delta,
 ):
     window, _app_controller, engine = qml_app
     height = window.height()
@@ -75,7 +76,9 @@ def test_a_legordulobol_kattintott_rendszerbetu_elonezetre_es_inibe_kerul(
     current = str(edit.property("textFontFamily"))
     current_index = offered.index(current) if current in offered else 0
     target_index = current_index + 1 if current_index + 1 < len(offered) else current_index - 1
-    assert target_index >= 0 and target_index != current_index
+    assert target_index >= 0 and target_index != current_index, (
+        f"nincs másik család a választáshoz: {offered!r}"
+    )
     chosen = offered[target_index]
 
     calls = []

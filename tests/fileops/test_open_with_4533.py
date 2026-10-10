@@ -130,7 +130,11 @@ def test_hianyzo_desktop_fajl_nem_hiba(xdg):
     ],
 )
 def test_exec_argumentumok_a_fajl_helyere_kerulnek(exec_line, elvart):
-    assert open_with.exec_argv(exec_line, Path("/k/kep.jpg")) == elvart
+    # A fájl a platform saját alakjában kerül az argumentumba (Windowson
+    # `\\k\\kep.jpg`) — a várt listát ugyanígy képezzük (#4831).
+    kep = Path("/k/kep.jpg")
+    elvart = [str(kep) if elem == "/k/kep.jpg" else elem for elem in elvart]
+    assert open_with.exec_argv(exec_line, kep) == elvart
 
 
 def test_inditas_a_valasztott_alkalmazassal_a_kep_utvonalaval(monkeypatch):

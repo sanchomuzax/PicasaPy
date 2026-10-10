@@ -9,8 +9,22 @@ fájlrendszere is az), a leghosszabb egyező prefix nyer.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath, PureWindowsPath
+
+
+_MEGHAJTO = re.compile(r"^[A-Za-z]:([\\/]|$)")
+
+
+def _cel_ut(target_prefix: str) -> PurePosixPath | PureWindowsPath:
+    """A célelőtag a saját platformja szerint fűződik tovább.
+
+    Windowson futva a cél windowsos útvonal (#4592 kézi átvétel); POSIX-
+    összefűzéssel `C:\\…\\kepek/kep.jpg` vegyes alak jött ki (#4831)."""
+    if _MEGHAJTO.match(target_prefix) or "\\" in target_prefix:
+        return PureWindowsPath(target_prefix)
+    return PurePosixPath(target_prefix)
 
 
 @dataclass(frozen=True)
@@ -43,7 +57,7 @@ class PathRemapper:
                 # a maradékot az EREDETI (nem casefoldolt) komponensekből
                 # vesszük — a fájlnevek kis-nagybetűi nem sérülhetnek
                 remainder_parts = parts[len(folded_prefix_parts) :]
-                base = PurePosixPath(target_prefix)
+                base = _cel_ut(target_prefix)
                 return (
                     str(base.joinpath(*remainder_parts)) if remainder_parts
                     else str(base)

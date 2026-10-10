@@ -84,7 +84,20 @@ def _lathato_sorok(lista, nev: str):
 
 
 @pytest.fixture
-def indulas_fake(monkeypatch):
+def linux_valaszto(monkeypatch):
+    """A Linux-ág (a mi választónk) kényszerítése minden platformon.
+
+    Windowson a `Társítás…` a héj saját párbeszédét hívja
+    (`hasNativeOpenWith()`), és a mi `openWithDialog`-unk meg sem nyílik —
+    ez a CI windowsos lábán a „a Társítás nem nyitotta meg a választót"
+    bukás oka (a QML: `Main.qml` `onOpenWithRequested`). A választó-ág
+    tesztjének ezért a platformot rögzítenie kell; a Windows-ágat külön teszt
+    fedi."""
+    monkeypatch.setattr(open_with_module, "_platform", lambda: "linux")
+
+
+@pytest.fixture
+def indulas_fake(monkeypatch, linux_valaszto):
     """A lista és az indítás helyettesítése; a hívásokat rögzíti."""
     inditasok = []
     monkeypatch.setattr(
@@ -137,7 +150,7 @@ def test_tarsitas_kattintas_listazza_es_megnyitja_a_kepet(
 
 @pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
 def test_tarsitas_ures_listanal_nem_indit_semmit(
-    qml_app, qt_app, monkeypatch, height_offset
+    qml_app, qt_app, monkeypatch, linux_valaszto, height_offset
 ):
     inditasok = []
     monkeypatch.setattr(open_with_module, "apps_for_file", lambda path: [])
@@ -158,3 +171,29 @@ def test_tarsitas_ures_listanal_nem_indit_semmit(
     ), "üres listánál nincs visszajelzés"
     assert _elem(window, "openWithOpenButton").property("enabled") is False
     assert inditasok == []
+
+
+@pytest.mark.parametrize("height_offset", _ABLAKMAGASSAG_ELTOLASOK)
+def test_tarsitas_windowson_a_hej_sajat_parbeszedet_hivja(
+    qml_app, qt_app, monkeypatch, indulas_fake, height_offset
+):
+    """Windowson a kattintás a héj párbeszédét indítja, a mi választónk nem nyílik."""
+    monkeypatch.setattr(open_with_module, "_platform", lambda: "win32")
+    hejhivasok = []
+    monkeypatch.setattr(
+        open_with_module,
+        "open_with_dialog_windows",
+        lambda path: hejhivasok.append(Path(path)),
+    )
+    window, controller, _engine = qml_app
+    _magassag(window, height_offset)
+    _nyisd_meg_helyi_menut(window, qt_app, 0)
+    _kattints(qt_app, _elem(window, "contextMenuOpenWith"))
+
+    assert _varj(qt_app, lambda: len(hejhivasok) == 1), (
+        "a Társítás nem hívta a héj párbeszédét"
+    )
+    assert hejhivasok[0] == Path(controller.photos.filePathAt(0))
+    dialog = _objektum(window, "openWithDialog")
+    assert dialog is None or dialog.property("visible") is not True
+    assert indulas_fake == []
