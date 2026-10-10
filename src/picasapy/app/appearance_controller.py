@@ -23,6 +23,9 @@ DARK_THEME_KEY = "view/darkTheme"
 UI_TRANSITIONS_KEY = "view/uiTransitions"
 SHOW_TOOLTIPS_KEY = "view/showTooltips"
 SINGLE_CLICK_EXIT_KEY = "view/singleClickExit"
+# #4570: az eredeti `Preferences/AutoPlayMovies` kapcsolója — megnyitáskor
+# magától lejátssza-e a videót. Alapállapot: igen (a Picasa így működött).
+AUTO_PLAY_MOVIES_KEY = "view/autoPlayMovies"
 
 # Igaznak számító mentett értékek (a QSettings platformonként bool-t vagy
 # szöveget ad vissza ugyanarra az írásra).
@@ -66,6 +69,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
     darkThemeChanged = Signal()
     uiTransitionsEnabledChanged = Signal()
     showTooltipsEnabledChanged = Signal()
+    autoPlayMoviesChanged = Signal()
     singleClickExitEnabledChanged = Signal()
 
     def _init_appearance(self) -> None:
@@ -81,6 +85,9 @@ class AppearanceMixin(FolderPhotoSortMixin):
         )
         self._single_click_exit_enabled = coerce_ui_preference_flag(
             settings.value(SINGLE_CLICK_EXIT_KEY, False), default=False
+        )
+        self._auto_play_movies = coerce_ui_preference_flag(
+            settings.value(AUTO_PLAY_MOVIES_KEY, True), default=True
         )
         self._init_folder_photo_sort()  # #1436
 
@@ -119,6 +126,22 @@ class AppearanceMixin(FolderPhotoSortMixin):
             UI_TRANSITIONS_KEY, "true" if enabled else "false"
         )
         self.uiTransitionsEnabledChanged.emit()
+
+    @Property(bool, notify=autoPlayMoviesChanged)
+    def autoPlayMovies(self) -> bool:
+        """Megnyitáskor magától induljon-e a videó (#4570, `AutoPlayMovies`)."""
+        return self._auto_play_movies
+
+    # Nem `@Slot`: az eredetiben rejtett kulcs, a felületről nem állítható (#4570)
+    def setAutoPlayMovies(self, enabled: bool) -> None:  # noqa: N802
+        enabled = bool(enabled)
+        if enabled == self._auto_play_movies:
+            return
+        self._auto_play_movies = enabled
+        self._get_settings().setValue(
+            AUTO_PLAY_MOVIES_KEY, "true" if enabled else "false"
+        )
+        self.autoPlayMoviesChanged.emit()
 
     @Property(bool, notify=showTooltipsEnabledChanged)
     def showTooltipsEnabled(self) -> bool:

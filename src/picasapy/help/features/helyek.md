@@ -14,6 +14,12 @@ Hely megadása: jelöld ki a képeket a rácsban, majd **kattints jobb
 gombbal a térképen** arra a pontra, ahova tartoznak. A kijelölés minden
 képe megkapja a helyet.
 
+Ha a térképen egy **jelölőre kattintasz**, a kép kijelölődik, a rács pedig
+átvált a **helyhez kötött képek** nézetére — ugyanarra, mint az eszköztár
+földgömb-szűrője. A rács fölötti zöld sávon a **Vissza az összes
+megtekintéséhez** gomb (vagy a földgömb-szűrő újabb megnyomása) visszahozza
+a teljes nézetet.
+
 A **Geocímkék törlése** gomb a kijelölt képekről leszedi a helyet; a
 gomb kiírja, hány képet érint. Ugyanez elérhető az **Eszközök ▸ Geocímke
 ▸ Geocímkék törlése** menüpontból is.
@@ -34,11 +40,12 @@ Kevesebb képnél a művelet kérdés nélkül lefut.
 > el. A geocímkék így is szerkeszthetők." A meglévő geocímkék ilyenkor is
 > olvashatók és törölhetők.
 
-### Cím keresése és térképtípus
+### Keresés a helyek között és térképtípus
 
-A panelen a **Cím keresése:** mező és egy **Keresés** nagyító-gomb áll.
-**Ez nem címkereső**: nem kérdez le térképszolgáltatást, és hálózati kérést
-sem küld. Amit beírsz, azt a program a **helyhez kötött képeid** között
+A panelen a **Keresés** felirat alatt egy keresőmező és egy **Keresés**
+nagyító-gomb áll. **Ez nem címkereső** (ezért a felirata is egyszerűen
+*Keresés*): nem kérdez le térképszolgáltatást, és hálózati kérést sem
+küld. Amit beírsz, azt a program a **helyhez kötött képeid** között
 keresi: a fájlnévben, a feliratban, a címkékben és a mappa nevében. A
 térképen csak a találatok jelölői maradnak, és a „*N* kép rendelkezik
 hellyel" szám is ehhez igazodik. Entert nyomva vagy a gombra kattintva
