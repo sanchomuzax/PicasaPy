@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 
 // Egy eszköz-csempe a szerkesztő 1. fülén (#405/#411): nagy, saját rajzú
 // SVG-ikon + felirat, „benyomott" (aktív) állapottal.
@@ -14,6 +15,7 @@ Item {
     // a "icons/<iconFile>.svg" fájlnév (kiterjesztés nélkül) — a
     // panel.qmlDir szerinti "icons/" mappában, ld. #361/#411
     required property string iconFile
+    property string tooltip: ""
     property bool active: false
     property bool tileEnabled: true
     // #4062: modal Kiegyenesítéskor az eredeti a használható csempéket
@@ -134,4 +136,7 @@ Item {
         hoverEnabled: true
         onClicked: tile.activated(tile.toolName)
     }
+    ToolTip.text: tile.tooltip
+    ToolTip.visible: tile.tooltip.length > 0 && tileMouse.containsMouse
+    ToolTip.delay: Theme.tooltipDelay
 }

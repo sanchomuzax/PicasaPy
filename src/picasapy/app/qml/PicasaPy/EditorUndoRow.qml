@@ -104,6 +104,7 @@ RowLayout {
         rogzitettMagassag: undoRow.gombMagassag
         objectName: "editUndoButton"
         label: panel.undoLabel
+        tooltip: qsTr("Remove the latest fix or edit")
         buttonEnabled: panel.undoAvailable
         //: #741/#2494: a mért, KIRAJZOLT gombmagasság 26 (a respack
         //: 132 × 28-as téglalapja a HELY, ld. a `gombMagassag`-nál).
@@ -128,6 +129,7 @@ RowLayout {
         rogzitettMagassag: undoRow.gombMagassag
         objectName: "editRedoButton"
         label: panel.redoLabel
+        tooltip: qsTr("Reapply a removed fix or edit")
         buttonEnabled: panel.redoAvailable
         // #405: egyenlő szélességű pár (nem egy keskeny + egy kitöltő)
         //: #741/#2494: a mért, KIRAJZOLT gombmagasság 26 (a respack

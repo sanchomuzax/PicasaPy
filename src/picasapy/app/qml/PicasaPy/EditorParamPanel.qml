@@ -385,6 +385,7 @@ Flickable {
             PanelButton {
                 objectName: "effectParamApplyButton"
                 label: qsTr("Apply")
+                tooltip: qsTr("Apply Changes")
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.applyParamPanel()
@@ -399,6 +400,7 @@ Flickable {
             PanelButton {
                 objectName: "effectParamCancelButton"
                 label: qsTr("Cancel")
+                tooltip: qsTr("Cancel Changes")
                 Layout.fillWidth: false
                 Layout.preferredWidth: 100
                 onButtonClicked: panel.cancelParamPanel()

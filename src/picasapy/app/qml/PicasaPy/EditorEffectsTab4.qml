@@ -59,6 +59,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectMatte"
             label: qsTr("Matte")
+            tooltip: qsTr("Add a light glow to the edges of your photo")
             onButtonClicked: if (!panel.tryOpenParamPanel("matte", label)) panel.effectRequested("matte")
             thumbSource: panel.effectThumbSource("matte")
             badge: panel.hasBadge("matte")
@@ -66,6 +67,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectNightVision"
             label: qsTr("Night Vision")
+            tooltip: qsTr("Mimics infrared night-vision cameras")
             onButtonClicked: if (!panel.tryOpenParamPanel("nightvision", label)) panel.effectRequested("nightvision")
             thumbSource: panel.effectThumbSource("nightvision")
             badge: panel.hasBadge("nightvision")
@@ -73,6 +75,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectLocalContrast"
             label: qsTr("Local Contrast")
+            tooltip: qsTr("Brings out image details")
             onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast", label)) panel.effectRequested("localcontrast")
             thumbSource: panel.effectThumbSource("localcontrast")
             badge: panel.hasBadge("localcontrast")
@@ -82,6 +85,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRoundedEdges"
             label: qsTr("Rounded Edges")
+            tooltip: qsTr("Give your photo rounded corners")
             onButtonClicked: if (!panel.tryOpenParamPanel("roundededges", label)) panel.effectRequested("roundededges")
             thumbSource: panel.effectThumbSource("roundededges")
             badge: panel.hasBadge("roundededges")
@@ -90,6 +94,8 @@ ColumnLayout {
             objectName: "effectPicnikGrain"
             label: panel.shiftMasodlagos
                    ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
+            tooltip: panel.shiftMasodlagos
+                     ? qsTr("Adds film grain") : qsTr("Simulate film grain")
             //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
             //: az eredeti csempe-táblája (picnikgrain -> grain)
             readonly property string szuro: panel.shiftMasodlagos
