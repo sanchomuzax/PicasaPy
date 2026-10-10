@@ -160,6 +160,30 @@ class TestSourceFingerprint:
 class TestUpdateDocument:
     """#137/#4471: belső szerializálás és külső írások best-effort észlelése."""
 
+    def test_legacy_ini_is_the_source_for_first_write(self, tmp_path):
+        from picasapy.ini import load_document, update_document
+
+        legacy_path = tmp_path / "Picasa.ini"
+        target_path = tmp_path / ".picasa.ini"
+        legacy_bytes = (
+            b"[IMG_0001.jpg]\r\nstar=yes\r\ncaption=regi felirat\r\n\r\n"
+            b"[IMG_0002.jpg]\r\ncaption=masik felirat\r\n"
+        )
+        legacy_path.write_bytes(legacy_bytes)
+
+        update_document(
+            target_path,
+            lambda document: document.with_value("IMG_0002.jpg", "star", "yes"),
+            backup=False,
+        )
+
+        saved = load_document(target_path)
+        assert saved.section("IMG_0001.jpg").get("star") == "yes"
+        assert saved.section("IMG_0001.jpg").get("caption") == "regi felirat"
+        assert saved.section("IMG_0002.jpg").get("caption") == "masik felirat"
+        assert saved.section("IMG_0002.jpg").get("star") == "yes"
+        assert legacy_path.read_bytes() == legacy_bytes
+
     def test_external_write_between_fingerprint_check_and_save(self, monkeypatch, tmp_path):
         """A külső író a sikeres ellenőrzés után, a mentés előtt módosít.
 

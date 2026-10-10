@@ -138,19 +138,39 @@ def load_document(path: str | Path) -> IniDocument:
     )
 
 
+def _ini_source_path(path: str | Path) -> Path:
+    """A mentés kiinduló fájlja: modern ini, korai Picasa ini, vagy a cél.
+
+    A kimeneti útvonal ettől nem változik: a `Picasa.ini` csak akkor olvasási
+    forrás, ha a kért `.picasa.ini` még nem létezik.
+    """
+    target = Path(path)
+    if target.exists():
+        return target
+    if target.name == ".picasa.ini":
+        legacy = target.with_name("Picasa.ini")
+        if legacy.exists():
+            return legacy
+    return target
+
+
 def load_or_empty(path: str | Path) -> IniDocument:
-    """A dokumentum betöltése, vagy üres dokumentum, ha a fájl nem létezik.
+    """A dokumentum betöltése, vagy üres dokumentum, ha nincs ini-fájl.
 
     #151/7: a `load_document(p) if p.exists() else parse_document("")`
     minta közös helpere — a controllerek eddig 6 helyen ismételték.
 
-    #137: a hiányzó fájlhoz a `NO_SOURCE_FILE` ujjlenyomat társul, hogy az
-    `update_document` a „még nem létezett" esetet is ütközésként ismerje fel,
-    ha időközben egy párhuzamos író létrehozza a fájlt."""
-    target = Path(path)
-    if not target.exists():
+    Ha a kért `.picasa.ini` hiányzik, a korai Picasa `Picasa.ini` fájl a
+    mentés kiinduló dokumentuma. A mentés célja ettől továbbra is a kért út.
+
+    #137: ha egyik ini-fájl sincs meg, a `NO_SOURCE_FILE` ujjlenyomat segít,
+    hogy az `update_document` észrevegye, ha egy párhuzamos író közben
+    létrehozza a célfájlt. Legacy fallbacknél a betöltött dokumentum az
+    olvasási forrás ujjlenyomatát tartja meg."""
+    source = _ini_source_path(path)
+    if not source.exists():
         return replace(parse_document(""), source_fingerprint=NO_SOURCE_FILE)
-    return load_document(target)
+    return load_document(source)
 
 
 def save_document(
@@ -267,11 +287,15 @@ def update_document(
     target = Path(path)
     with _ini_path_lock(target):
         for _ in range(max_retries + 1):
+            source = _ini_source_path(target)
             document = load_or_empty(target)
             mutated = mutate(document)
             # Mentés előtti újraellenőrzés: változott-e a fájl a betöltés óta?
             # (A tartalom-hash a döntő; az mtime önmagában nem megbízható.)
-            if _fingerprint_of(target) == document.source_fingerprint:
+            if (
+                _ini_source_path(target) == source
+                and _fingerprint_of(source) == document.source_fingerprint
+            ):
                 save_document(mutated, target, backup=backup)
                 # #643: a Picasa a fotó rekordjának érvényességét a KÉPFÁJLHOZ
                 # méri (`moddate`/`onlinechecksum`), ezért a puszta ini-írás nem
