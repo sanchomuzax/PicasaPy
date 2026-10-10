@@ -20,7 +20,8 @@ Item {
     // #4283/#4548: az effekt- és a szöveg-színválasztóban is látható az MRU-sor.
     property bool showRecentColors: false
     // Keskeny panelhez (a szövegpanel két, egymás melletti példánya): az MRU
-    // és a színkerék 3 × 2-es, 14 px-es mini-rácsban ül a paletta mellett;
+    // és a színkerék 3 × 2-es, 12 px-es mini-rácsban ül a paletta mellett
+    // (#4548: a 260 px-es panelbe a két példány így fér el, ld. #656 őr);
     // a magasság a sima (35 px) marad.
     property bool compactRecentColors: false
     readonly property bool compactRecent: showRecentColors && compactRecentColors
@@ -70,7 +71,7 @@ Item {
         showRecentColors && typeof editController !== "undefined" && editController
                 && editController.recentPickerColors !== undefined
             ? editController.recentPickerColors : ["", "", "", "", ""]
-    implicitWidth: compactRecent ? 122 : (wideRecent ? 225 : 103)
+    implicitWidth: compactRecent ? 115 : (wideRecent ? 225 : 103)
     implicitHeight: wideRecent ? 85 : 35
 
     onCurrentColorChanged: displayedColor = currentColor
@@ -132,9 +133,9 @@ Item {
     Rectangle {
         id: spectrumButton
         objectName: swatches.objectName + "SpectrumButton"
-        x: swatches.wideRecent ? 20 : (swatches.compactRecent ? 76 : 77)
-        y: swatches.wideRecent ? 15 : (swatches.compactRecent ? 1 : 4)
-        width: swatches.compactRecent ? 14 : 26
+        x: swatches.wideRecent ? 20 : (swatches.compactRecent ? 75 : 77)
+        y: swatches.wideRecent ? 15 : (swatches.compactRecent ? 3 : 4)
+        width: swatches.compactRecent ? 12 : 26
         height: width
         radius: width / 2
         color: Theme.buttonBg
@@ -194,11 +195,11 @@ Item {
             // A `pickerpanel/mru_0` az első hely; az eredeti 31 px-es
             // osztás és a 26 × 26-os mező a szerkesztőpanel méretspecéből jön.
             // Sűrített módban a 3 × 2-es mini-rács 1–5. helye (a 0. a kerék).
-            x: swatches.compactRecent ? 76 + ((index + 1) % 3) * 16
+            x: swatches.compactRecent ? 75 + ((index + 1) % 3) * 14
                                       : 51 + index * 31
-            y: swatches.compactRecent ? 1 + Math.floor((index + 1) / 3) * 17
+            y: swatches.compactRecent ? 3 + Math.floor((index + 1) / 3) * 16
                                       : 15
-            width: swatches.compactRecent ? 14 : 26
+            width: swatches.compactRecent ? 12 : 26
             height: width
             color: recentColor === "" ? "transparent" : recentColor
             border.width: recentColor !== ""

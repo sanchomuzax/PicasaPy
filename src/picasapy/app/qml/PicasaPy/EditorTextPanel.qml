@@ -297,7 +297,7 @@ ColumnLayout {
     // változatlan, és az Alkalmaz/Mégse gomb a panelen belül marad.
     RowLayout {
         Layout.fillWidth: true
-        spacing: 10
+        spacing: 6
         ColumnLayout {
             spacing: 4
             Text {
