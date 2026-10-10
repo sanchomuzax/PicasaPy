@@ -291,13 +291,14 @@ ColumnLayout {
 
     // #450/#4548: kitöltés-szín ÉS körvonal-szín, egymástól függetlenül;
     // mindkettő megjeleníti az öt legutóbbi színt és megnyitja a közös
-    // spektrumválasztót. Egymás alatt állnak, hogy a 225 px-es MRU-sor
-    // elférjen a szerkesztő keskeny oldalsávjában.
-    ColumnLayout {
+    // spektrumválasztót. Egymás mellett maradnak (mint a #775 óta): a
+    // `compactRecentColors` az MRU-t és a színkereket egy 3 × 2-es
+    // mini-rácsba sűríti a 4 × 2-es paletta mellé, így a sor magassága
+    // változatlan, és az Alkalmaz/Mégse gomb a panelen belül marad.
+    RowLayout {
         Layout.fillWidth: true
-        spacing: 6
+        spacing: 10
         ColumnLayout {
-            Layout.fillWidth: true
             spacing: 4
             Text {
                 Layout.fillWidth: true
@@ -309,12 +310,12 @@ ColumnLayout {
             TextColorSwatches {
                 objectName: "textFillColorSwatches"
                 showRecentColors: true
+                compactRecentColors: true
                 currentColor: panel.textFillColor
                 onColorPicked: (hex) => panel.textFillColorEdited(hex)
             }
         }
         ColumnLayout {
-            Layout.fillWidth: true
             spacing: 4
             Text {
                 Layout.fillWidth: true
@@ -326,6 +327,7 @@ ColumnLayout {
             TextColorSwatches {
                 objectName: "textOutlineColorSwatches"
                 showRecentColors: true
+                compactRecentColors: true
                 currentColor: panel.textOutlineColor
                 onColorPicked: (hex) => panel.textOutlineColorEdited(hex)
             }

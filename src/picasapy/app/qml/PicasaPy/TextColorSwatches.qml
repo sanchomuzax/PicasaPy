@@ -19,6 +19,12 @@ Item {
     id: swatches
     // #4283/#4548: az effekt- és a szöveg-színválasztóban is látható az MRU-sor.
     property bool showRecentColors: false
+    // Keskeny panelhez (a szövegpanel két, egymás melletti példánya): az MRU
+    // és a színkerék 3 × 2-es, 14 px-es mini-rácsban ül a paletta mellett;
+    // a magasság a sima (35 px) marad.
+    property bool compactRecentColors: false
+    readonly property bool compactRecent: showRecentColors && compactRecentColors
+    readonly property bool wideRecent: showRecentColors && !compactRecentColors
     property string currentColor: "#ffffff"
     property string displayedColor: currentColor
     readonly property bool spectrumPickerVisible:
@@ -64,8 +70,8 @@ Item {
         showRecentColors && typeof editController !== "undefined" && editController
                 && editController.recentPickerColors !== undefined
             ? editController.recentPickerColors : ["", "", "", "", ""]
-    implicitWidth: showRecentColors ? 225 : 103
-    implicitHeight: showRecentColors ? 85 : 35
+    implicitWidth: compactRecent ? 122 : (wideRecent ? 225 : 103)
+    implicitHeight: wideRecent ? 85 : 35
 
     onCurrentColorChanged: displayedColor = currentColor
 
@@ -96,8 +102,8 @@ Item {
 
     GridLayout {
         id: palette
-        x: swatches.showRecentColors ? 20 : 0
-        y: swatches.showRecentColors ? 50 : 0
+        x: swatches.wideRecent ? 20 : 0
+        y: swatches.wideRecent ? 50 : 0
         columns: 4
         rowSpacing: 3
         columnSpacing: 3
@@ -126,11 +132,11 @@ Item {
     Rectangle {
         id: spectrumButton
         objectName: swatches.objectName + "SpectrumButton"
-        x: swatches.showRecentColors ? 20 : 77
-        y: swatches.showRecentColors ? 15 : 4
-        width: 26
-        height: 26
-        radius: 13
+        x: swatches.wideRecent ? 20 : (swatches.compactRecent ? 76 : 77)
+        y: swatches.wideRecent ? 15 : (swatches.compactRecent ? 1 : 4)
+        width: swatches.compactRecent ? 14 : 26
+        height: width
+        radius: width / 2
         color: Theme.buttonBg
         border.width: 1
         border.color: Theme.chromeBorder
@@ -140,7 +146,7 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: 4
+            anchors.margins: swatches.compactRecent ? 2 : 4
             radius: width / 2
             clip: true
             gradient: Gradient {
@@ -187,10 +193,13 @@ Item {
             property string recentColor: modelData || ""
             // A `pickerpanel/mru_0` az első hely; az eredeti 31 px-es
             // osztás és a 26 × 26-os mező a szerkesztőpanel méretspecéből jön.
-            x: 51 + index * 31
-            y: 15
-            width: 26
-            height: 26
+            // Sűrített módban a 3 × 2-es mini-rács 1–5. helye (a 0. a kerék).
+            x: swatches.compactRecent ? 76 + ((index + 1) % 3) * 16
+                                      : 51 + index * 31
+            y: swatches.compactRecent ? 1 + Math.floor((index + 1) / 3) * 17
+                                      : 15
+            width: swatches.compactRecent ? 14 : 26
+            height: width
             color: recentColor === "" ? "transparent" : recentColor
             border.width: recentColor !== ""
                           && recentColor.toLowerCase() === swatches.displayedColor.toLowerCase()
