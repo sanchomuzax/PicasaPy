@@ -78,6 +78,10 @@ HIVATALOS = {
     "Use music for Slideshow and Movie presentation:": (
         "Zene használata diavetítéshez és mozgófilmes prezentációhoz:", "folderprops"),
     "Enter Folder Title": ("Mappa nevének megadása", "iCAcquireUI::SubFolder"),
+    # #4595: a célmappa-tipp (nem a rádiófelirat) — a katalógus szó szerint
+    "Enter new folder title or choose existing folder to continue": (
+        "A folytatáshoz írjon be egy új mappanevet, vagy válasszon egy létező mappát",
+        "acquirepanel/importtiptext"),
     "Date Taken (YYYY-MM-DD)": (
         "Készítés dátuma (ÉÉÉÉ. HH. NN.)", "iCAcquireUI::AutoDate"),
     "%1 (Today)": ("%1 (ma)", "iCAcquireUI::TodayDate"),
@@ -150,7 +154,8 @@ ELOFORDULASOK = {
         "Description (optional):", "Place taken (optional):",
         "Use music for Slideshow and Movie presentation:"],
     "PicasaPy/ImportSourceDialog.qml": [
-        "Enter Folder Title", "Date Taken (YYYY-MM-DD)", "%1 (Today)"],
+        "Enter Folder Title", "Date Taken (YYYY-MM-DD)", "%1 (Today)",
+        "Enter new folder title or choose existing folder to continue"],
     "PicasaPy/MoveDatabaseDialog.qml": [
         "Choose database location...", "Current database location:",
         "New database location:"],
@@ -173,8 +178,7 @@ ELAVULT = (
     "Align right",
     "Preserve Color",
     " s",
-    # #3575
-    "Enter new folder title or choose existing folder to continue",
+    # #3575: a szöveg rádiófeliratként volt hibás; tippként (#4595) helyes.
     "Import into separate folders for each date taken",
     "Import into folder with today's date",
     "Collection name:",
