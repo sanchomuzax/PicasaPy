@@ -82,14 +82,10 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "matte" : "vignette"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
-            thumbSource: panel.effectThumbSource("vignette")
+            //: #4558: a BÉLYEGKÉP is a Shift szerinti szűrőé — az eredeti a
+            //: csempe erőforrás-nevét a `_mod%s` utótaggal képzi, tehát a
+            //: másodlagos előnézetét mutatja (a kulcs a `szuro`).
+            thumbSource: panel.effectThumbSource(szuro)
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
@@ -108,14 +104,10 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "picnikfocalpixelate" : "pixelate"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
-            thumbSource: panel.effectThumbSource("pixelate")
+            //: #4558: a BÉLYEGKÉP is a Shift szerinti szűrőé — az eredeti a
+            //: csempe erőforrás-nevét a `_mod%s` utótaggal képzi, tehát a
+            //: másodlagos előnézetét mutatja (a kulcs a `szuro`).
+            thumbSource: panel.effectThumbSource(szuro)
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
@@ -162,14 +154,10 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "roundededges" : "border"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
-            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
-            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
-            //: bélyegkép-katalógusunkban sincs benne
-            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
-            //: csempét adna. A render-láncban mind a kilenc
-            //: megvan, a HÍVÁS tehát működik.
-            thumbSource: panel.effectThumbSource("border")
+            //: #4558: a BÉLYEGKÉP is a Shift szerinti szűrőé — az eredeti a
+            //: csempe erőforrás-nevét a `_mod%s` utótaggal képzi, tehát a
+            //: másodlagos előnézetét mutatja (a kulcs a `szuro`).
+            thumbSource: panel.effectThumbSource(szuro)
             badge: panel.hasBadge(szuro)
         }
         PanelButton {
