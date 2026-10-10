@@ -80,8 +80,9 @@ from picasapy.index import (
     all_photos,
     open_index,
 )
-from picasapy.ini import load_document, save_document, update_document
-from picasapy.scanner import PICASA_INI_NAME, media_kind_of
+from picasapy.ini import has_ini_source, load_or_empty, update_document
+from picasapy.ini.names import INI_NAME
+from picasapy.scanner import media_kind_of
 
 from .formatting import to_file_url, to_local_path
 from .wipe_card_warning import WipeCardFacts, wipe_card_warning
@@ -954,7 +955,7 @@ def _mark_imported_ini(
             result = result.with_value(target.name, "star", "yes")
         return result
 
-    update_document(target.parent / PICASA_INI_NAME, _mutate, backup=True)
+    update_document(target.parent / INI_NAME, _mutate, backup=True)
 
 
 def _remove_source_file(path: Path) -> None:
@@ -982,12 +983,16 @@ def _remove_source_file(path: Path) -> None:
                 directory.rmdir()  # csak ÜRES mappát töröl
             except OSError:
                 pass
-    source_ini = path.parent / PICASA_INI_NAME
-    if not source_ini.exists():
+    source_ini = path.parent / INI_NAME
+    if not has_ini_source(source_ini):
         return
     try:
-        document = load_document(source_ini)
+        document = load_or_empty(source_ini)
     except (OSError, ValueError):
         return
     if document.section(path.name) is not None:
-        save_document(document.without_section(path.name), source_ini, backup=True)
+        update_document(
+            source_ini,
+            lambda current: current.without_section(path.name),
+            backup=True,
+        )

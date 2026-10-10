@@ -38,7 +38,8 @@ from pathlib import Path
 
 from picasapy.burn import hasznalhato_kapacitas, lemezekre_oszt
 from picasapy.burn.iso import iso_kiirasa
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.ini import ini_source_path
+from picasapy.ini.names import INI_NAME
 
 from .futtatas import MANIFESZT_NEVE
 
@@ -73,17 +74,17 @@ def _manifeszt_szoveg(tetelek: Sequence[LemezkepTetel]) -> str:
 
 
 def _ini_tarsak(tetelek: Sequence[LemezkepTetel]) -> list[tuple[str, Path]]:
-    """A lemezre kerülő fájlok mappáinak `.picasa.ini`-jei.
+    """A lemezre kerülő fájlok mappáinak ini-fájljai.
 
     Mappánként egyszer, és csak ha a forrásmappában tényleg van ini —
     üres fájlt nem gyártunk.
     """
     parok: dict[str, Path] = {}
     for tetel in tetelek:
-        ini = tetel.forras.parent / PICASA_INI_NAME
-        if not ini.is_file():
+        ini = ini_source_path(tetel.forras.parent / INI_NAME)
+        if ini is None:
             continue
-        cel = tetel.relativ.parent / PICASA_INI_NAME
+        cel = tetel.relativ.parent / ini.name
         parok.setdefault(cel.as_posix(), ini)
     return sorted(parok.items())
 
